@@ -1,0 +1,154 @@
+#!/usr/bin/python
+
+import sys
+import glob
+from optparse import *
+from pylab import *
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+
+try:
+  lsctables.use_in(ligolw.PartialLIGOLWContentHandler)
+except AttributeError:
+  # old glue did not allow .use_in().
+  # FIXME:  remove when we can require the latest version of glue
+  pass
+
+##############################################################################
+
+##############################################################################
+# function to read in a list of files
+def isSearchSumm(name, attrs):
+  return lsctables.IsTableProperties(lsctables.SearchSummaryTable, name, attrs)
+
+def readFiles(fList):
+  """
+  read in the SimInspiralTables from a list of files
+  @param fList:       list of input files
+  """
+  output = None
+  if not fList:
+    return output
+  for thisFile in fList:
+    doc = ligolw.Document()
+    # read in SearchSummary
+    doc = ligolw.Document()
+    ligolw.make_parser(ligolw.PartialLIGOLWContentHandler(doc, \
+        isSearchSumm)).parse(file(thisFile))
+    searchSummTable = doc.childNodes[0]
+    if output:
+      output.extend(searchSummTable)
+    else:
+      output = searchSummTable
+  return output
+
+
+#################################################################
+# help message
+usage = """\
+       plotcoincseglength [options]
+
+  SUMMARY: Check of the lengths of coincident segments.  The code can make two
+           plots:
+           
+        1) A histogram of the length of coincident segments.
+
+        2) A plot of trigger rate vs segment length.
+
+           Additionally, if a segment length threshold is given, it will print
+           information about the total segment count and time analyzed, as well
+           as the segment count and time in segments shorter than the 
+           threshold.
+"""
+
+##############################################################################
+parser = OptionParser( usage )
+    
+parser.add_option("-t","--thinca-glob",action="store",type="string",\
+    default=None,metavar="THINCA",\
+    help="glob for files containing the string THINCA")
+    
+parser.add_option("-s","--show-plot",action="store_true",default=False,\
+    help="display the figures on the terminal" )
+
+parser.add_option("-H","--hist-seg-length",action="store_true",default=False,\
+    help="make a histogram of the segment lengths" )
+
+parser.add_option("-T","--trigger-rate",action="store_true",default=False,\
+    help="plot trigger rate vs segment length" )
+
+parser.add_option("-f","--figure-name",action="store",type="string",\
+    default=None, metavar=" FNAME",\
+    help="generate png figures with name FNAME.png" )
+
+parser.add_option("-n","--nbins",action="store",type="int",\
+    default=20, metavar="NBINS",\
+    help="number of bins to use when generating histogram" )
+
+parser.add_option("-S","--seg-max",action="store",type="int",\
+    default=None, metavar="MAX",\
+    help="maximum segment length to use in histogram" )
+
+parser.add_option("-l","--length-threshold",action="store",type="int",\
+    default=0, metavar="LEN",help="length threshold to determine 'short' segs")
+    
+(opts,args) = parser.parse_args()
+
+
+
+# identify the thinca files
+if opts.thinca_glob:
+  thincaFiles = glob.glob(opts.thinca_glob)
+  if not thincaFiles:
+    print >>sys.stderr, "The glob for " + opts.thinca_glob + \
+        " returned no files"
+    sys.exit(1)
+else:
+  thincaFiles = None
+
+#######################################################################
+# Read in the search summaries from the template banks
+thincaSumm = readFiles(thincaFiles)
+
+duration = thincaSumm.getColumnByName('out_end_time').asarray() \
+          - thincaSumm.getColumnByName('out_start_time').asarray()
+nevents = array(thincaSumm.getColumnByName('nevents').asarray(),'f')
+rate = nevents/duration
+if opts.trigger_rate:
+  figure(1)
+  semilogx(duration, nevents/duration,'kx',markersize=12, markeredgewidth=1)
+  xlabel('Length of coincidence segment (seconds)', size='x-large')
+  ylabel('Trigger rate (Hz)', size='x-large')
+  if opts.figure_name:
+    savefig(opts.figure_name + "_trigger_rate.png")
+  if not opts.show_plot:
+    close()
+
+if opts.length_threshold:
+  time = sum(duration)
+  num = len(duration)
+  num_short = sum(duration < 500)
+  time_short = sum(duration[duration < 500])
+  print 'Number of segments = ' + str(num)
+  print 'Number of segments shorter than ' + str(opts.length_threshold) \
+      + ' seconds = ' + str(num_short)
+  print 'Total length of segments = ' + str(time) + ' seconds'
+  print 'Total length of short segments = ' + str(time_short) + ' seconds'
+
+if opts.hist_seg_length:
+  if opts.seg_max:
+    bins = arange(0,opts.seg_max,opts.seg_max/opts.nbins)
+  else:
+    bins = opts.nbins
+  figure(2)
+  hist(duration,bins)
+      
+  xlabel('Length of coincidence segment (seconds)', size='x-large')
+  ylabel('Number of occurrances', size='x-large')
+  if opts.figure_name:
+    savefig(opts.figure_name + "_seg_length.png")
+  if not opts.show_plot:
+    close()
+
+if opts.show_plot:
+  show()  

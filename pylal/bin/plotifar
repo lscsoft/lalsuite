@@ -1,0 +1,1176 @@
+#!/usr/bin/python
+
+__author__ = "Collin Capano <cdcapano@physics.syr.edu>"
+__prog__ = "plotifar"
+
+import sys,os,re
+import copy
+from optparse import *
+import exceptions
+import glob
+from types import * 
+from operator import itemgetter
+from string import join
+
+from glue import lal
+from glue import segments 
+from glue import segmentsUtils 
+from glue.ligolw import ligolw 
+from glue.ligolw import table as tab 
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+import glue.iterutils
+from pylal import CoincInspiralUtils
+from pylal import SnglInspiralUtils
+from pylal import InspiralUtils
+from pylal import git_version
+
+import itertools
+import numpy
+import operator
+import matplotlib.mlab as mlab
+
+usage =  """
+"""
+# ============================================================================
+# def poly_between; needed if using older version of matplotlib
+def poly_between(x, ylower, yupper):
+    """
+    given a sequence of x, ylower and yupper, return the polygon that
+    fills the regions between them.  ylower or yupper can be scalar or
+    iterable.  If they are iterable, they must be equal in length to x
+
+    return value is x, y arrays for use with Axes.fill
+    """
+    Nx = len(x)
+    if not iterable(ylower):
+      ylower = ylower*numpy.ones(Nx)
+
+    if not iterable(yupper):
+      yupper = yupper*numpy.ones(Nx)
+
+    x = numpy.concatenate( (x,x[::-1]) )
+    y = numpy.concatenate( (yupper, ylower[::-1]) )
+    return x,y
+#  End poly_between ==========================================================
+# ============================================================================
+# Set options: --glob or --cache-file and --output-path are required
+
+def parse_command_line():
+  """
+  Parser function dedicated
+  """
+
+  parser = OptionParser( usage = usage, version = git_version.verbose_msg )
+  # following are related to file input and output naming
+  parser.add_option( "-g", "--glob", action = "store", type = "string", \
+        default = None, metavar = " GLOB", \
+        help = "glob of CORSE files to read" )
+  #!!! cache-file option currently doesn't do anything
+  parser.add_option( "-I", "--cache-file", \
+        help = "read CORSE file names from cache input file; " + \
+        "Currently does not work.")
+  parser.add_option( "", "--glob-slide", action = "store", type = "string",
+        default = None, metavar = " GLOB_SLIDE",
+        help = "glob of CORSE_SLIDE files; used if --plot-slides specified " )
+  parser.add_option( "-P", "--output-path", action = "store", type = "string", \
+        default = "", metavar = "PATH", \
+        help = "path where the figures should be stored" )
+  parser.add_option( "-O", "--enable-output", action = "store_true", \
+        default =  False, metavar = "OUTPUT", \
+        help = "enable the generation of html and cache documents" )
+  parser.add_option( "-s", "--show-plot", action = "store_true", default = False, \
+        help = "display the plots on the terminal" )
+  parser.add_option( "-v", "--verbose", action = "store_true", default = False, \
+        help = "print information to stdout" )
+  # following (gps-start/stop-time, ifo-times, ifo-tag, user-tag) are options
+  # required by InspiralUtils to generate a file name. They are only used for
+  # file naming. they aren't used in any calculations in the plot, so they are
+  # all optional.
+  parser.add_option( "", "--gps-start-time", action = "store", type = "int", \
+        default = None, metavar = "GPSSTARTTIME", \
+        help = "gps start time used in the figure and output file names" )
+  parser.add_option( "", "--gps-end-time", action = "store", type = "int", \
+        default = None, metavar = "GSPENDTIME", \
+        help = "gps end time used in the figure and output file names" )
+  parser.add_option( "", "--ifo-times", action = "store", default = None, metavar = "IFOS", \
+        help = "puts the ifo times for which the plots were made into output file name." )
+  parser.add_option( "", "--ifo-tag", action = "store", type = "string", \
+        default = None, metavar = "IFOTAG", \
+        help = "the ifo tag used in the name of the figure (e.g. SECOND_H1H2L1)" )
+  parser.add_option( "-u", "--user-tag", action = "store", type = "string", \
+        default = None, metavar = "USERTAG", \
+        help = "user tag used in the name of the figures" )
+  # following are ifar plot specific options
+  parser.add_option( "", "--summary-file-path", action = "store", 
+        type = "string", default = None,
+        help = "Directory to find corse summary-file. If none specified, " + \
+        "plotifar will look in the same location as the relevant corse file." )
+  parser.add_option( "", "--time-correct-file", metavar = "T_COR_FIL", action = "store", 
+        type = "string", default = None, 
+        help = "coire or corse  summary file that contains the amount of all_data analyzed time. " + \
+        "Dividing the analysed time for the globbed files' data-type by this corrects the far if it was " + \
+        "analyzed from an all_data septime file. ")
+  parser.add_option("", "--plot-slides", action = "store_true", default = False,
+        help = "if this is specified, will have the world famous " + \
+        "lightning-bolt plots. Requires a time-analyzed-file and a slide file for every " + \
+        "corse file that has background. If --glob-slide is not specified, will " + \
+        "try to find the CORSE_SLIDE files in the same directory.")
+  parser.add_option("", "--time-analyzed-file", action = "store", 
+        type =  "string", default = None,
+        help = "file containing amount of analyzed time in each slide. This is " +
+        "needed when making lightning bolt plots to correct corse, which " +
+        "calculates the bkg fans using zero-lag time.")
+  parser.add_option( "", "--x-min", action = "store", type = "float", \
+        default = None, metavar = "", \
+        help = "minimum x value to plot, in terms of IFAN " + \
+        "(for IFAR plots this will be normalized automatically)" )
+  parser.add_option( "", "--x-max", action = "store", type = "float", \
+        default = None, metavar = "", \
+        help = "maximum x value to plot, in terms of IFAN " + \
+        "(for IFAR plots this will be normalized automatically)" )
+  parser.add_option( "", "--y-min", action = "store", type = "float", \
+        default = None, metavar = "", \
+        help = "minimum y value to plot, must be greater than 0")
+  parser.add_option("", "--y-max", action = "store", type = "float", \
+        default = None, metavar = "", \
+        help = "maximum y value to plot")
+  parser.add_option( "", "--ifar-dist", action = "store_true", default = False, \
+        help = "plot a cumulative histogram of IFAR normalized in terms of a year" )
+  parser.add_option( "", "--ifan-dist", action = "store_true", default = False, \
+        help = "plot a cumulative histogram of IFAR*analysis time (the " + \
+        "inverse false alarm number). This generates ifar plots as they " + \
+        "were in the first year analysis." )
+  # snr-ifar plot currently does not work (consider for future)
+  parser.add_option( "", "--snr-ifar", action = "store_true", default = False, \
+        help = "plot effective snr vs time-normalized ifar; currently does not work" )
+  parser.add_option( "", "--show-min-bkg", action = "store_true", default = False, \
+        help = "put a vertical line indicating where the background begins for some " + \
+        "category. Requires num-slides a corse summary file with " + \
+        "the same name and location as the input file with file extension .txt " + \
+        "as opposed to .xml.gz"  )
+  parser.add_option( "", "--show-max-bkg", action = "store_true", default = False, \
+        help = "put a vertical line indicating where the background ends for some " + \
+        "category. Requires a corse summary file." )
+  parser.add_option( "", "--show-two-sigma-error", action = "store_true", default = False,
+        help = "plot background out to two sigma" )
+  parser.add_option( "", "--plot-uncombined", action = "store_true", default = False, \
+        help = "make an uncombined plot of however many categories there are" )
+  parser.add_option( "", "--plot-combined", action = "store_true", default = False, \
+        help = "Combine IFAN/IFARs from different experiments into one cum. hist." )
+  # The following are needed to run followup_missed.py
+  parser.add_option( "", "--do-followup", action = "store_true", default = False, \
+        help = "Followup loudest events." )
+  parser.add_option( "", "--ihope-cache", action = "store", type = "string",
+        default = None, metavar = " IHOPE_CACHE",
+        help = "Location of the ihope.cache file, neeedd for followups." )
+  parser.add_option( "", "--datatype", action = "store", type = "string",
+        default = None, metavar = " GLOB_SLIDE",
+        help = "Needed for followup, presumably 'PLAYGROUND' or 'FULL_DATA' " )
+  parser.add_option("","--followup-sned",action="store",\
+        type="string", default=None, metavar=" PATH",\
+        help="specify path to the sned-executable, use for spinning injections")
+  parser.add_option("","--followup-tag",action="store",\
+        type="string", default=None, metavar=" STRING",\
+        help="select an injection run using tag")
+
+
+   
+  (options,args) = parser.parse_args()
+
+  #check if required options specified and for self-consistency
+  if not options.glob or options.cache_file:
+    raise ValueError, "--glob or --cache-file must be specified"
+  if not options.output_path:
+    raise ValueError, "--output-path must be specified"
+  if options.plot_slides and not options.time_analyzed_file:
+    raise ValueError, "lightning bolt plots require time-analyzed-file"
+  if options.y_min and options.y_min <= 0.:
+    raise ValueError, "y-min must be greater than 0"
+  if options.y_max and (options.y_min >= options.y_max):
+    raise ValueError, "y-min must be less than y-max"
+  if (options.x_min and options.x_max) and (options.x_min >= options.x_max):
+    raise ValueError, "x-min must be less than x-max"
+  return options, sys.argv[1:]
+
+# ============= End parse_command_line =======================================
+
+# ============================================================================
+# Initialization: get arguments and input files; store to tables
+
+# set accepted amount of seconds in a year
+year = 31557600.
+# parse command line
+opts, args = parse_command_line()
+# Change to Agg back-end if show() will not be called 
+# thus avoiding display problem
+if not opts.show_plot:
+  import matplotlib
+  matplotlib.use('Agg')
+from pylab import *
+from pylal import viz
+from pylal import followup_trigger
+# turning off LaTex for now because of bugs
+rc('text', usetex=True)
+
+# set InspiralUtils options for file and plot naming
+opts = InspiralUtils.initialise( opts, __prog__, git_version.verbose_msg )
+# set the proper color code and symbols
+figure_number = 0 # used for the figure label (showplot)
+fnameList = [] # used for the html cache file
+tagList = [] # ditto
+
+# get input files
+corsefiles = []
+if opts.glob:
+  if opts.verbose: print >> sys.stdout, "Globbing corse files..."
+  for gl in opts.glob.split(" "):
+    corsefiles.extend(glob.glob(gl))
+elif opts.cache_file is not None:
+  # currently not a working feature; just print warning message and exit
+  print >> sys.stderr, "--cache-file option currently not available; " + \
+        "please  use --glob option instead."
+  sys.exit(1)
+if not corsefiles:
+  print >> sys.stderr, "No corse files could be found. Check input args."
+  sys.exit(1)
+# if combining experiments or calculating FAR, need number of bkg coinc. and 
+# time analyzed; this info is in the relevant corse summary files.
+# These are found using the corsefiles list; assumption is that summary file
+# has same name and location as the corse file, but has file extenstion .txt
+# save num. bkg coincs and analyzed time to relevant dict. referenced by
+# corse file name
+if opts.verbose: print >> sys.stdout, "Getting needed info from summary files..."
+maxBkgFAN = {}
+minBkgFAN = {}
+NormTime = {}
+modFAN = {}
+massbin = {}
+coincifos = {}
+no_bkg = {}
+no_frgnd = {}
+no_bkg_frgnd = {}
+warn_msg = ""
+for thisfile in corsefiles:
+  if opts.summary_file_path: # use alternate path for summfile
+    altfile = opts.summary_file_path + os.path.basename(thisfile)
+    summfile = glob.glob(altfile.rstrip('.xml.gz') + '.txt')
+  else:
+    summfile = glob.glob(thisfile.rstrip('.xml.gz') + '.txt')
+  # check if corse file has a corresponding summary file
+  if not summfile:
+    print >>sys.stderr, "A summary file for %s could not be found." %(thisfile)
+    sys.exit(1)
+  # get needed info from summary file
+  file = open(summfile[0], 'r')
+  for line in file:
+    # get coincidence type (used for labeling in plots); will have regardless
+    # of whether or not there are foreground triggers
+    if line.startswith( 'coincident ifos:' ):
+      # if no background triggers, set no_bkg to True; this will be used later
+      # to figure out if there is both no background and no foreground
+      if line.split()[2] == 'no_background': 
+        no_bkg[thisfile] = True
+      else:
+        coincifos[thisfile] = line.split()[2]
+    # get Number of background triggers
+    elif line.startswith( 'number of reconstructed slide coincidences:' ):
+      NbkgCoinc = float( line.split()[5] )
+    elif line.startswith( 'number of reconstructed zero-lag coincidences:' ):
+      if float( line.split(':')[1] ) == 0.: # no foreground
+        if thisfile in no_bkg:
+          # no foreground or background: remove from the no_bkg dictionary, 
+          # mark the corsefile for later removal and break from 
+          # reading the summary file 
+          no_bkg_frgnd[thisfile] = corsefiles.index(thisfile)
+          del no_bkg[thisfile]
+          break
+        else: # just have no foreground; add to no foreground dict
+          no_frgnd[thisfile] = True
+    # get foreground time analyzed; used maxbkgFAN as well as for normalizing
+    elif line.startswith( 'amount of time analysed for triggers' ):
+      FrgrndTime = float( line.split()[6] ) + float( line.split()[8] ) #sec + ns
+      NormTime[thisfile] = FrgrndTime / year
+    # get background time analyzed
+    elif line.startswith( 'amount of background time analyzed' ):
+      BkgTime = float( line.split()[5] )
+    # get mass-bin (used for labeling)
+    # this is an inverted dictionary, i.e., mass-bin is referenced by the
+    # masses and the elements are a list of the files that are in that mass
+    # bin
+    elif line.startswith( 'mass-bin:' ):
+      mass = line.split(":")[1].rstrip('\n').lstrip()
+      mass = mass.replace('_','-') # Tex has a problem with underscores
+      if mass in massbin:
+        massbin[ mass ].append(thisfile)
+      else:
+        massbin[ mass ] = []
+        massbin[ mass ].append(thisfile)
+  file.close()
+  if thisfile not in no_bkg_frgnd: # i.e., has background or foreground
+    # calculate min/max BkgFANs
+    minBkgFAN[thisfile] = FrgrndTime/BkgTime
+    if thisfile not in no_bkg:
+      maxBkgFAN[thisfile] = NbkgCoinc * FrgrndTime/BkgTime
+  # apply correction factor
+    if opts.time_correct_file:
+      corrfile = open(opts.time_correct_file,'r')
+      for line in corrfile:
+        if line.startswith( 'amount of time analysed' ):
+          t_factor = float( line.split()[6] )
+      corrfile.close()
+      modFAN[thisfile] = NormTime[thisfile]*year/t_factor
+    else:
+      modFAN[thisfile] = 1.
+# End: loop over corsefiles
+
+# remove files that had no bkg from corsefiles list and add their names to
+# warn_msg
+if no_bkg_frgnd:
+  warn_msg = 'No foreground or background in files:</br>\n'
+  # the following relies on itervalues cycling from the last key added to the
+  # dict to the first
+  for idx in sorted(no_bkg_frgnd.items(), key=itemgetter(1), reverse=True):
+    warn_msg = warn_msg + '-- ' + os.path.basename(corsefiles.pop(idx[1])) + '</br>\n'
+  # check if still have a corsefiles list; if all the files that were globbed
+  # don't have foreground and background, just make a generic plot with
+  # warn_msg on it; this avoids future errors
+  if not corsefiles:
+    warn_msg = warn_msg + 'These were all the globbed files.'
+    figure(figure_number)
+    figure_number += 1
+    rc('text', usetex=False) # turn off LaTex for plotting warn_msg
+    text( 0.5, 0.5, warn_msg, ha = 'center', va = 'center' )
+    xlabel( r"No data", size='x-large' )
+    ylabel( r"No data", size='x-large' )
+    if opts.enable_output is True:
+      name = "no_data_ifar"
+      txt = "No data to plot"
+      fname = InspiralUtils.set_figure_name(opts, name)
+      fname_thumb = InspiralUtils.savefig_pylal( filename=fname )
+      fnameList.append(fname)
+      tagList.append(txt)
+      html_filename = InspiralUtils.write_html_output(opts, args, fnameList, tagList)
+      InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+    if opts.show_plot:
+      show()
+    sys.exit(0)
+    
+# set statistic arg for the coincTable to far
+coincStat = CoincInspiralUtils.coincStatistic("far")
+
+# store coinc triggers to a CoincInspiralTable; this has to be done by first
+# reading in the SnglInspiralTable, then constructing a coincident table from
+# it. Since will need info from each file spearately (e.g., if normalizing by
+# time, each FAN will need to be divided by the time analyzed for that corse
+# file) am saving each coincTable to a dictionary of coinc tables
+# referenced by the corresponding file name
+if opts.verbose: print >> sys.stdout, "Creating coincident tables..."
+coincT = {}
+for thisfile in corsefiles:
+  insptrigs = SnglInspiralUtils.ReadSnglInspiralFromFiles( [thisfile] )
+  coincT[ thisfile ] = CoincInspiralUtils.coincInspiralTable( insptrigs, coincStat )
+  coincT[ thisfile ].sort() # sort by descending FAN
+  # if this file has no_bkg, but does have foreground, get the ifo coincident
+  # type from the first foreground trigger
+  if thisfile in no_bkg:
+    coincifos[thisfile] = coincT[ thisfile ][0].get_ifos()[0] 
+    
+# following gets info needed for lightning bolt plots; this includes globbing
+# the slide file, mapping it to a zero-lag file, getting the slide time analyzed
+# and adjusting the FAN of the slide triggers
+if opts.plot_slides:
+  if opts.verbose: print >> sys.stdout, "Globbing slide files..."
+  slidefiles = []
+  slideT = {}
+  bkg_modFAN = {}
+  # filemap and rev_filemap try to set a mapping between zero-lag files and their 
+  # slide files; this assumes that the only difference between the two is the 
+  # slide file has "_SLIDE_" in the file name.
+  filemap = {}
+  rev_filemap = {}
+  # get slide times from time-analyzed-file; these are used to change bkg FANs
+  # from N*zero_time/bkg_time (as calculated by corse) to
+  # N*slide_time/bkg_time
+  timefile = open(opts.time_analyzed_file,'r')
+  for line in timefile:
+    line = line.split()
+    bkg_modFAN[float(line[0])] = float(line[1]) # this is the time analyzed
+  # check that the zero-lag time in the time file matches that of all globbed
+  # zero-lag files
+  for thisfile in corsefiles:
+    if NormTime[thisfile]*year/bkg_modFAN[0] != modFAN[thisfile]:
+      print >> sys.stdout, "The zero-lag time in the time-analyzed file does" + \
+      "not match the zero-lag time in every corse file."
+      sys.exit(1)
+  # passed, multiply all bkg_modFANs by modFAN (doesn't matter which modFAN
+  # used since all zero-lag times are the same, so just using first corsefile)
+  zerotime = bkg_modFAN[0]
+  for slidenum in bkg_modFAN:
+    bkg_modFAN[slidenum] = bkg_modFAN[slidenum]*modFAN[corsefiles[0]]/zerotime
+
+  # get the slide files
+  if opts.glob_slide:
+    for gl in opts.glob_slide.split(" "):
+      slidefiles.extend(glob.glob(gl))
+    # remove any slidefiles from slidefile list that don't have matching
+    # corsefile
+    slidefiles = [slidefile for slidefile in slidefiles for corsefile in
+        corsefiles if os.path.basename(corsefile) == join(
+        os.path.basename(slidefile).split("_SLIDE_"), "_")]
+    for slidefile in slidefiles:
+      for corsefile in corsefiles:
+        if os.path.basename(corsefile) == join( os.path.basename(slidefile).split("_SLIDE_"), "_" ):
+          filemap[slidefile] = corsefile
+          rev_filemap[corsefile] = slidefile
+    # check that all slidefiles have 1 and only 1 corresponding corsefile
+    if len( filemap ) != len( slidefiles ):
+      print >> sys.stderr, "One or more slide files do not have matching " + \
+      "corse files. This error may have occured because it is assumed that the " + \
+      "slide file has the same basename as the zero-lag file, but with " + \
+      "'_SLIDE_' somewhere in the name."
+      sys.exit(1)
+  else: # attempt to find automatically
+    for corsefile in corsefiles:
+      slidefile = glob.glob( os.path.dirname(corsefile) +
+        '/' + join(os.path.basename(corsefile).split("CORSE"), "CORSE_SLIDE") )[0]
+      if not slidefile:
+        print >> sys.stderr, "Could not find a slide file for:"
+        print >> sys.stderr, corsefile
+        print >> sys.stderr, "Try using --glob-slide instead."
+        sys.exit(1)
+      slidefiles.append(slidefile)
+      filemap[slidefile] = corsefile
+      rev_filemap[corsefile] = slidefile
+
+  #  create slide coincs
+  if opts.verbose: print >> sys.stdout, "Creating slide coinc tables..."
+  for thisfile in slidefiles:
+    insptrigs = SnglInspiralUtils.ReadSnglInspiralFromFiles( [thisfile] )
+    slideT[ thisfile ] = CoincInspiralUtils.coincInspiralTable( insptrigs,
+        coincStat )
+    slideT[ thisfile ].sort()
+  # END thisfile in slidefiles loop
+
+# set plot colors and symbols
+if opts.verbose: 
+  print >> sys.stdout, "Setting plot symbols and colors..."
+PlotVals = {}
+no_bkg_msg = ""
+no_frgnd_msg = ""
+for thisfile in corsefiles:
+  PlotVals[thisfile] = {}
+  # set colors based on coincident ifos (colors are html code)
+  if coincifos[thisfile] == 'H1H2L1V1':
+    PlotVals[thisfile]['color'] = '#F88017' # dark orange
+  elif coincifos[thisfile] == 'H1H2L1':
+    PlotVals[thisfile]['color'] = '#00FFFF' # cyan
+  elif coincifos[thisfile] == 'H1L1V1':
+    PlotVals[thisfile]['color'] = '#7D1B7E' # dark orchid
+  elif coincifos[thisfile] == 'H2L1V1':
+    PlotVals[thisfile]['color'] = '#153E7E' # dodger blue4
+  elif coincifos[thisfile] == 'H1L1':
+    PlotVals[thisfile]['color'] = '#00FF00' # green
+  elif coincifos[thisfile] == 'H1V1':
+    PlotVals[thisfile]['color'] = '#6698FF' # sky blue
+  elif coincifos[thisfile] == 'H2L1':
+    PlotVals[thisfile]['color'] = '#FF0000' # red
+  elif coincifos[thisfile] == 'H2V1':
+    PlotVals[thisfile]['color'] = '#FF00FF' # magenta
+  elif coincifos[thisfile] == 'L1V1':
+    PlotVals[thisfile]['color'] = '#254117' # dark green
+  else: # other coincs just set to black
+    PlotVals[thisfile]['color'] = 'k'
+  # set foreground symbol based on mass-bin
+  trigsymbols = itertools.cycle(( '^', 'o', 's' ))
+  lnsymbols = itertools.cycle(( '--', ':', '-.' ))
+  for mass, marker, hash in zip( massbin, trigsymbols, lnsymbols):
+    if thisfile in massbin[mass]:
+      PlotVals[thisfile]['massbin'] = mass
+      PlotVals[thisfile]['trigsymbol'] = marker
+      PlotVals[thisfile]['lnsymbol'] = hash
+  # check for files that don't have background/foreground triggers; add trigger
+  # type to warn_msg
+  if thisfile in no_bkg:
+    if not no_bkg_msg: no_bkg_msg = "No background triggers in:</br>\n"
+    no_bkg_msg = no_bkg_msg + "-- " + coincifos[thisfile] + " " + PlotVals[thisfile]['massbin'] + "</br>\n" 
+  if thisfile in no_frgnd:
+    if not no_frgnd_msg: no_frgnd_msg = "No foreground triggers in:</br>\n"
+    no_frgnd_msg = no_frgnd_msg + "--  " + coincifos[thisfile] + " " + \
+        PlotVals[thisfile]['massbin'] + "</br>\n"
+# End for thisfiles in corsefiles
+# concatatenate no_bkg_msg and no_frgnd_msg to warn_msg
+warn_msg = warn_msg + no_bkg_msg + no_frgnd_msg
+
+# ============================================================================
+# ============================================================================
+# Apply necessary algorithims
+
+if opts.plot_uncombined:
+  if opts.verbose:
+    print >> sys.stdout, "Getting FANs from coinc tables and caculating IFAN/IFAR..."
+  IFAN = {} # store IFANs to dictionary referenced by file name
+  cumnum = {} # ditto the cum number (the y-axis in the ifar plots)
+  zero_fan = {}
+  if opts.ifar_dist: IFAR = {} # ditto IFARs
+  for thisfile in corsefiles:
+    if coincT[thisfile].sngl_table: # if have foreground trigs
+      IFAN[thisfile] = [] # initialize a list for this file
+      for coinc in coincT[thisfile]:
+        if coinc.stat == 0: # set IFAN to maximum IFAN, store to zero_fan dict
+          zero_fan[thisfile] = minBkgFAN[thisfile]
+          IFAN[thisfile].append( 1./zero_fan[thisfile] )
+        else:
+          IFAN[thisfile].append( 1./(coinc.stat*modFAN[thisfile]) )
+      IFAN[thisfile] = array(IFAN[thisfile]) # turn into a matplotlib array
+      # generate cumnum array
+      cumnum[thisfile] = []
+      for ii in range(len(IFAN[thisfile])):
+        cumnum[thisfile].append( len( (IFAN[thisfile]>=IFAN[thisfile][ii]).nonzero()[0] ))
+      if opts.ifar_dist:
+        IFAR[thisfile] = IFAN[thisfile] * NormTime[thisfile]
+# END if opts.plot_uncombined
+
+# If lightning bolt plots desired, do similar thing with slide files
+# !!! bkg_IFANs are being stored regardless of whether or not an
+# uncombined plot is desired; this makes doing the combined plotting code more
+# efficient (should do this with the zero-lag too... one-day... )
+if opts.plot_slides:
+  # create a dictionary to store the background IFANs
+  bkg_IFAN = {}
+  bkg_cumnum = {}
+  if opts.ifar_dist: bkg_IFAR = {}
+  for thisfile in slidefiles:
+    # for each file, create a sub dictionary; the keys in this dictionary
+    # will be all the slide numbers that are in that slide file
+    bkg_IFAN[ thisfile ] = {}
+    if opts.ifar_dist: bkg_IFAR[ thisfile ] = {}
+    for coinc in slideT[ thisfile ]:
+      slidenum = coinc._get_slide_num()
+      if slidenum not in bkg_IFAN[ thisfile ]:
+        bkg_IFAN[ thisfile ][ slidenum ] = []
+      if coinc.stat == 0.: # the loudest background trigger(s)
+      # !!! Note that this cannot happen with corse's current structure
+        bkg_IFAN[ thisfile ][ slidenum ].append(
+              1./(minBkgFAN[filemap[thisfile]]) )
+      else:
+        bkg_IFAN[ thisfile ][ slidenum ].append(
+              1./(coinc.stat*bkg_modFAN[slidenum] ) )
+    # END loop over coincident triggers
+    # generate bkg_cumnum array
+    bkg_cumnum[ thisfile ] = {}
+    # cycle through the slide numbers that are present in this file
+    for slidenum in bkg_IFAN[ thisfile ]:
+      bkg_IFAN[ thisfile ][ slidenum ] = array( bkg_IFAN[thisfile][slidenum] )
+      # populate the bkg_cumnum arrays
+      if slidenum not in bkg_cumnum[thisfile]: bkg_cumnum[thisfile][slidenum] = []
+      for ii in range(len(bkg_IFAN[thisfile][slidenum])):
+        bkg_cumnum[ thisfile ][ slidenum ].append( len(
+              (bkg_IFAN[thisfile][slidenum]>=bkg_IFAN[thisfile][slidenum][ii]).nonzero()[0]
+              ))
+      # also generate IFAR_array if it is desired
+      # !!! Normalizing using the zero-lag time (?)
+      if opts.ifar_dist:
+        bkg_IFAR[ thisfile ][slidenum] = {}
+        bkg_IFAR[ thisfile ][ slidenum ] = bkg_IFAN[thisfile][slidenum] * NormTime[filemap[thisfile]]
+
+if opts.plot_combined:
+  if opts.verbose:
+    print >> sys.stdout, "Combining FANs/FARs..."
+  # test to make sure all norm times are the same
+  for thisfile in corsefiles:
+    if NormTime[corsefiles[0]] != NormTime[thisfile]:
+      print >> sys.stderr, "Can't combine experiments with " + \
+        "different analysis times."
+      sys.exit( 1 )
+  maxFANs = [] # for storing max FAN of bkg (the dict is hard to sort by value)
+  FANc = [] # for storing the combined FANs of foreground triggers
+  zero_fanc = []
+  if opts.ifar_dist: IFARc = []
+  for thisfile in corsefiles:
+    if thisfile in maxBkgFAN: maxFANs.append( maxBkgFAN[thisfile] )
+    if coincT[thisfile].sngl_table: # if have foreground trigs
+      for coinc in coincT[thisfile]:
+        if coinc.stat == 0.: # mark and set to minbkgFAN[thisfile]
+          zero_fanc.append(minBkgFAN[thisfile])
+          FANc.append( minBkgFAN[thisfile])
+        else:
+          FANc.append( coinc.stat*modFAN[thisfile] )
+  FANc.sort(reverse=True) # order from weakest to strongest
+  maxFANs.sort(reverse=True)
+  FANc = array(FANc) # convert to array
+  maxFANs = array(maxFANs)
+  zero_fanc = array(zero_fanc)
+  # following works by starting from highest fan values and moving down (like
+  # moving left to right on an IFAN plot)
+  for ii in range(0,len(FANc)):
+    for jj in range(1, len(maxFANs)): # cycle through bkg fans, skipping first one
+      if FANc[ii] > maxFANs[jj]: # find the largest bkg fan < this foreground fan
+        FANc[ii] = FANc[ii] * (jj) # multiply by number of active categories
+        for kk in range(jj, len(maxFANs)):
+          FANc[ii] = FANc[ii] + maxFANs[kk] # add bkg fans of inactive categories
+        break # go to next fan in FANc
+      elif jj == len(maxFANs)-1: # all categories active
+        FANc[ii] = FANc[ii] * len(maxFANs)
+  # store as IFANc array
+  IFANc = 1./FANc
+  # adjust values in zero_fanc, if it exists
+  if zero_fanc.any(): zero_fanc = len(maxFANs) * zero_fanc
+  # generate cumnumc array
+  cumnumc = []
+  for ii in range( len(IFANc)):
+    cumnumc.append( len( (IFANc>=IFANc[ii]).nonzero()[0] ))
+  # if combining ifar, normalize
+  if opts.ifar_dist:
+    IFARc = IFANc * NormTime[corsefiles[0]]
+  # generate combined bkg_IFANc/IFARc if lightning bolt plots desired
+  if opts.plot_slides:
+    # get bkg_FANs from bkg_IFAN arrays; store to dictionary bkg_FANc whose
+    # keys are the slide numbers
+    bkg_FANc = {}
+    bkg_IFANc = {}
+    bkg_cumnumc = {}
+    if opts.ifar_dist: bkg_IFARc = {}
+    for thisfile in slidefiles:
+      for slidenum in bkg_IFAN[thisfile]:
+        if slidenum not in bkg_FANc:
+          bkg_FANc[slidenum] = (1./bkg_IFAN[thisfile][slidenum]).tolist()
+        else:
+          bkg_FANc[slidenum] = bkg_FANc[slidenum] + \
+                (1./bkg_IFAN[thisfile][slidenum]).tolist()
+      # END cycle of slidenums in thisfile
+    # END cycle of thisfile in slidefiles
+    for slidenum in bkg_FANc:
+      bkg_FANc[slidenum].sort(reverse=True)
+      bkg_FANc[slidenum] = array(bkg_FANc[slidenum])
+      # apply same algorithim as for zero-lag
+      for ii in range(0,len(bkg_FANc[slidenum])):
+        for jj in range(1, len(maxFANs)): # cycle through bkg fans, skipping first one
+          if bkg_FANc[slidenum][ii] > maxFANs[jj]: # find the largest bkg fan < this foreground fan
+            bkg_FANc[slidenum][ii] = bkg_FANc[slidenum][ii] * (jj) # multiply by number of active categories
+            for kk in range(jj, len(maxFANs)):
+              bkg_FANc[slidenum][ii] = bkg_FANc[slidenum][ii] + maxFANs[kk] # add bkg fans of inactive categories
+            break # go to next fan in bkg_FANc[slidenum]
+          elif jj == len(maxFANs)-1: # all categories active
+            bkg_FANc[slidenum][ii] = bkg_FANc[slidenum][ii] * len(maxFANs)
+      bkg_IFANc[slidenum] = 1./bkg_FANc[slidenum]
+      # generarte bkg_cumnumc array
+      bkg_cumnumc[slidenum] = []
+      for ii in range(len(bkg_IFANc[slidenum])):
+        bkg_cumnumc[slidenum].append( len( (bkg_IFANc[slidenum]>=bkg_IFANc[slidenum][ii]).nonzero()[0] ))
+      # if combining ifar, normalize
+      if opts.ifar_dist:
+        bkg_IFARc[slidenum] = bkg_IFANc[slidenum]*NormTime[corsefiles[0]]
+    # END cycle of slidenums in bkg_FANc
+  # END if opts.plot_slides
+# END if opt.plot_combined
+
+
+
+# ============================================================================
+# ============================================================================
+# Make plots
+
+if opts.plot_uncombined or opts.snr_ifar:
+  if opts.ifan_dist:
+    if opts.verbose:
+      print >> sys.stdout, "Generating uncombined IFAN plot..."
+    figure(figure_number)
+    figure_number += 1
+    xmin = numpy.inf
+    xmax = -numpy.inf
+    ymin = 0.8
+    ymax = 0
+    # plot lightning bolts; cycle through all the files first, so they don't
+    # cover up the foreground triggers
+    if opts.plot_slides:
+      for thisfile in corsefiles:
+        slidefile = rev_filemap[thisfile]
+        for slidenum in bkg_IFAN[slidefile]:
+          loglog( bkg_IFAN[slidefile][slidenum], bkg_cumnum[slidefile][slidenum],
+                linestyle='-', color='gray', alpha=0.2, label='_nolegend_')
+          hold(True)
+    # plot background
+    xbkg = numpy.logspace( -4, 2, num=100, endpoint=True, base=10.0 )
+    ybkg = 1./xbkg
+    loglog( xbkg, ybkg, 'k--', linewidth=2, label='_nolegend_' )
+    # plot error
+    bkgplus = ybkg + sqrt(ybkg)
+    bkgminus = ybkg - sqrt(ybkg)
+    bkgminus = where( bkgminus<=0, 1e-5, bkgminus ) # prevent (-) values
+    xs, ys = poly_between( xbkg, bkgminus, bkgplus )
+    fill( xs, ys, facecolor='y', alpha=0.4, label='_nolegend_' )
+    if opts.show_two_sigma_error:
+      bkgplus = ybkg + 2*sqrt(ybkg)
+      bkgminus = ybkg - 2*sqrt(ybkg)
+      bkgminus = where( bkgminus<=0, 1e-5, bkgminus ) # prevent (-) values
+      xs, ys = poly_between( xbkg, bkgminus, bkgplus )
+      fill( xs, ys, facecolor='y', alpha=0.2, label='_nolegend_' )
+    # plot foreground and min/max bkg lines
+    for thisfile in corsefiles:
+      if coincT[thisfile].sngl_table: # if have foreground trigs
+        loglog( IFAN[thisfile], cumnum[thisfile], 
+                marker=PlotVals[thisfile]['trigsymbol'], linestyle='None',
+                markerfacecolor=PlotVals[thisfile]['color'],
+                markeredgecolor='k', alpha=.9,
+                label='_nolegend_' ) 
+        # if any FANs were zero, stick an arrow on their marker
+        if thisfile in zero_fan:
+          xval = 1./zero_fan[thisfile]
+          yval = cumnum[thisfile][len( IFAN[thisfile].tolist() ) - 1]
+          text( xval, yval, '$\Rightarrow$', ha = 'left', va = 'center', color = 'k', label='_nolegend_' )
+        if xmin > IFAN[thisfile][0]: # reset xmin
+          xmin = IFAN[thisfile][0]
+        if xmax < IFAN[thisfile][len(IFAN[thisfile])-1]: # reset xmax
+          xmax = IFAN[thisfile][len(IFAN[thisfile])-1] 
+        if ymax < cumnum[thisfile][0]: # reset ymax
+          ymax = cumnum[thisfile][0]
+      # end if have foreground trigs
+      # plot min bkg lines
+      if opts.show_min_bkg and thisfile in maxBkgFAN:
+        xminbkg = 1./maxBkgFAN[thisfile]
+        loglog( [xminbkg,xminbkg], [0.1,10000],
+                color=PlotVals[thisfile]['color'], 
+                linestyle=PlotVals[thisfile]['lnsymbol'],
+                linewidth=2,
+                label='_nolegend_' )
+        if xmin > xminbkg:
+          xmin = xminbkg
+      # plot max bkg line 
+      if opts.show_max_bkg:
+        xmaxbkg = 1./minBkgFAN[thisfile]
+        loglog( [xmaxbkg,xmaxbkg], [ymin,ymax*1.2], color='k', linestyle='-',
+                linewidth=1, label='_nolegend_' )
+        if xmax < xmaxbkg:
+          xmax = xmaxbkg
+    # END loop of thisfile in corsefiles
+    # check if xmin, xmax, ymax are still original values; if so, set to
+    # arbitrary values (can happen if no foreground trigs and no show min/max
+    # bkg)
+    if xmin == numpy.inf: xmin = 0.001
+    if xmax == -numpy.inf: xmax = 100.
+    if ymax == 0.: ymax = 1000.
+    # set xmin and ymax to be slightly smaller/larger
+    xmin = xmin * 0.8
+    xmax = xmax * 1.4
+    ymax = ymax * 1.2
+    # if plot limits specified on command line, override values to whatever was specified
+    # and check for consistency
+    if opts.x_min: 
+      xmin = opts.x_min
+      if xmin >= xmax:
+       raise ValueError, "specified x-min greater than (auto) x-max; Nothing to plot!"
+    if opts.x_max: 
+      xmax = opts.x_max
+      if xmax <= xmin:
+        raise ValueError, "specified x-max greater than (auto) x-min; Nothing to plot!"
+    if opts.y_min: 
+      ymin = opts.y_min
+      if ymin >= ymax:
+        raise ValueError, "specified y-min greater than (auto) y-max; Nothing to plot!"
+    if opts.y_max: 
+      ymax = opts.y_max
+      if ymax <= ymin:
+        raise ValueError, "specified y-max greater than (auto) y-min; Nothing to plot!"
+    # generate legend key; this just shows what colors correspond to what ifos
+    # and what symbols correspond to what mass-bins. This is done by making
+    # dummy plots out of the range of the plots strictly for the sake of the
+    # legend. This is done as opposed to just giving labels for each plot
+    # because it was found that doing the former caused the legend to be so
+    # large it went off the plot.
+    xdum = 0.01*xmin
+    ydum = 0.01*ymin
+    lgnd = {}
+    # show ifo colors first
+    for thisfile in corsefiles:
+      thisifo = coincifos[thisfile]
+      if thisifo not in lgnd:
+        lgnd[ thisifo ] = PlotVals[thisfile]['color']
+        loglog( [xdum,xdum], [ydum,ydum], color = lgnd[thisifo],
+                linewidth = 5, label = thisifo)
+    # now show mass symbols (done in separate for loops for legend order)
+    for thisfile in corsefiles:
+      thismass = PlotVals[thisfile]['massbin']
+      if thismass not in lgnd:
+        thismarker = PlotVals[thisfile]['trigsymbol']
+        thislnsymbol = PlotVals[thisfile]['lnsymbol']
+        lgnd[thismass] = [ thismarker, thislnsymbol ]
+        loglog( [xdum,xdum], [ydum,ydum], color='k',
+                marker=thismarker, linestyle = thislnsymbol,
+                linewidth = 2, alpha = 0.8, label = thismass )
+    # make the legend
+    legend()
+    xlim(xmin,xmax)
+    ylim(ymin,ymax)
+    xlabel( r"Inverse False Alarm Number", size='x-large' )
+    ylabel( r"Cumulative \#", size='x-large' )
+    if opts.enable_output is True:
+      name = "cumhist_ifan"
+      txt = "Cumulative Histogram of IFAN distribution"
+      fname = InspiralUtils.set_figure_name(opts, name)
+      fname_thumb = InspiralUtils.savefig_pylal( filename=fname )
+      fnameList.append(fname)
+      tagList.append(txt)
+
+  # make uncombined ifar plot if desired; method is same as for IFAN
+  if opts.ifar_dist:
+    if opts.verbose:
+      print >> sys.stdout, "Generating uncombined IFAR plot..."
+    figure(figure_number)
+    figure_number += 1
+    xmin = numpy.inf
+    xmax = -numpy.inf
+    ymin = 0.8
+    ymax = 0
+    for thisfile in corsefiles:
+      # plot lightning bolts
+      if opts.plot_slides:
+        slidefile = rev_filemap[thisfile]
+        for slidenum in bkg_IFAR[slidefile]:
+          loglog( bkg_IFAR[slidefile][slidenum], bkg_cumnum[slidefile][slidenum],
+                linestyle='-', color='gray', alpha=0.2, label='_nolegend_')
+        # END cycle of slidenums in bkg_IFAN[slidefile]
+      # plot background; note that this is occuring in a corsefiles loop,
+      # whereas in IFAN plots it happens outside. This makes it possible to
+      # plot uncombined plots with different analysis times (if no lightning bolt plots)
+      xbkg = numpy.logspace( -8, 2, num=100, endpoint=True, base=10.0 )
+      ybkg = NormTime[thisfile] / xbkg
+      loglog( xbkg, ybkg, 'k--', linewidth=2, label='_nolegend_' )
+      hold(True)
+      # plot error
+      bkgplus = ybkg + sqrt(ybkg)
+      bkgminus = ybkg - sqrt(ybkg)
+      bkgminus = where( bkgminus<=0, 1e-5, bkgminus ) # prevent (-) values
+      xs, ys = poly_between( xbkg, bkgminus, bkgplus )
+      fill( xs, ys, facecolor='y', alpha=0.4, label='_nolegend_' )
+      if opts.show_two_sigma_error:
+        bkgplus = ybkg + 2*sqrt(ybkg)
+        bkgminus = ybkg - 2*sqrt(ybkg)
+        bkgminus = where( bkgminus<=0, 1e-5, bkgminus ) # prevent (-) values
+        xs, ys = poly_between( xbkg, bkgminus, bkgplus )
+        fill( xs, ys, facecolor='y', alpha=0.2, label='_nolegend_' )
+    # END corsefiles loop
+    # plot foreground, min/max bkg; this is done in a separate corsefiles
+    # loop so lightning bolts and background don't cover up foreground trigs
+    for thisfile in corsefiles:
+      if coincT[thisfile].sngl_table: # if have foreground trigs
+        loglog( IFAR[thisfile], cumnum[thisfile], 
+                marker=PlotVals[thisfile]['trigsymbol'], linestyle='None',
+                markerfacecolor=PlotVals[thisfile]['color'],
+                markeredgecolor='k', alpha=0.9,
+                label='_nolegend_' ) 
+        # if any FARs were zero, stick an arrow on their marker
+        if thisfile in zero_fan:
+          xval = NormTime[thisfile]/zero_fan[thisfile]
+          yval = cumnum[thisfile][len(IFAR[thisfile].tolist()) - 1]
+          text( xval, yval, '$\Rightarrow$', ha = 'left', va = 'center', color = 'k', label='_nolegend_' )
+        if xmin > IFAR[thisfile][0]: # reset xmin
+          xmin = IFAR[thisfile][0]
+        if xmax < IFAR[thisfile][len(IFAR[thisfile])-1]: # reset xmax
+          xmax = IFAR[thisfile][len(IFAR[thisfile])-1] 
+        if ymax < cumnum[thisfile][0]: # reset ymax
+          ymax = cumnum[thisfile][0]
+      # end if have foreground trigs
+      # plot min bkg lines
+      if opts.show_min_bkg and thisfile in maxBkgFAN:
+        xminbkg = NormTime[thisfile] / maxBkgFAN[thisfile]
+        loglog( [xminbkg,xminbkg], [0.1,10000],
+                color=PlotVals[thisfile]['color'], 
+                linestyle=PlotVals[thisfile]['lnsymbol'],
+                linewidth=2,
+                label='_nolegend_' )
+        if xmin > xminbkg:
+          xmin = xminbkg
+      # plot max bkg line 
+      if opts.show_max_bkg:
+        xmaxbkg = NormTime[thisfile] / minBkgFAN[thisfile]
+        loglog( [xmaxbkg,xmaxbkg], [ymin,ymax*1.2], color='k', linestyle='-',
+                linewidth=1, label='_nolegend_' )
+        if xmax < xmaxbkg:
+          xmax = xmaxbkg
+    # end loop over coinc tables
+    # check values
+    if xmin == numpy.inf: xmin = 0.001
+    if xmax == -numpy.inf: xmax = 100.
+    if ymax == 0.: ymax = 1000.
+    # set xmin and ymax to be slightly smaller/larger
+    xmin = xmin * 0.8
+    xmax = xmax * 1.4
+    ymax = ymax * 1.2
+    # if plot limits specified on command line, override values to whatever was specified
+    # and check for consistency
+    if opts.x_min: 
+      xmin = opts.x_min * min(NormTime.values())
+      if xmin >= xmax:
+       raise ValueError, "specified x-min greater than (auto) x-max; Nothing to plot!"
+    if opts.x_max: 
+      xmax = opts.x_max * max(NormTime.values())
+      if xmax <= xmin:
+        raise ValueError, "specified x-max greater than (auto) x-min; Nothing to plot!"
+    if opts.y_min: 
+      ymin = opts.y_min
+      if ymin >= ymax:
+        raise ValueError, "specified y-min greater than (auto) y-max; Nothing to plot!"
+    if opts.y_max: 
+      ymax = opts.y_max
+      if ymax <= ymin:
+        raise ValueError, "specified y-max greater than (auto) y-min; Nothing to plot!"
+    # generate legend key; same method and reasoning as above
+    xdum = 0.01*xmin
+    ydum = 0.01*ymin
+    lgnd = {}
+    # show ifo colors first
+    for thisfile in corsefiles:
+      thisifo = coincifos[thisfile]
+      if thisifo not in lgnd:
+        lgnd[ thisifo ] = PlotVals[thisfile]['color']
+        loglog( [xdum,xdum], [ydum,ydum], color = lgnd[thisifo],
+                linewidth = 5, label = thisifo)
+    # now show mass symbols (done in separate for loops for legend order)
+    for thisfile in corsefiles:
+      thismass = PlotVals[thisfile]['massbin']
+      if thismass not in lgnd:
+        thismarker = PlotVals[thisfile]['trigsymbol']
+        thislnsymbol = PlotVals[thisfile]['lnsymbol']
+        lgnd[thismass] = [ thismarker, thislnsymbol ]
+        loglog( [xdum,xdum], [ydum,ydum], color='k',
+                marker=thismarker, linestyle = thislnsymbol,
+                linewidth = 2, alpha = 0.8, label = thismass )
+    # make the legend
+    legend()
+    xlim(xmin,xmax)
+    ylim(ymin,ymax)
+    xlabel( r"Inverse False Alarm Rate (years)", size='x-large' )
+    ylabel( r"Cumulative \#", size='x-large' )
+    if opts.enable_output is True:
+      name = "cumhist_ifar"
+      txt = "Cumulative Histogram of IFAR distribution"
+      fname = InspiralUtils.set_figure_name(opts, name)
+      fname_thumb = InspiralUtils.savefig_pylal( filename=fname )
+      fnameList.append(fname)
+      tagList.append(txt)
+# End opts.plot_uncombined
+
+if opts.plot_combined:
+  if not FANc.any():
+    # this can happen if there were no foreground triggers in any of the files;
+    # in this case, can't make a combined IFAN or IFAR plot, so just print 
+    # warn_msg to an empty plot
+    figure(figure_number)
+    figure_number += 1
+    warn_msg = warn_msg + \
+      'Cannot make a combined plot because these were all the globbed files.'
+    rc('text', usetex=False) # turn off LaTex to plot warn_msg
+    text( 0.5, 0.5, warn_msg, ha = 'center', va = 'center' )
+    xlabel( r"No data", size='x-large' )
+    ylabel( r"No data", size='x-large' )
+    if opts.enable_output is True:
+      name = "no_data_combined"
+      txt = "No data to plot"
+      fname = InspiralUtils.set_figure_name(opts, name)
+      fname_thumb = InspiralUtils.savefig_pylal( filename=fname )
+      fnameList.append(fname)
+      tagList.append(txt)
+      html_filename = InspiralUtils.write_html_output(opts, args, fnameList, tagList)
+      InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+  # otherwise, make the combined plots
+  else: # use else as opposed to elif because elif would plot ifan OR ifar
+    if opts.ifan_dist:
+      # plotting method is similar as uncombined plots, but since all IFANs are
+      # already in the list IFANc, can just use this to make plot; colors for all
+      # triggers are blue, and symbols are triangles, in keeping with s5 1yr
+      # convention
+      if opts.verbose:
+        print >> sys.stdout, "Generating combined IFAN plot..."
+      figure(figure_number)
+      figure_number += 1
+      xmin = numpy.inf
+      xmax = -numpy.inf
+      ymin = 0.8
+      ymax = 0
+      # plot lightning bolts
+      if opts.plot_slides:
+        for slidenum in bkg_IFANc:
+          loglog( bkg_IFANc[slidenum], bkg_cumnumc[slidenum],
+                linestyle='-', color='gray', alpha=0.2, label='_nolegend_')
+          hold(True)
+          if (xmax * 1.4) < bkg_IFANc[slidenum][len(bkg_IFANc[slidenum])-1]:
+            xmax = bkg_IFANc[slidenum][len(bkg_IFANc[slidenum])-1] * 1.4
+        # END cycle of slidenums in bkg_IFANc
+      # plot background
+      xbkg = numpy.logspace( -4, 2, num=100, endpoint=True, base=10.0 )
+      ybkg = 1./xbkg
+      loglog( xbkg, ybkg, 'k--', linewidth=2, label='Background' )
+      # plot error
+      bkgplus = ybkg + sqrt(ybkg)
+      bkgminus = ybkg - sqrt(ybkg)
+      bkgminus = where( bkgminus<=0, 1e-5, bkgminus ) # prevent (-) values
+      xs, ys = poly_between( xbkg, bkgminus, bkgplus )
+      fill( xs, ys, facecolor='y', alpha=0.4, label='$N^{1/2}$ errors' )
+      if opts.show_two_sigma_error:
+        bkgplus = ybkg + 2*sqrt(ybkg)
+        bkgminus = ybkg - 2*sqrt(ybkg)
+        bkgminus = where( bkgminus<=0, 1e-5, bkgminus ) # prevent (-) values
+        xs, ys = poly_between( xbkg, bkgminus, bkgplus )
+        fill( xs, ys, facecolor='y', alpha=0.2, label='$2N^{1/2}$ errors' )
+      # plot foreground
+      loglog( IFANc, cumnumc, marker='^', linestyle='None', markerfacecolor='b',
+            markeredgecolor='k', alpha=0.9, label='Combined Triggers' )
+      # if any FANs were zero, need to stick an arrow on their marker; y-val
+      # is assumed to be whatever corresponds to the last value in IFANc
+      if zero_fanc.any():
+        for fanc in zero_fanc:
+          xval = 1./fanc
+          yval = cumnumc[len(IFANc.tolist())-1]
+          text( xval, yval, '$\Rightarrow$', ha = 'left', va = 'center', color = 'k', label='_nolegend_' )
+      # set xmin, xmax and ymax to be slightly smaller/larger then minIFANc/maxnum
+      xmin = IFANc[0] * 0.8
+      xmax = max( (IFANc[len(IFANc)-1] * 1.4), xmax )
+      ymax = cumnumc[0] * 1.2
+      # if plot limits specified on command line, override values to whatever was specified
+      # and check for consistency
+      if opts.x_min: 
+        xmin = opts.x_min
+        if xmin >= xmax:
+         raise ValueError, "specified x-min greater than (auto) x-max; Nothing to plot!"
+      if opts.x_max: 
+        xmax = opts.x_max
+        if xmax <= xmin:
+          raise ValueError, "specified x-max greater than (auto) x-min; Nothing to plot!"
+      if opts.y_min: 
+        ymin = opts.y_min
+        if ymin >= ymax:
+          raise ValueError, "specified y-min greater than (auto) y-max; Nothing to plot!"
+      if opts.y_max: 
+        ymax = opts.y_max
+        if ymax <= ymin:
+          raise ValueError, "specified y-max greater than (auto) y-min; Nothing to plot!"
+      xlim(xmin,xmax)
+      ylim(ymin,ymax)
+      xlabel( r"Inverse False Alarm Number", size='x-large' )
+      ylabel( r"Cumulative \#", size='x-large' )
+      legend()
+      if opts.enable_output is True:
+        name = "cumhist_ifan_combined"
+        txt = "Combined Cumulative Histogram of IFAN distribution"
+        fname = InspiralUtils.set_figure_name(opts, name)
+        fname_thumb = InspiralUtils.savefig_pylal( filename=fname )
+        fnameList.append(fname)
+        tagList.append(txt)
+  
+    if opts.ifar_dist: # same method as for IFAN
+      if opts.verbose:
+        print >> sys.stdout, "Generating combined IFAR plot..."
+      figure(figure_number)
+      figure_number += 1
+      xmin = numpy.inf
+      xmax = -numpy.inf
+      ymin = 0.8
+      ymax = 0
+      # plot lightning bolts
+      if opts.plot_slides:
+        for slidenum in bkg_IFARc:
+          loglog( bkg_IFARc[slidenum], bkg_cumnumc[slidenum],
+                linestyle='-', color='gray', alpha=0.2, label='_nolegend_')
+          hold(True)
+          if (xmax * 1.4) < bkg_IFARc[slidenum][len(bkg_IFARc[slidenum])-1]:
+            xmax = bkg_IFARc[slidenum][len(bkg_IFARc[slidenum])-1] * 1.4
+      # plot background
+      xbkg = numpy.logspace( -8, 2, num=100, endpoint=True, base=10.0 )
+      ybkg = NormTime[corsefiles[0]]/xbkg # normalized background
+      loglog( xbkg, ybkg, 'k--', linewidth=2, label='Background' )
+      # plot error
+      bkgplus = ybkg + sqrt(ybkg)
+      bkgminus = ybkg - sqrt(ybkg)
+      bkgminus = where( bkgminus<=0, 1e-5, bkgminus ) # prevent (-) values
+      xs, ys = poly_between( xbkg, bkgminus, bkgplus )
+      fill( xs, ys, facecolor='y', alpha=0.4, label='$N^{1/2}$ errors' )
+      if opts.show_two_sigma_error:
+        bkgplus = ybkg + 2*sqrt(ybkg)
+        bkgminus = ybkg - 2*sqrt(ybkg)
+        bkgminus = where( bkgminus<=0, 1e-5, bkgminus ) # prevent (-) values
+        xs, ys = poly_between( xbkg, bkgminus, bkgplus )
+        fill( xs, ys, facecolor='y', alpha=0.2, label='$2N^{1/2}$ errors' )
+      # plot foreground
+      loglog( IFARc, cumnumc, marker='^', linestyle='None', markerfacecolor='b',
+            markeredgecolor='k', alpha=0.9, label='Combined Triggers' )
+      # if any FARs were zero, need to stick an arrow on their marker
+      if zero_fanc.any():
+        for fanc in zero_fanc:
+          xval = NormTime[corsefiles[0]]/fanc
+          yval = cumnumc[len(IFARc.tolist())-1]
+          text( xval, yval, '$\Rightarrow$', ha = 'left', va = 'center', color = 'k', label='_nolegend' )
+      xmin = IFARc[0] * 0.8
+      xmax = max( (IFARc[len(IFARc)-1] * 1.4), xmax )
+      ymax = cumnumc[0] * 1.2
+      # if plot limits specified on command line, override values to whatever was specified
+      # and check for consistency
+      if opts.x_min: 
+        xmin = opts.x_min * min(NormTime.values())
+        if xmin >= xmax:
+         raise ValueError, "specified x-min greater than (auto) x-max; Nothing to plot!"
+      if opts.x_max: 
+        xmax = opts.x_max * max(NormTime.values())
+        if xmax <= xmin:
+          raise ValueError, "specified x-max greater than (auto) x-min; Nothing to plot!"
+      if opts.y_min: 
+        ymin = opts.y_min
+        if ymin >= ymax:
+          raise ValueError, "specified y-min greater than (auto) y-max; Nothing to plot!"
+      if opts.y_max: 
+        ymax = opts.y_max
+        if ymax <= ymin:
+          raise ValueError, "specified y-max greater than (auto) y-min; Nothing to plot!"
+      xlim(xmin,xmax)
+      ylim(ymin,ymax)
+      xlabel( r"Inverse False Alarm Rate (years)", size='x-large' )
+      ylabel( r"Cumulative \#", size='x-large' )
+      legend()
+      if opts.enable_output is True:
+        name = "cumhist_ifar_combined"
+        txt = "Combined Cumulative Histogram of IFAR distribution"
+        fname = InspiralUtils.set_figure_name(opts, name)
+        fname_thumb = InspiralUtils.savefig_pylal( filename=fname )
+        fnameList.append(fname)
+        tagList.append(txt)
+  
+# ============================================================================
+# final step: html, cache file generation
+if opts.enable_output is True:
+  if opts.verbose: print >> sys.stdout, "Writing html file and cache."
+  # make CoincSummTable
+  coincTList = []
+  commentList = []
+  for thisfile in corsefiles:
+    coincTList.append(coincT[thisfile])
+    commentList.append( os.path.basename(thisfile) + 
+        '<br>zero-lag analyzed time = ' + str(NormTime[thisfile]*year) + 's' )
+
+  followup = None
+  followupOpts = copy.deepcopy(opts)
+  if opts.do_followup:
+    followupOpts.followup_exttrig = False
+    followupOpts.followup_time_window = 50
+    followupOpts.figure_resolution = 50
+    followupOpts.prefix = opts.ifo_times + '_plotifar'
+    if not opts.user_tag:
+      followupOpts.suffix = opts.user_tag
+    else:
+      followupOpts.suffix = ''
+    followupCache = (lal.Cache.fromfile( open( opts.ihope_cache ) )).sieve\
+        ( description = opts.datatype )
+    followup = followup_trigger.FollowupTrigger(followupCache,followupOpts,\
+        False)
+  coincSumm = InspiralUtils.write_coinc_summ_table(
+        tableList = coincTList, commentList = commentList, stat = coincStat, 
+        statTag = 'uncombined FAN', number=5, format='html',\
+        followup=followup,followupOpts=followupOpts)
+  html_filename = InspiralUtils.write_html_output(opts, args, fnameList, tagList, comment=warn_msg,
+        CoincSummTable=coincSumm)
+  InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+# ============================================================================
+
+if opts.show_plot:
+  show()
+
+sys.exit(0)

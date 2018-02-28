@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+import subprocess
+import os, sys
+
+upv_path_first = "/archive/home/detchar/public_html/S6/UPV/weekly/"
+upv_type = "DARMERR"
+sites = [('L1', 'ldas-pcdev1.ligo-la.caltech.edu'), ('H1', 'ldas-pcdev1.ligo-wa.caltech.edu')]
+
+
+def get_upv_path(path, ifo, type, start, end):
+  path = "%s%s_%s_%u_%u_WEEKLY_webpage/inserted_segs/" % (path, ifo, type, start, end)
+  return path
+
+def get_vetoes(path, ifo, cluster, week, type):
+  filen = "veto_definer_file.xml"
+  proc = subprocess.Popen("gsiscp %s:%s%s %s_%s_week%s_%s" % (cluster, path, filen, ifo, type, week, filen), shell=True)
+  rc = proc.wait()
+
+for week in [int(x) for x in sys.argv[1:]]:
+  gps_start = ( (week - 1) * (86400 * 7) + 949449615)
+  upv_starttime = gps_start
+  upv_endtime = upv_starttime + (86400 * 7)
+  for ifon, clustern in sites:
+    upv_path = get_upv_path(upv_path_first, ifon, upv_type, upv_starttime, upv_endtime)
+    get_vetoes(upv_path, ifon, clustern, week, "upv")
+
+

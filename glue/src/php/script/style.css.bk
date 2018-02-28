@@ -1,0 +1,123 @@
+textarea {overflow:auto;}table.flaglist{	font-size: 12px;}tr.search{	background-color: #666666;	color: #FFFFFF;	font-size: 14px;	font-weight: bold;	font-family: Helvetica, Sans-Serif;}#records thead tr th {	/*font-family: Helvetica, Sans-Serif;*/	/*font-size: 12px;*/	background-color: #666666;	font-weight: bold;	text-align: center;}#records thead tr th a:link {	color: white;	text-decoration: none;	font-weight: bold;	text-align: center;}#records thead tr th a:visited {	color: white;	text-decoration: none;	font-weight: bold;	text-align: center;}#records thead tr th a:hover {	color: #cccccc;	text-decoration: underline;	font-weight: bold;	text-align: center;}#records tbody.scrollable {	overflow: auto;}#records tbody tr td {	color: #003366;	font-family: Helvetica, Sans-Serif;	font-size: 12px;	text-align: center;}#records tbody tr.even  td {      background-color: #e8e8e8;}
+
+a.nav {
+text-decoration: none;
+color: white;
+font-size: 14pt;
+}
+
+
+
+/* center content */
+#wrapper {
+	text-align: center;
+}
+
+#content {
+	position: relative;
+	width:80%;
+	margin:25px auto;
+	text-align: left;
+}
+
+/*body#home a#home, body#ligolw_segment_query a#ligolw_segment_query {
+color: #FFFF00;
+}
+*/
+
+/* navigation */
+ /* =========================================================================
+For any free or commercial usage please keep this credits text intact.
+Author : Femi Hasani www.vision.to ,test idea and CSS code.
+The original version of this stylesheet and the associated (x)html
+is available at http://www.vision.to/simple-css-one-level-dropdown-menu.php
+A link to www.vision.to would be apperciated but not mandatory.
+=============================================================================== */
+#navigation ul#nav {
+	z-index: 5000;
+	background: #151B54;
+	text-align: center;
+}
+
+#navigation ul#nav li {
+    list-style:none;
+	position: relative;
+	float: left;
+	text-align: center;
+	line-height: 1em;
+/*    width:175px; */
+}
+
+/* bgcolor of level 1 nav */
+#navigation ul#nav li a {
+	display: block;
+	padding: 12px 0;
+	color: #fff;
+	text-decoration: none;
+	border-right: 4px solid #ccc;
+	text-align: center;
+	background:	#151B54;
+}
+
+#navigation ul#nav li a span {
+	padding: 0 15px 0 10px;
+   /*	background: url(arrow.gif) no-repeat 100% 50%;  optional */
+}
+
+/* color of the subnav background */
+#navigation ul#nav  li ul {
+    display: block;
+    position: absolute;
+/* hidding submenus based on: http://css-class.com/articles/ursidae/  */
+    left: -999em;/* this makes it more accessible than display:none; */
+    /*width: 162px; */
+    padding: 3px 8px 3px 8px;
+    background:	#151B54;
+}
+
+#navigation ul#nav  li:hover ul,
+#navigation ul#nav  li.over ul /* This is for Internet Explorer 6  */
+{
+    display: block;
+    left: 0;
+    top: 100%;
+    /*position: absolute; */
+    z-index: 4000;
+    /*width: 146px; */
+}
+
+#navigation ul#nav  li ul li {
+    /* width: 146px; */
+    height: auto;
+    background: transparent;
+    text-indent: 0;
+    padding: 0;
+}
+
+#navigation ul#nav  li:hover ul li a,
+#navigation ul#nav  li.over ul li a {
+    display: block;
+    width: 126px;/*this is to adjust if used some background image for dropdown */
+    background: transparent;
+    padding: 15px 10px;
+    text-decoration: none;
+    margin: 0;
+    color: #eee;
+    text-indent: 0;
+    text-align: left;
+    border: 0;
+    white-space: nowrap;
+}
+
+#navigation ul#nav li ul li a:hover {
+    color: #fff;
+    background: #62686e;
+}
+
+#navigation ul#nav li.active a,
+#navigation ul#nav li a:hover,
+#navigation ul#nav li:hover a,
+#navigation ul#nav li.over a {
+    background: #555;
+}
+</style>

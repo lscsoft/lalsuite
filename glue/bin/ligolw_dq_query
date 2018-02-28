@@ -1,0 +1,510 @@
+#!/usr/bin/python
+#
+#
+# Copyright (C) 2009  Larne Pekowsky, Ping Wei
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+"""
+Provides tools to query the segment database or DMT XML files regarding the
+set of flags defined/active at or near a given time:
+
+
+The --report option prints an extensive query of the database for (a) given gps
+time(s). It prints which flags were undefined at the time (using the
+information in the segment_summary table). For the flags which were defined, it
+determines if the flag was active or inactive at that time. For an active flag,
+it prints the start and end time of the segment to which the active. For an
+inactive flag, it prints the end time of the previous adjacent active segment
+and the start time of the next adjacent active segment.
+
+  * What is the status of all DQ flags at this time? ligolw_dq_query --report
+  * Refine this query with --include-segments
+  * What flags were defined at this time (i.e. query segment_summary table)? ligolw_dq_query --defined
+  * Was a given flag defined at this time (i.e. query segment_summary table)? ligolw_dq_query --defined --include-segments
+  * What flags were active at this time? ligolw_dq_querty --active
+  * Was a given flag active at this time? ligolw_dq_query --active --include-segments
+  * Near this time? ligolw_dq_query --start-pad --end-pad
+"""
+
+
+from optparse import OptionParser
+
+try:
+    import sqlite3
+except ImportError:
+    # pre 2.5.x
+    from pysqlite2 import dbapi2 as sqlite3
+
+import sys
+import os
+import glob
+import time
+import socket
+import tempfile
+import urllib
+import pwd
+
+import glue.segments
+
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+
+from glue.ligolw.utils import ligolw_add
+from glue.ligolw.utils import process
+from glue.segmentdb import query_engine
+from glue.segmentdb import segmentdb_utils
+
+from glue.ligolw.utils import ligolw_sqlite
+from glue.ligolw import dbtables
+from glue import git_version
+
+PROGRAM_NAME = sys.argv[0].replace('./','')
+PROGRAM_PID  = os.getpid()
+
+try:
+  USER_NAME = os.getlogin()
+except:
+  USER_NAME = pwd.getpwuid(os.getuid())[0]
+
+
+
+
+__author__  = "Larne Pekowsky <lppekows@physics.syr.edu>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+    """
+    Parse the command line, return an options object
+    """
+
+    parser = OptionParser(
+        version = "Name: %%prog\n%s" % git_version.verbose_msg,
+        usage       = "%prog [ --version | --ping | --defined | --active | --report ]  [ --segment | --database | --dmt-file ] options gps-time1 gps-time2 ... ",
+        description = "Performs a number of queries against either a set of DMT files or a segment database"
+	)
+
+
+    # Major modes
+    parser.add_option("-p", "--ping",     action = "store_true", help = "Ping the target server")
+    parser.add_option("-y", "--defined",  action = "store_true", help = "Returns a segment summary table containing segments defined at the given time(s).")
+    parser.add_option("-u", "--active",   action = "store_true", help = "Returns a segment table containing segments active at the given time(s).")
+    parser.add_option("-q", "--report",   action = "store_true", help = "Prints which flags are defined/undefined at the given time(s). For the flags which were defined, it determines if the flag was active or inactive at that time. For an active flag, it prints the start and end time of the segment to which the active. For an inactive flag, it prints the end time of the previous adjacent active segment and the start time of the next adjacent active segment")
+
+    # Time options
+    parser.add_option("-s", "--start-pad", metavar = "start_pad", help = "Seconds before given time(s) to include in query")
+    parser.add_option("-e", "--end-pad",   metavar = "end_pad",   help = "Seconds after given time(s) to include in query")
+
+
+    # Data location options
+    parser.add_option("-t", "--segment-url",    metavar = "segment_url", help = "Segment URL")
+    parser.add_option("-d", "--database",   metavar = "use_database", action = "store_true", help = "use database specified by environment variable S6_SEGMENT_SERVER")
+    parser.add_option("-f", "--dmt-files",   metavar = "use_files", action = "store_true", help = "use files in directory specified by environment variable ONLINEDQ")
+
+
+    # Other options
+    parser.add_option("-a", "--include-segments", metavar = "include_segments", help = "This option expects a comma separated list of a colon separated sublist of interferometer, segment type, and version. The union of segments from all types and versions specified is returned. Use --show-types to see what types are available.   For example: --include-segment-types H1:SCIENCE:1,H1:INJECTION:2 will return the segments for which H1 is in either SCIENCE version 1 or INJECTION version 2 mode. If version information is not provided, the union of the segments of the latest version of requested segment type(s) will be returned.")
+
+    parser.add_option("-o", "--output-file",   metavar = "output_file", help = "File to which output should be written.  Defaults to stdout.")
+   
+    parser.add_option("-i", "--in-segments-only", action = "store_true", help = "If set, report will only return segments that given times were within") 
+
+    options, times = parser.parse_args()
+
+    # Make sure we have exactly one thing to do
+    count = 0
+    for arg in [options.ping, options.defined, options.active, options.report]:
+        if arg:
+            count += 1
+            
+    if count != 1:
+        raise ValueError("Exactly one of [ --ping | --defined | --active | --report ] must be provided")
+    
+    
+    # Make sure we have required arguments
+    database_location = None
+    file_location     = None
+
+    # Make sure we know who to contact for data
+    if options.segment_url:
+        if options.segment_url.startswith('ldbd') or options.segment_url.startswith('http'):
+            database_location = options.segment_url
+        elif options.segment_url.startswith('file:'):
+            file_location = options.segment_url[len('file://'):]
+        else:
+            tmp_dir = tempfile.mkdtemp()
+        
+            # Grab the part of the name after the last slash
+            pos     = options.segment_url[::-1].find('/')
+            fname   = (pos > -1) and options.segment_url[ -1 * pos:] or "dmt.xml" 
+
+            inurl   = urllib.urlopen(options.segment_url)
+            outfile = open(tmp_dir + "/" + fname, 'w')
+            for l in inurl:
+                print >>outfile, l,
+
+            inurl.close()
+            outfile.close()
+            file_location = tmp_dir
+    elif options.database:
+        if 'S6_SEGMENT_SERVER' not in os.environ:
+            raise ValueError( "--database specified but S6_SEGMENT_SERVER not set" )
+        database_location = os.environ['S6_SEGMENT_SERVER']
+    elif options.dmt_files:
+        if 'ONLINEDQ' not in os.environ:
+            raise ValueError( "--dmt-files specified but ONLINEDQ not set" )
+
+        tmp = os.environ['ONLINEDQ']
+        if tmp.startswith('file://'):
+            tmp = tmp[len('file://'):]
+        file_location = tmp
+    else:
+        raise ValueError( "One of [ --segment | --database | --dmt-file ] must be provided" )
+        
+
+    # Unless we're pinging, make sure we have start and end times
+    if options.ping:
+        if not database_location:
+            raise ValueError("--ping requires [ --segment https://... | --database ]")
+    
+    # Report is only available when hitting the database, since 
+    # we have no way of knowing where the segment boundaries are
+    # and would have to load *every* XML file.
+    if file_location and options.report:
+        print "--report can only be used with the database."
+        sys.exit(-1)
+
+    return options, database_location, file_location, times
+
+
+
+
+#
+# =============================================================================
+#
+#                                 General utilities
+#
+# =============================================================================
+#
+
+def build_time_clause(table, times):
+    """Given the name of a table containing start_time and end_time columns, and an
+    array of times of the form (lower bound, upper bound), constructs a SQL clause
+    that restricts a search to the given ranges"""
+
+    subclauses = map(lambda x: 'NOT (%d > %s.end_time OR %s.start_time > %d)' % (x[0], table, table, x[1]), times)
+    return '( ' + " OR ".join(subclauses) + ' )'
+
+
+def build_segment_clause(clauses):
+    """Given an array of segment definer restrictions of the form ifo:name:version,
+    ifo:name:* or ifo:name, constructs a SQL clause that restrcts a search to that
+    set of definers"""
+
+    def build_segment_subclause(clause):
+        tmp = clause.split(':')
+
+        if len(tmp) == 1 or tmp[1] == '*':
+            return "segment_definer.ifos = '%s'" % (tmp[0])
+
+        if len(tmp) == 2 or tmp[2] == '*':
+            return "segment_definer.ifos = '%s' AND segment_definer.name = '%s'" % (tmp[0], tmp[1])
+
+        return "segment_definer.ifos = '%s' AND segment_definer.name = '%s' AND segment_definer.version = %s" % (tmp[0], tmp[1], tmp[2])
+        
+    subclauses = map(build_segment_subclause, clauses.split(','))
+    return " OR ".join(subclauses)
+
+
+def get_full_name(ifo, name, version):
+    return '%s:%s:%d' % (ifo.strip(), name.strip(), version)
+
+#
+# =============================================================================
+#
+#                          Methods that implement major modes
+#
+# =============================================================================
+#
+
+def run_report(doc, process_id, engine, include_segments, times, in_segments_only):
+    all_keys       = {}
+    max_start      = {}
+    max_end        = {}
+    min_start      = {}
+    min_end        = {}
+    segment_clause = ''
+
+    if include_segments:
+        segment_clause = ' AND ' + build_segment_clause(include_segments)
+
+    # I'm not happy with the fact that this is done with four separate
+    # queries.  However it is possible that, say, there won't be a segment
+    # after the given time in which case 
+    #
+    #   select MAX(end_time), MIN(start_time)
+    #   where end_time < given time and start_time > given time
+    #
+    # would miss that segment definer entirely.  Maybe there's some
+    # clever trick using outer joins to get around this, but I
+    # can't seem to come up with one at the moment.
+    #
+    # For XML-file queries this isn't a problem, since local queries
+    # are fast.  But talking over the LDBD server takes a noticable amount
+    # of time per-query
+    #
+    for tm in map(lambda x: int(x[0]), times):
+        # Segments we are in the midsts of
+        rows = engine.query("""SELECT segment_definer.ifos, segment_definer.name, segment_definer.version,
+             segment.start_time, segment.end_time
+             FROM segment_definer, segment
+             WHERE segment_definer.segment_def_id = segment.segment_def_id
+             AND %d BETWEEN segment.start_time AND segment.end_time
+             %s """ % (tm, segment_clause)) 
+
+        in_times = {}
+        for ifo, name, version, start_time, end_time in rows:
+            full_name = get_full_name(ifo, name, version)
+            in_times[full_name] = [start_time, end_time]
+            print '%-45s [%d %d %d)' % (full_name, start_time, tm, end_time)
+
+        if not in_segments_only:
+            # Segments we are between. Latest end time before of interest.
+            out_times = {}
+
+            rows = engine.query("""SELECT segment_definer.ifos, segment_definer.name, segment_definer.version, MAX(segment.end_time)
+                FROM segment_definer, segment
+                WHERE segment_definer.segment_def_id = segment.segment_def_id
+                AND segment.end_time < %d %s
+                GROUP BY segment_definer.ifos, segment_definer.name, segment_definer.version""" % (tm, segment_clause))
+           
+           
+            for ifo, name, version, end_time in rows:
+                full_name = get_full_name(ifo, name, version)
+                out_times[full_name] = ['%d)' % end_time, '[now']
+
+            # The next start time after the time of interest
+            rows = engine.query("""SELECT segment_definer.ifos, segment_definer.name, segment_definer.version, MIN(segment.start_time)
+                FROM segment_definer, segment
+                WHERE segment_definer.segment_def_id = segment.segment_def_id
+                AND segment.start_time > %d %s
+                GROUP BY segment_definer.ifos, segment_definer.name, segment_definer.version""" % (tm, segment_clause))
+
+            for ifo, name, version, start_time in rows:
+                full_name = get_full_name(ifo, name, version)
+                value = full_name in out_times and [out_times[full_name][0], '[%s' % start_time] or ['never)', '[%s' % start_time]
+                out_times[full_name] = value
+
+            for key in out_times:
+                if key not in in_times:
+                    value = out_times[key]
+                    print '%-45s %s %d %s' % (key, value[0], tm, value[1])
+
+
+def run_active(doc, process_id, engine, include_segments, times):
+    time_clause    = build_time_clause('segment', times)
+    segment_clause = ''
+
+    if include_segments:
+        segment_clause = ' AND ' + build_segment_clause(include_segments)
+
+    rows = engine.query("""SELECT segment_definer.ifos, segment_definer.name, segment_definer.version, segment_definer.comment, segment.start_time, segment.end_time
+        FROM segment_definer, segment_summary, segment
+        WHERE segment_definer.segment_def_id = segment_summary.segment_def_id
+        AND   segment.start_time BETWEEN segment_summary.start_time AND segment_summary.end_time
+        AND   segment_definer.segment_def_id = segment.segment_def_id
+        AND """ + time_clause + segment_clause)
+
+    
+    distinct_names = []
+    distinct_rows = []
+    for x in rows:
+      if x[0:3] not in distinct_names:
+         distinct_names.append(x[0:2])
+         distinct_rows.append(x)
+
+
+    seg_def_table = lsctables.New(lsctables.SegmentDefTable, columns = ["process_id", "segment_def_id", "ifos", "name", "version", "comment"])
+    doc.childNodes[0].appendChild(seg_def_table)
+
+    for ifos, name, version, comment, start_time, end_time in distinct_rows:
+        seg_def_id                     = seg_def_table.get_next_id()
+        segment_definer                = lsctables.SegmentDef()
+        segment_definer.process_id     = process_id
+        segment_definer.segment_def_id = seg_def_id
+        segment_definer.ifos           = ifos.strip()
+        segment_definer.name           = name
+        segment_definer.version        = version
+        segment_definer.comment        = comment
+
+        seg_def_table.append(segment_definer)
+
+
+
+
+def run_defined(doc, process_id, engine, include_segments, times):
+    time_clause    = build_time_clause('segment_summary', times)
+    segment_clause = ''
+
+    if include_segments:
+        segment_clause = ' AND ' + build_segment_clause(include_segments)
+
+    rows = engine.query("""SELECT segment_definer.ifos, segment_definer.name, segment_definer.version, segment_definer.comment,
+               segment_summary.start_time, segment_summary.end_time
+        FROM segment_definer, segment_summary
+        WHERE segment_definer.segment_def_id = segment_summary.segment_def_id
+        AND """ + time_clause + segment_clause)
+
+    seg_def_table = lsctables.New(lsctables.SegmentDefTable, columns = ["process_id", "segment_def_id", "ifos", "name", "version", "comment"])
+    doc.childNodes[0].appendChild(seg_def_table)
+
+    for ifos, name, version, comment, start_time, end_time in rows:
+        seg_def_id                     = seg_def_table.get_next_id()
+        segment_definer                = lsctables.SegmentDef()
+        segment_definer.process_id     = process_id
+        segment_definer.segment_def_id = seg_def_id
+        segment_definer.ifos           = ifos.strip()
+        segment_definer.name           = name
+        segment_definer.version        = version
+        segment_definer.comment        = comment
+
+        seg_def_table.append(segment_definer)
+
+
+#
+# =============================================================================
+#
+#                                 Database/ldbd routines
+#
+# =============================================================================
+#
+
+def ping_server(client):
+    print client.ping()
+    return 0
+
+
+#
+# =============================================================================
+#
+#                                 XML/File routines
+#
+# =============================================================================
+#
+
+
+def setup_files(dir_name, options, times):
+    # Filter out the ones that are outside our time range
+    xml_files = []
+    for t in times:
+        xml_files += segmentdb_utils.get_all_files_in_range(dir_name, t[0], t[1])
+
+    handle, temp_db    = tempfile.mkstemp(suffix='.sqlite')
+    os.close(handle)
+
+    target     = dbtables.get_connection_filename(temp_db, None, True, False)
+    connection = ligolw_sqlite.setup(target)
+
+    ligolw_sqlite.insert_from_urls(connection, xml_files)
+
+    segmentdb_utils.ensure_segment_table(connection)
+
+    return temp_db, connection
+    
+
+
+#
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+#
+
+if __name__ == '__main__':
+    options, database_location, file_location, times  = parse_command_line()    
+
+    # Ping the database and exit if requested
+    if options.ping:
+        connection = segmentdb_utils.setup_database(database_location)
+        sys.exit( ping_server(connection) )
+
+    start_pad = 0
+    end_pad   = 0
+    
+    if options.start_pad:
+        start_pad = int(options.start_pad)
+
+    if options.end_pad:
+        end_pad = int(options.end_pad)
+
+    times = map(lambda x: (int(x) - start_pad, int(x) + end_pad), times)
+
+    # set up the response
+    doc = ligolw.Document()
+    doc.appendChild(ligolw.LIGO_LW())
+    process_id = process.register_to_xmldoc(doc, PROGRAM_NAME, options.__dict__, version = git_version.id, cvs_entry_time = __date__).process_id
+
+    temp_files = False
+
+    if database_location:
+        connection = segmentdb_utils.setup_database(database_location)
+        engine     = query_engine.LdbdQueryEngine(connection)
+    else:
+        temp_db, connection = setup_files(file_location, options, times)
+        engine     = query_engine.SqliteQueryEngine(connection)
+        temp_files = True
+
+    
+    if options.defined:
+        run_defined(doc, process_id, engine, options.include_segments, times)
+        utils.write_filename(doc, options.output_file)    
+
+    if options.active:
+       run_active(doc, process_id, engine, options.include_segments, times)
+       utils.write_filename(doc, options.output_file)
+
+    if options.report:
+       run_report(doc, process_id, engine, options.include_segments, times, options.in_segments_only)
+
+
+    # Clean up
+    if temp_files:
+        os.remove(temp_db)
+
+
+

@@ -1,0 +1,9 @@
+method = git
+#git_root = git://ligo-vcs.phys.uwm.edu/lalsuite.git
+git_root = $(HARNESS_GIT_REPO)
+git_tree = master
+#git_tree = $(HARNESS_GIT_BRANCH)
+git_path = glue/src/nmi/diff
+
+# omit glue/src/nmi/diff/ dir prefix
+tar_args = --strip-components=4

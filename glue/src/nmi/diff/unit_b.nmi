@@ -1,0 +1,3 @@
+method = nmi
+input_runids = $(RUNID_B)
+block_until_exists = true

@@ -1,0 +1,178 @@
+#!/usr/bin/python
+
+# Copyright (C) 2011 Duncan Macleod
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+# =============================================================================
+# Preamble
+# =============================================================================
+
+import sys
+import os
+from optparse import OptionParser
+from numpy import argsort
+from pylal.dq import dqFrameUtils
+
+from glue import git_version
+__author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+"""
+Script to query frames for channels
+"""
+
+# =============================================================================
+# Parse command line
+# =============================================================================
+
+def parse_command_line():
+
+  """
+    Parser function dedicated
+  """
+
+  usage = """usage: %prog [options]
+
+This script will return all frame types associated with given channel. All or part of a channel name to search for must be given. Including all or part of a data type will greatly speed up the search.
+
+Accepted ifos:
+
+H,L,V,H0,H1,H2,L0,L1,G0,G1,V0,V1
+
+WARNING: Any channels not matching the LIGO channel format (IFO:NAME) will not be included in the output of this code."""
+
+  parser = OptionParser(usage=usage)
+
+  parser.add_option("--verbose", action="store_true", default=False,\
+                    help="verbose output")
+
+  parser.add_option("-c", "--channels", action="store", type="string",\
+                    default="",
+                    help="relevant channel (or part therein), or comma"+\
+                         "separated list of channels (or parts therein) "+\
+                         "for search")
+
+  parser.add_option("-e", "--exclude-channels", action="store", type="string",\
+                    default="",
+                    help="exclude these channels (or parts therein),"+\
+                         "comma separated")
+  
+  parser.add_option("-t", "--types", action="store", type="string",\
+                    default="",
+                    help="specfic data type (or part therein), "+\
+                         "or comma separated list of data types "+\
+                         "(or parts therein) to search")
+ 
+  parser.add_option("-i", "--ifos", action="store", type="string",\
+                    default="",
+                    help="specific ifo, or comma separated list of ifos, "+\
+                         "to search")
+
+  parser.add_option("-s", "--gps-time", action="store", type="string",\
+                    help="gps time around which channels must be active")
+
+  parser.add_option("--full", action="store_true", default=False,\
+                    help="include ALL data types in search, default: %default")
+
+  parser.add_option("--short", action="store_true", default=False,\
+                    help="include only the most common data types in search "+\
+                         "(recommended for most users), default: %default")
+
+  parser.add_option("--match", action="store_true", default=False,\
+                    help="return only full matches to --channels option, "+\
+                         "default: %default")
+
+  (options, args) = parser.parse_args()
+
+  return options,args
+
+# =============================================================================
+# Main program starts here
+# =============================================================================
+
+def main():
+
+  # parse input options
+  options,args = parse_command_line()
+
+  channels    = [c for c in options.channels.split(',') if c]
+  ex_channels = [c for c in options.exclude_channels.split(',') if c]
+  types       = [t for t in options.types.split(',') if t]
+  ifos        = [i for i in options.ifos.split(',') if i]
+  full        = options.full
+  short       = options.short
+  match       = options.match
+  time        = options.gps_time
+  verbose     = options.verbose
+
+  # set up ignore list
+  ignore_list=[]
+  if not types and not full:
+    ignore_list=['M','T']
+
+  # set up search type
+  if short and full:
+    parser.error('Please choose only one of --short, --full.')
+  if options.short:  search='short'
+  elif options.full:  search='full'
+  else:  search='standard'
+
+  # find ifos
+  if not ifos:
+    if verbose:
+      sys.stdout.write("\nGenerating IFO list...\n")
+    ifos = dqFrameUtils.find_ifos()
+    if verbose:
+      sys.stdout.write("%d found:\n%s\n" % (len(ifos), ' '.join(ifos)))
+
+  # find types and ifos
+  if verbose:
+    if not types:
+      sys.stdout.write("\nGenerating frame type list...\n")
+    else:
+      sys.stdout.write("\nVerifying frame types...\n")
+  types = dqFrameUtils.find_types(ftype=types, ifo=ifos, search=search)
+
+  if len(types)==0:
+    raise RuntimeError("No frame types found, please review --types and "+\
+                       "--ifos and try again.")
+
+  if verbose:
+    sys.stdout.write("%d found:\n" % len(types))
+    for t in types:
+      sys.stdout.write("%s\n" % t)
+
+  # find channels
+  if verbose:
+    sys.stdout.write("\nFinding channels...\n")
+  found = dqFrameUtils.find_channels(name=channels, ftype=types, ifo=ifos,\
+                                     not_name=ex_channels,\
+                                     not_ftype=ignore_list,\
+                                     exact_match=match, time=time)
+  found.sort(key=lambda ch: str(ch))
+
+  # print summary
+  if len(found)>=1:
+    if verbose:
+      sys.stdout.write("%d found:\n" % len(found))
+    for ch in found:
+      sys.stdout.write("%s %s %s\n" % (str(ch), ch.type, ch.sampling))
+  else:
+    sys.stderr.write("WARNING: No channels found.\n")
+
+if __name__ == '__main__':
+  main()

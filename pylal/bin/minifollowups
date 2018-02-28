@@ -1,0 +1,455 @@
+#!/usr/bin/python
+"""
+routine to follow triggers from new style coinc xml tables
+"""
+
+from __future__ import division
+
+__author__ = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__prog__="minifollowups"
+
+import sys,os,copy
+from optparse import *
+from glue import lal
+from pylal import SnglInspiralUtils
+from pylal import CoincInspiralUtils
+from pylal.datatypes import LIGOTimeGPS
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue.ligolw.utils import print_tables
+from glue.ligolw.utils import search_summary as ligolw_search_summary
+from glue import segments
+from glue import git_version
+import matplotlib
+matplotlib.use('Agg')
+from pylal import followup_trigger
+from pylal import printutils
+
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+
+lsctables.use_in(ContentHandler)
+
+
+def make_external_call(command, show_stdout=False, show_command=False):
+  """
+  Run a program on the shell and print informative messages on failure.
+  """
+  if show_command: print command
+
+  stdin, out, err = os.popen3(command)
+  pid, status = os.wait()
+
+  if status != 0:
+      print >>sys.stderr, "External call failed."
+      print >>sys.stderr, "  status: %d" % status
+      print >>sys.stderr, "  stdout: %s" % out.read()
+      print >>sys.stderr, "  stderr: %s" % err.read()
+      print >>sys.stderr, "  command: %s" % command
+      # FIXME: find a permanent solution for the xvfb_kill error that is causing a status=256 error
+      #sys.exit(status)
+  if show_stdout:
+      print out.read()
+  stdin.close()
+  out.close()
+  err.close()
+
+
+def organize_coincs(new_coincs,sngls,coinc_map):
+# This function takes a (new style) coinc table and sngl table along with
+# the experiment map and returns a list of [coinc,[sngls]].
+  coinc_list = []
+  i = 0
+  for coinc in new_coincs:
+    coinc_list.append([])
+    coinc_list[i].append(coinc)
+    snglEventIds = []
+    for map in coinc_map:
+      if coinc.coinc_event_id == map.coinc_event_id:
+        snglEventIds.append(map.event_id)
+    snglList = []
+    for sngl in sngls:
+       if sngl.event_id in snglEventIds:
+         snglList.append(copy.deepcopy(sngl))
+    coinc_list[i].append(snglList)
+    i += 1
+  return coinc_list
+
+def organize_slides(coincTable,coincEvent,timeSlide):
+# This function adds the time slide offest to the coincTable
+  timeSlideDict = timeSlide.as_dict()
+  for coinc in coincTable:
+    timeOffsets = {}
+    coincID = coinc[0].coinc_event_id
+    for event in coincEvent:
+      if event.coinc_event_id == coincID:
+        slideID = event.time_slide_id
+    coinc.append(timeSlideDict[slideID])
+  return coincTable
+
+def organize_found_injs(summTable,sims,new_coincs,coinc_map,sngls):
+# This function associates a sim inspiral to a "selected found injection"
+  injList = []
+  i = 0
+  for event in summTable:
+    injList.append([])
+    injList[i].append(event)
+    for sim in sims:
+      if sim.simulation_id == event.simulation_id:
+        injList[i].append(sim)
+        coinc_id = event.coinc_event_id
+    snglEventIds = []
+    for map in coinc_map:
+      if coinc_id == map.coinc_event_id:
+        snglEventIds.append(map.event_id)
+    for coinc in new_coincs:
+      if coinc_id == coinc.coinc_event_id:
+        injList[i].append(coinc)
+    snglList = []
+    for sngl in sngls:
+       if sngl.event_id in snglEventIds:
+         snglList.append(sngl)
+    injList[i].append(snglList)
+    i += 1
+  return injList
+
+def omega_scan_inj(opts,inj):
+  omegaTimes = {}
+  for ifo in opts.omega_ifos:
+    injT = (ifo.lower())[0] + '_end_time'
+    omegaTimes[ifo] = LIGOTimeGPS(eval('inj.'+injT) + eval('inj.'+injT+'_ns')*1E-9)
+  omegaDirs,omegaLinks = run_omega_scan(opts,omegaTimes)
+  return omegaDirs,omegaLinks
+
+def omega_scan_coinc(opts,coinc):
+  omegaTimes = {}
+  for sngl in coinc:
+    omegaTimes[sngl.ifo] = sngl.get_end()
+  print omegaTimes
+  omegaDirs,omegaLinks = run_omega_scan(opts,omegaTimes)
+  return omegaDirs,omegaLinks
+
+def run_omega_scan(opts,omegaTimes):
+  omegaDirs = {}
+  omegaLinks = ''
+  omegaCommand = ['','','','','','','']
+  omegaCommand[0] = opts.omega_executable
+  omegaCommand[1] = 'scan'
+  omegaCommand[2] = '--report'
+  for ifo in omegaTimes.keys():
+    omegaCommand[3]='--configuration '+eval('opts.'+ifo.lower()+'_omega_config_file')
+    omegaCommand[4]='--framecache '+eval('opts.'+ifo.lower()+'_omega_frame_file')
+    if not os.path.isdir(opts.output_path + 'omega_scans'):
+      os.mkdir(opts.output_path + 'omega_scans')
+    outDir=opts.output_path+'omega_scans/'+ifo+'_'+str(omegaTimes[ifo].seconds)
+    outDir= outDir + '_' + str(omegaTimes[ifo].nanoseconds)
+    omegaCommand[5] = '--outdir ' + outDir
+    omegaCommand[6] = str(omegaTimes[ifo])
+    if not os.path.isdir(outDir):
+      if opts.verbose:
+        print 'Making an omega scan for ' + ifo + ' at time ' + str(omegaTimes[ifo].seconds)
+      make_external_call(' '.join(omegaCommand))
+    omegaDirs[ifo] = outDir
+    omegaLinks+= '<a href="coinc_result_plots/'+omegaDirs[ifo]+'" rel="external">'
+    omegaLinks+= ifo + '</a> '
+
+  return omegaDirs,omegaLinks
+
+def get_column_list(tableName, with_sngl = False):
+  if tableName == "loudest_events":
+    columnList, row_span_columns, rspan_break_columns = \
+        printutils.get_columns_to_print(xmlSummary, tableName, with_sngl = with_sngl)
+    columnList.remove('instruments_on')
+  elif tableName == "close_missed_injections":
+    columnList = ['rank', 'decisive_distance', 'gps_time', 'injection_time_utc__Px_click_for_daily_ihope_xP_', 'elogs', 'mini_followup','omega_scan']
+    row_span_columns = rspan_break_columns = []
+  elif tableName == 'selected_found_injections':
+    columnList = ['injected_decisive_distance','recovered_combined_far','recovered_snr','recovered_ifos','injected_gps_time','injected_event_time_utc__Px_click_for_daily_ihope_xP_','elogs','mini_followup','injected_mass1','injected_mass2','injected_mchirp','omega_scan']
+    row_span_columns = rspan_break_columns = ['injected_decisive_distance', 'injected_gps_time','injected_event_time_utc__Px_click_for_daily_ihope_xP_', 'elogs','injected_mass1', 'injected_mass2', 'injected_mchirp']
+  return columnList, row_span_columns, rspan_break_columns
+
+#
+# =============================================================================
+#
+#                                FollowUp Setup
+#
+# =============================================================================
+#
+
+def loudest_events(xmldoc, opts, summTable, followup):
+
+  coincT = table.get_table(xmldoc, lsctables.CoincInspiralTable.tableName)
+  coincMap = table.get_table(xmldoc, lsctables.CoincMapTable.tableName)
+  sngls = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+  coincTable = organize_coincs(coincT, sngls, coincMap)
+
+  coincEvent = table.get_table(xmldoc, lsctables.CoincTable.tableName)
+  timeSlide = table.get_table(xmldoc, lsctables.TimeSlideTable.tableName)
+  coincTable = organize_slides(coincTable, coincEvent, timeSlide)
+
+  page = []
+  omegaScans = []
+  numFU = 0
+
+  for coinc in coincTable:
+    if numFU < opts.max_followups:
+      if opts.do_omega_scan:
+        omegaDirs, omegaLinks = omega_scan_coinc(opts,coinc[1])
+        omegaScans.append(omegaLinks)
+      else:
+        omegaScans.append(None)
+      if opts.time_slides:
+        for sngl in coinc[1]:
+          SnglInspiralUtils.slideTriggersOnLines([sngl],coinc[2])
+        slideDict = {}
+        for ifo, shift in coinc[2].items():
+          slideDict[ifo] = shift
+        page.append( followup.from_new_slide_coinc(coinc[0],coinc[1],slideDict) )
+      else:
+        page.append( followup.from_new_coinc(coinc[0],coinc[1]) )
+      numFU += 1
+
+  for event in summTable:
+    for coinc,p,omegaScan in zip(coincTable,page,omegaScans):
+      if event.coinc_event_id == coinc[0].coinc_event_id:
+        event.mini_followup = '''<a href = "coinc_result_plots/''' + p + '''" rel="external"> link </a>'''
+        if omegaScan:
+          event.omega_scan = omegaScan
+
+  return summTable, coincTable, page, omegaScans  
+
+
+def missed_injections(opts, summTable, followup):
+
+  page = []
+  omegaScans = []
+  numFU = 0
+
+  for inj in summTable:
+    if numFU < opts.max_followups:
+      if opts.do_omega_scan:
+        omegaDirs,omegaLinks = omega_scan_inj(opts,inj)
+        omegaScans.append(omegaLinks)
+      else:
+        omegaScans.append(None)
+      page.append( followup.from_injection( inj,more_infos=True ) )
+      numFU += 1
+
+  for event,p,omegaScan in zip(summTable,page,omegaScans):
+    event.mini_followup = '''<a href = "coinc_result_plots/''' + p + '''" rel="external"> link </a>'''
+    if omegaScan:
+      event.omega_scan = omegaScan
+
+  return summTable, page, omegaScans
+
+
+def found_injections(xmldoc, opts, summTable, followup):
+
+  sims = table.get_table(xmldoc,lsctables.SimInspiralTable.tableName)
+  coincT = table.get_table(xmldoc, lsctables.CoincInspiralTable.tableName)
+  coincMap = table.get_table(xmldoc, lsctables.CoincMapTable.tableName)
+  sngls = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+  simTable = organize_found_injs(summTable,sims,coincT,coincMap,sngls)
+
+  page = []
+  omegaScans = []
+  numFU = 0
+
+  for event in simTable:
+    if numFU < opts.max_followups:
+      if opts.do_omega_scan:
+        omegaDirs,omegaLinks = omega_scan_inj(opts,event[1])
+        omegaScans.append(omegaLinks)
+      else:
+        omegaScans.append(None)
+      page.append( followup.from_found( event[1],more_infos=True,coinc = event[2],sngls = event[3]))
+      numFU += 1
+
+  for event,p,omegaScan in zip(summTable,page,omegaScans):
+    event.mini_followup = '''<a href = "coinc_result_plots/''' + p + '''" rel="external"> link </a>'''
+    if omegaScan:
+      event.omega_scan = omegaScan
+
+  return summTable, page, omegaScans
+
+
+#
+# =============================================================================
+#
+#                                Command Line
+#
+# =============================================================================
+#
+
+def parse_command_line():
+  description = """
+  Minifollowup is a code designed to run followups on new style xml files with
+  coinc_inspiral_tables in them. It can also take in the html table files output
+  by printlc and add the mini followup to it for write_ihope_page usage.
+  """
+  parser = OptionParser(
+    version = "Name: %%prog\n%s" % git_version.verbose_msg,
+    usage = "%prog [options]",
+    description = description
+  )
+  parser.add_option("-g","--cache-string",action="store",type="string",\
+        default=None, metavar=" USERTAG",\
+        help="This is used to parse the cache file. Only files with this string in them will be used" )
+  parser.add_option("-c", "--cache-file", action="store", type="string", default=None, metavar="CACHEFILE",\
+        help="The ihope cache file to be used")
+  parser.add_option("-p","--prefix",action="store",type="string",\
+        default=None, metavar=" PREFIX",\
+        help="Used to prefix the plot names" )
+  parser.add_option("-s","--suffix",action="store",type="string",\
+        default=None, metavar=" SUFFIX",\
+        help="Used as a suffix in the plot names" )
+  parser.add_option("-o","--output-path",action="store",type="string",\
+        default=".", metavar=" PATH",\
+        help="The output path for the plots" )
+  parser.add_option("-x","--input-xml",action="store",type="string",\
+        default=None, metavar=" INPUTXML",\
+        help="The input xml file containing the relevant events for followup" )
+  parser.add_option("-N","--table-name",action="store",type="string",\
+        default=None, metavar="INJTABNAME",\
+        help="The table we want to add followups to. Currently can be 'loudest_events' 'close_missed_injection' or 'selected_found_injections'" )
+  parser.add_option("-t","--input-xml-summary",action="store",type="string",\
+        default=None, metavar=" INPXMLSUMMTABLE",\
+        help="The input xml summary table (needed for quiet found injections and coinc triggers if you want to add the followups to these tables)" )
+  parser.add_option("-T","--output-html-table",action="store",type="string",\
+        default=None, metavar=" INPXMLSUMMTABLE",\
+        help="The output html summary table file name." )
+  parser.add_option("","--max-followups",action="store",\
+        type="int",  metavar="MAXFOLLOWUPS",default = 15,\
+        help="Only followup this number of files.")
+  parser.add_option("-O","--do-omega-scan",action="store_true",\
+        default=False,help="Use this flag to enable omega scans.")
+  parser.add_option("-H","--h1-omega-config-file",action="store",\
+        default=None,help="The omega config file for H1.")
+  parser.add_option("-f","--h1-omega-frame-file",action="store",\
+        default=None,help="The omega frame file for H1.")
+  parser.add_option("-L","--l1-omega-config-file",action="store",\
+        default=None,help="The omega config file for L1.")
+  parser.add_option("-l","--l1-omega-frame-file",action="store",\
+        default=None,help="The omega frame file for L1.")
+  parser.add_option("-V","--v1-omega-config-file",action="store",\
+        default=None,help="The omega config file for V1.")
+  parser.add_option("-a","--v1-omega-frame-file",action="store",\
+        default=None,help="The omega frame file for V1.")
+  parser.add_option("-e","--omega-executable",action="store",\
+        default=None,help="The omega executable.")
+  parser.add_option("","--time-slides",action="store_true",\
+        default=False,help="Use this flag to followup time slide triggers.")
+  parser.add_option("-v","--verbose",action="store_true",\
+        default=False,help="print information" )
+  
+  (opts,args) = parser.parse_args()
+  
+  #
+  # Check arguments
+  # 
+  
+  if opts.table_name not in ("loudest_events","close_missed_injections","selected_found_injections"):
+    raise ValueError, "--table-name is not a recognized table name. Run --help."
+  
+  
+  # Followup_trigger needs the following options to be set
+  
+  opts.followup_exttrig = False
+  opts.followup_flow = 40.0
+  opts.figure_resolution = 50
+  opts.output_path = opts.output_path + '/'
+  opts.suffix = '_' + opts.suffix
+  opts.verbose = True
+  opts.followup_time_window = 10
+  opts.user_tag = opts.cache_string
+  opts.omega_ifos = []
+  
+  if opts.h1_omega_config_file:
+    opts.omega_ifos.append('H1')
+  if opts.l1_omega_config_file:
+    opts.omega_ifos.append('L1')
+  if opts.v1_omega_config_file:
+    opts.omega_ifos.append('V1')
+
+  #
+  # done
+  #
+
+  return opts, args
+
+#
+# =============================================================================
+#
+#                                    Main
+#
+# =============================================================================
+#
+
+#
+# Command Line
+#
+
+opts, args = parse_command_line()
+
+# Make the Images directory if one does not exist
+if not os.path.isdir('Images'):
+  os.mkdir('Images')
+
+# Sieve the ihope cache file
+cache = lal.Cache.fromfile( open( opts.cache_file ) )
+temp_cache = cache.sieve (description = opts.cache_string )
+if opts.time_slides:
+  followup = followup_trigger.FollowupTrigger( temp_cache, opts, \
+      use_injections = False, do_slides = True )
+else:
+  followup = followup_trigger.FollowupTrigger( temp_cache, opts, False )
+
+# Read in the xml file
+xmldoc = utils.load_filename( opts.input_xml,
+    gz = opts.input_xml.endswith("gz"), contenthandler=ContentHandler)
+
+# Make minifollowup page and run omegascans
+if opts.table_name == "close_missed_injections":
+  summTable = table.get_table(xmldoc,opts.table_name + ":table")
+  summTable, page, omegaScans = missed_injections(opts, summTable, followup)  
+else:
+  xmlSummary = utils.load_filename(opts.input_xml_summary,\
+                 gz = opts.input_xml_summary.endswith("gz"),
+                 contenthandler=ContentHandler)
+  summTable = table.get_table(xmlSummary,opts.table_name + ":table")
+  if opts.table_name == "loudest_events":
+    summTable, coincTable, page, omegaScans = loudest_events(xmldoc, opts, summTable, followup)  
+  elif opts.table_name == "selected_found_injections":
+    summTable, page, omegaScans = found_injections(xmldoc, opts, summTable, followup)  
+
+# Write output html file if desired
+if opts.output_html_table:
+  output = open(opts.output_html_table,'w')
+  tableList = [opts.table_name]
+  columnList, row_span_columns, rspan_break_columns = get_column_list(opts.table_name, with_sngl = opts.time_slides)
+  print_tables.print_tables(summTable, output, "html",\
+    tableList = tableList, columnList = columnList, round_floats = True, \
+    decimal_places = 2, title = None, print_table_names = False, unique_rows = True, \
+    row_span_columns = row_span_columns, \
+    rspan_break_columns = rspan_break_columns)
+  output.close()
+
+# Write output to .xsl file
+if opts.table_name == "loudest_events":
+  for event in summTable:
+    for coinc,p,omegaScan in zip(coincTable,page,omegaScans):
+      if event.coinc_event_id == coinc[0].coinc_event_id:
+        event.mini_followup = page
+        if omegaScan:
+          event.omega_scan = omegaScan
+  utils.write_filename(xmlSummary,opts.input_xml_summary,xsl_file='ligolw.xsl')
+else:
+  for event,p,omegaScan in zip(summTable,page,omegaScans):
+    event.mini_followup = page
+    if omegaScan:
+      event.omega_scan = omegaScan
+  utils.write_filename(xmldoc,opts.input_xml,xsl_file='ligolw.xsl')
+

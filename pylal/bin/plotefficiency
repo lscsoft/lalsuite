@@ -1,0 +1,129 @@
+#!/usr/bin/python
+
+__author__ = "Stephen Fairhurst <sfairhurs@gravity.phys.uwm.edu>"
+
+import sys, os, re, glob, exceptions
+import glob
+from types    import *
+from optparse import *
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+
+from pylab import *
+from pylal import SnglInspiralUtils
+from pylal import SimInspiralUtils
+from pylal import CoincInspiralUtils
+from pylal import git_version
+from pylal import viz
+
+##############################################################################
+# parse options and arguments
+usage = """Usage: %prog [options] 
+
+Generate efficiency plots for inspiral triggers
+"""
+parser = OptionParser( usage=usage, version=git_version.verbose_msg )
+parser.add_option("-g","--glob-found",action="store",type="string",\
+    default=None, metavar=" FOUND_GLOB", \
+    help="GLOB of found trigger/injection files to read" )
+parser.add_option("-m","--glob-missed",action="store",type="string",\
+    default=None, metavar=" MISS_GLOB", \
+    help="GLOB of files containing missed injections to read" )
+parser.add_option("-a","--time-snr",action="store_true",default=False,\
+    help="plot snr v trig end time" )
+parser.add_option("-s","--show-plot",action="store_true",default=False,\
+    help="display the figures on the terminal" )
+parser.add_option("-F","--figure-name",action="store",type="string",\
+    default=None, metavar=" NAME",\
+    help="generate png figures with name NAME-fig.png" )
+parser.add_option("-d","--vs-distance",action="store_true",default=False,\
+    help="plot efficiency vs distance" )
+parser.add_option("-e","--vs-eff-dist",action="store_true",default=False,\
+    help="plot efficiency vs effective distance" )
+
+parser.add_option("-f","--vs-snr",action="store_true",default=False,\
+    help="plot efficiency vs snr threshold" )
+parser.add_option("-x","--min-snr",action="store",type="float",\
+    default=0, metavar=" MIN_SNR",help="minimum value of snr on plot" )
+parser.add_option("-X","--max-snr",action="store",type="float",\
+    default=0, metavar=" MAX_SNR",help="maximum value of snr on plot" )
+
+parser.add_option("-c","--vs-snr-chi",action="store_true",default=False,\
+    help="plot efficiency vs snr/chi threshold" )
+parser.add_option("-y","--min-snr-chi",action="store",type="float",\
+    default=0, metavar=" MIN_SNR_CHI",help="minimum value of snr/chi on plot" )
+parser.add_option("-Y","--max-snr-chi",action="store",type="float",\
+    default=0, metavar=" MAX_SNR_CHI",help="maximum value of snr/chi on plot" )
+
+    
+parser.add_option("-t","--title",action="store",type="string",\
+    default="", metavar=" TITLE", help="add more info to standard title" )
+parser.add_option("-l","--legend",action="store_true",default=False,\
+    help="include legend on plot" )  
+
+(opts,args) = parser.parse_args()
+
+# check at least one trig file was specified
+if not opts.glob_found:
+  print >>sys.stderr, "Must specify a GLOB of found injection files to read"
+  print >>sys.stderr, "Enter 'plotefficiency --help' for usage"
+  sys.exit(1)
+
+if not opts.glob_missed:
+  print >>sys.stderr, "Must specify a GLOB of missed injection files to read"
+  print >>sys.stderr, "Enter 'plotefficiency --help' for usage"
+  sys.exit(1)
+
+foundFiles = glob.glob(opts.glob_found)
+if not foundFiles:
+  print >>sys.stderr, "The glob for " + opts.glob_found + " returned no files"
+  sys.exit(1)
+
+missedFiles = glob.glob(opts.glob_missed)
+if not foundFiles:
+  print >>sys.stderr, "The glob for " + opts.glob_missed + " returned no files"
+  sys.exit(1)
+
+foundTrig = SnglInspiralUtils.ReadSnglInspiralFromFiles(foundFiles)
+foundInj  = SimInspiralUtils.ReadSimInspiralFromFiles(foundFiles)
+missedInj = SimInspiralUtils.ReadSimInspiralFromFiles(missedFiles)
+
+if len(foundTrig) != len(foundInj):
+    print >>sys.stderr,"number of triggers and found injections must be equal"
+    sys.exit(1)
+
+ifo = foundTrig[0].ifo
+
+##########################################
+# plot of efficiency vs effective distance
+if opts.vs_eff_dist:
+  figure(1)
+  viz.efficiencyplot(foundInj, missedInj, 'eff_dist', ifo, plot_type = 'log', \
+      nbins = 20, output_name = opts.figure_name )
+
+if opts.vs_distance:
+  figure(2)
+  viz.efficiencyplot(foundInj, missedInj, 'distance', ifo, plot_type = 'log', \
+      nbins = 20, output_name = opts.figure_name )
+
+if opts.vs_snr:
+  figure(3)
+  totalInj = len(foundInj) + len(missedInj)
+  viz.cumhistcol(foundTrig, 'snr', 'linear', normalization = totalInj, \
+      xlimit = [opts.min_snr,opts.max_snr], output_name = opts.figure_name)
+
+if opts.vs_snr_chi:
+  figure(4)
+  totalInj = len(foundInj) + len(missedInj)
+  viz.cumhistcol(foundTrig, 'snr_over_chi', 'linear', \
+      normalization = totalInj, \
+      xlimit = [opts.min_snr_chi,opts.max_snr_chi], \
+      output_name = opts.figure_name)
+
+if opts.show_plot:
+  show()
+
+
+

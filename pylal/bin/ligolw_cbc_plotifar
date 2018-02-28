@@ -1,0 +1,1096 @@
+#!/usr/bin/env python
+
+
+# ============================================================================
+#
+#                               Preamble
+#
+# ============================================================================
+
+from optparse import OptionParser
+try:
+    import sqlite3
+except ImportError:
+    # pre 2.5.x
+    from pysqlite2 import dbapi2 as sqlite3
+import sys,os,re
+import copy
+import bisect
+
+from glue.ligolw import lsctables
+from glue.ligolw import dbtables
+import glue.iterutils
+from glue import git_version
+
+from pylal import InspiralUtils
+
+import itertools
+import numpy
+import operator
+import matplotlib.mlab as mlab
+
+from pylal import ligolw_sqlutils as sqlutils
+
+__prog__ = "ligolw_cbc_plotifar"
+__author__ = "Collin Capano <cdcapano@physics.syr.edu>"
+
+description = \
+"Creates IFAR plots."
+
+
+# ============================================================================
+#
+#                               Define Functions
+#
+# ============================================================================
+
+def get_ifo_multiplicity( ifos ):
+    """
+    Returns the number of coincident ifos in an 'ifos' string.
+
+    @ifos: a string of comma-separated ifos
+    """
+    return len( lsctables.instrument_set_from_ifos( ifos ) )
+
+def multiplicity_colors( nIfos ):
+    """
+    Returns a color and a label based on the number of ifos.
+    """
+    if nIfos == 2:
+        name, color = "Doubles", "#347C2C" # Spring Green4
+    elif nIfos == 3:
+        name, color = "Triples", "#357EC7" # Slate Blue
+    elif nIfos == 4:
+        name, color = "Quadruples", "#7D0541" # Violet Red4
+    else:
+        name, color = str("N ifos = %d" % nIfos), 'k' # just return black
+
+    return name, color
+
+def get_trigger_color( coinc_group, group_by_multiplicity = False ):
+    """
+    Figures out whether to color a trigger by ifo or multiplicity.
+    """
+    if group_by_multiplicity:
+        _, color = multiplicity_colors( coinc_group )
+    elif (isinstance(coinc_group, set) or isinstance(coinc_group, frozenset)):
+        color = InspiralUtils.get_coinc_ifo_colors( coinc_group )
+    elif coinc_group == "ALL_IFOS":
+        color = 'b'
+    else:
+        color = 'k'
+
+    return color
+
+def get_trigger_name( coinc_group, group_by_multiplicity = False ):
+    """
+    Figures out what name to give to a coinc group for legend.
+    """
+    if group_by_multiplicity:
+        name, _ = multiplicity_colors( coinc_group )
+    elif (isinstance(coinc_group, set) or isinstance(coinc_group, frozenset)):
+        name = ''.join(sorted(coinc_group))
+    elif coinc_group == "ALL_IFOS":
+        name = 'All Coincs'
+    else:
+        name = str(coinc_group).replace('_', ' ')
+
+    return name
+
+
+# ============================================================================
+# def poly_between; needed if using older version of matplotlib
+def poly_between(x, ylower, yupper):
+    """
+    given a sequence of x, ylower and yupper, return the polygon that
+    fills the regions between them.  ylower or yupper can be scalar or
+    iterable.  If they are iterable, they must be equal in length to x
+
+    return value is x, y arrays for use with Axes.fill
+    """
+    Nx = len(x)
+    if not iterable(ylower):
+      ylower = ylower*numpy.ones(Nx)
+
+    if not iterable(yupper):
+      yupper = yupper*numpy.ones(Nx)
+
+    x = numpy.concatenate( (x,x[::-1]) )
+    y = numpy.concatenate( (yupper, ylower[::-1]) )
+    return x,y
+# ============================================================================
+
+
+# ============================================================================
+#
+#                               Set Options
+#
+# ============================================================================
+
+def parse_command_line():
+    """
+    Parser function dedicated
+    """
+    parser = OptionParser(
+        version = git_version.verbose_msg,
+        usage   = "%prog [options]",
+        description = description
+        )
+    # following are related to file input and output naming
+    parser.add_option( "-i", "--input", action = "store", type = "string", default = None,
+        help = 
+            "Input database to read. Can only input one at a time."
+        )
+    parser.add_option( "-t", "--tmp-space", action = "store", type = "string", default = None,
+        metavar = "PATH",
+        help = 
+            "Location of local disk on which to do work. This is optional; " +
+            "it is only used to enhance performance in a networked " +
+            "environment. "
+        )
+    parser.add_option( "-P", "--output-path", action = "store", type = "string", \
+        default = os.getcwd(), metavar = "PATH", \
+        help = 
+            "Optional. Path where the figures should be stored. Default is current directory." 
+        )
+    parser.add_option( "-O", "--enable-output", action = "store_true", \
+        default =  False, metavar = "OUTPUT", \
+        help = 
+            "enable the generation of html and cache documents" 
+        )
+    parser.add_option( "", "--coinc-table", action = "store", type = "string",\
+        default =  None, \
+        help = 
+            "Required. Can be any table with a coinc_event_id and a time column. Ex. coinc_inspiral." 
+        )
+    parser.add_option( "-s", "--show-plot", action = "store_true", default = False, \
+        help = 
+            "display the plots on the terminal" 
+        )
+    parser.add_option( "-v", "--verbose", action = "store_true", default = False, \
+        help = 
+            "print information to stdout" 
+        )
+    parser.add_option( "-u", "--user-tag", action = "store", type = "string",
+        default = None, metavar = "USERTAG",
+        help = 
+            "Add a tag in the name of the figures" 
+        )
+    parser.add_option("", "--plot-slides", action = "store_true", default = False,
+        help = 
+            "If this is specified, will have the world famous " +
+            "lightning-bolt plots."
+        ) 
+    parser.add_option( "", "--param-name", action = "store", default = None,
+        metavar = "PARAMETER(:label)", 
+        help = 
+            "Can be any parameter in the coinc_inspiral table. " + 
+            "Specifying this and param-ranges defines the bins " +
+            "which the uncombined_fars are calculated will be " +
+            "plotted in. The bins should be the same as " +
+            "whatever was used when calculating the uncombined false " +
+            "alarm rate. The parameter name will be in the legend of each plot; " +
+            "to give a label for the name, add a colon and the label. If no label is specified, " +
+            "the parameter name as given will be used. "
+        )
+    parser.add_option( "", "--param-ranges", action = "store", default = None,
+        metavar = " [ LOW1, HIGH1 ); ( LOW2, HIGH2]; etc.",
+        help = 
+            "Requires --param-name. Specify the parameter ranges " +
+            "to bin the triggers in. A '(' or ')' implies an open " +
+            "boundary, a '[' or ']' a closed boundary. To specify " +
+            "multiple ranges, separate each range by a ';'."
+        )
+    parser.add_option( "", "--x-min", action = "store", type = "float",
+        default = None, metavar = "",
+        help = 
+            "minimum x value to plot, in terms of IFAR (yr) "
+        )
+    parser.add_option( "", "--x-max", action = "store", type = "float",
+        default = None, metavar = "",
+        help = 
+            "maximum x value to plot, in terms of IFAR (yr) "
+        )
+    parser.add_option( "", "--y-min", action = "store", type = "float",
+        default = None, metavar = "",
+        help = 
+            "minimum y value to plot, must be greater than 0"
+        )
+    parser.add_option("", "--y-max", action = "store", type = "float",
+        default = None, metavar = "",
+        help = 
+            "maximum y value to plot"
+        ) 
+    parser.add_option( "", "--show-min-bkg", action = "store_true", default = False,
+        help = 
+            "put a vertical line indicating where the background begins for some " +
+            "category."
+        )
+    parser.add_option( "", "--show-max-bkg", action = "store_true", default = False,
+        help = 
+            "put a vertical line indicating where the background ends for some " +
+            "category." 
+        )
+    parser.add_option( "", "--show-two-sigma-error", action = "store_true", default = False,
+        help = 
+            "plot background out to two sigma" 
+        )
+    parser.add_option( "", "--plot-uncombined", action = "store_true", default = False,
+        help = 
+            "Make an uncombined plot of however many categories there are. " +
+            "FAR values are read from the --uncombined-column."
+        )
+    parser.add_option( "", "--uncombined-column", action = "store", default = "false_alarm_rate",
+        help =
+            "Column to get uncombined fars from. Default is false_alarm_rate. " +
+            "FAR values are read from the --combined-column."
+        )
+    parser.add_option( "", "--plot-combined", action = "store_true", default = False,
+        help = "Plot combined IFARs on a cumulative histogram." 
+        )
+    parser.add_option( "" , "--combined-column", action = "store", default = "combined_far",
+        help =
+            "Column to get combined fars from. Default is combined_far."
+        )
+    parser.add_option( "", "--group-by-ifos", action = "store_true", default = False, 
+        help = 
+          "Turning on will cause triggers to be grouped by coincident ifos when creating " +
+          "uncombined plot."
+        )
+    parser.add_option( "", "--group-by-multiplicity", action = "store_true", default = False, 
+        help = 
+          "Turning on will cause triggers to be grouped by the number of coincident ifos when creating " +
+          "uncombined plot. Note: if --group-by-ifos also specified, it will take precedence."
+        )
+    parser.add_option( "", "--datatype", action = "store", type = "string",
+        default = None, metavar = "all_data, playground, or exclude_play",
+        help = 
+            "Requried. Can either be 'all_data', 'playground', or 'exclude_play'. " +
+            "Specifies what type of zero-lag data to plot." 
+        )
+   
+    (options,args) = parser.parse_args()
+
+    #check if required options specified and for self-consistency
+    if not options.input:
+        raise ValueError, "--input must be specified"
+    if options.y_min and options.y_min <= 0.:
+        raise ValueError, "y-min must be greater than 0"
+    if options.y_max and (options.y_min >= options.y_max):
+        raise ValueError, "y-min must be less than y-max"
+    if (options.x_min and options.x_max) and (options.x_min >= options.x_max):
+        raise ValueError, "x-min must be less than x-max"
+    return options, sys.argv[1:]
+
+
+# =============================================================================
+#
+#                       Function Definitions
+#
+# =============================================================================
+
+def convert_to_yrs( duration ):
+    """
+    Uses sqlutils.convert_duration to automatically convert the frg_durs
+    to years. 
+    """
+    return sqlutils.convert_duration( duration, 'yr' )
+                   
+# ============================================================================
+#
+#                                 Main
+#
+# ============================================================================
+
+#
+#   Generic Initialization
+#
+
+# parse command line
+opts, args = parse_command_line()
+
+# get input database filename
+filename = opts.input
+if not os.path.isfile( filename ):
+    raise ValueError, "The input file, %s, cannot be found." % filename
+
+# Setup working databases and connections
+if opts.verbose: 
+    print >> sys.stdout, "Creating a database connection..."
+working_filename = dbtables.get_connection_filename( 
+    filename, tmp_path = opts.tmp_space, verbose = opts.verbose )
+connection = sqlite3.connect( working_filename )
+if opts.tmp_space:
+    dbtables.set_temp_store_directory(connection, opts.tmp_space, verbose = opts.verbose)
+
+coinc_table = sqlutils.validate_option( opts.coinc_table )
+
+#
+#   Plotting Initialization
+#
+
+# Change to Agg back-end if show() will not be called 
+# thus avoiding display problem
+if not opts.show_plot:
+  import matplotlib
+  matplotlib.use('Agg')
+from pylab import *
+#from pylal import viz
+rc('text', usetex=True)
+
+#
+#   Program-specific Initialization
+#
+
+# Get param and param-ranges if specified, and set ranges (for legend), symbols, and 
+# linestyles for plotting based on param_ranges. This plotting info is stored to the
+# param_ranges_legend, which has the following form:
+# param_ranges_legend[(param_name, group_number)]: {'range': string }, {'marker': marker}, {'linestyle': linestyle}, {'label': label}
+param_ranges_legend = {}
+trigsymbols = itertools.cycle(( 'v', 'o', 's' ))
+linestyles = itertools.cycle(( ':', '-.', '--' ))
+if opts.param_name:
+    opts.param_name, param_label = len(opts.param_name.split(':')) == 2 and opts.param_name.split(':') or [opts.param_name, opts.param_name.replace('_', ' ')]
+    param_parser = sqlutils.parse_param_ranges( coinc_table, opts.param_name,
+        opts.param_ranges, verbose = opts.verbose )
+    param_name = param_parser.param.split('.')[1]
+    connection.create_function("group_by_param", 1, param_parser.group_by_param_range)
+    param_grouping = ''.join([ 'group_by_param(', param_parser.param, ')' ])
+    for (n, _), marker, linestyle in zip( enumerate(param_parser.param_ranges), trigsymbols, linestyles ):
+        param_ranges_legend[(param_name, n)] = {}
+        param_ranges_legend[(param_name, n)]['range'] = \
+            param_parser.param_range_by_group(n) 
+        param_ranges_legend[(param_name, n)]['marker'] = \
+            marker
+        param_ranges_legend[(param_name, n)]['linestyle'] = \
+            linestyle
+        param_ranges_legend[(param_name, n)]['label'] = \
+            param_label
+
+else:
+    param_grouping = '0'
+    param_name = 'No binning'
+    param_ranges_legend[(param_name, 0 )] = {}
+    param_ranges_legend[(param_name, 0 )]['range'] = ''
+    param_ranges_legend[(param_name, 0 )]['marker'] = '^'
+    param_ranges_legend[(param_name, 0 )]['linestyle'] = '--'
+    param_ranges_legend[(param_name, 0)]['label'] = 'No binning'
+
+# get datatype
+plot_datatype = opts.datatype.strip().lower()
+if plot_datatype not in lsctables.ExperimentSummaryTable.datatypes:
+    raise ValueError, "Unrecognized datatype %s specified." % opts.datatype
+if plot_datatype == "slide" or plot_datatype == "simulation":
+    raise ValueError, "--datatype must be either all_data, playground, or exclude_play"
+
+# determine whether or not this is open box for later naming
+open_box = (plot_datatype == "all_data") or (plot_datatype == "exclude_play")
+
+# sqlitize convert_to_yrs
+connection.create_function( 'convert_to_yrs', 1, convert_to_yrs )
+
+# get desired ifo grouping for uncombined plots
+if opts.group_by_ifos:
+    ifo_grouping_table = coinc_table
+    ifo_grouping = '.'.join([ ifo_grouping_table, 'ifos' ])
+    opts.group_by_multiplicity = False # done so later coloring/labelling will be correct
+elif opts.group_by_multiplicity:
+    ifo_grouping_table = coinc_table
+    ifo_grouping = ''.join(['get_ifo_multiplicity(', ifo_grouping_table, '.ifos)'])
+    connection.create_function('get_ifo_multiplicity', 1, get_ifo_multiplicity)
+else:
+    ifo_grouping_table = None
+    ifo_grouping = '"ALL_IFOS"'
+
+# get combined and uncombined columns
+uncombined_column = '.'.join([ coinc_table, sqlutils.validate_option( opts.uncombined_column ) ])
+combined_column = '.'.join([ coinc_table, sqlutils.validate_option( opts.combined_column ) ])
+
+#
+#   Cycle over each available experiment, collecting information
+#   and generating plots for each
+#
+
+if opts.verbose:
+    print >> sys.stdout, "Getting information about all available experiments..."
+
+sqlquery = """
+    SELECT
+        experiment_id,
+        instruments,
+        gps_start_time,
+        gps_end_time
+    FROM
+        experiment
+        """
+for eid, on_inst, exp_start_time, exp_end_time in connection.cursor().execute( sqlquery ):
+    on_inst = lsctables.instrument_set_from_ifos(on_inst)
+    if opts.verbose:
+        print >> sys.stdout, "Creating plots for %s time..." % lsctables.ifos_from_instrument_set(on_inst)
+
+    # we'll use the Summaries class from sqlutils to store and manage
+    # needed info such as durations, background durations, max_bkg_fars (if
+    # they are to be plotted), etc.
+    background = sqlutils.Summaries()
+
+    # we'll also use the Summaries class to store uncombined and combined fars
+    # note: ufar_summaries is always used, regardless of whether or not uncombined-fars are plotted
+    ufar_summaries = sqlutils.Summaries()
+    if opts.plot_combined:
+        cfar_summaries = sqlutils.Summaries()
+
+    # get summary information for this experiment
+    if opts.verbose:
+        print >> sys.stdout, "\tgetting background statistics..."
+    sqlquery = """
+        SELECT
+            experiment_summary.experiment_summ_id,
+            convert_to_yrs(experiment_summary.duration),
+            experiment_summary.datatype
+        FROM
+            experiment_summary
+        WHERE
+            experiment_summary.experiment_id == ?"""
+    for esid, duration, datatype in connection.cursor().execute( sqlquery, (eid,) ):
+        background.append_duration(eid, esid, duration)
+        background.store_datatypes(eid, esid, datatype)
+        if datatype != "slide":
+            background.append_zero_lag_id(eid, esid)
+
+    # check that there is only a single plot_datatype entry for this experiment
+    if eid in background.datatypes.keys():
+        if plot_datatype in background.datatypes[eid].keys():
+            if len(background.datatypes[eid][plot_datatype]) > 1:
+                raise ValueError, "more than one %s entry found for experiment %s" %(plot_datatype, eid)
+        else:
+            print >> sys.stderr, "\tNo time for datatype %s in %s" %(plot_datatype, eid)
+    else:
+        print >> sys.stderr, "\tNo datatypes for this experiment_id "
+        continue
+
+
+    # calculate the background durations
+    background.calc_bkg_durs()
+
+    # calculate min_bkg_ufar in every time_slide in every experiment; 
+    # this is just 1/background_duration for each experiment_summ_id
+    min_bkg_ufar = {}
+    if opts.verbose:
+        print >> sys.stdout, "\tcalculating maximum background IFARs..."
+    for esid, bkg_dur in background.bkg_durs.items():
+        min_bkg_ufar[esid] = 1./bkg_dur
+
+    # get the triggers
+    if opts.verbose:
+        print >> sys.stdout, "\tgetting FARs of triggers..."
+    sqlquery = ''.join([ """
+        SELECT 
+            experiment_summary.experiment_summ_id,
+            """, ifo_grouping, """,
+            """, param_grouping, """,
+            """, uncombined_column, """,
+            """, combined_column, """
+        FROM 
+            """, coinc_table, """
+        JOIN 
+            experiment_summary, experiment_map ON (
+                experiment_summary.experiment_summ_id == experiment_map.experiment_summ_id
+                AND experiment_map.coinc_event_id == """, coinc_table, """.coinc_event_id)
+        WHERE 
+            experiment_summary.experiment_id == ? AND (
+                experiment_summary.datatype == "slide" 
+                OR experiment_summary.datatype == ? )
+        """])
+    for esid, ifos, param_group, ufar, cfar in connection.cursor().execute(sqlquery, (eid, plot_datatype) ):
+        if param_group is None:
+            continue
+        if opts.group_by_ifos:
+            ifos = frozenset(lsctables.instrument_set_from_ifos(ifos))
+        ufar_summaries.add_to_bkg_stats(eid, esid, ifos, param_group, ufar)
+        # since the ufar_summaries class doesn't know about zero-lag esids,
+        # we must remove the zero-lag stats from it's bkg_stats list by hand
+        if eid in background.zero_lag_ids.keys():
+            if esid in background.zero_lag_ids[eid]:
+                ufar_summaries.bkg_stats[(eid, ifos, param_group)].remove(ufar)
+            if opts.plot_combined:
+                cfar_summaries.add_to_bkg_stats(eid, esid, "ALL_IFOS", "ALL_PARAM_BINS", cfar)
+                if esid in background.zero_lag_ids[eid]:
+                    cfar_summaries.bkg_stats[(eid, "ALL_IFOS", "ALL_PARAM_BINS")].remove(cfar)
+
+    # calculate max-bkg fars
+    if opts.verbose:
+        print >> sys.stdout, "\tcalculating max-bkg FARS..."
+    max_bkg_fars = {}
+    sqlquery = ''.join(["""
+        SELECT DISTINCT
+            """, ifo_grouping, """,
+            """, param_grouping, """
+            FROM 
+                """, coinc_table, """
+            JOIN 
+                experiment_summary, experiment_map ON (
+                    experiment_summary.experiment_summ_id == experiment_map.experiment_summ_id
+                    AND experiment_map.coinc_event_id == """, coinc_table, """.coinc_event_id )
+            WHERE 
+                experiment_summary.experiment_id == ? AND
+                experiment_summary.datatype == "slide"
+            """])
+    for ifos, param_group in connection.cursor().execute(sqlquery, (eid,)):
+        if param_group is None:
+            continue
+        if opts.group_by_ifos:
+            ifos = frozenset(lsctables.instrument_set_from_ifos(ifos))
+        tot_num = len( ufar_summaries.bkg_stats[(eid, ifos, param_group)] )
+        for esid in background.frg_durs[eid]:
+            this_num = tot_num
+            # remove the number of triggers in the same esid
+            if (eid, esid, ifos, param_group) in ufar_summaries.sngl_slide_stats:
+                this_num = this_num - len( ufar_summaries.sngl_slide_stats[(eid, esid, ifos, param_group)] )
+            if esid not in max_bkg_fars:
+                max_bkg_fars[ esid ] = {}
+            # if this_num is zero (can happen if there is no background) just set max_bkg_far
+            # to corresponding min_bkg_far
+            if this_num == 0:
+                max_bkg_fars[esid][(ifos, param_group)] = min_bkg_ufar[esid]
+            else:
+                max_bkg_fars[esid][(ifos, param_group)] = this_num / background.bkg_durs[esid]
+    
+    # set any missing max_bkg_fars to the corresponding min_bkg_ufar (this can happen if
+    # a cateogory has foreground, but no background)
+    for (eid, esid, ifos, param_group) in ufar_summaries.sngl_slide_stats:
+        if esid not in max_bkg_fars:
+            max_bkg_fars[esid] = {}
+        if (ifos, param_group) not in max_bkg_fars[esid]:
+            max_bkg_fars[esid][(ifos, param_group)] = min_bkg_ufar[esid]
+
+    #
+    #   Sort and calculate cumulative historgram values
+    #
+
+    # uncombined_fars
+    if opts.verbose:
+        print >> sys.stdout, "\tcalculating cumulative histogram..."
+    if opts.plot_uncombined:
+        uncombined_cumnum = {}
+        uncomb_zero_cumnum = {}
+        for category, ufarlist in ufar_summaries.sngl_slide_stats.items():
+            ufarlist.sort()
+            uncombined_cumnum[ category ] = [ bisect.bisect_right(ufarlist, ufar) for ufar in ufarlist ]
+            # replace zeroes with min_bkg_ufar for this category and
+            # count how many there are to ensure that the arrow that will be 
+            # plotted has the correct y-value; following loop takes 
+            # advantage of ufarlist being sorted from smallest to largest
+            esid = category[1]
+            for n, ufar in enumerate(ufarlist):
+                if ufar != 0.:
+                    break
+                uncomb_zero_cumnum[ category ] = n + 1
+                ufarlist[n] = min_bkg_ufar[ category[1] ] 
+            # reverse sort ufarlist and uncombined_cumnum so loudest trigs will
+            # be plotted first 
+            uncombined_cumnum[ category ].sort(reverse = True)
+            ufarlist.sort(reverse = True)
+            # turn ufarlist into an array for easy inverse calculation
+            ufar_summaries.sngl_slide_stats[ category ] = numpy.array( ufarlist )
+
+    # do the same for combined_fars
+    if opts.plot_combined:
+        combined_cumnum = {}
+        comb_zero_cumnum = {}
+        for category, cfarlist in cfar_summaries.sngl_slide_stats.items():
+            esid = category[1]
+            cfarlist.sort()
+            combined_cumnum[ category ] = \
+                    [ bisect.bisect_right(cfarlist, cfar) for cfar in cfarlist ]
+            for n, cfar in enumerate( cfarlist ):
+                if cfar != 0.:
+                    break
+                comb_zero_cumnum[ category ] = n + 1
+                cfarlist[n] = min_bkg_ufar[esid] * len(max_bkg_fars[esid].values())
+            cfarlist.sort(reverse = True)
+            combined_cumnum[ category ].sort(reverse = True)
+            cfar_summaries.sngl_slide_stats[ category ] = numpy.array( cfarlist )
+
+        
+    #
+    #   Plot
+    #
+
+    # FIXME: The following should be done more elegantly, but requires changes to 
+    # InspiralUtils.py
+    # Add gps-start-time, gps-end-time, on_inst to opts to get them in the file names
+    opts.gps_start_time = exp_start_time
+    opts.gps_end_time = exp_end_time
+    opts.ifo_times = ''.join(sorted(on_inst))
+    opts.ifo_tag = ''
+
+    # set InspiralUtils options for file and plot naming
+    InspiralUtilsOpts = InspiralUtils.initialise( opts, __prog__, git_version.verbose_msg )
+    # set the proper color code and symbols
+    figure_number = 0 # used for the figure label (showplot)
+    fnameList = [] # used for the html cache file
+    tagList = [] # ditto
+
+    # set bkg_correction: this is the zero-lag duration of the plot_datatype divided
+    # by the all_data duration; this is needed to set the background correctly
+    all_data_dur = 0
+    if 'all_data' in background.datatypes[eid]:
+        all_data_dur = background.frg_durs[eid][background.datatypes[eid]['all_data'][0]]
+
+    # get the esid of the zero-lag for this eid
+    if plot_datatype in background.datatypes[ eid ].keys():
+        zero_esid = background.datatypes[ eid ][ plot_datatype ][0]
+        if all_data_dur != 0:
+            bkg_correction = background.frg_durs[eid][zero_esid] / all_data_dur
+        else: # if not all_data, just set bkg_correction to 1. to avoid errors
+            bkg_correction = 1.
+    else:
+        zero_esid = None
+
+    
+    #
+    #   Plot Uncombined IFAR
+    #
+
+    if opts.plot_uncombined:
+        if opts.verbose:
+            print >> sys.stdout, "\tgenerating uncombined IFAR plot..."
+
+        figure(figure_number)
+        figure_number += 1
+
+        # check that there's something to plot; if there isn't, just make an empty plot
+        msg = ''
+        if len(ufar_summaries.sngl_slide_stats.keys()) == 0:
+            msg = "No uncombined fars found for this experiment."
+        if zero_esid:
+            if background.frg_durs[eid][zero_esid] == 0:
+                msg = ' '.join([ msg, "No", plot_datatype, "time for this experiment." ])
+        else:
+            msg = ' '.join([ msg, "No", plot_datatype, "time for this experiment." ])
+
+        if len(msg) != 0:
+            text( 0.5, 0.5, msg, 
+                ha = 'center', va = 'center' )
+            xlabel( r"No data", size='x-large' )
+            ylabel( r"No data", size='x-large' )
+
+        else:
+            xmin = numpy.inf
+            xmax = -numpy.inf
+            ymin = 0.8
+            ymax = 0
+
+            #
+            #   Plot lightning bolts
+            #
+            if opts.plot_slides:
+                for category, ufars in ufar_summaries.sngl_slide_stats.items():
+                    esid = category[1]
+                    # skip the zero-lag
+                    if esid == zero_esid:
+                        continue
+                    # plot the rest as gray lines
+                    loglog( bkg_correction/ufars, 
+                            uncombined_cumnum[ category ],
+                            color = 'gray',
+                            linestyle = '-',
+                            alpha = 0.4,
+                            label = '_nolegend_' )
+                    # reset xmin/xmax to include quietest/loudest background trigger
+                    if xmin > bkg_correction/ufars[0]:
+                        xmin = bkg_correction/ufars[0]
+                    if xmax < bkg_correction/ufars[-1]:
+                        xmax = bkg_correction/ufars[-1]
+                    if ymax < uncombined_cumnum[category][0]:
+                        ymax = uncombined_cumnum[category][0]
+
+            #
+            #   Plot the expected background
+            #
+
+            xbkg = numpy.logspace( -8, 2, num=100, endpoint=True, base=10.0 )
+            ybkg = background.frg_durs[eid][zero_esid] / xbkg
+            loglog( xbkg, ybkg, 'k--', linewidth = 2, label = 'Expected Background' )
+            
+            # plot error
+            bkgplus = ybkg + sqrt(ybkg)
+            bkgminus = ybkg - sqrt(ybkg)
+            bkgminus = where( bkgminus<=0, 1e-5, bkgminus ) # prevent (-) values
+            xs, ys = poly_between( xbkg, bkgminus, bkgplus )
+            fill( xs, ys, facecolor='y', alpha=0.4, label='$N^{1/2}$ errors' )
+            if opts.show_two_sigma_error:
+                bkgplus = ybkg + 2*sqrt(ybkg)
+                bkgminus = ybkg - 2*sqrt(ybkg)
+                bkgminus = where( bkgminus<=0, 1e-5, bkgminus ) # prevent (-) values
+                xs, ys = poly_between( xbkg, bkgminus, bkgplus )
+                fill( xs, ys, facecolor='y', alpha=0.2, label='$2N^{1/2}$ errors' )
+
+            #
+            #   Plot the foreground
+            #
+
+            for category, ufars in ufar_summaries.sngl_slide_stats.items():
+                esid = category[1]
+                # skip the slides
+                if esid != zero_esid:
+                    continue
+                coinc_type = category[2]
+                param_group = category[3]
+                loglog( 1./ufars, 
+                        uncombined_cumnum[ category ],
+                        marker = param_ranges_legend[(param_name, param_group)]['marker'],
+                        markerfacecolor = get_trigger_color( coinc_type, group_by_multiplicity = opts.group_by_multiplicity ),
+                        markeredgecolor = 'k',
+                        linestyle = 'None',
+                        alpha = 0.9,
+                        label = '_nolegend_' )
+                # if any FARs were zero, stick an arrow on their marker
+                if category in uncomb_zero_cumnum:
+                    xval = 1. / min_bkg_ufar[ zero_esid ]
+                    yval = uncomb_zero_cumnum[ category ]
+                    text( xval, yval, '$\longrightarrow$', ha = 'left', va = 'center', 
+                        color = 'k', fontsize = 20, label='_nolegend_' )
+                # reset xmin, xmax, ymin
+                if xmin > 1./ufars[0]:
+                    xmin = 1./ufars[0]
+                if xmax < 1./ufars[-1]:
+                    xmax = 1./ufars[-1]
+                if ymax < uncombined_cumnum[category][0]:
+                    ymax = uncombined_cumnum[category][0]
+
+
+            #
+            #   Plot min/max bkg fars
+            #
+
+            # plot min bkg ifar line (same as max bkg far)
+            if opts.show_min_bkg:
+                for (coinc_type, param_group), max_bkg_far in max_bkg_fars[zero_esid].items():
+                    xminbkg = 1./max_bkg_far 
+                    loglog( [xminbkg,xminbkg], [0.1,10000],
+                        color = get_trigger_color( coinc_type, group_by_multiplicity = opts.group_by_multiplicity ), 
+                        linestyle = param_ranges_legend[(param_name, param_group)]['linestyle'],
+                        linewidth = 2,
+                        label='_nolegend_' )
+                    if xmin > xminbkg:
+                        xmin = xminbkg
+            # plot max bkg ifar line (same as min bkg ufar) 
+            if opts.show_max_bkg:
+                xmaxbkg = 1./min_bkg_ufar[zero_esid]
+                loglog( [xmaxbkg,xmaxbkg], [ymin,ymax*1.2],
+                    color = 'k',
+                    linestyle = '-',
+                    linewidth = 1,
+                    label='_nolegend_' )
+                if xmax < xmaxbkg:
+                    xmax = xmaxbkg
+
+
+            #
+            #   Finalize plot limits
+            #
+
+            # check if xmin, xmax, ymax are still original values; if so, set to
+            # arbitrary values (can happen if no foreground trigs and no show min/max
+            # bkg)
+            if xmin == numpy.inf: xmin = 0.001
+            if xmax == -numpy.inf: xmax = 100.
+            if ymax == 0.: ymax = 1000.
+            # Re-set xmin and ymax to be slightly smaller/larger
+            xmin = xmin * 0.8
+            xmax = 10**.5 * xmax
+            ymax = ymax * 1.2
+            # if plot limits specified on command line, override values to whatever was specified
+            # and check for consistency
+            if opts.x_min: 
+                xmin = opts.x_min
+                if xmin >= xmax:
+                    raise ValueError, "specified x-min greater than (auto) x-max; Nothing to plot!"
+            if opts.x_max: 
+                xmax = opts.x_max
+                if xmax <= xmin:
+                    raise ValueError, "specified x-max greater than (auto) x-min; Nothing to plot!"
+            if opts.y_min: 
+                ymin = opts.y_min
+                if ymin >= ymax:
+                    raise ValueError, "specified y-min greater than (auto) y-max; Nothing to plot!"
+            if opts.y_max: 
+                ymax = opts.y_max
+                if ymax <= ymin:
+                    raise ValueError, "specified y-max greater than (auto) y-min; Nothing to plot!"
+            
+            #
+            #   Make Legend
+            #
+
+            # The legend just shows what colors correspond to what ifos
+            # and what symbols correspond to what mass-bins. This is done by making
+            # dummy plots out of the range of the plots strictly for the sake of the
+            # legend. This is done as opposed to just giving labels for each plot
+            # because it was found that doing the former caused the legend to be so
+            # large it went off the plot.
+            
+            # set dummy coordinates
+            xdum = 0.01*xmin
+            ydum = 0.01*ymin
+
+            # Set the coinc_type colors:
+            # get all coinc types from max_bkg_fars dict and ufar_summaries (in case any coinc_type is in the foreground but not in the background)
+            coinc_types = set([coinc_type for (coinc_type, _) in max_bkg_fars[zero_esid]] + [coinc_type for (_,_,coinc_type,_) in ufar_summaries.sngl_slide_stats])
+            # add the ifo colors to the legend
+            for coinc_type in coinc_types:
+                loglog( [xdum,xdum], [ydum,ydum],
+                    color = get_trigger_color(coinc_type, opts.group_by_multiplicity),
+                    linewidth = 5,
+                    label = get_trigger_name(coinc_type, opts.group_by_multiplicity) )
+
+            # Set the mass bin symbols and linestyles using param_ranges_legend
+            for thisrange in param_ranges_legend:
+                loglog( [xdum,xdum], [ydum,ydum],
+                    color = 'k',
+                    marker = param_ranges_legend[thisrange]['marker'],
+                    linestyle = param_ranges_legend[thisrange]['linestyle'],
+                    label = ' '.join([ param_ranges_legend[thisrange]['label'], param_ranges_legend[thisrange]['range'] ]) )
+
+            # make the legend
+            legend()
+
+            xlim(xmin,xmax)
+            ylim(ymin,ymax)
+            xlabel( r"Uncombined Inverse False Alarm Rate (yr)", size='x-large' )
+            ylabel( r"Cumulative \#", size='x-large' )
+            title_txt = ' '.join([ lsctables.ifos_from_instrument_set(on_inst), "Time:",
+                re.sub('_','-', plot_datatype.upper()), "Cum. Num. vs Uncombined IFAR"])
+            title(title_txt, size='x-large')
+
+        #
+        #   Make the Plot
+        #
+        if opts.enable_output:
+            name = InspiralUtils.set_figure_tag("cumhist_uncombined_ifar", 
+                datatype_plotted = plot_datatype.upper(), open_box = open_box)
+            fname = InspiralUtils.set_figure_name(InspiralUtilsOpts, name)
+            fname_thumb = InspiralUtils.savefig_pylal( filename=fname )
+            fnameList.append(fname)
+            tagList.append(name)
+
+
+    #
+    #   Plot Combined IFAR
+    #
+
+    # plotting method is similar as uncombined plots; 
+    # except that all triggers are plotted as triangles.
+    # If combining across ifo groups (combine-fars in ligolw_cbc_cfar
+    # was set to across_all) all triggers are blue. If not combining
+    # across ifo groups (combine-fars was set to across_param_only)
+    # the color of the triggers will correspond to what coinc ifos generated
+    # them
+
+    if opts.plot_combined:
+        if opts.verbose:
+            print >> sys.stdout, "\tgenerating combined IFAR plot..."
+
+        figure(figure_number)
+        figure_number += 1
+
+        # check that there's something to plot; if there isn't, just make an empty plot
+        msg = ''
+        if len(cfar_summaries.sngl_slide_stats.keys()) == 0:
+            msg = "No combined fars found for this experiment."
+        if zero_esid:
+            if background.frg_durs[eid][zero_esid] == 0:
+                msg = ' '.join([ msg, "No", plot_datatype, "time for this experiment." ])
+        else:
+            msg = ' '.join([ msg, "No", plot_datatype, "time for this experiment." ])
+
+
+        if len(msg) != 0:
+            text( 0.5, 0.5, msg, 
+                ha = 'center', va = 'center' )
+            xlabel( r"No data", size='x-large' )
+            ylabel( r"No data", size='x-large' )
+
+        else:
+            xmin = numpy.inf
+            xmax = -numpy.inf
+            ymin = 0.8
+            ymax = 0
+
+            #
+            #   Plot lightning bolts
+            #
+            if opts.plot_slides:
+                for category, cfars in cfar_summaries.sngl_slide_stats.items():
+                    esid = category[1]
+                    # skip the zero-lag
+                    if esid == zero_esid:
+                        continue
+                    # plot the rest as gray lines
+                    loglog( bkg_correction/cfars, 
+                            combined_cumnum[ category ],
+                            color = 'gray',
+                            linestyle = '-',
+                            alpha = 0.4,
+                            label = '_nolegend_' )
+                    # reset xmin/xmax to include quietest/loudest background trigger
+                    if xmin > bkg_correction/cfars[0]:
+                        xmin = bkg_correction/cfars[0]
+                    if xmax < bkg_correction/cfars[-1]:
+                        xmax = bkg_correction/cfars[-1]
+                    if ymax < combined_cumnum[category][0]:
+                        ymax = combined_cumnum[category][0]
+
+            #
+            #   Plot the expected background
+            #
+
+            xbkg = numpy.logspace( -8, 2, num=100, endpoint=True, base=10.0 )
+            ybkg = background.frg_durs[eid][zero_esid] / xbkg
+            loglog( xbkg, ybkg, 'k--', linewidth = 2, label = 'Expected Background' )
+            
+            # plot error
+            bkgplus = ybkg + sqrt(ybkg)
+            bkgminus = ybkg - sqrt(ybkg)
+            bkgminus = where( bkgminus<=0, 1e-5, bkgminus ) # prevent (-) values
+            xs, ys = poly_between( xbkg, bkgminus, bkgplus )
+            fill( xs, ys, facecolor='y', alpha=0.4, label='$N^{1/2}$ errors' )
+            if opts.show_two_sigma_error:
+                bkgplus = ybkg + 2*sqrt(ybkg)
+                bkgminus = ybkg - 2*sqrt(ybkg)
+                bkgminus = where( bkgminus<=0, 1e-5, bkgminus ) # prevent (-) values
+                xs, ys = poly_between( xbkg, bkgminus, bkgplus )
+                fill( xs, ys, facecolor='y', alpha=0.2, label='$2N^{1/2}$ errors' )
+
+      
+            #
+            #   Plot the foreground
+            #
+
+            for category, cfars in cfar_summaries.sngl_slide_stats.items():
+                esid = category[1]
+                # skip the slides
+                if esid != zero_esid:
+                    continue
+                coinc_type = category[2]
+                loglog( 1./cfars,
+                        combined_cumnum[ category ],
+                        marker = '^',
+                        markerfacecolor = get_trigger_color(coinc_type),
+                        markeredgecolor = 'k',
+                        linestyle = 'None',
+                        alpha = 0.9,
+                        label = get_trigger_name(coinc_type) )
+                # if any FARs were zero, stick an arrow on their marker
+                if category in comb_zero_cumnum:
+                    xval = 1. / ( min_bkg_ufar[ zero_esid ] * len(max_bkg_fars[zero_esid].values()) )
+                    yval = comb_zero_cumnum[ category ]
+                    text( xval, yval, '$\longrightarrow$', ha = 'left', va = 'center', 
+                        color = 'k', fontsize = 20, label='_nolegend_' )
+                # reset xmin, xmax, ymin
+                if xmin > 1./cfars[0]:
+                    xmin = 1./cfars[0]
+                if xmax < 1./cfars[-1]:
+                    xmax = 1./cfars[-1]
+                if ymax < combined_cumnum[category][0]:
+                    ymax = combined_cumnum[category][0]
+
+
+            #
+            #   Finalize plot limits
+            #
+
+            # check if xmin, xmax, ymax are still original values; if so, set to
+            # arbitrary values (can happen if no foreground trigs) 
+            if xmin == numpy.inf: xmin = 0.001
+            if xmax == -numpy.inf: xmax = 100.
+            if ymax == 0.: ymax = 1000.
+            # Re-set xmin and ymax to be slightly smaller/larger
+            xmin = xmin * 0.8
+            xmax = 10**.5 * xmax
+            ymax = ymax * 1.2
+            # if plot limits specified on command line, override values to whatever was specified
+            # and check for consistency
+            if opts.x_min: 
+                xmin = opts.x_min
+                if xmin >= xmax:
+                    raise ValueError, "specified x-min greater than (auto) x-max; Nothing to plot!"
+            if opts.x_max: 
+                xmax = opts.x_max
+                if xmax <= xmin:
+                    raise ValueError, "specified x-max greater than (auto) x-min; Nothing to plot!"
+            if opts.y_min: 
+                ymin = opts.y_min
+                if ymin >= ymax:
+                    raise ValueError, "specified y-min greater than (auto) y-max; Nothing to plot!"
+            if opts.y_max: 
+                ymax = opts.y_max
+                if ymax <= ymin:
+                    raise ValueError, "specified y-max greater than (auto) y-min; Nothing to plot!"
+                    
+            xlim(xmin,xmax)
+            ylim(ymin,ymax)
+            xlabel( r"Inverse False Alarm Rate (yr)", size='x-large' )
+            ylabel( r"Cumulative \#", size='x-large' )
+            title_txt = ' '.join([ lsctables.ifos_from_instrument_set(on_inst), "Time:",
+                re.sub('_','-', plot_datatype.upper()), "Cum. Num. vs Combined IFAR"])
+            title(title_txt, size='x-large')
+
+            # Make the legend
+            legend()
+
+        #
+        #   Make the Plot
+        #
+        if opts.enable_output:
+            name = InspiralUtils.set_figure_tag("cumhist_combined_ifar", 
+                datatype_plotted = plot_datatype.upper(), open_box = open_box)
+            fname = InspiralUtils.set_figure_name(InspiralUtilsOpts, name)
+            fname_thumb = InspiralUtils.savefig_pylal( filename=fname )
+            fnameList.append(fname)
+            tagList.append(name)
+
+    #
+    #   Create the html page for this experiment id
+    #
+    
+    if opts.enable_output:
+        if opts.verbose:
+            print >> sys.stdout, "\twriting html file and cache."
+        html_filename = InspiralUtils.write_html_output( InspiralUtilsOpts, args, fnameList, tagList, 
+            html_tag = plot_datatype.upper() + '_PLOTTED', add_box_flag = True )
+        InspiralUtils.write_cache_output( InspiralUtilsOpts, html_filename, fnameList )
+    
+    if opts.show_plot:
+        show()
+
+    #
+    # Close the figures and clear memory for the next instrument time
+    #
+
+    for number in range(figure_number):
+        close(number)
+
+    del background
+    del ufar_summaries
+    if opts.plot_uncombined:
+        del uncombined_cumnum
+        del uncomb_zero_cumnum
+    if opts.plot_combined:
+        del cfar_summaries
+        del combined_cumnum
+        del comb_zero_cumnum
+    del max_bkg_fars
+    del min_bkg_ufar
+
+
+#
+#   Finished cycling over experiments; exit
+#
+connection.close()
+dbtables.discard_connection_filename( filename, working_filename, verbose = opts.verbose)
+if opts.verbose:
+    print >> sys.stdout, "Finished!"
+sys.exit(0)
+

@@ -1,0 +1,372 @@
+#!/usr/bin/python
+from __future__ import division
+
+__author__ = "Thomas Dent <thomas.dent@ligo.org>"
+__prog__ = "pylal_cbc_ratemc"
+__title__ = "Loudest Event rate interval Monte Carlo simulator"
+
+import sys
+import warnings
+
+from matplotlib import use 
+use("Agg")
+from matplotlib import pyplot as plt
+
+import math
+import numpy
+
+import random
+
+from optparse import *
+
+from pylal import rate
+from pylal import git_version
+from pylal import upper_limit_utils as ululs
+
+usage = """
+Program to investigate the behaviour of the Loudest Event procedure for 
+estimating event rates when splitting up the total analysis time into many 
+smaller times, in the presence of both signal and background events.
+
+For simplicity we consider only one type of signal for which the sensitive
+volume at a fiducial SNR of 8 in each of 2 detectors is the volume of a
+sphere with radius equal to "sensemon-range". 
+Background model is a falling exponential in combined SNR normalized to the
+Big Dog rate at rho_c = 8. 
+"""
+
+def parse_command_line():
+  parser = OptionParser(usage=usage, version=git_version.verbose_msg)
+
+  parser.add_option( "-m", "--n-montecarlo", action="store", type="int", default=10,\
+      help="Number of MC trials to do" )
+
+  parser.add_option( "-n", "--ntimes", action="store", type="int", default=20,\
+      help="Number of times to split total analysis into: must be >1" )
+
+  parser.add_option( "-i", "--far-index", action="store", type="float", default=numpy.log(100),\
+      help="Index of rhoc in exponential model for FAR vs. SNR: default is ln(100)" )
+
+  parser.add_option( "-l", "--lambda-error", action="store", type="float", default=0,\
+      help="Simulated fractional error on Lambda estimation (log-normal distribution)" )
+
+  parser.add_option( "-b", "--lambda-bias", action="store", type="float", default=1,\
+      help="Simulated multiplicative bias on Lambda estimation" )
+
+  parser.add_option( "-s", "--sensemon-range", action="store", type="float", default=180,\
+      help="Angle-averaged range of single detector at SNR=8" )
+
+  parser.add_option( "-R", "--astro-rate", action="store", type="float", default=1.,\
+      help="Astrophysical rate of coalescences in Mpc^-3 Myr^-1" )
+
+  parser.add_option( "-r", "--print-trials", action="store_true", default=False,\
+      help="Print summary UL values to screen for each trial" )
+
+  parser.add_option( "-P", "--posterior-plots", action="store_true", default=False,\
+      help="Output plots of the posterior pdfs for each MC trial. Output-path is required. Don't use this if nMC is large!" )
+
+  parser.add_option( "-v", "--verbose", action="store_true", default=False,\
+      help="Print FAR, Lambda, volume and effective numerator values to screen" )
+
+  parser.add_option( "-p", "--make-plots", action="store_true", default=False,\
+      help="Scatter plots of UL values versus various parameters. Output-path is required." )
+
+  parser.add_option( "-T", "--user-tag", action="store", default="",\
+      help="Tag string for output plots" )
+
+  parser.add_option( "-o", "--output-path", action="store", type="string", default=False,\
+      help="Directory to output plots to (trailing backslash will be added if absent)" )
+
+  (options,args) = parser.parse_args()
+
+  if (options.make_plots or options.posterior_plots) and not options.output_path:
+    raise ValueError, "You must specify an output-path to get plots."
+
+  if options.output_path and not options.output_path.endswith("/"):
+    options.output_path = options.output_path+"/"
+
+  return options, sys.argv[1:]
+
+##################################
+# convenience functions
+
+def FAR_of_rhoC(rhoC, index):
+  # units yr^-1
+  # gives a fit to the S6 BIC lowmass background if 
+  # index is approx log(100)
+  # bounded above by 10^10 and below by 10^-10
+  if not rhoC < 8:
+    return max(2000 * numpy.exp(-(rhoC-8)*index), 10**-10)
+  else:
+    return 10**10
+
+def rhoC_from_FAR(lambdaF, index):
+  # lambdaF is the FAR in 1/yr
+  # formula is a fit to the S6 BIC lowmass background estimation
+  # if index is set to approx log(100)
+  rhoC = 8 + numpy.log(2000/lambdaF)/index
+  return rhoC
+
+def FAN_from_FAP(pF):
+  # pF is the FAP
+  return -1*numpy.log(1-pF)
+
+def FAP_from_FAN(nF):
+  return 1 - numpy.exp(-nF)
+
+def volume_above_rhoC(rhoC, sensemon):
+  radius = sensemon*(8*numpy.sqrt(2)/rhoC)
+  vol = 4*math.pi*radius**3/3
+  return vol
+
+def exact_Lambda(rhoC, FAN, index):
+  # Steve's formula using volume \propto rhoC^-3
+  return (3./index) / (rhoC * FAN)
+
+
+############ MAIN #################
+
+opts, args = parse_command_line()
+
+errorflag =  (opts.lambda_error or (opts.lambda_bias-1))
+# tells us whether we are investigating errors in Lambda estimation
+
+Ttot = 1./2  # half a year
+Ti = Ttot/opts.ntimes
+Rsense = opts.sensemon_range
+trueRate = opts.astro_rate /10**6  # unit conversion, boo
+minrhoC = 8
+volume_8 = volume_above_rhoC(minrhoC, sensemon=Rsense) 
+signalrate_8 = volume_8 * trueRate # signals per year above rhoC = 8
+
+if True or opts.verbose:
+  print "Sensemon range is", Rsense, "Mpc"
+  print "Input astrophysical rate is", trueRate, "per Mpc^3 per yr"
+  print "Expected signal number at rhoC=8 is", Ttot*signalrate_8
+  print "Splitting", Ttot, "years science run into", opts.ntimes, "analysis times"
+  print "Expected loudest event FAR from noise in each time is", 1./Ti, "/yr"
+  print " "
+  print "Expected volume / upper limit from noise loudest event with FAP=0.5 is"
+  pF_exp = 0.5
+  lambdaF_exp = FAN_from_FAP(pF_exp)/Ttot
+  rhoC_exp = rhoC_from_FAR(lambdaF_exp, opts.far_index)
+  vol_exp = volume_above_rhoC(rhoC_exp, sensemon=Rsense)
+  Lambda_exp = exact_Lambda(rhoC_exp, lambdaF_exp*Ttot, opts.far_index)   #(3./opts.far_index)/(rhoC*Ttot*lambdaF)
+  mu = numpy.logspace(-numpy.log10(vol_exp*Ttot)-3, -numpy.log10(vol_exp*Ttot)+3, 10**5)
+  likely_exp = ululs.margLikelihood([vol_exp*Ttot], [Lambda_exp], mu, calerr=0, mcerrs=None)
+  upperLim_exp = ululs.compute_upper_limit(mu, likely_exp, alpha=0.9)
+  print "\t %.0d, %.3e" % (vol_exp, upperLim_exp)
+
+# set up outputs
+singleFAP = []
+singlerhoC = []
+singleVT = []
+peakRate_split = [] # most likely rate
+UL90_split = []     # 90% upper limit
+LL90_split = []     # 90% lower limit
+#UL90_Lerr = []
+peakRate_Lerr = []
+peakRate_single = []
+UL90_single = []
+LL90_single = []
+
+for nmc in range(opts.n_montecarlo):
+
+  Lambdas = []
+  estLambdas = []
+  Volumes = []
+  rhoCs = []
+  FARs = []
+  for i in range(opts.ntimes):
+
+    # generate signal events
+    # divide time into 'days', assume no more than 1 signal per 'day'
+    days_in_time = int(Ti*365.24) + 1
+    time_per_day = Ti/days_in_time
+    eventstats = []
+    for j in range(days_in_time):
+      if random.random() < signalrate_8 * time_per_day:  # probability of signal
+    # above rhoC=8 in one 'day': use an astrophysical distribution over rhoC>8
+        eventrhoC = minrhoC/(1-random.random())**(1./3)
+        eventFAR = FAR_of_rhoC(eventrhoC, index = opts.far_index)
+        eventstats.append([eventrhoC, eventFAR])  
+    if len(eventstats): 
+      minFAR = min([event[1] for event in eventstats])
+    # generate loudest noise events from uniform FAP distribution
+    pF = random.random()
+    lambdaF = FAN_from_FAP(pF)/Ti
+
+    if len(eventstats) and ( minFAR < lambdaF ): 
+      # signal is louder than background in this time
+      rhoC = max([event[0] for event in eventstats])
+    else:
+      # no signal or background is louder
+      minFAR = lambdaF
+      rhoC = rhoC_from_FAR(lambdaF, opts.far_index)
+    FARs.append(minFAR)
+    rhoCs.append(rhoC)
+    vol = volume_above_rhoC(rhoC, sensemon=Rsense)
+    Volumes.append(vol)
+    # use analytic Lambda formula for exponential background
+    exactLambda = exact_Lambda(rhoC, Ti*minFAR, opts.far_index)   #(3./opts.far_index)/(rhoC*Ti*lambdaF)
+    Lambdas.append(exactLambda)
+    # scatter and bias estimated Lambdas
+    estLambda = exactLambda*opts.lambda_bias*random.lognormvariate(0, opts.lambda_error)
+    estLambdas.append(estLambda)
+
+  # sample values of rate to cover the smallest and largest possible values of 1/VT
+  mu = numpy.logspace(-numpy.log10(sum(Volumes)*Ti)-3, -numpy.log10(min(Volumes)*Ti)+3, 10**5)
+  likely = ululs.margLikelihood([Vol*Ti for Vol in Volumes], Lambdas, mu, calerr=0, mcerrs=None)
+  mumode = mu[numpy.argmax(likely)]   # most likely value of mu 
+  likely_Lerr = ululs.margLikelihood([Vol*Ti for Vol in Volumes], estLambdas, mu, calerr=0, mcerrs=None)
+  mumode_Lerr = mu[numpy.argmax(likely_Lerr)]
+  upperLim = ululs.compute_upper_limit(mu, likely, alpha=0.9)
+  lowerLim = ululs.compute_lower_limit(mu, likely, alpha=0.9)
+  estupperLim = ululs.compute_upper_limit(mu, likely_Lerr, alpha=0.9)
+
+  # now do the calculation for the single loudest event with the smallest FAR value
+  exactLambda_single = exact_Lambda(max(rhoCs), Ttot*min(FARs), opts.far_index)   #(3./opts.far_index)/(max(rhoCs)*Ttot*min(FARs))
+  # appropriate sensitive volume is the minimum among the individual times
+  likely_single = ululs.margLikelihood([min(Volumes)*Ttot], [exactLambda_single], mu, calerr=0, mcerrs=None)
+  mumode_single = mu[numpy.argmax(likely_single)]
+  upperLim_single = ululs.compute_upper_limit(mu, likely_single, alpha=0.9)
+  lowerLim_single = ululs.compute_lower_limit(mu, likely_single, alpha=0.9)
+
+  # update trial summary info
+  singleFAP.append(FAP_from_FAN(min(FARs)*Ttot))
+  singlerhoC.append(max(rhoCs))
+  singleVT.append(min(Volumes)*Ttot)
+  peakRate_single.append(mumode_single)
+  UL90_single.append(upperLim_single)
+  LL90_single.append(lowerLim_single)
+  peakRate_split.append(mumode)
+  UL90_split.append(upperLim)
+  LL90_split.append(lowerLim)
+  peakRate_Lerr.append(mumode_Lerr)
+  #UL90_Lerr.append(estupperLim)
+
+  if opts.print_trials or opts.verbose: print " "
+  print "MC trial", nmc+1
+
+  if opts.print_trials or opts.verbose:
+    print "Loudest event FAP", FAP_from_FAN(min(FARs)*Ttot), "/ combined SNR", max(rhoCs)
+    if opts.verbose: print "FARs /yr^-1:", [str(FAR)[0:7] for FAR in FARs]
+    #if opts.verbose: print "Volumes /Mpc^3:", [int(Vol) for Vol in Volumes]
+    if opts.verbose: print "Exact Lambda values:", [str(Lam) for Lam in Lambdas]
+    if opts.verbose and errorflag: print "Lambda values with errors:", [str(eLam)[0:5] for eLam in estLambdas]
+    print r"90%UL from", opts.ntimes, "separate analyses: %.2e" % upperLim
+    print "Most likely rate estimate: %.2e" % mumode
+    print r"90%LL from", opts.ntimes, "separate analyses: %.2e" % lowerLim
+    if errorflag:
+      print r"Factor change in 90%UL due to Lambda errors:", "%.3g" % (estupperLim/upperLim)
+      print "Most likely rate with Lambda errors: %.2e" % mumode_Lerr
+    if opts.verbose: print "Lambda value from one single analysis: %.3f" % exactLambda_single
+    print  r"90%UL from single analysis:", "%.2e" % upperLim_single
+    print  "Most likely rate from single analysis: %.2e" % mumode_single
+    print  r"90%LL from single analysis:", "%.2e" % lowerLim_single
+
+  if opts.posterior_plots:
+    junk, plotlikely = ululs.normalize_pdf(mu, likely)
+    junk, plotsingl = ululs.normalize_pdf(mu, likely_single)
+    plt.semilogx( mu, plotlikely/10**6, 'r-', label=str(opts.ntimes)+" analysis times" )
+    if errorflag:
+      junk, plotestl = ululs.normalize_pdf(mu, likely_Lerr)
+      plt.semilogx( mu, plotestl/10**6, 'm-', label=str(opts.ntimes)+" times with Lambda errors" )
+    plt.semilogx( mu, plotsingl/10**6, 'g-', label="Single analysis" )
+    ylims = plt.ylim()
+    plt.semilogx( trueRate*numpy.array([1,1]), 1.2*numpy.array(ylims), "k--", label="Astrophysical rate" )
+    plt.ylim(ylims)
+    plt.xlim(trueRate/10**3, trueRate*10**4)
+    plt.xlabel("Rate (Mpc^-3 yr^-1)", size="large")
+    plt.ylabel(r"Posterior pdf (Mpc^3 Myr)", size="large")
+    plt.legend(loc="center right")
+    plt.title( "MC trial %2d, loudest event SNR = %3g" % (nmc+1, max(rhoCs)) )
+    plt.savefig(opts.output_path+"_ntimes_"+str(opts.ntimes)+"_"+opts.user_tag+"_posterior_trial_"+str(nmc+1)+".png")
+    plt.close()
+
+#split_logratios = numpy.log(numpy.array(peakRate_split)/numpy.
+if errorflag:
+  Lambdaerr_logratios = numpy.log(numpy.array(peakRate_Lerr)/numpy.array(peakRate_split))
+  print " "
+  print "Geometric mean scaling of most likely rate due to Lambda errors is", numpy.exp(numpy.mean(Lambdaerr_logratios))
+  print "MC standard deviation of fractional error (log of scaling factor) is", numpy.std(Lambdaerr_logratios)
+
+print " "
+print "Median peak posterior rate:", numpy.median(peakRate_split)
+print "Geometric mean peak posterior rate:", numpy.exp(numpy.mean(numpy.log(peakRate_split)))
+print "Std of log peak posterior rate:", numpy.std(numpy.log(peakRate_split))
+
+
+if opts.make_plots:
+  output_prefix = opts.output_path+"ratemc_"+opts.user_tag
+
+  # most likely rate values vs. rhoC of loudest event in single analysis
+  rhoCbins = rate.LogarithmicBins(min(singlerhoC), max(singlerhoC), 15)
+  rhoCindices = numpy.array([rhoCbins[snr] for snr in singlerhoC])
+  snrplot = []
+  meansplot = []
+  stdevplot = []
+  meansplot_singl = []
+  stdevplot_singl = []
+  if errorflag:
+    meansplot_Lerr = []
+    stdevplot_Lerr = []
+  for i in range(len(rhoCbins)):
+    rhoCbin = rhoCbins.centres()[i]
+    ratesinBin = numpy.array(peakRate_split)[rhoCindices == i]
+    ratesinBin_singl = numpy.array(peakRate_single)[rhoCindices == i]
+    if errorflag:
+      ratesinBin_Lerr = numpy.array(peakRate_Lerr)[rhoCindices == i]
+    rhoCbin = rhoCbins.centres()[i]
+    if len(ratesinBin):
+      snrplot.append(rhoCbin)
+      meansplot.append(numpy.mean(ratesinBin))
+      stdevplot.append(numpy.std(ratesinBin))
+      meansplot_singl.append(numpy.mean(ratesinBin_singl))
+      stdevplot_singl.append(numpy.std(ratesinBin_singl))
+    if (errorflag and len(ratesinBin_Lerr)):
+      meansplot_Lerr.append(numpy.mean(ratesinBin_Lerr))
+      stdevplot_Lerr.append(numpy.std(ratesinBin_Lerr))
+
+  plt.errorbar(snrplot, meansplot_singl, yerr=stdevplot_singl, marker="+", linestyle="None", color="b", label="Single analysis")
+  plt.errorbar(snrplot, meansplot, yerr=stdevplot, marker="o", linestyle="None", color="g", label="Split analysis (MC mean/std)")
+  if errorflag:
+    plt.errorbar(snrplot, meansplot_Lerr, yerr=stdevplot_Lerr, marker="x", linestyle="None", color="m", label="Split analysis, Lambda errors")
+  xlims = plt.xlim()
+  plt.plot(numpy.array([8,300]), trueRate*numpy.array([1,1]), "k--", label="Astrophysical rate")
+  plt.loglog()
+  plt.xlim(8,1.4*max(snrplot))
+  plt.ylim(trueRate*0.01, trueRate*10000)
+  plt.xlabel("Loudest combined SNR in single analysis", size="large")
+  plt.ylabel(r"Most likely posterior rate (/Mpc^3 /yr)", size="large")
+  plt.legend(loc = "upper left")
+  plt.title(str(opts.ntimes)+" analysis times")
+  plt.savefig(output_prefix+"_rate_vs_rhoC.png")
+  plt.close()
+
+  # UL*(VT for single analysis) vs. FAP of loudest single event
+  # this is "effective numerator" for the single analysis
+  # and allows us to factor out the dependence of volume on loudest event SNR
+  #plt.plot(singleFAP, numpy.array(UL90_single)*numpy.array(singleVT), "b+", label="Single analysis")
+  #plt.errorbar(fapplot, effnumplot, effnumstdplot, marker="o", linestyle="None", color="g", label="Split analysis (MC mean/std)")
+  #if errorflag:
+  #  plt.errorbar(fapplot, effnumplot_Lerr, effnumstdplot_Lerr, marker="x", linestyle="None", color="m", label="Split analysis w/ Lambda errors")
+  #plt.xlabel("Loudest event FAP", size="large")
+  #plt.ylabel(r"90%UL * VT(single analysis)", size="large") 
+  #plt.legend()
+  #plt.title(str(opts.ntimes)+" analysis times")
+  #plt.savefig(output_prefix+"_effnum_vs_FAP.png")
+  #plt.close()
+
+  # UL values vs. SNR of loudest event in single analysis
+  #plt.plot([rhoC_from_FAR(FAN_from_FAP(pF)/Ttot,opts.far_index) for pF in singleFAP], UL90_single, "b+", label="Single analysis")
+  #plt.errorbar([rhoC_from_FAR(FAN_from_FAP(pF)/Ttot,opts.far_index) for pF in fapplot], meansplot, yerr=stdevplot, marker="o", linestyle="None", color="g", label="Split analysis times (MC mean/stdev)")
+  #plt.xlabel("Loudest event combined SNR", size="large")
+  #plt.ylabel(r"90% upper limit", size="large")
+  #plt.legend(loc="upper left")
+  #plt.title(str(opts.ntimes)+" analysis times")
+  #plt.savefig(output_prefix+"_ul_vs_rhoC.png")
+  #plt.close()
+
+
+exit()

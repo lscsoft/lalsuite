@@ -1,0 +1,310 @@
+/* Example of style sheet to be used within write_ihope_page.ini 
+*  Thomas Cokelaer, David McKechan & Michele Vallisneri 2008
+*/
+
+body {
+padding: 0px;
+background-color: #dddddd;
+font-family: Helvetica, Verdana, sans-serif;
+font-size: 0.8em;
+}
+
+body.openbox {
+background-color: #ff0000;
+}
+
+#wrapper {
+position: relative;
+margin: 10px auto 10px auto;
+width: 1000px;
+}
+
+#ihope {
+position: absolute;
+width: 175px;
+height: 150px;
+top: 0px;
+left: 0px;
+background-color: #990000;
+color: #ffffff;
+text-align: center;
+}
+
+#header {
+position: absolute;
+width: 825px;
+height: 150px;
+right: 0px;
+background-color: #995555;
+color: #ffffff;
+text-align: center;
+}
+
+#menubar {
+position: absolute;
+width: 175px;
+top: 150px;
+background-color: #aeadac;
+}
+
+#menu {
+position: absolute;
+width: 175px;
+background-color: #aeadac;
+}
+
+.menuitem {
+position: relative;
+text-align: left;
+font-size: 10pt;
+font-weight: bold;
+right: 0px;
+width: 170px;
+top: 5px;
+padding-top: 5px;
+padding-bottom: 5px;
+padding-right: 5px;
+padding-left: 5px;
+}
+
+a.menulink { text-decoration: none; }
+
+a.menulink:link { color: #aa0517; }
+a.menulink:visited { color: #aa0517; }
+a.menulink:active { color: #aa0517; }
+
+a.menulink:hover { color: #8eebec; }
+
+#iframecontent {
+position: absolute;
+width: 825px;
+top: 150px;
+left: 175px;
+padding: 0px;
+background-color: #ffffff;
+}
+
+#placeholder {
+text-align: center;
+}
+
+div.encadre{ 
+  width: 100% ;
+  margin: 0 auto ;
+  text-align: left ;
+  border: 2px solid #ab4 ;
+  background: #fff ;
+  background: white ;
+}
+
+div.back{ 
+  float:right;
+  width: 100px ;
+  margin: 0 auto ;
+  text-align: center ;
+  border: 1px solid #111 ;
+  background: #ffffe0 ;
+  top:-50px;
+  position:relative;
+}
+
+input.toggle{ 
+  background-color: #fffae0 ;
+  color: #aa0517 ;
+}
+
+
+/* --------------------------------------------------------- the id contenu */
+div.contenu{
+  padding-left: 15px;
+}
+
+div.contenu h2 {
+  margin-left: 0px;
+  line-height: 30px;
+  font-size: 1.4em;
+  color: #aa0517;
+  border-bottom: 1px solid #aa0517;
+}
+
+div.contenu h3 {
+  margin-left: 0px;
+  padding-left: 5px;
+  border-bottom: 1px solid #aa0517;
+  border-left: 3px solid #aa0517;
+  color: #aa0517;
+}
+
+div.contenu h3:hover {
+  background-color: #aeadac;
+}
+
+div.contenu h4 {
+  margin-left: 25px;
+  padding-left: 15px;
+  border-bottom: 1px solid #aa0517;
+  border-left: 5px solid #aa0517;
+  color: #9bf;
+}
+
+div.contenu h5 {
+  margin-left: 0px;
+  line-height: 30px;
+  font-size: 1.2em;
+  color: #aa0517;
+}
+
+div.contenu p {
+  margin-left: 0px;
+  text-align: justify;
+}
+
+div.contenu a {
+  color: #288;
+}
+
+div.contenu a:hover {
+  color: #aa0517;
+}
+
+div.contenu ol {
+  line-height: 1.5em;
+}
+
+
+/* ------------------------------------------------ figure */
+
+div.figure {
+  text-align: center;
+  width: 763px; /* 800 - 15 - 2*10 - 2*1 */
+  margin: 10px 0px 10px 0px;
+  border: 1px silver solid;
+  margin: 0px;
+  padding: 10px;
+}
+
+div.figure a {
+  text-decoration: none;
+  border-bottom: none;
+}
+
+div.figure p {
+  font-style: italic;
+  font-size: 1.1em;
+  line-height: 1.5em; 
+}
+
+div.figure h2 {
+  margin-left: 15px;
+  padding-left: 5px;
+  border-bottom: 1px solid #aa0517;
+  border-left: 3px solid #aa0517;
+  color: #aa0517;
+}
+
+div.figure img {
+  border: 1px silver solid;
+}
+
+div.figure pre {
+  overflow: auto;
+  width: 
+  background: #eee;
+  border: 1px solid #000;
+  padding: 5px;
+  text-align: left;
+}
+
+/*---------------------- Other css*/
+
+
+/* this allows the content of <pre> tag to be wrapped. */
+pre {
+  white-space: pre-wrap; /* css-3 */
+  white-space: -moz-pre-wrap; /* Mozilla, since 1999 */
+  white-space: -pre-wrap; /* Opera 4-6 */
+  white-space: -o-pre-wrap; /* Opera 7 */
+  word-wrap: break-word; /* Internet Explorer 5.5+ */
+  /* additional style */
+  background: #eee;
+  border: 1px solid #aa0517;
+  padding: 5px;
+  font-size: 1.2em;
+  overflow: auto;
+}
+
+* html pre {
+  width: 500px;
+}
+
+pre span {
+	color: #560;
+}
+
+pre span.comment {
+	color: #b30000;
+}
+
+img.full {
+  width : 98%;
+  border :2px black solid;
+}
+
+img.half {
+  width : 45%;
+  border :2px black solid;
+}
+
+img.third {
+  width : 32%;
+  border :2px black solid;
+}
+
+
+a:hover {
+  color: purple;
+  background-color: inherit;
+  text-decoration: none; 
+}
+
+a:focus {
+  color: navy;
+  background-color: inherit;
+  text-decoration: none; 
+}
+
+a:active {
+  color: red;
+  background-color: inherit;
+  text-decoration: none; 
+}
+
+table {
+  font-size: 1.1em;
+  font-weight: normal;
+  text-align: center;
+  color: #000;
+  background: #eee;
+  padding: 0px 0px 0px 0px;
+  margin: 10px 0px 10px 0px;
+  border-spacing: 0px;
+  border-collapse: collapse;
+  border: 1px solid black;
+}
+
+tr {
+  padding: 0px;
+  margin: 0px;
+}
+
+td {
+  padding: 5px;
+  margin: 0px;
+  border: 1px dotted black;
+}
+
+th {
+  font-weight: bold;
+  padding: 0px 5px 0px 5px;
+  margin: 0px;
+}

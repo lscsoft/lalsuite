@@ -1,0 +1,657 @@
+#!/usr/bin/python
+
+import os
+import sys
+import pickle
+import time
+import subprocess
+import optparse
+import ConfigParser
+import warnings
+warnings.simplefilter('ignore',DeprecationWarning)
+
+import matplotlib
+matplotlib.use('Agg')
+
+from pylal import git_version
+from pylal import pylal_exttrig_llutils as peu
+
+###################################################
+usage = """usage: pylal_exttrig_monitor config_file
+
+to be executed as a cron job with e.g. the following entry:
+
+0  *  *    *    *   /bin/sh /home/dietz/S6/online_tagged/runmonitor.sh >> ~/.llmonitor_tagged.log 2>&1
+
+The script executed is a shall script that sources the relevant settings and executes the monitor code:
+
+
+sourcing the standard settings
+source ${HOME}/.bashrc
+# source the code settings for the s6_exttrig search
+source ${HOME}/S6/lscsoftrc
+# change to the peoper directory
+cd ${HOME}/S6/online_tagged
+# run the monitor
+pylal_exttrig_llmonitor --config-file llmonitor_online.conf 
+"""
+
+plot_hipe_template="""
+../../lalapps_plot_hipe \
+  --plotethinca \
+  --plotthinca \
+  --plotnumtemplates \
+  --plotinjnum \
+  --plotinspmissed \
+  --plotinspinj \
+  --plotsnrchi \
+  --second-stage \
+  --config-file ./lik_plothipe.ini \
+  --log-path %s \
+  --write-script"""
+
+# -----------------------------------------------------
+def start_new_analysis(grb_name, grb_ra, grb_dec, grb_time, grb_duration):
+  """
+  Start a new analysis of a GRB with a separate call.
+  All data are given in strings.
+  @param grb_name: name of the GRB (without 'GRB', e.g. 070201)
+  @param grb_ra: right ascension of the GRB in degree
+  @param grb_de: declination of the GRB in degree
+  @param grb_time: GPS trigger time of the GRB
+  @param grb_duration: Duration of the GRB in s if known, None otherwise
+  @return: a GRB instance
+  """
+
+  # First check if enough time has passed
+  # since the trigger-time
+  gps_now = time.time() - peu.offset_gps_to_linux
+  time_diff = gps_now-int(grb_time)
+  if time_diff < int(cp.get('analysis','min_diff')):
+    # do not analyze this GRB now; postpone to later time
+    peu.info(grb_name, "GRB%s: Analysis postponsed because time difference too small"%grb_name)
+    return None
+ 
+  if opts.check_time_window:
+    if time_diff > opts.check_time_window*86400.:
+      # do not analyze this GRB; only analyze online GRBs within a certain time range
+      peu.info('INFO', "GRB%s: Analysis not started because trigger is before the check-time-window"%grb_name)
+      return None	
+
+  analysis_path = cp.get('paths','main')+'/GRB'+grb_name
+  cvs_path = cp.get('paths','cvs')+'/'
+  seg_file = cp.get('paths','main')+'/plot_segments_grb%s.png' % grb_name
+  log_file = cp.get('paths','main')+'/llmonitor.log'
+  email_adresses = cp.get('notifications','email').replace(',',' ').split()
+
+  # initialize a new DAG
+  peu.info(grb_name, "New GRB found in the parse list: GRB %s at GPS %d"%(grb_name, grb_time))
+  grb = peu.GRB(grb_name = grb_name, grb_ra = grb_ra, \
+                grb_de = grb_dec, grb_time = grb_time)
+
+  # Set the duration if known
+  if grb_duration:
+    grb.duration = grb_duration
+
+  # set the paths to the GRB instance
+  grb.set_paths(input_dir=cp.get('paths','cvs'), \
+                main_dir=cp.get('paths','main'),\
+                ini_file = cp.get('analysis','ini_file'),\
+                inj_file = cp.get('analysis','inj_file'),\
+                config_file = opts.config_file,\
+                condor_log_path = cp.get('paths','condor_log_path'),\
+                log_file=log_file)
+  grb.set_addresses(email_adresses)
+
+  # check if there is enough data for this GRB
+  grb.update_segment_lists(int(cp.get('analysis','min_diff')))
+  grb.get_segment_info(seg_file)
+  grb.calculate_optimality()
+
+  # decide when GRB has data
+  if grb.has_data:
+    
+    # check the veto list for that time, if it overlaps with the on-source
+    grb.update_veto_lists(int(cp.get('analysis','min_diff')))
+    grb.check_veto_onsource()
+
+    # check again; this quantity might have been changed by 
+    # the function check_veto_onsource()
+    if grb.has_data:
+
+      # create the exttrig xml file
+      grb.create_exttrig_xml_file()
+
+      if opts.dag_injections!='only':
+
+        # set up the directory and start the onoff DAG
+        grb.prepare_inspiral_analysis()
+        grb.dag['onoff'].start()
+
+        # set the used tag for the inspiral analysis
+        grb.code['inspiral'] = peu.CodeTagger()
+  
+        # downloading the used veto-definer file
+        grb.get_veto_definer(cp.get('data','veto_definer'))
+
+        # cleaning up
+        grb.cleanup(analysis_path)
+  
+        # multiple notifications
+        subject = "New analysis started for GRB%s " %grb.name
+        email_msg = 'The GRB was detected at GPS %s at position (ra %s / dec %s) [deg]\n' %\
+                     (grb.time, grb.ra, grb.de)
+        email_msg += 'Enough coincident data found from detectors %s\n' % grb.ifolist
+        if grb_duration:
+          email_msg += 'The duration of this GRB is %.1f seconds.\n' % grb_duration
+        else:
+          email_msg += 'The duration is not know at this time.\n'
+        email_msg += 'The DAG is located at UWM in directory %s\n'% analysis_path
+        email_msg += 'The overview-page is located here: <%s/total_summary.html> \n' %\
+                      cp.get('paths','publishing_url')
+        peu.send_mail(subject, email_msg)
+
+      else:
+        peu.info(grb_name, "GRB%s: the onoff analysis will not be started. "%grb.name)
+
+    else:
+      peu.info(grb_name, "GRB%s: the onsource segment is vetoed by a CAT2 veto. "%grb.name)
+
+      # multiple notifications
+      subject = "Not enough data for GRB%s (vetoed)" % grb.name
+      email_msg = "A new GRB (%s) was found, but the analysis has not been started because "\
+                  "not enough data is available\n" % grb.name
+      email_msg += 'The GRB was detected at GPS %s at position (%s/%s)\n' %\
+                   (grb.time, grb.ra, grb.de)
+      peu.send_mail(subject, email_msg)
+
+
+  else:
+    peu.info(grb_name, "GRB%s: insufficient multi-IFO data to construct an "\
+         "off-source segment. This GRB will be marked with NoData."%grb.name)
+
+    # multiple notifications
+    subject = "Not enough data for GRB%s " % grb.name
+    email_msg = "A new GRB (%s) was found, but the analysis has not been started because "\
+                "not enough data is available\n" % grb.name
+    email_msg += 'The GRB was detected at GPS %s at position (%s/%s)\n' %\
+                 (grb.time, grb.ra, grb.de)    
+    peu.send_mail(subject, email_msg)  
+
+  # copy the segment plot and all the other stuff to html
+  if grb.has_data:
+    src_dir = analysis_path
+  else:
+    src_dir = cp.get('paths','main')
+  htmldir = '%s/GRB%s' % (cp.get('paths','publishing_path'), grb.name)
+  cmd = 'mkdir -p %s; cp %s/*grb%s* %s' % \
+          (htmldir, src_dir, grb.name, htmldir)
+  peu.system_call(grb.name, cmd)
+
+  # cleaning up
+  grb.cleanup('AuxFiles/')
+
+  return grb
+
+# -----------------------------------------------------
+def check_start_inj_dag(monitor_list):
+  """
+  Checks each GRB in the list if the injection
+  run can be started for it
+  """
+  # loop over the GRBs
+  for grb in monitor_list:
+    
+    # check only GRBs with data and which have not started now
+    if grb.has_data and grb.dag['inj'].status == 0:
+
+      # check the duration criterion
+      if (opts.dag_injections=='short' and (grb.duration and grb.duration<float(cp.get('analysis','max-duration'))) )\
+	or (opts.dag_injections=='always') \
+	or (opts.dag_injections=='only'):
+
+        # starting the injection DAG
+        grb.prepare_injection_analysis()
+        grb.dag['inj'].start()
+
+        
+# -----------------------------------------------------
+def update_database(opts):
+  """
+  This function checks for any new information
+  in the GCN alert file, provided by Isabel
+  """
+  # update the database files (scp)
+  peu.copy_exttrig_nofications()
+
+  # read the monitor list
+  monitor_list = peu.read_monitor_list()
+
+  # get a list with all GRBs already in the local database
+  grbs_processed = [obj.name for obj in monitor_list]
+  counter = 0
+
+  # open the file
+  for line in file(cp.get('alerts','alert_file')):
+
+    # leave out any empty line or any commented line
+    if len(line)>1 and line[0]!="#":
+
+      # check if we have reached the maximum number of GRBs
+      # to start in this round
+      if opts.check_number is not None:
+        if counter>=opts.check_number:
+          continue
+
+      # extract the useful information
+      words = line.split()
+      grb_name = words[2]
+      grb_duration = float(words[13])
+
+      # skip if this GRB already had been processed
+      if grb_name in grbs_processed:
+        continue
+
+      # check if only a certain GRB should be processed
+      if opts.grb:
+        if grb_name!=opts.grb:
+          continue
+
+      # we found a new GRB!!
+      grb_ra = float(words[3])
+      grb_dec = float(words[4])
+      grb_time = words[11]
+      grb_date = grb_name[:6]
+      grb_gps_time = peu.get_gps_from_asc(grb_date, grb_time)
+      if grb_duration == 0.0:
+        grb_duration = None
+      counter += 1 
+
+      # and prepare the call for a new analysis
+      grb = start_new_analysis(grb_name, grb_ra, grb_dec, grb_gps_time, grb_duration)
+
+      # only add to the list if this GRB has been accepted...
+      if grb:
+
+        # and add the processed GRB to the list of processed GRB's to avoid double analysis
+        monitor_list.append(grb)
+        grbs_processed.append(grb_name)
+
+  # check for updated duration informations for the GRBs
+  peu.update_durations(monitor_list)
+
+  # check if a GRB fullfill condition to start the injection run
+  check_start_inj_dag(monitor_list)
+
+  # and write the list to file
+  peu.write_monitor_list(monitor_list)
+
+
+# -----------------------------------------------------
+def start_ligolw(grb, dag):
+  """
+  Execute the ligolw stage; only needed when doing injections
+  @param grb: the GRB dictionary with all needed information
+  @param dag: the DAG dictionary 
+  """
+
+  # create the name for the ligolw SH script (DAG is not working!)
+  dag_name = dag.get_dagname().replace('uberdag','ligolw')
+  dag.set_dagname(dag_name)
+  ligolw_sh_name = dag.get_shname()
+
+  # and run the command to submit this DAG
+  cmd = 'cd %s; sh %s'  % (grb.analysis_dir, ligolw_sh_name)
+  peu.system_call(grb.name, cmd)
+ 
+  # setting status to 3
+  dag.set_status(3)
+  peu.info(grb.name, '  The LIGOLW stage for GRB %s has been started and ended with %s'%(grb.name, ligolw_sh_name))
+
+
+# ----------------------------------------------------
+def start_post(grb, dag, cp, veto_definer = None):
+  """
+  Execute the postprocessing stage for the onoff DAG
+  @param grb: the GRB dictionary with all information
+  @param dag: the DAG dictionary
+  @param cp: the object of the configuration file
+  """
+
+  # check the veto definer file to see changes
+  grb.update_veto_lists(int(cp.get('analysis','min_diff')),veto_definer)
+
+  # prepare the html output path
+  publishing_path = cp.get('paths','publishing_path')
+  command = 'mkdir -p %s/GRB%s' % (publishing_path, grb.name)
+  peu.system_call(grb.name, command)
+
+  # setup the DAG
+  dagfile = grb.prepare_onoff_analysis()
+  if not dagfile:
+    peu.info(grb.name, '  WARNING: onoff stage could not be started')
+    return
+
+  # prepare the new DAG and start it
+  dag.set_dagname(dagfile)
+  dag.start()
+
+  # set the used tag for the onoff postproc analysis analysis
+  grb.code['onoff'] = peu.CodeTagger()
+
+  # change the stage and status for this GRB
+  peu.info(grb.name, '  The postprocessing stage for this GRB analysis has been started')
+  dag.set_status(3)
+
+# ----------------------------------------------------
+def start_post_inj(grb, dag, cp, veto_definer = None):
+  """
+  Execute the postprocessing stage for the inj DAG
+  @param grb: the GRB dictionary with all information
+  @param dag: the DAG dictionary
+  @param cp: the object of the configuration file
+  """
+
+  # check the veto definer file to see changes
+  grb.update_veto_lists(int(cp.get('analysis','min_diff')),veto_definer)
+
+  # prepare the html output path; might be in onoff DAG, but just a precaution
+  publishing_path = cp.get('paths','publishing_path')
+  command = 'mkdir -p %s/GRB%s' % (publishing_path, grb.name)
+  peu.system_call(grb.name, command)
+
+  # setup the DAG
+  dagfile = grb.prepare_lik_analysis()
+  if not dagfile:
+    peu.info(grb.name, '  WARNING: likelihood stage could not be started')
+    return
+
+  # prepare the new DAG and start it
+  dag.set_dagname(dagfile)
+  dag.start()
+
+  # set the used tag for the onoff postproc analysis analysis
+  grb.code['inj'] = peu.CodeTagger()
+
+  # put the info and set the status
+  peu.info(grb.name, '  The likelihood stage for this GRB has been started')
+  dag.set_status(3)
+
+# -----------------------------------------------------
+def analysis_finalized(grb, dag):
+  """
+  Finzlize the run of this DAG
+  @params grb: GRB dictionary with all needed information
+  @param dag: the dag instance (for either onoff or inj DAG)
+  """
+
+  # create the subject
+  subject = 'The %s analysis of GRB%s has completed' %\
+       (dag.type, grb.name)
+
+  summary_file = 'pylal_exttrig_llsummary_%s-sanity.html' % (grb.name)
+  openbox_file =  'pylal_exttrig_llsummary_%s-OPENBOX.html' % (grb.name)
+  publishing_url = cp.get('paths','publishing_url')
+
+  # open file for detailed output message
+  email_msg = 'This GRB was detected at GPS %s at position (ra %s / dec %s) [deg]\n' %\
+                   (grb.time, grb.ra, grb.de)
+  email_msg += 'Enough coincident data found from detectors %s\n' % grb.ifolist
+  if grb.duration:
+     email_msg += 'The duration of this GRB is %.1f seconds.\n' % grb.duration
+  else:
+     email_msg += 'The duration is not know at this time.\n'
+
+  email_msg += 'The output pages and files are located at %s/GRB%s\n' % (publishing_url, grb.name)
+  email_msg += 'The summary page is %s/GRB%s/%s\n' % (publishing_url, grb.name, summary_file)
+  email_msg += '\nThe S6 overview-page is located here: <%s/total_summary.html> \n' %\
+                    cp.get('paths','publishing_url')
+  peu.send_mail(subject, email_msg, extra_addresses = [cp.get('notifications','extra')])
+
+  # put info to the log file
+  peu.info(grb.name, '  The %s analysis for GRB %s has completed successfully!' % (dag.type, grb.name))
+
+  # set the new status so 'finished'
+  dag.set_status(5)
+
+
+# -----------------------------------------------------
+def check_rerun(grb, dag, cp, force = False, veto_definer = None):
+  """
+  Function to check if this the postprocessing DAG of this GRB
+  should be rerun, and with what special options (force, veto_definer)
+  @param grb: instance of the GRB
+  @param dag: instance of the DAG
+  @param cp: config parser object
+  @param force: Force to rerun the postprocessing even if it is the 
+                same version of pylal (e.g. for testing etc)
+  @param veto_definer: Name of the veto-definer file to be used for the rerun
+  """
+
+  # execute this function only for finished DAGs
+  # or for DAGs with errors
+  if not (dag.get_status()==5 or dag.get_status()<0):
+    return
+
+  # check if there is a tag mismatch
+  tag_current = peu.get_code_tag()
+  type = dag.type
+  try:
+    tag_used = grb.code[type].tag 
+  except:
+    tag_used = None
+
+  # if the used tag is the current one, just leave it
+  if tag_used==tag_current and not force:    
+    return
+
+  if type=='onoff':
+    start_post(grb, dag, cp, veto_definer)
+  elif type=='inj':
+     start_post_inj(grb, dag, cp, veto_definer)
+  else:
+    raise ValueError, "Type '%s' unknown. There might be a serious bug somewhere..."
+
+
+# -----------------------------------------------------
+def parse_args():
+    parser = optparse.OptionParser(version=git_version.verbose_msg)
+
+    # cache input
+    parser.add_option("--config-file", help="Full path and name of the configuration file")
+
+    # GRBs to process
+    parser.add_option("--nocheck", action="store_true", default=False, \
+        help="If this flag is set, the codes does not check for a new GRB.")
+    parser.add_option("--check-number", type="int", default=None, 
+        help="Specifies the number of new GRBs to be processed.")
+    parser.add_option( "--grb", default=None,
+        help="Specifies the name of a GRB to check.")
+    parser.add_option("--check-time-window", type="float", default=None,
+        help="Specifies the time window to be checked from the current date (in days)."\
+             " Any GRB outside this range (i.e. earlier ones) and not analyzed.")
+    parser.add_option("--gps-start-time", type="int", default=None,
+        help="Specifies the start time of GRBs to process. Any GRB outside will not be started/rerun.")
+    parser.add_option("--gps-end-time", type="int", default=None,
+        help="Specifies the end time of GRBs to process. Any GRB outside will not be started/rerun.")
+
+
+
+    # injection related setting
+    parser.add_option( "--dag-injections", default = 'short',\
+        help="Sets what to do with injections: always, short, never, only.")
+    parser.add_option("--injection-config",default=None,\
+        help="Specifies the injection ini file (if required).")
+
+    # rerun flag
+    parser.add_option( "--rerun",default=False, action="store_true",\
+        help="If this flag is set, do a rerun of the postprocessing for onoff and lik stages.")
+    parser.add_option( "--force-rerun",default=False, action="store_true",\
+        help="If this flag is set, it forced a rerun even if the tag agrees (for testing of new code etc.).")
+    parser.add_option( "--update-veto-definer",default=None, action="store",\
+        help="Specifies a particular veto-definer file to be used for the rerun.")
+  
+    # verbosity arguments
+    parser.add_option("--info", action="store_true", default=False, \
+       help="Prints out the extra info messages.")
+
+    options, arguments = parser.parse_args()
+
+    # check that mandatory switches are present
+    for opt in (["config_file"]):
+        if getattr(options, opt) is None:
+            raise ValueError, "Option '--%s' is always required!" % opt.replace("_", "-")
+
+    if options.check_number is not None and options.grb is not None:
+      raise ValueError, "Only option '--check-number' or '--grb' can be specified, not both together!"
+
+    #if options.dag_injections and not options.injection_config:
+    #  raise ValueError, "injection ini-file must be specified with '--injection-config'"\
+    #                    " if the option '--dag-injections' is set!"
+
+    if options.gps_start_time or options.gps_end_time:
+      if not (options.gps_start_time and options.gps_end_time):
+        raise ValueError, "Either do not set any gps times or both of them."
+
+
+    return options, arguments
+
+# -----------------------------------------------------
+# main code
+# -----------------------------------------------------
+
+# parsing the command arguments
+opts, args = parse_args()
+
+# read the config parser and pass it to llutils
+cp = ConfigParser.ConfigParser()
+cp.read(opts.config_file)
+peu.cp = cp
+
+# put an info to the log-file
+peu.info('monitor', 'pylal_exttrig_llmonitor is executed...')
+
+# check the lock file
+pid = peu.check_lock()
+if pid:
+  peu.info('monitor','A different instance of this code is running with PID= %s.'%pid)
+  sys.exit(0)
+peu.set_lock()
+
+# if an veto-definer update is set, construct the full path here
+if opts.update_veto_definer is not None:
+  veto_definer = os.path.dirname(cp.get('data','veto_definer'))+'/'+opts.update_veto_definer
+else:
+  veto_definer = None
+
+#
+# First, update the internal database (llmonitor.pickle)
+#
+update_database(opts)
+
+#
+# Read the internal database
+#
+monitor_list = peu.read_monitor_list()
+
+#
+# main loop over each entry in the monitor list
+#
+for grb in monitor_list:
+
+  # Skip all the rest of this GRB has not enough data
+  if not grb.has_data:
+    continue
+
+  if opts.gps_start_time:
+    if opts.gps_start_time>grb.time or opts.gps_end_time<grb.time:
+      # do not analyze this GRB; its outside the time window
+      peu.info('INFO', "GRB%s: Any analysis suspended because trigger is outside window [%d - %d]."%\
+        (grb.name,opts.gps_start_time, opts.gps_end_time))
+      continue
+
+
+  # loop over the DAGs for this GRB
+  for dag_key, dag in grb.dag.iteritems():
+
+    # check if the postprocessing analyses should be rerun
+    if opts.rerun:
+      if not opts.grb or grb.name==opts.grb:
+        check_rerun(grb, dag, cp, opts.force_rerun, veto_definer)
+
+    # skip this DAG if it is finished (5) or has not started yet
+    if dag.get_status()==0 or dag.get_status()==5:
+      text = "INFO: GRB%s:  DAG %s " % (grb.name, dag.type)
+      if dag.get_status()==5:
+        text += "finished."
+      if dag.get_status()==0:
+        text += "not started."
+      if opts.info:
+        peu.info(grb.name, text)
+      continue
+
+    # check the status on this DAG
+    fstat = dag.check_status(grb)
+    status = dag.get_status()
+
+    if fstat == -2:
+      if opts.info:
+        peu.info(grb.name, "INFO: GRB%s DAG %s is missing: %s"%(grb.name, dag.type, dag.get_dagname()))
+
+
+    if fstat == 0:
+
+      # The DAG is running
+      if opts.info:
+        peu.info(grb.name, 'INFO: GRB%s DAG %s is running in stage %s.'%\
+                 (grb.name, dag_key, dag.get_stage_name()))
+
+    elif fstat == 1:
+      if opts.info:
+        peu.info(grb.name, 'INFO: GRB%s DAG %s has completed stage %s; starting the next stage.'%\
+                 (grb.name, dag_key, dag.get_stage_name()))
+
+      if status==3:
+        # finalize this DAG
+        analysis_finalized(grb, dag)
+
+      elif status==1:
+        # start postproc (for onoff) or first the ligolw DAG before
+        if dag_key == 'onoff':
+          start_post(grb, dag, cp)
+        elif dag_key == 'inj':
+           
+          # postprocessing of the likelihood code can be started only if
+          # the onoff DAG has finished, i.e. the onoff status is at least 2
+          # two steps at once are done here...
+          if grb.dag['onoff'].status>=2:
+            
+            start_ligolw(grb, dag)
+            start_post_inj(grb, dag, cp)
+          else:
+            if opts.info:
+              peu.info(grb.name, 'INFO: GRB%s DAG %s has completed stage %s, and is waiting for the onoff DAG.'%\
+                   (grb.name, dag_key, dag.get_stage_name()))
+        else:
+          raise ValueError, "There is no %s DAG in the analysis..." % dag_key
+    
+    else:
+      # The DAG has (still) an error
+      if opts.info:
+        peu.info(grb.name, 'INFO: GRB%s DAG %s has an ERROR running stage: %s '%\
+                 (grb.name, dag_key, dag.get_stage_name()))
+
+
+# write out the new status
+peu.write_monitor_list(monitor_list)
+
+#
+# Update the summary page for all GRBs
+#
+publish_path = cp.get('paths','publishing_path')
+publish_url = cp.get('paths','publishing_url')
+peu.generate_summary(publish_path, publish_url)
+
+# remove lock file 
+# FIXME: Needs to be removed for any error exit...
+peu.del_lock()

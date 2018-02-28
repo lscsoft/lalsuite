@@ -1,0 +1,54 @@
+<?php
+//convert start time
+        if (!strcmp("time", $_POST['starttimevsgps'])) {
+            if (!strcmp("pm", $_POST['starttype'])){
+                $starthour = (int)$_POST['starthour'] + 12;
+            } else {
+                $starthour = $_POST['starthour'];
+            }
+            $startmonth = $_POST['startmonth'];
+            $startday = $_POST['startday'];
+            $startyear = $_POST['startyear'];
+            $startmin = $_POST['startmin'];
+            $startsec = $_POST['startsec'];
+            $startzone = $_POST['startzone'];
+            $starttime = $startmonth.' '.$startday.', ';
+            $starttime .= $startyear.'&nbsp&nbsp '.$starthour.':';
+            $starttime .= $startmin.':'.$startsec.'&nbsp&nbsp ';
+            $starttime .= $startzone;
+            $startUnixTime = time2unix($startmonth, $startday, $startyear, $starthour, $startmin, $startsec, $startzone);
+            $startgps = unix2gps($startUnixTime);
+        } else {
+            $startgps = $_POST['startgps'];
+            $startUnixTime = gps2unix($startgps);
+            $starttime = gmstrftime("%b %d, %Y&nbsp&nbsp %H:%M:%S", $startUnixTime);
+            $starttime .= '&nbsp&nbsp UTC';
+        }
+#        echo $startgps . "<br/>";
+  // convert stop time
+        if (!strcmp("time", $_POST['stoptimevsgps'])){
+            if (!strcmp("pm", $_POST['stoptype'])){
+                $stophour = (int)$_POST['stophour'] + 12;
+            } else {
+                $stophour = $_POST['stophour'];
+            }
+            $stopmonth = $_POST['stopmonth'];
+            $stopday = $_POST['stopday'];
+            $stopyear = $_POST['stopyear'];
+            $stopmin = $_POST['stopmin'];
+            $stopsec = $_POST['stopsec'];
+            $stopzone = $_POST['stopzone'];
+            $stoptime = $stopmonth.' '.$stopday.', ';
+            $stoptime .= $stopyear.'&nbsp&nbsp '.$stophour.':';
+            $stoptime .= $stopmin.':'.$stopsec.'&nbsp&nbsp ';
+            $stoptime .= $stopzone;
+            $stopUnixTime = time2unix($stopmonth, $stopday, $stopyear, $stophour, $stopmin, $stopsec, $stopzone);
+            $stopgps = unix2gps($stopUnixTime);
+        } else {
+            $stopgps = $_POST['stopgps'];
+            $stopUnixTime = gps2unix($stopgps);
+            $stoptime = gmstrftime("%b %d, %Y&nbsp&nbsp %H:%M:%S", $stopUnixTime);
+            $stoptime .= '&nbsp&nbsp UTC';
+        }
+ #       echo $stopgps . "<br/>";
+?>

@@ -1,0 +1,174 @@
+#!/usr/bin/env python
+#
+#
+# Copyright (C) 2014  Alex Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""
+Takes one or more XML files containing segment lists and creates a new
+segment list that represents the intersection.
+"""
+import copy
+from optparse import OptionParser
+from glue.ligolw import ligolw, lsctables, utils
+from glue.segments import segmentlist
+from glue.ligolw.utils import process, segments, ligolw_add
+from glue import git_version
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(ContentHandler)
+
+def parse_command_line():
+    """
+    Parse the command line, return an options object
+    """
+
+    parser = OptionParser(
+        version = "Name: %%prog\n%s" % git_version.verbose_msg,
+        description = "Reads one or more files containing veto segments and "
+                      "generates a file with the cumulative segments."        
+	)
+    
+    parser.add_option("--output", help = "The output name of XML file "
+                                         "containing the cumulative segments.")
+    parser.add_option("--segment-name", help = "The name of the cumulative  "
+                                               "segments.")
+    options, args = parser.parse_args()
+    
+    for opt in ['segment-name', 'output']:
+        opt = opt.replace('-', '_')
+        if not opt in vars(options):
+            raise parser.error(' %s is required' % opt)
+    return options, args
+    
+if __name__ == '__main__':
+    opt, arg = parse_command_line()
+
+    # start a new document
+    doc = ligolw.Document()
+    doc.appendChild(ligolw.LIGO_LW())
+    lwdoc = doc.childNodes[0]
+      
+    # add the original documents together and pull out the combined process
+    # table #FIXME do I really need to propagate this?
+    try:
+        tmp_doc = ligolw.Document()
+        ligolw_add.ligolw_add(tmp_doc, arg)
+        proc_table = lsctables.ProcessTable.get_table(tmp_doc)
+        param_table = lsctables.ProcessParamsTable.get_table(tmp_doc)
+        lwdoc.appendChild(proc_table)
+        lwdoc.appendChild(param_table)
+        veto_table = lsctables.VetoDefTable.get_table(tmp_doc)
+        lwdoc.appendChild(veto_table)
+    except:
+        # This is a *serious* error, should fail here, not skip
+        print('No process table found in input files, ignoring.....')
+
+    # Register ourselves
+    proc_id = process.register_to_xmldoc(doc, 'ligolw_combine_segments', 
+                               opt.__dict__, version=git_version.id).process_id
+
+    # Read in the given xml files containing segments
+    ifos = set()
+    valid = None
+    segment_list = segmentlist([])
+    for filename in arg:
+        indoc = utils.load_filename(filename, 
+                             contenthandler=ContentHandler)
+        segs = segments.LigolwSegments(indoc)
+        for seglist in segs:
+            # valid should be the intersection of the valid portion
+            # in all files
+            if valid is None:
+                valid = seglist.valid
+            else:
+                valid = valid and seglist.valid
+            
+            # the union of the valid segments in all files
+            segment_list += seglist.active   
+            ifos.update(seglist.instruments)
+            segment_list, seglist.active
+
+    # Create the segment definer table
+    seg_def = lsctables.New(lsctables.SegmentDefTable)
+    def_row = lsctables.SegmentDef()
+    def_row.ifos = lsctables.ifos_from_instrument_set(ifos)
+    def_row.name = opt.segment_name
+    def_row.process_id = proc_id
+    def_row.segment_def_id = seg_def.get_next_id()
+    def_row.version = 1
+    seg_def.append(def_row)
+    lwdoc.appendChild(seg_def)
+
+    # Create the segment summary table
+    seg_sum = lsctables.New(lsctables.SegmentSumTable)
+    sum_row = lsctables.SegmentSum()
+    sum_row.start_time = valid[0][0]
+    sum_row.start_time_ns = 0
+    sum_row.end_time = valid[0][1]
+    sum_row.end_time_ns = 0
+    sum_row.process_id = proc_id
+    sum_row.segment_def_id = def_row.segment_def_id
+    sum_row.segment_sum_id = seg_sum.get_next_id()
+    seg_sum.append(sum_row)
+    lwdoc.appendChild(seg_sum)
+    
+    # These are filled with default (meaningless) values
+    def_row.comment = ''
+    sum_row.comment = ''
+    def_row.creator_db = 0
+    sum_row.creator_db = 0
+    def_row.insertion_time = 0
+    sum_row.segment_def_cdb = 0
+    
+    # Create the segment table
+    seg_table = lsctables.New(lsctables.SegmentTable)
+    base_row = lsctables.Segment()
+    base_row.creator_db = 0
+    base_row.segment_def_cdb = 0 
+    base_row.process_id = proc_id  
+    base_row.segment_def_id = def_row.segment_def_id
+    for seg in segment_list:
+        row = copy.copy(base_row)
+        row.set(seg)
+        row.segment_id = seg_table.get_next_id()
+        seg_table.append(row)
+    lwdoc.appendChild(seg_table)      
+
+    # FIXME: Segment utils currently writes tables in non-standard format.
+    #        until this is fixed, we need some additional hacking to make files
+    #        compatible.
+
+    # Need to add values to process table
+    values = {}
+    values["process"] = {}
+    values["process"]["domain"] = None
+    values["process"]["jobid"] = None
+    values["process"]["is_online"] = False
+
+    processTab = lsctables.table.get_table(doc, lsctables.ProcessTable.tableName)
+    for column_name in values["process"]:
+        try:
+            column = processTab.appendColumn(column_name)
+        except ValueError:
+            # Column already present
+            continue
+        # Set values
+        for i in range(len(processTab)):
+            column[i] = values["process"][column_name]
+    
+    utils.write_filename(doc, opt.output, gz=opt.output.endswith('gz'))
+

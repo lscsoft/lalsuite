@@ -1,0 +1,140 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt"><LIGO_LW>
+   <Comment>metadata</Comment>
+   <Table Name="processgroup:process:table">
+      <Column Name="processgroup:process:program" Type="lstring"/>
+      <Column Name="processgroup:process:version" Type="lstring"/>
+      <Column Name="processgroup:process:cvs_repository" Type="lstring"/>
+      <Column Name="processgroup:process:cvs_entry_time" Type="int_4s"/>
+      <Column Name="processgroup:process:comment" Type="lstring"/>
+      <Column Name="processgroup:process:is_online" Type="int_4s"/>
+      <Column Name="processgroup:process:node" Type="lstring"/>
+      <Column Name="processgroup:process:username" Type="lstring"/>
+      <Column Name="processgroup:process:unix_procid" Type="int_4s"/>
+      <Column Name="processgroup:process:start_time" Type="int_4s"/>
+      <Column Name="processgroup:process:end_time" Type="int_4s"/>
+      <Column Name="processgroup:process:jobid" Type="int_4s"/>
+      <Column Name="processgroup:process:domain" Type="lstring"/>
+      <Column Name="processgroup:process:ifos" Type="lstring"/>
+      <Column Name="processgroup:process:process_id" Type="ilwd:char"/>
+      <Stream Name="processgroup:process:table" Type="Local" Delimiter=",">
+         "thinca","1.36.2.1","/usr/local/cvs/lscsoft/lalapps/src/inspiral/thinca.c\,v",833067074," ",0,"node42","inspiralbns",1,833196235,833196235,0,"lalapps","H1H2","process:process_id:0"
+      </Stream>
+   </Table>
+   <Table Name="process_paramsgroup:process_params:table">
+      <Column Name="process_paramsgroup:process_params:program" Type="lstring"/>
+      <Column Name="process_paramsgroup:process_params:process_id" Type="ilwd:char"/>
+      <Column Name="process_paramsgroup:process_params:param" Type="lstring"/>
+      <Column Name="process_paramsgroup:process_params:type" Type="lstring"/>
+      <Column Name="process_paramsgroup:process_params:value" Type="lstring"/>
+      <Stream Name="process_paramsgroup:process_params:table" Type="Local" Delimiter=",">
+         "thinca","process:process_id:0","--ifo-tag","string","H1H2",
+         "thinca","process:process_id:0","--h2-eta-accuracy","float","0.1",
+         "thinca","process:process_id:0","--h2-mchirp-accuracy","float","0.01",
+         "thinca","process:process_id:0","--data-type","string","all_data",
+         "thinca","process:process_id:0","--l1-eta-accuracy","float","0.1",
+         "thinca","process:process_id:0","--maximization-interval","int","10",
+         "thinca","process:process_id:0","--gps-start-time","int","822746565",
+         "thinca","process:process_id:0","--h1-mchirp-accuracy","float","0.01",
+         "thinca","process:process_id:0","--parameter-test","string","mchirp_and_eta",
+         "thinca","process:process_id:0","--gps-end-time","int","822755699",
+         "thinca","process:process_id:0","--h1-eta-accuracy","float","0.1",
+         "thinca","process:process_id:0","--l1-time-accuracy","float","5",
+         "thinca","process:process_id:0","--h2-time-accuracy","float","5",
+         "thinca","process:process_id:0","--l1-mchirp-accuracy","float","0.01",
+         "thinca","process:process_id:0","--h1-time-accuracy","float","5",
+         "thinca","process:process_id:0","--h1-triggers","string"," ",
+         "thinca","process:process_id:0","--h2-triggers","string"," ",
+         "thinca","process:process_id:0","--multi-ifo-coinc","string"," "
+      </Stream>
+   </Table>
+   <Table Name="search_summarygroup:search_summary:table">
+      <Column Name="search_summarygroup:search_summary:process_id" Type="ilwd:char"/>
+      <Column Name="search_summarygroup:search_summary:shared_object" Type="lstring"/>
+      <Column Name="search_summarygroup:search_summary:lalwrapper_cvs_tag" Type="lstring"/>
+      <Column Name="search_summarygroup:search_summary:lal_cvs_tag" Type="lstring"/>
+      <Column Name="search_summarygroup:search_summary:comment" Type="lstring"/>
+      <Column Name="search_summarygroup:search_summary:ifos" Type="lstring"/>
+      <Column Name="search_summarygroup:search_summary:in_start_time" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:in_start_time_ns" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:in_end_time" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:in_end_time_ns" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:out_start_time" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:out_start_time_ns" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:out_end_time" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:out_end_time_ns" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:nevents" Type="int_4s"/>
+      <Column Name="search_summarygroup:search_summary:nnodes" Type="int_4s"/>
+      <Stream Name="search_summarygroup:search_summary:table" Type="Local" Delimiter=",">
+         "process:process_id:0","standalone"," ","s5-iulgroup-20060221 "," ","H1H2",822746565,0,822755699,0,822746565,0,822755699,0,1,1
+      </Stream>
+   </Table>
+   <Table Name="search_summvarsgroup:search_summvars:table">
+      <Column Name="search_summvarsgroup:search_summvars:process_id" Type="ilwd:char"/>
+      <Column Name="search_summvarsgroup:search_summvars:name" Type="lstring"/>
+      <Column Name="search_summvarsgroup:search_summvars:string" Type="lstring"/>
+      <Column Name="search_summvarsgroup:search_summvars:value" Type="real_8"/>
+      <Stream Name="search_summvarsgroup:search_summvars:table" Type="Local" Delimiter=",">
+         "process:process_id:0","input_file","H1-INSPIRAL_H1H2-822745403-2048.xml",0.0000000000000000e+00,
+         "process:process_id:0","input_file","H1-INSPIRAL_H1H2-822747323-2048.xml",0.0000000000000000e+00,
+         "process:process_id:0","input_file","H1-INSPIRAL_H1H2-822749243-2048.xml",0.0000000000000000e+00,
+         "process:process_id:0","input_file","H1-INSPIRAL_H1H2-822751163-2048.xml",0.0000000000000000e+00,
+         "process:process_id:0","input_file","H1-INSPIRAL_H1H2-822753083-2048.xml",0.0000000000000000e+00,
+         "process:process_id:0","input_file","H1-INSPIRAL_H1H2-822753715-2048.xml",0.0000000000000000e+00,
+         "process:process_id:0","input_file","H2-INSPIRAL_H1H2-822744706-2048.xml",0.0000000000000000e+00,
+         "process:process_id:0","input_file","H2-INSPIRAL_H1H2-822746626-2048.xml",0.0000000000000000e+00,
+         "process:process_id:0","input_file","H2-INSPIRAL_H1H2-822748546-2048.xml",0.0000000000000000e+00,
+         "process:process_id:0","input_file","H2-INSPIRAL_H1H2-822750466-2048.xml",0.0000000000000000e+00,
+         "process:process_id:0","input_file","H2-INSPIRAL_H1H2-822752386-2048.xml",0.0000000000000000e+00,
+         "process:process_id:0","input_file","H2-INSPIRAL_H1H2-822754306-2048.xml",0.0000000000000000e+00
+      </Stream>
+   </Table>
+   <Table Name="sngl_inspiralgroup:sngl_inspiral:table">
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:process_id" Type="ilwd:char"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:ifo" Type="lstring"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:search" Type="lstring"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:channel" Type="lstring"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:end_time" Type="int_4s"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:end_time_ns" Type="int_4s"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:end_time_gmst" Type="real_8"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:impulse_time" Type="int_4s"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:impulse_time_ns" Type="int_4s"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:template_duration" Type="real_8"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:event_duration" Type="real_8"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:amplitude" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:eff_distance" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:coa_phase" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:mass1" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:mass2" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:mchirp" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:mtotal" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:eta" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:tau0" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:tau2" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:tau3" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:tau4" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:tau5" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:ttotal" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:psi0" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:psi3" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:alpha" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:alpha1" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:alpha2" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:alpha3" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:alpha4" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:alpha5" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:alpha6" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:beta" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:f_final" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:snr" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:chisq" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:chisq_dof" Type="int_4s"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:sigmasq" Type="real_8"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:rsqveto_duration" Type="real_4"/>
+      <Column Name="sngl_inspiralgroup:sngl_inspiral:event_id" Type="ilwd:char"/>
+      <Stream Name="sngl_inspiralgroup:sngl_inspiral:table" Type="Local" Delimiter=",">
+         "process:process_id:0","H1","FindChirpSPtwoPN","LSC-DARM_ERR",600000000,645019531,0.2142877459832363e+01,600000000,645019531,1.8965988263175944e+01,2.4414062500000000e-04,0.000000e+00,3.631803e+01,-2.665723e+00,1.842579e+00,1.468554e+00,1.430192e+00,0.000000e+00,2.468100e-01,1.904426e+01,1.184032e+00,7.847475e-01,4.561680e-02,0.000000e+00,1.896599e+01,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,1.327997e+03,4.403185e+00,4.151011e+01,16,5.4080001792831492e+04,0.000000e+00,"sngl_inspiral:event_id:822746565000000001",
+         "process:process_id:0","H2","FindChirpSPtwoPN","LSC-DARM_ERR",600000000,654296875,0.2142880048528312e+01,600000000,654296875,1.9213940352529658e+01,0.0000000000000000e+00,0.000000e+00,1.863126e+01,-2.902296e+00,2.949659e+00,9.475656e-01,1.411489e+00,0.000000e+00,1.840222e-01,1.946668e+01,1.268594e+00,9.441404e-01,5.222691e-02,0.000000e+00,1.921394e+01,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,1.128284e+03,4.042784e+00,3.905618e+01,16,1.2675313683411609e+04,0.000000e+00,"sngl_inspiral:event_id:822746565000000001"
+      </Stream>
+   </Table>
+</LIGO_LW>

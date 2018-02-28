@@ -1,0 +1,298 @@
+#!/usr/bin/python
+
+__prog__ = "lalapps_plotnumtriggers"
+
+import sys
+import glob
+import gzip
+from optparse import *
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue import lal
+from pylal import git_version
+
+##############################################################################
+
+##############################################################################
+# function to read in a list of files
+def isSearchSumm(name, attrs):
+  return lsctables.IsTableProperties(lsctables.SearchSummaryTable, name, attrs)
+
+def isProcess(name, attrs):
+  return lsctables.IsTableProperties(lsctables.ProcessTable, name, attrs)
+
+def writeProcessParams(page, command_line):
+  """
+  function to write out the process params that the code was called with
+  """
+  text = "Figures produced with "+ __prog__+", "+ git_version.verbose_msg +", invoked with arguments:\n\n"+ __prog__
+
+  for arg in command_line:
+    text += " " +  arg
+  page.pre( text )
+  return page
+
+def readFiles(fList):
+  """
+  read in the SimInspiralTables from a list of files
+  @param fList:       list of input files
+  """
+  output = {}
+  if not fList:
+    return output
+  count = 0
+  for thisFile in fList:
+    fileobj = file(thisFile)
+    count = count+1
+    if opts.verbose is True :
+      print '...reading ' +  str(count)+'/'+str(len(fList)) + " " + thisFile
+    if thisFile.endswith(".gz"):
+      fileobj = gzip.GzipFile(mode = "rb", fileobj=fileobj)
+    else:
+      fileobj = thisFile
+ 
+    doc = ligolw.Document()
+    # read in ifo from process, as not stored in SearchSumm
+    ligolw.make_parser(ligolw.PartialLIGOLWContentHandler(doc, \
+	isProcess)).parse(fileobj)
+    ifo = doc.childNodes[0].getColumnByName('ifos')[0]
+    if thisFile.endswith(".gz"):
+       fileobj.seek(0)
+    else: pass
+  
+    # read in SearchSummary
+    doc = ligolw.Document()
+    ligolw.make_parser(ligolw.PartialLIGOLWContentHandler(doc, \
+        isSearchSumm)).parse(fileobj)
+    searchSummTable = doc.childNodes[0]
+    if output.has_key(ifo):
+      output[ifo].extend(searchSummTable)
+    else:
+      output[ifo] = searchSummTable
+  return output
+
+
+#################################################################
+# help message
+usage = """\
+Usage: plotnumtriggers [options]
+
+  SUMMARY: Makes a plot of the number of triggers against time.  The code
+           will read in INSPIRAL  files, for as many ifo's as you like.  
+	   It will then plot the number of triggers vs time for each ifo.
+
+"""
+
+##############################################################################
+parser = OptionParser(usage=usage, version=git_version.verbose_msg)
+
+
+ 
+parser.add_option("-t","--glob-inspiral",action="store",type="string",\
+    default=None,metavar="INSPIRAL",\
+    help="glob for files containing the string INSPIRAL")
+
+parser.add_option("-T","--glob-inspiral-second",action="store",type="string",\
+    default=None,metavar="INSPIRALSECOND",\
+    help="glob for files containing the string INSPIRAL")
+    
+parser.add_option("-c","--cache-file",action="store",type="string",\
+    default=None,metavar="INPUT",\
+    help="supply a bunch of INSPIRAL files")
+
+parser.add_option("-s","--show-plot",action="store_true",default=False,\
+    help="display the figures on the terminal" )
+
+parser.add_option("-f","--figure-name",action="store",type="string",\
+    default="", metavar=" FNAME",\
+    help="generate png figures with name FNAME.png" )
+
+parser.add_option("-p","--print-numbers",action="store_true",default=False,\
+    help="prints each number on the screen" )
+
+parser.add_option("-v","--verbose",action="store_true",default=False,\
+    help="prints verbose information" )
+
+parser.add_option("-L", "--log-y", action="store_true", default=False,
+    help="set the y axis to have a log scale")
+
+parser.add_option("-W","--output-html",action="store_true",\
+    default=False, metavar="HTML",\
+    help="generate a html page containing the plots")
+
+parser.add_option("-C","--output-cache",action="store_true",\
+    default=False, metavar="CACHE",\
+    help="generate a cache file with the figure names")
+
+parser.add_option("-P","--output-path",action="store",\
+    type="string",default="",  metavar="PATH",\
+    help="path where the figures would be stored")
+
+parser.add_option("-S","--gps-start-time",action="store",\
+    type="int",  metavar="GPSSTART",\
+    help="gps start time (for naming figure and output files")
+
+parser.add_option("-E","--gps-end-time",action="store",\
+    type="int",  metavar=" GPSEND",\
+    help="gps end time (for naming figure and output files")
+
+
+
+
+command_line = sys.argv[1:]
+
+(opts,args) = parser.parse_args()
+
+# check at least one inspiral file was specified
+if opts.glob_inspiral is None and opts.cache_file is None and opts.inspiral_second is None:
+  print >>sys.stderr, "Must specify a GLOB of files to read or a LAL cache"
+  print >>sys.stderr, "Enter '"+__prog__+" --help' for usage"
+  sys.exit(1)
+
+if not opts.show_plot:
+  import matplotlib
+  matplotlib.use('Agg')
+from pylab import *
+from pylal import viz
+
+
+#identify the inspiral files
+if opts.glob_inspiral is not None:
+  inspiralFiles =  glob.glob(opts.glob_inspiral)
+  if not inspiralFiles:
+    print >>sys.stderr, "The glob for " + opts.inspiral_glob + \
+        " returned no files"
+    sys.exit(1)
+else:
+  inspiralFiles = None
+
+# identify the trig inspiral files
+if opts.glob_inspiral_second is not None:
+  inspiralSecondFiles = glob.glob(opts.glob_inspiral_second)
+  if not inspiralSecondFiles:
+    print >>sys.stderr, "The glob for " + opts.glob_inspiral_second + \
+        " returned no files"
+    sys.exit(1)
+else:
+  inspiralSecondFiles = None
+
+
+if opts.cache_file:
+  trig = lal.Cache().fromfile(open(opts.cache_file))
+  if not trig:
+    print >>sys.stderr, "Must supply a list of input files"
+    sys.exit(1)
+  else:
+    inspiralSecondfiles = trig.sieve(description = "INSPIRAL_").checkfilesexist()[0].pfnlist()
+    inspiralFiles = trig.sieve(description = "INSPIRAL-").checkfilesexist()[0].pfnlist()
+
+#######################################################################
+# Initialise
+# Initialise the png output filenames
+if not opts.figure_name:
+  prefix = __prog__ + "_"
+else:
+  prefix = __prog__ + "_" + opts.figure_name + "_"
+if opts.gps_start_time and opts.gps_end_time :
+  suffix = "-"+str(opts.gps_start_time)+"-"+str(opts.gps_end_time-opts.gps_start_time)
+else:
+  suffix = "-unspecified-gpstime"
+
+# Initialise the html output file
+if opts.output_html is True:
+  try:
+    import markup
+    from markup import oneliner as e
+  except:
+    raise ImportError("Require markup.py to generate the html page")
+
+  html_filename = prefix[0:len(prefix)-1] + suffix +".html"
+  html_file = file(html_filename, "w")
+  page = markup.page()
+  title = "Number of Inspiral triggers (first and second stage)"
+  page.init(title=title)
+
+# set output_cache properly: make sure there is a slash
+if len(opts.output_path)>1 :
+  opts.output_path = opts.output_path +'/'
+
+output_name = []
+
+
+#######################################################################
+# Read in the search summaries from the inspiral summary 
+
+print 'Reading files...' + str(len(inspiralFiles))
+inspiralSumm = readFiles(inspiralFiles)
+print 'Reading files...' + str(len(inspiralSecondFiles))
+inspiralSecondSumm  = readFiles(inspiralSecondFiles)
+print 'done'
+colors = {'G1':'k','H1':'r','H2':'b','L1':'g'}
+
+for ifo in inspiralSumm.keys():
+  numTriggers = inspiralSumm[ifo].getColumnByName('nevents').asarray()
+  startTime = viz.timeindays(inspiralSumm[ifo].getColumnByName('out_start_time').asarray())
+  style = colors[ifo] + 'x'
+  
+  if opts.log_y is True:
+    semilogy(startTime, numTriggers, style, label=ifo+' inspiral',\
+        markersize=12, markeredgewidth=1)
+  else:
+    plot(startTime, numTriggers, style, label=ifo+' inspiral',\
+        markersize=12, markeredgewidth=1)
+
+  if opts.print_numbers:
+    print "Number of triggers for :" +ifo+ str(startTime) +" " + str(numTemplates)
+
+
+for ifo in inspiralSecondSumm.keys():
+  numTrigs = inspiralSecondSumm[ifo].getColumnByName('nevents').asarray()
+  startTime = viz.timeindays(inspiralSecondSumm[ifo].getColumnByName('out_start_time').asarray())
+  style = colors[ifo] + 'o'
+  if opts.log_y is True:
+    semilogy(startTime, numTrigs, style, label=ifo+' inspiral second',\
+        markersize=12, markeredgewidth=1)
+  else:
+    plot(startTime, numTrigs, style, label=ifo+' inspiral second',\
+        markersize=12, markeredgewidth=1)
+
+  if opts.print_numbers:
+    print "Number of trigges (second stage) for :" +ifo+ str(startTime) +" " + str(numTrigs)
+
+xlabel('Days after start of run', size='x-large')
+ylabel('Number of triggers', size='x-large')
+legend()
+grid("on")
+
+# Save image
+fname = prefix[0:len(prefix)-1]   + suffix + ".png"
+savefig(fname)
+
+if opts.output_html is True:
+  text ="Variation Inspiral trigger rates"
+  page.a(e.img(src = [opts.output_path +fname], width = 400, \
+      alt=text, border="2"), title=text, href=[opts.output_path+fname])
+  if opts.output_cache:
+    output_name.append(fname)
+
+
+# Initialise the html output if needed
+page = writeProcessParams(page, command_line)
+html_file.write(page(False))
+html_file.close()
+
+if opts.output_cache is True:
+  output_cache_name = prefix[0:len(prefix)-1] + suffix +'.cache'
+  this = open(output_cache_name, 'w')
+  if opts.output_html is True:
+    this.write(html_filename + '\n')
+  for fname in output_name:
+    this.write(fname + '\n')
+  this.close()
+
+
+
+
+if opts.show_plot:
+  show()  

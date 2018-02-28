@@ -1,0 +1,292 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2009 Cristina Valeria Torres
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+This python script is responisble for taking multi-media files and 
+converting them into an XML based form for using a SQL or XML 
+database environment.  Our goal for now is to encode the 'png' files 
+created by the search.  Encoding file in and out of the XML makes 
+moving plot content simpler.
+"""
+
+__author__  = "Cristina Valeria Torres <cristina.torres@ligo.org>"
+__prog__    = 'followupCheckParamCons.py'
+
+
+import optparse
+import sys
+import os
+import fnmatch
+import mimetypes
+from pylal import git_version
+from glue.ligolw import lsctables,ligolw,utils
+sys.path.append('@PYTHONLIBDIR@')
+
+###########################################################################3
+## Local methods required to accomplish media insertion and extraction
+###########################################################################3
+def recurseTreeFnmatch(parentPath=".",myRegex=None,traverseTree=False):
+    """
+    Given a base path to start recursing and regex it selects all the
+    files which match the regex.
+    """
+    matchingFiles=list()
+    dirTreeGuide= os.walk(os.path.normpath(parentPath))
+    if traverseTree:
+        for root,dir,files in dirTreeGuide:
+            for myFile in files:
+                normFilename=os.path.normpath(os.path.join(root,myFile))
+                if myShellEx != None:
+                    if fnmatch.fnmatch(normFilename,myShellEx):
+                        matchingFiles.append(normFilename)
+                else:
+                    matchingFiles.append(normFilename)
+    else:
+        level01=dirTreeGuide.next()
+        #Select only the files in '.'
+        for myFile in level01[2]:
+            normFilename=os.path.normpath(parentPath+'/'+myFile)
+            if fnmatch.fnmatch(normFilename,myShellEx):
+                matchingFiles.append(normFilename)
+    return matchingFiles
+
+def listFilesInXML(myTable=None):
+    """
+    """
+    if not myTable: return
+    fileList=list()
+    for row in myTable:
+        fileList.append(row.filename)
+    return fileList
+
+def createTree(parentPath=".",fileList=None):
+    if fileList == None: return
+    pathList=list()
+    for Z in fileList:
+        myPath=os.path.split(Z)[0]
+        if os.path.isdir(myPath):
+            pathList.append(myPath)
+    for path in pathList:
+        os.makedirs(path)
+
+def insertMedia(xmlTable=None,filename=None):
+    """
+    """
+    if xmlTable == None: return
+    if filename == None: filename="UnknownFile.unknownfile"
+    #Create a ROW object to append to the xmldoc (table)
+    myRow = xmlTable.RowType()
+    myRow.origin=\
+        myRow.process_id=\
+        myRow.submitter=\
+        myRow.frameset_group=\
+        myRow.segment_def_id=\
+        myRow.start_time=\
+        myRow.start_time_ns=\
+        myRow.end_time=\
+        myRow.end_time_ns=\
+        myRow.mimetype=\
+        myRow.comment=\
+        myRow.summ_mime_id=\
+        myRow.filename=\
+        myRow.channel=\
+        myRow.descrip=\
+        None
+    myType,myEncoding=mimetypes.guess_type(filename)
+    myRow.submitter=os.getenv('USER')
+    myRow.mimetype=myType
+    myRow.filename=filename
+    try:
+        myRow.mimedata=buffer(file(filename).read())
+        myRow.mimedata_length=len(myRow.mimedata)
+    except:
+        sys.stderr.write("Error processing file %s Skipping!\n"%(filename))
+        myRow.mimedata=None
+        myRow.mimedata_length=None
+    xmlTable.append(myRow)
+
+def extractMedia(xmlTable=None,filename=None,extractTree=False):
+    """
+    """
+    if xmlTable == None: return
+    if filename == None: filename="UnknownFile.unknownfile"
+    for row in xmlTable:
+        if ((filename==row.filename) or \
+                (filename == os.path.split(row.filename)[1])):
+            if extractTree:
+                myPath=os.path.split(filename)[0]
+                if myPath!="":
+                    os.makedirs(myPath)
+                file(filename,'w').write(row.mimedata)
+            else:
+                file(os.path.split(filename)[1],'w').write(row.mimedata)
+
+
+###########################################################################3
+## Main part of code
+###########################################################################3
+usage = """ usage: %prog [options] """
+
+parser = optparse.OptionParser(usage, version=git_version.verbose_msg)
+#All possible options for performing imports and export of media files
+parser.add_option("-f","--xml-file",action="store",type="string",\
+                      metavar="XMLFILE",default=None,\
+                      help="Set the XML file name for which you will \
+be getting files from the XML containter.")
+parser.add_option("-i","--insert-media",action="store",type="string",\
+                      metavar="MEDIAFILES",default=None,\
+                      help="List the filename that you want to insert \
+into the XML file.  You can use a input file which is a list of files, \
+a single file or a directory to traverse to insert files.")
+parser.add_option("-x","--extract-media",action="store",type="string",\
+                       metavar="EXTRACT",default=None,\
+                       help="Specify this flag extract the media \
+records to files that are inside this XML file.  You can either \
+specify a filename (with or without path), or file which is a list of \
+files to extract or a * to mean extract everything.  All extractions \
+will be to the local directory unless you specify --tree flag.")
+parser.add_option("-t","--tree",action="store_true",\
+                      default=False,help="Use this option if you want \
+to recreate the directory hiearchy of all the media files in this XML \
+object, otherwise we extract all files to the CWD.  In the case of \
+insertion this causes the program to traverse the lower directories to \
+add all media files found that match your REGEX.  The directory \
+hiearchy will be relative to the current working directory.")
+parser.add_option("-l","--ls",action="store_true",\
+                      default=False,help="Use this option to get a \
+ascii listing of all the media files saved inside of this XML \
+object.")
+#
+# Add delete option
+#
+(opts,args) = parser.parse_args()
+
+xmlDoc=None
+#Check to see if XML doc already exists?
+xmlFile=os.path.normpath(os.path.expanduser(opts.xml_file))
+if os.path.isfile(xmlFile):
+    #Open the xml doc object and select the table to append to
+    xmlDoc=utils.load_filename(xmlFile,gz = (xmlFile or "stdin").endswith(".gz"))
+    #Select the SummMimeTable
+    xmlTable=lsctables.SummMimeTable.get_table(xmlDoc)
+else:
+    #Create an XML Table object since xmlFile does not exist
+    xmlTable=lsctables.New(lsctables.SummMimeTable)
+#
+# Add content, extract content, or list content as requested by user
+#
+# Add content
+#
+if (opts.insert_media):
+    opts.insert_media=os.path.expanduser(opts.insert_media)
+    #Is argument a single media file, regex matching files or a list
+    #of matching files?
+    myShellEx=None
+    myFile=None
+    myFilelist=None
+    if os.path.isfile(opts.insert_media):
+        #If file is mime type text assume it is list of files
+        insertMediaMimeType=mimetypes.guess_type(os.path.normpath(opts.insert_media))
+        if insertMediaMimeType == mimetypes.guess_type("file.txt"):
+            myFilelist=os.path.normpath(opts.insert_media)
+        else:
+            myFile=os.path.normpath(opts.insert_media)
+        
+        if myFile:
+            #Insert the media file into the xmlTable
+            sys.stdout.write(\
+                "Inserting a single media file %s of type %s into %s\n"%\
+                    (myFile,insertMediaMimeType[0],xmlFile))
+            insertMedia(xmlTable,myFile)
+        if myFilelist:
+            #Loop over the list of files and insert each one
+            sys.stdout.write(\
+                "Inserting a media file(s) from %s into %s\n"%\
+                    (myFilelist,xmlFile)\
+                )
+            for myFile in file(myFilelist).readlines():
+                insertMedia(xmlTable,myFile.strip("\n"))
+
+    else:
+        #Assume argument is part of regex
+        myPath,myShellEx=os.path.split(os.path.normpath(opts.insert_media))
+        if myPath == "":
+            myPath = "./"
+        sys.stdout.write(\
+            "Inserting media files matching SHELLEXP %s in path %s into %s(Directory Recursion:%s)\n"%\
+                (myShellEx,myPath,xmlFile,opts.tree))
+        for myFile in recurseTreeFnmatch(myPath,myShellEx,opts.tree):
+            insertMedia(xmlTable,myFile)
+#
+# Extract content
+#
+if (opts.extract_media):
+    opts.extract_media=os.path.expanduser(opts.extract_media)
+    #Is argument a single media file, regex matching files or a list
+    #of matching files?
+    myShellEx=None
+    myFile=None
+    myFilelist=None
+    if os.path.isfile(opts.extract_media):
+        #If file is mime type text assume it is list of files
+        insertMediaMimeType=mimetypes.guess_type(os.path.normpath(opts.extract_media))
+        if insertMediaMimeType == mimetypes.guess_type("file.txt"):
+            myFilelist=os.path.normpath(opts.extract_media)
+        else:
+            myFile=os.path.normpath(opts.extract_media)
+        
+        if myFile:
+            #Extract the single media file from the XML file
+            sys.stdout.write(\
+                "Extracting a single media file %s of type %s from %s\n"%\
+                    (myFile,insertMediaMimeType[0],xmlFile))
+            extractMedia(xmlTable,myFile,opts.tree)
+
+        if myFilelist:
+            #Loop over the list of files and extract each one
+            sys.stdout.write(\
+                "Extracting a media file(s) from %s from %s\n"%\
+                    (myFilelist,xmlFile)\
+                )
+            for myFile in file(myFilelist).readlines():
+                extractMedia(xmlTable,myFile.strip("\n"),opts.tree)
+
+    else:
+        #Assume argument is part of regex
+        myShellEx=os.path.normpath(opts.extract_media)
+        sys.stdout.write(\
+            "Extracting media files matching SHELLEXP %s from %s\n"%\
+                (myShellEx,xmlFile))
+        for myFile in listFilesInXML(xmlTable):
+            if fnmatch.fnmatch(myFile,myShellEx):
+                extractMedia(xmlTable,myFile,opts.tree)
+#
+# List the file contents of the XML file to STDOUT
+#
+if opts.ls:
+    for myFile in listFilesInXML(xmlTable):
+        sys.stdout.write(myFile+"\n")
+#
+# Save the modified XML table back to the disk
+#
+xmlFP=open(xmlFile,'w')
+xmlTable.write(xmlFP)
+xmlFP.close()
+#
+# Exit program
+#

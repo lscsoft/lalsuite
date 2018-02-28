@@ -1,0 +1,251 @@
+#!/usr/bin/env python
+#
+#
+# Copyright (C) 2009  Larne Pekowsky
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+"""
+Generates a 'quick and dirty' glitch page
+
+"""
+
+
+from optparse import OptionParser
+
+try:
+    import sqlite3
+except ImportError:
+    # pre 2.5.x
+    from pysqlite2 import dbapi2 as sqlite3
+
+import sys
+import os
+import glob
+import tempfile
+
+import glue.segments
+
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue.ligolw.utils import ligolw_sqlite
+from glue.ligolw import dbtables
+
+from glue.segmentdb import segmentdb_utils
+
+from glue import gpstime
+
+import glob
+import time
+import datetime
+import StringIO
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+    """
+    Parse the command line, return an options object
+    """
+
+    parser = OptionParser(
+        version = "%prog CVS $Header$",
+        usage   = "%prog filename [options] trigger_files",
+        description = "Generates a quick 'n' dirty injection summary page from an XML file with a \n" +
+                      "sim_inpiral table and one or more trigger files with sngl_inspirals"
+	)
+    
+    parser.add_option("-i", "--injection_file", metavar = "injection_file", help = "XML file with sim_inspiral table.")
+    parser.add_option("-s", "--segment",        metavar = "segment_url",    help = "URL pointing to segment DB.  If empty DQ flags will not be retrieved.")
+
+
+    options, filenames = parser.parse_args()
+
+    if not options.injection_file:
+        print >>sys.stderr, "Injection filename must be specified"
+        sys.exit(1)
+
+    return options, filenames
+
+
+
+
+#
+# =============================================================================
+#
+#                                 Support utilities
+#
+# =============================================================================
+#
+def list_results(ifo, time, segment_url, filenames):
+    """Generate HTML for each MBTA trigger in the given ifo 'close to' the given time """
+    dq_flags = ''
+    flags    = {}
+
+    # Get associated DQ flags
+    if segment_url:
+        pipe = os.popen('ligolw_dq_query --segment=%s --include-segments %s --in-segments-only --report %d' % (segment_url, ifo, time))
+    else:
+        pipe = []
+
+    for line in pipe:
+        flag, beforet, timet, aftert = filter(lambda x: x != '', line.split())
+    
+        ifo, name, version = flag.split(':')
+        flags[name] = (beforet, timet, aftert)
+
+    if not pipe == []:
+        pipe.close()
+    
+    ifo_status = ''
+
+    # Handle the ones that sould be displayed in bols without
+    # DMT- 
+    for flag_name in ['Light','Up','Calibrated','Science','Injection']:
+        flag = 'DMT-' + flag_name.upper()
+
+        if flag in flags:
+            ifo_status += flag_name + ','
+            del flags[flag]
+
+    if len(ifo_status) > 0:
+        ifo_status = ifo_status[:-1]
+
+
+    flags[ifo_status] = True
+
+
+    for name, value in flags.items():
+        if not name.startswith('DMT'):
+            dq_flags += '<b>%s</b><br>' % name
+        else:
+            dq_flags += '%s %s %s<br>' % (name, value[0], value[2])
+
+    # Read the triggers.  The dirname should come from the command line
+    # dir_name = '/cluster/inspiral/E13/mbta/' + ifo
+
+    # Look for +/- 10 seconds around the end time
+    # xml_files  = segmentdb_utils.get_all_files_in_range(dir_name, end_time - 10, end_time + 10)
+    xml_files = []
+    
+    for fname in filenames:
+        tm, dur = fname.split('-')[-2:]
+        tm      = int(tm)
+        dur     = int(dur[:-4])
+
+        if end_time >= tm and end_time <= (tm + dur):
+            xml_files.append(fname)
+
+    # Create a temporary sqlite DB
+    handle2, temp_db2    = tempfile.mkstemp(suffix='.sqlite')
+    os.close(handle2)
+
+    target2     = dbtables.get_connection_filename(temp_db2, None, True, False)
+    connection2 = ligolw_sqlite.setup(target2)
+
+    ligolw_sqlite.insert_from_urls(connection2, xml_files)
+
+    # If there were no triggers then the necessary tables won't exist, and subsequent
+    # queries will fail.  Check for that first.
+    howmany = connection2.cursor().execute("""SELECT count(*) FROM sqlite_master WHERE name='sngl_inspiral'""").fetchone()[0]
+
+    if howmany:
+        howmany = connection2.cursor().execute("""SELECT count(*) FROM sngl_inspiral WHERE end_time BETWEEN %d AND %d AND ifo = '%s' """ % (end_time, end_time + 5, ifo)).fetchone()[0]
+
+    if howmany:
+        # Tables exist, get the triggers
+        rows2 = connection2.cursor().execute("""SELECT DISTINCT end_time, end_time_ns, mass1, mass2, snr, eff_distance FROM sngl_inspiral
+        WHERE end_time BETWEEN %d AND %d AND ifo = '%s' ORDER BY snr DESC """ % (end_time, end_time + 5, ifo))
+
+        for m_end_time, m_end_time_ns, mass1, mass2, snr, eff_distance in rows2:
+            print '  <tr valign="top" bgcolor="ddffdd">'
+            print '    <td>%s</td><td>%d</td><td>%d</td><td>%.2f</td><td>%.2f</td><td>%.2f</td><td>%.2f</td><td>%s</td>' % (ifo, end_time, end_time_ns, mass1, mass2, eff_distance, snr, dq_flags)
+            print '  </tr>'
+    else:
+        print '  <tr valign="top" bgcolor="ddffdd"><td>%s</td><td colspan="6">Not found</td><td>%s</td></tr>' % (ifo, dq_flags)
+
+    # clean up after ourselves
+    connection2.close()
+    os.remove(temp_db2)
+
+
+
+
+#
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+#
+
+if __name__ == '__main__':
+    options, filenames = parse_command_line()
+
+    # Turn off requirement that event_ids be unique
+    del lsctables.SnglInspiralTable.constraints 
+
+    # Create a temporary DB to hold the injections
+    handle, temp_db    = tempfile.mkstemp(suffix='.sqlite')
+    os.close(handle)
+    
+    target     = dbtables.get_connection_filename(temp_db, None, True, False)
+    connection = ligolw_sqlite.setup(target)
+    
+    # Load the injections (this should come from the command line and ideally
+    # should be able to retrieve from a URL)
+    ligolw_sqlite.insert_from_urls(connection, [options.injection_file])
+    
+    # Find the injections
+    rows = connection.cursor().execute("""SELECT sim_inspiral.h_end_time, h_end_time_ns, mass1, mass2, eff_dist_h
+    FROM sim_inspiral""")
+    
+    for end_time, end_time_ns, mass1, mass2, eff_dist_h in rows:
+        print '<table>'
+        print '  <tr bgcolor="#9999ff"><th>ifo</th><th>end_time</th><th>end_time_ns</th><th>mass 1</th><th>mass 2</th><th>eff_distance_h</th><th>snr</th><th>DQ flags</th>'
+        print '  <tr valign="top" bgcolor="ffdddd">'
+        print '    <td></td><td>%d</td><td>%d</td><td>%.2f</td><td>%.2f</td><td>%.2f</td><td></td><td></td>' % (end_time, end_time_ns, mass1, mass2, eff_dist_h) 
+        print '  </tr>'
+    
+        # Generate rows for triggers in H1 and H2
+        list_results('H1', end_time, options.segment, filenames)
+        list_results('H2', end_time, options.segment, filenames)
+    
+        print '</table>'
+        print '<p>'
+        sys.stdout.flush()
+    
+    # Clean up
+    connection.close()
+    os.remove(temp_db)
+     

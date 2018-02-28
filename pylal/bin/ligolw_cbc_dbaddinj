@@ -1,0 +1,245 @@
+#!/usr/bin/env python
+
+# ============================================================================
+#
+#                               Preamble
+#
+# ============================================================================
+
+from optparse import OptionParser
+try:
+    import sqlite3
+except ImportError:
+    # pre 2.5.x
+    from pysqlite2 import dbapi2 as sqlite3
+import sys
+import os
+import urllib2
+
+from glue.ligolw.utils import ligolw_sqlite
+from glue.ligolw import ligolw
+from glue.ligolw import dbtables
+from glue.ligolw.utils import process
+from glue import git_version
+
+from pylal import ligolw_sqlutils as sqlutils
+
+__prog__ = "ligolw_cbc_dbaddinj"
+__author__ = "Collin Capano <cdcapano@physics.syr.edu>"
+
+description = \
+"Adds injection file to a database and sets any simulation rows in the " + \
+"experiment_summary table who's sim_proc_id is None."
+
+# ============================================================================
+#
+#                               Set Options
+#
+# ============================================================================
+
+def parse_command_line():
+    """
+    Parser function dedicated
+    """
+    parser = OptionParser(
+        version = git_version.verbose_msg,
+        usage   = "%prog [options]",
+        description = description
+        )
+    # following are related to file input and output naming
+    parser.add_option( "-d", "--database", action = "store", type = "string", default = None,
+        help =
+            "Database to update. Must already exist and contain an experiment_summary table."
+            )
+    parser.add_option( "-I", "--injection-file", action = "store", type = "string", default = None,
+        help =
+            "Injection file to add and to point experiments to."
+            )
+    parser.add_option( "-s", "--sim-table", action = "store", type = "string", default = None,
+        help =
+            "Simulation table to get the injections' process ids from. If multiple injection tables exist " +
+            "in the injection-file, just pick one. Examples are sim_inspiral, sim_ringdown."
+            )
+    parser.add_option( "-S", "--sim-tag", action = "store", type = "string", default = None,
+        help =
+            "If given set the userTag entry of the inspinj process params table to this value"
+            )
+    parser.add_option( "-t", "--tmp-space", action = "store", type = "string", default = None,
+        metavar = "PATH",
+        help =
+            "Location of local disk on which to do work. This is optional; " +
+            "it is only used to enhance performance in a networked " +
+            "environment. "
+            )
+
+    parser.add_option( "-v", "--verbose", action = "store_true", default = False,
+        help =
+            "Print progress information"
+           )
+    parser.add_option( "-D", "--debug", action = "store_true", default = False,
+        help =
+            "Print SQLite queries used and the approximate time taken to run each one." )
+
+    (options, args) = parser.parse_args()
+    # check for required options and for self-consistency
+    if not options.database:
+        raise ValueError, "No database specified."
+    if options.sim_table is None:
+        raise ValueError, "sim-table is a required argument"
+
+    return options, sys.argv[1:]
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+
+dbtables.use_in(ContentHandler)
+
+
+
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+
+opts, args = parse_command_line()
+
+# get input database filename
+filename = opts.database
+if not os.path.isfile( filename ):
+    raise ValueError, "The input database, %s, cannot be found." % filename
+
+# get Injection file
+if not ( os.path.isfile( opts.injection_file ) or urllib2.urlopen( opts.injection_file ) ):
+    raise ValueError, "The injection file, %s, cannot be found." % opts.injection_file
+
+# get sim table
+sim_table = sqlutils.validate_option( opts.sim_table )
+
+# Setup working databases and connections
+if opts.verbose: 
+    print >> sys.stdout, "Creating a database connection..."
+working_filename = dbtables.get_connection_filename( 
+    filename, tmp_path = opts.tmp_space, verbose = opts.verbose )
+connection = sqlite3.connect( working_filename )
+if opts.tmp_space:
+    dbtables.set_temp_store_directory(connection, opts.tmp_space, verbose = opts.verbose)
+ContentHandler.connection = connection
+
+# Add program to process and process params table
+
+# FIXME: remove the following two lines once boolean type
+# has been properly handled
+from glue.ligolw import types as ligolwtypes
+ligolwtypes.FromPyType[type(True)] = ligolwtypes.FromPyType[type(8)]
+
+xmldoc = dbtables.get_xml(connection)
+proc_id = process.register_to_xmldoc(xmldoc, 'ligolw_cbc_dbaddinj', opts.__dict__, version = git_version.id)
+
+#
+#   Add the injection file to the database
+#
+if opts.verbose:
+    print >> sys.stderr, "Adding the injection file to the database..."
+
+ligolw_sqlite.insert_from_urls([opts.injection_file], ContentHandler, preserve_ids = False, verbose = opts.verbose)
+
+#
+#   Update any simulation rows in the experiment_summary table who's sim_proc_id is None
+#
+if opts.verbose:
+    print >> sys.stderr, "Updating the experiment_summary table..."
+
+# the process_id of the added injection file should be whatever the
+# largest process_id is in the sim_inspiral table
+sqlquery = ''.join(["""
+    UPDATE
+        experiment_summary
+    SET
+        sim_proc_id = (
+            SELECT DISTINCT 
+                process_id 
+            FROM 
+                """, sim_table, """ 
+            ORDER BY 
+                process_id 
+            DESC LIMIT 1 ) 
+    WHERE 
+        sim_proc_id IS NULL
+    """])
+if opts.debug:
+    import time
+    print >> sys.stderr, sqlquery
+    print >> sys.stderr, time.localtime()[3], time.localtime()[4], time.localtime()[5]
+
+connection.cursor().execute( sqlquery )
+
+if opts.debug:
+    print >> sys.stderr, time.localtime()[3], time.localtime()[4], time.localtime()[5]
+
+if opts.sim_tag:
+  # Set the --user-tag entry of the process params inspinj table to this value
+
+  # Need to get the process ID
+  sqlquery = '''SELECT
+                    sim_proc_id
+                FROM
+                    experiment_summary
+                WHERE
+                    datatype == "simulation"
+                ORDER BY
+                    sim_proc_id
+                DESC LIMIT 1'''
+  c = connection.cursor()
+  c.execute( sqlquery )
+  tmpQuery = connection.cursor().execute( sqlquery )
+  procId = tmpQuery.fetchall()[0]
+
+  # First need to check if a user-tag is already set
+  sqlquery = '''SELECT
+                    value
+                FROM
+                    process_params
+                WHERE
+                    program == "inspinj" AND
+                    process_id == ? AND
+                    (param == "--userTag" OR param == "-userTag")'''
+  tmpQuery = connection.cursor().execute(sqlquery, (procId))
+  orig_tag = tmpQuery.fetchall()
+
+  if orig_tag:
+    # If it exists update it
+    sqlquery = '''UPDATE
+                      process_params
+                  SET
+                      value = ?
+                  WHERE
+                      program == "inspinj" AND
+                      process_id == ? AND
+                      (param == "--userTag" OR param == "-userTag")'''
+    connection.cursor().execute(sqlquery, (opts.sim_tag,procId[0]))
+  else:
+    sqlquery = '''INSERT INTO
+                      process_params
+                      (program, process_id, param, type, value)
+                  VALUES (?, ?, ?, ?, ?)'''
+    connection.cursor().execute(sqlquery, ("inspinj", procId[0], "--userTag",\
+                                           "string", opts.sim_tag))
+
+
+#
+#       Save and Exit
+#
+
+connection.commit()
+connection.close()
+
+# write output database
+dbtables.put_connection_filename(filename, working_filename, verbose = opts.verbose)
+
+if opts.verbose: 
+    print >> sys.stdout, "Finished!"
+
+# set process end time
+process.set_process_end_time(proc_id)
+sys.exit(0)

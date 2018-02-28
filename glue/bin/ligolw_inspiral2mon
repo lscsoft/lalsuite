@@ -1,0 +1,148 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2006,2013  Kipp Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+from optparse import OptionParser
+
+
+from glue import git_version
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import process as ligolw_process
+from glue.ligolw.utils import search_summary as ligolw_search_summary
+from glue.ligolw.utils import segments as ligolw_segments
+
+
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+	pass
+lsctables.use_in(LIGOLWContentHandler)
+
+
+__author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+
+parser = OptionParser(
+	version = "Name: %%prog\n%s" % git_version.verbose_msg
+)
+parser.add_option("-c", "--comment", metavar = "text", default = "", help = "Set process comment.")
+parser.add_option("-i", "--input", metavar = "filename", help = "Read from filename (default = stdin).")
+parser.add_option("-o", "--output", metavar = "filename", help = "Write to filename (default = stdout).")
+parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+options, args = parser.parse_args()
+del parser, args
+
+
+#
+# =============================================================================
+#
+#                                    Input
+#
+# =============================================================================
+#
+
+
+indoc = ligolw_utils.load_filename(options.input, contenthandler = LIGOLWContentHandler, verbose = options.verbose)
+
+
+#
+# =============================================================================
+#
+#                              Output Preparation
+#
+# =============================================================================
+#
+
+
+doc = ligolw.Document()
+doc.appendChild(ligolw.LIGO_LW())
+process = ligolw_process.register_to_xmldoc(doc, "ligolw_inspiral2mon", options.__dict__, version = __version, cvs_repository = "lscsoft", cvs_entry_time = __date__, comment = options.comment)
+ligolwmontable = lsctables.New(lsctables.LIGOLWMonTable, columns = ["process_id", "time", "time_ns", "amplitude", "confidence", "frequency", "event_id"])
+doc.childNodes[0].appendChild(ligolwmontable)
+
+
+#
+# =============================================================================
+#
+#                             Build Segment Table
+#
+# =============================================================================
+#
+
+
+seglists = lsctables.SearchSummaryTable.get_table(indoc).get_out_segmentlistdict(lsctables.ProcessTable.get_table(indoc).get_ids_by_program("inspiral")).coalesce()
+segs = ligolw_segments.LigolwSegments(doc)
+segs.insert_from_segmentlistdict(seglists, "inspiral", comment = options.comment)
+segs.optimize()
+segs.finalize(process)
+ligolw_search_summary.append_search_summary(doc, process, comment = options.comment, inseg = seglists.extent_all(), outseg = seglists.extent_all())
+
+
+#
+# =============================================================================
+#
+#                     Convert sngl_inspiral To ligolw_mon
+#
+# =============================================================================
+#
+
+
+for inspiral in lsctables.SnglInspiralTable.get_table(indoc):
+	ligolwmon = lsctables.LIGOLWMon()
+	ligolwmon.process_id = process.process_id
+	ligolwmon.event_id = ligolwmontable.get_next_id()
+	ligolwmon.set_time(inspiral.get_end())
+	ligolwmon.amplitude = inspiral.snr
+	ligolwmon.confidence = inspiral.chisq
+	ligolwmon.frequency = inspiral.f_final
+	ligolwmontable.append(ligolwmon)
+
+
+#
+# =============================================================================
+#
+#                                    Output
+#
+# =============================================================================
+#
+
+
+ligolw_process.set_process_end_time(process)
+
+
+ligolw_utils.write_filename(doc, options.output, gz = (options.output or "stdout").endswith(".gz"), verbose = options.verbose)

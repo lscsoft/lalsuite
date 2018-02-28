@@ -1,0 +1,216 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2006  Kipp Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+"""
+Print things from LIGO LW XML files.  Inspired by lwtprint from LIGOTools.
+"""
+
+
+from optparse import OptionParser
+
+
+from glue import git_version
+from glue import segmentsUtils
+from glue.lal import CacheEntry
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import array
+from glue.ligolw import utils
+from glue import git_version
+
+__author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+	parser = OptionParser(
+		version = "Name: %%prog\n%s" % git_version.verbose_msg,
+		usage = "%prog [options] [url ...]",
+		description = "Prints the contents of table elements from one or more LIGO Light Weight XML files to stdout in delimited ASCII format.  In addition to regular files, the program can read from many common URLs such as http:// and ftp://.  Gzipped files will be automatically detected and decompressed.  If no filenames or URLs are given, then input is read from stdin."
+	)
+	parser.add_option("-i", "--input-cache", metavar = "name", action = "append", default = [], help = "Get URLs from the LAL cache file.  Can be provided multiple times to name several caches to iterate over.")
+	parser.add_option("-c", "--column", metavar = "name", action = "append", help = "Print only the contents of the given column.  Can be provided multiple times to print multiple columns.  The default is to print all columns from each table.")
+	parser.add_option("-d", "--delimiter", metavar = "string", default = ",", help = "Delimit output with the given string.  The default is \",\".")
+	parser.add_option("-r", "--rows", metavar = "rowspec", default = ":", help = "Print rows in the given range(s).  The format is first:last[,first:last,...].  Rows are numbered from 0.  A single first:last pair requests rows in the range [first, last).  If the first or last value of a pair is omited it means 0 or infinity respectively.  The default is \":\", or to print all rows.")
+	parser.add_option("-t", "--table", metavar = "name", action = "append", default = [], help = "Print rows from this table.  Can be provided multiple times to print rows from multiple tables.  The default is to print the contents of all tables.")
+	parser.add_option("-a", "--array", metavar = "name", action = "append", default = [], help = "Print the contents of this array.  Can be provided multiple times to print the elements from multiple arrays.  The default is to print the contents of all arrays.")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+	parser.add_option("--constrain-lsc-tables", action = "store_true", help = "Impose additional constraints on official LSC tables.  Provides format validation and allows RAM requirements to be reduced.")
+	options, urls = parser.parse_args()
+
+	# Ensure the delimiter is unicode compliant as well
+	options.delimiter = unicode(options.delimiter)
+
+	# add urls from cache files
+	urls += [CacheEntry(line).url for cache in options.input_cache for line in file(cache)]
+
+	# strip table names
+	if options.table:
+		options.table = map(table.StripTableName, options.table)
+
+	if options.array:
+		options.array = map(array.Array.ArrayName, options.array)
+
+	# turn row requests into a segment list
+	try:
+		options.rows = segmentsUtils.from_range_strings(options.rows.split(","))
+	except ValueError as e:
+		raise ValueError("invalid rowspec: %s" % str(e))
+
+	# success
+	return options, (urls or [None])
+
+
+#
+# =============================================================================
+#
+#                                    Input
+#
+# =============================================================================
+#
+
+
+#
+# Enable column interning
+#
+
+
+table.RowBuilder = table.InterningRowBuilder
+
+
+#
+# =============================================================================
+#
+#                         How to find things to print
+#
+# =============================================================================
+#
+
+
+#
+# How to print a table
+#
+
+
+def print_table(table_elem, columns, rows):
+	if not columns:
+		columns = table_elem.columnnames
+	for n, row in enumerate(table_elem):
+		if n in rows:
+			print options.delimiter.join(map(lambda key: unicode(getattr(row, key)), columns))
+
+
+#
+# How to print an array
+#
+
+
+def print_array(array_elem):
+	a = array_elem.array
+	if len(a.shape) == 1:
+		# a one-dimensional array
+		for row in a:
+			print repr(row)
+	elif len(a.shape) == 2:
+		for row in a.transpose()[:]:
+			print options.delimiter.join(map(repr, row))
+	else:
+		# a three or more dimensional array
+		raise ValueError("array has more than 2 dimensions")
+
+
+#
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+#
+
+
+options, urls = parse_command_line()
+
+
+#
+# Enable appropriate level of table parsing.  If specific table names have
+# been asked for, don't parse other tables so as to improve parsing speed
+# and reduce memory requirements.  Because we do this, we can assume later
+# that we should print all the tables that can be found in the document.
+#
+
+
+if not (options.table or options.array):
+	# parse the entire document
+	ContentHandler = ligolw.LIGOLWContentHandler
+else:
+	class ContentHandler(ligolw.PartialLIGOLWContentHandler):
+		def __init__(self, xmldoc):
+			super(ContentHandler, self).__init__(xmldoc, lambda name, attrs: (name in (ligolw.Table.tagName, ligolw.Array.tagName)) and (table.StripTableName(attrs["Name"]) in options.table or array.Array.ArrayName(attrs["Name"]) in options.array))
+
+array.use_in(ContentHandler)
+
+if options.constrain_lsc_tables:
+	lsctables.use_in(ContentHandler)
+else:
+	table.use_in(ContentHandler)
+
+
+#
+# If specific columns have been requested, don't load any others.
+#
+
+
+if options.column is not None:
+	table.Table.loadcolumns = set(options.column)
+
+
+#
+# Loop over input URLs
+#
+
+
+for url in urls:
+	xmldoc = utils.load_url(url, verbose = options.verbose, contenthandler = ContentHandler)
+	table.InterningRowBuilder.strings.clear()
+	for elem in ligolw.WalkChildren(xmldoc):
+		if elem.tagName == ligolw.Table.tagName:
+			print_table(elem, options.column, options.rows)
+		elif elem.tagName == ligolw.Array.tagName:
+			print_array(elem)
+	xmldoc.unlink()

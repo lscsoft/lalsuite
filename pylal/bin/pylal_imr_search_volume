@@ -1,0 +1,124 @@
+#!/usr/bin/python
+import scipy
+from scipy import interpolate
+import numpy
+try:
+	import sqlite3
+except ImportError:
+	# pre 2.5.x
+	from pysqlite2 import dbapi2 as sqlite3
+
+sqlite3.enable_callback_tracebacks(True)
+
+import sys
+import glob
+import copy
+from optparse import OptionParser
+import traceback
+
+from glue import segments
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import dbtables
+from glue.ligolw import utils
+from glue.ligolw import table
+from glue import segmentsUtils
+from glue.ligolw.utils import process
+from glue.ligolw.utils import segments as ligolw_segments
+
+from pylal import db_thinca_rings
+from pylal import rate
+from pylal import SimInspiralUtils
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+
+from pylal import git_version
+__author__ = "Chad Hanna <channa@ligo.caltech.edu>, Satya Mohapatra <satyanarayan.raypitambarmohapatra@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+from pylal import imr_utils
+
+
+
+def parse_command_line():
+	parser = OptionParser(version = git_version.verbose_msg, usage = "%prog [options] [file ...]", description = "%prog computes mass/mass upperlimit")
+	parser.add_option("--output-name-tag", default = "", metavar = "name", help = "Set the file output name tag, real name is 2Dsearchvolume-<tag>-<ifos>.xml")
+	parser.add_option("--far", default = float("inf"), type = "float", metavar = "Hz", help = "FAR to use for injection finding - default infinity")
+	parser.add_option("--live-time-program", default = "thinca", help = "Set the name of the live time program to use to get segments from the search summary table")
+	parser.add_option("--veto-segments-name", help = "Set the name of the veto segments to use from the XML document.  Default: don't use vetoes.")
+	parser.add_option("-t", "--tmp-space", metavar = "path", help = "Path to a directory suitable for use as a work area while manipulating the database file.  The database file will be worked on in this directory, and then moved to the final location when complete.  This option is intended to improve performance when running in a networked environment, where there might be a local disk with higher bandwidth than is available to the filesystem on which the final output will reside.")
+	parser.add_option("--verbose", action = "store_true", help = "Be verbose.")
+
+	opts, filenames = parser.parse_args()
+
+	if not filenames:
+		raise ValueError("must provide at least one database")
+
+	return opts, filenames
+
+
+options, filenames = parse_command_line()
+
+IMR = imr_utils.DataBaseSummary(filenames, tmp_path = options.tmp_space, veto_segments_name = options.veto_segments_name, live_time_program = options.live_time_program, verbose = options.verbose)
+
+for instruments, total_injections in IMR.total_injections_by_instrument_set.items():
+	found_below_far = [s for f, s in IMR.found_injections_by_instrument_set[instruments] if f < options.far]
+	if options.verbose:
+		print >> sys.stderr, "Found %d injections in %s below FAR %e" % (len(found_below_far), "".join(instruments), options.far)
+
+	xmldoc = ligolw.Document()
+
+	# First do masses
+	m1m2_found_below_far = imr_utils.symmetrize_sims(found_below_far, "mass2", "mass1")
+	m1m2_total_injections = imr_utils.symmetrize_sims(total_injections, "mass2", "mass1")
+
+	# figure out bin boundaries
+	d = [r.distance for r in m1m2_total_injections]
+	m = [r.mass1 for r in m1m2_total_injections] + [r.mass2 for r in m1m2_total_injections]
+	dist_m1_m2_bins = rate.NDBins((rate.LogarithmicBins(min(d), max(d), 200), rate.LinearBins(min(m), max(m), 11), rate.LinearBins(min(m) ,max(m), 11)))
+
+	mass_volume, errors = imr_utils.compute_search_volume_in_bins(m1m2_found_below_far, m1m2_total_injections, dist_m1_m2_bins, imr_utils.sim_to_distance_mass1_mass2_bins_function) #FIXME use errors?
+
+	# symmetrize the m1/m2 plane
+	for m1 in mass_volume.centres()[0]:
+		for m2 in mass_volume.centres()[1]:
+			if m2 > m1:
+				mass_volume[(m2,m1)] = mass_volume[(m1,m2)]
+				errors[(m2,m1)] = errors[(m1,m2)]
+
+	lw = xmldoc.appendChild(ligolw.LIGO_LW())
+	lw.appendChild(mass_volume.to_xml("mass1_mass2_volume"))
+	lw.appendChild(errors.to_xml("mass1_mass2_volume_error"))
+
+	errorsvolpercent = errors
+	errorsvolpercent.array = (errors.array / mass_volume.array)*100.0
+	# write the volume to disk
+	lw.appendChild(errorsvolpercent.to_xml("mass1_mass2_volume_error_percent"))
+	# we are done with the volume so we can overwrite the array with the range
+	mass_volume.array = (mass_volume.array / (4.0/3.0 * numpy.pi))**(1./3.)
+
+	lw.appendChild(mass_volume.to_xml("mass1_mass2_range"))
+	errorsdistance = errors
+	errorsdistancepercent = errors
+	errorsdistance.array = (errors.array)*(1./3.)
+	lw.appendChild(errorsdistance.to_xml("mass1_mass2_range_error"))
+
+	errorsdistancepercent.array = (errorsdistance.array / mass_volume.array)*100.0
+
+	lw.appendChild(errorsdistancepercent.to_xml("mass1_mass2_range_error_percent"))
+
+	# Then do spins - this can fail since many runs have spin set to 0.  Trap the error, print the traceback, but move on
+	# FIXME disabled for now until it can be made to work reliably
+	if 0:
+		dist_s1_s2_bins = imr_utils.guess_distance_spin1z_spin2z_bins_from_sims(total_injections)
+		spin_volume, _unused_errors = imr_utils.compute_search_volume_in_bins(found_below_far, total_injections, dist_s1_s2_bins, imr_utils.sim_to_distance_spin1z_spin2z_bins_function) #FIXME use errors?
+		# write the volume to disk
+		lw = xmldoc.appendChild(ligolw.LIGO_LW())
+		lw.appendChild(spin_volume.to_xml("spin1z_spin2z_volume"))
+		# we are done with the volume so we can overwrite the array with the range
+		spin_volume.array = (spin_volume.array / (4.0/3.0 * numpy.pi))**(1./3.)
+		lw.appendChild(spin_volume.to_xml("spin1z_spin2z_range"))
+
+	# write the file
+	utils.write_filename(xmldoc, "%s-%s.xml" % (options.output_name_tag, "".join(sorted(list(instruments)))))

@@ -1,0 +1,481 @@
+#!/usr/bin/python
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+from optparse import OptionParser
+try:
+    import sqlite3
+except ImportError:
+    # pre 2.5.x
+    from pysqlite2 import dbapi2 as sqlite3
+import sys
+import os
+import bisect
+import math
+import re
+
+from glue.ligolw import lsctables
+from glue.ligolw import dbtables
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import utils
+from glue.ligolw.utils import print_tables
+from glue.ligolw.utils import process
+from glue.ligolw.utils.ligolw_sqlite import extract
+from glue import git_version
+
+from pylal import ligolw_sqlutils as sqlutils
+from pylal import printutils
+
+__prog__ = "ligolw_cbc_printsims"
+__author__ = "Collin Capano <cdcapano@physics.syr.edu>"
+
+description = \
+"Ranks 'found' injections as if they were the only injection in a given datatype and " + \
+"prints information about that injection and the recovered parameters of all coinc-events " + \
+"that match that injection."
+
+# =============================================================================
+#
+#                                   Set Options
+#
+# =============================================================================
+
+
+def parse_command_line():
+    """
+    Parse the command line, return options and check for consistency among the
+    options.
+    """
+    parser = OptionParser(
+        version = git_version.verbose_msg,
+        usage   = "%prog [options]",
+        description = description
+        )
+
+    # following are related to file input and output naming
+    parser.add_option( "-i", "--input", action = "store", type = "string",
+        default = None,                  
+        help = 
+            "Input database to read. Can only input one at a time." 
+            )
+    parser.add_option("-o", "--output", action = "store", type = "string",
+        default = None,
+        help =
+            "Save summary table to file. If no output specified, result " +
+            "will be printed to stdout."
+            )
+    parser.add_option( "-t", "--tmp-space", action = "store", type = "string",
+        default = None, metavar = "path",
+        help = 
+            "Location of local disk on which to do work. " +
+            "This is used to enhance performance in a networked " +
+            "environment and is needed if extracting an xml file."
+            )
+    parser.add_option("-f", "--output-format", action = "store", type = "string",
+        default = "xml", metavar = "wiki, html, OR xml",
+        help =
+            "Format of output summary table. Choices are 'wiki', 'html', or 'xml'. " +
+            "Default is xml."
+            )
+    parser.add_option("-x", "--extract-to-xml", action = "store", type = "string",
+        default = None, metavar = "filename",
+        help =
+            "Will extract a full xml file from the database containing only the " +
+            "triggers that are printed. Requries --tmp-space. "
+            )
+    parser.add_option("-d", "--extract-to-database", action = "store", type = "string",
+        default = None, metavar = "filename",
+        help =
+            "Will extract a SQLite database from the input database containing only the " +
+            "triggers that are printed. Requries --tmp-space. "
+            )
+    parser.add_option( "-v", "--verbose", action = "store_true", default = False,
+        help = 
+            "Print the SQLite query that is used to stdout." 
+            )
+    # following are generic inspiral_sql options
+    parser.add_option( "", "--param-name", metavar = "PARAMETER",
+        action = "store", default = None,
+        help = 
+            "Can be any parameter in the recovery table. " +
+            "Specifying this and param-ranges will only select " +
+            "triggers that fall within the parameter ranges. " 
+            )
+    parser.add_option( "", "--param-ranges", action = "store", default = None,
+        metavar = " [ LOW1, HIGH1 ); ( LOW2, HIGH2]; !VAL3; etc.",
+        help = 
+            "Requires --param-name. Specify the parameter ranges " +
+            "to select triggers in. A '(' or ')' implies an open " +
+            "boundary, a '[' or ']' a closed boundary. To specify " +
+            "multiple ranges, separate each range by a ';'. To " +
+            "specify a single value, just type that value with no " +
+            "parentheses or brackets. To specify not equal to a single " +
+            "value, put a '!' before the value. If " +
+            "multiple ranges are specified, the triggers picked for " +
+            "ranking will come from the union of the ranges."
+            )
+    parser.add_option( "", "--exclude-coincs", action = "store", type = "string", default = None,
+        metavar = " [COINC_INSTRUMENTS1 + COINC_INSTRUMENTS2 in INSTRUMENTS_ON1];"
+            "[ALL in INSTRUMENTS_ON2]; etc.",
+        help = 
+            "Exclude coincident types in specified detector times, " +
+            "e.g., '[H2,L1 in H1,H2,L1]'. Some rules: " +
+                "* Coinc-types and detector time must be separated by " +
+                "an ' in '. When specifying a coinc_type or detector " +
+                "time, detectors and/or ifos must be separated by " +
+                "commas, e.g. 'H1,L1' not 'H1L1'. " +
+                "* To specify multiple coinc-types in one type of time, " +
+                "separate each coinc-type by a '+', e.g., " +
+                "'[H1,H2 + H2,L1 in H1,H2,L1]'. " +
+                "* To exclude all coincs in a specified detector time " +
+                "or specific coinc-type in all times, use 'ALL'. E.g., " +
+                "to exclude all H1,H2 triggers, use '[H1,H2 in ALL]' " +
+                "or to exclude all H2,L1 time use '[ALL in H2,L1]'. " + 
+                "* To specify multiple exclusions, separate each " +
+                "bracket by a ';'. " +
+                "* Order of the instruments nor case of the letters " +
+                "matter. So if your pinky is broken and you're " +
+                "dyslexic you can type '[h2,h1 in all]' without a " +
+                "problem." 
+            )
+    parser.add_option( "", "--include-only-coincs", action = "store", type = "string", default = None,
+        metavar = " [COINC_INSTRUMENTS1 + COINC_INSTRUMENTS2 in INSTRUMENTS_ON1];" +
+            "[ALL in INSTRUMENTS_ON2]; etc.",
+        help =
+            "Opposite of --exclude-coincs: only rank the specified coinc types. "
+            )
+    # following are options specific to this program
+    parser.add_option( "", "--time-column", action = "store", type = "string", default = None,
+        help =
+            "Required. What column to use for the gps-time of triggers. Should be set to end_time for inspiral searches" +
+            "or start_time for ringdown searches. It is assumed that the column specified has a corresponding _ns column."
+            )
+    parser.add_option( "-s", "--simulation-table", action = "store", type = "string", default = None,
+        help =
+            "Required. Table to look in for injection parameters. " +
+            "Can be any lsctable with a simulation_id."
+            )
+    parser.add_option( "", "--sngl-table", action = "store", type = "string", default = None,
+        help =
+            "Required. Set to table containing single event information." +
+            "Ex. sngl_inspiral, sngl_ringdown."
+            )
+    parser.add_option( "-r", "--recovery-table", action = "store", type = "string", default = None,
+        help =
+            "Required. Table to look in for recovered injections. " +
+            "Can be any lsctable with a coinc_event_id."
+            )
+    parser.add_option( "-M", "--map-label", action = "store", type = "string", default = None,
+        help = 
+            "Required. Name of the type of mapping that was used for finding injections."
+        )
+    parser.add_option( "", "--time-table", action = "store", type = "string", default = None,
+        help =
+            "What table to look in for the time column (see --time-column). Can be any table with a coinc_event_id and the specified time column." +
+            "Default is to use whatever recovery-table is set to. If, however, the specified recovery-table does not have the" +
+            "time column (e.g., the coinc_event table), then this must be specified."
+            )
+    parser.add_option("-c", "--columns", action = "store", type = "string", default = None,
+        help =
+            "If output-format is set to html or wiki, will only print the given columns. " +
+            "To specify multiple columns, separate column names with a comma."
+            "Default is to print the columns listed in pylal/printutils.get_columns_to_print."
+            )
+    parser.add_option( "", "--ranking-stat", action = "store", type = "string", default = None,
+        help =
+            "Requried. Statistic to rank by; can be any column " +
+            "in the recovery table." 
+            )
+    parser.add_option( "", "--rank-by", action = "store", type = "string", default = None, 
+        metavar = "MAX or MIN",
+        help = 
+            "Requried. Options are MAX or MIN. " +
+            "This specifies whether to rank triggers by maximum or " +
+            "minimum stat value." 
+            )
+    parser.add_option( "-D", "--comparison-datatype", action = "store", type = "string", default = None,
+        help =
+            "Requried. Datatype to base ranking on. Injections will be assigned a ranking " +
+            "as if they were the only injection event in the specified datatype. " +
+            "Options are 'all_data', 'playground', 'exclude_play', 'slide' or 'simulation'."
+            )
+    parser.add_option( "", "--sort-by", action = "store", type = "string", default = "rank", 
+        help = 
+            "Options are 'rank', 'injected_decisive_distance', or any column in the simulation or recovery table. " +
+            "This specifies the order which triggers will be printed out. Default is the rank." +
+            "To specify a sort column in the simulation table, prefix the column name with 'injected_', " +
+            "e.g., 'injected_mchirp'. To specify a sort column from the recovery table, prefix " +
+            "with 'recovered_', e.g., 'recovered_mchirp'."
+            )
+    parser.add_option( "", "--rank-range", action = "store", type = "string", default = None,
+        help =
+            "Specify what range of ranks to print. Same syntax rules as param-ranges apply. " +
+            "Default is to print all ranges."
+            )
+    parser.add_option( "", "--convert-durations", action = "store", type = "string", default = "s",
+        metavar = "s, min, hr, days, OR yr",
+        help =
+            "Convert the duration from seconds to a different unit of time. Options are: " +
+            "s (seconds), min (minutes), hr (hours), days (days), or yr (years). " +
+            "(Setting to s is the equivalent of a no-op.)"
+            )
+    parser.add_option( "", "--sim-tag", action = "store", type = "string", default = 'ALLINJ',
+        help =
+            "Specify the simulation type to plot, e.g., 'BNSLININJ'. To plot multiple injection types together " +
+            "separate tags by a '+', e.g., 'BNSLOGINJA+BNSLOGINJB'. " +
+            "If not specified, will group all injections together (equivalent to specifying 'ALLINJ')."
+            )
+    parser.add_option("-H", "--daily-ihope-pages-location", action = "store",
+        default = "https://ldas-jobs.ligo.caltech.edu/~cbc/ihope_daily",
+        help =
+            "Web address of the daily ihope pages. " +
+            "Default is https://ldas-jobs.ligo.caltech.edu/~cbc/ihope_daily"
+            )
+    parser.add_option("", "--get-sngl-info", action = "store_true", default = False,
+        help =
+            "Retrieve single event information along with coincident info. All sngl columns " +
+            "will be prefixed with 'sngl_'. A single gps_time_utc column will also be included. "
+            )
+
+    (options, args) = parser.parse_args()
+
+    # check for required options and for self-consistency
+    if not options.input:
+        raise ValueError, "No input specified."
+    if not options.simulation_table:
+        raise ValueError, "No simulation table specified."
+    if not options.recovery_table:
+        raise ValueError, "No recovery table specified."
+    if not options.time_column:
+        raise ValueError, "No time column specified."
+    if options.extract_to_xml and not options.tmp_space:
+        raise ValueError, "extract-to-xml requires tmp-space"
+    if not options.ranking_stat:
+        raise ValueError, "No ranking stat specified."
+    if not (options.rank_by.strip().upper() == 'MIN' or options.rank_by.strip().upper() == 'MAX'):
+        raise ValueError, "--rank-by must be specified and set to either MIN or MAX."
+    if options.param_name and not options.param_ranges:
+        raise ValueError, "--param-name requires --param-ranges"
+    if not options.comparison_datatype:
+        raise ValueError, "--comparison-datatype must be specified."
+    if options.comparison_datatype.strip().lower() not in lsctables.ExperimentSummaryTable.datatypes:
+        raise ValueError, "Unrecognized comparison datatype %s. See help for options." % options.comparison_datatype
+    if not (options.convert_durations.strip().lower() == "s" or options.convert_durations.strip().lower() == "min" or 
+        options.convert_durations.strip().lower() == "hr" or options.convert_durations.strip().lower() == "days" or
+        options.convert_durations.strip().lower() == "yr"):
+        raise ValueError, "--convert-duration must be either s, min, hr, days, or yr"
+
+
+    return options, sys.argv[1:]
+
+
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+
+opts, args = parse_command_line()
+
+# get input database filename
+filename = opts.input
+if not os.path.isfile( filename ):
+    raise ValueError, "The input file, %s, cannot be found." % filename
+
+# Setup working databases and connections
+if opts.verbose and opts.tmp_space: 
+    print >> sys.stderr, "Setting up temp. database..."
+working_filename = dbtables.get_connection_filename( 
+    filename, tmp_path = opts.tmp_space, verbose = opts.verbose )
+connection = sqlite3.connect( working_filename )
+if opts.tmp_space:
+    dbtables.set_temp_store_directory(connection, opts.tmp_space, verbose = opts.verbose)
+
+sngl_table = sqlutils.validate_option( opts.sngl_table )
+if opts.time_table is None:
+    time_table = sqlutils.validate_option( opts.recovery_table )
+else:
+    time_table = sqlutils.validate_option( opts.time_table )
+time_column = sqlutils.validate_option( opts.time_column )
+
+#
+#   Run printsims to get the data into a selected_found table
+#
+sftable = printutils.printsims(connection, opts.simulation_table, opts.recovery_table, opts.map_label, opts.ranking_stat, opts.rank_by,
+    opts.comparison_datatype, sort_by = opts.sort_by, param_name = opts.param_name, param_ranges = opts.param_ranges,
+    exclude_coincs = opts.exclude_coincs, include_only_coincs = opts.include_only_coincs,
+    sim_tag = opts.sim_tag, rank_range = opts.rank_range, convert_durations = opts.convert_durations,
+    daily_ihope_pages_location = opts.daily_ihope_pages_location, verbose = opts.verbose)
+
+if opts.get_sngl_info:
+    sftable = printutils.get_sngl_info(connection, sftable, opts.sngl_table, opts.daily_ihope_pages_location, verbose = opts.verbose)
+
+#
+# create a document
+#
+sfdoc = ligolw.Document()
+# setup the LIGOLW tag
+sfdoc.appendChild(ligolw.LIGO_LW())
+# add this program's metadata
+sfproc_id = process.register_to_xmldoc(sfdoc, __prog__, opts.__dict__, version = git_version.id)
+# connect the table to the document
+sfdoc.childNodes[0].appendChild(sftable)
+
+
+#
+#   Print the summary data
+#
+
+if opts.verbose and not opts.output:
+    print >> sys.stderr, "\nResults are:\n"
+
+if opts.output_format != "xml":
+    # set table list
+    tableList = ['selected_found_injections']
+    columnList, row_span_columns, rspan_break_columns = printutils.get_columns_to_print(sfdoc, tableList[0], with_sngl = opts.get_sngl_info)
+    if opts.columns is not None:
+        # if rank or duration desired, get the right name before overwriting columnList
+        if 'rank' in opts.columns or 'duration' in opts.columns:
+            rankname = [col for col in columnList if col.startswith('rank')]
+            rankname = rankname != [] and rankname.pop() or 'rank'
+            durname = [col for col in columnList if 'duration' in col]
+            durname = durname != [] and durname.pop() or 'duration'
+        # overwrite columnList with specified columns
+        columnList = [col.strip() for col in opts.columns.split(',')]
+        # check for rank, duration
+        for ii, column in enumerate(columnList):
+            if column == 'rank':
+                columnList[ii] = rankname
+            if column == 'duration':
+                columnList[ii] = durname
+    # set output
+    if opts.output is not None:
+        opts.output = open(opts.output, 'w')
+    # print the loudest_events table in the specified format
+    print_tables.print_tables(sfdoc, opts.output, opts.output_format, tableList = tableList,
+        columnList = columnList, round_floats = True, decimal_places = 2, title = None, print_table_names = False,
+        row_span_columns = row_span_columns, rspan_break_columns = rspan_break_columns)
+    if opts.output is not None:
+        opts.output.close()
+else:
+    utils.write_filename(sfdoc, opts.output, xsl_file = "ligolw.xsl")
+
+
+#
+#   If extract-to-xml or extract-to-database, prepare for extraction
+#
+
+if opts.extract_to_xml or opts.extract_to_database:
+    recovery_table = sqlutils.validate_option(opts.recovery_table)
+    simulation_table = sqlutils.validate_option(opts.simulation_table)
+    if opts.verbose:
+        print >> sys.stderr, "\nPreparing temp. database for xml extraction..."
+        print >> sys.stderr, "Deleting unwanted triggers from %s table..." % recovery_table
+
+    # use the coinc_event_ids to figure out what to keep
+    save_ids = [(row.coinc_event_id,) for row in sftable]
+    # stick them in a temporary table
+    connection.cursor().execute("CREATE TEMP TABLE save_ceids (ceid)")
+    connection.cursor().executemany("INSERT INTO save_ceids (ceid) VALUES (?)", save_ids)
+    # delete all other ids from the recovery table
+    sqlquery = ''.join([ """
+        DELETE
+        FROM 
+            """, recovery_table, """
+        WHERE
+            coinc_event_id NOT IN (
+                SELECT
+                    ceid
+                FROM
+                    save_ceids )""" ])
+    connection.cursor().execute(sqlquery)
+
+    # now delete unneeded simulation_ids
+    save_ids = [(row.simulation_id,) for row in sftable]
+    connection.cursor().execute("CREATE TEMP TABLE save_sim_ids (sim_id)")
+    connection.cursor().executemany("INSERT INTO save_sim_ids (sim_id) VALUES (?)", save_ids)
+    # delete all other ids from the recovery table
+    sqlquery = ''.join([ """
+        DELETE
+        FROM 
+            """, simulation_table, """
+        WHERE
+            simulation_id NOT IN (
+                SELECT
+                    sim_id
+                FROM
+                    save_sim_ids )""" ])
+    connection.cursor().execute(sqlquery)
+
+    # clean up the other tables that point to the deleted ids
+    sqlutils.clean_using_coinc_table( connection, recovery_table, verbose = opts.verbose,
+        clean_experiment_map = True, clean_coinc_event_table = True, clean_coinc_definer = True,
+        clean_coinc_event_map = False, clean_mapped_tables = False )
+
+    # to avoid deleting the simulations' intermediate coinc_event_ids, we'll clean the
+    # coinc_event_map by hand
+
+    # before deleting things, get what tables are there
+    if opts.verbose:
+        print >> sys.stderr, "Cleaning the coinc_event_map table..."
+    selected_tables = sqlutils.get_cem_table_names(connection)
+    sqlquery = """
+        DELETE
+        FROM
+            coinc_event_map
+        WHERE NOT (
+            event_id IN (
+                SELECT
+                    sim_id
+                FROM
+                    save_sim_ids )
+            OR event_id IN (
+                SELECT
+                    ceid
+                FROM
+                    save_ceids )
+            OR coinc_event_id IN (
+                SELECT
+                    ceid
+                FROM
+                    save_ceids )
+            )"""
+    connection.cursor().execute(sqlquery)
+
+    # now remove events from other tables that are no longer in the coinc_event_map
+    sqlutils.clean_mapped_event_tables( connection, selected_tables, raise_err_on_missing_evid = False,
+        verbose = opts.verbose ) 
+
+    # also remove experiments that don't have loud events in them
+    sqlutils.clean_experiment_tables( connection, verbose = opts.verbose )
+
+    # clean the metadata
+    key_table = recovery_table
+    key_column = time_column
+    sqlutils.clean_metadata_using_end_time(connection, key_table, key_column, verbose = opts.verbose)
+
+    # extract to the xml file
+    if opts.extract_to_xml:
+        extract(connection, opts.extract_to_xml, verbose = opts.verbose, xsl_file = "ligolw.xsl")
+
+
+# close connection and exit
+if opts.extract_to_database:
+    dbtables.put_connection_filename(opts.extract_to_database, working_filename, verbose = opts.verbose)
+else:
+    dbtables.discard_connection_filename( filename, working_filename, verbose = opts.verbose)
+
+# close connection and exit
+connection.close()
+
+if opts.verbose and opts.tmp_space:
+    print >> sys.stderr, "Finshed!"
+
+sys.exit(0)

@@ -1,0 +1,109 @@
+.TH LDBDC 1 "15 June 2003" "ldbd" "lightweight database dumper" 
+.SH NAME
+ldbdc \- lightweight database dumper client
+.SH SYNOPSIS
+.B ldbdc
+.RB \-\-server
+.IR host:port
+.RB \-\-database
+.IR name
+.RB [ \-\-sql
+.IR query ]
+.RB [ \-\-insert
+.IR file ]
+.RB [ \-\-identity
+.IR subject ]
+.RB [ \-\-output
+.IR file ]
+.RB [ \-\-verbose ]
+.RB [ \-\-help ]
+.SH DESCRIPTION
+.PP
+\fIldbdc\fP inserts a LIGO lightweight XML file into the specified
+database and/or executes an SQL query returning the results as a LIGO
+lightweight XML to the standard output or a file.
+.SH OPTIONS
+.TP
+.BI \-s,\-\-server " host:port"
+connect to ldbd server at \fIhost\fP on \fIport\fP. If \fIport\fP is not
+specified, then the default of 49999 is used
+.TP
+.BI -j,\-\-identity " subject"
+Use \fIsubject\fP as the subject of the server's identity certificate.
+If no identity is specified, the client assumes that it should expect 
+an ldbdserver service certificate issued by the DOE for the hostname
+specifed by \fIhost\fP (see \fBAUTHENTICATION\fP below)
+.TP
+.BI -d,\-\-database " name"
+interact with the database called \fIname\fP on \fIhost\fP
+.TP
+.BI -i,\-\-insert " file"
+insert the data in the LIGO lightweight XML file names \fIfile\fP into
+the database
+.TP
+.BI -q,\-\-query " query"
+Execute the SQL query \fIquery\fP at the specified database and return
+the results of the query as a LIGO lightweight XML file
+.TP
+.BI -o,\-\-output " file"
+Write the returned LIGO lightweight XML file to \fIfile\fP insted of
+the standard output.
+.TP
+.BI -v,\-\-verbose
+print lots of debugging information during execution
+.TP
+.BI -h,\-\-help
+print a brief usage message
+.SH DIAGNOSTICS
+.PP
+An exit status of 0 means that the no errors ocourred, 1 means that there
+was an error communicating with the server and 2 means that the server
+returned an error to the client.
+.SH EXAMPLES
+.PP
+ldbdc --server metaserver.phys.uwm.edu --database uwm_dev --insert test.xml
+
+Inserts the LIGO lightweight XML file test.xml into the uwm_dev database at
+metaserver.phys.uwm.edu
+.PP
+ldbdc --server metaserver.phys.uwm.edu:60000 --database uwm_dev --query "SELECT * FROM SNGL_INSPIRAL" --output inspiralevents.xml
+
+Retrieves all the entries from the SNGL_INSPIRAL table in the uwm_dev database
+at metaserver.phys.uwm.edu on port 60000 and writes the results to the file
+inspiralevents.xml
+.SH AUTHENTICATION
+.PP
+The ldbd package uses Globus GSI authentication using X.509 cerficates issued
+by a the DOEgrid certificate authority. Before running the client to connect
+to a server, the user must obtain an X.509 certificate and communcate the
+subject of the certificate to the database administrator so the the server can
+authenticate the client user. The user must also run the \fIgrid-proxy-init\fP
+program to give the client access to the users key.
+.PP
+The client program also expects the server to authenticate itself. To do this 
+the client needs to know the subject of the certificate that the server is 
+presenting. The is done by either specifying the subject directly with the
+\fI--identity\fP option or by letting the client assume that the server will
+present an ldbdserver service certificate issued by DOEgrids for the host that
+the server runs on. For example if the \fI--host\fP option is
+\fBmyhost.com\fP, then the client will expect the server to
+present a certificate with the subject:
+
+\fB/O=doesciencegrid.org/OU=Services/CN=ldbdserver/myhost.com\fP
+.SH COPYRIGHT
+.PP
+Copyright (C) 2003 Duncan Brown.
+.PP
+This is free software; see the source for copying conditions. There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.SH SEE ALSO
+.PP
+ldbdd(8)
+.SH AUTHOR
+.PP
+Duncan Brown <duncan@gravity.phys.uwm.edu>
+.SH BUGS
+.PP
+If the query produces a large amount of data, it can take the server a long
+time to parse it into LIGO lightweight XML. This is due to the code in the
+server being a prototype algorithm which will be optimised soon. 

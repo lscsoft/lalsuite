@@ -1,0 +1,161 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2011  Kipp Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+from optparse import OptionParser
+import sys
+
+
+from glue import git_version
+from glue import dagfile
+
+__author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+	parser = OptionParser(
+		version = "Name: %%prog\n%s" % git_version.verbose_msg,
+		usage = "%prog [options] node1 [node2 ...] <old_dag >new_dag",
+		description = "%prog constructs a DAG to re-run all parents of the DAG nodes named on the command line."
+	)
+	parser.add_option("--themselves", "-t", action = "store_true", help = "Rerun the named nodes.")
+	parser.add_option("--ancestors-of", "-a", action = "store_true", help = "Rerun the ancestors of the named nodes.")
+	parser.add_option("--descendants-of", "-d", action = "store_true", help = "Rerun the descendents of the named nodes.")
+	parser.add_option("--verbose", "-v", action = "store_true", help = "Be verbose.")
+	options, nodenames = parser.parse_args()
+
+	#
+	# check that there's something to do
+	#
+
+	if not (options.themselves or options.ancestors_of or options.descendants_of):
+		raise ValueError("nothing to do!")
+	if options.ancestors_of and options.descendants_of and not options.themselves:
+		raise ValueError("cowardly refusing to rerun both the parents and children of the named nodes without also rerunning the named nodes themselves.  must include --themselves when both --ancestors-of and --descendants-of have been selected.")
+
+	#
+	# uniqueify the node names
+	#
+
+	nodenames = set(nodenames)
+
+	#
+	# done
+	#
+
+	return options, nodenames
+
+
+#
+# =============================================================================
+#
+#                                 Process DAG
+#
+# =============================================================================
+#
+
+
+#
+# command line
+#
+
+
+options, nodenames = parse_command_line()
+
+
+#
+# read original dag from stdin
+#
+
+
+if options.verbose:
+	def progress(f, n, done):
+		print >>sys.stderr, "reading original dag from stdin ... %d lines\r" % n,
+		if done:
+			print >>sys.stderr
+else:
+	progress = None
+dag = dagfile.DAG.parse(sys.stdin, progress = progress)
+if not nodenames.issubset(set(dag.nodes)):
+	raise ValueError("node(s) %s not found in dag" % ", ".join(sorted(nodenames - set(dag.nodes))))
+
+
+#
+# extract graph
+#
+
+
+if options.verbose:
+	print >>sys.stderr, "extracting graph ..."
+names_to_rerun = set()
+if options.ancestors_of:
+	names_to_rerun |= dag.get_all_parent_names(nodenames)
+if options.descendants_of:
+	names_to_rerun |= dag.get_all_child_names(nodenames)
+if options.themselves:
+	names_to_rerun |= nodenames
+assert names_to_rerun	# must not be empty
+dag = dagfile.DAG.select_nodes_by_name(dag, names_to_rerun)
+
+
+#
+# set nodes matching the requested patterns to done, everything else to not
+# done
+#
+
+
+if options.verbose:
+	print >>sys.stderr, "setting jobs to done/not-done ..."
+for nodename, node in dag.nodes.items():
+	# FIXME:  feature not implemented;  all nodes marked "not done"
+	node.done = False
+
+
+#
+# write new dag to stdout
+#
+
+
+if options.verbose:
+	def progress(f, n, done):
+		print >>sys.stderr, "writing new dag to stdout ... %d lines\r" % n,
+		if done:
+			print >>sys.stderr
+else:
+	progress = None
+dag.write(sys.stdout, progress = progress)

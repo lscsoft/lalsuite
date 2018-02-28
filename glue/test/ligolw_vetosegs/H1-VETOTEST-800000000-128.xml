@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+   <Table Name="process:table">
+      <Column Name="process:process_id" Type="ilwd:char"/>
+      <Column Name="process:program" Type="lstring"/>
+      <Column Name="process:version" Type="lstring"/>
+      <Column Name="process:cvs_repository" Type="lstring"/>
+      <Column Name="process:cvs_entry_time" Type="int_4s"/>
+      <Column Name="process:is_online" Type="int_4s"/>
+      <Column Name="process:node" Type="lstring"/>
+      <Column Name="process:username" Type="lstring"/>
+      <Column Name="process:unix_procid" Type="int_4s"/>
+      <Column Name="process:start_time" Type="int_4s"/>
+      <Column Name="process:end_time" Type="int_4s"/>
+      <Column Name="process:ifos" Type="lstring"/>
+      <Column Name="process:comment" Type="lstring"/>
+      <Stream Name="process:table" Type="Local" Delimiter=",">
+      "process:process_id:0","ligolw_veto_file","1.1","/usr/local/cvs/lscsoft/glue/bin/ligolw_veto_file,v",822908378,0,"ldas-grid.ligo.caltech.edu","jrsmith",16830,822879594,822879594,"L1","Example file by Josh"
+      </Stream>
+   </Table>
+   <Table Name="veto_definer:table">
+      <Column Name="veto_definer:process_id" Type="ilwd:char"/>
+      <Column Name="veto_definer:ifo" Type="lstring"/>
+      <Column Name="veto_definer:name" Type="lstring"/>
+      <Column Name="veto_definer:version" Type="int_4s"/>
+      <Column Name="veto_definer:category" Type="int_4s"/>
+      <Column Name="segment:start_time" Type="int_4s"/>
+      <Column Name="segment:end_time" Type="int_4s"/>
+      <Column Name="veto_definer:start_pad" Type="int_4s"/>
+      <Column Name="veto_definer:end_pad" Type="int_4s"/>
+      <Column Name="veto_definer:comment" Type="lstring"/>
+      <Stream Name="veto_definer:table" Type="Local" Delimiter=",">
+      "process:process_id:0","H1","JUNK_DATA",1,1,800000000,800000030,0,0,"Do not analyze unlocked data",
+      "process:process_id:0","H1","CALIB_DROPOUT_1SEC",1,1,800000001,800000003,0,0,"Calibration line dropouts are bad for bursts",
+      "process:process_id:0","H1","SEVERE_LSC_OVERFLOW",1,2,800000065,0,0,0,"LSC Saturations are cat2 for now",
+      </Stream>
+   </Table>
+</LIGO_LW>

@@ -1,0 +1,7 @@
+method = git
+git_root = git://ligo-vcs.phys.uwm.edu/lalsuite.git
+git_tree = master
+git_path = glue/bin/ligolw_diff
+
+# omit glue/src/nmi/diff/ dir prefix
+tar_args = --strip-components=2

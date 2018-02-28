@@ -1,0 +1,97 @@
+#!/usr/bin/python
+
+import os
+import sys
+import pickle
+import optparse
+import ConfigParser
+
+from pylal import pylal_exttrig_llutils as peu
+from pylal import git_version
+
+usage = """
+Code to handle box opening for GRB's. You need to specify what operation should 
+be made and on what GRB. 
+
+Examples:
+
+# To open box for GRB090815D:
+pylal_exttrig_llbox --config-file llmonitorS6A.conf --grb 090815D --open 
+
+# To close the same box again:
+pylal_exttrig_llbox --config-file llmonitorS6A.conf --grb 090815D --close
+"""
+
+# parse the options
+parser = optparse.OptionParser(usage, version=git_version.verbose_msg)
+
+parser.add_option("--config-file", help="Name of the main config file for this analysis")
+parser.add_option("--grb", help="Name of the GRB(s) (without the term 'GRB') to open "
+    "the box for, or a comma-seperated list of GRBs.")
+parser.add_option("--open", action="store_true", default=False,
+        help="Specify to open the box")
+parser.add_option("--close", action="store_true", default=False,
+        help="Specify to close the box")
+
+opts, args = parser.parse_args()
+
+if opts.open and opts.close:
+  raise ValueError, "You cannot open and close the box at the same time! It's not a cat."
+if not opts.open and not opts.close:
+  raise ValueError, "Neither opening not closing the box is choosen. Doing nothing..."
+
+# open the configuration file
+cp = ConfigParser.ConfigParser()
+cp.read(opts.config_file)
+peu.cp = cp
+
+# get the GRB name as only argument
+if ',' in opts.grb:
+  grb_names = opts.grb.split(',')
+else:
+  grb_names = [opts.grb]
+
+# load the GRB data
+monitor_file = 'llmonitor.pickle'
+monitor_list = pickle.load(file(monitor_file))
+
+# loop over and find the correct one
+for grb in monitor_list:
+  if grb.name in grb_names:
+   
+    # get the OPENBOX path
+    path = cp.get('paths','publishing_path')+'/GRB'+grb.name+'/OPENBOX'
+
+    txt = 'Box for GRB %s has been ' % grb.name
+    if opts.open:
+      os.chmod(path, 365)
+      grb.openbox = True
+      txt += 'opened.'
+     
+      # set the smallest FAP value 
+      result = peu.obtain_results(grb)
+      grb.openbox_fap = result
+ 
+    if opts.close:
+      os.chmod(path, 0)
+      grb.openbox = False
+      txt += 'closed.'
+
+      # set the FAP value to None
+      grb.openbox_fap = None
+
+    print txt
+
+# rewrite the files
+pickle.dump(monitor_list, file(monitor_file,'w'))
+
+#
+# Update the summary page of all GRBs
+#
+publish_path = cp.get('paths','publishing_path')
+publish_url = cp.get('paths','publishing_url')
+peu.generate_summary(publish_path, publish_url)
+
+
+
+

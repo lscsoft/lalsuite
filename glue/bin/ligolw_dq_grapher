@@ -1,0 +1,123 @@
+#!/usr/bin/python
+import os,sys
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.figure import Figure
+import numpy as np
+
+#== Originally written by: Justin Garofoli justing@physics.syr.edu
+#== 2009 October 27
+
+#== Maintained by: Duncan Macleod duncan.macleod@astro.cf.ac.uk
+
+#== this update:
+#== takes IFO as 2nd input argument (comma separated list).
+
+"""
+ todo:
+ 1) add logging
+ 2) put all output in a directory
+ 3) get flags that are on and their segments
+      within the window, and draw those  (right now
+      we don't know if a flag is on right after
+      the central time.
+"""
+
+#== default IFOs options
+IFOs = ('H1', 'L1', 'V1')
+
+def get_segments(gpstime):
+  req = 'ligolw_dq_query -d --report -i ' + str(gpstime) 
+  pp = os.popen(req)
+  dd = {}
+  for line in pp.readlines():
+    if line[0:2] in IFOs:
+      print line[:-1]
+    this_line = line[:-1]
+    these_words = this_line.split()
+    dd[these_words[0]] = (int(these_words[1][1:]), int(these_words[2]), int(these_words[3][:-1]))
+  return dd
+
+def get_segments_test(gpstime):
+  pp = os.popen('cat test.txt')
+  dd = {}
+  for line in pp.readlines():
+    this_line = line[:-1]
+    these_words = this_line.split()
+    dd[these_words[0]] = (int(these_words[1][1:]), int(these_words[2]), int(these_words[3][:-1]))
+  return dd
+
+def make_figure(dd,width):
+  kk = dd.keys()
+  kk.sort()
+  for ifo in IFOs:
+    fig = Figure()
+    fig.set_figwidth(12.0)
+    fig.set_figheight(6.0)
+    ax = fig.add_axes([0.1, 0.2, 0.8, 0.7])
+    i = 0
+    for k in kk:
+      if ifo == k[0:2]:
+        times = dd[k]
+
+        start = times[0] - times[1]
+        if start < (-1*width):
+          start = -1*width
+
+        stop  = times[2] - times[1]
+        if stop > width:
+          stop = width
+
+        stop = float(stop)
+        start = float(start)
+        t = np.linspace(start,stop,stop-start)
+        y = i * np.ones(np.shape(t))
+        cc = 'r'
+        if k.find('UP:') > -1 or k.find('LIGHT:') > -1 or k.find('SCIENCE:') > -1 or k.find('CALIBRATED:') > -1:
+          cc = 'g'
+        elif k.find('V1:') > -1:
+          cc = 'm'
+        line, = ax.plot(t,y,label=k,c=cc,lw=2)
+        ha = 'right'
+        if (-1)**i==1:
+          ha = 'left'
+        print str(i) + ' ' + k + ' ' + str(t.shape[0]) + ' ' + ha
+        ax.text(((-1)**i)*0.1*width,i,k,bbox=dict(facecolor='white', alpha=0.8, edgecolor='white'),horizontalalignment=ha, verticalalignment='center',fontsize=10)
+        i = i+1
+    ax.plot((0,0),(-1,i),c='k',lw=1,zorder=-1)
+    ax.set_xlim(-1*width,width)
+    ax.set_title(ifo + ' data quality flags at t0 = ' + str(times[1]))
+    ax.set_ylim(-1,i)
+    ax.set_yticks(np.arange(-1,i),''*(i+1))
+    ax.set_xlabel('time after t0 (seconds)')
+    canvas = FigureCanvasAgg(fig)
+    canvas.print_figure(ifo + '-' + str(times[1]) + '_flags.png',dpi=150)
+  return 1
+
+if __name__ == '__main__':
+  if len(sys.argv)==1:
+    print 'error, must give gpstime argument'
+    sys.exit()
+  elif len(sys.argv)==2:
+    gpstime = sys.argv[1]
+    IFOs = ['H1','L1','V1']
+    width=600
+  elif len(sys.argv)==3:
+    gpstime = sys.argv[1]
+    IFOs    = sys.argv[2].split(',')
+    width=600
+  elif len(sys.argv)==4:
+    gpstime = sys.argv[1]
+    IFOs    = sys.argv[2].split(',')
+    width   = float(sys.argv[3])    
+  else :
+    print 'wrong arguments'
+    sys.exit()
+
+  #print sys.argv[1]
+  #print sys.argv
+  dd = get_segments(gpstime)
+  #dd = get_segments_test(931540290)
+  make_figure(dd,width)
+

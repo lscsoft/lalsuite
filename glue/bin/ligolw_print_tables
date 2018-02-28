@@ -1,0 +1,166 @@
+#!/usr/bin/env python
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+description = \
+"""
+The executable front-end of print_tables.py. This program prints tables in
+xml documents in specified formats -- currently wiki or html.
+"""
+import sys, os
+from optparse import OptionParser
+
+from glue import git_version
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import utils
+from glue.ligolw.utils import ligolw_add
+from glue.ligolw.utils import print_tables
+
+
+__prog__ = "ligolw_print_tables"
+__author__ = "Collin Capano <cdcapano@physics.syr.edu>"
+
+
+# =============================================================================
+#
+#                                   Set Options
+#
+# =============================================================================
+
+
+def parse_command_line():
+    """
+    Parse the command line, return options and check for consistency among the
+    options.
+    """
+    parser = OptionParser(
+        version = git_version.verbose_msg,
+        usage   = "%prog [--output-format] [options] file1.xml file2.xml ...",
+        description = description
+        )
+    
+    parser.add_option("-o", "--output", action = "store", type = "string",
+        default = sys.stdout,
+        help =
+            "Save converted tables to a file. If no output specified, result " +
+            "will be printed to stdout."
+            )
+    parser.add_option("-f", "--output-format", action = "store", type = "string",
+        default = None, metavar = "wiki OR html",
+        help =
+            "Requried. Format to convert xml tables into. Current choices are 'wiki' or 'html'."
+            )
+    parser.add_option("-m", "--merge-docs", action = "store_true",
+        default = False,
+        help =
+            "Merge all xml files into a single set of tables. WARNING: this will cause " +
+            "all ilwd:char (e.g., coinc_event_ids) to be re-mapped in the output."
+            )
+    parser.add_option("-t", "--table", action = "append", type = "string",
+        default = [],
+        help =
+            "Only convert the specified table (default is to convert all the tables). " +
+            "To specify multiple tables, give the argument multiple times. " +
+            "All the tables must exist in the xml file(s)."
+            )
+    parser.add_option("-c", "--column", action = "append", type = "string",
+        default = [],
+        help =
+            "Only print the given column (default is to print all columns). " +
+            "This applies to all tables with a column having the given name(s)." +
+            "To specify a column in a specific table, use table_name:column_name. " +
+            "To specify multiple columns, give the argument multiple times (order given " +
+            "will be the order printed). "
+            )
+    parser.add_option("-s","--rspan-column", action = "append", type = "string",
+        default = [],
+        help =
+            "Allow column to row-span; i.e., consecutive rows that have the same value " +
+            "in the given column will be combined into one cell that spans those rows. " +
+            "Default is to not row span any column. To specify multiple columns, give the " +
+            "argument multiple times."
+            )
+    parser.add_option("-b", "--break-column", action = "append", type = "string",
+        default = [],
+        help =
+            "Whenever a value between consecutive rows in the given column change, " +
+            "no columns will be allowed to row-span across that row."
+            )
+    parser.add_option("-r", "--round-floats", action = "store", type = "int",
+        default = None,
+        help =
+            "Round floating point numbers in the tables to the specified " +
+            "number of decimal places."
+            )
+    parser.add_option("-l", "--format-links", action = "store_true",
+        default = False,
+        help =
+            'Convert any entry with <a href=" in it to a hyperlink for the given ' +
+            'format. Note: if output format is html, this is a no-op.'
+            )
+    parser.add_option("", "--no-table-names", action = "store_true",
+        default = False,
+        help =
+            "Turn off printing table names."
+            )
+
+    (options, filenames) = parser.parse_args()
+
+    if not options.output_format:
+        raise ValueError("--output-format is a required option")
+
+    return options, filenames
+
+
+#
+# =============================================================================
+#
+#                                   Main
+#
+# =============================================================================
+#
+
+
+options, filenames = parse_command_line()
+
+# Also treat the special name 'stdin' as stdin
+filenames = map(lambda x: x != 'stdin' and x or None, filenames)
+
+# get the xmldocs
+if options.merge_docs:
+    xmldocs = [ ligolw_add.ligolw_add( ligolw.Document(), filenames, non_lsc_tables_ok = True ) ]
+    titles = [ None ]
+else:
+    xmldocs = [ utils.load_filename( filename, gz = (filename or "stdin").endswith(".gz") ) for filename in filenames ]
+    titles = filenames
+
+# open the output
+if options.output != sys.stdout:
+    options.output = open(options.output, 'w')
+
+if options.round_floats is None:
+    round_floats = False
+else:
+    round_floats = True
+
+print_table_names = not options.no_table_names
+
+# convert the files
+for xmldoc, title in zip(xmldocs, titles):
+    print_tables.print_tables(xmldoc, options.output, options.output_format, tableList = options.table,
+        columnList = options.column, round_floats = round_floats, decimal_places = options.round_floats,
+        format_links = options.format_links, row_span_columns = options.rspan_column, rspan_break_columns = options.break_column,
+        title = title, print_table_names = print_table_names)
+
+# close and exit
+options.output.close()
+
+sys.exit(0)

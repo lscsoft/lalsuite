@@ -1,0 +1,240 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2006  Kipp Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+"""
+LIGO Light-Weight XML segment table manipulation.  At the moment, all this
+can do is convert the output of segwizard to an XML file.
+"""
+
+
+from optparse import OptionParser
+import sys
+
+
+from glue import segments
+from glue.lal import CacheEntry
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue.ligolw.utils import segments as ligolw_segments
+from glue.ligolw.utils import process as ligolw_process
+from pylal import git_version
+
+
+lsctables.use_in(ligolw.LIGOLWContentHandler)
+
+
+__author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+	parser = OptionParser(
+		version = "Name: %%prog\n%s" % git_version.verbose_msg,
+		usage = "%prog [options] [url ...]",
+		description = "Utility for manipulating segment lists in LIGO Light Weight XML format.  At the moment, all this can do is insert segment lists into an XML file from segwizard format files and LAL cache files.  If no filenames are given on the command line then a new document is created and written to stdout.  If a filename is given on the command line then the transformations described by the command line options are applied to the contents of that file, and the file replaced with the result.  If multiple filenames are given on the command line, then the same transformation is performed to each one.  If --output is given on the command line then output is written to that file instead of stdout or instead of overwriting the input file (setting --output is not allowed when multiple input files are given).  The filenames can also be many common kinds of URLs like \"http://\" and \"ftp://\", but then --output must be used to redirect the output to another location."
+	)
+	parser.add_option("--coalesce", action = "store_true", help = "Coalesce the segment lists (default = don't).")
+	parser.add_option("--name", metavar = "text", help = "When inserting segments from segwizard files, set the name of the segment lists to this (default = None).")
+	parser.add_option("--segments-version", metavar = "integer", type = "int", help = "When inserting new segments, set the version number to this (default = None).")
+	parser.add_option("--comment", metavar = "text", help = "Set the comment string recorded for this program in the process table to this, and when inserting new segments set the comment in the segment_definer table to this (default = None).")
+	parser.add_option("-o", "--output", metavar = "filename", help = "Write output to this file (default = overwrite input file if one was given or write to stdout).  If the filename ends in \".gz\", it will be gzip compressed.  To force output to stdout when an input file was given on the command line set the output to \"-\" (to write to a file literally named \"-\", set the output to \"./-\").")
+	parser.add_option("--insert-from-lal-cache", metavar = "filename", default = [], action = "append", help = "Insert active segments from this LAL cache file.  The cache file's description column is used to provide the segment list names, the instrument and segment columns provide the segment lists.  This option can be given multiple times to process multiple cache files.")
+	parser.add_option("--insert-from-segwizard", metavar = "instrument=filename", default = [], action = "append", help = "Insert active segments from this segwizard file.  All segments in the file are assigned to the instrument named in option's argument.  This option can be given multiple tmies to insert multiple segment lists from segwizard files.")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+	options, urls = parser.parse_args()
+
+	if urls and len(urls) > 1 and options.output:
+		raise ValueError("setting --output with multiple input files causes data loss")
+
+	options.insert_from_segwizard = [tuple(argument.split("=")) for argument in options.insert_from_segwizard]
+
+	return options, (urls or [None])
+
+
+#
+# =============================================================================
+#
+#                           Add Process Information
+#
+# =============================================================================
+#
+
+
+def append_process(xmldoc, options):
+	process = ligolw_process.append_process(xmldoc, program = "ligolw_segments", version = __version__, cvs_repository = "lscsoft", cvs_entry_time = __date__, comment = options.comment)
+
+	params = []
+	if options.output is not None:
+		params += [(u"--output", u"lstring", options.output)]
+	for arguments in options.insert_from_segwizard:
+		params += [(u"--insert-from-segwizard", u"lstring", "=".join(arguments))]
+	for filename in options.insert_from_lal_cache:
+		params += [(u"--insert-from-lal-cache", u"lstring", filename)]
+	if options.name is not None:
+		params += [(u"--name", u"lstring", options.name)]
+	if options.comment is not None:
+		params += [(u"--comment", u"lstring", options.comment)]
+	ligolw_process.append_process_params(xmldoc, process, params)
+
+	return process
+
+
+#
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+#
+
+
+#
+# Parse command line.
+#
+
+
+options, urls = parse_command_line()
+
+
+#
+# Iterate over files to process.  If list == [None], then create a new file
+# and write to --output (or stdout if option not set).
+#
+
+
+for url in urls:
+	#
+	# Load document.
+	#
+
+
+	if url is not None:
+		xmldoc = utils.load_url(url, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
+	else:
+		# create an empty one
+		xmldoc = ligolw.Document()
+		xmldoc.appendChild(ligolw.LIGO_LW())
+		xmldoc.childNodes[-1].appendChild(lsctables.New(lsctables.ProcessTable))
+		xmldoc.childNodes[-1].appendChild(lsctables.New(lsctables.ProcessParamsTable))
+
+
+	#
+	# Add ourselves to the process table.
+	#
+
+
+	process = append_process(xmldoc, options)
+
+
+	#
+	# Build the document interface
+	#
+
+
+	segments_tables = ligolw_segments.LigolwSegments(xmldoc)
+
+
+	#
+	# Insert segwizard format file contents
+	#
+
+
+	for instrument, filename in options.insert_from_segwizard:
+		if options.verbose:
+			print >>sys.stderr, "reading \"%s\" for instrument \"%s\" (name %s) ..." % (filename, instrument, repr(options.name))
+
+		segments_tables.insert_from_segwizard(file(filename), set([instrument]), options.name, version = options.segments_version, comment = options.comment)
+
+
+	#
+	# Insert LAL cache file contents
+	#
+
+
+	if options.insert_from_lal_cache:
+		seglistdicts = dict()
+		for filename in options.insert_from_lal_cache:
+			if options.verbose:
+				print >>sys.stderr, "reading \"%s\" ..." % filename
+			for cacheentry in [CacheEntry(line, coltype = lsctables.LIGOTimeGPS) for line in file(filename)]:
+				if cacheentry.description not in seglistdicts:
+					seglistdicts[cacheentry.description] = segments.segmentlistdict()
+				seglistdicts[cacheentry.description] |= cacheentry.segmentlistdict
+		for name, seglists in seglistdicts.items():
+			segments_tables.insert_from_segmentlistdict(seglists, name, version = options.segments_version, comment = options.comment)
+		del seglistdicts
+
+
+	#
+	# Restore segment tables.
+	#
+
+
+	if options.coalesce:
+		if options.verbose:
+			print >>sys.stderr, "coalescing ..."
+		segments_tables.coalesce()
+	if options.verbose:
+		print >>sys.stderr, "merging equivalent lists ..."
+	segments_tables.optimize()
+	if options.verbose:
+		print >>sys.stderr, "reconstructing xml ..."
+	segments_tables.finalize(process)
+
+
+	#
+	# Finalize process metadata.
+	#
+
+
+	ligolw_process.set_process_end_time(process)
+
+
+	#
+	# Write output.
+	#
+
+
+	if options.output:
+		if options.output == "-":
+			utils.write_filename(xmldoc, None, verbose = options.verbose)
+		else:
+			utils.write_filename(xmldoc, options.output, verbose = options.verbose, gz = options.output.endswith(".gz"))
+	else:
+		utils.write_url(xmldoc, url, verbose = options.verbose, gz = (url or "stdout").endswith(".gz"))

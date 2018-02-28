@@ -1,0 +1,3 @@
+usr/lib/py*/*/glue/__init__.py*
+usr/lib/py*/*/glue/iterutils.py*
+usr/lib/py*/*/glue/git_version.py*

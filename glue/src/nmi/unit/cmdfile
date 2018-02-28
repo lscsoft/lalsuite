@@ -1,0 +1,21 @@
+description = unit test of $(LAL_EXE) from $(GIT_BRANCH):$(GIT_ID) to generate $(XML_BASENAME)
+project = cbc
+project_version = $(GIT_BRANCH)
+component = $(WORKFLOW_NODENAME)
+component_version = $(GIT_ID)
+run_type = test
+platforms = x86_64_sl_6.1
+notify = $(USER)
+notify_fail_only = true
+# stream "live" stdout/err from tasks back to the submit node
+stream_user_io = true
+
+inputs = scripts.git, $(BUILD_SOURCE_FILE)
+remote_pre = remote_pre.sh
+remote_task = remote_task.sh
+remote_post = remote_post.sh
+
+ligo_reference_xml = $(XML_FILE)
+ligo_exe = $(LAL_EXE)
+
+ligo_add_params =

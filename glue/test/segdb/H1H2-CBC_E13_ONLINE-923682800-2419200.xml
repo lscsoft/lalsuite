@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+   <Table Name="process:table">
+      <Column Name="process:process_id" Type="ilwd:char"/>
+      <Column Name="process:program" Type="lstring"/>
+      <Column Name="process:version" Type="lstring"/>
+      <Column Name="process:cvs_repository" Type="lstring"/>
+      <Column Name="process:cvs_entry_time" Type="int_4s"/>
+      <Column Name="process:node" Type="lstring"/>
+      <Column Name="process:username" Type="lstring"/>
+      <Column Name="process:unix_procid" Type="int_4s"/>
+      <Column Name="process:start_time" Type="int_4s"/>
+      <Column Name="process:end_time" Type="int_4s"/>
+      <Column Name="process:ifos" Type="lstring"/>
+      <Column Name="process:comment" Type="lstring"/>
+      <Stream Name="process:table" Type="Local" Delimiter=",">
+      "process:process_id:0","ligolw_veto_file","1.1","/usr/local/cvs/lscsoft/glue/bin/ligolw_veto_file,v",822908378,"ldas-grid.ligo.caltech.edu","jrsmith",16830,822879594,822879594,"L1","Example file by Josh"
+      </Stream>
+   </Table>
+   <Table Name="veto_definer:table">
+      <Column Name="veto_definer:process_id" Type="ilwd:char"/>
+      <Column Name="veto_definer:ifo" Type="lstring"/>
+      <Column Name="veto_definer:name" Type="lstring"/>
+      <Column Name="veto_definer:version" Type="int_4s"/>
+      <Column Name="veto_definer:category" Type="int_4s"/>
+      <Column Name="veto_definer:start_time" Type="int_4s"/>
+      <Column Name="veto_definer:end_time" Type="int_4s"/>
+      <Column Name="veto_definer:start_pad" Type="int_4s"/>
+      <Column Name="veto_definer:end_pad" Type="int_4s"/>
+      <Column Name="veto_definer:comment" Type="lstring"/>
+      <Stream Name="veto_definer:table" Type="Local" Delimiter=",">
+      "process:process_id:0","H1","DMT-OUT_OF_LOCK",1,1,923682800,0,0,0,"",
+      "process:process_id:0","H1","DMT-BADGAMMA",1,1,923682800,0,0,0,"",
+      "process:process_id:0","H1","DMT-INJECTION_BURST",1,2,923682800,0,-16,64,"",
+      "process:process_id:0","H1","DMT-ASC_OVERFLOW",1,2,923682800,0,-8,8,"ASC saturations are cat2",
+      "process:process_id:0","H1","DMT-PD_OVERFLOW",1,2,923682800,0,-8,8,"PD saturations are cat2",
+      "process:process_id:0","H1","DMT-SEVERE_LSC_OVERFLOW",1,2,923682800,0,-8,8,"LSC saturations are cat2",
+      "process:process_id:0","H1","DMT-ASC_OVERFLOW",1,3,923682800,0,-8,25,"ASC saturations are cat3 with larger pad",
+      "process:process_id:0","H1","DMT-SEVERE_LSC_OVERFLOW",1,3,923682800,0,-8,25,"LSC saturations are cat3 with larger pad",
+      "process:process_id:0","H1","DMT-PD_OVERFLOW",1,3,923682800,0,-8,25,"PD saturations are cat3 with larger pad",
+      "process:process_id:0","H1","DMT-WIND_OVER_30MPH",1,3,923682800,0,-8,8,"Windy",
+      "process:process_id:0","H1","DMT-LIGHTDIP_2_PERCENT",1,3,923682800,0,-2,2,"",
+      "process:process_id:0","H1","DMT-PRE_LOCKLOSS_10_SEC",1,3,923682800,0,0,0,"",
+      "process:process_id:0","H1","DMT-PRE_LOCKLOSS_30_SEC",1,3,923682800,0,0,0,"",
+      "process:process_id:0","H1","DMT-PRE_LOCKLOSS_60_SEC",1,3,923682800,0,0,0,"",
+      "process:process_id:0","H1","DMT-PRE_LOCKLOSS_120_SEC",1,3,923682800,0,0,0,"",
+      "process:process_id:0","H1","DMT-H2_NOT_LOCKED",1,3,923682800,0,0,0,"",
+      "process:process_id:0","H1","DMT-INJECTION",1,4,923682800,0,-16,64,"",      
+      "process:process_id:0","H1","DMT-INJECTION_INSPIRAL",1,4,923682800,0,0,0,"",
+      "process:process_id:0","H2","DMT-OUT_OF_LOCK",1,1,923682800,0,0,0,"",
+      "process:process_id:0","H2","DMT-BADGAMMA",1,1,923682800,0,0,0,"",
+      "process:process_id:0","H2","DMT-INJECTION_BURST",1,2,923682800,0,-16,64,"",
+      "process:process_id:0","H2","DMT-ASC_OVERFLOW",1,2,923682800,0,-8,8,"ASC saturations are cat2",
+      "process:process_id:0","H2","DMT-PD_OVERFLOW",1,2,923682800,0,-8,8,"PD saturations are cat2",
+      "process:process_id:0","H2","DMT-SEVERE_LSC_OVERFLOW",1,2,923682800,0,-8,8,"LSC saturations are cat2",
+      "process:process_id:0","H2","DMT-ASC_OVERFLOW",1,3,923682800,0,-8,25,"ASC saturations are cat3 with larger pad",
+      "process:process_id:0","H2","DMT-SEVERE_LSC_OVERFLOW",1,3,923682800,0,-8,25,"LSC saturations are cat3 with larger pad",
+      "process:process_id:0","H2","DMT-PD_OVERFLOW",1,3,923682800,0,-8,25,"PD saturations are cat3 with larger pad",
+      "process:process_id:0","H2","DMT-WIND_OVER_30MPH",1,3,923682800,0,-8,8,"Windy",
+      "process:process_id:0","H2","DMT-LIGHTDIP_4_PERCENT",1,3,923682800,0,-2,2,"",
+      "process:process_id:0","H2","DMT-PRE_LOCKLOSS_10_SEC",1,3,923682800,0,0,0,"",
+      "process:process_id:0","H2","DMT-PRE_LOCKLOSS_30_SEC",1,3,923682800,0,0,0,"",
+      "process:process_id:0","H2","DMT-PRE_LOCKLOSS_60_SEC",1,3,923682800,0,0,0,"",
+      "process:process_id:0","H2","DMT-PRE_LOCKLOSS_120_SEC",1,3,923682800,0,0,0,"",
+      "process:process_id:0","H2","DMT-H1_NOT_LOCKED",1,3,923682800,0,0,0,"",
+      "process:process_id:0","H2","DMT-INJECTION",1,4,923682800,0,-16,64,"",
+      "process:process_id:0","H2","DMT-INJECTION_INSPIRAL",1,4,923682800,0,0,0,""
+      </Stream>
+   </Table>
+</LIGO_LW>

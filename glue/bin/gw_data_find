@@ -1,0 +1,372 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2012  Scott Koranda
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Query the GWDataFindServer to obtain physical filenames or URLs for data files from a certain instrument and of a particular frame type within a GPS range.
+"""
+
+from __future__ import division
+
+__usage__ = """usage: %prog --server=HOST:PORT --observatory=OBS --type=NAME 
+               --gps-start-time=GPS --gps-end-time=GPS 
+               [ --lal-cache ] [ --frame-cache ]
+               [ --url-type=SCHEME ]  [ --match=EXPRESSION ]
+               [ --names-only ] [ --show-times ] [ --version ]
+               [ --no-proxy ] [ --gaps ]
+
+For example,
+
+    gw_data_find --server=HOST:PORT --observatory OBS --type TYPE --latest
+
+    gw_data_find --server=HOST:PORT --filename
+
+    gw_data_find --server=HOST:PORT --show-observatories
+
+    gw_data_find --server=HOST:PORT --show-types
+ 
+    gw_data_find --server=HOST:PORT --show-times --type TYPE --observatory OBS
+ 
+    gw_data_find --server=HOST:PORT --ping
+
+    gw_data_find --server=HOST:PORT --help"""
+
+# =============================================================================
+# Preamble
+# =============================================================================
+
+import os,sys,optparse,re
+from glue import datafind
+from glue import segments,segmentsUtils,git_version
+
+__author__  = "Scott Koranda <scott.koranda@ligo.org>, Duncan M. Macleod <duncan.macleod@ligo.org>"
+__version__ = git_version.id
+__data__    = git_version.date
+
+# =============================================================================
+# Convert to Omega frame cache respresentation
+# =============================================================================
+
+def wcacheFromLALCache(cache):
+    wcachedict={}
+    for e in cache:
+        dir = os.path.split(e.path)[0]
+        lfn = os.path.basename(e.path)
+        if wcachedict.has_key(dir):
+            l = wcachedict[dir]
+            if l[2] > int(e.segment[0]):
+                wcachedict[dir][2] = e.segment[0]
+            if l[3] < int(e.segment[1]):
+                wcachedict[dir][3] = e.segment[1]
+        else:
+            wcachedict[dir] = [e.observatory, e.description, int(e.segment[0]),\
+                               int(e.segment[1]), int(abs(e.segment)), dir]
+    return wcachedict
+
+# =============================================================================
+# Parse command line
+# =============================================================================
+
+def parse_command_line():
+    """
+    Take arguments from the command line and format them appropriately.
+    """
+
+    parser = optparse.OptionParser(usage=__usage__, description=__doc__[1:],\
+                                   formatter=optparse.IndentedHelpFormatter(4))
+    parser.add_option("-V", "--version", action="version",\
+                      help="show progam's version number and exit")
+    parser.version = __version__
+
+    qopts = optparse.OptionGroup(parser, "Query types",\
+                                 "Choices for a single query of the DataFind"+\
+                                 " server.")
+    qopts.add_option("-p", "--ping", action="store_true", default=False,\
+                     help="ping the LDRDataFind server, default: %default.")
+    qopts.add_option("-w", "--show-observatories", action="store_true",\
+                     default=False,
+                     help="list avilable observatory data, default: %default.")
+    qopts.add_option("-y", "--show-types", action="store_true",\
+                     default=False,
+                     help="list avilable types, default: %default.")
+    qopts.add_option("-a", "--show-times", action="store_true",\
+                     default=False,
+                     help="list gps-second segments for all data of type "+\
+                          "specified. Must be used with --type foo and "+\
+                          "--observatory bar, where foo is a frame type and "+\
+                          "bar is an observatory. Optionall supports one or "+\
+                          "both of --gps-start-time and --gps-end-time to "+\
+                          "restrict returned time ranges.")
+    qopts.add_option("-f", "--filename", action="store", type="string",\
+                     metavar="GWF", help="return URL(s) for a particular file.")
+    qopts.add_option("-T", "--latest", action="store_true", default=False,\
+                     help="list latest frame available of type specified, "+\
+                          "default: %default")
+
+    dopts = optparse.OptionGroup(parser, "Data options",\
+                                 "Parameters for your LDRDataFind query.")
+    dopts.add_option("-o", "--observatory", action="store", type="string",\
+                     metavar="OBS",\
+                     help="observatory(ies) that generated frame file. Use "+\
+                          "--show-observatories to see what is available.")
+    dopts.add_option("-t", "--type", action="store", type="string",\
+                     metavar="TYPE", help="type of frame file. Use --show-"+\
+                                         "types to see what is available.")
+    dopts.add_option("-s", "--gps-start-time", action="store", type="float",\
+                     metavar="GPS", help="start of GPS time range.")
+    dopts.add_option("-e", "--gps-end-time", action="store", type="float",\
+                     metavar="GPS", help="end of GPS time range.")
+
+    sopts = optparse.OptionGroup(parser, "Connection options",\
+                                 "Authentication and connection options.")
+    sopts.add_option("-r", "--server", action="store", type="string",\
+                     metavar="HOST:PORT",\
+                     help="hostname and optional port of server to query, "+\
+                          "in the form host:port.")
+    sopts.add_option("-P", "--no-proxy", action="store_true", default=False,\
+                     help="attempt to authenticate without a grid proxy,"+\
+                          "default: %default")
+
+    oopts = optparse.OptionGroup(parser, "Output options",\
+                                 "Parameters for parsing and writing output.")
+    oopts.add_option("-l", "--lal-cache", action="store_true", default=False,\
+                     help="format output for use as a LAL cache file, "+\
+                          "default: %default")
+    oopts.add_option("-W", "--frame-cache", action="store_true", default=False,\
+                     help="format output for use as a frame cache file, "+\
+                          "default: %default")
+    oopts.add_option("-m", "--match", action="store", type="string",\
+                     help="return only results that match a regular "+\
+                          "expression.")
+    oopts.add_option("-n", "--names-only", action="store_true", default=False,\
+                     help="return only the names of files with particular "+\
+                          "values for instrument, type, start, and end "+\
+                          "rather than full URLS, default: %default.")
+    oopts.add_option("-u", "--url-type", action="store", type="string",\
+                     help="return only URLs with a particular scheme or "+\
+                          "head such as \"file\" or \"gsiftp\"")
+    oopts.add_option("-g", "--gaps", action="store_true", default=False,\
+                     help="check the returned list of URLs or paths to see "+\
+                          "if the files cover the requested interval; a "+\
+                          "return value of zero (0) indicates the interval "+\
+                          "is covered, a value of one (1) indicates at least "+\
+                          "one gap exists and the interval is not covered, "+\
+                          "and a value of (2) indicates that the entire "+\
+                          "interval is not covered; missing gaps are printed "+\
+                          "to stderr, default: %default")
+    oopts.add_option("-O", "--output-file", action="store", type="string",\
+                     metavar="PATH", help="path to output file, defaults to "+\
+                                          "stdout")
+
+    parser.add_option_group(dopts)
+    parser.add_option_group(qopts)
+    parser.add_option_group(sopts)
+    parser.add_option_group(oopts)
+
+    return sanity_check_command_line(*parser.parse_args())
+
+def sanity_check_command_line(opts, args):
+    """
+    Sanity check the command lines arguments.
+    """
+    # make sure only one of the query types was given
+    if sum([opts.ping, opts.show_observatories, opts.show_types,\
+            opts.show_times, opts.filename is not None]) > 1:
+        raise optparse.OptionValueError("Only one of --ping, "+\
+                                      "--show-observatories, --show-types, "+\
+                                      "--show-times, --filename should be "+\
+                                      "given.")
+
+    # get the default server if it wasn't given
+    if not opts.server and not os.environ.has_key("LIGO_DATAFIND_SERVER"):
+        raise optparse.OptionValueError("--server was not given, and "+\
+                                      "$LIGO_DATAFIND_SERVER variable is not "+\
+                                      "set.")
+    elif not opts.server:
+        opts.server = os.environ["LIGO_DATAFIND_SERVER"] 
+
+        
+
+    # verify options for --show-times
+    if opts.show_times:
+        if not opts.observatory or not opts.type:
+            raise optparse.OptionValueError("--observatory and --type must be "+\
+                                          "given when using --show-times.")
+    # verify options for finding frames
+    if (not opts.show_observatories and not opts.show_types and\
+        not opts.show_times and not opts.ping and not opts.filename and\
+        not opts.latest):
+        if not opts.observatory or not opts.type or not opts.gps_start_time\
+        or not opts.gps_end_time:
+            raise optparse.OptionValueError("--observatory and --type and "+\
+                                          "--gps-start-time and --gps-end-"+\
+                                          "time must be given when querying "+\
+                                          "for frames.")
+    
+    # verify output options
+    if sum([opts.lal_cache, opts.frame_cache, opts.names_only]) > 1:
+        raise optparse.OptionValueError("Only one of --lal-cache, --frame-"+\
+                                      "cache, and --names-only should be "+\
+                                      "given.")
+
+    return opts, args
+
+# =============================================================================
+# Run from command line
+# =============================================================================
+
+if __name__ == "__main__":
+
+    opts, args = parse_command_line()
+
+    # verify authentication options
+    if not opts.no_proxy and not opts.server.endswith("80"):
+        cert_file, key_file = datafind.find_credential()
+    else:
+        cert_file, key_file = None,None
+
+    # connection to server
+    try:
+        server, port = opts.server.split(':',1)
+    except ValueError:
+        server = opts.server
+        port = None
+    else:
+        if port == "":
+            port = None
+        else:
+            port = int(port)
+
+    # open connection    
+    if cert_file and key_file:
+        connection =\
+            datafind.GWDataFindHTTPSConnection(host=server,\
+                                                       port=port,\
+                                                       cert_file=cert_file,\
+                                                       key_file=key_file)
+    else:
+        connection =\
+            datafind.GWDataFindHTTPConnection(host=server, port=port)
+
+    # open output
+    if opts.output_file:
+        out = open(opts.output_file, 'w')
+    else:
+        out = sys.stdout
+
+    # ping and exit
+    if opts.ping:
+        exitcode = connection.ping()
+        connection.close()
+        if exitcode == None or exitcode == 0:
+            sys.stdout.write("LDRDataFindServer at %s is alive.\n" % server)
+            sys.exit(0)
+
+    # show observatories and exit
+    elif opts.show_observatories:
+        sitelist = connection.find_observatories(match=opts.match)
+        connection.close()
+        out.write("%s\n" % "\n".join(sitelist))
+        out.close()
+        sys.exit(0)
+
+    # show types and exit
+    elif opts.show_types:
+        typelist = connection.find_types(site=opts.observatory,\
+                                         match=opts.match)
+        connection.close()
+        out.write("%s\n" % "\n".join(typelist))
+        out.close()
+        sys.exit(0)
+
+    # show types and exit
+    elif opts.show_times:
+        seglist = connection.find_times(site=opts.observatory,\
+                                        frametype=opts.type,\
+                                        gpsstart=opts.gps_start_time,\
+                                        gpsend=opts.gps_end_time)
+        connection.close()
+        segmentsUtils.tosegwizard(out, seglist)
+        out.close()
+        sys.exit(0)
+
+    #
+    # from here on every output should be a glue.lal.Cache object
+    #
+
+    # latest
+    elif opts.latest:
+        cache = connection.find_latest(opts.observatory, opts.type,\
+                                       urltype=opts.url_type,\
+                                       on_missing="warn")
+
+    # find specific frame
+    elif opts.filename:
+        cache = connection.find_frame(opts.filename, urltype=opts.url_type,\
+                                      on_missing="warn")
+
+    # find all frames
+    else:
+        cache = connection.find_frame_urls(opts.observatory, opts.type,\
+                                           opts.gps_start_time,\
+                                           opts.gps_end_time,\
+                                           match=opts.match,\
+                                           urltype=opts.url_type,\
+                                           on_gaps="ignore")
+
+    # check the gaps to get the exit code 
+    if opts.gaps:
+        span    = segments.segment(opts.gps_start_time, opts.gps_end_time)
+        seglist = segments.segmentlist(e.segment for e in cache).coalesce()
+        missing = (segments.segmentlist([span]) - seglist).coalesce()
+        if span in seglist:
+            exitcode = 0
+        elif span in missing:
+            exitcode = 2
+        else:
+            exitcode = 1
+
+    # close connection
+    connection.close()
+
+    # if searching for SFTs replace '.gwf' file suffix with '.sft'
+    if opts.type is not None and 'SFT' in opts.type:
+        for idx in range(len(cache)):
+            cache[idx].path = re.sub('.gwf', '.sft', cache[idx].path)
+
+    if opts.lal_cache:
+        cache.tofile(out)
+    elif opts.frame_cache:
+        wcachedict = wcacheFromLALCache(cache)
+        for item in wcachedict:
+            out.write("%s %s %s %s %s %s\n" % tuple(wcachedict[item]))
+        out.close()
+    elif opts.names_only:
+        cache.topfnfile(out)
+    else:
+        for entry in cache:
+            out.write("%s\n" % entry.url)
+    out.close()
+
+    if opts.gaps and len(missing) != 0:
+        sys.stderr.write("Missing segments:\n")
+        for seg in missing:
+            sys.stderr.write("%f %f\n" % tuple(seg))
+        sys.exit(exitcode)
+    else:
+        sys.exit(0)
+

@@ -1,0 +1,149 @@
+#!/usr/bin/python
+#
+# script to extract science mode segments from ldas rds frames
+#
+# Copyright (C) 2009 Duncan Brown
+# 
+# This is part of the Grid LSC User Environment (GLUE)
+# 
+# GLUE is free software: you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.
+# 
+# You should have received a copy of the GNU General Public License along with
+# this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import os
+import pwd
+import time
+
+from optparse import OptionParser
+
+import pylal.Fr
+
+from glue import lal
+from glue import segments
+from glue import gpstime
+
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import segments as ligolw_segments
+from glue.ligolw.utils import process as ligolw_process
+
+from glue.segmentdb import segmentdb_utils
+
+from pylal import git_version
+
+PROGRAM_NAME = sys.argv[0].replace('./','')
+PROGRAM_PID  = os.getpid()
+
+try:
+  USER_NAME = os.getlogin()
+except:
+  USER_NAME = pwd.getpwuid(os.getuid())[0]
+
+__author__  = "Duncan Brown <dabrown@physics.syr.edu>"
+
+parser = OptionParser(
+  version = git_version.verbose_msg,
+  usage   = "%prog [OPTIONS]",
+  description = "Extracts science mode segments from frame files")
+
+parser.add_option("-c", "--cache-file", metavar="FILE", help="read input frame names from CACHE" )
+parser.add_option("-i", "--ifo", metavar="IFO", help="extract segments for detector IFO" )
+parser.add_option("-t", "--type", metavar="RDS_TYPE", help="extract segments from frame type RDS_TYPE" )
+parser.add_option("-s", "--segment-version", metavar="VERSION", help="create science segments as version number VERSION", type=int )
+parser.add_option("-C", "--comment", metavar="STRING", help="add the optional STRING as the process:comment", default='' )
+parser.add_option("-V", "--verbose", action="store_true", help="print extra debugging information", default=False )
+
+options, filenames = parser.parse_args()
+
+if not options.cache_file:
+	raise ValueError, "missing argument --cache-file"
+if not options.ifo:
+	raise ValueError, "missing argument --ifo"
+if not options.type:
+	raise ValueError, "missing argument --type"
+if not options.segment_version:
+	raise ValueError, "missing argument --segment-version"
+
+frame_files = lal.Cache.fromfilenames([options.cache_file],coltype=int).sieve(ifos=options.ifo[0],description=options.type)
+frame_intervals = frame_files.to_segmentlistdict()[options.ifo[0]]
+
+# create a blank xml document and add the process id
+outdoc = ligolw.Document()
+outdoc.appendChild(ligolw.LIGO_LW())
+proc_id = ligolw_process.register_to_xmldoc(outdoc, PROGRAM_NAME, options.__dict__, comment=options.comment, ifos=[options.ifo], version=git_version.id, cvs_repository=git_version.branch, cvs_entry_time=git_version.date).process_id
+
+# create a science segment definition and a segment_summary entry for this interval
+sci_def_id = segmentdb_utils.add_to_segment_definer(outdoc,proc_id,options.ifo,"DMT-SCIENCE",options.segment_version,comment=options.ifo + " Science mode from RDS h(t) DQ flags")
+inj_def_id = segmentdb_utils.add_to_segment_definer(outdoc,proc_id,options.ifo,"DMT-INJECTION",options.segment_version,comment=options.ifo + " Injection mode from RDS h(t) DQ flags")
+up_def_id = segmentdb_utils.add_to_segment_definer(outdoc,proc_id,options.ifo,"DMT-UP",options.segment_version,comment=options.ifo + " Up mode from RDS h(t) DQ flags")
+cal_def_id = segmentdb_utils.add_to_segment_definer(outdoc,proc_id,options.ifo,"DMT-CALIBRATED",options.segment_version,comment=options.ifo + " Calibrated from RDS h(t) DQ flags")
+gam_def_id = segmentdb_utils.add_to_segment_definer(outdoc,proc_id,options.ifo,"DMT-BADGAMMA",options.segment_version,comment=options.ifo + " Calibration gamma is bad from RDS h(t) DQ flags")
+lig_def_id = segmentdb_utils.add_to_segment_definer(outdoc,proc_id,options.ifo,"DMT-LIGHT",options.segment_version,comment=options.ifo + " Light in arms ok from RDS h(t) DQ flags")
+segmentdb_utils.add_to_segment_summary(outdoc,proc_id,sci_def_id,frame_intervals,comment=options.type)
+segmentdb_utils.add_to_segment_summary(outdoc,proc_id,inj_def_id,frame_intervals,comment=options.type)
+segmentdb_utils.add_to_segment_summary(outdoc,proc_id,up_def_id,frame_intervals,comment=options.type)
+segmentdb_utils.add_to_segment_summary(outdoc,proc_id,cal_def_id,frame_intervals,comment=options.type)
+segmentdb_utils.add_to_segment_summary(outdoc,proc_id,gam_def_id,frame_intervals,comment=options.type)
+segmentdb_utils.add_to_segment_summary(outdoc,proc_id,lig_def_id,frame_intervals,comment=options.type)
+
+# create an empty list of science segments
+science_segments = segments.segmentlist()
+injection_segments = segments.segmentlist()
+up_segments = segments.segmentlist()
+calibrated_segments = segments.segmentlist()
+badgamma_segments = segments.segmentlist()
+light_segments = segments.segmentlist()
+
+# loop over the frames extracting the science and injection segments
+for frame in frame_files:
+	if options.verbose: print frame.path
+	state_vec = pylal.Fr.frgetvect(frame.path, ':'.join([options.ifo,'LSC-DATA_QUALITY_VECTOR']), start=-1, span=-1, verbose=False)
+	start_time = state_vec[1]
+	dt = state_vec[3][0]
+	for i in range(len(state_vec[0])):
+		if state_vec[0][i] & 0x1:
+			t_now = start_time + dt * i
+			science_segments |= segments.segmentlist([segments.segment(t_now, t_now + dt)])
+		if state_vec[0][i] & 0x2:
+			t_now = start_time + dt * i
+			injection_segments |= segments.segmentlist([segments.segment(t_now, t_now + dt)])
+                if state_vec[0][i] & 0x4:
+                        t_now = start_time + dt * i
+                        up_segments |= segments.segmentlist([segments.segment(t_now, t_now + dt)])
+                if state_vec[0][i] & 0x8:
+                        t_now = start_time + dt * i
+                        calibrated_segments |= segments.segmentlist([segments.segment(t_now, t_now + dt)])
+                if state_vec[0][i] & 0x10:
+                        t_now = start_time + dt * i
+                        badgamma_segments |= segments.segmentlist([segments.segment(t_now, t_now + dt)])
+                if state_vec[0][i] & 0x20:
+                        t_now = start_time + dt * i
+                        light_segments |= segments.segmentlist([segments.segment(t_now, t_now + dt)])
+
+# add the science segments to the output xml file
+segmentdb_utils.add_to_segment(outdoc,proc_id,sci_def_id,science_segments)
+segmentdb_utils.add_to_segment(outdoc,proc_id,inj_def_id,injection_segments)
+segmentdb_utils.add_to_segment(outdoc,proc_id,up_def_id,up_segments)
+segmentdb_utils.add_to_segment(outdoc,proc_id,cal_def_id,calibrated_segments)
+segmentdb_utils.add_to_segment(outdoc,proc_id,gam_def_id,badgamma_segments)
+segmentdb_utils.add_to_segment(outdoc,proc_id,lig_def_id,light_segments)
+
+# write the xml file to disk
+proctable = table.get_table(outdoc, lsctables.ProcessTable.tableName)
+proctable[0].end_time = gpstime.GpsSecondsFromPyUTC(time.time())
+outname = '-'.join([options.ifo[0],options.type + '_SEGMENTS_V' + str(options.segment_version),str(frame_intervals[0][0]),str(frame_intervals[-1][1]-frame_intervals[0][0])]) + '.xml'
+ligolw_utils.write_filename(outdoc,outname)
+
+sys.exit(0)

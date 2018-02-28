@@ -1,0 +1,147 @@
+pylal (0.10.0-1) unstable; urgency=high
+
+  * 0.10.0 release
+
+ -- Kipp Cannon <kipp.cannon@ligo.org>  Wed, 6 Jul 2016 18:16:00 +0900
+
+pylal (0.9.0-1) unstable; urgency=high
+
+  * 0.9.0 release
+
+ -- Kipp Cannon <kipp.cannon@ligo.org>  Wed, 21 Oct 2015 15:51:37 -0500
+
+pylal (0.8.1-1) unstable; urgency=high
+
+  * 0.8.1 release
+
+ -- Kipp Cannon <kipp.cannon@ligo.org>  Tue, 15 Sep 2015 13:15:36 -0500
+
+pylal (0.8.0) unstable; urgency=high
+
+  * 0.8.0 release
+
+ -- Kipp Cannon <kipp.cannon@ligo.org>  Thu, 23 Jul 2015 19:38:41 -0500
+
+pylal (0.7.2) unstable; urgency=high
+
+  * 0.7.2 release
+
+ -- Kipp Cannon <kipp.cannon@ligo.org>  Mon, 1 Jun 2015 13:03:37 -0500
+
+pylal (0.7.1) unstable; urgency=high
+
+  * 0.7.1 release
+
+ -- Kipp Cannon <kipp.cannon@ligo.org>  Thu, 28 May 2015 15:55:52 -0500
+
+pylal (0.7.0) unstable; urgency=high
+
+  * Initial 0.7.0 release
+
+ -- Kipp Cannon <kipp.cannon@ligo.org>  Wed, 20 May 2015 17:51:44 -0500
+
+pylal (0.6.0) unstable; urgency=high
+
+  * Initial 0.6.0 release
+
+ -- Kipp Cannon <kipp.cannon@ligo.org>  Wed, 19 Jan 2014 12:59:44 -0500
+
+pylal (0.5.0) unstable; urgency=high
+
+  * Initial 0.5.0 release
+
+ -- Kipp Cannon <kipp.cannon@ligo.org>  Thu, 16 Jan 2014 14:42:46 -0500
+
+pylal (0.4.0) unstable; urgency=high
+
+  * Initial 0.4.0 release
+
+ -- Kipp Cannon <kipp.cannon@ligo.org>  Mon, 1 Jul 2013 20:15:00 -0500
+
+pylal (0.3.0) unstable; urgency=high
+
+  * Initial 0.3.0 release
+
+ -- Kipp Cannon <kipp.cannon@ligo.org>  Tue, 5 Mar 2013 14:26:00 -0500
+
+pylal (0.2.0) unstable; urgency=high
+
+  * Initial 0.2.0 release
+
+ -- Kipp Cannon <kipp.cannon@ligo.org>  Fri, 25 Jan 2013 12:08:00 -0500
+
+pylal (0.1.5) unstable; urgency=high
+
+  [ Nickolas Fotopoulos ]
+  * Critical fix to frutils
+
+  [ Jameson Rollins ]
+  * Move to source 3.0 "native" package format.
+
+ -- Jameson Rollins <jameson.rollins@ligo.org>  Thu, 19 Jul 2012 15:02:54 -0700
+
+pylal (0.1.4-2) unstable; urgency=low
+
+  * Upgrade to 3.0 source format
+  * Fix source package name: pylal
+  * Bump standards version: 3.9.3
+  * Fix description field
+
+ -- Jameson Rollins <jameson.rollins@ligo.org>  Wed, 27 Jun 2012 19:15:39 -0700
+
+python-pylal (0.1.4-1) unstable; urgency=high
+
+  * Citizens demand releases; build more releases
+  * Lots of new and changed code
+
+ -- Nickolas Fotopoulos <nickolas.fotopoulos@ligo.org>  Wed, 20 Jun 2012 11:20:23 -0800
+
+python-pylal (0.1.3-1) unstable; urgency=high
+
+  * Sync Debian and SL6 packaging
+
+ -- Nickolas Fotopoulos <nickolas.fotopoulos@ligo.org>  Mon, 09 Jan 2012 15:50:47 -0800
+
+python-pylal (0.1.2-1) unstable; urgency=high
+
+  * Non-maintainer upload
+  * Fix Debian packaging
+
+ -- Nickolas Fotopoulos <nickolas.fotopoulos@ligo.org>  Mon, 02 Jan 2012 18:54:17 -0800
+
+python-pylal (0.1-4) unstable; urgency=low
+
+  * New Debian packaging
+  * New maintainer
+
+ -- Jameson Rollins <jameson.rollins@ligo.org>  Sat, 10 Sep 2011 11:06:38 -0700
+
+python-pylal (0.1-3lscsoft2.4) unstable; urgency=low
+
+  * python2.5 support requires numpy 1.1.x (Lenny and up)
+  * for now, build 2.4 only!
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Mon, 24 Nov 2008 14:15:00 +0100
+
+python-pylal (0.1-3lscsoft1) unstable; urgency=low
+
+  * build site-packages with both python2.5 and python2.4
+  * enable compilation of site-packages
+  * edit shebangs of bin/ scripts to invoke python2.4
+  * depend on python2.4, recommend python2.5
+  * build arch-dependent
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Fri, 21 Nov 2008 15:00:00 +0100
+
+python-pylal (0.1-2) unstable; urgency=low
+
+  * Rename to conform to python-* naming standards; builds into /opt/lscsoft
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Mon, 10 Nov 2008 14:40:00 +0100
+
+pylal (0.1-1) unstable; urgency=low
+
+  * Initial release from CVS checkout
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Sun, 21 Oct 2007 15:42:49 +0200
+

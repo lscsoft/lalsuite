@@ -1,0 +1,207 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2006  Kipp Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+"""
+Cut pieces out of LIGO LW XML files containing LSC tables.
+"""
+
+
+from optparse import OptionParser
+import sys
+
+
+from glue import git_version
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import utils
+
+
+__author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+	parser = OptionParser(
+		version = "Name: %%prog\n%s" % git_version.verbose_msg,
+		usage = "%prog [options] [file ...]",
+		description = "%prog removes XML elements from a LIGO Light Weight XML file.  If file names are given on the command line, those files are read, processed, and rewritten one at a time, otherwise input is read from stdin and output written to stdout.  Gzipped files are automatically detected on input, if the file's name ends in \".gz\" it will be gzip-compressed when written."
+	)
+	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+	parser.add_option("--delete-column", metavar = "name", action = "append", default = [], help = "Delete matching columns.  Example \"--delete-column sim_burst:dtminus\".")
+	parser.add_option("--delete-element", metavar = "tag[,attr=value[,...]]", action = "append", default = [], help = "Delete matching elements.  Example \"--delete-element Table,Name=search_summary\".")
+	parser.add_option("--delete-table", metavar = "name", action = "append", default = [], help = "Delete matching tables.  Example \"--delete-table search_summary\".")
+	options, filenames = parser.parse_args()
+
+	# strip column names
+	options.delete_column = set(map(table.StripColumnName, options.delete_column))
+
+	# parse element specs
+	def parse_delete_element(arg):
+		arg = arg.split(",")
+		return arg[0], tuple(a.split("=") for a in arg[1:])
+	options.delete_element = set(map(parse_delete_element, options.delete_element))
+
+	# strip table names
+	options.delete_table = set(map(table.StripTableName, options.delete_table))
+
+	return options, (filenames or [None])
+
+
+#
+# =============================================================================
+#
+#                                    Input
+#
+# =============================================================================
+#
+
+
+class ElementFilter(object):
+	"""
+	Class implementing any cuts that can be performed during document
+	parsing.
+	"""
+	def __init__(self, delete_tables):
+		self.delete_tables = delete_tables
+
+	def element_filter(self, name, attrs):
+		# check for unwanted tables
+		if name == ligolw.Table.tagName:
+			for delete_table in self.delete_tables:
+				if not table.CompareTableNames(delete_table, attrs["Name"]):
+					return False
+		return True
+
+
+class ContentHandler(ligolw.FilteringLIGOLWContentHandler):
+	def __init__(self, xmldoc):
+		super(ContentHandler, self).__init__(xmldoc, ElementFilter(options.delete_table).element_filter)
+
+
+table.use_in(ContentHandler)
+
+
+#
+# Enable attribute interning
+#
+
+
+table.RowBuilder = table.InterningRowBuilder
+
+
+#
+# =============================================================================
+#
+#                                     Cut
+#
+# =============================================================================
+#
+
+
+#
+# Remove unwanted columns
+#
+
+
+def RemoveColumns(doc, columns):
+	for table_elem in doc.getElementsByTagName(ligolw.Table.tagName):
+		for name in columns:
+			for column in table.getColumnsByName(table_elem, name):
+				table_elem.removeChild(column)
+
+
+#
+# Remove unwanted elements
+#
+
+
+def CompareDeleteElement(elem, name, attrvalues):
+	"""
+	Return 1 for !=, 0 for ==.
+	"""
+	if elem.tagName != name:
+		return 1
+	for attr, value in attrvalues:
+		try:
+			if elem.getAttribute(attr) != value:
+				return 1
+		except KeyError:
+			return 1
+	return 0
+
+
+def IsDeleteElement(elem, specs):
+	"""
+	Return True if elem matches an elem spec for deleting.
+	"""
+	for name, attrvalues in specs:
+		if CompareDeleteElement(elem, name, attrvalues) == 0:
+			return True
+	return False
+
+
+def RemoveElements(doc, specs):
+	for elem in doc.getElements(lambda e: IsDeleteElement(e, specs)):
+		elem.parentNode.removeChild(elem)
+
+
+#
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+#
+
+
+options, filenames = parse_command_line()
+
+
+for n, filename in enumerate(filenames):
+	if options.verbose:
+		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
+	doc = utils.load_filename(filename, verbose = options.verbose, contenthandler = ContentHandler)
+	table.InterningRowBuilder.strings.clear()
+	if options.verbose:
+		print >>sys.stderr, "processing"
+	if options.delete_column:
+		RemoveColumns(doc, options.delete_column)
+	if options.delete_element:
+		RemoveElements(doc, options.delete_element)
+	utils.write_filename(doc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
+	doc.unlink()

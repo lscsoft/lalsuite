@@ -1,0 +1,159 @@
+#!/usr/bin/python
+__author__ = "Sarah Caudill"
+__prog__ = "frame_check"
+
+import subprocess
+import os
+import sys
+from pylal import git_version
+from pylal import webUtils
+from pylal import InspiralUtils
+from optparse import *
+from glue import lal
+
+
+usage = """ %prog [options]
+"""
+
+parser = OptionParser( usage, version=git_version.verbose_msg)
+
+parser.add_option("-f","--frame-cache",action="store",type="string",\
+    metavar=" FILE",help="use frame files list FILE")
+
+parser.add_option("-F","--frame-check-executable",action="store",type="string",\
+    metavar=" EXEC",help="use EXEC to check the frame file")
+
+## ADD OPTIONS FOR DATA TYPES, OBSERVATORIES ETC..!!!
+parser.add_option("-D","--dataFind-executable",action="store",type="string",\
+    metavar=" EXEC",help="use EXEC to check the call LSCdataFind query")
+
+parser.add_option("","--gps-start-time", action="store",type="float", \
+    metavar=" GPSSTARTTIME",help="gps start time (for naming figure and \
+    output files)")
+
+parser.add_option("","--gps-end-time", action="store",type="float", \
+    metavar=" GPSENDTIME",help="gps end time (for naming figure and \
+    output files)")
+
+parser.add_option("-g","--gps-time",action="store",type="string",\
+    metavar=" GPS",help="use gps GPS to check the frame files")
+
+parser.add_option("-o","--output-path",action="store",type="string",\
+    metavar=" PATH",help="use output path PATH for snr and chisq plots")
+
+parser.add_option("-O","--enable-output",action="store_true",\
+    default="false",  metavar="OUTPUT",\
+    help="enable the generation of the html and cache documents")
+
+parser.add_option("-T","--user-tag", action="store",type="string", \
+    default=None, metavar=" USERTAG",help="user tag for the output file name")
+
+parser.add_option("","--ifo-times",action="store",\
+    type="string", default=None, metavar=" IFOTIMES",\
+    help="provide ifo times for naming figure")
+
+parser.add_option("","--ifo-tag",action="store",\
+    type="string",  metavar=" IFOTAG",\
+    help="ifo tag gives the information about ifo times and stage")
+
+command_line = sys.argv[1:]
+(opts,args) = parser.parse_args()
+
+#################################
+# Sanity check of input arguments
+
+if not opts.frame_check_executable:
+  print >> sys.stderr, "No frame check executable specified."
+  print >> sys.stderr, "Use executable EXEC to specify the frame checker."
+  sys.exit(1)
+
+if not opts.frame_cache and not opts.gps_time and not opts.dataFind_executable:
+  print >> sys.stderr, "No frame file specified."
+  print >> sys.stderr, "Use --frame-file FILE to specify location."
+  sys.exit(1)
+
+if not opts.output_path:
+  print >> sys.stderr, "No output path specified."
+  print >> sys.stderr, "Use --output-path PATH to specify location."
+  sys.exit(1)
+
+
+# THIS IS AN EXAMPLE FIX THIS!! (to be more general)
+if opts.dataFind_executable and opts.gps_time:
+  command = opts.dataFind_executable + ' --observatory=H --type=RDS_R_L1 --gps-start-time ' + opts.gps_time + ' --gps-end-time ' + opts.gps_time + ' --lal-cache --url-type=file'
+  commandExec = subprocess.Popen(command,shell=True, stdout=subprocess.PIPE)
+  commandRetCode = commandExec.wait()
+  cacheFile = commandExec.stdout
+  if commandRetCode != 0:
+    print >> sys.stderr, "command " + command + " failed"
+    sys.exit(1)
+
+  command = opts.dataFind_executable + ' --observatory=L --type=RDS_R_L1 --gps-start-time ' + opts.gps_time + ' --gps-end-time ' + opts.gps_time + ' --lal-cache --url-type=file'
+  commandExec = subprocess.Popen(command,shell=True, stdout=subprocess.PIPE)
+  commandRetCode = commandExec.wait()
+  cacheFile2 = commandExec.stdout
+  if commandRetCode != 0:
+    print >> sys.stderr, "command " + command + " failed"
+    sys.exit(1)
+
+else:
+  cacheFile = open(opts.frame_cache,'r')
+  cacheFile2 = None
+
+lalCache = lal.Cache()
+myCache = lalCache.fromfile(cacheFile)
+if cacheFile2: myCache += lalCache.fromfile(cacheFile2)
+
+mySegmentList = myCache.to_segmentlistdict()
+if opts.ifo_times and not (opts.dataFind_executable and opts.gps_time):
+  mySegment = mySegmentList[opts.ifo_times[0]][0]
+  startTime = float(mySegment[0])
+  endTime = float(mySegment[1])
+  if not opts.gps_start_time:
+    opts.gps_start_time = startTime 
+  if not opts.gps_end_time:
+    opts.gps_end_time = endTime
+
+opts = InspiralUtils.initialise(opts, __prog__, __version__)
+fnameList = []
+if opts.enable_output is True:
+  html_filename = opts.output_path + opts.prefix + opts.suffix + ".html"
+  web = webUtils.WebPage("Frame check for "+opts.ifo_times, html_filename)
+
+countPasses=int(0)
+frameCount=myCache.__len__()
+failedList=list()
+verboseText=list()
+for entry in myCache:
+  cmd = opts.frame_check_executable + ' -i  '  + entry.path
+  frCheckExec = subprocess.Popen(cmd,shell=True, stdout=subprocess.PIPE)
+  frCheckRetCode = frCheckExec.wait()
+  frCheckOutput = frCheckExec.stdout
+  if frCheckRetCode != 0:
+    failedList.append(entry.path)
+    if opts.enable_output is True:
+      for line in  frCheckOutput.readlines():
+        verboseText.append(line)
+  else:
+    if opts.enable_output is True:
+      for line in  frCheckOutput.readlines():
+        verboseText.append(line)
+
+if opts.enable_output is True:
+  web.text("Frame_Check_Summary :%i: files failed!\n\n"%(failedList.__len__()))
+  for line in failedList:
+    web.text(line+"\n")
+  web.text("\n\n")
+  for line in verboseText:
+    web.text(line)
+if opts.enable_output is True:    
+  InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+  web.cleanWrite('IUL')
+
+#If there are failed frame checks
+#if failedList.__len__() > 0:
+#  print >> sys.stderr, "At least 1 frame file failed the frame check.\n"
+#  sys.exit(1)
+  
+sys.exit(0)
+

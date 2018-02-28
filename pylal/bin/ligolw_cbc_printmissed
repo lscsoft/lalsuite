@@ -1,0 +1,265 @@
+#!/usr/bin/python
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+from optparse import OptionParser
+try:
+    import sqlite3
+except ImportError:
+    # pre 2.5.x
+    from pysqlite2 import dbapi2 as sqlite3
+import sys
+import os
+import bisect
+import math
+import re
+
+from glue import segments
+from glue.ligolw import lsctables
+from glue.ligolw import dbtables
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import utils
+from glue.ligolw.utils import print_tables
+from glue.ligolw.utils import process
+from glue.ligolw.utils.ligolw_sqlite import extract
+from glue import git_version
+
+from pylal import ligolw_sqlutils as sqlutils
+from pylal import printutils
+from pylal import db_thinca_rings
+
+__prog__ = "ligolw_cbc_printmissed"
+__author__ = "Collin Capano <cdcapano@physics.syr.edu>"
+
+description = \
+"Prints information about closest missed injections."
+
+# =============================================================================
+#
+#                                   Set Options
+#
+# =============================================================================
+
+
+def parse_command_line():
+    """
+    Parse the command line, return options and check for consistency among the
+    options.
+    """
+    parser = OptionParser(
+        version = git_version.verbose_msg,
+        usage   = "%prog [options]",
+        description = description
+        )
+
+    # following are related to file input and output naming
+    parser.add_option( "-i", "--input", action = "store", type = "string",
+        default = None,                  
+        help = 
+            "Input database to read. Can only input one at a time." 
+            )
+    parser.add_option("-o", "--output", action = "store", type = "string",
+        default = None,
+        help =
+            "Save summary table to file. If no output specified, result " +
+            "will be printed to stdout."
+            )
+    parser.add_option( "-t", "--tmp-space", action = "store", type = "string",
+        default = None, metavar = "path",
+        help = 
+            "Location of local disk on which to do work. " +
+            "This is used to enhance performance in a networked " +
+            "environment."
+            )
+    parser.add_option("-f", "--output-format", action = "store", type = "string",
+        default = "xml", metavar = "wiki, html, OR xml",
+        help =
+            "Format of output summary table. Choices are 'wiki', 'html', or 'xml'. " +
+            "Default is xml."
+            )
+    parser.add_option( "-v", "--verbose", action = "store_true", default = False,
+        help = 
+            "Print the SQLite query that is used to stdout." 
+            )
+    # following are generic inspiral_sql options
+    parser.add_option( "", "--param-name", metavar = "PARAMETER",
+        action = "store", default = None,
+        help = 
+            "Can be any parameter in the simulation table. " +
+            "Specifying this and param-ranges will only select " +
+            "triggers that fall within the parameter ranges. " 
+            )
+    parser.add_option( "", "--param-ranges", action = "store", default = None,
+        metavar = " [ LOW1, HIGH1 ); ( LOW2, HIGH2]; !VAL3; etc.",
+        help = 
+            "Requires --param-name. Specify the parameter ranges " +
+            "to select triggers in. A '(' or ')' implies an open " +
+            "boundary, a '[' or ']' a closed boundary. To specify " +
+            "multiple ranges, separate each range by a ';'. To " +
+            "specify a single value, just type that value with no " +
+            "parentheses or brackets. To specify not equal to a single " +
+            "value, put a '!' before the value. If " +
+            "multiple ranges are specified, the triggers picked for " +
+            "ranking will come from the union of the ranges."
+            )
+    # following are options specific to this program
+    parser.add_option( "-s", "--simulation-table", action = "store", type = "string", default = None,
+        help =
+            "Required. Table to look in for injection parameters. " +
+            "Can be any lsctable with a simulation_id."
+            )
+    parser.add_option( "-r", "--recovery-table", action = "store", type = "string", default = None,
+        help =
+            "Required. Table to look in to see if injections were missed. " +
+            "Can be any lsctable with a coinc_event_id."
+            )
+    parser.add_option( "-M", "--map-label", action = "store", type = "string", default = None,
+        help = 
+            "Required. Name of the type of mapping that was used for finding injections."
+        )
+    parser.add_option( "-l", "--livetime-program", action = "store", type = "string", default = None,
+        help =
+            "Required. Name of program used to get the analysis segments. This is needed to figure out " + \
+            "what instruments (if any) were on during missed injections."
+        )
+    parser.add_option("-c", "--columns", action = "store", type = "string", default = None,
+        help =
+            "If output-format is set to html or wiki, will only print the given columns. " +
+            "To specify multiple columns, separate column names with a comma."
+            "Default is to print the columns listed in pylal/printutils.get_columns_to_print."
+            )
+    parser.add_option( "-X", "--exclude-coincs", action = "store", type = "string", default = None,
+        metavar = " [ALL IN INSTRUMENTS_ON1];[ALL IN INSTRUMENTS_ON2]; etc.",
+        help = 
+            "Exclude specified instrument times. Must specify by typing '[ALL IN INSTRUMENTS_ON]' " +
+            "e.g., '[ALL IN H1,V1]' to exclude H1,V1 time. Some rules: " +
+                "* The word 'ALL' and the detector time must be separated by " +
+                "an 'in'. When specifying a detector " +
+                "time, detectors and/or ifos must be separated by " +
+                "commas, e.g. 'H1,L1' not 'H1L1'. " +
+                "* To specify multiple exclusions, separate each " +
+                "bracket by a ';'. " +
+                "* Order of the instruments nor case of the letters " +
+                "matter. So if your pinky is broken and you're " +
+                "dyslexic you can type '[all in v1,h1]' without a " +
+                "problem." 
+            )
+    parser.add_option( "-I", "--include-only-coincs", action = "store", type = "string", default = None,
+        metavar = " [ALL IN INSTRUMENTS_ON1];[ALL IN INSTRUMENTS_ON2]; etc.",
+        help =
+            "Opposite of --exclude-coincs: only get missed injections from the specified instrument time. " +
+            "Default is to find injections in all times present in the database."
+            )
+    parser.add_option( "", "--sim-tag", action = "store", type = "string", default = 'ALLINJ',
+        help =
+            "Specify the simulation type to plot, e.g., 'BNSLININJ'. To plot multiple injection types together " +
+            "separate tags by a '+', e.g., 'BNSLOGINJA+BNSLOGINJB'. " +
+            "If not specified, will group all injections together (equivalent to specifying 'ALLINJ')."
+            )
+    parser.add_option( "", "--limit", action = "store", type = "int", default = 10,
+        help =
+            "Specify up to what rank to print. Default is 10. Missed injections are ranked separately " +
+            "in each instrument time, e.g., if limit is 10, will get the 10 closest injection for each " +
+            "instrument time."
+            )
+    parser.add_option("-H", "--daily-ihope-pages-location", action = "store",
+        default = "https://ldas-jobs.ligo.caltech.edu/~cbc/ihope_daily",
+        help =
+            "Web address of the daily ihope pages. " +
+            "Default is https://ldas-jobs.ligo.caltech.edu/~cbc/ihope_daily"
+            )
+
+    (options, args) = parser.parse_args()
+
+    # check for required options and for self-consistency
+    if not options.input:
+        raise ValueError, "No input specified."
+    if not options.simulation_table:
+        raise ValueError, "No simulation table specified."
+    if not options.recovery_table:
+        raise ValueError, "No recovery table specified."
+    if not options.livetime_program:
+        raise ValueError, "No livetime-program specified."
+    if options.param_name and not options.param_ranges:
+        raise ValueError, "--param-name requires --param-ranges"
+
+
+    return options, sys.argv[1:]
+
+
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+
+opts, args = parse_command_line()
+
+# get input database filename
+filename = opts.input
+if not os.path.isfile( filename ):
+    raise ValueError, "The input file, %s, cannot be found." % filename
+
+# Setup working databases and connections
+if opts.verbose and opts.tmp_space: 
+    print >> sys.stderr, "Setting up temp. database..."
+working_filename = dbtables.get_connection_filename( 
+    filename, tmp_path = opts.tmp_space, verbose = opts.verbose )
+connection = sqlite3.connect( working_filename )
+if opts.tmp_space:
+    dbtables.set_temp_store_directory(connection, opts.tmp_space, verbose = opts.verbose)
+
+cmtable = printutils.printmissed( connection, opts.simulation_table, opts.recovery_table, opts.map_label, opts.livetime_program,
+    param_name = opts.param_name, param_ranges = opts.param_ranges, include_only_coincs = opts.include_only_coincs,
+    exclude_coincs = opts.exclude_coincs, sim_tag = opts.sim_tag, limit = opts.limit, 
+    daily_ihope_pages_location = opts.daily_ihope_pages_location, verbose = opts.verbose)
+
+#
+# create a document
+#
+cmdoc = ligolw.Document()
+# setup the LIGOLW tag
+cmdoc.appendChild(ligolw.LIGO_LW())
+# add this program's metadata
+cmproc_id = process.register_to_xmldoc(cmdoc, __prog__, opts.__dict__, version = git_version.id)
+# connect the table to the document
+cmdoc.childNodes[0].appendChild(cmtable)
+
+#
+#   Print the summary data
+#
+
+if opts.verbose and not opts.output:
+    print >> sys.stderr, "\nResults are:\n"
+
+if opts.output_format != "xml":
+    # set table list
+    tableList = ['close_missed_injections']
+    columnList, row_span_columns, rspan_break_columns = printutils.get_columns_to_print(cmdoc, tableList[0])
+    if opts.columns is not None:
+        # overwrite columnList with specified columns
+        columnList = [col.strip() for col in opts.columns.split(',')]
+    # set output
+    if opts.output is not None:
+        opts.output = open(opts.output, 'w')
+    # print the loudest_events table in the specified format
+    print_tables.print_tables(cmdoc, opts.output, opts.output_format, tableList = tableList,
+        columnList = columnList, round_floats = True, decimal_places = 2, title = None, print_table_names = False,
+        row_span_columns = row_span_columns, rspan_break_columns = rspan_break_columns)
+    if opts.output is not None:
+        opts.output.close()
+else:
+    utils.write_filename(cmdoc, opts.output, xsl_file = "ligolw.xsl")
+
+# close connection and exit
+connection.close()
+dbtables.discard_connection_filename( filename, working_filename, verbose = opts.verbose)
+
+sys.exit(0)

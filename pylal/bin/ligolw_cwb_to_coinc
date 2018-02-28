@@ -1,0 +1,118 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2011 Chris Pankow
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Convert a ROOT file produced by cWB into a ligolw document.
+"""
+
+import sys
+from optparse import OptionParser
+
+from glue import segments
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import table
+from glue.ligolw import types
+from glue.ligolw import utils
+from glue.ligolw import ilwd
+
+from glue.lal import LIGOTimeGPS
+from glue.lal import CacheEntry
+
+from pylal import git_version
+
+# Dear ROOT. No one thinks your help is useful. Stop eating my help messages. 
+# Very ironically yours, Chris...
+if not ("--help" in sys.argv or "-h" in sys.argv):
+	from pylal import ligolw_cwb_to_coinc
+
+#CONVERT_ROOT_VERSION = "0.0.8"
+__author__ = "Chris Pankow <chris.pankow@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+#
+# =============================================================================
+#
+#                                 Main
+#
+# =============================================================================
+#
+
+
+# Begin main driver script
+
+parser = OptionParser(
+  version = "Name: %%prog\n%s" % git_version.verbose_msg,
+  usage = "%prog [options] [files...]",
+  description = "Takes a set of cWB output ROOT files and converts them into a ligolw XML files with all tables required to describe the job. If a joblist is specified, then the job IDs will be synched with the IDs in the XML tables. If a joblist and a start/stop are specified, only events within those times will be converted. If a start/stop is specified without a joblist, then the start/stop times will be considerd to be the 'job segment'.")
+parser.add_option("-o", "--output-name", action="store", dest="outputname", 
+  help="Name of XML file to output.")
+parser.add_option("-c", "--cwb-table", action="store_true", dest="cwbtable", 
+  default=False, help="Turn on generation of non-standard cWB tables.")
+parser.add_option("-t", "--job-list", action="store", dest="job_list", 
+  help="Generate the search summary table from the joblist rather than attempting to determine it from the ROOT files. If it is a single job of cWB to be converted specify --gps-start-time and --gps-end-time instead without the joblist.")
+parser.add_option("-s", "--gps-start-time", action="store", dest="start", 
+  help="Allow events only after the gps-start-time.")
+parser.add_option("-e", "--gps-end-time", action="store", dest="end", 
+  help="Allow events only after the gps-end-time.")
+parser.add_option("-v", "--verbose", action="store_true", dest="verbose", 
+  default=False, help="Turn on verbosity.")
+parser.add_option("-w", "--set-offset", action="store", dest="waveoffset", 
+  default=0, help="Set job processing offset time. Defualt is 0.")
+parser.add_option("-i", "--instruments", metavar = "instruments", action =
+        "store", default = "", help = "Specify a set of instruments (IFOs) in a comma separated list, e.g. \"H1,H2,L1\". Recommended in case of conversion of file with no events.")
+parser.add_option("-I", "--input-cache", metavar = "filename", action = "append", default = [], help = "Get input files from the LAL cache named filename.")
+
+opts, rootfiles = parser.parse_args()
+
+if opts.input_cache:
+  if rootfiles == None: rootfiles = []
+  rootfiles += [CacheEntry(line).path for cache in opts.input_cache for line in file(cache)]
+
+if rootfiles == None:
+  sys.exit("Must specify input Coherent WaveBurst ROOT files")
+
+if opts.start != None:
+  print "Allowing events only after %10.1f" % int(opts.start)
+if opts.end != None:
+  print "Allowing events only before %10.1f" % int(opts.end)
+
+xmldoc = ligolw.Document()
+xmldoc.appendChild(ligolw.LIGO_LW());
+
+tbl_factory = ligolw_cwb_to_coinc.CWB2Coinc(opts.job_list, opts.start, opts.end,
+        #opts.cwbtable, 
+        opts.instruments, opts.waveoffset, opts.verbose)
+tbl_factory.create_tables(xmldoc, rootfiles)
+
+if opts.outputname == None :
+  print "Assigning name to output xml"
+  output = "cwb_to_coinc"
+
+  if opts.start and opts.end :
+    output = "%s_%d_%d" % ( output, int(opts.start), int(opts.end) )
+
+  output += ".xml.gz"
+else :
+  output = "%s.xml.gz" % opts.outputname
+
+utils.write_filename(xmldoc, output, verbose = True, 
+  gz = (output or "stdout").endswith(".gz"))
+
+xmldoc.unlink()

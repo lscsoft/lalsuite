@@ -1,0 +1,9 @@
+method = git
+# /home/pfcouvar/src/lalsuite/.git
+git_root = $(HARNESS_GIT_REPO)
+# master
+git_tree = $(HARNESS_GIT_BRANCH)
+git_path = glue/src/nmi/builds
+
+# omit lalinspiral/nmi/builds/ dir prefix
+tar_args = --strip-components=4

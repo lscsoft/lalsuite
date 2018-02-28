@@ -1,0 +1,199 @@
+#!/usr/bin/python
+#
+# lightweight database dumper client
+#
+#
+# Copyright (C) 2003 Duncan Brown
+# 
+# This program is part of the Grid LSC User Environment (GLUE)
+# 
+# GLUE is free software: you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.
+# 
+# You should have received a copy of the GNU General Public License along with
+# this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import os
+import getopt
+import re
+import exceptions
+import re
+
+try:
+  from glue.segmentdb import segmentdb_utils
+except ImportError as e:
+  print >> sys.stderr, """
+Error: unable to import modules from glue.
+
+Check that glue is correctly installed and in your PYTHONPATH.
+
+%s
+""" % e
+  sys.exit(1)
+
+
+def usage():
+  msg = """\
+Usage: ldbdc.py [OPTIONS]
+  -t, --segment-url       Users have to specify either 'https://' for a secure connection or 'http://' for an insecure connection in the segment database url. For example, '--segment-url=https://segdb.ligo.caltech.edu'. No need to specify port number 
+  -d, --database          use database specified by environment variable S6_SEGMENT_SERVER. For example, 'S6_SEGMENT_SERVER=https://segdb.ligo.caltech.edu'"
+  -i, --insert LIGOLW     insert LIGO lightweight file LIGOLW
+  -f, --pfn PFNLIST       a comma separated list of PFNs to insert
+  -q, --query QUERY       execute SQL query QUERY
+  -o, --output FILE       write output to FILE
+  -D, --dmt-segments      insert the XML data as DMT segment data
+  -p, --ping              ping the server
+  -h, --help              print this message
+
+One of the options --ping, --query, --insert must be specified.
+\
+"""
+  print msg
+
+def help():
+  usage()
+  sys.exit(0)
+
+shortop = "t:i:f:q:o:dDph"
+longop = [
+  "segment-url=",
+  "identity=",
+  "database",
+  "insert=",
+  "pfn=",
+  "query=",
+  "output=",
+  "dmt-segments",
+  "ping",
+  "help"
+  ]
+
+try:
+  opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
+except getopt.GetoptError:
+  print >>sys.stderr, "Error: %s \n" % str(e)
+  usage()
+  sys.exit(1)
+
+# defaults
+segment_url = None
+infile = None
+pfnlist = None
+outfile = None
+squery = None
+database = None
+dmtsegs = None
+ping = None
+
+# environment variables override defaults but not command line options
+# This block of code is also required for web pages calling ldbdc to work
+try:
+  segment_url = os.environ['LDBD_SERVER']
+except:
+  pass
+
+for o, a in opts:
+  if o in ("-h", "--help"):
+    help()
+  elif o in ("-t", "--segment-url"):
+    segment_url = a
+  elif o in ("-i", "--insert"):
+    infile = a
+  elif o in ("-f", "--pfn"):
+    pfnlist = a
+  elif o in ("-q", "--query"):
+    squery = a
+  elif o in ("-d", "--database"):
+    database = os.environ['S6_SEGMENT_SERVER']
+  elif o in ("-o", "--output"):
+    outfile = a
+  elif o in ("-D", "--dmt-segments"):
+    dmtsegs = 1
+  elif o in ("-p", "--ping"):
+    ping = 1
+
+
+if segment_url and database:
+  print "\nMust specify either --segment-url or --database"
+  usage()
+  sys.exit(1)
+if not segment_url and not database:
+  print "\nMust specify either --segment-url or --database"
+  usage()
+  sys.exit(1)
+if not infile and not squery and not ping:
+  print "\nNo operation specified\n"
+  usage()
+  sys.exit(1)
+if squery and infile:
+  print "\nOnly one of --query and --insert can be specified\n"
+  usage()
+  sys.exit(1)
+if pfnlist and not infile:
+  print "\nA list of PFNs makes sense only when inserting data\n"
+  usage()
+  sys.exit(1)
+if dmtsegs and not infile:
+  print "\nMust specify an XML file to insert\n"
+  usage()
+  sys.exit(1)
+if dmtsegs and pfnlist:
+  print "\nCannot specify a list of PFNs when inserting data segment data\n"
+  usage()
+  sys.exit(1)
+
+
+# open connection to LDBD(W)Server
+myClient = segmentdb_utils.setup_database(segment_url)
+
+
+try:
+  if ping:
+    # ping the server and print the response
+    print myClient.ping()
+
+  elif infile and not pfnlist:
+    # open an input file and send it to the server
+    fh = open(infile,'r')
+    xmltext = fh.read()
+    if dmtsegs:
+      myClient.insertdmt(xmltext)
+    else:
+      myClient.insert(xmltext)
+    fh.close()
+
+  elif infile and pfnlist:
+    # open the input file but skip any of the "bad" tables
+    xmltext = ""
+    p = LDBDClient.SimpleLWXMLParser()
+    fh = open(infile,'r')
+    for line in fh.xreadlines():
+      xmltext += p.parse_line(line)
+    fh.close()
+    lfnpfn_dict = {}
+    lfnpfn_dict[os.path.basename(infile)] = pfnlist.split(',')
+    myClient.insertmap(xmltext,lfnpfn_dict)
+
+  elif squery:
+    # execute the query and write out the results
+    if outfile:
+      fh = open(outfile,'w')
+    else:
+      fh = sys.__stdout__
+    fh.write(myClient.query(squery))
+    fh.close()
+
+except Exception as e:
+  print >>sys.stderr, "Error querying LDBD Server: %s" % str(e)
+  print >>sys.stderr, "Enter 'ldbdc --help' for usage"
+  sys.exit(1)
+
+sys.exit(0)

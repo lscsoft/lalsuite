@@ -1,0 +1,678 @@
+#!/usr/bin/python
+
+__author__ = "Patrick Brady <patrick@gravity.phys.uwm.edu>"
+
+import sys
+import os
+from optparse import *
+import re
+import exceptions
+import glob
+import ConfigParser
+import random
+from types import *
+
+from glue import segmentsUtils
+
+#####################################################################
+# function to read in and populate information about each time
+def read_png_file(file,time):
+  """
+  read an file which is formatted according to plotnumgalaxies output
+  return a 2-d array with each line of the file as a row in the array
+  @param file:  file name
+  @param time:  analyzed time associated with this file
+  """
+  f = open( file , "r")
+  lines = f.readlines()
+  f.close()
+
+  png_data = []
+  for line in lines:
+    if line[0] != '#':
+      png_line = get_png_array([float(val) for val in line.split()], time)
+      check_png_data(png_line)
+      png_data.append(png_line)
+           
+  return png_data
+
+#############################################################################
+def check_png_data(data):
+  """
+  Checks that no show stoppers are present in the read in png 'ini' file
+  @param data: the png_data dictionary to check
+  """
+  if data["ng"] < 1E-7:
+    print >> sys.stdout, "The search is not senstive to any galaxies."
+    print >> sys.stdout, "With no sensitivity I can say nothing about the rate"
+    sys.exit(1)
+  if data["tobs"] < 1E-10:
+    print >> sys.stdout, "The read in search duration was less than one ms"
+    print >> sys.stdout, "With no duration I can say nothing about rates."
+    sys.exit(1)
+
+#############################################################################
+def get_png_array(data,time):
+  """
+  extract the data from a line in a png file, and store as a dictionary
+  @param data:  a list of values read from a line of a png input file
+  @param time:  the analyzed time associated to this png data
+  """
+  param = {}
+  param["mlo"]                    = data[0]
+  param["mhi"]                    = data[1]
+  param["ng"]                     = data[2]
+  param["ngprime"]                = data[3]
+  param["pb"]                     = data[4]
+  param["pbprime"]                = data[5]
+  param["dn_lummu"]               = log( param["ng"] )
+  param["dn_lumsigma_lhocal"]     = log( 1. + data[6]/param["ng"])
+  param["dn_lumsigma_llocal"]     = log( 1. + data[7]/param["ng"])
+  param["dn_lumsigma_magnitude"]  = log( 1. + data[8]/param["ng"])
+  param["dn_lumsigma_distance"]   = log( 1. + data[9]/param["ng"])
+  param["dn_lumsigma_waveform"]   = log( 1. + data[10]/param["ng"])
+  param["dn_lumsigma_mc"]         = log( 1. + data[11]/param["ng"])
+  param["tobs"]                   = float(time)
+
+  return param
+
+#############################################################################
+# function to write posterior
+def write_file(rate, pdf, filename):
+  """
+  write out a posterior file
+  @param filename: output file name
+  """
+  outfile = open( filename, 'w' )
+  print >> outfile, "# Posterior computed using lalapps_compute_posterior"
+  for i in range(len(rate)):
+    print >> outfile, "%e\t%e" % (rate[i], pdf[i])
+  outfile.close()
+
+
+#############################################################################
+# function to read posterior
+def read_file( filename ):
+   """
+   read in a prior distribution for the rate, returns two 1-d arrays 
+   containing the first column (rate) and second column (prior probability)
+   @param source_file: input file name
+   """
+   f = open( filename , "r")
+   lines = f.readlines()
+   f.close()
+ 
+   vals = []
+   for line in lines:
+     if line[0] != '#':
+       vals.append([float(val) for val in line.split()[0:]])
+           
+   M = array(vals)
+   x = M[:,0]
+   y = M[:,1]
+
+   return x,y
+
+#############################################################################
+# make steps so that fill will work properly
+def makesteps(ularray,ymax,k):
+  """
+  make the arrays to shade the region above the limit
+  @param ularray: the array containing the upper limit details
+  @param ymax:    the maximum value for the y plo
+  @param k:       the index of the value to be plotted on y-axis
+  """
+  xnew=[]
+  ynew=[]
+  for i in arange(len(ularray[:,0])):
+    xnew.append(ularray[i,0])
+    xnew.append(ularray[i,1])
+    ynew.append(ularray[i,k])
+    ynew.append(ularray[i,k])
+  
+  # fill in the top
+  xnew.append(ularray[-1,1])
+  ynew.append(ymax)
+  xnew.append(ularray[0,0])
+  ynew.append(ymax)
+
+  xnew = asarray(xnew)
+  ynew = asarray(ynew)
+
+  return xnew,ynew
+
+#############################################################################
+# generate a lognormal distribution
+def lognormal_pdf(x, mu, sigma, sides=2):
+  yout = exp(-(log(x) - mu)**2./(2.*sigma**2.))/(x*sigma*(2.*pi)**.5)
+  if sides == 1:
+    step = []
+    for idx in range(len(x)):
+      if log(x[idx]) <= mu:
+        step.append(1.)
+      else:
+        step.append(0.)
+    step = array(step)
+    yout *= step
+
+  return array(yout)
+
+##############################################################################
+def calculate_nomargin_post(nepochs,bin,data,ngt,ngprimet,
+                            png_matrix,rate,rateprior):
+  # calculate the rate
+  l = ( ngprimet / ngt ) * ( data["pb"] / data["pbprime"] )
+  nomarginpost = rateprior * exp( - rate * ngt ) \
+        * ( 1. + l * ngt * rate ) * ngt / ( 1. + l )
+  return nomarginpost
+
+##############################################################################
+def calculate_margin_post(opts,nepochs,rate,data,ngt,ngprimet,
+                          rateprior,bin,png_matrix):
+  # calculate the rate
+  l = ( ngprimet / ngt ) * ( data["pb"] / data["pbprime"] )
+
+  # set exprate to zero to calculate marginalization calculation
+  marginpost = 0. * rate
+
+  # if only one epoch, do a convolution and integrate directly, otherwise
+  # do a Monte Carlo integral
+  if nepochs == 1:
+    data = png_matrix[0][bin]
+    numPoints = opts.ntrials
+    xRange = 100
+    ngs = arange(numPoints)*(log(xRange))/numPoints + \
+        log(ngt0/(data["tobs"]*xRange**.5))
+    ngs = exp(ngs)
+
+    pdfNg = zeros(numPoints)*0.
+    for idx in range(numPoints-1):
+      if ngs[idx] <= ngt0/data["tobs"] and ngs[idx+1] > ngt0/data["tobs"]:
+        pdfNg[idx] += 1.
+
+    if ( opts.magnitude_error and data["dn_lumsigma_magnitude"] != 0.0 ):
+      pdfNgErrorMag = lognormal_pdf(ngs, data["dn_lummu"],
+          data["dn_lumsigma_magnitude"])
+      pdfNg = convolve(pdfNg, pdfNgErrorMag,
+          mode=2)[len(pdfNg)/2:len(pdfNg)+len(pdfNg)/2]
+
+    if ( opts.calibration_error and data["dn_lumsigma_lhocal"] != 0.0 ):
+      pdfNgErrorCalH = lognormal_pdf(ngs, data["dn_lummu"],
+          data["dn_lumsigma_lhocal"])
+      pdfNg = convolve(pdfNg, pdfNgErrorCalH,
+          mode=2)[len(pdfNg)/2:len(pdfNg)+len(pdfNg)/2]
+
+    if ( opts.calibration_error and data["dn_lumsigma_llocal"] != 0.0 ):
+      pdfNgErrorCalL = lognormal_pdf(ngs, data["dn_lummu"],
+          data["dn_lumsigma_llocal"])
+      pdfNg = convolve(pdfNg, pdfNgErrorCalL,
+          mode=2)[len(pdfNg)/2:len(pdfNg)+len(pdfNg)/2]
+
+    if ( opts.montecarlo_error and data["dn_lumsigma_mc"] != 0.0 ):
+      pdfNgErrorMC = lognormal_pdf(ngs, data["dn_lummu"],
+          data["dn_lumsigma_mc"])
+      pdfNg = convolve(pdfNg, pdfNgErrorMC,
+          mode=2)[len(pdfNg)/2:len(pdfNg)+len(pdfNg)/2]
+
+    if ( opts.waveform_error and data["dn_lumsigma_waveform"] != 0.0 ):
+      pdfNgErrorWave = lognormal_pdf(ngs, data["dn_lummu"],
+          data["dn_lumsigma_waveform"], sides=1)
+      pdfNg = convolve(pdfNg, pdfNgErrorWave,
+          mode=2)[len(pdfNg)/2:len(pdfNg)+len(pdfNg)/2]
+
+    if ( opts.distance_error and data["dn_lumsigma_distance"] != 0.0 ):
+      pdfNgErrorDist = lognormal_pdf(ngs, data["dn_lummu"],
+          data["dn_lumsigma_distance"])
+      pdfNg = convolve(pdfNg, pdfNgErrorDist,
+          mode=2)[len(pdfNg)/2:len(pdfNg)+len(pdfNg)/2]
+
+    ngts = ngs*data["tobs"]
+    pdfNgt = pdfNg/sum(ngts*pdfNg*log(ngts[1]/ngts[0]))
+
+    for p_ngt,ngt in zip(pdfNgt,ngts):
+      # exprate = p_ngt * ngt * exp( - rate * ( ngt ) )
+      # but since these ngt points are equally spaced on a log scale
+      # we need to mutliply by another factor of ngt
+      marginpost += ngt * rateprior * p_ngt * exp( - rate * ngt ) \
+        * ( 1. + l * ngt * rate ) * ngt / ( 1. + l )
+
+  else:
+    # perform the marginalization by generating ntrials worth of samples
+    # from the given distributions for the various systematics
+    ngts = []
+    for j in arange(opts.ntrials):
+      ngt = 0
+      for epoch in range(nepochs):
+        data = png_matrix[epoch][bin]
+
+        thisngt = data["ng"] * data["tobs"]
+        # magnitude error is lognormal
+        if opts.magnitude_error:
+          thisngt *= random.lognormvariate(data["dn_lummu"],
+              data["dn_lumsigma_magnitude"]) / data["ng"]
+
+        # lho calibration error is lognormal
+        if ( opts.calibration_error and data["dn_lumsigma_lhocal"] != 0.0 ):
+          thisngt *= random.lognormvariate(data["dn_lummu"],
+              data["dn_lumsigma_lhocal"]) / data["ng"]
+
+        # llo calibration error is lognormal
+        if ( opts.calibration_error and data["dn_lumsigma_llocal"] != 0.0 ):
+          thisngt *= random.lognormvariate(data["dn_lummu"],
+              data["dn_lumsigma_llocal"]) / data["ng"]
+
+        # monte carlo error is lognormal
+        if opts.montecarlo_error:
+          thisngt *= random.lognormvariate(data["dn_lummu"],
+              data["dn_lumsigma_mc"]) / data["ng"]
+
+        # waveform error is lognormal and one-sided
+        if opts.waveform_error:
+          tmpngt = 2.*thisngt
+          while (tmpngt > thisngt):
+            tmpngt = thisngt * (random.lognormvariate(data["dn_lummu"],
+                data["dn_lumsigma_waveform"]) / data["ng"] )
+          thisngt = tmpngt
+
+        # distance error is lognormal
+        if opts.distance_error:
+          thisngt *= random.lognormvariate(data["dn_lummu"],
+              data["dn_lumsigma_distance"]) / data["ng"]
+
+        ngt +=  thisngt
+      ngts.append(ngt)
+      marginpost += rateprior * exp( - rate * ngt ) \
+        * ( 1. + l * ngt * rate ) * ngt / ( 1. + l )
+    marginpost /= float(opts.ntrials)
+
+  return marginpost,ngts,pdfNgt
+
+
+
+
+
+usage = """usage: %prog [options] file1 (file2 file3)
+
+Computing Upperlimit
+
+Calculates the final upperlimit results using the output
+of plotnumgalaxies (png-output.ini). 
+
+Example:
+
+"""
+parser = OptionParser( usage=usage, version=git_version.verbose_msg )
+
+parser.add_option("-p","--prior",action="store",type="string",\
+    default=None,\
+    help="which prior to use on the rate. (uniform|fromfile)" )
+parser.add_option("-P","--prior-file",action="store",type="string",\
+    default=None, metavar=" FILE", help="name of prior file" )
+parser.add_option("-s","--show-plot",action="store_true",default=False,\
+    help="display the figures on the terminal" )
+parser.add_option("-V","--verbose",action="store_true",default=False,\
+    help="display verbose output" )
+parser.add_option("-c","--calibration-error",action="store_true",default=False,\
+    help="marginalize over the calibration error" )
+parser.add_option("-g","--magnitude-error",action="store_true",default=False,\
+    help="marginalize over the magnitude error" )
+parser.add_option("-o","--montecarlo-error",action="store_true",default=False,\
+    help="marginalize over the monte carlo error" )
+parser.add_option("-w","--waveform-error",action="store_true",default=False,\
+    help="marginalize over the waveform error" )
+parser.add_option("-i","--distance-error",action="store_true",default=False,\
+    help="marginalize over the distance error" )
+parser.add_option("-f","--galaxies-file",action="append",type="string",\
+    default=None, metavar=" FNAME",\
+    help="File containing the output from plotnumgalaxies" ) 
+parser.add_option("-t","--observation-time",action="append",type="float",\
+    default=None, metavar=" TOBS", help="observation time in units of years" ) 
+parser.add_option("-T","--time-analyzed-file",action="append",type="string",\
+    default=None, metavar=" TFILE", \
+    help="Location of corse time analyzed file to read obs time from." )
+parser.add_option("-m","--max-rate",action="store",type="float",\
+    default=1.0, metavar=" MAXRATE", \
+    help="max rate on integral for posterior" ) 
+parser.add_option("-d","--dr",action="store",type="float",\
+    default=0.01, metavar=" DR", \
+    help="dr to use in rate integral" ) 
+parser.add_option("-n","--ntrials",action="store",type="int",\
+    default=1000, metavar=" NTRIALS", \
+    help="number of trials for marginalization over errors" ) 
+parser.add_option("-R","--mass-region-type",action="store",type="string",\
+    default="none", metavar=" TYPE", \
+    help="type of mass regions for rate vs mass plot" )
+
+# plotting details
+parser.add_option("-F","--figure-name",action="store",type="string",\
+    default=None,metavar=" FNAME",\
+    help="generate ps figures with name FNAME_PlotType.ps")
+parser.add_option("-x","--xmax",action="store",type="float",\
+    default=None, metavar=" XMAX", help=\
+    "maximum value on x-axis in plots of distributions (default = rate-max)" ) 
+parser.add_option("-y","--ymin",action="store",type="float",\
+    default=0.01, metavar=" YMIN", help="minimum value on y-axis" ) 
+parser.add_option("-Y","--ymax",action="store",type="float",\
+    default=100.0, metavar=" YMAX", 
+    help="maximum value on y-axis for rate vs mass plot (default = 100)" ) 
+
+(opts,args) = parser.parse_args()
+
+
+if not opts.prior:
+  print >>sys.stderr, "Must supply a prior for calculation\n" 
+  sys.exit(1)
+
+if opts.time_analyzed_file and opts.observation_time:
+  print >>sys.stderr, "You cannot supply time --time-analyzed-file and " +\
+      "--observation-time\n"
+  sys.exit(1)
+
+if (opts.time_analyzed_file):
+  if (len(opts.galaxies_file)-len(opts.time_analyzed_file)):
+    print >>sys.stderr, "Must give same number of galaxy files and " +\
+        "observation times\n"
+    print >> sys.stderr, "Number of galaxy-files (-f):" + \
+        str(len(opts.galaxies_file)) + \
+        "  number of observation time files (-t):" + \
+        str(len(opts.observation_time))
+    sys.exit(1)
+  opts.observation_time =[]
+  sec2year = 3.16889554E-8
+  for timeFile in opts.time_analyzed_file:
+    openFile = open(timeFile,'r')
+    for line in openFile:
+      if line.startswith('amount of time analysed'):
+        opts.observation_time.append(float(line.split()[6])*sec2year)
+      lineConts = (line.replace('\n','')).split(' ')
+      if lineConts[0] == '0':
+        opts.observation_time.append(float(lineConts[1])*sec2year)
+  
+if (len(opts.galaxies_file)-len(opts.observation_time)):
+  print >>sys.stderr, "Must give same number of galaxy files and " +\
+                      "observation times\n"
+  print >> sys.stderr, "Number of galaxy-files (-f):" + \
+      str(len(opts.galaxies_file)) + \
+      "  number of observation times (-t):" + str(len(opts.observation_time))
+  sys.exit(1)
+
+for time in opts.observation_time:
+  print >> sys.stdout, "Read observation time of " + str(time)
+
+#####################################################################
+# Do the pylab import in such a way that doesn't require an X display
+# if show() won't be invoked.
+if not opts.show_plot:
+  import matplotlib
+  matplotlib.use('Agg')
+from pylab import *
+if not opts.show_plot:
+  rc('text', usetex=True)
+
+
+###########################################################################
+# each time-type has a different file which can have parameters for a
+# sequence of different masses.  The png_matrix is a list of lists of
+# dictionaries.  The first index is the given by the number of epochs,
+# the second by the number of mass windows.
+png_matrix = []
+
+# nepochs is the number of distinct time types 
+nepochs = len(opts.galaxies_file)
+
+for epoch in range(nepochs):
+  png_matrix.append(read_png_file(opts.galaxies_file[epoch], \
+      opts.observation_time[epoch]))
+
+
+# note len(matrix) returns the number of rows in the matrix
+# massBins is given by the number of rows in the png files 
+# (assumed the same for all files)
+massBins = len(png_matrix[0])
+ularray = zeros((massBins,4),"float32")
+
+# the confidence level to use in the upper limit calculation
+confLevel=0.9
+
+# loop over the mass bins
+for bin in range(massBins):
+  check = False
+  while not check:
+    # generate the prior
+    if opts.prior == "fromfile":
+      if massBins > 1:
+        rate,rateprior = read_file(opts.prior_file + "-" + \
+            str(png_matrix[0][bin]["mlo"]) + "-" + \
+            str(png_matrix[0][bin]["mhi"]) + "-posterior-pdf.txt")
+      else:
+        rate,rateprior = read_file(opts.prior_file)
+    elif opts.prior == "uniform":
+      maxrate = opts.max_rate
+      dr = opts.dr
+      rate = arange(0,maxrate,dr)
+      rateprior = ones([int(around(maxrate/dr))])/maxrate
+    else:
+      print >> sys.stderr, "--prior must be one of uniform or fromfile"
+      sys.exit(1)
+
+    ngt = 0.0
+    ngprimet = 0.0
+    for epoch in range(nepochs):
+      data = png_matrix[epoch][bin]
+      ngt += data["ng"] * data["tobs"]
+      ngprimet += data["ngprime"] * data["tobs"]
+    ngt0 = ngt
+
+    nomarginpost = calculate_nomargin_post(nepochs,bin,data,ngt,ngprimet,\
+                                           png_matrix,rate,rateprior)
+
+    # Normalize and calculate cumulative distribution
+    nomarginpost /= sum(nomarginpost)
+    cumnomarginpost = cumsum(nomarginpost)
+
+    lastidx = len(nomarginpost)-1
+    ratio = nomarginpost[lastidx]/max(nomarginpost)
+    eps = 1e-4;
+    if ratio > eps:
+      print >>sys.stdout, "non neglible probability of obtaining maximum rate"
+      print >>sys.stdout, "90% confidence upper limit may be wrong"
+      print >>sys.stdout, "ratio of p(max_rate) to max(p(rate)) = %f" % ratio
+      print >>sys.stdout, "The max rate will be doubled and we will try again."
+      opts.max_rate=2*opts.max_rate
+      opts.dr = 2*opts.dr
+      print >>sys.stdout, "The max rate is now %f" % opts.max_rate
+    else:
+      marginpost,ngts,pdfNgt = calculate_margin_post(opts,nepochs,rate,data,
+                                   ngt,ngprimet,rateprior,bin,png_matrix)
+  
+      # Normalize and calculate cumulative distribution
+      marginpost /= sum(marginpost)
+      cummarginpost = cumsum(marginpost)  
+
+      # check that we have neglible probability at max rate
+      ratio = marginpost[lastidx]/max(marginpost)
+      eps = 1e-4;
+      if ratio > eps:
+        print >>sys.stdout, "non neglible probability of obtaining maximum rate"
+        print >>sys.stdout, "90% confidence upper limit may be wrong"
+        print >>sys.stdout, "ratio of p(max_rate) to max(p(rate)) = %f" % ratio
+        print >>sys.stdout, "The maxrate will be doubled and we will try again."
+        opts.max_rate=2*opts.max_rate
+        opts.dr = 2*opts.dr
+        print >>sys.stdout, "The max rate is now %f" % opts.max_rate
+      else:
+        check = True
+
+
+  # find the NgT corresponding to the marginalized upper limit
+  idx90pcnomargin = [idx for idx in range(len(cumnomarginpost)) \
+      if cumnomarginpost[idx] >= confLevel][0]
+  idx90pcmargin = [idx for idx in range(len(cummarginpost)) \
+      if cummarginpost[idx] >= confLevel][0]
+  ngtmargin = ngt0 * rate[idx90pcnomargin] / rate[idx90pcmargin]
+
+  if opts.verbose:
+    print "unmarginalized value at R=0 is %f" %  (nomarginpost[0])
+    print "marginalized value at R=0 is %f" % (marginpost[0])
+  
+  if opts.figure_name:
+    if massBins > 1:
+      outputName = opts.figure_name + "-" + str(png_matrix[0][bin]["mlo"]) + \
+          "-" + str(png_matrix[0][bin]["mhi"])
+    else:
+      outputName = opts.figure_name
+
+  # write out the data to a text file
+  if opts.figure_name:
+    write_file(rate, marginpost, outputName + "-posterior-pdf.txt")
+
+  # plot the NgT distribution
+  figure()
+  if nepochs == 1:
+    plot(ngts, pdfNgt, 'r', linewidth=2)
+  else:
+    hist(ngts, bins=20, normed=True)
+  hold(True)
+  axvline(ngt0, color='k', linestyle='--', linewidth=2)
+  axvline(ngtmargin, color='g', linestyle=':', linewidth=2)
+  xlabel('$\mathcal{C}_{L} T (L_{10} \cdot yr)$', size='x-large')
+  ylabel('Probability', size='x-large')
+  grid()
+  if opts.figure_name:
+    savefig( outputName + "-ngt-dist.png" )
+
+  # Determine a recommended xmax for the plots
+  flag = False
+  maxPost = max(nomarginpost)
+  for iterNum in xrange(1,len(nomarginpost)):
+    if nomarginpost[iterNum] < maxPost/1000. \
+        and nomarginpost[iterNum] < nomarginpost[iterNum-1]:
+      recXmax = rate[iterNum]
+      break
+
+  # plot the posterior pdf
+  figure()
+  plot(rate,nomarginpost,rate,marginpost,linewidth=2)
+  legend(('posterior','marginalized posterior'))
+  xlabel('Rate / yr / $L_{10}$', size='x-large')
+  ylabel('Probability', size='x-large')
+  title('Posterior on the rate')
+  grid()
+  tmpv = asarray(axis())
+  if opts.xmax: tmpv[1]=opts.xmax
+  else: 
+    tmpv[1] = recXmax
+  axis(tmpv)
+  if opts.figure_name:
+    savefig( outputName + "-posterior-pdf.png" )
+
+  figure()
+  semilogx(rate,nomarginpost,rate,marginpost,linewidth=2)
+  legend(('posterior','marginalized posterior'))
+  xlabel('Log rate / yr / $L_{10}$', size='x-large')
+  ylabel('Probability', size='x-large')
+  title('Posterior on the rate')
+  grid()
+  if opts.xmax:
+    xlim(0,opts.xmax)
+  if opts.figure_name:
+    savefig( outputName + "-posterior-pdf-log.png" )
+
+  # plot the cumulative probability
+  if opts.verbose:
+    print "unmarginalized value at R=0 is %f" %  (cumnomarginpost[1])
+    print "marginalized value at R=0 is %f" % (cummarginpost[1])
+  
+  figure()
+  semilogy(rate,1.0-cumnomarginpost, rate,1.0-cummarginpost,linewidth=2)
+  legend(('posterior','marginalized posterior'))
+  xlabel('Rate / yr / $L_{10}$', size='x-large')
+  ylabel('Cumulative Probability', size='x-large')
+  title('Cumulative posterior on the rate')
+  grid()
+  if opts.xmax:  axis([0,opts.xmax,0.001,1])
+  else: axis([0,recXmax,0.001,1])
+
+  if opts.figure_name:
+    savefig( outputName + "-posterior-cdf.png")
+
+  figure()
+  loglog(rate,1.0-cumnomarginpost, rate,1.0-cummarginpost,linewidth=2)
+  legend(('posterior','marginalized posterior'))
+  xlabel('Log rate / yr / $L_{10}$', size='x-large')
+  ylabel('Cumulative Probability', size='x-large')
+  title('Cumulative posterior on the rate')
+  grid()
+  if opts.xmax:  axis([0,opts.xmax,0.001,1])
+  else: ylim([0.001,1])
+
+  if opts.figure_name:
+    savefig( outputName + "-posterior-cdf-log.png")
+ 
+  # print out the upper limit based on the confidence level confLevel
+  ularray[bin,0]=data["mlo"]
+  ularray[bin,1]=data["mhi"]
+  if (massBins > 1):
+    print
+    print "For the mass range between %f and %f" % (data["mlo"], data["mhi"])
+
+  for i in range(len(rate)):
+    if cumnomarginpost[i] >= confLevel:
+      print "The rate upper limit (before marginalization) is %f" % rate[i]
+      ularray[bin,2]=rate[i]
+      break
+  
+  for i in range(len(rate)):
+    if cummarginpost[i] >= confLevel:
+      print "The rate upper limit (after marginalization) is %f" % rate[i]
+      ularray[bin,3]=rate[i]
+      break
+
+# write the output to a file
+if opts.figure_name:
+  ulfile = open(opts.figure_name + "-upper-limit","w")
+  ulfile.write("#M_low\tM_high\tUnmarginalized Rate\tMarginalized Rate\n")
+  for k in range(len(ularray)):
+    ulfile.write("%e\t%e\t%e\t%e\n" % (ularray[k,0], ularray[k,1], \
+        ularray[k,2],ularray[k,3]))
+  ulfile.close()
+
+# and plot this result, if we have a range of masses
+if (massBins > 1):
+  figure()
+  semilogy(ularray[:,0],opts.ymax + 0.0*ularray[:,0],'w+')
+
+  # XXX This assumes that the mass bins are continuous, i.e. where one bin
+  # ends, the next one starts.  If that is not the case, then the makesteps
+  # function needs to be generalized XXX.
+
+  # plot the unmarginalized upper limit
+  x,y=makesteps(ularray,opts.ymax,k=2)
+
+  p=fill(x,y, facecolor='0.8')
+  setp(p, alpha=0.2)
+  ylim(opts.ymin,opts.ymax)
+
+  # plot the marginalized upper limit
+  x,y=makesteps(ularray,opts.ymax,k=3)
+  p=fill(x,y, facecolor='0.5')
+  setp(p, alpha=0.4)
+
+  ylim(opts.ymin,opts.ymax)
+  xlim(min(ularray[:,0]), max(ularray[:,1]))
+  legend(('','unmarginalized','marginalized'),loc='lower left')
+  if opts.mass_region_type == "totalmass":
+    xlabel('Total Mass $(M_{\odot})$', size='x-large')
+  if opts.mass_region_type == "componentmass":
+    xlabel('Black Hole Mass $(M_{\odot})$', size='x-large')
+  ylabel('Rate / yr / $L_{10}$', size='x-large')
+  title('Rate versus Mass')
+  grid(True)
+
+  if opts.figure_name:
+    savefig( opts.figure_name  + "-rate-v-mass.png")
+  
+# show the plots is asked
+if opts.show_plot:
+  show()
+

@@ -1,0 +1,350 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2011 Duncan Macleod
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""Plot events from any ASCII or xml format trigger event file.
+"""
+
+# =============================================================================
+# Preamble
+# =============================================================================
+
+from __future__ import division
+
+import re
+import os
+import sys
+import time
+import optparse
+
+# set backend for non-interactive plotting
+if not os.getenv("DISPLAY", None):
+    import matplotlib
+    matplotlib.use("agg", warn=False)
+
+# FIXME remove warnings from mpl_toolkits
+import warnings
+warnings.filterwarnings("ignore", message="Module dap was already imported")
+
+from glue import segmentsUtils
+from glue import segments
+from glue import lal as cache
+from glue.ligolw import table as ligolw_table
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw import lsctables
+
+from pylal import git_version
+from pylal import plottriggers
+
+__author__ = 'Duncan M. Macleod <duncan.macleod@ligo.org>'
+__version__ = git_version.id
+__date__ = git_version.date
+
+# set up useful regular expressions
+_re_xml = re.compile('(xml|xml.gz)\Z')
+
+# =============================================================================
+# Print verbose statement
+# =============================================================================
+
+global VERBOSE
+VERBOSE = False
+global JOBSTART
+JOBSTART = time.time()
+global PROFILE
+PROFILE = False
+
+
+def elapsed_time():
+    """Return the time elapsed since the start of the timer (in seconds).
+    """
+    return time.time()-JOBSTART
+
+
+def print_verbose(message, stream=sys.stdout, profile=True):
+    """Print verbose messages to a file stream.
+
+    @param message
+        text to print
+    @param stream
+        file object stream in which to print
+    """
+    if not isinstance(message, str):
+        message = "%s\n" % str(message)
+
+    if PROFILE and profile:
+        nl = message.endswith("\n") and "\n" or ""
+        message = "%s (%.2f)%s" % (message.rstrip("\n"), elapsed_time(), nl)
+    if VERBOSE:
+        stream.write(message)
+        stream.flush()
+
+# =============================================================================
+# Read triggers from file
+# =============================================================================
+
+FORMATS = ["omega", "kw", "sngl_inspiral", "multi_inspiral", "sngl_burst",
+           "sim_inspiral", "sim_burst", "sim_ringdown"]
+
+
+def read_triggers(fp, format_, columns=None):
+    """@returns a LIGOLw xml table of events loaded from the given filepath
+
+    @param fp
+        path to file on disk
+    @param format
+        identifier of trigger type, or table name
+    @param columns
+        list of column name strings to load
+    """
+    format_ = format_.lower()
+    isxml = _re_xml.search(fp)
+
+    # verify columns
+    if columns is not None:
+        columns = map(str.lower, columns)
+        if "time" in columns:
+            columns.pop(columns.index("time"))
+            if re.match("sim_inspiral", format_, re.I):
+                columns.extend(["geocent_end_time", "geocent_end_time_ns"])
+            elif re.match("sim_burst", format_, re.I):
+                columns.extend(["time_geocent_gps", "time_geocent_gps_ns"])
+            elif re.match("sim_ringdown", format_, re.I):
+                columns.extend(["geocent_start_time", "geocent_start_time_ns"])
+            elif re.search("inspiral", format_, re.I):
+                columns.extend(["end_time", "end_time_ns"])
+            elif re.search("burst", format_, re.I):
+                columns.extend(["peak_time", "peak_time_ns"])
+            elif re.search("(ringdown|stochastic)", format_, re.I):
+                columns.extend(["start_time", "start_time_ns"])
+
+    # read XML file
+    if isxml:
+        # get table class
+        Table = lsctables.TableByName[format_]
+        # verify columns are actually in the table. If not, load all of them
+        for c in columns:
+            if c.lower() not in Table.validcolumns.keys():
+                columns = None
+                break
+        # set columns
+        if columns is not None:
+            Table.loadcolumns = columns
+        # load table
+        xmldoc = ligolw_utils.load_filename(fp, gz=fp.endswith("gz"))
+        return ligolw_table.get_table(xmldoc, format_)
+    # read ASCII format_ file
+    else:
+        if format_ == "omega":
+            return omegautils.fromfile(fp, columns=columns)
+        elif format_ == "kw":
+            return kwutils.fromfile(fp, columns=columns)
+        else:
+            raise ValueError("No read function defined for ASCII format "
+                             "\"%s\"" % format_)
+
+
+# =============================================================================
+# Parse command line
+# =============================================================================
+
+def _parse_format(option, opt, value, parser):
+    """Parse the --format argument and check against accepted formats.
+    """
+    value = value.lower()
+    option.choices = FORMATS
+    optparse.check_choice(option, opt, value)
+    setattr(parser.values, option.dest, value)
+
+
+def _parse_limit(option, opt_str, value, parser):
+    """Parse the --{x,y,color}limit arguments and format appropriately
+    """
+    setattr(parser.values, option.dest, map(float, value.split(",")))
+
+
+def parse_command_line():
+    """Parse options and arguments from the command line.
+    @returns (options, arguments) tuple
+    """
+    # setup parser
+    epilog = "If you need help, just ask.ligo.org."
+    parser = optparse.OptionParser(description=__doc__, epilog=epilog,
+                                   formatter=optparse.IndentedHelpFormatter(4))
+    parser.add_option("-p", "--profile", action="store_true", default=False,
+                      help="profile output, default: %default")
+    parser.add_option("-v", "--verbose", action="store_true", default=False,
+                      help="verbose output, default: %default")
+    parser.add_option("-V", "--version", action="version",
+                      help="show program's version number and exit")
+    parser.version = __version__
+    
+    # input options
+    inputopts = optparse.OptionGroup(parser, "Input options")
+    inputopts.add_option("-t", "--trigger-file", action="append",
+                         type="string", default=[],
+                         help=("Path to trigger file "
+                               "(can be given multiple times)."))
+    inputopts.add_option("-c", "--cache-file", action="append",
+                         type="string", default=[],
+                         help=("Path to LAL-format cache file containing "
+                               "paths to ASCII or xml trigger files."))
+    inputopts.add_option("-f", "--format", action="callback", type="string",
+                         default=None, callback=_parse_format,
+                         help="ASCII format, or name of xml table to read.")
+    inputopts.add_option("-x", "--xcolumn", action="store", type="string",
+                         default="time",
+                         help="column to plot on x-axis, default: %default")
+    inputopts.add_option("-y", "--ycolumn", action="store", type="string",
+                         default="snr",
+                         help=("column to plot on y-axis, or 'hist' for "
+                               "histogram, default: %default"))
+    inputopts.add_option("-z", "--colorbar", action="store", type="string",
+                         default=None,
+                         help="column by which to colour points, "+
+                              "default: %default")
+    parser.add_option_group(inputopts)
+
+    # plot options
+    plotopts = optparse.OptionGroup(parser, "Plotting options")
+    plotopts.add_option("--xlim", action="callback", type="string",
+                        metavar="Xmin,Xmax", callback=_parse_limit,
+                        help="limits (comma separated, for x-axis)")
+    plotopts.add_option("--ylim", action="callback", type="string",
+                        metavar="Ymin,Ymax", callback=_parse_limit,
+                        help="limits (comma separated, for y-axis)")
+    plotopts.add_option("--colorlim", action="callback", type="string",
+                        metavar="colormin,colormax", default=None,
+                        callback=_parse_limit,
+                        help=("cmin,cmax pair of colorbar limits. Triggers "
+                              "outside range are pinned to boundary."))
+    plotopts.add_option("--logx", action="store_true", default=False,
+                        help="plot x-axis in log scale, default: %default")
+    plotopts.add_option("--logy", action="store_true", default=False,
+                        help="plot y-axis in log scale, default: %default")
+    plotopts.add_option("--logcolor", action="store_true", default=False,
+                        help="plot colorbar in log scale, default: %default")
+    parser.add_option_group(plotopts)
+
+    # label options
+    labelopts = optparse.OptionGroup(parser, "Label options")
+    labelopts.add_option("--xlabel", action="store", type="string",
+                         default=None, help="label for x-axis")
+    labelopts.add_option("--ylabel", action="store", type="string",
+                         default=None, help="label for y-axis")
+    labelopts.add_option("--colorlabel", action="store", type="string",
+                         default=None, help="label for z-axis")
+    labelopts.add_option("--title", action="store", type="string",
+                         default="",
+                         help="Title for plot, default: %default")
+    labelopts.add_option("--subtitle", action="store", type="string",
+                         default=None,
+                         help="subtitle for plot, default: %default")
+    parser.add_option_group(labelopts)
+
+    # output options
+    outputopts = optparse.OptionGroup(parser, "Output options")
+    outputopts.add_option("-o", "--output-file", action="store",
+                          type="string", default="triggers.png",
+                          help="File path for output plot.")
+    outputopts.add_option("-b", "--tight-bbox", action="store_true",
+                          default=False,
+                          help=("Save figure with tight "
+                                "bounding box, default: %default"))
+    outputopts.add_option("-F", "--fancy-plot", action="store_true",
+                          default=False,
+                          help=("Save figure with rcParams "
+                                "making it look fancy, default: %default"))
+    
+    parser.add_option_group(outputopts)
+
+    opts,_ = parser.parse_args()
+
+    # set global print flags
+    global VERBOSE,PROFILE
+    VERBOSE = opts.verbose
+    PROFILE = opts.profile
+    
+    if opts.format is None:
+        raise parser.error("Must give --format.")
+
+    if len(opts.trigger_file) + len(opts.cache_file) == 0:
+        raise parser.error("Must give --trigger-file or --cache-file")
+
+    return opts
+
+
+# =============================================================================
+# Run from command line
+# =============================================================================
+
+if __name__ == "__main__":
+    # get command line options
+    opts = parse_command_line()
+
+    # get columns
+    columns = [opts.xcolumn.lower()]
+    if opts.ycolumn and opts.ycolumn.lower() != "hist":
+        columns.append(opts.ycolumn.lower())
+    if opts.colorbar:
+        columns.append(opts.colorbar.lower())
+
+    # read all filepaths
+    filepaths = opts.trigger_file
+    for cachefile in opts.cache_file:
+        filepaths.extend(cache.Cache.fromfile(open(cachefile, "r")).pfnlist())
+
+    # load all triggers
+    N = len(filepaths)
+    print_verbose("Loading triggers from %d files...     " % N, profile=False)
+    trigger_table = None
+    for i,fp in enumerate(filepaths):
+        if trigger_table is None:
+            trigger_table = read_triggers(fp, opts.format, columns)
+        else:
+            trigger_table.extend(read_triggers(fp, opts.format, columns))
+        print_verbose("\b\b\b%.2d%%" % (int(100*(i+1)/N)), profile=False)
+    print_verbose("\n")
+
+    # format plotting options
+    plotargs = {"xcolumn":opts.xcolumn,
+                "ycolumn":opts.ycolumn,
+                "xlim":opts.xlim,
+                "ylim":opts.ylim,
+                "logx":opts.logx,
+                "logy":opts.logy,
+                "title":opts.title,
+                "subtitle":opts.subtitle,
+                "xlabel":opts.xlabel,
+                "ylabel":opts.ylabel,
+                "bbox_inches":opts.tight_bbox and "tight" or None,
+                "hidden_colorbar":True}
+    if opts.colorbar:
+        plotargs.update({"colorcolumn":opts.colorbar,
+                         "colorlim":opts.colorlim,
+                         "logcolor":opts.logcolor,
+                         "colorlabel":opts.colorlabel})
+
+    # plot all triggers
+    if opts.fancy_plot:
+        plottriggers.plotutils.set_rcParams()
+        if "time" in map(str.lower, columns):
+            plottriggers.plotutils.pylab.rcParams.update({"figure.figsize":[12,6]})
+        else:
+            plottriggers.plotutils.pylab.rcParams.update({"figure.figsize":[8,6]})
+    plottriggers.plottable(trigger_table, opts.output_file, **plotargs)
+    print_verbose("Plot written to %s.\n" % opts.output_file)

@@ -1,0 +1,8 @@
+method = git
+#git_root = git://ligo-vcs.phys.uwm.edu/lalsuite.git
+git_root = /home/pfcouvar/src/lalsuite/.git
+git_tree = master
+git_path = glue/src/nmi/unit
+
+# omit glue/src/nmi/unit/ dir prefix
+tar_args = --strip-components=4

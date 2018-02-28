@@ -1,0 +1,4 @@
+usr/lib/py*/*/glue/segments.py*
+usr/lib/py*/*/glue/__segments.so*
+#usr/lib/py*/*/src/segments*
+#usr/lib/py*/*/test*

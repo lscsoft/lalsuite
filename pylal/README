@@ -1,0 +1,124 @@
+PyLAL: Python LAL
+https://www.lsc-group.phys.uwm.edu/daswg/projects/pylal.html
+
+PyLAL is a collection of utilities for plotting the output files from
+LSC analysis pipelines.
+
+This README file explains how to build and install PyLAL.
+
+------------------------------------------------------------------------------
+
+0. Prerequisites
+
+Compiling PyLAL's C extension modules requires the Fr (a.k.a. libframe),
+LAL, LALburst, and LALinspiral libraries to be installed.  Since most of
+PyLAL is written in Python (an interpreted language), for the most part
+PyLAL can be installed without having any prerequisites installed, however
+many PyLAL programs will fail to run without them.  PyLAL requires Glue for
+LIGO Light-Weight XML I/O, segment arithmetic, and many other things;
+PyLAL requires numpy, scipy, and matplotlib for data manipulation and
+plotting; plotting also requires a latex distribution.  All of these
+packages should be available at
+
+  http://www.lsc-group.phys.uwm.edu/daswg/download/repositories.html
+
+Note: matplotlib and numpy are now part of the standard LSCSOFT stack (at
+least for CentOS 5) and can be obtained using:
+
+  yum groupinstall "LSCSOFT"
+
+------------------------------------------------------------------------------
+
+1. Determine your Python version
+
+Python version 2.4 or greater is required to install PyLAL. Type:
+
+  python -V
+
+to determine the version of python installed on your machine. For
+example:
+
+  nvf@dirac:~$ python -V
+  Python 2.4.4
+
+If you do not have version 2.4 or greater installed, contact your system
+administrator for help installing Python.
+
+------------------------------------------------------------------------------
+
+2. Get PyLAL from Git
+
+PyLAL is part of the LALSuite Git repository. First choose a directory
+in which to install the PyLAL sources. In this example, we install the
+sources into ${HOME}/src. If you decide to install somewhere else,
+change ${HOME}/src to the directory you have chosen. Change
+albert.einstein in the git clone below to your ligo.org kerberos
+principle, if you have one. Type:
+
+  mkdir -p ${HOME}/src
+  cd ${HOME}/src
+  git clone git+ssh://albert.einstein@ligo-vcs.phys.uwm.edu/usr/local/git/lalsuite.git
+
+If you do not have a ligo.org kerberos principle you can get the source
+code anonymously using:
+
+  git clone git://ligo-vcs.phys.uwm.edu/lalsuite.git
+
+This will create a directory ${HOME}/src/lalsuite containing the
+LALSuite sources.
+
+
+------------------------------------------------------------------------------
+
+3. Build and Install PyLAL
+
+Choose a location in which to install PyLAL. In this example we choose
+/opt/pylal. You must have write access to this directory, so you may
+wish to install in ${HOME}, for example. Set the environment variable
+${PYLAL_LOCATION} to point to your chosen install directory. Bash or sh
+users should type:
+
+  export PYLAL_LOCATION=/opt/pylal
+
+and csh users should type:
+
+  setenv PYLAL_LOCATION /opt/pylal
+
+Assuming you have installed the pylal sources in
+${HOME}/src/lalsuite/pylal, type:
+
+  cd ${HOME}/src/lalsuite/pylal
+
+Then type:
+
+  ${PYTHON} setup.py install --prefix=${PYLAL_LOCATION}
+
+This will build and install all the PyLAL modules and programs.
+
+
+------------------------------------------------------------------------------
+
+4. Set up your Environment for Using PyLAL
+
+If you are a bash or sh user, edit your .profile (or .bash_profile)
+file and add the lines (changing /opt/pylal to wherever you installed
+PyLAL):
+
+  export PYLAL_LOCATION=/opt/pylal
+  if [ -f ${PYLAL_LOCATION}/etc/pylal-user-env.sh ] ; then
+    source ${PYLAL_LOCATION}/etc/pylal-user-env.sh
+  fi
+
+If you are a csh user, edit your .login file and add the lines (changing
+/opt/pylal to wherever you installed PyLAL):
+
+  setenv PYLAL_LOCATION /opt/pylal
+  if ( -f ${PYLAL_LOCATION}/etc/pylal-user-env.csh ) then
+    source ${PYLAL_LOCATION}/etc/pylal-user-env.csh
+  endif
+
+Now log out and log back in to ensure that all environment variables
+have been updated.
+
+You may now use PyLAL! Please report any problems via the Gnats
+database linked from the PyLAL home page.

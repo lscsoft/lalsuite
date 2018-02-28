@@ -1,0 +1,682 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2009  Steve Fairhurst & John Veitch, based on glitch-page.sh by Duncan
+# Brown, ligolw_glitch_page.py by Larne Pekowsky
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+
+from optparse import OptionParser
+import sys
+import os
+import subprocess
+
+
+from pylal import SnglInspiralUtils
+from pylal import SimInspiralUtils
+from glue import segments
+from glue import segmentsUtils
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils
+from glue.segmentdb import segmentdb_utils
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+
+# =============================================================================
+
+def readInjLog(fname):
+    """
+    read the injection log, and keep those rows corresponding to
+    successful injections
+    """
+    f = open(fname,'r')
+    injections = f.readlines()
+    f.close()
+    injections.pop(0)
+    inj_times = []
+    for line in injections:
+        details = line.strip().split('\t')
+        if details[3].strip() == 'Successful':
+            # injection performed successfully, so we want to record it
+            inj_times.append(int(details[0]))
+    return inj_times
+
+# =============================================================================
+
+
+def get_xml_files(filenames,time,ifo):
+	# Decide on the xml files to read
+	def filt_fn(filename,time,ifo):
+		tm,durend=filename.split('-')[-2:]
+		tm=int(tm)
+		dur=durend.split('.')[0]
+		dur=int(dur)
+		return time>=tm and time<=(tm+dur) and ifo in filename
+	
+	return filter(lambda fn: filt_fn(fn,time,ifo),filenames)
+# =============================================================================
+def get_expected_snr(filenames,ifo,time):
+	"""
+	Returns the expected SNR for a system with M<20
+	Using the range at that time if available
+	"""
+	if filenames is None:
+		return None
+	xml_files=get_xml_files(filenames,int(time),ifo)
+	# print 'xml_file: %s'%(xml_files)
+	if not xml_files:
+		return None
+	from pylal import SearchSummaryUtils
+	from glue.ligolw import lsctables
+	from glue.ligolw import table
+	xmldoc=SearchSummaryUtils.ReadTablesFromFiles(xml_files,[lsctables.SummValueTable])
+	try:
+		sum_tabs=table.get_table(xmldoc,lsctables.SummValueTable.tableName)
+	except:
+		sum_tabs=None
+	if sum_tabs==None:
+		return None
+	tabs=filter(lambda x: x.name==u'inspiral_effective_distance',sum_tabs)
+#	print 'after table name cut:'
+#	print tabs
+	tabs=filter(lambda x: int(x.start_time) < int(time) and int(x.end_time)>int(time),tabs)
+#	print 'After time cut:'
+#	print tabs
+	tabs=filter(lambda x: x.ifo==ifo,tabs)
+#	print ifo
+#	if tabs is not None: print tabs
+	if len(tabs)==0: return None
+	return tabs[0].value
+
+# =============================================================================
+
+def open_pipedown_database(database_filename,tmp_space):
+    """
+    Open the connection to the pipedown database
+    """
+    from glue.ligolw import dbtables
+    try:
+        import sqlite3
+    except ImportError:
+        # Pre-2.5
+        from pysqlite2 import dbapi2 as sqlite3
+    working_filename=dbtables.get_connection_filename(
+        database_filename,tmp_path=tmp_space)
+    connection = sqlite3.connect(working_filename)
+    if tmp_space:
+        dbtables.set_temp_store_directory(connection,tmp_space)
+    return (connection,working_filename)
+
+# =============================================================================
+def get_veto_times(connection,ifo):
+    sqlquery = """SELECT
+       segment.start_time,
+       segment.end_time
+   FROM
+       segment
+   JOIN
+       segment_definer ON segment_definer.segment_def_id == segment.segment_def_id
+   WHERE segment_definer.ifos == ?"""
+
+    veto_segs = segments.segmentlist([segments.segment(LIGOTimeGPS(start,0),LIGOTimeGPS(end,0)) for (start,end) in connection.cursor().execute(sqlquery, (ifo,))])
+    return veto_segs
+
+# =============================================================================
+
+def check_ifo_result_pipedowndb(ifo,time,database_connection,successful_inj,veto_segs,far_thresh=None):
+    """
+    Return indicator of status for this injection, query pipedown DB file
+    """
+    if(successful_inj.has_key(ifo)) and (successful_inj[ifo] is not None):
+        if time in successful_inj[ifo]:
+            injected=1
+        else: injected=0
+    else: injected=0
+    if(injected==0): return (0,0,0,0)
+    
+    # Check that time was analysed
+    if (time in veto_segs): analysed=0
+    else: analysed=1
+    # Check for triggers
+    sql_query="SELECT sngl_inspiral.end_time,sngl_inspiral.snr,coinc_inspiral.combined_far FROM sngl_inspiral \
+               JOIN experiment_summary, experiment_map, coinc_event_map, coinc_inspiral \
+               ON (experiment_summary.experiment_summ_id == experiment_map.experiment_summ_id \
+               AND coinc_inspiral.coinc_event_id==experiment_map.coinc_event_id AND \
+           coinc_event_map.event_id == sngl_inspiral.event_id AND coinc_inspiral.coinc_event_id==coinc_event_map.coinc_event_id ) \
+           WHERE \
+           experiment_summary.datatype == \"all_data\" AND \
+           sngl_inspiral.ifo == \""+ifo+"\" AND \
+           sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 >= "+str(time-0.1)+" AND \
+           sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 <= "+str(time+0.1)
+    
+    if far_thresh is not None:
+        sql_query=sql_query+" AND coinc_inspiral.combined_far < %f "%(far_thresh)
+    triggers=list(database_connection.cursor().execute(sql_query))
+    if(triggers and len(triggers)>0):
+        found=1
+        snr=triggers[0][1]
+        ifar=triggers[0][2]
+        print 'Found %i triggers for %f. SNR=%f cfar=%f'%(len(triggers),time,snr,ifar)
+    else:
+        found=0
+        snr=0.0
+        ifar=None
+    return (injected,analysed,found,snr,ifar)
+
+# =============================================================================
+def check_ifo_result(ifo,time,filenames,successful_inj):
+	"""
+	Return indicator of status for this injection
+	"""
+	snr=0
+	if(successful_inj.has_key(ifo)) and (successful_inj[ifo] is not None):
+	        if time in successful_inj[ifo]:
+			injected=1
+		else: injected = 0
+	else: injected=0
+	if(injected==0):
+		return (0,0,0,0)
+	xml_files = get_xml_files(filenames,int(time),ifo)
+	if not xml_files:
+		analysed=0
+		found=0
+	else: analysed=1
+	if analysed:
+		triggers =  SnglInspiralUtils.ReadSnglInspiralFromFiles(xml_files)
+		if triggers:
+			inj_time = segments.segment(time - 0.1, time + 0.1)
+			triggers = triggers.vetoed(inj_time)
+			triggers=triggers.ifocut(ifo)
+		if triggers and len(triggers):
+			found=1
+			snr=triggers[0].snr
+		else: found=0
+	return (injected,analysed,found,snr)
+
+def get_ifo_result_string(key):
+	"""
+	Generate the HTML table element for a particular IFO and time
+	"""
+	(injected,analysed,found,snr)=key
+	if not injected: return "<td bgcolor=#ddffdd>Not performed</td>"
+	if not analysed: return "<td bgcolor=#ff9900>Not analysed</td>"
+	if not found: return "<td bgcolor=#ff2222>Missed</td>"
+	else: return "<td bgcolor=#22ff22>Found<br>SNR=%.2f</td>"%(snr)
+
+def chirp_dist(inj,ifo):
+	return inj.get_eff_dist(ifo[0])*(2.8*.25**(3.0/5.0)/inj.mchirp)**(5.0/6.0)
+
+# =============================================================================
+def list_results(ifo, time, segment_url, filenames, successful_inj, outfile):
+    """
+    Generate HTML for each MBTA trigger in the given ifo 'close to'
+    the given time 
+    """
+    dq_flags = ''
+    flags    = {}
+
+    # Check whether the injection was performed
+    if (successful_inj.has_key(ifo) ) and (successful_inj[ifo] is not None):
+        if time not in successful_inj[ifo]:
+            print >>outfile,'  <tr valign="top" bgcolor="ddffdd"><td>%s</td><td colspan="10">Injection Not Performed</td><td></td></tr>' % ifo
+            return
+
+    # Get associated DQ flags
+    if segment_url:
+        pipe = os.popen('ligolw_dq_query --segment=%s --include-segments %s --in-segments-only --report %d' % (segment_url, ifo, time))
+    else:
+        pipe = []
+
+    for line in pipe:
+        flag, beforet, timet, aftert = filter(lambda x: x != '', line.split())
+    
+        ifo, name, version = flag.split(':')
+        flags[name] = (beforet, timet, aftert)
+
+    if not pipe == []:
+        pipe.close()
+    
+    ifo_status = ''
+
+    # Handle the ones that sould be displayed in bold without
+    # DMT- 
+    for flag_name in ['Light','Up','Calibrated','Science','Injection']:
+        flag = 'DMT-' + flag_name.upper()
+
+        if flag in flags:
+            ifo_status += flag_name + ','
+            del flags[flag]
+
+    if len(ifo_status) > 0:
+        ifo_status = ifo_status[:-1]
+
+
+    flags[ifo_status] = True
+
+
+    for name, value in flags.items():
+        if not name.startswith('DMT'):
+            dq_flags += '<b>%s</b><br>' % name
+        else:
+            dq_flags += '%s %s %s<br>' % (name, value[0], value[2])
+    xml_files=get_xml_files(filenames,time,ifo)
+
+    # read triggers
+    if not xml_files:
+        print >>outfile, '  <tr valign="top" bgcolor="ff9900"><td>%s</td><td colspan="10">Not Analyzed</td><td>%s</td></tr>' % (ifo, dq_flags)
+        return
+
+    triggers = SnglInspiralUtils.ReadSnglInspiralFromFiles(xml_files)
+    if triggers: 
+        # keep those which are near the time
+        inj_time = segments.segment(time - 0.1, time + 0.1)
+        triggers = triggers.vetoed(inj_time)
+        triggers = triggers.ifocut(ifo)
+    if triggers and len(triggers):
+        for trig in triggers:
+            if ifo[0] == "H":
+                print >>outfile, '    <td>%s</td><td>%.3f</td><td> - </td><td> - </td><td>%.2f</td><td>%.2f</td><td>%.2f</td><td>%.2f</td><td> - </td><td> - </td><td>%.2f</td><td>%s</td>' % (ifo, trig.get_end(), trig.mass1, trig.mass2, trig.mchirp, trig.eff_distance, trig.snr, dq_flags)
+            print >>outfile, '  </tr>'
+            if ifo[0] == "L":
+                print >>outfile, '    <td>%s</td><td> - </td><td>%.3f</td><td> - </td><td>%.2f</td><td>%.2f</td><td>%.2f</td><td> - </td><td>%.2f</td><td> - </td><td>%.2f</td><td>%s</td>' % (ifo, trig.get_end(), trig.mass1, trig.mass2, trig.mchirp, trig.eff_distance, trig.snr, dq_flags)
+            print >>outfile, '  </tr>'
+            if ifo[0] == "V":
+                print >>outfile, '    <td>%s</td><td> - </td><td> - </td><td>%.3f</td><td>%.2f</td><td>%.2f</td><td>%.2f</td><td> - </td><td> - </td><td>%.2f</td><td>%.2f</td><td>%s</td>' % (ifo, trig.get_end(), trig.mass1, trig.mass2, trig.mchirp, trig.eff_distance, trig.snr, dq_flags)
+            print >>outfile, '  </tr>'
+
+    else:
+        print >>outfile, '  <tr valign="top" bgcolor="ff3333"><td>%s</td><td colspan="10">Not Found</td><td>%s</td></tr>' % (ifo, dq_flags)
+
+    return
+# =============================================================================
+def write_page_long(opts,injections, ifos, filenames, hwinj_done):
+    outfile=open(opts.outfile,'w')
+    for inj in injections:
+        if (inj.get_end("H") > opts.gps_start_time) and \
+               (inj.get_end("H") < opts.gps_end_time): 
+            print >>outfile, '<table border=1>'
+            print >>outfile,'  <tr bgcolor="#9999ff"><th>ifo</th><th>H End Time</th><th>L End Time</th><th>V End Time</th><th>Mass 1</th><th>Mass 2</th><th>Chirp Mass</th><th>H Eff Dist</th><th>L Eff Dist</th><th>V Eff Dist</th><th>snr</th><th>DQ flags</th>'
+            print >>outfile, '  <tr valign="top" bgcolor="ffdddd">'
+            print >>outfile, '    <td></td><td>%.3f</td><td>%.3f</td><td>%.3f</td><td>%.2f</td><td>%.2f</td><td>%.2f</td><td>%.2f</td><td>%.2f</td><td>%.2f</td><td></td><td></td>' %  \
+                  (inj.get_end("H"), inj.get_end("L"), inj.get_end("V"), 
+                   inj.mass1, inj.mass2, inj.mchirp, inj.eff_dist_h, inj.eff_dist_l, 
+                   inj.eff_dist_v) 
+
+            for ifo in ifos:
+                list_results(ifo, inj.get_end(ifo[0]), opts.segment_db, filenames,\
+                             hwinj_done,outfile)
+    
+            print >>outfile, '</table>'
+            print >>outfile, '<p>'
+    return
+# =============================================================================
+def write_page_short(opts,injections,ifos,filenames,hwinj_done,rangefilenames=None):
+	"""
+	Generate the short page
+	"""
+	outfile=open(opts.outfile,'w')
+	cachefile=open(opts.outfile.replace('.html','.cache'),'w')
+	print >>outfile, '<html><head><title>Hardware injection summary: '+str(opts.gps_start_time)+' - '+str(opts.gps_end_time)+\
+			'</title></head><body><table border=1><tr bgcolor="#9999ff"><th>GPS end time</th><th>Mass 1</th><th>Mass 2</th><th>mChirp</th><th>Distance (Mpc)</th><th>H1 eff. dist</th><th>L1 eff. dist</th><th>V1 eff. dist</th><th>Chirp Dist H</th><th>Chirp Dist L</th><th>Chirp Dist V</th><th>comb. FAR</th>'
+	print >>cachefile, os.path.basename(opts.outfile)
+	# Check for image directory and create
+	imagedirname = os.path.dirname(opts.outfile)
+	imagedirname = os.path.join(imagedirname,'Images')
+	if not os.path.isdir(imagedirname):
+		os.mkdir(imagedirname)
+	SNRAvailable=False
+	totalinj={}
+	totalfound={}
+	totalanalysed={}
+	statelist={}
+	# Write table header
+	for ifo in ifos:
+		nay=[]
+		print >>outfile, '<th>'+ifo+'</th>'
+		totalinj[ifo]=0
+		totalfound[ifo]=0
+		totalanalysed[ifo]=0
+		statelist[ifo]=[]
+        # Check for database
+        if(opts.pipedown_db is not None):
+            (db_connection,db_working_filename)=open_pipedown_database(opts.pipedown_db,opts.tmp_space)
+            vetos={}
+            for ifo in ifos:
+                vetos[ifo]=get_veto_times(db_connection,ifo)
+
+	# Write table contents
+	for inj in injections:
+		injected={}
+		analysed={}
+		found={}
+		snr={}
+		if(int(inj.get_end("H")) < opts.gps_start_time or int(inj.get_end("H")) > opts.gps_end_time):
+#			print 'skipping %d'%(inj.get_end("H"))
+			continue
+#		print 'processing '+str(inj.get_end("H"))
+		cfar="None"
+		for ifo in ifos:
+                    if opts.pipedown_db is not None:
+                        (injected[ifo],analysed[ifo],found[ifo],snr[ifo],cfar_flt)=check_ifo_result_pipedowndb(ifo,inj.get_end(ifo[0]),db_connection,hwinj_done,vetos[ifo],opts.cfar_thresh)
+                        if cfar_flt is not None:
+                            cfar="%.3f"%(cfar_flt)
+                    else:
+                        (injected[ifo],analysed[ifo],found[ifo],snr[ifo])=check_ifo_result(ifo,inj.get_end(ifo[0]),filenames,hwinj_done)
+		if opts.coinc==True:
+			if sum(injected.values())<2:
+				print >>sys.stderr,'Injection %d not coincident in 2 or more detectors' % (inj.geocent_end_time)
+				continue
+		print >>outfile,'<tr><td>%.3f</td>' % (inj.geocent_end_time)
+		print >>outfile,'<td>%.3f</td><td>%.3f</td><td>%.3f</td><td>%.3f</td><td>%.3f</td><td>%.3f</td><td>%.3f</td><td>%.3f</td><td>%.3f</td><td>%.3f</td><td>%s</td>'% (inj.mass1,inj.mass2,inj.mchirp,inj.distance,inj.eff_dist_h,inj.eff_dist_l,inj.eff_dist_v,chirp_dist(inj,'H'),chirp_dist(inj,'L'),chirp_dist(inj,'V'),cfar)
+		for ifo in ifos:
+			expSNR=get_expected_snr(rangefilenames,ifo,inj.get_end(ifo[0]))
+			if(expSNR is not None):
+				SNRAvailable=True
+				expSNR=8.0*expSNR/chirp_dist(inj,ifo[0])
+			print >>outfile,get_ifo_result_string((injected[ifo],analysed[ifo],found[ifo],snr[ifo]))
+			totalinj[ifo]=totalinj[ifo]+injected[ifo]
+			totalanalysed[ifo]=totalanalysed[ifo]+analysed[ifo]
+			totalfound[ifo]=totalfound[ifo]+found[ifo]
+			statelist[ifo].append((inj.get_end(ifo[0]),inj,injected[ifo],analysed[ifo],found[ifo],expSNR))
+			print >>sys.stdout, '%s %f %f %d %d %d' % (str(inj.get_end()),inj.mchirp,chirp_dist(inj,ifo),injected[ifo],analysed[ifo],found[ifo])
+		print >>outfile,'</tr>'
+	print >>outfile,'<tr><td bgcolor=#9999ff colspan=4>Recovered /Analysed / Injected</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'
+	for ifo in ifos:
+		print >>outfile,'<td>%i / %i / %i</td>'%(totalfound[ifo],totalanalysed[ifo],totalinj[ifo])
+	print >>outfile,'</tr>'
+	print >>outfile,'</table>'
+	outfile.close()
+	outfile=open(opts.outfile,'a')
+	os.popen('cp %s %s'%(opts.outfile,opts.outfile.replace('.html','_table.html')))
+	tabfile=open(opts.outfile.replace('.html','_table.html'),'a')
+	print >>tabfile,'</body></html>'
+	tabfile.close()
+        if opts.pipedown_db:
+		if db_connection:
+			db_connection.close()
+			from glue.ligolw import dbtables
+			dbtables.discard_connection_filename(opts.pipedown_db,db_working_filename)
+	# Generate plot for injections
+	import matplotlib
+	matplotlib.use('Agg')
+	import pylab
+	for ifo in ifos:
+		foundx=[]
+		foundy=[]
+		missedx=[]
+		missedy=[]
+		nax=[]
+		nay=[]
+		thisplot=pylab.figure()
+		def isBNS(tup):
+			return tup[1].mass1<3.0 and tup[1].mass2<3.0
+		def isNSBH(tup):
+			return (tup[1].mass1<3.0 and tup[1].mass2>3.0) or (tup[1].mass2<3.0 and tup[1].mass1>3.0)
+		def isBBH(tup):
+			return (tup[1].mass1>3.0 and tup[1].mass2>3.0)
+		# Plot each type of injection
+		for (filt,symb,injtype) in zip((isBNS,isNSBH,isBBH) , ('+','x','o'),('BNS','NSBH','BBH')):
+			results=filter(filt,statelist[ifo])
+			
+			# Build a list of found and missed
+			if results is not None:
+				(foundx,foundy)=(map(lambda i: int(i[0]), filter(lambda tup: tup[2] and tup[4],results)),map(lambda i: chirp_dist(i[1],ifo),filter(lambda tup: tup[2] and tup[4],results)))
+				(missedx,missedy)=(map(lambda i: int(i[0]), filter(lambda tup: tup[2] and tup[4]!=1 and tup[3],results)),map(lambda i: chirp_dist(i[1],ifo),filter(lambda tup: tup[2] and tup[4]!=1 and tup[3],results)))
+				#(nax,nay)=(map(lambda i: int(i[0]), filter(lambda tup: tup[2] and tup[4]!=1 and not tup[3],results)),map(lambda i: chirp_dist(i[1],ifo),filter(lambda tup: tup[2] and tup[4]!=1 and not tup[3],results)))
+			# Found in green, missed in red
+			pylab.plot(foundx,foundy,'g'+symb,label='Found '+injtype)
+			thisplot.hold()
+			pylab.plot(missedx,missedy,'r'+symb,label='Missed '+injtype)
+			#pylab.plot(nax,nay,'y'+symb,label='Not Analysed '+injtype)
+		thisplot.gca().set_xbound(int(opts.gps_start_time),int(opts.gps_end_time))
+		thisplot.gca().set_ybound(0,300)
+		pylab.title(ifo+' Hardware injections '+ str(opts.gps_start_time) +' - '+ str(opts.gps_end_time))
+		pylab.xlabel('GPS time')
+		pylab.ylabel('Chirp Distance (Mpc)')
+		pylab.legend()
+		pylab.grid(b=True)
+		# save figure
+		#print 'save figure'
+		plotname=str(ifo) +'-'+'-'.join([str(opts.gps_start_time),str(opts.gps_end_time)]) +'.png'
+		print 'saving figure %s'%(plotname)
+		pylab.savefig(os.path.join(imagedirname,plotname))
+		pylab.savefig(os.path.join(imagedirname,plotname.replace('.png','_thumb.png')),dpi=40)
+		print >>cachefile, 'Images/'+plotname
+		print >>outfile,'<img src="Images/'+plotname.split(os.path.sep)[-1]+'">'
+	if(SNRAvailable): print 'Producing SNR plots'
+	else: print 'SNR information unavailable'
+	if SNRAvailable:
+		for ifo in ifos:
+			foundx=[]
+			foundy=[]
+			missedx=[]
+			missedy=[]
+			thisplot=pylab.figure()
+			lessTwenty=lambda x: x[1].mass1 + x[1].mass2 <20
+			moreTwenty=lambda x: x[1].mass1 + x[1].mass2 >20
+			for (filt,symb,injtype) in zip((lessTwenty,moreTwenty),('x','o'),('<20 Msun','>20 Msun')):
+				results = filter(filt,statelist[ifo])
+				if results is not None:
+					found = filter(lambda tup: tup[2] and tup[4] and tup[5] is not None,results)
+					missed=filter(lambda tup: tup[2] and tup[4]!=1 and tup[3] and tup[5] is not None,results)
+					foundx=map(lambda i: int(i[0]),found)
+					foundy=map(lambda i: i[5],found)
+					missedx=map(lambda i: int(i[0]),missed)
+					missedy=map(lambda i: i[5],missed)
+				pylab.plot(foundx,foundy,'g'+symb,label='Found '+injtype)
+				thisplot.hold()
+				pylab.plot(missedx,missedy,'r'+symb,label='Missed '+injtype)
+			thisplot.gca().set_xbound(int(opts.gps_start_time),int(opts.gps_end_time))
+			#thisplot.gca().set_ybound(0,100)
+			pylab.title(ifo+' Hardware injections '+ str(opts.gps_start_time) +' - '+ str(opts.gps_end_time))
+			pylab.xlabel('GPS time')
+			pylab.ylabel('Expected SNR')
+			pylab.legend()
+			pylab.grid(b=True)
+			# save figure
+			#print 'save SNR figure'
+			plotname=str(ifo) + '-' + os.path.splitext('SNR_' + '-'.join(os.path.basename(opts.outfile).split('-')[1:]))[0] + '.png'
+			pylab.savefig(os.path.join(imagedirname,plotname))
+			pylab.savefig(os.path.join(imagedirname,plotname.replace('.png','_thumb.png')),dpi=40)
+			print >>cachefile, 'Images/'+plotname
+			print >>outfile,'<img src="Images/'+plotname.split(os.path.sep)[-1]+'">'
+	print >>outfile,'</body></html>'
+	return
+
+# =============================================================================
+# Main program begins here
+# =============================================================================
+
+usage = """ %prog [options]
+Program to parse the inspiral injection log
+"""
+
+parser = OptionParser( usage )
+parser.add_option("-D","--dq",action="store_true",dest="long_page",default=False,help="Poll DQ flags for each injection and write long page")
+parser.add_option("-o","--outfile",action="store",type="string",\
+                  metavar="FILE.html",help="Filename for output page")
+parser.add_option("-t","--gps-start-time",action="store",type="int",\
+    default=924600000, metavar="START",
+    help="start of GPS time range (default = 924600000)" )
+
+parser.add_option("-r","--range-dir",action="store",type="string",dest="range_dir",default=None,metavar="DIR")
+
+parser.add_option("-e","--gps-end-time",action="store",type="int",\
+    default=1999999999, metavar="END",
+    help="end of GPS time range (default = 1999999999)")
+
+parser.add_option("-S","--segment-dir",action="store",type="string",dest="seg_dir",default="./",metavar="S_DIR",help="Directory to store results of polling segDB")
+
+parser.add_option("-g","--get-segment-list",action="store_true",default=False,help="Get the segment lists from the database")
+
+parser.add_option("-a","--analyze-injections",action="store_true",default=False,help="Perform analysis of the hardware injections using segment lists")
+
+parser.add_option("--skip-segment-check",action="store_true",default=False,dest="skipsegcheck",help="Don't check the segment database to see if injections were successful, just assume they were")
+
+parser.add_option("-i","--h1-injections",action="store_true",\
+    default=False, help="look at H1 injections")
+
+parser.add_option("-l","--l1-injections",action="store_true",\
+    default=False, help="look at L1 injections")
+
+parser.add_option("-v","--v1-injections",action="store_true",\
+    default=False, help="look at V1 injections")
+
+parser.add_option("-T","--t1-injections",action="store_true",\
+        default=False,help="Look at T1 injections")
+parser.add_option("-G","--g1-injections",action="store_true",\
+        default=False,help="Look at G1 injections")
+parser.add_option("-I","--h2-injections",action="store_true",\
+        default=False,help="--h2-injections")
+
+parser.add_option("-x","--source-xml",action="store",type="string",\
+    metavar="IN_XML", help="input xml file of injections" )
+
+parser.add_option("-s", "--segment-db", metavar = "segment_url", \
+    default = "https://segdb.ligo.caltech.edu", \
+    help = "URL pointing to segment database") 
+
+parser.add_option("-d","--trig-dir", action="store",\
+    type="string",default=None, help="Directory contianing trigger files",metavar="TRIG_DIR")
+
+parser.add_option("-P","--pipedown-db",action="store",\
+    type="string",default=None,help="Pipedown sqlite database file",metavar="DB_FILE")
+
+parser.add_option("-p","--tmp-space",action="store",\
+    type="string",default="./",help="Temp space for database file",metavar="TMP_SPACE")
+
+parser.add_option("-c","--cache-file",action="store",\
+        type="string",default=None,help="Cache file containing trigger files (optional)",metavar="CACHE_FILE")
+
+parser.add_option("-C","--cache-pattern",action="store",\
+        type="string",default='*',help="Pattern to match files in cache",metavar="PATTERN")
+
+parser.add_option("-n","--coinc",action="store_true",\
+        default=False,help="Operate only on HW injections in >2 IFOs")
+
+parser.add_option("--cfar-threshold",dest="cfar_thresh",action="store",default=None,type="float",help="Consider detection to be below given threshold in Combined FAR (counts/year)")
+
+opts,args  = parser.parse_args()
+if opts.outfile is None and opts.analyze_injections:
+    parser.error("Please specify an output file using the -o option")
+
+if opts.trig_dir is None and opts.cache_file is None and opts.pipedown_db is None and opts.analyze_injections:
+    parser.error("Must specify --trig-dir or --cache-file or --pipedown-db")
+
+if ((opts.trig_dir is not None and (opts.cache_file is not None or opts.pipedown_db is not None)) \
+  or (opts.pipedown_db is not None and opts.cache_file is not None) ):
+    parser.error("Can only specify one of --cache-file or --trig-dir or --pipedown-db")
+
+# =============================================================================
+# Build list of IFOs - only H1, L1 and V1 supported at present
+ifos = []
+hwinj_done = {}
+if opts.h1_injections:
+    ifos.append("H1")
+
+if opts.l1_injections:
+    ifos.append("L1")
+
+if opts.v1_injections:
+    ifos.append("V1")
+
+if opts.coinc==True:
+    if len(ifos)<2:
+        print "ERROR: Must specify >1 interferometer in coinc mode"
+        sys.exit(1)
+
+# The following IFOs are not supported at present
+#if opts.g1_injections:
+    #    ifos.append("G1")
+
+#if opts.h2_injections:
+    #    ifos.append("H2")
+
+#if opts.t1_injections:
+    #    ifos.append("T1"):
+
+if ifos == []:
+    print >>sys.stderr, "Must specify an ifo"
+    sys.exit(1)
+
+# =============================================================================
+# Work out times of injections
+hwinj_done = {}
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+lsctables.use_in(ContentHandler)
+
+for ifo in ifos:
+    # set the segment name
+    if ifo == "V1":
+        seg_name = "INJECTION_INSPIRAL"
+    else:
+        seg_name = "DMT-INJECTION_INSPIRAL"
+    # query for segments
+    out_file_name = '-'.join([ifo, "HWINJ_SEGMENTS", str(opts.gps_start_time), str(opts.gps_end_time - opts.gps_start_time)])
+    out_xml = os.path.join(opts.seg_dir,out_file_name + '.xml')
+    if opts.get_segment_list:
+        retcode = subprocess.call(["ligolw_segment_query", "--database", \
+                "--query-segments", "--gps-start-time", str(opts.gps_start_time), \
+                "--gps-end-time", str(opts.gps_end_time), \
+                "--output-file", out_xml, \
+                "--include-segments", ":".join([ifo,seg_name]), \
+                "--segment-url", opts.segment_db] )
+        if retcode != 0:
+                print >>sys.stderr, "Segment call failed."
+                sys.exit(1)
+
+if not opts.analyze_injections:
+        print "Ran database query"
+        sys.exit(0)
+    
+for ifo in ifos:
+    if opts.skipsegcheck:
+        hwinj_done[ifo]=segments.segmentlist([segments.segment(opts.gps_start_time,opts.gps_end_time)])
+    else:
+        out_file_name = '-'.join([ifo, "HWINJ_SEGMENTS", str(opts.gps_start_time), str(opts.gps_end_time - opts.gps_start_time)])
+        out_xml = os.path.join(opts.seg_dir,out_file_name + '.xml')
+        indoc = ligolw_utils.load_url(out_xml, contenthandler=ContentHandler)
+        hwinj_done[ifo] = segmentdb_utils.find_segments(indoc,ifo+":RESULT:1")
+
+# ==============================================================================
+# Read in the list of triggers
+rangefilenames=None
+filenames=None
+if opts.trig_dir is not None:
+    filenames = segmentdb_utils.get_all_files_in_range(opts.trig_dir, opts.gps_start_time, opts.gps_end_time)
+    
+    if opts.range_dir is not None:
+        print 'Scanning %s for files' % (opts.range_dir)
+        rangefilenames = segmentdb_utils.get_all_files_in_range(opts.range_dir, opts.gps_start_time, opts.gps_end_time)
+
+if opts.cache_file is not None:
+    from glue import lal
+    cache = lal.Cache.fromfile(open(opts.cache_file))
+    filecache = cache.sieve(description = opts.cache_pattern)
+    filenames = filecache.checkfilesexist()[0].pfnlist()
+
+# =============================================================================
+# Read in the injections
+injections = SimInspiralUtils.ReadSimInspiralFromFiles([opts.source_xml])
+injections.sort(key=lambda a:a.get_end())
+
+# =============================================================================
+# Write the output pages
+
+if(opts.long_page): write_page_long(opts,injections,ifos,filenames,hwinj_done)
+else:write_page_short(opts,injections,ifos,filenames,hwinj_done,rangefilenames)
+

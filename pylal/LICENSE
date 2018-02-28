@@ -1,0 +1,16 @@
+PyLAL, the Python LIGO Algorithm Library
+Copyright (C) 2005-12 Adam Mercer, Alexander Dietz, Andrew Mergl, Ben Aylott, Ben Farr, Benjamin Aylott, Benjamin Farr, Brian Moe, Britta Daudert, Chad Hanna, Chris Pankow, Collin Capano, Craig Robinson, Cristina Valeria Torres, Damir Buskulic, Darren Woods, David McKechan, Diego Fazi, Drew Keppel, Duncan Brown, Duncan Macleod, Eirini Messaritaki, Evan Ochsner, Florent Robinet, Frederique Marion, Gareth Jones, Ian Harry, Jacob Slutsky, James Lough, Jameson Rollins, Jessica Clayton, John T. Whelan, John Veitch, Jordi Burguet-Castell, Joshua Smith, Kari Hodge, Kipp Cannon, Larne Pekowsky, Larry Price, Leo Singer, Lisa Esteves, Lisa Goggin, Matthew Pitkin, Melissa Frei, Michal Was, Nickolas Fotopoulos, Patrick Brady, Peng Yu, Peter F. Couvares, Ping Wei, Rahul Biswas, Riccardo Sturani, Richard O'Shaughnessy, Romain Gouaty, Rory.smith, Ruslan Vaulin, Saikat Ray-Majumder, Salvatore Vitale, Sarah Caudill, Satya Mohapatra, Shaun Hooper, Steffen Grunewald, Stephen Fairhurst, Stephen Privitera, Sukanta Bose, Thomas Adams, Thomas Cokelaer, Thomas Dent, Tomoki Isogai, Tristan Miller, Valeriu Predoi, Vivien Raymond, Will M. Farr, Xavier Siemens
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.

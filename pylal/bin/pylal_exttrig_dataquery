@@ -1,0 +1,314 @@
+#!/usr/bin/python
+
+
+import warnings
+warnings.simplefilter('ignore',DeprecationWarning)
+warnings.simplefilter('ignore',UserWarning)
+import copy
+import glob
+import math
+import sha
+import os
+import subprocess
+import sys
+import ConfigParser
+import optparse
+import urllib
+
+import numpy
+import matplotlib
+matplotlib.use('Agg')
+import pylab as plt
+
+from glue.ligolw import ligolw
+from glue.ligolw import utils
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue import lal
+from glue import segments
+from glue import segmentsUtils
+from glue import pipeline
+from pylal import pylal_exttrig_llutils as peu
+from pylal import git_version
+
+# -----------------------------------------------------
+def call_segment_query(starttime, endtime, vetodef_file,grb_name):
+  """
+  Makes a call to ligolw_segments_from_cats to get the details on the
+  vetoes for a time range, given a specific vetodefiner file
+  """
+  
+  cmd = "ligolw_segments_from_cats --gps-start-time %d --gps-end-time %d "\
+        "--segment-url https://segdb.ligo.caltech.edu  --separate-categories "\
+        "--veto-file %s"%\
+        (starttime, endtime, vetodef_file)
+  print cmd
+  peu.system_call(grb_name,cmd)
+    
+# -----------------------------------------------------
+def plot_segments_around(gpstime, cat, plotrange, grbtag, useold = False, verbose = False):
+  """
+  Create a plot with all the vetoes around the trigger time
+  """
+
+  # prepare the figure
+  fig = plt.figure()
+  flag_title = False
+  starttime = plotrange[0]
+  endtime = plotrange[1]
+  duration = endtime-starttime
+
+  # loops over the IFOs
+  for ifoindex, ifo in enumerate(peu.basic_ifolist):
+
+    # try to open the veto file. Download recent file, if required
+    vetofile = "%s-VETOTIME_%s-%d-%d.xml" % (ifo, cat, starttime, duration)
+    if not os.path.exists(vetofile) or not useold:
+      pas = peu.AnalysisSingleton()
+      veto_definer = pas.cp.get('data','veto_definer')
+      call_segment_query(starttime, endtime, veto_definer,grbtag)
+      
+    # load the content of the veto-file
+    xmldoc = utils.load_filename(vetofile, gz = False)
+    segments = table.get_table(xmldoc, lsctables.SegmentTable.tableName)
+    segdefs = table.get_table(xmldoc, lsctables.SegmentDefTable.tableName)
+    
+    # create a mapping between the segments and their definitions
+    defdict = {}
+    coldict = {}
+    ndef = len(segdefs)
+    for i, segdef in enumerate(segdefs):
+      defdict[segdef.segment_def_id] = segdef.name
+      coldict[segdef.segment_def_id] = (i, peu.colors.next())
+
+    # creates a subplot for an IFO
+    ax = fig.add_subplot(len(peu.basic_ifolist), 1, ifoindex+1)
+    o = 0.5
+    fs = 12
+    if ndef>12:
+      fs = 11-int(float(ndef-13)/3.0)
+    if fs<4: fs=4
+
+    # loops over each segment for this IFO
+    for seg in segments:
+
+      # get the segment definition ID
+      id = seg.segment_def_id
+
+      # range of the veto
+      start = seg.start_time - gpstime
+      end = seg.end_time - gpstime
+
+      # print out as required...
+      if verbose:
+        print "  %s veto for %s: %d - %d because: %s"%\
+              (cat, ifo, seg.start_time-gpstime, seg.end_time-gpstime, defdict[id])
+
+      # choose the y-position and color from the colordict
+      y, col = coldict[id]
+
+      # create a box indicating the vetoed time
+      ax.fill([start, end, end, start, start], [y-o, y-o, y+o, y+o, y-o], col, label='_nolegend_' )
+
+    # redo the y labels, label them according to the veto name
+    yticks = range(ndef)
+    yticklabels = range(ndef)
+    for key, (id, col) in coldict.iteritems():
+      name = ifo+':'+defdict[key]
+      yticklabels[id] = name
+      ax.text(-deltat, id, name, fontsize = fs)
+    ax.set_yticks([])
+
+    # some beautification
+    ax.grid(True)
+    ax.axis([-deltat, deltat, 0, ndef])
+
+    if not flag_title:
+      flag_title = True
+      ax.set_title(grbtag+' '+cat)
+
+  # save the plot with a standard naming scheme
+  plt.savefig('vetoes_around_%s_%s.png'%(grbtag, cat))
+
+  
+# -----------------------------------------------------
+def parse_args():
+  """
+  Parsing the command line arguments
+  """
+  parser = optparse.OptionParser(version=git_version.verbose_msg)
+
+  # specify config file
+  parser.add_option("--config-file", help="Specifies the config file to use.")
+  parser.add_option("--log-file", help="Specifies the log file for any outputs.",\
+                   default = "default.log")
+
+  # cache input
+  parser.add_option("--grb-file", help="Full path to the GRB xml file.")
+  
+  # GRBs to process
+  parser.add_option("--time", help="GPS time of the GRB trigger.")
+  parser.add_option("--ra",  help="Right ascension of the GRB (degree).")
+  parser.add_option("--dec", help="Declination of the GRB (degree).")
+  parser.add_option("--name", help="Name of the GRB (e.g. 100122A).")
+  
+  # process parameters, e.g. total length
+  parser.add_option("--offset", help="Length of time to check in both directions [s].",type=int,\
+                    default = 2500)
+
+  parser.add_option("--useold", action="store_true", default=False,
+                    help="If this option is specified, the old old segment files will be used. "\
+                    "Otherwise they will be queries freshly.")
+  parser.add_option("--make-plots", action = "store_true", default = False,
+                    help = "If this option is specified, segment plots will be created.")
+  parser.add_option("--make-xml", action = "store_true", default = False,
+                    help = "If this option is specified, a xml file will be created.")
+  
+  
+  options, arguments = parser.parse_args()
+  
+  if not options.grb_file and (not options.time or not options.name):
+    raise ValueError, "Either a valid GRB xml file must be specified or "\
+          "the GPS time and name of the GRB...!"
+
+  if options.grb_file and options.make_xml:
+    print "Warning! It does not make sense to specfy the xml file as input "\
+          "and as output. Therefore, the make-xml flag will be set to False"
+    options.make_xml = False
+ 
+  if options.make_xml:
+    if not options.ra or not options.dec:
+      raise ValueError, "The right ascension (--ra) and the declination (--dec) is required"\
+                        " to be specified, because --make-xml was set."
+
+  return options, arguments
+
+
+##############################################################################
+# define a few utility functions that make this job easier
+
+# get the command line arguments
+opts,args = parse_args()
+
+# get the values of this GRB
+if opts.grb_file:
+  
+  # open the file and get the SnglInspiral table
+  xmldoc = utils.load_filename(opts.grb_file, gz=opts.grb_file.endswith(".gz"))
+  ext_table = table.get_table(xmldoc,
+       lsctables.ExtTriggersTable.tableName)
+
+  # extract the required information
+  grb_name = os.path.basename(opts.grb_file)[3:-4]
+  grb_time = ext_table[0].start_time
+  grb_ra = ext_table[0].event_ra
+  grb_dec = ext_table[0].event_dec
+
+else:
+  
+  # or get the information directly from the command line
+  grb_name = opts.name
+  grb_time = float(opts.time)
+
+
+# get the gpstime of the GRB
+grbtag = 'grb%s'%grb_name
+
+# find the part of S6 during which the GRB occured
+# to chose the correct veto definer file
+for run, rrange in peu.runtimes.iteritems():
+  if grb_time>rrange[0] and grb_time<rrange[1]:
+    break
+
+
+# define the config file to use
+if opts.config_file:
+  config_file = opts.config_file
+else:
+  config_file = 'S6%s_exttrig.ini'%run
+if not os.path.exists(config_file):
+  raise ValueError, "config file '%s' does not exist! Either copy the file from CVS or specify it with --config-file <file>"%(config_file)
+
+# read the config parser and pass it to llutils
+cp = ConfigParser.ConfigParser()
+cp.read(config_file)
+
+# define the Pylal Analysis Singleton
+pas = peu.AnalysisSingleton()
+pas.set_cp(cp)
+pas.set_logfile(opts.log_file)
+
+# set the ini-file and take the minimum science segment
+minscilength = peu.get_minimum_scienceseg_length(cp)
+print "Minimum required science segment: %d s"%minscilength
+
+## single check of data availability
+mainpath = '.'
+ifos, onsource, offsource,_  = peu.get_available_ifos(grb_time,  minscilength, path = mainpath, \
+                                                      tag = grbtag, useold = opts.useold, offset = opts.offset)
+
+if len(ifos)>1:
+    pas.info("GRB accepted with IFOs %s from GPS %d to %d"%(ifos, offsource[0], offsource[1]), grb_name)
+else:
+    pas.info("GRB has not enough data!", grb_name)
+
+# Write the analysis segments
+
+for ifo in peu.basic_ifolist:
+  if ifo in ifos:
+    analysisFP = open('%s-analyse_%s.txt' %(ifo,grbtag),'w')
+    analysisFP.write('# seg\t start    \t stop    \t duration\n')
+    analysisFP.write('0\t %d\t %d\t %d\n' %(offsource[0],offsource[1],offsource[1]-offsource[0]))
+  else:
+    analysisFP = open('%s-analyse_%s.txt' %(ifo,grbtag),'w')
+    analysisFP.write('# seg\t start    \t stop    \t duration\n')
+
+if opts.make_plots:
+
+  # calculate some time ranges for the veto plots
+  if len(ifos)>1:
+    # define some time ranges
+    deltat = opts.offset
+    starttime = offsource[0]-deltat
+    endtime   = offsource[1]+deltat
+  else:
+    # define some time ranges    
+    offsource = [grb_time, grb_time]
+    deltat = opts.offset
+    starttime = grb_time - deltat
+    endtime = grb_time + deltat
+
+  # make a visual plot of the CAT1 and CAT2 vetoes around the trigger time
+  plot_segments_around(grb_time, 'CAT1', [starttime, endtime], grbtag, opts.useold, verbose = True)
+  plot_segments_around(grb_time, 'CAT2', [starttime, endtime], grbtag, opts.useold, verbose = True)
+
+
+if opts.make_xml:
+
+  if not opts.grb_file:
+    # extract the positional information of this GRB
+    grb_ra = float(opts.ra)
+    grb_dec = float(opts.dec)
+
+  # create a new xml document with an ExtTriggers Table
+  xmldoc = ligolw.Document()
+  xmldoc.appendChild(ligolw.LIGO_LW())
+  tbl = lsctables.New(lsctables.ExtTriggersTable)
+  xmldoc.childNodes[-1].appendChild(tbl)
+
+  # set the values we need
+  row = peu.get_empty_exttrig_row()
+  row.event_ra = float(grb_ra)
+  row.event_dec = float(grb_dec)
+  row.start_time = grb_time
+  row.event_number_gcn = 9999
+  row.event_number_grb = grb_name
+
+  # insert into the table
+  tbl.extend([row])
+
+  # write out the trigger file
+  filename = 'grb%s.xml' % grb_name
+  utils.write_filename(xmldoc, filename)
+
+

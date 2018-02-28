@@ -1,0 +1,157 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2013 Ian W. Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+from __future__ import division
+
+__prog__ = "coh_PTF_inspiral_range"
+__title__ = "Inspiral Range Plots for cohPTF IPN GRB runs"
+__author__ = "Valeriu Predoi, Duncan MacLeod, Ian Harry, valeriu.predoi@astro.cf.ac.uk"
+
+import numpy,sys
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue import lal
+from pylal import InspiralUtils
+from pylal import git_version
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as pl
+import lal as lalconstants
+from pylal import grbsummary
+from optparse import OptionParser
+#########################################################################
+#parse the few options
+#########################################################################
+
+parser = OptionParser()
+
+parser.add_option( "-i", "--ifo-tag", action="store", type="string",\
+                   default=None,\
+                   help="The ifo tag, H1L1 or H1L1V1 for instance" )
+parser.add_option( "-g", "--grb-xml", action="store", type="string",\
+                   default=None, help="location of the GRB xml file" )
+parser.add_option( "-b", "--frequency", action="store", type="float",\
+                   default=0, help="sampling frequency of the data" )
+parser.add_option( "-a", "--trig-file", action="store", type="string",\
+                   default=None, help="location of the offsource triggers file")
+parser.add_option( "-o", "--output-dir",action="store", type="string",\
+                   default=".", help="Directory to output plots.")
+parser.add_option( "-c", "--cache", action="store", type="string",\
+                   default=None, help="location of the GRB cache file" )
+
+(opts,args) = parser.parse_args()
+
+if not opts.grb_xml:
+  print >>sys.stderr, 'No GRB xml trigger files specified or found.'
+  sys.exit(1)
+if not opts.ifo_tag:
+  print >>sys.stderr, 'No IFOs specified, please use help or --ifo-tag'
+  sys.exit(1)
+if not opts.trig_file:
+  if not opts.cache:
+    print >>sys.stderr, 'No cache specified, please use --cache'
+    sys.exit(1)
+if not opts.frequency:
+  print >>sys.stderr, 'ERROR: No sampling frequency specified'
+  sys,exit(1)
+
+ifoTag = opts.ifo_tag
+extTrigs = grbsummary.load_external_triggers( opts.grb_xml )
+
+if len( extTrigs )>1:
+  raise ValueError, 'Found more than one GRB in %s.' % grbfile
+
+grb = extTrigs[0].event_number_grb
+grb_ifos = [ifoTag[i*2:(i*2)+2] for i in range(int(len(ifoTag)/2))]
+
+#########################################################################
+# 2. parse the OFFSOURCE trigger xml file and extract information
+##########################################################################
+
+if opts.trig_file:
+  trigFile = opts.trig_file
+else:
+  cacheFile = opts.cache # e.g. "../GRB%s_onoff.cache"
+  cache = lal.Cache.fromfile(open( cacheFile, 'r' ))
+  cache = cache.sieve( ifos=ifoTag, description="COH_PTF_INSPIRAL_FIRST" )
+  if len(cache)<1:
+    print >>sys.stderr, 'No files found.'
+    sys.exit(1)
+
+  start, end = cache.to_segmentlistdict().extent_all()
+  trigFile = "%s-COH_PTF_INSPIRAL_FIRST_GRB%s_OFFSOURCE-%s-%s.xml.gz" % (ifoTag, grb, start, end-start)
+
+
+xmldoc = utils.load_filename( trigFile, gz=trigFile.endswith("gz" ), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
+trigs  = table.get_table( xmldoc, lsctables.MultiInspiralTable.tableName )
+searchSumm = table.get_table( xmldoc, lsctables.SearchSummaryTable.tableName )
+
+ifos = sorted( map( str, searchSumm[0].get_ifos() ) )
+ifoAtt = { 'G1':'g', 'H1':'h1', 'H2':'h2', 'L1':'l', 'V1':'v', 'T1':'t' }
+
+if len(trigs)<1:
+  print >>sys.stderr, 'WARNING: No triggers found.'
+
+########################################################################
+# Constants here
+########################################################################
+
+f=opts.frequency
+dynamic_range = 1e20
+distNorm = 2.0 * dynamic_range * lalconstants.MRSUN_SI / (1e6 * lalconstants.PC_SI)
+
+##########################################################################
+# Getting the distance
+##########################################################################
+
+Distance = {}
+norm_const = []
+mass = {}
+colors = InspiralUtils.colors
+
+for ifo in ifos:
+  Distance[ifo] = []
+  mass[ifo] = []
+  for trig in trigs:
+    m1 = trig.mass1
+    m2 = trig.mass1
+    m = m1 + m2
+    mu = m1*m2 / m
+    sigmasq = getattr(trig,'sigmasq_%s' % ifoAtt[ifo])
+    norm = ((5.0*mu) / 96.0 )**(0.5) * (m/((numpy.pi)**2.0))**(1.0/3.0) * (lalconstants.MTSUN_SI)**(-1.0/6.0) * (f**(1.0/3.0))
+    d = 4.0*(distNorm**2.0) * norm * (sigmasq**(0.5)) / 8.0
+    Distance[ifo].append(d)
+    mass[ifo].append( m1 )
+
+#########################################################################
+#  Make the plot
+#########################################################################
+
+
+pl.figure()
+for ifo in ifos:
+  pl.scatter(mass[ifo], Distance[ifo], color=colors[ifo], label=ifo, marker= "+")
+pl.xlim(0.0, 25.0)
+pl.xlabel("Component Mass [Msun]")
+pl.ylabel("Inspiral Horizon Distance [Mpc]")
+pl.title("Inspiral Horizon Distance vs. Component Mass")
+pl.grid()
+pl.savefig("%s/GRB%s_inspiral_horizon_distance.png" % (opts.output_dir,grb))

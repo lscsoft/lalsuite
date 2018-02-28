@@ -1,0 +1,434 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2008,2013  Kipp Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#				   Preamble
+#
+# =============================================================================
+#
+
+
+import bisect
+from new import instancemethod
+from optparse import OptionParser
+try:
+	import sqlite3
+except ImportError:
+	# pre 2.5.x
+	from pysqlite2 import dbapi2 as sqlite3
+import sys
+
+
+from glue import segments
+from glue.ligolw import lsctables
+from glue.ligolw import dbtables
+from pylal import git_version
+from pylal import rate
+from pylal import db_thinca_rings
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+import scipy
+import numpy
+lsctables.LIGOTimeGPS = LIGOTimeGPS
+
+
+__author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+#
+# =============================================================================
+#
+#				 Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+	parser = OptionParser(
+		version = "Name: %%prog\n%s" % git_version.verbose_msg,
+		usage = "%prog [options] [file ...]",
+		description = "%prog does blah blah blah."
+	)
+	parser.add_option("-p", "--live-time-program", metavar = "name", help = "Set the name of the program whose entries in the search_summary table will set the search live time.  Required.")
+	parser.add_option("--veto-segments-name", help = "Set the name of the segments to extract from the segment tables and use as the veto list.")
+	parser.add_option("--categories", metavar = "{\"mchirp-ifos-oninstruments\",\"mtotal-ifos-oninstruments\",\"ifos-oninstruments\",\"oninstruments\"}", help = "Select the event categorization algorithm.  Required.")
+	parser.add_option("-b", "--mass-bins", metavar = "mass,mass[,mass,...]", help = "Set the boundaries of the mass bins in solar masses.  The lowest and highest bounds must be explicitly listed.  Example \"0,5,inf\".  Required if mass-based categorization algorithm has been selected.")
+	parser.add_option("--lvstat", action = "store_true", help = "Compute the lvstat instead of the likelihood.")
+	parser.add_option("-t", "--tmp-space", metavar = "path", help = "Path to a directory suitable for use as a work area while manipulating the database file.  The database file will be worked on in this directory, and then moved to the final location when complete.  This option is intended to improve performance when running in a networked environment, where there might be a local disk with higher bandwidth than is available to the filesystem on which the final output will reside.")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+	options, filenames = parser.parse_args()
+
+	#
+	# categories and ranking
+	#
+
+	if options.categories not in ("mchirp-ifos-oninstruments", "mtotal-ifos-oninstruments", "ifos-oninstruments", "oninstruments"):
+		raise ValueError, "missing or unrecognized --categories option"
+
+	#
+	# parse mass bins
+	#
+
+	if options.categories in ("mchirp-ifos-oninstruments", "mtotal-ifos-oninstruments"):
+		if options.mass_bins is None:
+			raise ValueError, "--mass-bins required with category algorithm \"%s\"" % options.categories
+		options.mass_bins = sorted(map(float, options.mass_bins.split(",")))
+		if len(options.mass_bins) < 2:
+			raise ValueError, "must set at least two mass bin boundaries (i.e., define at least one mass bin)"
+		options.mass_bins = rate.IrregularBins(options.mass_bins)
+
+	#
+	# other
+	#
+
+	if options.live_time_program is None:
+		raise ValueError, "missing required option -p or --live-time-program"
+
+	#
+	# done
+	#
+
+	return options, (filenames or [None])
+
+
+#
+# =============================================================================
+#
+#				 Book-Keeping
+#
+# =============================================================================
+#
+
+
+class Summaries(object):
+	def __init__(self, category_algorithm, mass_bins = None, lvstat = False):
+		if category_algorithm == "mchirp-ifos-oninstruments":
+			self.category_func = lambda self, on_instruments, participating_instruments, mchirp, mtotal: (on_instruments, participating_instruments, self.mass_bins[mchirp])
+		elif category_algorithm == "mtotal-ifos-oninstruments":
+			self.category_func = lambda self, on_instruments, participating_instruments, mchirp, mtotal: (on_instruments, participating_instruments, self.mass_bins[mtotal])
+		elif category_algorithm == "ifos-oninstruments":
+			self.category_func = lambda self, on_instruments, participating_instruments, mchirp, mtotal: (on_instruments, participating_instruments)
+		elif category_algorithm == "oninstruments":
+			self.category_func = lambda self, on_instruments, participating_instruments, mchirp, mtotal: on_instruments
+		else:
+			raise ValueError, category_algorithm
+		self.category_func = instancemethod(self.category_func, self, self.__class__)
+
+		if lvstat:
+			self.false_alarm_rate_column = "false_alarm_rate"
+		else:
+			self.false_alarm_rate_column = "combined_far"
+
+		self.lvstat = lvstat
+		self.mass_bins = mass_bins
+		self.seglists = segments.segmentlistdict()
+		self.signal_denominator = {}
+		self.signal_denominator_full = 0.
+		self.signal_reputations = {}
+		self.signals = {}
+		self.zero_lag_times = {}
+		
+	def add_seglists(self, connection, live_time_program, veto_segments_name = None, verbose = False):
+		if verbose:
+			print >>sys.stderr, "\tretrieving segments \"%s\" ..." % live_time_program
+		seglists = db_thinca_rings.get_thinca_zero_lag_segments(connection, program_name = live_time_program)
+		if veto_segments_name is not None:
+			if verbose:
+				print >>sys.stderr, "\tretrieving veto segments \"%s\" ..." % veto_segments_name
+			veto_segments = db_thinca_rings.get_veto_segments(connection, veto_segments_name)
+		else:
+			veto_segments = segments.segmentlistdict()
+		seglists -= veto_segments
+		self.seglists += seglists
+
+	def add_coinc(self, on_instruments, participating_instruments, mchirp, mtotal, far, distance):
+		self.signal_reputations.setdefault(self.category_func(on_instruments, participating_instruments, mchirp, mtotal), []).append((far, distance))
+
+	def add_sim(self, on_instruments, distance):
+		self.signals.setdefault(on_instruments, []).append(distance)
+
+	def index(self):
+		for reputations in self.signal_reputations.values():
+			reputations.sort()
+
+	def likelihood_summarize(self):
+		instruments = set(self.seglists)
+		for key in self.signal_reputations.keys():
+			integral = 0
+			for j in range(len(self.signal_reputations[key])):
+				integral += self.signal_reputations[key][j][1]
+				self.signal_reputations[key][j] = (self.signal_reputations[key][j][0], integral)
+		self.signal_denominator_full = sum([l[-1][1] for l in self.signal_reputations.values()])
+		for on_instruments in self.signals.keys():
+			self.signal_denominator[on_instruments] = sum(self.signals[on_instruments])
+			self.zero_lag_times[on_instruments] = self.seglists.intersection(frozenset(on_instruments)) - self.seglists.union(instruments - frozenset(on_instruments))
+			self.zero_lag_times[on_instruments] = abs(self.zero_lag_times[on_instruments])
+
+	def likelihood(self, on_instruments, participating_instruments, mchirp, mtotal, far, snr):
+		category = self.category_func(on_instruments, participating_instruments, mchirp, mtotal)
+		if category not in self.signal_reputations.keys():
+#			print >>sys.stderr, "self.signal_reputations does not contain key =", category
+			return numpy.log(0)
+		signal_reputations = self.signal_reputations[self.category_func(on_instruments, participating_instruments, mchirp, mtotal)]
+		on_instruments = lsctables.instrument_set_from_ifos(on_instruments)
+		if self.lvstat:
+			try:
+				val = numpy.log(signal_reputations[-1][1]) - numpy.log(self.signal_denominator[tuple(on_instruments)]) - numpy.log(far)
+				return val
+			except ZeroDivisionError, e:
+				print >> sys.stderr, signal_reputations, self.signal_denominator[tuple(on_instruments)], far
+				print >>sys.stderr, "Divide by Zero in lvstat ranking"
+				raise e
+
+		else:
+			ns = bisect.bisect_right(signal_reputations, (far, float(numpy.inf)))
+			fan = far*float(self.zero_lag_times[tuple(on_instruments)])
+			fap = 1. - numpy.exp(-fan)
+			time_frac = float(self.zero_lag_times[tuple(on_instruments)])/float(sum(self.zero_lag_times.values()))
+			try:
+				# FIXME should we be using all injections (made|found) in a particular time
+				# or all injections (made|found) in all times for the signal denominator
+				val = numpy.log(signal_reputations[min(ns,len(signal_reputations)-1)][1]) - numpy.log(self.signal_denominator_full/time_frac) - numpy.log(fap)
+				return val
+			except ZeroDivisionError, e:
+				print >> sys.stderr, ns, signal_reputations, self.signal_denominator[tuple(on_instruments)], fap
+				print >>sys.stderr, "Divide by Zero in likelihood ranking"
+				raise e
+
+#
+# =============================================================================
+#
+#				     Main
+#
+# =============================================================================
+#
+
+
+#
+# command line
+#
+
+
+options, filenames = parse_command_line()
+
+
+#
+# initialize book-keeping
+#
+
+
+background = Summaries(options.categories, mass_bins = options.mass_bins, lvstat = options.lvstat)
+
+
+#
+# iterate over database files accumulating statistics
+#
+
+if options.verbose:
+	print >>sys.stderr, "collecting zero-lag livetime statistics ..."
+
+for n, filename in enumerate(filenames):
+	#
+	# open the database
+	#
+
+	if options.verbose:
+		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+	working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
+	connection = sqlite3.connect(working_filename)
+
+	if "sim_inspiral" in dbtables.get_table_names(connection):
+		if options.verbose:
+			print >>sys.stderr, "\tdatabase contains sim_inspiral table, ignore this this for livetime calculation ..."
+		connection.close()
+		dbtables.discard_connection_filename(filename, working_filename, verbose = options.verbose)
+		continue
+
+	#
+	# compute the zero-lag segment lists
+	#
+
+	background.add_seglists(connection, options.live_time_program, veto_segments_name = options.veto_segments_name, verbose = options.verbose)
+
+	#
+	# close the database
+	#
+
+	connection.close()
+	dbtables.discard_connection_filename(filename, working_filename, verbose = options.verbose)
+
+
+if options.verbose:
+	print >>sys.stderr, "collecting signal statistics ..."
+
+
+for n, filename in enumerate(filenames):
+	#
+	# open the database
+	#
+
+	if options.verbose:
+		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+	working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
+	connection = sqlite3.connect(working_filename)
+
+	#
+	# if the database contains a sim_inspiral table then it is assumed
+	# to represent an injection run.  its rings must not added to the
+	# livetime, However we can use its statistics in a likelihood calculation 
+
+	if "sim_inspiral" not in dbtables.get_table_names(connection):
+		if options.verbose:
+			print >>sys.stderr, "\tdatabase does not contains sim_inspiral table, continuing ..."
+		connection.close()
+		dbtables.discard_connection_filename(filename, working_filename, verbose = options.verbose)
+		continue
+
+	for on_instruments, participating_instruments, mchirp, mtotal, sim_mtotal, far, distance in connection.cursor().execute("""
+SELECT
+	coinc_event.instruments,
+	coinc_inspiral.ifos,
+	coinc_inspiral.mchirp,
+	coinc_inspiral.mass,
+	sim_inspiral.mass1 + sim_inspiral.mass2,
+	coinc_inspiral.%s,
+	-- Work out the correction factor for injection population distances
+	CASE (SELECT value FROM process_params WHERE program =="inspinj" AND param =="--d-distr")
+		WHEN "log10" THEN  sim_inspiral.distance * sim_inspiral.distance * sim_inspiral.distance
+		WHEN "linear" THEN  sim_inspiral.distance * sim_inspiral.distance
+		ELSE 1.0 END
+FROM
+	coinc_event
+	JOIN coinc_inspiral ON (
+		coinc_inspiral.coinc_event_id == coinc_event.coinc_event_id
+	)
+	JOIN coinc_event_map AS mapA ON (mapA.event_id == coinc_event.coinc_event_id AND mapA.table_name == "coinc_event")
+	JOIN coinc_event_map AS mapB ON (mapB.coinc_event_id == mapA.coinc_event_id AND mapB.table_name == "sim_inspiral")
+	JOIN sim_inspiral ON (mapB.event_id == sim_inspiral.simulation_id)
+WHERE
+	-- require coinc to not be background (= at least one of its time slide offsets is non-zero)
+	-- FIXME this has to call a function to get coinc_def id 
+	NOT EXISTS (
+		SELECT
+			*
+		FROM
+			time_slide
+		WHERE
+			time_slide.time_slide_id == coinc_event.time_slide_id
+			AND time_slide.offset != 0
+	)
+	""" % background.false_alarm_rate_column ):
+		#if background.lvstat:
+			#if sim_mtotal > 6.:
+			#	continue
+		background.add_coinc(on_instruments, participating_instruments, mchirp, mtotal, far, distance)
+
+	#
+	# figure out all injections made in a particular time
+	#
+
+	for end_time, end_time_ns, distance in connection.cursor().execute("""
+SELECT
+	sim_inspiral.geocent_end_time,
+	sim_inspiral.geocent_end_time_ns,
+	-- Work out the correction factor for injection population distances
+	CASE (SELECT value FROM process_params WHERE program =="inspinj" AND param =="--d-distr") 
+		WHEN "log10" THEN  sim_inspiral.distance * sim_inspiral.distance * sim_inspiral.distance 
+		WHEN "linear" THEN  sim_inspiral.distance * sim_inspiral.distance
+		ELSE 1.0 END
+FROM
+	sim_inspiral
+	"""):
+		sim_time = LIGOTimeGPS(end_time, end_time_ns)
+		on_instruments = set([])
+		for ifo in background.seglists.keys():
+			if sim_time in background.seglists[ifo]:
+				on_instruments |= set([ifo])
+		if len(on_instruments):
+			on_instruments = tuple(on_instruments)
+			background.add_sim(on_instruments, distance)
+
+	#
+	# close the database
+	#
+
+	connection.close()
+	dbtables.discard_connection_filename(filename, working_filename, verbose = options.verbose)
+
+
+background.index()
+background.likelihood_summarize()
+
+#
+# iterate over database files assigning false-alarm rates to coincs
+#
+
+
+for n, filename in enumerate(filenames):
+	#
+	# open the database
+	#
+
+	if options.verbose:
+		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+	working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
+	connection = sqlite3.connect(working_filename)
+
+	#
+	# prepare the database
+	#
+
+	# FIXME, sort of a hack tying it to one specific algorithm, do we make it a new algorithm?
+	connection.create_function("likeliness", 6, background.likelihood)
+	if options.verbose:
+		print >>sys.stderr, "\tcalculating and recording likelihood ..."
+	connection.cursor().execute("""
+UPDATE
+	coinc_event
+SET
+	likelihood = (
+		SELECT
+			likeliness(
+				coinc_event.instruments,
+				coinc_inspiral.ifos,
+				coinc_inspiral.mchirp,
+				coinc_inspiral.mass,
+				coinc_inspiral.combined_far,
+				coinc_inspiral.snr
+			)
+		FROM
+			coinc_inspiral
+		WHERE
+			coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id
+	)
+	""")
+	connection.commit()
+
+
+
+	#
+	# close the database
+	#
+
+	connection.close()
+	dbtables.put_connection_filename(filename, working_filename, verbose = options.verbose)

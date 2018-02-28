@@ -1,0 +1,198 @@
+#!/usr/bin/python
+#
+# Try this: projectedDetectorTensor --gps-sec 968654558 --ra-hr 7.26666667 --dec-deg -26.5 --display-llo --display-lho --display-virgo
+#
+# Copyright (C) 2010, 2011 John T. Whelan
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+import matplotlib
+matplotlib.use("Agg")
+from matplotlib import rc
+matplotlib.rc('text', usetex=True)
+matplotlib.rc('font', family='serif')
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy
+from optparse import OptionParser
+
+def myArrow(basex,basey,length,angle,color):
+    if length >= 0:
+        plt.annotate('',xytext=(basex,basey),
+                     xy=(basex+length*np.cos(angle),
+                         basey+length*np.sin(angle)),
+                     arrowprops=dict(arrowstyle='->',color=color))
+    else:
+        plt.annotate('',xytext=(basex-length*np.cos(angle),
+                                basey-length*np.sin(angle)),
+                     xy=(basex,basey),
+                     arrowprops=dict(arrowstyle='->',color=color))
+
+def drawTensor(basex, basey,a, b, color, drawcircle=True):     
+    if drawcircle == True:
+        phi = np.linspace(0.,2.*np.pi,1000)
+        ax.plot(basex + L*np.cos(phi),basey + L*np.sin(phi),'k:')
+    r = np.sqrt(np.sqrt(a**2+b**2))
+    psi = 0.5 * np.arctan2(b,a)
+    myArrow(basex,basey,r,np.pi-psi,color)
+    myArrow(basex,basey,-r,0.5*np.pi-psi,color)
+    myArrow(basex,basey,r,-psi,color)
+    myArrow(basex,basey,-r,-0.5*np.pi-psi,color)
+    return (r,psi*180/np.pi)
+
+def fillTableCell(det):
+    (a,b) = antenna.response(opts.gps_sec,15*raHr,decDeg,
+                             0,0,'degree',det)[:2]
+    (r,psiDeg) = drawTensor(raDeg,decDeg,L**2*a,L**2*b,detcolor[det])
+
+    print '%s:' % det
+    print '    (a,b)=(%f,%f)' % (a,b)
+    print '    a^2+b^2=%f' % (a**2+b**2)
+    print '    psi=%.1fdeg' % psiDeg
+
+def getDmsFromDecimal(decimal):
+    d = int(decimal)
+    minutes = 60*(decimal-d)
+    m = int(minutes)
+    seconds = 60*(minutes-m)
+    return (d,m,seconds)
+
+detcolor = {'H1' : 'r', 'H2' : 'b', 'L1' : 'g', 'V1': 'm'}
+
+parser = OptionParser()
+
+parser.add_option("--gps-sec",action="store",type="float",
+                  help="GPS time in seconds")
+parser.add_option("--ra-hr",action="store",type="float",
+                  help="right ascension in hours (specify either --ra-hr or --ra-deg or --ra-rad)")
+parser.add_option("--ra-deg",action="store",type="float",
+                  help="right ascension in degrees (specify either --ra-hr or --ra-deg or --ra-rad)")
+parser.add_option("--ra-rad",action="store",type="float",
+                  help="right ascension in radians (specify either --ra-hr or --ra-deg or --ra-rad)")
+parser.add_option("--dec-deg",action="store",type="float",
+                  help="declination in degrees (specify either --dec-deg or --dec-rad)")
+parser.add_option("--dec-rad",action="store",type="float",
+                  help="declination in radians (specify either --dec-deg or --dec-rad)")
+parser.add_option("--display-detector",action="append",type="string",
+                  help="two-character abbreviation of detectors to show",
+                  default=[])
+parser.add_option("--display-llo",action="store_true",default=False,
+                  help="equivalent to --display-detector L1")
+parser.add_option("--display-lho",action="store_true",default=False,
+                  help="equivalent to --display-detector H1")
+parser.add_option("--display-virgo",action="store_true",default=False,
+                  help="equivalent to --display-detector V1")
+parser.add_option("--grb-name",action="store",type="string")
+parser.add_option("--image-name",action="store",type="string",
+                  default="projtens.png")
+(opts,args) = parser.parse_args()
+
+import pylal
+from pylal import antenna
+
+if opts.dec_deg == None:
+    if opts.dec_rad == None:
+        raise RuntimeError, "Must specify declination in degrees or radians"
+    else:
+        if opts.dec_rad < -0.5 * np.pi or opts.dec_rad > 0.5 * np.pi:
+            raise ValueError, "Declination of %f outside allowed range [%f,%f]" % (opts.dec_rad,-0.5*np.pi,0.5*np.pi)
+        decDeg = np.degrees(opts.dec_rad)
+else:
+    if opts.dec_rad == None:
+        if opts.dec_deg < -90. or opts.dec_deg > 90.:
+            raise ValueError, "Declination of %f outside allowed range [%f,%f]" % (opts.dec_deg,-90.,90.)
+        decDeg = opts.dec_deg
+    else:
+        raise RuntimeError, "Can't specify declination in both degrees and radians"
+
+if opts.ra_hr == None:
+    if opts.ra_deg == None:
+        if opts.ra_rad == None:
+            raise RuntimeError, "Must specify right ascension in hours or degrees or radians"
+        else:
+            raDeg = np.degrees(opts.ra_rad) % 360
+            raHr = raDeg / 15.
+    else:
+        if opts.ra_rad == None:
+            raDeg = opts.ra_deg % 360
+            raHr = raDeg / 15.
+        else:
+            raise RuntimeError, "Can't specify right ascension in both degrees and radians"
+else:
+    if opts.ra_deg == None:
+        if opts.ra_rad == None:
+            raHr = opts.ra_hr % 24
+            raDeg = raHr * 15.
+        else:
+            raise RuntimeError, "Can't specify right ascension in both hours and radians" 
+    else:
+        if opts.ra_rad == None:
+            raise RuntimeError, "Can't specify right ascension in both hours and degrees"
+        else:
+            raise RuntimeError, "Can't specify right ascension in hours and degrees and radians"
+
+if opts.gps_sec == None:
+    raise RuntimeError, "Must specify GPS time"
+
+fig = plt.figure()
+fig.set_size_inches(5,5)
+ax = fig.add_subplot(111)
+
+L = 10
+
+if opts.display_lho and 'H1' not in opts.display_detector:
+    opts.display_detector.append('H1')
+            
+if opts.display_llo and 'L1' not in opts.display_detector:
+    opts.display_detector.append('L1')
+
+if opts.display_virgo and 'V1' not in opts.display_detector:
+    opts.display_detector.append('V1')
+
+for det in opts.display_detector:
+    fillTableCell(det)
+
+xmin = raDeg+1.1*L
+xmax = raDeg-1.1*L
+ymin = decDeg-1.1*L
+ymax = decDeg+1.1*L
+tickvals = np.array([xmin,raDeg,xmax])
+ticklabs = ['E',
+            r'$%02d^{\textrm{h}}%02d^{\textrm{m}}%02.0f^{\textrm{s}}$' %
+            getDmsFromDecimal(raHr),
+            'W']
+ax.set_xticks(tickvals)
+ax.set_xticklabels(ticklabs)
+tickvals = np.array([ymin,decDeg,ymax])
+if decDeg >= 0:
+  dmsFromDec = getDmsFromDecimal(decDeg)
+  decString = r'$+%02d^{\circ}%02d^{\prime}%02.0f^{\prime\prime}$'
+else:
+  dmsFromDec = getDmsFromDecimal(-decDeg)
+  decString = r'$-%02d^{\circ}%02d^{\prime}%02.0f^{\prime\prime}$'
+ticklabs = ['S', decString % (dmsFromDec), 'N']
+ax.set_yticks(tickvals)
+ax.set_yticklabels(ticklabs)
+if opts.grb_name == None:
+    ax.set_title('Detector Responses at GPS %d' % opts.gps_sec)
+else:
+    ax.set_title('Detector Responses for GRB %s' % opts.grb_name)
+ax.set_xlabel('Right Ascension')
+ax.set_ylabel('Declination')
+ax.grid(True)
+ax.set_xlim([xmin,xmax])
+ax.set_ylim([ymin,ymax])
+
+fig.savefig(opts.image_name,bbox_inches='tight')

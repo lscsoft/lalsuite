@@ -1,0 +1,119 @@
+GLUE: Grid LSC User Environment
+
+Glue is a collection of utilities for running data analysis pipelines
+for online and offline analysis as well as accessing various grid
+utilities.  It also provides the infrastructure for the segment
+database.
+
+The Glue web site:
+
+   http://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html
+
+contains many useful links for Glue users and developers.
+
+If you have questions or comments about Glue, please send them to the
+lal-discuss mailing list. You may join this list at: There are two
+LALApps mail lists/archives which are shared with LAL. These are:
+
+  http://www.lsc-group.phys.uwm.edu/mailman/listinfo.cgi/lal-discuss
+
+This README file explains how to build and install Glue.
+
+GLUE is distributed under the GNU General Public, version 3. See the
+file LICENSE for more information.
+
+If you use GLUE in published scientific work, we request that you
+include a reference in your work as follows:
+
+"Workflows were generated using the Grid LSC User Environment (GLUE)"
+
+------------------------------------------------------------------------------
+
+1. Determine your Python version
+
+Python version 2.4 or greater is required to install Glue. Type:
+
+  python -V
+
+to determine the version of python installed on your machine. For
+example:
+
+  [duncan@contra lalapps]$ python -V
+  Python 2.4.3
+
+If you do not have version 2.4 or greater installed, contact your system
+administrator for help installing Python.
+
+------------------------------------------------------------------------------
+
+2. Get Glue from Git
+
+Glue is part of the LALSuite Git repository. First choose a directory in
+which to install the LALSuite sources. In this example, we install the
+sources into ${HOME}/src. If you decide to install somewhere else,
+change ${HOME}/src to the directory you have chosen. Change
+albert.einstein in the git clone below to your ligo.org kerberos
+principle, if you have one. Type:
+
+  mkdir -p ${HOME}/src
+  cd ${HOME}/src
+  git clone git+ssh://albert.einstein@ligo-vcs.phys.uwm.edu/usr/local/git/lalsuite.git
+
+If you do not have a ligo.org kerberos principle you can get the source
+code anonymously using:
+
+  git clone git://ligo-vcs.phys.uwm.edu/lalsuite.git
+
+This will create a directory ${HOME}/src/lalsuite containing the
+LALSuite sources.
+
+
+------------------------------------------------------------------------------
+
+3. Build and Install Glue
+
+Choose a location in which to install Glue. In this example we choose
+/opt/glue. You must have write access to this directory, so you may wish
+to install in ${HOME}, for example. Set the environment variable
+${GLUE_LOCATION} to point to your chosen install directory. Bash or sh
+users should type:
+
+  export GLUE_LOCATION=/opt/glue
+
+and csh users should type:
+
+  setenv GLUE_LOCATION /opt/glue
+
+Assuming you have installed the glue sources in ${HOME}/src/glue, type:
+
+  cd ${HOME}/src/lalsuite/glue
+  ${PYTHON} setup.py install --prefix=${GLUE_LOCATION}
+
+This will build and install all the glue modules and programs.
+
+
+------------------------------------------------------------------------------
+
+4. Set up your Environment for Using Glue
+
+If you are a bash or sh user, edit your .profile (or .bash_profile) file
+and add the lines (changing /opt/glue to wherever you installed Glue):
+
+  export GLUE_LOCATION=/opt/glue
+  if [ -f ${GLUE_LOCATION}/etc/glue-user-env.sh ] ; then
+    source ${GLUE_LOCATION}/etc/glue-user-env.sh
+  fi
+
+If you are a csh user, edit your .login file and add the lines (changing
+/opt/glue to wherever you installed Glue):
+
+  setenv GLUE_LOCATION /opt/glue
+  if ( -f ${GLUE_LOCATION}/etc/glue-user-env.csh ) then
+    source ${GLUE_LOCATION}/etc/glue-user-env.csh
+  endif
+
+Now log out and log back in to ensure that all environment variables
+have been updated.
+
+You may now use Glue! Please report any problems via the Gnats database
+linked from the Glue home page.

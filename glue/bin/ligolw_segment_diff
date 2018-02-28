@@ -1,0 +1,151 @@
+#!/usr/bin/env python
+#
+#
+# Copyright (C) 2009  Larne Pekowsky
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+"""
+Takes two or more XML files containing segment tables, and calculates the
+difference A - B - C - ... between either (1) the union of all specified segment definers
+across files or (2) each individual segment definer between files
+"""
+
+
+from optparse import OptionParser
+
+import sys
+import os
+import pwd
+
+from glue.ligolw import utils
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+
+from glue.segmentdb import logic 
+
+from glue.ligolw.utils import process
+
+from glue.segmentdb.segmentdb_utils import add_to_segment_definer
+from glue.segmentdb.segmentdb_utils import add_to_segment
+from glue.segmentdb.segmentdb_utils import find_segments
+
+from glue import git_version
+
+PROGRAM_NAME = sys.argv[0].replace('./','')
+PROGRAM_PID  = os.getpid()
+
+try:
+    USER_NAME = os.getlogin()
+except:
+    USER_NAME = pwd.getpwuid(os.getuid())[0]
+
+
+__author__  = "Larne Pekowsky <lppekows@physics.syr.edu>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+def parse_command_line():
+    """
+    Parse the command line, return an options object
+    """
+
+    parser = OptionParser(
+        version = "Name: %%prog\n%s" % git_version.verbose_msg,
+        usage   = "%prog [--segment | --segment-summary] [options] file1.xml file2.xml ...",
+        description = "Takes two or more XML files containing segment tables, and calculates the\n" +
+        "difference A - B - C - ... between either (1) the union of all specified segment definers\n" +
+        "across files or (2) each individual segment definer between files\n"                      
+	)
+    
+    parser.add_option("-o", "--output-file", metavar = "output_file", help = "Output file (default = stdout)")
+    parser.add_option("-p", "--preserve",    action  = "store_true",  help = "If set, stores metadata from all input files in output")
+    parser.add_option("-i", "--include-segments",    metavar = "include_segments",    help = "Segments to diff (ifo:name or ifo:name:version)")
+    
+    parser.add_option("-s", "--segment",           action = "store_true",   help = "Operate on the segment table")
+    parser.add_option("-X", "--segment-summary",   action = "store_true",   help = "Operate on the segment_summary table")
+
+    parser.add_option("-n", "--result-name", metavar = "result_name", default = "RESULT", help = "Name for result segment definer (default = RESULT)") 
+    parser.add_option("-q", "--quiet",       action = "store_true",   help = "Set result status, but do not generate output")
+    options, filenames = parser.parse_args()
+
+    if not (options.segment or options.segment_summary) or (options.segment and options.segment_summary):
+        print >>sys.stderr, "Please specify one of --segment or  --segment-summary"
+        sys.exit(-1)
+
+    return options, filenames
+
+
+
+#
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+#
+
+if __name__ == '__main__':
+    options, filenames = parse_command_line()
+
+    # Set up the document
+    xmldoc = ligolw.Document()
+    xmldoc.appendChild(ligolw.LIGO_LW())
+    
+    # Register ourselves
+    proc_id = process.register_to_xmldoc(xmldoc, PROGRAM_NAME, options.__dict__, version=git_version.id).process_id
+
+    # If we have no filenames, assume that we're reading from stdin
+    # (ligolw_add uses None as a flag for stdin)
+    if len(filenames) == 0:
+        filenames = [None]
+
+    # Also treat the special name 'stdin' as stdin
+    filenames = map(lambda x: x != 'stdin' and x or None, filenames)
+
+    if options.include_segments:
+        xmldoc, total_time = logic.run_segment_operation(xmldoc, filenames, 
+                                            options.include_segments,
+                                            options.segment,
+                                            logic.DIFF,
+                                            options.result_name, options.preserve)
+    else:
+        xmldoc, total_time = logic.run_file_operation(xmldoc, filenames, options.segment, logic.DIFF, options.preserve)
+
+    if not options.quiet:
+        utils.write_filename(xmldoc, options.output_file)
+
+    # Return 0 if there is no total time, 1 if there is
+    # this is mostly useful for diff and intersect
+    sys.exit(total_time and 1)
+

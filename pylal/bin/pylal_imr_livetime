@@ -1,0 +1,29 @@
+#!/usr/bin/python
+
+import sqlite3
+sqlite3.enable_callback_tracebacks(True)
+
+import sys
+import glob
+from optparse import OptionParser
+import traceback
+#from pylal import imr_utils
+import imr_utils
+
+def parse_command_line():
+	parser = OptionParser(usage = "%prog [options] [file ...]")
+	parser.add_option("--live-time-program", default = "thinca")
+	parser.add_option("--veto-segments-name", default = "vetoes")
+	parser.add_option("-t", "--tmp-space", metavar = "path")
+	parser.add_option("--verbose", action = "store_true")
+	opts, filenames = parser.parse_args()
+	if not filenames:
+		raise ValueError("must provide at least one database")
+	return opts, filenames
+options, filenames = parse_command_line()
+
+IMR = imr_utils.DataBaseSummary(filenames, tmp_path = options.tmp_space, veto_segments_name = options.veto_segments_name, live_time_program = options.live_time_program, verbose = options.verbose)
+
+for instruments in IMR.instruments:
+	segs = IMR.segments.intersection(instruments)
+	print float(abs(segs))/(24.0*3600.0), instruments

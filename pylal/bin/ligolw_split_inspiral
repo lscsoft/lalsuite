@@ -1,0 +1,199 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2012 Matthew West
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                  Preamble
+#
+# =============================================================================
+#
+
+import os
+import sys
+from optparse import OptionParser
+
+import numpy
+
+from glue import lal
+from glue import segments
+from glue.ligolw.utils import ligolw_add
+from glue.ligolw import ligolw
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+
+from pylal import git_version
+
+__author__ = "Matthew West <matthew.west@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+#
+# =============================================================================
+#
+#                                Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+    """
+    Parse the command line, return an options object and a lal.Cache of inspiral files
+    """
+    parser = OptionParser(
+        version = "Name: %%prog\n%s" % git_version.verbose_msg,
+        usage = "%prog [options]",
+        description = ""
+        )
+    #
+    parser.add_option("-i", "--inspiral-cache", metavar = "name", type="string", default=None, \
+        help = "Get input inspiral files from the LAL cache named filename. Required." 
+        )
+    parser.add_option( "-p", "--output-path", action = "store", type="string", \
+        default = os.getcwd(), metavar = "PATH", \
+        help = "Path where the output xml is stored. Default is the current directory."
+        )
+    parser.add_option("-f", "--tmplt-file", metavar = "name", type="string", default=None, \
+        help = "The tmpltbank file. Required"
+        )
+    parser.add_option("-b", "--sort-by", metavar = "column", type="string", \
+        help = "Which sngl_inspiral column to sort the templates (mchirp, mtotal, ...)"
+        )
+    parser.add_option("-n", "--tmplt-num", metavar = "int", type="int", default=None, \
+        help = "Define the desired template id number. Required"
+        )
+    parser.add_option("-s", "--gps-start-time", metavar = "float", type="float", \
+        help = "Start time, in gps seconds, of the experiment being performed. Required."
+        )
+    parser.add_option("-e","--gps-end-time", metavar = "float", type="float",
+        help = "End time, in gps seconds, of the experiment being performed. Required."
+        )
+    parser.add_option("-v", "--verbose", action = "store_true", default=False, \
+        help = "Be verbose."
+        )
+    options, arguments =  parser.parse_args()
+
+    if not options.gps_start_time or not options.gps_end_time:
+        raise ValueError, "must specify --gps-start-time and --gps-end-time" 
+    if not options.inspiral_cache:
+        raise ValueError, "must specify --inspiral-cache"
+    if not options.tmplt_file or not (options.tmplt_num >= 0):
+        raise ValueError, "must specify both --tmplt-file and --tmplt-num" 
+
+    return options
+
+#
+# =============================================================================
+#
+#                                    Main
+#
+# =============================================================================
+#
+
+
+#
+# Command line
+#
+
+opts = parse_command_line()
+
+# create cache of desired inspiral files
+inspiral_cache = lal.Cache([lal.CacheEntry(line) for line in file(opts.inspiral_cache)])
+
+# optimize table for speed and memory usage
+lsctables.SnglInspiralTable.updateKeyMapping = lsctables.table.Table.updateKeyMapping
+lsctables.table.RowBuilder = lsctables.table.InterningRowBuilder
+
+# get desired template parameters
+tmplt_xmldoc = utils.load_filename(opts.tmplt_file, verbose = opts.verbose)
+tmplt_tbl = table.get_table(tmplt_xmldoc, lsctables.SnglInspiralTable.tableName)
+if opts.tmplt_num >= len(tmplt_tbl):
+    raise ValueError, "The given template number: %d is too large for this bank" % opts.tmplt_num
+
+# obtain desired template parameters
+idx = numpy.argsort( tmplt_tbl.getColumnByName(opts.sort_by) )[opts.tmplt_num]
+mchirp = tmplt_tbl.getColumnByName("mchirp")[ idx ]
+eta = tmplt_tbl.getColumnByName("eta")[ idx ]
+
+# define analysis segment
+analysis_seg = segments.segment(
+    lal.LIGOTimeGPS( opts.gps_start_time ),
+    lal.LIGOTimeGPS( opts.gps_end_time )
+)
+
+# loop over the files in the cache
+xmldoc = ligolw.Document()
+for n, file in enumerate(inspiral_cache):
+    if opts.verbose:
+        print >> sys.stderr, "%d/%d:" % (n + 1, len(inspiral_cache)),
+
+    # check that the inspiral file falls within specified times
+    if analysis_seg.intersects( file.segment ):
+        utils.load_url(file.url, verbose = opts.verbose, xmldoc = xmldoc, contenthandler = None)
+    else:
+        if opts.verbose:
+            print >> sys.stderr, "inspiral file lays outside specified gps times"
+        continue
+
+    ligolw_add.reassign_ids(xmldoc, verbose = opts.verbose)
+
+    # Document merge
+    if opts.verbose:
+        print >>sys.stderr, "merging elements ..."
+    ligolw_add.merge_ligolws(xmldoc)
+    ligolw_add.merge_compatible_tables(xmldoc)
+
+    # Select desired triggers
+    sngl_insp_tbl = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+    max_idx = len(sngl_insp_tbl) - 1
+    for idx, row in enumerate( reversed(sngl_insp_tbl) ):
+        # if template params don't match desired ones, remove
+        if abs(row.mchirp/mchirp - 1) > 1e-6 or abs(row.eta/eta - 1) > 1e-6:
+            del sngl_insp_tbl[max_idx - idx]
+
+
+# Reassign process_ids from process_id:0
+lsctables.ProcessTable.next_id = lsctables.ProcessID(0)
+ligolw_add.reassign_ids(xmldoc, verbose = opts.verbose)
+
+# Reassign event_ids
+sngl_insp_tbl = lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+sngl_insp_tbl.set_next_id(lsctables.SnglInspiralID(0))
+for row in sngl_insp_tbl:
+    row.event_id = sngl_insp_tbl.get_next_id()
+
+# Define the output filename
+ifos = ''.join( sorted(set(file.observatory for file in inspiral_cache)) )
+tmplt_id = 'TMPLT_%%0%dd' % int(numpy.log10(len(tmplt_tbl))+1)
+tmplt_id = tmplt_id % opts.tmplt_num
+duration = int(opts.gps_end_time - opts.gps_start_time)
+output_filename = '-'.join([ifos, 'INSPIRAL', tmplt_id, str(int(opts.gps_start_time)), str(duration)]) + '.xml.gz'
+
+#
+# Write back to disk, and clean up.
+#
+utils.write_filename(
+    xmldoc,
+    opts.output_path + '/' + output_filename,
+    verbose = opts.verbose,
+    gz = output_filename.endswith(".gz")
+)

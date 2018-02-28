@@ -1,0 +1,18 @@
+description = diff test of $(GIT_BRANCH_A):$(GIT_ID_A) vs. $(GIT_BRANCH_B):$(GIT_ID_B)
+project = cbc
+project_version = $(GIT_BRANCH_A)
+component = $(WORKFLOW_NODENAME)
+component_version = $(GIT_ID_A)
+run_type = test
+platforms = x86_64_sl_6.1
+notify = $(USER)
+notify_fail_only = true
+# stream "live" stdout/err from tasks back to the submit node
+stream_user_io = true
+
+inputs = scripts.git, ligolw_diff.git, unit_a.nmi, unit_b.nmi
+
+remote_task = remote_task.sh
+remote_task_args = $(GIT_ID_A) $(GIT_ID_B)
+
+platform_post = platform_post.sh

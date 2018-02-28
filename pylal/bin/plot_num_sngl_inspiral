@@ -1,0 +1,90 @@
+#!/usr/bin/python
+import os, sys, re
+from glue import lal
+from glue import segmentsUtils
+from glue.ligolw import utils
+from glue.ligolw import lsctables
+from glue.ligolw.utils import segments as llwsegments
+from glue import iterutils
+from optparse import *
+import numpy
+import matplotlib
+matplotlib.use('Agg')
+import pylab
+
+from pylal import git_version
+__author__ = "Chad Hanna <channa@ligo.caltech.edu>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+class IFOdata(object):
+	def __init__(self):
+		self.color_map = {'H1': 'r', 'H2': 'b', 'L1': 'g', 'V1': 'm'}
+		self.line_map = {'H1': ['o', 'x', 'd'], 'H2': ['o', 'x', 'd'], 'L1': ['o', 'x', 'd'], 'V1': ['o', 'x', 'd']}
+		self.counter = {'H1': 0, 'H2': 0, 'L1': 0, 'V1': 0}
+	def color(self, ifo):
+		return self.color_map[ifo]
+	def line(self, ifo):
+		self.counter[ifo] +=1
+		return self.line_map[ifo][(self.counter[ifo]-1) % 3]
+
+def parse_command_line():
+	parser = OptionParser(
+	version = "%prog",
+		description = "Plot number of rows in a single inspiral table from many files"
+        )
+        parser.add_option("-p", "--pattern", metavar = "pat", action="append", default = [], help = "Set the pattern for parsing the cache file for patterns to find sngl inspiral tables")
+	parser.add_option("-b", "--base", metavar = "str", help = "Set the figure basename, default derive from the cache")
+	parser.add_option("-s", "--stride", metavar = "num", help = "Set the stride of files to read in (in case you want to debug, or just decimate the dataset)")
+	options, filenames = parser.parse_args()
+	if not options.pattern: options.pattern = ['INSPIRAL_FIRST_FULL_DATA', 'INSPIRAL_SECOND_.*_FULL_DATA', 'TMPLTBANK_FULL_DATA', 'TRIGBANK_SECOND_.*_FULL_DATA']
+	if not options.base: options.base = os.path.basename(filenames[0]).replace(".cache","")
+	return options, (filenames or [])
+
+print >>sys.stderr, "processing cache file for pattern..."
+opts, cache = parse_command_line()
+print >> sys.stderr, "\t%s" % "|".join(opts.pattern)
+pats = re.compile("|".join(opts.pattern))
+new_list = filter(pats.search,open(cache[0]).readlines())
+pats = [re.compile(val) for val in opts.pattern]
+
+print >>sys.stderr, "found %d files of interest" % len(new_list)
+
+time_num = {}
+for i, line in enumerate(new_list):
+	if opts.stride and i % int(opts.stride): continue
+	print >>sys.stderr, "\tprocessing %d/%d\r" % (i, len(new_list)),
+	c = lal.CacheEntry(line)
+	patIX = [j for j, val in enumerate(pats) if val.search(c.description)][0]
+	XML = utils.load_filename(c.path, gz=c.path.endswith('.gz'))
+	try: sngl = lsctables.table.get_table(XML, "sngl_inspiral")
+	except: continue
+	if len(sngl):
+		time = min(sngl.get_column('end_time'))
+		if not time: time = int(c.segment[0])
+		time_num.setdefault((c.observatory, opts.pattern[patIX]),[]).append((time, len(sngl)))
+
+ifodata = IFOdata()
+for val in time_num.values(): val.sort()
+start = []
+lines = []; labels = [];
+for key, value in time_num.items():
+	start.append( min([t[0] for t in value]))
+start = min(start)
+data = time_num.items(); data.sort()
+outtab = open('%s_%s_%s.txt' % (opts.base, os.path.basename(sys.argv[0]), "-".join(opts.pattern).replace(".*","")),"w")
+outtab.write("||SET||AVG NUMBER||STD DEV||\n")
+for i, (key, value) in enumerate(data):
+	labels.append(" ".join(key))
+	outtab.write("||%s||%.2f||%.2f||\n" % (" ".join(key), numpy.mean([t[1] for t in value]), numpy.std([t[1] for t in value])))
+	lines.append(pylab.semilogy((numpy.array([t[0] for t in value]) - start) / 86400., [t[1] for t in value], label=str(key), color=ifodata.color(key[0]), linestyle='None', marker=ifodata.line(key[0])))
+outtab.close()
+leg = pylab.figlegend(lines, labels, 'upper right')#, labelspacing=0)
+leg.prop.set_size(6)
+leg.pad = 0
+pylab.ylabel("Number")
+pylab.xlabel("Time (days) relative to %d" % start)
+pylab.grid()
+figname = '%s_%s_%s.png' % (opts.base, os.path.basename(sys.argv[0]), "-".join(opts.pattern).replace(".*",""))
+print >> sys.stderr, "Writing output to %s" % (figname,)
+pylab.savefig(figname)

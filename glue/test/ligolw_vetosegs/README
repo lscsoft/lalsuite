@@ -1,0 +1,25 @@
+These are test/demo files for ligolw_vetosegs, which is an
+implementation of the program described in section 2, point 3 of
+https://www.lsc-group.phys.uwm.edu/daswg/docs//technical/T0900005.pdf.
+
+The H1-TEST_SEGS-* files simulate files produced by the DMT.
+H1-VETOTEST-800000000-128.xml is a sample DQ categorization file.
+Conceptually the program does the following:
+
+
+For each ifo
+   for each veto category
+      for each distinct entry in the DQ veto_definer table of that veto category or lower
+         find the intersection with each DMT segment
+      take the union of all such segments
+      generate xml/txt files
+    
+
+Running
+
+  ligolw_vetosegs -q  H1-TEST_SEGS-\* -v H1-VETOTEST-800000000-128.xml
+
+will regenerate the H1-VETOTIME_CAT*xml and H1-VETOTIME_CAT*txt files,
+which contain times that should be vetoed.
+
+

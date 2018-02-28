@@ -1,0 +1,89 @@
+%
+% =============================================================================
+%
+%                                   Premable
+%
+% =============================================================================
+%
+
+\documentclass{book}
+\usepackage{fullpage}
+\usepackage{pylal}
+
+
+% Add your name to the author list!  (alphabetical order?)
+
+\title{pyLAL Applications User Guide and Reference}
+\author{Kipp Cannon, Thomas Cokelaer, Alexander Dietz, Steve Fairhurst}
+\date{\today}
+
+
+%
+% =============================================================================
+%
+%                                   Document
+%
+% =============================================================================
+%
+
+\begin{document}
+\maketitle
+\tableofcontents
+\listoftables
+\listoffigures
+\chapter{Coding Conventions}
+\section{General}
+The executables should contain some standard code at the beginning of the
+document such as
+%
+\begin{verbatim}
+__author__ = "Albert Einstein <albert.einstein@ligo.org>
+\end{verbatim}
+to identify the author. If you parse arguments with the \prog{optparse}
+module, be sure to do \progarg{from pylal import git\_version} and in the
+parser initialization, use the kwarg
+\progarg{version=git\_version.verbose\_msg} in order to support
+\progarg{--version}.
+
+\section{Naming conventions}
+The output file should be 
+\begin{verbatim}
+<executable name>_<usertag>_<figure name>-<GPS start time>-<duration>.png
+<executable name>_<usertag>-<GPS start time>-<duration>.html
+<executable name>_<usertag>-<GPS start time>-<duration>.cache
+\end{verbatim}
+Where, executable name is defined by the variable \prog{\_\_name\_\_} (see above)
+
+
+\section{Optional arguments}
+The are numerous options available in the pylal plotting functions. Some of
+them should be standarize. In particular, we identify the following options,
+which should be present in the list of avaialable options :
+
+\begin{description}
+\item[\progarg{--output-cache}] to be used to provide a cache file
+\item[\progarg{--output-html}] to be used to provide a cache file
+\item[\progarg{--output-path}] to be used to provide a cache file
+\item[\progarg{--gps-start-time}] to be used to provide a cache file
+\item[\progarg{--gps-end-time}] to be used to provide a cache file
+\item[\progarg{--figure-name}] a tag to be used for naming the output figures
+(see Naming conventions).
+\item[\progarg{--verbose}] Be verbose
+\end{description}
+
+There are others option, which could be standarize such as the one related to
+globing or input cache file.
+
+
+\section{TODO}
+sort the list of arguments by alphabetical order.
+
+
+
+\chapter{Burst Tools}
+\include{ligolw_binjfind}
+\chapter{Inspiral Tools}
+\include{plotnumtemplates}
+\include{lalapps_plotinspiralrange}
+
+\end{document}

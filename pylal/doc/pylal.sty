@@ -1,0 +1,94 @@
+%
+% Dependancies
+%
+
+\RequirePackage{hyperref}
+\RequirePackage{amsmath}
+\RequirePackage{graphicx}
+\RequirePackage{amssymb}
+\RequirePackage[squaren]{SIunits}
+
+
+%
+% Augment the SIunit package
+%
+
+\addunit{\annum}{a}
+\addunit{\astronomicalunit}{AU}
+\addunit{\lightyear}{light\ year}
+\addunit{\parsec}{pc}
+\addunit{\bc}{\textsc{bc}}              % Before Christ
+
+
+%
+% Augment the math typsetting facilities
+%
+
+\DeclareMathOperator{\sign}{sign}       % sign x = -1,0,+1
+\DeclareMathOperator{\ci}{Ci}           % cosine integral
+\DeclareMathOperator{\order}{O}         % order of magnitude
+\DeclareMathOperator{\F}{F}             % hypergeometric function
+\newcommand{\pFq}[2]{\sideset{_{#1}}{_{#2}}{\F}}
+\DeclareMathOperator{\erf}{erf}         % error integral function
+\DeclareMathOperator{\erfc}{erfc}       % complementary error function
+\DeclareMathOperator{\erfi}{erfi}       % imaginary error integral
+\DeclareMathOperator{\besselJ}{J}
+\DeclareMathOperator{\besselY}{Y}
+\DeclareMathOperator{\besselH}{H}
+\DeclareMathOperator{\besselj}{j}
+\DeclareMathOperator{\bessely}{y}
+\DeclareMathOperator{\besselh}{h}
+\newcommand*{\diff}{\,\mathrm{d}}       % eg. "\int \diff x"
+\newcommand*{\ee}{\mathrm{e}}           % \log^{-1} 1
+\newcommand*{\aye}{\mathrm{i}}          % \sqrt{-1}
+\newcommand{\mat}[1]{\mathbb{#1}}       % a matrix
+\newcommand{\mean}[1]{\left\langle#1\right\rangle}
+\newcommand{\expect}[1]{\mean{#1}}
+\newcommand{\median}[1]{\text{median}\left(#1\right)}
+\newcommand{\cumulant}[1]{\ddelim{\left\langle}#1\ddelim{\right\rangle}}
+\newcommand{\magnitude}[1]{\left|#1\right|}
+
+
+%
+% Augment the physics typsetting facilities
+%
+
+\newcommand*{\Sol}{\odot}               % Sun
+\newcommand*{\Tera}{\oplus}             % Earth
+\newcommand*{\Msol}{{M_{\Sol}}}         % mass of Sun
+\newcommand*{\Mtera}{{M_{\Tera}}}       % mass of Earth
+\newcommand*{\boltzmann}{{k_{\mathrm{B}}}}
+\newcommand*{\spectralindex}{{n_{\mathrm{s}}}}
+\newcommand{\windowx}[2]{W\!\left(#1;#2\right)}
+\newcommand{\windowk}[2]{W_{#1;#2}}
+\newcommand*{\spectraldensity}{S}
+\newcommand*{\powerspectrum}{\mathcal{P}}
+\newcommand{\spectralmoment}[2]{\mean{#2^{2}}_{(#1)}}
+\newcommand{\planck}[1]{{\mathit{#1}_{\mathrm{Pl}}}}
+\newcommand*{\lplanck}{\planck{l}}      % Planck length
+\newcommand*{\tplanck}{\planck{t}}      % Planck time
+\newcommand*{\mplanck}{\planck{m}}      % Planck mass
+\newcommand*{\Tplanck}{\planck{T}}      % Planck temperature
+
+
+%
+% Augment the documentation typsetting facilities
+%
+
+\newcommand{\prog}[1]{\texttt{#1}}
+\newcommand{\progarg}[1]{\texttt{#1}}
+\newcommand{\progparm}[1]{\textit{#1}}
+\newcommand{\file}[1]{\texttt{#1}}
+\newenvironment{manpage}[1]{\cleardoublepage\section{#1}}{}
+\newcommand{\manname}[2]{\subsection{Name}#1 --- #2}
+\newcommand{\mansynopsis}[1]{\subsection{Synopsis}#1}
+\newcommand{\mancopyright}[1]{\subsection{Copyright}#1}
+\newenvironment{mansection}[1]{\subsection{#1}}{}
+
+
+%
+% Preamble
+%
+
+\numberwithin{equation}{section}
+\allowdisplaybreaks[1]

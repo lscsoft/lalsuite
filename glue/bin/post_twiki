@@ -1,0 +1,117 @@
+#!/usr/bin/env python
+
+import sys, os
+from httplib import HTTPS, HTTPSConnection
+import mimetypes
+
+host = "www.lsc-group.phys.uwm.edu"
+path = "/cgi-bin/x509/post_twiki"
+
+#-----------------------------------------------------------------
+# Lifted from http://code.activestate.com/recipes/146306/
+# altered slightly.  changed hostname to conn.  added some http headers
+
+def post_multipart(conn, selector, fields, files):
+    """
+    Post fields and files to an http host as multipart/form-data.
+    fields is a sequence of (name, value) elements for regular form fields.
+    files is a sequence of (name, filename, value) elements for data to be uploaded as files
+    Return the server's response page.
+    """
+    content_type, body = encode_multipart_formdata(fields, files)
+    conn.putrequest('POST', selector)
+    conn.putheader('content-type', content_type)
+    conn.putheader('accept', "text/plain")  # added
+    conn.putheader('user-agent', "Python Client")  # added
+    conn.putheader('content-length', str(len(body)))
+    conn.endheaders()
+    conn.send(body)
+    errcode, errmsg, headers = conn.getreply()
+    return conn.file.read()
+
+def encode_multipart_formdata(fields, files):
+    """
+    fields is a sequence of (name, value) elements for regular form fields.
+    files is a sequence of (name, filename, value) elements for data to be uploaded as files
+    Return (content_type, body) ready for httplib.HTTP instance
+    """
+    BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
+    CRLF = '\r\n'
+    L = []
+    for (key, value) in fields:
+        L.append('--' + BOUNDARY)
+        L.append('Content-Disposition: form-data; name="%s"' % key)
+        L.append('')
+        L.append(value)
+    for (key, filename, value) in files:
+        L.append('--' + BOUNDARY)
+        L.append('Content-Disposition: form-data; name="%s"; filename="%s"' % (key, filename))
+        L.append('Content-Type: %s' % get_content_type(filename))
+        L.append('')
+        L.append(value)
+    L.append('--' + BOUNDARY + '--')
+    L.append('')
+    body = CRLF.join(L)
+    content_type = 'multipart/form-data; boundary=%s' % BOUNDARY
+    return content_type, body
+
+def get_content_type(filename):
+    return mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+
+#-----------------------------------------------------------------
+def findUserCredentials():
+    # Note, this is taken from the lars client, but proxy related code
+    # has been removed as proxies are not allowed here.  Terrible.
+    certFile = os.environ.get('X509_USER_CERT')
+    keyFile = os.environ.get('X509_USER_KEY')
+
+    if certFile and keyFile:
+        return certFile, keyFile
+
+    # Try default cert/key
+    homeDir = os.environ.get('HOME')
+    certFile = os.path.join(homeDir, '.globus', 'usercert.pem')
+    keyFile = os.path.join(homeDir, '.globus', 'userkey.pem')
+
+    if os.path.exists(certFile) and os.path.exists(keyFile):
+        return certFile, keyFile
+
+    return None
+#-----------------------------------------------------------------
+
+if __name__ == "__main__":
+    if len(sys.argv) not in [3,4]:
+        print """Usage: %s TWIKIWEB TWIKIPAGENAME [FILENAME]
+    Post a TWiki page to the LSC TWiki at UWM called TWIKIPAGENAME on the web TWIKIWEB.  Contents of page will be taken from the file called FILENAME or standard input if FILENAME is missing.""" % sys.argv[0]
+        sys.exit(1)
+
+    if len(sys.argv) == 4:
+        data = open(sys.argv[3], 'r')
+    else:
+        data = sys.stdin
+
+    cred = findUserCredentials()
+
+    if not cred:
+        print "No credentials found"
+        sys.exit(1)
+
+    cert, key = cred
+
+    params = (
+        ("webname",  sys.argv[1]),
+        ("pagename", sys.argv[2]),
+    )
+
+    files = ( ("data", "anyname", data.read()), )
+
+    conn = HTTPS(host, key_file=key, cert_file=cert)
+
+    response = post_multipart(conn, path, params, files).strip()
+
+    if response != "OK":
+        print response
+        sys.exit(1)
+
+    sys.exit(0)
+

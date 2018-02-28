@@ -1,0 +1,171 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2006  Nickolas Fotopoulos, Chad Hanna
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""
+%prog [options] dax_file site
+
+dax_file: DAX file to submit
+site: site at which to run DAX; choose from {CIT, LHO, LLO, NEMO}
+
+Specifying --ini-file is probably required unless you already have a tc.data
+for this workflow.
+"""
+
+import ConfigParser
+import optparse
+import os
+import socket
+import sys
+import urllib
+import urlparse
+import subprocess
+
+default_sites = os.environ["GLUE_PREFIX"] + "/etc/ldg-sites.xml"
+default_properties = os.environ["GLUE_PREFIX"] + "/etc/pegasus-properties.bundle"
+
+def get_install_type(path):
+  """
+  Function to attempt to figure out what a binary is.  This is a
+  non issue since we don't use this pegasus feauture yet
+  """
+  INSTALL = 'INTEL32::LINUX'
+  TYPE = 'STATIC_BINARY'
+  pin, pout, perr = os.popen3('file '+path)
+  pid, status = os.wait()
+  output = pout.readlines()[0].strip()
+  if output.find('64-bit') !=-1: 
+     INSTALL = 'INTEL64::LINUX'  
+#  if output.find('dynamically') !=-1: 
+#     TYPE = 'DYNAMIC_BINARY'
+#  if output.find('script') !=-1: 
+#     TYPE = 'INSTALLED'
+  return INSTALL,TYPE
+
+class PegasusTransformationCatalog(list):
+    def write_tc_data(self, file_obj):
+        file_obj.write("\n".join(map(str, self)) + "\n")
+    
+    def from_hipe_ini(cls, ini_fileobj):
+        cp = ConfigParser.ConfigParser()
+        cp.readfp(ini_fileobj)
+        hostname = socket.getfqdn()
+
+        catalog = cls()
+        for prog, path in cp.items("condor"):
+            if prog !="universe":
+              tx = PegasusTransformation()
+              tx.siteID = "local"
+              tx.LogicalTX = "ligo::%s:1.0" % os.path.split(path)[1]
+              tx.PhysicalTX = urlparse.urlunsplit(("gsiftp", hostname,
+                  os.path.abspath(path), None, None))
+              tx.SystemInfo,tx.Type = get_install_type(path) 
+              #tx.Type = "STATIC_BINARY"
+              #tx.SystemInfo = "INTEL64::LINUX"
+              tx.Profiles = ""
+              catalog.append(tx)
+        return catalog
+    from_hipe_ini = classmethod(from_hipe_ini)
+
+class PegasusTransformation(object):
+    __slots__ = ["siteID", "LogicalTX", "PhysicalTX", "Type", "SystemInfo",
+        "Profiles"]
+    
+    def __str__(self):
+        return " ".join([getattr(self, key) for key in self.__slots__])
+
+def parse_args():
+    parser = optparse.OptionParser(version="$Id$", usage=__doc__)
+    parser.add_option("-s", "--sites-file", default=default_sites,
+        help="site.xml describing the desired sites (a default is installed with glue)")
+    parser.add_option("-p", "--properties-file", default=default_properties,
+        help="property bundle with pegasus preferences (a default is installed with glue)")
+    parser.add_option("-i", "--ini-file",
+        help="inspiral_hipe's ini file with which to create tc.data")
+    parser.add_option("-n", "--no-submit", action="store_true", default=False,
+        help="concretize the DAG and generate a sub file for it; do not submit to cluster")
+    parser.add_option("-c", "--pegasus-cache",
+        help="Point to a pegasus RLS cache file (if inputs aren't in catalog)")
+    parser.add_option("-v", "--verbose", action="store_true", default=False,
+        help="print informative messages")
+    
+    opts, args = parser.parse_args()
+    
+    if len(args) < 2:
+        print >>sys.stderr, "not enough arguments"
+    
+    return opts, args
+
+#
+# Main
+#
+
+# commandline
+opts, args = parse_args()
+dax_file = args[0]
+site = args[1]
+
+# create tc.data if necessary
+if opts.ini_file:
+    catalog = PegasusTransformationCatalog.from_hipe_ini(open(opts.ini_file))
+    catalog.write_tc_data(open("tc.data", "w"))
+
+#
+# run Pegasus stuff
+#
+
+# do pegasus-plan
+cwd = os.getcwd()
+
+plan_args = ["pegasus-plan"]
+plan_args.append("-Dpegasus.catalog.site.file=" + opts.sites_file)
+plan_args.append("-Dpegasus.user.properties=" + opts.properties_file)
+plan_args.append("-Dpegasus.catalog.transformation.file=" + os.path.abspath("tc.data"))
+plan_args.append("-Dpegasus.dir.storage=%s" % cwd)
+plan_args.append("--relative-dir=./")
+plan_args.append("--sites=" + site)
+plan_args.append("--output local")
+plan_args.append("--dax=" + dax_file)
+#plan_args.append("--nocleanup")
+plan_args.append("--basename="+dax_file)
+plan_args.append("--job-prefix="+dax_file)
+#plan_args.append("--verbose")
+plan_args.append("--randomdir")
+plan_args.append("--force")
+if not opts.no_submit:
+  plan_args.append("--submit")
+
+if opts.pegasus_cache: plan_args.append('--cache='+opts.pegasus_cache)
+plan_command = " ".join(plan_args)
+
+if opts.verbose: print "Executing: " + plan_command
+sto = open(".ldg_submit_dax.stdout","w");
+ste = open(".ldg_submit_dax.stderr","w");
+
+
+popen = subprocess.Popen(plan_command.split(), stderr = ste, stdout = sto)
+(stdout, stderr) = popen.communicate()
+status = popen.returncode
+sto.close()
+ste.close()
+
+if status != 0:
+    print >>sys.stderr, "External call failed."
+    print >>sys.stderr, "  status: %d" % status
+    print >>sys.stderr, "  stdout: %s" % open(".ldg_submit_dax.stdout","r").readlines()
+    print >>sys.stderr, "  stderr: %s" % open(".ldg_submit_dax.stderr","r").readlines()
+    print >>sys.stderr, "  command: %s" % plan_command
+    sys.exit(1) 
