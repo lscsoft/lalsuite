@@ -1631,7 +1631,6 @@ SphHarmTimeSeries* XLALSimInspiralTDModesFromPolarizations(
     REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
     REAL8 distance,                             /**< distance of source (m) */
-    REAL8 inclination,                          /**< inclination of source (rad) */
     REAL8 phiRef,                               /**< reference orbital phase (rad) */
     REAL8 longAscNodes,                         /**< longitude of ascending nodes, degenerate with the polarization angle, Omega in documentation */
     REAL8 eccentricity,                         /**< eccentrocity at reference epoch */
@@ -1643,6 +1642,12 @@ SphHarmTimeSeries* XLALSimInspiralTDModesFromPolarizations(
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     )
 {
+
+    if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) ) {
+      XLALPrintError("Non-zero transverse spins were given, but it is not possible to recover modes from H+ and Hx for precessing waveforms.\n");
+      XLAL_ERROR_NULL(XLAL_EINVAL);
+    }
+
     REAL8TimeSeries *hplus, *hcross;
     COMPLEX16TimeSeries *h22,*h2m2;
     SphHarmTimeSeries *hlm;
@@ -1651,7 +1656,7 @@ SphHarmTimeSeries* XLALSimInspiralTDModesFromPolarizations(
     float fac = XLALSpinWeightedSphericalHarmonic(0., 0., -2, 2,2);
 
     /* Generate waveform via on-axis emission. Assumes only (2,2) and (2,-2) emission */
-    retval = XLALSimInspiralTD(&hplus, &hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
+    retval = XLALSimInspiralTD(&hplus, &hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, 0., phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
     if (retval < 0)
         XLAL_ERROR_NULL(XLAL_EFUNC);
 
@@ -3147,7 +3152,7 @@ int XLALSimInspiralPolarizationsFromSphHarmTimeSeries(
     REAL8TimeSeries **hc, /**< Cross polarization time series [returned] */
     SphHarmTimeSeries *hlms, /**< Head of linked list of waveform modes */
     REAL8 iota, /**< inclination of viewer to source frame (rad) */
-    REAL8 psi /**< polarization angle (rad) */
+    REAL8 phiRef /**< reference phase (rad) */
     )
 {
     int ret;
@@ -3163,8 +3168,8 @@ int XLALSimInspiralPolarizationsFromSphHarmTimeSeries(
     memset( (*hp)->data->data, 0, (*hp)->data->length*sizeof(REAL8) );
     memset( (*hc)->data->data, 0, (*hc)->data->length*sizeof(REAL8) );
     while (ts) { // Add the contribution from the current mode to hp, hx...
-        // This function adds hlm(t) * Y_lm(incl,psi) to (h+ - i hx)(t)
-        ret = XLALSimAddMode(*hp, *hc, ts->mode, iota, psi, ts->l, ts->m, 0);
+        // This function adds hlm(t) * Y_lm(incl,phiRef) to (h+ - i hx)(t)
+        ret = XLALSimAddMode(*hp, *hc, ts->mode, iota, phiRef, ts->l, ts->m, 0);
         if( ret != XLAL_SUCCESS ) XLAL_ERROR(XLAL_EFUNC);
         ts = ts->next;
     }
