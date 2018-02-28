@@ -503,6 +503,100 @@ nightly:macos:
     - schedules
     - web
 
+# Build receipe for standalone wheels on Linux
+.nightly:wheel:manylinux1: &nightly-wheel-manylinux1
+  # This container is derived from the official manylinux image provided by
+  # python.org (see PEP 513), and includes all of the LALSuite
+  # build-dependencies.
+  image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
+  stage: nightly
+  script:
+    # Build and install LALSuite
+    - PYPREFIX=/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux1/\1/')
+    - ./00boot
+    - VERS=$(./configure --version | sed -n 's/LALSuite configure \(.*\)/\1/p')
+    - ./configure PYTHON=${PYPREFIX}/bin/python --enable-swig-python
+      --disable-laldetchar
+    # FIXME: laldetchar depends on glib >= 2.14, too new for manylinux1
+    - make -j4 install pyexecdir=$(pwd)/pyinst
+    # Build wheel
+    - pushd pyinst
+    - echo -e '[metadata]\nversion = '${VERS} > setup.cfg
+    - cp ../gnuscripts/wheel_setup.py setup.py
+    - ${PYPREFIX}/bin/python setup.py bdist_wheel -d ../dist
+    - popd
+    # Bundle and fix up dependent shared libraries
+    - auditwheel repair dist/*
+    # Test
+    - ${PYPREFIX}/bin/virtualenv test
+    - source test/bin/activate
+    - pip install -q wheelhouse/*
+    - python -c 'import lal, lalframe, lalmetaio'
+  dependencies: []
+  only:
+    - /^lalsuite-.+/
+    - schedules
+    - web
+  artifacts:
+    paths:
+      - wheelhouse
+
+# Build receipe for standalone wheels on macOS
+.nightly:wheel:macos: &nightly-wheel-macos
+  tags:
+    - macos
+  stage: nightly
+  script:
+    - PYVERS=$(echo ${CI_JOB_NAME} | sed 's/.*:cp\(.\)\(.\).*/\1.\2/')
+    # Enter virtualenv so that we have a controlled version of Numpy
+    - virtualenv-${PYVERS} env
+    - source env/bin/activate
+    - pip install -q git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 numpy==1.7.0
+    # Build and install LALSuite
+    - ./00boot
+    - VERS=$(./configure --version | sed -n 's/LALSuite configure \(.*\)/\1/p')
+    - ./configure --enable-swig-python --prefix=$(pwd)/inst PYTHON=$(which python${PYVERS})
+    - make -j4 install pyexecdir=$(pwd)/pyinst
+    # Build wheel
+    - pushd pyinst
+    - echo -e '[metadata]\nversion = '${VERS} > setup.cfg
+    - cp ../gnuscripts/wheel_setup.py setup.py
+    - python setup.py bdist_wheel -d ../dist
+    - popd
+    # Bundle and fix up dependent shared libraries
+    - delocate-wheel -v -w wheelhouse dist/*.whl
+    # Test
+    - virtualenv-${PYVERS} test
+    - source test/bin/activate
+    - pip install -q wheelhouse/*
+    - python -c 'import lal, lalframe, lalmetaio'
+  dependencies: []
+  only:
+    - /^lalsuite-.+/
+    - schedules
+    - web
+  artifacts:
+    paths:
+      - wheelhouse
+
+# Build wheels for all supported platforms
+nightly:wheel:cp27-cp27m-manylinux1:
+  <<: *nightly-wheel-manylinux1
+nightly:wheel:cp27-cp27mu-manylinux1:
+  <<: *nightly-wheel-manylinux1
+nightly:wheel:cp34-cp34m-manylinux1:
+  <<: *nightly-wheel-manylinux1
+nightly:wheel:cp35-cp35m-manylinux1:
+  <<: *nightly-wheel-manylinux1
+nightly:wheel:cp36-cp36m-manylinux1:
+  <<: *nightly-wheel-manylinux1
+nightly:wheel:cp27-cp27m-macosx:
+  <<: *nightly-wheel-macos
+nightly:wheel:cp35-cp35m-macosx:
+  <<: *nightly-wheel-macos
+nightly:wheel:cp36-cp36m-macosx:
+  <<: *nightly-wheel-macos
+
 pages:
   image: ligo/lalsuite-dev:stretch
   stage: nightly

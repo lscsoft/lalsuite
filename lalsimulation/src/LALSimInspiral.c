@@ -1766,14 +1766,14 @@ static int XLALSimInspiralTDFromTD(
         XLAL_ERROR(XLAL_EFUNC);
 
     /* condition the time domain waveform by tapering in the extra time
-     * at the beginning and high-pass filtering above original f_min */
+        * at the beginning and high-pass filtering above original f_min */
     XLALSimInspiralTDConditionStage1(*hplus, *hcross, extra_time_fraction * tchirp + textra, original_f_min);
 
     /* final tapering at the beginning and at the end to remove filter transients */
 
     /* waveform should terminate at a frequency >= Schwarzschild ISCO
-     * so taper one cycle at this frequency at the end; should not make
-     * any difference to IMR waveforms */
+        * so taper one cycle at this frequency at the end; should not make
+        * any difference to IMR waveforms */
     fisco = 1.0 / (pow(6.0, 1.5) * LAL_PI * (m1 + m2) * LAL_MTSUN_SI / LAL_MSUN_SI);
     XLALSimInspiralTDConditionStage2(*hplus, *hcross, f_min, fisco);
 
@@ -1943,6 +1943,8 @@ static int XLALSimInspiralTDFromFD(
  * are put in this early region so that the waveform smoothly turns on.  Artifacts at
  * the very end of the waveform are also tapered.  The resulting waveform is high-pass
  * filtered at frequency f_min so that it should have little content at lower frequencies.
+
+ * If calling the NR_hdf5 approximant then the starting frequency is not altered.
  *
  * This routine used to have one additional parameter relative to XLALSimInspiralChooseTDWaveform:
  * the redshift, z, of the waveform, which is now stuffed into the LALDict structure.
@@ -1981,8 +1983,27 @@ int XLALSimInspiralTD(
 {
     /* call the appropriate helper routine */
     if (XLALSimInspiralImplementedTDApproximants(approximant)) {
-        if (XLALSimInspiralTDFromTD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant) < 0)
-            XLAL_ERROR(XLAL_EFUNC);
+        /* If using NR_hdf5 generate using XLALSimInspiralChooseTDWaveform and apply the
+        * LAL Taper 'LAL_SIM_INSPIRAL_TAPER_START' instead of
+        * XLALSimInspiralTDConditionStage1 and XLALSimInspiralTDConditionStage2
+        * as is done in XLALSimInspiralTDFromTD.
+        * This is because XLALSimInspiralTDFromTD modifies the start frequency
+        * which is not always possible with NR_hdf5 waveforms.
+        */
+        if (approximant == NR_hdf5)
+        {
+            if (XLALSimInspiralChooseTDWaveform(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant) <0)
+                XLAL_ERROR(XLAL_EFUNC);
+            /* taper the waveforms */
+            LALSimInspiralApplyTaper taper = LAL_SIM_INSPIRAL_TAPER_START;
+            if (XLALSimInspiralREAL8WaveTaper((*hplus)->data, taper) == XLAL_FAILURE)
+                XLAL_ERROR(XLAL_EFUNC);
+            if (XLALSimInspiralREAL8WaveTaper((*hcross)->data, taper) == XLAL_FAILURE)
+                XLAL_ERROR(XLAL_EFUNC);
+        } else {
+            if (XLALSimInspiralTDFromTD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant) < 0)
+                XLAL_ERROR(XLAL_EFUNC);
+        }
     } else if (XLALSimInspiralImplementedFDApproximants(approximant)) {
         if (XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant) < 0)
             XLAL_ERROR(XLAL_EFUNC);
