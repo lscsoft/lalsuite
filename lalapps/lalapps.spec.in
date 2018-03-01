@@ -1,19 +1,20 @@
+%define nightly @NIGHTLY_VERSION@
 %define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
 %define _pkgpythondir %{_prefix}/lib64/python2.?/site-packages/@PACKAGE@
 %define _pkgpyexecdir %{_libdir}/python2.?/site-packages/@PACKAGE@
+%define release 1
 
 Name: @PACKAGE@
-Version: @VERSION@
-Release: 1%{?dist}
+Version: @BASE_VERSION@
+Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
 Summary: LSC Algorithm Library Applications
 License: GPLv2+
 Group: LAL
-Source: %{name}-%{version}.tar.xz
+Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
-BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
 BuildRequires: gsl-devel
@@ -80,11 +81,10 @@ This package contains applications that are built on tools in the LSC
 Algorithm Library.
 
 %prep
-%setup -q
+%setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
 
 %build
-nightly_version=@NIGHTLY_VERSION@
-%configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --enable-cfitsio --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc MPICXX=/usr/lib64/openmpi/bin/mpicxx MPIFC=/usr/lib64/openmpi/bin/mpifc
+%configure --disable-gcc-flags --enable-cfitsio --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc MPICXX=/usr/lib64/openmpi/bin/mpicxx MPIFC=/usr/lib64/openmpi/bin/mpifc
 %{__make} V=1
 
 %check
@@ -101,7 +101,7 @@ ldconfig
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -Rf ${RPM_BUILD_ROOT}
-rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
+rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files
 %defattr(-,root,root)

@@ -1,17 +1,18 @@
+%define nightly @NIGHTLY_VERSION@
 %define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
+%define release 1
 
 Name: @PACKAGE@
-Version: @VERSION@
-Release: 1%{?dist}
+Version: @BASE_VERSION@
+Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
 Summary: LSC Algorithm Inspiral Library
 License: GPLv2+
 Group: LAL
-Source: %{name}-%{version}.tar.xz
+Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
-BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: gsl-devel
 BuildRequires: libmetaio-devel
 BuildRequires: numpy
@@ -87,7 +88,7 @@ Requires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
 This package provides the Octave bindings for LALInspiral.
 
 %prep
-%setup -q
+%setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
 
 %build
 %configure --disable-gcc-flags --enable-swig
@@ -108,7 +109,7 @@ ldconfig
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -Rf ${RPM_BUILD_ROOT}
-rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
+rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files
 %defattr(-,root,root)
