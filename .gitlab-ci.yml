@@ -374,6 +374,121 @@ nightly:wheel:cp35-cp35m-macosx:
 nightly:wheel:cp36-cp36m-macosx:
   <<: *nightly-wheel-macos
 
+.levelN:rpm: &levelN-rpm-package
+  image: ligo/lalsuite-dev:el7
+  variables:
+    RPM_BUILD_CPUS: 4
+  script:
+    - rpm -ivh rpmbuild/RPMS/x86_64/lal*.rpm || true
+    - cd ${CI_JOB_NAME#level?:rpm:}
+    - ./00boot
+    - ./configure --enable-swig --enable-nightly
+    - make dist
+    - rpmbuild -tb --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${CI_JOB_NAME#level?:rpm:}-*.tar.xz
+  artifacts:
+    expire_in: 3h
+    paths:
+      - rpmbuild/RPMS/x86_64/${CI_JOB_NAME#level?:rpm:}-*.rpm
+  only:
+    - schedules
+    - web
+
+level0:rpm:lal:
+  <<: *levelN-rpm-package
+  stage: level0
+
+level1:rpm:lalframe:
+  <<: *levelN-rpm-package
+  stage: level1
+  dependencies:
+    - level0:rpm:lal
+
+level1:rpm:lalmetaio:
+  <<: *levelN-rpm-package
+  stage: level1
+  dependencies:
+    - level0:rpm:lal
+
+level1:rpm:lalsimulation:
+  <<: *levelN-rpm-package
+  stage: level1
+  dependencies:
+    - level0:rpm:lal
+
+level1:rpm:lalxml:
+  <<: *levelN-rpm-package
+  stage: level1
+  dependencies:
+    - level0:rpm:lal
+
+level2:rpm:lalburst:
+  <<: *levelN-rpm-package
+  stage: level2
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+
+level2:rpm:lalinspiral:
+  <<: *levelN-rpm-package
+  stage: level2
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+
+level2:rpm:lalpulsar:
+  <<: *levelN-rpm-package
+  stage: level2
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalxml
+
+level2:rpm:lalstochastic:
+  <<: *levelN-rpm-package
+  stage: level2
+  dependencies:
+   - level0:rpm:lal
+   - level1:rpm:lalmetaio
+
+level3:rpm:laldetchar:
+  <<: *levelN-rpm-package
+  stage: level3
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level2:rpm:lalburst
+
+level3:rpm:lalinference:
+  <<: *levelN-rpm-package
+  stage: level3
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level1:rpm:lalxml
+    - level2:rpm:lalburst
+    - level2:rpm:lalinspiral
+    - level2:rpm:lalpulsar
+
+level4:rpm:lalapps:
+  <<: *levelN-rpm-package
+  stage: level4
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level1:rpm:lalxml
+    - level2:rpm:lalburst
+    - level2:rpm:lalinspiral
+    - level2:rpm:lalpulsar
+    - level2:rpm:lalstochastic
+    - level3:rpm:lalinference
+
 pages:
   image: ligo/lalsuite-dev:stretch
   stage: nightly
