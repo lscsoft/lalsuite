@@ -514,22 +514,15 @@ nightly:macos:
   image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
   stage: nightly
   script:
-    # Build and install LALSuite
     - PYPREFIX=/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux1/\1/')
+    # Build wheel
     - ./00boot
-    - VERS=$(./configure --version | sed -n 's/LALSuite configure \(.*\)/\1/p')
+    # FIXME: laldetchar depends on glib >= 2.14, too new for manylinux1
     - ./configure PYTHON=${PYPREFIX}/bin/python --enable-swig-python
       --disable-laldetchar
-    # FIXME: laldetchar depends on glib >= 2.14, too new for manylinux1
-    - make -j4 install pyexecdir=$(pwd)/pyinst
-    # Build wheel
-    - pushd pyinst
-    - echo -e '[metadata]\nversion = '${VERS} > setup.cfg
-    - cp ../gnuscripts/wheel_setup.py setup.py
-    - ${PYPREFIX}/bin/python setup.py bdist_wheel -d ../dist
-    - popd
+    - make -j4 wheel
     # Bundle and fix up dependent shared libraries
-    - auditwheel repair dist/*
+    - auditwheel repair wheel/*.whl
     # Test
     - ${PYPREFIX}/bin/virtualenv test
     - source test/bin/activate
@@ -555,19 +548,12 @@ nightly:macos:
     - virtualenv-${PYVERS} env
     - source env/bin/activate
     - pip install -q git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 numpy==1.7.0
-    # Build and install LALSuite
-    - ./00boot
-    - VERS=$(./configure --version | sed -n 's/LALSuite configure \(.*\)/\1/p')
-    - ./configure --enable-swig-python --prefix=$(pwd)/inst PYTHON=$(which python${PYVERS})
-    - make -j4 install pyexecdir=$(pwd)/pyinst
     # Build wheel
-    - pushd pyinst
-    - echo -e '[metadata]\nversion = '${VERS} > setup.cfg
-    - cp ../gnuscripts/wheel_setup.py setup.py
-    - python setup.py bdist_wheel -d ../dist
-    - popd
+    - ./00boot
+    - ./configure --enable-swig-python PYTHON=$(which python${PYVERS})
+    - make -j4 wheel
     # Bundle and fix up dependent shared libraries
-    - delocate-wheel -v -w wheelhouse dist/*.whl
+    - delocate-wheel -v -w wheelhouse wheel/*.whl
     # Test
     - virtualenv-${PYVERS} test
     - source test/bin/activate
