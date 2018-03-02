@@ -1270,7 +1270,7 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
 
     const char *flat_params[] = {"q", "eta", "t0", "azimuth", "cosalpha", "time", "phase", "polarisation",
                                  "rightascension", "costheta_jn", "phi_jl",
-                                 "phi12", "a_spin1", "a_spin2", NULL};
+                                 "phi12", "a_spin1", "a_spin2", "logp1", "gamma1", "gamma2", "gamma3", NULL};
 
     LALInferenceVariables *args = thread->proposalArgs;
 

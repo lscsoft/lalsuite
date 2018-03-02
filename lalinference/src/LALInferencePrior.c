@@ -628,6 +628,15 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 
   }
 
+  // Apply additional prior if using eos parameters
+  if((LALInferenceCheckVariable(params,"logp1")&&LALInferenceCheckVariable(params,"gamma1")&&LALInferenceCheckVariable(params,"gamma2")&&LALInferenceCheckVariable(params,"gamma3")))
+  {
+    /*If EOS params and masses are aphysical, return -INFINITY to ensure point is rejected*/
+    if(LALInferenceEOSPhysicalCheck(params,runState->commandLine)==XLAL_FAILURE){
+       return -INFINITY;
+    }
+  }
+
   }/* end prior for signal model parameters */
 
 
