@@ -759,7 +759,7 @@ class Posterior(object):
         self._injFref=injFref
         self._injection=SimInspiralTableEntry
 
-        self._triggers=SnglInpiralList
+        self._triggers=SnglInspiralList
         self._loglaliases=['deltalogl', 'posterior', 'logl','logL','likelihood']
         self._logpaliases=['logp', 'logP','prior','logprior','Prior','logPrior']
 
