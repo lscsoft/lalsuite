@@ -2464,7 +2464,7 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
     peparser = bppu.PEOutputParser('common')
     nsResultsObject = peparser.parse(open(postfile, 'r'))
 
-  pos = bppu.Posterior( nsResultsObject, SimInspiralTableEntry=None, votfile=None )
+  pos = bppu.Posterior( nsResultsObject, SimInspiralTableEntry=None )
 
   # remove any unchanging variables and randomly shuffle the rest
   pnames = pos.names
