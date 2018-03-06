@@ -1977,7 +1977,7 @@ class knopeDAG(pipeline.CondorDAG):
       else:
         if isinstance(self.coarse_heterodyne_channels[ifo], string_types):
           # convert to list
-          self.coarse_heterodyne_channels[ifo] = list(self.coarse_heterodyne_channels[ifo])
+          self.coarse_heterodyne_channels[ifo] = [self.coarse_heterodyne_channels[ifo]]
         elif not isinstance(self.coarse_heterodyne_channels[ifo], list):
           print("Error... channel must be a string or a list of strings".format(ifo), file=sys.stderr)
           self.error_code = KNOPE_ERROR_GENERAL
