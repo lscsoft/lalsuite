@@ -17,25 +17,74 @@ To install, simply run::
     $ pip install lalsuite
 """
 
+import os
+import re
+from string import Template
+import shutil
+import tempfile
+
 from setuptools import Extension, find_packages, setup
 from setuptools.command.build_ext import build_ext as _build_ext
+from distutils.command.build_scripts import build_scripts as _build_scripts
 
 # Recursive globbing like in Python 3.5
 from glob2 import glob
+
+# These variables come from automake.
+subst = dict(prefix=os.path.abspath('build/inst'))
+subst['exec_prefix'] = Template('@exec_prefix@').substitute(**subst)
+LIBEXECDIR = Template('@libexecdir@').substitute(**subst)
+PYTHONDIR = Template('@pythondir@').substitute(**subst)
+BASE_VERSION = '@BASE_VERSION@'
+NIGHTLY_VERSION = '@NIGHTLY_VERSION@'
+
+if NIGHTLY_VERSION:
+    VERSION = BASE_VERSION + '.' + NIGHTLY_VERSION
+else:
+    VERSION = BASE_VERSION
 
 
 class build_ext(_build_ext):
     """Override setuptools build_ext: just copy pre-built modules."""
 
     def build_extension(self, ext):
-        src = ext.name.replace('.', '/') + '.so'
+        src = os.path.join(PYTHONDIR, ext.name.replace('.', '/') + '.so')
         dst = self.get_ext_fullpath(ext.name)
         self.copy_file(src, dst)
+
+
+class build_scripts(_build_scripts):
+    """Override setuptools install_scripts: strip the .py extensions and
+    add the shebang lines."""
+
+    def run(self):
+        old_scripts = self.scripts[:]
+        new_scripts = []
+        self.mkpath(self.build_dir)
+        tmpdir = tempfile.mkdtemp(dir=self.build_dir)
+        try:
+            for old_script in old_scripts:
+                base, ext = os.path.splitext(old_script)
+                if ext == '.py':
+                    new_script = os.path.join(tmpdir, base)
+                    with open(new_script, 'wb') as outfile:
+                        outfile.write(b'#!python\n')
+                        with open(old_script, 'rb') as infile:
+                            shutil.copyfileobj(infile, outfile)
+                else:
+                    new_script = old_script
+                new_scripts.append(new_script)
+            self.scripts = new_scripts
+            _build_scripts.run(self)
+            self.scripts = old_scripts
+        finally:
+            shutil.rmtree(tmpdir)
 
 
 setup(
     name='lalsuite',
     license='GPL-2+',
+    version=VERSION,
     description=__doc__.strip().split('\n')[0],
     long_description='\n'.join(__doc__.strip().split('\n')[1:]).strip(),
     url='https://git.ligo.org/lscsoft/lalsuite',
@@ -55,10 +104,13 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Topic :: Scientific/Engineering :: Astronomy',
         'Topic :: Scientific/Engineering :: Physics'],
-    cmdclass={'build_ext': build_ext},
-    packages=find_packages(),
-    package_data={'': ['*.so']},
-    ext_modules=[Extension(filename.replace('.so', '').replace('/', '.'), [])
-                 for filename in glob('lal*/**/*.so')],
+    cmdclass={'build_ext': build_ext, 'build_scripts': build_scripts},
+    package_dir={'': PYTHONDIR},
+    packages=find_packages(PYTHONDIR),
+    scripts=glob(LIBEXECDIR + '/**/*.py'),
+    ext_modules=[Extension(os.path.relpath(filename, PYTHONDIR)
+                           .replace('.so', '')
+                           .replace('/', '.'), [])
+                 for filename in glob(PYTHONDIR + '/**/*.so')],
     install_requires=['numpy>=1.7']
 )

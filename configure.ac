@@ -4,7 +4,7 @@ AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_PREFIX_DEFAULT(["`pwd`/_inst"])
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile wheel/Makefile wheel/setup.py])
 AM_INIT_AUTOMAKE([ \
   1.11 \
   foreign \
@@ -24,6 +24,9 @@ AM_SILENT_RULES([yes])
 # check for programs
 AC_PROG_AWK
 AC_PROG_SED
+
+LALSUITE_ENABLE_NIGHTLY
+LALSUITE_CHECK_PYTHON([2.6])
 
 # provide LAL library enable/disable options
 LALSUITE_ENABLE_ALL_LAL
