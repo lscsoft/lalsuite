@@ -201,6 +201,12 @@ XLALGetPeakHeapUsageMB ( void )
   struct rusage usage;
   XLAL_CHECK_REAL8 ( getrusage ( RUSAGE_SELF, &usage ) == 0, XLAL_ESYS, "call to getrusage() failed with errno = %d\n", errno );
   REAL8 peakHeapMB = usage.ru_maxrss / 1024.0;	// maxrss is in KB
+#ifdef __APPLE__
+  // on macOS rusage.ru_maxrss is returned in bytes
+  // https://developer.apple.com/legacy/library/documentation/Darwin/Reference/ManPages/man2/getrusage.2.html
+  peakHeapMB /= 1024.0;
+#endif
+
   if ( lalDebugLevel & LALMEMPADBIT ) {
     peakHeapMB /= 2.0;	// try to correct for memory-padding added by LALMalloc(), which seems ~factor of 2
   }

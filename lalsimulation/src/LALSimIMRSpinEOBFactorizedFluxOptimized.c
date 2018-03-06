@@ -189,7 +189,7 @@ XLALInspiralSpinFactorizedFluxOptimized (REAL8Vector * values,
       if (XLALSimIMREOBCalcSpinFacWaveformCoefficients
 	  (ak->eobParams->hCoeffs, ak->eobParams->m1, ak->eobParams->m2,
 	   ak->eobParams->eta, tplspin, chiS, chiA,
-	   SpinAlignedEOBversion) == XLAL_FAILURE)
+	   SpinAlignedEOBversion, ak) == XLAL_FAILURE)
 	{
 	  XLALDestroyREAL8Vector (values);
 	  XLAL_ERROR (XLAL_EFUNC);

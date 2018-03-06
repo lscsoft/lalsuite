@@ -68,7 +68,8 @@ import time
 import lal
 import six
 from astropy.table import Table
-from ..bayestar import moc
+from .. import moc
+from ..util.file import rm_f
 
 # FIXME: Remove this after all Astropy monkeypatches are obsolete.
 import astropy
@@ -409,7 +410,6 @@ def write_sky_map(filename, m, **kwargs):
         #
         # Also this works around https://github.com/astropy/astropy/pull/5720,
         # which was fixed in astropy 1.3.1.
-        from ..bayestar.command import rm_f
         rm_f(filename)
         m.write(filename, format='fits')
 

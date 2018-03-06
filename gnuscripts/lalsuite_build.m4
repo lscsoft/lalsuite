@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 142
+# serial 144
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -739,18 +739,22 @@ AC_DEFUN([LALSUITE_CHECK_LIBRARY_FOR_SUPPORT],[
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
-[AC_ARG_ENABLE(
-  [nightly],
-  AC_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
-  [ case "${enableval}" in
-      yes) NIGHTLY_VERSION=`date -u +"%Y%m%d"`
-           VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
-      no) NIGHTLY_VERSION="";;
-      *) NIGHTLY_VERSION="${enableval}"
-         VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
-      esac ],
-  [ NIGHTLY_VERSION="" ] )
-  AC_SUBST(NIGHTLY_VERSION)
+[
+  BASE_VERSION="${VERSION}"
+  AC_ARG_ENABLE(
+    [nightly],
+    AC_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
+    [ case "${enableval}" in
+        yes) NIGHTLY_VERSION=dev`date -u +"%Y%m%d"`
+             VERSION="${BASE_VERSION}-${NIGHTLY_VERSION}" ;;
+        no) NIGHTLY_VERSION="";;
+        *) NIGHTLY_VERSION="${enableval}"
+           VERSION="${BASE_VERSION}-${NIGHTLY_VERSION}" ;;
+        esac ],
+    [ NIGHTLY_VERSION="" ] )
+    AC_SUBST([VERSION])
+    AC_SUBST([BASE_VERSION])
+    AC_SUBST([NIGHTLY_VERSION])
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_ALL_LAL],

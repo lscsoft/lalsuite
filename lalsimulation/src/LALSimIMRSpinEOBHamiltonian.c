@@ -759,6 +759,42 @@ static REAL8 XLALSimIMRTEOBdeltaUTidal_u (
 }
 
 /**
+ * Function to compute the leading-order 2PN spin-induced quadrupole contribution to Heff/mu
+ * consistently with code in the function XLALSimIMRSpinEOBHamiltonian, written for generic Cartesian spin components, although used so far only for spin aligned
+ */
+static REAL8 XLALSimIMRTEOBdeltaHssQuadMonLO (
+                                 const REAL8 eta,	/**<< Symmetric mass ratio */
+                                 REAL8 u, /**<< Inverse of radial separation in units of M */
+                    			       REAL8Vector * restrict s1Vec, /**<< Spin vector 1 */
+                    			       REAL8Vector * restrict s2Vec, /**<< Spin vector 2 */
+                                 REAL8 nx, /**<< Cartesian component of unit separation vector n */
+                                 REAL8 ny, /**<< Cartesian component of unit separation vector n */
+                                 REAL8 nz, /**<< Cartesian component of unit separation vector n */
+                                 TidalEOBParams *tidal1, /**<< Tidal parameters of body 1 */
+                                 TidalEOBParams *tidal2  /**<< Tidal parameters of body 2 */
+)
+{
+    REAL8 deltaHss = 0.;
+    REAL8 u3 = u*u*u;
+    REAL8 m1ByM = tidal1->mByM;
+    REAL8 m2ByM = tidal2->mByM;
+    REAL8 s1_x = s1Vec->data[0];
+    REAL8 s1_y = s1Vec->data[1];
+    REAL8 s1_z = s1Vec->data[2];
+    REAL8 s2_x = s2Vec->data[0];
+    REAL8 s2_y = s2Vec->data[1];
+    REAL8 s2_z = s2Vec->data[2];
+    REAL8 quadparam1 = tidal1->quadparam;
+    REAL8 quadparam2 = tidal2->quadparam;
+    REAL8 s1s1 = s1_x * s1_x + s1_y * s1_y + s1_z * s1_z;
+    REAL8 s2s2 = s2_x * s2_x + s2_y * s2_y + s2_z * s2_z;
+    REAL8 s1n = s1_x * nx + s1_y * ny + s1_z * nz;
+    REAL8 s2n = s2_x * nx + s2_y * ny + s2_z * nz;
+    deltaHss = 0.5 * u3 / eta * ((quadparam1 - 1.) * m2ByM/m1ByM * (3. * s1n*s1n - s1s1) + (quadparam2 - 1.) * m1ByM/m2ByM * (3. * s2n*s2n - s2s2));
+    return deltaHss;
+}
+
+/**
  *
  * Function to calculate the value of the spinning Hamiltonian for given values
  * of the dynamical variables (in a Cartesian co-ordinate system). The inputs are
@@ -1180,6 +1216,10 @@ XLALSimIMRSpinEOBHamiltonian (const REAL8 eta,	    /**<< Symmetric mass ratio */
   Hs = w * s3 + Hwr * wr + Hwcos * wcos + HSOL + HSONL;
   /* Eq. 5.70 of BB1, last term */
   Hss = -0.5 * u3 * (sx * sx + sy * sy + sz * sz - 3. * sn * sn);
+  /* Add correction for leading-order spin-induced quadrupole, relevant for BNS - this is zero when kappa_1,2=1 */
+  if((coeffs->tidal1->quadparam - 1.) != 0. || (coeffs->tidal2->quadparam - 1.) != 0.) {
+    Hss += XLALSimIMRTEOBdeltaHssQuadMonLO(eta, u, s1Vec, s2Vec, nx, ny, nz, coeffs->tidal1, coeffs->tidal2);
+  }
   /* Eq. 5.70 of BB1 */
   H = Hns + Hs + Hss;
 

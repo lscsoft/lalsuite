@@ -8,6 +8,8 @@ ENV LD_LIBRARY_PATH="/opt/lalsuite/lib" \
 
 RUN find /opt/lalsuite/lib/pkgconfig -type f -name 'lal*.pc' -exec sed -i 's|^prefix=.*|prefix=/opt/lalsuite|g' {} \;
 
+RUN rm -f /opt/lalsuite/lib/*.la
+
 COPY /docker/startup /usr/local/bin/startup
 
 ENTRYPOINT [ "/usr/local/bin/startup" ]

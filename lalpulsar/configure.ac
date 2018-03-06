@@ -24,6 +24,7 @@ AC_CONFIG_FILES([ \
   swig/Makefile \
   test/Makefile \
 ])
+AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE([ \
   1.11 \
   foreign \
@@ -120,6 +121,9 @@ LALSUITE_USE_LIBTOOL
 # check for header files
 AC_HEADER_STDC
 AC_CHECK_HEADERS([unistd.h])
+
+# check for specific functions
+AC_FUNC_STRNLEN
 
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])

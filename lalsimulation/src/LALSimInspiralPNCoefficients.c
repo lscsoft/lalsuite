@@ -604,6 +604,29 @@ XLALSimInspiralPNFlux_12PNTidalCoeff(
         return (-176./7. - 1803./28.*mByM + 643./4.*mByM*mByM -155./2.*mByM*mByM*mByM) * mByM*mByM*mByM*mByM;
 }
 
+/*
+ * Tidal corrections to F2 phasing
+ * See arXiv:1101.1673
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(
+        REAL8 mByM /**< ratio of object mass to total mass */
+    )
+{
+  return (-288. + 264.*mByM)*mByM*mByM*mByM*mByM;
+
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(
+        REAL8 mByM /**< ratio of object mass to total mass */
+    )
+{
+  return (-15895./28. + 4595./28.*mByM + 5715./14.*mByM*mByM - 325./7.*mByM*mByM*mByM)*mByM*mByM*mByM*mByM;
+}
+
+
 /* The phasing function for TaylorF2 frequency-domain waveform.
  * This function is tested in ../test/PNCoefficients.c for consistency
  * with the energy and flux in this file.
@@ -727,6 +750,30 @@ XLALSimInspiralPNPhasing_F2(
             break;
     }
 
+    REAL8 lambda1=XLALSimInspiralWaveformParamsLookupTidalLambda1(p);
+    REAL8 lambda2=XLALSimInspiralWaveformParamsLookupTidalLambda2(p);
+    switch( XLALSimInspiralWaveformParamsLookupPNTidalOrder(p) )
+    {
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
+            pfa->v[12] = (lambda1*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m1M) + lambda2*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m2M) );
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
+            pfa->v[10] = ( lambda1*XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m1M) + lambda2*XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m2M) );
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
+            break;
+        default:
+            XLALPrintError("XLAL Error - %s: Invalid tidal PN order %i\n",
+                           __func__, XLALSimInspiralWaveformParamsLookupPNTidalOrder(p) );
+            XLAL_ERROR_VOID(XLAL_EINVAL);
+    }
+
+
     /* At the very end, multiply everything in the series by pfaN */
     for(int ii = 0; ii <= PN_PHASING_SERIES_MAX_ORDER; ii++)
     {
@@ -734,28 +781,6 @@ XLALSimInspiralPNPhasing_F2(
         pfa->vlogv[ii] *= pfaN;
         pfa->vlogvsq[ii] *= pfaN;
     }
-}
-
-/*
- * Tidal corrections to F2 phasing
- * See arXiv:1101.1673
- */
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(
-	REAL8 mByM /**< ratio of object mass to total mass */
-    )
-{
-  return (-288. + 264.*mByM)*mByM*mByM*mByM*mByM;
-
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(
-	REAL8 mByM /**< ratio of object mass to total mass */
-    )
-{
-  return (-15895./28. + 4595./28.*mByM + 5715./14.*mByM*mByM - 325./7.*mByM*mByM*mByM)*mByM*mByM*mByM*mByM;
 }
 
 /**

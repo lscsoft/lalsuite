@@ -135,7 +135,7 @@ LALSUITE_ENABLE_FAST_GSL
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
 # check for glib
-PKG_CHECK_MODULES([GLIB],[glib-2.0],[true],[false])
+PKG_CHECK_MODULES([GLIB],[glib-2.0 >= 2.14],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${GLIB_CFLAGS}],[${GLIB_LIBS}])
 AC_CHECK_LIB([glib-2.0],[g_sequence_new],,[AC_MSG_ERROR([could not find the glib library])])
 AC_CHECK_HEADERS([glib.h],,[AC_MSG_ERROR([could not find the glib.h header])])

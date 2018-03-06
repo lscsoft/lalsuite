@@ -17,7 +17,9 @@
 *  MA  02111-1307  USA
 */
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE     /* for setenv() and putenv() */
+#endif
 
 #include <stdlib.h>
 #include <ctype.h>

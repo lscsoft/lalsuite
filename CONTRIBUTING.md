@@ -17,15 +17,16 @@ If you with to contribute new code, or changes to existing code, please follow t
 
 **You only need to do this once**
 
-1. Go to the [LALSuite repository home page](/lscsoft/lalsuite)
-2. Click on the *Fork* button, that should lead you [here](https://git.ligo.org/lscsoft/lalsuite/fork/new)
+1. Go to the [LALSuite repository home page](https://git.ligo.org/lscsoft/lalsuite)
+2. Click on the *Fork* button, that should lead you [here](https://git.ligo.org/lscsoft/lalsuite/forks/new)
+3. Select the namespace that you want to create the fork in, this will usually be your personal namespace
 
 If you can't see the *Fork* button, make sure that you are logged in by checking for your account profile photo in the top right-hand corner of the screen.
 
 ### Clone your fork
 
 ```bash
-git clone git@git.ligo.org:<your-user-name>/lalsuite.git
+git clone git@git.ligo.org:<namespace>/lalsuite.git
 ```
 
 ### Updating your fork
