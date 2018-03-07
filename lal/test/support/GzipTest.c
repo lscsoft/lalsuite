@@ -63,6 +63,7 @@ int main(int argc, char **argv){
           break;
         else
           fprintf(stderr, "Error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg );
+	  /* fallthrough */
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
