@@ -453,6 +453,9 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
   REAL8 vetothresh = 1e-18;
   if ( ppt != NULL ) { vetothresh = atof( ppt->value ); }
 
+  /* initialise random number generator if seed is zero */
+  if ( seed == 0 ){ randomParams = XLALCreateRandomParams( 0 ); }
+
   /* read in data, needs to read in two sets of data for each ifo for pinsf model */
   for( i = 0, prev=NULL, prevmodel=NULL ; i < ml*numDets ; i++, prev=ifodata, prevmodel=ifomodel ){
     CHAR *datafile = NULL;
@@ -467,10 +470,10 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
 
     count = 0;
 
-    /* initialise random number generator */
-    /* Moved into det loop so same random seed can be used with */
-    /* different detector combos and still get same noise realisation */
-    randomParams = XLALCreateRandomParams( seed+i );
+    /* initialise random number generator (if using a non-zero seed).
+     * Moved into det loop so same random seed can be used with
+     * different detector combos and still get same noise realisation */
+    if ( seed != 0 ){ randomParams = XLALCreateRandomParams( seed+i ); }
 
     ifodata = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
     ifodata->likeli_counter = 0;
@@ -692,7 +695,6 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
           ifodata->compTimeData = XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, truncationIndex );
           ifomodel->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifomodel->compTimeSignal, 0, truncationIndex );
           ifodata->varTimeData = XLALResizeREAL8TimeSeries( ifodata->varTimeData, 0, truncationIndex );
-
         }
       }
 
@@ -836,12 +838,13 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     if ( sfile ) { XLALFree( sfile ); }
     if ( tfile ) { XLALFree( tfile ); }
 
-    XLALDestroyRandomParams( randomParams );
+    if ( seed != 0 ) { XLALDestroyRandomParams( randomParams ); }
 
     /* get maximum data length */
     if ( ifodata->compTimeData->data->length > maxlen ) { maxlen = ifodata->compTimeData->data->length; }
   }
 
+  if ( seed == 0 ) { XLALDestroyRandomParams( randomParams ); }
   XLALFree( filestr );
 
   /* chop the data into stationary chunks and also calculate the noise variance if required
