@@ -32,316 +32,15 @@ cache:
   paths:
     - ccache
 
-level0:lal:
+.levelN:package: &levelN-package
   image: ligo/lalsuite-dev:jessie
-  stage: level0
   script:
-    - cd lal
+    - cd ${CI_JOB_NAME#level?:}
     - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
+    - ./configure --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
     - make dist
-    - tar xf lal-*.tar.xz
-    - cd lal-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 installcheck
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
-  only:
-    - pushes
-    - schedules
-    - web
-
-level1:lalframe:
-  image: ligo/lalsuite-dev:jessie
-  stage: level1
-  script:
-    - cd lalframe
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalframe-*.tar.xz
-    - cd lalframe-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 installcheck
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
-  dependencies:
-    - level0:lal
-  only:
-    - pushes
-    - schedules
-    - web
-
-level1:lalmetaio:
-  image: ligo/lalsuite-dev:jessie
-  stage: level1
-  script:
-    - cd lalmetaio
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalmetaio-*.tar.xz
-    - cd lalmetaio-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 installcheck
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
-  dependencies:
-    - level0:lal
-  only:
-    - pushes
-    - schedules
-    - web
-
-level1:lalsimulation:
-  image: ligo/lalsuite-dev:jessie
-  stage: level1
-  script:
-    - cd lalsimulation
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalsimulation-*.tar.xz
-    - cd lalsimulation-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 installcheck
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
-  dependencies:
-    - level0:lal
-  only:
-    - pushes
-    - schedules
-    - web
-
-level1:lalxml:
-  image: ligo/lalsuite-dev:jessie
-  stage: level1
-  script:
-    - cd lalxml
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalxml-*.tar.xz
-    - cd lalxml-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 installcheck
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
-  dependencies:
-    - level0:lal
-  only:
-    - pushes
-    - schedules
-    - web
-
-level2:lalburst:
-  image: ligo/lalsuite-dev:jessie
-  stage: level2
-  script:
-    - cd lalburst
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalburst-*.tar.xz
-    - cd lalburst-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 installcheck
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
-  dependencies:
-    - level1:lalmetaio
-    - level1:lalsimulation
-  only:
-    - pushes
-    - schedules
-    - web
-
-level2:lalinspiral:
-  image: ligo/lalsuite-dev:jessie
-  stage: level2
-  script:
-    - cd lalinspiral
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalinspiral-*.tar.xz
-    - cd lalinspiral-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 installcheck
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
-  dependencies:
-    - level1:lalframe
-    - level1:lalmetaio
-    - level1:lalsimulation
-  only:
-    - pushes
-    - schedules
-    - web
-
-level2:lalpulsar:
-  image: ligo/lalsuite-dev:jessie
-  stage: level2
-  script:
-    - cd lalpulsar
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalpulsar-*.tar.xz
-    - cd lalpulsar-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 installcheck
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
-  dependencies:
-    - level1:lalxml
-  only:
-    - pushes
-    - schedules
-    - web
-
-level2:lalstochastic:
-  image: ligo/lalsuite-dev:jessie
-  stage: level2
-  script:
-    - cd lalstochastic
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalstochastic-*.tar.xz
-    - cd lalstochastic-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 installcheck
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
-  dependencies:
-    - level1:lalmetaio
-  only:
-    - pushes
-    - schedules
-    - web
-
-level3:laldetchar:
-  image: ligo/lalsuite-dev:jessie
-  stage: level3
-  script:
-    - cd laldetchar
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf laldetchar-*.tar.xz
-    - cd laldetchar-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 installcheck
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
-  dependencies:
-    - level2:lalburst
-  only:
-    - pushes
-    - schedules
-    - web
-
-level3:lalinference:
-  image: ligo/lalsuite-dev:jessie
-  stage: level3
-  script:
-    - cd lalinference
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalinference-*.tar.xz
-    - cd lalinference-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 installcheck
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
-  dependencies:
-    - level2:lalburst
-    - level2:lalinspiral
-    - level2:lalpulsar
-  only:
-    - pushes
-    - schedules
-    - web
-
-level4:lalapps:
-  image: ligo/lalsuite-dev:jessie
-  stage: level4
-  script:
-    - cd lalapps
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalapps-*.tar.xz
-    - cd lalapps-*
+    - tar xf *.tar.xz
+    - cd lal*-*
     - ./configure --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
     - make -j4 V=1
     - make -j4 V=1 VERBOSE=1 check
@@ -352,14 +51,87 @@ level4:lalapps:
     expire_in: 3h
     paths:
       - opt/lalsuite
-  dependencies:
-    - level2:lalstochastic
-    - level3:laldetchar
-    - level3:lalinference
   only:
     - pushes
     - schedules
     - web
+
+level0:lal:
+  <<: *levelN-package
+  stage: level0
+
+level1:lalframe:
+  <<: *levelN-package
+  stage: level1
+  dependencies:
+    - level0:lal
+
+level1:lalmetaio:
+  <<: *levelN-package
+  stage: level1
+  dependencies:
+    - level0:lal
+
+level1:lalsimulation:
+  <<: *levelN-package
+  stage: level1
+  dependencies:
+    - level0:lal
+
+level1:lalxml:
+  <<: *levelN-package
+  stage: level1
+  dependencies:
+    - level0:lal
+
+level2:lalburst:
+  <<: *levelN-package
+  stage: level2
+  dependencies:
+    - level1:lalmetaio
+    - level1:lalsimulation
+
+level2:lalinspiral:
+  <<: *levelN-package
+  stage: level2
+  dependencies:
+    - level1:lalframe
+    - level1:lalmetaio
+    - level1:lalsimulation
+
+level2:lalpulsar:
+  <<: *levelN-package
+  stage: level2
+  dependencies:
+    - level1:lalxml
+
+level2:lalstochastic:
+  <<: *levelN-package
+  stage: level2
+  dependencies:
+    - level1:lalmetaio
+
+level3:laldetchar:
+  <<: *levelN-package
+  stage: level3
+  dependencies:
+    - level2:lalburst
+
+level3:lalinference:
+  <<: *levelN-package
+  stage: level3
+  dependencies:
+    - level2:lalburst
+    - level2:lalinspiral
+    - level2:lalpulsar
+
+level4:lalapps:
+  <<: *levelN-package
+  stage: level4
+  dependencies:
+    - level2:lalstochastic
+    - level3:laldetchar
+    - level3:lalinference
 
 # release a debian docker image upon every tag in lalsuite
 docker:tags:
