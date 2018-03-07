@@ -587,7 +587,7 @@ nightly:macos:
     paths:
       - wheelhouse
 
-# Build wheels for all supported platorms
+# Build wheels for all supported platforms
 nightly:wheel:cp27-cp27m-manylinux1:
   <<: *nightly-wheel-manylinux1
 nightly:wheel:cp27-cp27mu-manylinux1:
