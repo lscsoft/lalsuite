@@ -17,6 +17,7 @@ stages:
   - level4
   - release
   - nightly
+  - deploy
 
 before_script:
   - ulimit -S -c 0
@@ -518,7 +519,8 @@ nightly:macos:
     # Build wheel
     - ./00boot
     # FIXME: laldetchar depends on glib >= 2.14, too new for manylinux1
-    - ./configure PYTHON=${PYPREFIX}/bin/python --enable-swig-python
+    - ./configure PYTHON=${PYPREFIX}/bin/python
+      --enable-swig-python --enable-nightly
       --disable-laldetchar
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
@@ -550,7 +552,8 @@ nightly:macos:
     - pip install -q git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 numpy==1.7.0
     # Build wheel
     - ./00boot
-    - ./configure --enable-swig-python PYTHON=$(which python${PYVERS})
+    - ./configure PYTHON=$(which python${PYVERS})
+      --enable-swig-python --enable-nightly
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - delocate-wheel -v -w wheelhouse wheel/*.whl
@@ -602,6 +605,32 @@ pages:
   artifacts:
     paths:
       - public
+  only:
+    - master@lscsoft/lalsuite
+  except:
+    - pushes
+
+deploy:wheel:
+  stage: deploy
+  image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
+  variables:
+    GIT_STRATEGY: none
+  script:
+    # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
+    - /opt/python/cp36-cp36m/bin/pip install twine
+    - /opt/python/cp36-cp36m/bin/twine upload wheelhouse/*
+  dependencies:
+    - nightly:wheel:cp27-cp27m-manylinux1
+    - nightly:wheel:cp27-cp27mu-manylinux1
+    - nightly:wheel:cp34-cp34m-manylinux1
+    - nightly:wheel:cp35-cp35m-manylinux1
+    - nightly:wheel:cp36-cp36m-manylinux1
+    - nightly:wheel:cp27-cp27m-macosx
+    - nightly:wheel:cp35-cp35m-macosx
+    - nightly:wheel:cp36-cp36m-macosx
+  artifacts:
+    paths:
+      - wheelhouse
   only:
     - master@lscsoft/lalsuite
   except:
