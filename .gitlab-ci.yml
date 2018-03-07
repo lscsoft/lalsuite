@@ -612,6 +612,7 @@ pages:
     - master@lscsoft/lalsuite
   except:
     - pushes
+    - web
 
 deploy:wheel:
   stage: deploy
