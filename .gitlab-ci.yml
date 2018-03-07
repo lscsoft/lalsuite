@@ -377,6 +377,7 @@ docker:nightly:
     - schedules
   except:
     - pushes
+    - web
 
 nightly:top-level:el7:
   image: ligo/lalsuite-dev:el7
