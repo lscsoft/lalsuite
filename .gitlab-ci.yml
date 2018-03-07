@@ -55,6 +55,7 @@ level0:lal:
   only:
     - pushes
     - schedules
+    - web
 
 level1:lalframe:
   image: ligo/lalsuite-dev:jessie
@@ -81,6 +82,7 @@ level1:lalframe:
   only:
     - pushes
     - schedules
+    - web
 
 level1:lalmetaio:
   image: ligo/lalsuite-dev:jessie
@@ -107,6 +109,7 @@ level1:lalmetaio:
   only:
     - pushes
     - schedules
+    - web
 
 level1:lalsimulation:
   image: ligo/lalsuite-dev:jessie
@@ -133,6 +136,7 @@ level1:lalsimulation:
   only:
     - pushes
     - schedules
+    - web
 
 level1:lalxml:
   image: ligo/lalsuite-dev:jessie
@@ -159,6 +163,7 @@ level1:lalxml:
   only:
     - pushes
     - schedules
+    - web
 
 level2:lalburst:
   image: ligo/lalsuite-dev:jessie
@@ -186,6 +191,7 @@ level2:lalburst:
   only:
     - pushes
     - schedules
+    - web
 
 level2:lalinspiral:
   image: ligo/lalsuite-dev:jessie
@@ -214,6 +220,7 @@ level2:lalinspiral:
   only:
     - pushes
     - schedules
+    - web
 
 level2:lalpulsar:
   image: ligo/lalsuite-dev:jessie
@@ -240,6 +247,7 @@ level2:lalpulsar:
   only:
     - pushes
     - schedules
+    - web
 
 level2:lalstochastic:
   image: ligo/lalsuite-dev:jessie
@@ -266,6 +274,7 @@ level2:lalstochastic:
   only:
     - pushes
     - schedules
+    - web
 
 level3:laldetchar:
   image: ligo/lalsuite-dev:jessie
@@ -292,6 +301,7 @@ level3:laldetchar:
   only:
     - pushes
     - schedules
+    - web
 
 level3:lalinference:
   image: ligo/lalsuite-dev:jessie
@@ -320,6 +330,7 @@ level3:lalinference:
   only:
     - pushes
     - schedules
+    - web
 
 level4:lalapps:
   image: ligo/lalsuite-dev:jessie
@@ -348,6 +359,7 @@ level4:lalapps:
   only:
     - pushes
     - schedules
+    - web
 
 # release a debian docker image upon every tag in lalsuite
 docker:tags:
