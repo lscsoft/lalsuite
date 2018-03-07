@@ -574,7 +574,7 @@ nightly:macos:
     paths:
       - wheelhouse
 
-# Build wheels for all supported platforms
+# Build wheels for all supported platorms
 nightly:wheel:cp27-cp27m-manylinux1:
   <<: *nightly-wheel-manylinux1
 nightly:wheel:cp27-cp27mu-manylinux1:
@@ -638,3 +638,4 @@ deploy:wheel:
     - master@lscsoft/lalsuite
   except:
     - pushes
+    - web
