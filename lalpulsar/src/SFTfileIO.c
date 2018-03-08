@@ -1058,15 +1058,21 @@ XLALLoadMultiSFTsFromView ( const MultiSFTCatalogView *multiCatalogView,/**< The
 } // XLALLoadMultiSFTsFromView()
 
 
+/// backwards compatible wrapper to XLALReadTimestampsFileConstrained() without GPS-time constraints
+LIGOTimeGPSVector *
+XLALReadTimestampsFile ( const CHAR *fname )
+{
+  return XLALReadTimestampsFileConstrained ( fname, NULL, NULL );
+}
 /**
  * Load timestamps file 'fname' into LIGOTimeGPSVector struct, allocated here.
  *
- * The timestamps file is of the format: <repeated lines of the form "seconds nano-seconds">
- * allowing for '%#' as comments, which are ignored.
- *
+ * The timestamps file must contain one GPS time per line, allowing for '%#' as comments, which are ignored.
+ * The constraints 'minGPS', 'maxGPS' are applied by returning only timestamps that fall within
+ * the range defined by XLALCWGPSinRange(gps, minGPS, maxGPS) == 0.
  */
 LIGOTimeGPSVector *
-XLALReadTimestampsFile ( const CHAR *fname )
+XLALReadTimestampsFileConstrained ( const CHAR *fname, const LIGOTimeGPS *minGPS, const LIGOTimeGPS *maxGPS )
 {
   /** check input consistency */
   XLAL_CHECK_NULL ( fname != NULL, XLAL_EINVAL );
@@ -1076,6 +1082,7 @@ XLALReadTimestampsFile ( const CHAR *fname )
   XLAL_CHECK_NULL ( XLALParseDataFile ( &flines, fname ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   UINT4 numTS = flines->lines->nTokens;
+  UINT4 numTSinRange = 0;
 
   /* allocate and initialized segment list */
   LIGOTimeGPSVector *timestamps = NULL;
@@ -1112,16 +1119,23 @@ XLALReadTimestampsFile ( const CHAR *fname )
             }
         }
 
-      timestamps->data[iTS] = gps;
+      if ( XLALCWGPSinRange ( gps, minGPS, maxGPS) == 0 )
+        {
+          timestamps->data[numTSinRange ++] = gps;
+        }
 
     } /* for iTS < numTS */
 
   /* free parsed segment file contents */
   XLALDestroyParsedDataFile ( flines );
 
+  // adjust size of timestamps vector to those found within range
+  timestamps->length = numTSinRange;
+  timestamps->data = XLALRealloc ( timestamps->data, numTSinRange * sizeof(timestamps->data[0]) );
+
   return timestamps;
 
-} /* XLALReadTimestampsFile() */
+} /* XLALReadTimestampsFileConstrained() */
 
 
 /**
@@ -1185,16 +1199,23 @@ XLALCheckCRCSFTCatalog(
 
 } /* XLALCheckCRCSFTCatalog() */
 
+/// backwards compatible wrapper to XLALReadMultiTimestampsFilesConstrained() without GPS-time constraints
+MultiLIGOTimeGPSVector *
+XLALReadMultiTimestampsFiles ( const LALStringVector *fnames )
+{
+  return XLALReadMultiTimestampsFilesConstrained ( fnames, NULL, NULL );
+}
 
 /**
  * Load several timestamps files, return a MultiLIGOTimeGPSVector struct, allocated here.
  *
- * The timestamps files are of the format: <repeated lines of the form "seconds nano-seconds">
- * allowing for '%#' as comments, which are ignored.
+ * The timestamps files must contain one GPS time per line, allowing for '%#' as comments, which are ignored.
+ * The constraints 'minGPS', 'maxGPS' are applied by returning only timestamps that fall within
+ * the range defined by XLALCWGPSinRange(gps, minGPS, maxGPS) == 0.
  *
  */
 MultiLIGOTimeGPSVector *
-XLALReadMultiTimestampsFiles ( const LALStringVector *fnames )
+XLALReadMultiTimestampsFilesConstrained ( const LALStringVector *fnames, const LIGOTimeGPS *minGPS, const LIGOTimeGPS *maxGPS )
 {
   XLAL_CHECK_NULL ( fnames != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( fnames->data != NULL, XLAL_EINVAL );
@@ -1211,12 +1232,12 @@ XLALReadMultiTimestampsFiles ( const LALStringVector *fnames )
   for ( UINT4 X=0; X < numDet; X ++ )
     {
       XLAL_CHECK_NULL ( fnames->data[X] != NULL, XLAL_EINVAL );
-      XLAL_CHECK_NULL ( ( multiTS->data[X] = XLALReadTimestampsFile ( fnames->data[X] )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( ( multiTS->data[X] = XLALReadTimestampsFileConstrained ( fnames->data[X], minGPS, maxGPS )) != NULL, XLAL_EFUNC );
     } // for X < numDet
 
   return multiTS;
 
-} // XLALReadMultiTimestampsFiles()
+} // XLALReadMultiTimestampsFilesConstrained()
 
 
 /**
