@@ -228,7 +228,7 @@ main(int argc, char *argv[])
   REAL8 dt;
   LIGOTimeGPS TstartGPS;
   MJDTime *TOA = NULL;
-  CHAR tempstr[18];
+  CHAR tempstr[1024];
   CHAR *tempstr2;
   CHAR TstartMJDstr[20],TfinishMJDstr[20],TOAstr[22];
   PulsarSignalParams pulsarparams;
@@ -585,12 +585,12 @@ main(int argc, char *argv[])
 
     } // for i < n
 
-  snprintf(tempstr,15,"%1.13f",TOA[0].fracdays);
+  snprintf(tempstr,sizeof(tempstr),"%1.13f",TOA[0].fracdays);
   tempstr2 = tempstr+2;
   snprintf(TstartMJDstr,19,"%d.%s",TOA[0].days,tempstr2);
   XLALPrintInfo ( "Converted initial TOA MJD %d %6.12f to the string %s\n",TOA[0].days,TOA[0].fracdays,TstartMJDstr);
 
-  snprintf(tempstr,15,"%1.13f",TOA[n-1].fracdays);
+  snprintf(tempstr,sizeof(tempstr),"%1.13f",TOA[n-1].fracdays);
   tempstr2 = tempstr+2;
   snprintf(TfinishMJDstr,19,"%d.%s",TOA[n-1].days,tempstr2);
   XLALPrintInfo ( "*** Converted MJD to a string %s\n",TfinishMJDstr);
@@ -635,7 +635,7 @@ main(int argc, char *argv[])
   for (i=0;i<n;i++)
     {
       /* convert each TOA to a string for output */
-      snprintf(tempstr,18,"%1.16f",TOA[i].fracdays);
+      snprintf(tempstr,sizeof(tempstr),"%1.16f",TOA[i].fracdays);
       tempstr2 = tempstr+2;
       snprintf(TOAstr,22,"%d.%s",TOA[i].days,tempstr2);
       fprintf(fp,"blank.dat\t1000.0\t%s\t1.0\t%s\n",TOAstr,detcode);
