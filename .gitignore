@@ -30,4 +30,6 @@ lalsuite-user-env.shell
 tags
 /wheel/build/
 /wheel/destdir/
+/wheel/Makefile
 /wheel/setup.py
+/wheel/*.whl
