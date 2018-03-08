@@ -44,7 +44,6 @@ cache:
     - ./configure --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
     - make -j4 V=1
     - make -j4 V=1 VERBOSE=1 check
-    - make -j4 installcheck
     - make -j4 install
     - make -j4 install-html
   artifacts:
