@@ -6,7 +6,10 @@ include $(top_srcdir)/gnuscripts/lalsuite_top.am
 
 ACLOCAL_AMFLAGS = -I gnuscripts
 
-SUBDIRS = @subdirs@
+SUBDIRS = @subdirs@ wheel
+
+wheel:
+	$(MAKE) -C wheel wheel
 
 # Override automake's default rule for rebuilding aclocal.m4, to ensure that
 # ./configure is successfully recreated after certain build system changes which
@@ -20,15 +23,15 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) $(top_srcdir)/configure $(ac_configure_args)
 
-.PHONY: cscopelist-subdirs
+.PHONY: cscopelist-subdirs wheel
 cscopelist-am: cscopelist-subdirs
 cscopelist-subdirs:
-	for subdir in $(SUBDIRS); do \
+	for subdir in @subdirs@; do \
 		sed "s|^|$${subdir}/|" $${subdir}/cscope.files >> $(top_builddir)/cscope.files; \
 	done
 
 user_environment = \
-	`for dir in $(SUBDIRS); do printf 'source %s; ' "$(sysconfdir)/$${dir}-user-env"; done` \
+	`for dir in @subdirs@; do printf 'source %s; ' "$(sysconfdir)/$${dir}-user-env"; done` \
 	$(END_OF_LIST)
 
 BUILT_SOURCES += $(PACKAGE)rc

@@ -1,17 +1,18 @@
+%define nightly @NIGHTLY_VERSION@
 %define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
+%define release 1
 
 Name: @PACKAGE@
-Version: @VERSION@
-Release: 1%{?dist}
+Version: @BASE_VERSION@
+Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
 Summary: LSC Algorithm Inference Library
 License: GPLv2+
 Group: LAL
-Source: %{name}-%{version}.tar.xz
+Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
-BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: chealpix-devel >= 3.30.0
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
@@ -131,7 +132,7 @@ The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALInference.
 
 %prep
-%setup -q
+%setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
 
 %build
 %configure --disable-gcc-flags --enable-swig --enable-openmp
@@ -152,7 +153,7 @@ ldconfig
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -Rf ${RPM_BUILD_ROOT}
-rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
+rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files
 %defattr(-,root,root)
@@ -173,6 +174,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_bindir}/bayestar_*
 %{_bindir}/imrtgr_*
 %{_bindir}/rapidpe_*
+%{_bindir}/cbcBayes*
 %{_libdir}/python*
 
 %files octave

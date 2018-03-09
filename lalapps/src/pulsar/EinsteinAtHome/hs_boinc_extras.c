@@ -75,7 +75,9 @@
 
 /* for finding out and logging the glibc version */
 #ifdef __GLIBC__
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include <gnu/libc-version.h>
 #endif
 

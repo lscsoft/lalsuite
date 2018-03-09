@@ -268,6 +268,7 @@ int main (int argc , char **argv) {
     /* Otherwise, the call to LALInspiral, etc. will still fail */
     default:
       fprintf(stderr, "Warning! approximant appears to be unknown\n");
+      /* fallthrough */
     /* These TD approximants generate h(t), h+(t), hx(t) directly */
     case TaylorT1:
     case TaylorT2:

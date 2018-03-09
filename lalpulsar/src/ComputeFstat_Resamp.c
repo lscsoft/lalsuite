@@ -407,10 +407,15 @@ XLALSetupFstatResamp ( void **method_data,
   // if FFTWF_WISDOM_FILENAME is set, try to import that wisdom
   wisdom_filename = getenv("FFTWF_WISDOM_FILENAME");
   if (wisdom_filename && !tried_wisdom) {
-    if (fftwf_import_wisdom_from_filename(wisdom_filename)) {
+    FILE* fp = fopen(wisdom_filename,"r");
+    if (!fp) {
+      XLALPrintWarning("WARNING: Couldn't open wisdom file '%s'\n", wisdom_filename);
+    } else if (fftwf_import_wisdom_from_file(fp)) {
       XLALPrintInfo("INFO: imported wisdom from file '%s'\n", wisdom_filename);
+      fclose(fp);
     } else {
       XLALPrintWarning("WARNING: Couldn't import wisdom from file '%s'\n", wisdom_filename);
+      fclose(fp);
     }
     tried_wisdom = -1;
   }

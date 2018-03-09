@@ -28,7 +28,7 @@ import numpy as np
 import pickle
 from scipy import optimize
 from collections import OrderedDict
-
+from six import string_types
 from lalapps import pulsarpputils as pppu
 
 # set some specific error codes and messages
@@ -147,23 +147,38 @@ class knopeDAG(pipeline.CondorDAG):
         if self.error_code != 0: return
 
     # Get the start and end time of the analysis
-    # see if starttime and endtime are integers or dictionaries
+    # see if starttime and endtime are integers, or dictionaries (of integers or lists of integers)
     self.starttime = self.get_config_option('analysis', 'starttime')
     if self.error_code != 0: return
     self.starttime = ast.literal_eval(self.starttime) # check if int or dict
     if isinstance(self.starttime, int): # convert to dictionary
       stdict = {}
       for ifo in self.ifos:
-        stdict[ifo] = self.starttime
+        stdict[ifo] = [self.starttime] # convert to list
       self.starttime = stdict
     elif isinstance(self.starttime, dict): # check each detector has a start time
       for ifo in self.ifos:
         if ifo not in self.starttime:
-          print("Error... 'starttime' either be a single 'int' value or a dictionary containing all detectors.", file=sys.stderr)
+          print("Error... 'starttime' either be a single 'int', or a dictionary containing all detectors with an integer or list of integers.", file=sys.stderr)
+          self.error_code = KNOPE_ERROR_GENERAL
+          return
+      
+      for stkey in dict(self.starttime):
+        if isinstance(self.starttime[stkey], int):
+          # convert to list
+          self.starttime[stkey] = list(self.starttime[stkey])
+        elif isinstance(self.starttime[stkey], list):
+          # check all values are int
+          if len([v for v in self.starttime[stkey] if isinstance(v, int)]) != len(self.starttime[stkey]):
+            print("Error... 'starttime' either be a single 'int', or a dictionary containing all detectors with an integer or list of integers.", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return
+        else:
+          print("Error... 'starttime' either be a single 'int', or a dictionary containing all detectors with an integer or list of integers.", file=sys.stderr)
           self.error_code = KNOPE_ERROR_GENERAL
           return
     else:
-      print("Error... 'starttime' either be a single 'int' value or a dictionary containing all detectors.", file=sys.stderr)
+      print("Error... 'starttime' either be a single 'int', or a dictionary containing all detectors with an integer or list of integers.", file=sys.stderr)
       self.error_code = KNOPE_ERROR_GENERAL
       return
 
@@ -173,18 +188,43 @@ class knopeDAG(pipeline.CondorDAG):
     if isinstance(self.endtime, int): # convert to dictionary
       etdict = {}
       for ifo in self.ifos:
-        etdict[ifo] = self.endtime
+        etdict[ifo] = [self.endtime] # convert to list
       self.endtime = etdict
     elif isinstance(self.endtime, dict): # check each detector has an end time
       for ifo in self.ifos:
         if ifo not in self.endtime:
-          print("Error... 'endtime' either be a single 'int' value or a dictionary containing all detectors.", file=sys.stderr)
+          print("Error... 'endtime' either be a single 'int', or a dictionary containing all detectors with an integer or list of integers.", file=sys.stderr)
+          self.error_code = KNOPE_ERROR_GENERAL
+          return
+
+      for etkey in dict(self.endtime):
+        if isinstance(self.endtime[etkey], int):
+          # convert to list
+          self.endtime[etkey] = list(self.endtime[etkey])
+        elif isinstance(self.endtime[etkey], list):
+          # check all values are int
+          if len([v for v in self.endtime[etkey] if isinstance(v, int)]) != len(self.endtime[etkey]):
+            print("Error... 'endtime' either be a single 'int', or a dictionary containing all detectors with an integer or list of integers.", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return
+        else:
+          print("Error... 'endtime' either be a single 'int', or a dictionary containing all detectors with an integer or list of integers.", file=sys.stderr)
           self.error_code = KNOPE_ERROR_GENERAL
           return
     else:
-      print("Error... 'endtime' either be a single 'int' value or a dictionary containing all detectors.", file=sys.stderr)
+      print("Error... 'endtime' either be a single 'int', or a dictionary containing all detectors with an integer or list of integers.", file=sys.stderr)
       self.error_code = KNOPE_ERROR_GENERAL
       return
+
+    # check start time and end time lists are consistent
+    self.ndatasets = {} # dictionary of number of seperate datasets (e.g. 2 different observing runs) for each detector
+    for ifo in self.ifos:
+      if len(self.starttime[ifo]) != len(self.endtime[ifo]):
+        print("Error... 'starttime' and 'endtime' have an inconsistent number of entries.", file=sys.stderr)
+        self.error_code = KNOPE_ERROR_GENERAL
+        return
+      else:
+        self.ndatasets[ifo] = len(self.starttime[ifo])    
 
     # Get the pre-processing engine (heterodyne or SplInter - default to heterodyne)
     if not self.postonly:
@@ -257,7 +297,8 @@ class knopeDAG(pipeline.CondorDAG):
       # convert to dictionary (to be consistent with start time)
       self.initial_start = {}
       for ifo in self.ifos:
-        self.initial_start[ifo] = initialstart
+        self.initial_start[ifo] = [initialstart] # convert to list to be consistent with self.starttimes
+      self.initial_start = self.initial_start
     else:
       self.initial_start = self.starttime
 
@@ -1927,6 +1968,21 @@ class knopeDAG(pipeline.CondorDAG):
       getmodsciencesegs[ifo] = True
       segfiletimes[ifo] = {}
 
+    # check if channels is a single value for each IFO or a list
+    for ifo in self.ifos:
+      if ifo not in self.coarse_heterodyne_channels:
+        print("Error... could channel not specified for '{}'".format(ifo), file=sys.stderr)
+        self.error_code = KNOPE_ERROR_GENERAL
+        return
+      else:
+        if isinstance(self.coarse_heterodyne_channels[ifo], string_types):
+          # convert to list
+          self.coarse_heterodyne_channels[ifo] = [self.coarse_heterodyne_channels[ifo]]
+        elif not isinstance(self.coarse_heterodyne_channels[ifo], list):
+          print("Error... channel must be a string or a list of strings".format(ifo), file=sys.stderr)
+          self.error_code = KNOPE_ERROR_GENERAL
+          return
+
     # loop through all pulsars
     for pname in self.analysed_pulsars:
       par = self.analysed_pulsars[pname]
@@ -2007,17 +2063,17 @@ class knopeDAG(pipeline.CondorDAG):
               # get end time from segment file
               p = sp.check_output("tail -1 " + segfiles[ifo], shell=True)
               if len(p) != 0:
-                self.starttime[ifo] = int(p.split()[1])
+                self.starttime[ifo] = [int(p.split()[1])] # add as a list for consistency
               else:
                 print("Error... could not get end time out of previous segment file '%s'" % segfiles[ifo], file=sys.stderr)
                 self.error_code = KNOPE_ERROR_GENERAL
                 return
 
           # check if a segment file for the given start time has already been created, and if so use that
-          if self.starttime[ifo] in segfiletimes[ifo]:
-            shutil.copy2(segfiletimes[ifo][self.starttime[ifo]], segfiles[ifo])
+          if self.starttime[ifo][0] in segfiletimes[ifo]:
+            shutil.copy2(segfiletimes[ifo][self.starttime[ifo][0]], segfiles[ifo])
           else:
-            segfiletimes[ifo][self.starttime[ifo]] = segfiles[ifo]
+            segfiletimes[ifo][self.starttime[ifo][0]] = segfiles[ifo]
 
             # create new segment file
             self.find_data_segments(self.starttime[ifo], self.endtime[ifo], ifo, segfiles[ifo])
@@ -2051,85 +2107,118 @@ class knopeDAG(pipeline.CondorDAG):
           self.mkdirs(freqfacdirfine)
           if self.error_code != 0: return
 
-          # create output files
-          if self.warning_code != KNOPE_WARNING_NO_SEGMENTS: # only add coarse heterodyne if there is segment data
-            if self.coarse_heterodyne_binary_output:
-              coarseoutput = os.path.join(freqfacdircoarse, 'coarse-%s-%d-%d.bin' % (ifo, int(self.starttime[ifo]), int(self.endtime[ifo])))
-            else:
-              coarseoutput = os.path.join(freqfacdircoarse, 'coarse-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo]), int(self.endtime[ifo])))
-
-            # create coarse heterodyne node
-            coarsenode = heterodyneNode(chetjob)
-
-            # add data find parent to coarse job
-            if self.datafind_nodes is not None:
-              coarsenode.add_parent(self.datafind_nodes[ifo])
-
-            # set data, segment location, channel and output location
-            coarsenode.set_data_file(self.cache_files[ifo])
-            coarsenode.set_seg_list(segfiles[ifo])
-            coarsenode.set_channel(self.coarse_heterodyne_channels[ifo])
-            coarsenode.set_output_file(coarseoutput)
-            if self.coarse_heterodyne_binary_output:
-              coarsenode.set_binoutput()
-            if self.coarse_heterodyne_gzip_output:
-              coarsenode.set_gzip_output()
-
-            # set some coarse heterodyne info
-            coarsenode.set_ifo(ifo)         # detector
-            coarsenode.set_het_flag(0)      # perform coarse heterodyne
-            coarsenode.set_pulsar(pname)    # pulsar name
-            coarsenode.set_param_file(par)  # pulsar parameter file
-            coarsenode.set_filter_knee(self.coarse_heterodyne_filter_knee)
-            coarsenode.set_sample_rate(self.coarse_heterodyne_sample_rate)
-            coarsenode.set_resample_rate(self.coarse_heterodyne_resample_rate)
-            coarsenode.set_freq_factor(freqfactor) # multiplicative factor for the rotation frequency
-
-            self.add_node(coarsenode)
-
-          if self.warning_code != KNOPE_WARNING_NO_SEGMENTS: # only add fine heterodyne if there is segment data
-            # create fine heterodyne node
-            finenode = heterodyneNode(fhetjob)
-
-            # add coarse parent to fine job
-            finenode.add_parent(coarsenode)
-
-            # create output files
-            fineoutput = os.path.join(freqfacdirfine, 'fine-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo]), int(self.endtime[ifo])))
-
-            # set data, segment location and output location
-            if self.coarse_heterodyne_gzip_output:
-              finenode.set_data_file(coarseoutput+'.gz')
-            else:
-              finenode.set_data_file(coarseoutput)
-
-            if self.coarse_heterodyne_binary_output:
-              finenode.set_bininput()
-
-            finenode.set_seg_list(segfiles[ifo])
-            finenode.set_output_file(fineoutput)
-
-            # set fine heterodyne info
-            finenode.set_ifo(ifo)
-            finenode.set_het_flag(1)      # perform fine heterodyne
-            finenode.set_pulsar(pname)    # pulsar name
-            finenode.set_param_file(par)  # pulsar parameter file
-            finenode.set_sample_rate(self.coarse_heterodyne_resample_rate) # use resample rate from coarse heterodyne
-            finenode.set_resample_rate(self.fine_heterodyne_resample_rate)
-            finenode.set_filter_knee(self.coarse_heterodyne_filter_knee)
-            finenode.set_freq_factor(freqfactor)
-            finenode.set_stddev_thresh(self.fine_heterodyne_stddev_thresh)
-            finenode.set_ephem_earth_file(earthfile)
-            finenode.set_ephem_sun_file(sunfile)
-            finenode.set_ephem_time_file(timefile)
-
+          # loop over number of "datasets"
+          finetmpfiles = [] # file list to concatenate if there is more than one "dataset"
+          if self.ndatasets[ifo] > 1: # create concatenation node for fine heterodyne
+            fineoutput = os.path.join(freqfacdirfine, 'fine-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo][0]), int(self.endtime[ifo][-1])))
             if self.fine_heterodyne_gzip_output:
-              finenode.set_gzip_output()
+              fineoutput += '.gz'
+            concatjob = concatJob(subfile=os.path.join(freqfacdirfine, 'concat.sub'), output=fineoutput, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir)
+          for k in range(self.ndatasets[ifo]):
+            # create output files
+            if self.warning_code != KNOPE_WARNING_NO_SEGMENTS: # only add coarse heterodyne if there is segment data
+              if self.coarse_heterodyne_binary_output:
+                coarseoutput = os.path.join(freqfacdircoarse, 'coarse-%s-%d-%d.bin' % (ifo, int(self.starttime[ifo][k]), int(self.endtime[ifo][k])))
+              else:
+                coarseoutput = os.path.join(freqfacdircoarse, 'coarse-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo][k]), int(self.endtime[ifo][k])))
 
-            self.add_node(finenode)
+              # create coarse heterodyne node
+              coarsenode = heterodyneNode(chetjob)
+
+              # add data find parent to coarse job
+              if self.datafind_nodes is not None:
+                coarsenode.add_parent(self.datafind_nodes[ifo][k])
+
+              # set data, segment location, channel and output location
+              coarsenode.set_data_file(self.cache_files[ifo][k])
+              coarsenode.set_seg_list(segfiles[ifo])
+              coarsenode.set_channel(self.coarse_heterodyne_channels[ifo][k])
+              coarsenode.set_output_file(coarseoutput)
+              if self.coarse_heterodyne_binary_output:
+                coarsenode.set_binoutput()
+              if self.coarse_heterodyne_gzip_output:
+                coarsenode.set_gzip_output()
+
+              # set some coarse heterodyne info
+              coarsenode.set_ifo(ifo)         # detector
+              coarsenode.set_het_flag(0)      # perform coarse heterodyne
+              coarsenode.set_pulsar(pname)    # pulsar name
+              coarsenode.set_param_file(par)  # pulsar parameter file
+              coarsenode.set_filter_knee(self.coarse_heterodyne_filter_knee)
+              coarsenode.set_sample_rate(self.coarse_heterodyne_sample_rate)
+              coarsenode.set_resample_rate(self.coarse_heterodyne_resample_rate)
+              coarsenode.set_freq_factor(freqfactor) # multiplicative factor for the rotation frequency
+
+              self.add_node(coarsenode)
+
+            if self.warning_code != KNOPE_WARNING_NO_SEGMENTS: # only add fine heterodyne if there is segment data
+              # create fine heterodyne node
+              finenode = heterodyneNode(fhetjob)
+
+              if self.ndatasets[ifo] > 1:
+                # create concatnode
+                if k == 0:
+                  concatnode = concatNode(concatjob)
+                concatnode.add_parent(finenode) # add fine heterodyne as parent
+
+              # add coarse parent to fine job
+              finenode.add_parent(coarsenode)
+
+              # create output files
+              fineoutput = os.path.join(freqfacdirfine, 'fine-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo][k]), int(self.endtime[ifo][k])))
+              finetmpfiles.append(fineoutput)
+
+              # set data, segment location and output location
+              if self.coarse_heterodyne_gzip_output:
+                finenode.set_data_file(coarseoutput+'.gz')
+              else:
+                finenode.set_data_file(coarseoutput)
+
+              if self.coarse_heterodyne_binary_output:
+                finenode.set_bininput()
+
+              finenode.set_seg_list(segfiles[ifo])
+              finenode.set_output_file(fineoutput)
+
+              # set fine heterodyne info
+              finenode.set_ifo(ifo)
+              finenode.set_het_flag(1)      # perform fine heterodyne
+              finenode.set_pulsar(pname)    # pulsar name
+              finenode.set_param_file(par)  # pulsar parameter file
+              finenode.set_sample_rate(self.coarse_heterodyne_resample_rate) # use resample rate from coarse heterodyne
+              finenode.set_resample_rate(self.fine_heterodyne_resample_rate)
+              finenode.set_filter_knee(self.coarse_heterodyne_filter_knee)
+              finenode.set_freq_factor(freqfactor)
+              finenode.set_stddev_thresh(self.fine_heterodyne_stddev_thresh)
+              finenode.set_ephem_earth_file(earthfile)
+              finenode.set_ephem_sun_file(sunfile)
+              finenode.set_ephem_time_file(timefile)
+
+              if self.fine_heterodyne_gzip_output:
+                finenode.set_gzip_output()
+                finetmpfiles[-1] += '.gz'
+
+              self.add_node(finenode)
+            
+            if self.ndatasets[ifo] > 1:
+              if k == self.ndatasets[ifo]-1:
+                concatnode.set_files(finetmpfiles)
+                self.add_node(concatnode)
+              # reset output name to that for the concatenated file
+              fineoutput = os.path.join(freqfacdirfine, 'fine-%s-%d-%d.txt' % (ifo, int(self.starttime[ifo][0]), int(self.endtime[ifo][-1])))
+
+              # remove the seperate find heterodyned files
+              rmjob = removeJob(accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir) # job for removing old files
+              rmnode = removeNode(rmjob)
+              rmnode.set_files(finetmpfiles)
+              rmnode.add_parent(concatnode)
+              self.add_node(rmnode)
 
             # record fine nodes and files
-            self.fine_heterodyne_nodes[pname][ifo][freqfactor] = finenode
+            if self.ndatasets[ifo] > 1:
+              self.fine_heterodyne_nodes[pname][ifo][freqfactor] = concatnode # set concatenation node as parent of future children
+            else:
+              self.fine_heterodyne_nodes[pname][ifo][freqfactor] = finenode
             if self.fine_heterodyne_gzip_output:
               fineoutput = fineoutput + '.gz' # append .gz to recorded file name
 
@@ -2426,7 +2515,7 @@ class knopeDAG(pipeline.CondorDAG):
           if splbool:
             splnode = splinterNode(spljob)
 
-            splnode.add_parent(self.datafind_nodes[ifo])
+            splnode.add_parent(self.datafind_nodes[ifo][0])
 
             splnode.set_sft_lalcache(self.cache_files[ifo]) # SFT cache file
             splnode.set_output_dir(splinterdir)             # output directory
@@ -2570,24 +2659,24 @@ class knopeDAG(pipeline.CondorDAG):
               return
 
             if pitem in self.splinter_modified_pars: # for modified pulsars set start time (for file name) from run values
-              startname = str(self.starttime[pifo])
+              startname = str(self.starttime[pifo][0])
             else: # a previous file exists use the start time from that (for file name)
               if len(prevfile) == 1:
                 try:
                   startname = os.path.basename(prevfile).split('-')[1]
                 except:
                   print("Warning... could not get previous start time from Splinter file name '%s'. Using start time from this run: '%d'" % (prevfile, self.starttime[pifo]))
-                  startname = str(self.starttime[pifo])
+                  startname = str(self.starttime[pifo][0])
 
                 catfiles = [os.path.join(self.splinter_data_location[pitem][pifo][ff], prevfile[0]), finefiles]
               else:
-                startname = str(self.starttime[pifo])
+                startname = str(self.starttime[pifo][0])
               try: # splinter node may not exist if (in autonomous mode) no new segments were found, but previous data did exist
                 parent = self.splinter_nodes_unmodified[pifo][ff]
               except:
                 parent = None
 
-            endname = str(self.endtime[pifo])
+            endname = str(self.endtime[pifo][-1])
 
             # create new file name containing analysis time stamps
             newfinefile = os.path.join(self.splinter_data_location[pitem][pifo][ff], '%s-%s-%s.txt' % ((os.path.basename(finefiles[0])).strip('.gz'), startname, endname))
@@ -2831,34 +2920,82 @@ class knopeDAG(pipeline.CondorDAG):
       return
 
     for ifo in self.ifos:
+      frtypelist = [] # list of frame types
       if not ifo in frtypes:
         print("Error... no data find type for %s" % ifo, file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
         return
+      else:
+        if isinstance(frtypes[ifo], string_types):
+          for i in range(self.ndatasets[ifo]):
+            frtypelist.append(frtypes[ifo])
+        elif isinstance(frtypes[ifo], list):
+          frtypelist = frtypes[ifo]
+          if len(frtypelist) != self.ndatasets[ifo]:
+            print("Error... the number of frame types must be the same as the number of start times", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return
+        else:
+          print("Error... frame types for '{}' must be a single string or a list of strings".format(ifo), file=sys.stderr)
+          self.error_code = KNOPE_ERROR_GENERAL
+          return
 
       # check if cache file is already set for the given detector
       if ifo in self.cache_files:
         continue
 
-      dfnode = pipeline.LSCDataFindNode(self.datafind_job)
-      dfnode.set_observatory(ifo[0])
-      dfnode.set_type(frtypes[ifo])
-      dfnode.set_start(self.initial_start[ifo])
-      dfnode.set_end(self.endtime[ifo])
+      self.datafind_nodes[ifo] = []
+      self.cache_files[ifo] = []
 
-      # reset the default LSCDataFindJob output cache filename
-      cachefile = os.path.join(self.preprocessing_base_dir[ifo], 'cache.lcf')
-      self.cache_files[ifo] = cachefile
-      dfnode.set_output(cachefile)
+      if self.engine == 'splinter':
+        # for splinter we can concatenate the data find output SFT caches together
+        concatjob = concatJob(subfile=os.path.join(self.preprocessing_base_dir[ifo], 'concat.sub'), output=os.path.join(self.preprocessing_base_dir[ifo], 'cache.lcf'), accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir)
 
-      self.datafind_nodes[ifo] = dfnode
-      self.add_node(dfnode) # add nodes into DAG
+      for i in range(self.ndatasets[ifo]):
+        dfnode = pipeline.LSCDataFindNode(self.datafind_job)
+        dfnode.set_observatory(ifo[0])
+        dfnode.set_type(frtypelist[i])
+        dfnode.set_start(self.initial_start[ifo][i])
+        dfnode.set_end(self.endtime[ifo][i])
+
+        # reset the default LSCDataFindJob output cache filename
+        if self.ndatasets[ifo] == 1:
+          cachefile = os.path.join(self.preprocessing_base_dir[ifo], 'cache.lcf')
+        else:
+          cachefile = os.path.join(self.preprocessing_base_dir[ifo], 'cache_{}.lcf'.format(i))
+        self.cache_files[ifo].append(cachefile)
+        dfnode.set_output(cachefile)
+
+        self.datafind_nodes[ifo].append(dfnode)
+        self.add_node(dfnode) # add nodes into DAG
+
+      if self.engine == 'splinter':
+        # for splinter we can concatenate the data find output SFT caches together
+        if self.ndatasets[ifo] == 0:
+          concatnode = concatNode(concatjob)
+          concatnode.set_files(self.cache_files[ifo])
+          for dfn in self.datafind_nodes[ifo]:
+            concatnode.add_parent(dfn)
+          self.add_node(concatnode)
+
+          # reset the self.datafind_nodes to the concatnode for future parents to use
+          self.datafind_nodes[ifo] = [concatnode]
+
+          # reset name of cache file
+          self.cache_files[ifo] = [os.path.join(self.preprocessing_base_dir[ifo], 'cache.lcf')]
 
 
   def find_data_segments(self, starttime, endtime, ifo, outfile):
     """
     Find data segments and output them to an acsii text segment file containing the start and end times of
-    each segment.
+    each segment. Pairs of start and end times in the `starttime` and `endtime` lists will be iterated over
+    and all segments within those pair will be concatenated into the final file.
+
+    Args:
+        starttime (list): a list of GPS start times
+        endtime (list): a list of GPS end times
+        ifo (str): a detector name, e.g., 'H1'
+        outfile (str): the file to output the segment list file to
     """
 
     # check if segment file(s) given (as a dictionary)
@@ -2913,52 +3050,123 @@ class knopeDAG(pipeline.CondorDAG):
       self.error_code = KNOPE_ERROR_GENERAL
       return
 
-    segFindCall = ' '.join([segfind, '--segment-url', server,
-                            '--query-segments',
-                            '--include-segments', segmenttypes[ifo],
-                            '--gps-start-time', str(starttime),
-                            '--gps-end-time', str(endtime)])
-
-    if excludesegs is not None:
-      if ifo in excludesegs:
-        if len(excludesegs[ifo]) > 0:
-          segFindCall += ' --exclude-segments ' + excludesegs[ifo]
-
-    ligolwprint = self.get_config_option('segmentfind', 'ligolw_print', default='ligolw_print')
-
-    # check ligolw_print file exists and is executable
-    if not os.path.isfile(ligolwprint) or not os.access(ligolwprint, os.X_OK):
-      print("Warning... '%s' executable does not exist or is not an executable. Try finding code in path." % ligolwprint)
-      ligolwprint = self.find_exec_file('ligolw_print')
-
-      if ligolwprint is None:
-        print("Error... could not find 'ligolw_print' in 'PATH'", file=sys.stderr)
+    if isinstance(starttime, int) and isinstance(endtime, int):
+      sts = [starttime] # have start time as a list
+      ets = [endtime]   # have end time as a list
+    elif isinstance(starttime, list) and isinstance(endtime, list):
+      if len(starttime) != len(endtime):
+        print("Error... list of start and end times for the segments are not the same lengths", file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
         return
 
-    xmlToTxtCall = ' '.join([ligolwprint,
-                             "--table segment --column start_time --column end_time --delimiter ' '",
-                             '>', outfile])
-
-    segCall = ' '.join([segFindCall, '|', xmlToTxtCall])
-
-    print("Generating segments: " + segCall)
-
-    p = sp.Popen(segCall, stdout=sp.PIPE, stderr=sp.PIPE, shell=True)
-    out, err = p.communicate()
-
-    if p.returncode != 0:
-      print("Error... could not generate segment list. Call returned with error:", file=sys.stderr)
-      print("\tstdout: %s" % out, file=sys.stderr)
-      print("\tstderr: %s" % err, file=sys.stderr)
+      for st, et in zip(starttime, endtime):
+        if st > et:
+          print("Error... start time comes before end time!", file=sys.stderr)
+          self.error_code = KNOPE_ERROR_GENERAL
+          return
+      sts = starttime
+      ets = endtime
+    else:
+      print("Error... start and end times must be integers or lists of integers")
       self.error_code = KNOPE_ERROR_GENERAL
       return
 
-    # check whether the segment file contains any segments
-    p = sp.check_output('wc -l {}'.format(outfile), shell=True)
-    if int(p.split()[0]) == 0:
-      print("Warning... no segments found for {}", file=sys.stderr)
-      self.warning_code = KNOPE_WARNING_NO_SEGMENTS
+    sidx = 0
+    # loop over start and end time pairs
+    for st, et in zip(sts, ets):
+      # check whether there are different segment types for the different times
+      if isinstance(segmenttypes[ifo], list):
+        if not isinstance(segmenttypes[ifo][sidx], string_types):
+          print("Error... segment types must be a string")
+          self.error_code = KNOPE_ERROR_GENERAL
+          return
+        elif len(segmenttypes[ifo]) != len(sts):
+          print("Error... number of segment types is not the same as the number of start times")
+          self.error_code = KNOPE_ERROR_GENERAL
+          return
+        else:
+          segmenttype = segmenttypes[ifo][sidx]
+      else:
+        if not isinstance(segmenttypes[ifo], string_types):
+          print("Error... segment types must be a string")
+          self.error_code = KNOPE_ERROR_GENERAL
+          return
+        else:
+          segmenttype = segmenttypes[ifo]
+      
+      segFindCall = ' '.join([segfind, '--segment-url', server,
+                              '--query-segments',
+                              '--include-segments', segmenttype,
+                              '--gps-start-time', str(st),
+                              '--gps-end-time', str(et)])
+
+      if excludesegs is not None:
+        # check whether there are different exclusion types for the different times
+        if ifo in excludesegs:
+          if isinstance(excludesegs[ifo], list):
+            if not isinstance(excludesegs[ifo][sidx], string_types):
+              print("Error... exclude types must be a string")
+              self.error_code = KNOPE_ERROR_GENERAL
+              return
+            elif len(excludesegs[ifo]) != len(sts):
+              print("Error... number of exclude types is not the same as the number of start times")
+              self.error_code = KNOPE_ERROR_GENERAL
+              return
+            else:
+              excludetype = excludesegs[ifo][sidx]
+          else:
+            if not isinstance(excludesegs[ifo], string_types):
+              print("Error... exclude types must be a string")
+              self.error_code = KNOPE_ERROR_GENERAL
+              return
+            else:
+              excludetype = excludesegs[ifo]
+
+            if len(excludetype) > 0:
+              segFindCall += ' --exclude-segments ' + excludetype
+
+      ligolwprint = self.get_config_option('segmentfind', 'ligolw_print', default='ligolw_print')
+
+      # check ligolw_print file exists and is executable
+      if not os.path.isfile(ligolwprint) or not os.access(ligolwprint, os.X_OK):
+        print("Warning... '%s' executable does not exist or is not an executable. Try finding code in path." % ligolwprint)
+        ligolwprint = self.find_exec_file('ligolw_print')
+
+        if ligolwprint is None:
+          print("Error... could not find 'ligolw_print' in 'PATH'", file=sys.stderr)
+          self.error_code = KNOPE_ERROR_GENERAL
+          return
+
+      if sidx == 0: # create file
+        xmlToTxtCall = ' '.join([ligolwprint,
+                                 "--table segment --column start_time --column end_time --delimiter ' '",
+                                 '>', outfile])
+      else: # append to file
+        xmlToTxtCall = ' '.join([ligolwprint,
+                                 "--table segment --column start_time --column end_time --delimiter ' '",
+                                 '>>', outfile])
+
+      segCall = ' '.join([segFindCall, '|', xmlToTxtCall])
+
+      print("Generating segments: " + segCall)
+
+      p = sp.Popen(segCall, stdout=sp.PIPE, stderr=sp.PIPE, shell=True)
+      out, err = p.communicate()
+
+      if p.returncode != 0:
+        print("Error... could not generate segment list. Call returned with error:", file=sys.stderr)
+        print("\tstdout: %s" % out, file=sys.stderr)
+        print("\tstderr: %s" % err, file=sys.stderr)
+        self.error_code = KNOPE_ERROR_GENERAL
+        return
+
+      # check whether the segment file contains any segments
+      p = sp.check_output('wc -l {}'.format(outfile), shell=True)
+      if int(p.split()[0]) == 0:
+        print("Warning... no segments found for {}", file=sys.stderr)
+        self.warning_code = KNOPE_WARNING_NO_SEGMENTS
+
+      sidx += 1
 
 
   def find_exec_file(self, filename):

@@ -48,6 +48,7 @@ AC_CONFIG_FILES([\
   src/stochastic/Makefile \
   src/string/Makefile \
 ])
+AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE([ \
   1.11 \
   foreign \
@@ -207,6 +208,9 @@ AC_CHECK_LIB([m],[sin])
 # check for system headers
 AC_HEADER_STDC
 AC_CHECK_HEADERS([unistd.h glob.h])
+
+# check for specific functions
+AC_CHECK_FUNC([strdup], [], [AC_MSG_ERROR([could not find the strdup function])])
 
 # check for zlib libraries and headers
 PKG_CHECK_MODULES([ZLIB],[zlib],[true],[false])

@@ -80,8 +80,8 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs *
 							 const REAL8 a,
 							 const REAL8 chiS,
 							 const REAL8 chiA,
-							 const UINT4
-							 SpinAlignedEOBversion);
+							 const UINT4 SpinAlignedEOBversion,
+						   SpinEOBParams * params);
 
 
 /*------------------------------------------------------------------------------------------
@@ -741,8 +741,10 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 					    /**< (chi1+chi2)/2 */
 							 const REAL8 chiA,
 					    /**< (chi1-chi2)/2 */
-							 const UINT4 SpinAlignedEOBversion
+							 const UINT4 SpinAlignedEOBversion,
 							   /**< 1 for SEOBNRv1; 2 for SEOBNRv2; 4 for SEOBNRv4 */
+							 SpinEOBParams * params
+							 /**< parameters */
   )
 {
   if ( SpinAlignedEOBversion != 1 && SpinAlignedEOBversion != 2 && SpinAlignedEOBversion != 4)
@@ -763,6 +765,9 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
   REAL8 m1Plus3eta, m1Plus3eta2, m1Plus3eta3;
 
   dM2 = 1. - 4. * eta;
+
+	/* Combinations of kappa_1,2, coefficients of the spin-induced quadrupole */
+	REAL8 kappaS, kappaA;
 
   //printf( "****************************** a = %e *********************************\n", a );
 
@@ -832,6 +837,13 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
       coeffs->rho22v4 =
 	-20555. / 10584. + 0.5 * (chiS + chiA * dM) * (chiS + chiA * dM) -
 	(33025. * eta) / 21168. + (19583. * eta2) / 42336.;
+	    /* If spin-induced quadrupole coefficients kappa_1,2 are not 1, include the leading-order correction at 2PN in rho22  */
+	    /* Relevant for BNS - TEOBv4 */
+	    if((params->seobCoeffs->tidal1->quadparam - 1.) != 0. || (params->seobCoeffs->tidal2->quadparam - 1.) != 0.) {
+				kappaS = 0.5 * (params->seobCoeffs->tidal1->quadparam + params->seobCoeffs->tidal2->quadparam);
+				kappaA = 0.5 * (params->seobCoeffs->tidal1->quadparam - params->seobCoeffs->tidal2->quadparam);
+		    coeffs->rho22v4 += chiA*chiA*(0.5*dM*kappaA - kappaS*eta + 0.5*kappaS + eta - 0.5) + chiA*chiS*(dM*kappaS - dM - 2*kappaA*eta + kappaA) + chiS*chiS*(0.5*dM*kappaA - kappaS*eta + 0.5*kappaS + eta - 0.5);
+			}
       break;
     default:
       XLALPrintError

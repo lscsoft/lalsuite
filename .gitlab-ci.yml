@@ -17,6 +17,7 @@ stages:
   - level4
   - release
   - nightly
+  - deploy
 
 before_script:
   - ulimit -S -c 0
@@ -31,19 +32,19 @@ cache:
   paths:
     - ccache
 
-level0:lal:
+.levelN:package: &levelN-package
   image: ligo/lalsuite-dev:jessie
-  stage: level0
   script:
-    - cd lal
+    - cd ${CI_JOB_NAME#level?:}
     - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
+    - ./configure --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
     - make dist
-    - tar xf lal-*.tar.xz
-    - cd lal-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
+    - tar xf *.tar.xz
+    - cd lal*-*
+    - ./configure --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
     - make -j4 V=1
     - make -j4 V=1 VERBOSE=1 check
+    - make -j4 installcheck
     - make -j4 install
     - make -j4 install-html
   artifacts:
@@ -53,288 +54,84 @@ level0:lal:
   only:
     - pushes
     - schedules
+    - web
+
+level0:lal:
+  <<: *levelN-package
+  stage: level0
 
 level1:lalframe:
-  image: ligo/lalsuite-dev:jessie
+  <<: *levelN-package
   stage: level1
-  script:
-    - cd lalframe
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalframe-*.tar.xz
-    - cd lalframe-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
   dependencies:
     - level0:lal
-  only:
-    - pushes
-    - schedules
 
 level1:lalmetaio:
-  image: ligo/lalsuite-dev:jessie
+  <<: *levelN-package
   stage: level1
-  script:
-    - cd lalmetaio
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalmetaio-*.tar.xz
-    - cd lalmetaio-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
   dependencies:
     - level0:lal
-  only:
-    - pushes
-    - schedules
 
 level1:lalsimulation:
-  image: ligo/lalsuite-dev:jessie
+  <<: *levelN-package
   stage: level1
-  script:
-    - cd lalsimulation
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalsimulation-*.tar.xz
-    - cd lalsimulation-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
   dependencies:
     - level0:lal
-  only:
-    - pushes
-    - schedules
 
 level1:lalxml:
-  image: ligo/lalsuite-dev:jessie
+  <<: *levelN-package
   stage: level1
-  script:
-    - cd lalxml
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalxml-*.tar.xz
-    - cd lalxml-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
   dependencies:
     - level0:lal
-  only:
-    - pushes
-    - schedules
 
 level2:lalburst:
-  image: ligo/lalsuite-dev:jessie
+  <<: *levelN-package
   stage: level2
-  script:
-    - cd lalburst
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalburst-*.tar.xz
-    - cd lalburst-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
   dependencies:
     - level1:lalmetaio
     - level1:lalsimulation
-  only:
-    - pushes
-    - schedules
 
 level2:lalinspiral:
-  image: ligo/lalsuite-dev:jessie
+  <<: *levelN-package
   stage: level2
-  script:
-    - cd lalinspiral
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalinspiral-*.tar.xz
-    - cd lalinspiral-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
   dependencies:
     - level1:lalframe
     - level1:lalmetaio
     - level1:lalsimulation
-  only:
-    - pushes
-    - schedules
 
 level2:lalpulsar:
-  image: ligo/lalsuite-dev:jessie
+  <<: *levelN-package
   stage: level2
-  script:
-    - cd lalpulsar
-    - ./00boot
-    - ./configure --enable-cfitsio --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalpulsar-*.tar.xz
-    - cd lalpulsar-*
-    - ./configure --enable-cfitsio --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
   dependencies:
     - level1:lalxml
-  only:
-    - pushes
-    - schedules
 
 level2:lalstochastic:
-  image: ligo/lalsuite-dev:jessie
+  <<: *levelN-package
   stage: level2
-  script:
-    - cd lalstochastic
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalstochastic-*.tar.xz
-    - cd lalstochastic-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
   dependencies:
     - level1:lalmetaio
-  only:
-    - pushes
-    - schedules
 
 level3:laldetchar:
-  image: ligo/lalsuite-dev:jessie
+  <<: *levelN-package
   stage: level3
-  script:
-    - cd laldetchar
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf laldetchar-*.tar.xz
-    - cd laldetchar-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
   dependencies:
     - level2:lalburst
-  only:
-    - pushes
-    - schedules
 
 level3:lalinference:
-  image: ligo/lalsuite-dev:jessie
+  <<: *levelN-package
   stage: level3
-  script:
-    - cd lalinference
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalinference-*.tar.xz
-    - cd lalinference-*
-    - ./configure --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
   dependencies:
     - level2:lalburst
     - level2:lalinspiral
     - level2:lalpulsar
-  only:
-    - pushes
-    - schedules
 
 level4:lalapps:
-  image: ligo/lalsuite-dev:jessie
+  <<: *levelN-package
   stage: level4
-  script:
-    - cd lalapps
-    - ./00boot
-    - ./configure --enable-cfitsio --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make dist
-    - tar xf lalapps-*.tar.xz
-    - cd lalapps-*
-    - ./configure --enable-cfitsio --enable-swig --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 install
-    - make -j4 install-html
-  artifacts:
-    expire_in: 3h
-    paths:
-      - opt/lalsuite
   dependencies:
     - level2:lalstochastic
     - level3:laldetchar
     - level3:lalinference
-  only:
-    - pushes
-    - schedules
 
 # release a debian docker image upon every tag in lalsuite
 docker:tags:
@@ -364,6 +161,7 @@ docker:nightly:
     - schedules
   except:
     - pushes
+    - web
 
 nightly:top-level:el7:
   image: ligo/lalsuite-dev:el7
@@ -428,13 +226,16 @@ nightly:top-level:artful:
     - web
   allow_failure: true
 
+# FIXME: It seems that Octave on buster currently has a few bugs which
+# cause the Octave bindings to fail, disable building the Octave SWIG
+# bindings for the time being.
 nightly:top-level:buster:
   image: skymoo/ligo-lalsuite-dev:buster
   stage: nightly
   dependencies: []
   script:
     - ./00boot
-    - ./configure --enable-swig --enable-doxygen
+    - ./configure --enable-doxygen
     - make -j4 distcheck
   only:
     - schedules
@@ -449,18 +250,6 @@ nightly:top-level:clang:
     - CC=clang CXX=clang++ ./configure --enable-swig --enable-doxygen
     - make -j4 distcheck
   dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:mpi:jessie:
-  image: ligo/lalsuite-dev:jessie
-  stage: nightly
-  dependencies: []
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --enable-mpi
-    - make -j4 distcheck
   only:
     - schedules
     - web
@@ -488,6 +277,9 @@ nightly:python3:stretch:
   only:
     - schedules
     - web
+  # FIXME: there is currently an intermittant LALBurst test failure when
+  # building with python3, temporarily allow this to fail
+  allow_failure: true
 
 nightly:macos:
   tags:
@@ -502,6 +294,90 @@ nightly:macos:
   only:
     - schedules
     - web
+
+# Build receipe for standalone wheels on Linux
+.nightly:wheel:manylinux1: &nightly-wheel-manylinux1
+  # This container is derived from the official manylinux image provided by
+  # python.org (see PEP 513), and includes all of the LALSuite
+  # build-dependencies.
+  image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
+  stage: nightly
+  script:
+    - PYPREFIX=/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux1/\1/')
+    # Build wheel
+    - ./00boot
+    # FIXME: laldetchar depends on glib >= 2.14, too new for manylinux1
+    - ./configure PYTHON=${PYPREFIX}/bin/python
+      --enable-swig-python --enable-nightly
+      --disable-laldetchar
+    - make -j4 wheel
+    # Bundle and fix up dependent shared libraries
+    - auditwheel repair wheel/*.whl
+    # Test
+    - ${PYPREFIX}/bin/virtualenv test
+    - source test/bin/activate
+    - pip install -q wheelhouse/*
+    - python -c 'import lal, lalframe, lalmetaio'
+  dependencies: []
+  only:
+    - /^lalsuite-.+/
+    - schedules
+    - web
+  artifacts:
+    expire_in: 3h
+    paths:
+      - wheelhouse
+
+# Build receipe for standalone wheels on macOS
+.nightly:wheel:macos: &nightly-wheel-macos
+  tags:
+    - macos
+  stage: nightly
+  script:
+    - PYVERS=$(echo ${CI_JOB_NAME} | sed 's/.*:cp\(.\)\(.\).*/\1.\2/')
+    # Enter virtualenv so that we have a controlled version of Numpy
+    - virtualenv-${PYVERS} env
+    - source env/bin/activate
+    - pip install -q git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 numpy==1.7.0
+    # Build wheel
+    - ./00boot
+    - ./configure PYTHON=$(which python${PYVERS})
+      --enable-swig-python --enable-nightly
+    - make -j4 wheel
+    # Bundle and fix up dependent shared libraries
+    - delocate-wheel -v -w wheelhouse wheel/*.whl
+    # Test
+    - virtualenv-${PYVERS} test
+    - source test/bin/activate
+    - pip install -q wheelhouse/*
+    - python -c 'import lal, lalframe, lalmetaio'
+  dependencies: []
+  only:
+    - /^lalsuite-.+/
+    - schedules
+    - web
+  artifacts:
+    expire_in: 3h
+    paths:
+      - wheelhouse
+
+# Build wheels for all supported platforms
+nightly:wheel:cp27-cp27m-manylinux1:
+  <<: *nightly-wheel-manylinux1
+nightly:wheel:cp27-cp27mu-manylinux1:
+  <<: *nightly-wheel-manylinux1
+nightly:wheel:cp34-cp34m-manylinux1:
+  <<: *nightly-wheel-manylinux1
+nightly:wheel:cp35-cp35m-manylinux1:
+  <<: *nightly-wheel-manylinux1
+nightly:wheel:cp36-cp36m-manylinux1:
+  <<: *nightly-wheel-manylinux1
+nightly:wheel:cp27-cp27m-macosx:
+  <<: *nightly-wheel-macos
+nightly:wheel:cp35-cp35m-macosx:
+  <<: *nightly-wheel-macos
+nightly:wheel:cp36-cp36m-macosx:
+  <<: *nightly-wheel-macos
 
 pages:
   image: ligo/lalsuite-dev:stretch
@@ -523,3 +399,32 @@ pages:
     - master@lscsoft/lalsuite
   except:
     - pushes
+    - web
+
+deploy:wheel:
+  stage: deploy
+  image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
+  variables:
+    GIT_STRATEGY: none
+  script:
+    # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
+    - /opt/python/cp36-cp36m/bin/pip install twine
+    - /opt/python/cp36-cp36m/bin/twine upload wheelhouse/*
+  dependencies:
+    - nightly:wheel:cp27-cp27m-manylinux1
+    - nightly:wheel:cp27-cp27mu-manylinux1
+    - nightly:wheel:cp34-cp34m-manylinux1
+    - nightly:wheel:cp35-cp35m-manylinux1
+    - nightly:wheel:cp36-cp36m-manylinux1
+    - nightly:wheel:cp27-cp27m-macosx
+    - nightly:wheel:cp35-cp35m-macosx
+    - nightly:wheel:cp36-cp36m-macosx
+  artifacts:
+    expire_in: 3h
+    paths:
+      - wheelhouse
+  only:
+    - master@lscsoft/lalsuite
+  except:
+    - pushes
+    - web

@@ -147,6 +147,12 @@ int XLALVectorExpREAL4 ( REAL4 *out, const REAL4 *in, const UINT4 len );
 /** Compute \f$\text{out} = \log(\text{in})\f$ over REAL4 vectors \c out, \c in with \c len elements */
 int XLALVectorLogREAL4 ( REAL4 *out, const REAL4 *in, const UINT4 len );
 
+/** Compute \f$\text{out} = round ( \text{in} )\f$ over REAL4 vectors \c out, \c in with \c len elements */
+int XLALVectorRoundREAL4 ( REAL4 *out, const REAL4 *in, const UINT4 len);
+
+/** Compute \f$\text{out} = round ( \text{in} )\f$ over REAL8 vectors \c out, \c in with \c len elements */
+int XLALVectorRoundREAL8 ( REAL8 *out, const REAL8 *in, const UINT4 len);
+
 /** Compute \f$\text{out1} = \sin(\text{in}), \text{out2} = \cos(\text{in})\f$ over REAL4 vectors \c out1, \c out2, \c in with \c len elements */
 int XLALVectorSinCosREAL4 ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len );
 
@@ -161,11 +167,32 @@ int XLALVectorSinCos2PiREAL4 ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const 
 /** Compute \f$\text{out} = \text{in1} + \text{in2}\f$ over REAL4 vectors \c in1 and \c in2 with \c len elements */
 int XLALVectorAddREAL4 ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len);
 
+/** Compute \f$\text{out} = \text{in1} - \text{in2}\f$ over REAL4 vectors \c in1 and \c in2 with \c len elements */
+int XLALVectorSubREAL4 ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len);
+
 /** Compute \f$\text{out} = \text{in1} \times \text{in2}\f$ over REAL4 vectors \c in1 and \c in2 with \c len elements */
 int XLALVectorMultiplyREAL4 ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len);
 
 /** Compute \f$\text{out} = max ( \text{in1}, \text{in2} )\f$ over REAL4 vectors \c in1 and \c in2 with \c len elements */
 int XLALVectorMaxREAL4 ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len);
+
+/** Compute \f$\text{out} = \text{in1} + \text{in2}\f$ over REAL8 vectors \c in1 and \c in2 with \c len elements */
+int XLALVectorAddREAL8 ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const UINT4 len);
+
+/** Compute \f$\text{out} = \text{in1} - \text{in2}\f$ over REAL8 vectors \c in1 and \c in2 with \c len elements */
+int XLALVectorSubREAL8 ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const UINT4 len);
+
+/** Compute \f$\text{out} = \text{in1} \times \text{in2}\f$ over REAL8 vectors \c in1 and \c in2 with \c len elements */
+int XLALVectorMultiplyREAL8 ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const UINT4 len);
+
+/** Compute \f$\text{out} = max ( \text{in1}, \text{in2} )\f$ over REAL8 vectors \c in1 and \c in2 with \c len elements */
+int XLALVectorMaxREAL8 ( REAL8 *out, const REAL8 *in1, const REAL8 *in2, const UINT4 len);
+
+/** Compute \f$\text{out} = \text{in1} \times \text{in2}\f$ over COMPLEX8 vectors \c in1 and \c in2 with \c len elements */
+int XLALVectorMultiplyCOMPLEX8 (  COMPLEX8 *out, const COMPLEX8 *in1, const COMPLEX8 *in2, const UINT4 len );
+
+/** Compute \f$\text{out} = \text{in1} + \text{in2}\f$ over COMPLEX8 vectors \c in1 and \c in2 with \c len elements */
+int XLALVectorAddCOMPLEX8 ( COMPLEX8 *out, const COMPLEX8 *in1, const COMPLEX8 *in2, const UINT4 len);
 
 /** @} */
 
@@ -180,6 +207,15 @@ int XLALVectorScaleREAL4 ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT
 
 /** Compute \f$\text{out} = \text{scalar} \times \text{in}\f$ over REAL8 vector \c in with \c len elements */
 int XLALVectorScaleREAL8 ( REAL8 *out, REAL8 scalar, const REAL8 *in, const UINT4 len);
+
+/** Compute \f$\text{out} = \text{scalar} + \text{in}\f$ over REAL8 vector \c in with \c len elements */
+int XLALVectorShiftREAL8 ( REAL8 *out, REAL8 scalar, const REAL8 *in, const UINT4 len);
+
+/** Compute \f$\text{out} = \text{scalar} \times \text{in}\f$ over COMPLEX8 vector \c in with \c len elements */
+int XLALVectorScaleCOMPLEX8 ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len);
+
+/** Compute \f$\text{out} = \text{scalar} + \text{in}\f$ over COMPLEX8 vector \c in with \c len elements */
+int XLALVectorShiftCOMPLEX8 ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len);
 
 /** @} */
 

@@ -25,6 +25,7 @@ AC_CONFIG_FILES([ \
   python/lalinference/popprior/Makefile \
   python/lalinference/rapid_pe/Makefile \
   python/lalinference/tiger/Makefile \
+  python/lalinference/util/Makefile \
   src/LALInferenceVCSInfo.c \
   src/LALInferenceVCSInfo.h \
   src/Makefile \
@@ -35,6 +36,7 @@ AC_CONFIG_FILES([ \
   test/data/Makefile \
   test/data/gstlal_reference_psd/Makefile
 ])
+AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE([ \
   1.11 \
   foreign \
@@ -143,6 +145,10 @@ LALSUITE_USE_LIBTOOL
 # check for header files
 AC_HEADER_STDC
 AC_CHECK_HEADERS([unistd.h])
+
+# check for specific functions
+AC_FUNC_STRNLEN
+AC_CHECK_FUNC([strdup], [], [AC_MSG_ERROR([could not find the strdup function])])
 
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])

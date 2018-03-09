@@ -6,7 +6,13 @@ ENV LD_LIBRARY_PATH="/opt/lalsuite/lib" \
     PKG_CONFIG_PATH="/opt/lalsuite/lib/pkgconfig" \
     PYTHONPATH="/opt/lalsuite/lib/python2.7/site-packages"
 
+# fix prefix in pkg-config files
 RUN find /opt/lalsuite/lib/pkgconfig -type f -name 'lal*.pc' -exec sed -i 's|^prefix=.*|prefix=/opt/lalsuite|g' {} \;
+
+# fix install path in python scripts
+RUN find /opt/lalsuite/bin -type f -exec grep -Iq . {} \; -exec sed -i 's|/builds/.*/lalsuite/opt/lalsuite|/opt/lalsuite|g' {} \;
+
+RUN rm -f /opt/lalsuite/lib/*.la
 
 COPY /docker/startup /usr/local/bin/startup
 

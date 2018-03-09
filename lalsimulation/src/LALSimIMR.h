@@ -106,7 +106,7 @@ SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(const REAL8 phiRef, const REAL8 deltaT
 
 double XLALSimIMRSpinAlignedEOBPeakFrequency(REAL8 m1SI, REAL8 m2SI, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion);
 int XLALSimIMRSpinAlignedEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion, LALDict *LALparams);
-int XLALSimIMRSpinAlignedEOBWaveformAll(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8Vector * tVec, REAL8Vector * rVec, REAL8Vector * phiVec, REAL8Vector * prVec, REAL8Vector * pphiVec, const REAL8 phiC, REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion, const REAL8 lambda2Tidal1, const REAL8 lambda2Tidal2, const REAL8 omega02Tidal1, const REAL8 omega02Tidal2, const REAL8 lambda3Tidal1, const REAL8 lambda3Tidal2, const REAL8 omega03Tidal1, const REAL8 omega03Tidal2, REAL8Vector *nqcCoeffsInput, const INT4 nqcFlag);
+int XLALSimIMRSpinAlignedEOBWaveformAll(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8Vector * tVec, REAL8Vector * rVec, REAL8Vector * phiVec, REAL8Vector * prVec, REAL8Vector * pphiVec, const REAL8 phiC, REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion, const REAL8 lambda2Tidal1, const REAL8 lambda2Tidal2, const REAL8 omega02Tidal1, const REAL8 omega02Tidal2, const REAL8 lambda3Tidal1, const REAL8 lambda3Tidal2, const REAL8 omega03Tidal1, const REAL8 omega03Tidal2, const REAL8 quadparam1, const REAL8 quadparam2, REAL8Vector *nqcCoeffsInput, const INT4 nqcFlag);
 /*int XLALSimIMRSpinEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, const REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1[], const REAL8 spin2[]);
  */
 
@@ -281,6 +281,12 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
         REAL8 deltaT,                   /**< sampling interval (s) */
         REAL8 m1,                       /**< mass of companion 1 (kg) */
         REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 S1x,                      /**< x-component of the dimensionless spin of object 1 */
+        REAL8 S1y,                      /**< y-component of the dimensionless spin of object 1 */
+        REAL8 S1z,                      /**< z-component of the dimensionless spin of object 1 */
+        REAL8 S2x,                      /**< x-component of the dimensionless spin of object 2 */
+        REAL8 S2y,                      /**< y-component of the dimensionless spin of object 2 */
+        REAL8 S2z,                      /**< z-component of the dimensionless spin of object 2 */
         REAL8 fMin,                     /**< start GW frequency (Hz) */
         REAL8 fRef,                     /**< reference GW frequency (Hz) */
         REAL8 distnace,                 /**< distance of source (m) */

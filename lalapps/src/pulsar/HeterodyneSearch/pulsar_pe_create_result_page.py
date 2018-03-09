@@ -43,8 +43,8 @@ import matplotlib
 matplotlib.use("Agg")
 
 #local application/library specific imports
-from pylal import bayespputils as bppu
-from pylal import git_version
+from lalinference import bayespputils as bppu
+from lalinference import git_version
 
 from lalapps import pulsarpputils as pppu
 

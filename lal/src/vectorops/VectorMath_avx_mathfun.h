@@ -42,6 +42,7 @@
 
 /* __m128 is ugly to write */
 typedef __m256  v8sf; // vector of 8 float (avx)
+typedef __m256d  v4sd; // vector of 4 double (avx)
 typedef __m256i v8si; // vector of 8 int   (avx)
 typedef __m128i v4sii; // vector of 8 int   (avx)
 
@@ -51,6 +52,13 @@ typedef ALIGN32_BEG union {
   v8sf  v;
   v8si  vi;
 } ALIGN32_END V8SF;
+
+typedef ALIGN32_BEG union {
+  double f[4];
+  int i[4];
+  v4sd  v;
+  v8si  vi;
+} ALIGN32_END V4SD;
 
 typedef ALIGN32_BEG union {
   int i[4];

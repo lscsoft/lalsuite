@@ -56,8 +56,6 @@
 
 */
 
-#include <lal/ReadPulsarParFile.h>
-
 #include <config.h>
 #include <string.h>
 #include <math.h>
@@ -73,6 +71,7 @@
 #include <lal/TranslateAngles.h>
 #include <lal/TranslateMJD.h>
 #include <lal/LALHashFunc.h>
+#include <lal/ReadPulsarParFile.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -133,13 +132,7 @@ static UINT8 PulsarHash( const void *elem );
 static UINT8 PulsarHash( const void *elem )
 {
   if( !elem ) { XLAL_ERROR(XLAL_EINVAL); }
-  // size_t len = strnlen(((const hash_elem *)elem)->name, PULSAR_PARNAME_MAX );
-  // use this instead of strnlen
-  const char *s = ((const hash_elem *)elem)->name;
-  size_t len;
-  for (len = 0; len < PULSAR_PARNAME_MAX; len++, s++) {
-    if (!*s) { break; }
-  }
+  size_t len = strnlen(((const hash_elem *)elem)->name, PULSAR_PARNAME_MAX );
   return( XLALCityHash64(((const hash_elem *)elem)->name, len) );
 }
 

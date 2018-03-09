@@ -33,7 +33,7 @@ Ftolerance=0.05
 Tsft=1800;
 startTime=711595934
 duration=144000		## 40 hours
-
+endTime=$(echo $startTime $duration | awk '{printf "%.1f", $1 + $2}');
 mfd_FreqBand=2.0;
 
 Alpha=2.0
@@ -105,7 +105,7 @@ else
 fi
 resSAF=`echo $tmp | awk '{printf "%g", 2.0 * $1}'`
 
-pfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --cosi=$cosi --h0=$h0 --psi=$psi --IFOs=$IFO"
+pfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --cosi=$cosi --h0=$h0 --psi=$psi"
 ## ---------- Run PredictFstat{NoiseWeights} ----------
 outfile_pfs1="__tmp_PFS1.dat";
 pfs_CL="${pfs_CL_common} --DataFiles=\"${SFTdir}/*.sft\" --Freq=$Freq --outputFstat=$outfile_pfs1"
@@ -138,7 +138,7 @@ resPFS0=`echo $tmp | awk '{printf "%g", $1}'`
 
 ## ---------- Run PredictFstat{timestamps,assumeSqrtSX} ----------
 outfile_pfs2="__tmp_PFS2.dat";
-pfs_CL="${pfs_CL_common} --timestampsFiles=${timestamps} --Tsft=$Tsft --outputFstat=$outfile_pfs2 --assumeSqrtSX=${noiseSqrtSh}"
+pfs_CL="${pfs_CL_common} --timestampsFiles=${timestamps} --Tsft=$Tsft --outputFstat=$outfile_pfs2 --assumeSqrtSX=${noiseSqrtSh} --IFOs=$IFO"
 cmdline="$pfs_path $pfs_CL"
 if [ "$DEBUG" ]; then echo $cmdline; fi
 echo -n "Running ${pfs_code}{timestamps,assumeSqrtSX} ... "
@@ -151,12 +151,12 @@ else
 fi
 resPFS2=`echo $tmp | awk '{printf "%g", $1}'`
 
-## ---------- Run PredictFstat{startTime+duration,assumeSqrtSX} ----------
+## ---------- Run PredictFstat{minStartTime+maxStartTime,assumeSqrtSX} ----------
 outfile_pfs3="__tmp_PFS3.dat";
-pfs_CL="${pfs_CL_common} --startTime=$startTime --duration=$duration --Tsft=$Tsft --outputFstat=$outfile_pfs3 --assumeSqrtSX=${noiseSqrtSh}"
+pfs_CL="${pfs_CL_common} --minStartTime=$startTime --maxStartTime=$endTime --Tsft=$Tsft --outputFstat=$outfile_pfs3 --assumeSqrtSX=${noiseSqrtSh} --IFOs=$IFO"
 cmdline="$pfs_path $pfs_CL"
 if [ "$DEBUG" ]; then echo $cmdline; fi
-echo -n "Running ${pfs_code}{startTime+duration,assumeSqrtSX} ... "
+echo -n "Running ${pfs_code}{minStartTime+maxStartTime,assumeSqrtSX} ... "
 if ! tmp=`eval $cmdline`; then
     echo "FAILED:"
     echo $cmdline
@@ -172,7 +172,7 @@ echo "SemiAnalyticF:              2F_SA  = $resSAF"
 echo "PredictFstat{assumeSqrtSX}: 2F_PF0 = $resPFS0"
 echo "PredictFstat{NoiseWeights}: 2F_PF1 = $resPFS1"
 echo "PredictFstat{timestamps,assumeSqrtSX}: 2F_PF2 = $resPFS2"
-echo "PredictFstat{startTime+duration,assumeSqrtSX}: 2F_PF2 = $resPFS3"
+echo "PredictFstat{minStartTime+maxStartTime,assumeSqrtSX}: 2F_PF2 = $resPFS3"
 
 echo
 
@@ -214,7 +214,7 @@ if [ "$fail2" ]; then
 else
     echo " ==> OK."
 fi
-echo -n "Relative deviation 2F_PF{startTime+duration,assumeSqrtSX} wrt 2F_PF{assumeSqrtSX} = ${eps3}% (tolerance = ${tolerance0}%)"
+echo -n "Relative deviation 2F_PF{minStartTime+maxStartTime,assumeSqrtSX} wrt 2F_PF{assumeSqrtSX} = ${eps3}% (tolerance = ${tolerance0}%)"
 if [ "$fail3" ]; then
     echo " ==> FAILED."
     res=1;

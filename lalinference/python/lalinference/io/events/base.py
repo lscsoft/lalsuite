@@ -105,7 +105,7 @@ class SingleEvent(six.with_metaclass(ABCMeta)):
 
     @abstractproperty
     def psd(self):
-        """PSD (REAL8TimeSeries)"""
+        """PSD (REAL8FrequencySeries)"""
         raise NotImplementedError
 
     @property

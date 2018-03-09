@@ -481,6 +481,7 @@ void get_input_args(InputParams *pars, int argc, char *argv[]){
         else
           fprintf(stderr, "Error parsing option %s with argument %s\n",
             long_options[option_index].name, LALoptarg );
+          /* fallthrough */
       case 'h': /* help message */
         fprintf(stderr, USAGE, program);
         exit(0);
@@ -504,6 +505,7 @@ void get_input_args(InputParams *pars, int argc, char *argv[]){
         break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );
+        /* fallthrough */
       default:
         fprintf(stderr, "unknown error while parsing options\n" );
     }

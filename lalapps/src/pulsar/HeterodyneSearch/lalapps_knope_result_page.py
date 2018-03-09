@@ -45,8 +45,8 @@ matplotlib.use("Agg")
 
 from lalapps.pulsarpputils import *
 from lalapps.pulsarhtmlutils import *
-from pylal import bayespputils as bppu
-from pylal import git_version
+from lalinference.bayespputils import Posterior, PosteriorOneDPDF
+from lalinference import git_version
 
 __author__="Matthew Pitkin <matthew.pitkin@ligo.org>"
 __version__= "git id %s"%git_version.id
@@ -580,20 +580,20 @@ class posteriors:
               psisamples[i] = np.mod(psisamples[i], np.pi/2.)
               if phi0samples is not None: # rotate phi0 appropriately
                 phi0samples[i] += nrots*(np.pi/2.)
-            psisnew = bppu.PosteriorOneDPDF('psi', psisamples)
+            psisnew = PosteriorOneDPDF('psi', psisamples)
             pos.pop('psi')
             pos.append(psisnew)
 
           # make sure phi0 values are between 0->pi
           if phi0samples is not None:
             phi0samples = np.mod(phi0samples, np.pi)
-            phi0new = bppu.PosteriorOneDPDF('phi0', phi0samples)
+            phi0new = PosteriorOneDPDF('phi0', phi0samples)
             pos.pop('phi0')
             pos.append(phi0new)
 
         if self._usegwphase: # try switching phi0 to 2*phi0 if working with l=m=2 gravitational wave initial phase (e.g. for hardware injections)
           if 'phi0' in pos.names:
-            phi0new = bppu.PosteriorOneDPDF('phi0', 2.*pos['phi0'].samples)
+            phi0new = PosteriorOneDPDF('phi0', 2.*pos['phi0'].samples)
             pos.pop('phi0')
             pos.append(phi0new)
 
@@ -601,7 +601,7 @@ class posteriors:
         if len(self._harmonics) == 1:
           if self._harmonics[0] == 2.:
             if 'c22' in pos.names and self._modeltype == 'waveform':
-              h0new = bppu.PosteriorOneDPDF('h0', 2.*pos['c22'].samples)
+              h0new = PosteriorOneDPDF('h0', 2.*pos['c22'].samples)
               pos.pop('c22')
               pos.append(h0new)
               ih0 = self._parameters.index('h0')
@@ -612,7 +612,7 @@ class posteriors:
                   setattr(self._injection_parameters, 'H0', 2.*self._injection_parameters['C22'])
 
             if 'phi22' in pos.names and modeltype == 'waveform':
-              phi0new = bppu.PosteriorOneDPDF('phi0', 0.5*pos['phi22'].samples)
+              phi0new = PosteriorOneDPDF('phi0', 0.5*pos['phi22'].samples)
               pos.pop('phi0')
               pos.append(phi0new)
               iphi0 = self._parameters.index('phi0')
@@ -626,7 +626,7 @@ class posteriors:
         if len(self._harmonics) == 2:
           if 1. in self._harmonics and 2. in self._harmonics and self._biaxial and self._modeltype == 'waveform':
             if 'phi21' in pos.names:
-              phi22 = bppu.PosteriorOneDPDF('phi22', 2.*pos['phi21'].samples)
+              phi22 = PosteriorOneDPDF('phi22', 2.*pos['phi21'].samples)
               pos.append(phi22)
               if self._parfile is not None:
                 if hasattr(self._injection_parameters, 'PHI21'):
@@ -1585,13 +1585,13 @@ class create_background(posteriors):
 
     # create fake posterior objects (requires logL to be there) for each detector
     for ifo in self._ifos:
-      self._posteriors[ifo] = bppu.Posterior((['tmp', 'logL'], np.zeros((100,2))))
+      self._posteriors[ifo] = Posterior((['tmp', 'logL'], np.zeros((100,2))))
 
       # add the SNR and Bsn values
-      snrs = bppu.PosteriorOneDPDF('snr', np.array([self._optimal_snrs[ifo]]).T)
+      snrs = PosteriorOneDPDF('snr', np.array([self._optimal_snrs[ifo]]).T)
       self._posteriors[ifo].append(snrs)
 
-      bsn = bppu.PosteriorOneDPDF('bsn', np.array([self._Bsn[ifo]]).T/np.log(10.)) # convert into base 10 log
+      bsn = PosteriorOneDPDF('bsn', np.array([self._Bsn[ifo]]).T/np.log(10.)) # convert into base 10 log
       self._posteriors[ifo].append(bsn)
 
       # remove temporary varaibles
@@ -1615,16 +1615,16 @@ class create_background(posteriors):
       if which != 'bci': # force which to be 'bci' (as there are only the two options)
         which = 'bci'
 
-    self._posteriors['Joint'] = bppu.Posterior((['tmp', 'logL'], np.zeros((100,2))))
+    self._posteriors['Joint'] = Posterior((['tmp', 'logL'], np.zeros((100,2))))
 
     # add the SNR and Bci values
-    snrs = bppu.PosteriorOneDPDF('snr', np.array([self._optimal_snrs['Joint']]).T)
+    snrs = PosteriorOneDPDF('snr', np.array([self._optimal_snrs['Joint']]).T)
     self._posteriors['Joint'].append(snrs)
 
     if which == 'bcin':
-      bci = bppu.PosteriorOneDPDF('bcin', np.array([self._Bcin]).T/np.log(10.))
+      bci = PosteriorOneDPDF('bcin', np.array([self._Bcin]).T/np.log(10.))
     else:
-      bci = bppu.PosteriorOneDPDF('bci', np.array([self._Bci]).T/np.log(10.))
+      bci = PosteriorOneDPDF('bci', np.array([self._Bci]).T/np.log(10.))
     self._posteriors['Joint'].append(bci)
 
     curifos = self._ifos # save current detectors
