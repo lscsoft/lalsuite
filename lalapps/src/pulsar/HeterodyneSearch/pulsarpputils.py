@@ -2481,16 +2481,19 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
   nsamps = len(pos[pnames[0]].samples)
   permarr = np.arange(nsamps)
   np.random.shuffle(permarr)
+  posdist = None
+  posfreqs = None
   for pname in pnames:
     # check if all samples are the same
     if pos[pname].samples.tolist().count(pos[pname].samples[0]) == len(pos[pname].samples):
       if pname == 'f0_fixed':
         # try getting a fixed f0 value (for calculating h0 from Q22)
         posfreqs = pos[pname].samples[0]
-      else:
-        # if distance is in the file then don't remove it (for calculating h0 from Q22 if required)
-        if pname != 'dist':
-          pos.pop(pname)
+      elif pname == 'dist':
+        # try getting a fixed distance value (for calculating h0 from Q22 if required)
+        posdist = pos[pname].samples[0]
+
+      pos.pop(pname)
     else:
       # shuffle
       shufpos = None
@@ -2555,9 +2558,13 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
   if 'q22' in pos.names:
     posQ22 = pos['q22'].samples
 
-  posdist = None
   if 'dist' in pos.names:
-    posdist = pos['dist'].samples
+    posdist = pos['dist'].samples # distance in metre (for use in converting Q22 to h0)
+
+    # convert distance samples to kpc
+    pos.pop('dist')
+    distpos = bppu.PosteriorOneDPDF('dist', posdist/KPC)
+    pos.append(distpos)
 
   if 'f0' in pos.names:
     posfreqs = pos['f0'].samples
