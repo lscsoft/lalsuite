@@ -790,6 +790,8 @@ int main(int argc,char *argv[])
       timing.tauFstat    /= num_templates;
       timing.tauTemplate /= num_templates;
       timing.tauF0       =  timing.tauFstat / timing.NSFTs;
+      timing.tauTransFstatMap /= num_templates;
+      timing.tauTransMarg     /= num_templates;
 
       XLAL_CHECK_MAIN ( write_TimingInfo ( uvar.outputTiming, &timing, &GV ) == XLAL_SUCCESS, XLAL_EFUNC );
 
