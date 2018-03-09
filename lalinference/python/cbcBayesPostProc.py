@@ -1081,6 +1081,7 @@ def cbcBayesPostProc(
     except:
         print 'Unable to compute the covariance matrix.'
 
+
     html_footer=html.add_section('')
     html_footer.p('Produced using cbcBayesPostProc.py at '+strftime("%Y-%m-%d %H:%M:%S")+' .')
 
@@ -1176,7 +1177,7 @@ if __name__=='__main__':
     else:
       fixedBurnins = None
 
-    from lalinference.bayespputils import massParams,spinParams,cosmoParam,strongFieldParams,distParams,incParams,polParams,skyParams,phaseParams,timeParams,endTimeParams,statsParams,calibParams,snrParams,tidalParams
+    from lalinference.bayespputils import massParams,spinParams,cosmoParam,strongFieldParams,distParams,incParams,polParams,skyParams,phaseParams,timeParams,endTimeParams,statsParams,calibParams,snrParams,tidalParams,eosParams
 
     oneDMenus={'Masses':None,'SourceFrame':None,'Timing':None,'Extrinsic':None,'Spins':None,'StrongField':None,'Others':None}
 
@@ -1248,7 +1249,7 @@ if __name__=='__main__':
         twoDGreedyMenu.append(['lambda1','lambda2'])
         twoDGreedyMenu.append(['lam_tilde','dlam_tilde'])
         twoDGreedyMenu.append(['lambdat','dlambdat'])
-        twoDGreedyMenu.append(['logp1','Gamma1','Gamma2','Gamma3'])
+        twoDGreedyMenu.append(['logp1','gamma1','gamma2','gamma3'])
         for psip in polParams:
             for phip in phaseParams:
                 twoDGreedyMenu.append([psip,phip])
