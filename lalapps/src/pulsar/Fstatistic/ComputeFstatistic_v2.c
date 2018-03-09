@@ -341,7 +341,7 @@ int compareFstatCandidates ( const void *candA, const void *candB );
 int compareFstatCandidates_BSGL ( const void *candA, const void *candB );
 
 int WriteFstatLog ( const CHAR *log_fname, const CHAR *logstr );
-CHAR *XLALGetLogString ( const ConfigVariables *cfg );
+CHAR *XLALGetLogString ( const ConfigVariables *cfg, const BOOLEAN verbose );
 
 int write_TimingInfo ( const CHAR *timingFile, const timingInfo_t *ti, const ConfigVariables *cfg );
 
@@ -404,7 +404,8 @@ int main(int argc,char *argv[])
   XLAL_CHECK_MAIN ( InitFstat( &GV, &uvar) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ----- produce a log-string describing the specific run setup ----- */
-  XLAL_CHECK_MAIN ( (GV.logstring = XLALGetLogString ( &GV )) != NULL, XLAL_EFUNC );
+  BOOLEAN logstrVerbose = TRUE;
+  XLAL_CHECK_MAIN ( (GV.logstring = XLALGetLogString ( &GV, logstrVerbose )) != NULL, XLAL_EFUNC );
   LogPrintfVerbatim( LOG_NORMAL, "%s", GV.logstring );
 
   /* keep a log-file recording all relevant parameters of this search-run */
@@ -1619,7 +1620,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
  * Produce a log-string describing the present run-setup
  */
 CHAR *
-XLALGetLogString ( const ConfigVariables *cfg )
+XLALGetLogString ( const ConfigVariables *cfg, const BOOLEAN verbose )
 {
   XLAL_CHECK_NULL ( cfg != NULL, XLAL_EINVAL );
 
@@ -1634,6 +1635,11 @@ XLALGetLogString ( const ConfigVariables *cfg )
   XLALFree ( cmdline );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, "\n" )) != NULL, XLAL_EFUNC );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, cfg->VCSInfoString )) != NULL, XLAL_EFUNC );
+
+  if ( !verbose ) {
+      /* don't include search details */
+      return logstr;
+  }
 
   XLAL_CHECK_NULL ( snprintf ( buf, BUFLEN, "%%%% FstatMethod used: '%s'\n", XLALGetFstatInputMethodName ( cfg->Fstat_in ) ) < BUFLEN, XLAL_EBADLEN );
   XLAL_CHECK_NULL ( (logstr = XLALStringAppend ( logstr, buf )) != NULL, XLAL_EFUNC );
@@ -2244,6 +2250,10 @@ write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti, const ConfigVariab
 {
   XLAL_CHECK ( (fname != NULL) && (ti != NULL), XLAL_EINVAL );
 
+  CHAR *logstr_short;
+  BOOLEAN logstrVerbose = FALSE;
+  XLAL_CHECK ( (logstr_short = XLALGetLogString ( cfg, logstrVerbose )) != NULL, XLAL_EFUNC );
+
   FILE *fp;
   if ( (fp = fopen(fname,"rb" )) != NULL )
     {
@@ -2253,6 +2263,7 @@ write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti, const ConfigVariab
   else
     {
       XLAL_CHECK ( (fp = fopen( fname, "wb" ) ), XLAL_ESYS, "Failed to open new timing-file '%s' for writing\n", fname );
+      fprintf ( fp, "%s", logstr_short );
       fprintf ( fp, "%2s%6s %10s %10s %10s %10s %10s %10s %10s %10s %10s %16s %12s\n",
                 "%%", "NSFTs", "NFreq", "tauF[s]", "tauFEff[s]", "tauF0[s]", "FstatMethod",
                 "tauMin", "tauMax", "NStart", "NTau", "tauTransFstatMap", "tauTransMarg"
@@ -2265,6 +2276,7 @@ write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti, const ConfigVariab
           );
 
   fclose ( fp );
+  XLALFree ( logstr_short );
   return XLAL_SUCCESS;
 
 } /* write_TimingInfo() */
