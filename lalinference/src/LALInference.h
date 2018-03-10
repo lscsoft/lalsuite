@@ -878,6 +878,12 @@ void LALInferenceQ2Eta(double q, double *eta);
 /** Convert from lambdaT, dLambdaT, and eta to lambda1 and lambda2. */
 void LALInferenceLambdaTsEta2Lambdas(REAL8 lambdaT, REAL8 dLambdaT, REAL8 eta, REAL8 *lambda1, REAL8 *lambda2);
 
+/** Calculate lambda1,2(m1,2|eos(logp1,gamma1,gamma2,gamma3)) */
+void LALInferenceLogp1GammasMasses2Lambdas(REAL8 logp1, REAL8 gamma1, REAL8 gamma2, REAL8 gamma3, REAL8 mass1, REAL8 mass2, REAL8 *lambda1, REAL8 *lambda2);
+
+/** Check for causality violation and mass conflict given masses and eos **/
+int LALInferenceEOSPhysicalCheck(LALInferenceVariables *params, ProcessParamsTable *commandLine);
+
 /**
  * The kD trees in LALInference are composed of cells.  Each cell
  * represents a rectangular region in parameter space, defined by

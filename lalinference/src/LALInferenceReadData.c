@@ -542,6 +542,10 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
     (--inj-lambda2)             value of lambda2 to be injected, LALSimulation only (0)\n\
     (--inj-lambdaT              value of lambdaT to be injected (0)\n\
     (--inj-dlambdaT             value of dlambdaT to be injected (0)\n\
+    (--inj-logp1)               value of logp1 to be injected (0)\n\
+    (--inj-gamma1)              value of gamma1 to be injected (0)\n\
+    (--inj-gamma2)              value of gamma2 to be injected (0)\n\
+    (--inj-gamma3)              value of gamma3 to be injected (0)\n\
     (--inj-spinOrder PNorder)   Specify twice the injection PN order (e.g. 5 <==> 2.5PN)\n\
                                     of spin effects effects to use, only for LALSimulation\n\
                                     (default: -1 <==> Use all spin effects).\n\
@@ -1559,6 +1563,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       /* FIXME - tidal lambda's and interactionFlag are just set to command line values here.
        * They should be added to injEvent and set to appropriate values
        */
+      // Inject (lambda1,lambda2)
       REAL8 lambda1 = 0.;
       if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")) {
         lambda1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")->value);
@@ -1569,6 +1574,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         lambda2= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambda2")->value);
         fprintf(stdout,"Injection lambda2 set to %f\n",lambda2);
       }
+      // Inject (lambdaT,dLambdaT)
       REAL8 lambdaT = 0.;
       REAL8 dLambdaT = 0.;
       REAL8 m1=injEvent->mass1;
@@ -1583,6 +1589,34 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         fprintf(stdout,"Injection dLambdaT set to %f\n",dLambdaT);
         fprintf(stdout,"lambda1 set to %f\n",lambda1);
         fprintf(stdout,"lambda2 set to %f\n",lambda2);
+      }
+      // Inject 4-piece polytrope eos
+      REAL8 logp1=0.0;
+      REAL8 gamma1=0.0;
+      REAL8 gamma2=0.0;
+      REAL8 gamma3=0.0;
+      if(LALInferenceGetProcParamVal(commandLine,"--inj-logp1")&&LALInferenceGetProcParamVal(commandLine,"--inj-gamma1")&&LALInferenceGetProcParamVal(commandLine,"--inj-gamma2")&&LALInferenceGetProcParamVal(commandLine,"--inj-gamma3")){
+        logp1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-logp1")->value);
+        gamma1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-gamma1")->value);
+        gamma2= atof(LALInferenceGetProcParamVal(commandLine,"--inj-gamma2")->value);
+        gamma3= atof(LALInferenceGetProcParamVal(commandLine,"--inj-gamma3")->value);
+        LALInferenceLogp1GammasMasses2Lambdas(logp1, gamma1, gamma2, gamma3, m1, m2, &lambda1, &lambda2);
+        fprintf(stdout,"Injection logp1 set to %f\n",logp1);
+        fprintf(stdout,"Injection gamma1 set to %f\n",gamma1);
+        fprintf(stdout,"Injection gamma2 set to %f\n",gamma2);
+        fprintf(stdout,"Injection gamma3 set to %f\n",gamma3);
+        fprintf(stdout,"lambda1 set to %f\n",lambda1);
+        fprintf(stdout,"lambda2 set to %f\n",lambda2);
+
+        /*
+        For when tagSimInspiralTable is updated
+        to include EOS params
+
+        injEvent->logp1= logp1;
+        injEvent->gamma1= gamma1;
+        injEvent->gamma2= gamma2;
+        injEvent->gamma3= gamma3;
+        */
       }
 
       REAL8 fref = 100.;
@@ -2246,6 +2280,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   REAL8 injtime=0.0;
   injtime=(REAL8) inj_table->geocent_end_time.gpsSeconds + (REAL8) inj_table->geocent_end_time.gpsNanoSeconds*1.0e-9;
 
+  // Inject (lambda1,lambda2)
   REAL8 lambda1 = 0.;
   if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")) {
     lambda1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")->value);
@@ -2257,10 +2292,9 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     lambda2= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambda2")->value);
     fprintf(stdout,"Injection lambda2 set to %f\n",lambda2);
   }
-
+  // Inject (lambdaT,dLambdaT)
   REAL8 lambdaT = 0.;
   REAL8 dLambdaT = 0.;
-
   if(LALInferenceGetProcParamVal(commandLine,"--inj-lambdaT")&&LALInferenceGetProcParamVal(commandLine,"--inj-dLambdaT")) {
     lambdaT= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambdaT")->value);
     dLambdaT= atof(LALInferenceGetProcParamVal(commandLine,"--inj-dLambdaT")->value);
@@ -2270,6 +2304,24 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     fprintf(stdout,"lambda1 set to %f\n",lambda1);
     fprintf(stdout,"lambda2 set to %f\n",lambda2);
   }
+   // Inject 4-piece polytrope eos
+   REAL8 logp1=0.0;
+   REAL8 gamma1=0.0;
+   REAL8 gamma2=0.0;
+   REAL8 gamma3=0.0;
+   if(LALInferenceGetProcParamVal(commandLine,"--inj-logp1")&&LALInferenceGetProcParamVal(commandLine,"--inj-gamma1")&&LALInferenceGetProcParamVal(commandLine,"--inj-gamma2")&&LALInferenceGetProcParamVal(commandLine,"--inj-gamma3")){
+     logp1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-logp1")->value);
+     gamma1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-gamma1")->value);
+     gamma2= atof(LALInferenceGetProcParamVal(commandLine,"--inj-gamma2")->value);
+     gamma3= atof(LALInferenceGetProcParamVal(commandLine,"--inj-gamma3")->value);
+     LALInferenceLogp1GammasMasses2Lambdas(logp1, gamma1, gamma2, gamma3, inj_table->mass1, inj_table->mass2, &lambda1, &lambda2);
+     fprintf(stdout,"Injection logp1 set to %f\n",logp1);
+     fprintf(stdout,"Injection gamma1 set to %f\n",gamma1);
+     fprintf(stdout,"Injection gamma2 set to %f\n",gamma2);
+     fprintf(stdout,"Injection gamma3 set to %f\n",gamma3);
+     fprintf(stdout,"lambda1 set to %f\n",lambda1);
+     fprintf(stdout,"lambda2 set to %f\n",lambda2);
+   }
 
   /* Set up wave flags */
   LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
@@ -2618,6 +2670,86 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
     }
     /* Fill named variables */
     LALInferenceInjectionToVariables(theEventTable, injparams);
+
+    /* FIXME: This is a hack to inject a different eos parameterization than used for sampling */
+    int tidalCheck = 1;
+    // Determine if injparams have different eos params than injected on commandline
+    if(LALInferenceCheckVariable(injparams, "logp1") && !(LALInferenceGetProcParamVal(runState->commandLine, "--inj-logp1"))) {
+        // Remove 4-piece polytrope params
+        LALInferenceRemoveVariable(injparams,"logp1");
+        LALInferenceRemoveVariable(injparams,"gamma1");
+        LALInferenceRemoveVariable(injparams,"gamma2");
+        LALInferenceRemoveVariable(injparams,"gamma3");
+    }
+    else if(LALInferenceCheckVariable(injparams, "lambdaT") && !(LALInferenceGetProcParamVal(runState->commandLine, "--inj-lambdaT"))) {
+        // Remove tidalT params
+        LALInferenceRemoveVariable(injparams,"lambdaT");
+        LALInferenceRemoveVariable(injparams,"dLambdaT");
+    }
+    else if(LALInferenceCheckVariable(injparams, "lambda1") && !(LALInferenceGetProcParamVal(runState->commandLine, "--inj-lambda1"))) {
+        // Remove tidal params
+        LALInferenceRemoveVariable(injparams, "lambda1");
+        LALInferenceRemoveVariable(injparams, "lambda2");
+    }
+    else
+        tidalCheck = 0;
+
+    // Determine correct parameters and add them to injparams
+    if(tidalCheck){
+        if(LALInferenceGetProcParamVal(runState->commandLine, "--inj-logp1")){
+            // Add 4-piece polytrope params
+            REAL8 logp1 = 0.;
+            REAL8 gamma1 = 0.;
+            REAL8 gamma2 = 0.;
+            REAL8 gamma3 = 0;
+            LALInferenceAddVariable(injparams,"logp1", &logp1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+            LALInferenceAddVariable(injparams,"gamma1", &gamma1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+            LALInferenceAddVariable(injparams,"gamma2", &gamma2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+            LALInferenceAddVariable(injparams,"gamma3", &gamma3, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        }
+        else if(LALInferenceGetProcParamVal(runState->commandLine, "--inj-lambdaT")){
+            // Add tidalT params
+            REAL8 lambdaT = 0.;
+            REAL8 dLambdaT = 0.;
+            LALInferenceAddVariable(injparams,"lambdaT", &lambdaT, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+            LALInferenceAddVariable(injparams,"dLambdaT", &dLambdaT, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        }
+        else if(LALInferenceGetProcParamVal(runState->commandLine, "--inj-lambda1")){
+            // Add tidal params
+            REAL8 lambda1 = 0.;
+            REAL8 lambda2 = 0.;
+            LALInferenceAddVariable(injparams,"lambda1", &lambda1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+            LALInferenceAddVariable(injparams,"lambda2", &lambda2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+         }
+    }
+
+    // Fill EOS variables
+    if(LALInferenceCheckVariable(injparams,"lambda1")) {
+        REAL8 l1 = atof(LALInferenceGetProcParamVal(runState->commandLine,"--inj-lambda1")->value);
+        REAL8 l2 = atof(LALInferenceGetProcParamVal(runState->commandLine,"--inj-lambda2")->value);
+
+        LALInferenceSetVariable(injparams,"lambda1", (void*) &l1);
+        LALInferenceSetVariable(injparams,"lambda2", (void*) &l2);
+    }
+    else if(LALInferenceCheckVariable(injparams,"lambdaT")) {
+        REAL8 lt = atof(LALInferenceGetProcParamVal(runState->commandLine,"--inj-lambdaT")->value);
+        REAL8 dlt = atof(LALInferenceGetProcParamVal(runState->commandLine,"--inj-dlambdaT")->value);
+
+        LALInferenceSetVariable(injparams,"lambdaT", (void*) &lt);
+        LALInferenceSetVariable(injparams,"dlambdaT", (void*) &dlt);
+    }
+    else if(LALInferenceCheckVariable(injparams,"logp1")) {
+        REAL8 lp1 = atof(LALInferenceGetProcParamVal(runState->commandLine,"--inj-logp1")->value);
+        REAL8 g1 = atof(LALInferenceGetProcParamVal(runState->commandLine,"--inj-gamma1")->value);
+        REAL8 g2 = atof(LALInferenceGetProcParamVal(runState->commandLine,"--inj-gamma2")->value);
+        REAL8 g3 = atof(LALInferenceGetProcParamVal(runState->commandLine,"--inj-gamma3")->value);
+
+        LALInferenceSetVariable(injparams,"logp1", (void*) &lp1);
+        LALInferenceSetVariable(injparams,"gamma1", (void*) &g1);
+        LALInferenceSetVariable(injparams,"gamma2", (void*) &g2);
+        LALInferenceSetVariable(injparams,"gamma3", (void*) &g3);
+    }
+    /* end hack */
 
     REAL8 injPrior = runState->prior(runState, injparams, model);
     LALInferenceAddVariable(injparams, "logPrior", &injPrior, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);

@@ -117,6 +117,7 @@ void XLALDestroySimNeutronStarFamily(LALSimNeutronStarFamily * fam);
 LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
     LALSimNeutronStarEOS * eos);
 
+double XLALSimNeutronStarMinimumMass(LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarMaximumMass(LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarCentralPressure(double m,
     LALSimNeutronStarFamily * fam);
