@@ -418,10 +418,6 @@ deploy:wheel:
     - nightly:wheel:cp27-cp27m-macosx
     - nightly:wheel:cp35-cp35m-macosx
     - nightly:wheel:cp36-cp36m-macosx
-  artifacts:
-    expire_in: 3h
-    paths:
-      - wheelhouse
   only:
     - master@lscsoft/lalsuite
   except:
