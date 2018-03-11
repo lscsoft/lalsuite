@@ -70,10 +70,10 @@ This package provides the Octave bindings for LALFrame.
 
 %build
 %configure --disable-gcc-flags --enable-swig
-%{__make} V=1
+%{__make} %{?_smp_mflags} V=1
 
 %check
-%{__make} V=1 check
+%{__make} %{?_smp_mflags} V=1 check
 
 %install
 %make_install
