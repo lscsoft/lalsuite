@@ -1720,6 +1720,66 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.add_node(node)
     return node
 
+class SingularityJob(pipeline.CondorDAGJob):
+    """
+    Wrapper class for running jobs via a singularity image
+    """
+    # Hard-coded frame location in cvmfs
+    CVMFS_FRAMES="/cvmfs/oasis.opensciencegrid.org/ligo/frames/"
+    def __init__(self, cp, singularity=True):
+        if not singularity:
+            return
+        if cp.has_option('condor','singularity'):
+            self.singularity_path = cp.get('condor','singularity')
+        else:
+            self.singularity_path = 'singularity' # must be in $PATH
+        if cp.has_option('singularity','image'):
+            self.image = cp.get('singularity','image')
+        else:
+            print("ERROR: You requested a singularity run but did not specify \
+                an image file in the [singularity] section of the config file")
+            sys.exit(-1)
+        self.wrapper_string="""
+            {singularity} exec \\
+                --bind {cvmfs_frames} \\
+                --home ${{PWD}} \\
+                --contain \\
+                --writable \\
+                {image} \\
+                {executable} \\
+                "$@"
+            """.format(singularity = self.singularity_path, \
+                    cvmfs_frames = self.CVMFS_FRAMES, \
+                    executable = super(self,pipeline.CondorDAGJob).get_executable()
+                )
+        # Add requested sites if specified
+        if cp.has_option('condor','desired-sites'):
+            self.add_condor_cmd('+DESIRED_Sites',cp.get('condor','desired-sites'))
+
+        # Add data transfer options
+        self.add_condor_cmd('should_transfer_files','YES')
+        self.add_condor_cmd('when_to_transfer_output','ON_EXIT_OR_EVICT')
+        
+        # Write the wrapper script
+        wrapper=os.path.splitext(self.get_sub_file())[0] +'_wrapper.sh'
+        self.write_script( wrapper )
+        # Over-write the executable to set the wrapper script
+        self._true_exec = self.get_executable()
+        self.set_executable( wrapper )
+        
+    def write_script(self,path):
+        """
+        Write the wrapper script
+        """
+        f=open(path,'w')
+        f.writelines('#!/usr/bin/env bash')
+        f.writelines(self.wrapper_string)
+        f.close()
+        os.chmod(path,0755)
+        
+        
+        
+
 class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
   def __init__(self,cp,submitFile,logdir,engine,ispreengine=False,dax=False,site=None):
     self.ispreengine=ispreengine
