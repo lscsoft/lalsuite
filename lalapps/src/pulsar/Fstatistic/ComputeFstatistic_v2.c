@@ -182,6 +182,8 @@ typedef struct {
   REAL8 dFreq;
   CHAR transientOutputTimeUnit; /**< output format for transient times t0,tau: 'd' for days (deprecated) or 's' for seconds */
   PulsarParamsVector *injectionSources;    /**< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}') */
+  MultiLIGOTimeGPSVector *multiTimestamps; /**< a vector of timestamps (only set if provided from dedicated time stamp files) */
+  MultiLALDetector multiIFO;		   /**< detectors to generate data for (if provided by user and not via noise files) */
 } ConfigVariables;
 
 
@@ -314,6 +316,11 @@ typedef struct {
 
   BOOLEAN resampFFTPowerOf2;	//!< in Resamp: enforce FFT length to be a power of two (by rounding up)
   LALStringVector *injectionSources;    /**< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}') */
+  LALStringVector *injectSqrtSX; 	/**< Add Gaussian noise: list of respective detectors' noise-floors sqrt{Sn}" */
+  LALStringVector *IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector */
+  LALStringVector *timestampsFiles;     /**< Names of numDet timestamps files */
+  REAL8 Tsft;                           /**< length of one SFT in seconds, used in combination with timestamps files (otherwise taken from SFT files) */
+  INT4 randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
   // ----- deprecated and obsolete variables, kept around for backwards-compatibility -----
   LIGOTimeGPS internalRefTime;   /**< [DEPRECATED] internal reference time. Has no effect, XLALComputeFstat() now always uses midtime anyway ... */
@@ -1010,6 +1017,11 @@ initUserVars ( UserInput_t *uvar )
   uvar->transient_useFReg = 0;
   uvar->resampFFTPowerOf2 = TRUE;
   uvar->injectionSources = NULL;
+  uvar->injectSqrtSX = NULL;
+  uvar->IFOs = NULL;
+  uvar->timestampsFiles = NULL;
+
+  uvar->Tsft=1800.0;
 
   /* ---------- register all user-variables ---------- */
   XLALRegisterUvarMember( 	Alpha, 		RAJ, 'a', OPTIONAL, "Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
@@ -1053,7 +1065,7 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( 	dorbitArgp, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Spacing in Orbital argument of periapse in radians");
   XLALRegisterUvarMember( 	dorbitEcc, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Spacing in Orbital eccentricity");
 
-  XLALRegisterUvarMember(DataFiles, 	STRING, 'D', REQUIRED, "File-pattern specifying (also multi-IFO) input SFT-files");
+  XLALRegisterUvarMember(DataFiles, 	STRING, 'D', OPTIONAL, "File-pattern specifying (also multi-IFO) input SFT-files");
   XLALRegisterUvarMember(IFO, 		STRING, 'I', OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
 
   XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
@@ -1139,6 +1151,11 @@ initUserVars ( UserInput_t *uvar )
 
   /* inject signals into the data being analyzed */
   XLALRegisterUvarMember(injectionSources,  STRINGVector, 0, DEVELOPER, "CSV list of files containing signal parameters for injection [see mfdv5]");
+  XLALRegisterUvarMember(injectSqrtSX,	    STRINGVector, 0, DEVELOPER, "Add Gaussian Noise: CSV list of detectors' noise-floors sqrt{Sn}");
+  XLALRegisterUvarMember(IFOs,	            STRINGVector, 0, DEVELOPER, "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\", when no SFT files are specified");
+  XLALRegisterUvarMember(timestampsFiles,   STRINGVector, 0, DEVELOPER, "File(s) to read timestamps from (file-format: lines with <seconds> <nanoseconds>) when no SFT files are specified");
+  XLALRegisterUvarMember(Tsft,              REAL8, 0, DEVELOPER, "Time baseline of one SFT in seconds");
+  XLALRegisterUvarMember(randSeed,          INT4, 0, DEVELOPER, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
 
   // ---------- deprecated but still-supported or tolerated options ----------
   XLALRegisterUvarMember ( RA,	STRING, 0, DEPRECATED, "Use --Alpha instead" );
@@ -1173,19 +1190,54 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   /* ----- set computational parameters for F-statistic from User-input ----- */
   cfg->useResamp = ( uvar->FstatMethod >= FMETHOD_RESAMP_GENERIC ); // use resampling;
 
-  /* use IFO-contraint if one given by the user */
+  /* if IFO string vector was passed by user, parse it for later use */
+
+  if ( uvar->IFOs != NULL ) {
+    XLAL_CHECK ( XLALParseMultiLALDetector ( &(cfg->multiIFO), uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  /* read timestamps if requested by the user */
+  if (uvar->timestampsFiles != NULL) {
+      XLAL_CHECK ( (cfg->multiTimestamps = XLALReadMultiTimestampsFiles ( uvar->timestampsFiles )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (cfg->multiTimestamps->length > 0) && (cfg->multiTimestamps->data != NULL), XLAL_EINVAL, "Got empty timestamps-list from XLALReadMultiTimestampsFiles()\n" );
+
+      for ( UINT4 X=0; X < cfg->multiTimestamps->length; X ++ ) {
+        cfg->multiTimestamps->data[X]->deltaT = uvar->Tsft;	// Tsft information not given by timestamps-file
+      }
+  }
+
+
+
+
+  /* use IFO-constraint if one given by the user */
   if ( XLALUserVarWasSet ( &uvar->IFO ) ) {
     XLAL_CHECK ( (constraints.detector = XLALGetChannelPrefix ( uvar->IFO )) != NULL, XLAL_EFUNC );
   }
+
+
+
   LIGOTimeGPS minStartTime = uvar->minStartTime;
   LIGOTimeGPS maxStartTime = uvar->maxStartTime;
   constraints.minStartTime = &minStartTime;
   constraints.maxStartTime = &maxStartTime;
 
+
+
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
-  LogPrintf (LOG_NORMAL, "Finding all SFTs to load ... ");
-  XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar->DataFiles, &constraints )) != NULL, XLAL_EFUNC );
-  LogPrintfVerbatim (LOG_NORMAL, "done. (found %d SFTs)\n", catalog->length);
+  /* DataFiles optional because of injectSqrtSX option, don't try to load if no files given **/
+
+  if( uvar->DataFiles != NULL ) {
+    LogPrintf (LOG_NORMAL, "Finding all SFTs to load ... ");
+    XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar->DataFiles, &constraints )) != NULL, XLAL_EFUNC );
+    LogPrintfVerbatim (LOG_NORMAL, "done. (found %d SFTs)\n", catalog->length);
+  } else {
+    /* Build a fake catalog with timestamps and IFOs given on the commandline instead of noise data files */
+    /* the data missing in the locators then signal to the Fstat code that fake noise needs to be generated, */
+    /* the noise level is passed from the sqrtSX option */
+
+    XLAL_CHECK ( (catalog = XLALMultiAddToFakeSFTCatalog ( NULL, uvar->IFOs,cfg-> multiTimestamps)) != NULL, XLAL_EFUNC );
+  }
+
 
   if ( constraints.detector ) {
     XLALFree ( constraints.detector );
@@ -1195,6 +1247,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* deduce start- and end-time of the observation spanned by the data */
   UINT4 numSFTfiles = catalog->length;
+
   cfg->Tsft = 1.0 / catalog->data[0].header.deltaF;
   cfg->startTime = catalog->data[0].header.epoch;
   endTime   = catalog->data[numSFTfiles - 1].header.epoch;
@@ -1415,16 +1468,25 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   }
 
   MultiNoiseFloor *injectSqrtSX = NULL;
+  MultiNoiseFloor s_injectSqrtSX;
+
+  if(uvar->injectSqrtSX != NULL) {
+    XLAL_CHECK( XLALParseMultiNoiseFloor( &s_injectSqrtSX, uvar->injectSqrtSX, XLALCountIFOsInCatalog(catalog) ) == XLAL_SUCCESS, XLAL_EFUNC );
+    injectSqrtSX = &s_injectSqrtSX;
+  }
+
   FstatOptionalArgs optionalArgs = FstatOptionalArgsDefaults;
   optionalArgs.Dterms  = uvar->Dterms;
   optionalArgs.SSBprec = uvar->SSBprecision;
   optionalArgs.runningMedianWindow = uvar->RngMedWindow;
   optionalArgs.injectSources = cfg->injectionSources;
   optionalArgs.injectSqrtSX = injectSqrtSX;
+  optionalArgs.randSeed=uvar->randSeed;
   optionalArgs.assumeSqrtSX = assumeSqrtSX;
   optionalArgs.FstatMethod = uvar->FstatMethod;
   optionalArgs.resampFFTPowerOf2 = uvar->resampFFTPowerOf2;
   optionalArgs.collectTiming = XLALUserVarWasSet ( &uvar->outputFstatTiming );
+
 
   XLAL_CHECK ( (cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax, cfg->dFreq, cfg->ephemeris, &optionalArgs )) != NULL, XLAL_EFUNC );
   XLALDestroySFTCatalog(catalog);
@@ -1744,6 +1806,10 @@ Freemem( ConfigVariables *cfg )
     XLALDestroyPulsarParamsVector ( cfg->injectionSources );
   }
 
+  if( cfg->multiTimestamps ) {
+    XLALDestroyMultiTimestamps( cfg->multiTimestamps );
+  }
+
   return;
 
 } /* Freemem() */
@@ -1934,6 +2000,16 @@ checkUserInputConsistency ( const UserInput_t *uvar )
 
   /* check SignalOnly and assumeSqrtSX */
   XLAL_CHECK ( !uvar->SignalOnly || (uvar->assumeSqrtSX == NULL), XLAL_EINVAL, "Cannot pass --SignalOnly AND --assumeSqrtSX at the same time!\n");
+
+  XLAL_CHECK ( (uvar->DataFiles ==NULL) ^ (uvar->injectSqrtSX == NULL), XLAL_EINVAL,  "Must pass exactly one out of --DataFiles or --injectSqrtSX \n");
+  if(uvar->DataFiles !=NULL) {
+     XLAL_CHECK ( uvar->timestampsFiles == NULL &&  uvar->IFOs == NULL && !XLALUserVarWasSet(&uvar->Tsft) , XLAL_EINVAL,"--DataFiles excludes --IFOs, --timestampsFiles, --Tsft \n");
+  }
+
+  if(uvar->injectSqrtSX !=NULL) {
+     XLAL_CHECK ( uvar->timestampsFiles != NULL &&  uvar->IFOs != NULL , XLAL_EINVAL,"--injectSqrtSX requires --IFOs, --timestampsFiles \n");
+  }
+
 
   return XLAL_SUCCESS;
 
