@@ -180,7 +180,7 @@ for sampler in samps:
 
       inifile=args[0]
 
-      cp=ConfigParser.ConfigParser()
+      cp=ConfigParser.SafeConfigParser()
       fp=open(inifile)
       cp.optionxform = str
       cp.readfp(fp)
