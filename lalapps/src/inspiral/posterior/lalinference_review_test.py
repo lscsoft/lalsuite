@@ -54,10 +54,10 @@ parser.add_argument('--condor-submit', action='store_true',
 args = parser.parse_args()
 
 
-if 'UNCLEAN' in lalinference.InferenceVCSId:
-    default_outputdir=os.getenv('HOME')+'/lalinference_testrun/'+lalinference.InferenceVCSId+'_UNCLEAN/'+args.engine+'/'
+if 'UNCLEAN' in lalinference.InferenceVCSInfo.vcsId:
+    default_outputdir=os.getenv('HOME')+'/lalinference_testrun/'+lalinference.InferenceVCSInfo.vcsId+'_UNCLEAN/'+args.engine+'/'
 else:
-    default_outputdir=os.getenv('HOME')+'/lalinference_testrun/'+lalinference.InferenceVCSId+'/'+args.engine.replace(',','_')+'/'
+    default_outputdir=os.getenv('HOME')+'/lalinference_testrun/'+lalinference.InferenceVCSInfo.vcsId+'/'+args.engine.replace(',','_')+'/'
 
 if args.output == None:
     web_outputdir=default_outputdir
