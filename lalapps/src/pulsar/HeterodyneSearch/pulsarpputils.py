@@ -2491,7 +2491,7 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
         posfreqs = pos[pname].samples[0]
       elif pname == 'dist':
         # try getting a fixed distance value (for calculating h0 from Q22 if required)
-        posdist = pos[pname].samples[0]
+        posdist = pos[pname].samples[0]/KPC
 
       pos.pop(pname)
     else:
@@ -2559,11 +2559,11 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
     posQ22 = pos['q22'].samples
 
   if 'dist' in pos.names:
-    posdist = pos['dist'].samples # distance in metre (for use in converting Q22 to h0)
+    posdist = pos['dist'].samples/KPC # distance in kpc (for use in converting Q22 to h0)
 
     # convert distance samples to kpc
     pos.pop('dist')
-    distpos = bppu.PosteriorOneDPDF('dist', posdist/KPC)
+    distpos = bppu.PosteriorOneDPDF('dist', posdist)
     pos.append(distpos)
 
   if 'f0' in pos.names:
