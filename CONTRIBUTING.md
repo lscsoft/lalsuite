@@ -84,6 +84,12 @@ You should click the button, and proceed to fill in the title and description bo
 
 Once the request has been opened, one of the maintainers will assign someone to review the change.
 
+### Special case: CW codes in LALPulsar and LALApps
+
+For the continuous-wave (CW) related codes in the `lalpulsar/` and `lalapps/src/pulsar` directories,
+issues should preferentially be reported [in the CW fork tracker](https://git.ligo.org/CW/lalsuite/issues).
+Branches in that fork can also be used for short-term development, please also see the special contributing guide [here](https://git.ligo.org/CW/lalsuite/wikis/contributing).
+
 ## More Information
 
 More information regarding the usage of GitLab can be found in the main GitLab [documentation](https://git.ligo.org/help/).
