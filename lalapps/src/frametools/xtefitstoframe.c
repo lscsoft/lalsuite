@@ -793,7 +793,8 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
   LogPrintf(LOG_DEBUG,"%s : extracted filename as %s\n",fn,header->filename);
 
   /* now we extract the APID hex string from the filename */
-  snprintf(header->apid,APIDLENGTH,"%s",header->filename);
+  if(APIDLENGTH<=snprintf(header->apid,APIDLENGTH,"%s",header->filename))
+		  printf("Warning: truncated filename %s\n",header->filename);
   LogPrintf(LOG_DEBUG,"%s : extracted APID as %s\n",fn,header->apid);
 
   /* check that APID is one we can currently deal with */
@@ -3053,10 +3054,18 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
 
 	/* construct file name - we use the LIGO format <DETECTOR>-<COMMENT>-<GPSSTART>-<DURATION>.gwf */
 	/* the comment field we sub-format into <INSTRUMENT>_<FRAME>_<SOURCE>_<OBSID_APID> */
-	if (ts->bary) snprintf(outputfile,STRINGLENGTH,"%s/X1-PCA_SSB_%s_%s_%s-%d-%d.gwf",
-			       outputdir,ts->objectname,ts->obsid,ts->apid,epoch.gpsSeconds,T);
-	else snprintf(outputfile,STRINGLENGTH,"%s/X1-PCA_DET_%s_%s_%s-%d-%d.gwf",
-		      outputdir,ts->objectname,ts->obsid,ts->apid,epoch.gpsSeconds,T);
+	if (ts->bary)
+    {
+		if(STRINGLENGTH <= snprintf(outputfile,STRINGLENGTH,"%s/X1-PCA_SSB_%s_%s_%s-%d-%d.gwf",
+		       outputdir,ts->objectname,ts->obsid,ts->apid,epoch.gpsSeconds,T))
+				printf("Warning: truncated string %s\n",outputfile);
+    }
+	else
+	{
+			if(STRINGLENGTH <= snprintf(outputfile,STRINGLENGTH,"%s/X1-PCA_DET_%s_%s_%s-%d-%d.gwf",
+		      outputdir,ts->objectname,ts->obsid,ts->apid,epoch.gpsSeconds,T))
+					printf("Warning: truncated string %s\n",outputfile);
+	}
 	LogPrintf(LOG_DEBUG,"%s : output file = %s\n",fn,outputfile);
 
 	/* generate a frame data structure - last threee inputs are [project, run, frnum, detectorFlags] */
@@ -3075,7 +3084,8 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
 
 	  /* define current channel name */
 	  /* the format is X1:<MODE>-<COLNAME>-<LLD>-<DETCONFIG>-<MINENERGY>_<MAXENERGY> */
-	  snprintf(channelname,STRINGLENGTH,"%s:%s-%s-%d-%s-%d_%d",xtechannelname,ts->mode,ts->ts[i]->colname,ts->lld,ts->ts[i]->detconfig,ts->ts[i]->energy[0],ts->ts[i]->energy[1]);
+	  if(STRINGLENGTH<=snprintf(channelname,STRINGLENGTH,"%s:%s-%s-%d-%s-%d_%d",xtechannelname,ts->mode,ts->ts[i]->colname,ts->lld,ts->ts[i]->detconfig,ts->ts[i]->energy[0],ts->ts[i]->energy[1]))
+			  printf("Warning: truncated channel name %s\n",channelname);
 	  LogPrintf(LOG_DEBUG,"%s : defined current channel name as %s\n",fn,channelname);
 
 	  /* create empty timeseries - this is INT4 not UINT4 because there is no frame writing function for UINT4 */
