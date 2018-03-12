@@ -321,7 +321,6 @@ nightly:macos:
   only:
     - /^lalsuite-.+/
     - schedules
-    - web
   artifacts:
     expire_in: 3h
     paths:
@@ -354,7 +353,6 @@ nightly:macos:
   only:
     - /^lalsuite-.+/
     - schedules
-    - web
   artifacts:
     expire_in: 3h
     paths:
