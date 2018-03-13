@@ -1151,10 +1151,16 @@ initUserVars ( UserInput_t *uvar )
 
   /* inject signals into the data being analyzed */
   XLALRegisterUvarMember(injectionSources,  STRINGVector, 0, DEVELOPER, "CSV list of files containing signal parameters for injection [see mfdv5]");
-  XLALRegisterUvarMember(injectSqrtSX,	    STRINGVector, 0, DEVELOPER, "Add Gaussian Noise: CSV list of detectors' noise-floors sqrt{Sn}");
+  XLALRegisterUvarMember(injectSqrtSX,	    STRINGVector, 0, DEVELOPER, "Generate Gaussian Noise SFTs on-the-fly: CSV list of detectors' noise-floors sqrt{Sn}");
   XLALRegisterUvarMember(IFOs,	            STRINGVector, 0, DEVELOPER, "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\", when no SFT files are specified");
-  XLALRegisterUvarMember(timestampsFiles,   STRINGVector, 0, DEVELOPER, "File(s) to read timestamps from (file-format: lines with <seconds> <nanoseconds>) when no SFT files are specified");
-  XLALRegisterUvarMember(Tsft,              REAL8, 0, DEVELOPER, "Time baseline of one SFT in seconds");
+  XLALRegisterUvarMember(timestampsFiles,   STRINGVector, 0, DEVELOPER, 
+    "Files containing timestamps for the generated SFTs when using "UVAR_STR( injectSqrtSX ) ". "
+    "Arguments correspond to the detectors given by " UVAR_STR( IFOs )
+    "; for example, if " UVAR_STR( IFOs ) " is set to 'H1,L1', then an argument of "
+    "'t1.txt,t2.txt' to this option will read H1 timestamps from the file 't1.txt', and L1 timestamps from the file 't2.txt'. "
+    "The timebase of the generated SFTs is specified by " UVAR_STR( Tsft ) ". "
+  );
+  XLALRegisterUvarMember(Tsft,              REAL8, 0, DEVELOPER, "Generate SFTs with this timebase (in seconds) instead of loading from files. Requires --injectSqrtSX, --IFOs, --timestampsFiles");
   XLALRegisterUvarMember(randSeed,          INT4, 0, DEVELOPER, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
 
   // ---------- deprecated but still-supported or tolerated options ----------
@@ -2001,9 +2007,15 @@ checkUserInputConsistency ( const UserInput_t *uvar )
   /* check SignalOnly and assumeSqrtSX */
   XLAL_CHECK ( !uvar->SignalOnly || (uvar->assumeSqrtSX == NULL), XLAL_EINVAL, "Cannot pass --SignalOnly AND --assumeSqrtSX at the same time!\n");
 
+
+
+
   XLAL_CHECK ( (uvar->DataFiles ==NULL) ^ (uvar->injectSqrtSX == NULL), XLAL_EINVAL,  "Must pass exactly one out of --DataFiles or --injectSqrtSX \n");
   if(uvar->DataFiles !=NULL) {
-     XLAL_CHECK ( uvar->timestampsFiles == NULL &&  uvar->IFOs == NULL && !XLALUserVarWasSet(&uvar->Tsft) , XLAL_EINVAL,"--DataFiles excludes --IFOs, --timestampsFiles, --Tsft \n");
+     
+     XLAL_CHECK ( !XLALUserVarWasSet(&uvar->Tsft) , XLAL_EINVAL, UVAR_STR(Tsft) " can only be used for data generation with " UVAR_STR(injectSqrtSX)", not when loading existing "  UVAR_STR(DataFiles) "\n");
+     XLAL_CHECK ( uvar->IFOs == NULL , XLAL_EINVAL, UVAR_STR(IFOs) " can only be used for data generation with " UVAR_STR(injectSqrtSX) ", not when loading existing "  UVAR_STR(DataFiles) "\n");
+     XLAL_CHECK ( uvar->timestampsFiles == NULL , XLAL_EINVAL,UVAR_STR(timestampsFiles) " can only be used for data generation with " UVAR_STR(injectSqrtSX) ", not when loading existing "  UVAR_STR(DataFiles) "\n");
   }
 
   if(uvar->injectSqrtSX !=NULL) {
