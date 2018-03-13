@@ -15,7 +15,6 @@ stages:
   - level2
   - level3
   - level4
-  - release
   - nightly
   - deploy
 
@@ -26,6 +25,7 @@ before_script:
   - export CCACHE_DIR=${PWD}/ccache
   - export PKG_CONFIG_PATH=${LAL_DIR}/lib/pkgconfig
   - mkdir -p opt/lalsuite
+  - if [[ ${CI_PIPELINE_SOURCE} == schedule ]]; then EXTRA_CONFIG_FLAGS="--enable-nightly"; fi
 
 cache:
   key: $CI_JOB_NAME
@@ -137,7 +137,7 @@ level4:lalapps:
 
 # release a debian docker image upon every tag in lalsuite
 docker:tags:
-  stage: release
+  stage: nightly
   before_script: []
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
@@ -317,7 +317,7 @@ nightly:macos:highsierra:
     - ./00boot
     # FIXME: laldetchar depends on glib >= 2.14, too new for manylinux1
     - ./configure PYTHON=${PYPREFIX}/bin/python
-      --enable-swig-python --enable-nightly
+      --enable-swig-python ${EXTRA_CONFIG_OPTIONS}
       --disable-laldetchar
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
@@ -329,7 +329,7 @@ nightly:macos:highsierra:
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []
   only:
-    - /^lalsuite-.+/
+    - /^lalsuite-v.*$/
     - schedules
   artifacts:
     expire_in: 3h
@@ -349,8 +349,7 @@ nightly:macos:highsierra:
     - pip install -q git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 numpy==1.7.0
     # Build wheel
     - ./00boot
-    - ./configure PYTHON=$(which python${PYVERS})
-      --enable-swig-python --enable-nightly
+    - ./configure PYTHON=$(which python${PYVERS}) --enable-swig-python ${EXTRA_CONFIG_FLAGS}
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - delocate-wheel -v -w wheelhouse wheel/*.whl
@@ -361,7 +360,7 @@ nightly:macos:highsierra:
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []
   only:
-    - /^lalsuite-.+/
+    - /^lalsuite-v.*$/
     - schedules
   artifacts:
     expire_in: 3h
@@ -526,6 +525,8 @@ deploy:wheel:
   variables:
     GIT_STRATEGY: none
   script:
+    # exit if we're not running in the main namespace
+    - if [[ ${CI_PROJECT_PATH} != "lscsoft/lalsuite" ]]; then echo "Not deploying."; exit 0; fi
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
     - /opt/python/cp36-cp36m/bin/pip install twine
     - /opt/python/cp36-cp36m/bin/twine upload wheelhouse/*
@@ -539,7 +540,5 @@ deploy:wheel:
 #    - nightly:wheel:cp35-cp35m-macosx
 #    - nightly:wheel:cp36-cp36m-macosx
   only:
-    - master@lscsoft/lalsuite
-  except:
-    - pushes
-    - web
+    - /^lalsuite-v.*$/
+    - schedules
