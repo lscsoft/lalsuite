@@ -78,7 +78,9 @@ EXTRA_DIST += \
 	testCFSv2_grid3.dat.ref.gz \
 	testCFSv2_grid6.dat.ref.gz \
 	testCFSv2_grid8.dat.ref.gz \
-	testCFSv2_grid9.dat.ref.gz
+	testCFSv2_grid9.dat.ref.gz \
+	H1_test_timestamps.dat \
+	L1_test_timestamps.dat
 
 TESTS = testPredictFstat.sh \
 	testSynthLV.sh
