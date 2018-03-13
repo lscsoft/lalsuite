@@ -34,6 +34,14 @@
 
 #define SQ(x) ( (x) * (x) )
 
+#ifdef __GNUC__
+#define likely(x)      __builtin_expect(!!(x), 1)
+#define unlikely(x)    __builtin_expect(!!(x), 0)
+#else
+#define likely(x)      (x)
+#define unlikely(x)    (x)
+#endif
+
 // ---------- Shared global variables ---------- //
 
 // ---------- Shared struct definitions ---------- //
@@ -79,11 +87,16 @@ XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, 
   REAL4 Fb_re = creal(Fb);
   REAL4 Fb_im = cimag(Fb);
 
-  REAL4 F = Dinv * (  B * ( SQ(Fa_re) + SQ(Fa_im) )
-                      + A * ( SQ(Fb_re) + SQ(Fb_im) )
-                      - 2.0 * C * (   Fa_re * Fb_re + Fa_im * Fb_im )
-                      - 2.0 * E * ( - Fa_re * Fb_im + Fa_im * Fb_re )           // nonzero only in RAA case where Ed!=0
-                      );
-  return 2.0f*F;
+  REAL4 twoF = 4;	// default fallback = E[2F] in noise when Dinv == 0 due to ill-conditionness of M_munu
+  if ( likely(Dinv > 0) )
+    {
+      twoF = 2.0f * Dinv * (  B * ( SQ(Fa_re) + SQ(Fa_im) )
+                              + A * ( SQ(Fb_re) + SQ(Fb_im) )
+                              - 2.0 * C * (   Fa_re * Fb_re + Fa_im * Fb_im )
+                              - 2.0 * E * ( - Fa_re * Fb_im + Fa_im * Fb_re )           // nonzero only in RAA case where Ed!=0
+                              );
+    }
+
+  return twoF;
 
 } // ComputeFstatFromFaFb()

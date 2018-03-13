@@ -59,9 +59,13 @@
 
 #define SQ(x) (x) * (x)
 
+static REAL4 AntennaPatternMaxCond = 1e4;
+static REAL4 AntennaPatternIllCondDeterminant = INFINITY;
+
 /*---------- internal types ----------*/
 
 /*---------- internal prototypes ----------*/
+static inline REAL4 estimateAntennaPatternConditionNumber ( REAL4 A, REAL4 B, REAL4 C, REAL4 E );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -251,14 +255,8 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
       amcoeX->A = AdX;
       amcoeX->B = BdX;
       amcoeX->C = CdX;
-      amcoeX->D = AdX * BdX - CdX * CdX - EdX * EdX;
+      amcoeX->D = XLALComputeAntennaPatternSqrtDeterminant ( AdX, BdX, CdX, EdX );
 
-      // in the unlikely event of a degenerate M-matrix with D = sqrt ( det M ) <= 0,
-      // we set D->inf, in order to set the corresponding F-value to zero rather than >>1
-      // By setting 'D=inf', we also allow upstream catching/filtering on such singular cases
-      if ( amcoeX->D <= 0 ) {
-	amcoeX->D = INFINITY;
-      }
       /* compute multi-IFO antenna-pattern coefficients A,B,C,E by summing over IFOs X */
       Ad += AdX;
       Bd += BdX;
@@ -269,15 +267,7 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
   multiAMcoef->Mmunu.Ad = Ad;
   multiAMcoef->Mmunu.Bd = Bd;
   multiAMcoef->Mmunu.Cd = Cd;
-  multiAMcoef->Mmunu.Dd = Ad * Bd - Cd * Cd - Ed * Ed;
-
-  // in the unlikely event of a degenerate M-matrix with D = sqrt(det M_munu) <= 0,
-  // we set D->inf, in order to set the corresponding F-value to zero rather than >>1
-  // By setting 'D=inf', we also allow upstream catching/filtering on such singular cases
-  if ( multiAMcoef->Mmunu.Dd <= 0 ) {
-    multiAMcoef->Mmunu.Dd = INFINITY;
-  }
-
+  multiAMcoef->Mmunu.Dd = XLALComputeAntennaPatternSqrtDeterminant ( Ad, Bd, Cd, Ed );
 
   if ( multiWeights ) {
     multiAMcoef->Mmunu.Sinv_Tsft = multiWeights->Sinv_Tsft;
@@ -528,3 +518,69 @@ XLALDestroyAMCoeffs ( AMCoeffs *amcoef )
 
 } /* XLALDestroyAMCoeffs() */
 
+/// estimate condition number for given antenna-pattern matrix
+static inline REAL4
+estimateAntennaPatternConditionNumber ( REAL4 A, REAL4 B, REAL4 C, REAL4 E )
+{
+  REAL4 sumAB  = A + B;
+  REAL4 diffAB = A - B;
+  REAL4 disc   = sqrt ( SQ(diffAB) + 4.0 * ( SQ(C) + SQ(E) ) );
+
+  REAL4 denom = sumAB - disc;
+
+  REAL4 cond = (denom > 0) ? ((sumAB + disc) / denom) : INFINITY;
+  return cond;
+}
+
+
+/// Compute (sqrt of) determinant of the antenna-pattern matrix
+/// Mmunu = [ A, C, 0, -E;
+///           C  B  E,  0;
+///           0  E  A   C;
+///          -Ed 0  C   B; ]
+/// which is det(Mmunu) = ( A B - C^2 - E^2 )^2;
+///
+/// in addition this function checks if the condition number exceeds
+/// a module-local tolerance value 'AntennaPatternMaxCond' and outputs a warning
+/// and returns NAN if it does.
+/// Use XLALSetAntennaPatternMaxCond() to change the acceptable tolerance value.
+///
+REAL4
+XLALComputeAntennaPatternSqrtDeterminant ( REAL4 A, REAL4 B, REAL4 C, REAL4 E )
+{
+  XLAL_CHECK_REAL4 ( (A >= 0) && (B>=0), XLAL_EINVAL );
+
+  REAL4 cond = estimateAntennaPatternConditionNumber ( A, B, C, E );
+  REAL4 det;
+  if ( cond >  AntennaPatternMaxCond )
+    {
+      XLALPrintWarning ( "WARNING: Antenna-pattern matrix condition number exceeds maximum allowed value:\n" );
+      XLALPrintWarning ( "cond{A=%.16g, B=%.16g, C=%.16g, E=%.16g} = %.2e > %.2e ==> setting derminant = %.16g\n",
+                         A, B, C, E, cond, AntennaPatternMaxCond, AntennaPatternIllCondDeterminant );
+      det = AntennaPatternIllCondDeterminant;
+    }
+  else
+    {
+      det = A * B - SQ(C) - SQ(E);
+    }
+
+  return det;
+}
+
+/// Set a new module-local maximal acceptable condition number of computing
+/// antenna-pattern matrix determinant
+void
+XLALSetAntennaPatternMaxCond ( REAL4 max_cond )
+{
+  AntennaPatternMaxCond = max_cond;
+}
+
+/// Set the 'fallback' determinant to use for ill-conditioned antenna-pattern
+/// matrix. Use 'INFINITY' (=default) to allow 2F-calculation to continue by
+/// 'turning off' the 2F value, or 'NAN' to force an error-condition to terminate
+/// the code.
+void
+XLALSetAntennaPatternIllCondDeterminant ( REAL4 illCondDeterminant )
+{
+  AntennaPatternIllCondDeterminant = illCondDeterminant;
+}

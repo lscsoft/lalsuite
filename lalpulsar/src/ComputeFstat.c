@@ -897,7 +897,8 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< 
     } // loop through detectors
 
   // compute determinant and final Fstat (not twoF!)
-  REAL4 Dinv = 1.0 / ( mmatrixA * mmatrixB - SQ(mmatrixC) );
+  REAL4 D = XLALComputeAntennaPatternSqrtDeterminant ( mmatrixA, mmatrixB, mmatrixC, 0);
+  REAL4 Dinv = 1.0f / D;
 
   twoF = XLALComputeFstatFromFaFb ( Fa, Fb, mmatrixA, mmatrixB, mmatrixC, 0, Dinv );
 
