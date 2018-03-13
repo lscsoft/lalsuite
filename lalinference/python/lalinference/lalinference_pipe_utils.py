@@ -1726,7 +1726,13 @@ class SingularityJob(pipeline.CondorDAGJob):
     """
     # Hard-coded frame location in cvmfs
     CVMFS_FRAMES="/cvmfs/oasis.opensciencegrid.org/ligo/frames/"
-    def __init__(self, cp, singularity=True):
+    image=None
+    def __init__(self, cp, singularity=True, *args, **kwargs):
+        # Dir in which the DAG will run
+        self.basedir = cp.get('paths','basedir')
+        self.add_condor_cmd('initialdir',self.basedir)
+        #pipeline.CondorDAGJob.__init__(self,cp, *args, **kwargs)
+        self.singularity = singularity
         if not singularity:
             return
         if cp.has_option('condor','singularity'):
@@ -1739,18 +1745,27 @@ class SingularityJob(pipeline.CondorDAGJob):
             print("ERROR: You requested a singularity run but did not specify \
                 an image file in the [singularity] section of the config file")
             sys.exit(-1)
+        frameopt = "" if cp.has_option('lalinference','fake-cache') else "--bind {cvmfs_frames}".format(cvmfs_frames = self.CVMFS_FRAMES)
         self.wrapper_string="""
+            echo "Workspace on execute node $(hostname -f)"
+            echo "PWD" ${{PWD}}
+            echo "contents"
+            ls -l
+            echo "Launching singularity..."
             {singularity} exec \\
-                --bind {cvmfs_frames} \\
                 --home ${{PWD}} \\
+                --bind ${{PWD}} \\
+                {frameopt} \\
                 --contain \\
                 --writable \\
                 {image} \\
                 {executable} \\
                 "$@"
-            """.format(singularity = self.singularity_path, \
-                    cvmfs_frames = self.CVMFS_FRAMES, \
-                    executable = super(self,pipeline.CondorDAGJob).get_executable()
+            """.format(singularity = self.singularity_path,
+                       basedir = self.basedir,
+                    frameopt = frameopt,
+                    executable = super(SingularityJob,self).get_executable(),
+                    image = self.image
                 )
         # Add requested sites if specified
         if cp.has_option('condor','desired-sites'):
@@ -1759,13 +1774,6 @@ class SingularityJob(pipeline.CondorDAGJob):
         # Add data transfer options
         self.add_condor_cmd('should_transfer_files','YES')
         self.add_condor_cmd('when_to_transfer_output','ON_EXIT_OR_EVICT')
-        
-        # Write the wrapper script
-        wrapper=os.path.splitext(self.get_sub_file())[0] +'_wrapper.sh'
-        self.write_script( wrapper )
-        # Over-write the executable to set the wrapper script
-        self._true_exec = self.get_executable()
-        self.set_executable( wrapper )
         
     def write_script(self,path):
         """
@@ -1776,12 +1784,59 @@ class SingularityJob(pipeline.CondorDAGJob):
         f.writelines(self.wrapper_string)
         f.close()
         os.chmod(path,0755)
-        
-        
-        
+    
+    def write_sub_file(self):
+        """
+        Over-load CondorDAGJob.write_sub_file to write the wrapper script and
+        set the exe to call it
+        """
+        if self.singularity:
+            # Write the wrapper script
+            wrapper=os.path.splitext(self.get_sub_file())[0] +'_wrapper.sh'
+            self.write_script( wrapper )
+            # Over-write the executable to set the wrapper script
+            self._true_exec = self.get_executable()
+            self.set_executable( wrapper )
+        # Call the parent method to do the rest
+        self.add_condor_cmd('transfer_input_files','$(macroinput),engine')
+        self.add_condor_cmd('transfer_output_files','$(macrooutput),engine')
+        super(SingularityJob,self).write_sub_file()
 
-class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
-  def __init__(self,cp,submitFile,logdir,engine,ispreengine=False,dax=False,site=None):
+
+class SingularityNode(pipeline.CondorDAGNode):
+    """
+    Class representing a node run via singularity
+    """
+    def add_output_file(self,filename):
+        print(self.job().basedir)
+        filename=os.path.relpath(filename,start=self.job().basedir)
+        print('Adding output file '+filename)
+        self.add_output_macro(filename)
+        super(SingularityNode,self).add_output_file(filename)
+    def add_input_file(self,filename):
+        filename=os.path.relpath(filename,start=self.job().basedir)
+        self.add_input_macro(filename)
+        print(filename)
+        super(SingularityNode,self).add_input_file(filename)
+        print(self.get_input_files())
+    def add_checkpoint_file(self,filename):
+        filename=os.path.relpath(filename,start=self.job().basedir)
+        self.add_checkpoint_macro(filename)
+        super(SingularityNode,self).add_checkpoint_file(filename)
+    def add_file_opt(self, opt, filename, file_is_output_file=False):
+        print('Adding file opt --{opt} {filename}'.format(opt=opt, filename=filename))
+        #filename=os.path.relpath(filename,start=self.job().basedir)
+        relfile=os.path.relpath(filename,start=self.job().basedir)
+        print("relative path ",relfile)
+        self.add_var_opt(opt,relfile)
+        if file_is_output_file:
+            self.add_output_file(filename)
+        else:
+            self.add_input_file(filename)
+        #super(SingularityNode,self).add_file_opt(opt, filename, file_is_output_file=file_is_output_file)
+
+class EngineJob(SingularityJob,pipeline.AnalysisJob):
+  def __init__(self,cp,submitFile,logdir,engine,ispreengine=False,dax=False,site=None, *args, **kwargs):
     self.ispreengine=ispreengine
     self.engine=engine
     basepath=cp.get('paths','basedir')
@@ -1815,6 +1870,8 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
 
     pipeline.CondorDAGJob.__init__(self,universe,exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
+    SingularityJob.__init__(self, cp)
+
     if cp.has_option('condor','accounting_group'):
       self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
     if cp.has_option('condor','accounting_group_user'):
@@ -1904,10 +1961,10 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.set_universe('vanilla')
     pipeline.CondorDAGJob.set_grid_site(self,site)
 
-class EngineNode(pipeline.CondorDAGNode):
+class EngineNode(SingularityNode):
   new_id = itertools.count().next
   def __init__(self,li_job):
-    pipeline.CondorDAGNode.__init__(self,li_job)
+    super(SingularityNode,self).__init__(li_job)
     self.ifos=[]
     self.scisegs={}
     self.channels={}
@@ -2139,7 +2196,7 @@ class EngineNode(pipeline.CondorDAGNode):
 
 class LALInferenceNestNode(EngineNode):
   def __init__(self,li_job):
-    EngineNode.__init__(self,li_job)
+    super(LALInferenceNestNode,self).__init__(li_job)
     self.engine='lalinferencenest'
     self.outfilearg='outfile'
 
@@ -2157,9 +2214,9 @@ class LALInferenceNestNode(EngineNode):
   def get_ns_file(self):
     return self.nsfile
 
-class LALInferenceBurstNode(EngineNode,LALInferenceNestNode):
+class LALInferenceBurstNode(LALInferenceNestNode):
   def __init__(self,li_job):
-    EngineNode.__init__(self,li_job)
+    super(LALInferenceNestNode,self).__init__(li_job)
     self.engine='lalinferenceburst'
     self.outfilearg='outfile'
   def set_injection(self,injfile,event):
