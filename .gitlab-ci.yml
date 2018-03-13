@@ -223,7 +223,6 @@ nightly:top-level:artful:
   only:
     - schedules
     - web
-  allow_failure: true
 
 # FIXME: It seems that Octave on buster currently has a few bugs which
 # cause the Octave bindings to fail, disable building the Octave SWIG
@@ -239,7 +238,6 @@ nightly:top-level:buster:
   only:
     - schedules
     - web
-  allow_failure: true
 
 nightly:top-level:clang:
   image: skymoo/ligo-lalsuite-clang:jessie
