@@ -214,6 +214,8 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
     earth_etype = EPHEM_DE414;
   else if ( strstr( earthEphemerisFile, "DE421" ) )
     earth_etype = EPHEM_DE421;
+  else if ( strstr( earthEphemerisFile, "DE430" ) )
+    earth_etype = EPHEM_DE430;
   else
     earth_etype = EPHEM_DE405;
 
@@ -226,6 +228,8 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
     sun_etype = EPHEM_DE414;
   else if ( strstr( sunEphemerisFile, "DE421" ) )
     sun_etype = EPHEM_DE421;
+  else if ( strstr( sunEphemerisFile, "DE430" ) )
+    sun_etype = EPHEM_DE430;
   else
     sun_etype = EPHEM_DE405;
 
