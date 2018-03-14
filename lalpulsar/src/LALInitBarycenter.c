@@ -499,10 +499,11 @@ XLALReadEphemerisFile ( const CHAR *fname )
     }
 
   /* check that number of lines is correct */
-  if( nEntries != (numLines - 1)/4 )
+  if( nEntries != (numLines - 1)/4 && nEntries != (numLines - 1) )
     {
       XLALDestroyParsedDataFile( flines );
-      XLAL_ERROR_NULL ( XLAL_EDOM, "Inconsistent number of data-lines (%d) in file '%s' compared to header information (%d)\n", (numLines - 1)/4, fname, nEntries);
+      INT4 dataLines = nEntries != (numLines - 1) ? (numLines - 1) : (numLines - 1)/4; 
+      XLAL_ERROR_NULL ( XLAL_EDOM, "Inconsistent number of data-lines (%d) in file '%s' compared to header information (%d)\n", dataLines, fname, nEntries);
     }
 
   /* prepare output ephemeris vector */
@@ -517,12 +518,13 @@ XLALReadEphemerisFile ( const CHAR *fname )
    * +  on 1980 Jan. 6 00:00:00 UTC
    */
 
-  /* the ephemeris files are created with each entry spanning 4 lines with the
-   * format:
+  /* the old-style ephemeris files are created with each entry spanning 4 lines
+   * with the format:
    *  gps\tposX\tposY\n
    *  posZ\tvelX\tvelY\n
    *  velZ\taccX\taccY\n
    *  accZ\n
+   * However, newer ephemerides just span 1 line. So, deal with both cases.
    ***************************************************************************/
 
   /* read the remaining lines */
@@ -531,21 +533,35 @@ XLALReadEphemerisFile ( const CHAR *fname )
       UINT4 i_line;
       int ret;
 
-      i_line = 1 + 4*j;
-      ret = sscanf( flines->lines->tokens[ i_line ], "%le %le %le\n", &ephemV->data[j].gps, &ephemV->data[j].pos[0], &ephemV->data[j].pos[1] );
-      XLAL_CHECK_NULL ( ret == 3, XLAL_EDOM, "Couldn't parse line %d of %s: read %d items instead of 3\n", i_line, fname, ret );
+      if ( nEntries == (numLines-1)/4 )
+        {
+          i_line = 1 + 4*j;
 
-      i_line ++;
-      ret = sscanf( flines->lines->tokens[ i_line ], "%le %le %le\n", &ephemV->data[j].pos[2], &ephemV->data[j].vel[0], &ephemV->data[j].vel[1] );
-      XLAL_CHECK_NULL ( ret == 3, XLAL_EDOM, "Couldn't parse line %d of %s: read %d items instead of 3\n", i_line, fname, ret );
+          ret = sscanf( flines->lines->tokens[ i_line ], "%le %le %le\n", &ephemV->data[j].gps, &ephemV->data[j].pos[0], &ephemV->data[j].pos[1] );
+          XLAL_CHECK_NULL ( ret == 3, XLAL_EDOM, "Couldn't parse line %d of %s: read %d items instead of 3\n", i_line, fname, ret );
 
-      i_line ++;
-      ret = sscanf( flines->lines->tokens[ i_line ], "%le %le %le\n", &ephemV->data[j].vel[2], &ephemV->data[j].acc[0], &ephemV->data[j].acc[1] );
-      XLAL_CHECK_NULL ( ret == 3, XLAL_EDOM, "Couldn't parse line %d of %s: read %d items instead of 3\n", i_line, fname, ret );
+          i_line ++;
+          ret = sscanf( flines->lines->tokens[ i_line ], "%le %le %le\n", &ephemV->data[j].pos[2], &ephemV->data[j].vel[0], &ephemV->data[j].vel[1] );
+          XLAL_CHECK_NULL ( ret == 3, XLAL_EDOM, "Couldn't parse line %d of %s: read %d items instead of 3\n", i_line, fname, ret );
 
-      i_line ++;
-      ret = sscanf( flines->lines->tokens[ i_line ], "%le\n", &ephemV->data[j].acc[2] );
-      XLAL_CHECK_NULL ( ret == 1, XLAL_EDOM, "Couldn't parse line %d of %s: read %d items instead of 1\n", i_line, fname, ret );
+          i_line ++;
+          ret = sscanf( flines->lines->tokens[ i_line ], "%le %le %le\n", &ephemV->data[j].vel[2], &ephemV->data[j].acc[0], &ephemV->data[j].acc[1] );
+          XLAL_CHECK_NULL ( ret == 3, XLAL_EDOM, "Couldn't parse line %d of %s: read %d items instead of 3\n", i_line, fname, ret );
+
+          i_line ++;
+          ret = sscanf( flines->lines->tokens[ i_line ], "%le\n", &ephemV->data[j].acc[2] );
+          XLAL_CHECK_NULL ( ret == 1, XLAL_EDOM, "Couldn't parse line %d of %s: read %d items instead of 1\n", i_line, fname, ret );
+        }
+      else
+        {
+          i_line = j+1;
+          ret = sscanf( flines->lines->tokens[ i_line ], "%le %le %le %le %le %le %le %le %le %le\n",
+                        &ephemV->data[j].gps, &ephemV->data[j].pos[0], &ephemV->data[j].pos[1],
+                        &ephemV->data[j].pos[2], &ephemV->data[j].vel[0], &ephemV->data[j].vel[1],
+                        &ephemV->data[j].vel[2], &ephemV->data[j].acc[0], &ephemV->data[j].acc[1],
+                        &ephemV->data[j].acc[2] );
+          XLAL_CHECK_NULL ( ret == 10, XLAL_EDOM, "Couldn't parse line %d of %s: read %d items instead of 10\n", i_line, fname, ret );
+        }
 
       /* check timestamps */
       if(j == 0)
