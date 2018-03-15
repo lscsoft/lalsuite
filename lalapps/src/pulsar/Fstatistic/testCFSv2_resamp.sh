@@ -178,7 +178,7 @@ echo "----------------------------------------------------------------------"
 echo " STEP 5: run directed CFS_v2 with resampling and on-the-fly noise"
 echo "----------------------------------------------------------------------"
 echo
-cmdline="$cfs_code $cfs_CL --injectionSources='${injectionSources}' --injectSqrtSX=${sqrtSX} --IFOs='H1,L1' --Tsft=${Tsft} --randSeed=1 --timestampsFiles='H1_test_timestamps.dat,L1_test_timestamps.dat' --FstatMethod=ResampBest  --outputFstat=$outfile_Resamp_otfn --outputTiming=$timefile_Resamp_otfn  --outputLoudest=${loudest_Resamp_otfn}"
+cmdline="$cfs_code $cfs_CL --injectionSources='${injectionSources}' --injectSqrtSX=${sqrtSX} --IFOs='H1,L1' --Tsft=${Tsft} --randSeed=1 --timestampsFiles='${srcdir}/H1_test_timestamps.dat,${srcdir}/L1_test_timestamps.dat' --FstatMethod=ResampBest  --outputFstat=$outfile_Resamp_otfn --outputTiming=$timefile_Resamp_otfn  --outputLoudest=${loudest_Resamp_otfn}"
 echo $cmdline;
 if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$cfs_code' ..."
