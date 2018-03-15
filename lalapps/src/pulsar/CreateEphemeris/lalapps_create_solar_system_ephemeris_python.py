@@ -149,7 +149,7 @@ if __name__=='__main__':
 
     # set the end time
     try:
-        endtime = starttime + TimeDelta(args.nyears*365.25*86400., format='sec') + dt
+        endtime = Time(starttime.decimalyear + args.nyears, format='decimalyear', scale='utc') + dt
     except ValueError:
         Exception("Could not parse total timespan")
 
