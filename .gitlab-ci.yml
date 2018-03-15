@@ -41,7 +41,9 @@ cache:
     - make dist
     - tar xf *.tar.xz
     - cd lal*-*
-    - ./configure --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
+    - mkdir -p subdir
+    - cd subdir
+    - ../configure --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
     - make -j4 V=1
     - make -j4 V=1 VERBOSE=1 check
     - make -j4 install
