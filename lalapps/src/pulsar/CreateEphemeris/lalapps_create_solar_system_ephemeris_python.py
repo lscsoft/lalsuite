@@ -101,7 +101,8 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser( )
     parser.add_argument("-e", "--ephemeris", dest="ephemeris", required=True, help="Set the ephemeris to use (e.g. DE405)")
     parser.add_argument("-o", "--output-file", dest="output", default=None, help="Set the output file (defaults to stdout)")
-    parser.add_argument("-g", "--gps-start", dest="gpsstart", type=float, required=True, help="Set the GPS time at which to start generating the ephemeris")
+    parser.add_argument("-g", "--gps-start", dest="gpsstart", type=float, default=None, help="Set the GPS time at which to start generating the ephemeris")
+    parser.add_argument("-y", "--year-start", dest="yearstart", type=float, default=None, help="Set the (decimal) year at which to start generating the ephemeris")
     parser.add_argument("-n", "--num-years", dest="nyears", type=float, required=True, help="Set the number of years over which to generate the ephemeris")
     parser.add_argument("-i", "--interval", dest="interval", type=float, required=True, help="Set the time step (in hours) between successive output points")
     parser.add_argument("-t", "--target", dest="target", required=True, help="Set the solar system body to generate the ephemeris for")
@@ -126,10 +127,19 @@ if __name__=='__main__':
     solar_system_ephemeris.set(ephemfile)
 
     # set the start time
-    try:
-        starttime = Time(args.gpsstart, format='gps', scale='utc')
-    except ValueError:
-        Exception("Could not parse start year: {}".format(args.gpsstart))
+    if args.gpsstart is not None and args.yearstart is not None:
+        print("Specify either '--gps-start' or '--year-start', but not both")
+        sys.exit(1)
+    elif args.gpsstart is not None:
+        try:
+            starttime = Time(args.gpsstart, format='gps', scale='utc')
+        except ValueError:
+            Exception("Could not parse start GPS time: {}".format(args.gpsstart))
+    else:
+        try:
+            starttime = Time(args.yearstart, format='decimalyear', scale='utc')
+        except ValueError:
+            Exception("Could not parse start year: {}".format(args.yearstart))
 
     # set the time step
     try:
@@ -139,7 +149,7 @@ if __name__=='__main__':
 
     # set the end time
     try:
-        endtime = Time(args.gpsstart + args.nyears*365.25*86400., format='gps', scale='utc')
+        endtime = starttime + TimeDelta(args.nyears*365.25*86400., format='sec') + dt
     except ValueError:
         Exception("Could not parse total timespan")
 
@@ -149,7 +159,7 @@ if __name__=='__main__':
 
     # get positions, velocities and accelerations
     curtime = starttime
-    while curtime <= endtime+dt:
+    while curtime <= endtime:
         tpos, tvel = get_body_barycentric_posvel(body, curtime)
 
         # convert positions to light seconds
@@ -158,16 +168,14 @@ if __name__=='__main__':
         # convert velocities to light seconds per second
         vel.append(tvel.xyz.to('m/s')/const.c)
 
-        # calculate accelerations
-        if len(vel) > 1:
-            acc.append((vel[-1]-vel[-2])/dt.to('s'))
+        # calculate accelerations (using velocities +/- dt/2 around the current time)
+        ctminus = curtime - dt/2.
+        _, mvel = get_body_barycentric_posvel(body, ctminus)
+        ctplus = curtime + dt/2.
+        _, pvel = get_body_barycentric_posvel(body, ctplus)    
+        acc.append(((pvel.xyz.to('m/s')-mvel.xyz.to('m/s'))/const.c)/dt.to('s'))
 
         curtime += dt
-    
-    # calculate final acceleration and make lists the same length
-    acc.append((vel[-1]-vel[-2])/dt.to('s'))
-    del pos[-1]
-    del vel[-1]
 
     # set output header
     headdic = {}
