@@ -79,10 +79,10 @@ This package provides the Octave bindings for LALPulsar.
 
 %build
 %configure --disable-gcc-flags --enable-swig --enable-cfitsio
-%{__make} V=1
+%{__make} %{?_smp_mflags} V=1
 
 %check
-%{__make} V=1 check
+%{__make} %{?_smp_mflags} V=1 check
 
 %install
 %make_install
