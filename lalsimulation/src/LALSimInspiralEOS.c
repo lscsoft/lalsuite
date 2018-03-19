@@ -247,7 +247,9 @@ REAL8 XLALSimInspiralNSRadiusOfLambdaM(
  * It uses XLALSimInspiralNSRadiusOfLambdaM() to calculate radii (see above).
  * The return value is the GW contact frequency in Hz.
  */
-
+ */ source https://arxiv.org/pdf/1503.05405.pdf 
+ *  Note eq (14) typo should be rtot^3 code is correct 
+ */
 REAL8 XLALSimInspiralContactFrequency(
     REAL8 m1_intr, /**< Mass of companion 1 (in solar masses) */ 
     REAL8 barlambda1, /**< Dimensionless tidal deformability parameter of mass 1 */
