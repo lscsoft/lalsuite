@@ -197,7 +197,7 @@ static REAL8 XLALSpinPrecHcapExactDerivativeNoWrap(
     }
 
     /** KK defined in Barausse and Buonanno PRD 81, 084024 (2010)
-     * Equations 6.11 and 6.13.
+     * Equation 6.11.
      */
     REAL8 m1PlusEtaKK = coeffs->KK*eta-1.0;
 
@@ -215,8 +215,7 @@ static REAL8 XLALSpinPrecHcapExactDerivativeNoWrap(
 
     /** variedParam specifies which partial derivative to compute;
      * the following switch structure sorts derivatives both by tortoise
-     * value and divby0 status.  Both tortoise and divby0 act as
-     * parameters that affect partial derivative computations.
+     * value and divby0 status.
      */
     if(variedParam <= 5 || !divby0 ){
         switch(tortoise){
