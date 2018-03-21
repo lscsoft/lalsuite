@@ -33,6 +33,7 @@
 #include <lal/Sequence.h>
 #include <lal/FrequencySeries.h>
 #include <lal/TimeFreqFFT.h>
+#include <lal/LALInferenceDistanceMarg.h>
 
 #include <gsl/gsl_sf_bessel.h>
 #include <gsl/gsl_sf_dawson.h>
@@ -1170,9 +1171,19 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   REAL8 OptimalSNR=sqrt(2.0*S);
   REAL8 MatchedFilterSNR = 0.;
 
+    
   /* Avoid nan's, since noise-only model has OptimalSNR == 0. */
   if (OptimalSNR > 0.)
       MatchedFilterSNR = 2.0*d_inner_h/OptimalSNR;
+    
+    if(1){
+        double dist_min, dist_max;
+        LALInferenceGetMinMaxPrior(model->params, "logdistance", &dist_min, &dist_max);
+        double marg_l = dist_integral(OptimalSNR, 2.0*d_inner_h, exp(dist_min), exp(dist_max));
+        loglikelihood = -D + log(marg_l);
+    }
+
+    
   LALInferenceAddVariable(currentParams,"optimal_snr",&OptimalSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   LALInferenceAddVariable(currentParams,"matched_filter_snr",&MatchedFilterSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
