@@ -1179,7 +1179,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     if(1){
         double dist_min, dist_max;
         LALInferenceGetMinMaxPrior(model->params, "logdistance", &dist_min, &dist_max);
-        double marg_l = dist_integral(OptimalSNR, 2.0*d_inner_h, exp(dist_min), exp(dist_max));
+        double marg_l = dist_integral(OptimalSNR*OptimalSNR, 2.0*d_inner_h, exp(dist_min), exp(dist_max));
         loglikelihood = -D + log(marg_l);
     }
 
