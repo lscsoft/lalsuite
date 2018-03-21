@@ -17,8 +17,8 @@
  * rho_opt is optimal SNR at 1 Mpc
  * rho_mf is <d|h> at 1 Mpc
  */
-double dist_integral(double rho_opt, double rho_match);
+double dist_integral(double rho_opt, double rho_match, double dist_min, double dist_max);
 
-double dist_snr_pdf(double rho_opt, double rho_match, double dL);
+double dist_snr_pdf(double dL, void *args);
 
 #endif /* LALInferenceDistanceMarg_h */

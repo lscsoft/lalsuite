@@ -1288,8 +1288,15 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     Dinitial=atof(ppt->value);
     distanceVary = LALINFERENCE_PARAM_FIXED;
   }
-
-  LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", log(Dinitial), log(Dmin), log(Dmax), distanceVary);
+  
+  if(LALInferenceGetProcParamVal(commandLine,"--margdist"))
+  {
+      REAL8 a = log(Dmin), b=log(Dmax);
+      LALInferenceAddMinMaxPrior(model->params, "logdistance", &a, &b, LALINFERENCE_REAL8_t);
+  }
+  else
+      LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", log(Dinitial), log(Dmin), log(Dmax), distanceVary) ;
+  
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "costheta_jn", zero, costhetaJNmin, costhetaJNmax,LALINFERENCE_PARAM_LINEAR);
 
