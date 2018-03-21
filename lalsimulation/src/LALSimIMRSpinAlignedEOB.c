@@ -488,7 +488,7 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
   INT4 nqcFlag = 0;
 
 
-  if ( SpinAlignedEOBversion == 401 || SpinAlignedEOBversion == 4 ) {
+  if ( SpinAlignedEOBversion == 401 ) {
     REAL8Vector   *tVec = NULL;
     REAL8Vector   *rVec = NULL;
     REAL8Vector   *phiVec = NULL;
