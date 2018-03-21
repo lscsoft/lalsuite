@@ -1828,7 +1828,8 @@ class SingularityNode(pipeline.CondorDAGNode):
         #filename=os.path.relpath(filename,start=self.job().basedir)
         relfile=os.path.relpath(filename,start=self.job().basedir)
         print("relative path ",relfile)
-        self.add_var_opt(opt,relfile)
+        # The code option needs the path as seen inside singularity, i.e. the pwd
+        self.add_var_opt(opt,os.path.basename(relfile))
         if file_is_output_file:
             self.add_output_file(filename)
         else:
@@ -1964,7 +1965,7 @@ class EngineJob(SingularityJob,pipeline.AnalysisJob):
 class EngineNode(SingularityNode):
   new_id = itertools.count().next
   def __init__(self,li_job):
-    super(SingularityNode,self).__init__(li_job)
+    super(EngineNode,self).__init__(li_job)
     self.ifos=[]
     self.scisegs={}
     self.channels={}
