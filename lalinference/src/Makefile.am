@@ -75,6 +75,7 @@ liblalinference_la_SOURCES = \
     LALInferenceDistanceMarg.c \
 	logaddexp.h \
 	cubic_interp.c \
+	distance_integrator.c \
 	$(BAYESTARSRC) \
 	$(XMLSRC)
 

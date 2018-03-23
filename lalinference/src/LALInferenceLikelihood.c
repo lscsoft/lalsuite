@@ -43,6 +43,8 @@
 
 #include "logaddexp.h"
 
+#include "distance_integrator.h"
+
 typedef enum
 {
   GAUSSIAN,
@@ -1208,9 +1210,32 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     
     if(1){
         double dist_min, dist_max;
+		static const size_t default_log_radial_integrator_size = 400;
         LALInferenceGetMinMaxPrior(model->params, "logdistance", &dist_min, &dist_max);
-        double marg_l = dist_integral(OptimalSNR*OptimalSNR, 2.0*d_inner_h, exp(dist_min), exp(dist_max));
-        loglikelihood = -D + log(marg_l);
+		static log_radial_integrator *integrator=NULL;
+		#pragma omp threadprivate(integrator)
+
+		if (integrator == NULL)
+		{
+				double pmax = 20000; /* CHECKME: Max SNR allowed ? */
+				int cosmology = 0; /* 0 = euclidean, nonzero co-moving */
+				/* Initialise the integrator for the first time */
+				integrator = log_radial_integrator_init(
+								dist_min,
+								dist_max,
+								2, /* Power of distance in prior */
+								cosmology,
+								pmax,
+								default_log_radial_integrator_size * 5 /* CHECKME: fudge factor of 5 compared to bayestar */
+								);
+				if (!integrator) XLAL_ERROR(XLAL_EFUNC, "Unable to initialise distance marginalisation integrator");
+		}
+
+		
+
+        //double marg_l = dist_integral(OptimalSNR*OptimalSNR, 2.0*d_inner_h, exp(dist_min), exp(dist_max));
+		double marg_l = log_radial_integrator_eval(integrator, OptimalSNR / sqrt(2), 2.0 * d_inner_h, log(OptimalSNR / sqrt(2)), log(2.0* d_inner_h));
+        loglikelihood = -D + marg_l;
     }
 
     
