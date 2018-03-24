@@ -16,20 +16,23 @@
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA  02111-1307  USA
  */
-
+#include <stdlib.h>
 #include "bayestar_cosmology.h"
-//#include "omp_interruptible.h"
+#include "omp_interruptible.h"
 
 #include <assert.h>
 
 #include <lal/LALError.h>
+#include <lal/LALMalloc.h>
 
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_sf_bessel.h>
 #include <gsl/gsl_sf_exp.h>
+#include <gsl/gsl_errno.h>
 
-#include "distance_integrator.h"
+
+#include <lal/distance_integrator.h>
 
 #ifndef _OPENMP
 #define omp ignore
@@ -37,12 +40,6 @@
 
 
 
-typedef struct {
-    double scale;
-    double p;
-    double b;
-    int k, cosmology;
-} radial_integrand_params;
 
 
 /* Uniform-in-comoving volume prior for the WMAP9 cosmology.
@@ -58,7 +55,7 @@ typedef struct {
  */
 static gsl_spline *dVC_dVL_interp = NULL;
 
-static double log_dVC_dVL(double DL)
+double log_dVC_dVL(double DL)
 {
     const double log_DL = log(DL);
     if (log_DL <= dVC_dVL_tmin)
@@ -71,6 +68,17 @@ static double log_dVC_dVL(double DL)
     }
 }
 
+void dVC_dVL_init(void)
+{
+    const size_t len = sizeof(dVC_dVL_data) / sizeof(*dVC_dVL_data);
+    dVC_dVL_interp = gsl_spline_alloc(gsl_interp_cspline, len);
+    assert(dVC_dVL_interp);
+    double x[len];
+    for (size_t i = 0; i < len; i ++)
+        x[i] = dVC_dVL_tmin + i * dVC_dVL_dt;
+    int ret = gsl_spline_init(dVC_dVL_interp, x, dVC_dVL_data, len);
+    assert(ret == GSL_SUCCESS);
+}
 
 static double radial_integrand(double r, void *params)
 {
@@ -79,15 +87,31 @@ static double radial_integrand(double r, void *params)
     const double p = integrand_params->p;
     const double b = integrand_params->b;
     const int k = integrand_params->k;
+    gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
     double ret = scale - gsl_pow_2(p / r - 0.5 * b / p);
+    int retval=GSL_SUCCESS;
+    gsl_sf_result result;
     if (integrand_params->cosmology)
         ret += log_dVC_dVL(r);
-    return gsl_sf_exp_mult(
-        ret, gsl_sf_bessel_I0_scaled(b / r) * gsl_pow_int(r, k));
+    retval = gsl_sf_exp_mult_e(
+        ret, gsl_sf_bessel_I0_scaled(b / r) * gsl_pow_int(r, k),
+        &result);
+    gsl_set_error_handler(old_handler);
+    switch (retval)
+    {
+        case GSL_SUCCESS:
+            return(result.val);
+            break;
+        case GSL_EUNDRFLW:
+            return(0); /* Underflow */
+            break;
+        default:
+            XLAL_ERROR(XLAL_EFUNC,"GSL error %s",gsl_strerror(retval));
+    }
 }
 
 
-static double log_radial_integrand(double r, void *params)
+double log_radial_integrand(double r, void *params)
 {
     const radial_integrand_params *integrand_params = params;
     const double scale = integrand_params->scale;
@@ -102,7 +126,7 @@ static double log_radial_integrand(double r, void *params)
 }
 
 
-static double log_radial_integral(double r1, double r2, double p, double b, int k, int cosmology)
+double log_radial_integral(double r1, double r2, double p, double b, int k, int cosmology)
 {
     radial_integrand_params params = {0, p, b, k, cosmology};
     double breakpoints[5];
@@ -210,7 +234,7 @@ static double log_radial_integral(double r1, double r2, double p, double b, int 
 
 log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, int cosmology, double pmax, size_t size)
 {
-    log_radial_integrator *integrator;
+    log_radial_integrator *integrator = NULL;
     bicubic_interp *region0 = NULL;
     cubic_interp *region1 = NULL, *region2 = NULL;
     const double alpha = 4;
@@ -223,12 +247,21 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, i
     const double d = (xmax - xmin) / (size - 1); /* dx = dy = du */
     const double umin = - (1 + M_SQRT1_2) * alpha;
     const double vmax = x0 - M_SQRT1_2 * alpha;
-    double z0[size][size], z1[size], z2[size];
+    
+    double *z1=calloc(size,sizeof(*z1));
+    double *z2=calloc(size,sizeof(*z2));
+    double **z0=calloc(size,sizeof(*z0));
+    assert(z0 && z1 && z2);
+    for (size_t i=0;i<size;i++)
+    {
+        z0[i]=calloc(size,sizeof(*z0[i]));
+        assert(z0[i]);
+    }
     /* const double umax = xmax - vmax; */ /* unused */
 
     int interrupted=0;
-    // OMP_BEGIN_INTERRUPTIBLE
-    integrator = calloc(1,sizeof(log_radial_integrator));
+    OMP_BEGIN_INTERRUPTIBLE
+    integrator = malloc(sizeof(*integrator));
 
     #pragma omp parallel for
     for (size_t i = 0; i < size * size; i ++)
@@ -249,10 +282,8 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, i
         z0[ix][iy] = log_radial_integral(r1, r2, p, b, k, cosmology);
     }
 
-    /*
 	if (OMP_WAS_INTERRUPTED)
         goto done;
-    */
 
     region0 = bicubic_interp_init(*z0, size, size, xmin, ymin, d, d);
 
@@ -264,12 +295,12 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, i
         z2[i] = z0[i][size - 1 - i];
     region2 = cubic_interp_init(z2, size, umin, d);
 
-	/*
 done:
     interrupted = OMP_WAS_INTERRUPTED;
     OMP_END_INTERRUPTIBLE
-	*/
-
+    
+    for (size_t i=0;i<size;i++) free(z0[i]);
+    free(z2); free(z1); free(z0);
     if (interrupted || !(integrator && region0 && region1 && region2))
     {
         free(integrator);

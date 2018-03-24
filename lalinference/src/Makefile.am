@@ -43,8 +43,9 @@ pkginclude_HEADERS = \
 	LALInferenceBurstRoutines.h \
 	LALInferenceHDF5.h \
 	LALInferencePriorVolumes.h \
-    LALInferenceDistanceMarg.h \
+	LALInferenceDistanceMarg.h \
 	cubic_interp.h \
+	distance_integrator.h \
 	$(BAYESTARHDR) \
 	$(XMLHDR)
 
@@ -72,7 +73,7 @@ liblalinference_la_SOURCES = \
 	LALInferenceHDF5.c \
 	LALInferencePriorVolumes.c \
 	DetectorFixedSkyCoords.c \
-    LALInferenceDistanceMarg.c \
+	LALInferenceDistanceMarg.c \
 	logaddexp.h \
 	cubic_interp.c \
 	distance_integrator.c \
