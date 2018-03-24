@@ -43,7 +43,7 @@
 
 #include "logaddexp.h"
 
-#include "distance_integrator.h"
+#include <lal/distance_integrator.h>
 
 typedef enum
 {
