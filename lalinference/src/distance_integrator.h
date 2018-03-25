@@ -52,7 +52,8 @@ void log_radial_integrator_free(log_radial_integrator *integrator);
  * @param integrator a log_radial_integrator
  * @param p The optimal SNR $p = sqrt(<h|h>)$
  * @param b match between template and data $b = <h|d> $
- * @param log_p log_b the logs of the above params
+ * @param log_p log(p)
+ * @param log_b log(b)
  */
 double log_radial_integrator_eval(const log_radial_integrator *integrator, double p, double b, double log_p, double log_b);
 
