@@ -21,6 +21,7 @@
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceProposal.h>
+#include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceHDF5.h>
 #include <lal/LALInferencePriorVolumes.h>
 
@@ -1209,6 +1210,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
         XLALH5FileAddScalarAttribute(groupPtr, "cpu_time", &execution_time, LAL_D_TYPE_CODE);
       }
 
+      LALInferenceVariables *injParams = NULL;
+      if ( (injParams=LALInferencePrintInjectionSample(runState)) )
+      {
+        LALInferenceH5VariablesArrayToDataset(groupPtr, &injParams, 1, "injection_params");
+        LALInferenceClearVariables(injParams);
+        XLALFree(injParams);
+      }
       XLALH5FileClose(h5file);
     }
   

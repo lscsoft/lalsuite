@@ -2190,7 +2190,7 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
 
 }
 
-void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
+LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
     int errnum=0;
     char *fname=NULL;
     char defaultname[]="injection_params.dat";
@@ -2209,7 +2209,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
 
     ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine,"--inj");
     if (!ppt)
-        return;
+        return(NULL);
 
     SimInspiralTableFromLIGOLw(&injTable, ppt->value, 0, 0);
 
@@ -2240,7 +2240,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
 
     if (!(approx && order)){
         fprintf(stdout,"Unable to print injection sample: No approximant/PN order set\n");
-        return;
+        return(NULL);
     }
 
     REAL8 fref = 100.;
@@ -2294,9 +2294,8 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
     LALInferencePrintSample(outfile, injparams);
 
     fclose(outfile);
-    LALInferenceClearVariables(injparams);
-    XLALFree(injparams);
-    return;
+    //LALInferenceClearVariables(injparams);
+    return(injparams);
 }
 
 int enforce_m1_larger_m2(SimInspiralTable* injEvent){
