@@ -368,7 +368,7 @@ def cbcBayesBurstPostProc(
     #Create an instance of the posterior class using the posterior values loaded
     #from the file and any injection information (if given).
     if got_inspiral_table==1:
-        pos = bppu.Posterior(commonResultsObj,SimInspiralTableEntry=injection,injFref=injFref,SnglInpiralList=triggers,votfile=votfile)
+        pos = bppu.Posterior(commonResultsObj,SimInspiralTableEntry=injection,injFref=injFref,SnglInspiralList=triggers,votfile=votfile)
     else:
         pos = bppu.BurstPosterior(commonResultsObj,SimBurstTableEntry=injection,injFref=injFref,SnglBurstList=triggers,votfile=votfile)
     #Create analytic likelihood functions if covariance matrices and mean vectors were given
@@ -387,7 +387,7 @@ def cbcBayesBurstPostProc(
     if eventnum is None and injfile is not None:
         import itertools
         if got_inspiral_table==1:
-            injections = SimInspiralUtils.ReadSimInpiralFromFiles([injfile])
+            injections = SimInspiralUtils.ReadSimInspiralFromFiles([injfile])
 
         if(len(injections)<1):
             try:

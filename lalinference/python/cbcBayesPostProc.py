@@ -392,7 +392,7 @@ def cbcBayesPostProc(
 
     #Create an instance of the posterior class using the posterior values loaded
     #from the file and any injection information (if given).
-    pos = bppu.Posterior(commonResultsObj,SimInspiralTableEntry=injection,inj_spin_frame=inj_spin_frame, injFref=injFref,SnglInpiralList=triggers,votfile=votfile)
+    pos = bppu.Posterior(commonResultsObj,SimInspiralTableEntry=injection,inj_spin_frame=inj_spin_frame, injFref=injFref,SnglInspiralList=triggers)
 
     #Create analytic likelihood functions if covariance matrices and mean vectors were given
     analyticLikelihood = None
