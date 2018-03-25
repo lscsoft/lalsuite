@@ -179,6 +179,9 @@ REAL8 LALInferenceMarginalisedPhaseLogLikelihood(LALInferenceVariables *currentP
 
 REAL8 LALInferenceMarginalisedTimePhaseLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
+/** Compute delta-log-likelihood for given distance min, max and OptimalSNR and d_inner_h when evaluated at 1Mpc */
+double LALInferenceMarginalDistanceLogLikelihood(double dist_min, double dist_max, double OptimalSNR, double d_inner_h);
+
 
 /**
  * Returns the log-likelihood marginalised over the time dimension
