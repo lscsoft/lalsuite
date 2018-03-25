@@ -1,3 +1,9 @@
+#ifndef DISTANCE_INTEGRATOR_H
+#define DISTANCE_INTEGRATOR_H
+
+/* exclude from SWIG interface and C++ code */
+#if !defined(SWIG) && !defined(__cplusplus)
+
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_interp.h>
 #include <lal/cubic_interp.h>
@@ -50,3 +56,6 @@ void log_radial_integrator_free(log_radial_integrator *integrator);
  */
 double log_radial_integrator_eval(const log_radial_integrator *integrator, double p, double b, double log_p, double log_b);
 
+#endif /* !defined(SWIG) && !defined(__cplusplus) */
+
+#endif /* DISTANCE_INTEGRATOR_H */
