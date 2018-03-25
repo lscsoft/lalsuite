@@ -62,6 +62,10 @@ typedef enum
 #define UNUSED
 #endif
 
+#ifndef _OPENMP
+#define omp ignore
+#endif
+
 static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *currentParams,
                                                LALInferenceIFOData *data,
                                                LALInferenceModel *model,
@@ -374,6 +378,8 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   {
       margdist = 1;
       LALInferenceGetMinMaxPrior(model->params, "logdistance", &dist_min, &dist_max);
+      dist_max=exp(dist_max);
+      dist_min=exp(dist_min);
   }
 
   if (LALInferenceCheckVariable(currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "spcal_active"))) {
@@ -1242,31 +1248,31 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
 double LALInferenceMarginalDistanceLogLikelihood(double dist_min, double dist_max, double OptimalSNR, double d_inner_h)
 {
-		static const size_t default_log_radial_integrator_size = 400;
+        static const size_t default_log_radial_integrator_size = 400;
         double loglikelihood=0;
-		static log_radial_integrator *integrator;
-#pragma omp threadprivate(integrator)
+        static log_radial_integrator *integrator;
+
         double pmax = 100000; /* CHECKME: Max SNR allowed ? */
-
-		if (integrator == NULL)
-		{
+        #pragma omp critical
+        {
+            if (integrator == NULL)
+            {
                 printf("Initialising distance integration lookup table\n");
-				int cosmology = 0; /* 0 = euclidean, nonzero co-moving */
-				/* Initialise the integrator for the first time */
-				integrator = log_radial_integrator_init(
-								dist_min,
-								dist_max,
-								2, /* Power of distance in prior */
-								cosmology,
-								pmax,
-								default_log_radial_integrator_size * 5 /* CHECKME: fudge factor of 5 compared to bayestar */
-								);
-				if (!integrator) XLAL_ERROR(XLAL_EFUNC, "Unable to initialise distance marginalisation integrator");
-		}
+                int cosmology = 0; /* 0 = euclidean, nonzero co-moving */
+                /* Initialise the integrator for the first time */
+                integrator = log_radial_integrator_init(
+                                dist_min,
+                                dist_max,
+                                2, /* Power of distance in prior */
+                                cosmology,
+                                pmax,
+                                default_log_radial_integrator_size * 5 /* CHECKME: fudge factor of 5 compared to bayestar */
+                                );
+            }
+        }
+        #pragma omp barrier
+        if (!integrator) XLAL_ERROR(XLAL_EFUNC, "Unable to initialise distance marginalisation integrator");
 
-		
-
-        //double marg_l = dist_integral(OptimalSNR*OptimalSNR, 2.0*d_inner_h, exp(dist_min), exp(dist_max));
         if (isnan(OptimalSNR) || isnan(d_inner_h) || pmax<OptimalSNR / sqrt(2))
         {
             loglikelihood=-INFINITY;
@@ -1275,7 +1281,7 @@ double LALInferenceMarginalDistanceLogLikelihood(double dist_min, double dist_ma
         else
         {
             double marg_l = log_radial_integrator_eval(integrator, OptimalSNR / sqrt(2), 2.0 * d_inner_h, log(OptimalSNR / sqrt(2)), log(2.0* d_inner_h));
-            loglikelihood = marg_l;
+            loglikelihood = marg_l - (log(dist_max-dist_min)); /* Normalise over prior */
         }
         return (loglikelihood);
 }
