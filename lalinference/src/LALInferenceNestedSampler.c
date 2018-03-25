@@ -174,7 +174,7 @@ static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NS
   double execution_time = 0.0;
   if ( ( execution_time = XLALH5FileQueryScalarAttributeValue(&execution_time, group, "execution_time") ) )
   {
-      LALInferenceAddVariable(runState->algorithmParams, "execution_time", &execution_time, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(runState->algorithmParams, "cpu_time", &execution_time, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
   }
   
   XLALH5FileClose(group);
@@ -795,7 +795,7 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
                             LALINFERENCE_PARAM_FIXED);
   }
   double zero=0.0;
-  LALInferenceAddVariable(runState->algorithmParams,"execution_time",&zero,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+  LALInferenceAddVariable(runState->algorithmParams,"cpu_time",&zero,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
   
   return;
 
@@ -1712,7 +1712,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
         }
         else
         {
-            nmcmc_exact = (1.0 - 1.0/tau)*nmcmc_exact + (safety/tau)*(2.0/accept_rate - 1.0);
+            nmcmc_exact = (1.0 - 1.0/tau)*nmcmc_exact + (safety/tau)*(2.0/sub_accept_rate - 1.0);
         }
         LALInferenceSetINT4Variable(runState->algorithmParams, "Nmcmc", (INT4) nmcmc_exact);
     }
