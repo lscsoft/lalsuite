@@ -1138,7 +1138,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       
       if(margdist )
       {
-        loglikelihood = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), 0.5*R);
+        loglikelihood = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), R);
         loglikelihood -= D ;
         REAL8 distance_maxl = 2.0*S/R;
         LALInferenceAddVariable(currentParams, "distance_maxl", &distance_maxl, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
@@ -1243,8 +1243,11 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   if (OptimalSNR > 0.)
       MatchedFilterSNR = 2.0*d_inner_h/OptimalSNR;
     
+  if(margdist) /* If margdist enabled, scale snr to optimal distance */
+  {
+      OptimalSNR/=LALInferenceGetREAL8Variable(currentParams,"distance_maxl");
+  }
 
-    
   LALInferenceAddVariable(currentParams,"optimal_snr",&OptimalSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   LALInferenceAddVariable(currentParams,"matched_filter_snr",&MatchedFilterSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
@@ -1257,6 +1260,7 @@ double LALInferenceMarginalDistanceLogLikelihood(double dist_min, double dist_ma
 {
         static const size_t default_log_radial_integrator_size = 400;
         double loglikelihood=0;
+        static double log_norm = 0;
         static log_radial_integrator *integrator;
 
         double pmax = 100000; /* CHECKME: Max SNR allowed ? */
@@ -1275,11 +1279,13 @@ double LALInferenceMarginalDistanceLogLikelihood(double dist_min, double dist_ma
                                 pmax,
                                 default_log_radial_integrator_size * 5 /* CHECKME: fudge factor of 5 compared to bayestar */
                                 );
+                /* distance prior normalisation */
+                log_norm = log_radial_integrator_eval(integrator, 0, 0, -INFINITY, -INFINITY);
             }
         }
         #pragma omp barrier
         if (!integrator) XLAL_ERROR(XLAL_EFUNC, "Unable to initialise distance marginalisation integrator");
-
+        
         if (isnan(OptimalSNR) || isnan(d_inner_h) || pmax<OptimalSNR / sqrt(2))
         {
             loglikelihood=-INFINITY;
@@ -1287,8 +1293,8 @@ double LALInferenceMarginalDistanceLogLikelihood(double dist_min, double dist_ma
         }
         else
         {
-            double marg_l = log_radial_integrator_eval(integrator, OptimalSNR / sqrt(2), 2.0 * d_inner_h, log(OptimalSNR / sqrt(2)), log(2.0* d_inner_h));
-            loglikelihood = marg_l - (log(dist_max-dist_min)); /* Normalise over prior */
+            double marg_l = log_radial_integrator_eval(integrator, OptimalSNR , d_inner_h, log(OptimalSNR), log(d_inner_h));
+            loglikelihood = marg_l - log_norm; /* Normalise prior */
         }
         return (loglikelihood);
 }
