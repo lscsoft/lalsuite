@@ -190,10 +190,10 @@ double log_radial_integral(double r1, double r2, double p, double b, int k, int 
         log_offset = 0;
 
     params.scale = -log_offset;
-
-    {
+    size_t n = 64;
+    do {
         /* Maximum number of subdivisions for adaptive integration. */
-        static const size_t n = 64;
+
 
         /* Allocate workspace on stack. Hopefully, a little bit faster than
          * using the heap in multi-threaded code. */
@@ -216,13 +216,18 @@ double log_radial_integral(double r1, double r2, double p, double b, int k, int 
 
         /* Set up integrand data structure. */
         const gsl_function func = {radial_integrand, &params};
+        gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
 
         /* Perform adaptive Gaussian quadrature. */
         ret = gsl_integration_qagp(&func, breakpoints, nbreakpoints,
-            DBL_MIN, 1e-8, n, &workspace, &result, &abserr);
+            1e-8, 1e-8, n, &workspace, &result, &abserr);
+        n*=2;
+        if(ret!=GSL_SUCCESS) fprintf(stderr,"GSL error %s, increasing n to %li\n",gsl_strerror(ret),n);
+        gsl_set_error_handler(old_handler);
 
         /* FIXME: do we care to keep the error estimate around? */
     }
+    while(ret!=GSL_SUCCESS);
 
     /* FIXME: do something with ret */
     (void)ret;
@@ -250,13 +255,15 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, i
     
     double *z1=calloc(size,sizeof(*z1));
     double *z2=calloc(size,sizeof(*z2));
-    double **z0=calloc(size,sizeof(*z0));
+    double *z0=calloc(size*size,sizeof(*z0));
     assert(z0 && z1 && z2);
+    /*
     for (size_t i=0;i<size;i++)
     {
         z0[i]=calloc(size,sizeof(*z0[i]));
         assert(z0[i]);
     }
+    */
     /* const double umax = xmax - vmax; */ /* unused */
 
     int interrupted=0;
@@ -279,27 +286,26 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, i
         const double r0 = exp(y);
         const double b = 2 * gsl_pow_2(p) / r0;
         /* Note: using this where p > r0; could reduce evaluations by half */
-        z0[ix][iy] = log_radial_integral(r1, r2, p, b, k, cosmology);
+        z0[ix*size + iy] = log_radial_integral(r1, r2, p, b, k, cosmology);
     }
 
 	if (OMP_WAS_INTERRUPTED)
         goto done;
 
-    region0 = bicubic_interp_init(*z0, size, size, xmin, ymin, d, d);
+    region0 = bicubic_interp_init(z0, size, size, xmin, ymin, d, d);
 
     for (size_t i = 0; i < size; i ++)
-        z1[i] = z0[i][size - 1];
+        z1[i] = z0[i*size + (size - 1)];
     region1 = cubic_interp_init(z1, size, xmin, d);
 
     for (size_t i = 0; i < size; i ++)
-        z2[i] = z0[i][size - 1 - i];
+        z2[i] = z0[i*size + (size - 1 - i)];
     region2 = cubic_interp_init(z2, size, umin, d);
 
 done:
     interrupted = OMP_WAS_INTERRUPTED;
     OMP_END_INTERRUPTIBLE
     
-    for (size_t i=0;i<size;i++) free(z0[i]);
     free(z2); free(z1); free(z0);
     if (interrupted || !(integrator && region0 && region1 && region2))
     {

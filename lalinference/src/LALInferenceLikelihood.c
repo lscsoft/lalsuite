@@ -47,11 +47,12 @@
 
 typedef enum
 {
-  GAUSSIAN,
-  STUDENTT,
-  MARGPHI,
-  MARGTIME,
-  MARGTIMEPHI
+  GAUSSIAN = 1,
+  STUDENTT = 2,
+  MARGPHI = 4,
+  MARGTIME = 8,
+  MARGTIMEPHI = 16,
+  MARGDIST = 32
 } LALInferenceLikelihoodFlags;
 
 
@@ -366,7 +367,14 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
   /* ROQ likelihood stuff */
   REAL8 d_inner_h=0.0;
-
+  double dist_min, dist_max;
+  
+  UINT4 margdist = 0;
+  if(LALInferenceCheckVariable(model->params, "MARGDIST") && LALInferenceGetVariable(model->params, "MARGDIST"))
+  {
+      margdist = 1;
+      LALInferenceGetMinMaxPrior(model->params, "logdistance", &dist_min, &dist_max);
+  }
 
   if (LALInferenceCheckVariable(currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "spcal_active"))) {
     spcal_active = 1;
@@ -1121,6 +1129,12 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       /* This is marginalised over phase only for now */
       loglikelihood += -(S+D) + log(I0x) + R ;
       d_inner_h= 0.5*R;
+      
+      if(margdist )
+      {
+        loglikelihood = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), d_inner_h);
+        loglikelihood -= D ;
+      }
       break;
     }
     case GAUSSIAN:
@@ -1163,8 +1177,16 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
                   angMax = atan2(dh_S_phase->data[i], dh_S->data[i]);
                   xMax=x;
               }
-              double I0=log(gsl_sf_bessel_I0_scaled(x)) + fabs(x);
-              dh_S->data[i] = I0;
+              
+              if(margdist)
+              {
+                dh_S->data[i]=LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), x) - D;
+              }
+              else
+              {
+                double I0=log(gsl_sf_bessel_I0_scaled(x)) + fabs(x);
+                dh_S->data[i] = I0;
+              }
           }
       }
       size_t imax;
@@ -1208,16 +1230,27 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   if (OptimalSNR > 0.)
       MatchedFilterSNR = 2.0*d_inner_h/OptimalSNR;
     
-    if(1){
-        double dist_min, dist_max;
+
+    
+  LALInferenceAddVariable(currentParams,"optimal_snr",&OptimalSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  LALInferenceAddVariable(currentParams,"matched_filter_snr",&MatchedFilterSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+
+  //loglikelihood = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
+
+  return(loglikelihood);
+}
+
+double LALInferenceMarginalDistanceLogLikelihood(double dist_min, double dist_max, double OptimalSNR, double d_inner_h)
+{
 		static const size_t default_log_radial_integrator_size = 400;
-        LALInferenceGetMinMaxPrior(model->params, "logdistance", &dist_min, &dist_max);
-		static log_radial_integrator *integrator=NULL;
-		#pragma omp threadprivate(integrator)
+        double loglikelihood=0;
+		static log_radial_integrator *integrator;
+#pragma omp threadprivate(integrator)
+        double pmax = 100000; /* CHECKME: Max SNR allowed ? */
 
 		if (integrator == NULL)
 		{
-				double pmax = 20000; /* CHECKME: Max SNR allowed ? */
+                printf("Initialising distance integration lookup table\n");
 				int cosmology = 0; /* 0 = euclidean, nonzero co-moving */
 				/* Initialise the integrator for the first time */
 				integrator = log_radial_integrator_init(
@@ -1234,17 +1267,17 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 		
 
         //double marg_l = dist_integral(OptimalSNR*OptimalSNR, 2.0*d_inner_h, exp(dist_min), exp(dist_max));
-		double marg_l = log_radial_integrator_eval(integrator, OptimalSNR / sqrt(2), 2.0 * d_inner_h, log(OptimalSNR / sqrt(2)), log(2.0* d_inner_h));
-        loglikelihood = -D + marg_l;
-    }
-
-    
-  LALInferenceAddVariable(currentParams,"optimal_snr",&OptimalSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-  LALInferenceAddVariable(currentParams,"matched_filter_snr",&MatchedFilterSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-
-  //loglikelihood = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
-
-  return(loglikelihood);
+        if (isnan(OptimalSNR) || isnan(d_inner_h) || pmax<OptimalSNR / sqrt(2))
+        {
+            loglikelihood=-INFINITY;
+            fprintf(stderr,"warning: Optimal SNR %lf exceeded pmax %lf\n",OptimalSNR/sqrt(2.0), pmax);
+        }
+        else
+        {
+            double marg_l = log_radial_integrator_eval(integrator, OptimalSNR / sqrt(2), 2.0 * d_inner_h, log(OptimalSNR / sqrt(2)), log(2.0* d_inner_h));
+            loglikelihood = marg_l;
+        }
+        return (loglikelihood);
 }
 
 /***************************************************************/
