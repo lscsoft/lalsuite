@@ -1138,7 +1138,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       
       if(margdist )
       {
-        loglikelihood = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), R);
+        loglikelihood = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), 0.5*R);
         loglikelihood -= D ;
         REAL8 distance_maxl = 2.0*S/R;
         LALInferenceAddVariable(currentParams, "distance_maxl", &distance_maxl, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
