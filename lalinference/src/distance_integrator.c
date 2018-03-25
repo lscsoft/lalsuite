@@ -216,14 +216,14 @@ double log_radial_integral(double r1, double r2, double p, double b, int k, int 
 
         /* Set up integrand data structure. */
         const gsl_function func = {radial_integrand, &params};
-        gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
+        //gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
 
         /* Perform adaptive Gaussian quadrature. */
         ret = gsl_integration_qagp(&func, breakpoints, nbreakpoints,
             1e-8, 1e-8, n, &workspace, &result, &abserr);
         n*=2;
         if(ret!=GSL_SUCCESS) fprintf(stderr,"GSL error %s, increasing n to %li\n",gsl_strerror(ret),n);
-        gsl_set_error_handler(old_handler);
+        //gsl_set_error_handler(old_handler);
 
         /* FIXME: do we care to keep the error estimate around? */
     }
@@ -269,14 +269,15 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, i
     int interrupted=0;
     OMP_BEGIN_INTERRUPTIBLE
     integrator = malloc(sizeof(*integrator));
+    /* Temporarily turn off gsl_error handler which isn't thread safe. */
+    gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
 
     #pragma omp parallel for
     for (size_t i = 0; i < size * size; i ++)
     {
-		/*
+
         if (OMP_WAS_INTERRUPTED)
             OMP_EXIT_LOOP_EARLY;
-		*/
 
         const size_t ix = i / size;
         const size_t iy = i % size;
@@ -288,7 +289,8 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, i
         /* Note: using this where p > r0; could reduce evaluations by half */
         z0[ix*size + iy] = log_radial_integral(r1, r2, p, b, k, cosmology);
     }
-
+    gsl_set_error_handler(old_handler);
+    
 	if (OMP_WAS_INTERRUPTED)
         goto done;
 
