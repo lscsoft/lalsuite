@@ -825,15 +825,14 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 					}
 	}
 
-	d_inner_h += creal(this_ifo_d_inner_h);
-        // D gets the factor of 2 inside nullloglikelihood
-        // R gets a factor of 2 later, before entering the Bessel function
-	S += 0.5*this_ifo_s;
-        D += -dataPtr->nullloglikelihood;
-        Rcplx += 0.5*this_ifo_d_inner_h;
+    d_inner_h += creal(this_ifo_d_inner_h);
+    // D gets the factor of 2 inside nullloglikelihood
+    // R gets a factor of 2 later, before entering the Bessel function
+    S += 0.5*this_ifo_s;
+    D += -dataPtr->nullloglikelihood;
+    Rcplx += 0.5*this_ifo_d_inner_h;
 
-        
-	model->ifo_loglikelihoods[ifo] = creal(this_ifo_d_inner_h) - (0.5*this_ifo_s) + dataPtr->nullloglikelihood;
+    model->ifo_loglikelihoods[ifo] = creal(this_ifo_d_inner_h) - (0.5*this_ifo_s) + dataPtr->nullloglikelihood;
     
     switch(marginalisationflags)
     {
@@ -852,26 +851,23 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       break;
     }
     
-	char varname[VARNAME_MAX];
-    	sprintf(varname,"%s_optimal_snr",dataPtr->name);
-    	REAL8 this_ifo_snr = sqrt(this_ifo_s);
-	model->ifo_SNRs[ifo] = this_ifo_snr;
-    	LALInferenceAddREAL8Variable(currentParams,varname,this_ifo_snr,LALINFERENCE_PARAM_OUTPUT);
+    char varname[VARNAME_MAX];
+    sprintf(varname,"%s_optimal_snr",dataPtr->name);
+    REAL8 this_ifo_snr = sqrt(this_ifo_s);
+    model->ifo_SNRs[ifo] = this_ifo_snr;
+    LALInferenceAddREAL8Variable(currentParams,varname,this_ifo_snr,LALINFERENCE_PARAM_OUTPUT);
 
-	sprintf(varname,"%s_cplx_snr_amp",dataPtr->name);
-	REAL8 cplx_snr_amp = cabs(this_ifo_d_inner_h)/this_ifo_snr;
-    	LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_amp,LALINFERENCE_PARAM_OUTPUT);
+    sprintf(varname,"%s_cplx_snr_amp",dataPtr->name);
+    REAL8 cplx_snr_amp = cabs(this_ifo_d_inner_h)/this_ifo_snr;
+    LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_amp,LALINFERENCE_PARAM_OUTPUT);
 
-    	sprintf(varname,"%s_cplx_snr_arg",dataPtr->name);
-    	REAL8 cplx_snr_phase = carg(this_ifo_d_inner_h);
-    	LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_phase,LALINFERENCE_PARAM_OUTPUT);
-
+    sprintf(varname,"%s_cplx_snr_arg",dataPtr->name);
+    REAL8 cplx_snr_phase = carg(this_ifo_d_inner_h);
+    LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_phase,LALINFERENCE_PARAM_OUTPUT);
 
     }
-
     else{
-
-    	REAL8 *psd=&(dataPtr->oneSidedNoisePowerSpectrum->data->data[lower]);
+    REAL8 *psd=&(dataPtr->oneSidedNoisePowerSpectrum->data->data[lower]);
     COMPLEX16 *dtilde=&(dataPtr->freqData->data->data[lower]);
     COMPLEX16 *hptilde=&(model->freqhPlus->data->data[lower]);
     COMPLEX16 *hctilde=&(model->freqhCross->data->data[lower]);
@@ -1026,6 +1022,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     S+=this_ifo_S;
     char varname[VARNAME_MAX];
     sprintf(varname,"%s_optimal_snr",dataPtr->name);
+    
     LALInferenceAddREAL8Variable(currentParams,varname,sqrt(2.0*this_ifo_S),LALINFERENCE_PARAM_OUTPUT);
 
     sprintf(varname,"%s_cplx_snr_amp",dataPtr->name);
@@ -1222,6 +1219,14 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   if(margdist) /* If margdist enabled, scale snr to optimal distance */
   {
       OptimalSNR/=LALInferenceGetREAL8Variable(currentParams,"distance_maxl");
+      /* Adjust the snrs in the IFOs */
+      for(dataPtr=data;dataPtr;dataPtr=dataPtr->next)
+      {
+          char varname[VARNAME_MAX];
+          sprintf(varname,"%s_optimal_snr",dataPtr->name);
+          REAL8 *s = LALInferenceGetVariable(currentParams,varname);
+          if(s) *s/=LALInferenceGetREAL8Variable(currentParams,"distance_maxl");
+      }
   }
 
   LALInferenceAddVariable(currentParams,"optimal_snr",&OptimalSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
