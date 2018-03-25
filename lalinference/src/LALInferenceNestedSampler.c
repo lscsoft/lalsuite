@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <float.h>
 #include <signal.h>
+#include <time.h>
+#include <sys/times.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -117,7 +119,12 @@ static int WriteNSCheckPointH5(char *filename, LALInferenceRunState *runState, N
     LALInferenceH5VariablesArrayToDataset(group, output_array, N_output_array, "past_chain");
     XLALH5FileAddScalarAttribute(group, "N_outputarray", &N_output_array, LAL_I4_TYPE_CODE);
   }
-  
+  struct tms tms_buffer;
+  if(times(&tms_buffer))
+  {
+    REAL8 execution_time = (REAL8)tms_buffer.tms_utime / (REAL8) sysconf (_SC_CLK_TCK) + LALInferenceGetREAL8Variable(runState->algorithmParams,"execution_time");
+    XLALH5FileAddScalarAttribute(group, "cpu_time", &execution_time, LAL_D_TYPE_CODE);
+  }
   XLALH5FileClose(group);
   XLALH5FileClose(h5file);
   return(retcode);
@@ -162,6 +169,12 @@ static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NS
     LALInferenceAddVariable(runState->algorithmParams,"outputarray",&outputarray,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
     XLALH5DatasetFree(outputGroup);
   }
+  double execution_time = 0.0;
+  if ( ( execution_time = XLALH5FileQueryScalarAttributeValue(&execution_time, group, "execution_time") ) )
+  {
+      LALInferenceAddVariable(runState->algorithmParams, "execution_time", &execution_time, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+  }
+  
   XLALH5FileClose(group);
   XLALH5FileClose(h5file);
   printf("done restoring\n");
@@ -751,6 +764,9 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
     LALInferenceAddVariable(runState->algorithmParams,"tolerance",&tmp, LALINFERENCE_REAL8_t,
                             LALINFERENCE_PARAM_FIXED);
   }
+  double zero=0.0;
+  LALInferenceAddVariable(runState->algorithmParams,"execution_time",&zero,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+  
   return;
 
 }
@@ -1155,7 +1171,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     /* Write HDF5 file */
     if(HDFOUTPUT)
     {
-      
+
       LALH5File *h5file=XLALH5FileOpen(outfile, "w");
       // Create group heirarchy 
       char runID[2048];
@@ -1175,6 +1191,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       XLALH5FileAddScalarAttribute(groupPtr, "log_max_likelihood", &logLmax , LAL_D_TYPE_CODE);
       XLALH5FileAddScalarAttribute(groupPtr, "number_live_points", &Nlive, LAL_U4_TYPE_CODE);
       XLALH5FileAddScalarAttribute(groupPtr, "log_prior_volume", &logvolume, LAL_D_TYPE_CODE);
+       /* Get the cpu usage */
+      struct tms tms_buffer;
+      if(times(&tms_buffer))
+      {
+        REAL8 execution_time = (REAL8)tms_buffer.tms_utime / (REAL8) sysconf (_SC_CLK_TCK) + LALInferenceGetREAL8Variable(runState->algorithmParams,"execution_time");
+        XLALH5FileAddScalarAttribute(groupPtr, "cpu_time", &execution_time, LAL_D_TYPE_CODE);
+      }
 
       LALInferenceVariables *injParams = NULL;
       if ( (injParams=LALInferencePrintInjectionSample(runState)) )
