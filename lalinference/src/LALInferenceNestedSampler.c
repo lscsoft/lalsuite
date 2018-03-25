@@ -1688,13 +1688,33 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceSetVariable(runState->algorithmParams,"accept_rate",&accept_rate);
     LALInferenceSetVariable(runState->algorithmParams,"sub_accept_rate",&sub_accept_rate);
     /* Adapt the sloppy fraction toward target acceptance of outer chain */
-    if(isfinite(logLmin)){
+    if(isfinite(logLmin))
+    {
         if((REAL8)accept_rate>Target) { sloppyfraction+=5.0/(REAL8)Nmcmc;}
         else { sloppyfraction-=5.0/(REAL8)Nmcmc;}
         if(sloppyfraction>maxsloppyfraction) sloppyfraction=maxsloppyfraction;
-	if(sloppyfraction<minsloppyfraction) sloppyfraction=minsloppyfraction;
+        if(sloppyfraction<minsloppyfraction) sloppyfraction=minsloppyfraction;
+        LALInferenceSetVariable(runState->algorithmParams,"sloppyfraction",&sloppyfraction);
 
-	LALInferenceSetVariable(runState->algorithmParams,"sloppyfraction",&sloppyfraction);
+        /* Update Nmcmc 
+        * Estimate autocorrelation length of chain using acceptance fraction
+        ACL = (2/acc) - 1
+        multiplied by a safety margin of 5
+        Uses moving average with decay time tau iterations (default: self.poolsize)
+        Taken from W. Farr's github.com/farr/Ensemble.jl
+        */
+        double tau = (double) LALInferenceGetINT4Variable(runState->algorithmParams, "Nlive");
+        double nmcmc_exact = (REAL8) Nmcmc;
+        double safety = 5.0;
+        if(accept_rate==0.0)
+        {
+            nmcmc_exact = (1.0 + 1.0/tau)*nmcmc_exact;
+        }
+        else
+        {
+            nmcmc_exact = (1.0 - 1.0/tau)*nmcmc_exact + (safety/tau)*(2.0/accept_rate - 1.0);
+        }
+        LALInferenceSetINT4Variable(runState->algorithmParams, "Nmcmc", (INT4) nmcmc_exact);
     }
     /* Cleanup */
     LALInferenceClearVariables(&oldParams);
