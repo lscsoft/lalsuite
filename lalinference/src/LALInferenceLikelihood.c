@@ -1188,7 +1188,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
               
               if(margdist)
               {
-                dh_S->data[i]=LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), x) - D;
+                dh_S->data[i]=LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), x) + S;
               }
               else
               {
@@ -1210,6 +1210,8 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
         LALInferenceAddVariable(currentParams,"phase_maxl",&phase_maxL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	    if(LALInferenceCheckVariable(currentParams,"phase")) LALInferenceRemoveVariable(currentParams,"phase");
         d_inner_h= 0.5*xMax;
+        REAL8 distance_maxl = 2.0*S/xMax;
+        LALInferenceAddVariable(currentParams, "distance_maxl", &distance_maxl, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
       }
       else
       {
