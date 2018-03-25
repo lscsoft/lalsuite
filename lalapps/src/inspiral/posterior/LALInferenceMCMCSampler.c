@@ -1414,6 +1414,13 @@ void LALInferenceWriteMCMCSamples(LALInferenceRunState *runState) {
         }
 
         /* TODO: Write metadata */
+        LALInferenceVariables *injParams = NULL;
+        if ( (injParams=LALInferencePrintInjectionSample(runState)) )
+        {
+            LALInferenceH5VariablesArrayToDataset(group, &injParams, 1, "injection_params");
+            LALInferenceClearVariables(injParams);
+            XLALFree(injParams);
+        }
     }
     XLALH5FileClose(group);
 
