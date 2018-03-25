@@ -134,7 +134,7 @@ def update_params_norm_hoff(P, IP, param_names, vals, verbose=False):
         setattr(P, 'm1', m1)
         setattr(P, 'm2', m2)
     elif special_params != []:
-        print special_params
+        print(special_params)
         raise Exception
 
     if verbose==True: # for debugging - make sure params change properly
@@ -186,18 +186,18 @@ def find_effective_Fisher_region(P, IP, target_match, param_names,param_bounds):
         try:
             min_param = brentq(func, param_peak, param_bounds[i][0], xtol=TOL)
         except ValueError:
-            print "\nWarning! Value", param_bounds[i][0], "of", param,\
+            print("\nWarning! Value", param_bounds[i][0], "of", param,\
                     "did not bound target match", target_match, ". Using",\
                     param_bounds[i][0], "as the lower bound of", param,\
-                    "range for the effective Fisher region.\n"
+                    "range for the effective Fisher region.\n")
             min_param = param_bounds[i][0]
         try:
             max_param = brentq(func, param_peak, param_bounds[i][1], xtol=TOL)
         except ValueError:
-            print "\nWarning! Value", param_bounds[i][1], "of", param,\
+            print("\nWarning! Value", param_bounds[i][1], "of", param,\
                     "did not bound target match", target_match, ". Using",\
                     param_bounds[i][1], "as the upper bound of", param,\
-                    "range for the effective Fisher region.\n"
+                    "range for the effective Fisher region.\n")
             max_param = param_bounds[i][1]
         param_cube.append( [min_param, max_param] )
 
