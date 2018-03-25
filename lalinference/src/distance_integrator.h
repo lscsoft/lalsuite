@@ -1,6 +1,6 @@
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_interp.h>
-#include "cubic_interp.h"
+#include <lal/cubic_interp.h>
 
 typedef struct taglog_radial_integrator {
 		bicubic_interp *region0;

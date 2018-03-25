@@ -1264,6 +1264,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", log(Dinitial), log(Dmin), log(Dmax), distanceVary) ;
   if(LALInferenceGetProcParamVal(commandLine,"--margdist"))
   {
+      if(! (LALInferenceGetProcParamVal(commandLine,"--margphi") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")))
+      {
+          fprintf(stderr,"ERROR: --margdist requires either --margphi or --margtimephi to be enabled");
+          exit(1);
+      }
       /* If using margdist, remove the distance parameters and add the ranges into the model params as a way of passing them in */
       REAL8 a = log(Dmin), b=log(Dmax);
       LALInferenceAddMinMaxPrior(model->params, "logdistance", &a, &b, LALINFERENCE_REAL8_t);
