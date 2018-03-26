@@ -660,7 +660,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         nSegs=(int)floor(PSDdatalength/SegmentLength);
     }
 
-    CHAR df_argument_name[128];
+    CHAR df_argument_name[262];
     REAL8 dof;
 
     for(i=0;i<Nifo;i++) {
