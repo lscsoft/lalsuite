@@ -122,7 +122,9 @@ static int WriteNSCheckPointH5(char *filename, LALInferenceRunState *runState, N
   struct tms tms_buffer;
   if(times(&tms_buffer))
   {
-    REAL8 execution_time = (REAL8)tms_buffer.tms_utime / (REAL8) sysconf (_SC_CLK_TCK) + LALInferenceGetREAL8Variable(runState->algorithmParams,"execution_time");
+    REAL8 execution_time = (REAL8)tms_buffer.tms_utime / (REAL8) sysconf (_SC_CLK_TCK);
+    REAL8 *prevtime=NULL;
+    if( (prevtime=LALInferenceGetVariable(runState->algorithmParams,"cpu_time"))) execution_time+=*prevtime;
     XLALH5FileAddScalarAttribute(group, "cpu_time", &execution_time, LAL_D_TYPE_CODE);
   }
   XLALH5FileClose(group);
@@ -170,7 +172,7 @@ static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NS
     XLALH5DatasetFree(outputGroup);
   }
   double execution_time = 0.0;
-  if ( ( execution_time = XLALH5FileQueryScalarAttributeValue(&execution_time, group, "execution_time") ) )
+  if ( ( execution_time = XLALH5FileQueryScalarAttributeValue(&execution_time, group, "cpu_time") ) )
   {
       LALInferenceAddVariable(runState->algorithmParams, "cpu_time", &execution_time, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
   }
@@ -1195,7 +1197,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       struct tms tms_buffer;
       if(times(&tms_buffer))
       {
-        REAL8 execution_time = (REAL8)tms_buffer.tms_utime / (REAL8) sysconf (_SC_CLK_TCK) + LALInferenceGetREAL8Variable(runState->algorithmParams,"execution_time");
+        REAL8 execution_time = (REAL8)tms_buffer.tms_utime / (REAL8) sysconf (_SC_CLK_TCK) + LALInferenceGetREAL8Variable(runState->algorithmParams,"cpu_time");
         XLALH5FileAddScalarAttribute(groupPtr, "cpu_time", &execution_time, LAL_D_TYPE_CODE);
       }
 
