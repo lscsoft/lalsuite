@@ -44,6 +44,7 @@ from operator import itemgetter
 
 #related third party imports
 from .io import read_samples
+from . import plot as lp
 import healpy as hp
 import astropy.table
 import numpy as np
@@ -3498,7 +3499,6 @@ def plot_sky_map(hpmap, outdir, inj=None, nest=True):
     :param nest: Flag indicating the pixel ordering in healpix.
 
     """
-    import lalinference.plot as lp
 
     fig = plt.figure(frameon=False, figsize=(8,6))
     ax = plt.subplot(111, projection='astro hours mollweide')
