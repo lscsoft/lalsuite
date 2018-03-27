@@ -33,7 +33,7 @@ double log_radial_integral(double r1, double r2, double p, double b, int k, int 
  * Distance integrator for marginalisation. Assumes a besselI0-type marginalised phase likelihood.
  * @param r1 Minimum distance (Mpc)
  * @param r2 Maximum distance (Mpc)
- * @param k  Exponent of distance prior $ p(r) \propto r^k $
+ * @param k  Exponent of distance prior \f$ p(r) propto r^k \f$
  * @param cosmology 0: Euclidean, 1: use co-moving volume prior
  * @param pmax: The maximum optimal SNR to allow
  * @param size: Size of lookup table
@@ -48,10 +48,10 @@ void log_radial_integrator_free(log_radial_integrator *integrator);
 /**
  * Evaluate the log distance integrator for given SNRs.
  * With a template at reference distance (1Mpc), compute the marginal likelihood
- * over distance. Uses the two SNRs p=sqrt(<h|h>) and b=<d|h>.
+ * over distance. Uses the two SNRs \f$ p=sqrt(<h|h>) \f$ and \f$ b=<d|h> \f$.
  * @param integrator a log_radial_integrator
- * @param p The optimal SNR $p = sqrt(<h|h>)$
- * @param b match between template and data $b = <h|d> $
+ * @param p The optimal SNR \f$ p = sqrt(<h|h>) \f$
+ * @param b match between template and data \f$ b = <h|d> \f$
  * @param log_p log(p)
  * @param log_b log(b)
  */
