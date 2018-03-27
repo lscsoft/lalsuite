@@ -5,6 +5,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 SUBDIRS = \
+	seobnrv3_opt_exactderivs \
 	mathematica_codes \
 	$(END_OF_LIST)
 

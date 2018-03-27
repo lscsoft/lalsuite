@@ -41,7 +41,7 @@
 #include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_integration.h>
 #include "LALSimIMREOBNRv2.h"
-#include "LALSimIMRSpinEOB.h"//TylerK:uncommented for test
+#include "LALSimIMRSpinEOB.h"
 #include "LALSimInspiralPrecess.h"
 #include "LALSimBlackHoleRingdownPrec.h"
 #include "LALSimFindAttachTime.h"
@@ -69,7 +69,6 @@
 #include "LALSpinPrecHcapRvecDerivative_v3opt.c"
 #include "LALSimIMRSpinPrecEOBWfGen.c"
 /* End OPTv3 */
-
 
 #define debugOutput 0
 
@@ -440,7 +439,7 @@ SEOBHCoeffConstants XLALEOBSpinPrecCalcSEOBHCoeffConstants(REAL8 eta){
   REAL8 coeffsKK =  c20 + c21*eta + c22*eta*eta + c23*eta*eta*eta;
   REAL8 m1PlusEtaKK = -1. + eta*coeffsKK;
 
-  #include "mathematica_codes/SEOBNRv3_opt/SEOBNRv3_opt_coeffs-kC-parsedfinal.c.generated"
+  #include "seobnrv3_opt_exactderivs/SEOBNRv3_opt_coeffs-kC-parsedfinal.c.generated"
   CoeffConsts.a0k2 = kC0;
   CoeffConsts.a1k2 = kC1;
   CoeffConsts.a0k3 = kC2;
@@ -602,7 +601,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   REAL8Vector *AttachParams = NULL;
 
-  // David new optimized selection code
+  /* SEOBNRv3_opt selection code */
   Approximant spinEOBApproximant = SEOBNRv3;
   INT4 use_optimized = 0;
   if ( PrecEOBversion == 300 || PrecEOBversion == 304 ) { spinEOBApproximant = SEOBNRv3_opt; use_optimized = 1; }
@@ -945,9 +944,9 @@ int XLALSimIMRSpinEOBWaveformAll(
   /* Miscellaneous memory for Ringdown attachment        */
   REAL8 tPeakOmega = 0, tAttach = 0, combSize = 0,/*longCombSize,*/ deltaNQC =0;
   REAL8  sh  = 0;
-  REAL8 magR = 0, Lx   = 0, Ly   = 0, Lz = 0, magL = 0, magJ = 0, //DAVID magR IS NOT IN OPT
+  REAL8 magR = 0, Lx   = 0, Ly   = 0, Lz = 0, magL = 0, magJ = 0, /* magR not in SEOBNRv3_opt */
         LNhx = 0, LNhy = 0, LNhz = 0, magLN =0, Jx = 0, Jy   = 0, Jz = 0;
-      REAL8 aI2P = 0, bI2P = 0, gI2P = 0; //DAVID THIS LINE IS NOT IN OPT
+      REAL8 aI2P = 0, bI2P = 0, gI2P = 0; /* These variables not in SEOBNRv3_opt */
       REAL8 aP2J = 0, bP2J = 0, gP2J = 0;
       REAL8 chi1J= 0, chi2J= 0, chiJ = 0;
       REAL8 chi1L= 0.0, chi2L = 0.0, chiL = 0.0;
@@ -964,9 +963,8 @@ int XLALSimIMRSpinEOBWaveformAll(
       REAL8Array              *dynamicsEOMLo    = NULL; //OPTV3: For Sparse Amp/Phase Calcualtion
       REAL8Array              *dynamicsEOMHi    = NULL;
       INT4                    retLenEOMLow = 0, retLenEOMHi = 0;
-      INT4                    retLen = 0, retLenLow = 0, retLenHi = 0; //DAVID retLen NOT USED IN OPT
+      INT4                    retLen = 0, retLenLow = 0, retLenHi = 0; /* retLen not used in SEOBNRv3_opt */
       INT4                    retLenRDPatchHi= 0, retLenRDPatchLow = 0;
-
 
 
   /* Interpolation spline */
@@ -978,10 +976,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   /* These accuracies can be adjusted according to desired accuracy and runtime */
   REAL8 EPS_ABS = 1.0e-8;
   const REAL8 EPS_REL = 1.0e-8;
-
-  //David: values for checking v3opt code agreement
-  //REAL8 EPS_ABS = 1.0e-10;
-  //const REAL8 EPS_REL = 1.0e-10;
 
   /* Relax abs accuracy in case of highly symmetric case that would otherwise slow down significantly */
   if (sqrt((INspin1[0] + INspin2[0])*(INspin1[0] + INspin2[0]) + (INspin1[1] + INspin2[1])*(INspin1[1] + INspin2[1])) < 1.0e-10 && !SpinsAlmostAligned && !use_optimized)
@@ -1220,22 +1214,6 @@ int XLALSimIMRSpinEOBWaveformAll(
     hCoeffs.tidal1 = &tidal1;
     hCoeffs.tidal2 = &tidal2;
 
-  /* Pre-compute the Hamiltonian coefficients
-    double KK; // nonspinning calibration in Hamiltonian (for SEOBNRv2: 1.712 − 1.804eta − 39:77eta^2 + 103.2eta^3)
-    double k0; // Delta_i coefficients in the Delta_u potential Eq. 8 of PRD 86, 024011 (2012) and https://dcc.ligo.org/T1400476
-    double k1;
-    double k2;
-    double k3;
-    double k4;
-    double k5;
-    double k5l;
-    double b3; // omega_{fd}^1 frame dragging parameter in Hamiltonian (unused)
-    double bb3; // omega_{fd}^2 frame dragging parameter in Hamiltonian (unused)
-    double d1; // spin-orbit calibration in Hamiltonian for SEOBNRv1
-    double d1v2; // spin-orbit calibration in Hamiltonian for SEOBNRv1
-    double dheffSS; // spin-spin calibration in Hamiltonian for SEOBNRv1
-    double dheffSSv2; // spin-spin calibration in Hamiltonian for SEOBNRv1
-   */
   if ( XLALSimIMRCalculateSpinPrecEOBHCoeffs( &seobCoeffs, eta, a,
                           SpinAlignedEOBversion ) == XLAL_FAILURE ) /* This function returns XLAL_SUCCESS or calls XLAL_ERROR( XLAL_EINVAL ) */
   {
@@ -1703,16 +1681,15 @@ int XLALSimIMRSpinEOBWaveformAll(
 
     } else {
       if(use_optimized){
-        retLenEOMLow = XLALAdaptiveRungeKutta4NoInterpolate(integrator, &seobParams, values->data, 0., 20./mTScaled, deltaT/mTScaled, &dynamicsEOMLo, 3);/* Last parameter added when functions were combined in LALAdaptiveRungeKuttaIntegrator.c */
-        if ( retLenEOMLow == XLAL_FAILURE )
+	retLenEOMLow = XLALAdaptiveRungeKuttaDenseandSparseOutput(integrator, &seobParams, values->data, 0., 20./mTScaled, deltaT/mTScaled, &dynamicsEOMLo, &dynamics);
+	if ( retLenEOMLow == XLAL_FAILURE )
           {
-            XLALPrintError("XLALAdaptiveRungeKutta4NoInterpolate failed!\n");
+            XLALPrintError("XLALAdaptiveRungeKuttaDenseandSparseOutput failed!\n");
             PRINT_PARAMS
               XLAL_ERROR( XLAL_EFAILED );
           }
 
         retLenLow =  (int)(dynamicsEOMLo->data[retLenEOMLow-1] / (deltaT/mTScaled))+ 1;
-        SEOBNRv3OptimizedInterpolatorGeneral(dynamicsEOMLo->data,0., deltaT/mTScaled, retLenEOMLow, &dynamics,v3_Hamiltonian_variables);
 
         posVecxEOMv.length = posVecyEOMv.length = posVeczEOMv.length = tVecEOMv.length = retLenEOMLow;
         posVecxEOM->data = dynamicsEOMLo->data+retLenEOMLow;
@@ -1898,9 +1875,8 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   }else{
     if(use_optimized) {
-      retLenEOMHi = XLALAdaptiveRungeKutta4NoInterpolate(integrator, &seobParams, values->data, 0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsEOMHi, 3);/* Last parameter added when functions were combined in LALAdaptiveRungeKuttaIntegrator.c */
+      retLenEOMHi = XLALAdaptiveRungeKuttaDenseandSparseOutput(integrator, &seobParams, values->data, 0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsEOMHi, &dynamicsHi);
       retLenHi = (int)(dynamicsEOMHi->data[retLenEOMHi-1] / (deltaTHigh/mTScaled))+ 1;
-      SEOBNRv3OptimizedInterpolatorGeneral(dynamicsEOMHi->data,0., deltaTHigh/mTScaled, retLenEOMHi, &dynamicsHi,14);
     } else {
       retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, values->data, 0., tStepBack/mTScaled, deltaTHigh/mTScaled, &dynamicsHi );
       retLenHi = retLen;
@@ -1973,7 +1949,6 @@ int XLALSimIMRSpinEOBWaveformAll(
     fclose( out );
   }
 
-
 /* *********************************************************************************
  * *********************************************************************************
  * STEP 3) Compute Euler angles to go from initial inertial frame to
@@ -1987,12 +1962,12 @@ int XLALSimIMRSpinEOBWaveformAll(
       Alpha = XLALCreateREAL8Vector( retLenEOMLow );
       Beta  = XLALCreateREAL8Vector( retLenEOMLow );
       Gamma = XLALCreateREAL8Vector( retLenEOMLow );
-      EulerAnglesI2P(Alpha, Beta, Gamma, &phaseCounterA, &phaseCounterB, *tVecEOM, *posVecxEOM, *posVecyEOM, *posVeczEOM, retLenEOMLow, 0., 0.5*LAL_PI, 0);
+      EulerAnglesI2P(Alpha, Beta, Gamma, &phaseCounterA, &phaseCounterB, *tVecEOM, *posVecxEOM, *posVecyEOM, *posVeczEOM, retLenEOMLow, 0., 0.5*LAL_PI, 0, 1);
     } else {
       Alpha = XLALCreateREAL8Vector( retLenLow );
       Beta  = XLALCreateREAL8Vector( retLenLow );
       Gamma = XLALCreateREAL8Vector( retLenLow );
-      EulerAnglesI2P(Alpha, Beta, Gamma, &phaseCounterA, &phaseCounterB, tVec, posVecx, posVecy, posVecz, retLenLow, 0., 0.5*LAL_PI, 0);
+      EulerAnglesI2P(Alpha, Beta, Gamma, &phaseCounterA, &phaseCounterB, tVec, posVecx, posVecy, posVecz, retLenLow, 0., 0.5*LAL_PI, 0, 0);
     }
     if (debugPK){
         XLAL_PRINT_INFO("Writing Alpha and Beta angle timeseries at low SR to alphaANDbeta.dat\n" );
@@ -2058,9 +2033,9 @@ int XLALSimIMRSpinEOBWaveformAll(
       gsl_interp_accel_free(beta_acc);
       gsl_integration_workspace_free(precEulerw);
 
-      EulerAnglesI2P(AlphaHi, BetaHi, GammaHi, &phaseCounterA, &phaseCounterB, timeHi, posVecxHi, posVecyHi, posVeczHi, retLenHi, alphaHiSRndx, gammaHiSRndx, 1);
+      EulerAnglesI2P(AlphaHi, BetaHi, GammaHi, &phaseCounterA, &phaseCounterB, timeHi, posVecxHi, posVecyHi, posVeczHi, retLenHi, alphaHiSRndx, gammaHiSRndx, 1, 1);
     } else {
-      EulerAnglesI2P(AlphaHi, BetaHi, GammaHi, &phaseCounterA, &phaseCounterB, timeHi, posVecxHi, posVecyHi, posVeczHi, retLenHi, Alpha->data[hiSRndx], Gamma->data[hiSRndx], 1);
+      EulerAnglesI2P(AlphaHi, BetaHi, GammaHi, &phaseCounterA, &phaseCounterB, timeHi, posVecxHi, posVecyHi, posVeczHi, retLenHi, Alpha->data[hiSRndx], Gamma->data[hiSRndx], 1, 0);
     }
 
     if (debugPK){
@@ -3603,7 +3578,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   int idxRD = 0; // V3OPT
 
   /*** attach hi sampling part and resample  */
-  if(use_optimized) { // David: making big, similar sections conditional here to avoid placing conditionals in for-loops and slowing down the program
+  if(use_optimized) { /* SEOBNRv3_opt makes big, similar sections conditional here to avoid placing conditionals in slower for-loops */
     hIMRJTS = XLALCreateCOMPLEX16TimeSeries( "HMRJLO2K", &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
     *hIMRlmJTSHiOutput = hIMRlmJTSHi;
   }
