@@ -115,6 +115,7 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
     (--margphi)                      Using marginalised phase likelihood\n\
     (--margtime)                     Using marginalised time likelihood\n\
     (--margtimephi)                  Using marginalised in time and phase likelihood\n\
+	(--margdist)                     Using marginalisation in distance (compatible with --margphi and --margtimephi)\n\
     \n";
 
     /* Print command line arguments if help requested */
