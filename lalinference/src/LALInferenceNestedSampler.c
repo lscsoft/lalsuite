@@ -1639,17 +1639,6 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
                tmp=logLnew-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
                LALInferenceAddVariable(threadState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
             }
-            ifo=0;
-            data=runState->data;
-            while(data)
-            {
-               if(!threadState->model->ifo_loglikelihoods) break;
-               tmp=threadState->model->ifo_loglikelihoods[ifo] - data->nullloglikelihood;
-               sprintf(tmpName,"deltalogl%s",data->name);
-               LALInferenceAddVariable(threadState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-               ifo++;
-               data=data->next;
-            }
             LALInferenceCopyVariables(threadState->currentParams,&oldParams);
             logLold=logLnew;
             threadState->currentLikelihood=logLnew;
@@ -1669,16 +1658,6 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
             if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
                tmp=logLnew-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
                LALInferenceAddVariable(threadState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-            }
-            ifo=0;
-            data=runState->data;
-            while(data && threadState->model->ifo_loglikelihoods)
-            {
-              tmp=threadState->model->ifo_loglikelihoods[ifo] - data->nullloglikelihood;
-              sprintf(tmpName,"deltalogl%s",data->name);
-              LALInferenceAddVariable(threadState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-              ifo++;
-              data=data->next;
             }
     }
 
