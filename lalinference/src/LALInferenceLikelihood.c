@@ -1064,7 +1064,10 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
         fprintf(stderr,"variable name too long\n"); exit(1);
     }
     LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_phase,LALINFERENCE_PARAM_OUTPUT);
-
+    if(margdist )
+      {
+        model->ifo_loglikelihoods[ifo] = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(this_ifo_S), 2.0*cabs(this_ifo_Rcplx))  ;
+      }
    /* Clean up calibration if necessary */
     if (!(calFactor == NULL)) {
       XLALDestroyCOMPLEX16FrequencySeries(calFactor);
@@ -1143,6 +1146,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
         loglikelihood -= D ;
         REAL8 distance_maxl = 2.0*S/R;
         LALInferenceAddVariable(currentParams, "distance_maxl", &distance_maxl, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+        
       }
       break;
     }
@@ -1250,13 +1254,17 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   {
       OptimalSNR/=LALInferenceGetREAL8Variable(currentParams,"distance_maxl");
       /* Adjust the snrs in the IFOs */
-      for(dataPtr=data;dataPtr;dataPtr=dataPtr->next)
+      REAL8 coherence=loglikelihood + D;
+      UINT4 ii;
+      for(dataPtr=data,ii=0;dataPtr;dataPtr=dataPtr->next,ii++)
       {
           char varname[VARNAME_MAX];
           sprintf(varname,"%s_optimal_snr",dataPtr->name);
           REAL8 *s = LALInferenceGetVariable(currentParams,varname);
           if(s) *s/=LALInferenceGetREAL8Variable(currentParams,"distance_maxl");
+          coherence -= model->ifo_loglikelihoods[ii];
       }
+      LALInferenceAddREAL8Variable(currentParams, "coherence", coherence, LALINFERENCE_PARAM_OUTPUT);
   }
 
   LALInferenceAddVariable(currentParams,"optimal_snr",&OptimalSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
