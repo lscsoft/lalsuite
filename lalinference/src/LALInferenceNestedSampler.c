@@ -1564,10 +1564,8 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceVariables oldParams;
     /* Single thread here */
     LALInferenceThreadState *threadState = runState->threads[0];
-    LALInferenceIFOData *data=runState->data;
     REAL8 tmp;
     REAL8 Target=0.3;
-    char tmpName[320];
     REAL8 logLold=*(REAL8 *)LALInferenceGetVariable(threadState->currentParams,"logL");
     memset(&oldParams,0,sizeof(oldParams));
     LALInferenceCopyVariables(threadState->currentParams,&oldParams);
@@ -1587,7 +1585,6 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     REAL8 logLnew=0.0;
     UINT4 sub_iter=0;
     UINT4 tries=0;
-    UINT4 ifo=0;
     REAL8 counter=1.;
     UINT4 BAILOUT=100*testnumber; /* If no acceptance after 100 tries, will exit and the sampler will try a different starting point */
     const char *extra_names[]={"logL","optimal_snr","matched_filter_snr","deltalogL"}; /* Names for parameters to be stripped when sampling prior */
