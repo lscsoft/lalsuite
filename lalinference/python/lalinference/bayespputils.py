@@ -7566,7 +7566,10 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
                         last_color = lines[-1].get_color()
                         plt.axvline(acl/Nskip, linestyle='-.', color=last_color)
                         plt.title('ACL = %i   N = %i'%(acl,Neff))
-                except FloatingPointError:
+                    acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.png')))
+                    if(savepdfs): acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.pdf')))
+                    plt.close(acffig)
+                except:
                     # Ignore
                     acfail=1
                     pass
@@ -7587,14 +7590,13 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
                         plt.title('Autocorrelation Function')
                     else:
                         plt.title('ACL = %i  N = %i'%(max(acls),Nsamps))
-                except FloatingPointError:
+                    acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.png')))
+                    if(savepdfs): acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.pdf')))
+                    plt.close(acffig)
+                except:
                     # Ignore
                     acfail=1
                     pass
-
-            acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.png')))
-            if(savepdfs): acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.pdf')))
-            plt.close(acffig)
 
         if not noacf:
 	  if not acfail:
