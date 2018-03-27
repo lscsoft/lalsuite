@@ -56,8 +56,8 @@ if len(args)==0:
 	print 'No input files specified'
 	sys.exit(1)
 
-if((not opts.ci and not opts.cin) or (opts.ci and opts.cin)):
-	print 'Please specify either -c or -n. See help for details.'
+if( sum([opts.ci,opts.cin,opts.cin_or_n])!=1):
+	print 'Please specify one of -c, -n or -b. See help for details.'
 	sys.exit(1)
 
 cofile=args[0]
