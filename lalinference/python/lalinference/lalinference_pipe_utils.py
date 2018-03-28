@@ -1751,7 +1751,6 @@ class SingularityJob(pipeline.CondorDAGJob):
             echo "Launching singularity..."
             {singularity} exec \\
                 --home ${{PWD}} \\
-                --bind {basedir} \\
                 {frameopt} \\
                 --contain \\
                 --writable \\
@@ -1764,6 +1763,8 @@ class SingularityJob(pipeline.CondorDAGJob):
                     executable = super(SingularityJob,self).get_executable(),
                     image = self.image
                 )
+#                --bind {basedir} \\
+
         # Add requested sites if specified
         if cp.has_option('condor','desired-sites'):
             self.add_condor_cmd('+DESIRED_Sites',cp.get('condor','desired-sites'))
@@ -1795,7 +1796,7 @@ class SingularityJob(pipeline.CondorDAGJob):
             # Over-write the executable to set the wrapper script
             self.set_executable( wrapper )
             self.add_condor_cmd('transfer_input_files','$(macroinput),engine')
-            self.add_condor_cmd('transfer_output_files','$(macrooutput),engine')
+            self.add_condor_cmd('transfer_output_files','engine')
         # Call the parent method to do the rest
         super(SingularityJob,self).write_sub_file()
         # Put the true exe back just in case
