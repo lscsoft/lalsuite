@@ -587,7 +587,7 @@ def Query_ROQ_Bounds_Type(path, roq_paths):
   return roq_bounds
 
 class LALInferencePipelineDAG(pipeline.CondorDAG):
-  def __init__(self,cp,dax=False,first_dag=True,previous_dag=None,site='local'):
+  def __init__(self,cp,dax=False,site='local'):
     self.subfiles=[]
     self.config=cp
     self.engine=get_engine_name(cp)
@@ -599,22 +599,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       self.basepath=os.getcwd()
       print 'No basepath specified, using current directory: %s'%(self.basepath)
     mkdirs(self.basepath)
+    print("Generating LALInference DAG in {0}".format(self.basepath))
     if dax:
         os.chdir(self.basepath)
     self.posteriorpath=os.path.join(self.basepath,'posterior_samples')
     mkdirs(self.posteriorpath)
-    if first_dag:
-      daglogdir=cp.get('paths','daglogdir')
-      mkdirs(daglogdir)
-      self.daglogfile=os.path.join(daglogdir,'lalinference_pipeline-'+str(uuid.uuid1())+'.log')
-      pipeline.CondorDAG.__init__(self,self.daglogfile,dax=dax)
-    elif not first_dag and previous_dag is not None:
-      daglogdir=cp.get('paths','daglogdir')
-      mkdirs(daglogdir)
-      self.daglogfile=os.path.join(daglogdir,'lalinference_pipeline-'+str(uuid.uuid1())+'.log')
-      pipeline.CondorDAG.__init__(self,self.daglogfile,dax=dax)
-      for node in previous_dag.get_nodes():
-        self.add_node(node)
+    daglogdir=cp.get('paths','daglogdir')
+    mkdirs(daglogdir)
+    self.daglogfile=os.path.join(daglogdir,'lalinference_pipeline-'+str(uuid.uuid1())+'.log')
+    pipeline.CondorDAG.__init__(self,self.daglogfile,dax=dax)
     if cp.has_option('paths','cachedir'):
       self.cachepath=cp.get('paths','cachedir')
     else:
@@ -728,7 +721,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       if self.config.getboolean('analysis','upload-to-gracedb'):
         self.add_gracedb_FITSskymap_upload(self.events[0],engine=self.engine)
     self.dagfilename="lalinference_%s-%s"%(self.config.get('input','gps-start-time'),self.config.get('input','gps-end-time'))
-    self.set_dag_file(self.dagfilename)
+    self.set_dag_file(os.path.join(self.basepath,self.dagfilename))
     if self.is_dax():
       self.set_dax_file(self.dagfilename)
 
@@ -1727,13 +1720,16 @@ class SingularityJob(pipeline.CondorDAGJob):
     # Hard-coded frame location in cvmfs
     CVMFS_FRAMES="/cvmfs/oasis.opensciencegrid.org/ligo/frames/"
     image=None
-    def __init__(self, cp, singularity=True, *args, **kwargs):
+    def __init__(self, cp, *args, **kwargs):
         # Dir in which the DAG will run
+        # Execute from the basedir so all paths can be resolved
+        if cp.has_option('analysis','singularity'):
+            self.singularity = cp.getboolean('analysis','singularity')
+        else:
+            self.singularity = False
         self.basedir = cp.get('paths','basedir')
         self.add_condor_cmd('initialdir',self.basedir)
-        #pipeline.CondorDAGJob.__init__(self,cp, *args, **kwargs)
-        self.singularity = singularity
-        if not singularity:
+        if not self.singularity:
             return
         if cp.has_option('condor','singularity'):
             self.singularity_path = cp.get('condor','singularity')
@@ -1745,7 +1741,8 @@ class SingularityJob(pipeline.CondorDAGJob):
             print("ERROR: You requested a singularity run but did not specify \
                 an image file in the [singularity] section of the config file")
             sys.exit(-1)
-        frameopt = "" if cp.has_option('lalinference','fake-cache') else "--bind {cvmfs_frames}".format(cvmfs_frames = self.CVMFS_FRAMES)
+        frameopt = "" if cp.has_option('lalinference','fake-cache') \
+            else "--bind {cvmfs_frames}".format(cvmfs_frames = self.CVMFS_FRAMES)
         self.wrapper_string="""
             echo "Workspace on execute node $(hostname -f)"
             echo "PWD" ${{PWD}}
@@ -1753,8 +1750,8 @@ class SingularityJob(pipeline.CondorDAGJob):
             ls -l
             echo "Launching singularity..."
             {singularity} exec \\
-                --home ${{PWD}} \\
-                --bind ${{PWD}} \\
+                --home {basedir} \\
+                --bind {basedir} \\
                 {frameopt} \\
                 --contain \\
                 --writable \\
@@ -1790,17 +1787,20 @@ class SingularityJob(pipeline.CondorDAGJob):
         Over-load CondorDAGJob.write_sub_file to write the wrapper script and
         set the exe to call it
         """
+        true_exec = self.get_executable()
         if self.singularity:
             # Write the wrapper script
             wrapper=os.path.splitext(self.get_sub_file())[0] +'_wrapper.sh'
             self.write_script( wrapper )
             # Over-write the executable to set the wrapper script
-            self._true_exec = self.get_executable()
             self.set_executable( wrapper )
+            self.add_condor_cmd('transfer_input_files','$(macroinput),engine')
+            self.add_condor_cmd('transfer_output_files','$(macrooutput),engine')
         # Call the parent method to do the rest
-        self.add_condor_cmd('transfer_input_files','$(macroinput),engine')
-        self.add_condor_cmd('transfer_output_files','$(macrooutput),engine')
         super(SingularityJob,self).write_sub_file()
+        # Put the true exe back just in case
+        self.set_executable(true_exec)
+        
 
 
 class SingularityNode(pipeline.CondorDAGNode):
