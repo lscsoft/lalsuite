@@ -1748,6 +1748,7 @@ class SingularityJob(pipeline.CondorDAGJob):
             echo "PWD" ${{PWD}}
             echo "contents"
             ls -l
+            set -e
             echo "Launching singularity..."
             {singularity} exec \\
                 --home ${{PWD}} \\
@@ -1757,7 +1758,6 @@ class SingularityJob(pipeline.CondorDAGJob):
                 {image} \\
                 {executable} \\
                 "$@"
-            return $?
             """.format(singularity = self.singularity_path,
                        basedir = self.basedir,
                     frameopt = frameopt,
@@ -1795,8 +1795,6 @@ class SingularityJob(pipeline.CondorDAGJob):
             self.write_script( wrapper )
             # Over-write the executable to set the wrapper script
             self.set_executable( wrapper )
-            self.add_condor_cmd('transfer_input_files','$(macroinput),engine')
-            self.add_condor_cmd('transfer_output_files','engine')
         # Call the parent method to do the rest
         super(SingularityJob,self).write_sub_file()
         # Put the true exe back just in case
@@ -1869,6 +1867,9 @@ class EngineJob(SingularityJob,pipeline.AnalysisJob):
     pipeline.CondorDAGJob.__init__(self,universe,exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
     SingularityJob.__init__(self, cp)
+    # locations for file IO
+    self.add_condor_cmd('transfer_input_files','caches,engine,$(macroinput)')
+    self.add_condor_cmd('transfer_output_files','engine')
 
     if cp.has_option('condor','accounting_group'):
       self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
