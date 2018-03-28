@@ -1750,7 +1750,7 @@ class SingularityJob(pipeline.CondorDAGJob):
             ls -l
             echo "Launching singularity..."
             {singularity} exec \\
-                --home {basedir} \\
+                --home ${{PWD}} \\
                 --bind {basedir} \\
                 {frameopt} \\
                 --contain \\
@@ -1810,7 +1810,6 @@ class SingularityNode(pipeline.CondorDAGNode):
     def add_output_file(self,filename):
         print(self.job().basedir)
         filename=os.path.relpath(filename,start=self.job().basedir)
-        print('Adding output file '+filename)
         self.add_output_macro(filename)
         super(SingularityNode,self).add_output_file(filename)
     def add_input_file(self,filename):
@@ -1824,12 +1823,9 @@ class SingularityNode(pipeline.CondorDAGNode):
         self.add_checkpoint_macro(filename)
         super(SingularityNode,self).add_checkpoint_file(filename)
     def add_file_opt(self, opt, filename, file_is_output_file=False):
-        print('Adding file opt --{opt} {filename}'.format(opt=opt, filename=filename))
-        #filename=os.path.relpath(filename,start=self.job().basedir)
-        relfile=os.path.relpath(filename,start=self.job().basedir)
-        print("relative path ",relfile)
         # The code option needs the path as seen inside singularity, i.e. the pwd
-        self.add_var_opt(opt,os.path.basename(relfile))
+        relfile=os.path.relpath(filename,start=self.job().basedir)
+        self.add_var_opt(opt,relfile)
         if file_is_output_file:
             self.add_output_file(filename)
         else:
