@@ -99,6 +99,7 @@ def generate_variations(master_cp, variations):
     Generate config parser objects for each of the variations
     """
     cur_basedir=master_cp.get('paths','basedir')
+    mkdirs(cur_basedir)
     # save the master file
     masterpath=os.path.join(cur_basedir,'config.ini')
     with open(masterpath,'w') as cpfile:
@@ -115,8 +116,8 @@ def generate_variations(master_cp, variations):
     (section, opt), vals = variations.popitem()
     for val in vals:
         # Read file back in to get a new object
-        cp = ConfigParser.ConfigParser().read(masterpath)
-
+        cp = ConfigParser.ConfigParser()
+	cp.read(masterpath)
         cp.set(section,opt,val)
         # Append to the paths
         cp.set('paths','basedir',os.path.join(cur_basedir, \
@@ -288,11 +289,13 @@ master_cp=cp
 print("Here cp.basedir="+cp.get('paths','basedir'))
 for cp in generate_variations(master_cp,variations):
     print("Generating variations: {}".format(variations))
-    injpath=cp.get('input','injection-file')
     basepath=cp.get('paths','basedir')
-    myinjpath=os.path.join(basepath,os.path.basename(injpath))
-    os.link(injpath, myinjpath)
-    cp.set('input','injection-file',myinjpath)
+    # Copy injection file into place as paths outside basedir are inaccessible
+    if cp.has_option('input','injection-file'):
+        injpath=cp.get('input','injection-file')
+        myinjpath=os.path.join(basepath,os.path.basename(injpath))
+        os.link(injpath, myinjpath)
+        cp.set('input','injection-file',myinjpath)
         
     for roq in roq_paths:
         basedir = cp.get('paths','basedir')
