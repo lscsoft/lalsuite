@@ -1757,13 +1757,13 @@ class SingularityJob(pipeline.CondorDAGJob):
                 {image} \\
                 {executable} \\
                 "$@"
+            return $?
             """.format(singularity = self.singularity_path,
                        basedir = self.basedir,
                     frameopt = frameopt,
                     executable = super(SingularityJob,self).get_executable(),
                     image = self.image
                 )
-#                --bind {basedir} \\
 
         # Add requested sites if specified
         if cp.has_option('condor','desired-sites'):
