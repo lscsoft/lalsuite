@@ -30,6 +30,7 @@ The user must also specify and ini file which will contain the main analysis con
 parser=OptionParser(usage)
 parser.add_option("-r","--run-path",default=None,action="store",type="string",help="Directory to run pipeline in (default: $PWD)",metavar="RUNDIR")
 parser.add_option("-p","--daglog-path",default=None,action="store",type="string",help="Path to directory to contain DAG log file. SHOULD BE LOCAL TO SUBMIT NODE",metavar="LOGDIR")
+parser.add_option("--gps",action="append",type="string",default=None,help="Analyse GPS time",metavar="GPSTIME")
 parser.add_option("-g","--gps-time-file",action="store",type="string",default=None,help="Text file containing list of GPS times to analyse",metavar="TIMES.txt")
 parser.add_option("-t","--single-triggers",action="store",type="string",default=None,help="SnglInspiralTable trigger list",metavar="SNGL_FILE.xml")
 parser.add_option("-C","--coinc-triggers",action="store",type="string",default=None,help="CoinInspiralTable trigger list",metavar="COINC_FILE.xml")
@@ -45,6 +46,89 @@ Supported options are: creamce and local",default=None)
 
 (opts,args)=parser.parse_args()
 
+# We will store variations of runs to use here as a dictionary of
+# ((section, option), ...) : [variation1, ...]
+# Where (section, option) indicate the configparser option to vary
+# and multiple section,option pairs are allowed
+variations={}
+
+def mkdirs(path):
+  """
+  Helper function. Make the given directory, creating intermediate
+  dirs if necessary, and don't complain about it already existing.
+  """
+  if os.access(path,os.W_OK) and os.path.isdir(path): return
+  else: os.makedirs(path)
+
+def add_variations(cp, section, option, values=None, allowed_values=None, optional=False):
+    """
+    Push some possible variations onto the stack.
+    If only one value is specified then just store it in cp as usual
+    cp : ConfigParser object to look in
+    section : [section] in cp
+    option : option in section
+    values: If given, use instead of cp's
+    allowed_values : if given, anything else will trigger an error
+    optional : if true, will ignore non-existent options
+    """
+    if not cp.has_section(section) and not cp.has_option(section,option):
+        return
+    
+    if values is not None:
+        vals = values
+    else:
+        vals = cp.get(section,option).split(',')
+    if allowed_values is not None and any(not vals in allowed_values):
+        raise ValueError("Unknown value for {section} . {option} {value}"
+                         .format(section, option, \
+                             ' '.join([v for v in vals if v not in allowed_options])
+                                )
+                         )
+    if len(vals) >1:
+        return {(section,option): vals}
+    elif len(vals)==1:
+        cp.set(section, option, vals[0])
+        return {}
+    else:
+        print("Found no variations of [{section}] {option}".format(section=section,
+                                                                   option=option))
+        return {}
+
+def generate_variations(master_cp, variations):
+    """
+    Generate config parser objects for each of the variations
+    """
+    cur_basedir=master_cp.get('paths','basedir')
+    # save the master file
+    masterpath=os.path.join(cur_basedir,'config.ini')
+    with open(masterpath,'w') as cpfile:
+        master_cp.write(cpfile)
+
+    cur_webdir=master_cp.get('paths','webdir')
+    cur_dagdir=master_cp.get('paths','daglogdir')
+    # If no variations, done
+    if not variations:
+        yield master_cp
+        raise StopIteration()
+
+    # Otherwise, vary over the next option
+    (section, opt), vals = variations.popitem()
+    for val in vals:
+        # Read file back in to get a new object
+        cp = ConfigParser.ConfigParser().read(masterpath)
+
+        cp.set(section,opt,val)
+        # Append to the paths
+        cp.set('paths','basedir',os.path.join(cur_basedir, \
+                                        '{val}'.format(opt=opt,val=val)))
+        cp.set('paths','webdir',os.path.join(cur_webdir, \
+                                        '{val}'.format(opt=opt,val=val)))
+        cp.set('paths','daglogdir',os.path.join(cur_dagdir, \
+                                        '{val}'.format(opt=opt,val=val)))
+        # recurse into remaining options
+        for sub_cp in generate_variations(cp,variations):
+            yield sub_cp
+
 if len(args)!=1:
   parser.print_help()
   print 'Error: must specify one ini file'
@@ -56,163 +140,183 @@ if opts.condor_submit and opts.pegasus_submit:
 
 inifile=args[0]
 
-cp=ConfigParser.ConfigParser()
+cp=ConfigParser.SafeConfigParser()
 fp=open(inifile)
 cp.optionxform = str
 cp.readfp(fp)
-
-approx='approx'
-if cp.has_option('engine','approx'):
-  pass
-elif cp.has_option('engine','approximant'):
-  approx='approximant'
-else:
-  print "Error: was expecting an 'approx' filed in the [engine] section\n"
-  sys.exit(1)
-
-apps=cp.get('engine',approx)
-apps=apps.split(',')
-
-samps=cp.get('analysis','engine')
-samps=samps.split(',')
-
-rundir_root=os.path.abspath(opts.run_path)
-if opts.daglog_path is not None:
-  daglogdir=os.path.abspath(opts.daglog_path)
-elif opts.run_path is not None:
-  daglogdir=os.path.abspath(opts.run_path)
-else:
-  daglogdir=os.path.abspath(cp.get('paths','basedir'))
-
-use_roq=False
-if cp.has_option('paths','roq_b_matrix_directory'):
-  from numpy import genfromtxt, array
-  path=cp.get('paths','roq_b_matrix_directory')
-  if not os.path.isdir(path):
-    print "The ROQ directory %s does not seem to exist\n"%path
-    sys.exit(1)
-  use_roq=True
-  roq_paths=os.listdir(path)
-  roq_params={}
-  roq_force_flow = None
-  gid=None
-  row=None
-  def key(item): # to order the ROQ bases
-    return float(item[1]['seglen'])
-
-  if cp.has_option('lalinference','roq_force_flow'):
-     roq_force_flow = cp.getfloat('lalinference','roq_force_flow')
-     print "WARNING: Forcing the f_low to ", str(roq_force_flow), "Hz"
-
-  print "WARNING: Overwriting user choice of flow, srate, seglen, and (mc_min, mc_max and q-min) or (mass1_min, mass1_max, mass2_min, mass2_max)"
-
-  if opts.gid is not None:
-    gid=opts.gid
-  elif opts.injections is not None or cp.has_option('input','injection-file'):
-    print "Only 0-th event in the XML table will be considered while running with ROQ\n"
-    # Read event 0 from  Siminspiral Table
-    from pylal import SimInspiralUtils
-    if opts.injections is not None:
-      inxml=opts.injections
-    else:
-      inxml=cp.get('input','injection-file')
-    injTable=SimInspiralUtils.ReadSimInspiralFromFiles([inxml])
-    row=injTable[0]
-  else:
-    gid=None
-    row=None
-
-  roq_bounds = pipe_utils.Query_ROQ_Bounds_Type(path, roq_paths)
-  if roq_bounds == 'chirp_mass_q':
-    print 'ROQ has bounds in chirp mass and mass-ratio'
-    mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=gid, sim_inspiral=row)
-  elif roq_bounds == 'component_mass':
-    print 'ROQ has bounds in component masses'
-    # get component mass bounds, then compute the chirp mass that can be safely covered
-    # further below we pass along the component mass bounds to the sampler, not the tighter chirp-mass, q bounds
-    m1_priors, m2_priors, trigger_mchirp = pipe_utils.get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=gid, sim_inspiral=row)
-    mc_priors = {}
-    for (roq,m1_prior), (roq2,m2_prior) in zip(m1_priors.items(), m2_priors.items()):
-      mc_priors[roq] = sorted([pipe_utils.mchirp_from_components(m1_prior[1], m2_prior[0]), pipe_utils.mchirp_from_components(m1_prior[0], m2_prior[1])])
-
-  if cp.has_option('lalinference','trigger_mchirp'):
-      trigger_mchirp=float(cp.get('lalinference','trigger_mchirp'))
-  roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, roq_force_flow)
-  if roq_mass_freq_scale_factor != 1.:
-    print 'WARNING: Rescaling ROQ basis, please ensure it is allowed with the model used.'
-
-  if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')) or cp.has_option('lalinference','trigger_mchirp'):
-
-    for mc_prior in mc_priors:
-      mc_priors[mc_prior] = array(mc_priors[mc_prior])
-    # find mass bin containing the trigger
-    trigger_bin = None
-    for roq in roq_paths:
-      if mc_priors[roq][0]*roq_mass_freq_scale_factor <= trigger_mchirp <= mc_priors[roq][1]*roq_mass_freq_scale_factor:
-        trigger_bin = roq
-        print 'Prior in Mchirp will be ['+str(mc_priors[roq][0]*roq_mass_freq_scale_factor)+','+str(mc_priors[roq][1]*roq_mass_freq_scale_factor)+'] to contain the trigger Mchirp '+str(trigger_mchirp)
-        break
-    roq_paths = [trigger_bin]
-  else:
-    for mc_prior in mc_priors:
-      mc_priors[mc_prior] = array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
-
-else:
-  roq_paths=[None]
-
 fp.close()
 
+# Set the base directory for the run
+if opts.run_path is not None:
+    cp.set('paths','basedir',os.path.abspath(opts.run_path))
+if cp.get('paths','basedir') is None:
+    print("Warning: no run dir set, using current dir")
+    cp.set('paths','basedir',os.path.getcwd())
+mkdirs(cp.get('paths','basedir'))
 
+if opts.daglog_path is not None:
+    cp.set('paths','daglogdir',os.path.abspath(opts.daglog_path))
+else:
+    cp.set('paths','daglogdir',os.path.abspath(cp.get('paths','basedir')))
+daglogdir=cp.get('paths','daglogdir')
+mkdirs(daglogdir)
+
+
+# Set up from all the various input options
+if opts.gps_time_file is not None:
+    cp.set('input','gps-time-file',os.path.abspath(opts.gps_time_file))
+
+if opts.single_triggers is not None:
+    cp.set('input','sngl-inspiral-file',os.path.abspath(opts.single_triggers))
+
+if opts.injections is not None:
+    cp.set('input','injection-file',os.path.abspath(opts.injections))
+
+if opts.burst_injections is not None:
+    if opts.injections is not None:
+        print "ERROR: cannot pass both inspiral and burst tables for injection\n"
+        sys.exit(1)
+    cp.set('input','burst-injection-file',os.path.abspath(opts.burst_injections))
+
+if opts.coinc_triggers is not None:
+    cp.set('input','coinc-inspiral-file',os.path.abspath(opts.coinc_triggers))
+
+if opts.gid is not None:
+    cp.set('input','gid',opts.gid)
+
+if opts.pipedown_db is not None:
+    cp.set('input','pipedown-db',os.path.abspath(opts.pipedown_db))
+
+# Some sanity checking
+approx='approx'
+if not (cp.has_option('engine','approx') or cp.has_option('engine','approximant') ):
+    print "Error: was expecting an 'approx' filed in the [engine] section\n"
+    sys.exit(1)
+
+# Build a list of allowed variations
+variations.update(add_variations(cp, 'engine','approx'))
+variations.update(add_variations(cp, 'analysis', 'engine'))
+variations.update(add_variations(cp, 'analysis', 'roq', optional=True))
+
+roq_paths=[]
+def setup_roq(cp):
+    use_roq=False
+    if not cp.getboolean('analysis','roq'): return
+    if cp.has_option('paths','roq_b_matrix_directory'):
+        if not cp.get_boolean('analysis','roq'):
+            print("Warning: If you are attempting to enable ROQ by specifying paths.roq_b_matrix_directory,\
+            please use analysis.roq in your config file in future")
+            return
+    from numpy import genfromtxt, array
+    path=cp.get('paths','roq_b_matrix_directory')
+    if not os.path.isdir(path):
+        print "The ROQ directory %s does not seem to exist\n"%path
+        sys.exit(1)
+    use_roq=True
+    roq_paths=os.listdir(path)
+    roq_params={}
+    roq_force_flow = None
+    
+    if cp.has_option('lalinference','roq_force_flow'):
+        roq_force_flow = cp.getfloat('lalinference','roq_force_flow')
+        print "WARNING: Forcing the f_low to ", str(roq_force_flow), "Hz"
+        print "WARNING: Overwriting user choice of flow, srate, seglen, and (mc_min, mc_max and q-min) or (mass1_min, mass1_max, mass2_min, mass2_max)"
+
+    gid=None
+    row=None
+    def key(item): # to order the ROQ bases
+        return float(item[1]['seglen'])
+
+    if opts.gid is not None:
+        gid=opts.gid
+    elif opts.injections is not None or cp.has_option('input','injection-file'):
+        print "Only 0-th event in the XML table will be considered while running with ROQ\n"
+        # Read event 0 from  Siminspiral Table
+        from pylal import SimInspiralUtils
+        inxml=cp.get('input','injection-file')
+        injTable=SimInspiralUtils.ReadSimInspiralFromFiles([inxml])
+        row=injTable[0]
+    else:
+        gid=None
+        row=None
+
+    roq_bounds = pipe_utils.Query_ROQ_Bounds_Type(path, roq_paths)
+    if roq_bounds == 'chirp_mass_q':
+        print 'ROQ has bounds in chirp mass and mass-ratio'
+        mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=gid, sim_inspiral=row)
+    elif roq_bounds == 'component_mass':
+        print 'ROQ has bounds in component masses'
+        # get component mass bounds, then compute the chirp mass that can be safely covered
+        # further below we pass along the component mass bounds to the sampler, not the tighter chirp-mass, q bounds
+        m1_priors, m2_priors, trigger_mchirp = pipe_utils.get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=gid, sim_inspiral=row)
+        mc_priors = {}
+        for (roq,m1_prior), (roq2,m2_prior) in zip(m1_priors.items(), m2_priors.items()):
+            mc_priors[roq] = sorted([pipe_utils.mchirp_from_components(m1_prior[1], m2_prior[0]), pipe_utils.mchirp_from_components(m1_prior[0], m2_prior[1])])
+
+    if cp.has_option('lalinference','trigger_mchirp'):
+        trigger_mchirp=float(cp.get('lalinference','trigger_mchirp'))
+    roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, roq_force_flow)
+    if roq_mass_freq_scale_factor != 1.:
+        print 'WARNING: Rescaling ROQ basis, please ensure it is allowed with the model used.'
+
+    # If the true chirp mass is unknown, add variations over the mass bins
+    if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')) or cp.has_option('lalinference','trigger_mchirp'):
+
+        for mc_prior in mc_priors:
+            mc_priors[mc_prior] = array(mc_priors[mc_prior])
+        # find mass bin containing the trigger
+        trigger_bin = None
+        for roq in roq_paths:
+            if mc_priors[roq][0]*roq_mass_freq_scale_factor <= trigger_mchirp <= mc_priors[roq][1]*roq_mass_freq_scale_factor:
+                trigger_bin = roq
+                print 'Prior in Mchirp will be ['+str(mc_priors[roq][0]*roq_mass_freq_scale_factor)+','+str(mc_priors[roq][1]*roq_mass_freq_scale_factor)+'] to contain the trigger Mchirp '+str(trigger_mchirp)
+                break
+        roq_paths = [trigger_bin]
+    else:
+        for mc_prior in mc_priors:
+            mc_priors[mc_prior] = array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
+
+
+# Create an outer dag to wrap the sub-dags
 outerdaglog=os.path.join(daglogdir,'lalinference_multi_'+str(uuid.uuid1())+'.log')
 outerdag=pipeline.CondorDAG(outerdaglog,dax=opts.dax)
-outerdag.set_dag_file(os.path.join(rundir_root,'multidag'))
+outerdag.set_dag_file(os.path.join(cp.get('paths','basedir'),'multidag'))
 
+setup_roq(cp)
 
-for sampler in samps:
-
-  for app in apps:
-
+master_cp=cp
+print("Here cp.basedir="+cp.get('paths','basedir'))
+for cp in generate_variations(master_cp,variations):
+    print("Generating variations: {}".format(variations))
+    injpath=cp.get('input','injection-file')
+    basepath=cp.get('paths','basedir')
+    myinjpath=os.path.join(basepath,os.path.basename(injpath))
+    os.link(injpath, myinjpath)
+    cp.set('input','injection-file',myinjpath)
+        
     for roq in roq_paths:
-
-      if not os.path.isdir(os.path.join(rundir_root,sampler,app)):
-        os.makedirs(os.path.join(rundir_root,sampler,app))
-      opts.run_path=os.path.abspath(os.path.join(rundir_root,sampler,app))
-
-      inifile=args[0]
-
-      cp=ConfigParser.SafeConfigParser()
-      fp=open(inifile)
-      cp.optionxform = str
-      cp.readfp(fp)
-      fp.close()
-      cp.set('engine',approx,app)
-      cp.set('analysis','engine',sampler)
-      if roq is None:
-        for p in dict(cp.items('paths')).keys():
-          #current value
-          if 'webdir' in p or 'url' in p or 'basedir' in p or 'daglogdir' in p:
-            out=cp.get('paths',p)
-            # append approximant prefix
-            cp.set('paths',p,os.path.join(out,sampler,app))
-      else:
-        # do the appropriate hacks for ROQ
-        if not os.path.isdir(os.path.join(rundir_root,sampler,app,roq)):
-          os.makedirs(os.path.join(rundir_root,sampler,app,roq))
-        opts.run_path=os.path.abspath(os.path.join(rundir_root,sampler,app,roq))
-        for p in dict(cp.items('paths')).keys():
-          #current value
-          if 'webdir' in p or 'url' in p or 'basedir' in p or 'daglogdir' in p:
-            out=cp.get('paths',p)
-            # append approximant prefix
-            cp.set('paths',p,os.path.join(out,sampler,app,roq))
+        basedir = cp.get('paths','basedir')
+        for dirs in 'basedir','daglogdir','webdir':
+            mkdirs(cp.get('paths',dirs))
+            # do the appropriate hacks for ROQ
+            if not os.path.isdir(os.path.join(basedir,roq)):
+                os.makedirs(os.path.join(basedir,roq))
+            for p in dict(cp.items('paths')).keys():
+                #current value
+                if 'webdir' in p or 'url' in p or 'basedir' in p or 'daglogdir' in p:
+                    out=cp.get('paths',p)
+                    # append approximant prefix
+                    subpath=os.path.join(out,sampler,app,roq)
+                    cp.set('paths',p,subpath)
+                    mkdirs(subpath)
 
         path=cp.get('paths','roq_b_matrix_directory')
         thispath=os.path.join(path,roq)
         cp.set('paths','roq_b_matrix_directory',thispath)
         flow=roq_params[roq]['flow'] / roq_mass_freq_scale_factor
         srate=2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor
-	if srate > 8192:
-		srate = 8192
+        if srate > 8192:
+            srate = 8192
 
         seglen=roq_params[roq]['seglen'] * roq_mass_freq_scale_factor
         # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
@@ -248,77 +352,35 @@ for sampler in samps:
           cp.set('engine','mass2-min',str(m2_min))
           cp.set('engine','mass2-max',str(m2_max))
 
-      if opts.run_path is not None:
-        cp.set('paths','basedir',os.path.abspath(opts.run_path))
 
-      if not cp.has_option('paths','basedir'):
-        print 'Warning: No --run-path specified, using %s'%(os.getcwd())
-        cp.set('paths','basedir',os.path.abspath(os.getcwd()))
+    local_work_dir=cp.get('paths','daglogdir')
+    # Create the DAG from the configparser object
+    dag=pipe_utils.LALInferencePipelineDAG(cp,dax=opts.dax,site=opts.grid_site)
 
-      if opts.daglog_path is not None:
-        cp.set('paths','daglogdir',os.path.abspath(opts.daglog_path))
-      elif opts.run_path is not None:
-        cp.set('paths','daglogdir',os.path.abspath(opts.run_path))
-      else:
-        cp.set('paths','daglogdir',os.path.abspath(cp.get('paths','basedir')))
-
-      local_work_dir=cp.get('paths','daglogdir')
-
-      if opts.gps_time_file is not None:
-        cp.set('input','gps-time-file',os.path.abspath(opts.gps_time_file))
-
-      if opts.single_triggers is not None:
-        cp.set('input','sngl-inspiral-file',os.path.abspath(opts.single_triggers))
-
-      if opts.injections is not None:
-        cp.set('input','injection-file',os.path.abspath(opts.injections))
-
-      if opts.burst_injections is not None:
-        if opts.injections is not None:
-          print "ERROR: cannot pass both inspiral and burst tables for injection\n"
-          sys.exit(1)
-        cp.set('input','burst-injection-file',os.path.abspath(opts.burst_injections))
-
-      if opts.coinc_triggers is not None:
-        cp.set('input','coinc-inspiral-file',os.path.abspath(opts.coinc_triggers))
-
-      #if opts.lvalert is not None:
-      #  cp.set('input','lvalert-file',os.path.abspath(opts.lvalert))
-
-      if opts.gid is not None:
-        cp.set('input','gid',opts.gid)
-
-      if opts.pipedown_db is not None:
-        cp.set('input','pipedown-db',os.path.abspath(opts.pipedown_db))
-
-
-      # Create the DAG from the configparser object
-      dag=pipe_utils.LALInferencePipelineDAG(cp,dax=opts.dax,site=opts.grid_site)
-      if((opts.dax) and not cp.has_option('lalinference','fake-cache')):
+    if((opts.dax) and not cp.has_option('lalinference','fake-cache')):
         # Create a text file with the frames listed
         pfnfile = dag.create_frame_pfn_file()
         peg_frame_cache = inspiralutils.create_pegasus_cache_file(pfnfile)
-      else:
+    else:
         peg_frame_cache = '/dev/null'
 
-      # A directory to store the DAX temporary files
-      execdir=os.path.join(local_work_dir,'lalinference_pegasus_'+str(uuid.uuid1()))
-      olddir=os.getcwd()
-      os.chdir(cp.get('paths','basedir'))
-      if opts.grid_site is not None:
+    # A directory to store the DAX temporary files
+    execdir=os.path.join(local_work_dir,'lalinference_pegasus_'+str(uuid.uuid1()))
+    olddir=os.getcwd()
+    if opts.grid_site is not None:
         site='local,'+opts.grid_site
-      else:
+    else:
         site=None
-      # Create the DAX scripts
-      if opts.dax:
-        dag.prepare_dax(tmp_exec_dir=execdir,grid_site=site,peg_frame_cache=peg_frame_cache)
-        # Ugly hack to replace pegasus.transfer.links=true in the pegasus.properties files created by pipeline.py
-        # Turns off the creation of links for files on the local file system. We use pegasus.transfer.links=false
-        # to make sure we have a copy of the data in the runing directory (useful when the data comes from temporary
-        # low latency buffer).
-        if cp.has_option('analysis','pegasus.transfer.links'):
-          if cp.get('analysis','pegasus.transfer.links')=='false':
-            lines=[]
+    # Create the DAX scripts
+    if opts.dax:
+            dag.prepare_dax(tmp_exec_dir=execdir,grid_site=site,peg_frame_cache=peg_frame_cache)
+            # Ugly hack to replace pegasus.transfer.links=true in the pegasus.properties files created by pipeline.py
+            # Turns off the creation of links for files on the local file system. We use pegasus.transfer.links=false
+            # to make sure we have a copy of the data in the runing directory (useful when the data comes from temporary
+            # low latency buffer).
+            if cp.has_option('analysis','pegasus.transfer.links'):
+                if cp.get('analysis','pegasus.transfer.links')=='false':
+                    lines=[]
             with open('pegasus.properties') as fin:
               for line in fin:
                 line = line.replace('pegasus.transfer.links=true', 'pegasus.transfer.links=false')
@@ -326,36 +388,36 @@ for sampler in samps:
             with open('pegasus.properties','w') as fout:
               for line in lines:
                 fout.write(line)
-        if cp.has_option('condor','accounting_group'):
-          lines=[]
-          with open('sites.xml') as fin:
-            for line in fin:
-              if '<profile namespace="condor" key="getenv">True</profile>' in line:
-                line=line+'    <profile namespace="condor" key="accounting_group">'+cp.get('condor','accounting_group')+'</profile>\n'
-              lines.append(line)
-          with open('sites.xml','w') as fout:
-            for line in lines:
-              fout.write(line)
-        if cp.has_option('condor','accounting_group_user'):
-          lines=[]
-          with open('sites.xml') as fin:
-            for line in fin:
-              if '<profile namespace="condor" key="getenv">True</profile>' in line:
-                line=line+'    <profile namespace="condor" key="accounting_group_user">'+cp.get('condor','accounting_group_user')+'</profile>\n'
-              lines.append(line)
-          with open('sites.xml','w') as fout:
-            for line in lines:
-              fout.write(line)
+            if cp.has_option('condor','accounting_group'):
+                lines=[]
+                with open('sites.xml') as fin:
+                    for line in fin:
+                        if '<profile namespace="condor" key="getenv">True</profile>' in line:
+                            line=line+'    <profile namespace="condor" key="accounting_group">'+cp.get('condor','accounting_group')+'</profile>\n'
+                            lines.append(line)
+                with open('sites.xml','w') as fout:
+                    for line in lines:
+                        fout.write(line)
+            if cp.has_option('condor','accounting_group_user'):
+                lines=[]
+                with open('sites.xml') as fin:
+                    for line in fin:
+                        if '<profile namespace="condor" key="getenv">True</profile>' in line:
+                            line=line+'    <profile namespace="condor" key="accounting_group_user">'+cp.get('condor','accounting_group_user')+'</profile>\n'
+                            lines.append(line)
+            with open('sites.xml','w') as fout:
+                for line in lines:
+                    fout.write(line)
 
-      full_dag_path=os.path.join(cp.get('paths','basedir'),dag.get_dag_file())
-      dagjob=pipeline.CondorDAGManJob(full_dag_path,dir=rundir_root)
-      dagnode=pipeline.CondorDAGManNode(dagjob)
-      outerdag.add_node(dagnode)
-
-      dag.write_sub_files()
-      dag.write_dag()
-      dag.write_script()
-      os.chdir(olddir)
+    print(os.path.join(cp.get('paths','basedir'),dag.get_dag_file()))
+    dagjob=pipeline.CondorDAGManJob(os.path.join(cp.get('paths','basedir'),dag.get_dag_file()),
+                                    cp.get('paths','basedir'))
+    dagnode=pipeline.CondorDAGManNode(dagjob)
+    outerdag.add_node(dagnode)
+    print('just before writing '+dag.get_dag_file())
+    dag.write_sub_files()
+    dag.write_dag()
+    dag.write_script()
 
 if(opts.dax):
   # Create a text file with the frames listed
