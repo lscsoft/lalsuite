@@ -29,12 +29,14 @@ from bisect import bisect_left
 import itertools
 import math
 import sys
+import time
 
 
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw.utils import coincs as ligolw_coincs
 from glue import offsetvector
+import lal
 from lalburst import snglcoinc
 
 
@@ -309,6 +311,7 @@ def ligolw_thinca(
 	seglists = None,
 	veto_segments = None,
 	likelihood_func = None,
+	fapfar = None,
 	min_instruments = 2,
 	min_log_L = None,
 	verbose = False
@@ -319,6 +322,8 @@ def ligolw_thinca(
 
 	if min_log_L is not None and likelihood_func is None:
 		raise ValueError("must supply likelihood_func to impose min_log_L cut")
+	if likelihood_func is None and fapfar is not None:
+		raise ValueError("must supply likelihood_func to compute false-alarm rates and false-alarm probabilities")
 
 	#
 	# prepare the coincidence table interface.
@@ -354,12 +359,24 @@ def ligolw_thinca(
 	# and record the survivors
 	#
 
+	gps_time_now = float(lal.UTCToGPS(time.gmtime()))
 	for node, events in time_slide_graph.get_coincs(eventlists, delta_t, verbose = verbose):
 		if not ntuple_comparefunc(events, node.offset_vector):
 			coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, events, seglists = seglists)
 			if likelihood_func is not None:
 				coinc.likelihood = likelihood_func(events, node.offset_vector)
+				if fapfar is not None:
+					# FIXME:  add proper columns to
+					# store these values in
+					coinc_inspiral.combined_far = fapfar.far_from_rank(coinc.likelihood)
+					coinc_inspiral.false_alarm_rate = fapfar.fap_from_rank(coinc.likelihood)
 			if min_log_L is None or coinc.likelihood >= min_log_L:
+				# set latency.
+				# NOTE:  this is nonsense unless running
+				# live.
+				# FIXME: add a proper column for this
+				coinc_inspiral.minimum_duration = gps_time_now - float(coinc_inspiral.end)
+				# finally, append coinc to tables
 				coinc_tables.append_coinc(coinc, coincmaps, coinc_inspiral)
 
 	#
