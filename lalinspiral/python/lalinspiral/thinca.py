@@ -489,9 +489,10 @@ class sngl_inspiral_coincs(object):
 		#
 
 		self.coinc_def, = (row for row in self.coinc_def_table if row.search == InspiralCoincDef.search and row.search_coinc_type == InspiralCoincDef.search_coinc_type)
-		self.coinc_event_index = dict((row.coinc_event_id, row) for row in self.coinc_event_table if row.coinc_def_id == self.coinc_def.coinc_def_id)
-		self.coinc_inspiral_index = dict((row.coinc_event_id, row) for row in self.coinc_inspiral_table)
-		assert set(self.coinc_event_index) == set(self.coinc_inspiral_index)
+		coinc_event_map_ids = frozenset(row.coinc_event_id for row in self.coinc_event_map_table)
+		self.coinc_event_index = dict((row.coinc_event_id, row) for row in self.coinc_event_table if row.coinc_def_id == self.coinc_def.coinc_def_id and row.coinc_event_id in coinc_event_map_ids)
+		self.coinc_inspiral_index = dict((row.coinc_event_id, row) for row in self.coinc_inspiral_table if row.coinc_event_id in coinc_event_map_ids)
+		assert frozenset(self.coinc_event_index) == frozenset(self.coinc_inspiral_index)
 		self.coinc_event_map_index = dict((coinc_event_id, []) for coinc_event_id in self.coinc_event_index)
 		for row in self.coinc_event_map_table:
 			try:
