@@ -540,6 +540,7 @@ class CoincTables(object):
 			table_name = event.event_id.table_name,
 			event_id = event.event_id
 		) for event in events]
+		assert coincmaps, "coincs must contain >= 1 event"
 
 		coinc = self.coinctable.RowType(
 			process_id = process_id,
