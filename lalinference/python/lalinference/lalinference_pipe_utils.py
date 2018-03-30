@@ -644,6 +644,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.prenodes={}
     self.datafind_job = pipeline.LSCDataFindJob(self.cachepath,self.logpath,self.config,dax=self.is_dax())
     self.datafind_job.add_opt('url-type','file')
+    # If running on OSG use its datafind server
+    if cp.has_option('analysis','osg') and cp.getboolean('analysis','osg'):
+        self.datafind_job.add_opt('server','datafind.ligo.org')
     if cp.has_option('condor','accounting_group'):
       self.datafind_job.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
     if cp.has_option('condor','accounting_group_user'):
@@ -1727,6 +1730,12 @@ class SingularityJob(pipeline.CondorDAGJob):
             self.singularity = cp.getboolean('analysis','singularity')
         else:
             self.singularity = False
+        if cp.has_option('analysis','osg'):
+            self.osg=cp.getboolean('analysis','osg')
+        else:
+            self.osg=False
+        if self.osg and not self.singularity:
+            raise Exception("Running on the OSG requires singularity=True in [analysis] section of ini file")
         self.basedir = cp.get('paths','basedir')
         self.add_condor_cmd('initialdir',self.basedir)
         if not self.singularity:
@@ -1741,34 +1750,32 @@ class SingularityJob(pipeline.CondorDAGJob):
             print("ERROR: You requested a singularity run but did not specify \
                 an image file in the [singularity] section of the config file")
             sys.exit(-1)
-        frameopt = "" if cp.has_option('lalinference','fake-cache') \
-            else "--bind {cvmfs_frames}".format(cvmfs_frames = self.CVMFS_FRAMES)
+        # If running on the OSG with real data, use frames from CVMFS
+        if cp.has_option('lalinference','fake-cache') or not self.osg:
+            frameopt=""
+        else:
+            frameopt="--bind {cvmfs_frames}".format(cvmfs_frames = self.CVMFS_FRAMES)
+            self.add_condor_cmd('+SingularityBindCVMFS','True')
+
         self.wrapper_string="""
             echo "Workspace on execute node $(hostname -f)"
             echo "PWD" ${{PWD}}
             echo "contents"
             ls -l
             set -e
-            echo "Launching singularity..."
-            {singularity} exec \\
-                --home ${{PWD}} \\
-                {frameopt} \\
-                --contain \\
-                --writable \\
-                {image} \\
-                {executable} \\
-                "$@"
-            """.format(singularity = self.singularity_path,
-                       basedir = self.basedir,
-                    frameopt = frameopt,
-                    executable = super(SingularityJob,self).get_executable(),
-                    image = self.image
-                )
+            {executable} \\
+            "$@"
+            """.format(executable = super(SingularityJob,self).get_executable())
 
-        # Add requested sites if specified
-        if cp.has_option('condor','desired-sites'):
-            self.add_condor_cmd('+DESIRED_Sites',cp.get('condor','desired-sites'))
-
+        if self.osg:
+            self.add_condor_cmd('+OpenScienceGrid','True')
+            self.add_condor_cmd('requirements','IS_GLIDEIN=?=True')
+            # Add requested sites if specified
+            if cp.has_option('condor','desired-sites'):
+                self.add_condor_cmd('+DESIRED_Sites',cp.get('condor','desired-sites'))
+        if self.singularity:
+            self.add_condor_cmd('requirements','HAS_SINGULARITY == TRUE')
+            self.add_condor_cmd('+SingularityImage','"{0}"'.format(self.image))
         # Add data transfer options
         self.add_condor_cmd('should_transfer_files','YES')
         self.add_condor_cmd('when_to_transfer_output','ON_EXIT_OR_EVICT')
@@ -1807,29 +1814,25 @@ class SingularityNode(pipeline.CondorDAGNode):
     Class representing a node run via singularity
     """
     def add_output_file(self,filename):
-        print(self.job().basedir)
         filename=os.path.relpath(filename,start=self.job().basedir)
         self.add_output_macro(filename)
         super(SingularityNode,self).add_output_file(filename)
     def add_input_file(self,filename):
         filename=os.path.relpath(filename,start=self.job().basedir)
         self.add_input_macro(filename)
-        print(filename)
         super(SingularityNode,self).add_input_file(filename)
-        print(self.get_input_files())
     def add_checkpoint_file(self,filename):
         filename=os.path.relpath(filename,start=self.job().basedir)
         self.add_checkpoint_macro(filename)
         super(SingularityNode,self).add_checkpoint_file(filename)
     def add_file_opt(self, opt, filename, file_is_output_file=False):
-        # The code option needs the path as seen inside singularity, i.e. the pwd
+        # The code option needs the path as seen inside singularity, i.e. relative to basedir
         relfile=os.path.relpath(filename,start=self.job().basedir)
         self.add_var_opt(opt,relfile)
         if file_is_output_file:
             self.add_output_file(filename)
         else:
             self.add_input_file(filename)
-        #super(SingularityNode,self).add_file_opt(opt, filename, file_is_output_file=file_is_output_file)
 
 class EngineJob(SingularityJob,pipeline.AnalysisJob):
   def __init__(self,cp,submitFile,logdir,engine,ispreengine=False,dax=False,site=None, *args, **kwargs):
