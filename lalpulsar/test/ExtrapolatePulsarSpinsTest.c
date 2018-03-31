@@ -40,7 +40,6 @@
  */
 int main(void)
 {
-  LALStatus XLAL_INIT_DECL(status);
   PulsarSpins result;
   PulsarSpins fkdot0, fkdot1;
   REAL8 tolerance = 1.0e-12;
@@ -90,8 +89,7 @@ int main(void)
        (RELERROR(fkdot1[2], result[2]) > tolerance) ||
        (RELERROR(fkdot1[3], result[3]) > tolerance) )
     {
-      XLALPrintError ( "\nRelative error of XLALExtrapolatePulsarSpins() exceeds tolerance of %g \n\n", tolerance);
-      return EXIT_FAILURE;
+      XLAL_ERROR_MAIN ( XLAL_ETOL, "\nRelative error of XLALExtrapolatePulsarSpins() exceeds tolerance of %g \n\n", tolerance);
     }
   else
     printf ("\n ==> OK. XLALExtrapolatePulsarSpins() lies within %g of the reference-result!\n", tolerance);
@@ -107,8 +105,7 @@ int main(void)
     printf ("\nExtrapolated phase phi1 = %.16f, Reference-result = %.16f\n", phi1, phi1Result );
     if ( RELERROR(phi1, phi1Result) > tolerancePhi )
       {
-	XLALPrintError ( "\nRelative error of XLALExtrapolatePulsarPhase() exceeds tolerance of %g \n\n", tolerancePhi);
-      return EXIT_FAILURE;
+        XLAL_ERROR_MAIN ( XLAL_ETOL, "\nRelative error of XLALExtrapolatePulsarPhase() exceeds tolerance of %g \n\n", tolerancePhi);
       }
     else
       printf ("\n ==> OK. XLALExtrapolatePulsarPhase() lies within %g of the reference-result!\n", tolerancePhi);
@@ -170,8 +167,7 @@ int main(void)
   if ( (range2.refTime.gpsSeconds != rangeResult.refTime.gpsSeconds)
        || ( range2.refTime.gpsNanoSeconds != rangeResult.refTime.gpsNanoSeconds ) )
     {
-      XLALPrintError ("\nOutput-range has wrong epoch\n");
-      return EXIT_FAILURE;
+      XLAL_ERROR_MAIN ( XLAL_ETIME, "\nOutput-range has wrong epoch\n");
     }
 
   if ( (RELERROR(range2.fkdot[0], rangeResult.fkdot[0]) > tolerance) ||
@@ -185,14 +181,14 @@ int main(void)
        (RELERROR(range2.fkdotBand[3], rangeResult.fkdotBand[3]) > tolerance)
        )
     {
-      XLALPrintError ( "\nRelative error of XLALExtrapolatePulsarSpinRange() exceeds tolerance of %g \n", tolerance );
-      return EXIT_FAILURE;
+      XLAL_ERROR_MAIN ( XLAL_ETOL, "\nRelative error of XLALExtrapolatePulsarSpinRange() exceeds tolerance of %g \n", tolerance );
     }
-  else
+  else {
     printf ("\n ==> OK. XLALExtrapolatePulsarSpinRange() lies within %g of the reference-result!\n\n", tolerance);
+  }
 
   LALCheckMemoryLeaks();
 
-  return 0;	/* OK */
+  return XLAL_SUCCESS;
 
 } /* main() */
