@@ -22,6 +22,9 @@
 
 #include <lal/PulsarDataTypes.h>
 #include <lal/AVFactories.h>
+#include <lal/LALDetectors.h>
+#include <lal/LALBarycenter.h>
+#include <lal/DetectorStates.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
@@ -89,6 +92,9 @@ int XLALExtrapolatePulsarPhase ( REAL8 *phi1, const PulsarSpins fkdot1, const RE
 
 int XLALCWSignalCoveringBand( REAL8 *minCoverFreq, REAL8 *maxCoverFreq, const LIGOTimeGPS *time1, const LIGOTimeGPS *time2,
                               const PulsarSpinRange *spinRange, const REAL8 binaryMaxAsini, const REAL8 binaryMinPeriod, const REAL8 binaryMaxEcc );
+
+int XLALCWSignalBand ( REAL8 *minCoverFreq, REAL8 *maxCoverFreq, const DetectorStateSeries *detStates, const PulsarDopplerParams *doppler );
+DetectorStateSeries *XLALPrepareCWSignalBand ( SkyPosition *skypos_maxdoppler, const LIGOTimeGPS tStart, const REAL8 Tspan, const REAL8 dT, const LALDetector *detector, const EphemerisData *edat );
 
 /*@}*/
 
