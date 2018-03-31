@@ -288,7 +288,6 @@ setup_roq(cp)
 master_cp=cp
 print("Here cp.basedir="+cp.get('paths','basedir'))
 for cp in generate_variations(master_cp,variations):
-    print("Generating variations: {}".format(variations))
     basepath=cp.get('paths','basedir')
     # Copy injection file into place as paths outside basedir are inaccessible
     if cp.has_option('input','injection-file'):
