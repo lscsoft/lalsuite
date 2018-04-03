@@ -1763,9 +1763,21 @@ class SingularityJob(pipeline.CondorDAGJob):
             echo "contents"
             ls -l
             set -e
-            {executable} \\
-            "$@"
-            """.format(executable = super(SingularityJob,self).get_executable())
+            which singularity
+            singularity exec \\
+                    --home ${{PWD}} \\
+                    {frameopt} \\
+                    --contain \\
+                    --writable \\
+                    {image} \\
+                    {executable} \\
+                    "$@"
+            """.format(singularity = self.singularity_path,
+                    basedir=self.basedir,
+                    frameopt = frameopt,
+                    executable = super(SingularityJob,self).get_executable(),
+                    image = self.image
+                    )
 
         if self.osg:
             self.add_condor_cmd('+OpenScienceGrid','True')
