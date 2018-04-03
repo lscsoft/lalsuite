@@ -1843,8 +1843,8 @@ class SingularityJob(pipeline.CondorDAGJob):
             # Add requested sites if specified
             if cp.has_option('condor','desired-sites'):
                 self.add_condor_cmd('+DESIRED_Sites',cp.get('condor','desired-sites'))
-        #if self.singularity:
-            #self.add_condor_cmd('requirements','HAS_SINGULARITY == TRUE')
+        if self.singularity:
+            self.add_condor_cmd('requirements','HasSingularity == TRUE')
             #self.add_condor_cmd('+SingularityImage','"{0}"'.format(self.image))
         # Add data transfer options
         self.add_condor_cmd('should_transfer_files','YES')
