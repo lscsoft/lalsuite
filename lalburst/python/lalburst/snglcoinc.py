@@ -271,11 +271,6 @@ class TimeSlideGraphNode(object):
 			raise ValueError("min_instruments (=%d) must be >= 1" % min_instruments)
 		if len(offset_vector) < 2:
 			raise ValueError("encountered offset vector with fewer than 2 instruments: %s", str(offset_vector))
-		if len(offset_vector) < min_instruments:
-			# this test is part of the logic that ensures we
-			# will only extract coincs that meet the
-			# min_instruments criterion
-			raise ValueError("encountered offset vector smaller than min_instruments (%d): %s", (min_instruments, str(offset_vector)))
 
 		#
 		# initialize
@@ -285,6 +280,8 @@ class TimeSlideGraphNode(object):
 		self.time_slide_id = time_slide_id
 		self.offset_vector = offset_vector
 		self.deltas = frozenset(offset_vector.deltas.items())
+		# keep_unused is part of the logic that ensures we only
+		# return coincs that meet the min_instruments criterion
 		self.keep_unused = len(offset_vector) > min_instruments
 		if len(offset_vector) > 2:
 			self.components = tuple(TimeSlideGraphNode(offset_vector, min_instruments = min_instruments) for offset_vector in offsetvector.component_offsetvectors([offset_vector], len(offset_vector) - 1))
@@ -440,6 +437,11 @@ class TimeSlideGraph(object):
 
 		if verbose:
 			print("constructing coincidence assembly graph for %d target offset vectors ..." % len(offset_vector_dict), file=sys.stderr)
+		if min(len(offset_vector) for offset_vector in offset_vector_dict.values()) < min_instruments:
+			# this test is part of the logic that ensures we
+			# will only extract coincs that meet the
+			# min_instruments criterion
+			raise ValueError("encountered offset vector (%s) smaller than min_instruments (%d)", (str(min(offset_vector_dict.values(), key = lambda offset_vector: len(offset_vector))), min_instruments))
 		self.head = tuple(TimeSlideGraphNode(offset_vector, min_instruments = min_instruments, time_slide_id = time_slide_id) for time_slide_id, offset_vector in sorted(offset_vector_dict.items()))
 
 		#
