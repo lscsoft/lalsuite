@@ -1,0 +1,462 @@
+#!/usr/bin/python
+"""
+Inspiral range plotting tool for TMPLTBANK/INSPIRAL files
+
+Example:
+
+>>> ~/opt/pylal/bin/pylal_plotinspiralrange \
+>>> --inspiral-glob '*-INSPIRAL-*' --tmpltbank-glob '*TMPLTBANK-*' 
+>>> --user-tag playground --range-min 1 --range-max 40 --n 50 
+>>> --range-vs-time --range-hist --verbose -a -b 
+>>> --range-mass --gps-start-time 847555570 --gps-end-time 849974770 
+>>> --output-path playground --enable-output  --ifo-times H1H2L1  
+
+todo
+  - Use only the TMPLTBANK file and not INSPIRAL anymore
+
+    Right now, the horizon distance are stored within the INSPIRAL files and 
+    used to generate 2 plots : histogram of a 1.4,1.4 horizon distance, and 
+    fluctuations of this horizon distance versus time. 
+    There is also the possibility to generate horizon versus time BUT it 
+    requires  the TMPLTBANK files. For historical reason, we started to generate
+    the 2 first plots using INSPIRAL files, and later the third one using TMPLTBANK
+    files. I think we could have used only the TMPLTBANK files. 
+   
+    For now this code needs both INSPIRAL and TMPLTBANK files to be parsed, which
+    is longer than expected. If someone has the time, we should read only TMPLTBANK 
+    files
+  - Allow cache description to have several arguments
+
+    one can provide both --inspiral-glob and --tmpltbank-glob options to provide the
+    list of requested files. There is also the possiblity to use a cachefile 
+    (--cache-file). A cache file may contain anything, so a pattern for INSPIRAL 
+    and TMPLTBANK files is required (trig-pattern and bank-pattern options).
+  - Use ContentHandler function from InspiralUtils
+
+"""
+__prog__ = "plotinspiralrange"
+__title__ = "Inspiral Range Plots"
+
+import sys
+import glob
+from optparse import *
+import numpy
+from glue import lal
+from pylal import InspiralUtils
+from pylal import git_version
+
+# ============================================================================
+def stairs(xVal,yVal):
+  """
+  Takes in x and y values you want to plot using stairs
+  and returns the necessary values to use with plot()
+  @param xVal:
+  @param yVal:
+  """
+  xLen = 2*(len(xVal))
+  for i in range(xLen):
+    if i == 0:
+      xStairs = [xVal[0]]
+      yStairs = [yVal[0]]
+    elif i == xLen-1:
+      xStairs.append(xVal[len(xVal)-1])
+      yStairs.append(yVal[len(yVal)-1])
+    elif not i%2:
+      xStairs.append(mean((xVal[i/2-1],xVal[i/2])))
+      yStairs.append(yVal[i/2])
+    else:
+      xStairs.append(mean((xVal[(i-1)/2],xVal[(i+1)/2])))
+      yStairs.append(yVal[(i-1)/2])
+
+  return xStairs,yStairs
+
+# ============================================================================
+def plotinspiralrange_histogram(opts):
+  """
+  Create the histogram of the inspiral range for each ifo available 
+  
+  @param  opts : the user arguments 
+  @return  fname  the HTML document
+  """
+  global figure_number 
+  
+  # iterate figure number 
+  figure_number = figure_number + 1
+  figure(figure_number)
+  
+  colors = InspiralUtils.colors
+  
+  if opts.range_min < 0 or opts.range_max < 0:
+    print >>sys.stderr, \
+        "Must specify --range-min and --range-max for range hist"
+    sys.exit(1)
+
+  if opts.plot_type == 'log':
+    opts.range_min = log10(opts.range_min)
+    opts.range_max = log10(opts.range_max)
+
+  bins = numpy.linspace(opts.range_min, opts.range_max, opts.nbins,
+    endpoint=True)
+
+  if opts.plot_type == 'log':
+    bins = 10**bins
+    opts.range_min = 10**(opts.range_min)
+    opts.range_max = 10**(opts.range_max)
+
+  num = {}
+  for ifo in inspiralSumm.keys():
+    Range = inspiralSumm[ifo].getColumnByName('value').asarray()
+    startTimeSec = inspiralSumm[ifo].getColumnByName('start_time').asarray()
+    style = colors[ifo]
+    num[ifo], bins = numpy.histogram(Range, bins)
+    bins = bins[:-1]
+
+  for ifo in inspiralSumm.keys():
+    if opts.plot_type == 'log':
+      semilogx(bins,num[ifo], colors[ifo], linewidth=2, label=ifo)
+    elif opts.plot_type == 'linear':
+      stairsX,stairsY = stairs(bins,num[ifo])
+      plot(stairsX, stairsY, colors[ifo], linewidth=2, label=ifo)
+
+  leg=legend()
+  if len(inspiralSumm.keys()):
+    ltext=leg.get_texts()
+    setp(ltext, fontsize='x-large')
+  xlim(opts.range_min, opts.range_max)
+  xticks(fontsize='x-large')
+  yticks(fontsize='x-large')
+  xlabel('Inspiral Horizon distance (Mpc)', size='x-large')
+  ylabel('Number of 2048 sec. blocks', size='x-large')
+  grid()
+  
+  fname = []
+  if opts.enable_output: 
+    fname = InspiralUtils.set_figure_name(opts, "range_hist")
+    fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, \
+      dpi_thumb=opts.figure_resolution)
+  if not opts.show_plot:
+    close()
+  return fname,fname_thumb
+
+# ============================================================================
+def plotinspiralrange_range_versus_time(opts):
+  """
+  Create the range versus time plot (BNS case) 
+  
+  @param  opts : the user arguments 
+  @return fname  the HTML document 
+  """
+  global figure_number
+  
+  # iterate figure number 
+  figure_number = figure_number + 1
+  figure(figure_number)
+
+  colors = InspiralUtils.colors
+
+  for ifo in inspiralSumm.keys():
+    Range = inspiralSumm[ifo].getColumnByName('value').asarray()
+    startTimeSec = inspiralSumm[ifo].getColumnByName('start_time').asarray()
+    startTime = viz.timeindays(\
+        inspiralSumm[ifo].getColumnByName('start_time').asarray())
+    style = colors[ifo] + 'x'
+    if opts.plot_type == 'linear':
+      plot(startTime, Range, style, label=ifo,\
+          markersize=12, markeredgewidth=1)
+    elif opts.plot_type == 'log':
+      semilogy(startTime, Range, style, label=ifo,\
+          markersize=12, markeredgewidth=1)
+  leg=legend()
+  if len(inspiralSumm.keys()):
+    ltext=leg.get_texts()
+    setp(ltext, fontsize='x-large')
+  xlabel('Days after start of run', size='x-large')
+  ylabel('Inspiral Horizon distance (Mpc)', size='x-large')
+  grid()
+
+  fname = []
+  if opts.enable_output: 
+    fname = InspiralUtils.set_figure_name(opts, "range_plot")
+    fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, \
+      dpi_thumb=opts.figure_resolution)
+  if not opts.show_plot:
+    close()
+
+  return fname,fname_thumb
+
+# ============================================================================
+def plotinspiralrange_range_versus_total_mass(opts):
+  """
+  Create the range versus total mass (request TMPLTBANK files) 
+  
+  @param  opts : the user arguments 
+  @return fname  the HTML document  
+  """
+  global figure_number
+  # iterate figure number 
+  figure_number = figure_number + 1
+  figure(figure_number)
+
+  colors = InspiralUtils.colors
+
+  mass = {}
+  massRange = {}
+  massRangeError = {}
+
+  for ifo in massInspiralSumm.keys():
+    if not mass.has_key(ifo):
+      mass[ifo] = []
+      massRange[ifo] = []
+      massRangeError[ifo] = []
+    for massNum in range(len(massInspiralSumm[ifo])):
+      Range = massInspiralSumm[ifo][massNum].getColumnByName('value').asarray()
+      startTimeSec = \
+          massInspiralSumm[ifo][massNum].getColumnByName('start_time').asarray()
+      mass[ifo].append(2*(massNum+1))
+      massRange[ifo].append(mean(Range))
+      massRangeError[ifo].append(std(Range))
+    if opts.verbose:
+      print ifo
+      print mass[ifo][4],massRange[ifo][4]
+      print mass[ifo][9],massRange[ifo][9]
+    errorbar(mass[ifo], massRange[ifo], massRangeError[ifo], \
+      fmt='x', color=colors[ifo], label=ifo)
+  currentAxes = axis()
+  Axes = [currentAxes[0],currentAxes[1],currentAxes[2],currentAxes[3]]
+  if opts.mass_max > 0:
+    Axes[1] = opts.mass_max
+  if opts.mass_min > 0:
+    Axes[0] = opts.mass_min
+  axis(Axes)
+  lines=gca().get_lines()
+  leg=legend(loc='upper left')
+  if len(massInspiralSumm.keys()):
+    ltext=leg.get_texts()
+    setp(ltext, fontsize='x-large')
+  setp(lines, linewidth=2, markeredgewidth=2, markersize=10)
+  xticks(fontsize='x-large')
+  yticks(fontsize='x-large')
+  xlabel('Total Mass ($M_\odot$)', size='x-large')
+  ylabel('Inspiral Horizon distance (Mpc)', size='x-large')
+  grid()
+  
+  fname = []
+  if opts.enable_output:
+    fname = InspiralUtils.set_figure_name(opts, "range_mass")
+    fname_thumb = InspiralUtils.savefig_pylal( filename=fname, doThumb=True, \
+      dpi_thumb=opts.figure_resolution)
+  if not opts.show_plot:
+    close()
+
+  return fname,fname_thumb
+
+# ============================================================================
+def get_filelist(opts):
+  """
+  return a list of files using the --glob option OR the cache file (and 
+  possibly a sieve with the --cache-description option)
+ 
+  @param opts: user options. Uses inspiral_glob, tmpltbank_glob AND/OR
+  cache_file and opts.ifo_type and option.cache_description
+  """
+  inspiralFiles = []
+  if opts.inspiral_glob:
+    inspiralFiles += glob.glob(opts.inspiral_glob)
+  if opts.tmpltbank_glob:
+    inspiralFiles += glob.glob(opts.tmpltbank_glob)
+  if opts.cache_file:
+    allfilesCache = lal.Cache.fromfile(open(opts.cache_file))
+    inspiralFiles = allfilesCache.sieve(description = (opts.trig_pattern), exact_match=opts.match).checkfilesexist()[0].pfnlist()
+    if opts.range_mass is True:
+      inspiralFiles += allfilesCache.sieve(description = (opts.bank_pattern), exact_match=opts.match).checkfilesexist()[0].pfnlist()
+     
+  return inspiralFiles
+
+# ============================================================================
+# help message
+usage = """\
+%prog [options]
+------------------------------------------------------------------------------
+ SUMMARY:  Program for plotting the range of the instruments over a given run.
+           You can make three plots
+         1) A plot of the range for each ifo vs time (in days after run start)
+            (--range-vs-time)           
+         2) A histogram of the number of blocks for which a given range 
+            was achieved (--range-hist).
+         3) Mean range versus total mass (--range-mass).
+
+ Request a list of inspiral and template bank files to read the summary value
+ tables
+------------------------------------------------------------------------------
+"""
+
+# ============================================================================
+
+def parse_command_line():
+  """
+  Parser function dedicated 
+  """
+  
+  parser = OptionParser(usage=usage, version=git_version.verbose_msg)
+  parser.add_option("-I","--inspiral-glob",action="store",type="string",\
+      default=None,metavar="INSPIRAL",\
+      help="glob for INSPIRAL files")
+  parser.add_option("-T","--tmpltbank-glob",action="store",type="string",\
+      default=None,metavar="TMPLTBANK",\
+      help="glob for TMPLTBANK files")
+  parser.add_option("-c","--cache-file",action="store",type="string",\
+      default=None,metavar="CACHE",\
+      help="name of a cache file containing INSPIRAL and/or TMPLTBANK files")
+  parser.add_option("-m","--range-min",action="store",type="float",\
+      metavar="MIN", help="minimum value on range plots", default=-1 )
+  parser.add_option("-M","--range-max",action="store",type="float",\
+      metavar="MAX", help="maximum value on range plots", default=-1 )
+  parser.add_option("-a","--range-vs-time",action="store_true",\
+      default=False,help="make a plot of range vs time" )
+  parser.add_option("-b","--range-hist",action="store_true",\
+      default=False,help="make a histogram of the range" )
+  parser.add_option("--range-mass",action="store_true",\
+      default=False,help="make a plot of the range vs total mass" )
+  parser.add_option("--mass-min",action="store",type="float",\
+      metavar="MIN", help="minimum x-value on mass plots", default=-1 )
+  parser.add_option("--mass-max",action="store",type="float",\
+      metavar="MAX", help="maximum x-value on mass plots", default=-1 )
+  parser.add_option("-t","--plot-type",action="store",type="string",\
+      default="linear",metavar=" PLOT_TYPE", \
+      help="make either linear or log or plots" )
+  parser.add_option("-n","--nbins",action="store",type="int",\
+      metavar="NBINS", help="number of bins for range hist (default 100)",
+      default=100)
+  parser.add_option("-s","--show-plot",action="store_true",default=False,\
+      help="display the figures on the terminal" )
+  parser.add_option("-i", "--ifo-times", action="store", type="string",\
+      metavar="IFOTIMES", help="ifo times is used as a prefix for the output files" )
+  parser.add_option("","--ifo-tag",action="store",type="string",\
+      default=None, metavar=" IFOTAG",\
+      help="The ifo tag used in the name of the figures (e.g. SECOND_H1H2L1)")
+  parser.add_option("-u","--user-tag",action="store",type="string",\
+      default=None, metavar=" USERTAG",\
+      help="The user tag used in the name of the figures" )
+  parser.add_option("-P","--output-path",action="store",\
+      type="string",default="",  metavar="PATH",\
+      help="path where the figures would be stored")
+  parser.add_option("-O","--enable-output",action="store_true",\
+      default="false",  metavar="OUTPUT",\
+      help="enable the generation of the html and cache documents")
+  parser.add_option("","--gps-start-time",action="store",\
+      type="int",  metavar="GPSSTARTTIME",\
+      help="gps start time (for naming figure and output files")
+  parser.add_option("","--gps-end-time",action="store",\
+      type="int",  metavar=" GPSENDTIME",\
+      help="gps end time (for naming figure and output files")
+  parser.add_option("-v","--verbose",action="store_true",\
+      default=False,help="print information" )
+  parser.add_option("","--ifo-type",action="store",\
+      type="string", default=None,  metavar="IFO_TYPE",\
+      help="sieve a cache file according to a particular ifo type")
+  parser.add_option("", "--figure-resolution",action="store",type="int",\
+      default=50, help="dpi of the thumbnails (50 by default)")
+
+   # options used in sieving the cache file, in case it is given
+  parser.add_option("","--trig-pattern",
+      help="sieve pattern for trigger files")
+  parser.add_option("","--bank-pattern", metavar="BANKPATTERN",
+      help="sieve pattern for inspiral files")
+  parser.add_option("","--match",action="store",type="string",\
+      default=None,metavar="MATCH",\
+      help="To sieve exactly according to a pattern, if its set True" )
+
+  command_line = sys.argv[1:]
+  (options,args) = parser.parse_args()
+
+  # test the input options
+  if not options.ifo_times:
+    raise ValueError, "--ifo-times (which ifos were analysed) must be provided"
+
+  if options.cache_file and (options.inspiral_glob or options.tmpltbank_glob):
+    raise ValueError, """
+Use either the glob options(inspiral-glob, tmpltbank-glob 
+OR the cachefile options (--cache-file), not both at the same time.
+"""
+
+  return options, sys.argv[1:]
+
+# ============================================================================
+# -- get command line arguments
+
+opts, args = parse_command_line()
+
+# -- Initialise
+opts = InspiralUtils.initialise(opts, __prog__, git_version.verbose_msg)
+
+# -- set the proper color code
+figure_number = 0  # used for the figure label (showplot)
+fnameList = []   # use for the cache file
+tagList= []   # use for the cache file
+
+# to avoid display problem when show plot is not used
+if not opts.show_plot:
+  import matplotlib
+  matplotlib.use('Agg')
+from pylab import *
+from pylal import viz
+
+# ============================================================================
+# -- identify the inspiral and template bank files
+
+InspiralUtils.message(opts, "Parsing the cache file...wait...")
+inspiralFiles = get_filelist(opts)
+ 
+# -- Read in the summ values from the inspiral/tmpltbank files
+inspiralSumm, massInspiralSumm = InspiralUtils.readHorizonDistanceFromSummValueTable(inspiralFiles, opts.verbose)
+
+# ============================================================================
+# Make plot of range vs time
+
+if opts.range_vs_time is True:
+  # create a text for the alt and title of html document
+  text ="Inspiral horizon distance for a (1.4,1.4)"+\
+      " solar mass system with SNR=8"
+  # -- the plot itself --
+  fname,fname_thumb = plotinspiralrange_range_versus_time(opts)
+  # -- save results in output files --
+  fnameList.append(fname)
+  tagList.append("Horizon distance versus time")
+
+# ============================================================================
+# Make histogram of range values
+
+if opts.range_hist is True:
+  # create a text for the alt and title of html document
+  text = "Histogram of inspiral horizon distance for a (1.4,1.4) solar "+\
+      "mass system with SNR = 8"
+  # -- the plot itself --
+  fname,fname_thumb = plotinspiralrange_histogram(opts)
+  # -- save results in output files --
+  fnameList.append(fname)
+  tagList.append("Histogram of horizon distance")
+
+# ============================================================================
+# Make plot of mean range vs total mass
+
+if opts.range_mass is True:
+  # create a text for the alt and title of html document
+  text = "Inspiral Horizon Distance versus Mass "+\
+      "at a SNR = 8"
+  # -- the plot itself --
+  fname,fname_thumb = plotinspiralrange_range_versus_total_mass(opts)
+  # -- save results in output files --
+  fnameList.append(fname)
+  tagList.append("Horizon distance versus mass")
+
+# ============================================================================
+# final step: html, cache file generation
+
+if opts.enable_output is True:
+  html_filename = InspiralUtils.write_html_output(opts, args, fnameList, tagList)
+  InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+
+# ============================================================================
+
+if opts.show_plot:
+  show()  

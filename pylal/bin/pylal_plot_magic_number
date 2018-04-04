@@ -1,0 +1,265 @@
+#!/usr/bin/python
+
+import sys
+import os
+from optparse import *
+import re
+import exceptions
+import glob
+from types import *
+
+from pylal import SnglInspiralUtils
+from pylal import SimInspiralUtils
+from glue import lal
+from pylal import InspiralUtils
+from pylal import git_version
+import numpy
+
+usage = """
+"""
+
+def const_eff_snr_lines(rhoVec, val, magic, dof):
+  outVec = []
+  for rho in rhoVec:
+    out = rho**4/val**4 / (1.0+rho**2 / magic) * float(dof)
+    outVec.append(out)
+  return outVec
+
+
+def parse_command_line():
+  """
+  Parser function dedicated
+  """
+  parser = OptionParser( usage=usage, version=git_version.verbose_msg)
+
+  parser.add_option("", "--cache-file", metavar="CACHEFILE",\
+      help="cache pointing to files of interest")
+  parser.add_option("","--trig-pattern", action="store",type="string",\
+      default=None, metavar="TRIGPTTRN", help="sieve pattern for trig-files" )
+  parser.add_option("","--slide-pattern", action="store",type="string",\
+      default=None, metavar="SLIDEPTTRN", help="sieve pattern for background" )
+  parser.add_option("","--found-pattern",
+      metavar="FOUNDPTTRN", help="sieve pattern for found injection files")
+  parser.add_option("-v","--verbose",action="store_true",\
+      default=False,help="print information" )
+  parser.add_option("-s","--show-plot",action="store_true",default=False,\
+        help="display the figures on the terminal" )
+
+  parser.add_option("-i", "--ifo-times", action="store", type="string", default=None, metavar="IFOTIMES", help="sieve a cache file according to a particular ifo type")
+
+  parser.add_option("", "--exact-match",action="store_true", default=False, help="the pattern should match exactly if this option is used" )
+
+  (options,args) = parser.parse_args()
+  return options, args
+
+###################### MAIN ################################################
+############################################################################
+
+
+try: opts, args = parse_command_line()
+except: 
+  print >>sys.stderr, "Must have command lines try --help for help"
+  sys.exit(1)
+
+if not opts.show_plot:
+  import matplotlib
+  matplotlib.use('Agg')
+from pylab import *
+from pylal import viz
+
+
+# a bit of sanity checking
+if not opts.cache_file and (opts.slide_pattern or opts.trig_pattern): 
+  print >>sys.stderr, "must specify cache file injection pattern and either slides or trigger pattern"
+  sys.exit(1)
+
+# Read the cache file
+allCache = lal.Cache.fromfile(open(opts.cache_file)).sieve(\
+               ifos=opts.ifo_times, exact_match=opts.exact_match)
+
+# extract the triggers 
+if opts.trig_pattern and opts.cache_file:
+  trig_cache = allCache.sieve(description=opts.trig_pattern,\
+                 exact_match=opts.exact_match)
+  found, missed = trig_cache.checkfilesexist()
+  trigFiles = found.pfnlist()
+  if not len(trigFiles):
+    print >>sys.stderr, opts.cache_file+ " contains no files with " + opts.trig_pattern + " description"
+    trigFiles = None
+
+# extract the slides
+if opts.slide_pattern and opts.cache_file:
+  slide_cache = allCache.sieve(description=opts.slide_pattern,\
+                 exact_match=opts.exact_match)
+  found, missed = slide_cache.checkfilesexist()
+  slideFiles = found.pfnlist()
+  if not len(slideFiles):
+   print >>sys.stderr, opts.cache_file+ " contains no files with " + opts.slide_pattern + " description"
+   slideFiles = None
+
+# extract the found injections
+if opts.found_pattern and opts.cache_file:
+  inj_cache = allCache.sieve(description = opts.found_pattern,\
+                exact_match=opts.exact_match)
+  found, missed = inj_cache.checkfilesexist()
+  injFiles = found.pfnlist()
+  if not len(injFiles):
+    print >>sys.stderr, opts.cache_file + " contains no files with " + opts.found_pattern + " description"
+    injFiles = None
+
+############
+# TRIGGERS #
+############
+
+snr = array([])
+chisq = array([])
+nevents = 0
+
+if trigFiles:
+  inspTriggers = SnglInspiralUtils.ReadSnglInspiralFromFiles(trigFiles, \
+      verbose=opts.verbose)
+  if inspTriggers:
+    nevents = len(inspTriggers)
+  if nevents:
+    effdist = inspTriggers.get_column('eff_distance')
+    snr = inspTriggers.get_column('snr')
+    chisq = inspTriggers.get_column('chisq')
+    chisq_dof = 2 * (inspTriggers.get_column('chisq_dof')[0] - 1 )
+  print >>sys.stderr, "Found " + str(nevents) + " triggers"
+
+
+############
+# SLIDES   #
+############
+
+slide_events = 0
+slide_snr = array([])
+slide_chisq = array([])
+
+if slideFiles:
+  slideTriggers = SnglInspiralUtils.ReadSnglInspiralFromFiles(slideFiles, \
+      verbose=opts.verbose)
+  if slideTriggers:
+    slide_events = len(slideTriggers)
+  if slide_events:
+    slide_effdist = slideTriggers.get_column('eff_distance')
+    slide_snr = slideTriggers.get_column('snr')
+    slide_chisq = slideTriggers.get_column('chisq')
+    chisq_dof = 2 * (slideTriggers.get_column('chisq_dof')[0] - 1 )
+  print >>sys.stderr, "Found " + str(slide_events) + " slides"
+
+##############
+# INJECTIONS #
+##############
+
+ninj_events = 0
+inj_snr = array([])
+inj_chisq = array([])
+
+if injFiles:
+  injTriggers = SnglInspiralUtils.ReadSnglInspiralFromFiles(injFiles, \
+      verbose=opts.verbose)
+  if injTriggers:
+    ninj_events = len(injTriggers)
+  if ninj_events:
+    inj_effdist = injTriggers.get_column('eff_distance')
+    inj_snr = injTriggers.get_column('snr')
+    inj_chisq = injTriggers.get_column('chisq')
+    chisq_dof =  2 * (injTriggers.get_column('chisq_dof')[0] - 1)
+  print >>sys.stderr, "Found " + str(ninj_events) + " injection triggers"
+
+
+print >>sys.stderr, "Found " + str(ninj_events) + " injection triggers"
+print >>sys.stderr, "Found " + str(slide_events) + " slides"
+print >>sys.stderr, "Found " + str(nevents) + " triggers"
+
+magic_numbers = range(1,501)
+results = []
+loudest_list = []
+for thresh in magic_numbers:
+  inj_eff = injTriggers.get_effective_snr(thresh)
+  slide_eff = slideTriggers.get_effective_snr(thresh)
+  insp_eff = inspTriggers.get_effective_snr(thresh)
+
+  scratch = slide_eff.copy()
+  scratch.sort()
+  loudest = scratch[-100]
+  loudest_list.append(loudest)
+  ix = (inj_eff > loudest).nonzero()
+  stat = sum(inj_effdist[ix]**3/log10(inj_effdist[ix])) / sum(inj_effdist**3/log10(inj_effdist))
+  print >>sys.stderr, "thresh = "+str(thresh)+" max is "+str(loudest)+" number of injections found is " + str(len(inj_eff[ix])) + " distance weighted " + str(stat)
+  results.append(stat)
+
+# Compute snr over chi stat for comparison 
+slide_snr_over_chi = slideTriggers.get_snr_over_chi()
+inj_snr_over_chi = injTriggers.get_snr_over_chi()
+snr_over_chi = inspTriggers.get_snr_over_chi()
+scratch = slide_snr_over_chi.copy()
+scratch.sort()
+loudest = scratch[-100]
+ix = (inj_snr_over_chi > loudest).nonzero()
+snr_over_chi_eff = sum(inj_effdist[ix]**3/log10(inj_effdist[ix])) / sum(inj_effdist**3/log10(inj_effdist))
+
+
+## MAKE PLOT ##
+figure(1)
+plot(magic_numbers, results)
+plot([min(magic_numbers), max(magic_numbers)], [snr_over_chi_eff, snr_over_chi_eff], 'r')
+xlabel('magic number', size='x-large')
+ylabel('d3 weighted injections above timeslide loudest event', size='x-large')
+legend(['effective snr', 'snr over chi'])
+fname = opts.ifo_times + "magic_number.png"
+savefig(fname, dpi=90)
+if not opts.show_plot:
+  close()
+else:
+  show()
+
+#find max efficiency
+maxidx = results.index(max(results))
+max_thresh = magic_numbers[maxidx]
+max_loudest = loudest_list[maxidx]
+
+figure(2)
+inj_eff25 = injTriggers.get_effective_snr(max_thresh)
+slide_eff25 = slideTriggers.get_effective_snr(max_thresh)
+insp_eff25 = inspTriggers.get_effective_snr(max_thresh)
+inj_eff250 = injTriggers.get_effective_snr(250)
+slide_eff250 = slideTriggers.get_effective_snr(250)
+insp_eff250 = inspTriggers.get_effective_snr(250)
+plot(inj_eff25,inj_eff250,'rx')
+plot(slide_eff25,slide_eff250,'kx')
+plot(insp_eff25,insp_eff250,'bx')
+legend(['slide','playground','injections'])
+xlabel('Effective SNR with ' + str(max_thresh), size='x-large')
+ylabel('Effective SNR with 250', size='x-large')
+fname = opts.ifo_times + "eff_snr_scatter.png"
+savefig(fname, dpi=90)
+if not opts.show_plot:
+  close()
+else:
+  show()
+
+## MAKE PLOT ##
+figure(4)
+scratch = slide_eff250.copy()
+scratch.sort()
+snrVec = numpy.linspace(5,1000, 10000)
+loglog(inj_snr,inj_chisq, 'rx')
+loglog(slide_snr,slide_chisq,'kx')
+loglog(snrVec,const_eff_snr_lines(snrVec, scratch[-100], 250.0,chisq_dof))
+loglog(snrVec,const_eff_snr_lines(snrVec, max_loudest, max_thresh,chisq_dof))
+# snr_over_chi stat
+loglog(snrVec, snrVec**2 / loudest / loudest, 'k')
+ylabel('chisq', size='x-large')
+xlabel('snr', size='x-large')
+xlim([5, 10000])
+ylim([1, 10000000])
+legend(['Injections', 'Time slides', 'eff snr = ' + str(scratch[-100]) + ' using 250', 'eff snr = ' + str(max_loudest) + ' using ' + str(max_thresh), 'snr over chi at ' +str(loudest**2) ])
+fname = opts.ifo_times + "chisq_vs_snr"
+savefig(fname, dpi=90)
+if not opts.show_plot:
+  close()
+else:
+  show()
+

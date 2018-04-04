@@ -1,0 +1,126 @@
+#!/usr/bin/env python
+# Copyright (C) 2010 Peter F. Couvares, Nickolas Fotopoulos
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Compare two LIGO LW XML files.
+"""
+
+import sys
+import optparse
+import os
+
+from glue import git_version
+from glue.ligolw import table
+from glue.ligolw import utils
+
+__author__ = "Peter Couvares <peter.couvares@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+# returns True if table1 and table2 contents are identical; False otherwise
+def diff_tables(table1, table2):
+    result = True
+    columns = table1.getElementsByTagName(table.Column.tagName)
+    # TODO: correctly handle the case where table2 is a superset of table1
+    for column1 in columns:
+        cname = column1.getAttribute("Name")
+        if cname in opts.exclude_columns.split(','):
+            if opts.debug: print >>sys.stderr, "skipping %s" % cname
+            continue
+        column2 = table2.getColumnByName(cname)
+        if diff_columns(column1, column2) is False:
+            # if we're reporting column diffs, note the false result and continue
+            if opts.columns:
+                result = False
+            # otherwise we're only reporting table diffs, and we now
+            # know the tables differ, so can stop comparing and return
+            else:
+                return False
+    return result
+                                                                                
+# returns True if colA and colB contents are identical; False otherwise
+def diff_columns(colA, colB):
+    cname = colA.getAttribute("Name")
+    if opts.debug: print "*** comparing %s ..." % cname
+    if len(colA) != len(colB):
+        if opts.columns: print "%s differs" % cname
+        return False
+    for i, row in enumerate(colA):
+        if row != colB[i]:
+            if opts.columns: print "%s differs" % cname
+            return False
+    return True
+
+# parse command line
+usage = "Usage: %s doc1.xml doc2.xml" % sys.argv[0]
+parser = optparse.OptionParser(usage=usage)
+parser.add_option("--debug", action="store_true", default=False,
+    help="Print debugging output")
+parser.add_option("--tables", action="store_true", default=False,
+    help="Print list of differing tables")
+parser.add_option("--columns", action="store_true", default=False,
+    help="Print list of differing columns within each table")
+parser.add_option("--exclude-tables", metavar="CSV_LIST", default="",
+    help="Ignore tables in CSV_LIST")
+parser.add_option("--exclude-columns", metavar="CSV_LIST", default="",
+    help="Ignore columns in CSV_LIST")
+
+opts, args = parser.parse_args()
+if len(args) != 2:
+    print >>sys.stderr, "Error: require exactly two arguments"
+    print usage
+    sys.exit(2)
+
+if opts.columns and opts.tables:
+    print >>sys.stderr, "Error: --columns and --tables are mutually exclusive; please choose one"
+    print usage
+    sys.exit(2)
+
+filename1, filename2 = args
+if not os.path.exists(filename1):
+    print >>sys.stderr, "Error: %s does not exist" % filename
+    sys.exit(2)
+if not os.path.exists(filename2):
+    print >>sys.stderr, "Error: %s does not exist" % filename
+    sys.exit(2)
+
+# parse documents
+xmldoc1 = utils.load_filename(filename1)
+xmldoc2 = utils.load_filename(filename2)
+
+exit_code = 0
+tables = xmldoc1.getElementsByTagName(table.Table.tagName)
+# TODO: correctly handle the case where xmldoc2 is a superset of xmldoc1
+for t1 in tables:
+    tname = t1.getAttribute("Name")
+
+    if tname in opts.exclude_tables.split(','):
+        if opts.debug: print >>sys.stderr, "*** skipping %s ..." % tname
+        continue
+
+    if opts.debug: print "*** comparing %s ..." % tname
+
+    t2 = table.get_table(xmldoc2, tname)
+    if diff_tables(t1, t2) is False:
+        exit_code = 1
+        if opts.tables:
+            print "%s differs" % tname
+        elif opts.columns is False:
+            # if we don't need to enumerate table or column diffs, we're done
+            break
+
+sys.exit(exit_code)

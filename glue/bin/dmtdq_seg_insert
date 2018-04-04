@@ -1,0 +1,131 @@
+#!/usr/bin/python
+#
+# lightweight database dumper dmt segment client
+#
+#
+# Copyright (C) 2005 Duncan Brown
+# 
+# This is part of the Grid LSC User Environment (GLUE)
+# 
+# GLUE is free software: you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.
+# 
+# You should have received a copy of the GNU General Public License along with
+# this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import os
+import getopt
+import re
+import exceptions
+import re
+
+try:
+  from glue.segmentdb import segmentdb_utils
+except ImportError as e:
+  print >> sys.stderr, """
+Error: unable to import modules from glue.
+
+Check that glue is correctly installed and in your PYTHONPATH.
+
+%s
+""" % e
+  sys.exit(1)
+
+
+def usage():
+  msg = """\
+Usage: dmtdq_seg_insert [OPTIONS]
+
+  -t, --segment-url       PROTOCOL:HOST Supported protocols include: https and ldbd. For example, "--segment-url=https://segdb.ligo.caltech.edu" or "--segment-url=ldbd://segdb.ligo.caltech.edu"
+  -f, --file              file to insert (deleted upon success)
+  -p, --ping              ping the server
+  -h, --help              print this message
+
+\
+"""
+  print msg
+
+def help():
+  usage()
+  sys.exit(0)
+
+shortop = "t:f:ph"
+longop = [
+  "segment-url=",
+  "file=",
+  "ping",
+  "help"
+  ]
+
+try:
+  opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
+except getopt.GetoptError as e:
+  print >>sys.stderr, "Error: %s \n" % str(e)
+  usage()
+  sys.exit(1)
+
+# defaults
+segment_url = None
+infile = None
+ping = None
+
+# environment variables override defaults but not
+# command line options
+try:
+  segment_url = os.environ['LDBD_SERVER']
+except:
+  pass
+
+for o, a in opts:
+  if o in ("-h", "--help"):
+    help()
+  elif o in ("-t", "--segment-url"):
+    segment_url = a
+  elif o in ("-f", "--file"):
+    infile = a
+  elif o in ("-p", "--ping"):
+    ping = 1
+
+# determine server and port
+if not segment_url:
+  print >>sys.stderr, "No --segment-url specified"
+  print >>sys.stderr, "Enter 'dmtdq_seg_insert --help' for usage"
+  sys.exit(1)
+
+
+if not ping and not infile:
+  print "\nNo file specified\n"
+  usage()
+  sys.exit(1)
+
+# open connection to LDBD(W)Server
+myClient = segmentdb_utils.setup_database(segment_url)
+
+try:
+  if ping:
+    # ping the server and print the response
+    print myClient.ping()
+
+  else:
+    # open the input file and send it to the server
+    fh = open(infile,'r')
+    xmltext = fh.read()
+    myClient.insertdmt(xmltext)
+    fh.close()
+
+except Exception as e:
+  print >>sys.stderr, "Error inserting segments: %s" % str(e)
+  sys.exit(1)
+
+if infile:
+  os.unlink(infile)
+
+sys.exit(0)

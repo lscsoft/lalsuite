@@ -1,0 +1,227 @@
+#!/usr/bin/python
+#
+# xml dq publishing script for virgo (or other) dq xml files
+#
+#
+# Copyright (C) 2009 Duncan Brown
+# 
+# This is part of the Grid LSC User Environment (GLUE)
+# 
+# GLUE is free software: you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.
+# 
+# You should have received a copy of the GNU General Public License along with
+# this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import pwd
+import os
+import re
+import exceptions
+import signal
+import re
+import time
+import glob
+import logging
+import logging.handlers
+
+from optparse import OptionParser
+
+from glue import lal
+from glue import segments
+from glue import gpstime
+from glue import segmentsUtils
+from glue import pidfile
+
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import segments as ligolw_segments
+from glue.ligolw.utils import process as ligolw_process
+
+from glue.segmentdb import segmentdb_utils
+
+# try and exit gracefully on a term signal
+die_now = False
+
+def SIGTERMhandler(signum, frame):
+  global die_now
+  try:
+    logger.info("caught SIGTERM")
+  except:
+    pass
+  die_now = True
+
+signal.signal(signal.SIGTERM, SIGTERMhandler)
+
+PROGRAM_NAME = sys.argv[0].replace('./','')
+PROGRAM_PID  = os.getpid()
+
+try:
+  USER_NAME = os.getlogin()
+except:
+  USER_NAME = pwd.getpwuid(os.getuid())[0]
+
+from glue import git_version
+__author__  = "Duncan Brown <dabrown@physics.syr.edu>"
+__date__    = git_version.date
+__version__ = git_version.id
+
+parser = OptionParser(
+  version = "%prog CVS $Header$",
+  usage   = "%prog [OPTIONS]",
+  description = "Publishes XML files into the segment database")
+
+parser.add_option("-t", "--segment-url", metavar = "PROTOCOL://HOST", help = "connect to ldbd on PROTOCOL://HOST")
+parser.add_option("-s", "--state-file", metavar = "FILE", help = "read published and excluded segments from FILE")
+parser.add_option("-f", "--segments-file", metavar = "FILE", help = "read list of segments to publish from FILE")
+parser.add_option("-P", "--pid-file", metavar = "FILE", help = "use FILE as process lock file")
+parser.add_option("-D", "--input-directory", metavar = "DIR", help = "look for input files in DIR")
+parser.add_option("-l", "--log-file", metavar = "FILE", help = "use FILE as log file")
+parser.add_option("-L", "--log-level", metavar = "LEVEL", default = "INFO", help = "set logging level to LEVEL")
+parser.add_option("-p", "--ping", action = "store_true")
+parser.add_option("-d", "--dry-run", action = "store_true")
+
+options, filenames = parser.parse_args()
+
+if not options.segment_url:
+  raise ValueError("missing argument --segment-url")
+
+# open connection to LDBDWClient
+myClient = segmentdb_utils.setup_database(options.segment_url)
+
+
+if options.ping:
+  msg = myClient.ping()
+  print msg
+  sys.exit(0)
+
+if not options.state_file and not options.segments_file:
+  raise ValueError("missing argument --state-file or --segments-file")
+if options.state_file and options.segments_file:
+  raise ValueError("incompatible arguments --state-file and --segments-file")
+if not options.pid_file:
+  raise ValueError("missing argument --pid-file")
+if not options.input_directory:
+  raise ValueError("missing argument --input-directory")
+if not options.log_file:
+  raise ValueError("missing argument --log-file")
+
+# check if a valid lock file already exists, and create one if not
+pidfile.get_lock(options.pid_file)
+
+try:
+  # set up logging
+  logger = logging.getLogger('ligolw_publish_dqxml')
+  handler = logging.handlers.RotatingFileHandler(options.log_file, 'a', 1024**3, 3)
+  formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+  handler.setFormatter(formatter)
+  logger.addHandler(handler)
+  logger.setLevel(eval("logging." + options.log_level))
+  logger.info("ligolw_publish_dqxml starting")
+  logger.debug("pid file = " + options.pid_file)
+  logger.debug("input directory = " + options.input_directory)
+  logger.debug("log file = " + options.log_file)
+  logger.debug("log level = " + options.log_level)
+
+  if options.state_file:
+    logger.debug("segment-url= " + options.segment_url)
+    # setup the output file
+    outdoc = ligolw.Document()
+    outdoc.appendChild(ligolw.LIGO_LW())
+    proc_id = ligolw_process.register_to_xmldoc(outdoc, PROGRAM_NAME, options.__dict__).process_id
+
+    # read in the published file and get the published segment list
+    logger.debug("reading state from %s" % options.state_file)
+    indoc = ligolw_utils.load_url(options.state_file, gz = (options.state_file or "stdin").endswith(".gz"))
+    published_segments = segmentdb_utils.find_segments(indoc,"P1:PUBLISHED:0")
+    exclude_segments = segmentdb_utils.find_segments(indoc,"P1:EXCLUDE:0")
+    logger.debug("published segments = %s" % str(published_segments))
+    logger.debug("excluded segments = %s" % str(exclude_segments))
+    # FIXME this will break Jul 19 2027 02:39:45 UTC
+    all_time = segments.segmentlist([segments.segment(0,1500000000)])
+    # make a list of the segments that need to be inserted
+    pending_segments = (all_time - published_segments) - exclude_segments
+
+  elif options.segments_file:
+    logger.debug("segments-file= " + options.segments_file)
+    logger.debug("reading segments from %s" % options.segments_file)
+    # read in the segments file and get the list of segments to insert
+    sfile = open(options.segments_file, "r")
+    pending_segments = segmentsUtils.fromsegwizard(sfile).coalesce()
+    sfile.close()
+    published_segments = segments.segmentlist()
+
+  logger.info("pending segments = %s" % str(pending_segments))
+  pending_files = lal.Cache()
+  # make a list of the files that need to be inserted
+  for s in pending_segments:
+    pending_files += lal.Cache.from_urls(segmentdb_utils.get_all_files_in_range(options.input_directory,s[0],s[1]),coltype=int).sieve(segment=s)
+  pending_files = pending_files.unique()
+  pending_files.sort()
+
+  logger.debug("pending files = %s" % [os.path.basename(f) for f in pending_files.pfnlist()])
+
+  # publish the files and add them to the list of published segments
+  for f in pending_files:
+    result = None
+    if die_now:
+      break
+    infile = f.path
+    try:
+      logger.debug("reading %s" % infile)
+      fh = open(infile,'r')
+      xmltext = fh.read()
+      fh.close()
+      if options.dry_run:
+        logger.debug("(dry-run) inserting %s" % infile)
+        result = True
+      else:
+        logger.debug("inserting %s" % infile)
+        myClient = segmentdb_utils.setup_database(options.segment_url)
+        result = myClient.insertdmt(xmltext)
+      del xmltext
+    except KeyboardInterrupt:
+      logger.info("caught keyboard interrupt")
+      if result:
+        logger.debug("published segment %s" % str(f.segment))
+        published_segments |= segments.segmentlist([f.segment])
+      die_now = True
+    except Exception as e:
+      logger.error("failed to publish %s (%s)" % (infile, str(e)))
+    else:
+      logger.debug("published segment %s" % str(f.segment))
+      published_segments |= segments.segmentlist([f.segment])
+
+  if options.state_file:
+    excl_def_id = segmentdb_utils.add_to_segment_definer(outdoc,proc_id,"P1","EXCLUDE",0)
+    pub_def_id = segmentdb_utils.add_to_segment_definer(outdoc,proc_id,"P1","PUBLISHED",0)
+    segmentdb_utils.add_to_segment(outdoc,proc_id,excl_def_id,exclude_segments)
+    segmentdb_utils.add_to_segment(outdoc,proc_id,pub_def_id,published_segments)
+    logger.debug("published segments = %s" % str(published_segments))
+    logger.debug("excluded segments = %s" % str(exclude_segments))
+
+    # write the new segment state file on top of the old one
+    logger.debug("writing state to %s" % options.state_file)
+    ligolw_utils.write_filename(outdoc, options.state_file)
+
+except Exception as e:
+  try:
+    logger.error(str(e))
+  except:
+    pass
+  print >>sys.stderr, "runtime error (%s)" % str(e)
+  os.unlink(options.pid_file)
+  sys.exit(1)
+
+logger.info("exiting")
+os.unlink(options.pid_file)
+sys.exit(0)
+

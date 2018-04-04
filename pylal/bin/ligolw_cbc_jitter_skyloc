@@ -1,0 +1,161 @@
+#!/usr/bin/python
+# Copyright (C) 2010  Nickolas Fotopoulos
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""
+Given an XML file with a SimInspiralTable, add a random offset to each
+injection's sky locations.
+
+Usage: %prog --jitter-sigma-deg JSIG --output-file OUTFILE siminsp_fname
+"""
+from __future__ import division
+
+__author__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>"
+
+import math
+import optparse
+import random
+import sys
+
+import numpy as np
+
+import lal
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import table
+from glue.ligolw import utils
+from glue.ligolw.utils import process as ligolw_process
+from pylal import date
+from pylal import git_version
+from pylal import sphericalutils as su
+from pylal import inject
+
+
+#
+# Utility functions
+#
+def polaz2lonlat(theta, phi):
+    """
+    Convert (polar, azimuthal) angles in radians to (longitude, latitude)
+    in radians.
+    """
+    return phi, lal.PI_2 - theta
+
+def lonlat2polaz(lon, lat):
+    """
+    Convert (longitude, latitude) in radians to (polar, azimuthal) angles
+    in radians.
+    """
+    return lal.PI_2 - lat, lon
+
+def eff_distance(detector, sim):
+    """
+    Return the effective distance.
+
+    Ref: Duncan's PhD thesis, eq. (4.3) on page 57, implemented in
+         LALInspiralSiteTimeAndDist in SimInspiralUtils.c:594.
+    """
+    f_plus, f_cross = lal.ComputeDetAMResponse(detector.response,
+        sim.longitude, sim.latitude, sim.polarization, sim.end_time_gmst)
+    ci = math.cos(sim.inclination)
+    s_plus = -(1 + ci * ci)
+    s_cross = -2 * ci
+    return 2 * sim.distance / math.sqrt(f_plus * f_plus * s_plus * s_plus + \
+        f_cross * f_cross * s_cross * s_cross)
+
+
+#
+# Parse commandline
+#
+
+parser = optparse.OptionParser(usage=__doc__, version=git_version.verbose_msg)
+parser.add_option("--jitter-sigma-deg", metavar="JSIG", type="float",
+    help="jitter injections with a Gaussian of standard deviation JSIG degrees")
+parser.add_option("--apply-fermi-error", action="store_true",default=False,
+    help="applies the statistical error from Fermi according to "\
+    "https://wiki.ligo.org/foswiki/bin/view/Bursts/S6VSR2InjectionSkyPositionJitter")
+parser.add_option("--output-file", metavar="OUTFILE",
+    help="name of output XML file")
+opts, args = parser.parse_args()
+
+# everything is required
+if (opts.jitter_sigma_deg is None) or \
+   (opts.output_file is None) or \
+   (len(args) != 1):
+    parser.print_usage()
+    sys.exit(2)
+
+siminsp_fname = args[0]
+jitter_sigma = np.radians(opts.jitter_sigma_deg)
+
+# for details on those parameters see 
+# https://wiki.ligo.org/foswiki/bin/view/Bursts/S6VSR2InjectionSkyPositionJitter
+err70 = np.radians(3.2)
+err30 = np.radians(9.5)
+jitter_fermi70 = np.sqrt(jitter_sigma*jitter_sigma + err70*err70 )
+jitter_fermi30 = np.sqrt(jitter_sigma*jitter_sigma + err30*err30 )
+
+#
+# Read inputs
+#
+
+siminsp_doc = utils.load_filename(siminsp_fname,
+    gz=siminsp_fname.endswith(".gz"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
+
+# Prepare process table with information about the current program
+process = ligolw_process.register_to_xmldoc(siminsp_doc,
+    "ligolw_cbc_jitter_skyloc",
+    opts.__dict__, version=git_version.tag or git_version.id,
+    cvs_repository="lalsuite", cvs_entry_time=git_version.date)
+
+
+#
+# Compute new sky locations
+#
+site_location_list = [\
+    ("h", "H1"),
+    ("l", "L1"),
+    ("g", "G1"),
+    ("t", "T1"),
+    ("v", "V1")
+]
+for sim in table.get_table(siminsp_doc, lsctables.SimInspiralTable.tableName):
+
+    # The Fisher distribution is the appropriate generalization of a
+    # Gaussian on a sphere.
+    if opts.apply_fermi_error:
+      jitter_sig = np.where(random.random()<0.3, jitter_fermi30, jitter_fermi70)      
+    else:
+      jitter_sig = jitter_sigma
+
+    kappa = 1 / (0.66 * jitter_sig)**2  # approximation from Briggs99
+    sim.ra_dec = \
+        polaz2lonlat(*su.fisher_rvs(np.array(\
+            lonlat2polaz(*sim.ra_dec)), kappa).squeeze())
+
+    # update arrival times and effective distances at the sites
+    for site, instrument_name in site_location_list:
+        site_end = sim.time_at_instrument(instrument_name, {instrument_name: 0.0})
+        setattr(sim, site + "_end_time", site_end.gpsSeconds)
+        setattr(sim, site + "_end_time_ns", site_end.gpsNanoSeconds)
+        setattr(sim, "eff_dist_" + site, eff_distance(inject.cached_detector_by_prefix[instrument], sim))
+
+
+#
+# Write output
+#
+
+ligolw_process.set_process_end_time(process)
+utils.write_filename(siminsp_doc, opts.output_file)

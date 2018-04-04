@@ -1,0 +1,404 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2008  Kipp Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#				   Preamble
+#
+# =============================================================================
+#
+
+
+import glob
+import math
+from optparse import OptionParser
+import sys
+import re
+
+import lal
+from glue.lal import CacheEntry
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue.ligolw.utils import process as ligolw_process
+from glue.ligolw.utils import segments as ligolw_segments
+from pylal import cbc_table_utils as table_utils
+from glue import segmentsUtils
+from pylal import git_version
+from pylal import ligolw_sstinca as ligolw_thinca
+from pylal import snglcoinc
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+
+
+lsctables.use_in(ligolw.LIGOLWContentHandler)
+
+
+__author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+#
+# Use interning row builder to save memory.
+#
+
+
+lsctables.table.RowBuilder = lsctables.table.InterningRowBuilder
+
+
+#
+# Use C row classes for memory efficiency and speed.
+#
+
+
+lsctables.SnglInspiralTable.RowType = lsctables.SnglInspiral = ligolw_thinca.SnglInspiral
+
+
+# TEMPORARILY HERE UNTIL A PERMANENT HOME FOUND
+
+
+def separate_coinc_noncoinc_sngls(xmldoc, verbose = False):
+    """
+    FIXME
+    """
+    sngls_tbl = lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+    sngls_tbl_eid = sngls_tbl.getColumnByName("event_id")
+
+    coinc_map_tbl = lsctables.table.get_table(xmldoc, lsctables.CoincMapTable.tableName)
+
+    # Create a mapping dictionary
+    sngls_tbl_dict = {}
+    for idx, eid in enumerate(sngls_tbl_eid):
+        sngls_tbl_dict[eid] = sngls_tbl[idx]
+
+    if len(coinc_map_tbl) == 0:
+        coinc_map_coinc_eids = []
+        coinc_map_sngl_eids = []
+        non_coincs = set(sngls_tbl_eid)
+    else:
+        coinc_map_sngl_eids = coinc_map_tbl.getColumnByName("event_id")
+        coinc_map_coinc_eids = coinc_map_tbl.getColumnByName("coinc_event_id")
+        non_coincs = set(sngls_tbl_eid) - set(coinc_map_sngl_eids)
+
+    non_coinc_sngls = []
+    for eid in non_coincs:
+        non_coinc_sngls.append(sngls_tbl_dict[eid])
+
+    coinc_sngls = {}
+    for sngl_eid, coinc_eid in zip(coinc_map_sngl_eids, coinc_map_coinc_eids):
+        if not coinc_sngls.has_key(coinc_eid):
+            coinc_sngls[coinc_eid] = [sngls_tbl_dict[sngl_eid]]
+        else:
+            coinc_sngls[coinc_eid].append(sngls_tbl_dict[sngl_eid])
+
+    return coinc_sngls.values(), non_coinc_sngls
+
+
+#
+# =============================================================================
+#
+#				 Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+	parser = OptionParser(
+		version = "Name: %%prog\n%s" % git_version.verbose_msg,
+		usage = "%prog [options] [file ...]",
+		description = "%prog implements the inspiral coincidence algorithm for use in performing trigger-based multi-instrument searches for gravitational wave events.  The LIGO Light Weight XML files listed on the command line are processed one by one in order, and over-written with the results.  If no files are named, then input is read from stdin and output written to stdout.  Gzipped files will be autodetected on input, if a file's name ends in \".gz\" it will be gzip-compressed on output."
+	)
+	parser.add_option("-c", "--comment", metavar = "text", help = "Set comment string in process table (default = None).")
+	parser.add_option("--lars-id", metavar = "string", type = "string", default = None, help = "Set the lars_id for this experiment in the experiment table (optional).")
+	parser.add_option("-t", "--e-thinca-parameter", metavar = "float", type = "float", help = "Set the ellipsoidal coincidence algorithm's threshold (must provide this if not using --exact-match. If using --exact-match must provide either this or --time-window).")
+	parser.add_option("--time-window", metavar= "SECONDS", type='float', help = "Set a mass invariant time window allowed for coincidence, to be added to light travel time between detectors. (Only allowed if using --exact-match. If using --exact-match must provide either this or --e-thinca-parameter.)")
+	parser.add_option("--exact-match", action = "store_true", help = "Use the ellipsoidal coincidence algorithm and require exact match in the masses and spins of the templates.")
+	parser.add_option("-s", "--weighted-snr", metavar = "{rawsnr|snroverchi|effsnr|newsnr}", help = "Select the desired coincident ChiSq weighted SNR (required). \"rawsnr\" is just the matched filter SNR and lacks any weighting by a ChiSq statistic. The statistic \"snroverchi\" is used by gstlal. \"effsnr\" uses the Effective SNR algorithm to calculate a ChiSq weighted detection SNR.  \"newsnr\" uses the New SNR algorithm to calculate a ChiSq weighted SNR.")
+	parser.add_option("-w", "--magic-number", metavar = "float", type = "float", help = "Set the numerical factor for the ChiSq weighted SNR (effsnr & newsnr).  For raw-snr and gstlal-snr, just set this value to None.  The standard values used for Effective-SNR in S5 & NewSNR in S6 are 250.0 and 6.0 respectively.")
+	parser.add_option("--vetoes-name", metavar = "string", default = "vetoes", help = "From the input document, exatract the segment list having this name to use as the veto segments (default = \"vetoes\").  Warning:  if no segments by this name are found in the document then vetoes will not be applied, this is not an error condition.")
+	parser.add_option("--trigger-program", metavar = "name", default = "inspiral", help = "Set the name of the program that generated the event list as it appears in the process table (default = \"inspiral\").")
+	parser.add_option("--search-group", metavar = "name", default = "cbc", help = "Set the name of the LSC search group that performed the analysis (default = \"cbc\").")
+	parser.add_option("--coinc-end-time-segment", metavar = "seg", help = "The segment of time to retain coincident triggers from. Uses segmentUtils.from_range_strings() format \"START:END\" for an interval of the form [START,END), \"START:\" for an interval of the form [START,INF), and \":END\" for an interval of the form (-INF,END).")
+	parser.add_option("--depop-sngl-inspiral", action = "store_true", help = "Removes all the rows in the sngl_inspiral table that are not associated with a coincident event.")
+	parser.add_option("--drop-veto-info", action = "store_true", help = "Remove the segment, segment_definer, veto_definer and segment_summary tables from the xmldoc as well as the associated rows in the process and process_params tables.")
+	parser.add_option("--make-expr-tables", action = "store_true", help = "Make and populate the set of experiment tables needed for the pipedown post-processing pipeline.")
+	parser.add_option("--likelihood-output-file", action="store", metavar="FILENAME", default=None, help="If provided, write the details of the single inspiral triggers into a gstlal-style likelihood output xml file. This can then be used in the gstlal post-processing code")
+	parser.add_option("--output-file", action="store", metavar="FILENAME", default=None, help="Name of the file to write output coincidences to. If not given the output file name is constructed from the input file name.")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+	options, filename = parser.parse_args()
+
+	#
+	# check arguments
+	#
+
+	required_options = ["weighted_snr", "magic_number"]
+	missing_options = [option for option in required_options if getattr(options, option) is None]
+	if missing_options:
+		raise ValueError("missing required option(s) %s" % ", ".join("--%s" % option.replace("_", "-") for option in missing_options))
+	if options.weighted_snr not in ("rawsnr", "gstlal","effsnr","newsnr"):
+		raise ValueError("unrecognized --weighted-snr %s" % options.weighted_snr)
+
+	if options.coinc_end_time_segment is not None:
+		if ',' in options.coinc_end_time_segment:
+			raise ValueError("--coinc-end-time-segment may only contain a single segment")
+		options.coinc_end_time_segs = segmentsUtils.from_range_strings([options.coinc_end_time_segment], boundtype = LIGOTimeGPS).coalesce()
+	else:
+		options.coinc_end_time_segs = None
+
+	# Check for coincidence threshold
+	if (not options.exact_match) and (not options.e_thinca_parameter):
+		raise ValueError("--e-thinca-parameter is required unless using --exact-match")
+	if (not options.exact_match) and options.time_window:
+		raise ValueError("--time-window is not supported unless using --exact-match")
+	if options.exact_match:
+		if (not options.e_thinca_parameter) and (options.time_window is None):
+			raise ValueError("When using --exact-match you must provide either --e-thinca-parameter or --time-window.")
+		elif options.e_thinca_parameter and (options.time_window is not None):
+			raise ValueError("When using --exact-match you may not provide both --e-thinca-parameter and --time-window.")
+
+	#
+	# done
+	#
+
+	return options, (filename or [None])
+
+
+#
+# =============================================================================
+#
+#				     Main
+#
+# =============================================================================
+#
+
+
+#
+# Command line
+#
+
+
+options, filename = parse_command_line()
+
+
+#
+# Select a chisq weighted SNR form
+#
+
+if options.weighted_snr == "newsnr":
+	ligolw_thinca.SnglInspiral.get_weighted_snr = ligolw_thinca.SnglInspiral.get_new_snr
+elif options.weighted_snr == "effsnr":
+	ligolw_thinca.SnglInspiral.get_weighted_snr = ligolw_thinca.SnglInspiral.get_effective_snr
+elif options.weighted_snr == "gstlal":
+	ligolw_thinca.SnglInspiral.get_weighted_snr = ligolw_thinca.SnglInspiral.get_snr_over_chi
+
+
+#
+# Select event_comparefunc form
+#
+
+if options.exact_match:
+	if options.e_thinca_parameter:
+		# Require exact match coincidence
+		event_comparefunc = ligolw_thinca.inspiral_coinc_compare_exact
+		threshold = options.e_thinca_parameter
+		max_dt_func = ligolw_thinca.inspiral_max_dt_exact
+	elif options.time_window is not None:
+		event_comparefunc = ligolw_thinca.inspiral_coinc_compare_exact_dt
+		threshold = options.time_window
+		max_dt = 1.1 * options.time_window + 2. * lal.REARTH_SI / lal.C_SI
+		max_dt_func = lambda dummy1, dummy2: max_dt
+	else:
+		raise ValueError("Cannot find valid input options for coincidence, this should have been caught in the command-line option checking.")
+else:
+	event_comparefunc = ligolw_thinca.inspiral_coinc_compare
+	threshold = options.e_thinca_parameter
+	max_dt_func = ligolw_thinca.inspiral_max_dt
+
+#
+# Select ntuple_comparefunc form
+#
+
+
+if options.coinc_end_time_segs is not None:
+	# Custom Ntuple Comparison Function
+	def restricted_endtime_ntuple_comparefunc(events, offset_vector, seg = options.coinc_end_time_segs):
+		"""
+		Return False (ntuple should be retained) if the end time of the
+		coinc is in the segmentlist segs.
+		"""
+		return ligolw_thinca.coinc_inspiral_end_time(events, offset_vector) not in seg
+
+	ntuple_comparefunc = restricted_endtime_ntuple_comparefunc
+else:
+	ntuple_comparefunc = ligolw_thinca.default_ntuple_comparefunc
+
+
+# 
+# Load input xmldoc
+#
+
+xmldoc = utils.load_filename(filename[0], verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
+
+lsctables.table.InterningRowBuilder.strings.clear()
+
+#
+# Add an entry to the process table.
+#
+
+process = ligolw_thinca.append_process(xmldoc, **options.__dict__) 
+
+#
+# Hack the IDs.  LAL writes all triggers with event_id = 0.  This
+# value is used by other LAL programs to check if coincidence has
+# been performed yet so that behaviour cannot be changed but we
+# need the IDs to be unique before starting the coincidence engine.
+#
+# FIXME:  remove this when LAL writes trigger files with unique
+# IDs (unique within the output of lalapps_inspiral).
+#
+
+tbl = lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+tbl.set_next_id(lsctables.SnglInspiralID(0))
+for row in tbl:
+	row.event_id = tbl.get_next_id()
+
+#
+# Extract veto segments if present.
+#
+# FIXME:  using the tools in the glue.ligolw.utils.segments module
+# it's not hard to modify the veto segments in the .xml to be just
+# those that intersect the search summary segments.  That way, if
+# multiple documents are inserted into the same database, or merged
+# with ligolw_add, the veto lists will not get duplicated.
+#
+
+vetoes = ligolw_thinca.get_vetoes(xmldoc, options.vetoes_name, verbose = options.verbose)
+
+#
+# Run coincidence algorithm.
+#
+
+ligolw_thinca.ligolw_thinca(
+	xmldoc,
+	process_id = process.process_id,
+	coinc_definer_row = ligolw_thinca.InspiralCoincDef,
+	event_comparefunc = event_comparefunc,
+	thresholds = threshold,
+	ntuple_comparefunc = ntuple_comparefunc,
+	magic_number = options.magic_number,
+	veto_segments = vetoes,
+	trigger_program = options.trigger_program,
+	verbose = options.verbose,
+	max_dt_func=max_dt_func
+)
+
+if options.likelihood_output_file is not None:
+    from gstlal import far
+    coinc_sngls, non_coinc_sngls = separate_coinc_noncoinc_sngls(xmldoc)
+    print len(non_coinc_sngls), len(coinc_sngls)
+    coinc_params_distributions = far.ThincaCoincParamsDistributions()
+
+    for event in coinc_sngls:
+        # NOTE: We could use this to feed gstlal *other* chisqs
+        # GSTLAL wants chisq / DOF
+        old_chisqs = []
+        for sngl in event:
+            old_chisqs.append(sngl.chisq)
+            sngl.chisq = sngl.chisq / ((sngl.chisq_dof - 1.) * 2.)
+        coinc_params_distributions.add_zero_lag(\
+                   coinc_params_distributions.coinc_params(event, None))
+
+    for event in non_coinc_sngls:
+        # NOTE: We could use this to feed gstlal *other* chisqs
+        # GSTLAL wants chisq / DOF
+        old_chisq = event.chisq
+        event.chisq = event.chisq / ((event.chisq_dof - 1.) * 2.)
+        coinc_params_distributions.add_background(\
+                   coinc_params_distributions.coinc_params((event,), None))
+
+    # Output
+    xmldoc2 = ligolw.Document()
+    xmldoc2.appendChild(ligolw.LIGO_LW())
+    process = ligolw_process.register_to_xmldoc(xmldoc2,
+                                             u"gstlal_inspiral", paramdict={})
+    # Don't know if this needs editing
+    search_summary = lsctables.table.get_table(xmldoc,
+                                        lsctables.SearchSummaryTable.tableName)
+    seglists = search_summary.get_in_segmentlistdict()
+    seglists.coalesce()
+    xmldoc2.childNodes[-1].appendChild(search_summary)
+    node = xmldoc2.childNodes[-1]
+    assert node.tagName == ligolw.LIGO_LW.tagName
+    if coinc_params_distributions is not None:
+        coinc_params_distributions.process_id = process.process_id
+        node.appendChild(coinc_params_distributions.to_xml(\
+                                                 u"gstlal_inspiral_likelihood"))
+
+    llwsegments = ligolw_segments.LigolwSegments(xmldoc2)
+    llwsegments.insert_from_segmentlistdict(seglists,
+                      u"gstlal_inspiral_likelihood:segments", comment=None)
+    llwsegments.finalize(process)
+    ligolw_process.set_process_end_time(process)
+    output_filename = options.likelihood_output_file
+    utils.write_filename(xmldoc2, output_filename,
+                gz = (output_filename or "stdout").endswith(".gz"),
+                verbose=options.verbose, trap_signals=None)
+        
+
+# 
+# Clean out rows in sngl_inspiral table not associated with coinc table
+# 
+
+if options.depop_sngl_inspiral:
+	table_utils.depopulate_sngl_inspiral(xmldoc, verbose = options.verbose)
+
+#
+# Make the experiment, experiment_summary, and experiment_map tables
+#
+
+if options.make_expr_tables:
+	table_utils.generate_experiment_tables(xmldoc, **options.__dict__)
+	table_utils.populate_experiment_map(xmldoc, options.vetoes_name , verbose = options.verbose)
+
+#
+# Remove the tables from the veto file (segments*, veto_definer) from the output xmldoc
+#
+
+if options.drop_veto_info:
+	table_utils.drop_segment_tables(xmldoc, verbose = options.verbose)
+	table_utils.drop_vetodef_table(xmldoc, verbose = options.verbose)
+
+#
+# Close out the process table.
+#
+
+ligolw_process.set_process_end_time(process)
+
+#
+# Write back to disk, and clean up.
+#
+if options.output_file is not None:
+	output_filename = options.output_file
+else:
+	output_filename = re.sub('LLWADD','THINCA',filename[0])
+utils.write_filename(xmldoc, output_filename, verbose = options.verbose, gz = (output_filename or "stdout").endswith(".gz"))
+xmldoc.unlink()
+

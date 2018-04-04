@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+  <Table Name="processgroup:process:table">
+    <Column Name="processgroup:process:program" Type="lstring"/>
+    <Column Name="processgroup:process:version" Type="lstring"/>
+    <Column Name="processgroup:process:cvs_repository" Type="lstring"/>
+    <Column Name="processgroup:process:cvs_entry_time" Type="int_4s"/>
+    <Column Name="process:is_online" Type="int_4s"/>
+    <Column Name="processgroup:process:comment" Type="lstring"/>
+    <Column Name="processgroup:process:node" Type="lstring"/>
+    <Column Name="processgroup:process:username" Type="lstring"/>
+    <Column Name="processgroup:process:unix_procid" Type="int_4s"/>
+    <Column Name="processgroup:process:start_time" Type="int_4s"/>
+    <Column Name="processgroup:process:end_time" Type="int_4s"/>
+    <Column Name="processgroup:process:process_id" Type="ilwd:char"/>
+    <Column Name="processgroup:process:ifos" Type="lstring"/>
+    <Stream Name="processgroup:process:table" Type="Local" Delimiter=",">
+      "TrigRndm","1.6",
+      "/ldcg_server/common/repository_gds/gds/Services/TrigMgr/TrigRndm.cc\,v",
+      856247035,0,"Random trigger generation utility","c21482","jzweizig",9567,
+      917047052,917052131,"process:process_id:0","H1H2"
+    </Stream>
+  </Table>
+  <Table Name="segment_definergroup:segment_definer:table">
+    <Column Name="segment_definergroup:segment_definer:process_id" Type="ilwd:char"/>
+    <Column Name="segment_definergroup:segment_definer:segment_def_id" Type="ilwd:char"/>
+    <Column Name="segment_definergroup:segment_definer:ifos" Type="lstring"/>
+    <Column Name="segment_definergroup:segment_definer:name" Type="lstring"/>
+    <Column Name="segment_definergroup:segment_definer:version" Type="int_4s"/>
+    <Column Name="segment_definergroup:segment_definer:comment" Type="lstring"/>
+    <Stream Name="segment_definergroup:segment_definer:table" Type="Local" Delimiter=",">
+      "process:process_id:0","segment_definer:segment_def_id:0","H1","JUNK_DATA",1,"",
+      "process:process_id:0","segment_definer:segment_def_id:1","H1","CALIB_DROPOUT_1SEC",1,"",
+      "process:process_id:0","segment_definer:segment_def_id:2","H1","SEVERE_LSC_OVERFLOW",1,""
+    </Stream>
+  </Table>
+  <Table Name="segmentgroup:segment:table">
+    <Column Name="segmentgroup:segment:segment_id" Type="ilwd:char"/>
+    <Column Name="segmentgroup:segment:start_time" Type="int_4s"/>
+    <Column Name="segmentgroup:segment:end_time" Type="int_4s"/>
+    <Column Name="segmentgroup:segment:segment_def_id" Type="ilwd:char"/>
+    <Column Name="segmentgroup:segment:process_id" Type="ilwd:char"/>
+    <Stream Name="segmentgroup:segment:table" Type="Local" Delimiter=",">
+      "segment:segment_id:0",800000000,800000001,"segment_definer:segment_def_id:0","process:process_id:0",
+      "segment:segment_id:1",800000001,800000002,"segment_definer:segment_def_id:0","process:process_id:0",
+      "segment:segment_id:2",800000002,800000003,"segment_definer:segment_def_id:1","process:process_id:0",
+      "segment:segment_id:3",800000009,800000010,"segment_definer:segment_def_id:2","process:process_id:0"
+    </Stream>
+  </Table>
+  <Table Name="segment_summarygroup:segment_summary:table">
+    <Column Name="segment_summarygroup:segment_summary:start_time" Type="int_4s"/>
+    <Column Name="segment_summarygroup:segment_summary:end_time" Type="int_4s"/>
+    <Column Name="segment_summarygroup:segment_summary:comment" Type="lstring"/>
+    <Column Name="segment_summarygroup:segment_summary:segment_def_id" Type="ilwd:char"/>
+    <Column Name="segment_summarygroup:segment_summary:process_id" Type="ilwd:char"/>
+    <Stream Name="segment_summarygroup:segment_summary:table" Type="Local" Delimiter=",">
+      800000000,800000064,"","segment_definer:segment_def_id:0",
+      "process:process_id:0"
+    </Stream>
+  </Table>
+</LIGO_LW>

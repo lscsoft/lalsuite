@@ -1,0 +1,305 @@
+#!/usr/bin/env python
+"""
+GRB Summary Information
+
+Generate a set of summary information and plots for on-source and off-source
+segments around a GRB trigger.
+"""
+from __future__ import division
+
+__author__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>"
+
+import ConfigParser
+import optparse
+import os
+import sys
+import shutil
+import subprocess
+
+from glue import lal
+from glue import segments, segmentsUtils
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from pylal import grbsummary
+from pylal import date
+from pylal import antenna
+from pylal import git_version
+from pylal.datatypes import LIGOTimeGPS
+
+# the html template. File html_template.html
+html_template ='<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"><html lang="en"><head></head><body><table style="text-align: center;" width="710" border="0" cellpadding="2" cellspacing="2"><tbody><tr><td colspan="2" style="font-weight: bold; font-size: 120%;">GRB&nbsp;macrogrbname</td></tr><tr><td><b>Basic information</b><table style="text-align: left;" border="1" cellpadding="2" cellspacing="2" width="500"><tbody><tr><td>GPS</td><td>Date</td><td>redshift</td><td>duration[s]</td><td>RA</td><td>DEC</td></tr><tr><td><a href="http://gcn.gsfc.nasa.gov/gcn3/macrolinkgcn.gcn3">macrogps</a></td><td>macrodate</td><td><a href="http://gcn.gsfc.nasa.gov/gcn3/macrolinkred.gcn3">macrovalred</a></td><td><a href="http://gcn.gsfc.nasa.gov/gcn3/macrolinkdur.gcn3">macrovaldur</a></td><td>macrora</td><td>macrodec</td></tr></tbody></table></td><td><b>Antenna factors</b><table style="text-align: left; width: 30%;" border="1" cellpadding="2" cellspacing="2" width="400"><tbody><tr><td>H1</td><td>H2</td><td>L1</td><td>G1</td><td>V1</td></tr><tr><td>macrodeth1</td><td>macrodeth2</td><td>macrodetl1</td><td>macrodetg1</td><td>macrodetv1</td></tr></tbody></table></td></tr><tr><td colspan="2"><a href="http://grad40.as.utexas.edu/grblog.php?view=burst&amp;GRB=macrogrbname">GRBlog summary</a> | <a href="macrokml">Google Sky placemark</a> | <a href="macroxml">on-source loudest candidates XML</a> | <a href="https://ldas-jobs.ligo.caltech.edu/%7Edietz/pages/s5/GRB/CVS/plotsegments/PLOTSEGMENT_macrogrbname.png">science segment availability</a></td></tr><tr><td colspan="2" style="text-align: center;"><table border="0" cellpadding="2" cellspacing="2" align="center" width="630"><tbody><tr><td style="text-align: center;"><a href="macroplot1link" title="Significance"><img alt="Significance" src="macroplot1thumb" border="2" width="300" height="225"></a></td><td><a href="macroplot2link" title="P(L_max &gt; L_max^*| 0) vs ln L_max^*"><img alt="P(L_max &gt; L_max^*| 0) vs ln L_max^*" src="macroplot2thumb" border="2" width="300" height="225"></a></td></tr><tr><td><a href="macroplot3link" title="(m2, D) contours including MC error"><img alt="(m2, D) contours including MC error" src="macroplot3thumb" border="2" width="300" height="225"></a></td><td><a href="macroplot4link" title="mchirp vs loudest statistic"><img alt="mchirp vs loudest statistic" src="macroplot4thumb" border="2" width="300" height="225"></a></td></tr></tbody></table></td></tr><tr><td colspan="2">macrosignificance</td></tr></tbody></table></body></html>'
+
+
+# the kml template. File kml_template.kml
+kml_template='<kml xmlns="http://www.opengis.net/kml/2.2" hint="target=sky"><Document>  <Style id="macroid">    <BalloonStyle>      <text><center><b>$[name]</b></center><br/>$[description]</text>    </BalloonStyle>  </Style>  <Placemark>    <name>macroid</name>    <description>      <![CDATA[     macrodescription      ]]>    </description>    <LookAt>      <longitude>macrolong</longitude>      <latitude>macrolat</latitude>      <altitude>0</altitude>      <range>500000</range>      <tilt>0</tilt>      <heading>0</heading>    </LookAt>    <styleUrl>#CrabNebula</styleUrl>    <Point>      <coordinates>macrolong,macrolat,0</coordinates>    </Point>  </Placemark></Document></kml>'
+
+
+# --------------------------------
+def mkdirsafe( directory, nag = False ):
+  """
+  Create a directory if it does not already exist.
+  Optionally, nag if it already exists.
+  """
+  try:
+     os.makedirs(directory)
+  except OSError, (errno, strerror):
+    if errno == 17 and nag:
+      raise OSError, "Directory '%s' already exists, all files "\
+            "contained will be included in summary file, "\
+            "although not related to THIS summary!" \
+            " Suggestion: rename directory '%s'." % \
+            (directory, directory)
+    if errno!=17:
+      raise
+
+# --------------------------------
+def create_kml(grb, grb_name):
+  """
+  Creates the content of a google-earth kml file.
+  @param grb: grb entry
+  @param grb_name: name of the GRB
+  """
+
+  # copy template
+  kml = kml_template
+
+  # replace the contents
+  kml = kml.replace('macroid',grb.event_number_grb)
+  kml = kml.replace('macrodescription',grb.event_number_grb)
+  ra = grb.event_ra
+  dec = grb.event_dec  
+  kml = kml.replace('macrolong','%.2f'%(ra-180))
+  kml = kml.replace('macrolat','%.2f'%dec)
+
+  return kml
+
+# --------------------------------
+def create_html(grb, grb_name):
+  """
+  Populates the html template with basic GRB parameters
+  @param grb: grb entry
+  @param grb_name: name of the GRB
+  """
+  month=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug',\
+         'Sep','Oct','Nov','Dec']
+
+  html = html_template
+  
+  ## now take the template and replace all the pieces
+  html = html.replace('macrogrbname',grb_name)
+
+  html = html.replace('macrogps','%s'%grb.start_time)
+
+  d = date.XLALGPSToUTC(LIGOTimeGPS(grb.start_time))
+  date_text = '%s %02d %d %02d:%02d:%02d' %\
+         (month[d[1]-1], d[2], d[0], d[3], d[4], d[5])
+
+  html = html.replace('macrodate',date_text)
+  html = html.replace('macrolinkgcn','%d' % grb.event_number_gcn)
+  if grb.event_z>0:
+      html = html.replace('macrovalred','%.3f'%grb.event_z)
+      html = html.replace('macrolinkred','%d'%int(grb.notice_time))
+  else:
+      html = html.replace('macrovalred','n/a')
+      html = html.replace('macrolinkred','%d'%int(grb.notice_time))
+  html = html.replace('macrovaldur','%.2f'%float(grb.event_epoch))
+  html = html.replace('macrolinkdur','%d'%grb.email_time)
+  html = html.replace('macrora','%.2f'%grb.event_ra)
+  html = html.replace('macrodec','%.2f'%grb.event_dec)
+
+  return html
+
+# --------------------------------
+def write_file(root_dir, filename, content):
+  """
+  Writes a file to disk.
+  @param root_dir: directory where to write the file
+  @param filename: name of the file
+  @param content: contents of the file
+  """
+  
+  f = open(root_dir+'/'+filename,'w')
+  f.write(content)
+  f.close()
+
+# --------------------------------
+def extract_significance(html_filename):
+  """
+  Return the lines of the HTML file containing ln(sum L) and its false alarm
+  probability as a multi-line string extracted from html_filename.  Remove
+  trailing <br>s.
+  @param html_filename: plotgrbl output HTML file.
+  """
+  sig_prefix = "ln (&Sigma; <em>L</em><sub>obs</sub>) = "
+  line_iter = iter(open(html_filename))
+  for line in line_iter:
+    if line.startswith(sig_prefix):
+      return line + line_iter.next().rstrip("\n").rstrip("<br>")
+  return "No candidates."
+
+# --------------------------------
+def get_options():
+    """
+    Parse user input and return opts.
+    """
+    parser = optparse.OptionParser(usage=__doc__,
+        version=git_version.verbose_msg)
+
+    # always required parameters
+    parser.add_option("-c", "--plot-config-file",
+        help="plotting ini-file with parameters to pass to summary routines")
+    parser.add_option("-l","--list",action="store",type="string",\
+        default='../../listGRB.xml', metavar=" GRB LIST",\
+        help="path to the file with GRB data stored")
+    parser.add_option("-t","--type",action="store",type="string",\
+        default=None, metavar=" TYPE",\
+        help="specifies the name of fake or OPENBOX")
+    parser.add_option("-i","--ifo-times",action="store",type="string",\
+        default=None, metavar=" IFO_TIMES",\
+        help="specifies the ifo times")
+    
+    # verbosity
+    parser.add_option("-v", "--verbose", action="store_true", default=False,
+        help="print additional information during pipeline construction")
+
+    # output parameters
+    parser.add_option("-r", "--root-dir", action="store", \
+        default='public_html', help="path to a temporary directory "\
+        "to put the summary page")
+    parser.add_option("-o", "--output-path-html", action="store", default=None,
+        help="path to directory to put the output webpage for publishing")
+    parser.add_option("-f", "--output-file", action="store", default=None,
+        help="file to put the output files (zipped archive)")
+    
+    (opts, args) = parser.parse_args()
+
+    # check if a required option is missed
+    error_if_missing = ["plot_config_file","ifo_times","type"]
+    
+    for opt in error_if_missing:
+        if getattr(opts, opt) is None:
+            raise ValueError, "missing required option: --%s" % \
+                  opt.replace("_", "-")
+
+    return opts
+
+##############################################################################
+# Main
+##############################################################################
+
+# get the options
+opts = get_options()
+    
+# load plotting configuration
+cp = ConfigParser.ConfigParser()
+cp.read(opts.plot_config_file)
+
+# extract some parameters
+user_tag = cp.get('common','user-tag')
+gps_start = cp.get('common','gps-start-time')
+gps_end = cp.get('common','gps-end-time')
+grb_name = user_tag[3:]
+
+# load the grb list
+grb_file = opts.list
+list_exttrig = grbsummary.load_external_triggers(grb_file)
+
+# search for the current GRB
+this_grb = None
+for entry in list_exttrig:
+    if entry.event_number_grb == grb_name:
+        this_grb = entry
+        break
+if not this_grb:
+    raise ValueError, "The GRB %s is not found in the list" % grb_name
+
+
+plots_dir = 'plots'
+if opts.type=='OPENBOX':
+  plots_dir+='OPENBOX'
+
+# create directory structure
+root_dir = opts.root_dir+'-'+opts.type
+image_dir = root_dir+'/'+plots_dir+'/Images'
+mkdirsafe(root_dir, True)
+mkdirsafe(root_dir+'/'+plots_dir)
+mkdirsafe(image_dir)
+
+## create the kml file
+kml = create_kml(this_grb, user_tag)
+
+# write the kml file
+kml_filename = grb_name+'.kml'
+write_file(root_dir,kml_filename , kml)
+
+## create the basic html file
+html = create_html(this_grb, grb_name)
+
+# define common plot prefixes and -suffixes
+plot_prefix = plots_dir+'/Images/'
+
+plot_semifix = opts.ifo_times+'_'+user_tag+'_'+opts.type
+plot_suffix = str(gps_start)+'-2190'
+
+# put in the different plots
+prefixes = ['plotgrbl_','plotgrbl_',\
+            'plotgrbl_','pylal_grbUL_']
+roots = ['_loudest_stats_by_mchirp-','_P_L_sum_by_L-',\
+         '_max_log_L_by_mc_m2-','_FC_exclusion_by_m2_D-' ]
+
+# loop over the four plots to put into the page
+for index, descr in enumerate(zip(prefixes, roots)):
+
+  # create the names
+  macroplotlink = plot_prefix + descr[0] + plot_semifix + descr[1] + plot_suffix +'.png'
+  macroplotthumb = plot_prefix + descr[0]+ plot_semifix + descr[1] + plot_suffix +'_thumb.png'
+
+  # replace the html tag
+  html = html.replace('macroplot%dlink'%(index+1), macroplotlink)
+  html = html.replace('macroplot%dthumb'%(index+1), macroplotthumb)
+
+  shutil.copy(macroplotlink, image_dir)
+  shutil.copy(macroplotthumb, image_dir)    
+
+for ifo in ['H1','H2','L1','G1','V1']:
+  
+  # compute the antenna factor for this time and position on the sky
+  f_plus, f_cross, f_ave, f_q = antenna.response( this_grb.start_time,
+                                                  this_grb.event_ra,\
+                                                  this_grb.event_dec, \
+                                                  0.0, 0.0, 'degree',
+                                                  ifo )
+  html = html.replace('macrodet%s'%ifo.lower(),'%.2f'%f_q)
+  
+
+# put in some more links
+html = html.replace('macrokml',kml_filename)
+
+xml_filename = 'pylal_relic_onsource_GRB' + grb_name + '_' + opts.type + '.xml'
+shutil.copy(xml_filename, root_dir)
+html = html.replace('macroxml',xml_filename)
+
+# extract significance and insert into HTML
+plotgrbl_html_fname = \
+    plots_dir + "/plotgrbl_" + plot_semifix + "-" + plot_suffix + ".html"
+html = html.replace('macrosignificance',
+    extract_significance(plotgrbl_html_fname))
+
+# write the html file
+write_file(root_dir,'pylal_exttrig_summary_'+grb_name+'.html' , html)
+
+
+# now copy the files if required
+if opts.output_path_html:
+  command = 'cp -r %s/* %s' % (root_dir, opts.output_path_html)
+  subprocess.call(command, shell=True)
+  
+# now tar all of the files
+if opts.output_file:
+  command = 'tar -cf %s %s' % (opts.output_file, root_dir)
+  subprocess.call(command, shell=True)
+  
+  command = 'gzip -f %s' % opts.output_file
+  subprocess.call(command, shell=True)  
+

@@ -1,0 +1,5 @@
+This directory contain a test script glue_test.py which test the result of ligolw_segment_query and ligolw_segments_from_cats.
+
+For ligolw_segment_query, glue_test.py runs a test query, and diff its results against the correct results in file correct_ligolw_segment_query_results.txt. 
+
+For ligolw_segments_from_cats, glue_test.py runs a test query which generates 8 xml file and retreieves the segment start_time, end_time from each xml file and stores them in a temporary time file. Then check_ligolw_tools.py diff each time file against its corresponding validated time file.

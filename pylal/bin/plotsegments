@@ -1,0 +1,136 @@
+#!/usr/bin/env python
+# encoding: utf-8
+#
+# Copyright (C) 2008  Nickolas V Fotopoulos
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+__author__ = "Nickolas Fotopoulos (nvf@gravity.phys.uwm.edu)"
+
+import optparse
+
+# Change to Agg back-end to remove X display dependency
+import matplotlib
+matplotlib.use('Agg')
+from pylal.plotsegments import PlotSegmentsPlot
+
+### Speed hacks
+import glue.segments, glue.__segments
+glue.segments.segment = glue.__segments.segment
+glue.segments.segmentlist = glue.__segments.segmentlist
+### End speed hacks
+
+from glue.segments import segmentlistdict, segment, segmentlist
+from glue.segmentsUtils import fromsegwizard
+
+from pylal import git_version
+
+##############################################################################
+# Command-line parser
+
+usage = """%prog [options]
+
+Plot the segments from the given segwizard-format files.
+"""
+
+def parse_command_line():
+  parser = optparse.OptionParser(usage=usage, version=git_version.verbose_msg)
+  
+  # segment lists
+  parser.add_option("","--g1-segments", help="segments to plot from G1")
+  parser.add_option("","--h1-segments", help="segments to plot from H1")
+  parser.add_option("","--h2-segments", help="segments to plot from H2")
+  parser.add_option("","--l1-segments", help="segments to plot from L1")
+  parser.add_option("","--v1-segments", help="segments to plot from V1")
+  
+  # optional plot features
+  parser.add_option("", "--time-origin", type="int", default=0,
+    help="set the zero to be at this GPS time.")
+  parser.add_option("", "--highlight-file",
+    help="highlight the segment in this segfile")
+  parser.add_option("", "--window-file",
+    help="plot the segments only within this single viewing window of interest")
+  parser.add_option("", "--window-padding", type="int", default=0,
+    help="add this much padding to either side of the viewing interval")
+  
+  # output options
+  parser.add_option("-P","--output-path", default=".",
+    help="the directory in which the figures would be stored")
+  parser.add_option("", "--gps-start-time", type="int",
+    help="GPS start time of the segments in question")
+  parser.add_option("", "--gps-end-time", type="int",
+    help="GPS end time of the segments in question")
+  parser.add_option("", "--usertag",
+    help="usertag with which to name output")
+  
+  opts, args = parser.parse_args()
+  
+  return (opts, args)
+
+
+##############################################################################
+# Main
+
+opts, args = parse_command_line()
+
+if len(args) > 0:
+  raise ValueError, "only options are allowed; no arguments"
+
+# read segments into segmentlistdict
+seg_filename_dict = {"H1": opts.h1_segments,
+                     "H2": opts.h2_segments,
+                     "L1": opts.l1_segments,
+                     "G1": opts.g1_segments,
+                     "V1": opts.v1_segments}
+segdict = segmentlistdict([(ifo, fromsegwizard(open(fname), coltype=int)) \
+                           for ifo, fname in seg_filename_dict.iteritems() \
+                           if fname is not None])
+ifos = segdict.keys()
+ifos.sort()
+
+# apply windowing
+if opts.window_file is not None:
+  window = fromsegwizard(open(opts.window_file))
+  if len(window) != 1:
+    raise ValueError, "window file must contain exactly one segment"
+  
+  effective_window = segmentlist(window[:]).protract(opts.window_padding)
+  segdict = segdict.map(lambda sl: sl & effective_window)
+
+# read highlight segment
+if opts.highlight_file is not None:
+  highlight_segs = fromsegwizard(open(opts.highlight_file))
+  if len(highlight_segs) != 1:
+    raise ValueError, "highlight file must contain exactly one segment"
+  highlight_seg = highlight_segs[0]
+
+# create plot
+plot = PlotSegmentsPlot(opts.time_origin)
+plot.add_contents(segdict)
+if opts.window_file is not None:
+  plot.set_window(window[0], opts.window_padding)
+if opts.highlight_file is not None:
+  plot.highlight_segment(highlight_seg)
+plot.finalize()
+
+# write to disk
+filename = opts.output_path + "/" + "".join(ifos) + "-PLOTSEGMENT"
+if opts.usertag is not None:
+  filename += "_" + opts.usertag
+if (opts.gps_start_time is not None) and (opts.gps_end_time is not None):
+  filename = "-".join((filename, str(opts.gps_start_time),
+                       str(opts.gps_end_time - opts.gps_start_time)))
+filename += ".png"
+plot.savefig(filename)

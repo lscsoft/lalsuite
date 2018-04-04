@@ -1,0 +1,779 @@
+#!/usr/bin/python
+
+
+# ============================================================================
+#
+#                               Preamble
+#
+# ============================================================================
+
+from optparse import OptionParser
+try:
+    import sqlite3
+except ImportError:
+    # pre 2.5.x
+    from pysqlite2 import dbapi2 as sqlite3
+import sys, os, math, re
+import numpy
+
+from glue import git_version
+from glue.ligolw import lsctables
+from glue.ligolw import dbtables
+
+from pylal import InspiralUtils
+from pylal import ligolw_sqlutils as sqlutils
+from pylal import printutils
+from pylal.ligolw_dataUtils import get_row_stat
+
+__author__ = "Collin Capano <cdcapano@physics.syr.edu>"
+__prog__ = "ligolw_cbc_plotfm"
+
+description = \
+"Creates found/missed plots."
+
+# ============================================================================
+#
+#                               Set Options
+#
+# ============================================================================
+
+def parse_command_line():
+    """
+    Parser function dedicated
+    """
+    parser = OptionParser(
+        version = git_version.verbose_msg,
+        usage   = "%prog -x var1 [options] file1.sqlite file2.sqlite ...",
+        description = description
+        )
+    # following are related to file input and output naming
+    parser.add_option( "-t", "--tmp-space", action = "store", type = "string", default = None,
+        metavar = "PATH",
+        help = 
+            "Location of local disk on which to do work. This is optional; " +
+            "it is only used to enhance performance in a networked " +
+            "environment. "
+        )
+    parser.add_option( "-P", "--output-path", action = "store", type = "string",
+        default = os.getcwd(), metavar = "PATH",
+        help = 
+            "Optional. Path where the figures should be stored. Default is current directory." 
+        )
+    parser.add_option( "-O", "--enable-output", action = "store_true",
+        default =  False, metavar = "OUTPUT",
+        help = 
+            "enable the generation of html and cache documents" 
+        )
+    parser.add_option( "-u", "--user-tag", action = "store", type = "string",
+        help =
+            "Set a user-tag for plot and html naming."
+        )
+    parser.add_option( "-x", "--variables", action = "append", default = [],
+        metavar = "independent_var1[:label][;dependent_var1[:label]]",
+        help = 
+            "Required. What variable(s) to plot. At least one independent variable is needed. If no dependent variable " +
+            "is specified, will plot injected decisive distance on the y-axis. For example, if you specify -x injected_mchirp, " +
+            "injected decisive distance vs. injected mchirp will be plotted. If, however you specify -x 'injected_mchirp;recovered_mchirp' " +
+            "(don't forget to use quotes!) recovered mchirp vs. injected mchirp will be plotted. " +
+            "To specify a column from the simulation table, prefix the column name with 'injected_'. To specify a column from " +
+            "the recovery table, prefix the column name with 'recovered_'. Any column in either the simulation table or the " +
+            "recovery table may be used. However, missed injections will only be plotted if all of the variables in a given plot are from the " +
+            "recovery table. Math operations are also supported. For example, you can type " +
+            "recovered_mchirp-injected_mchirp; recovered_end_time+1e-9*recovered_end_time_ns-injected_end_time+1e-9*injected_end_time_ns " +
+            "to plot the difference between recovered and injected end times vs the difference between recovered/injected mchirps. " +
+            "All functions in the python math module can be used. Syntax is standard python; e.g., log(recovered_snr, 10) " +
+            "will return the log10 of the recovered_snr. To specify a label for each axis, type :label after each variable, e.g., " +
+            r"'recovered_mchirp: Recovered Chirp Mass ($M_\odot^{\frac{2}{5}}$); injected_mchirp: Injected Chirp Mass ($M_\odot^{\frac{2}{5}}$)'. " +
+            "LaTex is supported when placed between two $ signs (if using a bash terminal, be sure to escape each dollar sign appropriately). " +
+            "One special label is gps_(s|min|hr|days|yr). If given, the stat will be assumed to be a gps time and the units will be plotted in " +
+            "(s|min|hr|days|yr) since the earliest experiment start time in the databases. For example, if you type injected_end_time:gps_days, "
+            "and the earilest start time is 987654321, the x-axis will be 'Injected End Time ($987654320 + days$)'. " +
+            "If multiple variables are specified, will create a plot for each one. To specify multiple variables, " +
+            "give the argument multiple times. "
+        )
+    parser.add_option( "-r", "--ranking-stat", action = "store", default = "combined_far:Combined FAR ($yr^{-1}$)",
+        metavar = " stat[:label]",
+        help =
+            "Stat to rank found injections with. The stat must be a column in the recovery table; default is combined_far. As with --variables, to specify a label " +
+            "for plotting, put a colon followed by the label. This label will be put on the colorbar, if it is turned on (see --colorbar). " +
+            "Unlike --variables, only a single column may be used and math operations are not supported."
+        )
+    parser.add_option( "-b", "--rank-by", action = "store", default = "MIN",
+        help =
+            "How to rank the injections. Options are 'MAX' or 'MIN', default is 'MIN'. If set to 'MIN', any trigger " +
+            "with a 0 ranking_stat value will be plotted with a star as opposed to a circle. If set to 'MAX', any " +
+            "trigger with an infinite value will be plotted with a star."
+        )
+    parser.add_option( "-c", "--colorbar", action = "store_true", default = False,
+        help =
+            "Turn on the colorbar. This will cause all found injections to be colored according to the ranking-stat."
+        )
+    parser.add_option( "-p", "--param-name", metavar = "PARAMETER[:label]",
+        action = "store", default = None,
+        help =
+            "Specifying this and param-ranges will only select triggers that fall within the given range for each plot. " +
+            "This will apply to all plots. Any column(s) in the simulation or recovery table may be used. " +
+            "To specify a parameter in the simulation table, prefix with 'injected_'; " +
+            "for recovery table, 'recovered_'. As with variables, math operations are permitted between columns, e.g.," +
+            "injected_mass1+injected_mass2. Any function in the python math module may be used; syntax is python. The parameter name " +
+            "will be in the title of each plot; to give a label for the name, add a colon and the label. If no label is specified, the " +
+            "the parameter name as given will be used. " +
+            "WARNING: if you use any recovered parameters, missed injections will not be included in plots " +
+            "as recovered parameters are undefined for them. For example, if you chose to bin by recovered_mchirp " +
+            "missed injections will not be plotted on any plot. If you chose to bin by injected_mchirp, however, missed injections " +
+            "will be plotted. "
+        )
+    parser.add_option( "-q", "--param-ranges", action = "store", default = None,
+        metavar = " [ LOW1, HIGH1 ); ( LOW2, HIGH2]; !VAL3; etc.",
+        help = 
+            "Requires --param-name. Specify the parameter ranges " +
+            "to select triggers in. A '(' or ')' implies an open " +
+            "boundary, a '[' or ']' a closed boundary. To specify " +
+            "multiple ranges, separate each range by a ';'. To " +
+            "specify a single value, just type that value with no " +
+            "parentheses or brackets. To specify not equal to a single " +
+            "value, put a '!' before the value. If " +
+            "multiple ranges are specified, a separate plot for each range will be generated."
+        )
+    parser.add_option( "-s", "--sim-tag", action = "store", type = "string", default = 'ALLINJ',
+        help =
+            "Specify the simulation type to plot, e.g., 'BNSLININJ'. To plot multiple injection types together " +
+            "separate tags by a '+', e.g., 'BNSLOGINJA+BNSLOGINJB'. " +
+            "If not specified, will group all injections together (equivalent to specifying 'ALLINJ')."
+        )
+    parser.add_option('-X', '--logx', action = 'store_true', default = False,
+        help =
+            'Make x-axis logarithmic. Note: this will apply to all plots generated.'
+        )
+    parser.add_option('-Y', '--logy', action = 'store_true', default = False,
+        help =
+            'Make y-axis logarithmic. Note: this will apply to all plots generated.'
+        )
+    parser.add_option('-Z', '--logz', action = 'store_true', default = False,
+        help =
+            'Make the colorbar logarithmic. Note: this will apply to all plots generated.'
+        )
+    parser.add_option('', '--xmin', action = 'store', type = 'float', default = None,
+        help =
+            'Set a minimum value for the x-axis. If logx set, must be > 0. This will apply to all plots generated.'
+        )
+    parser.add_option('', '--xmax', action = 'store', type = 'float', default = None,
+        help =
+            'Set a maximum value for the x-axis. If logx set, must be > 0. This will apply to all plots generated.'
+        )
+    parser.add_option('', '--ymin', action = 'store', type = 'float', default = None,
+        help =
+            'Set a minimum value for the y-axis. If logy set, must be > 0. This will apply to all plots generated.'
+        )
+    parser.add_option('', '--ymax', action = 'store', type = 'float', default = None,
+        help =
+            'Set a maximum value for the y-axis. If logy set, must be > 0. This will apply to all plots generated.'
+        )
+    parser.add_option('-f', '--plot-x-function', action = 'append', default = [], metavar = 'f(x)[:label]',
+        help =
+            "Plot the curve y=f(x) where f(x) is the given function of x. As with --variables, any function in the python math module may " +
+            "be used; syntax is python. Functions should be in terms of 'x'. The domain is evenly " +
+            "spaced across the space spanned by the x-axis. Some examples: to plot the sine of pi times x, " +
+            "type 'sin(pi*x)'. To plot 'log10(x)' type 'log(x, 10)'. To plot y=x type 'x'. To plot a horizontal line " +
+            "at some value, say y=6, just type '6'. To plot multiple functions, give the argument multiple times. To put a label " +
+            "for the function on the plot(s), add a colon and the label. As with variables, LaTex is supported by enclosing in $ signs."
+        )
+    parser.add_option('-g', '--plot-y-function', action = 'append', default = [], metavar = 'g(y)[:label]',
+        help =
+            "Plot the curve x=g(y) where g(y) is the given function of y. Syntax is the same as plot-x-function, " +
+            "except that functions should be in terms of 'y'. The domain is evenly spaced across the space spanned " +
+            "by the y-axis. For example, to plot a vertical line at some value, say x=6, just type '6'."
+        )
+    parser.add_option( "-S", "--simulation-table", action = "store", type = "string", default = "sim_inspiral",
+        help =
+            "Table to look in for injection parameters. " +
+            "Can be any lsctable with a simulation_id. Default is 'sim_inspiral'."
+        )
+    parser.add_option( "-R", "--recovery-table", action = "store", type = "string", default = "coinc_inspiral",
+        help =
+            "Table to look in for recovered injections. " +
+            "Can be any lsctable with a coinc_event_id. Default is coinc_inspiral."
+        )
+    parser.add_option( "-M", "--map-label", action = "store", type = "string", default = None,
+        help = 
+            "Required. Name of the type of mapping that was used for finding injections."
+        )
+    parser.add_option( "-L", "--livetime-program", action = "store", type = "string", default = "inspiral",
+        help =
+            "Name of program used to get the analysis segments. This is needed to figure out what instruments (if any) were on for missed injections. "
+            "Default is inspiral."
+        )
+    parser.add_option( "", "--show-plot", action = "store_true", default = False,
+        help = 
+            "Display the plots on the terminal"
+        )
+    parser.add_option( "", "--dpi", action = "store", type = "int", default = 150,
+        help = 
+            "Set the plots' dpi. Default is 150."
+        )
+    parser.add_option( "-v", "--verbose", action = "store_true", default = False,
+        help = 
+            "Be verbose."
+        )
+
+    (options,filenames) = parser.parse_args()
+
+    #check if required options specified and for self-consistency
+    if options.variables == []:
+        raise ValueError, "At least one --variable must be specified."
+    if options.logx and options.xmin is not None and options.xmin <= 0:
+        raise ValueError, "If --logx desired, --xmin must be > 0."
+    if options.logx and options.xmax is not None and options.xmax <= 0:
+        raise ValueError, "If --logx desired, --xmax must be > 0."
+    if options.logy and options.ymin is not None and options.ymin <= 0:
+        raise ValueError, "If --logy desired, --ymin must be > 0."
+    if options.logy and options.ymax is not None and options.ymax <= 0:
+        raise ValueError, "If --logy desired, --ymax must be > 0."
+
+    return options, filenames, sys.argv[1:]
+            
+# =============================================================================
+#
+#                       Function Definitions
+#
+# =============================================================================
+
+def get_cmrow_stat(row, arg):
+    """
+    Wrapper method to evaluate the desired operation on columns from a row in the ClosestMissed table. 
+    """
+    return get_row_stat( row, arg.replace("injected_", '') )
+        
+def select_best_inj_match(found_table, selection_stat, select_by, use_match_rank = True):
+    """
+    If an injection is mapped to multiple events, picks out the best match via
+    some selection stat. If use_match_rank is True, will always use the match_rank
+    column first, thus only using the selection_stat as a tie-breaker. For example,
+    if the found_table was generated using combined_far, combined_far determines the
+    match_rank entry and therefore is the primary selection criteria. In the event
+    that two events have the same match rank -- they had the same far -- the selection_stat
+    is then used to pick one of the two. In the event that both triggers have the same
+    selection stat, the first one in the table is used.
+
+    @found_table: a SelectedFound table created by printsims
+    @selection_stat: any recovered stat in the found_table, e.g., recovered_snr
+    @select_by: must be 'MAX' or 'MIN'; whether to use max or min values of selection_stat
+    @use_match_rank: toggle whether or not to use match_rank
+    """
+
+    # cycle through the table, getting coinc_event_ids of events to delete
+    delete_ceids = []
+    # get all events with multiple matches
+    simid_index = dict([ [row.simulation_id, [all_rows for all_rows in found_table if all_rows.simulation_id == row.simulation_id]]
+        for row in found_table ])
+    
+    for sim_id, matchlist in simid_index.items():
+        if len(matchlist) > 1:
+            # apply selection criteria
+            delete_these = set([ row.coinc_event_id for row in matchlist
+                if use_match_rank and row.recovered_match_rank != 1
+                or select_by == "MAX" and getattr(row, 'recovered_'+selection_stat) != max([getattr(x, 'recovered_'+selection_stat) for x in matchlist])
+                or select_by == "MIN" and getattr(row, 'recovered_'+selection_stat) != min([getattr(x, 'recovered_'+selection_stat) for x in matchlist])
+                ])
+            # check that only have one event left, if not, just keep the first non-deleted event in the list
+            unique_ceids = list(set([row.coinc_event_id for row in matchlist]))
+            ii = 0
+            while len(unique_ceids) - len(delete_these) > 1:
+                delete_these.update([unique_ceids[ii]])
+                ii += 1
+            # add to list to be deleted
+            delete_ceids.extend(list(delete_these))
+    
+    # remove the deletes
+    [ found_table.remove(row) for row in found_table[::-1] if row.coinc_event_id in delete_ceids ]
+
+        
+def ColorFormatter(y, pos):
+    return "$10^{%.1f}$" % y
+
+# ============================================================================
+#
+#                                 Main
+#
+# ============================================================================
+
+#
+#   Generic Initialization
+#
+
+# parse command line
+opts, filenames, args = parse_command_line()
+# parse the variables 
+stats = []
+for var in opts.variables:
+    x,y = len(var.split(';')) == 2 and var.split(';') or [var.split(';')[0],'injected_decisive_distance:Injected Decisive Distance ($Mpc$)']
+    x, xlabel = len(x.split(':')) == 2 and x.split(':') or [x.split(':')[0], x.split(':')[0].replace('_', ' ').title() ]
+    y, ylabel = len(y.split(':')) == 2 and y.split(':') or [y.split(':')[0], y.split(':')[0].replace('_', ' ').title() ]
+    xlabel, ylabel = xlabel.strip(), ylabel.strip()
+    stats.append((x,xlabel,y,ylabel))
+
+# get rank_by
+rank_by = sqlutils.validate_option(opts.rank_by, lower = False).upper()
+# get ranking/colorbar stat
+if len(opts.ranking_stat.split(':')) == 2:
+    cbstat, cblabel = opts.ranking_stat.split(':')
+else:
+    cbstat = opts.ranking_stat
+    cblabel = cbstat.replace('_', ' ').title()
+# check if binning by param-range at all
+if opts.param_name is not None:
+    param_name, param_label = len(opts.param_name.split(':')) == 2 and opts.param_name.split(':') or [opts.param_name, opts.param_name.replace('_', ' ').title()]
+    param_name = sqlutils.validate_option( param_name, lower = False )
+    param_label = param_label.strip()
+    param_parser = sqlutils.parse_param_ranges('', param_name, opts.param_ranges, verbose = opts.verbose)
+    num_subgroups = len(param_parser.param_ranges)
+else:
+    param_name = None
+    num_subgroups = 1
+
+sqlite3.enable_callback_tracebacks(True)
+
+#
+#   Plotting Initialization
+#
+
+# Change to Agg back-end if show() will not be called 
+# thus avoiding display problem
+if not opts.show_plot:
+  import matplotlib
+  matplotlib.use('Agg')
+import pylab
+pylab.rc('text', usetex=True)
+
+def cMapClipped():
+    """
+    Cuts upper edge of jet colormap scheme at rgba = (1,0,0,1), i.e., red.
+    """
+    cdict = matplotlib.cm.jet._segmentdata
+    # remap red scale
+    cdict['red'] = ([ x == cdict['red'][-1] and (1,1,1) or x for x in cdict['red'] ])
+    
+    return matplotlib.colors.LinearSegmentedColormap('clrs', cdict) 
+
+#
+#   Program-specific Initialization
+#
+
+# get available instrument times
+experiments = {}
+if opts.verbose:
+    print >> sys.stderr, "Opening database(s) and checking for instrument times..."
+for filename in filenames:
+    working_filename = dbtables.get_connection_filename( 
+        filename, tmp_path = opts.tmp_space, verbose = opts.verbose )
+    connection = sqlite3.connect( working_filename )
+    if opts.tmp_space:
+        dbtables.set_temp_store_directory(connection, opts.tmp_space, verbose = opts.verbose)
+    sqlquery = "SELECT DISTINCT instruments, gps_start_time, gps_end_time FROM experiment"
+    for on_insts, gps_start, gps_end in connection.cursor().execute(sqlquery):
+        current_times = experiments.setdefault( frozenset(lsctables.instrument_set_from_ifos(on_insts)), (int(gps_start), int(gps_end)) )
+        if current_times is not None:
+            update_start, update_end = current_times
+            if update_start > int(gps_start):
+                update_start = int(gps_start)
+            if update_end < int(gps_end):
+                update_end = int(gps_end)
+            experiments[ frozenset(lsctables.instrument_set_from_ifos(on_insts)) ] = (update_start,update_end)
+    # only close the connection if there are more than one database being used
+    if len(filenames) > 1:
+        connection.close()
+        dbtables.discard_connection_filename( filename, working_filename, verbose = opts.verbose)
+
+# cycle over available instrument times
+for on_instruments, (gps_start_time, gps_end_time) in experiments.items():
+    on_instr = r','.join(sorted(on_instruments))
+    found_table = []
+    missed_table = []
+    if opts.verbose:
+        print >> sys.stderr, "Creating plots for %s time..." % on_instr
+
+    for filename in filenames:
+        if len(filenames) > 1:
+            working_filename = dbtables.get_connection_filename( 
+                filename, tmp_path = opts.tmp_space, verbose = opts.verbose )
+            connection = sqlite3.connect( working_filename )
+            if opts.tmp_space:
+                dbtables.set_temp_store_directory(connection, opts.tmp_space, verbose = opts.verbose)
+
+        # get found table
+        if opts.verbose:
+            print >> sys.stderr, "\tgetting 'found' triggers from %s..." % filename
+            
+        found_table += [ row for row in 
+            printutils.printsims(connection, opts.simulation_table, opts.recovery_table,
+            opts.map_label, cbstat.replace('recovered_', ''), opts.rank_by,
+            "slide", param_name = None, param_ranges = None,
+            include_only_coincs = '[ALL in %s]' % on_instr,
+            sim_tag = opts.sim_tag, verbose = False)]
+
+
+        # get missed table
+        if opts.verbose:
+            print >> sys.stderr, "\tgetting missed triggers from %s..." % filename
+        missed_table += [ row for row in 
+            printutils.printmissed( connection, opts.simulation_table, opts.recovery_table,  opts.map_label, opts.livetime_program,
+            param_name = None, param_ranges = None,
+            include_only_coincs = '[ALL in %s]' % on_instr,
+            sim_tag = opts.sim_tag, limit = None, 
+            verbose = False) ]
+
+        if len(filenames) > 1:
+            connection.close()
+            dbtables.discard_connection_filename( filename, working_filename, verbose = opts.verbose)
+
+    #
+    #   Plot
+    #
+    # set InspiralUtils options for file and plot naming
+    if opts.verbose:
+        print >> sys.stderr, "\tplotting..."
+    opts.gps_start_time = int(gps_start_time)
+    opts.gps_end_time = int(gps_end_time)
+    opts.ifo_times = ''.join(sorted(on_instruments))
+    opts.ifo_tag = ''
+    InspiralUtilsOpts = InspiralUtils.initialise( opts, __prog__, git_version.verbose_msg )
+
+    fnameList = []
+    tagList = []
+    figure_numbers = []
+    fig_num = 0
+
+    for xstat, xlabel, ystat, ylabel in stats:
+    
+        x_is_string = False
+        y_is_string = False
+
+        for n in range(num_subgroups):
+            pylab.figure(fig_num)
+            figure_numbers.append(fig_num)
+            fig_num += 1
+            pylab.hold(True)
+            xmax = -numpy.inf
+            xmin = numpy.inf
+            ymax = -numpy.inf
+            ymin = numpy.inf
+
+            # select best matches using snr
+            this_group = [row for row in found_table if (param_name is not None and param_parser.group_by_param_range( get_row_stat(row, param_name) ) == n) or param_name is None]
+            select_best_inj_match(this_group, 'snr', 'MAX', use_match_rank = True)
+
+            # get desired plot values
+
+            plotvals = [ (
+                get_row_stat(row, xstat),
+                get_row_stat(row, ystat),
+                get_row_stat(row, 'recovered_' not in cbstat and 'recovered_' + cbstat or cbstat) )
+                for row in this_group]
+
+            # if logx, remove any 0 valued things
+            if opts.logx:
+                popis = [ j for j, (statval, _, _ ) in enumerate(plotvals) if statval == 0 ]
+                for j in popis[::-1]:
+                    del plotvals[j]
+            # ditto logy
+            if opts.logy:
+                popis = [ j for j, (_, statval, _) in enumerate(plotvals) if statval == 0 ]
+                for j in popis[::-1]:
+                    del plotvals[j]
+            # set time unit
+            is_time_x = re.match(r'gps_(s|min|hr|days|yr)', xlabel)
+            if is_time_x is not None:
+                plotvals = [ (sqlutils.convert_duration( x - gps_start_time + 1, is_time_x.group(1) ), y, z) for (x,y,z) in plotvals ]
+            is_time_y = re.match(r'gps_(s|min|hr|days|yr)', ylabel)
+            if is_time_y is not None:
+                plotvals = [ (x, sqlutils.convert_duration( y - gps_start_time + 1, is_time_y.group(1) ), z) for (x,y,z) in plotvals ]
+            # separate out the 0/inf valued things
+            plotspecial = [ j for j, (_,_, statval) in enumerate(plotvals)
+                if rank_by == 'MIN' and statval == 0 or rank_by == 'MAX' and statval == numpy.inf ]
+            plotspecial = [ plotvals.pop(j) for j in plotspecial[::-1] ]
+            
+            # Plot stars
+            if plotspecial != []:
+                x = [x[0] for x in plotspecial]
+                y = [y[1] for y in plotspecial]
+
+                # if x is a list of strings, re-map to indices
+                if isinstance(x[0], basestring):
+                    tagdictx = dict([ [tag, num] for num, tag in enumerate(sorted(set(x))) ])
+                    rev_tagdictx = dict([ [num, tag] for tag, num in tagdictx.items() ])
+                    x = [tagdictx[xval] for xval in x]
+                    x_is_string = True
+                # ditto y
+                if isinstance(y[0], basestring):
+                    tagdicty = dict([ [tag, num] for num, tag in enumerate(sorted(set(y))) ])
+                    rev_tagdicty = dict([ [num, tag] for tag, num in tagdicty.items() ])
+                    y = [tagdicty[yval] for yval in y]
+                    y_is_string = True
+
+                pylab.scatter( x, y, c = (0.,0.,.5,1.), marker = (5,1,0), s = 40, linewidth = .5, alpha = 1., label = '_nolegend_' )
+
+                xmax = max(xmax, max(x))
+                xmin = min(xmin, min(x))
+                ymax = max(ymax, max(y))
+                ymin = min(ymin, min(y))
+
+            # Plot missed
+            plotmissed = []
+            if 'recovered_' not in xstat and 'recovered_' not in ystat and (param_name is not None and 'recovered_' not in param_name or param_name is None):
+                plotmissed = [ ( get_cmrow_stat(row,xstat), get_cmrow_stat(row,ystat) ) for row in missed_table
+                    if (param_name is not None and param_parser.group_by_param_range( get_cmrow_stat(row, param_name) ) == n) or param_name is None ]
+
+                if plotmissed != []:
+                    if is_time_x is not None:
+                        plotmissed = [ (sqlutils.convert_duration( x - gps_start_time, is_time_x.group(1) ), y) for (x,y) in plotmissed ]
+                    if is_time_y is not None:
+                        plotmissed = [ (x, sqlutils.convert_duration( y - gps_start_time, is_time_y.group(1) )) for (x,y) in plotmissed ]
+
+                    x = [x[0] for x in plotmissed]
+                    y = [y[1] for y in plotmissed]
+
+                    # remap x if strings
+                    if isinstance( x[0], basestring ):
+                        this_dict = dict([ [tag, num] for num, tag in enumerate(sorted(set(x))) ])
+                        if x_is_string:
+                            tagdictx.update(dict([ [tag, num+len(tagdictx.keys())-1] for tag, num in this_dict.items() if tag not in tagdictx ]))
+                        else:
+                            tagdictx = this_dict
+                        rev_tagdictx = dict([ [num, tag] for tag, num in tagdictx.items() ])
+                        x = [tagdictx[xval] for xval in x]
+                        x_is_string = True
+                    # ditto y
+                    if isinstance( y[0], basestring ):
+                        this_dict = dict([ [tag, num] for num, tag in enumerate(sorted(set(y))) ])
+                        if y_is_string:
+                            tagdicty.update(dict([ [tag, num+len(tagdicty.keys())-1] for tag, num in this_dict.items() if tag not in tagdicty ]))
+                        else:
+                            tagdicty = this_dict
+                        rev_tagdicty = dict([ [num, tag] for tag, num in tagdicty.items() ])
+                        y = [tagdicty[yval] for yval in y]
+                        y_is_string = True
+
+                    pylab.scatter( x, y, marker = 'x', s = 40, color = (1.,0.,0.,1.), alpha = .8, label = '_nolegend_')
+
+                    xmax = max(xmax, max(x))
+                    xmin = min(xmin, min(x))
+                    ymax = max(ymax, max(y))
+                    ymin = min(ymin, min(y))
+
+            # Plot circles
+            if plotvals != []:
+                x = [x[0] for x in plotvals]
+                y = [y[1] for y in plotvals]
+                z = opts.colorbar and [opts.logz and math.log(z[2],10) or z[2] for z in plotvals] or (0.,0.,.5,1.)
+
+                # remap x if strings
+                if isinstance( x[0], basestring ):
+                    this_dict = dict([ [tag, num] for num, tag in enumerate(sorted(set(x))) ])
+                    if x_is_string:
+                        tagdictx.update(dict([ [tag, num+len(tagdictx.keys())-1] for tag, num in this_dict.items() if tag not in tagdictx ]))
+                    else:
+                        tagdictx = this_dict
+                    rev_tagdictx = dict([ [num, tag] for tag, num in tagdictx.items() ])
+                    x = [tagdictx[xval] for xval in x]
+                    x_is_string = True
+                # ditto y
+                if isinstance( y[0], basestring ):
+                    this_dict = dict([ [tag, num] for num, tag in enumerate(sorted(set(y))) ])
+                    if y_is_string:
+                        tagdicty.update(dict([ [tag, num+len(tagdicty.keys())-1] for tag, num in this_dict.items() if tag not in tagdicty ]))
+                    else:
+                        tagdicty = this_dict
+                    rev_tagdicty = dict([ [num, tag] for tag, num in tagdicty.items() ])
+                    y = [tagdicty[yval] for yval in y]
+                    y_is_string = True
+
+                pylab.scatter( x, y, c = z, cmap = cMapClipped(), s = 20, edgecolor = 'white', linewidth = .5, label = '_nolegend_' )
+
+                xmax = max(xmax, max(x))
+                xmin = min(xmin, min(x))
+                ymax = max(ymax, max(y))
+                ymin = min(ymin, min(y))
+
+                if opts.colorbar:
+                    cb = pylab.colorbar(format = opts.logz and pylab.FuncFormatter(ColorFormatter) or None)
+                    cb.ax.set_ylabel( cblabel )
+
+            # if nothing to plot, just plot a warning message
+            if plotvals == [] and plotspecial == [] and plotmissed == []:
+                pylab.text(0.5,0.5, 'Nothing to plot.')
+                xmin = ymin = 0
+                xmax = ymax = 1
+                no_data = True
+            else:
+                no_data = False
+
+            # plot any x-functions
+            if opts.plot_x_function != [] and not no_data:
+                safe_dict = dict([ [name,val] for name,val in math.__dict__.items() if not name.startswith('__') ])
+                if opts.logx and not x_is_string:
+                    x_vals = numpy.logspace( math.log(xmin,10), math.log(xmax,10), num=1000, endpoint=True, base=10.0 )
+                    xtext = xmax * 10**-.5
+                else:
+                    x_vals = numpy.linspace( xmin, xmax, num=1000, endpoint = True )
+                    xtext = xmax-.1*(xmax-xmin)
+                for f in opts.plot_x_function:
+                    f, flabel = len(f.split(':')) == 2 and f.split(':') or [f, False]
+                    y_vals = [eval( f, {"__builtins__":None, 'x':x}, safe_dict ) for x in x_vals]
+                    pylab.plot( x_vals, y_vals, 'k--' )
+                    ymin = min(y_vals) < ymin and min(y_vals) or ymin
+                    ymax = max(y_vals) > ymax and max(y_vals) or ymax
+                    if flabel:
+                        x,y = ( x_vals[len(y_vals)-y_vals[::-1].index(max(y_vals))-1], max(y_vals) )
+                        if opts.logy and not y_is_string:
+                            ytext = max(y_vals) * 10**.25
+                        else:
+                            ytext = max(y_vals)+.05*(ymax-ymin)
+                        pylab.annotate( '$y=$'+flabel, xy=(x,y), xytext = (xtext,ytext), arrowprops=dict(arrowstyle='->'))
+
+            # plot any y-functions
+            if opts.plot_y_function != [] and not no_data:
+                safe_dict = dict([ [name,val] for name,val in math.__dict__.items() if not name.startswith('__') ])
+                if opts.logy and not y_is_string:
+                    y_vals = numpy.logspace( math.log(ymin,10), math.log(ymax,10), num=1000, endpoint=True, base=10.0 )
+                    ytext = ymax * 10**.25
+                else:
+                    y_vals = numpy.linspace( ymin, ymax, num=1000, endpoint = True )
+                    ytext = ymax+.05*(ymax-ymin)
+                for g in opts.plot_y_function:
+                    g, glabel = len(g.split(':')) == 2 and g.split(':') or [g, False]
+                    x_vals = [eval( g, {"__builtins__":None, 'y':y}, safe_dict ) for y in y_vals]
+                    pylab.plot( x_vals, y_vals, 'k--' )
+                    xmin = min(x_vals) < xmin and min(x_vals) or xmin
+                    xmax = max(x_vals) > xmax and max(x_vals) or xmax
+                    if glabel:
+                        x,y = ( max(x_vals), y_vals[len(x_vals)-x_vals[::-1].index(max(x_vals))-1] )
+                        if opts.logx and not x_is_string:
+                            xtext = max(x_vals) * 10**-.5
+                        else:
+                            xtext = max(x_vals)-.1*(xmax-xmin)
+                        pylab.annotate( '$x=$'+glabel, xy=(x,y), xytext = (xtext,ytext), arrowprops=dict(arrowstyle='->'))
+                
+
+            #
+            # Set plot parameters
+            #
+
+            t = "%s Time: %s" % (on_instr, opts.sim_tag.replace('_', '\_'))
+            if param_name is not None:
+                t = "%s %s %s" % (t, param_label, param_parser.param_range_by_group(n))
+            pylab.title( t )
+
+            # set x-axis parameters
+            if is_time_x is not None:
+                lbl = '%s ($%i + %s$)' % (xstat.replace('_', ' ').title(), gps_start_time-1, is_time_x.group(1))
+            else:
+                lbl = xlabel 
+            pylab.xlabel(lbl)
+
+            # set y-axis parameters
+            if is_time_y is not None:
+                lbl = '%s ($%i + %s$)' % (ystat.replace('_', ' ').title(), gps_start_time-1, is_time_y.group(1))
+            else:
+                lbl = ylabel
+            pylab.ylabel(lbl)
+
+            # set log properties
+            if opts.logx and not no_data and not x_is_string:
+                pylab.gca().semilogx()
+                
+            if opts.logy and not no_data and not y_is_string:
+                pylab.gca().semilogy()
+            
+            if opts.logy and opts.logx and not no_data and not x_is_string and not y_is_string:
+                pylab.gca().loglog()
+
+            # set x/y limits
+            if opts.logx and not no_data and not x_is_string:
+                xmin, xmax = ( xmin * 10**-.5, xmax * 10**.5 )
+            elif x_is_string:
+                xmin = min(tagdictx.values()) - 1
+                xmax = max(tagdictx.values()) + 1
+            else:
+                xmin = opts.xmin is not None and not no_data and opts.xmin or xmin-.1*(xmax-xmin)
+                xmax = opts.xmax is not None and not no_data and opts.xmax or xmax+.1*(xmax-xmin)
+
+            pylab.xlim( xmin, xmax )
+
+            if x_is_string:
+                pylab.gca().set_xticks( [xmin]+sorted(tagdictx.values())+[xmax] )
+                pylab.gca().set_xticklabels([n in rev_tagdictx and rev_tagdictx[n].replace('_', '\_') or '' for n in pylab.gca().get_xticks()],
+                    size = 'small', rotation = 45)
+
+            if opts.logy and not no_data:
+                ymin, ymax = ( ymin * 10**-.5, ymax * 10**.5 )
+            elif y_is_string:
+                ymin = min(tagdicty.values()) - 1
+                ymax = max(tagdicty.values()) + 1
+            else:
+                ymin = opts.ymin is not None and not no_data and opts.ymin or ymin-.1*(ymax-ymin)
+                ymax = opts.ymax is not None and not no_data and opts.ymax or ymax+.1*(ymax-ymin)
+
+            pylab.ylim( ymin, ymax )
+
+            if y_is_string:
+                pylab.gca().set_yticks( [ymin]+sorted(tagdicty.values())+[ymax] )
+                pylab.gca().set_yticklabels([n in rev_tagdicty and rev_tagdicty[n].replace('_', '\_') or '' for n in pylab.gca().get_yticks()],
+                    size = 'xx-small')
+
+            pylab.grid()
+                
+            if opts.enable_output:
+                param_tag = param_name is not None and param_label or ''
+                if param_name is not None:
+                    param_tag = '_'.join([ re.sub( r'\W', '', param_tag),
+                        `int(param_parser.param_ranges[n][0][1])`,
+                        `int(param_parser.param_ranges[n][1][1])`, '' ])
+                plot_description = '%sF%i' % ( param_tag, fig_num )
+                #plot_description = '_'.join([ param_tag, re.sub( r'\W', '', ystat ), 'v', re.sub( r'\W', '', xstat ) ])
+                name = InspiralUtils.set_figure_tag( plot_description, 
+                    datatype_plotted = opts.sim_tag, open_box = False)
+                fname = InspiralUtils.set_figure_name(InspiralUtilsOpts, name)
+                fname_thumb = InspiralUtils.savefig_pylal( filename=fname, dpi=opts.dpi )
+                fnameList.append(fname)
+                tagList.append(name)
+
+    #
+    #   Create the html page for this instrument time
+    #
+    
+    if opts.enable_output:
+        if opts.verbose:
+            print >> sys.stdout, "\twriting html file and cache."
+
+        # create html of closed box plots
+        comment_vals = (rank_by == "MAX" and "infinite" or "zero", cbstat.replace('_',' '))
+        comment = "<b>Plot Key:</b> Stars are injections found with %s %s. " % comment_vals + \
+            "Circles are injections found with non-%s %s. " % comment_vals + \
+            "Red crosses (if plotted) are missed injections (vetoed injections are excluded)."
+        plothtml = InspiralUtils.write_html_output( InspiralUtilsOpts, args, fnameList,
+            tagList, comment = comment, add_box_flag = False )
+        InspiralUtils.write_cache_output( InspiralUtilsOpts, plothtml, fnameList )
+
+    if opts.show_plot:
+        pylab.show()
+
+    #
+    # Close the figures and clear memory for the next instrument time
+    #
+
+    for number in figure_numbers:
+        pylab.close(number)
+
+    del found_table
+    del missed_table
+
+#
+#   Finished cycling over experiments; exit
+#
+if len(filenames) == 1:
+    connection.close()
+    dbtables.discard_connection_filename( filename, working_filename, verbose = opts.verbose)
+
+if opts.verbose:
+    print >> sys.stdout, "Finished!"
+sys.exit(0)

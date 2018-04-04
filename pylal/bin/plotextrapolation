@@ -1,0 +1,1047 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2009  Rahul Biswas
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+__author__ = "Rahul Biswas <rahul@gravity.phys.uwm.edu"
+__prog__ = "plotextrapolation"
+__title__ = "Background extrapolation technique"
+
+import matplotlib
+matplotlib.use('Agg')
+from pylab import *
+from pylal import viz
+import sys 
+import string
+from optparse import *
+import glob
+from glue import segments
+from glue import lal
+from glue import segmentsUtils
+from glue.ligolw import utils
+from glue.ligolw.utils import segments as ligolw_segments
+
+import glue.iterutils
+from pylal import CoincInspiralUtils
+from pylal import SnglInspiralUtils
+from pylal import InspiralUtils
+from pylal import date
+from pylal import git_version
+import numpy   
+import itertools
+import pickle  
+ 
+from pylal import SnglInspiralUtils, SimInspiralUtils
+
+#########################################################################################
+def sngls_snr_ratio(ifos_one,ifos_two,stat,ifos,vetoes_time, ifos_three=None, vetoes=None):
+   try:
+      print("Reading in pickle files of snr one")
+      print "Applying CAT_2 veto and Triple time for", ifos[0]
+      f=open("snr_one_"+str(opts.gps_start_time)+".pickle","r")
+      snr_one=pickle.load(f)
+      f.close()
+      print("Reading in pickle files of snr HW one")
+      f=open("snr_one_HW_"+str(opts.gps_start_time)+".pickle","r")
+      snr_one_HW=pickle.load(f)
+      f.close()
+      print "Number of triggers after HW veto", len(snr_one_HW)
+      print "Number of triggers after HW veto and accounting for triple time only", len(snr_one)
+      print "Minimum and Maximum snr of triggers are", min(snr_one), max(snr_one) 
+
+      print("Reading in pickle files of snr two")
+      print "Applying CAT_2 veto and Triple time for", ifos[1]
+      f=open("snr_two_"+str(opts.gps_start_time)+".pickle","r")
+      snr_two=pickle.load(f)
+      f.close()
+      print("Reading in pickle files of snr HW two")
+      f=open("snr_two_HW_"+str(opts.gps_start_time)+".pickle","r")
+      snr_two_HW=pickle.load(f)
+      f.close()
+      print "Number of triggers after HW veto", len(snr_two_HW)
+      print "Number of triggers after HW veto and accounting for triple time only", len(snr_two)
+      print "Minimum and Maximum snr of triggers are", min(snr_two), max(snr_two)      
+
+      if ifos_three is not None:
+         print ("Reading in pickle files of snr three")
+         print "Applying CAT_2 veto and Triple time for", ifos[2]
+         f=open("snr_three_"+str(opts.gps_start_time)+".pickle","r")
+         snr_three=pickle.load(f)
+         f.close()
+         print ("Reading in pickle files of snr HW three")
+         f=open("snr_three_HW_"+str(opts.gps_start_time)+".pickle","r")
+         snr_three_HW=pickle.load(f)
+         f.close()
+         print "Number of triggers after HW veto", len(snr_three_HW)
+         print "Number of triggers after HW veto and accounting for triple time only", len(snr_three)
+         print "Minimum and Maximum snr of triggers are", min(snr_three), max(snr_three)   
+
+   except:
+      print("Extracting snr one")
+      if vetoes is None:
+         SnglInspiralTriggersone = SnglInspiralUtils.ReadSnglInspiralFromFiles(ifos_one,mangle_event_id=True,verbose=True)
+         snr_vector_one_HW=SnglInspiralTriggersone.get_column(str(stat))
+         print "Number of triggers after HW veto", len(snr_vector_one_HW)
+         snr_vector_one = SnglInspiralTriggersone.veto(vetoes_time[ifos[0]]).get_column(str(stat))
+         print "Number of triggers after HW veto and accounting for triple time only", len(snr_vector_one)
+         print "Minimum and Maximum snr of triggers are", min(snr_vector_one), max(snr_vector_one)
+
+
+      else:
+       # print vetoes, vetoes_time
+         SnglInspiralTriggersone=SnglInspiralUtils.ReadSnglInspiralFromFiles(ifos_one,mangle_event_id=True,verbose=False)
+         print "Applying CAT_2 veto and Triple time for", ifos[0]
+         snr_vector_one_HW=SnglInspiralTriggersone.veto(vetoes[ifos[0]]).get_column(str(stat))
+         print "Number of triggers after HW veto", len(snr_vector_one_HW) 
+         snr_vector_one = SnglInspiralTriggersone.veto(vetoes_time[ifos[0]]).veto(vetoes[ifos[0]]).get_column(str(stat))
+         print "Number of triggers after HW veto and accounting for triple time only", len(snr_vector_one)
+         print "Minimum and Maximum snr of triggers are", min(snr_vector_one), max(snr_vector_one)
+
+      print("Extracting snr two")
+      if vetoes is None:
+         SnglInspiralTriggerstwo=SnglInspiralUtils.ReadSnglInspiralFromFiles(ifos_two,mangle_event_id=True,verbose=True)
+         snr_vector_two_HW=SnglInspiralTriggerstwo.get_column(str(stat))
+         print "Number of triggers after HW veto", len(snr_vector_two_HW)
+         snr_vector_two = SnglInspiralTriggerstwo.veto(vetoes_time[ifos[1]]).get_column(str(stat))
+         print "Number of triggers after HW veto and accounting for triple time only", len(snr_vector_two)
+         print "Minimum and Maximum snr of triggers are", min(snr_vector_two), max(snr_vector_two)
+
+      else: 
+         SnglInspiralTriggerstwo=SnglInspiralUtils.ReadSnglInspiralFromFiles(ifos_two,mangle_event_id=True,verbose=False)
+         print "Applying CAT_2 veto and Triple time for", ifos[1]
+         snr_vector_two_HW=SnglInspiralTriggerstwo.veto(vetoes[ifos[1]]).get_column(str(stat))
+         print "Number of triggers after HW veto", len(snr_vector_two_HW)
+         snr_vector_two = SnglInspiralTriggerstwo.veto(vetoes_time[ifos[1]]).veto(vetoes[ifos[1]]).get_column(str(stat))
+         print "Number of triggers after HW veto and accounting for triple time only", len(snr_vector_two)
+         print "Minimum and Maximum snr of triggers are", min(snr_vector_two), max(snr_vector_two)
+
+      if ifos_three is not None:
+         print ("Extracting snr three")
+         if vetoes is None:
+            SnglInspiralTriggersthree=SnglInspiralUtils.ReadSnglInspiralFromFiles(ifos_three,mangle_event_id=True,verbose=False)
+            print "Applying CAT_2 veto and Triple time for", ifos[2]
+            snr_vector_three_HW=SnglInspiralTriggersthree.get_column(str(stat))
+            print "Number of triggers after HW veto", len(snr_vector_three_HW)
+            snr_vector_three = SnglInspiralTriggersthree.veto(vetoes_time[ifos[2]]).get_column(str(stat))
+            print "Number of triggers after HW veto and accounting for triple time only", len(snr_vector_three)
+            print "Minimum and Maximum snr of triggers are", min(snr_vector_three), max(snr_vector_three)
+
+         else:
+            SnglInspiralTriggersthree=SnglInspiralUtils.ReadSnglInspiralFromFiles(ifos_three,mangle_event_id=True,verbose=False)
+            print "Applying CAT_2 veto and Triple time for", ifos[2]
+            snr_vector_three_HW=SnglInspiralTriggersthree.veto(vetoes[ifos[2]]).get_column(str(stat))
+            print "Number of triggers after HW veto", len(snr_vector_three_HW)
+            snr_vector_three = SnglInspiralTriggersthree.veto(vetoes_time[ifos[2]]).veto(vetoes[ifos[2]]).get_column(str(stat))
+            print "Number of triggers after HW veto and accounting for triple time only", len(snr_vector_three) 
+            print "Minimum and Maximum snr of triggers are", min(snr_vector_three), max(snr_vector_three)
+
+      snr_one = numpy.asarray(snr_vector_one)
+      snr_one_HW=numpy.asarray(snr_vector_one_HW)
+      snr_two = numpy.asarray(snr_vector_two)
+      snr_two_HW=numpy.asarray(snr_vector_two_HW)
+      if ifos_three is not None:
+         snr_three=numpy.asarray(snr_vector_three) 
+         snr_three_HW=numpy.asarray(snr_vector_three_HW)
+
+  # if opts.two_ifo:
+   subplot(211)
+   min_val=numpy.log10(min(snr_one))
+   max_val=numpy.log10(max(snr_one))
+   array=numpy.logspace(min_val,max_val,100)
+   xhist, xtray=numpy.histogram(snr_one, array, new=False)
+   yhist, ytray=numpy.histogram(snr_two, array, new=False)
+   loglog(xtray, xhist, "r", ytray, yhist, "b")
+   legend((str(ifos[0]), str(ifos[1])))
+   ylabel("Numbers")
+   xlabel("snr")
+   subplot(212)
+   min_val=numpy.log10(min(snr_one**2))
+   max_val=numpy.log10(max(snr_one**2))
+   array=numpy.logspace(min_val,max_val,100)
+   xhist, xtray=numpy.histogram(snr_one**2, array, new=False)
+   yhist, ytray=numpy.histogram(snr_two**2, array, new=False)
+   loglog(xtray, xhist, "r", ytray, yhist, "b", linewidth="2")
+   legend((str(ifos[0]), str(ifos[1])))
+   ylabel("Numbers")
+   xlabel("snr squared")
+    #if opts.statistic=="effective_snr":xlabel("effective"+"_"+"snr")
+   savefig(str(ifos[0])+str(ifos[1])+"_histogram.png")
+   clf()
+
+
+   if ifos_three is not None:
+    subplot(311)
+    minone=numpy.log10(min(snr_one_HW)**2)
+    maxone=numpy.log10(max(snr_one_HW)**2)
+    array=numpy.logspace(minone,maxone,100)
+    histone, trayone=numpy.histogram(snr_one**2, array, new=False)
+    histoneHW, trayoneHW=numpy.histogram(snr_one_HW**2, array, new=False)
+    loglog(trayone, histone, "r", trayoneHW, histoneHW, "b", linewidth="2")
+    legend((str(ifos[0])+"HW and Time",str(ifos[0])+"HW"))
+    ylabel("Numbers")
+    if opts.statistic=="snr":xlabel("snr square")
+    if opts.statistic=="effective_snr":xlabel("effective snr square")
+    if opts.statistic=="bankeffective_snr":xlabel("bank effective snr square")
+    subplot(312)
+    mintwo=numpy.log10(min(snr_two_HW)**2)
+    maxtwo=numpy.log10(max(snr_two_HW)**2)
+    array=numpy.logspace(mintwo,maxtwo,100)
+    histtwo, traytwo=numpy.histogram(snr_two**2, array, new=False)
+    histtwoHW, traytwoHW=numpy.histogram(snr_two_HW**2, array, new=False)
+    loglog(traytwo, histtwo, "r", traytwoHW, histtwoHW, "b", linewidth="2")
+    legend((str(ifos[1])+"HW and Time", str(ifos[1])+"HW"))
+    ylabel("Numbers")
+    if opts.statistic=="snr":xlabel("snr square")
+    if opts.statistic=="effective_snr":xlabel("effective snr square")
+    if opts.statistic=="bankeffective_snr":xlabel("bank effective snr square") 
+    subplot(313)
+    minthree=numpy.log10(min(snr_three_HW)**2)
+    maxthree=numpy.log10(max(snr_three_HW)**2)
+    array=numpy.logspace(minthree,maxthree,100)
+    histthree, traythree=numpy.histogram(snr_three**2, array, new=False)
+    histthreeHW, traythreeHW=numpy.histogram(snr_three_HW**2, array, new=False)
+    loglog(traythree, histthree, "r", traythreeHW, histthreeHW, linewidth="2")
+    legend((str(ifos[2])+"HW and Time", str(ifos[2])+"HW"))
+    ylabel("Numbers")
+    if opts.statistic=="snr":xlabel("snr square")
+    if opts.statistic=="effective_snr":xlabel("effective snr square")
+    if opts.statistic=="bankeffective_snr":xlabel("bank effective snr square")
+   #if opts.statistic=="effective_snr":xlabel("effective"+"_"+"snr")
+    savefig(str(ifos[0])+str(ifos[1])+str(ifos[2])+"_"+str(opts.gps_start_time)+"_histogram.png")
+    clf()
+             
+   file = open("snr_one_"+str(opts.gps_start_time)+".pickle","w")
+   pickle.dump(snr_one,file)
+   file.close()
+   file = open("snr_one_HW_"+str(opts.gps_start_time)+".pickle","w")
+   pickle.dump(snr_one_HW,file)
+   file.close()
+   file = open("snr_two_"+str(opts.gps_start_time)+".pickle","w")
+   pickle.dump(snr_two,file)
+   file.close()
+   file = open("snr_two_HW_"+str(opts.gps_start_time)+".pickle","w")
+   pickle.dump(snr_two_HW,file)
+   file.close()
+
+   file.close()
+   if ifos_three is not None:
+      file=open("snr_three_"+str(opts.gps_start_time)+".pickle","w")
+      pickle.dump(snr_three,file)
+      file.close()
+      file=open("snr_three_HW_"+str(opts.gps_start_time)+".pickle","w")
+      pickle.dump(snr_three_HW,file)
+      file.close()
+
+
+   if ifos_three is not None:
+     maxrhosq=max(snr_one)**2+max(snr_two)**2+max(snr_three)**2 
+     return snr_one, snr_two, snr_three, maxrhosq
+   else: 
+     maxrhosq=max(snr_one)**2+max(snr_two)**2
+     return snr_one, snr_two, maxrhosq
+
+############################################################################################
+def Slidetriggerlist(slidefiles,numslides,statistic,vetofile=None,segment=None,verbose=None):
+
+   
+    slideTriggers = []
+
+    inspSlide = SnglInspiralUtils.\
+              ReadSnglInspiralFromFiles(slidefiles,mangle_event_id=True,verbose=False)
+
+    slide_num = range(1 , numslides + 1)
+    slide_num.extend(range(-numslides, 0))
+
+    for slide in slide_num:
+      this_slide = {}
+      this_slide["slide_num"] = slide
+      try:
+        this_slide["sngl_trigs"] = inspSlide.getslide(slide)
+      except:
+        this_slide["sngl_trigs"] = []
+    # make coincs
+      this_slide["coinc_trigs"] = \
+        CoincInspiralUtils.coincInspiralTable(this_slide["sngl_trigs"],statistic)
+
+
+    # add slide to list
+      slideTriggers.append(this_slide)
+      if opts.verbose:
+        print (str(slide) + ' ' + str(len(this_slide["sngl_trigs"])))
+
+
+    return slideTriggers
+
+
+#########################################################################################
+# Integration Algorithm
+#########################################################################################
+
+
+def integration2D(snr_vect_one, snr_vect_two, array, rhoc):
+
+   xhist,xtray = numpy.histogram(snr_vect_one,array,new=False)
+   yhist,ytray = numpy.histogram(snr_vect_two,array,new=False)
+   
+   integral = 0.0
+   for i in range(len(array)):
+     for j in range(len(array)):
+         try: 
+           if ( array[i] + array[j] < rhoc ):
+            integral += xhist[i]*yhist[j]
+         except:rhocsq==0.0
+
+   return  integral
+
+###########################################################################################
+
+def integration3D(snr_vect_one, snr_vect_two, snr_vect_three, array, rhoc):
+
+   xhist,xtray = numpy.histogram(snr_vect_one,array,new=False)
+   yhist,ytray = numpy.histogram(snr_vect_two,array,new=False)
+   zhist,ztray = numpy.histogram(snr_vect_three,array,new=False)
+
+   integral = 0.0
+   for i in range(len(array)):
+     for j in range(len(array)):
+       for k in range(len(array)):
+         try: 
+           if ( array[i] + array[j] + array[k]< rhoc ):
+            integral += xhist[i]*yhist[j]*zhist[k]
+         except:rhocsq==0.0
+
+   return  integral
+###########################################################################################
+# This is the meat of the program
+###########################################################################################
+
+def HistogramConstructor(InspTriggers, SlideTriggers, slideVector, stat, nbins, maxrhosq, ifocoinc=None, maxsnr=None, minsnr=None, remove_h1h2=None):
+  
+  """This function is the main meat of this code. This generates the cummulative histogram
+     for the zerolag triggers and timeslides for all ifo coincs.
+  """
+  if opts.veto_file: 
+
+    xmldoc = utils.load_filename(opts.veto_file, gz=opts.veto_file.endswith("gz"))
+    vetoes_zerolag = ligolw_segments.segmenttable_get_by_name(xmldoc, "vetoes")
+    vetoes_zerolag.coalesce()
+
+    seg = segments.segmentlist(
+        [segments.segment(date.LIGOTimeGPS(opts.gps_start_time),
+                      date.LIGOTimeGPS(opts.gps_end_time))])
+    for key in vetoes_zerolag.keys():
+      vetoes_zerolag[key] &= seg  
+ 
+    segs = segments.segmentlistdict()
+    segs[ifocoinc] = seg & (~vetoes_zerolag).intersection(ifocoinc)
+    InspTriggers = InspTriggers.vetoed(segs[ifocoinc])
+    coincTriggers = CoincInspiralUtils.coincInspiralTable(InspTriggers,statistic)
+  
+    vetoes_slides = ligolw_segments.segmenttable_get_by_name(xmldoc, "vetoes")
+    vetoes_slides.coalesce()
+
+    slide_num = range(1 , opts.num_slides + 1)
+    slide_num.extend(range(-opts.num_slides, 0))
+
+    slideSegs={}
+    thisSlide={}
+    slideTriggers=[]
+    for slide in slide_num:
+       slideSegs[slide] = segments.segmentlistdict()
+       slides = slideVector.copy()
+       thisSlide["slide_num"] = slide
+       thisSlide["segs"] = slideSegs[slide]
+       thisSlide["sngl_trigs"] = {}
+       thisSlide["coinc_trigs"]={}
+  
+       for key in slides.keys():
+          slides[key] *= slide
+       slideVetoes=SnglInspiralUtils.slideSegListDictOnRing(seg[0], vetoes_slides, slides)
+       slideSegs[slide][ifocoinc]= seg & (~slideVetoes).intersection(ifocoinc)        
+ 
+       SnglInspiralUtils.slideTriggersOnRings(SlideTriggers[slide]["sngl_trigs"], seg, slides)
+       thisSlide["sngl_trigs"][ifocoinc] = SlideTriggers[slide]["sngl_trigs"].vetoed(thisSlide["segs"][ifocoinc])    
+       slideTriggers.append(CoincInspiralUtils.coincInspiralTable(thisSlide["sngl_trigs"][ifocoinc],statistic))
+       slide_trig_list=[s.coinctype(ifocoinc) for s in slideTriggers]
+  else:
+    
+    coincTriggers = CoincInspiralUtils.coincInspiralTable(InspTriggers,statistic)
+    slide_trig_list=[s["coinc_trigs"] for s in SlideTriggers]
+    slide_trig_list=[s.coinctype(ifocoinc) for s in slide_trig_list]
+ 
+  internal_min = numpy.inf
+  internal_max = -numpy.inf
+
+  coinc_snr=coincTriggers.coinctype(ifocoinc).getstat()
+  # read in slide triggers
+  slide_snr_list = []
+  for this_slide in slide_trig_list:
+      slide_snr=this_slide.getstat()
+#      slide_snr_list.append(slide_snr)
+      if len(slide_snr) > 0:
+        slide_snr_list.append(slide_snr)
+        internal_max = max(internal_max, slide_snr.max())
+        internal_min = min(internal_min, slide_snr.min())
+
+  #max_val = max(internal_max,opts.max_snr)
+  #min_val = min(internal_min,opts.min_snr)
+  max_val= opts.max_snr
+  min_val= opts.min_snr
+
+  x_start=numpy.log10(min_val**2)
+  x_end=numpy.log10(max_val**2)
+  xbins=numpy.logspace(x_start,x_end,3*nbins)
+  numzero,zerobin=numpy.histogram(coinc_snr**2,xbins,new=False)
+  cumzero=numzero[::-1].cumsum()[::-1]
+  
+
+  if slide_trig_list:
+    cum_dist_slide = []
+    cumdistfor=[]
+    cumdistrev=[]
+    for slide_snr in slide_snr_list:
+        num_slide, bin = numpy.histogram(slide_snr**2,xbins,new=False)
+        cum_slide_for=num_slide.cumsum()
+        cum_slide_for_norm=cum_slide_for*1.0/max(cum_slide_for)
+        cum_slide_rev_norm=1.0-cum_slide_for_norm 
+        cum_slide = num_slide[::-1].cumsum()[::-1]
+        cum_dist_slide.append(cum_slide)
+        cumdistfor.append(cum_slide_for_norm)
+        cumdistrev.append(cum_slide_rev_norm)
+    cum_dist_slide = numpy.array(cum_dist_slide)
+    slide_mean = cum_dist_slide.mean(axis=0)
+    slide_std = cum_dist_slide.std(axis=0)
+    Cum_for_norm=numpy.asarray(cumdistfor).mean(axis=0)
+    Cum_rev_norm=numpy.asarray(cumdistrev).mean(axis=0)
+   
+  xu=abs(Cum_for_norm -0.2).argmin()
+  xl=abs(Cum_rev_norm -0.2).argmin() 
+  print xu, xl
+  print "xbins[xu], xbins[xl]", xbins[xu], xbins[xl]
+
+  step=numpy.log10(xbins[1])-numpy.log10(xbins[0])
+  x2=numpy.log10(maxrhosq)
+  u=numpy.arange(-1,10,step)
+  xarray=10**u
+  xreg3=numpy.logspace(x_end+0.0005,x2+1.0,nbins)  
+  rhosqarray=numpy.concatenate((xbins,xreg3))
+  return cumzero, slide_mean, slide_std, rhosqarray, xarray, xbins, xu, xl
+#########################################################################################
+# Plotter 
+#########################################################################################
+
+def plotter(xdata, xdataextend, scalefactor_single, scalefactor_mean, zerolagdata, bgdata, xlow, xhigh, bgextend, bgextend_single, ifocoinc, xmin=None, xmax=None, ymin=None, ymax=None):
+     ifoscoinc=""
+     for ifos in [ifocoinc][0]:
+        ifoscoinc += str(ifos)
+    
+     bgdatapos=[]
+     for val in bgdata:
+       if val>0:
+         bgdatapos.append(val)
+     bgdatapos=numpy.asarray(bgdatapos)
+     xvect=bgdatapos[xlow:]
+     yvect=bgextend_single[xlow:len(bgdatapos)]*1.0/scalefactor_single
+   
+     #xvect=bgdatapos[len(bgdatapos)-3:]
+     #yvect=bgextend_single[len(bgdatapos)-3:len(bgdatapos)]*1.0/scalefactor_single
+     n=len(xvect)
+     Sfit, Cfit=chisqfit(xvect,yvect)
+     print "Sfit, Cfit", Sfit, Cfit
+
+
+     cfactor=bgdata*1.0/bgextend_single[:len(bgdata)]
+     cindexlist=[]
+     cfactordiff=cfactor[0]-cfactor
+     for i in range(len(cfactordiff)):
+        if abs(cfactordiff[i]) >0.5:
+          cindexlist.append(i)
+     cindex=cindexlist[0]
+ 
+     errorplus=bgdatapos+numpy.sqrt(bgdatapos)
+     errorminus=bgdatapos-numpy.sqrt(bgdatapos)
+     errorminus=where(errorminus<=0, 1e-5, errorminus)
+     loglog(xdata, zerolagdata+10**(-15),"b^",markersize=12)
+     hold(True)
+     loglog(xdata, bgdata, "r+", markersize=12)
+     hold(True)
+     loglog(xdataextend, bgextend_single, "kx", markersize=12)
+     hold(True)
+     fill_between(xdata[:len(bgdatapos)], errorminus, errorplus, alpha=0.2, facecolor="black")
+     legend(("Zerolag","Time slides","EBG on single bin"),loc=0)
+     ylabel("Cumulative Number")
+     if opts.statistic=="snr":xlabel("snr square")
+     if opts.statistic=="effective_snr":xlabel("effective snr square")
+     if opts.statistic=="bankeffective_snr":xlabel("bank effective snr square")
+     title("Cumulative number above a given statistics for "+ ifoscoinc + " coincs with proper Time")
+     ylim((10**(-9),10*max(max(zerolagdata),max(bgdata),max(bgextend_single))))
+     xlim((min(xdataextend), 10**3))
+     savefig(ifoscoinc+"_cumulative_histogram_"+opts.ifo_times+"_"+opts.user_tag+"_"+opts.statistic+"_"+str(opts.gps_start_time)+".png")
+     clf()
+
+     bgextendfit=Sfit*bgextend_single*1.0/scalefactor_single
+     #bgextendfit=numpy.concatenate((bgextend_single[:xlow],Sfit*bgextend_single[xlow:]*1.0/scalefactor_single))
+     #bgextendfit=numpy.concatenate((bgextend_single[:len(bgdatapos)-3],Sfit*bgextend_single[len(bgdatapos)-3:]*1.0/scalefactor_single))
+ 
+     loglog(xdata, zerolagdata+10**(-15),"b^",markersize=12)
+     hold(True)
+     loglog(xdata, bgdata, "r+", markersize=12)
+     hold(True)
+     loglog(xdataextend, bgextendfit, "kx", markersize=12)
+     hold(True)
+     fill_between(xdata[:len(bgdatapos)], errorminus, errorplus, alpha=0.2, facecolor="black")
+     legend(("Zerolag","Time slides","EBG on corrected bin"),loc=0)
+     ylabel("Cumulative Number")
+     if opts.statistic=="snr":xlabel("snr square")
+     if opts.statistic=="effective_snr":xlabel("effective snr square")
+     if opts.statistic=="bankeffective_snr":xlabel("bank effective snr square")
+     title("Cumulative number above a given statistics for "+ ifoscoinc + " coincs with proper Time")
+     ylim((10**(-9),10*max(max(zerolagdata),max(bgdata),max(bgextend_single))))
+     xlim((min(xdataextend), 10**3))
+     savefig(ifoscoinc+"_cumulative_histogram_chisqfit_"+opts.ifo_times+"_"+opts.user_tag+"_"+opts.statistic+"_"+str(opts.gps_start_time)+".png")   
+
+     clf()
+
+
+#######################################################################################
+# Partitioning the Scale factor as a function of SNR.
+#########################################################################################
+
+def PartitionPlotter(SlideMean, SlideStd, Proddist, index, Zerolagdata, xbins, xdataextend, ifocoinc):
+  
+    """ This function generates a statistic dependent Scale factor and does the extrapolation """
+       
+    ifoscoincs=""
+    for ifos in [ifocoinc][0]:
+       ifoscoincs +=str(ifos) 
+
+
+    loglog(xdataextend, Proddist, "r+", markersize=12)
+    hold(True)
+    ylabel("Integral")
+    if opts.statistic=="snr":xlabel("snr square")
+    if opts.statistic=="effective_snr":xlabel("effective snr square")
+    if opts.statistic=="bankeffective_snr":xlabel("bankeffective snr square")
+    ylim(0.1*min(Proddist), 10*max(Proddist))
+    xlim(min(xdataextend),1000)
+    title((str(len(ifocoinc))+"D integral vs statistics for "+ ifoscoincs + " coincs"))
+    savefig(ifoscoincs+"_"+opts.ifo_times+"_"+opts.user_tag+"_"+opts.statistic+"_"+str(opts.gps_start_time)+"_Integral.png")
+    clf()
+
+
+######################################################################################################################
+# Common Usage
+######################################################################################################################
+
+def chisqfit(yvect, Prodvect):
+   """ This function calculates the chi square value for a series of points. 
+       determines the best value of scalefactor and also computes two possible values 
+       of scale factors such that chisq*1.0/dof=0.5.
+
+       chisq= a*alpha**2 - 2*b*alpha + c
+
+   """
+   a=sum(1.0/yvect**2)
+   b=sum(Prodvect*1.0/yvect)
+   c=sum(Prodvect*1.0/yvect**2)
+   d=sum(1.0/yvect)
+   e=sum(Prodvect**2*1.0/yvect**2)
+
+ 
+   C=(e*d-b*c)*1.0/(e*a-c**2)
+   S=(a*b-c*d)*1.0/(e*a-c**2)
+                            
+   return S, C**2
+    
+#####################################################################################################################
+
+
+
+
+usage = """
+        Tries to find the ratio
+        """
+
+def parse_command_line():
+
+  """
+  Parser function dedicated
+  """
+  parser = OptionParser(version=git_version.verbose_msg)
+  parser.add_option("-i", "--cache-file", help="read thinca filenames from cache input file")
+  parser.add_option("-V","--veto-file",action="store",type="string", default=None,metavar=" FNAME",\
+      help="discard triggers in segments from FNAME (segwizard format)")
+  parser.add_option("","--times-vetofile",action="store",type="string", default=None,metavar=" FNAME",\
+      help="discard triggers in segments from FNAME (segwizard format)") 
+  parser.add_option("","--gps-start-time",action="store", type="int", metavar="GPSSTARTTIME",\
+      help="gps start time used in the figure and output file names")
+  parser.add_option("","--gps-end-time",action="store", type= "int", metavar="GPSENDTIME",\
+      help="gps end time used in the figure and output file names")
+  parser.add_option("-P","--output-path",action="store",\
+      type="string",default="",  metavar="PATH",\
+      help="path where the figures would be stored")
+  parser.add_option("-j","--two-ifo",action="store_true",\
+      default=False,help="sets ifo times for which plots will be made (e.g. H1 H2 or L1)" )
+  parser.add_option("-k","--three-ifo",action="store_true",\
+      default=False,help="sets ifo times for which plots will be made (e.g. H1 H2 or L1)" )
+  parser.add_option("-O","--enable-output",action="store_true",\
+      default=False,help="enable the generation of the html and cache documents")
+  parser.add_option("","--remove-h1h2",action="store_true",default=False,\
+      help="remove H1H2 triggers (e.g. when H1 and H2 are slid together)" )
+  parser.add_option("-v","--verbose",action="store_true",\
+      default=False,help="print information" )
+  parser.add_option("-s","--scalefactor",action="store_true",\
+      default=False,help="Calculates the scale factor" )
+  parser.add_option("-E","--extendbg",action="store_true",\
+      default=False,help="Estimates the background from the prouct the individual rates of single INSPIRALS and \
+            the scaling factor according to the relation: \
+            R_b=R_1*R_2*scale" )
+  parser.add_option("","--dvalue",action="store_true",\
+      default=False,help="Calculates the average of scale factors where time slides \
+                          fall below 1.0" )
+  parser.add_option("","--standard-method",action="store_true",\
+      default=False,help="Determines the integration using standard histogram Scheme" )
+  parser.add_option("","--glob-first",action="store",type="string",\
+      default=None, metavar=" GLOB-FIRST",help="GLOB of thinca files to read" )
+  parser.add_option("","--globsngls-first",action="store",type="string",\
+      default=None, metavar=" GLOBSNGLS",help="GLOB of INSPIRAL/SIREfiles to read" )
+  parser.add_option("-u","--user-tag",action="store",type="string",\
+      default=None, metavar=" USERTAG",\
+      help="The user tag used in the name of the figures" )
+  parser.add_option("","--ifo-tag",action="store",type="string",\
+      default=None, metavar=" IFOTAG",\
+      help="The ifo tag used in the name of the figures (e.g. SECOND_H1H2L1)")      
+  parser.add_option("","--ifo-times",action="store",type="string",\
+      default=None,metavar="IFOS",\
+      help="sets ifo times for which plots will be made (e.g. H1H2L1)" )
+  # options used in sieving the cache file, in case it is given    
+  parser.add_option("","--coinc-pattern",
+    help="sieve the cache for zero-lag coincidence files with this pattern")
+  parser.add_option("","--slide-pattern",
+    help="sieve the cache for time-slide files with this pattern")
+  parser.add_option("","--sngls-pattern",
+    help="sieve the cache for single ifos files with this pattern")
+  parser.add_option("","--match", action="store_true", default=False,
+      help="Apply sieve patterns exactly (no leading and trailing *s)")
+
+  #options that set parameters specific to the plots 
+
+  parser.add_option("-L","--cluster-window",action="store",type="int",\
+      default=0,\
+      metavar=" SEC", help="length of time over which to cluster triggers" )
+  parser.add_option("-x","--min-snr",action="store",type="float",\
+      default=0, metavar=" MIN_SNR",help="minimum value of snr on plot" )
+  parser.add_option("-X","--max-snr",action="store",type="float",\
+      default=0, metavar=" MAX_SNR",help="maximum value of snr on plot" )
+  parser.add_option("-A","--g1-triggers",action="store_true",default=False,\
+      help="input files contain triggers from G1" )
+  parser.add_option("-B","--h1-triggers",action="store_true",default=False,\
+      help="input files contain triggers from H1" )
+  parser.add_option("-C","--h2-triggers",action="store_true",default=False,\
+      help="input files contain triggers from H2" )
+  parser.add_option("-D","--l1-triggers",action="store_true",default=False,\
+      help="input files contain triggers from L1" )
+  parser.add_option("-U","--v1-triggers",action="store_true",default=False,\
+      help="input files contain triggers from V1" )
+  parser.add_option("","--xmin",action="store",type="float",\
+      default=0, metavar=" XMIN",help="minimum value of x snr on plot" )
+  parser.add_option("","--clevel",action="store",type="float",\
+      default=0, metavar=" CLEVEL",help="Confidence level on cummulative probability" )
+  parser.add_option("","--xmax",action="store",type="float",\
+      default=0, metavar=" XMAX",help="maximun value of x snr on plot" )
+  parser.add_option("","--ymin",action="store",type="float",\
+      default=0, metavar=" YMIN",help="minimum value of y snr on plot" )
+  parser.add_option("","--ymax",action="store",type="float",\
+      default=0, metavar=" YMAX",help="maximum  value of y snr on plot" )  
+  parser.add_option("-S","--statistic",action="store",default='snr',\
+      type="string",\
+      help="choice of statistic used in making plots, valid arguments are: "
+            "snr (DEFAULT), snr_over_chi, effective_snr, " 
+            "bitten_l, bitten_lsq") 
+  parser.add_option("","--coinc-statistic",action="store",default='snr',\
+      type="string",\
+      help="choice of statistic used in making plots, valid arguments are: "
+            "snr (DEFAULT), snr_over_chi, effective_snr, "
+            "bitten_l, bitten_lsq")
+  parser.add_option("-n","--nbins",action="store",type="int",default=20,\
+      metavar=" NBINS", help="number of bins for the histogram plots" )
+  parser.add_option("-N","--num-slides",action="store",type="int",default=0,\
+      metavar=" NUM_SLIDES",help="number of time slides performed" )
+   
+  (options,args) = parser.parse_args()
+
+  # test the input options
+
+  return options, sys.argv[1:]
+
+
+opts, args = parse_command_line()
+
+mangleEventID = True
+
+#############################################################################
+
+if not opts.glob_first  and not opts.cache_file:
+  print >>sys.stderr, \
+      "Must specify a --glob of files or --cache-input file to read"
+  print >>sys.stderr, "Enter 'plotextrapolate --help' for usage"
+  sys.exit(1)
+
+
+
+# check that statistic is OK:
+if (opts.statistic != 'snr') and (opts.statistic != 'snr_over_chi') and (opts.statistic != 'effective_snr') and (opts.statistic != 'bankeffective_snr'):
+  print >>sys.stderr, "--statistic must be one of"
+  print >>sys.stderr, "snr or snr_over_chi or effective_snr or bankeffective_snr"
+  sys.exit(1)
+
+############################################################################
+opts = InspiralUtils.initialise(opts, __name__, git_version.verbose_msg)
+colors = InspiralUtils.colors
+figure_number = 0  # used for the figure label (showplot)
+fnameList = []   # use for the cache file
+tagList= []   # use for the cache file
+
+################################################################################
+
+statistic=CoincInspiralUtils.coincStatistic(opts.statistic)
+
+################################################################################
+# determine IFOs and IFO combos in play
+
+ifo_list = [ifo for ifo in ("G1", "H1", "H2", "L1", "V1") \
+            if getattr(opts, "%s_triggers" % ifo.lower())]
+ifo_non_h = [ifo for ifo in ifo_list if ifo[0] != "H"]
+
+ifo_coincs = []
+for num_ifos in range(2, len(ifo_list) + 1):
+  ifo_coincs.extend(list(glue.iterutils.choices(ifo_list, num_ifos)))
+
+
+slideVector={}
+for ifo in ifo_list:
+  if ifo == "H1":  slideVector[ifo] = 0
+  if ifo == "H2":  slideVector[ifo] = 10
+  if ifo == "L1":  slideVector[ifo] = 5
+  if ifo == "V1":  slideVector[ifo] = 15
+
+
+
+################################################################################
+# glob the list of files to read in
+################################################################################
+slidefiles_first = []
+coincfiles_first = []
+offsourcefiles = []
+
+if opts.glob_first is not None or opts.globsngls_first is not None:
+  if opts.glob_first is not None:
+    allfiles_first = []
+    for gl in opts.glob_first.split(" "):
+      allfiles_first.extend(glob.glob(gl))
+    if len(allfiles_first) < 1:
+      print >>sys.stderr, "The glob for " + opts.glob_first + " returned no files" 
+      sys.exit(1)
+
+    for file in allfiles_first:
+      if 'SLIDE' in file:
+        slidefiles_first.append(file)
+      else:
+        coincfiles_first.append(file)
+
+
+  if opts.globsngls_first is not None:
+    allfiles_sngls_first = []
+    for gl in opts.globsngls_first.split(" "):
+      allfiles_sngls_first.extend(glob.glob(gl))
+
+
+    first_snglifolist_one=[]
+    first_snglifolist_two=[]
+    first_snglifolist_three=[]
+    for file in  allfiles_sngls_first:
+      if ifo_list[0] in file:
+         first_snglifolist_one.append(file)
+      elif ifo_list[1] in file:
+         first_snglifolist_two.append(file)
+      elif ifo_list[2] in file:
+         first_snglifolist_three.append(file)
+ 
+
+   
+
+if opts.cache_file is not None:
+    allfilesCache = lal.Cache.fromfile(open(opts.cache_file))
+
+    sieved_cache = allfilesCache.sieve(description=opts.coinc_pattern,exact_match="True").sieve(ifos=opts.ifo_times,exact_match="True")
+    coincfiles_first = sieved_cache.pfnlist()
+            
+    sieved_cache = allfilesCache.sieve(description=opts.slide_pattern,exact_match="True").sieve(ifos=opts.ifo_times,exact_match="True")
+    slidefiles_first = sieved_cache.pfnlist()
+
+
+    if opts.two_ifo:
+       first_snglifolist_one=allfilesCache.sieve(description=opts.sngls_pattern, exact_match="True").sieve(ifos=ifo_list[0],exact_match="True").checkfilesexist()[0].pfnlist()
+       first_snglifolist_two=allfilesCache.sieve(description=opts.sngls_pattern, exact_match="True").sieve(ifos=ifo_list[1],exact_match="True").checkfilesexist()[0].pfnlist()
+    if opts.three_ifo:
+       first_snglifolist_one=allfilesCache.sieve(description=opts.sngls_pattern, exact_match="True").sieve(ifos=ifo_list[0],exact_match="True").checkfilesexist()[0].pfnlist()
+       first_snglifolist_two=allfilesCache.sieve(description=opts.sngls_pattern, exact_match="True").sieve(ifos=ifo_list[1],exact_match="True").checkfilesexist()[0].pfnlist()
+       first_snglifolist_three=allfilesCache.sieve(description=opts.sngls_pattern, exact_match="True").sieve(ifos=ifo_list[2],exact_match="True").checkfilesexist()[0].pfnlist()
+
+
+  # check if the file lists are not empty
+    if not (coincfiles_first or slidefiles_first):
+       print >>sys.stdout, "No files match your description."
+       sys.exit(0) 
+
+################################################################################
+# Perform vetoes.
+################################################################################
+# read in the veto files
+
+if opts.veto_file:
+  xmldoc = utils.load_filename(opts.veto_file, gz=opts.veto_file.endswith("gz"))
+  vetoes = ligolw_segments.segmenttable_get_by_name(xmldoc, "vetoes")
+  vetoes.coalesce()
+
+  seg = segments.segmentlist(
+      [segments.segment(date.LIGOTimeGPS(opts.gps_start_time),
+                      date.LIGOTimeGPS(opts.gps_end_time))])
+  for key in vetoes.keys():
+    vetoes[key] &= seg
+  
+
+if opts.times_vetofile:
+  seg = segments.segmentlist(
+      [segments.segment(date.LIGOTimeGPS(opts.gps_start_time),
+                      date.LIGOTimeGPS(opts.gps_end_time))])
+
+  xmldoc = utils.load_filename(opts.times_vetofile, gz=opts.times_vetofile.endswith("gz"))
+  timevetoes = ligolw_segments.segmenttable_get_by_name(xmldoc, "vetoes")
+  timevetoes.coalesce()
+
+  for key in timevetoes.keys():
+     timevetoes[key] &= seg
+
+##############################################################################
+
+SlideTriggers=Slidetriggerlist(slidefiles_first,opts.num_slides,statistic)
+
+################################################################################
+if opts.three_ifo:
+  if opts.veto_file:
+    snr_vector_one, snr_vector_two,snr_vector_three, maxrhosq = sngls_snr_ratio(first_snglifolist_one, first_snglifolist_two, opts.statistic, ifo_list, timevetoes, first_snglifolist_three, vetoes)
+  else:
+   snr_vector_one, snr_vector_two,snr_vector_three, maxrhosq = sngls_snr_ratio(first_snglifolist_one, first_snglifolist_two, opts.statistic, ifo_list, timevetoes, first_snglifolist_three)
+if opts.two_ifo:
+  if opts.veto_file:
+    snr_vector_one, snr_vector_two, maxrhosq = sngls_snr_ratio(first_snglifolist_one, first_snglifolist_two, opts.statistic, ifo_list, timevetoes, None, vetoes)
+  else:
+    snr_vector_one, snr_vector_two, maxrhosq = sngls_snr_ratio(first_snglifolist_one, first_snglifolist_two, opts.statistic, ifo_list, timevetoes)
+#################################################################################
+InspTriggers = None
+coincTriggers = CoincInspiralUtils.coincInspiralTable()
+   
+InspTriggers = SnglInspiralUtils.\
+                 ReadSnglInspiralFromFiles(coincfiles_first,
+                                           mangle_event_id = mangleEventID)
+  
+
+if opts.two_ifo:
+  vector_one=snr_vector_one**2
+  vector_two=snr_vector_two**2
+if opts.three_ifo:
+  vector_one=snr_vector_one**2
+  vector_two=snr_vector_two**2
+  vector_three=snr_vector_three**2
+
+#########################################################################################
+# Calculating scale factor and Extrapolation of the Background
+#########################################################################################
+  
+def BackgroundExtrapolator(InspTriggers, SlideTriggers, ifo_vector_one, ifo_vector_two, statistic, nbins, maxrhosq, maxsnr, minsnr, ifocoincs, ifo_vector_three=None):
+
+   """This is the second most important function in this code. This function uses the output of the HistogramConstructor
+       to extrapolate the background. It can determine the type of coincidence and does a 2D or 3D integration depending on 
+       the type. For example, if only --h1-trigger --l1-trigger is specified in the command line, it will construct only 
+       one coinc (double), do 2D integration. However if --h1-trigger --h2-trigger --l1-trigger is specified, it will construct
+       two double coincs(H1L1, H2L1) and one triple (H1H2L1). It will then do the integration accordingly.
+   """ 
+
+   if len(ifocoincs)>2:
+     
+   
+     cumzero, slide_mean, slide_std, rhosqarray, xarray, xbins, xlow, xhigh =HistogramConstructor(InspTriggers, SlideTriggers, slideVector, statistic, nbins, maxrhosq, ifocoincs, maxsnr, minsnr)
+     
+     if opts.verbose: print "This is a triple coincidence in " + str(ifocoincs[0]) + str(ifocoincs[1]) + str(ifocoincs[2])
+
+     if opts.standard_method:
+       statistic=CoincInspiralUtils.coincStatistic(opts.statistic)
+       coincTriggers = CoincInspiralUtils.coincInspiralTable(InspTriggers,statistic)
+       coincs_H1H2=coincTriggers.coinctype(["H1","H2"]).getstat()
+       if opts.verbose:
+         print "Doing 3 Dimensional Integration using standard histograms"
+         print "This part might take time.."
+         print "max sngl one", max(ifo_vector_one)
+         print "max sngl two", max(ifo_vector_two)
+         print "max sngl three", max(ifo_vector_three)
+
+       proddist=[]
+       for rhocsq in rhosqarray:
+         #Integ=integration2D(coincs_H1H2**2, ifo_vector_three, xarray ,rhocsq)
+         #Integ=integration2D(ifo_vector_one, coincs_H1H2**2, xarray ,rhocsq)
+         Integ=integration3D(ifo_vector_one, ifo_vector_two, ifo_vector_three, xarray ,rhocsq)
+         proddist.append(Integ)
+
+     proddist=numpy.asarray(proddist)  
+     proddist=proddist[-1] - proddist
+
+     if opts.verbose:
+       print "Done"
+       print "Determining scale factor"
+
+
+     Scale=slide_mean/(1e-6+proddist[:len(xbins)])
+
+     Scale_nonzero=[]
+     for val in Scale:
+       if val >0:
+         Scale_nonzero.append(val)
+       
+     Scale_nonzero=numpy.asarray(Scale_nonzero)
+ 
+     scale_mean=Scale_nonzero.mean(axis=0)
+     scale_std=Scale_nonzero.std(axis=0)
+
+     Scale_single=slide_mean[0]*1.0/proddist[0]
+   
+     Scale_diff=Scale-max(Scale)
+     index=abs(Scale_diff).argmin()
+     
+     if opts.verbose:
+       print Scale_single
+       print "Done"
+       print "Extrapolating the background"
+       
+     slide_extend=scale_mean*proddist
+     slide_extend_single=Scale_single*proddist
+
+     if opts.verbose: print "Done"
+    
+   else: 
+
+     if opts.verbose: print "This is a double coincidence in " + str(ifocoincs[0]) + str(ifocoincs[1])
+    
+     cumzero, slide_mean, slide_std, rhosqarray, xarray, xbins, xlow, xhigh=HistogramConstructor(InspTriggers, SlideTriggers, slideVector, statistic, nbins, maxrhosq, ifocoincs, maxsnr, minsnr)
+     
+     if opts.standard_method:
+       if opts.verbose:
+         print "Doing 2 Dimensional Integration using standard histograms"
+         print "This part might take time.."
+         print "max sngl one", max(ifo_vector_one)
+         print "max sngl two", max(ifo_vector_two)
+
+       proddist=[]
+       for rhocsq in rhosqarray:
+         Integ=integration2D(ifo_vector_one, ifo_vector_two, xarray ,rhocsq)
+         proddist.append(Integ)
+
+     proddist=numpy.asarray(proddist)
+     proddist=proddist[-1] - proddist
+     
+
+     if opts.verbose:
+       print "Done"
+       print "Determining scale factor"
+
+
+     Scale=slide_mean/(1e-6+proddist[:len(xbins)])
+
+     Scale_nonzero=[]
+     for val in Scale:
+       if val >0:
+         Scale_nonzero.append(val)
+
+     Scale_nonzero=numpy.asarray(Scale_nonzero)
+
+     scale_mean=Scale_nonzero.mean(axis=0)
+     scale_std=Scale_nonzero.std(axis=0)
+
+     Scale_single=slide_mean[0]*1.0/proddist[0]
+
+     Scale_diff=Scale-max(Scale)
+
+     index=abs(Scale_diff).argmin()
+     
+     if opts.verbose:
+       print Scale_single
+       print "Done"
+       print "Extrapolating the background"
+   
+     slide_extend=scale_mean*proddist 
+     slide_extend_single=Scale_single*proddist
+
+     if opts.verbose:print "Done" 
+
+
+   return cumzero, slide_mean, slide_extend, slide_extend_single, slide_std, xbins, rhosqarray, Scale_single, scale_mean, proddist, index, xlow, xhigh
+
+  
+##############################################################################################
+# Generating plots 
+##############################################################################################
+
+if opts.extendbg:
+
+  """This is a very crucial step. In this section we identify the coinc type and iterate over the sngl snr vectors accordingly.
+  """
+
+  if opts.three_ifo:
+     for coincs in ifo_coincs:
+       if len(coincs)>2:
+         cumzero, slide_mean, slide_extend, slide_extend_single, slide_std, xbins, rhosqarray, Scale_single, Scale_Mean, proddist, index, xlow, xhigh = BackgroundExtrapolator(InspTriggers, SlideTriggers, vector_one, vector_two, opts.statistic, opts.nbins, maxrhosq, opts.max_snr, opts.min_snr, coincs, vector_three)
+         plotter(xbins, rhosqarray, Scale_single, Scale_Mean, cumzero, slide_mean, xlow, xhigh, numpy.asarray(slide_extend), numpy.asarray(slide_extend_single), coincs)
+         PartitionPlotter(slide_mean, slide_std, proddist, index, cumzero, xbins, rhosqarray, coincs)
+        
+       elif (coincs[0]=="H1" and coincs[1]=="H2"): 
+         print "The two participating interferometers are not slid in time, hence the background can't be extrapolated"
+         print " Checking for other coinc type" 
+
+       elif (coincs[0]=="H1" and coincs[1]=="L1"): 
+         cumzero, slide_mean, slide_extend, slide_extend_single, slide_std, xbins, rhosqarray, Scale_single,  Scale_Mean, proddist, index, xlow, xhigh = BackgroundExtrapolator(InspTriggers, SlideTriggers, vector_one, vector_three, opts.statistic, opts.nbins, maxrhosq, opts.max_snr, opts.min_snr, coincs)
+         plotter(xbins, rhosqarray, Scale_single, Scale_Mean, cumzero, slide_mean, xlow, xhigh, numpy.asarray(slide_extend), numpy.asarray(slide_extend_single), coincs)
+         PartitionPlotter(slide_mean, slide_std, proddist, index, cumzero, xbins, rhosqarray, coincs)     
+
+       elif (coincs[0]=="H2" and coincs[1]=="L1"):
+         cumzero, slide_mean, slide_extend, slide_extend_single, slide_std, xbins, rhosqarray, Scale_single, Scale_Mean, proddist, index, xlow, xhigh = BackgroundExtrapolator(InspTriggers, SlideTriggers, vector_two, vector_three, opts.statistic, opts.nbins, maxrhosq, opts.max_snr, opts.min_snr, coincs)
+         plotter(xbins, rhosqarray, Scale_single, Scale_Mean, cumzero, slide_mean, xlow, xhigh, numpy.asarray(slide_extend), numpy.asarray(slide_extend_single), coincs)
+         PartitionPlotter(slide_mean, slide_std, proddist, index, cumzero, xbins, rhosqarray, coincs)
+
+
+  if opts.two_ifo:
+
+     for coincs in ifo_coincs:
+       cumzero, slide_mean, slide_extend, slide_extend_single, slide_std, xbins, rhosqarray, Scale_single, Scale_Mean, proddist, index, xlow, xhigh = BackgroundExtrapolator(InspTriggers, SlideTriggers, vector_one, vector_two, opts.statistic, opts.nbins, maxrhosq, opts.max_snr, opts.min_snr, coincs)
+       plotter(xbins, rhosqarray, Scale_single, Scale_Mean, cumzero, slide_mean, xlow, xhigh, numpy.asarray(slide_extend), numpy.asarray(slide_extend_single), coincs)
+       PartitionPlotter(slide_mean, slide_std, proddist, index, cumzero, xbins, rhosqarray, coincs)
+   
+##########################################################################################
+# final step: html, cache file generation
+if opts.enable_output is True:
+  html_filename = InspiralUtils.write_html_output(opts, args, fnameList, tagList)
+  InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+
+##########################################################################################

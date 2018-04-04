@@ -1,0 +1,555 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2010  Drew Keppel
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#				   Preamble
+#
+# =============================================================================
+#
+
+
+from optparse import OptionParser
+try:
+	import sqlite3
+except ImportError:
+	# pre 2.5.x
+	from pysqlite2 import dbapi2 as sqlite3
+import sys
+
+import numpy
+import scipy
+
+from glue.ligolw import lsctables
+from glue.ligolw import dbtables
+from glue.ligolw import utils
+from pylal import git_version
+from pylal import rate
+
+
+__author__ = "Drew Keppel <drew.keppel@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+#
+# =============================================================================
+#
+#				 Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+	parser = OptionParser(
+		version = "Name: %%prog\n%s" % git_version.verbose_msg,
+		usage = "%prog [options] [file ...]",
+		description = "%prog does blah blah blah."
+	)
+	parser.add_option("-t", "--tmp-space", metavar = "path", help = "Path to a directory suitable for use as a work area while manipulating the database file.  The database file will be worked on in this directory, and then moved to the final location when complete.  This option is intended to improve performance when running in a networked environment, where there might be a local disk with higher bandwidth than is available to the filesystem on which the final output will reside.")
+	parser.add_option("--output-dir", metavar = "path", default = "./", help = "Path to directory to store output files")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+	options, filenames = parser.parse_args()
+
+	return options, (filenames or [None])
+
+
+#
+# =============================================================================
+#
+#				 Book-Keeping
+#
+# =============================================================================
+#
+
+
+class Summaries(object):
+	def __init__(self, Nbins):
+
+		#
+		# setting up required attributes
+		#
+
+		self.Nbins = Nbins
+		self.ifos = set()
+		self.final_stats_names = ['likelihood', 'eff_snr', 'new_snr']
+		self.final_stats = {}
+		for key in self.final_stats_names:
+			self.final_stats[key] = {}
+
+		#
+		# here we define the single detector 2D projections
+		# we will perform and how they should be binned
+		#
+
+		self.atanlog_atan_bins = [('snr', 'mtotal'), ('chisq', 'mtotal')]
+		self.atanlog_atanlog_bins = [('snr', 'chisq')]
+		self.atan_atan_bins = []
+		self.sngl_slices = self.atan_atan_bins + self.atanlog_atanlog_bins + self.atanlog_atan_bins
+		self.sngl_bins = {}
+		self.sngl_1D_bins = {}
+		self.sngl_1D_count = {}
+		sngls_set = set()
+		for col1,col2 in self.sngl_slices:
+			sngls_set.add(col1)
+			sngls_set.add(col2)
+
+		#
+		# store the location of all the statistics
+		#
+
+		self.idx_sngls = {}
+		for id,key in enumerate(list(sngls_set) + ['ifo', 'chisq_dof', 'weight']):
+			self.idx_sngls[key] = id
+
+		self.list_idx_sngls = range(len(self.idx_sngls))
+		for key,id in self.idx_sngls.items():
+			self.list_idx_sngls[id] = key
+
+		#
+		# setup min and max values for use in the bins
+		#
+
+		self.minmax = {}
+		self.minmax['snr'] = (1, 1e4)
+		self.minmax['chisq'] = (1, 1e8)
+		self.minmax['mtotal'] = (25, 1e2)
+		self.minmax['likelihood'] = (1e-8, 1e8)
+		self.minmax['eff_snr'] = (1, 1e8)
+		self.minmax['new_snr'] = (1, 1e8)
+
+	def setup_binned_ratios(self):
+		#
+		# setting up the binned ratio objects for all ifos
+		#
+
+		for ifo in self.ifos:
+			#
+			# creating dicts to store bins for sngl detector 2D-slices
+			#
+
+			self.sngl_bins[ifo] = {}
+			for key in self.sngl_slices:
+				#
+				# three kinds of bins mixed between ATanBins and ATanLogarithmicBins
+				#
+
+				if key in self.atanlog_atanlog_bins:
+					self.sngl_bins[ifo][key] = rate.BinnedRatios(rate.NDBins((rate.ATanLogarithmicBins(self.minmax[key[0]][0], self.minmax[key[0]][1], self.Nbins), rate.ATanLogarithmicBins(self.minmax[key[1]][0], self.minmax[key[1]][1], self.Nbins))))
+				elif key in self.atanlog_atan_bins:
+					self.sngl_bins[ifo][key] = rate.BinnedRatios(rate.NDBins((rate.ATanLogarithmicBins(self.minmax[key[0]][0], self.minmax[key[0]][1], self.Nbins), rate.ATanBins(self.minmax[key[1]][0], self.minmax[key[1]][1], self.Nbins))))
+				elif key in self.atan_atan_bins:
+					self.sngl_bins[ifo][key] = rate.BinnedRatios(rate.NDBins((rate.ATanBins(self.minmax[key[0]][0], self.minmax[key[0]][1], self.Nbins), rate.ATanBins(self.minmax[key[1]][0], self.minmax[key[1]][1], self.Nbins))))
+				else:
+					print >>sys.stderr,"ERROR: binning not implemented for ",key
+					sys.exit(1)
+
+			#
+			# creating bins for sngl detector final statistics (e.g., likelihood, eff_snr, new_snr)
+			#
+
+			for key in self.final_stats_names:
+				self.final_stats[key][ifo] = rate.BinnedArray(rate.NDBins((rate.ATanLogarithmicBins(self.minmax[key][0], self.minmax[key][1], self.Nbins**2),)))
+
+	def add_bkg_sngl(self, values):
+		#
+		# add a background single to its appropriate bins
+		#
+		for key in self.sngl_slices:
+			self.sngl_bins[values[self.idx_sngls['ifo']]][key].incdenominator((values[self.idx_sngls[key[0]]], values[self.idx_sngls[key[1]]]), weight=values[self.idx_sngls['weight']])
+
+	def add_inj_sngl(self, values):
+		#
+		# add an injection single to its appropriate bins
+		#
+		for key in self.sngl_slices:
+			self.sngl_bins[values[self.idx_sngls['ifo']]][key].incnumerator((values[self.idx_sngls[key[0]]], values[self.idx_sngls[key[1]]]), weight=values[self.idx_sngls['weight']])
+
+	def filter_binned_ratios(self):
+		#
+		# smooth the binned array objects
+		#
+		for key1 in self.sngl_bins.keys():
+			for key2 in self.sngl_bins[key1].keys():
+				tablename = "".join(key1) + "--" + "-".join(key2)
+				if options.verbose:
+					print >>sys.stderr, "\tsmoothing %s ..." % tablename
+				rate.filter_binned_ratios(self.sngl_bins[key1][key2], rate.gaussian_window(self.sngl_bins[key1][key2].numerator.bins.shape[0]/30, self.sngl_bins[key1][key2].numerator.bins.shape[1]/30, sigma=60))
+				if options.verbose:
+					print >>sys.stderr, "\tconverting %s to pdf ..." % tablename
+				self.sngl_bins[key1][key2].to_pdf()
+
+
+	def output_bins(self):
+		#
+		# save the binned array objects to xml
+		#
+		xmldoc = lsctables.ligolw.Document()
+		xmldoc.appendChild(lsctables.ligolw.LIGO_LW())
+		for key1 in self.sngl_bins.keys():
+			for key2 in self.sngl_bins[key1].keys():
+				tablename = "".join(key1) + "--" + "-".join(key2)
+				xmldoc.childNodes[-1].appendChild(self.sngl_bins[key1][key2].to_xml(tablename))
+		for key1 in self.sngl_1D_bins.keys():
+			for key2 in self.sngl_1D_bins[key1].keys():
+				tablename = "".join(key1) + "--" + "".join(key2)
+				xmldoc.childNodes[-1].appendChild(self.sngl_1D_bins[key1][key2].to_xml(tablename))
+		for key1 in self.final_stats.keys():
+			for key2 in self.final_stats[key1].keys():
+				tablename = "".join(key2) + "--" + "".join(key1)
+				xmldoc.childNodes[-1].appendChild(self.final_stats[key1][key2].to_xml(tablename))
+		if options.output_dir:
+			options.output_dir + "/"
+		utils.write_filename(xmldoc, options.output_dir + "likelihood_snr_chisq.xml.gz", gz = True, verbose = True)
+
+	def create_1D_slices(self):
+		#
+		# create the appropriate 1D slices from the 2D projections
+		#
+		for ifo in self.sngl_bins.keys():
+			self.sngl_1D_bins[ifo] = {}
+			self.sngl_1D_count[ifo] = {}
+			for key in self.sngl_bins[ifo].keys():
+				for dim,subkey in enumerate(key):
+					if subkey not in self.sngl_1D_bins[ifo].keys():
+						self.sngl_1D_bins[ifo][subkey] = rate.marginalize_ratios(self.sngl_bins[ifo][key], (dim+1)%2)
+						self.sngl_1D_count[ifo][subkey] = 0
+					else:
+						self.sngl_1D_count[ifo][subkey] += 1
+
+	def sngl_likelihood(self, values):
+		"""
+		compute likelihood and increment the appropriate bin for a single detector trigger
+		"""
+
+		ifo = values[self.idx_sngls['ifo']]
+		snr = values[self.idx_sngls['snr']]
+		rchisq = values[self.idx_sngls['chisq']] / 2. / (values[self.idx_sngls['chisq_dof']] - 1.)
+
+		#
+		# compute the 2D likelihoods
+		#
+
+		likelihood_2D = 1.
+		for key in self.sngl_slices:
+			likelihood_2D *= self.sngl_bins[ifo][key][(values[self.idx_sngls[key[0]]],values[self.idx_sngls[key[1]]])]
+
+		#
+		# compute the 1D likelihoods to correct for multiple uses of dimensions in 2D likelihoods
+		#
+
+		likelihood_1D = 1.		
+		for key in self.sngl_1D_bins[ifo].keys():
+			likelihood_1D *= (self.sngl_1D_bins[ifo][key][(values[self.idx_sngls[key]],)])**self.sngl_1D_count[values[self.idx_sngls['ifo']]][key]
+			
+
+		#
+		# increment the appropriate final statistic bin for the single detector trigger
+		#
+
+		likelihood = likelihood_2D / likelihood_1D
+		eff_snr = snr / (1. + snr**2./250.)**.25 / rchisq**.25
+		new_snr = snr / (0.5 * (1. + rchisq**(6./2.)))**(1./6.)
+		if rchisq < 1:
+			new_snr = snr
+
+		self.final_stats['likelihood'][ifo][(likelihood,)] += 1
+		self.final_stats['eff_snr'][ifo][(eff_snr,)] += 1
+		self.final_stats['new_snr'][ifo][(new_snr,)] += 1
+
+	def xml_values(sngl_inspiral_row):
+		"""
+		extract the appropriate columns from the sngl_inspiral_row
+		"""
+		return [row.get_attribute(col) for col in self.list_idx_sngls]
+
+	#
+	# Fake Inection Generator 
+	#
+	def chisq(self, mean, num=100):
+        	return sum((scipy.randn(num)+mean)**2)
+
+	def mass(self, min, max):
+		return min + (max - min)*scipy.rand(1)
+
+	def rand_snr_chisq(self, ifo, num=16, mm=0.1, var=0.3, maxsnr=100.0, minmass=25, maxmass=100, length=10000):
+		values = {}
+	        for i in range(length):
+	                snr = 10**(scipy.rand(1)*numpy.log10(maxsnr))
+	                m = scipy.rand(1)**0.5 * mm * numpy.exp(scipy.randn(1)*var)
+			values['ifo'] = ifo
+			values['snr'] = float(snr)
+			values['chisq'] = float(self.chisq(m*snr*snr,num))
+			values['chisq_dof'] = num
+			values['mtotal'] = float(self.mass(minmass, maxmass))
+			values['weight'] = float(snr**-3.)
+	                yield [values[key] for key in self.list_idx_sngls]
+
+
+#
+# =============================================================================
+#
+#				SQLITE Queries
+#
+# =============================================================================
+#
+
+
+def single_bkg(values):
+	#
+	# the SQL query for single detector background triggers
+	#
+	query = """
+SELECT"""
+	keys = values.items()
+	keys.sort(cmp=lambda x,y: cmp(x[1],y[1]))
+	for value in keys:
+		if not value == keys[0]:
+			query += ""","""
+		if value[0] == 'weight':
+			query += """
+	1.0"""
+			continue
+
+		query += """
+	sngl_inspiral.""" + value[0]
+
+	query += """
+FROM
+	sngl_inspiral
+"""
+
+	return query
+
+
+#
+# =============================================================================
+#
+#				     Helper Functions
+#
+# =============================================================================
+#
+
+
+def extract_ifos(filename):
+	# FIXME: end end of file name
+	if 'sqlite' in filename:
+		#
+		# open the database
+		#
+
+		working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
+		connection = sqlite3.connect(working_filename)
+
+		if options.verbose:
+			print >>sys.stderr, "\textracting all ifos ..."
+		ifos = set(ifo for ifo, in connection.cursor().execute("""SELECT DISTINCT ifos FROM process WHERE process.program == 'inspiral'"""))
+
+		#
+		# done extracting info so close database
+		#
+
+		connection.close()
+		dbtables.discard_connection_filename(filename, working_filename, verbose = options.verbose)
+
+	elif 'xml' in filename:
+		xmldoc = utils.load_filename(filename, gz=filename.endswith(".gz"), verbose = options.verbose)
+		process_table = lsctables.table.get_table(xmldoc, lsctables.ProcessTable.tableName)
+		ifos = set(row.ifos for row in process_table)
+	else:
+		print >>sys.stderr, 'cannot analyse file %s, unknown type'%(filename,)
+		sys.exit(1)
+
+	return ifos
+
+
+def extract_bkg(likelihood_bins, filename):
+	if 'sqlite' in filename:
+		#
+		# open the database
+		#
+
+		working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
+		connection = sqlite3.connect(working_filename)
+
+		#
+		# extract triggers using appropriate sqlite queries determined
+		# by the existence of a sim_inspiral table in the database
+		#
+
+		#
+		# loop over all single ifos and add sngls to appropriate list
+		#
+
+		if options.verbose:
+			print >>sys.stderr, "\textracting all sngls to populate binned ratio denominator ..."
+		for values in connection.cursor().execute(single_bkg(likelihood_bins.idx_sngls)):
+			likelihood_bins.add_bkg_sngl(values)
+
+		#
+		# done extracting info so close database
+		#
+
+		connection.close()
+		dbtables.discard_connection_filename(filename, working_filename, verbose = options.verbose)
+	elif 'xml' in filename:
+		xmldoc = utils.load_filename(filename, gz=filename.endswith(".gz"), verbose = options.verbose)
+		sngl_inspiral_table = lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+		# FIXME: look up how to get columns from a sngl_inspiral row
+		[likelihood_bins.add_bkg_sngl([row.get_attribute(col) for col in likelihood_bins.list_idx_sngls]) for row in sngl_inspiral_table]
+	else:
+		print >>sys.stderr, 'cannot analyse file %s, unknown type'%(filename,)
+		sys.exit(1)
+
+def compute_likelihoods(likelihood_bins, filename):
+	if 'sqlite' in filename:
+		#
+		# open the database
+		#
+		working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
+		connection = sqlite3.connect(working_filename)
+
+		# 
+		# extract and loop over all sngls and add to appropriate list 
+		#
+
+		if options.verbose:
+			print >>sys.stderr, "\textracting all sngls for likelihood computation ..."
+		for values in connection.cursor().execute(single_bkg(likelihood_bins.idx_sngls)):
+			likelihood_bins.sngl_likelihood(values)
+ 
+		#
+		# done extracting info so close database
+		#
+
+		connection.close()
+		dbtables.discard_connection_filename(filename, working_filename, verbose = options.verbose)
+	elif 'xml' in filename:
+		xmldoc = utils.load_filename(filename, gz=filename.endswith(".gz"), verbose = options.verbose)
+		sngl_inspiral_table = lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+		# FIXME: look up how to get columns from a sngl_inspiral row
+		[likelihood_bins.sngl_likelihood([row.get_attribute(col) for col in likelihood_bins.list_idx_sngls]) for row in sngl_inspiral_table]
+	else:
+		print >>sys.stderr, 'cannot analyse file %s, unknown type'%(filename,)
+		sys.exit(1)
+
+
+#
+# =============================================================================
+#
+#				     Main
+#
+# =============================================================================
+#
+
+
+#
+# command line
+#
+
+
+options, filenames = parse_command_line()
+
+#
+# initialize book-keeping
+#
+
+
+likelihood_bins = Summaries(200)
+
+
+#
+# iterate over files accumulating statistics
+#
+
+
+if options.verbose:
+	print >>sys.stderr, "collecting initial information ..."
+
+for n, filename in enumerate(filenames):
+	if options.verbose:
+		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+	likelihood_bins.ifos |= extract_ifos(filename)
+
+
+#
+# end loop over input files
+#
+
+
+if options.verbose:
+	print >>sys.stderr, "setting up binned ratio objects ..."
+likelihood_bins.setup_binned_ratios()
+
+
+#
+# iterate over files accumulating statistics
+#
+
+
+if options.verbose:
+	print >>sys.stderr, "extracting background statistics ..."
+for n, filename in enumerate(filenames):
+	extract_bkg(likelihood_bins, filename)
+
+
+#
+# populate numerator of binned ratio objects with fake injections
+#
+
+
+if options.verbose:
+	print >>sys.stderr, "populating fake injection statistics ..."
+for ifo in likelihood_bins.ifos:
+	for values in likelihood_bins.rand_snr_chisq(ifo, length=10**5):
+		likelihood_bins.add_inj_sngl(values)
+
+if options.verbose:
+	print >>sys.stderr, "smoothing binned ratios ..."
+likelihood_bins.filter_binned_ratios()
+if options.verbose:
+	print >>sys.stderr, "creating 1D binned ratios ..."
+likelihood_bins.create_1D_slices()
+
+
+#
+# iterate over files computing likelihoods
+#
+
+
+if options.verbose:
+	print >>sys.stderr, "computing likelihoods ..."
+for n, filename in enumerate(filenames):
+	if options.verbose:
+		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+	compute_likelihoods(likelihood_bins, filename)
+
+
+#
+# output the binned ratios
+#
+
+
+if options.verbose:
+	print >>sys.stderr, "writing out binned ratios ..."
+likelihood_bins.output_bins()
+
+sys.exit(0)

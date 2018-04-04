@@ -1,0 +1,219 @@
+#!/usr/bin/python
+import sys, subprocess, os, re, socket
+from glue import lal
+from optparse import OptionParser
+from glue import git_version
+import tempfile
+
+__author__ = "Chad Hanna <channa@caltech.edu>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+def chunk(lst, n):
+	out = []
+	for l in lst:
+		out.append(l)
+		if len(out) > n:
+			yield out
+			out = []
+	yield out
+
+class RemoteCache(object):
+	def __init__(self, url, verbose=False, regex=None, copy=False, ignore_local=False, allow_missing=False, base=''):
+		self.copy = copy
+		self.ignore_local = ignore_local
+		self.verbose=verbose
+		self.base = base
+		self.regex=regex
+		self.url = url
+		self.allow_missing = allow_missing
+		self.host, self.cache = self.url.split(":")
+		if not self.base: self.base = self.host
+		self.dir_dict = {}
+		self.local_cache = []
+		self.local_cache_dict = {}
+		self.mtab = {}
+		self.unmount = []
+		self.mount = []
+		self.remote_cache_parsed_dict = {}
+
+		if not self.copy: self.parse_mtab()
+		# Setup some directories
+		self.local_dir = os.path.join(os.getcwd(), ".local%s" %(self.base,))
+		self.remote_dir = os.path.join(os.getcwd(), ".remote%s" %(self.base,))
+		self.make_dirs()
+
+
+		self.remote_cache_file_copy = self.remote_dir + "/" + os.path.split(self.cache)[1]
+		self.get_cache()
+		self.parse_cache_and_get_dirs()
+		if not self.is_local():
+			self.make_local_dirs()
+			self.make_cache()
+			self.get_files()
+		else:
+			self.make_local_dirs()
+			self.make_cache()
+
+	def parse_mtab(self):
+		for l in open('/etc/mtab'):
+			self.mtab[l.split()[0]] = l.split()[1]
+
+	def make_dirs(self):
+		try: os.mkdir(self.local_dir)
+		except: pass
+		try: os.mkdir(self.remote_dir)
+		except: pass
+
+	def is_local(self):
+		if self.ignore_local: return False
+		if self.host == socket.getfqdn(): return True
+		else: return False
+
+	def get_cache(self):
+		if self.is_local():
+			if self.verbose: print>>sys.stderr, "\tCache file %s appears to be local...\n" % (self.url,)
+			self.retrieve_file(self.cache, self.remote_cache_file_copy)
+		else:
+			if self.verbose: print>>sys.stderr, "\tretrieving %s...\n" % (self.url)
+			self.retrieve_file(self.cache, self.remote_cache_file_copy)
+
+	def retrieve_file(self, remotepath, localpath, filelist=None, n=1):
+		if self.verbose: st = sys.stderr
+		else: st = None
+		if self.verbose:
+			opts = "-zuL"
+		else:
+			opts = "-zquL"
+		if filelist is None:
+			command = ["rsync", opts, "--rsh=gsissh", "--progress", "%s:%s" % (self.host, remotepath), "%s" % (localpath,)]
+			ret = subprocess.call(command, stdout=st, stderr=st)
+		else:
+			tmp = open("rsync.txt","w")
+			[tmp.write("%s\n" % (os.path.split(f)[1],)) for f in filelist]
+			tmp.close()
+			command = ["rsync", opts, "--rsh=gsissh", "--progress", "--files-from=rsync.txt", "%s:%s" % (self.host, remotepath), "%s/." % (localpath,)]
+			print " ".join(command)
+			ret = subprocess.call(command,stdout=st,stderr=st)
+			tmp.close()
+		if ret:
+			print >>sys.stderr, "retrieve failed with %d try #%d" % (ret,n)
+			if n>3: sys.exit(1)
+			self.retrieve_file(remotepath, localpath, filelist=filelist, n=n+1)
+
+	def parse_cache_and_get_dirs(self):
+		self.remote_dir_set = set([])
+		self.remote_cache_parsed = []
+		for i,l in enumerate(open(self.remote_cache_file_copy).readlines()):
+			if self.regex:
+				pat = re.compile(self.regex)
+				if not pat.search(l): continue
+			if self.verbose: print >>sys.stderr, "\tparsing cache for directory set %d\r" % (i,),
+			c = lal.CacheEntry(l)
+			self.remote_cache_parsed.append(c)
+			self.remote_dir_set.add(os.path.split(c.path)[0])
+			self.remote_cache_parsed_dict.setdefault(os.path.split(c.path)[0], []).append(c)
+		if self.verbose: print >>sys.stderr,"\n"
+		self.remote_cache_file_parsed = "%s/parsed-%s" % os.path.split(self.remote_cache_file_copy)
+		f = open(self.remote_cache_file_parsed,"w")
+		f.write("\n".join([str(c) for c in self.remote_cache_parsed]))
+		f.close()
+
+	def make_local_dirs(self):
+		for dir in self.remote_dir_set:
+			self.dir_dict[dir] = os.path.join(self.local_dir, dir.replace("/","_"))
+			try: os.mkdir(self.dir_dict[dir])
+			except:  pass
+
+	def make_cache(self):
+		for key, val in self.remote_cache_parsed_dict.items():
+			for i,c in enumerate(val):
+				if self.verbose: print >>sys.stderr, "\tgenerating local cache %d\r" % (i,),
+				newpath = os.path.join(self.dir_dict[os.path.split(c.path)[0]], os.path.split(c.path)[1])
+				cr = lal.CacheEntry(str(c))
+				cr.url = "file://localhost" + newpath
+				self.local_cache.append(cr)
+				#FIXME We dont want two copies of this, one a list and one a dict!!
+				self.local_cache_dict.setdefault(key, []).append(cr)
+		if self.verbose: print >>sys.stderr,"\n"
+
+	def get_files(self, n=100000):
+		if self.copy:
+			for key, rcp in self.remote_cache_parsed_dict.items():
+				if self.verbose: print >>sys.stderr, "\tcopying files for %s\n" % (key,)
+				for i,c in enumerate(chunk(rcp,n)):
+					filelist = [cf.path for cf in c]
+					remotepath = os.path.split(filelist[0])[0]
+					# just the leading directory
+					localpath = os.path.split(self.local_cache_dict[key][i].path)[0]
+					self.retrieve_file(remotepath, localpath, filelist)
+		else: # try sshfs
+			for remote, local in self.dir_dict.items():
+				self.unmount.append(" ".join(["fusermount", "-uz", "%s" % (local,)]))
+				rdir = "%s:%s" % (self.host, remote)
+				ldir = "%s" % (local,)
+				# mount the remote system readonly
+				cmd = ["sshfs", rdir, ldir, '-o', 'ro', '-o', 'follow_symlinks']
+				self.mount.append(" ".join(cmd))
+				try:
+					self.mtab[rdir]
+					print >>sys.stderr, "\t%s appears to be mounted...continuing" % (self.mtab[rdir],)
+				except:
+					print >>sys.stderr, "\tmounting %s..." % (rdir,)
+					ret = subprocess.call(cmd)
+					if ret:
+						print >>sys.stderr, "mount failed with %d" % (ret,)
+						if self.allow_missing: print >>sys.stderr, "ignoring..."
+						else: sys.exit(1)
+
+
+def parse_command_line():
+	parser = OptionParser(
+		version = "Name: %%prog\n%s" % git_version.verbose_msg,
+		usage = """
+%prog [options] \n This program is designed to copy or link (via sshfs) the contents remote cache files to a local directory tree.  It produces a local cache file with local paths that can then be used by other programs.  For example, the CBC group uses lalapps_ihope for analysis.  ihope produces a cache file of its output.  If people run ihope over different GPS times on several different computers one could use this tool to concatenate the output.  You can also whittle down the cache with a regex.  For example the followingcommand would retrieve a local cache of two ihope run's injection files on different clusters
+
+lalapps_remote_cache --verbose --cache ldas-pcdev1.ligo.caltech.edu:/archive/home/channa/analysis/s5_highmass_20090517/871147814-875232014/highmass_ihope_871147814-875232014.cache --cache pcdev1.phys.uwm.edu:/home/lucia/s5/highMass/815155213-820555271/highmass_ihope_815155213-820555271.cache --regex="HL-"
+
+WARNING: You really need to make sure that you have ssh configured to stay alive otherwise these mounts will drop out.  I put in my ~/.ssh/config
+
+Host *
+        ServerAliveInterval 60
+
+""",
+		description = ""
+	)
+
+        parser.add_option("-c", "--cache", metavar = "name", action = "append", default = [], help = "specify the cache file to copy in the form host:/path/to/file.cache (you can use this option multiple times)")
+        parser.add_option("-r", "--regex", metavar = "name", help = "a regex pattern to apply to the cache entry strings to whittle them down.")
+        parser.add_option("-o", "--output", metavar = "name", default="remote_cache.cache", help = "output file name")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+	parser.add_option("-f", "--force-copy", action = "store_true", help = "force copying files instead of sshfs (this could be slow and reuquire GBs of free space)")
+	parser.add_option("-i", "--ignore-local", action = "store_true", help = "force copying or linking files even if they are on the local file system")
+	parser.add_option("-m", "--allow-missing", action = "store_true", help = "allow missing remote files when doing --force-copy")
+
+	options, urls = parser.parse_args()
+	if not options.force_copy and subprocess.call(["which", "sshfs"]):
+		print >> sys.stderr, "\n\nsshfs is not installed or not in your path.  You can force files to be copied instead by doing --force-copy (could take a while)\n\n"
+		sys.exit(1)
+
+        return options
+
+
+opts = parse_command_line()
+
+outcache = []
+mount = ["#!/bin/bash"]
+unmount = ["#!/bin/bash"]
+
+for i, cache in enumerate(opts.cache):
+	R = RemoteCache(cache, verbose = opts.verbose, regex = opts.regex, copy = opts.force_copy, ignore_local = opts.ignore_local, allow_missing=opts.allow_missing)
+	outcache.extend(R.local_cache)
+	mount.extend(R.mount)
+	unmount.extend(R.unmount)
+
+if opts.verbose: print >> sys.stderr, "local cache file written to: %s" % (opts.output,)
+open(opts.output,"w").write("\n".join([str(c) for c in outcache]))
+open(opts.output+".mount","w").write("\n".join(mount))
+open(opts.output+".unmount","w").write("\n".join(unmount))
+

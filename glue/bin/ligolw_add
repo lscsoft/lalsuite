@@ -1,0 +1,213 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2006  Kipp Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+"""
+Add (merge) LIGO LW XML files containing LSC tables.
+"""
+
+
+from optparse import OptionParser
+import os
+import sys
+
+
+from glue import git_version
+from glue.lal import CacheEntry
+from glue.ligolw import ligolw
+from glue.ligolw import array as ligolw_array
+from glue.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import ligolw_add
+
+
+__author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+	"""
+	Parse the command line, return an options object and a list of URLs.
+	"""
+	parser = OptionParser(
+		version = "Name: %%prog\n%s" % git_version.verbose_msg,
+		usage = "%prog [options] [url ...]",
+		description = "Combines one or more LIGO Light Weight XML files into a single output file.  The output is written to stdout or to the filename specified by --output.  In addition to regular files, many common URL types can be read such as http:// and ftp://.  Input documents that are gzip-compressed are automatically detected and decompressed.  If the output file's name ends in \".gz\", the output document will be gzip-compressed.  Table elements contained in the document will be merged so that there is not more than one table of any given name in the output.  To accomplish this, any tables in the input documents that share the same name must have compatible columns, meaning the same column names with matching types (but not necessarily in the same order)."
+	)
+	parser.add_option("-i", "--input-cache", metavar = "filename", action = "append", default = [], help = "Get input files from the LAL cache named filename.")
+	parser.add_option("--add-lfn-table", action = "store_true", help = "Add an lfn entry for each process.")
+	parser.add_option("--lfn-start-time", metavar = "GPS seconds", help = "Set lfn start_time (optional).")
+	parser.add_option("--lfn-end-time", metavar = "GPS seconds", help = "Set lfn end_time (optional).")
+	parser.add_option("--lfn-comment", metavar = "string", help = "Set lfn comment (optional).")
+	parser.add_option("--non-lsc-tables-ok", action = "store_true", help = "OK to merge documents containing non-LSC tables.")
+	parser.add_option("-o", "--output", metavar = "filename", help = "Write output to filename (default = stdout).")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+	parser.add_option("--remove-input", action = "store_true", help = "Remove input files after writing output (an attempt is made to not delete the output file in the event that it overwrote one of the input files).")
+	parser.add_option("--remove-input-except", metavar = "filename", action = "append", default = [], help = "When deleting input files, do not delete this file.")
+	options, urls = parser.parse_args()
+
+	if options.lfn_start_time:
+		options.lfn_start_time = int(options.lfn_start_time)
+	if options.lfn_end_time:
+		options.lfn_end_time = int(options.lfn_end_time)
+
+	urls += [CacheEntry(line).url for cache in options.input_cache for line in file(cache)]
+
+	if len(urls) < 1:
+		raise ValueError("no input files!")
+
+	return options, urls
+
+
+#
+# =============================================================================
+#
+#                                  LFN Table
+#
+# =============================================================================
+#
+
+
+def update_lfn_table(xmldoc, pathname, start_time = None, end_time = None, comment = None):
+	"""
+	Update the LFN table in the document, adding it if needed.
+	"""
+	# determine the columns required by the user
+	cols = ["process_id", "lfn_id", "name"]
+	if start_time is not None:
+		cols.append("start_time")
+	if end_time is not None:
+		cols.append("end_time")
+	if comment is not None:
+		cols.append("comment")
+	# look for an existing LFN table.  while at it, sync the next_id
+	# attribute and collect the process IDs that already have entries
+	# in the tables
+	lfn_table = None
+	existing_pids = set()
+	for lfn_table in lsctables.table.getTablesByName(xmldoc, lsctables.LfnTable.tableName):
+		lfn_table.sync_next_id()
+		existing_pids.update(lfn_table.getColumnByName("process_id"))
+	if lfn_table is None:
+		# didn't find an LFN table, add one
+		lfn_table = lsctables.New(lsctables.LfnTable, cols)
+		xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName)[0].appendChild(lfn_table)
+	else:
+		# already has an LFN table, are the columns OK?
+		if set(cols) != set(lfn_table.columnnames):
+			raise Exception("document contains an LFN table with columns %s, but columns %s are required" % (", ".join(lfn_table.columnnames), ", ".join(cols)))
+	pathname = os.path.basename(pathname)
+	# add a row to the LFN table for every process in every process
+	# table
+	for process_table in lsctables.table.getTablesByName(xmldoc, lsctables.ProcessTable.tableName):
+		for pid in process_table.getColumnByName("process_id"):
+			if pid in existing_pids:
+				# LFN table already has an entry for this
+				# one, ignore
+				continue
+			row = lsctables.Lfn()
+			row.process_id = pid
+			row.lfn_id = lfn_table.get_next_id()
+			row.name = pathname
+			row.start_time = start_time
+			row.end_time = end_time
+			row.comment = comment
+			lfn_table.append(row)
+	return lfn_table
+
+
+#
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+#
+
+
+#
+# Command line
+#
+
+
+options, urls = parse_command_line()
+
+
+#
+# Input
+#
+
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+	pass
+
+ligolw_array.use_in(ContentHandler)
+lsctables.use_in(ContentHandler)
+
+
+lsctables.table.RowBuilder = lsctables.table.InterningRowBuilder
+
+
+xmldoc = ligolw_add.ligolw_add(ligolw.Document(), urls, non_lsc_tables_ok = options.non_lsc_tables_ok, verbose = options.verbose, contenthandler = ContentHandler)
+
+
+#
+# LFN table
+#
+
+
+if options.add_lfn_table:
+	if not options.output:
+		raise Exception("cannot add LFN table when no output filename is given")
+	update_lfn_table(xmldoc, options.output, options.lfn_start_time, options.lfn_end_time, options.lfn_comment)
+
+
+#
+# Output
+#
+
+
+ligolw_utils.write_filename(xmldoc, options.output, verbose = options.verbose, gz = (options.output or "stdout").endswith(".gz"))
+
+
+#
+# Remove input
+#
+
+
+if options.remove_input:
+	ligolw_add.remove_input(urls, [options.output] + options.remove_input_except, options.verbose)

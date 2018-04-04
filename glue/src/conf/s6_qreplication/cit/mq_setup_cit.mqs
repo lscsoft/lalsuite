@@ -1,0 +1,69 @@
+* 1. Admin Queue:
+* This queue is used by the Q capture program to communicate with
+* the Q apply program at the target
+define qlocal('ASN.QM3.ADMINQ')
+
+************Creating the source queues*******************
+* 2. Restart Queue:
+* This queue stores restart information for the Q capture program
+define qlocal('ASN.QM3.RESTARTQ')
+
+* 3. Transmit Queues:
+* This queue holds messages before they cross the channel
+define qlocal('QM1') usage(xmitq)
+alter qlocal('QM1') maxdepth(999999999)
+
+define qlocal('QM2') usage(xmitq)
+alter qlocal('QM2') maxdepth(999999999)
+
+* 4. Send Queues:
+* This queue is a remote queue defintion that the Q capture program
+* uses to direct messages that contain replication data to the receive
+* queue at the target
+define qremote('ASN.QM3_TO_QM1.DATAQ') rname('ASN.QM3_TO_QM1.DATAQ') rqmname('QM1') xmitq('QM1')
+define qremote('ASN.QM3_TO_QM2.DATAQ') rname('ASN.QM3_TO_QM2.DATAQ') rqmname('QM2') xmitq('QM2')
+
+* 5. Receive Queues:
+define qlocal('ASN.QM1_TO_QM3.DATAQ')
+define qlocal('ASN.QM2_TO_QM3.DATAQ')
+
+* 6. Create the remote queue definition that points to the source
+* admin queues
+define qremote('ASN.QM1.ADMINQ') rname('ASN.QM1.ADMINQ') rqmname('QM1') xmitq('QM1')
+define qremote('ASN.QM2.ADMINQ') rname('ASN.QM2.ADMINQ') rqmname('QM2') xmitq('QM2')
+
+* 7. Create the model queue definition for spill queues:
+define qmodel('IBMQREP.SPILL.MODELQ') defsopt(SHARED) maxdepth(500000) msgdlvsq(FIFO) deftype(PERMDYN)
+
+
+* 8. Define the sender channel from QM3 queue manager to QM1 and QM2 queue managers
+define chl('QM3_TO_QM1') +
+chltype(SDR) trptype(tcp) +
+conname('198.129.208.254') +
+xmitq('QM1') +
+discint (0) +
+sslciph(RC4_MD5_US)
+
+define chl('QM3_TO_QM2') +
+chltype(SDR) trptype(tcp) +
+conname('208.69.128.76') +
+xmitq('QM2') +
+discint (0) +
+sslciph(RC4_MD5_US)
+
+
+* 9. Define the receiver channel from QM1 and QM2 queue manager to QM3 queue manager
+define chl('QM1_TO_QM3') +
+chltype(RCVR) trptype(tcp) +
+sslciph(RC4_MD5_US) +
+sslcauth(REQUIRED) +
+sslpeer('OU=Services, CN="ldbd/segdb.ligo-wa.caltech.edu"')
+
+define chl('QM2_TO_QM3') +
+chltype(RCVR) trptype(tcp) +
+sslciph(RC4_MD5_US) +
+sslcauth(REQUIRED) +
+sslpeer('OU=Services, CN="ldbd/segdb.ligo-la.caltech.edu"')
+
+refresh security
+

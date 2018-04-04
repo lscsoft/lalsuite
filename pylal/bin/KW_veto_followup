@@ -1,0 +1,344 @@
+#!/usr/bin/env python
+#
+# Copyright (C) 2009 Tomoki Isogai
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""
+%prog [options]
+
+Tomoki Isogai (isogait@carleton.edu)
+
+This program picks interesting events to be followed up for det char, and get DQ flags / prepare omega scans / create summary page.
+
+The way it determines the interesting events are:
+
+1. gather all the coincident events above the veto threshold from veto candidate channels.
+
+2. cluster the events using the window given
+
+3. require at least two events in the cluster
+
+"""
+
+from __future__ import division
+
+import os
+import sys
+import glob
+import re
+import math
+import time
+import optparse
+import cPickle
+
+try:
+    import sqlite3
+except ImportError:
+    # pre 2.5.x
+    from pysqlite2 import dbapi2 as sqlite3
+
+from glue.segments import segment, segmentlist
+from glue import segmentsUtils
+
+from pylal import KW_veto_utils
+#import KW_veto_utils
+
+__author__ = "Tomoki Isogai <isogait@carleton.edu>"
+__date__ = "$Date$"
+__version__ = "$Revision$"
+
+def parse_commandline():
+    """
+    Parse the options given on the command-line.
+    """
+    parser = optparse.OptionParser(usage = __doc__,version=__version__)
+
+    parser.add_option("-i", "--ifo",
+                      help="IFO to analyze. Required.")
+    parser.add_option("-r", "--result_dir",
+                      help="Result directory from KW_veto code. Required.")
+    parser.add_option("-m", "--min_coinc", default=0, type='int',
+                      help="Only analyze channels that have more than this number of coincident triggers. (Default: 0)")
+    parser.add_option("-t", "--twindow", type="float", default=0.5,
+                      help="Cluster triggers within TWINDOW second. (Default: 0.5)")
+    parser.add_option("-d", "--DQFlags", action="store_true", default=False,
+                      help="List DQ Flags at that time if true (Default: Fault)")  
+    parser.add_option("-s", "--server", default="https://segdb.ligo.caltech.edu",
+                      help="Server used to get DQ flags. (Default: https://segdb.ligo.caltech.edu")
+    parser.add_option("-w", "--wscan", action="store_true", default=False,
+                      help="Put links for omega scan if given.")
+    parser.add_option("-e", "--w_executable", default="/archive/home/omega/opt/omega/bin/wpipeline",help="Location of omegascan executable. (Default: /archive/home/omega/opt/omega/bin/wpipeline)")
+    parser.add_option("-c", "--w_config",help="Configuration file for omega scan.")
+    parser.add_option("-f", "--w_framecache", default="/frames/full",help="Frame cache file for omega scan.")
+    parser.add_option("-l", "--scratch_dir", default=".",
+                      help="Scratch directory to be used for database engine. Specify local scratch directory for better performance and less fileserver load. (Default: current directory)")
+    parser.add_option("-o", "--out_dir", default=".",
+                      help="Output directory. (Default: current directory)")
+    parser.add_option("-v", "--verbose", action="store_true", default=False,
+                      help="Run verbosely. (Default: False)")
+  
+    opts, args = parser.parse_args()
+    
+    # check if necessary input exists
+
+    if opts.result_dir is None:    
+      parser.error("Error: --result_dir is required")
+
+    if not os.path.isdir(opts.out_dir):
+      os.makedirs(opts.out_dir)    
+    if opts.DQFlags:
+      if os.system('ligolw_dq_query --segment-url %s --ping'%opts.server) > 0:
+        parser.error("Error: error during ligolw_dq_query run. Check if ligolw_dq_query --segment-url %s --ping works properly."%opts.server)
+
+
+    if opts.verbose:
+      print >> sys.stderr, "Running KW_veto_followup..."
+      print >> sys.stderr, "Version: %s"%__version__
+      print >> sys.stderr, ""
+      print >> sys.stderr, "***************** PARAMETERS ********************"
+      for o in opts.__dict__.items():
+        print >> sys.stderr, o[0]+":"
+        print >> sys.stderr, o[1]
+      print >> sys.stderr, "" 
+    
+    return opts
+
+
+    
+# =============================================================================
+#
+#                                    Main
+#
+# =============================================================================
+
+opts = parse_commandline()
+
+# load the data and store the data in a list in a form:
+# [(GPSTime, Significance, ChannelName, CorrespondingSNR), ...]
+
+
+result_files = KW_veto_utils.get_result_files(opts.result_dir,opts.verbose)
+candidates = []
+unsafe = re.compile(r"DARM_ERR|DARM_CTRL|AS_I|AS_Q|READOUT_OUT_DAQ|PR_B1_ACP")
+for f in result_files:
+  try:
+    global working_filename
+    cursor, connection, working_filename, params =\
+      KW_veto_utils.load_db(f, opts.scratch_dir, opts.verbose)
+    data = KW_veto_utils.get_candidate(cursor, params['critical_usedPer'])
+    if data != None: # means candidate
+      # coincident KW triggers above the threshold
+      coincKWtrigs = zip(*cursor.execute("select GPSTime, KWSignificance, CoincidenceGWTrigID from KWtrigs where KWSignificance > ? and CoincidenceGWTrigID <> 'No Coincidence'",(data[0],)).fetchall())
+      trig_num = len(coincKWtrigs[0]) # number of triggers
+      if trig_num >= opts.min_coinc:
+        channel = params['channel']
+        if not unsafe.search(channel):
+          for GPStime, significance, id in zip(coincKWtrigs[0],coincKWtrigs[1],coincKWtrigs[2]):
+            coincGW_id = map(int,id.split(","))
+            connection.create_function("coinc", 1, lambda x: x in coincGW_id)
+            # find coincident GW triggers
+            coincGW_SNR = zip(*cursor.execute("select SNR from GWtrigs where coinc(ID)").fetchall())
+            candidates.append((GPStime, significance, channel, max(*coincGW_SNR), params['filePrefix']))
+  finally:
+    # clean up all the tmp database
+    if globals().has_key("working_filename"):
+        db = globals()["working_filename"]
+        if opts.verbose:
+          print >> sys.stderr, "removing temporary workspace '%s'..."%db
+        os.remove(db)
+
+candidates.sort()
+print len(candidates)
+if len(candidates) == 0:
+  print >> sys.stderr, "Error: no candidate event to analyze."
+  #sys.exit(1)
+
+
+# clustering
+if opts.verbose: 
+  print >> sys.stderr, "clustering events..."
+# clustered_candidate is ugly dictionary in a form:
+# 
+clustered_candidate = {}
+i = 0
+while len(candidates) > 0: # essentially infinite loop but skip when no trigger
+  j = i + 1
+  cluster = [candidates[i]]
+  while True:
+    if j >= len(candidates):
+      break
+    elif candidates[j][0] - candidates[i][0] <= opts.twindow:
+      cluster.append(candidates[j])
+      j += 1
+    else:
+      if len(cluster) > 1: # FIXME
+        # sort by significance
+        sorted_cluster = sorted(cluster, cmp=lambda x, y: cmp(y[1], x[1]))
+        clustered_candidate[(sorted_cluster[0][0],sorted_cluster[0][3])] = sorted_cluster
+      break
+  i = j
+  if i >= len(candidates):
+    break
+
+if opts.verbose: 
+  print >> sys.stderr, "%d candidates found"%len(clustered_candidate)
+
+print len(clustered_candidate)
+
+## DQ flags
+for j, t in enumerate(clustered_candidate):
+  if opts.verbose:
+    print >> sys.stderr, "working on %d/%d..."%(j+1,len(clustered_candidate))
+  # DQ Flags
+  if opts.DQFlags:  
+    o_dir = os.path.join(opts.out_dir,"DQFlags")
+    if not os.path.exists(o_dir): os.makedirs(o_dir)
+    o = os.path.join(o_dir,"%f.txt"%t[0])
+    DQ_cmd = ' ligolw_dq_query --active --segment-url %s %d | ligolw_print -t segment_definer -c ifos -c name -c version -c comment -d " " | grep %s > %s'%(opts.server,t[0],opts.ifo,o)
+    if opts.verbose:
+      print >> sys.stderr, "finding DQ flags for %f:"%t[0]
+      print >> sys.stderr, DQ_cmd
+    exit = os.system(DQ_cmd)
+    if exit > 0:
+      # wait for a minute and try again
+      time.sleep(60)
+      exit = os.system(DQ_cmd)
+      if exit > 0:
+        print >> sys.stderr, "Error: DQ query failed."
+        sys.exit(1)
+
+# make a webpage
+if opts.verbose:
+  print >> sys.stderr, "creating webpage..."
+
+user = os.environ['USER']
+curTime = time.strftime('%m-%d-%Y %H:%M:%S', time.localtime())
+title = "Events to be followed up"
+main_contents=["""
+<html>
+<head>
+<meta content="text/html; charset=ISO-8859-1"
+http-equiv="content-type">
+<title>%s</title>
+</head>
+<body>
+<big><big><big>%s</big></big></big><br>
+<br>
+Those events are from the channels that have at least %d coincident KW triggers at their threshold and events are clustered by %.1f second window. <br>
+Events are ordered by the significance of corresponding GW channel.
+<br>
+<br>
+"""%(title,title,opts.min_coinc,opts.twindow)]
+
+omega_times = []
+
+for i, data in enumerate(sorted(clustered_candidate.items(),cmp=lambda x,y:cmp(y[0][1],x[0][1]))):
+  t = data[0]
+  c = data[1]
+  omega_times.append(t[0])
+  title = t[0]
+  subpage_name = "%f.html"%t[0]
+  sub_contents=["""
+  <html>
+  <head>
+  <meta content="text/html; charset=ISO-8859-1"
+  http-equiv="content-type">
+  <title>%f</title>
+  </head>
+  <body>
+  """%(title)]
+
+  utcTime = os.popen('tconvert -f %%m/%%d/%%Y" "%%T" "%%Z %d'%int(t[0])).read()[:-1]
+  localTime = os.popen('tconvert -l -f %%m/%%d/%%Y" "%%T" "%%Z %d'%int(t[0])).read()[:-1]
+  main_contents.append('<big>%d.<big><a href="%s"> %.3f </a></big></big><br>'%(i+1,subpage_name,t[0]))
+  sub_contents.append('<big><big><big><big><font color="900000"> %.3f </font></big><br>(%s, %s)</big></big></big><br><br>'%(t[0],utcTime,localTime))
+  sub_contents.append('<big><big>Corresponding GW Trigger KW Significance: %s </big></big><br><br><big>('%t[1])
+  if opts.wscan:
+    omega_loc = os.path.join("./omega",str(t[0]))
+    sub_contents.append('<a href="%s">Omega Scan</a>, '%omega_loc)
+
+  if opts.DQFlags:
+    dqFile_loc = os.path.join("./DQFlags","%f.txt"%t[0])
+    sub_contents.append('<a href="%s">DQ Flags</a>, '%dqFile_loc)
+ 
+  if params['ifo'] == "L1":
+    log_loc = "http://ilog.ligo-la.caltech.edu/ilog/pub/ilog.cgi?group=detector&date_to_view=%s"%localTime[:10]
+  elif params['ifo'] == "H1" or opts.ifo == "H2":
+    log_loc = "http://ilog.ligo-wa.caltech.edu/ilog/pub/ilog.cgi?group=detector&date_to_view=%s"%localTime[:10]
+  else:
+    # FIXME: local time for virgo would be different
+    today = os.popen('tconvert -l -f %%d/%%m/%%Y" "%%T" "%%Z %f'%(t[0])).read()[:-1]
+    tomorrow = os.popen('tconvert -l -f %%d/%%m/%%Y" "%%T" "%%Z %f'%(t[0]+86400)).read()[:-1]
+    log_loc = "https://pub3.ego-gw.it/logbook/index.php?area=logbook&ref=search&dateto=%s&datefrom=%s"%(tomorrow[:10],today[:10])
+
+
+  sub_contents.append('<a href="%s">Detector Log of %s</a>'%(log_loc,localTime[:10]))
+  sub_contents.append(')</big><br><br><big> Clustered Events (Ordered by KW significance): </big><br>')
+  sub_contents.append('<table border="0" cellspacing="30"><tr>')
+  sub_contents.append("<td>Channel Name</td><td>Peak Time</td><td>KW Significance</td></tr>")
+  channels = set()
+  for event in c:
+      name_parts = event[2].split("_")
+      channel_name = name_parts[0]+":"+name_parts[1]+"-"+"_".join(name_parts[2:-2])
+      chan_wiki = "https://ldas-jobs.ligo.caltech.edu/cgi-bin/chanwiki?%s"%channel_name
+      sub_contents.append('<tr><td><a href="%s">%s</a>  (<a href="%s">wiki</a>)</td><td>%f</td><td>%f</td></tr>'%("../channel_pages/%s-report_page.html"%event[4],event[2],chan_wiki,event[0],event[1]))
+      channels.add(channel_name)
+  sub_contents.append('</table><br><br>')
+
+  for c in sorted(channels):
+    main_contents.append("%s<br>"%c)
+  main_contents.append("<br>")
+
+  if opts.wscan:
+    file_path = os.path.join(opts.out_dir,"omega/%.3f"%t[0])
+    omega_outdir = os.path.join("${HOME}","/".join(file_path.split("/")[4:]))
+    omega_log = "%.3f_log.txt"%t[0]
+    if not os.path.isdir(file_path):
+      os.makedirs(file_path)
+    lines=['<html><head><meta content="text/html; charset=ISO-8859-1"http-equiv="content-type"></head><body>']
+    lines.append("Copy and paste the command below to run omega scan if you have an grid account at LHO, LLO or CIT.")
+    lines.append("(Reference: https://geco.phys.columbia.edu/omega/wiki/Documentation/omega/scan or https://www.lsc-group.phys.uwm.edu/twiki/bin/view/DetChar/OmegaScan)")
+    lines.append('You can check the run by reading %s or typing in "condor_q ${USER}" in the command line.<br>'%omega_log)
+    lines.append("%s scan %.3f -c %s -f %s -o %s -r >> %s 2>&1 &"%(opts.w_executable,t[0],opts.w_config,opts.w_framecache,omega_outdir,omega_log))
+    lines.append('</small></body></html>')
+    open(file_path + "/index.html", "w").write("<br>".join(lines))
+
+  sub_contents.append("""
+  <small>
+  This page is created by user %s on %s
+  </small>
+  </body>
+  </html>
+  """%(user,curTime))
+  page = open(os.path.join(opts.out_dir,subpage_name),'w')
+  page.write("\n".join(sub_contents))
+
+
+main_contents.append("""
+<small>
+This page is created by user %s on %s
+</small>
+</body>
+</html>
+"""%(user,curTime))
+
+#FIXME: param might be
+if opts.verbose:
+  print >> sys.stderr, "saveing pages in at %s..."%opts.out_dir 
+open(os.path.join(opts.out_dir,"omega_times.txt"),"w").write("\n".join(map(str,omega_times)))
+page = open(os.path.join(opts.out_dir,params["name_tag"]+"_followup.html"),'w')
+page.write("\n".join(main_contents))
+
+if opts.verbose: print >> sys.stderr, "Done."

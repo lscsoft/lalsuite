@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+#
+# Copyright (C) 2007  Nickolas Fotopoulos
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+from __future__ import division
+
+__author__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu"
+
+import optparse
+import os
+import sys
+
+import numpy
+
+from pylal import git_version
+from pylal.galaxyutils import *
+
+usage = """%prog [options]
+
+This program will read in the LSC CBC group's catalog of galaxies and a
+user-specified polygon on the sky, and will output which galaxies lie within
+the polygon.
+
+Known issues:
+* This program will get confused by polygons that span the RA=0 line,
+  e.g. a "thin rectangle" with sides at RA=23:59 and RA=00:01 will be
+  interpreted as a "wide rectangle" from RA=00:01 to RA=23:59.
+* This program will successfully parse minutes and seconds of 60.00, despite
+  that being invalid, to accomodate a bug in the galaxy catalog generation
+  code.
+"""
+
+##############################################################################
+# utility functions
+##############################################################################
+
+def parse_vertices(ra_dec_string):
+    """
+    Given an RA1,dec1,RA2,dec2,... string in either sexagesimal string
+    or float, return an Nx2 array of radian coordinates.
+    """
+    ra_dec_list = ra_dec_string.split(",")
+    try:
+        try:
+            return numpy.array([(float(ra), float(dec)) for ra, dec in \
+                zip(ra_dec_list[::2], ra_dec_list[1::2])], dtype=float)
+        except ValueError:
+            return numpy.array([(hms2rad(ra), dms2rad(dec)) for ra, dec in \
+                zip(ra_dec_list[::2], ra_dec_list[1::2])], dtype=float)
+    except IndexError:
+        return numpy.array([(hm2rad(ra), dm2rad(dec)) for ra, dec in \
+            zip(ra_dec_list[::2], ra_dec_list[1::2])], dtype=float)
+
+def parse_args():
+    parser = optparse.OptionParser(usage=usage,
+        version=git_version.verbose_msg)
+    parser.add_option("-V", "--vertices",
+        help="comma-delimited vertices RA1,dec1,RA2,dec2,... in radians or colon-delimited sexagesimal")
+    parser.add_option("-C", "--catalog", help="galaxy catalog")
+    parser.add_option("-v", "--verbose", action="store_true", default=False,
+        help="output additional information")
+    parser.add_option("-k", "--load-columns",
+        help="load only the columns of this comma-delimited list (default: load all)")
+    opts, args = parser.parse_args()
+    
+    if opts.load_columns is not None:
+        opts.load_columns = opts.load_columns.split(",")
+    
+    return opts
+
+##############################################################################
+# main program
+##############################################################################
+
+opts = parse_args()
+
+vertices = parse_vertices(opts.vertices)
+
+if opts.verbose:
+    print "Vertices in radians are:"
+    print vertices
+    print
+    print "Parsing galaxy catalog..."
+
+catalog = GalaxyCatalog.from_file(open(opts.catalog), load_columns=opts.load_columns)
+
+if opts.verbose:
+    print len(catalog), "galaxies parsed."
+    print
+    print "Computing galaxies in polygon..."
+
+galaxies_in_polygon = catalog.within_polygon(vertices)
+
+if opts.verbose:
+    print "Number of galaxies in polygon:", len(galaxies_in_polygon)
+
+print "#", "\t".join(Galaxy.__slots__)
+print galaxies_in_polygon

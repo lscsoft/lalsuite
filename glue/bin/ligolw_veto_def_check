@@ -1,0 +1,592 @@
+#! /usr/bin/env python
+
+import subprocess
+import shutil
+import os, sys
+import copy
+from optparse import OptionParser
+
+from glue import segments
+from glue.ligolw import ligolw
+from glue.ligolw import utils
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw.utils import ligolw_add
+from glue.ligolw.utils import process
+from glue.ligolw.utils import print_tables
+from glue import git_version
+from glue.segmentdb import query_engine
+from glue.segmentdb import segmentdb_utils
+
+from pylal.printutils import format_end_time_in_utc
+from pylal import InspiralUtils
+
+__prog__ = "ligolw_veto_def_check"
+__author__ = "Collin Capano <cdcapano@physics.syr.edu>"
+
+#
+#   Parse command line
+#
+
+parser = OptionParser(usage = "%s [options] veto_file1.xml veto_file2.xml ... " % __prog__, description = "Checks the segment database for higher versions of flags in the given veto definer file(s) during the specified times. Outputs a summary of what flags have higher versions and for what segments. Also checks if SciMon flags in the veto-definer file(s) are in the database. If the optional --write-new-veto-file is specified, a new veto definer file will be written based on what the program thinks are the correct versions to use. That is: vetoes that are found to have higher versions in the database will be re-written with the higher version. If a veto is found to not intersect at all with the correct version in the segment database, it will be discarded. This action can be overridden for specific flags using the various skip- options, however.")
+
+parser.add_option("-o", "--output-directory", default = "./", help = "write summary files to directory. Default is to write to the current directory.")
+parser.add_option("-n", "--write-new-veto-file", action = "store_true", default = False,  help = "write a new veto definer file with the updated versions to the specified files. The file will be named {IFOS}-UPDATED_VETO_DEFINER-{START_TIME}-{DURATION}.xml, where IFOS are all the ifos in the input veto definer file(s), START_TIME is the start time of the analysis (see --start-time for more info), and DURATION is the duration of the analysis (see --end-time for more info). This file will be located in the output-directory.")
+parser.add_option("-s", "--start-time", action = "store", type = "int", default = 931035296, help = "earliest time to check; default is the start of S6 (931035296)")
+parser.add_option("-e", "--end-time", action = "store", type = "int", default = None, help = "latest time to check; default is to check up to now. WARNING: If set to anything other than the default (now), the analysis may not be correct. This is because higher versions of flags may be defined at a point later than the given end time, making any lower version found obsolete.")
+parser.add_option("-F", "--skip-flag", action = "append", default = [], metavar = "IFO:NAME", help = "Keep all of the original vetoes for a given flag the same in the updated veto-definer file, regardless of the results of the analysis. Note that the flag will still be analyzed, so this option only has an effect if a new veto-definer file is desired. To specify multiple flags, give the option multiple times." )
+parser.add_option("-I", "--skip-ifo", action = "append", default = [], metavar = "IFO", help = "Add all of the given ifo's flags to the list of skipped flags. To specify multiple flags, give the option multiple times." )
+parser.add_option("-T", "--skip-type", action = "append", default = [], metavar = "TYPE", help = "Add all flags of the given type to the list of skipped flags. A flag's type is given by whatever preceeds the first '-' in the flag name. For example, H1:DMT-UP is a DMT flag. To specify multiple flags, give the option multiple times. Note: this does not work for Virgo flags." )
+parser.add_option("-S", "--skip-science-linked-flags", action = "store_true", default = False, help = "Add Science-related DMT flags to the list of skipped flags. These are flags that are republished along with DMT-SCIENCE, e.g., DMT-BADGAMMA." )
+parser.add_option("-U", "--skip-undefined-flags", action = "store_true", default = False, help = "Add undefined flags to the list of skipped flags. These are non-SciMon flags that are found to not intersect any of the vetoes in the input file(s). This can be due to a mistake in either the veto-definer file or in the insertion of the flag into the segment database. The default action is to delete these from the updated veto-definer file; turning this on will cause the vetoes to be left in as they were in the original file(s)." )
+parser.add_option("-v", "--verbose", action = "store_true", default = False, help = "Be verbose.")
+
+opts, veto_def_files = parser.parse_args()
+# check options
+veto_def_files = map(lambda x: x != 'stdin' and x or None, veto_def_files)
+if veto_def_files == []:
+    veto_def_files = [None]
+if opts.end_time is not None:
+    print >> sys.stderr, "WARNING: By setting an end-time to analyze, this analysis may not be correct. If a higher version of any flag has been inserted after the given end time, those flags will be obsolete."
+# adjust list arguments to comma separated strings so as not to confuse process_params table
+skip_flags = []
+skip_ifos = []
+skip_types = []
+for listopt, listname in [('skip_ifo', skip_ifos), ('skip_type', skip_types), ('skip_flag',skip_flags)]:
+    if getattr(opts, listopt) != []:
+        listname.extend( map(str.upper, getattr(opts, listopt)) )
+        setattr(opts, listopt, ','.join([flag for flag in listname]))
+    else:
+        setattr(opts, listopt, None)
+# make skip_flags into a list of tuples
+skip_flags = [tuple(x.split(':')) for x in skip_flags]
+    
+
+#
+#   Main
+#
+
+# copy each input file to the output directory and get md5sums of each
+analyzed_files = {}
+for filename in veto_def_files:
+    # if input is stdin (i.e., filenmae is None), copy the input to a file called 'stdin_input.xml' to the output directory
+    if filename is None:
+        target_file = '%s/stdin_input.xml' % opts.output_directory 
+        f = open( target_file, 'w')
+        shutil.copyfileobj( sys.stdin, f )
+        f.seek(0)
+    else:
+        target_file = "%s/%s" % (opts.output_directory, os.path.basename(filename))
+        if not shutil._samefile(filename, target_file):
+            shutil.copyfile( filename, target_file )
+        f = open(target_file, 'r')
+    # get the md5sum
+    _, md5sum = utils.load_fileobj( f )
+    f.close()
+    # add to the files to analyze
+    analyzed_files[target_file] = md5sum
+
+# load the veto definer file(s)
+xmldoc = ligolw_add.ligolw_add( ligolw.Document(), analyzed_files.keys() )
+veto_def_table = table.get_table(xmldoc, lsctables.VetoDefTable.tableName)
+
+# create summary_file directory in output directory to store files to
+if not os.path.exists( '%s/%s' %( opts.output_directory, 'summary_files' ) ):
+    os.mkdir( '%s/%s' %( opts.output_directory, 'summary_files') )
+
+# connect to the segment database
+database_location = "https://segdb.ligo.caltech.edu"
+connection = segmentdb_utils.setup_database(database_location)
+engine     = query_engine.LdbdQueryEngine(connection)
+
+# create a veto definer table to write to
+outtable = lsctables.New(lsctables.VetoDefTable)
+outdoc = ligolw.Document()
+outdoc.appendChild(ligolw.LIGO_LW())
+outproc_id = process.register_to_xmldoc(outdoc, __prog__, opts.__dict__, version = git_version.id)
+
+# freeze the time up to which we search; default is to set this to whatever the start time of the program is
+if opts.end_time is not None:
+    global_end_time = opts.end_time
+else:
+    global_end_time = outproc_id.start_time
+global_segment = segments.segment(opts.start_time, global_end_time)
+
+# add the original file's process info
+origproctab = table.get_table(xmldoc, lsctables.ProcessTable.tableName)
+newproctab = table.get_table(outdoc, lsctables.ProcessTable.tableName)
+for proc in origproctab:
+    newproc = lsctables.Process()
+    for x in newproc.__slots__:
+        try:
+            setattr(newproc, x, getattr(proc,x))
+        except AttributeError:
+            # can happen if the process table in the original file is out of date
+            setattr(newproc, x, None)
+    newproctab.append(newproc)
+
+# get html elements
+nl = "<br />"
+ttx, xtt, tx, xt, capx, xcap, rx, xr, cx, xc, rspx, xrsp, hlx, hxl, xhl = print_tables.set_output_format( "html" )
+xt = "</table>"
+thx = "<th>"
+xth = "</th>"
+ulx, xul, lix, xli = "<ul>", "</ul", "<li>", "</li>"
+
+# check sci-mon flags; for these, just check that there is an intersecting segment in the segment database for the given name
+found_scimon_flags = {}
+missing_scimon_flags = {}
+found_summ_files = {}
+missing_summ_files = {}
+if opts.verbose:
+    print >> sys.stderr, "Checking SciMon flags:"
+scimon_flags = dict([ [(veto.ifo, veto.name), [y for y in veto_def_table if y.ifo == veto.ifo and y.name == veto.name]] for veto in veto_def_table if veto.name.startswith('SCI-') ])
+for this_ifo, this_name in sorted(scimon_flags):
+    if opts.verbose:
+        print >> sys.stderr, "\t%s:%s" %(this_ifo, this_name)
+    for this_veto in scimon_flags[(this_ifo, this_name)]:
+        vseg = segments.segment(this_veto.start_time, this_veto.end_time != 0 and this_veto.end_time or segments.infinity)
+        sqlquery = "SELECT segdef.comment, segdef.version, segsumm.start_time, segsumm.end_time FROM segment_summary AS segsumm JOIN segment_definer AS segdef ON (segdef.segment_def_id = segsumm.segment_def_id) WHERE segdef.ifos = '%s' AND segdef.name = '%s' AND segsumm.end_time > %i" % (this_ifo, this_name, this_veto.start_time)
+        for cmt, vn, start, end in engine.query(sqlquery):
+            this_seg = segments.segment(start,end)
+            if this_seg.intersects(vseg):
+                found_scimon_flags.setdefault((this_ifo, this_name), {})
+                found_scimon_flags[(this_ifo,this_name)].setdefault(this_veto, [])
+                found_scimon_flags[(this_ifo, this_name)][this_veto].append((cmt, vn, this_seg))
+        # check if this_veto has no counterpart in the segdb
+        if (this_ifo, this_name) not in found_scimon_flags or ((this_ifo, this_name) in found_scimon_flags and this_veto not in found_scimon_flags[(this_ifo, this_name)]):
+            missing_scimon_flags.setdefault((this_ifo,this_name), [])
+            missing_scimon_flags[(this_ifo,this_name)].append(this_veto)
+
+    # write found summary file
+    if (this_ifo, this_name) in found_scimon_flags:
+        summ_fn = "%s/summary_files/%s-%s_FOUND-%i-%i.html" % ( opts.output_directory, this_ifo, this_name, global_segment[0], abs(global_segment) )
+        summ_file = open(summ_fn, 'w')
+        print >> summ_file, "%s\n%s" %( "<html>", "<body>" )
+        print >> summ_file, "<h1>%s:%s Flags Found in the SegDB</h1>" %( this_ifo, this_name)
+        print >> summ_file, "<p>These are instances of %s in the checked file for which a corresponding flag is found in the segment database that intersects with it. All intersecting %s flags in the database are shown.</p>" %( ':'.join([this_ifo, this_name]), ':'.join([this_ifo, this_name]) )
+        print >> summ_file, '<table border="1", cellpadding="5">'
+        print >> summ_file, rx + '<th colspan="7">From Veto-definer File</th><th colspan="5">From SegDB</th>' + xr
+        print >> summ_file, rx + thx + (xth+thx).join([ 'Version', 'Category', 'Start Pad', 'End Pad', 'Start Time', 'End Time', 'Comment', 'Version', 'Start Time', 'End Time', 'Comment', 'Overlap' ]) + xth + xr
+        for v in found_scimon_flags[(this_ifo, this_name)]:
+            special_cx = "%s%i%s" % (rspx, len(found_scimon_flags[(this_ifo,this_name)][v]), xrsp) 
+            print >> summ_file, rx + special_cx + (xc+special_cx).join([ str(v.version), str(v.category), str(v.start_pad), str(v.end_pad), str(v.start_time), str(v.end_time), v.comment ]) + xc,
+            for n, (dbcmt, dbvn, dbseg) in enumerate(found_scimon_flags[(this_ifo, this_name)][v]):
+                if n != 0:
+                    print >> summ_file, rx,
+                print >> summ_file, cx + (xc+cx).join([ str(dbvn), str(dbseg[0]), str(dbseg[1]), dbcmt, str(abs(dbseg & segments.segment(v.start_time, v.end_time == 0 and segment.infinity or v.end_time))) ]) + xc + xr
+        print >> summ_file, "</table>"
+        print >> summ_file, "%s\n%s" %( "</body>", "</html>" )
+        summ_file.close()
+        found_summ_files[(this_ifo, this_name)] = summ_fn
+
+    # write missing summary file
+    if (this_ifo, this_name) in missing_scimon_flags:
+        summ_fn = "%s/summary_files/%s-%s_MISSING-%i-%i.html" % ( opts.output_directory, this_ifo, this_name, global_segment[0], abs(global_segment) )
+        summ_file = open(summ_fn, 'w')
+        print >> summ_file, "%s\n%s" %( "<html>", "<body>" )
+        print >> summ_file, "<h1>%s:%s Flags Not Found in the SegDB</h1>" %( this_ifo, this_name)
+        print >> summ_file, "<p>These are all the %s entries in the veto definer file for which a corresponding flag could not be found in the segment database during the entries' specified time.</p>" %( ':'.join([this_ifo, this_name]) ) + nl
+        print >> summ_file, '<table style="background-color:#e5eecc", cellpadding="5">'
+        print >> summ_file, rx + thx + (xth+thx).join(["ifo", "name", "version", "category", "start_time", "end_time", "start_pad", "end_pad", "comment"]) + xth + xr
+        for veto in missing_scimon_flags[(this_ifo, this_name)]:
+            print >> summ_file, rx + cx + (xc+cx).join([veto.ifo, veto.name, str(veto.version), str(veto.category), str(veto.start_time), str(veto.end_time), str(veto.start_pad), str(veto.end_pad), veto.comment]) + xc + xr
+        print >> summ_file, "</table>"
+        print >> summ_file, "%s\n%s" %( "</body>", "</html>" )
+        summ_file.close()
+        missing_summ_files[(this_ifo, this_name)] = summ_fn
+        
+# cycle over flags, analyzing
+if opts.verbose:
+    print >> sys.stderr, "Checking the rest:"
+
+updated_flags = {}
+missing_flags = []
+unchanged_flags = []
+undefined_flags = {}
+non_intersecting_flags = {}
+
+check_names = dict([ [(veto.ifo, veto.name), [y for y in veto_def_table if y.ifo == veto.ifo and y.name == veto.name]] for veto in veto_def_table if (veto.ifo,veto.name) not in scimon_flags])
+
+# get flags to not update
+other_skipped_flags = [(this_ifo, this_name) for this_ifo, this_name in check_names if this_ifo in skip_ifos or this_ifo != 'V1' and this_name.split('-')[0] in skip_types]
+skip_flags.extend(other_skipped_flags)    
+
+# FIXME: Virgo science flags?
+science_related_flags = ['H1:DMT-INJECTION', 'H1:DMT-UP', 'H1:DMT-CALIBRATED', 'H1:DMT-BADGAMMA', 'H1:DMT-LIGHT', 'L1:DMT-SCIENCE', 'L1:DMT-INJECTION', 'L1:DMT-UP', 'L1:DMT-CALIBRATED', 'L1:DMT-BADGAMMA', 'L1:DMT-LIGHT']
+if opts.skip_science_linked_flags:
+    skip_flags.extend(tuple(x.split(':')) for x in science_related_flags)
+
+for this_ifo, this_name in sorted(check_names):
+    if opts.verbose:
+        print >> sys.stderr, "\t%s:%s" % (this_ifo, this_name)
+    # check if there are multiple versions
+    sqlquery = "SELECT DISTINCT(version) FROM segment_definer JOIN segment_summary AS segsumm ON (segment_definer.segment_def_id = segsumm.segment_def_id) WHERE segment_definer.ifos = '%s' AND segment_definer.name = '%s' AND segsumm.end_time > %i" %( this_ifo, this_name, opts.start_time )
+    versions = [row[0] for row in engine.query(sqlquery)]
+    if len(versions) == 0:
+        missing_flags.append((this_ifo, this_name))
+    else:
+        sqlquery = "SELECT segdef.version, segsumm.start_time, segsumm.end_time FROM segment_summary AS segsumm JOIN segment_definer AS segdef ON (segdef.segment_def_id = segsumm.segment_def_id) WHERE segdef.ifos = '%s' AND segdef.name = '%s' AND segsumm.end_time > %i" % (this_ifo, this_name, opts.start_time)
+        segs = segments.segmentlistdict()
+        for vn, start, end  in engine.query(sqlquery):
+            seg = segments.segment(start,end)
+            if seg.intersects(global_segment):
+                segs.setdefault(vn, segments.segmentlist([]))
+                segs[vn].append( segments.segment(start, end) & global_segment )
+        
+        # coalesce the segment lists, as well as create a copy to be used later to keep track of segments added by higher versions
+        added_segs = segments.segmentlistdict([ [vn, copy.copy(sl.coalesce())] for vn, sl in segs.items() ])
+        # check if the max version in the segment database is >= what's specified in the vetoes
+        vdf_vn_too_high = max(segs.keys()) < max([veto.version for veto in check_names[(this_ifo, this_name)] ])
+        if vdf_vn_too_high:
+            for vn in [veto.version for veto in check_names[(this-ifo, this_name)] if veto.version > max(segs.keys())]:
+                segs[vn] = segments.segmentlist([])
+        # check if any of the segments intersect with the version given in the vdf
+        flag_intersects = any([ segments.segment(veto.start_time, veto.end_time == 0 and segments.infinity or veto.end_time) in segs[veto.version] for veto in check_names[(this_ifo, this_name)] ])
+        # now cycle over the versions going from highest to lowest and remove segments of higher versions to get the corrected segments
+        versions = sorted([vn for vn in segs], reverse = True)
+        seg_extents = {}
+        uncertain_segs = segments.segmentlistdict()
+        for vn in versions:
+            seg_extents[vn] = segs[vn].extent()
+            higher_versions = [higher_vn for higher_vn in versions if higher_vn > vn]
+            for higher_vn in higher_versions:
+                segs[vn] -= segs[higher_vn]
+            # remove uncertain segs; these are segs that occur after all higher version's end times
+            if higher_versions != []:
+                uncertain_segs[vn] = segments.segmentlist([seg for seg in segs[vn] if all(seg_extents[higher_vn][1] <= seg[0] for higher_vn in higher_versions)])
+                segs[vn] -= uncertain_segs[vn]
+
+        # create the added segments segment list; this is done by going from low-to-high in versions and removing all segments from lower versions
+        for vn in sorted(versions):
+            for lower_vn in [x for x in sorted(versions) if x < vn]:
+                added_segs[vn] -= added_segs[lower_vn]
+        
+        # create updated veto entries
+        unique_vetoes = set([(this_ifo, this_name, veto.category, veto.start_pad, veto.end_pad, veto.comment, veto.start_time, veto.end_time) for veto in check_names[(this_ifo, this_name)]])
+        added_flags = []
+        for ifo, name, cat, start_pad, end_pad, comment, orig_start_time, orig_end_time in unique_vetoes:
+            veto_seg = segments.segmentlist([segments.segment(orig_start_time, orig_end_time == 0 and segments.infinity or orig_end_time)])
+            new_flag_segs = {}
+            # create flag from the highest version
+            if veto_seg.intersects( segments.segmentlist([seg_extents[max(versions)]]) ):
+                new_flag_segs[max(versions)] = (segments.segmentlist([seg_extents[max(versions)]]) & veto_seg).extent()
+            # for lower versions, only add the uncertain segments
+            for vn, sl in uncertain_segs.items():
+                if veto_seg.intersects(sl):
+                    new_flag_segs[vn] = (veto_seg & sl).extent()
+            for vn, (new_start_time, new_end_time) in sorted(new_flag_segs.items(), reverse = True):
+                updated_flag = lsctables.VetoDef()
+                updated_flag.process_id = outproc_id.process_id
+                updated_flag.ifo = ifo
+                updated_flag.name = name
+                updated_flag.version = vn 
+                updated_flag.category = cat
+                updated_flag.start_pad = start_pad
+                updated_flag.end_pad = end_pad
+                updated_flag.comment = comment
+                if new_start_time != orig_start_time:
+                    new_start_time -= abs(start_pad)
+                updated_flag.start_time = new_start_time
+                if orig_end_time == 0 and new_end_time == max([x[1] for x in new_flag_segs.values()]):
+                    updated_flag.end_time = 0
+                elif new_end_time != orig_end_time:
+                    new_end_time += abs(end_pad)
+                    updated_flag.end_time = new_end_time
+                else:
+                    updated_flag.end_time = new_end_time
+                added_flags.append(updated_flag)
+            
+        # check if the flag in the skipped flags; if not, add the new ones to the outtable; otherwise, add the original
+        if (this_ifo, this_name) in skip_flags or added_flags == [] and opts.skip_undefined_flags:
+            for veto in check_names[this_ifo, this_name]:
+                outtable.append(veto)
+        else:
+            for veto in added_flags:
+                outtable.append(veto)
+
+        # check how many vetoes have been updated
+        def match_criteria(v):
+            return (v.ifo, v.name, v.version, v.category, v.start_pad, v.end_pad, v.comment, v.start_time, v.end_time)
+        # if all the original flags are the same as the new flags, add to unchanged_flags, otherwise, write a summary html file for it
+        if all([ any([match_criteria(orig_veto) == match_criteria(new_veto) for new_veto in added_flags]) for orig_veto in check_names[(this_ifo,this_name)] ]):
+            unchanged_flags.append((this_ifo,this_name))
+        else:
+            # write summary
+            summ_fn = "%s/summary_files/%s-%s-%i-%i.html" % ( opts.output_directory, this_ifo, this_name, global_segment[0], abs(global_segment) )
+            summ_file = open( summ_fn, 'w' )
+            print >> summ_file, "<html>\n<body>"
+            print >> summ_file, "<h1> %s:%s </h1>" %( this_ifo, this_name )
+            print >> summ_file, "<p><i>This analysis valid for %i - %i (%s UTC - %s UTC)</i></p>" %( global_segment[0], global_segment[1], format_end_time_in_utc(global_segment[0]), format_end_time_in_utc(global_segment[1]) )
+            print >> summ_file, "<p>Used in vetoes:" + nl
+            print >> summ_file, '<table style="background-color:#e5eecc", cellpadding="5">'
+            print >> summ_file, rx + thx + (xth+thx).join(["ifo", "name", "version", "category", "start_time", "end_time", "start_pad", "end_pad", "comment"]) + xth + xr
+            for veto in check_names[(this_ifo, this_name)]:
+                print >> summ_file, rx + cx + (xc+cx).join([veto.ifo, veto.name, str(veto.version), str(veto.category), str(veto.start_time), str(veto.end_time), str(veto.start_pad), str(veto.end_pad), veto.comment]) + xc + xr
+            print >> summ_file, "</table>" + nl
+           
+            # check if these vetoes are undefined or not
+            if added_flags == []:
+                print >> summ_file, 'This flag is found in the segment database but none of the vetoes intersect with the times for which it was defined (i.e., segment_summary table segments). This is because:'
+                print >> summ_file, '<table  style="background-color:#ff8080", celpadding="5"><tr><td><b>' 
+                if vdf_vn_too_high:
+                    print >> summ_file, 'The minimum version specified in the veto-definer file is higher than the maximum version found in the segment database.'
+                elif flag_intersects:
+                    print >> summ_file, 'The veto intersects with segment_summary segments in the segment database, but not with the highest version. This can result in time being vetoed that should not be (assuming the versions were republished correctly in the segment database).'
+                else:
+                    print >> summ_file, 'The veto does not intersect with any versions of the flag in the segment database.'
+                print >> summ_file, '</b></td></tr></table><br />'
+            else:
+                print >> summ_file, "These should be updated to:" + nl
+                print >> summ_file, '<table style="background-color:#90ee90", cellpadding="5">'
+                print >> summ_file, rx + thx + (xth+thx).join(["ifo", "name", "version", "category", "start_time", "end_time", "start_pad", "end_pad", "comment"]) + xth + xr
+                for veto in added_flags:
+                    print >> summ_file, rx + cx + (xc+cx).join([veto.ifo, veto.name, str(veto.version), str(veto.category), str(veto.start_time), str(veto.end_time), str(veto.start_pad), str(veto.end_pad), veto.comment]) + xc + xr
+                print >> summ_file, "</table>" + nl
+
+            for vn in sorted(versions):
+                start, end = seg_extents[vn]
+                print >> summ_file, "<b>Version %i extent:</b> %i - %i (%s - %s)" % ( vn, start, end, format_end_time_in_utc(start), format_end_time_in_utc(end) ) + nl
+            print >> summ_file, "</p>"
+
+            print >> summ_file, "<h3>Extent of Uncertain Segments</h3>"
+            for vn, sl in sorted(uncertain_segs.items()):
+                print >> summ_file, lix + "Version %i: " % vn,
+                if uncertain_segs[vn] == []:
+                    print >> summ_file, "No uncertain segments." + xli
+                else:
+                    print >> summ_file, "%i - %i (%s - %s)" %( sl.extent()[0], sl.extent()[1], format_end_time_in_utc(sl.extent()[0]), format_end_time_in_utc(sl.extent()[1]) ) + xli
+            print >> summ_file, xul
+            print >> summ_file, '<p>This is the extent of segment_summary segments that come after the last defined segment for all higher versions than the stated version. These are "uncertain" because if new segments are appened to the higher versions in the future, these segments will be obsolete. For the individual segments, see "Uncertain Segment-summary Table Segments", below.</p>'
+
+            print >> summ_file, "<hr /><h2>Summary of Deleted Segment-summary Table Segments</h2>"
+            print >> summ_file, '<p>This is a summary of segment_summary table segments that were in the given version but not in higher versions. For the individual segments, see "Segment-summary Table Segments Deleted by Higher Versions", below.</p>'
+            for vn in sorted([x for x in versions if x != max(versions)]):
+                print >> summ_file, "<h3> Version %i </h3>" % vn
+                print >> summ_file, "<p><b>Total number of seconds deleted: %i</b>" % sum([abs(seg) for seg in segs[vn]]) + nl + nl
+                print >> summ_file, "Number of seconds deleted intersecting with above flag(s) in the veto definer file:"
+                print >> summ_file, tx
+                print >> summ_file, ''.join([ rx, thx, (xth+thx).join([ 'Category', 'Flag Start', 'Flag End', '# deleted seconds' ]), xth, xr ])
+                for veto in [x for x in check_names[(this_ifo, this_name)] if x.version == vn]:
+                    veto_seg = segments.segmentlist([segments.segment(veto.start_time, veto.end_time == 0 and segments.infinity or veto.end_time)])
+                    print >> summ_file, ''.join([ rx, cx, (xc+cx).join([ str(veto.category), str(veto.start_time), str(veto.end_time), str(veto_seg.intersects(segs[vn]) and sum([abs(seg) for seg in veto_seg & segs[vn]]) or 0) ]), xc, xr])
+                print >> summ_file, xt + nl
+                print >> summ_file, "Number of seconds deleted prior to start of higher versions:"
+                print >> summ_file, tx
+                print >> summ_file, ''.join([ rx, thx, (xth+thx).join([ 'Higher Version #', 'Earliest start time', 'UTC', 'Number of seconds deleted prior' ]), xth, xr ])
+                for higher_vn in sorted([x for x in versions if x > vn], reverse = True):
+                    print >> summ_file, ''.join([ rx, cx, (xc+cx).join([ str(higher_vn), str(seg_extents[higher_vn][0]), format_end_time_in_utc(seg_extents[higher_vn][0]), str(sum([abs(seg) for seg in segs[vn] if seg[1] <= seg_extents[higher_vn][0]])) ]), xc, xr ])
+                print >> summ_file, "%s\n%s" %(xt, nl)
+
+                print >> summ_file, "For deleted segments in the extent of higher versions:" + ulx
+                higher_vns_extent = segments.segmentlist([seg for higher_vn, seg in seg_extents.items() if higher_vn > vn]).coalesce().extent()
+                print >> summ_file, "%s number <= 2s long: %i %s" % (lix, len([seg for seg in segs[vn] if seg in higher_vns_extent and abs(seg) <= 2]), xli)
+                print >> summ_file, "%s number > 2s and <= 64s long: %i %s" % (lix, len([seg for seg in segs[vn] if seg in higher_vns_extent and abs(seg) > 2 and abs(seg) <= 64]), xli)
+                print >> summ_file, "%s number > 64s long: %i %s" % (lix, len([seg for seg in segs[vn] if seg in higher_vns_extent and abs(seg) > 64]), xli )
+                print >> summ_file, xul + "</p>"
+
+            print >> summ_file, "<hr /><h2>Summary of Added Segment-summary Table Segments</h2>"
+            print >> summ_file, '<p>This is a summary of segment_summary table segments that were in the given version but not in lower versions. For individual segments, see "Segment-summary Table Segments Added by Lower Versions", below.</p>'
+            for vn in sorted([x for x in versions if x != min(versions)]):
+                print >> summ_file, "<h3> Version %i </h3>" % vn
+                print >> summ_file, "<p><b>Total number of seconds added: %i</b>" % sum([abs(seg) for seg in added_segs[vn]]) + nl + nl
+                print >> summ_file, "Number of seconds added intersecting with above flag(s) in the veto definer file:"
+                print >> summ_file, tx
+                print >> summ_file, ''.join([ rx, thx, (xth+thx).join([ 'Category', 'Flag Start', 'Flag End', '# added seconds' ]), xth, xr ])
+                for veto in [x for x in check_names[(this_ifo, this_name)] if x.version == vn]:
+                    veto_seg = segments.segmentlist([segments.segment(veto.start_time, veto.end_time == 0 and segments.infinity or veto.end_time)])
+                    print >> summ_file, ''.join([ rx, cx, (xc+cx).join([ str(veto.category), str(veto.start_time), str(veto.end_time), str(veto_seg.intersects(added_segs[vn]) and sum([abs(seg) for seg in veto_seg & added_segs[vn]]) or 0) ]), xc, xr])
+                print >> summ_file, xt + nl
+
+                print >> summ_file, "For added segments in the extent of lower versions:" + ulx
+                lower_vns_extent = segments.segmentlist([seg for lower_vn, seg in seg_extents.items() if lower_vn < vn]).coalesce().extent()
+                print >> summ_file, "%s number <= 2s long: %i %s" % (lix, len([seg for seg in added_segs[vn] if seg in lower_vns_extent and abs(seg) <= 2]), xli)
+                print >> summ_file, "%s number > 2s and <= 64s long: %i %s" % (lix, len([seg for seg in added_segs[vn] if seg in lower_vns_extent and abs(seg) > 2 and abs(seg) <= 64]), xli)
+                print >> summ_file, "%s number > 64s long: %i %s" % (lix, len([seg for seg in added_segs[vn] if seg in lower_vns_extent and abs(seg) > 64]), xli )
+                print >> summ_file, xul + "</p>"
+
+            print >> summ_file, "<hr /><h2> Uncertain Segment-summary Table Segments </h2>"
+            for vn, sl in sorted(uncertain_segs.items()):
+                print >> summ_file, "<h3> Version %i </h3>" % vn
+                print >> summ_file, tx
+                print >> summ_file, "%s Segment %s UTC %s dt (s) %s" % ( rx+thx, xth+thx, xth+thx, xth+xr )
+                for seg in sorted(uncertain_segs[vn]): #, key = lambda x: abs(x), reverse = True):
+                    print >> summ_file, ''.join([ rx, cx, "%i<br />%i" %( seg[0], seg[1]), xc, cx, format_end_time_in_utc(seg[0]), " <br /> ", format_end_time_in_utc(seg[1]), xc, cx, "%i" % abs(seg), xc, xr ])
+                print >> summ_file, xt 
+
+            print >> summ_file, "<hr /><h2>Segment-summary Table Segments Deleted by Higher Versions </h2>"
+            print >> summ_file, '<p>These are segment_summary table segments that were in the given version but not in higher versions.</p>'
+            for vn in sorted([x for x in versions if x != max(versions)]):
+                print >> summ_file, "<h3> Version %i </h3>" % vn
+                print >> summ_file, tx
+                print >> summ_file, "%s Segment %s UTC %s dt (s) %s" % ( rx+thx, xth+thx, xth+thx, xth+xr )
+                for seg in sorted(segs[vn]): #, key = lambda x: abs(x), reverse = True):
+                    print >> summ_file, ''.join([ rx, cx, "%i<br /> %i" %( seg[0], seg[1]), xc, cx, format_end_time_in_utc(seg[0]), "<br />", format_end_time_in_utc(seg[1]), xc, cx, "%i" % abs(seg), xc, xr ])
+                print >> summ_file, xt 
+
+            print >> summ_file, "<hr /><h2>Segment-summary Table Segments Added by Lower Versions </h2>"
+            print >> summ_file, '<p>These are segment_summary table segments that were in the given version but not in lower versions.</p>'
+            for vn in sorted([x for x in versions if x != min(versions)]):
+                print >> summ_file, "<h3> Version %i </h3>" % vn
+                print >> summ_file, tx
+                print >> summ_file, "%s Segment %s UTC %s dt (s) %s" % ( rx+thx, xth+thx, xth+thx, xth+xr )
+                for seg in sorted(added_segs[vn]): #, key = lambda x: abs(x), reverse = True):
+                    print >> summ_file, ''.join([ rx, cx, "%i<br /> %i" %( seg[0], seg[1]), xc, cx, format_end_time_in_utc(seg[0]), "<br />", format_end_time_in_utc(seg[1]), xc, cx, "%i" % abs(seg), xc, xr ])
+                print >> summ_file, xt 
+            print >> summ_file, "%s\n%s" % ( '</body>', '</html>' )
+            summ_file.close()
+
+            # add to the correct file list
+            if added_flags == [] and flag_intersects:
+                undefined_flags[(this_ifo, this_name)] = summ_fn 
+            elif added_flags == [] and flag_intersects:
+                non_intersecting_flags[(this_ifo, this_name)] = summ_fn 
+            else:
+                updated_flags[(this_ifo, this_name)] = summ_fn
+
+
+# write master summary file
+all_ifos = sorted(set([v.ifo for v in veto_def_table]))
+global_summ_fn = '%s/%s-VETO_DEFINER_CHECK_SUMMARY-%i-%i.html' %( opts.output_directory, ''.join(all_ifos), global_segment[0], abs(global_segment) )
+summ_file = open( global_summ_fn, 'w' )
+print >> summ_file, "<html>\n<body>"
+print >> summ_file, "<h1>Veto Definer Check: %i - %i </h1>" %(global_segment[0], global_segment[1])
+print >> summ_file, "<h2>(%s UTC - %s UTC)</h2>" %( format_end_time_in_utc(global_segment[0]), format_end_time_in_utc(global_segment[1]) )
+print >> summ_file, "<p>File(s) Checked:"
+print >> summ_file, "<blockquote>"
+for filename, md5sum in analyzed_files.items():
+    print >> summ_file, '<a href="./%s">%s</a> md5sum: <code>%s</code>' % ( os.path.basename(filename), os.path.basename(filename), md5sum )
+print >> summ_file, "</blockquote>"
+if opts.write_new_veto_file:
+    new_veto_fn = '%s-UPDATED_VETO_DEFINER-%i-%i.xml' %( ''.join(all_ifos), global_segment[0], abs(global_segment) )
+    print >> summ_file, '<p>New veto definer file written to: <blockquote><a href="./%s">%s</a></blockquote></p>' % ( new_veto_fn, new_veto_fn )
+    print >> summ_file, "<p>All veto entries corresponding to these flags were left un-altered:" + ulx
+    print >> summ_file, lix + "All SciMon flags" + xli
+    if opts.skip_undefined_flags:
+        print >> summ_file, lix + "All Undefined flags" + xli
+    for x in skip_ifos+skip_types:
+        print >> summ_file, lix + "All %s flags" % x.upper() + xli
+    for flag in skip_flags:
+        if flag in check_names and flag not in other_skipped_flags:
+            print >> summ_file, lix + ':'.join(flag) + xli
+    print >> summ_file, xul + "</p>"
+
+print >> summ_file, "<hr /><h2>SciMon Flags Checked</h2>"
+print >> summ_file, '<p>These are flags that begin with "SCI-". "Found Flags Summary" links to the summary page with all vetoes in the veto definer file for which a corresponding flag could be found in the segment database during the desired times. All flags found in the segment database are listed on those pages. "Missing Flags Summary" links to the summary page with all vetoes for which a corresponding flag could <i>not</i> be found in the segment database during the desired times.</p>'
+if opts.write_new_veto_file:
+    print >> summ_file, '<p><b>All SciMon flags are written to the new veto definer file as they were originally, regardless of whether a corresponding flag could be found or not. To update these, please update by hand.</b></p>'
+print >> summ_file, '<table border="1", cellpadding="5", align="center">'
+print >> summ_file, rx + thx + (xth+thx).join([ 'Flag', 'Found Flags Summary', 'Missing Flags Summary' ])
+for (this_ifo, this_name) in sorted(scimon_flags):
+    print >> summ_file, rx + cx + '%s:%s' % (this_ifo, this_name) + xc,
+    if (this_ifo, this_name) in found_summ_files:
+        print >> summ_file, ''.join([ cx, hlx, "./summary_files/%s" % os.path.basename(found_summ_files[(this_ifo, this_name)]), hxl, 'link', xhl, xc]),
+    else:
+        print >> summ_file, ''.join([ '<td style="background-color:#ff8080">', 'None', xc ]),
+    if (this_ifo, this_name) in missing_summ_files:
+        print >> summ_file, ''.join([ '<td style="background-color:#ff8080">', hlx, "./summary_files/%s" % os.path.basename(missing_summ_files[(this_ifo, this_name)]), hxl, 'link', xhl, xc]),
+    else:
+        print >> summ_file, ''.join([ '<td style="background-color:#80ff80">', 'None', xc ]),
+    print >> summ_file, xr
+print >> summ_file, "</table>"
+
+print >> summ_file, "<hr /><h2>Undefined Flags</h2>"
+print >> summ_file, "<p>These are non-SciMon entries in the veto-definer file(s) that do not intersect with any defined segments at the correct version in the segment database, rendering them useless. This can happen for one of three reasons:<ol>"
+print >> summ_file, lix + "<b>Missing flags:</b> No summary segment could be found in the segment database during the times checked, implying that the flag is not in the segment database at all." + xli
+print >> summ_file, lix + "<b>Non-intersecting flags:</b> The flag is defined in the database, but none of the defined segments intersect with times for which the veto was specified to be used. This could be because the version specified in the veto-definer file is higher than the maximum version found in the database; see the summary files for details." + xli
+print >> summ_file, lix + "<b>Non-intersecting flags due to higher versions:</b> The entries in the veto-definer file do intersect with defined segments in the segment database at the versions specified but do not intersect with higher versions of the flag. This could indicate a mistake in the publication of the segments -- when the higher versions were added, segments occuring before the times that were meant to be fixed were not republished at the higher version, as they should have been -- or this could have been done on purpose -- the higher versions were added to the database because it was found that the flag should not be defined during those times, and so the veto should be removed. If the latter, leaving these flags in the veto-definer file will result in times being vetoed that shouldn't be. If the former, removing these flags will result in times not being vetoed that should be. <b>Without contacting the person who republished the segments, it is impossible to tell which is the case.</b>" + xli
+print >> summ_file, '</ol>'
+
+print >> summ_file, "<h3>Missing Flags</h3>"
+if missing_flags == []:
+    print >> summ_file, '<p style="background-color:#80ff80; text-align:center"><br /><i>None</i><br />&nbsp</p>'
+else:
+    if opts.write_new_veto_file and not opts.skip_undefined_flags:
+        print >> summ_file, "<p><b>All of these flags have been removed from the updated veto-definer file.</b></p>"
+    print >> summ_file, '<table style="background-color:#ff8080" align="center", cellpadding="5">'
+    print >> summ_file, rx + thx + (xth+thx).join(["ifo", "name", "version", "category", "start_time", "end_time", "start_pad", "end_pad", "comment"]) + xth + xr
+    for ifo, name in sorted(missing_flags):
+        for veto in check_names[(ifo,name)]:
+            print >> summ_file, rx + cx + (xc+cx).join([veto.ifo, veto.name, str(veto.version), str(veto.category), str(veto.start_time), str(veto.end_time), str(veto.start_pad), str(veto.end_pad), veto.comment]) + xc + xr
+    print >> summ_file, "</table>" + nl
+
+print >> summ_file, "<h3>Non-intersecting Flags</h3>"
+if non_intersecting_flags.keys() == []:
+    print >> summ_file, '<p style="background-color:#80ff80; text-align:center"><br /><b>None</b><br />&nbsp</p>'
+else:
+    if opts.write_new_veto_file:
+        print >> summ_file, "<p><b>All flags marked </b><i>removed</i><b> have been removed from the updated veto-definer file.</b></p>"
+    print >> summ_file, '<table style="background-color:#ff8080"; align="center", cellpadding="5">'
+    print >> summ_file, '<caption><i>Click on link to see summary</i></caption>'
+    updt_mark = '<td style="background-color:#80ff80"><i>removed</i>'
+    for (this_ifo, this_name), summ_fn in sorted(non_intersecting_flags.items()):
+        print >> summ_file, ''.join([ rx, cx, hlx, "./summary_files/%s" % os.path.basename(summ_fn), hxl, "%s:%s" %( this_ifo, this_name), xhl, xc, opts.write_new_veto_file and '%s' %( ( opts.skip_undefined_flags or (this_ifo,this_name) in skip_flags) and cx or updt_mark) or cx, xc, xr ]) 
+    print >> summ_file, xt
+
+print >> summ_file, "<h3>Non-intersecting Flags due to Higher Versions</h3>"
+if undefined_flags.keys() == []:
+    print >> summ_file, '<p style="background-color:#80ff80; text-align:center"><br /><b>None</b><br />&nbsp</p>'
+else:
+    if opts.write_new_veto_file:
+        print >> summ_file, "<p><b>All flags marked </b><i>removed</i><b> have been removed from the updated veto-definer file.</b></p>"
+    print >> summ_file, '<table style="background-color:#ff8080"; align="center", cellpadding="5">'
+    print >> summ_file, '<caption><i>Click on link to see summary</i></caption>'
+    updt_mark = '<td style="background-color:#80ff80"><i>removed</i>'
+    for (this_ifo, this_name), summ_fn in sorted(undefined_flags.items()):
+        print >> summ_file, ''.join([ rx, cx, hlx, "./summary_files/%s" % os.path.basename(summ_fn), hxl, "%s:%s" %( this_ifo, this_name), xhl, xc, opts.write_new_veto_file and '%s' %( ( opts.skip_undefined_flags or (this_ifo,this_name) in skip_flags) and cx or updt_mark) or cx, xc, xr ]) 
+    print >> summ_file, xt
+
+
+print >> summ_file, "<hr /><h2>Flags that Should be Updated</h2>"
+print >> summ_file, "<p>These are non-SciMon flags that were found to have higher versions defined in the segment database.</p>"
+if undefined_flags.keys() == []:
+    print >> summ_file, '<p style="background-color:#80ff80; text-align:center"><br /><b>None</b><br />&nbsp</p>'
+else:
+    if opts.write_new_veto_file:
+        print >> summ_file, "<p><b>All flags marked </b><i>updated</i><b> have been updated in the new veto definer file according to what's shown on their respective summary pages.</b></p>"
+    print >> summ_file, '<table style="background-color:#ff8080"; align="center", cellpadding="5">'
+    print >> summ_file, '<caption><i>Click on link to see summary</i></caption>'
+    updt_mark = '<td style="background-color:#80ff80"><i>updated</i>'
+    for (this_ifo, this_name), summ_fn in sorted(updated_flags.items()):
+        print >> summ_file, ''.join([ rx, cx, hlx, "./summary_files/%s" % os.path.basename(summ_fn), hxl, "%s:%s" %( this_ifo, this_name), xhl, xc, opts.write_new_veto_file and '%s' %( (this_ifo,this_name) in skip_flags and cx or updt_mark) or cx, xc, xr ])
+    print >> summ_file, xt
+
+print >> summ_file, "<hr /><h2>Flags with No Higher Versions</h2>"
+print >> summ_file, '<p>These are all non-SciMon flags for which there are no higher versions in the segment database than what is specified in the veto-definer file for all associated vetoes.</p><ul style="background-color:#80ff80"'
+for this_ifo, this_name in sorted(unchanged_flags):
+    print >> summ_file, ''.join([ lix, "%s:%s" % (this_ifo, this_name), xli ])
+print >> summ_file, xul
+
+print >> summ_file, "<hr />"
+print >> summ_file, InspiralUtils.writeProcessParams( __prog__, git_version.verbose_msg.replace('\n','<br>'), sys.argv[1:] ).replace('Figure(s) produced', 'Results generated') 
+print >> summ_file, "%s\n%s" % ( '</body>', '</html>' )
+
+summ_file.close()
+
+# write xml file
+if opts.write_new_veto_file:
+    if opts.verbose:
+        print >> sys.stderr, "Writing new veto file..."
+    # add scimon flags
+    for vl in scimon_flags.values():
+        for veto in vl:
+            outtable.append(veto)
+    # add missing flags
+    if not opts.skip_undefined_flags:
+        outtable += [veto for this_ifo, this_name in check_names for veto in check_names[(this_ifo, this_name)] if (this_ifo, this_name) in missing_flags]
+    outdoc.childNodes[0].appendChild(outtable)
+    process.set_process_end_time(outproc_id)
+    # try to find ligolw.xsl file based on the location of this executable
+    if os.path.exists( '%s/%s' % (opts.output_directory, 'ligolw.xsl') ):
+        xsl_file = 'ligolw.xsl'
+    elif sys.argv[0].endswith('bin/%s' % __prog__) and os.path.exists(sys.argv[0].replace('bin/%s' % __prog__, 'etc/ligolw.xsl')):
+        shutil.copy( sys.argv[0].replace('bin/%s' % __prog__, 'etc/ligolw.xsl'), opts.output_directory ) 
+        xsl_file = 'ligolw.xsl'
+    else:
+        xsl_file = None
+    utils.write_filename(outdoc, '%s/%s' %( opts.output_directory, new_veto_fn ), xsl_file = xsl_file)
+
+if opts.verbose:
+    print >> sys.stderr, "Finished!\nSummary file written to:\n\t%s" % ( global_summ_fn )
+
+sys.exit(0)

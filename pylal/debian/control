@@ -1,0 +1,49 @@
+Source: pylal
+Section: python
+Priority: optional
+Maintainer: Jameson Rollins <jameson.rollins@ligo.org>
+X-Python-Version: >= 2.6
+Build-Depends:
+ pkg-config,
+ python,
+ python-all-dev,
+ python-numpy,
+ libframe-dev (>= 8.15),
+ lal-dev (>= 6.14.0),
+ lalburst-dev (>= 1.3.0),
+ lalframe-dev (>= 1.2.5),
+ lalinspiral-dev (>= 1.6.5),
+ lalmetaio-dev (>= 1.2.6),
+ debhelper (>= 7)
+Standards-Version: 3.9.3
+
+Package: python-pylal
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
+ lal,
+ lal-python,
+ lalburst,
+ lalburst-python,
+ lalframe,
+ lalframe-python,
+ lalinspiral,
+ lalinspiral-python,
+ python-glue,
+ python-glue-segments,
+ python-matplotlib,
+ python-numpy,
+ python-scipy
+Description: Python LSC Algorithm Library
+ The PyLAL package is best described as the Python LIGO Algorithm
+ Library. It was originally a Python wrapping of parts of the LAL
+ library, and although it continues to provide that function it has
+ acquired a large collection of independent code of its own so that it
+ is no longer exclusively a Python interface to LAL. In this package
+ you will find convenience code to assist with manipulating XML
+ documents using the glue.ligolw I/O library, you will find a wrapping
+ to libframe to enable GWF frame-file reading, you will find binning
+ and smoothing code, and you will find (partial) wrappings of LAL's
+ burstsearch, date, inject, tools, and window packages. Additionally,
+ you will find most, if not all, of the inspiral pipeline's follow-up
+ and summary tools, and several burst-related trigger post-production
+ tools.

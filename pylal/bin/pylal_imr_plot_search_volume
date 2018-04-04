@@ -1,0 +1,102 @@
+#!/usr/bin/python
+import sys
+from glue.ligolw import ligolw, utils
+from pylal import rate
+import matplotlib
+matplotlib.use('Agg')
+import pylab
+import numpy
+params =  {'text.usetex': True }
+pylab.rcParams.update(params)
+
+
+matplotlib.rcParams.update({
+        "font.size": 8.0,
+        "axes.titlesize": 8.0,
+        "axes.labelsize": 8.0,
+        "xtick.labelsize": 8.0,
+        "ytick.labelsize": 8.0,
+        "legend.fontsize": 8.0,
+        "figure.figsize": (3,3),
+        "figure.dpi": 600,
+        "subplots.left": 0.25,
+        "subplots.right": 0.75,
+        "subplots.bottom": 0.25,
+        "subplots.top": 0.75,
+        "savefig.dpi": 600,
+        "text.usetex": True     # render all text with TeX                 
+})
+
+f = sys.argv[1]
+
+xmldoc = utils.load_filename(f, verbose = True)
+xmldoc = xmldoc.childNodes[0]
+
+
+rangeVal  = rate.BinnedArray.from_xml(xmldoc, "mass1_mass2_range")
+bins = rate.NDBins.from_xml(xmldoc.childNodes[1])
+range_error  = rate.BinnedArray.from_xml(xmldoc, "mass1_mass2_range_error")
+#### Make the NaN in the error as zero for plotting only
+whereAreNaNs = numpy.isnan(range_error.array);
+range_error.array[whereAreNaNs] = 0;
+
+
+M1 = rangeVal.centres()[0]
+M2 = rangeVal.centres()[1]
+dm = M1[1]-M1[0]
+
+
+
+
+
+ax=pylab.subplot(111)
+pylab.pcolor(M1,M2,rangeVal.array,vmin=0, vmax=200,label='Sensitive Range (Mpc)') 
+
+cv = 0
+
+for j in range(len(M1)-1):
+    for i in range(len(M2)-1):
+        if int(rangeVal.array[j,i]) > 4: ax.annotate(str(int(rangeVal.array[j,i])), (M1[j]+dm/3.,M2[i]+dm/2.), color=[cv,cv,cv],size='x-small')
+
+
+for j in range(len(M1)-1):
+    for i in range(len(M2)-1):
+        if int(range_error.array[j,i]) > 0 : ax.annotate(r'$\pm$'+ str(int(range_error.array[j,i])), (M1[j]+dm/3.,M2[i]+dm/10.), color=[cv,cv,cv],size='xx-small')
+
+pylab.xlabel(r"$M_{1}$" + " $(M_{\odot})$")
+pylab.ylabel(r"$M_{2}$" + " $(M_{\odot})$")
+ax.annotate('Range in Mpc', (60,70),color=[1,1,1])
+pylab.xlim([min(M1), max(M1)])
+pylab.ylim([min(M2), max(M2)])
+pylab.gca().set_aspect(1)
+pylab.savefig("mass1_mass2_range_color" + ".png") 
+pylab.close()
+
+
+pylab.gray()
+ax=pylab.subplot(111)
+pylab.pcolor(M1,M2,rangeVal.array,vmin=0, vmax=200,label='Sensitive Range (Mpc)') 
+cv = 0
+for j in range(len(M1)-1):
+    for i in range(len(M2)-1):
+        if int(rangeVal.array[j,i]) > 4: ax.annotate(str(int(rangeVal.array[j,i])), (M1[j]+dm/3.,M2[i]+dm/2.), color=[cv,cv,cv],size='x-small')
+
+for j in range(len(M1)-1):
+    for i in range(len(M2)-1):
+        if int(range_error.array[j,i]) > 0 : ax.annotate(r'$\pm$'+ str(int(range_error.array[j,i])), (M1[j]+dm/3.,M2[i]+dm/10.), color=[cv,cv,cv],size='xx-small')
+
+
+pylab.xlabel(r"$M_{1}$" + " $(M_{\odot})$")
+pylab.ylabel(r"$M_{2}$" + " $(M_{\odot})$")
+ax.annotate('Range in Mpc', (60,70),color=[1,1,1])
+pylab.xlim([min(M1), max(M1)])
+pylab.ylim([min(M2), max(M2)])
+pylab.gca().set_aspect(1)
+pylab.savefig("mass1_mass2_range_grayscale" + ".png") 
+pylab.close()
+
+
+
+
+
+

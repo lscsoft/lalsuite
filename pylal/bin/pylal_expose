@@ -1,0 +1,395 @@
+#!/usr/bin/env python 
+#
+# Copyright (C) 2008  Nickolas Fotopoulos and Alexander Dietz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+"""
+pylal_expose: EXternal-trigger POpulation SEarch
+
+This code computes the probability that a set of loudest statistics from
+searches for external triggers is drawn from the same distribution as a
+set of loudest statistics from background trials.
+"""
+
+from __future__ import division
+
+__author__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>, Alexander Dietz alexander.dietz@lapp.in2p3.fr"
+__prog__ = "pylal_expose"
+__title__ = "External Trigger Population Search"
+
+import random
+import optparse
+import cPickle as pickle
+                       
+import numpy 
+import pylab as plt
+#plt.rc('text', usetex=True)
+
+
+from pylal import InspiralUtils
+from pylal import rate
+from pylal import git_version
+from pylal import PopStatement
+from pylal import plotutils
+
+#
+# Functions
+#
+
+def create_hist(data):
+    """
+    Create a histogram of the data
+    """
+    nbins = 30
+    val_min = min(data)-1.0
+    val_max = max(data)+1.0
+    bins = rate.LinearBins(val_min, val_max, nbins)
+    px = bins.lower()
+
+    # create the histogram and fill it
+    hist = numpy.zeros(nbins)
+    for value in data:
+        hist[bins[value]] += 1
+    return px, hist
+    
+def parse_args():
+    """
+    Parsing the command line arguments. 
+    """
+    parser = optparse.OptionParser(version=git_version.verbose_msg)
+
+    # inputs
+    parser.add_option("--data-path", help="path to the data pickle files")   
+    parser.add_option("--grb-pickle", default = "list_grb.pickle", \
+                      help="pickle file containing the GRB data.")
+
+    parser.add_option("--analyze", type="string",help="Specifies what to "\
+                      "analyze. Possible values: {box,test}.")
+    parser.add_option("--statistic", type="string",help="Specifies what "\
+                      "statistoc to use. Possible values: {fap,ifar}.")
+    parser.add_option("--reject-no-candidate", action="store_true",
+                      help="Rejects any GRB which does not have any candidate"\
+                      " for the population statement.", default=False)
+    parser.add_option("--reject-grb", type="string",default = "",\
+                      help="Comma-seperated list"\
+                      " of GRBs to be rejected.")
+    parser.add_option("--reject-empty", action="store_true", default=False,
+        help="reject every empty trial in both on/off-source")
+    
+    parser.add_option("--m2-min", type="float", help="minimum m2 value")
+    parser.add_option("--m2-max", type="float", help="maximum m2 value")
+    parser.add_option("--m2-nbins", type="int", help="number of m2 bins")
+
+    # InspiralUtils compatibility
+    parser.add_option("--gps-start-time", type="int",
+        help="GPS start time of data analyzed")
+    parser.add_option("--gps-end-time", type="int",
+        help="GPS end time of data analyzed")
+    parser.add_option("--ifo-tag", help="IFO coincidence time analyzed")
+    parser.add_option("--user-tag", help="a tag to label your plots")
+    parser.add_option("--output-path", help="root of the HTML output")
+    parser.add_option("--enable-output", action="store_true",
+        default=False, help="enable plots and HTML output")
+    parser.add_option("--show-plot", action="store_true", default=False,
+        help="display the plots to screen if an X11 display is available")
+       
+    # odds and ends
+    parser.set_defaults(onmismatch="raise")
+    parser.add_option("--version-mismatch-ok", action="store_const",
+        const="warn", dest="onmismatch", help="by default, the program "\
+        "will halt if the version id stored in the pickle does not match the "\
+        "running version id; specify this option to reduce to a warning")
+    parser.add_option("--verbose", action="store_true", default=False,
+        help="print extra information to stdout")
+
+    options, arguments = parser.parse_args()
+
+    if options.ifo_tag is not None:
+        options.ifo_times = options.ifo_tag
+
+    # check the minimal required arguments
+    for opt in ["data_path","m2_min","m2_max","m2_nbins","statistic"]:
+        if getattr(options, opt) is None:
+            raise ValueError,  "--%s is required" % opt.replace("_", "-")
+
+    return options, arguments
+
+
+def add_sigma_levels(plot):
+
+    # arbitrary numbers found to be about accurate
+    # see code qqtest.py
+    shift_vector = [0.045, 0.11, 0.18]
+    shift_color = ['#CCCCCC','#999999','#555555']
+    
+    x = numpy.arange(0.0, 1.0, 0.01)
+    for shift, col in zip(shift_vector, shift_color):
+        y = x+shift
+        
+        plot.ax.plot(x,y, color=col)
+        
+    return plot
+
+#########################################################
+####################  MAIN  ############################
+#########################################################
+
+#
+# initialization
+#
+opts, args = parse_args()
+page = InspiralUtils.InspiralPage(opts)
+
+
+# create the PopStatement instances which are used to handle the
+# population statement calculations
+grb_data = pickle.load(file(opts.grb_pickle))
+pop_stat = PopStatement.PopStatement(grb_data,'condensed')
+list_reject_grb = opts.reject_grb.split(",")
+
+# create the PopStatement instances for the m2-bin analysis
+pop_m2 = {}
+m2_bins = rate.LinearBins(opts.m2_min, opts.m2_max, opts.m2_nbins )
+for m2_low, m2_high in zip(m2_bins.lower(), m2_bins.upper()):
+    mass_bin = "%.1f-%.1f" % (m2_low, m2_high)
+    pop_m2[mass_bin] = PopStatement.PopStatement(grb_data, mass_bin)
+
+
+# loop over each GRB in the list
+list_grb = grb_data.keys()
+list_grb.sort()
+for grb_name in list_grb:
+
+    file_on = opts.data_path+\
+              "/pylal_grblikelihood_onsource_GRB%s_OPENBOX.pickle"%grb_name
+    file_off = opts.data_path+\
+               "/pylal_grblikelihood_offsource_GRB%s_OPENBOX.pickle"%grb_name
+    file_inj = opts.data_path+\
+               "/pylal_grblikelihood_injections_GRB%s_OPENBOX.pickle"%grb_name
+ 
+    # read the data from the files
+    id, dummy, dummy, dummy, onsource_L_by_m2, log_sum_L =\
+           pickle.load(open(file_on))
+    git_version.check_match(id, onmismatch=opts.onmismatch)
+    
+    id, dummy, dummy, offsource_L_by_trial_m2, off_log_sum_L_by_trial =\
+           pickle.load(open(file_off))
+    git_version.check_match(id, onmismatch=opts.onmismatch)
+    n_trials = offsource_L_by_trial_m2.shape[0]
+
+    # read injection data only in the case of testing (i.e. not-box-opening)
+    if opts.analyze!='box':
+        id, dummy, dummy, injections_L_by_trial_m2, inj_log_sum_L_by_trial =\
+               pickle.load(open(file_inj))
+        git_version.check_match(id, onmismatch=opts.onmismatch)
+    else:
+        inj_log_sum_L_by_trial = [0]
+        injections_L_by_trial_m2 = []
+
+    # double check the detection statistic
+    count_louder = (off_log_sum_L_by_trial > log_sum_L).sum(axis=0)
+    stat = count_louder/n_trials
+    text = "GRB%s p(c|0)= %.1f %% | log(L) = %.2f" % \
+           (grb_name, 100.0*stat, log_sum_L)
+    if log_sum_L == -numpy.infty:
+        text+= "(no candidate)"    
+    page.write(text)
+
+    if (opts.reject_no_candidate and log_sum_L == -numpy.infty) \
+           or grb_name in list_reject_grb:
+        text = "This GRB %s will not be used for the final "\
+               "population statement"%grb_name
+        page.write(text)
+        continue
+
+    # add data to the m2-pop statement instances
+    for index_m2, (m2_low, m2_high) in \
+        enumerate(zip(m2_bins.lower(), m2_bins.upper())):             
+        mass_bin = "%.1f-%.1f" % (m2_low, m2_high)
+        
+        if opts.analyze!='box':
+            injections_L_by_trial = injections_L_by_trial_m2[:,index_m2]
+        else:
+            injections_L_by_trial = [0]
+            
+        pop_m2[mass_bin].add_data(grb_name, \
+                                  injections_L_by_trial,\
+                                  offsource_L_by_trial_m2[:,index_m2], \
+                                  onsource_L_by_m2[index_m2])
+
+    # populate the popStatement instance with real background/onsource
+    pop_stat.add_data(grb_name, inj_log_sum_L_by_trial, \
+                      off_log_sum_L_by_trial, log_sum_L) 
+
+# finalize the sampling
+pop_stat.finalize()
+for pop_inst in pop_m2.values():
+    pop_inst.finalize()
+
+page.write("Number of offsource trials total: %d" % pop_stat.n_off)
+page.write("Number of GRB data total: %d" % pop_stat.n_grb)
+
+# create overview plots (for the condense case)
+plot = pop_stat.check_off_distribution_lik()
+page.add_plot(plot.fig, "check_off_distribution-lik")
+
+plot = pop_stat.check_off_distribution_far()
+page.add_plot(plot.fig, "check_off_distribution-far")
+
+# decide what to do: a general test or choose an onsource
+if opts.analyze=='test':
+    vec_lik = {}
+    vec_ifar = {}
+    
+    for type in ['random']:
+        print "Samples drawn from ", type
+        
+        dummy_lik = []
+        dummy_ifar = []
+        for i in range(5000):
+            pop_stat.select_onsource(type, reject_empty = opts.reject_empty)
+            z_lik, z_ifar = pop_stat.compute_wmu()
+
+            dummy_lik.append(z_lik)
+            dummy_ifar.append(z_ifar)
+            
+        pickle.dump(dummy_lik, open('expose_random_z.pickle','w'))
+        sys.exit(0)
+
+        vec_lik[type]=dummy_lik
+        vec_ifar[type]=dummy_ifar
+
+    a1, a2 = create_hist(vec_lik['random'])
+    b1, b2 = create_hist(vec_lik['single'])
+    c1, c2 = create_hist(vec_lik['max'])     
+    
+    plt.clf()
+    plt.plot(a1, a2, 'r-')
+    plt.plot(b1, b2, 'b-')
+    plt.plot(c1, c2, 'g-')
+    plt.grid(True)
+    plt.xlabel('sigma')
+    plt.ylabel('number')
+    plt.legend(('random','single','max'))
+    page.add_plot(plt.gcf(), "test-lik")
+        
+    a1, a2 = create_hist(vec_ifar['random'])
+    b1, b2 = create_hist(vec_ifar['single'])
+    c1, c2 = create_hist(vec_ifar['max'])     
+    
+    plt.clf()
+    plt.plot(a1, a2, 'r-')
+    plt.plot(b1, b2, 'b-')
+    plt.plot(c1, c2, 'g-')
+    plt.grid(True)
+    plt.xlabel('sigma')
+    plt.ylabel('number')
+    plt.legend(('random','single','max'))
+    page.add_plot(plt.gcf(), "test-ifar")    
+    
+else:    
+
+    # prepare arrays to hold the data
+    z_by_m2 = numpy.zeros(opts.m2_nbins, float)
+    p_by_m2 = numpy.zeros(opts.m2_nbins, float)
+
+    # analyse each of the m2 pop instances
+    for index_m2, (m2_low, m2_high) in \
+            enumerate(zip(m2_bins.lower(), m2_bins.upper())):
+                
+        mass_bin = "%.1f-%.1f" % (m2_low, m2_high)
+        pop_m2[mass_bin].set_stat(opts.statistic)
+        pop_m2[mass_bin].select_onsource(opts.analyze, reject_empty =\
+                                         opts.reject_empty)
+        z_by_m2[index_m2] = pop_m2[mass_bin].compute_wmu()
+        p_by_m2[index_m2] = pop_m2[mass_bin].p_one_sided
+
+        # create the plots
+        plot = pop_m2[mass_bin].create_plot_hist()
+        page.add_plot(plot.fig, "hist-"+mass_bin)
+        plot = pop_m2[mass_bin].create_plot_qq()
+        page.add_plot(plot.fig, "qq-"+mass_bin)
+
+
+    # select either a fake trial or the box
+    pop_stat.set_stat(opts.statistic)
+    pop_stat.select_onsource(opts.analyze, reject_empty = opts.reject_empty)
+    z_lik = pop_stat.compute_wmu()
+
+    page.write("Number of actual offsource trials used: %d" % pop_stat.n_off)
+    page.write("Number of actual GRB data used: %d" % pop_stat.n_grb)
+
+    plot = pop_stat.create_plot_hist()
+    page.add_plot(plot.fig, "histCondense")
+    plot = pop_stat.create_plot_qq()
+    plot = add_sigma_levels(plot)
+    plot.ax.axis([0.0, 1.0, 0.1, 1.0])
+    page.add_plot(plot.fig, "qqCondense")
+
+    # write the basic result to the output and to the web page
+    text = "The result of the analysis for the condense statement is: "+\
+               "%.2f sigma (i.e. %.2f Percent )" %\
+               (z_lik, 100.0*pop_stat.p_one_sided)
+    page.write(text)
+
+    # create the final plot
+    plt.clf()
+    plt.plot(m2_bins.centres(), z_by_m2, 'r-', linewidth = 3)
+    plt.grid(True)
+    plt.xlabel('m2')
+    plt.ylabel('sigma')
+    page.add_plot(plt.gcf(), "condense_sigma-"+opts.analyze)
+
+    plt.clf()
+    plt.plot(m2_bins.centres(), p_by_m2, 'r-', linewidth = 3)
+    plt.grid(True)
+    plt.xlabel('m2')
+    plt.ylabel('p (one sided)')
+    page.add_plot(plt.gcf(), "condense_prob-"+opts.analyze)
+
+
+    plot = pop_stat.create_cdf_plot()
+    page.add_plot(plot.fig, "condense_cdf-"+opts.analyze)
+
+    plot = pop_stat.create_pdf_plot()
+    page.add_plot(plot.fig, "condense_pdf-"+opts.analyze)
+
+    plot = pop_stat.create_hist_plot(10,[2.5, 10.0])
+    page.add_plot(plot.fig, "condense_hist10-"+opts.analyze)
+
+    plot = pop_stat.create_hist_plot(8,[2.5, 10.0])
+    page.add_plot(plot.fig, "condense_hist8-"+opts.analyze)
+
+    # write out the data for later usage
+    f = open('wmu_data.pickle', 'w')
+    pickle.dump([pop_stat.on_list, pop_stat.off_list],f)
+
+
+# create the html page    
+page.write_page()
+
+# store the key results in a tex file for the paper
+tex_file = open('expose.tex','w')
+tex_file.write('\\newcommand\\numGRBs{%d}\n' % pop_stat.n_grb)
+tex_file.write('\\newcommand\\numbertotaloff{%d}\n'% pop_stat.n_off)
+p_100 = 100.0*pop_stat.p_one_sided
+tex_file.write('\\newcommand\\mwuprob{%.0f}\n'% p_100)
+tex_file.write('\\newcommand\\mwusigma{%.2f}\n'% z_lik)
+p_dummy =  100.0-p_100
+tex_file.write('\\newcommand\\resultUTestInverse{%.0f}\n' % p_dummy)
+tex_file.close()
+print "expose.tex file has been created"
+

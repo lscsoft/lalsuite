@@ -1,0 +1,419 @@
+#!/usr/bin/python
+
+"""
+Client for querying a LDRdataFindServer to find LSC data.
+
+Uses pyGlobus and the LDRdataFindClient modules.
+
+
+This program is part of the Grid LSC User Environment (GLUE)
+
+GLUE is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+You should have received a copy of the GNU General Public License along with
+this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+from glue import git_version
+__version__ = git_version.id
+
+import sys
+import os
+import getopt
+import re
+import exceptions
+
+try:
+        from pyGlobus import security
+except ImportError:
+        print >> sys.stderr, """
+Error: unable to import security module from pyGlobus.
+
+Check that pyGlobus is correctly installed and in your PYTHONPATH.
+"""
+        sys.exit(1)
+
+# this client should have its PYTHONPATH set for it during installation
+# to find LDRdataFindClient.py, but if it does not we can try to find
+# it by looking for LDR_LOCATION
+
+PYTHONPATH = os.getenv('PYTHONPATH', None)
+
+if not PYTHONPATH:
+        LDR_LOCATION = os.getenv('LDR_LOCATION', None)
+        if LDR_LOCATION:
+                sys.path.append("%s/ldr/lib" % LDR_LOCATION)
+
+
+try:
+        from glue import LDRdataFindClient
+        from glue import gsiserverutils
+        from glue.lal import LIGOTimeGPS
+except ImportError as e:
+        print >> sys.stderr, """
+Error: unable to import modules from glue.
+
+Check that glue is correctly installed and in your PYTHONPATH.
+
+%s
+""" % e
+        sys.exit(1)
+
+
+def usage():
+        """
+        Print a usage message to stderr.
+        """
+        msg = """\
+NAME
+        LSCdataFind
+
+SYNOPSIS
+        LSCdataFind --server=NAME:PORT --observatory=NAME --type=NAME 
+               --gps-start-time=GPS --gps-end-time=GPS [ --lal-cache ] 
+               [ --url-type=SCHEME ]  [ --match=EXPRESSION ]
+               [ --names-only ] [ --limit=LIMIT ] [ --offset=OFFSET ]
+               [ --strict-time-check ] [--show-times] [ --version ]
+               [ --disable-host-auth ] [ --no-proxy ]
+
+        LSCdataFind --server=NAME:PORT --filename
+
+        LSCdataFind --server=NAME:PORT --show-observatories
+
+        LSCdataFind --server=NAME:PORT --show-types
+ 
+	LSCdataFind --server=NAME:PORT --show-times --type foo --observatory bar
+
+        LSCdataFind --server=NAME:PORT --ping
+
+        LSCdataFind --server=NAME:PORT --help
+
+DESCRIPTION
+        Query a LDRdataFindServer to obtain physical filenames 
+        or URLs for data files from a certain instrument and of 
+        a particular frame type within a GPS range.
+
+        -v, --version
+                Print version information for LSCdataFind client
+
+        -o, --observatory    
+                observatory(ies) that generated frame file 
+                Use --show-observatories to see what is available
+
+        -t, --type  
+                type of frame file 
+                Use --show-types to see what is available
+
+        -s, --gps-start-time 
+                start of GPS time range
+
+        -e, --gps-end-time   
+                end of GPS time range
+
+        -r, --server
+                hostname and optional port of server to query, in the form
+                host:port
+
+        -l, --lal-cache
+                format output for use as a LAL cache file
+
+        -m, --match
+                return only results that match a regular expression
+
+        -n, --names-only
+                return only the names of files with particular values for
+                instrument, type, start, and end rather than full URLs
+
+        -P, --no-proxy
+                attempt to authenticate without a grid proxy.
+
+        -d, --disable-host-auth
+                disable GSI host authentication
+
+        -u, --url-type
+                return only URLs with particular scheme or head such as
+                'file' or 'gsiftp'
+
+        -w, --show-observatories
+                list available observatory data
+
+        -y, --show-types
+                list available types
+
+        -a, --show-times
+		list gps-second segments for all data of type specified.
+		Must be used with --type foo and --observatory bar, where foo 
+                is a frame type and bar is an observatory. Optionally
+		Supports one or both of --gps-start-time and
+		--gps-end-time to restrict returned time ranges.
+
+        -p, --ping
+                ping the LDRDataFind server
+
+        -f, --filename
+                return URL(s) for a particular file
+
+        --limit
+                limit the number of results returned
+
+        --offset
+                offset from which to count the limit of results returned,
+                requires using --limit
+
+        --strict-time-check
+                return only frame files within the GPS times and with
+                no padding on the boundaries; this may break LAL frame
+                cache reading routines
+
+        -h, --help  
+                show this usage message
+
+ENVIRONMENT
+
+        LSC_DATAFIND_SERVER can be set to avoid having to use the 
+        --server option on the command line. 
+
+        LSC_DATAFIND_URL_TYPE can be set to avoid having to use the
+        --url-type option on the command line.
+
+        LSC_DATAFIND_MATCH can be set to avoid having to use the
+        --match option on the command line. 
+
+EXAMPLE
+
+[hydra]$ LSCdataFind --server=dataserver.phys.uwm.edu --observatory=H 
+--type=R --gps-start-time=714024240 --gps-end-time=714024340 --url-type=file --match=localhost
+file://localhost/netdata/s001/S1/R/H/714023808-714029599/H-R-714024224-16.gwf
+file://localhost/netdata/s001/S1/R/H/714023808-714029599/H-R-714024240-16.gwf
+file://localhost/netdata/s001/S1/R/H/714023808-714029599/H-R-714024256-16.gwf
+file://localhost/netdata/s001/S1/R/H/714023808-714029599/H-R-714024272-16.gwf
+file://localhost/netdata/s001/S1/R/H/714023808-714029599/H-R-714024288-16.gwf
+file://localhost/netdata/s001/S1/R/H/714023808-714029599/H-R-714024304-16.gwf
+file://localhost/netdata/s001/S1/R/H/714023808-714029599/H-R-714024320-16.gwf
+file://localhost/netdata/s001/S1/R/H/714023808-714029599/H-R-714024336-16.gwf
+\
+"""
+        print >>sys.stderr, msg
+
+
+# grab command line options
+shortop = "vt:s:e:wyaphlr:f:u:m:o:nPdO:"
+longop = [
+          "version",
+          "help", 
+          "show-observatories",
+          "show-types",
+          "observatory=",
+          "gps-start-time=",
+          "gps-end-time=",
+          "type=",
+          "ping",
+          "server=",
+          "lal-cache",
+          "filename=",
+          "url-type=",
+          "match=",
+          "names-only",
+          "limit=",
+          "offset=",
+          "strict-time-check",
+          "show-times",
+          "no-proxy",
+          "disable-host-auth",
+          "output-file=",
+          ]
+
+try:
+	opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
+except getopt.GetoptError:
+        print >>sys.stderr, "Error parsing command line"
+        print >>sys.stderr, "Enter 'LSCdataFind --help' for usage"
+        sys.exit(1)
+
+# defaults
+hostPortString = None
+port = 30010
+lalcache = False
+noproxy = False # i.e., use proxy by default
+disablehostauth = False # i.e. use host auth by default
+
+clientMethodArgDict = {
+        'observatory': None,
+        'end': None,
+        'start': None,
+        'type': None,
+        'times': None,
+        'filename': None,
+        'urlType': None,
+        'match': None,
+        'limit': None,
+        'offset': None,
+        'strict': None
+        }
+
+# default method 
+clientMethod = 'findFrameURLs'
+
+# environment variables override defaults but not
+# command line options
+try:
+        hostPortString = os.environ['LSC_DATAFIND_SERVER']
+except:
+        pass
+
+try:   
+        clientMethodArgDict['urlType'] = os.environ['LSC_DATAFIND_URL_TYPE'] 
+        clientMethod = 'findFrameURLsFilter'
+except:
+        pass
+
+try:
+        clientMethodArgDict['match'] = os.environ['LSC_DATAFIND_MATCH']
+        clientMethod = 'findFrameURLsFilter'
+except:
+        pass
+        
+output_file = sys.stdout
+
+for o, a in opts:
+        if o in ("-h", "--help"):
+                usage()
+                sys.exit(0)
+        elif o in ("-v", "--version"):
+                print 'LSCdataFind client version', __version__
+                import glue.LDRdataFindClient
+                print 'Built on top of LDRdataFindClient version', glue.LDRdataFindClient.version()
+                sys.exit(0)
+        elif o in ("-p", "--ping"):
+                clientMethod = 'ping'
+        elif o in ("-w", "--show-observatories"):
+                clientMethod = 'showObservatories'
+        elif o in ("-y", "--show-types"):
+                clientMethod = 'showTypes'
+        elif o in ("-o", "--observatory"):
+                clientMethodArgDict['observatory'] = a
+        elif o in ("-s", "--gps-start-time"):
+                clientMethodArgDict['start'] = str(LIGOTimeGPS(a).seconds)
+        elif o in ("-e", "--gps-end-time"):
+                a = LIGOTimeGPS(a)
+                if a.nanoseconds:
+                        clientMethodArgDict['end'] = str(a.seconds + 1)
+                else:
+                        clientMethodArgDict['end'] = str(a.seconds)
+        elif o in ("-t", "--type"):
+                clientMethodArgDict['type'] = a
+        elif o in ("-l", "--lal-cache"):
+                lalcache = True
+        elif o in ("-f", "--filename"):
+                clientMethodArgDict['filename'] = a
+                clientMethod = 'singleFrameFind'
+        elif o in ("-r", "--server"):
+                hostPortString = a
+        elif o in ("-u", "--url-type"):
+                pat = re.compile("rl-type")
+                m = pat.match(a)
+                if m:
+                        print >>sys.stderr, "The correct option is --url-type"
+                        print >>sys.stderr, "Enter 'LSCdataFind --help' for usage"
+                        sys.exit(1)
+                clientMethodArgDict['urlType'] = a
+                clientMethod = 'findFrameURLsFilter'
+        elif o in ("-m", "--match"):
+                clientMethodArgDict['match'] = a
+                clientMethod = 'findFrameURLsFilter'
+        elif o in ("-n", "--names-only"):
+                clientMethodArgDict['namesOnly'] = True
+                clientMethod = 'findFrameNames'
+        elif o in ("--limit",):
+                clientMethodArgDict['limit'] = int(a)
+        elif o in ("--offset",):
+                clientMethodArgDict['offset'] = int(a)
+        elif o in ("--strict-time-check",):
+                clientMethodArgDict['strict'] = True
+        elif o in ("-a","--show-times"):
+                clientMethodArgDict['show-times'] = True
+                clientMethod = 'showTimes'
+        elif o in ("-P","--no-proxy"):
+                noproxy = True
+        elif o in ("-d","--disable-host-auth"):
+                disablehostauth = True
+        elif o in ("-O", "--output-file"):
+                output_file = open(a, "w")
+
+if not clientMethod:
+        print >>sys.stderr, "Bad combination or missing options"
+        print >>sys.stderr, "Enter 'LSCdataFind --help' for usage"
+        sys.exit(1)
+
+# determine server and port
+if not hostPortString:
+        print >>sys.stderr, "No LDRdataFindServer specified"
+        print >>sys.stderr, "Enter 'LSCdataFind --help' for usage"
+        sys.exit(1)
+
+if hostPortString.find(':') < 0:
+        # no port specified
+        host = hostPortString
+else:
+        # server and port specified
+        host, portString = hostPortString.split(':')
+        port = int(portString)
+
+
+# open connection to LDRdataFindServer
+try:
+        myClient = LDRdataFindClient.LSCdataFindClient( host, port, noproxy, disablehostauth )
+except Exception as e:
+        print >>sys.stderr, "Unable to connect to LDRdataFindServer %s:%d" % (host, port)
+        if gsiserverutils.checkCredentials():
+                print >>sys.stderr, "Got the following error : " + str(e)
+                print >>sys.stderr, "Enter 'LSCdataFind --help' for usage"
+        sys.exit(1)
+
+        
+# execute the query and print the result
+try:
+        result = eval("myClient.%s(%s)" % (clientMethod, clientMethodArgDict))
+        if isinstance( result, str ):
+                output_file.write(result + "\n")
+        elif isinstance( result, LDRdataFindClient.lfnlist ):
+                if len(result) == 0:
+                        print >>sys.stderr, "No files found!"
+                else:
+                        for r in result:
+                                output_file.write(r + "\n")
+        elif isinstance( result, LDRdataFindClient.pfnlist ):
+                if len(result) == 0:
+                        print >>sys.stderr, "No URLs found!"
+                else:
+                        if lalcache:
+                                for pfn in result:
+                                        lfn = os.path.basename(pfn)
+                                        head, ext = os.path.splitext(lfn)
+                                        a, b, c, d = head.split('-') 
+                                        output_file.write("%s %s %s %s %s\n" % (a, b, c, d, pfn))
+
+                        else:
+                                for r in result:
+                                        output_file.write(r + "\n")
+        elif isinstance( result, list ):
+                for r in result:
+                        output_file.write(r + "\n")
+        else:
+                msg = "Error: unknown result format : %s" % result
+                raise LDRdataFindClient.LDRdataFindException(msg)
+
+except Exception as e:
+        print >>sys.stderr, "Error querying LDRdataFindServer: %s" % str(e)
+        print >>sys.stderr, "Enter 'LSCdataFind --help' for usage"
+        sys.exit(1)
+
+output_file.close()
+sys.exit(0)

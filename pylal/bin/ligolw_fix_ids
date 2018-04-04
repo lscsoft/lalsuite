@@ -1,0 +1,143 @@
+#!/usr/bin/python
+#
+# copyright (C) 2011-2013 by Drew Keppel, Thomas Dent
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+from optparse import OptionParser
+import sys
+
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue.ligolw.utils import process as ligolw_process
+from pylal import git_version
+from pylal import ligolw_thinca
+
+
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+# Use interning row builder to save memory.
+
+lsctables.table.RowBuilder = lsctables.table.InterningRowBuilder
+
+
+# Use C row classes for memory efficiency and speed.
+
+lsctables.SnglInspiralTable.RowType = lsctables.SnglInspiral = ligolw_thinca.SnglInspiral
+
+
+# =============================================================================
+#
+#			   Add Process Information
+#
+# =============================================================================
+
+process_program_name = "ligolw_fix_ids"
+
+def append_process(xmldoc, comment = None, verbose = None):
+	process = ligolw_process.append_process(xmldoc, program = process_program_name, version = __version__, cvs_repository = u"lscsoft", cvs_entry_time = __date__, comment = comment)
+
+	params = []
+	if comment is not None:
+		params += [(u"--comment", u"lstring", comment)]
+	if verbose is not None:
+		params += [(u"--verbose", None, None)]
+
+	ligolw_process.append_process_params(xmldoc, process, params)
+
+	return process
+
+
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+
+
+def parse_command_line():
+	parser = OptionParser(
+		version = "Name: %%prog\n%s" % git_version.verbose_msg,
+		usage = "%prog [options] file ...",
+		description = "%prog fixes the inspiral table so that different sngl_inspiral triggers have different event_ids. The LIGO Light Weight XML files listed on the command line are processed one by one in order, and over-written with the results.  If no files are named, then input is read from stdin and output written to stdout.  Any files whose names end in \".gz\" are assumed to be gzip-compressed and will be decompressed and recompressed during I/O."
+	)
+	parser.add_option("-c", "--comment", metavar = "text", help = "Set comment string in process table (default = None).")
+	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
+	options, filenames = parser.parse_args()
+
+	return options, filenames
+
+
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+
+# Command line
+
+options, filenames = parse_command_line()
+
+# Iterate over files
+
+for n, filename in enumerate(filenames):
+
+	# Load the file
+
+	if options.verbose:
+		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
+	xmldoc = utils.load_filename(filename, verbose = options.verbose)
+	lsctables.table.InterningRowBuilder.strings.clear()
+
+	# Add an entry to the process table
+
+	process = append_process(
+		xmldoc,
+		comment = options.comment,
+		verbose = options.verbose
+	)
+
+	# lalapps_tmpltbank and lalapps_inspiral currently produce entries
+	# that all have the same event_id=sngl_inspiral:event_id:0. Because
+	# ligolw_sqlite currently fails when trying to add files where all
+	# event_id's are the same, this program was written to give each row
+	# a unique id. This is purely a temporary fix to deal with files
+	# that already exist. New files should not have this problem.
+
+	snglinsp_tbl = lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+	snglinsp_tbl.set_next_id(lsctables.SnglInspiralID(0))
+	for row in snglinsp_tbl:
+		row.event_id = snglinsp_tbl.get_next_id()
+
+	# Close out the process table
+
+	ligolw_process.set_process_end_time(process)
+
+	# Write back to disk, and clean up
+
+	utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = filename.endswith(".gz"))
+	xmldoc.unlink()
+	lsctables.table.reset_next_ids(lsctables.TableByName.values())

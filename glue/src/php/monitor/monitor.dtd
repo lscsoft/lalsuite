@@ -1,0 +1,22 @@
+<!ELEMENT monitor (name, description, creation_time, start_time?,server_name?,(event,latency_comparison,process_duration)*)>
+<!ELEMENT latency_comparison (event,event,window,gps_difference)>
+<!ELEMENT event (type,ifo?,name,description,gps_time,latency,bool?,process_duration?)>
+<!ELEMENT process_duration (ifo?,name,description,gps_difference,bool)>
+<!ELEMENT latency (gps_difference)>
+<!ELEMENT type (file_modification|file_creation|log_file_record|database_entry)>
+<!ELEMENT file_modification (file_name)>
+<!ELEMENT file_creation (file_description)>
+<!ELEMENT log_file_record (file_name)>
+<!ELEMENT database_entry (server_name)>
+<!ELEMENT file_description (file_name?,#CDATA)>
+<!ELEMENT file_name (#CDATA)>
+<!ELEMENT server_name (#CDATA)>
+<!ELEMENT ifo (#CDATA)>
+<!ELEMENT bool (#CDATA)>
+<!ELEMENT name (#CDATA)>
+<!ELEMENT description (#CDATA)>
+<!ELEMENT window (gps_difference)>
+<!ELEMENT gps_difference (#PCDATA)>
+<!ELEMENT gps_time (#PCDATA)>
+<!ELEMENT creation_time (#PCDATA)>
+<!ELEMENT start_time (#PCDATA)>

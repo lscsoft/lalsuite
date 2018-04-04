@@ -1,0 +1,216 @@
+#!/usr/bin/python
+__author__ = "Chad Hanna"
+__prog__ = "IFOstatus_check"
+
+import os
+import sys
+import commands
+import shutil
+
+import matplotlib
+matplotlib.use('Agg')
+
+from pylal import InspiralUtils
+from pylal import webUtils
+from pylal import Fr
+from optparse import *
+from glue import lal
+
+from pylab import *
+
+from pylal import git_version
+from pylal import viz
+from pylal import date
+from pylal import xlal
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+usage = """ %prog [options]
+"""
+
+parser = OptionParser(usage, version=git_version.verbose_msg)
+
+## ADD OPTIONS FOR DATA TYPES, OBSERVATORIES ETC..!!!
+#parser.add_option("-D","--dataFind-executable",action="store",type="string",\
+#    metavar=" EXEC",help="use EXEC to check the call LSCdataFind query")
+
+parser.add_option("-g","--gps-time",action="store",type="string",\
+    metavar=" GPS",help="use gps GPS to check trends")
+
+parser.add_option("-i","--ifo-times",action="store",type="string",\
+    default=None, metavar=" IFO",help="use gps IFO to check trends")
+
+parser.add_option("","--ifo-tag",action="store",\
+    type="string",  metavar=" IFOTAG",\
+    help="ifo tag gives the information about ifo times and stage")
+
+parser.add_option("-T","--user-tag", action="store",type="string", \
+    default=None, metavar=" USERTAG",help="user tag for the output file name")
+
+parser.add_option("-o","--output-path",action="store",type="string",\
+    default="", metavar=" PATH",\
+    help="path where the figures would be stored")
+
+parser.add_option("-O","--enable-output",action="store_true",\
+    default="false",  metavar="OUTPUT",\
+    help="enable the generation of the html and cache documents")
+
+
+command_line = sys.argv[1:]
+(opts,args) = parser.parse_args()
+
+#################################
+# Sanity check of input arguments
+
+if not opts.output_path:
+  print >> sys.stderr, "No output path specified."
+  print >> sys.stderr, "Use --output-path PATH to specify location."
+  sys.exit(1)
+
+currentDir = os.path.abspath(".")
+
+gps = LIGOTimeGPS(opts.gps_time.split('.')[0])
+gpsplus = LIGOTimeGPS(str(int(opts.gps_time.split('.')[0])+86400))
+gpsminus = LIGOTimeGPS(str(int(opts.gps_time.split('.')[0])-86400))
+
+utc = xlal.date.XLALGPSToUTC(gps)
+
+if utc[1] < 10: month = '0'+str(utc[1])
+else: month = str(utc[1])
+
+if utc[2] < 10: day = '0'+str(utc[2])
+else: day = str(utc[2])
+
+if utc[3] < 10: hour = '0'+str(utc[3])
+else: hour = str(utc[3])
+
+if utc[4] < 10: minute = '0'+str(utc[4])
+else: minute = str(utc[4])
+
+if utc[5] < 10: second = '0'+str(utc[5])
+else: second = str(utc[5])
+
+
+opts = InspiralUtils.initialise(opts, __prog__, git_version.verbose_msg)
+fnameList = []
+
+if opts.enable_output is True:
+  html_filename = opts.output_path + opts.prefix + opts.suffix + ".html"
+  webPage = webUtils.WebPage("Ifo status for " + opts.ifo_times + " @ " + opts.gps_time.split('.')[0] + " (" + str(utc[0]) + "/" + month + "/" + day + " " + hour + ":" + minute + ":" + second + " utc", html_filename)
+
+utc = xlal.date.XLALGPSToUTC(gpsminus)
+if utc[1] < 10: month = '0'+str(utc[1])
+else: month = str(utc[1])
+
+if utc[2] < 10: day = '0'+str(utc[2])
+else: day = str(utc[2])
+
+if opts.ifo_times[0] == 'H':
+  plotURL = 'http://blue.ligo-wa.caltech.edu/scirun/S5/DailyStatistics/'
+if opts.ifo_times[0] == 'L':
+  plotURL = 'http://london.ligo-la.caltech.edu/scirun/S5/DailyStatistics/'
+plotLink = 'Summary' + '_' + str(utc[0]) + '_' + month+day+'_' + opts.ifo_times.lower()+'.pdf'
+
+pngLink = plotLink.replace('.pdf','.png')
+
+# the plots posted on london can be reached without password
+if opts.ifo_times[0] == 'L':
+  os.chdir(opts.output_path)
+  plot = commands.getoutput('wget '+plotURL+plotLink)
+  convert = commands.getoutput('convert '+plotLink+' '+pngLink)
+  os.remove(plotLink)
+  os.chdir(currentDir)
+  figName = InspiralUtils.set_figure_name(opts,str(utc[0]) + '_' + month+day)
+  saveplot = shutil.move(opts.output_path + "/" + pngLink,figName)
+  fnameList.append(figName)
+  print plot
+# the access to the plots posted on blue requires a password. So we just put a link to these pages.
+#else:
+#  convert = commands.getoutput('convert -rotate 90 '+plotLink+' '+pngLink)
+
+if opts.enable_output is True:
+  webPage.appendSection("day: " + month+day)
+  if opts.ifo_times[0] == 'L':
+    webPage.lastSection.image("Images/"+os.path.basename(figName))
+  else:
+    webPage.lastSection.link(plotURL+plotLink,plotURL+plotLink)
+
+utc = xlal.date.XLALGPSToUTC(gps)
+
+if utc[1] < 10: month = '0'+str(utc[1])
+else: month = str(utc[1])
+
+if utc[2] < 10: day = '0'+str(utc[2])
+else: day = str(utc[2])
+
+if opts.ifo_times[0] == 'H':
+  plotURL = 'http://blue.ligo-wa.caltech.edu/scirun/S5/DailyStatistics/'
+if opts.ifo_times[0] == 'L':
+  plotURL = 'http://london.ligo-la.caltech.edu/scirun/S5/DailyStatistics/'
+plotLink = 'Summary' + '_' + str(utc[0]) + '_' + month+day+'_' + opts.ifo_times.lower()+'.pdf' 
+
+pngLink = plotLink.replace('.pdf','.png')
+
+# the plots posted on london can be reached without password
+if opts.ifo_times[0] == 'L':
+  os.chdir(opts.output_path)
+  plot = commands.getoutput('wget '+plotURL+plotLink)
+  convert = commands.getoutput('convert '+plotLink+' '+pngLink)
+  os.remove(plotLink)
+  os.chdir(currentDir)
+  figName = InspiralUtils.set_figure_name(opts,str(utc[0]) + '_' + month+day)
+  saveplot = shutil.move(opts.output_path + "/" + pngLink,figName)
+  fnameList.append(figName)
+  print plot
+# the access to the plots posted on blue requires a password. So we just put a link to these pages.
+#else:
+#  convert = commands.getoutput('convert -rotate 90 '+plotLink+' '+pngLink) 
+
+if opts.enable_output is True:
+  webPage.appendSection("day: " + month+day)
+  if opts.ifo_times[0] == 'L':
+    webPage.lastSection.image("Images/"+os.path.basename(figName))
+  else:
+    webPage.lastSection.link(plotURL+plotLink,plotURL+plotLink)
+
+utc = xlal.date.XLALGPSToUTC(gpsplus)
+if utc[1] < 10: month = '0'+str(utc[1])
+else: month = str(utc[1])
+
+if utc[2] < 10: day = '0'+str(utc[2])
+else: day = str(utc[2])
+
+if opts.ifo_times[0] == 'H':
+  plotURL = 'http://blue.ligo-wa.caltech.edu/scirun/S5/DailyStatistics/'
+if opts.ifo_times[0] == 'L':   
+  plotURL = 'http://london.ligo-la.caltech.edu/scirun/S5/DailyStatistics/'
+plotLink = 'Summary' + '_' + str(utc[0]) + '_' + month+day+'_' + opts.ifo_times.lower()+'.pdf'
+
+pngLink = plotLink.replace('.pdf','.png')
+
+# the plots posted on london can be reached without password
+if opts.ifo_times[0] == 'L':
+  os.chdir(opts.output_path)
+  plot = commands.getoutput('wget '+plotURL+plotLink)
+  convert = commands.getoutput('convert '+plotLink+' '+pngLink)
+  os.remove(plotLink)
+  os.chdir(currentDir)
+  figName = InspiralUtils.set_figure_name(opts,str(utc[0]) + '_' + month+day)
+  saveplot = shutil.move(opts.output_path + "/" + pngLink,figName)
+  fnameList.append(figName)
+  print plot
+# the access to the plots posted on blue requires a password. So we just put a link to these pages.
+#else:
+#  convert = commands.getoutput('convert -rotate 90 '+plotLink+' '+pngLink)
+
+if opts.enable_output is True:
+  webPage.appendSection("day: " + month+day)
+  if opts.ifo_times[0] == 'L':
+    webPage.lastSection.image("Images/"+os.path.basename(figName))
+  else:
+    webPage.lastSection.link(plotURL+plotLink,plotURL+plotLink)
+
+if opts.enable_output is True:
+  InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+  webPage.cleanWrite('IUL')
+
+sys.exit(0)
+

@@ -1,0 +1,452 @@
+#!/usr/bin/python
+import sys
+try:
+        import sqlite3
+except ImportError:
+        # pre 2.5.x
+        from pysqlite2 import dbapi2 as sqlite3
+
+import math
+import numpy
+from optparse import OptionParser
+from glue import segments
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import dbtables
+from glue.ligolw import utils
+from glue.ligolw import table
+from glue import segmentsUtils
+from glue.ligolw.utils import process
+from glue.ligolw.utils import segments as ligolw_segments
+
+from pylal import db_thinca_rings
+from pylal import rate
+from pylal import SimInspiralUtils
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+from pylal import imr_utils
+
+from pylal import spawaveform
+import math
+import matplotlib
+matplotlib.use('Agg')
+import pylab
+from scipy import optimize
+from scipy import special
+
+
+from pylal import git_version
+__author__ = "Chad Hanna <channa@ligo.caltech.edu>, Satya Mohapatra <satya@physics.umass.edu>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+lsctables.LIGOTimeGPS = LIGOTimeGPS
+
+
+def parse_command_line():
+	parser = OptionParser(version=git_version.verbose_msg, usage = "%prog [options] [file ...]", description = "%prog computes missed found plots")
+	parser.add_option("--instruments", metavar = "name[,name,...]", help = "Set the list of instruments.  Required.  Example \"H1,H2,L1\"")
+	parser.add_option("--live-time-program", default = "thinca", metavar = "name", help = "Set the name of the program whose rings will be extracted from the search_summary table.  Default = \"thinca\".")
+	parser.add_option("--output-name-tag", dest= "outnametag", default = "omega", metavar = "name", help = "Set the name of the program whose rings will be extracted from the search_summary table.  Default = \"omega\".")
+	parser.add_option("--far", help = "FAR to use for injection finding instead of loudest event", default=float("inf"), type="float")
+	parser.add_option("--veto-segments-name", default = "vetoes", help = "Set the name of the veto segments to use from the XML document.")
+	parser.add_option("-t", "--tmp-space", metavar = "path", help = "Path to a directory suitable for use as a work area while manipulating the database file.  The database file will be worked on in this directory, and then moved to the final location when complete.  This option is intended to improve performance when running in a networked environment, where there might be a local disk with higher bandwidth than is available to the filesystem on which the final output will reside.")
+	parser.add_option("--verbose", action = "store_true", help = "Be verbose.")
+
+	opts, filenames = parser.parse_args()
+
+	#if opts.instruments: opts.instruments = lsctables.instrument_set_from_ifos(opts.instruments)
+	if opts.instruments: opts.instruments = frozenset(lsctables.instrument_set_from_ifos(opts.instruments))
+	if not filenames:
+		print >>sys.stderr, "must specify at least one database file"
+		sys.exit(1)
+	return opts, filenames
+
+opts, filenames = parse_command_line()
+
+IMR = imr_utils.DataBaseSummary(filenames, opts.live_time_program, opts.veto_segments_name, tmp_path = opts.tmp_space, verbose = opts.verbose)
+
+def inbin(x, y, xbottom, xtop, ybottom, ytop):
+	xmasked = numpy.ma.masked_outside(x, xbottom, xtop)
+	ymasked = numpy.ma.masked_array(y, mask = xmasked.mask)
+	total = numpy.ma.masked_outside(ymasked, ybottom, ytop)
+	return numpy.ma.count(total)
+
+#final spin
+def finalspin(m1, m2, s1z, s2z):
+    G = 6.67259e-11     	#Gravitational constant
+    c = 2.99792458e8    	#Speed of light
+    M_sun = 1.98892e30  	#Solar mass
+    Mpc = 3.0856775807e22	#Megaparsec (in meters)
+    s4 = -0.129
+    s5 = -0.384
+    t0 = -2.686
+    t2 = -3.454
+    t3 = 2.353
+    s1x = 0
+    s1y = 0
+    s2x = 0
+    s2y = 0
+    M = m1 + m2
+    q = m2/m1
+    eta = m1*m2/(m1+m2)**2
+    a1 = math.sqrt(s1x**2 + s1y**2 + s1z**2)
+    a2 = math.sqrt(s2x**2 + s2y**2 + s2z**2)
+    if (a1 != 0) and (a2 != 0): cosa = (s1x*s2x + s1y*s2y + s1z*s2z)/(a1*a2)
+    else:cosa = 0
+    if a1 != 0: cosb = s1z/a1
+    else: cosb = 0
+    if a2 != 0: cosc = s2z/a2
+    else: cosc = 0
+    l = (s4/(1+q**2)**2 * (a1**2 + (a2**2)*(q**4) + 2*a1*a2*(q**2)*cosa) + (s5*eta + t0 + 2)/(1+q**2) * (a1*cosb + a2*(q**2)*cosc) + 2*math.sqrt(3.) + t2*eta + t3*(eta**2))
+    afin = 1/(1+q)**2 * math.sqrt(a1**2 + (a2**2)*(q**4) + 2*a1*a2*(q**2)*cosa + 2*(a1*cosb + a2*(q**2)*cosc)*l*q + (l**2)*(q**2))
+    return afin
+
+
+
+
+def get_log_bin_vec(start,stop,bins):
+  #edges vector
+  bv = numpy.logspace(math.log(start,10), math.log(stop,10), bins)
+  #center vector (edges vector length -1)
+  cv = []
+  for n in range(1,len(bv)):
+    # compute bin centers 
+    cv.append(bv[n-1]+10**( ( math.log(bv[n],10)-math.log(bv[n-1],10) ) / 2.0) )
+  return bv, numpy.array(cv)
+
+
+
+def bin(Sims, bv):
+  out = {}
+  for n in range(1,len(binVec)):
+    out[n-1] = []
+    for r in Sims:
+      if r > bv[n-1] and r < bv[n]: out[n-1].append(r)
+  return out
+
+
+fitfunc = lambda p, x: p[3]*(1.+(special.erf((p[0]-x*p[2])/(p[1]))))
+errfunc = lambda p, y, x: fitfunc(p,x) - y
+  
+
+#Missed-Found plots
+for instruments in IMR.instruments:
+	if opts.instruments != instruments:
+		print >> sys.stderr, "Instruments %s does not equal requested instruments %s, continuing" % (instruments, opts.instruments)
+		continue
+	found = [s for f, s in IMR.found_injections_by_instrument_set[instruments] if f < opts.far]
+	total = IMR.total_injections_by_instrument_set[instruments]
+	missed = IMR.missed_injections_by_instrument_set[instruments]
+	sims = total
+	
+	pylab.figure()
+	pylab.plot([s.mass1 for s in sims], [s.mass2 for s in sims],'.')
+	pylab.xlabel('Injected Mass One ($M_\odot$)')
+	pylab.ylabel('Injected Mass Two ($M_\odot$)')
+	pylab.title('Injected Mass One Vs Mass Two')
+	pylab.savefig(opts.outnametag + '_' +'mass1_mass2.png')
+
+	pylab.figure()
+	pylab.plot([s.spin1z for s in sims], [s.spin2z for s in sims],'.')
+	pylab.xlabel('Injected Spin One z')
+	pylab.ylabel('Injected Spin Two z')
+	pylab.title('Injected Spin One Vs Spin Two')
+	pylab.savefig(opts.outnametag + '_' + 'spin1_spin2.png')
+
+	pylab.figure()
+	pylab.hexbin([s.mass1 for s in sims], [s.mass2 for s in sims],bins='log',cmap=matplotlib.cm.jet)
+	pylab.xlabel('Injected Mass One ($M_\odot$)')
+	pylab.ylabel('Injected Mass Two ($M_\odot$)')
+	pylab.title('Injected Mass One Vs Mass Two')
+	cb = pylab.colorbar()
+	cb.set_label('log10(N)')
+	pylab.savefig(opts.outnametag + '_' + 'mass1_mass2_hist.png')
+
+	pylab.figure()
+	pylab.hist([s.mass1/s.mass2 for s in sims])
+	pylab.xlabel('Mass One / Mass Two')
+	pylab.title('Injected Mass One/ Mass Two')
+	pylab.savefig(opts.outnametag + '_' + 'ratiomass1mass2_hist.png')
+
+	pylab.figure()
+	pylab.hexbin([s.spin1z for s in sims], [s.spin2z for s in sims],bins='log', cmap=matplotlib.cm.jet)
+	pylab.xlabel('Injected Spin One z')
+	pylab.ylabel('Injected Spin Two z')
+	pylab.title('Injected Spin One Vs Spin Two')
+	cb = pylab.colorbar()
+	cb.set_label('log10(N)')
+	pylab.savefig(opts.outnametag + '_' + 'spin1_spin2_hist.png')
+
+	#
+	# Effective distance plots
+	#
+
+	for (ifo, col) in [('L1', 'eff_dist_l'), ('H1', 'eff_dist_h'), ('V1', 'eff_dist_v')]:
+		if ifo in opts.instruments:
+			found_eff_dist = [getattr(f,col) for f in found]
+			missed_eff_dist = [getattr(m,col) for m in missed]
+	
+			pylab.figure()
+			pylab.semilogy([f.mchirp for f in found], found_eff_dist, '.')
+			pylab.semilogy([m.mchirp for m in missed], missed_eff_dist, 'k.')
+			pylab.xlabel('Chirp Mass ($M_\odot$)')
+			pylab.ylabel('Effective Distance (Mpc): %s' % ifo )
+			pylab.title('Missed-Found:%s Effective Distance vs Chirp Mass' % ifo)
+			pylab.savefig(opts.outnametag + '_' + ifo + 'effdist_chirpmass.png')
+
+			pylab.figure()
+			pylab.semilogy([f.mass1+f.mass2 for f in found], found_eff_dist,'.')
+			pylab.semilogy([m.mass1+m.mass2 for m in missed], missed_eff_dist,'k.')
+			pylab.xlabel('Total Mass ($M_\odot$)')
+			pylab.ylabel('Effective Distance (Mpc): %s' % ifo)
+			pylab.title('Missed-Found:%s Effective Distance vs Total Mass' % ifo)
+			pylab.savefig(opts.outnametag + '_' + ifo + 'effdist_mass.png')
+
+			pylab.figure()
+			pylab.semilogy([spawaveform.computechi(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found], found_eff_dist,'.')
+			pylab.semilogy([spawaveform.computechi(m.mass1, m.mass2, m.spin1z, f.spin2z) for m in missed], missed_eff_dist,'k.')
+			pylab.xlabel('Mass Weighted Spin')
+			pylab.ylabel('Effective Distance (Mpc): %s' % ifo)
+			pylab.title('Missed-Found:%s Effective Distance vs Mass Weighted Spin' % ifo)
+			pylab.savefig(opts.outnametag + '_' + ifo + 'effdist_massweightedspin.png')
+
+			pylab.figure()
+			pylab.semilogy([finalspin(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found], found_eff_dist,'.')
+			pylab.semilogy([finalspin(m.mass1, m.mass2, m.spin1z, m.spin2z) for m in missed], missed_eff_dist,'k.')
+			pylab.xlabel('Final Spin')
+			pylab.ylabel('Effective Distance (Mpc): %s' % ifo)
+			pylab.title('Missed-Found:%s Effective Distance vs Final Spin' % ifo)
+			pylab.savefig(opts.outnametag + '_' + ifo + 'effdist_finalspin.png')
+
+        #                                                      
+        # Decisive distance plots                             
+                        pylab.figure()
+                        pylab.semilogy([f.mass1+f.mass2 for f \
+in found], [max([f.eff_dist_h,f.eff_dist_l]) for f in found],'.')
+                        pylab.semilogy([m.mass1+m.mass2 for m in missed],[max([m.eff_dist_h,m.eff_dist_l]) for m in missed],'k.')
+                        pylab.xlabel('Total Mass ($M_\odot$)')
+                        pylab.ylabel('Decisive Distance (Mpc)')
+                        pylab.title('Missed-Found: Decisive Distance vs Total Mass')
+                        pylab.savefig(opts.outnametag + '_' + 'decisive_distance_mass.png')
+
+	#
+	# Physical distance plots
+
+	pylab.figure()
+	pylab.semilogy([f.mchirp for f in found], [f.distance for f in found],'.')
+	pylab.semilogy([m.mchirp for m in missed], [m.distance for m in missed],'k.')
+	pylab.xlabel('ChirpMass ($M_\odot$)')
+	pylab.ylabel('Distance (Mpc)')
+	pylab.title('Missed-Found:Distance vs Chirp Mass')
+	pylab.savefig(opts.outnametag + '_' + 'dist_chirpmass.png')
+
+	pylab.figure()
+	pylab.semilogy([f.mass1+f.mass2 for f in found], [f.distance for f in found],'.')
+	pylab.semilogy([m.mass1+m.mass2 for m in missed], [m.distance for m in missed],'k.')
+	pylab.xlabel('Total Mass ($M_\odot$)')
+	pylab.ylabel('Distance (Mpc)')
+	pylab.title('Missed-Found:Distance vs Total Mass')
+	pylab.savefig(opts.outnametag + '_' + 'dist_mass.png')
+
+	pylab.figure()
+	pylab.semilogy([spawaveform.computechi(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found], [f.distance for f in found],'.')
+	pylab.semilogy([spawaveform.computechi(m.mass1, m.mass2, m.spin1z, f.spin2z) for m in missed], [m.distance for m in missed],'k.')
+	pylab.xlabel('Mass Weighted Spin')
+	pylab.ylabel('Distance (Mpc)')
+	pylab.title('Missed-Found: Distance vs Mass Weighted Spin')
+	pylab.savefig(opts.outnametag + '_' + 'dist_massweightedspin.png')
+
+	pylab.figure()
+	pylab.semilogy([finalspin(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found], [f.distance for f in found],'.')
+	pylab.semilogy([finalspin(m.mass1, m.mass2, m.spin1z, m.spin2z) for m in missed], [m.distance for m in missed],'k.')
+	pylab.xlabel('Final Spin')
+	pylab.ylabel('Distance (Mpc)')
+	pylab.title('Missed-Found: Distance vs Final Spin')
+	pylab.savefig(opts.outnametag + '_' + 'dist_finalspin.png')
+
+	#
+	# effective distance efficiency
+	#
+	nbinsD = 25 
+	nbinsM = 20
+	nbinschi = 30
+	nbinsSpin = 20
+	chi_found = numpy.array([spawaveform.computechi(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found])
+	chi_missed = numpy.array([spawaveform.computechi(m.mass1, m.mass2, m.spin1z, m.spin2z) for m in missed])
+	chi_total = numpy.append(chi_found,chi_missed)	
+	spin_found = numpy.array([finalspin(f.mass1, f.mass2, f.spin1z, f.spin2z) for f in found])
+	spin_missed = numpy.array([finalspin(m.mass1, m.mass2, m.spin1z, m.spin2z) for m in missed])
+	spin_total = numpy.append(spin_found,spin_missed)
+	distance_found_dict = {}
+	distance_missed_dict = {}
+	distance_total_dict = {}
+
+	for ifo in opts.instruments:
+		distance_found_dict[ifo] = [getattr(f, 'eff_dist_%s' % ifo[0].lower()) for f in found]
+		distance_missed_dict[ifo] = [getattr(f, 'eff_dist_%s' % ifo[0].lower()) for f in missed]
+		#distance_found_dict[ifo] = found.get_column('eff_dist_' % ifo[0].lower())
+		#distance_missed_dict[ifo] = missed.get_column('eff_dist_' % ifo[0].lower())
+		distance_total_dict[ifo] = numpy.append(distance_found_dict[ifo], distance_missed_dict[ifo])
+	distance_found = numpy.array([f.distance for f in found])
+	distance_missed = numpy.array([m.distance for m in missed])
+	distance_total = numpy.append(distance_found,distance_missed)
+
+	mass_missed = numpy.array([m.mass1+m.mass2 for m in missed])
+	mass_found = numpy.array([f.mass1+f.mass2 for f in found])
+	mass_total = numpy.append(mass_found,mass_missed)
+	
+	chirpmass_missed = numpy.array([m.mchirp for m in missed])
+	chirpmass_found = numpy.array([f.mchirp for f in found])
+	chirpmass_total = numpy.append(chirpmass_found,chirpmass_missed)
+
+	mass1_missed = numpy.array([m.mass1 for m in missed])
+	mass1_found = numpy.array([m.mass1 for m in found])
+	mass1_total = numpy.append(mass1_found,mass1_missed)
+	mass2_missed = numpy.array([m.mass2 for m in missed])
+	mass2_found = numpy.array([m.mass2 for m in found])
+	mass2_total = numpy.append(mass2_found,mass2_missed)
+	spin1z_missed = numpy.array([m.spin1z for m in missed])
+	spin1z_found = numpy.array([m.spin1z for m in found])
+	spin1z_total = numpy.append(spin1z_found,spin1z_missed)
+	spin2z_missed = numpy.array([m.spin2z for m in missed])
+	spin2z_found = numpy.array([m.spin2z for m in found])
+	spin2z_total = numpy.append(spin2z_found,spin2z_missed)
+
+
+
+	#
+	# distance-chirp mass    
+	#
+
+	def eff_plot(xtotal, xfound, ytotal, yfound, name, plotname, xname, log = True):
+		nbinsD = 25 
+		nbinsM = 20
+		pylab.figure()
+
+		E = pylab.empty((nbinsM, nbinsD))
+		Xarray = pylab.linspace(numpy.min(xtotal), numpy.max(xtotal), nbinsM+1)
+		if log:
+			Yarray = pylab.linspace(math.log(numpy.min(ytotal)), math.log(numpy.max(ytotal)), nbinsD+1)
+			Yarray = pylab.exp(Yarray)
+		else:
+			Yarray = pylab.linspace(numpy.min(ytotal), numpy.max(ytotal), nbinsD+1)
+		for i in range(nbinsM):
+			for j in range(nbinsD):
+				total = inbin(xtotal, ytotal, Xarray[i], Xarray[i+1], Yarray[j], Yarray[j+1])
+				found = inbin(yfound, yfound, Xarray[i], Xarray[i+1], Yarray[j], Yarray[j+1])
+				#Set the efficiency
+				try:
+					E[i,j] = float(found)/float(total)
+				except ZeroDivisionError:
+					E[i,j] = 2  
+		E = numpy.ma.masked_object(E, 2)
+		pylab.pcolor(Xarray, Yarray, E.T, cmap=matplotlib.cm.jet, alpha=0.9)
+		pylab.title('Detection Efficiency vs. %s and %s' % (name, xname))
+		pylab.xlabel(r'%s ($M_\odot$)' % name)
+		pylab.ylabel('%s:Effective Distance (Mpc)' % xname)
+		if log: pylab.yscale('log')
+		pylab.ylim(2,10000)
+		#pylab.grid(color='k')
+		cb = pylab.colorbar()
+		cb.set_label('Efficiency')
+		pylab.savefig(opts.outnametag + '_' + '%s_Efficiency.png' % plotname)
+
+
+	#
+	# make all the plots that are ifo independent
+	#
+		
+	for (xtotal, xfound, ytotal, yfound, name, plotname, xname, log) in [
+	(chirpmass_total, chirpmass_found, distance_total, distance_found, 'Chirp Mass', 'dist_chirpmass', 'Distance', True),
+	(mass_total, mass_found, distance_total, distance_found, 'Total Mass', 'dist_mass', 'Distance', True),
+	(chi_total, chi_found, distance_total, distance_found, 'Chi', 'dist_chi', 'Distance', True),
+	(spin_total, spin_found, distance_total, distance_found, 'Final Spin', 'dist_finalspin', 'Distance', True),
+	(chi_total, chi_found, spin_total, spin_found, 'Final Spin', 'Mass_chi_', 'Chi', False),
+	(mass2_total, mass2_found, mass1_total, mass1_found, 'Mass 1', 'Mass1_Mass2', 'Mass 2', False),
+	(spin2z_total, spin2z_found, spin1z_total, spin1z_found, 'Spin 1', 'Spin1z_Spin2z', 'Spin 2', False)
+	]:
+		eff_plot(xtotal, xfound, ytotal, yfound, name, plotname, xname, log)
+	
+	#
+	# then make all the plots for effective distance
+	#
+		
+	for ifo in opts.instruments:
+		for (xtotal, xfound, ytotal, yfound, name, plotname, xname, log) in [
+		(chirpmass_total, chirpmass_found, distance_total_dict[ifo], distance_found_dict[ifo], 'Chirp Mass', '%seffdist_chirpmass' % ifo, '%s:Effective Distance' % ifo, True),
+		(mass_total, mass_found, distance_total_dict[ifo], distance_found_dict[ifo], 'Total Mass', '%seffdist_mass' % ifo, '%s:Effective Distance' % ifo, True),
+		(chi_total, chi_found, distance_total_dict[ifo], distance_found_dict[ifo], 'Chi', '%seffdist_chi' % ifo, '%s:Effective Distance' % ifo, True),
+		(spin_total, spin_found, distance_total_dict[ifo], distance_found_dict[ifo], 'Final Spin', '%seffdist_finalspin' % ifo, '%s:Effective Distance' % ifo, True)
+		
+		]:
+			eff_plot(xtotal, xfound, ytotal, yfound, name, plotname, xname, True)
+
+
+	EffdistanceMin = min([min(f) for f in distance_found_dict.values()])
+	EffdistanceMax = max([max(f) for f in distance_found_dict.values()])
+	distanceMin = min(distance_found)
+	distanceMax = max(distance_found)
+	binVec,centerVec = get_log_bin_vec(EffdistanceMin,EffdistanceMax,20)
+	binVec1,centerVec1 = get_log_bin_vec(distanceMin,distanceMax,20)
+
+	FoundBineffect = {}
+	TotalBineffect = {}
+	efficiencyeffdist = {}
+	eff_err = {}
+	for ifo in opts.instruments:
+		FoundBineffect[ifo] = bin(distance_found_dict[ifo], binVec)
+		TotalBineffect[ifo] = bin(distance_total_dict[ifo], binVec)
+		efficiencyeffdist[ifo] = numpy.empty(len(centerVec))
+		eff_err[ifo] = numpy.empty(len(centerVec))
+
+		for b in range(len(centerVec)):
+			try:
+				efficiencyeffdist[ifo][b]  = float(len(FoundBineffect[ifo][b]))/float(len(TotalBineffect[ifo][b]))
+				eff_err[ifo][b] = numpy.sqrt(efficiencyeffdist[ifo][b] * (1-efficiencyeffdist[ifo][b])/float(len(TotalBineffect[ifo][b])))
+
+
+			except ZeroDivisionError:
+				efficiencyeffdist[ifo][b] = numpy.nan
+				eff_err[ifo][b] = numpy.nan
+
+	FoundBindist = bin(distance_found, binVec1)
+	TotalBindist = bin(distance_total, binVec1)
+	efficiencydist = numpy.empty(len(centerVec1))
+	amp = numpy.copy(centerVec)
+
+	print eff_err
+
+	def func50(x):
+		return fitfunc(p1,x)-0.5
+	def func90(x):
+		return fitfunc(p1,x)-0.9
+	
+	p0 = [100.,50.,0.9999,0.55]
+
+	wiki = open(opts.outnametag+'_'+'Efficiency.txt',"w")
+	wiki.write("||'''distance'''||'''50 % distance(Mpc)'''||'''90 % distance(Mpc)'''||\n")
+
+	for ifo in opts.instruments:
+
+		p1, success = optimize.leastsq(errfunc, p0, args=(efficiencyeffdist[ifo],amp))
+		smooth = numpy.arange(1,10000,1)
+		fitted_array = numpy.empty(len(smooth))
+		for i in range(len(smooth)):
+			fitted_array[i] = fitfunc(p1,smooth[i])
+		x50 = optimize.fsolve(func50,50,warning=False)
+		x90 = optimize.fsolve(func90,100,warning=False)
+		pylab.figure()
+		pylab.semilogx(amp,efficiencyeffdist[ifo],"ro",smooth,fitted_array,"b-")
+		pylab.axhline(y=0.5,xmin=0,xmax=math.log(x50,10)/math.log(10000,10)-0.14,linewidth=1, color='red')   
+		pylab.axhline(y=0.9,xmin=0,xmax=math.log(x90,10)/math.log(10000,10)-0.2,linewidth=1, color='green')
+		pylab.axvline(x=x50, ymin=0, ymax=0.5,linewidth=1, color='red')
+		pylab.axvline(x=x90,ymin=0, ymax=0.9,linewidth=1, color='green')
+		pylab.xlim(10,10000)
+		pylab.ylim(0,1.05)
+		pylab.grid()
+		pylab.title(ifo +  ' effective distance')
+		pylab.xlabel(ifo + ' effective distance (Mpc)')
+		pylab.ylabel('Efficiency')	
+		pylab.savefig(opts.outnametag + '_' + ifo + 'effdist_sigmoid.png')
+		wiki.write("||'''%s effecive distance'''||%.2f|| %.2f ||\n" % (ifo, x50,x90) )	
+

@@ -1,0 +1,1287 @@
+#!/usr/bin/python
+"""
+pylal_exttrig_llsummary
+
+Creating a summary page for the low latency analysis of a GRB
+
+Generate a set of images, numerical results and a
+summary page  for the low latency online
+GRB triggered inspiral search.
+"""
+from __future__ import division
+
+itertools = __import__("itertools")  # absolute import of system-wide itertools
+import os
+import sys
+import copy
+import pickle
+import shutil
+import subprocess
+import optparse
+import time
+import ConfigParser
+
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+
+from glue.ligolw import utils
+
+from glue import lal
+from glue import segments
+from glue import cbcwebpage
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from pylal import grbsummary
+from pylal import date
+from pylal import rate
+from pylal import antenna
+from pylal import plotutils
+from pylal import InspiralUtils
+from pylal import SnglInspiralUtils
+from pylal import CoincInspiralUtils
+from pylal import git_version
+from pylal import followup_trigger
+from pylal import pylal_exttrig_llutils as peu
+from pylal.datatypes import LIGOTimeGPS
+
+ifo_list = ['H1','L1','V1']
+
+# the html template. File html_template.html
+html_template ="""
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"><html lang="en"><head></head><body><div style="text-align: center;"><span style="font-weight: bold;"></span><span style="font-weight: bold;">Low Latency Inspiral search of GRB&nbsp;macrogrbname</span><br></div><div style="text-align: center;"><span style="font-weight: bold;"></span></div><span style="font-weight: bold;"></span><br><table style="text-align: left; width: 50%;" border="0" cellpadding="2" cellspacing="2"><tbody><tr><td><b>Basic information</b><table style="text-align: left;" border="1" cellpadding="2" cellspacing="2" width="700"><tbody><tr><td>GPS</td><td>Date</td><td>RA</td><td>DEC</td><td>T<sub>90</sub></td><td>IFOS</td></tr><tr><td>macrogps</a></td><td>macrodate</td></td><td>macrora</td><td>macrodec</td><td>macrot90</td><td>macroifos</td></tr></tbody></table></td><td><b>Antenna factors</b><table style="text-align: left; width: 30%;" border="1" cellpadding="2" cellspacing="2" width="400"><tbody><tr><td>H1</td><td>L1</td><td>V1</td></tr><tr><td>macrodeth1</td><td>macrodetl1</td><td>macrodetv1</td></tr></tbody></table></td></tr></tbody></table><br>
+summary of this GRB <a href="http://grblog.org/grblog.php?view=burst&GRB=macrogrbname">here</a><br>
+google sky kml-file <a href="macrokml">here</a><br>
+segments availability <a href="macrosegplot">here</a><br>
+ini-file used <a href="macroinifile">here</a><br>
+conf-file used <a href="macroconffile">here</a><br>
+"""
+
+
+html_template_results = 'onsource triggers xml <a href="macroxml">here</a><br><hr><br><table style="text-align: left;" border="0" cellpadding="2" cellspacing="2" width="700"><tbody><tr><td><a href="macroplot1link" title="Loudest by Mchirp H1L1V1"><img alt="Loudest by Mchirp H1L1V1" src="macroplot1thumb" border="2" width="300"></a></td><td><a href="macroplot2link" title="Loudest by Mchirp H1L1"><img alt="Loudest by Mchirp H1L1" src="macroplot2thumb" border="2" width="300"></a></td></tr><tr><td><a href="macroplot3link" title="Loudest by Mchirp H1V1"><img alt="Loudest by Mchirp H1V1" src="macroplot3thumb" border="2" width="300"></a></td><td><a href="macroplot4link" title="Loudest by Mchirp L1V1"><img alt="Loudest by Mchirp L1V1" src="macroplot4thumb" border="2" width="300"></a>&nbsp;</td></tr></tbody></table>macrostattable<hr><p>Additional information can be found on the <a href="macrofullpage">onoff page</a>.</p></body></html>'
+
+
+# the kml template. File kml_template.kml
+kml_template='<kml xmlns="http://www.opengis.net/kml/2.2" hint="target=sky"><Document>  <Style id="macroid">    <BalloonStyle>      <text><center><b>$[name]</b></center><br/>$[description]</text>    </BalloonStyle>  </Style>  <Placemark>    <name>macroid</name>    <description>      <![CDATA[     macrodescription      ]]>    </description>    <LookAt>      <longitude>macrolong</longitude>      <latitude>macrolat</latitude>      <altitude>0</altitude>      <range>500000</range>      <tilt>0</tilt>      <heading>0</heading>    </LookAt>    <styleUrl>#CrabNebula</styleUrl>    <Point>      <coordinates>macrolong,macrolat,0</coordinates>    </Point>  </Placemark></Document></kml>'
+
+
+# --------------------------------
+def mkdirsafe(directory, nag = False):
+  """
+  Create a directory if it does not already exist.
+  Optionally, nag if it already exists.
+  @param directory: name of the directory to be created
+  @param nag: If True, nags if the directory already exist
+  """
+  try:
+     os.makedirs(directory)
+  except OSError, (errno, strerror):
+    if errno == 17 and nag:
+      raise OSError, "Directory '%s' already exists, all files "\
+            "contained will be included in summary file, "\
+            "although not related to THIS summary!" \
+            " Suggestion: rename directory '%s'." % \
+            (directory, directory)
+    if errno!=17:
+      raise
+
+# --------------------------------
+def copysafe(source, dest):
+  """
+  Failsafe copy routine
+  """
+  try: 
+    shutil.copy(source, dest)
+  except shutil.Error, (errno, strerror):
+    print errno, strerror
+    sys.exit(0)
+
+
+# --------------------------------
+def create_kml(grb_name, right_ascension, declination):
+  """
+  Creates the content of a google-earth kml file.
+  @param grb_name: name of the GRB
+  @param right_ascension: the right ascension of the source, in degree
+  @param declination: the declination of the source, in degree
+  """
+
+  # copy template
+  kml = kml_template
+
+  # replace the contents
+  kml = kml.replace('macroid',grb_name)
+  kml = kml.replace('macrodescription',grb_name)
+  kml = kml.replace('macrolong','%.2f'%(right_ascension-180))
+  kml = kml.replace('macrolat','%.2f'%declination)
+
+  return kml
+
+# --------------------------------
+def create_html(grb, opts):
+  """
+  Populates the html template with basic GRB parameters
+  @param grb: the grb instance
+  @param grb_name: name of the GRB
+  """
+  month=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug',\
+         'Sep','Oct','Nov','Dec']
+
+  html = html_template
+  
+  ## now take the template and replace all the pieces
+  html = html.replace('macrogrbname',grb.name)
+
+  html = html.replace('macrogps','%s'%grb.time)
+
+  d = date.XLALGPSToUTC(LIGOTimeGPS(grb.time))
+  date_text = '%s %02d %d %02d:%02d:%02d' %\
+         (month[d[1]-1], d[2], d[0], d[3], d[4], d[5])
+
+  html = html.replace('macrodate',date_text)
+  html = html.replace('macrora','%.2f'%grb.ra)
+  html = html.replace('macrodec','%.2f'%grb.de)
+  if grb.duration>0:
+    html = html.replace('macrot90','%.2f'%grb.duration)
+  else:
+    html = html.replace('macrot90','&mdash')
+  html = html.replace('macroifos','%s'%"".join(grb.ifolist))
+
+  return html
+
+
+# --------------------------------
+def create_sanity_page(html, grb, opts, statistic):
+  """
+  Function to create the complete sanity page 
+  with general information, links to selected images
+  and links to special plot pages. 
+  @param html: the html template
+  @param grb: the grb instance
+  @param opts: The option structure of this code call
+  @param statistic: the name of the statistic used
+  """
+
+  ifo_times = "".join(grb.ifolist)
+  def file_replace(filenamein):
+    gps_duration = grb.endtime - grb.starttime
+    ident = '%9d-%d' % (grb.starttime, gps_duration)
+        
+    fn = copy.deepcopy(filenamein)
+    fn = fn.replace('MACIDENT',ident)
+    fn = fn.replace('MACIFOS',ifo_times)
+    fn = fn.replace('MACGRB',grb.name)        
+    fn = fn.replace('MACSTAT', statistic)
+    return fn
+        
+  # define a complete list of images to be shown on the sanity page
+  page_sections = {}
+  page_sections['numtemplates']={'page':'H1L1V1-plotnumtemplates_GRBMACGRB-MACIDENT.html',\
+                                   'images':['H1L1V1-plotnumtemplates_GRBMACGRB_banksize-MACIDENT.png']}
+  page_sections['inspiralH1']={'page':'H1-plotinspiral_SECOND_H1_GRBMACGRB-MACIDENT.html',\
+                             'images':['H1-plotinspiral_SECOND_H1_GRBMACGRB_snr_vs_time-MACIDENT.png',\
+                                       'H1-plotinspiral_SECOND_H1_GRBMACGRB_snr_histogram-MACIDENT.png']}
+  page_sections['inspiralL1']={'page':'L1-plotinspiral_SECOND_L1_GRBMACGRB-MACIDENT.html',\
+                                 'images':['L1-plotinspiral_SECOND_L1_GRBMACGRB_snr_vs_time-MACIDENT.png',\
+                                           'L1-plotinspiral_SECOND_L1_GRBMACGRB_snr_histogram-MACIDENT.png']}
+  page_sections['inspiralV1']={'page':'V1-plotinspiral_SECOND_V1_GRBMACGRB-MACIDENT.html',\
+                                 'images':['V1-plotinspiral_SECOND_V1_GRBMACGRB_snr_vs_time-MACIDENT.png',\
+                                           'V1-plotinspiral_SECOND_V1_GRBMACGRB_snr_histogram-MACIDENT.png']}    
+  page_sections['thinca']={'page':'MACIFOS-plotthinca_GRBMACGRB-MACIDENT.html',\
+                             'images':['MACIFOS-plotthinca_GRBMACGRB_cum_hist_MACSTAT-MACIDENT.png']}
+  page_sections['grbstats'] = {'page':'pylal_grbtimeslide_stats_GRBMACGRB-MACIDENT.html',
+                                 'images':['pylal_grbtimeslide_stats_GRBMACGRB_trials_MACSTAT_cum_hist-0.86-3.48-MACIDENT.png',\
+                                           'pylal_grbtimeslide_stats_GRBMACGRB_trials_MACSTAT_cum_hist-3.48-7.40-MACIDENT.png',\
+                                           'pylal_grbtimeslide_stats_GRBMACGRB_trials_MACSTAT_cum_hist-7.40-17.50-MACIDENT.png']}
+    
+  # replace the macro definitions and put it together, in the given order
+  for key in ['numtemplates','inspiralH1','inspiralL1','inspiralV1','thinca','grbstats']:
+
+        section = page_sections[key]
+        html+='<hr>'
+        
+        page = file_replace(section['page'])
+        images = [file_replace(image) for image in section['images']]
+        
+        for image in images:
+            html += '<a href="Images/%s" title="%s"><img src="Images/%s" border="2" width="300"></a>' %\
+                    (image, image, image)
+            
+        html += '<br>Detailed results on the <a href="%s">%s summary page</a>' %\
+                (page, key)
+            
+  return html
+
+
+# --------------------------------
+def write_file(root_dir, filename, content):
+  """
+  Writes a file to disk.
+  @param root_dir: directory where to create the file
+  @param filename: name of the file to be created
+  @param content: contents of the file to be written
+  """
+  
+  f = open(root_dir+'/'+filename,'w')
+  f.write(content)
+  f.close()
+
+# --------------------------------
+def link_openbox(root_dir, filename):
+  """
+  Creates a symbolic link from a file into the OPENBOX
+  directory, like for the kml files or the segment plot files
+  @param root_dir: directory where to find the file to link
+  @param filename: name of the file to link
+  """
+
+  dstdir = root_dir+'/OPENBOX'
+  cmd = 'cd %s; ln -s ../%s .' % (dstdir, filename)
+  peu.system_call('link',cmd)
+
+# --------------------------------
+def make_html_table(two_dim_seq, header_row=None):
+    """
+    Given a sequence of sequences (2-D array works), make an HTML table out
+    of it.  If header_row is provided, make it the table header.
+    """
+    
+    class always_equal(object):
+      def __eq__(self, other):
+        return True
+
+    
+    last_len = always_equal()
+    html = ["<table  border=\"1\" cellspacing=\"0\">"]
+    if header_row is not None:
+        html.append("  <tr><th>" + "</th><th>".join(map(str, header_row)) \
+            + "</th></tr>")
+        last_len = len(header_row)
+    for row in two_dim_seq:
+        if len(row) != last_len:
+            raise ValueError, "header and row lengths must all be consistent."
+        last_len = len(row)
+        html.append("  <tr><td>" + "</td><td>".join(map(str, row)) \
+            + "</td></tr>")
+    html.append("</table><br>")
+    return "\n".join(html)
+
+# --------------------------------
+def create_mchirp_plot(statistic, mc_bins, ifos,\
+                       onsource_loudest_by_mc, p0_by_mc):
+  """
+  Creates the mchirp plot and returns it.
+  @params statistic: The used statistic
+  @params mc_bins: An IrregularBins object describing the used mchirp bins
+  @params ifos: the used ifos (as a string)
+  @params onsource_loudest_cat: loudest onsource coincs by mchirp
+  @params p0_by_cat: the FAP by mchirp
+  """
+
+  if statistic=="effective_snr":
+    txt_stat = "eff"
+  elif statistic=="new_snr":
+    txt_stat = "new"
+  else:
+    raise ValueError, "ERROR: Only effective_snr and new_snr supported. "\
+                      "Requested statistic is: %s" % statistic
+  
+  ## mchirp vs loudest stat horizontal bar graph
+  text = "mchirp vs loudest statistic"
+  mc_latex = r"\langle \hat{M}_\mathrm{chirp} \rangle"
+
+  plot = plotutils.NumberVsBinBarPlot(\
+    r"$\rho_\mathrm{"+txt_stat+"}$",
+    "$" + mc_latex + "$", "Loudest statistics by template bank mchirp %s"%ifos)
+  plot.add_content(mc_bins, onsource_loudest_by_mc)
+  plot.finalize(orientation="horizontal")
+  
+  # add p(c|0) on top as text
+  for mc, snr, pc0 in \
+          zip(mc_bins.centres(), onsource_loudest_by_mc, p0_by_mc):
+
+    plot.ax.text(snr + 0.2, mc, r"$\mathrm{FAP} = %.3f;\; \rho_\mathrm{%s,comb}=%.2f$" \
+                   % (pc0, txt_stat, snr), verticalalignment="center")
+      
+  if plot.ax.get_xlim()[1] < 20:
+    plot.ax.set_xlim(xmax=20)
+  plot.ax.set_ylim((mc_bins.min, mc_bins.max))
+
+  # add mchirp dividers
+  for divider in mc_bins.boundaries:
+    plot.ax.plot(plot.ax.get_xlim(), (divider, divider),
+                 "k--", label="_nolegend_")
+
+  return plot
+
+# --------------------------------
+def create_snr_plot(statistic, onsource_loudest, offsource_loudest_by_trial, \
+                     bin_lower, bin_upper, ifos):
+  
+  # create the cdf with the FAP data
+  offsource_loudest_by_trial.sort()
+  offsource_loudest = offsource_loudest_by_trial[::-1]
+  n_trials = len(offsource_loudest)
+
+  # compute the cumulative histograms
+  y_off = np.arange(n_trials,dtype=float)
+  y_off /= float(n_trials)
+  x_off = np.asarray(offsource_loudest)
+  px = [x_off[0]] + list(x_off)
+  py = [0] + list(y_off)
+
+  # create the plot
+  plot = plotutils.SimplePlot(statistic.replace("_", r"\_"), \
+                              "cumulative number",\
+                              "SNR distribution for %s in range [%.2f-%.2f]"%\
+                              (ifos, bin_lower, bin_upper))
+  
+  # Add the entries before and after our real data so that the steps touch the
+  # x and y axes.
+  plot.add_content(px, py, color ='r',
+                   linestyle='steps-post', linewidth=3,
+                   label = 'off-source')
+
+  # plot the onsource value
+  plot.ax.plot((onsource_loudest, onsource_loudest), plot.ax.get_ylim(),
+                 "b--", label="onsource", linewidth = 3)
+  
+  plot.finalize()
+  plot.ax.axis([4.0, 15.0, 0.0, 1.0])
+
+  return plot
+
+# --------------------------------
+def ifo_string(ifos):
+  ifo_list = list(ifos)
+  ifo_list.sort()
+  return "".join(ifo_list)
+
+# FIXME: Put me into lsctables or so
+def get_xmltable_from_file(filename, tablename, verbose = False):
+
+
+  print filename
+  xmldoc = utils.load_filename(filename, verbose=verbose,\
+                               gz=filename.endswith(".gz"))
+  xmltable = table.get_table(xmldoc, tablename)
+  return xmltable
+
+
+# --------------------------------
+# FIXME: this functions does not seem to be used at all
+def modify_opts(opts, grb, output_dir):
+
+  mod_opt = copy.deepcopy(opts)
+  mod_opt.output_path = output_dir
+  mod_opt.user_tag += '_'+opts.type
+  mod_opt.ifo_times = "".join(grb.ifolist)
+  mod_opt.gps_start_time = grb.starttime
+  mod_opt.gps_end_time = grb.endtime
+
+  mkdirsafe(mod_opt.output_path)
+
+  return mod_opt
+
+# FIXME Needs to go into markup or so
+def add_href(page, href="", name="click here"):
+  try:
+    page.add("<a href=\"" + href + "\" rel=\"external\"> " + name + "</a>")
+  except: 
+    logText(logfile, "Could not create link "+ href, "error")
+  return page
+
+# ---------------------------------------------------------
+def get_version(executable): 
+  """
+  Search for the tag and version of an executable using the --version argument.
+
+  @param executable: the name of an executable
+  @return: the commit ID of the executable
+  """
+  output=[]
+  try:
+    # this is surely useless now to make a distinction with trigbank 
+    cmd = executable+" --version"
+    output,status = make_external_call(cmd, False,  False, True)
+  except:  
+    output= '(not found)' 
+
+  output = output.split('\n')
+
+  #searching for the version, which may be empty(undefined)
+  version = None
+  for entry in output:
+    if entry.startswith('$lalappsCommitID'):
+      version = 'Version is '+ entry.split(' ')[1] +'.'
+
+  return version
+
+# --------------------------------
+def create_subpage_general(subpage, cp, grb):
+
+  # add a section to that subpage
+  subpage.add_section("section_code","Code information")
+
+  #subpage.sections["section_code"].add_table(my_table, "The title of my table", "A caption describing the fact that this table is meaningless")
+  #subpage.sections["section_code"].add('The ')
+
+  stage_keys =  ['inspiral','onoff','inj']
+  tag_table = []
+  for stage in stage_keys:
+    code = grb.code[stage]
+    if code:
+      tag_table.append([stage, code.get_tag()])
+    else: 
+      tag_table.append([stage, '---'])
+  subpage.sections["section_code"].add_table(tag_table, "Used code tags for the pipeline stages") 
+
+  # create the configuration file section
+  section_conf = subpage.add_section("section_conf","Used configuration files")
+
+  link = 'S6GRB_trigger_hipe.ini'
+  section_conf.add_link(href=link, text="S6GRB_trigger_hipe.ini file")
+  
+
+  #
+  # retrieve all the versions of the used executables
+  #
+  section_version = subpage.add_section("section_version","The following executables have been used")
+
+  trigger_inifile = cp.get('paths','main')+'/GRB%s/S6GRB_trigger_hipe.ini'%grb.name
+  triggercp = ConfigParser.ConfigParser()
+  triggercp.read(trigger_inifile)
+
+  executables = []
+  for item,value in triggercp.items('condor'):
+    if item != 'universe':
+      executables.append(os.path.split(value)[1])     
+
+  table = []
+  for executable in executables:
+    fullpath = cp.get('paths','main')+'/GRB%s/%s'%(grb.name, executable)    
+    version = get_version(fullpath)
+    table.append([executable, version])
+
+  # add the table to the page
+  section_version.add_table(table, "Versions used for each executable")  
+
+
+  ## the postprocessing executables
+  executables_onoff = ['plotinspiral','plotnumtemplates','plotthinca',\
+                 'pylal_exttrig_llsummary','pylal_relic','pylal_grbtimeslide_stats']
+
+
+  pylal_tag = peu.get_code_tag()
+  table = []
+  for executable in executables_onoff:
+    fullpath = "%s/GRB%s/postprocessing_%s/executables/%s" % (grb.analysis_dir, grb.name, pylal_tag, executable)
+    version = get_version(fullpath)
+    table.append([executable, version])
+
+  # add the table to the page
+  section_version.add_table(table, "Versions used for each executable")
+
+
+  #executables_lik = [plotgrbl','plot_grbUL']
+
+# --------------------------------
+def create_subpage_trigger(subpage, cp, grb):
+  month=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug',\
+         'Sep','Oct','Nov','Dec']
+
+
+  # add a section to that subpage
+  subpage.add_section("trigger_basic","Basic GRB information")
+
+  grb_table = []
+  grb_table.append(['GRB', grb.name])
+  grb_table.append(['GPS', grb.time])
+  d = date.XLALGPSToUTC(LIGOTimeGPS(grb.time))
+  date_text = '%s %02d %d %02d:%02d:%02d' %\
+         (month[d[1]-1], d[2], d[0], d[3], d[4], d[5])
+  grb_table.append(['time', date_text])
+  grb_table.append(['right ascension [degree]', grb.ra])
+  grb_table.append(['declination [degree]', grb.de])
+  if grb.duration>0:
+    grb_table.append(['T<sub>90</sub>', grb.duration])
+  else:
+    grb_table.append(['T<sub>90</sub>', '---'])
+  grb_table.append(['IFO\'s used',"".join(grb.ifolist) ])
+  
+  subpage.sections["trigger_basic"].add_table(grb_table, "Basic information on the used trigger")
+
+  subpage.add("<p>More info in <a href=\"http://grblog.org/grblog.php?view=burst&GRB=%s\">grblog</a>.</p>" % grb.name)
+
+  subpage.add_section("trigger_lightcurve","Lightcurve")
+
+
+# FIXME: Merge me with the external call structure in pylal_exttrig_llutils.py (or somewhere else maybe...)
+# ***************************************************************************
+def make_external_call(\
+  command, show_stdout=False, \
+  show_command=False, show_error=True):
+  """
+  Run a command line argument and print informative messages on failure.
+  It returns two outputs: the stdout of the command, and its status.  
+
+    >>> make_external_call('cp * /tmp', False, False, True)
+
+  @param command: the command to try
+  @type command: string
+  @param show_stdout: show the stdout 
+  @type show_stdout: boolean
+  @param show_command: show the command
+  @type show_command: boolean
+  @param show_error: show the error if any
+  @type show_error: boolean
+  @return: the stdout and a status  
+
+
+  """
+  if show_command and opts.verbose is True: 
+    print "--- Trying this command :" + command
+
+  stdin, out, err = os.popen3(command)
+  pid, status = os.wait()
+  this_output = out.read()
+  if show_error & status != 0:
+    print >>sys.stderr, "External call failed."
+    print >>sys.stderr, "  status: %d" % status
+    print >>sys.stderr, "  stdout: %s" % this_output
+    print >>sys.stderr, "  stderr: %s" % err.read()
+    print >>sys.stderr, "  command: %s" % command
+    sys.exit(status)
+  if show_stdout:
+    if this_output[0:1]=='\n': 
+      print  this_output[1:]  #first character is \n
+    else:
+      print this_output
+
+  stdin.close()
+  out.close()
+  err.close()  
+  return this_output, status
+
+# ***************************************************************************
+def get_segments_tag(tag, grb):
+  """
+  reads segment files and return table of duration for each ifo
+ 
+    >>> get_segments_tag("SELECTED_SEGS")
+
+  @param tag: a tag to the segments
+  @type tag: string
+  return: 
+  """
+  # some variables
+  datadir = "../../"
+  thisdata = {}
+  thisdata['segments'] = ['filename', 'duration(days)' ,'duration (s)']
+
+  for ifo in grb.ifolist:
+    print ifo, grb.ifolist
+    vetofile = datadir + ifo + '-'+tag + '-%d-%d.xml' %(grb.time-15000, 30000)
+    scifile = datadir + 'segments'+ifo+'_grb%s.xml'%grb.name
+    print vetofile, scifile
+    if os.path.isfile(vetofile) and os.path.isfile(scifile):
+      command = 'segexpr \'intersection(%s,%s)\' -include index,duration | awk \'{sum=sum+$4} END {print sum}\'' % (vetofile,scifile)
+      output_seconds, status = \
+        make_external_call(command, False, False, True)
+      if output_seconds.rstrip():
+        thisdata[ifo] = [os.path.basename(vetofile), "%.2f"%(float(output_seconds)/86400.0), "%.2f"%float(output_seconds)]
+      else:
+        thisdata[ifo] = [os.path.basename(vetofile), '0.0', '0.0']
+    else: 
+      raise ValueError, "Files do not exist! Maybe make this a warning..."
+      #logText(logfile , 'File ' + file + ' and/or ' + scifile + ' does not exist. Cannot read segments!',"error")
+
+  return thisdata
+
+
+# --------------------------------
+def create_subpage_data(subpage, cp, grb):
+
+  subpage.add("<p><b>This section summarizes the data which was available for analysis.</b>")
+
+  #
+  # SAcience section
+  # 
+
+  # add a section to that subpage
+  section = subpage.add_section("data_science","Science segments")
+
+  segplot = 'plot_segments_grb%s.png' % (grb.name)
+  section.add_link(href=segplot, text='<img src="%s" border="2" width="300">'%segplot)
+
+  #
+  # DQ section
+  #
+  section = subpage.add_section("data_DQ","Data quality CAT2")
+
+  # veto-definer file
+  section.add('The following veto definer file has been used: '+ grb.veto_definer)
+  filename = "../../"+grb.veto_definer
+  proctab = get_xmltable_from_file(filename, lsctables.ProcessTable.tableName)
+  section.add("Version used: "+proctab[0].version)
+
+  segs = get_segments_tag("VETOTIME_CAT2", grb)
+  #print segs
+
+  dq_table = []
+  dq_table.append(segs['segments'])
+  for ifo in grb.ifolist:
+    dq_table.append(segs[ifo])
+  #print dq_table
+
+  section.add_table(dq_table,"Data quality information")
+  
+  
+# --------------------------------
+def create_subpage_bkg(subpage, cp, grb, statistic):
+
+  #subpage.add("<p><b>This section summarizes the background diagnostics.</b>")
+
+  ifo_times = "".join(grb.ifolist)
+  def file_replace(filenamein):
+    gps_duration = grb.endtime - grb.starttime
+    ident = '%9d-%d' % (grb.starttime, gps_duration)
+
+    fn = copy.deepcopy(filenamein)
+    fn = fn.replace('MACIDENT',ident)
+    fn = fn.replace('MACIFOS',ifo_times)
+    fn = fn.replace('MACGRB',grb.name)
+    fn = fn.replace('MACSTAT', statistic)
+    return fn
+
+  # define a complete list of images to be shown on the sanity page
+  page_sections = {}
+  page_sections['numtemplates']={'page':'H1L1V1-plotnumtemplates_GRBMACGRB-MACIDENT.html',\
+                                   'images':['H1L1V1-plotnumtemplates_GRBMACGRB_banksize-MACIDENT.png']}
+  page_sections['inspiralH1']={'page':'H1-plotinspiral_SECOND_H1_GRBMACGRB-MACIDENT.html',\
+                             'images':['H1-plotinspiral_SECOND_H1_GRBMACGRB_snr_vs_time-MACIDENT.png',\
+                                       'H1-plotinspiral_SECOND_H1_GRBMACGRB_snr_histogram-MACIDENT.png']}
+  page_sections['inspiralL1']={'page':'L1-plotinspiral_SECOND_L1_GRBMACGRB-MACIDENT.html',\
+                                 'images':['L1-plotinspiral_SECOND_L1_GRBMACGRB_snr_vs_time-MACIDENT.png',\
+                                           'L1-plotinspiral_SECOND_L1_GRBMACGRB_snr_histogram-MACIDENT.png']}
+  page_sections['inspiralV1']={'page':'V1-plotinspiral_SECOND_V1_GRBMACGRB-MACIDENT.html',\
+                                 'images':['V1-plotinspiral_SECOND_V1_GRBMACGRB_snr_vs_time-MACIDENT.png',\
+                                           'V1-plotinspiral_SECOND_V1_GRBMACGRB_snr_histogram-MACIDENT.png']}
+  page_sections['thinca']={'page':'MACIFOS-plotthinca_GRBMACGRB-MACIDENT.html',\
+                             'images':['MACIFOS-plotthinca_GRBMACGRB_cum_hist_MACSTAT-MACIDENT.png']}
+  page_sections['grbstats'] = {'page':'pylal_grbtimeslide_stats_GRBMACGRB-MACIDENT.html',
+                                 'images':['pylal_grbtimeslide_stats_GRBMACGRB_trials_MACSTAT_cum_hist-0.86-3.48-MACIDENT.png',\
+                                           'pylal_grbtimeslide_stats_GRBMACGRB_trials_MACSTAT_cum_hist-3.48-7.40-MACIDENT.png',\
+                                           'pylal_grbtimeslide_stats_GRBMACGRB_trials_MACSTAT_cum_hist-7.40-17.50-MACIDENT.png']}
+
+  # replace the macro definitions and put it together, in the given order
+  main_path = './'
+  for key in ['numtemplates','inspiralH1','inspiralL1','inspiralV1','thinca','grbstats']:
+
+    sec = subpage.add_section(key,"Plots from "+key)
+    
+    pagelink = file_replace(page_sections[key]['page'])
+    images = page_sections[key]['images']   
+
+    for image in images: 
+      imagename = file_replace(image)
+      print image, imagename
+      fullimagepath = main_path+'Images/'+imagename
+      sec.add_link(href=fullimagepath, text='<img src="%s" border="2" width="300">'%fullimagepath)
+
+    sec.add('<br')
+    sec.add_text(txt='Detailed results can be found here:', bold=True)
+    sec.add_link(href = main_path+pagelink, text = key+' summary page')
+
+
+def create_subpage_inj(subpage, cp, grb, statistic):
+  """Creates the section with information about the injections."""
+
+  def file_replace(fname):
+    fname = fname.replace('MACIDENT', '%9d-%d' % (grb.starttime, grb.endtime - grb.starttime))
+    fname = fname.replace('MACIFOS', ''.join(grb.ifolist))
+    fname = fname.replace('MACGRB', grb.name)
+    fname = fname.replace('MACSTAT', statistic)
+    return fname
+
+  # define a complete list of images to be shown on the sanity page
+  page_sections = {}
+  for ifo in grb.ifolist:
+    page_sections['plotinspinj%s' % ifo] = {
+      'page': '%s-plotinspinj_SECOND_H1_GRBMACGRB-MACIDENT.html' % ifo,
+      'images': ['%s-plotinspinj_SECOND_%s_GRBMACGRB_%s-MACIDENT.png' % (ifo, ifo, x) \
+                   for x in \
+                 'mchirp_vs_snr end_time_vs_snr'.split()] }
+
+  ethinca_singleifo_plots = []
+  for ifo in grb.ifolist:
+    ethinca_singleifo_plots += []
+#      'ethinca_vs_%s_snr_andtotMass' % ifo,
+#      'ethinca_slide_only_vs_%s_snr_andtotMass' % ifo,
+#      'ethinca_vs_%s_snr' % ifo]
+  page_sections['plotethinca'] = {
+    'page': 'MACIFOS-plotethinca_SECOND_MACIFOS_GRBMACGRB-MACIDENT.html',
+    'images': ['MACIFOS-plotethinca_SECOND_H1L1_GRBMACGRB_%s_%s-MACIDENT.png' % ('_'.join(grb.ifolist), x) \
+                 for x in ethinca_singleifo_plots + \
+                 'ethinca_vs_combined_new_snr'.split()]}
+
+  page_sections['plotinjnum'] = {
+    'page': 'MACIFOS-plotinjnum_SECOND_MACIFOS_GRBMACGRB-MACIDENT.html',
+    'images': ['MACIFOS-plotinjnum_SECOND_MACIFOS_GRBMACGRB_%s-MACIDENT.png' % x \
+                 for x in 'found_missed_eff_dist_h_vs_end_time_gmst'.split()] }
+
+  page_sections['plotinspmissed'] = {
+    'page': 'MACIFOS-plotinspmissed_SECOND_MACIFOS_GRBMACGRB-MACIDENT.html',
+    'images': ['MACIFOS-plotinspmissed_SECOND_MACIFOS_GRBMACGRB_%s-MACIDENT.png' % x \
+                 for x in 'totalmass-decisiveEffDist_log-map'.split()] }
+
+  for ifo in grb.ifolist:
+    page_sections['plotsnrchi%s' % ifo] = {
+      'page': 'MACIFOS-plotsnrchi_%s_GRBMACGRB-MACIDENT.html' % ifo,
+      'images': ['MACIFOS-plotsnrchi_%s_GRBMACGRB_snr_vs_chisq-MACIDENT.png' % ifo,
+                 'MACIFOS-plotsnrchi_%s_GRBMACGRB_snr_vs_rsq-MACIDENT.png' % ifo] }
+
+  # replace the macro definitions and put it together, in the given order
+  main_path = './'
+  sections_sorted = ['plotethinca', 'plotinspmissed', 'plotinjnum'] + \
+                    ['plotinspinj'+ifo for ifo in grb.ifolist] + \
+                    ['plotsnrchi'+ifo for ifo in grb.ifolist]
+  for key in sections_sorted:
+    sec = subpage.add_section(key, "Plots from "+key)
+
+    pagelink = file_replace(page_sections[key]['page'])
+    images = page_sections[key]['images']
+
+    for image in images:
+      imagename = file_replace(image)
+      print image, imagename
+      fullimagepath = main_path+'Images/'+imagename
+      sec.add_link(href=fullimagepath, text='<img src="%s" border="2" width="300">' % fullimagepath)
+
+    sec.add('<br')
+    sec.add_text(txt='Detailed results can be found here:', bold=True)
+    sec.add_link(href = main_path+pagelink, text = key+' summary page')
+
+
+# --------------------------------
+def create_subpage_openbox(subpage, cp, grb, statistic, columns, rows):
+  """Creates the section with the results (openbox), including
+  likelihood."""
+
+  def file_replace(fname):
+    fname = fname.replace('MACIDENT', '%9d-%d' % (grb.starttime, grb.endtime - grb.starttime))
+    fname = fname.replace('MACIFOS', ''.join(grb.ifolist))
+    fname = fname.replace('MACGRB', grb.name)
+    fname = fname.replace('MACSTAT', statistic)
+    return fname
+
+  # define a complete list of images to be shown on the sanity page
+  page_sections = {}
+  page_sections['plotgrbl'] = {
+    'page': 'plotgrbl_MACIFOS_GRBMACGRB_OPENBOX-MACIDENT.html',
+    'images': ['plotgrbl_H1L1_GRB090818H_OPENBOX_%s-MACIDENT.png' % x \
+                 for x in 'max_log_L_by_mc_m2 P_L_sum_by_L loudest_stats_by_mchirpH1L1 '
+                          'log_L_by_mc_m2_H1L1 '
+                          'log_sum_L_vs_rho_max_0 log_sum_L_vs_rho_max_1 log_sum_L_vs_rho_max_2 '
+                          'log_sum_L_vs_rho_max '
+                          'IFAR_vs_rho_max log_sum_L_vs_IFAR_max '
+                          'ROC_uniform ROC_D3 '
+                          'log_pc0_vs_rho_H1L1 log_pc0_vs_rho_zoom_H1L1 '
+                          'log_pc0_vs_rho log_pc0_vs_rho_zoom '
+                          'pLh_afterMCerr_by_m2_D '
+                          'pLh_by_m2_D pL0_by_m2 '
+                          'pL0_by_L '
+                          'injection_count_by_m2_D'.split()] }
+
+  page_sections['grbUL'] = {
+    'page': 'pylal_grbUL_MACIFOS_GRBMACGRB_OPENBOX-MACIDENT.html',
+    'images': ['pylal_grbUL_MACIFOS_GRBMACGRB_OPENBOX_%s-MACIDENT.png' % x \
+                 for x in 'FC_exclusion_by_m2_D '
+               'pLD_by_m2_D_0.9  D_best_0.9  confidence_belts_0.9 '
+               'pLD_by_m2_D_3.0  D_best_3.0  confidence_belts_3.0 '
+               'pLD_by_m2_D_7.0  D_best_7.0  confidence_belts_7.0 '
+               'pLD_by_m2_D_13.0 D_best_13.0 confidence_belts_13.0 '
+               'pLD_by_m2_D_21.0 D_best_21.0 confidence_belts_21.0 '
+               'pLD_by_m2_D_31.0 D_best_31.0 confidence_belts_31.0 '
+               'old_exclusion_by_m2_D'.split()] }
+
+  # replace the macro definitions and put it together, in the given order
+  main_path = './'
+  for key in page_sections:
+    sec = subpage.add_section(key, "Plots from "+key)
+
+    pagelink = file_replace(page_sections[key]['page'])
+    images = page_sections[key]['images']
+
+    for image in images: 
+      imagename = file_replace(image)
+      print image, imagename
+      fullimagepath = main_path+'Images/'+imagename
+      sec.add_link(href=fullimagepath, text='<img src="%s" border="2" width="300">' % fullimagepath)
+
+    sec.add('<br')
+    sec.add_text(txt='Detailed results can be found here:', bold=True)
+    sec.add_link(href = main_path+pagelink, text = key+' summary page')
+
+  # Table
+  sec = subpage.add_section('onoff',"Results from onoff analysis")
+  table_gts = [columns]
+  table_gts.extend(rows)
+  sec.add_table(table_gts, 'onoff results')
+
+
+# --------------------------------
+def get_options():
+    """
+    Parse user input and return opts.
+    """
+    parser = optparse.OptionParser(version=git_version.verbose_msg)
+    
+    # input data
+    parser.add_option("--onsource-pickle",\
+                      help="specifies the name of the onsource pickle")
+    parser.add_option("--onsource-xml",\
+                      help="specifies the name of the onsource xml")
+    parser.add_option("--offsource-pickle",\
+                      help="specifies the name of the offsource pickle")
+
+    # internal information required to produce the output
+    parser.add_option("--config-file",default=None, \
+                      help="the low-latency configuration file")
+    parser.add_option("--grb-pickle",default=None, \
+                      help="full path to the GRB pickle file")
+    parser.add_option("--plots-dirs", metavar="DIR1,DIR2,...",
+                      help="paths to the directories with images")
+    parser.add_option("--grb-name",default=None, \
+                      help="name of GRB to be processed")
+    parser.add_option("--type",default=None, \
+                      help="type of this summary (onoff or inj)")
+
+    parser.add_option("--user-tag",default=None, \
+                      help="usertag to label the files")
+    parser.add_option("--ifo-times",action="store",type="string",\
+        default=None, help="specifies the ifo times")
+    parser.add_option("--gps-start-time", type = "int", \
+                      help = "GPS start time")
+    parser.add_option("--gps-end-time", type = "int", \
+                      help = "GPS end time")
+    parser.add_option("--right-ascension", type = "float", \
+                      help = "The right ascension in degree")
+    parser.add_option("--declination", type = "float", \
+                      help = "The declination in degree")
+    parser.add_option("--gps-trigger-time", type = "int", \
+                      help = "GPS trigger time")
+    
+    # verbosity
+    parser.add_option("-v", "--verbose", action="store_true", default=False,
+        help="print additional information during pipeline construction")
+
+    # output parameters
+    parser.add_option("-r", "--root-dir", action="store", \
+        default='public_html', help="path to a temporary directory "\
+        "to put the summary page")
+    parser.add_option("--output-sanity", default=None,
+        help="path for the sanity plots and results.")
+    parser.add_option("--output-box", default=None,
+        help="path for the openbox plots and results.")
+    parser.add_option("--output-www", action="store", default=None,
+        help="path to the webpage directory.")
+    parser.add_option("--enable-output", action="store_true", default=False,
+        help="enables to make output")
+
+    parser.add_option("--disable-mini-followup", action="store_true", default=False,
+        help="disables the mini followup")
+    
+    (opts, args) = parser.parse_args()
+
+    # check if a required option is missed
+    error_if_missing = ["onsource_pickle","onsource_xml","offsource_pickle",\
+                        "grb_name","grb_pickle","type","config_file","output_www"]
+    for opt in error_if_missing:
+        if getattr(opts, opt) is None:
+            raise ValueError, "missing required option: --%s" % \
+                  opt.replace("_", "-")
+
+    return opts
+
+##############################################################################
+# Main
+##############################################################################
+
+# read the options
+opts = get_options()
+
+# read the configuration file and pass it to peu
+cp = ConfigParser.ConfigParser()
+cp.read(opts.config_file)
+peu.cp = cp
+
+# read the grb instance from the monitor GRB list
+grb_name = opts.grb_name
+grb = peu.read_grb_from_list(grb_name)
+
+# Initialize the page object
+if not os.path.exists(opts.output_www):
+  os.makedirs(opts.output_www)
+page = cbcwebpage.cbcpage(title="Resultpage for GRB %s" % opts.grb_name,
+                          path = opts.output_www)
+
+
+#
+# read and check the input-data
+#
+id1,  statistic, mc_bins, mc_ifo_cats, onsource_loudest_by_cat \
+    = pickle.load(open(opts.onsource_pickle))
+id2, statistic, mc_bins, mc_ifo_cats, offsource_loudest_by_trial_cat \
+    = pickle.load(open(opts.offsource_pickle))
+assert id1==id2, 'Pickle IDs not identical! '
+
+# some dummy hack, fix, feature, whatever
+cats = [cat[0] for cat in mc_ifo_cats.centres()]
+
+# check the used statistics
+if statistic=="effective_snr":
+  txt_stat = "eff"
+elif statistic=="new_snr":
+  txt_stat = "new"
+else:
+  raise ValueError, "ERROR: Only effective_snr and new_snr supported. "\
+                    "Requested statistic is: %s" % statistic
+
+
+#
+# Process the input data
+#
+onsource_fap_by_cat = np.zeros(shape=onsource_loudest_by_cat.shape, dtype=float)
+n_trials =offsource_loudest_by_trial_cat.shape[0]
+
+# loop over the mchirp/ifo bins and compute the FAP for each category
+for cat in cats:
+
+  index = mc_ifo_cats[cat]
+  offsource_loudest_by_trial =offsource_loudest_by_trial_cat[:,index]
+  onsource_loudest = onsource_loudest_by_cat[index]
+
+  # calculate the FAP and store it 
+  count_louder = (offsource_loudest_by_trial >= onsource_loudest).sum(axis=0)
+  stat = count_louder/n_trials
+  onsource_fap_by_cat[index]=stat
+
+#
+# add textual information to the page
+#
+
+# parse the coincidences from the xml file
+coinc_stat = CoincInspiralUtils.coincStatistic(statistic)
+onsource_doc = SnglInspiralUtils.ReadSnglInspiralFromFiles(\
+            [opts.onsource_xml])
+
+# Neeed to work around a bug introduced much earlier:
+# If no trigger, then no table
+try:
+  onsource_trigs = table.get_table(onsource_doc,
+                                  lsctables.SnglInspiralTable.tableName)
+except AttributeError:
+  onsource_trigs = []
+onsource_coincs = CoincInspiralUtils.coincInspiralTable(onsource_trigs,
+                                                        coinc_stat)
+if len(onsource_coincs) > len(mc_ifo_cats):
+  raise ValueError, "ERROR: more on-source coincs (%d) than result bins (%d)" %\
+                    (len(onsource_coincs), len(mc_ifo_cats))
+
+#
+# mini-followup
+#
+if not opts.disable_mini_followup:
+  # define a dummy-option instance
+  fuopts = copy.deepcopy(opts)
+  fuopts.prefix = 'pylal_exttrig_llsummary'
+  fuopts.suffix = '_GRB'+grb.name
+  fuopts.figure_resolution = 60
+  fuopts.output_path = opts.output_box+'/'
+
+  # read the cache file and initialize the followup class
+  cache = lal.Cache.fromfile(open('../GRB'+grb.name+'.cache')).sieve(description='ONSOURCE')
+  followup = followup_trigger.FollowupTrigger(cache, fuopts, False)
+else:
+  followup = None
+
+lsctables.SnglInspiralTable.loadcolumns = ["event_id", "mchirp", "ifo",
+        "snr", "chisq", "chisq_dof", "end_time", "end_time_ns", "process_id"]
+
+# create the trigger table
+#
+ifos_list = ['H1L1V1','H1L1','H1V1','L1V1']
+columns = ["ifos","mc_bin", "event_id"] \
+          + ["<em>&rho;</em><sub>%s,%s</sub>" % (txt_stat, ifo) for ifo in ifo_list] \
+          + ["combined <em>&rho;</em><sub>%s</sub>"%txt_stat, "mchirp",
+             "minifu","FAP"]
+output_list = []
+rows = []
+for cat in cats:
+
+  # get the basic index and the mchirps and ifos
+  index = mc_ifo_cats[cat]
+  mchirp_low = mc_bins.lower()[cat[0]]
+  mchirp_upp = mc_bins.upper()[cat[0]]
+  ifos = cat[1]
+
+  # prepare dictionary to save the data
+  output_dict = {'event_id':None,'snrH':None,'snrL':None,'snrV':None}
+                   
+  # retrieve all coincs for this ifo combination
+  ifos_coinc = onsource_coincs.getChirpMass(mchirp_low, mchirp_upp)
+
+  # keep only the one with the correct IFO combination
+  use_coinc = None
+  for coinc in ifos_coinc:
+    if coinc.ifos == ifos:
+      use_coinc = coinc
+      break
+
+  # run the minifollowup on this coinc
+  if use_coinc and not opts.disable_mini_followup:
+    followupname = followup.from_coinc(use_coinc)
+  else:
+    followupname = None
+  
+  ifo_str = ifo_string(ifos)    
+  row = ["%s"%ifo_str, "[%.2f, %.2f)" % (mchirp_low, mchirp_upp)]
+  output_dict['ifos'] = ifo_str
+  output_dict['mc-bins'] = [mchirp_low, mchirp_upp]
+  if use_coinc:
+    use_id = str(use_coinc.event_id).split(':')[2]
+    row += [use_id]
+    output_dict['event_id']=use_id
+  else:
+    row += ['&mdash']
+
+  if use_coinc:
+    for ifo in ifo_list:
+      try:
+        trig = getattr(use_coinc, ifo)
+        stat = getattr(trig, 'get_'+statistic)()
+        row += ["%.4g"%stat]
+        output_dict['snr'+ifo[0].upper()]=stat
+      except:
+        row += ["&mdash"]
+
+    pc0 = onsource_fap_by_cat[index]
+    row += ["%.4g" % use_coinc.stat, "%.4g" % \
+           grbsummary.get_mean_mchirp(use_coinc),
+           "<a href=%s>link</a>"%followupname,"%.4g" % pc0]
+    output_dict['snr_effective']=use_coinc.stat
+    output_dict['mchirp']=grbsummary.get_mean_mchirp(use_coinc)
+    output_dict['minifu']=followupname
+    output_dict['prob']=pc0
+      
+  else:
+    row += ['&mdash','&mdash','&mdash','&mdash','&mdash','&mdash','&mdash']
+
+  # add this row to the rows-list
+  rows.append(row)
+  output_list.append(output_dict)
+
+
+# add all the subpages
+page.add_subpage("subpage_general","General information", "General Information")
+page.add_subpage("subpage_trigger","Trigger information", "Trigger Information")
+page.add_subpage("subpage_data","Data information", "Data Information")
+page.add_subpage("subpage_bg_diag","Background diagnostics", "Background diagnostics")
+page.add_subpage("subpage_inj_diag","Injection diagnostics", "Injection diagnostics")
+page.add_subpage("subpage_openbox","OPENBOX results", "OPENBOX results")
+
+# calls to the specific subfunctions to create the subpages
+create_subpage_general(page.subpages["subpage_general"], cp, grb)
+create_subpage_trigger(page.subpages["subpage_trigger"], cp, grb)
+create_subpage_data(page.subpages["subpage_data"], cp, grb)
+create_subpage_bkg(page.subpages["subpage_bg_diag"], cp, grb, statistic)
+create_subpage_inj(page.subpages["subpage_inj_diag"], cp, grb, statistic)
+
+create_subpage_openbox(page.subpages["subpage_openbox"], cp, grb, statistic, columns, rows)
+
+section_gts = page.subpages["subpage_bg_diag"].sections["grbstats"]
+table_gts = [columns]
+table_gts.extend(rows)
+print table_gts
+#section_gts.add_table(table_gts, 'test')
+
+# write the page to disk
+page.write("mypage")
+
+
+
+# copy the segment plot
+segplot = 'plot_segments_grb%s.png' % grb_name
+source = grb.analysis_dir + '/' + segplot
+copysafe(source, opts.output_www)
+
+
+
+# copy the ini-file and the configuration file
+inifile = grb.analysis_dir + '/' + cp.get('analysis','ini_file')
+copysafe(inifile, opts.output_www)
+copysafe(opts.config_file, opts.output_www)
+
+
+for imgdir in opts.plots_dirs.split(','):
+  command = 'cp -r %s %s' % (imgdir, opts.output_www)
+  subprocess.call(command, shell=True)
+
+
+####  Why is this here? Which part of the code below do we actually want?
+sys.exit(0)
+
+
+# add this table to the html file
+statistic_table = make_html_table(rows, columns)
+page.write("statistic_table")
+
+# write the pickle file containing all numerical informations
+filename = '%s/llsummary_%s_GRB%s.pickle'%(opts.output_box, opts.type, grb_name)
+f = file(filename,'w')
+pickle.dump(output_list, f)
+f.close()
+      
+#
+# Create the two main plots
+#
+
+# loudest coinc per mchirp plot; one for each IFO
+ifo_set = set()
+for a in mc_ifo_cats.centres(): ifo_set.add(a[0][1])
+
+print "Creating the blue-bar plots"
+for ifos in ifo_set:
+  ifos_str = ifo_string(ifos)
+  indices = [mc_ifo_cats[cat] for cat in cats if cat[1]==ifos]
+
+  # create the 'blue-bar' plot
+  plot = create_mchirp_plot(statistic, mc_bins, ifos_str, \
+                            onsource_loudest_by_cat[indices], \
+                            onsource_fap_by_cat[indices])
+  page.add_plot(plot.fig, 'loudest_statistic_by_mchirp_%s'%ifos_str)
+
+# somewhat hacky: get the filenames of the first 4 overview plots
+list_overview_plots = copy.deepcopy(page.fname_list)
+
+# loop over the mchirp/ifo bins
+print "Creating the SNR plots"
+for cat in cats:
+
+  # get the basic index and the mchirps and ifos
+  index = mc_ifo_cats[cat]
+  mchirp_low = mc_bins.lower()[cat[0]]
+  mchirp_upp = mc_bins.upper()[cat[0]]
+  ifos = cat[1]
+  ifos_str = "".join(ifos)
+
+  offsource_loudest_by_trial =offsource_loudest_by_trial_cat[:,index]
+  onsource_loudest = onsource_loudest_by_cat[index]
+
+  # create the plot and add it to the output page
+  plot = create_snr_plot(statistic, onsource_loudest, \
+                         offsource_loudest_by_trial, \
+                         mchirp_low, mchirp_upp, ifos_str)
+  page.add_plot(plot.fig, 'SNR_distribution_%s_mchirp_%.1f-%.1f'%\
+                (ifos_str, mchirp_low, mchirp_upp))
+
+
+# write the full results page
+htmlname_openbox = page.write_page()
+
+
+########################################################
+
+## create the kml file
+kml = create_kml(grb_name, grb.ra, grb.de)
+kml_filename = grb_name+'.kml'
+write_file(opts.output_path, kml_filename, kml)
+
+## create the basic html file
+html = create_html(grb, opts)
+  
+html = html.replace('macroinifile',cp.get('data','ini_file'))
+html = html.replace('macroconffile', os.path.basename(opts.config_file))
+
+# put in some more links and copy needed files
+copysafe(opts.onsource_xml, opts.openbox_path)
+html = html.replace('macrokml',kml_filename)
+html = html.replace('macrosegplot', segplot)
+
+
+# populate the antenna factor table
+for ifo in ['H1','L1','V1']:
+  
+  # compute the antenna factor for this time and position on the sky
+  f_plus, f_cross, f_ave, f_q = antenna.response( grb.time, grb.ra, grb.de,\
+                                                  0.0, 0.0, 'degree',
+                                                  ifo )
+  html = html.replace('macrodet%s'%ifo.lower(),'%.2f'%f_q)
+
+## Create the two different html pages, split here from the 
+## common sub-page
+html_results = html+html_template_results
+html_sanity = html
+
+## Add the XML link to the results page
+html_results = html_results.replace('macroxml', opts.onsource_xml)
+html_results = html_results.replace('macrostattable', statistic_table)
+html_results = html_results.replace('macrofullpage', os.path.basename(htmlname_openbox))
+
+# and set the links for the plots for the results-html
+for nr, plots in enumerate(list_overview_plots):
+
+  # remove the first directory
+  index= plots.index('/')+1
+  filename = plots[index:]
+
+  # create thumbname
+  thumbname = filename.replace('.png','_thumb.png')
+
+  # replace the html macros
+  html_results = html_results.replace('macroplot%dlink'%(nr+1), filename)
+  html_results = html_results.replace('macroplot%dthumb'%(nr+1), thumbname)
+
+
+## Update the other page with sanity plots
+html_sanity = create_sanity_page(html_sanity, grb, opts, statistic)
+
+# put some status information 
+text = "<hr>This page has been created at %s\n"%time.asctime(time.localtime())
+text += "with command <br>"
+for arg in sys.argv:
+  text += arg +' '
+text += "<br><hr>Version used:<br> "+ git_version.verbose_msg
+
+html_sanity = html_sanity + text
+html_results = html_results + text
+
+# write the html file
+write_file(opts.openbox_path, 'pylal_exttrig_llsummary_'+grb_name+'-OPENBOX.html' , html_results)
+write_file(opts.output_path, 'pylal_exttrig_llsummary_'+grb_name+'-sanity.html' , html_sanity)
+
+# if a html output path is specified, copy all the sanity plots 
+if opts.output_path_html:
+
+  openboxpath = opts.output_path_html+'/OPENBOX'
+  if not os.path.exists(openboxpath):
+    mkdirsafe(openboxpath)
+
+  # make the OPENBOX read/write enables
+  os.chmod(openboxpath, 493)
+
+  command = 'cp -r %s/* %s' % (opts.output_path, opts.output_path_html)
+  subprocess.call(command, shell=True)
+  command = 'cp -r %s/* %s' % (opts.openbox_path, openboxpath)
+  subprocess.call(command, shell=True)
+
+  # set two links to the kml file and the segplot
+  link_openbox(opts.output_path_html, kml_filename)
+  link_openbox(opts.output_path_html, segplot)
+  link_openbox(opts.output_path_html, cp.get('analysis','ini_file'))
+  link_openbox(opts.output_path_html, os.path.basename(opts.config_file))
+
+  if not grb.openbox:
+    # make the OPENBOX read protected
+    os.chmod(openboxpath, 0)

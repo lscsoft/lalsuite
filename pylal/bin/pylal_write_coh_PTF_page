@@ -1,0 +1,1338 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2012 Duncan M. Macleod
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ 
+"""Write the results and summary HTML for a coherent (PTF) analysis.
+"""
+
+# =============================================================================
+# Preamble
+# =============================================================================
+
+# set float division
+from __future__ import division
+
+# load built-ins
+import sys
+import os
+import time
+import optparse
+import re
+import errno
+import getpass
+import subprocess
+import urlparse
+import itertools
+import glob
+import shutil
+import urllib
+import tempfile
+
+# get version and load python3 dependent modules
+python3 = sys.version_info[0] > 2
+if python3:
+    import configparser
+else:
+    import ConfigParser
+
+from glue import markup
+from glue.ligolw import lsctables
+
+from pylal import (git_version, htmlutils)
+from pylal.MultiInspiralUtils import ReadMultiInspiralFromFiles
+from pylal.SimInspiralUtils import ReadSimInspiralFromFiles
+
+__author__ = "Duncan M. Macleod <duncan.macleod@ligo.org>"
+__version__ = git_version.id
+__date__ = git_version.date
+
+INDEX = "index.html"
+TOGGLE = "toggleVisible();"
+BLOCK = "display: block;"
+FANCYBOX = "fancybox-button"
+
+GENERAL = "general"
+DATAFIND = "datafind"
+SEGMENTS = "segments"
+TMPLTBANK = "tmpltbank"
+EXECUTABLES = "executables"
+SKYGRIDS = "skygrids"
+FULL_DATA = "full_data"
+FULL_DATA_SLIDE = "full_data_slide"
+
+# =============================================================================
+# Utilities
+# =============================================================================
+
+def mkdir_p(path, chdir=False):
+    """Makes a new directory if it doesn't exist and moves to it if
+    requested.
+
+    @param path
+        directory path to be created
+    @param chdir
+        choose to move into the new directory
+    """
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST:
+            pass
+        else:
+            raise
+    if chdir:
+        os.chdir(path)
+
+def normjoin(*args):
+    return os.path.normpath(os.path.join(*args))
+
+def scp(remotefile, localfile):
+    """Download a file from a HTTP URL to a local directory
+
+    @param remotefile
+        URL/path of file to copy
+    @param localfile
+        local path (file or directory) to write
+
+    @returns path of local file written to
+    """
+    if os.path.isdir(localfile):
+        localfile = os.path.join(localfile, os.path.basename(remotefile))
+    url = urlparse.urlparse(remotefile)
+    if url.path.startswith("%s~" % os.sep):
+        return remotefile
+    if not url.scheme or url.scheme == "file":
+        if os.path.isfile(url.path) and not os.path.isfile(localfile)\
+        or not os.path.samefile(url.path, localfile):
+            shutil.copy(url.path, localfile)
+        elif not os.path.isfile(url.path):
+            print_verbose("warning: cannot find %s\n" % url.path,\
+                          stream=sys.stderr)
+    else:
+        urllib.urlretrieve(remotefile, localfile)
+
+    return localfile
+
+def shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE):
+    """Execute shell command and capture standard output and errors. 
+
+    @returns tuple "(stdout, stderr, returncode)".
+    """
+    if not isinstance(command, str):
+        cmdstr = " ".join(command)
+    else:
+        cmdstr = command
+
+    p = subprocess.Popen(command, stdout=stdout, stderr=stderr,
+                         shell=isinstance(command, str))
+    out, err = p.communicate()
+
+    return out, err, p.returncode
+
+global VERBOSE
+VERBOSE = False
+global JOBSTART
+JOBSTART = time.time()
+global PROFILE
+PROFILE = False
+
+def elapsed_time():
+    """Return the time elapsed since the start of the timer (in seconds).
+    """
+    return time.time()-JOBSTART
+
+def print_verbose(message, stream=sys.stdout, profile=True):
+    """Print verbose messages to a file stream.
+
+    @param message
+        text to print
+    @param stream
+        file object stream in which to print
+    """
+    if not isinstance(message, str):
+        message = "%s\n" % str(message)
+
+    if PROFILE and profile:
+        nl = message.endswith("\n") and "\n" or ""
+        message = "%s (%.2f)%s" % (message.rstrip("\n"), elapsed_time(), nl)
+    if VERBOSE:
+        stream.write(message)
+        stream.flush()
+
+def find_networks(cp):
+    """Find the multi-interferometer networks defined in the ini file
+
+    @returns a list of IFO-tags representing a network
+    """
+    networks= []
+    ifos = sorted(opt[:2].upper() for opt in cp.options("ifo-details")\
+                  if re.match("[a-z]\d-data\Z", opt))
+    for i,c in enumerate(["one", "two", "three", "four", "five", "six"]):
+        if i <= len(ifos) and cp.has_option("ifo-details", "%s-ifo" % c):
+            networks.extend(map(lambda n: "".join(n),\
+                                itertools.combinations(ifos, i+1)))
+    return networks
+
+def syntax_highlight(filepath, format_):
+    """Returns a syntax-highlighted version of the give filepath.
+
+    Uses the higlight command line utlitity.
+    """
+    highlight, err, rc = shell(["which", "highlight"])
+    if rc == 0:
+        # build highlight command
+        highlight_cmd = [highlight.rstrip("\n"),\
+                         "--out-format", "html",\
+                         "--syntax", format_,\
+                         "--inline-css", "--fragment",\
+                         "--input", filepath]
+        out, err, rc = shell(highlight_cmd)
+        if rc != 0:
+            out = open(filepath, "r").read()
+    else:
+        out = open(filepath, "r").read()
+
+    return markup.oneliner.pre(out)
+
+def add_config_section(page, cp, sections):
+    """Copy and paste a section of the INI file into a markup.page
+    """
+    if isinstance(sections, str):
+        sections = [sections]
+
+    raw = ""
+    for i,section in enumerate(sections):
+        items = cp.items(section)
+        raw += "[%s]\n" % section
+        for key,val in items:
+            raw += "%s = %s\n" % (key, val)
+        if i < (len(sections)-1):
+            raw += "\n"
+    tmpfile = tempfile.mktemp()
+    with open(tmpfile, "w") as f:
+        f.write(raw)
+    page.add(syntax_highlight(tmpfile, "ini"))
+    if os.path.isfile(tmpfile):
+        os.remove(tmpfile)
+    return
+
+# =============================================================================
+# Parse command line
+# =============================================================================
+
+def parse_run_directory(d):
+    """Find variables nested in the coherent ihope directory structure.
+    """
+    gps_regex = re.compile(r"(\d+)-(\d+)\Z")
+    all_ = os.listdir(d)
+    gpsdir = None
+    run_options = dict()
+ 
+    for name in all_:
+        if os.path.isdir(os.path.join(d, name)) and gps_regex.match(name):
+             run_options["GPSSTART"], run_options["GPSEND"] =\
+                 gps_regex.match(name).groups()
+
+    return run_options
+
+
+# =============================================================================
+# Followup loudest events
+# =============================================================================
+
+def followup_multi_inspirals(mi_table, outdir="loudest"):
+    """Write summary information for the events in the loudest events
+    MultiInspiralTable mi_table.
+    """
+    if not os.path.isdir(outdir):
+        os.mkdir(outdir)
+    base_html = os.path.basename(os.getcwd())
+    loudest_html = os.path.join(outdir, "loudest_events.html")
+    th = ["Rank", "GPS Time", "Significance (BestNR)", "Coherent SNR",
+          "Mass 1", "Mass 2", "Chirp mass", "Followup"]
+    td = []
+    form = lambda x: "%.2f" % x
+    for i,event in enumerate(mi_table):
+        params = [event.get_end(), event.get_bestnr(), event.snr, event.mass1,
+                  event.mass2, event.mchirp]
+        mifu_html = os.path.join(outdir, "%d.html" % int(params[0]))
+        followup_multi_inspiral(event, mifu_html)
+        td.append([str(i)] + map(form, params) +
+                  [markup.oneliner.a("link", href=mifu_html)])
+    page = markup.page()
+    with open(loudest_html, "w") as f:
+        f.write(str(htmlutils.write_table(th, td, {"table":"numeric"})))
+    return loudest_html
+
+def followup_multi_inspiral(event, html):
+    """Perform mini-followup of the given MultiInspiral event.
+
+    @param event
+        MultiInspiral event to followup
+    @param html
+        path for output HTML file
+    """
+    page = markup.page()
+    page.h1("MultiInspiral event followup")
+    page.h3("%.3f" % event.get_end())
+    # write coherent parameters
+    page.h2("Coherent parameters")
+    th = ["GPS Time", "Significance (BestNR)", "Coherent SNR",
+          "Mass 1", "Mass 2", "Chirp mass", "Chisq (per DOF)",
+          "Bank chisq (per DOF)", "Auto chisq (per DOF)"] 
+    td = [event.get_end(), event.get_bestnr(), event.snr, event.mass1,
+          event.mass2, event.mchirp, event.chisq/event.chisq_dof,
+          event.bank_chisq/event.bank_chisq_dof,
+          event.cont_chisq/event.cont_chisq_dof]
+    page.add(str(htmlutils.write_table(th, td, {"table":"numeric"})))
+    ifos = lsctables.instrument_set_from_ifos(event.ifos)
+    th = ["IFO", "SNR", "Chisq"]
+    td = []
+    for ifo in ifos:
+        if ifo.lower().startswith("h"):
+            td.append([ifo, getattr(event, "snr_%s" % ifo.lower()),
+                       getattr(event, "chisq_%s" % ifo.lower())])
+        else:
+            td.append([ifo, getattr(event, "snr_%s" % ifo[0].lower()),
+                       getattr(event, "chisq_%s" % ifo[0].lower())])
+    page.h2("Single-detector parameters")
+    page.add(str(htmlutils.write_table(th, td, {"table":"numeric"})))
+    with open(html, "w") as f:
+         f.write(str(page))
+
+def followup_sim_inspirals(sim_table, network, outdir="missed"):
+    """Write summary information for the events in the close missed
+    SimInspiralTable sim_table.
+    """
+    if not os.path.isdir(outdir):
+        os.mkdir(outdir)
+    base_html = os.path.basename(os.getcwd())
+    loudest_html = os.path.join(outdir, "close_missed_injections.html")
+    th = (["Rank", "GPS Time", "Distance"] +
+          ["Eff. dist (%s)" % site[0] for site in network] +
+          ["Mass 1", "Mass 2", "Chirp mass", "Inclination", "Spin 1", "Spin2"])
+    td = []
+    form = lambda x: "%.2f" % x
+    for i,event in enumerate(sim_table):
+        params = ([event.get_end(), event.distance] +
+                  [event.get_eff_dist(site[0]) for site in network] +
+                  [event.mass1, event.mass2, event.mchirp, event.inclination,
+                   event.get_spin_mag(1), event.get_spin_mag(2)])
+        mifu_html = os.path.join(outdir, "%d.html" % int(params[0]))
+        td.append([str(i)] + map(form, params))
+    page = markup.page()
+    with open(loudest_html, "w") as f:
+        f.write(str(htmlutils.write_table(th, td, {"table":"numeric"})))
+    return loudest_html
+
+
+# =============================================================================
+# HTML
+# =============================================================================
+
+def div(page, id_, header, display=True):
+    if isinstance(id_, int):
+        id_ = str(id_)
+    elif not isinstance(id_, str):
+        id_ = ".".join(list(map(str, id_)))
+    N = len(re.split("\.", id_))
+
+    if not display:
+        display = "display: none;"
+        class_ = "closed"
+    else:
+        display = "display: block;"
+        class_ = "open"
+
+    getattr(page, "h%d" % N)("%s %s" % (id_, header), onclick=TOGGLE,\
+                             id_="h%d_%s" % (N, id_.replace(".","-")),\
+                             class_=class_)
+    page.div(id_="div_%s" % id_.replace(".","-"), style=display)
+
+def write_html_banner(cp):
+    """@returns markup.page with banner information
+    """
+    page = markup.page()
+    page.h1(cp.get("html", "header"))
+    page.h2("%d-%d" % (cp.getint("input", "gps-start-time"),\
+                       cp.getint("input", "gps-end-time")))
+
+    return page
+
+def write_html_menu(sections):
+    """@returns markup.page with HTML menu
+    """
+    page = markup.page()
+    for i,(name,url) in enumerate(sections):
+        if url.endswith("index.html"):
+            url = url[:-10]
+        page.a("%d %s" % (i,name), class_="menulink", href=url)
+    return page
+
+def write_general(cp, section_number=0):
+    """Write the general section
+
+    @param cp
+        configparser.configparser instance with [condor] section
+
+    @returns a markup.page instance
+    """
+    if not os.path.isdir(GENERAL):
+        os.mkdir(GENERAL)
+
+    # create page
+    page = markup.page()
+    div(page, section_number, "General information")
+    page.p("This page summarises the resources used for this analysis")
+
+    gps_directory = cp.get("input", "analysis-directory")
+
+    # link INI file in full
+    div(page, (section_number, 0), "Configuration file")
+    page.p("The analysis configuration can be downloaded %s."\
+           % markup.oneliner.a("here", href=cp.filename))
+    page.add(str(syntax_highlight(cp.filename, "ini")))
+    page.div.close()
+
+    # list binaries and their version
+    div(page, (section_number, 1), "Computational resources")
+    table_headers = ["Name", "Executable", "Version"]
+    table_body = []
+    for name,exe in cp.items("condor"):
+        if name == "universe":
+            continue
+        if exe in ["/bin/true", "/bin/false"]:
+            table_body.append([name, exe,\
+                               markup.oneliner.font("Unused", color="blue")])
+        else:
+            exe = os.path.join(gps_directory, "executables",\
+                               os.path.basename(exe))
+            out,err,rc = shell([exe, "--version"])
+            if rc != 0:
+                version = markup.oneliner.font("Undefined version",\
+                                               color="red")
+            else:
+                version = out
+            table_body.append([name, os.path.basename(exe),\
+                              markup.escape(version, newline=True)])
+    table_body.sort(key=lambda x: x[0])
+    page.add(htmlutils.write_table(table_headers, table_body)())
+    page.div.close()
+
+    page.div.close()
+
+    return page
+
+def write_segments(cp, section_number=1, symlink=False):
+    """Write the segment information section
+
+    @param cp
+        configparser.configparser instance with [condor] section
+
+    @returns a markup.page instance
+    """
+    gps_directory = cp.get("input", "analysis-directory")
+    seg_directory = os.path.join(gps_directory, SEGMENTS)
+    gpsstart = cp.getint("input", "gps-start-time")
+    gpsend = cp.getint("input", "gps-end-time")
+    gpstag = "%d-%d" % (gpsstart, gpsend-gpsstart)
+    # get seg directory
+    if not os.path.isdir(SEGMENTS):
+        if symlink:
+            os.symlink(seg_directory, SEGMENTS)
+        else:
+            shutil.copytree(seg_directory, SEGMENTS)
+
+    # get networks
+    networks = find_networks(cp)
+
+    # create page
+    page = markup.page()
+    div(page, section_number, "Segment information", display=True)
+    page.p("This page summarises the segments used in this analysis")
+
+    # write segment sectio from INI
+    div(page, (section_number, 0), "Segment configuration", display=False)
+    page.p("Segments were generated using the following information:")
+    add_config_section(page, cp, ["segments", "segfind"])
+    page.div.close()
+
+    # write analysis segment summary
+    i = 1
+    for network in networks:
+        div(page, (section_number, i), "%s analysis segments" % network)
+        # plot
+        div(page, (section_number, i, 0), "Segment plot")
+        p = os.path.join(SEGMENTS, "%s-SEGMENTS-%s.png" % (network, gpstag))
+        page.a(markup.oneliner.img(src=p, class_="full mpl", rel="full"),
+               href=p, class_=FANCYBOX)
+        page.div.close()
+        # seg file
+        div(page, (section_number, i, 1), "Segment file")
+        f = os.path.join(SEGMENTS, "%s-SELECTED_SEGMENTS-%s.txt"\
+                                   % (network, gpstag))
+        page.p("The %s segment file can be downloaded %s."\
+               % (network, markup.oneliner.a("here", href=f)))
+        page.pre(open(f, "r").read())
+        page.div.close()
+
+        page.div.close()
+        i += 1
+
+    # write veto definer information
+    #div(page, (section_number, i+1), 
+
+    page.div.close()
+    return page
+
+def write_sky_grids(cp, section_number=2, symlink=False):
+    """Write the sky gridding information section
+
+    @param cp
+        configparser.configparser instance with [skygrids] section
+
+    @returns a markup.page instance
+    """
+    gps_directory = cp.get("input", "analysis-directory")
+    sky_directory = os.path.join(gps_directory, SKYGRIDS)
+    gpsstart = cp.getint("input", "gps-start-time")
+    gpsend = cp.getint("input", "gps-end-time")
+    gpstag = "%d-%d" % (gpsstart, gpsend-gpsstart)
+    # get seg directory
+    if not os.path.isdir(SKYGRIDS):
+        if symlink:
+            os.symlink(sky_directory, SKYGRIDS)
+        else:
+            shutil.copytree(sky_directory, SKYGRIDS)
+
+    # get networks
+    networks = find_networks(cp)
+
+    # create page
+    page = markup.page()
+    div(page, section_number, "Sky grid information", display=True)
+    page.p("This page summarises the sky maps used in this analysis")
+
+    # write segment sectio from INI
+    div(page, (section_number, 0), "Sky map configuration", display=False)
+    page.p("Sky maps were generated using the following information:")
+    add_config_section(page, cp, "sky")
+    page.div.close()
+
+    # write analysis segment summary
+    i = 1
+    for network in networks:
+        div(page, (section_number, i), "%s sky map" % network)
+        page.p("This section contains an example sky grid generated "+\
+               "for the %s network" % network)
+        # plot
+        div(page, (section_number, i, 0), "Sky map plot")
+        p = os.path.join(SKYGRIDS, "%s-COH_PTF_INSPIRAL_SKY_GRID_MOLL-0-0.png"\
+                                   % network)
+        if os.path.isfile(p) or os.path.islink(p):
+            page.a(markup.oneliner.img(src=p, width="60%", class_="mpl",
+                                       rel="full"), href=p, class_=FANCYBOX)
+        p = p.replace("MOLL", "ORTHO")
+        if os.path.isfile(p) or os.path.islink(p):
+            page.a(markup.oneliner.img(src=p, width="40%", class_="mpl",
+                                       rel="full"), href=p, class_=FANCYBOX)
+        page.div.close()
+
+        page.div.close()
+        i += 1
+
+    return page
+
+def write_tmpltbank(cp, section_number=3, symlink=False):
+    """Write the template bank information section
+
+    @param cp
+        configparser.configparser instance with [tmplbank] section
+
+    @returns a markup.page instance
+    """
+    gps_directory = cp.get("input", "analysis-directory")
+    tmpltbank_directory = os.path.join(gps_directory, TMPLTBANK)
+    gpsstart = cp.getint("input", "gps-start-time")
+    gpsend = cp.getint("input", "gps-end-time")
+    gpstag = "%d-%d" % (gpsstart, gpsend-gpsstart)
+    # get seg directory
+    if not os.path.islink(TMPLTBANK):
+        if symlink:
+            os.symlink(tmpltbank_directory, SKYGRIDS)
+        else:
+            mkdir_p(TMPLTBANK)
+            plots = glob.glob(os.path.join(tmpltbank_directory, "*.png"))
+            for plot in plots:
+                scp(plot, TMPLTBANK)
+
+    # get networks
+    networks = find_networks(cp)
+
+    # create page
+    page = markup.page()
+    div(page, section_number, "Template bank information")
+    page.p("This page summarises the template bank used in this analysis")
+
+    # write section from INI
+    div(page, (section_number, 0), "Template bank configuration", display=False)
+    page.p("The template bank was generated using the following information:")
+    add_config_section(page, cp, ["data", TMPLTBANK])
+    page.div.close()
+
+    # link plots
+    div(page, (section_number, 1), "Template bank plots")
+    page.p("Here are some plots of the template bank:")
+    plots = glob.glob(os.path.join(TMPLTBANK, "*.png"))
+    for plot in plots:
+        page.a(markup.oneliner.img(src=plot, class_="half mpl", rel="full"),
+               href=plot, class_=FANCYBOX)
+    page.div.close()
+
+    page.div.close()
+    return page
+
+
+def write_full_data(cp, section_number=4, symlink=False):
+    """Write the full data (zero-lag) information section
+
+    @param cp
+        configparser.configparser instance with [data] section
+
+    @returns a markup.page instance
+    """
+    vetoes = [None] + map(int, cp.get("segments", "veto-categories").split(","))
+    gps_directory = cp.get("input", "analysis-directory")
+    data_directory = os.path.join(gps_directory, FULL_DATA)
+    plot_directory = os.path.join(data_directory, "plots")
+    gpsstart = cp.getint("input", "gps-start-time")
+    gpsend = cp.getint("input", "gps-end-time")
+    gpsdur = gpsend - gpsstart
+    gpstag = "%d-%d" % (gpsstart, gpsdur)
+    # get seg directory
+    if not os.path.islink(FULL_DATA):
+        if symlink:
+            os.symlink(data_directory, FULL_DATA)
+        else:
+            mkdir_p(FULL_DATA)
+            plots = glob.glob(os.path.join(plot_directory, "*.png"))
+            for plot in plots:
+                scp(plot, FULL_DATA)
+
+    # get networks
+    networks = find_networks(cp)
+
+    # create page
+    page = markup.page()
+    div(page, section_number, "Full data information")
+    page.p("This page summarises the results of the full analysis")
+
+    # write section from INI
+    div(page, (section_number, 0), "Full data configuration", display=False)
+    page.p("The data were generated using the following information:")
+    add_config_section(page, cp, ["data", "coh_PTF_inspiral"])
+    page.div.close()
+
+    # link plots
+    tag = "COH_PTF_INSPIRAL_FULL_DATA"
+    pclass="half mpl"
+    for i,network in enumerate(networks):
+        div(page, (section_number, i+1), "%s data summary" % network)
+        for j,cat in enumerate(vetoes):
+            if cat:
+                div(page, (section_number, i+1, j),
+                    "After category %d data quality vetoes" % cat,
+                    display=False)
+            else:
+                div(page, (section_number, i+1, j),
+                    "Before data quality vetoes", display=False)
+            if cat:
+                plotname = os.path.join(FULL_DATA,
+                                        "%s-%s_CAT%d_SBV_%s-%s.png"
+                                        % (network, tag, cat, "%s", gpstag))
+            else:
+                plotname = os.path.join(FULL_DATA,
+                                        "%s-%s_SBV_%s-%s.png"
+                                        % (network, tag, "%s", gpstag))
+            # plot summary
+            plot = plotname % "BESTNR_HISTOGRAM"
+            if os.path.isfile(plot):
+                page.a(markup.oneliner.img(src=plot, class_="full", rel="full"),
+                       href=plot, class_=FANCYBOX)
+            # loudest slides
+            if cat:
+                xmlfile = ("%s-%s_CAT%d_SBV_LOUDEST-%s.xml.gz"
+                           % (network, tag, cat, gpstag))
+            else:
+                xmlfile = ("%s-%s_SBV_LOUDEST-%s.xml.gz"
+                           % (network, tag, gpstag))
+            if os.path.isfile(os.path.join(data_directory, xmlfile)):
+                scp(os.path.join(data_directory, xmlfile), FULL_DATA)
+                events = ReadMultiInspiralFromFiles([
+                             os.path.join(FULL_DATA, xmlfile)])
+                events.sort(key=lambda x: x.get_bestnr(), reverse=True)
+                loudest_events = followup_multi_inspirals(events,
+                                                          FULL_DATA_SLIDE)
+                with open(loudest_events, "r") as f:
+                    page.add(f.read())
+            page.div.close()
+        page.div.close()        
+
+    # signal-consistency
+    for network in networks:
+        i += 1
+        div(page, (section_number, i+1), "%s full data signal-consistency"
+                                         % (network),
+            display=False)
+        ifos = lsctables.instrument_set_from_ifos(network)
+        sites = set(ifo[0] for ifo in ifos)
+        for j,cat in enumerate(vetoes):
+            if cat:
+                div(page, (section_number, i+1, j),
+                    "After category %d data quality vetoes" % cat,
+                    display=False)
+            else:
+                div(page, (section_number, i+1, j),
+                    "Before data quality vetoes", display=False)
+            if cat:
+                plotname = os.path.join(FULL_DATA,
+                                        "%s-%s_CAT%d_SBV_%s-%s.png"
+                                        % (network, tag, cat, "%s", gpstag))
+            else:
+                plotname = os.path.join(FULL_DATA,
+                                        "%s-%s_SBV_%s-%s.png"
+                                        % (network, tag, "%s", gpstag))
+            for sbv in ["SNR_CHISQ", "SNR_BANK_CHISQ", "SNR_CONT_CHISQ",
+                        "SNR_NULL"]:
+                plot = plotname % sbv
+                if os.path.isfile(plot):
+                    page.a(markup.oneliner.img(src=plot, class_=pclass,
+                                               rel="full"),
+                           href=plot, class_=FANCYBOX)
+            page.div.close()
+        page.div.close()
+
+    return page
+
+
+def write_full_data_slide(cp, section_number=5, symlink=False):
+    """Write the time-slide information section
+
+    @param cp
+        configparser.configparser instance with [time-slides] section
+
+    @returns a markup.page instance
+    """
+    vetoes = [None] + map(int, cp.get("segments", "veto-categories").split(","))
+    gps_directory = cp.get("input", "analysis-directory")
+    slide_directory = os.path.join(gps_directory, FULL_DATA_SLIDE)
+    plot_directory = os.path.join(slide_directory, "plots")
+    gpsstart = cp.getint("input", "gps-start-time")
+    gpsend = cp.getint("input", "gps-end-time")
+    gpsdur = gpsend - gpsstart
+    gpstag = "%d-%d" % (gpsstart, gpsdur)
+    # get seg directory
+    if not os.path.islink(FULL_DATA_SLIDE):
+        if symlink:
+            os.symlink(slide_directory, FULL_DATA_SLIDE)
+        else:
+            mkdir_p(FULL_DATA_SLIDE)
+            plots = glob.glob(os.path.join(plot_directory, "*.png"))
+            for plot in plots:
+                scp(plot, FULL_DATA_SLIDE)
+
+    # get networks
+    networks = find_networks(cp)
+
+    # create page
+    page = markup.page()
+    div(page, section_number, "Time slide information")
+    page.p("This page summarises the time slides used in this analysis")
+
+    # write section from INI
+    div(page, (section_number, 0), "Time slide configuration", display=False)
+    page.p("The time slides were generated using the following information:")
+    add_config_section(page, cp, ["data", "time-slides"])
+    page.div.close()
+
+    # link plots
+    pclass="half mpl"
+    tag = "COH_PTF_INSPIRAL_FULL_DATA_SLIDE"
+    for i,network in enumerate(networks):
+        div(page, (section_number, i+1), "%s time slide summary" % network)
+        for j,cat in enumerate(vetoes):
+            if cat:
+                div(page, (section_number, i+1, j),
+                    "After category %d data quality vetoes" % cat,
+                    display=False)
+            else:
+                div(page, (section_number, i+1, j),
+                    "Before data quality vetoes", display=False)
+            if cat:
+                plotname = os.path.join(FULL_DATA_SLIDE,
+                                        "%s-%s_CAT%d_SBV_%s-%s.png"
+                                        % (network, tag, cat, "%s", gpstag))
+            else:
+                plotname = os.path.join(FULL_DATA_SLIDE,
+                                        "%s-%s_SBV_%s-%s.png"
+                                        % (network, tag, "%s", gpstag))
+            # plot summary
+            plot = (plotname % "NUM_EVENTS")\
+                       .replace(FULL_DATA_SLIDE, FULL_DATA)\
+                       .replace("_SLIDE", "")
+            if os.path.isfile(plot):
+                page.a(markup.oneliner.img(src=plot, class_=pclass, rel="full"),
+                       href=plot, class_=FANCYBOX)
+            plot = plotname % "BESTNR_HISTOGRAM"
+            if os.path.isfile(plot):
+                page.a(markup.oneliner.img(src=plot, class_=pclass, rel="full"),
+                       href=plot, class_=FANCYBOX)
+            # loudest slides
+            if cat:
+                xmlfile = ("%s-%s_CAT%d_SBV_LOUDEST-%s.xml.gz"
+                           % (network, tag, cat, gpstag))
+            else:
+                xmlfile = ("%s-%s_SBV_LOUDEST-%s.xml.gz"
+                           % (network, tag, gpstag))
+            if os.path.isfile(os.path.join(slide_directory, xmlfile)):
+                scp(os.path.join(slide_directory, xmlfile), FULL_DATA_SLIDE)
+                events = ReadMultiInspiralFromFiles([
+                             os.path.join(FULL_DATA_SLIDE, xmlfile)])
+                events.sort(key=lambda x: x.get_bestnr(), reverse=True)
+                loudest_events = followup_multi_inspirals(events,
+                                                          FULL_DATA_SLIDE)
+                with open(loudest_events, "r") as f:
+                    page.add(f.read())
+            page.div.close()
+        page.div.close() 
+
+    # signal-consistency
+    for network in networks:
+        i += 1
+        div(page, (section_number, i+1), "%s time slide signal-consistency"
+                                         % (network),
+            display=False)
+        ifos = lsctables.instrument_set_from_ifos(network)
+        sites = set(ifo[0] for ifo in ifos)
+        for j,cat in enumerate(vetoes):
+            if cat:
+                div(page, (section_number, i+1, j),
+                    "After category %d data quality vetoes" % cat,
+                    display=False)
+            else:
+                div(page, (section_number, i+1, j),
+                    "Before data quality vetoes", display=False)
+            if cat:
+                plotname = os.path.join(FULL_DATA_SLIDE,
+                                        "%s-%s_CAT%d_SBV_%s-%s.png"
+                                        % (network, tag, cat, "%s", gpstag))
+            else:
+                plotname = os.path.join(FULL_DATA_SLIDE,
+                                        "%s-%s_SBV_%s-%s.png"
+                                        % (network, tag, "%s", gpstag))
+            for sbv in ["SNR_CHISQ", "SNR_BANK_CHISQ", "SNR_CONT_CHISQ",
+                        "SNR_NULL"]:
+                plot = plotname % sbv
+                if os.path.isfile(plot):
+                    page.a(markup.oneliner.img(src=plot, class_=pclass,
+                                               rel="full"),
+                           href=plot, class_=FANCYBOX)
+            page.div.close()
+        page.div.close()
+
+    return page
+
+
+    return page
+
+
+def write_injections(cp, injections, section_number=6, symlink=False):
+    """Write the injectiom summary information section
+
+    @param cp
+        configparser.configparser instance with [time-slides] section
+    @param injections
+        name of the injection run as a string
+
+    @returns a markup.page instance
+    """
+    vetoes = [None] + map(int, cp.get("segments", "veto-categories").split(","))
+    gps_directory = cp.get("input", "analysis-directory")
+    data_directory = os.path.join(gps_directory, injections.lower())
+    plot_directory = os.path.join(data_directory, "plots")
+    gpsstart = cp.getint("input", "gps-start-time")
+    gpsend = cp.getint("input", "gps-end-time")
+    gpsdur = gpsend - gpsstart
+    gpstag = "%d-%d" % (gpsstart, gpsdur)
+    # get seg directory
+    if not os.path.islink(injections.lower()):
+        if symlink:
+            os.symlink(data_directory, injections.lower())
+        else:
+            mkdir_p(injections.lower())
+            plots = glob.glob(os.path.join(plot_directory, "*.png"))
+            for plot in plots:
+                scp(plot, injections.lower())
+
+    # get networks
+    networks = find_networks(cp)
+
+    # create page
+    page = markup.page()
+    div(page, section_number, "%s simulation results" % injections.upper())
+    page.p("This page summarises the results of the %s software injection run"
+           % injections.upper())
+
+    # write section from INI
+    div(page, (section_number, 0), "Simulation configuration", display=False)
+    page.p("The injections were generated using the following information:")
+    add_config_section(page, cp, ["inspinj", injections.lower()])
+    page.div.close()
+
+    # link plots
+    pclass="half mpl"
+    tag = "COH_PTF_INSPIRAL_%s" % injections.upper()
+    for i,network in enumerate(networks):
+        div(page, (section_number, i+1), "%s %s simulations summary"
+                                         % (network, injections.upper()))
+        page.add("In all of the following, 'found' means 'found loudest than "
+                 "the loudest background (FAP==0).")
+        for j,cat in enumerate(vetoes):
+            if cat:
+                div(page, (section_number, i+1, j),
+                    "After category %d data quality vetoes" % cat,
+                    display=cat==vetoes[-1])
+            else:
+                div(page, (section_number, i+1, j),
+                    "Before data quality vetoes", display=False)
+            if cat:
+                plotname = os.path.join(injections.lower(),
+                                        "%s-%s_CAT%d_SBV_%s-%s.png"
+                                        % (network, tag, cat, "%s", gpstag))
+            else:
+                plotname = os.path.join(injections.lower(),
+                                        "%s-%s_SBV_%s-%s.png"
+                                        % (network, tag, "%s", gpstag))
+            # plot summary
+            plot = plotname % "EFFICIENCY"
+            if os.path.isfile(plot):
+                page.a(markup.oneliner.img(src=plot, class_=pclass, rel="full"),
+                       href=plot, class_=FANCYBOX)
+            plot = plotname % "FOUND_MISSED_MCHIRP_EFF_DIST"
+            if os.path.isfile(plot):
+                page.a(markup.oneliner.img(src=plot, class_=pclass, rel="full"),
+                       href=plot, class_=FANCYBOX)
+
+            page.div.close()
+        page.div.close()
+
+    # plot efficiency
+    for network in networks:
+        i += 1
+        div(page, (section_number, i+1), "%s %s efficiencies"
+                                         % (network, injections.upper()),
+            display=False)
+        ifos = lsctables.instrument_set_from_ifos(network)
+        sites = set(ifo[0] for ifo in ifos)
+        for j,cat in enumerate(vetoes):
+            if cat:
+                div(page, (section_number, i+1, j),
+                    "After category %d data quality vetoes" % cat,
+                    display=False)
+            else:
+                div(page, (section_number, i+1, j),
+                    "Before data quality vetoes", display=False)
+            if cat:
+                plotname = os.path.join(injections.lower(),
+                                        "%s-%s_CAT%d_SBV_%s-%s.png"
+                                        % (network, tag, cat, "%s", gpstag))
+            else:
+                plotname = os.path.join(injections.lower(),
+                                        "%s-%s_SBV_%s-%s.png"
+                                        % (network, tag, "%s", gpstag))
+            for ifo in sorted(sites):
+                plot = plotname % "%s_EFFICIENCY" % ifo.upper()
+                if os.path.isfile(plot):
+                    page.a(markup.oneliner.img(src=plot, class_=pclass,
+                                               rel="full"),
+                           href=plot, class_=FANCYBOX)
+            page.div.close()
+        page.div.close()
+
+    # found/missed
+    for network in networks:
+        i += 1
+        div(page, (section_number, i+1), "%s %s found and missed injections"
+                                         % (network, injections.upper()),
+            display=False)
+        ifos = lsctables.instrument_set_from_ifos(network)
+        sites = set(ifo[0] for ifo in ifos)
+        for j,cat in enumerate(vetoes):
+            if cat:
+                div(page, (section_number, i+1, j),
+                    "After category %d data quality vetoes" % cat,
+                    display=False)
+            else:
+                div(page, (section_number, i+1, j),
+                    "Before data quality vetoes", display=False)
+            if cat:
+                plotname = os.path.join(injections.lower(),
+                                        "%s-%s_CAT%d_SBV_%s-%s.png"
+                                        % (network, tag, cat, "%s", gpstag))
+            else:
+                plotname = os.path.join(injections.lower(),
+                                        "%s-%s_SBV_%s-%s.png"
+                                        % (network, tag, "%s", gpstag))
+            for ifo in sorted(sites):
+                plot = plotname % ("FOUND_MISSED_MCHIRP_%s_EFF_DIST"
+                                   % ifo.upper())
+                if os.path.isfile(plot):
+                    page.a(markup.oneliner.img(src=plot, class_=pclass,
+                                               rel="full"),
+                           href=plot, class_=FANCYBOX)
+                plot = plotname % ("FOUND_MISSED_TIME_%s_EFF_DIST"
+                                   % ifo.upper())
+                if os.path.isfile(plot):
+                    page.a(markup.oneliner.img(src=plot, class_=pclass,
+                                               rel="full"),
+                           href=plot, class_=FANCYBOX)
+
+            # TODO: write closeby missed injections
+            page.h4("Closest missed injections")
+            if cat:
+                xmlfile = ("%s-%s_CAT%d_SBV_CLOSE_MISSED-%s.xml.gz"
+                           % (network, tag, cat, gpstag))
+            else:
+                xmlfile = ("%s-%s_SBV_CLOSE_MISSED-%s.xml.gz"
+                           % (network, tag, gpstag))
+            if os.path.isfile(os.path.join(data_directory, xmlfile)):
+                scp(os.path.join(data_directory, xmlfile), injections.lower())
+                events = ReadSimInspiralFromFiles([
+                             os.path.join(injections.lower(), xmlfile)])
+                events.sort(key=lambda x: x.distance)
+                sites = set([ifo[0] for ifo in 
+                             lsctables.instrument_set_from_ifos(network)])
+                closed_missed_events = followup_sim_inspirals(
+                                           events, sites, injections.lower())
+                with open(closed_missed_events, "r") as f:
+                    page.add(f.read())
+            page.div.close()
+        page.div.close()
+
+    # signal-consistency
+    for network in networks:
+        i += 1
+        div(page, (section_number, i+1), "%s %s signal-consistency"
+                                         % (network, injections.upper()),
+            display=False)
+        ifos = lsctables.instrument_set_from_ifos(network)
+        sites = set(ifo[0] for ifo in ifos)
+        for j,cat in enumerate(vetoes):
+            if cat:
+                div(page, (section_number, i+1, j),
+                    "After category %d data quality vetoes" % cat,
+                    display=False)
+            else:
+                div(page, (section_number, i+1, j),
+                    "Before data quality vetoes", display=False)
+            if cat:
+                plotname = os.path.join(injections.lower(),
+                                        "%s-%s_CAT%d_SBV_%s-%s.png"
+                                        % (network, tag, cat, "%s", gpstag))
+            else:
+                plotname = os.path.join(injections.lower(),
+                                        "%s-%s_SBV_%s-%s.png"
+                                        % (network, tag, "%s", gpstag))
+            for sbv in ["SNR_CHISQ", "SNR_BANK_CHISQ", "SNR_CONT_CHISQ",
+                        "SNR_NULL"]:
+                plot = plotname % sbv
+                if os.path.isfile(plot):
+                    page.a(markup.oneliner.img(src=plot, class_=pclass,
+                                               rel="full"),
+                           href=plot, class_=FANCYBOX)
+            page.div.close()
+        page.div.close()
+
+    return page
+
+# =============================================================================
+# Parse command line
+# =============================================================================
+
+def require(parser, opt, value):
+    """Check required options
+    """
+    if not value:
+        parser.error("--%s is a required option." % opt.replace("_","-"))
+    return
+
+def parse_command_line():
+    """@returns the options as given on the command line
+    """
+    # setup parser
+    epilog = "If you need help, just ask.ligo.org."
+    parser =\
+        optparse.OptionParser(description=__doc__[1:], epilog=epilog,\
+                              formatter=optparse.IndentedHelpFormatter(4))
+    parser.add_option("-p", "--profile", action="store_true", default=False,\
+                      help="profile output, default: %default")
+    parser.add_option("-v", "--verbose", action="store_true", default=False,\
+                      help="verbose output, default: %default")
+    parser.add_option("-V", "--version", action="version",\
+                      help="show program's version number and exit")
+    parser.version = __version__
+
+    # add input options
+    inopts = optparse.OptionGroup(parser, "Configuration options")
+    inopts.add_option("-r", "--run-directory", action="store", type="string",\
+                      default=os.getcwd(),\
+                      help="parent directory of ${GPSSTART}-${GPSEND} dir, "+\
+                           "default: %default")
+    inopts.add_option("-f", "--config-file", action="store", type="string",\
+                      default=None,\
+                      help="Path to INI-format configuration file for "+\
+                           "analysis")
+    parser.add_option_group(inopts)
+
+    # output options
+    outopts = optparse.OptionGroup(parser, "Output options")
+    outopts.add_option("-o", "--output-directory", action="store",\
+                       type="string", default=os.getcwd(),\
+                       help="Output path for summary webpage, "+\
+                            "default: %default")
+    outopts.add_option("-O", "--open-the-box", action="store_true",\
+                       default=False,\
+                       help="Open the box on this analysis, default: %default")
+    outopts.add_option("-T", "--symlink-plots", action="store_true",\
+                       default=False,\
+                       help="symlink plots, don't copy, default: %default")
+    parser.add_option_group(outopts)
+
+    # get options
+    opts,_ = parser.parse_args()
+
+    # check required options
+    for opt in ["config_file"]:
+        val = getattr(opts, opt)
+        require(parser, opt, val)
+
+    # set global print flags
+    global VERBOSE,PROFILE
+    VERBOSE = opts.verbose
+    PROFILE = opts.profile
+
+    # set absolute paths
+    opts.run_directory = os.path.abspath(opts.run_directory)
+    opts.output_directory = os.path.abspath(opts.output_directory)
+
+    return opts
+
+# =============================================================================
+# Run from command line
+# =============================================================================
+
+if __name__ == "__main__":
+    #
+    # setup
+    #
+
+    # parse command line
+    opts = parse_command_line()
+    run_directory = opts.run_directory
+    open_box = opts.open_the_box
+    
+    # parse config file
+    cp = ConfigParser.ConfigParser()
+    cp.optionxform = str
+    cp.read(opts.config_file)
+    cp.filename = os.path.abspath(opts.config_file)
+    if not cp.has_section("input"):
+        cp.add_section("input")
+
+    # find variables from run directory
+    run_options = parse_run_directory(run_directory)
+    gpsstart = int(run_options["GPSSTART"])
+    gpsend = int(run_options["GPSEND"])
+    cp.set("input", "gps-start-time", str(gpsstart))
+    cp.set("input", "gps-end-time", str(gpsend))
+    gpsdir = "%d-%d" % (gpsstart, gpsend)
+    cp.set("input", "analysis-directory", os.path.join(run_directory, gpsdir))
+
+    # set output directory
+    outdir = os.path.normpath(os.path.abspath(opts.output_directory))
+    if not outdir.endswith(gpsdir):
+        outdir = os.path.join(outdir, gpsdir)
+    mkdir_p(outdir, chdir=True)
+
+    # copy config to output directory
+    scp(cp.filename, outdir)
+    cp.filename = os.path.basename(cp.filename)
+
+    #
+    # construct sections
+    #
+
+    injection_runs = cp.options("injections")
+
+    sections = [("General", os.path.join(GENERAL, INDEX)),\
+                ("Segments", os.path.join(SEGMENTS, INDEX)),\
+                ("Sky grids", os.path.join(SKYGRIDS, INDEX)),\
+                ("Template bank", os.path.join(TMPLTBANK, INDEX)),\
+                ("Full data", os.path.join(FULL_DATA, INDEX)),\
+                ("Time slides", os.path.join(FULL_DATA_SLIDE, INDEX))]
+    sections.extend([(inj.upper(), os.path.join(inj, INDEX))\
+                    for inj in injection_runs])
+    index = sections[4]
+
+    #
+    # initialise HTML
+    #
+
+    # get files
+    css = cp.get("html", "style-sheet").split(",")
+    for i,stylesheet in enumerate(css):
+        css[i] = scp(stylesheet,\
+                     os.path.join("html", os.path.basename(stylesheet)))
+
+    javascript = cp.get("html", "javascript").split(",")
+    for i,fp in enumerate(javascript):
+        javascript[i] = scp(fp, os.path.join("html", os.path.basename(fp)))
+
+    # get HTML base
+    userdir = os.path.realpath(htmlutils.get_public_html())
+    if outdir.startswith(userdir):
+        base = "%s%s" % (normjoin(os.sep, "~%s" % getpass.getuser(),\
+                                  outdir[len(userdir)+1:]), os.sep)
+    else:
+        base = None
+ 
+    # get HTML header
+    if open_box:
+        icon = cp.get("html", "open-box-icon")
+    else:
+        icon = cp.get("html", "closed-box-icon")
+    if icon:
+        icon = markup.oneliner.img(src=os.path.basename(scp(icon, outdir)),\
+                                   class_="logo")
+    htmlbanner = write_html_banner(cp)
+
+    # build menu
+    menu = write_html_menu(sections)
+
+    # construct initialisation arguments
+    htmlinit = {"css":css, "script":javascript, "title":cp.get("html", "header"),
+                "base":base}
+
+    #
+    # build general information section
+    #    
+
+    idx = 0
+    section = sections[idx]
+    frame = write_general(cp, idx)
+    page = htmlutils.build_page(icon=icon, banner=htmlbanner(), menu=menu(),\
+                                frame=frame(), **htmlinit)
+    html = section[1]
+    with open(html, "w") as f:
+        f.write(str(page))
+
+    #
+    # build segment information section
+    #
+
+    idx = 1
+    section = sections[idx]
+    frame = write_segments(cp, idx, symlink=opts.symlink_plots)
+    page = htmlutils.build_page(icon=icon, banner=htmlbanner(), menu=menu(),\
+                                frame=frame(), **htmlinit)
+    html = section[1]
+    with open(html, "w") as f:
+        f.write(str(page))
+
+    #
+    # build sky grid information section
+    #
+
+    idx += 1
+    section = sections[idx]
+    frame = write_sky_grids(cp, idx, symlink=opts.symlink_plots)
+    page = htmlutils.build_page(icon=icon, banner=htmlbanner(), menu=menu(),\
+                                frame=frame(), **htmlinit)
+    html = section[1]
+    with open(html, "w") as f:
+        f.write(str(page))
+
+    #
+    # build tmpltbank information section
+    #
+
+    idx += 1
+    section = sections[idx]
+    frame = write_tmpltbank(cp, idx, symlink=opts.symlink_plots)
+    page = htmlutils.build_page(icon=icon, banner=htmlbanner(), menu=menu(),\
+                                frame=frame(), **htmlinit)
+    html = section[1]
+    with open(html, "w") as f:
+        f.write(str(page))
+
+    #
+    # build full data information section
+    #
+
+    idx += 1
+    if open_box:
+        section = sections[idx]
+        frame = write_full_data(cp, idx, symlink=opts.symlink_plots)
+        page = htmlutils.build_page(icon=icon, banner=htmlbanner(),
+                                    menu=menu(), frame=frame(), **htmlinit)
+        html = section[1]
+        with open(html, "w") as f:
+            f.write(str(page))
+
+    #
+    # build time slide information section
+    #
+
+    idx = 5
+
+    section = sections[idx]
+    frame = write_full_data_slide(cp, idx, symlink=opts.symlink_plots)
+    page = htmlutils.build_page(icon=icon, banner=htmlbanner(), menu=menu(),\
+                                frame=frame(), **htmlinit)
+    html = section[1]
+    with open(html, "w") as f:
+        f.write(str(page))
+
+    #
+    # build injection summary
+    #
+
+    for inj in injection_runs:
+        idx += 1
+        section = sections[idx]
+        frame = write_injections(cp, inj, idx, symlink=opts.symlink_plots)
+        page = htmlutils.build_page(icon=icon, banner=htmlbanner(),
+                                    menu=menu(), frame=frame(), **htmlinit)
+        html = section[1]
+        with open(html, "w") as f:
+            f.write(str(page))
+
+    #
+    # clean up
+    #
+
+    scp(index[1], "index.html")

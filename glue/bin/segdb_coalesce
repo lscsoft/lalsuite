@@ -1,0 +1,164 @@
+#!/usr/bin/python
+#
+# xml dq publishing script for virgo (or other) dq xml files
+#
+#
+# Copyright (C) 2009 Duncan Brown
+# 
+# This is part of the Grid LSC User Environment (GLUE)
+# 
+# GLUE is free software: you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.
+# 
+# You should have received a copy of the GNU General Public License along with
+# this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import pwd
+import os
+import re
+import exceptions
+import re
+import time
+import logging
+import logging.handlers
+
+from optparse import OptionParser
+
+from glue import gsiserverutils
+from glue import segments
+from glue import gpstime
+
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import segments as ligolw_segments
+from glue.ligolw.utils import process as ligolw_process
+from glue.ligolw.utils import coalesce_db as ligolw_coalesce
+
+from glue.segmentdb import segmentdb_utils
+
+
+PROGRAM_NAME = sys.argv[0].replace('./','')
+PROGRAM_PID  = os.getpid()
+
+try:
+  USER_NAME = os.getlogin()
+except:
+  USER_NAME = pwd.getpwuid(os.getuid())[0]
+
+__author__  = "Ping Wei <piwei@physics.syr.edu>"
+from glue import git_version
+__date__    = git_version.date
+__version__ = git_version.id
+
+parser = OptionParser(
+  version = "%prog CVS $Header$",
+  usage   = "%prog [OPTIONS]",
+  description = "Coalesce segments and summary intervals in the database")
+
+parser.add_option("-d", "--database-name", metavar = "database_name", help = "name of the database you run coalescing on")
+parser.add_option("-S", "--state-file", metavar = "FILE", help = "read coalesced time range from FILE")
+parser.add_option("-P", "--pid-file", metavar = "FILE", help = "use FILE as process lock file")
+parser.add_option("-l", "--log-file", metavar = "FILE", help = "use FILE as log file")
+parser.add_option("-L", "--log-level", metavar = "LEVEL", default = "INFO", help = "set logging level to LEVEL")
+
+options, filenames = parser.parse_args()
+
+if not options.database_name:
+  raise ValueError("missing argument --database-name")
+if not options.state_file:
+  raise ValueError("missing argument --state-file")
+if not options.pid_file:
+  raise ValueError("missing argument --pid-file")
+if not options.log_file:
+  raise ValueError("missing argument --log-file")
+
+# check for an existing lock file
+if os.access(options.pid_file,os.F_OK):
+  raise RuntimeError("lock file exists: %s" % options.pid_file)
+
+# create lock file
+fp = open(options.pid_file, "w")
+fp.write("lock")
+fp.close()
+
+
+try:
+  # setup the output file
+  outdoc = ligolw.Document()
+  outdoc.appendChild(ligolw.LIGO_LW())
+  proc_id = ligolw_process.register_to_xmldoc(outdoc, PROGRAM_NAME, options.__dict__).process_id
+
+  # set up logging
+  logger = logging.getLogger('segdb_coalesce')
+  handler = logging.handlers.RotatingFileHandler(options.log_file, 'a', 1048576, 5)
+  formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+  handler.setFormatter(formatter)
+  logger.addHandler(handler)
+  logger.setLevel(eval("logging." + options.log_level))
+  logger.debug("pid file = " + options.pid_file)
+  logger.debug("log file = " + options.log_file)
+  logger.debug("log level = " + options.log_level)
+
+  # read in the coalesced time range 
+  logger.debug("reading state from %s" % options.state_file)
+  indoc = ligolw_utils.load_url(options.state_file, gz = (options.state_file or "stdin").endswith(".gz"))
+  coalesced_range = segmentdb_utils.find_segments(indoc,"P1:COALESCED:0")
+  end_times = []
+  for c in coalesced_range:
+    end_times.append(c[1])
+  max_endtime = max(end_times) 
+  logger.debug("coalesced time range = %s" % str(coalesced_range))
+
+  # make a list of the time range that need to be coalesced:
+  #########################
+  current_time = gpstime.GpsSecondsFromPyUTC(time.time())
+  pending_range = [(max_endtime, current_time)]
+  st = max_endtime
+  et = current_time 
+  logger.debug("pending range is [%d,%d)" % (st,et))
+
+  # coalesce the pending range and add them to the list of coalesced range 
+  logger.debug("start coalescing")
+  result,data_existence = ligolw_coalesce.coalesce_seg(options.database_name,st,et)
+  if result == 0 and data_existence == 1:
+        coalesced_range |= segments.segmentlist([(st,et)])
+        coalesced_id = segmentdb_utils.add_to_segment_definer(outdoc,proc_id,"P1","COALESCED",0)
+        segmentdb_utils.add_to_segment(outdoc,proc_id,coalesced_id,coalesced_range)
+
+        # write the new segment state file on top of the old one
+        ligolw_utils.write_filename(outdoc, options.state_file)
+
+        logger.info("finished coalescing range [%d,%d)" % (st,et))
+        logger.info("exiting")
+  elif result == 0 and data_existence != 1:
+        logger.info("no data found in time range, state_file remians unchanged")
+  if result != 0 :
+        logger.error("fail to coalesce, state_file remains unchanged")
+        try:
+          os.unlink(options.pid_file)
+        except:
+          pass
+        logger.error(result)
+        sys.exit(1)
+
+except Exception as e:
+  try:
+    logger.error(str(e))
+  except:
+    pass
+  print >>sys.stderr, "runtime error (%s)" % str(e)
+  os.unlink(options.pid_file)
+  sys.exit(1)
+
+os.unlink(options.pid_file)
+sys.exit(0)
+

@@ -1,0 +1,156 @@
+#!/usr/bin/env python
+#
+# ligolw_dq_active_cats: print state of defined cat vetos for a given
+# time
+#
+# Copyright (C) 2009 Jameson Rollins and Josh Smith
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import sys
+import os
+from subprocess import *
+
+############################################################
+
+# usage
+def usage():
+	print "usage: LIGOLW_VETO_FILE=<file>", CMD, "<gpstime> [<duration>]"
+	print """
+For specified time and category definer file, output flag states.  If
+a duration is also specified, then the flag states are output for the
+entire duration, starting at gpstime, in an OR manor, with preference
+given to the flags in the order defined below.  The output is one line
+per category-defined veto, of the form:
+
+  <state> <cat> <ifo:flag>
+
+The states are:
+
+  + = active
+  - = defined but inactive
+  ! = undefined
+
+The environment variable LIGOLW_VETO_FILE must contain the path or URL
+of a category definer file."""
+
+# simple failure function
+def failure(error='', errnum=1):
+	sys.stderr.write(error)
+	sys.exit(errnum)
+	
+# make category/start_time/end_time dictionaries from defined veto cat
+# flags from a veto file.  returns three dictionaries with flag names
+# as keys (<ifo>:<flag>) and categories, start times, and end times as
+# values
+def get_cats():
+	cmd = 'ligolw_print -t veto_definer -d " " -c ifo -c name -c category -c start_time -c end_time %s' % (VETO_FILE)
+	p1 = Popen(cmd, stdout=PIPE, shell=True)
+	categories = {}
+	start_times = {}
+	end_times = {}
+	for line in p1.communicate()[0].split('\n'):
+		if line == '': continue
+		info = line.split(' ')
+		flag = info[0] + ':' + info[1]
+		cat = info[2]
+		start = float(info[3])
+		end = float(info[4])
+		if end == 0: end = float('inf')
+
+		categories[flag] = cat
+		start_times[flag] = start
+		end_times[flag] = end
+
+	if p1.wait() == 0:
+		return categories, start_times, end_times
+	else:
+		failure("Could not retrieve info from veto definier file.\n")
+
+# retrieve flags of type ('defined', 'active') for time
+def get_flags(type, time, duration=0):
+	# convert time to integer, since that's what dq_query accepts at the moment
+	time = int(time)
+	cmd1 = 'ligolw_dq_query --dmt-file --%s --end-pad %s %s' % (type, duration, time)
+	cmd2 = 'ligolw_print -t segment_definer -c ifos -c name -d :'
+	p1 = Popen(cmd1, stdout=PIPE, shell=True)
+	p2 = Popen(cmd2, stdin=p1.stdout, stdout=PIPE, shell=True)
+	flags = []
+	[flags.append(line) for line in p2.communicate()[0].split('\n') if line != '']
+
+	if p1.wait() == 0 and p2.wait() == 0:
+		return flags
+	else:
+		failure("Could not retrieve %s flags.\n" % (type))
+	
+############################################################
+
+CMD = os.path.basename(sys.argv.pop(0))
+
+# single input argument is GPS time (or --help)
+try:
+	if sys.argv[0] in ['--help', '-h', '-help']:
+		usage()
+		sys.exit()
+	else:
+		time = float(sys.argv.pop(0))
+except IndexError:
+	failure("Must specify a GPS time. Type '--help' for more info.\n")
+except ValueError:
+	failure("GPS time must be a number. Type '--help' for more info.\n")
+
+try:
+	duration = int(sys.argv.pop(0))
+except ValueError:
+	failure("Duration must be an integer. Type '--help' for more info.\n")
+except IndexError:
+	duration = 0
+
+# get the veto file from the environment
+VETO_FILE = os.getenv("LIGOLW_VETO_FILE")
+if VETO_FILE == None:
+	failure("LIGOLW_VETO_FILE variable not defined.\n")
+
+############################################################
+
+# get categories, start and end times from definer file
+categories, start_times, end_times = get_cats()
+
+# retrieve active flags for time
+actives = get_flags('active', time, duration)
+
+# retrieve defined flags for time
+defined = get_flags('defined', time, duration)
+
+# process all vetos
+for flag, category in categories.iteritems():
+
+	# check that the flag is valid for the time
+	if time < start_times[flag]:
+		continue
+	if time >= end_times[flag]:
+		continue
+
+	# set the appropriate state indicator
+	if flag in defined:
+		if flag in actives:
+			state = '+'
+		else:
+			state = '-'
+	else:
+		state = '!'
+
+	# output the info
+	print state, category, flag

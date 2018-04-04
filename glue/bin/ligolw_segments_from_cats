@@ -1,0 +1,377 @@
+#!/usr/bin/env python
+#
+#
+# Copyright (C) 2009  Larne Pekowsky
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+"""
+Takes one or more segment XML files and a query file, runs the query against
+the segments, and produces veto files as XML
+"""
+
+
+from optparse import OptionParser
+
+try:
+    import sqlite3
+except ImportError:
+    # pre 2.5.x
+    from pysqlite2 import dbapi2 as sqlite3
+
+import sys
+import os
+import pwd
+import tempfile
+import operator
+import glue.segments
+
+import time
+from glue import gpstime
+
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from glue.ligolw.utils import ligolw_sqlite
+from glue.ligolw import dbtables
+
+from glue.segmentdb import query_engine
+from glue.segmentdb import segmentdb_utils
+
+from glue.ligolw.utils import process
+
+from glue import git_version
+
+import re
+import urllib
+
+PROGRAM_NAME = sys.argv[0].replace('./','')
+PROGRAM_PID  = os.getpid()
+try:
+        USER_NAME = os.getlogin()
+except:
+        USER_NAME = pwd.getpwuid(os.getuid())[0]
+
+
+__author__ = "Larne Pekowsky <lppekows@physics.syr.edu>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+    """
+    Parse the command line, return an options object
+    """
+
+    parser = OptionParser(
+        version = "Name: %%prog\n%s" % git_version.verbose_msg,
+        usage   = "%prog -v|--veto-file filename [options]",
+        description = "Reads one or more segment files and a veto file and generates files of veto segments"        
+	)
+    
+    parser.add_option("-v", "--veto-file",    metavar = "veto_file",    help = "veto XML file (required).")
+    parser.add_option("-o", "--output-dir",   metavar = "output_dir",   default = '.',          help = "Directory to write output (default=cwd).")
+    parser.add_option("-k", "--keep-db",      metavar = "keep_db",      action  = "store_true", help = "Keep sqlite database.")
+    parser.add_option("-r", "--remove-definer-table",    action = "store_true", help = "If set the veto definer table will not be included in the output.")
+
+    parser.add_option("-t", "--segment-url",  metavar = "segment_url", help = "Segment URL")
+    parser.add_option("-d", "--database",     metavar = "use_database", action = "store_true", help = "use database specified by environment variable S6_SEGMENT_SERVER")
+    parser.add_option("-f", "--dmt-file",     metavar = "use_files", action = "store_true", help = "use files in directory specified by environment variable ONLINEDQ")
+    parser.add_option("-c", "--cumulative-categories",   action = "store_true", help = "If set the category N files will contain all segments in categories <= N")
+    parser.add_option("-p", "--separate-categories",     action = "store_true", help = "If set the category N files will contain only category N")
+    parser.add_option("-i", "--individual-results",      action = "store_true", help = "If set include information on each veto individually.")
+    parser.add_option("-C", "--veto-categories", action="store", default=None, help="A comma separated list of all veto categories to consider. If not given then consider all categories in the veto-definer file.")
+    parser.add_option("-I", "--ifo-list", action="store", default=None, help="A comma separated list of all ifos to consider. If not given then consider all ifos in the veto-definer file.")
+
+    # Time options
+    parser.add_option("-s", "--gps-start-time", metavar = "gps_start_time", help = "Start of GPS time range")
+    parser.add_option("-e", "--gps-end-time",   metavar = "gps_end_time", help = "End of GPS time range")
+
+    options, others = parser.parse_args()
+
+    if not options.veto_file:
+        raise ValueError("missing required argument --veto-file")
+   
+    # User must specify how to treat the categories
+    if not (options.cumulative_categories or options.separate_categories) or (options.cumulative_categories and options.separate_categories):
+        print >>sys.stderr, "Must provide one of --cumulative-categories | --separate-categories"
+        sys.exit(-1)
+
+    tmp_dir = None
+
+    # If the veto file is a URL, load it
+    loaded_file = None
+
+    if options.veto_file.find(':') != -1:
+        tmp_dir = tempfile.mkdtemp()
+        inurl   = urllib.urlopen(options.veto_file)
+
+        # Grab the part of the name after the last slash
+        pos     = options.veto_file[::-1].find('/')
+        fname   = (pos > -1) and options.veto_file[ -1 * pos:] or "veto_definer.xml" 
+
+        loaded_file = tmp_dir + "/" + fname
+
+        outfile = open(loaded_file, 'w')
+        for l in inurl:
+            print >>outfile, l,
+
+        inurl.close()
+        outfile.close()
+
+    # Make sure we have required arguments
+    database_location = None
+    file_location     = None
+
+    # Make sure we know who to contact for data
+    # (This is redundant with ligolw_segment_query, maybe move to
+    # query_engine)
+    if options.segment_url:
+        if options.segment_url.startswith('ldbd') or options.segment_url.startswith('http'):
+            database_location = options.segment_url
+        elif options.segment_url.startswith('file:'):
+            file_location = options.segment_url[len('file://'):]
+        else:
+            tmp_dir = tempfile.mkdtemp()
+        
+            # Grab the part of the name after the last slash
+            pos     = options.segment_url[::-1].find('/')
+            fname   = (pos > -1) and options.segment_url[ -1 * pos:] or "dmt.xml" 
+
+            inurl   = urllib.urlopen(options.segment_url)
+            outfile = open(tmp_dir + "/" + fname, 'w')
+            for l in inurl:
+                print >>outfile, l,
+
+            inurl.close()
+            outfile.close()
+            file_location = tmp_dir
+    elif options.database:
+        if 'S6_SEGMENT_SERVER' not in os.environ:
+            raise ValueError( "--database specified by S6_SEGMENT_SERVER not set" )
+        database_location = os.environ['S6_SEGMENT_SERVER']
+    elif options.dmt_file:
+        if 'ONLINEDQ' not in os.environ:
+            raise ValueError( "--dmt-file specified but ONLINEDQ not set" )
+
+        tmp = os.environ['ONLINEDQ']
+        if tmp.startswith('file://'):
+            tmp = tmp[len('file://'):]
+        file_location = tmp
+    else:
+        raise ValueError( "One of [ --segment_url | --database | --dmt-file ] must be provided" )
+
+
+    if not options.gps_start_time:
+        raise ValueError( "missing required argument --gps-start-time" )
+    
+    if not options.gps_end_time:
+        raise ValueError( "missing required argument --gps-end-time" )
+
+        
+    return options, database_location, file_location, loaded_file
+
+
+
+
+#
+# =============================================================================
+#
+#                                 Library Code
+#
+# =============================================================================
+#
+
+#
+# Do to some sort of version skew in sqlite at LHO dbtables.get_column_info
+# doesn't work if and only if a new table has been created, which we do
+# in order to make the segment_backup table.  This method is a replcement
+# that works in this case.
+# TODO: once the environment is fixed, remove this.
+#
+def kludge_get_column_info(connection, table_name):
+    """
+    Return an in order list of (name, type) tuples describing the
+    columns in the given table.
+    """
+    statement = None
+
+    table_name_str = str(table_name)
+
+    for name,sql in connection.cursor().execute("SELECT name, sql FROM sqlite_master WHERE type == 'table'"):
+        if str(name) == table_name_str:
+            statement = sql
+
+    coldefs = re.match(dbtables._sql_create_table_pattern, statement).groupdict()["coldefs"]
+    return [(coldef.groupdict()["name"], coldef.groupdict()["type"]) for coldef in re.finditer(dbtables._sql_coldef_pattern, coldefs) if coldef.groupdict()["name"].upper() not in ("PRIMARY", "UNIQUE", "CHECK")]
+
+class ContentHandler(ligolw.LIGOLWContentHandler):
+    connection = None
+
+
+#
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+#
+
+if __name__ == '__main__':
+    # Settings
+
+    dbtables.get_column_info = kludge_get_column_info
+
+    options, db_location, file_location, loaded_file = parse_command_line()    
+
+    now = gpstime.GpsSecondsFromPyUTC(time.time())
+
+    # 1. Load the veto file into sqlite    
+    handle, temp_db    = tempfile.mkstemp(suffix='.sqlite')
+    os.close(handle)
+    target          = dbtables.get_connection_filename(temp_db, None, True, False)
+    veto_connection = sqlite3.connect(target)
+    dbtables.idmap_sync(veto_connection)
+
+
+    # Create an engine to query veto information
+    veto_query_engine = query_engine.SqliteQueryEngine(veto_connection)
+    xml_files         = [loaded_file or options.veto_file]
+
+    # 2. If we're working with DMT files load them into sqlite as well
+    min_start_time = int(options.gps_start_time)
+    max_end_time   = int(options.gps_end_time)
+    
+    if file_location:
+        xml_files += segmentdb_utils.get_all_files_in_range(file_location, min_start_time, max_end_time)
+        segment_query_engine = veto_query_engine
+    else:
+        segment_connection   = segmentdb_utils.setup_database(db_location)
+        segment_query_engine = query_engine.LdbdQueryEngine(segment_connection)
+
+    ContentHandler.connection = veto_connection
+    dbtables.use_in(ContentHandler)
+    ligolw_sqlite.insert_from_urls(xml_files, ContentHandler)
+
+    # If we're working with DMT files make sure we have a segment table
+    if file_location:
+        segmentdb_utils.ensure_segment_table(veto_connection)
+    
+    cli_interval = glue.segments.segmentlist([glue.segments.segment(int(options.gps_start_time), int(options.gps_end_time))])
+            
+    #
+    # Get the set of veto categories and ifos for which we have segments 
+    #
+    if options.veto_categories:
+        categories=[int(x) for x in options.veto_categories.split(",")]
+    else:
+        categories = [row[0] for row in veto_query_engine.query("select distinct(category) from veto_definer")]
+    if options.ifo_list:
+        ifos = [x for x in options.ifo_list.split(",")]
+    else:
+        ifos = [row[0] for row in veto_query_engine.query("select distinct(ifo) from veto_definer")]
+
+    category_selection_operator = options.cumulative_categories and ' <= ' or ' = '
+
+    for ifo in ifos:
+        for category_num in categories:
+            # Start a new document
+            doc = ligolw.Document()
+            doc.appendChild(ligolw.LIGO_LW())
+
+            # Copy veto definer's process table
+            doc.childNodes[0].appendChild(dbtables.get_xml(veto_connection, ['process']).childNodes[0])
+
+            # Register ourselves
+            proc_id = process.register_to_xmldoc(doc, PROGRAM_NAME, options.__dict__, version=git_version.id).process_id
+
+            # Keep the veto_definer for tracking purposes
+            if not options.remove_definer_table:
+                doc.childNodes[0].appendChild(dbtables.get_xml(veto_connection, ['veto_definer']).childNodes[0])
+
+            # loop over select of name, version where ifo=current ifo and category <= current category
+            cursor = veto_connection.cursor()
+            sql = """SELECT ifo, name, version, start_time, end_time, start_pad, end_pad
+                       FROM veto_definer
+                      WHERE ifo = '%s' AND category %s %s""" % (ifo, category_selection_operator, category_num)
+
+            segdefs = []
+            for ifo, name, version, start_time, end_time, start_pad, end_pad in cursor.execute(sql):
+                if end_time == 0:
+                    end_time = now
+
+                veto_interval  = glue.segments.segmentlist([glue.segments.segment(start_time, end_time)])
+                veto_interval.coalesce()
+                veto_interval &= cli_interval
+
+
+                if len(veto_interval) > 0:
+                    segdefs.append( (ifo, name, version, veto_interval[0][0], veto_interval[0][1], start_pad, end_pad) )
+
+
+            vetoed_segments   = segmentdb_utils.query_segments(segment_query_engine, 'segment', segdefs)
+            segment_summaries = segmentdb_utils.query_segments(segment_query_engine, 'segment_summary', segdefs)
+
+            # We could write out everything we found.  This might help tracking down why a time
+            # or trigger was vetoed.
+            if options.individual_results:
+              segmentdb_utils.add_segment_info(doc, proc_id, segdefs, vetoed_segments, segment_summaries)
+
+            # Form the result
+            vetoed_segments = reduce(operator.or_, vetoed_segments).coalesce()
+
+            # Add the result type to the segment definer table
+            seg_name   = 'VETO_CAT%d%s' % (category_num, options.cumulative_categories and '_CUMULATIVE' or '')
+            seg_def_id = segmentdb_utils.add_to_segment_definer(doc, proc_id, ifo, seg_name, 1)
+
+            # and segment summary
+            segmentdb_utils.add_to_segment_summary(doc, proc_id, seg_def_id, [[min_start_time, max_end_time]])
+
+            # and store the segments
+            segmentdb_utils.add_to_segment(doc, proc_id, seg_def_id, vetoed_segments)
+            
+            # Dump to XML
+            output_name = "%s/%s-VETOTIME_CAT%d-%d-%d.xml" % (options.output_dir, ifo, category_num, min_start_time, (max_end_time - min_start_time))
+            utils.write_filename(doc, output_name)
+
+    # Clean up
+    if loaded_file:
+        os.remove(loaded_file)
+        pos   = loaded_file[::-1].find('/') + 1
+        os.rmdir(loaded_file[:-1 * pos])
+
+
+    if not options.keep_db:
+        os.remove(temp_db)
+

@@ -1,0 +1,52 @@
+#!/usr/bin/python
+
+import sys
+from pylal.followup_page import *
+
+###############################################################################
+##### MAIN ####################################################################
+###############################################################################
+
+
+# PARSE THE CACHE
+coinc_info, cache = cache_parser(sys.argv[1])
+
+# LOOP OVER DIFFERENT "SEARCHES" LIKE FULL DATA ETC,
+for search, coincs in coinc_info.items():
+	events = []
+
+	# pull out the events and sort them
+	for coinc in coincs:
+		events.append(Coinc(coinc, search, cache))
+	events.sort(key=lambda x: x.rank)
+
+	# make the page
+	page = cbcwebpage.cbcpage(title="Followup " + search)
+
+	# loop over the followed up events
+	for event in events:
+		print >>sys.stderr, "processing coinc@%s in %s" % (event.coinctime, search)
+		key = (str(event.coinctime))
+		page.add_subpage(key,"my new page",link_text=key)
+		#section for param table
+		if search.lower() != "gps_only": event.write_param_table(page.subpages[key])
+		#section for qscans
+		event.add_htqscan(page.subpages[key])
+		#section for seismic qscans
+		event.add_seismicqscan(page.subpages[key])
+		#section for rds qscans (CVT)
+		event.add_rdsqscan(page.subpages[key])
+		#section for snr plots etc
+		event.add_plotsnrchisq(page.subpages[key])
+		#dq
+		event.add_dq(page.subpages[key])
+		#section for plotchia
+		event.add_plotchia(page.subpages[key])
+		#section for skymap
+		event.add_skymap(page.subpages[key])
+		#checklist
+		#event.add_checklist(page.subpages[key])
+	#page.add_external_frame("https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/Test_of_new_Bare_Bones_Checklist_Page","checklist")
+	page.write(search)
+
+

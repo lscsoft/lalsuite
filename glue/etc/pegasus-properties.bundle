@@ -1,0 +1,26 @@
+############################################################################
+# PEGASUS USER PROPERTIES   
+# GENERATED AT 2008-01-04-bdaudert
+############################################################################
+pegasus.catalog.replica = RLS
+pegasus.catalog.replica.cache.asrc = true
+pegasus.catalog.replica.lrc.ignore = rls://ldas.ligo-la.caltech.edu,rls://ldas.ligo-wa.caltech.edu,rls://nemo-dataserver.phys.uwm.edu
+pegasus.catalog.replica.url = rls://ldas-cit.ligo.caltech.edu
+pegasus.catalog.site = XML3
+pegasus.catalog.transformation = File
+pegasus.catalog.transformation.mapper = Staged
+#pegasus.condor.arguments.quote = false
+pegasus.condor.arguments.quote = true
+pegasus.condor.retry = 3
+pegasus.exitcode.arguments = -e
+#pegasus.exitcode.impl = exitcode
+pegasus.exitcode.scope = all
+#pegasus.dir.storage = /usr2/bdaudert/LDG/results
+pegasus.gridstart.kickstart.stat = false
+pegasus.selector.replica.*.ignore.stagein.sites = lho,llo
+#pegasus.transfer.*.thirdparty.sites = LIGO_UWM_NEMO
+pegasus.transfer.force = true
+pegasus.transfer.links = false
+pegasus.transfer.refiner = Bundle
+pegasus.transfer.throttle.streams = 4
+#pegasus.transfer.arguments = -v -P 1

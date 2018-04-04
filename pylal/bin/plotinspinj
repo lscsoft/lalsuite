@@ -1,0 +1,878 @@
+#!/usr/bin/python
+
+__author__ = "Stephen Fairhurst <sfairhurs@gravity.phys.uwm.edu>"
+__prog__ = "plotinspinj"
+__title__ = "Injection Plots"
+
+
+import sys
+import os
+import re
+import exceptions
+import glob
+import itertools
+from types import *
+from optparse import *
+import warnings
+warnings.filterwarnings('ignore', '^NumpyTest')
+
+from glue import segmentsUtils
+from glue.ligolw import ligolw, table as tab, lsctables, utils
+from glue import lal
+
+from pylal import SnglInspiralUtils, SimInspiralUtils, CoincInspiralUtils
+from pylal.tools import XLALEThincaParameterForInjection as ethinca_param
+from pylal import InspiralUtils
+from pylal import git_version
+
+#############################################################################
+def plot_injected_vs_recovered_parameter(opts, plot_num, injections, \
+    column, units, plot_type = 'linear' ):
+  """
+  opts = the command line options
+  plot_num = plot number
+  injections = set of recovered injections with sim and sngl inspiral entries
+  column = column to plot
+  units = units of column
+  plot_type = log or linear
+  """
+  text = InspiralUtils.message(opts, \
+      "Plots of injected versus detected " + column.replace("_"," ") )
+  figure(plot_num.next())
+  hold(True)
+  ifos = injections.keys()
+
+  for ifo in ifos:
+    injection = injections[ifo]
+    viz.plotval(injection['sim_inspiral'], injection['sngl_inspiral'],\
+                column, plot_type, InspiralUtils.colors[ifo] + 'x')
+  viz.labelval(column, units, [0,0,0,0],'Injected','Recovered',\
+      None,opts.title_text)
+  if opts.enable_output:
+    fname = InspiralUtils.set_figure_name(opts, column + "_plot")
+    fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, \
+        dpi_thumb=opts.figure_resolution)
+  if not opts.show_plot:
+    close()
+
+  return fname, text, plot_num
+
+#############################################################################
+def plot_parameter_accuracy(opts, plot_num, injections, \
+    column, units, axis_width, plot_type = 'linear', error_type = 'actual' ):
+  """
+  opts = the command line options
+  plot_num = plot number
+  injections = set of recovered injections with sim and sngl inspiral entries
+  column = colum to plot
+  units = units of column
+  axis_width = range of the axis
+  plot_type = log or linear
+  error_type = actual or fractional
+  """
+  text = InspiralUtils.message(opts, "Plotting errors in recovery of " + \
+      column.replace("_"," ") )
+  figure(plot_num.next())
+  hold(True) 
+  for ifo in ifos:
+    injection = injections[ifo]
+    if error_type == 'actual':
+      viz.plotdiff(injection['sim_inspiral'], injection['sngl_inspiral'],\
+          column, plot_type, InspiralUtils.colors[ifo] + 'x')
+    elif error_type == 'fractional':
+      viz.plotfracdiff(injection['sim_inspiral'], injection['sngl_inspiral'],\
+          column, plot_type, InspiralUtils.colors[ifo] + 'x')
+  if error_type == 'actual':
+    viz.labeldiff(column, units, [0,0,-axis_width,axis_width],\
+        None,opts.title_text) 
+  elif error_type == 'fractional':
+    viz.labelfracdiff(column, units, [0,0,-opts.time_axis,opts.time_axis],\
+        None,opts.title_text) 
+
+  if opts.enable_output:
+    fname = InspiralUtils.set_figure_name(opts, column + "_accuracy")
+    fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, \
+        dpi_thumb=opts.figure_resolution)
+  if not opts.show_plot:
+    close()
+
+  return fname, text, plot_num
+
+#############################################################################
+def plot_parameter_accuracy_vs_second_parameter(opts, plot_num, injections, \
+    column, units, axis_width, second_column, second_units, \
+    plot_type = 'linear', error_type = 'actual' ):
+  """
+  opts = the command line options
+  plot_num = plot number
+  injections = set of recovered injections with sim and sngl inspiral entries
+  column = column to plot accuracy of
+  units = units of column
+  axis_width = range of the axis
+  second_column = column to plot on x-axis
+  second_units = units of second column
+  plot_type = log or linear
+  error_type = actual or fractional
+  """
+  text = InspiralUtils.message(opts, \
+      column.replace("_"," ") + " errors versus " + \
+          second_column.replace("_"," ") )
+  figure(plot_num.next())
+  hold(True) 
+  second_axis_lowerlim = 0  #default values passed to viz
+  second_axis_upperlim = 0
+  for ifo in ifos:
+    injection = injections[ifo]
+    if second_column == 'snr':
+      firstSet = injection['sngl_inspiral']
+      secondSet = injection['sim_inspiral']
+      second_axis_lowerlim = min(firstSet.get_column(second_column))
+      second_axis_upperlim = max(firstSet.get_column(second_column))
+    else:
+      firstSet = injection['sim_inspiral']
+      secondSet = injection['sngl_inspiral']
+    if error_type == 'actual':
+      viz.plotdiffa_vs_b(firstSet, secondSet, column, second_column, \
+          plot_type, InspiralUtils.colors[ifo] + 'x')
+    elif error_type == 'fractional':
+      viz.plotfracdiffa_vs_b(firstSet, secondSet, column, second_column, \
+          plot_type, InspiralUtils.colors[ifo] + 'x')
+  if error_type == 'actual': 
+    viz.labeldiffa_vs_b(column, second_column, units, second_units, \
+        [second_axis_lowerlim,1.1*second_axis_upperlim,-axis_width,axis_width], None, opts.title_text)
+  elif error_type == 'fractional': 
+    viz.labelfracdiffa_vs_b(column, second_column, units, second_units, \
+        [second_axis_lowerlim,1.1*second_axis_upperlim,-axis_width,axis_width], None, opts.title_text)
+  if opts.enable_output:
+    fname = InspiralUtils.set_figure_name(opts, column + "_vs_" + \
+        second_column)
+    fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True,\
+        dpi_thumb=opts.figure_resolution)
+  if not opts.show_plot:
+    close()
+
+  return fname, text, plot_num
+
+#############################################################################
+def hist_parameter_accuracy(opts, plot_num, injections, \
+    column, units, axis_width, plot_type = 'hist'):
+  """
+  opts = the command line options
+  plot_num = plot number
+  injections = set of recovered injections with sim and sngl inspiral entries
+  column = colum to plot accuracy of
+  units = units of column
+  axis_width = range of the axis
+  plot_type = log or linear
+  """
+  text = InspiralUtils.message(opts, "histogram of error in " + \
+      column.replace("_"," "))
+  figure(plot_num.next())
+  hold(True) 
+  sym=0
+  for ifo in ifos:
+    injection = injections[ifo]
+    viz.histdiff(injection['sim_inspiral'], injection['sngl_inspiral'], \
+        column, plot_type, sym, len(injections), opts.nbins, \
+        [-axis_width,axis_width])
+    sym+=1
+  viz.labelhistdiff(column, plot_type, units, None, opts.title_text)
+  if opts.enable_output:
+    fname = InspiralUtils.set_figure_name(opts, column + "_histogram")
+    fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, \
+        dpi_thumb=opts.figure_resolution)
+  if not opts.show_plot:
+    close()
+
+  return fname, text, plot_num
+
+#############################################################################
+def plot_parameter_accuracy_vs_second_parameter_with_colorbar(opts, plot_num, \
+    injections, column, units, axis_width, second_column, second_units, \
+    color_column, plot_type = 'linear', error_type = 'actual' ):
+  """
+  opts = the command line options
+  plot_num = plot number
+  injections = set of recovered injections with sim and sngl inspiral entries
+  column = column to plot accuracy of
+  units = units of column
+  axis_width = range of the axis
+  second_column = column to plot on x-axis
+  second_units = units of second column
+  color_column = column to use for color scale
+  plot_type = log or linear
+  error_type = actual or fractional
+  """
+  text = InspiralUtils.message(opts, \
+      column.replace("_"," ") + " errors versus " + \
+          second_column.replace("_"," ") + " colorscale from " + \
+          color_column.replace("_"," ") )
+  figure(plot_num.next())
+  hold(True) 
+  second_axis_lowerlim = 0  #default value passed to viz
+  second_axis_upperlim = 0
+  for ifo in ifos:
+    injection = injections[ifo]
+    sim_value = viz.readcol(injection['sim_inspiral'], column, ifo)
+    sngl_value = viz.readcol(injection['sngl_inspiral'], column, ifo)
+    if second_column == 'snr':
+      second_value = injection['sngl_inspiral'].get_column('snr')
+      second_axis_lowerlim = min(second_value)
+      second_axis_upperlim = max(second_value)
+    else:
+      second_value = viz.readcol(injection['sim_inspiral'], second_column, ifo)
+    if color_column == 'snr':
+      color_value = injection['sngl_inspiral'].get_column('snr')
+    else:
+      color_value = viz.readcol(injection['sim_inspiral'], color_column, ifo)
+
+    diff = sim_value - sngl_value
+    if error_type == 'fractional':
+      diff /= sim_value
+
+    scatter(second_value, diff, s=40, c=color_value, faceted=None)
+    ax = axes()
+    if plot_type == 'log':
+      ax.set_xscale('log')
+
+  if error_type == 'actual':
+    viz.labeldiffa_vs_b(column, second_column,units,second_units, \
+        [second_axis_lowerlim,1.1*second_axis_upperlim,-axis_width, axis_width], None, opts.title_text)
+  elif error_type == 'fractional':
+    viz.labelfracdiffa_vs_b(column, second_column,units,second_units, \
+        [second_axis_lowerlim,1.1*second_axis_upperlim,-axis_width, axis_width], None, opts.title_text)
+  colorbar()
+
+  if opts.enable_output:
+    fname = InspiralUtils.set_figure_name(opts, \
+        column + "_vs_" + second_column + "_accuracy_scatter_" + color_column)
+    fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, \
+        dpi_thumb=opts.figure_resolution)
+  if not opts.show_plot:
+    close()
+
+  return fname, text, plot_num
+
+#############################################################################
+
+usage = """usage: %prog [options] file1 (file2 file3)
+
+Inspiral Injection Plotting Functions
+
+Generate a set of summary plots from triggers and found injections stored as
+sngl_inspiral and sim_inspiral table in LIGO lightweight format
+respectively.  The routine expects that there are equal numbers of triggers
+and injections stored in the files.  
+
+The various plots can be turned on by selecting them.  For plots and
+histograms, the AXIS can be specified.  This gives the Y-axis scale for plots 
+and the width for the histograms.
+
+Available plots:
+
+1) Chirp mass accuracy can be plotted as:
+  a) a function of the injected chirp mass, using --plot-mchirp
+  b) a histogram, using --hist-mchirp
+  c) a function of the injected effective distance, using --chirp-dist
+  d) a function of the detected SNR, using --chirp-snr
+  e) a function of the detected SNR, with color given by mtotal using
+       --chirp-snr-mtotal
+The width of all these plots is set using --chirp-axis
+
+2) Eta accuracy can be plotted in the same way as above, using eta in place of 
+mchirp.  The width of all these plots is set using --eta-axis
+
+3) End time accuracy can be plotted in the same way as above, using time 
+in place of chirp. The width of all these plots is set using --eta-axis
+
+4) Effective distance accuracy can be plotted as:
+  a) a function of the injected eta, using --plot-dist
+  b) a histogram, using --hist-dist
+The width of these plots is set using --dist-axis
+  c) injected vs detected distance can be plotted using --dist-dist 
+
+5) E-thinca parameter between a trigger and an injection can be plotted as:
+  a) a function of the difference between a common parameter in the trigger and
+     injections, using --ethinca-param-vs (ex: --ethinca-param-vs=end_time)
+  b) histogram, using --hist-ethinca
+
+"""
+
+#################################################################
+def parse_command_line():
+  """
+  Parser function dedicated
+  """
+  parser = OptionParser(usage=usage, version=git_version.verbose_msg)
+
+    
+  parser.add_option("-m","--plot-mchirp",action="store_true",default=False,\
+      help="plot the chirp mass accuracy" )
+  parser.add_option("-M","--hist-mchirp",action="store_true",default=False,\
+      help="histogram of the chirp mass accuracy" )
+  parser.add_option("-Z","--chirp-dist",action="store_true",default=False,\
+      help="plot of chirp mass accuracy vs effective dist" )
+  parser.add_option("-q","--chirp-snr",action="store_true",default=False,\
+      help="plot of chirp mass accuracy vs snr" )
+  parser.add_option("-Q","--chirp-snr-mtotal",action="store_true",\
+      default=False,\
+      help="plot of chirp mass accuracy vs snr, colorbar mtotal" )
+  parser.add_option("-C","--chirp-axis",action="store",type="float",\
+      default=0, metavar=" M_SUN",help="width of chirp mass accuracy in plots" )
+  parser.add_option("","--mchirp-mchirp",action="store_true",default=False,\
+     help="plot of injected vs recovered mchirp" )
+
+  parser.add_option("","--plot-mtotal",action="store_true",default=False,\
+      help="plot the total mass accuracy" )
+  parser.add_option("","--hist-mtotal",action="store_true",default=False,\
+      help="histogram of the total mass accuracy" )
+  parser.add_option("","--mtotal-snr",action="store_true",default=False,\
+      help="plot of total mass accuracy vs snr" )
+  parser.add_option("","--mtotal-mtotal",action="store_true",default=False,\
+     help="plot of injected vs recovered mtotal" )
+
+  parser.add_option("-e","--plot-eta",action="store_true",default=False,\
+      help="plot the eta accuracy" )
+  parser.add_option("-E","--hist-eta",action="store_true",default=False,\
+      help="histogram of the eta accuracy" ) 
+  parser.add_option("-a","--eta-snr",action="store_true",default=False,\
+      help="plot of eta accuracy vs snr" )
+  parser.add_option("-L","--eta-snr-mtotal",action="store_true",\
+      default=False,\
+      help="plot of eta accuracy vs snr, colorbar mtotal" )
+  parser.add_option("-F","--eta-axis",action="store",type="float",\
+      default=0, metavar=" UNITS",help="width of eta accuracy in plots" )
+  
+  parser.add_option("-t","--plot-time",action="store_true",default=False,\
+      help="plot of the timing accuracy" )
+  parser.add_option("-T","--hist-time",action="store_true",default=False,\
+      help="histogram of the timing accuracy" )
+  parser.add_option("-p","--time-dist",action="store_true",default=False,\
+      help="plot of timing accuracy vs effective dist" )
+  parser.add_option("-r","--time-snr",action="store_true",default=False,\
+      help="plot of timing accuracy vs snr" )
+  parser.add_option("-K","--time-snr-mtotal",action="store_true",\
+      default=False,\
+      help="plot of time accuracy vs snr, colorbar mtotal" )
+
+  parser.add_option("-S","--time-axis",action="store",type="float",\
+      default=0, metavar=" SEC",help="width of timing accuracy in plots" )
+  
+  parser.add_option("","--plot-dist",action="store_true",default=False,\
+      help="plot of the effective distance accuracy" )
+  parser.add_option("-I","--hist-dist",action="store_true",default=False,\
+      help="histogram of the effective distance accuracy" )
+  parser.add_option("-k","--dist-dist",action="store_true",default=False,\
+      help="plot of injected vs recovered distance" )
+  parser.add_option("-D","--dist-axis",action="store",type="float",\
+      default=0,metavar=" FRAC_DIFF",help="width of distance accuracy in plots")
+  
+  parser.add_option("", "--ethinca-vs-diff", dest="ethinca_vs_diff", \
+      action='append', default=[], \
+      help="plot maximum ethinca parameter for which "\
+      "the trigger's ellipse encloses the true injection params "\
+      "vs difference in given column between injection and trigger")
+  parser.add_option("", "--ethinca-vs-snr", action="store_true", \
+      default=False, help="plot minimum ethinca parameter for which "\
+      "the trigger's ellipse encloses the true injection params "\
+      "vs the inverse of the snr of the trigger")
+  
+  parser.add_option("", "--log-x", action="store_true", default=False,\
+      help="plot the x-axis on a log scale (only implemented for ethinca "
+      " plots)")
+  parser.add_option("", "--log-y", action="store_true", default=False,\
+      help="plot the y-axis on a log scale (only implemented for ethinca "
+      " plots)")
+  parser.add_option("", "--hist-ethinca", action="store_true", default=False,\
+      help=\
+      "histogram ethinca parameters between injections and recovered triggers")
+  
+  parser.add_option("-c", "--coire-split", action="store_true", default=False,\
+      help="split coired triggers into sire-like single ifo triggers")
+  
+  parser.add_option("-s","--show-plot",action="store_true",default=False,\
+      help="display the figures on the terminal" )
+  parser.add_option("-n","--nbins",action="store",type="int",default=10,\
+      metavar=" NBINS", \
+      help="number of bins for the histogram plots (default 10)" )
+  parser.add_option("-x","--title-text",action="store",type="string",\
+      default=None, metavar=" TEXT",\
+      help="add TEXT at start of plot titles" ) 
+  parser.add_option("-V","--veto-file",action="store",type="string",\
+      default=None,metavar=" FNAME",\
+      help="read in segments from FNAME (assumed segwizard format)")
+  parser.add_option("","--cache-file",action="store",type="string",\
+      default=None, metavar=" CACHE-FILE",\
+      help=" reads the cache file as an input" )
+  parser.add_option("","--found-pattern", metavar="INJECTION_PATTERN",
+    help="sieves a file for found injections of a particular type" )
+  parser.add_option("","--min-snr", metavar="MIN_SNR", default=5.5,
+    help="the minimum SNR value for setting the limit of the axis" )
+
+  # output related
+  parser.add_option("-z","--user-tag",action="store",type="string",\
+      default=None,metavar=" FNAME",\
+      help="a user tag for the output filenames" )
+  parser.add_option("-o","--output-path",action="store",\
+      type="string",default="",  metavar="PATH",\
+      help="path where the figures would be stored")
+  parser.add_option("-O","--enable-output",action="store_true",\
+      default="false",  metavar="OUTPUT",\
+      help="enable the generation of the html and cache documents")
+  parser.add_option("","--gps-start-time",action="store",\
+      type="int",  metavar="GPSSTARTTIME",\
+      help="gps start time (for naming figure and output files")
+  parser.add_option("","--gps-end-time",action="store",\
+      type="int",  metavar=" GPSENDTIME",\
+      help="gps end time (for naming figure and output files")
+  parser.add_option("-i", "--ifo-times", action="store", type="string",\
+      default=None,\
+      metavar="IFOTIMES", \
+      help="sieve a cache file according to a particular ifo times")
+  parser.add_option("","--ifo-tag",action="store",\
+      type="string",  metavar=" IFOTAG",\
+      help="ifo tag gives the information about ifo times and stage")
+  parser.add_option("", "--verbose", action="store_true", default=False,\
+      metavar="VERBOSE", help="verbose option")
+  parser.add_option("", "--figure-resolution",action="store",type="int",\
+      default=50, help="dpi of the thumbnails (50 by default)")
+
+  parser.add_option("", "--old-document",action="store_true",\
+      default=False,help="this option turns on mangling. you are only "\
+      "supposed to use it if you are handling old documents")
+
+  (options,args) = parser.parse_args()
+
+  # test the input options
+  if options.ifo_times is None:
+    raise ValueError, "--ifo-times must be an undelimited list of IFOs "\
+      "from the set {H1, H2, L1, V1, G1}.  e.g. H1H2V1."
+
+  if (options.cache_file is None) and (len(args) == 0):
+    print >>sys.stderr, "Error: a trig-file must be specified"
+    parser.print_usage()
+    sys.exit(2)
+
+  return options, sys.argv[1:]
+
+# ============================================================================
+# -- get command line arguments
+opts, args = parse_command_line()
+# ============================================================================
+# Initialise
+opts = InspiralUtils.initialise(opts, __prog__, git_version.verbose_msg)
+figure_number = 0  # used for the figure label (showplot)
+fnameList = []  # used for the cache file
+tagList = []  # used for the cache file
+
+# to avoid display problem when show plot is not used
+if not opts.show_plot:
+  import matplotlib
+  matplotlib.use('Agg')
+from pylab import *
+from pylal import viz
+from numpy import histogram, power
+rc('text', usetex=True)
+
+
+
+# check at least one trig file was specified
+if opts.cache_file:
+  cache = lal.Cache.fromfile(open(opts.cache_file))
+  injcache = cache.sieve(ifos=opts.ifo_times, description = opts.found_pattern)
+  injFiles = injcache.checkfilesexist()[0].pfnlist()
+  if opts.verbose:
+    for inj in injFiles:
+      print "...reading the following list of found files  " + inj
+else:
+  injFiles = args
+
+lsctables.SnglInspiralTable.loadcolumns = ['mchirp', 'eta', 'mtotal', 'end_time', 'end_time_ns', 'ifo',  'snr', 'eff_distance', 'process_id', 'event_id']
+trigs = SnglInspiralUtils.ReadSnglInspiralFromFiles(injFiles, verbose=opts.verbose)
+
+sims = SimInspiralUtils.ReadSimInspiralFromFiles(injFiles)
+
+if (trigs is None) :
+  raise ValueError, "the number of triggers is zero"   
+if (sims is None):
+  raise ValueError, "the number of sims is zero"   
+
+# Check that veto-file is only used if coire-split present
+if opts.veto_file is not None and not opts.coire_split:
+  raise ValueError, "Can only use --veto-file when --coire-split is used"
+# because triggers and sims have different end times, and vetoing is not well defined
+  
+# provide a matching sim_inspiral for each sngl_inspiral if requested
+if opts.coire_split:
+  new_sim_table = tab.new_from_template(sims)
+    
+  # iterator over consecutive triggers with matching event_ids
+  coincs = itertools.groupby(trigs, lambda row: row.event_id)
+  for coinc, inj in itertools.izip(coincs, sims):
+    # coinc is tuple of (key, iterator); count length of iterator
+    num_coincs = reduce(lambda x,y: x + 1, coinc[1], 0)
+    new_sim_table.extend([inj] * num_coincs)
+  sims = new_sim_table
+
+  # veto if supplied
+  if opts.veto_file is not None:
+    if len(trigs) != len(sims):
+      raise ValueError, "len(trigs) must be equal to len(sims)"
+
+    for veto_file in opts.veto_file.split(','):
+      seglist = segmentsUtils.fromsegwizard(open(veto_file))
+      # We would do just "trigs.veto(seglist); sims.veto(seglist)", but
+      # their times may differ, with one inside the veto and not the other
+      trigs_keep = tab.new_from_template(trigs)
+      sims_keep = tab.new_from_template(sims)
+      for trig, sim in itertools.izip(trigs, sims):
+        if trig.get_end() not in seglist and sim.get_end() not in seglist:
+          trigs_keep.append(trig)
+          sims_keep.append(sim)
+      trigs = trigs_keep
+      sims = sims_keep
+
+if len(trigs) != len(sims):
+  print "Found %d triggers and %d simulations" % (len(trigs), len(sims))
+  raise ValueError, "number of triggers and found injections must be equal"
+
+# sort into bins by IFO
+injSets = {}
+for trig, sim in zip(trigs,sims):
+  ifo = trig.ifo
+
+  if ifo not in injSets:
+    injSets[ifo] = {"sim_inspiral" : tab.new_from_template(sims),
+                    "sngl_inspiral": tab.new_from_template(trigs)}
+  injSets[ifo]["sim_inspiral"].append(sim)
+  injSets[ifo]["sngl_inspiral"].append(trig)
+ifos = injSets.keys()
+ifos.sort()
+ 
+# set lists of plot symbols
+plot_symbols = ['rx','b+','ko','D','h','p','rx','b+','ko','D','h','p']
+plot_colors = ['r', 'b', 'k', 'g', 'y']
+
+# infinite sequence of integers, starting at 1
+plot_num = itertools.count(1)
+
+#####################################
+# plot of injected vs detected mchirp/mtotal
+if opts.mchirp_mchirp:
+  fname, text, plot_num = plot_injected_vs_recovered_parameter(opts, plot_num,\
+      injSets, 'mchirp', '$M_{\odot}$', plot_type = 'linear' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+if opts.mtotal_mtotal:
+  fname, text, plot_num = plot_injected_vs_recovered_parameter(opts, plot_num,\
+      injSets, 'mtotal', '$M_{\odot}$', plot_type = 'linear' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+################################
+# plot of mchirp/tot error vs mchirp/mtotal
+if opts.plot_mchirp:
+  fname, text, plot_num = plot_parameter_accuracy(opts, plot_num, injSets, \
+    'mchirp', '$M_{\odot}$', opts.chirp_axis, plot_type = 'linear' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+if opts.plot_mtotal:
+  fname, text, plot_num = plot_parameter_accuracy(opts, plot_num, injSets, \
+    'mtotal', '$M_{\odot}$', opts.chirp_axis, plot_type = 'linear' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+###############################  
+# histogram of chirp/total mass error
+if opts.hist_mchirp:
+  fname, text, plot_num = fname, text, plot_num = \
+      hist_parameter_accuracy(opts, plot_num,\
+      injSets, 'mchirp', '$M_{\odot}$', opts.chirp_axis, plot_type = 'linear' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+if opts.hist_mtotal:
+  fname, text, plot_num = fname, text, plot_num = \
+      hist_parameter_accuracy(opts, plot_num,\
+      injSets, 'mtotal', '$M_{\odot}$', opts.chirp_axis, plot_type = 'linear' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+################################
+# plot of eta error vs eta
+if opts.plot_eta:
+  fname, text, plot_num = plot_parameter_accuracy(opts, plot_num, injSets, \
+    'eta', None, opts.eta_axis, plot_type = 'linear' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+###############################  
+# histogram of eta error
+if opts.hist_eta:
+  fname, text, plot_num = hist_parameter_accuracy(opts, plot_num,\
+      injSets, 'eta', None, opts.eta_axis, plot_type = 'linear' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+################################
+# plot of timing error vs time
+if opts.plot_time:
+  fname, text, plot_num = plot_parameter_accuracy(opts, plot_num, injSets, \
+    'end_time', 'seconds', opts.time_axis, plot_type = 'linear' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+############################### 
+# histogram of timing error
+if opts.hist_time:
+  fname, text, plot_num = hist_parameter_accuracy(opts, plot_num,\
+      injSets, 'end_time', 'seconds', opts.time_axis, \
+      plot_type = 'linear' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+################################
+# plot of distance error vs dist
+if opts.plot_dist:
+  fname, text, plot_num = plot_parameter_accuracy(opts, plot_num, injSets, \
+    'eff_dist', 'Mpc', opts.dist_axis, plot_type = 'log', \
+    error_type='fractional' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+###############################  
+# histogram of dist error
+if opts.hist_dist:
+  fname, text, plot_num = hist_parameter_accuracy(opts, plot_num,\
+      injSets, 'eff_dist', 'Mpc', opts.dist_axis, \
+      plot_type = 'frac_hist' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+#######################################
+# plot of injected vs detected distance    
+if opts.dist_dist:  
+  fname, text, plot_num = plot_injected_vs_recovered_parameter(opts, plot_num,\
+      injSets, 'eff_dist', 'Mpc', plot_type = 'log' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+################################
+# plot of mchirp error vs eff_dist
+if opts.chirp_dist:
+  fname, text, plot_num = plot_parameter_accuracy_vs_second_parameter(opts, \
+      plot_num, injSets, 'mchirp', '$M_{\odot}$', opts.chirp_axis, 'eff_dist',\
+      'Mpc', plot_type = 'log', error_type = 'actual' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+################################
+# plot of end time error vs eff_dist
+if opts.time_dist:
+  fname, text, plot_num = plot_parameter_accuracy_vs_second_parameter(opts, \
+      plot_num, injSets, 'end_time', 'seconds', opts.time_axis, 'eff_dist',\
+      'Mpc', plot_type = 'log', error_type = 'actual' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+################################
+# plot of mchirp/mtotal error vs snr
+if opts.chirp_snr:
+  fname, text, plot_num = plot_parameter_accuracy_vs_second_parameter(opts, \
+      plot_num, injSets, 'mchirp', '$M_{\odot}$', opts.chirp_axis, 'snr',\
+      None, plot_type = 'log', error_type = 'actual' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+if opts.mtotal_snr:
+  fname, text, plot_num = plot_parameter_accuracy_vs_second_parameter(opts, \
+      plot_num, injSets, 'mtotal', '$M_{\odot}$', opts.chirp_axis, 'snr',\
+      None, plot_type = 'log', error_type = 'actual' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+if opts.chirp_snr_mtotal:
+  fname, text, plot_num = \
+      plot_parameter_accuracy_vs_second_parameter_with_colorbar(opts, \
+      plot_num, injSets, 'mchirp', '$M_{\odot}$', opts.chirp_axis, \
+      'snr', None, 'mtotal', plot_type = 'log', error_type ='fractional')
+  fnameList.append(fname)
+  tagList.append(text)
+
+################################
+# plot of end time error vs snr
+if opts.time_snr:
+  fname, text, plot_num = plot_parameter_accuracy_vs_second_parameter(opts, \
+      plot_num, injSets, 'end_time', 'seconds', opts.time_axis, 'snr',\
+      None, plot_type = 'log', error_type = 'actual' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+if opts.time_snr_mtotal:
+  fname, text, plot_num = \
+      plot_parameter_accuracy_vs_second_parameter_with_colorbar(opts, \
+      plot_num, injSets, 'end_time', 'seconds', opts.time_axis, 'snr',\
+      None, 'mtotal', plot_type = 'log', error_type ='actual')
+  fnameList.append(fname)
+  tagList.append(text)
+
+
+################################
+# plot of eta error vs snr
+if opts.eta_snr:
+  fname, text, plot_num = plot_parameter_accuracy_vs_second_parameter(opts, \
+      plot_num, injSets, 'eta', None, opts.chirp_axis, 'snr',\
+      None, plot_type = 'log', error_type = 'actual' )
+  fnameList.append(fname)
+  tagList.append(text)
+
+if opts.eta_snr_mtotal:
+  fname, text, plot_num = \
+      plot_parameter_accuracy_vs_second_parameter_with_colorbar(opts, \
+      plot_num, injSets, 'eta', None, opts.time_axis, 'snr',\
+      None, 'mtotal', plot_type = 'log', error_type ='fractional')
+  fnameList.append(fname)
+  tagList.append(text)
+
+
+################################
+# plot of ethinca parameter vs the difference between any parameter's
+# injected and recovered values
+
+for ethinca_vs_diff in opts.ethinca_vs_diff:
+  text = InspiralUtils.message(opts, "fix me")
+  fig = figure(plot_num.next())
+  ax = fig.add_subplot(111)
+  ax.grid(True)
+  for ifo, symb in zip(ifos, plot_symbols):
+    injSet = injSets[ifo]
+    table1 = injSet['sim_inspiral']
+    table2 = injSet['sngl_inspiral']
+    
+    # Print first row of table1
+    # print [(k, table1[0].__getattribute__(k)) for k in table1.columnnames]
+    
+    # Print first row of table2
+    # print [(k, table2[0].__getattribute__(k)) for k in table2.columnnames]
+    
+    [par1, par2, ifo] = viz.readcolfrom2tables(table1, table2, ethinca_vs_diff)
+    
+    diff_a = (par1 - par2)
+    col_b = [ethinca_param(sim, sngl) for sim, sngl in zip(table1, table2)]
+    
+    ax.plot(diff_a, col_b, symb)
+    
+    if opts.log_x:
+      ax.set_xscale('log')
+    if opts.log_y:
+      ax.set_yscale('log')
+    
+    ax.set_xlabel('$\delta (\mathrm{%s})$' \
+      % ethinca_vs_diff.replace('_', r'\_'), size='x-large')
+    ax.set_ylabel('ethinca-parameter', size='x-large')
+
+    if opts.title_text is not None:
+      ax.set_title(opts.title_text, size='x-large', weight='bold')
+    
+    if opts.enable_output:
+      fname = InspiralUtils.set_figure_name(opts, "ethinca_vs_ethinca_vs_diff_accuracy")
+      fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, dpi_thumb=opts.figure_resolution)
+      fnameList.append(fname)
+      tagList.append(text)
+    if not opts.show_plot:
+      close()
+
+# Plot of ethinca values vs snr
+if opts.ethinca_vs_snr:
+  fig = figure(plot_num.next())
+  ax = fig.add_subplot(111)
+  ax.grid(True)
+  for ifo, symb in zip(ifos, plot_symbols):
+    injSet = injSets[ifo]
+    table1 = injSet['sim_inspiral']
+    table2 = injSet['sngl_inspiral']
+
+    # Print first row of table1
+    # print [(k, table1[0].__getattribute__(k)) for k in table1.columnnames]
+
+    # Print first row of table2
+    # print [(k, table2[0].__getattribute__(k)) for k in table2.columnnames]
+
+    col_a = viz.readcol(table2, 'snr')
+
+    col_b = [ethinca_param(sim, sngl) for sim, sngl in zip(table1, table2)]
+
+    ax.plot(col_a, col_b, symb)
+
+    if opts.log_x:
+      ax.set_xscale('log')
+    if opts.log_y:
+      ax.set_yscale('log')
+
+    ax.set_xlabel('snr', size='x-large')
+    ax.set_ylabel('ethinca-parameter', size='x-large')
+
+    if opts.title_text is not None:
+      ax.set_title(opts.title_text, size='x-large', weight='bold')
+
+    if opts.enable_output:
+      fname = InspiralUtils.set_figure_name(opts, "ethinca_vs_snr")
+      fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, dpi_thumb=opts.figure_resolution)
+      fnameList.append(fname)
+      tagList.append("fix me")
+    if not opts.show_plot:
+      close()
+
+# Histogram of ethinca values
+if opts.hist_ethinca:
+  fig = figure(plot_num.next())
+  ax = fig.add_subplot(111)
+  
+  sim_tables = [x['sim_inspiral'] for x in injSets.itervalues()]
+  sngl_tables = [x['sngl_inspiral'] for x in injSets.itervalues()]
+  
+  ethinca_list = [[ethinca_param(sim, sngl) \
+                  for sim, sngl in zip(sim_table, sngl_table)] \
+                  for sim_table, sngl_table in zip(sim_tables, sngl_tables)]
+  
+  # Histogram all datasets with the same bins
+  ep_max = max([max(eps) for eps in ethinca_list])
+  hists = {}
+  for ifo in ifos:
+    hists[ifo] = histogram(eps, bins=opts.nbins, range=[0, ep_max], new=False)
+  # y_list, x_list = zip(*[histogram(eps, bins=opts.nbins, range=[0, ep_max]) \
+  #                        for eps in ethinca_list])
+  
+  n = len(ifos)
+  for i, ifo in enumerate(ifos):
+    y, x = hists[ifo]
+  # for i, x, y, color in zip(range(n), x_list, y_list, plot_colors):
+    x += 0.1*i*ep_max/opts.nbins  # Introduce some stagger
+    ax.bar(x, y, color=plot_colors[i], width=(1-0.1*n)*ep_max/opts.nbins)
+  ax.set_ylabel("\#")
+  ax.set_xlabel("E-thinca parameter")
+  
+  if opts.title_text is not None:
+    ax.set_title(opts.title_text, size='x-large', weight='bold')
+  
+  if opts.enable_output:
+    fname = InspiralUtils.set_figure_name(opts, "inj_trig_ethinca_hist")
+    fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, dpi_thumb=opts.figure_resolution)
+    fnameList.append(fname)
+    tagList.append("fix me")
+  if not opts.show_plot:
+    close()
+
+
+
+# ============================================================================
+# final step: html, cache file generation
+if opts.enable_output is True:
+  html_filename = InspiralUtils.write_html_output(opts, args, fnameList, \
+      tagList)
+  InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+
+if opts.show_plot:
+  show()

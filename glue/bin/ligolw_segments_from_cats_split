@@ -1,0 +1,171 @@
+#!/usr/bin/env python
+#
+# Copyright (C) 2010  Peter Couvares  <pfcouvar@syr.edu>
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+This intended as a drop-in replacement for ligolw_segments_from_cats
+which splits the specified query into multiple shorter queries (by GPS
+time) and recombines the results.  It supports a single additional
+optional argument, --max_gps_duration, to specify the maximum gps time
+of each constituent query (default is one week).
+"""
+
+import sys
+import os
+import pwd
+import tempfile
+import re
+from optparse import OptionParser
+
+import glue.segments
+from glue.segmentsUtils import segmentlist_range
+from glue import git_version
+
+PROGRAM_NAME = sys.argv[0].replace('./','')
+PROGRAM_PID  = os.getpid()
+try:
+        USER_NAME = os.getlogin()
+except:
+        USER_NAME = pwd.getpwuid(os.getuid())[0]
+
+
+__author__ = "Peter Couvares <pfcouvar@syr.edu>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+# lifted from ligolw_segments_from_cats, with --max-gps-duration added
+def parse_command_line():
+    """
+    Parse the command line, return an options object
+    """
+
+    parser = OptionParser(
+        version = "Name: %%prog\n%s" % git_version.verbose_msg,
+        usage   = "%prog -v|--veto-file filename [options]",
+        description = "Reads one or more segment files and a veto file and generates files of veto segments"        
+	)
+    
+    parser.add_option("-v", "--veto-file",    metavar = "veto_file",    help = "veto XML file (required).")
+    parser.add_option("-o", "--output-dir",   metavar = "output_dir",   default = '.',          help = "Directory to write output (default=cwd).")
+    parser.add_option("-k", "--keep-db",      metavar = "keep_db",      action  = "store_true", help = "Keep sqlite database.")
+                      
+    parser.add_option("-t", "--segment-url",  metavar = "segment_url", help = "Segment URL")
+    parser.add_option("-d", "--database",     metavar = "use_database", action = "store_true", help = "use database specified by environment variable S6_SEGMENT_SERVER")
+    parser.add_option("-f", "--dmt-file",     metavar = "use_files", action = "store_true", help = "use files in directory specified by environment variable ONLINEDQ")
+    parser.add_option("-c", "--cumulative-categories",   action = "store_true", help = "If set the category N files will contain all segments in categories <= N")
+    parser.add_option("-p", "--separate-categories",     action = "store_true", help = "If set the category N files will contain only category N")
+    
+    parser.add_option("-s", "--gps-start-time", metavar = "gps_start_time", help = "Start of GPS time range")
+    parser.add_option("-e", "--gps-end-time",   metavar = "gps_end_time", help = "End of GPS time range")
+
+    parser.add_option("--max-gps-duration",   metavar = "max_gps_duration", help = "Maximum duration of an individual query; larger durations will be split into multiple queries and recombined.")
+
+    options, others = parser.parse_args()
+
+    if not options.gps_start_time:
+        raise ValueError( "missing required argument --gps-start-time" )
+    
+    if not options.gps_end_time:
+        raise ValueError( "missing required argument --gps-end-time" )
+
+    return options
+
+
+# generates a modified version of the provided argv array, minus a
+# given argument (and optionally its value)
+def strip_arg(argv, long_name, short_name=None, remove_value=True):
+    argn = 0
+    while argn < len(argv):
+        arg = argv[argn]
+
+	# if the argument includes a value delimited by '=', separate it
+        argsplit = arg.split('=')
+        arg = argsplit[0]
+	
+        if arg == long_name or arg == short_name:
+            # if we are to remove the associated value, and that value
+            # is not already inside the arg (via '='), then skip the
+            # subsequent argument
+            if remove_value and len(argsplit)==1:
+                argn += 1
+        else:
+            yield argv[argn]
+        argn += 1
+
+
+if __name__ == '__main__':
+    options = parse_command_line()
+
+    if options.max_gps_duration is None:
+        max_gps_duration = 60*60*24*7
+    else:
+        max_gps_duration = int(options.max_gps_duration)
+
+    gps_start_time = int(options.gps_start_time)
+    gps_end_time = int(options.gps_end_time)
+    gps_duration = gps_end_time - gps_start_time
+
+    if max_gps_duration > gps_duration:
+        max_gps_duration = gps_duration
+
+#    print gps_start_time
+#    print gps_end_time
+
+    gps_segmentlist = list(segmentlist_range(gps_start_time, gps_end_time, max_gps_duration))
+    if gps_segmentlist[-1][1] != int(gps_end_time):
+        gps_segmentlist.append(glue.segments.segment(gps_segmentlist[-1][1],gps_end_time))
+
+    print "segmentlist =", gps_segmentlist
+
+    argv = sys.argv[1:]
+#    print "original argv =", argv
+    argv = list(strip_arg(argv, "-s", "--gps-start-time"))
+    argv = list(strip_arg(argv, "-e", "--gps-end-time"))
+    argv = list(strip_arg(argv, "-o", "--output-dir"))
+    argv = list(strip_arg(argv, "--max-gps-duration"))
+
+#    print "stripped argv =", argv
+
+    temp_dirs = []
+
+    for segment in gps_segmentlist:
+        temp_dir = tempfile.mkdtemp()
+        temp_dirs.append(temp_dir)
+        temp_argv = list(argv)
+        temp_argv.append("-s %s" % segment[0])
+        temp_argv.append("-e %s" % segment[1])
+        temp_argv.append("-o %s" % temp_dir)
+#        print "temp_argv =", temp_argv
+        os.system("ligolw_segments_from_cats %s" % ' '.join(temp_argv))
+
+    # in theory, the same output files should be present in each output
+    # dir, so we just need to look in one to figure out the names
+    # e.g., "L1-VETOTIME_CAT2-970271943-259200.xml"
+
+    prefix = re.compile(r"^[A-Z][0-9]-VETOTIME_CAT[0-9]")
+    temp_files = [prefix.match(s).group() for s in os.listdir(temp_dirs[0])]
+
+    for file in temp_files:
+        file_instances = ["%s/%s-*-*.xml" % (dir, file) for dir in temp_dirs]
+        os.chdir(options.output_dir)
+#        os.system("pwd")
+        result_file = "%s-%d-%d.xml" % (file, gps_start_time, gps_duration)
+        os.system("ligolw_add --output %s %s" % (result_file, ' '.join(file_instances)))
+#        os.system("rm -v %s" % ' '.join(file_instances))
+
+#    for dir in temp_dirs:
+#        os.rmdir(dir)

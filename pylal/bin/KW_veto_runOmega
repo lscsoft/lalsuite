@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+"""
+Tomoki Isogai (isogait@carleton.edu)
+
+
+"""
+# ================================================================================
+#
+#                                  PREAMBLE
+#
+# ================================================================================
+
+
+from __future__ import division
+
+import os
+import sys
+import optparse
+
+__author__ = "Tomoki Isogai <isogait@carleton.edu>"
+__date__ = "7/15/2009"
+__version__ = "1.0"
+
+def parse_commandline():
+    """
+    Parse the options given on the command-line.
+    """
+    parser = optparse.OptionParser(usage = __doc__, version=__version__)
+
+    parser.add_option("-t", "--time_file",
+                      help="File contains GPS time ordered by significance. Required.")
+    parser.add_option("-i", "--index", type='int',
+                      help="Index implying which time to run the scan on, starting from 0. Required.")
+    parser.add_option("-e", "--w_executable", default="/archive/home/omega/opt/omega/bin/wpipeline",help="")
+    parser.add_option("-c", "--w_config",help="")
+    parser.add_option("-f", "--w_framecache", default="/frames/full",help="(Default: /frames/full)")
+    parser.add_option("-o", "--out_dir", default=".",
+                      help="Output directory. (Default: current directory)")
+    parser.add_option("-v", "--verbose", action="store_true", default=False,
+                      help="Run verbosely. (Default: False)")
+  
+    opts, args = parser.parse_args()
+    
+    # check if necessary input exists
+    for o in ("time_file","index","w_config"):
+      if getattr(opts,o) == None:
+        print >> sys.stderr, "Error: --%s is required."%o
+        sys.exit(1)
+
+    for f in ("time_file","w_config","w_framecache"):
+      if not os.path.isfile(getattr(opts,o)):
+        print >> sys.stderr, "Error: %s not found."%getattr(opts,o) 
+        sys.exit(1)
+
+    if not os.path.isfile(opts.time_file):
+      print >> sys.stderr, "Error: --time_file %s not found."%opts.time_file
+      sys.exit(1)
+
+    if not os.path.isdir(opts.out_dir):
+      os.makedirs(opts.out_dir)
+      
+    if opts.verbose:
+        print >> sys.stderr, "Running KW_veto_runWscan..."
+        print >> sys.stderr, "Version: %s"%__version__
+        print >> sys.stderr, ""
+        print >> sys.stderr, "***************** PARAMETERS ********************"
+        for o in opts.__dict__.items():
+          print >> sys.stderr, o[0]+":"
+          print >> sys.stderr, o[1]
+        print >> sys.stderr, "" 
+        
+    return opts
+    
+# =============================================================================
+#
+#                                    Main
+#
+# =============================================================================
+
+opts = parse_commandline()
+
+times = [float(t) for t in open(opts.time_file).readlines() if not t.startswith("#") and not t.startswith("%") and t != "\n"]
+if opts.index < len(times):
+  GPSTime = times[opts.index]
+
+  outdir = os.path.join(opts.out_dir,str(GPSTime))
+
+  # remove directory if already exists
+  if os.path.isdir(outdir):
+    if opts.verbose:
+      print >> sys.stderr, "removing old directory %s..."%outdir
+    os.system("rm -r %s"%outdir)
+
+  if not os.path.isdir(outdir):
+    os.makedirs(outdir)
+
+  # run omega scan
+  cmd = "%s scan %f -c %s -f %s -o %s -r"%(opts.w_executable,GPSTime,opts.w_config,opts.w_framecache,outdir)
+  if opts.verbose:
+    print >> sys.stderr, "running omega scans..."
+    print >> sys.stderr, cmd
+  exit = os.system(cmd)
+  if exit > 0:
+    print >> sys.stderr, "Error: qscan failed."
+    sys.exit(1)  
+
+else:
+  if opts.verbose:
+    print >> sys.stderr, "No GPS time for %d"%opts.index

@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
+<LIGO_LW>
+  <Table Name="processgroup:process:table">
+    <Column Name="processgroup:process:program" Type="lstring"/>
+    <Column Name="processgroup:process:version" Type="lstring"/>
+    <Column Name="processgroup:process:cvs_repository" Type="lstring"/>
+    <Column Name="processgroup:process:cvs_entry_time" Type="int_4s"/>
+    <Column Name="processgroup:process:comment" Type="lstring"/>
+    <Column Name="processgroup:process:node" Type="lstring"/>
+    <Column Name="processgroup:process:username" Type="lstring"/>
+    <Column Name="processgroup:process:unix_procid" Type="int_4s"/>
+    <Column Name="processgroup:process:start_time" Type="int_4s"/>
+    <Column Name="processgroup:process:end_time" Type="int_4s"/>
+    <Column Name="processgroup:process:process_id" Type="ilwd:char"/>
+    <Column Name="processgroup:process:ifos" Type="lstring"/>
+    <Stream Name="processgroup:process:table" Type="Local" Delimiter=",">
+      "SegGener","1.20",
+      "/ldcg_server/common/repository_gds/gds/Monitors/SegGener/SegGener.cc\,v",
+      924886686,"Segment generation from an OSC condition","granite","jzweizig",4736,
+      924889603,924900019,"process:process_id:0","H0H1H2"
+    </Stream>
+  </Table>
+  <Table Name="segment_definergroup:segment_definer:table">
+    <Column Name="segment_definergroup:segment_definer:process_id" Type="ilwd:char"/>
+    <Column Name="segment_definergroup:segment_definer:segment_def_id" Type="ilwd:char"/>
+    <Column Name="segment_definergroup:segment_definer:ifos" Type="lstring"/>
+    <Column Name="segment_definergroup:segment_definer:name" Type="lstring"/>
+    <Column Name="segment_definergroup:segment_definer:version" Type="int_4s"/>
+    <Column Name="segment_definergroup:segment_definer:comment" Type="lstring"/>
+    <Stream Name="segment_definergroup:segment_definer:table" Type="Local" Delimiter=",">
+      "process:process_id:0","segment_definer:segment_def_id:0","H1","DMT-TESTSEG_1",1,"Test segment 1, version 1",
+      "process:process_id:0","segment_definer:segment_def_id:1","H1","DMT-TESTSEG_1",2,"Test segment 1, version 2",
+      "process:process_id:0","segment_definer:segment_def_id:2","H1","DMT-TESTSEG_2",1,"Test segment 2, version 1",
+      "process:process_id:0","segment_definer:segment_def_id:3","H1","DMT-TESTSEG_3",1,"Test segment 3, version 1"
+    </Stream>
+  </Table>
+  <Table Name="segment_summarygroup:segment_summary:table">
+    <Column Name="segment_summarygroup:segment_summary:segment_sum_id" Type="ilwd:char"/>
+    <Column Name="segment_summarygroup:segment_summary:start_time" Type="int_4s"/>
+    <Column Name="segment_summarygroup:segment_summary:end_time" Type="int_4s"/>
+    <Column Name="segment_summarygroup:segment_summary:comment" Type="lstring"/>
+    <Column Name="segment_summarygroup:segment_summary:segment_def_id" Type="ilwd:char"/>
+    <Column Name="segment_summarygroup:segment_summary:process_id" Type="ilwd:char"/>
+    <Stream Name="segment_summarygroup:segment_summary:table" Type="Local" Delimiter=",">
+      "segment_summary:segment_sum_id:0",924900000,924900016,"","segment_definer:segment_def_id:0","process:process_id:0",
+      "segment_summary:segment_sum_id:1",924900008,924900010,"","segment_definer:segment_def_id:1","process:process_id:0",
+      "segment_summary:segment_sum_id:2",924900000,924900010,"","segment_definer:segment_def_id:2","process:process_id:0",
+      "segment_summary:segment_sum_id:3",924900008,924900016,"","segment_definer:segment_def_id:3","process:process_id:0"
+    </Stream>
+  </Table>
+  <Table Name="segmentgroup:segment:table">
+    <Column Name="segmentgroup:segment:segment_id" Type="ilwd:char"/>
+    <Column Name="segmentgroup:segment:start_time" Type="int_4s"/>
+    <Column Name="segmentgroup:segment:end_time" Type="int_4s"/>
+    <Column Name="segmentgroup:segment:segment_def_id" Type="ilwd:char"/>
+    <Column Name="segmentgroup:segment:process_id" Type="ilwd:char"/>
+    <Stream Name="segmentgroup:segment:table" Type="Local" Delimiter=",">
+      "segment:segment_id:0",924900000,924900016,"segment_definer:segment_def_id:0","process:process_id:0",
+      "segment:segment_id:1",924900000,924900016,"segment_definer:segment_def_id:0","process:process_id:0",
+      "segment:segment_id:2",924900000,924900016,"segment_definer:segment_def_id:0","process:process_id:0",
+      "segment:segment_id:3",924900000,924900016,"segment_definer:segment_def_id:0","process:process_id:0",
+      "segment:segment_id:4",924900000,924900016,"segment_definer:segment_def_id:0","process:process_id:0"
+    </Stream>
+  </Table>
+</LIGO_LW>

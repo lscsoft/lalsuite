@@ -1,0 +1,5 @@
+method = nmi
+block_until_exists = true
+timeout = 12h
+# TODO: since we're not using pre_all or platform_pre hooks, set this to false to avoid expensive local gunzip/untar, and untar on the worker node
+untar_results = true

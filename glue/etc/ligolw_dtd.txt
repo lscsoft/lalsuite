@@ -1,0 +1,70 @@
+<!ELEMENT LIGO_LW ((LIGO_LW|Comment|Param|Table|Array|Stream|IGWDFrame|AdcData|AdcInterval|Time|Detector)*)>
+<!ATTLIST LIGO_LW
+          Name CDATA #IMPLIED
+          Type CDATA #IMPLIED>
+
+<!ELEMENT Comment (#PCDATA)>
+
+<!ELEMENT Param (#PCDATA|Comment)*>
+<!ATTLIST Param 
+          Name CDATA #IMPLIED
+          Type CDATA #IMPLIED
+          Start CDATA #IMPLIED
+          Scale CDATA #IMPLIED
+          Unit CDATA #IMPLIED
+          DataUnit CDATA #IMPLIED>
+
+<!ELEMENT Table (Comment?,Column*,Stream?)>
+<!ATTLIST Table 
+          Name CDATA #IMPLIED
+          Type CDATA #IMPLIED>
+
+<!ELEMENT Column EMPTY>
+<!ATTLIST Column
+          Name CDATA #IMPLIED
+          Type CDATA #IMPLIED
+          Unit CDATA #IMPLIED>
+
+<!ELEMENT Array (Dim*,Stream?)>
+<!ATTLIST Array 
+          Name CDATA #IMPLIED
+          Type CDATA #IMPLIED
+          Unit CDATA #IMPLIED>
+
+<!ELEMENT Dim (#PCDATA)>
+<!ATTLIST Dim 
+          Name  CDATA #IMPLIED
+          Unit CDATA #IMPLIED
+          Start CDATA #IMPLIED
+          Scale CDATA #IMPLIED>
+
+<!ELEMENT Stream (#PCDATA)>
+<!ATTLIST Stream 
+          Name      CDATA #IMPLIED
+          Type      (Remote|Local) "Local"
+          Delimiter CDATA ","
+          Encoding  CDATA #IMPLIED
+          Content   CDATA #IMPLIED>
+
+<!ELEMENT IGWDFrame ((Comment|Param|Time|Detector|AdcData|LIGO_LW|Stream?|Array|IGWDFrame)*)>
+<!ATTLIST IGWDFrame 
+          Name CDATA #IMPLIED>
+
+<!ELEMENT Detector ((Comment|Param|LIGO_LW)*)>
+<!ATTLIST Detector 
+          Name CDATA #IMPLIED>
+
+<!ELEMENT AdcData ((AdcData|Comment|Param|Time|LIGO_LW|Array)*)>
+<!ATTLIST AdcData 
+          Name CDATA #IMPLIED>
+
+<!ELEMENT AdcInterval ((AdcData|Comment|Time)*)>
+<!ATTLIST AdcInterval 
+          Name CDATA #IMPLIED
+          StartTime CDATA #IMPLIED
+          DeltaT CDATA #IMPLIED>
+
+<!ELEMENT Time (#PCDATA)>
+<!ATTLIST Time 
+          Name CDATA #IMPLIED
+          Type (GPS|Unix|ISO-8601) "ISO-8601">

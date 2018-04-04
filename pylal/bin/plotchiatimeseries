@@ -1,0 +1,695 @@
+#!/usr/bin/python
+"""
+Time-series plots of coherent CBC statistics and null-statistics.
+
+"""
+__prog__ = "plotchiatimeseries"
+__title__ = "Coherent search and null statistics time series plots"
+
+import matplotlib
+matplotlib.use('Agg')
+import copy
+import math
+import sys
+import os
+import socket, time
+from optparse import *
+import re, string
+import exceptions
+import glob
+import tempfile
+import ConfigParser
+import urlparse
+from types import *
+from pylab import *
+from pylal import viz
+from pylal import Fr
+from glue import segments
+from glue import segmentsUtils
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import ligolw
+from glue.ligolw import utils
+from pylal import CoincInspiralUtils
+from pylal import InspiralUtils
+from pylal import MultiInspiralUtils
+from pylal import git_version
+from glue import markup
+from glue import pipeline
+from glue import lal
+
+
+sys.path.append('@PYTHONLIBDIR@')
+
+rc('text', usetex=False)
+
+def plotchiatimeseries(opts,args,outputPath,chiaProcParams,multiInspiralTable,ifoTag,frameDict,user_tag=None):
+ 
+    ifoH1 = 0
+    ifoH2 = 0
+    numIfos = 0
+    rsqThreshold = 0
+
+    if user_tag:
+      eventID = user_tag
+    else:
+      eventID = ''
+
+    #print >> sys.stdout, "Frame file name for H2  "
+    #print >> sys.stdout, "Frame file name is  " + opts.H2_framefile
+            
+    gpsStart = int(opts.gps_start_time)
+    gpsEnd = int(opts.gps_end_time)
+    sampleRate = int(opts.sample_rate)
+
+    duration = int(math.ceil(gpsEnd)) - int(gpsStart)
+    opts.suffix = "-" + str(int(gpsStart)) + "-" + str(duration)
+
+    maxSNR = 0.0
+    maxIndex = 0
+    for row_index,row in enumerate(multiInspiralTable):
+      eventID = int(row.event_id)
+      #if not str(eventID) in user_tag:
+      #  continue
+      SNR = float(row.snr)
+      if SNR > maxSNR:
+        maxSNR = SNR
+        maxIndex = row_index
+
+    IfoSNR = {}
+    colorCode = {'H1': 'r', 'H2': 'b', 'L1': 'g', 'V1': 'm'}
+
+    for j in range(0,len(ifoTag)-1,2):
+      ifo = ifoTag[j:j+2]
+      quadRe = eval("float(multiInspiralTable[maxIndex]." + ifo.lower() + "quad_re)")
+      quadIm = eval("float(multiInspiralTable[maxIndex]." + ifo.lower() + "quad_im)")
+      IfoSNR[ifo] = "%0.4f"%(sqrt(quadRe**2 + quadIm**2))
+      if ifo == 'H1':
+        ifoH1 = 1
+      elif ifo == 'H2':
+        ifoH2 = 1
+      numIfos = numIfos + 1
+
+    minSNR = float(IfoSNR[ifoTag[0:2]])
+    minSNRIfo = ifoTag[0:2]
+    for j in range(0,len(ifoTag)-1,2):
+      ifo = ifoTag[j:j+2]
+      if float(IfoSNR[ifo]) < float(minSNR):
+        minSNR = float(IfoSNR[ifo])
+        minSNRIfo = ifo
+
+
+    if not (float(multiInspiralTable[maxIndex].eff_dist_h1h2) == -1.0):
+      eff_dist_h1h2 = "%0.3f"%multiInspiralTable[maxIndex].eff_dist_h1h2
+    else:
+      eff_dist_h1h2 =  "NA"
+
+    maxSNRTmp = sqrt(maxSNR)
+    cohSNR = "%0.2f"%maxSNRTmp
+    if ifoH1 == 1 and ifoH2 == 1 \
+      and not (float(multiInspiralTable[maxIndex].null_stat_h1h2 ) < 0.0):
+      # Fetch H1H2 null-stat if available
+      h1h2_null_stat = sqrt(float(multiInspiralTable[maxIndex].null_stat_h1h2))
+      h1h2NullStat = "%0.5f"%h1h2_null_stat
+    else:
+      h1h2NullStat = "NA"
+    # Fetch H1H2 eff-distance if available
+    if ifoH1 == 1 and ifoH2 == 1 \
+      and not (float(multiInspiralTable[maxIndex].eff_dist_h1h2) == -1.0):
+      eff_dist_h1h2 = "%0.3f"%multiInspiralTable[maxIndex].eff_dist_h1h2
+    else:
+      eff_dist_h1h2 =  "NA"
+    if not (float(multiInspiralTable[maxIndex].null_statistic) < 0.0):
+      net_null_stat = sqrt(float(multiInspiralTable[maxIndex].null_statistic))
+      netNullStat = "%0.5f"%net_null_stat
+    else:
+      netNullStat =  "NA"
+    eta = "%0.3f"%multiInspiralTable[maxIndex].eta
+    mchirp = "%0.3f"%multiInspiralTable[maxIndex].mchirp
+    mass1 = "%0.3f"%multiInspiralTable[maxIndex].mass1
+    mass2 = "%0.3f"%multiInspiralTable[maxIndex].mass2
+    end_time = str(multiInspiralTable[maxIndex].end_time)
+    end_time_ns = str(multiInspiralTable[maxIndex].end_time_ns)
+    gpsTime = repr(float(multiInspiralTable[maxIndex].end_time) + float(multiInspiralTable[maxIndex].end_time_ns)*10**(-9))
+    if not (float(multiInspiralTable[maxIndex].distance) == -1.0):
+      distance = "%0.3f"%multiInspiralTable[maxIndex].distance
+    else:
+      distance =  "NA"
+    if not (float(multiInspiralTable[maxIndex].eff_dist_h1 ) == -1.0):
+      eff_dist_h1 = "%0.3f"%multiInspiralTable[maxIndex].eff_dist_h1
+    else:
+      eff_dist_h1 =  "NA"
+    if not (float(multiInspiralTable[maxIndex].eff_dist_h2 ) == -1.0):
+      eff_dist_h2 = "%0.3f"%multiInspiralTable[maxIndex].eff_dist_h2
+    else:
+      eff_dist_h2 =  "NA"
+    if not (float(multiInspiralTable[maxIndex].eff_dist_l ) == -1.0):
+      eff_dist_l = "%0.3f"%multiInspiralTable[maxIndex].eff_dist_l
+    else:
+      eff_dist_l =  "NA"
+    if not (float(multiInspiralTable[maxIndex].eff_dist_v ) == -1.0):
+      eff_dist_v = "%0.3f"%multiInspiralTable[maxIndex].eff_dist_v
+    else:
+      eff_dist_v =  "NA"
+    if not (float(multiInspiralTable[maxIndex].dec) == -1001.0):
+      dec = "%0.3f"%multiInspiralTable[maxIndex].dec
+    else:
+      dec =  "NA"
+    if not (float(multiInspiralTable[maxIndex].ra) == -1001.0):
+      ra = "%0.3f"%multiInspiralTable[maxIndex].ra
+    else:
+      ra =  "NA"
+    if not (float(multiInspiralTable[maxIndex].polarization) == -1001.0):
+      polarization = "%0.3f"%multiInspiralTable[maxIndex].polarization
+    else:
+      polarization =  "NA"
+    if not (float(multiInspiralTable[maxIndex].inclination) == -1001.0):
+      inclination = "%0.3f"%multiInspiralTable[maxIndex].inclination
+    else:
+      inclination =  "NA"
+    if not (float(multiInspiralTable[maxIndex].coa_phase) == -1001.0):
+      coa_phase = "%0.3f"%multiInspiralTable[maxIndex].coa_phase
+    else:
+      coa_phase =  "NA"
+
+    del multiInspiralTable
+
+    print >> sys.stdout, "Read table entries"
+
+    # Between H1 and H2, identify the ifo with the lower SNR 
+    if ifoH1 == 1 and ifoH2 ==1:
+      if float(IfoSNR['H1']) < float(IfoSNR['H2']):
+        ifoWithLowerSNRInH1H2 = 'H1'
+      else: 
+        ifoWithLowerSNRInH1H2 = 'H2'
+
+    segLenSec = int((gpsEnd-gpsStart)*0.5)
+    timePoints = segLenSec * sampleRate
+
+    cohNetSNRFrameName = 'Coherent_SNR_' + str(eventID)
+    cohNetSNRFrameFile = opts.chiaFrameFile 
+    cohNetSNR_tuple = Fr.frgetvect(cohNetSNRFrameFile,cohNetSNRFrameName,-1,timePoints,0)
+
+    itfCData_time = array(range(0, timePoints)) * cohNetSNR_tuple[3][0]
+
+    #cohNetSNRSq = cohNetSNR_tuple[0]*cohNetSNR_tuple[0]
+    cohNetSNRSq = cohNetSNR_tuple[0]
+
+    del cohNetSNR_tuple
+
+    expectCohH1H2snr = 0
+
+    #Read in the coherent H1H2 SNR data from frame-file
+    if ifoH1 == 1 and ifoH2 == 1 and numIfos > 2 and opts.cohH1H2SNRFrameFile and os.path.isfile(opts.cohH1H2SNRFrameFile):
+      cohH1H2SNRFrameName = 'Coherent_H1H2SNR_' + str(eventID)      
+      cohH1H2SNRFrameFile = opts.cohH1H2SNRFrameFile 
+      cohH1H2SNR_tuple = Fr.frgetvect(cohH1H2SNRFrameFile,cohH1H2SNRFrameName,-1,timePoints,0)
+      cohH1H2SNRSq = cohH1H2SNR_tuple[0]*cohH1H2SNR_tuple[0]
+      del cohH1H2SNR_tuple
+      print >> sys.stdout, "Generate Coherent H1H2 SNR!!" 
+      expectCohH1H2snr = 1 
+    elif ifoH1 == 1 and ifoH2 == 1 and numIfos < 3:
+      cohH1H2SNRFrameName = 'Coherent_SNR_' + str(eventID)
+      cohH1H2SNRFrameFile = opts.chiaFrameFile 
+      cohH1H2SNR_tuple = Fr.frgetvect(cohH1H2SNRFrameFile,cohH1H2SNRFrameName,-1,timePoints,0)
+      cohH1H2SNRSq = cohH1H2SNR_tuple[0]*cohH1H2SNR_tuple[0]
+      del cohH1H2SNR_tuple
+      expectCohH1H2snr = 1
+      print >> sys.stdout, "Generate Coherent SNR!!"
+    else: expectCohH1H2snr = 0
+
+    fnameList = []
+    tagList = []
+
+    figure(1)
+    legendText = []
+    plot(itfCData_time[1:timePoints],cohNetSNRSq[1:timePoints],'k')
+    hold(1)
+    legendTxt = str(ifoTag) + ' cohsnr-sq'
+    legendText.append(legendTxt)
+    if expectCohH1H2snr == 1 and ifoH1 == 1 and ifoH2 == 1 and numIfos > 2:
+      plot(itfCData_time[1:timePoints],cohH1H2SNRSq[1:timePoints],'c--')
+      legendTxt = 'H1H2 cohsnr-sq'
+      legendText.append(legendTxt)
+    for j in range(0,len(ifoTag)-1,2):
+      itf = ifoTag[j:j+2]
+      itfFrameFile = frameDict[itf]
+      print >> sys.stdout, "Extracting data from ifo " + str(itf)
+      #for row in chiaProcParams:
+      #if row.param == str(itfFrameFileArg):
+      if itfFrameFile:
+          itfFrameName = str(itf) + ':CBC-CData_' + str(eventID)
+          print >> sys.stdout, "Frame file name is  " + str(itfFrameFile)
+          itfCData_tuple = Fr.frgetvect(itfFrameFile,itfFrameName)
+          itfCDataModSq = abs(itfCData_tuple[0])*abs(itfCData_tuple[0])
+          plot(itfCData_time[1:timePoints],itfCDataModSq[1:timePoints],colorCode[itf])
+          del itfCDataModSq
+          legendTxt = str(itf) + ' snr-sq'
+          legendText.append(legendTxt)
+          print >> sys.stdout, "plotting itf!!"
+          if itf == 'H1':
+            itfCDataH1 = itfCData_tuple[0]
+          elif itf == 'H2':
+            itfCDataH2 = itfCData_tuple[0]
+          del itfCData_tuple
+    hold(0)
+    print >> sys.stdout, "Printing Figure 1!!"
+    #for j in range(0,len(ifoTag)-1,2):
+    xlabel('time (s)',size='x-large')
+    ylabel(r'statistic',size='x-large')
+    grid()
+    title(ifoTag + ' trigger: ' + gpsTime)
+    legend(legendText,loc='upper right')
+    figName = InspiralUtils.set_figure_name(opts,'snr-squared')
+    InspiralUtils.savefig_pylal(figName)
+    close(1)
+    fnameList.append(figName)
+    tagList.append("Plot of Coherent Statistic")
+
+
+    figure(11)
+    legendText = []
+    plot(itfCData_time[1:timePoints],cohNetSNRSq[1:timePoints],'k')
+    del cohNetSNRSq
+    hold(1)
+    legendTxt = str(ifoTag) + ' cohsnr-sq'
+    legendText.append(legendTxt)
+    if expectCohH1H2snr == 1 and ifoH1 == 1 and ifoH2 == 1 and numIfos > 2:
+      plot(itfCData_time[1:timePoints],cohH1H2SNRSq[1:timePoints],'c--')
+      del cohH1H2SNRSq 
+      legendTxt = 'H1H2 cohsnr-sq'
+      legendText.append(legendTxt)
+    for j in range(0,len(ifoTag)-1,2):
+      itf = ifoTag[j:j+2]
+      itfFrameFile = frameDict[itf]
+      print >> sys.stdout, "Extracting data from ifo " + str(itf)
+      if itfFrameFile:
+          itfFrameName = str(itf) + ':CBC-CData_' + str(eventID)
+          print >> sys.stdout, "Frame file name is  " + str(itfFrameFile)
+          itfCData_tuple = Fr.frgetvect(itfFrameFile,itfFrameName)
+          itfCDataModSq = abs(itfCData_tuple[0])*abs(itfCData_tuple[0])
+          del itfCData_tuple
+          plot(itfCData_time[1:timePoints],itfCDataModSq[1:timePoints],colorCode[itf])
+          del itfCDataModSq
+          legendTxt = str(itf) + ' snr-sq'
+          legendText.append(legendTxt)
+    hold(0)
+    #for j in range(0,len(ifoTag)-1,2):
+    xlim(0.5-0.02, 0.5+0.02)
+    xlabel('time (s)',size='x-large')
+    ylabel(r'statistic',size='x-large')
+    grid()
+    title(ifoTag + ' trigger: ' + gpsTime + ' (zoomed)')
+    legend(legendText,loc='upper right')
+    figName = InspiralUtils.set_figure_name(opts,'snr-squared-zoomed')
+    InspiralUtils.savefig_pylal(figName)
+    close(11)
+    fnameList.append(figName)
+    tagList.append("Plot of Coherent Statistic (zoomed)")
+
+    if ifoH1 == 1 and ifoH2 == 1:
+      figure(2)
+      legendText = []
+      h1h2PhaseDiffNumer = itfCDataH1.real*itfCDataH2.real + itfCDataH1.imag*itfCDataH2.imag #+ itfImagH1.imag*itfImagH2.imag
+      h1h2PhaseDiff = h1h2PhaseDiffNumer / (abs(itfCDataH1)*abs(itfCDataH2))
+      del h1h2PhaseDiffNumer
+      del itfCDataH1
+      del itfCDataH2
+      plot(itfCData_time[1:timePoints],h1h2PhaseDiff[1:timePoints],'r')
+      legendText.append('Cos(PhiH1 - PhiH2)')
+      xlabel('time (s)',size='x-large')
+      ylabel(r'H1-H2 complex-snr phase difference',size='x-large')
+      grid()
+      title(ifoTag + ' trigger: ' + gpsTime)
+      legend(legendText,loc='upper right')
+      figName = InspiralUtils.set_figure_name(opts,'phasediffh1h2')
+      InspiralUtils.savefig_pylal(figName)
+      close(2)
+      fnameList.append(figName)
+      tagList.append("Plot of Phase Difference in H1-H2")
+    else:
+      if ifoH1 == 1:
+        del itfCDataH1
+      if ifoH2 == 1:
+        del itfCDataH2
+
+    if ifoH1 == 1 and ifoH2 == 1:
+      figure(22)
+      legendText = []
+      plot(itfCData_time[1:timePoints],h1h2PhaseDiff[1:timePoints],'r')
+      del h1h2PhaseDiff
+      legendText.append('Cos(PhiH1 - PhiH2)')
+      xlim(0.5-0.02, 0.5+0.02)
+      xlabel('time (s)',size='x-large')
+      ylabel(r'H1-H2 complex-snr phase difference',size='x-large')
+      grid()
+      title(ifoTag + ' trigger: ' + gpsTime + ' (zoomed)')
+      legend(legendText,loc='upper right')
+      figName = InspiralUtils.set_figure_name(opts,'phasediffh1h2Zoomed')
+      InspiralUtils.savefig_pylal(figName)
+      close(22)
+      fnameList.append(figName)
+      tagList.append("Plot of Phase Difference in H1-H2 (zoomed)")
+
+    #Read in the coherent H1H2 SNR data from frame-file
+    if expectCohH1H2snr == 1 and ifoH1 == 1 and ifoH2 == 1 and numIfos > 2 and opts.cohH1H2SNRFrameFile and os.path.isfile(opts.cohH1H2SNRFrameFile):
+      cohH1H2SNRFrameName = 'Coherent_H1H2SNR_' + str(eventID)
+      cohH1H2SNRFrameFile = opts.cohH1H2SNRFrameFile 
+      cohH1H2SNR_tuple = Fr.frgetvect(cohH1H2SNRFrameFile,cohH1H2SNRFrameName)
+      cohH1H2SNRSq = cohH1H2SNR_tuple[0]*cohH1H2SNR_tuple[0]
+      del cohH1H2SNR_tuple
+    elif expectCohH1H2snr == 1 and ifoH1 == 1 and ifoH2 == 1 and numIfos < 3:
+      cohH1H2SNRFrameName = 'Coherent_SNR_' + str(eventID)
+      cohH1H2SNRFrameFile = opts.chiaFrameFile 
+      cohH1H2SNR_tuple = Fr.frgetvect(cohH1H2SNRFrameFile,cohH1H2SNRFrameName)
+      cohH1H2SNRSq = cohH1H2SNR_tuple[0]*cohH1H2SNR_tuple[0]
+      del cohH1H2SNR_tuple
+    else: expectCohH1H2snr = 0
+
+    expectH1H2Nullstat = 0
+    # This assumes that null-stat is for H1-H2 and not a 3-ifo 
+    # or 4-ifo one. This is okay for S5 12-18month, but needs to be
+    # updated for LV searches
+    if ifoH1 == 1 and ifoH2 == 1 and opts.H1H2NullStatFrameFile and os.path.isfile(opts.H1H2NullStatFrameFile):
+      H1H2NullStatFrameName = 'Coherent_H1H2_NullStat_' + str(eventID)
+      H1H2NullStatFrameFile = opts.H1H2NullStatFrameFile #os.path.dirname(chiaXmlFile) + '/' + 'H1H2-CHIA_NULL_STAT_1_' + str(eventID) + '-' + str(gpsStart) + '-' +  str(int(2*segLenSec)) +'.gwf'
+      H1H2NullStat_tuple = Fr.frgetvect(H1H2NullStatFrameFile,H1H2NullStatFrameName)
+      H1H2NullStatSq = H1H2NullStat_tuple[0]
+      del H1H2NullStat_tuple
+      expectH1H2Nullstat = 1
+    else: expectH1H2Nullstat = 0
+
+    if expectCohH1H2snr == 1 and expectH1H2Nullstat == 1:
+      figure(3)  
+      legendText = []
+      plot(itfCData_time[1:timePoints],H1H2NullStatSq[1:timePoints],'k')
+      legendText.append('H1-H2 null-stat-sq')
+      hold(1)
+      plot(itfCData_time[1:timePoints],cohH1H2SNRSq[1:timePoints],'c')
+      legendText.append('H1-H2 cohsnr-sq')
+      hold(0)
+      xlabel('time (s)',size='x-large')
+      ylabel(r'H1-H2 statistics',size='x-large')
+      grid()
+      title(ifoTag + ' trigger: ' + gpsTime)
+      legend(legendText,loc='upper right')
+      figName = InspiralUtils.set_figure_name(opts,'cohsnrh1h2null')
+      InspiralUtils.savefig_pylal(figName)
+      close(3)
+      fnameList.append(figName)
+      tagList.append("Plot of Coherent Search and Null Statistic-squared in H1-H2")
+
+      figure(33)
+      legendText = []
+      plot(itfCData_time[1:timePoints],H1H2NullStatSq[1:timePoints],'k')
+      legendText.append('H1-H2 null-stat-sq')
+      hold(1)
+      plot(itfCData_time[1:timePoints],cohH1H2SNRSq[1:timePoints],'c')
+      legendText.append('H1-H2 cohsnr-sq')
+      hold(0)
+      xlim(0.5-0.02, 0.5+0.02)
+      xlabel('time (s)',size='x-large')
+      ylabel(r'H1-H2 statistics',size='x-large')
+      grid()
+      title(ifoTag + ' trigger: ' + gpsTime + ' (zoomed)')
+      legend(legendText,loc='upper right')
+      figName = InspiralUtils.set_figure_name(opts,'cohsnrh1h2nullZoomed')
+      InspiralUtils.savefig_pylal(figName)
+      close(33)
+      fnameList.append(figName)
+      tagList.append("Plot of Coherent Search and Null Statistic-squared in H1-H2 (zoomed)")
+ 
+      figure(34)
+      legendText = []
+      plot(itfCData_time[1:timePoints],H1H2NullStatSq[1:timePoints],'k')
+      del H1H2NullStatSq
+      legendText.append('H1-H2 null-stat-sq')
+      hold(1)
+      itf = ifoWithLowerSNRInH1H2
+      itfFrameFile = frameDict[itf]
+      if itfFrameFile:
+          itfFrameName = str(itf) + ':CBC-CData_' + str(eventID)
+          itfCData_tuple = Fr.frgetvect(itfFrameFile,itfFrameName)
+          itfCDataModSq = abs(itfCData_tuple[0])*abs(itfCData_tuple[0])
+          del itfCData_tuple
+          plot(itfCData_time[1:timePoints],itfCDataModSq[1:timePoints],colorCode[itf])
+          del itfCDataModSq
+          legendTxt = str(itf) + ' (weaker ifo) snr-sq'
+          legendText.append(legendTxt)
+      hold(0)
+      xlim(0.5-0.05, 0.5+0.05)
+      xlabel('time (s)',size='x-large')
+      ylabel(r'statistics',size='x-large')
+      grid()
+      title(ifoTag + ' trigger: ' + gpsTime)
+      legend(legendText,loc='upper right')
+      figName = InspiralUtils.set_figure_name(opts,'h1h2nullZoomed'
+)
+      InspiralUtils.savefig_pylal(figName)
+      close(34)
+      fnameList.append(figName)
+      tagList.append("Plot of Null Statistic-squared in H1-H2 and SNR in weaker ifo")
+
+    # Network null-stream versus weakest ifo SNR:
+    if not (ifoH1 == 1 and ifoH2 == 1 and numIfos == 3 ) and not (numIfos < 3) and opts.cohNullStatFrameFile and os.path.isfile(opts.cohNullStatFrameFile):
+      cohNullStatFrameName = 'Coherent_NullStat_' + str(eventID)
+      cohNullStatFrameFile = opts.cohNullStatFrameFile #os.path.dirname(chiaXmlFile) + '/' + ifoTag + '-CHIA_NULL_STAT_1_' + str(eventID) + '-' + str(gpsStart) + '-' +  str(int(2*segLenSec)) +'.gwf'
+      cohNullStat_tuple = Fr.frgetvect(cohNullStatFrameFile,cohNullStatFrameName)
+      cohNullStatSq = cohNullStat_tuple[0]
+      del cohNullStat_tuple
+      figure(35)
+      legendText = []
+      plot(itfCData_time[1:timePoints],cohNullStatSq[1:timePoints],'k')
+      del cohNullStatSq
+      legendText.append('Network null-stat-sq')
+      hold(1)
+      itf = minSNRIfo
+      itfFrameFile = frameDict[itf] 
+      if itfFrameFile:
+          print >> sys.stdout, "Extracting data from file " + str(itfFrameFile)
+          itfFrameName = str(itf) + ':CBC-CData_' + str(eventID)
+          print >> sys.stdout, "Frame file name is  " + str(itfFrameFile)
+          itfCData_tuple = Fr.frgetvect(itfFrameFile,itfFrameName)
+          itfCDataModSq = abs(itfCData_tuple[0])*abs(itfCData_tuple[0])
+          del itfCData_tuple
+          plot(itfCData_time[1:timePoints],itfCDataModSq[1:timePoints],colorCode[itf])
+          del itfCDataModSq
+          legendTxt = str(itf) + ' (weakest ifo) snr-sq'
+          legendText.append(legendTxt)
+      hold(0)
+      xlim(0.5-0.05, 0.5+0.05)
+      xlabel('time (s)',size='x-large')
+      ylabel(r'statistics',size='x-large')
+      grid()
+      title(ifoTag + ' trigger: ' + gpsTime)
+      legend(legendText,loc='upper right')
+      figName = InspiralUtils.set_figure_name(opts,'cohnullsnrh1Zoomed'
+)
+      InspiralUtils.savefig_pylal(figName)
+      close(35)
+      fnameList.append(figName)
+      tagList.append("Plot of Null Statistic-squared in H1-H2 and SNR in weaker ifo")
+
+    if opts.enable_output is True:
+      # THIS IS A HACK: The method \"write_html_output\" of InspiralUtils 
+      # is not currently designed to add tables to the output web page.
+      # here we are replicating a few lines of code. Instead one should try to
+      # make the method \"write_html_output\" more flexible...
+
+      page, extra = InspiralUtils.init_markup_page(opts)
+      page.h1(opts.name + " results")
+      page.p(opts.prefix + opts.suffix)
+      page.hr()
+
+      page.add('<table bgcolor=pink border=1px>')
+      page.tr()
+      page.td('<b>end_time</b>')
+      page.td('<b>end_time_ns</b>')
+      page.td('<b>CohSNR</b>')
+      page.td('<b>NetNullStat</b>')
+      page.td('<b>H1H2NullStat</b>')
+      for j in range(0,len(ifoTag)-1,2):
+        ifo = ifoTag[j:j+2]
+        page.td('<b>'+ifo+' snr</b>') 
+      page.td('<b>chirp mass (M_sun)</b>')
+      page.td('<b>eta</b>')
+      page.td('<b>mass1 (M_sun)</b>')
+      page.td('<b>mass2 (M_sun)</b>')
+      page.tr.close()
+      page.tr()
+      page.td(end_time)
+      page.td(end_time_ns)
+      page.td(cohSNR)
+      page.td(netNullStat)
+      page.td(h1h2NullStat)
+      for j in range(0,len(ifoTag)-1,2):
+        ifo = ifoTag[j:j+2]
+        page.td(IfoSNR[ifo])
+      page.td(mchirp)
+      page.td(eta)
+      page.td(mass1)
+      page.td(mass2)
+      page.tr.close()
+      page.table.close()
+      page.hr()
+
+
+      page.hr()
+      page.add('<table bgcolor=yellow border=1px>')
+      page.tr()
+      #page.td('<b>Distance</b>')
+      page.td('<b>Eff. dist. (H1, Mpc)</b>')
+      page.td('<b>Eff. dist. (H2, Mpc)</b>')
+      page.td('<b>Eff. dist. (H1-H2, Mpc)</b>')
+      page.td('<b>Eff. dist. (L1, Mpc)</b>')
+      page.td('<b>Eff. dist. (V1, Mpc)</b>')
+      #page.td('<b>Dec (deg)</b>')
+      #page.td('<b>RA (hr)</b>')
+      #page.td('<b>Polarization (deg)</b>')
+      #page.td('<b>Inclination (deg)</b>')
+      #page.td('<b>Coal. phase (deg)</b>')
+      page.tr.close()
+      page.tr()
+      #page.td(eff_distance)
+      page.td(eff_dist_h1)
+      page.td(eff_dist_h2)
+      page.td(eff_dist_h1h2)
+      page.td(eff_dist_l)
+      page.td(eff_dist_v)
+      #page.td(dec)
+      #page.td(ra)
+      #page.td(polarization)
+      #page.td(inclination)
+      #page.td(coa_phase)
+      page.tr.close()
+      page.table.close()
+      page.hr()
+
+
+
+      for tag,filename in zip(tagList,fnameList):
+        fname = "Images/" + os.path.basename(filename)
+        fname_thumb = fname[:-4] + "_thumb.png"
+        page.a(extra.img(src=[fname_thumb], width=400, alt=tag, border="2"),title=tag,href=[ fname])
+      page.hr()
+      
+      text = InspiralUtils.writeProcessParams(opts.name,opts.version,args)
+      page.add(text)
+
+      html_filename = opts.output_path + opts.prefix + opts.suffix + ".html"
+      html_file = file(html_filename,"w")
+      html_file.write(page(False))
+      html_file.close()
+
+      #html_filename = InspiralUtils.write_html_output(opts, args, fnameList, \
+      #  tagList)
+      InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+
+##############################################################################
+#
+#  MAIN PROGRAM
+#
+##############################################################################
+
+usage = """ %prog [options]
+"""
+
+parser = OptionParser( usage, version=git_version.verbose_msg )
+
+parser.add_option("-o","--output-path",action="store",type="string",\
+    default="", metavar=" PATH",\
+    help="path where the figures would be stored")
+
+parser.add_option("-O","--enable-output",action="store_true",\
+    default="false",  metavar=" OUTPUT",\
+    help="enable the generation of the html and cache documents")
+
+parser.add_option("-x","--chiaXmlFile", action="store",type="string", \
+    metavar=" XML",help="use chia-file")
+
+parser.add_option("","--chiaFrameFile", action="store",type="string", \
+    metavar=" GWF",help="use chia-frame-file")
+
+parser.add_option("","--cohH1H2SNRFrameFile", default=None, action="store",type="string", \
+    metavar=" GWF",help="use chia-frame-file")
+
+parser.add_option("","--H1H2NullStatFrameFile", default=None, action="store",type="string", \
+    metavar=" GWF",help="use chia-frame-file")
+
+parser.add_option("","--cohNullStatFrameFile", default=None, action="store",type="string", \
+    metavar=" GWF",help="use chia-frame-file")
+
+parser.add_option("-T","--user-tag", action="store",type="string", \
+    default=None, metavar=" USERTAG",help="user tag for the output file name")
+
+parser.add_option("","--ifo-times",action="store",\
+    type="string", default=None, metavar=" IFOTIMES",\
+    help="provide ifo times for naming figure")
+
+parser.add_option("","--ifo-tag",action="store",\
+    type="string",  metavar=" IFOTAG",\
+    help="ifo tag gives the information about ifo times and stage")
+
+parser.add_option("","--sample-rate",action="store",\
+    type="int",  metavar=" SAMPLE_RATE",\
+    help="sample-rate helps determine the number of time-series points in data")
+
+parser.add_option("","--gps-start-time",action="store",
+    type="int",  metavar="GPSSTARTTIME",
+    help="gps start time (for naming figure and output files")
+
+parser.add_option("","--gps-end-time",action="store",
+    type="int",  metavar=" GPSENDTIME",
+    help="gps end time (for naming figure and output files")
+
+parser.add_option("","--h1-framefile", action="store",type="string", \
+    metavar=" FILE",help="use H1 frame-file")
+
+parser.add_option("","--h2-framefile", action="store",type="string", \
+    metavar=" FILE",help="use H2 frame-file")
+
+parser.add_option("","--l1-framefile", action="store",type="string", \
+    metavar=" FILE",help="use L1 frame-file")
+
+parser.add_option("","--v1-framefile", action="store",type="string", \
+    metavar=" FILE",help="use V1 frame-file")
+
+command_line = sys.argv[1:]
+(opts,args) = parser.parse_args()
+
+
+#################################
+# Sanity check of input arguments
+
+
+if not opts.output_path:
+  print >> sys.stderr, "No output path specified."
+  print >> sys.stderr, "Use --output-path PATH to specify location."
+  sys.exit(1)
+
+if not opts.chiaXmlFile:
+  print >> sys.stderr, "No chia xml file specified."
+  print >> sys.stderr, "Use --chiaXmlFile XML to specify a file"
+  sys.exit(1)
+
+frameDict = {'H1': opts.h1_framefile, 'H2': opts.h2_framefile, 'L1': opts.l1_framefile, 'V1': opts.v1_framefile}
+
+#opts = InspiralUtils.initialise(opts, __prog__, git_version.verbose_msg)
+opts.prefix = opts.ifo_times + "-" + __prog__ + "_" + opts.ifo_tag + "_" + opts.user_tag
+opts.name = __prog__
+opts.version = git_version.verbose_msg.replace('\n','<br>')
+
+extension = opts.chiaXmlFile.split('.')[-1]
+if extension == 'gz': gz = True
+else: gz = False
+doc = utils.load_filename(opts.chiaXmlFile,verbose=False, gz=gz, xmldoc=None, contenthandler=None)
+proc = table.get_table(doc, lsctables.ProcessParamsTable.tableName)
+multiInspiralTable = table.getTablesByName(doc,lsctables.MultiInspiralTable.tableName)
+if len(multiInspiralTable) == 0:
+  print >> sys.stdout, "document does not contain any multi_inspiral table, which means no trigger found"
+  sys.exit(0)
+elif len(multiInspiralTable) > 1:
+  print >> sys.sderr, "document should not contain more than 1 multi_inspiral table"
+  sys.exit(1)
+else:
+  plotchiatimeseries(opts,args,opts.output_path,proc,multiInspiralTable[0],opts.ifo_times,frameDict,opts.user_tag)

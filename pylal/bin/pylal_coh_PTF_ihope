@@ -1,0 +1,1940 @@
+#!/usr/bin/python
+
+# Copyright (C) 2012 Duncan M. Macleod
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""This script generates the condor DAG necessary to analyze a given
+amount of GEO, LIGO, or Virgo data. It takes in the start and end
+times, generates  the segments, runs the analysis, generates summary
+information and plots and follows up the loudest events.
+"""
+
+# =============================================================================
+# Preamble
+# =============================================================================
+
+# future imports
+from __future__ import division
+
+# built-in imports
+import os
+import sys
+import copy
+import shutil
+import ConfigParser
+import optparse
+import urllib
+import time
+import re
+import M2Crypto
+import calendar
+import tempfile
+import itertools
+import lal
+import random
+import string
+import errno
+import numpy
+import datetime
+import warnings
+warnings.filterwarnings("ignore", "Module dap was already imported from None",
+                        UserWarning)
+
+# glue imports
+from glue import segments
+from glue import segmentsUtils
+from glue import pipeline
+from glue import lal as cache
+from glue import datafind
+from glue.ligolw import lsctables
+
+# set plotting backend
+from matplotlib import use
+use(os.getenv("DISPLAY", None) and "GtkAgg" or "Agg")
+
+# pylal imports
+from pylal import sky
+from pylal import plotutils
+from pylal import plotsegments
+from pylal import git_version
+from pylal.dq import dqSegmentUtils
+
+# lalapps imports
+from lalapps import inspiral
+from lalapps import inspiralutils
+
+# set metadata
+__author__  = "Duncan M. Macleod <duncan.macleod@LIGO.ORG>"
+__credits__ = "stephen.fairhurst, ian.harry and valeriu.predoi (@LIGO.ORG)"
+__date__    = git_version.date
+__version__ = git_version.id
+
+#
+# set useful globals
+#
+
+# start timer
+_start = int(time.time())
+elapsed_time = lambda: int(time.time()-_start)
+
+# define useful regex and lambdas
+_xml = re.compile("(xml|xml.gz)\Z")
+readsegments = lambda f: _xml.search(f)\
+                         and dqSegmentUtils.fromsegmentxml(open(f, "r"))\
+                        or segmentsUtils.fromsegwizard(open(f, "r"))
+
+DATAFIND = "datafind"
+SEGMENTS = "segments"
+TMPLTBANK = "tmpltbank"
+EXECUTABLES = "executables"
+SKYGRIDS = "skygrids"
+FULL_DATA = "full_data"
+FULL_DATA_SLIDE = "full_data_slide"
+
+# =============================================================================
+# Utilities
+# =============================================================================
+
+def mkdir_p(path, chdir=False):
+    """Makes a new directory if it doesn't exist and moves to it if
+    requested.
+
+    @param path
+        directory path to be created
+    @param chdir
+        choose to move into the new directory
+    """
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST:
+            pass
+        else:
+            raise
+    if chdir:
+        os.chdir(path)
+
+def normjoin(*args):
+    return os.path.normpath(os.path.join(*args))
+
+# =============================================================================
+# Addons for ScienceSegment
+# =============================================================================
+
+def set_df_file(self, df_node, ifo=None):
+    """Set the DataFind cache asociated with this ScienceSegment to df_file.
+    If ifo is given (not None), an interferometer-specific
+    __$ifo_df_file attribute will be set.
+
+    @param df_file
+        the pipeline.LSCDataFindNode output file for this ScienceSegment
+    @param ifo
+        interferometer prefix for this ScienceSegment
+    """
+    if ifo:
+        setattr(self, "__%s_df_file" % ifo.lower(), df_node)
+    else:
+        setattr(self, "__df_file", df_node)
+
+def get_df_file(self, ifo=None):
+    """@returns the LSCDataFindNode output file for this ScienceSegment.
+
+    @param ifo
+        interferometer prefix for this ScienceSegment
+    """
+    if ifo:
+        return getattr(self, "__%s_df_file" % ifo.lower())
+    else:
+        return self.__df_file
+
+pipeline.ScienceSegment.set_df_file = set_df_file
+pipeline.ScienceSegment.get_df_file = get_df_file
+
+# =============================================================================
+# Addons for AnalysisChunk
+# =============================================================================
+
+def set_tb_file(self, tb_file):
+    """Set the TmpltBank file associated with this AnalysisChunk to tb_file.
+
+    @param tb_file
+        the TmpltBank file for this AnalysisChunk.
+    """
+    self.__tb_file = tb_file
+
+def get_tb_file(self):
+    """@returns the TmpltBank node for this AnalysisChunk.
+    """
+    return self.__tb_file
+
+def set_sb_files(self, sb_files):
+    """Set the SplitBank file associated with this AnalysisChunk to sb_file.
+
+    @param sb_file
+        the SplitBank file for this AnalysisChunk.
+    """
+    self.__sb_files = sb_files
+
+def get_sb_files(self):
+    """@returns the SplitBank output files for this AnalysisChunk.
+    """
+    return self.__sb_files
+
+def set_sky_grid_file(self, f):
+    """Set the sky_grid grid file associated with this AnalysisChunk to sb_node.
+
+    @param sb_node
+        the sky_grid grid file for this AnalysisChunk.
+    """
+    self.__sky_grid_file = f
+
+def get_sky_grid_file(self):
+    """@returns the sky_grid grid file for this AnalysisChunk.
+    """
+    return self.__sky_grid_file
+
+pipeline.AnalysisChunk.set_tb_file = set_tb_file
+pipeline.AnalysisChunk.get_tb_file = get_tb_file
+pipeline.AnalysisChunk.set_sb_files = set_sb_files
+pipeline.AnalysisChunk.get_sb_files = get_sb_files
+pipeline.AnalysisChunk.set_sky_grid_file = set_sky_grid_file
+pipeline.AnalysisChunk.get_sky_grid_file = get_sky_grid_file
+
+# =============================================================================
+# Verbose
+# =============================================================================
+
+PROFILE = False
+VERBOSE = False
+def print_verbose(message, verbose=True, stream=sys.stdout, profile=True):
+    """Print verbose messages to a file stream.
+
+    @param message
+        text to print
+    @param verbose
+        flag to print or not, default: False (don"t print)
+    @param stream
+        file object stream in which to print
+    @param profile
+        flag to print timestamp, default: False
+    """
+    if stream != sys.stderr:
+        profile &= PROFILE
+        verbose &= VERBOSE
+    if profile and message.endswith("\n"):
+        message = "%s (%.2f)\n" % (message.rstrip("\n"), elapsed_time())
+    if verbose:
+        stream.write(message)
+        stream.flush()
+
+
+# =============================================================================
+# Setup datafind
+# =============================================================================
+
+def setup_datafind(cp, data, logdir, run_datafind=True):
+    """Setup a datafind DAG for the given segmentlist segs, either with a
+    single job for the whole list, or one for each segment.
+
+    @param cp
+        ConfigParser representation of INI file
+    @param data
+        dict of (network, segments) pairs
+    @param logdir
+        path to log directory
+    """
+    tag = "datafind"
+    logdir = os.path.join(logdir, tag)
+    if run_datafind and not os.path.isdir(logdir):
+        os.makedirs(logdir)
+
+    # get networks
+    networks = data.keys()
+
+    # set dag
+    dag = pipeline.CondorDAG(os.path.join(logdir, "%s.log" % tag))
+    dag.set_dag_file(tag)
+    job = pipeline.LSCDataFindJob(os.curdir, logdir, cp)
+    dfcache = cache.Cache()
+
+    # build LSCDataFindNode
+    ftype = dict()
+    for network in networks:
+        ifos = lsctables.instrument_set_from_ifos(network)
+        for ifo in ifos:
+            if not ftype.has_key(ifo):
+                _,ftype[ifo],_ = inspiralutils.get_data_options(cp, ifo)
+            for seg in data[network]:
+                # initialise job
+                node = pipeline.LSCDataFindNode(job)
+                node.set_start(seg.start())
+                node.set_end(seg.end())
+                node.set_observatory(ifo[0])
+                node.set_type(ftype[ifo])
+                node.set_category(tag)
+                dfcache.append(cache.CacheEntry.from_T050017(\
+                                   os.path.join(os.pardir, DATAFIND,
+                                                node.get_output()),
+                                   coltype=int))
+                # add to DAG and record
+                seg.set_df_file(node.get_output(), ifo=ifo)
+                dag.add_node(node)
+
+    return dag, dfcache
+
+# =============================================================================
+# Setup sky grids
+# =============================================================================
+
+def setup_sky(cp, data, usertag="COH_PTF_INSPIRAL_SKY_GRID",\
+              write_grid=True):
+    """Generate the sky grids for each network in the dict of (network,
+    segments) pairs, one per segment per network. The sky grids are
+    written into the given output directory with the given usertag,
+    assuming write_grid=True.
+
+    @param cp
+        ConfigParser representation of INI file
+    @param data
+        dict of (network, segments) pairs
+    @param usertag
+        identifier to include in output filenames
+    @param write_grid
+        boolean choice to write generate sky grids and write to disk,
+        if False: filenames will be determined but not written
+    """
+    # get networks
+    networks = data.keys()
+
+    # get config parameters
+    dt = cp.getfloat("sky", "timing-accuracy")
+    cov = cp.get("sky", "coverage")
+
+    # generate a grid for each networks
+    skyfile = None
+    skycache = cache.Cache()
+    for network in networks:
+        ifos = sorted(lsctables.instrument_set_from_ifos(network))
+        sites = sky.parse_sites(ifos)
+        # one for each segment: this accounts for celestial rotations
+        for seg in data[network]:
+            for chunk in seg:
+                outfile = os.path.join("%s-%s-%d-%d.txt"\
+                                       % (network, usertag, chunk.start(),\
+                                          chunk.end()-chunk.start()))
+                skyfile = outfile
+                chunk.set_sky_grid_file(outfile)
+                skycache.append(cache.CacheEntry.from_T050017(\
+                                os.path.join(os.pardir, SKYGRIDS, outfile),
+                                coltype=int))
+                if write_grid:
+                    gps = (chunk.start() + chunk.end())/2
+                    if len(sites)==2:
+                        grid = sky.TwoSiteSkyGrid(ifos, gps, dt=dt, sky=cov)
+                    elif len(sites)==3:        
+                        grid = sky.ThreeSiteSkyGrid(ifos, gps, dt=dt, sky=cov)
+                    else:
+                        raise NotImplementedError("Sky grids for more than "+\
+                                                  "3 sites have not been "+\
+                                                  "implemented yet, sorry...")
+                    if write_grid:
+                        with open(outfile, "w") as f:
+                            sky.tofile(f, grid, degrees=True)
+
+    if write_grid and skyfile:
+        ra,dec = numpy.loadtxt(skyfile, unpack=True)
+        # plot ortho projection   
+        plotutils.pylab.rcParams.update({"figure.figsize":[8,6]})
+        skyplot = "%s-%s_ORTHO-0-0.png" % (network, usertag)
+        centre = (ra.mean(), dec.mean())
+        plot = plotutils.SkyPositionsPlot(title="%s sky grid" % network)
+        plot.add_content(ra, dec)
+        plot.finalize(projection="ortho", centre=centre)
+        plot.savefig(skyplot)
+        # plot mollewiede projection
+        plotutils.pylab.rcParams.update({"figure.figsize":[12,6]})
+        plotutils.set_rcParams()
+        skyplot = skyplot.replace("ORTHO", "MOLL")
+        plot = plotutils.SkyPositionsPlot(title="%s sky grid" % network)
+        plot.add_content(ra, dec)
+        plot.finalize(projection="moll")
+        plot.savefig(skyplot)
+        plot.close()
+        plot.close()
+
+    return skycache
+
+# =============================================================================
+# Setup tmpltbank
+# =============================================================================
+
+def setup_tmpltbank(cp, data, logdir, usertag="COH_PTF_TMPLTBANK",\
+                    run_tmpltbank=True, run_splitbank=True):
+    """Setup a TmpltBankNode for this analysis, including all tmpltbank and
+    splitbank jobs.
+
+    @param cp
+        ConfigParser representation of INI file
+    @param data
+        dict of (network, segments) pairs
+    @param logdir
+        path to log directory
+    @param usertag
+        identifier to include in output filenames
+    @param run_tmpltank
+        add TmpltBankJobs to TmpltBankNode, default: True
+    @param run_splitbank
+        add SplitBankJobs to TmpltBankNode, default: True
+    """
+    tag = "tmpltbank"
+    logdir = os.path.join(logdir, tag)
+    if (run_tmpltbank or run_splitbank):
+        mkdir_p(logdir)
+
+    # get networks
+    networks = data.keys()
+
+    # set dag
+    dag = pipeline.CondorDAG(os.path.join(logdir, "%s.log" % tag))
+    dag.set_dag_file(tag)
+
+    # get template bank IFO
+    ifo = cp.get("tmpltbank-meta", "bank-ifo")
+    data_opts, ftype, channel = inspiralutils.get_data_options(cp, ifo)
+
+    # set tmpltbank job
+    job = inspiral.TmpltBankJob(cp)
+    if run_tmpltbank:
+        job.add_ini_opts(cp, "%s-tmpltbank" % ifo.lower())
+        job.add_ini_opts(cp, data_opts)
+        job.add_opt("channel-name", "%s:%s" % (ifo, channel))
+        set_job_files(job, tag, os.curdir, logdir)
+
+    tbcache = cache.Cache()
+    sbcache = cache.Cache()
+
+    # set splitbank job
+    sbjob = inspiral.SplitBankJob(cp)
+    num_split = cp.getint("splitbank-meta", "num-banks")
+    if num_split == 1:
+        print_verbose("SplitBank: num-split = 1, disabling SplitBank...\n")
+
+    # set plotting job
+    plotjob = inspiral.InspiralPlottingJob(cp, ["plot_triggers",\
+                                                "plot-tmpltbank-meta"],\
+                                           "plot_triggers", "png")
+    if plotjob._CondorJob__universe == "standard":
+        plotjob._CondorJob__universe = "vanilla"
+    plots = cp.options("plot-tmpltbank")
+    if run_tmpltbank:
+       set_job_files(job, "trig_plot", os.curdir, logdir)
+
+    # generate TmpltBankNode and SplitbankNode for each time chunk in
+    # each segment for each network
+    for network in networks:
+        for i,seg in enumerate(data[network]):
+            # get relevant datafind cache
+            datafind_cache = normjoin(os.pardir, DATAFIND,\
+                                      seg.get_df_file(ifo=ifo))
+            for j,chunk in enumerate(seg):
+                # make a template bank job for the master chunk
+                node = inspiral.TmpltBankNode(job)
+                node.set_category("tmpltbank")
+                node.set_start(int(chunk.start()))
+                node.set_end(int(chunk.end()))
+                node.set_ifo(ifo)
+                node.set_cache(datafind_cache)
+                # add to DAG and record
+                chunk.set_tb_file(node.get_output())
+                if run_tmpltbank:
+                    dag.add_node(node)
+
+                tbcache.append(cache.CacheEntry.from_T050017(\
+                                   os.path.join(os.pardir, TMPLTBANK,
+                                                node.get_output()),
+                                   coltype=int))
+
+                # make a splitbank node for the maseter chunk
+                if num_split == 1:
+                    chunk.set_sb_files([chunk.get_tb_file()])
+                else:
+                    sbnode = inspiral.SplitBankNode(sbjob)
+                    sbnode.set_category("splitbank")
+                    sbnode.set_bank(node.get_output())
+                    sbnode.set_num_banks(cp.get("splitbank-meta", "num-banks"))
+                    sbnode.add_parent(node)
+                    sbcache.extend(map(lambda f: cache.CacheEntry.from_T050017(\
+                                                   os.path.join(os.pardir,
+                                                                TMPLTBANK, f),
+                                                   coltype=int),
+                                       sbnode.get_output()))
+                    chunk.set_sb_files(sbnode.get_output())
+                    if run_splitbank:
+                        dag.add_node(sbnode)
+
+                # make plots
+                if i == 0 and j == 0:
+                    tmpltbank_file = node.get_output()
+                    for plot in plots:
+                        plotnode = inspiral.InspiralPlottingNode(plotjob)
+                        plotnode.add_var_opt("trigger-file", tmpltbank_file)
+                        for key,val in cp.items(plot):
+                            plotnode.add_var_opt(key, val)
+                        plottag = "TMPLTBANK_%s" % plot.replace("-","_").upper()
+                        outfile = tmpltbank_file.replace("TMPLTBANK", plottag)
+                        outfile = re.sub("(xml.gz|xml)\Z", "png", outfile)
+                        plotnode.add_var_opt("output-file", outfile)
+                        plotnode.add_parent(node)
+                        dag.add_node(plotnode)
+
+    return dag, tbcache, sbcache
+
+def setup_fixedbank(cp, fixed_bank_file, data, logdir, run_splitbank=True):
+    """Setup the analysis to use the fixed template bank given on the
+    command line.
+    """
+    tag = "fixedbank"
+    logdir = os.path.join(logdir, os.path.basename(os.getcwd()))
+    if run_splitbank:
+        mkdir_p(logdir)
+
+    # get networks
+    networks = data.keys()
+
+    # set dag
+    dag = pipeline.CondorDAG(os.path.join(logdir, "%s.log" % tag))
+    dag.set_dag_file(tag)
+
+    # set splitbank job
+    sbjob = inspiral.SplitBankJob(cp)
+
+    # copy the fixed bank to the tmpltbank folder
+    if not os.path.isfile(os.path.basename(fixed_bank_file)) or\
+    not os.path.samefile(fixed_bank_file, os.path.basename(fixed_bank_file)):
+        shutil.copy(fixed_bank_file, os.path.basename(fixed_bank_file))
+    fixed_bank_file = os.path.basename(fixed_bank_file)
+
+    # generate SplitBankNode for each time chunk in
+    # each segment for each network
+    sbcache = cache.Cache()
+    num_split = cp.getint("splitbank-meta", "num-banks")
+    if num_split == 1:
+        print_verbose("SplitBank: num-split = 1, disabling SplitBank...\n")
+    for network in networks:
+        for seg in data[network]:
+            # get relevant datafind cache
+            datafind_cache = normjoin(os.pardir, DATAFIND,\
+                                      seg.get_df_file(ifo=ifo))
+            for chunk in seg:
+                # record the template bank for the chunk
+                chunk.set_tb_file(fixed_bank_file)
+                if num_split == 1:
+                   chunk.set_sb_files([chunk.get_tb_file()])
+                else:
+                    # make a splitbank node for the maseter chunk
+                    sbnode = inspiral.SplitBankNode(sbjob)
+                    sbnode.set_category("splitbank")
+                    sbnode.set_bank(fixed_bank_file)
+                    sbnode.set_num_banks(cp.get("splitbank-meta", "num-banks"))
+                    try:
+                       sbcache.extend(map(lambda f:\
+                                          cache.CacheEntry.from_T050017(\
+                                              os.path.join(os.pardir,
+                                                           TMPLTBANK, f),
+                                              coltype=int),
+                                       sbnode.get_output()))
+                    except IndexError:
+                        raise RuntimeError("--fixed-bank-file argument "+\
+                                           "malformed. Must conform to "+\
+                                           "T050017 file naming convention.")
+                    # add to DAG and record
+                    chunk.set_sb_files(sbnode.get_output())
+                    if run_splitbank:
+                        dag.add_node(sbnode)
+
+    return dag, sbcache
+
+# =============================================================================
+# Set up search
+# =============================================================================
+
+def setup_search(cp, network, data, logdir, injection=None,
+                 injseed=None, time_slides=None, run_search=True):
+    """Setup a PTFInspiral DAG for this analysis, and the relevant
+    InspInjJob if required.
+
+    @param cp
+        ConfigParser representation of INI file
+    @param data
+        dict of (network, segments) pairs
+    @param logdir
+        path to log directory
+    @param usertag
+        identifier to include in output filenames
+    @param run_tmpltank
+        add TmpltBankJobs to TmpltBankNode, default: True
+
+    @returns (pipeline.CondorDAG, cache.Cache) for this core PTFInspiral run
+    """
+    tag = "coh_PTF_inspiral"
+    search = os.path.basename(os.getcwd())
+    logdir = os.path.join(logdir, search)
+    if run_search:
+        mkdir_p(logdir)
+
+    run_inspinj = injection is not None
+    run_time_slides = time_slides is not None
+
+    # get ifos
+    ifos = sorted(lsctables.instrument_set_from_ifos(network))
+    
+    # set dag
+    dag = pipeline.CondorDAG(os.path.join(logdir, "%s.log" % tag))
+    dag.set_dag_file(tag)
+
+    # set file tag
+    if run_inspinj:
+        filetag = re.sub("[-\s]", "_", injection.upper())
+    else:
+        filetag = FULL_DATA.upper()
+
+    # check time slides, defaulting to the "zero lag slide"
+    if run_time_slides:
+        slides = time_slides
+    else:
+        slides = [[0]*len(ifos)]
+
+    # set inspinj job
+    if run_inspinj:
+        job = inspiral.InspInjJob(cp)
+        set_job_files(job, "%s_inspinj" % tag, os.curdir, logdir)
+        job.add_ini_opts(cp, injection)
+        # build inspinj node
+        start = cp.getint("input", "gps-start-time")
+        end = cp.getint("input", "gps-end-time")
+        inspinjnode = inspiral.InspInjNode(job)
+        inspinjnode.set_start(start)
+        inspinjnode.set_end(end)
+        inspinjnode.set_seed(int(injseed))
+        dag.add_node(inspinjnode)
+
+    # copy bank veto file to output directory
+    bank_veto_file = cp.get("coh_PTF_inspiral", "bank-veto-templates")
+    bank_veto_copy = os.path.join(os.pardir, TMPLTBANK,\
+                                  os.path.basename(bank_veto_file))
+    if not os.path.isfile(bank_veto_file):
+        raise RuntimeError("Bank veto file %s not found." % bank_veto_file)
+    if not os.path.isfile(bank_veto_copy) or\
+    not os.path.samefile(bank_veto_file, bank_veto_copy):
+        shutil.copy(bank_veto_file, bank_veto_copy)
+    cp.set("coh_PTF_inspiral", "bank-veto-templates", bank_veto_copy)
+
+    # set job
+    job = inspiral.PTFInspiralJob(cp)
+    if injection:
+        job.add_ini_opts(cp, 'coh_PTF_inspiral-injection')
+    set_job_files(job, tag, os.curdir, logdir)
+    for ifo in ifos:
+        data_opts, ftype, channel = inspiralutils.get_data_options(cp, ifo)
+        job.add_opt("%s-data" % ifo.lower(), "")
+        job.add_opt("%s-channel-name" % ifo.lower(), "%s:%s" % (ifo, channel))
+    if run_inspinj:
+        job.add_opt("analyze-inj-segs-only", "")
+
+    # build analysis job for each time slide and template bank in each chunk
+    # in each segment
+    inspcache = cache.Cache()
+    for seg in data:
+        datafind_cache = dict((ifo, normjoin(os.pardir, DATAFIND,\
+                                        seg.get_df_file(ifo=ifo)))\
+                              for ifo in ifos)
+        for chunk in seg:
+            banks = map(lambda f: normjoin(os.pardir, TMPLTBANK, f),\
+                        chunk.get_sb_files())
+            for bank,slide in [(bank, slide) for slide in slides\
+                               for bank in enumerate(banks)]:
+                i,bank = bank
+                # make an inspiral job for the master chunk for
+                # this bank
+                node = inspiral.PTFInspiralNode(job)
+                node.set_category(tag)
+                node.set_start(int(chunk.start()))
+                node.set_end(int(chunk.end()))
+                node.set_trig_start(int(chunk.trig_start()))
+                node.set_trig_end(int(chunk.trig_end()))
+                node.set_ifo(network)
+                node.set_no_spin_bank(bank)
+                node.set_seed(i)
+                # prepare file tag
+                jobtag = filetag
+                if run_time_slides:
+                    jobtag += "_SLIDE"
+                    for j,ifo in enumerate(ifos):
+                        node.add_var_opt("%s-slide" % ifo.lower(), slide[j])
+                        jobtag += "_%s%d" % (ifo.upper(), slide[j])
+                jobtag = "%s_BANK_%d" % (jobtag, i)
+                # set usertag
+                node.set_user_tag(jobtag)
+                # set output file
+                node.set_output()
+                inspcache.append(cache.CacheEntry.from_T050017(\
+                                     os.path.join(os.pardir, search,
+                                                  node.get_output()),
+                                     coltype=int))
+                if run_search:
+                    # add injections
+                    if run_inspinj:
+                        node.set_injections(inspinjnode.get_output())
+                        node.add_parent(inspinjnode)
+                    # set datafind caches
+                    for ifo in ifos:
+                        node.add_var_opt("%s-frame-cache" % ifo.lower(),\
+                                         datafind_cache[ifo])
+                    # add sky grids
+                    node.add_var_opt("sky-positions-file",\
+                                     normjoin(os.pardir, SKYGRIDS,\
+                                              chunk.get_sky_grid_file()))
+                    node.add_var_opt("trigger-time",\
+                                     int((chunk.start()+chunk.end())//2))
+                    # add to dag and record
+                    dag.add_node(node)
+
+    return dag, inspcache
+
+# =============================================================================
+# Build time slides
+# =============================================================================
+
+def build_time_slides(cp, network):
+    """Build a list of time slides for this analysis, given the detector list
+    ifos and the configuration cp.
+
+    @param cp
+        ConfigParser representation of INI file
+    @param network
+        list of interferometers for this time slide
+
+    @returns a M-item list of N-tuples (for M slides and N detectors
+    in the network)
+    """
+    numslides = cp.getint("time-slides", "num-slides")
+    numsegs = cp.getint("data", "number-of-segments")
+
+    # build slide vectors
+    vector = dict()
+    for ifo in ifos:
+        offset = cp.getint("time-slides", "%s-slide-offset" % ifo.lower())
+        slide = cp.getint("time-slides", "%s-slide" % ifo.lower())
+        vector[ifo] = [(offset + i*slide) % numsegs for i in range(numslides)]
+    slides = map(list, zip(*[vector[ifo] for ifo in ifos]))
+
+    # normalize slides to 0 for first detector
+    for i,slide in enumerate(slides):
+        o = slide[0]
+        for j,ifo in enumerate(ifos):
+            slides[i][j] = (slides[i][j] - o) % numsegs
+
+    return slides
+
+# =============================================================================
+# Set up clustering
+# =============================================================================
+
+def setup_clustering(cp, network, data, inspcache, logdir,\
+                     time_slides=None, injection_run=None,
+                     run_clustering=True):
+    """Setup a clustering DAG for this analysis.
+
+    @param cp
+        ConfigParser representation of INI file
+    @param data
+        dict of (network, segments) pairs
+    @param inspcache
+        glue.lal.Cache of inspiral files to be clustered
+    @param logdir
+        path to log directory
+    @param time_slides
+        list of time slides for this analysis
+    @param run_clustering
+        boolean switch to write clustering DAG, rather than just
+        generate the filenames.
+
+    @returns a pipeline.CondorDAG for the clustering stage, and a cache
+    containing the clustered output trigger files.
+    """
+    tag = "coh_PTF_cluster"
+    search = os.path.basename(os.getcwd())
+    logdir = os.path.join(logdir, search)
+    if run_clustering and not os.path.isdir(logdir):
+        os.makedirs(logdir)
+
+    # set tag dependent on time slides
+    if time_slides is not None:
+        ifos = sorted(lsctables.instrument_set_from_ifos(network))
+    else:
+        time_slides = [None]
+
+    # set dag
+    dag = pipeline.CondorDAG(os.path.join(logdir, "%s.log" % tag))
+    dag.set_dag_file(tag)
+
+    # set job
+    uni = cp.get("condor", "universe")
+    if uni == "standard":
+        uni = "vanilla"
+    exe = cp.get("condor", tag)
+    job = pipeline.CondorDAGJob(uni,exe)
+    set_job_files(job, tag, os.curdir, logdir)
+    job.add_ini_opts(cp, tag)
+    if not injection_run:
+        job._CondorJob__options.pop("preserve-sim-inspiral", None)
+    clcache = cache.Cache()
+
+    tag = (injection_run and "%s injections" % injection_run or
+           time_slides[0] and "time slides" or "zero-lag")
+
+    N = len(data)
+    for i,seg in enumerate(data):
+        segment = segments.segment(seg.start(), seg.end())
+        for slide in time_slides:
+            if injection_run:
+                filetag = injection_run.upper()
+                segcache = inspcache.sieve(segment=segment)
+            elif slide:
+                filetag = "%s_%s_" \
+                           % (FULL_DATA_SLIDE.upper(),
+                              "_".join(["%s%d" % (ifo.upper(), s)\
+                                       for s,ifo in zip(slide, ifos)]))
+                segcache = inspcache.sieve(segment=segment)
+                segcache = segcache.sieve(description=filetag)
+                filetag = filetag[:-1]
+            else:
+                filetag = FULL_DATA.upper()
+                segcache = inspcache.sieve(segment=segment)
+            d = abs(segment)
+            cachefile = "%s-COH_PTF_INSPIRAL_%s-%d-%d.lcf"\
+                        % (network, filetag, segment[0], d)
+            outfile = "%s-COH_PTF_INSPIRAL_%s_CLUSTERED-%d-%d.xml.gz"\
+                       % (network, filetag, segment[0], d)
+            if run_clustering:
+                with open(cachefile, "w") as f:
+                    segcache.tofile(f)
+            node = pipeline.CondorDAGNode(job)
+            node.add_var_opt("cache-file", cachefile)
+            node.add_var_opt("output-file", outfile)
+            clcache.append(
+                cache.CacheEntry.from_T050017(os.path.join(os.pardir, search,
+                                                           outfile),
+                                              coltype=int))
+            dag.add_node(node)
+        print_verbose("Building clustering dag for %s... %.2d%%\r"
+                      % (tag, int((i+1)/N*100)), verbose=run['clustering'],
+                      profile=False)
+    print_verbose("Building clustering dag for %s... 100%%\n" % tag,
+                  verbose=run['clustering'])
+
+    return dag, clcache
+
+
+# =============================================================================
+# Set up injfinder
+# =============================================================================
+
+def setup_dqv(cp, network, xml_cache, logdir, run_dqv=True):
+    """Setup a veto DAG for this analysis.
+    """
+    tag = "coh_PTF_dqv"
+    logdir = os.path.join(logdir, os.path.basename(os.getcwd()))
+    if run_dqv and not os.path.isdir(logdir):
+        os.makedirs(logdir)
+
+    # set dag
+    dag = pipeline.CondorDAG(os.path.join(logdir, "%s.log" % tag))
+    dag.set_dag_file(tag)
+
+    # set injfinder job
+    job = pipeline.CondorDAGJob("vanilla", cp.get("condor", tag))
+    job.add_ini_opts(cp, tag)
+    set_job_files(job, tag, os.curdir, logdir)
+
+    # get params
+    gpsstart = cp.getint("input", "gps-start-time")
+    gpsend = cp.getint("input", "gps-end-time")
+    gpsdur = gpsend-gpsstart
+    vetoes = sorted(map(int, cp.get("segments", "veto-categories").split(",")))
+    ifos = lsctables.instrument_set_from_ifos(network)
+
+    # set up injfinder nodes
+    segdir = os.path.join(os.pardir, SEGMENTS)
+    dqv_cache = cache.Cache()
+    for i,cat in enumerate(vetoes):
+        vetofiles = []
+        for ifo in ifos:
+            for c in vetoes[:i+1]:
+                vetofiles.append(os.path.join(segdir,
+                                              "%s-VETOTIME_CAT%d-%d-%d.xml"
+                                              % (ifo, c, gpsstart, gpsdur)))
+        for e in xml_cache:
+            fp = e.path
+            node = pipeline.CondorDAGNode(job)
+            node.add_var_opt("segment-file", ",".join(vetofiles))
+            outfile = fp.replace(e.description,
+                                 "%s_CAT%d" % (e.description, cat))
+            node.add_var_opt("output-file", outfile)
+            node.add_var_arg(fp)
+            dqv_cache.append(cache.CacheEntry.from_T050017(outfile,
+                                                           coltype=int))
+            dag.add_node(node)
+
+    if run_dqv:
+        e = xml_cache[0]
+        desc = e.description
+        while re.search("_SLIDE_[A-Z]\d+_", desc):
+            desc = re.sub("_SLIDE_[A-Z]\d+_", "_SLIDE_", desc)
+        cachefile = ("%s-%s-%d-%d.lcf"
+                     % (e.observatory, desc, gpsstart, gpsdur))
+        with open(cachefile, "w") as f:
+            xml_cache.tofile(f)
+        for cat in vetoes:
+            cat_cache = dqv_cache.sieve(description="CAT%d" % cat)
+            e = cat_cache[0]
+            desc = e.description
+            while re.search("_SLIDE_[A-Z]\d+_", desc):
+               desc = re.sub("_SLIDE_[A-Z]\d+_", "_SLIDE_", desc)
+            cachefile = ("%s-%s-%d-%d.lcf"
+                         % (e.observatory, desc, gpsstart, gpsdur))
+            with open(cachefile, "w") as f:
+                cat_cache.tofile(f)
+
+    return dag, dqv_cache
+
+
+# =============================================================================
+# Set up injfinder
+# =============================================================================
+
+def setup_sbv(cp, network, xml_cache, logdir, run_sbv=True):
+    """Setup a signal-based veto DAG for this analysis.
+    """
+    tag = "coh_PTF_sbv"
+    logdir = os.path.join(logdir, os.path.basename(os.getcwd()))
+    if run_sbv and not os.path.isdir(logdir):
+        os.makedirs(logdir)
+
+    # set dag
+    dag = pipeline.CondorDAG(os.path.join(logdir, "%s.log" % tag))
+    dag.set_dag_file(tag)
+
+    # set job
+    job = pipeline.CondorDAGJob("vanilla", cp.get("condor", tag))
+    job.add_ini_opts(cp, tag)
+    set_job_files(job, tag, os.curdir, logdir)
+
+    # get params
+    gpsstart = cp.getint("input", "gps-start-time")
+    gpsend = cp.getint("input", "gps-end-time")
+    gpsdur = gpsend-gpsstart
+    vetoes = map(int, cp.get("segments", "veto-categories").split(","))
+    ifos = lsctables.instrument_set_from_ifos(network)
+
+    # set up injfinder nodes
+    sbv_cache = cache.Cache()
+    for e in xml_cache:
+        fp = e.path
+        node = pipeline.CondorDAGNode(job)
+        outfile = fp.replace(e.description, "%s_SBV" % e.description)
+        node.add_var_opt("output-file", outfile)
+        node.add_var_arg(fp)
+        sbv_cache.append(cache.CacheEntry.from_T050017(outfile, coltype=int))
+        dag.add_node(node)
+
+    if run_sbv:
+        e = sbv_cache[0]
+        desc = e.description
+        nodq_cache = sbv_cache.sieve(description="*_CLUSTERED_SBV",
+                                     exact_match=True)
+        while re.search("_SLIDE_[A-Z]\d+_", desc):
+            desc = re.sub("_SLIDE_[A-Z]\d+_", "_SLIDE_", desc)
+        cachefile = ("%s-%s-%d-%d.lcf"
+                     % (e.observatory, desc, gpsstart, gpsdur))
+        with open(cachefile, "w") as f:
+            nodq_cache.tofile(f)
+        for cat in vetoes:
+            cat_cache = sbv_cache.sieve(description="CAT%d" % cat)
+            e = cat_cache[0]
+            desc = e.description
+            while re.search("_SLIDE_[A-Z]\d+_", desc):
+               desc = re.sub("_SLIDE_[A-Z]\d+_", "_SLIDE_", desc)
+            cachefile = ("%s-%s-%d-%d.lcf"
+                         % (e.observatory, desc, gpsstart, gpsdur))
+            with open(cachefile, "w") as f:
+                cat_cache.tofile(f)
+
+    return dag, sbv_cache
+
+# =============================================================================
+# Set up injfinder
+# =============================================================================
+
+def setup_injfind(cp, injcache, logdir, run_injfind=True):
+    """Setup a clustering DAG for this analysis.
+
+    @param cp
+        ConfigParser representation of INI file
+    @param injcache
+        glue.lal.Cache of injection mulit_inspiral files to test
+    @param logdir
+        path to log directory
+    @param run_injfind
+        boolean switch to write injfind DAG, rather than just
+        generate the filenames.
+
+    @returns a pipeline.CondorDAG for the injfind stage
+    """
+    tag = "injfind"
+    logdir = os.path.join(logdir, os.path.basename(os.getcwd()))
+    if run_injfind and not os.path.isdir(logdir):
+        os.makedirs(logdir)
+
+    # set dag
+    dag = pipeline.CondorDAG(os.path.join(logdir, "%s.log" % tag))
+    dag.set_dag_file(tag)
+
+    # set injfinder job
+    job = inspiral.InjFindJob(cp)
+    if job._CondorJob__universe == "standard":
+        job._CondorJob__universe = "vanilla"
+    set_job_files(job, tag, os.curdir, logdir)
+
+    # set up injfinder nodes
+    for injfile in injcache.pfnlist():
+        node = inspiral.InspInjFindNode(job)
+        node.add_var_arg(injfile)
+        dag.add_node(node)
+
+    return dag
+
+# =============================================================================
+# Set files for Condor job
+# =============================================================================
+
+def set_job_files(job, tag, subdir, logdir, stddir=None,\
+                  overwrite=False):
+    """Set the sub_file, log_file, stderr_file, and stdout_file attributes
+    of the given CondorJob.
+
+    @param job
+        CondorJob whose attributes are to be written
+    @param tag
+        nomnitive tag for this Job
+    @param subdir
+        submit directory for this Job
+    @param logdir
+        log directory for this Job
+    @param stddir
+        directory in which to write stdout (*.out) and stderr (*.err)
+        files, defaults to subdir/logs
+    @param overwrite
+        choose to overwrite existing attributes, default False, i.e.
+        only write those attributes not written yet
+    """
+    if not stddir:
+        stddir = os.path.join(subdir, "logs")
+    mkdir_p(subdir)
+    mkdir_p(logdir)
+    mkdir_p(stddir)
+
+    # set tag for log files
+    logtag = "$(cluster)-$(process)"
+
+    # set attributes
+    if overwrite or not job.get_sub_file():
+        job.set_sub_file(normjoin(subdir, "%s.sub" % (tag)))
+    if overwrite\
+    or (hasattr(job, "_CondorJob_log_file") and job._CondorJob_log_file)\
+    or (hasattr(job, "_log_file") and job._log_file):
+        job.set_log_file(normjoin(logdir, "%s-%s.log" % (tag, logtag)))
+    if overwrite or not job.get_stderr_file():
+        job.set_stderr_file(normjoin(stddir, "%s-%s.err" % (tag, logtag)))
+    if overwrite or not job.get_stdout_file():
+        job.set_stdout_file(normjoin(stddir, "%s-%s.out" % (tag, logtag)))
+
+    # tell condor to use the submission environment for the job
+    job.get_condor_cmds().setdefault("getenv", "True")
+
+# =============================================================================
+# Finalise DAG object
+# =============================================================================
+
+def finalise_DAG(dag, parents=[]):
+    """Completes the generation of a CondorDAG by writing the associated
+    submit files, sh script and DAG file.
+
+    @returns a pipeline.CondorDAGManNode for this DAG with the
+    appropriate dependencies from the parents list.
+    """
+    dag.write_sub_files()
+    dag.write_dag()
+    dag.write_script()
+    dagfile = list(os.path.split(dag.get_dag_file()))
+    if not dagfile[0].startswith("/"): 
+        base =  os.path.basename(os.getcwd())
+        dagfile[0] = normjoin(base, dagfile[0])
+    DAGManJob = pipeline.CondorDAGManJob(dagfile[1],dagfile[0])
+    DAGManNode = pipeline.CondorDAGManNode(DAGManJob)
+    for node in parents:
+        DAGManNode.add_parent(node)
+
+    return DAGManNode
+
+
+# =============================================================================
+# Check grid proxy
+# =============================================================================
+
+def check_grid_proxy():
+    """Check the GSI proxy and make sure there's an hour's worth of time to run
+    datafind jobs.
+    """
+    # find certificates
+    cert, key = datafind.find_credential()
+    datafind.validate_proxy(cert)
+    
+    # load certificate
+    proxy = M2Crypto.X509.load_cert(cert)
+    proxy.get_ext("proxyCertInfo")
+
+    # get expiry time
+    expiry = proxy.get_not_after().__str__()
+    expiryGMT = time.strptime(expiry, "%b %d %H:%M:%S %Y %Z")
+    expiryUTC = calendar.timegm(expiryGMT)
+    expiry = expiryUTC - int(time.time())
+    time_needed = 3600*1
+    if expiry < time_needed:
+        raise RuntimeError("Not enough time left on grid proxy (%d seconds)"\
+                           % expiry)
+
+# =============================================================================
+# Set directories
+# =============================================================================
+
+def set_analysis_directories(outdir, start, end):
+    """ 
+    Set the directories for this analysis inside the given output
+    directory
+
+    @param outdir
+        output path for this analysis
+    @param start
+        GPS start time
+    @param end
+        GPS end time
+
+    @returns analysis directory and dict of (name, path) pairs for
+    auxiliary directories for:
+        - "executables"
+        - "segments"
+        - "datafind"
+        - "tmpltbank"
+        - "skygrids"
+    """
+    gps_tag = "%d-%d" % (start, end)
+    if not outdir.endswith(gps_tag):
+        outdir = os.path.join(outdir, gps_tag)
+
+    # make output directory
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
+    os.chdir(outdir)
+
+    return outdir
+
+# =============================================================================
+# Generate analysis segments
+# =============================================================================
+
+def find_selected_segments(cp, ifos, apply_cat_one=False,\
+                           generate_segments=False):
+    """Find the single detector segments allowed for this analysis.
+    @returns dict of (ifo, segments.segmentlist) pairs.
+    """
+    # get GPS limits
+    start = cp.getfloat("input", "gps-start-time")
+    end   = cp.getfloat("input", "gps-end-time")
+
+    # get segment params
+    n       = cp.getfloat("data", "segment-length")
+    s       = cp.getint("data", "number-of-segments")
+    r       = cp.getint("data", "sample-rate")
+    o       = cp.getfloat("inspiral", "segment-overlap")
+    length  = ( n * s - ( s - 1 ) * o ) / r
+    overlap = o / r
+
+    # get segment database
+    segurl = cp.get("segfind", "segment-url")
+
+    segs = segments.segmentlistdict()
+
+    # get science segments
+    for ifo in ifos:
+        segfile = "%s-SELECTED_SEGMENTS-%d-%d.txt" % (ifo.upper(), start, end)
+        cp.set("input", "%s-segments" % ifo.lower(), segfile)
+        segs[ifo] = segments.segmentlist()
+        if generate_segments:
+            flags = cp.get("segments", "%s-analyze" % ifo.lower()).split(",")
+            for flag in flags:
+                segs[ifo] +=\
+                        dqSegmentUtils.grab_segments(start, end, flag, segment_url=segurl)
+            segs[ifo] = segs[ifo].coalesce()
+
+            print_verbose("%s science segments downloaded.\n" % ifo)
+
+            # apply cat one
+            if apply_cat_one:         
+                cat1= cp.get("vetoes", "%s-category-1" % ifo.lower())
+                segs[ifo] -= readsegments(cat1)
+
+            # apply minimum length
+            segs[ifo] = type(segs[ifo])([s for s in segs[ifo]\
+                                         if abs(segs[ifo])>=length])
+
+            with open(segfile, "w") as f:
+                segmentsUtils.tosegwizard(f, segs[ifo])
+            print_verbose("%s segments selected.\n" % ifo)
+        with open(segfile, "r") as f:
+            segs[ifo] = segmentsUtils.fromsegwizard(f)
+
+    return segs
+
+def find_coincident_segments(cp, networks, segdict, generate_segments=False):
+    """Find those multi-detector analysis segments for the given networks.
+
+    @param cp
+        ConfigParser representation of INI file
+    @param networks
+        list of multi-detector network strings, e.g. "G1H1L1"
+    @param segdict
+        dict of single-detector (ifo, segmentlist) pairs
+    @param generate_segments
+        boolean switch to generate and record analysis segments, if
+        False: just read them from disk from last time
+    @param plot
+        boolean switch to plot each single- and multi-detector
+        segmentlist
+    """
+    # get GPS limits
+    pad = cp.getint("data", "pad-data")
+    start = cp.getfloat("input", "gps-start-time")
+    end = cp.getfloat("input", "gps-end-time")
+    seglen = cp.getfloat("data", "segment-length")
+    numseg = cp.getint("data", "number-of-segments")
+    rate = cp.getint("data", "sample-rate")
+    stride = cp.getfloat("inspiral", "segment-overlap")
+    length = (seglen * numseg - (numseg-1) * stride) / rate
+    overlap = stride / rate
+
+    span = segments.segmentlist([segments.segment(start, end)])
+
+    # get ifos
+    networks.sort(key=lambda n: (len(n),n))
+    ifos = set()
+    for net in networks:
+        ifos.update(lsctables.instrument_set_from_ifos(net))
+    ifos = sorted(list(ifos))
+
+    # save single IFO segments for plot
+    psegs = segments.segmentlistdict()
+    for ifo in ifos:
+        psegs[ifo] = copy.deepcopy(segdict[ifo])
+
+    # find coincident segments for largest network to smallest
+    data = dict()
+    for tag in networks[::-1]:
+        segfile = "%s-SELECTED_SEGMENTS-%d-%d.txt" % (tag, start, end-start)
+        cp.set("input", "%s-segments" % tag.lower(), segfile)
+        c = lsctables.instrument_set_from_ifos(tag)
+        segdict[tag] = segments.segmentlist()
+        data[tag]    = pipeline.ScienceData()
+        if generate_segments:
+            # get coinc segs for this network
+            for i,ifo in enumerate(c): 
+                if i==0:
+                    segdict[tag] += segdict[ifo]
+                else:
+                    segdict[tag] &= segdict[ifo]
+            # remove the coinc segs for the next network
+            for ifo in c:
+                segdict[ifo] -= segments.segmentlist([s for s in segdict[tag]\
+                                                      if abs(s) >= length])
+
+            # write to file
+            with open(segfile, "w") as f:
+                segmentsUtils.tosegwizard(f, segdict[tag])
+            print_verbose("%s coincident segments generated.\n" % tag)
+        with open(segfile, "r") as f:
+            segdict[tag] = segmentsUtils.fromsegwizard(f)
+        data[tag].read(segfile, length + 2*pad)
+
+    if generate_segments:
+        segdict.update(psegs)
+        params = plotutils.parse_plot_config(cp, "plotsegments")
+        params.setdefault("title", "%s coherent analysis segments"\
+                                   % "".join(ifos))
+        params.setdefault("subtitle", "%d-%d" % (start, end))
+        plotutils.set_rcParams()
+        plotsegments.plotsegmentlistdict(\
+            segdict, "%s-SEGMENTS-%d-%d.png"\
+                     % ("".join(ifos), start, end-start),\
+            keys=sorted(segdict.keys(), key=lambda x:(len(x), x),\
+                        reverse=True),
+            xlim=[start,end], **params)
+        print_verbose("Segments plotted.\n")
+
+    return data
+
+def find_analysis_segments(cp, data, play=0):
+    """Find the analysable segments for each network from the ScienceData
+    for that segment. Modifies the ScienceData in place.
+
+    @param cp
+        ConfigParser representation of INI file
+    @param data
+        ScienceData for this network
+    @param playground
+        length of playground, default: 0
+    """
+    play = int(play)
+
+    # find analysis segments
+    pad = cp.getint("data", "pad-data")
+    start = cp.getfloat("input", "gps-start-time")
+    end = cp.getfloat("input", "gps-end-time")
+    seglen = cp.getfloat("data", "segment-length")
+    numseg = cp.getint("data", "number-of-segments")
+    rate = cp.getint("data", "sample-rate")
+    stride = cp.getfloat("inspiral", "segment-overlap")
+    length = (seglen * numseg - (numseg-1) * stride) / rate
+    overlap = stride / rate
+
+    data.make_chunks(length, overlap, play, 0, overlap/2, pad)
+    data.make_chunks_from_unused(length, overlap/2, play, 0, 0, overlap/2, pad)
+
+# =============================================================================
+# Run from command line
+# =============================================================================
+
+if __name__ == "__main__":
+
+    # parse command line
+    epilog = "This script will write a directory structure, including "+\
+             "any auxiliary files, and a nested DAG for running under "+\
+             "condor. If you're having trouble, e-mail cbc+code@ligo.org."
+    parser = optparse.OptionParser(description=__doc__,\
+                                   formatter=optparse.IndentedHelpFormatter(4),\
+                                   epilog=epilog)
+    parser.add_option("-v", "--verbose", action="store_true", default=False,\
+                      help="show verbose output, default: %default")
+    parser.add_option("-V", "--version", action="version",\
+                      help="show program's version number and exit")
+    parser.version =  __version__
+
+    # add basic options
+    desc = "Required options for search span, and configuration. "+\
+           "The configuration file should be INI format and should define "+\
+           "all necessary components, including the injection runs."
+    basicopts = optparse.OptionGroup(parser, "Basic options", description=desc)
+
+    basicopts.add_option("-s", "--gps-start-time", action="store",\
+                         type="int", metavar="GPSSTART",\
+                         default=os.getenv("GPSSTART", None),\
+                         help="begin analysis at GPSSTART, default: %default")
+    basicopts.add_option("-e", "--gps-end-time", action="store",\
+                         type="int", metavar="GPSEND",\
+                         default=os.getenv("GPSEND", None),\
+                         help="end analysis at GPSEND, default %default")
+    basicopts.add_option("-f", "--config-file", action="store", type="string",\
+                         metavar="CONFIGFILE",\
+                         default=os.getenv("CONFIGFILE", None),\
+                         help="read configuration from CONFIGFILE, "+\
+                              "default: %default")
+
+    # add directory options
+    diropts = optparse.OptionGroup(parser, "Directory options")
+    diropts.add_option("-o", "--output-dir", action="store", type="string",\
+                       metavar="PATH", default=os.getcwd(),\
+                       help="output directory, default: %default")
+    diropts.add_option("-p", "--log-dir", action="store", type="string",\
+                       metavar="LOGPATH", default=os.getenv("LOGPATH", None),\
+                       help="directory to write condor log file, "+\
+                            "should be a local directory: default: %default")
+
+    # add source options
+    desc = "Choose search mode between all-aky (default) and triggered."
+    sourceopts = optparse.OptionGroup(parser, "Source options",\
+                                      description=desc)
+    sourceopts.add_option("-t", "--triggered", action="store_true",\
+                          default=False,\
+                          help="run a triggered search, default: %default")
+
+    # add template options
+    desc = "Choose options for the template bank"
+    tmpltopts = optparse.OptionGroup(parser, "Template options",\
+                                     description=desc)
+    tmpltopts.add_option("-b", "--fixed-bank-file", action="store",\
+                         type="string", metavar="FILE",\
+                         help="use fixed template bank from FILE")
+
+    # add pipeline options
+    desc = "Skip sections of the pipeline (useful for rerunning parts). "+\
+           "By default the pipeline is run in full."
+    pipeopts = optparse.OptionGroup(parser, "Pipeline options",\
+                                    description=desc)
+    pipeopts.add_option("-S", "--skip-generate-segments", action="store_false",
+                        default=True, dest="run_generate_segments",
+                        help=("skip generating segments for analysis, "
+                              "default: False"))
+    pipeopts.add_option("-D", "--skip-generate-veto-segments",
+                        action="store_false", default=True,
+                        dest="run_generate_veto_segments",
+                        help=("skip generating segments for analysis, "
+                              "default: False"))
+    pipeopts.add_option("-G", "--skip-generate-sky-grids", default=True,
+                        action="store_false", dest="run_generate_sky_grids",
+                        help=("skip generating sky grids, default: False"))
+    pipeopts.add_option("-B", "--skip-datafind", action="store_false",
+                        default=True, dest="run_datafind",
+                        help=("skip the datafind step, default: False"))
+    pipeopts.add_option("-T", "--skip-tmpltbank", action="store_false",
+                        default=True, dest="run_tmpltbank",
+                        help=("skip the template bank generation, "
+                              "default: False"))
+    pipeopts.add_option("-X", "--skip-splitbank", action="store_false",
+                        default=True, dest="run_splitbank",
+                        help=("skip the template bank splitting, "
+                              "default: False"))
+    pipeopts.add_option("-1", "--skip-pre-processing", action="store_false",
+                        default=True, dest="run_pre_processing",
+                        help=("skip all pre-processing, shortcut for -SDGBTX, "
+                              "default: %default"))
+    pipeopts.add_option("-F", "--skip-full-data", action="store_false",
+                        default=True, dest="run_full_data",
+                        help=("skip the full data search, default: False"))
+    pipeopts.add_option("-P", "--skip-playground", action="store_false",
+                        default=True, dest="run_playground",
+                        help=("skip the playground analysis, default: False"))
+    pipeopts.add_option("-I", "--skip-injections", action="store_false",
+                        default=True, dest="run_injections",
+                        help=("skip the inspiral analysis with software "
+                              "injections, default: False"))
+    pipeopts.add_option("-A", "--skip-search", action="store_false",
+                        default=True, dest="run_search",
+                        help=("skip the search of the data, default: False"))
+    pipeopts.add_option("-H", "--skip-time-slides", action="store_false",
+                        default=True, dest="run_time_slides",
+                        help=("skip the time slides, default: False"))
+    pipeopts.add_option("-2", "--skip-processing", action="store_false",
+                        default=True, dest="run_processing",
+                        help=("skip all processing, shortcut for -FPIAH, "
+                              "default: %default"))
+    pipeopts.add_option("-C", "--skip-clustering", action="store_false",
+                        default=True, dest="run_clustering",
+                        help=("skip trigger clustering, default: False"))
+    pipeopts.add_option("-W", "--skip-data-quality",
+                        action="store_false", default=True, dest="run_dqv",
+                        help=("skip application of data quality vetoes, "
+                              "default: False"))
+    pipeopts.add_option("-O", "--skip-signal-based-vetoes",
+                        action="store_false", default=True, dest="run_sbv",
+                        help=("skip signal-based vetoes, default: False"))
+    pipeopts.add_option("-E", "--skip-injection-finding", action="store_false",
+                        default=True, dest="run_injfind",
+                        help=("skip injection finding, default: False"))
+    pipeopts.add_option("-Z", "--skip-plots", action="store_false",
+                        default=True, dest="run_plots",
+                        help=("skip the plotting step, default: False"))
+    pipeopts.add_option("-U", "--skip-followup", action="store_false",
+                        default=True, dest="run_followup",
+                        help=("skip the event followup, default: False"))
+    pipeopts.add_option("-3", "--skip-post-processing", action="store_false",
+                        default=True, dest="run_post_processing",
+                        help=("skip all post processing, shortcut for "
+                              "-CWOEZU, default: %default"))
+
+    # collect groups
+    parser.add_option_group(basicopts)
+    parser.add_option_group(diropts)
+    parser.add_option_group(sourceopts)
+    parser.add_option_group(tmpltopts)
+    parser.add_option_group(pipeopts)
+
+    # parse options and arguments
+    opts, args = parser.parse_args()
+    parser.destroy()
+
+    VERBOSE = opts.verbose
+
+    # assert all required options
+    req_opts = ["gps_start_time", "gps_end_time", "config_file"]
+    for opt in req_opts:
+        if not getattr(opts, opt):
+            raise optparse.OptionValueError("--%s is a required option"\
+                                            % re.sub("_", "-", opt))
+
+    # set up blocks
+    if not opts.run_pre_processing:
+        opts.run_generate_segments = False
+        opts.run_generate_veto_segments = False
+        opts.run_generate_sky_grids = False
+        opts.run_datafind = False
+        opts.run_tmpltbank = False
+        opts.run_splitbank = False
+    if not opts.run_processing:
+        opts.run_full_data = False
+        opts.run_playground = False
+        opts.run_injections = False
+        opts.run_search = False
+        opts.run_time_slides = False
+    if not opts.run_post_processing:
+        opts.run_clustering = False
+        opts.run_dqv = False
+        opts.run_sbv = False
+        opts.run_injfind = False
+        opts.run_plots = False
+        opts.run_followup = False
+
+    # set default options
+    if opts.log_dir is None:
+        opts.log_dir = opts.output_dir
+
+    # check template bank file
+    if opts.fixed_bank_file and opts.run_tmpltbank:
+        print_verbose("--template-bank-file was given, "
+                      "applying --skip-tmpltbank.\n", stream=sys.stderr)
+        opts.run_tmpltbank = False
+
+    # format options
+    #opts.config_file = os.path.abspath(opts.config_file)
+    #opts.output_dir = os.path.abspath(opts.output_dir)
+    #opts.log_dir = os.path.abspath(opts.log_dir)
+    if opts.fixed_bank_file and not os.path.isfile(opts.fixed_bank_file):
+        raise optparse.OptionValueError("Fixed-bank-file argument \'%s\' "\
+                                        "not found." % opts.fixed_bank_file)
+    if opts.fixed_bank_file:
+        opts.fixed_bank_file = os.path.abspath(opts.fixed_bank_file)
+
+    # get times
+    start = opts.gps_start_time
+    end = opts.gps_end_time
+ 
+    # get config file
+    cp = ConfigParser.ConfigParser()
+    cp.optionxform = str
+    cp.read(opts.config_file)
+    cp.filename = opts.config_file
+
+    # get directories
+    outdir = opts.output_dir
+    logdir = opts.log_dir
+
+    # get run opts
+    run = dict((opt.split("_", 1)[1], getattr(opts, opt))\
+               for opt in opts.__dict__ if opt.startswith("run_"))
+
+    print_verbose("Command line read, generating coherent pipeline.\n")
+
+    # get duration
+    duration = end-start
+
+    # set directories
+    outdir = set_analysis_directories(outdir, start, end)    
+    os.chdir(outdir)
+    print_verbose("Directories set.\n")
+
+    # check proxy
+    check_grid_proxy()
+    print_verbose("Grid proxy verified.\n")
+
+    # set values in the ini file
+    if not cp.has_section("input"): cp.add_section("input")
+    cp.set("input", "gps-start-time", str(start))
+    cp.set("input", "gps-end-time", str(end))
+
+    # set condor executables
+    mkdir_p(EXECUTABLES)
+    for (job, exe) in cp.items("condor"):
+        if job != "universe": 
+            # copy executable
+            if not os.access(exe, os.R_OK):
+                raise IOError("Cannot read %s executable %s." % (job, exe))
+            shutil.copy(exe, EXECUTABLES)
+            # rename new executable, with child directory
+            exe = os.path.join(EXECUTABLES, os.path.basename(exe))
+            if not exe.startswith("/"):
+                exe = os.path.join(os.pardir, exe)
+            cp.set("condor", job, exe)
+    print_verbose("Condor executables checked.\n")
+
+    # ============================
+    # set up DAG
+    
+    basename = os.path.splitext(os.path.basename(cp.filename))[0]
+
+    # get a new log directory
+    date = datetime.date.today().strftime("%Y%m%d")
+    logrand = ''.join(random.choice(string.ascii_uppercase + string.digits)\
+                      for x in range(6))
+    logtag = "%s_%s_%s" % (basename, date, logrand)
+    logdir = os.path.join(logdir, logtag)
+    if not os.path.isdir(logdir):
+        os.makedirs(logdir)
+    print_verbose("Condor log files will be written to\n%s\n" % logdir)
+
+    # create a log file that the Condor jobs will write to
+    logname = "%s.dag.log" % basename
+    tempfile.tempdir = logdir
+    logfile = tempfile.mktemp(prefix=logname)
+    open(logfile, "w").close()
+
+    # create the DAG writing the log to the specified directory
+    dag = pipeline.CondorDAG(logfile)
+    dag.set_dag_file(basename)
+    dagnode = dict()
+
+    cachedict = dict()
+
+    # ============================
+    # set up IFOs
+
+    lalDetectors = [d.frDetector.prefix for d in lal.lalCachedDetectors]+["C1"]
+    ifos = sorted([ifo for ifo in lalDetectors\
+                   if cp.has_option("ifo-details", "%s-data" % ifo.lower())])
+
+    print_verbose("Setting up an analysis for %s from %s to %s...\n"\
+                  % ("".join(ifos), start, end))
+
+    # get ifo combinations
+    networks= []
+    for i,c in enumerate(["one", "two", "three", "four", "five", "six"]):
+        if i <= len(ifos) and cp.has_option("ifo-details", "%s-ifo" % c):
+            networks.extend(map(lambda n: "".join(n),\
+                                itertools.combinations(ifos, i+1)))
+    
+    # ============================
+    # get segments
+
+    tag = SEGMENTS
+    mkdir_p(tag, chdir=True)
+    
+    # get veto categories
+    veto_categories = sorted(list(map(int, cp.get("segments",\
+                                               "veto-categories").split(","))))
+    
+    # get veto definer
+    veto_file =\
+        inspiralutils.downloadVetoDefFile(cp, run["generate_veto_segments"])
+    
+    # generate veto xml files
+    inspiralutils.generate_veto_cat_files(cp, veto_file,\
+                                          run["generate_veto_segments"])
+    
+    # add veto xml files to config
+    if not cp.has_section("vetoes"): cp.add_section("vetoes")
+    for ifo,cat in [(i,c) for i in ifos for c in veto_categories]:
+        f = "%s-VETOTIME_CAT%d-%d-%d.xml" % (ifo.upper(), cat, start, end)
+        cp.set("vetoes", "%s-category-%d" % (ifo.lower(), cat), f)
+     
+    # find science segments
+    segs = find_selected_segments(cp, ifos, apply_cat_one=1 in veto_categories,
+                                  generate_segments=run["generate_segments"])
+    
+    # find coincident segments
+    data = find_coincident_segments(cp, networks, segs,\
+                                    generate_segments=run["generate_segments"])
+        
+    # find analysis segments
+    for network in networks:
+        find_analysis_segments(cp, data[network], play=False)
+
+    if run["generate_segments"]:
+        print_verbose("Segments generated.\n")
+    
+    os.chdir(os.pardir)
+
+    #
+    #
+    # pre-processing
+    #
+    #
+
+    # ============================
+    # set up sky grids
+
+    tag = SKYGRIDS
+    mkdir_p(tag, chdir=True)
+    cachedict[tag] = setup_sky(cp, data, write_grid=run["generate_sky_grids"])
+    if run["generate_sky_grids"]:
+        print_verbose("Sky grid generation complete.\n")
+    os.chdir(os.pardir)
+
+    # ============================
+    # set up datafind
+
+    tag = DATAFIND
+    mkdir_p(tag, chdir=True)
+    _dag, cachedict[tag] = setup_datafind(cp, data, logdir)
+    if run[tag]:
+        dagnode[tag] = finalise_DAG(_dag, [])
+        dag.add_node(dagnode[tag])
+        print_verbose("datafind setup complete.\n")
+
+    os.chdir(os.pardir)
+
+    # ============================
+    # setup tmpltbank
+
+    parents = run["datafind"] and [dagnode["datafind"]] or []
+
+    tag = TMPLTBANK
+    mkdir_p(tag, chdir=True)
+
+    if opts.fixed_bank_file:
+        _dag, cachedict["splitbank"] =\
+            setup_fixedbank(cp, opts.fixed_bank_file, data, logdir,\
+                            run_splitbank=run["splitbank"])
+        cachedict[tag] = cache.Cache()
+    else:
+        _dag, cachedict[tag], cachedict["splitbank"] =\
+            setup_tmpltbank(cp, data, logdir, run_tmpltbank=run["tmpltbank"],\
+                            run_splitbank=run["splitbank"])
+    if run["tmpltbank"]\
+    or (run["splitbank"] and cp.getint("splitbank-meta", "num-banks") != 1):
+        dagnode[tag] = finalise_DAG(_dag, parents)
+        dag.add_node(dagnode[tag])
+        print_verbose("tmpltbank setup complete.\n")
+    os.chdir(os.pardir)
+
+    #
+    #
+    # processing
+    #
+    #
+
+    parents = (run["tmpltbank"] and [dagnode["tmpltbank"]] or
+               run["datafind"] and [dagnode["datafind"]] or
+               [])
+
+    # ============================
+    # setup zero-lag inspiral
+
+    mkdir_p(FULL_DATA, chdir=True)
+    for network in networks:
+        tag = "%s_%s" % (FULL_DATA, network.lower())
+        node, cachedict[tag] = setup_search(cp, network, data[network],\
+                                            logdir, injection=None)
+        if run["full_data"]:
+            dagnode[tag] = finalise_DAG(node, parents)
+            dag.add_node(dagnode[tag])
+    os.chdir(os.pardir)
+    print_verbose("full data search setup complete.\n", verbose=run["full_data"])
+
+    # ============================
+    # set up injections
+
+    # read injections from ini file
+    injruns = dict(cp.items("injections"))
+
+    for injrun in injruns:
+        mkdir_p(injrun, chdir=True)
+        for network in networks:
+            tag = "%s_%s" % (injrun, network.lower())
+            _dag, cachedict[tag] = setup_search(cp, network, data[network],\
+                                                logdir, injection=injrun,
+                                                injseed=int(injruns[injrun]))
+            if run["injections"]:
+                dagnode[tag] = finalise_DAG(_dag, parents)
+                dag.add_node(dagnode[tag])
+        os.chdir(os.pardir)
+        print_verbose("%s injections search setup complete.\n"\
+                      % injrun, verbose=run["injections"])
+
+    # ============================
+    # set up time slides
+
+    slides = {}
+
+    mkdir_p(FULL_DATA_SLIDE, chdir=True)
+    for network in networks:
+        tag = "%s_%s" % (FULL_DATA_SLIDE, network.lower())
+        slides[network] =\
+            build_time_slides(cp, lsctables.instrument_set_from_ifos(network))
+        _dag, cachedict[tag] = setup_search(cp, network, data[network],\
+                                            logdir, injection=None,\
+                                            time_slides=slides[network])
+        if run["time_slides"]:
+            dagnode[tag] = finalise_DAG(_dag, parents)
+            dag.add_node(dagnode[tag])
+    os.chdir(os.pardir)
+    if run["time_slides"]:
+        print_verbose("Time slide setup complete.\n", verbose=run["time_slides"])
+
+    #
+    #
+    # post proceessing starts now
+    #
+    #
+
+    searches = [FULL_DATA, FULL_DATA_SLIDE] + list(injruns)
+    if not run['time_slides']:
+        searches.pop(1)
+    if not run["full_data"]:
+        searches.pop(0)
+
+    # ============================
+    # set up clustering
+
+    for search in searches:
+        os.chdir(search)
+        for network in networks:
+            searchtag = "%s_%s" % (search, network.lower())
+            tag = "%s_%s_clustered" % (search, network.lower())
+            ptag = "%s_%s" % (search, network.lower())
+            slide = "slide" in search and slides[network] or None
+            _dag, cachedict[tag] =\
+                setup_clustering(cp, network, data[network],\
+                                 cachedict[ptag], logdir, time_slides=slide,\
+                                 injection_run=(search in injruns and search or
+                                                None),
+                                 run_clustering=run["clustering"])
+            if run["clustering"]:
+                if run["search"]:
+                    parents = [dagnode[searchtag]]
+                else:
+                    parents = []
+                dagnode[tag] = finalise_DAG(_dag, parents)
+                dag.add_node(dagnode[tag])
+        os.chdir(os.pardir)
+    print_verbose("Clustering setup complete.\n", verbose=run["clustering"])
+
+    # ============================
+    # set up data quality vetoes
+
+    for search in searches:   
+        os.chdir(search.lower())
+        for network in networks:
+            tag = "%s_%s_dqv" % (search, network.lower())
+            ptag = "%s_%s_clustered" % (search, network.lower())
+            _dag, cachedict[tag] = setup_dqv(cp, network, cachedict[ptag],
+                                             logdir, run_dqv=run["dqv"])
+            if run["dqv"]:
+                if run["clustering"]:
+                    parents = [dagnode[ptag]]
+                else:
+                    parents = []
+                dagnode[tag] = finalise_DAG(_dag, parents)
+                dag.add_node(dagnode[tag])
+        os.chdir(os.pardir)
+    print_verbose("Data quality veto setup complete.\n", verbose=run["dqv"])
+
+    # ============================
+    # set up signal-based vetoes
+
+    for search in searches:
+        os.chdir(search.lower())
+        for network in networks:
+            tag = "%s_%s_sbv" % (search, network.lower())
+            ptag = "%s_%s_dqv" % (search, network.lower())
+            ctag = "%s_%s_clustered" % (search, network.lower())
+            _dag, cachedict[tag] = setup_sbv(cp, network,
+                                             cachedict[ctag]+cachedict[ptag],
+                                             logdir, run_sbv=run["sbv"])
+            if run["sbv"]:
+                if run["sbv"]:
+                    parents = [dagnode[ptag]]
+                else:
+                    parents = []
+                dagnode[tag] = finalise_DAG(_dag, parents)
+                dag.add_node(dagnode[tag])
+        os.chdir(os.pardir)
+    if run['sbv']:
+        print_verbose("Signal-based veto setup complete.\n", verbose=run["sbv"])
+
+    # ============================
+    # set up injection finding
+
+    for injrun in injruns:
+        os.chdir(injrun)
+        for network in networks:
+            tag = "%s_%s_injfind" % (injrun, network.lower())
+            ptag = "%s_%s_sbv" % (injrun, network.lower())
+            _dag = setup_injfind(cp, cachedict[ptag], logdir,
+                                 run_injfind=run["injfind"])
+            if run["injfind"]:
+                if run["clustering"]:
+                    parents = [dagnode[ptag]]
+                else:
+                    parents = []
+                dagnode[tag] = finalise_DAG(_dag, parents)
+                dag.add_node(dagnode[tag])
+            os.chdir(os.pardir)
+    if run['injfind']:
+        print_verbose("Injection finding setup complete.\n",
+                      verbose=run["injections"])
+
+    # ============================
+    # set up plotting
+
+    # ============================
+    # set up search results
+
+    # ============================
+    # finalise pipeline
+
+    # set the number of retries for each of the sub-dags run by ihope
+    if cp.has_option("pipeline", "retry-subdag"):
+        num_retries = int(cp.get("pipeline","retry-subdag"))
+        for node in dag.get_nodes(): node.set_retry(num_retries)
+
+    # write the cache
+    allcache = cache.Cache()
+    for sect,subcache in cachedict.iteritems():
+        for e in subcache:
+            if not isinstance(e, cache.CacheEntry):
+                raise RuntimeError(sect)
+            allcache.append(e)
+    cachefile = os.path.join(outdir, "%s.lcf" % basename)
+    with open(cachefile, "w") as f:
+        allcache.tofile(f)
+
+    # Write the dag and sub files
+    dag.write_sub_files()
+    dag.write_dag()
+
+    print_verbose("""
+================================================================================
+
+DAG ready. Submit to condor by executing
+
+cd {0}
+condor_submit_dag {1}
+
+and follow the progress by executing (in the GPSSTART-GPSEND directory)
+
+lalapps_ihope_status --dag-file {1}
+
+================================================================================
+""".format(outdir, dag.get_dag_file()))
+
+    # DONE

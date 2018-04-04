@@ -1,0 +1,231 @@
+#!/usr/bin/python
+
+__author__ = "Drew Keppel <keppel_d@ligo.caltech.edu>"
+
+import sys
+import os
+from optparse import *
+import re
+import exceptions
+import glob
+import ConfigParser
+import random
+from types import *
+
+from glue import segmentsUtils
+from pylal import git_version
+
+#####################################################################
+# function to read in and populate information about each mass range
+def read_lcp_file(file):
+  """
+  read an file which is formatted according to lalapps_compute_posterior output
+  return a 2-d array with each line of the file as a row in the array
+  @param file:  file name
+  @param time:  analyzed time associated with this file
+  """
+  f = open( file , "r")
+  lines = f.readlines()
+  f.close()
+
+  lcp_data = []
+  for line in lines:
+    if line[0] != '#':
+      lcp_line = get_lcp_array([float(val) for val in line.split()])
+      lcp_data.append(lcp_line)
+           
+  return lcp_data
+
+#############################################################################
+def get_lcp_array(data):
+  """
+  extract the data from a line in a lcp file, and store as a dictionary
+  @param data:  a list of values read from a line of a png input file
+  """
+  param = {}
+  param["mlo"]           = data[0]
+  param["mhi"]           = data[1]
+  param["unmargrate"]    = data[2]
+  param["margrate"]      = data[3]
+
+  return param
+
+#############################################################################
+# make steps so that fill will work properly
+def makesteps(ularray,ymax,k):
+  """
+  make the arrays to shade the region above the limit
+  @param ularray: the array containing the upper limit details
+  @param ymax:    the maximum value for the y plo
+  @param k:       the index of the value to be plotted on y-axis
+  """
+  xnew=[]
+  ynew=[]
+  for i in arange(len(ularray[:,0])):
+    xnew.append(ularray[i,0])
+    xnew.append(ularray[i,1])
+    ynew.append(ularray[i,k])
+    ynew.append(ularray[i,k])
+  
+  # fill in the top
+  xnew.append(ularray[-1,1])
+  ynew.append(ymax)
+  xnew.append(ularray[0,0])
+  ynew.append(ymax)
+
+  xnew = asarray(xnew)
+  ynew = asarray(ynew)
+
+  return xnew,ynew
+
+##############################################################################
+usage = """usage: %prog [options]
+
+Creating Upper Limit vs Mass Plot
+
+Creates the final upperlimit vs mass plot using the output
+of lalapps_compute_posterior (lcp-upperlimit). 
+
+Example:
+
+"""
+parser = OptionParser(usage=usage, version=git_version.verbose_msg)
+
+parser.add_option("-g","--computepost-glob",action="store",type="string",\
+    default=None, metavar=" FNAME",\
+    help="glob containing the output from lalapps_compute_posterior" )
+parser.add_option("-s","--show-plot",action="store_true",default=False,\
+    help="display the figures on the terminal" )
+parser.add_option("-V","--verbose",action="store_true",default=False,\
+    help="display verbose output" )
+parser.add_option("-R","--mass-region-type",action="store",type="string",\
+    default="none", metavar=" TYPE", \
+    help="type of mass regions for rate vs mass plot" )
+
+# plotting details
+parser.add_option("-F","--figure-name",action="store",type="string",\
+    default=None,metavar=" FNAME",\
+    help="generate png figures with name FNAME_PlotType.png")
+parser.add_option("-f","--figure-type",action="store",type="string",\
+    default="png",metavar=" FTYPE",\
+    help="generate figures with of the format FTYPE (png|eps|ps)")
+parser.add_option("-y","--ymin",action="store",type="float",\
+    default=0.001, metavar=" YMIN",
+    help="minimum value on y-axis for rate vs mass plot (default = 1e-3)" )
+parser.add_option("-Y","--ymax",action="store",type="float",\
+    default=100.0, metavar=" YMAX", 
+    help="maximum value on y-axis for rate vs mass plot (default = 1e2)" ) 
+
+(opts,args) = parser.parse_args()
+
+
+if not opts.computepost_glob:
+  print >>sys.stderr, "Must give at least one lalapps_compute_posterior file\n"
+  sys.exit(0)
+
+if not ( opts.figure_type == "png" or opts.figure_type == "eps" \
+         or opts.figure_type == "ps" ):
+  print >>sys.stderr, "--figure-type must be one of (png|eps|ps)\n"
+  sys.exit(0)
+
+#####################################################################
+# Do the pylab import in such a way that doesn't require an X display
+# if show() won't be invoked.
+if not opts.show_plot:
+  import matplotlib
+  matplotlib.use('Agg')
+from pylab import *
+if not opts.show_plot:
+  rc('text', usetex=True)
+
+###########################################################################
+# each lcp-output has a different file which can have parameters for a
+# sequence of different masses.  The ulmatrix is a list of lists of
+# dictionaries.  The first index is the given by the number of epochs,
+# the second by the number of mass windows.
+ulmatrix = []
+lcpFiles = glob.glob(opts.computepost_glob)
+for region in range(len(lcpFiles)):
+  ulmatrix.append(read_lcp_file(lcpFiles[region]))
+
+# note len(matrix) returns the number of rows in the matrix
+# massBins is given by the number of rows in the png files 
+# (assumed the same for all files)
+massBins = 0
+massOrder = {}
+for idx in range(len(ulmatrix)):
+  massBins += len(ulmatrix[idx])
+  massOrder[ulmatrix[idx][0]["mlo"]] = idx  
+
+keys = massOrder.keys()
+keys.sort()
+
+bin = 0
+ularray = zeros((massBins,4),"float32")
+massLimits = []
+for key in keys:
+  for idx in range(len(ulmatrix[massOrder[key]])):
+    ularray[bin,0]=ulmatrix[massOrder[key]][idx]["mlo"]
+    ularray[bin,1]=ulmatrix[massOrder[key]][idx]["mhi"] - \
+                   ulmatrix[massOrder[key]][idx]["mlo"]
+    ularray[bin,2]=ulmatrix[massOrder[key]][idx]["unmargrate"]
+    ularray[bin,3]=ulmatrix[massOrder[key]][idx]["margrate"]
+    bin += 1
+  massLimits.append(\
+      ulmatrix[massOrder[key]][len(ulmatrix[massOrder[key]])-1]["mhi"])
+
+
+#########################################
+# start the plot with the a semilogy axis
+figure()
+semilogy(ularray[:,0],opts.ymax + 0.0*ularray[:,0],'w+',label='_nolegend_')
+hold(True)
+
+###########################
+# set the color of the bars
+barColor=['0.8','0.5']
+
+#####################################
+# plot the unmarginalized upper limit
+bar(left=ularray[:,0],width=ularray[:,1],height=1.0+opts.ymax-ularray[:,2],
+    bottom=ularray[:,2],color=barColor[0],label='unmarginalized')
+
+##############################################
+# add the marginalized upper limit to the plot
+bar(left=ularray[:,0],width=ularray[:,1],height=1.0+opts.ymax-ularray[:,3],
+    bottom=ularray[:,3],color=barColor[1],label='marginalized')
+
+##########################
+# add a legend to the plot
+leg=legend(loc='lower left')
+leg_text=leg.get_texts()
+setp(leg_text,fontsize='x-large')
+leg_boxes=leg.get_patches()
+for idx in range(len(leg_boxes)):
+  setp(leg_boxes[idx],facecolor=barColor[idx])
+
+###################################################################
+# add deliminators to plot showing regions of different backgrounds
+for idx in range(len(massLimits) - 1):
+  axvline(massLimits[idx],linewidth=2,color='k')
+
+ylim(opts.ymin,opts.ymax)
+xlim(min(ularray[:,0]), max(ularray[:,1]+ularray[:,0]))
+if opts.mass_region_type == "totalmass":
+  xlabel('Total Mass $(M_{\odot})$', size='x-large')
+if opts.mass_region_type == "componentmass":
+  xlabel('Black Hole Mass $(M_{\odot})$', size='x-large')
+ylabel('Rate $(yr^{-1}L_{10}^{-1})$', size='x-large')
+grid(True)
+junk,x_ticks=xticks()
+setp(x_ticks,fontsize='x-large')
+junk,y_ticks=yticks()
+setp(y_ticks,fontsize='x-large')
+
+if opts.figure_name:
+  savefig( opts.figure_name + "-rate-v-mass." + opts.figure_type )
+  
+# show the plots is asked
+if opts.show_plot:
+  show()
+

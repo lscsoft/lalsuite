@@ -1,0 +1,1 @@
+<?php echo "<title>$uTitle</title>\n" ?><LINK REL=StyleSheet HREF="./scripts/style.css" TYPE="text/css" MEDIA=screen>

@@ -1,0 +1,356 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2009  Tomoki Isogai
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+%prog --result_file=File [options]
+
+Tomoki Isogai (isogait@carleton.edu)
+
+This program creates a report page of all channels analyzed and put link to each channel report page.
+It lists veto candidate channels with the relevant values.
+
+Specify --min_cind_num to get rid of all the channels that don't have enough coincident triggers.
+"""
+
+import sys
+import  os
+import time
+import optparse
+import re
+
+try:
+    import sqlite3
+except ImportError:
+    # pre 2.5.x
+    from pysqlite2 import dbapi2 as sqlite3
+
+from glue.segments import segment, segmentlist
+from glue import segmentsUtils
+
+from pylal import git_version
+from pylal import KW_veto_utils
+
+__author__ = "Tomoki Isogai <isogait@carleton.edu>"
+__date__ = "7/10/2009"
+__version__ = "2.0"
+
+def parse_commandline():
+    """
+    Parse the options given on the command-line.
+    """
+    parser = optparse.OptionParser(usage=__doc__,version=git_version.verbose_msg)
+    parser.add_option("-r", "--result_dir",
+                      help="Directory with result files from KW_veto_calc. Required.")
+    parser.add_option("-m","--min_coinc_num", default=0, type="int",
+                      help="Minimum number of coincident KW triggers to be a veto candidate. (Default: 0)")
+    parser.add_option("-u", "--unsafe_channels",action="append",default=[],
+                      help="Code treat channels specified as unsafe. Can be provided multiple times to specify more than one channel.")
+    parser.add_option("-o","--out_dir", default=".",
+                      help="Output directory. (Default: current directory)")
+    parser.add_option("-l", "--scratch_dir", default=".",
+                      help="Scratch directory to be used for database engine. Specify local scratch directory for better performance and less fileserver load. (Default: current directory)")
+    parser.add_option("-v", "--verbose", action="store_true",
+                      default=False, help="Run verbosely. (Default: None)")
+    
+    opts, args = parser.parse_args()
+    
+    ########################## sanity check ####################################
+    
+    # check if necessary input exists
+    if opts.result_dir is None:
+      print >> sys.stderr, "Error: --result_dir is a required parameter"
+      sys.exit(1)
+    
+    opts.unsafe_channels = map(lambda x:x.upper().replace("-","_"),opts.unsafe_channels)
+        
+    ######################### show parameters ##################################
+    if opts.verbose:
+        print >> sys.stderr, ""
+        print >> sys.stderr, "running KW_veto_reportPage..."
+        print >> sys.stderr, git_version.verbose_msg
+        print >> sys.stderr, ""
+        print >> sys.stderr, "*************** PARAMETERS **********************"
+        for o in opts.__dict__.items():
+          print >> sys.stderr, o[0]+":"
+          print >> sys.stderr, o[1]
+        print >> sys.stderr, ""
+    
+    return opts
+    
+def candidate(data,channel):
+   """
+   determine if the channel is veto candidate
+   """
+   return data != None and data[2] >= opts.min_coinc_num and channel.find("DARM_ERR")==-1 and channel.find("DARM_CTRL")==-1 and channel.find("AS_I")==-1 and channel.find("AS_Q")==-1 and channel.find("PR_B1_ACP_40_1250")==-1 and channel.find("OMC_READOUT_OUT_DAQ")==-1
+
+def report_page():
+    """
+    creates summary report page
+    """
+
+    ############################## header ######################################
+    title = params['name_tag'].upper()
+
+    contents=["""
+    <html>
+    <head>
+    <meta content="text/html; charset=ISO-8859-1"
+    http-equiv="content-type">
+    <title>%s</title>
+    </head>
+    <body>
+    <big><big><big>%s</big></big></big><br>
+    <br>
+    <br>
+    """%(title,title)]
+    
+    ######################### candidate channel table ##########################
+    
+    ## make a table for those channels that go above the critical used percentage and have coincident trigger number above min_coinc_num
+    
+    
+    table = ["""
+    <big><b>Veto Candidate Channels</b></big><br>
+    Channels with the used percentage > %d%% and the number of coincident KW triggers >= %d are on this table. <br>
+    Some channels (GW channel etc.) are already excluded since they are not safe. <br>
+    Channels that didn't pass the safety probability test are highlighted in yellow.<br>
+    Channels that are in the a priori unsafe channel list (see the ini file) are highlighted in red. <br>
+    Channels highlighted in red or yellow are considered to be unsafe and won't be inserted into the segdb. <br>
+    (A list of all the analyzed channels follows below the table.)
+    <br><br>
+    <table border="1">
+    <tbody>
+    <tr>
+    <th>Channel</th>
+    <th>KW Significance Threshold</th>
+    <th>Used Percentage (%%)</th>
+    <th>Coincident KW</th>
+    <th>Total KW</th>
+    <th>Veto Efficiency (%%)</th>
+    <th>Dead Time Percentage (%%)</th>
+    <th>Used %% / Random Used %%</th>
+    <th>Veto Efficiency / Dead Time</th>
+    <th>Vetoed Injection / Total Injection</th>
+    <th>Expected Number</th>
+    <th>Probability</th>
+    <th>Safety</th>
+    </tr>
+    """%(params['critical_usedPer'],opts.min_coinc_num)]
+    all_list = ['<big>All Channels Analyzed</big>']
+
+    for chan in sorted(channel_info.keys()):
+      # derive necessary info
+      filePrefix = channel_info[chan][0]
+      data = channel_info[chan][1]
+      safety = channel_info[chan][2]
+
+      # exclude channels that we know they are not safe
+      if candidate(data,chan):
+        if unsafe.search(chan):
+          color = "red"
+        elif safety[3] == "Unsafe":
+          color ="yellow"
+        else:
+          color = "white"
+        table.append("""
+                <tr bgcolor="%s">
+                <td><a href="channel_pages/%s-report_page.html">%s</a></td>
+                <td>%d</td>
+                <td>%.2f</td>
+                <td>%d</td>
+                <td>%d</td>
+                <td>%.2f</td>
+                <td>%.4f</td>
+                <td>%.2f</td>
+                <td>%.2f</td>
+                <td>%s / %s</td>
+                <td>%s</td>
+                <td>%s</td>
+                <td>%s</td>
+                </tr>
+                """%(color,filePrefix,chan,data[0],data[1],data[2],data[3],
+                     data[5],data[7],data[8],data[9],
+                     safety[0],safety[4],safety[1],safety[2],safety[3]))
+
+      ############################## all channel #############################
+        
+      # for all the analyzed channels
+      # for candidate channels, comment veto info
+      all_list.append('<big><a href="channel_pages/%s-report_page.html">'\
+      %filePrefix + chan + "</a></big>")
+      all_list.append("comments:")
+      if data != None:
+        all_list.append("This channel goes over used percentage %d%%."%\
+                                                     params['critical_usedPer'])
+        all_list.append("At KW significance threshold %d, "%(data[0])+\
+                           "used percentage = %.2f %% "%(data[1])+\
+                           "(Coincident KW events / Total KW events = %d / %d)"\
+                                      %(data[2],data[3]))
+      all_list.append("<br>")
+    table.append("</tbody></table><br><br>")
+      
+    ############################# Overlap Table ############################
+    
+    ## make a table to show overlap
+
+    ## check overlap
+    # 2D dict
+    overlap = {}
+    for c1 in sorted(veto_segs.keys()):
+      overlap[c1]={}
+      for c2 in sorted(veto_segs.keys()):
+        overlap[c1][c2] = abs(veto_segs[c1] & veto_segs[c2])*1.0/abs(veto_segs[c2])*100
+
+
+    table2 = ["""
+    <big><b>Overlap</b></big><br>
+    The table below shows the overlaps between the candidate channels.<br>
+    The numbers by the channel names in parentheses are the thresholds used.<br>
+    The figures in the table are:<br>
+    (overlap time between two channels) / (total vetoed time by the channel on the column) * 100<br><br>
+    <table border="1">
+    <tbody>
+    <tr>\n
+    """]
+
+    # every 15 column, put channel name for readability
+
+    # first row - channel names
+    for i, c in enumerate(sorted(overlap)):
+        short_chan = " ".join(c.split("_")[1:-2])
+        if i % 15 == 0:
+          table2.append("<th>Channel Name</th>")
+        table2.append('<th><a href="channel_pages/%s-report_page.html"><small>%s</small></a></th>'%(channel_info[c][0],short_chan))
+    table2.append("<th>Channel Name</th></tr>\n")
+
+    # content
+    for c1 in sorted(overlap):
+        short_chan = "_".join(c1.split("_")[1:-2])
+        table2.append('<tr>')
+        for i, c2 in enumerate(sorted(overlap[c1])):
+          if i % 15 == 0:
+            table2.append('<td><a href="channel_pages/%s-report_page.html"><small>%s</small></a></td>'%(channel_info[c1][0],short_chan))
+          color_num = int((100 - overlap[c1][c2]) * 255 / 100)
+          color = "#ff%s%s"%(hex(color_num)[-2:],hex(color_num)[-2:])
+          table2.append('<td bgcolor="%s">%.2f%%</td>'%(color,overlap[c1][c2]))
+        table2.append('<td><a href="channel_pages/%s-report_page.html"><small><small>%s</small></small></a></td>'%(channel_info[c1][0],short_chan))
+        table2.append("</tr>\n")
+
+    # last row - channel names
+    for i, c in enumerate(sorted(overlap)):
+        short_chan = " ".join(c.split("_")[1:-2])
+        if i % 15 == 0:
+          table2.append("<th>Channel Name</th>")
+        table2.append('<th><a href="channel_pages/%s-report_page.html"><small>%s</small></a></th>'%(channel_info[c][0],short_chan))
+    table2.append("<th>Channel Name</th></tr>")
+
+    table2.append("</tbody></table><br><br>")
+    
+    # figure out the total dead time
+    if veto_segs.values() == []:
+      totalDeadTime = 0
+    else:
+      totalDeadTime = abs(reduce(lambda x, y: x | y, veto_segs.values()))
+    deadTimePer = totalDeadTime * 1.0 / abs(analyzed_segs) * 100
+
+    # add tables and list
+    contents.append("".join(table))
+    contents.append("<big><b>Total Dead Time: %d s (%.2f %%)</big></b><br><br><br>"%(totalDeadTime,deadTimePer))
+    contents.append("".join(table2))
+    contents.append("<br>\n".join(all_list))
+    
+    ################################# closing ##################################
+    user=os.environ['USER']
+    curTime=time.strftime('%m-%d-%Y %H:%M:%S',time.localtime())
+    contents.append("""
+    <small>
+    This page was created by user %s on %s
+    </small>
+    </body>
+    </html>
+    """%(user,curTime))
+    
+    ## save the page
+    chan_page = open("%s/index.html"%(baseDir),"w")
+    chan_page.write("".join(contents))
+    
+
+# =============================================================================
+#
+#                                  MAIN
+# 
+# =============================================================================
+
+# parse commandline
+opts = parse_commandline()
+
+# figure out channels in the result dir and get info
+# make a list of the result files from KW_veto_calc
+files_list = KW_veto_utils.get_result_files(opts.result_dir,opts.verbose)
+    
+# get unsafe channel list
+unsafe_channels = "|".join(opts.unsafe_channels)
+unsafe = re.compile(unsafe_channels,re.I) # re.I so that it's case insensitive
+
+## figure out which channel gets over a critical used percentage
+channel_info = {}
+veto_segs = {}
+for chan_file in files_list:    
+  if opts.verbose: 
+    print >> sys.stderr, "gathering infomation from %s..."%(chan_file)
+  try:
+    # retrieve info
+    # store info at the critical threshold for each channel
+    global working_filename
+    cursor, connection, working_filename, params = \
+         KW_veto_utils.load_db(chan_file, opts.scratch_dir, opts.verbose)
+    channel_name = params["channel"]
+    # channel_ifo is a dictionary {channel name: (filePrefix,candidate,safety)}
+    # candidate is a tuple:
+    # (threshold, used percentage, # of coincident KW triggers above the threshold, # of total KW triggers above the threshold, # of vetoed GW triggers, veto efficiency, dead time, dead time percentage, (used percentage) / (random used percentage), (veto efficiency) / (dead time percentage))   
+    # that corresponds to threshold to be used for veto
+    # OR just None for non candidate channel
+    # safety is another tuple:
+    # (vetoed # of HW injection, expectation number of vetoed HW injection, probability that at least N are vetoed given the expectation number, safety, total number of injections)
+    channel_info[channel_name] = (params["filePrefix"],KW_veto_utils.get_candidate(cursor,params["critical_usedPer"]),(params['HWInjNvetoed'],params['HWInjNexp'],params['HWInjProbability'],params['safety'],params['totalInjNum']))
+
+    # veto_segs is dictionary {channel name: veto segments} for candidates
+    if candidate(channel_info[channel_name][1],channel_name):
+      veto_segs[channel_name] = KW_veto_utils.load_segs_db(cursor,"veto_segments") 
+    analyzed_segs = KW_veto_utils.load_segs_db(cursor,"analyzed_segs")
+    connection.close()
+  finally:
+    # erase temporal database
+    if globals().has_key('working_filename'):
+      db = globals()['working_filename']
+      if opts.verbose:
+        print >> sys.stderr, "removing temporary workspace '%s'..." % db
+      os.remove(db)
+
+# create output directory if not exist
+baseDir = os.path.join(opts.out_dir,'%s_webpage'%params['name_tag'])
+if not os.path.exists(baseDir):
+  if opts.verbose:
+    print >> sys.stderr, "creating output directory %s..."%baseDir
+  os.makedirs(baseDir)
+
+# make the page
+report_page()
+        
+if opts.verbose: print >> sys.stderr, "KW_veto_reportPage done!"
+

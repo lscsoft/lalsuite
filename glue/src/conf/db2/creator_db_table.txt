@@ -1,0 +1,11 @@
+lho 1
+llo 2
+cit 3
+dev 4
+test 5
+mit 6
+uwm 7
+psu 8
+dev1 9
+dev2 10
+other -1

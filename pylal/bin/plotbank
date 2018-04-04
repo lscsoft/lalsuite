@@ -1,0 +1,131 @@
+#!/usr/bin/python
+
+__author__ = "Alexander Dietz <alexanderdietz1@googlemail.com>"
+
+import sys
+import optparse
+
+import matplotlib
+matplotlib.use('Agg')
+
+from glue import lal
+from pylal import git_version
+from pylal import SnglInspiralUtils
+from pylal import InspiralUtils
+from pylal import plotutils
+
+##############################################################################
+usage = """
+usage: %prog [options]
+
+Bank Plotting Function
+
+Generates plots of the used templatebank
+"""
+
+parser = optparse.OptionParser( usage=usage, version=git_version.verbose_msg)
+parser.add_option("-I", "--cache-file", \
+      help="Specifies the cache from which the filenames are taken from.")  
+parser.add_option("-T","--template-pattern",action="store",type="string",\
+    default=None, metavar="TMPLT",\
+    help="Specifies the pattern to select the template banks." )
+parser.add_option("-m","--m1-m2",action="store_true",default=False,\
+    help="Make plots of mass2 vs mass1" )
+parser.add_option("-M","--mchirp-eta",action="store_true",default=False,\
+    help="Make plots of eta vs mchirp" )
+parser.add_option("-t","--tau0-tau3",action="store_true",default=False,\
+    help="Make plots of tau3 vs tau0" )
+parser.add_option("-a","--all-plots",action="store_true",default=False,\
+    help="Makes all plots" )
+parser.add_option("-s","--show-plot",action="store_true",default=False,\
+    help="Display the figures on the terminal" )
+parser.add_option("--enable-output",action="store_true",default=False,\
+    help="Enables the plots to be written to files." )
+parser.add_option("--output-path",action="store",default="./",\
+    help="Specifies the output path for the page/images." )
+
+(opts,args) = parser.parse_args()
+
+
+if not (opts.m1_m2 or opts.mchirp_eta or opts.tau0_tau3 or opts.all_plots):
+  print >>sys.stderr, "Error: Must specify --m1-m2, --mchirp-eta, --tau0-tau3 or --all-plots."
+  sys.exit(1)
+
+if not opts.template_pattern:
+  print >>sys.stderr, "Error: Must specify a pattern to sieve the template files with '--template-pattern'."
+  sys.exit(1)
+
+
+# Now, use the Agg backend if it's unnecessary to call plot(), then do imports
+if not opts.show_plot:
+  import matplotlib
+  matplotlib.use('Agg')
+from matplotlib import pyplot as plt
+
+if opts.cache_file:
+  allfile_cache =  lal.Cache.fromfile(open(opts.cache_file)) 
+  sieved_cache = allfile_cache.sieve(description = opts.template_pattern,
+                                           exact_match = False)
+else:
+  raise ValueError, "Error: Must specify a cache file with '--cache-file'"
+
+
+#
+# read the templatebanks: only one for each IFO (the first)
+#
+dict_templates = {}
+for entry in sieved_cache:
+  # extract the IFO and the filename
+  ifo = entry.observatory
+  filename = entry.path
+
+  # and fill the dict with it
+  if ifo in dict_templates:
+    print "WARNING: There is already a template-bank associated with IFO %s. "\
+          "Will use instead the first templatebank found." % ifo
+  else:
+    dict_templates[ifo] = SnglInspiralUtils.ReadSnglInspiralFromFiles([filename])
+
+# HTML initialization
+page = InspiralUtils.InspiralPage(opts)
+
+# make the plots for each IFO
+for ifo, bank in dict_templates.iteritems():
+
+  if opts.m1_m2 or opts.all_plots:
+    plot = plotutils.SimplePlot(r"$m_1$", r"$m_2$","mass2 vs. mass1 for %s"%ifo)
+    plot.add_content([tmplt.mass1 for tmplt in bank], [tmplt.mass2 for tmplt in bank],\
+                     marker="x",linestyle="None")
+    plot.finalize()
+    if opts.enable_output:
+      page.add_plot(plot.fig, "mass2_vs_mass1_for_%s"%ifo )
+    if not opts.show_plot:
+      plot.close()
+
+  if opts.mchirp_eta or opts.all_plots:
+    plot = plotutils.SimplePlot(r"$\mathcal{M}$", r"$\eta$",r"$\eta$ vs. $\mathcal{M}$ for %s"%ifo)
+    plot.add_content([tmplt.mchirp for tmplt in bank], [tmplt.eta for tmplt in bank],\
+                     marker="x",linestyle="None")
+    plot.finalize()
+    if opts.enable_output:
+      page.add_plot(plot.fig, "eta_vs_mchirp_for_%s"%ifo )
+    if not opts.show_plot:
+      plot.close()
+
+  if opts.tau0_tau3 or opts.all_plots:
+    plot = plotutils.SimplePlot(r"$\tau_0$", r"$\tau_3$",r"$\tau_3$ vs. $\tau_0$ for %s"%ifo)
+    plot.add_content([tmplt.tau0 for tmplt in bank], [tmplt.tau3 for tmplt in bank],\
+                     marker="x",linestyle="None")
+    plot.finalize()
+    if opts.enable_output:
+      page.add_plot(plot.fig, "tau3_vs_tau0_for_%s"%ifo )
+    if not opts.show_plot:
+      plot.close()
+
+
+# Generate HTML and cache file
+page.write_page()
+
+if opts.show_plot:
+  plt.show()
+

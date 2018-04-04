@@ -1,0 +1,1 @@
+time	rightascension	polarisation	phase	massratio	logw	logmc	logdistance	logPrior	logL	inclination	distance	deltaloglH1	deltalogL	declination	chirpmass	LAL_PNORDER	LAL_APPROXIMANT	

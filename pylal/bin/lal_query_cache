@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+# Copyright (C) 2008  Nickolas Fotopoulos
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+"""
+Make queries against a given LAL-formatted cache file and print the matching
+entries.  Alternatively, provide --print-missing to print the entries whose
+files cannot be found on disk.
+"""
+
+import optparse
+import sys
+
+from glue.lal import Cache, CacheEntry
+from glue.segments import segment
+from pylal import git_version
+
+__author__ = "Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>"
+
+def format_cache(cache):
+    return "\n".join(map(str, cache))
+
+parser = optparse.OptionParser(usage="%prog [options] CACHEFILE",
+    version=git_version.verbose_msg)
+
+# query options
+parser.add_option("--select-description", metavar="PAT", help="select " \
+    "entries whose description strings match the glob-like pattern PAT")
+parser.add_option("--select-ifos", metavar="OBS", help="select " \
+    "entries whose observatory field (often overridden as IFO times) matches " \
+    "OBS")
+parser.add_option("--within-segment", metavar="SEG", help="select " \
+    "entries that overlap SEG, a comma-separated pair of start,stop")
+parser.add_option("--exact-match", action="store_true", default=False,
+    help="match patterns exactly")
+
+# can print all entries, only_found, or only_missed
+parser.set_defaults(print_which="all")
+parser.add_option("--only-found", dest="print_which", action="store_const",
+    const="only_found", help="print only entries whose files can be found " \
+    "on disk")
+parser.add_option("--only-missing", dest="print_which", action="store_const",
+    const="only_missing", help="print only entries whose files cannot be " \
+    "found on disk")
+
+opts, args = parser.parse_args()
+
+if opts.within_segment is not None:
+    start, end = map(int, opts.within_segment.split(","))
+    opts.within_segment = segment(start, end)
+
+if len(args) != 1:
+    parser.print_usage(sys.stderr)
+    sys.exit(2)
+
+# read cache
+cache = Cache.fromfile(open(args[0]), coltype=int)
+
+# do query
+sieved_cache = cache.sieve(description=opts.select_description,
+                           ifos=opts.select_ifos,
+                           segment=opts.within_segment,
+                           exact_match=opts.exact_match)
+
+# take action
+if opts.print_which == "all":
+    if len(sieved_cache) > 0:
+        print format_cache(sieved_cache)
+elif opts.print_which == "only_missing":
+    found, missing = sieved_cache.checkfilesexist(on_missing="ignore")
+    if len(missing) > 0:
+        print format_cache(missing)
+elif opts.print_which == "only_found":
+    found, missing = sieved_cache.checkfilesexist(on_missing="ignore")
+    if len(found) > 0:
+        print format_cache(found)
+else:
+    raise ValueError, "should never get here; file a bug report"
+

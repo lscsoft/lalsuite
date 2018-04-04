@@ -1,0 +1,660 @@
+#!/usr/bin/python
+"""
+ldbdd listens on a socket for connections from a client, processes the
+requests and then returns the results to the client.
+
+The server is built on top of the ThreadingGSITCPSocketServer from
+the io module in U{pyGlobus<http://www-itg.lbl.gov/gtg/projects/pyGlobus/>},
+which is build on top of the standard module SocketServer.
+
+This program is part of the Grid LSC User Environment (GLUE)
+
+GLUE is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+You should have received a copy of the GNU General Public License along with
+this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+import os
+import sys
+import signal
+import getopt
+import time
+import socket
+import ConfigParser
+import exceptions
+import logging
+import logging.handlers
+from pyGlobus import io
+from glue import gsiserverutils
+
+
+def SIGHUPhandler(signum, frame):
+  """
+  Handle SIGHUP signals by asking the server to stop its 
+  service, then read the gridmap file again and reconfigure, 
+  after which the service will automatically start again.
+
+  @param signum: signal number; see the documentation for the 
+    signal module
+
+  @param frame: current stack frame; see the documentation for
+    the signal module
+        
+  @return: None
+  """
+  global logger
+  global myServer
+  global myConfigParser
+  
+  myServer.stopService()
+  logger.info("Re-reading configuration file")
+
+  myConfigParser.read(configFilePath)
+  for k in configuration.keys():
+    try:
+      value = myConfigParser.get('ldbdd',k)
+    except ConfigParser.NoOptionError:
+      try:
+        logger.error("Error: missing configuration option : %s" % (k))
+      except:
+        print >> sys.stderr, "Error: missing configuration option : %s" % (k)
+      sys.exit(1)
+    try:
+      configuration[k] = eval(value)
+    except:
+      configuration[k] = value
+
+  logger.info("Re-initializing server module")
+  ServerModule.shutdown()
+  myServer.initialize()
+  ServerModule.initialize(configuration,logger)
+
+def SIGTERMhandler(signum, frame):
+  """
+  Handle SIGTERM signals by asking the server to stop and die.
+
+  @param signum: signal number; see the documentation for the 
+    signal module
+
+  @param frame: current stack frame; see the documentation for
+    the signal module
+        
+  @return: None
+  """
+  global myServer
+
+  myServer.die()
+
+
+def socketReadyCallback(arg, handle, result):
+  """
+  Called when a socket is ready for reading (when a connection has been made
+  and there is something to read).
+
+  This function simply sets a flag to let the server loop know the socket
+  is ready for reading.
+
+  @param arg: User supplied argument. Here it is used to carry the socket ready
+    flag.
+  @param handle: a pointer to the SWIG'ized globus_io_handle_t
+  @param result: a pointer to the SWIG'ized globus_result_t
+
+  @return: None
+  """
+  arg.mySocketReady = 1
+
+
+# parse command line options
+shortop = "c:dh"
+longop = [
+  "config-file=",
+  "daemon",
+  "help"
+  ]
+
+
+usage = """\
+Usage: ldbdd [OPTIONS]
+
+  -c, --config-file FILE    read configuration from FILE
+  -d, --daemon              run as a deamon
+  -h, --help                print detailed help message
+
+If no configuration file is given, the server will attempt to use
+
+  ${GLUE_PREFIX}/etc/ldbdd.ini
+
+Sending the server process a HUP will cause the confuration and grid-mapfile
+to be re-read and sending the process a TERM will shutdown the server.
+"""
+
+#default for command-line options
+runAsDaemon = False
+configFilePath = None
+
+try:
+  opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
+except getopt.GetoptError:
+  print >>sys.stderr, "Error parsing command line"
+  sys.exit(1)
+
+for o, a in opts:
+  if o in ("-d", "--daemon"):
+    runAsDaemon = True
+  if o in ("-c", "--config-file"):
+    configFilePath = a
+  if o in ("-h", "--help"):
+    print usage
+    sys.exit(0)
+
+try:
+  GLUE_PREFIX = os.environ["GLUE_PREFIX"]
+except:
+  pass
+
+if not configFilePath:
+  configFilePath = os.path.join(GLUE_PREFIX, "etc/ldbdserver.ini")
+
+# default configuration values may go here, but they will be replaced
+# by actual values if and when a ConfigurationManager instance is
+# created elsewhere
+configuration = {
+  'server' : None,
+  'ipaddr' : '',
+  'port' : 30015,
+  'secure' : 'yes',
+  'gridmap' : 'grid-mapfile',
+  'certfile' : 'ldbdcert.pem',
+  'keyfile' : 'ldbdkey.pem',
+  'dbname' : 'ldbd_tst',
+  'dbuser' : 'grid',
+  'rls' : 'rls://kitalpha.ligo.caltech.edu',
+  'dbpasswd' : '',
+  'max_client_byte_string': 1048576,
+  'pidfile' : 'ldbdd.pid',
+  'logfile' : 'ldbdd.log',
+  'logmaxbytes' : 1024 * 1024 * 1,
+  'logbackupcount' : 5,
+  'loglevel' : 'INFO',
+  'ldbd_com':'',
+  'db2_com':''
+  }
+
+
+# grab configuration
+myConfigParser = ConfigParser.ConfigParser()
+try:
+  myConfigParser.read(configFilePath)
+except:
+  print >> sys.stderr, "Error: unable to read configuration file : %s"
+  sys.exit(1)
+
+for k in configuration.keys():
+  try:
+    value = myConfigParser.get('ldbdd',k)
+  except ConfigParser.NoOptionError:
+    print >> sys.stderr, "Error: missing configuration option : %s" % (k)
+    sys.exit(1)
+  try:
+    configuration[k] = eval(value)
+  except:
+    configuration[k] = value
+
+# setup to cach HUP and SIGTERM
+signal.signal(signal.SIGHUP, SIGHUPhandler)
+signal.signal(signal.SIGTERM, SIGTERMhandler)
+
+# become a daemon
+if runAsDaemon:
+  gsiserverutils.daemon()
+
+# set up logging but don't set handler here since that is
+# configurable in the .ini file
+logger = logging.getLogger('ldbdd')
+
+
+class LDBDDaemonException(exceptions.Exception):
+  """
+  Class representing exceptions withing the LDBDDaemon class.
+  """
+  def __init__(self, args=None):
+    """
+    Initialize an instance.
+
+    @param args: 
+
+    @return: Instance of class ServerHandlerException
+    """
+    self.args = args
+
+
+class LDBDDaemon(object):
+  """
+  An instance of this class is a multi-threadead server that will listen on a
+  socket/port for connections from a client and will process requests.
+  """
+  def __init__(self,handler):
+    """
+    Perform any checks that are necessary before becoming a daemon and
+    starting a socket service to listen on. If any check fail print
+    to stderr and exit.
+
+    @param:
+
+    @return: instance of class LDBDDaemon
+    """
+    self.serverName = None
+    self.handler = handler
+    self.server = None
+
+    # verify that we have access to the certificate, key, grid-mapfile
+    certFilePath = configuration["certfile"]
+    if not os.access(certFilePath, os.R_OK):
+      print >>sys.stderr, "ldbdd: " + \
+      "Cannot access certificate file at %s" % certFilePath
+      sys.exit(1)
+
+    keyFilePath = configuration["keyfile"]
+    if not os.access(keyFilePath, os.R_OK):
+      print >>sys.stderr, \
+        "ldbdd: Cannot access key file at %s" % keyFilePath
+      sys.exit(1)
+
+    gridmapFilePath = configuration["gridmap"]
+    if not os.access(gridmapFilePath, os.R_OK):
+      print >>sys.stderr, \
+        "ldbdd: Cannot access grid-mapfile at %s" % gridmapFilePath
+      sys.exit(1)
+
+    # verify that we can write PID file
+    failure = 0
+    pidFilePath = configuration["pidfile"]
+    exists  = os.access(pidFilePath, os.F_OK)
+    if exists:
+      if not os.access(pidFilePath, os.W_OK):
+        failure = 1
+    else:
+      try:
+        f = open(pidFilePath, "w")
+        f.close()
+      except:
+        failure = 1
+                        
+    if failure:
+      print >>sys.stderr, \
+        "ldbdd: Cannot write PID to file %s" % pidFilePath
+      sys.exit(1)
+
+  def initialize(self):
+    """
+    Grab information from configuration and record it for this instance. Set
+    up logging.
+
+    @param:
+                
+    @return: None
+
+    """
+    global logger
+
+    if self.serverName is None:
+      msg = "Error: the server name is not configured"
+      raise LDBDDaemonException(msg)
+    if self.serverName != configuration["server"]:
+      msg = "Error: attempt to change service %s into service %s" % \
+        ( self.serverName, configuration["server"] )
+      raise LDBDDaemonException(msg)
+
+    try:
+      self.certFilePath = configuration["certfile"]
+      self.keyFilePath  = configuration["keyfile"]
+      self.gridmapFilePath = configuration["gridmap"]
+      self.pidFilePath = configuration["pidfile"]
+      self.ipaddr = configuration["ipaddr"]
+      self.port = configuration["port"]
+      self.secure = configuration["secure"]
+
+      myLogger = logging.getLogger('ldbdd')
+
+      # remove any existing handlers
+      for h in myLogger.handlers:
+        myLogger.removeHandler(h)
+
+      logFilePath = configuration["logfile"]
+
+      handler = logging.handlers.RotatingFileHandler(
+        logFilePath, 'a', configuration['logmaxbytes'], 
+        configuration['logbackupcount'])
+      formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+      handler.setFormatter(formatter)
+      myLogger.addHandler(handler)
+      logFileLevel = configuration["loglevel"]
+      myLogger.setLevel(eval("logging." + logFileLevel))
+
+      self.logger = myLogger
+      logger = myLogger
+
+    except Exception as e:
+      print >>sys.__stderr__, "Unable to start logging: %s" % e
+        
+    for k in configuration.keys():
+      logger.info("Configuration parameter: %s = %s" %
+        (k, str(configuration[k])))
+
+  def run(self):
+    """
+    Read configuration information in the initialize() method, write out
+    pid, set up our environment, start the GSI TCP service on the socket,
+    then start listening forever.
+
+    @param:
+
+    @return: None
+    """
+    self.writePID()
+    self.setEnvironment()
+    self.startService()
+    self.serveForever()
+
+  def stopService(self):
+    """
+    Set a flag on this instance of LDBDDaemon so that when the main loop in
+    the serveForever() method sees the flag set the service is stopped.
+
+    @param:
+
+    @return: None
+    """
+    self.logger.info("stopNow flag set; server will stop during next loop")
+    self.stopNow = 1
+        
+  def die(self):
+    """
+    Set a flag on this instance of LDBDDaemon so that when the main loop in
+    the serveForever() method sees the flag set the service is stopped and
+    then the executable exits.
+
+    @param:
+
+    @return: None
+    """
+    self.logger.info("dieNow flag set; executable will exit during next loop")
+    self.stopService()
+    self.dieNow = 1
+
+  def writePID(self):
+    """
+    Write pid out to a file.
+                
+    @param:
+
+    @return: None
+    """
+
+    # write PID out to file
+    myPIDfd = os.open(self.pidFilePath, os.O_WRONLY | os.O_CREAT, 0644)
+    os.write(myPIDfd, "%d\n" % os.getpid())
+    os.close(myPIDfd)
+
+  def clearPID(self):
+    """
+    Delete pid file.
+                
+    @param:
+
+    @return: None
+    """
+
+    try:
+      os.unlink(self.pidFilePath)
+    except:
+      pass
+
+  def setEnvironment(self):
+    """
+    Set environment variables that this instance of ldbdd needs, in particular
+    for GSI services.
+                
+    @param:
+
+    @return: None
+    """
+    os.environ["X509_USER_CERT"] = self.certFilePath
+    os.environ["X509_USER_KEY"] = self.keyFilePath
+    os.environ["GRIDMAP"] = self.gridmapFilePath
+
+  def startService(self):
+    """
+    Create instance of io.ThreadingGSITCPSocketServer that this server will
+    use to listen for incoming requests from clients. See the
+    U{pyGlobus<http://www-itg.lbl.gov/gtg/projects/pyGlobus/>} documentation.
+
+    If the ThreadingGSITCPSocketServer cannot be started sleep and then try
+    again, with the time between retries growing exponentially.
+
+    This server requires GSI authentication. 
+
+    @param:
+
+    @return: None
+    """
+    # create TCPIO Attribute object and initialize to pass to server        
+    tcpIOAttr = io.TCPIOAttr()
+    authData = io.AuthData()
+
+    # create a callback to use for authorization
+    gridmap = gsiserverutils.Gridmap(self.gridmapFilePath, self.logger)
+    callback = gsiserverutils.AuthCallback(gridmap, self.logger, callback=None)
+
+    # set authorization callback
+    authData.set_callback(callback, self)
+    self.authData = authData
+
+    if self.secure == 'no':
+      # set up an unathenticated connection
+      self.logger.info("Disabling security")
+      tcpIOAttr.set_authentication_mode(
+        io.ioc.GLOBUS_IO_SECURE_AUTHENTICATION_MODE_NONE)
+      tcpIOAttr.set_authorization_mode(
+        io.ioc.GLOBUS_IO_SECURE_AUTHORIZATION_MODE_NONE, authData)
+      tcpIOAttr.set_channel_mode(
+        io.ioc.GLOBUS_IO_SECURE_CHANNEL_MODE_CLEAR)
+      tcpIOAttr.set_delegation_mode(
+        io.ioc.GLOBUS_IO_SECURE_DELEGATION_MODE_NONE)
+
+    else:
+      # we use secure IO authentication using GSSAPI and authorization back
+      # to a callback function, which reads a gridmap file
+      self.logger.info("Enabling security")
+      tcpIOAttr.set_authentication_mode(
+        io.ioc.GLOBUS_IO_SECURE_AUTHENTICATION_MODE_GSSAPI)
+      tcpIOAttr.set_authorization_mode(
+        io.ioc.GLOBUS_IO_SECURE_AUTHORIZATION_MODE_CALLBACK, authData)
+      tcpIOAttr.set_channel_mode(
+        io.ioc.GLOBUS_IO_SECURE_CHANNEL_MODE_CLEAR)
+      tcpIOAttr.set_delegation_mode(
+        io.ioc.GLOBUS_IO_SECURE_DELEGATION_MODE_FULL_PROXY)
+
+    self.tcpIOAttr = tcpIOAttr
+
+    # bind to an interface, if specified
+    if self.ipaddr is not '':
+      self.logger.info("Listening on ip address: %s" % self.ipaddr)
+      self.tcpIOAttr.set_interface(self.ipaddr)
+    else:
+      self.logger.info("Listening on all interfaces")
+
+    # start the server
+    self.running = 0
+    self.nap = 1
+    while not self.running:
+      try:
+        self.logger.info("Starting server on port %d" % self.port)
+        server = io.ThreadingGSITCPSocketServer(
+          addr=(self.ipaddr, self.port), 
+          RequestHandlerClass=self.handler,
+          channel_mode=io.ioc.GLOBUS_IO_SECURE_CHANNEL_MODE_CLEAR,
+          delegation_mode=io.ioc.GLOBUS_IO_SECURE_DELEGATION_MODE_FULL_PROXY,
+          tcpAttr=self.tcpIOAttr
+          )
+        self.server = server
+        self.logger.info("Server running on port %d" % self.port)
+
+        self.running = 1
+        self.nap = 1
+                                
+        self.stopNow = 0
+        self.dieNow = 0
+                        
+      except Exception as e:
+        self.logger.warning("Error starting server: %s" % e)
+        self.logger.warning("Will retry in %d seconds" % self.nap)
+
+        try:
+          del server
+          del self.server
+        except:
+          pass
+
+        time.sleep(self.nap)
+        self.nap = self.nap * 2
+                        
+  def serveForever(self):
+    """
+    Our own version of the server_forever() method for the GSITCPServer and
+    SocketServer.BaseServer classes. Normally the call sequence is
+
+    get_request()
+    verify_request()
+    process_request()
+
+    and this is normally done with error handling by the handle_request() 
+    method. In turn server_forever() is usually just
+
+    while 1: handle_request()
+
+    The get_request() for GSITCPServer is normally a blocking listen() on the
+    socket followed by the accept() call.
+
+    In order to not block we instead use a register_listen() call and have the
+    callback set a flag when a socket is ready to be answered and a call to
+    accept() made.
+
+    Since the loop is not blocking on the socket IO, it can be interrupted
+    by signals, such as a SIGHUP.
+
+    @param:
+        
+    @return: None
+    """
+    # set socket ready flag to false and register a listening callback
+    # that is called when the socket is ready
+    self.mySocketReady = 0
+    handle = self.server.socket.register_listen(socketReadyCallback, self)
+
+    while self.running:
+      # is my socket ready? 
+      if self.mySocketReady:
+        # socket is ready so accept the connection, then process it
+        # the process_request() method used here will be that from
+        # the SocketServer.ThreadingMixIn class so inside of that a
+        # new thread is started.
+        try:
+          self.logger.debug("calling accept method for socket instance")
+          (request, client_address) = self.server.socket.accept(
+            self.server.attr)
+          process = 1
+        except io.GSITCPSocketException as ex:
+          self.server.socket.shutdown(2)
+          process = 0
+
+        if process:
+          try:
+            self.logger.debug("processing request on socket now...")
+            self.server.process_request(request, client_address)
+            self.logger.debug("finished processing request")
+          except Exception as e:
+            self.logger.error("Error during server.process_request(): %s" % e)
+            self.server.handle_error(request, client_address)
+            self.server.close_request(request)
+
+        # free callback handle used for the register_listen
+        self.server.socket.free_callback(handle)
+
+        # prepare for next connection by setting ready flag to false and
+        # registering a new listener
+        self.mySocketReady = 0
+        handle = self.server.socket.register_listen(socketReadyCallback, self)
+        continue
+
+      # have I been told to shutdown?
+      if self.stopNow:
+        # close and delete the server
+        self.logger.info('closing server')
+        self.server.server_close()
+        del self.server
+
+        # have I been told to die?
+        if self.dieNow:
+          self.clearPID()
+          raise SystemExit
+
+        # give 5 seconds for the socket to be freed up
+        time.sleep(5)
+        self.running = 0
+
+        continue
+
+      # no socket is ready and I have not been told to shutdown
+      # so sleep for a bit so that we don't burn CPU all the time
+      time.sleep(0.1)
+
+
+# figure out what server we are using and load it
+serv = configuration['server']
+ServerModule = __import__( "glue." + serv, globals(), locals(), [serv] )
+
+# initialize daemon inheriting the server properties from the loaded module
+myServer = LDBDDaemon(ServerModule.ServerHandler)
+myServer.serverName = configuration['server']
+myServer.initialize()
+ServerModule.initialize(configuration,logger)
+
+running = 1
+
+try:
+  while running:
+    # start server
+    myServer.run()
+
+except SystemExit:
+  ServerModule.shutdown()
+  logger.info("ldbdd shutting down")
+  sys.exit()
+
+except KeyboardInterrupt:
+  ServerModule.shutdown()
+  logger.info("ldbdd shutting down")
+  sys.exit()
+
+except Exception as e:
+  try:
+    ServerModule.shutdown()
+  except:
+    pass
+  msg = "ldbdd is stopping due to unhandled error: %s" % e
+  print >>sys.stderr, msg
+  logger.critical(msg)
+
+del logger
+logger = None
+sys.exit()

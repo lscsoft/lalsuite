@@ -1,0 +1,641 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2006  Alexander Dietz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+__author__ = "Darren Woods and Stephen Fairhurst <sfairhurs@gravity.phys.uwm.edu>"
+__prog__ = "plotinspmissed"
+__title__ = "Found and Missed plots for triggers"
+
+import sys, os, re, glob, exceptions
+from types    import *
+from optparse import *
+from matplotlib.ticker import FormatStrFormatter
+from glue import segments
+from glue import segmentsUtils
+from glue import lal
+from glue.ligolw import utils
+from glue.ligolw import lsctables
+from pylal import SnglInspiralUtils
+from pylal import CoincInspiralUtils
+from pylal import SimInspiralUtils
+from pylal import InspiralUtils
+from pylal import git_version
+import numpy
+
+
+#######################################################################
+def getData( table, xname, yname, ifo  ):
+  """
+  Retrieves data from a table, including non-table entries
+  such as 'mtotal' and 'time'
+  @param table: the table with the data
+  @param xname: the x-value
+  @param yname: the y-value
+  @param ifo  : the ifo for which the time or distance is returned
+  """
+
+  if xname=='time':
+    xp= [ t-opts.time_offset \
+          for t in viz.timeindays(viz.readcol( table,"end_time", ifo)) ]
+    legx = "End time (in days)"
+  elif xname == 'mtotal':    
+    xp = viz.readcol( table,"mass1")+viz.readcol( table,"mass2")
+    legx = "Total mass"
+  else:
+    xp = viz.readcol( table,xname)
+    legx = xname
+
+  if yname == 'eff_dist':
+    yp = viz.readcol( table,"eff_dist", ifo )
+    legy = "Effective distance"
+  else:
+    yp = viz.readcol( table,yname)
+    legy = yname
+
+  return xp, yp, legx, legy
+
+#######################################################################
+def savePlot(opts, filename, tag, keep=False):
+  """
+  This is a helper function to save a plot.
+  @param filename: name of the plot
+  @param tag:      tag for the plot
+  @param keep:     whether to close plot (boolean, default=False)
+  """
+       
+  fname = InspiralUtils.set_figure_name(opts, filename)
+  fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, \
+                                            dpi_thumb=opts.figure_resolution)
+  fnameList.append(fname)
+  tagList.append( tag )
+  if not opts.show_plot and not keep:
+    close()
+  return fname
+
+#######################################################################
+# parse options and arguments
+usage = """Usage: %prog [options] [trigs1 missed1 trigs2 missed2]
+
+Generate found and missed trig plots
+
+plotinspmissed --mtotal-dist-linear --verbose  --output-path plots/ --mchirp-dist-log  --time-dist  --gps-start-time 866088014 --mchirp-dist-linear --gps-end-time 866109614 --cache-file ihope.cache --enable-output  --mtotal-dist-log  --ifo H1 --legend --found-pattern COIRE_INJECTIONS_*_FOUND_SECOND_*_INJ* --missed-pattern COIRE_INJECTIONS_*_MISSED_SECOND_*_INJ*
+"""
+
+def parse_command_line():
+  """
+  Parser function dedicated
+  """
+  parser = OptionParser(usage=usage, version=git_version.verbose_msg)
+  parser.add_option("-a","--time-dist",action="store_true",default=False,\
+      help="plot eff dist v trig end time" )
+  parser.add_option("-b","--mchirp-dist-log",action="store_true",default=False,\
+      help="plot eff dist v mchirp (log dist axis)" )
+  parser.add_option("-c","--mtotal-dist-log",action="store_true",default=False,\
+      help="plot eff dist v mtotal (log dist axis)" )
+  parser.add_option("-d","--mchirp-dist-linear",action="store_true",default=False,\
+      help="plot eff dist v mchirp (linear dist axis)" )
+  parser.add_option("-e","--mtotal-dist-linear",action="store_true",default=False,\
+      help="plot eff dist v mtotal (linear dist axis)" )
+  parser.add_option("-f","--eff-vs-eff-dist",action="store_true",default=False,\
+      help="efficiency plot versus effective distance (logarithmic dist axis)" )
+  parser.add_option("-g","--eff-vs-distance",action="store_true",default=False,\
+      help="efficiency plot versus distance (linear dist axis)" )
+  parser.add_option("-k","--eff-vs-chirp-dist",action ="store_true",default=False,\
+      help="efficiency plot versus chirp distance (linear dist axis)" )
+  parser.add_option("-j","--mchirp-distance-lin",action="store_true",default=False,\
+      help="plot distance v mchirp (linear dist axis)" )
+  parser.add_option("-T","--time-offset",action="store",type="float",\
+      default=0.0,metavar=" TIME-OFFSET",\
+      help="time offset when plotting times")
+  parser.add_option("-s","--show-plot",action="store_true",default=False,\
+      help="display the figures on the terminal" )
+  parser.add_option("-t","--title",action="store",type="string",\
+      default="", metavar=" TITLE", help="add more info to standard title" )
+  parser.add_option("-l","--legend",action="store_true",default=False,\
+      help="include legend on plot" )  
+  parser.add_option("-u","--user-tag",action="store",type="string",\
+      default=None, metavar=" USERTAG",\
+      help="The user tag used in the name of the figures" )
+  parser.add_option("","--ifo-tag",action="store",type="string",\
+      default=None, metavar=" IFOTAG",\
+      help="The ifo tag used in the name of the figures (e.g. SECOND_H1H2L1)")      
+  parser.add_option("","--ifo-times",action="store",type="string",\
+      default=None,metavar="IFOS",\
+      help="sets ifo times for which plots will be made (e.g. H1H2L1)" )
+  parser.add_option("-S","--same-symbol",action="store",type="string",\
+      default=None,  metavar="SAME-SYMBOL",\
+      help="enables the use of a same symbol")
+  parser.add_option("-V","--veto-file",action="store",type="string",\
+      default=None,metavar=" FNAME",\
+      help="read in segments from FNAME (assumed segwizard format)")
+  parser.add_option("-i","--ifo",action="store",type="string",default=None,\
+      help="specify the ifo (otherwise will loop over all IFOs in ifo-times")
+  parser.add_option("-M","--min-distance",action="store",type="int",\
+      default=None, metavar=" MIN_DIST",\
+      help="provide time and dist of all missed injections closer than MIN_DIST [Mpc]")
+  parser.add_option("-p","--y-min",action="store",type="float",\
+      default=None,metavar="YMIN",\
+      help="set the y min range to YMIN")
+  parser.add_option("-q","--y-max",action="store",type="float",\
+      default=None,metavar="YMAX",\
+      help="set the y max range to YMAX")
+  parser.add_option("", "--found-pattern",
+    help="sieve the cache for found injection files with this pattern")
+  parser.add_option("", "--missed-pattern",
+    help="sieve the cache for missed injection files with this pattern")
+  parser.add_option("", "--cache-file", help="LAL cache of relevant files")
+  parser.add_option("", "--sire",action="store_true",\
+       default=False, help="Indicating the use of single-trigger sire files")
+  parser.add_option("-P","--output-path",action="store",\
+      type="string",default="",  metavar="PATH",\
+      help="path where the figures would be stored")
+  parser.add_option("-O","--enable-output",action="store_true",\
+      default=False,  metavar="OUTPUT",\
+        help="enable the generation of the html and cache documents")
+  parser.add_option("","--gps-start-time",action="store",\
+      type="int",  metavar="GPSSTARTTIME",\
+      help="gps start time (for naming figure and output files")
+  parser.add_option("","--gps-end-time",action="store",\
+      type="int",  metavar=" GPSENDTIME",\
+      help="gps end time (for naming figure and output files")
+  parser.add_option("-v","--verbose",action="store_true",\
+      default=False,help="print information" )
+  parser.add_option("", "--figure-resolution",action="store",type="int",\
+      default=50, metavar="resolution of the thumbnails (50 by default)", \
+      help="read a file of a particular description  from cache file" )
+  parser.add_option("","--do-followup",action="store_true",\
+      default=False,help="activates the followup of missed injections."\
+      " Required to ignore injections missed due to vetoes.")
+  parser.add_option("","--followup-dist-l",action="store",\
+      type="float",default=None,  metavar="FOLLOWUPDISTL",\
+      help="distance for a binary with 20 Solarmasses in L")
+  parser.add_option("","--followup-dist-h",action="store",\
+      type="float",default=None,  metavar="FOLLOWUPDISTH",\
+      help="distance for a binary with 20 Solarmasses in H")
+  parser.add_option("","--followup-dist-g",action="store",\
+      type="float",default=None,  metavar="FOLLOWUPDISTG",\
+      help="distance for a binary with 20 Solarmasses in G")
+  parser.add_option("","--followup-dist-v",action="store",\
+      type="float",default=None,  metavar="FOLLOWUPDISTV",\
+      help="distance for a binary with 20 Solarmasses in V")
+  parser.add_option("","--followup-number",\
+      type="int",default=None,  metavar="FOLLOWUPNUMBER",\
+      help="number of closest missed injections to be followed up")
+  parser.add_option("","--followup-flow",action="store",\
+      type="float",default=40.0,  metavar="FOLLOWUPFLOW",\
+      help="specifies the lower cutoff frequency")
+  parser.add_option("","--followup-exttrig",action="store_true",\
+      default=False,help="set the exttrig flag for followup" )
+  parser.add_option("","--followup-vetofile-l1",action="store",\
+      type="string",default=None,  metavar="FOLLOWUPVETOL1",\
+      help="vetofile containing veto times for L1")
+  parser.add_option("","--followup-vetofile-h1",action="store",\
+      type="string",default=None,  metavar="FOLLOWUPVETOH1",\
+      help="vetofile containing veto times for H1")
+  parser.add_option("","--followup-vetofile-h2",action="store",\
+      type="string",default=None,  metavar="FOLLOWUPVETOH2",\
+      help="vetofile containing veto times for H2")
+  parser.add_option("","--followup-vetofile-g1",action="store",\
+      type="string",default=None,  metavar="FOLLOWUPVETOG1",\
+      help="vetofile containing veto times for G1")
+  parser.add_option("","--followup-vetofile-v1",action="store",\
+      type="string",default=None,  metavar="FOLLOWUPVETOV1",\
+      help="vetofile containing veto times for V1")
+  parser.add_option("","--followup-tag",action="store",\
+      type="string",default=None,  metavar="FOLLOWUPTAG",\
+      help="a tag to select the proper xml files in a cache file"\
+                    "for the followup.")
+  parser.add_option("","--followup-time-window",action="store",\
+      type="float",default=20.0,  metavar="FOLLOWUPTIMEWINDOW",\
+      help="time-window to be plotted in the followup [in seconds]")
+  parser.add_option("","--followup-sned",action="store",\
+        type="string",default=None, \
+	help="optional: specifies the path to lalapps_sned to compute "\
+	     "the correct effective distance")
+  parser.add_option("","--count-vetoes-as-missed",action="store_true",\
+      default=False,help="counts vetoes as missed injections. They are included in "\
+      "followups if --do-followup is enabled.")  
+      
+  command_line = sys.argv[1:]
+  (options,args) = parser.parse_args()
+
+
+  # test the input options
+  if not options.ifo_times:
+    raise ValueError, "--ifo-times must be provided"
+ 
+  if 'ALLINJ' in options.user_tag:
+    print >>sys.stderr, "The followup options currently do not work with the"
+    print >>sys.stderr, "ALLINJ plots. They have been disabled."
+    options.do_followup = False
+
+  return options, sys.argv[1:]
+
+
+# ============================================================================
+# -- get command line arguments
+opts, args = parse_command_line()
+comments = ""
+
+# Initialise: add prefix and suffix to the opts structure. To be used for filenames
+opts = InspiralUtils.initialise(opts, __prog__, git_version.verbose_msg)
+
+# -- set the proper color code
+colors = InspiralUtils.colors
+figure_number = 0  # used for the figure label (showplot)
+fnameList = []   # use for the cache file
+tagList= []   # use for the cache file
+mapList = []  # vector containing data for creating maps
+
+# to avoid  display problem when show plot is not used
+if not opts.show_plot:
+  import matplotlib
+  matplotlib.use('Agg')
+from pylab import *
+from pylal import viz
+from pylal import followup_missed
+from pylal import followup_trigger
+
+
+# do something if a title was given
+if opts.title != "":
+  opts.title += ": "
+  
+# check at least one trig file was specified
+if opts.cache_file:
+  cache = lal.Cache.fromfile(open(opts.cache_file))
+  injcache = cache.sieve(description = opts.found_pattern).sieve(ifos=opts.ifo_times, exact_match=True)
+  miscache = cache.sieve(description = opts.missed_pattern).sieve(ifos=opts.ifo_times, exact_match=True)
+  injFiles = injcache.checkfilesexist()[0].pfnlist()
+  misFiles = miscache.checkfilesexist()[0].pfnlist()
+
+  if opts.verbose:
+    print "\n"+__prog__+"... reading the following found files" 
+    for file in injFiles:
+      print file
+    print "\n"+__prog__+"... reading the following missed files \n"
+    for file in misFiles:
+      print file
+  if len(injFiles) == 0:
+    err_msg = opts.cache_file + " contains no files with " + \
+              opts.found_pattern + " description"
+    print >>sys.stderr, err_msg
+    comments += InspiralUtils.message(opts, err_msg)
+    if opts.enable_output is True: 
+      html_filename = InspiralUtils.write_html_output(opts, args, fnameList, \
+                                                      tagList, comment=comments)
+      InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+      if opts.show_plot:
+        sys.exit(1)
+      else:
+        sys.exit(0)
+  
+else:
+
+  if not args:
+    print >>sys.stderr, "One trig-file must be specified at least"
+    print >>sys.stderr, "Enter 'plotinspmissed --help' for usage"
+    sys.exit(1)
+    
+  # check if trig and missed inj files are paired
+  # then fill lists of injection and missed injection files
+  if len(args)<2:
+    print >>sys.stderr, "At least one trigger file and one missed"\
+          " file must be specified"
+    print >>sys.stderr, "Enter 'plotinspmissed --help' for usage"
+    print usage
+    sys.exit(1)
+
+  elif len(args)%2:
+    print >>sys.stderr, "The number of files specified must be even"
+    print >>sys.stderr, "Enter 'plotinspmissed --help' for usage"
+    print usage
+    sys.exit(1)
+  
+  else:
+    injFiles = []
+    misFiles = []
+    # create the list of found and missed files
+    for i in range(len(args)):
+      if i%2:
+        misFiles.append(args[i])
+      else:
+        injFiles.append(args[i])
+
+
+# create the ifoList
+ifoList = []
+for i in range(len(opts.ifo_times)/2):
+  ifoList.append(opts.ifo_times[2*i:2*i+2])
+
+
+# check the followup input parameters
+if opts.do_followup:
+  if not opts.followup_number:
+    for ifo in ifoList:
+      if not getattr( opts, "followup_dist_%s" % ifo[0].lower() ):
+        print >>sys.stderr, "ERROR: If --followup-number is not given "
+        print >>sys.stderr, "--followup-dist-%s must be specified \n" %\
+              ifo[0].lower() 
+        print usage
+        sys.exit(1)
+
+# selecet one IFO if required
+if opts.ifo:
+  ifoList=[opts.ifo]
+
+
+##############################################################################
+# read in tables into dictionaries of paired sets
+# each dictionary contains the data for a different 'type'
+# type e.g. H1H2, H1L1, H2L1, H1H2L1 in H1H2L1 ifo-times
+
+foundInj  = dict()
+foundTrig = dict()
+possibleMissedInj = lsctables.New(lsctables.SimInspiralTable)
+missedInj = lsctables.New(lsctables.SimInspiralTable)
+followupInj = lsctables.New(lsctables.SimInspiralTable)
+vetoedInj = lsctables.New(lsctables.SimInspiralTable)
+missedVetoedInj = lsctables.New(lsctables.SimInspiralTable)
+allFoundTrig = lsctables.New(lsctables.SnglInspiralTable)
+allFoundInj = lsctables.New(lsctables.SimInspiralTable) 
+
+
+## read the found injections
+for entry, injfile in zip(injcache,injFiles):
+
+  # read the found injections and get the coincidences
+  sims =  SimInspiralUtils.ReadSimInspiralFromFiles([injfile])
+  snglInspiralTable = SnglInspiralUtils.ReadSnglInspiralFromFiles([injfile], verbose=opts.verbose)
+
+  # mange event_id's by hand for sire triggers 	 
+  if snglInspiralTable and opts.sire: 	 
+    for i in range(len(snglInspiralTable)): 	 
+      snglInspiralTable[i].event_id=i
+
+  # this is OK because we only treat one file at a time
+  # so event ID collisions will not occur
+  triggers = CoincInspiralUtils.coincInspiralTable(
+    snglInspiralTable,CoincInspiralUtils.coincStatistic( "snr") )
+
+  # check if there are any sims here
+  if sims is None:
+    continue
+
+  if opts.sire: 	 
+     if not opts.ifo in foundInj: 	 
+       foundInj[opts.ifo]  = lsctables.New(lsctables.SimInspiralTable) 	 
+       foundTrig[opts.ifo] = lsctables.New(lsctables.SnglInspiralTable) 	 
+  	 
+     for sim, trigger in zip(sims, snglInspiralTable): 	 
+       foundInj[opts.ifo].append( sim ) 	 
+       foundTrig[opts.ifo].append(trigger) 	 
+       allFoundTrig.append( trigger ) 	 
+       allFoundInj.append( sim ) 	 
+  	 
+  else:
+    # loop over each sim, trigger
+    for sim, trigger in zip(sims, triggers):
+
+      # get the IFOs in which the trigger was recovered
+      ifos, dummyList= trigger.get_ifos()
+
+      if ifos not in foundInj:
+        foundInj[ifos]  = lsctables.New(lsctables.SimInspiralTable)
+        foundTrig[ifos] = lsctables.New(lsctables.SnglInspiralTable)
+
+      foundInj[ifos].append( sim )
+      foundTrig[ifos].append(trigger)
+      allFoundTrig.append( trigger )
+      allFoundInj.append( sim )
+
+## read the missed injections
+for misentry, misfile in zip(miscache,misFiles):
+# fill the dictionary    
+  sims =   SimInspiralUtils.ReadSimInspiralFromFiles([misfile])
+  if sims:
+    possibleMissedInj.extend( sims )
+
+# initialize the followup class
+if opts.do_followup:
+  followup = followup_trigger.FollowupTrigger(cache, opts)
+
+## take the vetoes into account for the followup (not else??)
+if opts.do_followup and not opts.count_vetoes_as_missed and False:
+  if opts.verbose:
+    print "Using veto files to determine which injections were missed due to vetoes."
+
+  # loop over each possible missed injection
+  for inj in possibleMissedInj:
+
+    # count how many IFO's remain after applying the veto
+    unvetoedIFOs = 0
+    for ifo in ifoList:
+      vetoTime = float(getattr(inj,ifo[0].lower()+'_end_time'))
+      if not followup.is_veto(vetoTime,ifo): unvetoedIFOs += 1
+
+    if unvetoedIFOs == 0:
+      # no IFO is vetoed. So this injection is clearly missed and needs
+      # to be followed up
+      missedInj.append(inj)
+      followupInj.append(inj)
+    elif unvetoedIFOs < 2:
+      # At most one IFO is unvetoed. You will never get a coincident candidate
+      # from this injection, so this is clearly vetoed.
+      vetoedInj.append(inj)
+    else:
+      # Here are two or more IFO's remaining, the rest has been vetoed.
+      # So the injection could have been found. Need to followup.
+      missedVetoedInj.append(inj)
+      followupInj.append(inj)
+else:
+  # well, no veto -> all missed injections are missed...
+  missedInj = possibleMissedInj
+  followupInj = possibleMissedInj
+
+
+##############################################################################
+# set lists of plot symbols
+plot1symbol=['bx','bo','b+','b^','b>','b<']
+plot2symbol=['rx','ro','r+','r^','r>','r<']
+allsymbols=['^','v','<','>','s','+','x','D','d','1','2','3','4','h','H','p']
+
+# GEO tags missing...
+foundSymbol = {'H1H2':'x', 'H1L1':'^', 'H2L1':'+', 'H1V1':'v', 'H2V1':'<','L1V1':'>',\
+               'H1H2L1':'s', 'H1H2V1':'D', 'H2L1V1':'d', 'H1L1V1':'1',\
+               'H1H2L1V1':'p', 'H1':'x', 'H2':'x', 'L1':'x', 'V1':'x'}
+foundSymbols = ['','','','','','','','' ]
+
+gpsDigits = "9"
+xmajorFormatter = FormatStrFormatter("%"+gpsDigits+"d")
+
+
+##############################################################################
+# Do the followup in a nicely one-function call
+if opts.do_followup:
+
+  mapDict = followup.followup_missed_injections(opts, missedInj, foundInj)
+
+  # save the figure (containing filled circles)
+  if opts.enable_output:
+
+    # save the figure and add it to the list of maps
+    # after removal of the first directory...
+    filename = 'totalmass-maxEffDist_log-map'
+    filename = savePlot( opts, 'totalmass-decisiveEffDist_log-map', \
+                         opts.user_tag or '')
+    index=filename.index('/')+1
+    mapDict['object']=filename[index:]
+    mapList.append( mapDict )
+
+##############################################################################
+# Create all the plots
+
+xplot=[]
+yplot=[]
+yscale = []
+if opts.time_dist:
+  xplot.append('time')
+  yplot.append('eff_dist')
+  yscale.append('log')
+if opts.mchirp_dist_linear:
+  xplot.append('mchirp')
+  yplot.append('eff_dist')
+  yscale.append('lin')
+if opts.mchirp_dist_log:
+  xplot.append('mchirp')
+  yplot.append('eff_dist')
+  yscale.append('log')
+if opts.mtotal_dist_linear:
+  xplot.append('mtotal')
+  yplot.append('eff_dist')
+  yscale.append('lin')
+if opts.mtotal_dist_log:
+  xplot.append('mtotal')
+  yplot.append('eff_dist')
+  yscale.append('log')
+if opts.mchirp_distance_lin: 	 
+   xplot.append('mchirp') 	 
+   yplot.append('distance') 	 
+   yscale.append('lin')
+
+# loop over all the plotting types
+for xname, yname, ys in zip( xplot, yplot, yscale):
+
+  # create a plot for each ifo in the list
+  for ifo in ifoList:
+
+    figure()
+    sym = 0
+
+    # loop over the different types for found injections
+    for type in foundInj.keys():
+
+      if ifo in type:
+        col = 'b'
+      else:
+        col = 'm'
+
+      px, py, legx, legy = getData( foundInj[type], xname, yname, ifo )
+      plot( px, py, col+foundSymbol[type], markerfacecolor='None',\
+        markeredgecolor=col, label = type, markersize=10, markeredgewidth=1)
+
+    # plot the vetoed ones
+    if opts.do_followup and not opts.count_vetoes_as_missed:
+      px, py, legx, legy = getData( vetoedInj, xname, yname, ifo )
+      plot( px, py, 'ko', markerfacecolor='None',label='vetoed',\
+        markeredgecolor='k',markersize=10, markeredgewidth=1)
+      
+    # plot the missed ones
+    px, py, legx, legy = getData( missedInj, xname, yname, ifo )
+    plot( px, py, 'ro', markerfacecolor='None',label='missed',\
+          markeredgecolor='r',markersize=10, markeredgewidth=1)
+
+    titleText = legx+' vs '+legy +' '+ifo
+    title( opts.title + ' '+titleText+' in '+opts.ifo_times+' times', size='x-large')
+    xlabel(legx, size='x-large')
+    ylabel(legy+' '+ifo+' [Mpc]', size='x-large')
+    grid(True)
+    legend()
+
+    if opts.enable_output:
+      if ys=='lin':
+        savePlot( opts, xname+'-'+yname+'-lin-'+ifo, titleText )
+      if ys=='log':
+        axes().set_yscale('log')    
+        filename = xname+'-'+yname+'-log-'+ifo
+        savePlot( opts, filename, titleText, keep=True )
+        
+        if not opts.show_plot:
+          close()
+
+    
+##########################################
+# plot of efficiency vs different values
+
+# put together what efficiency plots we need
+valueList = ['eff_dist', 'distance', 'chirp_dist']
+nameList = ["efficiency-eff_dist", "efficiency-dist", "efficiency-chirp_dist"]
+tagnameList = ["Efficiency vs eff distance", "Efficiency vs distance", \
+    "Efficiency vs chirp distance"]
+
+indexPlots = []
+if opts.eff_vs_eff_dist:
+  indexPlots.append(0)
+if opts.eff_vs_distance:
+  indexPlots.append(1)
+if opts.eff_vs_chirp_dist:
+  indexPlots.append(2)
+
+for ifo in ifoList:
+
+  # create the efficiency plots
+  for index in indexPlots:
+
+    # use log plot when large spread of values is expected
+    plot_type = 'log' if 'eff' in valueList[index] else 'linear'
+    figure()
+    viz.efficiencyplot( allFoundInj, missedInj, valueList[index],ifo=ifo,\
+                        plot_type = plot_type,\
+                        nbins = 25, output_name = None, errors=True,\
+                        title_string = opts.title)
+
+    if opts.enable_output:
+      fname = InspiralUtils.set_figure_name(opts, ifo+'-'+nameList[index])
+      fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, \
+                                                dpi_thumb=opts.figure_resolution)
+      fnameList.append(fname)
+      tagList.append(tagnameList[index]+" "+ifo)
+    if not opts.show_plot:
+      close()
+
+
+# ============================================================================
+# final step: html, cache file generation
+if opts.enable_output is True:
+  html_filename = \
+      InspiralUtils.write_html_output(opts, args, fnameList, tagList,\
+                                      doThumb=True, mapList=mapList)
+  InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+
+  # create the cache-file
+  if opts.do_followup:
+    fnameList.extend( followup.fname_list )
+  InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+
+#########################################################################
+if opts.show_plot:
+  show()

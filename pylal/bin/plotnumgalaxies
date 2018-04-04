@@ -1,0 +1,2219 @@
+#!/usr/bin/python
+
+__author__ = "Stephen Fairhurst <fairhurst_s@ligo.caltech.edu>"
+
+import sys
+import glob
+import string
+import random 
+from optparse import *
+from types import *
+import matplotlib
+matplotlib.use('Agg')
+
+from pylab import *
+from glue import segmentsUtils
+from glue.ligolw import table
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from pylal import CoincInspiralUtils
+from pylal import git_version
+
+##############################################################################
+# redefine the SimInspiral columns of interest
+##############################################################################
+lsctables.SimInspiralTable.loadcolumns = [
+    "waveform",
+    "geocent_end_time",
+    "geocent_end_time_ns",
+    "h_end_time",
+    "h_end_time_ns",
+    "l_end_time",
+    "l_end_time_ns",
+    "source",
+    "mass1",
+    "mass2",
+    "mchirp",
+    "eta",
+    "distance",
+    "spin1x",
+    "spin1y",
+    "spin1z",
+    "spin2x",
+    "spin2y",
+    "spin2z",
+    "eff_dist_h",
+    "eff_dist_l",
+    "eff_dist_g",
+    "eff_dist_t",
+    "eff_dist_v"]
+  
+##############################################################################
+# redefine the SnglInspiral columns of interest
+##############################################################################
+lsctables.SnglInspiralTable.loadcolumns = [
+    "ifo",
+    "end_time",
+    "end_time_ns",
+    "eff_distance",
+    "mass1",
+    "mass2",
+    "mchirp",
+    "eta",
+    "snr",
+    "chisq",
+    "chisq_dof",
+    "sigmasq",
+    "alpha",
+    "event_id"]
+
+##############################################################################
+# Define a Square Array
+##############################################################################
+def square(xdata,xedges,ydata,yedges,lum_weight=None):
+  """
+  generate a square array with from xdata and ydata with the edges specified
+  by xedges and yedges.  Can rescale the entries by lum_weight
+  @param xdata:  array of data for parameter x
+  @param xedges: bin boundaries for parameter x
+  @param ydata:  array of data for parameter y
+  @param yedges: bin boundaries for parameter y
+  @param lum_weight: rescaling factor for the histogram
+  """
+  ng_x_y = zeros((len(xedges),len(yedges)),'d')
+  
+  for i in range(len(xdata)):
+    if xdata[i] >= max(xedges):
+      k = len(xedges)
+    else:
+      k = [idx for idx in range(len(xedges)) \
+          if xdata[i] < xedges[idx]][0]
+
+    if ydata[i] >= max(yedges):
+      l = len(yedges)
+    else:
+      l = [idx for idx in range(len(yedges)) \
+          if ydata[i] < yedges[idx]][0]
+
+    if not lum_weight:
+      lum_array = 1
+    else:
+      lum_array = lum_weight[i]
+
+    if (k>=0 and k<len(xedges)) and (l>=0 and l<len(yedges)):
+      ng_x_y[l][k] += lum_array
+
+  return ng_x_y
+  
+##############################################################################
+# Define a Hist Function
+##############################################################################
+def histng(xdata,xedges,lum_weight=None):
+
+  """
+  histogram xdata with edges specified xedges and yedges.  
+  Can rescale the entries by lum_weight
+  @param xdata:  array of data for parameter x
+  @param xedges: bin boundaries for parameter x
+  @param lum_weight: rescaling factor for the histogram
+  """
+  ng_x = zeros(len(xedges),'d')
+  
+  for i in range(len(xdata)):
+    if xdata[i] >= max(xedges):
+      l = len(xedges)
+    else:
+      l = [idx for idx in range(len(xedges)) \
+          if xdata[i] < xedges[idx]][0]
+
+    if not lum_weight:
+      lum_array = 1
+    else: 
+      lum_array = lum_weight[i]
+
+    if (l>=0 and l<len(xedges)):
+      ng_x[l] += lum_array
+ 
+  return ng_x
+
+##############################################################################
+# Chop a simInspiralTable based on component masses.
+##############################################################################
+def massCut (sim_table, m_low, m_high):
+  """
+  function to remove injections whose total mass lies outside [m_low,m_high]
+  @param sim_table: a list of sim inspirals
+  @param m_low:     the low mass threshold
+  @param m_high:    the high mass threshold
+  """
+  tmpTable = lsctables.New(lsctables.SimInspiralTable)
+
+  for entry in sim_table:
+    mass1 = getattr(entry,'mass1')
+    mass2 = getattr(entry,'mass2')
+    if opts.population_type == "componentmass":
+      mass = max(mass1,mass2)
+    else:
+      mass = mass1 + mass2
+    if (mass > m_low) and (mass < m_high):
+      tmpTable.append(entry)
+
+  return tmpTable
+
+###############################################################################
+# Chop a coincInspiralTable based on component masses of the sim
+###############################################################################
+def injMassCut (coinc_table, m_low, m_high):
+  """
+  function to remove injections whose total mass lies outside [m_low,m_high]
+  @param coinc_table: a list of coincs
+  @param m_low:     the low mass threshold
+  @param m_high:    the high mass threshold
+  """
+  tmpTable = CoincInspiralUtils.coincInspiralTable()
+  tmpTable.sngl_table = lsctables.New(lsctables.SnglInspiralTable)
+  for entry in coinc_table:
+    sim = getattr(entry, 'sim')
+    event_id = int(getattr(entry, 'event_id'))
+    mass1 = getattr(sim, 'mass1')
+    mass2 = getattr(sim, 'mass2')
+    if opts.population_type == "componentmass":
+      mass = max(mass1,mass2)
+    else:
+      mass = mass1 + mass2
+    if (mass > m_low) and (mass < m_high):
+      tmpTable.append(entry)
+      for trig in coinc_table.sngl_table:
+        if int(trig.event_id) == event_id:
+          tmpTable.sngl_table.append(trig)
+  return tmpTable
+
+##############################################################################
+# function to read in a list of files and extract the simInspiral tables
+##############################################################################
+def readFiles(fileGlob,statistic=None,dcCalErrorVal=None):
+  """
+  read in the Sngl and SimInspiralTables from a list of files
+  if Sngls are found, construct coincs, add injections (if any)
+  also return Sims (if any)
+  @param fileGlob: glob of input files
+  @param statistic: statistic to use in creating coincs
+  """
+  #if fileGlob is empty return empty structures...
+  if not fileGlob:
+    if opts.verbose:
+      print "Warning: No glob specified, returning empty structures..."
+    return None, CoincInspiralUtils.coincInspiralTable() 
+
+  fList = glob.glob(fileGlob)
+  if not fList:
+    print >>sys.stderr, "The glob for " + fileGlob + " returned no files"
+    sys.exit(1)
+  sims = None
+  coincs = None
+  for thisFile in fList:
+    doc = utils.load_filename(thisFile, gz = (thisFile[-3:] == '.gz') )
+    # extract the sim inspiral table
+    try:
+      simInspiralTable = \
+          table.get_table(doc, lsctables.SimInspiralTable.tableName)
+      if dcCalErrorVal != None:
+        dc_calibration_correction(simInspiralTable,dcCalErrorVal)
+      if sims: sims.extend(simInspiralTable)
+      else: sims = simInspiralTable
+    except: simInspiralTable = None
+
+    # extract the sngl inspiral table, construct coincs
+    try: snglInspiralTable = \
+      table.get_table(doc, lsctables.SnglInspiralTable.tableName)
+    except: snglInspiralTable = None
+    if snglInspiralTable:
+      coincInspiralTable = \
+        CoincInspiralUtils.coincInspiralTable(snglInspiralTable,statistic)
+      if simInspiralTable: 
+        coincInspiralTable.add_sim_inspirals(simInspiralTable) 
+      if coincs: coincs.extend(coincInspiralTable)
+      else: coincs = coincInspiralTable
+
+    max_dist = None
+    try: 
+      ppTable = table.get_table(doc, lsctables.ProcessParamsTable.tableName)
+      for row in ppTable:
+        if row.param=="--max-distance":
+          max_dist = float(row.value)
+    except: max_dist = None
+
+  return sims,coincs, max_dist
+
+##############################################################################
+# Function to read in the source file and return a sorted list of its
+# components according to the luminosity
+##############################################################################
+def read_source_file( source_file ):
+  """
+  read in the galaxy list, from an inspsrcs.dat type file
+  @param source_file: input file name
+  """
+  f = open( source_file , "r")
+  lines = f.readlines()
+  f.close()
+
+  sourceList = {}
+  sourceList["MW"] = {"luminosity": 0.0, "distance": 0, "delta_d": 0.0,\
+                      "delta_m":opts.mw_mag_error}
+  for line in lines:
+    if line[0] != '#':
+      b  = string.split(line)
+      
+      if opts.distance_error and opts.magnitude_error:
+        c = {"luminosity": float(b[4]), "distance": float(b[3]), \
+            "delta_d": float(b[6]), "delta_m": float(b[7])}
+      elif opts.distance_error:
+        c = {"luminosity": float(b[4]), "distance": float(b[3]), \
+            "delta_d": float(b[6])}
+      elif opts.magnitude_error:
+        c = {"luminosity": float(b[4]), "distance": float(b[3]), \
+            "delta_m": float(b[7])}
+      else:
+        c = {"luminosity": float(b[4]), "distance": float(b[3])}   
+      sourceList[b[0]] = c
+
+  return sourceList
+
+##############################################################################
+def add_actual_error( sourceList, distErrorType, magErrorType ):
+  """
+  add an column containing a random error on distance/magnitude to a
+  galaxy sourceList
+  @param sourceList: a list of galaxies as generated by read_source_file
+  """
+  for galaxy in sourceList.itervalues():
+    if distErrorType == "positive":
+      galaxy["actual_delta_d"] = galaxy["delta_d"]
+    elif distErrorType == "negative":
+      galaxy["actual_delta_d"] = -galaxy["delta_d"]
+    elif distErrorType == "random":
+      galaxy["actual_delta_d"] = random.gauss(0,galaxy["delta_d"])
+
+    if magErrorType == "positive":
+      galaxy["actual_delta_m"] = galaxy["delta_m"]
+    elif magErrorType == "negative":
+      galaxy["actual_delta_m"] = -galaxy["delta_m"]
+    elif magErrorType == "random":
+      galaxy["actual_delta_m"] = random.gauss(0,galaxy["delta_m"])
+
+  return sourceList
+    
+##############################################################################
+def dc_calibration_correction( simInspiralTable, dcCalErrorVal ):
+  """
+  modify the effective distance columns in the sim_inspiral table by their
+  appropriate DC calibration error factors in dcCalErrorVal
+  @sim_inspiral: a sim_inspiral table to be modified
+  @dcCalErrorVal: a dictionary containing the DC calibration correction factors
+  """
+  for key in dcCalErrorVal.keys():
+    if key == "Hanford_DC_Calibration_Error":
+      for row in simInspiralTable:
+        row.eff_dist_h *= 1. - dcCalErrorVal[key]
+    elif key == "Livingston_DC_Calibration_Error":
+      for row in simInspiralTable:
+        row.eff_dist_l *= 1. - dcCalErrorVal[key]
+
+##############################################################################
+def determine_diffs(snrArray,slideZero):
+  """
+  A function to determine the points in the SNRarray that should be used in
+  calculating the differential of Ng prime
+  """
+  if max(snrArray) <= (slideZero.zero_loudest):
+    upperDiff = len(snrArray) - 1
+    lowerDiff = len(snrArray) - 2
+    print >> sys.stderr, "WARNING: your loudest event is louder than all"
+    print >> sys.stderr, "background events. C_L' may not be calculated"
+    print >> sys.stderr, "with sufficient accuracy. More time slides are"
+    print >> sys.stderr, "needed to ensure better accuracy."
+    print >> sys.stderr, "You may also see this message if insufficient"
+    print >> sys.stderr, "injections have been performed in regions where"
+    print >> sys.stderr, "IFAR is going from max to min."
+  elif min(snrArray) >= (slideZero.zero_loudest):
+    upperDiff = 1
+    lowerDiff = 0
+    print >> sys.stderr, "WARNING: your loudest event is quiter than all"
+    print >> sys.stderr, "background events. C_L' may not be calculated"
+    print >> sys.stderr, "with sufficient accuracy. More time slides are"
+    print >> sys.stderr, "needed to ensure better accuracy."
+  else:
+    upperDiff = len(snrArray) - \
+        len(snrArray[(snrArray > slideZero.zero_loudest)])
+    lowerDiff = len(snrArray[(snrArray < slideZero.zero_loudest)]) - 1
+  return upperDiff,lowerDiff
+##############################################################################
+# Class for storing the time slide information
+##############################################################################
+class slideZeroData:
+  """
+  class to hold the time slide data, has methods to make the relevant plots
+  """
+  def __init__(self, numSlides, statistic):
+    self.num_slides = numSlides
+    self.statistic = statistic
+    self.slide_loudest = None
+    self.zero_loudest = None
+    self.snr_array = None
+
+  def add_slide_data (self, slideGlob):
+    # read in triggers, get slide loudest
+    nosims,slideCoinc,md = readFiles(slideGlob,self.statistic)
+    numSlides = self.num_slides
+    slideNum = range(1 , numSlides + 1)
+    slideNum.extend(range(-numSlides, 0))
+    slideLoudest = []
+    for slide in slideNum:
+      slideTrigs = slideCoinc.getslide(slide)
+      if self.statistic.name == 'far':
+        try: stat = min(slideCoinc.getslide(slide).getstat() )
+        except: stat = 100.0
+      else:
+        try: stat = max(slideCoinc.getslide(slide).getstat() )
+        except: stat = 0.0
+      slideLoudest.append(stat)
+
+    self.slide_loudest = asarray(slideLoudest)
+    if self.num_slides and self.zero_loudest:
+      minSnr = 0.95 * min(min(self.slide_loudest),self.zero_loudest)
+      maxSnr = 1.05 * max(max(self.slide_loudest),self.zero_loudest)
+      self.snr_array = \
+          arange(minSnr, maxSnr, (maxSnr - minSnr)/(2 * self.num_slides))
+    else:
+      minSnr = 0.95 * min(self.slide_loudest)
+      maxSnr = 1.05 * max(self.slide_loudest)
+      self.snr_array = \
+          arange(minSnr, maxSnr, (maxSnr - minSnr)/(2 * self.num_slides))
+
+  
+  def add_zero_lag(self, zeroGlob):
+    """
+    add zero lag data 
+    """
+    nosims,zeroCoinc,md = readFiles(zeroGlob,self.statistic)
+    if self.statistic.name == 'far':
+      try: stat = min(zeroCoinc.getstat())
+      except: stat = 100.0
+    else:
+      try: stat = max(zeroCoinc.getstat())
+      except: stat = 0.0
+    self.zero_loudest = stat
+  
+  def get_cumulative(self, snrArray = None):
+    """
+    get cumulative distribution of snrs 
+    """
+    if not snrArray: snrArray = self.snr_array
+    numBelow = []
+    for snrValue in snrArray:
+      numBelow.append(sum(self.slide_loudest < snrValue))
+    numBelow = asarray(numBelow,'f')/(2 * self.num_slides)
+    return numBelow
+  
+  def plot_cumulative(self,figNum,figureName):
+    """
+    plot cumulative distribution of snrs of slide loudest events
+    """
+    figure(figNum)
+    slideCum = self.get_cumulative()
+    if self.statistic.name == 'far':
+      slideCum = 1. - slideCum
+    plot(self.snr_array, slideCum,linewidth=2,label="slide dist")
+    grid()
+    xlabel(self.statistic.name, size='x-large')
+    if self.statistic.name == 'far':
+      ylabel('Probability loudest event > value', size='x-large')
+    else:
+      ylabel('Probability loudest event < value', size='x-large')
+    if self.zero_loudest:
+      axvline(self.zero_loudest,linewidth=2,color='r',label="zero lag")
+      if self.statistic.name == 'far':
+        P_b = exp(-self.zero_loudest * opts.far_time_correction * \
+            opts.num_categories)
+      elif self.statistic.name == 'ifar':
+        P_b = exp(- opts.far_time_correction * \
+            opts.num_categories / self.zero_loudest)
+      else:
+        P_b = self.get_cumulative([self.zero_loudest])[0]
+      print 'cumulative probability P_b at loudest event is %.4f' % P_b
+    legend()
+    if figureName:
+      savefig( figureName + '_slide_cumulative_dist.png' )
+    return P_b
+  
+  def get_smooth_pdf(self, snrArray = None):
+    """
+    get the smooth pdf of the snrs of the slide loudest events
+    """
+    if not snrArray: snrArray = self.snr_array
+    # plot a smoothed probability distribution
+    num = [0]
+    for i in range(len(snrArray) - 1):
+      num.append(sum((self.slide_loudest > snrArray[i]) * \
+                     (self.slide_loudest < snrArray[i+1])))
+    # normalize pdf to unity                 
+    num = asarray(num,'f') / ( len(self.slide_loudest) * \
+        (snrArray[1] - snrArray[0]) )
+    # gaussian average over 5 points
+    width = 5.0
+    gauss = exp(- arange(- 1.0* (self.num_slides - 1) /width, 
+        1.0 * self.num_slides / width,
+        1.0/width )**2 / 2) / sqrt(2.0 * pi) /width
+    smooth_pb = convolve(num,gauss,mode=1)
+    return smooth_pb
+  
+  def plot_pdf(self,figNum,figureName):
+    """
+    plot the smooth pdf of the snrs of the slide loudest events
+    """
+    figure(figNum)
+    if self.statistic.name == 'far':
+      slidePDF = exp(-self.snr_array * opts.far_time_correction * \
+          opts.num_categories)
+    if self.statistic.name == 'ifar':
+      slidePDF = 1/(self.snr_array**2)*exp(- opts.far_time_correction * \
+          opts.num_categories/ self.snr_array)
+    else:
+      slidePDF = self.get_smooth_pdf()
+    plot(self.snr_array, slidePDF, 'k',linewidth=2,label="smoothed pdf")
+    xlabel(self.statistic.name, size='x-large')
+    ylabel('pdf of loudest event', size='x-large')
+    grid()
+    if self.zero_loudest:
+      x = arange(len(self.snr_array))
+      axvline(self.zero_loudest,linewidth=2,color='r',label="zero lag")
+      if self.statistic.name == 'far':
+        p_b = exp(-self.zero_loudest * opts.far_time_correction * \
+            opts.num_categories)
+      if self.statistic.name == 'ifar':
+        p_b = 1/(self.zero_loudest**2)*exp(- opts.far_time_correction * \
+            opts.num_categories/ self.zero_loudest)
+      else:
+        if max(self.snr_array) < self.zero_loudest:
+          p_b = 0.5 * (slidePDF[-1] + slidePDF[-2])
+        elif min(self.snr_array) > self.zero_loudest:
+          p_b = 0.5 * (slidePDF[0] + slidePDF[1])
+        else:
+          p_b = 0.5 * (slidePDF[max(x[self.snr_array < self.zero_loudest])] + \
+                       slidePDF[min(x[self.snr_array > self.zero_loudest])] )
+      print 'pdf p_b at loudest event is %.4f' % p_b
+    legend()
+    if figureName:
+      savefig( figureName + '_slide_pdf.png' )
+    return p_b
+
+  def plot_integrated_pdf(self,figNum,figureName):
+    """
+    plot the integral of the smoothed pdf, and the original cumulative dist
+    """
+    figure(figNum)
+    if self.statistic.name == 'far':
+      smoothCum = exp(-self.snr_array * opts.far_time_correction * \
+          opts.num_categories)
+    if self.statistic.name == 'ifar':
+      smoothCum = exp(- opts.far_time_correction * \
+          opts.num_categories/ self.snr_array)
+
+    else:
+      slidePDF = self.get_smooth_pdf()
+      smoothCum = cumsum(slidePDF)*(self.snr_array[1] - self.snr_array[0])
+    slideCum = self.get_cumulative()
+    if self.statistic.name == 'far':
+      slideCum = 1. - slideCum
+    plot(self.snr_array, smoothCum, 'k',linewidth=2,\
+        label="integral of smoothed pdf")
+    plot(self.snr_array, slideCum, 'b',linewidth=2,label="cumulative dist")
+    xlabel(self.statistic.name, size='x-large')
+    if self.statistic.name == 'far':
+      ylabel('Probability loudest event > value', size='x-large')
+    else:
+      ylabel('Probability loudest event < value', size='x-large')
+    grid()
+    if self.zero_loudest:
+      x = arange(len(self.snr_array))
+      axvline(self.zero_loudest,linewidth=2,color='r',label="zero lag")
+    legend(loc = 4)
+    if figureName:
+      savefig( figureName + '_int_slide_dist.png' )
+
+##############################################################################
+# Class for storing the astrophysical data
+##############################################################################
+class astroData:
+  """
+  class to hold the data from astrophysical injections
+  """
+  def __init__(self, astroGlob, sourceFile, figName, distErrorType = None, \
+      magErrorType = None):
+    self.astro_inj,nocoincs, self.max_dist = readFiles(astroGlob)
+    self.astro_inj_precut = self.astro_inj
+    self.source_list = read_source_file(sourceFile)
+    if distErrorType or magErrorType: 
+      self.source_list = add_actual_error(self.source_list,distErrorType,\
+          magErrorType)
+    self.fig_name = figName
+    self.max_luminosity = 0.
+    self.total_luminosity = 0.
+    for galaxy, params in self.source_list.iteritems():
+      if self.max_dist is not None and params["distance"] < self.max_dist:
+        self.total_luminosity += params["luminosity"]
+      if params["luminosity"] > self.max_luminosity:
+        self.max_galaxy = galaxy
+        self.max_luminosity = params["luminosity"]
+    self.count_sources()
+
+  def count_sources(self):
+    """
+    store details about galaxies
+    """
+    self.max_sources = \
+        self.astro_inj.getColumnByName('source').count(self.max_galaxy)
+    self.mw_sources = \
+        self.astro_inj.getColumnByName('source').count('MW') 
+    self.astro_normalization = self.max_luminosity/self.max_sources
+    self.total_sources = len(self.astro_inj)
+    self.total_normalization = self.total_luminosity/self.total_sources
+
+  def mass_cut(self,mlow,mhigh):
+    """
+    cut injections by mass
+    """
+    self.astro_inj = massCut(self.astro_inj_precut,mlow,mhigh)
+    self.count_sources()
+    
+  def segment_cut(self,segmentFile):
+    """
+    cut injections which lie outside the given segment file
+    """
+    segFile = open( segmentFile , "r")
+    segList = segmentsUtils.fromsegwizard(segFile)
+    segFile.close()
+    self.astro_inj = self.astro_inj.veto(segList.__invert__())
+    self.count_sources()
+
+  def get_values(self,column,error=None):
+    """
+    return the values in the specified column, 
+    if error is specified, then correct values if they are distances
+    XXX need to extend to take lowest 2 distances per injection XXX
+    """
+    if "combined_chirp_dist" in column:
+      gal_name = self.astro_inj.getColumnByName('source')
+      sites = column.split('_')[-1]
+      invDistsq = zeros(len(self.astro_inj),'d')
+      for site in sites:
+        dist = self.astro_inj.get_chirp_eff_dist(site)
+        if error == "Distance":
+          # apply the appropriate correction
+          for i in range(len(gal_name)):
+            dist[i] *= (1 + self.source_list[gal_name[i]]['actual_delta_d'])
+        invDistsq += (distNorm[site]/dist)**2.
+      return invDistsq**-.5
+    elif (error == "Distance") and ("dist" in column):
+      gal_name = self.astro_inj.getColumnByName('source')
+      col_data = self.astro_inj.get_column(column)
+      for i in range(len(gal_name)):
+        col_data[i] *= (1 + self.source_list[gal_name[i]]['actual_delta_d'])
+      return col_data
+    else:
+      return self.astro_inj.get_column(column)
+
+  def hist_ng(self,column,edges,error=None):
+    """
+    return a hist of the given column, with specified edges
+    """
+    if error:
+      gal_name = self.astro_inj.getColumnByName('source')
+      lum = []
+      for name in gal_name:
+        if error=="Distance":
+          lum.append( (1 + self.source_list[name]['actual_delta_d'])**2 ) 
+        elif error=="Magnitude":
+          lum.append( 10**(self.source_list[name]['actual_delta_m']/2.5) )
+      return (histng(self.get_values(column,error),edges,lum) * \
+              self.total_normalization)
+    else:
+      return (histng(self.get_values(column),edges) * self.total_normalization)
+
+  def hist_2d_ng(self,col1,edges1,col2,edges2,error=None):
+    """
+    return a 2-d hist of columns, given edges
+    """
+    if error:
+      gal_name = self.astro_inj.getColumnByName('source')
+      lum = []
+      for name in gal_name:
+        if error=="Distance":
+          lum.append( (1+self.source_list[name]['actual_delta_d'])**2 )  
+        elif error=="Magnitude":
+          lum.append( 10**(self.source_list[name]['actual_delta_m']/2.5) )
+      return (square(self.get_values(col1,error), edges1, \
+                     self.get_values(col2,error), edges2, lum) *\
+                     self.total_normalization)
+    else:
+      return (square(self.get_values(col1),edges1, \
+                     self.get_values(col2),edges2) * \
+                     self.total_normalization)
+
+  def print_distance_ng(self, column, edges):
+    """
+    print out the ng versus effective distance for the sources
+    """
+    lumarray = cumsum(self.hist_ng(column,edges))
+    step = edges[1]-edges[0]
+
+    print "# The number of L_10 as a function of horizon distance."
+    print "# The format is:"
+    print "#    Dhorizon Dsensemon NG N1 N6"
+    print "# where"
+    print "# Dhorizon: distance to optimally oriented, located binary"
+    print "# Dsensmon: Dhorizon/sqrt(5.0)"
+    print "# NG: total blue luminosity inside D in unit of L10"
+    print "# N1: no of events detectable in a search with this sensitivity"
+    print "#     based on KKL model 1"
+    print "# N6: no of events detectable in a search with this sensitivity"
+    print "#     based on KKL model 6"
+    for i,e in enumerate(edges):
+      Dhorizon = edges[i]+step
+      Dsensemon = Dhorizon / sqrt(5.0)
+      NsubG = lumarray[i]
+      # normalizations are from XXX
+      Nmodelone = (23.2/1.7) * NsubG / 1.0e6 
+      Nmodelsix = (83.0/1.7) * NsubG / 1.0e6 
+      print "%f\t%f\t%f\t%e\t%e" % \
+          (Dhorizon, Dsensemon, NsubG, Nmodelone, Nmodelsix) 
+
+
+  def plot_ng(self, figNum, column, edges, type = 'plot', error = None):
+    """
+    make a plot of ng vs column
+    """
+    figure(figNum)
+    if type == 'hist':
+      bar(edges, self.hist_ng(column,edges,error), (edges[1]-edges[0]))
+      ending = '_ng_hist'
+      title_text = 'Luminosity vs ' + column
+    elif type == 'cum_log':
+      loglog(edges, cumsum(self.hist_ng(column,edges,error)),
+             linewidth=2)
+      ending = '_ng_cum_log'
+      title_text = 'Cumulative Luminosity vs ' + column
+    elif (type == 'cum' or type == 'curvefit'):
+      plot(edges, cumsum(self.hist_ng(column,edges,error)),linewidth=2)
+      ending = '_ng_cum'
+      title_text = 'Cumulative Luminosity vs ' + column
+    else:
+      plot(edges, self.hist_ng(column,edges,error)/(edges[1] - edges[0]),
+          linewidth=2)
+      ending = '_ng_plot'    
+      title_text = 'Luminosity vs ' + column
+    grid( True)
+    xlim(min(edges),max(edges))
+    xlabel(column, size='x-large')
+    ylabel('N_10', size='x-large')
+    if error == "Distance":
+      title_text += ' with galaxy distance errors'
+      ending += '_dist_err'
+    elif error == "Magnitude":
+      title_text += ' with galaxy magnitude errors'
+      ending += '_mag_err'
+    if type == 'curvefit':
+      print 
+      print "The Fitted Curve was generated using Regression method" 
+      print "using the first 30 galaxies and fitting a Cubic polynomial"   
+      x = arange(min(edges),max(edges),(max(edges) - min(edges))/100)
+      N_Gr = 0.00611877*(x)*(x)*(x)-0.0164998*(x)*(x)+2.52*(x)
+      plot(x,N_Gr,label='Fitted Curve',linewidth=2)
+      ending = 'ng_cum_curvefit.png'
+      legend()      
+    title( title_text, size='x-large')  
+    ending += '.png'
+    if self.fig_name:
+      savefig(self.fig_name + '_' + column + ending )
+
+  def plot_2d_ng(self, figNum, col1,edges1,col2,edges2,error=None):
+    """
+    make a 2d plot of ng vs columns
+    """
+    figure(figNum)
+    ng = self.hist_2d_ng(col1,edges1,col2,edges2,error)
+    ng = ng / (edges1[1] - edges1[0]) / (edges2[1] - edges2[0])
+    V = arange(0,ng.max(),ng.max()/40)
+    NC=contourf(edges1,edges2,ng + 0.5 * V[1],V)
+    V = arange(0,ng.max(),ng.max()/10)
+    contour(edges1,edges2,ng,V,colors='k',linewidths=2)
+    colorbar(NC)
+    title_text = "Luminosity contour"
+    ending = "_ng"
+    if error == "Distance":
+      title_text += ' with galaxy distance errors'
+      ending += '_dist_err'
+    elif error == "Magnitude":
+      title_text += ' with galaxy magnitude errors'
+      ending += '_mag_err'
+    ending += ".png"
+    xlim(min(edges1), max(edges1))
+    ylim(min(edges2), max(edges2))
+    xlabel(col1, size='x-large')
+    ylabel(col2, size='x-large')
+    title( title_text, size='x-large')
+    if self.fig_name:
+      savefig( self.fig_name  + '_' + col1 + '_' + \
+             col2 + ending )
+
+##############################################################################
+# Class for storing the injection data
+##############################################################################
+class injData:
+  """
+  class to hold the injection data
+  """
+  def __init__(self,foundGlob, missedGlob, statistic, dcCalErrorVal, figName):
+    self.statistic = statistic.name
+    self.found_precut,self.coincs_precut,md = readFiles(foundGlob,statistic,
+        dcCalErrorVal=dcCalErrorVal)
+    self.missed_precut,self.nocoincs_precut,md = readFiles(missedGlob,
+        dcCalErrorVal=dcCalErrorVal)
+    #self.missed = lsctables.New(lsctables.SimInspiralTable)
+    #self.missed.extend(self.missed_precut) 
+    #self.coincs = CoincInspiralUtils.coincInspiralTable()
+    #self.coincs.extend(self.coincs_precut)
+    #self.found = lsctables.New(lsctables.SimInspiralTable)
+    #self.found.extend(self.found_precut)
+    #self.nocoincs = CoincInspiralUtils.coincInspiralTable()
+    #if self.nocoincs: self.nocoincs.extend(self.nocoincs_precut)
+    self.missed = self.missed_precut
+    self.found = self.found_precut
+    self.coincs = self.coincs_precut
+    self.nocoincs = self.nocoincs_precut
+    self.coincs.add_missed_sims(self.missed)
+    self.fig_name = figName
+   
+  def get_injections(self,threshold):
+    """
+    extract the injections found above giventhreshold
+    """
+    return self.coincs.return_sim_inspirals(self.statistic,threshold)
+
+  def get_values(self,column,threshold,error="None"):
+    """
+    get the values contained in column for inj above threshold
+    XXX need to extend to take lowest 2 distances per injection XXX
+    """
+    if "combined_chirp_dist" in column:
+      injs = self.get_injections(threshold)
+      sites = column.split('_')[-1]
+      invDistsq = zeros(len(injs),'d')
+      for site in sites:
+        if  error != "None" and \
+            (error == "Waveform" or error[0].lower() == site):
+          # apply the appropriate correction
+          dist = distError(injs.get_chirp_eff_dist(site), errorVal[error], 0)
+        else:
+          dist = injs.get_chirp_eff_dist(site)
+        invDistsq += (distNorm[site]/dist)**2.
+      return invDistsq**-.5
+    else:
+      if  error != "None" and \
+          (error == "Waveform" or error[0].lower() == column[-1]):
+        return distError(self.get_injections(threshold).get_column(column),
+            errorVal[error], 0)
+      else:
+        return self.get_injections(threshold).get_column(column)
+  
+  def mass_cut(self,mlow,mhigh):
+    """
+    cut injections by mass
+    """
+    self.found = massCut(self.found_precut,mlow,mhigh)
+    # this correctly cleans up coincs and the sngl_table but
+    # not the sim table, I do that below
+    self.coincs = injMassCut(self.coincs_precut,mlow,mhigh)
+    self.missed = massCut(self.missed_precut,mlow,mhigh)
+    # The sim_table is the last to clean up 
+    self.coincs.sim_table = self.found
+  
+  ############################################################################
+  # 1-d operations and plots
+  ############################################################################
+  def hist_inj(self,column,edges,threshold):
+    """
+    return a hist of the given column, with specified edges
+    """  
+    return histng(self.get_values(column,threshold), edges)
+      
+  def eff(self,column,edges,threshold):
+    """
+    get efficiency vs column, above given threshold
+    """
+    all_inj = histng(self.get_values(column,-2), edges)
+    found_inj = histng(self.get_values(column,threshold), edges)
+    return found_inj / (all_inj + 1e-5)
+
+  def mc(self,column,edges,threshold):
+    """
+    get mc errors for column, above given threshold
+    """
+    all_inj = histng(self.get_values(column,-2), edges)
+    found_inj = histng(self.get_values(column,threshold), edges)
+    return sqrt(found_inj * (all_inj - found_inj) / (all_inj**3 + 1e-5))
+
+  def error(self,column,edges,error,threshold):
+    """
+    get errors for column, above given threshold
+    """
+    all_inj = histng(self.get_values(column,-2,error), edges)
+    found_inj = histng(self.get_values(column,threshold,error), edges)
+    return (found_inj/(all_inj + 1e-5) - self.eff(column,edges,threshold) )
+
+  def plot_efficiency(self, figNum, column, edges, threshold = 0, error = None):
+    """
+    plot efficency above threshold for column adding errors if specified
+    """
+    figure(figNum)
+    eff = self.eff(column,edges,threshold)
+    plot(edges,eff,'b',linewidth=2)
+    if error:
+      ending = error.lower() + ".png"
+      title_text = 'Efficiency vs ' + column + ' with ' + error + ' errors'
+      if error == "Monte_Carlo":
+        mc = self.mc(column,edges,threshold)
+        errorTuple = errorbar(edges,eff,mc,fmt=None,ecolor='r',linewidth=2)
+      elif "dist" in column and \
+          (error == "Waveform" or error[0].lower() == column[-1]):
+        if error == "Waveform":
+          errorTuple = errorbar(edges,eff, \
+              xerr=([edges*errorVal["Waveform"],zeros(len(edges))]),\
+              fmt=None,ecolor='g',linewidth=2)
+        else:
+          errorTuple = errorbar(edges,eff,xerr=(edges*errorVal[error]),\
+              fmt=None,ecolor='k',linewidth=2)
+      else:
+        errorTuple = errorbar(edges,eff,xerr=(zeros(len(edges))),\
+              fmt=None,ecolor='k',linewidth=2)
+      fit = errorTuple[0]
+      errors = errorTuple[1]
+
+      for line in errors:
+        matplotlib.lines.Line2D.set_linewidth(line,1)
+        matplotlib.lines.Line2D.set_markeredgewidth(line,1)
+    else:
+      ending = "efficiency.png"
+      title_text = 'Efficiency vs ' + column
+    grid(True)
+    ylim(0, 1.1) 
+    xlabel( column, size='x-large')
+    ylabel('Efficiency', size='x-large')
+    title(title_text, size='x-large')
+    if self.fig_name:
+      savefig( self.fig_name + '_' + column + "_" + ending )
+
+  ############################################################################
+  # 2-d operations and plots
+  ############################################################################
+  def hist_2d_inj(self,col1,edges1,col2,edges2,threshold):
+    """
+    return a hist of the given columns, with specified edges
+    """ 
+    return square(self.get_values(col1,threshold), edges1, \
+                  self.get_values(col2,threshold), edges2)
+  
+  def eff_2d(self,col1,edges1,col2,edges2,threshold):
+    """
+    get efficiency vs columns, above given threshold
+    """
+    all_inj = self.hist_2d_inj(col1,edges1,col2,edges2,-2)
+    found_inj = self.hist_2d_inj(col1,edges1,col2,edges2,threshold)
+    return found_inj / (all_inj + 1e-5)
+
+  def mc_2d(self,col1,edges1,col2,edges2,threshold):
+    """
+    get mc errors for columns, above given threshold
+    """
+    all_inj = self.hist_2d_inj(col1,edges1,col2,edges2,-2)
+    found_inj = self.hist_2d_inj(col1,edges1,col2,edges2,threshold)
+    return sqrt(found_inj* (all_inj - found_inj) / (all_inj**3 + 1e-5))
+
+  def error_2d(self,col1,edges1,col2,edges2,error,threshold):
+    """
+    get errors for columns, above given threshold
+    """
+    all = {}
+    found = {}
+    for col in [col1, col2]:
+      all[col] = self.get_values(col,-2,error)
+      found[col] = self.get_values(col,threshold,error)
+    all_inj = square(all[col1], edges1, all[col2], edges2)
+    found_inj = square(found[col1], edges1, found[col2], edges2)
+    return (found_inj/(all_inj + 1e-5) - \
+        self.eff_2d(col1,edges1,col2,edges2,threshold) )
+
+  def plot_injections(self, figNum, col1, edges1, col2, edges2, threshold = 0):
+    """
+    plot injections above threshold for column
+    """
+    figure(figNum)
+    inj = self.hist_2d_inj(col1,edges1,col2,edges2,threshold)
+    V = arange(0,inj.max(),inj.max()/40)
+    IC=contourf(edges1,edges2,inj + 0.5*V[1],V)
+    V = arange(0,inj.max(),inj.max()/10)
+    contour(edges1,edges2,inj,V,colors='k',linewidths=1)
+    xlabel(col1, size='x-large' )
+    ylabel(col2, size='x-large' )
+    colorbar(IC)
+    if threshold > 0:
+      title('Number of injections found above threshold %.2f' % threshold, 
+          size='x-large' )
+      ending = '_inj_found_above_%.2f.png' % threshold
+    else:
+      title('Number of injections', size='x-large')
+      ending = '_inj.png'
+    if self.fig_name:
+      savefig( self.fig_name + '_' + col1 + '_'  + col2 + ending )
+
+
+  def plot_eff_contour(self, figNum, col1, edges1, col2, edges2, threshold):
+    """
+    plot efficency above threshold for columns
+    """
+    figure(figNum)
+    eff_2d = self.eff_2d(col1, edges1, col2, edges2, threshold)
+    V = arange(0,42./40,1./40)
+    EC=contourf(edges1,edges2,eff_2d + 0.5 * V[1],V)
+    hold(True)
+    V = arange(0.1,1,0.1)
+    contour(edges1,edges2,eff_2d,V,colors='k',linewidths=1)
+    xlabel(col1, size='x-large')
+    ylabel(col2, size='x-large')
+    colorbar(EC)
+    title('Efficiency Contour', size='x-large') 
+    if self.fig_name:
+      savefig( self.fig_name + '_' + col1 + '_' + col2 + '_efficiency.png' )
+
+  def plot_mc_contour(self, figNum, col1, edges1, col2, edges2, threshold):
+    """
+    plot efficency above threshold for columns
+    """
+    figure(figNum)
+    mc_2d = self.mc_2d(col1, edges1, col2, edges2, threshold)
+    V = arange(0,max(mc_2d.max(),0.01),max(mc_2d.max(),0.01)/40)
+    MC=contourf(edges1,edges2,mc_2d + 0.5 * V[1],V)
+    hold(True)
+    V = arange(0,max(mc_2d.max(),0.01),max(mc_2d.max(),0.01)/10)
+    contour(edges1,edges2,mc_2d,V,colors='k',linewidths=1)
+    xlabel(col1, size='x-large')
+    ylabel(col2, size='x-large')
+    colorbar(MC)
+    title('Monte_Carlo Errors in Efficiency', size='x-large') 
+    if self.fig_name:
+      savefig( self.fig_name + '_' + col1 + '_' + col2 + '_mc_errors.png' )
+
+##############################################################################
+# Class for storing the injection data
+##############################################################################
+class injAstroData:
+  """
+  class to hold the time slide data, has methods to make the relevant plots
+  """
+  def __init__(self, xValue, yValue, nBins, figName = None, \
+               xMin = None, xMax = None, yMin = None, yMax = None):
+    self.x_value = xValue
+    self.y_value = yValue
+    self.nbins = nBins
+    self.fig_name = figName
+    self.log_x = False
+    self.x_min = xMin
+    self.x_max = xMax
+    self.log_y = False
+    self.y_min = yMin
+    self.y_max = yMax
+    self.astro = None
+    self.inj = None
+
+  def add_astro_data(self,astroGlob, sourceFile, distErrorType = None, \
+      magErrorType = None):
+    """
+    add the astrophyscially distributed injections 
+    """
+    self.astro =  astroData(astroGlob, sourceFile, self.fig_name, \
+        distErrorType, magErrorType)
+
+  def add_found_missed(self,foundGlob, missedGlob, statistic, dcCalErrorVal):
+    """
+    add the performed injections 
+    """
+    self.inj = injData(foundGlob, missedGlob, statistic, dcCalErrorVal,
+        self.fig_name) 
+
+  ############################################################################
+  # General stuff to fix axes etc
+  ############################################################################
+  def set_log_x(self, value):
+    """
+    set the value for log_x 
+    """
+    self.log_x = value
+
+  def set_x_min(self, value):
+    """
+    set the minimum value for x 
+    """
+    self.x_min = value
+
+  def set_x_max(self, value):
+    """
+    set the maximum value for x 
+    """
+    self.x_max = value
+
+  def set_log_y(self, value):
+    """
+    set the value for log_y 
+    """
+    self.log_y = value
+
+  def set_y_min(self, value):
+    """
+    set the minimum value for y 
+    """
+    self.y_min = value
+
+  def set_y_max(self, value):
+    """
+    set the maximum value for y 
+    """
+    self.y_max = value
+
+  def axes_square(self):
+    """
+    make the axes square
+    """
+    if self.x_min > self.y_min:
+      self.set_x_min(self.y_min)
+    else:
+      self.set_y_min(self.x_min)
+      
+    if self.x_max < self.y_max:
+      self.set_x_max(self.y_max)
+    else:
+      self.set_y_max(self.x_max)
+
+  def axes_from_found(self,threshold):
+    """
+    take the axes from the found injections
+    """
+    if self.inj:
+      self.set_x_min(0.99 * min(self.inj.get_values(self.x_value,threshold)) )
+      self.set_x_max(1.01 * max(self.inj.get_values(self.x_value,threshold)) )
+      self.set_y_min(0.99 * min(self.inj.get_values(self.y_value,threshold)) )
+      self.set_y_max(1.01 * max(self.inj.get_values(self.y_value,threshold)) )
+    
+  def x_edges(self):
+    """
+    return the edges in the x-direction
+    """
+    if self.log_x:
+      x_edges = \
+          arange(self.nbins)*log(self.x_max/self.x_min)/(self.nbins - 1.) \
+          + log(self.x_min)
+      x_edges = exp(x_edges)
+    else:
+      x_edges = \
+          arange(self.x_min, self.x_max, (self.x_max - self.x_min)/self.nbins)
+    return x_edges
+    
+  def y_edges(self):
+    """
+    return the edges in the y-direction
+    """
+    if self.log_y:
+      y_edges = \
+          arange(self.nbins)*log(self.y_max/self.y_min)/(self.nbins - 1.) \
+          + log(self.y_min)
+      y_edges = exp(y_edges)
+    else:
+      y_edges = \
+          arange(self.y_min, self.y_max, (self.y_max - self.y_min)/self.nbins)
+    return y_edges
+
+  ############################################################################
+  # Make plots using astro data
+  ############################################################################
+  def plot_x_ng(self, figNum, type = 'plot',error=None):
+    """
+    make a plot of ng vs x-value
+    """
+    self.astro.plot_ng(figNum, self.x_value, self.x_edges(), type, error)
+
+  def plot_y_ng(self, figNum, type = 'plot'):
+    """
+    make a plot of ng vs y-value
+    """
+    self.astro.plot_ng(figNum, self.y_value, self.y_edges(), type)
+ 
+  def plot_2d_ng(self, figNum,error=None):
+    """
+    make a 2d plot of ng vs x-value,y-value
+    """
+    self.astro.plot_2d_ng(figNum, self.x_value, self.x_edges(), 
+                          self.y_value, self.y_edges(),error)
+    
+  ############################################################################
+  # Make plots using injection results
+  ############################################################################
+  def plot_x_eff(self, figNum, threshold = 0, error = None):
+    """
+    plot efficency above threshold for x-value
+    """
+    self.inj.plot_efficiency(figNum, self.x_value, self.x_edges(), \
+        threshold, error)
+
+  def plot_y_eff(self, figNum, threshold = 0, error = None):
+    """
+    plot efficency above threshold for x-value
+    """
+    self.inj.plot_eff(figNum, self.y_value, self.y_edges(), \
+        threshold, error)
+
+  def plot_eff_contour(self, figNum, threshold):
+    """
+    plot efficency above threshold for x-value, y-value
+    """
+    self.inj.plot_eff_contour(figNum, self.x_value, self.x_edges(), \
+                              self.y_value, self.y_edges(), threshold)
+
+  def plot_mc_contour(self, figNum, threshold):
+    """
+    plot mc errors above threshold for x-value, y-value
+    """
+    self.inj.plot_mc_contour(figNum, self.x_value, self.x_edges(), \
+                              self.y_value, self.y_edges(), threshold)
+
+  def plot_inj(self, figNum, threshold = 0):
+    """
+    plot injections above threshold for x-value
+    """
+    self.inj.plot_injections(figNum, self.x_value, self.x_edges(), \
+                             self.y_value, self.y_edges(), threshold)
+
+  ############################################################################
+  # Make plots using injection results and astrophysical distributions
+  ############################################################################
+  def plot_search_x_ng(self, figNum, threshold):
+    """
+    plot number of galaxies searched
+    """
+    figure(figNum)
+    xng_search = self.inj.eff(self.x_value, self.x_edges(), threshold) * \
+                 self.astro.hist_ng(self.x_value, self.x_edges())
+    plot(self.x_edges(),cumsum(xng_search),linewidth=2)
+    grid( True )
+    xlabel( self.x_value, size='x-large' )
+    ylabel('N_10' , size='x-large')
+    title( 'Cumulative Search Luminosity vs ' + self.x_value, size='x-large')
+    if self.fig_name:
+      savefig( self.fig_name + '_' + self.x_value + '_ng_search_cum.png' )
+
+  def get_search_x_ng(self, threshold, astroError=None):
+    """
+    get the number of galaxies searched using x integral
+    """
+    return sum(self.inj.eff(self.x_value, self.x_edges(), threshold) * \
+               self.astro.hist_ng(self.x_value, self.x_edges(), astroError) )
+
+  def get_search_x_error(self, error, threshold):
+    """
+    get the error on number of galaxies searched using x integral
+    """
+    if error == "Monte_Carlo":
+      return sqrt( sum(self.inj.mc(self.x_value, self.x_edges(), threshold)**2\
+           * self.astro.hist_ng(self.x_value, self.x_edges())**2 ))
+    else:
+      return sum(self.inj.error(self.x_value,self.x_edges(),error,threshold) \
+           * self.astro.hist_ng(self.x_value, self.x_edges()) )
+     
+  def get_search_2d_ng(self, threshold, astroError=None):
+    """
+    get the number of galaxies searched using 2d integral
+    """
+    return sum(sum(self.inj.eff_2d(self.x_value, self.x_edges(), self.y_value, \
+                   self.y_edges(), threshold) * \
+                   self.astro.hist_2d_ng(self.x_value, self.x_edges(), \
+                   self.y_value, self.y_edges(), astroError) ))
+
+  def get_search_2d_error(self, error, threshold):
+    """
+    get the monte carlo error on number of galaxies searched using 2d integral
+    """
+    if error == "Monte_Carlo":
+      return sqrt( sum(sum( self.inj.mc_2d(self.x_value, self.x_edges(), \
+                   self.y_value, self.y_edges(), threshold)**2 * \
+                   self.astro.hist_2d_ng(self.x_value, self.x_edges(), \
+                   self.y_value, self.y_edges())**2 )) )
+    else:
+      return sum(sum( self.inj.error_2d(self.x_value, self.x_edges(), \
+                      self.y_value, self.y_edges(), error, threshold) * \
+                      self.astro.hist_2d_ng(self.x_value, self.x_edges(), \
+                      self.y_value, self.y_edges()) ))
+
+
+##############################################################################
+# Make the plot of N_G and N_G'
+##############################################################################
+def plot_ng_vs_stat(injAstro, slideZero, statistic, figNum, integrate,
+    figName = None, numPts=None,ifarTimeCorrect=None):
+  """
+  plot the luminosity vs statistic, using stat values taken from 
+  slides/zero lag.
+  @param injAstro:  an instance of the injAstroData class, containing the 
+                    injections and astrophysical distributions
+  @param slideZero: an instance of the slideZeroData class, containing the
+                    time slides and (possibly) zero lag information.
+  @param figNum:    the figure number
+  @param integrate: which integral to do, either 'x', 'y' or 'xy'.
+  @param figName:   the figure name
+  @param numPts:    number of points used in making the plot, 
+                    default to the number of time slides performed
+  @param ifarTimeCorrect:   The ratio of time between the average time of the
+                            time slides and the zero lag. Needed to make an
+                            intelligent snrArray when using ifar.
+  """
+  ngArray = []
+  ngTempArray = []
+  ngArray2 = []
+  newSnrArray = []
+  tempSnrArray = []
+  newSnrArray2 = []
+
+  # set up the SNR array
+  if slideZero.statistic.name == 'ifar':
+    # To get a good range of values for ifar we explicitly add the first
+    # five loudest values of ifar to snrArray. We then add more sparesly
+    # spaced values determined by the values below snrSpacing,initSnr
+    # and numPts.
+    snrSpacing = 5
+    initSnr = 3
+    if not numPts: numPts = 50
+    numSlides = slideZero.num_slides
+    snrArray = []
+    for i in xrange(1,6):
+      snrArray.append(max(slideZero.slide_loudest)/float(i))
+    for i in xrange(1,numPts+1):
+      snrArray.append(max(slideZero.slide_loudest)/(snrSpacing*float(i) \
+          + initSnr))
+    snrArray.sort()
+  elif numPts:
+    # restrict the size of snrArray 
+    snrArray = slideZero.snr_array
+    snrStep = snrArray[1] - snrArray[0]
+    snrArray = arange(snrArray[0],snrArray[-1]+snrStep, 
+        (snrArray[-1] - snrArray[0])/numPts)
+  else:  
+    snrArray = slideZero.snr_array
+
+  for statValue in snrArray:
+    if slideZero.statistic.name == 'ifar':
+      # This is here because of discreteness in ifar.In a lot of cases we will 
+      # find that the loudest event is equal to a point in the snrArray and
+      # the ifar of some injections. Here we multiply by 1.000001 so that equal
+      # quantities are not treated as greater than.
+      statValue*= 1.000001
+    if integrate == 'x':
+      ngVal = injAstro.get_search_x_ng(statValue)
+    elif integrate == 'y':
+      ngVal = injAstro.get_search_y_ng(statValue)
+    elif integrate == 'xy':
+      ngVal = injAstro.get_search_2d_ng(statValue)
+    if slideZero.statistic.name == 'ifar' and len(ngArray) != 0:
+      # We only add values to ngArray if it is not equal to the previous value
+      if ngVal != ngArray[-1]:
+        ngArray.append(ngVal)
+        newSnrArray.append(statValue)
+    else:
+      ngArray.append(ngVal)
+      newSnrArray.append(statValue)
+    if slideZero.statistic.name == 'ifar':
+      ngTempArray.append(ngVal)
+      tempSnrArray.append(statValue)
+  if slideZero.statistic.name == 'ifar' and len(newSnrArray) == 1:
+    ngArray.append(ngArray[0])
+    newSnrArray.append(newSnrArray[0] + 1)
+    print >> sys.stderr, "WARNING: Insufficient injections have been made, such"
+    print >> sys.stderr, "that C_L is not varying at all for different values"
+    print >> sys.stderr, "of your statistic. C_L' will be artificially set to"
+    print >> sys.stderr, "zero. More injection runs are needed to calculate"
+    print >> sys.stderr, "this quantity with any accuracy."
+         
+  # We also want to make an ngArray, if ifar is used, where we only keep values
+  # if the value of ng is not equal to the NEXT value.
+  if slideZero.statistic.name == 'ifar':
+    ngArray2.append(ngTempArray[-1])
+    newSnrArray2.append(tempSnrArray[-1])
+    for idx in range(len(ngTempArray)-1):
+      if ngTempArray[-idx-2] != ngArray2[-1]:
+        ngArray2.append(ngTempArray[-idx-2])
+        newSnrArray2.append(tempSnrArray[-idx-2])
+    ngArray2.reverse()
+    newSnrArray2.reverse()
+    if len(newSnrArray2) == 1:
+      ngArray2.append(ngArray2[0])
+      newSnrArray2.append(newSnrArray2[0] - 1)
+      print >> sys.stderr, "WARNING: Insufficient injections have been made, such"
+      print >> sys.stderr, "that C_L is not varying at all for different values"
+      print >> sys.stderr, "of your statistic. C_L' will be artificially set to"
+      print >> sys.stderr, "zero. More injection runs are needed to calculate"
+      print >> sys.stderr, "this quantity with any accuracy."
+      
+  ngArray = asarray(ngArray)
+  snrArray = asarray(newSnrArray)
+  ngArray2 = asarray(ngArray2)
+  newSnrArray2 = asarray(newSnrArray2)
+
+  # calculate the derivative at the loudest event
+  upperDiff = None
+  lowerDiff = None
+  upperDiff2 = None
+  lowerDiff2 = None
+  if not slideZero.zero_loudest:
+    return 0
+  if slideZero.statistic.name == 'ifar':
+    # If the loudest statistic is equal to a value in the snrArray then we
+    # differentiate across that point.
+    idx = 0
+    for snr in snrArray:
+      if sqrt((1/snr - 1/slideZero.zero_loudest)**2) < 0.001:
+        upperDiff = idx + 1
+        lowerDiff = idx - 1
+        break
+      else:
+        idx += 1
+    if upperDiff >= len(snrArray):
+      upperDiff = len(snrArray) - 1
+    if lowerDiff == -1:
+      lowerDiff = 0
+    idx = 0
+    for snr in newSnrArray2:
+      if sqrt((1/snr - 1/slideZero.zero_loudest)**2) < 0.001:
+        upperDiff2 = idx + 1
+        lowerDiff2 = idx - 1
+        break
+      else:
+        idx += 1
+    if upperDiff2 >= len(newSnrArray2):
+      upperDiff2 = len(newSnrArray2) - 1
+    if lowerDiff2 == -1:
+      lowerDiff2 = 0
+    if not upperDiff:
+      upperDiff,lowerDiff = determine_diffs(snrArray,slideZero)
+    if not upperDiff2:
+      upperDiff2,lowerDiff2 = determine_diffs(snrArray,slideZero)
+    ngPrime1 = ( ngArray[lowerDiff] - ngArray[upperDiff]) / \
+        (snrArray[upperDiff] - snrArray[lowerDiff])
+    ngPrime2 = ( ngArray2[lowerDiff2] - ngArray2[upperDiff2]) / \
+        (newSnrArray2[upperDiff2] - newSnrArray2[lowerDiff2])
+    ngPrime = (ngPrime1 + ngPrime2)/2.0
+  else:
+    upperDiff,lowerDiff = determine_diffs(snrArray,slideZero)
+    ngPrime = ( ngArray[lowerDiff] - ngArray[upperDiff]) / \
+        (snrArray[upperDiff] - snrArray[lowerDiff])
+  if statistic == 'far':
+    ngPrime *= -1.0
+  diffLineX = (snrArray[lowerDiff],snrArray[upperDiff])
+  diffLineY = (ngArray[lowerDiff],ngArray[upperDiff])
+  if statistic == 'ifar':
+    diffLineX2 = (newSnrArray2[lowerDiff2],newSnrArray2[upperDiff2])
+    diffLineY2 = (ngArray2[lowerDiff2],ngArray2[upperDiff2])
+
+  # make the figure
+  figure(figNum)
+  plot(snrArray, ngArray, 'b', linewidth=2, label="luminosity")
+  plot(diffLineX,diffLineY, 'k', linewidth=4, label="Differential used.")
+  if statistic == 'ifar':
+    plot(newSnrArray2, ngArray2, 'b', linewidth=2, label="luminosity")
+    plot(diffLineX2,diffLineY2, 'k', linewidth=4, label="Differential used.")
+  grid()
+  xlabel(slideZero.statistic.name, size='x-large')
+  if statistic == 'far':
+    ylabel('Luminosity visible below threshold', size='x-large')
+  else:
+    ylabel('Luminosity visible above threshold', size='x-large')
+  if slideZero.zero_loudest:
+    axvline(slideZero.zero_loudest,linewidth=2,color='r',label="zero lag")
+  if figName:
+    if integrate == 'x':
+      figName += "_ng_vs_stat_using_" + opts.x_value + "_integral.png"
+    elif integrate == 'y':
+      figName += "_ng_vs_stat_using_" + opts.y_value + "_integral.png"
+    elif integrate == 'xy':
+      figName += "_ng_vs_stat_using_" + opts.x_value + "_" + opts.y_value + \
+          "_integral.png"
+    savefig( figName )
+
+  return ngPrime
+
+##############################################################################
+# Add systematic errors to distances
+##############################################################################
+def distError(distance, systematic=None, random = None):
+  """
+  function to apply errors to the distance.
+  Systematic error applied by D -> D ( 1 + systematic )
+  Random error applied by D -> D * lognormal(0,random)
+  @param distance:    an array of distances
+  @param systematic:  the systematic error in the distance
+  @param random:      the random error in the distance
+  """
+  if not systematic and not random:
+    return None
+  
+  if systematic:
+    #rescale distances systematically
+    distance = distance * ( 1 + systematic)
+  if random:
+    # rescale distances randomly
+    for i in range(len(distance)):
+      distance[i] = distance[i] * random.lognormvariate(0,random)
+
+  return distance
+
+##############################################################################
+# help message
+usage = """\
+plotnumgalaxies [options]
+
+  Generate plots necessary to calculate an upper limit from a search.  The
+  code reads in different types of data files and makes the appropriate plots.
+
+  ----------------------------------------------------------------------------
+  An astrophysical population distribution can be specified with:
+  --source-file:     A list of source galaxies (such as inspsrcs.dat)
+  --population-glob:  A glob of xml files of sim inspirals, generated with the
+                     source file given above.
+  --population-type: The population's mass distrubtion type
+                     
+  The injections can be cut to keep only those in the relevant times, if a 
+  --segment-file is specified.
+  
+  The luminosity distribution can be plotted against the specified
+  --x-value, where this can be any column in the siminspiral table, or the 
+  chirp_dist_X or combined_chirp_dist_XY[Z...] (where X,Y,Z is one of g,h,l,t,v)
+  
+  The following plots can be made:
+
+  --plot-ng:       A plot of the luminosity.
+  --hist-ng:       A histogram of the luminosity (binned version of above)
+  --cumulative-ng: A cumulative plot of the luminosity.
+  --add-curvefit:  The above plot with a fitted curve added.
+  --cum-log-ng:    A log-log plot of the cumulative luminosity.
+  --plot-2d-ng:    A 2-d contour plot of the luminosity distribution.
+                   (A --y-value must also be specified)
+  
+  If the --source-file contains distance errors for galaxies, you can add
+  --distance-error which will remake the above plots taking into account the
+  distance errors to the galaxies.
+
+  ----------------------------------------------------------------------------
+  Injection results from a search can be specified using:
+  
+  --found-glob:  A glob of xml files containing found injections and  
+  --missed-glob: A glob of xml files containing missed injections
+
+  In this case, the available plots are:
+
+  --plot-efficiency:  An efficiency plot vs x-value
+  --plot-effcontour:  A 2-d efficiency plot vs x-value and y-value.
+  --plot-injections:  2-d contour plots of total and found injections.
+
+  If there is a DC calibration correction to apply, the following options
+  should be used:
+
+  --h-dc-calibration CAL, --l-dc-calibration CAL
+
+  These options will modify the effective distances by D->(1-/+CAL)*D where CAL
+  is the DC calibration error. A positive CAL corresponds to the noise in the
+  detector getting louder by N=N*(1+CAL) and decreasing the effective distance
+  of an injection by D=D*(1-CAL).
+
+  Errors can also be added, using:
+  --h-calibration, --l-calibration, --waveform-systematic, --mc-errors
+
+  ----------------------------------------------------------------------------
+  If both astrophysical and injection data are given, the following additional
+  results are available:
+
+  --cum-search-ng:    The cumulative luminosity available to the search using
+                      an integration over the x-value
+  --cum-search-2d-ng: The cumulative luminosity available to the search using
+                      a 2-d integration over the x-value and y-value
+                   
+  ----------------------------------------------------------------------------
+  The time slide and zero lag results can be specified using:
+  --slide-glob, --zero-glob
+  If these are given, then you can make plots of the distributions of loudest
+  slide events to estimate the background:
+
+  --plot-cum-loudest: Plot the cumulative distribution of loudest slide events
+  --plot-pdf-loudest: Plot the pdf of the loudest events from slides
+  --plot-int-pdf:     Plot the integral of the pdf to check that the smoothing
+                      used to get the pdf is reasonable
+
+  If the zero lag results are given, they are added to the plot.
+  
+  ----------------------------------------------------------------------------
+  If the time-slide, injection and astrophysical results are given, then plots
+  of search luminosity vs statistic value are also available using:
+
+  --plot-ng-vs-stat
+  --plot-2d-ng-vs-stat
+
+  by default, these use the same binning as the time slide plots, however they
+  are rather slow, so the number of points can be selected with:
+
+  --ng-vs-stat-points
+  
+  ----------------------------------------------------------------------------   
+"""
+
+##############################################################################
+parser = OptionParser( usage=usage, version=git_version.verbose_msg)
+
+# used letters: 
+# abcdefghijklmnopqrstuvwxyz
+# ABCDEFGHIJKLMNOPQRSTUVWXYZ
+# !
+
+# basics
+parser.add_option("-V","--verbose",action="store_true",default=False,\
+    help="print additional information when running" )
+
+# input files
+parser.add_option("-S","--source-file",action="store",type="string",\
+    default=None,metavar=" SOURCES",help="full path to source file")
+
+parser.add_option("-I","--population-glob",action="store",type="string",\
+    default=None,metavar=" INJ_GLOB",\
+    help="GLOB of files containing astrophysically distributed injections")
+
+parser.add_option("--population-type",action="store",type="string",\
+    default="gaussian",metavar=" TYPE",\
+    help="The population's mass distrubtion type")
+
+parser.add_option("-G","--segment-file",action="store",type="string",\
+    default=None,metavar=" SEG_LIST",help="full path to segment file")
+
+parser.add_option("-g","--found-glob",action="store",type="string",\
+    default=None, metavar=" FOUND_GLOB", \
+    help="GLOB of found trigger/injection files to read" )
+    
+parser.add_option("-m","--missed-glob",action="store",type="string",\
+    default=None, metavar=" MISS_GLOB", \
+    help="GLOB of files containing missed injections to read" )
+    
+parser.add_option("-z","--zero-glob",action="store",type="string",\
+    default=None, metavar=" ZERO_GLOB", \
+    help="GLOB of files containing zero lag triggers" )
+    
+parser.add_option("-T","--slide-glob",action="store",type="string",\
+    default=None, metavar=" SLIDE_GLOB", \
+    help="GLOB of files containing time slide triggers" )
+
+# statistic
+parser.add_option("-K","--statistic",action="store",type="string",\
+    default="effective_snr",metavar=" STAT",\
+    help="coincident statistic (default = effective_snr)")
+
+parser.add_option("--num-categories",action="store",type="int",\
+    default=0,metavar=" NUM_CAT",\
+    help="number of categories of FAR calculations combined for loudest" + \
+        "events (for use with stat = far)")
+
+parser.add_option("--far-time-correction",action="store",type="float",\
+    default=1.,metavar=" T_COR",\
+    help="zero-lag time correction for FAR when calculating P_b and p_b" + \
+        "FAR -> T_COR*FAR (for use with stat = far when FAR calculated " + \
+        "with all_data and need exclude_play FAR)")
+
+parser.add_option("-d","--bittenl_a",action="store",type="float",\
+    default="3", help="parameter a of bitten-l")
+
+parser.add_option("-k","--bittenl_b",action="store",type="float",\
+    default="3", help="parameter b of bitten-l")
+
+parser.add_option("-J","--num-slides",action="store",type="int",\
+    default=0,metavar=" NUM_SLIDES",\
+    help="number of slides")
+
+# mass cut
+parser.add_option("-L","--m-low",action="store",type="float",default=None,\
+    metavar=" M_LOW",help="low mass threshold in mass cut" )
+
+parser.add_option("-H","--m-high",action="store",type="float",default=None,\
+    metavar=" M_HIGH",help="high mass threshold in mass cut" )
+
+parser.add_option("-A","--m-dm",action="store",type="float",default=None,\
+    metavar=" M_DM",help="steps in mass for mass cut" )
+
+parser.add_option("--cut-inj-by-mass",action="store",type="int",default=1,\
+    help="cut injections by mass in addition to sources" )
+
+# efficiency errors
+parser.add_option("--h-dc-calibration",action="store",type="float",
+    default=None,metavar=" H_DC_CAL",
+    help="correct for DC calibrtion error for Hanford by rescaling " + \
+    "effective distances D->(1-/+CAL)*D. Positive CAL corresponds to an " + \
+    "increase in detector noise and thus a decrease in the injected " + \
+    "effective distance")
+
+parser.add_option("--l-dc-calibration",action="store",type="float",
+    default=None,metavar=" L_DC_CAL",
+    help="correct for DC calibrtion error for Livingston by rescaling " + \
+    "effective distances D->(1-/+CAL)*D. Positive CAL corresponds to an " + \
+    "increase in detector noise and thus a decrease in the injected " + \
+    "effective distance")
+
+parser.add_option("-C","--h-calibration",action="store",type="float",
+    default=None,metavar=" H_CAL",
+    help="systematic error in h calibration, rescale distances D->(1+/-CAL)*D")
+    
+parser.add_option("-D","--l-calibration",action="store",type="float",
+    default=None,metavar=" L_CAL",
+    help="systematic error in y calibration, rescale distances D->(1+/-CAL)*D")
+    
+parser.add_option("-w","--waveform-systematic",action="store",type="float",
+    default=None, metavar=" WAV",
+    help="systematic errors in waveform, rescale distances by D->(1+WAV)*D")
+    
+parser.add_option("-M","--mc-errors",action="store_true",default=False,\
+    help="monte carlo errors, calculated from injections performed" )
+
+parser.add_option("-R","--distance-error",action="store",default=None,\
+    metavar=" DIST_ERROR",\
+    help="error in galaxy distance/luminosity due to error in distance\n" + \
+    "DIST_ERROR must be one of ('positive'|'negative'|'random')" )
+
+parser.add_option("-Z","--magnitude-error",action="store",default=None,\
+    metavar=" MAG_ERROR",\
+    help="error in galaxy luminosity due to error in magnitude\n" + \
+    "MAG_ERROR must be one of ('positive'|'negative'|'random')" )
+
+parser.add_option("-j","--mw-mag-error",action="store",type="float",default=0,\
+    metavar=" MW_MAGERR", \
+    help="errors in milky way apparent magnitude (default = 0)")
+
+# plotting details
+parser.add_option("-f","--figure-name",action="store",type="string",\
+    default=None,metavar=" FNAME",\
+    help="generate ps figures with name FNAME_PlotType.ps")
+    
+parser.add_option("-t","--title",action="store",type="string",default=None,\
+    metavar=" STRING",help="title string for plots")
+    
+parser.add_option("-s","--show-plot",action="store_true",default=False,\
+    help="display the figures on the terminal" )
+        
+parser.add_option("-X","--x-value",action="store",type="string",\
+    default ="eff_dist_h",\
+    help="Assigns x axis parameter for plot contour, (default eff_dist_h)")
+
+parser.add_option("","--h2-combined-dist",action="store_true",\
+    default=False,\
+    help="Sets combined distance normalizer=0.5 for Hanford (default False)")
+
+parser.add_option("","--log-x",action="store_true",\
+    default=False,\
+    help="Assigns x axis parameter to be log distributed")
+
+parser.add_option("-x","--x-max",action="store",type="float",default = 100.0,\
+    help="maximum value plotted on x axis (default 100)")
+
+parser.add_option("-q","--x-min",action="store",type="float",default = 1e-4,\
+    help="minimum value plotted on x axis (default 0.0001)")
+
+parser.add_option("-Y","--y-value",action="store",type="string",\
+    default ='mchirp',\
+    help="Assigns the parameter to y axis to plot contour, (default mchirp)")
+
+parser.add_option("","--log-y",action="store_true",\
+    default=False,\
+    help="Assigns y axis parameter to be log distributed")
+
+parser.add_option("-y","--y-max",action="store",type="float",default = 2.62,\
+    help="maximum value plotted on y axis (default 2.62")
+
+parser.add_option("-p","--y-min",action="store",type="float",default = 0.87,\
+    help="minimum value plotted on y axis (default 0.87)")
+
+parser.add_option("-o","--axes-from-found",action="store_true",default=False,\
+    help= \
+    "overwrite the default or specified axes with the max/min from found inj")
+
+parser.add_option("-Q","--axes-square",action="store_true",default=False,\
+    help="make the axis ranges for x and y equal")
+
+parser.add_option("-n","--nbins",action="store",type="int",default=20,\
+    metavar=" NBINS", 
+    help="number of bins for the histogram plots (default = 20)" )
+
+# plots to be made
+
+# using slide/zero data
+parser.add_option("-r","--plot-cum-loudest",action="store_true",
+    default=False,
+    help="plot the cumulative distribution of slide loudest events")
+
+parser.add_option("-i","--plot-pdf-loudest",action="store_true",
+    default=False,
+    help="plot the non-cumulative distribution of slide loudest events")
+
+
+parser.add_option("-!","--plot-int-pdf",action="store_true",
+    default=False,
+    help="plot the integrated pdf and the original distribution")
+
+# using astrophysical data
+parser.add_option("-N","--plot-ng",action="store_true",default=False,\
+    help="plot the astrophysical ng vs x-value")
+
+parser.add_option("-b","--hist-ng",action="store_true",default=False,\
+    help="make a histogram of ng vs x-value" )
+
+parser.add_option("-u","--cumulative-ng",action="store_true",default=False,\
+    help="make a plot of cumulative Ng vs x-value" )
+    
+parser.add_option("-l","--cum-log-ng",action="store_true",default=False,\
+    help="make a log-log plot of ng vs x-value" )
+
+parser.add_option("-c","--add-curvefit",action="store_true",default=False,\
+    help="add a curve to fit the ng distribution" )
+
+parser.add_option("-P","--print-distance-ng",action="store_true",default=False,\
+    help="print out information about NG within various distances" )
+
+# using injection data
+parser.add_option("-e","--plot-efficiency",action="store_true",default=False,\
+    help="make a plot of efficiency vs x-value" )
+
+parser.add_option("-E","--plot-effcontour",action="store_true",default=False,\
+    help="make an efficiency contour plot of parameters x and y")
+
+parser.add_option("-F","--plot-injections",action="store_true",default=False,\
+    help="make contour plots of found and total injections")
+
+# using injection and astrophysical data
+parser.add_option("-U","--cum-search-ng",action="store_true",default=False,\
+    help="make a plot of cumulative Ng for search vs x-value" )
+
+parser.add_option("-O","--plot-2d-ng",action="store_true",default=False,\
+    help="plot the astrophysical ng vs x-value")
+
+parser.add_option("-W","--cum-search-2d-ng",action="store_true",default=False,\
+    help="calculate the cumulateive number of galaxies for this search" )
+
+# using injection, astrophysical and slide/zero data
+parser.add_option("-v","--plot-ng-vs-stat",action="store_true", \
+    default=False, \
+    help="plot the astrophysical ng from 1-dim integral vs statistic value")
+
+parser.add_option("-a","--plot-2d-ng-vs-stat",action="store_true",\
+    default=False, \
+    help="plot the astrophysical ng from 2-dim integral vs statistic value")
+
+parser.add_option("-B","--ng-vs-stat-points",action="store",type="int",\
+    default=None, metavar=" NUMPTS",\
+    help="number of points to use in 1-d/2-d plots of ng vs stat (default = number of time slides)")
+    
+(opts,args) = parser.parse_args()
+
+##############################################################################
+# Check options
+##############################################################################
+
+astroPlots = False
+injPlots = False
+
+# if making plots of background:
+if (opts.plot_cum_loudest or opts.plot_pdf_loudest or opts.plot_ng_vs_stat \
+    or opts.plot_2d_ng_vs_stat):
+  if not opts.slide_glob:
+    print >>sys.stderr, "Must specify a GLOB of slide files to read\n" + \
+                        "when plotting the distribution of loudest events\n" + \
+                        "Enter 'plotnumgalaxies --help' for usage\n"
+    sys.exit(1)
+    
+  if not opts.num_slides:
+    print >>sys.stderr, \
+      "Must specify the num_slides when plotting loudest event distributions"
+    sys.exit(1)
+  
+# if making plots of astrophysical distribution:
+if (opts.plot_ng or opts.cum_log_ng or opts.hist_ng or opts.cumulative_ng or \
+    opts.cum_search_ng or opts.plot_2d_ng or opts.cum_search_2d_ng or \
+    opts.plot_ng_vs_stat or opts.plot_2d_ng_vs_stat):
+  astroPlots = True
+  # check at least one injection file was specified
+  if not opts.population_glob:
+    print >>sys.stderr, "Must specify a GLOB of injection files to read"
+    print >>sys.stderr, "Enter 'plotnumgalaxies --help' for usage"
+    sys.exit(1)
+
+  # check that the source file was supplied
+  if not opts.source_file:
+    print >>sys.stderr, "the source list file must be supplied"
+    print >>sys.stderr, "Enter 'plotnumgalaxies --help' for usage"
+    sys.exit(1)
+
+  # check mass cut parameters
+  if (opts.m_low or opts.m_high or opts.m_dm):
+      if not (opts.m_low and opts.m_high and opts.m_dm):
+        print >>sys.stderr, "For mass cut, all of --m-low, --m-high"
+        print >>sys.stderr, "and m-dm must be supplied"
+        print >>sys.stderr, "Enter 'plotnumgalaxies --help' for usage"
+        sys.exit(1)
+      elif opts.m_dm > (opts.m_high-opts.m_low):
+        opts.m_dm = (opts.m_high-opts.m_low)
+
+# if making plots of efficiencies:
+if (opts.plot_efficiency or opts.cum_search_ng or opts.plot_effcontour or \
+    opts.plot_injections or opts.cum_search_2d_ng or \
+    opts.plot_ng_vs_stat or opts.plot_2d_ng_vs_stat):
+  injPlots = True
+  # check at least one found file was specified
+  if not opts.found_glob:
+    print >>sys.stderr, "Must specify a GLOB of found injection files to read"
+    print >>sys.stderr, "Enter 'plotnumgalaxies --help' for usage"
+    sys.exit(1)
+
+  # check that at least one missed file was specified
+  if not opts.missed_glob:
+    print >>sys.stderr, "Must specify a GLOB of missed injection files to read"
+    print >>sys.stderr, "Enter 'plotnumgalaxies --help' for usage"
+    sys.exit(1)
+
+# DC calibration error correction values
+dcCalErrorVal = {}
+
+if opts.h_dc_calibration:
+  dcCalErrorVal['Hanford_DC_Calibration_Error'] = opts.h_dc_calibration
+if opts.l_dc_calibration:
+  dcCalErrorVal['Livingston_DC_Calibration_Error'] = opts.l_dc_calibration
+
+# store the error values
+errorVal = {}
+
+if opts.h_calibration:
+  errorVal['Hanford_Calibration'] = opts.h_calibration
+if opts.l_calibration:
+  errorVal['Livingston_Calibration'] = opts.l_calibration
+if opts.waveform_systematic:
+  errorVal['Waveform'] = opts.waveform_systematic
+if opts.mc_errors:
+  errorVal['Monte_Carlo'] = None
+
+# store the chirp distance normalizers
+distNorm = {}
+distNorm['l'] = 1.
+if opts.h2_combined_dist:
+  distNorm['h'] = 2.
+else:
+  distNorm['h'] = 1.
+
+figNum = 0
+##############################################################################
+# Output file and dictionary
+##############################################################################
+ini_file = open("png-output.ini","w")
+resultDict = { "mass":0.0, "ng":0.0, "ngprime":0.0, "pb":0.0, "pbprime":0.0,\
+    "Hanford_Calibration":0.0, "Livingston_Calibration":0.0,\
+    "Magnitude":0.0, "Distance":0.0, "Waveform":0.0,\
+    "Monte_Carlo":0.0}
+resultDict["ngprime"]=1.0
+
+##############################################################################
+# read in the time slides and zero lag
+##############################################################################
+
+# set the default threshold on statistic 
+# (above 0 so missed injections are not included)
+statThresh = 1e-6
+
+statistic=CoincInspiralUtils.coincStatistic( opts.statistic, opts.bittenl_a, \
+    opts.bittenl_b )
+
+# Initialize the slideZeroData class
+slideLoudest = slideZeroData(opts.num_slides, statistic)
+
+# Read the zero-lag if it is given
+if opts.zero_glob:
+  if opts.verbose:
+    print "Reading zero lag"
+  slideLoudest.add_zero_lag(opts.zero_glob)
+
+# Read the time slide triggers if given and initialize the snrArray
+if opts.verbose and opts.slide_glob:
+  print "Reading time slides"
+slideLoudest.add_slide_data(opts.slide_glob)
+statThresh = slideLoudest.zero_loudest
+
+# Calculate pb and pbprime only if the zero-lag AND the time-slides are given
+if opts.zero_glob and opts.slide_glob:  
+  if opts.plot_cum_loudest: 
+    figNum += 1
+    P_b=slideLoudest.plot_cumulative(figNum, opts.figure_name)
+    resultDict["pb"]=P_b
+
+  if opts.plot_pdf_loudest: 
+    figNum += 1
+    pbprime=slideLoudest.plot_pdf(figNum, opts.figure_name)
+    resultDict["pbprime"]=pbprime
+
+
+  if opts.plot_int_pdf: 
+    figNum += 1
+    slideLoudest.plot_integrated_pdf(figNum, opts.figure_name)
+
+##############################################################################
+# read in the data
+##############################################################################
+injAstro = injAstroData(opts.x_value, opts.y_value, opts.nbins, \
+                        opts.figure_name, opts.x_min, opts.x_max, \
+                        opts.y_min, opts.y_max)
+if astroPlots:
+  if opts.verbose:
+    print "\nReading the astrophysical injections"
+  injAstro.add_astro_data(opts.population_glob, opts.source_file, \
+      opts.distance_error, opts.magnitude_error)
+
+  if opts.verbose:
+    print 'The maximum luminosity = %.2f' % injAstro.astro.max_luminosity
+    print 'The Galaxy having Maximum Luminosity is ' + \
+        injAstro.astro.max_galaxy 
+
+
+  if opts.segment_file:
+    print 'Number of Sources in ' + injAstro.astro.max_galaxy + \
+          ' before segment selection = %d' % + injAstro.astro.max_sources
+    injAstro.astro.segment_cut(opts.segment_file)
+    injAstro.astro.astro_inj_precut = injAstro.astro.astro_inj
+
+  if opts.verbose:
+    print 'The number of Sources in ' + injAstro.astro.max_galaxy + ' = %d' \
+          % injAstro.astro.max_sources
+    print 'The total luminosity = %.2f' % injAstro.astro.total_luminosity
+    print 'The number of Sources  = %d' % injAstro.astro.total_sources
+    print 'Normalization (L10 per source) from most luminous galaxy = ' + \
+        str(injAstro.astro.astro_normalization)
+    print 'Normalization (L10 per source) from all galaxies = ' + \
+        str(injAstro.astro.total_normalization)
+    print 'The number of Sources in the Milky Way = %d' % \
+        injAstro.astro.mw_sources
+    print 'The inferred Milky Way luminosity (using most luminous galaxy) is = %.2f' % \
+        (injAstro.astro.mw_sources * injAstro.astro.astro_normalization)
+    print 'The inferred Milky Way luminosity (using all galaxy) is = %.2f' % \
+        (injAstro.astro.mw_sources * injAstro.astro.total_normalization)
+
+if injPlots:
+  if opts.verbose:
+    print "\nReading the found/missed injections"
+  injAstro.add_found_missed(opts.found_glob, opts.missed_glob, statistic,
+      dcCalErrorVal)
+
+if opts.axes_from_found: injAstro.axes_from_found(statThresh)
+
+if opts.axes_square: injAstro.axes_square()
+
+if opts.log_x: injAstro.set_log_x(True)
+
+if opts.log_y: injAstro.set_log_y(True)
+
+##############################################################################
+# Make plots from astrophysical distributions
+##############################################################################
+astroErrors = {}
+if opts.distance_error: astroErrors["Distance"] = opts.distance_error
+if opts.magnitude_error:astroErrors["Magnitude"] = opts.magnitude_error 
+
+for astroError in astroErrors.keys() + [None]:
+  if opts.plot_ng: 
+    figNum += 1
+    injAstro.plot_x_ng(figNum,'plot',error = astroError)
+  if opts.hist_ng:
+    figNum += 1
+    injAstro.plot_x_ng(figNum,'hist',error = astroError)
+  if opts.cumulative_ng:
+    figNum += 1
+    injAstro.plot_x_ng(figNum,'cum',error = astroError)
+  if opts.add_curvefit:
+    figNum += 1
+    injAstro.plot_x_ng(figNum,'curvefit',error = astroError)
+  if opts.cum_log_ng:
+    figNum += 1
+    injAstro.plot_x_ng(figNum,'cum_log',error = astroError)
+  if opts.plot_2d_ng:
+    figNum += 1
+    injAstro.plot_2d_ng(figNum,error = astroError)
+
+##############################################################################
+# Print out some useful astrophysical information
+##############################################################################
+
+if opts.print_distance_ng:
+  injAstro.astro.print_distance_ng(injAstro.x_value, injAstro.x_edges())
+
+
+
+##############################################################################
+# Make plots using found and missed injections
+##############################################################################
+if opts.plot_efficiency:
+  figNum += 1
+  injAstro.plot_x_eff(figNum, statThresh)
+  for key in errorVal.keys():
+    figNum += 1
+    injAstro.plot_x_eff(figNum, statThresh, key)
+
+if opts.plot_effcontour:
+  figNum += 1
+  injAstro.plot_eff_contour(figNum, statThresh)
+  if opts.mc_errors:
+    figNum += 1
+    injAstro.plot_mc_contour(figNum, statThresh)
+  
+if opts.plot_injections:
+  figNum += 1
+  injAstro.plot_inj(figNum, -2)
+  figNum += 1
+  injAstro.plot_inj(figNum, statThresh)
+
+##############################################################################
+# Make plots requiring both astrophysical and injection data
+##############################################################################
+if astroPlots and opts.m_low and opts.m_high and opts.m_dm:
+  massedges = arange(opts.m_low,opts.m_high+1.0e-6,opts.m_dm)
+elif astroPlots:
+  massedges=[0.0,1.0e20]
+else:
+  massedges=[]
+
+for i in range(len(massedges)-1):
+  injAstro.astro.mass_cut(massedges[i],massedges[i+1])
+  if opts.cut_inj_by_mass and injAstro.inj:
+    injAstro.inj.mass_cut(massedges[i],massedges[i+1])
+    if opts.population_type == "totalmass":
+      print "Restricting to total mass of injections from " + \
+          str(massedges[i]) + " to " + str(massedges[i+1])
+    elif opts.population_type == "componentmass":
+      print "Restricting to component mass1 of injections from " + \
+          str(massedges[i]) + " to " + str(massedges[i+1])
+  else:
+    print "Warning: not restricting masses of injections" 
+  resultDict["mlo"]=massedges[i]
+  resultDict["mhi"] = massedges[i+1]
+  if len(massedges) > 2:
+    if opts.population_type == "totalmass":
+      print "Restricting to total mass of sources between " + \
+          str(massedges[i]) + " and " + str(massedges[i+1])
+    elif opts.population_type == "componentmass":
+      print "Restricting to component mass1 of sources between " + \
+          str(massedges[i]) + " and " + str(massedges[i+1])
+
+  
+  ##############################################################################
+  # Make one dimensional plots + calculate 1-d results
+  ##############################################################################
+  if opts.cum_search_ng:
+    figNum += 1
+    injAstro.plot_search_x_ng(figNum, statThresh)
+    xng_cum = injAstro.get_search_x_ng(statThresh)
+    resultDict["ng"]=xng_cum
+    print '1-d calculation using ' + injAstro.x_value + ' yields'
+    print 'The total luminosity = %.2f L_10' % xng_cum
+    for key in errorVal.keys():
+      err = injAstro.get_search_x_error(key,statThresh)
+      resultDict[key]=err
+      if key == "Monte_Carlo":
+        print "Monte_Carlo error gives error in luminosity = %.2f L_10" % err
+      else:  
+        print key + ' error of %.1f' % float(100 * errorVal[key]) + \
+        '% gives error in luminosity = ' + '%.2f L_10' % err
+
+    # account for systematic errors
+    for key in astroErrors:
+        error = injAstro.get_search_x_ng(statThresh, key) - xng_cum
+        print astroErrors[key].capitalize() + " " + key + \
+            " error for galaxies gives an error in luminosity = %.2f L_10" % \
+            error
+        resultDict[key]=error
+ 
+    # plot ng vs snr/calculate ng'
+    if opts.plot_ng_vs_stat:
+      figNum +=1
+      xng_prime = plot_ng_vs_stat(injAstro, slideLoudest, opts.statistic,\
+          figNum, integrate = 'x', figName = opts.figure_name, \
+          numPts = opts.ng_vs_stat_points)
+      if slideLoudest.zero_loudest:
+        print "The derivative of N_G = %.2f L_10" % xng_prime
+        resultDict["ngprime"] = xng_prime
+
+
+  ##############################################################################
+  # Make two dimensional plots + calculate 2-d results
+  ##############################################################################
+  if opts.cum_search_2d_ng:
+    N_G = injAstro.get_search_2d_ng(statThresh)
+    resultDict["ng"]=N_G
+    print '2-d calculation using ' + injAstro.x_value + ' and ' + \
+          injAstro.y_value + ' yields'
+    print "The total luminosity = %.2f L_10" % N_G    
+    for key in errorVal.keys():
+      err = injAstro.get_search_2d_error(key,statThresh)
+      resultDict[key]=err
+      if key == "Monte_Carlo":
+        print "Monte_Carlo error gives error in luminosity = %.2f L_10" % err
+      else:
+        print key + ' error of %.1f' % float(100 * errorVal[key]) + \
+            '% gives error in luminosity =' + ' %.2f L_10' % err
+        
+    # account for systematic errors
+    for key in astroErrors:
+        error = injAstro.get_search_2d_ng(statThresh, key) - N_G
+        print astroErrors[key].capitalize() + " " + key + \
+            " error for galaxies gives an error in luminosity = %.2f L_10" % \
+            error
+        resultDict[key]=error
+
+    # plot ng vs snr/calculate ng'
+    if opts.plot_2d_ng_vs_stat:
+      figNum +=1
+      ng_prime = plot_ng_vs_stat(injAstro, slideLoudest, opts.statistic,\
+          figNum, integrate = 'xy', figName = opts.figure_name, \
+          numPts = opts.ng_vs_stat_points )
+      if slideLoudest.zero_loudest:
+        print "The derivative of N_G = %.2f L_10" % ng_prime
+        resultDict["ngprime"] = ng_prime
+    
+  ##############################################################################
+  # 
+  ini_file.write("%e %e %e %e %e %e %e %e %e %e %e %e\n" % (\
+      resultDict["mlo"],\
+      resultDict["mhi"],\
+      resultDict["ng"],\
+      resultDict["ngprime"],\
+      resultDict["pb"],\
+      resultDict["pbprime"],\
+      resultDict["Hanford_Calibration"],\
+      resultDict["Livingston_Calibration"],\
+      resultDict["Magnitude"],\
+      resultDict["Distance"],\
+      resultDict["Waveform"],\
+      resultDict["Monte_Carlo"] ) )
+
+ini_file.close()
+
+if opts.show_plot:
+  show()

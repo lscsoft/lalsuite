@@ -1,0 +1,264 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2009  Tomoki Isogai
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+%prog --result_file=File [options]
+
+Tomoki Isogai (hardta@carleton.edu)
+
+This program creates a report page of all channels analyzed and put link to each channel report page.
+It lists veto candidate channels with the relevant values.
+
+Specify --min_cind_num to get rid of all the channels that don't have enough coincident triggers.
+"""
+
+import sys
+import  os
+import time
+import optparse
+import re
+import cPickle
+
+try:
+    import sqlite3
+except ImportError:
+    # pre 2.5.x
+    from pysqlite2 import dbapi2 as sqlite3
+
+from glue.segments import segment, segmentlist
+from glue import segmentsUtils
+
+from pylal import KW_veto_utils
+
+__author__ = "Tomoki Isogai <hardta@carleton.edu>"
+__date__ = "7/10/2009"
+__version__ = "2.0"
+
+def parse_commandline():
+    """
+    Parse the options given on the command-line.
+    """
+    parser = optparse.OptionParser(usage=__doc__,version=__version__)
+    parser.add_option("-s", "--summary_file",
+                      help="pickle file that contains the history")
+    parser.add_option("-r", "--result_dir",
+                      help="Directory with result files from KW_veto_calc. Required.")
+    parser.add_option("-m","--min_coinc_num", default=0, type="int",
+                      help="Minimum number of coincident KW triggers to be a veto candidate. (Default: 0)")
+    parser.add_option("-o","--out_dir", default=".",
+                      help="Output directory. (Default: current directory)")
+    parser.add_option("-l", "--scratch_dir", default=".",
+                      help="Scratch directory to be used for database engine. Specify local scratch directory for better performance and less fileserver load. (Default: current directory)")
+    parser.add_option("-v", "--verbose", action="store_true",
+                      default=False, help="Run verbosely. (Default: None)")
+    
+    opts, args = parser.parse_args()
+    
+    ########################## sanity check ####################################
+    
+    # check if necessary input exists
+    if opts.result_dir is None:
+      print >> sys.stderr, "Error: --result_dir is a required parameter"
+      sys.exit(1)
+
+    if opts.summary_file is None:
+      print >> sys.stderr, "Error: --summary_file is a required parameter"
+      sys.exit(1)
+
+    if not os.path.isdir(opts.out_dir):    
+      if opts.verbose:
+        print sys.stderr, "creating output directory %s..."%opts.out_dir
+      os.makedirs(opts.out_dir)
+
+    ######################### show parameters ##################################
+    if opts.verbose:
+        print >> sys.stderr, ""
+        print >> sys.stderr, "running KW_veto_reportPage..."
+        print >> sys.stderr, "version: %s..."%__version__
+        print >> sys.stderr, ""
+        print >> sys.stderr, "*************** PARAMETERS **********************"
+        for o in opts.__dict__.items():
+          print >> sys.stderr, o[0]+":"
+          print >> sys.stderr, o[1]
+        print >> sys.stderr, ""
+    
+    return opts
+    
+def candidate(data,channel):
+   """
+   determine if the channel is veto candidate
+   """
+   return data != None and data[2] >= opts.min_coinc_num and channel.find("DARM_ERR")==-1 and channel.find("DARM_CTRL")==-1 and channel.find("AS_I")==-1 and channel.find("AS_Q")==-1 and channel.find("PR_B1_ACP_40_1250")==-1 and channel.find("OMC_READOUT_OUT_DAQ")==-1
+
+def report_page():
+    """
+    creates summary report page
+    """
+
+    ############################## header ######################################
+    title = "Daily Comparison"
+
+    contents=["""
+    <html>
+    <head>
+    <meta content="text/html; charset=ISO-8859-1"
+    http-equiv="content-type">
+    <title>%s</title>
+    </head>
+    <body>
+    <big><big><big>%s</big></big></big><br>
+    <br>
+    """%(title,title)]
+    
+      
+    ########################### Comparison Table ############################
+    
+    ## make a table to show day-to-day difference
+
+    table = ["""
+    The values reported in the table are used % (KW significancethreshold).<br>
+    Newly appeared channel appears on the top of the table. (So the "regular" channels are at the bottom.)<br>
+    The value right below the date is:<br>
+    (analyzed time) / 24 hrs * 100 <br><br>
+    <table border="1">
+    <tbody>\n
+    """]
+
+    ## content
+    # put date for every 20 rows and channel name for every 12 columns
+    for i, c in enumerate(reversed(summary_hist['channels'])):
+      table.append('<tr>')
+      for j, d in enumerate(reversed(summary_hist['date'])):
+        if i % 20 == 0:
+          if j % 10 == 0:
+            table.append("<th>&nbsp</th>")
+          table.append("<th>%s (%.1f%%)</th>"%(d[0],d[1]))
+
+        else:
+          if j % 10 == 0:
+            table.append('<td><small>%s</small></td>'%c)
+
+          if d[0] in summary_hist['hist'][c].keys():
+            hist_data = summary_hist['hist'][c][d[0]]
+            color_num = int((100 - hist_data[0]) * 255 / 100)
+            color = "#ff%s%s"%(hex(color_num)[-2:],hex(color_num)[-2:])
+            table.append('<td bgcolor="%s"><a href="%s">%.2f%%</a>&nbsp(%d)</td>'%(color,hist_data[2],hist_data[0],hist_data[1]))
+          else:
+            table.append('<td>&nbsp</td>')
+      table.append('</tr>\n')
+
+    table.append("</tbody></table><br><br>")
+    
+    # add table and list
+    contents.append("".join(table))
+    
+    ################################# closing ##################################
+    user=os.environ['USER']
+    curTime=time.strftime('%m-%d-%Y %H:%M:%S',time.localtime())
+    contents.append("""
+    <small>
+    This page was created by user %s on %s
+    </small>
+    </body>
+    </html>
+    """%(user,curTime))
+    
+    ## save the page
+    chan_page = open("%s/history.html"%(opts.out_dir),"w")
+    chan_page.write("".join(contents))
+    
+
+# =============================================================================
+#
+#                                  MAIN
+# 
+# =============================================================================
+
+# parse commandline
+opts = parse_commandline()
+
+# figure out channels in the result dir and get info
+# make a list of the result files from KW_veto_calc
+files_list = KW_veto_utils.get_result_files(opts.result_dir,opts.verbose)
+
+## figure out which channel gets over a critical used percentage
+if not os.path.isfile(opts.summary_file):
+  summary_hist = {"date":[], "channels":[], "hist":{}}
+else:
+  file_handle = file(opts.summary_file, 'rb')
+  # For gz files, bind file_handle to a gzip file and find the new extension
+  if os.path.splitext(opts.summary_file)[-1] == '.gz':
+    import gzip
+    file_handle = gzip.GzipFile(fileobj=file_handle, mode='rb')
+    
+  summary_hist = cPickle.load(file_handle)
+
+
+for chan_file in files_list:    
+  if opts.verbose: 
+    print >> sys.stderr, "gathering infomation from %s..."%(chan_file)
+  try:
+    # retrieve info
+    # store info at the critical threshold for each channel
+    global working_filename
+    cursor, connection, working_filename, params = \
+         KW_veto_utils.load_db(chan_file, opts.scratch_dir, opts.verbose)
+    channel_name = params["channel"]
+
+
+    data = KW_veto_utils.get_candidate(cursor,params["critical_usedPer"])
+    if candidate(data,channel_name):
+      # figure out the date
+      end_time = params['end_time']
+      y=(end_time-15) % 86400
+      if y == 0:
+          end_time = end_time-1
+          
+      date = os.popen('tconvert %d -f %%m/%%d/%%y'%(end_time)).readline()
+      # calculate duty cycle
+      duty_cycle = abs(KW_veto_utils.load_segs_db(cursor,"analyzed_segs"))*100.0/86400
+      if (date,duty_cycle) not in summary_hist['date']:
+        summary_hist['date'].append((date,duty_cycle))
+
+      if not channel_name in summary_hist['channels']:
+        summary_hist['hist'][channel_name] = {}
+        summary_hist['channels'].append(channel_name)
+        #os.system('echo "New UPV channel:\n %s appeared." | mail -s "New UPV channel: %s" "hardta@carleton.edu"'%(channel_name,channel_name))
+
+      # tuple is (used percentage, threshold, web address)
+      web_address = "../%s_webpage/channel_pages/%s-report_page.html"%(params["name_tag"],params["filePrefix"])
+      summary_hist['hist'][channel_name][date] = (data[1],data[0],web_address)
+
+    connection.close()
+  finally:
+    # erase temporal database
+    if globals().has_key('working_filename'):
+      db = globals()['working_filename']
+      if opts.verbose:
+        print >> sys.stderr, "removing temporary workspace '%s'..." % db
+      os.remove(db)
+
+output = cPickle.dumps(summary_hist, -1) # -1 means newest format
+file_name = os.path.split(opts.summary_file)[-1]
+open(os.path.join(opts.out_dir,file_name),'w').write(output)
+
+# make the page
+report_page()
+        
+if opts.verbose: print >> sys.stderr, "KW_veto_compare done!"
+

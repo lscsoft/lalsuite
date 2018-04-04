@@ -1,0 +1,108 @@
+#!/usr/bin/python
+#
+# Copyright (C) 2006  Duncan A. Brown
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+from optparse import OptionParser
+import sys
+
+from glue.lal import CacheEntry
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from pylal import SnglInspiralUtils
+from pylal import git_version
+from pylal import ligolw_sicluster
+
+lsctables.use_in(ligolw.LIGOLWContentHandler)
+
+__author__ = "Duncan Brown <dbrown@ligo.caltech.edu>"
+
+#
+# Use interning row builder to save memory.
+#
+
+lsctables.table.RowBuilder = lsctables.table.InterningRowBuilder
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+def parse_command_line():
+  parser = OptionParser(version = git_version.verbose_msg)
+  parser.add_option("--comment", metavar = "text", default = "", 
+    help = "set comment string in process table")
+  parser.add_option("-i", "--input-cache", metavar = "filename", action = "append", default = [], help = "Process the files listed in this LAL cache.")
+  parser.add_option("-w", "--cluster-window", type="float", action = "store", 
+    help = "duration of snr clustering window in seconds (required)")
+  parser.add_option("-t", "--snr-threshold", type="float", 
+    default = "0", action = "store", 
+    help = "discard triggers below SNR_THRESHOLD")
+  parser.add_option("-s", "--sort-descending-snr", action = "store_true", 
+    help = "sort output triggers by descending snr", default = False)
+  parser.add_option("-S", "--sort-ascending-snr", action = "store_true", 
+    help = "sort output triggers by ascending snr", default = False)
+  parser.add_option("-v", "--verbose", action = "store_true", 
+    help = "be verbose")
+  options, filenames = parser.parse_args()
+
+  if options.cluster_window is None:
+    raise Exception, \
+      "missing required command line argument --cluster-window"
+  options.cluster_window = lsctables.LIGOTimeGPS(options.cluster_window)
+
+  for cache in options.input_cache:
+    filenames += [CacheEntry(line).path for line in file(cache)]
+
+  return options, (filenames or [None])
+
+
+#
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+#
+
+try:
+  options, filenames = parse_command_line()
+except ValueError, e:
+  print >>sys.stderr, "error: %s" % str(e)
+
+#try:
+for filename in filenames:
+  doc = utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
+  for comment in doc.getElementsByTagName(ligolw.Comment.tagName):
+    comment.parentNode.removeChild(comment)
+    comment.unlink()
+  doc = ligolw_sicluster.ligolw_sicluster(doc, **options.__dict__)
+  utils.write_filename(doc, filename, gz = (filename or "stdout").endswith(".gz"), verbose = options.verbose)
+#except Exception, e:
+#  print >>sys.stderr, "error: %s" % str(e)
+#  sys.exit(1)

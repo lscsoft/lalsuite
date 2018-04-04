@@ -1,0 +1,4 @@
+include LICENSE MANIFEST.in README pylal.spec
+recursive-include src *.c *.h
+include misc/*
+include test/*

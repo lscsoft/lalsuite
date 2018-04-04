@@ -1,0 +1,606 @@
+#!/usr/bin/python
+"""
+Generate various plots related to single inspiral tables
+
+Example:
+you can use a cache file that will be parsed for INSPIRAL files
+
+>>>  plotinspiral --enable-output --cache-file
+>>> ../playground/inspiral_hipe_playground_intermediate_data-847555570-849974770.cache
+>>>   --ifo-times H1H2L1 --user-tag test --verbose
+
+or with a glob option
+
+>>> plotinspiral --enable-output --inspiral-glob '../playground/*INS*'
+>>> --ifo-times H1H2L1 --user-tag test --verbose
+
+"""
+
+__prog__ = "plotinspiral"
+__title__ = "Inspiral Plots"
+
+import sys
+import os
+from optparse import *
+import re
+import exceptions
+import glob
+from types import *
+
+from glue import lal
+from glue import segments
+from glue import segmentsUtils
+from glue.ligolw import lsctables
+from pylal import SnglInspiralUtils
+from pylal import InspiralUtils
+from pylal import git_version
+
+##############################################################################
+# redefine the SnglInspiral columns of interest
+##############################################################################
+lsctables.SnglInspiralTable.loadcolumns = [
+    "ifo",
+    "end_time",
+    "end_time_ns",
+#    "eff_distance",
+    "mass1",
+    "mass2",
+#    "mtotal",
+#    "mchirp",
+#    "eta",
+    "snr",
+    "chisq",
+    "chisq_dof"#,
+#    "bank_chisq",
+#    "bank_chisq_dof",
+#    "cont_chisq",
+#    "cont_chisq_dof",
+#    "rsqveto_duration",
+#    "sigmasq",
+#    "alpha",
+#    "template_duration",
+#    "ttotal",
+#    "event_id"#,
+#    "process_id"
+    ]
+
+# help message
+usage = """\
+%prog [options]
+------------------------------------------------------------------------------
+  Inspiral Plotting Functions
+
+  The function reads in triggers from a glob of files and produces several 
+  different figures.
+
+  The plots are
+
+  1)  SNR v time.
+  2)  SNR v CHISQ, linear scale  (requres that the chisq was calculated)
+  3)  SNR v CHISQ, log scale on both axes
+      The chisq threshold can be added to the above plots if the 
+       --chisq-threshold, --chisq-delta and --chisq-bins are given
+  4)  Cumulative Histogram of SNR values
+  5)  Histogram of SNR values
+  6)  "Normalized" cumulative histogram of SNR values
+      The normalization is determined by the maximum total number of triggers,
+      calculated from the --maximization-interval and --analyzed-time
+  7)  Histogram of CHISQ values 
+  8)  Cumulative Histogram of snr/chi values
+"""
+
+#################################################################
+def parse_command_line():
+  """
+  Parser function dedicated
+  """
+  parser = OptionParser(usage=usage, version=git_version.verbose_msg)
+
+  #chisq  related
+  parser.add_option("-a","--snr-chisq",action="store_true",default=False,
+      help="make a plot of snr vs chisq")
+  parser.add_option("-b","--log-snr-chisq",action="store_true",default=False,
+      help="make a log plot of snr vs chisq")
+  parser.add_option("-B","--chisq-threshold",action="store",type="float",
+      metavar=" CHISQ_THRESH",
+      help="specify the chisq threshold (so we can add to plot)")
+  parser.add_option("-c","--chisq-delta",action="store",type="float",
+      metavar=" CHISQ_DELTA", help="specify the delta param for the chisq")
+  parser.add_option("-C","--chisq-bins",action="store",type="int",
+      metavar=" CHISQ_BINS", help="specify the number of chisq bins")
+  parser.add_option("-d","--hist-chisq",action="store_true",default=False,
+      help="histogram of the chisq values")
+  parser.add_option("-D","--cum-hist-snr-chisq",action="store_true",default=False,
+      help="cumulative histogram of snr/chi")
+  parser.add_option("-e","--hist-snr-chisq",action="store_true",default=False,
+      help="histogram of snr/chi" )
+
+  # histogram related or SNR related
+  parser.add_option("-E","--snr-time",action="store_true",default=False,
+      help="make a plot of snr vs time")
+  parser.add_option("-f","--cum-hist-snr",action="store_true",default=False,
+      help="cumulative histogram of the snr")
+  parser.add_option("-F","--hist-snr",action="store_true",default=False,
+      help="histogram of the snr")
+  parser.add_option("-g","--norm-hist-snr",action="store_true",default=False,
+      help="normalized cumulative histogram of the snr")
+
+  # output
+  parser.add_option("-G","--add-vertical-line",action="store",default=None,
+      metavar=" GPS_TIME",type="float",
+      help="add a vertical line at GPS_TIME to the snr vs time plot")
+  #axis and plotting related
+  parser.add_option("", "--log-y", action="store_true", default=False,
+      help="set the y axis to have a log scale")
+  parser.add_option("", "--log-x", action="store_true", default=False,
+      help="set the x axis to have a log scale")
+  parser.add_option("", "--threshold", type="float", default=0,
+      help="set the SNR threshold used in the analysis; triggers"
+           " below this threshold will not be plotted")
+  parser.add_option("-n","--nbins",action="store",type="int",default=10,
+      metavar=" NBINS", help="number of bins for the histogram plots")
+  parser.add_option("-t","--title",action="store",type="string",default=None,
+      metavar=" STRING",help="title string for plots")
+#  parser.add_option("-x","--x-min",action="store",type="float",
+#      default=None, metavar="XMIN",help="set plot xmin to XMIN")
+  parser.add_option("-X","--x-max",action="store",type="float",
+      default=None, metavar="XMAX",help="set plot xmax to XMAX")
+#  parser.add_option("-y","--y-min",action="store",type="float",
+#      default=None, metavar="YMIN",help="set plot ymin to YMIN")
+  parser.add_option("-Y","--y-max",action="store",type="float",
+      default=None, metavar="YMAX",help="set plot xmax to YMAX")
+
+  # post analysis
+  parser.add_option("-j","--maximization-interval",action="store",
+      type="int",default=10,
+      metavar=" MAX_INT", help="maximization interval used (in ms)")
+  parser.add_option("-J","--veto-file",action="store",type="string",
+      default=None,metavar=" FNAME",
+      help="read in segments from FNAME (assumed segwizard format). "
+      "Multiple veto files can be added separated by commas.")
+
+  #others
+  parser.add_option("-l","--analyzed-time",action="store",type="int",
+      metavar=" SECONDS", help="amount of time analyzed")
+  parser.add_option("-s","--show-plot",action="store_true",default=False,
+      help="display the figures on the terminal")
+  parser.add_option("-v","--verbose",action="store_true",
+      default=False,help="print information")
+  parser.add_option("","--exttrig-onsource",action="store",type="string",default=None,
+      metavar=" STRING",help="file containing the trigger time of the GRB")
+
+  # output related
+  parser.add_option("-o","--output-path",action="store",
+      type="string",default="",  metavar="PATH",
+      help="path where the figures would be stored")
+  parser.add_option("-O","--enable-output",action="store_true",
+      default="false",  metavar="OUTPUT",
+      help="enable the generation of the html and cache documents")
+  parser.add_option("","--gps-start-time",action="store",
+      type="int",  metavar="GPSSTARTTIME",
+      help="gps start time (for naming figure and output files")
+  parser.add_option("","--gps-end-time",action="store",
+      type="int",  metavar=" GPSENDTIME",
+      help="gps end time (for naming figure and output files")
+  parser.add_option("", "--ifo-tag", help="ifotag for naming output")
+  parser.add_option("", "--user-tag", help="usertag for naming output")
+  parser.add_option("", "--figure-resolution",action="store",type="int",
+      default=50, metavar="FIGURERESOLUTION",
+      help="set the resolution of the thumbnail (50 dpi by default)" )
+
+  #input
+  parser.add_option("-i", "--ifo-times",
+    help="sieve a cache file according to a particular ifo type")
+  parser.add_option("-u","--template-bank",action="store",type="string",
+      default=None, metavar=" FILE",help="name of a template bank file")
+  parser.add_option("-U","--inspiral-glob",action="store",type="string",
+      default=None, metavar=" GLOB",help="GLOB of inspiral trigger files to read")
+  parser.add_option("-w", "--cache-file",
+    help="read trigger filenames from cache file")
+  parser.add_option("", "--trig-pattern",
+    help="sieve trigger files of a particular description pattern from cache file" )
+  parser.add_option("", "--bank-pattern",
+    help="sieve template bank files of a particular description pattern from cache file" )
+
+  (options,args) = parser.parse_args()
+
+
+  # test the input options
+  if not options.ifo_times:
+    raise ValueError, "--ifo-times must be provided in (H1, H2, L1, V1, G1)"
+
+  if options.cache_file and (options.inspiral_glob):
+    raise ValueError, """
+Use either the glob options(--inspiral-glob)
+OR the cachefile options (--cache-file), not both at the same time.
+"""
+
+  return options, sys.argv[1:]
+
+
+# ============================================================================
+# -- get command line arguments
+opts, args = parse_command_line()
+InspiralUtils.message(opts, "reading data...")
+# ============================================================================
+# Initialise
+opts = InspiralUtils.initialise(opts, __prog__, git_version.verbose_msg)
+comments = ""
+# -- set the proper color code
+ifocolors = InspiralUtils.colors
+figure_number = 0  # used for the figure label (showplot)
+fnameList = []   # use for the cache file
+tagList= []   # use for the cache file
+
+# set the type of plot into a variable
+if opts.log_y is True and opts.log_x is False:
+  plot_type = 'logy'
+elif opts.log_y is False and opts.log_x is True:
+  plot_type = 'logx'
+elif opts.log_y is False and opts.log_x is False:
+  plot_type = 'linear'
+elif opts.log_y is True and opts.log_x is True:
+  plot_type = 'loglog'
+
+
+# to avoid  display problem when show plot is not used
+if not opts.show_plot:
+  import matplotlib
+  matplotlib.use('Agg')
+from pylab import *
+from pylal import viz
+
+# check at least one trig file was specified
+if opts.inspiral_glob is None and opts.cache_file is None:
+  print >>sys.stderr, "Must specify a GLOB of files to read or a LAL cache"
+  print >>sys.stderr, "Enter 'plotinspiral --help' for usage"
+  sys.exit(1)
+
+if opts.norm_hist_snr and not opts.analyzed_time:
+  print >>sys.stderr, "to make the normalized cumulative histogram"
+  print >>sys.stderr, "the --analyzed-time must be specified"
+  sys.exit(1)
+
+
+# load cache
+if opts.cache_file is not None:
+  cache = lal.Cache.fromfile(open(opts.cache_file))
+  if opts.ifo_times:
+    cache = cache.sieve(ifos=opts.ifo_times, exact_match=True)
+
+# determine trigger files
+trigFiles = []
+if opts.inspiral_glob is not None:
+  trigFiles.extend(glob.glob(opts.inspiral_glob))
+  if len(trigFiles) == 0:
+    err_msg = "The glob for " + opts.inspiral_glob + " returned no files"
+    print >>sys.stderr, err_msg
+    comments += InspiralUtils.message(opts, err_msg)
+if opts.trig_pattern is not None:
+  trig_cache = cache.sieve(description=opts.trig_pattern)
+  trigFiles.extend(trig_cache.checkfilesexist()[0].pfnlist())
+  if len(trigFiles) == 0:
+    err_msg = opts.cache_file + " contains no files with " + \
+        opts.trig_pattern + " description"
+    print >>sys.stderr, err_msg
+    comments += InspiralUtils.message(opts, err_msg)
+
+if len(trigFiles) == 0:
+  # give up and exit
+  if opts.enable_output is True:
+    html_filename = InspiralUtils.write_html_output(opts, args, fnameList,
+        tagList, comment=comments)
+    InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+    if opts.show_plot:
+      sys.exit(1)
+    else:
+      sys.exit(0)
+
+if opts.verbose:
+  print >>sys.stdout, "There are " + str(len(trigFiles)) + \
+      " files in your glob and/or lal cache"
+
+if opts.threshold > 0:
+  inspTriggers = SnglInspiralUtils.ReadSnglInspiralFromFiles(trigFiles, verbose=opts.verbose,
+      filterFunc=lambda sng: sng.snr >= opts.threshold)
+else:
+  inspTriggers = SnglInspiralUtils.ReadSnglInspiralFromFiles(trigFiles, verbose=opts.verbose)
+if inspTriggers is None or len(inspTriggers)==0:
+  err_msg = "There were no inspiral triggers in the files read in," + \
+      " no plots generated"
+  print >>sys.stderr, err_msg
+  comments += InspiralUtils.message(opts, err_msg)
+  if opts.enable_output is True:
+    html_filename = InspiralUtils.write_html_output(opts, args, fnameList,
+        tagList, comment=comments)
+    InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+    sys.exit(0)
+
+# read in the template bank if supplied
+bank_files = []
+if opts.bank_pattern is not None:
+  bank_cache = cache.sieve(description=opts.bank_pattern)
+  bank_files = bank_cache.checkfilesexist()[0].pfnlist()
+if opts.template_bank is not None:
+  bank_files.append(opts.template_bank)
+tmpltbank = SnglInspiralUtils.ReadSnglInspiralFromFiles(bank_files, verbose=opts.verbose)
+
+# apply veto if there is one
+if opts.veto_file:
+  for veto_file in opts.veto_file.split(','):
+    seglist = segmentsUtils.fromsegwizard(open(veto_file))
+    inspTriggers = inspTriggers.veto(seglist)
+
+if opts.exttrig_onsource:
+  exttrigseg = segmentsUtils.fromsegwizard(open(opts.exttrig_onsource))[0]
+  inspTriggers = inspTriggers.veto(exttrigseg)
+
+# determine ranges of plotted values
+max_snr = max(inspTriggers.get_column('snr'))
+min_snr = min(inspTriggers.get_column('snr'))
+snr_range = arange( min_snr, max_snr, (max_snr - min_snr)/100  )
+
+if opts.chisq_threshold:
+  if not ( opts.chisq_bins and opts.chisq_delta ):
+    print >>sys.stderr, "when --chisq-threshold is specified, must also give"
+    print >>sys.stderr, " --chisq-bins and --chisq-delta"
+    sys.exit(1)
+
+  chisq_thresh = opts.chisq_threshold * ( opts.chisq_bins + \
+    opts.chisq_delta * snr_range * snr_range )
+
+
+###################################
+# plot of snr vs time
+if opts.snr_time is True:
+  text = "SNR versus end time"
+  InspiralUtils.message(opts, "plotting..."+text)
+  ifo = inspTriggers[0].ifo
+  plot_sym=ifocolors[ifo]+'x'
+  figure_number += 1
+  figure(figure_number)
+
+  if opts.log_y:
+    ax = subplot(111)
+    ax.set_yscale('log')
+  if opts.add_vertical_line:
+    axvline(opts.add_vertical_line - int(opts.add_vertical_line),
+            linewidth=1, color='r')
+    for idx in range(len(inspTriggers)):
+      inspTriggers[idx].end_time = inspTriggers[idx].end_time \
+                                   - int(opts.add_vertical_line)
+
+    viz.plot_a_v_b(inspTriggers,'end_time','snr','seconds',plot_sym,
+                   x_min=None, x_max=None,
+                   y_min=opts.threshold, y_max=opts.y_max)
+  else:
+    viz.plot_a_v_b(inspTriggers,'end_time','snr','linear',plot_sym,
+                   y_min=opts.threshold, y_max=opts.y_max, )
+
+  ylabel('SNR')
+  xlabel('Time in days')
+  if opts.enable_output is True:
+    fname = InspiralUtils.set_figure_name(opts, "snr_vs_time")
+    fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, dpi_thumb=opts.figure_resolution)
+    fnameList.append(fname)
+    tagList.append(text)
+  if not opts.show_plot:
+    close()
+
+
+###################################
+# plot of snr vs chisq
+if opts.snr_chisq is True:
+  ifo = inspTriggers[0].ifo
+  plot_sym=ifocolors[ifo]+'x'
+  col_a = viz.readcol(inspTriggers, 'chisq', ifo )
+  if col_a[0]!=0:
+    text = "SNR versus chisq-square (linear)"
+    InspiralUtils.message(opts, "plotting..."+text)
+    figure_number += 1
+    figure(figure_number)
+    if opts.chisq_threshold:
+      plot(snr_range, chisq_thresh)
+      hold(True)
+    viz.plot_a_v_b(inspTriggers,'snr','chisq','linear',plot_sym)
+    xlabel('SNR')
+    if opts.enable_output is True:
+      fname = InspiralUtils.set_figure_name(opts, "snr_vs_chisq_linear")
+      fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, dpi_thumb=opts.figure_resolution)
+      fnameList.append(fname)
+      tagList.append(text)
+    if not opts.show_plot:
+      close()
+
+
+###################################
+# plot of snr vs chisq
+try:
+  if opts.log_snr_chisq is True:
+    text = "SNR versus chisq-square (log)"
+    ifo = inspTriggers[0].ifo
+    plot_sym=ifocolors[ifo]+'x'
+    InspiralUtils.message(opts, "plotting..."+text)
+    figure_number += 1
+    figure(figure_number)
+    if opts.chisq_threshold:
+      loglog(snr_range, chisq_thresh)
+      hold(True)
+
+    viz.plot_a_v_b(inspTriggers,'snr','chisq','loglog',plot_sym)
+    xlabel('SNR')
+    if opts.enable_output is True:
+      fname = InspiralUtils.set_figure_name(opts, "snr_vs_chisq_log")
+      fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, dpi_thumb=opts.figure_resolution)
+      fnameList.append(fname)
+      tagList.append(text)
+    if not opts.show_plot:
+      close()
+except:
+  InspiralUtils.ErrorMessagePlotting(opts, "snrvschisq")
+  pass
+
+
+###################################
+# cumulative histogram of snr
+if opts.cum_hist_snr is True:
+  text = "SNR,cumulative histogram"
+  InspiralUtils.message(opts, "plotting..."+text)
+  ifo = inspTriggers[0].ifo
+  symcolor=ifocolors[ifo]
+
+  figure_number += 1
+  figure(figure_number)
+  if opts.log_y:
+    ax = subplot(111)
+    ax.set_yscale('log')
+
+  xlimits = [opts.threshold, 0]
+
+  viz.cumhistcol(inspTriggers,'snr', plot_type=plot_type, xlimit=xlimits, color=symcolor)
+  xlabel('SNR')
+
+  if opts.enable_output is True:
+    fname = InspiralUtils.set_figure_name(opts, "snr_cum_hist")
+    fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, dpi_thumb=opts.figure_resolution)
+    fnameList.append(fname)
+    tagList.append(text)
+
+
+###################################
+# histogram of snr
+if opts.hist_snr is True:
+  text = "SNR histogram"
+  InspiralUtils.message(opts, "plotting..."+text)
+  ifo = inspTriggers[0].ifo
+  symcolor=ifocolors[ifo]
+  figure_number += 1
+  figure(figure_number)
+
+  xlimits = [opts.threshold, 0]
+
+  viz.histcol(inspTriggers,'snr',opts.nbins,None, xlimit=xlimits, color=symcolor, plot_type=plot_type)
+
+  ylabel('Number')
+  if opts.enable_output is True:
+    fname = InspiralUtils.set_figure_name(opts, "snr_histogram")
+    fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, dpi_thumb=opts.figure_resolution)
+    fnameList.append(fname)
+    tagList.append(text)
+
+
+###################################
+# normalized histogram of snr
+if opts.norm_hist_snr is True:
+  text = "SNR normalised histogram"
+  InspiralUtils.message(opts, "plotting..."+text)
+  max_poss_trigs = (1000 / float (opts.maximization_interval)) * \
+    opts.analyzed_time
+  figure_number += 1
+  figure(figure_number)
+  if opts.log_y:
+    ax = subplot(111)
+    ax.set_yscale('log')
+  viz.cumhistcol(inspTriggers,'snr',normalization = max_poss_trigs)
+  ylabel('SNR')
+  if opts.enable_output is True:
+    fname = InspiralUtils.set_figure_name(opts, "snr_norm_hist")
+    fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, dpi_thumb=opts.figure_resolution)
+    fnameList.append(fname)
+    tagList.append(text)
+
+
+###################################
+# histogram of chisq values
+if opts.hist_chisq is True:
+  ifo = inspTriggers[0].ifo
+  col_a = viz.readcol(inspTriggers, 'chisq', ifo )
+  if col_a[0]!=0:
+    text = "Chisquare  histogram"
+    InspiralUtils.message(opts, "plotting..."+text)
+    figure_number += 1
+    figure(figure_number)
+  #  if opts.log_y:
+  #    ax = subplot(111)
+  #    ax.set_yscale('log')
+    viz.histcol(inspTriggers,'chisq',opts.nbins,None)
+    if opts.enable_output is True:
+      fname = InspiralUtils.set_figure_name(opts, "chisq_histogram")
+      fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, dpi_thumb=opts.figure_resolution)
+      tagList.append(text)
+      fnameList.append(fname)
+
+
+###################################
+# cumulative histogram of snr
+try:
+  if opts.cum_hist_snr_chisq is True:
+    text = "Cumulative SNR over Chisquare cumulative histogram"
+    InspiralUtils.message(opts, "plotting..."+text)
+    figure_number += 1
+    figure(figure_number)
+    if opts.log_y:
+      ax = subplot(111)
+      ax.set_yscale('log')
+    viz.cumhistcol(inspTriggers,'snr_over_chi')
+    if opts.enable_output is True:
+      fname = InspiralUtils.set_figure_name(opts, "snr_over_chi_cum_hist")
+      fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, dpi_thumb=opts.figure_resolution)
+      fnameList.append(fname)
+      tagList.append(text)
+except:
+  InspiralUtils.ErrorMessagePlotting(opts, "cumhistsnrchisq")
+  pass
+
+
+###################################
+# histogram of snr
+try:
+  if opts.hist_snr_chisq is True:
+    ifo = inspTriggers[0].ifo
+    col_a = viz.readcol(inspTriggers, 'chisq', ifo )
+    if col_a[0]!=0:
+      text = "SNR over Chisquare cumulative histogram"
+      InspiralUtils.message(opts, "plotting..."+text)
+      figure_number += 1
+      figure(figure_number)
+  #    if opts.log_y:
+  #      ax = subplot(111)
+  #      ax.set_yscale('log')
+      viz.histcol(inspTriggers,'snr_over_chi',opts.nbins,None)
+      if opts.enable_output is True:
+        fname = InspiralUtils.set_figure_name(opts, "snr_over_chi_histogram")
+        fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, dpi_thumb=opts.figure_resolution)
+        fnameList.append(fname)
+        tagList.append(text)
+except:
+  InspiralUtils.ErrorMessagePlotting(opts, "histsnrchisq")
+  pass
+
+
+###################################
+# plot the template bank and overlay the triggers
+if opts.template_bank is True :
+  text = "Template bank and inspiral triggers overlayed"
+  InspiralUtils.message(opts, "plotting..."+text)
+  figure_number += 1
+  figure(figure_number)
+  outputname = __prog__+"_"+opts.user_tag
+  viz.plot_a_v_b(tmpltbank,'mass1','mass2','linear',plot_sym = 'rx')
+  viz.plot_a_v_b(inspTriggers,'mass1','mass2','linear',plot_sym = 'ro',
+      output_name = outputname)
+  if opts.enable_output is True:
+    fname = InspiralUtils.set_figure_name(opts, "mass1_vs_mass2")
+    fname_thumb = InspiralUtils.savefig_pylal(filename=fname, doThumb=True, dpi_thumb=opts.figure_resolution)
+    fnameList.append(fname)
+    tagList.append(text)
+
+
+###################################
+# final step: html, cache file generation
+if opts.enable_output is True:
+  html_filename = InspiralUtils.write_html_output(opts, args, fnameList, tagList)
+  InspiralUtils.write_cache_output(opts, html_filename, fnameList)
+
+if opts.show_plot:
+  show()

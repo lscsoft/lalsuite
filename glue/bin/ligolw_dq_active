@@ -1,0 +1,162 @@
+#!/usr/bin/env python
+#
+#
+# Copyright (C) 2009  Larne Pekowsky
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+"""
+Displays the set of flags active at a give time or times, in a convinent
+ascii form.
+
+All the heavy lifting is done by ligolw_dq_query --segment-url, this just 
+processes the arguments and output.
+"""
+
+from optparse import OptionParser
+
+import sys
+import os
+import glob
+import time
+import socket
+import tempfile
+import urllib
+import pwd
+
+from glue import git_version
+
+PROGRAM_NAME = sys.argv[0].replace('./','')
+PROGRAM_PID  = os.getpid()
+USER_NAME    = pwd.getpwuid(os.getuid())[0]
+
+
+
+__author__  = "Larne Pekowsky <lppekows@physics.syr.edu>"
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
+
+#
+# =============================================================================
+#
+#                                 Command Line
+#
+# =============================================================================
+#
+
+
+def parse_command_line():
+    """
+    Parse the command line, return an options object
+    """
+
+    parser = OptionParser(
+        version = "Name: %%prog\n%s" % git_version.verbose_msg,
+        usage       = "%prog --ifo ifo --time-file timefile --input-dir dir",
+        description = "Prints a list of the flags that were active at each of the specified times"
+	)
+
+    # Major modes
+    parser.add_option("-i", "--ifo",        metavar = "ifo",       help = "Abbreviation for IFO of interest")
+    parser.add_option("-t", "--time-file",  metavar = "time-file", help = "File of gps times, one per line")
+    parser.add_option("-s", "--segment-url", metavar = "segment-url", help = "URL of segment database or DMT files")
+    parser.add_option("-d", "--input-dir",  metavar = "input-dir", help = "Location of DMT files")
+
+
+    options, others = parser.parse_args()
+
+
+    if not options.ifo:
+        print >>sys.stderr, "ifo is required"
+        sys.exit(1)
+
+
+
+    if not options.time_file:
+        print >>sys.stderr, "time-file is required"
+        sys.exit(1)
+
+    if not os.path.exists(options.time_file):
+        print >>sys.stderr, "time-file %s does not exist" % options.time_file
+        sys.exit(1)
+
+    if not os.path.isfile(options.time_file):
+        print >>sys.stderr, "time-file %s exists but is not a file" % options.time_file
+        sys.exit(1)
+
+
+
+
+    if not (options.input_dir or options.segment):
+        print >>sys.stderr, "One of [input-dir|segment] is required"
+        sys.exit(1)
+
+    if options.input_dir and not os.path.exists(options.input_dir):
+        print >>sys.stderr, "input_dir %s does not exist" % options.input_dir
+        sys.exit(1)
+
+    if options.input_dir and not os.path.isdir(options.input_dir):
+        print >>sys.stderr, "input_dir %s exists but is not a directory" % options.input_dir
+        sys.exit(1)
+
+
+    return options
+
+
+
+
+#
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+#
+
+if __name__ == '__main__':
+    options = parse_command_line()    
+
+    f = open(options.time_file)
+
+    if options.input_dir:
+        segment = 'file://' + options.input_dir
+    else:
+        segment = options.segment
+
+    for tme in f:
+        tme  = tme[:-1]
+        pipe = os.popen('ligolw_dq_query --segment=%s --active --include-segments=%s %s | ligolw_print -t segment_definer -c name' % (segment, options.ifo, tme))
+
+        print tme,
+
+        for name in pipe:
+            print '\t', name[:-1],
+
+        pipe.close()
+
+        print
+
+    f.close()
+

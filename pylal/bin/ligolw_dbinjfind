@@ -1,0 +1,284 @@
+#!/usr/bin/env python
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+
+
+__prog__ = "ligolw_dbinjfind"
+__author__ = "Collin Capano <collin.capano@ligo.org>"
+description = \
+''' 
+Finds and draws mappings between injections and single-IFO events. If all
+the single-IFO events in a coincident event are found to be mapped to the same
+injection, then the coincident event is also mapped to the injection.
+'''
+usage = "%s --input INDB.SQLITE --output OUTDB.SQLITE --simulation-table SIM_TABLE --recovery-table SNGL_TABLE --match-criteria CRITERIA --map-label LABEL [options]"
+
+from optparse import OptionParser
+try:
+    import sqlite3
+except ImportError:
+    # pre 2.5.x
+    from pysqlite2 import dbapi2 as sqlite3
+sqlite3.enable_callback_tracebacks(True)
+import sys
+import os
+import shutil
+import re
+
+from glue import git_version
+from glue.ligolw import dbtables
+from glue.ligolw import lsctables
+from glue.ligolw.utils import process
+
+from pylal import ligolw_dbinjfind
+from pylal import ligolw_sqlutils as sqlutils
+
+# =============================================================================
+#
+#                                   Set Options
+#
+# =============================================================================
+
+
+def parse_command_line():
+    """
+    Parse the command line, return options and check for consistency among the
+    options.
+    """
+    parser = OptionParser( version = "", usage = usage )
+
+    # following are related to file input and output naming
+    parser.add_option( "-i", "--input", action = "store", type = "string", default = None,
+        help =
+            "Required. Database to update."
+            )
+    parser.add_option( "-o", "--output", action = "store", type = "string", default = None,
+        help =
+            "Required. Name of output database to save to."
+            )
+    parser.add_option( "-t", "--tmp-space", action = "store", type = "string", default = None,
+        metavar = "PATH",
+        help =
+            "Location of local disk on which to do work. This is used to enhance performance in a networked environment."
+            ) 
+    parser.add_option( "-v", "--verbose", action = "store_true", default = False,
+        help = "Print progress information"
+        )
+    # following are specific to this program
+    parser.add_option( "-s", "--simulation-table", action = "store", type = "string", default = None,
+        help =
+            "Required. Name of table to look in for injections. This table must have a simulation_id column."
+        )
+    parser.add_option( "-r", "--recovery-table", action = "store", type = "string", default = None,
+        help =
+            "Required. Name of (sngl) table to look in for events. This table must have an event_id and an ifo column."
+        )
+    parser.add_option( "-m", "--match-criteria", action = "append", type = "string", default = [],
+        metavar = "SIM_CRITERIA[:REC_CRITERIA]:WINDOW_SIZE",
+        help =
+            "Required. The criteria to use to draw mappings, and the size of that criteria to use. If only one criteria is specified, the same criteria will be applied to both the simulation and the recovery table. The criteria can be either 'endTime', 'startTime', 'eThinca', or any math operation on columns that are in the simulation-table (for the sim-criteria) and the recovery table (for the rec-criteria). If 'endTime' or 'startTime' are used, the difference in time between the event's end/start time and the end/start time for the corresponding IFO in the simulation table is used. For example, for an H1 event, the h_end_time column will be used in the simulation table. If 'eThinca', the ethinca parameter is calculated between injections and events using XLALEThincaParameterForInjection. The value after the colon specifies the largest allowable difference between the injection and the event for it to be mapped. The units of the value correspond to what the criteria returns. For endTime and startTime it is seconds; for eThinca, the ethinca distance; for an arbitrary function, whatever the value returned. If this argument is given multiple times, all the specified match criteria must be satisfied. For example, if '-m endTime:endTime:0.2 -m mass1+mass2:mtotal:0.1' is specified, an event's end time must be within 0.2s of the injected end time and it's total mass must be within 0.1 of the injected total mass."
+        )
+    parser.add_option( "-M", "--rough-match", action = "store", type = "string", default = None,
+        metavar = "SIM_COLUMN:REC_COLUMN:WINDOW_SIZE",
+        help =
+            "Use a rough cut before applying the match criteria. This cuts down on the number  of times the match-criteria must be executed between injections and sim-inspiral events. Must be a single column in each table; example: 'geocent_end_time:end_time:10'. It is STRONGLY recommended that you use this, as it will cut down the execution time substantialy."
+        )
+    parser.add_option( "-R", "--check-all-data", action = "append", type = "string", default = [],
+        metavar = "CRITERIA:WINDOW_SIZE",
+        help =
+            "Check all_data (i.e., zero-lag data with no injections) for an event with values of the given column within the given window size. If an event is found, then the corresponding event in simulation data cannot be mapped to any injection. The reasoning is if the same event exists in simulation data and all_data, it cannot be from an injection. Similar to match-criteria, the criteria can be either 'endTime', 'startTime', or any math operation on any of the columns in the recovery table. (eThinca cannot be used because the ethinca function in lal cannot apply ethinca to two triggers from the same detector.) For example, if 'endTime:0' is specified, the end time will be used; a window size of 0 means that the events must have the exact same time to be considered the same. This option can be specified multiple times. If it is, all specified criteria must match in order for an event not to be considered for injection mapping."
+        )
+    parser.add_option( "-X", "--rough-all-data-check", action = "store", type = "string", default = None,
+        metavar = "REC_COLUMN:WINDOW_SIZE",
+        help =
+            "Use a rough check before applying the check-all-data criteria. Must be a single column in the recovery table; example: 'end_time:10'. It is STRONGLY recommended that you use this, as it will cut down the execution time substantialy."
+        )
+    parser.add_option("-l", "--map-label", action = "store", type = "string", default = None,
+        help =
+            "Required. What label to assign the mapping. This will be stored in the coinc_definer's description column, and will be used by later programs to pick out what type of mapping to use for found and missed injections. Typical inputs are 'exact' and 'nearby'. Note: if this program is run multiple times on the same database with the same map-label argument and simulation/recovery tables, then later programs will not be able to distinguish between the maps; i.e., all injections mapped in all runs will be considered 'found.' For this reason, if the given map-label is already found in the database between the given simulation and recovery tables, an error will be raised, unless --clear-map, --clear-coinc-type, or --force are specified."
+        )
+    parser.add_option("-C", "--clear-coinc-type", action = "store_true", default = False,
+        help =
+            "Delete all mappings in the database between the simulation-table and the recovery-table that have the same label as map-label prior to preforming the injection finding."
+        )
+    parser.add_option("-A", "--clear-map", action = "store_true", default = False,
+        help =
+            "Delete all mappings in the database that have the same description as --map-label prior to drawing the new mappings."
+        )
+    parser.add_option("-F", "--force", action = "store_true", default = False,
+        help =
+            "Perform injection finding even if maps with the given map-label already exist between the recovery-table and simulation-table in the database."
+        )
+    parser.add_option("-S", "--search", action = "store", type = "string", default = None,
+        help = 
+            "Define the search type (ala 'inspiral','ringdown', etc) which then will be stored in the search column of the coinc_definer table. This is strictly for labelling purposes, and it not required."
+        )
+
+    (options, args) = parser.parse_args()
+    # check for required options and for self-consistency
+
+    return options, args
+
+# =============================================================================
+#
+#                                     Main
+#
+# =============================================================================
+
+opts, filenames = parse_command_line()
+
+if not os.path.isfile( opts.input ):
+    raise ValueError, "The input database, %s, cannot be found." % opts.input
+
+# check if outfile is the same as in file; if not working in a temp directory, we need to copy
+# the original database to the new file name, then work on that, so as not to overwrite the original
+if opts.output == opts.input:
+    print >> sys.stderr, "WARNING: The input file %s is the same as the output file." % opts.input
+
+if opts.tmp_space is not None:
+    working_filename = dbtables.get_connection_filename( 
+        opts.input, tmp_path = opts.tmp_space, verbose = opts.verbose )
+    connection = sqlite3.connect( working_filename )
+    dbtables.set_temp_store_directory(connection, opts.tmp_space, verbose = opts.verbose)
+else:
+    if opts.input == opts.output:
+        working_filename = opts.input
+    else:
+        if opts.verbose:
+            print >> sys.stdout, "\tcopying to %s" % opts.output
+        shutil.copy(opts.input, opts.output)
+        working_filename = opts.output
+    connection = sqlite3.connect( working_filename )
+
+# check if the given map_label already exists in the database
+if opts.verbose:
+    print >> sys.stdout, "Checking if map-label already in the database..."
+if opts.map_label in sqlutils.get_map_labels(connection):
+    if opts.clear_map:
+        sqlutils.delete_map(connection, opts.map_label)
+    else:
+        # get all of the coinc types
+        coinc_types = sqlutils.get_coinc_types(connection)
+        # if the map isn't in coinc_types, means that the map label
+        # was previously used, but no mappings were actually drawn
+        if opts.map_label not in coinc_types:
+            print >> sys.stderr, "WARNING: map label %s is already in the database, but has no associated coincs. I will continue to use this label." %(opts.map_label)
+
+        else:
+            # check if the same tables are mapped for this coinc-type
+            newSimSngls = set([opts.recovery_table, opts.simulation_table])
+            newCoincSimSngls = set([opts.recovery_table, opts.simulation_table, 'coinc_event'])
+            for thisCoincType in [newSimSngls, newCoincSimSngls]:
+                if thisCoincType in coinc_types[opts.map_label]:
+                    if opts.clear_coinc_type:
+                        if opts.verbose:
+                            print >> sys.stdout, "Found coinc-type %s with map-label %s; deleting..." %( ','.join(sorted(thisCoincType)), opts.map_label )
+                        sqlutils.delete_coinc_type( connection, opts.map_label, thisCoincType )
+                    elif opts.force:
+                        print >> sys.stderr, "WARNING: Coinc type %s with map %s already in the database." %(','.join(sorted(thisCoincType)), opts.map_label)
+                    else:
+                        raise ValueError, "Coinc type %s with map %s already in the database. To process anyway, re-run with --force option on." %(','.join(thisCoincType), opts.map_label)
+
+
+# Add program to process and process params table
+
+# FIXME: remove the following two lines once boolean type
+# has been properly handled
+from glue.ligolw import types as ligolwtypes
+ligolwtypes.FromPyType[type(True)] = ligolwtypes.FromPyType[type(8)]
+
+xmldoc = dbtables.get_xml(connection)
+this_process = process.register_to_xmldoc(xmldoc, __prog__, opts.__dict__, version = git_version.id)
+
+# parse opts
+
+# we'll need the columns in each table for error checking
+snglcols = sqlutils.get_column_names_from_table(connection, opts.recovery_table)
+simcols = sqlutils.get_column_names_from_table(connection, opts.simulation_table) 
+
+match_criteria = []
+for test in opts.match_criteria:
+    if len(test.split(':')) == 3:
+        simCriteria, snglCriteria, window = test.split(':')
+    elif len(test.split(':')) == 2:
+        simCriteria, window = test.split(':')
+        snglCriteria = simCriteria
+    else:
+        raise ValueError, "--match-criteria not formatted correctly; see --help"
+    # check for startTime/endtime consistency
+    if snglCriteria == 'startTime' and ('start_time' not in snglcols
+    or 'start_time_ns' not in snglcols):
+        raise ValueError, "Recovery-table match criteria set to startTime, but start_time and start_time_ns columns not found in the %s table." %( opts.recovery_table )
+    if snglCriteria == 'endTime' and ('end_time' not in snglcols
+    or 'end_time_ns' not in snglcols):
+        raise ValueError, "Recovery-table match criteria set to endTime, but end_time and end_time_ns columns not found in the %s table." %( opts.recovery_table )
+    if simCriteria == 'startTime':
+        simTest = [(re.match('[a-z]_start_time', col) is not None
+            and re.match('[a-z]_start_time_ns', col) is None) or
+            (re.match('[a-z]_start_time_ns', col) is not None) for col in simcols]
+        if not any(simTest):
+            raise ValueError, "Simulation table match criteria set to startTime, but [a-z]_start_time and [a-z]_start_time_ns columns not found in the %s table." % opts.simulation_table
+    if simCriteria == 'endTime':
+        simTest = [(re.match('[a-z]_end_time', col) is not None
+            and re.match('[a-z]_end_time_ns', col) is None) or
+            (re.match('[a-z]_end_time_ns', col) is not None) for col in simcols]
+        if not any(simTest):
+            raise ValueError, "Simulation table match criteria set to endTime, but [a-z]_end_time and [a-z]_end_time_ns columns not found in the %s table." % opts.simulation_table
+    window = float(window)
+    match_criteria.append( (simCriteria, snglCriteria, window) )
+
+if opts.rough_match is not None:
+    if len(opts.rough_match.split(':')) == 3:
+        simCriteria, snglCriteria, window = opts.rough_match.split(':')
+        window = float(window)
+        rough_match = (simCriteria, snglCriteria, window)
+    else:
+        raise ValueError, "--rough-match not formatted corrrectly; see --help"
+    if snglCriteria not in snglcols:
+        raise ValueError, "Recovery table criteria for rough match must be a single column that is in the recovery table (no math). Options are: %s." % ', '.join(sorted(snglcols))
+    if simCriteria not in simcols:
+        raise ValueError, "Simulation table criteria for rough match must be a single column that is in the recovery table (no math). Options are: %s." % ', '.join(sorted(simcols))
+else:
+    rough_match = None
+
+rejection_criteria = []
+for test in opts.check_all_data:
+    if len(test.split(':')) == 2:
+        criteria, window = test.split(':')
+    else:
+        raise ValueError, "--check-all-data not formatted correctly; see --help"
+    window = float(window)
+    rejection_criteria.append( (criteria, window) )
+
+if opts.rough_all_data_check is not None:
+    if len(opts.rough_all_data_check.split(':')) == 2:
+        criteria, window = opts.rough_all_data_check.split(':')
+        window = float(window)
+        rough_rejection = (criteria, window)
+    else:
+        raise ValueError, "--rough-all-data-check not formatted correctly; see --help"
+    if criteria not in snglcols:
+        raise ValueError, "Criteria for rough-all-data-check must be a single column that is in the recovery table (no math). Options are: %s." % ', '.join(sorted(snglcols))
+else:
+    rough_rejection = None
+
+# carry out injection finding
+ligolw_dbinjfind.dbinjfind( connection, opts.simulation_table, opts.recovery_table, match_criteria, rough_match, rejection_criteria, rough_rejection, verbose = opts.verbose )
+
+# write results to database
+ligolw_dbinjfind.write_coincidences( connection, opts.map_label, opts.search, this_process.process_id, verbose = opts.verbose )
+
+# save and exit
+process.set_process_end_time(this_process)
+connection.close()
+if opts.tmp_space is not None:
+    dbtables.put_connection_filename(opts.output, working_filename, verbose = opts.verbose)
+if opts.verbose:
+    print >> sys.stdout, "Finished!"
+sys.exit(0)

@@ -1,0 +1,10 @@
+db2 connect to seg_lho
+db2 update db cfg for seg_lho using LOGFILSIZ 16384
+db2 update db cfg for seg_lho using LOGPRIMARY 100
+db2 update db cfg for seg_lho using LOGSECOND 155
+db2 -tf process.sql
+db2 -tf process_params.sql
+db2 -tf segment_definer.sql
+db2 -tf segment_summary.sql
+db2 -tf segment.sql
+

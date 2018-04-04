@@ -1,0 +1,1046 @@
+#!/usr/bin/python
+"""
+%prog -i ini_file [options]
+
+Tomoki Isogai (isogait@carleton.edu)
+
+This program parses param file, sets up a segment file, and creates dag file.
+
+"""
+# =============================================================================
+#
+#                               PREAMBLE
+#
+# =============================================================================
+
+import os
+import sys
+import optparse
+import ConfigParser
+import glob
+import re
+import urllib2
+
+from glue import pipeline
+from glue import segmentsUtils
+from glue.segments import segment, segmentlist
+
+from pylal import git_version
+from pylal import KW_veto_utils
+
+__author__ = "Tomoki Isogai <isogait@carleton.edu>"
+__date__ = "$Date$"
+__version__ = "$Revision$"
+
+def parse_commandline():
+    """
+    Parse the options given on the command-line.
+    """
+    parser = optparse.OptionParser(usage=__doc__,version=git_version.verbose_msg)
+
+    parser.add_option("-i", "--ini_file", help="file which contains parameters")
+    parser.add_option("-s", "--write_script",action="store_true", default=False,
+                      help="create a script in addition to dag file")
+    parser.add_option("-v", "--verbose", action="store_true",\
+                      default=False, help="run verbosely")
+    
+    # parse the options
+    opts, args = parser.parse_args()
+    
+    # check if necessary input exists
+    if opts.ini_file is None:
+        print >>sys.stderr, "--ini-file is a required parameter"
+        sys.exit(1)
+    if not os.path.isfile(opts.ini_file):
+        print >>sys.stderr, "ini file not found"
+        sys.exit(1)    
+        
+    return opts
+
+################################################################################
+# Define Jobs.  A Job corresponds to a program.  Each Job can have multiple 
+# Nodes (instances).
+################################################################################
+
+class calcJob(pipeline.CondorDAGJob):
+  """
+  This class represents the KW_veto_calc program. 
+  KW_veto_calc program calculates all the figures like used percentage, veto 
+  efficiency, deadtime percentage etc.
+  """
+  def __init__(self, cp):
+    """
+    cp = a ConfigParser instance
+    """
+    self.__executable = cp.get('condor','KW_veto_calc-bin')
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe, self.__executable)
+
+    self.set_stdout_file('logs/$(logname)-$(cluster).out')
+    self.set_stderr_file('logs/$(logname)-$(cluster).err')
+    self.add_condor_cmd('getenv','True')
+
+    self.add_opt("name_tag", cp.get("general","tag"))
+    self.add_opt("ifo", cp.get("input","ifo"))
+    for t in trigger_files:
+      self.add_opt("trigger_files",t)
+    self.add_opt("segment_file", segment_file)
+    if cp.get("input","KW_location") != "":
+      self.add_opt("KW_location",cp.get("input","KW_location"))
+    self.add_opt("critical_usedPer",cp.get("data_conditioning","critical_usedPer"))
+    self.add_opt("min_snr",cp.get("data_conditioning","min_snr"))
+    self.add_opt("positive_window",cp.get("data_conditioning","positive_window"))
+    self.add_opt("negative_window",cp.get("data_conditioning","negative_window"))
+    self.add_opt("min_thresh",cp.get("data_conditioning","min_thresh"))
+    self.add_opt("max_thresh",cp.get("data_conditioning","max_thresh"))
+    self.add_opt("resolution",cp.get("data_conditioning","resolution"))
+    self.add_opt("scratch_dir",cp.get("condor","scratchdir"))
+    self.add_arg("--verbose")
+    if cp.get("input","injection_file") != "":
+      self.add_opt("injection_file",cp.get("input","injection_file"))
+      self.add_opt("safety_thresh",cp.get("data_conditioning","safety_thresh"))
+
+    ## other necessary information in the paramfile
+    # don't need min_kw for this program - exclude it temporarily
+    self.add_ini_opts(cp, "output")
+    
+class plotsJob(pipeline.CondorDAGJob):
+  """
+  This class represents the KW_veto_plots program.
+  KW_veto_plots takes output from KW_veto_calc and creates plots for webpage
+  """
+  def __init__(self, cp):
+    """
+    cp = a ConfigParser instance
+    """
+    self.__executable = cp.get('condor','KW_veto_plots-bin')
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe, self.__executable)
+
+    self.set_stdout_file('logs/$(logname)-$(cluster).out')
+    self.set_stderr_file('logs/$(logname)-$(cluster).err')
+    self.add_condor_cmd('getenv','True')
+
+    self.add_opt("out_dir", cp.get("plot", "outdir"))
+    self.add_opt("scratch_dir",cp.get("condor","scratchdir"))
+    self.add_arg("--verbose")
+
+class channelPageJob(pipeline.CondorDAGJob):
+  """
+  This class represents the KW_veto_channelPage program.
+  KW_veto_channelPage creats a webpage that summarizes the result for a 
+  channel.
+  """
+  def __init__(self, cp):
+    """
+    cp = a ConfigParser instance
+    param_loc = location of param file
+    """
+    self.__executable = cp.get('condor','KW_veto_channelPage-bin')
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe, self.__executable)
+
+    self.set_stdout_file('logs/$(logname)-$(cluster).out')
+    self.set_stderr_file('logs/$(logname)-$(cluster).err')
+    self.add_condor_cmd('getenv','True')
+
+    self.add_opt("plot_dir",cp.get("plot","outdir"))
+    self.add_opt("param_file", opts.ini_file)
+    self.add_opt("out_dir", cp.get("webpage","outdir"))
+    self.add_opt("scratch_dir",cp.get("condor","scratchdir"))
+    self.add_arg("--verbose")
+    
+class reportPageJob(pipeline.CondorDAGJob):
+  """
+  This class represents the veto_KW_reportPage program. 
+  KW_veto_reportPage creates a summary page for all channels analyzed: 
+  it lists veto candidate channels and shows important info like 
+  use percentage, veto efficiency etc. and links to individual 
+  channel summary page.
+  """
+  def __init__(self, cp):
+    """
+    cp = a ConfigParser instance
+    """
+    self.__executable = cp.get('condor','KW_veto_reportPage-bin')
+    self.__universe = "vanilla"
+    pipeline.CondorDAGJob.__init__(self,self.__universe, self.__executable)
+
+    self.set_stdout_file('logs/$(logname)-$(cluster).out')
+    self.set_stderr_file('logs/$(logname)-$(cluster).err')
+    self.add_condor_cmd('getenv','True')
+  
+    self.add_opt("out_dir", cp.get("webpage", "outdir"))
+    self.add_opt("min_coinc_num", cp.get("data_conditioning","min_kw"))
+    print unsafe_list
+    for u in unsafe_list:
+      self.add_arg("--unsafe_channels %s"%u)
+    self.add_opt("scratch_dir",cp.get("condor","scratchdir"))
+    self.add_arg("--verbose")
+
+class insertJob(pipeline.CondorDAGJob):
+  """
+  """
+  def __init__(self, cp):
+    """
+    cp = a ConfigParser instance
+    """
+    self.__executable = cp.get('condor','KW_veto_insert-bin')
+    self.__universe = "local"
+    pipeline.CondorDAGJob.__init__(self,self.__universe, self.__executable)
+
+    self.set_stdout_file('logs/$(logname)-$(cluster).out')
+    self.set_stderr_file('logs/$(logname)-$(cluster).err')
+    self.add_condor_cmd('getenv','True')
+  
+    self.add_opt("result_dir", cp.get("output", "out_dir"))
+    self.add_opt("out_dir",os.path.join(web_outdir,"inserted_segs"))
+    if cp.getboolean("veto","xml"):
+      self.add_arg("--write_xml")
+    if cp.getboolean("veto","insert"):
+      self.add_arg("--insert")
+    self.add_opt("segment-url", cp.get("veto","segment_url"))
+    self.add_opt("web_address",cp.get("veto","web_address"))
+    for u in unsafe_list:
+      self.add_arg("--unsafe_channels %s"%u)
+    self.add_opt("min_coinc_num",cp.get("data_conditioning","min_kw"))
+    self.add_opt("scratch_dir",cp.get("condor","scratchdir"))
+    self.add_opt("trigger_type",cp.get("veto","trigger_type"))
+    self.add_arg("--verbose")
+      
+      
+class followupJob(pipeline.CondorDAGJob):
+  """
+  """
+  def __init__(self, cp):
+      """
+      cp = a ConfigParser instance
+      """
+      self.__executable = cp.get('condor','KW_veto_followup-bin')
+      self.__universe = "local"
+      pipeline.CondorDAGJob.__init__(self,self.__universe, self.__executable)
+
+      self.set_stdout_file('logs/$(logname)-$(cluster).out')
+      self.set_stderr_file('logs/$(logname)-$(cluster).err')
+      self.add_condor_cmd('getenv','True')
+      
+      self.add_opt("ifo",cp.get("input","ifo"))
+      self.add_opt("result_dir",cp.get("output","out_dir"))
+      self.add_opt("min_coinc",cp.get("data_conditioning","min_kw"))
+      self.add_opt("scratch_dir",cp.get("condor","scratchdir"))
+      self.add_opt("out_dir",os.path.join(web_outdir,"followup"))
+      if cp.getboolean("follow_up","dq_flag"):
+        self.add_arg("--DQFlags")
+      if cp.getboolean("follow_up","wscans"):
+        self.add_arg("--wscan")
+        self.add_opt("w_executable",cp.get("condor","wscan-bin"))
+        self.add_opt("w_config",cp.get("follow_up","wscan_config"))
+        self.add_opt("w_framecache",cp.get("follow_up","wscan_framecache"))
+      self.add_arg("--verbose")
+      
+class wscanRunJob(pipeline.CondorDAGJob):
+  """
+  submission file will be replaced by KW_veto_qscanSetup
+  """
+  def __init__(self, cp):
+      """
+      cp = a ConfigParser instance
+      """
+      self.__executable = cp.get('condor','KW_veto_runOmega-bin')
+      self.__universe = "local"
+      pipeline.CondorDAGJob.__init__(self,self.__universe, self.__executable)
+      
+      self.set_stdout_file('logs/$(logname)-$(cluster).out')
+      self.set_stderr_file('logs/$(logname)-$(cluster).err')
+      self.add_condor_cmd('getenv','True')
+      
+      output = os.path.join(web_outdir,"followup")
+
+      self.add_opt("time_file",os.path.join(output,"omega_times.txt"))
+      self.add_opt("w_executable",cp.get("condor","wscan-bin"))
+      self.add_opt("w_config",cp.get("follow_up","wscan_config"))
+      self.add_opt("w_framecache",cp.get("follow_up","wscan_framecache"))
+      self.add_opt("out_dir",os.path.join(output,"omega"))
+      self.add_arg("--verbose")
+      
+        
+################################################################################
+# Define Nodes.  A Node corresponds to a single instance of a program to be
+# run.  They each attach to a Job, which contains the information common to
+# all Nodes of a single type.
+################################################################################
+
+class calcNode(pipeline.CondorDAGNode):
+  def __init__(self, job, name, retry, channel,filePrefix):
+    """
+    A calcNode runs an instance of KW_veto_calc in a Condor DAG.
+    """
+    
+    pipeline.CondorDAGNode.__init__(self, job)
+
+    self.set_name(name)
+    self.set_retry(retry)
+    self.add_var_opt("channel", channel)
+    self.add_macro("logname","calc-"+filePrefix) # used for log name
+        
+class plotsNode(pipeline.CondorDAGNode):
+  def __init__(self, job, name, retry,filePrefix):
+    """
+    A plotsNode runs an instance of KW_veto_plots in a Condor DAG.
+    """
+    
+    pipeline.CondorDAGNode.__init__(self, job)
+    
+
+    self.add_var_opt("result_glob",os.path.join(cp.get("output","out_dir"),filePrefix+"-data.db"))
+    self.set_name(name)
+    self.set_retry(retry)
+    self.add_macro("logname","plots-"+filePrefix) # used for log name
+        
+class channelPageNode(pipeline.CondorDAGNode):
+  def __init__(self,job,name,retry,result_file,log_dir,filePrefix):
+    """
+    A channelPageNode runs an instance of KW_veto_channelPage in 
+    a Condor DAG.
+    """
+    
+    pipeline.CondorDAGNode.__init__(self, job)
+
+    self.set_name(name)
+    self.set_retry(retry)
+    self.add_var_opt("result_file", result_file)
+    self.add_var_opt("log_dir", log_dir)
+    self.add_macro("logname","channelPage-"+filePrefix) # used for log name
+
+
+class insertNode(pipeline.CondorDAGNode):
+  def __init__(self, job, name, retry, filePrefix):
+    """
+    """
+    
+    pipeline.CondorDAGNode.__init__(self, job)
+
+    self.set_name(name)
+    self.set_retry(retry)
+    self.add_macro("logname","insert-"+filePrefix) # used for log name
+        
+
+class followupNode(pipeline.CondorDAGNode):
+    def __init__(self, job, name, retry, filePrefix):
+        """
+        """
+        
+        pipeline.CondorDAGNode.__init__(self, job)
+        
+        self.set_name(name)
+        self.set_retry(retry)
+        
+        self.add_macro("logname","followup-"+filePrefix) # used for log name
+        
+        
+class wscanRunNode(pipeline.CondorDAGNode):
+    def __init__(self, job, name, retry, filePrefix, index):
+        """
+        """
+        
+        pipeline.CondorDAGNode.__init__(self, job)
+        self.set_name(name)
+        self.set_retry(retry)
+        self.set_category("wscan")
+        self.add_var_opt("index", index)
+        self.add_macro("logname","wscanRun-"+filePrefix) # used for log name
+        
+
+class reportPageNode(pipeline.CondorDAGNode):
+  def __init__(self, job, name, retry,filePrefix):
+    """
+    A reportPage runs an instance of KW_veto_reportPage in a Condor DAG.
+    """
+    
+    pipeline.CondorDAGNode.__init__(self, job)
+
+    self.set_name(name)
+    self.set_retry(retry)
+    self.add_var_opt("result_dir", cp.get("output","out_dir"))
+    self.add_macro("logname","reportPage-"+filePrefix) # used for log name
+        
+        
+################################################################################
+# Manipulate segment files and get the actual segments to run the program on
+################################################################################
+
+def get_analyze_segment():
+  """
+  cp is a config parser instance
+
+  This function does the following to get the segment list to be analyzed:
+  - take a union of the segment files specified on analyzed_seg_files 
+    in param file
+  - subtract category specified 
+  """
+  if opts.verbose:
+      print "making segment list..."
+
+  if not os.path.exists("segfiles"):
+      os.makedirs("segfiles")
+  
+  ################# take a union of analyzed_seg_files ###################
+  
+  if opts.verbose: print "getting analyzed segments..."
+  analyzed_seg_files = KW_veto_utils.get_files_from_globs(cp.get("input","analyzed_seg_files"))
+  # check if there is at least one file
+  if analyzed_seg_files == []:
+      print >>sys.stderr, "Error: analyzed_seg_files not found."
+      sys.exit(1)
+      
+  if opts.verbose: print "added seg files:", analyzed_seg_files
+  analyzed_segs=segmentlist()
+  # take a union of one segment list at a time
+  for fileName in analyzed_seg_files:
+    if fileName.endswith("txt"):
+      segs = KW_veto_utils.read_segfile(fileName)
+    elif fileName.endswith("xml") or fileName.endswith("xml.gz"):
+      segs = KW_veto_utils.read_segfile_xml(fileName,opts.verbose)
+    else:
+      print >> sys.stderr, "Error: file format of %s is not supported."%fileName
+      sys.exit(1)
+    analyzed_segs.__ior__(segs)
+  
+  ####################### subtract flag_seg_files ########################
+ 
+  if opts.verbose: print "subtracting flag_seg_files..." 
+  flag_seg_files = KW_veto_utils.get_files_from_globs(cp.get("input","flag_seg_files")) 
+  if opts.verbose: print "subtracted seg files:",flag_seg_files
+  for fileName in flag_seg_files:
+    if fileName.endswith("txt"):
+      segs = KW_veto_utils.read_segfile(fileName)
+    elif fileName.endswith("xml") or fileName.endswith("xml.gz"):
+      segs = KW_veto_utils.read_segfile_xml(fileName)
+    else:
+      print >> sys.stderr, "Error: file format of %s is not supported."%fileName
+      sys.exit(1)
+    analyzed_segs = analyzed_segs - segs
+
+  analyzed_segs.coalesce()
+
+  ######################### subtract category times ######################
+
+  if any(cats.values()) == True:
+    start = int(analyzed_segs[0][0])
+    end = int(analyzed_segs[-1][1]+1)
+    duration = end - start
+    # FIXME: write my own function - ligolw_segments_from_cats gets segments 
+    # for all ifos and wasteful
+    def get_cats():
+      if opts.verbose:
+        print "getting cat veto files..."
+        print "this might take a while..."
+      cmd = "ligolw_segments_from_cats --veto-file %s --output-dir %s --segment-url %s --separate-categories --gps-start-time %d --gps-end-time %d"%(cp.get("input","veto_definer_file"),"segfiles",cp.get("input","server"),start,end)
+      print cmd
+      exit = os.system(cmd)
+      if exit > 0:
+        print >> sys.stderr, """
+        Error: command below failed.
+               %s"""%cmd
+        sys.exit(1)
+
+    for i in cats.keys():
+      if cats[i] == True:
+        cat_file = "segfiles/%s-VETOTIME_CAT%d-%d-%d.xml"%(cp.get("input","ifo"),i,start,duration)  
+        if not os.path.isfile(cat_file):
+          get_cats()
+        if opts.verbose: print "subtracting %s"%cat_file  
+        analyzed_segs = analyzed_segs - KW_veto_utils.read_segfile_xml(cat_file,opts.verbose)
+
+  analyzed_segs.coalesce
+  if opts.verbose: 
+      print "segs to be analyzed:"; print analyzed_segs
+  # for name
+  start_time = int(analyzed_segs[0][0])
+  end_time = int(analyzed_segs[-1][1])
+  duration = end_time - start_time      
+
+  ########################### save the result ############################
+  
+  output_name = os.path.join("segfiles","%s-%s-%s-%s-segs.txt"%(cp.get("general","tag"),cp.get("input","ifo"),str(start_time),str(duration)))
+  if opts.verbose: print "saving the segment list in %s..."%output_name
+  segmentsUtils.tosegwizard(open(output_name,"w"),analyzed_segs,\
+                            coltype=float)
+  return start_time, duration, output_name
+
+################################################################################
+# Set up DAG 
+################################################################################
+
+def dag_maker():
+    """
+    This function creates a dag file and condor submission files
+    
+    ifo_list contains ifos on which vetoStats is to run (vetoStats is the 
+    program that calculates all the necessary values of veto like 
+    used percentage, veto efficiency, dead time percentage etc.)
+    ifo_list=[] means no vetoStats (use results from a previous run)
+    cp is a config parser instance
+    """
+    tag = cp.get("general", "tag")
+    ifo = cp.get("input", "ifo")
+
+    ## create directory for Condor output and error files
+    KW_veto_utils.rename("logs") 
+    os.mkdir("logs")
+
+    ############################################################################
+    # set dag
+    ############################################################################
+    
+    dag=pipeline.CondorDAG(os.path.join(cp.get("condor","logdir"),"%s.log"%tag))
+    dag.set_dag_file(os.path.join("dags",tag))  
+
+    ############################################################################
+    # set jobs and subfiles
+    ############################################################################
+    
+    calc_job = calcJob(cp)
+    calc_job.set_sub_file(os.path.join("dags","%s.calc.sub"%tag))
+    
+    plots_job = plotsJob(cp)
+    plots_job.set_sub_file(os.path.join("dags","%s.plots.sub"%tag))
+    
+    channelPage_job = channelPageJob(cp)
+    channelPage_job.set_sub_file(os.path.join("dags","%s.channelPage.sub"%tag))
+     
+    reportPage_job = reportPageJob(cp)
+    reportPage_job.set_sub_file(os.path.join("dags","%s.reportPage.sub"%tag))
+    
+    insert_job = insertJob(cp)
+    insert_job.set_sub_file(os.path.join("dags","%s.insert.sub"%tag))
+
+    followup_job = followupJob(cp)
+    followup_job.set_sub_file(os.path.join("dags","%s.followup.sub"%tag))
+
+    wscanRun_job = wscanRunJob(cp)
+    wscanRun_job.set_sub_file(os.path.join("dags","%s.wscanRun.sub"%tag))
+
+    ############################################################################
+    # set each node
+    # case 1: one of H1, H2, L1, V1 is on - run the code on specified channel
+    ############################################################################
+    
+    parent_list=[] # to be used to define dependancies of nodes
+    retry = cp.getint("condor","retry")
+    
+    # channel_list is the list of channels to be analyzed 
+    ################## inner loop: channels to be analyzed #################
+    
+    for channel in channel_list:
+      filePrefix = "-".join([cp.get("general","tag"),ifo,channel,str(start_time),str(duration)])
+      ## Add ifo/channel-dependant nodes
+      # Add calc nodes
+      dagNodeName = "calc-"+ifo+"-"+channel
+      cl = calcNode(calc_job,dagNodeName,retry,channel,filePrefix)
+      dag.add_node(cl)
+      parent_list.append(cl)
+      
+      # Add plot_maker nodes
+      dagNodeName = "plots-"+ifo+"-"+channel
+      # result glob for this particular ifo/channel
+      pl = plotsNode(plots_job,dagNodeName,retry,filePrefix)
+      if cp.getboolean("plot","plot"):
+        pl.add_parent(cl)
+        dag.add_node(pl)
+          
+      # Add channelPage_maker nodes
+      dagNodeName = "channelPage-"+ifo+"-"+channel
+      # derive all the input to channelPage_maker
+      plot_dir = cp.get("plot","outdir")
+      # figure out path to each output file
+      result_file = os.path.join(cp.get("output","out_dir"),filePrefix+"-data.db")
+      log_dir = "logs"
+      ch = channelPageNode(channelPage_job,dagNodeName,retry,result_file,log_dir,filePrefix)
+      if cp.getboolean("webpage","webpage"):
+        ch.add_parent(cl) 
+        # add plot_maker in parent as well so that log file includes
+        # log from plot_maker
+        if cp.getboolean("plot","plot"):
+          ch.add_parent(pl)
+        dag.add_node(ch)
+
+    filePrefix = "-".join([cp.get("general","tag"),ifo,str(start_time),str(duration)])                    
+    # add reportPage node
+    if cp.getboolean("webpage","webpage"):
+        dagNodeName = "reportPage"
+        rp = reportPageNode(reportPage_job,dagNodeName,retry,filePrefix)
+        # add parent
+        for p in parent_list:
+            rp.add_parent(p)
+        dag.add_node(rp)
+
+    # add insert node
+    if cp.getboolean("veto","xml") or cp.getboolean("veto","insert"):
+      dagNodeName = "insert"
+      ins = insertNode(insert_job,dagNodeName,retry,filePrefix)
+      # add parent 
+      for p in parent_list:
+        ins.add_parent(p)
+      dag.add_node(ins)
+
+    # add follow up node
+    if cp.getboolean("follow_up","follow_up"):
+      dagNodeName = "followup"
+      fu = followupNode(followup_job,dagNodeName,retry,filePrefix)
+      # add parent
+      for p in parent_list:
+          fu.add_parent(p)
+      dag.add_node(fu)
+
+      # add omega scan node
+      if cp.getboolean("follow_up","wscans"):
+        for i in range(cp.getint("follow_up","wscan_num")):
+          dagNodeName = "wscanRun_%d"%i
+          retry = cp.getint("condor","retry")
+          filePrefix = "-".join([cp.get("general","tag"),str(start_time),str(duration)])
+          ws = wscanRunNode(wscanRun_job,dagNodeName,retry,filePrefix, i)
+          # add parent
+          ws.add_parent(fu)
+          dag.add_node(ws)
+
+    # output workflow as DAG or script; assumes that parents always appear
+    # before children.
+    dag.add_maxjobs_category("wscan", 5)
+    dag.write_sub_files()
+    dag.write_dag()
+    if opts.write_script:
+        dag.write_script()
+    
+# =============================================================================
+#
+#                                  MAIN
+#
+# =============================================================================
+
+    
+# parse commandline
+opts = parse_commandline()
+
+
+# access configuration file
+cp = ConfigParser.ConfigParser()
+cp.read(opts.ini_file)
+
+home = os.environ['HOME']
+user = os.environ['USER']
+
+if opts.verbose:
+  print "checking the parameters..."
+
+############################################################################
+# check necessary txt files
+# if not exist, download
+############################################################################
+inputfiles = {}
+if not os.path.isdir("inputfiles"):
+    os.mkdir("inputfiles")
+
+for f in ("vstyle.css","S6_channel_list.txt", "S5_LIGO_channel_list.txt", "E14_channel_list.txt", "VSR4_channel_list.txt"):
+  if not os.path.isfile("inputfiles/%s"%f):
+    inputfile = "https://virgo.physics.carleton.edu/public/UPV_inputfiles/%s"%f
+    outfile = os.path.join("inputfiles",f)
+    exit = os.system("wget -O %s %s --no-check-certificate"%(outfile,inputfile))
+    if exit > 0:
+      print >> sys.stderr, "Error: could not download %s. Please check the address."%cp.get("input","veto_definer_file")
+      sys.exit(1)
+
+############################################################################
+# check config and make sure they are sane
+############################################################################
+
+########################### [general] section ##############################
+
+if cp.get("general","tag").find("-") is not -1:
+    print >> sys.stderr, 'Error: you can not use "-" in your tag'
+    sys.exit(1)
+
+if cp.get("general","tag")=="":
+    from time import strftime, localtime
+    cp.set("general","tag",strftime("%y%m%d",localtime()))
+    
+if os.path.isdir("dags"): 
+    KW_veto_utils.rename("dags")
+os.makedirs("dags")
+    
+    
+########################### [condor] section ###############################
+
+# log directory - set it to /usr1/${USER} if left blank in param file
+#                 otherwise set as specified
+if cp.get("condor", "logdir")=="":
+    cp.set("condor","logdir","/usr1/%s"%user)
+else:
+    # print precaution message
+    print >> sys.stderr, """
+********************************************************************************
+You might need to tell Condor not to complain that your DAG logs are on 
+NFS volumes before submitting your DAG.
+
+bash users:
+export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
+
+tcsh users:
+setenv _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR FALSE
+********************************************************************************
+    """
+if cp.get("condor", "scratchdir")=="":
+    cp.set("condor","scratchdir","/usr1/%s"%user)
+
+for bin in ("calc","plots","channelPage","reportPage","followup","runOmega"):
+  if cp.get("condor","KW_veto_%s-bin"%bin)=="":
+    cp.set("condor","KW_veto_%s-bin",\
+               "/archive/home/isogait/pylal/bin/KW_veto_"+bin)
+  if not os.path.isfile(cp.get("condor","KW_veto_%s-bin"%bin)):
+    print >> sys.stderr, "Error: %s bin not found"%bin
+    sys.exit(1)
+    
+    
+if cp.get("condor","retry")=="":
+    print >> sys.stderr, """
+    retry is not set in param file.
+    setting retry to 1
+    """
+    cp.set("condor","retry","1")
+
+try:
+  cp.getint("condor","retry")
+except ValueError:
+  raise('Error: retry must be an int value')
+    
+    
+######################## [data_conditioning] section #######################
+
+for d in ("critical_usedPer","min_snr","positive_window","negative_window", "min_thresh","max_thresh","resolution","min_KW"):
+  if cp.get("data_conditioning",d)=="":
+    print >> sys.stderr, "Error: %s is a required in param file."%d
+    sys.exit(1)
+  if d in ("positive_window","negative_window","trigger_filter"):
+    try:
+      cp.getfloat("data_conditioning",d)
+    except:
+      raise("Error: %s must be a float value"%d)
+  else:
+    try:
+      cp.getint("data_conditioning",d)
+    except:
+      raise("Error: %s must be an int value"%d)
+
+if cp.get("input","injection_file") != "":
+  if cp.get("data_conditioning","safety_thresh") == "":
+    print >> sys.stderr, "Error: --safety_thresh is a required in param file."
+    sys.exit(1)
+  try:
+    cp.getint("data_conditioning","safety_thresh")
+  except:
+    raise("Error: safety_thresh must be int")
+
+######################### [output] section #################################
+
+# if not specified, set the output of KW_veto_calc to "results"
+if cp.get("output","out_dir")=="": 
+  cp.set("output","out_dir","results")
+    
+# if output directory already exists, rename to avoid collision;
+# create output directory if not exist yet
+KW_veto_utils.rename(cp.get("output","out_dir"))
+if not os.path.isdir(cp.get("output","out_dir")): 
+  os.makedirs(cp.get("output","out_dir"))
+    
+# if not specified, set the output extension to .txt
+if cp.get("output","extension") == "": 
+  cp.set("output","extension",".txt")
+    
+# add comma if not there yet
+if cp.get("output","extension")[0]!=".": 
+  cp.set("output","extension","."+cp.get("output","extension"))
+# check if extension specified is supported by the code
+if cp.get("output","extension") not in (".txt",".txt.gz",".pickle","pickle.gz",".mat"):
+  print >> sys.stderr, """
+  Error: output extension has to be .txt, .txt.gz, .pickle, .pickle.gz or .mat
+  """
+  sys.exit(1)
+        
+############################# [input] section #################################
+
+# convert to upper case if not already
+cp.set("input", "ifo", cp.get("input", "ifo").upper())
+if cp.get("input", "ifo") not in ("H1", "H2", "L1", "V1"):
+  print >> sys.stderr, "%s is not a supported ifo."%cp.get("input", "ifo")
+  sys.exit(1)
+
+# check if necessary input exists
+for f in ("analyzed_seg_files", "GW_trigger_files", "channel_list_file"):
+  if cp.get("input",f)=="":
+    print >> sys.stderr, "Error: %s is required in param file"%f
+    sys.exit(1)
+    if not os.path.isfile(cp.get("input",f)):
+      print >> sys.stderr, "Error: --%s %s not found"%(f,cp.get(input,f))
+      sys.exit(1)
+
+trigger_files = KW_veto_utils.get_files_from_globs(cp.get("input","GW_trigger_files"))
+if trigger_files == []:
+  print >> sys.stderr, "Error: no trigger files found for %s."%cp.get("input","GW_trigger_files")
+  sys.exit(1)
+
+if cp.get("input","channel_list_file")[:4] == "http":
+  chanFile = urllib2.urlopen(cp.get("input","channel_list_file"))
+else:
+  try:
+    chanFile = open(cp.get("input","channel_list_file"))
+  except:
+    print >> sys.stderr, "Error: cannot read the channel_list_file."
+    raise
+
+channel_list = [f.strip().upper() for f in cp.get("input","channels").split(",")]
+
+## read available channels
+if cp.get("input","ifo") == "H1":
+  ok_channel = [line.strip() for line in chanFile.readlines() if re.match("H0", line.upper()) != None or re.match("H1",line.upper()) != None or re.match("S5",line.upper()) != None]
+if cp.get("input","ifo") == "H2":
+  ok_channel = [line.strip() for line in chanFile.readlines() if re.match("H0", line.upper()) != None or re.match("H2",line.upper()) != None or re.match("S5",line.upper()) != None]
+if cp.get("input","ifo") == "L1":
+  ok_channel = [line.strip() for line in chanFile.readlines() if re.match("L0", line.upper()) != None or re.match("L1",line.upper()) != None or re.match("S5",line.upper()) != None]
+if cp.get("input", "ifo") == "V1":
+  ok_channel = [line.strip() for line in chanFile.readlines() if re.match("V1", line.upper()) != None]
+
+# if blank, use all the channels available
+if channel_list == [""]:
+  channel_list = ok_channel
+else: # otherwise, check if specified channel names are available in the file
+  for c in channel_list:
+    if c not in ok_channel:
+      print >> sys.stderr, "Error: channel name %s is not in channel_list_file %s."%(c,cp.get("input","channel_list_file"))
+      sys.exit(1)
+
+# exclude channels specified in "exclude_channels"
+ex_chan=[f.strip() for f in cp.get("input","exclude_channels").split(",")]
+if ex_chan != [""]:
+  for ec in ex_chan:
+    channel_list.remove(ec)
+
+# convert it to upper case
+channel_list = map(lambda x:x.upper().replace("-","_"),channel_list)
+
+if opts.verbose:
+  print "channels to be analyzed:"
+  print  channel_list
+
+# get categories to apply
+cats = {}
+for i in range(5):
+  i += 1 # cat start from 1
+  try:
+    cats[i]=cp.getboolean("input","cat%d"%i)    
+  except:
+    print >> sys.stderr, "cat%s has to be True or False"%i  
+    raise
+
+# if at least one of them is True, check server and veto_defiver_file
+if any(cats.values()) == True:
+  if cp.get("input","veto_definer_file") == "":
+    print >> sys.stderr, "Error: you need to specify veto_definer_file."
+  # if http, copy it over
+  if cp.get("input","veto_definer_file").startswith("http"):
+    outfile = os.path.join("inputfiles",os.path.basename(cp.get("input","veto_definer_file")))
+    cmd = "wget -O %s %s --no-check-certificate"%(outfile,cp.get("input","veto_definer_file"))
+    exit = os.system(cmd)
+    if exit > 0:
+      print >> sys.stderr, "Error: could not download %s. Please check the address."%cp.get("input","veto_definer_file")
+      sys.exit(1)
+    cp.set("input","veto_definer_file",outfile)
+    if opts.verbose:
+      print "veto cat files retrieved."
+  else:
+    if not os.path.isfile(cp.get("input","veto_definer_file")):
+      print >> sys.stderr, "Error: veto_definer_file %s not found"%cp.get("input","veto_definer_file")
+
+  # check the server
+  if cp.get("input","server") == "":
+    cp.set("input","server","https://segdb.ligo.caltech.edu")
+  if cp.get("input","server").startswith("https://"):
+    cmd_ping = "ligolw_segment_query --ping --segment-url %s"%cp.get("input","server")
+    if os.system(cmd_ping) > 0:
+      print >> sys.stderr, "Error: problem with segment server. Please check %s works."%cmd_ping
+      sys.exit(1)
+
+  if cp.get("input","injection_file") != "":
+    if not os.path.isfile(cp.get("input","injection_file")):
+      print >> sys.stderr, "Error: injection_file %s not found"%cp.get("input","injection_file")
+      sys.exit(1)
+
+########################## [plot] [webpage] section ###########################
+
+# check if boolean values are readable
+# zip represents (section, item) in config parser
+for i in (("plot","plot"),("webpage","webpage")):
+  try:
+    cp.getboolean(i[0],i[1])
+  except ValueError:
+    raise("""
+    Error: "%s" in param file must be one of "true", "yes",
+           "on", or "0" to indicate True, "false", "no", "off", or "1" to 
+           indicate False. Those are case insensitive.""")%i[1]
+
+    
+# if not specified, set output directory of webpages to
+# ${HOME}/public_html/veto/(tag)_webpage
+if cp.get("webpage", "outdir")=="":
+  cp.set("webpage","outdir","%s/public_html/veto/"%home)
+web_outdir = os.path.join(cp.get("webpage","outdir"),"%s_webpage"%cp.get("general","tag"))
+
+# make output directory
+if not os.path.isdir(cp.get("webpage","outdir")):
+  os.makedirs(cp.get("webpage","outdir"))
+    
+
+
+  # if webpage is true, then set output of plots to a subdirectory of 
+  # webpage output, so that the code doesn't need to copy over
+  # print warning message
+if cp.getboolean("webpage","webpage"):
+  if cp.getboolean("plot","plot") and cp.get("plot","outdir") != os.path.join(web_outdir,"plots"):
+    cp.set("plot","outdir",os.path.join(web_outdir,"plots"))
+    print >> sys.stderr, """
+    Warning: plot output directory in param file is ignored.
+             plot output will be in:
+             %s
+    """%cp.get("plot","outdir")
+     
+# if not specified, set output dir of plots to plots
+if cp.getboolean("plot","plot"):
+  if cp.get("plot","outdir")=="":
+    cp.set("plot","outdir","plots")
+  # make output directory 
+  KW_veto_utils.rename(cp.get("plot","outdir"))
+  os.makedirs(cp.get("plot","outdir"))
+ 
+############################### [veto] section #############################
+
+# if blank, then set them to False
+if cp.get("veto","xml") == "":
+  cp.set("veto","xml",False)
+if cp.get("veto","insert") == "":
+  cp.set("veto","insert",False)
+
+unsafe_list = [f.strip().upper() for f in cp.get("veto","unsafe_channels").split(",")]
+
+if cp.getboolean("veto","xml") or cp.getboolean("veto","insert"):
+  if not os.path.isfile(cp.get("condor","KW_veto_insert-bin")):
+    print >> sys.stderr, "Error: file specified in KW_veto_insert-bin not found."
+    sys.exit(1)
+  if cp.get("veto","segment_url") == "":
+    cp.set("veto","segment_url","https://segdb.ligo.caltech.edu")
+  if cp.get("veto","web_address") == "":
+    print >> sys.stderr, "Error: web_address in veto section is required."
+    sys.exit(1)
+
+  
+  if cp.get("veto","trigger_type") not in ("KW", "IHOPE", "MBTA"):
+    print >> sys.stderr, "Error: trigger_type must be KW, IHOPE or MBTA"
+    sys.exit(1)
+
+############################ [follow_up] section ###########################
+
+if cp.get("follow_up", "follow_up") == "":
+  cp.set("follow_up", "follow_up", False)
+if cp.getboolean("follow_up","follow_up"):
+  if cp.get("condor","KW_veto_followup-bin")=="":
+    cp.set("condor","KW_veto_followup-bin",\
+               "/archive/home/isogait/pylal/bin/KW_veto_followup")
+  if not os.path.isfile(cp.get("condor","KW_veto_followup-bin")):
+    print >> sys.stderr, "Error: followup bin not found"
+    sys.exit(1)
+  if cp.get("follow_up","twindow") == "":
+    cp.set("follow_up","twindow",1)
+  try:
+    cp.getfloat("follow_up","twindow")
+  except:
+    raise("Error: twindow must be a number")
+
+  if cp.get("follow_up","dq_flag") == "":
+    cp.set("follow_up", "dq_flog", True)
+
+  if cp.getboolean("follow_up","dq_flag"):
+    if cp.get("follow_up","server") == "":
+      cp.set("follow_up","server","https://segdb.ligo.caltech.edu")
+    cmd_ping = "ligolw_dq_query --ping --segment-url %s"%cp.get("follow_up","server")
+    if cp.get("follow_up","server").startswith("https://") and os.system(cmd_ping) > 0:
+      print >> sys.stderr, "Error: problem with segment server. Please check %s works."%cmd_ping
+      sys.exit(1)
+
+  if cp.get("follow_up", "wscans") == "":
+    cp.set("follow_up", "wscans", True)
+  if cp.getboolean("follow_up","wscans"):  
+    if cp.get("condor","KW_veto_runOmega-bin")=="":
+        cp.set("condor","KW_veto_runOmega-bin",\
+               "/archive/home/isogait/pylal/bin/KW_veto_runOmeaga")
+    if not os.path.isfile(cp.get("condor","KW_veto_runOmega-bin")):
+      print >> sys.stderr, "Error: runOmega bin not found"
+      sys.exit(1)
+
+    if cp.get("condor","wscan-bin") == "":
+      print >> sys.stderr, "wscan-bin must be set in param file."
+      sys.exit(1)    
+
+    for o in ("wscan_config","wscan_framecache"):
+      if cp.get("follow_up",o) == "":
+        print >> sys.stderr, "Error: %s is required in param file."%o
+        sys.exit(1)
+      if not os.path.exists(cp.get("follow_up",o)):
+        print >> sys.stderr, "Error: %s %s is not found."%(o,cp.get("follow_up",o))
+        sys.exit(1)
+
+    try:
+      cp.getint("follow_up","wscan_num")
+    except:
+      raise("Error: wscan_num must be a number")
+
+
+########################## show parameters #################################
+if opts.verbose:
+    for s in cp.sections():
+        print s+":"
+        for i in cp.items(s):
+            print i
+        print
+            
+############################################################################
+# get analyze segments
+############################################################################
+
+start_time,duration,segment_file = get_analyze_segment()
+
+# make output directory 
+if cp.getboolean("plot","plot"):
+    plot_outdir = cp.get("plot","outdir")
+    if not os.path.isdir(plot_outdir): os.makedirs(plot_outdir)
+
+############################################################################
+# set up DAG
+############################################################################
+
+if opts.verbose: print "creating dag files..."
+dag_maker()
+
+##################### print informational message ##########################
+
+dag_prefix = os.path.join("dags",cp.get("general","tag"))
+
+print """
+********************************************************************************
+Ready to run the dag file!
+To run:
+$ condor_submit_dag -maxjobs (reasonable number) %s.dag
+To check the status:
+$ tail -f %s.dag.dagman.out
+
+*Always* set maxjobs.
+********************************************************************************
+"""%(dag_prefix,dag_prefix)
+

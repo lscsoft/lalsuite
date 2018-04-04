@@ -1,0 +1,380 @@
+@charset "iso-8859-1";
+body, html	{ font-family: arial, tahoma, verdana, helvetica, sans-serif; font-size: .9em; }
+img,table	{ border: 0; }
+body		{ margin: 0; padding: 0; text-align: center; background-color: #DCE4E8; /*#7792A0;*/ min-height: 100%}
+
+h1, h2, h3, h4, p, blockquote, ul, ol 	{ margin: 1em 0; padding: 0 5px; } 
+h1, h2, h3, h4					{ margin-top: .5em; margin-bottom: 0px; }
+a							{ color: #369; text-decoration: none; }
+
+
+#wrap, #container, .clear, .placeholder,
+#hdr, #hdrTier1, #hdrTier2, #hdrTier3		{ background-color: #fff; }
+
+
+h1		{
+color: #999;
+font-size: 1.9em;
+font-weight: bold;
+text-transform: uppercase;
+border-bottom: 2px solid #b7c4ca;
+}
+h2 {
+color: #369;
+font-size: 1.3em;
+font-weight: bold;
+text-transform: uppercase;
+}
+
+h2 a:link {
+color: #369;
+}
+
+#wrap {
+width: 1024px; /*width: 1006px;*/
+border: 3px solid #b7c4ca;
+margin: auto;
+/* margin-top: 30px; padding-top: 30px; */
+/* background: #fff url(../images/bodyGrad.gif) top left; background-repeat: repeat-x; */
+margin-top: 5px; padding-top: 0px;
+}
+
+#container	{ 
+width: 1006px; /*width: 1000px;*/
+margin: auto;
+text-align: left;
+background-color: #fff;
+}
+
+.placeholder {
+height: 10px;
+}
+.placeholder_bg {
+height: 6px;
+background-color: #eee;
+}
+.placeholder2 {
+height: 2px;
+}
+.clear {
+height: 2px;
+}
+.clear {
+clear: both;
+height: 10px;
+}
+.caption {
+font-size: .8em;
+font-style: italic;
+text-align: left;
+padding: 0 20px 15px 20px;
+}
+
+
+
+
+
+#hdr	{
+width: 100%; height: auto;
+}
+
+#hdrTier1 {
+/*width: auto;*/
+text-align: right;
+margin: 0;
+}
+
+#hdrTier1 ul {
+/*display: inline;*/ width: 100%;
+}
+
+#hdrTier1 ul li {
+display: inline;
+list-style: none;
+padding: 8px;
+}
+
+#hdrTier1 ul li a:link,
+#hdrTier1 ul li a:visited {
+font-size: .9em;
+font-weight: bold; color: #369;
+border-bottom: 1px dotted #369;
+}
+#hdrTier1 ul li a:hover,
+#hdrTier1 ul li a:active {
+font-size: .9em;
+font-weight: bold; color: #369;
+border-bottom: 1px solid #369;
+}
+
+
+
+#hdrTier2 {
+width: auto;
+margin: 0; padding: 0 5px;
+}
+
+#hdrTier3 {
+margin: 0; padding: 5px;
+background: url(../images/navGrad.gif); background-repeat: repeat-x;
+background-color: #369; 
+}
+
+#hdrTier3 ul {
+margin: 0;
+padding: 0;
+list-style-type: none;
+text-align: center;
+}
+
+#hdrTier3 ul li {
+display: inline;
+}
+
+.here {
+background-color: #eee;
+color: #369;
+font-weight: bold;
+padding: .2em 1em;
+}
+
+#hdrTier3 ul li a {
+padding: .2em 1em;
+color: #fff;
+text-decoration: none;
+font-weight: bold;
+}
+
+#hdrTier3 ul li a:hover {
+color: #369;
+background-color: #eee;
+}
+
+#hdrTier4 {
+margin: 0; padding: 5px 0;
+background-color: #eee;
+}
+
+#hdrTier4 ul {
+list-style-type: none;
+margin: 0;
+padding: 0;
+}
+
+#hdrTier4 ul li {
+display: inline;
+}
+
+#hdrTier4 ul li a {
+padding: .2em 1em;
+color: #369;
+text-decoration: none;
+font-weight: bold;
+}
+
+#hdrTier4 ul li a:hover {
+color: #eee;
+background-color: #369;
+}
+
+
+
+#mainTier1	{
+width: 100%; /* important */
+height: 285px; /* height of video embed */
+}
+
+#mainTier1Left {
+float: left;
+width: 646px; /* 1006px - 20px whitespace - 340px width of video embed */
+height: 285px; /* height of video embed */
+}
+
+#mainTier1Right {
+float: right;
+width: 340px; /* width of video embed */
+height: 285px; /* height of video embed */
+}
+
+
+#mainTier2	{
+width: 100%; /* important */
+height: 100%;
+border-top: 3px solid #B7C4CA;
+/* border: 1px solid #ccc; */ /* diagnostic */
+}
+
+#mainTier2Left {
+float: left;
+width: 646px; /* was 67% */
+background-color: #fff; height: auto;
+}
+
+
+
+#mainTier2Left a,
+#mainTier2Right a {
+color: #369;
+border-bottom: 1px dotted #369;
+}
+#mainTier2Left a:hover,
+#mainTier2Right a:hover {
+color: #369;
+border-bottom: 1px solid #369;
+}
+
+#mainTier2Left a.view { 
+color: #369;
+font-size: 1.3em;
+font-weight: bold;
+text-transform: uppercase;
+text-decoration: none;
+border-bottom: 1px dotted #369;
+}
+#mainTier2Left a.view:hover { 
+border-bottom: 1px solid #369;
+}
+#mainTier2Left a.imglink,
+#mainTier2Left a.imglink:hover {
+border-bottom: none;
+}
+
+
+
+
+
+
+#mainTier2Left ul {
+margin-left: 2em;
+}
+
+#mainTier2Right {
+float: right;
+width: 340px; /* was 30% */
+height: auto;
+background: url(../images/bodyGrad3.gif); background-repeat: repeat-x;
+}
+
+#mainTier2Left1 {
+float: left;
+width: 312px;
+padding: 2px; 
+background-color: #fff;
+}
+#mainTier2Left2 {
+float: right;
+width: 312px;
+padding: 2px;
+background-color: #fff;
+}
+
+
+
+
+#mainTier2Right1 {
+width: 336px;
+padding: 2px;
+}
+/*#mainTier2Right a:hover {*/
+/*border-bottom: 1px dotted #333;*/
+/*}*/
+
+
+#btn {
+text-align: center;
+}
+#btn a,
+#btn a:hover {
+border-bottom: none; 
+}
+
+
+td.date, td.text {
+padding: 5px;
+}
+.date {
+font-weight: bold;
+font-size: 1em;
+color: #333;
+}
+.text {
+}
+
+
+
+#ftr	{
+width: 100%; /*1000px;*/
+min-height: 40px;
+margin: 0 0 30px 0;
+border-top: 3px solid #B7C4CA;
+text-align: center;
+/* border: 1px solid #ccc; */ /* diagnostic */
+}
+#ftr ul  {
+list-style-type: none;
+}
+#ftr ul li {
+display: inline;
+padding: 0 5px;
+font-size: .8em;
+/* border-right: 1px solid #ccc; */
+}
+#ftr ul li.last {
+border-right: none;
+}
+#ftr ul li a {
+border-bottom: 1px dotted #ccc;
+}
+#ftr ul li a:hover {
+border-bottom: 1px solid #ccc;
+}
+p.p {
+margin-left: 10px;
+line-height: 1.1; }
+a.text:link { color:#CC3366; TEXT-DECORATION: none; outline: none;}
+a.text:visited { color: #CC3366; TEXT-DECORATION: none; outline: none; }
+a.text:active { color: #333333; TEXT-DECORATION: none; outline: none; }
+a.text:hover { color:#666600; TEXT-DECORATION: underline; outline: none;}
+
+/* added 2010.02.11 - VK: */
+p.blurb,
+p.credit  {
+color: #555;
+padding-left: 5px;
+}
+p.blurb {
+font-size: .8em;
+}
+p.credit {
+font-size: .7em;
+text-align: right;
+font-style: italic;
+}
+
+/* tier3 highlight current page */
+.home a#home, 
+body#seg_query a#segdb_tools,
+body#dq_query a#segdb_tools,
+body#seg_list a#ready_list,
+body#sum_list a#ready_list,
+body#scimon_list a#scimon,
+body#scimon_insert a#scimon,
+body#dq_flag_list a#ready_list
+{
+background-color:#eee;
+color:#369; 
+}
+
+
+/* tier4 highlight current page */
+body#seg_query a#seg_query, 
+body#dq_query a#dq_query,
+body#seg_list a#seg_list,
+body#sum_list a#sum_list,
+body#dq_flag_list a#dq_flag_list,
+body#scimon_list a#scimon_list,
+body#scimon_insert a#scimon_insert
+{
+background-color: #369;
+color: #eee;
+}
