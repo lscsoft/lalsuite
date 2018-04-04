@@ -629,7 +629,7 @@ class CoincRates(object):
 
 		# fast-path for gstlal-inspiral pipeline:  hard-coded
 		# result for H,L,V network, 5 ms coincidence window, 1 or 2
-		# minimum instruments required.  computing using qhull's
+		# minimum instruments required.  computed using qhull's
 		# half-plane intersection code on a machine where that's
 		# available
 		if self.instruments == set(("H1", "L1", "V1")) and self.delta_t == 0.005:
