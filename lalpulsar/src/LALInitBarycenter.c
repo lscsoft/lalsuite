@@ -276,8 +276,8 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
     }
 
   /* typical position, velocity and acceleration and allowed ranged */
-  REAL8 avgS[3]   = { 5.5, 5.5e-8, 50.5e-16 };
-  REAL8 rangeS[3] = { 4.5, 4.5e-8, 49.5e-16 };
+  REAL8 avgS[3] = { 2.7, 4.2e-8, 7.0e-16 };
+  REAL8 rangeS[3] = { 2.5, 1.4e-8, 2.8e-16 };
 
   if ( XLALCheckEphemerisRanges ( ephemV, avgS, rangeS ) != XLAL_SUCCESS )
     {
