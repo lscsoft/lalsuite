@@ -279,7 +279,6 @@ class TimeSlideGraphNode(object):
 		# time_slide_id non-None only in head nodes
 		self.time_slide_id = time_slide_id
 		self.offset_vector = offset_vector
-		self.deltas = frozenset(offset_vector.deltas.items())
 		# keep_unused is part of the logic that ensures we only
 		# return coincs that meet the min_instruments criterion
 		self.keep_unused = len(offset_vector) > min_instruments
@@ -287,10 +286,6 @@ class TimeSlideGraphNode(object):
 			self.components = tuple(TimeSlideGraphNode(offset_vector, min_instruments = min_instruments) for offset_vector in offsetvector.component_offsetvectors([offset_vector], len(offset_vector) - 1))
 		else:
 			self.components = None
-
-	@property
-	def name(self):
-		return self.offset_vector.__str__(compact = True)
 
 	def get_coincs(self, eventlists, threshold_data, verbose = False):
 		#
