@@ -106,6 +106,36 @@ InspiralCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 
 
 
 #
+# Definition of coinc_inspiral.end_time
+#
+
+
+def coinc_inspiral_end_time(events, offset_vector):
+	"""
+	Compute the end time of an inspiral coincidence.  events is an
+	iterable of sngl_inspiral triggers, offset_vector is a dictionary
+	mapping instrument to offset.
+
+	This function returns the time shifted end time of the trigger with
+	the highest SNR.  The end time reported by this function gets used
+	for things like plot titles, alert messages, and so on.  It is not
+	meant to be an accurate estimate of the time at which the
+	gravitational wave passed through the geocentre, or any other such
+	thing.
+
+	This end time is also used to parallelize thinca by allowing a
+	single lock stretch to be split across several jobs without missing
+	or double counting any coincs.  This is achieved by using a
+	definition that is guaranteed to return a bit-identical "end time"
+	for a given set of triggers.  Guaranteeing that allows thinca to
+	clip coincs to a sequence of contiguous segments and know that no
+	coinc will missed or double counted.
+	"""
+	event = max(events, key = lambda event: event.snr)
+	return event.end + offset_vector[event.ifo]
+
+
+#
 # Custom snglcoinc.CoincTables subclass.
 #
 
@@ -140,17 +170,19 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		# - false-alarm rates are blank
 		#
 
-		coinc_inspiral = self.coinc_inspiral_table.RowType()
-		coinc_inspiral.coinc_event_id = coinc.coinc_event_id	# = None
-		coinc_inspiral.mass = sum(event.mass1 + event.mass2 for event in events) / len(events)
-		coinc_inspiral.mchirp = sum(event.mchirp for event in events) / len(events)
-		coinc_inspiral.snr = math.sqrt(sum(event.snr**2 for event in events))
-		coinc_inspiral.false_alarm_rate = None
-		coinc_inspiral.combined_far = None
-		coinc_inspiral.minimum_duration = None
 		offsetvector = self.time_slide_index[time_slide_id]
-		coinc_inspiral.end = end = coinc_inspiral_end_time(events, offsetvector)
-		coinc_inspiral.instruments = (event.ifo for event in events)
+		end = coinc_inspiral_end_time(events, offsetvector)
+		coinc_inspiral = self.coinc_inspiral_table.RowType(
+			coinc_event_id = coinc.coinc_event_id,	# = None
+			mass = sum(event.mass1 + event.mass2 for event in events) / len(events),
+			mchirp = sum(event.mchirp for event in events) / len(events),
+			snr = math.sqrt(sum(event.snr**2. for event in events)),
+			false_alarm_rate = None,
+			combined_far = None,
+			minimum_duration = None,
+			end = end,
+			instruments = (event.ifo for event in events)
+		)
 
 		#
 		# record the instruments that were on at the time of the
@@ -184,36 +216,6 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		coinc_inspiral.coinc_event_id = coinc_event.coinc_event_id
 		self.coinc_inspiral_table.append(coinc_inspiral)
 		return coinc_event
-
-
-#
-# Custom function to compute the coinc_inspiral.end_time
-#
-
-
-def coinc_inspiral_end_time(events, offset_vector):
-	"""
-	Compute the end time of an inspiral coincidence.  events is an
-	iterable of sngl_inspiral triggers, offset_vector is a dictionary
-	mapping instrument to offset.
-
-	This function returns the time shifted end time of the trigger with
-	the highest SNR.  The end time reported by this function gets used
-	for things like plot titles, alert messages, and so on.  It is not
-	meant to be an accurate estimate of the time at which the
-	gravitational wave passed through the geocentre, or any other such
-	thing.
-
-	This end time is also used to parallelize thinca by allowing a
-	single lock stretch to be split across several jobs without missing
-	or double counting any coincs.  This is achieved by using a
-	definition that is guaranteed to return a bit-identical "end time"
-	for a given set of triggers.  Guaranteeing that allows thinca to
-	clip coincs to a sequence of contiguous segments and know that no
-	coinc will missed or double counted.
-	"""
-	event = max(events, key = lambda event: event.snr)
-	return event.end + offset_vector[event.ifo]
 
 
 #
