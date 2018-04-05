@@ -286,7 +286,6 @@ outerdag.set_dag_file(os.path.join(cp.get('paths','basedir'),'multidag'))
 setup_roq(cp)
 
 master_cp=cp
-print("Here cp.basedir="+cp.get('paths','basedir'))
 for cp in generate_variations(master_cp,variations):
     basepath=cp.get('paths','basedir')
     # Copy injection file into place as paths outside basedir are inaccessible
@@ -411,12 +410,10 @@ for cp in generate_variations(master_cp,variations):
                 for line in lines:
                     fout.write(line)
 
-    print(os.path.join(cp.get('paths','basedir'),dag.get_dag_file()))
     dagjob=pipeline.CondorDAGManJob(os.path.join(cp.get('paths','basedir'),dag.get_dag_file()),
                                     cp.get('paths','basedir'))
     dagnode=pipeline.CondorDAGManNode(dagjob)
     outerdag.add_node(dagnode)
-    print('just before writing '+dag.get_dag_file())
     dag.write_sub_files()
     dag.write_dag()
     dag.write_script()
