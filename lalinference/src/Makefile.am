@@ -15,7 +15,11 @@ endif
 
 ANALYTICFILES = CorrelationMatrix.csv unimodalMeans.csv bimodalMeans.csv
 
-pkgdata_DATA = $(ANALYTICFILES)
+FIDUCIALINJECTIONS = fiducialBBH.xml fiducialBNS.xml
+
+EXAMPLE_CONFIG = lalinference_pipe_example.ini
+
+pkgdata_DATA = $(ANALYTICFILES) $(FIDUCIALINJECTIONS) $(EXAMPLE_CONFIG)
 
 pkginclude_HEADERS = \
 	LALInference.h \
@@ -103,6 +107,8 @@ EXTRA_DIST = \
 	LALInferenceConfig.h.in \
 	bayestar_cosmology.py \
 	$(ANALYTICFILES) \
+	$(FIDUCIALINJECTIONS) \
+	$(EXAMPLE_CONFIG) \
 	config.h.in
 
 DISTCLEANFILES = config.h
