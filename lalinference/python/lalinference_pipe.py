@@ -283,22 +283,11 @@ def setup_roq(cp):
         this_cp = ConfigParser.ConfigParser()
 	this_cp.read(masterpath)
         basedir = this_cp.get('paths','basedir')
-        for dirs in 'basedir','daglogdir','webdir':
-            mkdirs(this_cp.get('paths',dirs))
-            # do the appropriate hacks for ROQ
-            if not os.path.isdir(os.path.join(basedir,roq)):
-                os.makedirs(os.path.join(basedir,roq))
-            for p in dict(this_cp.items('paths')).keys():
-                #current value
-                if 'webdir' in p or 'basedir' in p or 'daglogdir' in p:
-                    out=this_cp.get('paths',p)
-                    # append approximant prefix
-                    subpath=os.path.join(out,roq)
-                    this_cp.set('paths',p,subpath)
-                    mkdirs(subpath)
-        path=this_cp.get('paths','roq_b_matrix_directory')
-        thispath=os.path.join(path,roq)
-        this_cp.set('paths','roq_b_matrix_directory',thispath)
+        for dirs in 'basedir','daglogdir','webdir', 'roq_b_matrix_directory':
+            val = this_cp.get('paths',dirs)
+            newval = os.path.join(val,roq)
+            mkdirs(newval)
+            this_cp.set('paths',dirs,newval)
         flow=roq_params[roq]['flow'] / roq_mass_freq_scale_factor
         srate=2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor
         if srate > 8192:
