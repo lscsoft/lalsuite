@@ -1195,8 +1195,6 @@ int XLALSimInspiralChooseFDWaveform(
                 ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
                 ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
-            //if( !checkTidesZero(lambda1, lambda2) )
-                //ABORT_NONZERO_TIDES(waveFlags);
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomDGenerateFD(hptilde, phiRef, f_ref, deltaF, m1, m2,
                   S1z, S2z, f_min, f_max, r, nonGRparams);
