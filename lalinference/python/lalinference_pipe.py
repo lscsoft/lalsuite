@@ -202,10 +202,10 @@ roq_paths=[]
 def setup_roq(cp):
     use_roq=False
     if cp.has_option('paths','roq_b_matrix_directory'):
-        if not cp.getboolean('analysis','roq'):
+        if not cp.has_option('analysis','roq'):
             print("Warning: If you are attempting to enable ROQ by specifying paths.roq_b_matrix_directory,\
-            please use analysis.roq in your config file in future")
-            return
+            please use analysis.roq in your config file in future. Enabling ROQ.")
+            cp.set('analysis','roq',True)
     if not cp.getboolean('analysis','roq'): return
     from numpy import genfromtxt, array
     path=cp.get('paths','roq_b_matrix_directory')
