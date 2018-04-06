@@ -581,8 +581,14 @@ static int TEOBResumROMCore(
   //create t(f) spline
   double physical_times_end = physical_times[Gntimes-1];//save the last element before resizing
   //Resize freqs and physical_times to include only monotonically increasing values
-  realloc(freqs,i_end_mono*sizeof(double));
-  realloc(physical_times,i_end_mono*sizeof(double));
+  if ( (freqs = XLALRealloc ( freqs, i_end_mono*sizeof( *freqs ) )) == NULL ) {
+    XLALPrintError ("%s: XLALRealloc(%d) failed!\n", __func__, i_end_mono );
+    XLAL_ERROR ( XLAL_ENOMEM );
+  }
+  if ( (physical_times = XLALRealloc ( physical_times, i_end_mono*sizeof( *physical_times ) )) == NULL ) {
+    XLALPrintError ("%s: XLALRealloc(%d) failed!\n", __func__, i_end_mono );
+    XLAL_ERROR ( XLAL_ENOMEM );
+  }
   //interpolate to get t(f)
   gsl_spline *toffreq_spline = gsl_spline_alloc (gsl_interp_cspline, i_end_mono);
   gsl_spline_init(toffreq_spline, freqs, physical_times, i_end_mono);

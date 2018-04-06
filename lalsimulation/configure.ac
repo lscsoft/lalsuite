@@ -20,8 +20,8 @@ AC_CONFIG_FILES([ \
   src/LALSimulationVCSInfo.c \
   src/LALSimulationVCSInfo.h \
   src/Makefile \
+  src/seobnrv3_opt_exactderivs/Makefile \
   src/mathematica_codes/Makefile \
-  src/mathematica_codes/SEOBNRv3_opt/Makefile \
   src/version.c \
   swig/Makefile \
   test/Makefile \

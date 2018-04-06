@@ -32,6 +32,7 @@
 #standard library imports
 import sys
 import os
+import socket
 
 from math import ceil,floor
 import cPickle as pickle
@@ -84,68 +85,20 @@ __author__="Ben Aylott <benjamin.aylott@ligo.org>, Ben Farr <bfarr@u.northwester
 __version__= "git id %s"%git_version.id
 __date__= git_version.date
 
+from lalinference.lalinference_pipe_utils import guess_url
+
 def email_notify(address,path):
     import smtplib
     import subprocess
-    import socket
-    import os
+    USER = os.environ('USER')
+    HOST = socket.getfqdn()
     address=address.split(',')
-    SERVER="localhost"
-    USER=os.environ['USER']
-    HOST=socket.getfqdn()
     FROM=USER+'@'+HOST
     SUBJECT="LALInference result is ready at "+HOST+"!"
     # Guess the web space path for the clusters
     fslocation=os.path.abspath(path)
     webpath='posplots.html'
-    if 'public_html' in fslocation:
-        k='public_html/'
-    elif 'WWW' in fslocation:
-        k='WWW/'
-    elif 'www_html' in fslocation:
-        k='www_html/'
-    else:
-        k=None
-    if k is not None:
-        (a,b)=fslocation.split(k)
-        webpath=os.path.join('~%s'%(USER),b,webpath)
-        onweb=True
-    else:
-        (c,d)=outpath.split(os.environ['USER'])
-        for k in ['public_html','WWW','www_html']:
-            trypath=c+os.environ['USER']+'/'+k+d
-            #Follow symlinks
-            if os.path.realpath(trypath)==os.path.normpath(outpath):
-                (a,b)=trypath.split(k)
-                webpath=os.path.join('~%s'%(USER),b,webpath)
-                onweb=True
-                break
-            else:
-                webpath=os.path.join(fslocation,'posplots.html')
-                onweb=False
-    if 'atlas' in HOST:
-        url="https://atlas1.atlas.aei.uni-hannover.de/"
-    elif 'cit' in HOST or 'caltech' in HOST:
-        url="https://ldas-jobs.ligo.caltech.edu/"
-    elif 'ligo-wa' in HOST:
-        url="https://ldas-jobs.ligo-wa.caltech.edu/"
-    elif 'ligo-la' in HOST:
-        url="https://ldas-jobs.ligo-la.caltech.edu/"
-    elif 'uwm' in HOST or 'nemo' in HOST:
-        url="https://ldas-jobs.phys.uwm.edu/"
-    elif 'phy.syr.edu' in HOST:
-        url="https://sugar-jobs.phy.syr.edu/"
-    elif 'arcca.cf.ac.uk' in HOST:
-        url="https://geo2.arcca.cf.ac.uk/"
-    elif 'vulcan' in HOST:
-        url="https://galahad.aei.mpg.de/"
-    else:
-        if onweb:
-          url="http://%s/"%(HOST)
-        else:
-          url=HOST+':'
-    url=url+webpath
-
+    url = guess_url(os.path.join(fslocation,webpath))
     TEXT="Hi "+USER+",\nYou have a new parameter estimation result on "+HOST+".\nYou can view the result at "+url+"\n"
     cmd='echo "%s" | mail -s "%s" "%s"'%(TEXT,SUBJECT,', '.join(address))
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.STDOUT, shell=True)

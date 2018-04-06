@@ -218,11 +218,13 @@ class CWSimulator(object):
             noise_sigma = math.sqrt(0.5 / h.deltaT) * noise_sqrt_Sh
             lalpulsar.AddGaussianNoise(h, noise_sigma, noise_seed)
 
-    def get_strain(self, fs, noise_sqrt_Sh=0, noise_seed=0):
+    def get_strain(self, fs, tmin=0, tmax=None, noise_sqrt_Sh=0, noise_seed=0):
         """
         Generate strain time series of a continuous-wave signal in the detector frame.
 
         @param fs: sampling frequency of strain time series, in Hz
+        @param tmin: start time for strain time series, as offsets from self.__tstart
+        @param tmax: start time for strain time series, as offsets from self.__tstart
         @param noise_sqrt_Sh: if >0, add Gaussian noise with square-root single-sided power
             spectral density given by this value, in Hz^(-1/2)
         @param noise_seed: use this need for the random number generator used to create noise
@@ -232,9 +234,19 @@ class CWSimulator(object):
             @b h = strain time series
         """
 
+        # process tmin/tmax range (interpreted relative to self.__tstart)
+        if (tmin < 0) or (tmin>=self.__Tdata):
+            raise ValueError('tmin must be within [0,{}).'.format(self.__Tdata))
+        if tmax is None:
+            tmax = self.__Tdata
+        elif (tmax <= 0) or (tmax>self.__Tdata):
+            raise ValueError('tmax must be within (0,{}].'.format(self.__Tdata))
+        tspan = tmax-tmin
+
         # create REAL4TimeSeries to store output time series
-        Nh = int(fs*self.__Tdata)
-        h = lal.CreateREAL4TimeSeries("h", self.__tstart, 0, 1.0 / fs, lal.DimensionlessUnit, Nh)
+        Nh = int(fs*tspan)
+        h = lal.CreateREAL4TimeSeries("h", self.__tstart+tmin, 0, 1.0 / fs,
+                                      lal.DimensionlessUnit, Nh)
 
         # generate strain time series
         self._simulate_coherent_gw(h, noise_sqrt_Sh, noise_seed)
@@ -269,15 +281,14 @@ class CWSimulator(object):
         if Tblock * Nblock > self.__Tdata:
             raise ValueError("Length of block Tblock=%g does not divide evenly into Tdata=%g" % (Tblock, self.__Tdata))
 
-        # create REAL4TimeSeries to store output time series
-        Nh = int(fs*Tblock)
-        h = lal.CreateREAL4TimeSeries("h", self.__tstart, 0, 1.0 / fs, lal.DimensionlessUnit, Nh)
-
         # generate strain time series in blocks of length 'Tblock'
+        tmin = 0
         for iblock in xrange(0, Nblock):
-            self._simulate_coherent_gw(h, noise_sqrt_Sh, noise_seed + iblock)
-            yield h.epoch, h.data.data, iblock, Nblock
-            h.epoch += Tblock
+            epoch, hoft = self.get_strain(fs, tmin=tmin, tmax=tmin+Tblock,
+                                          noise_sqrt_Sh=noise_sqrt_Sh,
+                                          noise_seed=noise_seed + iblock)
+            yield epoch, hoft, iblock, Nblock
+            tmin += Tblock
 
     def write_frame_files(self, fs, Tframe, comment, out_dir=".", noise_sqrt_Sh=0, noise_seed=0):
         """
