@@ -1780,6 +1780,7 @@ class SingularityJob(pipeline.CondorDAGJob):
     CVMFS_FRAMES="/cvmfs/oasis.opensciencegrid.org/ligo/frames/"
     image=None
     def __init__(self, cp, *args, **kwargs):
+        self.requirements=[]
         # Dir in which the DAG will run
         # Execute from the basedir so all paths can be resolved
         if cp.has_option('analysis','singularity'):
@@ -1821,14 +1822,7 @@ class SingularityJob(pipeline.CondorDAGJob):
             echo "contents"
             ls -l
             set -e
-            which singularity
-            singularity exec \\
-                    --home ${{PWD}} \\
-                    {extra_paths} \\
-                    --contain \\
-                    --writable \\
-                    {image} \\
-                    {executable} \\
+            {executable} \\
                     "$@"
             """.format(singularity = self.singularity_path,
                     basedir=self.basedir,
@@ -1839,13 +1833,13 @@ class SingularityJob(pipeline.CondorDAGJob):
 
         if self.osg:
             self.add_condor_cmd('+OpenScienceGrid','True')
-            self.add_condor_cmd('requirements','IS_GLIDEIN=?=True')
+            self.requirements.append('IS_GLIDEIN==True')
             # Add requested sites if specified
             if cp.has_option('condor','desired-sites'):
                 self.add_condor_cmd('+DESIRED_Sites',cp.get('condor','desired-sites'))
         if self.singularity:
-            self.add_condor_cmd('requirements','HasSingularity == TRUE')
-            #self.add_condor_cmd('+SingularityImage','"{0}"'.format(self.image))
+            self.requirements.append('HasSingularity == TRUE')
+            self.add_condor_cmd('+SingularityImage','"{0}"'.format(self.image))
         # Add data transfer options
         self.add_condor_cmd('should_transfer_files','YES')
         self.add_condor_cmd('when_to_transfer_output','ON_EXIT_OR_EVICT')
@@ -1866,6 +1860,7 @@ class SingularityJob(pipeline.CondorDAGJob):
         set the exe to call it
         """
         true_exec = self.get_executable()
+        self.add_condor_command('requirements','&&'.join('({0})'.format(r) for r in self.requirements))
         if self.singularity:
             # Write the wrapper script
             wrapper=os.path.splitext(self.get_sub_file())[0] +'_wrapper.sh'
