@@ -23,6 +23,62 @@ import numpy as np
 # type of job. Each class has inputs and outputs, which are used to
 # join together types of jobs into a DAG.
 
+def guess_url(fslocation):
+    """
+    Try to work out the web address of a given path
+    """
+    SERVER="localhost"
+    USER=os.environ['USER']
+    HOST=socket.getfqdn()
+    if 'public_html' in fslocation:
+        k='public_html/'
+    elif 'WWW' in fslocation:
+        k='WWW/'
+    elif 'www_html' in fslocation:
+        k='www_html/'
+    else:
+        k=None
+    if k is not None:
+        (a,b)=fslocation.split(k)
+        webpath=os.path.join('~%s'%(USER),b)
+        onweb=True
+    else:
+        (c,d)=fslocation.split(USER)
+        for k in ['public_html','WWW','www_html']:
+            trypath=c+os.environ['USER']+'/'+k+d
+            #Follow symlinks
+            if os.path.realpath(trypath)==os.path.normpath(fslocation):
+                (a,b)=trypath.split(k)
+                webpath=os.path.join('~%s'%(USER),b,webpath)
+                onweb=True
+                break
+            else:
+                webpath=fslocation
+                onweb=False
+    if 'atlas' in HOST:
+        url="https://atlas1.atlas.aei.uni-hannover.de/"
+    elif 'cit' in HOST or 'caltech' in HOST:
+        url="https://ldas-jobs.ligo.caltech.edu/"
+    elif 'ligo-wa' in HOST:
+        url="https://ldas-jobs.ligo-wa.caltech.edu/"
+    elif 'ligo-la' in HOST:
+        url="https://ldas-jobs.ligo-la.caltech.edu/"
+    elif 'uwm' in HOST or 'nemo' in HOST:
+        url="https://ldas-jobs.phys.uwm.edu/"
+    elif 'phy.syr.edu' in HOST:
+        url="https://sugar-jobs.phy.syr.edu/"
+    elif 'arcca.cf.ac.uk' in HOST:
+        url="https://geo2.arcca.cf.ac.uk/"
+    elif 'vulcan' in HOST:
+        url="https://galahad.aei.mpg.de/"
+    else:
+        if onweb:
+          url="http://%s/"%(HOST)
+        else:
+          url=HOST+':'
+    url=url+webpath
+    return(url)
+
 class Event():
   """
   Represents a unique event to run on
@@ -2648,8 +2704,8 @@ class GraceDBJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.set_stdout_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).err'))
       self.add_condor_cmd('getenv','True')
-      self.baseurl=cp.get('paths','baseurl')
       self.basepath=cp.get('paths','webdir')
+      self.baseurl=guess_url(self.basepath)
 
 class GraceDBNode(pipeline.CondorDAGNode):
     """
