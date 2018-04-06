@@ -204,7 +204,7 @@ def setup_roq(cp):
     use_roq=False
     if not cp.getboolean('analysis','roq'): return
     if cp.has_option('paths','roq_b_matrix_directory'):
-        if not cp.get_boolean('analysis','roq'):
+        if not cp.getboolean('analysis','roq'):
             print("Warning: If you are attempting to enable ROQ by specifying paths.roq_b_matrix_directory,\
             please use analysis.roq in your config file in future")
             return

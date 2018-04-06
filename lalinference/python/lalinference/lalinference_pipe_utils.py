@@ -1752,10 +1752,12 @@ class SingularityJob(pipeline.CondorDAGJob):
             sys.exit(-1)
         # If running on the OSG with real data, use frames from CVMFS
         if cp.has_option('lalinference','fake-cache') or not self.osg:
-            frameopt=""
+            extra_paths=""
         else:
-            frameopt="--bind {cvmfs_frames}".format(cvmfs_frames = self.CVMFS_FRAMES)
+            extra_paths="--bind {cvmfs_frames}".format(cvmfs_frames = self.CVMFS_FRAMES)
             self.add_condor_cmd('+SingularityBindCVMFS','True')
+	if cp.has_option('analysis','roq') and cp.getboolean('analysis','roq'):
+	    extra_paths+=" --bind {roqpath}".format(roqpath=cp.get('paths','roq_b_matrix_directory'))
 
         self.wrapper_string="""
             echo "Workspace on execute node $(hostname -f)"
@@ -1766,7 +1768,7 @@ class SingularityJob(pipeline.CondorDAGJob):
             which singularity
             singularity exec \\
                     --home ${{PWD}} \\
-                    {frameopt} \\
+                    {extra_paths} \\
                     --contain \\
                     --writable \\
                     {image} \\
@@ -1774,7 +1776,7 @@ class SingularityJob(pipeline.CondorDAGJob):
                     "$@"
             """.format(singularity = self.singularity_path,
                     basedir=self.basedir,
-                    frameopt = frameopt,
+                    extra_paths = extra_paths,
                     executable = super(SingularityJob,self).get_executable(),
                     image = self.image
                     )
