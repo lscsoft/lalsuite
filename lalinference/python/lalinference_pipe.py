@@ -60,7 +60,7 @@ def mkdirs(path):
   if os.access(path,os.W_OK) and os.path.isdir(path): return
   else: os.makedirs(path)
 
-def add_variations(cp, section, option, values=None, allowed_values=None, optional=False):
+def add_variations(cp, section, option, values=None, allowed_values=None):
     """
     Push some possible variations onto the stack.
     If only one value is specified then just store it in cp as usual
@@ -69,7 +69,6 @@ def add_variations(cp, section, option, values=None, allowed_values=None, option
     option : option in section
     values: If given, use instead of cp's
     allowed_values : if given, anything else will trigger an error
-    optional : if true, will ignore non-existent options
     """
     if not cp.has_section(section) and not cp.has_option(section,option):
         return
@@ -197,7 +196,7 @@ if not (cp.has_option('engine','approx') or cp.has_option('engine','approximant'
 # Build a list of allowed variations
 variations.update(add_variations(cp, 'engine','approx'))
 variations.update(add_variations(cp, 'analysis', 'engine'))
-variations.update(add_variations(cp, 'analysis', 'roq', optional=True))
+variations.update(add_variations(cp, 'analysis', 'roq'))
 
 roq_paths=[]
 def setup_roq(cp):
