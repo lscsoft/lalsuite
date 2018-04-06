@@ -94,7 +94,7 @@ int XLALSpinPrecHcapExactDerivative(
   /* Since we take numerical derivatives wrt dynamical variables */
   /* but we want them wrt time, we use this temporary vector in  */
   /* the conversion */
-  REAL8	tmpDValues[14];
+  REAL8	tmpDValues[14] = {0};
 
   //Hamiltonian
   REAL8 H = 0.0;
