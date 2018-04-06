@@ -592,7 +592,7 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
           const REAL4 DdX_inv = 1.0f / resamp->MmunuX[X].Dd;
           for ( UINT4 k = 0; k < numFreqBins; k ++ )
             {
-              Fstats->twoFPerDet[X][k] = XLALComputeFstatFromFaFb ( ws->FaX_k[k], ws->FbX_k[k], AdX, BdX, CdX, EdX, DdX_inv );
+              Fstats->twoFPerDet[X][k] = compute_fstat_from_fa_fb ( ws->FaX_k[k], ws->FbX_k[k], AdX, BdX, CdX, EdX, DdX_inv );
             }  // for k < numFreqBins
         } // end: if compute F_X
 
@@ -618,7 +618,7 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
       const REAL4 Dd_inv = 1.0f / resamp->Mmunu.Dd;
       for ( UINT4 k=0; k < numFreqBins; k++ )
         {
-          Fstats->twoF[k] = XLALComputeFstatFromFaFb ( ws->Fa_k[k], ws->Fb_k[k], Ad, Bd, Cd, Ed, Dd_inv );
+          Fstats->twoF[k] = compute_fstat_from_fa_fb ( ws->Fa_k[k], ws->Fb_k[k], Ad, Bd, Cd, Ed, Dd_inv );
         }
     } // if FSTATQ_2F
 
