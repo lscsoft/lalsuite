@@ -31,13 +31,11 @@ static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
                  const UINT4 retLenLow, /**<< Array length of the trajectory */
                  const REAL8 InitialAlpha, /**<< Initial alpha (used only if flag_highSR=1) */
                  const REAL8 InitialGamma, /**<< Initial gamma */
-                 UINT4 flag_highSR /**<< Flag to indicate whether one is analyzing the high SR trajectory */) {
+		 UINT4 flag_highSR, /**<< Flag to indicate whether one is analyzing the high SR trajectory */
+		 const UINT4 use_optimized /**<< Flag to indicate whether one is using SEOBNRv3_opt */) {
     UINT4 i = 0;
     REAL8Vector *LN_x = NULL, *LN_y = NULL, *LN_z = NULL;
     REAL8 tmpR[3], tmpRdot[3], magLN;
-    REAL8 precEulerresult = 0, precEulererror = 0;
-    gsl_integration_workspace * precEulerw = gsl_integration_workspace_alloc (1000);
-    gsl_function precEulerF;
     PrecEulerAnglesIntegration precEulerparams;
     REAL8 inGamma = InitialGamma;
 
@@ -127,20 +125,30 @@ static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
     precEulerparams.beta_spline  = y_spline;
     precEulerparams.beta_acc     = y_acc;
 
-    precEulerF.function = &f_alphadotcosi;
-    precEulerF.params   = &precEulerparams;
-
-    for( i = 0; i < retLenLow; i++ )
-    {
-        //if( i==0 ) { Gamma->data[i] = InitialGamma; }
-        if( i==0 ) { Gamma->data[i] = inGamma; }
-        else
-        {
-            gsl_integration_qags (&precEulerF, tVec.data[i-1], tVec.data[i], 1e-9, 1e-9, 1000, precEulerw, &precEulerresult, &precEulererror);
-            Gamma->data[i] = Gamma->data[i-1] + precEulerresult;
-        }
+    Gamma->data[0] = inGamma;
+    if(use_optimized){
+      for( i = 1; i < retLenLow; i++ ){
+	double t1 = tVec.data[i-1];
+	double t2 = tVec.data[i];
+	Gamma->data[i] = Gamma->data[i-1] + (1.0/90.0)*(t2 - t1)*(7.0*f_alphadotcosi(t1,&precEulerparams)
+								  + 32.0*f_alphadotcosi((t1+3.0*t2)/4.0,&precEulerparams)
+								  + 12.0*f_alphadotcosi((t1+t2)/2.0,&precEulerparams)
+								  + 32.0*f_alphadotcosi((3.0*t1+t2)/4.0,&precEulerparams)
+								  + 7.0*f_alphadotcosi(t2,&precEulerparams));/* Boole's Rule */
+      }
+    }else{
+      gsl_integration_workspace * precEulerw = gsl_integration_workspace_alloc (1000);
+      gsl_function precEulerF;
+      REAL8 precEulerresult = 0, precEulererror = 0;
+      precEulerF.function = &f_alphadotcosi;
+      precEulerF.params   = &precEulerparams;
+      for( i = 1; i < retLenLow; i++ ) {
+	gsl_integration_qags (&precEulerF, tVec.data[i-1], tVec.data[i], 1e-9, 1e-9, 1000, precEulerw, &precEulerresult, &precEulererror);
+	Gamma->data[i] = Gamma->data[i-1] + precEulerresult;
+      }
+      gsl_integration_workspace_free( precEulerw );
     }
-    gsl_integration_workspace_free( precEulerw );
+
     gsl_spline_free( x_spline );
     gsl_spline_free( y_spline );
     gsl_spline_free( z_spline );

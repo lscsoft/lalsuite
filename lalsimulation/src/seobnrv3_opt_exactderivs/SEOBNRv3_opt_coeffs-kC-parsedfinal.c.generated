@@ -1,3 +1,7 @@
+/* This file was gerenated using the Mathematica script found on the SEOBNRv3_opt review wiki page
+ * https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/SEOBNRv3_opt.
+ */
+
 REAL8 tmp4=(m1PlusEtaKK*m1PlusEtaKK*m1PlusEtaKK);
 REAL8 tmp10=m1PlusEtaKK*m1PlusEtaKK;
 REAL8 tmp7=(m1PlusEtaKK*m1PlusEtaKK*m1PlusEtaKK*m1PlusEtaKK);

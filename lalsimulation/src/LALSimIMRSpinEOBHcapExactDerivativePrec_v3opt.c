@@ -61,12 +61,6 @@ int XLALSpinPrecHcapExactDerivative(
 				    void        *funcParams	/**<< EOB parameters */
 );
 
-REAL8 XLALSpinPrecHcapExactDerivWRTParam(
-					 const INT4	paramIdx,	/**<< Index of the parameters */
-					 const REAL8	values[],	/**<< Dynamical variables */
-					 SpinEOBParams *funcParams	/**<< EOB Parameters */
-);
-
 /*------------------------------------------------------------------------------------------
  *
  *          Defintions of functions.
@@ -103,7 +97,7 @@ int XLALSpinPrecHcapExactDerivative(
   REAL8	tmpDValues[14];
 
   //Hamiltonian
-  REAL8 H;
+  REAL8 H = 0.0;
   REAL8 flux;
 
   /* Set up pointers for GSL */
@@ -200,28 +194,36 @@ int XLALSpinPrecHcapExactDerivative(
   memcpy(s1DataNorm, values + 6, 3 * sizeof(REAL8));
   memcpy(s2DataNorm, values + 9, 3 * sizeof(REAL8));
 
-  const REAL8 m1pm2sq = (mass1 + mass2) * (mass1 + mass2);
+  const REAL8 mass1mass2inv = 1.0/(mass1*mass2);
+  const REAL8 mass1inv = mass1mass2inv*mass2;
+  const REAL8 mass2inv = mass1mass2inv*mass1;
+  const REAL8 totalMass = mass1 + mass2;
+  const REAL8 totalMassinv = 1.0/totalMass;
+  const REAL8 totalMass2 = totalMass*totalMass;
+  const REAL8 totalMass2inv = totalMassinv*totalMassinv;
+
   for (i = 0; i < 3; i++) {
-    s1.data[i] *= m1pm2sq;
-    s2.data[i] *= m1pm2sq;
+    s1.data[i] *= totalMass2;
+    s2.data[i] *= totalMass2;
   }
 
   sKerr.length = 3;
   sKerr.data = sKerrData;
-  XLALSimIMRSpinEOBCalculateSigmaKerr(&sKerr, mass1, mass2, &s1, &s2);
 
   sStar.length = 3;
   sStar.data = sStarData;
-  XLALSimIMRSpinEOBCalculateSigmaStar(&sStar, mass1, mass2, &s1, &s2);
+
+  for ( i = 0; i < 3; i++ )
+    {
+      sKerr.data[i] = (s1.data[i] + s2.data[i])*totalMass2inv;
+      sStar.data[i] = (mass2*mass1inv * s1.data[i] + mass1*mass2inv * s2.data[i])*totalMass2inv;
+    }
 
   a = sqrt(sKerr.data[0] * sKerr.data[0] + sKerr.data[1] * sKerr.data[1]
 	   + sKerr.data[2] * sKerr.data[2]);
 
   /* Convert momenta to p Eq. A3 of PRD 81, 084041 (2010) */
   rMag = sqrt(rVec.data[0] * rVec.data[0] + rVec.data[1] * rVec.data[1] + rVec.data[2] * rVec.data[2]);
-  /* This is p^*.r/|r| */
-  prT = pVec.data[0] * (rVec.data[0] / rMag) + pVec.data[1] * (rVec.data[1] / rMag)
-    + pVec.data[2] * (rVec.data[2] / rMag);
 
   rMag2 = rMag * rMag;
   u = 1. / rMag;
@@ -231,15 +233,22 @@ int XLALSpinPrecHcapExactDerivative(
   u5 = u4 * u;
   a2 = a * a;
   w2 = rMag2 + a2;
+
+  /* This is p^*.r/|r| */
+  prT = pVec.data[0] * (rVec.data[0] * u) + pVec.data[1] * (rVec.data[1] * u) + pVec.data[2] * (rVec.data[2] * u);
+
   /* Eq. 5.83 of BB1, inverse */
   D = 1. + log(1. + 6. * eta * u2 + 2. * (26. - 3. * eta) * eta * u3);
   /* d(Eq. 5.83 of BB1)/dr */
   eobD_r = (u2 / (D * D)) * (12. * eta * u + 6. * (26. - 3. * eta) * eta * u2) / (1.
-										  + 6. * eta * u2 + 2. * (26. - 3. * eta) * eta * u3);
+                  + 6. * eta * u2 + 2. * (26. - 3. * eta) * eta * u3);
   m1PlusetaKK = -1. + eta * coeffs->KK;
+  const double m1PlusetaKKinv = 1.0/m1PlusetaKK;
+  const double logu = log(u);
+
   /* Eq. 5.75 of BB1 */
   /* a as returned by XLALSimIMRSpinEOBCalculateSigmaKerr is S/M^2 so that a is unitless, i.e. 1/M^2 is absorbed in a2. Also, u = M/|r| is unitless */
-  bulk = 1. / (m1PlusetaKK * m1PlusetaKK) + (2. * u) / m1PlusetaKK + a2 * u2;
+  bulk = m1PlusetaKKinv*m1PlusetaKKinv + (2. * u) * m1PlusetaKKinv + a2 * u2;
   /* Eq. 5.73 of BB1 */
   /* The 4PN term with coefficients k5 and k5l are defined in the SEOBNRv2 review document https://dcc.ligo.org/T1400476 */
   logarg = 1. + coeffs->k1 * u + coeffs->k2 * u2 + coeffs->k3 * u3 + coeffs->k4 * u4 + coeffs->k5 * u5 + coeffs->k5l * u5 * log(u);
@@ -251,9 +260,9 @@ int XLALSpinPrecHcapExactDerivative(
   deltaT = rMag2 * deltaU;
   /* ddeltaU/du */
   /* The log(u) is treated as a constant when taking the derivative wrt u */
-  deltaU_u = 2. * (1. / m1PlusetaKK + a2 * u) * logTerms +
-             bulk * (eta * (coeffs->k1 + u * (2. * coeffs->k2 + u * (3. * coeffs->k3
-	     + u * (4. * coeffs->k4 + 5. * (coeffs->k5 + coeffs->k5l * log(u)) * u))))) / logarg;
+  deltaU_u = 2. * (1.*m1PlusetaKKinv + a2 * u) * logTerms + bulk * (eta * (coeffs->k1 + u * (2. * coeffs->k2 + u * (3. * coeffs->k3
+	        + u * (4. * coeffs->k4 + 5. * (coeffs->k5 + coeffs->k5l * logu) * u)))))/(1. + coeffs->k1 * u + coeffs->k2 * u2 + coeffs->k3 * u3
+		+ coeffs->k4 * u4 + (coeffs->k5 + coeffs->k5l * logu) * u5);
   deltaU_r = -u2 * deltaU_u;
   /* Eq. 5.38 of BB1 */
   deltaR = deltaT * D;
@@ -265,7 +274,7 @@ int XLALSpinPrecHcapExactDerivative(
 
   /* This is A3 of PRD 81, 084041 (2010) explicitly evaluated */
   for (i = 0; i < 3; i++) {
-    tmpP[i] = pVec.data[i] - (rVec.data[i] / rMag) * prT * (csi - 1.) / csi;
+    tmpP[i] = pVec.data[i] - (rVec.data[i] * u) * prT * (csi - 1.) / csi;
   }
 
   if (debugPK) {
@@ -280,27 +289,23 @@ int XLALSpinPrecHcapExactDerivative(
    */
   for (i = 0; i < 3; i++)
     for (j = 0; j <= i; j++) {
-      Tmatrix[i][j] = Tmatrix[j][i] = (rVec.data[i] * rVec.data[j] / rMag2)
-	* (csi - 1.);
-
-      invTmatrix[i][j] = invTmatrix[j][i] =
-	-(csi - 1) / csi * (rVec.data[i] * rVec.data[j] / rMag2);
-
+      Tmatrix[i][j] = Tmatrix[j][i] = (rVec.data[i] * rVec.data[j] * u2) * (csi - 1.);
+      invTmatrix[i][j] = invTmatrix[j][i] = -(csi - 1) / csi * (rVec.data[i] * rVec.data[j] * u2);
       if (i == j) {
 	Tmatrix[i][j]++;
 	invTmatrix[i][j]++;
       }
     }
   /* This is dcsi/dr: this is needed in the last term of Eq. A5 of PRD 81, 084041 (2010) */
-  dcsi = csi * (2. / rMag + deltaU_r / deltaU) + csi * csi * csi
-         / (2. * rMag2 * rMag2 * deltaU * deltaU) * (rMag * (-4. * w2) / D - eobD_r * (w2 * w2));
+  dcsi = csi * (2. * u + deltaU_r / deltaU) + csi * csi * csi
+    / (2. * rMag2 * rMag2 * deltaU * deltaU) * (rMag * (-4. * w2) / D - eobD_r * (w2 * w2));
 
   for (i = 0; i < 3; i++)
     for (j = 0; j < 3; j++)
       for (k = 0; k < 3; k++) {
 	dTijdXk[i][j][k] = (rVec.data[i] * KRONECKER_DELTA(j, k) + KRONECKER_DELTA(i, k) * rVec.data[j])
-	                   * (csi - 1.) / rMag2
-	                   + rVec.data[i] * rVec.data[j] * rVec.data[k] / rMag2 / rMag * (-2. / rMag * (csi - 1.) + dcsi);
+	  * (csi - 1.) * u2
+	  + rVec.data[i] * rVec.data[j] * rVec.data[k] * u2 * u * (-2. * u * (csi - 1.) + dcsi);
       }
 
   //Print out the T - matrix for comparison
@@ -318,29 +323,14 @@ int XLALSpinPrecHcapExactDerivative(
     }
   }
   INT4   updateHCoeffsOld =  params.params->seobCoeffs->updateHCoeffs;
-  /* Now calculate derivatives w.r.t. each parameter */
 
-  for (i = 0; i < 3; i++){
-    params.varyParam = i;
-    params.params->tortoise = 2;
-    memcpy(tmpValues, params.values, sizeof(tmpValues));
-    tmpValues[3] = tmpP[0];
-    tmpValues[4] = tmpP[1];
-    tmpValues[5] = tmpP[2];
+  memcpy(tmpValues, params.values, sizeof(tmpValues));
+  tmpValues[3] = tmpP[0];
+  tmpValues[4] = tmpP[1];
+  tmpValues[5] = tmpP[2];
+  params.params->seobCoeffs->updateHCoeffs = 1;
 
-    params.values = tmpValues;
-    tmpDValues[i] = XLALSpinPrecHcapExactDerivativeWrapper(tmpValues,params.params,i);
-
-    params.values = values;
-    params.params->tortoise = 1;
-  }
-  for (i = 3; i < 12; i++){
-    params.varyParam = i;
-    params.params->seobCoeffs->updateHCoeffs = 1;
-    params.values = values;
-
-    tmpDValues[i] = XLALSpinPrecHcapExactDerivativeWrapper(values,params.params,i);
-  }
+  XLALSEOBNRv3_opt_ComputeHamiltonianDerivatives(tmpValues,values,params.params->seobCoeffs,tmpDValues,params.params,&H);
 
   params.params->seobCoeffs->updateHCoeffs = updateHCoeffsOld;
   /* Now make the conversion */
@@ -416,7 +406,7 @@ int XLALSpinPrecHcapExactDerivative(
    * background
    */
   /*   /\* See below Eq. 4 of PRD 89, 061502(R) (2014)*\/ */
-  tplspin = (1. - 2. * eta) * chiS + (mass1 - mass2) / (mass1 + mass2) * chiA;
+  tplspin = (1. - 2. * eta) * chiS + (mass1 - mass2) * totalMassinv * chiA;
 
   memcpy(params.params->s1Vec->data, s1norm.data, 3*sizeof(*params.params->s1Vec->data));
   memcpy(params.params->s2Vec->data, s2norm.data, 3*sizeof(*params.params->s2Vec->data));
@@ -428,11 +418,6 @@ int XLALSpinPrecHcapExactDerivative(
   XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(params.params->eobParams->hCoeffs, mass1, mass2, eta, tplspin,
 						   chiS, chiA, 3);
 
-  XLALSimIMRCalculateSpinPrecEOBHCoeffs(params.params->seobCoeffs, eta, a,
-					SpinAlignedEOBversion);
-
-  H = XLALSimIMRSpinPrecEOBHamiltonian(eta, &rVec, &pVec, &s1norm, &s2norm,
-				       &sKerr, &sStar, params.params->tortoise, params.params->seobCoeffs);
   H = H * (mass1 + mass2);
 
   /* Now we have the ingredients to compute the flux */
@@ -445,7 +430,7 @@ int XLALSpinPrecHcapExactDerivative(
   /* Eq. 13 of PRD 86, 024011 (2012) */
   if ( params.params->ignoreflux == 0 ) {
     flux = XLALInspiralPrecSpinFactorizedFlux_exact(&polarDynamics, &cartDynamics,
-						    nqcCoeffs, omega, params.params, H / (mass1 + mass2), lMax, SpinAlignedEOBversion);
+						    nqcCoeffs, omega, params.params, H * totalMassinv, lMax, SpinAlignedEOBversion);
   }
   else if ( params.params->ignoreflux  == 1) {
     flux = 0.;
@@ -461,7 +446,11 @@ int XLALSpinPrecHcapExactDerivative(
   flux = flux / eta;
   pDotS1 = pData[0] * s1.data[0] + pVec.data[1] * s1.data[1] + pVec.data[2] * s1.data[2];
   pDotS2 = pVec.data[0] * s2.data[0] + pVec.data[1] * s2.data[1] + pVec.data[2] * s2.data[2];
-  rrTerm2 = 8. / 15. * eta * eta * pow(omega, 8. / 3.) / (magL * magL * r) * ((61. + 48. * mass2 / mass1) * pDotS1 + (61. + 48. * mass1 / mass2) * pDotS2);
+  const double omega2=omega*omega;
+  const double omega4=omega2*omega2;
+  const double omega8=omega4*omega4;
+  const double omega8o3=cbrt(omega8);
+  rrTerm2 = 8. / 15. * eta * eta * omega8o3 / (magL * magL * r) * ((61. + 48. * mass2 * mass1inv) * pDotS1 + (61. + 48. * mass1 * mass2inv) * pDotS2);
 
   if (debugPK) {
     XLAL_PRINT_INFO("omega = %.12e \n flux = %.12e \n Lmag = %.12e\n", omega, flux, magL);
@@ -626,49 +615,6 @@ int XLALSpinPrecHcapExactDerivative(
       }
   }
   return XLAL_SUCCESS;
-}
-
-/**
- * Calculate the derivative of the Hamiltonian w.r.t. a specific parameter
- * Used by generic spin EOB model, including initial conditions solver.
- */
-REAL8 XLALSpinPrecHcapExactDerivWRTParam(
-					 const INT4    paramIdx,	/**<< Index of the parameters */
-					 const REAL8   values[],	/**<< Dynamical variables */
-					 SpinEOBParams * funcParams	/**<< EOB Parameters */
-)
-{
-  HcapDerivParams params;
-
-  REAL8	result;
-
-  params.params = funcParams;
-  params.varyParam = paramIdx;
-
-  REAL8	mass1, mass2;
-
-  params.params = funcParams;
-  params.varyParam = paramIdx;
-
-  mass1 = params.params->eobParams->m1;
-  mass2 = params.params->eobParams->m2;
-
-  REAL8 mT2 = (mass1 + mass2) * (mass1 + mass2);
-  REAL8 tmpValues[14];
-  for (UINT4 i = 0; i < 3; i++) {
-    tmpValues[i] = values[i];
-    tmpValues[i + 3] = values[i + 3];
-    tmpValues[i + 6] = values[i + 6]/mT2;
-    tmpValues[i + 9] = values[i + 9]/mT2;
-  }
-  tmpValues[12] = values[12];
-  tmpValues[13] = values[13];
-  params.values = tmpValues;
-
-  /* Now calculate derivatives w.r.t. the required parameter */
-  result = XLALSpinPrecHcapExactDerivativeWrapper(tmpValues,funcParams,paramIdx);
-
-  return result;
 }
 
 #endif // _LALSIMIMRSPINPRECEOBHCAPEXACTDERIVATIVEPREC_V3OPT_C

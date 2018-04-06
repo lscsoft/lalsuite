@@ -95,11 +95,14 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
     Tmatrix[i][i]++;
     }
 
-    for ( int i = 3; i < 6; i++ )
-        tmpDValues[i]=XLALSpinPrecHcapExactDerivativeWrapper(values,seobParams,i);
+    REAL8 Pderivs[3]={0.};
+    XLALSEOBNRv3_opt_HDerivs_for_Omega(values,seobParams->eobParams->m1,seobParams->eobParams->m2,seobParams->eobParams->eta,seobParams->seobCoeffs,Pderivs,seobParams);
+    tmpDValues[3] = Pderivs[0];
+    tmpDValues[4] = Pderivs[1];
+    tmpDValues[5] = Pderivs[2];
 
-    {
-    //OPTV3: The following updates hcoeffs
+      {
+	/* SEOBNRv3_opt: The following updates hcoeffs */
         REAL8 mass1 = seobParams->eobParams->m1;
         REAL8 mass2 = seobParams->eobParams->m2;
         REAL8 s1Data[3],s2Data[3], rcrossrDot[3];
@@ -128,7 +131,7 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
         tplspin = (1.-2.*seobParams->eobParams->eta) * chiS + (mass1 - mass2)/(mass1 + mass2) * chiA;
 
         XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(seobParams->eobParams->hCoeffs, mass1, mass2, seobParams->eobParams->eta, tplspin,chiS, chiA, 3);
-    }
+      }
 
     /* Now make the conversion */
     /* rVectorDot */
