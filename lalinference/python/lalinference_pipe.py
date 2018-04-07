@@ -377,4 +377,4 @@ if opts.condor_submit:
   else:
     print 'Unable to submit DAG file'
 else:
-  print('To submit, run:\n\tcondor_submit_dag {0}'.format(outerdag.get_dag_file))
+  print('To submit, run:\n\tcondor_submit_dag {0}'.format(outerdag.get_dag_file()))
