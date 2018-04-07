@@ -1813,6 +1813,7 @@ class SingularityJob(pipeline.CondorDAGJob):
         else:
             extra_paths="--bind {cvmfs_frames}".format(cvmfs_frames = self.CVMFS_FRAMES)
             self.add_condor_cmd('+SingularityBindCVMFS','True')
+            self.add_condor_cmd('use_x509userproxy','true')
 	if cp.has_option('analysis','roq') and cp.getboolean('analysis','roq'):
 	    extra_paths+=" --bind {roqpath}".format(roqpath=cp.get('paths','roq_b_matrix_directory'))
 
@@ -1860,7 +1861,7 @@ class SingularityJob(pipeline.CondorDAGJob):
         set the exe to call it
         """
         true_exec = self.get_executable()
-        self.add_condor_command('requirements','&&'.join('({0})'.format(r) for r in self.requirements))
+        self.add_condor_cmd('requirements','&&'.join('({0})'.format(r) for r in self.requirements))
         if self.singularity:
             # Write the wrapper script
             wrapper=os.path.splitext(self.get_sub_file())[0] +'_wrapper.sh'
