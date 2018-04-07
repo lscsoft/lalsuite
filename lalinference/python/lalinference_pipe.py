@@ -362,7 +362,7 @@ outerdag.write_dag()
 outerdag.write_script()
 
 # End of program
-print 'Successfully created DAG file.'
+print('Successfully created DAG file.')
 
 if opts.condor_submit:
   import subprocess
@@ -376,4 +376,5 @@ if opts.condor_submit:
     print 'Submitted DAG file'
   else:
     print 'Unable to submit DAG file'
-
+else:
+  print('To submit, run:\n\tcondor_submit_dag {0}'.format(outerdag.get_dag_file))
