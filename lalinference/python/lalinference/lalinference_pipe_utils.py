@@ -711,7 +711,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.preengine_job = EngineJob(self.config, os.path.join(self.basepath,'prelalinference.sub'),self.logpath,engine='lalinferencedatadump',ispreengine=True,dax=self.is_dax())
     self.preengine_job.set_grid_site('local')
     self.preengine_job.set_universe('vanilla')
-    if self.config.has_option('condor','computeroqweights'):
+    if self.config.getboolean('analysis','roq'):
       self.computeroqweights_job = ROMJob(self.config,os.path.join(self.basepath,'computeroqweights.sub'),self.logpath,dax=self.is_dax())
       self.computeroqweights_job.set_grid_site('local')
     if self.config.has_option('condor','bayesline'):
@@ -1032,7 +1032,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       if not self.config.has_option('engine','distance-max') and self.config.has_option('input','threshold-snr'):
         threshold_snr=self.config.getfloat('input','threshold-snr')
       events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),basepath=self.basepath,downloadpsd=downloadgracedbpsd,
-                           threshold_snr=threshold_snr,roq=self.config.has_option('condor','computeroqweights'))
+                           threshold_snr=threshold_snr,roq=self.config.getboolean('analysis','roq'))
     else: gid=None
     # pipedown-database
     if self.config.has_option('input','gstlal-db'):
@@ -1377,7 +1377,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     prenode=LALInferenceDataDumpNode(self.preengine_job)
     node=self.EngineNode(self.engine_jobs[tuple(ifos)])
     roqeventpath=os.path.join(self.preengine_job.roqpath,str(event.event_id)+'/')
-    if self.config.has_option('condor','bayesline') or self.config.has_option('condor','bayeswave') or self.config.has_option('condor','computeroqweights'):
+    if self.config.has_option('condor','bayesline') or self.config.has_option('condor','bayeswave') or self.config.getboolean('analysis','roq'):
       mkdirs(roqeventpath)
     node.set_trig_time(end_time)
     prenode.set_trig_time(end_time)
@@ -1424,13 +1424,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       for seg in self.segments[ifo]:
         if segstart >= seg.start() and segend < seg.end():
             if not self.config.has_option('lalinference','fake-cache'):
-              if self.config.has_option('condor','bayesline') or self.config.has_option('condor','computeroqweights'):
-                prenode.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
-              gotdata+=node.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
+                if self.config.has_option('condor','bayesline') or self.config.getboolean('analysis','roq'):
+                    prenode.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
+                gotdata+=node.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
             else:
               fakecachefiles=ast.literal_eval(self.config.get('lalinference','fake-cache'))
-              if self.config.has_option('condor','bayesline') or self.config.has_option('condor','computeroqweights'):
-                prenode.add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],self.channels[ifo],timeslide=slide)
+              if self.config.has_option('condor','bayesline') or self.config.getboolean('analysis','roq'):
+                  prenode.add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],self.channels[ifo],timeslide=slide)
               gotdata+=node.add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],self.channels[ifo],timeslide=slide)
     if self.config.has_option('lalinference','psd-xmlfile'):
       psdpath=os.path.realpath(self.config.get('lalinference','psd-xmlfile'))
@@ -1529,12 +1529,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                   bayeswavepsdnode[ifo].set_seed(randomseed)
                   if self.dataseed:
                      bayeswavepsdnode[ifo].set_dataseed(self.dataseed+event.event_id)
-        if self.config.has_option('condor','bayesline') or self.config.has_option('condor','computeroqweights'):
+        if self.config.has_option('condor','bayesline') or self.config.getboolean('analysis','roq'):
           if gotdata and event.event_id not in self.prenodes.keys():
             if prenode not in self.get_nodes():
               self.add_node(prenode)
               for ifo in ifos:
-                if self.config.has_option('condor','computeroqweights'):
+                if self.config.getboolean('analysis','roq'):
                   computeroqweightsnode[ifo]=self.add_rom_weights_node(ifo,prenode)
                 #self.add_node(computeroqweightsnode[ifo])
                 if self.config.has_option('input','injection-file'):
@@ -1549,7 +1549,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                   bayeslinenode[ifo].add_input_file(freqDataFile)
                   bayeslinenode[ifo].add_var_arg('-o '+os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
                   bayeslinenode[ifo].add_output_file(os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
-                if self.config.has_option('condor','computeroqweights'):
+                if self.config.getboolean('analysis','roq'):
                   computeroqweightsnode[ifo].add_var_arg('--fHigh '+str(prenode.fhighs[ifo]))
                   computeroqweightsnode[ifo].add_var_arg('--data '+freqDataFile)
                   computeroqweightsnode[ifo].add_input_file(freqDataFile)
@@ -1560,10 +1560,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
               #self.prenodes[seg.id()]=(prenode,computeroqweightsnode)
               if self.config.has_option('condor','bayesline'):
                   self.prenodes[event.event_id]=(prenode,bayeslinenode)
-              if self.config.has_option('condor','computeroqweights'):
+              if self.config.getboolean('analysis','roq'):
                   self.prenodes[event.event_id]=(prenode,computeroqweightsnode)
 
-      if self.config.has_option('condor','bayesline') or self.config.has_option('condor','computeroqweights'):
+      if self.config.has_option('condor','bayesline') or self.config.getboolean('analysis','roq'):
         #node.add_parent(self.prenodes[seg.id()][1][ifokey])
         node.add_parent(self.prenodes[event.event_id][1][ifokey])
 
@@ -1620,7 +1620,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     out_dir=os.path.join(self.basepath,'engine')
     mkdirs(out_dir)
     node.set_output_file(os.path.join(out_dir,node.engine+'-'+str(event.event_id)+'-'+node.get_ifos()+'-'+str(node.get_trig_time())+'-'+str(node.id)))
-    if self.config.has_option('condor','computeroqweights'):
+    if self.config.getboolean('analysis','roq'):
       for ifo in ifos:
         node.add_var_arg('--'+ifo+'-roqweightsLinear '+os.path.join(roqeventpath,'weights_linear_'+ifo+'.dat'))
         node.add_input_file(os.path.join(roqeventpath,'weights_linear_'+ifo+'.dat'))
