@@ -451,7 +451,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
 
     if (gamma1 <= 1.0 || gamma2 <= 1.0 || gamma3 <= 1.0)
         XLAL_ERROR_NULL(XLAL_EINVAL,
-            "Adiabitic indices gamma1=%g, gamma2=%g, and gamma3=%g "
+            "Adiabatic indices gamma1=%g, gamma2=%g, and gamma3=%g "
             "must all be greater than 1", gamma1, gamma2, gamma3);
 
     /* Transition densities between the 3 high-density polytropes */
@@ -482,7 +482,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
 
     eos->datatype = LALSIM_NEUTRON_STAR_EOS_DATA_TYPE_PIECEWISE_POLYTROPE;
     eos->data.piecewisePolytrope = data;
-    if(snprintf(eos->name, sizeof(eos->name), "4-Piece Polytrope (p1=10^%.2f Pa,Gam1=%10.2e,Gam2=%10.2e,Gam3=%10.2e)", logp1_si, gamma1, gamma2, gamma3) >= (int) sizeof(eos->name))
+    if(snprintf(eos->name, sizeof(eos->name), "4-Pc Polytrope (p1=10^%.2f Pa,Gam1=%.2f,Gam2=%.2f,Gam3=%.2f)", logp1_si, gamma1, gamma2, gamma3) >= (int) sizeof(eos->name))
       XLAL_PRINT_WARNING("eos name overflow (max. size %d).",(int) sizeof(eos->name));
 
     /* setup function pointers */
