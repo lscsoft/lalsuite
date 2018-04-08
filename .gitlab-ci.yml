@@ -280,7 +280,7 @@ nightly:python3:stretch:
   # building with python3, temporarily allow this to fail
   allow_failure: true
 
-nightly:macos:
+.nightly:macos:
   tags:
     - macos
   stage: nightly
@@ -369,11 +369,11 @@ nightly:wheel:cp35-cp35m-manylinux1:
   <<: *nightly-wheel-manylinux1
 nightly:wheel:cp36-cp36m-manylinux1:
   <<: *nightly-wheel-manylinux1
-nightly:wheel:cp27-cp27m-macosx:
+.nightly:wheel:cp27-cp27m-macosx:
   <<: *nightly-wheel-macos
-nightly:wheel:cp35-cp35m-macosx:
+.nightly:wheel:cp35-cp35m-macosx:
   <<: *nightly-wheel-macos
-nightly:wheel:cp36-cp36m-macosx:
+.nightly:wheel:cp36-cp36m-macosx:
   <<: *nightly-wheel-macos
 
 .levelN:rpm: &levelN-rpm-package
@@ -528,9 +528,9 @@ deploy:wheel:
     - nightly:wheel:cp34-cp34m-manylinux1
     - nightly:wheel:cp35-cp35m-manylinux1
     - nightly:wheel:cp36-cp36m-manylinux1
-    - nightly:wheel:cp27-cp27m-macosx
-    - nightly:wheel:cp35-cp35m-macosx
-    - nightly:wheel:cp36-cp36m-macosx
+#    - nightly:wheel:cp27-cp27m-macosx
+#    - nightly:wheel:cp35-cp35m-macosx
+#    - nightly:wheel:cp36-cp36m-macosx
   only:
     - master@lscsoft/lalsuite
   except:
