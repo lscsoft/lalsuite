@@ -75,7 +75,7 @@ def parse_command_line():
 		raise ValueError, "missing required options %s" % ", ".join(sorted("--%s" % option.replace("_", "-") for option in missing_options))
 
 	if options.vetoes_file is not None:
-		options.vetoes_cache = set([CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.vetoes_file))])
+		options.vetoes_cache = set([CacheEntry(None, "VETO", None, "file://localhost" + os.path.abspath(options.vetoes_file))])
 	else:
 		options.vetoes_cache = set()
 
@@ -174,7 +174,7 @@ overlap = short_segment_duration / 2 + 2 * pad	# FIXME:  correct?
 #
 
 instruments = lsctables.instrumentsproperty.get(config_parser.get('pipeline','ifos'))
-segments_cache = set([CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.segments_file))])
+segments_cache = set([CacheEntry(None, "SEG", None, "file://localhost" + os.path.abspath(options.segments_file))])
 seglists = ligolw_segments.segmenttable_get_by_name(ligolw_utils.load_filename(options.segments_file, contenthandler = ligolw_segments.LIGOLWContentHandler, verbose = options.verbose), options.segments_name).coalesce()
 # remove extra instruments
 for instrument in set(seglists) - instruments:
@@ -198,7 +198,7 @@ if options.verbose:
 background_time_slides = {}
 background_seglists = segments.segmentlistdict()
 for filename in options.background_time_slides:
-	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
+	cache_entry = CacheEntry(None, "BG", None, "file://localhost" + os.path.abspath(filename))
 
 	background_time_slides[cache_entry] = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw_segments.LIGOLWContentHandler)).as_dict().values()
 
@@ -210,7 +210,7 @@ for filename in options.background_time_slides:
 injection_time_slides = {}
 injection_seglists = segments.segmentlistdict()
 for filename in options.injection_time_slides:
-	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
+	cache_entry = CacheEntry(None, "INJ", None, "file://localhost" + os.path.abspath(filename))
 
         injection_time_slides[cache_entry] = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw_segments.LIGOLWContentHandler)).as_dict().values()
 
