@@ -573,7 +573,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_ET1_DETECTOR_LATITUDE_RAD          	0.76151183984	/**< ET1 vertex latitude (rad) */
 #define LAL_ET1_DETECTOR_ELEVATION_SI          	51.884	/**< ET1 vertex elevation (m) */
 #define LAL_ET1_DETECTOR_ARM_X_AZIMUTH_RAD     	0.33916285222	/**< ET1 x arm azimuth (rad) */
-#define LAL_ET1_DETECTOR_ARM_Y_AZIMUTH_RAD     	5.05155183261	/**< ET1 y arm azimuth (rad) */
+#define LAL_ET1_DETECTOR_ARM_Y_AZIMUTH_RAD     	5.57515060820	/**< ET1 y arm azimuth (rad) */
 #define LAL_ET1_DETECTOR_ARM_X_ALTITUDE_RAD    	0.00000000000	/**< ET1 x arm altitude (rad) */
 #define LAL_ET1_DETECTOR_ARM_Y_ALTITUDE_RAD    	0.00000000000	/**< ET1 y arm altitude (rad) */
 #define LAL_ET1_DETECTOR_ARM_X_MIDPOINT_SI     	5000.00000000000	/**< ET1 x arm midpoint (m) */
