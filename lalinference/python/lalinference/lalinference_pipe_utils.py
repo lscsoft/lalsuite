@@ -1884,20 +1884,20 @@ class SingularityNode(pipeline.CondorDAGNode):
     Class representing a node run via singularity
     """
     def add_output_file(self,filename):
-        filename=os.path.relpath(filename,start=self.job().basedir)
+        filename=os.path.relpath(filename,start=self.job().get_config('paths','basedir'))
         self.add_output_macro(filename)
         super(SingularityNode,self).add_output_file(filename)
     def add_input_file(self,filename):
-        filename=os.path.relpath(filename,start=self.job().basedir)
+        filename=os.path.relpath(filename,start=self.job().get_config('paths','basedir'))
         self.add_input_macro(filename)
         super(SingularityNode,self).add_input_file(filename)
     def add_checkpoint_file(self,filename):
-        filename=os.path.relpath(filename,start=self.job().basedir)
+        filename=os.path.relpath(filename,start=self.job().get_config('paths','basedir'))
         self.add_checkpoint_macro(filename)
         super(SingularityNode,self).add_checkpoint_file(filename)
     def add_file_opt(self, opt, filename, file_is_output_file=False):
         # The code option needs the path as seen inside singularity, i.e. relative to basedir
-        relfile=os.path.relpath(filename,start=self.job().basedir)
+        relfile=os.path.relpath(filename,start=self.job().get_config('paths','basedir'))
         self.add_var_opt(opt,relfile)
         if file_is_output_file:
             self.add_output_file(filename)
