@@ -268,8 +268,14 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
       fprintf(stderr,"No mass parameters found!");
       exit(0);
     }
-
-  distance = exp(LALInferenceGetREAL8Variable(model->params, "logdistance"))* LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
+  if(LALInferenceCheckVariable(model->params,"logdistance"))
+  {
+      distance = exp(LALInferenceGetREAL8Variable(model->params, "logdistance"))* LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
+  }
+  else
+  {
+      distance = LAL_PC_SI * 1.0e6; /* 1Mpc default */
+  }
 
   phi0 = LALInferenceGetREAL8Variable(model->params, "phase"); /* START phase as per lalsimulation convention, radians*/
   /* Zenith angle between J and N in radians. Also known as inclination angle when spins are aligned */
