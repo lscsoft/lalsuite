@@ -2041,19 +2041,22 @@ void LALInferenceCheckApproximantNeeds(LALInferenceRunState *state,Approximant a
   /* In the IMRPhenomD review a region with possible issues  (q < 1/10 for maximal spins) was identified */
   /* This is not cause to restrict the waveform to exclude this region, but caution should be exercised */
   if (approx==IMRPhenomD){
-     LALInferenceGetMinMaxPrior(state->priorArgs, "a_spin1", &a1min, &a1max);
-     LALInferenceGetMinMaxPrior(state->priorArgs, "a_spin2", &a2min, &a2max);
-     if (q==1 && min<1./10 && ((a1max==1.0 || a2max==1.0) || (a1min==-1.0 || a2min==-1.0))){
-        fprintf(stdout,"WARNING: Based on the allowed prior volume (q < 1/10 for maximal spins), please consult\n");
-        fprintf(stdout,"IMRPhenomD review wiki for further discussion on reliable parameter spaces\n");
-        fprintf(stdout,"https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/PhenD_LargeNegativeSpins\n");
-     }
-     if (q==0 && min<0.082644628 && ((a1max==1.0 || a2max==1.0) || (a1min==-1.0 || a2min==-1.0))){
-        fprintf(stdout,"WARNING: Based on the allowed prior volume (q < 1/10 for maximal spins), please consult\n");
-        fprintf(stdout,"IMRPhenomD review wiki for further discussion on reliable parameter spaces\n");
-        fprintf(stdout,"https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/PhenD_LargeNegativeSpins\n");
-     }
+    if (LALInferenceCheckMinMaxPrior(state->priorArgs,"a_spin1") && LALInferenceCheckMinMaxPrior(state->priorArgs,"a_spin2")){
+       LALInferenceGetMinMaxPrior(state->priorArgs, "a_spin1", &a1min, &a1max);
+       LALInferenceGetMinMaxPrior(state->priorArgs, "a_spin2", &a2min, &a2max);
+       if (q==1 && min<1./10 && ((a1max==1.0 || a2max==1.0) || (a1min==-1.0 || a2min==-1.0))){
+          fprintf(stdout,"WARNING: Based on the allowed prior volume (q < 1/10 for maximal spins), please consult\n");
+          fprintf(stdout,"IMRPhenomD review wiki for further discussion on reliable parameter spaces\n");
+          fprintf(stdout,"https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/PhenD_LargeNegativeSpins\n");
+       }
+       if (q==0 && min<0.082644628 && ((a1max==1.0 || a2max==1.0) || (a1min==-1.0 || a2min==-1.0))){
+          fprintf(stdout,"WARNING: Based on the allowed prior volume (q < 1/10 for maximal spins), please consult\n");
+          fprintf(stdout,"IMRPhenomD review wiki for further discussion on reliable parameter spaces\n");
+          fprintf(stdout,"https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/PhenD_LargeNegativeSpins\n");
+       }
+    }
   }
+
 
   /* IMRPhenomPv2 only supports q > 1/20. Set prior consequently  */
   if (q==1 && approx==IMRPhenomPv2 && min<1./20.){
@@ -2166,5 +2169,3 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
     }
 
 }
-
-
