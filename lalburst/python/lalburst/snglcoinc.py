@@ -287,7 +287,7 @@ class TimeSlideGraphNode(object):
 		self.deltas = frozenset(offset_vector.deltas.items())
 		self.keep_unused = len(offset_vector) > min_instruments
 		if len(offset_vector) > 2:
-			self.components = tuple(TimeSlideGraphNode(offset_vector, min_instruments = min_instruments) for offset_vector in offsetvector.component_offsetvectors([offsetvector], len(offset_vector) - 1))
+			self.components = tuple(TimeSlideGraphNode(offset_vector, min_instruments = min_instruments) for offset_vector in offsetvector.component_offsetvectors([offset_vector], len(offset_vector) - 1))
 		else:
 			self.components = None
 
@@ -336,14 +336,14 @@ class TimeSlideGraphNode(object):
 		# first collect all coincs and unused partial coincs from
 		# the component nodes in the graph
 		component_coincs_and_unused_coincs = tuple(component.get_coincs(eventlists, threshold_data, verbose = verbose) for component in self.components)
-		component_coincs = component_coincs_and_unused_coincs[0::2]
+		component_coincs = tuple(elem[0] for elem in component_coincs_and_unused_coincs)
 
 		if self.keep_unused:
 			# all coincs with n-1 instruments from the
 			# component time slides are potentially unused.
 			# they all go into our unused_coincs pile, and
 			# we'll remove things from this set as we use them
-			unused_coincs = reduce(lambda a, b: a | b, component_coincs, set())
+			unused_coincs = set(itertools.chain(*component_coincs))
 
 			# of the (< n-1)-instrument coincs that were not
 			# used in forming the (n-1)-instrument coincs, any
@@ -352,7 +352,7 @@ class TimeSlideGraphNode(object):
 			# components, they definitely won't be used to
 			# construct our n-instrument coincs, and so they go
 			# into our unused pile
-			for unused_coincsa, unused_coincsb in itertools.combinations(component_coincs_and_unused_coincs[1::2], 2):
+			for unused_coincsa, unused_coincsb in itertools.combinations((elem[1] for elem in component_coincs_and_unused_coincs), 2):
 				unused_coincs |= unused_coincsa & unused_coincsb
 		else:
 			unused_coincs = set()
