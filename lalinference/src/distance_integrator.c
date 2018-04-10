@@ -191,6 +191,9 @@ double log_radial_integral(double r1, double r2, double p, double b, int k, int 
 
     params.scale = -log_offset;
     size_t n = 64;
+    double abstol = 1e-8;
+    double reltol = 1e-8;
+    int relaxed=0;
     do {
         /* Maximum number of subdivisions for adaptive integration. */
 
@@ -220,18 +223,27 @@ double log_radial_integral(double r1, double r2, double p, double b, int k, int 
 
         /* Perform adaptive Gaussian quadrature. */
         ret = gsl_integration_qagp(&func, breakpoints, nbreakpoints,
-            1e-8, 1e-8, n, &workspace, &result, &abserr);
-        n*=2;
-        if(ret!=GSL_SUCCESS) fprintf(stderr,"GSL error %s, increasing n to %li\n",gsl_strerror(ret),n);
-        //gsl_set_error_handler(old_handler);
-
-        /* FIXME: do we care to keep the error estimate around? */
+            abstol, reltol, n, &workspace, &result, &abserr);
+        switch(ret)
+        {
+		case GSL_EROUND:
+			relaxed=1;
+			abstol*=2;
+			break;
+		case GSL_EMAXITER:
+			fprintf(stderr,"GSL error %s, increasing n to %li\n",gsl_strerror(ret),n*=2);
+			break;
+		case GSL_SUCCESS:
+			break;
+		default:
+			fprintf(stderr,"%s unable to handle GSL error: %s\n",__func__,gsl_strerror(ret));
+			exit(1);
+			break;
+        }
     }
     while(ret!=GSL_SUCCESS);
-
-    /* FIXME: do something with ret */
-    (void)ret;
-
+    if(relaxed) fprintf(stderr,"Warning: had to relax absolute tolerance to %le during distance integration for r1=%lf, r2=%lf, p=%lf, b=%lf, k=%i\n",
+			abstol,r1,r2,p,b,k);
     /* Done! */
     return log_offset + log(result);
 }
