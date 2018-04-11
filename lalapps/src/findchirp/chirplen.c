@@ -205,7 +205,7 @@ int main ( int argc, char *argv[] )
       case 'V':
         /* print version information and exit */
         fprintf( stdout, "Compute some basic properties of inspiral signals\n" 
-            "Patrick Brady and Duncan Brown\n"
+            "Patrick R Brady and Duncan Brown\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
         exit( 0 );
