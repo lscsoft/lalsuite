@@ -261,14 +261,49 @@ def get_doubles(eventlists, offsetvector, threshold_data, unused):
 #
 
 
-class TimeSlideGraphNode(object):
-	def __init__(self, offset_vector, min_instruments = 2, time_slide_id = None):
+class TimeSlideGraphNoOpNode(object):
+	def __init__(self, offset_vector, min_instruments, time_slide_id = None):
 		#
 		# safety check input
 		#
 
-		if min_instruments < 1:
-			raise ValueError("min_instruments (=%d) must be >= 1" % min_instruments)
+		if len(offset_vector) < 1:
+			raise ValueError("encountered offset vector with fewer than 1 instrument: %s", str(offset_vector))
+
+		#
+		# initialize
+		#
+
+		# time_slide_id is non-None only in head nodes
+		self.time_slide_id = time_slide_id
+		self.offset_vector = offset_vector
+		self.components = None
+
+	def get_coincs(self, eventlists, threshold_data, verbose = False):
+		if verbose:
+			print("\tconstructing %s ..." % str(self.offset_vector), file=sys.stderr)
+
+		#
+		# sanity check input
+		#
+
+		assert set(self.offset_vector) <= set(eventlists), "no event list for instrument(s) %s" % ", ".join(sorted(set(self.offset_vector) - set(eventlists)))
+
+		#
+		# return 1-detector "coincs" and a null set of unused
+		# events
+		#
+
+		instrument, = self.offset_vector
+		return tuple((id(event),) for event in eventlists[instrument]), set()
+
+
+class TimeSlideGraphNode(object):
+	def __init__(self, offset_vector, min_instruments, time_slide_id = None):
+		#
+		# safety check input
+		#
+
 		if len(offset_vector) < 2:
 			raise ValueError("encountered offset vector with fewer than 2 instruments: %s", str(offset_vector))
 
@@ -283,7 +318,7 @@ class TimeSlideGraphNode(object):
 		# return coincs that meet the min_instruments criterion
 		self.keep_unused = len(offset_vector) > min_instruments
 		if len(offset_vector) > 2:
-			self.components = tuple(TimeSlideGraphNode(offset_vector, min_instruments = min_instruments) for offset_vector in offsetvector.component_offsetvectors([offset_vector], len(offset_vector) - 1))
+			self.components = tuple(TimeSlideGraphNode(offset_vector, min_instruments) for offset_vector in offsetvector.component_offsetvectors([offset_vector], len(offset_vector) - 1))
 		else:
 			self.components = None
 
@@ -300,7 +335,6 @@ class TimeSlideGraphNode(object):
 			# sanity check input
 			#
 
-			assert len(self.offset_vector) == 2, "broken graph:  node with no components has %d-component offset vector, must be 2" % len(self.offset_vector)
 			assert set(self.offset_vector) <= set(eventlists), "no event list for instrument(s) %s" % ", ".join(sorted(set(self.offset_vector) - set(eventlists)))
 
 			#
@@ -430,14 +464,21 @@ class TimeSlideGraph(object):
 		# target offset vectors requested by the calling code.
 		#
 
-		if verbose:
-			print("constructing coincidence assembly graph for %d target offset vectors ..." % len(offset_vector_dict), file=sys.stderr)
+		if min_instruments < 1:
+			raise ValueError("require min_instruments >= 1 (%d)" % min_instruments)
 		if min(len(offset_vector) for offset_vector in offset_vector_dict.values()) < min_instruments:
 			# this test is part of the logic that ensures we
 			# will only extract coincs that meet the
 			# min_instruments criterion
 			raise ValueError("encountered offset vector (%s) smaller than min_instruments (%d)", (str(min(offset_vector_dict.values(), key = lambda offset_vector: len(offset_vector))), min_instruments))
-		self.head = tuple(TimeSlideGraphNode(offset_vector, min_instruments = min_instruments, time_slide_id = time_slide_id) for time_slide_id, offset_vector in sorted(offset_vector_dict.items()))
+
+		if verbose:
+			print("constructing coincidence assembly graph for %d offset vectors ..." % len(offset_vector_dict), file=sys.stderr)
+		self.head = tuple(
+			(TimeSlideGraphNode if len(offset_vector) >= 2 else TimeSlideGraphNoOpNode)(
+				offset_vector, min_instruments, time_slide_id = time_slide_id
+			) for time_slide_id, offset_vector in sorted(offset_vector_dict.items())
+		)
 
 		#
 		# done
@@ -448,7 +489,7 @@ class TimeSlideGraph(object):
 				# return the number of leaf and non-leaf
 				# nodes in the graph rooted on this node
 				return numpy.array((1, 0)) if node.components is None else numpy.array((0, 1)) + sum(walk(node) for node in node.components)
-			print("graph contains %d 2-instrument nodes, %d higher-order nodes" % tuple(sum(walk(node) for node in self.head)), file=sys.stderr)
+			print("graph contains %d fundamental nodes, %d higher-order nodes" % tuple(sum(walk(node) for node in self.head)), file=sys.stderr)
 
 
 	def get_coincs(self, eventlists, threshold_data, verbose = False):
