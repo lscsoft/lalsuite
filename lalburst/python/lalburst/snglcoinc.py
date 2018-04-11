@@ -444,16 +444,11 @@ class TimeSlideGraph(object):
 		#
 
 		if verbose:
-			def walk(nodes, leaves, nonleaves):
-				for node in nodes:
-					if node.components is None:
-						leaves.append(node)
-					else:
-						nonleaves.append(node)
-						walk(node.components, leaves, nonleaves)
-			leaves, nonleaves = [], []
-			walk(self.head, leaves, nonleaves)
-			print("graph contains %d 2-instrument nodes, %d higher-order nodes" % (len(leaves), len(nonleaves)), file=sys.stderr)
+			def walk(node):
+				# return the number of leaf and non-leaf
+				# nodes in the graph rooted on this node
+				return numpy.array((1, 0)) if node.components is None else numpy.array((0, 1)) + sum(walk(node) for node in node.components)
+			print("graph contains %d 2-instrument nodes, %d higher-order nodes" % tuple(sum(walk(node) for node in self.head)), file=sys.stderr)
 
 
 	def get_coincs(self, eventlists, threshold_data, verbose = False):
