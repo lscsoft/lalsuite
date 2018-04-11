@@ -196,9 +196,9 @@ def setup_roq(cp):
     Generates cp objects with the different ROQs applied
     """
     use_roq=False
-    if cp.has_option('paths','roq_b_matrix_directory'):
+    if cp.has_option('paths','roq_b_matrix_directory') or cp.has_open('paths','computeroqweights'):
         if not cp.has_option('analysis','roq'):
-            print("Warning: If you are attempting to enable ROQ by specifying paths.roq_b_matrix_directory,\
+            print("Warning: If you are attempting to enable ROQ by specifying roq_b_matrix_directory or computeroqweights,\n\
             please use analysis.roq in your config file in future. Enabling ROQ.")
             cp.set('analysis','roq',True)
     if not cp.getboolean('analysis','roq'):
@@ -283,11 +283,12 @@ def setup_roq(cp):
         this_cp = ConfigParser.ConfigParser()
 	this_cp.read(masterpath)
         basedir = this_cp.get('paths','basedir')
-        for dirs in 'basedir','daglogdir','webdir', 'roq_b_matrix_directory':
+        for dirs in 'basedir','daglogdir','webdir':
             val = this_cp.get('paths',dirs)
             newval = os.path.join(val,roq)
             mkdirs(newval)
             this_cp.set('paths',dirs,newval)
+        this_cp.set('paths','roq_b_matrix_directory',os.path.join(cp.get('paths','roq_b_matrix_directory'),roq))
         flow=roq_params[roq]['flow'] / roq_mass_freq_scale_factor
         srate=2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor
         if srate > 8192:
@@ -362,7 +363,7 @@ outerdag.write_dag()
 outerdag.write_script()
 
 # End of program
-print 'Successfully created DAG file.'
+print('Successfully created DAG file.')
 
 if opts.condor_submit:
   import subprocess
@@ -376,4 +377,5 @@ if opts.condor_submit:
     print 'Submitted DAG file'
   else:
     print 'Unable to submit DAG file'
-
+else:
+  print('To submit, run:\n\tcondor_submit_dag {0}'.format(outerdag.get_dag_file()))
