@@ -369,6 +369,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   REAL8 cos_calpha=cos(calpha);
   REAL8 sin_calpha=sin(calpha);
   UINT4 constantcal_active=0;
+  INT4 errnum=0;
 
   /* ROQ likelihood stuff */
   REAL8 d_inner_h=0.0;
@@ -637,7 +638,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
         if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
         LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
 
-        INT4 errnum=0;
         XLAL_TRY(model->templt(model),errnum);
         errnum&=~XLAL_EFUNC;
         if(errnum!=XLAL_SUCCESS)
@@ -1067,7 +1067,23 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_phase,LALINFERENCE_PARAM_OUTPUT);
     if(margdist )
       {
-        model->ifo_loglikelihoods[ifo] = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(this_ifo_S), 2.0*cabs(this_ifo_Rcplx))  ;
+          XLAL_TRY(model->ifo_loglikelihoods[ifo] = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(this_ifo_S), 2.0*cabs(this_ifo_Rcplx)), errnum);
+          errnum&=~XLAL_EFUNC;
+          if(errnum!=XLAL_SUCCESS)
+          {
+            switch(errnum)
+            {
+              case XLAL_ERANGE: /* The SNR input was outside the interpolation range */
+		if(calFactor) {XLALDestroyCOMPLEX16FrequencySeries(calFactor); calFactor=NULL;}
+                return (-INFINITY);
+                break;
+              default: /* Panic! */
+                fprintf(stderr,"Unhandled error in marginal distance likelihood - exiting!\n");
+                fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
+                exit(1);
+                break;
+            }
+          }
       }
    /* Clean up calibration if necessary */
     if (!(calFactor == NULL)) {
@@ -1143,7 +1159,22 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       
       if(margdist )
       {
-        loglikelihood = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), R);
+        XLAL_TRY(loglikelihood = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), R), errnum);
+        errnum&=~XLAL_EFUNC;
+        if(errnum!=XLAL_SUCCESS)
+        {
+            switch(errnum)
+            {
+              case XLAL_ERANGE: /* The SNR input was outside the interpolation range */
+                loglikelihood = -INFINITY;
+                break;
+              default: /* Panic! */
+                fprintf(stderr,"Unhandled error in marginal distance likelihood - exiting!\n");
+                fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
+                exit(1);
+                break;
+            }
+        }
         loglikelihood -= D ;
         REAL8 distance_maxl = 2.0*S/R;
         LALInferenceAddVariable(currentParams, "distance_maxl", &distance_maxl, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
@@ -1194,7 +1225,22 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
               
               if(margdist)
               {
-                dh_S->data[i]=LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), x) + S;
+                XLAL_TRY(dh_S->data[i]=LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), x) + S, errnum);
+	        errnum&=~XLAL_EFUNC;
+        	if(errnum!=XLAL_SUCCESS)
+	        {
+        	    switch(errnum)
+	            {
+                        case XLAL_ERANGE: /* The SNR input was outside the interpolation range */
+                            dh_S->data[i] = -INFINITY;
+                            break;
+                        default: /* Panic! */
+                            fprintf(stderr,"Unhandled error in marginal distance likelihood - exiting!\n");
+                            fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
+                            exit(1);
+                            break;
+                    }
+                }
               }
               else
               {
@@ -1306,10 +1352,10 @@ double LALInferenceMarginalDistanceLogLikelihood(double dist_min, double dist_ma
         #pragma omp barrier
         if (!integrator) XLAL_ERROR(XLAL_EFUNC, "Unable to initialise distance marginalisation integrator");
         
-        if (isnan(OptimalSNR) || isnan(d_inner_h) || pmax<OptimalSNR / sqrt(2))
+        if (isnan(OptimalSNR) || isnan(d_inner_h) || pmax<OptimalSNR)
         {
             loglikelihood=-INFINITY;
-            fprintf(stderr,"warning: Optimal SNR %lf exceeded pmax %lf\n",OptimalSNR/sqrt(2.0), pmax);
+            XLAL_ERROR(XLAL_ERANGE,"warning: Optimal SNR %lf exceeded pmax %lf\n",OptimalSNR, pmax);
         }
         else
         {
