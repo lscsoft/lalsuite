@@ -690,7 +690,7 @@ class knopeDAG(pipeline.CondorDAG):
       # NOTE: this is mainly required because on the ARCCA cluster the nodes cannot access the internet
       pinfo = pppu.get_atnf_info(pname)
       if pinfo is not None:
-        dist, p1_I, assoc, atnfurl = pinfo # unpack values
+        dist, p1_I, assoc, _ = pinfo # unpack values
         psrinfo = {}
         psrinfo['Pulsar data'] = {}
         psrinfo['Pulsar data']['DIST'] = dist
@@ -699,7 +699,7 @@ class knopeDAG(pipeline.CondorDAG):
 
         try:
           fp = open(jsonfile, 'w')
-          jsf = json.dump(psrinfo, fp, indent=2)
+          json.dump(psrinfo, fp, indent=2)
           fp.close()
         except:
           print("Warning... could not write out ATNF catalogue information to JSON file '%s'." % jsonfile, file=sys.stderr)
@@ -1942,6 +1942,7 @@ class knopeDAG(pipeline.CondorDAG):
     self.coarse_heterodyne_binary_output = self.get_config_option('heterodyne', 'binary_output', 'boolean', default=True)
     self.coarse_heterodyne_gzip_output = self.get_config_option('heterodyne', 'gzip_coarse_output', 'boolean', default=False)
     self.coarse_heterodyne_request_memory = self.get_config_option('heterodyne', 'coarse_request_memory', 'int', allownone=True)
+    self.coarse_heterodyne_max_data_length = self.get_config_option('heterodyne', 'coarse_max_data_length', 'int', default=512)
     if self.error_code != 0: return
     if self.coarse_heterodyne_binary_output and self.coarse_heterodyne_gzip_output:
       print("Warning... cannot output coarse heterdyned data as gzip and binary. Defaulting to binary output.")
@@ -1954,7 +1955,6 @@ class knopeDAG(pipeline.CondorDAG):
     if self.error_code != 0: return
 
     # create heterodyne job
-    requestmemory = None
     chetjob = heterodyneJob(self.heterodyne_exec, univ=self.heterodyne_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir, subprefix='coarse', requestmemory=self.coarse_heterodyne_request_memory)
     fhetjob = heterodyneJob(self.heterodyne_exec, univ=self.heterodyne_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir, subprefix='fine', requestmemory=self.fine_heterodyne_request_memory)
 
@@ -2131,6 +2131,7 @@ class knopeDAG(pipeline.CondorDAG):
 
               # set data, segment location, channel and output location
               coarsenode.set_data_file(self.cache_files[ifo][k])
+              coarsenode.set_max_data_length(self.coarse_heterodyne_max_data_length)
               coarsenode.set_seg_list(segfiles[ifo])
               coarsenode.set_channel(self.coarse_heterodyne_channels[ifo][k])
               coarsenode.set_output_file(coarseoutput)
@@ -3222,7 +3223,7 @@ class heterodyneJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
     if requestmemory is not None:
       if isinstance(requestmemory, int):
-        self.add_condor_cmd('Request_memory', requestmemory)
+        self.add_condor_cmd('request_memory', requestmemory)
 
     # set log files for job
     if logdir != None:
@@ -3267,11 +3268,17 @@ class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__scale_fac = None
     self.__manual_epoch = None
     self.__gzip = False
+    self.__max_data_length = None
 
   def set_data_file(self,data_file):
     # set file containing data to be heterodyne (either list of frames or coarse het output)
     self.add_var_opt('data-file',data_file)
     self.__data_file = data_file
+
+  def set_max_data_length(self, maxdatalength):
+    # set the maximum length of data to be read from a frame file
+    self.add_var_opt('data-chunk-length', maxdatalength)
+    self.__max_data_length = maxdatalength
 
   def set_output_file(self,output_file):
     # set output directory
@@ -3416,7 +3423,7 @@ class splinterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
     if requestmemory is not None:
       if isinstance(requestmemory, int):
-        self.add_condor_cmd('Request_memory', requestmemory)
+        self.add_condor_cmd('request_memory', requestmemory)
 
     # set log files for job
     if logdir != None:
@@ -3805,7 +3812,7 @@ class ppeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
     if requestmemory is not None:
       if isinstance(requestmemory, int):
-        self.add_condor_cmd('Request_memory', requestmemory)
+        self.add_condor_cmd('request_memory', requestmemory)
 
     # set log files for job
     if logdir != None:
