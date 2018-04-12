@@ -663,7 +663,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     daglogdir=cp.get('paths','daglogdir')
     mkdirs(daglogdir)
     self.daglogfile=os.path.join(daglogdir,'lalinference_pipeline-'+str(uuid.uuid1())+'.log')
-    pipeline.CondorDAG.__init__(self,self.daglogfile,dax=dax)
+    super(LALInferencePipelineDAG,self).__init__(self.daglogfile,dax=dax)
     if cp.has_option('paths','cachedir'):
       self.cachepath=cp.get('paths','cachedir')
     else:
@@ -2296,7 +2296,7 @@ class LALInferenceBurstNode(LALInferenceNestNode):
 
 class LALInferenceMCMCNode(EngineNode):
   def __init__(self,li_job):
-    EngineNode.__init__(self,li_job)
+    super(LALInferenceMCMCNode,self).__init__(li_job)
     self.engine='lalinferencemcmc'
     self.outfilearg='outfile'
     self.add_var_opt('mpirun',li_job.mpirun)
@@ -2314,7 +2314,7 @@ class LALInferenceMCMCNode(EngineNode):
 
 class LALInferenceDataDumpNode(EngineNode):
   def __init__(self,li_job):
-    EngineNode.__init__(self,li_job)
+    super(LALInferenceDataDumpNode,self).__init__(li_job)
     self.engine='lalinferencedatadump'
     self.outfilearg='outfile'
   def set_output_file(self,filename):
@@ -2322,7 +2322,7 @@ class LALInferenceDataDumpNode(EngineNode):
 
 class LALInferenceBAMBINode(EngineNode):
   def __init__(self,li_job):
-    EngineNode.__init__(self,li_job)
+    super(LALInferenceBAMBINode,self).__init__(li_job)
     self.engine='lalinferencebambi'
     self.outfilearg='outfile'
     if li_job.engine=='lalinferencebambimpi':
@@ -2384,7 +2384,7 @@ class BayesWavePSDJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
 
 class BayesWavePSDNode(EngineNode):
   def __init__(self,bayeswavepsd_job):
-    EngineNode.__init__(self,bayeswavepsd_job)
+    super(BayesWavePSDNode,self).__init__(bayeswavepsd_job)
     self.engine='bayeswave'
     self.outfilearg='outfile'
 
@@ -2422,7 +2422,7 @@ class ResultsPageJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
 
 class ResultsPageNode(pipeline.CondorDAGNode):
     def __init__(self,results_page_job,outpath=None):
-        pipeline.CondorDAGNode.__init__(self,results_page_job)
+        super(ResultsPageNode,self).__init__(results_page_job)
         if outpath is not None:
             self.set_output_path(path)
         self.__event=0
@@ -2537,7 +2537,7 @@ class CoherenceTestNode(pipeline.CondorDAGNode):
     Class defining the node for the coherence test
     """
     def __init__(self,coherencetest_job,outfile=None):
-      pipeline.CondorDAGNode.__init__(self,coherencetest_job)
+      super(CoherenceTestNode,self).__init__(coherencetest_job)
       self.incoherent_parents=[]
       self.coherent_parent=None
       self.finalized=False
@@ -2614,7 +2614,7 @@ class MergeNode(pipeline.CondorDAGNode):
     engine   - Set to either 'nest' or 'mcmc' for the appropriate behaviour
     """
     def __init__(self,merge_job,parents=None,engine='nest'):
-        pipeline.CondorDAGNode.__init__(self,merge_job)
+        super(MergeNode,self).__init__(merge_job)
         if parents is not None:
           for parent in parents:
             if engine == 'nest':
@@ -2665,7 +2665,7 @@ class CombineMCMCNode(pipeline.CondorDAGNode):
     parents = iterable of parent LALInferenceMCMC nodes (must have get_ns_file() method)
     """
     def __init__(self,combine_job,parents=None):
-        pipeline.CondorDAGNode.__init__(self,combine_job)
+        super(CombineMCMCNode,self).__init__(combine_job)
         if parents is not None:
           for parent in parents:
             self.add_engine_parent(parent)
@@ -2689,7 +2689,6 @@ class GraceDBJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     """
     def __init__(self,cp,submitFile,logdir,dax=False):
       exe=cp.get('condor','gracedb')
-      #pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
       pipeline.CondorDAGJob.__init__(self,"scheduler",exe)
       pipeline.AnalysisJob.__init__(self,cp,dax=dax)
       if cp.has_option('condor','accounting_group'):
@@ -2710,7 +2709,7 @@ class GraceDBNode(pipeline.CondorDAGNode):
     def __init__(self,gracedb_job,gid=None,parent=None,message=None,upfile=None,command='upload',tag=None):
         # Message need to be a string
         # Upfile is the full path of the file to be uploaded
-        pipeline.CondorDAGNode.__init__(self,gracedb_job)
+        super(GraceDBNode,self).__init__(gracedb_job)
         if gid: self.set_gid(gid)
         if parent:
           if isinstance(parent, list):
@@ -2804,7 +2803,7 @@ class ROMNode(pipeline.CondorDAGNode):
   Run the ROM compute weights script
   """
   def __init__(self,computeroqweights_job,ifo,seglen,flow):
-    pipeline.CondorDAGNode.__init__(self,computeroqweights_job)
+    super(ROMNode,self).__init__(computeroqweights_job)
     self.__finalized=False
     self.add_var_arg('--seglen '+str(seglen))
     self.add_var_arg('--fLow '+str(flow))
@@ -2847,7 +2846,7 @@ class BayesLineNode(pipeline.CondorDAGNode):
   Run the BayesLine code
   """
   def __init__(self,bayesline_job):
-    pipeline.CondorDAGNode.__init__(self,bayesline_job)
+    super(BayesLineNode,self).__init__(bayesline_job)
     self.__finalized=False
 
   def finalize(self):
@@ -2860,7 +2859,7 @@ class SkyAreaNode(pipeline.CondorDAGNode):
   Node to run sky area code
   """
   def __init__(self,skyarea_job,posfile=None,parent=None,prefix=None):
-      pipeline.CondorDAGNode.__init__(self,skyarea_job)
+      super(SkyAreaNode,self).__init__(skyarea_job)
       if parent:
           self.add_parent(parent)
       if posfile:
