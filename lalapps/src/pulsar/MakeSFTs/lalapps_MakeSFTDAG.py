@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 
 MakeSFTDAG.py - Creates DAGs to run jobs that generates SFTs; can act as a dag generator for use with onasys.

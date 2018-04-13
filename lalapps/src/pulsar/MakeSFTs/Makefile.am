@@ -1,5 +1,7 @@
 MOSTLYCLEANFILES =
+EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalapps.am
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 if FRAME
@@ -30,4 +32,9 @@ endif
 lalapps_MakeSFTs_CPPFLAGS = $(AM_CPPFLAGS)
 if PSS
 lalapps_MakeSFTs_CPPFLAGS += -DPSS_ENABLED
+endif
+
+if HAVE_PYTHON
+pybin_scripts = lalapps_MakeSFTDAG
+pkgpython_PYTHON =
 endif
