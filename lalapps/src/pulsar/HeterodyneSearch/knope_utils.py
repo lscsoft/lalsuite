@@ -1675,12 +1675,12 @@ class knopeDAG(pipeline.CondorDAG):
                 return outfile
             else:
               a = 0. # uniform prior bound at 0
-              b = requls[utl]/0.95 # stretch limit to ~100% bound
+              b = requls[ult]/0.95 # stretch limit to ~100% bound
 
             fp.write('%s\t%s\t%.16le\t%.16le\n' % (ult, self.pe_amplitude_prior_type, a, b))
       else:
         # try and fit Gaussian Mixture Model to required amplitude parameters
-        means, covs, weights, samps = self.gmm_prior(posteriorfile, gmmpars, taper='elliptical', decaywidth=1.)
+        means, covs, weights, _ = self.gmm_prior(posteriorfile, gmmpars, taper='elliptical', decaywidth=1.)
         if self.error_code == -1:
           print("Error... could not set GMM prior using previous posterior samples.", file=sys.stderr)
           return outfile
@@ -1802,7 +1802,7 @@ class knopeDAG(pipeline.CondorDAG):
           self.error_code = KNOPE_ERROR_GENERAL
           return means, covs, weights, None
 
-        possamps, B, N = pppu.pulsar_nest_to_posterior(prevpostfile)
+        possamps, _, _ = pppu.pulsar_nest_to_posterior(prevpostfile)
         for par in pardict:
           allsamples.append(possamps[par.upper()].samples)
       else: # get samples fron numpy array
@@ -1979,7 +1979,7 @@ class knopeDAG(pipeline.CondorDAG):
           # convert to list
           self.coarse_heterodyne_channels[ifo] = [self.coarse_heterodyne_channels[ifo]]
         elif not isinstance(self.coarse_heterodyne_channels[ifo], list):
-          print("Error... channel must be a string or a list of strings".format(ifo), file=sys.stderr)
+          print("Error... channel must be a string or a list of strings", file=sys.stderr)
           self.error_code = KNOPE_ERROR_GENERAL
           return
 
@@ -2774,7 +2774,7 @@ class knopeDAG(pipeline.CondorDAG):
           value = [value]
       except:
         if not allownone:
-          if not instance(default, list):
+          if not isinstance(default, list):
             print("Error... could not parse '%s' list option from '[%s]' section." % (option, section), file=sys.stderr)
             self.error_code = KNOPE_ERROR_GENERAL
           else:
@@ -2872,7 +2872,7 @@ class knopeDAG(pipeline.CondorDAG):
             self.error_code = KNOPE_ERROR_GENERAL
             return
           else:
-            cp.set('condor', 'datafind', datafindexec) # set value in config file parser
+            self.config.set('condor', 'datafind', datafindexec) # set value in config file parser
             self.datafind_job = pipeline.LSCDataFindJob(self.preprocessing_base_dir.values()[0], self.log_dir, self.config)
     else:
       # if no data find is specified try using the system gw_data_find
@@ -4082,11 +4082,6 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set the sample interval of the fake data
     self.add_var_opt('fake-dt',fdt)
     self.__fake_dt = fdt
-
-  def set_scale_snr(self,ssnr):
-    # set the SNR of the injected signal
-    self.add_var_opt('scale-snr',ssnr)
-    self.__scale_snr = ssnr
 
   def set_scale_snr(self,ssnr):
     # set the SNR of the injected signal
