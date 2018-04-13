@@ -47,7 +47,7 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 
-#define VARNAME_MAX 320
+#define VARNAME_MAX 40
 #define VARVALSTRINGSIZE_MAX 128
 
 #include <lal/LALStdlib.h>
@@ -89,8 +89,6 @@
 
 /*LIB imports*/
 #include <lal/LALInferenceBurstRoutines.h>
-
-#define LALINFERENCE_HASHTABLE_SIZE 256 /* Max entries in hash table */
 
 //...other includes
 
@@ -619,7 +617,7 @@ tagLALInferenceRunState
 } LALInferenceRunState;
 
 
-#define DETNAMELEN 256
+#define DETNAMELEN 8
 
 /**
  * Structure to contain IFO data.

@@ -203,7 +203,10 @@ static REAL8 LALInferenceConstantCalibrationPrior(LALInferenceRunState *runState
       if (ampWidth>0){
 	      char ampVarName[VARNAME_MAX];
 	      REAL8 amp = 0.0;
-	      snprintf(ampVarName, VARNAME_MAX, "calamp_%s", ifo->name);
+	      if((VARNAME_MAX <= snprintf(ampVarName, VARNAME_MAX, "calamp_%s", ifo->name)))
+          {
+                fprintf(stderr,"variable name too long\n"); exit(1);
+          }
 	      amp = *(REAL8*)LALInferenceGetVariable(params, ampVarName);
 	      logPrior += -0.5*log(2.0*M_PI) - log(ampWidth) - 0.5*amp*amp/ampWidth/ampWidth;
       }
@@ -213,7 +216,10 @@ static REAL8 LALInferenceConstantCalibrationPrior(LALInferenceRunState *runState
       if (phaseWidth>0){
 	      char phaseVarName[VARNAME_MAX];
 	      REAL8 phase = 0.0;
-	      snprintf(phaseVarName, VARNAME_MAX, "calpha_%s", ifo->name);
+	      if((VARNAME_MAX <= snprintf(phaseVarName, VARNAME_MAX, "calpha_%s", ifo->name)))
+          {
+            fprintf(stderr,"variable name too long\n"); exit(1);
+          }
 	      phase = *(REAL8 *)LALInferenceGetVariable(params, phaseVarName);
 	      logPrior += -0.5*log(2.0*M_PI) - log(phaseWidth) - 0.5*phase*phase/phaseWidth/phaseWidth;
       }
@@ -246,7 +252,10 @@ UINT4 LALInferenceCubeToConstantCalibrationPrior(LALInferenceRunState *runState,
       {
         char ampVarName[VARNAME_MAX];
         REAL8 amp = 0.0;
-        snprintf(ampVarName, VARNAME_MAX, "calamp_%s", ifo->name);
+        if((VARNAME_MAX <= snprintf(ampVarName, VARNAME_MAX, "calamp_%s", ifo->name)))
+        {
+            fprintf(stderr,"variable name too long\n"); exit(1);
+        }
         amp = LALInferenceCubeToGaussianPrior(Cube[(*idx)++], 0.0, ampWidth);
         LALInferenceSetVariable(params, ampVarName, &amp);
       }
@@ -258,7 +267,10 @@ UINT4 LALInferenceCubeToConstantCalibrationPrior(LALInferenceRunState *runState,
       {
         char phaseVarName[VARNAME_MAX];
         REAL8 phase = 0.0;
-        snprintf(phaseVarName, VARNAME_MAX, "calpha_%s", ifo->name);
+        if((VARNAME_MAX <= snprintf(phaseVarName, VARNAME_MAX, "calpha_%s", ifo->name)))
+        {
+            fprintf(stderr,"variable name too long\n"); exit(1);
+        }
         phase = LALInferenceCubeToGaussianPrior(Cube[(*idx)++], 0.0, phaseWidth);
         LALInferenceSetVariable(params, phaseVarName, &phase);
       }

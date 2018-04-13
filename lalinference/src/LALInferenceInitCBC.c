@@ -514,9 +514,12 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       char env_uncert_op[VARNAME_MAX];
       struct spcal_envelope *env=NULL;
 
-      snprintf(amp_uncert_op, VARNAME_MAX, "--%s-spcal-amp-uncertainty", ifo->name);
-      snprintf(pha_uncert_op, VARNAME_MAX, "--%s-spcal-phase-uncertainty", ifo->name);
-      snprintf(env_uncert_op, VARNAME_MAX, "--%s-spcal-envelope",ifo->name);
+      if((VARNAME_MAX <= snprintf(amp_uncert_op, VARNAME_MAX, "--%s-spcal-amp-uncertainty", ifo->name))
+          || (VARNAME_MAX <= snprintf(pha_uncert_op, VARNAME_MAX, "--%s-spcal-phase-uncertainty", ifo->name))
+          || (VARNAME_MAX <= snprintf(env_uncert_op, VARNAME_MAX, "--%s-spcal-envelope",ifo->name)) )
+      {
+        fprintf(stderr,"variable name too long\n"); exit(1);
+      }
 
       if( (ppt=LALInferenceGetProcParamVal(runState->commandLine, env_uncert_op)))
           env = initCalibrationEnvelope(ppt->value);
@@ -541,10 +544,13 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       /* Now add each spline node */
       for(i=0;i<ncal;i++)
 	  {
-			  snprintf(freqVarName, VARNAME_MAX, "%s_spcal_logfreq_%i",ifo->name,i);
-			  snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp_%i", ifo->name,i);
-			  snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase_%i", ifo->name,i);
-			  REAL8 amp_std=ampUncertaintyPrior,amp_mean=0.0;
+			  if((VARNAME_MAX <= snprintf(freqVarName, VARNAME_MAX, "%s_spcal_logfreq_%i",ifo->name,i))
+                  || (VARNAME_MAX <= snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp_%i", ifo->name,i))
+                  || (VARNAME_MAX <= snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase_%i", ifo->name,i)) )
+              {
+                  fprintf(stderr,"Variable name too long\n"); exit(1);
+              }
+              REAL8 amp_std=ampUncertaintyPrior,amp_mean=0.0;
 			  REAL8 phase_std=phaseUncertaintyPrior,phase_mean=0.0;
 			  REAL8 logFreq = logFMin + i*dLogF;
 			  LALInferenceAddREAL8Variable(currentParams,freqVarName,logFreq,LALINFERENCE_PARAM_FIXED);

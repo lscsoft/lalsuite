@@ -429,7 +429,11 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, co
   if(new==NULL||new->value==NULL) {
     XLAL_ERROR_VOID(XLAL_ENOMEM, "Unable to allocate memory for list item.");
   }
-  memcpy(new->name,name,VARNAME_MAX);
+  if((VARNAME_MAX <= snprintf(new->name, VARNAME_MAX, "%s", name)))
+  {
+      fprintf(stderr,"Variable name %s too long. Maximum length %i\n",name,VARNAME_MAX);
+      exit(1);
+  }
   new->type = type;
   new->vary = vary;
   memcpy(new->value,value,LALInferenceTypeSize[type]);
