@@ -97,7 +97,7 @@ static int PhenomPCore(
    * If deltaF > 0, the frequency points given in freqs are uniformly spaced with
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
-  IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
+  IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD, IMRPhenomPv2_NRTidal is a tidal version of IMRPhenomPv2 */
   LALDict *extraParams /**< linked list containing the extra testing GR parameters */
 );
 
@@ -105,9 +105,6 @@ static int PhenomPCore(
 static int PhenomPCoreOneFrequency(
   const REAL8 fHz,                        /**< Frequency (Hz) */
   const REAL8 eta,                        /**< Symmetric mass ratio */
-  const REAL8 chi1_l,                     /**< Dimensionless aligned spin on companion 1 */
-  const REAL8 chi2_l,                     /**< Dimensionless aligned spin on companion 2 */
-  const REAL8 chip,                       /**< Dimensionless spin in the orbital plane */
   const REAL8 distance,                   /**< Distance of source (m) */
   const REAL8 M,                          /**< Total mass (Solar masses) */
   const REAL8 phic,                       /**< Orbital phase at the peak of the underlying non precessing model (rad) */
@@ -115,16 +112,28 @@ static int PhenomPCoreOneFrequency(
   IMRPhenomDPhaseCoefficients *pPhi,      /**< Internal IMRPhenomD phase coefficients */
   BBHPhenomCParams *PCparams,             /**< Internal PhenomC parameters */
   PNPhasingSeries *PNparams,              /**< PN inspiral phase coefficients */
-  NNLOanglecoeffs *angcoeffs,             /**< Struct with PN coeffs for the NNLO angles */
-  SpinWeightedSphericalHarmonic_l2 *Y2m,  /**< Struct of l=2 spherical harmonics of spin weight -2 */
-  const REAL8 alphaoffset,                /**< f_ref dependent offset for alpha angle (azimuthal precession angle) */
-  const REAL8 epsilonoffset,              /**< f_ref dependent offset for epsilon angle */
-  COMPLEX16 *hp,                          /**< Output: tilde h_+ */
-  COMPLEX16 *hc,                          /**< Output: tilde h_+ */
+  COMPLEX16 *hPhenom,                     /**< Output: IMRPhenom waveform (before precession) */
   REAL8 *phasing,                         /**< Output: overall phasing */
   const UINT4 IMRPhenomP_version,         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
   AmpInsPrefactors *amp_prefactors,       /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
   PhiInsPrefactors *phi_prefactors        /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/
+);
+
+static int PhenomPCoreTwistUp(
+  const REAL8 fHz,                            /**< Frequency (Hz) */
+  COMPLEX16 hPhenom,                    /**< [in] IMRPhenom waveform (before precession) */
+  const REAL8 eta,                            /**< Symmetric mass ratio */
+  const REAL8 chi1_l,                         /**< Dimensionless aligned spin on companion 1 */
+  const REAL8 chi2_l,                         /**< Dimensionless aligned spin on companion 2 */
+  const REAL8 chip,                           /**< Dimensionless spin in the orbital plane */
+  const REAL8 M,                              /**< Total mass (Solar masses) */
+  NNLOanglecoeffs *angcoeffs,                 /**< Struct with PN coeffs for the NNLO angles */
+  SpinWeightedSphericalHarmonic_l2 *Y2m,      /**< Struct of l=2 spherical harmonics of spin weight -2 */
+  const REAL8 alphaoffset,                    /**< f_ref dependent offset for alpha angle (azimuthal precession angle) */
+  const REAL8 epsilonoffset,                  /**< f_ref dependent offset for epsilon angle */
+  COMPLEX16 *hp,                              /**< [out] plus polarization \f$\tilde h_+\f$ */
+  COMPLEX16 *hc,                              /**< [out] cross polarization \f$\tilde h_x\f$ */
+  IMRPhenomP_version_type IMRPhenomP_version  /**< IMRPhenomP(v1) uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
 );
 
 /* Simple 2PN version of L, without any spin terms expressed as a function of v */
@@ -189,5 +198,21 @@ static REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.70
 
 static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon);
 static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
+
+static int PhenomPCoreOneFrequency_withTides(
+  const REAL8 fHz,                            /**< Frequency (Hz) */
+  const REAL8 ampTidal,
+  COMPLEX16 phaseTidal,
+  const REAL8 distance,                       /**< Distance of source (m) */
+  const REAL8 M,                              /**< Total mass (Solar masses) */
+  const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
+  IMRPhenomDAmplitudeCoefficients *pAmp,      /**< Internal IMRPhenomD amplitude coefficients */
+  IMRPhenomDPhaseCoefficients *pPhi,          /**< Internal IMRPhenomD phase coefficients */
+  PNPhasingSeries *PNparams,                  /**< PN inspiral phase coefficients */
+  COMPLEX16 *hPhenom,                         /**< [out] IMRPhenom waveform (before precession) */
+  REAL8 *phasing,                             /**< [out] overall phasing */
+  AmpInsPrefactors *amp_prefactors,           /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
+  PhiInsPrefactors *phi_prefactors            /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/
+);
 
 #endif	// of #ifndef _LALSIM_IMR_PHENOMP_H

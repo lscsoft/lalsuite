@@ -27,6 +27,7 @@
 
 #include <lal/SphericalHarmonics.h>
 #include <lal/LALSimInspiral.h>
+#include <lal/LALSimInspiralEOS.h>
 #include <lal/LALSimIMR.h>
 #include <lal/LALSimSphHarmMode.h>
 #include <lal/LALConstants.h>
@@ -151,6 +152,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(IMRPhenomD_NRTidal),
     INITIALIZE_NAME(IMRPhenomP),
     INITIALIZE_NAME(IMRPhenomPv2),
+    INITIALIZE_NAME(IMRPhenomPv2_NRTidal),
     INITIALIZE_NAME(IMRPhenomFC),
     INITIALIZE_NAME(TaylorEt),
     INITIALIZE_NAME(TaylorT4),
@@ -271,6 +273,8 @@ static double fixReferenceFrequency(const double f_ref, const double f_min, cons
         case SpinTaylorF2:
         case IMRPhenomP:
         case IMRPhenomPv2:
+        case IMRPhenomPv2_NRTidal:
+            return f_min;
         case NRSur4d2s:
             return f_min;
         default:
@@ -758,6 +762,10 @@ int XLALSimInspiralChooseTDWaveform(
 	    ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
 	    break;
 
+        case IMRPhenomPv2_NRTidal:
+            ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
+           break;
+
         case PhenSpinTaylorRD:
             /* Waveform-specific sanity checks */
             if( !checkTidesZero(lambda1, lambda2) )
@@ -969,6 +977,16 @@ int XLALSimInspiralChooseFDWaveform(
     REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALparams);
     int amplitudeO = XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALparams);
     int phaseO =XLALSimInspiralWaveformParamsLookupPNPhaseOrder(LALparams);
+    if ((!XLALDictContains(LALparams, "dQuadMon1")) && (XLALDictContains(LALparams, "lambda1"))) {
+      REAL8 lambda1_in = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALparams);
+      REAL8 quadparam1_in = XLALSimInspiralEOSQfromLambda(lambda1_in);
+      XLALSimInspiralWaveformParamsInsertdQuadMon1(LALparams, quadparam1_in-1.);
+    }
+    if ((!XLALDictContains(LALparams, "dQuadMon2")) && (XLALDictContains(LALparams, "lambda2"))) {
+      REAL8 lambda2_in = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALparams);
+      REAL8 quadparam2_in = XLALSimInspiralEOSQfromLambda(lambda2_in);
+      XLALSimInspiralWaveformParamsInsertdQuadMon2(LALparams, quadparam2_in-1.);
+    }
 
     /* Support variables for precessing wfs*/
     REAL8 spin1x,spin1y,spin1z;
@@ -1509,6 +1527,33 @@ int XLALSimInspiralChooseFDWaveform(
             ret = XLALSimIMRPhenomP(hptilde, hctilde,
               chi1_l, chi2_l, chip, thetaJN,
               m1, m2, distance, alpha0, phi_aligned, deltaF, f_min, f_max, f_ref, IMRPhenomPv2_V, LALparams);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            for (UINT4 idx=0;idx<(*hptilde)->data->length;idx++) {
+                PhPpolp=(*hptilde)->data->data[idx];
+                PhPpolc=(*hctilde)->data->data[idx];
+                (*hptilde)->data->data[idx] =cos(2.*zeta_polariz)*PhPpolp+sin(2.*zeta_polariz)*PhPpolc;
+                (*hctilde)->data->data[idx]=cos(2.*zeta_polariz)*PhPpolc-sin(2.*zeta_polariz)*PhPpolp;
+            }
+            break;
+
+        case IMRPhenomPv2_NRTidal:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALparams) )
+                ABORT_NONDEFAULT_FRAME_AXIS(LALparams);/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
+            if(!XLALSimInspiralWaveformParamsModesChoiceIsDefault(          /* Default is (2,2) or l=2 modes. */LALparams) )
+                ABORT_NONDEFAULT_MODES_CHOICE(LALparams);
+            /* Tranform to model parameters */
+            if(f_ref==0.0)
+                f_ref = f_min; /* Default reference frequency is minimum frequency */
+            XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame(
+                &chi1_l, &chi2_l, &chip, &thetaJN, &alpha0, &phi_aligned, &zeta_polariz,
+                m1, m2, f_ref, phiRef, inclination,
+                S1x, S1y, S1z,
+                S2x, S2y, S2z, IMRPhenomPv2NRTidal_V);
+            /* Call the waveform driver routine */
+            ret = XLALSimIMRPhenomP(hptilde, hctilde,
+              chi1_l, chi2_l, chip, thetaJN,
+              m1, m2, distance, alpha0, phi_aligned, deltaF, f_min, f_max, f_ref, IMRPhenomPv2NRTidal_V, LALparams);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             for (UINT4 idx=0;idx<(*hptilde)->data->length;idx++) {
                 PhPpolp=(*hptilde)->data->data[idx];
@@ -4626,6 +4671,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case IMRPhenomC:
 	case IMRPhenomD:
 	case IMRPhenomPv2:
+        case IMRPhenomPv2_NRTidal:
         case PhenSpinTaylorRD:
         case SEOBNRv1:
         case SpinDominatedWf:
@@ -4667,6 +4713,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomD_NRTidal:
         case IMRPhenomP:
         case IMRPhenomPv2:
+        case IMRPhenomPv2_NRTidal:
         case EOBNRv2_ROM:
         case EOBNRv2HM_ROM:
         case SEOBNRv1_ROM_EffectiveSpin:
@@ -5070,6 +5117,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SpinTaylorT3:
     case IMRPhenomP:
     case IMRPhenomPv2:
+    case IMRPhenomPv2_NRTidal:
     case SpinTaylorT2Fourier:
     case SpinTaylorT4Fourier:
     case SpinDominatedWf:
@@ -5231,6 +5279,9 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case IMRPhenomD:
     case IMRPhenomP:
     case IMRPhenomPv2:
+      testGR_accept=LAL_SIM_INSPIRAL_TESTGR_PARAMS;
+      break;
+    case IMRPhenomPv2_NRTidal:
       testGR_accept=LAL_SIM_INSPIRAL_TESTGR_PARAMS;
       break;
     default:
