@@ -107,6 +107,9 @@ extern "C" {
 " --data-file (-d)         file containing list of frame files (in frame\n\
                           cache format) or previously heterodyned data\n\
                           file\n"\
+" --data-chunk-length (-D)  maximum length of data (in seconds) to be read in\n\
+                          at one time from a frame file, overriding\n\
+                          MAXDATALENGTH\n"\
 " --channel (-c)           frame data channel (i.e. LSC-DARM_ERR)\n"\
 " --output-file (-o)       full path and filename for the output data\n"\
 " --seg-file (-l)          name of file containing science segment list\n"\
@@ -133,8 +136,8 @@ extern "C" {
                           if not this suffix will be appended\n"\
 "\n"
 
-#define MAXDATALENGTH 256 /* maximum length of data to be read from frames */
-#define MAXSTRLENGTH 256 /* maximum number of characters in a frame filename */
+#define MAXDATALENGTH 256   /* maximum length of data to be read from frames */
+#define MAXSTRLENGTH 1024   /* maximum number of characters in a frame filename */
 #define MAXLISTLENGTH 20000 /* maximum length of a list of frames files */
 
 #define ALPHAMIN 0.0 /* minimum acceptable value of alpha calib coefficient */
@@ -182,6 +185,7 @@ typedef struct tagInputParams{
 
   CHAR datafile[256];
   CHAR channel[128];
+  INT4 datachunklength;
 
   CHAR outputfile[256];
   CHAR segfile[256];
@@ -262,7 +266,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 gpstime,
 INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile, INT4 heterodyneflag);
 
 /* get frame data for partcular science segment */
-CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache, INT4 numFrames, INT4 *position);
+CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache, INT4 numFrames, INT4 *position, INT4 maxchunklength);
 
 /* calibrate data */
 void calibrate(COMPLEX16TimeSeries *series, REAL8Vector *datatimes, CalibrationFiles calfiles,
