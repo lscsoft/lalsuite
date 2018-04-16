@@ -48,8 +48,8 @@ def guess_url(fslocation):
             trypath=c+os.environ['USER']+'/'+k+d
             #Follow symlinks
             if os.path.realpath(trypath)==os.path.normpath(fslocation):
-                (a,b)=trypath.split(k)
-                webpath=os.path.join('~%s'%(USER),b,webpath)
+                #(a,b)=trypath.split(k)
+                webpath=os.path.join('~%s'%(USER),d)
                 onweb=True
                 break
             else:
