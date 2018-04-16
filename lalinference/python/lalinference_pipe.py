@@ -196,7 +196,7 @@ def setup_roq(cp):
     Generates cp objects with the different ROQs applied
     """
     use_roq=False
-    if cp.has_option('paths','roq_b_matrix_directory') or cp.has_open('paths','computeroqweights'):
+    if cp.has_option('paths','roq_b_matrix_directory') or cp.has_option('paths','computeroqweights'):
         if not cp.has_option('analysis','roq'):
             print("Warning: If you are attempting to enable ROQ by specifying roq_b_matrix_directory or computeroqweights,\n\
             please use analysis.roq in your config file in future. Enabling ROQ.")
