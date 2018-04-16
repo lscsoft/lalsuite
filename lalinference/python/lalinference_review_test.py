@@ -7,6 +7,12 @@ import socket
 import glob
 import lalinference
 
+prefix=''
+try:
+    prefix=os.environ['LALINFERENCE_DATADIR']
+except KeyError:
+    prefix=''
+
 parser = argparse.ArgumentParser(description="Runs review tests of lalinference using lalinference_pipe_example.ini.")
 
 parser.add_argument('-i','--ini_file', type=str, nargs='?',
@@ -15,7 +21,7 @@ parser.add_argument('-i','--ini_file', type=str, nargs='?',
 
 parser.add_argument('--bns-injection', type=str, nargs='?',
                     default=False,
-                    const='fiducial_BNS.xml',
+                    const=os.path.join(prefix,'fiducial_BNS.xml'),
                     help='injection file for fiducial BNS analysis.')
 
 parser.add_argument('--gracedb', action='store_true',
@@ -36,7 +42,7 @@ parser.add_argument('--pptest', action='store_true',
 
 parser.add_argument('--bbh-injection', type=str, nargs='?',
                     default=False,
-                    const='fiducial_BBH.xml',
+                    const=os.path.join(prefix,'fiducial_BBH.xml'),
                     help='injection file for fiducial BBH analysis.')
 
 parser.add_argument('-e','--engine', type=str, nargs='?',
