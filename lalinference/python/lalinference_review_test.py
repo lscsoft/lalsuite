@@ -21,7 +21,7 @@ parser.add_argument('-i','--ini_file', type=str, nargs='?',
 
 parser.add_argument('--bns-injection', type=str, nargs='?',
                     default=False,
-                    const=os.path.join(prefix,'fiducial_BNS.xml'),
+                    const=os.path.join(prefix,'fiducialBNS.xml'),
                     help='injection file for fiducial BNS analysis.')
 
 parser.add_argument('--gracedb', action='store_true',
@@ -42,7 +42,7 @@ parser.add_argument('--pptest', action='store_true',
 
 parser.add_argument('--bbh-injection', type=str, nargs='?',
                     default=False,
-                    const=os.path.join(prefix,'fiducial_BBH.xml'),
+                    const=os.path.join(prefix,'fiducialBBH.xml'),
                     help='injection file for fiducial BBH analysis.')
 
 parser.add_argument('-e','--engine', type=str, nargs='?',
@@ -97,38 +97,17 @@ if args.analytic_tests:
 
 os.chdir(args.output)
 
-path_keys = {'datafind': 'ligo_data_find',
-            'mergeNSscript': 'lalapps_nest2pos',
-            'mergeMCMCscript': 'cbcBayesMCMC2pos',
-            'combinePTMCMCh5script': 'cbcBayesCombinePTMCMCh5s',
-            'resultspage': 'cbcBayesPostProc',
-            'segfind': 'ligolw_segment_query',
-            'ligolw_print': 'ligolw_print',
-            'coherencetest': 'lalapps_coherence_test',
-            'lalinferencenest': 'lalinference_nest',
-            'lalinferencemcmc': 'lalinference_mcmc',
-            'lalinferencebambi': 'lalinference_bambi',
-            'lalinferencedatadump': 'lalinference_datadump',
-            'bayesline': 'BayesLine',
-            'skyarea': 'run_sky_area',
-            'mpirun': 'mpirun',
-            'mpiwrapper': 'lalinference_mpi_wrapper',
-            'gracedb': 'gracedb',
-            'ppanalysis': 'cbcBayesPPAnalysis',
-            'pos_to_sim_inspiral': 'cbcBayesPosToSimInspiral',
-            'processareas': 'process_areas',
-            'computeroqweights': 'lalapps_compute_roq_weights'}
+lalinf_prefix=''
+try:
+    lalinf_prefix=os.environ['LALINFERENCE_PREFIX']
+except KeyError:
+    print 'LALINFERENCE_PREFIX variable not defined, could not find LALInference installation.'
+    sys.exit()
 
 def replace(line):
-    for key in path_keys.keys():
-        if key+'=/' in line:
-            albert_path=line.split('=')[-1]
-            exec_path=distutils.spawn.find_executable(path_keys[key])
-            if exec_path==None:
-                exec_path=distutils.spawn.find_executable('true')
-                print 'Could not find executable for '+path_keys[key]+'. Will use '+exec_path+' instead.'
-            new_path=exec_path+'\n'
-            return line.replace(albert_path,new_path)
+
+    if 'lalsuite-install=' in line:
+        return 'lalsuite-install='+lalinf_prefix
     if 'engine=' in line:
         return line.replace(line.split('=')[-1],args.engine)+'\n'
     if 'nparallel=' in line:
