@@ -845,6 +845,30 @@ XLALAdd4ToFstatResults ( FstatResults* Fstats    ///< [in/out] #FstatResults str
 
 } // XLALAdd4ToFstatResults()
 
+
+/// Compute the \f$\mathcal{F}\f$-statistic from the complex \f$F_a\f$ and \f$F_b\f$ components
+/// and the antenna pattern matrix.
+///
+/// Note for developers:
+/// This is just a wrapper to the internal function
+/// compute_fstat_from_fa_fb()
+/// so that it can be re-used externally.
+/// Inside this module, better use that function directly!
+///
+REAL4
+XLALComputeFstatFromFaFb ( COMPLEX8 Fa, ///< [in] F-stat component \f$F_a\f$
+                           COMPLEX8 Fb, ///< [in] F-stat component \f$F_b\f$
+                           REAL4 A, ///< [in] antenna pattern matrix component
+                           REAL4 B, ///< [in] antenna pattern matrix component
+                           REAL4 C, ///< [in] antenna pattern matrix component
+                           REAL4 E, ///< [in] antenna pattern matrix component
+                           REAL4 Dinv ///< [in] inverse determinant
+                         )
+{
+  return compute_fstat_from_fa_fb ( Fa, Fb, A, B, C, E, Dinv );
+} // XLALComputeFstatFromFaFb()
+
+
 ///
 /// Compute single-or multi-IFO Fstat '2F' from multi-IFO 'atoms'
 ///
@@ -900,7 +924,7 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< 
   REAL4 D = XLALComputeAntennaPatternSqrtDeterminant ( mmatrixA, mmatrixB, mmatrixC, 0);
   REAL4 Dinv = 1.0f / D;
 
-  twoF = XLALComputeFstatFromFaFb ( Fa, Fb, mmatrixA, mmatrixB, mmatrixC, 0, Dinv );
+  twoF = compute_fstat_from_fa_fb ( Fa, Fb, mmatrixA, mmatrixB, mmatrixC, 0, Dinv );
 
   return twoF;
 

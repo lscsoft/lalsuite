@@ -80,7 +80,7 @@ void XLALDestroyFstatInputTimeslice_common ( FstatCommon *common );
 void XLALDestroyFstatInputTimeslice_Demod ( void *method_data );
 
 static inline REAL4
-XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv )
+compute_fstat_from_fa_fb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv )
 {
   REAL4 Fa_re = creal(Fa);
   REAL4 Fa_im = cimag(Fa);
