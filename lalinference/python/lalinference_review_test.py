@@ -15,8 +15,8 @@ parser.add_argument('-i','--ini_file', type=str, nargs='?',
 
 parser.add_argument('--bns-injection', type=str, nargs='?',
                     default=False,
-                    const='O2_fiducial_BNS.xml',
-                    help='injection file for O2 (and onwards) BNS analysis.')
+                    const='fiducial_BNS.xml',
+                    help='injection file for fiducial BNS analysis.')
 
 parser.add_argument('--gracedb', action='store_true',
                     default=False,
@@ -36,8 +36,8 @@ parser.add_argument('--pptest', action='store_true',
 
 parser.add_argument('--bbh-injection', type=str, nargs='?',
                     default=False,
-                    const='O2_fiducial_BBH.xml',
-                    help='injection file for O2 (and onwards) BBH analysis.')
+                    const='fiducial_BBH.xml',
+                    help='injection file for fiducial BBH analysis.')
 
 parser.add_argument('-e','--engine', type=str, nargs='?',
                     default='lalinferencemcmc,lalinferencenest',
