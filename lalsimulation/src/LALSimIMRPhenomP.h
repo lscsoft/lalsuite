@@ -201,8 +201,8 @@ static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
 
 static int PhenomPCoreOneFrequency_withTides(
   const REAL8 fHz,                            /**< Frequency (Hz) */
-  const REAL8 ampTidal,
-  COMPLEX16 phaseTidal,
+  const REAL8 ampTidal,                      /**< tidal amplitude at a frequency sample; planck window */
+  COMPLEX16 phaseTidal,                      /**< tidal phasing at a frequency sample from NRTidal infrastructure*/
   const REAL8 distance,                       /**< Distance of source (m) */
   const REAL8 M,                              /**< Total mass (Solar masses) */
   const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
