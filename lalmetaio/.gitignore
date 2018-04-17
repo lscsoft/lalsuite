@@ -51,5 +51,6 @@ src/lalmetaio_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
+swig/.swigdeps
 swig/swiglalmetaio.i*
 swig/swiglal_*

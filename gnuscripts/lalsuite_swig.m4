@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 102
+# serial 103
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -14,6 +14,16 @@ AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   ])
   AS_IF([test "x${swig_version}" = x],[
     AC_MSG_ERROR([could not determine version of $1])
+  ])
+  # end $0
+])
+
+AC_DEFUN([_LALSUITE_SWIG_OUTPUT_DEPENDENCY_COMMANDS],[
+  # $0: create dummy SWIG dependency files
+  AS_IF([test -d swig && test -f swig/Makefile],[
+    # create dummy SWIG dependency files
+    _AS_ECHO_LOG([cd swig && ${SED} -e '/^include /d' Makefile | ${MAKE} -f - swig-dummy-depfiles])
+    ( cd swig && ${SED} -e '/^include /d' Makefile | ${MAKE} -f - swig-dummy-depfiles )
   ])
   # end $0
 ])
@@ -61,6 +71,32 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
   AS_IF([test "${swig_build_iface}" = true],[
     # Python is required to run generate_swig_iface.py
     LALSUITE_REQUIRE_PYTHON([2.6])
+  ])
+  AC_CONFIG_COMMANDS_PRE([
+    # used to include SWIG dependency files into lalsuite_swig.am
+    # - cannot use 'include' directly as it is interpreted by Automake, so instead
+    #   use low-level @am__include@ and @am__quote@ set by AM_MAKE_INCLUDE()
+    AC_SUBST([SWIG_DEPDIR],["./.swigdeps"])
+    AS_IF([test "x${am__include+set}" != xset],[
+      AC_MSG_ERROR([could not determine how to include SWIG dependency files])
+    ])
+    AS_IF([test "x${am__quote+set}" != xset],[
+      AC_MSG_ERROR([could not determine how to quote SWIG dependency files])
+    ])
+    AC_SUBST([swig__depfile_include_pre],["${am__include} ${am__quote}"])
+    AC_SUBST([swig__depfile_include_post],["${am__quote}"])
+  ])
+  _AC_CONFIG_COMMANDS_INIT([MAKE="${MAKE-make}"])
+  m4_ifdef([_AM_OUTPUT_DEPENDENCY_COMMANDS],[
+    m4_rename([_AM_OUTPUT_DEPENDENCY_COMMANDS],[lalsuite_swig__AM_OUTPUT_DEPENDENCY_COMMANDS])
+    AC_DEFUN([_AM_OUTPUT_DEPENDENCY_COMMANDS],[
+    {
+      _LALSUITE_SWIG_OUTPUT_DEPENDENCY_COMMANDS
+      lalsuite_swig__AM_OUTPUT_DEPENDENCY_COMMANDS
+    }
+    ])
+  ],[
+    m4_fatal([could not link SWIG automatic dependency tracking into Automake])
   ])
   # end $0
 ])
