@@ -72,8 +72,7 @@ def parse_command_line():
 	)
 	parser.add_option("-c", "--comment", metavar = "text", help = "Set comment string in process table (default = None).")
 	parser.add_option("-f", "--force", action = "store_true", help = "Process document even if it has already been processed.")
-	parser.add_option("-m", "--match", metavar = "algorithm", default = "exact", help = "Select the coincidence test.  Allowed values are:  \"exact\" (require exact template match, the default).")
-	parser.add_option("-t", "--threshold", metavar = "float", type = "float", help = "Set the coincidence threshold (required).  The meaning is defined by the match algorithm.  For --match=exact this sets the Delta t window in seconds.")
+	parser.add_option("-t", "--threshold", metavar = "float", type = "float", help = "Set the coincidence window in seconds, not including light travel time (required).  The value entered here will be dilated by the light travel time between detectors to define the coincidence window for each detector pair.")
 	parser.add_option("--min-instruments", metavar = "number", default = "2", type = "int", help = "Set the minimum number of instruments that must participate in a coincidence (default = 2).  The value must be greater than 0.")
 	parser.add_option("--vetoes-name", metavar = "string", default = "vetoes", help = "From the input document, exatract the segment list having this name to use as the veto segments (default = \"vetoes\").  Warning:  if no segments by this name are found in the document then vetoes will not be applied, this is not an error condition.")
 	parser.add_option("--coinc-end-time-segment", metavar = "seg", help = "The segment of time to retain coincident triggers from. Uses segmentUtils.from_range_strings() format \"START:END\" for an interval of the form [START,END), \"START:\" for an interval of the form [START,INF), and \":END\" for an interval of the form (-INF,END).")
@@ -90,8 +89,6 @@ def parse_command_line():
 	missing_options = [option for option in required_options if getattr(options, option) is None]
 	if missing_options:
 		raise ValueError("missing required option(s) %s" % ", ".join("--%s" % option.replace("_", "-") for option in missing_options))
-	if options.match not in ("exact",):
-		raise ValueError("unrecognized value for --match: \"%s\"" % options.match)
 	if options.min_instruments < 1:
 		raise ValueError("invalid --min-instruments: \"%s\"" % options.min_instruments)
 
@@ -234,7 +231,7 @@ for n, filename in enumerate(filenames, start = 1):
 		xmldoc,
 		process_id = process.process_id,
 		coinc_definer_row = thinca.InspiralCoincDef,
-		thresholds = options.threshold,
+		delta_t = options.threshold,
 		ntuple_comparefunc = ntuple_comparefunc,
 		seglists = None,	# FIXME
 		veto_segments = vetoes,

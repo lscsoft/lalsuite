@@ -204,12 +204,12 @@ class ExcessPowerEventList(snglcoinc.EventList):
 			self.max_edge_peak_delta = 0
 
 	@staticmethod
-	def comparefunc(a, offseta, b, offsetb, light_travel_time, ignored):
+	def comparefunc(a, offseta, b, light_travel_time, ignored):
 		if abs(a.central_freq - b.central_freq) > (a.bandwidth + b.bandwidth) / 2:
 			return True
 
 		astart = a.start + offseta
-		bstart = b.start + offsetb
+		bstart = b.start
 		if astart > bstart + b.duration + light_travel_time:
 			# a starts after the end of b
 			return True
@@ -240,13 +240,13 @@ class ExcessPowerEventList(snglcoinc.EventList):
 		dt += self.max_edge_peak_delta + light_travel_time
 
 		# apply time shift
-		peak += offset_a - self.offset
+		peak += offset_a
 
 		# extract the subset of events from this list that pass
 		# coincidence with event_a (use bisection searches for the
 		# minimum and maximum allowed peak times to quickly
 		# identify a subset of the full list)
-		return [event_b for event_b in self[bisect_left(self, peak - dt) : bisect_right(self, peak + dt)] if not self.comparefunc(event_a, offset_a, event_b, self.offset, light_travel_time, ignored)]
+		return [event_b for event_b in self[bisect_left(self, peak - dt) : bisect_right(self, peak + dt)] if not self.comparefunc(event_a, offset_a, event_b, light_travel_time, ignored)]
 
 
 #
@@ -270,7 +270,7 @@ class StringEventList(snglcoinc.EventList):
 		self.sort(key = lambda event: event.peak)
 
 	def get_coincs(self, event_a, offset_a, light_travel_time, threshold):
-		peak = event_a.peak + offset_a - self.offset
+		peak = event_a.peak + offset_a
 		coinc_window = threshold + light_travel_time
 		return self[bisect_left(self, peak - coinc_window) : bisect_right(self, peak + coinc_window)]
 
@@ -290,18 +290,11 @@ def burca(
 	EventListType,
 	CoincTables,
 	coinc_definer_row,
-	thresholds,
+	threshold,
 	ntuple_comparefunc = lambda events, offset_vector: False,
 	min_instruments = 2,
 	verbose = False
 ):
-	#
-	# validate input
-	#
-
-	if min_instruments < 1:
-		raise ValueError("min_instruments (=%d) must be >= 1" % min_instruments)
-
 	#
 	# prepare the coincidence table interface.
 	#
@@ -329,7 +322,7 @@ def burca(
 	# and record the survivors
 	#
 
-	for node, coinc in time_slide_graph.get_coincs(eventlists, thresholds, verbose = verbose):
+	for node, coinc in time_slide_graph.get_coincs(eventlists, threshold, verbose = verbose):
 		if not ntuple_comparefunc(coinc, node.offset_vector):
 			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, coinc))
 
