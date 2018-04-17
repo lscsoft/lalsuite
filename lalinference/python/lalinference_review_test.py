@@ -16,7 +16,7 @@ except KeyError:
 parser = argparse.ArgumentParser(description="Runs review tests of lalinference using lalinference_pipe_example.ini.")
 
 parser.add_argument('-i','--ini_file', type=str, nargs='?',
-                    default='lalinference_pipe_example.ini',
+                    default=os.path.join(prefix,'lalinference_pipe_example.ini'),
                     help='lalinference_pipe ini file to process.')
 
 parser.add_argument('--bns-injection', type=str, nargs='?',
