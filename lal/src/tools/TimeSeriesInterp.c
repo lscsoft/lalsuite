@@ -28,10 +28,82 @@
 #include <lal/XLALError.h>
 
 
+/**
+ * Default kernel function. A Welch-windowed sinc interpolating kernel is
+ * used.  See
+ *
+ * Smith, Julius O. Digital Audio Resampling Home Page Center for Computer
+ * Research in Music and Acoustics (CCRMA), Stanford University,
+ * 2014-01-10.  Web published at
+ * http://www-ccrma.stanford.edu/~jos/resample/.
+ *
+ * for more information, but note that that reference uses a Kaiser window
+ * for the sinc kernel's envelope whereas we use a Welch window here.  The
+ * Welch window (inverted parabola) is chosen because it yields results
+ * similar in accuracy to the Lanczos window but is much less costly to
+ * compute.
+ */
+
+
+struct default_kernel_data {
+	double welch_factor;
+};
+
+
+static void default_kernel(double *cached_kernel, int kernel_length, double residual, void *data)
+{
+	/* kernel is Welch-windowed sinc function.  the sinc component
+	 * takes the form
+	 *
+	 *	x = pi (i - x);
+	 *	kern = sin(x) / x
+	 *
+	 * we don't check for 0/0 because that can only occur if x is an
+	 * integer, which is trapped by no-op path above.  note that the
+	 * argument of sin(x) increases by pi each iteration, so we just
+	 * need to compute its value for the first iteration then flip sign
+	 * for each subsequent iteration.  for numerical reasons, it's
+	 * better to compute sin(x) from residual rather than from (start -
+	 * x), i.e. what it's argument should be for the first iteration,
+	 * so we also have to figure out how many factors of -1 to apply to
+	 * get its sign right for the first iteration.
+	 */
+
+	double welch_factor = ((struct default_kernel_data *) data)->welch_factor;
+	double *stop = cached_kernel + kernel_length;
+	/* put a factor of welch_factor in this.  see below */
+	double sinx_over_pi = sin(LAL_PI * residual) / LAL_PI * welch_factor;
+	int i;
+	if(kernel_length & 2)
+		sinx_over_pi = -sinx_over_pi;
+	for(i = -(kernel_length - 1) / 2; cached_kernel < stop; i++, sinx_over_pi = -sinx_over_pi) {
+		double y = welch_factor * (i + residual);
+		if(fabs(y) < 1.)
+			/* the window is
+			 *
+			 * sinx_over_pi / i * (1. - y * y)
+			 *
+			 * but by putting an extra factor of welch_factor
+			 * into sinx_over_pi we can replace i with y,
+			 * and then move the factor of 1/y into the
+			 * parentheses to reduce the total number of
+			 * arithmetic operations in the loop
+			 */
+			*cached_kernel++ = sinx_over_pi * (1. / y - y);
+		else
+			*cached_kernel++ = 0.;
+	}
+}
+
+
+/**
+ * Opaque LALREAL8SequenceInterp instance structure.
+ */
+
+
 struct tagLALREAL8SequenceInterp {
 	const REAL8Sequence *s;
 	int kernel_length;
-	double welch_factor;
 	double *cached_kernel;
 	double residual;
 	/* samples.  the length of the kernel sets the bandwidth of the
@@ -40,6 +112,9 @@ struct tagLALREAL8SequenceInterp {
 	 * kernel is regenerated to this in a heuristic way to hide the
 	 * sub-sample residual quantization in the filter's roll-off. */
 	double noop_threshold;
+	/* calling-code supplied kernel generator */
+	void (*kernel)(double *, int, double, void *);
+	void *kernel_data;
 };
 
 
@@ -57,16 +132,22 @@ struct tagLALREAL8SequenceInterp {
  * The REAL8Sequence object with which the LALREAL8SequenceInterp is
  * associated must remain valid as long as the interpolator exists.  Do not
  * free the REAL8Sequence before freeing the LALREAL8SequenceInterp.
+ *
+ * FIXME:  update documentation to explain kernel, kernel_data
  */
 
 
-LALREAL8SequenceInterp *XLALREAL8SequenceInterpCreate(const REAL8Sequence *s, int kernel_length)
+LALREAL8SequenceInterp *XLALREAL8SequenceInterpCreate(const REAL8Sequence *s, int kernel_length, void (*kernel)(double *, int, double, void *), void *kernel_data)
 {
 	LALREAL8SequenceInterp *interp;
 	double *cached_kernel;
 
 	if(kernel_length < 3)
 		XLAL_ERROR_NULL(XLAL_EDOM);
+	if(!kernel && kernel_data) {
+		/* FIXME:  print error message */
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
 	/* interpolator induces phase shifts unless this is odd */
 	kernel_length -= (~kernel_length) & 1;
 
@@ -80,13 +161,36 @@ LALREAL8SequenceInterp *XLALREAL8SequenceInterpCreate(const REAL8Sequence *s, in
 
 	interp->s = s;
 	interp->kernel_length = kernel_length;
-	interp->welch_factor = 1.0 / ((kernel_length - 1.) / 2. + 1.);
 	interp->cached_kernel = cached_kernel;
 	/* >= 1 --> impossible.  forces kernel init on first eval */
 	interp->residual = 2.;
 	/* set no-op threshold.  the kernel is recomputed when the residual
 	 * changes by this much */
 	interp->noop_threshold = 1. / (4 * interp->kernel_length);
+
+	/* install interpolator, using default if needed */
+	if(!kernel) {
+		struct default_kernel_data *default_kernel_data = XLALMalloc(sizeof(*default_kernel_data));
+		if(!default_kernel_data) {
+			XLALFree(interp);
+			XLALFree(cached_kernel);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
+		}
+
+		default_kernel_data->welch_factor = 1.0 / ((kernel_length - 1.) / 2. + 1.);
+
+		kernel = default_kernel;
+		kernel_data = default_kernel_data;
+	} else if(kernel == default_kernel) {
+		/* not allowed because destroy method checks for the
+		 * default kernel to decide if it must free the kernel_data
+		 * memory */
+		XLALFree(interp);
+		XLALFree(cached_kernel);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+	interp->kernel = kernel;
+	interp->kernel_data = kernel_data;
 
 	return interp;
 }
@@ -104,6 +208,13 @@ void XLALREAL8SequenceInterpDestroy(LALREAL8SequenceInterp *interp)
 		/* unref the REAL8Sequence.  place-holder in case this code
 		 * is ported to a language where this matters */
 		interp->s = NULL;
+		/* only free if we allocated it ourselves */
+		if(interp->kernel == default_kernel)
+			XLALFree(interp->kernel_data);
+		/* unref kernel and kernel_data.  place-holder in case this
+		 * code is ported to a language where this matters */
+		interp->kernel = NULL;
+		interp->kernel_data = NULL;
 	}
 	XLALFree(interp);
 }
@@ -117,19 +228,6 @@ void XLALREAL8SequenceInterpDestroy(LALREAL8SequenceInterp *interp)
  * XLAL_EDOM domain error is also raised if x is not in [0, length) where
  * length is the sample count of the sequence to which the interpolator is
  * attached.
- *
- * A Welch-windowed sinc interpolating kernel is used.  See
- *
- * Smith, Julius O. Digital Audio Resampling Home Page Center for Computer
- * Research in Music and Acoustics (CCRMA), Stanford University,
- * 2014-01-10.  Web published at
- * http://www-ccrma.stanford.edu/~jos/resample/.
- *
- * for more information, but note that that reference uses a Kaiser window
- * for the sinc kernel's envelope whereas we use a Welch window here.  The
- * Welch window (inverted parabola) is chosen because it yields results
- * similar in accuracy to the Lanczos window but is much less costly to
- * compute.
  *
  * Be aware that for performance reasons the interpolating kernel is cached
  * and only recomputed if the error estimated to arise from failing to
@@ -164,59 +262,15 @@ REAL8 XLALREAL8SequenceInterpEval(LALREAL8SequenceInterp *interp, double x, int 
 	if(!isfinite(x) || (bounds_check && (x < 0 || x >= interp->s->length)))
 		XLAL_ERROR_REAL8(XLAL_EDOM);
 
-	if(fabs(residual) < interp->noop_threshold)
+	if(fabs(residual) < interp->noop_threshold && interp->kernel==default_kernel)
 		return 0 <= start && start < (int) interp->s->length ? data[start] : 0.0;
 
-	start -= (interp->kernel_length - 1) / 2;
-
 	if(fabs(residual - interp->residual) >= interp->noop_threshold) {
-		/* kernel is Welch-windowed sinc function.  the sinc
-		 * component takes the form
-		 *
-		 *	x = pi (i - x);
-		 *	kern = sin(x) / x
-		 *
-		 * we don't check for 0/0 because that can only occur if x
-		 * is an integer, which is trapped by no-op path above.
-		 * note that the  argument of sin(x) increases by pi each
-		 * iteration, so we just need to compute its value for the
-		 * first iteration then flip sign for each subsequent
-		 * iteration.  for numerical reasons, it's better to
-		 * compute sin(x) from residual rather than from (start -
-		 * x), i.e. what it's argument should be for the first
-		 * iteration, so we also have to figure out how many
-		 * factors of -1 to apply to get its sign right for the
-		 * first iteration.
-		 */
-		double welch_factor = interp->welch_factor;
-		/* put a factor of welch_factor in this.  see below */
-		double sinx_over_pi = sin(LAL_PI * residual) / LAL_PI * welch_factor;
-		int i;
-		if(interp->kernel_length & 2)
-			sinx_over_pi = -sinx_over_pi;
-		for(i = start; cached_kernel < stop; i++, sinx_over_pi = -sinx_over_pi) {
-			double y = welch_factor * (i - x);
-			if(fabs(y) < 1.)
-				/* the window is
-				 *
-				 * sinx_over_pi / (i - x) * (1. - y * y)
-				 *
-				 * but by putting an extra factor of
-				 * welch_factor into sinx_over_pi we can
-				 * replace (i - x) with y, and then move
-				 * the factor of 1/y into the parentheses
-				 * to reduce the total number of arithmetic
-				 * operations in the loop
-				 */
-				*cached_kernel++ = sinx_over_pi * (1. / y - y);
-			else
-				*cached_kernel++ = 0.;
-		}
+		interp->kernel(cached_kernel, interp->kernel_length, residual, interp->kernel_data);
 		interp->residual = residual;
-		/* reset pointer */
-		cached_kernel = interp->cached_kernel;
 	}
 
+	start -= (interp->kernel_length - 1) / 2;
 	if(start + interp->kernel_length > (signed) interp->s->length)
 		stop -= start + interp->kernel_length - interp->s->length;
 	if(start < 0)
@@ -250,16 +304,18 @@ struct tagLALREAL8TimeSeriesInterp {
  * The REAL8TimeSeries object with which the LALREAL8TimeSeriesInterp is
  * associated must remain valid as long as the interpolator exists.  Do not
  * free the REAL8TimeSeries before freeing the LALREAL8TimeSeriesInterp.
+ *
+ * FIXME:  document kernel, kernel_data
  */
 
 
-LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries *series, int kernel_length)
+LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries *series, int kernel_length, void (*kernel)(double *, int, double, void *), void *kernel_data)
 {
 	LALREAL8TimeSeriesInterp *interp;
 	LALREAL8SequenceInterp *seqinterp;
 
 	interp = XLALMalloc(sizeof(*interp));
-	seqinterp = XLALREAL8SequenceInterpCreate(series->data, kernel_length);
+	seqinterp = XLALREAL8SequenceInterpCreate(series->data, kernel_length, kernel, kernel_data);
 	if(!interp || !seqinterp) {
 		XLALFree(interp);
 		XLALREAL8SequenceInterpDestroy(seqinterp);

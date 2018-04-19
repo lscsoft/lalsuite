@@ -166,7 +166,7 @@ int main(void)
 	 * times then they get their own interpolating kernels, i.e. we
 	 * defeat the kernel caching mechanism so that we can watch the
 	 * behaviour of the kernel sample-by-sample */
-	interp = XLALREAL8TimeSeriesInterpCreate(src, 65535);
+	interp = XLALREAL8TimeSeriesInterpCreate(src, 65535, NULL, NULL);
 	evaluate(dst, interp, 1);
 	XLALREAL8TimeSeriesInterpDestroy(interp);
 
@@ -212,7 +212,7 @@ int main(void)
 
 	add_sine(mdl, src->epoch, 1.0, f);
 
-	interp = XLALREAL8TimeSeriesInterpCreate(src, 9);
+	interp = XLALREAL8TimeSeriesInterpCreate(src, 9, NULL, NULL);
 	evaluate(dst, interp, 1);
 	XLALREAL8TimeSeriesInterpDestroy(interp);
 
@@ -251,7 +251,7 @@ int main(void)
 	src->data->length--;			/* fake the length */
 	src->data->data[src->data->length] = 1;	/* place a 1 beyond the end */
 
-	interp = XLALREAL8TimeSeriesInterpCreate(src, 9);
+	interp = XLALREAL8TimeSeriesInterpCreate(src, 9, NULL, NULL);
 	{
 	LIGOTimeGPS t = src->epoch;
 	double result;

@@ -313,8 +313,8 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 
 	/* project + and x time series onto detector */
 
-	hplusinterp = XLALREAL8TimeSeriesInterpCreate(hplus, kernel_length);
-	hcrossinterp = XLALREAL8TimeSeriesInterpCreate(hcross, kernel_length);
+	hplusinterp = XLALREAL8TimeSeriesInterpCreate(hplus, kernel_length, NULL, NULL);
+	hcrossinterp = XLALREAL8TimeSeriesInterpCreate(hcross, kernel_length, NULL, NULL);
 	if(!hplusinterp || !hcrossinterp)
 		goto error;
 
