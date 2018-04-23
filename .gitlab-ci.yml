@@ -286,7 +286,7 @@ nightly:python3:stretch:
   stage: nightly
   script:
     - ./00boot
-    - ./configure --enable-swig --enable-doxygen
+    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-swig --enable-doxygen
     - make -j4
     - make -j4 check
   dependencies: []
