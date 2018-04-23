@@ -149,6 +149,8 @@ const char * usage =
 "--tidal-quadfmode2 W22      dimensionless quadrupolar f-mode angular frequency of mass 2, normalized to mass 2\n"
 "--tidal-octufmode1 W31      dimensionless octupolar f-mode angular frequency of mass 1, normalized to mass 1\n"
 "--tidal-octufmode2 W32      dimensionless octupolar f-mode angular frequency of mass 2, normalized to mass 2\n"
+"--quad-mon1 kappa1          dimensionless quadrupole-monopole parameter of mass 1, value 1 for a black hole\n"
+"--quad-mon2 kappa2          dimensionless quadrupole-monopole parameter of mass 2, value 1 for a black hole\n"
 "--spin-order ORD           Twice PN order of spin effects\n"
 "                           (default ORD=-1 <==> All spin effects)\n"
 "--tidal-order ORD          Twice PN order of tidal effects\n"
@@ -216,12 +218,9 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     params->meanPerAno = 0.;
     XLALSimInspiralWaveformParamsInsertTidalLambda1(params->params, 0.);
     XLALSimInspiralWaveformParamsInsertTidalLambda2(params->params, 0.);
-    XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda1(params->params, 0.);
-    XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda2(params->params, 0.);
-    XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode1(params->params, 0.);
-    XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(params->params, 0.);
-    XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode1(params->params, 0.);
-    XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(params->params, 0.);
+    /* Note: given a LALDict, SEOBNRv2T/v4T will check wether other parameters ( TidalOctupolarLambda, TidalQuadrupolarFMode, TidalOctupolarFMode, dQuadMon) are present in the LALDict */
+    /* If present, this value is looked up and used, if absent, the parameter is computed from quadrupolar lambda through universal relations */
+    /* We therefore do not Insert default values for these parameters, they will be inserted in LALDict only if specified on the commandline */
     strncpy(params->outname, "simulation.dat", 256); /* output to this file */
     params->verbose = 0; /* No verbosity */
 
@@ -297,6 +296,10 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
         XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode1(params->params, atof(argv[++i]));
         } else if (strcmp(argv[i], "--tidal-octufmode2") == 0) {
         XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(params->params, atof(argv[++i]));
+        } else if (strcmp(argv[i], "--quad-mon1") == 0) {
+        XLALSimInspiralWaveformParamsInsertdQuadMon1(params->params, atof(argv[++i]) - 1.); /* dQuadMon is kappa-1 */
+        } else if (strcmp(argv[i], "--quad-mon2") == 0) {
+        XLALSimInspiralWaveformParamsInsertdQuadMon2(params->params, atof(argv[++i]) - 1.); /* dQuadMon is kappa-1 */
         } else if (strcmp(argv[i], "--spin-order") == 0) {
 	    XLALSimInspiralWaveformParamsInsertPNSpinOrder(params->params, atoi(argv[++i]));
         } else if (strcmp(argv[i], "--tidal-order") == 0) {
@@ -438,7 +441,7 @@ static int dump_TD(FILE *f, REAL8TimeSeries *hplus, REAL8TimeSeries *hcross) {
 
     fprintf(f, "# t hplus hcross\n");
     for (i=0; i < hplus->data->length; i++)
-        fprintf(f, "%.16e %.16e %.16e\n", t0 + i * hplus->deltaT, 
+        fprintf(f, "%.16e %.16e %.16e\n", t0 + i * hplus->deltaT,
                 hplus->data->data[i], hcross->data->data[i]);
     return 0;
 }
@@ -484,7 +487,7 @@ int main (int argc , char **argv) {
     REAL8TimeSeries *hplus = NULL;
     REAL8TimeSeries *hcross = NULL;
     GSParams *params;
-	
+
     /* set us up to fail hard */
     XLALSetErrorHandler(XLALAbortErrorHandler);
 
@@ -517,7 +520,7 @@ int main (int argc , char **argv) {
             XLALPrintError("Error: domain must be either TD or FD\n");
     }
     if (params->verbose)
-        XLALPrintInfo("Generation took %.0f seconds\n", 
+        XLALPrintInfo("Generation took %.0f seconds\n",
                 difftime(time(NULL), start_time));
     if (((params->domain == LAL_SIM_DOMAIN_FREQUENCY) && (!hptilde || !hctilde)) ||
         ((params->domain == LAL_SIM_DOMAIN_TIME) && (!hplus || !hcross))) {
