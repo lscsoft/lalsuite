@@ -120,7 +120,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 		# are symmetric about 0
 		self.densities["instrumentgroup,rss_timing_residual"] = rate.BinnedLnPDF(rate.NDBins((snglcoinc.InstrumentBins(names = instruments), rate.ATanBins(-0.02, +0.02, 1001))))
 
-	def __call__(self, params):
+	def __call__(self, **params):
 		try:
 			interps = self.interps
 		except AttributeError:
@@ -194,6 +194,7 @@ class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 		pass
 
 	def __init__(self, instruments):
+		self.triangulators = triangulators(dict.fromkeys(instruments, 8e-5))
 		self.numerator = LnLRDensity(instruments)
 		self.denominator = LnLRDensity(instruments)
 		self.candidates = LnLRDensity(instruments)
@@ -201,6 +202,8 @@ class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 	def __iadd__(self, other):
 		if type(self) != type(other):
 			raise TypeError(other)
+		if set(self.triangulators.keys()) != set(other.triangulators.keys()):
+			raise ValueError("incompatible instruments")
 		self.numerator += other.numerator
 		self.denominator += other.denominator
 		self.candidates += other.candidates
@@ -208,13 +211,13 @@ class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 
 	def copy(self):
 		new = type(self)([])
+		new.triangulators = self.triangulators	# share reference
 		new.numerator = self.numerator.copy()
 		new.denominator = self.denominator.copy()
 		new.candidates = self.candidates.copy()
 		return new
 
-	@staticmethod
-	def coinc_params(events, offsetvector, triangulators):
+	def ln_lr_from_triggers(self, events, offsetvector):
 		#
 		# check for coincs that have been vetoed entirely
 		#
@@ -238,15 +241,18 @@ class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 		# zero-instrument parameters
 		#
 
-		ignored, ignored, ignored, rss_timing_residual = triangulators[instruments](tuple(event.peak + offsetvector[event.ifo] for event in events))
-		# FIXME:  rss_timing_residual is disabled.
-		# all the code to compute it properly is still here and
-		# given suitable initializations, the distribution data is still
-		# two-dimensional and has a suitable filter applied to it, but all
-		# events are forced into the RSS_{\Delta t} = 0 bin, in effect
-		# removing that dimension from the data.  We can look at this again
-		# sometime in the future if we're curious why it didn't help.  Just
-		# delete the next line and you're back in business.
+		ignored, ignored, ignored, rss_timing_residual = self.triangulators[instruments](tuple(event.peak + offsetvector[event.ifo] for event in events))
+		# FIXME:  rss_timing_residual is disabled.  all the code to
+		# compute it properly is still here and given suitable
+		# initializations, the distribution data is still
+		# two-dimensional and has a suitable filter applied to it,
+		# but all events are forced into the RSS_{\Delta t} = 0
+		# bin, in effect removing that dimension from the data.  We
+		# can look at this again sometime in the future if we're
+		# curious why it didn't help.  Just delete the next line
+		# and you're back in business.
+		rss_timing_residual = 0.0
+		# FIXME:  why is this commented out?
 		#params["instrumentgroup,rss_timing_residual"] = (frozenset(instruments), rss_timing_residual)
 
 		#
@@ -279,10 +285,12 @@ class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 			params["%sdf" % prefix] = (df,)
 
 		#
-		# done
+		# evaluate
 		#
 
-		return params
+		return self(
+			**params
+		)
 
 	def finish(self):
 		self.numerator.finish()
@@ -304,6 +312,10 @@ class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 		self.numerator = LnLRDensity.from_xml(xml, "numerator")
 		self.denominator = LnLRDensity.from_xml(xml, "denominator")
 		self.candidates = LnLRDensity.from_xml(xml, "candidates")
+		# FIXME:  stupid way to get instruments, store them in the
+		# XML
+		instruments = [key.replace("_snr2_chi2", "") for key in self.numerator.densities.keys() if "_snr2_chi2" in key]
+		self.triangulators = triangulators(dict.fromkeys(instruments, 8e-5))
 		return self
 
 	def to_xml(self, name):
