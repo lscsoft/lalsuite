@@ -225,7 +225,7 @@ class StringJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.output_dir = power.get_triggers_dir(config_parser)
 
 
-class StringNode(pipeline.AnalysisNode):
+class StringNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   """
   A RingNode runs an instance of the ring code in a Condor DAG.
   """
