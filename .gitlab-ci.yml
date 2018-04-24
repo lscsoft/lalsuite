@@ -280,9 +280,9 @@ nightly:python3:stretch:
   # building with python3, temporarily allow this to fail
   allow_failure: true
 
-.nightly:macos:
+.nightly:macos:highsierra:
   tags:
-    - macos
+    - macos_highsierra
   stage: nightly
   script:
     - ./00boot
