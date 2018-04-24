@@ -280,7 +280,7 @@ nightly:python3:stretch:
   # building with python3, temporarily allow this to fail
   allow_failure: true
 
-.nightly:macos:highsierra:
+nightly:macos:highsierra:
   tags:
     - macos_highsierra
   stage: nightly
