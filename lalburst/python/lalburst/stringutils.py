@@ -1,4 +1,4 @@
-# Copyright (C) 2009--2017  Kipp Cannon
+# Copyright (C) 2009--2018  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -96,6 +96,36 @@ def triangulators(timing_uncertainties):
 
 
 #
+# A binning for instrument combinations
+#
+# FIXME:  we decided that the coherent and null stream naming convention
+# would look like
+#
+# H1H2:LSC-STRAIN_HPLUS, H1H2:LSC-STRAIN_HNULL
+#
+# and so on.  i.e., the +, x and null streams from a coherent network would
+# be different channels from a single instrument whose name would be the
+# mash-up of the names of the instruments in the network.  that is
+# inconsisntent with the "H1H2+", "H1H2-" shown here, so this needs to be
+# fixed but I don't know how.  maybe it'll go away before it needs to be
+# fixed.
+#
+
+
+def InstrumentBins(names = ("E0", "E1", "E2", "E3", "G1", "H1", "H2", "H1H2+", "H1H2-", "L1", "V1")):
+	"""
+	Example:
+
+	>>> x = InstrumentBins()
+	>>> x[frozenset(("H1", "L1"))]
+	55
+	>>> x.centres()[55]
+	frozenset(['H1', 'L1'])
+	"""
+	return rate.HashableBins(frozenset(combo) for n in range(len(names) + 1) for combo in itertools.combinations(names, n))
+
+
+#
 # Parameter distributions
 #
 
@@ -118,7 +148,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 		# but we want a binning that's linear at the origin so
 		# instead of inventing a new one we just use atan bins that
 		# are symmetric about 0
-		self.densities["instrumentgroup,rss_timing_residual"] = rate.BinnedLnPDF(rate.NDBins((snglcoinc.InstrumentBins(names = instruments), rate.ATanBins(-0.02, +0.02, 1001))))
+		self.densities["instrumentgroup,rss_timing_residual"] = rate.BinnedLnPDF(rate.NDBins((InstrumentBins(names = instruments), rate.ATanBins(-0.02, +0.02, 1001))))
 
 	def __call__(self, **params):
 		try:
@@ -139,7 +169,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 			pass
 		return self
 
-	def increment(self, params, weight = 1.0):
+	def increment(self, weight = 1.0, **params):
 		for param, value in params.items():
 			self.densities[param].count[value] += weight
 
@@ -217,13 +247,15 @@ class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 		new.candidates = self.candidates.copy()
 		return new
 
-	def ln_lr_from_triggers(self, events, offsetvector):
+	def coinc_params(self, events, offsetvector):
+		params = {}
+
 		#
 		# check for coincs that have been vetoed entirely
 		#
 
 		if len(events) < 2:
-			return None
+			return params
 
 		#
 		# Initialize the parameter dictionary, sort the events by
@@ -233,7 +265,6 @@ class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 		# names
 		#
 
-		params = {}
 		events = tuple(sorted(events, key = lambda event: event.ifo))
 		instruments = tuple(event.ifo for event in events)
 
@@ -285,17 +316,19 @@ class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 			params["%sdf" % prefix] = (df,)
 
 		#
-		# evaluate
+		# done
 		#
 
-		return self(
-			**params
-		)
+		return params
+
+	def ln_lr_from_triggers(self, events, offsetvector):
+		return self(**self.coinc_params(events, offsetvector))
 
 	def finish(self):
 		self.numerator.finish()
 		self.denominator.finish()
 		self.candidates.finish()
+		return self
 
 	@classmethod
 	def get_xml_root(cls, xml, name):

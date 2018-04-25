@@ -1303,36 +1303,6 @@ class TOATriangulator(object):
 
 
 #
-# A binning for instrument combinations
-#
-# FIXME:  we decided that the coherent and null stream naming convention
-# would look like
-#
-# H1H2:LSC-STRAIN_HPLUS, H1H2:LSC-STRAIN_HNULL
-#
-# and so on.  i.e., the +, x and null streams from a coherent network would
-# be different channels from a single instrument whose name would be the
-# mash-up of the names of the instruments in the network.  that is
-# inconsisntent with the "H1H2+", "H1H2-" shown here, so this needs to be
-# fixed but I don't know how.  maybe it'll go away before it needs to be
-# fixed.
-#
-
-
-def InstrumentBins(names = ("E0", "E1", "E2", "E3", "G1", "H1", "H2", "H1H2+", "H1H2-", "L1", "V1")):
-	"""
-	Example:
-
-	>>> x = InstrumentBins()
-	>>> x[frozenset(("H1", "L1"))]
-	55
-	>>> x.centres()[55]
-	frozenset(['H1', 'L1'])
-	"""
-	return rate.HashableBins(frozenset(combo) for n in range(len(names) + 1) for combo in itertools.combinations(names, n))
-
-
-#
 # Base class for parameter distribution densities for use in log likelihood
 # ratio ranking statistics
 #
