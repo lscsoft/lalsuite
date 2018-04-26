@@ -80,6 +80,7 @@ python/lalinference/git_version.py
 python/lalinference/lalinference.py
 python/lalinference_average_skymaps
 python/lalinference_pipe
+python/lalinference_review_test
 python/rapidpe_calculate_overlap
 python/rapidpe_compute_intrinsic_fisher
 python/rapidpe_compute_intrinsic_grid
@@ -105,6 +106,7 @@ swig/.swigdeps
 swig/swiglal_*
 swig/swiglalinference.i*
 test/.cache
+test/.pytest_cache
 test/LALInferenceGenerateROQTest
 test/LALInferenceHDF5Test
 test/LALInferenceInjectionTest
