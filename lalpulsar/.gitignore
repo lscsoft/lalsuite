@@ -106,6 +106,7 @@ test/SuperskyMetricsTest.fits
 test/TEMPOcomparison
 test/TwoDMeshTest
 test/UniversalDopplerMetricTest
+test/V-1_V1_1800SFT_simCW_simulateCWTest-*-1800.sft
 test/VelocityTest
 test/XLALComputeAMTest
 test/XLALMultiNoiseWeightsTest
