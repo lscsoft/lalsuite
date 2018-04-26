@@ -27,7 +27,11 @@
 #include <stdio.h>
 
 #if defined(HAVE_LIBCFITSIO)
+// disable -Wstrict-prototypes flag for this header file as this causes
+// a build failure for cfitsio-3.440+
+#pragma GCC diagnostic ignored "-Wstrict-prototypes"
 #include <fitsio.h>
+#pragma GCC diagnostic pop
 #else
 #error CFITSIO library is not available
 #endif
