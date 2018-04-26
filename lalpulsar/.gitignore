@@ -5,7 +5,6 @@
 *.pc
 *.pyc
 *.pyo
-__pycache__
 .deps
 .libs
 /_build/
@@ -14,6 +13,7 @@ __pycache__
 AUTHORS
 Makefile
 Makefile.in
+__pycache__
 config.lt
 debian/control
 doxygen/autogen.dox
@@ -52,8 +52,8 @@ src/stamp-h1
 src/stamp-h2
 src/version.c
 swig/.swigdeps
-swig/swiglalpulsar.i*
 swig/swiglal_*
+swig/swiglalpulsar.i*
 test/BinarySSBTimesTest
 test/ComputeFstatTest
 test/ConstructPLUTTest
