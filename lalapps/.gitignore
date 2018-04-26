@@ -189,6 +189,7 @@ src/power/lalapps_power_veto
 src/power/lalapps_simburst_to_frame
 src/power/lalapps_xml_plotlalseries
 src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
+src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris_python
 src/pulsar/CreateEphemeris/lalapps_create_time_correction_ephemeris
 src/pulsar/CrossCorr/gsldata.dat
 src/pulsar/CrossCorr/lalapps_pulsar_crosscorr
