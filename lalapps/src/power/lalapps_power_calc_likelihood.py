@@ -36,7 +36,6 @@ from lalburst import git_version
 from lalburst import burca_tailor
 from lalburst import calc_likelihood
 from lalburst import SnglBurstUtils
-from lalburst.SimBurstUtils import MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -161,7 +160,16 @@ for n, filename in enumerate(filenames):
 	#
 
 
-	calc_likelihood.ligolw_burca2(database, distributions, distributions.coinc_params, verbose = options.verbose, params_func_extra_args = (MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD))
+	calc_likelihood.assign_likelihood_ratios(
+		connection = database.connection,
+		coinc_def_id = database.bb_definer_id,
+		offset_vectors = database.time_slide_table.as_dict(),
+		vetoseglists = database.vetoseglists,
+		events_func = lambda cursor, coinc_event_id: calc_likelihood.sngl_burst_events_func(cursor, coinc_event_id, database.sngl_burst_table.row_from_cols),
+		veto_func = calc_likelihood.sngl_burst_veto_func,
+		ln_likelihood_ratio_func = distributions.ln_lr_from_triggers,
+		verbose = options.verbose
+	)
 
 
 	#

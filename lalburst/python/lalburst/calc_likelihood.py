@@ -162,29 +162,3 @@ WHERE
 def sngl_burst_veto_func(event, vetoseglists):
 	# return True if event should be *retained*
 	return event.ifo not in vetoseglists or event.peak not in vetoseglists[event.ifo]
-
-
-def ligolw_burca2(database, ln_likelihood_ratio_func, verbose = False):
-	"""
-	Assigns likelihood ratio values to excess power coincidences.
-	"""
-	#
-	# Run core function
-	#
-
-	assign_likelihood_ratios(
-		connection = database.connection,
-		coinc_def_id = database.bb_definer_id,
-		offset_vectors = database.time_slide_table.as_dict(),
-		vetoseglists = database.vetoseglists,
-		events_func = lambda cursor, coinc_event_id: sngl_burst_events_func(cursor, coinc_event_id, database.sngl_burst_table.row_from_cols),
-		veto_func = sngl_burst_veto_func,
-		ln_likelihood_ratio_func = ln_likelihood_ratio_func,
-		verbose = verbose
-	)
-
-	#
-	# Done
-	#
-
-	return database
