@@ -180,4 +180,53 @@ static REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.70
 static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon);
 static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
 
+static int PhenomPCore_withTides(
+  COMPLEX16FrequencySeries **hptilde,        /**< [out] Frequency-domain waveform h+ */
+  COMPLEX16FrequencySeries **hctilde,        /**< [out] Frequency-domain waveform hx */
+  const REAL8 chi1_l_in,                     /**< Dimensionless aligned spin on companion 1 */
+  const REAL8 chi2_l_in,                     /**< Dimensionless aligned spin on companion 2 */
+  const REAL8 chip,                          /**< Effective spin in the orbital plane */
+  const REAL8 thetaJ,                        /**< Angle between J0 and line of sight (z-direction) */
+  const REAL8 m1_SI_in,                      /**< Mass of companion 1 (kg) */
+  const REAL8 m2_SI_in,                      /**< Mass of companion 2 (kg) */
+  const REAL8 distance,                      /**< Distance of source (m) */
+  const REAL8 quadparam1,
+  const REAL8 quadparam2,
+  const REAL8 lambda1,
+  const REAL8 lambda2,
+  const REAL8 alpha0,                        /**< Initial value of alpha angle (azimuthal precession angle) */
+  const REAL8 phic,                          /**< Orbital phase at the peak of the underlying non precessing model (rad) */
+  const REAL8 f_ref,                         /**< Reference frequency */
+  const REAL8Sequence *freqs_in,             /**< Frequency points at which to evaluate the waveform (Hz) */
+  double deltaF,                             /**< Sampling frequency (Hz).
+   * If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+   *    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
+   *       * Then we will use deltaF = 0 to create the frequency series we return. */
+  const LALSimInspiralTestGRParam *extraParams /**<linked list containing the extra testing GR parameters */
+  );
+
+static int PhenomPCoreOneFrequency_withTides(
+  const REAL8 fHz,                            /**< Frequency (Hz) */
+  const REAL8 ampTidal,
+  COMPLEX16 phaseTidal,
+  const REAL8 eta,                            /**< Symmetric mass ratio */
+  const REAL8 chi1_l,                         /**< Dimensionless aligned spin on companion 1 */
+  const REAL8 chi2_l,                         /**< Dimensionless aligned spin on companion 2 */
+  const REAL8 chip,                           /**< Dimensionless spin in the orbital plane */
+  const REAL8 distance,                       /**< Distance of source (m) */
+  const REAL8 M,                              /**< Total mass (Solar masses) */
+  const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
+  IMRPhenomDAmplitudeCoefficients *pAmp,      /**< Internal IMRPhenomD amplitude coefficients */
+  IMRPhenomDPhaseCoefficients *pPhi,          /**< Internal IMRPhenomD phase coefficients */
+  PNPhasingSeries *PNparams,                  /**< PN inspiral phase coefficients */
+  NNLOanglecoeffs *angcoeffs,                 /**< Struct with PN coeffs for the NNLO angles */
+  SpinWeightedSphericalHarmonic_l2 *Y2m,      /**< Struct of l=2 spherical harmonics of spin weight -2 */
+  const REAL8 alphaoffset,                    /**< f_ref dependent offset for alpha angle (azimuthal precession angle) */
+  const REAL8 epsilonoffset,                  /**< f_ref dependent offset for epsilon angle */
+  COMPLEX16 *hp,                              /**< [out] plus polarization \f$\tilde h_+\f$ */
+  COMPLEX16 *hc,                              /**< [out] cross polarization \f$\tilde h_x\f$ */
+  REAL8 *phasing,                             /**< [out] overall phasing */
+  AmpInsPrefactors *amp_prefactors,           /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
+  PhiInsPrefactors *phi_prefactors            /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/);
+
 #endif	// of #ifndef _LALSIM_IMR_PHENOMP_H

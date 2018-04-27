@@ -72,7 +72,8 @@ pkginclude_HEADERS = \
 	LALSimulation.h \
 	LALSimulationConfig.h \
 	LALSimulationVCSInfo.h \
-	LALSimulationVCSInfoHeader.h
+	LALSimulationVCSInfoHeader.h \
+        LALSimInspiralEOS.h
 
 noinst_HEADERS = \
 	LALSimBlackHoleRingdownPrec.c \
@@ -192,7 +193,8 @@ liblalsimulation_la_SOURCES = \
 	check_waveform_macros.h \
 	unicorn.xpm \
 	LALSimInspiralHGimri.c \
-	LALSimFindAttachTime.c
+	LALSimFindAttachTime.c \
+        LALSimInspiralEOS.c
 
 nodist_liblalsimulation_la_SOURCES = LALSimulationBuildInfo.c
 

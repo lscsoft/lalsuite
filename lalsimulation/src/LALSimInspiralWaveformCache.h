@@ -21,6 +21,7 @@
 #define _LALSIMINSPIRALWAVEFORMCACHE_H
 
 #include <lal/LALSimInspiral.h>
+#include <lal/LALSimInspiralEOS.h>
 
 #if defined(__cplusplus)
 extern "C" {

@@ -24,6 +24,7 @@
 #include <lal/LALSimSphHarmSeries.h>
 #include <lal/LALSimInspiralTestGRParams.h>
 #include <lal/LALSimInspiralWaveformFlags.h>
+#include <lal/LALSimInspiralEOS.h>
 #include <gsl/gsl_matrix.h>
 
 #if defined(__cplusplus)
@@ -369,6 +370,7 @@ typedef enum tagApproximant {
                           * @remarks Implemented in lalsimulation (frequency domain). */
    IMRPhenomD_NRTidal,   /**< Uses arxiv:1706.02969 to upgrad IMRPhenomD to a tidal approximant
                           * @remarks Implemented in lalsimulation (frequency domain). */
+   IMRPhenomPv2_NRTidal, /**< FD waveform; the tidal phase is added first and then the twisting is applied */
    NumApproximants	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
