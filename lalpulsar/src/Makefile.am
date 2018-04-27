@@ -127,11 +127,6 @@ nodist_liblalpulsar_la_SOURCES = \
 	LALPulsarVCSInfo.c \
 	$(END_OF_LIST)
 
-if LALXML
-pkginclude_HEADERS += LALXMLVOTableSerializersPulsar.h
-liblalpulsar_la_SOURCES += LALXMLVOTableSerializersPulsar.c
-endif
-
 noinst_LTLIBRARIES =
 liblalpulsar_la_LIBADD =
 
