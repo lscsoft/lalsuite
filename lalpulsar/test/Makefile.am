@@ -38,10 +38,6 @@ test_programs += VelocityTest
 test_programs += XLALComputeAMTest
 test_programs += XLALMultiNoiseWeightsTest
 
-if LALXML
-test_programs += LALPulsarXMLTest
-endif
-
 # Add shell, Python, etc. test scripts to this variable
 test_scripts += pulsar_toa_test.sh
 if SWIG_BUILD_PYTHON
@@ -80,7 +76,6 @@ MOSTLYCLEANFILES = \
 	$(END_OF_LIST)
 
 pkgdata_DATA = \
-	VOTable-1.1.xsd \
 	circularEphem.dat \
 	earth00-19-DE200.dat.gz \
 	earth00-19-DE405.dat.gz \
