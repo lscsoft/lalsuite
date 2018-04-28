@@ -57,7 +57,6 @@ MIN_LALSIMULATION_VERSION="1.7.0"
 MIN_LALINSPIRAL_VERSION="1.7.7"
 MIN_LALPULSAR_VERSION="1.16.0"
 MIN_LALBURST_VERSION="1.4.4"
-MIN_LALXML_VERSION="1.2.4"
 AC_SUBST([MIN_GLUE_VERSION])
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
@@ -66,7 +65,6 @@ AC_SUBST([MIN_LALSIMULATION_VERSION])
 AC_SUBST([MIN_LALINSPIRAL_VERSION])
 AC_SUBST([MIN_LALPULSAR_VERSION])
 AC_SUBST([MIN_LALBURST_VERSION])
-AC_SUBST([MIN_LALXML_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -106,7 +104,6 @@ LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALBURST
-LALSUITE_ENABLE_LALXML
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
@@ -196,13 +193,6 @@ if test "${with_hdf5}" != "yes"; then
   AC_MSG_ERROR([could not find the HDF5 library])
 fi
 
-if test "$lalxml" = "true"; then
-  # check for libxml2
-  PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
-  LALSUITE_ADD_FLAGS([C],[${LIBXML2_CFLAGS}],[${LIBXML2_LIBS}])
-  AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_WARN([cannot find the xml2 library])])
-fi
-
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
@@ -212,10 +202,6 @@ LALSUITE_CHECK_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDetect
 LALSUITE_CHECK_LIB([LALInspiral],[${MIN_LALINSPIRAL_VERSION}],[LALInspiralParameterCalc],[lal/LALInspiral.h])
 LALSUITE_CHECK_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat],[lal/ComputeFstat.h])
 LALSUITE_CHECK_LIB([LALBurst],[${MIN_LALBURST_VERSION}],[XLALEPSearch],[lal/EPSearch.h])
-
-
-# check for lalxml
-LALSUITE_CHECK_OPT_LIB([LALXML],[${MIN_LALXML_VERSION}],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 dnl FIXME: This doesn't work in the top-level build, because it tries
 dnl to compile and link against LAL itself, which will not have been built yet.
@@ -272,7 +258,6 @@ AC_MSG_NOTICE([
 LALInference has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
-* LALXML library support is $LALXML_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * HEALPix is $HEALPIX_ENABLE_VAL

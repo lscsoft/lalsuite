@@ -38,9 +38,7 @@ AM_INIT_AUTOMAKE([ \
 
 # version requirements
 MIN_LAL_VERSION="6.18.0"
-MIN_LALXML_VERSION="1.2.4"
 AC_SUBST([MIN_LAL_VERSION])
-AC_SUBST([MIN_LALXML_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -151,13 +149,6 @@ AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_ERROR([could not find the fftw3
 # check for fft headers
 AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_ERROR([could not find the fftw3.h header])])
 
-if test "$lalxml" = "true"; then
-  # check for libxml2
-  PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
-  LALSUITE_ADD_FLAGS([C],[${LIBXML2_CFLAGS}],[${LIBXML2_LIBS}])
-  AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_WARN([cannot find the xml2 library])])
-fi
-
 # check for cfitsio
 LALSUITE_USE_CFITSIO
 
@@ -169,9 +160,6 @@ LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 
 # check for lalsupport, needed for test suite
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
-
-# check for lalxml
-LALSUITE_CHECK_OPT_LIB([LALXML],[${MIN_LALXML_VERSION}],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # finish boinc checks, and restore compiler after lal library checks
 LALSUITE_END_CHECK_BOINC
@@ -207,7 +195,6 @@ AC_MSG_NOTICE([
 LALPulsar has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
-* LALXML library support is $LALXML_ENABLE_VAL
 * BOINC support is $BOINC_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL

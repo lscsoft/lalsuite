@@ -104,7 +104,7 @@ level2:lalpulsar:
   <<: *levelN-package
   stage: level2
   dependencies:
-    - level1:lalxml
+    - level0:lal
 
 level2:lalstochastic:
   <<: *levelN-package
@@ -457,7 +457,6 @@ level2:rpm:lalpulsar:
   stage: level2
   dependencies:
     - level0:rpm:lal
-    - level1:rpm:lalxml
 
 level2:rpm:lalstochastic:
   <<: *levelN-rpm-package
@@ -483,7 +482,6 @@ level3:rpm:lalinference:
     - level1:rpm:lalframe
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
-    - level1:rpm:lalxml
     - level2:rpm:lalburst
     - level2:rpm:lalinspiral
     - level2:rpm:lalpulsar
@@ -496,7 +494,6 @@ level4:rpm:lalapps:
     - level1:rpm:lalframe
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
-    - level1:rpm:lalxml
     - level2:rpm:lalburst
     - level2:rpm:lalinspiral
     - level2:rpm:lalpulsar
