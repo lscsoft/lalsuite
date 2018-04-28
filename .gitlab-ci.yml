@@ -237,7 +237,6 @@ nightly:top-level:bionic:
   only:
     - schedules
     - web
-  allow_failure: true
 
 # FIXME: It seems that Octave on buster currently has a few bugs which
 # cause the Octave bindings to fail, disable building the Octave SWIG
