@@ -774,13 +774,13 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
      phi_12                       Difference between spins' azimuthal angles \n\
      phi_jl                       Difference between total and orbital angular momentum azimuthal angles\n\
     * Equation of State parameters:\n\
-     (requires --use-tidal)\n\
+     (requires --tidal)\n\
      lambda1                      lambda1.\n\
      lambda2                      lambda2.\n\
-     (requires --use-tidalT)\n\
+     (requires --tidalT)\n\
      lambdaT                      lambdaT.\n\
      dLambdaT                     dLambdaT.\n\
-     (requires --use-poly-eos)\n\
+     (requires --4PolyEOS)\n\
      logp1                        logp1.\n\
      gamma1                       gamma1.\n\
      gamma2                       gamma2.\n\
@@ -1343,25 +1343,25 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   }
 
   // Must pick to either use tidal, tidalT, or 4-piece polytrope parameters; otherwise throw error message
-  if(LALInferenceGetProcParamVal(commandLine,"--use-tidalT")&&LALInferenceGetProcParamVal(commandLine,"--use-tidal")){
-    XLALPrintError("Error: cannot use both --use-tidalT and --use-tidal.\n");
+  if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--tidal")){
+    XLALPrintError("Error: cannot use both --tidalT and --tidal.\n");
     XLAL_ERROR_NULL(XLAL_EINVAL);
-  } else if(LALInferenceGetProcParamVal(commandLine,"--use-tidalT")&&LALInferenceGetProcParamVal(commandLine,"--use-poly-eos")){
-    XLALPrintError("Error: cannot use both --use-tidalT and --use-poly-eos.\n");
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")){
+    XLALPrintError("Error: cannot use both --tidalT and --4PolyEOS.\n");
     XLAL_ERROR_NULL(XLAL_EINVAL);
-  } else if(LALInferenceGetProcParamVal(commandLine,"--use-tidal")&&LALInferenceGetProcParamVal(commandLine,"--use-poly-eos")){
-    XLALPrintError("Error: cannot use both --use-tidal and --use-poly-eos.\n");
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidal")&&LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")){
+    XLALPrintError("Error: cannot use both --tidal and --4PolyEOS.\n");
     XLAL_ERROR_NULL(XLAL_EINVAL);
   // Pull in tidalT parameters (lambdaT,dLambdaT)
-  } else if(LALInferenceGetProcParamVal(commandLine,"--use-tidalT")){
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")){
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambdaT", zero, lambdaTMin, lambdaTMax, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "dLambdaT", zero, dLambdaTMin, dLambdaTMax, LALINFERENCE_PARAM_LINEAR);
   // Pull in tidal parameters (lambda1,lambda2)
-  } else if(LALInferenceGetProcParamVal(commandLine,"--use-tidal")){
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidal")){
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambda1", zero, lambda1Min, lambda1Max, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambda2", zero, lambda2Min, lambda2Max, LALINFERENCE_PARAM_LINEAR);
   // Pull in 4-piece polytrope parameters (logp1,gamma1,gamma2,gamma3)
-  } else if(LALInferenceGetProcParamVal(commandLine,"--use-poly-eos")){
+  } else if(LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")){
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "logp1", zero, logp1Min, logp1Max, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma1", zero, gamma1Min, gamma1Max, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma2", zero, gamma2Min, gamma2Max, LALINFERENCE_PARAM_LINEAR);
