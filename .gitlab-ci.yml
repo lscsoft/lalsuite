@@ -33,13 +33,14 @@ cache:
     - ccache
 
 .levelN:package: &levelN-package
-  image: ligo/lalsuite-dev:jessie
+  image: ligo/lalsuite-dev:stretch
   script:
     - cd ${CI_JOB_NAME#level?:}
     - ./00boot
     - ./configure --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
     - make dist
-    - tar xf *.tar.xz
+    - cd ${CI_PROJECT_DIR}
+    - tar xf ${CI_JOB_NAME#level?:}/lal*.tar.xz
     - cd lal*-*
     - mkdir -p subdir
     - cd subdir
@@ -175,11 +176,8 @@ nightly:top-level:el7:
     - schedules
     - web
 
-# do not perform a jessie build because we are doing one nightly via
-# the normal CI parellel build process
-
-nightly:top-level:stretch:
-  image: ligo/lalsuite-dev:stretch
+nightly:top-level:jessie:
+  image: ligo/lalsuite-dev:jessie
   stage: nightly
   script:
     - ./00boot
