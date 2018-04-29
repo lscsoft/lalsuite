@@ -2234,6 +2234,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
     LALInferenceInjectionToVariables(theEventTable, injparams);
 
     /* FIXME: This is a hack to inject a different eos parameterization than used for sampling */
+/*
     int tidalCheck = 1;
     // Determine if injparams have different eos params than injected on commandline
     if(LALInferenceCheckVariable(injparams, "logp1") && !(LALInferenceGetProcParamVal(runState->commandLine, "--inj-logp1"))) {
@@ -2311,6 +2312,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
         LALInferenceSetVariable(injparams,"gamma2", (void*) &g2);
         LALInferenceSetVariable(injparams,"gamma3", (void*) &g3);
     }
+*/
     /* end hack */
 
     REAL8 injPrior = runState->prior(runState, injparams, model);
