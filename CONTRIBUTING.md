@@ -35,7 +35,7 @@ git clone git@git.ligo.org:<namespace>/lalsuite.git
 
 ### Keeping your fork up to date
 
-Link your clone to the main (`upstream`) repository so that you can `fetch` changes, `merge` them with your clone, and `push` them to your fork. 
+Link your clone to the main (`upstream`) repository so that you can `fetch` changes, `merge` them with your clone, and `push` them to your fork. Do *not* make changes on your master branch. 
 
 1. Link your fork to the main repository:
 
