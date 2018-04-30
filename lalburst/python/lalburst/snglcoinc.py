@@ -900,7 +900,7 @@ class CoincRates(object):
 			# so that when the problem is encountered it's
 			# easier to identify the cause
 			raise ValueError("rates must be >= 0")
-		if max(rates.values()) * max(self.tau.values()) >= 1.:
+		if self.tau and max(rates.values()) * max(self.tau.values()) >= 1.:
 			raise ValueError("events per coincidence window must be << 1: rates = %s, max window = %g" % (rates, max(self.tau.values())))
 
 		# compute \mu_{1} * \mu_{2} ... \mu_{N} * FACTOR where
