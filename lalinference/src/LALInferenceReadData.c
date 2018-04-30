@@ -149,8 +149,8 @@ REAL8 interpolate(struct fvec *fvec, REAL8 f){
 	return (fvec[i-1].x*a + fvec[i].x*(1.0-a));
 }
 
-int InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, ProcessParamsTable *commandLine);
-void enforce_m1_larger_m2(SimInspiralTable* injEvent);
+void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, ProcessParamsTable *commandLine);
+int enforce_m1_larger_m2(SimInspiralTable* injEvent);
 
 typedef void (NoiseFunc)(LALStatus *statusPtr,REAL8 *psd,REAL8 f);
 void MetaNoiseFunc(LALStatus *status, REAL8 *psd, REAL8 f, struct fvec *interp, NoiseFunc *noisefunc);
@@ -2765,7 +2765,6 @@ int enforce_m1_larger_m2(SimInspiralTable* injEvent){
 	injEvent->coa_phase=injEvent->coa_phase+LAL_PI;
         return(1);
         }
-    return ;
 }
 
 void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *commandLine){

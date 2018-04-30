@@ -190,7 +190,7 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
  * @param fam Pointer to the neutron star family structure.
  * @return The maximum mass of the neutron star family (kg).
  */
-double XLALSimNeutronStarMinimumMass(LALSimNeutronStarFamily *fam)
+double XLALSimNeutronStarFamMinimumMass(LALSimNeutronStarFamily *fam)
 {
     return fam->mdat[0];
 }

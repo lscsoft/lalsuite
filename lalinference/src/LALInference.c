@@ -2403,7 +2403,7 @@ double mass1_kg= mass1*LAL_MSUN_SI;
 double mass2_kg= mass2*LAL_MSUN_SI;
 
 // Calculate speed of sound and max and min mass allowed by eos
-double min_mass_kg = XLALSimNeutronStarMinimumMass(fam);
+double min_mass_kg = XLALSimNeutronStarFamMinimumMass(fam);
 double max_mass_kg = XLALSimNeutronStarMaximumMass(fam);
 double pmax = XLALSimNeutronStarCentralPressure(max_mass_kg, fam);
 double hmax = XLALSimNeutronStarEOSPseudoEnthalpyOfPressure(pmax, eos);
