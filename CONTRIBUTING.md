@@ -100,7 +100,7 @@ All changes should be developed on a feature branch in order to keep them separa
    git checkout my-new-feature
    git fetch upstream
    git rebase upstream/master
-   git push origin my-new-feature
+   git push -f origin my-new-feature
    ```
 
    This works if you created your branch with the `checkout` command above. If you forgot to add the `upstream/master` starting point, then you will need to dig deeper into git commands to get changes and merge them into your feature branch. 
