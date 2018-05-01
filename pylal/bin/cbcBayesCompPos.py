@@ -52,7 +52,7 @@ __version__= "git id %s"%git_version.id
 __date__= git_version.date
 
 #List of parameters to plot/bin . Need to match (converted) column names.
-oneDMenu=['mtotal','m1','m2','mchirp','mc','chirpmass','distance','distMPC','dist','iota','psi','eta','q','asym_massratio','spin1','spin2','a1','a2','phi1','theta1','phi2','theta2','costilt1','costilt2','costhetas','cosbeta','phi_orb', 'lambdat', 'dlambdat', 'lambda1', 'lambda2', 'lam_tilde', 'dlam_tilde','logp1','gamma1','gamma2','gamma3','theta_jn','a1z','a2z'] + bppu.snrParams
+oneDMenu=['mtotal','m1','m2','mchirp','mc','chirpmass','distance','distMPC','dist','iota','psi','eta','q','asym_massratio','spin1','spin2','a1','a2','phi1','theta1','phi2','theta2','costilt1','costilt2','costhetas','cosbeta','phi_orb', 'lambdat', 'dlambdat', 'lambda1', 'lambda2', 'lam_tilde', 'dlam_tilde','logp1','gamma1','gamma2','gamma3','SDgamma0','SDgamma1','SDgamma2','SDgamma3','theta_jn','a1z','a2z'] + bppu.snrParams
 #List of parameter pairs to bin . Need to match (converted) column names.
 twoDGreedyMenu=[['mc','eta'],['mchirp','eta'],['chirpmass','eta'],['mc','q'],['mchirp','q'],['chirpmass','q'],['mc','asym_massratio'],['mchirp','asym_massratio'],['chirpmass','asym_massratio'],['m1','m2'],['mtotal','eta'],['distance','iota'],['dist','iota'],['dist','m1'],['ra','dec'],['dist','cos(iota)'],['phi_orb','iota'],['theta_jn','dist'],['spin1','spin2'],['spin1','mchirp'],['spin1','m1'],['a1','a2'],['a1','mchirp'],['a1','m1'],['tilt1','tilt2'],['tilt1','mchirp'],['tilt1','m1'],['a1z','a2z']]
 #Bin size/resolution for binning. Need to match (converted) column names.
@@ -69,6 +69,7 @@ paramNameLatexMap = {'m1': 'm_1', 'm2' : 'm_2', 'mtotal' : r'M_{\rm tot}', 'mchi
                      'lambda1' : r'\lambda_1', 'lambda2': r'\lambda_2',
                      'lam_tilde' : r'\tilde{\Lambda}', 'dlam_tilde': r'\delta \tilde{\Lambda}',
                      'logp1':r'\log(p_1)','gamma1':r'\Gamma_1','gamma2':r'\Gamma_2','gamma3':r'\Gamma_3',
+                     'SDgamma0':r'\gamma_0','SDgamma1':r'\gamma_1','SDgamma2':r'\gamma_2','SDgamma3':r'\gamma_3',
                      'dchi0':r'\delta\chi_0','dchi1':r'\delta\chi_1','dchi2':r'\delta\chi_2','dchi3':r'\delta\chi_3','dchi4':r'\delta\chi_4','dchi5':r'\delta\chi_5','dchi5l':r'\delta\chi_{5l}','dchi6':r'\delta\chi_6','dchi6l':r'\delta\chi_{6l}','dchi7':r'\delta\chi_7','dbeta2':r'\delta\beta_2','dbeta3':r'\delta\beta_3','dsigma2':r'\delta\sigma_2','dsigma3':r'\delta\sigma_3','dsigma4':r'\delta\sigma_4','dbeta2':r'\delta\beta_2','dbeta3':r'\delta\beta_3' }
 
 # Only these parameters, in this order appear in confidence level table.
@@ -89,7 +90,7 @@ TwoDconfidenceLevels=OneDconfidenceLevels
 #2D plots list
 #twoDplots=[['mc','eta'],['mchirp','eta'],['m1','m2'],['mtotal','eta'],['distance','iota'],['dist','iota'],['RA','dec'],['ra','dec'],['m1','dist'],['m2','dist'],['psi','iota'],['psi','distance'],['psi','dist'],['psi','phi0'],['dist','cos(iota)']]
 twoDplots=[['m1','m2'],['mass1','mass2'],['RA','dec'],['ra','dec'],['cos(thetas)','cos(beta)'],['distance','iota'],['dist','iota'],['dist','cosiota'],['distance','cosiota'],['psi','iota'],['psi','distance'],['psi','phi0'],['dist','cos(iota)'],['phi_orb','iota'],['distance','inclination'],['dist','inclination'],['theta_jn','dist'],['spin1','spin2'],['spin1','mchirp'],['spin1','m1'],['a1','a2'],['a1','mchirp'],['a1','m1'],['tilt1','tilt2'],['tilt1','mchirp'],['tilt1','m1']]
-allowed_params=['mtotal','m1','m2','mchirp','mc','chirpmass','q','asym_massratio','distance','distMPC','dist','iota','psi','eta','ra','dec','a1','a2','spin1','spin2','phi1','theta1','phi2','theta2','cos(iota)','cos(tilt1)','cos(tilt2)','tilt1','tilt2','cos(thetas)','cos(beta)','phi_orb','inclination', 'logl', 'lambdat', 'dlambdat', 'lambda1', 'lambda2', 'lam_tilde', 'dlam_tilde','logp1','gamma1','gamma2','gamma3','theta_jn','a1z','a2z']+bppu.snrParams+bppu.calParams
+allowed_params=['mtotal','m1','m2','mchirp','mc','chirpmass','q','asym_massratio','distance','distMPC','dist','iota','psi','eta','ra','dec','a1','a2','spin1','spin2','phi1','theta1','phi2','theta2','cos(iota)','cos(tilt1)','cos(tilt2)','tilt1','tilt2','cos(thetas)','cos(beta)','phi_orb','inclination', 'logl', 'lambdat', 'dlambdat', 'lambda1', 'lambda2', 'lam_tilde', 'dlam_tilde','logp1','gamma1','gamma2','gamma3','SDgamma0','SDgamma1','SDgamma2','SDgamma3','theta_jn','a1z','a2z']+bppu.snrParams+bppu.calParams
 
 def open_url(url,username,password):
 

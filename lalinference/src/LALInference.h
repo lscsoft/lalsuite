@@ -881,8 +881,17 @@ void LALInferenceLambdaTsEta2Lambdas(REAL8 lambdaT, REAL8 dLambdaT, REAL8 eta, R
 /** Calculate lambda1,2(m1,2|eos(logp1,gamma1,gamma2,gamma3)) */
 void LALInferenceLogp1GammasMasses2Lambdas(REAL8 logp1, REAL8 gamma1, REAL8 gamma2, REAL8 gamma3, REAL8 mass1, REAL8 mass2, REAL8 *lambda1, REAL8 *lambda2);
 
-/** Check for causality violation and mass conflict given masses and eos **/
+/** Convert from spectral parameters to lambda1, lambda2 */
+void LALInferenceSDGammasMasses2Lambdas(REAL8 gamma[], REAL8 mass1, REAL8 mass2, REAL8 *lambda1, REAL8 *lambda2, int size);
+
+/** Check for causality violation and mass conflict given masses and eos */
 int LALInferenceEOSPhysicalCheck(LALInferenceVariables *params, ProcessParamsTable *commandLine);
+
+/** Specral decomposition of eos's adiabatic index */
+double AdiabaticIndex(double gamma[],double x, int size);
+
+/** Determine if the Adiabatic index is within 'prior' range */
+int LALInferenceSDGammaCheck(double gamma[], int size);
 
 /**
  * The kD trees in LALInference are composed of cells.  Each cell

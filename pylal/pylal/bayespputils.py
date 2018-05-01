@@ -147,8 +147,9 @@ bransDickeParams=['omegaBD','ScalarCharge1','ScalarCharge2']
 massiveGravitonParams=['lambdaG']
 tidalParams=['lambda1','lambda2','lam_tilde','dlam_tilde','lambdat','dlambdat']
 fourPiecePolyParams=['logp1','gamma1','gamma2','gamma3']
+spectralParams=['sdgamma0','sdgamma1','sdgamma2','sdgamma3']
 energyParams=['e_rad', 'l_peak']
-strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+energyParams+fourPiecePolyParams
+strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+energyParams+fourPiecePolyParams+spectralParams
 
 #Extrinsic
 distParams=['distance','distMPC','dist']
@@ -178,6 +179,8 @@ for param in tigerParams + bransDickeParams + massiveGravitonParams:
 for param in tidalParams:
   greedyBinSizes[param]=2.5
 for param in fourPiecePolyParams:
+  greedyBinSizes[param]=2.5
+for param in spectralParams:
   greedyBinSizes[param]=2.5
   #Confidence levels
 for loglname in statsParams:
@@ -354,6 +357,10 @@ def get_prior(name):
       'gamma1': None,
       'gamma2': None,
       'gamma3': None,
+      'sdgamma0': None,
+      'sdgamma1': None,
+      'sdgamma2': None,
+      'sdgamma3': None,
       'calamp_h1' : 'uniform',
       'calamp_l1' : 'uniform',
       'calpha_h1' : 'uniform',
@@ -452,6 +459,10 @@ def plot_label(param):
       'gamma1' : r'$\Gamma_{1}$',
       'gamma2' : r'$\Gamma_{2}$',
       'gamma3' : r'$\Gamma_{3}$',
+      'sdgamma0' : r'$\gamma_{0}$',
+      'sdgamma1' : r'$\gamma_{1}$',
+      'sdgamma2' : r'$\gamma_{2}$',
+      'sdgamma3' : r'$\gamma_{3}$',
       'calamp_h1' : r'$\delta A_{H1}$',
       'calamp_l1' : r'$\delta A_{L1}$',
       'calpha_h1' : r'$\delta \phi_{H1}$',
