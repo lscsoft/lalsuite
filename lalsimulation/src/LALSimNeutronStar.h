@@ -61,7 +61,7 @@ typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
 void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos);
 char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
 
-// FIXME: Constructed for python wrappers
+/** FIXME: Constructed for python wrappers */
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition_for_plot(
     double SDgamma0, double SDgamma1, double SDgamma2, double SDgamma3,
     int size);
