@@ -319,15 +319,6 @@ def ligolw_thinca(
 	verbose = False
 ):
 	#
-	# validate input
-	#
-
-	if min_log_L is not None and likelihood_func is None:
-		raise ValueError("must supply likelihood_func to impose min_log_L cut")
-	if likelihood_func is None and fapfar is not None:
-		raise ValueError("must supply likelihood_func to compute false-alarm rates and false-alarm probabilities")
-
-	#
 	# prepare the coincidence table interface.
 	#
 
@@ -372,7 +363,10 @@ def ligolw_thinca(
 					# store these values in
 					coinc_inspiral.combined_far = fapfar.far_from_rank(coinc.likelihood)
 					coinc_inspiral.false_alarm_rate = fapfar.fap_from_rank(coinc.likelihood)
-			if min_log_L is None or coinc.likelihood >= min_log_L:
+			# if min_log_L is None, this test always passes,
+			# regardless of the value of .likelihood, be it
+			# None, some number, -inf or even nan.
+			if coinc.likelihood >= min_log_L:
 				# set latency.
 				# NOTE:  this is nonsense unless running
 				# live.
