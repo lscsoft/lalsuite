@@ -2320,15 +2320,15 @@ def gaussian_window(*bins, **kwargs):
 	"""
 	if not bins:
 		raise ValueError("function requires at least 1 width")
+	if min(bins) < 0.:
+		raise ValueError("widths must be non-negative, got %s" % str(bins))
 	sigma = kwargs.pop("sigma", 10)
 	if kwargs:
 		raise ValueError("unrecognized keyword argument(s): %s" % ",".join(kwargs))
 	windows = []
 	for b in bins:
-		if b <= 0:
-			raise ValueError("negative width: %s" % repr(b))
 		l = int(math.floor(sigma * b / 2.0)) * 2
-		w = lal.CreateGaussREAL8Window(l + 1, l / float(b))
+		w = lal.CreateGaussREAL8Window(l + 1, l / float(b) if b else PosInf)
 		windows.append(w.data.data / w.sum)
 	if len(windows) == 1:
 		# 1D short-cut
