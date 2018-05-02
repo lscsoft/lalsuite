@@ -2346,8 +2346,8 @@ def tophat_window(*bins):
 	"""
 	Generate a normalized (integral = 1) rectangular window in N
 	dimensions.  The bins parameters set the width of the window in bin
-	counts in each dimension, each of which is rounded up to the
-	nearest odd integer.
+	counts in each dimension, each of which must be positive and will
+	be rounded up to the nearest odd integer.
 
 	Example:
 
@@ -2362,10 +2362,10 @@ def tophat_window(*bins):
 	"""
 	if not bins:
 		raise ValueError("function requires at least 1 width")
+	if min(bins) <= 0:
+		raise ValueError("widths must be positive, got %s" % str(bins))
 	windows = []
 	for b in bins:
-		if bins <= 0:
-			raise ValueError("negative width: %s" % repr(b))
 		w = lal.CreateRectangularREAL8Window(int(math.floor(b / 2.0)) * 2 + 1)
 		windows.append(w.data.data / w.sum)
 	if len(windows) == 1:
