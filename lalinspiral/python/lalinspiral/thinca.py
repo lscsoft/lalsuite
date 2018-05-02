@@ -319,13 +319,6 @@ def ligolw_thinca(
 	verbose = False
 ):
 	#
-	# validate input
-	#
-
-	if likelihood_func is None and fapfar is not None:
-		raise ValueError("must supply likelihood_func to compute false-alarm rates and false-alarm probabilities")
-
-	#
 	# prepare the coincidence table interface.
 	#
 
