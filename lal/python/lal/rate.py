@@ -2334,6 +2334,11 @@ def gaussian_window(*bins, **kwargs):
 		# 1D short-cut
 		return windows[0]
 	try:
+		# only works upto 26 dimensions, but that's 2 trillion bins
+		# if there are just 3 bins along each side, so it's
+		# unlikely to be a practical limitation;  for a while at
+		# least
+		assert len(windows) <= 26
 		return numpy.einsum(",".join("abcdefghijklmnopqrstuvwxyz"[:len(windows)]), *windows)
 	except AttributeError:
 		# numpy < 1.6
@@ -2372,6 +2377,11 @@ def tophat_window(*bins):
 		# 1D short-cut
 		return windows[0]
 	try:
+		# only works upto 26 dimensions, but that's 2 trillion bins
+		# if there are just 3 bins along each side, so it's
+		# unlikely to be a practical limitation;  for a while at
+		# least
+		assert len(windows) <= 26
 		return numpy.einsum(",".join("abcdefghijklmnopqrstuvwxyz"[:len(windows)]), *windows)
 	except AttributeError:
 		# numpy < 1.6
