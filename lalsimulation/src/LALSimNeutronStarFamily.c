@@ -124,7 +124,7 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
         XLALSimNeutronStarTOVODEIntegrate(&fam->rdat[i], &fam->mdat[i],
             &fam->kdat[i], fam->pdat[i], eos);
         /* determine if maximum mass has been found */
-        if (i > 0 && fam->mdat[i] < fam->mdat[i-1])
+        if (i > 0 && fam->mdat[i] <= fam->mdat[i-1])
             break;
     }
 
@@ -157,7 +157,10 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
             &fam->kdat[i], fam->pdat[i], eos);
 
         /* resize arrays */
-        ndat = i + 1;
+        if(fam->pdat[i] == fam->pdat[i-1])
+            ndat = i;
+        else
+            ndat = i + 1;
         fam->pdat = LALRealloc(fam->pdat, ndat * sizeof(*fam->pdat));
         fam->mdat = LALRealloc(fam->mdat, ndat * sizeof(*fam->mdat));
         fam->rdat = LALRealloc(fam->rdat, ndat * sizeof(*fam->rdat));
@@ -180,6 +183,16 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
     gsl_interp_init(fam->k_of_m_interp, fam->mdat, fam->kdat, ndat);
 
     return fam;
+}
+
+/**
+ * @brief Returns the minimum mass of a neutron star family.
+ * @param fam Pointer to the neutron star family structure.
+ * @return The maximum mass of the neutron star family (kg).
+ */
+double XLALSimNeutronStarFamMinimumMass(LALSimNeutronStarFamily *fam)
+{
+    return fam->mdat[0];
 }
 
 /**

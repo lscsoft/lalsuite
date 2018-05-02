@@ -482,8 +482,10 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
 
     eos->datatype = LALSIM_NEUTRON_STAR_EOS_DATA_TYPE_PIECEWISE_POLYTROPE;
     eos->data.piecewisePolytrope = data;
-    if(snprintf(eos->name, sizeof(eos->name), "4-Pc Polytrope (p1=10^%.2f Pa,Gam1=%.2f,Gam2=%.2f,Gam3=%.2f)", logp1_si, gamma1, gamma2, gamma3) >= (int) sizeof(eos->name))
-      XLAL_PRINT_WARNING("eos name overflow (max. size %d).",(int) sizeof(eos->name));
+
+    if(snprintf(eos->name, sizeof(eos->name), "4-Piece Poly (p1=10^%.4g Pa,"
+	"G1=%.4g,G2=%.4g,G3=%.4g)", logp1_si, gamma1, gamma2, gamma3) >= (int) sizeof(eos->name))
+        XLAL_ERROR_NULL(XLAL_EINVAL, "eos name overflow");
 
     /* setup function pointers */
     eos->free = eos_free_piecewise_polytrope;

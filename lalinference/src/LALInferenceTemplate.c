@@ -352,6 +352,23 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
     XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars,lambda2);
   }
 
+  /* ==== 4-PIECE POLYTROPE EOS PARAMETERS ==== */
+  REAL8 logp1 = 0.;
+  REAL8 gamma1 = 0.;
+  REAL8 gamma2 = 0.;
+  REAL8 gamma3 = 0.;
+  if(LALInferenceCheckVariable(model->params, "logp1")&&LALInferenceCheckVariable(model->params, "gamma1")&&LALInferenceCheckVariable(model->params, "gamma2")&&LALInferenceCheckVariable(model->params, "gamma3")){
+    REAL8 lambda1 = 0.;
+    REAL8 lambda2 = 0.;
+    logp1 = *(REAL8*) LALInferenceGetVariable(model->params, "logp1");
+    gamma1 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma1");
+    gamma2 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma2");
+    gamma3 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma3");
+    // Find lambda1,2(m1,2|eos)
+    LALInferenceLogp1GammasMasses2Lambdas(logp1,gamma1,gamma2,gamma3,m1,m2,&lambda1,&lambda2);
+    XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
+    XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+  }
 
   /* Only use GR templates */
   /* Fill in the extra parameters for testing GR, if necessary */
@@ -777,6 +794,23 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
   }
 
+  /* ==== 4-PIECE POLYTROPE EOS PARAMETERS ==== */
+  REAL8 logp1 = 0.;
+  REAL8 gamma1 = 0.;
+  REAL8 gamma2 = 0.;
+  REAL8 gamma3 = 0.;
+  if(LALInferenceCheckVariable(model->params, "logp1")&&LALInferenceCheckVariable(model->params, "gamma1")&&LALInferenceCheckVariable(model->params, "gamma2")&&LALInferenceCheckVariable(model->params, "gamma3")){
+    REAL8 lambda1 = 0.;
+    REAL8 lambda2 = 0.;
+    logp1 = *(REAL8*) LALInferenceGetVariable(model->params, "logp1");
+    gamma1 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma1");
+    gamma2 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma2");
+    gamma3 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma3");
+    // Find lambda1,2(m1,2|eos)
+    LALInferenceLogp1GammasMasses2Lambdas(logp1,gamma1,gamma2,gamma3,m1,m2,&lambda1,&lambda2);
+    XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
+    XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+  }
 
   /* Only use GR templates */
   /* Fill in the extra parameters for testing GR, if necessary */
@@ -1254,6 +1288,24 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
         LALInferenceLambdaTsEta2Lambdas(lambdaT,dLambdaT,sym_mass_ratio_eta,&lambda1,&lambda2);
         XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
         XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+    }
+
+    /* ==== 4-PIECE POLYTROPE EOS PARAMETERS ==== */
+    REAL8 logp1 = 0.;
+    REAL8 gamma1 = 0.;
+    REAL8 gamma2 = 0.;
+    REAL8 gamma3 = 0.;
+    if(LALInferenceCheckVariable(model->params, "logp1")&&LALInferenceCheckVariable(model->params, "gamma1")&&LALInferenceCheckVariable(model->params, "gamma2")&&LALInferenceCheckVariable(model->params, "gamma3")){
+      REAL8 lambda1 = 0.;
+      REAL8 lambda2 = 0.;
+      logp1 = *(REAL8*) LALInferenceGetVariable(model->params, "logp1");
+      gamma1 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma1");
+      gamma2 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma2");
+      gamma3 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma3");
+      // Find lambda1,2(m1,2|eos)
+      LALInferenceLogp1GammasMasses2Lambdas(logp1,gamma1,gamma2,gamma3,m1,m2,&lambda1,&lambda2);
+      XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
+      XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
     }
 
     /* Only use GR templates */

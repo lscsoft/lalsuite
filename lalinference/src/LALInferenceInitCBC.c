@@ -741,6 +741,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--fref f_ref)                  Specify a reference frequency at which parameters are defined (default 100).\n\
     (--tidal)                   Enables tidal corrections, only with LALSimulation.\n\
     (--tidalT)                  Enables reparmeterized tidal corrections, only with LALSimulation.\n\
+    (--4PolyEOS)                Enables 4-piece polytropic EOS parmeterization, only with LALSimulation.\n\
     (--spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
     (--tidalOrder PNorder)          Specify twice the PN order (e.g. 10 <==> 5PN) of tidal effects to use, only for LALSimulation (default: -1 <==> Use all tidal effects).\n\
     (--numreldata FileName)         Location of NR data file for NR waveforms (with NR_hdf5 approx).\n\
@@ -773,11 +774,19 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
      tilt_spin2                   Angle between spin2 and orbital angular momentum \n\
      phi_12                       Difference between spins' azimuthal angles \n\
      phi_jl                       Difference between total and orbital angular momentum azimuthal angles\n\
-    * Equation of State parameters (requires --use-tidal or --use-tidalT):\n\
+    * Equation of State parameters:\n\
+     (requires --tidal)\n\
      lambda1                      lambda1.\n\
      lambda2                      lambda2.\n\
+     (requires --tidalT)\n\
      lambdaT                      lambdaT.\n\
      dLambdaT                     dLambdaT.\n\
+     (requires --4PolyEOS)\n\
+     logp1                        logp1.\n\
+     gamma1                       gamma1.\n\
+     gamma2                       gamma2.\n\
+     gamma3                       gamma3.\n\
+    * \n\
     ----------------------------------------------\n\
     --- Prior Ranges -----------------------------\n\
     ----------------------------------------------\n\
@@ -793,6 +802,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--mtotal-max max)                      Maximum total mass (200.0).\n\
     (--dt time)                             Width of time prior, centred around trigger (0.2s).\n\
 \n\
+    (--ns-max-mass)                          Maximum observed NS mass used for EOS prior (none).\n\
     (--varyFlow, --flowMin, --flowMax)       Allow the lower frequency bound of integration to vary in given range.\n\
     (--pinparams)                            List of parameters to set to injected values [mchirp,asym_massratio,etc].\n\
     ----------------------------------------------\n\
@@ -856,6 +866,14 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   REAL8 lambdaTMax=3000.0;
   REAL8 dLambdaTMin=-500.0;
   REAL8 dLambdaTMax=500.0;
+  REAL8 logp1Min=33.6;
+  REAL8 logp1Max=35.4;
+  REAL8 gamma1Min=2.0;
+  REAL8 gamma1Max=4.5;
+  REAL8 gamma2Min=1.1;
+  REAL8 gamma2Max=4.5;
+  REAL8 gamma3Min=1.1;
+  REAL8 gamma3Max=4.5;
   gsl_rng *GSLrandom=state->GSLrandom;
   REAL8 endtime=0.0, timeParam=0.0;
   REAL8 timeMin=endtime-dt,timeMax=endtime+dt;
@@ -1325,17 +1343,30 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
 
   }
 
+  // Must pick to either use tidal, tidalT, or 4-piece polytrope parameters; otherwise throw error message
   if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--tidal")){
     XLALPrintError("Error: cannot use both --tidalT and --tidal.\n");
     XLAL_ERROR_NULL(XLAL_EINVAL);
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")){
+    XLALPrintError("Error: cannot use both --tidalT and --4PolyEOS.\n");
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidal")&&LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")){
+    XLALPrintError("Error: cannot use both --tidal and --4PolyEOS.\n");
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  // Pull in tidalT parameters (lambdaT,dLambdaT)
   } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")){
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambdaT", zero, lambdaTMin, lambdaTMax, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "dLambdaT", zero, dLambdaTMin, dLambdaTMax, LALINFERENCE_PARAM_LINEAR);
-
+  // Pull in tidal parameters (lambda1,lambda2)
   } else if(LALInferenceGetProcParamVal(commandLine,"--tidal")){
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambda1", zero, lambda1Min, lambda1Max, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambda2", zero, lambda2Min, lambda2Max, LALINFERENCE_PARAM_LINEAR);
-
+  // Pull in 4-piece polytrope parameters (logp1,gamma1,gamma2,gamma3)
+  } else if(LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")){
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "logp1", zero, logp1Min, logp1Max, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma1", zero, gamma1Min, gamma1Max, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma2", zero, gamma2Min, gamma2Max, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma3", zero, gamma3Min, gamma3Max, LALINFERENCE_PARAM_LINEAR);
   }
 
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
