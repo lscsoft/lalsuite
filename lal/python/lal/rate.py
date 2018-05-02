@@ -2320,20 +2320,25 @@ def gaussian_window(*bins, **kwargs):
 	"""
 	if not bins:
 		raise ValueError("function requires at least 1 width")
+	if min(bins) < 0.:
+		raise ValueError("widths must be non-negative, got %s" % str(bins))
 	sigma = kwargs.pop("sigma", 10)
 	if kwargs:
 		raise ValueError("unrecognized keyword argument(s): %s" % ",".join(kwargs))
 	windows = []
 	for b in bins:
-		if b <= 0:
-			raise ValueError("negative width: %s" % repr(b))
 		l = int(math.floor(sigma * b / 2.0)) * 2
-		w = lal.CreateGaussREAL8Window(l + 1, l / float(b))
+		w = lal.CreateGaussREAL8Window(l + 1, l / float(b) if b else PosInf)
 		windows.append(w.data.data / w.sum)
 	if len(windows) == 1:
 		# 1D short-cut
 		return windows[0]
 	try:
+		# only works upto 26 dimensions, but that's 2 trillion bins
+		# if there are just 3 bins along each side, so it's
+		# unlikely to be a practical limitation;  for a while at
+		# least
+		assert len(windows) <= 26
 		return numpy.einsum(",".join("abcdefghijklmnopqrstuvwxyz"[:len(windows)]), *windows)
 	except AttributeError:
 		# numpy < 1.6
@@ -2346,8 +2351,8 @@ def tophat_window(*bins):
 	"""
 	Generate a normalized (integral = 1) rectangular window in N
 	dimensions.  The bins parameters set the width of the window in bin
-	counts in each dimension, each of which is rounded up to the
-	nearest odd integer.
+	counts in each dimension, each of which must be positive and will
+	be rounded up to the nearest odd integer.
 
 	Example:
 
@@ -2362,16 +2367,21 @@ def tophat_window(*bins):
 	"""
 	if not bins:
 		raise ValueError("function requires at least 1 width")
+	if min(bins) <= 0:
+		raise ValueError("widths must be positive, got %s" % str(bins))
 	windows = []
 	for b in bins:
-		if bins <= 0:
-			raise ValueError("negative width: %s" % repr(b))
 		w = lal.CreateRectangularREAL8Window(int(math.floor(b / 2.0)) * 2 + 1)
 		windows.append(w.data.data / w.sum)
 	if len(windows) == 1:
 		# 1D short-cut
 		return windows[0]
 	try:
+		# only works upto 26 dimensions, but that's 2 trillion bins
+		# if there are just 3 bins along each side, so it's
+		# unlikely to be a practical limitation;  for a while at
+		# least
+		assert len(windows) <= 26
 		return numpy.einsum(",".join("abcdefghijklmnopqrstuvwxyz"[:len(windows)]), *windows)
 	except AttributeError:
 		# numpy < 1.6
