@@ -33,14 +33,13 @@ cache:
     - ccache
 
 .levelN:package: &levelN-package
-  image: ligo/lalsuite-dev:stretch
   script:
-    - cd ${CI_JOB_NAME#level?:}
+    - cd ${CI_JOB_NAME#level?:*:}
     - ./00boot
     - ./configure --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
     - make dist
     - cd ${CI_PROJECT_DIR}
-    - tar xf ${CI_JOB_NAME#level?:}/lal*.tar.xz
+    - tar xf ${CI_JOB_NAME#level?:*:}/lal*.tar.xz
     - cd lal*-*
     - mkdir -p subdir
     - cd subdir
@@ -58,82 +57,167 @@ cache:
     - schedules
     - web
 
-level0:lal:
+.levelN:package:stretch: &levelN-package-stretch
+  image: ligo/lalsuite-dev:stretch
   <<: *levelN-package
+
+level0:stretch:lal:
+  <<: *levelN-package-stretch
   stage: level0
 
-level1:lalframe:
-  <<: *levelN-package
+level1:stretch:lalframe:
+  <<: *levelN-package-stretch
   stage: level1
   dependencies:
-    - level0:lal
+    - level0:stretch:lal
 
-level1:lalmetaio:
-  <<: *levelN-package
+level1:stretch:lalmetaio:
+  <<: *levelN-package-stretch
   stage: level1
   dependencies:
-    - level0:lal
+    - level0:stretch:lal
 
-level1:lalsimulation:
-  <<: *levelN-package
+level1:stretch:lalsimulation:
+  <<: *levelN-package-stretch
   stage: level1
   dependencies:
-    - level0:lal
+    - level0:stretch:lal
 
-level1:lalxml:
-  <<: *levelN-package
+level1:stretch:lalxml:
+  <<: *levelN-package-stretch
   stage: level1
   dependencies:
-    - level0:lal
+    - level0:stretch:lal
 
-level2:lalburst:
-  <<: *levelN-package
+level2:stretch:lalburst:
+  <<: *levelN-package-stretch
   stage: level2
   dependencies:
-    - level1:lalmetaio
-    - level1:lalsimulation
+    - level1:stretch:lalmetaio
+    - level1:stretch:lalsimulation
 
-level2:lalinspiral:
-  <<: *levelN-package
+level2:stretch:lalinspiral:
+  <<: *levelN-package-stretch
   stage: level2
   dependencies:
-    - level1:lalframe
-    - level1:lalmetaio
-    - level1:lalsimulation
+    - level1:stretch:lalframe
+    - level1:stretch:lalmetaio
+    - level1:stretch:lalsimulation
 
-level2:lalpulsar:
-  <<: *levelN-package
+level2:stretch:lalpulsar:
+  <<: *levelN-package-stretch
   stage: level2
   dependencies:
-    - level0:lal
+    - level0:stretch:lal
 
-level2:lalstochastic:
-  <<: *levelN-package
+level2:stretch:lalstochastic:
+  <<: *levelN-package-stretch
   stage: level2
   dependencies:
-    - level1:lalmetaio
+    - level1:stretch:lalmetaio
 
-level3:laldetchar:
-  <<: *levelN-package
+level3:stretch:laldetchar:
+  <<: *levelN-package-stretch
   stage: level3
   dependencies:
-    - level2:lalburst
+    - level2:stretch:lalburst
 
-level3:lalinference:
-  <<: *levelN-package
+level3:stretch:lalinference:
+  <<: *levelN-package-stretch
   stage: level3
   dependencies:
-    - level2:lalburst
-    - level2:lalinspiral
-    - level2:lalpulsar
+    - level2:stretch:lalburst
+    - level2:stretch:lalinspiral
+    - level2:stretch:lalpulsar
 
-level4:lalapps:
-  <<: *levelN-package
+level4:stretch:lalapps:
+  <<: *levelN-package-stretch
   stage: level4
   dependencies:
-    - level2:lalstochastic
-    - level3:laldetchar
-    - level3:lalinference
+    - level2:stretch:lalstochastic
+    - level3:stretch:laldetchar
+    - level3:stretch:lalinference
+
+.levelN:package:el7: &levelN-package-el7
+  image: ligo/lalsuite-dev:el7
+  <<: *levelN-package
+
+level0:el7:lal:
+  <<: *levelN-package-el7
+  stage: level0
+
+level1:el7:lalframe:
+  <<: *levelN-package-el7
+  stage: level1
+  dependencies:
+    - level0:el7:lal
+
+level1:el7:lalmetaio:
+  <<: *levelN-package-el7
+  stage: level1
+  dependencies:
+    - level0:el7:lal
+
+level1:el7:lalsimulation:
+  <<: *levelN-package-el7
+  stage: level1
+  dependencies:
+    - level0:el7:lal
+
+level1:el7:lalxml:
+  <<: *levelN-package-el7
+  stage: level1
+  dependencies:
+    - level0:el7:lal
+
+level2:el7:lalburst:
+  <<: *levelN-package-el7
+  stage: level2
+  dependencies:
+    - level1:el7:lalmetaio
+    - level1:el7:lalsimulation
+
+level2:el7:lalinspiral:
+  <<: *levelN-package-el7
+  stage: level2
+  dependencies:
+    - level1:el7:lalframe
+    - level1:el7:lalmetaio
+    - level1:el7:lalsimulation
+
+level2:el7:lalpulsar:
+  <<: *levelN-package-el7
+  stage: level2
+  dependencies:
+    - level0:el7:lal
+
+level2:el7:lalstochastic:
+  <<: *levelN-package-el7
+  stage: level2
+  dependencies:
+    - level1:el7:lalmetaio
+
+level3:el7:laldetchar:
+  <<: *levelN-package-el7
+  stage: level3
+  dependencies:
+    - level2:el7:lalburst
+
+level3:el7:lalinference:
+  <<: *levelN-package-el7
+  stage: level3
+  dependencies:
+    - level2:el7:lalburst
+    - level2:el7:lalinspiral
+    - level2:el7:lalpulsar
+
+level4:el7:lalapps:
+  <<: *levelN-package-el7
+  stage: level4
+  dependencies:
+    - level2:el7:lalstochastic
+    - level3:el7:laldetchar
+    - level3:el7:lalinference
 
 # release a debian docker image upon every tag in lalsuite
 docker:tags:
@@ -144,7 +228,7 @@ docker:tags:
     - docker build --pull -t $TAG --file .Dockerfile.gitlab-ci .
     - docker push $TAG
   dependencies:
-    - level4:lalapps
+    - level4:stretch:lalapps
   only:
     - tags
 
@@ -157,23 +241,12 @@ docker:nightly:
     - docker build --pull -t $NIGHTLY --file .Dockerfile.gitlab-ci .
     - docker push $NIGHTLY
   dependencies:
-    - level4:lalapps
+    - level4:stretch:lalapps
   only:
     - master@lscsoft/lalsuite
     - schedules
   except:
     - pushes
-    - web
-
-nightly:top-level:el7:
-  image: ligo/lalsuite-dev:el7
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  only:
-    - schedules
     - web
 
 nightly:top-level:jessie:
