@@ -157,7 +157,7 @@ class CWSimulator(object):
             bary_emit = lalpulsar.EmissionTime()
             bary_input.tgps = tref
             bary_input.site = self.__site
-            for i in xrange(0, 3):
+            for i in range(0, 3):
                 bary_input.site.location[i] /= lal.C_SI
             bary_input.alpha = alpha
             bary_input.delta = delta
@@ -191,7 +191,7 @@ class CWSimulator(object):
 
         # call waveform() to fill time series of signal phase and amplitudes
         dt = float(tstart_wf - tref)
-        for i in xrange(0, Nwf):
+        for i in range(0, Nwf):
             dphi, aplus, across = waveform(dt)
             self.__phi.data.data[i] = phi0 + dphi
             self.__a.data.data[i][0] = aplus
@@ -287,7 +287,7 @@ class CWSimulator(object):
 
         # generate strain time series in blocks of length 'Tblock'
         tmin = 0
-        for iblock in xrange(0, Nblock):
+        for iblock in range(0, Nblock):
             epoch, hoft = self.get_strain(fs, tmin=tmin, tmax=tmin+Tblock,
                                           noise_sqrt_Sh=noise_sqrt_Sh,
                                           noise_seed=noise_seed + iblock)
