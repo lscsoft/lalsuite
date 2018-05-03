@@ -261,6 +261,18 @@ nightly:top-level:jessie:
     - schedules
     - web
 
+nightly:top-level:el7-cr:
+  image: ligo/lalsuite-dev:el7-cr
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
 nightly:top-level:trusty:
   image: skymoo/ligo-lalsuite-dev:trusty
   stage: nightly
