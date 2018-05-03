@@ -84,7 +84,7 @@ Algorithm Library.
 %{__make} %{?_smp_mflags} V=1
 
 %check
-%{__make} %{?_smp_mflags} V=1 check
+%{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
 
 %install
 %make_install
