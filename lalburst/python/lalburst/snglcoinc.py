@@ -856,7 +856,7 @@ class CoincRates(object):
 		>>> coincrates.all_instrument_combos
 		(frozenset(['V1', 'H1']), frozenset(['V1', 'L1']), frozenset(['H1', 'L1']), frozenset(['V1', 'H1', 'L1']))
 		"""
-		all_instruments = tuple(self.instruments)
+		all_instruments = sorted(self.instruments)
 		return tuple(frozenset(instruments) for n in range(self.min_instruments, len(all_instruments) + 1) for instruments in itertools.combinations(all_instruments, n))
 
 
