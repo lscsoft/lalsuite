@@ -87,7 +87,7 @@ This package provides the Octave bindings for LALBurst.
 %{__make} %{?_smp_mflags} V=1
 
 %check
-%{__make} %{?_smp_mflags} V=1 check
+%{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
 
 %install
 %make_install
