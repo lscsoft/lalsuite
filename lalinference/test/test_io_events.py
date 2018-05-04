@@ -76,22 +76,6 @@ def test_ligolw():
     ligolw_assertions(source)
 
 
-def test_sqlite(tmpdir):
-    """Test reading events from SQLite files."""
-    # Convert the test data to SQLite format in the temporary directory.
-    xmlfilename = os.path.join(DATA_PATH, '2016_subset.xml.gz')
-    dbfilename = str(tmpdir / '2016_subset.sqlite')
-    subprocess.check_call(['ligolw_sqlite', '-p',
-                           xmlfilename, '-d', dbfilename])
-
-    # Symbolicly link the PSD directory into the temporary directory.
-    os.symlink(os.path.join(DATA_PATH, 'gstlal_reference_psd'),
-               str(tmpdir / 'gstlal_reference_psd'))
-
-    source = events.open(dbfilename)
-    ligolw_assertions(source)
-
-
 def test_gracedb():
     """Test reading events from GraceDB records."""
     client = MockGraceDb()
