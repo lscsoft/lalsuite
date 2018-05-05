@@ -15,6 +15,7 @@ stages:
   - level2
   - level3
   - level4
+  - docker
   - nightly
   - wheels
   - deploy
@@ -222,7 +223,7 @@ level4:el7:lalapps:
 
 # release a debian docker image upon every tag in lalsuite
 docker:tags:
-  stage: nightly
+  stage: docker
   before_script: []
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
@@ -235,7 +236,7 @@ docker:tags:
 
 # release a debian docker image of each nightly build
 docker:nightly:
-  stage: nightly
+  stage: docker
   before_script: []
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
@@ -738,7 +739,7 @@ level4:deb:lalapps:
 
 # build a nightly container from the debian packages
 docker:stretch:nightly:
-  stage: nightly
+  stage: docker
   before_script: []
   script:
     # add deb packages to directory to pass to docker
