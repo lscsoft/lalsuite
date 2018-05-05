@@ -49,6 +49,7 @@ Requires: less
 Requires: libframe
 Requires: libmetaio
 Requires: openmpi
+Requires: openssh-clients
 Requires: python
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: lal-python >= @MIN_LAL_VERSION@
