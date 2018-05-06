@@ -608,6 +608,38 @@ level4:rpm:lalapps:
     - level2:rpm:lalstochastic
     - level3:rpm:lalinference
 
+# build a nightly container from the RPMs
+docker:el7:nightly:
+  stage: docker
+  before_script: []
+  script:
+    # add RPMs to directory to pass to docker
+    - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
+    - rm -rf rpmbuild*
+    # build container and push to registry
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $CI_REGISTRY_IMAGE/el7:nightly --file .Dockerfile-el7.gitlab-ci .
+    - docker push $CI_REGISTRY_IMAGE/el7:nightly
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level1:rpm:lalxml
+    - level2:rpm:lalburst
+    - level2:rpm:lalinspiral
+    - level2:rpm:lalpulsar
+    - level2:rpm:lalstochastic
+    - level3:rpm:laldetchar
+    - level3:rpm:lalinference
+    - level4:rpm:lalapps
+  only:
+    - master@lscsoft/lalsuite
+    - schedules
+  except:
+    - pushes
+    - web
+
 .levelN:deb: &levelN-deb-package
   image: ligo/lalsuite-dev:stretch
   script:
