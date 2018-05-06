@@ -401,9 +401,7 @@ nightly:macos:highsierra:
     # Build wheel
     - ./00boot
     # FIXME: laldetchar depends on glib >= 2.14, too new for manylinux1
-    - ./configure PYTHON=${PYPREFIX}/bin/python
-      --enable-swig-python ${EXTRA_CONFIG_OPTIONS}
-      --disable-laldetchar
+    - ./configure PYTHON=${PYPREFIX}/bin/python --disable-laldetchar ${EXTRA_CONFIG_FLAGS}
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - auditwheel repair wheel/*.whl
