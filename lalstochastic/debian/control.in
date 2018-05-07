@@ -2,6 +2,7 @@ Source: lalstochastic
 Section: science
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
+Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
 Build-Depends: debhelper (>= 9),
   dh-python,
   libmetaio-dev (>= 8.2),
