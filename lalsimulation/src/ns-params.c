@@ -164,6 +164,7 @@ int parseargs(int argc, char **argv)
         case '3':
             gamma3 = atof(LALoptarg);
             break;
+
            /* using 4 coeff. spectral decomposition */
         case 'T':
             spectralFlag = 1;

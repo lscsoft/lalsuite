@@ -185,7 +185,7 @@ int parseargs(int argc, char **argv)
     double logp1_si = 0, gamma1 = 0, gamma2 = 0, gamma3 = 0;
 
     /* quatities for 4-coeff. spectral decompositions */
-    int spectralFlag = 0.;
+    int spectralFlag = 0;
     double SDgamma0 = 0, SDgamma1 = 0, SDgamma2 = 0, SDgamma3 = 0;
 
     while (1) {
@@ -255,6 +255,7 @@ int parseargs(int argc, char **argv)
         case '3':
             gamma3 = atof(LALoptarg);
             break;
+
            /* using 4-coeff. spectral decomposition */
         case 'T':
             spectralFlag = 1;
@@ -291,7 +292,7 @@ int parseargs(int argc, char **argv)
             gamma1, gamma2, gamma3);
 
     /* set eos to 4-coeff. spectral decomposition */
-    if (spectralFlag == 2)
+    if (spectralFlag == 1)
        {
          double gamma[]={SDgamma0, SDgamma1, SDgamma2, SDgamma3};
          global_eos = XLALSimNeutronStarEOSSpectralDecomposition(gamma, 4);

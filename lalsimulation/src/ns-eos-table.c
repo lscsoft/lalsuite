@@ -209,10 +209,10 @@ int parseargs(int argc, char **argv)
         {"gamma2", required_argument, 0, '2'},
         {"gamma3", required_argument, 0, '3'},
         {"4parameterspectraldecomposition", no_argument, 0, 'T'},
-        {"SDgamma0_4", required_argument, 0, 'w'},
-        {"SDgamma1_4", required_argument, 0, 'x'},
-        {"SDgamma2_4", required_argument, 0, 'y'},
-        {"SDgamma3_4", required_argument, 0, 'z'},
+        {"SDgamma0", required_argument, 0, 'w'},
+        {"SDgamma1", required_argument, 0, 'x'},
+        {"SDgamma2", required_argument, 0, 'y'},
+        {"SDgamma3", required_argument, 0, 'z'},
         {0, 0, 0, 0}
     };
     char args[] = "hcgf:n:F:N:PG:p:r:Qq:1:2:3:Tw:x:y:z:";
@@ -227,7 +227,7 @@ int parseargs(int argc, char **argv)
 
     /* quatities for 4-coeff. spectral decompositions */
     int spectralFlag = 0;
-    double SDgamma0_4 = 0, SDgamma1_4 = 0, SDgamma2_4 = 0, SDgamma3_4 = 0;
+    double SDgamma0 = 0, SDgamma1 = 0, SDgamma2 = 0, SDgamma3 = 0;
 
     while (1) {
         int option_index = 0;
@@ -302,21 +302,22 @@ int parseargs(int argc, char **argv)
         case '3':
             gamma3 = atof(LALoptarg);
             break;
+
            /* using 4-parameter spectral decomposition */
         case 'T':
             spectralFlag = 1;
             break;
         case 'w':
-            SDgamma0_4 = atof(LALoptarg);
+            SDgamma0 = atof(LALoptarg);
             break;
         case 'x':
-            SDgamma1_4 = atof(LALoptarg);
+            SDgamma1 = atof(LALoptarg);
             break;
         case 'y':
-            SDgamma2_4 = atof(LALoptarg);
+            SDgamma2 = atof(LALoptarg);
             break;
         case 'z':
-            SDgamma3_4 = atof(LALoptarg);
+            SDgamma3 = atof(LALoptarg);
             break;
 
         default:
@@ -340,7 +341,7 @@ int parseargs(int argc, char **argv)
     /* set eos to 4-parameter spectral decomposition */
     if (spectralFlag == 1)
        {
-         double gamma[]={SDgamma0_4, SDgamma1_4, SDgamma2_4, SDgamma3_4};
+         double gamma[]={SDgamma0, SDgamma1, SDgamma2, SDgamma3};
          global_eos = XLALSimNeutronStarEOSSpectralDecomposition(gamma, 4);
        }
 
@@ -391,13 +392,13 @@ int usage(const char *program)
     fprintf(stderr,
         "\t-T --4paramspectraldecomp        \tuse 4-parameter spectral decomposition (PRD 82, 103011 (2010))\n");
     fprintf(stderr,
-        "\t-w SDgamma0_4, --SDgamma0_4=SDgamma0_4 \tadiabatic index spectral decomposition coefficient 1 (4-coeff) 0.2--2.0\n");
+        "\t-w SDgamma0, --SDgamma0=SDgamma0 \tadiabatic index spectral decomposition coefficient 1 (4-coeff) 0.2--2.0\n");
     fprintf(stderr,
-        "\t-x SDgamma1_4, --SDgamma1_4=SDgamma1_4 \tadiabatic index spectral decomposition coefficient 2 (4-coeff) -1.6--1.7\n");
+        "\t-x SDgamma1, --SDgamma1=SDgamma1 \tadiabatic index spectral decomposition coefficient 2 (4-coeff) -1.6--1.7\n");
     fprintf(stderr,
-        "\t-y SDgamma2_4, --SDgamma2_4=SDgamma2_4 \tadiabatic index spectral decomposition coefficient 3 (4-coeff) -0.8--0.6\n");
+        "\t-y SDgamma2, --SDgamma2=SDgamma2 \tadiabatic index spectral decomposition coefficient 3 (4-coeff) -0.8--0.6\n");
     fprintf(stderr,
-        "\t-z SDgamma3_4, --SDgamma3_4=SDgamma3_4 \tadiabatic index spectral decomposition coefficient 4 (4-coeff) -0.2--0.2\n");
+        "\t-z SDgamma3, --SDgamma3=SDgamma3 \tadiabatic index spectral decomposition coefficient 4 (4-coeff) -0.2--0.2\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "\t-c, --cgs                        \tuse CGS units\n");
     fprintf(stderr,
