@@ -2392,7 +2392,6 @@ if(LALInferenceCheckVariable(params, "logp1") && LALInferenceCheckVariable(param
 
   // Make 4-piece polytrope eos
   eos = XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(logp1_si,gamma1,gamma2,gamma3);
-  fam = XLALCreateSimNeutronStarFamily(eos);
 }
 // Else if using 4-coeff spectral eos params...
 else if( LALInferenceCheckVariable(params,"SDgamma0") && LALInferenceCheckVariable(params,"SDgamma1") && LALInferenceCheckVariable(params,"SDgamma2") && LALInferenceCheckVariable(params,"SDgamma3"))
@@ -2441,8 +2440,21 @@ for (int i = 0; i < 4; ++i) {
    /* determine if maximum mass has been found */
    if (mdat[i] <= mdat[i-1])
       fprintf(stdout,"EOS has too few points. Sample rejected.\n");
+      // Clean up
+      LALFree(pdat);
+      LALFree(mdat);
+      LALFree(rdat);
+      LALFree(kdat);
+      XLALDestroySimNeutronStarFamily(fam);
+      XLALDestroySimNeutronStarEOS(eos);
       return XLAL_FAILURE;
 }
+// Clean up
+LALFree(pdat);
+LALFree(mdat);
+LALFree(rdat);
+LALFree(kdat);
+
 fam = XLALCreateSimNeutronStarFamily(eos);
 
 // Determine which mass parameterization is used
@@ -2470,6 +2482,9 @@ else if(LALInferenceCheckVariable(params, "chirpmass") && LALInferenceCheckVaria
 else {
   // Else fail
   fprintf(stdout,"ERROR: NO MASS PARAMETERS FOUND\n");
+  // Clean up
+  XLALDestroySimNeutronStarFamily(fam);
+  XLALDestroySimNeutronStarEOS(eos);
   return XLAL_FAILURE;
 }
 
@@ -2501,16 +2516,16 @@ if(mass1_kg <= max_mass_kg && mass2_kg <= max_mass_kg && mass1_kg >= min_mass_kg
   ret=XLAL_SUCCESS;
 // Else fail
 }else{
+  // Clean up
+  XLALDestroySimNeutronStarFamily(fam);
+  XLALDestroySimNeutronStarEOS(eos);
   ret=XLAL_FAILURE;
 }
 
 // Clean up
-LALFree(pdat);
-LALFree(mdat);
-LALFree(rdat);
-LALFree(kdat);
 XLALDestroySimNeutronStarFamily(fam);
 XLALDestroySimNeutronStarEOS(eos);
+LALCheckMemoryLeaks();
 return ret;
 }
 
