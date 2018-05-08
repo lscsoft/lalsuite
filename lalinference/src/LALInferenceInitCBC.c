@@ -1351,8 +1351,22 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   }
 
   // For EOS, must pick to either use tidal, tidalT, or 4-piece polytrope parameters; otherwise throw error message
-  if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--tidal")
-     &&LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")&&LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")){
+  if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--tidal")){
+    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")){
+    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")){
+    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidal")&&LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")){
+    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidal")&&LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")){
+    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  } else if(LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")&&LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")){
     XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
     XLAL_ERROR_NULL(XLAL_EINVAL);
   } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")){
