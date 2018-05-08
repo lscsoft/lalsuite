@@ -736,6 +736,38 @@ level4:deb:lalapps:
     - level2:deb:lalstochastic
     - level3:deb:lalinference
 
+# build a nightly container from the debian packages
+docker:stretch:nightly:
+  stage: nightly
+  before_script: []
+  script:
+    # add deb packages to directory to pass to docker
+    - mkdir debs && mv *.deb debs
+    - rm *.changes *.dsc *.orig.*
+    # build container and push to registry
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $CI_REGISTRY_IMAGE/stretch:nightly --file .Dockerfile-stretch.gitlab-ci .
+    - docker push $CI_REGISTRY_IMAGE/stretch:nightly
+  dependencies:
+    - level0:deb:lal
+    - level1:deb:lalframe
+    - level1:deb:lalmetaio
+    - level1:deb:lalsimulation
+    - level1:deb:lalxml
+    - level2:deb:lalburst
+    - level2:deb:lalinspiral
+    - level2:deb:lalpulsar
+    - level2:deb:lalstochastic
+    - level3:deb:laldetchar
+    - level3:deb:lalinference
+    - level4:deb:lalapps
+  only:
+    - master@lscsoft/lalsuite
+    - schedules
+  except:
+    - pushes
+    - web
+
 pages:
   image: ligo/lalsuite-dev:stretch
   stage: nightly
