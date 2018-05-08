@@ -34,6 +34,7 @@ cache:
   paths:
     - ccache
 
+# FIXME: remove schedules after package builds have been running for a while
 .levelN:package: &levelN-package
   script:
     - cd ${CI_JOB_NAME#level?:*:}
@@ -220,7 +221,7 @@ level4:el7:lalapps:
     - level3:el7:laldetchar
     - level3:el7:lalinference
 
-# release a debian docker image upon every tag in lalsuite
+# FIXME: remove after package builds have been running for a while
 docker:tags:
   stage: docker
   before_script: []
@@ -233,7 +234,7 @@ docker:tags:
   only:
     - tags
 
-# release a debian docker image of each nightly build
+# FIXME: remove after package builds have been running for a while
 docker:nightly:
   stage: docker
   before_script: []
