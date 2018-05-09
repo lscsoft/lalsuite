@@ -736,6 +736,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--tidal)                   Enables tidal corrections, only with LALSimulation.\n\
     (--tidalT)                  Enables reparmeterized tidal corrections, only with LALSimulation.\n\
     (--4PolyEOS)                Enables 4-piece polytropic EOS parmeterization, only with LALSimulation.\n\
+    (--4SpectralDecomp)         Enables 4-coeff. spectral decomposition EOS parmeterization, only with LALSimulation.\n\
     (--spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
     (--tidalOrder PNorder)          Specify twice the PN order (e.g. 10 <==> 5PN) of tidal effects to use, only for LALSimulation (default: -1 <==> Use all tidal effects).\n\
     (--numreldata FileName)         Location of NR data file for NR waveforms (with NR_hdf5 approx).\n\
@@ -780,6 +781,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
      gamma1                       gamma1.\n\
      gamma2                       gamma2.\n\
      gamma3                       gamma3.\n\
+     (requires --4SpectralDecomp):\n\
+     SDgamma0                     SDgamma0.\n\
+     SDgamma1                     SDgamma1.\n\
+     SDgamma2                     SDgamma2.\n\
+     SDgamma3                     SDgamma3.\n\
     ----------------------------------------------\n\
     --- Prior Ranges -----------------------------\n\
     ----------------------------------------------\n\
@@ -867,6 +873,14 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   REAL8 gamma2Max=4.5;
   REAL8 gamma3Min=1.1;
   REAL8 gamma3Max=4.5;
+  REAL8 SDgamma0Min=0.2;
+  REAL8 SDgamma0Max=2.0;
+  REAL8 SDgamma1Min=-1.6;
+  REAL8 SDgamma1Max=1.7;
+  REAL8 SDgamma2Min=-0.6;
+  REAL8 SDgamma2Max=0.6;
+  REAL8 SDgamma3Min=-0.02;
+  REAL8 SDgamma3Max=0.02;
   gsl_rng *GSLrandom=state->GSLrandom;
   REAL8 endtime=0.0, timeParam=0.0;
   REAL8 timeMin=endtime-dt,timeMax=endtime+dt;
@@ -1337,8 +1351,23 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   }
 
   // For EOS, must pick to either use tidal, tidalT, or 4-piece polytrope parameters; otherwise throw error message
-  if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--tidal")&&LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")){
-    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS.\n");
+  if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--tidal")){
+    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")){
+    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")){
+    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidal")&&LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")){
+    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  } else if(LALInferenceGetProcParamVal(commandLine,"--tidal")&&LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")){
+    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  } else if(LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")&&LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")){
+    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
     XLAL_ERROR_NULL(XLAL_EINVAL);
   } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")){
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambdaT", zero, lambdaTMin, lambdaTMax, LALINFERENCE_PARAM_LINEAR);
@@ -1353,6 +1382,12 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma1", zero, gamma1Min, gamma1Max, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma2", zero, gamma2Min, gamma2Max, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma3", zero, gamma3Min, gamma3Max, LALINFERENCE_PARAM_LINEAR);
+  // Pull in spectral decomposition parameters (SDgamma0,SDgamma1,SDgamma2,SDgamma3)
+  } else  if(LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")){
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "SDgamma0", zero, SDgamma0Min, SDgamma0Max, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "SDgamma1", zero, SDgamma1Min, SDgamma1Max, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "SDgamma2", zero, SDgamma2Min, SDgamma2Max, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "SDgamma3", zero, SDgamma3Min, SDgamma3Max, LALINFERENCE_PARAM_LINEAR);
   }
 
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;

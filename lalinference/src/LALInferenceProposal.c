@@ -96,7 +96,7 @@ const char *const splineCalibrationProposalName = "SplineCalibration";
 const char *const distanceLikelihoodProposalName = "DistanceLikelihood";
 
 static const char *intrinsicNames[] = {"chirpmass", "q", "eta", "mass1", "mass2", "a_spin1", "a_spin2",
-  "tilt_spin1", "tilt_spin2", "phi12", "phi_jl", "frequency", "quality", "duration","polar_angle", "phase", "polar_eccentricity","dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7","aPPE","alphaPPE","bPPE","betaPPE","betaStep","fStep","dxi1","dxi2","dxi3","dxi4","dxi5","dxi6","dalpha1","dalpha2","dalpha3","dalpha4","dalpha5","dbeta1","dbeta2","dbeta3","dsigma1","dsigma2","dsigma3","dsigma4",NULL};
+  "tilt_spin1", "tilt_spin2", "phi12", "phi_jl", "frequency", "quality", "duration","polar_angle", "phase", "polar_eccentricity","dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7","aPPE","alphaPPE","bPPE","betaPPE","betaStep","fStep","dxi1","dxi2","dxi3","dxi4","dxi5","dxi6","dalpha1","dalpha2","dalpha3","dalpha4","dalpha5","dbeta1","dbeta2","dbeta3","dsigma1","dsigma2","dsigma3","dsigma4","lambda1","lambda2","lambdaT","dlambdaT","logp1", "gamma1", "gamma2", "gamma3", "SDgamma0","SDgamma1","SDgamma2","SDgamma3",NULL};
 
 static const char *extrinsicNames[] = {"rightascension", "declination", "cosalpha", "azimuth", "polarisation", "distance",
   "logdistance", "time", "costheta_jn", "t0", "theta","hrss", "loghrss", NULL};
@@ -1270,7 +1270,8 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
 
     const char *flat_params[] = {"q", "eta", "t0", "azimuth", "cosalpha", "time", "phase", "polarisation",
                                  "rightascension", "costheta_jn", "phi_jl",
-                                 "phi12", "a_spin1", "a_spin2", "logp1", "gamma1", "gamma2", "gamma3", NULL};
+                                 "phi12", "a_spin1", "a_spin2", "logp1", "gamma1", "gamma2", "gamma3",
+                                 "SDgamma0","SDgamma1","SDgamma2","SDgamma3", NULL};
 
     LALInferenceVariables *args = thread->proposalArgs;
 

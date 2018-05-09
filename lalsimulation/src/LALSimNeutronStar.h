@@ -61,12 +61,19 @@ typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
 void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos);
 char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
 
+/** FIXME: Constructed for python wrappers */
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition_for_plot(
+    double SDgamma0, double SDgamma1, double SDgamma2, double SDgamma3,
+    int size);
+
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
     double reference_pressure_si, double reference_density_si);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
     logp1_si, double gamma1, double gamma2, double gamma3);
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double 
+    gamma[], int size);
 
 double XLALSimNeutronStarEOSMaxPressure(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS *
