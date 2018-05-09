@@ -2438,7 +2438,7 @@ for (int i = 0; i < 4; ++i) {
    XLALSimNeutronStarTOVODEIntegrate(&rdat[i], &mdat[i],
    &kdat[i], pdat[i], eos);
    /* determine if maximum mass has been found */
-   if (mdat[i] <= mdat[i-1])
+   if (mdat[i] <= mdat[i-1]){
       fprintf(stdout,"EOS has too few points. Sample rejected.\n");
       // Clean up
       LALFree(pdat);
@@ -2448,6 +2448,7 @@ for (int i = 0; i < 4; ++i) {
       XLALDestroySimNeutronStarFamily(fam);
       XLALDestroySimNeutronStarEOS(eos);
       return XLAL_FAILURE;
+    }
 }
 // Clean up
 LALFree(pdat);
