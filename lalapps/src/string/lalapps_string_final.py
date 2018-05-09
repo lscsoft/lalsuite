@@ -372,6 +372,12 @@ WHERE
 		background_x, background_y, background_yerr = compress_ratevsthresh_curve(background_x, background_y, background_yerr)
 
 		#
+		# save data points in a text file
+		#
+
+		numpy.savetxt('string_rate_background.txt',numpy.transpose((background_x,background_y,background_yerr)))
+
+		#
 		# start the rate vs. threshold plot
 		#
 
