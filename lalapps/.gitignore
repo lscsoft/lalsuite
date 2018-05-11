@@ -253,6 +253,7 @@ src/pulsar/Injections/lalapps_Makefakedata_v5
 src/pulsar/Injections/lalapps_compareTS
 src/pulsar/MakeSFTs/lalapps_LISAmakeSFTs
 src/pulsar/MakeSFTs/lalapps_MakeSFTs
+src/pulsar/MakeSFTs/lalapps_MakeSFTDAG
 src/pulsar/SFTTools/SFT-bad1
 src/pulsar/SFTTools/SFT-bad10
 src/pulsar/SFTTools/SFT-bad11
