@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 103
+# serial 104
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -314,6 +314,12 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.2.0],[
       LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[3.0.12],[
         swig_min_version=3.0.12
+        swig_min_version_info="for Octave version ${octave_version}"
+      ])
+    ])
+    LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.4.0],[
+      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[4.0.0],[
+        swig_min_version=4.0.0
         swig_min_version_info="for Octave version ${octave_version}"
       ])
     ])
