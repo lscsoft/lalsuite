@@ -2,6 +2,7 @@ import argparse
 import shutil
 import distutils.spawn
 import os
+import sys
 import subprocess
 import socket
 import glob
