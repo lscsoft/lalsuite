@@ -1205,6 +1205,10 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  *    based on IMRPhenomD
  *    (should be used instead of IMRPhenomP,
  *    unless there are good reasons not to).
+ *  * IMRPhenomPv2_NRTidal models precessing binaries,
+ *    adds NRTides (https://arxiv.org/pdf/1706.02969.pdf) 
+ *    to IMRPhenomD phasing and twists the waveform 
+ *    to generate the corresponding precessing waveform.
  *
  * @review IMRPhenomB routines reviewed by Frank Ohme, P. Ajith, Alex Nitz
  * and Riccardo Sturani. The review concluded with git hash
