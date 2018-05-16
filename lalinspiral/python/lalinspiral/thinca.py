@@ -307,7 +307,6 @@ class InspiralEventList(snglcoinc.EventList):
 def ligolw_thinca(
 	xmldoc,
 	process_id,
-	coinc_definer_row,
 	delta_t,
 	ntuple_comparefunc = InspiralCoincTables.ntuple_comparefunc,
 	seglists = None,
@@ -316,6 +315,7 @@ def ligolw_thinca(
 	fapfar = None,
 	min_instruments = 2,
 	min_log_L = None,
+	coinc_definer_row = InspiralCoincDef,
 	verbose = False
 ):
 	#
