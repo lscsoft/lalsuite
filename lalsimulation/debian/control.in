@@ -16,8 +16,8 @@ Build-Depends: debhelper (>= 9),
   zlib1g-dev,
   lal-dev (>= @MIN_LAL_VERSION@~),
   lal-octave (>= @MIN_LAL_VERSION@~),
-  lal-python (>= @MIN_LAL_VERSION@~),
-  lal-python3 (>= @MIN_LAL_VERSION@~)
+  python-lal (>= @MIN_LAL_VERSION@~),
+  python3-lal (>= @MIN_LAL_VERSION@~)
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
 Standards-Version: 3.9.8
@@ -47,25 +47,48 @@ Description: LSC Algorithm Library Simulation Developers
  Simulation library.
 
 Package: lalsimulation-python
+Depends: python-lalsimulation, ${misc:Depends}
+Architecture: all
+Priority: optional
+Section: oldlibs
+Description: transitional package
+ lalsimulation-python was renamed python-lalsimulation,
+ this is a transitional package, it can safely be removed.
+
+Package: python-lalsimulation
 Section: python
+Replaces: lalsimulation-python (<< 1.7.3-1~)
+Breaks: lalsimulation-python (<< 1.7.3-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python:Depends},
   ${shlibs:Depends},
-  lal-python (>= @MIN_LAL_VERSION@~),
+  python-lal (>= @MIN_LAL_VERSION@~),
   lalsimulation (= ${binary:Version})
 Description: Python bindings for LALSimulation
  The LSC Algorithm Simulation Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL Simulation library.
 
 Package: lalsimulation-python3
+Depends: python-lalsimulation3, ${misc:Depends}
+Architecture: all
+Priority: optional
+Section: oldlibs
+Description: transitional package
+ lalsimulation-python3 was renamed python3-lalsimulation,
+ this is a transitional package, it can safely be removed.
+
+Package: python3-lalsimulation
+Section: python
+Replaces: lalsimulation-python3 (<< 1.7.3-1~)
+Breaks: lalsimulation-python3 (<< 1.7.3-1~)
 Section: python
 Architecture: any
 Depends:
   ${misc:Depends},
   ${python3:Depends},
   ${shlibs:Depends},
-  lal-python3 (>= @MIN_LAL_VERSION@~),
+  python3-lal (>= @MIN_LAL_VERSION@~),
   lalsimulation (= ${binary:Version})
 Description: Python 3 bindings for LALSimulation
  The LSC Algorithm Simulation Library for gravitational wave data analysis.
