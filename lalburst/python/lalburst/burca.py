@@ -30,7 +30,6 @@ import sys
 
 
 from glue.ligolw import lsctables
-from glue.ligolw.utils import coincs as ligolw_coincs
 from glue.ligolw.utils import process as ligolw_process
 from . import snglcoinc
 
@@ -132,8 +131,8 @@ class ExcessPowerCoincTables(snglcoinc.CoincTables):
 
 		return multiburst
 
-	def coinc_rows(self, process_id, time_slide_id, coinc_def_id, events):
-		coinc, coincmaps = super(ExcessPowerCoincTables, self).coinc_rows(process_id, time_slide_id, coinc_def_id, events)
+	def coinc_rows(self, process_id, time_slide_id, events):
+		coinc, coincmaps = super(ExcessPowerCoincTables, self).coinc_rows(process_id, time_slide_id, events)
 		coinc.insts = (event.ifo for event in events)
 		return coinc, coincmaps, self.make_multi_burst(process_id, coinc.coinc_event_id, events, self.time_slide_index[time_slide_id])
 
@@ -158,8 +157,8 @@ class StringCuspCoincTables(snglcoinc.CoincTables):
 		# disallow H1,H2 only coincs
 		return set(event.ifo for event in events) == disallowed
 
-	def coinc_rows(self, process_id, time_slide_id, coinc_def_id, events):
-		coinc, coincmaps = super(StringCuspCoincTables, self).coinc_rows(process_id, time_slide_id, coinc_def_id, events)
+	def coinc_rows(self, process_id, time_slide_id, events):
+		coinc, coincmaps = super(StringCuspCoincTables, self).coinc_rows(process_id, time_slide_id, events)
 		coinc.insts = (event.ifo for event in events)
 		return coinc, coincmaps
 
@@ -301,8 +300,7 @@ def burca(
 
 	if verbose:
 		print >>sys.stderr, "indexing ..."
-	coinc_tables = CoincTables(xmldoc)
-	coinc_def_id = ligolw_coincs.get_coinc_def_id(xmldoc, coinc_definer_row.search, coinc_definer_row.search_coinc_type, create_new = True, description = coinc_definer_row.description)
+	coinc_tables = CoincTables(xmldoc, coinc_definer_row)
 
 	#
 	# build the event list accessors, populated with events from those
@@ -324,7 +322,7 @@ def burca(
 
 	for node, coinc in time_slide_graph.get_coincs(eventlists, threshold, verbose = verbose):
 		if not ntuple_comparefunc(coinc, node.offset_vector):
-			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, coinc))
+			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc))
 
 	#
 	# done

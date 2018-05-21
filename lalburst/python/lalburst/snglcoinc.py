@@ -62,6 +62,7 @@ from glue.ligolw import ligolw
 from glue.ligolw import array as ligolw_array
 from glue.ligolw import param as ligolw_param
 from glue.ligolw import lsctables
+from glue.ligolw.utils import coincs as ligolw_coincs
 from glue.text_progress_bar import ProgressBar
 
 
@@ -523,7 +524,7 @@ class CoincTables(object):
 	A convenience interface to the XML document's coincidence tables,
 	allowing for easy addition of coincidence events.
 	"""
-	def __init__(self, xmldoc):
+	def __init__(self, xmldoc, coinc_definer_row):
 		# find the coinc table or create one if not found
 		try:
 			self.coinctable = lsctables.CoincTable.get_table(xmldoc)
@@ -539,11 +540,14 @@ class CoincTables(object):
 			self.coincmaptable = lsctables.New(lsctables.CoincMapTable)
 			xmldoc.childNodes[0].appendChild(self.coincmaptable)
 
+		# look-up the coinc_def_id, creating a new one if required
+		self.coinc_def_id = ligolw_coincs.get_coinc_def_id(xmldoc, coinc_definer_row.search, coinc_definer_row.search_coinc_type, create_new = True, description = coinc_definer_row.description)
+
 		# find the time_slide table
 		self.time_slide_table = lsctables.TimeSlideTable.get_table(xmldoc)
 		self.time_slide_index = self.time_slide_table.as_dict()
 
-	def coinc_rows(self, process_id, time_slide_id, coinc_def_id, events):
+	def coinc_rows(self, process_id, time_slide_id, events):
 		"""
 		From a process ID, a time slide ID, and a sequence of
 		events (generator expressions are OK), constructs and
@@ -577,7 +581,7 @@ class CoincTables(object):
 
 		coinc = self.coinctable.RowType(
 			process_id = process_id,
-			coinc_def_id = coinc_def_id,
+			coinc_def_id = self.coinc_def_id,
 			coinc_event_id = None,
 			time_slide_id = time_slide_id,
 			insts = None,
