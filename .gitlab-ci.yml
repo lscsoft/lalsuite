@@ -422,7 +422,7 @@ nightly:macos:highsierra:
 # Build receipe for standalone wheels on macOS
 .nightly:wheel:macos: &nightly-wheel-macos
   tags:
-    - macos
+    - macos_elcapitan
   stage: nightly
   script:
     - PYVERS=$(echo ${CI_JOB_NAME} | sed 's/.*:cp\(.\)\(.\).*/\1.\2/')
@@ -461,11 +461,11 @@ nightly:wheel:cp35-cp35m-manylinux1:
   <<: *nightly-wheel-manylinux1
 nightly:wheel:cp36-cp36m-manylinux1:
   <<: *nightly-wheel-manylinux1
-.nightly:wheel:cp27-cp27m-macosx:
+nightly:wheel:cp27-cp27m-macosx:
   <<: *nightly-wheel-macos
-.nightly:wheel:cp35-cp35m-macosx:
+nightly:wheel:cp35-cp35m-macosx:
   <<: *nightly-wheel-macos
-.nightly:wheel:cp36-cp36m-macosx:
+nightly:wheel:cp36-cp36m-macosx:
   <<: *nightly-wheel-macos
 
 .levelN:rpm: &levelN-rpm-package
@@ -619,9 +619,9 @@ deploy:wheel:
     - nightly:wheel:cp34-cp34m-manylinux1
     - nightly:wheel:cp35-cp35m-manylinux1
     - nightly:wheel:cp36-cp36m-manylinux1
-#    - nightly:wheel:cp27-cp27m-macosx
-#    - nightly:wheel:cp35-cp35m-macosx
-#    - nightly:wheel:cp36-cp36m-macosx
+    - nightly:wheel:cp27-cp27m-macosx
+    - nightly:wheel:cp35-cp35m-macosx
+    - nightly:wheel:cp36-cp36m-macosx
   only:
     - /^lalsuite-v.*$/
     - schedules
