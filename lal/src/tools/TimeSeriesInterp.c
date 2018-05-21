@@ -124,6 +124,36 @@ struct tagLALREAL8SequenceInterp {
  * the interpolating kernel in samples.  Use
  * XLALREAL8SequenceInterpDestroy() to free.
  *
+ * The optional kernel() function has the signature
+ *
+ * void (*kernel)(double *kern, int length, double residual, void *data);
+ *
+ * The optional kernel_data parameter will be passed to kernel() as the
+ * final argument.  It is an error to provide a non-NULL kernel_data
+ * pointer without supplying a kernel() function.  If both are NULL, an
+ * internal default Welch-windowed sinc kernel function will be used.  If
+ * supplied, the kernel() function is responsible for computing the
+ * time-domain interpolation kernel.  The kernel must be exactly length
+ * samples long and be placed in the kernel array, which is guaranteed to
+ * be non-NULL and large enough to contain length samples.  length is
+ * guaranteed to be odd, and not less than 3.
+ *
+ * residual is the interval from the nearest available sample of source
+ * data to the co-ordinate at which the user has requested the interpolated
+ * function be evaluated.  The middle sample of the kernel will be the
+ * weight applied to that sample of source data.  A purely sinc() kernel
+ * function would be of the form
+ *
+ * static voic kernel(double *kern, int length, double res, void *ignored)
+ * {
+ *	int i;
+ *
+ *	for(i = 0; i < length; i++) {
+ *		double x = i - (length - 1) / 2.;
+ *		kern[i] = x ? sin(PI * x + res) / (PI * x + res) : 1.;
+ *	}
+ * }
+ *
  * Notes:
  *
  * The LALREAL8SequenceInterp object is opaque.  Calling code should not
@@ -132,8 +162,6 @@ struct tagLALREAL8SequenceInterp {
  * The REAL8Sequence object with which the LALREAL8SequenceInterp is
  * associated must remain valid as long as the interpolator exists.  Do not
  * free the REAL8Sequence before freeing the LALREAL8SequenceInterp.
- *
- * FIXME:  update documentation to explain kernel, kernel_data
  */
 
 
@@ -262,14 +290,17 @@ REAL8 XLALREAL8SequenceInterpEval(LALREAL8SequenceInterp *interp, double x, int 
 	if(!isfinite(x) || (bounds_check && (x < 0 || x >= interp->s->length)))
 		XLAL_ERROR_REAL8(XLAL_EDOM);
 
-	if(fabs(residual) < interp->noop_threshold && interp->kernel==default_kernel)
+	/* special no-op case for default kernel */
+	if(fabs(residual) < interp->noop_threshold && interp->kernel == default_kernel)
 		return 0 <= start && start < (int) interp->s->length ? data[start] : 0.0;
 
+	/* need new kernel? */
 	if(fabs(residual - interp->residual) >= interp->noop_threshold) {
 		interp->kernel(cached_kernel, interp->kernel_length, residual, interp->kernel_data);
 		interp->residual = residual;
 	}
 
+	/* inner product of kernel and samples */
 	start -= (interp->kernel_length - 1) / 2;
 	if(start + interp->kernel_length > (signed) interp->s->length)
 		stop -= start + interp->kernel_length - interp->s->length;
@@ -296,6 +327,10 @@ struct tagLALREAL8TimeSeriesInterp {
  * the interpolating kernel in samples.  Use
  * XLALREAL8TimeSeriesInterpDestroy() to free.
  *
+ * See XLALREAL8SequenceInterpCreate() for the definition of the kernel and
+ * kernel_data parameters.  These are optional;  set both to NULL to use
+ * the internal default interpolation kernel.
+ *
  * Notes:
  *
  * The LALREAL8TimeSeriesInterp object is opaque.  Calling code should not
@@ -304,8 +339,6 @@ struct tagLALREAL8TimeSeriesInterp {
  * The REAL8TimeSeries object with which the LALREAL8TimeSeriesInterp is
  * associated must remain valid as long as the interpolator exists.  Do not
  * free the REAL8TimeSeries before freeing the LALREAL8TimeSeriesInterp.
- *
- * FIXME:  document kernel, kernel_data
  */
 
 
