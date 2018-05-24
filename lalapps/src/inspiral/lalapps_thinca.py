@@ -230,7 +230,6 @@ for n, filename in enumerate(filenames, start = 1):
 	thinca.ligolw_thinca(
 		xmldoc,
 		process_id = process.process_id,
-		coinc_definer_row = thinca.InspiralCoincDef,
 		delta_t = options.threshold,
 		ntuple_comparefunc = ntuple_comparefunc,
 		seglists = None,	# FIXME

@@ -34,7 +34,6 @@ import time
 
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
-from glue.ligolw.utils import coincs as ligolw_coincs
 from glue import offsetvector
 import lal
 from lalburst import snglcoinc
@@ -141,8 +140,8 @@ def coinc_inspiral_end_time(events, offset_vector):
 
 
 class InspiralCoincTables(snglcoinc.CoincTables):
-	def __init__(self, xmldoc):
-		super(InspiralCoincTables, self).__init__(xmldoc)
+	def __init__(self, xmldoc, coinc_definer_row):
+		super(InspiralCoincTables, self).__init__(xmldoc, coinc_definer_row)
 
 		#
 		# find the coinc_inspiral table or create one if not found
@@ -155,8 +154,8 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 			xmldoc.childNodes[0].appendChild(self.coinc_inspiral_table)
 
 
-	def coinc_rows(self, process_id, time_slide_id, coinc_def_id, events, seglists = None):
-		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, coinc_def_id, events)
+	def coinc_rows(self, process_id, time_slide_id, events, seglists = None):
+		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, events)
 
 		#
 		# populate the coinc_inspiral table:
@@ -324,8 +323,7 @@ def ligolw_thinca(
 
 	if verbose:
 		print("indexing ...", file=sys.stderr)
-	coinc_tables = InspiralCoincTables(xmldoc)
-	coinc_def_id = ligolw_coincs.get_coinc_def_id(xmldoc, coinc_definer_row.search, coinc_definer_row.search_coinc_type, create_new = True, description = coinc_definer_row.description)
+	coinc_tables = InspiralCoincTables(xmldoc, coinc_definer_row)
 	instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument"))
 
 	#
@@ -355,7 +353,7 @@ def ligolw_thinca(
 	gps_time_now = float(lal.UTCToGPS(time.gmtime()))
 	for node, events in time_slide_graph.get_coincs(eventlists, delta_t, verbose = verbose):
 		if not ntuple_comparefunc(events, node.offset_vector):
-			coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, events, seglists = seglists)
+			coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, events, seglists = seglists)
 			if likelihood_func is not None:
 				coinc.likelihood = likelihood_func(events, node.offset_vector)
 				if fapfar is not None:
