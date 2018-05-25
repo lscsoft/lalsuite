@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 146
+# serial 147
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1066,8 +1066,17 @@ AC_ARG_WITH(
     AS_IF([test "x${NVCC}" = x],[
       AC_MSG_ERROR([could not find 'nvcc' in path])
     ])
+    AC_SUBST(NVCC_CFLAGS)
   ])
   LALSUITE_ENABLE_MODULE([CUDA])
+  AC_ARG_WITH(
+    [nvcc_cflags],
+    AC_HELP_STRING([--with-nvcc-cflags=NVCC_CFLAGS],[NVCC compiler flags]),
+    [
+      NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}"
+    ],[
+    ]
+  )
 ])
 
 
@@ -1153,13 +1162,6 @@ AS_IF([test "x${osx_version_check}" = "xtrue"],[
       [10.4*|10.5*|10.6*|10.7*|10.8*|10.9*|10.10*|10.11*|10.12*|10.13*],,
       AC_MSG_WARN([Unknown Mac OS X version]))
 ])])])
-
-AC_DEFUN([LALSUITE_WITH_NVCC_CFLAGS],
-[AC_ARG_WITH(
-  [nvcc_cflags],
-  AC_HELP_STRING([--with-nvcc-cflags=NVCC_CFLAGS],[NVCC compiler flags]),
-  AS_IF([test -n "${with_nvcc_cflags}"],[NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}"]),)
-])
 
 AC_DEFUN([LALSUITE_CHECK_CUDA],
 [AC_MSG_CHECKING([whether LAL has been compiled with CUDA support])
