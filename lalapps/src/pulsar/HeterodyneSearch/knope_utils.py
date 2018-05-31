@@ -2568,13 +2568,13 @@ class knopeDAG(pipeline.CondorDAG):
     if units is None: # default to TEMPO2 standard of TCB
       units = 'TCB'
 
-    earthfile = os.path.join(self.ephem_path, 'earth00-19-%s.dat.gz' % ephem)
-    sunfile = os.path.join(self.ephem_path, 'sun00-19-%s.dat.gz' % ephem)
+    earthfile = os.path.join(self.ephem_path, 'earth00-40-%s.dat.gz' % ephem)
+    sunfile = os.path.join(self.ephem_path, 'sun00-40-%s.dat.gz' % ephem)
 
     if units == 'TDB':
-      timefile = os.path.join(self.ephem_path, 'tdb_2000-2019.dat.gz')
+      timefile = os.path.join(self.ephem_path, 'tdb_2000-2040.dat.gz')
     else:
-      timefile = os.path.join(self.ephem_path, 'te405_2000-2019.dat.gz')
+      timefile = os.path.join(self.ephem_path, 'te405_2000-2040.dat.gz')
 
     if not os.path.isfile(earthfile):
       print("Error... Earth ephemeris file '%s' does not exist" % earthfile, file=sys.stderr)
