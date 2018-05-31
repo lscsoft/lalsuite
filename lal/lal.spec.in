@@ -15,6 +15,7 @@ URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRequires: bc
 BuildRequires: fftw-devel
+BuildRequires: python2-ligo-segments
 BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
@@ -51,6 +52,7 @@ as well as the documentation for the library.
 Summary: Python bindings for LAL
 Group: LAL
 Requires: %{name} = %{version}
+Requires: python2-ligo-segments
 Requires: glue >= @MIN_GLUE_VERSION@
 Requires: numpy
 Requires: python

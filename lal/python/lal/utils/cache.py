@@ -25,7 +25,7 @@ import tempfile
 from functools import total_ordering
 from six.moves import urllib
 
-from glue import segments
+from ligo import segments
 
 from .. import git_version
 from ..lal import CacheImport
@@ -91,7 +91,7 @@ class CacheEntry(object):
 
     The values for these columns are stored in the .observatory,
     .description, .segment and .url attributes of instances of this class,
-    respectively.  The .segment attribute stores a glue.segments.segment
+    respectively.  The .segment attribute stores a ligo.segments.segment
     object describing the interval spanned by the file.  Any of these
     attributes except the URL is allowed to be None.
 
@@ -115,7 +115,7 @@ class CacheEntry(object):
 
     Example (extract segmentlist dictionary from LAL cache):
 
-    >>> from glue import segments
+    >>> from ligo import segments
     >>> seglists = segments.segmentlistdict()
     >>> for cacheentry in cache:
     ...    seglists |= cacheentry.segmentlistdict
