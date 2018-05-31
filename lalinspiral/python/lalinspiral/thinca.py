@@ -324,7 +324,6 @@ def ligolw_thinca(
 	if verbose:
 		print("indexing ...", file=sys.stderr)
 	coinc_tables = InspiralCoincTables(xmldoc, coinc_definer_row)
-	instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument"))
 
 	#
 	# build the event list accessors.  apply vetoes by excluding events
@@ -337,7 +336,6 @@ def ligolw_thinca(
 		if seglists is not None:
 			# don't do in-place
 			seglists = seglists - veto_segments
-	eventlists = snglcoinc.EventListDict(InspiralEventList, sngl_inspiral_table, instruments = instruments)
 
 	#
 	# construct offset vector assembly graph
@@ -351,7 +349,11 @@ def ligolw_thinca(
 	#
 
 	gps_time_now = float(lal.UTCToGPS(time.gmtime()))
-	for node, events in time_slide_graph.get_coincs(eventlists, delta_t, verbose = verbose):
+	for node, events in time_slide_graph.get_coincs(
+		snglcoinc.EventListDict(InspiralEventList, sngl_inspiral_table, instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument"))),
+		delta_t,
+		verbose = verbose
+	):
 		if not ntuple_comparefunc(events, node.offset_vector):
 			coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, events, seglists = seglists)
 			if likelihood_func is not None:
