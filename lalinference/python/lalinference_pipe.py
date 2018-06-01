@@ -211,8 +211,8 @@ for sampler in samps:
         cp.set('paths','roq_b_matrix_directory',thispath)
         flow=roq_params[roq]['flow'] / roq_mass_freq_scale_factor
         srate=2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor
-	if srate > 8192:
-		srate = 8192
+        if srate > 8192:
+            srate = 8192
 
         seglen=roq_params[roq]['seglen'] * roq_mass_freq_scale_factor
         # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
