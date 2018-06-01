@@ -3,7 +3,7 @@
 
 from lalinference import lalinference_pipe_utils as pipe_utils
 from lalapps import inspiralutils
-import ConfigParser
+from six.moves.configparser import ConfigParser
 from optparse import OptionParser,OptionValueError
 import sys
 import ast
@@ -68,7 +68,7 @@ def add_variations(cp, section, option, values=None, allowed_values=None):
     """
     if not cp.has_section(section) and not cp.has_option(section,option):
         return
-    
+
     if values is not None:
         vals = values
     else:
@@ -213,7 +213,7 @@ def setup_roq(cp):
     roq_paths=os.listdir(path)
     roq_params={}
     roq_force_flow = None
-    
+
     if cp.has_option('lalinference','roq_force_flow'):
         roq_force_flow = cp.getfloat('lalinference','roq_force_flow')
         print "WARNING: Forcing the f_low to ", str(roq_force_flow), "Hz"
@@ -346,7 +346,7 @@ for cp in generate_variations(master_cp,variations):
         myinjpath=os.path.join(basepath,os.path.basename(injpath))
         os.link(injpath, myinjpath)
         cp.set('input','injection-file',myinjpath)
-        
+
     for this_cp in setup_roq(cp):
         # Create the DAG from the configparser object
         dag=pipe_utils.LALInferencePipelineDAG(this_cp,dax=False)
