@@ -43,7 +43,7 @@ def guess_url(fslocation):
         webpath=os.path.join('~%s'%(USER),b)
         onweb=True
     else:
-        (c,d)=fslocation.split(USER)
+        (c,d)=fslocation.split(USER,1)
         for k in ['public_html','WWW','www_html']:
             trypath=c+os.environ['USER']+'/'+k+d
             #Follow symlinks
@@ -1844,7 +1844,7 @@ class SingularityJob(pipeline.CondorDAGJob):
         # Add data transfer options
         self.add_condor_cmd('should_transfer_files','YES')
         self.add_condor_cmd('when_to_transfer_output','ON_EXIT_OR_EVICT')
-        
+
     def write_script(self,path):
         """
         Write the wrapper script
@@ -1854,7 +1854,7 @@ class SingularityJob(pipeline.CondorDAGJob):
         f.writelines(self.wrapper_string)
         f.close()
         os.chmod(path,0755)
-    
+
     def write_sub_file(self):
         """
         Over-load CondorDAGJob.write_sub_file to write the wrapper script and
@@ -1872,7 +1872,7 @@ class SingularityJob(pipeline.CondorDAGJob):
         super(SingularityJob,self).write_sub_file()
         # Put the true exe back just in case
         self.set_executable(true_exec)
-        
+
 
 
 class SingularityNode(pipeline.CondorDAGNode):
