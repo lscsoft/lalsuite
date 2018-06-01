@@ -1422,7 +1422,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       else:
         slide=0
       for seg in self.segments[ifo]:
-        if segstart >= seg.start() and segend < seg.end():
+        if segstart >= seg.start() and segend <= seg.end():
             if not self.config.has_option('lalinference','fake-cache'):
                 if self.config.has_option('condor','bayesline') or self.config.getboolean('analysis','roq'):
                     prenode.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
@@ -1517,7 +1517,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                   else:
                      slide=0
                   for seg in self.segments[ifo]:
-                     if segstart >= seg.start() and segend < seg.end():
+                     if segstart >= seg.start() and segend <= seg.end():
                         if not self.config.has_option('lalinference','fake-cache'):
                            bayeswavepsdnode[ifo].add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
                         else:
