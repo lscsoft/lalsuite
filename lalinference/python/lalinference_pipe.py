@@ -3,7 +3,7 @@
 
 from lalinference import lalinference_pipe_utils as pipe_utils
 from lalapps import inspiralutils
-from six.moves.configparser import ConfigParser
+from six.moves import configparser
 from optparse import OptionParser,OptionValueError
 import sys
 import ast
@@ -111,7 +111,7 @@ def generate_variations(master_cp, variations):
     (section, opt), vals = variations.popitem()
     for val in vals:
         # Read file back in to get a new object
-        cp = ConfigParser.ConfigParser()
+        cp = configparser.ConfigParser()
 	cp.read(masterpath)
         cp.set(section,opt,val)
         # Append to the paths
@@ -280,7 +280,7 @@ def setup_roq(cp):
         cp.write(cpfile)
 
     for roq in roq_paths:
-        this_cp = ConfigParser.ConfigParser()
+        this_cp = configparser.ConfigParser()
 	this_cp.read(masterpath)
         basedir = this_cp.get('paths','basedir')
         for dirs in 'basedir','daglogdir','webdir':
