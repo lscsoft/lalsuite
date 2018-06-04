@@ -342,13 +342,30 @@ master_cp=cp
 # Iterate over variations and generate sub-dags
 for cp in generate_variations(master_cp,variations):
     basepath=cp.get('paths','basedir')
-    # Copy injection file into place as paths outside basedir are inaccessible
+    # Link injection file into place as paths outside basedir are inaccessible to containerised jobs
     if cp.has_option('input','injection-file'):
         injpath=cp.get('input','injection-file')
         myinjpath=os.path.join(basepath,os.path.basename(injpath))
-        os.link(injpath, myinjpath)
-        cp.set('input','injection-file',myinjpath)
+        if os.path.abspath(myinjpath) != os.path.abspath(injpath):
+            # If the injection file does not exist in the run dir, link it in place
+            # Useful for singularity jobs which see only rundir
+            if os.path.lexists(myinjpath):
+                # If the path exists, see if it is a link to the current file
+                # and if so, just update the config
+                if os.path.islink(myinjpath) and os.path.realpath(myinjpath)==os.path.realpath(injpath):
+                    cp.set('input','injection-file',myinjpath)
+                else:
+                    # Do not over-write the injection file
+                    print("Error: File {0} exists in run directory, not over-writing with \
+                            {1}. Remove the existing file or create a fresh run directory".format(myinjpath,injpath)
+                            )
+                    sys.exit(1)
+            else:
+                # The link doens't exist, so create it and update config
+                os.link(os.path.abspath(injpath), myinjpath)
+                cp.set('input','injection-file',myinjpath)
 
+        
     for this_cp in setup_roq(cp):
         # Create the DAG from the configparser object
         dag=pipe_utils.LALInferencePipelineDAG(this_cp,dax=False)
