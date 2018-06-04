@@ -112,6 +112,7 @@ def generate_variations(master_cp, variations):
     for val in vals:
         # Read file back in to get a new object
         cp = configparser.ConfigParser()
+        cp.optionxform = str
 	cp.read(masterpath)
         cp.set(section,opt,val)
         # Append to the paths
@@ -132,7 +133,7 @@ if len(args)!=1:
 
 inifile=args[0]
 
-cp=ConfigParser.SafeConfigParser()
+cp=configparser.SafeConfigParser()
 fp=open(inifile)
 cp.optionxform = str
 cp.readfp(fp)
@@ -281,6 +282,7 @@ def setup_roq(cp):
 
     for roq in roq_paths:
         this_cp = configparser.ConfigParser()
+        this_cp.optionxform = str
 	this_cp.read(masterpath)
         basedir = this_cp.get('paths','basedir')
         for dirs in 'basedir','daglogdir','webdir':
