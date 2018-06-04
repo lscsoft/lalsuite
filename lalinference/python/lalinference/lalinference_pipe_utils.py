@@ -43,7 +43,7 @@ def guess_url(fslocation):
         webpath=os.path.join('~%s'%(USER),b)
         onweb=True
     else:
-        (c,d)=fslocation.split(USER)
+        (c,d)=fslocation.split(USER,1)
         for k in ['public_html','WWW','www_html']:
             trypath=c+os.environ['USER']+'/'+k+d
             #Follow symlinks
@@ -1422,7 +1422,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       else:
         slide=0
       for seg in self.segments[ifo]:
-        if segstart >= seg.start() and segend < seg.end():
+        if segstart >= seg.start() and segend <= seg.end():
             if not self.config.has_option('lalinference','fake-cache'):
                 if self.config.has_option('condor','bayesline') or self.config.getboolean('analysis','roq'):
                     prenode.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
@@ -1517,7 +1517,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                   else:
                      slide=0
                   for seg in self.segments[ifo]:
-                     if segstart >= seg.start() and segend < seg.end():
+                     if segstart >= seg.start() and segend <= seg.end():
                         if not self.config.has_option('lalinference','fake-cache'):
                            bayeswavepsdnode[ifo].add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
                         else:
@@ -1844,7 +1844,7 @@ class SingularityJob(pipeline.CondorDAGJob):
         # Add data transfer options
         self.add_condor_cmd('should_transfer_files','YES')
         self.add_condor_cmd('when_to_transfer_output','ON_EXIT_OR_EVICT')
-        
+
     def write_script(self,path):
         """
         Write the wrapper script
@@ -1854,7 +1854,7 @@ class SingularityJob(pipeline.CondorDAGJob):
         f.writelines(self.wrapper_string)
         f.close()
         os.chmod(path,0755)
-    
+
     def write_sub_file(self):
         """
         Over-load CondorDAGJob.write_sub_file to write the wrapper script and
@@ -1872,7 +1872,7 @@ class SingularityJob(pipeline.CondorDAGJob):
         super(SingularityJob,self).write_sub_file()
         # Put the true exe back just in case
         self.set_executable(true_exec)
-        
+
 
 
 class SingularityNode(pipeline.CondorDAGNode):

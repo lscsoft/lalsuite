@@ -923,6 +923,7 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 	i = 0;
 
   if(debugPK){ out = fopen("ICIterations.dat", "w"); }
+  INT4 jittered=0;
 	do {
 		XLAL_CALLGSL(gslStatus = gsl_multiroot_fsolver_iterate(rootSolver));
 		if (debugPK) {
@@ -1029,6 +1030,22 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
           gsl_multiroot_fsolver_dx(rootSolver),
           gsl_multiroot_fsolver_root(rootSolver),
           1.e-8, 1.e-5));*/
+
+		if (jittered==0) {
+		  finalValues = gsl_multiroot_fsolver_dx(rootSolver);
+		  if (isnan(gsl_vector_get(finalValues, 1))) {
+		    rootParams.values[0] = scale1 * 1. / (v0 * v0)*(1.+1.e-8);	/* Jitter on initial r */
+		    rootParams.values[4] = scale2 * v0*(1.-1.e-8);	            /* Jitter on initial p */
+		    rootParams.values[5] = scale3 * 1e-3;
+		    memcpy(rootParams.values + 6, tmpS1, sizeof(tmpS1));
+		    memcpy(rootParams.values + 9, tmpS2, sizeof(tmpS2));
+		    gsl_vector_set(initValues, 0, rootParams.values[0]);
+		    gsl_vector_set(initValues, 1, rootParams.values[4]);
+		    gsl_vector_set(initValues, 2, rootParams.values[5]);
+		    gsl_multiroot_fsolver_set(rootSolver, &rootFunction, initValues);
+		    jittered=1;
+		  }
+		}
 		i++;
 	}
 	while (gslStatus == GSL_CONTINUE && i <= maxIter);

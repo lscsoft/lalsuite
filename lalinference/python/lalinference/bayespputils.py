@@ -999,7 +999,10 @@ class Posterior(object):
       # Calculate redshift from luminosity distance measurements
       if('distance' in pos.names):
           pos.append_mapping('redshift', calculate_redshift, 'distance')
+      elif('dist' in pos.names):
+          pos.append_mapping('redshift', calculate_redshift, 'dist')
 
+          
       # Calculate source mass parameters
       if ('m1' in pos.names) and ('redshift' in pos.names):
           pos.append_mapping('m1_source', source_mass, ['m1', 'redshift'])
