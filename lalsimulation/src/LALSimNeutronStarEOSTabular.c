@@ -27,6 +27,7 @@
 
 #include <lal/LALSimReadData.h>
 #include <gsl/gsl_interp.h>
+#include <lal/LALSimNeutronStar.h>
 
 /** @cond */
 
@@ -415,41 +416,27 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
 {
     static const char fname_base[] = "LALSimNeutronStarEOS_";
     static const char fname_extn[] = ".dat";
-    static const char *eos_names[] = {
-        "ALF1", "ALF2", "ALF3", "ALF4",
-        "AP1", "AP2", "AP3", "AP4",
-        "BBB2", "BGN1H1", "BPAL12", 
-        "BSK19", "BSK20", "BSK21",
-        "ENG", "FPS", "GNH3",
-        "GS1", "GS2",
-        "H1", "H2", "H3", "H4", "H5", "H6", "H7",
-        "MPA1", "MS1B", "MS1", "MS2",
-        "PAL6", "PCL2", "PS",
-        "QMC700",
-        "SLY4", "SLY",
-        "SQM1", "SQM2", "SQM3",
-        "WFF1", "WFF2", "WFF3"
-    };
-    size_t n = XLAL_NUM_ELEM(eos_names);
+    
+    size_t n = XLAL_NUM_ELEM(LALSimNeutronStarEOSNames);
     size_t i;
     char fname[FILENAME_MAX];
 
     for (i = 0; i < n; ++i)
-        if (mystrcasecmp(name, eos_names[i]) == 0) {
+        if (mystrcasecmp(name, LALSimNeutronStarEOSNames[i]) == 0) {
             LALSimNeutronStarEOS *eos;
-            snprintf(fname, sizeof(fname), "%s%s%s", fname_base, eos_names[i],
+            snprintf(fname, sizeof(fname), "%s%s%s", fname_base, LALSimNeutronStarEOSNames[i],
                 fname_extn);
             eos = XLALSimNeutronStarEOSFromFile(fname);
             if (!eos)
                 XLAL_ERROR_NULL(XLAL_EFUNC);
-            snprintf(eos->name, sizeof(eos->name), "%s", eos_names[i]);
+            snprintf(eos->name, sizeof(eos->name), "%s", LALSimNeutronStarEOSNames[i]);
             return eos;
         }
 
     XLAL_PRINT_ERROR("Unrecognized EOS name %s...", name);
-    XLALPrintError("\tKnown EOS names are: %s", eos_names[0]);
+    XLALPrintError("\tKnown EOS names are: %s", LALSimNeutronStarEOSNames[0]);
     for (i = 1; i < n; ++i)
-        XLALPrintError(", %s", eos_names[i]);
+        XLALPrintError(", %s", LALSimNeutronStarEOSNames[i]);
     XLALPrintError("\n");
     XLAL_ERROR_NULL(XLAL_ENAME);
 }
