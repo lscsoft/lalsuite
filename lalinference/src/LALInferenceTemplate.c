@@ -793,6 +793,35 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
     XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
   }
+  if(LALInferenceCheckVariable(model->params, "ns_eos"))
+  {
+      LALSimNeutronStarFamily *eos_fam = XLALCreateSimNeutronStarFamily((LALSimNeutronStarEOS *)LALInferenceGetVariable(model->params, "ns_eos"));
+      REAL8 r1=0, r2=0, k2_1=0, k2_2=0;
+      REAL8 mass_max = XLALSimNeutronStarMaximumMass(eos_fam) / LAL_MSUN_SI;
+      REAL8 mass_min = XLALSimNeutronStarFamMinimumMass(eos_fam) / LAL_MSUN_SI;
+
+      if(m1<mass_max && m1>mass_min)
+      {
+        /* Compute l1, l2 from mass and EOS */
+        r1 = SimNeutronStarRadius(mass1*LAL_MSUN_SI, eos_fam);
+        k2_1 = SimNeutronStarLoveNumberK2(mass1*LAL_MSUN_SI, eos_fam);
+        lambda1 = (2./3.)*k2_1 * pow(r1/(mass1*LAL_MRSUN_SI), 5.0);
+      }
+      if(m2<mass_max && m2>mass_min)
+      {
+         r2 = SimNeutronStarRadius(mass2*LAL_MSUN_SI, eos_fam);
+         k2_2 = SimNeutronStarLoveNumberK2(mass2*LAL_MSUN_SI, eos_fam);
+         lambda2 = (2./3.)*k2_2 * pow(r2/(mass2*LAL_MRSUN_SI), 5.0);          
+      }
+      
+      /* Add derived quantities for output */
+      LALInferenceAddVariable(model->params, "radius1", &r1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(model->params, "radius2", &r2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(model->params, "lambda1", &lambda1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(model->params, "lambda2", &lambda2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+      /* ClLean up */
+      if(eos_fam) XLALDestroySimNeutronStarFamily(eos_fam);
+  }
 
   /* ==== 4-PIECE POLYTROPE EOS PARAMETERS ==== */
   REAL8 logp1 = 0.;
