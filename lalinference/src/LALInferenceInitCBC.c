@@ -1386,8 +1386,12 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     errnum=XLAL_SUCCESS;
     XLAL_TRY(eos=XLALSimNeutronStarEOSByName(ppt->value), errnum);
     if(errnum!=XLAL_SUCCESS)
-        XLAL_ERROR_NULL(errnum); 
-    LALInferenceAddVariable(model->params, "ns_eos", eos, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
+        XLAL_ERROR_NULL(errnum,"%s: %s",__func__,XLALErrorString(errnum));
+    
+    XLAL_TRY(model->eos_fam = XLALCreateSimNeutronStarFamily(eos),errnum);
+    if(errnum!=XLAL_SUCCESS)
+        XLAL_ERROR_NULL(errnum,"%s: %s",__func__,XLALErrorString(errnum));
+    if(!model->eos_fam) XLAL_ERROR_NULL(XLAL_EINVAL, "Unable to initialise EOS family");
   }
 
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
