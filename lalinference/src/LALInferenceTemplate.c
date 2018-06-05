@@ -803,14 +803,14 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       if(m1<mass_max && m1>mass_min)
       {
         /* Compute l1, l2 from mass and EOS */
-        r1 = SimNeutronStarRadius(mass1*LAL_MSUN_SI, eos_fam);
-        k2_1 = SimNeutronStarLoveNumberK2(mass1*LAL_MSUN_SI, eos_fam);
+        r1 = XLALSimNeutronStarRadius(mass1*LAL_MSUN_SI, eos_fam);
+        k2_1 = XLALSimNeutronStarLoveNumberK2(mass1*LAL_MSUN_SI, eos_fam);
         lambda1 = (2./3.)*k2_1 * pow(r1/(mass1*LAL_MRSUN_SI), 5.0);
       }
       if(m2<mass_max && m2>mass_min)
       {
-         r2 = SimNeutronStarRadius(mass2*LAL_MSUN_SI, eos_fam);
-         k2_2 = SimNeutronStarLoveNumberK2(mass2*LAL_MSUN_SI, eos_fam);
+         r2 = XLALSimNeutronStarRadius(mass2*LAL_MSUN_SI, eos_fam);
+         k2_2 = XLALSimNeutronStarLoveNumberK2(mass2*LAL_MSUN_SI, eos_fam);
          lambda2 = (2./3.)*k2_2 * pow(r2/(mass2*LAL_MRSUN_SI), 5.0);          
       }
       
