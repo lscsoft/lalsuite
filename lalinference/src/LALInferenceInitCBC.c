@@ -38,6 +38,7 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceInit.h>
 #include <lal/LALInferenceCalibrationErrors.h>
+#include <lal/LALSimNeutronStar.h>
 
 static int checkParamInList(const char *list, const char *param);
 static int checkParamInList(const char *list, const char *param)
@@ -1345,9 +1346,9 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
 
   }
 
-  if((~~LALInferenceGetProcParamVal(commandLine,"--tidalT") + ~~LALInferenceGetProcParamVal(commandLine,"--tidal")
-    +~~LALInferenceGetProcParamVal(commandLine,"--4PolyEOS") + ~~LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")
-    +~~LALInferenceGetProcParamVal(commandLine,"--eos")) > 1 )
+  if((!!LALInferenceGetProcParamVal(commandLine,"--tidalT") + !!LALInferenceGetProcParamVal(commandLine,"--tidal")
+    + !!LALInferenceGetProcParamVal(commandLine,"--4PolyEOS") + !!LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")
+    + !!LALInferenceGetProcParamVal(commandLine,"--eos")) > 1 )
   {
       XLALPrintError("Error: cannot use more than one of --tidalT, --tidal, --4PolyEOS, --4SpectralDecomp and --eos.\n");
       XLAL_ERROR_NULL(XLAL_EINVAL);
@@ -1370,11 +1371,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   else if((ppt=LALInferenceGetProcParamVal(commandLine,"--eos")))
   {
     LALSimNeutronStarEOS *eos=NULL;
-    INT4 errnum=XLAL_SUCCESS;
+    errnum=XLAL_SUCCESS;
     XLAL_TRY(eos=XLALSimNeutronStarEOSByName(ppt->value), errnum);
     if(errnum!=XLAL_SUCCESS)
         XLAL_ERROR_NULL(errnum); 
-    LALInferenceAddVariable(model->params, "ns_eos", eos, LALINFERENCE_void_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(model->params, "ns_eos", eos, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
   }
 
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
