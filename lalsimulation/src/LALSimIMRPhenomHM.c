@@ -1650,7 +1650,7 @@ int IMRPhenomHMEvaluateOnehlmMode(
     for (size_t i = pHM->ind_min; i < pHM->ind_max; i++)
     {
         Mf = freqs_geom->data[i];
-        phase_term1 = t0 * (Mf - pHM->Mf_ref * 0.);
+        phase_term1 = t0 * (Mf - pHM->Mf_ref);
         phase_term2 = phases->data[i] - (mm * phi0);
         ((*hlm)->data->data)[i] = amps->data[i] * cexp(-I * (phase_term1 + phase_term2));
 
