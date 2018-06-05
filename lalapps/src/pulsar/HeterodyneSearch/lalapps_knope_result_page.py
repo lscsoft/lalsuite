@@ -469,6 +469,10 @@ class posteriors:
       if hasattr(self._injection_parameters, 'DEC_RAD'):
         setattr(self._injection_parameters, 'DEC', self._injection_parameters['DEC_RAD'])
 
+      # if DIST is set, then use the original value in KPC as the posterior samples will be in KPC
+      if hasattr(self._injection_parameters, 'DIST'):
+        setattr(self._injection_parameters, 'DIST', self._injection_parameters['DIST_ORIGINAL'])
+
     if 'Joint' in self._ifos: # put 'Joint' at the end
       j = self._ifos.pop(self._ifos.index('Joint'))
       self._ifos.append(j)

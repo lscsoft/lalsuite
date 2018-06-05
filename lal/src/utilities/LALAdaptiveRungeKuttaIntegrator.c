@@ -609,6 +609,283 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKuttaIntegrator * integ
     return outputlength;
 }
 
+int XLALAdaptiveRungeKuttaDenseandSparseOutput(LALAdaptiveRungeKuttaIntegrator * integrator,
+         void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat,
+         REAL8Array ** sparse_output, REAL8Array ** dense_output)
+{
+    /* Error-checking variables used throughout */
+    int errnum = 0;
+    int status;
+
+    /* Integration and interpolation variables */
+    size_t dim = integrator->sys->dimension;
+    UINT4 sparse_outputlength = 0;
+    UINT4 dense_outputlength = 0;
+    size_t sparse_bufferlength, dense_bufferlength, retries;
+    REAL8 t = tinit;
+    REAL8 tnew;
+    REAL8 h0 = deltat;
+    REAL8Array *sparse_buffers = NULL;
+    REAL8Array *dense_buffers = NULL;
+    REAL8 *temp = NULL, *y, *y0, *dydt_in, *dydt_in0, *dydt_out, *yerr;
+    REAL8 interp_t = tinit + h0;
+
+    /* For speed, this replaces the single CALLGSL wrapper applied before each GSL call */
+    XLAL_BEGINGSL;
+
+    /* Allocate buffers!
+     * Note: REAL8Array has a field dimLength (UINT4Vector) with dimensions, and a field data that points to a single memory block;
+     * dimLength itself has fields length and data */
+    sparse_bufferlength = (int)((tend - tinit) / h0) + 2;   /* allow for the initial value and possibly a final semi-step */
+    dense_bufferlength = (int)((tend - tinit) / h0) + 2;
+
+    const UINT4 dimn = dim + 1;/* Time is not included in input dimesions, but is included in ouput arrays. */
+
+    sparse_buffers = XLALCreateREAL8ArrayL(2, dimn, sparse_bufferlength);
+    dense_buffers = XLALCreateREAL8ArrayL(2, dimn, dense_bufferlength);
+    temp = LALCalloc(6 * dim, sizeof(REAL8));
+
+    if (!sparse_buffers || !dense_buffers || !temp) {
+        errnum = XLAL_ENOMEM;
+        goto bail_out;
+    }
+
+    /* Aliases */
+    y = temp;
+    y0 = temp + dim;
+    dydt_in = temp + 2 * dim;
+    dydt_in0 = temp + 3 * dim;
+    dydt_out = temp + 4 * dim;
+    yerr = temp + 5 * dim;
+
+    /* Integrator set up */
+    integrator->sys->params = params;
+    integrator->returncode = 0;
+    retries = integrator->retries;
+
+    memcpy(y, yinit, dim * sizeof(REAL8));
+
+    /* Store the first data point. */
+    sparse_buffers->data[0] = t;
+    dense_buffers->data[0] = t;
+    for (UINT4 i = 1; i <= dim; i++){
+      UINT4 iminus1 = i - 1;
+      sparse_buffers->data[i * sparse_bufferlength] = y[iminus1];
+      dense_buffers->data[i * dense_bufferlength] = y[iminus1];
+    }
+
+    /* Compute derivatives at the initial time (dydt_in); bail out if impossible. */
+    if ((status = integrator->dydt(t, y, dydt_in, params)) != GSL_SUCCESS) {
+        integrator->returncode = status;
+        errnum = XLAL_EFAILED;
+        goto bail_out;
+    }
+
+    while (1) {
+
+        if (!integrator->stopontestonly && t >= tend) {
+            break;
+        }
+
+        if (integrator->stop) {
+            if ((status = integrator->stop(t, y, dydt_in, params)) != GSL_SUCCESS) {
+	      integrator->returncode = status;
+                break;
+            }
+        }
+
+        /* Try stepping! */
+      try_step:
+
+        /* If we would be stepping beyond the final time, stop there instead. */
+        if (!integrator->stopontestonly && t + h0 > tend)
+            h0 = tend - t;
+
+	/* Save y to y0 and dydt_in to dydt_in0. */
+        memcpy(y0, y, dim * sizeof(REAL8));
+        memcpy(dydt_in0, dydt_in, dim * sizeof(REAL8));
+
+        /* Call the GSL stepper function. */
+        status = gsl_odeiv_step_apply(integrator->step, t, h0, y, yerr, dydt_in, dydt_out, integrator->sys);
+        /* Note: If the user-supplied functions defined in the system dydt return a status other than GSL_SUCCESS,
+         * the step will be aborted. In this case, the elements of y will be restored to their pre-step values,
+         * and the error code from the user-supplied function will be returned. */
+
+        /* Did the stepper report a derivative-evaluation error? */
+        if (status != GSL_SUCCESS) {
+	  if (retries--) {
+	    /* If we have singularity retries left, reduce the timestep and try again... */
+	    h0 = h0 / 10.0;
+	    goto try_step;
+	  } else {
+	    integrator->returncode = status;
+	    /* ...otherwise exit the loop. */
+	    break;
+	  }
+        } else {
+	  /* We stepped successfully; reset the singularity retries. */
+	  retries = integrator->retries;
+        }
+
+        tnew = t + h0;
+
+        /* Call the GSL error-checking function. */
+        status = gsl_odeiv_control_hadjust(integrator->control, integrator->step, y, yerr, dydt_out, &h0);
+
+        /* Did the error-checker reduce the stepsize?
+         * Note: other possible return codes are GSL_ODEIV_HADJ_INC if it was increased;
+         * GSL_ODEIV_HADJ_NIL if it was unchanged. */
+        if (status == GSL_ODEIV_HADJ_DEC) {
+	  /* If so, undo the step, and try again */
+	  memcpy(y, y0, dim * sizeof(REAL8));
+	  memcpy(dydt_in, dydt_in0, dim * sizeof(REAL8));
+	  goto try_step;
+        }
+
+	if (2*dense_outputlength >= dense_bufferlength) {
+          REAL8Array *rebuffers;
+
+          /* Sadly, we cannot use ResizeREAL8Array because it would only work if we extended the first array dimension;
+           * thus we copy everything and switch the buffers. */
+          if (!(rebuffers = XLALCreateREAL8ArrayL(2, dimn, 2 * dense_bufferlength))) {
+            errnum = XLAL_ENOMEM;
+            goto bail_out;
+          } else {
+	    for (UINT4 k = 0; k <= dim; k++)
+              memcpy(&rebuffers->data[k * 2 * dense_bufferlength], &dense_buffers->data[k * dense_bufferlength], dense_outputlength * sizeof(REAL8));
+            XLALDestroyREAL8Array(dense_buffers);
+            dense_buffers = rebuffers;
+            dense_bufferlength *= 2;
+          }
+	}
+
+	{
+          const REAL8 interp_t_old = interp_t;
+          const UINT4 dense_outputlength_old = dense_outputlength;
+          while (interp_t < tnew) {
+            dense_outputlength++;
+            dense_buffers->data[dense_outputlength] = interp_t;
+            interp_t += deltat;
+          }
+          interp_t = interp_t_old;
+          dense_outputlength = dense_outputlength_old;
+        }
+
+	{
+	  const REAL8 h = tnew - t;
+          const REAL8 h_inv = 1.0/h;
+
+	  for (UINT4 i = 0; i < dim; i++) {
+	    REAL8 interp_t_old = interp_t;
+	    UINT4 dense_outputlength_old = dense_outputlength;
+	    REAL8 y0i = y0[i];
+	    REAL8 yi = y[i];
+
+	    while (interp_t < tnew) {
+	      dense_outputlength++;
+
+	      const REAL8 theta = (interp_t - t)*h_inv;
+
+	      dense_buffers->data[(i+1)*dense_bufferlength + dense_outputlength] =
+                (1.0 - theta)*y0i + theta*yi + theta*(theta-1.0)*( (1.0 - 2.0*theta)*(yi - y0i) + h*( (theta-1.0)*dydt_in[i] + theta*dydt_out[i]));
+
+	      interp_t += deltat;
+	    }
+
+	    if(i<(dim-1)){
+	      interp_t = interp_t_old;
+	      dense_outputlength = dense_outputlength_old;
+	    }
+	  }
+	}
+
+        /* Update the current time and input derivatives. */
+        t = tnew;
+        memcpy(dydt_in, dydt_out, dim * sizeof(REAL8));
+        sparse_outputlength++;
+
+        /* Check if interpolation buffers need to be extended. */
+        if (sparse_outputlength >= sparse_bufferlength) {
+	  REAL8Array *rebuffers;
+
+	  /* Sadly, we cannot use ResizeREAL8Array because it would only work if we extended the first array dimension;
+	   * thus we copy everything and switch the buffers. */
+	  if (!(rebuffers = XLALCreateREAL8ArrayL(2, dimn, 2 * sparse_bufferlength))) {
+	    errnum = XLAL_ENOMEM;
+	    goto bail_out;
+	  } else {
+	    for (UINT4 i = 0; i <= dim; i++)
+	      memcpy(&rebuffers->data[i * 2 * sparse_bufferlength], &sparse_buffers->data[i * sparse_bufferlength], sparse_outputlength * sizeof(REAL8));
+	    XLALDestroyREAL8Array(sparse_buffers);
+	    sparse_buffers = rebuffers;
+	    sparse_bufferlength *= 2;
+	  }
+        }
+
+        /* Copy time and state into buffers. */
+        sparse_buffers->data[sparse_outputlength] = t;
+        for (UINT4 i = 1; i <= dim; i++)
+            sparse_buffers->data[i * sparse_bufferlength + sparse_outputlength] = y[i - 1];
+    }
+
+    /* Copy the final state into yinit and dense_output. */
+    memcpy(yinit, y, dim * sizeof(REAL8));
+    dense_outputlength++;
+    dense_buffers->data[dense_outputlength] = t;
+    for (UINT4 i = 1; i <= dim; i++)
+      dense_buffers->data[i * dense_bufferlength + dense_outputlength] = y[i - 1];
+
+    if (sparse_outputlength == 0 || dense_outputlength == 0)
+        goto bail_out;
+
+    sparse_outputlength++;
+
+    (*sparse_output) = XLALCreateREAL8ArrayL(2, dim+1, sparse_outputlength);
+    (*dense_output) = XLALCreateREAL8ArrayL(2, dim+1, dense_outputlength);
+
+    if (!(*sparse_output) || !(*dense_output)) {
+      errnum = XLAL_ENOMEM;   /* ouch again, ran out of memory */
+      if (*sparse_output){
+	XLALDestroyREAL8Array(*sparse_output);
+	sparse_outputlength = 0;
+      }
+      if (*dense_output){
+	XLALDestroyREAL8Array(*dense_output);
+        dense_outputlength = 0;
+      }
+      goto bail_out;
+    }
+
+    for(UINT4 j = 0; j < sparse_outputlength; j++) {
+      (*sparse_output)->data[j] = sparse_buffers->data[j];
+      for(UINT4 i = 1; i <= dim; i++) {
+        (*sparse_output)->data[i * sparse_outputlength + j] = sparse_buffers->data[i * sparse_bufferlength + j];
+      }
+    }
+
+    for(UINT4 j = 0; j < dense_outputlength; j++) {
+      (*dense_output)->data[j] = dense_buffers->data[j];
+      for(UINT4 i = 1; i <= dim; i++) {
+        (*dense_output)->data[i * dense_outputlength + j] = dense_buffers->data[i * dense_bufferlength + j];
+      }
+    }
+
+    /* Deallocate memory and return sparse_outputlength. */
+  bail_out:
+
+    XLAL_ENDGSL;
+
+    if (sparse_buffers)
+      XLALDestroyREAL8Array(sparse_buffers);
+    if (dense_buffers)
+      XLALDestroyREAL8Array(dense_buffers);
+    if (temp)
+      LALFree(temp);
+    if (errnum)
+      XLAL_ERROR(errnum);
+
+    return sparse_outputlength;
+}
 
 int XLALAdaptiveRungeKutta4(LALAdaptiveRungeKuttaIntegrator * integrator,
     void *params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat, REAL8Array ** yout)

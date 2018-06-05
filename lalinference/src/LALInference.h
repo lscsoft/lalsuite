@@ -47,7 +47,7 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 
-#define VARNAME_MAX 320
+#define VARNAME_MAX 40
 #define VARVALSTRINGSIZE_MAX 128
 
 #include <lal/LALStdlib.h>
@@ -89,8 +89,6 @@
 
 /*LIB imports*/
 #include <lal/LALInferenceBurstRoutines.h>
-
-#define LALINFERENCE_HASHTABLE_SIZE 256 /* Max entries in hash table */
 
 //...other includes
 
@@ -619,7 +617,7 @@ tagLALInferenceRunState
 } LALInferenceRunState;
 
 
-#define DETNAMELEN 256
+#define DETNAMELEN 8
 
 /**
  * Structure to contain IFO data.
@@ -878,6 +876,12 @@ void LALInferenceQ2Eta(double q, double *eta);
 
 /** Convert from lambdaT, dLambdaT, and eta to lambda1 and lambda2. */
 void LALInferenceLambdaTsEta2Lambdas(REAL8 lambdaT, REAL8 dLambdaT, REAL8 eta, REAL8 *lambda1, REAL8 *lambda2);
+
+/** Calculate lambda1,2(m1,2|eos(logp1,gamma1,gamma2,gamma3)) */
+void LALInferenceLogp1GammasMasses2Lambdas(REAL8 logp1, REAL8 gamma1, REAL8 gamma2, REAL8 gamma3, REAL8 mass1, REAL8 mass2, REAL8 *lambda1, REAL8 *lambda2);
+
+/** Check for causality violation and mass conflict given masses and eos **/
+int LALInferenceEOSPhysicalCheck(LALInferenceVariables *params, ProcessParamsTable *commandLine);
 
 /**
  * The kD trees in LALInference are composed of cells.  Each cell

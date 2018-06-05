@@ -202,9 +202,9 @@ class RateVsThreshold(object):
 	def __iadd__(self, other):
 		self.zero_lag += other.zero_lag
 		self.n_background += other.n_background
-		self.background[:] = heapq.nlargest(itertools.chain(self.background, other.background), self.record_background)
-		self.most_significant_background[:] = heapq.nlargest(itertools.chain(self.most_significant_background, other.most_significant_background), self.record_candidates)
-		self.candidates[:] = heapq.nlargest(itertools.chain(self.candidates, other.candidates), self.record_candidates)
+		self.background[:] = heapq.nlargest(self.record_background, itertools.chain(self.background, other.background))
+		self.most_significant_background[:] = heapq.nlargest(self.record_candidates, itertools.chain(self.most_significant_background, other.most_significant_background))
+		self.candidates[:] = heapq.nlargest(self.record_candidates, itertools.chain(self.candidates, other.candidates))
 		self.zero_lag_time += other.zero_lag_time
 		self.background_time += other.background_time
 		return self
@@ -370,6 +370,12 @@ WHERE
 		#
 
 		background_x, background_y, background_yerr = compress_ratevsthresh_curve(background_x, background_y, background_yerr)
+
+		#
+		# save data points in a text file
+		#
+
+		numpy.savetxt('string_rate_background.txt',numpy.transpose((background_x,background_y,background_yerr)))
 
 		#
 		# start the rate vs. threshold plot
@@ -545,8 +551,8 @@ class Efficiency(object):
 		self.seglists |= other.seglists
 		self.vetoseglists |= other.vetoseglists
 		self.found += other.found
-		self.loudest_missed[:] = heapq.nlargest(itertools.chain(self.loudest_missed, other.loudest_missed), self.n_diagnostics)
-		self.quietest_found[:] = heapq.nlargest(itertools.chain(self.quietest_found, other.quietest_found), self.n_diagnostics)
+		self.loudest_missed[:] = heapq.nlargest(self.n_diagnostics, itertools.chain(self.loudest_missed, other.loudest_missed))
+		self.quietest_found[:] = heapq.nlargest(self.n_diagnostics, itertools.chain(self.quietest_found, other.quietest_found))
 		self.all += other.all
 		return self
 

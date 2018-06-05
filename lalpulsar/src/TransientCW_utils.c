@@ -821,12 +821,9 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
 
 
           /* generic F-stat calculation from A,B,C, Fa, Fb */
-          REAL4 Dd = ( Ad * Bd - Cd * Cd );
-          REAL4 DdInv = 0;
-          if ( Dd > 0 ) { /* safety catch as in XLALWeightMultiAMCoeffs(): make it so that in the end F=0 instead of -nan */
-            DdInv = 1.0f / Dd;
-          }
-          REAL4 twoF = XLALComputeFstatFromFaFb ( Fa, Fb, Ad, Bd, Cd, 0, DdInv );
+          REAL4 Dd = XLALComputeAntennaPatternSqrtDeterminant ( Ad, Bd, Cd, 0 );
+          REAL4 DdInv = 1.0f / Dd;
+          REAL4 twoF = compute_fstat_from_fa_fb ( Fa, Fb, Ad, Bd, Cd, 0, DdInv );
           REAL4 F = 0.5 * twoF;
           /* keep track of loudest F-stat value encountered over the m x n matrix */
           if ( F > ret->maxF )

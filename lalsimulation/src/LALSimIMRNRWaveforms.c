@@ -856,8 +856,9 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
 
   }
 
- /* Correct for the "alpha" angle as given in T1600045 to translate
-  * from the NR wave frame to LAL wave-frame
+ /* Correct for the "alpha" angle as given in T1500606 or arxiv:1703.01076
+  * to translate from the NR wave frame to LAL wave-frame.
+  *
   * Helper time series needed.
   */
 

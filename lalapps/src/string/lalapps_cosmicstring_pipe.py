@@ -75,7 +75,7 @@ def parse_command_line():
 		raise ValueError, "missing required options %s" % ", ".join(sorted("--%s" % option.replace("_", "-") for option in missing_options))
 
 	if options.vetoes_file is not None:
-		options.vetoes_cache = set([CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.vetoes_file))])
+		options.vetoes_cache = set([CacheEntry(None, "VETO", None, "file://localhost" + os.path.abspath(options.vetoes_file))])
 	else:
 		options.vetoes_cache = set()
 
@@ -174,7 +174,7 @@ overlap = short_segment_duration / 2 + 2 * pad	# FIXME:  correct?
 #
 
 instruments = lsctables.instrumentsproperty.get(config_parser.get('pipeline','ifos'))
-segments_cache = set([CacheEntry(None, None, None, "file://localhost" + os.path.abspath(options.segments_file))])
+segments_cache = set([CacheEntry(None, "SEG", None, "file://localhost" + os.path.abspath(options.segments_file))])
 seglists = ligolw_segments.segmenttable_get_by_name(ligolw_utils.load_filename(options.segments_file, contenthandler = ligolw_segments.LIGOLWContentHandler, verbose = options.verbose), options.segments_name).coalesce()
 # remove extra instruments
 for instrument in set(seglists) - instruments:
@@ -198,7 +198,7 @@ if options.verbose:
 background_time_slides = {}
 background_seglists = segments.segmentlistdict()
 for filename in options.background_time_slides:
-	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
+	cache_entry = CacheEntry(None, "BG", None, "file://localhost" + os.path.abspath(filename))
 
 	background_time_slides[cache_entry] = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw_segments.LIGOLWContentHandler)).as_dict().values()
 
@@ -210,7 +210,7 @@ for filename in options.background_time_slides:
 injection_time_slides = {}
 injection_seglists = segments.segmentlistdict()
 for filename in options.injection_time_slides:
-	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
+	cache_entry = CacheEntry(None, "INJ", None, "file://localhost" + os.path.abspath(filename))
 
         injection_time_slides[cache_entry] = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw_segments.LIGOLWContentHandler)).as_dict().values()
 
@@ -229,7 +229,7 @@ def check_for_reused_offsetvectors(background_time_slides, injection_time_slides
 
 	for background_cache_entry, background_offsetvector in [(cache_entry, offsetvector) for cache_entry, offsetvectors in background_time_slides.items() for offsetvector in offsetvectors]:
 		for injection_cache_entry, injection_offsetvector in [(cache_entry, offsetvector) for cache_entry, offsetvectors in injection_time_slides.items() for offsetvector in offsetvectors]:
-			if background_offsetvector.delta == injection_offsetvector.delta:
+			if background_offsetvector.deltas == injection_offsetvector.deltas:
 				raise ValueError, "injections offset vector %s from %s is the same as non-injections offset vector %s from %s.  to avoid a self-selection bias, injections must not be performed at the same relative time shifts as a non-injection run" % (str(injection_offsetvector), injection_cache_entry.url, str(background_offsetvector), background_cache_entry.url)
 
 check_for_reused_offsetvectors(background_time_slides, injection_time_slides)
@@ -326,7 +326,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 
 		tisi_cache = set([time_slides_cache_entry])
 		lladd_nodes = set()
-		for seg, parents, cache, clipseg in power.group_coinc_parents(trigger_nodes, these_time_slides, extentlimit = 50000000.0 / (len(these_time_slides) or 1), verbose = verbose):
+		for segnum, (seg, parents, cache, clipseg) in enumerate(power.group_coinc_parents(trigger_nodes, these_time_slides, extentlimit = 150000000.0 / (len(these_time_slides) or 1), verbose = verbose)):
 			binj_cache = set(cache_entry for node in binjnodes for cache_entry in node.get_output_cache() if cache_entry.segment.intersects(seg))
 			# otherwise too many copies of the offset vector
 			# will be fed into burca
@@ -339,7 +339,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 				# ligolw_add needs to copy the time slide
 				# document into its output
 				extra_input_cache = tisi_cache | vetoes_cache
-			these_lladd_nodes = power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache | segments_cache, extra_input_cache = extra_input_cache, remove_input = do_injections and clipseg is not None, preserve_cache = binj_cache | segments_cache | tisi_cache | vetoes_cache)
+			these_lladd_nodes = power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d_%x" % (tag, n, segnum), segment = seg, input_cache = cache | binj_cache | segments_cache, extra_input_cache = extra_input_cache, remove_input = do_injections and clipseg is not None, preserve_cache = binj_cache | segments_cache | tisi_cache | vetoes_cache)
 			if clipseg is not None:
 				#
 				# this is a fragment of a too-large burca

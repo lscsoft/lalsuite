@@ -25,8 +25,6 @@
 #
 
 
-import math
-import numpy
 from optparse import OptionParser
 import sqlite3
 import sys
@@ -150,7 +148,16 @@ for n, filename in enumerate(filenames):
 	# Run likelihood ratio calculation.
 	#
 
-	calc_likelihood.ligolw_burca2(contents, coincparamsdistributions, coincparamsdistributions.coinc_params, verbose = options.verbose, params_func_extra_args = (triangulators,))
+	calc_likelihood.assign_likelihood_ratios(
+		connection = contents.connection,
+		coinc_def_id = contents.bb_definer_id,
+		offset_vectors = contents.time_slide_table.as_dict(),
+		vetoseglists = contents.vetoseglists,
+		events_func = lambda cursor, coinc_event_id: calc_likelihood.sngl_burst_events_func(cursor, coinc_event_id, contents.sngl_burst_table.row_from_cols),
+		veto_func = calc_likelihood.sngl_burst_veto_func,
+		ln_likelihood_ratio_func = coincparamsdistributions.ln_lr_from_triggers,
+		verbose = options.verbose
+	)
 
 	#
 	# Clean up.

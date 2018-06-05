@@ -34,6 +34,7 @@ pybin_scripts = \
 	imrtgr_imr_consistency_test \
 	lalinference_average_skymaps \
 	lalinference_pipe \
+	lalinference_review_test \
 	cbcBayesBurstPostProc \
 	cbcBayesCombinePosteriors \
 	cbcBayesCompPos \

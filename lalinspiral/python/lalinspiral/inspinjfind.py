@@ -41,6 +41,7 @@ again using the standard coincidence infrastructure.
 
 
 import bisect
+import functools
 import sys
 
 
@@ -67,6 +68,7 @@ from .git_version import version as __version__
 #
 
 
+@functools.total_ordering
 class SnglInspiral(lsctables.SnglInspiral):
 	"""
 	Version of lsctables.SnglInspiral who's .__cmp__() method compares
@@ -75,8 +77,12 @@ class SnglInspiral(lsctables.SnglInspiral):
 	searched for a LIGOTimeGPS end time.
 	"""
 	__slots__ = ()
-	def __cmp__(self, other):
-		return cmp(self.end, other)
+
+	def __lt__(self, other):
+		return self.end < other
+
+	def __eq__(self, other):
+		return self.end == other
 
 
 @lsctables.use_in

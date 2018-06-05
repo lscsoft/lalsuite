@@ -44,6 +44,7 @@ from operator import itemgetter
 
 #related third party imports
 from .io import read_samples
+from . import plot as lp
 import healpy as hp
 import astropy.table
 import numpy as np
@@ -140,8 +141,9 @@ tigerParams=['dchi%i'%(i) for i in range(8)] + ['dchi%il'%(i) for i in [5,6] ] +
 bransDickeParams=['omegaBD','ScalarCharge1','ScalarCharge2']
 massiveGravitonParams=['lambdaG']
 tidalParams=['lambda1','lambda2','lam_tilde','dlam_tilde','lambdat','dlambdat']
+eosParams=['logp1','gamma1','gamma2','gamma3']
 energyParams=['e_rad', 'l_peak']
-strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+energyParams
+strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+eosParams+energyParams
 
 #Extrinsic
 distParams=['distance','distMPC','dist']
@@ -169,6 +171,8 @@ for derived_phase in relativePhaseParams:
 for param in tigerParams + bransDickeParams + massiveGravitonParams:
   greedyBinSizes[param]=0.01
 for param in tidalParams:
+  greedyBinSizes[param]=2.5
+for param in eosParams:
   greedyBinSizes[param]=2.5
   #Confidence levels
 for loglname in statsParams:
@@ -337,6 +341,10 @@ def get_prior(name):
       'lambda2': 'uniform',
       'lam_tilde' : None,
       'dlam_tilde': None,
+      'logp1':None,
+      'gamma1':None,
+      'gamma2':None,
+      'gamma3':None,
       'calamp_h1' : 'uniform',
       'calamp_l1' : 'uniform',
       'calpha_h1' : 'uniform',
@@ -431,6 +439,10 @@ def plot_label(param):
       'lambda2': r'$\lambda_2$',
       'lam_tilde' : r'$\tilde{\Lambda}$',
       'dlam_tilde': r'$\delta \tilde{\Lambda}$',
+      'logp1':r'$\log(p_1)$',
+      'gamma1':r'$\Gamma_1$',
+      'gamma2':r'$\Gamma_2$',
+      'gamma3':r'$\Gamma_3$',
       'calamp_h1' : r'$\delta A_{H1}$',
       'calamp_l1' : r'$\delta A_{L1}$',
       'calpha_h1' : r'$\delta \phi_{H1}$',
@@ -987,7 +999,10 @@ class Posterior(object):
       # Calculate redshift from luminosity distance measurements
       if('distance' in pos.names):
           pos.append_mapping('redshift', calculate_redshift, 'distance')
+      elif('dist' in pos.names):
+          pos.append_mapping('redshift', calculate_redshift, 'dist')
 
+          
       # Calculate source mass parameters
       if ('m1' in pos.names) and ('redshift' in pos.names):
           pos.append_mapping('m1_source', source_mass, ['m1', 'redshift'])
@@ -3498,7 +3513,6 @@ def plot_sky_map(hpmap, outdir, inj=None, nest=True):
     :param nest: Flag indicating the pixel ordering in healpix.
 
     """
-    import lalinference.plot as lp
 
     fig = plt.figure(frameon=False, figsize=(8,6))
     ax = plt.subplot(111, projection='astro hours mollweide')

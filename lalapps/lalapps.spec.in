@@ -28,8 +28,6 @@ BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
 BuildRequires: lalframe-python >= @MIN_LALFRAME_VERSION@
 BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalxml-devel >= @MIN_LALXML_VERSION@
-BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
 BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
@@ -51,6 +49,7 @@ Requires: less
 Requires: libframe
 Requires: libmetaio
 Requires: openmpi
+Requires: openssh-clients
 Requires: python
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: lal-python >= @MIN_LAL_VERSION@
@@ -58,8 +57,6 @@ Requires: lalframe >= @MIN_LALFRAME_VERSION@
 Requires: lalframe-python >= @MIN_LALFRAME_VERSION@
 Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
-Requires: lalxml >= @MIN_LALXML_VERSION@
-Requires: lalxml-python >= @MIN_LALXML_VERSION@
 Requires: lalsimulation  >= @MIN_LALSIMULATION_VERSION@
 Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
 Requires: lalburst >= @MIN_LALBURST_VERSION@
@@ -85,10 +82,10 @@ Algorithm Library.
 
 %build
 %configure --disable-gcc-flags --enable-cfitsio --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc MPICXX=/usr/lib64/openmpi/bin/mpicxx MPIFC=/usr/lib64/openmpi/bin/mpifc
-%{__make} V=1
+%{__make} %{?_smp_mflags} V=1
 
 %check
-%{__make} V=1 check
+%{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
 
 %install
 %make_install

@@ -23,14 +23,10 @@ BuildRequires: swig >= 3.0.7
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 BuildRequires: lal-python >= @MIN_LAL_VERSION@
-BuildRequires: lalxml-devel >= @MIN_LALXML_VERSION@
-BuildRequires: lalxml-octave >= @MIN_LALXML_VERSION@
-BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
 Requires: cfitsio
 Requires: fftw
 Requires: gsl
 Requires: lal >= @MIN_LAL_VERSION@
-Requires: lalxml >= @MIN_LALXML_VERSION@
 Prefix: %{_prefix}
 
 %description
@@ -47,7 +43,6 @@ Requires: fftw-devel
 Requires: fftw-static
 Requires: gsl-devel
 Requires: lal-devel >= @MIN_LAL_VERSION@
-Requires: lalxml-devel >= @MIN_LALXML_VERSION@
 %description devel
 The LSC Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL
@@ -60,7 +55,6 @@ Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
 Requires: lal-python >= @MIN_LAL_VERSION@
-Requires: lalxml-python >= @MIN_LALXML_VERSION@
 %description python
 This package provides the Python bindings for LALPulsar.
 
@@ -70,7 +64,6 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
-Requires: lalxml-octave >= @MIN_LALXML_VERSION@
 %description octave
 This package provides the Octave bindings for LALPulsar.
 
@@ -79,10 +72,10 @@ This package provides the Octave bindings for LALPulsar.
 
 %build
 %configure --disable-gcc-flags --enable-swig --enable-cfitsio
-%{__make} V=1
+%{__make} %{?_smp_mflags} V=1
 
 %check
-%{__make} V=1 check
+%{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
 
 %install
 %make_install

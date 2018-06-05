@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <float.h>
 #include <signal.h>
+#include <time.h>
+#include <sys/times.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -116,7 +118,14 @@ static int WriteNSCheckPointH5(char *filename, LALInferenceRunState *runState, N
     LALInferenceH5VariablesArrayToDataset(group, output_array, N_output_array, "past_chain");
     XLALH5FileAddScalarAttribute(group, "N_outputarray", &N_output_array, LAL_I4_TYPE_CODE);
   }
-  
+  struct tms tms_buffer;
+  if(times(&tms_buffer))
+  {
+    REAL8 execution_time = (REAL8)tms_buffer.tms_utime / (REAL8) sysconf (_SC_CLK_TCK);
+    REAL8 *prevtime=NULL;
+    if( (prevtime=LALInferenceGetVariable(runState->algorithmParams,"cpu_time"))) execution_time+=*prevtime;
+    XLALH5FileAddScalarAttribute(group, "cpu_time", &execution_time, LAL_D_TYPE_CODE);
+  }
   XLALH5FileClose(group);
   XLALH5FileClose(h5file);
   return(retcode);
@@ -161,6 +170,12 @@ static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NS
     LALInferenceAddVariable(runState->algorithmParams,"outputarray",&outputarray,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
     XLALH5DatasetFree(outputGroup);
   }
+  double execution_time = 0.0;
+  if ( ( execution_time = XLALH5FileQueryScalarAttributeValue(&execution_time, group, "cpu_time") ) )
+  {
+      LALInferenceAddVariable(runState->algorithmParams, "cpu_time", &execution_time, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+  }
+  
   XLALH5FileClose(group);
   XLALH5FileClose(h5file);
   printf("done restoring\n");
@@ -329,6 +344,34 @@ static void catch_alarm(UNUSED int sig, UNUSED siginfo_t *siginfo,UNUSED void *c
 static void catch_alarm(UNUSED int sig, UNUSED siginfo_t *siginfo,UNUSED void *context)
 {
   __ns_saveStateFlag=1;
+}
+
+static void install_resume_handler(void);
+static void install_resume_handler(void)
+{
+    /* Install a periodic alarm that will trigger a checkpoint */
+    int sigretcode=0;
+    struct sigaction sa;
+    sa.sa_sigaction=catch_alarm;
+    sa.sa_flags=SA_SIGINFO;
+    sigretcode=sigaction(SIGVTALRM,&sa,NULL);
+    if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint timer!\n");
+    /* Condor sends SIGUSR2 to checkpoint and continue */
+    sigretcode=sigaction(SIGUSR2,&sa,NULL);
+    if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGUSR2.\n");
+    checkpoint_timer.it_interval.tv_sec=30*60; /* Default timer 30 mins */
+    checkpoint_timer.it_interval.tv_usec=0;
+    checkpoint_timer.it_value=checkpoint_timer.it_interval;
+    setitimer(ITIMER_VIRTUAL,&checkpoint_timer,NULL);
+    /* Install the handler for the condor interrupt signal */
+    sa.sa_sigaction=catch_interrupt;
+    sigretcode=sigaction(SIGINT,&sa,NULL);
+    if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGINT.\n");
+    /* Condor sends SIGTERM to vanilla universe jobs to evict them */
+    sigretcode=sigaction(SIGTERM,&sa,NULL);
+    if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGTERM.\n");
+    /* Condor sends SIGTSTP to standard universe jobs to evict them.
+     *I think condor handles this, so didn't add a handler CHECK */
 }
 
 static UINT4 UpdateNMCMC(LALInferenceRunState *runState);
@@ -750,6 +793,9 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
     LALInferenceAddVariable(runState->algorithmParams,"tolerance",&tmp, LALINFERENCE_REAL8_t,
                             LALINFERENCE_PARAM_FIXED);
   }
+  double zero=0.0;
+  LALInferenceAddVariable(runState->algorithmParams,"cpu_time",&zero,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+  
   return;
 
 }
@@ -901,35 +947,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
           for(i=0;i<Nlive;i++) logLikelihoods[i]=*(REAL8 *)LALInferenceGetVariable(runState->livePoints[i],"logL");
           iter=s->iteration;
       }
-      /* Install a periodic alarm that will trigger a checkpoint */
-      int sigretcode=0;
-      struct sigaction sa;
-      sa.sa_sigaction=catch_alarm;
-      sa.sa_flags=SA_SIGINFO;
-      sigretcode=sigaction(SIGVTALRM,&sa,NULL);
-      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint timer!\n");
-      /* Condor sends SIGUSR2 to checkpoint and continue */
-      sigretcode=sigaction(SIGUSR2,&sa,NULL);
-      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGUSR2.\n");
-      checkpoint_timer.it_interval.tv_sec=30*60; /* Default timer 30 mins */
-      checkpoint_timer.it_interval.tv_usec=0;
-      checkpoint_timer.it_value=checkpoint_timer.it_interval;
-      setitimer(ITIMER_VIRTUAL,&checkpoint_timer,NULL);
-      /* Install the handler for the condor interrupt signal */
-      sa.sa_sigaction=catch_interrupt;
-      sigretcode=sigaction(SIGINT,&sa,NULL);
-      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGINT.\n");
-      /* Condor sends SIGTERM to vanilla universe jobs to evict them */
-      sigretcode=sigaction(SIGTERM,&sa,NULL);
-      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGTERM.\n");
-      /* Condor sends SIGTSTP to standard universe jobs to evict them.
-       *I think condor handles this, so didn't add a handler CHECK */
   }
-
   if(retcode!=0)
   {
     if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
-        fprintf(stdout,"Unable to open resume file %s. Starting anew.\n",resumefilename);
+        fprintf(stdout,"No resume file %s. Starting a new run.\n",resumefilename);
     /* Sprinkle points */
     LALInferenceSetVariable(runState->algorithmParams,"logLmin",&neginfty);
     int sprinklewarning=0;
@@ -995,6 +1017,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   minpos=0;
   threadState->currentParams=currentVars;
   fprintf(stdout,"Starting nested sampling loop!\n");
+  /* Install interrupt handler for resuming */
+  if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
+  {
+      install_resume_handler();
+  }
   /* Iterate until termination condition is met */
   do {
     /* Find minimum likelihood sample to replace */
@@ -1154,7 +1181,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     /* Write HDF5 file */
     if(HDFOUTPUT)
     {
-      
+
       LALH5File *h5file=XLALH5FileOpen(outfile, "w");
       // Create group heirarchy 
       char runID[2048];
@@ -1174,6 +1201,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       XLALH5FileAddScalarAttribute(groupPtr, "log_max_likelihood", &logLmax , LAL_D_TYPE_CODE);
       XLALH5FileAddScalarAttribute(groupPtr, "number_live_points", &Nlive, LAL_U4_TYPE_CODE);
       XLALH5FileAddScalarAttribute(groupPtr, "log_prior_volume", &logvolume, LAL_D_TYPE_CODE);
+       /* Get the cpu usage */
+      struct tms tms_buffer;
+      if(times(&tms_buffer))
+      {
+        REAL8 execution_time = (REAL8)tms_buffer.tms_utime / (REAL8) sysconf (_SC_CLK_TCK) + LALInferenceGetREAL8Variable(runState->algorithmParams,"cpu_time");
+        XLALH5FileAddScalarAttribute(groupPtr, "cpu_time", &execution_time, LAL_D_TYPE_CODE);
+      }
 
       XLALH5FileClose(h5file);
     }

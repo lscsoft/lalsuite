@@ -62,20 +62,6 @@ __date__ = git_version.date
 #
 
 
-class Thresholds(object):
-	"""
-	Fake dictionary that returns the same thing for all keys.
-	"""
-	def __init__(self, val):
-		self.val = val
-
-	def __setitem__(self, key, val):
-		self.val = val
-
-	def __getitem__(self, key):
-		return self.val
-
-
 def parse_command_line():
 	parser = OptionParser(
 		version = "Name: %%prog\n%s" % git_version.verbose_msg,
@@ -87,7 +73,7 @@ def parse_command_line():
 	parser.add_option("-a", "--coincidence-algorithm", metavar = "[excesspower|stringcusp]", default = None, help = "Select the coincidence test algorithm to use (required).")
 	parser.add_option("-s", "--coincidence-segments", metavar = "start:end[,start:end,...]", help = "Set the GPS segments in which to retain coincidences.  Multiple segments can be specified by separating them with commas.  If either start or end is absent from a segment then the interval is unbounded on that side, for example \"874000000:\" causes all coincidences starting at 874000000 to be retained.  The \"time\" of a coincidence is ambiguous, and is different for different search algorithms, but a deterministic algorithm is used in all cases so the same coincidence of events will always be assigned the same time.  This feature is intended to allow large input files to be analyzed;  the procedure is to make n copies of the file and run n instances of burca specifying disjoint --coincidence-segments for each.")
 	parser.add_option("-m", "--min-instruments", metavar = "N", type = "int", default = 2, help = "Set the minimum number of instruments required to form a coincidence (default = 2).")
-	parser.add_option("-t", "--threshold", metavar = "threshold", default = None, help = "Set the coincidence algorithm's threshold.  For excesspower this parameter is not used.  For stringcusp, this parameter sets the maximum peak time difference in seconds not including light travel time (which will be added internally).")
+	parser.add_option("-t", "--threshold", metavar = "threshold", type = "float", help = "Set the coincidence algorithm's threshold.  For excesspower this parameter is not used.  For stringcusp, this parameter sets the maximum peak time difference in seconds not including light travel time (which will be added internally).")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 	options, filenames = parser.parse_args()
 
@@ -108,14 +94,8 @@ def parse_command_line():
 	if options.min_instruments < 1:
 		raise ValueError("--min-instruments must be >= 1")
 
-	#
-	# parse the --thresholds arguments
-	#
-
-	if options.coincidence_algorithm == "stringcusp":
-		if options.threshold is None:
-			raise ValueError("--threshold is required for --coincidence-algorithm stringcusp")
-		options.threshold = Thresholds(float(options.threshold))
+	if options.coincidence_algorithm == "stringcusp" and options.threshold is None:
+		raise ValueError("--threshold is required for --coincidence-algorithm stringcusp")
 
 	#
 	# done
@@ -221,7 +201,7 @@ for n, filename in enumerate(filenames):
 		EventListType = EventListType,
 		CoincTables = CoincTables,
 		coinc_definer_row = CoincDef,
-		thresholds = options.threshold,
+		threshold = options.threshold,
 		ntuple_comparefunc = ntuple_comparefunc,
 		verbose = options.verbose
 	)

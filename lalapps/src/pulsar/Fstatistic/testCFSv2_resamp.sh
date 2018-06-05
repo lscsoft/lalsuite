@@ -93,9 +93,15 @@ loudest_Demod=${testDir}/Loudest_Demod.dat
 outfile_Resamp=${testDir}/Fstat_Resamp.dat
 loudest_Resamp=${testDir}/Loudest_Resamp.dat
 
+outfile_Resamp_otfn=${testDir}/Fstat_Resamp_otfn.dat
+loudest_Resamp_otfn=${testDir}/Loudest_Resamp_otfn.dat
+
+
+
 timefile_Comp=${testDir}/timing_Comp.dat
 timefile_Demod=${testDir}/timing_Demod.dat
 timefile_Resamp=${testDir}/timing_Resamp.dat
+timefile_Resamp_otfn=${testDir}/timing_Resamp_otfn.dat
 
 ##--------------------------------------------------
 ## test starts here
@@ -165,13 +171,31 @@ if ! eval "$cmdline 2> /dev/null"; then
     exit 1;
 fi
 
+
+
+echo
+echo "----------------------------------------------------------------------"
+echo " STEP 5: run directed CFS_v2 with resampling and on-the-fly noise"
+echo "----------------------------------------------------------------------"
+echo
+cmdline="$cfs_code $cfs_CL --injectionSources='${injectionSources}' --injectSqrtSX=${sqrtSX} --IFOs='H1,L1' --Tsft=${Tsft} --randSeed=1 --timestampsFiles='${srcdir}/H1_test_timestamps.dat,${srcdir}/L1_test_timestamps.dat' --FstatMethod=ResampBest  --outputFstat=$outfile_Resamp_otfn --outputTiming=$timefile_Resamp_otfn  --outputLoudest=${loudest_Resamp_otfn}"
+echo $cmdline;
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1;
+fi
+
+
+
+
 echo "----------------------------------------"
-echo " STEP 5: Comparing results: "
+echo " STEP 6: Comparing results: "
 echo "----------------------------------------"
 
 sort -o $outfile_Comp $outfile_Comp
 sort -o $outfile_Demod $outfile_Demod
 sort -o $outfile_Resamp $outfile_Resamp
+sort -o $outfile_Resamp_otfn $outfile_Resamp_otfn
 
 ## compare absolute differences instead of relative, allow deviations of up to sigma=sqrt(8)~2.8
 echo
@@ -194,9 +218,23 @@ else
     echo "	==> OK."
 fi
 
+
+#laxer tolerances as we have different noiuse realizations in this testcase. Incuded just for smoke test
+echo
+cmdline="$cmp_code -1 ./${outfile_Resamp} -2 ./${outfile_Resamp_otfn} --tol-L1=7e-1 --tol-L2=7e-1 --tol-angle=0.2 --tol-atMax=2e-1"
+echo -n $cmdline
+if ! eval $cmdline; then
+    echo "==> OUCH... files differ. Something might be wrong with --injectSqrtSX et al."
+    exit 2
+else
+    echo "      ==> OK."
+fi
+
+
+
 echo
 echo "----------------------------------------------------------------------"
-echo " STEP 6: Sanity-check Resampling parameter estimation: "
+echo " STEP 7: Sanity-check Resampling parameter estimation: "
 echo "----------------------------------------------------------------------"
 echo
 

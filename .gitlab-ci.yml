@@ -15,7 +15,6 @@ stages:
   - level2
   - level3
   - level4
-  - release
   - nightly
   - deploy
 
@@ -26,6 +25,7 @@ before_script:
   - export CCACHE_DIR=${PWD}/ccache
   - export PKG_CONFIG_PATH=${LAL_DIR}/lib/pkgconfig
   - mkdir -p opt/lalsuite
+  - if [ ${CI_PIPELINE_SOURCE} = schedule ]; then EXTRA_CONFIG_FLAGS="--enable-nightly"; fi
 
 cache:
   key: $CI_JOB_NAME
@@ -33,18 +33,19 @@ cache:
     - ccache
 
 .levelN:package: &levelN-package
-  image: ligo/lalsuite-dev:jessie
   script:
-    - cd ${CI_JOB_NAME#level?:}
+    - cd ${CI_JOB_NAME#level?:*:}
     - ./00boot
     - ./configure --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
     - make dist
-    - tar xf *.tar.xz
+    - cd ${CI_PROJECT_DIR}
+    - tar xf ${CI_JOB_NAME#level?:*:}/lal*.tar.xz
     - cd lal*-*
-    - ./configure --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
+    - mkdir -p subdir
+    - cd subdir
+    - ../configure --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
     - make -j4 V=1
     - make -j4 V=1 VERBOSE=1 check
-    - make -j4 installcheck
     - make -j4 install
     - make -j4 install-html
   artifacts:
@@ -56,93 +57,178 @@ cache:
     - schedules
     - web
 
-level0:lal:
+.levelN:package:stretch: &levelN-package-stretch
+  image: ligo/lalsuite-dev:stretch
   <<: *levelN-package
+
+level0:stretch:lal:
+  <<: *levelN-package-stretch
   stage: level0
 
-level1:lalframe:
-  <<: *levelN-package
+level1:stretch:lalframe:
+  <<: *levelN-package-stretch
   stage: level1
   dependencies:
-    - level0:lal
+    - level0:stretch:lal
 
-level1:lalmetaio:
-  <<: *levelN-package
+level1:stretch:lalmetaio:
+  <<: *levelN-package-stretch
   stage: level1
   dependencies:
-    - level0:lal
+    - level0:stretch:lal
 
-level1:lalsimulation:
-  <<: *levelN-package
+level1:stretch:lalsimulation:
+  <<: *levelN-package-stretch
   stage: level1
   dependencies:
-    - level0:lal
+    - level0:stretch:lal
 
-level1:lalxml:
-  <<: *levelN-package
+level1:stretch:lalxml:
+  <<: *levelN-package-stretch
   stage: level1
   dependencies:
-    - level0:lal
+    - level0:stretch:lal
 
-level2:lalburst:
-  <<: *levelN-package
+level2:stretch:lalburst:
+  <<: *levelN-package-stretch
   stage: level2
   dependencies:
-    - level1:lalmetaio
-    - level1:lalsimulation
+    - level1:stretch:lalmetaio
+    - level1:stretch:lalsimulation
 
-level2:lalinspiral:
-  <<: *levelN-package
+level2:stretch:lalinspiral:
+  <<: *levelN-package-stretch
   stage: level2
   dependencies:
-    - level1:lalframe
-    - level1:lalmetaio
-    - level1:lalsimulation
+    - level1:stretch:lalframe
+    - level1:stretch:lalmetaio
+    - level1:stretch:lalsimulation
 
-level2:lalpulsar:
-  <<: *levelN-package
+level2:stretch:lalpulsar:
+  <<: *levelN-package-stretch
   stage: level2
   dependencies:
-    - level1:lalxml
+    - level0:stretch:lal
 
-level2:lalstochastic:
-  <<: *levelN-package
+level2:stretch:lalstochastic:
+  <<: *levelN-package-stretch
   stage: level2
   dependencies:
-    - level1:lalmetaio
+    - level1:stretch:lalmetaio
 
-level3:laldetchar:
-  <<: *levelN-package
+level3:stretch:laldetchar:
+  <<: *levelN-package-stretch
   stage: level3
   dependencies:
-    - level2:lalburst
+    - level2:stretch:lalburst
 
-level3:lalinference:
-  <<: *levelN-package
+level3:stretch:lalinference:
+  <<: *levelN-package-stretch
   stage: level3
   dependencies:
-    - level2:lalburst
-    - level2:lalinspiral
-    - level2:lalpulsar
+    - level2:stretch:lalburst
+    - level2:stretch:lalinspiral
+    - level2:stretch:lalpulsar
 
-level4:lalapps:
-  <<: *levelN-package
+level4:stretch:lalapps:
+  <<: *levelN-package-stretch
   stage: level4
   dependencies:
-    - level2:lalstochastic
-    - level3:laldetchar
-    - level3:lalinference
+    - level2:stretch:lalstochastic
+    - level3:stretch:laldetchar
+    - level3:stretch:lalinference
+
+.levelN:package:el7: &levelN-package-el7
+  image: ligo/lalsuite-dev:el7
+  <<: *levelN-package
+
+level0:el7:lal:
+  <<: *levelN-package-el7
+  stage: level0
+
+level1:el7:lalframe:
+  <<: *levelN-package-el7
+  stage: level1
+  dependencies:
+    - level0:el7:lal
+
+level1:el7:lalmetaio:
+  <<: *levelN-package-el7
+  stage: level1
+  dependencies:
+    - level0:el7:lal
+
+level1:el7:lalsimulation:
+  <<: *levelN-package-el7
+  stage: level1
+  dependencies:
+    - level0:el7:lal
+
+level1:el7:lalxml:
+  <<: *levelN-package-el7
+  stage: level1
+  dependencies:
+    - level0:el7:lal
+
+level2:el7:lalburst:
+  <<: *levelN-package-el7
+  stage: level2
+  dependencies:
+    - level1:el7:lalmetaio
+    - level1:el7:lalsimulation
+
+level2:el7:lalinspiral:
+  <<: *levelN-package-el7
+  stage: level2
+  dependencies:
+    - level1:el7:lalframe
+    - level1:el7:lalmetaio
+    - level1:el7:lalsimulation
+
+level2:el7:lalpulsar:
+  <<: *levelN-package-el7
+  stage: level2
+  dependencies:
+    - level0:el7:lal
+
+level2:el7:lalstochastic:
+  <<: *levelN-package-el7
+  stage: level2
+  dependencies:
+    - level1:el7:lalmetaio
+
+level3:el7:laldetchar:
+  <<: *levelN-package-el7
+  stage: level3
+  dependencies:
+    - level2:el7:lalburst
+
+level3:el7:lalinference:
+  <<: *levelN-package-el7
+  stage: level3
+  dependencies:
+    - level2:el7:lalburst
+    - level2:el7:lalinspiral
+    - level2:el7:lalpulsar
+
+level4:el7:lalapps:
+  <<: *levelN-package-el7
+  stage: level4
+  dependencies:
+    - level2:el7:lalstochastic
+    - level3:el7:laldetchar
+    - level3:el7:lalinference
 
 # release a debian docker image upon every tag in lalsuite
 docker:tags:
-  stage: release
+  stage: nightly
   before_script: []
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker build --pull -t $TAG --file .Dockerfile.gitlab-ci .
     - docker push $TAG
   dependencies:
-    - level4:lalapps
+    - level4:stretch:lalapps
   only:
     - tags
 
@@ -155,7 +241,7 @@ docker:nightly:
     - docker build --pull -t $NIGHTLY --file .Dockerfile.gitlab-ci .
     - docker push $NIGHTLY
   dependencies:
-    - level4:lalapps
+    - level4:stretch:lalapps
   only:
     - master@lscsoft/lalsuite
     - schedules
@@ -163,22 +249,20 @@ docker:nightly:
     - pushes
     - web
 
-nightly:top-level:el7:
-  image: ligo/lalsuite-dev:el7
+nightly:top-level:jessie:
+  image: ligo/lalsuite-dev:jessie
   stage: nightly
   script:
     - ./00boot
     - ./configure --enable-swig --enable-doxygen
     - make -j4 distcheck
+  dependencies: []
   only:
     - schedules
     - web
 
-# do not perform a jessie build because we are doing one nightly via
-# the normal CI parellel build process
-
-nightly:top-level:stretch:
-  image: ligo/lalsuite-dev:stretch
+nightly:top-level:el7-cr:
+  image: ligo/lalsuite-dev:el7-cr
   stage: nightly
   script:
     - ./00boot
@@ -224,7 +308,18 @@ nightly:top-level:artful:
   only:
     - schedules
     - web
-  allow_failure: true
+
+nightly:top-level:bionic:
+  image: skymoo/ligo-lalsuite-dev:bionic
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
 
 # FIXME: It seems that Octave on buster currently has a few bugs which
 # cause the Octave bindings to fail, disable building the Octave SWIG
@@ -240,7 +335,6 @@ nightly:top-level:buster:
   only:
     - schedules
     - web
-  allow_failure: true
 
 nightly:top-level:clang:
   image: skymoo/ligo-lalsuite-clang:jessie
@@ -281,13 +375,13 @@ nightly:python3:stretch:
   # building with python3, temporarily allow this to fail
   allow_failure: true
 
-nightly:macos:
+nightly:macos:highsierra:
   tags:
-    - macos
+    - macos_highsierra
   stage: nightly
   script:
     - ./00boot
-    - ./configure --enable-swig --enable-doxygen
+    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-swig --enable-doxygen
     - make -j4
     - make -j4 check
   dependencies: []
@@ -307,9 +401,7 @@ nightly:macos:
     # Build wheel
     - ./00boot
     # FIXME: laldetchar depends on glib >= 2.14, too new for manylinux1
-    - ./configure PYTHON=${PYPREFIX}/bin/python
-      --enable-swig-python --enable-nightly
-      --disable-laldetchar
+    - ./configure PYTHON=${PYPREFIX}/bin/python --disable-laldetchar ${EXTRA_CONFIG_FLAGS}
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - auditwheel repair wheel/*.whl
@@ -320,9 +412,8 @@ nightly:macos:
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []
   only:
-    - /^lalsuite-.+/
+    - /^lalsuite-v.*$/
     - schedules
-    - web
   artifacts:
     expire_in: 3h
     paths:
@@ -331,7 +422,7 @@ nightly:macos:
 # Build receipe for standalone wheels on macOS
 .nightly:wheel:macos: &nightly-wheel-macos
   tags:
-    - macos
+    - macos_elcapitan
   stage: nightly
   script:
     - PYVERS=$(echo ${CI_JOB_NAME} | sed 's/.*:cp\(.\)\(.\).*/\1.\2/')
@@ -341,8 +432,7 @@ nightly:macos:
     - pip install -q git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 numpy==1.7.0
     # Build wheel
     - ./00boot
-    - ./configure PYTHON=$(which python${PYVERS})
-      --enable-swig-python --enable-nightly
+    - ./configure PYTHON=$(which python${PYVERS}) --enable-swig-python ${EXTRA_CONFIG_FLAGS}
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - delocate-wheel -v -w wheelhouse wheel/*.whl
@@ -353,9 +443,8 @@ nightly:macos:
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []
   only:
-    - /^lalsuite-.+/
+    - /^lalsuite-v.*$/
     - schedules
-    - web
   artifacts:
     expire_in: 3h
     paths:
@@ -378,6 +467,118 @@ nightly:wheel:cp35-cp35m-macosx:
   <<: *nightly-wheel-macos
 nightly:wheel:cp36-cp36m-macosx:
   <<: *nightly-wheel-macos
+
+.levelN:rpm: &levelN-rpm-package
+  image: ligo/lalsuite-dev:el7
+  variables:
+    RPM_BUILD_CPUS: 4
+  script:
+    - rpm -ivh rpmbuild/RPMS/x86_64/lal*.rpm || true
+    - cd ${CI_JOB_NAME#level?:rpm:}
+    - ./00boot
+    - ./configure --enable-swig --enable-nightly
+    - make dist
+    - rpmbuild -tb --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${CI_JOB_NAME#level?:rpm:}-*.tar.xz
+  artifacts:
+    expire_in: 3h
+    paths:
+      - rpmbuild/RPMS/x86_64/${CI_JOB_NAME#level?:rpm:}-*.rpm
+  only:
+    - schedules
+    - web
+
+level0:rpm:lal:
+  <<: *levelN-rpm-package
+  stage: level0
+
+level1:rpm:lalframe:
+  <<: *levelN-rpm-package
+  stage: level1
+  dependencies:
+    - level0:rpm:lal
+
+level1:rpm:lalmetaio:
+  <<: *levelN-rpm-package
+  stage: level1
+  dependencies:
+    - level0:rpm:lal
+
+level1:rpm:lalsimulation:
+  <<: *levelN-rpm-package
+  stage: level1
+  dependencies:
+    - level0:rpm:lal
+
+level1:rpm:lalxml:
+  <<: *levelN-rpm-package
+  stage: level1
+  dependencies:
+    - level0:rpm:lal
+
+level2:rpm:lalburst:
+  <<: *levelN-rpm-package
+  stage: level2
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+
+level2:rpm:lalinspiral:
+  <<: *levelN-rpm-package
+  stage: level2
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+
+level2:rpm:lalpulsar:
+  <<: *levelN-rpm-package
+  stage: level2
+  dependencies:
+    - level0:rpm:lal
+
+level2:rpm:lalstochastic:
+  <<: *levelN-rpm-package
+  stage: level2
+  dependencies:
+   - level0:rpm:lal
+   - level1:rpm:lalmetaio
+
+level3:rpm:laldetchar:
+  <<: *levelN-rpm-package
+  stage: level3
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level2:rpm:lalburst
+
+level3:rpm:lalinference:
+  <<: *levelN-rpm-package
+  stage: level3
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level2:rpm:lalburst
+    - level2:rpm:lalinspiral
+    - level2:rpm:lalpulsar
+
+level4:rpm:lalapps:
+  <<: *levelN-rpm-package
+  stage: level4
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level2:rpm:lalburst
+    - level2:rpm:lalinspiral
+    - level2:rpm:lalpulsar
+    - level2:rpm:lalstochastic
+    - level3:rpm:lalinference
 
 pages:
   image: ligo/lalsuite-dev:stretch
@@ -407,6 +608,8 @@ deploy:wheel:
   variables:
     GIT_STRATEGY: none
   script:
+    # exit if we're not running in the main namespace
+    - if [[ ${CI_PROJECT_PATH} != "lscsoft/lalsuite" ]]; then echo "Not deploying."; exit 0; fi
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
     - /opt/python/cp36-cp36m/bin/pip install twine
     - /opt/python/cp36-cp36m/bin/twine upload wheelhouse/*
@@ -419,12 +622,6 @@ deploy:wheel:
     - nightly:wheel:cp27-cp27m-macosx
     - nightly:wheel:cp35-cp35m-macosx
     - nightly:wheel:cp36-cp36m-macosx
-  artifacts:
-    expire_in: 3h
-    paths:
-      - wheelhouse
   only:
-    - master@lscsoft/lalsuite
-  except:
-    - pushes
-    - web
+    - /^lalsuite-v.*$/
+    - schedules

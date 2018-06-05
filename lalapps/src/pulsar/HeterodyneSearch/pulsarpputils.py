@@ -259,7 +259,7 @@ float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "
               "BETA", "RA_RAD", "DEC_RAD", "GAMMA", "SINI", "M2", "MTOT",
               "FB0", "FB1", "FB2", "ELAT", "ELONG", "PMRA", "PMDEC", "DIST",
               "PB_2", "PB_3", "T0_2", "T0_3", "A1_2", "A1_3", "OM_2", "OM_3",
-              "ECC_2", "ECC_3", "DIST", "PX", "KIN", "KOM", "A0", "B0", "D_AOP",
+              "ECC_2", "ECC_3", "PX", "KIN", "KOM", "A0", "B0", "D_AOP",
               # GW PARAMETERS
               "H0", "COSIOTA", "PSI", "PHI0", "THETA", "I21", "I31", "C22", "HPLUS", "HCROSS",
               "C21", "PHI22", "PHI21", "SNR", "COSTHETA", "IOTA", "Q22"]
@@ -543,7 +543,7 @@ class psr_prior:
 #(Hz), spin-down (Hz/s) and distance (kpc). The canonical value of moment of
 # inertia of 1e38 kg m^2 is used
 def spin_down_limit(freq, fdot, dist):
-  hsd = math.sqrt((5./2.)*(G/C**3)*I38*math.fabs(fdot)/freq)/(dist*KPC)
+  hsd = np.sqrt((5./2.)*(G/C**3)*I38*np.fabs(fdot)/freq)/(dist*KPC)
 
   return hsd
 
@@ -551,16 +551,23 @@ def spin_down_limit(freq, fdot, dist):
 # Function to convert a pulsar stain into ellipticity assuming the canonical
 # moment of inertia
 def h0_to_ellipticity(h0, freq, dist):
-  ell = h0*C**4.*dist*KPC/(16.*math.pi**2*G*I38*freq**2)
+  ell = h0*C**4.*dist*KPC/(16.*np.pi**2*G*I38*freq**2)
 
   return ell
 
 
 # Function to convert a pulsar strain into a mass quadrupole moment
 def h0_to_quadrupole(h0, freq, dist):
-  q22 = math.sqrt(15./(8.*math.pi))*h0*C**4.*dist*KPC/(16.*math.pi**2*G*freq**2)
+  q22 = np.sqrt(15./(8.*np.pi))*h0*C**4.*dist*KPC/(16.*np.pi**2*G*freq**2)
 
   return q22
+
+
+# Function to conver quadrupole moment to strain
+def quadrupole_to_h0(q22, freq, dist):
+   h0 = q22*np.sqrt((8.*np.pi)/15.)*16.*np.pi**2*G*freq**2/(C**4.*dist*KPC)
+
+   return h0
 
 
 # function to convert the psi' and phi0' coordinates used in nested sampling
@@ -2417,6 +2424,9 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
   sample file). It will be returned as a Posterior class object from `bayespputils`. The
   signal evidence and noise evidence are also returned.
 
+  If there are samples in 'Q22' and not 'H0', and also a distance, or distance samples, then
+  the Q22 samples will be converted into equivalent H0 values.
+
   Parameters
   ----------
   postfile : str, required
@@ -2471,9 +2481,18 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
   nsamps = len(pos[pnames[0]].samples)
   permarr = np.arange(nsamps)
   np.random.shuffle(permarr)
+  posdist = None
+  posfreqs = None
   for pname in pnames:
     # check if all samples are the same
     if pos[pname].samples.tolist().count(pos[pname].samples[0]) == len(pos[pname].samples):
+      if pname == 'f0_fixed':
+        # try getting a fixed f0 value (for calculating h0 from Q22)
+        posfreqs = pos[pname].samples[0]
+      elif pname == 'dist':
+        # try getting a fixed distance value (for calculating h0 from Q22 if required)
+        posdist = pos[pname].samples[0]/KPC
+
       pos.pop(pname)
     else:
       # shuffle
@@ -2483,10 +2502,9 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
       pos.append(shufpos)
 
   # check whether iota has been used
-  try:
+  posIota = None
+  if 'iota' in pos.names:
     posIota = pos['iota'].samples
-  except:
-    posIota = None
 
   if posIota is not None:
     cipos = None
@@ -2496,10 +2514,9 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
       pos.pop('iota')
 
   # check whether sin(i) binary parameter has been used
-  try:
+  posI = None
+  if 'i' in pos.names:
     posI = pos['i'].samples
-  except:
-    posI = None
 
   if posI is not None:
     sinipos = None
@@ -2509,20 +2526,17 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
       pos.pop('i')
 
   # convert C22 back into h0, and phi22 back into phi0 if required
-  try:
+  posC21 = None  
+  if 'c21' in pos.names:
     posC21 = pos['c21'].samples
-  except:
-    posC21 = None
 
-  try:
+  posC22 = None
+  if 'c22' in pos.names:
     posC22 = pos['c22'].samples
-  except:
-    posC22 = None
 
-  try:
+  posphi22 = None
+  if 'phi22' in pos.names:
     posphi22 = pos['phi22'].samples
-  except:
-    posphi22 = None
 
   # convert C22 back into h0, and phi22 back into phi0 if required
   if posC22 is not None and posC21 is None:
@@ -2538,6 +2552,29 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
 
       pos.append(phi0pos)
       pos.pop('phi22')
+
+  # convert Q22 to h0 is required
+  posQ22 = None
+  if 'q22' in pos.names:
+    posQ22 = pos['q22'].samples
+
+  if 'dist' in pos.names:
+    posdist = pos['dist'].samples/KPC # distance in kpc (for use in converting Q22 to h0)
+
+    # convert distance samples to kpc
+    pos.pop('dist')
+    distpos = bppu.PosteriorOneDPDF('dist', posdist)
+    pos.append(distpos)
+
+  if 'f0' in pos.names:
+    posfreqs = pos['f0'].samples
+    # if not found this will have been set from the f0_fixed value above
+
+  if posQ22 is not None and posdist is not None and 'h0' not in pos.names:
+    h0pos = None
+    h0pos = bppu.PosteriorOneDPDF('h0', quadrupole_to_h0(posQ22, posfreqs, posdist))
+
+    pos.append(h0pos)
 
   # get evidence (as in lalapps_nest2pos)
   if fe == '.h5' or fe == '.hdf':

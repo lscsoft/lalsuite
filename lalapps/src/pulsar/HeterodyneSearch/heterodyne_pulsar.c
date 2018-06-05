@@ -424,9 +424,9 @@ data!\n");
           starts->data[count] )
         break;
 
-      if((duration = stops->data[count] - starts->data[count]) > MAXDATALENGTH)
-        duration = MAXDATALENGTH; /* if duration of science segment is large
-                                     just get part of it */
+      if((duration = stops->data[count] - starts->data[count]) > inputParams.datachunklength)
+        duration = inputParams.datachunklength; /* if duration of science segment is large
+                                                   just get part of it */
 
       fprintf(stderr, "Getting data between %d and %d.\n", starts->data[count],
         starts->data[count]+duration);
@@ -437,7 +437,7 @@ data!\n");
 
       /* if there was no frame file for that segment move on */
       if((smalllist = set_frame_files(&starts->data[count], &stops->data[count],
-        cache, frcount, &count))==NULL){
+        cache, frcount, &count, inputParams.datachunklength))==NULL){
         /* if there was no frame file for that segment move on */
         fprintf(stderr, "Error... no frame files listed between %d and %d.\n",
           (INT4)gpstime, (INT4)gpstime + duration);
@@ -804,6 +804,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "sample-rate",              required_argument,  0, 's' },
     { "resample-rate",            required_argument,  0, 'r' },
     { "data-file",                required_argument,  0, 'd' },
+    { "data-chunk-length",        required_argument,  0, 'D' },
     { "channel",                  required_argument,  0, 'c' },
     { "output-file",              required_argument,  0, 'o' },
     { "ephem-earth-file",         required_argument,  0, 'e' },
@@ -828,7 +829,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { 0, 0, 0, 0 }
   };
 
-  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:t:l:R:C:F:O:T:m:G:H:M:ABbZLv";
+  char args[] = "hi:p:z:f:g:k:s:r:d:D:c:o:e:S:t:l:R:C:F:O:T:m:G:H:M:ABbZLv";
   char *program = argv[0];
 
   /* set defaults */
@@ -847,6 +848,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   inputParams->calibfiles.sensingfunctionfile = NULL;
   inputParams->calibfiles.openloopgainfile = NULL;
   inputParams->calibfiles.responsefunctionfile = NULL;
+  inputParams->datachunklength = MAXDATALENGTH; /* default to MAXDATALENGTH */
 
   inputParams->freqfactor = 2.0; /* default is to look for gws at twice the
 pulsar spin frequency */
@@ -974,6 +976,9 @@ the pulsar parameter file */
         snprintf(inputParams->datafile, sizeof(inputParams->datafile), "%s",
           LALoptarg);
         break;
+      case 'D': /* set the maximum data chunk length for reading in */ 
+        inputParams->datachunklength = atoi(LALoptarg);
+        break;
       case 'c': /* frame channel */
         snprintf(inputParams->channel, sizeof(inputParams->channel), "%s",
           LALoptarg);
@@ -1073,6 +1078,11 @@ defined.\n");
     fprintf(stderr, "Error... invalid sample rates.\n");
     exit(0);
   }*/
+
+  if( inputParams->datachunklength <= 0 ){
+    fprintf(stderr, "Error... data chunk length must be greater than zero.\n");
+    exit(1);
+  }
 
   if(inputParams->freqfactor < 0.){
     fprintf(stderr, "Error... frequency factor must be greater than zero.\n");
@@ -1941,7 +1951,7 @@ INT4 heterodyneflag){
 
 /* get frame data for partcular science segment */
 CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
-  INT4 numFrames, INT4 *position){
+  INT4 numFrames, INT4 *position, INT4 maxchunklength){
   INT4 i=0;
   INT4 durlock; /* duration of locked segment */
   INT4 tempstart, tempstop;
@@ -1956,8 +1966,8 @@ CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
   tempstop = *stops;
 
   /*if lock stretch is long can't read whole thing in at once so only do a bit*/
-  if( durlock > MAXDATALENGTH )
-    tempstop = tempstart + MAXDATALENGTH;
+  if( durlock > maxchunklength )
+    tempstop = tempstart + maxchunklength;
 
   for( i=0;i<numFrames;i++ ){
     if(tempstart >= cache.starttime[i]
@@ -1981,7 +1991,7 @@ XLALStringAppend!\n");
       break;
   }
 
-  if( durlock > MAXDATALENGTH ){/* set starts to its value plus MAXDATALENGTH*/
+  if( durlock > maxchunklength ){ /* set starts to its value plus maxchunklength */
     (*position)--; /* move position counter back one */
     *starts = tempstop;
   }

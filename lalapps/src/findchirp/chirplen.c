@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Duncan Brown, Patrick Brady
+*  Copyright (C) 2007 Duncan Brown, Patrick R Brady
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -205,7 +205,7 @@ int main ( int argc, char *argv[] )
       case 'V':
         /* print version information and exit */
         fprintf( stdout, "Compute some basic properties of inspiral signals\n" 
-            "Patrick Brady and Duncan Brown\n"
+            "Patrick R Brady and Duncan Brown\n"
             "CVS Version: " CVS_ID_STRING "\n"
             "CVS Tag: " CVS_NAME_STRING "\n" );
         exit( 0 );

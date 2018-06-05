@@ -103,6 +103,9 @@ int XLALAdaptiveRungeKutta4( LALAdaptiveRungeKuttaIntegrator *integrator,
 int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKuttaIntegrator * integrator,
          void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat_or_h0,
 					 REAL8Array ** t_and_yout,INT4 EOBversion);
+int XLALAdaptiveRungeKuttaDenseandSparseOutput(LALAdaptiveRungeKuttaIntegrator * integrator,
+         void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat,
+                          REAL8Array ** sparse_output, REAL8Array ** dense_output);
 /* END OPTIMIZED */
 
 int XLALAdaptiveRungeKutta4Hermite( LALAdaptiveRungeKuttaIntegrator *integrator,

@@ -89,6 +89,7 @@ typedef enum tagEphemerisType {
   EPHEM_DE405,
   EPHEM_DE414,
   EPHEM_DE421,
+  EPHEM_DE430,
   EPHEM_LAST
 } EphemerisType;
 

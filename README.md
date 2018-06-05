@@ -14,6 +14,10 @@ This only needs to be done once for each machine you access the repository. It c
 $ git clone git@git.ligo.org:lscsoft/lalsuite.git
 ```
 
+## Contributing to LALSuite
+
+The guide to [Contributing](https://git.ligo.org/lscsoft/lalsuite/blob/master/CONTRIBUTING.md) to LALSuite explains how to report issues and contribute fixes or new features using the fork and pull workflow. Please read and follow these directions. 
+
 ## Notes on Ancient History
 
 LALSuite was transferred to git.ligo.org in December 2017. Older history has been imported, though commit hashes were rewritten during the GitLFS conversion. Please note:
