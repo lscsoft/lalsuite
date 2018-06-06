@@ -808,7 +808,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   if(model->eos_fam)
   {
       LALSimNeutronStarFamily *eos_fam = model->eos_fam;
-      REAL8 r1=0, r2=0, k2_1=0, k2_2=0, lambda1=0, lambda2=0;
+      REAL8 r1=0, r2=0, k2_1=0, k2_2=0;
       REAL8 mass_max = XLALSimNeutronStarMaximumMass(eos_fam) / LAL_MSUN_SI;
       REAL8 mass_min = XLALSimNeutronStarFamMinimumMass(eos_fam) / LAL_MSUN_SI;
 
@@ -826,8 +826,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
          lambda2 = (2./3.)*k2_2 * pow(r2/(m2*LAL_MRSUN_SI), 5.0);          
       }
       /* Set waveform params */
-      XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
-      XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+      /*XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
+      XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);*/
     
       /* Add derived quantities for output */
       LALInferenceAddVariable(model->params, "radius1", &r1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
