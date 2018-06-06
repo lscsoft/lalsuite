@@ -825,9 +825,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
          k2_2 = XLALSimNeutronStarLoveNumberK2(m2*LAL_MSUN_SI, eos_fam);
          lambda2 = (2./3.)*k2_2 * pow(r2/(m2*LAL_MRSUN_SI), 5.0);          
       }
-      /* Set waveform params */
-      /*XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
-      XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);*/
     
       /* Add derived quantities for output */
       LALInferenceAddVariable(model->params, "radius1", &r1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
