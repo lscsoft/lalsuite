@@ -75,6 +75,22 @@ const char list_extra_parameters[34][16] = {"dchi0","dchi1","dchi2","dchi3","dch
 
 const UINT4 N_extra_params = 34;
 
+/** Return the quadrupole moment of a neutron star given its lambda
+    We use the relations defined here. https://arxiv.org/pdf/1302.4499.pdf.
+    Note that the convention we use is that:
+    .. math::
+        \mathrm{dquadmon} = \bar{Q} - 1.
+    Where :math:`\bar{Q}` (dimensionless) is the reduced quadrupole moment.
+*/
+static REAL8 dquadmon_from_lambda(REAL8 lambdav);
+static REAL8 dquadmon_from_lambda(REAL8 lambdav)
+{
+    
+    double ll = log(lambdav);
+    double ai = .194, bi = .0936, ci = 0.0474, di = -4.21e-3.0, ei = 1.23e-4.0;
+    ln_quad_moment = ai + bi*ll + ci*ll*ll + di*pow(ll,3.0) + ei*pow(ll,4.0);
+    return(exp(ln_quad_moment) - 1);
+}
 
 static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src, COMPLEX16FrequencySeries *dest);
 static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src, COMPLEX16FrequencySeries *dest)
@@ -817,6 +833,10 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       /* Set waveform params */
       XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
       XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+      REAL8 dQuadMon1 = dquadmon_from_lambda(lambda1);
+      REAL8 dQuadMon2 = dquadmon_from_lambda(lambdav);
+      XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars, dQuadMon1);
+      XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars, dQuadMon2);
     
       /* Add derived quantities for output */
       LALInferenceAddVariable(model->params, "radius1", &r1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
@@ -841,6 +861,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     LALInferenceLogp1GammasMasses2Lambdas(logp1,gamma1,gamma2,gamma3,m1,m2,&lambda1,&lambda2);
     XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
     XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+
   }
 
   /* Only use GR templates */
