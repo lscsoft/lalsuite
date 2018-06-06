@@ -808,7 +808,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   if(model->eos_fam)
   {
       LALSimNeutronStarFamily *eos_fam = model->eos_fam;
-      REAL8 r1=0, r2=0, k2_1=0, k2_2=0, lambda1=0, lambda2=0;
+      REAL8 r1=0, r2=0, k2_1=0, k2_2=0;
       REAL8 mass_max = XLALSimNeutronStarMaximumMass(eos_fam) / LAL_MSUN_SI;
       REAL8 mass_min = XLALSimNeutronStarFamMinimumMass(eos_fam) / LAL_MSUN_SI;
 
