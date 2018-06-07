@@ -1432,7 +1432,7 @@ def group_coinc_parents(parents, offset_vectors, extentlimit = None, verbose = F
 				lo = segments.NegInfinity
 			else:
 				lo = extent[0]
-			if i >= len(extents) - 2 or extents[i + 1].disjoint(extent):
+			if i >= len(extents) - 1 or extents[i + 1].disjoint(extent):
 				hi = segments.PosInfinity
 			else:
 				hi = extent[1]
