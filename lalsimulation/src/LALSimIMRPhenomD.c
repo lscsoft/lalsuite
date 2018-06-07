@@ -696,6 +696,12 @@ double IMRPhenomDFinalMass(
       "PhenomInternal_AlignedSpinEnforcePrimaryIsm1 failed");
   REAL8 Mtot = m1 + m2;
   REAL8 eta = m1 * m2 / (Mtot * Mtot);
+
+  if (eta > 0.25)
+    PhenomInternal_nudge(&eta, 0.25, 1e-6);
+  if (eta > 0.25 || eta < 0.0)
+    XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
+
   return (1.0 - EradRational0815(eta, chi1z, chi2z));
 }
 
