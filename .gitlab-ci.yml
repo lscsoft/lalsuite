@@ -16,6 +16,7 @@ stages:
   - level3
   - level4
   - nightly
+  - wheels
   - deploy
 
 before_script:
@@ -409,7 +410,7 @@ nightly:macos:elcapitan:
   # python.org (see PEP 513), and includes all of the LALSuite
   # build-dependencies.
   image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
-  stage: nightly
+  stage: wheels
   script:
     - PYPREFIX=/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux1/\1/')
     # Build wheel
@@ -437,7 +438,7 @@ nightly:macos:elcapitan:
 .nightly:wheel:macos: &nightly-wheel-macos
   tags:
     - macos_elcapitan
-  stage: nightly
+  stage: wheels
   script:
     - PYVERS=$(echo ${CI_JOB_NAME} | sed 's/.*:cp\(.\)\(.\).*/\1.\2/')
     # Enter virtualenv so that we have a controlled version of Numpy
