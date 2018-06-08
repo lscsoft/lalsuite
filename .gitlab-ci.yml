@@ -389,6 +389,20 @@ nightly:macos:highsierra:
     - schedules
     - web
 
+nightly:macos:elcapitan:
+  tags:
+    - macos_elcapitan
+  stage: nightly
+  script:
+    - ./00boot
+    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-swig --enable-doxygen
+    - make -j4
+    - make -j4 check
+  dependencies: []
+  only:
+    - schedules
+    - web
+
 # Build receipe for standalone wheels on Linux
 .nightly:wheel:manylinux1: &nightly-wheel-manylinux1
   # This container is derived from the official manylinux image provided by
