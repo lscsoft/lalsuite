@@ -16,6 +16,7 @@ stages:
   - level3
   - level4
   - nightly
+  - wheels
   - deploy
 
 before_script:
@@ -273,6 +274,18 @@ nightly:top-level:el7-cr:
     - schedules
     - web
 
+nightly:top-level:sl7:
+  image: ligo/lalsuite-dev:sl7
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
 nightly:top-level:trusty:
   image: skymoo/ligo-lalsuite-dev:trusty
   stage: nightly
@@ -389,13 +402,27 @@ nightly:macos:highsierra:
     - schedules
     - web
 
+nightly:macos:elcapitan:
+  tags:
+    - macos_elcapitan
+  stage: nightly
+  script:
+    - ./00boot
+    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-swig --enable-doxygen
+    - make -j4
+    - make -j4 check
+  dependencies: []
+  only:
+    - schedules
+    - web
+
 # Build receipe for standalone wheels on Linux
 .nightly:wheel:manylinux1: &nightly-wheel-manylinux1
   # This container is derived from the official manylinux image provided by
   # python.org (see PEP 513), and includes all of the LALSuite
   # build-dependencies.
   image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
-  stage: nightly
+  stage: wheels
   script:
     - PYPREFIX=/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux1/\1/')
     # Build wheel
@@ -423,7 +450,7 @@ nightly:macos:highsierra:
 .nightly:wheel:macos: &nightly-wheel-macos
   tags:
     - macos_elcapitan
-  stage: nightly
+  stage: wheels
   script:
     - PYVERS=$(echo ${CI_JOB_NAME} | sed 's/.*:cp\(.\)\(.\).*/\1.\2/')
     # Enter virtualenv so that we have a controlled version of Numpy
