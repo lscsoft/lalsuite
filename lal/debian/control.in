@@ -51,6 +51,17 @@ Description: Files and documentation needed for compiling programs that use LAL
  library as well as the documentation for the library.
 
 Package: lal-python
+Depends: python-lal, ${misc:Depends}
+Architecture: all
+Priority: optional
+Section: oldlibs
+Description: transitional package
+ lal-python was renamed python-lal,
+ this is a transitional package, it can safely be removed.
+
+Package: python-lal
+Replaces: lal-python (<< 6.18.0-1~)
+Breaks: lal-python (<< 6.18.0-1~)
 Section: python
 Architecture: any
 Depends: ${misc:Depends},
@@ -64,7 +75,18 @@ Description: Python bindings for LAL
  This package contains Python bindings for the LAL library.
 
 Package: lal-python3
+Depends: python3-lal, ${misc:Depends}
+Architecture: all
+Priority: optional
+Section: oldlibs
+Description: transitional package
+ lal-python3 was renamed python3-lal,
+ this is a transitional package, it can safely be removed.
+
+Package: python3-lal
 Section: python
+Replaces: lal-python3 (<< 6.18.0-1~)
+Breaks: lal-python3 (<< 6.18.0-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},

@@ -16,8 +16,8 @@ Build-Depends: debhelper (>= 9),
   swig (>= 3.0.7),
   lal-dev (>= @MIN_LAL_VERSION@~),
   lal-octave (>= @MIN_LAL_VERSION@~),
-  lal-python (>= @MIN_LAL_VERSION@~),
-  lal-python3 (>= @MIN_LAL_VERSION@~),
+  python-lal (>= @MIN_LAL_VERSION@~),
+  python3-lal (>= @MIN_LAL_VERSION@~),
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
 Standards-Version: 3.9.8
@@ -48,24 +48,46 @@ Description: LSC Algorithm Library Pulsar Developers
  Pulsar library.
 
 Package: lalpulsar-python
+Depends: python-lalpulsar, ${misc:Depends}
+Architecture: all
+Priority: optional
+Section: oldlibs
+Description: transitional package
+ lalpulsar-python was renamed python-lalpulsar,
+ this is a transitional package, it can safely be removed.
+
+Package: python-lalpulsar
 Section: python
+Replaces: lalpulsar-python (<< 1.16.0-1~)
+Breaks: lalpulsar-python (<< 1.16.0-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python:Depends},
   ${shlibs:Depends},
-  lal-python (>= @MIN_LAL_VERSION@~),
+  python-lal (>= @MIN_LAL_VERSION@~),
   lalpulsar (= ${binary:Version})
 Description: Python bindings for LALPulsar.
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL Pulsar library.
 
 Package: lalpulsar-python3
+Depends: python-lalpulsar3, ${misc:Depends}
+Architecture: all
+Priority: optional
+Section: oldlibs
+Description: transitional package
+ lalpulsar-python3 was renamed python3-lalpulsar,
+ this is a transitional package, it can safely be removed.
+
+Package: python3-lalpulsar
 Section: python
+Replaces: lalpulsar-python3 (<< 1.16.0-1~)
+Breaks: lalpulsar-python3 (<< 1.16.0-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},
   ${shlibs:Depends},
-  lal-python3 (>= @MIN_LAL_VERSION@~),
+  python3-lal (>= @MIN_LAL_VERSION@~),
   lalpulsar (= ${binary:Version})
 Description: Python 3 bindings for LALPulsar.
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.

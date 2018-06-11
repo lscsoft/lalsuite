@@ -15,12 +15,12 @@ Build-Depends: debhelper (>= 9),
   zlib1g-dev,
   lal-dev (>= @MIN_LAL_VERSION@~),
   lal-octave (>= @MIN_LAL_VERSION@~),
-  lal-python (>= @MIN_LAL_VERSION@~),
-  lal-python3 (>= @MIN_LAL_VERSION@~),
+  python-lal (>= @MIN_LAL_VERSION@~),
+  python3-lal (>= @MIN_LAL_VERSION@~),
   lalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
   lalmetaio-octave (>= @MIN_LALMETAIO_VERSION@~),
-  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
-  lalmetaio-python3 (>= @MIN_LALMETAIO_VERSION@~)
+  python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
+  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~)
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
 Standards-Version: 3.9.8
@@ -53,7 +53,18 @@ Description: LSC Algorithm Library Stochastic Developers
  Stochastic library.
 
 Package: lalstochastic-python
+Depends: python-lalstochastic, ${misc:Depends}
+Architecture: all
+Priority: optional
+Section: oldlibs
+Description: transitional package
+ lalstochastic-python was renamed python-lalstochastic,
+ this is a transitional package, it can safely be removed.
+
+Package: python-lalstochastic
 Section: python
+Replaces: lalstochastic-python (<< 1.1.20-1~)
+Breaks: lalstochastic-python (<< 1.1.20-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python:Depends},
@@ -66,7 +77,18 @@ Description: Python bindings for LALStochastic
  This package contains Python bindings for the LAL Stochastic library.
 
 Package: lalstochastic-python3
+Depends: python-lalstochastic3, ${misc:Depends}
+Architecture: all
+Priority: optional
+Section: oldlibs
+Description: transitional package
+ lalstochastic-python3 was renamed python3-lalstochastic,
+ this is a transitional package, it can safely be removed.
+
+Package: python3-lalstochastic
 Section: python
+Replaces: lalstochastic-python3 (<< 1.1.20-1~)
+Breaks: lalstochastic-python3 (<< 1.1.20-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},
