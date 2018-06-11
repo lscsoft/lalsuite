@@ -695,6 +695,7 @@ docker:el7:tags:
     paths:
       - ${CI_JOB_NAME#level?:deb:}*.changes
       - ${CI_JOB_NAME#level?:deb:}*.deb
+      - python*-${CI_JOB_NAME#level?:deb:}*.deb
       - ${CI_JOB_NAME#level?:deb:}*.dsc
       - ${CI_JOB_NAME#level?:deb:}*.orig.*
   only:
