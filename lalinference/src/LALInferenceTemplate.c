@@ -87,9 +87,9 @@ static REAL8 dquadmon_from_lambda(REAL8 lambdav)
 {
     
     double ll = log(lambdav);
-    double ai = .194, bi = .0936, ci = 0.0474, di = -4.21e-3.0, ei = 1.23e-4.0;
-    ln_quad_moment = ai + bi*ll + ci*ll*ll + di*pow(ll,3.0) + ei*pow(ll,4.0);
-    return(exp(ln_quad_moment) - 1);
+    double ai = .194, bi = .0936, ci = 0.0474, di = -4.21e-3, ei = 1.23e-4;
+    double ln_quad_moment = ai + bi*ll + ci*ll*ll + di*pow(ll,3.0) + ei*pow(ll,4.0);
+    return(exp(ln_quad_moment) - 1.0);
 }
 
 static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src, COMPLEX16FrequencySeries *dest);
@@ -834,7 +834,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
       XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
       REAL8 dQuadMon1 = dquadmon_from_lambda(lambda1);
-      REAL8 dQuadMon2 = dquadmon_from_lambda(lambdav);
+      REAL8 dQuadMon2 = dquadmon_from_lambda(lambda2);
       XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars, dQuadMon1);
       XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars, dQuadMon2);
     
