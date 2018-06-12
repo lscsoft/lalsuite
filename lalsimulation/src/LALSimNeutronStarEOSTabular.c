@@ -411,16 +411,16 @@ static double eos_e_of_p_spectral_decomposition(double x, double gamma[], int si
     double abcissae[nEval], abcissaePrime[nEval];
     resetAbcissae(abcissae);
     double weights[] = {
-       0.066671344308,
-       0.149451349150,
-       0.219086362515,
-       0.269266719309,
-       0.295524224714,
-       0.295524224714,
-       0.269266719309,
-       0.219086362515,
-       0.149451349150,
-       0.066671344308
+       0.0666713443086881,
+       0.1494513491505806,
+       0.2190863625159820,
+       0.2692667193099963,
+       0.2955242247147529,
+       0.2955242247147529,
+       0.2692667193099963,
+       0.2190863625159820,
+       0.1494513491505806,
+       0.0666713443086881
        };
 
 
@@ -492,16 +492,16 @@ void GLBoundConversion(double a, double b, double abcissae[], int nEval)
 /* Resets 10 point array to standard abcissae */
 void resetAbcissae(double abcissae[])
 {
-       abcissae[0] = -0.97390652851;
-       abcissae[1] = -0.86506336668;
-       abcissae[2] = -0.67940956829;
-       abcissae[3] = -0.43339539412;
-       abcissae[4] = -0.14887433898;
-       abcissae[5] = 0.148874338981;
-       abcissae[6] = 0.433395394129;
-       abcissae[7] = 0.679409568299;
-       abcissae[8] = 0.865063366688;
-       abcissae[9] = 0.973906528517;
+       abcissae[0] = -0.9739065285171717;
+       abcissae[1] = -0.8650633666889845;
+       abcissae[2] = -0.6794095682990244;
+       abcissae[3] = -0.4333953941292472;
+       abcissae[4] = -0.1488743389816312;
+       abcissae[5] =  0.1488743389816312;
+       abcissae[6] =  0.4333953941292472;
+       abcissae[7] =  0.6794095682990244;
+       abcissae[8] =  0.8650633666889845;
+       abcissae[9] =  0.9739065285171717;
 }
 
 
