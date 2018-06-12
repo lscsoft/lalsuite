@@ -95,7 +95,7 @@ Description: transitional package
  lalburst-python3 was renamed python3-lalburst,
  this is a transitional package, it can safely be removed.
 
-Package: lalburst-python3
+Package: python3-lalburst
 Section: python
 Replaces: lalburst-python3 (<< 1.4.4-2~)
 Breaks: lalburst-python3 (<< 1.4.4-2)
