@@ -59,7 +59,6 @@ Description: transitional package
  this is a transitional package, it can safely be removed.
 
 Package: python-lalxml
-Section: python
 Replaces: lalxml-python (<< 1.2.4-1~)
 Breaks: lalxml-python (<< 1.2.4-1~)
 Section: python
