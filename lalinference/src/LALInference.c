@@ -2373,8 +2373,8 @@ XLALDestroySimNeutronStarEOS(eos);
 
 /* Checks if EOS allows for acausal speed of sound and unphysical maximum masses */
 int LALInferenceEOSPhysicalCheck(LALInferenceVariables *params, ProcessParamsTable *commandLine){
-int ret;
 
+int ret;
 LALSimNeutronStarEOS *eos=NULL;
 LALSimNeutronStarFamily *fam=NULL;
 
@@ -2518,8 +2518,6 @@ if(mass1_kg <= max_mass_kg && mass2_kg <= max_mass_kg && mass1_kg >= min_mass_kg
 // Else fail
 }else{
   // Clean up
-  XLALDestroySimNeutronStarFamily(fam);
-  XLALDestroySimNeutronStarEOS(eos);
   ret=XLAL_FAILURE;
 }
 
