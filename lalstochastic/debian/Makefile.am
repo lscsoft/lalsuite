@@ -5,8 +5,8 @@ EXTRA_DIST = \
 	copyright \
 	lalstochastic-dev.install \
 	lalstochastic-octave.install \
-	lalstochastic-python.install \
-	lalstochastic-python3.install \
+	python-lalstochastic.install \
+	python3-lalstochastic.install \
 	lalstochastic.install \
 	rules \
 	lalsuite.mk \
