@@ -68,7 +68,6 @@ Description: transitional package
  this is a transitional package, it can safely be removed.
 
 Package: python-laldetchar
-Section: python
 Replaces: laldetchar-python (<< 0.3.5-1~)
 Breaks: laldetchar-python (<< 0.3.5-1~)
 Section: python
