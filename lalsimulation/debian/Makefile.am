@@ -5,8 +5,8 @@ EXTRA_DIST = \
 	copyright \
 	lalsimulation-dev.install \
 	lalsimulation-octave.install \
-	lalsimulation-python.install \
-	lalsimulation-python3.install \
+	python-lalsimulation.install \
+	python3-lalsimulation.install \
 	lalsimulation.install \
 	rules \
 	lalsuite.mk \
