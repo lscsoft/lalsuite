@@ -73,7 +73,7 @@ Description: Python bindings for LALFrame
  This package contains Python bindings for the LAL Frame library.
 
 Package: lalframe-python3
-Depends: python-lalframe3, ${misc:Depends}
+Depends: python3-lalframe, ${misc:Depends}
 Architecture: all
 Priority: optional
 Section: oldlibs
