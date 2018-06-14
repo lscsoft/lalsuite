@@ -31,7 +31,7 @@ Build-Depends: bc,
   lalpulsar-dev (>= @MIN_LALPULSAR_VERSION@~),
   python-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
   lalstochastic-dev (>= @MIN_LALSTOCHASTIC_VERSION@~),
-  python-stochastic (>= @MIN_LALSTOCHASTIC_VERSION@~),
+  python-lalstochastic (>= @MIN_LALSTOCHASTIC_VERSION@~),
   lalinference-dev (>= @MIN_LALINFERENCE_VERSION@~),
   python-lalinference (>= @MIN_LALINFERENCE_VERSION@~)
 X-Python-Version: >= 2.7

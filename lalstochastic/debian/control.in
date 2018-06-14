@@ -77,7 +77,7 @@ Description: Python bindings for LALStochastic
  This package contains Python bindings for the LAL Stochastic library.
 
 Package: lalstochastic-python3
-Depends: python-lalstochastic3, ${misc:Depends}
+Depends: python3-lalstochastic, ${misc:Depends}
 Architecture: all
 Priority: optional
 Section: oldlibs

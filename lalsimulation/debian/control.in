@@ -70,7 +70,7 @@ Description: Python bindings for LALSimulation
  This package contains Python bindings for the LAL Simulation library.
 
 Package: lalsimulation-python3
-Depends: python-lalsimulation3, ${misc:Depends}
+Depends: python3-lalsimulation, ${misc:Depends}
 Architecture: all
 Priority: optional
 Section: oldlibs

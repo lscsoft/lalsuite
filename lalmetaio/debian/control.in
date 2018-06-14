@@ -68,7 +68,7 @@ Description: Python bindings for LALMetaIO
  This package contains Python bindings for the LAL MetaIO library.
 
 Package: lalmetaio-python3
-Depends: python-lalmetaio3, ${misc:Depends}
+Depends: python3-lalmetaio, ${misc:Depends}
 Architecture: all
 Priority: optional
 Section: oldlibs

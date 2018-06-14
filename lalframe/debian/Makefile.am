@@ -5,8 +5,8 @@ EXTRA_DIST = \
 	copyright \
 	lalframe-dev.install \
 	lalframe-octave.install \
-	lalframe-python.install \
-	lalframe-python3.install \
+	python-lalframe.install \
+	python3-lalframe.install \
 	lalframe.install \
 	rules \
 	lalsuite.mk \

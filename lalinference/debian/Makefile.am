@@ -5,7 +5,7 @@ EXTRA_DIST = \
 	copyright \
 	lalinference-dev.install \
 	lalinference-octave.install \
-	lalinference-python.install \
+	python-lalinference.install \
 	lalinference.install \
 	rules \
 	lalsuite.mk \
