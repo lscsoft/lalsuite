@@ -71,7 +71,7 @@ Description: Python bindings for LALPulsar.
  This package contains Python bindings for the LAL Pulsar library.
 
 Package: lalpulsar-python3
-Depends: python-lalpulsar3, ${misc:Depends}
+Depends: python3-lalpulsar, ${misc:Depends}
 Architecture: all
 Priority: optional
 Section: oldlibs
