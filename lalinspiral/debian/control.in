@@ -95,7 +95,7 @@ Description: Python bindings for LALInspiral
  This package contains Python bindings for the LAL Inspiral library.
 
 Package: lalinspiral-python3
-Depends: python-lalinspiral3, ${misc:Depends}
+Depends: python3-lalinspiral, ${misc:Depends}
 Architecture: all
 Priority: optional
 Section: oldlibs
