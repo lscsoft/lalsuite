@@ -5,8 +5,8 @@ EXTRA_DIST = \
 	copyright \
 	lalxml-dev.install \
 	lalxml-octave.install \
-	lalxml-python.install \
-	lalxml-python3.install \
+	python-lalxml.install \
+	python3-lalxml.install \
 	lalxml.install \
 	rules \
 	lalsuite.mk \
