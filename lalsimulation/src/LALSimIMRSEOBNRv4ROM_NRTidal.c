@@ -29,6 +29,8 @@
 #include <math.h>
 #include <complex.h>
 
+#include <gsl/gsl_spline.h>
+
 #include <lal/Units.h>
 #include <lal/SeqFactories.h>
 #include <lal/LALConstants.h>
@@ -39,6 +41,47 @@
 
 #include "LALSimIMRSEOBNRv4ROM_NRTidal.h"
 
+
+void Self_spin_phase_contributions(
+  const REAL8 m1_SI,     /**< Mass of neutron star 1 (kg) */
+  const REAL8 m2_SI,     /**< Mass of neutron star 2 (kg) */
+  const REAL8 chi1L,     /**< Dimensionless aligned component spin of NS 1 */
+  const REAL8 chi2L,     /**< Dimensionless aligned component spin of NS 2 */
+  const REAL8 qm_def1,   /**< Quadrupole deformation parameter of body 1 (dimensionless) */
+  const REAL8 qm_def2,   /**< Quadrupole deformation parameter of body 2 (dimensionless) */
+                         /**< qm_def1,2 = 1 for BH */
+  REAL8 *pfa_v4_contrib, /**< self-spin contribution to v^4 */
+  REAL8 *pfa_v6_contrib  /**< self-spin contribution to v^6 */
+) {
+  const REAL8 mtot = m1_SI + m2_SI;
+  const REAL8 eta = m1_SI*m2_SI/mtot/mtot;
+  const REAL8 m1M = m1_SI/mtot;
+  const REAL8 m2M = m2_SI/mtot;
+
+  const REAL8 chi1sq = chi1L*chi1L;
+  const REAL8 chi2sq = chi2L*chi2L;
+  const REAL8 chi1dotchi2 = chi1L*chi2L;
+
+  // From LALSimInspiralPNCoefficients.c:XLALSimInspiralPNPhasing_F2()
+  /* Compute 2.0PN SS, QM, and self-spin */
+  // See Eq. (6.24) in arXiv:0810.5336
+  // 9b,c,d in arXiv:astro-ph/0504538
+  REAL8 pn_sigma = eta * (721.L/48.L*chi1L*chi2L - 247.L/48.L*chi1dotchi2);
+  pn_sigma += (720.L*qm_def1 - 1.L)/96.0L * m1M * m1M * chi1L * chi1L;
+  pn_sigma += (720.L*qm_def2 - 1.L)/96.0L * m2M * m2M * chi2L * chi2L;
+  pn_sigma -= (240.L*qm_def1 - 7.L)/96.0L * m1M * m1M * chi1sq;
+  pn_sigma -= (240.L*qm_def2 - 7.L)/96.0L * m2M * m2M * chi2sq;
+  
+  REAL8 pn_ss3 =  (326.75L/1.12L + 557.5L/1.8L*eta)*eta*chi1L*chi2L;
+  pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m1M-120.L*m1M*m1M)*qm_def1 + (-4108.25L/6.72L-108.5L/1.2L*m1M+125.5L/3.6L*m1M*m1M)) *m1M*m1M * chi1sq;
+  pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m2M-120.L*m2M*m2M)*qm_def2 + (-4108.25L/6.72L-108.5L/1.2L*m2M+125.5L/3.6L*m2M*m2M)) *m2M*m2M * chi2sq;
+
+  const REAL8 pfaN = 3.L/(128.L * eta);
+  // The leading order term pfa->v[0] is positive and so the 
+  // self-spin corrections should be added to a postive phasing.
+  *pfa_v4_contrib = -10.L * pn_sigma * pfaN;
+  *pfa_v6_contrib = + pn_ss3 * pfaN;
+}
 
 int SEOBNRv4ROM_NRTidal_Core(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
@@ -53,6 +96,8 @@ int SEOBNRv4ROM_NRTidal_Core(
   REAL8 chi2,                                   /**< Dimensionless aligned component spin of NS 2 */
   REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
   REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
+  REAL8 qm_def1,                                /**< Spin-induced quadrupole moment of mass 1 */
+  REAL8 qm_def2,                                /**< Spin-induced quadrupole moment of mass 2 */
   const REAL8Sequence *freqs_in,                /**< Frequency points at which to evaluate the waveform (Hz) */
   REAL8 deltaF)                                 /**< Sampling frequency (Hz) */
 {
@@ -144,19 +189,70 @@ int SEOBNRv4ROM_NRTidal_Core(
   );
   XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
 
-  // // Prepare tapering of amplitude beyond merger frequency
-  // double kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
-  // double fHz_mrg = XLALSimNRTunedTidesMergerFrequency(Mtot_MSUN, kappa2T, q);
+  // Tidal self-spin contributions to the phase
+  REAL8 pfa_v4_contrib, pfa_v6_contrib;
+  Self_spin_phase_contributions(m1_SI, m2_SI, chi1, chi2, qm_def1 - 1.0, qm_def2 - 1.0,
+    &pfa_v4_contrib, &pfa_v6_contrib);
+
+  const REAL8 m1 = m1_SI / LAL_MSUN_SI;
+  const REAL8 m2 = m2_SI / LAL_MSUN_SI;
+  const REAL8 mtot = m1 + m2;
+  const REAL8 m_sec = mtot * LAL_MTSUN_SI;  /* total mass in seconds */
+  const REAL8 piM = LAL_PI * m_sec;
+
+  // Varibales for phase spline for aligning in time below
+  gsl_interp_accel *acc_phi = gsl_interp_accel_alloc();
+  gsl_spline *spline_phi = gsl_spline_alloc(gsl_interp_cspline, freqs->length);
+  gsl_vector *f_vec = gsl_vector_alloc(freqs->length);
+  gsl_vector *phi_vec = gsl_vector_alloc(freqs->length);
 
   // Assemble waveform from amplitude and phase
   for (size_t i=0; i<freqs->length; i++) { // loop over frequency points in sequence
     int j = i + offset; // shift index for frequency series if needed
-    // Apply tidal phase correction and amplitude taper
-    // double taper = 1.0 - PlanckTaper(freqs->data[i], fHz_mrg, 1.2*fHz_mrg);
-    COMPLEX16 Corr = amp_tidal->data[i] * cexp(-I*phi_tidal->data[i]);
+    const REAL8 v = cbrt(piM * freqs->data[i]);
+    // phasing = (ss_term_v4 * v^4 + ss_term_v6 * v^6) / v^5
+    const REAL8 phi_ss = pfa_v4_contrib / v + pfa_v6_contrib * v;
+    const REAL8 phase_corr = phi_tidal->data[i] + phi_ss;
+    gsl_vector_set(f_vec, i, freqs->data[i]);
+    gsl_vector_set(phi_vec, i, phase_corr);
+
+    COMPLEX16 Corr = amp_tidal->data[i] * cexp(-I*phase_corr);
     pdata[j] *= Corr;
     cdata[j] *= Corr;
   }
+
+/* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
+  // Appendix A of 1512.02248
+  
+  // Get SEOBNRv4 ringdown frequency for 22 mode
+  // Note: IMRPhenomPv2_NRTidal also uses the BBH ringdown frequency and then just sets it
+  // to the last frequency in the grid
+  double fHz_final = XLALSimInspiralGetFinalFreq(m1_SI, m2_SI, 0, 0, chi1, 0, 0, chi2, SEOBNRv4);
+
+  gsl_spline_init(spline_phi, gsl_vector_const_ptr(f_vec, 0), gsl_vector_const_ptr(phi_vec, 0), freqs->length);
+
+  // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
+  // Here we only apply this to phase corrections beyond SEOBNRv4_ROM.
+  // For SEOBNRv4_ROM the phase has already been corrected.
+
+  if (fHz_final > freqs->data[freqs->length-1])
+    fHz_final = freqs->data[freqs->length-1];
+  REAL8 t_corr_s = gsl_spline_eval_deriv(spline_phi, fHz_final, acc_phi) / (2*LAL_PI);
+
+  // Now correct phase
+  for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+    double fHz = freqs->data[i] - fRef;
+    int j = i + offset; // shift index for frequency series if needed
+    double phase_factor = -2*LAL_PI * fHz * t_corr_s;
+    COMPLEX16 t_factor = (cos(phase_factor) + I*sin(phase_factor));
+    pdata[j] *= t_factor;
+    cdata[j] *= t_factor;
+  }
+
+  gsl_vector_free(f_vec);
+  gsl_vector_free(phi_vec);
+  gsl_spline_free(spline_phi);
+  gsl_interp_accel_free(acc_phi);
 
   XLALDestroyREAL8Sequence(freqs);
   XLALDestroyREAL8Sequence(phi_tidal);
@@ -224,14 +320,17 @@ int XLALSimIMRSEOBNRv4ROMNRTidalFrequencySequence(
   REAL8 chi1,                                   /**< Dimensionless aligned component spin of NS 1 */
   REAL8 chi2,                                   /**< Dimensionless aligned component spin of NS 2 */
   REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
-  REAL8 lambda2)                                /**< Dimensionless tidal deformability of NS 2 */
+  REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
+  REAL8 qm_def1,                                /**< Spin-induced quadrupole moment of mass 1 */
+  REAL8 qm_def2)                                /**< Spin-induced quadrupole moment of mass 2 */
 {
   if (!freqs) XLAL_ERROR(XLAL_EFAULT);
 
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = SEOBNRv4ROM_NRTidal_Core(hptilde, hctilde,
-            phiRef, fRef, distance, inclination, m1_SI, m2_SI, chi1, chi2, lambda1, lambda2, freqs, 0);
+            phiRef, fRef, distance, inclination, m1_SI, m2_SI, chi1, chi2, 
+            lambda1, lambda2, qm_def1, qm_def2, freqs, 0);
 
   return(retcode);
 }
@@ -259,7 +358,9 @@ int XLALSimIMRSEOBNRv4ROMNRTidal(
   REAL8 chi1,                                   /**< Dimensionless aligned component spin of NS 1 */
   REAL8 chi2,                                   /**< Dimensionless aligned component spin of NS 2 */
   REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
-  REAL8 lambda2                                 /**< Dimensionless tidal deformability of NS 2 */
+  REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
+  REAL8 qm_def1,                                /**< Spin-induced quadrupole moment of mass 1 */
+  REAL8 qm_def2                                 /**< Spin-induced quadrupole moment of mass 2 */
 ) {
   // Use fLow, fHigh, deltaF to compute freqs sequence
   // Instead of building a full sequence we only transfer the boundaries and let
@@ -269,7 +370,8 @@ int XLALSimIMRSEOBNRv4ROMNRTidal(
   freqs->data[1] = fHigh;
 
   int retcode = SEOBNRv4ROM_NRTidal_Core(hptilde, hctilde,
-            phiRef, fRef, distance, inclination, m1_SI, m2_SI, chi1, chi2, lambda1, lambda2, freqs, deltaF);
+            phiRef, fRef, distance, inclination, m1_SI, m2_SI, chi1, chi2, 
+            lambda1, lambda2, qm_def1, qm_def2, freqs, deltaF);
 
   XLALDestroyREAL8Sequence(freqs);
 
