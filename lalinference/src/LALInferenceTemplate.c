@@ -831,20 +831,19 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       if((lambda1 > 0) && (lambda2 > 0) && (approximant == TaylorF2))
       {
         /* Start with ISCO */
-        f_max = 1. / (pow(6,1.5) * LAL_PI * (m1*lal_MTSUN_SI + m2*lal_MTSUN_SI));
+        f_max = 1. / (pow(6,1.5) * LAL_PI * (m1*LAL_MTSUN_SI + m2*LAL_MTSUN_SI));
         REAL8 log_lambda1 = log(lambda1);
         REAL8 log_lambda2 = log(lambda2);
         REAL8 compactness1 = 0.371 - 0.0391 * log_lambda1 + 0.001056 * log_lambda1 * log_lambda1;
         REAL8 compactness2 = 0.371 - 0.0391 * log_lambda2 + 0.001056 * log_lambda2 * log_lambda2;
-        REAL8 rad1 = m1*lal_MTSUN_SI / cness1;
-        REAL8 rad2 = m2*lal_MTSUN_SI / cness2;
+        REAL8 rad1 = m1*LAL_MTSUN_SI / compactness1;
+        REAL8 rad2 = m2*LAL_MTSUN_SI / compactness2;
         /* Use the smaller of ISCO and the EOS-dependent termination */
-        REAL8 fmax_eos = 1. / LAL_PI * pow((m1*lal_MTSUN_SI + m2*lal_MTSUN_SI) / pow((rad1 + rad2),3.0),0.5)
+        REAL8 fmax_eos = 1. / LAL_PI * pow((m1*LAL_MTSUN_SI + m2*LAL_MTSUN_SI) / pow((rad1 + rad2),3.0),0.5);
         if (fmax_eos < f_max)
         {
           f_max = fmax_eos;
         }
-        fprintf(stderr, "%e %e \n", f_max, fmax_eos);
       }
     
       /* Add derived quantities for output */
