@@ -75,13 +75,12 @@ const char list_extra_parameters[34][16] = {"dchi0","dchi1","dchi2","dchi3","dch
 
 const UINT4 N_extra_params = 34;
 
-/** Return the quadrupole moment of a neutron star given its lambda
-    We use the relations defined here. https://arxiv.org/pdf/1302.4499.pdf.
-    Note that the convention we use is that:
-    .. math::
-        \mathrm{dquadmon} = \bar{Q} - 1.
-    Where :math:`\bar{Q}` (dimensionless) is the reduced quadrupole moment.
-*/
+/* Return the quadrupole moment of a neutron star given its lambda
+ * We use the relations defined here. https://arxiv.org/pdf/1302.4499.pdf.
+ * Note that the convention we use is that:
+ * \f$\mathrm{dquadmon} = \bar{Q} - 1.\f$
+ * Where \f$\bar{Q}\f$ (dimensionless) is the reduced quadrupole moment.
+ */
 static REAL8 dquadmon_from_lambda(REAL8 lambdav);
 static REAL8 dquadmon_from_lambda(REAL8 lambdav)
 {
