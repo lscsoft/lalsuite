@@ -2,6 +2,7 @@ Source: lal
 Section: science
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
+Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
 Build-Depends: bc,
   debhelper (>= 9),
   dh-python,

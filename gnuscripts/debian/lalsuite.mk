@@ -22,7 +22,7 @@ export PYBUILD_CONFIGURE_ARGS = cd {build_dir} && {dir}/configure \
 	$(CONFIGUREARGS) PYTHON=$$(which {interpreter}) pythondir={install_dir}
 export PYBUILD_BUILD_ARGS = $(MAKE) $(MAKEARGS)
 export PYBUILD_INSTALL_ARGS = $(MAKE) $(MAKEARGS) DESTDIR={destdir} install
-export PYBUILD_TEST_ARGS = $(MAKE) $(MAKEARGS) check
+export PYBUILD_TEST_ARGS = $(MAKE) $(MAKEARGS) VERBOSE=1 check
 
 %:
 	dh $@ \

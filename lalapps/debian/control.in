@@ -2,12 +2,13 @@ Source: lalapps
 Section: science
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
+Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
 Build-Depends: bc,
   debhelper (>= 9),
   dh-python,
   help2man,
   less,
-  libcfitsio3-dev,
+  libcfitsio3-dev | libcfitsio-dev,
   libfftw3-dev,
   libframe-dev (>= 8.0),
   libgsl-dev | libgsl0-dev (>= 1.9),
