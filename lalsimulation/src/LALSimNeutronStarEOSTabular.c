@@ -203,7 +203,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     size_t i;
     double *hdat;
     double *rhodat;
-    double integrand_im1, integrand_i, integral;
 
     eos = LALCalloc(1, sizeof(*eos));
     data = LALCalloc(1, sizeof(*data));
@@ -242,6 +241,7 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
 
     hdat = LALMalloc(ndat * sizeof(*hdat));
     hdat[0] = 0.0;
+    // FIXME: First points not done correctly. Minimal error, though.
     // Do first point by hand
     hdat[1] = hdat[0] + 0.5 * (1./(pdat[1]+edat[1])) * (pdat[1] - pdat[0]);
     for (i = 1; i < ndat-1; ++i) {
@@ -254,21 +254,10 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     LALFree(log_pdat);
     LALFree(integrand);
 
-    /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-    /*             CALCULATION OF RHO CURRENTLY RETURNS GARBAGE               */
-    /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-    /* compute rest-mass density by integrating (trapezoid rule) */
-    /* rho_i = rho_{i-1} exp(int_{e_{i-1}}^{e_i} de/(e+p)) */
+    // Find rho from e, p, and h: rho = (e+p)/exp(h)
     rhodat = LALMalloc(ndat * sizeof(*hdat));
-    rhodat[0] = 0.0;
-    rhodat[1] = edat[1];        /* essentially the same at low density */
-    integrand_im1 = 1.0 / (edat[1] + pdat[1]);
-    for (i = 2; i < ndat; i++) {
-        integrand_i = 1.0 / (edat[i] + pdat[i]);
-        integral =
-            0.5 * (integrand_im1 + integrand_i) * (edat[i] - edat[i - 1]);
-        integrand_im1 = integrand_i;
-        rhodat[i] = rhodat[i - 1] * exp(integral);
+    for (i=0; i < ndat; i++){
+        rhodat[i] = (edat[i]+pdat[i])/exp(hdat[i]);
     }
 
     data->hdat = hdat;
