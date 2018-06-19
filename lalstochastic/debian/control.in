@@ -94,8 +94,8 @@ Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},
   ${shlibs:Depends},
-  lal-python3 (>= @MIN_LAL_VERSION@~),
-  lalmetaio-python3 (>= @MIN_LALMETAIO_VERSION@~),
+  python3-lal (>= @MIN_LAL_VERSION@~),
+  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   lalstochastic (= ${binary:Version})
 Description: Python 3 bindings for LALStochastic
  The LSC Algorithm Stochastic Library for gravitational wave data analysis.
