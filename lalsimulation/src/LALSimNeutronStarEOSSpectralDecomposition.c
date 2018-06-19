@@ -174,7 +174,7 @@ static double eos_e_of_p_spectral_decomposition(double x, double gamma[], int si
  * array length to construct an eos using a spectral decomposition of the 
  * adiabatic index, outlined in PRD 82 103011 (2010).
  * @param[in] gamma[] Array of spectral decomposition eos parameters.
- * size The length of the gamma array.
+ * @param[in] size The length of the gamma array.
  * @return A pointer to neutron star equation of state structure.
  */
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double gamma[], int size)
@@ -293,7 +293,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double gamma[],
  * @details Reads 4 spectral decomposition eos parameters and to construct an
  * eos using a spectral decomposition of the adiabatic index, outlined in 
  * PRD 82 103011 (2010).
- * @param[in] SDgammai The i-th spectral decomposition eos parameter.
+ * @param[in] SDgamma0,SDgamma1,SDgamma2,SDgamma3 The spectral decomposition
+ * eos parameters.
  * @return A pointer to neutron star equation of state structure.
  */
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterSpectralDecomposition(double SDgamma0, double SDgamma1, double SDgamma2, double SDgamma3){
