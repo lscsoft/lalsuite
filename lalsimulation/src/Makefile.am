@@ -187,6 +187,7 @@ noinst_HEADERS = \
 	LALSimInspiraldEnergyFlux.c \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
+        LALSimNeutronStarEOSSpectralDecomposition.c \
 	LALSimIMRSpinEOBHamiltonian.h \
 	LALSimNRTunedTides.h
 

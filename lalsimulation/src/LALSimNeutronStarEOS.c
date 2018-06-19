@@ -117,6 +117,9 @@ void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos)
 /* Piecewise-Polytrope Equation of State Code */
 #include "LALSimNeutronStarEOSPiecewisePolytrope.c"
 
+/* Spectral Decomposition Equation of State Code */
+#include "LALSimNeutronStarEOSSpectralDecomposition.c"
+
 /**
  * @name Routines to access equation of state variables
  * @{
