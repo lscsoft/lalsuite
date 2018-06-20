@@ -665,7 +665,8 @@ int XLALSimIMRSpinEOBWaveformAll(
     REAL8 EPS_ALIGN = 1.0e-4, incA = inc;
     bool SpinsAlmostAligned = ( fabs(theta1Ini) <= EPS_ALIGN  || fabs(theta1Ini) >= LAL_PI - EPS_ALIGN) && ( fabs(theta2Ini) <= EPS_ALIGN || fabs(theta2Ini) >= LAL_PI - EPS_ALIGN);
     if ( SpinsAlmostAligned ) {
-        if (debugPK) {XLAL_PRINT_INFO("Both spins are almost aligned/antialigned to initial LNhat: we use V2 dynamics\n");
+      XLAL_PRINT_INFO("Both spins are almost aligned/antialigned to initial LNhat: we use V2 dynamics\n");
+        if (debugPK) {
             XLAL_PRINT_INFO("spin1Norm spin2Norm %e %e\n", spin1Norm, spin2Norm);
         }
         spin1[0] = 0.;
