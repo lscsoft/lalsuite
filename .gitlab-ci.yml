@@ -362,8 +362,8 @@ nightly:top-level:clang:
     - schedules
     - web
 
-nightly:openmp:jessie:
-  image: ligo/lalsuite-dev:jessie
+nightly:openmp:stretch:
+  image: ligo/lalsuite-dev:stretch
   stage: nightly
   dependencies: []
   script:
