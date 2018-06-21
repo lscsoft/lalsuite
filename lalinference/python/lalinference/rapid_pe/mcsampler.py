@@ -465,7 +465,7 @@ class MCSampler(object):
                 raise NanOrInf("maxlnL = inf")
 
             if show_evaluation_log:
-                print int(time.time()), ": ", self.ntotal, eff_samp, math.log(maxval), numpy.log(int_val1/self.ntotal), numpy.log(int_val1/self.ntotal)-maxlnL, numpy.sqrt(var*self.ntotal)/int_val1
+                print "{0:.3f} : {1:d} {2:.5f} {3:.2f} {4:.2f} {5:.2f} {6:.3f}".format(time.time(), self.ntotal, eff_samp, math.log(maxval), numpy.log(int_val1 / self.ntotal), numpy.log(int_val1 / self.ntotal) - maxlnL, numpy.sqrt(var * self.ntotal) / int_val1)
 
             if (not convergence_tests) and self.ntotal >= nmin and self.ntotal >= nmax and neff != float("inf"):
                 print >>sys.stderr, "WARNING: User requested maximum number of samples reached... bailing."
