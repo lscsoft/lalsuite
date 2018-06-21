@@ -86,11 +86,11 @@ Breaks: lalinspiral-python (<< 1.7.7-1~)
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   lalinspiral (= ${binary:Version}),
-  lal-python (>= @MIN_LAL_VERSION@~),
-  lalburst-python,
-  lalframe-python (>= @MIN_LALFRAME_VERSION@~),
-  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
-  lalsimulation-python (>= @MIN_LALSIMULATION_VERSION@~)
+  python-lal (>= @MIN_LAL_VERSION@~),
+  python-lalburst,
+  python-lalframe (>= @MIN_LALFRAME_VERSION@~),
+  python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
+  python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~)
 Description: Python bindings for LALInspiral
  The LSC Algorithm Inspiral Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL Inspiral library.
@@ -112,11 +112,11 @@ Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},
   ${shlibs:Depends},
-  lal-python3 (>= @MIN_LAL_VERSION@~),
-  lalburst-python3,
-  lalframe-python3 (>= @MIN_LALFRAME_VERSION@~),
-  lalmetaio-python3 (>= @MIN_LALMETAIO_VERSION@~),
-  lalsimulation-python3 (>= @MIN_LALSIMULATION_VERSION@~),
+  python3-lal (>= @MIN_LAL_VERSION@~),
+  python3-lalburst,
+  python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
+  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
+  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
   lalinspiral (= ${binary:Version})
 Description: Python 3 bindings for LALInspiral
  The LSC Algorithm Inspiral Library for gravitational wave data analysis.

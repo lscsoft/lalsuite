@@ -91,9 +91,9 @@ Depends: ${misc:Depends},
   ${shlibs:Depends},
   octave,
   lal-octave (>= @MIN_LAL_VERSION@~),
-  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
+  python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
-  lalburst-python (>= @MIN_LALBURST_VERSION@~),
+  python-lalburst (>= @MIN_LALBURST_VERSION@~),
   laldetchar (= ${binary:Version})
 Description: Octave bindings for LALDetChar
  The LSC Algorithm Detchar Library for gravitational wave data analysis.
