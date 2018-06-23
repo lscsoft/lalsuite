@@ -334,7 +334,7 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
 int XLALSimIMRPhenomDNRTidal(COMPLEX16FrequencySeries **htilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 lambda1, REAL8 lambda2, LALDict *extraParams);
 int XLALSimIMRPhenomDNRTidalFrequencySequence(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 lambda1, REAL8 lambda2, LALDict *extraParams);
 
-/* in module LALSimIMRPhenomHMv2.c */
+/* in module LALSimIMRPhenomHM.c */
 int XLALSimIMRPhenomHM(
     COMPLEX16FrequencySeries **hptilde,
     COMPLEX16FrequencySeries **hctilde,

@@ -55,11 +55,6 @@ static const double cShift[7] = {0.0,
                                  LAL_PI_2 /* -1 shift */,
                                  0.0};
 
-/* This allows us to reuse internal IMRPhenomD functions without making those functions XLAL */
-/* DIDN"T WANT TO HAVE TO DO THIS!
- * Need to rewrite parts of PhenomD code to make this nicer. */
-// #include "LALSimIMRPhenomD_internals.c"
-
 /**
  * read in a LALDict.
  * If ModeArray in LALDict is NULL then create a ModrArray
@@ -83,17 +78,11 @@ LALDict *IMRPhenomHM_setup_mode_array(
          * The negative m modes are automatically added.
          */
         XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
-        // XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -2);
         XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 1);
-        // XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -1);
         XLALSimInspiralModeArrayActivateMode(ModeArray, 3, 3);
-        // XLALSimInspiralModeArrayActivateMode(ModeArray, 3, -3);
         XLALSimInspiralModeArrayActivateMode(ModeArray, 3, 2);
-        // XLALSimInspiralModeArrayActivateMode(ModeArray, 3, -2);
         XLALSimInspiralModeArrayActivateMode(ModeArray, 4, 4);
-        // XLALSimInspiralModeArrayActivateMode(ModeArray, 4, -4);
         XLALSimInspiralModeArrayActivateMode(ModeArray, 4, 3);
-        // XLALSimInspiralModeArrayActivateMode(ModeArray, 4, -3);
         // XLALSimInspiralModeArrayPrintModes(ModeArray);
         /* Don't forget to insert ModeArray back into extraParams. */
         XLALSimInspiralWaveformParamsInsertModeArray(extraParams, ModeArray);
@@ -101,13 +90,9 @@ LALDict *IMRPhenomHM_setup_mode_array(
     else
     {
         XLAL_PRINT_INFO("Using custom modes for PhenomHM.\n");
+        XLAL_PRINT_ERROR("Custom mode array for PhenomHM not suppoted.\n");
         /* TODO: loop over mode array and throw an error if
          there is a mode that is not included in the model */
-        /* Have a variable that contains the list of modes currently
-        implemented and check against this. */
-        //FIXME://FIXME://FIXME://FIXME://FIXME://FIXME://FIXME:
-        //FIXME://FIXME://FIXME://FIXME://FIXME://FIXME://FIXME:
-        //FIXME: see above
         //FIXME: for example if someone tries to add the (l,m)=(2,0)
         //mode we need to throw an error.
     }
@@ -129,7 +114,6 @@ int PhenomHM_init_useful_mf_powers(PhenomHMUsefulMfPowers *p, REAL8 number)
     // consider changing pow(x,1/6.0) to cbrt(x) and sqrt(x) - might be faster
     p->itself = number;
     p->sqrt = sqrt(number);
-    //p->sixth = pow(number, 1/6.0); //FP
     p->sixth = cbrt(p->sqrt);
     p->m_sixth = 1.0 / p->sixth;
     p->third = p->sixth * p->sixth;
@@ -154,7 +138,6 @@ int PhenomHM_init_useful_powers(PhenomHMUsefulPowers *p, REAL8 number)
     // consider changing pow(x,1/6.0) to cbrt(x) and sqrt(x) - might be faster
     double sixth = pow(number, 1.0 / 6.0);
     p->third = sixth * sixth;
-    //p->third = cbrt(number);
     p->two_thirds = p->third * p->third;
     p->four_thirds = number * p->third;
     p->five_thirds = p->four_thirds * p->third;
@@ -374,10 +357,6 @@ static int init_PhenomHM_Storage(
     int retcode;
     XLAL_CHECK(0 != p, XLAL_EFAULT, "p is NULL");
 
-    /*TODO: Check which mass is larger and swap masses and spins if needed
-     * to enforce m1>=m2
-     */
-
     p->m1 = m1_SI / LAL_MSUN_SI;
     p->m2 = m2_SI / LAL_MSUN_SI;
     p->m1_SI = m1_SI;
@@ -395,9 +374,6 @@ static int init_PhenomHM_Storage(
     if (p->eta > 0.25 || p->eta < 0.0)
         XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
 
-    /*XLAL_PRINT_INFO("before swap: m1 = %f, m2 = %f, chi1z = %f, chi2z = %f\n",
-            p->m1, p->m2, p->chi1z, p->chi2z); */
-
     retcode = 0;
     retcode = PhenomInternal_AlignedSpinEnforcePrimaryIsm1(
         &(p->m1),
@@ -408,9 +384,6 @@ static int init_PhenomHM_Storage(
         XLAL_SUCCESS == retcode,
         XLAL_EFUNC,
         "PhenomInternal_AlignedSpinEnforcePrimaryIsm1 failed");
-
-    /*XLAL_PRINT_INFO("after swap: m1 = %f, m2 = %f, chi1z = %f, chi2z = %f\n",
-            p->m1, p->m2, p->chi1z, p->chi2z); */
 
     /* sanity checks on frequencies */
     PhenomHMFrequencyBoundsStorage pHMFS;
@@ -985,13 +958,6 @@ int IMRPhenomHMPhasePreComp(
     q->fi = fi;
     q->fr = fr;
 
-    // printf("q->ai = %f\n", q->ai);
-    // printf("q->bi = %f\n", q->bi);
-    // printf("q->am = %f\n", q->am);
-    // printf("q->bm = %f\n", q->bm);
-    // printf("q->ar = %f\n", q->ar);
-    // printf("q->br = %f\n", q->br);
-
     double Rholm = pHM->Rholm[ell][mm];
     double Taulm = pHM->Taulm[ell][mm];
 
@@ -1023,7 +989,7 @@ int IMRPhenomHMPhasePreComp(
 }
 
 /**
- * Define function for FD PN amplitudes up to and including v^3 terms
+ * Define function for FD PN amplitudes
  */
 COMPLEX16 IMRPhenomHMOnePointFiveSpinPN(
     REAL8 fM,
@@ -1049,12 +1015,6 @@ COMPLEX16 IMRPhenomHMOnePointFiveSpinPN(
     REAL8 Xa = 0.5 * (X1z - X2z);
     COMPLEX16 ans = 0;
 
-    /*
-  NOTE:
-   - The prescription here is to keep leading order for l=m
-   - But keep up to v^3 terms when l = m+1
-  */
-
     // Define PN parameter and realed powers
     REAL8 v = pow(M * 2.0 * LAL_PI * fM / m, 1.0 / 3.0);
     REAL8 v2 = v * v;
@@ -1063,14 +1023,12 @@ COMPLEX16 IMRPhenomHMOnePointFiveSpinPN(
     // Define Leading Order Ampitude for each supported multipole
     if (l == 2 && m == 2)
     {
-
         // (l,m) = (2,2)
         // THIS IS LEADING ORDER
         Hlm = 1.0;
     }
     else if (l == 2 && m == 1)
     {
-
         // (l,m) = (2,1)
         // SPIN TERMS ADDED
 
@@ -1087,56 +1045,46 @@ COMPLEX16 IMRPhenomHMOnePointFiveSpinPN(
             delta * Xs * (4771.0 / 1344 - eta * 2549 / 336) + \
             delta * (-I * 0.5 - LAL_PI - 2 * I * 0.69314718056) \
             );
-
     }
     else if (l == 3 && m == 3)
     {
-
         // (l,m) = (3,3)
         // THIS IS LEADING ORDER
         Hlm = 0.75 * sqrt(5.0 / 7.0) * (v * delta);
     }
     else if (l == 3 && m == 2)
     {
-
         // (l,m) = (3,2)
         // NO SPIN TERMS to avoid roots
         Hlm = (1.0 / 3.0) * sqrt(5.0 / 7.0) * (v2 * (1.0 - 3.0 * eta));
     }
     else if (l == 4 && m == 4)
     {
-
         // (l,m) = (4,4)
         // THIS IS LEADING ORDER
         Hlm = (4.0 / 9.0) * sqrt(10.0 / 7.0) * v2 * (1.0 - 3.0 * eta);
     }
     else if (l == 4 && m == 3)
     {
-
         // (l,m) = (4,3)
         // NO SPIN TERMS TO ADD AT DESIRED ORDER
         Hlm = 0.75 * sqrt(3.0 / 35.0) * v3 * delta * (1.0 - 2.0 * eta);
     }
     else
     {
-
-        // Let the people know
         XLALPrintError("XLAL Error - requested ell = %i and m = %i mode not available, check documentation for available modes\n", l, m);
         XLAL_ERROR(XLAL_EDOM);
     }
-
     // Compute the final PN Amplitude at Leading Order in fM
     ans = M * M * LAL_PI * sqrt(eta * 2.0 / 3) * pow(v, -3.5) * cabs(Hlm);
 
-    //
     return ans;
 }
 
 /**
- * h = h+ - i*hx = Sum hlm * Ylm - FIXME: check sign
+ * h = h+ - i*hx = Sum hlm * Ylm
  * Returns h+ and hx in the frequency domain
  * evaluated at a user defined set of frequencies.
- * Loops over IMRPhenomHMOneFrequency
  *
  * This function can be called in the usual sense
  * where you supply a f_min, f_max and deltaF.
@@ -1208,7 +1156,7 @@ UNUSED int XLALSimIMRPhenomHM(
 /**
  * internal function that returns h+ and hx.
  * Inside this function the my bulk of the work is done
- * like the loop over frequencies.s
+ * like the loop over frequencies.
  */
 int IMRPhenomHMCore(
     UNUSED COMPLEX16FrequencySeries **hptilde, /**< [out] Frequency domain h+ GW strain */
@@ -1339,19 +1287,17 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
             {
                 sym = 1;
             }
-            IMRPhenomHMFDAddMode(*hptilde, *hctilde, hlm, inclination, 0., ell, mm, sym); /* The phase \Phi is set to 0 - assumes phiRef is defined as half the phase of the 22 mode h22 (or the first mode in the list), not for h = hplus-I hcross */
-            // FDAddMode( *hptilde, *hctilde, hlm, inclination, phi0, ell, mm, sym); /* Added phi0 here as a quick fix for the reference phase. not sure if it should be m * phi0 or m/2*phi0 . */
+            IMRPhenomHMFDAddMode(*hptilde, *hctilde, hlm, inclination, 0., ell, mm, sym); /* The phase \Phi is set to 0 - assumes phiRef is defined as half the phase of the 22 mode h22 */
         }
     }
 
     XLALDestroySphHarmFrequencySeries(*hlms);
     XLALFree(hlms);
 
-    // NOTE: SK: HERE I SWAP hplus with hcross to conform with LAL phase convension
+    // NOTE: SK: HERE I SWAP hplus with hcross to conform with LAL phase convension //CHECK ME
     /* Compute the amplitude pre-factor */
     const REAL8 amp0 = XLALSimPhenomUtilsFDamp0(Mtot, distance);
-// for (size_t i = 0; i < (*hptilde)->data->length; i++) //old code
-#pragma omp parallel for
+    #pragma omp parallel for
     for (size_t i = pHMFS->ind_min; i < pHMFS->ind_max; i++)
     {
         ((*hptilde)->data->data)[i] = I * ((*hptilde)->data->data)[i] * amp0;
@@ -1374,8 +1320,6 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
  * Note this has a similar interface to XLALSimIMRPhenomHM
  * because it is designed so it can be used independently.
  * Function to compute the hlm modes.
- * Note this is not static so that IMRPhenomPv3HM
- * can also use this function
  * TODO: add documention on how to use the freqs and deltaF together
  * to either generate a uniform frequency array from f_min to f_max
  * with spacing deltaF or to an arbitrary frequency array
@@ -1458,6 +1402,7 @@ failed");
         {                                     /* populate the frequency unitformly from zero - this is the standard
              convention we use when generating waveforms in LAL. */
             freqs->data[i] = i * pHM->deltaF; /* This is in Hz */
+            //FIXME: memset
             phases->data[i] = 0;              /* initalise all phases to zero. */
             amps->data[i] = 0;                /* initalise all amps to zero. */
         }
@@ -1477,6 +1422,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
         amps = XLALCreateREAL8Sequence(freqs->length);
         for (size_t i = 0; i < pHM->npts; i++)
         {
+            //FIXME: memset
             phases->data[i] = 0; /* initalise all phases to zero. */
             amps->data[i] = 0;   /* initalise all phases to zero. */
         }
@@ -1493,12 +1439,6 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
         freqs_geom->data[i] = XLALSimPhenomUtilsHztoMf(freqs->data[i], pHM->Mtot); /* initalise all phases to zero. */
     }
 
-    /* Loop over ModeArray and if active then generate hlm for
-     that mode and add it to **hlm */
-    /* TODO: modify ind_min and ind_max
-      * based on the (l,m) number to try and
-      */
-
     PhenDAmpAndPhasePreComp pDPreComp22;
     retcode = IMRPhenomDSetupAmpAndPhaseCoefficients(
         &pDPreComp22,
@@ -1506,7 +1446,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
         pHM->m2,
         pHM->chi1z,
         pHM->chi2z,
-        pHM->Rholm[2][2], //FIXME: THIS IS IN THE WRONG PLACE BUT JUST DEBUGGING
+        pHM->Rholm[2][2],
         pHM->Taulm[2][2],
         extraParams);
     if (retcode != XLAL_SUCCESS)
@@ -1525,7 +1465,6 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
     REAL8 phi0 = 0.5 * phi_22_at_f_ref - phiRef;
 
     /* loop over modes */
-    // LALValue* ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(extraParams);
     /* at this point ModeArray should contain the list of modes
      * and therefore if NULL then something is wrong and abort.
      */
@@ -1559,11 +1498,6 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
                                                     extraParams);
             XLAL_CHECK(XLAL_SUCCESS == retcode,
                        XLAL_EFUNC, "IMRPhenomHMEvaluateOnehlmMode failed");
-
-            // for(UINT4 i=0; i < hlm->data->length; i++)
-            // {
-            //     printf("freqs->data[%i] = %f, freqs_geom->data[%i] = %f, hlm->data[%i] = %.8f\n", i, freqs->data[i], i, freqs_geom->data[i], i, fabs(hlm->data->data[i]));
-            // }
 
             *hlms = XLALSphHarmFrequencySeriesAddMode(*hlms, hlm, ell, mm);
 
@@ -1653,9 +1587,6 @@ int IMRPhenomHMEvaluateOnehlmMode(
         phase_term1 = t0 * (Mf - pHM->Mf_ref);
         phase_term2 = phases->data[i] - (mm * phi0);
         ((*hlm)->data->data)[i] = amps->data[i] * cexp(-I * (phase_term1 + phase_term2));
-
-        // COMPLEX16 exponent = -I*(t0 + phases->data[i] * t0*(Mf-MfRef));
-        // ((*hlm)->data->data)[i] = amps->data[i] * cexp( -I phases->data[i] );
     }
 
     /* cleanup */
@@ -1789,19 +1720,6 @@ int IMRPhenomHMPhase(
 {
     int retcode;
 
-    // retcode = 0;
-    // retcode = IMRPhenomDPhaseFrequencySequence(
-    //     phases,
-    //     freqs_geom,
-    //     ind_min, ind_max,
-    //     pHM->m1, pHM->m2,
-    //     pHM->chi1z, pHM->chi2z,
-    //     1., 1.,
-    //     extraParams
-    // );
-    // XLAL_CHECK(XLAL_SUCCESS == retcode,
-    //     XLAL_EFUNC, "IMRPhenomDPhaseFrequencySequence failed");
-
     HMPhasePreComp q;
     retcode = 0;
     retcode = IMRPhenomHMPhasePreComp(&q, ell, mm, pHM, extraParams);
@@ -1865,21 +1783,3 @@ int IMRPhenomHMPhase(
 
     return XLAL_SUCCESS;
 }
-
-/**
- * returns h+ and hx in the frequency domain at one frequency. Optimised inputs
- */
-// int IMRPhenomHMOneFrequency(
-//     REAL8 fHz /** < Single frequency at which to evaluate the waveform (Hz) */
-// )
-
-/**
- * Returns hlm at a set of given frequencies
- * * Loops over IMRPhenomHMSingleModehlmOneFrequency
- */
-// int XLALSimIMRPhenomHMSingleModehlmFrequencySequence
-
-/**
- * returns hlm at one frequency. Optimised inputs
- */
-// int IMRPhenomHMSingleModehlmOneFrequency
