@@ -26,7 +26,11 @@ Build-Depends: debhelper (>= 9),
   lalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
   lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
   python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
-  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~)
+  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
+  python-scipy,
+  python3-scipy,
+  python-glue,
+  python3-glue
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
 Standards-Version: 3.9.8
@@ -82,7 +86,9 @@ Depends: ${misc:Depends},
   python-lal (>= @MIN_LAL_VERSION@~),
   python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@),
-  lalburst (= ${binary:Version})
+  lalburst (= ${binary:Version}),
+  python-scipy,
+  python-glue
 Description: Python bindings for LALBurst
  The LSC Algorithm Burst Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL Burst library.
@@ -107,7 +113,9 @@ Depends: ${misc:Depends},
   python3-lal (>= @MIN_LAL_VERSION@~),
   python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@),
-  lalburst (= ${binary:Version})
+  lalburst (= ${binary:Version}),
+  python3-scipy,
+  python3-glue
 Description: Python 3 bindings foar LALBurst
  The LSC Algorithm Burst Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Burst library.
