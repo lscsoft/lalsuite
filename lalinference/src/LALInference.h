@@ -61,6 +61,7 @@
 #include <lal/LALString.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimInspiralWaveformCache.h>
+#include <lal/LALSimNeutronStar.h>
 #include <lal/LALHashTbl.h>
 
 #include <lal/SFTutils.h>
@@ -467,7 +468,8 @@ typedef struct tagLALInferenceModel
   REAL8Window                 *window;        /** A window */
   REAL8                        padding; /** The padding of the above window */
   struct tagLALInferenceROQModel *roq; /** ROQ data */
-  int roq_flag;
+  int roq_flag;               /** Is ROQ enabled */
+  LALSimNeutronStarFamily     *eos_fam; /** Neutron Star equation of state family */
 
 } LALInferenceModel;
 

@@ -38,6 +38,7 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceInit.h>
 #include <lal/LALInferenceCalibrationErrors.h>
+#include <lal/LALSimNeutronStar.h>
 
 static int checkParamInList(const char *list, const char *param);
 static int checkParamInList(const char *list, const char *param)
@@ -737,6 +738,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--tidalT)                  Enables reparmeterized tidal corrections, only with LALSimulation.\n\
     (--4PolyEOS)                Enables 4-piece polytropic EOS parmeterization, only with LALSimulation.\n\
     (--4SpectralDecomp)         Enables 4-coeff. spectral decomposition EOS parmeterization, only with LALSimulation.\n\
+    (--eos   EOS)               Fix the neutron star EOS. Use \"--eos help\" for allowed names\n\
     (--spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
     (--tidalOrder PNorder)          Specify twice the PN order (e.g. 10 <==> 5PN) of tidal effects to use, only for LALSimulation (default: -1 <==> Use all tidal effects).\n\
     (--numreldata FileName)         Location of NR data file for NR waveforms (with NR_hdf5 approx).\n\
@@ -903,6 +905,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   LALInferenceModel *model = XLALMalloc(sizeof(LALInferenceModel));
   model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
   memset(model->params, 0, sizeof(LALInferenceVariables));
+  model->eos_fam = NULL;
 
   UINT4 signal_flag=1;
   ppt = LALInferenceGetProcParamVal(commandLine, "--noiseonly");
@@ -1350,26 +1353,15 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
 
   }
 
-  // For EOS, must pick to either use tidal, tidalT, or 4-piece polytrope parameters; otherwise throw error message
-  if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--tidal")){
-    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
-    XLAL_ERROR_NULL(XLAL_EINVAL);
-  } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")){
-    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
-    XLAL_ERROR_NULL(XLAL_EINVAL);
-  } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")){
-    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
-    XLAL_ERROR_NULL(XLAL_EINVAL);
-  } else if(LALInferenceGetProcParamVal(commandLine,"--tidal")&&LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")){
-    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
-    XLAL_ERROR_NULL(XLAL_EINVAL);
-  } else if(LALInferenceGetProcParamVal(commandLine,"--tidal")&&LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")){
-    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
-    XLAL_ERROR_NULL(XLAL_EINVAL);
-  } else if(LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")&&LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")){
-    XLALPrintError("Error: cannot use more than one of --tidalT and --tidal and --4PolyEOS and --4SpectralDecomp.\n");
-    XLAL_ERROR_NULL(XLAL_EINVAL);
-  } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")){
+  if((!!LALInferenceGetProcParamVal(commandLine,"--tidalT") + !!LALInferenceGetProcParamVal(commandLine,"--tidal")
+    + !!LALInferenceGetProcParamVal(commandLine,"--4PolyEOS") + !!LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")
+    + !!LALInferenceGetProcParamVal(commandLine,"--eos")) > 1 )
+  {
+      XLALPrintError("Error: cannot use more than one of --tidalT, --tidal, --4PolyEOS, --4SpectralDecomp and --eos.\n");
+      XLAL_ERROR_NULL(XLAL_EINVAL);
+  }
+
+  if(LALInferenceGetProcParamVal(commandLine,"--tidalT")){
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambdaT", zero, lambdaTMin, lambdaTMax, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "dLambdaT", zero, dLambdaTMin, dLambdaTMax, LALINFERENCE_PARAM_LINEAR);
 
@@ -1388,6 +1380,19 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "SDgamma1", zero, SDgamma1Min, SDgamma1Max, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "SDgamma2", zero, SDgamma2Min, SDgamma2Max, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "SDgamma3", zero, SDgamma3Min, SDgamma3Max, LALINFERENCE_PARAM_LINEAR);
+  }
+  else if((ppt=LALInferenceGetProcParamVal(commandLine,"--eos")))
+  {
+    LALSimNeutronStarEOS *eos=NULL;
+    errnum=XLAL_SUCCESS;
+    XLAL_TRY(eos=XLALSimNeutronStarEOSByName(ppt->value), errnum);
+    if(errnum!=XLAL_SUCCESS)
+        XLAL_ERROR_NULL(errnum,"%s: %s",__func__,XLALErrorString(errnum));
+    
+    XLAL_TRY(model->eos_fam = XLALCreateSimNeutronStarFamily(eos),errnum);
+    if(errnum!=XLAL_SUCCESS)
+        XLAL_ERROR_NULL(errnum,"%s: %s",__func__,XLALErrorString(errnum));
+    if(!model->eos_fam) XLAL_ERROR_NULL(XLAL_EINVAL, "Unable to initialise EOS family");
   }
 
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
