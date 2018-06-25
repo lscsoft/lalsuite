@@ -34,9 +34,67 @@ NOISEPSDFILES = \
 	LIGO-T0900288-v3-ZERO_DET_low_P.txt
 
 EOSDATAFILES = \
+	LALSimNeutronStarEOS_ALF1.dat \
+	LALSimNeutronStarEOS_ALF2.dat \
+	LALSimNeutronStarEOS_ALF3.dat \
+	LALSimNeutronStarEOS_ALF4.dat \
+	LALSimNeutronStarEOS_AP1.dat \
+	LALSimNeutronStarEOS_AP2.dat \
+	LALSimNeutronStarEOS_AP3.dat \
 	LALSimNeutronStarEOS_AP4.dat \
+	LALSimNeutronStarEOS_BBB2.dat \
+	LALSimNeutronStarEOS_BGN1H1.dat \
+	LALSimNeutronStarEOS_BPAL12.dat \
+	LALSimNeutronStarEOS_BSK19.dat \
+	LALSimNeutronStarEOS_BSK20.dat \
+	LALSimNeutronStarEOS_BSK21.dat \
+	LALSimNeutronStarEOS_ENG.dat \
 	LALSimNeutronStarEOS_FPS.dat \
-	LALSimNeutronStarEOS_SLY4.dat
+	LALSimNeutronStarEOS_GNH3.dat \
+	LALSimNeutronStarEOS_GS1.dat \
+	LALSimNeutronStarEOS_GS2.dat \
+	LALSimNeutronStarEOS_H1.dat \
+	LALSimNeutronStarEOS_H2.dat \
+	LALSimNeutronStarEOS_H3.dat \
+	LALSimNeutronStarEOS_H4.dat \
+	LALSimNeutronStarEOS_H5.dat \
+	LALSimNeutronStarEOS_H6.dat \
+	LALSimNeutronStarEOS_H7.dat \
+	LALSimNeutronStarEOS_MPA1.dat \
+	LALSimNeutronStarEOS_MS1B.dat \
+	LALSimNeutronStarEOS_MS1.dat \
+	LALSimNeutronStarEOS_MS2.dat \
+	LALSimNeutronStarEOS_PAL6.dat \
+	LALSimNeutronStarEOS_PCL2.dat \
+	LALSimNeutronStarEOS_PS.dat \
+	LALSimNeutronStarEOS_QMC700.dat \
+	LALSimNeutronStarEOS_SLY4.dat \
+	LALSimNeutronStarEOS_SLY.dat \
+	LALSimNeutronStarEOS_SQM1.dat \
+	LALSimNeutronStarEOS_SQM2.dat \
+	LALSimNeutronStarEOS_SQM3.dat \
+	LALSimNeutronStarEOS_WFF1.dat \
+	LALSimNeutronStarEOS_WFF2.dat \
+	LALSimNeutronStarEOS_WFF3.dat \
+	LALSimNeutronStarEOS_APR.dat \
+	LALSimNeutronStarEOS_BHF_BBB2.dat \
+	LALSimNeutronStarEOS_KDE0V.dat \
+	LALSimNeutronStarEOS_KDE0V1.dat \
+	LALSimNeutronStarEOS_RS.dat \
+	LALSimNeutronStarEOS_SK255.dat \
+	LALSimNeutronStarEOS_SK272.dat \
+	LALSimNeutronStarEOS_SKA.dat \
+	LALSimNeutronStarEOS_SKB.dat \
+	LALSimNeutronStarEOS_SKI2.dat \
+	LALSimNeutronStarEOS_SKI3.dat \
+	LALSimNeutronStarEOS_SKI4.dat \
+	LALSimNeutronStarEOS_SKI5.dat \
+	LALSimNeutronStarEOS_SKI6.dat \
+	LALSimNeutronStarEOS_SKMP.dat \
+	LALSimNeutronStarEOS_SKOP.dat \
+	LALSimNeutronStarEOS_SLY2.dat \
+	LALSimNeutronStarEOS_SLY230A.dat \
+	LALSimNeutronStarEOS_SLY9.dat
 
 bin_PROGRAMS = \
 	lalsim-bh-qnmode \

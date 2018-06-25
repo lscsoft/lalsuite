@@ -26,6 +26,7 @@
  */
 
 #include <lal/LALSimReadData.h>
+#include <lal/LALSimNeutronStar.h>
 #include <gsl/gsl_interp.h>
 
 void GLBoundConversion(double a, double b, double abcissae[],int nEval);
@@ -304,17 +305,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     return eos;
 }
 
-static int mystrcasecmp(const char *s1, const char *s2)
-{
-    while (*s1) {
-        int c1 = toupper(*s1++);
-        int c2 = toupper(*s2++);
-        if (c1 != c2)
-            return (c1 > c2) - (c1 < c2);
-    }
-    return 0;
-}
-
 /** @endcond */
 
 /**
@@ -357,9 +347,69 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
  * @details A known, installed, named tabulated equation of state data file is
  * read and the used to create the equation of state structure.  Presently
  * the known equations of state are:
+ * - ALF1
+ * - ALF2
+ * - ALF3
+ * - ALF4
+ * - AP1
+ * - AP2
+ * - AP3
  * - AP4
+ * - BBB2
+ * - BGN1H1
+ * - BPAL12
+ * - BSK19
+ * - BSK20
+ * - BSK21
+ * - ENG
  * - FPS
+ * - GNH3
+ * - GS1
+ * - GS2
+ * - H1
+ * - H2
+ * - H3
+ * - H4
+ * - H5
+ * - H6
+ * - H7
+ * - MPA1
+ * - MS1B
+ * - MS1
+ * - MS2
+ * - PAL6
+ * - PCL2
+ * - PS
+ * - QMC700
  * - SLY4
+ * - SLY
+ * - SQM1
+ * - SQM2
+ * - SQM3
+ * - WFF1
+ * - WFF2
+ * - WFF3
+ * We also include more modern equations from the CompOSE website
+ * https://compose.obspm.fr/ downloaded on 18 June 2018. These EOSs are:
+ * - APR
+ * - BHF_BBB2
+ * - KDE0V
+ * - KDE0V1
+ * - RS
+ * - SK255
+ * - SK272
+ * - SKA
+ * - SKB
+ * - SKI2
+ * - SKI3
+ * - SKI4
+ * - SKI5
+ * - SKI6
+ * - SKMP
+ * - SKOP
+ * - SLY2
+ * - SLY230A
+ * - SLY9
  * @param[in] name The name of the equation of state.
  * @return A pointer to neutron star equation of state structure.
  */
@@ -367,31 +417,26 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
 {
     static const char fname_base[] = "LALSimNeutronStarEOS_";
     static const char fname_extn[] = ".dat";
-    static const char *eos_names[] = {
-        "FPS",
-        "SLY4",
-        "AP4"
-    };
-    size_t n = XLAL_NUM_ELEM(eos_names);
+    size_t n = XLAL_NUM_ELEM(lalSimNeutronStarEOSNames);
     size_t i;
     char fname[FILENAME_MAX];
 
     for (i = 0; i < n; ++i)
-        if (mystrcasecmp(name, eos_names[i]) == 0) {
+        if (XLALStringCaseCompare(name, lalSimNeutronStarEOSNames[i]) == 0) {
             LALSimNeutronStarEOS *eos;
-            snprintf(fname, sizeof(fname), "%s%s%s", fname_base, eos_names[i],
+            snprintf(fname, sizeof(fname), "%s%s%s", fname_base, lalSimNeutronStarEOSNames[i],
                 fname_extn);
             eos = XLALSimNeutronStarEOSFromFile(fname);
             if (!eos)
                 XLAL_ERROR_NULL(XLAL_EFUNC);
-            snprintf(eos->name, sizeof(eos->name), "%s", eos_names[i]);
+            snprintf(eos->name, sizeof(eos->name), "%s", lalSimNeutronStarEOSNames[i]);
             return eos;
         }
 
     XLAL_PRINT_ERROR("Unrecognized EOS name %s...", name);
-    XLALPrintError("\tKnown EOS names are: %s", eos_names[0]);
+    XLALPrintError("\tKnown EOS names are: %s", lalSimNeutronStarEOSNames[0]);
     for (i = 1; i < n; ++i)
-        XLALPrintError(", %s", eos_names[i]);
+        XLALPrintError(", %s", lalSimNeutronStarEOSNames[i]);
     XLALPrintError("\n");
     XLAL_ERROR_NULL(XLAL_ENAME);
 }
