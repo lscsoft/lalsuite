@@ -203,7 +203,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     size_t i;
     double *hdat;
     double *rhodat;
-    double integrand_im1, integrand_i, integral;
 
     eos = LALCalloc(1, sizeof(*eos));
     data = LALCalloc(1, sizeof(*data));
@@ -242,6 +241,7 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
 
     hdat = LALMalloc(ndat * sizeof(*hdat));
     hdat[0] = 0.0;
+    // FIXME: First points not done correctly. Minimal error, though.
     // Do first point by hand
     hdat[1] = hdat[0] + 0.5 * (1./(pdat[1]+edat[1])) * (pdat[1] - pdat[0]);
     for (i = 1; i < ndat-1; ++i) {
@@ -254,21 +254,10 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     LALFree(log_pdat);
     LALFree(integrand);
 
-    /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-    /*             CALCULATION OF RHO CURRENTLY RETURNS GARBAGE               */
-    /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-    /* compute rest-mass density by integrating (trapezoid rule) */
-    /* rho_i = rho_{i-1} exp(int_{e_{i-1}}^{e_i} de/(e+p)) */
+    // Find rho from e, p, and h: rho = (e+p)/exp(h)
     rhodat = LALMalloc(ndat * sizeof(*hdat));
-    rhodat[0] = 0.0;
-    rhodat[1] = edat[1];        /* essentially the same at low density */
-    integrand_im1 = 1.0 / (edat[1] + pdat[1]);
-    for (i = 2; i < ndat; i++) {
-        integrand_i = 1.0 / (edat[i] + pdat[i]);
-        integral =
-            0.5 * (integrand_im1 + integrand_i) * (edat[i] - edat[i - 1]);
-        integrand_im1 = integrand_i;
-        rhodat[i] = rhodat[i - 1] * exp(integral);
+    for (i=0; i < ndat; i++){
+        rhodat[i] = (edat[i]+pdat[i])/exp(hdat[i]);
     }
 
     data->hdat = hdat;
@@ -313,16 +302,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     return eos;
 }
 
-static int mystrcasecmp(const char *s1, const char *s2)
-{
-    while (*s1) {
-        int c1 = toupper(*s1++);
-        int c2 = toupper(*s2++);
-        if (c1 != c2)
-            return (c1 > c2) - (c1 < c2);
-    }
-    return 0;
-}
 
 /** @endcond */
 
@@ -417,26 +396,26 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
     static const char fname_base[] = "LALSimNeutronStarEOS_";
     static const char fname_extn[] = ".dat";
     
-    size_t n = XLAL_NUM_ELEM(LALSimNeutronStarEOSNames);
+    size_t n = XLAL_NUM_ELEM(lalSimNeutronStarEOSNames);
     size_t i;
     char fname[FILENAME_MAX];
 
     for (i = 0; i < n; ++i)
-        if (mystrcasecmp(name, LALSimNeutronStarEOSNames[i]) == 0) {
+        if (XLALStringCaseCompare(name, lalSimNeutronStarEOSNames[i]) == 0) {
             LALSimNeutronStarEOS *eos;
-            snprintf(fname, sizeof(fname), "%s%s%s", fname_base, LALSimNeutronStarEOSNames[i],
+            snprintf(fname, sizeof(fname), "%s%s%s", fname_base, lalSimNeutronStarEOSNames[i],
                 fname_extn);
             eos = XLALSimNeutronStarEOSFromFile(fname);
             if (!eos)
                 XLAL_ERROR_NULL(XLAL_EFUNC);
-            snprintf(eos->name, sizeof(eos->name), "%s", LALSimNeutronStarEOSNames[i]);
+            snprintf(eos->name, sizeof(eos->name), "%s", lalSimNeutronStarEOSNames[i]);
             return eos;
         }
 
     XLAL_PRINT_ERROR("Unrecognized EOS name %s...", name);
-    XLALPrintError("\tKnown EOS names are: %s", LALSimNeutronStarEOSNames[0]);
+    XLALPrintError("\tKnown EOS names are: %s", lalSimNeutronStarEOSNames[0]);
     for (i = 1; i < n; ++i)
-        XLALPrintError(", %s", LALSimNeutronStarEOSNames[i]);
+        XLALPrintError(", %s", lalSimNeutronStarEOSNames[i]);
     XLALPrintError("\n");
     XLAL_ERROR_NULL(XLAL_ENAME);
 }

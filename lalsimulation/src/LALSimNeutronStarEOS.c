@@ -78,7 +78,7 @@ struct tagLALSimNeutronStarEOS {
 /** @endcond */
 
 /** Recognised equations of state names */
-const char * const LALSimNeutronStarEOSNames[] = {
+const char * const lalSimNeutronStarEOSNames[42] = {
         "ALF1", "ALF2", "ALF3", "ALF4",
         "AP1", "AP2", "AP3", "AP4",
         "BBB2", "BGN1H1", "BPAL12", 
@@ -116,6 +116,9 @@ void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos)
 
 /* Piecewise-Polytrope Equation of State Code */
 #include "LALSimNeutronStarEOSPiecewisePolytrope.c"
+
+/* Spectral Decomposition Equation of State Code */
+#include "LALSimNeutronStarEOSSpectralDecomposition.c"
 
 /**
  * @name Routines to access equation of state variables

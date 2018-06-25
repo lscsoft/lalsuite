@@ -42,6 +42,7 @@ AC_CONFIG_FILES([\
   src/pulsar/SidebandSearch/Makefile \
   src/pulsar/Tools/Makefile \
   src/pulsar/TwoSpect/Makefile \
+  src/pulsar/Weave/Makefile \
   src/pulsar/Xray/Makefile \
   src/ring/Makefile \
   src/stochastic/Makefile \
@@ -219,7 +220,6 @@ LALSUITE_POP_UVARS
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
-AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_version],,[AC_MSG_ERROR([could not find the gsl library])])
 LALSUITE_CHECK_GSL_VERSION([1.13])
 LALSUITE_ENABLE_FAST_GSL

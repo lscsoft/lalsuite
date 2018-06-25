@@ -253,6 +253,11 @@ int XLALInspiralTDWaveformFromSimInspiral(
    if ( (int) approximant == XLAL_FAILURE)
       XLAL_ERROR(XLAL_EFUNC);
 
+   if (approximant == NR_hdf5) {
+     char *filepath = thisRow->numrel_data;
+     XLALSimInspiralWaveformParamsInsertNumRelData(params, filepath);
+   }
+   
    /* get phase PN order; this is an enum such that the value is twice the PN order */
    order = XLALSimInspiralGetPNOrderFromString(thisRow->waveform);
    if ( (int) order == XLAL_FAILURE)

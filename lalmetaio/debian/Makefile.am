@@ -6,8 +6,8 @@ EXTRA_DIST = \
 	lalmetaio-dev.install \
 	lalmetaio.install \
 	lalmetaio-octave.install \
-	lalmetaio-python.install \
-	lalmetaio-python3.install \
+	python-lalmetaio.install \
+	python3-lalmetaio.install \
 	rules \
 	lalsuite.mk \
 	source/format

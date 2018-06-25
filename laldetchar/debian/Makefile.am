@@ -5,7 +5,7 @@ EXTRA_DIST = \
 	copyright \
 	laldetchar-dev.install \
 	laldetchar-octave.install \
-	laldetchar-python.install \
+	python-laldetchar.install \
 	laldetchar.install \
 	rules \
 	lalsuite.mk \

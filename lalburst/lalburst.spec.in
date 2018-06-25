@@ -28,6 +28,8 @@ BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: scipy
+BuildRequires: glue
 Requires: gsl
 Requires: libmetaio
 Requires: lal >= @MIN_LAL_VERSION@
@@ -63,6 +65,8 @@ Requires: python
 Requires: lal-python >= @MIN_LAL_VERSION@
 Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
+Requires: scipy
+Requires: glue
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings for LALBurst.

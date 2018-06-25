@@ -1,7 +1,8 @@
 Source: lalinspiral
 Section: science
 Priority: optional
-Maintainer: Adam Mercer <adam.mercer@ligo.org>
+Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
+Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
 Build-Depends: debhelper (>= 9),
   dh-python,
   libframe-dev (>= 8.0),
@@ -17,20 +18,22 @@ Build-Depends: debhelper (>= 9),
   zlib1g-dev,
   lal-dev (>= @MIN_LAL_VERSION@~),
   lal-octave (>= @MIN_LAL_VERSION@~),
-  lal-python (>= @MIN_LAL_VERSION@~),
-  lal-python3 (>= @MIN_LAL_VERSION@~),
+  python-lal (>= @MIN_LAL_VERSION@~),
+  python3-lal (>= @MIN_LAL_VERSION@~),
   lalframe-dev (>= @MIN_LALFRAME_VERSION@~),
   lalframe-octave (>= @MIN_LALFRAME_VERSION@~),
-  lalframe-python (>= @MIN_LALFRAME_VERSION@~),
-  lalframe-python3 (>= @MIN_LALFRAME_VERSION@~),
+  python-lalframe (>= @MIN_LALFRAME_VERSION@~),
+  python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
   lalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
   lalmetaio-octave (>= @MIN_LALMETAIO_VERSION@~),
-  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
-  lalmetaio-python3 (>= @MIN_LALMETAIO_VERSION@~),
+  python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
+  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   lalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
   lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
-  lalsimulation-python (>= @MIN_LALSIMULATION_VERSION@~),
-  lalsimulation-python3 (>= @MIN_LALSIMULATION_VERSION@~)
+  python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
+  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
+  python-glue,
+  python3-glue
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
 Standards-Version: 3.9.8
@@ -70,31 +73,55 @@ Description: LSC Algorithm Library Inspiral Developers
  Inspiral library.
 
 Package: lalinspiral-python
+Depends: python-lalinspiral, ${misc:Depends}
+Architecture: all
+Priority: optional
+Section: oldlibs
+Description: transitional package
+ lalinspiral-python was renamed python-lalinspiral,
+ this is a transitional package, it can safely be removed.
+
+Package: python-lalinspiral
 Section: python
+Replaces: lalinspiral-python (<< 1.7.7-1~)
+Breaks: lalinspiral-python (<< 1.7.7-1~)
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   lalinspiral (= ${binary:Version}),
-  lal-python (>= @MIN_LAL_VERSION@~),
-  lalburst-python,
-  lalframe-python (>= @MIN_LALFRAME_VERSION@~),
-  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
-  lalsimulation-python (>= @MIN_LALSIMULATION_VERSION@~)
+  python-lal (>= @MIN_LAL_VERSION@~),
+  python-lalburst,
+  python-lalframe (>= @MIN_LALFRAME_VERSION@~),
+  python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
+  python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
+  python-glue
 Description: Python bindings for LALInspiral
  The LSC Algorithm Inspiral Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL Inspiral library.
 
 Package: lalinspiral-python3
+Depends: python3-lalinspiral, ${misc:Depends}
+Architecture: all
+Priority: optional
+Section: oldlibs
+Description: transitional package
+ lalinspiral-python3 was renamed python3-lalinspiral,
+ this is a transitional package, it can safely be removed.
+
+Package: python3-lalinspiral
 Section: python
+Replaces: lalinspiral-python3 (<< 1.7.7-1~)
+Breaks: lalinspiral-python3 (<< 1.7.7-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},
   ${shlibs:Depends},
-  lal-python3 (>= @MIN_LAL_VERSION@~),
-  lalburst-python3,
-  lalframe-python3 (>= @MIN_LALFRAME_VERSION@~),
-  lalmetaio-python3 (>= @MIN_LALMETAIO_VERSION@~),
-  lalsimulation-python3 (>= @MIN_LALSIMULATION_VERSION@~),
-  lalinspiral (= ${binary:Version})
+  python3-lal (>= @MIN_LAL_VERSION@~),
+  python3-lalburst,
+  python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
+  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
+  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
+  lalinspiral (= ${binary:Version}),
+  python3-glue
 Description: Python 3 bindings for LALInspiral
  The LSC Algorithm Inspiral Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Inspiral library.

@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 147
+# serial 148
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1074,7 +1074,6 @@ AC_ARG_WITH(
     AC_HELP_STRING([--with-nvcc-cflags=NVCC_CFLAGS],[NVCC compiler flags]),
     [
       NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}"
-    ],[
     ]
   )
 ])

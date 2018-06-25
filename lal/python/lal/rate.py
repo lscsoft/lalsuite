@@ -63,9 +63,9 @@ else:
 '''
 from scipy.signal import signaltools
 
+from ligo import segments
 
 from glue import iterutils
-from glue import segments
 from glue.ligolw import ligolw
 from glue.ligolw import array as ligolw_array
 from glue.ligolw import param as ligolw_param
@@ -922,7 +922,7 @@ class Categories(Bins):
 
 	Example with continuous values:
 
-	>>> from glue.segments import *
+	>>> from ligo.segments import *
 	>>> categories = Categories([
 	...	segmentlist([segment(1, 3), segment(5, 7)]),
 	...	segmentlist([segment(0, PosInfinity)])
@@ -1348,7 +1348,7 @@ def bins_spanned(bins, seglist):
 
 	Example:
 
-	>>> from glue.segments import *
+	>>> from ligo.segments import *
 	>>> s = segmentlist([segment(1.5, 10.333), segment(15.8, 24)])
 	>>> b = LinearBins(0, 30, 100)
 	>>> bins_spanned(b, s)

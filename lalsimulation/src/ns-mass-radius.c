@@ -167,9 +167,14 @@ int parseargs(int argc, char **argv)
         {"gamma1", required_argument, 0, '1'},
         {"gamma2", required_argument, 0, '2'},
         {"gamma3", required_argument, 0, '3'},
+        {"4parameterspectraldecomposition", no_argument, 0, 'S'},
+        {"SDgamma0", required_argument, 0, 'w'},
+        {"SDgamma1", required_argument, 0, 'x'},
+        {"SDgamma2", required_argument, 0, 'y'},
+        {"SDgamma3", required_argument, 0, 'z'},
         {0, 0, 0, 0}
     };
-    char args[] = "hf:n:F:N:PG:p:r:Qq:1:2:3:";
+    char args[] = "hf:n:F:N:PG:p:r:Qq:1:2:3:Sw:x:y:z:";
 
     /* quantities for 1-piece polytrope: */
     int polytropeFlag = 0;
@@ -178,6 +183,10 @@ int parseargs(int argc, char **argv)
     /* quantities for 4-parameter piecewise polytrope: */
     int piecewisePolytropeFlag = 0;
     double logp1_si = 0, gamma1 = 0, gamma2 = 0, gamma3 = 0;
+
+    /* quatities for 4-coeff. spectral decompositions */
+    int spectralFlag = 0;
+    double SDgamma0 = 0, SDgamma1 = 0, SDgamma2 = 0, SDgamma3 = 0;
 
     while (1) {
         int option_index = 0;
@@ -247,6 +256,23 @@ int parseargs(int argc, char **argv)
             gamma3 = atof(LALoptarg);
             break;
 
+           /* using 4-coeff. spectral decomposition */
+        case 'S':
+            spectralFlag = 1;
+            break;
+        case 'w':
+            SDgamma0 = atof(LALoptarg);
+            break;
+        case 'x':
+            SDgamma1 = atof(LALoptarg);
+            break;
+        case 'y':
+            SDgamma2 = atof(LALoptarg);
+            break;
+        case 'z':
+            SDgamma3 = atof(LALoptarg);
+            break;
+
         default:
             fprintf(stderr, "unknown error while parsing options\n");
             exit(1);
@@ -264,6 +290,12 @@ int parseargs(int argc, char **argv)
         global_eos =
             XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(logp1_si,
             gamma1, gamma2, gamma3);
+
+    /* set eos to 4-coeff. spectral decomposition */
+    if (spectralFlag == 1)
+        global_eos =
+            XLALSimNeutronStarEOS4ParameterSpectralDecomposition(SDgamma0,
+            SDgamma1, SDgamma2, SDgamma3);
 
     if (LALoptind < argc) {
         fprintf(stderr, "extraneous command line arguments:\n");
@@ -309,6 +341,17 @@ int usage(const char *program)
         "\t-2 Gamma_2, --gamma2=Gamma_2     \tadiabatic index 10^17.7--10^18 kg/m^3\n");
     fprintf(stderr,
         "\t-3 Gamma_3, --gamma3=Gamma_3     \tadiabatic index >10^18.0 kg/m^3\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr,
+        "\t-S --4paramspectraldecomp        \tuse 4-parameter spectral decomposition (PRD 82, 103011 (2010))\n");
+    fprintf(stderr,
+        "\t-w SDgamma0, --SDgamma0=SDgamma0 \tadiabatic index spectral decomposition coefficient 1 0.2--2.0\n");
+    fprintf(stderr,
+        "\t-x SDgamma1, --SDgamma1=SDgamma1 \tadiabatic index spectral decomposition coefficient 2 -1.6--1.7\n");
+    fprintf(stderr,
+        "\t-y SDgamma2, --SDgamma2=SDgamma2 \tadiabatic index spectral decomposition coefficient 3 -0.8--0.6\n");
+    fprintf(stderr,
+        "\t-z SDgamma3, --SDgamma3=SDgamma3 \tadiabatic index spectral decomposition coefficient 4 -0.2--0.2\n");
     fprintf(stderr, "\n");
     fprintf(stderr,
         "\t-N NPTS, --npts=NPTS         \toutput NPTS points [%ld]\n",
