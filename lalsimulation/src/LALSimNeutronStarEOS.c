@@ -78,7 +78,7 @@ struct tagLALSimNeutronStarEOS {
 /** @endcond */
 
 /** Recognised equations of state names */
-const char * const lalSimNeutronStarEOSNames[45] = {
+const char * const lalSimNeutronStarEOSNames[64] = {
         "ALF1", "ALF2", "ALF3", "ALF4",
         "AP1", "AP2", "AP3", "AP4", "APR4_EPP",
         "BBB2", "BGN1H1", "BPAL12", 
@@ -91,7 +91,13 @@ const char * const lalSimNeutronStarEOSNames[45] = {
         "QMC700",
         "SLY4", "SLY",
         "SQM1", "SQM2", "SQM3",
-        "WFF1", "WFF2", "WFF3"
+        "WFF1", "WFF2", "WFF3",
+        /* From here, EOSs are coming from CompOSE via Ian */
+        "APR", "BHF_BBB2",
+        "KDE0V", "KDE0V1", "RS", "SK255", "SK272",
+        "SKA", "SKB", "SKI2", "SKI3", "SKI4", "SKI5", "SKI6",
+        "SKMP", "SKOP",
+        "SLY2", "SLY230A", "SLY9"
     };
 
 /**

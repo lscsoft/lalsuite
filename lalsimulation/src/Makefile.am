@@ -88,7 +88,26 @@ EOSDATAFILES = \
 	LALSimNeutronStarEOS_SQM3.dat \
 	LALSimNeutronStarEOS_WFF1.dat \
 	LALSimNeutronStarEOS_WFF2.dat \
-	LALSimNeutronStarEOS_WFF3.dat
+	LALSimNeutronStarEOS_WFF3.dat \
+	LALSimNeutronStarEOS_APR.dat \
+	LALSimNeutronStarEOS_BHF_BBB2.dat \
+	LALSimNeutronStarEOS_KDE0V.dat \
+	LALSimNeutronStarEOS_KDE0V1.dat \
+	LALSimNeutronStarEOS_RS.dat \
+	LALSimNeutronStarEOS_SK255.dat \
+	LALSimNeutronStarEOS_SK272.dat \
+	LALSimNeutronStarEOS_SKA.dat \
+	LALSimNeutronStarEOS_SKB.dat \
+	LALSimNeutronStarEOS_SKI2.dat \
+	LALSimNeutronStarEOS_SKI3.dat \
+	LALSimNeutronStarEOS_SKI4.dat \
+	LALSimNeutronStarEOS_SKI5.dat \
+	LALSimNeutronStarEOS_SKI6.dat \
+	LALSimNeutronStarEOS_SKMP.dat \
+	LALSimNeutronStarEOS_SKOP.dat \
+	LALSimNeutronStarEOS_SLY2.dat \
+	LALSimNeutronStarEOS_SLY230A.dat \
+	LALSimNeutronStarEOS_SLY9.dat
 
 LDADD = liblalsimulation.la
 
