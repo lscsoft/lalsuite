@@ -75,13 +75,12 @@ const char list_extra_parameters[34][16] = {"dchi0","dchi1","dchi2","dchi3","dch
 
 const UINT4 N_extra_params = 34;
 
-/** Return the quadrupole moment of a neutron star given its lambda
-    We use the relations defined here. https://arxiv.org/pdf/1302.4499.pdf.
-    Note that the convention we use is that:
-    .. math::
-        \mathrm{dquadmon} = \bar{Q} - 1.
-    Where :math:`\bar{Q}` (dimensionless) is the reduced quadrupole moment.
-*/
+/* Return the quadrupole moment of a neutron star given its lambda
+ * We use the relations defined here. https://arxiv.org/pdf/1302.4499.pdf.
+ * Note that the convention we use is that:
+ * \f$\mathrm{dquadmon} = \bar{Q} - 1.\f$
+ * Where \f$\bar{Q}\f$ (dimensionless) is the reduced quadrupole moment.
+ */
 static REAL8 dquadmon_from_lambda(REAL8 lambdav);
 static REAL8 dquadmon_from_lambda(REAL8 lambdav)
 {
@@ -837,6 +836,26 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       REAL8 dQuadMon2 = dquadmon_from_lambda(lambda2);
       XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars, dQuadMon1);
       XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars, dQuadMon2);
+
+      /* Calculate maximum frequency */
+      /* If both lambdas are non-zero compute EOS-dependent f_max */
+      if((lambda1 > 0) && (lambda2 > 0) && (approximant == TaylorF2))
+      {
+        /* Start with ISCO */
+        f_max = 1. / (pow(6,1.5) * LAL_PI * (m1*LAL_MTSUN_SI + m2*LAL_MTSUN_SI));
+        REAL8 log_lambda1 = log(lambda1);
+        REAL8 log_lambda2 = log(lambda2);
+        REAL8 compactness1 = 0.371 - 0.0391 * log_lambda1 + 0.001056 * log_lambda1 * log_lambda1;
+        REAL8 compactness2 = 0.371 - 0.0391 * log_lambda2 + 0.001056 * log_lambda2 * log_lambda2;
+        REAL8 rad1 = m1*LAL_MTSUN_SI / compactness1;
+        REAL8 rad2 = m2*LAL_MTSUN_SI / compactness2;
+        /* Use the smaller of ISCO and the EOS-dependent termination */
+        REAL8 fmax_eos = 1. / LAL_PI * pow((m1*LAL_MTSUN_SI + m2*LAL_MTSUN_SI) / pow((rad1 + rad2),3.0),0.5);
+        if (fmax_eos < f_max)
+        {
+          f_max = fmax_eos;
+        }
+      }
     
       /* Add derived quantities for output */
       LALInferenceAddVariable(model->params, "radius1", &r1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
