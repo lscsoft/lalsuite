@@ -90,11 +90,6 @@ LALDict *IMRPhenomHM_setup_mode_array(
     else
     {
         XLAL_PRINT_INFO("Using custom modes for PhenomHM.\n");
-        XLAL_PRINT_ERROR("Custom mode array for PhenomHM not suppoted.\n");
-        /* TODO: loop over mode array and throw an error if
-         there is a mode that is not included in the model */
-        //FIXME: for example if someone tries to add the (l,m)=(2,0)
-        //mode we need to throw an error.
     }
 
     XLALDestroyValue(ModeArray);
