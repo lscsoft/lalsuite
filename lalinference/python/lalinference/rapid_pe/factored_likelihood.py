@@ -146,33 +146,44 @@ def factored_log_likelihood(extr_params, rholms_intp, crossTerms, Lmax):
     psi = extr_params.psi
     dist = extr_params.dist
 
-    # N.B.: The Ylms are a function of - phiref b/c we are passively rotating
-    # the source frame, rather than actively rotating the binary.
-    # Said another way, the m^th harmonic of the waveform should transform as
-    # e^{- i m phiref}, but the Ylms go as e^{+ i m phiref}, so we must give
-    # - phiref as an argument so Y_lm h_lm has the proper phiref dependence
-    # FIXME: Strictly speaking, this should be inside the detector loop because
-    # there *could* be different l,m pairs for different detectors. This never
-    # happens in practice, so it's pulled out here, and we use the first
-    # detector as a reference.
-    Ylms = compute_spherical_harmonics(Lmax, incl, -phiref, rholms_intp[rholms_intp.keys()[0]])
+    # use EXTREMELY many bits
+    i = 0
+    _lnL = np.zeros(np.shape(extr_params.phi), dtype=np.float128)
 
-    lnL = 0.
-    for det in detectors:
-        CT = crossTerms[det]
+    for RA, DEC, phiref, incl, psi, tref, dist in zip(extr_params.phi, \
+                                        extr_params.theta, extr_params.phiref, \
+                                        extr_params.incl, extr_params.psi, \
+                                        extr_params.tref, extr_params.dist):
+        # N.B.: The Ylms are a function of - phiref b/c we are passively rotating
+        # the source frame, rather than actively rotating the binary.
+        # Said another way, the m^th harmonic of the waveform should transform as
+        # e^{- i m phiref}, but the Ylms go as e^{+ i m phiref}, so we must give
+        # - phiref as an argument so Y_lm h_lm has the proper phiref dependence
+        # FIXME: Strictly speaking, this should be inside the detector loop because
+        # there *could* be different l,m pairs for different detectors. This never
+        # happens in practice, so it's pulled out here, and we use the first
+        # detector as a reference.
+        Ylms = compute_spherical_harmonics(Lmax, incl, -phiref, rholms_intp[rholms_intp.keys()[0]])
 
-        # This is the GPS time at the detector
-        t_det = compute_arrival_time_at_detector(det, RA, DEC, tref)
-        F = complex_antenna_factor(det, RA, DEC, psi, t_det)
+        lnL = 0.
+        for det in detectors:
+            CT = crossTerms[det]
 
-        det_rholms = {}  # rholms evaluated at time at detector
-        for key in rholms_intp[det]:
-            func = rholms_intp[det][key]
-            det_rholms[key] = func(float(t_det))
+            # This is the GPS time at the detector
+            t_det = compute_arrival_time_at_detector(det, RA, DEC, tref)
+            F = complex_antenna_factor(det, RA, DEC, psi, t_det)
 
-        lnL += single_detector_log_likelihood(det_rholms, CT, Ylms, F, dist)
+            det_rholms = {}  # rholms evaluated at time at detector
+            for key in rholms_intp[det]:
+                func = rholms_intp[det][key]
+                det_rholms[key] = func(float(t_det))
 
-    return lnL
+            lnL += single_detector_log_likelihood(det_rholms, CT, Ylms, F, dist)
+
+        _lnL[i] = lnL
+        i += 1
+
+    return _lnL
 
 def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, rholms, crossTerms, det_epochs, Lmax, interpolate=False):
     """
@@ -201,44 +212,56 @@ def factored_log_likelihood_time_marginalized(tvals, extr_params, rholms_intp, r
     psi = extr_params.psi
     dist = extr_params.dist
 
-    # N.B.: The Ylms are a function of - phiref b/c we are passively rotating
-    # the source frame, rather than actively rotating the binary.
-    # Said another way, the m^th harmonic of the waveform should transform as
-    # e^{- i m phiref}, but the Ylms go as e^{+ i m phiref}, so we must give
-    # - phiref as an argument so Y_lm h_lm has the proper phiref dependence
-    # FIXME: Strictly speaking, this should be inside the detector loop because
-    # there *could* be different l,m pairs for different detectors. This never
-    # happens in practice, so it's pulled out here, and we use the first
-    # detector as a reference.
-    Ylms = compute_spherical_harmonics(Lmax, incl, -phiref, rholms[rholms.keys()[0]])
+    # use EXTREMELY many bits
+    i = 0
+    _lnL = np.zeros(np.shape(extr_params.phi), dtype=np.float128)
 
-    lnL = 0.
-    delta_t = tvals[1] - tvals[0]
-    for det in detectors:
-        CT = crossTerms[det]
-        F = complex_antenna_factor(det, RA, DEC, psi, tref)
-        rho_epoch = float(det_epochs[det])
+    for RA, DEC, phiref, incl, psi, dist in zip(extr_params.phi, \
+                                        extr_params.theta, extr_params.phiref, \
+                                        extr_params.incl, extr_params.psi, \
+                                        extr_params.dist):
 
-        # This is the GPS time at the detector
-        t_det = compute_arrival_time_at_detector(det, RA, DEC, tref)
-        det_rholms = {}  # rholms evaluated at time at detector
-        if ( interpolate ):
-            # use the interpolating functions. 
-            for key, func in rholms_intp[det].iteritems():
-                det_rholms[key] = func(float(t_det)+tvals)
-        else:
-            # do not interpolate, just use nearest neighbors.
-            for key, rhoTS in rholms[det].iteritems():
-	        # PRB: these can be moved outside this loop to after t_det
-                tfirst = float(t_det)+tvals[0]
-                ifirst = int((tfirst - rho_epoch) / delta_t + 0.5)
-                ilast = ifirst + len(tvals)
-                det_rholms[key] = rhoTS[ifirst:ilast]
+        # N.B.: The Ylms are a function of - phiref b/c we are passively rotating
+        # the source frame, rather than actively rotating the binary.
+        # Said another way, the m^th harmonic of the waveform should transform as
+        # e^{- i m phiref}, but the Ylms go as e^{+ i m phiref}, so we must give
+        # - phiref as an argument so Y_lm h_lm has the proper phiref dependence
+        # FIXME: Strictly speaking, this should be inside the detector loop because
+        # there *could* be different l,m pairs for different detectors. This never
+        # happens in practice, so it's pulled out here, and we use the first
+        # detector as a reference.
+        Ylms = compute_spherical_harmonics(Lmax, incl, -phiref, rholms[rholms.keys()[0]])
 
-        lnL += single_detector_log_likelihood(det_rholms, CT, Ylms, F, dist)
+        lnL = 0.
+        delta_t = tvals[1] - tvals[0]
+        for det in detectors:
+            CT = crossTerms[det]
+            F = complex_antenna_factor(det, RA, DEC, psi, tref)
+            rho_epoch = float(det_epochs[det])
 
-    maxlnL = np.max(lnL)
-    return maxlnL + np.log(np.sum(np.exp(lnL - maxlnL)) * (tvals[1]-tvals[0]))
+            # This is the GPS time at the detector
+            t_det = compute_arrival_time_at_detector(det, RA, DEC, tref)
+            det_rholms = {}  # rholms evaluated at time at detector
+            if ( interpolate ):
+                # use the interpolating functions. 
+                for key, func in rholms_intp[det].iteritems():
+                    det_rholms[key] = func(float(t_det)+tvals)
+            else:
+                # do not interpolate, just use nearest neighbors.
+                for key, rhoTS in rholms[det].iteritems():
+                # PRB: these can be moved outside this loop to after t_det
+                    tfirst = float(t_det)+tvals[0]
+                    ifirst = int((tfirst - rho_epoch) / delta_t + 0.5)
+                    ilast = ifirst + len(tvals)
+                    det_rholms[key] = rhoTS[ifirst:ilast]
+
+            lnL += single_detector_log_likelihood(det_rholms, CT, Ylms, F, dist)
+
+        maxlnL = np.max(lnL)
+        _lnL[i] = maxlnL + np.log(np.sum(np.exp(lnL - maxlnL)) * (tvals[1]-tvals[0]))
+        i += 1
+
+    return _lnL
 
 def single_detector_log_likelihood(rholm_vals, crossTerms, Ylms, F, dist):
     """
