@@ -627,6 +627,11 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
           switch(errnum)
           {
             case XLAL_EUSR0: /* Template generation failed in a known way, set -Inf likelihood */
+		      /* Free up allocated vectors */
+              if(dh_S_tilde) XLALDestroyCOMPLEX16Vector(dh_S_tilde);
+              if(dh_S) XLALDestroyREAL8Vector(dh_S);
+              if(dh_S_phase_tilde) XLALDestroyCOMPLEX16Vector(dh_S_phase_tilde);
+              if(dh_S_phase) XLALDestroyREAL8Vector(dh_S_phase);
               if(model->roq_flag)
               {
                 if ( model->roq->hptildeLinear ) XLALDestroyCOMPLEX16FrequencySeries(model->roq->hptildeLinear);
