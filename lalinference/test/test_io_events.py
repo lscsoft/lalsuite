@@ -155,9 +155,12 @@ def test_detector_disabled():
         assert len(event.singles) == 1
         assert event.singles[0].detector == 'L1'
 
+    # py2 and py3 differ in the ordering of set elements, so build upfront:
+    ifoset = '{%s}' % ' '.join({'H1', 'L1'})
+
     # Now test that exceptions are raised when they are called for.
     expected_message = ('Disabling detectors {H1, L1} would have no effect on '
-                        'this event with detectors {H1 L1}')
+                        'this event with detectors %s' % ifoset)
     nonraising_source = events.detector_disabled.open(
         base_source, ['H1, L1'], raises=False)
     raising_source = events.detector_disabled.open(
@@ -170,7 +173,7 @@ def test_detector_disabled():
 
     # Now test that exceptions are raised when they are called for.
     expected_message = ('Disabling detectors {V1} would have no effect on '
-                        'this event with detectors {H1 L1}')
+                        'this event with detectors %s' % ifoset)
     nonraising_source = events.detector_disabled.open(
         base_source, ['V1'], raises=False)
     raising_source = events.detector_disabled.open(
