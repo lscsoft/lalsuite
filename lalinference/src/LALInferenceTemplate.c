@@ -40,6 +40,7 @@
 #include <lal/LALSimInspiral.h>
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceMultibanding.h>
+#include <lal/LALSimNeutronStar.h>
 
 /* LIB imports*/
 #include <lal/LALInferenceBurstRoutines.h>
@@ -74,6 +75,21 @@ const char list_extra_parameters[34][16] = {"dchi0","dchi1","dchi2","dchi3","dch
 
 const UINT4 N_extra_params = 34;
 
+/* Return the quadrupole moment of a neutron star given its lambda
+ * We use the relations defined here. https://arxiv.org/pdf/1302.4499.pdf.
+ * Note that the convention we use is that:
+ * \f$\mathrm{dquadmon} = \bar{Q} - 1.\f$
+ * Where \f$\bar{Q}\f$ (dimensionless) is the reduced quadrupole moment.
+ */
+static REAL8 dquadmon_from_lambda(REAL8 lambdav);
+static REAL8 dquadmon_from_lambda(REAL8 lambdav)
+{
+    
+    double ll = log(lambdav);
+    double ai = .194, bi = .0936, ci = 0.0474, di = -4.21e-3, ei = 1.23e-4;
+    double ln_quad_moment = ai + bi*ll + ci*ll*ll + di*pow(ll,3.0) + ei*pow(ll,4.0);
+    return(exp(ln_quad_moment) - 1.0);
+}
 
 static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src, COMPLEX16FrequencySeries *dest);
 static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src, COMPLEX16FrequencySeries *dest)
@@ -358,6 +374,23 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
     XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars,lambda2);
   }
 
+  /* ==== 4-PIECE POLYTROPE EOS PARAMETERS ==== */
+  REAL8 logp1 = 0.;
+  REAL8 gamma1 = 0.;
+  REAL8 gamma2 = 0.;
+  REAL8 gamma3 = 0.;
+  if(LALInferenceCheckVariable(model->params, "logp1")&&LALInferenceCheckVariable(model->params, "gamma1")&&LALInferenceCheckVariable(model->params, "gamma2")&&LALInferenceCheckVariable(model->params, "gamma3")){
+    REAL8 lambda1 = 0.;
+    REAL8 lambda2 = 0.;
+    logp1 = *(REAL8*) LALInferenceGetVariable(model->params, "logp1");
+    gamma1 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma1");
+    gamma2 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma2");
+    gamma3 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma3");
+    // Find lambda1,2(m1,2|eos)
+    LALInferenceLogp1GammasMasses2Lambdas(logp1,gamma1,gamma2,gamma3,m1,m2,&lambda1,&lambda2);
+    XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
+    XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+  }
 
   /* Only use GR templates */
   /* Fill in the extra parameters for testing GR, if necessary */
@@ -785,7 +818,79 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
     XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
   }
+  if(model->eos_fam)
+  {
+      LALSimNeutronStarFamily *eos_fam = model->eos_fam;
+      REAL8 r1=0, r2=0, k2_1=0, k2_2=0, lambda1=0, lambda2=0;
+      REAL8 mass_max = XLALSimNeutronStarMaximumMass(eos_fam) / LAL_MSUN_SI;
+      REAL8 mass_min = XLALSimNeutronStarFamMinimumMass(eos_fam) / LAL_MSUN_SI;
 
+      if(m1<mass_max && m1>mass_min)
+      {
+        /* Compute l1, l2 from mass and EOS */
+        r1 = XLALSimNeutronStarRadius(m1*LAL_MSUN_SI, eos_fam);
+        k2_1 = XLALSimNeutronStarLoveNumberK2(m1*LAL_MSUN_SI, eos_fam);
+        lambda1 = (2./3.)*k2_1 * pow(r1/(m1*LAL_MRSUN_SI), 5.0);
+      }
+      if(m2<mass_max && m2>mass_min)
+      {
+         r2 = XLALSimNeutronStarRadius(m2*LAL_MSUN_SI, eos_fam);
+         k2_2 = XLALSimNeutronStarLoveNumberK2(m2*LAL_MSUN_SI, eos_fam);
+         lambda2 = (2./3.)*k2_2 * pow(r2/(m2*LAL_MRSUN_SI), 5.0);          
+      }
+      /* Set waveform params */
+      XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
+      XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+      REAL8 dQuadMon1 = dquadmon_from_lambda(lambda1);
+      REAL8 dQuadMon2 = dquadmon_from_lambda(lambda2);
+      XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars, dQuadMon1);
+      XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars, dQuadMon2);
+
+      /* Calculate maximum frequency */
+      /* If both lambdas are non-zero compute EOS-dependent f_max */
+      if((lambda1 > 0) && (lambda2 > 0) && (approximant == TaylorF2))
+      {
+        /* Start with ISCO */
+        f_max = 1. / (pow(6,1.5) * LAL_PI * (m1*LAL_MTSUN_SI + m2*LAL_MTSUN_SI));
+        REAL8 log_lambda1 = log(lambda1);
+        REAL8 log_lambda2 = log(lambda2);
+        REAL8 compactness1 = 0.371 - 0.0391 * log_lambda1 + 0.001056 * log_lambda1 * log_lambda1;
+        REAL8 compactness2 = 0.371 - 0.0391 * log_lambda2 + 0.001056 * log_lambda2 * log_lambda2;
+        REAL8 rad1 = m1*LAL_MTSUN_SI / compactness1;
+        REAL8 rad2 = m2*LAL_MTSUN_SI / compactness2;
+        /* Use the smaller of ISCO and the EOS-dependent termination */
+        REAL8 fmax_eos = 1. / LAL_PI * pow((m1*LAL_MTSUN_SI + m2*LAL_MTSUN_SI) / pow((rad1 + rad2),3.0),0.5);
+        if (fmax_eos < f_max)
+        {
+          f_max = fmax_eos;
+        }
+      }
+    
+      /* Add derived quantities for output */
+      LALInferenceAddVariable(model->params, "radius1", &r1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(model->params, "radius2", &r2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(model->params, "lambda1", &lambda1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(model->params, "lambda2", &lambda2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+  }
+
+  /* ==== 4-PIECE POLYTROPE EOS PARAMETERS ==== */
+  REAL8 logp1 = 0.;
+  REAL8 gamma1 = 0.;
+  REAL8 gamma2 = 0.;
+  REAL8 gamma3 = 0.;
+  if(LALInferenceCheckVariable(model->params, "logp1")&&LALInferenceCheckVariable(model->params, "gamma1")&&LALInferenceCheckVariable(model->params, "gamma2")&&LALInferenceCheckVariable(model->params, "gamma3")){
+    REAL8 lambda1 = 0.;
+    REAL8 lambda2 = 0.;
+    logp1 = *(REAL8*) LALInferenceGetVariable(model->params, "logp1");
+    gamma1 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma1");
+    gamma2 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma2");
+    gamma3 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma3");
+    // Find lambda1,2(m1,2|eos)
+    LALInferenceLogp1GammasMasses2Lambdas(logp1,gamma1,gamma2,gamma3,m1,m2,&lambda1,&lambda2);
+    XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
+    XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+
+  }
 
   /* Only use GR templates */
   /* Fill in the extra parameters for testing GR, if necessary */
@@ -1263,6 +1368,24 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
         LALInferenceLambdaTsEta2Lambdas(lambdaT,dLambdaT,sym_mass_ratio_eta,&lambda1,&lambda2);
         XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
         XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+    }
+
+    /* ==== 4-PIECE POLYTROPE EOS PARAMETERS ==== */
+    REAL8 logp1 = 0.;
+    REAL8 gamma1 = 0.;
+    REAL8 gamma2 = 0.;
+    REAL8 gamma3 = 0.;
+    if(LALInferenceCheckVariable(model->params, "logp1")&&LALInferenceCheckVariable(model->params, "gamma1")&&LALInferenceCheckVariable(model->params, "gamma2")&&LALInferenceCheckVariable(model->params, "gamma3")){
+      REAL8 lambda1 = 0.;
+      REAL8 lambda2 = 0.;
+      logp1 = *(REAL8*) LALInferenceGetVariable(model->params, "logp1");
+      gamma1 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma1");
+      gamma2 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma2");
+      gamma3 = *(REAL8*) LALInferenceGetVariable(model->params, "gamma3");
+      // Find lambda1,2(m1,2|eos)
+      LALInferenceLogp1GammasMasses2Lambdas(logp1,gamma1,gamma2,gamma3,m1,m2,&lambda1,&lambda2);
+      XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
+      XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
     }
 
     /* Only use GR templates */

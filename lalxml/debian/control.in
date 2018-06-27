@@ -1,7 +1,8 @@
 Source: lalxml
 Section: science
 Priority: optional
-Maintainer: Adam Mercer <adam.mercer@ligo.org>
+Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
+Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
 Build-Depends: debhelper (>= 9),
   dh-python,
   libgsl-dev | libgsl0-dev (>= 1.9),
@@ -16,8 +17,8 @@ Build-Depends: debhelper (>= 9),
   zlib1g-dev,
   lal-dev (>= @MIN_LAL_VERSION@~),
   lal-octave (>= @MIN_LAL_VERSION@~),
-  lal-python (>= @MIN_LAL_VERSION@~),
-  lal-python3 (>= @MIN_LAL_VERSION@~)
+  python-lal (>= @MIN_LAL_VERSION@~),
+  python3-lal (>= @MIN_LAL_VERSION@~)
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
 Standards-Version: 3.9.8
@@ -50,24 +51,46 @@ Description: LSC Algorithm Library XML Developers
  XML library.
 
 Package: lalxml-python
+Depends: python-lalxml, ${misc:Depends}
+Architecture: all
+Priority: optional
+Section: oldlibs
+Description: transitional package
+ lalxml-python was renamed python-lalxml,
+ this is a transitional package, it can safely be removed.
+
+Package: python-lalxml
+Replaces: lalxml-python (<< 1.2.4-1~)
+Breaks: lalxml-python (<< 1.2.4-1~)
 Section: python
 Architecture: any
 Depends: ${misc:Depends},
   ${python:Depends},
   ${shlibs:Depends},
-  lal-python (>= @MIN_LAL_VERSION@~),
+  python-lal (>= @MIN_LAL_VERSION@~),
   lalxml (= ${binary:Version})
 Description: Python bindings for LALXML
  The LSC Algorithm XML Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL XML library.
 
 Package: lalxml-python3
+Depends: python-lalxml3, ${misc:Depends}
+Architecture: all
+Priority: optional
+Section: oldlibs
+Description: transitional package
+ lalxml-python3 was renamed python3-lalxml,
+ this is a transitional package, it can safely be removed.
+
+Package: python3-lalxml
 Section: python
+Replaces: lalxml-python3 (<< 1.2.4-1~)
+Breaks: lalxml-python3 (<< 1.2.4-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},
   ${shlibs:Depends},
-  lal-python3 (>= @MIN_LAL_VERSION@~),
+  python3-lal (>= @MIN_LAL_VERSION@~),
   lalxml (= ${binary:Version})
 Description: Python 3 bindings for LALXML
  The LSC Algorithm XML Library for gravitational wave data analysis.

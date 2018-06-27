@@ -25,16 +25,17 @@
 
 
 from __future__ import print_function
-from bisect import bisect_left, bisect_right
+from bisect import bisect_left
 import itertools
 import math
 import sys
+import time
 
 
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
-from glue.ligolw.utils import coincs as ligolw_coincs
 from glue import offsetvector
+import lal
 from lalburst import snglcoinc
 
 
@@ -104,102 +105,7 @@ InspiralCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 
 
 
 #
-# Custom snglcoinc.CoincTables subclass.
-#
-
-
-class InspiralCoincTables(snglcoinc.CoincTables):
-	def __init__(self, xmldoc, likelihood_func = None):
-		snglcoinc.CoincTables.__init__(self, xmldoc)
-
-		#
-		# configure the likelihood ratio evaluator
-		#
-
-		self.likelihood_func = likelihood_func
-
-		#
-		# find the coinc_inspiral table or create one if not found
-		#
-
-		try:
-			self.coinc_inspiral_table = lsctables.CoincInspiralTable.get_table(xmldoc)
-		except ValueError:
-			self.coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
-			xmldoc.childNodes[0].appendChild(self.coinc_inspiral_table)
-
-
-	def coinc_rows(self, process_id, time_slide_id, coinc_def_id, events, seglists = None):
-		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, coinc_def_id, events)
-
-		#
-		# populate the coinc_inspiral table:
-		#
-		# - end_time is the end time of the first trigger in
-		#   alphabetical order by instrument (!?) time-shifted
-		#   according to the coinc's offset vector
-		# - mass is average of total masses
-		# - mchirp is average of mchirps
-		# - snr is root-sum-square of SNRs
-		# - false-alarm rates are blank
-		#
-
-		coinc_inspiral = self.coinc_inspiral_table.RowType()
-		coinc_inspiral.coinc_event_id = coinc.coinc_event_id	# = None
-		coinc_inspiral.mass = sum(event.mass1 + event.mass2 for event in events) / len(events)
-		coinc_inspiral.mchirp = sum(event.mchirp for event in events) / len(events)
-		coinc_inspiral.snr = math.sqrt(sum(event.snr**2 for event in events))
-		coinc_inspiral.false_alarm_rate = None
-		coinc_inspiral.combined_far = None
-		coinc_inspiral.minimum_duration = None
-		offsetvector = self.time_slide_index[time_slide_id]
-		coinc_inspiral.end = end = coinc_inspiral_end_time(events, offsetvector)
-		coinc_inspiral.instruments = (event.ifo for event in events)
-
-		#
-		# record the instruments that were on at the time of the
-		# coinc.  instruments that provide triggers are, by
-		# definition, on.  note that the end time of the coinc
-		# must be unslid to compare with the instrument segment
-		# lists
-		#
-
-		coinc.insts = set(event.ifo for event in events)
-		if seglists is not None:
-			coinc.insts |= set(instrument for instrument, segs in seglists.items() if end - offsetvector[instrument] in segs)
-
-		#
-		# if a likelihood ratio calculator is available, assign a
-		# likelihood ratio to the coinc
-		#
-
-		if self.likelihood_func is not None:
-			coinc.likelihood = self.likelihood_func(events, offsetvector)
-
-		#
-		# done
-		#
-
-		return coinc, coincmaps, coinc_inspiral
-
-
-	@staticmethod
-	def ntuple_comparefunc(events, offset_vector):
-		"""
-		Default ntuple test function.  Accept all ntuples.
-		"""
-		return False
-
-
-	def append_coinc(self, coinc_event, coinc_event_maps, coinc_inspiral):
-		coinc_event = super(InspiralCoincTables, self).append_coinc(coinc_event, coinc_event_maps)
-		coinc_inspiral.coinc_event_id = coinc_event.coinc_event_id
-		self.coinc_inspiral_table.append(coinc_inspiral)
-		return coinc_event
-
-
-#
-# Custom function to compute the coinc_inspiral.end_time
+# Definition of coinc_inspiral.end_time
 #
 
 
@@ -226,6 +132,89 @@ def coinc_inspiral_end_time(events, offset_vector):
 	"""
 	event = max(events, key = lambda event: event.snr)
 	return event.end + offset_vector[event.ifo]
+
+
+#
+# Custom snglcoinc.CoincTables subclass.
+#
+
+
+class InspiralCoincTables(snglcoinc.CoincTables):
+	def __init__(self, xmldoc, coinc_definer_row):
+		super(InspiralCoincTables, self).__init__(xmldoc, coinc_definer_row)
+
+		#
+		# find the coinc_inspiral table or create one if not found
+		#
+
+		try:
+			self.coinc_inspiral_table = lsctables.CoincInspiralTable.get_table(xmldoc)
+		except ValueError:
+			self.coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
+			xmldoc.childNodes[0].appendChild(self.coinc_inspiral_table)
+
+
+	def coinc_rows(self, process_id, time_slide_id, events, seglists = None):
+		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, events)
+
+		#
+		# populate the coinc_inspiral table:
+		#
+		# - end_time is the end time of the first trigger in
+		#   alphabetical order by instrument (!?) time-shifted
+		#   according to the coinc's offset vector
+		# - mass is average of total masses
+		# - mchirp is average of mchirps
+		# - snr is root-sum-square of SNRs
+		# - false-alarm rates are blank
+		#
+
+		offsetvector = self.time_slide_index[time_slide_id]
+		end = coinc_inspiral_end_time(events, offsetvector)
+		coinc_inspiral = self.coinc_inspiral_table.RowType(
+			coinc_event_id = coinc.coinc_event_id,	# = None
+			mass = sum(event.mass1 + event.mass2 for event in events) / len(events),
+			mchirp = sum(event.mchirp for event in events) / len(events),
+			snr = math.sqrt(sum(event.snr**2. for event in events)),
+			false_alarm_rate = None,
+			combined_far = None,
+			minimum_duration = None,
+			end = end,
+			instruments = (event.ifo for event in events)
+		)
+
+		#
+		# record the instruments that were on at the time of the
+		# coinc.  instruments that provide triggers are, by
+		# definition, on.  note that the end time of the coinc
+		# must be unslid to compare with the instrument segment
+		# lists
+		#
+
+		coinc.insts = set(event.ifo for event in events)
+		if seglists is not None:
+			coinc.insts |= set(instrument for instrument, segs in seglists.items() if end - offsetvector[instrument] in segs)
+
+		#
+		# done
+		#
+
+		return coinc, coincmaps, coinc_inspiral
+
+
+	@staticmethod
+	def ntuple_comparefunc(events, offset_vector):
+		"""
+		Default ntuple test function.  Accept all ntuples.
+		"""
+		return False
+
+
+	def append_coinc(self, coinc_event, coinc_event_maps, coinc_inspiral):
+		coinc_event = super(InspiralCoincTables, self).append_coinc(coinc_event, coinc_event_maps)
+		coinc_inspiral.coinc_event_id = coinc_event.coinc_event_id
+		self.coinc_inspiral_table.append(coinc_inspiral)
+		return coinc_event
 
 
 #
@@ -274,7 +263,7 @@ class InspiralEventList(snglcoinc.EventList):
 		# times in this list.
 		#
 
-		end = event_a.end + offset_a - self.offset
+		end = event_a.end + offset_a
 
 		#
 		# the coincidence window
@@ -284,9 +273,13 @@ class InspiralEventList(snglcoinc.EventList):
 
 		#
 		# extract the subset of events from this list that pass
-		# coincidence with event_a (use bisection searches for the
-		# minimum and maximum allowed end times to quickly identify
-		# a subset of the full list)
+		# coincidence with event_a.  use a bisection search for the
+		# minimum allowed end time and a brute-force scan for the
+		# maximum allowed end time.  because the number of events
+		# in the coincidence window is generally quite small, the
+		# brute-force scan has a lower expected operation count
+		# than a second bisection search to find the upper bound in
+		# the sequence
 		#
 
 		try:
@@ -297,7 +290,8 @@ class InspiralEventList(snglcoinc.EventList):
 			# typical today so trapping the exception is more
 			# efficient than testing
 			return ()
-		return events[bisect_left(events, end - coincidence_window) : bisect_right(events, end + coincidence_window)]
+		stop = end + coincidence_window
+		return tuple(itertools.takewhile(lambda event: event.end <= stop, events[bisect_left(events, end - coincidence_window):]))
 
 
 #
@@ -309,66 +303,27 @@ class InspiralEventList(snglcoinc.EventList):
 #
 
 
-def replicate_threshold(threshold, instruments):
-	"""
-	From a single threshold and a list of instruments, return a
-	dictionary whose keys are every instrument pair (both orders), and
-	whose values are all the same single threshold.
-
-	Example:
-
-	>>> replicate_threshold(6, ["H1", "H2"])
-	{("H1", "H2"): 6, ("H2", "H1"): 6}
-	"""
-	# uniqueify
-	instruments = list(set(instruments))
-	# first order
-	thresholds = dict((pair, threshold) for pair in itertools.combinations(instruments, 2))
-	# other order
-	instruments.reverse()
-	thresholds.update(dict((pair, threshold) for pair in itertools.combinations(instruments, 2)))
-	# done
-	return thresholds
-
-
 def ligolw_thinca(
 	xmldoc,
 	process_id,
-	coinc_definer_row,
-	thresholds,
+	delta_t,
 	ntuple_comparefunc = InspiralCoincTables.ntuple_comparefunc,
 	seglists = None,
 	veto_segments = None,
 	likelihood_func = None,
+	fapfar = None,
 	min_instruments = 2,
 	min_log_L = None,
+	coinc_definer_row = InspiralCoincDef,
 	verbose = False
 ):
-	#
-	# validate input
-	#
-
-	if min_instruments < 1:
-		raise ValueError("min_instruments (=%d) must be >= 1" % min_instruments)
-	if min_log_L is not None and likelihood_func is None:
-		raise ValueError("must supply likelihood_func to impose min_log_L cut")
-
 	#
 	# prepare the coincidence table interface.
 	#
 
 	if verbose:
 		print("indexing ...", file=sys.stderr)
-	coinc_tables = InspiralCoincTables(xmldoc, likelihood_func = likelihood_func)
-	coinc_def_id = ligolw_coincs.get_coinc_def_id(xmldoc, coinc_definer_row.search, coinc_definer_row.search_coinc_type, create_new = True, description = coinc_definer_row.description)
-	instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument"))
-
-	#
-	# replicate the coincidence window parameter for every possible
-	# instrument pair
-	#
-
-	thresholds = replicate_threshold(thresholds, instruments)
+	coinc_tables = InspiralCoincTables(xmldoc, coinc_definer_row)
 
 	#
 	# build the event list accessors.  apply vetoes by excluding events
@@ -381,7 +336,6 @@ def ligolw_thinca(
 		if seglists is not None:
 			# don't do in-place
 			seglists = seglists - veto_segments
-	eventlists = snglcoinc.EventListDict(InspiralEventList, sngl_inspiral_table, instruments = instruments)
 
 	#
 	# construct offset vector assembly graph
@@ -394,10 +348,31 @@ def ligolw_thinca(
 	# and record the survivors
 	#
 
-	for node, coinc in time_slide_graph.get_coincs(eventlists, thresholds, verbose = verbose):
-		if not ntuple_comparefunc(coinc, node.offset_vector):
-			coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, coinc_def_id, coinc, seglists = seglists)
-			if min_log_L is None or coinc.likelihood >= min_log_L:
+	gps_time_now = float(lal.UTCToGPS(time.gmtime()))
+	for node, events in time_slide_graph.get_coincs(
+		snglcoinc.EventListDict(InspiralEventList, sngl_inspiral_table, instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument"))),
+		delta_t,
+		verbose = verbose
+	):
+		if not ntuple_comparefunc(events, node.offset_vector):
+			coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, events, seglists = seglists)
+			if likelihood_func is not None:
+				coinc.likelihood = likelihood_func(events, node.offset_vector)
+				if fapfar is not None:
+					# FIXME:  add proper columns to
+					# store these values in
+					coinc_inspiral.combined_far = fapfar.far_from_rank(coinc.likelihood)
+					coinc_inspiral.false_alarm_rate = fapfar.fap_from_rank(coinc.likelihood)
+			# if min_log_L is None, this test always passes,
+			# regardless of the value of .likelihood, be it
+			# None, some number, -inf or even nan.
+			if coinc.likelihood >= min_log_L:
+				# set latency.
+				# NOTE:  this is nonsense unless running
+				# live.
+				# FIXME: add a proper column for this
+				coinc_inspiral.minimum_duration = gps_time_now - float(coinc_inspiral.end)
+				# finally, append coinc to tables
 				coinc_tables.append_coinc(coinc, coincmaps, coinc_inspiral)
 
 	#
@@ -510,9 +485,10 @@ class sngl_inspiral_coincs(object):
 		#
 
 		self.coinc_def, = (row for row in self.coinc_def_table if row.search == InspiralCoincDef.search and row.search_coinc_type == InspiralCoincDef.search_coinc_type)
-		self.coinc_event_index = dict((row.coinc_event_id, row) for row in self.coinc_event_table if row.coinc_def_id == self.coinc_def.coinc_def_id)
-		self.coinc_inspiral_index = dict((row.coinc_event_id, row) for row in self.coinc_inspiral_table)
-		assert set(self.coinc_event_index) == set(self.coinc_inspiral_index)
+		coinc_event_map_ids = frozenset(row.coinc_event_id for row in self.coinc_event_map_table)
+		self.coinc_event_index = dict((row.coinc_event_id, row) for row in self.coinc_event_table if row.coinc_def_id == self.coinc_def.coinc_def_id and row.coinc_event_id in coinc_event_map_ids)
+		self.coinc_inspiral_index = dict((row.coinc_event_id, row) for row in self.coinc_inspiral_table if row.coinc_event_id in coinc_event_map_ids)
+		assert frozenset(self.coinc_event_index) == frozenset(self.coinc_inspiral_index)
 		self.coinc_event_map_index = dict((coinc_event_id, []) for coinc_event_id in self.coinc_event_index)
 		for row in self.coinc_event_map_table:
 			try:

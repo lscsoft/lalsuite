@@ -5,8 +5,8 @@ EXTRA_DIST = \
 	copyright \
 	lalpulsar-dev.install \
 	lalpulsar-octave.install \
-	lalpulsar-python.install \
-	lalpulsar-python3.install \
+	python-lalpulsar.install \
+	python3-lalpulsar.install \
 	lalpulsar.install \
 	rules \
 	lalsuite.mk \

@@ -1,5 +1,4 @@
-#
-# Copyright (C) 2010  Kipp Cannon
+# Copyright (C) 2010--2018  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -209,14 +208,6 @@ for n, filename in enumerate(filenames):
 	segs |= contents.seglists
 
 	#
-	# Build triangulators.  The timing uncertainty of +/- 8e-5 s was
-	# measured with lalapps_string_plot_binj and is essentially
-	# identical for H1, H2, L1, and V1.
-	#
-
-	triangulators = stringutils.triangulators(dict.fromkeys(contents.instruments, 8e-5))
-
-	#
 	# Record statistics.  Assume all files with sim_burst tables are
 	# the outputs of injection runs, and others aren't.
 	#
@@ -224,20 +215,20 @@ for n, filename in enumerate(filenames):
 	if contents.sim_burst_table is None:
 		# iterate over burst<-->burst coincs
 		for is_background, events, offsetvector in contents.get_noninjections():
-			params = distributions.coinc_params([event for event in events if event.ifo not in contents.vetoseglists or event.peak not in contents.vetoseglists[event.ifo]], offsetvector, triangulators)
-			if params is not None:
-				if is_background:
-					distributions.denominator.increment(params)
-				else:
-					distributions.candidates.increment(params)
+			params = distributions.coinc_params([event for event in events if event.ifo not in contents.vetoseglists or event.peak not in contents.vetoseglists[event.ifo]], offsetvector)
+			if is_background:
+				distributions.denominator.increment(**params)
+			else:
+				distributions.candidates.increment(**params)
 	else:
 		weight_func = get_injection_weight_func(contents, options.injection_reweight, options.injection_reweight_cutoff)
 		# iterate over burst<-->burst coincs matching injections
 		# "exactly"
 		for sim, events, offsetvector in contents.get_injections():
-			params = distributions.coinc_params([event for event in events if event.ifo not in contents.vetoseglists or event.peak not in contents.vetoseglists[event.ifo]], offsetvector, triangulators)
-			if params is not None:
-				distributions.numerator.increment(params, weight = weight_func(sim))
+			distributions.numerator.increment(
+				weight = weight_func(sim),
+				**distributions.coinc_params([event for event in events if event.ifo not in contents.vetoseglists or event.peak not in contents.vetoseglists[event.ifo]], offsetvector)
+			)
 
 	#
 	# Clean up.

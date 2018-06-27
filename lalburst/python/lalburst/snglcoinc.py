@@ -62,6 +62,7 @@ from glue.ligolw import ligolw
 from glue.ligolw import array as ligolw_array
 from glue.ligolw import param as ligolw_param
 from glue.ligolw import lsctables
+from glue.ligolw.utils import coincs as ligolw_coincs
 from glue.text_progress_bar import ProgressBar
 
 
@@ -81,22 +82,13 @@ from .git_version import version as __version__
 
 class EventList(list):
 	"""
-	A parent class for managing a list of events:  applying time
-	offsets, and retrieving subsets of the list selected by time
-	interval.  To be useful, this class must be subclassed with
-	overrides provided for certain methods.  The only methods that
-	*must* be overridden in a subclass are the _add_offset() and
-	get_coincs() methods.  The make_index() method can be overridden if
-	needed.  None of the other methods inherited from the list parent
-	class need to be overridden, indeed they probably should not be
-	unless you know what you're doing.
+	A parent class for managing a list of events, retrieving subsets of
+	the list selected by time interval.  To be useful, this class must
+	be subclassed with overrides provided for certain methods.  The
+	only method that must be overridden in a subclass is the
+	get_coincs() method.  The make_index() method can be overridden if
+	needed.
 	"""
-	def __init__(self):
-		# the offset that should be added to the times of events in
-		# this list when comparing to the times of other events.
-		# used to implement time-shifted coincidence tests
-		self.offset = lal.LIGOTimeGPS(0)
-
 	def make_index(self):
 		"""
 		Provided to allow for search-specific look-up tables or
@@ -108,15 +100,7 @@ class EventList(list):
 		"""
 		pass
 
-	def set_offset(self, offset):
-		"""
-		Set an offset on the times of all events in the list.
-		"""
-		# cast offset to LIGOTimeGPS to avoid repeated conversion
-		# when applying the offset to each event.
-		self.offset = lal.LIGOTimeGPS(offset)
-
-	def get_coincs(self, event_a, offset_a, light_travel_time, threshold):
+	def get_coincs(self, event_a, offset_a, light_travel_time, threshold_data):
 		"""
 		Return a sequence of the events from this list that are
 		coincident with event_a.  The object returned by this
@@ -125,26 +109,12 @@ class EventList(list):
 
 		offset_a is the time shift to be added to the time of
 		event_a before comparing to the times of events in this
-		list.  The offset attribute of this object will contain the
-		time shift to be added to the times of the events in this
-		list before comparing to event_a.  That is, the times of
-		arrival of the events in this list should have (self.offset
-		- offset_a) added to them before comparing to the time of
-		arrival of event_a.  Or, equivalently, the time of arrival
-		of event_a should have (offset_a - self.offset) added to it
-		before comparing to the times of arrival of the events in
-		this list.  This behaviour is to support the construction
-		of time shifted coincidences.
+		list.  This behaviour is to support the construction of
+		time shifted coincidences.
 
 		Because it is frequently needed by implementations of this
 		method, the distance in light seconds between the two
 		instruments is provided as the light_travel_time parameter.
-
-		The threshold argument will be the thresholds appropriate
-		for "instrument_a, instrument_b", in that order, where
-		instrument_a is the instrument for event_a, and
-		instrument_b is the instrument for the events in this
-		EventList.
 		"""
 		raise NotImplementedError
 
@@ -191,29 +161,6 @@ class EventListDict(dict):
 		for l in self.values():
 			l.make_index()
 
-	@property
-	def offsetvector(self):
-		"""
-		offsetvector of the offsets carried by the event lists.
-		When assigning to this property, any event list whose
-		instrument is not in the dictionary of offsets is not
-		modified, and KeyError is raised if the offset dictionary
-		contains an instrument that is not in this dictionary of
-		event lists.  As a short-cut to setting all offsets to 0,
-		the attribute can be deleted.
-		"""
-		return offsetvector.offsetvector((instrument, eventlist.offset) for instrument, eventlist in self.items())
-
-	@offsetvector.setter
-	def offsetvector(self, offsetvector):
-		for instrument, offset in offsetvector.items():
-			self[instrument].set_offset(offset)
-
-	@offsetvector.deleter
-	def offsetvector(self):
-		for eventlist in self.values():
-			eventlist.set_offset(0)
-
 
 #
 # =============================================================================
@@ -237,69 +184,48 @@ def light_travel_time(instrument1, instrument2):
 	return math.sqrt((dx * dx).sum()) / lal.C_SI
 
 
-def get_doubles(eventlists, instruments, thresholds, unused):
+def get_doubles(eventlists, offsetvector, threshold_data, unused):
 	"""
-	Given an instance of an EventListDict, an iterable (e.g., a list)
-	of instruments, and a dictionary mapping instrument pair to
-	threshold data for use by the event comparison test defined by the
-	EventListDict (or None if this feature is not used), generate a
-	sequence of tuples of Python IDs of mutually coincident events, and
-	populate a set (unused) of 1-element tuples of the Python IDs of
-	the events that did not participate in coincidences.
-
-	If not set to None, the thresholds dictionary should look like
-
-	{("H1", "L1"): 10.0, ("L1", "H1"): -10.0}
-
-	i.e., the keys are tuples of instrument pairs and the values
-	specify the "threshold data" for that instrument pair.  The
-	threshold data itself is an arbitrary Python object.  Floats are
-	shown in the example above, but any Python object can be provided
-	and will be passed to the .get_coincs() method of an EventList
-	object in the EventListDict.  Note that it is assumed that order
-	matters in the selection of the threshold object function and so
-	the thresholds dictionary must provide a threshold for the
-	instruments in both orders.
+	Given an instance of an EventListDict, a dictionary of
+	instrument,offset pairs, and threshold data to pass to the
+	comparison function, generate a sequence of tuples of Python IDs of
+	mutually coincident events, and populate a set (unused) of
+	1-element tuples of the Python IDs of the events that did not
+	participate in coincidences.
 
 	Each tuple returned by this generator will contain exactly two
-	Python IDs, one from each of the two instruments in the instruments
-	sequence.
+	Python IDs, one from each of the two instruments in the offset
+	vector.
 
-	NOTE:  the instruments sequence must contain exactly two
-	instruments;  it may be a generator, it will be iterated over only
-	once.
+	NOTE:  the offset vector must contain exactly two instruments.
 
 	NOTE:  the "unused" parameter passed to this function must be a set
 	or set-like object.  It will be cleared by invoking .clear(), then
 	populated by invoking .update(), .add(), and .remove().
 
 	NOTE:  the order of the IDs in each tuple returned by this function
-	matches the order of the instruments sequence.
+	will be in alphabetical order by instrument.
 	"""
 	# retrieve the event lists for the requested instrument combination
+	try:
+		instrumenta, instrumentb = sorted(offsetvector)
+	except ValueError:
+		raise ValueError("offsetvector must be for 2 instruments, not %d" % len(offsetvector))
+	eventlista, eventlistb = eventlists[instrumenta], eventlists[instrumentb]
 
-	instruments = tuple(instruments)
-	assert len(instruments) == 2, "instruments must be an iterable of exactly two names, not %d" % len(instruments)
-	eventlista, eventlistb = eventlists[instruments[0]], eventlists[instruments[1]]
+	# compute the time offset and light travel time.
+
+	offset_a = offsetvector[instrumenta] - offsetvector[instrumentb]
+	dt = light_travel_time(instrumenta, instrumentb)
 
 	# choose the shorter of the two lists for the outer loop
 
 	if len(eventlistb) < len(eventlista):
 		eventlista, eventlistb = eventlistb, eventlista
-		instruments = instruments[1], instruments[0]
+		offset_a = -offset_a
 		unswap = lambda a, b: (b, a)
 	else:
 		unswap = lambda a, b: (a, b)
-
-	# extract the thresholds and pre-compute the light travel time.
-	# need to do this after swapping the event lists (if they need to
-	# be swapped).
-
-	try:
-		threshold_data = thresholds[instruments] if thresholds is not None else None
-	except KeyError as e:
-		raise KeyError("no coincidence thresholds provided for instrument pair %s, %s" % e.args[0])
-	dt = light_travel_time(*instruments)
 
 	# populate the unused set with all IDs from list B
 
@@ -312,7 +238,6 @@ def get_doubles(eventlists, instruments, thresholds, unused):
 	# IDs, otherwise remove the IDs of the things that are coincident
 	# with it from the set.
 
-	offset_a = eventlista.offset
 	eventlistb_get_coincs = eventlistb.get_coincs
 	for eventa in eventlista:
 		eventa_id = id(eventa)
@@ -337,31 +262,68 @@ def get_doubles(eventlists, instruments, thresholds, unused):
 #
 
 
-class TimeSlideGraphNode(object):
-	def __init__(self, offset_vector, time_slide_id = None, keep_unused = True):
+class TimeSlideGraphNoOpNode(object):
+	def __init__(self, offset_vector, min_instruments, time_slide_id = None):
+		#
+		# safety check input
+		#
+
+		if len(offset_vector) < 1:
+			raise ValueError("encountered offset vector with fewer than 1 instrument: %s", str(offset_vector))
+
+		#
+		# initialize
+		#
+
+		# time_slide_id is non-None only in head nodes
 		self.time_slide_id = time_slide_id
 		self.offset_vector = offset_vector
-		self.deltas = frozenset(offset_vector.deltas.items())
 		self.components = None
-		self.coincs = None
-		self.unused_coincs = set()
-		self.keep_unused = keep_unused
 
-	@property
-	def name(self):
-		return self.offset_vector.__str__(compact = True)
+	def get_coincs(self, eventlists, threshold_data, verbose = False):
+		if verbose:
+			print("\tconstructing %s ..." % str(self.offset_vector), file=sys.stderr)
 
-	def get_coincs(self, eventlists, thresholds, verbose = False):
 		#
-		# has this node already been visited?  if so, return the
-		# answer we already know
+		# sanity check input
 		#
 
-		if self.coincs is not None:
-			if verbose:
-				print("\treusing %s" % str(self.offset_vector), file=sys.stderr)
-			return self.coincs
+		assert set(self.offset_vector) <= set(eventlists), "no event list for instrument(s) %s" % ", ".join(sorted(set(self.offset_vector) - set(eventlists)))
 
+		#
+		# return 1-detector "coincs" and a null set of unused
+		# events
+		#
+
+		instrument, = self.offset_vector
+		return tuple((id(event),) for event in eventlists[instrument]), set()
+
+
+class TimeSlideGraphNode(object):
+	def __init__(self, offset_vector, min_instruments, time_slide_id = None):
+		#
+		# safety check input
+		#
+
+		if len(offset_vector) < 2:
+			raise ValueError("encountered offset vector with fewer than 2 instruments: %s", str(offset_vector))
+
+		#
+		# initialize
+		#
+
+		# time_slide_id non-None only in head nodes
+		self.time_slide_id = time_slide_id
+		self.offset_vector = offset_vector
+		# keep_unused is part of the logic that ensures we only
+		# return coincs that meet the min_instruments criterion
+		self.keep_unused = len(offset_vector) > min_instruments
+		if len(offset_vector) > 2:
+			self.components = tuple(TimeSlideGraphNode(offset_vector, min_instruments) for offset_vector in offsetvector.component_offsetvectors([offset_vector], len(offset_vector) - 1))
+		else:
+			self.components = None
+
+	def get_coincs(self, eventlists, threshold_data, verbose = False):
 		#
 		# is this a leaf node?  construct the coincs explicitly
 		#
@@ -374,56 +336,21 @@ class TimeSlideGraphNode(object):
 			# sanity check input
 			#
 
-			assert len(self.offset_vector) == 2, "broken graph:  node with no components has %d-component offset vector, must be 2" % len(self.offset_vector)
 			assert set(self.offset_vector) <= set(eventlists), "no event list for instrument(s) %s" % ", ".join(sorted(set(self.offset_vector) - set(eventlists)))
-
-			#
-			# apply offsets to events
-			#
-
-			eventlists.offsetvector = self.offset_vector
 
 			#
 			# search for and record coincidences.  coincs is a
 			# sorted tuple of event ID pairs, where each pair
 			# of IDs is, itself, ordered alphabetically by
-			# instrument name.  note that the event order in
-			# each tuple returned by get_doubles() is set by
-			# the order of the instrument names passed to it,
-			# which we make be alphabetical
+			# instrument name.
 			#
 
-			self.coincs = tuple(sorted(get_doubles(eventlists, sorted(self.offset_vector), thresholds, self.unused_coincs)))
-			if not self.keep_unused:
-				self.unused_coincs.clear()
-			return self.coincs
+			unused_coincs = set()
+			coincs = tuple(sorted(get_doubles(eventlists, self.offset_vector, threshold_data, unused_coincs)))
+			return coincs, (unused_coincs if self.keep_unused else set())
 
 		#
-		# is this a head node, or some other node that magically
-		# has only one component?  copy coincs from component
-		#
-
-		if len(self.components) == 1:
-			if verbose:
-				print("\tcopying from %s ..." % str(self.components[0].offset_vector), file=sys.stderr)
-			self.coincs = self.components[0].get_coincs(eventlists, thresholds, verbose = verbose)
-			if self.keep_unused:
-				# don't copy reference, always do in-place
-				# manipulation of our own .unused_coincs so
-				# that calling codes that might hold a
-				# reference to it get the correct result
-				self.unused_coincs.update(self.components[0].unused_coincs)
-
-			#
-			# done.  unlink the graph as we go to release
-			# memory
-			#
-
-			self.components = None
-			return self.coincs
-
-		#
-		# len(self.components) == 2 is impossible
+		# len(self.components) == 1 or 2 are impossible
 		#
 
 		assert len(self.components) > 2
@@ -433,42 +360,42 @@ class TimeSlideGraphNode(object):
 		# synthesis algorithm to populate its coincs
 		#
 
-		self.coincs = []
+		# first collect all coincs and unused partial coincs from
+		# the component nodes in the graph
+		component_coincs_and_unused_coincs = tuple(component.get_coincs(eventlists, threshold_data, verbose = verbose) for component in self.components)
+		component_coincs = tuple(elem[0] for elem in component_coincs_and_unused_coincs)
 
-		# all coincs with n-1 instruments from the component time
-		# slides are potentially unused.  they all go in, we'll
-		# remove things from this set as we use them
-		# NOTE:  this function call is the recursion into the
-		# components to ensure they are initialized, it must be
-		# executed before any of what follows, and in particular it
-		# must be done whether or not we'll be keeping the
-		# collection of return values
-		for component in self.components:
-			self.unused_coincs.update(component.get_coincs(eventlists, thresholds, verbose = verbose))
-		# of the (< n-1)-instrument coincs that were not used in
-		# forming the (n-1)-instrument coincs, any that remained
-		# unused after forming two compontents cannot have been
-		# used by any other components, they definitely won't be
-		# used to construct our n-instrument coincs, and so they go
-		# into our unused pile
 		if self.keep_unused:
-			for componenta, componentb in itertools.combinations(self.components, 2):
-				self.unused_coincs |= componenta.unused_coincs & componentb.unused_coincs
+			# all coincs with n-1 instruments from the
+			# component time slides are potentially unused.
+			# they all go into our unused_coincs pile, and
+			# we'll remove things from this set as we use them
+			unused_coincs = set(itertools.chain(*component_coincs))
+
+			# of the (< n-1)-instrument coincs that were not
+			# used in forming the (n-1)-instrument coincs, any
+			# that remained unused after forming two
+			# compontents cannot have been used by any other
+			# components, they definitely won't be used to
+			# construct our n-instrument coincs, and so they go
+			# into our unused pile
+			for unused_coincsa, unused_coincsb in itertools.combinations((elem[1] for elem in component_coincs_and_unused_coincs), 2):
+				unused_coincs |= unused_coincsa & unused_coincsb
 		else:
-			self.unused_coincs.clear()
+			unused_coincs = set()
+		del component_coincs_and_unused_coincs
 
 		if verbose:
 			print("\tassembling %s ..." % str(self.offset_vector), file=sys.stderr)
 		# magic:  we can form all n-instrument coincs by knowing
 		# just three sets of the (n-1)-instrument coincs no matter
-		# what n is (n > 2).  note that we pass verbose=False
-		# because we've already called the .get_coincs() methods
-		# above, these are no-ops to retrieve the answers again
-		allcoincs0 = self.components[0].get_coincs(eventlists, thresholds, verbose = False)
-		allcoincs1 = self.components[1].get_coincs(eventlists, thresholds, verbose = False)
-		allcoincs2 = self.components[-1].get_coincs(eventlists, thresholds, verbose = False)
+		# what n is (n > 2).
+		coincs = []
+		component_coincs0 = component_coincs[0]
+		component_coincs1 = component_coincs[1]
+		component_coincs2 = component_coincs[-1]
 		# for each coinc in list 0
-		for coinc0 in allcoincs0:
+		for coinc0 in component_coincs0:
 			# find all the coincs in list 1 whose first (n-2)
 			# event IDs are the same as the first (n-2) event
 			# IDs in coinc0.  note that they are guaranteed to
@@ -479,13 +406,13 @@ class TimeSlideGraphNode(object):
 			# things in each tuple, we need to use bisect_left
 			# after incrementing the last of the (n-2) things
 			# by one to obtain the correct range of indexes
-			coincs1 = allcoincs1[bisect_left(allcoincs1, coinc0[:-1]):bisect_left(allcoincs1, coinc0[:-2] + (coinc0[-2] + 1,))]
+			coincs1 = component_coincs1[bisect_left(component_coincs1, coinc0[:-1]):bisect_left(component_coincs1, coinc0[:-2] + (coinc0[-2] + 1,))]
 			# find all the coincs in list 2 whose first (n-2)
 			# event IDs are the same as the last (n-2) event
 			# IDs in coinc0.  note that they are guaranteed to
 			# be arranged together in the list and can be
 			# identified with two bisection searches
-			coincs2 = allcoincs2[bisect_left(allcoincs2, coinc0[1:]):bisect_left(allcoincs2, coinc0[1:-1] + (coinc0[-1] + 1,))]
+			coincs2 = component_coincs2[bisect_left(component_coincs2, coinc0[1:]):bisect_left(component_coincs2, coinc0[1:-1] + (coinc0[-1] + 1,))]
 			# for each coinc extracted from list 1 above search
 			# for a coinc extracted from list 2 above whose
 			# first (n-2) event IDs are the last (n-2) event
@@ -517,173 +444,70 @@ class TimeSlideGraphNode(object):
 					# remove them from the unused list
 					# because we just used them, then
 					# record the coinc and move on
-					self.unused_coincs.difference_update(itertools.combinations(new_coinc, len(new_coinc) - 1))
-					self.coincs.append(new_coinc)
+					unused_coincs.difference_update(itertools.combinations(new_coinc, len(new_coinc) - 1))
+					coincs.append(new_coinc)
 		# sort the coincs we just constructed by the component
 		# event IDs and convert to a tuple for speed
-		self.coincs.sort()
-		self.coincs = tuple(self.coincs)
+		coincs.sort()
+		coincs = tuple(coincs)
 
 		#
-		# done.  we won't be back here again so unlink the graph as
-		# we go to release memory
+		# done.
 		#
 
-		self.components = None
-		return self.coincs
+		return coincs, unused_coincs
 
 
 class TimeSlideGraph(object):
 	def __init__(self, offset_vector_dict, min_instruments = 2, verbose = False):
 		#
-		# safety check input
-		#
-
-		if min_instruments < 1:
-			raise ValueError("min_instruments must be >= 1: %d" % min_instruments)
-		offset_vector = min(offset_vector_dict.values(), key = lambda x: len(x))
-		if len(offset_vector) < 2:
-			raise ValueError("encountered offset vector with fewer than 2 instruments: %s", str(offset_vector))
-		if len(offset_vector) < min_instruments:
-			# this test is part of the logic that ensures we
-			# will only extract coincs that meet the
-			# min_instruments criterion
-			raise ValueError("encountered offset vector smaller than min_instruments (%d): %s", (min_instruments, str(offset_vector)))
-
-		#
-		# plays no role in the coincidence engine.  used for early
-		# memory clean-up, to remove coincs from intermediate data
-		# products that the calling code will not retain.  also as
-		# a convenience for the calling code, implementing the
-		# ubiquitous "minimum instruments" cut here in the
-		# .get_coincs() method
-		#
-
-		self.min_instruments = min_instruments
-
-		#
 		# populate the graph head nodes.  these represent the
 		# target offset vectors requested by the calling code.
 		#
 
+		if min_instruments < 1:
+			raise ValueError("require min_instruments >= 1 (%d)" % min_instruments)
+		if min(len(offset_vector) for offset_vector in offset_vector_dict.values()) < min_instruments:
+			# this test is part of the logic that ensures we
+			# will only extract coincs that meet the
+			# min_instruments criterion
+			raise ValueError("encountered offset vector (%s) smaller than min_instruments (%d)", (str(min(offset_vector_dict.values(), key = lambda offset_vector: len(offset_vector))), min_instruments))
+
 		if verbose:
-			print("constructing coincidence assembly graph for %d target offset vectors ..." % len(offset_vector_dict), file=sys.stderr)
-		self.head = tuple(TimeSlideGraphNode(offset_vector, time_slide_id = time_slide_id, keep_unused = len(offset_vector) > min_instruments) for time_slide_id, offset_vector in sorted(offset_vector_dict.items()))
-
-		#
-		# populate the graph generations.  generations[n] is a
-		# tuple of the nodes in the graph representing all unique
-		# n-instrument offset vectors to be constructed as part of
-		# the analysis (including normalized forms of any
-		# n-instrument target offset vectors).
-		#
-
-		self.generations = {}
-		n = max(len(offset_vector) for offset_vector in offset_vector_dict.values())
-		self.generations[n] = tuple(TimeSlideGraphNode(offset_vector, keep_unused = len(offset_vector) > min_instruments) for offset_vector in offsetvector.component_offsetvectors((node.offset_vector for node in self.head if len(node.offset_vector) == n), n))
-		for n in range(n, 2, -1):	# [n, n-1, ..., 3]
-			#
-			# collect all offset vectors of length n that we
-			# need to be able to construct
-			#
-
-			offset_vectors = [node.offset_vector for node in self.head if len(node.offset_vector) == n] + [node.offset_vector for node in self.generations[n]]
-
-			#
-			# determine the smallest set of offset vectors of
-			# length n-1 required to construct the length-n
-			# offset vectors, build a graph node for each of
-			# the vectors of length n-1, and record the nodes
-			# as the n-1'st generation
-			#
-
-			self.generations[n - 1] = tuple(TimeSlideGraphNode(offset_vector, keep_unused = len(offset_vector) > min_instruments) for offset_vector in offsetvector.component_offsetvectors(offset_vectors, n - 1))
-
-		#
-		# link each n-instrument node to the n-1 instrument nodes
-		# from which it will be constructed.  NOTE:  the components
-		# are sorted according to the alphabetically-sorted tuples
-		# of instrument names involved in each component;  this is
-		# a critical part of the coincidence synthesis algorithm
-		#
-
-		for node in self.head:
-			#
-			# the offset vector of a head node should be found
-			# directly in its generation, and it must be unique
-			# or there's a bug above.  despite this, we still
-			# go to the trouble of sorting to make it easy to
-			# keep this code in sync with the code for other
-			# graph nodes below, but the assert makes sure the
-			# result contains just one entry
-			#
-
-			node.components = tuple(sorted((component for component in self.generations[len(node.offset_vector)] if node.deltas == component.deltas), key = lambda x: sorted(x.offset_vector)))
-			assert len(node.components) == 1
-
-		for n, nodes in self.generations.items():
-			assert n >= 2	# failure indicates bug in code that constructed generations
-			if n == 2:
-				# leaf nodes have no components
-				continue
-			for node in nodes:
-				component_deltas = set(frozenset(offset_vector.deltas.items()) for offset_vector in offsetvector.component_offsetvectors([node.offset_vector], n - 1))
-				node.components = tuple(sorted((component for component in self.generations[n - 1] if component.deltas in component_deltas), key = lambda x: sorted(x.offset_vector)))
+			print("constructing coincidence assembly graph for %d offset vectors ..." % len(offset_vector_dict), file=sys.stderr)
+		self.head = tuple(
+			(TimeSlideGraphNode if len(offset_vector) >= 2 else TimeSlideGraphNoOpNode)(
+				offset_vector, min_instruments, time_slide_id = time_slide_id
+			) for time_slide_id, offset_vector in sorted(offset_vector_dict.items())
+		)
 
 		#
 		# done
 		#
 
 		if verbose:
-			print("graph contains:", file=sys.stderr)
-			for n in sorted(self.generations):
-				print("\t%d %d-insrument offset vectors (%s)" % (len(self.generations[n]), n, ("to be constructed directly" if n == 2 else "to be constructed indirectly")), file=sys.stderr)
-			print("\t%d offset vectors total" % sum(len(self.generations[n]) for n in self.generations), file=sys.stderr)
+			def walk(node):
+				# return the number of leaf and non-leaf
+				# nodes in the graph rooted on this node
+				return numpy.array((1, 0)) if node.components is None else numpy.array((0, 1)) + sum(walk(node) for node in node.components)
+			print("graph contains %d fundamental nodes, %d higher-order nodes" % tuple(sum(walk(node) for node in self.head)), file=sys.stderr)
 
 
-	def get_coincs(self, eventlists, thresholds, verbose = False):
+	def get_coincs(self, eventlists, threshold_data, verbose = False):
 		if verbose:
 			print("constructing coincs for target offset vectors ...", file=sys.stderr)
 		# don't do attribute look-ups in the loop
 		sngl_index = eventlists.idx
-		min_instruments = self.min_instruments
 		for n, node in enumerate(self.head, start = 1):
 			if verbose:
 				print("%d/%d: %s" % (n, len(self.head), str(node.offset_vector)), file=sys.stderr)
-			# the contents of .unused_coincs must be iterated
-			# over after the call to .get_coincs() because the
-			# former is populated as a side effect of the
-			# latter, but .unused_coincs is populated in-place
-			# so the following is not sensitive to the order of
-			# evaluation of arguments (the .unused_coincs
-			# attribute look-up can occur before or after
-			# .get_coincs() is called as long as its contents
-			# are not iterated over until after).
-			for coinc in itertools.chain(node.get_coincs(eventlists, thresholds, verbose), node.unused_coincs):
+			for coinc in itertools.chain(*node.get_coincs(eventlists, threshold_data, verbose)):
 				# we don't need to check that coinc
 				# contains at least min_instruments events
 				# because those that don't meet the
 				# criteria are excluded during coinc
 				# construction.
 				yield node, tuple(sngl_index[event_id] for event_id in coinc)
-
-
-	def write(self, fileobj):
-		"""
-		Write a DOT graph representation of the time slide graph to
-		fileobj.
-		"""
-		print("digraph \"Time Slides\" {", file=fileobj)
-		for node in itertools.chain(*self.generations.values()):
-			print("\t\"%s\" [shape=box];" % node.name, file=fileobj)
-			if node.components is not None:
-				for component in node.components:
-					print("\t\"%s\" -> \"%s\";" % (component.name, node.name), file=fileobj)
-		for node in self.head:
-			print("\t\"%s\" [shape=ellipse];" % node.name, file=fileobj)
-			for component in node.components:
-				print("\t\"%s\" -> \"%s\";" % (component.name, node.name), file=fileobj)
-		print("}", file=fileobj)
 
 
 #
@@ -700,7 +524,7 @@ class CoincTables(object):
 	A convenience interface to the XML document's coincidence tables,
 	allowing for easy addition of coincidence events.
 	"""
-	def __init__(self, xmldoc):
+	def __init__(self, xmldoc, coinc_definer_row):
 		# find the coinc table or create one if not found
 		try:
 			self.coinctable = lsctables.CoincTable.get_table(xmldoc)
@@ -716,17 +540,14 @@ class CoincTables(object):
 			self.coincmaptable = lsctables.New(lsctables.CoincMapTable)
 			xmldoc.childNodes[0].appendChild(self.coincmaptable)
 
+		# look-up the coinc_def_id, creating a new one if required
+		self.coinc_def_id = ligolw_coincs.get_coinc_def_id(xmldoc, coinc_definer_row.search, coinc_definer_row.search_coinc_type, create_new = True, description = coinc_definer_row.description)
+
 		# find the time_slide table
 		self.time_slide_table = lsctables.TimeSlideTable.get_table(xmldoc)
 		self.time_slide_index = self.time_slide_table.as_dict()
 
-		# cast all offsets to LIGOTimeGPS for reversable arithmetic
-		# FIXME:  I believe the arithmetic in the time slide graph
-		# construction can be cleaned up so that this isn't
-		# required.  when that is fixed, remove this
-		self.time_slide_index = dict((time_slide_id, type(offset_vector)((instrument, lal.LIGOTimeGPS(offset)) for instrument, offset in offset_vector.items())) for time_slide_id, offset_vector in self.time_slide_index.items())
-
-	def coinc_rows(self, process_id, time_slide_id, coinc_def_id, events):
+	def coinc_rows(self, process_id, time_slide_id, events):
 		"""
 		From a process ID, a time slide ID, and a sequence of
 		events (generator expressions are OK), constructs and
@@ -751,21 +572,22 @@ class CoincTables(object):
 		retrieved from self.time_slide_index using the
 		time_slide_id.
 		"""
-		coinc = self.coinctable.RowType()
-		coinc.process_id = process_id
-		coinc.coinc_def_id = coinc_def_id
-		coinc.coinc_event_id = None
-		coinc.time_slide_id = time_slide_id
-		coinc.insts = None
-		coinc.likelihood = None
-
 		coincmaps = [self.coincmaptable.RowType(
 			coinc_event_id = None,
 			table_name = event.event_id.table_name,
 			event_id = event.event_id
 		) for event in events]
+		assert coincmaps, "coincs must contain >= 1 event"
 
-		coinc.nevents = len(coincmaps)
+		coinc = self.coinctable.RowType(
+			process_id = process_id,
+			coinc_def_id = self.coinc_def_id,
+			coinc_event_id = None,
+			time_slide_id = time_slide_id,
+			insts = None,
+			nevents = len(coincmaps),
+			likelihood = None
+		)
 
 		return coinc, coincmaps
 
@@ -844,7 +666,7 @@ class CoincRates(object):
 
 		# fast-path for gstlal-inspiral pipeline:  hard-coded
 		# result for H,L,V network, 5 ms coincidence window, 1 or 2
-		# minimum instruments required.  computing using qhull's
+		# minimum instruments required.  computed using qhull's
 		# half-plane intersection code on a machine where that's
 		# available
 		if self.instruments == set(("H1", "L1", "V1")) and self.delta_t == 0.005:
@@ -1082,7 +904,7 @@ class CoincRates(object):
 			# so that when the problem is encountered it's
 			# easier to identify the cause
 			raise ValueError("rates must be >= 0")
-		if max(rates.values()) * max(self.tau.values()) >= 1.:
+		if self.tau and max(rates.values()) * max(self.tau.values()) >= 1.:
 			raise ValueError("events per coincidence window must be << 1: rates = %s, max window = %g" % (rates, max(self.tau.values())))
 
 		# compute \mu_{1} * \mu_{2} ... \mu_{N} * FACTOR where
@@ -1485,36 +1307,6 @@ class TOATriangulator(object):
 
 
 #
-# A binning for instrument combinations
-#
-# FIXME:  we decided that the coherent and null stream naming convention
-# would look like
-#
-# H1H2:LSC-STRAIN_HPLUS, H1H2:LSC-STRAIN_HNULL
-#
-# and so on.  i.e., the +, x and null streams from a coherent network would
-# be different channels from a single instrument whose name would be the
-# mash-up of the names of the instruments in the network.  that is
-# inconsisntent with the "H1H2+", "H1H2-" shown here, so this needs to be
-# fixed but I don't know how.  maybe it'll go away before it needs to be
-# fixed.
-#
-
-
-def InstrumentBins(names = ("E0", "E1", "E2", "E3", "G1", "H1", "H2", "H1H2+", "H1H2-", "L1", "V1")):
-	"""
-	Example:
-
-	>>> x = InstrumentBins()
-	>>> x[frozenset(("H1", "L1"))]
-	55
-	>>> x.centres()[55]
-	frozenset(['H1', 'L1'])
-	"""
-	return rate.HashableBins(frozenset(combo) for n in range(len(names) + 1) for combo in itertools.combinations(names, n))
-
-
-#
 # Base class for parameter distribution densities for use in log likelihood
 # ratio ranking statistics
 #
@@ -1629,394 +1421,6 @@ class LnLRDensity(object):
 		#self = cls()
 		#return self
 		raise NotImplementedError
-
-
-#
-# A class for measuring parameter distributions
-#
-
-
-class CoincParamsDistributions(object):
-	"""
-	A class for histograming the parameters of coincidences (or of
-	single events).  It is assumed there is a fixed, pre-determined,
-	set of parameters that one wishes to histogram, and that each
-	parameter has a name.  To use this, it must be sub-classed and the
-	derived class must provide dictionaries of binnings and functions
-	for performing the kernel density estimation transform to obtain
-	PDFs from histograms of counts.  The binnings is a dictionary
-	mapping parameter names to rate.NDBins instances describing the
-	binning to be used for each paramter.  The pdf_from_rates_func
-	dictionary maps parameter names to functions to smooth and
-	normalize bin count data into PDFs.  As a special case, a default
-	function is provided and will be used for any parameters whose
-	names do not appear in the pdf_from_rates_func dictionary.  The
-	default function looks for a smoothing filter in the filters
-	dictionary, applies it if found, then invokes the .to_pdf() method
-	of the binned array object.  Subclasses must also provide a
-	.coinc_params() static method that will transform a list of
-	single-instrument events into a dictionary mapping paramter name to
-	parameter value.
-
-	This class maintains three sets of histograms, one set for noise
-	(or "background") events, one set for signal (or "injection")
-	events and one set for observed (or "zero lag") events.  The bin
-	counts are floating point values (not integers).
-	"""
-	#
-	# sub-classes may override the following
-	#
-
-	ligo_lw_name_suffix = u"pylal_snglcoinc_coincparamsdistributions"
-
-	#
-	# Default content handler for loading CoincParamsDistributions
-	# objects from XML documents
-	#
-
-	class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-		pass
-	ligolw_array.use_in(LIGOLWContentHandler)
-	lsctables.use_in(LIGOLWContentHandler)
-	ligolw_param.use_in(LIGOLWContentHandler)
-
-	#
-	# sub-classes must override the following
-	#
-
-	binnings = {}
-
-	pdf_from_rates_func = {}
-	filters = {}
-
-	@staticmethod
-	def coinc_params(*args, **kwargs):
-		"""
-		Given a sequence of single-instrument events (rows from an
-		event table) that form a coincidence, compute and return a
-		dictionary mapping parameter name to parameter values,
-		suitable for being passed to one of the .add_*() methods.
-		This function may return None.
-		"""
-		raise NotImplementedError("subclass must implement .coinc_params() method")
-
-	#
-	# begin implementation
-	#
-
-	def __init__(self, process_id = None):
-		if not self.binnings:
-			raise NotImplementedError("subclass must provide dictionary of binnings")
-		self.zero_lag_rates = dict((param, rate.BinnedArray(binning)) for param, binning in self.binnings.items())
-		self.background_rates = dict((param, rate.BinnedArray(binning)) for param, binning in self.binnings.items())
-		self.injection_rates = dict((param, rate.BinnedArray(binning)) for param, binning in self.binnings.items())
-		self.zero_lag_pdf = {}
-		self.background_pdf = {}
-		self.injection_pdf = {}
-		self.zero_lag_lnpdf_interp = {}
-		self.background_lnpdf_interp = {}
-		self.injection_lnpdf_interp = {}
-		self.process_id = process_id
-
-	def _rebuild_interpolators(self, keys = None):
-		"""
-		Initialize the interp dictionaries from the discretely
-		sampled PDF data.  For internal use only.
-		"""
-		self.zero_lag_lnpdf_interp.clear()
-		self.background_lnpdf_interp.clear()
-		self.injection_lnpdf_interp.clear()
-		# if a specific set of keys wasn't given, do them all
-		if keys is None:
-			keys = set(self.zero_lag_pdf)
-		# build interpolators for the requested keys
-		def mkinterp(binnedarray):
-			with numpy.errstate(invalid = "ignore"):
-				assert not (binnedarray.array < 0.).any()
-			binnedarray = binnedarray.copy()
-			with numpy.errstate(divide = "ignore"):
-				binnedarray.array = numpy.log(binnedarray.array)
-			return rate.InterpBinnedArray(binnedarray, fill_value = NegInf)
-		for key, binnedarray in self.zero_lag_pdf.items():
-			if key in keys:
-				self.zero_lag_lnpdf_interp[key] = mkinterp(binnedarray)
-		for key, binnedarray in self.background_pdf.items():
-			if key in keys:
-				self.background_lnpdf_interp[key] = mkinterp(binnedarray)
-		for key, binnedarray in self.injection_pdf.items():
-			if key in keys:
-				self.injection_lnpdf_interp[key] = mkinterp(binnedarray)
-
-	@staticmethod
-	def addbinnedarrays(rate_target_dict, rate_source_dict, pdf_target_dict, pdf_source_dict):
-		"""
-		For internal use.
-		"""
-		weight_target = {}
-		weight_source = {}
-		for name, binnedarray in rate_source_dict.items():
-			if name in rate_target_dict:
-				weight_target[name] = rate_target_dict[name].array.sum()
-				weight_source[name] = rate_source_dict[name].array.sum()
-				rate_target_dict[name] += binnedarray
-			else:
-				rate_target_dict[name] = binnedarray.copy()
-		for name, binnedarray in pdf_source_dict.items():
-			if name in pdf_target_dict:
-				binnedarray = binnedarray.copy()
-				binnedarray.array *= weight_source[name]
-				pdf_target_dict[name].array *= weight_target[name]
-				pdf_target_dict[name] += binnedarray
-				pdf_target_dict[name].array /= weight_source[name] + weight_target[name]
-			else:
-				pdf_target_dict[name] = binnedarray.copy()
-
-	def __iadd__(self, other):
-		if type(other) != type(self):
-			raise TypeError(other)
-
-		self.addbinnedarrays(self.zero_lag_rates, other.zero_lag_rates, self.zero_lag_pdf, other.zero_lag_pdf)
-		self.addbinnedarrays(self.background_rates, other.background_rates, self.background_pdf, other.background_pdf)
-		self.addbinnedarrays(self.injection_rates, other.injection_rates, self.injection_pdf, other.injection_pdf)
-
-		#
-		# rebuild interpolators
-		#
-
-		self._rebuild_interpolators()
-
-		#
-		# done
-		#
-
-		return self
-
-	def copy(self):
-		new = type(self)(process_id = self.process_id)
-		new += self
-		return new
-
-	def add_zero_lag(self, param_dict, weight = 1.0):
-		"""
-		Increment a bin in one or more of the observed data (or
-		"zero lag") histograms by weight (default 1).  The names of
-		the histograms to increment, and the parameters identifying
-		the bin in each histogram, are given by the param_dict
-		dictionary.
-		"""
-		for param, value in param_dict.items():
-			try:
-				self.zero_lag_rates[param][value] += weight
-			except IndexError:
-				# param value out of range
-				pass
-
-	def add_background(self, param_dict, weight = 1.0):
-		"""
-		Increment a bin in one or more of the noise (or
-		"background") histograms by weight (default 1).  The names
-		of the histograms to increment, and the parameters
-		identifying the bin in each histogram, are given by the
-		param_dict dictionary.
-		"""
-		for param, value in param_dict.items():
-			try:
-				self.background_rates[param][value] += weight
-			except IndexError:
-				# param value out of range
-				pass
-
-	def add_injection(self, param_dict, weight = 1.0):
-		"""
-		Increment a bin in one or more of the signal (or
-		"injection") histograms by weight (default 1).  The names
-		of the histograms to increment, and the parameters
-		identifying the bin in each histogram, are given by the
-		param_dict dictionary.
-		"""
-		for param, value in param_dict.items():
-			try:
-				self.injection_rates[param][value] += weight
-			except IndexError:
-				# param value out of range
-				pass
-
-	def default_pdf_from_rates(self, key, pdf_dict):
-		"""
-		For internal use by the CoincParamsDistributions class.
-		"""
-		binnedarray = pdf_dict[key]
-		if key in self.filters:
-			rate.filter_array(binnedarray.array, self.filters[key])
-		binnedarray.to_pdf()
-
-	def finish(self, verbose = False):
-		"""
-		Populate the discrete PDF dictionaries from the contents of
-		the rates dictionaries, and then the PDF interpolator
-		dictionaries from the discrete PDFs.  The raw bin counts
-		from the rates dictionaries are copied verbatim, smoothed
-		using the dictionary of filters carried by this class
-		instance, and converted to normalized PDFs using the bin
-		volumes.  Finally the dictionary of PDF interpolators is
-		populated from the discretely sampled PDF data.
-		"""
-		#
-		# convert raw bin counts into normalized PDFs
-		#
-
-		self.zero_lag_pdf.clear()
-		self.background_pdf.clear()
-		self.injection_pdf.clear()
-		progressbar = ProgressBar(text = "Computing Parameter PDFs", max = len(self.zero_lag_rates) + len(self.background_rates) + len(self.injection_rates)) if verbose else None
-		for key, (msg, rates_dict, pdf_dict) in itertools.chain(
-				zip(self.zero_lag_rates, itertools.repeat(("zero lag", self.zero_lag_rates, self.zero_lag_pdf))),
-				zip(self.background_rates, itertools.repeat(("background", self.background_rates, self.background_pdf))),
-				zip(self.injection_rates, itertools.repeat(("injections", self.injection_rates, self.injection_pdf)))
-		):
-			assert numpy.isfinite(rates_dict[key].array).all() and (rates_dict[key].array >= 0).all(), "%s %s counts are not valid" % (key, msg)
-			pdf_dict[key] = rates_dict[key].copy()
-			try:
-				pdf_from_rates_func = self.pdf_from_rates_func[key]
-			except KeyError:
-				pdf_from_rates_func = self.default_pdf_from_rates
-			if pdf_from_rates_func is not None:
-				pdf_from_rates_func(key, pdf_dict)
-			if progressbar is not None:
-				progressbar.increment()
-
-		#
-		# rebuild interpolators
-		#
-
-		self._rebuild_interpolators()
-
-	def lnP_noise(self, params):
-		"""
-		From a parameter value dictionary as returned by
-		self.coinc_params(), compute and return the natural
-		logarithm of the noise probability density at that point in
-		parameter space.
-
-		The .finish() method must have been invoked before this
-		method does meaningful things.  No attempt is made to
-		ensure the .finish() method has been invoked nor, if it has
-		been invoked, that no manipulations have occured that might
-		require it to be re-invoked (e.g., the contents of the
-		parameter distributions have been modified and require
-		re-normalization).
-
-		This default implementation assumes the individual PDFs
-		containined in the noise dictionary are for
-		statistically-independent random variables, and computes
-		and returns the logarithm of their product.  Sub-classes
-		that require more sophisticated calculations can override
-		this method.
-		"""
-		__getitem__ = self.background_lnpdf_interp.__getitem__
-		return sum(__getitem__(name)(*value) for name, value in params.items())
-
-	def lnP_signal(self, params):
-		"""
-		From a parameter value dictionary as returned by
-		self.coinc_params(), compute and return the natural
-		logarithm of the signal probability density at that point
-		in parameter space.
-
-		The .finish() method must have been invoked before this
-		method does meaningful things.  No attempt is made to
-		ensure the .finish() method has been invoked nor, if it has
-		been invoked, that no manipulations have occured that might
-		require it to be re-invoked (e.g., the contents of the
-		parameter distributions have been modified and require
-		re-normalization).
-
-		This default implementation assumes the individual PDFs
-		containined in the signal dictionary are for
-		statistically-independent random variables, and computes
-		and returns the logarithm of their product.  Sub-classes
-		that require more sophisticated calculations can override
-		this method.
-		"""
-		__getitem__ = self.injection_lnpdf_interp.__getitem__
-		return sum(__getitem__(name)(*value) for name, value in params.items())
-
-	@classmethod
-	def get_xml_root(cls, xml, name):
-		"""
-		Sub-classes can use this in their overrides of the
-		.from_xml() method to find the root element of the XML
-		serialization.
-		"""
-		name = u"%s:%s" % (name, cls.ligo_lw_name_suffix)
-		xml = [elem for elem in xml.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == name]
-		if len(xml) != 1:
-			raise ValueError("XML tree must contain exactly one %s element named %s" % (ligolw.LIGO_LW.tagName, name))
-		return xml[0]
-
-	@classmethod
-	def from_xml(cls, xml, name, **kwargs):
-		"""
-		In the XML document tree rooted at xml, search for the
-		serialized CoincParamsDistributions object named name, and
-		deserialize it.  The return value is a two-element tuple.
-		The first element is the deserialized
-		CoincParamsDistributions object, the second is the process
-		ID recorded when it was written to XML.
-		"""
-		# find the root element of the XML serialization
-		xml = cls.get_xml_root(xml, name)
-
-		# retrieve the process ID
-		process_id = ligolw_param.get_pyvalue(xml, u"process_id")
-
-		# create an instance
-		self = cls(process_id = process_id, **kwargs)
-
-		# reconstruct the BinnedArray objects
-		def reconstruct(xml, prefix, target_dict):
-			for name in [elem.Name.split(u":")[1] for elem in xml.childNodes if elem.Name.startswith(u"%s:" % prefix)]:
-				target_dict[str(name)] = rate.BinnedArray.from_xml(xml, u"%s:%s" % (prefix, name))
-		reconstruct(xml, u"zero_lag", self.zero_lag_rates)
-		reconstruct(xml, u"zero_lag_pdf", self.zero_lag_pdf)
-		reconstruct(xml, u"background", self.background_rates)
-		reconstruct(xml, u"background_pdf", self.background_pdf)
-		reconstruct(xml, u"injection", self.injection_rates)
-		reconstruct(xml, u"injection_pdf", self.injection_pdf)
-
-		#
-		# rebuild interpolators
-		#
-
-		self._rebuild_interpolators()
-
-		#
-		# done
-		#
-
-		return self
-
-	def to_xml(self, name):
-		"""
-		Serialize this CoincParamsDistributions object to an XML
-		fragment and return the root element of the resulting XML
-		tree.  The .process_id attribute of process will be
-		recorded in the serialized XML, and the object will be
-		given the name name.
-		"""
-		xml = ligolw.LIGO_LW({u"Name": u"%s:%s" % (name, self.ligo_lw_name_suffix)})
-		xml.appendChild(ligolw_param.Param.from_pyvalue(u"process_id", self.process_id))
-		def store(xml, prefix, source_dict):
-			for name, binnedarray in sorted(source_dict.items()):
-				xml.appendChild(binnedarray.to_xml(u"%s:%s" % (prefix, name)))
-		store(xml, u"zero_lag", self.zero_lag_rates)
-		store(xml, u"zero_lag_pdf", self.zero_lag_pdf)
-		store(xml, u"background", self.background_rates)
-		store(xml, u"background_pdf", self.background_pdf)
-		store(xml, u"injection", self.injection_rates)
-		store(xml, u"injection_pdf", self.injection_pdf)
-
-		return xml
 
 
 #

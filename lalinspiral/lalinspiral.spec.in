@@ -31,6 +31,7 @@ BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: glue
 Requires: gsl
 Requires: libframe
 Requires: libmetaio
@@ -72,6 +73,7 @@ Requires: lalburst-python
 Requires: lalframe-python >= @MIN_LALFRAME_VERSION@
 Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
+Requires: glue
 %description python
 This package provides the Python bindings for LALInspiral.
 
@@ -95,7 +97,7 @@ This package provides the Octave bindings for LALInspiral.
 %{__make} %{?_smp_mflags} V=1
 
 %check
-%{__make} %{?_smp_mflags} V=1 check
+%{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
 
 %install
 %make_install

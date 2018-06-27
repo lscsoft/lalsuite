@@ -57,6 +57,7 @@ src/lal_version
 src/stamp-h1
 src/stamp-h2
 src/version.c
+swig/.swigdeps
 swig/swiglal.i*
 swig/swiglal_*
 test/*/*.dat

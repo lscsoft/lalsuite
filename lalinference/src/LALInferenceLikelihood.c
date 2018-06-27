@@ -89,9 +89,9 @@ static int get_calib_spline(LALInferenceVariables *vars, const char *ifoname, RE
 
   for(UINT4 i=0;i<npts;i++)
   {
-    snprintf(freqname, VARNAME_MAX, "%s_spcal_logfreq_%i", ifoname, i);
-    snprintf(ampname, VARNAME_MAX, "%s_spcal_amp_%i", ifoname, i);
-    snprintf(phasename, VARNAME_MAX, "%s_spcal_phase_%i", ifoname, i);
+    if((VARNAME_MAX <= snprintf(freqname, VARNAME_MAX, "%s_spcal_logfreq_%i", ifoname, i))) XLAL_ERROR(XLAL_EINVAL,"Variable name too long");
+    if((VARNAME_MAX <= snprintf(ampname, VARNAME_MAX, "%s_spcal_amp_%i", ifoname, i))) XLAL_ERROR(XLAL_EINVAL,"Variable name too long");
+    if((VARNAME_MAX <= snprintf(phasename, VARNAME_MAX, "%s_spcal_phase_%i", ifoname, i))) XLAL_ERROR(XLAL_EINVAL,"Variable name too long");
 
     (*logfreqs)->data[i] = LALInferenceGetREAL8Variable(vars, freqname);
     (*amps)->data[i] =  LALInferenceGetREAL8Variable(vars, ampname);
@@ -645,11 +645,14 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
           switch(errnum)
           {
             case XLAL_EUSR0: /* Template generation failed in a known way, set -Inf likelihood */
-                if(dh_S_tilde) XLALDestroyCOMPLEX16Vector(dh_S_tilde);
-                if(dh_S) XLALDestroyREAL8Vector(dh_S);
-                if(dh_S_phase_tilde) XLALDestroyCOMPLEX16Vector(dh_S_phase_tilde);
-                if(dh_S_phase) XLALDestroyREAL8Vector(dh_S_phase);
-                return (-INFINITY);
+              if(model->roq_flag)
+              {
+                if ( model->roq->hptildeLinear ) XLALDestroyCOMPLEX16FrequencySeries(model->roq->hptildeLinear);
+                if ( model->roq->hctildeLinear ) XLALDestroyCOMPLEX16FrequencySeries(model->roq->hctildeLinear);
+                if ( model->roq->hptildeQuadratic ) XLALDestroyCOMPLEX16FrequencySeries(model->roq->hptildeQuadratic);
+                if ( model->roq->hctildeQuadratic ) XLALDestroyCOMPLEX16FrequencySeries(model->roq->hctildeQuadratic);
+              }
+              return (-INFINITY);
               break;
             default: /* Panic! */
               fprintf(stderr,"Unhandled error in template generation - exiting!\n");
@@ -852,15 +855,28 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       break;
     }
     
-    char varname[VARNAME_MAX];
-    sprintf(varname,"%s_optimal_snr",dataPtr->name);
+	char varname[VARNAME_MAX];
+    if((VARNAME_MAX <= snprintf(varname,VARNAME_MAX,"%s_optimal_snr",dataPtr->name)))
+    {
+        fprintf(stderr,"variable name too long\n"); exit(1);
+    }
     REAL8 this_ifo_snr = sqrt(this_ifo_s);
     model->ifo_SNRs[ifo] = this_ifo_snr;
     LALInferenceAddREAL8Variable(currentParams,varname,this_ifo_snr,LALINFERENCE_PARAM_OUTPUT);
 
-    sprintf(varname,"%s_cplx_snr_amp",dataPtr->name);
+    if((VARNAME_MAX <= snprintf(varname,VARNAME_MAX,"%s_cplx_snr_amp",dataPtr->name)))
+    {
+        fprintf(stderr,"variable name too long\n"); exit(1);
+    }
     REAL8 cplx_snr_amp = cabs(this_ifo_d_inner_h)/this_ifo_snr;
     LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_amp,LALINFERENCE_PARAM_OUTPUT);
+
+    if((VARNAME_MAX <= snprintf(varname,VARNAME_MAX,"%s_cplx_snr_arg",dataPtr->name)))
+    {
+        fprintf(stderr,"variable name too long\n"); exit(1);
+    }
+    REAL8 cplx_snr_phase = carg(this_ifo_d_inner_h);
+    LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_phase,LALINFERENCE_PARAM_OUTPUT);
 
     sprintf(varname,"%s_cplx_snr_arg",dataPtr->name);
     REAL8 cplx_snr_phase = carg(this_ifo_d_inner_h);
@@ -1022,18 +1038,26 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     }
     S+=this_ifo_S;
     char varname[VARNAME_MAX];
-    sprintf(varname,"%s_optimal_snr",dataPtr->name);
-    
+    if((VARNAME_MAX <= snprintf(varname,VARNAME_MAX,"%s_optimal_snr",dataPtr->name)))
+    {
+        fprintf(stderr,"variable name too long\n"); exit(1);
+    }
     LALInferenceAddREAL8Variable(currentParams,varname,sqrt(2.0*this_ifo_S),LALINFERENCE_PARAM_OUTPUT);
 
-    sprintf(varname,"%s_cplx_snr_amp",dataPtr->name);
+    if((VARNAME_MAX <= snprintf(varname,VARNAME_MAX,"%s_cplx_snr_amp",dataPtr->name)))
+    {
+        fprintf(stderr,"variable name too long\n"); exit(1);
+    }
     REAL8 cplx_snr_amp=0.0;
     REAL8 cplx_snr_phase=carg(this_ifo_Rcplx);
     if(this_ifo_S > 0) cplx_snr_amp=2.0*cabs(this_ifo_Rcplx)/sqrt(2.0*this_ifo_S);
 
     LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_amp,LALINFERENCE_PARAM_OUTPUT);
 
-    sprintf(varname,"%s_cplx_snr_arg",dataPtr->name);
+    if((VARNAME_MAX <= snprintf(varname,VARNAME_MAX,"%s_cplx_snr_arg",dataPtr->name)))
+    {
+        fprintf(stderr,"variable name too long\n"); exit(1);
+    }
     LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_phase,LALINFERENCE_PARAM_OUTPUT);
     if(margdist )
       {

@@ -5,8 +5,8 @@ EXTRA_DIST = \
 	copyright \
 	lalinspiral-dev.install \
 	lalinspiral-octave.install \
-	lalinspiral-python.install \
-	lalinspiral-python3.install \
+	python-lalinspiral.install \
+	python3-lalinspiral.install \
 	lalinspiral.install \
 	rules \
 	lalsuite.mk \

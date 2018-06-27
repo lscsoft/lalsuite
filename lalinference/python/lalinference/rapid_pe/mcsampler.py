@@ -17,7 +17,7 @@
 """
 Collection of classes and numpy functions to facilitate a random sampler Monte-Carlo integrator.
 """
-from __future__ import print_function
+
 import sys
 import math
 import bisect
@@ -347,7 +347,7 @@ class MCSampler(object):
 
         show_evaluation_log = kwargs['verbose'] if kwargs.has_key('verbose') else False
         if show_evaluation_log:
-            print(" .... mcsampler : providing verbose output ..... ")
+            print " .... mcsampler : providing verbose output ..... "
 
         int_val1 = numpy.float128(0)
         self.ntotal = 0
@@ -359,7 +359,7 @@ class MCSampler(object):
         last_convergence_test = defaultdict(lambda: False)   # initialize record of tests
 
         if show_evaluation_log:
-            print("walltime : iteration Neff  ln(maxweight) lnLmarg ln(Z/Lmax) int_var")
+            print "walltime : iteration Neff  ln(maxweight) lnLmarg ln(Z/Lmax) int_var"
 
         socket = None
         while self.ntotal < nmin or (eff_samp < neff and self.ntotal < nmax):
@@ -378,7 +378,7 @@ class MCSampler(object):
               or (not isinstance(joint_p_s, numpy.ndarray) and joint_p_s <= 0):
                 for p in self.params:
                     self._rvs[p] = numpy.resize(self._rvs[p], len(self._rvs[p])-n)
-                print("Zero prior value detected, skipping.",file=sys.stderr)
+                print >>sys.stderr, "Zero prior value detected, skipping."
                 continue
 
             #
@@ -405,7 +405,7 @@ class MCSampler(object):
             if fval.sum() == 0:
                 for p in self.params:
                     self._rvs[p] = numpy.resize(self._rvs[p], len(self._rvs[p])-n)
-                print("No contribution to integral, skipping.",file=sys.stderr)
+                print >>sys.stderr, "No contribution to integral, skipping."
                 continue
 
             sample_n = numpy.arange(self.ntotal, self.ntotal + len(fval))
@@ -465,10 +465,10 @@ class MCSampler(object):
                 raise NanOrInf("maxlnL = inf")
 
             if show_evaluation_log:
-                print(int(time.time()), ": ", self.ntotal, eff_samp, math.log(maxval), numpy.log(int_val1/self.ntotal), numpy.log(int_val1/self.ntotal)-maxlnL, numpy.sqrt(var*self.ntotal)/int_val1)
+                print "{0:.3f} : {1:d} {2:.5f} {3:.2f} {4:.2f} {5:.2f} {6:.3f}".format(time.time(), self.ntotal, eff_samp, math.log(maxval), numpy.log(int_val1 / self.ntotal), numpy.log(int_val1 / self.ntotal) - maxlnL, numpy.sqrt(var * self.ntotal) / int_val1)
 
             if (not convergence_tests) and self.ntotal >= nmin and self.ntotal >= nmax and neff != float("inf"):
-                print("WARNING: User requested maximum number of samples reached... bailing.",file=sys.stderr)
+                print >>sys.stderr, "WARNING: User requested maximum number of samples reached... bailing."
 
             #
             # Convergence tests
@@ -481,7 +481,7 @@ class MCSampler(object):
 
             if convergence_tests and show_evaluation_log:  # Print status of each test
                 for key in convergence_tests:
-                    print("   -- Convergence test status : ", key, last_convergence_test[key])
+                    print "   -- Convergence test status : ", key, last_convergence_test[key]
 
             self._address, self._port = "pcdev2.nemo.phys.uwm.edu", 1890
             #if self._address is not None:

@@ -1048,6 +1048,8 @@ def hlmoft(P, Lmax=2, Fp=None, Fc=None):
         hlms = lalsim.SimInspiralChooseTDModes( \
             P.phiref, P.deltaT, \
             P.m1, P.m2, \
+            P.spin1x, P.spin1y, P.spin1z, \
+            P.spin2x, P.spin2y, P.spin2z, \
             P.fmin, P.fref, P.dist, \
             extra_params, Lmax, P.approx)
     except RuntimeError:
@@ -1055,7 +1057,7 @@ def hlmoft(P, Lmax=2, Fp=None, Fc=None):
             P.m1, P.m2, \
             P.spin1x, P.spin1y, P.spin1z, \
             P.spin2x, P.spin2y, P.spin2z, \
-            P.dist, P.incl, P.phiref,  \
+            P.dist, P.phiref,  \
             P.psi, P.eccentricity, P.meanPerAno, \
             P.deltaT, P.fmin, P.fref, \
             extra_params, P.approx)

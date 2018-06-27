@@ -150,7 +150,7 @@ REAL8 interpolate(struct fvec *fvec, REAL8 f){
 }
 
 void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, ProcessParamsTable *commandLine);
-void enforce_m1_larger_m2(SimInspiralTable* injEvent);
+int enforce_m1_larger_m2(SimInspiralTable* injEvent);
 
 typedef void (NoiseFunc)(LALStatus *statusPtr,REAL8 *psd,REAL8 f);
 void MetaNoiseFunc(LALStatus *status, REAL8 *psd, REAL8 f, struct fvec *interp, NoiseFunc *noisefunc);
@@ -533,6 +533,10 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
     (--inj-lambda2)             value of lambda2 to be injected, LALSimulation only (0)\n\
     (--inj-lambdaT              value of lambdaT to be injected (0)\n\
     (--inj-dlambdaT             value of dlambdaT to be injected (0)\n\
+    (--inj-logp1)               value of logp1 to be injected\n\
+    (--inj-gamma1)              value of gamma1 to be injected\n\
+    (--inj-gamma2)              value of gamma2 to be injected\n\
+    (--inj-gamma3)              value of gamma3 to be injected\n\
     (--inj-spinOrder PNorder)   Specify twice the injection PN order (e.g. 5 <==> 2.5PN)\n\
                                     of spin effects effects to use, only for LALSimulation\n\
                                     (default: -1 <==> Use all spin effects).\n\
@@ -1384,10 +1388,11 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	LALInferenceIFOData *thisData=IFOdata->next;
 	REAL8 minFlow=IFOdata->fLow;
 	REAL8 MindeltaT=IFOdata->timeData->deltaT;
-  REAL8 InjSampleRate=1.0/MindeltaT;
+    REAL8 InjSampleRate=1.0/MindeltaT;
 	REAL4TimeSeries *injectionBuffer=NULL;
-  REAL8 padding=0.4; //default, set in LALInferenceReadData()
-  char SNRpath[FILENAME_MAX+50]="";
+    REAL8 padding=0.4; //default, set in LALInferenceReadData()
+    char SNRpath[FILENAME_MAX+50]="";
+    int flipped_masses=0;
 
 	while(thisData){
           minFlow   = minFlow>thisData->fLow ? thisData->fLow : minFlow;
@@ -1418,7 +1423,6 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	while(i<event) {i++; injTable = injTable->next;} /* Select event */
 	injEvent = injTable;
 	injEvent->next = NULL;
-  enforce_m1_larger_m2(injEvent);
 	Approximant injapprox;
 	injapprox = XLALGetApproximantFromString(injTable->waveform);
         if( (int) injapprox == XLAL_FAILURE)
@@ -1434,6 +1438,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	 LALInferencePrintDataWithInjection(IFOdata,commandLine);
 	 return;
 	}
+        flipped_masses = enforce_m1_larger_m2(injEvent);
 	/* Begin loop over interferometers */
 	while(thisData){
 		Approximant       approximant;        /* Get approximant value      */
@@ -1550,16 +1555,32 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       /* FIXME - tidal lambda's and interactionFlag are just set to command line values here.
        * They should be added to injEvent and set to appropriate values
        */
+
+      // Inject (lambda1,lambda2)
       REAL8 lambda1 = 0.;
       if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")) {
         lambda1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")->value);
-        fprintf(stdout,"Injection lambda1 set to %f\n",lambda1);
       }
       REAL8 lambda2 = 0.;
       if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda2")) {
         lambda2= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambda2")->value);
-        fprintf(stdout,"Injection lambda2 set to %f\n",lambda2);
       }
+	  if(flipped_masses)
+	  {
+			  /* Having previously flipped the masses so m1>m2, also flip lambdas */
+			  REAL8 lambda_tmp = lambda1;
+			  lambda1 = lambda2;
+			  lambda2 = lambda_tmp;
+			  fprintf(stdout,"Flipping lambdas since masses are flipped\n");
+	  }
+      if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")) {
+        fprintf(stdout,"Injection lambda1 set to %f\n",lambda1);
+      }
+      if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda2")) {
+        fprintf(stdout,"Injection lambda1 set to %f\n",lambda1);
+      }
+
+      // Inject (lambdaT,dLambdaT)
       REAL8 lambdaT = 0.;
       REAL8 dLambdaT = 0.;
       REAL8 m1=injEvent->mass1;
@@ -1574,6 +1595,36 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         fprintf(stdout,"Injection dLambdaT set to %f\n",dLambdaT);
         fprintf(stdout,"lambda1 set to %f\n",lambda1);
         fprintf(stdout,"lambda2 set to %f\n",lambda2);
+      }
+
+      // Inject 4-piece polytrope eos
+      REAL8 logp1=0.0;
+      REAL8 gamma1=0.0;
+      REAL8 gamma2=0.0;
+      REAL8 gamma3=0.0;
+      if(LALInferenceGetProcParamVal(commandLine,"--inj-logp1")&&LALInferenceGetProcParamVal(commandLine,"--inj-gamma1")&&LALInferenceGetProcParamVal(commandLine,"--inj-gamma2")&&LALInferenceGetProcParamVal(commandLine,"--inj-gamma3")){
+        logp1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-logp1")->value);
+        gamma1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-gamma1")->value);
+        gamma2= atof(LALInferenceGetProcParamVal(commandLine,"--inj-gamma2")->value);
+        gamma3= atof(LALInferenceGetProcParamVal(commandLine,"--inj-gamma3")->value);
+        // Find lambda1,2(m1,2|eos)
+        LALInferenceLogp1GammasMasses2Lambdas(logp1, gamma1, gamma2, gamma3, m1, m2, &lambda1, &lambda2);
+        fprintf(stdout,"Injection logp1 set to %f\n",logp1);
+        fprintf(stdout,"Injection gamma1 set to %f\n",gamma1);
+        fprintf(stdout,"Injection gamma2 set to %f\n",gamma2);
+        fprintf(stdout,"Injection gamma3 set to %f\n",gamma3);
+        fprintf(stdout,"lambda1 set to %f\n",lambda1);
+        fprintf(stdout,"lambda2 set to %f\n",lambda2);
+
+        /*
+        For when tagSimInspiralTable is updated
+        to include EOS params
+
+        injEvent->logp1= logp1;
+        injEvent->gamma1= gamma1;
+        injEvent->gamma2= gamma2;
+        injEvent->gamma3= gamma3;
+        */
       }
 
       REAL8 fref = 100.;
@@ -1753,6 +1804,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   INT4 errnum;
   char SNRpath[FILENAME_MAX+50];
   ProcessParamsTable *ppt=NULL;
+  int flipped_masses=0;
 
   ppt = LALInferenceGetProcParamVal(commandLine,"--outfile");
   if (ppt)
@@ -1770,35 +1822,78 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 
   LALPNOrder amp_order = (LALPNOrder) inj_table->amp_order;
 
-  enforce_m1_larger_m2(inj_table);
+  flipped_masses = enforce_m1_larger_m2(inj_table);
 
   REAL8 injtime=0.0;
   injtime=(REAL8) inj_table->geocent_end_time.gpsSeconds + (REAL8) inj_table->geocent_end_time.gpsNanoSeconds*1.0e-9;
 
+  // Inject (lambda1,lambda2)
   REAL8 lambda1 = 0.;
   if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")) {
     lambda1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")->value);
-    fprintf(stdout,"Injection lambda1 set to %f\n",lambda1);
   }
-
   REAL8 lambda2 = 0.;
   if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda2")) {
     lambda2= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambda2")->value);
+  }
+  if(flipped_masses) /* If flipped masses, also flip lambda */
+  {
+		REAL8 lambda_tmp=lambda1;
+		lambda1=lambda2;
+		lambda2=lambda_tmp;
+		fprintf(stdout,"Flipping lambdas since masses are flipped\n");
+  }
+  if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda1")) {
+    fprintf(stdout,"Injection lambda1 set to %f\n",lambda1);
+  }
+  if(LALInferenceGetProcParamVal(commandLine,"--inj-lambda2")) {
     fprintf(stdout,"Injection lambda2 set to %f\n",lambda2);
   }
 
+
+  // Inject (lambdaT,dLambdaT)
   REAL8 lambdaT = 0.;
   REAL8 dLambdaT = 0.;
-
   if(LALInferenceGetProcParamVal(commandLine,"--inj-lambdaT")&&LALInferenceGetProcParamVal(commandLine,"--inj-dLambdaT")) {
     lambdaT= atof(LALInferenceGetProcParamVal(commandLine,"--inj-lambdaT")->value);
     dLambdaT= atof(LALInferenceGetProcParamVal(commandLine,"--inj-dLambdaT")->value);
+    // Find lambda1,2(LambdaT,dLambdaT,eta)
     LALInferenceLambdaTsEta2Lambdas(lambdaT, dLambdaT, inj_table->eta, &lambda1, &lambda2);
     fprintf(stdout,"Injection lambdaT set to %f\n",lambdaT);
     fprintf(stdout,"Injection dLambdaT set to %f\n",dLambdaT);
     fprintf(stdout,"lambda1 set to %f\n",lambda1);
     fprintf(stdout,"lambda2 set to %f\n",lambda2);
   }
+
+   // Inject 4-piece polytrope eos
+   REAL8 logp1=0.0;
+   REAL8 gamma1=0.0;
+   REAL8 gamma2=0.0;
+   REAL8 gamma3=0.0;
+   if(LALInferenceGetProcParamVal(commandLine,"--inj-logp1")&&LALInferenceGetProcParamVal(commandLine,"--inj-gamma1")&&LALInferenceGetProcParamVal(commandLine,"--inj-gamma2")&&LALInferenceGetProcParamVal(commandLine,"--inj-gamma3")){
+     logp1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-logp1")->value);
+     gamma1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-gamma1")->value);
+     gamma2= atof(LALInferenceGetProcParamVal(commandLine,"--inj-gamma2")->value);
+     gamma3= atof(LALInferenceGetProcParamVal(commandLine,"--inj-gamma3")->value);
+     // Find lambda1,2(m1,2|eos)
+     LALInferenceLogp1GammasMasses2Lambdas(logp1, gamma1, gamma2, gamma3, inj_table->mass1, inj_table->mass2, &lambda1, &lambda2);
+     fprintf(stdout,"Injection logp1 set to %f\n",logp1);
+     fprintf(stdout,"Injection gamma1 set to %f\n",gamma1);
+     fprintf(stdout,"Injection gamma2 set to %f\n",gamma2);
+     fprintf(stdout,"Injection gamma3 set to %f\n",gamma3);
+     fprintf(stdout,"lambda1 set to %f\n",lambda1);
+     fprintf(stdout,"lambda2 set to %f\n",lambda2);
+
+     /*
+     For when tagSimInspiralTable is updated
+     to include EOS params
+
+     injEvent->logp1= logp1;
+     injEvent->gamma1= gamma1;
+     injEvent->gamma2= gamma2;
+     injEvent->gamma3= gamma3;
+     */
+   }
 
   /* Set up LAL dictionary */
   LALDict* LALpars=XLALCreateDict();
@@ -2184,15 +2279,16 @@ LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *ru
     return(injparams);
 }
 
-void enforce_m1_larger_m2(SimInspiralTable* injEvent){
+int enforce_m1_larger_m2(SimInspiralTable* injEvent){
     /* Template generator assumes m1>=m2 thus we must enfore the same convention while injecting, otherwise spin2 will be assigned to mass1
     *        We also shift the phase by pi to be sure the same WF in injected
+	*        Returns: 1 if masses were flipped
     */
     REAL8 m1,m2,tmp;
     m1=injEvent->mass1;
     m2=injEvent->mass2;
 
-    if (m1>=m2) return;
+    if (m1>=m2) return(0);
     else{
         fprintf(stdout, "Injtable has m1<m2. Flipping masses and spins in injection. Shifting phase by pi. \n");
         tmp=m1;
@@ -2207,9 +2303,9 @@ void enforce_m1_larger_m2(SimInspiralTable* injEvent){
         tmp=injEvent->spin1z;
         injEvent->spin1z=injEvent->spin2z;
         injEvent->spin2z=tmp;
-	injEvent->coa_phase=injEvent->coa_phase+LAL_PI;
+    	injEvent->coa_phase=injEvent->coa_phase+LAL_PI;
+        return(1);
         }
-    return ;
 }
 
 void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *commandLine){

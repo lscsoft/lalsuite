@@ -42,6 +42,7 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
 from . import snglcoinc
+from .SimBurstUtils import MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -71,7 +72,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 			self.densities["%s_%s_df" % pair] = rate.BinnedLnDPF(rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))))
 			self.densities["%s_%s_dh" % pair] = rate.BinnedLnDPF(rate.NDBins((rate.LinearBins(-2.0, +2.0, 12001), rate.LinearBins(0.0, 2 * math.pi, 61))))
 
-	def __call__(self, params):
+	def __call__(self, **params):
 		try:
 			interps = self.interps
 		except AttributeError:
@@ -217,8 +218,7 @@ class BurcaCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 
 
 class EPAllSkyCoincParamsDistributions(BurcaCoincParamsDistributions):
-	@staticmethod
-	def coinc_params(events, offsetvector):
+	def ln_lr_from_triggers(self, events, offsetvector):
 		#
 		# check for coincs that have been vetoed entirely
 		#
@@ -284,7 +284,7 @@ class EPAllSkyCoincParamsDistributions(BurcaCoincParamsDistributions):
 				#params[name] = (ddur,)
 				params[name] = (ddur, gmst)
 
-		return params
+		return self(**params)
 
 
 #
@@ -325,8 +325,8 @@ def delay_and_amplitude_correct(event, ra, dec):
 
 
 class EPGalacticCoreCoincParamsDistributions(BurcaCoincParamsDistributions):
-	@staticmethod
-	def coinc_params(events, offsetvector, ra, dec):
+	def ln_lr_from_triggers(self, events, offsetvector):
+		ra, dec = MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD
 		return EPAllSkyCoincParamsDistributions.coinc_params([delay_and_amplitude_correct(copy.copy(event), ra, dec) for event in events], offsetvector)
 
 

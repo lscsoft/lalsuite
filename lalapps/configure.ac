@@ -42,6 +42,7 @@ AC_CONFIG_FILES([\
   src/pulsar/SidebandSearch/Makefile \
   src/pulsar/Tools/Makefile \
   src/pulsar/TwoSpect/Makefile \
+  src/pulsar/Weave/Makefile \
   src/pulsar/Xray/Makefile \
   src/ring/Makefile \
   src/stochastic/Makefile \
@@ -63,7 +64,6 @@ AM_INIT_AUTOMAKE([ \
 MIN_LAL_VERSION="6.18.0"
 MIN_LALFRAME_VERSION="1.4.3"
 MIN_LALMETAIO_VERSION="1.3.1"
-MIN_LALXML_VERSION="1.2.4"
 MIN_LALSIMULATION_VERSION="1.7.0"
 MIN_LALBURST_VERSION="1.4.4"
 MIN_LALINSPIRAL_VERSION="1.7.7"
@@ -73,7 +73,6 @@ MIN_LALSTOCHASTIC_VERSION="1.1.20"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
-AC_SUBST([MIN_LALXML_VERSION])
 AC_SUBST([MIN_LALSIMULATION_VERSION])
 AC_SUBST([MIN_LALBURST_VERSION])
 AC_SUBST([MIN_LALINSPIRAL_VERSION])
@@ -110,7 +109,6 @@ LALAPPS_ENABLE_GDS
 
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
-LALSUITE_ENABLE_LALXML
 LALSUITE_ENABLE_LALSIMULATION
 LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALINSPIRAL
@@ -222,7 +220,6 @@ LALSUITE_POP_UVARS
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
-AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_version],,[AC_MSG_ERROR([could not find the gsl library])])
 LALSUITE_CHECK_GSL_VERSION([1.13])
 LALSUITE_ENABLE_FAST_GSL
@@ -300,28 +297,6 @@ if test "${metaio}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([METAIO])
 
-# check for libxml2
-if test "$lalxml" = "true"; then
-  AC_SEARCH_LIBS([lzma_code],[lzma])
-  PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
-  lal_pre_libxml2_LIBS="$LIBS"
-  LALSUITE_ADD_FLAGS([C],[],[${LIBXML2_LIBS}])
-  AC_SEARCH_LIBS([xmlInitParser],[xml2],,
-                 [AC_MSG_WARN([cannot find the xml2 library])]
-                 [lalxml="false"]
-                 [LIBS="$lal_pre_libxml2_LIBS"])
-fi
-
-# check for libxml2 headers
-if test "$lalxml" = "true"; then
-  lal_pre_libxml2_CPPFLAGS="$CPPFLAGS"
-  LALSUITE_ADD_FLAGS([C],[${LIBXML2_CFLAGS}],[])
-  AC_CHECK_HEADERS([libxml/tree.h],,
-                   [AC_MSG_WARN([could not the libxml/tree.h header])]
-                   [lalxml="false"]
-                   [CPPFLAGS="$lal_pre_libxml2_CPPFLAGS"])
-fi
-
 # check for cfitsio
 LALSUITE_USE_CFITSIO
 
@@ -382,7 +357,6 @@ LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
 LALSUITE_CHECK_OPT_LIB([LALFrame],[${MIN_LALFRAME_VERSION}],[LALFrOpen],[lal/LALFrameL.h])
 LALSUITE_CHECK_OPT_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_OPT_LIB([LALXML],[${MIN_LALXML_VERSION}],[XLALXMLFilePrintElements],[lal/LALXML.h])
 LALSUITE_CHECK_OPT_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_OPT_LIB([LALBurst],[${MIN_LALBURST_VERSION}],[XLALEPSearch],[lal/EPSearch.h])
 LALSUITE_CHECK_OPT_LIB([LALInspiral],[${MIN_LALINSPIRAL_VERSION}],[LALInspiralParameterCalc],[lal/LALInspiral.h])
@@ -453,7 +427,6 @@ LALApps has now been successfully configured:
 * MetaIO library support is $METAIO_ENABLE_VAL
 * LALFrame library support is $LALFRAME_ENABLE_VAL
 * LALMetaIO library support is $LALMETAIO_ENABLE_VAL
-* LALXML library support is $LALXML_ENABLE_VAL
 * LALSimulation library support is $LALSIMULATION_ENABLE_VAL
 * LALBurst library support is $LALBURST_ENABLE_VAL
 * LALInspiral library support is $LALINSPIRAL_ENABLE_VAL

@@ -347,6 +347,34 @@ static void catch_alarm(UNUSED int sig, UNUSED siginfo_t *siginfo,UNUSED void *c
   __ns_saveStateFlag=1;
 }
 
+static void install_resume_handler(void);
+static void install_resume_handler(void)
+{
+    /* Install a periodic alarm that will trigger a checkpoint */
+    int sigretcode=0;
+    struct sigaction sa;
+    sa.sa_sigaction=catch_alarm;
+    sa.sa_flags=SA_SIGINFO;
+    sigretcode=sigaction(SIGVTALRM,&sa,NULL);
+    if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint timer!\n");
+    /* Condor sends SIGUSR2 to checkpoint and continue */
+    sigretcode=sigaction(SIGUSR2,&sa,NULL);
+    if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGUSR2.\n");
+    checkpoint_timer.it_interval.tv_sec=30*60; /* Default timer 30 mins */
+    checkpoint_timer.it_interval.tv_usec=0;
+    checkpoint_timer.it_value=checkpoint_timer.it_interval;
+    setitimer(ITIMER_VIRTUAL,&checkpoint_timer,NULL);
+    /* Install the handler for the condor interrupt signal */
+    sa.sa_sigaction=catch_interrupt;
+    sigretcode=sigaction(SIGINT,&sa,NULL);
+    if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGINT.\n");
+    /* Condor sends SIGTERM to vanilla universe jobs to evict them */
+    sigretcode=sigaction(SIGTERM,&sa,NULL);
+    if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGTERM.\n");
+    /* Condor sends SIGTSTP to standard universe jobs to evict them.
+     *I think condor handles this, so didn't add a handler CHECK */
+}
+
 static UINT4 UpdateNMCMC(LALInferenceRunState *runState);
 /* Prototypes for private "helper" functions. */
 
@@ -920,35 +948,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
           for(i=0;i<Nlive;i++) logLikelihoods[i]=*(REAL8 *)LALInferenceGetVariable(runState->livePoints[i],"logL");
           iter=s->iteration;
       }
-      /* Install a periodic alarm that will trigger a checkpoint */
-      int sigretcode=0;
-      struct sigaction sa;
-      sa.sa_sigaction=catch_alarm;
-      sa.sa_flags=SA_SIGINFO;
-      sigretcode=sigaction(SIGVTALRM,&sa,NULL);
-      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint timer!\n");
-      /* Condor sends SIGUSR2 to checkpoint and continue */
-      sigretcode=sigaction(SIGUSR2,&sa,NULL);
-      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGUSR2.\n");
-      checkpoint_timer.it_interval.tv_sec=30*60; /* Default timer 30 mins */
-      checkpoint_timer.it_interval.tv_usec=0;
-      checkpoint_timer.it_value=checkpoint_timer.it_interval;
-      setitimer(ITIMER_VIRTUAL,&checkpoint_timer,NULL);
-      /* Install the handler for the condor interrupt signal */
-      sa.sa_sigaction=catch_interrupt;
-      sigretcode=sigaction(SIGINT,&sa,NULL);
-      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGINT.\n");
-      /* Condor sends SIGTERM to vanilla universe jobs to evict them */
-      sigretcode=sigaction(SIGTERM,&sa,NULL);
-      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGTERM.\n");
-      /* Condor sends SIGTSTP to standard universe jobs to evict them.
-       *I think condor handles this, so didn't add a handler CHECK */
   }
-
   if(retcode!=0)
   {
     if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
-        fprintf(stdout,"Unable to open resume file %s. Starting anew.\n",resumefilename);
+        fprintf(stdout,"No resume file %s. Starting a new run.\n",resumefilename);
     /* Sprinkle points */
     LALInferenceSetVariable(runState->algorithmParams,"logLmin",&neginfty);
     int sprinklewarning=0;
@@ -1014,6 +1018,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   minpos=0;
   threadState->currentParams=currentVars;
   fprintf(stdout,"Starting nested sampling loop!\n");
+  /* Install interrupt handler for resuming */
+  if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
+  {
+      install_resume_handler();
+  }
   /* Iterate until termination condition is met */
   do {
     /* Find minimum likelihood sample to replace */

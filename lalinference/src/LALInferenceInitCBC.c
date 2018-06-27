@@ -38,6 +38,7 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceInit.h>
 #include <lal/LALInferenceCalibrationErrors.h>
+#include <lal/LALSimNeutronStar.h>
 
 static int checkParamInList(const char *list, const char *param);
 static int checkParamInList(const char *list, const char *param)
@@ -514,9 +515,12 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       char env_uncert_op[VARNAME_MAX];
       struct spcal_envelope *env=NULL;
 
-      snprintf(amp_uncert_op, VARNAME_MAX, "--%s-spcal-amp-uncertainty", ifo->name);
-      snprintf(pha_uncert_op, VARNAME_MAX, "--%s-spcal-phase-uncertainty", ifo->name);
-      snprintf(env_uncert_op, VARNAME_MAX, "--%s-spcal-envelope",ifo->name);
+      if((VARNAME_MAX <= snprintf(amp_uncert_op, VARNAME_MAX, "--%s-spcal-amp-uncertainty", ifo->name))
+          || (VARNAME_MAX <= snprintf(pha_uncert_op, VARNAME_MAX, "--%s-spcal-phase-uncertainty", ifo->name))
+          || (VARNAME_MAX <= snprintf(env_uncert_op, VARNAME_MAX, "--%s-spcal-envelope",ifo->name)) )
+      {
+        fprintf(stderr,"variable name too long\n"); exit(1);
+      }
 
       if( (ppt=LALInferenceGetProcParamVal(runState->commandLine, env_uncert_op)))
           env = initCalibrationEnvelope(ppt->value);
@@ -541,10 +545,13 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       /* Now add each spline node */
       for(i=0;i<ncal;i++)
 	  {
-			  snprintf(freqVarName, VARNAME_MAX, "%s_spcal_logfreq_%i",ifo->name,i);
-			  snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp_%i", ifo->name,i);
-			  snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase_%i", ifo->name,i);
-			  REAL8 amp_std=ampUncertaintyPrior,amp_mean=0.0;
+			  if((VARNAME_MAX <= snprintf(freqVarName, VARNAME_MAX, "%s_spcal_logfreq_%i",ifo->name,i))
+                  || (VARNAME_MAX <= snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp_%i", ifo->name,i))
+                  || (VARNAME_MAX <= snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase_%i", ifo->name,i)) )
+              {
+                  fprintf(stderr,"Variable name too long\n"); exit(1);
+              }
+              REAL8 amp_std=ampUncertaintyPrior,amp_mean=0.0;
 			  REAL8 phase_std=phaseUncertaintyPrior,phase_mean=0.0;
 			  REAL8 logFreq = logFMin + i*dLogF;
 			  LALInferenceAddREAL8Variable(currentParams,freqVarName,logFreq,LALINFERENCE_PARAM_FIXED);
@@ -735,6 +742,9 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--fref f_ref)                  Specify a reference frequency at which parameters are defined (default 100).\n\
     (--tidal)                   Enables tidal corrections, only with LALSimulation.\n\
     (--tidalT)                  Enables reparmeterized tidal corrections, only with LALSimulation.\n\
+    (--4PolyEOS)                Enables 4-piece polytropic EOS parmeterization, only with LALSimulation.\n\
+    (--4SpectralDecomp)         Enables 4-coeff. spectral decomposition EOS parmeterization, only with LALSimulation.\n\
+    (--eos   EOS)               Fix the neutron star EOS. Use \"--eos help\" for allowed names\n\
     (--spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
     (--tidalOrder PNorder)          Specify twice the PN order (e.g. 10 <==> 5PN) of tidal effects to use, only for LALSimulation (default: -1 <==> Use all tidal effects).\n\
     (--numreldata FileName)         Location of NR data file for NR waveforms (with NR_hdf5 approx).\n\
@@ -767,11 +777,19 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
      tilt_spin2                   Angle between spin2 and orbital angular momentum \n\
      phi_12                       Difference between spins' azimuthal angles \n\
      phi_jl                       Difference between total and orbital angular momentum azimuthal angles\n\
-    * Equation of State parameters (requires --use-tidal or --use-tidalT):\n\
+    * Equation of State parameters:\n\
+     (requires --tidal)\n\
      lambda1                      lambda1.\n\
      lambda2                      lambda2.\n\
+     (requires --tidalT)\n\
      lambdaT                      lambdaT.\n\
      dLambdaT                     dLambdaT.\n\
+     (requires --4PolyEOS)\n\
+     logp1                        logp1.\n\
+     gamma1                       gamma1.\n\
+     gamma2                       gamma2.\n\
+     gamma3                       gamma3.\n\
+    * \n\
     ----------------------------------------------\n\
     --- Prior Ranges -----------------------------\n\
     ----------------------------------------------\n\
@@ -787,6 +805,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--mtotal-max max)                      Maximum total mass (200.0).\n\
     (--dt time)                             Width of time prior, centred around trigger (0.2s).\n\
 \n\
+    (--ns-max-mass)                          Maximum observed NS mass used for EOS prior (none).\n\
     (--varyFlow, --flowMin, --flowMax)       Allow the lower frequency bound of integration to vary in given range.\n\
     (--pinparams)                            List of parameters to set to injected values [mchirp,asym_massratio,etc].\n\
     ----------------------------------------------\n\
@@ -850,6 +869,14 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   REAL8 lambdaTMax=3000.0;
   REAL8 dLambdaTMin=-500.0;
   REAL8 dLambdaTMax=500.0;
+  REAL8 logp1Min=33.6;
+  REAL8 logp1Max=35.4;
+  REAL8 gamma1Min=2.0;
+  REAL8 gamma1Max=4.5;
+  REAL8 gamma2Min=1.1;
+  REAL8 gamma2Max=4.5;
+  REAL8 gamma3Min=1.1;
+  REAL8 gamma3Max=4.5;
   gsl_rng *GSLrandom=state->GSLrandom;
   REAL8 endtime=0.0, timeParam=0.0;
   REAL8 timeMin=endtime-dt,timeMax=endtime+dt;
@@ -872,6 +899,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   LALInferenceModel *model = XLALMalloc(sizeof(LALInferenceModel));
   model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
   memset(model->params, 0, sizeof(LALInferenceVariables));
+  model->eos_fam = NULL;
 
   UINT4 signal_flag=1;
   ppt = LALInferenceGetProcParamVal(commandLine, "--noiseonly");
@@ -1334,17 +1362,40 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
 
   }
 
-  if(LALInferenceGetProcParamVal(commandLine,"--tidalT")&&LALInferenceGetProcParamVal(commandLine,"--tidal")){
-    XLALPrintError("Error: cannot use both --tidalT and --tidal.\n");
-    XLAL_ERROR_NULL(XLAL_EINVAL);
-  } else if(LALInferenceGetProcParamVal(commandLine,"--tidalT")){
+  if((!!LALInferenceGetProcParamVal(commandLine,"--tidalT") + !!LALInferenceGetProcParamVal(commandLine,"--tidal")
+    + !!LALInferenceGetProcParamVal(commandLine,"--4PolyEOS") + !!LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")
+    + !!LALInferenceGetProcParamVal(commandLine,"--eos")) > 1 )
+  {
+      XLALPrintError("Error: cannot use more than one of --tidalT, --tidal, --4PolyEOS, --4SpectralDecomp and --eos.\n");
+      XLAL_ERROR_NULL(XLAL_EINVAL);
+  }
+
+  if(LALInferenceGetProcParamVal(commandLine,"--tidalT")){
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambdaT", zero, lambdaTMin, lambdaTMax, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "dLambdaT", zero, dLambdaTMin, dLambdaTMax, LALINFERENCE_PARAM_LINEAR);
-
+  // Pull in tidal parameters (lambda1,lambda2)
   } else if(LALInferenceGetProcParamVal(commandLine,"--tidal")){
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambda1", zero, lambda1Min, lambda1Max, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambda2", zero, lambda2Min, lambda2Max, LALINFERENCE_PARAM_LINEAR);
-
+  // Pull in 4-piece polytrope parameters (logp1,gamma1,gamma2,gamma3)
+  } else if(LALInferenceGetProcParamVal(commandLine,"--4PolyEOS")){
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "logp1", zero, logp1Min, logp1Max, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma1", zero, gamma1Min, gamma1Max, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma2", zero, gamma2Min, gamma2Max, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma3", zero, gamma3Min, gamma3Max, LALINFERENCE_PARAM_LINEAR);
+  }
+  else if((ppt=LALInferenceGetProcParamVal(commandLine,"--eos")))
+  {
+    LALSimNeutronStarEOS *eos=NULL;
+    errnum=XLAL_SUCCESS;
+    XLAL_TRY(eos=XLALSimNeutronStarEOSByName(ppt->value), errnum);
+    if(errnum!=XLAL_SUCCESS)
+        XLAL_ERROR_NULL(errnum,"%s: %s",__func__,XLALErrorString(errnum));
+    
+    XLAL_TRY(model->eos_fam = XLALCreateSimNeutronStarFamily(eos),errnum);
+    if(errnum!=XLAL_SUCCESS)
+        XLAL_ERROR_NULL(errnum,"%s: %s",__func__,XLALErrorString(errnum));
+    if(!model->eos_fam) XLAL_ERROR_NULL(XLAL_EINVAL, "Unable to initialise EOS family");
   }
 
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
@@ -2056,19 +2107,22 @@ void LALInferenceCheckApproximantNeeds(LALInferenceRunState *state,Approximant a
   /* In the IMRPhenomD review a region with possible issues  (q < 1/10 for maximal spins) was identified */
   /* This is not cause to restrict the waveform to exclude this region, but caution should be exercised */
   if (approx==IMRPhenomD){
-     LALInferenceGetMinMaxPrior(state->priorArgs, "a_spin1", &a1min, &a1max);
-     LALInferenceGetMinMaxPrior(state->priorArgs, "a_spin2", &a2min, &a2max);
-     if (q==1 && min<1./10 && ((a1max==1.0 || a2max==1.0) || (a1min==-1.0 || a2min==-1.0))){
-        fprintf(stdout,"WARNING: Based on the allowed prior volume (q < 1/10 for maximal spins), please consult\n");
-        fprintf(stdout,"IMRPhenomD review wiki for further discussion on reliable parameter spaces\n");
-        fprintf(stdout,"https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/PhenD_LargeNegativeSpins\n");
-     }
-     if (q==0 && min<0.082644628 && ((a1max==1.0 || a2max==1.0) || (a1min==-1.0 || a2min==-1.0))){
-        fprintf(stdout,"WARNING: Based on the allowed prior volume (q < 1/10 for maximal spins), please consult\n");
-        fprintf(stdout,"IMRPhenomD review wiki for further discussion on reliable parameter spaces\n");
-        fprintf(stdout,"https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/PhenD_LargeNegativeSpins\n");
-     }
+    if (LALInferenceCheckMinMaxPrior(state->priorArgs,"a_spin1") && LALInferenceCheckMinMaxPrior(state->priorArgs,"a_spin2")){
+       LALInferenceGetMinMaxPrior(state->priorArgs, "a_spin1", &a1min, &a1max);
+       LALInferenceGetMinMaxPrior(state->priorArgs, "a_spin2", &a2min, &a2max);
+       if (q==1 && min<1./10 && ((a1max==1.0 || a2max==1.0) || (a1min==-1.0 || a2min==-1.0))){
+          fprintf(stdout,"WARNING: Based on the allowed prior volume (q < 1/10 for maximal spins), please consult\n");
+          fprintf(stdout,"IMRPhenomD review wiki for further discussion on reliable parameter spaces\n");
+          fprintf(stdout,"https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/PhenD_LargeNegativeSpins\n");
+       }
+       if (q==0 && min<0.082644628 && ((a1max==1.0 || a2max==1.0) || (a1min==-1.0 || a2min==-1.0))){
+          fprintf(stdout,"WARNING: Based on the allowed prior volume (q < 1/10 for maximal spins), please consult\n");
+          fprintf(stdout,"IMRPhenomD review wiki for further discussion on reliable parameter spaces\n");
+          fprintf(stdout,"https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/PhenD_LargeNegativeSpins\n");
+       }
+    }
   }
+
 
   /* IMRPhenomPv2 only supports q > 1/20. Set prior consequently  */
   if (q==1 && approx==IMRPhenomPv2 && min<1./20.){
@@ -2181,5 +2235,3 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
     }
 
 }
-
-

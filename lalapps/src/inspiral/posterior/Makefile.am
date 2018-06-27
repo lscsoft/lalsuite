@@ -46,8 +46,7 @@ pybin_scripts = \
 	lalinference_multi_pipe \
 	lalinference_tiger_pipe \
 	lalapps_compute_roq_weights \
-	lalapps_merge_posteriors \
-	lalinference_review_test
+	lalapps_merge_posteriors
 endif
 
 EXTRA_DIST += \

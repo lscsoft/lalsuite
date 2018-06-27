@@ -3,7 +3,7 @@
 
 from lalinference import lalinference_pipe_utils as pipe_utils
 from lalapps import inspiralutils
-import ConfigParser
+from six.moves import configparser
 from optparse import OptionParser,OptionValueError
 import sys
 import ast
@@ -68,7 +68,7 @@ def add_variations(cp, section, option, values=None, allowed_values=None):
     """
     if not cp.has_section(section) and not cp.has_option(section,option):
         return
-    
+
     if values is not None:
         vals = values
     else:
@@ -111,7 +111,8 @@ def generate_variations(master_cp, variations):
     (section, opt), vals = variations.popitem()
     for val in vals:
         # Read file back in to get a new object
-        cp = ConfigParser.ConfigParser()
+        cp = configparser.ConfigParser()
+        cp.optionxform = str
 	cp.read(masterpath)
         cp.set(section,opt,val)
         # Append to the paths
@@ -132,7 +133,7 @@ if len(args)!=1:
 
 inifile=args[0]
 
-cp=ConfigParser.SafeConfigParser()
+cp=configparser.SafeConfigParser()
 fp=open(inifile)
 cp.optionxform = str
 cp.readfp(fp)
@@ -196,9 +197,9 @@ def setup_roq(cp):
     Generates cp objects with the different ROQs applied
     """
     use_roq=False
-    if cp.has_option('paths','roq_b_matrix_directory'):
+    if cp.has_option('paths','roq_b_matrix_directory') or cp.has_option('paths','computeroqweights'):
         if not cp.has_option('analysis','roq'):
-            print("Warning: If you are attempting to enable ROQ by specifying paths.roq_b_matrix_directory,\
+            print("Warning: If you are attempting to enable ROQ by specifying roq_b_matrix_directory or computeroqweights,\n\
             please use analysis.roq in your config file in future. Enabling ROQ.")
             cp.set('analysis','roq',True)
     if not cp.getboolean('analysis','roq'):
@@ -213,7 +214,7 @@ def setup_roq(cp):
     roq_paths=os.listdir(path)
     roq_params={}
     roq_force_flow = None
-    
+
     if cp.has_option('lalinference','roq_force_flow'):
         roq_force_flow = cp.getfloat('lalinference','roq_force_flow')
         print "WARNING: Forcing the f_low to ", str(roq_force_flow), "Hz"
@@ -280,14 +281,16 @@ def setup_roq(cp):
         cp.write(cpfile)
 
     for roq in roq_paths:
-        this_cp = ConfigParser.ConfigParser()
+        this_cp = configparser.ConfigParser()
+        this_cp.optionxform = str
 	this_cp.read(masterpath)
         basedir = this_cp.get('paths','basedir')
-        for dirs in 'basedir','daglogdir','webdir', 'roq_b_matrix_directory':
+        for dirs in 'basedir','daglogdir','webdir':
             val = this_cp.get('paths',dirs)
             newval = os.path.join(val,roq)
             mkdirs(newval)
             this_cp.set('paths',dirs,newval)
+        this_cp.set('paths','roq_b_matrix_directory',os.path.join(cp.get('paths','roq_b_matrix_directory'),roq))
         flow=roq_params[roq]['flow'] / roq_mass_freq_scale_factor
         srate=2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor
         if srate > 8192:
@@ -339,12 +342,29 @@ master_cp=cp
 # Iterate over variations and generate sub-dags
 for cp in generate_variations(master_cp,variations):
     basepath=cp.get('paths','basedir')
-    # Copy injection file into place as paths outside basedir are inaccessible
+    # Link injection file into place as paths outside basedir are inaccessible to containerised jobs
     if cp.has_option('input','injection-file'):
         injpath=cp.get('input','injection-file')
         myinjpath=os.path.join(basepath,os.path.basename(injpath))
-        os.link(injpath, myinjpath)
-        cp.set('input','injection-file',myinjpath)
+        if os.path.abspath(myinjpath) != os.path.abspath(injpath):
+            # If the injection file does not exist in the run dir, link it in place
+            # Useful for singularity jobs which see only rundir
+            if os.path.lexists(myinjpath):
+                # If the path exists, see if it is a link to the current file
+                # and if so, just update the config
+                if os.path.islink(myinjpath) and os.path.realpath(myinjpath)==os.path.realpath(injpath):
+                    cp.set('input','injection-file',myinjpath)
+                else:
+                    # Do not over-write the injection file
+                    print("Error: File {0} exists in run directory, not over-writing with \
+                            {1}. Remove the existing file or create a fresh run directory".format(myinjpath,injpath)
+                            )
+                    sys.exit(1)
+            else:
+                # The link doens't exist, so create it and update config
+                os.link(os.path.abspath(injpath), myinjpath)
+                cp.set('input','injection-file',myinjpath)
+
         
     for this_cp in setup_roq(cp):
         # Create the DAG from the configparser object
@@ -362,7 +382,7 @@ outerdag.write_dag()
 outerdag.write_script()
 
 # End of program
-print 'Successfully created DAG file.'
+print('Successfully created DAG file.')
 
 if opts.condor_submit:
   import subprocess
@@ -376,4 +396,5 @@ if opts.condor_submit:
     print 'Submitted DAG file'
   else:
     print 'Unable to submit DAG file'
-
+else:
+  print('To submit, run:\n\tcondor_submit_dag {0}'.format(outerdag.get_dag_file()))

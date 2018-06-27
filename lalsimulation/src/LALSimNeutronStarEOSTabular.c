@@ -27,6 +27,7 @@
 
 #include <lal/LALSimReadData.h>
 #include <gsl/gsl_interp.h>
+#include <lal/LALSimNeutronStar.h>
 
 /** @cond */
 
@@ -202,7 +203,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     size_t i;
     double *hdat;
     double *rhodat;
-    double integrand_im1, integrand_i, integral;
 
     eos = LALCalloc(1, sizeof(*eos));
     data = LALCalloc(1, sizeof(*data));
@@ -241,6 +241,7 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
 
     hdat = LALMalloc(ndat * sizeof(*hdat));
     hdat[0] = 0.0;
+    // FIXME: First points not done correctly. Minimal error, though.
     // Do first point by hand
     hdat[1] = hdat[0] + 0.5 * (1./(pdat[1]+edat[1])) * (pdat[1] - pdat[0]);
     for (i = 1; i < ndat-1; ++i) {
@@ -253,21 +254,10 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     LALFree(log_pdat);
     LALFree(integrand);
 
-    /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-    /*             CALCULATION OF RHO CURRENTLY RETURNS GARBAGE               */
-    /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-    /* compute rest-mass density by integrating (trapezoid rule) */
-    /* rho_i = rho_{i-1} exp(int_{e_{i-1}}^{e_i} de/(e+p)) */
+    // Find rho from e, p, and h: rho = (e+p)/exp(h)
     rhodat = LALMalloc(ndat * sizeof(*hdat));
-    rhodat[0] = 0.0;
-    rhodat[1] = edat[1];        /* essentially the same at low density */
-    integrand_im1 = 1.0 / (edat[1] + pdat[1]);
-    for (i = 2; i < ndat; i++) {
-        integrand_i = 1.0 / (edat[i] + pdat[i]);
-        integral =
-            0.5 * (integrand_im1 + integrand_i) * (edat[i] - edat[i - 1]);
-        integrand_im1 = integrand_i;
-        rhodat[i] = rhodat[i - 1] * exp(integral);
+    for (i=0; i < ndat; i++){
+        rhodat[i] = (edat[i]+pdat[i])/exp(hdat[i]);
     }
 
     data->hdat = hdat;
@@ -312,16 +302,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     return eos;
 }
 
-static int mystrcasecmp(const char *s1, const char *s2)
-{
-    while (*s1) {
-        int c1 = toupper(*s1++);
-        int c2 = toupper(*s2++);
-        if (c1 != c2)
-            return (c1 > c2) - (c1 < c2);
-    }
-    return 0;
-}
 
 /** @endcond */
 
@@ -415,41 +395,27 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
 {
     static const char fname_base[] = "LALSimNeutronStarEOS_";
     static const char fname_extn[] = ".dat";
-    static const char *eos_names[] = {
-        "ALF1", "ALF2", "ALF3", "ALF4",
-        "AP1", "AP2", "AP3", "AP4",
-        "BBB2", "BGN1H1", "BPAL12", 
-        "BSK19", "BSK20", "BSK21",
-        "ENG", "FPS", "GNH3",
-        "GS1", "GS2",
-        "H1", "H2", "H3", "H4", "H5", "H6", "H7",
-        "MPA1", "MS1B", "MS1", "MS2",
-        "PAL6", "PCL2", "PS",
-        "QMC700",
-        "SLY4", "SLY",
-        "SQM1", "SQM2", "SQM3",
-        "WFF1", "WFF2", "WFF3"
-    };
-    size_t n = XLAL_NUM_ELEM(eos_names);
+    
+    size_t n = XLAL_NUM_ELEM(lalSimNeutronStarEOSNames);
     size_t i;
     char fname[FILENAME_MAX];
 
     for (i = 0; i < n; ++i)
-        if (mystrcasecmp(name, eos_names[i]) == 0) {
+        if (XLALStringCaseCompare(name, lalSimNeutronStarEOSNames[i]) == 0) {
             LALSimNeutronStarEOS *eos;
-            snprintf(fname, sizeof(fname), "%s%s%s", fname_base, eos_names[i],
+            snprintf(fname, sizeof(fname), "%s%s%s", fname_base, lalSimNeutronStarEOSNames[i],
                 fname_extn);
             eos = XLALSimNeutronStarEOSFromFile(fname);
             if (!eos)
                 XLAL_ERROR_NULL(XLAL_EFUNC);
-            snprintf(eos->name, sizeof(eos->name), "%s", eos_names[i]);
+            snprintf(eos->name, sizeof(eos->name), "%s", lalSimNeutronStarEOSNames[i]);
             return eos;
         }
 
     XLAL_PRINT_ERROR("Unrecognized EOS name %s...", name);
-    XLALPrintError("\tKnown EOS names are: %s", eos_names[0]);
+    XLALPrintError("\tKnown EOS names are: %s", lalSimNeutronStarEOSNames[0]);
     for (i = 1; i < n; ++i)
-        XLALPrintError(", %s", eos_names[i]);
+        XLALPrintError(", %s", lalSimNeutronStarEOSNames[i]);
     XLALPrintError("\n");
     XLAL_ERROR_NULL(XLAL_ENAME);
 }

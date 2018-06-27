@@ -29,7 +29,11 @@
 
 #if defined(HAVE_LIBCFITSIO)
 
+// disable -Wstrict-prototypes flag for this header file as this causes
+// a build failure for cfitsio-3.440+
+#pragma GCC diagnostic ignored "-Wstrict-prototypes"
 #include <fitsio.h>
+#pragma GCC diagnostic pop
 
 // If fffree() is missing, use free() instead
 #if !defined(HAVE_FFFREE)

@@ -487,21 +487,16 @@ if not opts.time_marginalization:
     # to it.
     #
     def likelihood_function(right_ascension, declination, t_ref, phi_orb, inclination, psi, distance):
-        # use EXTREMELY many bits
-        lnL = numpy.zeros(right_ascension.shape,dtype=numpy.float128)
-        i = 0
-        for ph, th, tr, phr, ic, ps, di in zip(right_ascension, declination,
-                t_ref, phi_orb, inclination, psi, distance):
-            P.phi = ph # right ascension
-            P.theta = th # declination
-            P.tref = fiducial_epoch + tr # ref. time (rel to epoch for data taking)
-            P.phiref = phr # ref. orbital phase
-            P.incl = ic # inclination
-            P.psi = ps # polarization angle
-            P.dist = di* 1.e6 * lal.PC_SI # luminosity distance
+
+        P.phi = right_ascension # right ascension
+        P.theta = declination # declination
+        P.tref = t_ref + fiducial_epoch # ref. time (rel to epoch for data taking)
+        P.phiref = phi_orb # ref. orbital phase
+        P.incl = inclination # inclination
+        P.psi = psi # polarization angle
+        P.dist = distance * 1.e6 * lal.PC_SI # luminosity distance
     
-            lnL[i] = factored_likelihood.factored_log_likelihood(P, rholms_intp, cross_terms, opts.l_max)
-            i+=1
+        lnL = factored_likelihood.factored_log_likelihood(P, rholms_intp, cross_terms, opts.l_max)
     
         return numpy.exp(lnL)
 
@@ -530,23 +525,16 @@ else: # Sum over time for every point in other extrinsic params
 
     def likelihood_function(right_ascension, declination, phi_orb, inclination,
             psi, distance):
-        # use EXTREMELY many bits
-        lnL = numpy.zeros(right_ascension.shape,dtype=numpy.float128)
-	# PRB: can we move this loop inside the factored_likelihood? It might help.
-        i = 0
-        # choose an array at the target sampling rate. P is inherited globally
-        for ph, th, phr, ic, ps, di in zip(right_ascension, declination,
-                phi_orb, inclination, psi, distance):
-            P.phi = ph # right ascension
-            P.theta = th # declination
-            P.tref = fiducial_epoch  # see 'tvals', above
-            P.phiref = phr # ref. orbital phase
-            P.incl = ic # inclination
-            P.psi = ps # polarization angle
-            P.dist = di* 1.e6 * lal.PC_SI # luminosity distance
 
-            lnL[i] = factored_likelihood.factored_log_likelihood_time_marginalized(tvals, P, rholms_intp, rholms, cross_terms, det_epochs, opts.l_max,interpolate=opts.interpolate_time)
-            i+=1
+        P.phi = right_ascension # right ascension
+        P.theta = declination # declination
+        P.tref = fiducial_epoch  # see 'tvals', above
+        P.phiref = phi_orb # ref. orbital phase
+        P.incl = inclination # inclination
+        P.psi = psi # polarization angle
+        P.dist = distance * 1.e6 * lal.PC_SI # luminosity distance
+
+        lnL = factored_likelihood.factored_log_likelihood_time_marginalized(tvals, P, rholms_intp, rholms, cross_terms, det_epochs, opts.l_max,interpolate=opts.interpolate_time)
     
         return numpy.exp(lnL)
 

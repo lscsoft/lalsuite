@@ -33,7 +33,11 @@
 
 /***********************************************************************************************/
 /* includes */
+/* disable -Wstrict-prototypes flag for this header file as this */
+/* a build failure for cfitsio-3.440+ */
+#pragma GCC diagnostic ignored "-Wstrict-prototypes"
 #include <fitsio.h>
+#pragma GCC diagnostic pop
 #include <math.h>
 #include <gsl/gsl_interp.h>        /* needed for the gsl interpolation */
 #include <gsl/gsl_spline.h>        /* needed for the gsl interpolation */

@@ -33,6 +33,7 @@ from glob2 import glob
 # These variables come from automake.
 subst = dict(prefix=os.path.abspath('build/inst'))
 subst['exec_prefix'] = Template('@exec_prefix@').substitute(**subst)
+BINDIR = Template('@bindir@').substitute(**subst)
 LIBEXECDIR = Template('@libexecdir@').substitute(**subst)
 PYTHONDIR = Template('@pythondir@').substitute(**subst)
 BASE_VERSION = '@BASE_VERSION@'
@@ -53,6 +54,13 @@ class build_ext(_build_ext):
         self.copy_file(src, dst)
 
 
+stub = '''\
+#!python
+import os, pkg_resources, sys
+os.execv(pkg_resources.resource_filename('lalapps', 'bin/{}'), sys.argv)
+'''
+
+
 class build_scripts(_build_scripts):
     """Override setuptools install_scripts: strip the .py extensions and
     add the shebang lines."""
@@ -64,8 +72,13 @@ class build_scripts(_build_scripts):
         tmpdir = tempfile.mkdtemp(dir=self.build_dir)
         try:
             for old_script in old_scripts:
-                base, ext = os.path.splitext(old_script)
-                if ext == '.py':
+                basename = os.path.basename(old_script)
+                base, ext = os.path.splitext(basename)
+                if not old_script.startswith(LIBEXECDIR):
+                    new_script = os.path.join(tmpdir, basename)
+                    with open(new_script, 'w') as outfile:
+                        outfile.write(stub.format(os.path.basename(old_script)))
+                elif ext == '.py':
                     new_script = os.path.join(tmpdir, base)
                     with open(new_script, 'wb') as outfile:
                         outfile.write(b'#!python\n')
@@ -105,12 +118,13 @@ setup(
         'Topic :: Scientific/Engineering :: Astronomy',
         'Topic :: Scientific/Engineering :: Physics'],
     cmdclass={'build_ext': build_ext, 'build_scripts': build_scripts},
-    package_dir={'': PYTHONDIR},
-    packages=find_packages(PYTHONDIR),
-    scripts=glob(LIBEXECDIR + '/**/*.py'),
+    package_dir={'': PYTHONDIR, 'lalapps.bin': BINDIR},
+    package_data={'lalapps.bin': ['*']},
+    packages=find_packages(PYTHONDIR) + ['lalapps.bin'],
+    scripts=glob(LIBEXECDIR + '/**/*.py') + glob(BINDIR + '/*'),
     ext_modules=[Extension(os.path.relpath(filename, PYTHONDIR)
                            .replace('.so', '')
                            .replace('/', '.'), [])
                  for filename in glob(PYTHONDIR + '/**/*.so')],
-    install_requires=['numpy>=1.7']
+    install_requires=['ligo-segments', 'numpy>=1.7']
 )

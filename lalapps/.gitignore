@@ -7,7 +7,6 @@
 *.pyc
 *.pyman
 *.pyo
-__pycache__
 .deps
 .libs
 /_build/
@@ -16,6 +15,7 @@ __pycache__
 AUTHORS
 Makefile
 Makefile.in
+__pycache__
 config.lt
 debian/control
 doxygen/autogen.dox
@@ -152,7 +152,6 @@ src/lalapps/LALAppsBuildInfoHeader.h
 src/lalapps/LALAppsVCSInfo.c
 src/lalapps/LALAppsVCSInfo.h
 src/lalapps/LALAppsVCSInfoHeader.h
-src/lalapps/version2.c
 src/lalapps/git_version.py
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_fftw*_wisdom
@@ -160,6 +159,7 @@ src/lalapps/lalapps_path2cache
 src/lalapps/lalapps_searchsum2cache
 src/lalapps/lalapps_tconvert
 src/lalapps/lalapps_version
+src/lalapps/version2.c
 src/online/lalapps_online_datafind
 src/power/lalapps_binj
 src/power/lalapps_binj_pic
@@ -189,6 +189,7 @@ src/power/lalapps_power_veto
 src/power/lalapps_simburst_to_frame
 src/power/lalapps_xml_plotlalseries
 src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
+src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris_python
 src/pulsar/CreateEphemeris/lalapps_create_time_correction_ephemeris
 src/pulsar/CrossCorr/gsldata.dat
 src/pulsar/CrossCorr/lalapps_pulsar_crosscorr
@@ -210,6 +211,7 @@ src/pulsar/FITSTools/lalapps_fits_table_merge
 src/pulsar/FITSTools/lalapps_fits_table_select
 src/pulsar/Fscan/lalapps_spec_avg
 src/pulsar/Fscan/lalapps_spec_avg_long
+src/pulsar/Fstatistic/lalapps_ComputeFstatBenchmark
 src/pulsar/Fstatistic/lalapps_ComputeFstatLatticeCount
 src/pulsar/Fstatistic/lalapps_ComputeFstatMCUpperLimit
 src/pulsar/Fstatistic/lalapps_ComputeFstatistic_v2
@@ -219,7 +221,6 @@ src/pulsar/Fstatistic/lalapps_compareFstats
 src/pulsar/Fstatistic/lalapps_synthesizeBstatMC
 src/pulsar/Fstatistic/lalapps_synthesizeLVStats
 src/pulsar/Fstatistic/lalapps_synthesizeTransientStats
-src/pulsar/Fstatistic/lalapps_ComputeFstatBenchmark
 src/pulsar/GCT/lalapps_HierarchSearchGCT
 src/pulsar/HeterodyneSearch/lalapps_CrabTNHeterodyne
 src/pulsar/HeterodyneSearch/lalapps_SplInter
@@ -252,6 +253,7 @@ src/pulsar/Injections/lalapps_Makefakedata_v5
 src/pulsar/Injections/lalapps_compareTS
 src/pulsar/MakeSFTs/lalapps_LISAmakeSFTs
 src/pulsar/MakeSFTs/lalapps_MakeSFTs
+src/pulsar/MakeSFTs/lalapps_MakeSFTDAG
 src/pulsar/SFTTools/SFT-bad1
 src/pulsar/SFTTools/SFT-bad10
 src/pulsar/SFTTools/SFT-bad11
@@ -290,6 +292,10 @@ src/pulsar/Tools/lalapps_FstatMetric_v2
 src/pulsar/Tools/lalapps_PrintDetectorState
 src/pulsar/TwoSpect/lalapps_TwoSpect
 src/pulsar/TwoSpect/lalapps_TwoSpectTemplateBank
+src/pulsar/Weave/*.testdir
+src/pulsar/Weave/lalapps_Weave
+src/pulsar/Weave/lalapps_WeaveCompare
+src/pulsar/Weave/lalapps_WeaveSetup
 src/pulsar/Xray/lalapps_Intermittent
 src/pulsar/Xray/lalapps_SemiCoherentBinary_v2
 src/pulsar/Xray/lalapps_binary2sfts
@@ -319,6 +325,8 @@ src/stochastic/lalapps_stochastic_preprocess
 src/stochastic/lalapps_stochastic_virgo
 src/stochastic/lalapps_stopp
 src/stochastic/lalapps_stopp_bayes
+src/string/lalapps_StringAddFrame
+src/string/lalapps_StringSearch
 src/string/lalapps_cosmicstring_pipe
 src/string/lalapps_string_apply_vetoes
 src/string/lalapps_string_calc_likelihood
@@ -328,8 +336,6 @@ src/string/lalapps_string_final
 src/string/lalapps_string_meas_likelihood
 src/string/lalapps_string_plot_binj
 src/string/lalapps_string_plot_likelihood
-src/string/lalapps_StringAddFrame
-src/string/lalapps_StringSearch
 src/tracksearch/lalapps_tracksearch
 src/tracksearch/lalapps_tracksearch_averager
 src/tracksearch/lalapps_tracksearch_cutpipe

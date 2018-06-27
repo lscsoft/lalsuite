@@ -1272,7 +1272,7 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
 
     const char *flat_params[] = {"q", "eta", "t0", "azimuth", "cosalpha", "time", "phase", "polarisation",
                                  "rightascension", "costheta_jn", "phi_jl",
-                                 "phi12", "a_spin1", "a_spin2", NULL};
+                                 "phi12", "a_spin1", "a_spin2", "logp1", "gamma1", "gamma2", "gamma3", NULL};
 
     LALInferenceVariables *args = thread->proposalArgs;
 
@@ -3648,8 +3648,14 @@ REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LAL
     REAL8 phaseWidth;
     UINT4 nspl = LALInferenceGetUINT4Variable(proposedParams, "spcal_npts");
     for (i = 0; i < nspl; i++) {
-      snprintf(ampName, VARNAME_MAX, "%s_spcal_amp_%i", det->name, i);
-      snprintf(phaseName, VARNAME_MAX, "%s_spcal_phase_%i", det->name, i);
+      if((VARNAME_MAX <= snprintf(ampName, VARNAME_MAX, "%s_spcal_amp_%i", det->name, i)))
+      {
+        fprintf(stderr,"variable name too long\n"); exit(1);
+      }
+      if((VARNAME_MAX <= snprintf(phaseName, VARNAME_MAX, "%s_spcal_phase_%i", det->name, i)))
+      {
+        fprintf(stderr,"variable name too long\n"); exit(1);
+      }
 
       LALInferenceGetGaussianPrior(thread->priorArgs, ampName, &dummy, &ampWidth);
       REAL8 amp = LALInferenceGetREAL8Variable(proposedParams, ampName);
