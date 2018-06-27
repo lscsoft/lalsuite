@@ -138,14 +138,12 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
   Based on Chris Pankow's script
   """
   output=[]
-  from glue.ligolw import utils
+  from glue.ligolw import utils as ligolw_utils
   from glue.ligolw import lsctables
   from glue.ligolw import ligolw
-  class PSDContentHandler(ligolw.LIGOLWContentHandler):
+  class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
-  lsctables.use_in(PSDContentHandler)
-  from glue.ligolw import param
-  from glue.ligolw import array
+  lsctables.use_in(LIGOLWContentHandler)
   import subprocess
   from lal import series as lalseries
   from subprocess import Popen, PIPE
@@ -153,7 +151,7 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
   os.chdir(basepath)
   print "%s download %s coinc.xml"%(gracedb,gid)
   subprocess.call([gracedb,"download", gid ,"coinc.xml"])
-  xmldoc=utils.load_filename("coinc.xml",contenthandler = PSDContentHandler)
+  xmldoc=ligolw_utils.load_filename("coinc.xml",contenthandler = LIGOLWContentHandler)
   coinctable = lsctables.CoincInspiralTable.get_table(xmldoc)
   coinc_events = [event for event in coinctable]
   sngltable = lsctables.SnglInspiralTable.get_table(xmldoc)
@@ -166,7 +164,7 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
   if downloadpsd:
     print "gracedb download %s psd.xml.gz" % gid
     subprocess.call([gracedb,"download", gid ,"psd.xml.gz"])
-    xmlpsd = lalseries.read_psd_xmldoc(utils.load_filename('psd.xml.gz',contenthandler = lalseries.PSDContentHandler))
+    xmlpsd = lalseries.read_psd_xmldoc(ligolw_utils.load_filename('psd.xml.gz',contenthandler = lalseries.PSDContentHandler))
     if os.path.exists("psd.xml.gz"):
       psdasciidic=get_xml_psds(os.path.realpath("./psd.xml.gz"),ifos,os.path.realpath('./PSDs'),end_time=None)
       combine=np.loadtxt(psdasciidic[psdasciidic.keys()[0]])
@@ -193,10 +191,10 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
       snr = e.snr
       eff_dist = e.eff_distance
       if threshold_snr is not None:
-          if snr > threshold_snr:
-              horizon_distance.append(eff_dist * snr/threshold_snr)
-          else:
-              horizon_distance.append(2 * eff_dist)
+        if snr > threshold_snr:
+          horizon_distance.append(eff_dist * snr/threshold_snr)
+        else:
+          horizon_distance.append(2 * eff_dist)
     if srate:
       if max(srate)<srate_psdfile:
         srate = max(srate)
@@ -435,13 +433,13 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
     (end_time): trigtime for this event. Will be used a part of the PSD file name
   """
   lal=1
-  from glue.ligolw import utils
+  from glue.ligolw import utils as ligolw_utils
   try:
     #from pylal import series
-    from lal import series as series
+    from lal import series as lalseries
     lal=0
   except ImportError:
-    print "ERROR, cannot import pylal.series in bppu/get_xml_psds()\n"
+    print "ERROR, cannot import lal.series in bppu/get_xml_psds()\n"
     exit(1)
 
   out={}
@@ -470,7 +468,7 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
   if not os.path.isfile(psdxml):
     print "ERROR: impossible to open the psd file %s. Exiting...\n"%psdxml
     sys.exit(1)
-  xmlpsd =  series.read_psd_xmldoc(utils.load_filename(psdxml,contenthandler = series.PSDContentHandler))
+  xmlpsd =  lalseries.read_psd_xmldoc(ligolw_utils.load_filename(psdxml,contenthandler = lalseries.PSDContentHandler))
   # Check the psd file contains all the IFOs we want to analize
   for ifo in ifos:
     if not ifo in [i.encode('ascii') for i in xmlpsd.keys()]:
@@ -512,15 +510,15 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
 def get_trigger_chirpmass(gid=None,gracedb="gracedb"):
   from glue.ligolw import lsctables
   from glue.ligolw import ligolw
-  from glue.ligolw import utils
-  class PSDContentHandler(ligolw.LIGOLWContentHandler):
+  from glue.ligolw import utils as ligolw_utils
+  class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
-  lsctables.use_in(PSDContentHandler)
+  lsctables.use_in(LIGOLWContentHandler)
   import subprocess
 
   cwd=os.getcwd()
   subprocess.call([gracedb,"download", gid ,"coinc.xml"])
-  xmldoc=utils.load_filename("coinc.xml",contenthandler = PSDContentHandler)
+  xmldoc=ligolw_utils.load_filename("coinc.xml",contenthandler = LIGOLWContentHandler)
   coinctable = lsctables.CoincInspiralTable.get_table(xmldoc)
   coinc_events = [event for event in coinctable]
   sngltable = lsctables.SnglInspiralTable.get_table(xmldoc)
@@ -998,13 +996,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('input','burst-injection-file'):
       #from pylal import SimBurstUtils
       from glue.ligolw import lsctables
-      from glue.ligolw import utils
+      from glue.ligolw import utils as ligolw_utils
       from glue.ligolw import ligolw
       injfile=self.config.get('input','burst-injection-file')
-      class PSDContentHandler(ligolw.LIGOLWContentHandler):
+      class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 	pass
-      lsctables.use_in(PSDContentHandler)
-      injTable=lsctables.SimBurstTable.get_table(utils.load_filename(injfile,contenthandler = PSDContentHandler))
+      lsctables.use_in(LIGOLWContentHandler)
+      injTable=lsctables.SimBurstTable.get_table(ligolw_utils.load_filename(injfile,contenthandler = LIGOLWContentHandler))
       events=[Event(SimBurst=inj) for inj in injTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','burst-injection-file'))])
     # SnglInspiral Table
