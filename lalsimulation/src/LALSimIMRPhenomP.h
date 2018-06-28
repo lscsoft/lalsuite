@@ -114,7 +114,7 @@ static int PhenomPCoreOneFrequency(
   PNPhasingSeries *PNparams,              /**< PN inspiral phase coefficients */
   COMPLEX16 *hPhenom,                     /**< Output: IMRPhenom waveform (before precession) */
   REAL8 *phasing,                         /**< Output: overall phasing */
-  const UINT4 IMRPhenomP_version,         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
+  const UINT4 IMRPhenomP_version,         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD, NRTidal uses IMRPhenomPv2 with the NRTidal framework */
   AmpInsPrefactors *amp_prefactors,       /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
   PhiInsPrefactors *phi_prefactors        /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/
 );
@@ -133,7 +133,7 @@ static int PhenomPCoreTwistUp(
   const REAL8 epsilonoffset,                  /**< f_ref dependent offset for epsilon angle */
   COMPLEX16 *hp,                              /**< [out] plus polarization \f$\tilde h_+\f$ */
   COMPLEX16 *hc,                              /**< [out] cross polarization \f$\tilde h_x\f$ */
-  IMRPhenomP_version_type IMRPhenomP_version  /**< IMRPhenomP(v1) uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
+  IMRPhenomP_version_type IMRPhenomP_version  /**< IMRPhenomP(v1) uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD, IMRPhenomPv2_NRTidal uses NRTidal framework with IMRPhenomPv2 */
 );
 
 /* Simple 2PN version of L, without any spin terms expressed as a function of v */
