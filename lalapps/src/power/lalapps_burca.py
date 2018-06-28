@@ -132,7 +132,7 @@ if options.coincidence_segments is not None:
 		# for the purposes of the coinc segs feature, the coinc
 		# time is minimum of event peak times.  this is a fast, and
 		# guaranteed reproducible definition
-		return len(events) < min_instruments or min(event.peak for event in events) not in coinc_segs
+		return len(events) < min_instruments or min(event.peak + offset_vector[event.ifo] for event in events) not in coinc_segs
 else:
 	def coinc_segs_ntuple_comparefunc(events, offset_vector, min_instruments = options.min_instruments):
 		return len(events) < min_instruments
