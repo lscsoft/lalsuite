@@ -79,7 +79,7 @@ double  XLALSimLocateOmegaTime(
     timeHi.data = dynamicsHi->data;
 
     double dt = timeHi.data[1] - timeHi.data[0];
-    double ddradiusVec[timeHi.length - 2];
+    double ddradiusVec[timeHi.length - 1];
     unsigned int k;
     for (k = 1; k < timeHi.length-1; k++) {
         ddradiusVec[k] = (radiusVec->data[k+1] - 2.*radiusVec->data[k] + radiusVec->data[k-1])/dt/dt;
@@ -91,6 +91,7 @@ double  XLALSimLocateOmegaTime(
     //            break;
     //        }
     //    }
+    ddradiusVec[0] = ddradiusVec[1];
     for (k = 0; k < timeHi.length-2; k++) {
         //        XLAL_PRINT_INFO("%3.10f %3.10f\n", timeHi->data[k], ddradiusVec[k]);
         if (dt*k > dt*( timeHi.length-2)-20 && ddradiusVec[k] > 0) {
@@ -369,7 +370,7 @@ double XLALSimLocateAmplTime(
     if (debugPK) {debugRD = 0;}
 
     double dt = timeHi->data[1] - timeHi->data[0];
-    double ddradiusVec[timeHi->length - 2];
+    double ddradiusVec[timeHi->length - 1];
     unsigned int k;
     for (k = 1; k < timeHi->length-1; k++) {
         ddradiusVec[k] = (radiusVec->data[k+1] - 2.*radiusVec->data[k] + radiusVec->data[k-1])/dt/dt;
@@ -381,6 +382,7 @@ double XLALSimLocateAmplTime(
 //            break;
 //        }
 //    }
+    ddradiusVec[0]=ddradiusVec[1];
     for (k = 0; k < timeHi->length-2; k++) {
 //        XLAL_PRINT_INFO("%3.10f %3.10f\n", timeHi->data[k], ddradiusVec[k]);
         if (dt*k > dt*( timeHi->length-2)-20 && ddradiusVec[k] > 0) {
