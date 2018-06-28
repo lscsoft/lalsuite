@@ -17,6 +17,7 @@ Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
+BuildRequires: python2-rpm-macros
 BuildRequires: bc
 BuildRequires: fftw-devel
 BuildRequires: python2-ligo-segments
@@ -26,6 +27,7 @@ BuildRequires: hdf5-devel
 BuildRequires: less
 BuildRequires: numpy
 BuildRequires: octave-devel
+BuildRequires: python
 BuildRequires: python-devel
 BuildRequires: python-six
 BuildRequires: swig >= 3.0.7
@@ -52,18 +54,21 @@ The LSC Algorithm Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL library
 as well as the documentation for the library.
 
-%package python
-Summary: Python bindings for LAL
+%package -n python2-%{name}
+Summary: Python %{python2_version} bindings for LAL
 Group: LAL
+Provides: %{name}-python
+Obsoletes: %{name}-python < 6.18.0-2
+Conflicts: %{name}-python
 Requires: %{name} = %{version}
+Requires: python
+Requires: numpy
+Requires: python-six
 Requires: python2-ligo-segments
 Requires: glue >= @MIN_GLUE_VERSION@
-Requires: numpy
-Requires: python
-Requires: python-six
-%description python
+%description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
-This package provides the Python bindings.
+This package provides the Python %{python2_version} bindings.
 
 %package octave
 Summary: Octave bindings for LAL
@@ -112,9 +117,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%files python
+%files -n python2-%{name}
 %defattr(-,root,root)
-%{_libdir}/python*
+%{python2_sitelib}/*
 
 %files octave
 %defattr(-,root,root)
