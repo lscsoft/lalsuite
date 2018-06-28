@@ -148,6 +148,10 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
   import lal
   from lalsimulation import SimInspiralChirpTimeBound, GetApproximantFromString, IMRPhenomDGetPeakFreq
   from ligo.gracedb.rest import GraceDb
+  try:
+    from gstlal import reference_psd
+  except ImportError:
+    reference_psd = None
   cwd=os.getcwd()
   os.chdir(basepath)
   print "Download %s coinc.xml" % gid
@@ -163,7 +167,12 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
   fhigh=None
   if downloadpsd:
     print "Download %s psd.xml.gz" % gid
-    open("psd.xml.gz", "w").write(client.files(gid, "psd.xml.gz").read())
+    if reference_psd is not None:
+      xmlpsd = ligolw_utils.load_fileobj(client.files(gid, "psd.xml.gz"), contenthandler = lalseries.PSDContentHandler)[0]
+      psd = lalseries.read_psd_xmldoc(xmlpsd)
+      ligolw_utils.write_filename(xmlpsd, "psd.xml.gz", gz = True)
+    else:
+      open("psd.xml.gz", "w").write(client.files(gid, "psd.xml.gz").read())
     psdasciidic = get_xml_psds(os.path.realpath("./psd.xml.gz"),ifos,os.path.realpath('./PSDs'),end_time=None)
     combine = np.loadtxt(psdasciidic[psdasciidic.keys()[0]])
     srate_psdfile = pow(2.0, ceil( log(float(combine[-1][0]), 2) ) ) * 2
@@ -179,13 +188,19 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
         fstop = IMRPhenomDGetPeakFreq(e.mass1, e.mass2, 0.0, 0.0)
         dur.append(pow(2.0, ceil( log(max(8.0, chirplen + 2.0), 2) ) ) )
         srate.append(pow(2.0, ceil( log(fstop, 2) ) ) * 2)
-      snr = e.snr
-      eff_dist = e.eff_distance
+      # determine horizon distance
       if threshold_snr is not None:
-        if snr > threshold_snr:
-          horizon_distance.append(eff_dist * snr/threshold_snr)
+        if e.eff_distance is not None:
+          if e.snr > threshold_snr:
+            horizon_distance.append(e.eff_distance * e.snr / threshold_snr)
+          else:
+            horizon_distance.append(2 * e.eff_distance)
         else:
-          horizon_distance.append(2 * eff_dist)
+          if reference_psd is not None and downloadpsd:
+            if not roq==False:
+              fstop = IMRPhenomDGetPeakFreq(e.mass1, e.mass2, 0.0, 0.0)
+            HorizonDistanceObj = reference_psd.HorizonDistance(f_min = flow, f_max = fstop, delta_f = 1.0 / 32.0, m1 = e.mass1, m2 = e.mass2)
+            horizon_distance.append(HorizonDistanceObj(psd[e.ifo], snr = threshold_snr)[0])
     if srate:
       if max(srate)<srate_psdfile:
         srate = max(srate)
