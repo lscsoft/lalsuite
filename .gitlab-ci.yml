@@ -501,6 +501,9 @@ nightly:wheel:cp36-cp36m-macosx:
   variables:
     RPM_BUILD_CPUS: 4
   script:
+    # FIXME: manually install h5py, can be reverted when
+    # lscsoft-lalsuite-dev-1.14-1 is in production
+    - yum -y install h5py
     - rpm -ivh rpmbuild/RPMS/x86_64/lal*.rpm || true
     - cd ${CI_JOB_NAME#level?:rpm:}
     - ./00boot
