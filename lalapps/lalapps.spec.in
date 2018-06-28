@@ -1,10 +1,14 @@
-%define nightly @NIGHTLY_VERSION@
+%define nightly @NIGHTLY_VERSION@%{nil}
 %define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
 %define _pkgpythondir %{_prefix}/lib64/python2.?/site-packages/@PACKAGE@
 %define _pkgpyexecdir %{_libdir}/python2.?/site-packages/@PACKAGE@
 %define release 1
+
+%if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
+%undefine nightly
+%endif
 
 Name: @PACKAGE@
 Version: @BASE_VERSION@
