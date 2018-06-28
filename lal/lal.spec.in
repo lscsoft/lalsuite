@@ -26,6 +26,7 @@ BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
 BuildRequires: less
 BuildRequires: numpy
+BuildRequires: scipy
 BuildRequires: octave-devel
 BuildRequires: python
 BuildRequires: python-devel
@@ -63,6 +64,7 @@ Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: python
 Requires: numpy
+Requires: scipy
 Requires: python-six
 Requires: python2-ligo-segments
 Requires: glue >= @MIN_GLUE_VERSION@
