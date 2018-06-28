@@ -144,50 +144,41 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
   class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
   lsctables.use_in(LIGOLWContentHandler)
-  import subprocess
   from lal import series as lalseries
-  from subprocess import Popen, PIPE
+  import lal
+  from lalsimulation import SimInspiralChirpTimeBound, GetApproximantFromString, IMRPhenomDGetPeakFreq
+  from ligo.gracedb.rest import GraceDb
   cwd=os.getcwd()
   os.chdir(basepath)
-  print "%s download %s coinc.xml"%(gracedb,gid)
-  subprocess.call([gracedb,"download", gid ,"coinc.xml"])
-  xmldoc=ligolw_utils.load_filename("coinc.xml",contenthandler = LIGOLWContentHandler)
-  coinctable = lsctables.CoincInspiralTable.get_table(xmldoc)
-  coinc_events = [event for event in coinctable]
-  sngltable = lsctables.SnglInspiralTable.get_table(xmldoc)
-  sngl_events = [event for event in sngltable]
-  ifos = coinctable[0].ifos.split(",")
-  trigSNR = coinctable[0].snr
+  print "Download %s coinc.xml" % gid
+  client = GraceDb()
+  xmldoc = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"), contenthandler = LIGOLWContentHandler)[0]
+  ligolw_utils.write_filename(xmldoc, "coinc.xml")
+  coinc_events = lsctables.CoincInspiralTable.get_table(xmldoc)
+  sngl_event_idx = dict((row.event_id, row) for row in lsctables.SnglInspiralTable.get_table(xmldoc))
+  ifos = sorted(coinc_events[0].instruments)
+  trigSNR = coinc_events[0].snr
   # Parse PSD
   srate_psdfile=16384
   fhigh=None
   if downloadpsd:
-    print "gracedb download %s psd.xml.gz" % gid
-    subprocess.call([gracedb,"download", gid ,"psd.xml.gz"])
-    xmlpsd = lalseries.read_psd_xmldoc(ligolw_utils.load_filename('psd.xml.gz',contenthandler = lalseries.PSDContentHandler))
-    if os.path.exists("psd.xml.gz"):
-      psdasciidic=get_xml_psds(os.path.realpath("./psd.xml.gz"),ifos,os.path.realpath('./PSDs'),end_time=None)
-      combine=np.loadtxt(psdasciidic[psdasciidic.keys()[0]])
-      srate_psdfile = pow(2.0, ceil( log(float(combine[-1][0]), 2) ) ) * 2
-    else:
-      print "Failed to gracedb download %s psd.xml.gz. lalinference will estimate the psd itself." % gid
+    print "Download %s psd.xml.gz" % gid
+    open("psd.xml.gz", "w").write(client.files(gid, "psd.xml.gz").read())
+    psdasciidic = get_xml_psds(os.path.realpath("./psd.xml.gz"),ifos,os.path.realpath('./PSDs'),end_time=None)
+    combine = np.loadtxt(psdasciidic[psdasciidic.keys()[0]])
+    srate_psdfile = pow(2.0, ceil( log(float(combine[-1][0]), 2) ) ) * 2
   coinc_map = lsctables.CoincMapTable.get_table(xmldoc)
   for coinc in coinc_events:
-    these_sngls = [e for e in sngl_events if e.event_id in [c.event_id for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id] ]
+    these_sngls = [sngl_event_idx[c.event_id] for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id]
     dur=[]
     srate=[]
     horizon_distance=[]
     for e in these_sngls:
-      # Review: Replace this with a call to LALSimulation function at some point
       if roq==False:
-        try:
-          p=Popen(["lalapps_chirplen","--flow",str(flow),"-m1",str(e.mass1),"-m2",str(e.mass2)],stdout=PIPE, stderr=PIPE, stdin=PIPE)
-          strlen = p.stdout.read()
-          dur.append(pow(2.0, ceil( log(max(8.0,float(strlen.splitlines()[2].split()[5]) + 2.0), 2) ) ) )
-          srate.append(pow(2.0, ceil( log(float(strlen.splitlines()[1].split()[5]), 2) ) ) * 2 )
-        except:
-          print "WARNING: lalapps_chirplen --flow",str(flow),"-m1",str(e.mass1),"-m2",str(e.mass2)," failed."
-          print "WARNING: make sure you have set manually seglen and srate in the .ini file."
+        chirplen = SimInspiralChirpTimeBound(flow, e.mass1 * lal.MSUN_SI, e.mass2 * lal.MSUN_SI, 0.0, 0.0)
+        fstop = IMRPhenomDGetPeakFreq(e.mass1, e.mass2, 0.0, 0.0)
+        dur.append(pow(2.0, ceil( log(max(8.0, chirplen + 2.0), 2) ) ) )
+        srate.append(pow(2.0, ceil( log(fstop, 2) ) ) * 2)
       snr = e.snr
       eff_dist = e.eff_distance
       if threshold_snr is not None:
