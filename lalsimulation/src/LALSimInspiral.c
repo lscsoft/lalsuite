@@ -971,22 +971,35 @@ int XLALSimInspiralChooseFDWaveform(
     unsigned int j;
     REAL8 pfac, cfac;
     INT4 phiRefAtEnd;
-    REAL8 quadparam1 = 1.+XLALSimInspiralWaveformParamsLookupdQuadMon1(LALparams);
-    REAL8 quadparam2 = 1.+XLALSimInspiralWaveformParamsLookupdQuadMon2(LALparams);
+    int amplitudeO = XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALparams);
+    int phaseO = XLALSimInspiralWaveformParamsLookupPNPhaseOrder(LALparams);
+
+    REAL8 quadparam1 = XLALSimInspiralWaveformParamsLookupdQuadMon1(LALparams);
+    REAL8 quadparam2 = XLALSimInspiralWaveformParamsLookupdQuadMon2(LALparams);
     REAL8 lambda1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALparams);
     REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALparams);
-    int amplitudeO = XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALparams);
-    int phaseO =XLALSimInspiralWaveformParamsLookupPNPhaseOrder(LALparams);
-    if ((!XLALDictContains(LALparams, "dQuadMon1")) && (XLALDictContains(LALparams, "lambda1"))) {
-      REAL8 lambda1_in = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALparams);
-      REAL8 quadparam1_in = XLALSimInspiralEOSQfromLambda(lambda1_in);
-      XLALSimInspiralWaveformParamsInsertdQuadMon1(LALparams, quadparam1_in-1.);
+
+    /* if you do NOT provide a quadparam[1,2] term and you DO provide
+     * lamdba[1,2] then we calculate quad-mono term using universal relations
+     * quadparam[1,2]_UR: Quadrupole-Monopole parameter computed using
+     * universal relations (UR) */
+    if ((lambda1 > 0) && (quadparam1 > 0)) {
+        REAL8 quadparam1_UR = XLALSimInspiralEOSQfromLambda(lambda1);
+        XLALSimInspiralWaveformParamsInsertdQuadMon1(LALparams, quadparam1_UR - 1.);
+        quadparam1 = quadparam1_UR;
+    } else {
+        quadparam1 = 1. + quadparam1;
     }
-    if ((!XLALDictContains(LALparams, "dQuadMon2")) && (XLALDictContains(LALparams, "lambda2"))) {
-      REAL8 lambda2_in = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALparams);
-      REAL8 quadparam2_in = XLALSimInspiralEOSQfromLambda(lambda2_in);
-      XLALSimInspiralWaveformParamsInsertdQuadMon2(LALparams, quadparam2_in-1.);
+
+    if ((lambda2 > 0) && (quadparam2 > 0)) {
+        REAL8 quadparam2_UR = XLALSimInspiralEOSQfromLambda(lambda2);
+        XLALSimInspiralWaveformParamsInsertdQuadMon2(LALparams, quadparam2_UR - 1.);
+        quadparam2 = quadparam2_UR;
+    } else {
+        quadparam2 = 1. + quadparam2;
     }
+
+
 
     /* Support variables for precessing wfs*/
     REAL8 spin1x,spin1y,spin1z;
