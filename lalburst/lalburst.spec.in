@@ -17,6 +17,7 @@ Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
+BuildRequires: python2-rpm-macros
 BuildRequires: gsl-devel
 BuildRequires: libmetaio-devel
 BuildRequires: numpy
@@ -60,9 +61,12 @@ The LSC Algorithm Burst Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Burst
 library.
 
-%package python
-Summary: Python Bindings for LALBurst
+%package -n python2-%{name}
+Summary: Python %{python2_version} Bindings for LALBurst
 Group: LAL
+Provides: %{name}-python
+Obsoletes: %{name}-python < 1.4.4-2
+Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
@@ -71,9 +75,9 @@ Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
 Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
 Requires: scipy
 Requires: glue
-%description python
+%description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
-This package provides the Python bindings for LALBurst.
+This package provides the Python %{python2_version} bindings for LALBurst.
 
 %package octave
 Summary: Octave Bindings for LALBurst
@@ -124,9 +128,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%files python
+%files -n python2-%{name}
 %defattr(-,root,root)
-%{_libdir}/python*
+%{python2_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
