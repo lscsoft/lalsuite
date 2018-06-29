@@ -983,7 +983,7 @@ int XLALSimInspiralChooseFDWaveform(
      * lamdba[1,2] then we calculate quad-mono term using universal relations
      * quadparam[1,2]_UR: Quadrupole-Monopole parameter computed using
      * universal relations (UR) */
-    if ((lambda1 > 0) && (quadparam1 > 0)) {
+    if ((lambda1 > 0) && (quadparam1 == 0)) {
         REAL8 quadparam1_UR = XLALSimInspiralEOSQfromLambda(lambda1);
         XLALSimInspiralWaveformParamsInsertdQuadMon1(LALparams, quadparam1_UR - 1.);
         quadparam1 = quadparam1_UR;
@@ -991,7 +991,7 @@ int XLALSimInspiralChooseFDWaveform(
         quadparam1 = 1. + quadparam1;
     }
 
-    if ((lambda2 > 0) && (quadparam2 > 0)) {
+    if ((lambda2 > 0) && (quadparam2 == 0)) {
         REAL8 quadparam2_UR = XLALSimInspiralEOSQfromLambda(lambda2);
         XLALSimInspiralWaveformParamsInsertdQuadMon2(LALparams, quadparam2_UR - 1.);
         quadparam2 = quadparam2_UR;
