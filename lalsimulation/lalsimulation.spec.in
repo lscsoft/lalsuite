@@ -17,6 +17,7 @@ Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
+BuildRequires: python2-rpm-macros
 BuildRequires: gsl-devel
 BuildRequires: numpy
 BuildRequires: octave-devel
@@ -45,15 +46,18 @@ The LSC Algorithm Simulation Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Simulation
 library.
 
-%package python
-Summary: Python bindings for LALSimulation
+%package -n python2-%{name}
+Summary: Python %{python2_version} bindings for LALSimulation
 Group: LAL
+Provides: %{name}-python
+Obsoletes: %{name}-python < 1.7.2-2
+Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
 Requires: lal-python >= @MIN_LAL_VERSION@
-%description python
-This package provides the Python Bindings for LALSimulation.
+%description -n python2-%{name}
+This package provides the Python %{python2_version} Bindings for LALSimulation.
 
 %package octave
 Summary: Octave bindings for LALSimulation
@@ -106,9 +110,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%files python
+%files -n python2-%{name}
 %defattr(-,root,root)
-%{_libdir}/python*
+%{python2_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
