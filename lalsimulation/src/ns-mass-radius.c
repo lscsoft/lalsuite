@@ -315,6 +315,7 @@ int parseargs(int argc, char **argv)
 
 int usage(const char *program)
 {
+    int e, c;
     fprintf(stderr, "usage: %s [options]\n", program);
     fprintf(stderr,
         "\t-h, --help                   \tprint this message and exit\n");
@@ -359,7 +360,7 @@ int usage(const char *program)
     fprintf(stderr,
         "\t-F FORMAT, --format=FORMAT   \toutput format FORMAT [\"%s\"]\n",
         default_fmt);
-    fprintf(stderr, "Format string conversions:\n");
+    fprintf(stderr, "format string conversions:\n");
     fprintf(stderr,
         "\t%%c\t is replaced by the dimensionless compactness M/R\n");
     fprintf(stderr,
@@ -367,5 +368,12 @@ int usage(const char *program)
     fprintf(stderr, "\t%%k\t is replaced by the tidal love number k2\n");
     fprintf(stderr, "\t%%m\t is replaced by the mass in solar masses\n");
     fprintf(stderr, "\t%%r\t is replaced by the radius in kilometers\n");
+    fprintf(stderr, "recognized tabulated equations of state:");
+	for (e = 0, c = 0; e < (int)(sizeof(lalSimNeutronStarEOSNames)/sizeof(*lalSimNeutronStarEOSNames)); ++e) {
+		c += fprintf(stderr, "%s%s", c ? ", " : "\n\t", lalSimNeutronStarEOSNames[e]);
+		if (c > 50)
+			c = 0;
+	}
+    fprintf(stderr, "\n");
     return 0;
 }

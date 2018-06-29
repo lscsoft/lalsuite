@@ -362,6 +362,7 @@ int parseargs(int argc, char **argv)
 
 int usage(const char *program)
 {
+	int e, c;
     fprintf(stderr, "usage: %s [options]\n", program);
     fprintf(stderr,
         "\t-h, --help                       \tprint this message and exit\n");
@@ -409,12 +410,19 @@ int usage(const char *program)
     fprintf(stderr,
         "\t-F FORMAT, --format=FORMAT       \toutput format FORMAT [\"%s\"]\n",
         default_fmt);
-    fprintf(stderr, "Format string conversions:\n");
+    fprintf(stderr, "format string conversions:\n");
     fprintf(stderr, "\t%%h\t is replaced by the pseudo-enthalpy\n");
     fprintf(stderr, "\t%%p\t is replaced by the pressure\n");
     fprintf(stderr, "\t%%e\t is replaced by the energy density\n");
     fprintf(stderr, "\t%%r\t is replaced by the rest-mass density\n");
     fprintf(stderr, "\t%%v\t is replaced by the speed of sound\n");
+    fprintf(stderr, "recognized tabulated equations of state:");
+	for (e = 0, c = 0; e < (int)(sizeof(lalSimNeutronStarEOSNames)/sizeof(*lalSimNeutronStarEOSNames)); ++e) {
+		c += fprintf(stderr, "%s%s", c ? ", " : "\n\t", lalSimNeutronStarEOSNames[e]);
+		if (c > 50)
+			c = 0;
+	}
+    fprintf(stderr, "\n");
 
     return 0;
 }
