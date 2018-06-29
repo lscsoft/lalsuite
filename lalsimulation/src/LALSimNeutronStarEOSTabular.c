@@ -33,77 +33,120 @@
 
 /* Contents of the tabular equation of state data structure. */
 struct tagLALSimNeutronStarEOSDataTabular {
-    double *pdat;
-    double *edat;
-    double *hdat;
-    double *rhodat;
+    double *log_pdat;
+    double *log_edat;
+    double *log_hdat;
+    double *log_rhodat;
     size_t ndat;
-    gsl_interp *e_of_p_interp;
-    gsl_interp *h_of_p_interp;
-    gsl_interp *e_of_h_interp;
-    gsl_interp *p_of_h_interp;
-    gsl_interp *rho_of_h_interp;
-    gsl_interp_accel *e_of_p_acc;
-    gsl_interp_accel *h_of_p_acc;
-    gsl_interp_accel *e_of_h_acc;
-    gsl_interp_accel *p_of_h_acc;
-    gsl_interp_accel *rho_of_h_acc;
+    gsl_interp *log_e_of_log_p_interp;
+    gsl_interp *log_h_of_log_p_interp;
+    gsl_interp *log_e_of_log_h_interp;
+    gsl_interp *log_p_of_log_h_interp;
+    gsl_interp *log_rho_of_log_h_interp;
+    gsl_interp_accel *log_e_of_log_p_acc;
+    gsl_interp_accel *log_h_of_log_p_acc;
+    gsl_interp_accel *log_e_of_log_h_acc;
+    gsl_interp_accel *log_p_of_log_h_acc;
+    gsl_interp_accel *log_rho_of_log_h_acc;
 };
 
 static double eos_e_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
 {
-    double e;
-    e = gsl_interp_eval(eos->data.tabular->e_of_p_interp,
-        eos->data.tabular->pdat, eos->data.tabular->edat, p,
-        eos->data.tabular->e_of_p_acc);
-    return e;
+	double log_p;
+    double log_e;
+	if (p == 0.0)
+		return 0.0;
+	log_p = log(p);
+	if (log_p < eos->data.tabular->log_pdat[0])
+		/* use non-relativistic degenerate gas, p = K * e**(5./3.) */
+		return exp(eos->data.tabular->log_edat[0] + (3.0 / 5.0) * (log_p - eos->data.tabular->log_pdat[0]));
+    log_e = gsl_interp_eval(eos->data.tabular->log_e_of_log_p_interp,
+        eos->data.tabular->log_pdat, eos->data.tabular->log_edat, log_p,
+        eos->data.tabular->log_e_of_log_p_acc);
+    return exp(log_e);
 }
 
 static double eos_e_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 {
-    double e;
-    e = gsl_interp_eval(eos->data.tabular->e_of_h_interp,
-        eos->data.tabular->hdat, eos->data.tabular->edat, h,
-        eos->data.tabular->e_of_h_acc);
-    return e;
+	double log_h;
+    double log_e;
+	if (h == 0.0)
+		return 0.0;
+ 	log_h = log(h);
+	if (log_h < eos->data.tabular->log_hdat[0])
+		/* use non-relativistic degenerate gas, e = K * h**(3./2.) */
+		return exp(eos->data.tabular->log_edat[0] + 1.5 * (log_h - eos->data.tabular->log_hdat[0]));
+    log_e = gsl_interp_eval(eos->data.tabular->log_e_of_log_h_interp,
+        eos->data.tabular->log_hdat, eos->data.tabular->log_edat, log_h,
+        eos->data.tabular->log_e_of_log_h_acc);
+    return exp(log_e);
 }
 
 static double eos_p_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 {
-    double p;
-    p = gsl_interp_eval(eos->data.tabular->p_of_h_interp,
-        eos->data.tabular->hdat, eos->data.tabular->pdat, h,
-        eos->data.tabular->p_of_h_acc);
-    return p;
+	double log_h;
+    double log_p;
+	if (h == 0.0)
+		return 0.0;
+ 	log_h = log(h);
+	if (log_h < eos->data.tabular->log_hdat[0])
+		/* use non-relativistic degenerate gas, p = K * h**(5./2.) */
+		return exp(eos->data.tabular->log_pdat[0] + 2.5 * (log_h - eos->data.tabular->log_hdat[0]));
+    log_p = gsl_interp_eval(eos->data.tabular->log_p_of_log_h_interp,
+        eos->data.tabular->log_hdat, eos->data.tabular->log_pdat, log_h,
+        eos->data.tabular->log_p_of_log_h_acc);
+    return exp(log_p);
 }
 
 static double eos_rho_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 {
-    double rho;
-    rho =
-        gsl_interp_eval(eos->data.tabular->rho_of_h_interp,
-        eos->data.tabular->hdat, eos->data.tabular->rhodat, h,
-        eos->data.tabular->rho_of_h_acc);
-    return rho;
+	double log_h;
+    double log_rho;
+	if (h == 0.0)
+		return 0.0;
+ 	log_h = log(h);
+	if (log_h < eos->data.tabular->log_hdat[0])
+		/* use non-relativistic degenerate gas, rho = K * h**(3./2.) */
+		return exp(eos->data.tabular->log_rhodat[0] + 1.5 * (log_h - eos->data.tabular->log_hdat[0]));
+    log_rho =
+        gsl_interp_eval(eos->data.tabular->log_rho_of_log_h_interp,
+        eos->data.tabular->log_hdat, eos->data.tabular->log_rhodat, log_h,
+        eos->data.tabular->log_rho_of_log_h_acc);
+    return exp(log_rho);
 }
 
 static double eos_h_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
 {
-    double h;
-    h = gsl_interp_eval(eos->data.tabular->h_of_p_interp,
-        eos->data.tabular->pdat, eos->data.tabular->hdat, p,
-        eos->data.tabular->h_of_p_acc);
-    return h;
+	double log_p;
+    double log_h;
+	if (p == 0)
+		return 0.0;
+ 	log_p = log(p);
+	if (log_p < eos->data.tabular->log_pdat[0])
+		/* use non-relativistic degenerate gas, h = K * p**(2./5.) */
+		return exp(eos->data.tabular->log_hdat[0] + 0.4 * (log_p - eos->data.tabular->log_pdat[0]));
+    log_h = gsl_interp_eval(eos->data.tabular->log_h_of_log_p_interp,
+        eos->data.tabular->log_pdat, eos->data.tabular->log_hdat, log_p,
+        eos->data.tabular->log_h_of_log_p_acc);
+    return exp(log_h);
 }
 
 static double eos_dedp_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
 {
-    double dedp;
-    dedp =
-        gsl_interp_eval_deriv(eos->data.tabular->e_of_p_interp,
-        eos->data.tabular->pdat, eos->data.tabular->edat, p,
-        eos->data.tabular->e_of_p_acc);
-    return dedp;
+    double log_p;
+    double log_e;
+    double d_log_e_d_log_p;
+	if (p == 0 || (log_p = log(p)) < eos->data.tabular->log_pdat[0])
+		/* use non-relativistic degenerate gas, p = K * e**(5./3.) */
+		return (3.0 / 5.0) * exp(eos->data.tabular->log_edat[0] - eos->data.tabular->log_pdat[0]);
+    log_e = gsl_interp_eval(eos->data.tabular->log_e_of_log_p_interp,
+        eos->data.tabular->log_pdat, eos->data.tabular->log_edat, log_p,
+        eos->data.tabular->log_e_of_log_p_acc);
+    d_log_e_d_log_p =
+        gsl_interp_eval_deriv(eos->data.tabular->log_e_of_log_p_interp,
+        eos->data.tabular->log_pdat, eos->data.tabular->log_edat, log_p,
+        eos->data.tabular->log_e_of_log_p_acc);
+    return d_log_e_d_log_p * exp(log_e - log_p);
 }
 
 static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
@@ -118,7 +161,7 @@ static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 //{
 //      double dpdh, dedh;
 //    printf("hi4\n");
-//    dpdh = gsl_interp_eval_deriv(eos->data.tabular->p_of_h_interp, eos->data.tabular->hdat, eos->data.tabular->pdat, h, eos->data.tabular->p_of_h_acc);
+//    dpdh = gsl_interp_eval_deriv(eos->data.tabular->log_p_of_log_h_interp, eos->data.tabular->hdat, eos->data.tabular->pdat, h, eos->data.tabular->p_of_h_acc);
 //    printf("hi5\n");
 //    dedh = gsl_interp_eval_deriv(eos->data.tabular->e_of_h_interp, eos->data.tabular->hdat, eos->data.tabular->edat, h, eos->data.tabular->e_of_h_acc);
 //      return sqrt(dpdh/dedh);
@@ -127,20 +170,20 @@ static double eos_v_of_h_tabular(double h, LALSimNeutronStarEOS * eos)
 static void eos_free_tabular_data(LALSimNeutronStarEOSDataTabular * data)
 {
     if (data) {
-        gsl_interp_free(data->e_of_p_interp);
-        gsl_interp_free(data->e_of_h_interp);
-        gsl_interp_free(data->p_of_h_interp);
-        gsl_interp_free(data->h_of_p_interp);
-        gsl_interp_free(data->rho_of_h_interp);
-        gsl_interp_accel_free(data->e_of_p_acc);
-        gsl_interp_accel_free(data->e_of_h_acc);
-        gsl_interp_accel_free(data->p_of_h_acc);
-        gsl_interp_accel_free(data->h_of_p_acc);
-        gsl_interp_accel_free(data->rho_of_h_acc);
-        LALFree(data->edat);
-        LALFree(data->pdat);
-        LALFree(data->hdat);
-        LALFree(data->rhodat);
+        gsl_interp_free(data->log_e_of_log_p_interp);
+        gsl_interp_free(data->log_e_of_log_h_interp);
+        gsl_interp_free(data->log_p_of_log_h_interp);
+        gsl_interp_free(data->log_h_of_log_p_interp);
+        gsl_interp_free(data->log_rho_of_log_h_interp);
+        gsl_interp_accel_free(data->log_e_of_log_p_acc);
+        gsl_interp_accel_free(data->log_e_of_log_h_acc);
+        gsl_interp_accel_free(data->log_p_of_log_h_acc);
+        gsl_interp_accel_free(data->log_h_of_log_p_acc);
+        gsl_interp_accel_free(data->log_rho_of_log_h_acc);
+        LALFree(data->log_edat);
+        LALFree(data->log_pdat);
+        LALFree(data->log_hdat);
+        LALFree(data->log_rhodat);
         LALFree(data);
     }
     return;
@@ -174,10 +217,10 @@ static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
     double m;   /* slope for linear interpolation */
     double hMinAcausal = hmax;  /* default large number for EOS that is always causal */
 
-    h_im1 = eos->data.tabular->hdat[0];
+    h_im1 = exp(eos->data.tabular->log_hdat[0]);
     v_im1 = eos_v_of_h_tabular(h_im1, eos);
     for (i = 1; i < eos->data.tabular->ndat; i++) {
-        h_i = eos->data.tabular->hdat[i];
+        h_i = exp(eos->data.tabular->log_hdat[i]);
         v_i = eos_v_of_h_tabular(h_i, eos);
         if (v_i > 1.0) {
             /* solve vsound(h) = 1 */
@@ -201,8 +244,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     LALSimNeutronStarEOS *eos;
     LALSimNeutronStarEOSDataTabular *data;
     size_t i;
-    double *hdat;
-    double *rhodat;
 
     eos = LALCalloc(1, sizeof(*eos));
     data = LALCalloc(1, sizeof(*data));
@@ -220,74 +261,75 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     eos->dedp_of_p = eos_dedp_of_p_tabular;
     eos->v_of_h = eos_v_of_h_tabular;
 
+	/* allocate memory for eos data; ignore first points if 0 */
+	while (*pdat == 0.0 || *edat == 0.0) {
+		++pdat;
+		++edat;
+		--ndat;
+	}
+    data->ndat = ndat;
+    data->log_pdat = XLALMalloc(ndat * sizeof(*data->log_pdat));
+    data->log_edat = XLALMalloc(ndat * sizeof(*data->log_edat));
+    data->log_hdat = XLALMalloc(ndat * sizeof(*data->log_hdat));
+    data->log_rhodat = XLALMalloc(ndat * sizeof(*data->log_rhodat));
+
+    /* take log of eos data */
+    for (i = 0; i < ndat; ++i) {
+    	data->log_pdat[i] = log(pdat[i]);
+    	data->log_edat[i] = log(edat[i]);
+    }
+
     /* compute pseudo-enthalpy h from dhdp */
     /* Integrate in log space: 
        dhdp = 1 / [e(p) + p]
        h(p) = h(p0) + \int_p0^p dhdp dp
        h(p) = h(p0) + \int_ln(p0)^ln(p) exp[ln(p) + ln(dhdp)] dln(p)
+       First point is
+       h(p0) = p0 / [e(p0) + p0]
     */
-    double * integrand;
-    double * log_pdat;
-    log_pdat = XLALCalloc(ndat-1, sizeof(*log_pdat));
-    integrand = LALMalloc((ndat-1) * sizeof(*integrand));
-    for (i = 0; i < ndat-1; ++i) {
-        log_pdat[i] = log(pdat[i+1]);
-        integrand[i] = exp(log_pdat[i] + log(1.0 / (edat[i+1] + pdat[i+1])));
-    }
+    double *integrand;
+    integrand = LALMalloc(ndat * sizeof(*integrand));
+    for (i = 0; i < ndat; ++i)
+        integrand[i] = exp(data->log_pdat[i] + log(1.0 / (edat[i] + pdat[i])));
 
     gsl_interp_accel * dhdp_of_p_acc_temp = gsl_interp_accel_alloc();
-    gsl_interp * dhdp_of_p_interp_temp = gsl_interp_alloc(gsl_interp_linear, ndat-1);
-    gsl_interp_init(dhdp_of_p_interp_temp, log_pdat, integrand, ndat-1);
+    gsl_interp * dhdp_of_p_interp_temp = gsl_interp_alloc(gsl_interp_linear, ndat);
+    gsl_interp_init(dhdp_of_p_interp_temp, data->log_pdat, integrand, ndat);
 
-    hdat = LALMalloc(ndat * sizeof(*hdat));
-    hdat[0] = 0.0;
-    // FIXME: First points not done correctly. Minimal error, though.
-    // Do first point by hand
-    hdat[1] = hdat[0] + 0.5 * (1./(pdat[1]+edat[1])) * (pdat[1] - pdat[0]);
-    for (i = 1; i < ndat-1; ++i) {
-        hdat[i+1] = gsl_interp_eval_integ(dhdp_of_p_interp_temp, log_pdat, integrand,
-          log_pdat[0], log_pdat[i], dhdp_of_p_acc_temp);
-    }
+    data->log_hdat[0] = log(pdat[0] / (edat[0] + pdat[0]));
+    for (i = 1; i < ndat; ++i)
+        data->log_hdat[i] = log(exp(data->log_hdat[0]) + gsl_interp_eval_integ(dhdp_of_p_interp_temp, data->log_pdat, integrand, data->log_pdat[0], data->log_pdat[i], dhdp_of_p_acc_temp));
+
     gsl_interp_free(dhdp_of_p_interp_temp);
     gsl_interp_accel_free(dhdp_of_p_acc_temp);
-
-    LALFree(log_pdat);
     LALFree(integrand);
 
     // Find rho from e, p, and h: rho = (e+p)/exp(h)
-    rhodat = LALMalloc(ndat * sizeof(*hdat));
-    for (i=0; i < ndat; i++){
-        rhodat[i] = (edat[i]+pdat[i])/exp(hdat[i]);
-    }
-
-    data->hdat = hdat;
-    data->pdat = pdat;
-    data->edat = edat;
-    data->rhodat = rhodat;
-    data->ndat = ndat;
-
-    eos->pmax = data->pdat[ndat - 1];
-    eos->hmax = data->hdat[ndat - 1];
+    for (i = 0; i < ndat; i++)
+        data->log_rhodat[i] = log(edat[i] + pdat[i]) - exp(data->log_hdat[i]);
+    
+    eos->pmax = exp(data->log_pdat[ndat - 1]);
+    eos->hmax = exp(data->log_hdat[ndat - 1]);
 
     /* setup interpolation tables */
 
-    data->e_of_p_acc = gsl_interp_accel_alloc();
-    data->h_of_p_acc = gsl_interp_accel_alloc();
-    data->e_of_h_acc = gsl_interp_accel_alloc();
-    data->p_of_h_acc = gsl_interp_accel_alloc();
-    data->rho_of_h_acc = gsl_interp_accel_alloc();
+    data->log_e_of_log_p_acc = gsl_interp_accel_alloc();
+    data->log_h_of_log_p_acc = gsl_interp_accel_alloc();
+    data->log_e_of_log_h_acc = gsl_interp_accel_alloc();
+    data->log_p_of_log_h_acc = gsl_interp_accel_alloc();
+    data->log_rho_of_log_h_acc = gsl_interp_accel_alloc();
 
-    data->e_of_p_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->h_of_p_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->e_of_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->p_of_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    data->rho_of_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+    data->log_e_of_log_p_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+    data->log_h_of_log_p_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+    data->log_e_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+    data->log_p_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+    data->log_rho_of_log_h_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
 
-    gsl_interp_init(data->e_of_p_interp, pdat, edat, ndat);
-    gsl_interp_init(data->h_of_p_interp, pdat, hdat, ndat);
-    gsl_interp_init(data->e_of_h_interp, hdat, edat, ndat);
-    gsl_interp_init(data->p_of_h_interp, hdat, pdat, ndat);
-    gsl_interp_init(data->rho_of_h_interp, hdat, rhodat, ndat);
+    gsl_interp_init(data->log_e_of_log_p_interp, data->log_pdat, data->log_edat, ndat);
+    gsl_interp_init(data->log_h_of_log_p_interp, data->log_pdat, data->log_hdat, ndat);
+    gsl_interp_init(data->log_e_of_log_h_interp, data->log_hdat, data->log_edat, ndat);
+    gsl_interp_init(data->log_p_of_log_h_interp, data->log_hdat, data->log_pdat, ndat);
+    gsl_interp_init(data->log_rho_of_log_h_interp, data->log_hdat, data->log_rhodat, ndat);
 
     eos->hMinAcausal =
         eos_min_acausal_pseudo_enthalpy_tabular(eos->hmax, eos);
@@ -335,6 +377,10 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
         XLAL_ERROR_NULL(XLAL_EFUNC);
 
     eos = eos_alloc_tabular(pdat, edat, ndat);
+
+	XLALFree(pdat);
+	XLALFree(edat);
+
     snprintf(eos->name, sizeof(eos->name), "%s", fname);
     return eos;
 }
