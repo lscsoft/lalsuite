@@ -25,10 +25,10 @@ BuildRequires: python-devel
 BuildRequires: swig >= 3.0.7
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
+BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
+BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: libmetaio
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
@@ -60,8 +60,8 @@ Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
-Requires: lal-python >= @MIN_LAL_VERSION@
-Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
+Requires: python2-lal >= @MIN_LAL_VERSION@
+Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 %description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings for LALFrame.

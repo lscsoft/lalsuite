@@ -25,7 +25,7 @@ BuildRequires: python-devel
 BuildRequires: swig >= 3.0.7
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
+BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 Requires: gsl
 Requires: libxml2
 Requires:lal >= @MIN_LAL_VERSION@
@@ -57,7 +57,7 @@ Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
-Requires: lal-python >= @MIN_LAL_VERSION@
+Requires: python2-lal >= @MIN_LAL_VERSION@
 %description -n python2-%{name}
 This package provides the Python %{python2_version} bindings for LALXML.
 
