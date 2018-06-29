@@ -500,6 +500,8 @@ nightly:wheel:cp36-cp36m-macosx:
   image: ligo/lalsuite-dev:el7
   variables:
     RPM_BUILD_CPUS: 4
+  before_script:
+    - yum -y -q install python2-rpm-macros
   script:
     - rpm -ivh rpmbuild/RPMS/x86_64/lal*.rpm || true
     - cd ${CI_JOB_NAME#level?:rpm:}
