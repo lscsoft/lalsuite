@@ -17,6 +17,7 @@ Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
+BuildRequires: python2-rpm-macros
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
 BuildRequires: gsl-devel
@@ -52,15 +53,18 @@ The LSC Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL
 Pulsar library.
 
-%package python
-Summary: Python bindings for LALPulsar
+%package -n python2-%{name}
+Summary: Python %{python2_version} bindings for LALPulsar
 Group: LAL
+Provides: %{name}-python
+Obsoletes: %{name}-python < 1.16.0-2
+Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
 Requires: lal-python >= @MIN_LAL_VERSION@
-%description python
-This package provides the Python bindings for LALPulsar.
+%description -n python2-%{name}
+This package provides the Python %{python2_version} bindings for LALPulsar.
 
 %package octave
 Summary: Octave bindings for LALPulsar
@@ -109,9 +113,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%files python
+%files -n python2-%{name}
 %defattr(-,root,root)
-%{_libdir}/python*
+%{python2_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
