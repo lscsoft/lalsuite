@@ -17,6 +17,7 @@ Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
+BuildRequires: python2-rpm-macros
 BuildRequires: chealpix-devel >= 3.30.0
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
@@ -86,9 +87,12 @@ The LSC Algorithm Inference Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Inference
 library.
 
-%package python
-Summary: Python Bindings for LALInference
+%package -n python2-%{name}
+Summary: Python %{python2_version} Bindings for LALInference
 Group: LAL
+Provides: %{name}-python
+Obsoletes: %{name}-python < 1.9.4-2
+Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: healpy >= 1.9.1
 Requires: h5py
@@ -108,9 +112,9 @@ Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
 Requires: lalburst-python >= @MIN_LALBURST_VERSION@
 Requires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
 Requires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
-%description python
+%description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
-This package provides the Python bindings for LALInference.
+This package provides the Python %{python2_version} bindings for LALInference.
 
 %package octave
 Summary: Octave Bindings for LALInference
@@ -165,13 +169,13 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%files python
+%files -n python2-%{name}
 %defattr(-,root,root)
 %{_bindir}/bayestar_*
 %{_bindir}/imrtgr_*
 %{_bindir}/rapidpe_*
 %{_bindir}/cbcBayes*
-%{_libdir}/python*
+%{python2_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
