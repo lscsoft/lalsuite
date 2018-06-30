@@ -1199,7 +1199,19 @@ int XLALSimInspiralChooseFDWaveformSequence(
                 PhPpolc=(*hctilde)->data->data[idx];
                 (*hptilde)->data->data[idx] =cos(2.*zeta_polariz)*PhPpolp+sin(2.*zeta_polariz)*PhPpolc;
                 (*hctilde)->data->data[idx]=cos(2.*zeta_polariz)*PhPpolc-sin(2.*zeta_polariz)*PhPpolp;
-            } 
+            }
+            break;
+
+        case IMRPhenomHM:
+            if (!checkTransverseSpinsZero(S1x, S1y, S2x, S2y))
+                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+            if (!checkTidesZero(lambda1, lambda2))
+                ABORT_NONZERO_TIDES(LALpars);
+            ret = XLALSimIMRPhenomHM(hptilde, hctilde, frequencies, m1, m2,
+                                     S1z, S2z, distance, inclination, phiRef, 0., f_ref,
+                                     LALpars);
+            if (ret == XLAL_FAILURE)
+                XLAL_ERROR(XLAL_EFUNC);
             break;
 
         default:
