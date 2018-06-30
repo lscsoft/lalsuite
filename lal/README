@@ -32,5 +32,5 @@ For More Information
 Please visit the [LALSuite project page][project].
 
 [install]: https://wiki.ligo.org/DASWG/LALSuiteInstall
-[bugs]:    https://bugs.ligo.org/redmine/projects/lalsuite
+[bugs]:    https://git.ligo.org/lscsoft/lalsuite/issues/
 [project]: https://wiki.ligo.org/DASWG/LALSuite
