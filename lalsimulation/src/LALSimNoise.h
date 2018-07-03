@@ -186,7 +186,7 @@ int XLALSimNoisePSDKAGRALateSensitivityT1600593(REAL8FrequencySeries *psd, doubl
 int XLALSimNoisePSDKAGRADesignSensitivityT1600593(REAL8FrequencySeries *psd, double flow);
 
 /*
- * NOISE PSDs FROM LIGO-P1200087
+ * NOISE PSDs FROM LIGO-P1800042
  */
 
 int XLALSimNoisePSDaLIGOAPlusDesignSensitivityT1800042(REAL8FrequencySeries *psd, double flow);
