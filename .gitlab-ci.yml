@@ -458,7 +458,7 @@ nightly:macos:elcapitan:
     # Enter virtualenv so that we have a controlled version of Numpy
     - virtualenv-${PYVERS} env
     - source env/bin/activate
-    - pip install -q git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 numpy==1.7.0
+    - pip install -q git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 'numpy==1.14.5;python_version>="3.7"' 'numpy==1.7.0;python_version<"3.7"'
     # Build wheel
     - ./00boot
     - ./configure PYTHON=$(which python${PYVERS}) --enable-swig-python ${EXTRA_CONFIG_FLAGS} LDFLAGS=-Wl,-headerpad_max_install_names
@@ -490,11 +490,15 @@ nightly:wheel:cp35-cp35m-manylinux1:
   <<: *nightly-wheel-manylinux1
 nightly:wheel:cp36-cp36m-manylinux1:
   <<: *nightly-wheel-manylinux1
+nightly:wheel:cp37-cp37m-manylinux1:
+  <<: *nightly-wheel-manylinux1
 nightly:wheel:cp27-cp27m-macosx:
   <<: *nightly-wheel-macos
 nightly:wheel:cp35-cp35m-macosx:
   <<: *nightly-wheel-macos
 nightly:wheel:cp36-cp36m-macosx:
+  <<: *nightly-wheel-macos
+nightly:wheel:cp37-cp37m-macosx:
   <<: *nightly-wheel-macos
 
 .levelN:rpm: &levelN-rpm-package
@@ -893,9 +897,11 @@ deploy:wheel:
     - nightly:wheel:cp34-cp34m-manylinux1
     - nightly:wheel:cp35-cp35m-manylinux1
     - nightly:wheel:cp36-cp36m-manylinux1
+    - nightly:wheel:cp37-cp37m-manylinux1
     - nightly:wheel:cp27-cp27m-macosx
     - nightly:wheel:cp35-cp35m-macosx
     - nightly:wheel:cp36-cp36m-macosx
+    - nightly:wheel:cp37-cp37m-macosx
   only:
     - /^lalsuite-v.*$/
     - schedules
