@@ -18,6 +18,12 @@ $ git clone git@git.ligo.org:lscsoft/lalsuite.git
 
 The guide to [Contributing](https://git.ligo.org/lscsoft/lalsuite/blob/master/CONTRIBUTING.md) to LALSuite explains how to report issues and contribute fixes or new features using the fork and pull workflow. Please read and follow these directions.
 
+## Nightly Documentation
+
+The Doxygen Documentation is built under GitLab-CI every night and can be viewied at:
+
+https://docs.ligo.org/lscsoft/lalsuite/
+
 ## Notes on Ancient History
 
 LALSuite was transferred to git.ligo.org in December 2017. Older history has been imported, though commit hashes were rewritten during the GitLFS conversion. Please note:
