@@ -20,7 +20,7 @@ The guide to [Contributing](https://git.ligo.org/lscsoft/lalsuite/blob/master/CO
 
 ## Nightly Documentation
 
-The Doxygen Documentation is built under GitLab-CI every night and can be viewied at:
+The Doxygen Documentation is built under GitLab-CI every night and can be viewed at:
 
 https://docs.ligo.org/lscsoft/lalsuite/
 
