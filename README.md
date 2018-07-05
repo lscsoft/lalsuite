@@ -16,7 +16,7 @@ $ git clone git@git.ligo.org:lscsoft/lalsuite.git
 
 ## Contributing to LALSuite
 
-The guide to [Contributing](https://git.ligo.org/lscsoft/lalsuite/blob/master/CONTRIBUTING.md) to LALSuite explains how to report issues and contribute fixes or new features using the fork and pull workflow. Please read and follow these directions. 
+The guide to [Contributing](https://git.ligo.org/lscsoft/lalsuite/blob/master/CONTRIBUTING.md) to LALSuite explains how to report issues and contribute fixes or new features using the fork and pull workflow. Please read and follow these directions.
 
 ## Notes on Ancient History
 
