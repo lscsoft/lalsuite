@@ -17,6 +17,7 @@ Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
+BuildRequires: python2-rpm-macros
 BuildRequires: chealpix-devel >= 3.30.0
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
@@ -35,22 +36,22 @@ BuildRequires: swig >= 3.0.7
 BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
+BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
+BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
 BuildRequires: lalburst-octave >= @MIN_LALBURST_VERSION@
-BuildRequires: lalburst-python >= @MIN_LALBURST_VERSION@
+BuildRequires: python2-lalburst >= @MIN_LALBURST_VERSION@
 BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: lalinspiral-octave >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
 BuildRequires: lalpulsar-octave >= @MIN_LALPULSAR_VERSION@
-BuildRequires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
+BuildRequires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: chealpix
 Requires: gsl >= 1.15
 Requires: hdf5
@@ -86,9 +87,12 @@ The LSC Algorithm Inference Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Inference
 library.
 
-%package python
-Summary: Python Bindings for LALInference
+%package -n python2-%{name}
+Summary: Python %{python2_version} Bindings for LALInference
 Group: LAL
+Provides: %{name}-python
+Obsoletes: %{name}-python < 1.9.4-2
+Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: healpy >= 1.9.1
 Requires: h5py
@@ -102,15 +106,15 @@ Requires: python-six
 Requires: python-seaborn
 Requires: glue >= @MIN_GLUE_VERSION@
 Requires: ligo-gracedb
-Requires: lal-python >= @MIN_LAL_VERSION@
-Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
-Requires: lalburst-python >= @MIN_LALBURST_VERSION@
-Requires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
-Requires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
-%description python
+Requires: python2-lal >= @MIN_LAL_VERSION@
+Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
+Requires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+Requires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
+%description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
-This package provides the Python bindings for LALInference.
+This package provides the Python %{python2_version} bindings for LALInference.
 
 %package octave
 Summary: Octave Bindings for LALInference
@@ -165,13 +169,13 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%files python
+%files -n python2-%{name}
 %defattr(-,root,root)
 %{_bindir}/bayestar_*
 %{_bindir}/imrtgr_*
 %{_bindir}/rapidpe_*
 %{_bindir}/cbcBayes*
-%{_libdir}/python*
+%{python2_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
