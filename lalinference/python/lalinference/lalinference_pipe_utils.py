@@ -147,7 +147,7 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
   from lal import series as lalseries
   import lal
   from lalsimulation import SimInspiralChirpTimeBound, GetApproximantFromString, IMRPhenomDGetPeakFreq
-  from ligo.gracedb.rest import GraceDb
+  from ligo.gracedb.rest import GraceDb, HTTPError
   try:
     from gstlal import reference_psd
   except ImportError:
@@ -165,17 +165,23 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
   # Parse PSD
   srate_psdfile=16384
   fhigh=None
+  psdfileobj = None
   if downloadpsd:
     print "Download %s psd.xml.gz" % gid
-    if reference_psd is not None:
-      xmlpsd = ligolw_utils.load_fileobj(client.files(gid, "psd.xml.gz"), contenthandler = lalseries.PSDContentHandler)[0]
-      psd = lalseries.read_psd_xmldoc(xmlpsd)
-      ligolw_utils.write_filename(xmlpsd, "psd.xml.gz", gz = True)
-    else:
-      open("psd.xml.gz", "w").write(client.files(gid, "psd.xml.gz").read())
-    psdasciidic = get_xml_psds(os.path.realpath("./psd.xml.gz"),ifos,os.path.realpath('./PSDs'),end_time=None)
-    combine = np.loadtxt(psdasciidic[psdasciidic.keys()[0]])
-    srate_psdfile = pow(2.0, ceil( log(float(combine[-1][0]), 2) ) ) * 2
+    try:
+      psdfileobj = client.files(gid, "psd.xml.gz")
+    except HTTPError:
+      print "Failed to download %s psd.xml.gz. lalinference will estimate the psd itself." % gid
+    if psdfileobj is not None:
+      if reference_psd is not None:
+        xmlpsd = ligolw_utils.load_fileobj(psdfileobj, contenthandler = lalseries.PSDContentHandler)[0]
+        psd = lalseries.read_psd_xmldoc(xmlpsd)
+        ligolw_utils.write_filename(xmlpsd, "psd.xml.gz", gz = True)
+      else:
+        open("psd.xml.gz", "w").write(psdfileobj.read())
+      psdasciidic = get_xml_psds(os.path.realpath("./psd.xml.gz"),ifos,os.path.realpath('./PSDs'),end_time=None)
+      combine = np.loadtxt(psdasciidic[psdasciidic.keys()[0]])
+      srate_psdfile = pow(2.0, ceil( log(float(combine[-1][0]), 2) ) ) * 2
   coinc_map = lsctables.CoincMapTable.get_table(xmldoc)
   for coinc in coinc_events:
     these_sngls = [sngl_event_idx[c.event_id] for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id]
@@ -196,7 +202,7 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
           else:
             horizon_distance.append(2 * e.eff_distance)
         else:
-          if reference_psd is not None and downloadpsd:
+          if reference_psd is not None and psdfileobj is not None:
             if not roq==False:
               fstop = IMRPhenomDGetPeakFreq(e.mass1, e.mass2, 0.0, 0.0)
             HorizonDistanceObj = reference_psd.HorizonDistance(f_min = flow, f_max = fstop, delta_f = 1.0 / 32.0, m1 = e.mass1, m2 = e.mass2)
@@ -206,7 +212,7 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
         srate = max(srate)
       else:
         srate = srate_psdfile
-        if downloadpsd:
+        if psdfileobj is not None:
           fhigh = srate_psdfile/2.0 * 0.95 # Because of the drop-off near Nyquist of the PSD from gstlal
     else:
       srate = None
