@@ -84,11 +84,13 @@ const double sqrt_6 = 2.44948974278317788;
  * @brief Functions for producing IMRPhenomP waveforms for precessing binaries,
  * as described in Hannam et al., arXiv:1308.3271 [gr-qc].
  *
- * @note Two versions of IMRPhenomP are available (selected by IMRPhenomP_version):
+ * @note Three versions of IMRPhenomP are available (selected by IMRPhenomP_version):
  *    * version 1 ("IMRPhenomP"): based on IMRPhenomC
  *      (outdated, not reviewed!)
  *    * version 2 ("IMRPhenomPv2"): based on IMRPhenomD
  *      (to be used, currently under review as of Dec 2015)
+ *    * version NRTidal ("IMRPhenomPv2_NRTidal"): based on IMRPhenomPv2
+ *      (NRTidal framework added to PhenomD aligned phasing and then twisted up)
  *
  * Each IMRPhenomP version inherits its range of validity
  * over the parameter space from the respective aligned-spin waveform.
