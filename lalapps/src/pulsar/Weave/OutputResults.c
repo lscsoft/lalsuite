@@ -369,7 +369,8 @@ int XLALWeaveOutputResultsWrite(
 ///
 int XLALWeaveOutputResultsReadAppend(
   FITSFile *file,
-  WeaveOutputResults **out
+  WeaveOutputResults **out,
+  UINT4 toplist_limit
   )
 {
 
@@ -423,9 +424,10 @@ int XLALWeaveOutputResultsReadAppend(
   // Compute and fill the full stats-dependency map
   XLAL_CHECK( XLALWeaveStatisticsParamsSetDependencyMap( statistics_params, toplist_stats, extra_stats, recalc_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Read maximum size of toplists
-  UINT4 toplist_limit = 0;
-  XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "toplimit", &toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Read maximum size of toplists, if not supplied
+  if ( toplist_limit == 0 ) {
+    XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "toplimit", &toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
   // Read whether to output semicoherent/coherent template indexes
   BOOLEAN toplist_tmpl_idx = 0;
