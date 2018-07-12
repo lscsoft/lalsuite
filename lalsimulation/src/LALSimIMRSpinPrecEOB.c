@@ -462,8 +462,8 @@ int XLALSimIMRSpinEOBWaveform(
          REAL8TimeSeries **hcross, /**<< OUTPUT, x-polarization waveform */
         const REAL8      phiC, /**<< coalescence orbital phase (rad) */
         const REAL8     deltaT, /**<< sampling time step */
-        const REAL8     m1SI, /**<< mass-1 in SI unit (kg) */
-        const REAL8     m2SI, /**<< mass-2 in SI unit (kg) 8*/
+        const REAL8     m1SI_in, /**<< mass-1 in SI unit (kg) */
+        const REAL8     m2SI_in, /**<< mass-2 in SI unit (kg) 8*/
         const REAL8     fMin, /**<< starting frequency (Hz) */
         const REAL8     r, /**<< luminosity distance in SI unit (m) */
         const REAL8     inc, /**<< inclination angle */
@@ -485,19 +485,36 @@ int XLALSimIMRSpinEOBWaveform(
     /** stores harmonics of the full waveform in I-frame */
     SphHarmTimeSeries *hIMR = NULL;
 
-    ret = XLALSimIMRSpinEOBWaveformAll(hplus, hcross, &dynamicsHi, &hlmPTSout, &hlmPTSHi, &hIMRlmJTSHi, &hIMR, &AttachPars,
-                                       phiC, deltaT, m1SI, m2SI, fMin, r, inc, INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2], PrecEOBversion);
-    if (ret == XLAL_SUCCESS){
-        if (*hplus == NULL || *hcross == NULL){
-             XLALPrintError("Houston-2, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, inclination = %.18e,   spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n",
-                       m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc,  INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
-             XLAL_ERROR( XLAL_ENOMEM );
-        }
-        if ((*hplus)->data == NULL || (*hcross)->data == NULL){
-             XLALPrintError("Houston-3, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, inclination = %.18e,   spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n",
-                       m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc,  INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
-             XLAL_ERROR( XLAL_ENOMEM );
-        }
+    REAL8 m1SI = m1SI_in;
+    REAL8 m2SI = m2SI_in;
+
+    // Loop around waveform generation and perturb masses if it returns NULL pointers
+    bool generation_OK = false;
+    int i = 0;
+    int n_try = 5;
+    REAL8 pert = 1.0 + 1e-12;
+    while (!generation_OK && (i < n_try)) {
+      ret = XLALSimIMRSpinEOBWaveformAll(hplus, hcross, &dynamicsHi, &hlmPTSout, &hlmPTSHi, &hIMRlmJTSHi, &hIMR, &AttachPars,
+                                         phiC, deltaT, m1SI, m2SI, fMin, r, inc, INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2], PrecEOBversion);
+      if (ret == XLAL_SUCCESS) {
+          if (*hplus == NULL || *hcross == NULL || (*hplus)->data == NULL || (*hcross)->data == NULL){
+              XLALPrintWarning("Houston-2/3, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, inclination = %.18e,   spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n",
+                         m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc,  INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
+              XLALPrintWarning("We will perturb the masses by a small amount and retry in next iteration (%d of %d).\n", i, n_try);
+              m1SI *= pert;
+              m2SI /= pert;
+          }
+          else
+            generation_OK = true;
+      }
+      i++;
+
+      if (!generation_OK) {
+          XLALPrintWarning("We have called XLALSimIMRSpinEOBWaveformAll %d times with perturbed masses, now we give up.\n", n_try);
+          XLALPrintError("Houston-2/3, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, inclination = %.18e,   spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n",
+                    m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc,  INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
+          XLAL_ERROR( XLAL_ENOMEM );
+      }
     }
 
     if(dynamicsHi)
