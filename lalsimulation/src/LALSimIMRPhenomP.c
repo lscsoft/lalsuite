@@ -696,8 +696,8 @@ static int PhenomPCore(
         XLAL_PRINT_WARNING("IMRPhenomPv2: Warning: The underlying non-precessing model is calibrated up to m1/m2 <= 18.\n");
       else if (q > 100.0)
           XLAL_ERROR(XLAL_EDOM, "IMRPhenomPv2: Mass ratio q > 100 which is way outside the calibration range q <= 18.\n");
-      if ((q < 1.5) && (lambda1 > 2000.0) && (lambda2 > 2000.0) && (fabs(chi1_l) < 0.15) && (fabs(chi2_l) < 0.15))
-        XLAL_PRINT_WARNING("IMRPhenomPv2_NRTidal: Warning: Entering region of parameter space where waveform is not reliable; q=%g,lambda1=%g, lambda2=%g, chi1_l=%g, chi2_l=%g\n",q, lambda1, lambda2, chi1_l, chi2_l);
+      if ((q < 1.5) && (lambda1 > 2000.0) && (lambda2 > 2000.0))
+        XLAL_PRINT_WARNING("IMRPhenomPv2_NRTidal: Warning: Entering region of parameter space where waveform is not reliable; q=%g,lambda1=%g, lambda2=%g\n",q, lambda1, lambda2);
       CheckMaxOpeningAngle(m1, m2, chi1_l, chi2_l, chip);
       break;
     default:
