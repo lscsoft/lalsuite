@@ -791,6 +791,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
     for (j=0;j<bingrid->ndim;j++) fprintf(fp,"%6.12f\t",TL.params[i][j]);
     fprintf(fp,"%6.12e\n",TL.data[i]);
   }
+  LogPrintf(LOG_NORMAL,"%s : wrote %i results to toplist file\n",__func__,(UINT4)TL.n);
 
   /* free template memory */
   for (i=0;i<power->length;i++) {
@@ -902,7 +903,7 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
     snprintf(outputfile,LONGSTRINGLENGTH,"%s/SemiCoherentResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt",
                   outputdir,(CHAR*)uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
   }
-  LogPrintf(LOG_DEBUG,"%s : output %s\n",__func__,outputfile);
+  LogPrintf(LOG_NORMAL,"%s : output %s\n",__func__,outputfile);
 
   /* open the output file */
   if (((*fp) = fopen(outputfile,"w")) == NULL) {
