@@ -58,6 +58,7 @@
 #include <lal/LALSimIMR.h>
 #include <lal/H5FileIO.h>
 
+#include "LALSimIMRNRSur7dq2.h"
 #include "LALSimIMRSEOBNRROMUtilities.c"
 
 #include <lal/LALConfig.h>
@@ -65,747 +66,68 @@
 #include <pthread.h>
 #endif
 
-// These are to rescale the mass ratio fit range from [0.99, 2.01] to [-1, 1].
-static const double NRSUR7DQ2_Q_FIT_OFFSET = -2.9411764705882355; // = (0.5*(2.01 - 0.99)) * (2 / (2.01 - 0.99))
-static const double NRSUR7DQ2_Q_FIT_SLOPE = 1.9607843137254901; // = 2 / (2.01 - 0.99)
-
-// Allow a tiny bit of extrapolation in mass ratio and spin
-static const double NRSUR7DQ2_Q_MIN = 0.999;
-static const double NRSUR7DQ2_Q_MAX = 2.001;
-static const double NRSUR7DQ2_CHI_MAX = 0.801;
-
-static const int NRSUR7DQ2_LMAX = 4;
-
-// Surrogate model data, in LAL_DATA_PATH. File available in lalsuite-extra or at
-// https://www.black-holes.org/surrogates
-static const char NRSUR7DQ2_DATAFILE[] = "NRSur7dq2.h5";
 
 #ifdef LAL_PTHREAD_LOCK
 static pthread_once_t NRSur7dq2_is_initialized = PTHREAD_ONCE_INIT;
 #endif
 
-/***********************************************************************************/
-/****************************** Type definitions ***********************************/
-/***********************************************************************************/
 
-// Data used in a single fit
-typedef struct tagFitData {
-    gsl_matrix_long *basisFunctionOrders; // matrix of (n_coefs x 7) basis function orders
-    gsl_vector *coefs;
-    int n_coefs;
-} FitData;
-
-// Data used in vector fit
-typedef struct tagVectorFitData {
-    gsl_matrix_long *basisFunctionOrders;
-    gsl_vector *coefs;
-    gsl_vector_long *componentIndices;
-    int n_coefs;
-    int vec_dim;
-} VectorFitData;
-
-typedef struct tagDynamicsNodeFitData {
-    FitData *omega_data;
-    VectorFitData *omega_copr_data;
-    VectorFitData *chiA_dot_data;
-    VectorFitData *chiB_dot_data;
-} DynamicsNodeFitData;
-
-typedef struct tagWaveformDataPiece {
-    int n_nodes;
-    FitData **fit_data;
-    gsl_matrix *empirical_interpolant_basis;
-    gsl_vector_long *empirical_node_indices;
-} WaveformDataPiece;
-
-typedef struct tagWaveformFixedEllModeData {
-    int ell;
-    WaveformDataPiece *m0_real_data;
-    WaveformDataPiece *m0_imag_data;
-    // X_\pm^{l, m} = \frac{1}{2}( h^{l, m} \pm h^{l, -m} )
-    WaveformDataPiece **X_real_plus_data; // One for each 1 <= m <= ell
-    WaveformDataPiece **X_real_minus_data;
-    WaveformDataPiece **X_imag_plus_data; // One for each 1 <= m <= ell
-    WaveformDataPiece **X_imag_minus_data;
-} WaveformFixedEllModeData;
-
-typedef struct tagNRSur7dq2Data {
-    UINT4 setup;
-    int LMax;
-    gsl_vector *t_ds;
-    gsl_vector *t_ds_half_times; // t_1/2, t_3/2, and t_5/2 used to start up integration
-    gsl_vector *t_coorb;
-    DynamicsNodeFitData **ds_node_data;
-    DynamicsNodeFitData **ds_half_node_data; // 3 half nodes at t_ds_half_times
-    WaveformFixedEllModeData **coorbital_mode_data; // One for each 2 <= ell <= LMax
-} NRSur7dq2Data;
-
-typedef struct tagMultiModalWaveform {
-    int n_modes;
-    int n_times;
-    int *lvals;
-    int *mvals;
-    gsl_vector **modes_real_part;
-    gsl_vector **modes_imag_part;
-} MultiModalWaveform;
-
-typedef struct tagWignerDMatrices {
-    int LMax;
-    int n_entries;
-    gsl_vector **real_part;
-    gsl_vector **imag_part;
-} WignerDMatrices;
-
-typedef struct tagRealPowers {
-    int LMax;
-    int n_entries;
-    int n_times;
-    gsl_vector **powers;
-} RealPowers;
-
-typedef struct tagComplexPowers {
-    int LMax;
-    int n_entries;
-    int n_times;
-    gsl_vector **real_part;
-    gsl_vector **imag_part;
-} ComplexPowers;
-
-/**** Global surrogate data ****/
+/**
+ * Global surrogate data.
+ * This data will be loaded at most once. Any executable which calls NRSur7dq2_Init_LALDATA
+ * directly or by calling any XLAL NRSur7dq2 function will have a memory leak according
+ * to valgrind, because we never free this memory.
+ */
 static NRSur7dq2Data __lalsim_NRSur7dq2_data;
 
+/**
+ * @addtogroup LALSimNRSur7dq2_c
+ * @{
+ *
+ * @name Routines for NR surrogate model "NRSur7dq2"
+ * @{
+ *
+ * @author Jonathan Blackman
+ *
+ * @brief C code for NRSur7dq2 NR surrogate waveform model.
+ *
+ * This is a fully precessing time domain model including all subdominant modes up to ell=4.
+ * See Blackman et al \cite Blackman:q27d for details.
+ * Any studies that use this waveform model should include a reference to that paper.
+ * Using this model requires the file lalsuite-extra/data/lalsimulation/NRSur7dq2.h5
+ * Make sure your $LAL_DATA_PATH points to lalsuite-extra/data/lalsimulation/.
+ * The lalsuite-extra commit hash at the time of review was 77613e7f5f01d5ea11829ded5677783cafc0d298
+ *
+ * @note The range of validity of the model is:
+ * * Mass ratios 1 <= q <= 2
+ * * Spin magnitudes |chi_i| <= 0.8
+ * * Total time before merger <= 4500M, which in practice leads to a parameter-dependent lower bound for fmin.
+ *
+ * @note Additional notes:
+ * * Passing in a non-trivial ModeArray controls which co-orbital frame modes are evaluated.
+ * * A python version of this model can be installed with "pip install NRSur7dq2".
+ * * This lalsimulation implementation has been verified to agree with version 1.0.3 up to
+ * very small differences due to slightly differing time interpolation methods.
+ * * Note that for conventions to agree with ChooseTDWaveform (and XLALSimInspiralNRSur7dq2Polarizations),
+ * you must pass use_lalsimulation_conventions=True when calling the pip version of NRSur7dq2.
+ *
+ * @review NRSur7dq2 model and routines reviewed by Sebastian Khan, Harald Pfeiffer, Geraint Pratten, and Michael Pürrer.
+ * Reviewees were Jonathan Blackman, Scott Field, and Vijay Varma.
+ * The review page can be found at https://git.ligo.org/waveforms/reviews/nrsur/wikis/home
+ */
 
-/***********************************************************************************/
-/****************************** Function declarations*******************************/
-/***********************************************************************************/
-static void NRSur7dq2_MultiModalWaveform_Init(MultiModalWaveform **wave, int LMax, int n_times);
-static void NRSur7dq2_MultiModalWaveform_Destroy(MultiModalWaveform *wave);
-static void NRSur7dq2_WignerDMatrices_Init(WignerDMatrices **matrices, int n_times, int LMax);
-static void NRSur7dq2_WignerDMatrices_Destroy(WignerDMatrices *matrices);
-static int NRSur7dq2_WignerDMatrix_Index(int ell, int m, int mp);
-static void NRSur7dq2_WignerDMatrices_Compute(WignerDMatrices *matrices, gsl_vector **quat);
-static void NRSur7dq2_ComplexPowers_Init(ComplexPowers **cp, int LMax, int n_times);
-static void NRSur7dq2_ComplexPowers_Destroy(ComplexPowers *cp);
-static void NRSur7dq2_RealPowers_Init(RealPowers **rp, int LMax, int n_times);
-static void NRSur7dq2_RealPowers_Destroy(RealPowers *rp);
-static void NRSur7dq2_ComplexPowers_Compute(ComplexPowers *cp, gsl_vector *x, gsl_vector *y);
-static void NRSur7dq2_RealPowers_Compute(RealPowers *rp, gsl_vector *x);
-static void NRSur7dq2_Init_LALDATA(void);
-static int NRSur7dq2_Init(NRSur7dq2Data *data, LALH5File *file);
-static void NRSur7dq2_LoadDynamicsNode(DynamicsNodeFitData **ds_node_data, LALH5File *sub, int i);
-static void NRSur7dq2_LoadCoorbitalEllModes(WaveformFixedEllModeData **coorbital_mode_data, LALH5File *file, int i);
-static void NRSur7dq2_LoadWaveformDataPiece(LALH5File *sub, WaveformDataPiece **data, bool invert_sign);
-static bool NRSur7dq2_IsSetup(void);
-static double ipow(double base, int exponent); // integer powers
-
-static void complex_vector_mult(gsl_vector *x1, gsl_vector *y1, gsl_vector *x2, gsl_vector *y2, gsl_vector *tmp1, gsl_vector *tmp2);
-static double NRSur7dq2_eval_fit(FitData *data, double *x);
-
-static void NRSur7dq2_eval_vector_fit(
-    double *res, // Result
-    VectorFitData *data, // Data for fit
-    double *x // size 7, giving mass ratio q, and dimensionless spin components
-);
-
-static void NRSur7dq2_normalize_y(
-    double chiANorm,
-    double chiBNorm,
-    double *y
-); // Helper to keep spin magnitude constant
-
-static void NRSur7dq2_normalize_results(
-    double normA,
-    double normB,
-    gsl_vector **quat,
-    gsl_vector **chiA,
-    gsl_vector **chiB
-);
-
-static void NRSur7dq2_rotate_spins(gsl_vector **chiA, gsl_vector **chiB, gsl_vector *phi, bool backwards);
-
-static void NRSur7dq2_ds_fit_x(
-    double *x, //Result, length 7
-    double q, // Mass ratio
-    double *y // [q0, qx, qy, qz, phi, chiAx, chiAy, chiAz, chiBx, chiBy, chiBz]
-);
-
-static void NRSur7dq2_assemble_dydt(
-    double *dydt,           // Result, length 11
-    double *y,              // ODE solution at the current time step
-    double *Omega_coorb_xy, // a form of time derivative of the coprecessing frame
-    double omega,           // orbital angular frequency in the coprecessing frame
-    double *chiA_dot,       // chiA time derivative
-    double *chiB_dot        // chiB time derivative
-);
-
-static void NRSur7dq2_ab4_dy(
-    double *dy,     // Result, length 11
-    double *k1,     // dy/dt evaluated at node 1
-    double *k2,     // dy/dt evaluated at node 2
-    double *k3,     // dy/dt evaluated at node 3
-    double *k4,     // dy/dt evaluated at node 4
-    double dt1,     // t_2 - t_1
-    double dt2,     // t_3 - t_2
-    double dt3,     // t_4 - t_3
-    double dt4      // t_5 - t_4
-);
-
-static double factorial(int n);
-static double factorial_ratio(int n, int k);
-static double binomial(int n, int k);
-static double wigner_coef(int ell, int mp, int m);
-
-static double cubic_interp(double xout, double *x, double *y);
-static gsl_vector *spline_array_interp(gsl_vector *xout, gsl_vector *x, gsl_vector *y);
-
-static double NRSur7dq2_get_omega(size_t node_index, double q, double *y0);
-static double NRSur7dq2_get_t_ref(double omega_ref, double q, double *chiA0, double *chiB0, double *q_ref, double phi_ref);
-
-static void NRSur7dq2_get_time_deriv_from_index(
-    double *dydt,       // Output: dy/dt evaluated at the ODE time node with index i0. Must have space for 11 entries.
-    int i0,             // Time node index. i0=-1, -2, and -3 are used for time nodes 1/2, 3/2, and 5/2 respectively.
-    double q,           // Mass ratio
-    double *y           // Current ODE state: [q0, qx, qy, qz, orbphase, chiAx, chiAy, chiAz, chiBx, chiBy, chiBz]
-);
-
-static void NRSur7dq2_get_time_deriv(
-    double *dtdy,       // Output: dy/dt evaluated at time t. Must have space for 11 entries.
-    double t,           // Time at which the ODE should be evaluated.
-    double q,           // Mass ratio
-    double *y           // Current ODE state
-);
-
-static int NRSur7dq2_initialize_at_dynamics_node(
-    double *dynamics_data,  // ODE output
-    double t_ref,           // reference time. t_ds[i0] will be close to t_ref.
-    double q,               // mass ratio
-    double *chiA0,          // chiA at t_ref.
-    double *chiB0,          // chiB at t_ref.
-    double phi_ref,         // orbital phase at t_ref.
-    double *q_ref,          // quaternion at t_ref.
-    double normA,           // |chiA|
-    double normB            // |chiB|
-);
-
-static void NRSur7dq2_initialize_RK4_with_half_nodes(
-    double *dynamics_data,  // ODE output
-    double *time_steps,     // Output: first three time steps. Should have size 3.
-    double *dydt0,             // Output: dydt at node 0. Should have size 11.
-    double *dydt1,             // Output: dydt at node 1. Should have size 11.
-    double *dydt2,             // Output: dydt at node 2. Should have size 11.
-    double *dydt3,             // Output: dydt at node 3. Should have size 11.
-    double normA,           // |chiA|
-    double normB,           // |chiB|
-    double q                // mass ratio
-);
-
-static int NRSur7dq2_initialize_RK4(
-    double *dynamics_data,  // ODE output
-    double *time_steps,     // Output: first three time steps. Should have size 3.
-    double *dydt0,             // Output: dydt at node i0 + 0. Should have size 11.
-    double *dydt1,             // Output: dydt at node i0 + 1. Should have size 11.
-    double *dydt2,             // Output: dydt at node i0 + 2. Should have size 11.
-    double *dydt3,             // Output: dydt at node i0 + 3. Should have size 11.
-    double normA,           // |chiA|
-    double normB,           // |chiB|
-    double q,               // mass ratio
-    int i0                  // the node that is already initialized
-);
-
-static void NRSur7dq2_integrate_AB4(
-    double *dynamics_data,  // ODE output
-    double *time_steps,     // The first three time steps beginning at i_start.
-    double *dydt0,          // dydt at node i_start
-    double *dydt1,          // dydt at node i_start + 1
-    double *dydt2,          // dydt at node i_start + 2
-    double *dydt3,          // dydt at node i_start + 3
-    double normA,           // |chiA|
-    double normB,           // |chiB|
-    double q,               // mass ratio
-    int i_start             // nodes i_start through i_start+3 are already initialized
-);
-
-static int NRSur7dq2_IntegrateDynamics(
-    double *dynamics_data,  // Output: length (n * 11), where entries 11*m <= i < 11*(m+1) are
-                            // [q0, qx, qy, qz, varphi, chiAx, chiAy, chiAz, chiBx, chiBy, chiBz]
-    double q,               // Mass ratio mA / mB
-    double *chiA0,          // chiA at the reference point
-    double *chiB0,          // chiB at the reference point
-    double omega_ref,       // orbital angular frequency at the reference point
-    double phi_ref,         // orbital phase at the reference point
-    double *q_ref           // coprecessing quaterion at the reference point
-);
-
-static void NRSur7dq2_eval_data_piece(
-    gsl_vector *result, // Output: Should have already been assigned space
-    double q,           // Mass ratio
-    gsl_vector **chiA,  // 3 gsl_vector *s, one for each (coorbital) component
-    gsl_vector **chiB,  // similar to chiA
-    WaveformDataPiece *data // The data piece to evaluate
-);
-
-static void NRSur7dq2_TransformModes(
-    MultiModalWaveform *h,          // Output. Dimensionless waveform modes sampled on t_coorb. Should be initialized.
-    MultiModalWaveform *h_coorb,    // Coorbital frame waveform modes.
-    gsl_vector **quat,              // should be *quat[4], one for each component. Coprecessing frame quaternions.
-    gsl_vector *orbphase            // Orbital phase, used to obtain the coprecessing modes.
-);
-
-static void NRSur7dq2_core(
-    MultiModalWaveform **h, // Output. Dimensionless waveform modes sampled on t_coorb
-    double q,               // Mass ratio mA / mB
-    double *chiA0,          // chiA at the reference point
-    double *chiB0,          // chiB at the reference point
-    double omega_ref,       // orbital angular frequency at the reference point
-    double phi_ref,         // orbital phase at the reference point
-    double *q_ref,          // coprecessing quaterion at the reference point
-    int LMax                // Maximum ell mode to evaluate (NRSur7dq2 contains ell=2, 3, 4 modes)
-);
 
 /***********************************************************************************/
 /****************************** Function Definitions *******************************/
 /***********************************************************************************/
-static void NRSur7dq2_MultiModalWaveform_Init(
-    MultiModalWaveform **wave,
-    int LMax,
-    int n_times
-) {
-    if (!wave) exit(1);
-    if (LMax < 2) XLAL_ERROR_VOID(XLAL_FAILURE, "Got LMax=%d < 2!\n", LMax);
-    if (*wave) NRSur7dq2_MultiModalWaveform_Destroy(*wave);
-    (*wave) = XLALCalloc(1, sizeof(MultiModalWaveform));
-
-    int n_modes = LMax*(LMax+2) - 3;
-
-    (*wave)->n_modes = n_modes;
-    (*wave)->lvals = XLALCalloc(n_modes, sizeof(int));
-    (*wave)->mvals = XLALCalloc(n_modes, sizeof(int));
-    (*wave)->n_times = n_times;
-    gsl_vector **modes_real_part = malloc(n_modes * sizeof(*modes_real_part));
-    gsl_vector **modes_imag_part = malloc(n_modes * sizeof(*modes_imag_part));
-    (*wave)->modes_real_part = modes_real_part;
-    (*wave)->modes_imag_part = modes_imag_part;
-
-    int ell=2;
-    int m=-2;
-    for (int i=0; i<n_modes; i++) {
-        (*wave)->lvals[i] = ell;
-        (*wave)->mvals[i] = m;
-        (*wave)->modes_real_part[i] = gsl_vector_calloc(n_times);
-        (*wave)->modes_imag_part[i] = gsl_vector_calloc(n_times);
-        m += 1;
-        if (m > ell) {
-            ell += 1;
-            m = -1 * ell;
-        }
-    }
-}
-
-static void NRSur7dq2_MultiModalWaveform_Destroy(MultiModalWaveform *wave) {
-    if (!wave) return;
-    for (int i=0; i<wave->n_modes; i++) {
-        if (wave->modes_real_part[i]) gsl_vector_free(wave->modes_real_part[i]);
-        if (wave->modes_imag_part[i]) gsl_vector_free(wave->modes_imag_part[i]);
-    }
-    free(wave->modes_real_part);
-    free(wave->modes_imag_part);
-    XLALFree(wave->lvals);
-    XLALFree(wave->mvals);
-    XLALFree(wave);
-}
-
-static void NRSur7dq2_WignerDMatrices_Init(
-    WignerDMatrices **matrices,
-    int n_times,
-    int LMax
-) {
-    if (!matrices) exit(1);
-    if (LMax < 2) XLAL_ERROR_VOID(XLAL_FAILURE, "Got LMax=%d < 2!\n", LMax);
-    if (*matrices) NRSur7dq2_WignerDMatrices_Destroy(*matrices);
-    (*matrices) = XLALCalloc(1, sizeof(WignerDMatrices));
-
-    int n_entries = 0;
-    for (int ell=2; ell<=LMax; ell++) {
-        n_entries += (2*ell+1) * (2*ell+1);
-    }
-
-    (*matrices)->LMax = LMax;
-    (*matrices)->n_entries = n_entries;
-
-    gsl_vector **real_part = malloc(n_entries * sizeof(*real_part));
-    gsl_vector **imag_part = malloc(n_entries * sizeof(*imag_part));
-    (*matrices)->real_part = real_part;
-    (*matrices)->imag_part = imag_part;
-
-    for (int i=0; i<n_entries; i++) {
-        (*matrices)->real_part[i] = gsl_vector_calloc(n_times);
-        (*matrices)->imag_part[i] = gsl_vector_calloc(n_times);
-    }
-}
-
-static void NRSur7dq2_WignerDMatrices_Destroy(WignerDMatrices *matrices) {
-    if (!matrices) return;
-    for (int i=0; i<matrices->n_entries; i++) {
-        if (matrices->real_part[i]) gsl_vector_free(matrices->real_part[i]);
-        if (matrices->imag_part[i]) gsl_vector_free(matrices->imag_part[i]);
-    }
-    free(matrices->real_part);
-    free(matrices->imag_part);
-    XLALFree(matrices);
-}
-
-static int NRSur7dq2_WignerDMatrix_Index(int ell, int m, int mp) {
-    int i0 = (ell*(ell*ell*4 - 1))/3 - 10; // Start of the (m, mp) matrix, which has size (2*ell + 1) X (2*ell + 1)
-    int res = i0 + (2*ell+1)*(ell+m) + (ell+mp);
-    return res;
-}
-
-static void NRSur7dq2_ComplexPowers_Init(ComplexPowers **cp, int LMax, int n_times) {
-    // include powers from -2*LMax to 2*LMax inclusive
-    if (!cp) exit(1);
-    if (*cp) NRSur7dq2_ComplexPowers_Destroy(*cp);
-    (*cp) = XLALCalloc(1, sizeof(ComplexPowers));
-
-    int n_entries = 4*LMax+1;
-    (*cp)->LMax = LMax;
-    (*cp)->n_entries = n_entries;
-
-    gsl_vector **real_part = malloc(n_entries * sizeof(*real_part));
-    gsl_vector **imag_part = malloc(n_entries * sizeof(*imag_part));
-    (*cp)->real_part = real_part;
-    (*cp)->imag_part = imag_part;
-
-    for (int i=0; i<n_entries; i++) {
-        (*cp)->real_part[i] = gsl_vector_calloc(n_times);
-        (*cp)->imag_part[i] = gsl_vector_calloc(n_times);
-    }
-}
-
-static void NRSur7dq2_ComplexPowers_Destroy(ComplexPowers *cp) {
-    if (!cp) return;
-    for (int i=0; i<cp->n_entries; i++) {
-        if (cp->real_part[i]) gsl_vector_free(cp->real_part[i]);
-        if (cp->imag_part[i]) gsl_vector_free(cp->imag_part[i]);
-    }
-    free(cp->real_part);
-    free(cp->imag_part);
-    XLALFree(cp);
-}
-
-static void NRSur7dq2_RealPowers_Init(RealPowers **rp, int LMax, int n_times) {
-    // include powers from 0 to 2*LMax inclusive
-    if (!rp) exit(1);
-    if (*rp) NRSur7dq2_RealPowers_Destroy(*rp);
-    (*rp) = XLALCalloc(1, sizeof(RealPowers));
-
-    int n_entries = 2*LMax+1;
-    (*rp)->LMax = LMax;
-    (*rp)->n_entries = n_entries;
-
-    gsl_vector **powers = malloc(n_entries * sizeof(*powers));
-    (*rp)->powers = powers;
-
-    for (int i=0; i<n_entries; i++) {
-        (*rp)->powers[i] = gsl_vector_calloc(n_times);
-    }
-}
-
-static void NRSur7dq2_RealPowers_Destroy(RealPowers *rp) {
-    if (!rp) return;
-    for (int i=0; i<rp->n_entries; i++) {
-        if (rp->powers[i]) gsl_vector_free(rp->powers[i]);
-    }
-    free(rp->powers);
-    XLALFree(rp);
-}
-
-static void NRSur7dq2_ComplexPowers_Compute(ComplexPowers *cp, gsl_vector *x, gsl_vector *y) {
-    int i, j, power;
-
-    // z = x + iy
-    gsl_vector *tmp = gsl_vector_calloc(x->size);
-    gsl_vector *z_mag_sqr = gsl_vector_calloc(x->size);
-
-    // Set zero'th power
-    i = 2*cp->LMax;
-    gsl_vector_add_constant(cp->real_part[i], 1.0);
-
-    // Set first power
-    i += 1;
-    gsl_vector_add(cp->real_part[i], x);
-    gsl_vector_add(cp->imag_part[i], y);
-
-    // Compute positive powers
-    for (power=2; power <= 2*cp->LMax; power++) {
-        // Compute z^n = z^{n-1} * z. Currently, i indexes z^{n-1}.
-        // Re[z^{n-1]] * Re[z]
-        gsl_vector_add(tmp, cp->real_part[i]);
-        gsl_vector_mul(tmp, x);
-        gsl_vector_add(cp->real_part[i+1], tmp);
-        gsl_vector_set_zero(tmp);
-
-        // Re[z^{n-1]] * Im[z]
-        gsl_vector_add(tmp, cp->real_part[i]);
-        gsl_vector_mul(tmp, y);
-        gsl_vector_add(cp->imag_part[i+1], tmp);
-        gsl_vector_set_zero(tmp);
-
-        // Im[z^{n-1]] * Re[z]
-        gsl_vector_add(tmp, cp->imag_part[i]);
-        gsl_vector_mul(tmp, x);
-        gsl_vector_add(cp->imag_part[i+1], tmp);
-        gsl_vector_set_zero(tmp);
-
-        // Im[z^{n-1]] * Im[z]
-        gsl_vector_add(tmp, cp->imag_part[i]);
-        gsl_vector_mul(tmp, y);
-        gsl_vector_sub(cp->real_part[i+1], tmp);
-        gsl_vector_set_zero(tmp);
-
-        i += 1;
-    }
-
-    // Compute z^{-n} = (z^n)* / |(z^n)^2|
-    for (power=1; power <= 2*cp->LMax; power++) {
-        i = 2*cp->LMax + power;
-        j = 2*cp->LMax - power;
-
-        // Compute |(z^n)|^2
-        gsl_vector_add(tmp, cp->real_part[i]);
-        gsl_vector_mul(tmp, tmp);
-        gsl_vector_add(z_mag_sqr, tmp);
-        gsl_vector_set_zero(tmp);
-        gsl_vector_add(tmp, cp->imag_part[i]);
-        gsl_vector_mul(tmp, tmp);
-        gsl_vector_add(z_mag_sqr, tmp);
-        gsl_vector_set_zero(tmp);
-
-        // Set z^{-n}
-        gsl_vector_add(cp->real_part[j], cp->real_part[i]);
-        gsl_vector_div(cp->real_part[j], z_mag_sqr);
-        gsl_vector_sub(cp->imag_part[j], cp->imag_part[i]);
-        gsl_vector_div(cp->imag_part[j], z_mag_sqr);
-
-        gsl_vector_set_zero(z_mag_sqr);
-    }
-
-    gsl_vector_free(tmp);
-    gsl_vector_free(z_mag_sqr);
-
-}
-
-static void NRSur7dq2_RealPowers_Compute(RealPowers *rp, gsl_vector *x) {
-    int power;
-
-    gsl_vector *tmp = gsl_vector_calloc(x->size);
-
-    // Set zero'th power
-    gsl_vector_add_constant(rp->powers[0], 1.0);
-
-    // Set first power
-    gsl_vector_add(rp->powers[1], x);
-
-    // Compute positive powers
-    for (power=2; power <= 2*rp->LMax; power++) {
-        // Compute x^n = x^{n-1} * x.
-        gsl_vector_add(tmp, rp->powers[power-1]);
-        gsl_vector_mul(tmp, x);
-        gsl_vector_add(rp->powers[power], tmp);
-        gsl_vector_set_zero(tmp);
-    }
-
-    gsl_vector_free(tmp);
-}
-
-static void NRSur7dq2_WignerDMatrices_Compute(WignerDMatrices *matrices, gsl_vector **quat) {
-    // We compute them all at once because a lot of the work is just processing quat.
-    // Parts of this function are adapted from GWFrames:
-    // https://github.com/moble/GWFrames
-    // written by Michael Boyle, based on his paper:
-    // http://arxiv.org/abs/1302.2919
-    // although we are working with the conjugate of quat (replace q with [q[0], -1*q[1], -1*q[2], -1*q[3]]
-
-    int n_times = quat[0]->size;
-    int i, j, ell, m, mp, rho_min, rho_max, rho;
-    double tmp_re, tmp_im, tmp_abs_sqr, coef, c;
-    double eps_sqr = 1.0e-24;
-
-    // ra = q[0] - I*q[3], and rb = -q[2] - I*q[1]
-    // It's possible that |ra| = 0 or |rb| = 0, making it unsafe to divide by them.
-    // We keep track of which indices have this problem, use a safe-but-garbage value of quat=[0.5, 0.5, 0.5, 0.5] at those indices,
-    // and then fix them afterwards.
-    gsl_vector_int *index_types = gsl_vector_int_calloc(n_times);
-    gsl_vector *safe_ra_mag_sqr = gsl_vector_calloc(n_times);
-    gsl_vector *safe_rb_mag_sqr = gsl_vector_calloc(n_times);
-    gsl_vector *safe_ra_real = gsl_vector_calloc(n_times);
-    gsl_vector *safe_ra_imag = gsl_vector_calloc(n_times);
-    gsl_vector *safe_rb_real = gsl_vector_calloc(n_times);
-    gsl_vector *safe_rb_imag = gsl_vector_calloc(n_times);
-    gsl_vector_add(safe_ra_real, quat[0]);
-    gsl_vector_sub(safe_ra_imag, quat[3]);
-    gsl_vector_sub(safe_rb_real, quat[2]);
-    gsl_vector_sub(safe_rb_imag, quat[1]);
-    for (i=0; i<n_times; i++) {
-        tmp_re = gsl_vector_get(quat[2], i);
-        tmp_im = gsl_vector_get(quat[1], i);
-        tmp_abs_sqr = tmp_re*tmp_re + tmp_im*tmp_im;
-        if (tmp_abs_sqr < eps_sqr) {
-            gsl_vector_int_set(index_types, i, 2); // Use 0 for normal, 1 for ra small, 2 for ra ok but rb small
-            gsl_vector_set(safe_rb_mag_sqr, i, 0.5);
-            gsl_vector_set(safe_rb_real, i, 0.25);
-            gsl_vector_set(safe_rb_imag, i, 0.25);
-        } else {
-            gsl_vector_set(safe_rb_mag_sqr, i, tmp_abs_sqr);
-        }
-
-        tmp_re = gsl_vector_get(quat[0], i);
-        tmp_im = gsl_vector_get(quat[3], i);
-        tmp_abs_sqr = tmp_re*tmp_re + tmp_im*tmp_im;
-        if (tmp_abs_sqr < eps_sqr) {
-            gsl_vector_int_set(index_types, i, 1); // Use 0 for normal, 1 for ra small, 2 for ra ok but rb small
-            gsl_vector_set(safe_ra_mag_sqr, i, 0.5);
-            gsl_vector_set(safe_ra_real, i, 0.25);
-            gsl_vector_set(safe_ra_imag, i, 0.25);
-        } else {
-            gsl_vector_set(safe_ra_mag_sqr, i, tmp_abs_sqr);
-        }
-    }
-
-    // We will need various integer powers of ra, rb, |ra^2|, and |(rb/ra)^2| that will be used in many WignerD terms
-    gsl_vector *safe_abs_rb_over_ra_sqr = gsl_vector_calloc(n_times);
-    gsl_vector_add(safe_abs_rb_over_ra_sqr, safe_rb_mag_sqr);
-    gsl_vector_div(safe_abs_rb_over_ra_sqr, safe_ra_mag_sqr);
-
-    ComplexPowers *ra_powers = NULL;
-    ComplexPowers *rb_powers = NULL;
-    RealPowers *abs_ra_sqr_powers = NULL;
-    RealPowers *abs_rb_over_ra_sqr_powers = NULL;
-
-    NRSur7dq2_ComplexPowers_Init(&ra_powers, matrices->LMax, n_times);
-    NRSur7dq2_ComplexPowers_Init(&rb_powers, matrices->LMax, n_times);
-    NRSur7dq2_RealPowers_Init(&abs_ra_sqr_powers, matrices->LMax, n_times);
-    NRSur7dq2_RealPowers_Init(&abs_rb_over_ra_sqr_powers, matrices->LMax, n_times);
 
 
-    NRSur7dq2_ComplexPowers_Compute(ra_powers, safe_ra_real, safe_ra_imag);
-    NRSur7dq2_ComplexPowers_Compute(rb_powers, safe_rb_real, safe_rb_imag);
-    NRSur7dq2_RealPowers_Compute(abs_ra_sqr_powers, safe_ra_mag_sqr);
-    NRSur7dq2_RealPowers_Compute(abs_rb_over_ra_sqr_powers, safe_abs_rb_over_ra_sqr);
 
 
-    // Compute the matrices. We don't use safe_* anymore, so we can use them as temporary results
-    for (ell=2; ell <= matrices->LMax; ell++) {
-        for (m = -1*ell; m <= ell; m++) {
-            for (mp = -1*ell; mp <= ell; mp++) {
-                i = NRSur7dq2_WignerDMatrix_Index(ell, m, mp);
-                coef = wigner_coef(ell, mp, m);
-                gsl_vector_set_zero(safe_ra_mag_sqr);
-
-                // factor = coef * (ra^(m+mp)) * (rb^(m-mp)) * (|ra^2|^(ell-m))
-                // The result is
-                //      factor * \sum_{rho} c(rho) * (|(rb/ra)^2|^rho)
-                //  where c(rho) = (-1)^rho * binom(ell+mp, rho) * binom(ell-mp, ell-rho-m)
-
-                // Store factor in matrices, using safe_rb_real and safe_rb_imag as temporary results
-                gsl_vector_add(matrices->real_part[i], ra_powers->real_part[2*matrices->LMax + m + mp]);
-                gsl_vector_add(matrices->imag_part[i], ra_powers->imag_part[2*matrices->LMax + m + mp]);
-                complex_vector_mult(matrices->real_part[i], matrices->imag_part[i],
-                                    rb_powers->real_part[2*matrices->LMax + m - mp], rb_powers->imag_part[2*matrices->LMax + m - mp],
-                                    safe_rb_real, safe_rb_imag);
-                gsl_vector_scale(matrices->real_part[i], coef);
-                gsl_vector_scale(matrices->imag_part[i], coef);
-                gsl_vector_mul(matrices->real_part[i], abs_ra_sqr_powers->powers[ell-m]);
-                gsl_vector_mul(matrices->imag_part[i], abs_ra_sqr_powers->powers[ell-m]);
-
-                // Compute the sum, storing it in safe_ra_mag_sqr
-                rho_min = (mp > m) ? (mp - m) : 0;
-                rho_max = (mp > -1*m) ? (ell-m) : (ell+mp);
-                for (rho=rho_min; rho <= rho_max; rho++) {
-                    c = binomial(ell+mp, rho) * binomial(ell-mp, ell-rho-m);
-                    if ((rho%2)==1) {
-                        c *= -1;
-                    }
-                    // Store the temporary term in safe_rb_mag_sqr
-                    gsl_vector_set_zero(safe_rb_mag_sqr);
-                    gsl_vector_add(safe_rb_mag_sqr, abs_rb_over_ra_sqr_powers->powers[rho]);
-                    gsl_vector_scale(safe_rb_mag_sqr, c);
-                    gsl_vector_add(safe_ra_mag_sqr, safe_rb_mag_sqr);
-                }
-
-                // multiply by the (real) sum to get the result
-                gsl_vector_mul(matrices->real_part[i], safe_ra_mag_sqr);
-                gsl_vector_mul(matrices->imag_part[i], safe_ra_mag_sqr);
-
-            }
-        }
-    }
-
-    double zx, zy;
-    int k;
-    // Now fix the values at bad indices
-    for (j=0; j<n_times; j++) {
-        rho = gsl_vector_int_get(index_types, j);
-        if (rho != 0) {
-            for (ell=2; ell <= matrices->LMax; ell++) {
-                for (m=-1*ell; m <= ell; m++) {
-                    for (mp = -1*ell; mp <= ell; mp++) {
-                        i = NRSur7dq2_WignerDMatrix_Index(ell, m, mp);
-                        zx = 0.0;
-                        zy = 0.0;
-                        if (rho==1 && (mp == -m)) {
-                            // z = (-1)^(ell+m+1) * rb^(2*m)
-                            tmp_re = -1 * gsl_vector_get(quat[2], j);
-                            tmp_im = -1 * gsl_vector_get(quat[1], j);
-                            zx = 1.0;
-                            zy = 0.0;
-                            for (k=0; k < 2*m; k++) {
-                                c = zx * tmp_im;
-                                zx = zx*tmp_re - zy*tmp_im;
-                                zy = zy*tmp_re + c;
-                            }
-                            if ((ell+m)%2 == 0) {
-                                zx *= -1;
-                                zy *= -1;
-                            }
-                            gsl_vector_set(matrices->real_part[i], j, zx);
-                            gsl_vector_set(matrices->imag_part[i], j, zy);
-                        } else if (rho==2 && (mp == m)) {
-                            // z = ra^(2*m)
-                            tmp_re = gsl_vector_get(quat[0], j);
-                            tmp_im = -1 * gsl_vector_get(quat[3], j);
-                            zx = 1.0;
-                            zy = 0.0;
-                            for (k=0; k < 2*m; k++) {
-                                c = zx * tmp_im;
-                                zx = zx*tmp_re - zy*tmp_im;
-                                zy = zy*tmp_re + c;
-                            }
-                            gsl_vector_set(matrices->real_part[i], j, zx);
-                            gsl_vector_set(matrices->imag_part[i], j, zy);
-                        }
-                        gsl_vector_set(matrices->real_part[i], j, zx);
-                        gsl_vector_set(matrices->imag_part[i], j, zy);
-                    }
-                }
-            }
-        }
-    }
-
-    // Cleanup
-    gsl_vector_int_free(index_types);
-    gsl_vector_free(safe_ra_mag_sqr);
-    gsl_vector_free(safe_rb_mag_sqr);
-    gsl_vector_free(safe_ra_real);
-    gsl_vector_free(safe_ra_imag);
-    gsl_vector_free(safe_rb_real);
-    gsl_vector_free(safe_rb_imag);
-    gsl_vector_free(safe_abs_rb_over_ra_sqr);
-    NRSur7dq2_ComplexPowers_Destroy(ra_powers);
-    NRSur7dq2_ComplexPowers_Destroy(rb_powers);
-    NRSur7dq2_RealPowers_Destroy(abs_ra_sqr_powers);
-    NRSur7dq2_RealPowers_Destroy(abs_rb_over_ra_sqr_powers);
-}
-
+/**
+ * This needs to be called once, before __lalsim_NRSur7dq2_data is used.
+ * It finds the hdf5 data file with the NRSur7dq2 data and calls NRSur7dq2_Init.
+ */
 static void NRSur7dq2_Init_LALDATA(void) {
     if (NRSur7dq2_IsSetup()) return;
 
@@ -828,6 +150,10 @@ static void NRSur7dq2_Init_LALDATA(void) {
     XLALFree(file_path);
 }
 
+/**
+ * Initialize a NRSur7dq2Data structure from an open hdf5 file.
+ * This will typically only be called once, from NRSur7dq2_Init_LALDATA.
+ */
 static int NRSur7dq2_Init(NRSur7dq2Data *data, LALH5File *file) {
     size_t i;
 
@@ -858,8 +184,8 @@ static int NRSur7dq2_Init(NRSur7dq2Data *data, LALH5File *file) {
     // These INCLUDE the half-nodes at t_1/2, t_3/2, and t_5/2, so the (node time, index) pairs are
     // (t_0, 0), (t_1/2, 1), (t_1, 2), (t_3/2, 3), (t_2, 4), (t_5/2, 5), (t_3, 6), (t_4, 7), ...
     // (t_n, n+3) for n >= 3
-    DynamicsNodeFitData **ds_node_data = malloc( (t_ds->size) * sizeof(*ds_node_data));
-    DynamicsNodeFitData **ds_half_node_data = malloc( 3 * sizeof(*ds_node_data) );
+    DynamicsNodeFitData **ds_node_data = XLALMalloc( (t_ds->size) * sizeof(*ds_node_data));
+    DynamicsNodeFitData **ds_half_node_data = XLALMalloc( 3 * sizeof(*ds_node_data) );
     for (i=0; i < (t_ds->size); i++) ds_node_data[i] = NULL;
     for (i=0; i < 3; i++) ds_half_node_data[i] = NULL;
     LALH5File *sub;
@@ -887,28 +213,32 @@ static int NRSur7dq2_Init(NRSur7dq2Data *data, LALH5File *file) {
     data->t_coorb = t_coorb;
 
     // Load coorbital waveform surrogate data
-    WaveformFixedEllModeData **coorbital_mode_data = malloc( (NRSUR7DQ2_LMAX - 1) * sizeof(*coorbital_mode_data) );
+    WaveformFixedEllModeData **coorbital_mode_data = XLALMalloc( (NRSUR7DQ2_LMAX - 1) * sizeof(*coorbital_mode_data) );
     for (int ell_idx=0; ell_idx < NRSUR7DQ2_LMAX-1; ell_idx++) {
         NRSur7dq2_LoadCoorbitalEllModes(coorbital_mode_data, file, ell_idx);
     }
     data->coorbital_mode_data = coorbital_mode_data;
 
-    printf("Successfully loaded NRSur7dq2 data!\n");
+    XLAL_PRINT_INFO("Successfully loaded NRSur7dq2 data!");
     data->LMax = NRSUR7DQ2_LMAX;
     data->setup = 1;
 
     return XLAL_SUCCESS;
 }
 
+/**
+ * Loads the data for a single dynamics node into a DynamicsNodeFitData struct.
+ * This is only called during the initialization of the surrogate data through NRSur7dq2_Init.
+ */
 static void NRSur7dq2_LoadDynamicsNode(
-    DynamicsNodeFitData **ds_node_data,     // Entry i should be NULL; Will malloc space and load data
-    LALH5File *sub,                         // Subgroup containing data for dynamics node i
-    int i                                   // Dynamics node index. Note that since ) {
+    DynamicsNodeFitData **ds_node_data, /**< Entry i should be NULL; Will malloc space and load data into it. */
+    LALH5File *sub,                     /**< Subgroup containing data for dynamics node i. */
+    int i                               /**< Dynamics node index. */
 ) {
-    ds_node_data[i] = malloc( sizeof(*ds_node_data[i]) );
+    ds_node_data[i] = XLALMalloc( sizeof(*ds_node_data[i]) );
 
     // omega
-    FitData *omega_data = malloc(sizeof(FitData));
+    FitData *omega_data = XLALMalloc(sizeof(FitData));
     omega_data->coefs = NULL;
     omega_data->basisFunctionOrders = NULL;
     ReadHDF5RealVectorDataset(sub, "omega_coefs", &(omega_data->coefs));
@@ -917,7 +247,7 @@ static void NRSur7dq2_LoadDynamicsNode(
     ds_node_data[i]->omega_data = omega_data;
 
     // omega_copr
-    VectorFitData *omega_copr_data = malloc(sizeof(VectorFitData));
+    VectorFitData *omega_copr_data = XLALMalloc(sizeof(VectorFitData));
     omega_copr_data->coefs = NULL;
     omega_copr_data->basisFunctionOrders = NULL;
     omega_copr_data->componentIndices = NULL;
@@ -929,7 +259,7 @@ static void NRSur7dq2_LoadDynamicsNode(
     ds_node_data[i]->omega_copr_data = omega_copr_data;
 
     // chiA_dot
-    VectorFitData *chiA_dot_data = malloc(sizeof(VectorFitData));
+    VectorFitData *chiA_dot_data = XLALMalloc(sizeof(VectorFitData));
     chiA_dot_data->coefs = NULL;
     chiA_dot_data->basisFunctionOrders = NULL;
     chiA_dot_data->componentIndices = NULL;
@@ -942,7 +272,7 @@ static void NRSur7dq2_LoadDynamicsNode(
 
     // chiB_dot
     // One chiB_dot node has 0 coefficients, and ReadHDF5RealVectorDataset fails.
-    VectorFitData *chiB_dot_data = malloc(sizeof(VectorFitData));
+    VectorFitData *chiB_dot_data = XLALMalloc(sizeof(VectorFitData));
     chiB_dot_data->coefs = NULL;
     chiB_dot_data->basisFunctionOrders = NULL;
     chiB_dot_data->componentIndices = NULL;
@@ -965,12 +295,16 @@ static void NRSur7dq2_LoadDynamicsNode(
     ds_node_data[i]->chiB_dot_data = chiB_dot_data;
 }
 
+/**
+ * Load the WaveformFixedEllModeData from file for a single value of ell.
+ * This is only called during the initialization of the surrogate data through NRSur7dq2_Init.
+ */
 static void NRSur7dq2_LoadCoorbitalEllModes(
-    WaveformFixedEllModeData **coorbital_mode_data, // All coorbital waveform modes; Space will be allocated and data will be loaded for entry i.
-    LALH5File *file, // NRSur7dq2.hdf5
-    int i // The index of coorbital_mode_data, also ell-2.
+    WaveformFixedEllModeData **coorbital_mode_data, /**< Entry i should be NULL; will malloc space and load data into it.*/
+    LALH5File *file, /**< The open NRSur7dq2.hdf5 file */
+    int i /**< The index of coorbital_mode_data. Equivalently, ell-2. */
 ) {
-    WaveformFixedEllModeData *mode_data = malloc( sizeof(*coorbital_mode_data[i]) );
+    WaveformFixedEllModeData *mode_data = XLALMalloc( sizeof(*coorbital_mode_data[i]) );
     mode_data->ell = i+2;
 
     LALH5File *sub;
@@ -1001,10 +335,10 @@ static void NRSur7dq2_LoadCoorbitalEllModes(
     // Re[X_-] = -Re[Y_-],
     // Im[X_-] = Im[Y_-]
     // We work with X rather than Y in this file, so we need the minus signs when loading from Y.
-    mode_data->X_real_plus_data = malloc( (i+2) * sizeof(WaveformDataPiece *) );
-    mode_data->X_real_minus_data = malloc( (i+2) * sizeof(WaveformDataPiece *) );
-    mode_data->X_imag_plus_data = malloc( (i+2) * sizeof(WaveformDataPiece *) );
-    mode_data->X_imag_minus_data = malloc( (i+2) * sizeof(WaveformDataPiece *) );
+    mode_data->X_real_plus_data = XLALMalloc( (i+2) * sizeof(WaveformDataPiece *) );
+    mode_data->X_real_minus_data = XLALMalloc( (i+2) * sizeof(WaveformDataPiece *) );
+    mode_data->X_imag_plus_data = XLALMalloc( (i+2) * sizeof(WaveformDataPiece *) );
+    mode_data->X_imag_minus_data = XLALMalloc( (i+2) * sizeof(WaveformDataPiece *) );
     for (int m=1; m<=(i+2); m++) {
         snprintf(sub_name, str_size, "hCoorb_%d_%d_Re+", i+2, m);
         sub = XLALH5GroupOpen(file, sub_name);
@@ -1023,12 +357,16 @@ static void NRSur7dq2_LoadCoorbitalEllModes(
     coorbital_mode_data[i] = mode_data;
 }
 
+/**
+ * Loads a single NRSur7dq2 coorbital waveform data piece from file into a WaveformDataPiece.
+ * This is only called during the initialization of the surrogate data through NRSur7dq2_Init.
+ */
 static void NRSur7dq2_LoadWaveformDataPiece(
-    LALH5File *sub, // HDF5 group containing data for this waveform data piece
-    WaveformDataPiece **data, // Output
-    bool invert_sign
+    LALH5File *sub,             /**< HDF5 group containing data for this waveform data piece */
+    WaveformDataPiece **data,   /**< Output - *data should be NULL. Space will be allocated. */
+    bool invert_sign            /**< If true, multiply the empirical interpolation matrix by -1. */
 ) {
-    *data = malloc(sizeof(WaveformDataPiece));
+    *data = XLALMalloc(sizeof(WaveformDataPiece));
 
     gsl_matrix *EI_basis = NULL;
     ReadHDF5RealMatrixDataset(sub, "EIBasis", &EI_basis);
@@ -1043,13 +381,13 @@ static void NRSur7dq2_LoadWaveformDataPiece(
 
     int n_nodes = (*data)->empirical_node_indices->size;
     (*data)->n_nodes = n_nodes;
-    (*data)->fit_data = malloc( n_nodes * sizeof(FitData *) );
+    (*data)->fit_data = XLALMalloc( n_nodes * sizeof(FitData *) );
 
     LALH5File *nodeModelers = XLALH5GroupOpen(sub, "nodeModelers");
     int str_size = 20; // Enough for L with 11 digits...
     char *sub_name = XLALMalloc(str_size);
     for (int i=0; i<n_nodes; i++) {
-        FitData *node_data = malloc(sizeof(FitData));
+        FitData *node_data = XLALMalloc(sizeof(FitData));
         node_data->coefs = NULL;
         node_data->basisFunctionOrders = NULL;
         snprintf(sub_name, str_size, "coefs_%d", i);
@@ -1061,11 +399,17 @@ static void NRSur7dq2_LoadWaveformDataPiece(
     }
 }
 
+/**
+ * Helper function which returns whether or not the global NRSur7dq2 surrogate data has been initialized.
+ */
 static bool NRSur7dq2_IsSetup(void) {
     if(__lalsim_NRSur7dq2_data.setup)   return true;
     else return false;
 }
 
+/**
+ * Helper function for integer powers
+ */
 double ipow(double base, int exponent) {
     if (exponent == 0) return 1.0;
     double res = base;
@@ -1076,30 +420,9 @@ double ipow(double base, int exponent) {
     return res;
 }
 
-// This is just a helper to save space.
-// It's probably better to use complex vectors but I'm almost done and don't want to rewrite everything...
-// Multiplies (x1 + I*y1) * (x2 + I*y2), storing the real part in x1 and the imaginary part in x2.
-// Uses tmp1 and tmp2 for temporary results; x2 and y2 will be left unchanged but tmpx and tmpy are modified.
-static void complex_vector_mult(gsl_vector *x1, gsl_vector *y1, gsl_vector *x2, gsl_vector *y2, gsl_vector *tmpx, gsl_vector *tmpy) {
-    gsl_vector_set_zero(tmpx);
-    gsl_vector_set_zero(tmpy);
-
-    // Store the temporary results x1*y2 and y1*y2
-    gsl_vector_add(tmpx, y1);
-    gsl_vector_mul(tmpx, y2);
-    gsl_vector_add(tmpy, x1);
-    gsl_vector_mul(tmpy, y2);
-
-    // Now we can safely transform x1->x1*x2 and y1->y1*x2
-    gsl_vector_mul(x1, x2);
-    gsl_vector_mul(y1, x2);
-
-    // Now we add in the temporary results
-    gsl_vector_sub(x1, tmpx);
-    gsl_vector_add(y1, tmpy);
-}
 
 /*
+ * Evaluate a NRSur7dq2 scalar fit.
  * The fit result is given by
  *      \sum_{i=1}^{n} c_i * \prod_{j=1}^7 B_j(k_{i, j}; x_j)
  * where i runs over fit coefficients, j runs over the 7 dimensional parameter
@@ -1108,10 +431,9 @@ static void complex_vector_mult(gsl_vector *x1, gsl_vector *y1, gsl_vector *x2, 
  * components, and monomials in an affine transformation of the mass ratio.
  */
 double NRSur7dq2_eval_fit(
-    FitData *data, // Data for fit
-    double *x // size 7, giving mass ratio q, and dimensionless spin components
+    FitData *data,  /**< Data for fit */
+    double *x       /**< size 7, giving mass ratio q, and dimensionless spin components */
 ) {
-
     double x_powers[22]; // 3 per spin component, 4 for mass ratio
     double res = 0.0;
     double prod;
@@ -1131,8 +453,10 @@ double NRSur7dq2_eval_fit(
 
     // Sum up fit terms
     for (i=0; i < data->n_coefs; i++) {
-        prod = x_powers[7 * gsl_matrix_long_get(data->basisFunctionOrders, i, 0)]; // Initialize with q basis function
-        for (j=1; j<7; j++) { // Multiply with spin basis functions
+        // Initialize with q basis function:
+        prod = x_powers[7 * gsl_matrix_long_get(data->basisFunctionOrders, i, 0)];
+        // Multiply with spin basis functions:
+        for (j=1; j<7; j++) {
             prod *= x_powers[7 * gsl_matrix_long_get(data->basisFunctionOrders, i, j) + j];
         }
         res += gsl_vector_get(data->coefs, i) * prod;
@@ -1147,11 +471,10 @@ double NRSur7dq2_eval_fit(
  * just a single component of the result.
  */
 static void NRSur7dq2_eval_vector_fit(
-    double *res, // Result
-    VectorFitData *data, // Data for fit
-    double *x // size 7, giving mass ratio q, and dimensionless spin components
+    double *res,            /**< Result */
+    VectorFitData *data,    /**< Data for fit */
+    double *x               /**< size 7, giving mass ratio q, and dimensionless spin components */
 ) {
-
     double x_powers[22]; // 3 per spin component, 4 for mass ratio
     double prod;
     int i, j;
@@ -1175,8 +498,10 @@ static void NRSur7dq2_eval_vector_fit(
 
     // Sum up fit terms
     for (i=0; i < data->n_coefs; i++) {
-        prod = x_powers[7 * gsl_matrix_long_get(data->basisFunctionOrders, i, 0)]; // Initialize with q basis function
-        for (j=1; j<7; j++) { // Multiply with spin basis functions
+        // Initialize with q basis function:
+        prod = x_powers[7 * gsl_matrix_long_get(data->basisFunctionOrders, i, 0)];
+        // Multiply with spin basis functions:
+        for (j=1; j<7; j++) {
             prod *= x_powers[7 * gsl_matrix_long_get(data->basisFunctionOrders, i, j) + j];
         }
         res[gsl_vector_long_get(data->componentIndices, i)] += gsl_vector_get(data->coefs, i) * prod;
@@ -1188,9 +513,9 @@ static void NRSur7dq2_eval_vector_fit(
  * Normalizes in-place
  */
 static void NRSur7dq2_normalize_y(
-    double chiANorm, // ||\vec{\chi}_A||
-    double chiBNorm, // ||\vec{\chi}_B||
-    double *y // [q0, qx, qy, qz, phi, chiAx, chiAy, chiAz, chiBx, chiBy, chiBz]
+    double chiANorm,    /**< ||vec{chi}_A|| */
+    double chiBNorm,    /**< ||vec{chi}_B|| */
+    double *y           /**< [q0, qx, qy, qz, phi, chiAx, chiAy, chiAz, chiBx, chiBy, chiBz] */
 ) {
     double nQ, nA, nB, sum;
     int i;
@@ -1231,11 +556,11 @@ static void NRSur7dq2_normalize_y(
  * Similar to normalize_y, but components given individually as arrays with n samples
  */
 static void NRSur7dq2_normalize_results(
-    double normA,
-    double normB,
-    gsl_vector **quat,
-    gsl_vector **chiA,
-    gsl_vector **chiB
+    double normA,       /**< ||vec{chi}_A|| */
+    double normB,       /**< ||vec{chi}_B|| */
+    gsl_vector **quat,  /**< The four quaternion time-dependent components */
+    gsl_vector **chiA,  /**< Time-dependent components of chiA */
+    gsl_vector **chiB   /**< Time-dependent components of chiB */
 ) {
     double nA, nB, nQ;
     int i;
@@ -1278,20 +603,25 @@ static void NRSur7dq2_normalize_results(
     }
 }
 
-static void NRSur7dq2_rotate_spins(gsl_vector **chiA, gsl_vector **chiB, gsl_vector *phi_vec, bool backwards) {
-
+/**
+ * Transforms chiA and chiB from the coprecessing frame to the coorbital frame
+ * using the orbital phase.
+ */
+static void NRSur7dq2_rotate_spins(
+    gsl_vector **chiA,  /**< 3 time-dependent components of chiA in the coorbital frame */
+    gsl_vector **chiB,  /**< 3 time-dependent components of chiB in the coorbital frame */
+    gsl_vector *phi_vec /**< The time-dependent orbital phase */
+) {
     int i;
     int n = phi_vec->size;
     double sp, cp, tmp;
     double *phi = phi_vec->data;
-    int sgn = 1;
-    if (backwards) sgn = -1;
 
     double *chix = chiA[0]->data;
     double *chiy = chiA[1]->data;
     for (i=0; i<n; i++) {
         cp = cos(phi[i]);
-        sp = sin(sgn * phi[i]);
+        sp = sin(phi[i]);
         tmp = chix[i];
         chix[i] = tmp*cp + chiy[i]*sp;
         chiy[i] = -1*tmp*sp + chiy[i]*cp;
@@ -1301,7 +631,7 @@ static void NRSur7dq2_rotate_spins(gsl_vector **chiA, gsl_vector **chiB, gsl_vec
     chiy = chiB[1]->data;
     for (i=0; i<n; i++) {
         cp = cos(phi[i]);
-        sp = sin(sgn * phi[i]);
+        sp = sin(phi[i]);
         tmp = chix[i];
         chix[i] = tmp*cp + chiy[i]*sp;
         chiy[i] = -1*tmp*sp + chiy[i]*cp;
@@ -1315,9 +645,9 @@ static void NRSur7dq2_rotate_spins(gsl_vector **chiA, gsl_vector **chiB, gsl_vec
  * components of x are in the coorbital frame.
  */
 static void NRSur7dq2_ds_fit_x(
-    double *x, // Result, length 7
-    double q, // Mass ratio
-    double *y // [q0, qx, qy, qz, phi, chiAx, chiAy, chiAz, chiBx, chiBy, chiBz]
+    double *x,  /**< Result, length 7 */
+    double q,   /**< Mass ratio */
+    double *y   /**< [q0, qx, qy, qz, phi, chiAx, chiAy, chiAz, chiBx, chiBy, chiBz] */
 ) {
     double sp = sin(y[4]);
     double cp = cos(y[4]);
@@ -1343,12 +673,12 @@ static void NRSur7dq2_ds_fit_x(
  * quaternions using the coprecessing components of Omega
  */
 static void NRSur7dq2_assemble_dydt(
-    double *dydt,           // Result, length 11
-    double *y,              // ODE solution at the current time step
-    double *Omega_coorb_xy, // a form of time derivative of the coprecessing frame
-    double omega,           // orbital angular frequency in the coprecessing frame
-    double *chiA_dot,       // chiA time derivative
-    double *chiB_dot        // chiB time derivative
+    double *dydt,           /**< Result, length 11 */
+    double *y,              /**< ODE solution at the current time step */
+    double *Omega_coorb_xy, /**< a form of time derivative of the coprecessing frame */
+    double omega,           /**< orbital angular frequency in the coprecessing frame */
+    double *chiA_dot,       /**< chiA time derivative */
+    double *chiB_dot        /**< chiB time derivative */
 ) {
     double omega_quat_x, omega_quat_y;
 
@@ -1377,78 +707,16 @@ static void NRSur7dq2_assemble_dydt(
     dydt[10] = chiB_dot[2];
 }
 
-/*
- * Given dy/dt evaluated as a function of y and t at 4 time nodes, compute
- * dy = y_5 - y_4 using a 4th-order accurate Adams-Bashforth scheme.
+/**
+ * Cubic interpolation of 4 data points
+ * This gives a much closer result to scipy.interpolate.InterpolatedUnivariateSpline than using gsl_interp_cspline
+ * (see comment in spline_array_interp)
  */
-static void NRSur7dq2_ab4_dy(
-    double *dy,     // Result, length 11
-    double *k1,     // dy/dt evaluated at node 1
-    double *k2,     // dy/dt evaluated at node 2
-    double *k3,     // dy/dt evaluated at node 3
-    double *k4,     // dy/dt evaluated at node 4
-    double dt1,     // t_2 - t_1
-    double dt2,     // t_3 - t_2
-    double dt3,     // t_4 - t_3
-    double dt4      // t_5 - t_4
+static double cubic_interp(
+    double xout,    /**< The target x value */
+    double *x,      /**< The x values of the points to interpolate. Length 4, must be increasing. */
+    double *y       /**< The y values of the points to interpolate. Length 4. */
 ) {
-
-    double dt12, dt23, dt123, D1, D2, D3, B41, B42, B43, B4, C41, C42, C43, C4;
-    double A, B, C, D;
-    int i;
-
-    // Various time intervals
-    dt12 = dt1 + dt2;
-    dt123 = dt12 + dt3;
-    dt23 = dt2 + dt3;
-
-    // Denomenators and coefficients
-    D1 = dt1 * dt12 * dt123;
-    D2 = dt1 * dt2 * dt23;
-    D3 = dt2 * dt12 * dt3;
-
-    B41 = dt3 * dt23 / D1;
-    B42 = -1 * dt3 * dt123 / D2;
-    B43 = dt23 * dt123 / D3;
-    B4 = B41 + B42 + B43;
-
-    C41 = (dt23 + dt3) / D1;
-    C42 = -1 * (dt123 + dt3) / D2;
-    C43 = (dt123 + dt23) / D3;
-    C4 = C41 + C42 + C43;
-
-    // Polynomial coefficients and result
-    for (i=0; i<11; i++) {
-        A = k4[i];
-        B = k4[i]*B4 - k1[i]*B41 - k2[i]*B42 - k3[i]*B43;
-        C = k4[i]*C4 - k1[i]*C41 - k2[i]*C42 - k3[i]*C43;
-        D = (k4[i]-k1[i])/D1 - (k4[i]-k2[i])/D2 + (k4[i]-k3[i])/D3;
-        dy[i] = dt4 * (A + dt4 * (0.5*B + dt4*( C/3.0 + dt4*0.25*D)));
-    }
-}
-
-static double factorial(int n) {
-    if (n <= 0) return 1.0;
-    return factorial(n-1) * n;
-}
-
-static double factorial_ratio(int n, int k) {
-    if (n <= k) return 1.0;
-    return factorial_ratio(n-1, k) * n;
-}
-
-static double binomial(int n, int k) {
-    return factorial_ratio(n, k) / factorial(n-k);
-}
-
-static double wigner_coef(int ell, int mp, int m) {
-    return sqrt(factorial(ell+m) * factorial(ell-m) / (factorial(ell+mp) * factorial(ell-mp)));
-}
-
-static double cubic_interp(double xout, double *x, double *y) {
-    // This gives a much closer result to scipy.interpolate.InterpolatedUnivariateSpline than using gsl_interp_cspline
-    // (see comment below in spline_array_interp)
-    // x and y should have length 4, with x increasing.
     gsl_interp_accel *acc = gsl_interp_accel_alloc();
     gsl_spline *interpolant = gsl_spline_alloc(gsl_interp_polynomial, 4);
     gsl_spline_init(interpolant, x, y, 4);
@@ -1458,11 +726,17 @@ static double cubic_interp(double xout, double *x, double *y) {
     return res;
 }
 
-static gsl_vector *spline_array_interp(gsl_vector *xout, gsl_vector *x, gsl_vector *y) {
-    // Results differ from scipy.interpolate.InterpolatedUnivariateSpline due to different boundary conditions.
-    // We should really implement fast not-a-knot 1d spline interpolation and use it everywhere instead of gsl.
-    // This difference leads to differences between this implementation of NRSur7dq2 and the python implementation.
-    // As far as I'm aware, it's the only difference, and everything else agrees to within machine precision.
+/**
+ * Do cubic spline interpolation using a gsl_interp_cspline.
+ * Results differ from scipy.interpolate.InterpolatedUnivariateSpline due to different boundary conditions.
+ * This difference leads to small differences between this implementation of NRSur7dq2 and the python
+ * implementation, especially near the start and end of the waveform.
+ */
+static gsl_vector *spline_array_interp(
+    gsl_vector *xout,   /**< The vector of points onto which we want to interpolate. */
+    gsl_vector *x,      /**< The x values of the data to interpolate. */
+    gsl_vector *y       /**< The y values of the data to interpolate. */
+) {
     gsl_interp_accel *acc = gsl_interp_accel_alloc();
     gsl_spline *spline = gsl_spline_alloc(gsl_interp_cspline, x->size);
     gsl_spline_init(spline, x->data, y->data, x->size);
@@ -1478,10 +752,14 @@ static gsl_vector *spline_array_interp(gsl_vector *xout, gsl_vector *x, gsl_vect
     return res;
 }
 
+/**
+ * Computes the orbital angular frequency at a dynamics node.
+ */
 static double NRSur7dq2_get_omega(
-    size_t node_index,
-    double q,
-    double *y0
+    size_t node_index,  /**< The index of the dynamics node. */
+    double q,           /**< The mass ratio. */
+    double *y0          /**< The value of the ODE state y = [q0, qx, qy, qz, orbphase, chiAx, chiAy, chiAz,
+                                                            chiBx, chiBy, chiBz] */
 ){
     double x[7];
     NRSur7dq2_ds_fit_x(x, q, y0);
@@ -1490,19 +768,23 @@ static double NRSur7dq2_get_omega(
     return omega;
 }
 
+/**
+ * Computes a reference time from a reference orbital angular frequency.
+ */
 static double NRSur7dq2_get_t_ref(
-    double omega_ref,   // reference orbital angular frequency
-    double q,           // mass ratio
-    double *chiA0,      // chiA at reference point
-    double *chiB0,      // chiB at reference point
-    double *q_ref,      // coprecessing frame quaternion at reference point
-    double phi_ref      // orbital phase at reference point
+    double omega_ref,   /**< reference orbital angular frequency */
+    double q,           /**< mass ratio */
+    double *chiA0,      /**< chiA at reference point */
+    double *chiB0,      /**< chiB at reference point */
+    double *q_ref,      /**< coprecessing frame quaternion at reference point */
+    double phi_ref      /**< orbital phase at reference point */
 ) {
     if (fabs(omega_ref) < 1.e-10) {
         XLAL_PRINT_WARNING("WARNING: Treating omega_ref = 0 as a flag to use t_ref = t_0 = -4500M");
         return -4499.99999999; // The first time node is ever so slightly larger than -4500; this avoids out-of-range issues
     }
 
+    // omega_ref <= 0.201 guarantees omega is smaller than the final and merger omegas for all masses and spins.
     if (omega_ref > 0.201) XLAL_ERROR_REAL8(XLAL_FAILURE, "Reference frequency omega_ref=%0.4f > 0.2, too large!\n", omega_ref);
 
     double y0[11];
@@ -1540,11 +822,14 @@ static double NRSur7dq2_get_t_ref(
     return t_ref;
 }
 
+/**
+ * Compute dydt at a given dynamics node, where y is the numerical solution to the dynamics ODE.
+ */
 static void NRSur7dq2_get_time_deriv_from_index(
-    double *dydt,       // Output: dy/dt evaluated at the ODE time node with index i0. Must have space for 11 entries.
-    int i0,             // Time node index. i0=-1, -2, and -3 are used for time nodes 1/2, 3/2, and 5/2 respectively.
-    double q,           // Mass ratio
-    double *y           // Current ODE state: [q0, qx, qy, qz, orbphase, chiAx, chiAy, chiAz, chiBx, chiBy, chiBz]
+    double *dydt,   /**< Output: dy/dt evaluated at the ODE time node with index i0. Must have space for 11 entries. */
+    int i0,         /**< Time node index. i0=-1, -2, and -3 are used for time nodes 1/2, 3/2, and 5/2 respectively. */
+    double q,       /**< Mass ratio */
+    double *y       /**< Current ODE state: [q0, qx, qy, qz, orbphase, chiAx, chiAy, chiAz, chiBx, chiBy, chiBz] */
 ) {
     // Setup fit variables
     double x[7];
@@ -1567,11 +852,15 @@ static void NRSur7dq2_get_time_deriv_from_index(
     NRSur7dq2_assemble_dydt(dydt, y, Omega_coorb_xy, omega, chiA_dot, chiB_dot);
 }
 
+/**
+ * Compute dydt at any time by evaluating dydt at 4 nearby dynamics nodes and
+ * using cubic spline interpolation to evaluate at the desired time.
+ */
 static void NRSur7dq2_get_time_deriv(
-    double *dydt,       // Output: dy/dt evaluated at time t. Must have space for 11 entries.
-    double t,           // Time at which the ODE should be evaluated.
-    double q,           // Mass ratio
-    double *y           // Current ODE state
+    double *dydt,   /**< Output: dy/dt evaluated at time t. Must have space for 11 entries. */
+    double t,       /**< Time at which the ODE should be evaluated. */
+    double q,       /**< Mass ratio */
+    double *y       /**< Current ODE state */
 ) {
     // Make sure we are within the valid range
     gsl_vector *t_ds = (&__lalsim_NRSur7dq2_data)->t_ds;
@@ -1613,16 +902,21 @@ static void NRSur7dq2_get_time_deriv(
 
 }
 
+/**
+ * Initialize the dynamics ODE at a dynamics node.
+ * Given t_ref, finds the nearest dynamics node and integrates the initial conditions at t_ref
+ * a tiny bit to obtain the ODE state at the dynamics node.
+ */
 static int NRSur7dq2_initialize_at_dynamics_node(
-    double *dynamics_data,  // ODE output
-    double t_ref,           // reference time. t_ds[i0] will be close to t_ref.
-    double q,               // mass ratio
-    double *chiA0,          // chiA at t_ref.
-    double *chiB0,          // chiB at t_ref.
-    double phi_ref,         // orbital phase at t_ref.
-    double *q_ref,          // quaternion at t_ref.
-    double normA,           // |chiA|
-    double normB            // |chiB|
+    double *dynamics_data,  /**< ODE output */
+    double t_ref,           /**< reference time. t_ds[i0] will be close to t_ref. */
+    double q,               /**< mass ratio */
+    double *chiA0,          /**< chiA at t_ref. */
+    double *chiB0,          /**< chiB at t_ref. */
+    double phi_ref,         /**< orbital phase at t_ref. */
+    double *q_ref,          /**< quaternion at t_ref. */
+    double normA,           /**< |chiA| */
+    double normB            /**< |chiB| */
 ) {
     int imin, imax, i0, j;
     double tmin, tmax, t0, dt, y_ref[11], dydt_ref[11], *node_data;
@@ -1678,16 +972,29 @@ static int NRSur7dq2_initialize_at_dynamics_node(
     return i0;
 }
 
+/**
+ * Initializes the AB4 ODE system from the surrogate start time by taking 3 RK4 steps,
+ * making use of the three additional half-time-step nodes for the RK4 substeps.
+ * This is the recommended way to initialize the AB4 ODE system - the additional nodes
+ * are there to increase accuracy during initialization.
+ * The drawback is that we are forced to accept fRef to be the
+ * surrogate start frequency, which will depend on masses and spins.
+ * The ODE system is for the vector of 11 quantities:
+ * [q0, qx, qy, qz, varphi, chiAx, chiAy, chiAz, chiBx, chiBy, chiBz]
+ * where (q0, qx, qy, qz) is the coprecessing frame quaternion, varphi is the
+ * orbital phase, and the spin components are in the coprecessing frame.
+ */
 static void NRSur7dq2_initialize_RK4_with_half_nodes(
-    double *dynamics_data,  // ODE output
-    double *time_steps,     // Output: first three time steps. Should have size 3.
-    double *dydt0,             // Output: dydt at node 0. Should have size 11.
-    double *dydt1,             // Output: dydt at node 1. Should have size 11.
-    double *dydt2,             // Output: dydt at node 2. Should have size 11.
-    double *dydt3,             // Output: dydt at node 3. Should have size 11.
-    double normA,           // |chiA|
-    double normB,           // |chiB|
-    double q                // mass ratio
+    double *dynamics_data,  /**< A pointer to the start of the ODE output; the first 11 entries
+                                 (for node 0) should have already been set.*/
+    double *time_steps,     /**< Output: first three time steps. Should have size 3. */
+    double *dydt0,          /**< Output: dydt at node 0. Should have size 11. */
+    double *dydt1,          /**< Output: dydt at node 1. Should have size 11. */
+    double *dydt2,          /**< Output: dydt at node 2. Should have size 11. */
+    double *dydt3,          /**< Output: dydt at node 3. Should have size 11. */
+    double normA,           /**< |chiA| */
+    double normB,           /**< |chiB| */
+    double q                /**< mass ratio */
 ) {
     gsl_vector *t_ds = (&__lalsim_NRSur7dq2_data)->t_ds;
     double t1, t2;
@@ -1749,17 +1056,24 @@ static void NRSur7dq2_initialize_RK4_with_half_nodes(
     NRSur7dq2_get_time_deriv_from_index(dydt3, 3, q, node_data);
 }
 
+/**
+ * Initializes the AB4 ODE system from a single arbitrary dynamics node by taking 3 RK4 steps.
+ * Compared to NRSur7dq2_initialize_RK4_with_half_nodes, this may be slightly less accurate
+ * and slightly more time consuming as we must interpolate many dynamics node fit evaluations,
+ * but this is more flexible as we can initialize from any node instead of just node 0.
+ */
 static int NRSur7dq2_initialize_RK4(
-    double *dynamics_data,  // ODE output - quaternions
-    double *time_steps,     // Output: first three time steps. Should have size 3.
-    double *dydt0,             // Output: dydt at node i0 + 0. Should have size 11.
-    double *dydt1,             // Output: dydt at node i0 + 1. Should have size 11.
-    double *dydt2,             // Output: dydt at node i0 + 2. Should have size 11.
-    double *dydt3,             // Output: dydt at node i0 + 3. Should have size 11.
-    double normA,           // |chiA|
-    double normB,           // |chiB|
-    double q,               // mass ratio
-    int i0                  // the node that is already initialized
+    double *dynamics_data,  /**< A pointer to the start of the ODE output.
+                                 Entries with i0*11 <= i < (i0+1)*11 should have already be computed. */
+    double *time_steps,     /**< Output: first three time steps. Should have size 3. */
+    double *dydt0,          /**< Output: dydt at node i0 + 0. Should have size 11. */
+    double *dydt1,          /**< Output: dydt at node i0 + 1. Should have size 11. */
+    double *dydt2,          /**< Output: dydt at node i0 + 2. Should have size 11. */
+    double *dydt3,          /**< Output: dydt at node i0 + 3. Should have size 11. */
+    double normA,           /**< |chiA| */
+    double normB,           /**< |chiB| */
+    double q,               /**< mass ratio */
+    int i0                  /**< the node that is already initialized */
 ) {
     gsl_vector *t_ds = (&__lalsim_NRSur7dq2_data)->t_ds;
     double t1, t2;
@@ -1814,7 +1128,7 @@ static int NRSur7dq2_initialize_RK4(
 
             // Compute the RK4 expression for the next node, normalize, and store the data
             for (j=0; j<11; j++) {
-                y_tmp[j] = node_data[j] - (time_steps[i]/6.0)*(dydt[3-i][j] + 2*k2[j] + 2*k3[j] + k4[j]);
+                y_tmp[j] = node_data[j] - (time_steps[2-i]/6.0)*(dydt[3-i][j] + 2*k2[j] + 2*k3[j] + k4[j]);
             }
             NRSur7dq2_normalize_y(normA, normB, y_tmp);
             node_data = node_data - 11;
@@ -1880,17 +1194,25 @@ static int NRSur7dq2_initialize_RK4(
     return i_start;
 }
 
+/**
+ * Integrates the AB4 ODE system in time forwards, and backwards if needed.
+ * The system should have already been initialized at 4 adjacent dynamics nodes.
+ * Output is a flattened array where entries i*11 <= j < (i+1)*11 are
+ * [q0, qx, qy, qz, varphi, chiAx, chiAy, chiAz, chiBx, chiBy, chiBz] at dynamics node i,
+ * where (q0, qx, qy, qz) is the coprecessing frame quaternion, varphi is the
+ * orbital phase, and the spin components are in the coprecessing frame.
+ */
 static void NRSur7dq2_integrate_AB4(
-    double *dynamics_data,  // ODE output
-    double *time_steps,     // The first three time steps beginning at i_start.
-    double *dydt0,          // dydt at node i_start
-    double *dydt1,          // dydt at node i_start + 1
-    double *dydt2,          // dydt at node i_start + 2
-    double *dydt3,          // dydt at node i_start + 3
-    double normA,           // |chiA|
-    double normB,           // |chiB|
-    double q,               // mass ratio
-    int i_start             // nodes i_start through i_start+3 are already initialized
+    double *dynamics_data,  /**< ODE output */
+    double *time_steps,     /**< The first three time steps beginning at i_start. */
+    double *dydt0,          /**< dydt at node i_start */
+    double *dydt1,          /**< dydt at node i_start + 1 */
+    double *dydt2,          /**< dydt at node i_start + 2 */
+    double *dydt3,          /**< dydt at node i_start + 3 */
+    double normA,           /**< |chiA| */
+    double normB,           /**< |chiB| */
+    double q,               /**< mass ratio */
+    int i_start             /**< nodes i_start through i_start+3 are already initialized */
 ) {
     // At each step, we will use the 4 most recent nodes where we have the solution, and integrate up to the first new node.
     double dt1, dt2, dt3, dt4; // Time steps between the 4 known nodes, as well as up to the first new node (dt4)
@@ -1918,7 +1240,7 @@ static void NRSur7dq2_integrate_AB4(
 
         // Compute dy = dydt*dt, write it in ynext
         dt4 = gsl_vector_get(t_ds, i) - gsl_vector_get(t_ds, i-1);
-        NRSur7dq2_ab4_dy(ynext, k1, k2, k3, k4, dt1, dt2, dt3, dt4);
+        NRSur_ab4_dy(ynext, k1, k2, k3, k4, dt1, dt2, dt3, dt4, 11);
 
         // Add the latest known node, to obtain y at the next node
         for (j=0; j<11; j++) ynext[j] += node_data[j];
@@ -1959,7 +1281,7 @@ static void NRSur7dq2_integrate_AB4(
 
         // Compute dy = dydt*dt, write it in ynext
         dt4 = gsl_vector_get(t_ds, i) - gsl_vector_get(t_ds, i+1);
-        NRSur7dq2_ab4_dy(ynext, k1, k2, k3, k4, dt1, dt2, dt3, dt4);
+        NRSur_ab4_dy(ynext, k1, k2, k3, k4, dt1, dt2, dt3, dt4, 11);
 
         // Add the earliest known node, to obtain y at the previous
         for (j=0; j<11; j++) ynext[j] += node_data[j];
@@ -1984,14 +1306,18 @@ static void NRSur7dq2_integrate_AB4(
     }
 }
 
+/**
+ * Evaluates a single NRSur7dq2 coorbital waveoform data piece.
+ * The dynamics ODE must have already been solved, since this requires the
+ * spins evaluated at all of the empirical nodes for this waveform data piece.
+ */
 static void NRSur7dq2_eval_data_piece(
-    gsl_vector *result, // Output: Should have already been assigned space
-    double q,           // Mass ratio
-    gsl_vector **chiA,  // 3 gsl_vector *s, one for each (coorbital) component
-    gsl_vector **chiB,  // similar to chiA
-    WaveformDataPiece *data // The data piece to evaluate
+    gsl_vector *result, /**< Output: Should have already been assigned space */
+    double q,           /**< Mass ratio */
+    gsl_vector **chiA,  /**< 3 gsl_vector *s, one for each (coorbital) component */
+    gsl_vector **chiB,  /**< similar to chiA */
+    WaveformDataPiece *data /**< The data piece to evaluate */
 ) {
-
     gsl_vector *nodes = gsl_vector_alloc(data->n_nodes);
     double x[7];
     int i, j, node_index;
@@ -2015,15 +1341,27 @@ static void NRSur7dq2_eval_data_piece(
 
 /************************ Main Waveform Generation Routines ***********/
 
+/**
+ * This is the main NRSur7dq2 dynamics surrogate integration routine.
+ * Given omega_ref and the system parameters at omega_ref, we find the corresponding t_ref
+ * and first (if needed) take a tiny time step and evolve the system to the nearest
+ * dynamics node.
+ * We then initialize the AB4 ODE system at 4 consecutive dynamics nodes by taking 3 RK4 steps.
+ * Finally, we integrate forwards (and backwards if needed) to obtain the solution at all
+ * dynamics nodes.
+ * Output is a flattened array where entries i*11 <= j < (i+1)*11 are
+ * [q0, qx, qy, qz, varphi, chiAx, chiAy, chiAz, chiBx, chiBy, chiBz] at dynamics node i,
+ * where (q0, qx, qy, qz) is the coprecessing frame quaternion, varphi is the
+ * orbital phase, and the spin components are in the coprecessing frame.
+ */
 static int NRSur7dq2_IntegrateDynamics(
-    double *dynamics_data,  // Output: length (n * 11), where entries 11*m <= i < 11*(m+1) are
-                            // [q0, qx, qy, qz, varphi, chiAx, chiAy, chiAz, chiBx, chiBy, chiBz]
-    double q,               // Mass ratio mA / mB
-    double *chiA0,          // chiA at the reference point
-    double *chiB0,          // chiB at the reference point
-    double omega_ref,       // orbital angular frequency at the reference point
-    double phi_ref,         // orbital phase at the reference point
-    double *q_ref           // coprecessing quaterion at the reference point
+    double *dynamics_data,  /**< Output: length (n_dynamics_nodes * 11) */
+    double q,               /**< Mass ratio mA / mB */
+    double *chiA0,          /**< chiA at the reference point */
+    double *chiB0,          /**< chiB at the reference point */
+    double omega_ref,       /**< orbital angular frequency at the reference point */
+    double phi_ref,         /**< orbital phase at the reference point */
+    double *q_ref           /**< coprecessing quaterion at the reference point */
 ) {
     double normA = sqrt(chiA0[0]*chiA0[0] + chiA0[1]*chiA0[1] + chiA0[2]*chiA0[2]);
     double normB = sqrt(chiB0[0]*chiB0[0] + chiB0[1]*chiB0[1] + chiB0[2]*chiB0[2]);
@@ -2063,132 +1401,37 @@ static int NRSur7dq2_IntegrateDynamics(
     return XLAL_SUCCESS;
 }
 
-static void NRSur7dq2_TransformModes(
-    MultiModalWaveform *h,          // Output. Dimensionless waveform modes sampled on t_coorb. Should be initialized.
-    MultiModalWaveform *h_coorb,    // Coorbital frame waveform modes.
-    gsl_vector **quat,              // should be *quat[4], one for each component. Coprecessing frame quaternions.
-    gsl_vector *orbphase            // Orbital phase, used to obtain the coprecessing modes.
-) {
-    int i, j, ell, m, mp;
-    int n_times = h_coorb->n_times;
-    int lmax = h_coorb->lvals[h_coorb->n_modes -1];
-    int lmin;
-    gsl_vector *cosmphi = gsl_vector_alloc(n_times);
-    gsl_vector *sinmphi = gsl_vector_alloc(n_times);
-    gsl_vector *tmp_vec = gsl_vector_alloc(n_times);
-
-    // First transform to the coprecessing frame:
-    // h^{\ell, m}_\mathrm{copr} = e^{-i m \varphi} h^{\ell, m}_\mathrm{coorb}.
-    // Loop over m first, since fixed m modes transform the same way.
-    MultiModalWaveform *h_copr = NULL;
-    NRSur7dq2_MultiModalWaveform_Init(&h_copr, lmax, n_times);
-    for (m = -1*lmax; m <= lmax; m++) {
-        if (m==0) {
-            // No transformation
-            for (ell = 2; ell <= lmax; ell++) {
-                i = ell*(ell+1) - 4;
-                gsl_vector_add(h_copr->modes_real_part[i], h_coorb->modes_real_part[i]);
-                gsl_vector_add(h_copr->modes_imag_part[i], h_coorb->modes_imag_part[i]);
-            }
-        } else {
-            for (j=0; j<n_times; j++) {
-                gsl_vector_set(cosmphi, j, cos(m * gsl_vector_get(orbphase, j)));
-                gsl_vector_set(sinmphi, j, sin(m * gsl_vector_get(orbphase, j)));
-            }
-            lmin = abs(m);
-            if (lmin < 2) {
-                lmin = 2;
-            }
-            for (ell = lmin; ell<=lmax; ell++) {
-                i = ell*(ell+1) - 4 + m;
-                // compute and add multiplicative combinations of {real, imag} and {cosmphi, sinmphi}
-                // real * cosmphi
-                gsl_vector_set_zero(tmp_vec);
-                gsl_vector_add(tmp_vec, h_coorb->modes_real_part[i]);
-                gsl_vector_mul(tmp_vec, cosmphi);
-                gsl_vector_add(h_copr->modes_real_part[i], tmp_vec);
-                // -1 * real * I * sinmphi
-                gsl_vector_set_zero(tmp_vec);
-                gsl_vector_add(tmp_vec, h_coorb->modes_real_part[i]);
-                gsl_vector_mul(tmp_vec, sinmphi);
-                gsl_vector_sub(h_copr->modes_imag_part[i], tmp_vec);
-                // I * imag * cosmphi
-                gsl_vector_set_zero(tmp_vec);
-                gsl_vector_add(tmp_vec, h_coorb->modes_imag_part[i]);
-                gsl_vector_mul(tmp_vec, cosmphi);
-                gsl_vector_add(h_copr->modes_imag_part[i], tmp_vec);
-                // imag * sinmphi
-                gsl_vector_set_zero(tmp_vec);
-                gsl_vector_add(tmp_vec, h_coorb->modes_imag_part[i]);
-                gsl_vector_mul(tmp_vec, sinmphi);
-                gsl_vector_add(h_copr->modes_real_part[i], tmp_vec);
-            }
-        }
-    }
-
-    // Now we transform the coprecessing modes to the intertial frame, using the quaternions.
-    WignerDMatrices *matrices = NULL;
-    NRSur7dq2_WignerDMatrices_Init(&matrices, n_times, lmax);
-    NRSur7dq2_WignerDMatrices_Compute(matrices, quat);
-    int matrix_index;
-    for (ell = 2; ell <= lmax; ell++) {
-        for (m= -1 * ell; m <= ell; m++) {
-            i = ell*(ell+1) - 4 + m;
-            for (mp = -1 * ell; mp <= ell; mp++) {
-                j = ell*(ell+1) - 4 + mp;
-                matrix_index = NRSur7dq2_WignerDMatrix_Index(ell, m, mp);
-                // Re[h] * Re[D]
-                gsl_vector_set_zero(tmp_vec);
-                gsl_vector_add(tmp_vec, h_copr->modes_real_part[j]);
-                gsl_vector_mul(tmp_vec, matrices->real_part[matrix_index]);
-                gsl_vector_add(h->modes_real_part[i], tmp_vec);
-
-                // Re[h] * Im[D]
-                gsl_vector_set_zero(tmp_vec);
-                gsl_vector_add(tmp_vec, h_copr->modes_real_part[j]);
-                gsl_vector_mul(tmp_vec, matrices->imag_part[matrix_index]);
-                gsl_vector_add(h->modes_imag_part[i], tmp_vec);
-
-                // Im[h] * Re[D]
-                gsl_vector_set_zero(tmp_vec);
-                gsl_vector_add(tmp_vec, h_copr->modes_imag_part[j]);
-                gsl_vector_mul(tmp_vec, matrices->real_part[matrix_index]);
-                gsl_vector_add(h->modes_imag_part[i], tmp_vec);
-
-                // Im[h] * Im[D]
-                gsl_vector_set_zero(tmp_vec);
-                gsl_vector_add(tmp_vec, h_copr->modes_imag_part[j]);
-                gsl_vector_mul(tmp_vec, matrices->imag_part[matrix_index]);
-                gsl_vector_sub(h->modes_real_part[i], tmp_vec);
-            }
-        }
-    }
-    NRSur7dq2_WignerDMatrices_Destroy(matrices);
-    NRSur7dq2_MultiModalWaveform_Destroy(h_copr);
-    gsl_vector_free(cosmphi);
-    gsl_vector_free(sinmphi);
-    gsl_vector_free(tmp_vec);
-}
 
 /* This is the core function of the NRSur7dq2 model.
- * It evaluates the model, and returns waveform modes in the inertial frame, sampled on
- * t_coorb.
+ * It evaluates the model, and returns waveform modes in the inertial frame, sampled on t_coorb.
+ * When using a custom ModeArray the user must explicitly supply all modes, -ve and +ve m-modes.
+ * Note that the co-orbital frame modes are specified in ModeArray, not the inertial frame modes.
  */
 static void NRSur7dq2_core(
-    MultiModalWaveform **h, // Output. Dimensionless waveform modes sampled on t_coorb
-    double q,               // Mass ratio mA / mB
-    double *chiA0,          // chiA at the reference point
-    double *chiB0,          // chiB at the reference point
-    double omega_ref,       // orbital angular frequency at the reference point
-    double phi_ref,         // orbital phase at the reference point
-    double *q_ref,          // coprecessing quaterion at the reference point
-    int LMax                // Maximum ell mode to evaluate (NRSur7dq2 contains ell=2, 3, 4 modes)
+    MultiModalWaveform **h, /**< Output. Dimensionless waveform modes sampled on t_coorb */
+    double q,               /**< Mass ratio mA / mB */
+    double *chiA0,          /**< chiA at the reference point */
+    double *chiB0,          /**< chiB at the reference point */
+    double omega_ref,       /**< orbital angular frequency at the reference point */
+    double phi_ref,         /**< orbital phase at the reference point */
+    double *q_ref,          /**< coprecessing quaterion at the reference point */
+    LALValue* ModeArray     /**< Container for the ell and m co-orbital modes to generate */
 ) {
 #ifdef LAL_PTHREAD_LOCK
   (void) pthread_once(&NRSur7dq2_is_initialized, NRSur7dq2_Init_LALDATA);
 #else
     NRSur7dq2_Init_LALDATA();
 #endif
+
+    // Make sure we didn't request any unavailable modes
+    int ell, m;
+    for (ell=NRSUR7DQ2_LMAX+1; ell <= LAL_SIM_L_MAX_MODE_ARRAY; ell++) {
+        for (m=-ell; m<=ell; m++) {
+            if (XLALSimInspiralModeArrayIsModeActive(ModeArray, ell, m) == 1) {
+                XLAL_ERROR_VOID(XLAL_FAILURE, "A requested mode has ell larger than available");
+            }
+        }
+    }
 
     // time arrays
     gsl_vector *t_ds = (&__lalsim_NRSur7dq2_data)->t_ds;
@@ -2199,11 +1442,11 @@ static void NRSur7dq2_core(
     // Get dynamics
     double *dynamics_data = XLALCalloc(n_ds * 11, sizeof(double));
 
-    int i, j;
     int ret = NRSur7dq2_IntegrateDynamics(dynamics_data, q, chiA0, chiB0, omega_ref, phi_ref, q_ref);
     if(ret != XLAL_SUCCESS) XLAL_ERROR_VOID(XLAL_FAILURE, "Failed to integrate dynamics");
 
     // Put output into appropriate vectors
+    int i, j;
     gsl_vector *dynamics[11];
     for (j=0; j<11; j++) {
         dynamics[j] = gsl_vector_alloc(n_ds);
@@ -2240,31 +1483,43 @@ static void NRSur7dq2_core(
     NRSur7dq2_normalize_results(normA, normB, quat_coorb, chiA_coorb, chiB_coorb);
 
     // Transform spins from coprecessing frame to coorbital frame for use in coorbital waveform surrogate
-    NRSur7dq2_rotate_spins(chiA_coorb, chiB_coorb, phi_coorb, false);
+    NRSur7dq2_rotate_spins(chiA_coorb, chiB_coorb, phi_coorb);
 
     // Evaluate the coorbital waveform surrogate
     MultiModalWaveform *h_coorb = NULL;
-    NRSur7dq2_MultiModalWaveform_Init(&h_coorb, LMax, n_coorb);
+    MultiModalWaveform_Init(&h_coorb, NRSUR7DQ2_LMAX, n_coorb);
     gsl_vector *data_piece_eval = gsl_vector_alloc(n_coorb);
     WaveformDataPiece *data_piece_data;
-    int ell, m;
     int i0; // for indexing the (ell, m=0) mode, such that the (ell, m) mode is index (i0 + m).
     WaveformFixedEllModeData *ell_data;
-    for (ell=2; ell<=LMax; ell++) {
+    for (ell=2; ell<=NRSUR7DQ2_LMAX; ell++) {
         ell_data = (&__lalsim_NRSur7dq2_data)->coorbital_mode_data[ell - 2];
         i0 = ell*(ell+1) - 4;
 
         // m=0
-        data_piece_data = ell_data->m0_real_data;
-        NRSur7dq2_eval_data_piece(data_piece_eval, q, chiA_coorb, chiB_coorb, data_piece_data);
-        gsl_vector_add(h_coorb->modes_real_part[i0], data_piece_eval);
+        if (XLALSimInspiralModeArrayIsModeActive(ModeArray, ell, 0) != 1) {
+          XLAL_PRINT_INFO("SKIPPING (%i, 0) co-orbital mode", ell);
+        }
+        else {
+            XLAL_PRINT_INFO("Generating (%i, 0) co-orbital mode", ell);
+            data_piece_data = ell_data->m0_real_data;
+            NRSur7dq2_eval_data_piece(data_piece_eval, q, chiA_coorb, chiB_coorb, data_piece_data);
+            gsl_vector_add(h_coorb->modes_real_part[i0], data_piece_eval);
 
-        data_piece_data = ell_data->m0_imag_data;
-        NRSur7dq2_eval_data_piece(data_piece_eval, q, chiA_coorb, chiB_coorb, data_piece_data);
-        gsl_vector_add(h_coorb->modes_imag_part[i0], data_piece_eval);
+            data_piece_data = ell_data->m0_imag_data;
+            NRSur7dq2_eval_data_piece(data_piece_eval, q, chiA_coorb, chiB_coorb, data_piece_data);
+            gsl_vector_add(h_coorb->modes_imag_part[i0], data_piece_eval);
+        }
 
         // Other modes
         for (m=1; m<=ell; m++) {
+            if ((XLALSimInspiralModeArrayIsModeActive(ModeArray, ell, m) != 1) &&
+                (XLALSimInspiralModeArrayIsModeActive(ModeArray, ell, -m) != 1)) {
+                XLAL_PRINT_INFO("SKIPPING (%i, %i) co-orbital mode", ell, m);
+                continue;
+            }
+            XLAL_PRINT_INFO("Generating (%i, +/- %i) co-orbital modes", ell, m);
+
             // h^{ell, m} = X_plus + X_minus
             // h^{ell, -m} = (X_plus - X_minus)* <- complex conjugate
 
@@ -2295,11 +1550,11 @@ static void NRSur7dq2_core(
     }
 
     // Rotate to the inertial frame, write results in h
-    NRSur7dq2_MultiModalWaveform_Init(h, LMax, n_coorb);
-    NRSur7dq2_TransformModes(*h, h_coorb, quat_coorb, phi_coorb);
+    MultiModalWaveform_Init(h, NRSUR7DQ2_LMAX, n_coorb);
+    TransformModesCoorbitalToInertial(*h, h_coorb, quat_coorb, phi_coorb);
 
     // Cleanup
-    NRSur7dq2_MultiModalWaveform_Destroy(h_coorb);
+    MultiModalWaveform_Destroy(h_coorb);
     for (i=0; i<3; i++) {
         gsl_vector_free(chiA_coorb[i]);
         gsl_vector_free(chiB_coorb[i]);
@@ -2310,7 +1565,78 @@ static void NRSur7dq2_core(
     gsl_vector_free(data_piece_eval);
 }
 
-/** This function evaluates the NRSur7dq2 surrogate model and sums over all ell <= 4 modes to obtain the + and x polarizations.*/
+/**
+ * Computes the starting frequency of the NRSur7dq2 waveform approximant when
+ * evaluated using fRef=0 (which uses the entire surrogate waveform starting
+ * 4500M before the peak amplitude).
+ */
+double XLALSimInspiralNRSur7dq2StartFrequency(
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 s1x,                      /**< initial value of S1x */
+        REAL8 s1y,                      /**< initial value of S1y */
+        REAL8 s1z,                      /**< initial value of S1z */
+        REAL8 s2x,                      /**< initial value of S2x */
+        REAL8 s2y,                      /**< initial value of S2y */
+        REAL8 s2z                      /**< initial value of S2z */
+) {
+#ifdef LAL_PTHREAD_LOCK
+    (void) pthread_once(&NRSur7dq2_is_initialized, NRSur7dq2_Init_LALDATA);
+#else
+    NRSur7dq2_Init_LALDATA();
+#endif
+    if (m1 < m2) {
+        // Now switch the labeling; NRSur7dq2 assumes m1 >= m2.
+        REAL8 tmp = m1;
+        m1 = m2;
+        m2 = tmp;
+        tmp = s1x;
+        s1x = s2x;
+        s2x = tmp;
+        tmp = s1y;
+        s1y = s2y;
+        s2y = tmp;
+        tmp = s1z;
+        s1z = s2z;
+        s2z = tmp;
+    }
+
+    double Mtot = (m1 + m2) / LAL_MSUN_SI;
+    double Mtot_sec = Mtot * LAL_MTSUN_SI; /* Total mass in seconds */
+    double q = m1 / m2;
+    double y0[11];
+    y0[0] = 1.0; // Scalar component of reference quaternion
+    int i;
+    for (i=1; i<4; i++) y0[i] = 0.0; // Vector components of quaternion
+    y0[4] = 0.0; // Reference orbital phase - doesn't affect frequency
+    y0[5] = s1x;
+    y0[6] = s1y;
+    y0[7] = s1z;
+    y0[8] = s2x;
+    y0[9] = s2y;
+    y0[10] = s2z;
+    double omega_dimless_start = NRSur7dq2_get_omega(0, q, y0);
+    // GW freq is roughly twice the orbital freq
+    double f_start_Hz = omega_dimless_start / (LAL_PI * Mtot_sec);
+    return f_start_Hz;
+}
+
+
+/**
+ * This function evaluates the NRSur7dq2 surrogate model and sums over all ell <= 4 modes to
+ * obtain the + and x polarizations.
+ * The system is initialized at a time where the orbital angular frequency of the waveform
+ * coorbital frame (Eq 10. of https://arxiv.org/abs/1705.07089) is pi * fRef.
+ * At this reference point, the system is initialized with the z-axis along the
+ * principal eigenvector of the angular momentum operator acting on the waveform (the system is
+ * instantaneously aligned with the coprecessing frame) and with an orbital phase of phiRef
+ * where this orbital phase is the one in Eq 6 of https://arxiv.org/abs/1705.07089 (...and the
+ * coorbital frame).
+ * This essentially places the larger black hole on the +ive x-axis, with the smaller black hole
+ * on the -ive x-axis, and the initial orbital angular momentum is in the +z direction.
+ * Finally, the modes are summed up with the specified inclination angle and an azimuthal angle of 0.
+ * When using a custom ModeArray the user must explicitly supply all modes, -ve and +ve m-modes.
+ * Note that these are modes in the co-orbital frame, not the inertial frame. */
 int XLALSimInspiralNRSur7dq2Polarizations(
         REAL8TimeSeries **hplus,        /**< OUTPUT h_+ vector */
         REAL8TimeSeries **hcross,       /**< OUTPUT h_x vector */
@@ -2327,13 +1653,17 @@ int XLALSimInspiralNRSur7dq2Polarizations(
         REAL8 s1z,                      /**< initial value of S1z */
         REAL8 s2x,                      /**< initial value of S2x */
         REAL8 s2y,                      /**< initial value of S2y */
-        REAL8 s2z                      /**< initial value of S2z */
+        REAL8 s2z,                      /**< initial value of S2z */
+        LALValue* ModeArray             /**< Container for the ell and m co-orbital modes to generate. To generate all available modes pass NULL */
 ) {
-    if (fabs(fMin) > 1.e-6) XLAL_PRINT_WARNING("NRSur7dq2 ignores fMin. Set fMin=0 to ignore this warning.");
-
-    // TODO: Could lmax, as well as the frame choice at fRef, be obtained from the LALparams dict?
-    // If so, how? lmax would be quite useful to have, both to study the effect of lmax and since
-    // lmax=2 is more than twice as fast as lmax=4 (and for low SNR lmax=2 is sufficient).
+    int ell, m;
+    if ( ModeArray == NULL ) {
+        // Use all available modes
+        ModeArray = XLALSimInspiralCreateModeArray();
+        for (ell=2; ell <= NRSUR7DQ2_LMAX; ell++) {
+            XLALSimInspiralModeArrayActivateAllModesAtL(ModeArray, ell);
+        }
+    } // Otherwise, use the specified modes.
 
     // BH A is defined to be the one with the larger mass, BH B with the smaller mass.
     if (m1 < m2) {
@@ -2361,11 +1691,15 @@ int XLALSimInspiralNRSur7dq2Polarizations(
     double Mtot_sec = Mtot * LAL_MTSUN_SI; /* Total mass in seconds */
     double q = massA / massB;
     double chiA0[3], chiB0[3];
-    chiA0[0] = s1x;
-    chiA0[1] = s1y;
+    /* The spin components are given in the Lalsimulation source frame
+     * (see See Harald Pfeiffer, T18002260-v1 for a diagram). The surrogate frame has the same z
+     * but has its x along the line of ascending nodes, so we must rotate the (x, y) spin components
+     * by phiRef */
+    chiA0[0] = s1x * cos(phiRef) - s1y * sin(phiRef);
+    chiA0[1] = s1y * cos(phiRef) + s1x * sin(phiRef);
     chiA0[2] = s1z;
-    chiB0[0] = s2x;
-    chiB0[1] = s2y;
+    chiB0[0] = s2x * cos(phiRef) - s2y * sin(phiRef);
+    chiB0[1] = s2y * cos(phiRef) + s2x * sin(phiRef);
     chiB0[2] = s2z;
     // Orbital angular frequency = 0.5*(wave angular frequency) = pi*(wave frequency)
     double omegaRef_dimless = (Mtot_sec * fRef) * LAL_PI;
@@ -2375,11 +1709,10 @@ int XLALSimInspiralNRSur7dq2Polarizations(
     q_ref[1] = 0.0;
     q_ref[2] = 0.0;
     q_ref[3] = 0.0;
-    int lmax=4; // Use all available modes.
 
     // Evaluate the model modes
     MultiModalWaveform *h_inertial_modes = NULL;
-    NRSur7dq2_core(&h_inertial_modes, q, chiA0, chiB0, omegaRef_dimless, phiRef, q_ref, lmax);
+    NRSur7dq2_core(&h_inertial_modes, q, chiA0, chiB0, omegaRef_dimless, phiRef, q_ref, ModeArray);
     if (!h_inertial_modes) {
         return XLAL_FAILURE;
     }
@@ -2393,14 +1726,31 @@ int XLALSimInspiralNRSur7dq2Polarizations(
     COMPLEX16 swsh_coef;// = XLALSpinWeightedSphericalHarmonic(spheretheta, spherephi, -2, swsh_L, swsh_m);
     double c_re, c_im;// = creal(swsh_coef);
     double hmre, hmim;
-    int ell, m, i, j;
+    int i, j;
+    bool skip_ell_modes;
     i=0;
-    for (ell=2; ell<=lmax; ell++) {
+    for (ell=2; ell <= NRSUR7DQ2_LMAX; ell++) {
+        /* If *any* co-orbital frame mode of this ell is non-zero we need to sum over all modes of this ell,
+         * as the frame rotation will have mixed the modes. */
+        skip_ell_modes = true;
         for (m=-ell; m<=ell; m++) {
-            // phi=0. phiRef controls the *orbital phase*.
-            // To effectively obtain phi != 0, take phiRef -> phiRef - phi, and rotate the (x + iy) spin components
-            // in the complex plane by e^{-i*phi} for both chi1 and chi2.
-            swsh_coef = XLALSpinWeightedSphericalHarmonic(inclination, 0.0, -2, ell, m);
+            if (XLALSimInspiralModeArrayIsModeActive(ModeArray, ell, m) == 1) skip_ell_modes = false;
+        }
+        if (skip_ell_modes) {
+            XLAL_PRINT_INFO("SKIPPING ell=%i modes", ell);
+            i += 2*ell + 1;
+            continue;
+        }
+        for (m=-ell; m<=ell; m++) {
+            XLAL_PRINT_INFO("Interpolating (%i, %i) mode", ell, m);
+            /* See Harald Pfeiffer, T18002260-v1 for frame diagram. The surrogate frame has its z
+             * direction aligned with the orbital angular momentum, which agrees with the lowercase
+             * source frame z in the diagram. The surrogate x direction, however, points along the
+             * line of ascending nodes (the funny omega with circles on the ends). The uppercase Z,
+             * which is the direction along which we want to evaluate the waveform, is always in the
+             * surrogate frame (y, z) plane. Z is rotated from z towards the +ive y surrogate axis,
+             * so we should always evaluate at (inclination, pi/2). */
+            swsh_coef = XLALSpinWeightedSphericalHarmonic(inclination, 0.5 * LAL_PI, -2, ell, m);
             c_re = creal(swsh_coef);
             c_im = cimag(swsh_coef);
             for (j=0; j < (int)length; j++) {
@@ -2422,6 +1772,13 @@ int XLALSimInspiralNRSur7dq2Polarizations(
     gsl_vector *model_times = (&__lalsim_NRSur7dq2_data)->t_coorb;
     double deltaT_dimless = deltaT / Mtot_sec;
     double t0 = gsl_vector_get(model_times, 0);
+    double start_freq = XLALSimInspiralNRSur7dq2StartFrequency(m1, m2, s1x, s2y, s1z, s2x, s2y, s2z);
+    if (fMin >= start_freq) {
+        double omegaMin_dimless = (Mtot_sec * fMin) * LAL_PI;
+        t0 = NRSur7dq2_get_t_ref(omegaMin_dimless, q, chiA0, chiB0, q_ref, phiRef);
+    } else if (fMin > 0) {
+        XLAL_ERROR_REAL8(XLAL_FAILURE, "fMin should be 0 or >= %0.8f for this configuration, got %0.8f", start_freq, fMin);
+    }
     double tf = gsl_vector_get(model_times, length-1);
     int nt = (int) ceil((tf - t0) / deltaT_dimless);
     gsl_vector *output_times = gsl_vector_alloc(nt);
@@ -2431,7 +1788,8 @@ int XLALSimInspiralNRSur7dq2Polarizations(
 
     // Interpolate onto output times
     double t;
-    LIGOTimeGPS epoch = LIGOTIMEGPSZERO; // Dummy time
+    LIGOTimeGPS epoch = LIGOTIMEGPSZERO;
+    XLALGPSAdd( &epoch, -Mtot_sec * NRSUR7DQ2_START_TIME);
     *hplus = XLALCreateREAL8TimeSeries("hp: TD waveform", &epoch, 0.0, deltaT, &lalStrainUnit, nt);
     *hcross = XLALCreateREAL8TimeSeries("hc: TD waveform", &epoch, 0.0, deltaT, &lalStrainUnit, nt);
     gsl_interp_accel *acc = gsl_interp_accel_alloc();
@@ -2452,12 +1810,25 @@ int XLALSimInspiralNRSur7dq2Polarizations(
     gsl_interp_accel_free(acc);
     gsl_spline_free(spl_hplus);
     gsl_spline_free(spl_hcross);
-    NRSur7dq2_MultiModalWaveform_Destroy(h_inertial_modes);
+    MultiModalWaveform_Destroy(h_inertial_modes);
 
     return XLAL_SUCCESS;
 }
 
-/** This function evaluates the NRSur7dq2 surrogate model and returns the inertial frame modes.*/
+/**
+ * This function evaluates the NRSur7dq2 surrogate model and returns the inertial frame modes
+ * in the form of a SphHarmTimeSeries. The system is initialized at a time where the orbital
+ * angular frequency of the waveform coorbital frame (Eq 10. of https://arxiv.org/abs/1705.07089)
+ * is pi * fRef. At this reference point, the system is initialized with the z-axis along the
+ * principal eigenvector of the angular momentum operator acting on the waveform (the system is
+ * instantaneously aligned with the coprecessing frame) and with an orbital phase of phiRef
+ * where this orbital phase is the one in Eq 6 of https://arxiv.org/abs/1705.07089 (...and the
+ * coorbital frame).
+ * This essentially places the larger black hole on the +ive x-axis, with the smaller black hole
+ * on the -ive x-axis, and the initial orbital angular momentum is in the +z direction.
+ * When using a custom ModeArray the user must explicitly supply all modes, -ve and +ve m-modes.
+ * Note that these are modes in the co-orbital frame, not the inertial frame. */
+
 SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
         REAL8 phiRef,                   /**< orbital phase at reference pt. */
         REAL8 deltaT,                   /**< sampling interval (s) */
@@ -2472,16 +1843,18 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
         REAL8 fMin,                     /**< start GW frequency (Hz) */
         REAL8 fRef,                     /**< reference GW frequency (Hz) */
         REAL8 distance,                 /**< distance of source (m) */
-        int lmax                        /**< Evaluates (l, m) modes with l <= lmax. The model contains modes up to l=4. */
+        LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
 ) {
-    if (fabs(fMin) > 1.e-6) XLAL_PRINT_WARNING("NRSur7dq2 ignores fMin. Set fMin=0 to ignore this warning.");
-
     SphHarmTimeSeries *hlms = NULL;
 
-    if (lmax > NRSUR7DQ2_LMAX) {
-        XLAL_PRINT_WARNING("Got lmax=%d > NRSUR7DQ2_LMAX=%d, decreasing lmax\n", lmax, NRSUR7DQ2_LMAX);
-        lmax = NRSUR7DQ2_LMAX;
-    }
+    int ell, m;
+    if ( ModeArray == NULL ) {
+        // Use all available modes
+        ModeArray = XLALSimInspiralCreateModeArray();
+        for (ell=2; ell <= NRSUR7DQ2_LMAX; ell++) {
+            XLALSimInspiralModeArrayActivateAllModesAtL(ModeArray, ell);
+        }
+    } // Otherwise, use the specified modes.
 
     double chiA0[3], chiB0[3];
     chiA0[0] = S1x;
@@ -2521,9 +1894,9 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
 
     // Evaluate the model modes
     MultiModalWaveform *h_inertial = NULL;
-    NRSur7dq2_core(&h_inertial, q, chiA0, chiB0, omegaRef_dimless, phiRef, q_ref, lmax);
+    NRSur7dq2_core(&h_inertial, q, chiA0, chiB0, omegaRef_dimless, phiRef, q_ref, ModeArray);
     if (!h_inertial) {
-        printf("NRSur7dq2_core failed!\n");
+        XLAL_PRINT_INFO("NRSur7dq2_core failed!");
         return hlms;
     }
 
@@ -2532,9 +1905,16 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
 
     // Setup dimensionless output times
     gsl_vector *model_times = (&__lalsim_NRSur7dq2_data)->t_coorb;
-    size_t length = model_times->size;
     double deltaT_dimless = deltaT / Mtot_sec;
     double t0 = gsl_vector_get(model_times, 0);
+    double start_freq = XLALSimInspiralNRSur7dq2StartFrequency(m1, m2, S1x, S2y, S1z, S2x, S2y, S2z);
+    if (fMin >= start_freq) {
+        double omegaMin_dimless = (Mtot_sec * fMin) * LAL_PI;
+        t0 = NRSur7dq2_get_t_ref(omegaMin_dimless, q, chiA0, chiB0, q_ref, phiRef);
+    } else if (fMin > 0) {
+        XLAL_ERROR_NULL(XLAL_FAILURE, "fMin should be 0 or >= %0.8f for this configuration, got %0.8f", start_freq, fMin);
+    }
+    size_t length = model_times->size;
     double tf = gsl_vector_get(model_times, length-1);
     int nt = (int) ceil((tf - t0) / deltaT_dimless);
     gsl_vector *output_times = gsl_vector_alloc(nt);
@@ -2545,16 +1925,30 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
 
     // Setup interpolation onto dimensionless output times
     double t;
-    LIGOTimeGPS epoch = LIGOTIMEGPSZERO; // Dummy time
+    LIGOTimeGPS epoch = LIGOTIMEGPSZERO;
+    XLALGPSAdd( &epoch, -Mtot_sec * NRSUR7DQ2_START_TIME);
     gsl_interp_accel *acc = gsl_interp_accel_alloc();
 
     // Create LAL modes
     COMPLEX16TimeSeries *tmp_mode;
-    int ell, m;
     i=0;
+    bool skip_ell_modes;
     char mode_name[32];
-    for (ell=2; ell<=lmax; ell++) {
+    for (ell=2; ell <= NRSUR7DQ2_LMAX; ell++) {
+        /* If *any* co-orbital frame mode of this ell is non-zero we need to sum over all modes of this ell,
+         * as the frame rotation will have mixed the modes. */
+        skip_ell_modes = true;
         for (m=-ell; m<=ell; m++) {
+            if (XLALSimInspiralModeArrayIsModeActive(ModeArray, ell, m) == 1) skip_ell_modes = false;
+        }
+        if (skip_ell_modes) {
+            XLAL_PRINT_INFO("SKIPPING ell=%i modes", ell);
+            i += 2*ell + 1;
+            continue;
+        }
+        for (m=-ell; m<=ell; m++) {
+            XLAL_PRINT_INFO("Interpolating (%i, %i) mode", ell, m);
+
             gsl_vector_scale(h_inertial->modes_real_part[i], a0);
             gsl_vector_scale(h_inertial->modes_imag_part[i], a0);
             snprintf(mode_name, sizeof(mode_name), "(%d, %d) mode", ell, m);
@@ -2578,9 +1972,12 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
     }
 
     // Cleanup
-    NRSur7dq2_MultiModalWaveform_Destroy(h_inertial);
+    MultiModalWaveform_Destroy(h_inertial);
     gsl_vector_free(output_times);
     gsl_interp_accel_free(acc);
 
     return hlms;
 }
+
+/** @} */
+/** @} */
