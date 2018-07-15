@@ -77,9 +77,9 @@ if [ $? != "0" ]; then
 fi
 
 # set ephemeris file
-EEPHEM="earth00-19-DE405.dat.gz"
-SEPHEM="sun00-19-DE405.dat.gz"
-TEPHEM="tdb_2000-2019.dat.gz"
+EEPHEM="earth00-40-DE405.dat.gz"
+SEPHEM="sun00-40-DE405.dat.gz"
+TEPHEM="tdb_2000-2040.dat.gz"
 
 # get current location
 LOCATION=`pwd`
