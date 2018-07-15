@@ -311,18 +311,6 @@ nightly:top-level:xenial:
     - schedules
     - web
 
-nightly:top-level:artful:
-  image: skymoo/ligo-lalsuite-dev:artful
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
 nightly:top-level:bionic:
   image: skymoo/ligo-lalsuite-dev:bionic
   stage: nightly
