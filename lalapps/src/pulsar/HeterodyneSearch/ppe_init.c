@@ -195,6 +195,10 @@ void initialise_algorithm( LALInferenceRunState *runState )
     LALInferenceAddVariable( runState->algorithmParams, "tolerance", &tmp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
   }
 
+  /* Set cpu_time variable */
+  REAL8 zero = 0.0;
+  LALInferenceAddVariable( runState->algorithmParams, "cpu_time", &zero, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT );
+
   /* Set up the random number generator */
   gsl_rng_env_setup();
   runState->GSLrandom = gsl_rng_alloc( gsl_rng_mt19937 );
