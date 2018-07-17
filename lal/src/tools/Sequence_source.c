@@ -132,6 +132,10 @@ SEQUENCETYPE *RFUNC (
 			SFUNC (sequence, -first);
 		} else
 			XLAL_ERROR_NULL(XLAL_EFUNC);
+	} else if (length == 0) {
+		XLALFree(sequence->data);
+		sequence->data = NULL;
+		sequence->length = 0;
 	} else {
 		/* do not need to increase memory */
 		SFUNC (sequence, -first);
