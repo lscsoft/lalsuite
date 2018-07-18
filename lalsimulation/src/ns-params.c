@@ -224,6 +224,7 @@ int parseargs(int argc, char **argv)
 
 int usage(const char *program)
 {
+    int e, c;
     fprintf(stderr, "usage: %s [options]\n", program);
     fprintf(stderr,
         "\t-h, --help                   \tprint this message and exit\n");
@@ -263,5 +264,13 @@ int usage(const char *program)
         "\t-y SDgamma2, --SDgamma2=SDgamma2 \tadiabatic index spectral decomposition coefficient 3 -0.8--0.6\n");
     fprintf(stderr,
         "\t-z SDgamma3, --SDgamma3=SDgamma3 \tadiabatic index spectral decomposition coefficient 4 -0.2--0.2\n");
+    fprintf(stderr, "recognized tabulated equations of state:");
+	for (e = 0, c = 0; e < (int)(sizeof(lalSimNeutronStarEOSNames)/sizeof(*lalSimNeutronStarEOSNames)); ++e) {
+		c += fprintf(stderr, "%s%s", c ? ", " : "\n\t", lalSimNeutronStarEOSNames[e]);
+		if (c > 50)
+			c = 0;
+	}
+    fprintf(stderr, "\n");
+
     return 0;
 }

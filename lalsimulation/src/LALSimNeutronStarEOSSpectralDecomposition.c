@@ -283,7 +283,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double gamma[],
 
     if(snprintf(eos->name, sizeof(eos->name), "4-Param Spec Decomp (g0=%.4g, g1=%.4g, g2=%.4g, g3=%.4g)",
     gamma[0], gamma[1], gamma[2], gamma[3]) >= (int) sizeof(eos->name))
-        XLAL_ERROR_NULL(XLAL_EINVAL,"eos name overflow");
+        XLAL_PRINT_WARNING("EOS name too long");
 
     return eos;
 }
