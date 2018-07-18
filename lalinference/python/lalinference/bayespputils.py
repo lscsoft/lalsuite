@@ -5403,6 +5403,7 @@ def readCoincXML(xml_file, trignum):
 
     from glue.ligolw import ligolw
     from glue.ligolw import lsctables
+    from glue.ligolw import utils
     coincXML = utils.load_filename(xml_file, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
     coinc = lsctables.CoincTable.get_table(coincXML)
     coincMap = lsctables.CoincMapTable.get_table(coincXML)
