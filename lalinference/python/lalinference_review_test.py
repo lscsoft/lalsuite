@@ -40,7 +40,7 @@ parser.add_argument('--analytic-csv-dir', type=str,
 
 parser.add_argument('--pptest', action='store_true',
                     default=False,
-                    help='Runs a P-P analysis.')
+                    help='Runs a P-P analysis. Must specify a single engine.')
 
 parser.add_argument('--bbh-injection', type=str, nargs='?',
                     default=False,
@@ -315,6 +315,9 @@ def set_pptest(cp):
     return cp
 
 if args.pptest:
+
+    # The PP test needs an engine to be specified
+    assert ',' not in args.engine, "A single engine must be specified"
 
     os.makedirs(args.output+'/pptest/')
     os.chdir(args.output+'/pptest/')
