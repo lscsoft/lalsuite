@@ -40,7 +40,7 @@ parser.add_argument('--analytic-csv-dir', type=str,
 
 parser.add_argument('--pptest', action='store_true',
                     default=False,
-                    help='Runs a P-P analysis.')
+                    help='Runs a P-P analysis. Must specify a single engine.')
 
 parser.add_argument('--bbh-injection', type=str, nargs='?',
                     default=False,
@@ -278,7 +278,6 @@ if args.analytic_tests:
         os.chdir(args.output+'/' + test_func + '/')
 
 
-        shutil.copy(args.bbh_injection,args.output+'/'+test_func+'/')
         analytic_ini_file=os.path.join(args.output,test_func,'analytic.ini')
 
         cpanalytic=set_analytic_test(init_ini_file(), test_func)
@@ -302,6 +301,7 @@ if args.analytic_tests:
 def set_pptest(cp):
 
     cp.set('paths','webdir',web_outputdir+'/pptest/webdir/')
+    cp.set('ppanalysis','webdir',web_outputdir+'/PPcheck/')
     cp.set('lalinference','fake-cache',"{'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
     cp.set('analysis','dataseed','1234')
 
@@ -316,6 +316,9 @@ def set_pptest(cp):
     return cp
 
 if args.pptest:
+
+    # The PP test needs an engine to be specified
+    assert ',' not in args.engine, "A single engine must be specified"
 
     os.makedirs(args.output+'/pptest/')
     os.chdir(args.output+'/pptest/')
