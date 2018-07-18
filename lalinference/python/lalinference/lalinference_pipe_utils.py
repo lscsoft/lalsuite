@@ -18,6 +18,7 @@ import random
 from itertools import permutations
 import shutil
 import numpy as np
+import math
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -196,7 +197,7 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
         srate.append(pow(2.0, ceil( log(fstop, 2) ) ) * 2)
       # determine horizon distance
       if threshold_snr is not None:
-        if e.eff_distance is not None:
+        if e.eff_distance is not None and not math.isnan(e.eff_distance):
           if e.snr > threshold_snr:
             horizon_distance.append(e.eff_distance * e.snr / threshold_snr)
           else:
