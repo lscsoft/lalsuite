@@ -527,20 +527,18 @@ def get_trigger_chirpmass(gid=None,gracedb="gracedb"):
   class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
   lsctables.use_in(LIGOLWContentHandler)
-  import subprocess
-
+  from ligo.gracedb.rest import GraceDb
   cwd=os.getcwd()
-  subprocess.call([gracedb,"download", gid ,"coinc.xml"])
-  xmldoc=ligolw_utils.load_filename("coinc.xml",contenthandler = LIGOLWContentHandler)
-  coinctable = lsctables.CoincInspiralTable.get_table(xmldoc)
-  coinc_events = [event for event in coinctable]
-  sngltable = lsctables.SnglInspiralTable.get_table(xmldoc)
-  sngl_events = [event for event in sngltable]
+  client = GraceDb()
+  xmldoc = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"), contenthandler = LIGOLWContentHandler)[0]
+  ligolw_utils.write_filename(xmldoc, "coinc.xml")
+  coinc_events = lsctables.CoincInspiralTable.get_table(xmldoc)
+  sngl_event_idx = dict((row.event_id, row) for row in lsctables.SnglInspiralTable.get_table(xmldoc))
   coinc_map = lsctables.CoincMapTable.get_table(xmldoc)
   mass1 = []
   mass2 = []
   for coinc in coinc_events:
-    these_sngls = [e for e in sngl_events if e.event_id in [c.event_id for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id] ]
+    these_sngls = [sngl_event_idx[c.event_id] for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id]
     for e in these_sngls:
       mass1.append(e.mass1)
       mass2.append(e.mass2)
