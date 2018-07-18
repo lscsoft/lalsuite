@@ -301,6 +301,7 @@ if args.analytic_tests:
 def set_pptest(cp):
 
     cp.set('paths','webdir',web_outputdir+'/pptest/webdir/')
+    cp.set('ppanalysis','webdir',web_outputdir+'/PPcheck/')
     cp.set('lalinference','fake-cache',"{'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
     cp.set('analysis','dataseed','1234')
 
