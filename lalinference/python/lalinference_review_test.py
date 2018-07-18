@@ -278,7 +278,6 @@ if args.analytic_tests:
         os.chdir(args.output+'/' + test_func + '/')
 
 
-        shutil.copy(args.bbh_injection,args.output+'/'+test_func+'/')
         analytic_ini_file=os.path.join(args.output,test_func,'analytic.ini')
 
         cpanalytic=set_analytic_test(init_ini_file(), test_func)
