@@ -32,7 +32,7 @@ def send_samples(data, address=None, port=1890, socket=None, verbose=False):
 
     msg_len = numpy.prod(data.shape) * 8
     if verbose:
-        print("Sending %d bytes to %s:%d" % (msg_len, address, port))
+        print "Sending %d bytes to %s:%d" % (msg_len, address, port)
 
     try:
         if socket is None:
@@ -40,7 +40,7 @@ def send_samples(data, address=None, port=1890, socket=None, verbose=False):
         sender.send(data.tobytes("C"))
     except pysocket.error as sockerr:
         if verbose:
-            print("Unable to send data.")
+            print "Unable to send data."
         # FIXME: Reenable this
         #if sockerr.errno != errno.ECONNREFUSED or sockerr.errno:
             #raise sockerr

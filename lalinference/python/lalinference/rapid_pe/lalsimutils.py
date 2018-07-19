@@ -17,7 +17,6 @@
 """
 A collection of useful data analysis routines built from the SWIG wrappings of LAL and LALSimulation.
 """
-from __future__ import print_function
 import sys
 import copy
 import types
@@ -125,52 +124,52 @@ class ChooseWaveformParams:
         """
         Print all key-value pairs belonging in the class instance
         """
-        print("This ChooseWaveformParams has the following parameter values:")
-        print("m1 =", self.m1 / lal.MSUN_SI, "(Msun)")
-        print("m2 =", self.m2 / lal.MSUN_SI, "(Msun)")
-        print("spin1x =", self.spin1x)
-        print("spin1y =", self.spin1y)
-        print("spin1z =", self.spin1z)
-        print("spin2x =", self.spin2x)
-        print("spin2y =", self.spin2y)
-        print("spin2z =", self.spin2z)
-        print("lambda1 =", self.lambda1)
-        print("lambda2 =", self.lambda2)
-        print("inclination =", self.incl)
-        print("distance =", self.dist / 1.e+6 / lal.PC_SI, "(Mpc)")
-        print("reference orbital phase =", self.phiref)
-        print("time of coalescence =", float(self.tref))
-        print("detector is:", self.detector)
+        print "This ChooseWaveformParams has the following parameter values:"
+        print "m1 =", self.m1 / lal.MSUN_SI, "(Msun)"
+        print "m2 =", self.m2 / lal.MSUN_SI, "(Msun)"
+        print "spin1x =", self.spin1x
+        print "spin1y =", self.spin1y
+        print "spin1z =", self.spin1z
+        print "spin2x =", self.spin2x
+        print "spin2y =", self.spin2y
+        print "spin2z =", self.spin2z
+        print "lambda1 =", self.lambda1
+        print "lambda2 =", self.lambda2
+        print "inclination =", self.incl
+        print "distance =", self.dist / 1.e+6 / lal.PC_SI, "(Mpc)"
+        print "reference orbital phase =", self.phiref
+        print "time of coalescence =", float(self.tref)
+        print "detector is:", self.detector
         if self.radec==False:
-            print("Sky position relative to overhead detector is:")
-            print("zenith angle =", self.theta, "(radians)")
-            print("azimuth angle =", self.phi, "(radians)")
+            print "Sky position relative to overhead detector is:"
+            print "zenith angle =", self.theta, "(radians)"
+            print "azimuth angle =", self.phi, "(radians)"
         if self.radec==True:
-            print("Sky position relative to geocenter is:")
-            print("declination =", self.theta, "(radians)")
-            print("right ascension =", self.phi, "(radians)")
-        print("polarization angle =", self.psi)
-        print("starting frequency is =", self.fmin)
-        print("reference frequency is =", self.fref)
-        print("Max frequency is =", self.fmax)
-        print("time step =", self.deltaT, "(s) <==>", 1./self.deltaT,\
-                "(Hz) sample rate")
-        print("freq. bin size is =", self.deltaF, "(Hz)")
-        print("approximant is =", lalsim.GetStringFromApproximant(self.approx))
-        print("phase order =", self.phaseO)
-        print("amplitude order =", self.ampO)
-        print("waveFlags struct is", self.waveFlags)
-        print("nonGRparams struct is", self.nonGRparams)
+            print "Sky position relative to geocenter is:"
+            print "declination =", self.theta, "(radians)"
+            print "right ascension =", self.phi, "(radians)"
+        print "polarization angle =", self.psi
+        print "starting frequency is =", self.fmin
+        print "reference frequency is =", self.fref
+        print "Max frequency is =", self.fmax
+        print "time step =", self.deltaT, "(s) <==>", 1./self.deltaT,\
+                "(Hz) sample rate"
+        print "freq. bin size is =", self.deltaF, "(Hz)"
+        print "approximant is =", lalsim.GetStringFromApproximant(self.approx)
+        print "phase order =", self.phaseO
+        print "amplitude order =", self.ampO
+        print "waveFlags struct is", self.waveFlags
+        print "nonGRparams struct is", self.nonGRparams
         if self.taper==lalsim.SIM_INSPIRAL_TAPER_NONE:
-            print("Tapering is set to SIM_INSPIRAL_TAPER_NONE")
+            print "Tapering is set to SIM_INSPIRAL_TAPER_NONE"
         elif self.taper==lalsim.SIM_INSPIRAL_TAPER_START:
-            print("Tapering is set to SIM_INSPIRAL_TAPER_START")
+            print "Tapering is set to SIM_INSPIRAL_TAPER_START"
         elif self.taper==lalsim.SIM_INSPIRAL_TAPER_END:
-            print("Tapering is set to SIM_INSPIRAL_TAPER_END")
+            print "Tapering is set to SIM_INSPIRAL_TAPER_END"
         elif self.taper==lalsim.SIM_INSPIRAL_TAPER_STARTEND:
-            print("Tapering is set to SIM_INSPIRAL_TAPER_STARTEND")
+            print "Tapering is set to SIM_INSPIRAL_TAPER_STARTEND"
         else:
-            print("Warning! Invalid value for taper:", self.taper)
+            print "Warning! Invalid value for taper:", self.taper
 
     def copy_sim_inspiral(self, row):
         """
@@ -266,7 +265,7 @@ def xml_to_ChooseWaveformParams_array(fname, minrow=None, maxrow=None,
         # Copy the information from requested rows to the ChooseWaveformParams
         [Ps[i-minrow].copy_lsctables_sim_inspiral(sim_insp[i]) for i in rng]
     except ValueError:
-        print("No SimInspiral table found in xml file",file=sys.stderr)
+        print >>sys.stderr, "No SimInspiral table found in xml file"
     return Ps
 
 
@@ -543,7 +542,7 @@ class Overlap(InnerProduct):
         Compute norm of a COMPLEX16Frequency Series
         """
         if h.data.length != self.len1side:
-            print("Bad data length, needed %d, got %d" % (self.len1side, h.data.length))
+            print "Bad data length, needed %d, got %d" % (self.len1side, h.data.length)
         assert h.data.length == self.len1side
         assert abs(h.deltaF-self.deltaF) <= TOL_DF
         val = 0.
@@ -1275,7 +1274,7 @@ def frame_data_to_hoft(fname, channel, start=None, stop=None, window_shape=0.,
             strength over that fraction of each end of the data segment.
     """
     if verbose:
-        print(" ++ Loading from cache ", fname, channel)
+        print " ++ Loading from cache ", fname, channel
     with open(fname) as cfile:
         cachef = Cache.fromfile(cfile)
     for i in range(len(cachef))[::-1]:
@@ -1283,7 +1282,7 @@ def frame_data_to_hoft(fname, channel, start=None, stop=None, window_shape=0.,
         if cachef[i].observatory != channel[0]:
             del cachef[i]
     if verbose:
-        print(cachef.to_segmentlistdict())
+        print cachef.to_segmentlistdict()
     fcache = frutils.FrameCache(cachef)
     # FIXME: Horrible, horrible hack -- will only work if all requested channels
     # span the cache *exactly*
@@ -1297,7 +1296,7 @@ def frame_data_to_hoft(fname, channel, start=None, stop=None, window_shape=0.,
     tmp = lal.CreateREAL8TimeSeries("h(t)", 
             lal.LIGOTimeGPS(float(ht.metadata.segments[0][0])),
             0., ht.metadata.dt, lal.DimensionlessUnit, len(ht))
-    print("  ++ Frame data sampling rate ", 1./tmp.deltaT, " and epoch ", string_gps_pretty_print(tmp.epoch))
+    print   "  ++ Frame data sampling rate ", 1./tmp.deltaT, " and epoch ", string_gps_pretty_print(tmp.epoch)
     tmp.data.data[:] = ht
     # Window the data - N.B. default is identity (no windowing)
     hoft_window = lal.CreateTukeyREAL8Window(tmp.data.length, window_shape)
@@ -1385,7 +1384,7 @@ def frame_data_to_non_herm_hoff(fname, channel, start=None, stop=None, TDlen=0,
             FDlen)
     lal.COMPLEX16TimeFreqFFT(hf, hoftC, fwdplan)
     if verbose:
-        print(" ++ Loaded data h(f) of length n= ", hf.data.length, " (= ", len(hf.data.data)*ht.deltaT, "s) at sampling rate ", 1./ht.deltaT)
+        print " ++ Loaded data h(f) of length n= ", hf.data.length, " (= ", len(hf.data.data)*ht.deltaT, "s) at sampling rate ", 1./ht.deltaT    
     return hf
 
 
@@ -1468,15 +1467,13 @@ if __name__ == "__main__":
         try:
             hoft(params)
         except RuntimeError:
-            print("TD waveform generation failed for params\n" \
-                "masses: %e %e, spins: %e, %e, approx: %s" % (m1i, m2i, s1zi, s2zi, a) \
-                    ,file=sys.stderr)
+            print >>sys.stderr, "TD waveform generation failed for params\n" \
+                "masses: %e %e, spins: %e, %e, approx: %s" % (m1i, m2i, s1zi, s2zi, a)
 
         params.deltaF = 1.0/8
         params.fmax = 2048.
         try:
             hoff(params)
         except RuntimeError:
-            print("FD waveform generation failed for params\n" \
-                "masses: %e %e, spins: %e, %e, approx: %s" % (m1i, m2i, s1zi, s2zi, a) \
-                    , file=sys.stderr)
+            print >>sys.stderr, "FD waveform generation failed for params\n" \
+                "masses: %e %e, spins: %e, %e, approx: %s" % (m1i, m2i, s1zi, s2zi, a)

@@ -519,7 +519,7 @@ def TigerPostProcess(configfile):
 	#
 	#############################################################################
 
-	print('Script finished')
+	print 'Script finished'
 	"""
 	------------------------------------------------------------------------------
 	"""
@@ -691,7 +691,7 @@ class TigerRun:
 		NB: NOT READY FOR USE YET!
 		"""
 		if self.nsources == 0:
-			print("Nothing to fetch")
+			print "Nothing to fetch"
 		else:
 			# FIND THE NUMBER OF LINE FIRST SO THAT ONE CAN DIFFERENTIATE FILES
 			command = "" 
@@ -704,7 +704,7 @@ class TigerRun:
 				command+="'"
 			p = Popen(command, stdout=PIPE, stderr=PIPE,shell=True)
 			posteriorfilesizes = loadtxt(p.stdout, usecols=[0])[:-1]
-			print(shape(posteriorfilesizes))
+			print shape(posteriorfilesizes)
 
 			# PULLING THE POSTERIOR SAMPLES
 			command = "" 
@@ -717,7 +717,7 @@ class TigerRun:
 				command+="'"
 			p = Popen(command, stdout=PIPE, stderr=PIPE,shell=True)
 			self.posteriorsamples = loadtxt(p.stdout)
-			print(shape(self.posteriorsamples))
+			print shape(self.posteriorsamples)
 
 	
 	def applycut(self, st=8.0, bt=32.0):
@@ -854,7 +854,7 @@ class TigerSet:
 		APPLY DETECTION CUTS (SNR AND BAYESGR)
 		"""
 		
-		print("... Shuufling with seed", str(seed))
+		print "... Shuufling with seed", str(seed)
 
 		# CREATE NEW ORDER OF SOURCES
 		if (self.nsources != 0) and (self.nsources == shape(self.bayes)[0]):
@@ -898,7 +898,7 @@ class TigerSet:
 		"""
 		for loc in self.locations:
 			# CREATE PREPROCESSFILE
-			print('Writing preprocessfile')
+			print 'Writing preprocessfile'
 			preprocesstmp = 'tig_preprocess_tmp.txt'
 			preprocessfp = open(preprocesstmp,'w')
 			preprocessfp.write('local')
@@ -909,7 +909,7 @@ class TigerSet:
 			preprocessfp.write('\t')
 			preprocessfp.write(str(loc.subhyp))
 			preprocessfp.close()
-			print('Writing preprocessfile - done')
+			print 'Writing preprocessfile - done'
 
 			# UPLOAD FILE AND RUN: TESTING PHASE
 			command = ""
@@ -920,15 +920,15 @@ class TigerSet:
 			command += preprocesstmp
 			command += " "
 			command += clusters[loc.cluster]+":~/"
-			print(command)
+			print command
 			p = Popen(command, stdout=PIPE, stderr=PIPE,shell=True)
 			p.communicate()
 			if p.returncode == 0:
 				command = "gsissh "+clusters[loc.cluster]+" 'python "+path.basename(scriptfilename)+" -p "+preprocesstmp+"'"
-				print(command)
+				print command
 				p = Popen(command, stdout=PIPE, stderr=PIPE,shell=True)
-				print(p.stdout.read())
-				print(p.stderr.read())
+				print p.stdout.read()
+				print p.stderr.read()
 			exit(0)
 
 
@@ -942,7 +942,7 @@ def LoadPickledTigerSet(filename):
 	"""
 	LOAD FROM PICKLE
 	"""
-	print('... Loading file from pickle',filename)
+	print '... Loading file from pickle',filename
 	fp = open(filename,'rb')
 	return load(fp)
 
@@ -1105,7 +1105,7 @@ def TigerCreateCumFreq(tigerrun, axis):
 
 	# CHECK IF TOTAL ADDS UP TO TOTAL NUMBER OF SOURCES
 	if sum(freqs[-1,:]) != tigerrun.nsources:
-		print("Warning, some sources maybe out of the SNR range and are not plotted: SNR \in [%.1f:%.1f], %i sources missing" %(xlim[0], xlim[1], tigerrun.nsources-sum(freqs[-1,:])))
+		print "Warning, some sources maybe out of the SNR range and are not plotted: SNR \in [%.1f:%.1f], %i sources missing" %(xlim[0], xlim[1], tigerrun.nsources-sum(freqs[-1,:]))
 
 	# PLOT CUMULATIVE HIGHEST BAYES SIGNAL VERSUS NOISE
 	rcParams['legend.fontsize']=18 # MANUAL RESET FONTSIZE

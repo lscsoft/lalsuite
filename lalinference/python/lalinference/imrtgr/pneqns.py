@@ -94,8 +94,8 @@ def precession_eqns(t, y_vec, m1, m2):
 	Lmag = (eta*m**2./v)*(1.+(1.5+eta/6.)*v**2.)
 
 	# precession freqs. Eqs.(3.8) of Ajith (2011)
-	Omega1= Omega(v, m1, m2, S1, S2, Ln)
-	Omega2= Omega(v, m2, m1, S2, S1, Ln)
+        Omega1= Omega(v, m1, m2, S1, S2, Ln)
+        Omega2= Omega(v, m2, m1, S2, S1, Ln)
 
 	# spin precession eqns. Eqs.(3.7) of Ajith (2011)
 	dS1_dt = np.cross(Omega1, S1)

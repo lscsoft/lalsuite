@@ -66,7 +66,7 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
  * \brief Function to output a sample with logL values etc for the injection, if one is made.
  * Requires --inj, --outfile and optionally --event (if not 0).
  */
-LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *runState);
+void LALInferencePrintInjectionSample(LALInferenceRunState *runState);
 void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOData *IFOdata);
 /*@}*/
 

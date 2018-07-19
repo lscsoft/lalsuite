@@ -259,7 +259,7 @@ def get_framedir(trigtime,timeslide,ifo,frametype):
   command="/usr/bin/gw_data_find --observatory=%s --url-type=file --type=%s --gps-start-time=%.3f --gps-end-time=%.3f"%(ifo[0],frametype,scantime,scantime)
   datafind_stdout,datafind_stderr = system_call(command)
   if not datafind_stdout:
-    print(datafind_stderr)
+    print datafind_stderr
     exit("gw_data_find failed, exiting...")
   gwf_file = datafind_stdout.replace("file://localhost","").strip()
   gwf_dir = os.path.dirname(gwf_file).strip()
@@ -319,7 +319,7 @@ def fix_scriptfile(dagpath,dagfilename,executable):
 
   if len(executable.split())>1:
     if executable.split()[1] == 'scan':
-      print("scan found")
+      print "scan found"
       return
 
   #do the following if scan is not present
@@ -421,7 +421,7 @@ class OmegaScansDAG(pipeline.CondorDAG):
     #This is where we store data for a wiki table
     self.table_entries=[]
 
-    print("calling gw_data_find for each node...")
+    print "calling gw_data_find for each node..."
     for n in range(Nsources):
       timeslides={}
       if self.oddslimit_set:
@@ -437,7 +437,7 @@ class OmegaScansDAG(pipeline.CondorDAG):
           timeslides[ifo] = info[ifo][n]
           self.add_node(node)
         self.add_table_entry(info['trigtime'][n],timeslides,self.ifos,0.0)
-    print("success!")
+    print "succes!"
 
     self.write_table()
 
@@ -456,7 +456,7 @@ class OmegaScansDAG(pipeline.CondorDAG):
     """
 
     filename = os.path.join(self.outpath,"CBCwiki_table.txt")
-    print("writing CBC wiki table to \"%s\""%filename)
+    print "writing CBC wiki table to \"%s\""%filename
 
     outlier=None
     if self.config.has_option('cbcwikitable','outlier'):
@@ -612,7 +612,7 @@ class OmegaScanNode(pipeline.CondorDAGNode):
     #they will be removed, but the user is warned
     lockfile = os.path.join(outdir,"scan_%.0f"%trigtime,"%s_%.2f"%(ifo,scantime),"lock.txt")
     if os.path.isfile(lockfile):
-      print("WARNING: lock file found in output directory.\n         Deleting it now, but check that you did not forget to stop some ongoing run.")
+      print "WARNING: lock file found in output directory.\n         Deleting it now, but check that you did not forget to stop some ongoing run."
       system_call('rm %s'%lockfile)
 
     self.add_var_arg('%.3f'%scantime)
@@ -647,7 +647,7 @@ def main():
     with open("omegascanslist.txt","w") as f:
       f.write(ExampleSourceFile)
 
-    print("Example files \"omega_config.ini\" and \"omegascanslist.txt\" are created")
+    print "Example files \"omega_config.ini\" and \"omegascanslist.txt\" are created"
     sys.exit(0)
 
   if len(args) != 1:
@@ -670,9 +670,9 @@ def main():
   fix_subfile(dag.submitFile)
   fix_scriptfile(cp.get('paths','basedir'),dag.get_dag_file(),cp.get('omegapipe','executable'))
 
-  print('Successfully created DAG file.')
+  print 'Successfully created DAG file.'
   fulldagpath=os.path.join(cp.get('paths','basedir'),dag.get_dag_file())
-  print('Now run condor_submit_dag %s\n'%(fulldagpath))
+  print 'Now run condor_submit_dag %s\n'%(fulldagpath)
 
 
 

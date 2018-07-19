@@ -76,20 +76,20 @@ def _truncate_at_Kerr_limit(chif, behavior, fitname="this"):
         if behavior==bbh_Kerr_trunc_opts.trunc or behavior==bbh_Kerr_trunc_opts.trunc_silent:
           chif_trunc = np.sign(chif[idx_over])*1.0
           if behavior==bbh_Kerr_trunc_opts.trunc:
-            print("Truncating %d excessive chif values from %s fit to Kerr limit of +-1.0" % (np.size(idx_over), fitname))
+            print "Truncating %d excessive chif values from %s fit to Kerr limit of +-1.0" % (np.size(idx_over), fitname)
           chif[idx_over] = chif_trunc
         elif behavior==bbh_Kerr_trunc_opts.keep:
-          print("Note: %s fit predicts %d chif values in excess of the Kerr limit." % (fitname, np.size(idx_over)))
+          print "Note: %s fit predicts %d chif values in excess of the Kerr limit." % (fitname, np.size(idx_over))
         elif behavior==bbh_Kerr_trunc_opts.err:
           raise ValueError("%s fit predicts %d chif values in excess of the Kerr limit." % (fitname, np.size(idx_over)))
       else:
         if behavior==bbh_Kerr_trunc_opts.trunc or behavior==bbh_Kerr_trunc_opts.trunc_silent:
           chif_trunc = np.sign(chif)*1.0
           if behavior==bbh_Kerr_trunc_opts.trunc:
-            print("Truncating excessive chif of %f from %s fit to Kerr limit of %f" % (chif, fitname, chif_trunc))
+            print "Truncating excessive chif of %f from %s fit to Kerr limit of %f" % (chif, fitname, chif_trunc)
           chif = chif_trunc
         elif behavior==bbh_Kerr_trunc_opts.keep:
-          print("Note: %s fit predicts chif of %f in excess of the Kerr limit." % (fitname, chif))
+          print "Note: %s fit predicts chif of %f in excess of the Kerr limit." % (fitname, chif)
         elif behavior==bbh_Kerr_trunc_opts.err:
           raise ValueError("%s fit predicts chif of %f in excess of the Kerr limit." % (fitname, chif))
     return chif
@@ -432,9 +432,9 @@ def bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, ch
 
     if fitname==bbh_final_state_fits.pan2011:
        if np.any(chi1!=0) or np.any(chi2!=0) or np.any(tilt1!=0) or np.any(tilt2!=0):
-          print("Note: Pan2011 fit does not use spins.")
+          print "Note: Pan2011 fit does not use spins."
        if chif is not None:
-          print("Note: Precomputed chif not used by this fit.")
+          print "Note: Precomputed chif not used by this fit."
        mf = bbh_final_mass_non_spinning_Panetal(m1, m2)
     elif fitname==bbh_final_state_fits.hlz2014:
        mf = bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1proj, chi2proj, version="2014", chif=chif)
@@ -442,15 +442,15 @@ def bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, ch
        mf = bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1proj, chi2proj, version="2016", chif=chif)
     elif fitname==bbh_final_state_fits.phenD:
        if chif is not None:
-          print("Note: Precomputed chif not used by this fit.")
+          print "Note: Precomputed chif not used by this fit."
        mf = bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1proj, chi2proj)
     elif fitname==bbh_final_state_fits.uib2016:
        if chif is not None:
-          print("Note: Precomputed chif not used by this fit.")
+          print "Note: Precomputed chif not used by this fit."
        mf = bbh_final_mass_non_precessing_UIB2016(m1, m2, chi1proj, chi2proj, version="v2")
     elif fitname==bbh_final_state_fits.uib2016v1:
        if chif is not None:
-          print("Note: Precomputed chif not used by this fit.")
+          print "Note: Precomputed chif not used by this fit."
        mf = bbh_final_mass_non_precessing_UIB2016(m1, m2, chi1proj, chi2proj, version="v1")
     else:
        raise ValueError("Unrecognized fit name.")
@@ -489,7 +489,7 @@ def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, tr
 
     if fitname==bbh_final_state_fits.pan2011:
        if np.any(chi1!=0) or np.any(chi2!=0) or np.any(tilt1!=0) or np.any(tilt2!=0):
-          print("Note: Pan2011 fit does not use spins.")
+          print "Note: Pan2011 fit does not use spins."
        chif = bbh_final_spin_non_spinning_Panetal(m1, m2)
     elif fitname==bbh_final_state_fits.hlz2014:
        chif = bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1proj, chi2proj, version="2014")
@@ -687,10 +687,10 @@ def bbh_UIBfits_setup(m1, m2, chi1, chi2):
     # symmetric mass ratio
     eta  = m1*m2/msq
     if np.any(eta>0.25):
-      print("Truncating eta from above to 0.25. This should only be necessary in some rounding corner cases, but better check your m1 and m2 inputs...")
+      print "Truncating eta from above to 0.25. This should only be necessary in some rounding corner cases, but better check your m1 and m2 inputs..."
       eta = np.minimum(eta,0.25)
     if np.any(eta<0.0):
-      print("Truncating negative eta to 0.0. This should only be necessary in some rounding corner cases, but better check your m1 and m2 inputs...")
+      print "Truncating negative eta to 0.0. This should only be necessary in some rounding corner cases, but better check your m1 and m2 inputs..."
       eta = np.maximum(eta,0.0)
     eta2 = eta*eta
     eta3 = eta2*eta

@@ -21,7 +21,6 @@
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceProposal.h>
-#include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceHDF5.h>
 #include <lal/LALInferencePriorVolumes.h>
 
@@ -1210,13 +1209,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
         XLALH5FileAddScalarAttribute(groupPtr, "cpu_time", &execution_time, LAL_D_TYPE_CODE);
       }
 
-      LALInferenceVariables *injParams = NULL;
-      if ( (injParams=LALInferencePrintInjectionSample(runState)) )
-      {
-        LALInferenceH5VariablesArrayToDataset(groupPtr, &injParams, 1, "injection_params");
-        LALInferenceClearVariables(injParams);
-        XLALFree(injParams);
-      }
       XLALH5FileClose(h5file);
     }
   
@@ -1573,8 +1565,10 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceVariables oldParams;
     /* Single thread here */
     LALInferenceThreadState *threadState = runState->threads[0];
+    LALInferenceIFOData *data=runState->data;
     REAL8 tmp;
     REAL8 Target=0.3;
+    char tmpName[320];
     REAL8 logLold=*(REAL8 *)LALInferenceGetVariable(threadState->currentParams,"logL");
     memset(&oldParams,0,sizeof(oldParams));
     LALInferenceCopyVariables(threadState->currentParams,&oldParams);
@@ -1594,6 +1588,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     REAL8 logLnew=0.0;
     UINT4 sub_iter=0;
     UINT4 tries=0;
+    UINT4 ifo=0;
     REAL8 counter=1.;
     UINT4 BAILOUT=100*testnumber; /* If no acceptance after 100 tries, will exit and the sampler will try a different starting point */
     const char *extra_names[]={"logL","optimal_snr","matched_filter_snr","deltalogL"}; /* Names for parameters to be stripped when sampling prior */
@@ -1636,6 +1631,17 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
                tmp=logLnew-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
                LALInferenceAddVariable(threadState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
             }
+            ifo=0;
+            data=runState->data;
+            while(data)
+            {
+               if(!threadState->model->ifo_loglikelihoods) break;
+               tmp=threadState->model->ifo_loglikelihoods[ifo] - data->nullloglikelihood;
+               sprintf(tmpName,"deltalogl%s",data->name);
+               LALInferenceAddVariable(threadState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+               ifo++;
+               data=data->next;
+            }
             LALInferenceCopyVariables(threadState->currentParams,&oldParams);
             logLold=logLnew;
             threadState->currentLikelihood=logLnew;
@@ -1656,6 +1662,16 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
                tmp=logLnew-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
                LALInferenceAddVariable(threadState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
             }
+            ifo=0;
+            data=runState->data;
+            while(data && threadState->model->ifo_loglikelihoods)
+            {
+              tmp=threadState->model->ifo_loglikelihoods[ifo] - data->nullloglikelihood;
+              sprintf(tmpName,"deltalogl%s",data->name);
+              LALInferenceAddVariable(threadState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+              ifo++;
+              data=data->next;
+            }
     }
 
     /* Compute some statistics for information */
@@ -1664,33 +1680,13 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceSetVariable(runState->algorithmParams,"accept_rate",&accept_rate);
     LALInferenceSetVariable(runState->algorithmParams,"sub_accept_rate",&sub_accept_rate);
     /* Adapt the sloppy fraction toward target acceptance of outer chain */
-    if(isfinite(logLmin))
-    {
+    if(isfinite(logLmin)){
         if((REAL8)accept_rate>Target) { sloppyfraction+=5.0/(REAL8)Nmcmc;}
         else { sloppyfraction-=5.0/(REAL8)Nmcmc;}
         if(sloppyfraction>maxsloppyfraction) sloppyfraction=maxsloppyfraction;
-        if(sloppyfraction<minsloppyfraction) sloppyfraction=minsloppyfraction;
-        LALInferenceSetVariable(runState->algorithmParams,"sloppyfraction",&sloppyfraction);
+	if(sloppyfraction<minsloppyfraction) sloppyfraction=minsloppyfraction;
 
-        /* Update Nmcmc 
-        * Estimate autocorrelation length of chain using acceptance fraction
-        ACL = (2/acc) - 1
-        multiplied by a safety margin of 5
-        Uses moving average with decay time tau iterations (default: self.poolsize)
-        Taken from W. Farr's github.com/farr/Ensemble.jl
-        */
-        double tau = (double) LALInferenceGetINT4Variable(runState->algorithmParams, "Nlive");
-        double nmcmc_exact = (REAL8) Nmcmc;
-        double safety = 5.0;
-        if(accept_rate==0.0)
-        {
-            nmcmc_exact = (1.0 + 1.0/tau)*nmcmc_exact;
-        }
-        else
-        {
-            nmcmc_exact = (1.0 - 1.0/tau)*nmcmc_exact + (safety/tau)*(2.0/sub_accept_rate - 1.0);
-        }
-        LALInferenceSetINT4Variable(runState->algorithmParams, "Nmcmc", (INT4) nmcmc_exact);
+	LALInferenceSetVariable(runState->algorithmParams,"sloppyfraction",&sloppyfraction);
     }
     /* Cleanup */
     LALInferenceClearVariables(&oldParams);

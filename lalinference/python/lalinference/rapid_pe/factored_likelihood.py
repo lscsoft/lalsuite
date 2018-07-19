@@ -19,7 +19,7 @@ Code to compute the log likelihood of parameters of a gravitational waveform. Pr
 
 Requires python SWIG bindings of the LIGO Algorithms Library (LAL)
 """
-from __future__ import print_function
+
 import lal
 import lalsimulation as lalsim
 from lalinference.rapid_pe import lalsimutils as lsu
@@ -106,17 +106,17 @@ def precompute_likelihood_terms(event_time_geo, t_window, P, data_dict,
         t = np.arange(N_window) * P.deltaT\
                 + float(rho_epoch + N_shift * P.deltaT )
         if verbose:
-            print("For detector", det, "...")
-            print("\tData starts at %.20g" % float(data_dict[det].epoch))
-            print("\trholm starts at %.20g" % float(rho_epoch))
-            print("\tEvent time at detector is: %.18g" % float(t_det))
-            print("\tInterpolation window has half width %g" % t_window)
-            print("\tComputed t_shift = %.20g" % t_shift)
-            print("\t(t_shift should be t_det - t_window - t_rholm = %.20g)" %\
-                    (t_det - t_window - float(rho_epoch)))
-            print("\tInterpolation starts at time %.20g" % t[0])
-            print("\t(Should start at t_event - t_window = %.20g)" %\
-                    (float(rho_epoch + N_shift * P.deltaT)))
+            print "For detector", det, "..."
+            print "\tData starts at %.20g" % float(data_dict[det].epoch)
+            print "\trholm starts at %.20g" % float(rho_epoch)
+            print "\tEvent time at detector is: %.18g" % float(t_det)
+            print "\tInterpolation window has half width %g" % t_window
+            print "\tComputed t_shift = %.20g" % t_shift
+            print "\t(t_shift should be t_det - t_window - t_rholm = %.20g)" %\
+                    (t_det - t_window - float(rho_epoch))
+            print "\tInterpolation starts at time %.20g" % t[0]
+            print "\t(Should start at t_event - t_window = %.20g)" %\
+                    (float(rho_epoch + N_shift * P.deltaT))
         # The minus N_shift indicates we need to roll left
         # to bring the desired samples to the front of the array
         rholms_intp[det] =  interpolate_rho_lms(rholms[det], t)
@@ -414,8 +414,8 @@ def compute_mode_cross_term_ip(hlms, psd, fmin, fMax, fNyq, deltaF,
         for mode2 in hlms.keys():
             crossTerms[ (mode1,mode2) ] = IP.ip(hlms[mode1], hlms[mode2])
             if verbose:
-                print("       : U populated ", (mode1, mode2), "  = ",\
-                        crossTerms[(mode1,mode2) ])
+                print "       : U populated ", (mode1, mode2), "  = ",\
+                        crossTerms[(mode1,mode2) ]
 
     return crossTerms
 
