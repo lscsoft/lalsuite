@@ -61,7 +61,7 @@
  * list is not iterated over.  The hplus and hcross time series objects
  * will be allocated by this function.  The time-at-geocentre is applied,
  * but the time shift offset must be applied separately.  delta_t is the
- * sample interval for the time series.  The return value is 0 in success,
+ * sample interval for the time series.  The return value is 0 on success,
  * non-0 on failure.
  */
 int XLALGenerateSimBurst(

@@ -190,6 +190,11 @@ int FreeMem(StringTemplate *strtemplate, int NTemplates);
 /* Clustering comparison function */
 static int XLALCompareStringBurstByTime(const SnglBurst * const *, const SnglBurst * const *);
 
+/* Cluster functions */
+static void XLALStringBurstCluster(SnglBurst *, const SnglBurst *);
+static void XLALClusterSnglBurstTable(SnglBurst **, int (*)(const SnglBurst * const *, const SnglBurst * const *), int (*)(const SnglBurst * const *, const SnglBurst * const *), void (*)(SnglBurst *, const SnglBurst *));
+
+
 /************************************* MAIN PROGRAM *************************************/
 
 int main(int argc,char *argv[])
@@ -342,6 +347,63 @@ static int XLALCompareStringBurstByTime(
     return(-1);
   return(0);
 }
+
+
+/**
+ * cluster events a and b, storing result in a; takes one with largest snr
+ */
+static void XLALStringBurstCluster(
+  SnglBurst *a,
+  const SnglBurst *b
+)
+{
+  if(b->snr > a->snr)
+    *a = *b;
+}
+
+
+/**
+ * Recursively cluster a linked list of SnglBurst events until the list
+ * stops changing.  testfunc() should return 0 if the two given events are to
+ * be clustered.  If bailoutfunc() is provided (not NULL), then testfunc() will
+ * be used to sort the trigger list before each clustering pass and
+ * bailoutfunc() will be called to check for the option of terminating the
+ * inner loop early.  In the ideal case, use of bailoutfunc() converts this
+ * algorithm from O(n^3) to order O(n log n).  The clusterfunc() should replace
+ * the SnglBurst event pointed to by its first argument with the cluster
+ * of that event and the event pointed to by the second argument.
+ */
+static void XLALClusterSnglBurstTable (
+  SnglBurst **list,
+  int (*bailoutfunc)(const SnglBurst * const *, const SnglBurst * const *),
+  int (*testfunc)(const SnglBurst * const *, const SnglBurst * const *),
+  void (*clusterfunc)(SnglBurst *, const SnglBurst *)
+)
+{
+  int did_cluster;
+  SnglBurst *a, *b, *prev;
+
+  do {
+    did_cluster = 0;
+
+    if(bailoutfunc)
+      XLALSortSnglBurst(list, testfunc);
+
+    for(a = *list; a; a = a->next)
+      for(prev = a, b = a->next; b; b = prev->next) {
+        if(!testfunc((const SnglBurst * const *) &a, (const SnglBurst * const *) &b)) {
+          clusterfunc(a, b);
+          prev->next = b->next;
+          XLALDestroySnglBurst(b);
+          did_cluster = 1;
+        } else if(bailoutfunc && bailoutfunc((const SnglBurst * const *) &a, (const SnglBurst * const *) &b))
+          break;
+        else
+          prev = b;
+      }
+  } while(did_cluster);
+}
+
 
 /*******************************************************************************/
 

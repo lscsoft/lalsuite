@@ -33,7 +33,6 @@ burst searches in the past.
 import math
 
 
-from glue import segments
 import lal
 
 
@@ -58,7 +57,7 @@ def XLALTimeDelayFromEarthCenter(pos, ra, dec, gps):
 #
 # =============================================================================
 #
-#                                Plotting Tools
+#                               Time Generators
 #
 # =============================================================================
 #
@@ -117,34 +116,3 @@ def GMST_0hs(start, end):
 	while midnight < end:
 		yield midnight
 		midnight = gmst_0h(midnight + 86402)
-
-
-#
-# =============================================================================
-#
-#                                Segment Lists
-#
-# =============================================================================
-#
-
-
-def gmst_days(gps_start, gps_stop):
-	"""
-	Generates a segmentlist whose segments are the Greenwich Mean
-	Sidereal days spanning the given range of GPS times.  Input and
-	output times are all GPS seconds.
-	"""
-	# construct an iterator for computing sequential 0h GMST in
-	# LIGOTimeGPS.  86402 == same constant seen above in in
-	# UTCMidnights.
-	gmst_0hs = GMST_0hs(gmst_0h(gps_start), gps_stop + 86402)
-
-	# initialize a segmentlist with the first sidereal day
-	l = segments.segmentlist([segments.segment(gmst_0hs.next(), gmst_0hs.next())])
-
-	# append each subsequent sideral day as another segment
-	while l[-1][1] < gps_stop:
-		l.append(segments.segment(l[-1][1], gmst_0hs.next()))
-
-	# done
-	return l
