@@ -156,6 +156,9 @@ int main(int argc, char *argv[]){
   /* write injection with noise evidence information from algorithm */
   LALInferencePrintInjectionSample(state);
 
+  if (LALInferenceGetProcParamVal(state->commandLine, "--dont-sample")){
+	  return(0);
+  }
   /* Call nested sampling algorithm */
   state->algorithm(state);
 
