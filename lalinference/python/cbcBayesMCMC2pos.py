@@ -22,6 +22,9 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
+import matplotlib
+matplotlib.use('Agg') #sets backend to not need to open windows
+
 import numpy as np
 import astropy.table as apt
 import scipy.integrate as si
