@@ -2140,23 +2140,26 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
 
   LALInferenceAddVariable(vars, "chirpmass", &chirpmass, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "q", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   if  (LALInferenceCheckVariable(vars,"distance"))
   	LALInferenceAddVariable(vars, "distance", &dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   else if  (LALInferenceCheckVariable(vars,"logdistance")){
 	  REAL8 logdistance=log(dist);
   	LALInferenceAddVariable(vars, "logdistance", &logdistance, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-	
   }
-  //LALInferenceAddVariable(vars, "costheta_jn", &cosinclination, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "polarisation", &(psi), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "phase", &phase, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
+  /* Those will work even if the user is working with the detector-frame variables because SKY_FRAME is set 
+  to zero while calculating the injected logL in LALInferencePrintInjectionSample */  
   LALInferenceAddVariable(vars, "declination", &dec, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "rightascension", &ra, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
+
   LALInferenceAddVariable(vars, "LAL_APPROXIMANT", &injapprox, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "LAL_PNORDER",&order,LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "LAL_AMPORDER", &(theEventTable->amp_order), LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-	  
+
 	REAL8 thetaJN,phiJL,theta1,theta2,phi12,chi1,chi2;
 	/* Convert cartesian spin coordinates to system-frame variables*/
 	
@@ -2239,6 +2242,23 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
         fprintf(stdout,"Unable to print injection sample: No approximant/PN order set\n");
         return;
     }
+
+    REAL8 fref = 100.;
+    if(LALInferenceGetProcParamVal(runState->commandLine,"--inj-fref")) {
+      fref = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--inj-fref")->value);
+    }
+	LALInferenceAddVariable(injparams,"f_ref",(void *)&fref,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+
+	UINT4 azero=0;
+	LALInferenceAddVariable(injparams,"SKY_FRAME",(void *)&azero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	/* remove eventual SKY FRAME vars since they will contain garbage*/
+	if (LALInferenceCheckVariable(injparams,"t0"))
+		LALInferenceRemoveVariable(injparams,"t0");
+	if (LALInferenceCheckVariable(injparams,"cosalpha"))
+		LALInferenceRemoveVariable(injparams,"cosalpha");
+	if (LALInferenceCheckVariable(injparams,"azimuth"))
+		LALInferenceRemoveVariable(injparams,"azimuth");
+	
     /* Fill named variables */
     LALInferenceInjectionToVariables(theEventTable, injparams);
 
@@ -2264,12 +2284,6 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
         LALInferenceAddVariable(injparams, tmpName, &tmp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
         data=data->next;
     }
-	
-    REAL8 fref = 100.;
-    if(LALInferenceGetProcParamVal(runState->commandLine,"--inj-fref")) {
-      fref = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--inj-fref")->value);
-    }
-	LALInferenceAddVariable(injparams,"f_ref",(void *)&fref,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	
     /* Save to file */
     outfile=fopen(fname,"w");

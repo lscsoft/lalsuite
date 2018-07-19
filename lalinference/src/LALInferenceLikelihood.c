@@ -504,7 +504,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     INT4 SKY_FRAME=0;
     if(LALInferenceCheckVariable(currentParams,"SKY_FRAME"))
       SKY_FRAME=*(INT4 *)LALInferenceGetVariable(currentParams,"SKY_FRAME");
-
+	printf("SKY FRAME IS %d\n\n",SKY_FRAME);
     if(SKY_FRAME==0){
       /* determine source's sky location & orientation parameters: */
       ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
