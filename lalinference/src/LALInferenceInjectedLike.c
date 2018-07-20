@@ -1,7 +1,7 @@
 /*
- *  InferenceNest.c:  Nested Sampling using LALInference
+ *  LALInferenceInjectedLike.c: Util bin to create an *injection file with the true parameters and the injected logL/P
  *
- *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
+ *  Copyright (C) 2018 salvatore vitale 
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -30,7 +30,6 @@
 #include <lal/StringInput.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/TimeSeries.h>
-#include <lal/LALInferenceNestedSampler.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceLikelihood.h>
@@ -46,10 +45,8 @@
 int main(int argc, char *argv[]){
   int helpflag=0;
   char help[]="\
-  LALInferenceNest:\n\
-  Bayesian analysis tool using Nested Sampling algorithm\n\
-  for CBC analysis. Uses LALInference library for back-end.\n\n\
-  Arguments for each section follow:\n\n";
+  LALInferenceInjectedLike:\n\
+  Print the injected values of parameters and (delta)LogL/P \n";
 
   LALInferenceRunState *state;
   ProcessParamsTable *procParams=NULL;
@@ -81,14 +78,7 @@ int main(int argc, char *argv[]){
       exit(1);
       }
   }
-    char *outfile=ppt->value;
-    char headerfile[FILENAME_MAX+100];
-    FILE *fpout=NULL;
-    snprintf(headerfile,sizeof(headerfile),"%s_header.txt",outfile);
-    fpout=fopen(headerfile,"w");
-    fprintf(fpout,"LALInference version:%s,%s,%s,%s,%s\n", lalInferenceVCSInfo.vcsId,lalInferenceVCSInfo.vcsDate,lalInferenceVCSInfo.vcsBranch,lalInferenceVCSInfo.vcsAuthor,lalInferenceVCSInfo.vcsStatus);
-    fprintf(fpout,"%s\n",LALInferencePrintCommandLine(state->commandLine));
-    fclose(fpout);
+    
     }
   if (state == NULL) {
       if (!helpflag) {
@@ -109,13 +99,6 @@ int main(int argc, char *argv[]){
   * injectInspiralTD/FD are called! */
   LALInferenceApplyCalibrationErrors(data, procParams);
 
-  /* Set up the appropriate functions for the nested sampling algorithm */
-  if (state){
-    state->algorithm=&LALInferenceNestedSamplingAlgorithm;
-    state->evolve=&LALInferenceNestedSamplingOneStep;
-
-    state->proposalArgs = LALInferenceParseProposalArgs(state);
-  }
 
   if (!helpflag && LALInferenceGetProcParamVal(state->commandLine, "--roqtime_steps")){
 
@@ -130,17 +113,6 @@ int main(int argc, char *argv[]){
   /* Init the prior */
   LALInferenceInitCBCPrior(state);
 
-  /* Set up structures for nested sampling */
-  LALInferenceNestedSamplingAlgorithmInit(state);
-
-  if (state){
-    for(INT4 i=0;i<state->nthreads;i++)
-    {
-      state->threads[i]->cycle=LALInferenceSetupDefaultInspiralProposalCycle(state->threads[i]->proposalArgs);
-      LALInferenceRandomizeProposalCycle(state->threads[i]->cycle,state->GSLrandom);
-    }
-  }
-
   /* Choose the likelihood and set some auxiliary variables */
   LALInferenceInitLikelihood(state);
 
@@ -150,14 +122,8 @@ int main(int argc, char *argv[]){
     exit(0);
   }
 
-  /* Call setupLivePointsArray() to populate live points structures */
-  LALInferenceSetupLivePointsArray(state);
-
   /* write injection with noise evidence information from algorithm */
   LALInferencePrintInjectionSample(state);
-
-  /* Call nested sampling algorithm */
-  state->algorithm(state);
 
   /* end */
   return(0);

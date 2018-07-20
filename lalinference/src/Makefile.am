@@ -91,6 +91,7 @@ LDADD = liblalinference.la
 
 bin_PROGRAMS = \
 	lalinference_nest \
+	lalinference_injectedlike \
 	lalinference_burst \
 	lalinference_datadump \
 	lalinference_bench \
@@ -98,6 +99,7 @@ bin_PROGRAMS = \
 	$(END_OF_LIST)
 
 lalinference_nest_SOURCES = LALInferenceNest.c
+lalinference_injectedlike_SOURCES = LALInferenceInjectedLike.c
 lalinference_burst_SOURCES = LALInferenceBurst.c
 lalinference_datadump_SOURCES = LALInferenceDataDump.c
 lalinference_bench_SOURCES = LALInferenceBench.c
