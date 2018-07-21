@@ -2006,7 +2006,13 @@ class EngineJob(SingularityJob,pipeline.AnalysisJob):
       self.add_condor_cmd('request_cpus',self.machine_count)
       self.add_condor_cmd('request_memory',str(float(self.machine_count)*float(self.machine_memory)))
     if self.engine=='lalinferencenest':
-      self.add_condor_cmd('request_memory','4000') # 4GB RAM for high SNR BNS
+      self.add_condor_cmd('request_memory','2048') # 2GB RAM for high SNR BNS
+      if cp.has_option('condor','request_cpus'):
+          nthreads=cp.get('condor','request_cpus')
+      else:
+          nthreads=1
+      self.add_condor_cmd('environment','OMP_NUM_THREADS='+str(nthreads))
+      self.add_condor_cmd('request_cpus',str(nthreads))
     if cp.has_section(self.engine):
       if not ispreengine:
         self.add_ini_opts(cp,self.engine)
@@ -2015,8 +2021,6 @@ class EngineJob(SingularityJob,pipeline.AnalysisJob):
     self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
     self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).err'))
     # For LALInferenceNest demand only 1 thread (to be tuned later)
-    if self.engine=='lalinferencenest':
-            self.add_condor_cmd('environment','OMP_NUM_THREADS=1')
     if cp.has_option('condor','notification'):
         self.set_notification(cp.get('condor','notification'))
         if cp.has_option('resultspage','email'):
@@ -2405,6 +2409,8 @@ class ResultsPageJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     exe=cp.get('condor','resultspage')
     pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax) # Job always runs locally
+    # Increase priority of postproc script to complete postproc faster
+    self.add_condor_cmd('priority','10')
     if cp.has_option('condor','accounting_group'):
       self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
     if cp.has_option('condor','accounting_group_user'):
@@ -2592,6 +2598,8 @@ class MergeJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         exe=cp.get('condor','mergeNSscript')
       pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
       pipeline.AnalysisJob.__init__(self,cp,dax=dax)
+      # Increase priority of merge scripts to complete postproc faster
+      self.add_condor_cmd('priority','5')
       if cp.has_option('condor','accounting_group'):
         self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
       if cp.has_option('condor','accounting_group_user'):
