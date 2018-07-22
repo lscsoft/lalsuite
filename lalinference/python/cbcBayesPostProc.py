@@ -628,12 +628,7 @@ def cbcBayesPostProc(
       wfsection.write('<a href="calibration.png" target="_blank"><img src="calibration.png"/></a>')
      # if precessing spins do spin disk
     allin=1.0
-    for i in ['a1','tilt_spin1','a2','tilt_spin2']:
-      if not i in pos.names:
-        allin*=0.0
-    if allin ==0.0:
-      pass
-    else:
+    if set(['a1','a2','tilt1','tilt2']).issubset(pos.names):
       wftd=html_wf.insert_td(row,'',label='DiskPlot',legend=legend)
       wfsection=html.add_section_to_element('DiskPlot',wftd)
       lalinference.plot.make_disk_plot(pos, outpath=outdir)
