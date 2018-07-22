@@ -478,6 +478,11 @@ def plot_label(param):
       'dsigma2':r'$d\sigma_2$',
       'dsigma3':r'$d\sigma_3$',
       'dsigma4':r'$d\sigma_4$',
+      'optimal_snr':r'$\rho^{opt}$',
+      'h1_optimal_snr':r'$\rho^{opt}_{H1}$',
+      'l1_optimal_snr':r'$\rho^{opt}_{L1}$',
+      'v1_optimal_snr':r'$\rho^{opt}_{V1}$',
+      'matched_filter_snr':r'$\rho^{MF}$'
     }
 
   # Handle cases where multiple names have been used
@@ -3942,7 +3947,7 @@ def plot_one_param_pdf(posterior,plot1DParams,analyticPDF=None,analyticCDF=None,
     @param plotkde: Use KDE to smooth plot (default: False)
     """
 
-    # matplotlib.rcParams['text.usetex']=True
+    matplotlib.rcParams['text.usetex']=False
 
     param=plot1DParams.keys()[0].lower()
     histbins=plot1DParams.values()[0]

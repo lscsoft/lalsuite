@@ -9,12 +9,12 @@ __all__=('make_disk_plot',)
 def make_disk_plot(post,outpath=None):
   from matplotlib import pyplot as plt
   from matplotlib import rc
-  rc('text', usetex=True)
+  rc('text', usetex=False)
   rc('font', family='lmodern')
 
   small, big = 10, 12
   rc('axes', labelsize=big)
-  rc('text', fontsize=big)
+  rc('font', size=big)
   rc('legend', fontsize=small)
   rc('xtick', labelsize=small)
   rc('ytick', labelsize=small)
@@ -28,16 +28,13 @@ def make_disk_plot(post,outpath=None):
     return None
 
   a1='a1'
-  tilt1='tilt_spin1'
+  tilt1='tilt1'
   a2='a2'
-  tilt2='tilt_spin2'
+  tilt2='tilt2'
 
   names=post.names
-  allin=1.0
-  for i in [a1,tilt1,a2,tilt2]:
-    if not i in names:
-      allin*=0.0
-  if allin==0.0:
+  
+  if not set([a1,a2,tilt1,tilt2]).issubset(names):
     print("Cannot plot spin disk plot. Not all required spin parameters exist in the posterior file. Skipping...\n")
     return None
 
