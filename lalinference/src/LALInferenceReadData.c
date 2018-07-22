@@ -2474,7 +2474,7 @@ static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , char SNRpath[] ){
 */
 void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInferenceVariables *vars)
 {
-  UINT4 spinCheck=0;
+
   if(!vars) {
   XLALPrintError("Encountered NULL variables pointer");
   XLAL_ERROR_VOID(XLAL_EINVAL);
@@ -2483,46 +2483,12 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
   REAL8 q = theEventTable->mass2 / theEventTable->mass1;
   if (q > 1.0) q = 1.0/q;
 
-  REAL8 sx = theEventTable->spin1x;
-  REAL8 sy = theEventTable->spin1y;
-  REAL8 s1z = theEventTable->spin1z;
-
-  REAL8 a_spin1 = sqrt(sx*sx + sy*sy + s1z*s1z);
-
-  REAL8 theta_spin1, phi_spin1;
-  if (a_spin1 == 0.0) {
-    theta_spin1 = 0.0;
-    phi_spin1 = 0.0;
-  } else {
-    theta_spin1 = acos(s1z / a_spin1);
-    phi_spin1 = atan2(sy, sx);
-    if (phi_spin1 < 0.0) phi_spin1 += 2.0*M_PI;
-  }
-
-  sx = theEventTable->spin2x;
-  sy = theEventTable->spin2y;
-  REAL8 s2z = theEventTable->spin2z;
-
-  REAL8 a_spin2 = sqrt(sx*sx + sy*sy + s2z*s2z), theta_spin2, phi_spin2;
-  if (a_spin2 == 0.0) {
-    theta_spin2 = 0.0;
-    phi_spin2 = 0.0;
-  } else {
-    theta_spin2 = acos(s2z / a_spin2);
-    phi_spin2 = atan2(sy, sx);
-    if (phi_spin2 < 0.0) phi_spin2 += 2.0*M_PI;
-  }
-
-  /* Check for presence of spin in the injection */
-  if(a_spin1!=0.0 || a_spin2!=0.0) spinCheck=1;
-
   REAL8 psi = theEventTable->polarization;
   if (psi>=M_PI) psi -= M_PI;
 
   REAL8 injGPSTime = XLALGPSGetREAL8(&(theEventTable->geocent_end_time));
 
   REAL8 dist = theEventTable->distance;
-  REAL8 cosinclination = cos(theEventTable->inclination);
   REAL8 phase = theEventTable->coa_phase;
   REAL8 dec = theEventTable->latitude;
   REAL8 ra = theEventTable->longitude;
@@ -2533,38 +2499,59 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
   REAL8 m1=theEventTable->mass1;
   REAL8 m2=theEventTable->mass2;
   REAL8 chirpmass = theEventTable->mchirp;
-  LALInferenceAddVariable(vars, "mass1", &m1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(vars, "mass2", &m2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
   LALInferenceAddVariable(vars, "chirpmass", &chirpmass, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "q", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(vars, "distance", &dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(vars, "costheta_jn", &cosinclination, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  if  (LALInferenceCheckVariable(vars,"distance"))
+      LALInferenceAddVariable(vars, "distance", &dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  else if  (LALInferenceCheckVariable(vars,"logdistance")){
+      REAL8 logdistance=log(dist);
+      LALInferenceAddVariable(vars, "logdistance", &logdistance, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  }
   LALInferenceAddVariable(vars, "polarisation", &(psi), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "phase", &phase, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
   LALInferenceAddVariable(vars, "declination", &dec, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "rightascension", &ra, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
+
   LALInferenceAddVariable(vars, "LAL_APPROXIMANT", &injapprox, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "LAL_PNORDER",&order,LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(vars, "LAL_AMPORDER", &(theEventTable->amp_order), LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-  if(spinCheck){
-      if (theEventTable->spin1x==0 && theEventTable->spin1y==0.0 && theEventTable->spin2x==0.0 && theEventTable->spin2y==0.0){
-        LALInferenceAddVariable(vars, "a_spin1", &s1z, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-        LALInferenceAddVariable(vars, "a_spin2", &s2z, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
+    REAL8 thetaJN,phiJL,theta1,theta2,phi12,chi1,chi2;
+    /* Convert cartesian spin coordinates to system-frame variables*/
+   
+    REAL8 fref=100.0;
+    if (LALInferenceCheckVariable(vars,"f_ref"))
+        fref= *(REAL8*)  LALInferenceGetVariable(vars,"f_ref");
+    
+    LALSimInspiralFrameAxis frameAxis = LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT;
+    if((ppt=LALInferenceGetProcParamVal(commandLine,"--inj-spin-frame"))) {
+        frameAxis = XLALSimInspiralGetFrameAxisFromString(ppt->value);
       }
-      else{
-        LALInferenceAddVariable(vars, "a_spin1", &a_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-        LALInferenceAddVariable(vars, "a_spin2", &a_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-        LALInferenceAddVariable(vars, "theta_spin1", &theta_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-        LALInferenceAddVariable(vars, "theta_spin2", &theta_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-        LALInferenceAddVariable(vars, "phi_spin1", &phi_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-        LALInferenceAddVariable(vars, "phi_spin2", &phi_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-      }
-  }
+
+    XLALSimInspiralInvertPrecessingNewInitialConditions(&thetaJN,&phiJL,&theta1,&theta2,&phi12,&chi1,&chi2,theEventTable->inclination,theEventTable->spin1x,theEventTable->spin1y,theEventTable->spin1z,  theEventTable->spin2x, theEventTable->spin2y, theEventTable->spin2z,m1,m2,fref,phase,frameAxis);
+    
+    if (LALInferenceCheckVariable(vars,"a_spin1"))
+        LALInferenceAddVariable(vars,"a_spin1", &chi1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    if (LALInferenceCheckVariable(vars,"a_spin2"))
+        LALInferenceAddVariable(vars,"a_spin2", &chi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    if (LALInferenceCheckVariable(vars,"tilt_spin1"))
+        LALInferenceAddVariable(vars,"tilt_spin1", &theta1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    if (LALInferenceCheckVariable(vars,"tilt_spin2"))
+        LALInferenceAddVariable(vars,"tilt_spin2", &theta2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    if (LALInferenceCheckVariable(vars,"phi_jl"))
+        LALInferenceAddVariable(vars,"phi_jl", &phiJL, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    if (LALInferenceCheckVariable(vars,"phi12"))
+        LALInferenceAddVariable(vars,"phi12", &phi12, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    REAL8 costhetajn=cos(thetaJN);
+    LALInferenceAddVariable(vars, "costheta_jn", &costhetajn, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
 }
 
-void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
+LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
     int errnum=0;
     char *fname=NULL;
     char defaultname[]="injection_params.dat";
@@ -2583,7 +2570,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
 
     ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine,"--inj");
     if (!ppt)
-        return;
+        return(NULL);
 
     SimInspiralTableFromLIGOLw(&injTable, ppt->value, 0, 0);
 
@@ -2614,8 +2601,25 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
 
     if (!(approx && order)){
         fprintf(stdout,"Unable to print injection sample: No approximant/PN order set\n");
-        return;
+        return(NULL);
     }
+
+    REAL8 fref = 100.;
+    if(LALInferenceGetProcParamVal(runState->commandLine,"--inj-fref")) {
+      fref = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--inj-fref")->value);
+    }
+    LALInferenceAddVariable(injparams,"f_ref",(void *)&fref,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+
+    UINT4 azero=0;
+    LALInferenceAddVariable(injparams,"SKY_FRAME",(void *)&azero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    /* remove eventual SKY FRAME vars since they will contain garbage*/
+    if (LALInferenceCheckVariable(injparams,"t0"))
+        LALInferenceRemoveVariable(injparams,"t0");
+    if (LALInferenceCheckVariable(injparams,"cosalpha"))
+        LALInferenceRemoveVariable(injparams,"cosalpha");
+    if (LALInferenceCheckVariable(injparams,"azimuth"))
+        LALInferenceRemoveVariable(injparams,"azimuth");
+    
     /* Fill named variables */
     LALInferenceInjectionToVariables(theEventTable, injparams);
 
@@ -2629,18 +2633,19 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
         }
     }
     LALInferenceAddVariable(injparams, "logL", (void *)&injL,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
-    if (LALInferenceCheckVariable(runState->algorithmParams, "logZnoise")){
-        REAL8 tmp=injL-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
-        LALInferenceAddVariable(injparams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-    }
+    REAL8 logZnoise=LALInferenceNullLogLikelihood(runState->data);
+    REAL8 tmp2=injL-logZnoise;
+    LALInferenceAddVariable(injparams,"deltalogL",(void *)&tmp2,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    
     LALInferenceIFOData *data=runState->data;
     while(data) {
-        char tmpName[50];
+        char tmpName[320];
         REAL8 tmp=model->loglikelihood - data->nullloglikelihood;
         sprintf(tmpName,"deltalogl%s",data->name);
         LALInferenceAddVariable(injparams, tmpName, &tmp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
         data=data->next;
     }
+    
     /* Save to file */
     outfile=fopen(fname,"w");
     if(!outfile) {fprintf(stderr,"ERROR: Unable to open file %s for injection saving\n",fname); exit(1);}
@@ -2650,10 +2655,9 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
     LALInferencePrintSample(outfile, injparams);
 
     fclose(outfile);
-    LALInferenceClearVariables(injparams);
-    XLALFree(injparams);
-    return;
+    return(injparams);
 }
+
 
 void enforce_m1_larger_m2(SimInspiralTable* injEvent){
     /* Template generator assumes m1>=m2 thus we must enfore the same convention while injecting, otherwise spin2 will be assigned to mass1

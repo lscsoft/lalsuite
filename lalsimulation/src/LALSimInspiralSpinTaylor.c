@@ -3506,6 +3506,156 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(
 	return XLAL_SUCCESS;
 }
 
+/* This function does the inverse transformation of the one above (XLALSimInspiralTransformPrecessingNewInitialConditions)
+ * Takes the cartesian components of the spins as stored in a siminspiral table and returns the system-frame spin variables
+ * UNREVIEWED but tested by salvo
+ *
+ * */
+int XLALSimInspiralInvertPrecessingNewInitialConditions(
+        REAL8 *theta_jn,         /**< zenith angle between J and N (rad) [return]*/
+        REAL8 *phi_jl,   /**< azimuthal angle of L_N on its cone about J (rad) [return] */
+        REAL8 *tilt1,          /**< zenith angle between S1 and LNhat (rad) [return] */
+        REAL8 *tilt2,          /**< zenith angle between S2 and LNhat (rad) [return] */
+        REAL8 *phi12,   /**< difference in azimuthal angle btwn S1, S2 (rad) [return] */
+        REAL8 *chi1,    /**< dimensionless spin of body 1 */
+        REAL8 *chi2,    /**< dimensionless spin of body 2 */
+        const REAL8 incl,       /**< Inclination angle of L_N (returned) */
+        const REAL8 S1x,        /**< S1 x component (input) */
+        const REAL8 S1y,        /**< S1 y component (input) */
+        const REAL8 S1z,        /**< S1 z component (input) */
+        const REAL8 S2x,        /**< S2 x component (input) */
+        const REAL8 S2y,        /**< S2 y component (input) */
+        const REAL8 S2z,        /**< S2 z component (input) */
+        const REAL8 m1,         /**< mass of body 1 (solar mass) */
+        const REAL8 m2,         /**< mass of body 2 (solar mass) */
+        const REAL8 fRef,       /**< reference GW frequency (Hz) */
+        const REAL8 phiRef ,     /**< reference orbital phase */
+        const int axis /** frame choice */
+        )
+{
+   /* Check that fRef is sane */
+    if( fRef == 0. )
+    {
+        XLALPrintError("XLAL Error - %s: fRef=0 is invalid. Please pass in the starting GW frequency instead.\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    REAL8 eta, v0, Jnorm, tmp1, tmp2; // theta0, phi0, Jnorm, tmp1, tmp2;
+    REAL8 Jhatx, Jhaty, Jhatz,  Jx, Jy, Jz, Lmag;
+    REAL8 s1hatx,s1haty,s1hatz,s2hatx,s2haty,s2hatz;
+    REAL8 phi1, phi2;
+    REAL8 s1x, s1y, s1z, s2x, s2y, s2z,iota;
+    REAL8 theta0, phi0;
+    /* Transform to radiation-frame where N//z (view axis) */
+    printf("fref %f axis %d\n\n",fRef,axis);
+    printf("before Conditioning %f %f %f %f %f %f %f \n",incl,S1x,S1y,S1z,S2x,S2y,S2z);
+    XLALSimInspiralInitialConditionsPrecessingApproxs(&iota,&s1x,&s1y,&s1z,&s2x,&s2y,&s2z,incl,S1x,S1y,S1z,S2x,S2y,S2z,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI,fRef,phiRef,axis);
+    printf("after Conditioning %f %f %f %f %f %f %f \n",iota,s1x, s1y, s1z, s2x, s2y, s2z);
+    *chi1 = sqrt(s1x*s1x + s1y*s1y + s1z*s1z);
+    *chi2 = sqrt(s2x*s2x + s2y*s2y + s2z*s2z);
+    if ((*chi1) > 0.0){
+        s1hatx = s1x/(*chi1);
+        s1haty = s1y/(*chi1);
+        s1hatz = s1z/(*chi1);
+    }else{
+        s1hatx = 0.0;
+        s1haty = 0.0;
+        s1hatz = 0.0;
+    }
+
+    if ((*chi2) > 0.0){
+        s2hatx = s2x/(*chi2);
+        s2haty = s2y/(*chi2);
+        s2hatz = s2z/(*chi2);
+    }else{
+        s2hatx = 0.0;
+        s2haty = 0.0;
+        s2hatz = 0.0;
+    }
+
+
+    eta=m1*m2/(m1+m2)/(m1+m2);
+
+    v0 = cbrt( (m1+m2) * LAL_MTSUN_SI *LAL_PI * fRef );
+
+    Lmag = XLALSimInspiralLN(m1+m2,eta,v0)*(1.0 + v0*v0*XLALSimInspiralL_2PN(eta));
+    REAL8 Lmagx,Lmagy,Lmagz,Lhaty,Lhatx,Lhatz;
+    Lmagx=Lmag*sin(iota)*cos(0.0);
+    Lmagy=Lmag*sin(iota)*sin(0.0);
+    Lmagz=Lmag*cos(iota);
+    Lhatx=Lmagx/Lmag;
+    Lhaty=Lmagy/Lmag;
+    Lhatz=Lmagz/Lmag;
+
+    s1x = m1 * m1 * s1x;
+    s1y = m1 * m1 * s1y;
+    s1z = m1 * m1 * s1z;
+    s2x = m2 * m2 * s2x;
+    s2y = m2 * m2 * s2y;
+    s2z = m2 * m2 * s2z;
+    Jx = Lmagx+ s1x + s2x;
+    Jy = Lmagy+ s1y + s2y;
+    Jz = Lmagz + s1z + s2z;
+
+
+    Jnorm = sqrt( Jx*Jx + Jy*Jy + Jz*Jz);
+    Jhatx = Jx / Jnorm;
+    Jhaty = Jy / Jnorm;
+    Jhatz = Jz / Jnorm;
+    printf("Lhat %f %f %f -- Lmag %.3e \n",Lhatx,Lhaty,Lhatz,Lmag);
+    printf("Jhat %f %f %f -- Jmag %.3e \n",Jhatx,Jhaty,Jhatz,Jnorm);
+
+    *tilt1=acos(Lhatx*s1hatx+Lhaty*s1haty+Lhatz*s1hatz);
+    *tilt2=acos(Lhatx*s2hatx+Lhaty*s2haty+Lhatz*s2hatz);
+
+    phi0 = atan2(Jhaty, Jhatx);
+    phi0=LAL_PI-phi0;
+
+    ROTATEZ(phi0, Jhatx, Jhaty, Jhatz);
+    ROTATEZ(phi0, Lhatx, Lhaty, Lhatz);
+    ROTATEZ(phi0, s1hatx, s1haty, s1hatz);
+    ROTATEZ(phi0, s2hatx, s2haty, s2hatz);
+
+    printf("rotating by phi0 %f\n",phi0);
+    printf("Jhat %f %f %f -- Jmag %.3e \n",Jhatx,Jhaty,Jhatz,Jnorm);
+
+    *theta_jn= acos(Jhatz);
+
+    ROTATEY(*theta_jn, Jhatx, Jhaty, Jhatz);
+    ROTATEY(*theta_jn, Lhatx, Lhaty, Lhatz);
+    ROTATEY(*theta_jn, s1hatx, s1haty, s1hatz);
+    ROTATEY(*theta_jn, s2hatx, s2haty, s2hatz);
+
+    *phi_jl= atan2(Lhaty, Lhatx);
+     printf("rotated by thetajn %f\n",*theta_jn);
+     printf("L is now %f %f %f\n",Lhatx, Lhaty, Lhatz);
+     printf("atan2 is %f\n",atan2(Lhaty, Lhatx));
+    *phi_jl=LAL_PI-*phi_jl;
+     printf("phijl %f\n",*phi_jl);
+    ROTATEZ(*phi_jl, Jhatx, Jhaty, Jhatz);
+    ROTATEZ(*phi_jl, Lhatx, Lhaty, Lhatz);
+    ROTATEZ(*phi_jl, s1hatx, s1haty, s1hatz);
+    ROTATEZ(*phi_jl, s2hatx, s2haty, s2hatz);
+
+    theta0=acos(Lhatz);
+
+    ROTATEY(theta0, Jhatx, Jhaty, Jhatz);
+    ROTATEY(theta0, Lhatx, Lhaty, Lhatz);
+    ROTATEY(theta0, s1hatx, s1haty, s1hatz);
+    ROTATEY(theta0, s2hatx, s2haty, s2hatz);
+
+    phi1=atan2(s1haty,s1hatx);
+    phi2=atan2(s2haty,s2hatx);
+
+    if (phi2<phi1)
+        *phi12=phi2-phi1+LAL_TWOPI;
+    else
+        *phi12=phi2-phi1;
+
+    return XLAL_SUCCESS;
+
+}
+
 /**
  * Function to specify the desired orientation of the spin components of
  * a precessing binary.
