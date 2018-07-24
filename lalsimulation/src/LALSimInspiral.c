@@ -153,6 +153,8 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SpinTaylorT4Fourier),
     INITIALIZE_NAME(SpinTaylorT2Fourier),
     INITIALIZE_NAME(SpinDominatedWf),
+    INITIALIZE_NAME(NRSur7dq2_HM),
+    INITIALIZE_NAME(NRSur7dq2_L2only),
     INITIALIZE_NAME(NR_hdf5),
 };
 #undef INITIALIZE_NAME
@@ -870,6 +872,20 @@ int XLALSimInspiralChooseTDWaveform(
                     phiRef, i, deltaT, m1, m2, r, f_min, f_ref, S1x, S1y, S1z,
                     S2x, S2y, S2z, numrel_data_path);
             XLALFree(numrel_data_path);
+            break;
+        case NRSur7dq2_HM:
+            /* Waveform-specific sanity checks */
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralNRSur7dq2Polarizations(hplus, hcross,
+                    phiRef, i, deltaT, m1, m2, r, f_min, f_ref,
+                    S1x, S1y, S1z, S2x, S2y, S2z, false);
+            break;
+        case NRSur7dq2_L2only:
+            /* Waveform-specific sanity checks */
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralNRSur7dq2Polarizations(hplus, hcross,
+                    phiRef, i, deltaT, m1, m2, r, f_min, f_ref,
+                    S1x, S1y, S1z, S2x, S2y, S2z, true);
             break;
 
 
@@ -4056,6 +4072,8 @@ int XLALSimInspiralImplementedTDApproximants(
         case SEOBNRv4:
         case SEOBNRv4_opt:
         case NR_hdf5:
+        case NRSur7dq2_HM:
+        case NRSur7dq2_L2only:
             return 1;
 
         default:
@@ -4488,6 +4506,8 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SpinDominatedWf:
     case SEOBNRv3:
     case NR_hdf5:
+    case NRSur7dq2_HM:
+    case NRSur7dq2_L2only:
       spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
       break;
     case SpinTaylorF2:
@@ -4610,6 +4630,8 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SpinDominatedWf:
     case NumApproximants:
     case NR_hdf5:
+    case NRSur7dq2_HM:
+    case NRSur7dq2_L2only:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;
     case TaylorF2:

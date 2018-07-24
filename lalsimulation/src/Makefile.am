@@ -180,6 +180,8 @@ noinst_HEADERS = \
 	LALSimInspiraldEnergyFlux.c \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
+	LALSimIMRNRSur7dq2.h \
+	LALSimNRSurrogateUtilities.h \
 	LALSimNRTunedTides.h
 
 lib_LTLIBRARIES = liblalsimulation.la
@@ -252,7 +254,9 @@ liblalsimulation_la_SOURCES = \
 	unicorn.xpm \
 	LALSimInspiralHGimri.c \
 	LALSimFindAttachTime.c \
-        LALSimInspiralEOS.c
+        LALSimInspiralEOS.c \
+	LALSimIMRNRSur7dq2.c \
+	LALSimNRSurrogateUtilities.c
 
 nodist_liblalsimulation_la_SOURCES = LALSimulationBuildInfo.c
 

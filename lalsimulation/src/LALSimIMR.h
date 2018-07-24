@@ -48,6 +48,7 @@ extern "C" {
  * @defgroup LALSimIMRSEOBNRROM_c                LALSimIMRSEOBNRvxROMXXX.c
  * @defgroup LALSimIMRSEOBNRv2ChirpTime_c        LALSimIMRSEOBNRv2ChirpTime.c
  * @defgroup LALSimIMRPSpinInspiralRD_c          LALSimIMRPSpinInspiralRD.c
+ * @defgroup LALSimNRSur7dq2_c                   LALSimIMRNRSur7dq2.c
  * @}
  *
  * @addtogroup LALSimIMR_h
@@ -246,6 +247,55 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
         REAL8 s2z,                      /**< initial value of S2z */
         const char *NRDataFile          /**< Location of NR HDF file */
         );
+
+/* in module LALSimIMRNRSur7dq2.c */
+
+double XLALSimInspiralNRSur7dq2StartFrequency(
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 s1x,                      /**< initial value of S1x */
+        REAL8 s1y,                      /**< initial value of S1y */
+        REAL8 s1z,                      /**< initial value of S1z */
+        REAL8 s2x,                      /**< initial value of S2x */
+        REAL8 s2y,                      /**< initial value of S2y */
+        REAL8 s2z                      /**< initial value of S2z */
+);
+
+int XLALSimInspiralNRSur7dq2Polarizations(
+        REAL8TimeSeries **hplus,        /**< OUTPUT h_+ vector */
+        REAL8TimeSeries **hcross,       /**< OUTPUT h_x vector */
+        REAL8 phiRef,                   /**< orbital phase at reference pt. */
+        REAL8 inclination,              /**< inclination angle */
+        REAL8 deltaT,                   /**< sampling interval (s) */
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 distnace,                 /**< distance of source (m) */
+        REAL8 fMin,                     /**< start GW frequency (Hz) */
+        REAL8 fRef,                     /**< reference GW frequency (Hz) */
+        REAL8 s1x,                      /**< reference value of S1x */
+        REAL8 s1y,                      /**< reference value of S1y */
+        REAL8 s1z,                      /**< reference value of S1z */
+        REAL8 s2x,                      /**< reference value of S2x */
+        REAL8 s2y,                      /**< reference value of S2y */
+        REAL8 s2z,                      /**< reference value of S2z */
+        bool quadrupole_only            /**< If true, only use (2, +/-2) modes in the coorbital frame */
+);
+
+SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
+        REAL8 phiRef,                   /**< orbital phase at reference pt. */
+        REAL8 deltaT,                   /**< sampling interval (s) */
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 S1x,                      /**< x-component of the dimensionless spin of object 1 */
+        REAL8 S1y,                      /**< y-component of the dimensionless spin of object 1 */
+        REAL8 S1z,                      /**< z-component of the dimensionless spin of object 1 */
+        REAL8 S2x,                      /**< x-component of the dimensionless spin of object 2 */
+        REAL8 S2y,                      /**< y-component of the dimensionless spin of object 2 */
+        REAL8 S2z,                      /**< z-component of the dimensionless spin of object 2 */
+        REAL8 fMin,                     /**< start GW frequency (Hz) */
+        REAL8 fRef,                     /**< reference GW frequency (Hz) */
+        REAL8 distnace                  /**< distance of source (m) */
+);
 
 /* in module LALSimNRTunedTides.c */
 double XLALSimNRTunedTidesComputeKappa2T(
