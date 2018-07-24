@@ -38,6 +38,7 @@
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_interp.h>
 #include <lal/LALHashFunc.h>
+#include <lal/LALSimNeutronStar.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -2307,6 +2308,281 @@ void LALInferenceLambdaTsEta2Lambdas(REAL8 lambdaT, REAL8 dLambdaT, REAL8 eta, R
   *lambda1=((c-d)*lambdaT-(a-b)*dLambdaT)/(2.*(b*c-a*d));
   *lambda2=((c+d)*lambdaT-(a+b)*dLambdaT)/(2.*(a*d-b*c));
   return;
+}
+
+/* Find lambda1,2(m1,2|eos) for 4-piece polytrope EOS model */
+void LALInferenceLogp1GammasMasses2Lambdas(REAL8 logp1,REAL8 gamma1,REAL8 gamma2,REAL8 gamma3, REAL8 mass1, REAL8 mass2, REAL8 *lambda1, REAL8 *lambda2){
+
+// Convert to SI
+REAL8 logp1_si=logp1-1.0;
+double mass1_kg=mass1*LAL_MSUN_SI;
+double mass2_kg=mass2*LAL_MSUN_SI;
+
+// Make eos
+LALSimNeutronStarEOS *eos = NULL;
+LALSimNeutronStarFamily *fam = NULL;
+eos = XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(logp1_si, gamma1, gamma2, gamma3);
+fam = XLALCreateSimNeutronStarFamily(eos);
+
+// Calculating lambda1(m1|eos)
+double r = XLALSimNeutronStarRadius(mass1_kg, fam);
+double k = XLALSimNeutronStarLoveNumberK2(mass1_kg, fam);
+double c = mass1 * LAL_MRSUN_SI / r;
+*lambda1= (2.0/3.0) * k / pow(c , 5.0);
+
+// Calculating lambda2(m1|eos)
+r = XLALSimNeutronStarRadius(mass2_kg, fam);
+k = XLALSimNeutronStarLoveNumberK2(mass2_kg, fam);
+c = mass2 * LAL_MRSUN_SI / r;
+*lambda2= (2.0/3.0) * k / pow(c , 5.0);
+
+// Clean up
+XLALDestroySimNeutronStarFamily(fam);
+XLALDestroySimNeutronStarEOS(eos);
+}
+
+/* Find lambda1,2(m1,2|eos) for 4-piece polytrope EOS model */
+void LALInferenceSDGammasMasses2Lambdas(REAL8 gamma[], REAL8 mass1, REAL8 mass2, REAL8 *lambda1, REAL8 *lambda2, int size){
+
+// Convert to SI
+double mass1_kg=mass1*LAL_MSUN_SI;
+double mass2_kg=mass2*LAL_MSUN_SI;
+
+// Make eos
+LALSimNeutronStarEOS *eos = NULL;
+LALSimNeutronStarFamily *fam = NULL;
+eos = XLALSimNeutronStarEOSSpectralDecomposition(gamma,size);
+fam = XLALCreateSimNeutronStarFamily(eos);
+
+// Calculating lambda1(m1|eos)
+double r = XLALSimNeutronStarRadius(mass1_kg, fam);
+double k = XLALSimNeutronStarLoveNumberK2(mass1_kg, fam);
+double c = mass1 * LAL_MRSUN_SI / r;
+*lambda1= (2.0/3.0) * k / pow(c , 5.0);
+
+// Calculating lambda2(m1|eos)
+r = XLALSimNeutronStarRadius(mass2_kg, fam);
+k = XLALSimNeutronStarLoveNumberK2(mass2_kg, fam);
+c = mass2 * LAL_MRSUN_SI / r;
+*lambda2= (2.0/3.0) * k / pow(c , 5.0);
+
+// Clean up
+XLALDestroySimNeutronStarFamily(fam);
+XLALDestroySimNeutronStarEOS(eos);
+}
+
+/* Checks if EOS allows for acausal speed of sound and unphysical maximum masses */
+int LALInferenceEOSPhysicalCheck(LALInferenceVariables *params, ProcessParamsTable *commandLine){
+
+int ret;
+LALSimNeutronStarEOS *eos=NULL;
+LALSimNeutronStarFamily *fam=NULL;
+
+// If using 4-piece polytrope eos params...
+if(LALInferenceCheckVariable(params, "logp1") && LALInferenceCheckVariable(params, "gamma1") && LALInferenceCheckVariable(params, "gamma2") && LALInferenceCheckVariable(params, "gamma3"))
+{
+  // Retrieve EOS params from params linked list
+  double logp1=*(double *)LALInferenceGetVariable(params,"logp1");
+  double gamma1=*(double *)LALInferenceGetVariable(params,"gamma1");
+  double gamma2=*(double *)LALInferenceGetVariable(params,"gamma2");
+  double gamma3=*(double *)LALInferenceGetVariable(params,"gamma3");
+
+  // Convert to SI
+  REAL8 logp1_si=logp1-1.0;
+
+  // Make 4-piece polytrope eos
+  eos = XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(logp1_si,gamma1,gamma2,gamma3);
+}
+// Else if using 4-coeff spectral eos params...
+else if( LALInferenceCheckVariable(params,"SDgamma0") && LALInferenceCheckVariable(params,"SDgamma1") && LALInferenceCheckVariable(params,"SDgamma2") && LALInferenceCheckVariable(params,"SDgamma3"))
+{
+  // Retrieve EOS params from params linked list
+  double SDgamma0=*(double *)LALInferenceGetVariable(params,"SDgamma0");
+  double SDgamma1=*(double *)LALInferenceGetVariable(params,"SDgamma1");
+  double SDgamma2=*(double *)LALInferenceGetVariable(params,"SDgamma2");
+  double SDgamma3=*(double *)LALInferenceGetVariable(params,"SDgamma3");
+  double gamma[]={SDgamma0,SDgamma1,SDgamma2,SDgamma3};
+
+  if(LALInferenceSDGammaCheck(gamma, 4) == XLAL_FAILURE)
+    return XLAL_FAILURE;
+
+  // Make 4-piece polytrope eos
+  eos = XLALSimNeutronStarEOSSpectralDecomposition(gamma,4);
+}
+// Else fail, since you need an eos
+else {
+  fprintf(stdout,"NO EOS PARAMETERS FOUND\n");
+  return XLAL_FAILURE;
+}
+
+/* FIXME: This is a little clunky,
+  Check to make sure family will contain
+  enough pts for cspline interpolation */
+size_t ndat = 100;
+double *pdat;
+double *mdat;
+double *rdat;
+double *kdat;
+pdat = LALMalloc(ndat * sizeof(pdat));
+mdat = LALMalloc(ndat * sizeof(mdat));
+rdat = LALMalloc(ndat * sizeof(rdat));
+kdat = LALMalloc(ndat * sizeof(kdat));
+
+// Ensure mass turnover does not happen too soon
+const double logpmin = 75.5;
+double logpmax = log(XLALSimNeutronStarEOSMaxPressure(eos));
+double dlogp = (logpmax - logpmin) / 100;
+// Need at least 4 points
+for (int i = 0; i < 4; ++i) {
+   pdat[i] = exp(logpmin + i * dlogp);
+   XLALSimNeutronStarTOVODEIntegrate(&rdat[i], &mdat[i],
+   &kdat[i], pdat[i], eos);
+   /* determine if maximum mass has been found */
+   if (mdat[i] <= mdat[i-1]){
+      fprintf(stdout,"EOS has too few points. Sample rejected.\n");
+      // Clean up
+      LALFree(pdat);
+      LALFree(mdat);
+      LALFree(rdat);
+      LALFree(kdat);
+      XLALDestroySimNeutronStarFamily(fam);
+      XLALDestroySimNeutronStarEOS(eos);
+      return XLAL_FAILURE;
+    }
+}
+// Clean up
+LALFree(pdat);
+LALFree(mdat);
+LALFree(rdat);
+LALFree(kdat);
+
+fam = XLALCreateSimNeutronStarFamily(eos);
+
+// Determine which mass parameterization is used
+double mass1 = 0.;
+double mass2 = 0.;
+
+if(LALInferenceCheckVariable(params,"mass1") && LALInferenceCheckVariable(params,"mass2")) {
+  // If using (mass1,mass2) parameterization, no need to convert
+  mass1=*(double *)LALInferenceGetVariable(params,"mass1");
+  mass2=*(double *)LALInferenceGetVariable(params,"mass2");
+}
+else if(LALInferenceCheckVariable(params,"chirpmass") && LALInferenceCheckVariable(params,"q")) {
+  // Convert from (chirpmass,q) -> (m1,m2)
+  double chirpmass=*(double *)LALInferenceGetVariable(params,"chirpmass");
+  double q=*(double *)LALInferenceGetVariable(params,"q");
+  LALInferenceMcQ2Masses(chirpmass,q,&mass1,&mass2);
+}
+
+else if(LALInferenceCheckVariable(params, "chirpmass") && LALInferenceCheckVariable(params, "eta")) {
+  // Convert from (chirpmass,eta) -> (m1,m2)
+  double chirpmass=*(double *)LALInferenceGetVariable(params,"chirpmass");
+  double eta=*(double *)LALInferenceGetVariable(params,"eta");
+  LALInferenceMcEta2Masses(chirpmass,eta,&mass1,&mass2);
+}
+else {
+  // Else fail
+  fprintf(stdout,"ERROR: NO MASS PARAMETERS FOUND\n");
+  // Clean up
+  XLALDestroySimNeutronStarFamily(fam);
+  XLALDestroySimNeutronStarEOS(eos);
+  return XLAL_FAILURE;
+}
+
+// Convert to SI
+double mass1_kg= mass1*LAL_MSUN_SI;
+double mass2_kg= mass2*LAL_MSUN_SI;
+
+// Calculate speed of sound and max and min mass allowed by eos
+double min_mass_kg = XLALSimNeutronStarFamMinimumMass(fam);
+double max_mass_kg = XLALSimNeutronStarMaximumMass(fam);
+double pmax = XLALSimNeutronStarCentralPressure(max_mass_kg, fam);
+double hmax = XLALSimNeutronStarEOSPseudoEnthalpyOfPressure(pmax, eos);
+double vsmax = XLALSimNeutronStarEOSSpeedOfSoundGeometerized(hmax, eos);
+
+// Read in max observed NS mass, which eos must support
+REAL8 ns_max_mass = 0.;
+if(LALInferenceGetProcParamVal(commandLine,"--ns-max-mass")) {
+  ns_max_mass= atof(LALInferenceGetProcParamVal(commandLine,"--ns-max-mass")->value);
+}
+// If none, then set max to proposed mass, since EOS must support this mass anyway
+else{
+  ns_max_mass = mass2;
+}
+
+// If m1 and m2 are supported by min and max mass allowed by eos
+// and if the speed of sound is less than 1.1c (the 0.1 is some wiggle room, since eos is not exact)
+// and if the max-mass NS is supported
+if(mass1_kg <= max_mass_kg && mass2_kg <= max_mass_kg && mass1_kg >= min_mass_kg && mass2_kg >= min_mass_kg && vsmax <= 1.1 && max_mass_kg >= ns_max_mass*LAL_MSUN_SI){
+  ret=XLAL_SUCCESS;
+// Else fail
+}else{
+  // Clean up
+  ret=XLAL_FAILURE;
+}
+
+// Clean up
+XLALDestroySimNeutronStarFamily(fam);
+XLALDestroySimNeutronStarEOS(eos);
+LALCheckMemoryLeaks();
+return ret;
+}
+
+// Determines if current spectral parameters are within Adiabatic 'prior' range
+int LALInferenceSDGammaCheck(double gamma[], int size) {
+int i;
+int ret = XLAL_SUCCESS;
+double p0 = 4.43784199e-13;
+double xmax = 12.3081;
+double pmax = p0 * exp(xmax);
+size_t ndat = 500;
+
+double *pdat;
+double *adat;
+double *xdat;
+
+pdat = XLALCalloc(ndat, sizeof(*pdat));
+adat = XLALCalloc(ndat, sizeof(*adat));
+xdat = XLALCalloc(ndat, sizeof(*xdat));
+
+// Generating higher density portion of EOS with spectral decomposition
+double logpmax = log(pmax);
+double logp0 = log(p0);
+double dlogp = (logpmax-logp0)/ndat;
+// Calculating pressure and adiabatic index table
+for(i = 0;i < (int) ndat;i++)
+{
+  pdat[i] = exp(logp0 + dlogp*i);
+  xdat[i] = log(pdat[i]/p0);
+  adat[i] = AdiabaticIndex(gamma, xdat[i], size);
+}
+
+// Make sure all values are within Adiabatic Prior range
+for(i = 0;i<(int) ndat;i++) {
+  // FIXME: Should make range adjustable from the commandline
+  if(adat[i] < 0.6 || adat[i] > 4.5) {
+    ret =  XLAL_FAILURE;
+    break;
+  }
+}
+LALFree(pdat);
+LALFree(xdat);
+LALFree(adat);
+LALCheckMemoryLeaks();
+return ret;
+}
+
+/* Specral decomposition of eos's adiabatic index */
+double AdiabaticIndex(double gamma[],double x, int size)
+{
+        double Gamma, logGamma = 0;
+        int i;
+        for(i=0;i<size;i++)
+        {
+          logGamma += gamma[i]*pow(x,(double) i);
+        }
+        Gamma = exp(logGamma);
+        return Gamma;
 }
 
 static void deleteCell(LALInferenceKDTree *cell) {

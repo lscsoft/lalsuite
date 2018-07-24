@@ -61,6 +61,7 @@
 #include <lal/LALString.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimInspiralWaveformCache.h>
+#include <lal/LALSimNeutronStar.h>
 #include <lal/LALHashTbl.h>
 
 #include <lal/SFTutils.h>
@@ -467,7 +468,8 @@ typedef struct tagLALInferenceModel
   REAL8Window                 *window;        /** A window */
   REAL8                        padding; /** The padding of the above window */
   struct tagLALInferenceROQModel *roq; /** ROQ data */
-  int roq_flag;
+  int roq_flag;               /** Is ROQ enabled */
+  LALSimNeutronStarFamily     *eos_fam; /** Neutron Star equation of state family */
 
 } LALInferenceModel;
 
@@ -877,6 +879,21 @@ void LALInferenceQ2Eta(double q, double *eta);
 
 /** Convert from lambdaT, dLambdaT, and eta to lambda1 and lambda2. */
 void LALInferenceLambdaTsEta2Lambdas(REAL8 lambdaT, REAL8 dLambdaT, REAL8 eta, REAL8 *lambda1, REAL8 *lambda2);
+
+/** Calculate lambda1,2(m1,2|eos(logp1,gamma1,gamma2,gamma3)) */
+void LALInferenceLogp1GammasMasses2Lambdas(REAL8 logp1, REAL8 gamma1, REAL8 gamma2, REAL8 gamma3, REAL8 mass1, REAL8 mass2, REAL8 *lambda1, REAL8 *lambda2);
+
+/** Convert from spectral parameters to lambda1, lambda2 */
+void LALInferenceSDGammasMasses2Lambdas(REAL8 gamma[], REAL8 mass1, REAL8 mass2, REAL8 *lambda1, REAL8 *lambda2, int size);
+
+/** Check for causality violation and mass conflict given masses and eos */
+int LALInferenceEOSPhysicalCheck(LALInferenceVariables *params, ProcessParamsTable *commandLine);
+
+/** Specral decomposition of eos's adiabatic index */
+double AdiabaticIndex(double gamma[],double x, int size);
+
+/** Determine if the Adiabatic index is within 'prior' range */
+int LALInferenceSDGammaCheck(double gamma[], int size);
 
 /**
  * The kD trees in LALInference are composed of cells.  Each cell

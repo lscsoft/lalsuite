@@ -26,8 +26,13 @@
  */
 
 #include <lal/LALSimReadData.h>
+#include <lal/LALSimNeutronStar.h>
 #include <gsl/gsl_interp.h>
 
+void GLBoundConversion(double a, double b, double abcissae[],int nEval);
+double AdiabaticIndex(double gamma[],double x, int size);
+void resetAbcissae(double abcissae[]);
+static double eos_e_of_p_spectral_decomposition(double x, double gamma[],int size, double p0, double e0);
 /** @cond */
 
 /* Contents of the tabular equation of state data structure. */
@@ -201,9 +206,7 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     LALSimNeutronStarEOSDataTabular *data;
     size_t i;
     double *hdat;
-    double dhdp;
     double *rhodat;
-    double integrand_im1, integrand_i, integral;
 
     eos = LALCalloc(1, sizeof(*eos));
     data = LALCalloc(1, sizeof(*data));
@@ -221,31 +224,43 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     eos->dedp_of_p = eos_dedp_of_p_tabular;
     eos->v_of_h = eos_v_of_h_tabular;
 
-    /* compute enthalpy data by integrating (trapezoid rule) */
-    hdat = LALMalloc(ndat * sizeof(*hdat));
-    hdat[0] = 0.0;
-    dhdp = 1.0 / (edat[1] + pdat[1]);   /* first deriv is at second point */
-    for (i = 1; i < ndat; ++i) {
-        double prev = dhdp;
-        dhdp = 1.0 / (edat[i] + pdat[i]);
-        hdat[i] = hdat[i - 1] + 0.5 * (prev + dhdp) * (pdat[i] - pdat[i - 1]);
+    /* compute pseudo-enthalpy h from dhdp */
+    /* Integrate in log space:
+       dhdp = 1 / [e(p) + p]
+       h(p) = h(p0) + \int_p0^p dhdp dp
+       h(p) = h(p0) + \int_ln(p0)^ln(p) exp[ln(p) + ln(dhdp)] dln(p)
+    */
+    double * integrand;
+    double * log_pdat;
+    log_pdat = XLALCalloc(ndat-1, sizeof(*log_pdat));
+    integrand = LALMalloc((ndat-1) * sizeof(*integrand));
+    for (i = 0; i < ndat-1; ++i) {
+        log_pdat[i] = log(pdat[i+1]);
+        integrand[i] = exp(log_pdat[i] + log(1.0 / (edat[i+1] + pdat[i+1])));
     }
 
-    /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-    /*             CALCULATION OF RHO CURRENTLY RETURNS GARBAGE               */
-    /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-    /* compute rest-mass density by integrating (trapezoid rule) */
-    /* rho_i = rho_{i-1} exp(int_{e_{i-1}}^{e_i} de/(e+p)) */
+    gsl_interp_accel * dhdp_of_p_acc_temp = gsl_interp_accel_alloc();
+    gsl_interp * dhdp_of_p_interp_temp = gsl_interp_alloc(gsl_interp_linear, ndat-1);
+    gsl_interp_init(dhdp_of_p_interp_temp, log_pdat, integrand, ndat-1);
+
+    hdat = LALMalloc(ndat * sizeof(*hdat));
+    hdat[0] = 0.0;
+    // Do first point by hand
+    hdat[1] = hdat[0] + 0.5 * (1./(pdat[1]+edat[1])) * (pdat[1] - pdat[0]);
+    for (i = 1; i < ndat-1; ++i) {
+        hdat[i+1] = gsl_interp_eval_integ(dhdp_of_p_interp_temp, log_pdat, integrand,
+          log_pdat[0], log_pdat[i], dhdp_of_p_acc_temp);
+    }
+    gsl_interp_free(dhdp_of_p_interp_temp);
+    gsl_interp_accel_free(dhdp_of_p_acc_temp);
+
+    LALFree(log_pdat);
+    LALFree(integrand);
+
+    // Find rho from e, p, and h
     rhodat = LALMalloc(ndat * sizeof(*hdat));
-    rhodat[0] = 0.0;
-    rhodat[1] = edat[1];        /* essentially the same at low density */
-    integrand_im1 = 1.0 / (edat[1] + pdat[1]);
-    for (i = 2; i < ndat; i++) {
-        integrand_i = 1.0 / (edat[i] + pdat[i]);
-        integral =
-            0.5 * (integrand_im1 + integrand_i) * (edat[i] - edat[i - 1]);
-        integrand_im1 = integrand_i;
-        rhodat[i] = rhodat[i - 1] * exp(integral);
+    for (i=0; i < ndat; i++){
+        rhodat[i] = (edat[i]+pdat[i])/exp(hdat[i]);
     }
 
     data->hdat = hdat;
@@ -290,17 +305,6 @@ static LALSimNeutronStarEOS *eos_alloc_tabular(double *pdat, double *edat,
     return eos;
 }
 
-static int mystrcasecmp(const char *s1, const char *s2)
-{
-    while (*s1) {
-        int c1 = toupper(*s1++);
-        int c2 = toupper(*s2++);
-        if (c1 != c2)
-            return (c1 > c2) - (c1 < c2);
-    }
-    return 0;
-}
-
 /** @endcond */
 
 /**
@@ -343,9 +347,69 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
  * @details A known, installed, named tabulated equation of state data file is
  * read and the used to create the equation of state structure.  Presently
  * the known equations of state are:
+ * - ALF1
+ * - ALF2
+ * - ALF3
+ * - ALF4
+ * - AP1
+ * - AP2
+ * - AP3
  * - AP4
+ * - BBB2
+ * - BGN1H1
+ * - BPAL12
+ * - BSK19
+ * - BSK20
+ * - BSK21
+ * - ENG
  * - FPS
+ * - GNH3
+ * - GS1
+ * - GS2
+ * - H1
+ * - H2
+ * - H3
+ * - H4
+ * - H5
+ * - H6
+ * - H7
+ * - MPA1
+ * - MS1B
+ * - MS1
+ * - MS2
+ * - PAL6
+ * - PCL2
+ * - PS
+ * - QMC700
  * - SLY4
+ * - SLY
+ * - SQM1
+ * - SQM2
+ * - SQM3
+ * - WFF1
+ * - WFF2
+ * - WFF3
+ * We also include more modern equations from the CompOSE website
+ * https://compose.obspm.fr/ downloaded on 18 June 2018. These EOSs are:
+ * - APR
+ * - BHF_BBB2
+ * - KDE0V
+ * - KDE0V1
+ * - RS
+ * - SK255
+ * - SK272
+ * - SKA
+ * - SKB
+ * - SKI2
+ * - SKI3
+ * - SKI4
+ * - SKI5
+ * - SKI6
+ * - SKMP
+ * - SKOP
+ * - SLY2
+ * - SLY230A
+ * - SLY9
  * @param[in] name The name of the equation of state.
  * @return A pointer to neutron star equation of state structure.
  */
@@ -353,33 +417,261 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name)
 {
     static const char fname_base[] = "LALSimNeutronStarEOS_";
     static const char fname_extn[] = ".dat";
-    static const char *eos_names[] = {
-        "FPS",
-        "SLY4",
-        "AP4"
-    };
-    size_t n = XLAL_NUM_ELEM(eos_names);
+    size_t n = XLAL_NUM_ELEM(lalSimNeutronStarEOSNames);
     size_t i;
     char fname[FILENAME_MAX];
 
     for (i = 0; i < n; ++i)
-        if (mystrcasecmp(name, eos_names[i]) == 0) {
+        if (XLALStringCaseCompare(name, lalSimNeutronStarEOSNames[i]) == 0) {
             LALSimNeutronStarEOS *eos;
-            snprintf(fname, sizeof(fname), "%s%s%s", fname_base, eos_names[i],
+            snprintf(fname, sizeof(fname), "%s%s%s", fname_base, lalSimNeutronStarEOSNames[i],
                 fname_extn);
             eos = XLALSimNeutronStarEOSFromFile(fname);
             if (!eos)
                 XLAL_ERROR_NULL(XLAL_EFUNC);
-            snprintf(eos->name, sizeof(eos->name), "%s", eos_names[i]);
+            snprintf(eos->name, sizeof(eos->name), "%s", lalSimNeutronStarEOSNames[i]);
             return eos;
         }
 
     XLAL_PRINT_ERROR("Unrecognized EOS name %s...", name);
-    XLALPrintError("\tKnown EOS names are: %s", eos_names[0]);
+    XLALPrintError("\tKnown EOS names are: %s", lalSimNeutronStarEOSNames[0]);
     for (i = 1; i < n; ++i)
-        XLALPrintError(", %s", eos_names[i]);
+        XLALPrintError(", %s", lalSimNeutronStarEOSNames[i]);
     XLALPrintError("\n");
     XLAL_ERROR_NULL(XLAL_ENAME);
+}
+
+/* Returns energy density given a pressure and spectral decomposition parameters */
+static double eos_e_of_p_spectral_decomposition(double x, double gamma[], int size, double p0, double e0)
+{
+    // Integration/Placeholder variables
+    int i;
+    int j;
+    int nEval = 10;
+    double Integrand;
+    double IPrime;
+    double e, Mu;
+
+    // Declaring arrays needed for Gauss-Legendre abcissae and weights
+    double abcissae[nEval], abcissaePrime[nEval];
+    resetAbcissae(abcissae);
+    double weights[] = {
+       0.0666713443086881,
+       0.1494513491505806,
+       0.2190863625159820,
+       0.2692667193099963,
+       0.2955242247147529,
+       0.2955242247147529,
+       0.2692667193099963,
+       0.2190863625159820,
+       0.1494513491505806,
+       0.0666713443086881
+       };
+
+
+    /* Calculation of Mu */
+    Integrand = 0.0;
+
+    GLBoundConversion(0.0,x,abcissae, nEval);
+    for(i=0;i<nEval;i++)
+    {
+      Integrand += weights[i]*pow(AdiabaticIndex(gamma,abcissae[i],size),-1.0);
+    }
+
+    Integrand*=(x/2.0);
+    Mu = exp(-Integrand);
+    /* Calculation of integral in Eq. 7 of PRD 82, 103011 (2010) */
+    Integrand = 0.0;
+
+    for(i=0;i<nEval;i++)
+    {
+      IPrime = 0.0;
+      resetAbcissae(abcissaePrime);
+      GLBoundConversion(0.0,abcissae[i],abcissaePrime, nEval);
+
+      for(j=0;j<nEval;j++)
+      {
+        IPrime += weights[j]*pow(AdiabaticIndex(gamma,abcissaePrime[j],size),-1.0);
+      }
+
+      IPrime *= (abcissae[i]/2.0);
+      IPrime = exp(-IPrime);
+      Integrand += weights[i]*(exp(abcissae[i])*IPrime/AdiabaticIndex(gamma,abcissae[i],size));
+    }
+
+    Integrand*=(x/2.0);
+
+    e = e0/Mu +(p0/Mu)*Integrand;
+    return e;
+}
+
+/* Specral decomposition of eos's adiabatic index */
+double AdiabaticIndex(double gamma[], double x, int size)
+{
+        double Gamma, logGamma = 0;
+        int i;
+        for(i=0;i<size;i++)
+        {
+          logGamma += gamma[i]*pow(x,(double) i);
+        }
+        Gamma = exp(logGamma);
+        return Gamma;
+}
+
+
+/** Gauss-Legendre quaderature-specific functions **/
+
+
+/* Maps the abcissae from [-1,1] to [a,b] */
+void GLBoundConversion(double a, double b, double abcissae[], int nEval)
+{
+    int i;
+
+    // Converting to new evalutation points
+    for(i=0;i<nEval;i++)
+    {
+        abcissae[i]=((b-a)/2.0)*abcissae[i] + (a+b)/2.0;
+    }
+}
+
+/* Resets 10 point array to standard abcissae */
+void resetAbcissae(double abcissae[])
+{
+       abcissae[0] = -0.9739065285171717;
+       abcissae[1] = -0.8650633666889845;
+       abcissae[2] = -0.6794095682990244;
+       abcissae[3] = -0.4333953941292472;
+       abcissae[4] = -0.1488743389816312;
+       abcissae[5] =  0.1488743389816312;
+       abcissae[6] =  0.4333953941292472;
+       abcissae[7] =  0.6794095682990244;
+       abcissae[8] =  0.8650633666889845;
+       abcissae[9] =  0.9739065285171717;
+}
+
+
+
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double gamma[], int size)
+{
+    LALSimNeutronStarEOS * eos;
+    size_t ndat_low = 69;
+    size_t ndat = ndat_low + 500;
+    size_t i;
+
+    // Minimum pressure and energy density of core EOS geom
+    double e0 = 9.54629006e-11;
+    double p0 = 4.43784199e-13;
+
+    double xmax = 12.3081;
+    double pmax = p0*exp(xmax);
+
+    // Declaring array and allocating memory space
+    double *edat;
+    double *pdat;
+    double xdat[ndat-ndat_low];
+
+    pdat = XLALCalloc(ndat, sizeof(*pdat));
+    edat = XLALCalloc(ndat, sizeof(*edat));
+
+    // Low density EOS values to be stitched (SLy, in geom)
+    double pdat_low[]={0.00000000e+00,   2.49730009e-31,   1.59235347e-30,
+         1.01533235e-29,   6.47406376e-29,   4.12805731e-28,
+         2.63217321e-27,   1.67835262e-26,   1.07016799e-25,
+         6.82371225e-25,   4.35100369e-24,   1.91523482e-23,
+         8.06001537e-23,   3.23144235e-22,   4.34521997e-22,
+         1.18566090e-21,   3.16699528e-21,   8.31201995e-21,
+         2.15154075e-20,   5.51600847e-20,   7.21972469e-20,
+         1.34595234e-19,   2.50269468e-19,   3.41156366e-19,
+         4.16096744e-19,   5.66803746e-19,   1.05098304e-18,
+         1.94663211e-18,   3.60407863e-18,   4.67819652e-18,
+         6.36373536e-18,   8.65904266e-18,   1.17739845e-17,
+         1.60126190e-17,   2.06809005e-17,   2.81253637e-17,
+         3.82385968e-17,   4.91532870e-17,   6.68349199e-17,
+         9.08868981e-17,   1.19805457e-16,   1.23523557e-16,
+         1.67975513e-16,   2.14575704e-16,   2.38949918e-16,
+         2.71834450e-16,   3.69579177e-16,   4.80543818e-16,
+         6.22823125e-16,   6.44883854e-16,   6.51906933e-16,
+         6.90079430e-16,   7.51717272e-16,   7.84188682e-16,
+         8.12280996e-16,   8.94822824e-16,   1.78030908e-15,
+         2.83170525e-15,   4.35257355e-15,   6.44272433e-15,
+         9.21014776e-15,   1.72635532e-14,   2.96134301e-14,
+         4.76007735e-14,   7.28061891e-14,   1.06973879e-13,
+         1.78634067e-13,   3.17897582e-13,   4.16939514e-13};
+
+    double edat_low[]={0.00000000e+00,   9.76800363e-24,   3.08891410e-23,
+         9.76800489e-23,   3.08891490e-22,   9.76801000e-22,
+         3.08891816e-21,   9.76803078e-21,   3.08893141e-20,
+         9.76811525e-20,   3.08898527e-19,   7.75906672e-19,
+         1.94909879e-18,   4.89622085e-18,   6.16357861e-18,
+         1.22969164e-17,   2.45420997e-17,   4.89823567e-17,
+         9.77310869e-17,   1.95024387e-16,   2.45531498e-16,
+         3.89264229e-16,   6.16926264e-16,   7.76837038e-16,
+         9.00642353e-16,   1.19237569e-15,   1.89037060e-15,
+         3.09452823e-15,   4.90635934e-15,   5.96458915e-15,
+         7.51061114e-15,   9.79776989e-15,   1.23353809e-14,
+         1.55335650e-14,   1.88188196e-14,   2.46271194e-14,
+         3.10096915e-14,   3.74392368e-14,   4.91814886e-14,
+         6.19454280e-14,   7.62224545e-14,   8.11155415e-14,
+         1.05200677e-13,   1.26436151e-13,   1.37076948e-13,
+         1.55799897e-13,   2.02900352e-13,   2.47139208e-13,
+         3.11281590e-13,   3.19529901e-13,   3.22140999e-13,
+         3.36213572e-13,   3.58537297e-13,   3.70113877e-13,
+         3.80033593e-13,   4.24821517e-13,   1.57119195e-12,
+         2.36083738e-12,   3.33152493e-12,   4.49715211e-12,
+         5.87555551e-12,   9.35905600e-12,   1.39898961e-11,
+         2.00067862e-11,   2.76245081e-11,   3.69196076e-11,
+         5.35224936e-11,   7.81020115e-11,   9.19476188e-11};
+
+    // Populating first 69 points with low density EOS
+    for(i=0;i<ndat_low;i++)
+    {
+      pdat[i]=pdat_low[i];
+      edat[i]=edat_low[i];
+    }
+
+    // Generating higher density portion of EOS with spectral decomposition
+    double logpmax = log(pmax);
+    double logp0 = log(p0);
+    double dlogp = (logpmax-logp0)/(ndat - ndat_low);
+
+    // Calculating pressure table
+    for(i=0;i < ndat-ndat_low;i++)
+    {
+      pdat[i+ndat_low] = exp(logp0 + dlogp*(i));
+    }
+
+    // Calculating xdat table
+    for(i = 0;i<ndat - ndat_low;i++) {
+      xdat[i] = log(pdat[i+ndat_low]/p0);
+    }
+    for(i = ndat_low;i < ndat;i++)
+    {
+      // Calculate energy density for each dimensionless pressure value
+      edat[i] = eos_e_of_p_spectral_decomposition(xdat[i-ndat_low], gamma, size, p0,e0);
+    }
+
+    /* Updating eos structure */
+    eos = eos_alloc_tabular(pdat,edat,ndat);
+
+    if(size == 2)
+    {
+      snprintf(eos->name, sizeof(eos->name), "2-Parameter Spectral Decomposition (SDgamma0=%g, SDgamma1=%g)", gamma[0], gamma[1]);
+    }
+
+    else if(size == 4)
+    {
+      snprintf(eos->name, sizeof(eos->name), "4-Parameter Spectral Decomposition (SDgamma0=%g, SDgamma1=%g, SDgamma2=%g, SDgamma3=%g)", gamma[0], gamma[1], gamma[2], gamma[3]);
+    }
+
+    return eos;
+}
+
+// FIXME: Function for using with python
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition_for_plot(double SDgamma0, double SDgamma1, double SDgamma2, double SDgamma3, int size){
+    double gamma[] = {SDgamma0, SDgamma1, SDgamma2, SDgamma3};
+    LALSimNeutronStarEOS * eos;
+    eos = XLALSimNeutronStarEOSSpectralDecomposition(gamma, size);
+    return eos;
 }
 
 /** @} */

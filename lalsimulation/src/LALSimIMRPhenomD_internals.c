@@ -1135,6 +1135,7 @@ static double PhiInsAnsatzInt(double Mf, UsefulPowers * powers_of_Mf, PhiInsPref
   phasing += prefactors->minus_third / powers_of_Mf->third;
   phasing += prefactors->minus_two_thirds / powers_of_Mf->two_thirds;
   phasing += prefactors->minus_one / Mf;
+  phasing += prefactors->minus_four_thirds / powers_of_Mf->four_thirds;
   phasing += prefactors->minus_five_thirds / powers_of_Mf->five_thirds; // * v^0
 
   // Now add higher order terms that were calibrated for PhenomD
@@ -1166,6 +1167,7 @@ static int init_phi_ins_prefactors(PhiInsPrefactors * prefactors, IMRPhenomDPhas
 	prefactors->minus_third = pn->v[4] / powers_of_pi.third;
 	prefactors->minus_two_thirds = pn->v[3] / powers_of_pi.two_thirds;
 	prefactors->minus_one = pn->v[2] / Pi;
+        prefactors->minus_four_thirds = pn->v[1] / powers_of_pi.four_thirds;
 	prefactors->minus_five_thirds = pn->v[0] / powers_of_pi.five_thirds; // * v^0
 
   // higher order terms that were calibrated for PhenomD

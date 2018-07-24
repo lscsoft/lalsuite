@@ -55,11 +55,19 @@
 /** Incomplete type for the neutron star Equation of State (EOS). */
 typedef struct tagLALSimNeutronStarEOS LALSimNeutronStarEOS;
 
+/** Recognised names of equations of state */
+extern const char * const lalSimNeutronStarEOSNames[61];
+
 /** Incomplete type for a neutron star family having a particular EOS. */
 typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
 
 void XLALDestroySimNeutronStarEOS(LALSimNeutronStarEOS * eos);
 char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
+
+/** FIXME: Constructed for python wrappers */
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition_for_plot(
+    double SDgamma0, double SDgamma1, double SDgamma2, double SDgamma3,
+    int size);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
@@ -67,6 +75,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
     double reference_pressure_si, double reference_density_si);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
     logp1_si, double gamma1, double gamma2, double gamma3);
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double 
+    gamma[], int size);
 
 double XLALSimNeutronStarEOSMaxPressure(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS *
@@ -117,6 +127,7 @@ void XLALDestroySimNeutronStarFamily(LALSimNeutronStarFamily * fam);
 LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
     LALSimNeutronStarEOS * eos);
 
+double XLALSimNeutronStarFamMinimumMass(LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarMaximumMass(LALSimNeutronStarFamily * fam);
 double XLALSimNeutronStarCentralPressure(double m,
     LALSimNeutronStarFamily * fam);
