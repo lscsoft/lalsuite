@@ -895,7 +895,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     }
   }
 
-  /* See if there are any parameters pinned to injection values */
+  /* See if there are any parameters pinned to injection values 
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
     char *pinned_params=ppt->value;
     LALInferenceVariables tempParams;
@@ -913,7 +913,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
       if(node) LALInferenceAddVariable(model->params,node->name,node->value,node->type,node->vary);
       else {fprintf(stderr,"Error: Cannot pin parameter %s. No such parameter found in injection!\n",node->name);}
     }
-  }
+  }*/
 
   /* Over-ride approximant if user specifies */
   ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
@@ -1431,6 +1431,33 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
 
   /* Initialize waveform cache */
   model->waveformCache = XLALCreateSimInspiralWaveformCache();
+
+  /* See if there are any parameters pinned to injection values */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
+    char *pinned_params=ppt->value;
+    LALInferenceVariables tempParams;
+    memset(&tempParams,0,sizeof(tempParams));
+    LALInferenceCopyVariables(model->params, &tempParams);
+
+    char **strings=NULL;
+    UINT4 N;
+    LALInferenceParseCharacterOptionString(pinned_params,&strings,&N);
+    LALInferenceInjectionToVariables(injTable,&tempParams);
+    LALInferenceVariableItem *node=NULL;
+    while(N>0){
+      N--;
+      char *name=strings[N];
+      node=LALInferenceGetItem(&tempParams,name);
+
+      if(node){ 
+        LALInferenceAddVariable(model->params,node->name,node->value,node->type,node->vary);
+        fprintf(stdout,"Pinning parameter %s to %lf \n",node->name,*(REAL8 *)node->value); 
+      }
+      else {fprintf(stderr,"Error: Cannot pin parameter %s. No such parameter found in injection!\n",node->name);}
+    }
+  }
+
+
 
   return(model);
 }

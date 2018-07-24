@@ -3583,8 +3583,8 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
 
     Lmag = XLALSimInspiralLN(m1+m2,eta,v0)*(1.0 + v0*v0*XLALSimInspiralL_2PN(eta));
     REAL8 Lmagx,Lmagy,Lmagz,Lhaty,Lhatx,Lhatz;
-    Lmagx=Lmag*sin(iota)*cos(0.0);
-    Lmagy=Lmag*sin(iota)*sin(0.0);
+    Lmagx=Lmag*sin(iota);
+    Lmagy=0.0;//Lmag*sin(iota)*sin(0.0);
     Lmagz=Lmag*cos(iota);
     Lhatx=Lmagx/Lmag;
     Lhaty=Lmagy/Lmag;
@@ -3605,8 +3605,8 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     Jhatx = Jx / Jnorm;
     Jhaty = Jy / Jnorm;
     Jhatz = Jz / Jnorm;
-    //printf("Lhat %f %f %f -- Lmag %.3e \n",Lhatx,Lhaty,Lhatz,Lmag);
-    //printf("Jhat %f %f %f -- Jmag %.3e \n",Jhatx,Jhaty,Jhatz,Jnorm);
+    printf("Lhat %10.20e %10.20e %10.20e -- Lmag %.3e \n",Lhatx,Lhaty,Lhatz,Lmag);
+    printf("Jhat %10.20e %10.20e %10.20e -- Jmag %.3e \n",Jhatx,Jhaty,Jhatz,Jnorm);
     REAL8 xxx=Lhatx*s1hatx+Lhaty*s1haty+Lhatz*s1hatz;
     if (xxx>1.0){
       fprintf(stdout,"Due to rounding error Lhat dot S1hat >1 by %10.10e\n",xxx-1.0);
@@ -3636,6 +3636,28 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     ROTATEZ(phi0, s1hatx, s1haty, s1hatz);
     ROTATEZ(phi0, s2hatx, s2haty, s2hatz);
 
+    /* Renormalize after every rotation to get rid of rounding*/
+    REAL8 Lhatmag=0.0;
+    REAL8 Jhatmag=0.0;
+    REAL8 s1hatmag=0.0;
+    REAL8 s2hatmag=0.0;
+    Lhatmag=sqrt(Lhatx*Lhatx+Lhaty*Lhaty+Lhatz*Lhatz);
+    Jhatmag=sqrt(Jhatx*Jhatx+Jhaty*Jhaty+Jhatz*Jhatz);
+    s1hatmag=sqrt(s1hatx*s1hatx+ s1haty*s1haty+s1hatz*s1hatz);
+    s2hatmag=sqrt(s2hatx*s2hatx+ s2haty*s2haty+s2hatz*s2hatz);
+    Jhatx/=Jhatmag;
+    Jhaty/=Jhatmag;
+    Jhatz/=Jhatmag;
+    Lhatx/=Lhatmag;
+    Lhaty/=Lhatmag;
+    Lhatz/=Lhatmag;
+    s1hatx/=s1hatmag;
+    s1haty/=s1hatmag;
+    s1hatz/=s1hatmag;
+    s2hatx/=s2hatmag;
+    s2haty/=s2hatmag;
+    s2hatz/=s2hatmag;
+
     //printf("rotating by phi0 %f\n",phi0);
     //printf("Jhat %f %f %f -- Jmag %.3e \n",Jhatx,Jhaty,Jhatz,Jnorm);
 
@@ -3645,6 +3667,24 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     ROTATEY(*theta_jn, Lhatx, Lhaty, Lhatz);
     ROTATEY(*theta_jn, s1hatx, s1haty, s1hatz);
     ROTATEY(*theta_jn, s2hatx, s2haty, s2hatz);
+
+        /* Renormalize after every rotation to get rid of rounding*/
+    Lhatmag=sqrt(Lhatx*Lhatx+Lhaty*Lhaty+Lhatz*Lhatz);
+    Jhatmag=sqrt(Jhatx*Jhatx+Jhaty*Jhaty+Jhatz*Jhatz);
+    s1hatmag=sqrt(s1hatx*s1hatx+ s1haty*s1haty+s1hatz*s1hatz);
+    s2hatmag=sqrt(s2hatx*s2hatx+ s2haty*s2haty+s2hatz*s2hatz);
+    Jhatx/=Jhatmag;
+    Jhaty/=Jhatmag;
+    Jhatz/=Jhatmag;
+    Lhatx/=Lhatmag;
+    Lhaty/=Lhatmag;
+    Lhatz/=Lhatmag;
+    s1hatx/=s1hatmag;
+    s1haty/=s1hatmag;
+    s1hatz/=s1hatmag;
+    s2hatx/=s2hatmag;
+    s2haty/=s2hatmag;
+    s2hatz/=s2hatmag;
 
     *phi_jl= atan2(Lhaty, Lhatx);
      //printf("rotated by thetajn %f\n",*theta_jn);
@@ -3658,12 +3698,49 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     ROTATEZ(*phi_jl, s1hatx, s1haty, s1hatz);
     ROTATEZ(*phi_jl, s2hatx, s2haty, s2hatz);
 
-    theta0=acos(Lhatz);
 
+        /* Renormalize after every rotation to get rid of rounding*/
+    Lhatmag=sqrt(Lhatx*Lhatx+Lhaty*Lhaty+Lhatz*Lhatz);
+    Jhatmag=sqrt(Jhatx*Jhatx+Jhaty*Jhaty+Jhatz*Jhatz);
+    s1hatmag=sqrt(s1hatx*s1hatx+ s1haty*s1haty+s1hatz*s1hatz);
+    s2hatmag=sqrt(s2hatx*s2hatx+ s2haty*s2haty+s2hatz*s2hatz);
+    Jhatx/=Jhatmag;
+    Jhaty/=Jhatmag;
+    Jhatz/=Jhatmag;
+    Lhatx/=Lhatmag;
+    Lhaty/=Lhatmag;
+    Lhatz/=Lhatmag;
+    s1hatx/=s1hatmag;
+    s1haty/=s1hatmag;
+    s1hatz/=s1hatmag;
+    s2hatx/=s2hatmag;
+    s2haty/=s2hatmag;
+    s2hatz/=s2hatmag;
+
+
+    theta0=acos(Lhatz);
     ROTATEY(theta0, Jhatx, Jhaty, Jhatz);
     ROTATEY(theta0, Lhatx, Lhaty, Lhatz);
     ROTATEY(theta0, s1hatx, s1haty, s1hatz);
     ROTATEY(theta0, s2hatx, s2haty, s2hatz);
+
+    /* Renormalize after every rotation to get rid of rounding*/
+    Lhatmag=sqrt(Lhatx*Lhatx+Lhaty*Lhaty+Lhatz*Lhatz);
+    Jhatmag=sqrt(Jhatx*Jhatx+Jhaty*Jhaty+Jhatz*Jhatz);
+    s1hatmag=sqrt(s1hatx*s1hatx+ s1haty*s1haty+s1hatz*s1hatz);
+    s2hatmag=sqrt(s2hatx*s2hatx+ s2haty*s2haty+s2hatz*s2hatz);
+    Jhatx/=Jhatmag;
+    Jhaty/=Jhatmag;
+    Jhatz/=Jhatmag;
+    Lhatx/=Lhatmag;
+    Lhaty/=Lhatmag;
+    Lhatz/=Lhatmag;
+    s1hatx/=s1hatmag;
+    s1haty/=s1hatmag;
+    s1hatz/=s1hatmag;
+    s2hatx/=s2hatmag;
+    s2haty/=s2hatmag;
+    s2hatz/=s2hatmag;
 
     phi1=atan2(s1haty,s1hatx);
     phi2=atan2(s2haty,s2hatx);
