@@ -70,6 +70,7 @@ noinst_HEADERS = \
 	H5FileIOTimeSeries_source.c \
 	H5FileIOVectorHL_source.c \
 	H5FileIOVector_source.c \
+	H5ThreadSafe.c \
 	PrintFrequencySeries_source.c \
 	PrintTimeSeries_source.c \
 	PrintVector_source.c \
