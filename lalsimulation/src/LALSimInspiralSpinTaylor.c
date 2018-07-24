@@ -3605,11 +3605,28 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     Jhatx = Jx / Jnorm;
     Jhaty = Jy / Jnorm;
     Jhatz = Jz / Jnorm;
-    printf("Lhat %f %f %f -- Lmag %.3e \n",Lhatx,Lhaty,Lhatz,Lmag);
-    printf("Jhat %f %f %f -- Jmag %.3e \n",Jhatx,Jhaty,Jhatz,Jnorm);
-
-    *tilt1=acos(Lhatx*s1hatx+Lhaty*s1haty+Lhatz*s1hatz);
-    *tilt2=acos(Lhatx*s2hatx+Lhaty*s2haty+Lhatz*s2hatz);
+    //printf("Lhat %f %f %f -- Lmag %.3e \n",Lhatx,Lhaty,Lhatz,Lmag);
+    //printf("Jhat %f %f %f -- Jmag %.3e \n",Jhatx,Jhaty,Jhatz,Jnorm);
+    REAL8 xxx=Lhatx*s1hatx+Lhaty*s1haty+Lhatz*s1hatz;
+    if (xxx>1.0){
+      fprintf(stdout,"Due to rounding error Lhat dot S1hat >1 by %10.10e\n",xxx-1.0);
+      fprintf(stdout,"Setting tilt1=0.0 \n");
+      *tilt1=0.0;
+    }
+    else *tilt1=acos(Lhatx*s1hatx+Lhaty*s1haty+Lhatz*s1hatz);
+    /* It would seem this is not yet enough. For some spin-aligned events the argument of the cos is not quite 1 and that's
+    * enough to decrease the logL. I'm working here under the assumption that the original frame is orbitalL so that if spins are aligned
+    * the x and y components will have to be zero 
+    * FIXME: check that orbitalL was indeed the frame*/
+    if (*tilt1<1e-5 && S1x==0.0 && S1y==0.0) *tilt1=0.0;
+    xxx=Lhatx*s2hatx+Lhaty*s2haty+Lhatz*s2hatz;
+    if (xxx>1.0){
+      fprintf(stdout,"Due to rounding error Lhat dot S2hat >1 by %10.10e\n",xxx-1.0);
+      fprintf(stdout,"Setting tilt2=0.0 \n");
+      *tilt2=0.0;
+    }
+    else     *tilt2=acos(Lhatx*s2hatx+Lhaty*s2haty+Lhatz*s2hatz);
+    if (*tilt2<1e-5 && S2x==0.0 && S2y==0.0) *tilt2=0.0;
 
     phi0 = atan2(Jhaty, Jhatx);
     phi0=LAL_PI-phi0;
@@ -3619,8 +3636,8 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     ROTATEZ(phi0, s1hatx, s1haty, s1hatz);
     ROTATEZ(phi0, s2hatx, s2haty, s2hatz);
 
-    printf("rotating by phi0 %f\n",phi0);
-    printf("Jhat %f %f %f -- Jmag %.3e \n",Jhatx,Jhaty,Jhatz,Jnorm);
+    //printf("rotating by phi0 %f\n",phi0);
+    //printf("Jhat %f %f %f -- Jmag %.3e \n",Jhatx,Jhaty,Jhatz,Jnorm);
 
     *theta_jn= acos(Jhatz);
 
@@ -3630,12 +3647,12 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     ROTATEY(*theta_jn, s2hatx, s2haty, s2hatz);
 
     *phi_jl= atan2(Lhaty, Lhatx);
-     printf("rotated by thetajn %f\n",*theta_jn);
-     printf("costjn %f\n",cos(*theta_jn));
-     printf("L is now %f %f %f\n",Lhatx, Lhaty, Lhatz);
-     printf("atan2 is %f\n",atan2(Lhaty, Lhatx));
+     //printf("rotated by thetajn %f\n",*theta_jn);
+     //printf("costjn %f\n",cos(*theta_jn));
+     //printf("L is now %10.10e %10.10e %10.10e\n",Lhatx, Lhaty, Lhatz);
+     //printf("atan2 is %f\n",atan2(Lhaty, Lhatx));
     *phi_jl=*phi_jl+LAL_PI;
-     printf("phijl %f\n",*phi_jl);
+     //printf("phijl %f\n",*phi_jl);
     ROTATEZ(*phi_jl, Jhatx, Jhaty, Jhatz);
     ROTATEZ(*phi_jl, Lhatx, Lhaty, Lhatz);
     ROTATEZ(*phi_jl, s1hatx, s1haty, s1hatz);
