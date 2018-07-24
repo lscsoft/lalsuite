@@ -1731,7 +1731,7 @@ int XLALSimInspiralNRSur7dq2Polarizations(
     // Interpolate onto output times
     double t;
     LIGOTimeGPS epoch = LIGOTIMEGPSZERO;
-    XLALGPSAdd( &epoch, -Mtot_sec * NRSUR7DQ2_START_TIME);
+    XLALGPSAdd( &epoch, Mtot_sec * t0);
     *hplus = XLALCreateREAL8TimeSeries("hp: TD waveform", &epoch, 0.0, deltaT, &lalStrainUnit, nt);
     *hcross = XLALCreateREAL8TimeSeries("hc: TD waveform", &epoch, 0.0, deltaT, &lalStrainUnit, nt);
     gsl_interp_accel *acc = gsl_interp_accel_alloc();
@@ -1855,7 +1855,7 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
     // Setup interpolation onto dimensionless output times
     double t;
     LIGOTimeGPS epoch = LIGOTIMEGPSZERO;
-    XLALGPSAdd( &epoch, -Mtot_sec * NRSUR7DQ2_START_TIME);
+    XLALGPSAdd( &epoch, Mtot_sec * t0);
     gsl_interp_accel *acc = gsl_interp_accel_alloc();
 
     // Create LAL modes
