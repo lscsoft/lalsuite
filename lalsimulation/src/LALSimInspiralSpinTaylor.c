@@ -3529,7 +3529,6 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
         const REAL8 m1,         /**< mass of body 1 (solar mass) */
         const REAL8 m2,         /**< mass of body 2 (solar mass) */
         const REAL8 fRef,       /**< reference GW frequency (Hz) */
-        const REAL8 phiRef ,     /**< reference orbital phase */
         const int axis /** frame choice */
         )
 {
@@ -3549,8 +3548,12 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     /* Transform to radiation-frame where N//z (view axis) */
     printf("fref %f axis %d\n\n",fRef,axis);
     printf("before Conditioning %f %f %f %f %f %f %f \n",incl,S1x,S1y,S1z,S2x,S2y,S2z);
-    XLALSimInspiralInitialConditionsPrecessingApproxs(&iota,&s1x,&s1y,&s1z,&s2x,&s2y,&s2z,incl,S1x,S1y,S1z,S2x,S2y,S2z,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI,fRef,phiRef,axis);
+    XLALSimInspiralInitialConditionsPrecessingApproxs(&iota,&s1x,&s1y,&s1z,&s2x,&s2y,&s2z,incl,S1x,S1y,S1z,S2x,S2y,S2z,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI,fRef,axis);
     printf("after Conditioning %f %f %f %f %f %f %f \n",iota,s1x, s1y, s1z, s2x, s2y, s2z);
+
+
+
+
     *chi1 = sqrt(s1x*s1x + s1y*s1y + s1z*s1z);
     *chi2 = sqrt(s2x*s2x + s2y*s2y + s2z*s2z);
     if ((*chi1) > 0.0){
@@ -3628,9 +3631,10 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
 
     *phi_jl= atan2(Lhaty, Lhatx);
      printf("rotated by thetajn %f\n",*theta_jn);
+     printf("costjn %f\n",cos(*theta_jn));
      printf("L is now %f %f %f\n",Lhatx, Lhaty, Lhatz);
      printf("atan2 is %f\n",atan2(Lhaty, Lhatx));
-    *phi_jl=LAL_PI-*phi_jl;
+    *phi_jl=*phi_jl+LAL_PI;
      printf("phijl %f\n",*phi_jl);
     ROTATEZ(*phi_jl, Jhatx, Jhaty, Jhatz);
     ROTATEZ(*phi_jl, Lhatx, Lhaty, Lhatz);

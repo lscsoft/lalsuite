@@ -2041,7 +2041,7 @@ class Posterior(object):
 
             # J should now be || z and L should have a azimuthal angle phi_jl
             phi_jl = np.arctan2(L[1], L[0])
-            phi_jl = np.pi - phi_jl
+            phi_jl = np.pi + phi_jl
             spins['phi_jl'] = phi_jl
 
             # bring L in the Z-X plane, with negative x

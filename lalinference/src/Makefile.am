@@ -6,6 +6,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 LDADD = liblalinference.la
 
 lalinference_nest_SOURCES = LALInferenceNest.c
+lalinference_injectedlike_SOURCES = LALInferenceInjectedLike.c
 lalinference_burst_SOURCES = LALInferenceBurst.c
 lalinference_datadump_SOURCES = LALInferenceDataDump.c
 lalinference_bench_SOURCES = LALInferenceBench.c
@@ -79,6 +80,7 @@ liblalinference_la_LDFLAGS = $(AM_LDFLAGS) $(HDF5_LDFLAGS) $(HDF5_LIBS) -version
 
 bin_PROGRAMS = \
 	lalinference_nest \
+        lalinference_injectedlike \
 	lalinference_burst \
 	lalinference_datadump \
 	lalinference_bench

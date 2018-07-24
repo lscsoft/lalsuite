@@ -2224,7 +2224,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   INT4 errnum;
   char SNRpath[FILENAME_MAX];
   ProcessParamsTable *ppt=NULL;
-
+  LALInferenceIFOData *dataPtr;
   ppt = LALInferenceGetProcParamVal(commandLine,"--outfile");
   if (ppt)
     sprintf(SNRpath, "%s_snr.txt", ppt->value);
@@ -2308,6 +2308,18 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     fref = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-fref")->value);
   }
 
+  if (approximant == TaylorF2)
+      f_max = 0.0; /* this will stop at ISCO */
+  else{
+	  /* get the max f_max as done in Template. Has to do this since I cannot  access LALInferenceModel here*/
+	  dataPtr=IFOdata;
+	  while(dataPtr){
+      	if(dataPtr->fHigh>f_max) f_max=dataPtr->fHigh;
+		dataPtr=dataPtr->next;
+	  }
+  }
+
+  printf("f_max for inj and fref %f %f\n",f_max,fref);
   LALSimInspiralTestGRParam *nonGRparams = NULL;
 
  /* Print a line with information about approximant, amp_order, phaseorder, tide order and spin order */
@@ -2334,7 +2346,6 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   XLALSimInspiralDestroyWaveformFlags(waveFlags);
   XLALSimInspiralDestroyTestGRParam(nonGRparams);
 
-  LALInferenceIFOData *dataPtr;
   REAL8 Fplus, Fcross;
   REAL8 plainTemplateReal, plainTemplateImag;
   REAL8 templateReal, templateImag;
@@ -2528,11 +2539,10 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
         fref= *(REAL8*)  LALInferenceGetVariable(vars,"f_ref");
     
     LALSimInspiralFrameAxis frameAxis = LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT;
-    if((ppt=LALInferenceGetProcParamVal(commandLine,"--inj-spin-frame"))) {
-        frameAxis = XLALSimInspiralGetFrameAxisFromString(ppt->value);
-      }
+    if (LALInferenceCheckVariable(vars,"frameAxis"))
+      frameAxis=*(LALSimInspiralFrameAxis*) LALInferenceGetVariable(vars,"frameAxis");
 
-    XLALSimInspiralInvertPrecessingNewInitialConditions(&thetaJN,&phiJL,&theta1,&theta2,&phi12,&chi1,&chi2,theEventTable->inclination,theEventTable->spin1x,theEventTable->spin1y,theEventTable->spin1z,  theEventTable->spin2x, theEventTable->spin2y, theEventTable->spin2z,m1,m2,fref,phase,frameAxis);
+    XLALSimInspiralInvertPrecessingNewInitialConditions(&thetaJN,&phiJL,&theta1,&theta2,&phi12,&chi1,&chi2,theEventTable->inclination,theEventTable->spin1x,theEventTable->spin1y,theEventTable->spin1z,  theEventTable->spin2x, theEventTable->spin2y, theEventTable->spin2z,m1,m2,fref,frameAxis);
     
     if (LALInferenceCheckVariable(vars,"a_spin1"))
         LALInferenceAddVariable(vars,"a_spin1", &chi1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
@@ -2551,7 +2561,7 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
 
 }
 
-LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
+void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
     int errnum=0;
     char *fname=NULL;
     char defaultname[]="injection_params.dat";
@@ -2570,7 +2580,7 @@ LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *ru
 
     ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine,"--inj");
     if (!ppt)
-        return(NULL);
+        return;
 
     SimInspiralTableFromLIGOLw(&injTable, ppt->value, 0, 0);
 
@@ -2601,7 +2611,7 @@ LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *ru
 
     if (!(approx && order)){
         fprintf(stdout,"Unable to print injection sample: No approximant/PN order set\n");
-        return(NULL);
+        return;
     }
 
     REAL8 fref = 100.;
@@ -2609,6 +2619,14 @@ LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *ru
       fref = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--inj-fref")->value);
     }
     LALInferenceAddVariable(injparams,"f_ref",(void *)&fref,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+
+    LALSimInspiralFrameAxis frameAxis = LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT;
+    if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--inj-spin-frame"))) {
+        frameAxis = XLALSimInspiralGetFrameAxisFromString(ppt->value);
+      }
+
+    LALInferenceAddVariable(injparams,"frameAxis",(void *)&frameAxis,LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_OUTPUT);
+
 
     UINT4 azero=0;
     LALInferenceAddVariable(injparams,"SKY_FRAME",(void *)&azero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
@@ -2655,7 +2673,9 @@ LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *ru
     LALInferencePrintSample(outfile, injparams);
 
     fclose(outfile);
-    return(injparams);
+    LALInferenceClearVariables(injparams);
+    XLALFree(injparams);
+    return;
 }
 
 
