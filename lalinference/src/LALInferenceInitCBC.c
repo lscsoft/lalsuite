@@ -204,7 +204,7 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
 void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) {
   if (run_state == NULL){
     LALInferenceInitCBCModel(run_state);
-    return;
+   return;
   }
 
   ProcessParamsTable *commandLine=run_state->commandLine;
@@ -1511,10 +1511,10 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
       N--;
       char *name=strings[N];
       node=LALInferenceGetItem(&tempParams,name);
-
-      if(node){ 
+      if(node){
+        LALInferenceRemoveVariable(model->params,node->name); 
         LALInferenceAddVariable(model->params,node->name,node->value,node->type,node->vary);
-        fprintf(stdout,"Pinning parameter %s to %lf \n",node->name,*(REAL8 *)node->value); 
+        fprintf(stdout,"Pinning parameter %s to %lf %d\n",node->name,*(REAL8 *)node->value,node->vary); 
       }
       else {fprintf(stderr,"Error: Cannot pin parameter %s. No such parameter found in injection!\n",node->name);}
     }

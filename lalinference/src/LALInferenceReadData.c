@@ -2637,25 +2637,25 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
   REAL8 m2=theEventTable->mass2;
   REAL8 chirpmass = theEventTable->mchirp;
 
-  LALInferenceAddVariable(vars, "chirpmass", &chirpmass, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(vars, "q", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceFullyReplaceVariable(vars, "chirpmass", &chirpmass, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceFullyReplaceVariable(vars, "q", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   if  (LALInferenceCheckVariable(vars,"distance"))
-      LALInferenceAddVariable(vars, "distance", &dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceFullyReplaceVariable(vars, "distance", &dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   else if  (LALInferenceCheckVariable(vars,"logdistance")){
       REAL8 logdistance=log(dist);
-      LALInferenceAddVariable(vars, "logdistance", &logdistance, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceFullyReplaceVariable(vars, "logdistance", &logdistance, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   }
-  LALInferenceAddVariable(vars, "polarisation", &(psi), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(vars, "phase", &phase, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceFullyReplaceVariable(vars, "polarisation", &(psi), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceFullyReplaceVariable(vars, "phase", &phase, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
-  LALInferenceAddVariable(vars, "declination", &dec, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(vars, "rightascension", &ra, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceFullyReplaceVariable(vars, "declination", &dec, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceFullyReplaceVariable(vars, "rightascension", &ra, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceFullyReplaceVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
 
-  LALInferenceAddVariable(vars, "LAL_APPROXIMANT", &injapprox, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(vars, "LAL_PNORDER",&order,LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(vars, "LAL_AMPORDER", &(theEventTable->amp_order), LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceFullyReplaceVariable(vars, "LAL_APPROXIMANT", &injapprox, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceFullyReplaceVariable(vars, "LAL_PNORDER",&order,LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceFullyReplaceVariable(vars, "LAL_AMPORDER", &(theEventTable->amp_order), LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
 
     REAL8 thetaJN,phiJL,theta1,theta2,phi12,chi1,chi2;
     /* Convert cartesian spin coordinates to system-frame variables*/
@@ -2671,19 +2671,19 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
     XLALSimInspiralInvertPrecessingNewInitialConditions(&thetaJN,&phiJL,&theta1,&theta2,&phi12,&chi1,&chi2,theEventTable->inclination,theEventTable->spin1x,theEventTable->spin1y,theEventTable->spin1z,  theEventTable->spin2x, theEventTable->spin2y, theEventTable->spin2z,m1,m2,fref,frameAxis);
     
     if (LALInferenceCheckVariable(vars,"a_spin1"))
-        LALInferenceAddVariable(vars,"a_spin1", &chi1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceFullyReplaceVariable(vars,"a_spin1", &chi1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     if (LALInferenceCheckVariable(vars,"a_spin2"))
-        LALInferenceAddVariable(vars,"a_spin2", &chi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceFullyReplaceVariable(vars,"a_spin2", &chi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     if (LALInferenceCheckVariable(vars,"tilt_spin1"))
-        LALInferenceAddVariable(vars,"tilt_spin1", &theta1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceFullyReplaceVariable(vars,"tilt_spin1", &theta1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     if (LALInferenceCheckVariable(vars,"tilt_spin2"))
-        LALInferenceAddVariable(vars,"tilt_spin2", &theta2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceFullyReplaceVariable(vars,"tilt_spin2", &theta2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     if (LALInferenceCheckVariable(vars,"phi_jl"))
-        LALInferenceAddVariable(vars,"phi_jl", &phiJL, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceFullyReplaceVariable(vars,"phi_jl", &phiJL, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     if (LALInferenceCheckVariable(vars,"phi12"))
-        LALInferenceAddVariable(vars,"phi12", &phi12, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+        LALInferenceFullyReplaceVariable(vars,"phi12", &phi12, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     REAL8 costhetajn=cos(thetaJN);
-    LALInferenceAddVariable(vars, "costheta_jn", &costhetajn, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceFullyReplaceVariable(vars, "costheta_jn", &costhetajn, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
 }
 

@@ -1678,7 +1678,6 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	    runState->livePoints[i]=XLALCalloc(1,sizeof(LALInferenceVariables));
 	    /* Copy the param structure */
 	    LALInferenceCopyVariables(threadState->currentParams,runState->livePoints[i]);
-
 	  /* Sprinkle the varying points among prior */
 	  do{
 	    LALInferenceDrawFromPrior( runState->livePoints[i], runState->priorArgs, runState->GSLrandom );

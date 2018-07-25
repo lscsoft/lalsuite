@@ -346,6 +346,15 @@ char *LALInferenceGetVariableName(LALInferenceVariables *vars, int idx)
   return(item->name);
 }
 
+void LALInferenceFullyReplaceVariable(LALInferenceVariables * vars, const char * name, const void *value, LALInferenceVariableType type, LALInferenceParamVaryType vary)
+/* Set the value of variable name in the vars structure to value, type and vary 
+ * Destroy previous value/type/vary of the variable*/
+{
+  if (LALInferenceCheckVariable(vars,name))
+    LALInferenceRemoveVariable(vars,name);
+  LALInferenceAddVariable(vars,name,value,type,vary);
+  return ;
+}
 
 void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, const void *value)
 /* Set the value of variable name in the vars structure to value */
@@ -432,6 +441,7 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, co
   memcpy(new->name,name,VARNAME_MAX);
   new->type = type;
   new->vary = vary;
+
   memcpy(new->value,value,LALInferenceTypeSize[type]);
   new->next = vars->head;
   vars->head = new;

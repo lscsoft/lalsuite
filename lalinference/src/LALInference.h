@@ -287,6 +287,11 @@ void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, co
 void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, const void * value,
 	LALInferenceVariableType type, LALInferenceParamVaryType vary);
 
+/*
+ * Fully replace a variable if contained in vars. Disregard previous type and vary. This is violent
+ * */
+void LALInferenceFullyReplaceVariable(LALInferenceVariables * vars, const char * name, const void *value, LALInferenceVariableType type, LALInferenceParamVaryType vary);
+
 /**
  * Remove \c name from \c vars
  * Frees the memory for the \c name structure and its contents

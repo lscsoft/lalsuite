@@ -3694,18 +3694,27 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
       s2haty/=s2hatmag;
       s2hatz/=s2hatmag;
     }
+
+    /* Now N is in the positive XZ plane, but phi_JL is defined in the plane where J||z and N in the negative XZ. Need to Z rotate by pi */
+    ROTATEZ(LAL_PI, Jhatx, Jhaty, Jhatz);
+    ROTATEZ(LAL_PI, Lhatx, Lhaty, Lhatz);
+    ROTATEZ(LAL_PI, s1hatx, s1haty, s1hatz);
+    ROTATEZ(LAL_PI, s2hatx, s2haty, s2hatz);
+
+
     *phi_jl= atan2(Lhaty, Lhatx);
      //printf("rotated by thetajn %f\n",*theta_jn);
      //printf("costjn %f\n",cos(*theta_jn));
      //printf("L is now %10.10e %10.10e %10.10e\n",Lhatx, Lhaty, Lhatz);
      //printf("atan2 is %f\n",atan2(Lhaty, Lhatx));
-    *phi_jl=*phi_jl+LAL_PI;
+    if (*phi_jl<0.0)
+      *phi_jl= *phi_jl+LAL_TWOPI;
      //printf("phijl %f\n",*phi_jl);
-    ROTATEZ(*phi_jl, Jhatx, Jhaty, Jhatz);
-    ROTATEZ(*phi_jl, Lhatx, Lhaty, Lhatz);
-    ROTATEZ(*phi_jl, s1hatx, s1haty, s1hatz);
-    ROTATEZ(*phi_jl, s2hatx, s2haty, s2hatz);
-
+    ROTATEZ(LAL_PI- *phi_jl, Jhatx, Jhaty, Jhatz);
+    ROTATEZ(LAL_PI-*phi_jl, Lhatx, Lhaty, Lhatz);
+    ROTATEZ(LAL_PI-*phi_jl, s1hatx, s1haty, s1hatz);
+    ROTATEZ(LAL_PI-*phi_jl, s2hatx, s2haty, s2hatz);
+    // Now L on the negative XZ plane
 
         /* Renormalize after every rotation to get rid of rounding*/
     Lhatmag=sqrt(Lhatx*Lhatx+Lhaty*Lhaty+Lhatz*Lhatz);
