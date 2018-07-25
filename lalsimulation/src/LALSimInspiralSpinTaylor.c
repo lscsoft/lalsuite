@@ -3546,10 +3546,10 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     REAL8 s1x, s1y, s1z, s2x, s2y, s2z,iota;
     REAL8 theta0, phi0;
     /* Transform to radiation-frame where N//z (view axis) */
-    printf("fref %f axis %d\n\n",fRef,axis);
-    printf("before Conditioning %f %f %f %f %f %f %f \n",incl,S1x,S1y,S1z,S2x,S2y,S2z);
+    //printf("fref %f axis %d\n\n",fRef,axis);
+    //printf("before Conditioning %f %f %f %f %f %f %f \n",incl,S1x,S1y,S1z,S2x,S2y,S2z);
     XLALSimInspiralInitialConditionsPrecessingApproxs(&iota,&s1x,&s1y,&s1z,&s2x,&s2y,&s2z,incl,S1x,S1y,S1z,S2x,S2y,S2z,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI,fRef,axis);
-    printf("after Conditioning %f %f %f %f %f %f %f \n",iota,s1x, s1y, s1z, s2x, s2y, s2z);
+    //printf("after Conditioning %f %f %f %f %f %f %f \n",iota,s1x, s1y, s1z, s2x, s2y, s2z);
 
 
 
@@ -3605,8 +3605,10 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     Jhatx = Jx / Jnorm;
     Jhaty = Jy / Jnorm;
     Jhatz = Jz / Jnorm;
-    printf("Lhat %10.20e %10.20e %10.20e -- Lmag %.3e \n",Lhatx,Lhaty,Lhatz,Lmag);
+    /*printf("Lhat %10.20e %10.20e %10.20e -- Lmag %.3e \n",Lhatx,Lhaty,Lhatz,Lmag);
+    printf("Lhatmag-1 %10.20e \n",sqrt(Lhatx*Lhatx+Lhaty*Lhaty+Lhatz*Lhatz)-1.0);
     printf("Jhat %10.20e %10.20e %10.20e -- Jmag %.3e \n",Jhatx,Jhaty,Jhatz,Jnorm);
+    */
     REAL8 xxx=Lhatx*s1hatx+Lhaty*s1haty+Lhatz*s1hatz;
     if (xxx>1.0){
       fprintf(stdout,"Due to rounding error Lhat dot S1hat >1 by %10.10e\n",xxx-1.0);
@@ -3651,13 +3653,16 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     Lhatx/=Lhatmag;
     Lhaty/=Lhatmag;
     Lhatz/=Lhatmag;
-    s1hatx/=s1hatmag;
-    s1haty/=s1hatmag;
-    s1hatz/=s1hatmag;
-    s2hatx/=s2hatmag;
-    s2haty/=s2hatmag;
-    s2hatz/=s2hatmag;
-
+    if (s1hatmag>0.0){
+      s1hatx/=s1hatmag;
+      s1haty/=s1hatmag;
+      s1hatz/=s1hatmag;
+    }
+    if (s2hatmag>0.0){
+      s2hatx/=s2hatmag;
+      s2haty/=s2hatmag;
+      s2hatz/=s2hatmag;
+    }
     //printf("rotating by phi0 %f\n",phi0);
     //printf("Jhat %f %f %f -- Jmag %.3e \n",Jhatx,Jhaty,Jhatz,Jnorm);
 
@@ -3679,13 +3684,16 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     Lhatx/=Lhatmag;
     Lhaty/=Lhatmag;
     Lhatz/=Lhatmag;
-    s1hatx/=s1hatmag;
-    s1haty/=s1hatmag;
-    s1hatz/=s1hatmag;
-    s2hatx/=s2hatmag;
-    s2haty/=s2hatmag;
-    s2hatz/=s2hatmag;
-
+    if (s1hatmag>0.0){
+      s1hatx/=s1hatmag;
+      s1haty/=s1hatmag;
+      s1hatz/=s1hatmag;
+    }
+    if (s2hatmag>0.0){
+      s2hatx/=s2hatmag;
+      s2haty/=s2hatmag;
+      s2hatz/=s2hatmag;
+    }
     *phi_jl= atan2(Lhaty, Lhatx);
      //printf("rotated by thetajn %f\n",*theta_jn);
      //printf("costjn %f\n",cos(*theta_jn));
@@ -3710,13 +3718,16 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     Lhatx/=Lhatmag;
     Lhaty/=Lhatmag;
     Lhatz/=Lhatmag;
-    s1hatx/=s1hatmag;
-    s1haty/=s1hatmag;
-    s1hatz/=s1hatmag;
-    s2hatx/=s2hatmag;
-    s2haty/=s2hatmag;
-    s2hatz/=s2hatmag;
-
+    if (s1hatmag>0.0){
+      s1hatx/=s1hatmag;
+      s1haty/=s1hatmag;
+      s1hatz/=s1hatmag;
+    }
+    if (s2hatmag>0.0){
+      s2hatx/=s2hatmag;
+      s2haty/=s2hatmag;
+      s2hatz/=s2hatmag;
+    }
 
     theta0=acos(Lhatz);
     ROTATEY(theta0, Jhatx, Jhaty, Jhatz);
@@ -3735,12 +3746,18 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     Lhatx/=Lhatmag;
     Lhaty/=Lhatmag;
     Lhatz/=Lhatmag;
-    s1hatx/=s1hatmag;
-    s1haty/=s1hatmag;
-    s1hatz/=s1hatmag;
-    s2hatx/=s2hatmag;
-    s2haty/=s2hatmag;
-    s2hatz/=s2hatmag;
+    if (s1hatmag>0.0){
+      s1hatx/=s1hatmag;
+      s1haty/=s1hatmag;
+      s1hatz/=s1hatmag;
+    }
+    if (s2hatmag>0.0){
+      s2hatx/=s2hatmag;
+      s2haty/=s2hatmag;
+      s2hatz/=s2hatmag;
+    }
+    //printf("atan2 spin1 x %10.10e y %10.10e tan %10.10e\n",s1hatx,s1haty,atan2(s1haty,s1hatx));
+    //printf("atan2 spin2 x %10.10e y %10.10e tan %10.10e\n",s2hatx,s2haty,atan2(s2haty,s2hatx));
 
     phi1=atan2(s1haty,s1hatx);
     phi2=atan2(s2haty,s2hatx);
