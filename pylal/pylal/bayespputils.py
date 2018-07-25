@@ -2063,14 +2063,15 @@ class Posterior(object):
 
             # J should now be || z and L should have a azimuthal angle phi_jl
             phi_jl = np.arctan2(L[1], L[0])
-            phi_jl = np.pi - phi_jl
-            spins['phi_jl'] = phi_jl
+            ## This np.pi is here below because we are in a frame where N is in the positive XZ plane
+            # But phi_jl is the polar angle in a frame where N is in the *negative* XZ plane
+            spins['phi_jl'] = np.pi + phi_jl
 
-            # bring L in the Z-X plane, with negative x
-            J = ROTATEZ(phi_jl, J[0], J[1], J[2])
-            L = ROTATEZ(phi_jl, L[0], L[1], L[2])
-            S1 = ROTATEZ(phi_jl, S1[0], S1[1], S1[2])
-            S2 = ROTATEZ(phi_jl, S2[0], S2[1], S2[2])
+            # bring L in the Z-X plane, with *negative* x
+            J = ROTATEZ( np.pi-phi_jl, J[0], J[1], J[2])
+            L = ROTATEZ( np.pi-phi_jl, L[0], L[1], L[2])
+            S1 = ROTATEZ( np.pi-phi_jl, S1[0], S1[1], S1[2])
+            S2 = ROTATEZ( np.pi-phi_jl, S2[0], S2[1], S2[2])
 
             theta0 = array_polar_ang(L)
             J = ROTATEY(theta0, J[0], J[1], J[2])
