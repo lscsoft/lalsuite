@@ -1,8 +1,12 @@
-%define nightly @NIGHTLY_VERSION@
+%define nightly @NIGHTLY_VERSION@%{nil}
 %define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
 %define release 1
+
+%if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
+%undefine nightly
+%endif
 
 Name: @PACKAGE@
 Version: @BASE_VERSION@
@@ -13,6 +17,7 @@ Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
+BuildRequires: python2-rpm-macros
 BuildRequires: gsl-devel
 BuildRequires: libmetaio-devel
 BuildRequires: numpy
@@ -21,16 +26,16 @@ BuildRequires: python-devel
 BuildRequires: swig >= 3.0.7
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
-BuildRequires: lal-python >= @MIN_LAL_VERSION@
+BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
 BuildRequires: lalframe-octave >= @MIN_LALFRAME_VERSION@
-BuildRequires: lalframe-python >= @MIN_LALFRAME_VERSION@
+BuildRequires: python2-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
+BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: glue
 Requires: gsl
 Requires: libframe
@@ -62,19 +67,22 @@ The LSC Algorithm Inspiral Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Inspiral
 library.
 
-%package python
+%package -n python2-%{name}
 Summary: Python bindings for LALInspiral
 Group: LAL
+Provides: %{name}-python
+Obsoletes: %{name}-python < 1.7.7-2
+Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
-Requires: lal-python >= @MIN_LAL_VERSION@
-Requires: lalburst-python
-Requires: lalframe-python >= @MIN_LALFRAME_VERSION@
-Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
+Requires: python2-lal >= @MIN_LAL_VERSION@
+Requires: python2-lalburst
+Requires: python2-lalframe >= @MIN_LALFRAME_VERSION@
+Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: glue
-%description python
+%description -n python2-%{name}
 This package provides the Python bindings for LALInspiral.
 
 %package octave
@@ -126,9 +134,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%files python
+%files -n python2-%{name}
 %defattr(-,root,root)
-%{_libdir}/python*
+%{python2_sitearch}/*
 
 %files octave
 %defattr(-,root,root)

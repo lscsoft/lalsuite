@@ -24,6 +24,10 @@
 #
 
 
+try:
+	from fpconst import NegInf
+except ImportError:
+	NegInf = float("-inf")
 import itertools
 import math
 import scipy.stats
@@ -156,7 +160,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 		except AttributeError:
 			self.mkinterps()
 			interps = self.interps
-		return sum(interps[param](*value) for param, value in params.items())
+		return sum(interps[param](*value) for param, value in params.items()) if params else NegInf
 
 	def __iadd__(self, other):
 		if type(self) != type(other) or set(self.densities) != set(other.densities):

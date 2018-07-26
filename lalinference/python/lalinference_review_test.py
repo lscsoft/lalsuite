@@ -40,7 +40,11 @@ parser.add_argument('--analytic-csv-dir', type=str,
 
 parser.add_argument('--pptest', action='store_true',
                     default=False,
-                    help='Runs a P-P analysis.')
+                    help='Runs a P-P analysis. Must specify a single engine.')
+
+parser.add_argument('--pp-approximant', action='store', type=str,
+                    default='IMRPhenomPv2pseudoFourPN,SEOBNRv4_ROMpseudoFourPN',
+                    help='Approximant(s) used for the P-P analysis.')
 
 parser.add_argument('--bbh-injection', type=str, nargs='?',
                     default=False,
@@ -93,7 +97,7 @@ lalinf_prefix=''
 try:
     lalinf_prefix=os.environ['LALINFERENCE_PREFIX']
 except KeyError:
-    print 'LALINFERENCE_PREFIX variable not defined, could not find LALInference installation.'
+    print('LALINFERENCE_PREFIX variable not defined, could not find LALInference installation.')
     sys.exit()
 
 def init_ini_file(file=args.ini_file):
@@ -278,7 +282,6 @@ if args.analytic_tests:
         os.chdir(args.output+'/' + test_func + '/')
 
 
-        shutil.copy(args.bbh_injection,args.output+'/'+test_func+'/')
         analytic_ini_file=os.path.join(args.output,test_func,'analytic.ini')
 
         cpanalytic=set_analytic_test(init_ini_file(), test_func)
@@ -299,17 +302,20 @@ if args.analytic_tests:
 
 ############################################################
 
-def set_pptest(cp):
+def set_pptest(cp, engine, approximant):
 
-    cp.set('paths','webdir',web_outputdir+'/pptest/webdir/')
+    cp.set('paths','webdir', os.path.join(web_outputdir, 'pptest', engine, approximant, 'webdir/'))
+    cp.set('ppanalysis','webdir', os.path.join(web_outputdir, 'PPcheck', engine, approximant + '/'))
     cp.set('lalinference','fake-cache',"{'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
     cp.set('analysis','dataseed','1234')
+    cp.set('analysis', 'engine', engine)
 
     cp.remove_option('engine','margphi')
     cp.set('engine','margtime','')
     cp.set('engine','amporder','-1')
     cp.set('engine','fref','0')
     cp.set('engine','distance-max','2000')
+    cp.set('engine', 'approx', approximant)
 
     cp.set('resultspage','deltaLogP','7')
 
@@ -317,24 +323,29 @@ def set_pptest(cp):
 
 if args.pptest:
 
-    os.makedirs(args.output+'/pptest/')
-    os.chdir(args.output+'/pptest/')
+    # The PP test needs a single engine to be specified
+    for engine in args.engine.split(','):
+        for approximant in args.pp_approximant.split(','):
+            os.makedirs(os.path.join(args.output, 'pptest', engine, approximant + '/'))
+            os.chdir(os.path.join(args.output, 'pptest', engine, approximant + '/'))
 
-    pptest_ini_file=os.path.join(args.output,'pptest','pptest.ini')
+            pptest_ini_file=os.path.join(args.output, 'pptest', engine, approximant, 'pptest.ini')
 
-    cppptest=set_pptest(init_ini_file())
-    with open(pptest_ini_file,'w') as cpfile:
-        cppptest.write(cpfile)
+            cppptest=set_pptest(init_ini_file(), engine=engine, 
+                                approximant=approximant)
+            with open(pptest_ini_file,'w') as cpfile:
+                cppptest.write(cpfile)
 
-    lalinferenceargs = [ 'lalinference_pp_pipe'
-                         , '-r'
-                         , './run'
-                         , '-N'
-                         , '100'
-                         , pptest_ini_file ]
+            lalinferenceargs = [ 'lalinference_pp_pipe'
+                                 , '-r'
+                                 , './run'
+                                 , '-N'
+                                 , '100'
+                                 , pptest_ini_file ]
 
-    subprocess.call(lalinferenceargs)
+            subprocess.call(lalinferenceargs)
 
-    if args.condor_submit:
-        condor_submit_dag = ['condor_submit_dag',args.output+'/pptest/run/priortest.dag']
-        subprocess.call(condor_submit_dag)
+            if args.condor_submit:
+                condor_submit_dag = ['condor_submit_dag', os.path.join(args.output, 'pptest', engine, approximant, 'run/priortest.dag')]
+                subprocess.call(condor_submit_dag)
+

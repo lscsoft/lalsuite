@@ -193,10 +193,10 @@ static INT4 XLALSEOBNRv3_opt_HDerivs_for_Omega(
   }
 
   if(isnan(derivs[0]*derivs[1]*derivs[2])){
-      printf("NAN in derivative! derivs0,1,2 = %e %e %e | divby0 = %d\n",derivs[0],derivs[1],derivs[2],divby0);
-      XLAL_ERROR( XLAL_EFUNC );
-      exit(1);
-    }
+    XLALPrintError("XLALSEOBNRv3_opt_HDerivs_for_Omega failed!\n");
+    XLALPrintError("NAN in derivative! derivs0,1,2 = %e %e %e | divby0 = %d\n",derivs[0],derivs[1],derivs[2],divby0);
+    XLAL_ERROR( XLAL_EFAILED );
+  }
 
   return 0;
 }
@@ -487,10 +487,10 @@ UNUSED static INT4 XLALSEOBNRv3_opt_ComputeHamiltonianDerivatives(const REAL8 * 
   }
 
   if(isnan(derivs[0]*derivs[1]*derivs[2]*derivs[3]*derivs[4]*derivs[5]*derivs[6]*derivs[7]*derivs[8]*derivs[9]*derivs[10]*derivs[11])){
-    printf("NAN in derivative! derivs0,1,2,3,4,5,6,7,8,9,10,11 = %e %e %e %e %e %e %e %e %e %e %e %e | divby0 = %d\n",derivs[0],derivs[1],derivs[2],derivs[3],derivs[4],derivs[5],derivs[6],derivs[7],derivs[8],derivs[9],derivs[10],derivs[11],divby0);
-        XLAL_ERROR( XLAL_EFUNC );
-        exit(1);
-        }
+    XLALPrintError("XLALSEOBNRv3_opt_ComputeHamiltonianDerivatives failed!\n");
+    XLALPrintError("NAN in derivative! derivs0,1,2,3,4,5,6,7,8,9,10,11 = %e %e %e %e %e %e %e %e %e %e %e %e | divby0 = %d\n",derivs[0],derivs[1],derivs[2],derivs[3],derivs[4],derivs[5],derivs[6],derivs[7],derivs[8],derivs[9],derivs[10],derivs[11],divby0);
+    XLAL_ERROR( XLAL_EFAILED );
+  }
 
  return 0;
 }

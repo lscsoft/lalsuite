@@ -604,6 +604,184 @@ XLALSimInspiralPNFlux_12PNTidalCoeff(
         return (-176./7. - 1803./28.*mByM + 643./4.*mByM*mByM -155./2.*mByM*mByM*mByM) * mByM*mByM*mByM*mByM;
 }
 
+/* Non-spin phasing terms - see arXiv:0907.0700, Eq. 3.18 */
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_2PNCoeff(
+        REAL8 eta
+    )
+{
+        return 5.*(74.3/8.4 + 11.*eta)/9.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_3PNCoeff(
+        REAL8 UNUSED eta)
+{
+        return -16.*LAL_PI;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_4PNCoeff(
+        REAL8 eta
+    )
+{
+        return 5.*(3058.673/7.056 + 5429./7.*eta+617.*eta*eta)/72.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_5PNCoeff(
+        REAL8 eta
+    )
+{
+        return 5./9.*(772.9/8.4-13.*eta)*LAL_PI;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_5PNLogCoeff(
+        REAL8 eta
+    )
+{
+        return 5./3.*(772.9/8.4-13.*eta)*LAL_PI;
+}
+
+static REAL8 UNUSED XLALSimInspiralTaylorF2Phasing_6PNLogCoeff(
+        REAL8 UNUSED eta
+    )
+{
+  return -684.8/2.1;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_6PNCoeff(
+        REAL8 eta
+    )
+{
+  return 11583.231236531/4.694215680 - 640./3.*LAL_PI*LAL_PI - 684.8/2.1*LAL_GAMMA + eta*(-15737.765635/3.048192 + 225.5/1.2*LAL_PI*LAL_PI) + eta*eta*76.055/1.728 - eta*eta*eta*127.825/1.296 + XLALSimInspiralTaylorF2Phasing_6PNLogCoeff(eta)*log(4.);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_7PNCoeff(
+        REAL8 eta
+    )
+{
+        return LAL_PI*(770.96675/2.54016 + 378.515/1.512*eta - 740.45/7.56*eta*eta);
+}
+
+/* Spin-orbit terms - can be derived from arXiv:1303.7412, Eq. 3.15-16 */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_3PNSOCoeff(
+        REAL8 mByM
+    )
+{
+        return  mByM*(25.+38./3.*mByM);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_5PNSOCoeff(
+        REAL8 mByM
+    )
+{
+  return -mByM*(1391.5/8.4-mByM*(1.-mByM)*10./3.+ mByM*(1276./8.1+mByM*(1.-mByM)*170./9.));
+
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_6PNSOCoeff(
+        REAL8 mByM)
+{
+  return LAL_PI*mByM*(1490./3. + mByM*260.);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_7PNSOCoeff(
+        REAL8 mByM
+    )
+{
+  REAL8 eta=mByM*(1.-mByM);
+  return mByM*(-17097.8035/4.8384+eta*28764.25/6.72+eta*eta*47.35/1.44 + mByM*(-7189.233785/1.524096+eta*458.555/3.024-eta*eta*534.5/7.2));
+}
+
+/*
+ * Spin-squared corrections to TF2 phasing
+ * Compute 2.0PN SS, QM, and self-spin
+ * See Eq. (6.24) in arXiv:0810.5336
+ * 9b,c,d in arXiv:astro-ph/0504538
+ * See also https://dcc.ligo.org/T1800298
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_4PNS1S2Coeff(
+        REAL8 eta
+    )
+{
+  return  247./4.8*eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_4PNS1S2OCoeff(
+        REAL8 eta
+    )
+{
+  return  -721./4.8*eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_4PNQM2SOCoeff(
+        REAL8 mByM
+    )
+{
+  return -720./9.6*mByM*mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_4PNSelf2SOCoeff(
+        REAL8 mByM
+    )
+{
+  return 1./9.6*mByM*mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_4PNQM2SCoeff(
+        REAL8 mByM
+    )
+{
+  return 240./9.6*mByM*mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_4PNSelf2SCoeff(
+        REAL8 mByM
+    )
+{
+  return -7./9.6*mByM*mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_6PNS1S2OCoeff(
+        REAL8 eta
+    )
+{
+  return (326.75/1.12L + 557.5/1.8*eta)*eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_6PNSelf2SCoeff(
+        REAL8 mByM
+    )
+{
+  return (-4108.25/6.72-108.5/1.2*mByM+125.5/3.6*mByM*mByM)*mByM*mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_6PNQM2SCoeff(
+        REAL8 mByM
+    )
+{
+  return (4703.5/8.4+2935./6.*mByM-120.*mByM*mByM)*mByM*mByM;
+}
+
 /*
  * Tidal corrections to F2 phasing
  * See arXiv:1101.1673
@@ -626,7 +804,6 @@ XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(
   return (-15895./28. + 4595./28.*mByM + 5715./14.*mByM*mByM - 325./7.*mByM*mByM*mByM)*mByM*mByM*mByM*mByM;
 }
 
-
 /* The phasing function for TaylorF2 frequency-domain waveform.
  * This function is tested in ../test/PNCoefficients.c for consistency
  * with the energy and flux in this file.
@@ -645,43 +822,27 @@ XLALSimInspiralPNPhasing_F2(
 	)
 {
     const REAL8 mtot = m1 + m2;
-    const REAL8 d = (m1 - m2) / (m1 + m2);
     const REAL8 eta = m1*m2/mtot/mtot;
     const REAL8 m1M = m1/mtot;
     const REAL8 m2M = m2/mtot;
-    /* Use the spin-orbit variables from arXiv:1303.7412, Eq. 3.9
-     * We write dSigmaL for their (\delta m/m) * \Sigma_\ell
-     * There's a division by mtotal^2 in both the energy and flux terms
-     * We just absorb the division by mtotal^2 into SL and dSigmaL
-     */
-    const REAL8 SL = m1M*m1M*chi1L + m2M*m2M*chi2L;
-    const REAL8 dSigmaL = d*(m2M*chi2L - m1M*chi1L);
 
     const REAL8 pfaN = 3.L/(128.L * eta);
 
     memset(pfa, 0, sizeof(PNPhasingSeries));
 
-    /* Non-spin phasing terms - see arXiv:0907.0700, Eq. 3.18 */
     pfa->v[0] = 1.L;
     pfa->v[1] = 0.L;
-    pfa->v[2] = 5.L*(743.L/84.L + 11.L * eta)/9.L;
-    pfa->v[3] = -16.L*LAL_PI;
-    pfa->v[4] = 5.L*(3058.673L/7.056L + 5429.L/7.L * eta
-                     + 617.L * eta*eta)/72.L;
-    pfa->v[5] = 5.L/9.L * (7729.L/84.L - 13.L * eta) * LAL_PI;
-    pfa->vlogv[5] = 5.L/3.L * (7729.L/84.L - 13.L * eta) * LAL_PI;
-    pfa->v[6] = (11583.231236531L/4.694215680L
-                     - 640.L/3.L * LAL_PI * LAL_PI - 6848.L/21.L*LAL_GAMMA)
-                 + eta * (-15737.765635L/3.048192L
-                     + 2255./12. * LAL_PI * LAL_PI)
-                 + eta*eta * 76055.L/1728.L
-                 - eta*eta*eta * 127825.L/1296.L;
-    pfa->v[6] += (-6848.L/21.L)*log(4.);
-    pfa->vlogv[6] = -6848.L/21.L;
-    pfa->v[7] = LAL_PI * ( 77096675.L/254016.L
-                     + 378515.L/1512.L * eta - 74045.L/756.L * eta*eta);
+    pfa->v[2] = XLALSimInspiralTaylorF2Phasing_2PNCoeff(eta);
+    pfa->v[3] = XLALSimInspiralTaylorF2Phasing_3PNCoeff(eta);
+    pfa->v[4] = XLALSimInspiralTaylorF2Phasing_4PNCoeff(eta);
+    pfa->v[5] = XLALSimInspiralTaylorF2Phasing_5PNCoeff(eta);
+    pfa->vlogv[5] = XLALSimInspiralTaylorF2Phasing_5PNLogCoeff(eta);
+    pfa->v[6] =  XLALSimInspiralTaylorF2Phasing_6PNCoeff(eta);
+    pfa->vlogv[6] = XLALSimInspiralTaylorF2Phasing_6PNLogCoeff(eta);
+    pfa->v[7] = XLALSimInspiralTaylorF2Phasing_7PNCoeff(eta);
 
     /* modify the PN coefficients if a non null LALSimInspiralTestGRParam structure is passed */
+    /* BEWARE: this is for the non-spinning case only!*/
     pfa->v[0]*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi0(p));
     pfa->v[1] = XLALSimInspiralWaveformParamsLookupNonGRDChi1(p);
     pfa->v[2]*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi2(p));
@@ -692,50 +853,47 @@ XLALSimInspiralPNPhasing_F2(
     pfa->v[6]*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi6(p));
     pfa->vlogv[6]*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi6L(p));
     pfa->v[7]*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi7(p));
-    REAL8 qm_def1=1.+XLALSimInspiralWaveformParamsLookupdQuadMon1(p);
-    REAL8 qm_def2=1.+XLALSimInspiralWaveformParamsLookupdQuadMon2(p);
-    
-    /* Compute 2.0PN SS, QM, and self-spin */
-    // See Eq. (6.24) in arXiv:0810.5336
-    // 9b,c,d in arXiv:astro-ph/0504538
-    REAL8 pn_sigma = eta * (721.L/48.L*chi1L*chi2L - 247.L/48.L*chi1dotchi2);
-    pn_sigma += (720.L*qm_def1 - 1.L)/96.0L * m1M * m1M * chi1L * chi1L;
-    pn_sigma += (720.L*qm_def2 - 1.L)/96.0L * m2M * m2M * chi2L * chi2L;
-    pn_sigma -= (240.L*qm_def1 - 7.L)/96.0L * m1M * m1M * chi1sq;
-    pn_sigma -= (240.L*qm_def2 - 7.L)/96.0L * m2M * m2M * chi2sq;
 
-    REAL8 pn_ss3 =  (326.75L/1.12L + 557.5L/1.8L*eta)*eta*chi1L*chi2L;
-    pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m1M-120.L*m1M*m1M)*qm_def1 + (-4108.25L/6.72L-108.5L/1.2L*m1M+125.5L/3.6L*m1M*m1M)) *m1M*m1M * chi1sq;
-    pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m2M-120.L*m2M*m2M)*qm_def2 + (-4108.25L/6.72L-108.5L/1.2L*m2M+125.5L/3.6L*m2M*m2M)) *m2M*m2M * chi2sq;
+    const REAL8 qm_def1=1.+XLALSimInspiralWaveformParamsLookupdQuadMon1(p);
+    const REAL8 qm_def2=1.+XLALSimInspiralWaveformParamsLookupdQuadMon2(p);
 
-    /* Spin-orbit terms - can be derived from arXiv:1303.7412, Eq. 3.15-16 */
-    const REAL8 pn_gamma = (554345.L/1134.L + 110.L*eta/9.L)*SL + (13915.L/84.L - 10.L*eta/3.L)*dSigmaL;
     switch( XLALSimInspiralWaveformParamsLookupPNSpinOrder(p) )
     {
         case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
         case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
-            pfa->v[7] += (-8980424995.L/762048.L + 6586595.L*eta/756.L - 305.L*eta*eta/36.L)*SL - (170978035.L/48384.L - 2876425.L*eta/672.L - 4735.L*eta*eta/144.L) * dSigmaL;
+	    pfa->v[7] += XLALSimInspiralTaylorF2Phasing_7PNSOCoeff(m1M)*chi1L+XLALSimInspiralTaylorF2Phasing_7PNSOCoeff(m2M)*chi2L;
 #if __GNUC__ >= 7
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
-            pfa->v[6] += LAL_PI * (3760.L*SL + 1490.L*dSigmaL)/3.L + pn_ss3;
+            pfa->v[6] += XLALSimInspiralTaylorF2Phasing_6PNSOCoeff(m1M)*chi1L
+	      + XLALSimInspiralTaylorF2Phasing_6PNSOCoeff(m2M)*chi2L
+	      + XLALSimInspiralTaylorF2Phasing_6PNS1S2OCoeff(eta)*chi1L*chi2L
+	      + (XLALSimInspiralTaylorF2Phasing_6PNQM2SCoeff(m1M)*qm_def1+XLALSimInspiralTaylorF2Phasing_6PNSelf2SCoeff(m1M))*chi1sq
+	      + (XLALSimInspiralTaylorF2Phasing_6PNQM2SCoeff(m2M)*qm_def2+XLALSimInspiralTaylorF2Phasing_6PNSelf2SCoeff(m2M))*chi2sq;
 #if __GNUC__ >= 7
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
-            pfa->v[5] += -1.L * pn_gamma;
-            pfa->vlogv[5] += -3.L * pn_gamma;
+            pfa->v[5] += XLALSimInspiralTaylorF2Phasing_5PNSOCoeff(m1M)*chi1L
+	      + XLALSimInspiralTaylorF2Phasing_5PNSOCoeff(m2M)*chi2L;
+            pfa->vlogv[5] += 3.*(XLALSimInspiralTaylorF2Phasing_5PNSOCoeff(m1M)*chi1L
+				 + XLALSimInspiralTaylorF2Phasing_5PNSOCoeff(m2M)*chi2L);
 #if __GNUC__ >= 7
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
-            pfa->v[4] += -10.L * pn_sigma;
+	    /* 2PN SS, QM, and self-spin */
+            pfa->v[4] += XLALSimInspiralTaylorF2Phasing_4PNS1S2Coeff(eta)*chi1dotchi2+XLALSimInspiralTaylorF2Phasing_4PNS1S2OCoeff(eta)*chi1L*chi2L
+	      + (XLALSimInspiralTaylorF2Phasing_4PNQM2SOCoeff(m1M)*qm_def1+XLALSimInspiralTaylorF2Phasing_4PNSelf2SOCoeff(m1M))*chi1L*chi1L
+	      + (XLALSimInspiralTaylorF2Phasing_4PNQM2SOCoeff(m2M)*qm_def2+XLALSimInspiralTaylorF2Phasing_4PNSelf2SOCoeff(m2M))*chi2L*chi2L
+	      + (XLALSimInspiralTaylorF2Phasing_4PNQM2SCoeff(m1M)*qm_def1+XLALSimInspiralTaylorF2Phasing_4PNSelf2SCoeff(m1M))*chi1sq
+	      + (XLALSimInspiralTaylorF2Phasing_4PNQM2SCoeff(m2M)*qm_def2+XLALSimInspiralTaylorF2Phasing_4PNSelf2SCoeff(m2M))*chi2sq;
 #if __GNUC__ >= 7
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
-            pfa->v[3] += 188.L*SL/3.L + 25.L*dSigmaL;
+            pfa->v[3] += XLALSimInspiralTaylorF2Phasing_3PNSOCoeff(m1M)*chi1L+XLALSimInspiralTaylorF2Phasing_3PNSOCoeff(m2M)*chi2L;
 #if __GNUC__ >= 7
             __attribute__ ((fallthrough));
 #endif
