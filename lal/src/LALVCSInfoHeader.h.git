@@ -45,9 +45,11 @@ extern "C" {
 #define @PACKAGE_NAME_UCASE@_VCS_CLEAN "@CLEAN@"
 #define @PACKAGE_NAME_UCASE@_VCS_STATUS "@STATUS@"
 
+#if @PACKAGE_NAME_UCASE@_VERSION_DEVEL != 0
 /* VCS header/library mismatch link check function */
 #define @PACKAGE_NAME_UCASE@_VCS_LINK_CHECK @PACKAGE_NAME_UCASE@_@CLEAN@_@ID@_VCS_HEADER_LIBRARY_MISMATCH
 void @PACKAGE_NAME_UCASE@_VCS_LINK_CHECK(void);
+#endif
 
 #ifdef __cplusplus
 }
