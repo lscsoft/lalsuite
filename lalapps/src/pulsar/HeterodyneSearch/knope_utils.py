@@ -3123,8 +3123,8 @@ class knopeDAG(pipeline.CondorDAG):
             else:
               excludetype = excludesegs[ifo]
 
-            if len(excludetype) > 0:
-              segFindCall += ' --exclude-segments ' + excludetype
+          if len(excludetype) > 0:
+            segFindCall += ' --exclude-segments ' + excludetype
 
       ligolwprint = self.get_config_option('segmentfind', 'ligolw_print', default='ligolw_print')
 
