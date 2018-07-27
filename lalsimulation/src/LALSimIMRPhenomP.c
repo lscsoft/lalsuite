@@ -625,6 +625,7 @@ static int PhenomPCore(
     lambda2_in = XLALSimInspiralWaveformParamsLookupTidalLambda2(extraParams);
     quadparam1_in = 1. + XLALSimInspiralWaveformParamsLookupdQuadMon1(extraParams);
     quadparam2_in = 1. + XLALSimInspiralWaveformParamsLookupdQuadMon2(extraParams);
+    SimInspiralCheckForInput(extraParams);
   }
 
   REAL8 lambda1, lambda2;
