@@ -56,8 +56,7 @@
 typedef struct tagLALSimNeutronStarEOS LALSimNeutronStarEOS;
 
 /** Recognised names of equations of state */
-extern const char * const lalSimNeutronStarEOSNames[64];
-
+extern const char * const lalSimNeutronStarEOSNames[65];
 
 /** Incomplete type for a neutron star family having a particular EOS. */
 typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;

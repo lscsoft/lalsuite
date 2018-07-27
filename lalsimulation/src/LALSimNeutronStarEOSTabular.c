@@ -458,6 +458,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
  * - SLY2
  * - SLY230A
  * - SLY9
+ * And we include HQC18 from http://user.numazu-ct.ac.jp/~sumi/eos/HQC18_submit
+ * - HQC18
  * @param[in] name The name of the equation of state.
  * @return A pointer to neutron star equation of state structure.
  */

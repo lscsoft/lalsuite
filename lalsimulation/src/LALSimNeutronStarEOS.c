@@ -78,7 +78,7 @@ struct tagLALSimNeutronStarEOS {
 /** @endcond */
 
 /** Recognised equations of state names */
-const char * const lalSimNeutronStarEOSNames[64] = {
+const char * const lalSimNeutronStarEOSNames[65] = {
         "ALF1", "ALF2", "ALF3", "ALF4",
         "AP1", "AP2", "AP3", "AP4", "APR4_EPP",
         "BBB2", "BGN1H1", "BPAL12", 
@@ -97,7 +97,11 @@ const char * const lalSimNeutronStarEOSNames[64] = {
         "KDE0V", "KDE0V1", "RS", "SK255", "SK272",
         "SKA", "SKB", "SKI2", "SKI3", "SKI4", "SKI5", "SKI6",
         "SKMP", "SKOP",
-        "SLY2", "SLY230A", "SLY9"
+        "SLY2", "SLY230A", "SLY9",
+        /* This EOS was added by request from
+         * http://user.numazu-ct.ac.jp/~sumi/eos/HQC18_submit
+         */
+        "HQC18"
     };
 
 /**

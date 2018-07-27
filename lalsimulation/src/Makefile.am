@@ -107,7 +107,8 @@ EOSDATAFILES = \
 	LALSimNeutronStarEOS_SKOP.dat \
 	LALSimNeutronStarEOS_SLY2.dat \
 	LALSimNeutronStarEOS_SLY230A.dat \
-	LALSimNeutronStarEOS_SLY9.dat
+	LALSimNeutronStarEOS_SLY9.dat \
+	LALSimNeutronStarEOS_HQC18.dat
 
 LDADD = liblalsimulation.la
 
