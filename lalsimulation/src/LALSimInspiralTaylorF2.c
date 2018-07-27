@@ -521,11 +521,13 @@ int XLALSimInspiralTaylorF2(
     REAL8Sequence *freqs = NULL;
     LIGOTimeGPS tC = {0, 0};
     int ret;
+    int retcode;
     REAL8 fCONT;
     INT4 tideO = XLALSimInspiralWaveformParamsLookupPNTidalOrder(p);
     REAL8 lambda1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(p);
     REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(p);
-    XLALSimInspiralSetQuadMonParamsFromLambdas(p);
+    retcode = XLALSimInspiralSetQuadMonParamsFromLambdas(p);
+    XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to set quadparams from Universal relation.\n");
 
     COMPLEX16FrequencySeries *htilde = NULL;
 

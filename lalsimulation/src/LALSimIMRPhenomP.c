@@ -621,11 +621,13 @@ static int PhenomPCore(
   REAL8 quadparam2_in = 1.0;
 
   if (IMRPhenomP_version == IMRPhenomPv2NRTidal_V) {
+    int retcode;
+    retcode = XLALSimInspiralSetQuadMonParamsFromLambdas(extraParams);
+    XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to set quadparams from Universal relation.\n"); 
     lambda1_in = XLALSimInspiralWaveformParamsLookupTidalLambda1(extraParams); 
     lambda2_in = XLALSimInspiralWaveformParamsLookupTidalLambda2(extraParams);
     quadparam1_in = 1. + XLALSimInspiralWaveformParamsLookupdQuadMon1(extraParams);
     quadparam2_in = 1. + XLALSimInspiralWaveformParamsLookupdQuadMon2(extraParams);
-    XLALSimInspiralSetQuadMonParamsFromLambdas(extraParams);
   }
 
   REAL8 lambda1, lambda2;

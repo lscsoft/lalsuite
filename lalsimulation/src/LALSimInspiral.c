@@ -974,8 +974,8 @@ int XLALSimInspiralChooseFDWaveform(
     int amplitudeO = XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALparams);
     int phaseO = XLALSimInspiralWaveformParamsLookupPNPhaseOrder(LALparams);
 
-    REAL8 quadparam1 = XLALSimInspiralWaveformParamsLookupdQuadMon1(LALparams);
-    REAL8 quadparam2 = XLALSimInspiralWaveformParamsLookupdQuadMon2(LALparams);
+    REAL8 quadparam1 = 1.+XLALSimInspiralWaveformParamsLookupdQuadMon1(LALparams);
+    REAL8 quadparam2 = 1.+XLALSimInspiralWaveformParamsLookupdQuadMon2(LALparams);
     REAL8 lambda1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALparams);
     REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALparams);
 
@@ -7090,12 +7090,14 @@ int XLALSimInspiralChooseFDWaveformOLD(
     return ret;
 }
 
-/* if you do NOT provide a quadparam[1,2] term and you DO provide
+/** 
+ * if you do NOT provide a quadparam[1,2] term and you DO provide
  * lamdba[1,2] then we calculate quad-mono term using universal relations
  * quadparam[1,2]_UR: Quadrupole-Monopole parameter computed using
- * universal relations (UR) */
+ * universal relations (UR) 
+ */
 
-void XLALSimInspiralSetQuadMonParamsFromLambdas(
+int XLALSimInspiralSetQuadMonParamsFromLambdas(
        LALDict *LALparams /**< LAL dictionary containing accessory parameters */
        )
 {
@@ -7113,6 +7115,7 @@ void XLALSimInspiralSetQuadMonParamsFromLambdas(
         REAL8 quadparam2_UR = XLALSimInspiralEOSQfromLambda(lambda2);
         XLALSimInspiralWaveformParamsInsertdQuadMon2(LALparams, quadparam2_UR - 1.);
     }
+    return XLAL_SUCCESS;
 }
 
 /** @} */
