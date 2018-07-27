@@ -525,7 +525,7 @@ int XLALSimInspiralTaylorF2(
     INT4 tideO = XLALSimInspiralWaveformParamsLookupPNTidalOrder(p);
     REAL8 lambda1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(p);
     REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(p);
-    SimInspiralCheckForInput(p);
+    XLALSimInspiralSetQuadMonParamsFromLambdas(p);
 
     COMPLEX16FrequencySeries *htilde = NULL;
 

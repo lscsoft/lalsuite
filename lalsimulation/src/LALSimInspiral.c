@@ -7095,7 +7095,7 @@ int XLALSimInspiralChooseFDWaveformOLD(
  * quadparam[1,2]_UR: Quadrupole-Monopole parameter computed using
  * universal relations (UR) */
 
-void SimInspiralCheckForInput(
+void XLALSimInspiralSetQuadMonParamsFromLambdas(
        LALDict *LALparams /**< LAL dictionary containing accessory parameters */
        )
 {
