@@ -66,7 +66,7 @@ def sinegaussian_example(axes1, axes2, e, pol):
 	axes2.grid(True)
 
 	hp, hc = lalsimulation.SimBurstSineGaussian(8.89, 250., 1., e, pol, 1./16384)
-	print "measured hrss = %.17g" % lalsimulation.MeasureHrss(hp, hc)
+	print("measured hrss = %.17g" % lalsimulation.MeasureHrss(hp, hc))
 	t = float(hp.epoch) + numpy.arange(0., len(hp.data.data)) * hp.deltaT
 	axes1.plot(t, hp.data.data, label = r"$h_{+}$")
 	t = float(hc.epoch) + numpy.arange(0., len(hc.data.data)) * hc.deltaT
