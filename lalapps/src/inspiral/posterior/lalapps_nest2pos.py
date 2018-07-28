@@ -103,7 +103,7 @@ def read_nested_from_hdf5(nested_path_list):
     # for metadata which is in a list, take the average.
     for level in metadata:
         for key in metadata[level]:
-            if isinstance(metadata[level][key], list):
+            if isinstance(metadata[level][key], list) and all(isinstance(x, (int,float)) for x in metadata[level][key]):
                 metadata[level][key] = mean(metadata[level][key])
 
     log_noise_evidence = reduce(logaddexp, log_noise_evidences) - log(len(log_noise_evidences))
