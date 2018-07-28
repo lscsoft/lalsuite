@@ -24,6 +24,9 @@
 #
 
 
+from __future__ import print_function
+
+
 from bisect import bisect_left, bisect_right
 import math
 import sys
@@ -299,7 +302,7 @@ def burca(
 	#
 
 	if verbose:
-		print >>sys.stderr, "indexing ..."
+		print("indexing ...", file=sys.stderr)
 	coinc_tables = CoincTables(xmldoc, coinc_definer_row)
 
 	#

@@ -36,6 +36,9 @@ again using the standard coincidence infrastructure.
 """
 
 
+from __future__ import print_function
+
+
 import bisect
 import sys
 
@@ -598,7 +601,7 @@ def binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, ver
 	#
 
 	if verbose:
-		print >>sys.stderr, "indexing ..."
+		print("indexing ...", file=sys.stderr)
 
 	b_b_def = {
 		"StringCusp": burca.StringCuspBBCoincDef,
@@ -715,25 +718,25 @@ def binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, ver
 		#
 
 		if verbose:
-			print >>sys.stderr, "constructing %s:" % sb_b_def.description
+			print("constructing %s:" % sb_b_def.description, file=sys.stderr)
 		for n, sim in enumerate(contents.simbursttable):
 			if verbose:
-				print >>sys.stderr, "\t%.1f%%\r" % (100.0 * n / N),
+				print("\t%.1f%%\r" % (100.0 * n / N), end=' ', file=sys.stderr)
 			events = find_sngl_burst_matches(contents, sim, snglcomparefunc, burst_peak_time_window)
 			if events:
 				add_sim_burst_coinc(contents, sim, events, contents.sb_b_coinc_def_id)
 		if verbose:
-			print >>sys.stderr, "\t100.0%"
+			print("\t100.0%", file=sys.stderr)
 
 		#
 		# Find sim_burst <--> coinc_event coincidences.
 		#
 
 		if verbose:
-			print >>sys.stderr, "constructing %s and %s:" % (sb_c_e_def.description, sb_c_n_def.description)
+			print("constructing %s and %s:" % (sb_c_e_def.description, sb_c_n_def.description), file=sys.stderr)
 		for n, sim in enumerate(contents.simbursttable):
 			if verbose:
-				print >>sys.stderr, "\t%.1f%%\r" % (100.0 * n / N),
+				print("\t%.1f%%\r" % (100.0 * n / N), end=' ', file=sys.stderr)
 			offsetvector = contents.offsetvectors[sim.time_slide_id]
 			coincs = contents.coincs_near_peaktime(sim.time_geocent, coinc_peak_time_window, offsetvector)
 			exact_coinc_event_ids = find_exact_coinc_matches(coincs, sim, snglcomparefunc, contents.seglists, offsetvector)
@@ -744,9 +747,9 @@ def binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, ver
 			if near_coinc_event_ids:
 				add_sim_coinc_coinc(contents, sim, near_coinc_event_ids, contents.sb_c_n_coinc_def_id)
 		if verbose:
-			print >>sys.stderr, "\t100.0%"
+			print("\t100.0%", file=sys.stderr)
 	elif verbose:
-		print >>sys.stderr, "no %s table in document, skipping" % lsctables.SimBurstTable.tableName
+		print("no %s table in document, skipping" % lsctables.SimBurstTable.tableName, file=sys.stderr)
 
 	#
 	# Search for sim_inspiral <--> * coincidences
@@ -760,25 +763,25 @@ def binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, ver
 		#
 
 		if verbose:
-			print >>sys.stderr, "constructing %s:" % si_b_def.description
+			print("constructing %s:" % si_b_def.description, file=sys.stderr)
 		for n, sim in enumerate(contents.siminspiraltable):
 			if verbose:
-				print >>sys.stderr, "\t%.1f%%\r" % (100.0 * n / N),
+				print("\t%.1f%%\r" % (100.0 * n / N), end=' ', file=sys.stderr)
 			events = find_sngl_burst_matches(contents, sim, snglcomparefunc, burst_peak_time_window)
 			if events:
 				add_sim_burst_coinc(contents, sim, events, contents.si_b_coinc_def_id)
 		if verbose:
-			print >>sys.stderr, "\t100.0%"
+			print("\t100.0%", file=sys.stderr)
 
 		#
 		# Find sim_inspiral <--> coinc_event coincidences.
 		#
 
 		if verbose:
-			print >>sys.stderr, "constructing %s and %s:" % (si_c_e_def.description, si_c_n_def.description)
+			print("constructing %s and %s:" % (si_c_e_def.description, si_c_n_def.description), file=sys.stderr)
 		for n, sim in enumerate(contents.siminspiraltable):
 			if verbose:
-				print >>sys.stderr, "\t%.1f%%\r" % (100.0 * n / N),
+				print("\t%.1f%%\r" % (100.0 * n / N), end=' ', file=sys.stderr)
 			offsetvector = contents.offsetvectors[sim.time_slide_id]
 			coincs = contents.coincs_near_peaktime(sim.time_geocent, coinc_peak_time_window, offsetvector)
 			exact_coinc_event_ids = find_exact_coinc_matches(coincs, sim, snglcomparefunc, contents.seglists, offsetvector)
@@ -789,9 +792,9 @@ def binjfind(xmldoc, process, search, snglcomparefunc, nearcoinccomparefunc, ver
 			if near_coinc_event_ids:
 				add_sim_coinc_coinc(contents, sim, near_coinc_event_ids, contents.si_c_n_coinc_def_id)
 		if verbose:
-			print >>sys.stderr, "\t100.0%"
+			print("\t100.0%", file=sys.stderr)
 	elif verbose:
-		print >>sys.stderr, "no %s table in document, skipping" % lsctables.SimInspiralTable.tableName
+		print("no %s table in document, skipping" % lsctables.SimInspiralTable.tableName, file=sys.stderr)
 
 	#
 	# Done.

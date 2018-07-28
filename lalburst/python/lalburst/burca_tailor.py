@@ -24,6 +24,9 @@
 #
 
 
+from __future__ import print_function
+
+
 import copy
 import itertools
 import math
@@ -198,7 +201,7 @@ class BurcaCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 		self = None
 		for n, filename in enumerate(filenames, 1):
 			if verbose:
-				print >>sys.stderr, "%d/%d:" % (n, len(filenames)),
+				print("%d/%d:" % (n, len(filenames)), end=' ', file=sys.stderr)
 			xmldoc = ligolw_utils.load_filename(filename, verbose = verbose, contenthandler = cls.contenthandler)
 			if self is None:
 				self = cls.from_xml(xmldoc, name)

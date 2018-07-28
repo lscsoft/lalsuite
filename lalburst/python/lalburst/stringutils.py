@@ -24,6 +24,9 @@
 #
 
 
+from __future__ import print_function
+
+
 try:
 	from fpconst import NegInf
 except ImportError:
@@ -373,7 +376,7 @@ def load_likelihood_data(filenames, verbose = False):
 	seglists = None
 	for n, filename in enumerate(filenames, 1):
 		if verbose:
-			print >>sys.stderr, "%d/%d:" % (n, len(filenames)),
+			print("%d/%d:" % (n, len(filenames)), end=' ', file=sys.stderr)
 		xmldoc = ligolw_utils.load_filename(filename, verbose = verbose, contenthandler = StringCoincParamsDistributions.LIGOLWContentHandler)
 		this_coinc_params = StringCoincParamsDistributions.from_xml(xmldoc, u"string_cusp_likelihood")
 		this_seglists = lsctables.SearchSummaryTable.get_table(xmldoc).get_out_segmentlistdict(lsctables.ProcessTable.get_table(xmldoc).get_ids_by_program(u"lalapps_string_meas_likelihood")).coalesce()
@@ -413,17 +416,17 @@ def time_slides_livetime(seglists, time_slides, min_instruments, verbose = False
 	seglists = seglists.copy()	# don't modify original
 	N = len(time_slides)
 	if verbose:
-		print >>sys.stderr, "computing the live time for %d time slides:" % N
+		print("computing the live time for %d time slides:" % N, file=sys.stderr)
 	for n, time_slide in enumerate(time_slides):
 		if verbose:
-			print >>sys.stderr, "\t%.1f%%\r" % (100.0 * n / N),
+			print("\t%.1f%%\r" % (100.0 * n / N), end=' ', file=sys.stderr)
 		seglists.offsets.update(time_slide)
 		if clip is None:
 			livetime += float(abs(segmentsUtils.vote(seglists.values(), min_instruments)))
 		else:
 			livetime += float(abs(segmentsUtils.vote((seglists & clip).values(), min_instruments)))
 	if verbose:
-		print >>sys.stderr, "\t100.0%"
+		print("\t100.0%", file=sys.stderr)
 	return livetime
 
 
@@ -440,10 +443,10 @@ def time_slides_livetime_for_instrument_combo(seglists, time_slides, instruments
 	offseglists = seglists.copy(keys = set(seglists) - set(instruments))
 	N = len(time_slides)
 	if verbose:
-		print >>sys.stderr, "computing the live time for %s in %d time slides:" % (", ".join(instruments), N)
+		print("computing the live time for %s in %d time slides:" % (", ".join(instruments), N), file=sys.stderr)
 	for n, time_slide in enumerate(time_slides):
 		if verbose:
-			print >>sys.stderr, "\t%.1f%%\r" % (100.0 * n / N),
+			print("\t%.1f%%\r" % (100.0 * n / N), end=' ', file=sys.stderr)
 		onseglists.offsets.update(time_slide)
 		offseglists.offsets.update(time_slide)
 		if clip is None:
@@ -451,7 +454,7 @@ def time_slides_livetime_for_instrument_combo(seglists, time_slides, instruments
 		else:
 			livetime += float(abs((onseglists & clip).intersection(onseglists.keys()) - offseglists.union(offseglists.keys())))
 	if verbose:
-		print >>sys.stderr, "\t100.0%"
+		print("\t100.0%", file=sys.stderr)
 	return livetime
 
 

@@ -24,6 +24,9 @@
 #
 
 
+from __future__ import print_function
+
+
 import math
 import sys
 
@@ -235,7 +238,7 @@ WHERE
 						self.found_x.append(sim.frequency)
 						self.found_y.append(amplitude)
 			elif found:
-				print >>sys.stderr, "odd, injection %s was found in %s but not injected..." % (sim.simulation_id, "+".join(self.instruments))
+				print("odd, injection %s was found in %s but not injected..." % (sim.simulation_id, "+".join(self.instruments)), file=sys.stderr)
 
 	def _bin_events(self, binning = None):
 		# called internally by finish()
@@ -268,8 +271,8 @@ WHERE
 			# program will take too long to run
 			raise ValueError("smoothing filter too large (not enough injections)")
 
-		print >>sys.stderr, "The smoothing window for %s is %g x %g bins" % ("+".join(self.instruments), self.window_size_x, self.window_size_y),
-		print >>sys.stderr, "which is %g%% x %g%% of the binning" % (100.0 * self.window_size_x / binning[0].n, 100.0 * self.window_size_y / binning[1].n)
+		print("The smoothing window for %s is %g x %g bins" % ("+".join(self.instruments), self.window_size_x, self.window_size_y), end=' ', file=sys.stderr)
+		print("which is %g%% x %g%% of the binning" % (100.0 * self.window_size_x / binning[0].n, 100.0 * self.window_size_y / binning[1].n), file=sys.stderr)
 
 	def finish(self, binning = None):
 		# compute the binning if needed, and set the injections
@@ -279,11 +282,11 @@ WHERE
 		self._bin_events(binning)
 
 		# smooth the efficiency data.
-		print >>sys.stderr, "Sum of numerator bins before smoothing = %g" % self.efficiency.numerator.array.sum()
-		print >>sys.stderr, "Sum of denominator bins before smoothing = %g" % self.efficiency.denominator.array.sum()
+		print("Sum of numerator bins before smoothing = %g" % self.efficiency.numerator.array.sum(), file=sys.stderr)
+		print("Sum of denominator bins before smoothing = %g" % self.efficiency.denominator.array.sum(), file=sys.stderr)
 		rate.filter_binned_ratios(self.efficiency, rate.gaussian_window(self.window_size_x, self.window_size_y))
-		print >>sys.stderr, "Sum of numerator bins after smoothing = %g" % self.efficiency.numerator.array.sum()
-		print >>sys.stderr, "Sum of denominator bins after smoothing = %g" % self.efficiency.denominator.array.sum()
+		print("Sum of numerator bins after smoothing = %g" % self.efficiency.numerator.array.sum(), file=sys.stderr)
+		print("Sum of denominator bins after smoothing = %g" % self.efficiency.denominator.array.sum(), file=sys.stderr)
 
 		# regularize to prevent divide-by-zero errors
 		self.efficiency.regularize()
