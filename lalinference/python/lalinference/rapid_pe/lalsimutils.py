@@ -25,6 +25,8 @@ import copy
 import types
 from math import cos, sin, sqrt
 
+from six.moves import range
+
 import numpy as np
 from scipy import interpolate
 from scipy import signal
@@ -335,7 +337,7 @@ class InnerProduct(object):
             WFD.data.data[:] = np.sqrt(self.weights) # W_FD is 1/sqrt(S_n(f))
             WFD.data.data[0] = WFD.data.data[-1] = 0. # zero 0, f_Nyq bins
             lal.REAL8FreqTimeFFT(WTD, WFD, revplan) # IFFT to TD
-            for i in xrange(N_spec/2, self.len2side - N_spec/2):
+            for i in range(N_spec/2, self.len2side - N_spec/2):
                 WTD.data.data[i] = 0. # Zero all but T_spec/2 ends of W_TD
             lal.REAL8TimeFreqFFT(WFD, WTD, fwdplan) # FFT back to FD
             WFD.data.data[0] = WFD.data.data[-1] = 0. # zero 0, f_Nyq bins

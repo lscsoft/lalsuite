@@ -26,6 +26,7 @@
 Populate a sim_inspiral table with random draws from an ASCII table.
 """
 from optparse import Option, OptionParser
+from six.moves import range
 import numpy as np
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
@@ -249,11 +250,11 @@ if __name__ == "__main__":
         else:  # executed if no exception is raised
             print(('f_low given in both input file and command line.'
                   ' Using command line argument: %r' % opts.flow))
-        flow = [opts.flow for i in xrange(N)]
+        flow = [opts.flow for i in range(N)]
 
     # Populate structured array
-    injections['waveform'] = [opts.approx for i in xrange(N)]
-    injections['taper'] = [opts.taper for i in xrange(N)]
+    injections['waveform'] = [opts.approx for i in range(N)]
+    injections['taper'] = [opts.taper for i in range(N)]
     injections['f_lower'] = flow
     injections['mchirp'] = mc
     injections['eta'] = eta
@@ -273,8 +274,8 @@ if __name__ == "__main__":
     injections['spin2x'] = s2x
     injections['spin2y'] = s2y
     injections['spin2z'] = s2z
-    injections['amp_order'] = [opts.amporder for i in xrange(N)]
-    injections['numrel_data'] = [ "" for _ in xrange(N)]
+    injections['amp_order'] = [opts.amporder for i in range(N)]
+    injections['numrel_data'] = [ "" for _ in range(N)]
 
     # Create a new XML document
     xmldoc = ligolw.Document()
@@ -283,7 +284,7 @@ if __name__ == "__main__":
     xmldoc.childNodes[0].appendChild(sim_table)
 
     # Add empty rows to the sim_inspiral table
-    for inj in xrange(N):
+    for inj in range(N):
         row = sim_table.RowType()
         for slot in row.__slots__: setattr(row, slot, 0)
         sim_table.append(row)
