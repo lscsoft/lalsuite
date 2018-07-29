@@ -126,5 +126,5 @@ setup(
                            .replace('.so', '')
                            .replace('/', '.'), [])
                  for filename in glob(PYTHONDIR + '/**/*.so')],
-    install_requires=['ligo-segments', 'numpy>=1.7']
+    install_requires=['ligo-segments', 'numpy>=1.7', 'python-dateutil']
 )
