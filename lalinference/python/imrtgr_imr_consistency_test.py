@@ -151,7 +151,7 @@ if __name__ == '__main__':
   ring_target = os.path.join(out_dir, 'lalinf_ring')
   imr_target = os.path.join(out_dir, 'lalinf_imr')
   
-  print
+  print()
   if insp_posplots != insp_target:
     if os.path.islink(insp_target):
       print('... removing existing link %s'%(insp_target))
@@ -170,7 +170,7 @@ if __name__ == '__main__':
       os.system('rm %s'%(imr_target))
     print('... linking %s to %s' %(imr_posplots, imr_target))
     os.system('ln -s %s %s' %(imr_posplots, imr_target))
-  print
+  print()
   
   # read the injection mass parameters if this is an injection
   m1_inj = options.m1_inj
@@ -230,7 +230,7 @@ if __name__ == '__main__':
   # compute the final mass and spin
   Mf_imr, chif_imr = tgr.calc_final_mass_spin(m1_imr, m2_imr, chi1_imr, chi2_imr, fit_formula)
 
-  print '... read posteriors'
+  print('... read posteriors')
   ###############################################################################################
 
   ###############################################################################################
@@ -297,7 +297,7 @@ if __name__ == '__main__':
     P_Mfchif_r[np.isinf(P_Mfchif_r)] = 0.
     P_Mfchif_imr[np.isinf(P_Mfchif_imr)] = 0.
 
-    print '... computed (prior) corrected posteriors'
+    print('... computed (prior) corrected posteriors')
     
   ###############################################################################################
 
@@ -306,7 +306,7 @@ if __name__ == '__main__':
   ################################################################################################
   P_dMfdchif = dMf*dchif*ss.correlate2d(P_Mfchif_i, P_Mfchif_r, boundary='fill', mode='same')
 
-  print '... computed P(delta_Mf, delta_chif)'
+  print('... computed P(delta_Mf, delta_chif)')
   ###############################################################################################
 
   ################################################################################################
@@ -344,7 +344,7 @@ if __name__ == '__main__':
   conf_v1v2 = confidence(P_dMfbyMf_dchifbychif)
   gr_height = P_dMfbyMf_dchifbychif[np.argmin(abs(dMfbyMf_vec)), np.argmin(abs(dchifbychif_vec))] # taking value closest to (0,0)
   gr_conf_level = conf_v1v2.level_from_height(gr_height)
-  print '... no deviation from GR above %.1f%% confidence level'%(100.*gr_conf_level)
+  print('... no deviation from GR above %.1f%% confidence level'%(100.*gr_conf_level))
 
   # creating the parameter table
   param_table = [['Upper cutoff freq for the inspiral analysis: %s Hz'%insp_fhigh],
@@ -744,8 +744,8 @@ if __name__ == '__main__':
   plt.savefig('%s/img/dMfbyMfdchifbychif.png' %(out_dir), dpi=300)
   plt.savefig('%s/img/dMfbyMfdchifbychif_thumb.png' %(out_dir), dpi=72)
 
-  print '... made summary plots' 
+  print('... made summary plots') 
 
-  print '... completed in %f seconds' %(time.time()-start_time)
+  print('... completed in %f seconds' %(time.time()-start_time))
   #########################################################################################
 

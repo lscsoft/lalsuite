@@ -96,17 +96,17 @@ if opts.coinc_xml is not None:
     assert len(coinc_table) == 1
     coinc_row = coinc_table[0]
     event_time = coinc_row.get_end()
-    print "Coinc XML loaded, event time: %s" % str(coinc_row.get_end())
+    print("Coinc XML loaded, event time: %s" % str(coinc_row.get_end()))
 elif opts.sim_xml is not None:
     xmldoc = utils.load_filename(opts.sim_xml, contenthandler=ligolw.LIGOLWContentHandler)
     sim_table = lsctables.SimInspiralTable.get_table(xmldoc)
     assert len(sim_table) == 1
     sim_row = sim_table[0]
     event_time = sim_row.get_end()
-    print "Sim XML loaded, event time: %s" % str(sim_row.get_end())
+    print("Sim XML loaded, event time: %s" % str(sim_row.get_end()))
 elif opts.event_time is not None:
     event_time = glue.lal.LIGOTimeGPS(opts.event_time)
-    print "Event time from command line: %s" % str(event_time)
+    print("Event time from command line: %s" % str(event_time))
 else:
     raise ValueError("Either --coinc-xml or --event-time must be provided to parse event time.")
 
@@ -128,7 +128,7 @@ else:
 
 m1_SI = m1 * lal.MSUN_SI
 m2_SI = m2 * lal.MSUN_SI
-print "Computing marginalized likelihood in a neighborhood about intrinsic parameters mass 1: %f, mass 2 %f" % (m1, m2)
+print("Computing marginalized likelihood in a neighborhood about intrinsic parameters mass 1: %f, mass 2 %f" % (m1, m2))
 
 
 # The next 4 values set the maximum size of the region to explore
@@ -238,13 +238,13 @@ min_mc = McSIG * min_mc_factor
 max_mc = McSIG * max_mc_factor
 param_ranges = eff.find_effective_Fisher_region(PSIG, IP, wide_match,
         param_names, [[min_mc, max_mc],[min_eta, max_eta]])
-print "Computing amibiguity function in the range:"
+print("Computing amibiguity function in the range:")
 for i, param in enumerate(param_names):
     if param=='Mc' or param=='m1' or param=='m2': # rescale output by MSUN
-        print "\t", param, ":", np.array(param_ranges[i])/lal.MSUN_SI,\
-                "(Msun)"
+        print("\t", param, ":", np.array(param_ranges[i])/lal.MSUN_SI,\
+                "(Msun)")
     else:
-        print "\t", param, ":", param_ranges[i]
+        print("\t", param, ":", param_ranges[i])
 
 # setup uniform parameter grid for effective Fisher
 pts_per_dim = [NMcs, NEtas]
@@ -278,16 +278,16 @@ evals, evecs, rot = eff.eigensystem(gam)
 
 # Print information about the effective Fisher matrix
 # and its eigensystem
-print "Least squares fit finds g_Mc,Mc = ", fitgamma[0]
-print "                        g_Mc,eta = ", fitgamma[1]
-print "                        g_eta,eta = ", fitgamma[2]
+print("Least squares fit finds g_Mc,Mc = ", fitgamma[0])
+print("                        g_Mc,eta = ", fitgamma[1])
+print("                        g_eta,eta = ", fitgamma[2])
 
-print "\nFisher matrix:"
-print "eigenvalues:", evals
-print "eigenvectors:"
-print evecs
-print "rotation taking eigenvectors into Mc, eta basis:"
-print rot
+print("\nFisher matrix:")
+print("eigenvalues:", evals)
+print("eigenvectors:")
+print(evecs)
+print("rotation taking eigenvectors into Mc, eta basis:")
+print(rot)
 
 #
 # Distribute points inside predicted ellipsoid of certain level of overlap
@@ -302,13 +302,13 @@ Nspokes = int(Nrandpts/Nrad)
 # pointing both directions from the center!
 ph0 = np.arctan(np.abs(r1) * (rot[0,1])/(np.abs(r2) * rot[0,0]) )
 if opts.linear_spoked:
-	print "Doing linear spoked placement"
+	print("Doing linear spoked placement")
 	cart_grid, sph_grid = eff.linear_spoked_ellipsoid(Nrad,Nspokes,[ph0],r1,r2)
 elif opts.uniform_spoked:
-	print "Doing uniform spoked placement"
+	print("Doing uniform spoked placement")
 	cart_grid, sph_grid = eff.uniform_spoked_ellipsoid(Nrad,Nspokes,[ph0],r1,r2)
 else: # do random, uniform placement
-	print "Doing uniform random placement"
+	print("Doing uniform random placement")
 	cart_grid, sph_grid = eff.uniform_random_ellipsoid(Nrandpts, r1, r2)
 # Rotate to get coordinates in parameter basis
 cart_grid = np.array([ np.real( np.dot(rot, cart_grid[i]))
@@ -325,11 +325,11 @@ rand_etas = np.array(map(partial(lsu.sanitize_eta, exception=np.NAN), rand_etas)
 cart_grid = np.transpose((rand_Mcs,rand_etas))
 phys_cut = ~np.isnan(cart_grid).any(1) # cut to remove unphysical pts
 cart_grid = cart_grid[phys_cut]
-print "Requested", Nrandpts, "points inside the ellipsoid of",\
-        match_cntr, "match."
-print "Kept", len(cart_grid), "points with physically allowed parameters."
+print("Requested", Nrandpts, "points inside the ellipsoid of",\
+        match_cntr, "match.")
+print("Kept", len(cart_grid), "points with physically allowed parameters.")
 if opts.N_tidal_pts:
-    print "With tidal parameters will have", len(cart_grid)*Nlam, "points."
+    print("With tidal parameters will have", len(cart_grid)*Nlam, "points.")
 
 # Output Cartesian and spherical coordinates of intrinsic grid
 indices = np.arange(len(cart_grid))

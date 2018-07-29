@@ -26,7 +26,7 @@ def add_h5_link(file_name, group_name, comb_file):
 	comb_file[group_name].attrs['evidence_volume_prior'] = log_prior_volume + log_evidence - comb_file.attrs["total_log_prior_volume"]
 
 	comb_file[group_name].attrs['PDF_weight'] = np.exp(comb_file[group_name].attrs['evidence_volume_prior'] - comb_file.attrs["evidence_volume_prior_max"])
-	print comb_file[group_name].attrs['PDF_weight']	
+	print(comb_file[group_name].attrs['PDF_weight'])	
 
 def combine_posterior_files(posterior_files):
 

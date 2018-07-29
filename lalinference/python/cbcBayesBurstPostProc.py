@@ -60,7 +60,7 @@ try:
   os.environ['PATH'] = os.environ['PATH'] + ':/usr/texbin'
 except:
   os.environ['PATH'] =':/usr/texbin'
-print os.environ['PATH']
+print(os.environ['PATH'])
 __author__="Ben Aylott <benjamin.aylott@ligo.org>, Ben Farr <bfarr@u.northwestern.edu>, Will M. Farr <will.farr@ligo.org>, John Veitch <john.veitch@ligo.org>"
 __version__= "git id %s"%git_version.id
 __date__= git_version.date
@@ -244,13 +244,13 @@ def cbcBayesBurstPostProc(
     got_burst_table=0
     votfile=None
     if eventnum is not None and injfile is None:
-        print "You specified an event number but no injection file. Ignoring!"
+        print("You specified an event number but no injection file. Ignoring!")
 
     if trignum is not None and trigfile is None:
-        print "You specified a trigger number but no trigger file. Ignoring!"
+        print("You specified a trigger number but no trigger file. Ignoring!")
 
     if trignum is None and trigfile is not None:
-        print "You specified a trigger file but no trigger number. Taking first entry (the case for GraceDB events)."
+        print("You specified a trigger file but no trigger number. Taking first entry (the case for GraceDB events).")
         trignum=0
 
     if data is None:
@@ -301,8 +301,8 @@ def cbcBayesBurstPostProc(
         f_refIdx = ps.index('f_ref')
         injFref = unique(samps[:,f_refIdx])
         if len(injFref) > 1:
-            print "ERROR: Expected f_ref to be constant for all samples.  Can't tell which value was injected!"
-            print injFref
+            print("ERROR: Expected f_ref to be constant for all samples.  Can't tell which value was injected!")
+            print(injFref)
             injFref = None
         else:
             injFref = injFref[0]
@@ -312,7 +312,7 @@ def cbcBayesBurstPostProc(
     #Select injections using tc +/- 0.1s if it exists or eventnum from the injection file
     injection=None
     if injfile and eventnum is not None:
-        print 'Looking for event %i in %s\n'%(eventnum,injfile)
+        print('Looking for event %i in %s\n'%(eventnum,injfile))
         xmldoc = utils.load_filename(injfile,contenthandler=LIGOLWContentHandlerExtractSimBurstTable)
         from glue.ligolw import table
         got_burst_table=1
@@ -343,16 +343,16 @@ def cbcBayesBurstPostProc(
         bfile.close()
         if(len(BSN.split())!=1):
           BSN=BSN.split()[0]
-        print 'BSN: %s'%BSN
+        print('BSN: %s'%BSN)
     if bayesfactorcoherent is not None:
         bfile=open(bayesfactorcoherent,'r')
         BCI=bfile.read()
         bfile.close()
-        print 'BCI: %s'%BCI
+        print('BCI: %s'%BCI)
 
     if snrfactor is not None:
         if not os.path.isfile(snrfactor):
-            print "No snr file provided or wrong path to snr file\n"
+            print("No snr file provided or wrong path to snr file\n")
             snrfactor=None
         else:
             snrstring=""
@@ -391,16 +391,16 @@ def cbcBayesBurstPostProc(
 
         if(len(injections)<1):
             try:
-                print 'Warning: Cannot find injection with end time %f' %(pos['time'].mean)
+                print('Warning: Cannot find injection with end time %f' %(pos['time'].mean))
             except KeyError:
-                print "Warning: No 'time' column!"
+                print("Warning: No 'time' column!")
 
         else:
             try:
                 injection = itertools.ifilter(lambda a: abs(float(a.get_end()) - pos['time'].mean) < 0.1, injections).next()
                 pos.set_injection(injection)
             except KeyError:
-                print "Warning: No 'time' column!"
+                print("Warning: No 'time' column!")
 
         # Compute time delays from sky position
     if ('ra' in pos.names or 'rightascension' in pos.names) \
@@ -450,7 +450,7 @@ def cbcBayesBurstPostProc(
             for func in functions.keys():
                 old_pos_name = pos_name.replace(func,'')
                 if pos_name.find(func)==0 and old_pos_name in pos.names:
-                    print "Taking %s of %s ..."% (func,old_pos_name)
+                    print("Taking %s of %s ..."% (func,old_pos_name))
                     pos.append_mapping(pos_name,functions[func],old_pos_name)
 
     #Remove samples with NaNs in requested params
@@ -464,17 +464,17 @@ def cbcBayesBurstPostProc(
 
     ##Print some summary stats for the user...##
     #Number of samples
-    print "Number of posterior samples: %i"%len(pos)
+    print("Number of posterior samples: %i"%len(pos))
     # Means
-    print 'Means:'
-    print str(pos.means)
+    print('Means:')
+    print(str(pos.means))
     #Median
-    print 'Median:'
-    print str(pos.medians)
+    print('Median:')
+    print(str(pos.medians))
     #maxL
-    print 'maxL:'
+    print('maxL:')
     max_pos,max_pos_co=pos.maxL
-    print max_pos_co
+    print(max_pos_co)
 
     #==================================================================#
     #Create web page
@@ -532,7 +532,7 @@ def cbcBayesBurstPostProc(
         evout.write(" ")
         evout.write(str(log_ev))
         evout.close()
-        print "Computing direct integration evidence = %g (log(Evidence) = %g)"%(ev, log_ev)
+        print("Computing direct integration evidence = %g (log(Evidence) = %g)"%(ev, log_ev))
         html_model.p('Direct integration evidence is %g, or log(Evidence) = %g.  (Boxing parameter = %d.)'%(ev,log_ev,boxing))
         if 'logl' in pos.names:
             log_ev=pos.harmonic_mean_evidence()
@@ -547,14 +547,14 @@ def cbcBayesBurstPostProc(
             evout=open(evfilename, 'w')
             evout.write(str(ev) + ' ' + str(log_ev))
             evout.close()
-            print 'Computing elliptical region evidence = %g (log(ev) = %g)'%(ev, log_ev)
+            print('Computing elliptical region evidence = %g (log(ev) = %g)'%(ev, log_ev))
             html_model.p('Elliptical region evidence is %g, or log(Evidence) = %g.'%(ev, log_ev))
 
             if 'logl' in pos.names:
                 log_ev=pos.harmonic_mean_evidence()
                 html_model.p('Compare to harmonic mean evidence of %g (log(Evidence = %g))'%(exp(log_ev), log_ev))
         except IndexError:
-            print 'Warning: Sample size too small to compute elliptical evidence!'
+            print('Warning: Sample size too small to compute elliptical evidence!')
 
     #Create a section for SNR, if a file is provided
     if snrfactor is not None:
@@ -719,7 +719,7 @@ def cbcBayesBurstPostProc(
         try:
             par_bin=GreedyRes[par_name]
         except KeyError:
-            print "Bin size is not set for %s, skipping binning."%par_name
+            print("Bin size is not set for %s, skipping binning."%par_name)
             continue
 
         #print "Binning %s to determine confidence levels ..."%par_name
@@ -753,7 +753,7 @@ def cbcBayesBurstPostProc(
         html_ogci_write+=BCItableline
 
         #Generate 1D histogram/kde plots
-        print "Generating 1D plot for %s."%par_name
+        print("Generating 1D plot for %s."%par_name)
 
         #Get analytic description if given
         pdf=cdf=None
@@ -771,7 +771,7 @@ def cbcBayesBurstPostProc(
         plt.close(plotFig)
 
         if rbins:
-            print "r of injected value of %s (bins) = %f"%(par_name, rbins)
+            print("r of injected value of %s (bins) = %f"%(par_name, rbins))
 
         ##Produce plot of raw samples
         myfig=plt.figure(figsize=(4,3.5),dpi=200)
@@ -939,12 +939,12 @@ def cbcBayesBurstPostProc(
         try:
             par1_bin=GreedyRes[par1_name]
         except KeyError:
-            print "Bin size is not set for %s, skipping %s/%s binning."%(par1_name,par1_name,par2_name)
+            print("Bin size is not set for %s, skipping %s/%s binning."%(par1_name,par1_name,par2_name))
             continue
         try:
             par2_bin=GreedyRes[par2_name]
         except KeyError:
-            print "Bin size is not set for %s, skipping %s/%s binning."%(par2_name,par1_name,par2_name)
+            print("Bin size is not set for %s, skipping %s/%s binning."%(par2_name,par1_name,par2_name))
             continue
 
         #print "Binning %s-%s to determine confidence levels ..."%(par1_name,par2_name)
@@ -959,8 +959,8 @@ def cbcBayesBurstPostProc(
           # Failures may happen since some simburst set injval to nan
           continue
 
-        print "BCI %s-%s:"%(par1_name,par2_name)
-        print reses
+        print("BCI %s-%s:"%(par1_name,par2_name))
+        print(reses)
 
         #Generate new BCI html table row
         BCItableline='<tr><td>%s-%s</td>'%(par1_name,par2_name)
@@ -1010,7 +1010,7 @@ def cbcBayesBurstPostProc(
         greedyFile.close()
 
         if [par1_name,par2_name] in twoDplots or [par2_name,par1_name] in twoDplots :
-            print 'Generating %s-%s greedy hist plot'%(par1_name,par2_name)
+            print('Generating %s-%s greedy hist plot'%(par1_name,par2_name))
 
             par1_pos=pos[par1_name].samples
             par2_pos=pos[par2_name].samples
@@ -1031,7 +1031,7 @@ def cbcBayesBurstPostProc(
 
         if twodkdeplots_flag is True:
             if [par1_name,par2_name] in twoDplots or [par2_name,par1_name] in twoDplots :
-                print 'Generating %s-%s plot'%(par1_name,par2_name)
+                print('Generating %s-%s plot'%(par1_name,par2_name))
 
                 par1_pos=pos[par1_name].samples
                 par2_pos=pos[par2_name].samples
@@ -1353,5 +1353,5 @@ if __name__=='__main__':
         try:
             email_notify(opts.email,opts.outpath)
         except:
-            print 'Unable to send notification email'
+            print('Unable to send notification email')
 #

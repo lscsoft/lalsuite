@@ -85,8 +85,8 @@ def add_variations(cp, section, option, values=None, allowed_values=None):
         cp.set(section, option, vals[0])
         return {}
     else:
-        print("Found no variations of [{section}] {option}".format(section=section,
-                                                                   option=option))
+        print(("Found no variations of [{section}] {option}".format(section=section,
+                                                                   option=option)))
         return {}
 
 def generate_variations(master_cp, variations):
@@ -128,7 +128,7 @@ def generate_variations(master_cp, variations):
 
 if len(args)!=1:
   parser.print_help()
-  print 'Error: must specify one ini file'
+  print('Error: must specify one ini file')
   sys.exit(1)
 
 inifile=args[0]
@@ -167,7 +167,7 @@ if opts.injections is not None:
 
 if opts.burst_injections is not None:
     if opts.injections is not None:
-        print "ERROR: cannot pass both inspiral and burst tables for injection\n"
+        print("ERROR: cannot pass both inspiral and burst tables for injection\n")
         sys.exit(1)
     cp.set('input','burst-injection-file',os.path.abspath(opts.burst_injections))
 
@@ -183,7 +183,7 @@ if opts.pipedown_db is not None:
 # Some sanity checking
 approx='approx'
 if not (cp.has_option('engine','approx') or cp.has_option('engine','approximant') ):
-    print "Error: was expecting an 'approx' filed in the [engine] section\n"
+    print("Error: was expecting an 'approx' filed in the [engine] section\n")
     sys.exit(1)
 
 # Build a list of allowed variations
@@ -208,7 +208,7 @@ def setup_roq(cp):
     from numpy import genfromtxt, array
     path=cp.get('paths','roq_b_matrix_directory')
     if not os.path.isdir(path):
-        print "The ROQ directory %s does not seem to exist\n"%path
+        print("The ROQ directory %s does not seem to exist\n"%path)
         sys.exit(1)
     use_roq=True
     roq_paths=os.listdir(path)
@@ -217,8 +217,8 @@ def setup_roq(cp):
 
     if cp.has_option('lalinference','roq_force_flow'):
         roq_force_flow = cp.getfloat('lalinference','roq_force_flow')
-        print "WARNING: Forcing the f_low to ", str(roq_force_flow), "Hz"
-        print "WARNING: Overwriting user choice of flow, srate, seglen, and (mc_min, mc_max and q-min) or (mass1_min, mass1_max, mass2_min, mass2_max)"
+        print("WARNING: Forcing the f_low to ", str(roq_force_flow), "Hz")
+        print("WARNING: Overwriting user choice of flow, srate, seglen, and (mc_min, mc_max and q-min) or (mass1_min, mass1_max, mass2_min, mass2_max)")
 
     gid=None
     row=None
@@ -228,7 +228,7 @@ def setup_roq(cp):
     if opts.gid is not None:
         gid=opts.gid
     elif opts.injections is not None or cp.has_option('input','injection-file'):
-        print "Only 0-th event in the XML table will be considered while running with ROQ\n"
+        print("Only 0-th event in the XML table will be considered while running with ROQ\n")
         # Read event 0 from  Siminspiral Table
         from pylal import SimInspiralUtils
         inxml=cp.get('input','injection-file')
@@ -240,10 +240,10 @@ def setup_roq(cp):
 
     roq_bounds = pipe_utils.Query_ROQ_Bounds_Type(path, roq_paths)
     if roq_bounds == 'chirp_mass_q':
-        print 'ROQ has bounds in chirp mass and mass-ratio'
+        print('ROQ has bounds in chirp mass and mass-ratio')
         mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=gid, sim_inspiral=row)
     elif roq_bounds == 'component_mass':
-        print 'ROQ has bounds in component masses'
+        print('ROQ has bounds in component masses')
         # get component mass bounds, then compute the chirp mass that can be safely covered
         # further below we pass along the component mass bounds to the sampler, not the tighter chirp-mass, q bounds
         m1_priors, m2_priors, trigger_mchirp = pipe_utils.get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=gid, sim_inspiral=row)
@@ -255,7 +255,7 @@ def setup_roq(cp):
         trigger_mchirp=float(cp.get('lalinference','trigger_mchirp'))
     roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, roq_force_flow)
     if roq_mass_freq_scale_factor != 1.:
-        print 'WARNING: Rescaling ROQ basis, please ensure it is allowed with the model used.'
+        print('WARNING: Rescaling ROQ basis, please ensure it is allowed with the model used.')
 
     # If the true chirp mass is unknown, add variations over the mass bins
     if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')) or cp.has_option('lalinference','trigger_mchirp'):
@@ -267,7 +267,7 @@ def setup_roq(cp):
         for roq in roq_paths:
             if mc_priors[roq][0]*roq_mass_freq_scale_factor <= trigger_mchirp <= mc_priors[roq][1]*roq_mass_freq_scale_factor:
                 trigger_bin = roq
-                print 'Prior in Mchirp will be ['+str(mc_priors[roq][0]*roq_mass_freq_scale_factor)+','+str(mc_priors[roq][1]*roq_mass_freq_scale_factor)+'] to contain the trigger Mchirp '+str(trigger_mchirp)
+                print('Prior in Mchirp will be ['+str(mc_priors[roq][0]*roq_mass_freq_scale_factor)+','+str(mc_priors[roq][1]*roq_mass_freq_scale_factor)+'] to contain the trigger Mchirp '+str(trigger_mchirp))
                 break
         roq_paths = [trigger_bin]
     else:
@@ -356,9 +356,9 @@ for cp in generate_variations(master_cp,variations):
                     cp.set('input','injection-file',myinjpath)
                 else:
                     # Do not over-write the injection file
-                    print("Error: File {0} exists in run directory, not over-writing with \
+                    print(("Error: File {0} exists in run directory, not over-writing with \
                             {1}. Remove the existing file or create a fresh run directory".format(myinjpath,injpath)
-                            )
+                            ))
                     sys.exit(1)
             else:
                 # The link doens't exist, so create it and update config
@@ -393,8 +393,8 @@ if opts.condor_submit:
     x = subprocess.Popen(['condor_submit_dag',outerdag.get_dag_file()])
   x.wait()
   if x.returncode==0:
-    print 'Submitted DAG file'
+    print('Submitted DAG file')
   else:
-    print 'Unable to submit DAG file'
+    print('Unable to submit DAG file')
 else:
   print('To submit, run:\n\tcondor_submit_dag {0}'.format(outerdag.get_dag_file()))

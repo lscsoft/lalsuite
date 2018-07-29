@@ -234,7 +234,7 @@ if __name__ == "__main__":
     else:
         inclination = theta_jn
 
-    print s1x.shape
+    print(s1x.shape)
     # Check if f_low is given on the command line. If not, try to take if from 'samples'.
     if opts.flow is None:
         try:
@@ -247,8 +247,8 @@ if __name__ == "__main__":
         except:
             pass
         else:  # executed if no exception is raised
-            print('f_low given in both input file and command line.'
-                  ' Using command line argument: %r' % opts.flow)
+            print(('f_low given in both input file and command line.'
+                  ' Using command line argument: %r' % opts.flow))
         flow = [opts.flow for i in xrange(N)]
 
     # Populate structured array

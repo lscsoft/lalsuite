@@ -105,11 +105,11 @@ except ValueError:
 if args.f_low is None:
     f_low = infer_flow(xmldoc)
     if args.verbose:
-        print "Low frequency inferred from template bank is %f" % f_low
+        print("Low frequency inferred from template bank is %f" % f_low)
 else:
     f_low = args.f_low
     if args.verbose:
-        print "Low frequency from command line is %f" % f_low
+        print("Low frequency from command line is %f" % f_low)
 
 if f_low is None:
     exit("Low frequency cutoff could not be inferred from template bank, and none was given.")
@@ -187,7 +187,7 @@ for i1, pt in enumerate(pts):
     h1 = lalsimutils.generate_waveform_from_tmplt(t1, args.approximant1, delta_f, f_low)
     h1_norm = ovrlp.norm(h1)
     if args.verbose:
-        print "--- %d (%f, %f) / (%f, %f)" % (int(t1.event_id), t1.mass1, t1.mass2, t1.mchirp, t1.eta)
+        print("--- %d (%f, %f) / (%f, %f)" % (int(t1.event_id), t1.mass1, t1.mass2, t1.mchirp, t1.eta))
 
     ovrlps = []
     for d, i2 in numpy.vstack((dist, idx)).T:
@@ -199,7 +199,7 @@ for i1, pt in enumerate(pts):
         olapmat[i1, i2] = olapmat[i2, i1] = o12
 
         if args.too_verbose:
-            print d, t2.mass1, t2.mass2, t2.mchirp, t2.eta, o12
+            print(d, t2.mass1, t2.mass2, t2.mchirp, t2.eta, o12)
 
     opts = amrlib.apply_inv_transform(pts[idx][0], intr_prms, "mchirp_eta")
     opts = numpy.vstack((opts.T, ovrlps, idx[0]))

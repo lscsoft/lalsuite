@@ -160,9 +160,9 @@ if __name__ == "__main__":
         injections['pol_ellipse_e']= samples['pol_ellipse_e']
     else:
         injections['pol_ellipse_e']=None
-    print params
-    print samples['pol_ellipse_e']
-    print injections['pol_ellipse_e']
+    print(params)
+    print(samples['pol_ellipse_e'])
+    print(injections['pol_ellipse_e'])
     if 'bandwidth' in params:
       injections['bandwidth'] = samples['bandwidth']
     else:

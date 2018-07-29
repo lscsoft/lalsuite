@@ -54,7 +54,7 @@ def find_ln_p_j_voronoi(m, f, popt):
             all_p.append(p)
             all_i.append(i)
             vtot += pvol
-    print "Voronoi diagram, total volume = "+str(vtot)
+    print("Voronoi diagram, total volume = "+str(vtot))
     all_p = np.array(all_p)
     all_vols = np.array(all_vols)
     all_i = np.array(all_i)
@@ -142,7 +142,7 @@ f, popt = source_population() # find probability density of masses for BNS sourc
 mass = load_bank(bank) # load mass
 #mass = load_bank(bank) # load mass and chi
 overlap = load_overlaps(bank)
-print "Overlap data loaded. Total time elapsed:", time.time()-start_time
+print("Overlap data loaded. Total time elapsed:", time.time()-start_time)
 
 ############################################
 ############################################
@@ -170,7 +170,7 @@ for i in range(len(p_j_indices)): # loop over all signal population
     for r in range(len(rho)): # loop over all rho
         ln_p_jk[r,:] = np.logaddexp(ln_p_jk[r,:], ln_p_j[order][i]+ln_p_k(ovrlp, rho[r], t_k))
         
-print "ln(P_jk) computed for all templates. Time elapsed:", time.time()-start_time
+print("ln(P_jk) computed for all templates. Time elapsed:", time.time()-start_time)
 
 # Save data to hdf5 file
 if save_data:
@@ -181,5 +181,5 @@ if save_data:
     f.create_dataset('ln_P_jk', data=ln_p_jk)
     f.create_dataset('masses', data=mass)
     f.close()
-    print "Data saved. Time elapsed:", time.time()-start_time
+    print("Data saved. Time elapsed:", time.time()-start_time)
 
