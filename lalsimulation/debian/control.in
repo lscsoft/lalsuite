@@ -18,7 +18,9 @@ Build-Depends: debhelper (>= 9),
   lal-dev (>= @MIN_LAL_VERSION@~),
   lal-octave (>= @MIN_LAL_VERSION@~),
   python-lal (>= @MIN_LAL_VERSION@~),
-  python3-lal (>= @MIN_LAL_VERSION@~)
+  python3-lal (>= @MIN_LAL_VERSION@~),
+  python-six,
+  python3-six
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
 Standards-Version: 3.9.8
