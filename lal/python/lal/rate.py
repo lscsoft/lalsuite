@@ -37,6 +37,7 @@ smoothing contour plots.
 
 from bisect import bisect_right
 from functools import reduce
+from six.moves import range
 try:
 	from fpconst import PosInf, NegInf
 except ImportError:
@@ -2433,7 +2434,7 @@ def filter_array(a, window, cyclic = False, use_fft = True):
 		raise ValueError("window size is not an odd integer in at least 1 dimension")
 	# determine how much of the window function can be used
 	window_slices = []
-	for d in xrange(dims):
+	for d in range(dims):
 		if window.shape[d] > a.shape[d]:
 			# largest odd integer <= size of a
 			n = ((a.shape[d] + 1) // 2) * 2 - 1
