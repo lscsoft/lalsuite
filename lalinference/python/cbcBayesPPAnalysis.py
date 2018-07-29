@@ -159,7 +159,7 @@ def read_posterior_samples(f,injrow):
     # add tilts, comp masses, tidal...
     try:
       data.extend_posterior()
-    except Exception,e:
+    except Exception as e:
       pass 
     return data
 

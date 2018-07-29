@@ -589,7 +589,7 @@ def cbcBayesPostProc(
         os.makedirs(wfdir)
     try:
         wfpointer= bppu.plot_waveform(pos=pos,siminspiral=injfile,event=eventnum,path=wfdir)
-    except  Exception,e:
+    except  Exception as e:
         wfpointer = None
         print "Could not create WF plot. The error was: %s\n"%str(e)
     wftd=html_wf.insert_td(row,'',label='Waveform',legend=legend)
@@ -614,7 +614,7 @@ def cbcBayesPostProc(
           f_low = 30.
         bppu.plot_psd(psd_files,outpath=psddir, f_min=f_low)
         wfsection.write('<a href="PSDs/PSD.png" target="_blank"><img src="PSDs/PSD.png"/></a>')
-      except  Exception,e:
+      except  Exception as e:
         print "Could not create PSD plot. The error was: %s\n"%str(e)
         wfsection.write("<b>PSD plotting failed</b>")
     else:
@@ -1336,7 +1336,7 @@ if __name__=='__main__':
     if opts.email:
         try:
             email_notify(opts.email,opts.outpath)
-        except Exception,e:
+        except Exception as e:
             print 'Unable to send notification email'
             print "The error was %s\n"%str(e)
 #

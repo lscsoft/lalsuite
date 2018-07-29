@@ -124,7 +124,7 @@ def open_url(url,username,password):
         f.write(data)
         f.close()
 
-    except IOError, e:
+    except IOError as e:
         print 'We failed to open "%s".' % url
         if hasattr(e, 'code'):
             print 'We failed with error code - %s.' % e.code

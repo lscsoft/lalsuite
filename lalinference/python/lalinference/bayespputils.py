@@ -1122,7 +1122,7 @@ class Posterior(object):
               try:
                   pos.append_mapping('af', bbh_final_spin_non_precessing_Healyetal, ['m1', 'm2', 'a1z', 'a2z'])
                   pos.append_mapping('mf', lambda m1, m2, chi1z, chi2z, chif: bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1z, chi2z, chif=chif), ['m1', 'm2', 'a1z', 'a2z', 'af'])
-              except Exception,e:
+              except Exception as e:
                   print "Could not calculate final parameters. The error was: %s"%(str(e))
           elif ('a1' in pos.names) and ('a2' in pos.names):
               if ('tilt1' in pos.names) and ('tilt2' in pos.names):
@@ -1130,39 +1130,39 @@ class Posterior(object):
                   try:
                       pos.append_mapping('af', bbh_final_spin_projected_spin_Healyetal, ['m1', 'm2', 'a1', 'a2', 'tilt1', 'tilt2'])
                       pos.append_mapping('mf', bbh_final_mass_projected_spin_Healyetal, ['m1', 'm2', 'a1', 'a2', 'tilt1', 'tilt2', 'af'])
-                  except Exception,e:
+                  except Exception as e:
                       print "Could not calculate final parameters. The error was: %s"%(str(e))
               else:
                   print "Using non-precessing fit formula [Healy at al (2014)] for final mass and spin (on masses and spin magnitudes)."
                   try:
                       pos.append_mapping('af', bbh_final_spin_non_precessing_Healyetal, ['m1', 'm2', 'a1', 'a2'])
                       pos.append_mapping('mf', lambda m1, m2, chi1, chi2, chif: bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=chif), ['m1', 'm2', 'a1', 'a2', 'af'])
-                  except Exception,e:
+                  except Exception as e:
                       print "Could not calculate final parameters. The error was: %s"%(str(e))
           else:
               print "Using non-spinning fit formula [Pan at al (2010)] for final mass and spin."
               try:
                   pos.append_mapping('af', bbh_final_spin_non_spinning_Panetal, ['m1', 'm2'])
                   pos.append_mapping('mf', bbh_final_mass_non_spinning_Panetal, ['m1', 'm2'])
-              except Exception,e:
+              except Exception as e:
                   print "Could not calculate final parameters. The error was: %s"%(str(e))
       if ('mf' in pos.names) and ('redshift' in pos.names):
           try:
               pos.append_mapping('mf_source', source_mass, ['mf', 'redshift'])
-          except Exception,e:
+          except Exception as e:
               print "Could not calculate final source frame mass. The error was: %s"%(str(e))
 
       # Calculate radiated energy and peak luminosity
       if ('mtotal_source' in pos.names) and ('mf_source' in pos.names):
           try:
               pos.append_mapping('e_rad', lambda mtot_s, mf_s: mtot_s-mf_s, ['mtotal_source', 'mf_source'])
-          except Exception,e:
+          except Exception as e:
               print "Could not calculate radiated energy. The error was: %s"%(str(e))
 
       if ('q' in pos.names) and ('a1z' in pos.names) and ('a2z' in pos.names):
           try:
               pos.append_mapping('l_peak', bbh_aligned_Lpeak_6mode_SHXJDK, ['q', 'a1z', 'a2z'])
-          except Exception,e:
+          except Exception as e:
               print "Could not calculate peak luminosity. The error was: %s"%(str(e))
 
     def bootstrap(self):
