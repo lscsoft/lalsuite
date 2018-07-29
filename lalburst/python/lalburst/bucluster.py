@@ -24,6 +24,9 @@
 #
 
 
+from __future__ import print_function
+
+
 import math
 import sys
 
@@ -365,7 +368,7 @@ def bucluster(
 	except ValueError:
 		# no-op:  document does not contain a sngl_burst table
 		if verbose:
-			print >>sys.stderr, "document does not contain a sngl_burst table, skipping ..."
+			print("document does not contain a sngl_burst table, skipping ...", file=sys.stderr)
 		return xmldoc, False
 	seglists = ligolw_search_summary.segmentlistdict_fromsearchsummary(xmldoc, program = program).coalesce()
 
@@ -374,7 +377,7 @@ def bucluster(
 	#
 
 	if verbose:
-		print >>sys.stderr, "pre-processing ..."
+		print("pre-processing ...", file=sys.stderr)
 	preprocess_output = prefunc(sngl_burst_table)
 
 	#
@@ -388,7 +391,7 @@ def bucluster(
 	#
 
 	if verbose:
-		print >>sys.stderr, "post-processing ..."
+		print("post-processing ...", file=sys.stderr)
 	postfunc(sngl_burst_table, preprocess_output)
 
 	#

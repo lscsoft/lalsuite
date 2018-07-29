@@ -23,6 +23,9 @@
 #
 
 
+from __future__ import print_function
+
+
 import itertools
 import math
 import matplotlib
@@ -243,18 +246,18 @@ def summarize_coinc_database(contents, filename = None):
 	else:
 		filename = "%s: " % filename
 	cursor = contents.connection.cursor()
-	print >>sys.stderr, "%sdatabase stats:" % filename
+	print("%sdatabase stats:" % filename, file=sys.stderr)
 	for instrument, seglist in sorted(contents.seglists.items()):
-		print >>sys.stderr, "\t%s%s livetime: %g s (%g%% vetoed)" % (filename, instrument, abs(seglist), 100.0 * float(abs(instrument in contents.vetoseglists and (seglist & contents.vetoseglists[instrument]) or 0.0)) / float(abs(seglist)))
+		print("\t%s%s livetime: %g s (%g%% vetoed)" % (filename, instrument, abs(seglist), 100.0 * float(abs(instrument in contents.vetoseglists and (seglist & contents.vetoseglists[instrument]) or 0.0)) / float(abs(seglist))), file=sys.stderr)
 	if contents.sngl_burst_table is not None:
-		print >>sys.stderr, "\t%sburst events: %d" % (filename, len(contents.sngl_burst_table))
+		print("\t%sburst events: %d" % (filename, len(contents.sngl_burst_table)), file=sys.stderr)
 	if contents.sim_burst_table is not None:
-		print >>sys.stderr, "\t%sburst injections: %d" % (filename, len(contents.sim_burst_table))
+		print("\t%sburst injections: %d" % (filename, len(contents.sim_burst_table)), file=sys.stderr)
 	if contents.time_slide_table is not None:
-		print >>sys.stderr, "\t%stime slides: %d" % (filename, cursor.execute("SELECT COUNT(DISTINCT(time_slide_id)) FROM time_slide").fetchone()[0])
+		print("\t%stime slides: %d" % (filename, cursor.execute("SELECT COUNT(DISTINCT(time_slide_id)) FROM time_slide").fetchone()[0]), file=sys.stderr)
 	if contents.coinc_def_table is not None:
 		for description, n in cursor.execute("SELECT description, COUNT(*) FROM coinc_definer NATURAL JOIN coinc_event GROUP BY coinc_def_id ORDER BY description"):
-			print >>sys.stderr, "\t%s%s: %d" % (filename, description, n)
+			print("\t%s%s: %d" % (filename, description, n), file=sys.stderr)
 	cursor.close()
 
 
@@ -306,15 +309,15 @@ def time_slides_livetime(seglists, time_slides, verbose = False):
 	old_offsets = seglists.offsets.copy()
 	N = len(time_slides)
 	if verbose:
-		print >>sys.stderr, "computing the live time for %d time slides:" % N
+		print("computing the live time for %d time slides:" % N, file=sys.stderr)
 	for n, time_slide in enumerate(time_slides):
 		if verbose:
-			print >>sys.stderr, "\t%.1f%%\r" % (100.0 * n / N),
+			print("\t%.1f%%\r" % (100.0 * n / N), end=' ', file=sys.stderr)
 		seglists.offsets.update(time_slide)
 		livetime += float(abs(seglists.intersection(time_slide.keys())))
 	seglists.offsets.update(old_offsets)
 	if verbose:
-		print >>sys.stderr, "\t100.0%"
+		print("\t100.0%", file=sys.stderr)
 	return livetime
 
 

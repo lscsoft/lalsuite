@@ -24,6 +24,9 @@
 #
 
 
+from __future__ import print_function
+
+
 import sys
 import traceback
 
@@ -89,7 +92,7 @@ def assign_likelihood_ratios(connection, coinc_def_id, offset_vectors, vetosegli
 	#
 
 	if verbose:
-		print >>sys.stderr, "computing likelihood ratios ..."
+		print("computing likelihood ratios ...", file=sys.stderr)
 
 	connection.cursor().execute("""
 UPDATE
