@@ -7,7 +7,8 @@ import subprocess
 import socket
 import glob
 import lalinference
-import ConfigParser
+
+from six.moves.configparser import SafeConfigParser
 
 prefix=''
 try:
@@ -101,7 +102,7 @@ except KeyError:
     sys.exit()
 
 def init_ini_file(file=args.ini_file):
-    cp=ConfigParser.SafeConfigParser()
+    cp=SafeConfigParser()
     fp=open(file)
     cp.optionxform = str
     cp.readfp(fp)
