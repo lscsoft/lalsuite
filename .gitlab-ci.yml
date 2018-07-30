@@ -34,7 +34,6 @@ cache:
   paths:
     - ccache
 
-# FIXME: remove schedules after package builds have been running for a while
 .levelN:package: &levelN-package
   script:
     - cd ${CI_JOB_NAME#level?:*:}
@@ -57,7 +56,6 @@ cache:
       - opt/lalsuite
   only:
     - pushes
-    - schedules
 
 .levelN:package:stretch: &levelN-package-stretch
   image: ligo/lalsuite-dev:stretch
@@ -220,36 +218,6 @@ level4:el7:lalapps:
     - level2:el7:lalstochastic
     - level3:el7:laldetchar
     - level3:el7:lalinference
-
-# FIXME: remove after package builds have been running for a while
-docker:tags:
-  stage: docker
-  before_script: []
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $TAG --file .Dockerfile.gitlab-ci .
-    - docker push $TAG
-  dependencies:
-    - level4:stretch:lalapps
-  only:
-    - tags
-
-# FIXME: remove after package builds have been running for a while
-docker:nightly:
-  stage: docker
-  before_script: []
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $NIGHTLY --file .Dockerfile.gitlab-ci .
-    - docker push $NIGHTLY
-  dependencies:
-    - level4:stretch:lalapps
-  only:
-    - master@lscsoft/lalsuite
-    - schedules
-  except:
-    - pushes
-    - web
 
 nightly:top-level:jessie:
   image: ligo/lalsuite-dev:jessie
