@@ -323,6 +323,18 @@ nightly:top-level:bionic:
     - schedules
     - web
 
+nightly:top-level:cosmic:
+  image: skymoo/ligo-lalsuite-dev:cosmic
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
 # FIXME: It seems that Octave on buster currently has a few bugs which
 # cause the Octave bindings to fail, disable building the Octave SWIG
 # bindings for the time being.
