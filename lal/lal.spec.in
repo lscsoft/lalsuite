@@ -25,6 +25,7 @@ BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
 BuildRequires: less
+BuildRequires: python-dateutil
 BuildRequires: numpy
 BuildRequires: scipy
 BuildRequires: octave-devel
@@ -63,6 +64,7 @@ Obsoletes: %{name}-python < 6.18.0-2
 Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: python
+Requires: python-dateutil
 Requires: numpy
 Requires: scipy
 Requires: python-six
