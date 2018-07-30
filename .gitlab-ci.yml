@@ -608,7 +608,7 @@ level4:rpm:lalapps:
     - level3:rpm:lalinference
 
 # build a nightly container from the RPMs
-docker:el7:nightly:
+docker:nightly:el7:
   stage: docker
   before_script: []
   script:
@@ -617,8 +617,8 @@ docker:el7:nightly:
     - rm -rf rpmbuild*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/el7:nightly --file .Dockerfile-el7.gitlab-ci .
-    - docker push $CI_REGISTRY_IMAGE/el7:nightly
+    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:el7 --file .Dockerfile-el7.gitlab-ci .
+    - docker push $CI_REGISTRY_IMAGE/nightly:el7
   dependencies:
     - level0:rpm:lal
     - level1:rpm:lalframe
@@ -636,7 +636,7 @@ docker:el7:nightly:
     - schedules
 
 # build a tagged container from the RPMs
-docker:el7:tags:
+docker:tags:el7:
   stage: docker
   before_script: []
   script:
@@ -645,8 +645,8 @@ docker:el7:tags:
     - rm -rf rpmbuild*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/el7:$CI_COMMIT_TAG --file .Dockerfile-el7.gitlab-ci .
-    - docker push $CI_REGISTRY_IMAGE/el7:$CI_COMMIT_TAG
+    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7 --file .Dockerfile-el7.gitlab-ci .
+    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7
   dependencies:
     - level0:rpm:lal
     - level1:rpm:lalframe
@@ -795,7 +795,7 @@ level4:deb:lalapps:
     - level3:deb:lalinference
 
 # build a nightly container from the debian packages
-docker:stretch:nightly:
+docker:nightly:stretch:
   stage: docker
   before_script: []
   script:
@@ -804,8 +804,8 @@ docker:stretch:nightly:
     - rm *.changes *.dsc *.orig.*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/stretch:nightly --file .Dockerfile-stretch.gitlab-ci .
-    - docker push $CI_REGISTRY_IMAGE/stretch:nightly
+    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:stretch --file .Dockerfile-stretch.gitlab-ci .
+    - docker push $CI_REGISTRY_IMAGE/nightly:stretch
   dependencies:
     - level0:deb:lal
     - level1:deb:lalframe
@@ -823,7 +823,7 @@ docker:stretch:nightly:
     - schedules
 
 # build a tagged container from the debian packages
-docker:stretch:tags:
+docker:tags:stretch:
   stage: docker
   before_script: []
   script:
@@ -832,8 +832,8 @@ docker:stretch:tags:
     - rm *.changes *.dsc *.orig.*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/stretch:$CI_COMMIT_TAG --file .Dockerfile-stretch.gitlab-ci .
-    - docker push $CI_REGISTRY_IMAGE/stretch:$CI_COMMIT_TAG
+    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch --file .Dockerfile-stretch.gitlab-ci .
+    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG/stretch
   dependencies:
     - level0:deb:lal
     - level1:deb:lalframe
