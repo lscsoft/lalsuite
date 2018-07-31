@@ -36,9 +36,6 @@ import math
 import sys
 
 
-from six.moves import range
-
-
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
 
