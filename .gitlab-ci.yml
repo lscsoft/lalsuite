@@ -392,7 +392,9 @@ nightly:macos:highsierra:
   stage: nightly
   script:
     - ./00boot
-    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-swig --enable-doxygen
+    # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
+    # is available
+    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
     - make -j4
     - make -j4 check
   dependencies: []
@@ -406,7 +408,9 @@ nightly:macos:elcapitan:
   stage: nightly
   script:
     - ./00boot
-    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-swig --enable-doxygen
+    # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
+    # is available
+    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
     - make -j4
     - make -j4 check
   dependencies: []
