@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2014 Karl Wette
- * Copyright (C) 2005, 2006 Reinhard Prix
+ * Copyright (C) 2005, 2006, 2018 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -45,15 +45,20 @@
 
 #include <lal/LALError.h>
 #include <lal/Date.h>
+#include <lal/SFTfileIO.h>
+#include <lal/SFTutils.h>
+#include <lal/SSBtimes.h>
 
 #include "ExtrapolatePulsarSpins.h"
 
 /*---------- local DEFINES ----------*/
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
-
-#define TRUE (1==1)
-#define FALSE (1==0)
+#define COPY_VECT(dst,src) do { (dst)[0] = (src)[0]; (dst)[1] = (src)[1]; (dst)[2] = (src)[2]; } while(0)
+#define SUB_VECT(dst,src) do { (dst)[0] -= (src)[0]; (dst)[1] -= (src)[1]; (dst)[2] -= (src)[2]; } while(0)
+#define MULT_VECT(v,lam) do{ (v)[0] *= (lam); (v)[1] *= (lam); (v)[2] *= (lam); } while(0)
+#define DOT_VECT(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
+#define NORM_VECT(v) sqrt(DOT_VECT(v,v))
 
 /*---------- main functions ---------- */
 
@@ -306,3 +311,114 @@ XLALCWSignalCoveringBand ( REAL8 *minCoverFreq,                          /**< [o
   return XLAL_SUCCESS;
 
 } /* XLALCWSignalCoveringBand() */
+
+
+/**
+ * Determines the frequency band occupied by the frequency evolution of a given CW signal between two GPS times.
+ * The calculation accounts for the spin evolution of the signals, and the actual Dopper modulation
+ * due to detector motion, and (for binary signals) binary orbital motion.
+ */
+int
+XLALCWSignalBand ( REAL8 *minFreq,                          /**< [out] Minimum frequency of the covering band */
+                   REAL8 *maxFreq,                          /**< [out] Maximum frequency of the covering band */
+                   const DetectorStateSeries *detStates,    /**< [in] detector state series, cf XLALGetDetectorStates() */
+                   const PulsarDopplerParams *doppler       /**< [in] Signal phase-evolution parameters */
+                   )
+{
+  XLAL_CHECK ( minFreq != NULL && maxFreq != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( detStates != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( doppler != NULL, XLAL_EINVAL );
+
+  // get actual doppler-shifts as a function of time over the observation time
+  SkyPosition skypos = { .longitude = doppler->Alpha, .latitude = doppler->Delta, .system = COORDINATESYSTEM_EQUATORIAL };
+  SSBtimes *ssb;
+  XLAL_CHECK ( (ssb = XLALGetSSBtimes ( detStates, skypos, doppler->refTime, SSBPREC_NEWTONIAN )) != NULL, XLAL_EFUNC );
+  if ( doppler->asini > 0 ) {
+    XLAL_CHECK ( XLALAddBinaryTimes ( &ssb, ssb, doppler ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  UINT4 Nsteps = detStates->length;
+  REAL8 minFreq0 = LAL_REAL8_MAX;
+  REAL8 maxFreq0 = 0;
+  for ( UINT4 i = 0; i < Nsteps; i ++ )
+    {
+      REAL8 dtau_i = XLALGPSDiff ( &(detStates->data[i].tGPS), &(doppler->refTime) );
+      PulsarSpins fkdot_i;
+      XLAL_CHECK ( XLALExtrapolatePulsarSpins ( fkdot_i, doppler->fkdot, dtau_i ) == XLAL_SUCCESS, XLAL_EFUNC );
+      REAL8 freq_i = fkdot_i[0];
+      // apply doppler shifts from detector motion
+      freq_i *= (ssb->Tdot->data[i]);
+
+      minFreq0 = fmin ( minFreq0, freq_i );
+      maxFreq0 = fmax ( maxFreq0, freq_i );
+    } // for i < Nsteps
+
+  XLALDestroySSBtimes ( ssb );
+
+  (*minFreq) = minFreq0;
+  (*maxFreq) = maxFreq0;
+
+  return XLAL_SUCCESS;
+
+} // XLALCWSignalBand()
+
+
+/**
+ * (Optional) Helper function for using XLALCWSignalBand():
+ * compute DetectorStateSeries for given time-span and detector, also
+ * The calculation accounts for the spin evolution of the signals, and the actual Dopper modulation
+ * due to detector motion, and (for binary signals) binary orbital motion.
+ */
+DetectorStateSeries *
+XLALPrepareCWSignalBand ( SkyPosition *skypos_maxdoppler, //< [out] [optional] sky-position of maximal Doppler band-width over the sky
+                          const LIGOTimeGPS tStart,	  //< [in] start GPS time of observing interval
+                          const REAL8 Tspan,              //< [in] total span of observing interval in seconds
+                          const REAL8 dT,                 //< [in] step-size (in seconds) to use to sample output detector-state series
+                          const LALDetector *detector,    //< [in] detector
+                          const EphemerisData *edat       //< [in] ephemeris data, cf XLALInitBarycenter()
+                          )
+{
+  XLAL_CHECK_NULL ( detector != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( edat != NULL, XLAL_EINVAL );
+
+  // create a 'grid' of timestamps over the observing interval
+  LIGOTimeGPSVector *ts;
+  XLAL_CHECK_NULL ( (ts = XLALMakeTimestamps ( tStart, Tspan, dT, 0 ) ) != NULL, XLAL_EFUNC );
+
+  // get corresponding 'detector states'
+  DetectorStateSeries *detStates;
+  XLAL_CHECK_NULL ( (detStates = XLALGetDetectorStates ( ts, detector, edat, 0 )) != NULL, XLAL_EFUNC );
+  UINT4 Nsteps = detStates->length;
+
+  XLALDestroyTimestampVector ( ts );
+
+  // if output 'skypos_maxdoppler' requested
+  if ( skypos_maxdoppler )
+    {
+      // compute dV = v0 - v1, with maximal norm over observation time
+      REAL8 XLAL_INIT_DECL(dV, [3]);
+      REAL8 XLAL_INIT_DECL(v1, [3]);
+      COPY_VECT(dV,detStates->data[0].vDetector);
+      // heuristic: if Tspan>6months, we use dV = v0 - (-v0) = 2*v0 ~ v0: we only need the direction!
+      if ( Tspan < 0.5 * LAL_YRSID_SI ) {
+        COPY_VECT(v1,detStates->data[Nsteps-1].vDetector);
+        SUB_VECT(dV,v1);
+      }
+      // normalize
+      REAL8 norm = NORM_VECT(dV);
+      MULT_VECT(dV,(1.0/norm));
+      // convert back into equatorial coordinates
+      REAL8 longitude = atan2 ( dV[1], dV[0] );	// range = [-pi, pi]
+      if ( longitude < 0 ) {
+        longitude += LAL_TWOPI;
+      }
+      REAL8 latitude = asin ( dV[2] );	// range is [-pi/2, pi/2]
+      (*skypos_maxdoppler).longitude = longitude;
+      (*skypos_maxdoppler).latitude  = latitude;
+      (*skypos_maxdoppler).system = COORDINATESYSTEM_EQUATORIAL;
+
+    } // if skypos_maxdopppler
+
+  return detStates;
+
+} // XLALPrepareCWSignalBand()
