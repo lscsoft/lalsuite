@@ -20,9 +20,9 @@ import lalsimulation as lalsim
 import numpy as np
 import unittest
 from optparse import OptionParser
-import ConfigParser
 import io
 import sys, os
+from six.moves import configparser
 
 NEW_DATA_STR = '######### NEW DATASET #############\n'
 DEFAULT_FILE = 'reviewed_waveforms.asc'
@@ -257,9 +257,9 @@ class ReferenceFile:
         self.newapproxindex = [i for i in range(self.size)
                 if self.content[i] == NEW_DATA_STR]
         # possibly add more above
-        ConfigParser.RawConfigParser.optionxform = str
+        configparser.RawConfigParser.optionxform = str
         # prevent ConfigParser to use lower case version of option
-        self.dataset = [ConfigParser.RawConfigParser()
+        self.dataset = [configparser.RawConfigParser()
                 for i in range(len(self.newapproxindex))]
         self.newapproxindex.append(self.size)
         for i in range(len(self.newapproxindex) - 1):

@@ -26,6 +26,7 @@ BuildRequires: swig >= 3.0.7
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
+BuildRequires: python-six
 Requires: gsl
 Requires: lal >= @MIN_LAL_VERSION@
 Prefix: %{_prefix}
