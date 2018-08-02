@@ -2636,8 +2636,13 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
   REAL8 m1=theEventTable->mass1;
   REAL8 m2=theEventTable->mass2;
   REAL8 chirpmass = theEventTable->mchirp;
-
-  LALInferenceFullyReplaceVariable(vars, "chirpmass", &chirpmass, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+  REAL8 eta=m1*m2/(m1+m2)/(m1+m2);
+  REAL8 mc=(m1+m2)*pow(eta,3./5.);
+  if (fabs(mc-chirpmass)/chirpmass>0.001){
+    fprintf(stderr,"The chirpmass in the XML table does not agree with m1 and m2. Are you sure you did not manually hack the table? Exiting\n"); 
+    exit(1);
+  }
+  LALInferenceFullyReplaceVariable(vars, "chirpmass", &mc, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceFullyReplaceVariable(vars, "q", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   if  (LALInferenceCheckVariable(vars,"distance"))
       LALInferenceFullyReplaceVariable(vars, "distance", &dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
