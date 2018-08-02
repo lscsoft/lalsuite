@@ -1569,7 +1569,7 @@ int XLALSimNoisePSDaLIGOaLIGODesignSensitivityT1800044(
 )
 {
 	return XLALSimNoisePSDFromFile(psd, flow,
-		T1800044 "LIGO-T1800044-v5-aLIGO_DESIGN.txt");
+		T1800044 "aLIGO_DESIGN.txt");
 }
 
 /** @} */
