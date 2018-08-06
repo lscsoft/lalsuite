@@ -89,7 +89,7 @@ else:
 Mf_bins = np.linspace(-Mf_lim, Mf_lim, N_bins)
 af_bins = np.linspace(-af_lim, af_lim, N_bins)
 P_Mfaf_pr = tgr.calc_Mfchif_prior(comp_mass_min, comp_mass_max, comp_spin_min, comp_spin_max, Mf_bins, af_bins, fit_formula, spin_angle_dist, N_sampl, num_threads)
-print '... calculated the prior' 
+print('... calculated the prior') 
 
 # create an interpolation object and save it 
 Mf_bins = (Mf_bins[:-1] + Mf_bins[1:])/2.
@@ -98,7 +98,7 @@ outfile = 'Prior_Mfaf_%s_comp_mass_min%2.1f_comp_mass_max%2.1f_comp_spin_min%2.1
 P_Mfaf_pr_interp_obj = interp.interp2d(Mf_bins, af_bins, P_Mfaf_pr, fill_value=0., bounds_error=False)
 f = gzip.open(outfile+".pklz",'wb')
 pickle.dump(P_Mfaf_pr_interp_obj, f)
-print '... saved the interpolation object.' 
+print('... saved the interpolation object.') 
 
 # read the interpolation object, reconstruct the data from the interpolation object. This is only used for estimating the error due to the interpolation 
 f = gzip.open(outfile+".pklz",'rb')
@@ -107,7 +107,7 @@ P_Mfaf_pr_interp = P_Mfaf_pr_interp_obj(Mf_bins, af_bins)
 
 # difference between the original and interpolated data 
 interp_err = abs(P_Mfaf_pr-P_Mfaf_pr_interp)
-print '... maximum difference between the original and interpolated data is %e' %np.max(interp_err)
+print('... maximum difference between the original and interpolated data is %e' %np.max(interp_err))
 
 plt.figure(figsize=(15,4))
 plt.subplot(131)

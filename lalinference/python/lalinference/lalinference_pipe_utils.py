@@ -155,7 +155,7 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
     reference_psd = None
   cwd=os.getcwd()
   os.chdir(basepath)
-  print "Download %s coinc.xml" % gid
+  print("Download %s coinc.xml" % gid)
   client = GraceDb()
   xmldoc = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"), contenthandler = LIGOLWContentHandler)[0]
   ligolw_utils.write_filename(xmldoc, "coinc.xml")
@@ -168,11 +168,11 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
   fhigh=None
   psdfileobj = None
   if downloadpsd:
-    print "Download %s psd.xml.gz" % gid
+    print("Download %s psd.xml.gz" % gid)
     try:
       psdfileobj = client.files(gid, "psd.xml.gz")
     except HTTPError:
-      print "Failed to download %s psd.xml.gz. lalinference will estimate the psd itself." % gid
+      print("Failed to download %s psd.xml.gz. lalinference will estimate the psd itself." % gid)
     if psdfileobj is not None:
       if reference_psd is not None:
         xmlpsd = ligolw_utils.load_fileobj(psdfileobj, contenthandler = lalseries.PSDContentHandler)[0]
@@ -226,7 +226,7 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
              trigSNR = trigSNR, fhigh = fhigh, horizon_distance=horizon_distance)
     output.append(ev)
 
-  print "Found %d coinc events in table." % len(coinc_events)
+  print("Found %d coinc events in table." % len(coinc_events))
   os.chdir(cwd)
   return output
 
@@ -426,9 +426,9 @@ def scan_timefile(timefile):
       if not p.match(time):
 	continue
       if float(time) in times:
-	print 'Skipping duplicate time %s'%(time)
+	print('Skipping duplicate time %s'%(time))
 	continue
-      print 'Read time %s'%(time)
+      print('Read time %s'%(time))
       times.append(float(time))
     timefilehandle.close()
     return times
@@ -452,7 +452,7 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
     from lal import series as lalseries
     lal=0
   except ImportError:
-    print "ERROR, cannot import lal.series in bppu/get_xml_psds()\n"
+    print("ERROR, cannot import lal.series in bppu/get_xml_psds()\n")
     exit(1)
 
   out={}
@@ -479,13 +479,13 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
 
   # We need to convert the PSD for one or more IFOS. Open the file
   if not os.path.isfile(psdxml):
-    print "ERROR: impossible to open the psd file %s. Exiting...\n"%psdxml
+    print("ERROR: impossible to open the psd file %s. Exiting...\n"%psdxml)
     sys.exit(1)
   xmlpsd =  lalseries.read_psd_xmldoc(ligolw_utils.load_filename(psdxml,contenthandler = lalseries.PSDContentHandler))
   # Check the psd file contains all the IFOs we want to analize
   for ifo in ifos:
     if not ifo in [i.encode('ascii') for i in xmlpsd.keys()]:
-      print "ERROR. The PSD for the ifo %s does not seem to be contained in %s\n"%(ifo,psdxml)
+      print("ERROR. The PSD for the ifo %s does not seem to be contained in %s\n"%(ifo,psdxml))
       sys.exit(1)
   #loop over ifos in psd xml file
   for instrument in xmlpsd.keys():
@@ -558,7 +558,7 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=None,sim_inspira
   mc_priors = {}
 
   if gid is not None and sim_inspiral is not None:
-    print "Error in get_roq_mchirp_priors, cannot use both gid and sim_inspiral\n"
+    print("Error in get_roq_mchirp_priors, cannot use both gid and sim_inspiral\n")
     sys.exit(1)
 
   for roq in roq_paths:
@@ -593,7 +593,7 @@ def get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=None,sim
   m2_priors = {}
 
   if gid is not None and sim_inspiral is not None:
-    print "Error in get_roq_mchirp_priors, cannot use both gid and sim_inspiral\n"
+    print("Error in get_roq_mchirp_priors, cannot use both gid and sim_inspiral\n")
     sys.exit(1)
 
   for roq in roq_paths:
@@ -647,7 +647,7 @@ def Query_ROQ_Bounds_Type(path, roq_paths):
   elif roq_names_set.issuperset(chirp_mass_q_bounds_set):
     roq_bounds = 'chirp_mass_q'
   else:
-    print 'Invalid bounds for ROQ. Ether (m1,m2) or (mc,q) bounds are supported.'
+    print('Invalid bounds for ROQ. Ether (m1,m2) or (mc,q) bounds are supported.')
     sys.exit(1)
   return roq_bounds
 
@@ -662,7 +662,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       self.basepath=cp.get('paths','basedir')
     else:
       self.basepath=os.getcwd()
-      print 'No basepath specified, using current directory: %s'%(self.basepath)
+      print('No basepath specified, using current directory: %s'%(self.basepath))
     mkdirs(self.basepath)
     print("Generating LALInference DAG in {0}".format(self.basepath))
     if dax:
@@ -760,7 +760,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
     # Sanity checking
     if len(self.events)==0:
-      print 'No input events found, please check your config if you expect some events'
+      print('No input events found, please check your config if you expect some events')
     self.times=[e.trig_time for e in self.events]
 
     # Set up the segments
@@ -885,7 +885,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         if ':' in raw_event:
             limits=raw_event.split(':')
             if len(limits) != 2:
-                print "Error: in event config option; ':' must separate two numbers."
+                print("Error: in event config option; ':' must separate two numbers.")
                 exit(0)
             low=int(limits[0])
             high=int(limits[1])
@@ -919,7 +919,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Review: Clean up this section
     if self.config.has_option('input','events'):
       selected_events=self.config.get('input','events')
-      print 'Selected events %s'%(str(selected_events))
+      print('Selected events %s'%(str(selected_events)))
 
       if selected_events=='all':
           selected_events=None
@@ -937,18 +937,18 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
     # No input file given, analyse the entire time stretch between gpsstart and gpsend
     if self.config.has_option('input','analyse-all-time') and self.config.getboolean('input','analyse-all-time')==True:
-        print 'Setting up for analysis of continuous time stretch %f - %f'%(gpsstart,gpsend)
+        print('Setting up for analysis of continuous time stretch %f - %f'%(gpsstart,gpsend))
         if self.config.has_option('engine','seglen'):
           seglen=self.config.getfloat('engine','seglen')
         else:
-          print 'ERROR: seglen must be specified in [engine] section when running without input file'
+          print('ERROR: seglen must be specified in [engine] section when running without input file')
           sys.exit(1)
         if(self.config.has_option('input','segment-overlap')):
           overlap=self.config.getfloat('input','segment-overlap')
         else:
           overlap=32.;
         if(overlap>seglen):
-          print 'ERROR: segment-overlap is greater than seglen'
+          print('ERROR: segment-overlap is greater than seglen')
           sys.exit(1)
         # Now divide gpsstart - gpsend into jobs of seglen - overlap length
         t=gpsstart
@@ -973,21 +973,21 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       if self.config.has_option('input','timeslides-ascii'):
         # The timeslides-ascii files contains one row per trigtime, and a column per IFO
         # Note: the IFO order is the same given in the ifos section of the [analysis] tag
-        print "Reading timeslides from ascii file. Columns order is understood as follow:"
+        print("Reading timeslides from ascii file. Columns order is understood as follow:")
         for this_ifo,ifo in enumerate(self.ifos):
-            print "Column %d"%this_ifo + "= %s "%(ifo)
+            print("Column %d"%this_ifo + "= %s "%(ifo))
         dest=self.config.get('input','timeslides-ascii')
         if not os.path.isfile(dest):
-            print "ERROR the ascii file %s containing the timeslides does not exist\n"%dest
+            print("ERROR the ascii file %s containing the timeslides does not exist\n"%dest)
             exit(1)
         else:
             from numpy import loadtxt
             data=loadtxt(dest).reshape(-1,len(self.ifos))
             if len(self.ifos)!= len(data[0,:]):
-                print "ERROR: ascii timeslide file must contain a column for each IFO used in the analysis!\n"
+                print("ERROR: ascii timeslide file must contain a column for each IFO used in the analysis!\n")
                 exit(1)
             if len(times)!=len(data[:,0]):
-                print 'ERROR: ascii timeslide must contain a row for each trigtime. Exiting...\n'
+                print('ERROR: ascii timeslide must contain a row for each trigtime. Exiting...\n')
                 exit(1)
             timeslides={}
             for this_time,time in enumerate(times):
@@ -1377,7 +1377,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
           myifos.add(ifo)
     ifos=myifos
     if len(ifos)==0:
-      print 'No data found for time %f - %f, skipping'%(segstart,segend)
+      print('No data found for time %f - %f, skipping'%(segstart,segend))
       return
 
     computeroqweightsnode={}
@@ -1402,9 +1402,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     elif self.config.has_option('engine','srate'):
       original_srate=self.config.getfloat('engine','srate')
     if (np.log2(original_srate)%1):
-      print 'The srate given,'+str(original_srate)+' Hz, is not a power of 2.'
-      print 'For data handling purposes, the srate used will be '+str(np.power(2., np.ceil(np.log2(original_srate))))+' Hz'
-      print 'The inner products will still however be integrated up to '+str(original_srate/2.)+' Hz'
+      print('The srate given,'+str(original_srate)+' Hz, is not a power of 2.')
+      print('For data handling purposes, the srate used will be '+str(np.power(2., np.ceil(np.log2(original_srate))))+' Hz')
+      print('The inner products will still however be integrated up to '+str(original_srate/2.)+' Hz')
       srate = np.power(2., np.ceil(np.log2(original_srate)))
     else:
       srate = original_srate
@@ -1490,15 +1490,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       else:
         bw_seglen = event.duration
       if (np.log2(bw_seglen)%1):
-        print 'BayesWave only supports seglengths which are powers of 2, you have specified a seglength of '+str(bw_seglen)+' seconds.'
-        print 'Instead, a seglenth of '+str(np.power(2., np.ceil(np.log2(bw_seglen))))+'s will be used for the BayesWave PSD estimation.'
-        print 'The main LALInference job will stil use seglength '+str(bw_seglen)+' seconds.'
+        print('BayesWave only supports seglengths which are powers of 2, you have specified a seglength of '+str(bw_seglen)+' seconds.')
+        print('Instead, a seglenth of '+str(np.power(2., np.ceil(np.log2(bw_seglen))))+'s will be used for the BayesWave PSD estimation.')
+        print('The main LALInference job will stil use seglength '+str(bw_seglen)+' seconds.')
         bw_seglen = np.power(2., np.ceil(np.log2(bw_seglen)))
     if self.config.has_option('condor','bayeswave'):
       if (np.log2(srate)%1):
-        print 'BayesWave only supports srates which are powers of 2, you have specified a srate of '+str(srate)+' Hertz.'
-        print 'Instead, a srate of '+str(np.power(2., np.ceil(np.log2(srate))))+'Hz will be used for the BayesWave PSD estimation.'
-        print 'The main LALInference job will stil use srate '+str(srate)+' Hertz.'
+        print('BayesWave only supports srates which are powers of 2, you have specified a srate of '+str(srate)+' Hertz.')
+        print('Instead, a srate of '+str(np.power(2., np.ceil(np.log2(srate))))+'Hz will be used for the BayesWave PSD estimation.')
+        print('The main LALInference job will stil use srate '+str(srate)+' Hertz.')
         bw_srate = np.power(2., np.ceil(np.log2(srate)))
       else:
         bw_srate = srate
@@ -1534,7 +1534,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                            bayeswavepsdnode[ifo].add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],self.channels[ifo],timeslide=slide)
                   if self.config.has_option('lalinference','flow'):
                      bayeswavepsdnode[ifo].flows[ifo]=np.power(2,np.floor(np.log2(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])))
-                     print 'BayesWave requires f_low being a power of 2, therefore f_low for '+ifo+' has been changed from '+str(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])+' to '+str(np.power(2,np.floor(np.log2(ast.literal_eval(self.config.get('lalinference','flow'))[ifo]))))+' Hz (for the BayesWave job only, in the main LALInference jobs f_low will still be '+str(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])+' Hz)'
+                     print('BayesWave requires f_low being a power of 2, therefore f_low for '+ifo+' has been changed from '+str(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])+' to '+str(np.power(2,np.floor(np.log2(ast.literal_eval(self.config.get('lalinference','flow'))[ifo]))))+' Hz (for the BayesWave job only, in the main LALInference jobs f_low will still be '+str(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])+' Hz)')
                   bayeswavepsdnode[ifo].set_seed(randomseed)
                   if self.dataseed:
                      bayeswavepsdnode[ifo].set_dataseed(self.dataseed+event.event_id)
@@ -1583,7 +1583,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if gotdata:
       self.add_node(node)
     else:
-      print 'no data found for time %f'%(end_time)
+      print('no data found for time %f'%(end_time))
       return None, bayeswavepsdnode
     if extra_options is not None:
       for opt in extra_options.keys():
@@ -1939,7 +1939,7 @@ class EngineJob(SingularityJob,pipeline.AnalysisJob):
             # This will go away, since condor_compile will not be supported in future
             universe='standard'
       else:
-        print 'LALInferencePipe: Unknown engine node type %s!'%(self.engine)
+        print('LALInferencePipe: Unknown engine node type %s!'%(self.engine))
         sys.exit(1)
 
     pipeline.CondorDAGJob.__init__(self,universe,exe)
@@ -2804,7 +2804,7 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       + 3*((params['fhigh']-params['flow'])*params['seglen'])*(float(dt+0.05)*2/float(time_step))*2*8/(1024*1024)
       + os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_quadratic.npy'))/(1024*1024)
       ) + 4096) # add 4gb of memory due to how matrix-copying is handled in lalapps_compute_roq_weights.py/numpy
-      print 'Requesting '+computeroqweights_memory+' of memory for computeroqweights.'
+      print('Requesting '+computeroqweights_memory+' of memory for computeroqweights.')
     self.add_condor_cmd('request_memory',computeroqweights_memory)
 
 class ROMNode(pipeline.CondorDAGNode):

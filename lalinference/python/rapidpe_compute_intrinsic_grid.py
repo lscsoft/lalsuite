@@ -220,7 +220,7 @@ if opts.use_overlap is not None:
     odata = h5file[wfrm_fam]
     m1, m2, ovrlp = odata["mass1"], odata["mass2"], odata["overlaps"]
     if opts.verbose:
-        print "Using overlap data from %s" % wfrm_fam
+        print("Using overlap data from %s" % wfrm_fam)
 
 # Hopefully the point is already present and we can just get it, otherwise it
 # could incur an overlap calculation, or suffer from the effects of being close
@@ -378,7 +378,7 @@ if opts.refine or opts.prerefine:
 extent_str = " ".join("(%f, %f)" % bnd for bnd in map(tuple, init_region._bounds))
 center_str = " ".join(map(str, init_region._center))
 label_str = ", ".join(region_labels)
-print "Initial region (" + label_str + ") has center " + center_str + " and extent " + extent_str
+print("Initial region (" + label_str + ") has center " + center_str + " and extent " + extent_str)
 
 #### BEGIN REFINEMENT OF RESULTS #########
 
@@ -391,15 +391,15 @@ if opts.result_file is not None:
     selected = get_evidence_grid(selected, res_pts, intr_prms)
 
     if opts.verbose:
-        print "Loaded %d result points" % len(selected)
+        print("Loaded %d result points" % len(selected))
 
     if opts.refine:
         # FIXME: We use overlap threshold as a proxy for confidence level
         selected = get_cr_from_grid(selected, results, cr_thr=opts.overlap_threshold, min_n=opts.min_n_points, max_n=opts.max_n_points)
-        print "Selected %d cells from %3.2f%% confidence region" % (len(selected), opts.overlap_threshold*100)
+        print("Selected %d cells from %3.2f%% confidence region" % (len(selected), opts.overlap_threshold*100))
 
 if opts.prerefine:
-    print "Performing refinement for points with overlap > %1.3f" % opts.overlap_threshold
+    print("Performing refinement for points with overlap > %1.3f" % opts.overlap_threshold)
     pt_select = results > opts.overlap_threshold
     selected = selected[pt_select]
     results = results[pt_select]
@@ -407,7 +407,7 @@ if opts.prerefine:
 
 else:
     grid, spacing = amrlib.refine_regular_grid(selected, spacing, return_cntr=opts.setup)
-print "%d cells after refinement" % len(grid)
+print("%d cells after refinement" % len(grid))
 grid = amrlib.prune_duplicate_pts(grid, init_region._bounds, spacing)
 
 #
@@ -417,7 +417,7 @@ grid = amrlib.prune_duplicate_pts(grid, init_region._bounds, spacing)
 grid = numpy.array(grid)
 bounds_mask = amrlib.check_grid(grid, intr_prms, opts.distance_coordinates)
 grid = grid[bounds_mask]
-print "%d cells after bounds checking" % len(grid)
+print("%d cells after bounds checking" % len(grid))
 
 if len(grid) == 0:
     exit("All cells would be removed by physical boundaries.")
@@ -433,7 +433,7 @@ else:
     grp = amrlib.load_grid_level(opts.refine, None)
     level = amrlib.save_grid_cells_hdf(grp, cells, "mass1_mass2", intr_prms)
 
-print "Selected %d cells for further analysis." % len(cells)
+print("Selected %d cells for further analysis." % len(cells))
 if opts.setup:
     fname = "HL-MASS_POINTS_LEVEL_0-0-1.xml.gz"
     write_to_xml(cells, intr_prms, pin_prms, None, fname, verbose=opts.verbose)

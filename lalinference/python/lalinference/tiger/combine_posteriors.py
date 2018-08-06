@@ -3,6 +3,8 @@
 # combine_posteriors.py
 # Copyright 2016 Jeroen Meidam <jmeidam@nikhef.nl>
 
+from __future__ import print_function
+
 import sys
 py_version = sys.version_info[:2]
 from os import path, makedirs
@@ -196,7 +198,7 @@ class parameter():
       self.kde_min = xranges_batch[paramname][0]
       self.kde_max = xranges_batch[paramname][1]
 
-    print "working on",paramname
+    print("working on",paramname)
 
     for sourcename in self.sourcenames:
       if batchname == "":
@@ -256,7 +258,7 @@ def batchname_from_parameter(param):
   elif "dsigma" in param:
     batchname = "dsigmas"
   else:
-    print "could not set batchname"
+    print("could not set batchname")
     return ""
   return batchname
 
@@ -286,7 +288,7 @@ def init(settings):
 
   #get sources
   if (path.isfile(datafile) and not settings["rescan_files"]):
-    print "reading data from", datafile
+    print("reading data from", datafile)
     parameters = load(datafile)
   else:
     parameters = {}
@@ -297,7 +299,7 @@ def init(settings):
       for p in settings["parameters"]:
         batchname = batchname_from_parameter(p)
         parameters[p] = parameter(p,settings["sources"],settings,batchname=batchname)
-    print "storing data in", datafile
+    print("storing data in", datafile)
     save(datafile,parameters)
 
   return parameters
@@ -317,7 +319,7 @@ def normalize_kde(kde,x):
 
 def plot_combined_kde(parameters,param,settings):
 
-  print "plotting",param
+  print("plotting",param)
   sourcenames = settings["sources"]
 
   ## Start plotting
@@ -399,8 +401,8 @@ if not settings["singles"]:
     #add the header in a tremendously ugly, but effective fashion:
     for line in fileinput.input([batchfilename_out], inplace=True):
         if fileinput.isfirstline():
-            print header
-        print line,
+            print(header)
+        print(line, end=' ')
 
 
 

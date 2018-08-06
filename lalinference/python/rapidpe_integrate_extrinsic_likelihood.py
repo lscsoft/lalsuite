@@ -18,6 +18,8 @@
 Integrate the extrinsic parameters of the prefactored likelihood function.
 """
 
+from __future__ import print_function
+
 # Basic stuff
 import sys
 import functools
@@ -119,10 +121,10 @@ if opts.coinc_xml is not None:
     assert len(coinc_table) == 1
     coinc_row = coinc_table[0]
     event_time = coinc_row.get_end()
-    print "Coinc XML loaded, event time: %s" % str(coinc_row.get_end())
+    print("Coinc XML loaded, event time: %s" % str(coinc_row.get_end()))
 elif opts.event_time is not None:
     event_time = glue.lal.LIGOTimeGPS(opts.event_time)
-    print "Event time from command line: %s" % str(event_time)
+    print("Event time from command line: %s" % str(event_time))
 else:
     raise ValueError("Either --coinc-xml or --event-time must be provided to parse event time.")
 
@@ -147,7 +149,7 @@ lambda1, lambda2 = 0, 0
 if opts.eff_lambda is not None:
     lambda1, lambda2 = lalsimutils.tidal_lambda_from_tilde(opts.mass1, opts.mass2, opts.eff_lambda, opts.deff_lambda or 0)
 
-print "Performing integration for intrinsic parameters mass 1: %f, mass 2 %f, lambda1: %f, lambda2: %f, spin1z: %1.3f, spin2z: %1.3f" % (m1, m2, lambda1, lambda2, opts.spin1z or 0, opts.spin2z or 0)
+print("Performing integration for intrinsic parameters mass 1: %f, mass 2 %f, lambda1: %f, lambda2: %f, spin1z: %1.3f, spin2z: %1.3f" % (m1, m2, lambda1, lambda2, opts.spin1z or 0, opts.spin2z or 0))
 
 #
 # Template descriptors
@@ -200,8 +202,8 @@ elif opts.coinc_xml is not None:
 if opts.data_start_time is not None and opts.data_end_time is not None:
     start_time =  opts.data_start_time
     end_time =  opts.data_end_time
-    print "Fetching data segment with start=", start_time
-    print "                             end=", end_time
+    print("Fetching data segment with start=", start_time)
+    print("                             end=", end_time)
 
 # Automatically choose data segment bounds so region of interest isn't corrupted
 else:
@@ -210,10 +212,10 @@ else:
     T_seg = T_tmplt + T_spec + T_safety # Amount before and after event time
     start_time = float(event_time) - T_seg
     end_time = float(event_time) + T_seg
-    print "Fetching data segment with start=", start_time
-    print "                             end=", end_time
-    print "\t\tEvent time is: ", float(event_time)
-    print "\t\tT_seg is: ", T_seg
+    print("Fetching data segment with start=", start_time)
+    print("                             end=", end_time)
+    print("\t\tEvent time is: ", float(event_time))
+    print("\t\tT_seg is: ", T_seg)
 
 #
 # Load in data and PSDs
@@ -224,26 +226,26 @@ if opts.zero_noise:
     if not opts.pin_to_sim:
         exit("--pin-to-sim must be provided with zero noise to do an injection.")
     for inst, _ in map(lambda c: c.split("="), opts.psd_file):
-        print "Adding injections from sim inspiral row for instrument %s" % inst
+        print("Adding injections from sim inspiral row for instrument %s" % inst)
         P_inj = lalsimutils.ChooseWaveformParams()
         P_inj.copy_lsctables_sim_inspiral(sim_row)
         P_inj.detector = inst
         P_inj.radec = True # Get the right antenna patterns
         P_inj.deltaF, P_inj.fmax = 0.125/16, 2048
         data_dict[inst] = lalsimutils.non_herm_hoff(P_inj)
-        print "Frequency binning: %f, length %d" % (data_dict[inst].deltaF,
-                data_dict[inst].data.length)
+        print("Frequency binning: %f, length %d" % (data_dict[inst].deltaF,
+                data_dict[inst].data.length))
 else:
     for inst, chan in map(lambda c: c.split("="), opts.channel_name):
-        print "Reading channel %s from cache %s" % (inst+":"+chan, opts.cache_file)
+        print("Reading channel %s from cache %s" % (inst+":"+chan, opts.cache_file))
         data_dict[inst] = lalsimutils.frame_data_to_non_herm_hoff(opts.cache_file,
                 inst+":"+chan, start=start_time, stop=end_time,
                 window_shape=opts.window_shape)
-        print "Frequency binning: %f, length %d" % (data_dict[inst].deltaF,
-                data_dict[inst].data.length)
+        print("Frequency binning: %f, length %d" % (data_dict[inst].deltaF,
+                data_dict[inst].data.length))
 
 for inst, psdf in map(lambda c: c.split("="), opts.psd_file):
-    print "Reading PSD for instrument %s from %s" % (inst, psdf)
+    print("Reading PSD for instrument %s from %s" % (inst, psdf))
     psd_dict[inst] = lalsimutils.get_psd_series_from_xmldoc(psdf, inst)
 
     deltaF = data_dict[inst].deltaF
@@ -257,13 +259,13 @@ for inst, psdf in map(lambda c: c.split("="), opts.psd_file):
         fmax = opts.fmax # fmax is now the upper freq. of IP integral
 
     psd_dict[inst] = lalsimutils.resample_psd_series(psd_dict[inst], deltaF)
-    print "PSD deltaF after interpolation %f" % psd_dict[inst].deltaF
+    print("PSD deltaF after interpolation %f" % psd_dict[inst].deltaF)
 
     assert psd_dict[inst].deltaF == deltaF
 
 # Ensure data and PSDs keyed to same detectors
 if sorted(psd_dict.keys()) != sorted(data_dict.keys()):
-    print >>sys.stderr, "Got a different set of instruments based on data and PSDs provided."
+    print("Got a different set of instruments based on data and PSDs provided.", file=sys.stderr)
 
 # Ensure waveform has same sample rate, padded length as data
 #
@@ -290,17 +292,17 @@ rholms_intp, cross_terms, rholms = factored_likelihood.precompute_likelihood_ter
 
 if opts.pin_to_sim and not opts.zero_noise:
     P.copy_lsctables_sim_inspiral(sim_row)
-    print "Pinned parameters from sim_inspiral"
-    print "\tRA", P.phi, sim_row.longitude 
-    print "\tdec", P.theta, sim_row.latitude 
-    print "\tt ref %d.%d" % (P.tref.gpsSeconds, P.tref.gpsNanoSeconds), sim_row.get_time_geocent()
-    print "\torb phase", P.phiref, sim_row.coa_phase # ref. orbital phase
-    print "\tinclination", P.incl, sim_row.inclination # inclination
-    print "\tpsi", P.psi, sim_row.polarization # polarization angle
-    print "\tdistance", P.dist/(1e6 * lal.PC_SI), sim_row.distance  # luminosity distance
+    print("Pinned parameters from sim_inspiral")
+    print("\tRA", P.phi, sim_row.longitude) 
+    print("\tdec", P.theta, sim_row.latitude) 
+    print("\tt ref %d.%d" % (P.tref.gpsSeconds, P.tref.gpsNanoSeconds), sim_row.get_time_geocent())
+    print("\torb phase", P.phiref, sim_row.coa_phase) # ref. orbital phase
+    print("\tinclination", P.incl, sim_row.inclination) # inclination
+    print("\tpsi", P.psi, sim_row.polarization) # polarization angle
+    print("\tdistance", P.dist/(1e6 * lal.PC_SI), sim_row.distance)  # luminosity distance
 
     logL = factored_likelihood.factored_log_likelihood(P, rholms_intp, cross_terms, opts.l_max)
-    print "Pinned log likelihood: %g, (%g in \"SNR\")" % (logL, numpy.sqrt(2*logL))
+    print("Pinned log likelihood: %g, (%g in \"SNR\")" % (logL, numpy.sqrt(2*logL)))
     tref = float(P.tref)
     tvals = numpy.arange(tref-0.01, tref+0.01, 0.00001)
     logLs = []
@@ -310,14 +312,14 @@ if opts.pin_to_sim and not opts.zero_noise:
     import matplotlib
     matplotlib.use("Agg")
     from matplotlib import pyplot
-    print "Maximum logL is %g, (%g in \"SNR\")" % (max(logLs), numpy.sqrt(2*max(logLs)))
-    print "Which occurs at sample", numpy.argmax(logLs)
-    print "This corresponds to time %.20g" % tvals[numpy.argmax(logLs)]
-    print "The data event time is:  %.20g" % sim_row.get_time_geocent()
-    print "Difference from geocenter t_ref is %.20g" %\
-            (tvals[numpy.argmax(logLs)] - sim_row.get_time_geocent())
-    print "This difference in discrete samples: %.20g" %\
-            ((tvals[numpy.argmax(logLs)]-sim_row.get_time_geocent())/P.deltaT)
+    print("Maximum logL is %g, (%g in \"SNR\")" % (max(logLs), numpy.sqrt(2*max(logLs))))
+    print("Which occurs at sample", numpy.argmax(logLs))
+    print("This corresponds to time %.20g" % tvals[numpy.argmax(logLs)])
+    print("The data event time is:  %.20g" % sim_row.get_time_geocent())
+    print("Difference from geocenter t_ref is %.20g" %\
+            (tvals[numpy.argmax(logLs)] - sim_row.get_time_geocent()))
+    print("This difference in discrete samples: %.20g" %\
+            ((tvals[numpy.argmax(logLs)]-sim_row.get_time_geocent())/P.deltaT))
     pyplot.plot(tvals-tref, logLs)
     pyplot.ylabel("log Likelihood")
     pyplot.xlabel("time (relative to %10.5f)" % tref)
@@ -326,8 +328,8 @@ if opts.pin_to_sim and not opts.zero_noise:
     pyplot.grid()
     pyplot.savefig("logL.png")
     integral = numpy.sum( numpy.exp(logLs) * P.deltaT )
-    print "Integral over t of likelihood is:", integral
-    print "The log of the integral is:", numpy.log(integral)
+    print("Integral over t of likelihood is:", integral)
+    print("The log of the integral is:", numpy.log(integral))
     exit()
 
 #
@@ -413,7 +415,7 @@ else:
 
 pinned_params = common_cl.get_pinned_params(opts)
 unpinned_params = common_cl.get_unpinned_params(opts, sampler.params)
-print "{0:<25s} {1:>5s} {2:>5s} {3:>20s} {4:<10s}".format("parameter", "lower limit", "upper limit", "pinned?", "pin value")
+print("{0:<25s} {1:>5s} {2:>5s} {3:>20s} {4:<10s}".format("parameter", "lower limit", "upper limit", "pinned?", "pin value"))
 plen = len(sorted(sampler.params, key=lambda p: len(p))[-1])
 for p in sampler.params:
     if pinned_params.has_key(p):
@@ -424,10 +426,10 @@ for p in sampler.params:
     if isinstance(p, tuple):
         for subp, subl, subr in zip(p, sampler.llim[p], sampler.rlim[p]):
             subp = subp + " "*min(0, plen-len(subp))
-            print "|{0:<25s} {1:>1.3g}   {2:>1.3g} {3:>20s} {4:<10s}".format(subp, subl, subr, str(False), "")
+            print("|{0:<25s} {1:>1.3g}   {2:>1.3g} {3:>20s} {4:<10s}".format(subp, subl, subr, str(False), ""))
     else:
         p = p + " "*min(0, plen-len(p))
-        print "{0:<25s} {1:>1.3g}   {2:>1.3g} {3:>20s} {4:<10s}".format(p, sampler.llim[p], sampler.rlim[p], str(pinned), value)
+        print("{0:<25s} {1:>1.3g}   {2:>1.3g} {3:>20s} {4:<10s}".format(p, sampler.llim[p], sampler.rlim[p], str(pinned), value))
 
 # Special case: t_ref is assumed to be relative to the epoch
 if pinned_params.has_key("t_ref"):
@@ -540,8 +542,8 @@ else: # Sum over time for every point in other extrinsic params
 
     res, var, neff, dict_return = sampler.integrate(likelihood_function, *unpinned_params, **pinned_params)
 
-print " lnLmarg is ", numpy.log(res), " with expected relative error ", numpy.sqrt(var)/res
-print " note neff is ", neff
+print(" lnLmarg is ", numpy.log(res), " with expected relative error ", numpy.sqrt(var)/res)
+print(" note neff is ", neff)
 
 # FIXME: This is turning into a mess
 if opts.output_file:

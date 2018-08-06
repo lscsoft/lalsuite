@@ -61,7 +61,7 @@ def rapidpe_to_hdf(basegrp, bankfile, samplefiles):
         tmplt_bank = lsctables.SnglInspiralTable.get_table(bank_xmldoc)
 
     for sample_file in samplesfiles:
-        print "Processing %s" % sample_file
+        print("Processing %s" % sample_file)
 
         # Get tables from xmldoc
         xmldoc = utils.load_filename(sample_file, contenthandler=ligolw.LIGOLWContentHandler)
@@ -93,7 +93,7 @@ def rapidpe_to_hdf(basegrp, bankfile, samplefiles):
 def txt_to_hdf(basegrp, samplefile):
 
     samplefile = samplefile[0]
-    print "Processing %s" % samplefile
+    print("Processing %s" % samplefile)
 
     samples = numpy.genfromtxt(samplefile, names=True)
 

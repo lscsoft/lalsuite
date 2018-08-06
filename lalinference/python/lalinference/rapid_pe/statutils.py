@@ -224,8 +224,8 @@ if __name__ == "__main__":
         bin_chosen[i] += 1
     bin_chosen = numpy.array(bin_chosen.values(), dtype=numpy.float64)
     bin_chosen /= bin_chosen.sum()
-    print sorted(probs)
-    print sorted(bin_chosen)
+    print(sorted(probs))
+    print(sorted(bin_chosen))
 
     rvs = multivariate_normal(mean=(0,0), cov=((1, 2), (0.5, 2)), size=(100000,)).T
     nbin_side = 20

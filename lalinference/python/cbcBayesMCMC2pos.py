@@ -114,7 +114,7 @@ def downsample_and_evidence(data_hdf5, deltaLogP=None, fixedBurnin=None, nDownsa
     # Compute the evidence for the set of parallel tempered chains through a thermodynamic integral
 
 	if not data_hdf5.lower().endswith(('.hdf5', '.hdf', '.h5')):
-		print 'cbcBayesMCMC2pos only suports hdf5 input, for older file formats plese revert to cbcBayesThermoInt and cbcBayesPosProc'
+		print('cbcBayesMCMC2pos only suports hdf5 input, for older file formats plese revert to cbcBayesThermoInt and cbcBayesPosProc')
 		sys.exit(1)
 
 	peparser = bppu.PEOutputParser('hdf5')
@@ -132,7 +132,7 @@ def downsample_and_evidence(data_hdf5, deltaLogP=None, fixedBurnin=None, nDownsa
 		ps, samps = peparser.parse(data_hdf5, deltaLogP=deltaLogP, fixedBurnins=fixedBurnin,
 			nDownsample=nDownsample, tablename='chain_'+str('%02.f' %i))
 		highTchains.append(apt.Table(samps, names=ps))
-		if verbose: print 'chain_'+str('%02.f' %i)+' at a temperature '+str(highTchains[i-1]['temperature'].mean())
+		if verbose: print('chain_'+str('%02.f' %i)+' at a temperature '+str(highTchains[i-1]['temperature'].mean()))
 
 	betas = np.zeros(len(highTchains)+1)
 	logls = np.zeros_like(betas)
@@ -169,8 +169,8 @@ def downsample_and_evidence(data_hdf5, deltaLogP=None, fixedBurnin=None, nDownsa
 	posterior_samples['chain_log_bayes_factor'] = posterior_samples['chain_log_evidence'] - posterior_samples['chain_log_noise_evidence']
 
 	if verbose:
-		print 'logZ = '+str(posterior_samples['chain_log_evidence'][0])+'+-'+str(posterior_samples['chain_delta_log_evidence'][0])
-		print 'logB_SN = '+str(posterior_samples['chain_log_bayes_factor'][0])
+		print('logZ = '+str(posterior_samples['chain_log_evidence'][0])+'+-'+str(posterior_samples['chain_delta_log_evidence'][0]))
+		print('logB_SN = '+str(posterior_samples['chain_log_bayes_factor'][0]))
 
 	posterior_samples = reassign_metadata(posterior_samples, data_hdf5)
 
@@ -188,17 +188,17 @@ def weight_and_combine(pos_chains, verbose=False):
 	for i in xrange(len(pos_chains)):
 		log_evs[i] = pos_chains[i]['chain_log_evidence'][0]
 		log_noise_evs[i] = pos_chains[i]['chain_log_noise_evidence'][0]
-	if verbose: print 'Computed log_evidences: %s'%(str(log_evs))
+	if verbose: print('Computed log_evidences: %s'%(str(log_evs)))
 
 	max_log_ev = log_evs.max()
 
 	fracs=[np.exp(log_ev-max_log_ev) for log_ev in log_evs]
-	if verbose: print 'Relative weights of input files: %s'%(str(fracs))
+	if verbose: print('Relative weights of input files: %s'%(str(fracs)))
 
 	Ns=[fracs[i]/len(pos_chains[i]) for i in xrange(len(fracs))]
 	Ntot=max(Ns)
 	fracs=[n/Ntot for n in Ns]
-	if verbose: print 'Relative weights of input files taking into account their length: %s'%(str(fracs))
+	if verbose: print('Relative weights of input files taking into account their length: %s'%(str(fracs)))
 
 	final_posterior = pos_chains[0][np.random.uniform(size=len(pos_chains[0]))<fracs[0]]
 

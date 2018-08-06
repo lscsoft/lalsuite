@@ -54,7 +54,7 @@ def find_ln_p_j_voronoi(m, f, popt):
             all_p.append(p)
             all_i.append(i)
             vtot += pvol
-    print "Voronoi diagram, total volume = "+str(vtot)
+    print("Voronoi diagram, total volume = "+str(vtot))
     all_p = np.array(all_p)
     all_vols = np.array(all_vols)
     all_i = np.array(all_i)

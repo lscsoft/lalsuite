@@ -18,6 +18,8 @@
 Creates a dag workflow to perform extrinsic marginalization calculation.
 """
 
+from __future__ import print_function
+
 import sys
 import os
 from argparse import ArgumentParser
@@ -90,10 +92,10 @@ if opts.coinc_xml is not None:
     assert len(coinc_table) == 1
     coinc_row = coinc_table[0]
     event_time = coinc_row.get_end()
-    print "Coinc XML loaded, event time: %s" % str(coinc_row.get_end())
+    print("Coinc XML loaded, event time: %s" % str(coinc_row.get_end()))
 elif opts.event_time is not None:
     event_time = glue.lal.LIGOTimeGPS(opts.event_time)
-    print "Event time from command line: %s" % str(event_time)
+    print("Event time from command line: %s" % str(event_time))
 else:
     raise ValueError("Either --coinc-xml or --event-time must be provided to parse event time.")
 
@@ -101,7 +103,7 @@ xmldoc, tmplt_bnk = utils.load_filename(opts.template_bank_xml, contenthandler=l
 try:
     tmplt_bnk = lsctables.SimInspiralTable.get_table(xmldoc)
 except ValueError:
-    print >>sys.stderr, "Exactly one sim_inspiral table was not found in %s, trying sngl_inspiral" % opts.template_bank_xml
+    print("Exactly one sim_inspiral table was not found in %s, trying sngl_inspiral" % opts.template_bank_xml, file=sys.stderr)
 
 if tmplt_bnk is None:
     tmplt_bnk = lsctables.SnglInspiralTable.get_table(xmldoc)
@@ -264,8 +266,8 @@ dag.write_concrete_dag()
 if opts.write_script:
     dag.write_script()
 
-print "Created a DAG named %s\n" % dag_name
-print "This will run %i instances of %s in parallel\n" % (len(tmplt_bnk), ile_sub_name)
+print("Created a DAG named %s\n" % dag_name)
+print("This will run %i instances of %s in parallel\n" % (len(tmplt_bnk), ile_sub_name))
 
 # FIXME: Adjust name on command line
 if use_bayespe_postproc:
@@ -277,7 +279,7 @@ if use_bayespe_postproc:
     if opts.write_script:
         ppdag.write_script()
 
-    print "Created a postprocessing DAG named %s\n" % ppdag_name
+    print("Created a postprocessing DAG named %s\n" % ppdag_name)
 
 xmldoc = ligolw.Document()
 xmldoc.appendChild(ligolw.LIGO_LW())

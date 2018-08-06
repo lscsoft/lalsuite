@@ -222,13 +222,13 @@ def cbcBayesPostProc(
     and stats from the marginal posteriors for each parameter/set of parameters.
     """
     if eventnum is not None and injfile is None:
-        print "You specified an event number but no injection file. Ignoring!"
+        print("You specified an event number but no injection file. Ignoring!")
 
     if trignum is not None and trigfile is None:
-        print "You specified a trigger number but no trigger file. Ignoring!"
+        print("You specified a trigger number but no trigger file. Ignoring!")
 
     if trignum is None and trigfile is not None:
-        print "You specified a trigger file but no trigger number. Taking first entry (the case for GraceDB events)."
+        print("You specified a trigger file but no trigger number. Taking first entry (the case for GraceDB events).")
         trignum=0
 
     if data is None:
@@ -283,8 +283,8 @@ def cbcBayesPostProc(
         f_refIdx = ps.index('f_ref')
         injFref = unique(samps[:,f_refIdx])
         if len(injFref) > 1:
-            print "ERROR: Expected f_ref to be constant for all samples.  Can't tell which value was injected!"
-            print injFref
+            print("ERROR: Expected f_ref to be constant for all samples.  Can't tell which value was injected!")
+            print(injFref)
             injFref = None
         else:
             injFref = injFref[0]
@@ -294,7 +294,7 @@ def cbcBayesPostProc(
     #Select injections using tc +/- 0.1s if it exists or eventnum from the injection file
     injection=None
     if injfile and eventnum is not None:
-        print 'Looking for event %i in %s\n'%(eventnum,injfile)
+        print('Looking for event %i in %s\n'%(eventnum,injfile))
         xmldoc = utils.load_filename(injfile,contenthandler=ExtractSimInspiralTableLIGOLWContentHandler)
         siminspiraltable=lsctables.SimInspiralTable.get_table(xmldoc)
         injection=siminspiraltable[eventnum]
@@ -315,16 +315,16 @@ def cbcBayesPostProc(
         bfile.close()
         if(len(BSN.split())!=1):
           BSN=BSN.split()[0]
-        print 'BSN: %s'%BSN
+        print('BSN: %s'%BSN)
     if bayesfactorcoherent is not None:
         bfile=open(bayesfactorcoherent,'r')
         BCI=bfile.read()
         bfile.close()
-        print 'BCI: %s'%BCI
+        print('BCI: %s'%BCI)
 
     if snrfactor is not None:
         if not os.path.isfile(snrfactor):
-            print "No snr file provided or wrong path to snr file\n"
+            print("No snr file provided or wrong path to snr file\n")
             snrfactor=None
         else:
             snrstring=""
@@ -361,16 +361,16 @@ def cbcBayesPostProc(
 
         if(len(injections)<1):
             try:
-                print 'Warning: Cannot find injection with end time %f' %(pos['time'].mean)
+                print('Warning: Cannot find injection with end time %f' %(pos['time'].mean))
             except KeyError:
-                print "Warning: No 'time' column!"
+                print("Warning: No 'time' column!")
 
         else:
             try:
                 injection = itertools.ifilter(lambda a: abs(float(a.get_end()) - pos['time'].mean) < 0.1, injections).next()
                 pos.set_injection(injection)
             except KeyError:
-                print "Warning: No 'time' column!"
+                print("Warning: No 'time' column!")
 
     pos.extend_posterior()
     # create list of names in oneDMenus dic
@@ -384,7 +384,7 @@ def cbcBayesPostProc(
             for func in functions.keys():
                 old_pos_name = pos_name.replace(func,'')
                 if pos_name.find(func)==0 and old_pos_name in pos.names:
-                    print "Taking %s of %s ..."% (func,old_pos_name)
+                    print("Taking %s of %s ..."% (func,old_pos_name))
                     pos.append_mapping(pos_name,functions[func],old_pos_name)
 
     #Remove samples with NaNs in requested params
@@ -398,17 +398,17 @@ def cbcBayesPostProc(
 
     ##Print some summary stats for the user...##
     #Number of samples
-    print "Number of posterior samples: %i"%len(pos)
+    print("Number of posterior samples: %i"%len(pos))
     # Means
-    print 'Means:'
-    print str(pos.means)
+    print('Means:')
+    print(str(pos.means))
     #Median
-    print 'Median:'
-    print str(pos.medians)
+    print('Median:')
+    print(str(pos.medians))
     #maxL
-    print 'maxL:'
+    print('maxL:')
     max_pos,max_pos_co=pos.maxL
-    print max_pos_co
+    print(max_pos_co)
 
     # Save posterior samples
     posfilename=os.path.join(outdir,'posterior_samples.dat')
@@ -469,7 +469,7 @@ def cbcBayesPostProc(
         evout.write(" ")
         evout.write(str(log_ev))
         evout.close()
-        print "Computing direct integration evidence = %g (log(Evidence) = %g)"%(ev, log_ev)
+        print("Computing direct integration evidence = %g (log(Evidence) = %g)"%(ev, log_ev))
         html_model.p('Direct integration evidence is %g, or log(Evidence) = %g.  (Boxing parameter = %d.)'%(ev,log_ev,boxing))
         if 'logl' in pos.names:
             log_ev=pos.harmonic_mean_evidence()
@@ -484,14 +484,14 @@ def cbcBayesPostProc(
             evout=open(evfilename, 'w')
             evout.write(str(ev) + ' ' + str(log_ev))
             evout.close()
-            print 'Computing elliptical region evidence = %g (log(ev) = %g)'%(ev, log_ev)
+            print('Computing elliptical region evidence = %g (log(ev) = %g)'%(ev, log_ev))
             html_model.p('Elliptical region evidence is %g, or log(Evidence) = %g.'%(ev, log_ev))
 
             if 'logl' in pos.names:
                 log_ev=pos.harmonic_mean_evidence()
                 html_model.p('Compare to harmonic mean evidence of %g (log(Evidence = %g))'%(exp(log_ev), log_ev))
         except IndexError:
-            print 'Warning: Sample size too small to compute elliptical evidence!'
+            print('Warning: Sample size too small to compute elliptical evidence!')
 
     #Create a section for SNR, if a file is provided
     if snrfactor is not None:
@@ -589,15 +589,15 @@ def cbcBayesPostProc(
         os.makedirs(wfdir)
     try:
         wfpointer= bppu.plot_waveform(pos=pos,siminspiral=injfile,event=eventnum,path=wfdir)
-    except  Exception,e:
+    except  Exception as e:
         wfpointer = None
-        print "Could not create WF plot. The error was: %s\n"%str(e)
+        print("Could not create WF plot. The error was: %s\n"%str(e))
     wftd=html_wf.insert_td(row,'',label='Waveform',legend=legend)
     wfsection=html.add_section_to_element('Waveforms',wftd)
     if wfpointer is not None:
       wfsection.write('<a href="Waveform/WF_DetFrame.png" target="_blank"><img src="Waveform/WF_DetFrame.png"/></a>')
     else:
-      print "Could not create WF plot.\n"
+      print("Could not create WF plot.\n")
       wfsection.write("<b>No Waveform generated!</b>")
 
     wftd=html_wf.insert_td(row,'',label='PSDs',legend=legend)
@@ -614,8 +614,8 @@ def cbcBayesPostProc(
           f_low = 30.
         bppu.plot_psd(psd_files,outpath=psddir, f_min=f_low)
         wfsection.write('<a href="PSDs/PSD.png" target="_blank"><img src="PSDs/PSD.png"/></a>')
-      except  Exception,e:
-        print "Could not create PSD plot. The error was: %s\n"%str(e)
+      except  Exception as e:
+        print("Could not create PSD plot. The error was: %s\n"%str(e))
         wfsection.write("<b>PSD plotting failed</b>")
     else:
         wfsection.write("<b>No PSD files provided</b>")
@@ -680,18 +680,18 @@ def cbcBayesPostProc(
       try:
               par_bin=GreedyRes[par_name]
       except KeyError:
-              print "Bin size is not set for %s, skipping binning."%par_name
+              print("Bin size is not set for %s, skipping binning."%par_name)
               continue
       binParams={par_name:par_bin}
       injection_area=None
       if greedy:
                     if printed==0:
-                        print "Using greedy 1-d binning credible regions\n"
+                        print("Using greedy 1-d binning credible regions\n")
                         printed=1
                     toppoints,injectionconfidence,reses,injection_area,cl_intervals=bppu.greedy_bin_one_param(pos,binParams,confidence_levels)
       else:
                     if printed==0:
-                        print "Using 2-step KDE 1-d credible regions\n"
+                        print("Using 2-step KDE 1-d credible regions\n")
                         printed=1
                     if pos[par_name].injval is None:
                         injCoords=None
@@ -861,12 +861,12 @@ def cbcBayesPostProc(
         try:
             par1_bin=GreedyRes[par1_name]
         except KeyError:
-            print "Bin size is not set for %s, skipping %s/%s binning."%(par1_name,par1_name,par2_name)
+            print("Bin size is not set for %s, skipping %s/%s binning."%(par1_name,par1_name,par2_name))
             continue
         try:
             par2_bin=GreedyRes[par2_name]
         except KeyError:
-            print "Bin size is not set for %s, skipping %s/%s binning."%(par2_name,par1_name,par2_name)
+            print("Bin size is not set for %s, skipping %s/%s binning."%(par2_name,par1_name,par2_name))
             continue
 
         # Skip any fixed parameters to avoid matrix inversion problems
@@ -883,8 +883,8 @@ def cbcBayesPostProc(
         toppoints,injection_cl,reses,injection_area=\
         bppu.greedy_bin_two_param(pos,greedy2Params,confidence_levels)
 
-        print "BCI %s-%s:"%(par1_name,par2_name)
-        print reses
+        print("BCI %s-%s:"%(par1_name,par2_name))
+        print(reses)
 
         #Generate new BCI html table row
         BCItableline='<tr><td>%s-%s</td>'%(par1_name,par2_name)
@@ -933,7 +933,7 @@ def cbcBayesPostProc(
         greedyFile.close()
 
         if [par1_name,par2_name] in twoDplots or [par2_name,par1_name] in twoDplots :
-            print 'Generating %s-%s greedy hist plot'%(par1_name,par2_name)
+            print('Generating %s-%s greedy hist plot'%(par1_name,par2_name))
 
             par1_pos=pos[par1_name].samples
             par2_pos=pos[par2_name].samples
@@ -954,7 +954,7 @@ def cbcBayesPostProc(
 
         if twodkdeplots_flag is True:
             if [par1_name,par2_name] in twoDplots or [par2_name,par1_name] in twoDplots :
-                print 'Generating %s-%s plot'%(par1_name,par2_name)
+                print('Generating %s-%s plot'%(par1_name,par2_name))
 
                 par1_pos=pos[par1_name].samples
                 par2_pos=pos[par2_name].samples
@@ -981,7 +981,7 @@ def cbcBayesPostProc(
                   if(savepdfs): myfig.savefig(twoDKdePath.replace('.png','.pdf'))
                   plt.close(myfig)
                 else:
-                  print 'Unable to generate 2D kde levels for %s-%s'%(par1_name,par2_name)
+                  print('Unable to generate 2D kde levels for %s-%s'%(par1_name,par2_name))
 
 
     #Finish off the BCI table and write it into the etree
@@ -1074,7 +1074,7 @@ def cbcBayesPostProc(
         html_stats_cov.write(cov_table_string)
 
     except:
-        print 'Unable to compute the covariance matrix.'
+        print('Unable to compute the covariance matrix.')
 
 
     html_footer=html.add_section('')
@@ -1331,7 +1331,7 @@ if __name__=='__main__':
     if opts.email:
         try:
             email_notify(opts.email,opts.outpath)
-        except Exception,e:
-            print 'Unable to send notification email'
-            print "The error was %s\n"%str(e)
+        except Exception as e:
+            print('Unable to send notification email')
+            print("The error was %s\n"%str(e))
 #

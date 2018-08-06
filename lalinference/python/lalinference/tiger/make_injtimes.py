@@ -53,30 +53,30 @@ class IFO:
     self._minlen = minlen
 
     if type(segments) is str:
-      print "Reading segments for " + self._name + ""
+      print("Reading segments for " + self._name + "")
       self._allsegments = self.readSegments(segments)
     elif type(segments) is ndarray:
       self._allsegments = segmentData(list(segments))
     elif  isinstance(segments, segmentData):
       self._allsegments = segments
     else:
-      print "Cannot recognize segments!"
+      print("Cannot recognize segments!")
       return -1
     self._segments = self._allsegments.fits(self._minlen)
 
     if type(vetoes) is str:
-      print "Reading veto segments for " + self._name + ""
+      print("Reading veto segments for " + self._name + "")
       self._vetoes = self.readSegments(vetoes)
     elif type(vetoes) is ndarray:
       self._vetoes = segmentData(list(vetoes))
     elif isinstance(vetoes, segmentData):
       self._vetoes = vetoes
     else:
-      print "Cannot recognize veto segments!"
+      print("Cannot recognize veto segments!")
       return -1
 
     self.setUnvetoed()
-    print "Number of unvetoed segments that fit " + str(self._minlen) + ": " + str(self._unvetoed.length())
+    print("Number of unvetoed segments that fit " + str(self._minlen) + ": " + str(self._unvetoed.length()))
 
   def setUnvetoed(self):
     '''This is getting a list of unvetoed segments that fit the minimum length'''
@@ -84,7 +84,7 @@ class IFO:
     #self._unvetoed = self._segments.fits(self._minlen).getUnvetoed(self._vetoes).fits(self._minlen)
 
   def readSegments(self, segfname):
-    print "Reading " + segfname
+    print("Reading " + segfname)
     segdata = genfromtxt(segfname, dtype=int)
     return segmentData(list(segdata))
 
@@ -114,7 +114,7 @@ class IFO:
             trigtimes.append(t + self._minlen//2)
           t += self._minlen
       else:
-        print "Invalid whereInj argument. Output times will be empty."
+        print("Invalid whereInj argument. Output times will be empty.")
     
     if n is not None:
       trigtimes = trigtimes[:n]
@@ -124,7 +124,7 @@ class IFO:
       savetxt(outfile, array(trigtimes), fmt='%i')
 
   def plotCumulativeDurations(self, outfile, maxdur=None):
-    print "Plotting segment lengths distribution to file " + outfile
+    print("Plotting segment lengths distribution to file " + outfile)
     fig = figure()
     ax = fig.add_subplot(111)
     ax.set_xlabel("segment length")
@@ -169,7 +169,7 @@ class IFO:
     if outfile is None:
       return fig
     else:
-      print 'Plotting segments to ', outfile
+      print('Plotting segments to ', outfile)
       fig.savefig(outfile)
       plot_params = {'figure.figsize': [fig_width,fig_height]}
       rcParams.update(plot_params)
@@ -192,14 +192,14 @@ class segment:
     elif gpsstart is None and gpsend is None:
       '''Overloading to generate segment from an array (id, start, end, length)'''
       if len(data) is not 4:
-        print "Segment data doesn't have the correct length!"
+        print("Segment data doesn't have the correct length!")
         return -1
       self._id = data[0]
       self._start = data[1]
       self._end = data[2]
       self._len = data[3]
     else:
-      print "Wrong arguments to create segment!"
+      print("Wrong arguments to create segment!")
       return -1
 #    if self._len != (self._end - self._start):
 #      print "Error in segment data: inconsistent length! " + str(self._len) + " " + str(self._end - self._start)
@@ -333,7 +333,7 @@ class segmentData:
     sgn = ds*de    #should be negative if segment contains t
     ids = where(sgn < 0)[0]
     if len(ids) > 1:
-      print "Time " + time + " contained in more than one segment!"
+      print("Time " + time + " contained in more than one segment!")
     if len(ids) == 1:
       return [ds[ids[0]], -de[ids[0]]]
     else:
@@ -341,7 +341,7 @@ class segmentData:
 
 
   def printToFile(self, outfile):
-    print "Printing segment list to file " + outfile
+    print("Printing segment list to file " + outfile)
     savetxt(outfile, array(self._seglist), fmt='%i')
     
   def plotSegments(self, outfile=None, lenperline=200000, segcolor='b', title=None):
@@ -367,12 +367,12 @@ class segmentData:
     if outfile is None:
       return fig
     else:
-      print 'Plotting segments to ', outfile
+      print('Plotting segments to ', outfile)
       fig.savefig(outfile)
     
     
   def plotCumulativeDurations(self, outfile, maxdur=None):
-    print "Plotting segment lengths distribution to file " + outfile
+    print("Plotting segment lengths distribution to file " + outfile)
     fig = figure()
     ax = fig.add_subplot(111)
     ax.set_xlabel("segment length")
@@ -418,7 +418,7 @@ def getDoubles(ifo1, ifo2, unvetoed=False):
   minl2 = ifo2._minlen
   
   name12 = name1 + name2
-  print 'Combining ' + name1 + ' and ' + name2 + ' into ' + name12
+  print('Combining ' + name1 + ' and ' + name2 + ' into ' + name12)
   if unvetoed:
     seg12 = unv1.intersectSegments(unv2)  # only uses unvetoed long segment list for each IFO
   else:
@@ -471,8 +471,8 @@ def generateTimeslides(tdict, n, ref=None, outfolder=None, verbose=False):
     slidefile.write(header+'\n')
     slidedata = array(slidedict.values()).T
     if verbose:
-      print injtimes
-      print slidedict
+      print(injtimes)
+      print(slidedict)
     savetxt(injtimesfile, array(injtimes), fmt='%i')
     savetxt(slidefile, slidedata, delimiter=' ', fmt='%i')
     slidefile.close()
@@ -579,10 +579,10 @@ if __name__ == "__main__":
         single.getTrigTimes(whereInj=whereInj, n=Ninj, interval=interval, lmargin=seglen, outfile=os.path.join(outfolder, 'injtimes_' + single._name + '_' + str(single._minlen) + '.dat'))
         # Check unvetoedness and prints the distance of trigger times to edges of unvetoed segments
         if check:
-          print 'checking single ' + single._name
+          print('checking single ' + single._name)
           for time in single.getTrigTimes(whereInj=whereInj, n=Ninj, interval=interval, lmargin=seglen):
             dist = single._unvetoed.timeIn(time)
-            print dist, dist > 0
+            print(dist, dist > 0)
       # Dump unvetoed segment list to file and plot segments to file
       if dumpunvetoed:
         single._unvetoed.printToFile(os.path.join(outfolder, 'segments', single._name + '_unvetoed_segs.dat'))
@@ -603,10 +603,10 @@ if __name__ == "__main__":
           double.plotCumulativeDurations(os.path.join(outfolder,'doubleseg_' + double._name +'.png'), maxplot)
       # Check unvetoedness and prints the distance of trigger times to edges of unvetoed segments
       if check:
-        print 'checking double ' + double._name
+        print('checking double ' + double._name)
         for time in double.getTrigTimes(whereInj=whereInj, n=Ninj, interval=interval, lmargin=seglen):
           dist = double._unvetoed.timeIn(time)
-          print dist, dist > 0
+          print(dist, dist > 0)
       # Dump unvetoed segment list to file and plot segments to file
       if dumpunvetoed:
         double._unvetoed.printToFile(os.path.join(outfolder, 'segments', double._name + '_unvetoed_segs.dat'))
@@ -627,10 +627,10 @@ if __name__ == "__main__":
       tripleIFO.plotCumulativeDurations(os.path.join(outfolder,'tripleseg_' + tripleIFO._name +'.png'), maxplot)
       # Check unvetoedness and prints the distance of trigger times to edges of unvetoed segments
     if check:
-      print 'checking triple ' + tripleIFO._name
+      print('checking triple ' + tripleIFO._name)
       for time in tripleIFO.getTrigTimes(whereInj=whereInj, n=Ninj, interval=interval, lmargin=seglen):
         dist = tripleIFO._unvetoed.timeIn(time)
-        print dist, dist > 0
+        print(dist, dist > 0)
     # Dump unvetoed segment list to file and plot segments to file
     if dumpunvetoed:
       tripleIFO._unvetoed.printToFile(os.path.join(outfolder, 'segments', tripleIFO._name + '_unvetoed_segs.dat'))

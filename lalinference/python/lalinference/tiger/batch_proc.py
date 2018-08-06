@@ -121,7 +121,7 @@ class Parameter(object):
 #      self.kde = stats.gaussian_kde(mirrorEdges(self.postpoints, min(self.postpoints), max(self.postpoints)))
       self.kde = stats.gaussian_kde(mirrorEdges(postrestr, self.min, self.max))
     else:
-      print "Not ready to handle weights yet"
+      print("Not ready to handle weights yet")
       exit(-1)
       self.posterior = histogram(self.postpoints, self.nbins, (self.min, self.max), weights=weight)[0]
       self.kde = stats.gaussian_kde(mirrorEdges(self.postpoints, self.min, self.max)) ###FIXME EEE
@@ -150,7 +150,7 @@ class GlobalParam(Parameter):
     if self.name in source.recparams.keys():
       self.sourcelist.append(source)
     else:
-      print "This source does not have the variable " + self.name + " as recovered parameters."
+      print("This source does not have the variable " + self.name + " as recovered parameters.")
 
   def setPosterior(self):
     '''Read posterior from list of sources'''
@@ -170,7 +170,7 @@ class GlobalParam(Parameter):
 
   def combinePosteriors(self):
     '''Combine posteriors from all the sources in the list'''
-    print "Combining posteriors for " + self.name + " from " + str(len(self.sourcelist)) + " sources..."
+    print("Combining posteriors for " + self.name + " from " + str(len(self.sourcelist)) + " sources...")
     if len(self.posteriors) == 0:    
       self.setPosterior()
     #print len(self.posteriors)
@@ -268,10 +268,10 @@ class GlobalParam(Parameter):
       '''Save figure to file'''
       outname = os.path.join(outdir, s.batch.label, self.name + '-' + s.batch.label + '-' + str(i+1) + '-post.png')
       if outdir is None:
-        print "Saving figure in memory"
+        print("Saving figure in memory")
         self.figs[outname] = fig
       else:
-        print 'Saving figure to file ' + outname
+        print('Saving figure to file ' + outname)
         fig.savefig(outname, bbox_inches='tight')
 
   def animatePDFs(self, outdir=None):
@@ -316,7 +316,7 @@ class Batch:
           chainfile = f.rpartition('_')[0] 
           (n, gps, ifos) = decChainFile(chainfile)
           self.sources.append(Source(self, n, gps, self.nlive, xmlfile=self.xml, chainfile=os.path.join(self.rundir, chainfile), IFOs=ifos))
-      print "Added " + str(len(paramfiles)) + " sources for seed " + str(self.seed) + " from " + self.rundir + " ."
+      print("Added " + str(len(paramfiles)) + " sources for seed " + str(self.seed) + " from " + self.rundir + " .")
 
       return
 
@@ -418,7 +418,7 @@ class Source:
           self.posteriors.append(postdict[name])
           self.postweights[name] = weight
       else:
-        print "Could not add params. Variables are not in the recovered params!"
+        print("Could not add params. Variables are not in the recovered params!")
       
 
     def setPosteriors(self, seed=1234):
@@ -428,13 +428,13 @@ class Source:
       if os.path.isfile(self.postfile):
         p = genfromtxt(self.postfile)[1:]
         np = len(p)
-        print 'Found posterior file: ' + self.postfile
+        print('Found posterior file: ' + self.postfile)
       elif os.path.isfile(self.chainfile):
         p, np, nc = nest2pos(self.chainfile, self.nlive, seed, self.recparams['logL'])
-        print 'Did not find posterior file ' + self.postfile
-        print 'Sampled ' + str(nc) + '-->' + str(np) +  ' posteriors from chain file ' + self.chainfile + ' using ' + str(self.nlive) + ' live points.'
+        print('Did not find posterior file ' + self.postfile)
+        print('Sampled ' + str(nc) + '-->' + str(np) +  ' posteriors from chain file ' + self.chainfile + ' using ' + str(self.nlive) + ' live points.')
       else:
-        print "No posterior or chain file provided!"
+        print("No posterior or chain file provided!")
         exit(-1)
       self.posteriors = list(p.transpose())
       self.npost = np
@@ -448,7 +448,7 @@ class Source:
         self.chain = list(genfromtxt(self.chainfile, skip_header=1).transpose())
         self.nchain = len(self.chain[0])
       else:
-        print "No chain file provided!"
+        print("No chain file provided!")
         exit(-1)
 
     def getStats(self):
@@ -483,7 +483,7 @@ class Label:
     self.globalpars[gp.name] = GlobalParam(gp.name, gp.min, gp.max, gp.prior_shape, latex_name=gp.latex_name, latex_unit=gp.latex_unit, color=self.color, injected=injValues[l][gp.name], xfm=gp.xfm)
 
   def addGlobalParam2D(self, gp):
-    print "Adding " + str(gp.name)
+    print("Adding " + str(gp.name))
     self.globalpars2d[gp.name[0]+'-'+gp.name[1]] = GlobalParam2D(gp.parameters, color=self.color, injectedx=injValues[l][gp.name[0]], injectedy=injValues[l][gp.name[1]])
 
   def addSummaryPlot(self, sax, parname):
@@ -606,7 +606,7 @@ def matchFiles(location, substrings):
             match = match and (s in f)
         if match:
             matchList.append(f)
-    print "Found " + str(len(matchList)) + " events in " + location+" matching " + str(substrings)
+    print("Found " + str(len(matchList)) + " events in " + location+" matching " + str(substrings))
 
     return matchList
 
@@ -630,7 +630,7 @@ def loadfrompickle(filename):
 	"""
 	LOAD FROM PICKLE
 	"""
-	print '... Loading file from pickle',filename
+	print('... Loading file from pickle',filename)
 	fp = open(filename,'rb')
 	return load(fp)
 
@@ -747,7 +747,7 @@ if __name__ == "__main__":
     for par in gparams2d:
       thisLabel.addGlobalParam2D(par)
 
-    print "Processing ", l
+    print("Processing ", l)
       
     LocationFile = open(os.path.join(outputfolder,'locations_'+l+'.txt'),'w')
 
@@ -758,7 +758,7 @@ if __name__ == "__main__":
       if b.label != l:
         continue
       thisLabel.batches.append(b)
-      print "Processing batch with seed ", b.seed
+      print("Processing batch with seed ", b.seed)
       b.populateSources()
       
 # HERE IS A GOOD PLACE TO LOOK FOR RESULTS FROM ALL HYPOTHESES AND POPULATE "COMBINED SOURCES"   
@@ -767,7 +767,7 @@ if __name__ == "__main__":
       
       # THIS PART NEEDS TO BE ADJUSTED FOR TIGER
       
-      print "Populated " + str(len(b.sources)) + " sources"
+      print("Populated " + str(len(b.sources)) + " sources")
 
       for s in b.sources:
         if iEventCount >= nMax and nMax!=0:
@@ -801,7 +801,7 @@ if __name__ == "__main__":
         LocationFile.write(str(iEventCount)+'\t'+b.basedir+'\t'+s.chainfile+'\t'+s.Bfile+'\t'+s.snrfile+'\t'+ s.postfile +'\n')
 		
         '''Output progress'''
-        print str(iEventCount)+": "+ os.path.split(s.chainfile)[1] + " event " + str(s.id) +" --> " + str(len(s.posteriors[0]))+" pts, SNR: "+str(s.SNR)+", Bfactor: "+str(s.Bfac)
+        print(str(iEventCount)+": "+ os.path.split(s.chainfile)[1] + " event " + str(s.id) +" --> " + str(len(s.posteriors[0]))+" pts, SNR: "+str(s.SNR)+", Bfactor: "+str(s.Bfac))
                
     # CLOSE LOCATIONS FILE
     LocationFile.close()

@@ -70,16 +70,16 @@ args = parser.parse_args()
 nPos = np.size(args.infilename)
 nWeight = np.size(args.weightings)
 
-print args.weightings
+print(args.weightings)
 
 #Check sensible combination of arguments
 if (nWeight != 0):
     if args.all:
-        print "You cannot use all posterior samples and weight them!"
+        print("You cannot use all posterior samples and weight them!")
         exit(1)
 
     if (nWeight != nPos):
-        print "Please either specify a weight for each posterior file or none"
+        print("Please either specify a weight for each posterior file or none")
         exit(1)
 else:
     args.weightings = [1.0] * nPos
@@ -99,7 +99,7 @@ else:
 if args.mix:
     combineID = combineID+"_mixed"
 
-print "Combined ID:", combineID
+print("Combined ID:", combineID)
 
 #Initiate lists to hold data 
 samples = []
@@ -135,7 +135,7 @@ for posIndex in range(nPos):
             elif "rererecombined_run_ids" not in group.attrs:
                 metadata["lalinference/"+combineID]["rererecombined_run_ids"][posIndex] = True
             else:
-                print "Too many combinations to count!"
+                print("Too many combinations to count!")
 
 
             group = group[posterior_grp_name]
@@ -193,7 +193,7 @@ else:
     indexSize = weightNum
 
 
-print "Using number of samples ", indexSize
+print("Using number of samples ", indexSize)
 
 
 startIndex = 0
