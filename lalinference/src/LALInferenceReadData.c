@@ -2785,6 +2785,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
     REAL8 logZnoise=LALInferenceNullLogLikelihood(runState->data);
     REAL8 tmp2=injL-logZnoise;
     LALInferenceAddVariable(injparams,"deltalogL",(void *)&tmp2,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(injparams,"logZNoise",(void *)&logZnoise,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     
     LALInferenceIFOData *data=runState->data;
     while(data) {
