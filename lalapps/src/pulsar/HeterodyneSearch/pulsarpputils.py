@@ -36,14 +36,13 @@ import numpy as np
 import struct
 import re
 import h5py
-import urllib2
 
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 from scipy.stats import hmean
 from scipy.misc import logsumexp
 
-from types import StringType, FloatType
+from six import string_types
 
 # some common constants taken from psr_constants.py in PRESTO
 ARCSECTORAD = float('4.8481368110953599358991410235794797595635330237270e-6')
@@ -481,7 +480,7 @@ class psr_par:
     out = ""
     for k, v in self.__dict__.items():
       if k[:2]!="__":
-        if type(self.__dict__[k]) is StringType:
+        if isinstance(self.__dict__[k], string_type):
           out += "%10s = '%s'\n" % (k, v)
         else:
           out += "%10s = %-20.15g\n" % (k, v)
@@ -3071,13 +3070,16 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
 
 
 # current version of the ATNF pulsar catalogue
-ATNF_VERSION = '1.56'
+ATNF_VERSION = '1.58'
 
 def get_atnf_info(psr):
   """
   Get the pulsar (psr) distance (DIST in kpc), proper motion corrected period derivative (P1_I) and any association
   (ASSOC e.g. GC) from the ATNF catalogue.
   """
+
+  from six.moves.urllib.request import urlopen
+  import requests
 
   psrname = re.sub('\+', '%2B', psr) # switch '+' for unicode character
 
@@ -3088,9 +3090,9 @@ def get_atnf_info(psr):
   atnfurl += '&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=linear&y_axis=&y_scale=linear&state=query'
 
   try:
-    urldat = urllib2.urlopen(atnfurl).read() # read ATNF url
-    predat = re.search(r'<pre[^>]*>([^<]+)</pre>', urldat) # to extract data within pre environment (without using BeautifulSoup) see e.g. http://stackoverflow.com/a/3369000/1862861 and http://stackoverflow.com/a/20046030/1862861
-    pdat = predat.group(1).strip().split('\n') # remove preceeding and trailing new lines and split lines
+    urldat = requests.get(atnfurl) # read ATNF url
+    predat = re.search(r'<pre[^>]*>([^<]+)</pre>', str(urldat.content)) # to extract data within pre environment (without using BeautifulSoup) see e.g. http://stackoverflow.com/a/3369000/1862861 and http://stackoverflow.com/a/20046030/1862861
+    pdat = predat.group(1).strip().split(r'\n') # remove preceeding and trailing new lines and split lines
   except:
     print("Warning... could not get information from ATNF pulsar catalogue.", file=sys.stderr)
     return None
@@ -3099,7 +3101,7 @@ def get_atnf_info(psr):
   dist = None
   p1_I = None
   assoc = None
-  for line in pdat:
+  for line in [p for p in pdat if len(p) != 0]:
     if 'WARNING' in line or 'not in catalogue' in line:
       return None
     vals = line.split()
