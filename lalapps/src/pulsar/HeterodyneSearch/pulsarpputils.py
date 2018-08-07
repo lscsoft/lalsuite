@@ -167,7 +167,7 @@ def rad_to_string(rad, ra_or_dec):
   elif ra_or_dec.upper() == 'DEC':
     v, m, s = rad_to_dms(rad)
   else:
-    raise("Unrecognised option: Expected 'ra_or_dec' to be 'RA' or 'DEC'")
+    raise ValueError("Unrecognised option: Expected 'ra_or_dec' to be 'RA' or 'DEC'")
 
   return coord_to_string(v, m, s)
 
@@ -1790,14 +1790,12 @@ def heterodyned_pulsar_signal(pardict, detector, starttime=900000000., duration=
     iota = math.acos(cosiota)
     siniota = math.sin(iota)
   else:
-    print("cos(iota) not defined!", file=sys.stderr)
-    raise KeyError
+    raise KeyError("cos(iota) not defined!")
 
   if 'psi' in pardict:
     psi = pardict['psi']
   else:
-    print("psi not defined!", file=sys.stderr)
-    raise KeyError
+    raise KeyError("psi not defined!")
 
   if 'C22' in pardict:
     C22 = pardict['C22']
@@ -1990,7 +1988,7 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
   try:
     detector=detMap[det]
   except KeyError:
-    raise ValueError, "ERROR. Key %s is not a valid detector name." % (det)
+    raise KeyError("ERROR. Key {} is not a valid detector name.".format(det))
 
   # get detector
   detval = lal.CachedDetectors[detector]
@@ -2002,18 +2000,18 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
       try:
         ra = ra_to_rad(ra)
       except:
-        raise ValueError, "Right ascension string '%s' not formatted properly" % ra
+        raise ValueError("Right ascension string '{}' not formatted properly".format(ra))
     else:
-      raise ValueError, "Right ascension must be a 'float' in radians or a string of the format 'hh:mm:ss.s'"
+      raise ValueError("Right ascension must be a 'float' in radians or a string of the format 'hh:mm:ss.s'")
 
   if not isinstance(dec, float):
     if isinstance(dec, basestring):
       try:
         dec = dec_to_rad(dec)
       except:
-        raise ValueError, "Declination string '%s' not formatted properly" % ra
+        raise ValueError("Declination string '{}' not formatted properly".format(ra))
     else:
-      raise ValueError, "Declination must be a 'float' in radians or a string of the format 'dd:mm:ss.s'"
+      raise ValueError("Declination must be a 'float' in radians or a string of the format 'dd:mm:ss.s'")
 
   # check if gpsTime is just a float or int, and if so convert into an array
   if isinstance(gpsTime, float) or isinstance(gpsTime, int):
@@ -2086,12 +2084,10 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
     npsds = tmpnpsds
 
   if len(freqfac) == 1 and len(detectors) != len(npsds):
-    raise ValueError, "Number of detectors %d not the same as number of "\
-                      "noises %d" % (len(detectors), len(npsds))
+    raise ValueError("Number of detectors {} not the same as number of noises {}".format(len(detectors), len(npsds)))
 
   if len(freqfac) == 2 and 2*len(detectors) != len(npsds):
-    raise ValueError, "Number of detectors %d not half the number of "\
-                      "noises %d" % (len(detectors), len(npsds))
+    raise ValueError("Number of detectors {} not half the number of noises {}".format(len(detectors), len(npsds)))
 
   tss = np.array([])
   ss = np.array([])
@@ -2205,7 +2201,7 @@ def detector_noise( det, f ):
   elif det == 'AL1' or det == 'AH1':
     return lalsimulation.SimNoisePSDaLIGOZeroDetHighPower( f )
   else:
-    raise ValueError, "%s is not a recognised detector" % (det)
+    raise ValueError("{} is not a recognised detector".format(det))
 
 # function to calculate the optimal SNR of a heterodyned pulsar signal - it
 # takes in a complex signal model and noise standard deviation
@@ -2462,7 +2458,7 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
 
         nsResultsObject = (samples.colnames, samples.as_array().view(float).reshape(-1, len(params)))
       except:
-        raise IOError, "Could not import nested samples"
+        raise IOError("Could not import nested samples")
     else: # assume posterior file has been created with lalapps_nest2pos
       peparser = bppu.PEOutputParser('hdf5')
       nsResultsObject = peparser.parse(postfile)
