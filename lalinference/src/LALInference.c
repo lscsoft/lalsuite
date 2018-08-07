@@ -1851,6 +1851,7 @@ ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
     /* check for a double-dash at beginning of argument #i: */
     dbldash = ((argv[i][0]=='-') && (argv[i][1]=='-'));
     /* react depending on current state: */
+    printf("%s\n",argv[i]);
     if (state==1){ /* ('state 1' means handling very 1st argument) */
       if (dbldash) {
         XLALStringCopy(head->param, argv[i], sizeof(CHAR)*LIGOMETA_PARAM_MAX);

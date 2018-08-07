@@ -3546,13 +3546,7 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     REAL8 s1x, s1y, s1z, s2x, s2y, s2z,iota;
     REAL8 theta0, phi0;
     /* Transform to radiation-frame where N//z (view axis) */
-    //printf("fref %f axis %d\n\n",fRef,axis);
-    //printf("before Conditioning %f %f %f %f %f %f %f \n",incl,S1x,S1y,S1z,S2x,S2y,S2z);
     XLALSimInspiralInitialConditionsPrecessingApproxs(&iota,&s1x,&s1y,&s1z,&s2x,&s2y,&s2z,incl,S1x,S1y,S1z,S2x,S2y,S2z,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI,fRef,axis);
-    //printf("after Conditioning %f %f %f %f %f %f %f \n",iota,s1x, s1y, s1z, s2x, s2y, s2z);
-
-
-
 
     *chi1 = sqrt(s1x*s1x + s1y*s1y + s1z*s1z);
     *chi2 = sqrt(s2x*s2x + s2y*s2y + s2z*s2z);
@@ -3663,8 +3657,8 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
       s2haty/=s2hatmag;
       s2hatz/=s2hatmag;
     }
-    //printf("rotating by phi0 %f\n",phi0);
-    //printf("Jhat %f %f %f -- Jmag %.3e \n",Jhatx,Jhaty,Jhatz,Jnorm);
+  // printf("rotating by phi0 %f\n",phi0);
+  //  printf("Jhat %f %f %f -- Jmag %.3e \n",Jhatx,Jhaty,Jhatz,Jnorm);
 
     *theta_jn= acos(Jhatz);
 
@@ -3701,12 +3695,34 @@ int XLALSimInspiralInvertPrecessingNewInitialConditions(
     ROTATEZ(LAL_PI, s1hatx, s1haty, s1hatz);
     ROTATEZ(LAL_PI, s2hatx, s2haty, s2hatz);
 
+        /* Renormalize after every rotation to get rid of rounding*/
+    Lhatmag=sqrt(Lhatx*Lhatx+Lhaty*Lhaty+Lhatz*Lhatz);
+    Jhatmag=sqrt(Jhatx*Jhatx+Jhaty*Jhaty+Jhatz*Jhatz);
+    s1hatmag=sqrt(s1hatx*s1hatx+ s1haty*s1haty+s1hatz*s1hatz);
+    s2hatmag=sqrt(s2hatx*s2hatx+ s2haty*s2haty+s2hatz*s2hatz);
+    Jhatx/=Jhatmag;
+    Jhaty/=Jhatmag;
+    Jhatz/=Jhatmag;
+    Lhatx/=Lhatmag;
+    Lhaty/=Lhatmag;
+    Lhatz/=Lhatmag;
+    if (s1hatmag>0.0){
+      s1hatx/=s1hatmag;
+      s1haty/=s1hatmag;
+      s1hatz/=s1hatmag;
+    }
+    if (s2hatmag>0.0){
+      s2hatx/=s2hatmag;
+      s2haty/=s2hatmag;
+      s2hatz/=s2hatmag;
+    }
+
 
     *phi_jl= atan2(Lhaty, Lhatx);
-     //printf("rotated by thetajn %f\n",*theta_jn);
-     //printf("costjn %f\n",cos(*theta_jn));
-     //printf("L is now %10.10e %10.10e %10.10e\n",Lhatx, Lhaty, Lhatz);
-     //printf("atan2 is %f\n",atan2(Lhaty, Lhatx));
+    // printf("rotated by thetajn %f\n",*theta_jn);
+    // printf("costjn %f\n",cos(*theta_jn));
+    // printf("L is now %10.10e %10.10e %10.10e\n",Lhatx, Lhaty, Lhatz);
+    // printf("atan2 is %f\n",atan2(Lhaty, Lhatx));
     if (*phi_jl<0.0)
       *phi_jl= *phi_jl+LAL_TWOPI;
      //printf("phijl %f\n",*phi_jl);
