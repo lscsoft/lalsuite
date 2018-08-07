@@ -97,6 +97,7 @@ typedef struct {
   CHAR *tempdir;                    /**< a temporary directory for keeping the results */
   BOOLEAN with_chi2_renorm;         /**< switch on chi^2 renormalisation */
   BOOLEAN with_xbins;               /**< enable fast summing of extra bins */
+  CHAR *touchfile;
 } UserInput_t;
 
 typedef struct {
@@ -381,6 +382,16 @@ int main( int argc, char *argv[] )  {
   /* CLEAN UP */
   /**********************************************************************************/
 
+  if (XLALUserVarWasSet(&uvar.touchfile)) {
+    FILE *fp = fopen(uvar.touchfile, "w");
+    XLAL_CHECK(fp != NULL, XLAL_EIO);
+    time_t t;
+    time(&t);
+    struct tm *tm = localtime(&t);
+    fprintf(fp, "%s : %s\n", argv[0], asctime(tm));
+    fclose(fp);
+  }
+
   /* move the temporary directory to the final location */
   if (uvar.tempdir) {
     CHAR newoutputdir[LONGSTRINGLENGTH];
@@ -502,6 +513,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(gpsend,                INT4, 'e', OPTIONAL, "The maximum end time (GPS sec)");
   XLALRegisterUvarMember(with_chi2_renorm,       BOOLEAN, 0, OPTIONAL,  "Switch on chi^2 renormalisation");
   XLALRegisterUvarMember(with_xbins,             BOOLEAN, 0, DEVELOPER,  "Enable fast summing of extra bins");
+  XLALRegisterUvarMember(touchfile,             STRING, 0, OPTIONAL, "Touch file on success (for Makeflow integration)");
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
