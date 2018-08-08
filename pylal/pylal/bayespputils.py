@@ -1994,6 +1994,9 @@ class Posterior(object):
             spins = {}
 
         else:
+            # FIXME: this need fix. SimInspiralGetFrameAxisFromString expects its argument to be a waveform name, not OrbitalL, etc, itself.
+            # This works in the lalinferenceO2 branch because upon failure, the routine returns the detault axis (-1) which happens to be
+            # The one used in XML files. 
             axis = lalsim.SimInspiralGetFrameAxisFromString(frame)
 
             m1, m2 = inj.mass1, inj.mass2
@@ -2042,7 +2045,7 @@ class Posterior(object):
             spins['tilt2'] = tilt2
             spins['beta'] = beta
 
-            # Need to do rotations of XLALSimInspiralTransformPrecessingInitialConditioin inverse order to go in the L frame
+            # Need to do rotations of XLALSimInspiralTransformPrecessingNewInitialConditions inverse order to go in the L frame
             # first rotation: bring J in the N-x plane, with negative x component
             phi0 = np.arctan2(J[1], J[0])
             phi0 = np.pi - phi0
@@ -2067,7 +2070,7 @@ class Posterior(object):
             # But phi_jl is the polar angle in a frame where N is in the *negative* XZ plane
             spins['phi_jl'] = np.pi + phi_jl
 
-            # bring L in the Z-X plane, with negative x
+            # bring L in the Z-X plane, with *negative* x
             J = ROTATEZ( np.pi-phi_jl, J[0], J[1], J[2])
             L = ROTATEZ( np.pi-phi_jl, L[0], L[1], L[2])
             S1 = ROTATEZ( np.pi-phi_jl, S1[0], S1[1], S1[2])
