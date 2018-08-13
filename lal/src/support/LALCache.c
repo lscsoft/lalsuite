@@ -345,9 +345,11 @@ LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn)
         } while (nextdir);
     }
 
-    if (!g.gl_pathc)
+    if (!g.gl_pathc) {
+        globfree(&g);
         XLAL_ERROR_NULL(XLAL_EIO, "No matching files found in %s\n",
                         fnptrn);
+    }
     cache = XLALCreateCache(g.gl_pathc);
     if (!cache) {
         globfree(&g);
