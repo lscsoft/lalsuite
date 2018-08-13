@@ -24,7 +24,7 @@ typedef struct tagParamData{
   const CHAR *fitFlag; /* add a TEMPO-style fitting flag to some parameters */
 }ParamData;
 
-#define NUMPARS 54
+#define NUMPARS 58
 
 /* setup a collection of allowed .par file parameters */
 ParamData p[NUMPARS] =
@@ -82,6 +82,11 @@ ParamData p[NUMPARS] =
   { "FB2",      "1.23400e-09",  "1.23400e-09",      "1.23400e-18",  "1.23400e-18",  " " },
   { "FB1",      "1.23400e-09",  "1.23400e-09",      "1.23400e-18",  "1.23400e-18",  "1" },
   { "EDOT",     "1.23400e-05",  "1.23400e-17",      "1.23400e-18",  "1.23400e-18",  " " },
+  /* FITWAVES parameters */
+  { "WAVE_OM",   "0.30000",     "0.30000",          NULL,           NULL,           " " },
+  { "WAVEEPOCH", "54321.0",     "870652748.81600",  NULL,           NULL,           " " },
+  { "WAVE1",     "0.21000",     "0.21000",          "0.56000",      "0.56000",      " " },
+  { "WAVE2",     "0.01000",     "0.01000",          "-0.02000",     "-0.02000",     " " },
   /* GW parameters */
   { "H0",       "1.23000e-22",  "1.23000e-22",      "1.23000E-23",  "1.23000e-23",  " " }, /* input exponent as E */
   { "COSIOTA",  "-0.12300",     "-0.12300",         "0.00123",      "0.00123"    ,  " " },
@@ -132,13 +137,40 @@ int main( void ){
     }
     else{ token = strtok(namecopy, "0123456789"); }
 
-    if ( !PulsarCheckParam( pars, p[i].name ) && !PulsarCheckParam( pars, token ) ){
-      XLAL_ERROR( XLAL_EFAILED, "Error... parameter %s does not exist in the read-in data!\n", p[i].name );
-    }
+    /* value is a FITWAVES vector */
+    if ( !strncmp( p[i].name, "WAVE", 4 ) && strlen( p[i].name ) < 7 && PulsarCheckParam( pars, "WAVESIN" ) &&  PulsarCheckParam( pars, "WAVECOS" ) ){
+      /* in the ParamDict array the "val" item contains WAVESIN and the "sigma" entry contains "WAVECOS" */
+      UINT4 num = 0;
+      CHAR sinname[256], cosname[256];
 
+      if ( sscanf( p[i].name+strlen( "WAVE" ), "%d",  &num ) != 1 ){
+        XLAL_ERROR( XLAL_EINVAL, "Error...problem reading %s number from par file.\n", p[i].name);
+      }
+
+      sprintf(sinname, "WAVESIN%d", (INT4)num);
+      sprintf(cosname, "WAVECOS%d", (INT4)num);
+
+      /* get WAVESIN value and convert to string */
+      if ( !strchr( p[i].valcheck, 'e' ) ){ /* number doesn't contain an exponent */
+        sprintf(outval, "%.5lf", PulsarGetREAL8VectorParamIndividual(pars, sinname));
+      }
+      else{ /* number does contain an exponent */
+        sprintf(outval, "%.5le", PulsarGetREAL8VectorParamIndividual(pars, sinname));
+      }
+
+      /* get WAVECOS value and convert to string */
+      if ( !strchr( p[i].valcheck, 'e' ) ){ /* number doesn't contain an exponent */
+        sprintf(outsigma, "%.5lf", PulsarGetREAL8VectorParamIndividual(pars, cosname));
+      }
+      else{ /* number does contain an exponent */
+        sprintf(outsigma, "%.5le", PulsarGetREAL8VectorParamIndividual(pars, cosname));
+      }
+
+      sprintf(outfitflag, " ");
+    }
     /* value is a vector */
-    if ( PulsarCheckParam( pars, token ) && PulsarGetParamType( pars, token ) == PULSARTYPE_REAL8Vector_t ){
-     /* get value and convert to string */
+    else if ( PulsarCheckParam( pars, token ) && PulsarGetParamType( pars, token ) == PULSARTYPE_REAL8Vector_t ){
+      /* get value and convert to string */
       if ( !strchr( p[i].valcheck, 'e' ) ){ /* number doesn't contain an exponent */
         sprintf(outval, "%.5lf", PulsarGetREAL8VectorParamIndividual(pars, p[i].name));
       }
@@ -212,7 +244,7 @@ int main( void ){
       }
 
       if ( strcmp(outfitflag, p[i].fitFlag) != 0 ){
-        XLAL_ERROR( XLAL_EFAILED, "Error... parameter %s fit flag does not match input!\n", p[i].fitFlag );
+        XLAL_ERROR( XLAL_EFAILED, "Error... parameter %s fit flag does not match input!\n", p[i].name );
       }
     }
 
