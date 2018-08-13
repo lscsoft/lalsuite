@@ -97,6 +97,7 @@ typedef struct {
   CHAR *tempdir;                    /**< a temporary directory for keeping the results */
   BOOLEAN with_chi2_renorm;         /**< switch on chi^2 renormalisation */
   BOOLEAN with_xbins;               /**< enable fast summing of extra bins */
+  BOOLEAN with_amp_per_SFT;         /**< enable return of amplitude per SFT */
   CHAR *touchfile;
 } UserInput_t;
 
@@ -104,6 +105,7 @@ typedef struct {
   REAL4 *data;
   INT4 idx;
   INT4 n;
+  REAL4 **datapSFT;
   REAL8 **params;
 } toplist;
 
@@ -115,10 +117,10 @@ extern int vrbflg;              /**< defined in lalapps.c */
 /* define functions */
 int main(int argc,char *argv[]);
 int XLALReadUserVars(int argc,char *argv[],UserInput_t *uvar, CHAR **clargs);
-int XLALComputeSemiCoherentStat(FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist,BOOLEAN with_chi2_renorm,BOOLEAN with_xbins);
+int XLALComputeSemiCoherentStat(FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist,BOOLEAN with_chi2_renorm,BOOLEAN with_xbins,FILE *fp_pSFT);
 int XLALDefineBinaryParameterSpace(REAL8Space **, LIGOTimeGPS, REAL8, UserInput_t *);
-int XLALOpenSemiCoherentResultsFile(FILE **,CHAR *,ParameterSpace *,CHAR *,UserInput_t *);
-int XLALtoplist(REAL4 x,Template *params,toplist *TL);
+int XLALOpenSemiCoherentResultsFile(FILE **,CHAR *,ParameterSpace *,CHAR *,UserInput_t *,const CHAR *);
+int XLALtoplist(REAL4 x, UINT4 nSFT, const REAL4 *xpSFT, Template *params,toplist *TL);
 
 /***********************************************************************************************/
 /* empty initializers */
@@ -145,6 +147,7 @@ int main( int argc, char *argv[] )  {
   REAL8 fmin_read,fmax_read,fband_read;         /* the range of frequencies to be read from SFTs */
   UINT4 i;                                      /* counters */
   FILE *sfp = NULL;
+  FILE *sfp_pSFT = NULL;
   /* FILE *cfp = NULL; */
 
   vrbflg = 0;                           /* verbose error-messages */
@@ -360,22 +363,32 @@ int main( int argc, char *argv[] )  {
   /* OPEN RESULTS FILE */
   /**********************************************************************************/
 
-  if (XLALOpenSemiCoherentResultsFile(&sfp,newnewtemp,&pspace,clargs,&uvar)) {
+  if (XLALOpenSemiCoherentResultsFile(&sfp,newnewtemp,&pspace,clargs,&uvar,"")) {
     LogPrintf(LOG_CRITICAL,"%s : XLALOutputBayesResults() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   LogPrintf(LOG_NORMAL,"%s : output results to file.\n",__func__);
+  if (uvar.with_amp_per_SFT) {
+    if (XLALOpenSemiCoherentResultsFile(&sfp_pSFT,newnewtemp,&pspace,clargs,&uvar,"_per_SFT")) {
+      LogPrintf(LOG_CRITICAL,"%s : XLALOutputBayesResults() failed with error = %d\n",__func__,xlalErrno);
+      return 1;
+    }
+    LogPrintf(LOG_NORMAL,"%s : output per-SFT results to file.\n",__func__);
+  }
 
    /**********************************************************************************/
   /* COMPUTE THE STATISTICS ON THE FINE GRID */
   /**********************************************************************************/
 
   /* compute the semi-coherent detection statistic on the fine grid */
-  if (XLALComputeSemiCoherentStat(sfp,dmpower,&pspace,freqgridparams,bingridparams,uvar.ntoplist,uvar.with_chi2_renorm,uvar.with_xbins)) {
+  if (XLALComputeSemiCoherentStat(sfp,dmpower,&pspace,freqgridparams,bingridparams,uvar.ntoplist,uvar.with_chi2_renorm,uvar.with_xbins,sfp_pSFT)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALComputeSemiCoherentStat() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   fclose(sfp);
+  if (sfp_pSFT != NULL) {
+    fclose(sfp_pSFT);
+  }
   LogPrintf(LOG_NORMAL,"%s : computed the semi-coherent statistic\n",__func__);
 
   /**********************************************************************************/
@@ -513,6 +526,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(gpsend,                INT4, 'e', OPTIONAL, "The maximum end time (GPS sec)");
   XLALRegisterUvarMember(with_chi2_renorm,       BOOLEAN, 0, OPTIONAL,  "Switch on chi^2 renormalisation");
   XLALRegisterUvarMember(with_xbins,             BOOLEAN, 0, DEVELOPER,  "Enable fast summing of extra bins");
+  XLALRegisterUvarMember(with_amp_per_SFT,       BOOLEAN, 0, OPTIONAL,  "Enable return of amplitude per SFT");
   XLALRegisterUvarMember(touchfile,             STRING, 0, OPTIONAL, "Touch file on success (for Makeflow integration)");
 
   /* do ALL cmdline and cfgfile handling */
@@ -553,7 +567,8 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
                                 GridParameters *bingrid,                 /**< [in] the grid parameters */
                                 INT4 ntoplist,		/**< UNDOCUMENTED */
                                 BOOLEAN with_chi2_renorm,                /**< switch on chi^2 renormalisation */
-                                BOOLEAN with_xbins                       /**< enable fast summing of extra bins */
+                                BOOLEAN with_xbins,                      /**< enable fast summing of extra bins */
+                                FILE *fp_pSFT                            /**< [in] the output per-SFT file pointer */
                                 )
 {
 
@@ -612,11 +627,22 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
     LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
     XLAL_ERROR(XLAL_ENOMEM);
   }
+  if ((TL.datapSFT = (REAL4 **)XLALCalloc(TL.n,sizeof(REAL4 *))) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
+  }
   if ((TL.params = (REAL8 **)XLALCalloc(TL.n,sizeof(REAL8 *))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
     XLAL_ERROR(XLAL_ENOMEM);
   }
   for (i=0;i<(UINT4)TL.n;i++) {
+    TL.datapSFT[i] = NULL;
+    if (fp_pSFT != NULL) {
+      if ((TL.datapSFT[i] = (REAL4 *)XLALCalloc(power->length,sizeof(REAL4))) == NULL) {
+        LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+        XLAL_ERROR(XLAL_ENOMEM);
+      }
+    }
     TL.params[i] = NULL;
     if ((TL.params[i] = (REAL8 *)XLALCalloc(bingrid->ndim,sizeof(REAL8))) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
@@ -657,6 +683,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   else getnext = &XLALGetNextTemplate;
 
   REAL4 *logLratiosumvec = NULL;
+  REAL4 *logLratiosumvecpSFT = NULL;
 
   /* single loop over binary templates */
   double fine_deriv_t = 0;
@@ -719,6 +746,12 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       logLratiosumvec = XLALRealloc( logLratiosumvec, max_tot_xbins * sizeof( *logLratiosumvec ) );
       XLAL_CHECK( logLratiosumvec != NULL, XLAL_ENOMEM );
 
+      /* reallocate logLratiosumvecpSFT */
+      if (fp_pSFT != NULL) {
+        logLratiosumvecpSFT = XLALRealloc( logLratiosumvecpSFT, power->length * max_tot_xbins * sizeof( *logLratiosumvecpSFT ) );
+        XLAL_CHECK( logLratiosumvecpSFT != NULL, XLAL_ENOMEM );
+      }
+
     }
 
     /** loop over segments **********************************************************************************/
@@ -740,6 +773,11 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       } else {
         XLAL_CHECK( XLALVectorAddREAL4( logLratiosumvec, logLratiosumvec, &currentpower->data->data[idx0], tot_xbins ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
+      if (fp_pSFT != NULL) {
+        for (j = 0; j < (UINT4)tot_xbins; ++j) {
+          logLratiosumvecpSFT[power->length * j + i] = currentpower->data->data[idx0 + j];
+        }
+      }
 
     } /* end loop over segments */
     fine_sum_t += XLALGetCPUTime() - fine_sum_t0;
@@ -748,6 +786,9 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 
     /* make it a true chi-squared variable */
     XLAL_CHECK( XLALVectorScaleREAL4( logLratiosumvec, 2.0, logLratiosumvec, tot_xbins ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if (fp_pSFT != NULL) {
+      XLAL_CHECK( XLALVectorScaleREAL4( logLratiosumvecpSFT, 2.0, logLratiosumvecpSFT, power->length * tot_xbins ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
 
     /* save central binary template frequency */
     const REAL8 nu0 = bintemp->x[0];
@@ -759,10 +800,11 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 
       /* output semi-coherent statistic for this template if it exceeds the threshold*/
       const REAL4 logLratiosum = logLratiosumvec[x + left_xbins];
+      const REAL4 *logLratiosumpSFT = (fp_pSFT != NULL) ? &logLratiosumvecpSFT[power->length * (x + left_xbins)] : NULL;
       mean += logLratiosum;
       var += logLratiosum*logLratiosum;
       ++Ntemp;
-      XLALtoplist(logLratiosum,bintemp,&TL);
+      XLALtoplist(logLratiosum, (fp_pSFT != NULL) ? power->length : 0, logLratiosumpSFT, bintemp, &TL);
 
     }
 
@@ -795,7 +837,12 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 
   if ( with_chi2_renorm ) {
     /* modify toplist to have correct mean and variance */
-    for (i=0;i<(UINT4)TL.n;i++) TL.data[i] = (TL.data[i] - mean)*sqrt(4.0*power->length)/sqrt(var) + 2.0*power->length;
+    for (i=0;i<(UINT4)TL.n;i++) {
+      TL.data[i] = (TL.data[i] - mean)*sqrt(4.0*power->length)/sqrt(var) + 2.0*power->length;
+      if (fp_pSFT != NULL) {
+        for (j=0;j<power->length;j++) TL.datapSFT[i][j] = (TL.datapSFT[i][j] - mean/(1.0*power->length))*sqrt(4.0*power->length)/sqrt(var) + 2.0;
+      }
+    }
   }
 
   /* output toplist to file */
@@ -804,6 +851,15 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
     fprintf(fp,"%6.12e\n",TL.data[i]);
   }
   LogPrintf(LOG_NORMAL,"%s : wrote %i results to toplist file\n",__func__,(UINT4)TL.n);
+  if (fp_pSFT != NULL) {
+    for (i=0;i<(UINT4)TL.n;i++) {
+      for (j=0;j<bingrid->ndim;j++) fprintf(fp_pSFT,"%6.12f\t",TL.params[i][j]);
+      fprintf(fp_pSFT,"%6.12e",TL.data[i]);
+      for (j=0;j<power->length;j++) fprintf(fp_pSFT,"\t%6.12e",TL.datapSFT[i][j]);
+      fprintf(fp_pSFT,"\n");
+    }
+    LogPrintf(LOG_NORMAL,"%s : wrote %i per-SFT results to toplist file\n",__func__,(UINT4)TL.n);
+  }
 
   /* free template memory */
   for (i=0;i<power->length;i++) {
@@ -812,6 +868,8 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   }
   XLALFree(fdots);
   XLALFree(TL.data);
+  for (i=0;i<(UINT4)TL.n;i++) XLALFree(TL.datapSFT[i]);
+  XLALFree(TL.datapSFT);
   for (i=0;i<(UINT4)TL.n;i++) XLALFree(TL.params[i]);
   XLALFree(TL.params);
 
@@ -823,6 +881,8 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 }
 
 int XLALtoplist(REAL4 x,		/**< [in] the data to add to the toplist */
+                UINT4 nSFT,             /**< [in] number of SFTs */
+                const REAL4 *xpSFT,	/**< [in] data per SFT */
                 Template *params,       /**< [in] the parameters for this result */
                 toplist *TL             /**< [in/out] the toplist */
                 )
@@ -845,6 +905,7 @@ int XLALtoplist(REAL4 x,		/**< [in] the data to add to the toplist */
 
   /* place the input data into the current location */
   TL->data[TL->idx] = x;
+  for (i=0;i<(INT4)nSFT;i++) TL->datapSFT[TL->idx][i] = xpSFT[i];
   for (i=0;i<(INT4)params->ndim;i++) TL->params[TL->idx][i] = params->x[i];
   if (TL->idx<TL->n-1) TL->idx++;
 
@@ -867,6 +928,11 @@ int XLALtoplist(REAL4 x,		/**< [in] the data to add to the toplist */
   REAL4 old = TL->data[TL->n-1];
   TL->data[TL->n-1] = lowest;
   TL->data[li] = old;
+  for (i=0;i<(INT4)nSFT;i++) {
+    REAL4 olddatapSFT = TL->datapSFT[TL->n-1][i];
+    TL->datapSFT[TL->n-1][i] = TL->datapSFT[li][i];
+    TL->datapSFT[li][i] = olddatapSFT;
+  }
 
   return 0;
 
@@ -882,7 +948,8 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
                                     CHAR *outputdir,            /**< [in] the output directory name */
                                     ParameterSpace *pspace,     /**< [in] the parameter space */
                                     CHAR *clargs,               /**< [in] the command line args */
-                                    UserInput_t *uvar		/**< UNDOCUMENTED */
+                                    UserInput_t *uvar,		/**< UNDOCUMENTED */
+                                    const CHAR *suffix
                                     )
 {
   CHAR outputfile[LONGSTRINGLENGTH];    /* the output filename */
@@ -912,8 +979,8 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
     /* if (coherent) snprintf(outputfile,LONGSTRINGLENGTH,"%s/CoherentResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt",
                            outputdir,(CHAR*)uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
     else */
-    snprintf(outputfile,LONGSTRINGLENGTH,"%s/SemiCoherentResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt",
-                  outputdir,(CHAR*)uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
+    snprintf(outputfile,LONGSTRINGLENGTH,"%s/SemiCoherentResults-%s-%d_%d-%04d_%03d_%04d_%03d%s.txt",
+             outputdir,(CHAR*)uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz,suffix);
   }
   LogPrintf(LOG_NORMAL,"%s : output %s\n",__func__,outputfile);
 
