@@ -118,5 +118,5 @@ if sys.argv[1] == "make_sqlite":
     print("Seconds taken to create database:", time.time()-start_time)
 if sys.argv[1] == "make_ram":
     start_time = time.time()
-    x = Bank(Bank.make_db(":memory:", glob.glob("uberbank/*.hdf")) # in RAM version
+    x = Bank(Bank.make_db(":memory:", glob.glob("uberbank/*.hdf"))) # in RAM version
     print("Seconds taken to create database:", time.time()-start_time)
