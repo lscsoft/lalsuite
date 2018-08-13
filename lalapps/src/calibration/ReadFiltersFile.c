@@ -25,7 +25,7 @@
 #include <lal/ConfigFile.h>   /* to use XLALParseDataFile() */
 #include <lal/AVFactories.h>  /* to use XLALCreateREAL8Vector() */
 
-#include <lal/ReadFiltersFile.h>
+#include <ReadFiltersFile.h>
 
 
 static int check_checksum(const char *filterfile, const char *claimed_chksum);
