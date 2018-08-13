@@ -30,6 +30,9 @@ Public-domain cartographic data is courtesy of Natural Earth
 
 # Command line interface
 
+from lalinference.bayestar.deprecation import warn
+warn('ligo-skymap-plot')
+
 import argparse
 from lalinference.bayestar import command
 parser = command.ArgumentParser(parents=[command.figure_parser])

@@ -36,6 +36,9 @@ terminal, or redirected from a fifo):
 # Command line interface
 #
 
+from lalinference.bayestar.deprecation import warn
+warn('bayestar-localize-lvalert')
+
 from lalinference.bayestar import command
 
 methods = '''

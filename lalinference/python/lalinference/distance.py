@@ -639,3 +639,6 @@ def parameters_to_marginal_moments(prob, distmu, distsigma):
     rbar = (prob * distmean).sum()
     r2bar = (prob * (np.square(diststd) + np.square(distmean))).sum()
     return rbar, np.sqrt(r2bar - np.square(rbar))
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.distance')

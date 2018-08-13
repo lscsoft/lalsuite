@@ -34,6 +34,9 @@ there is a choice for how to generate perturbed time and phase measurements:
 from __future__ import division
 
 
+from lalinference.bayestar.deprecation import warn
+warn('bayestar-realize-coincs')
+
 # Determine list of known detectors for command line arguments.
 import lal
 available_ifos = sorted(det.frDetector.prefix

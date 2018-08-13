@@ -50,3 +50,6 @@ class GraceDBEventSource(EventSource):
 
 
 open = GraceDBEventSource
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.io.events.gracedb')

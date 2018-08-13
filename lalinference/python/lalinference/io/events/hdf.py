@@ -232,3 +232,6 @@ class HDFSingleEvent(SingleEvent):
 
 
 open = HDFEventSource
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.io.events.hdf')

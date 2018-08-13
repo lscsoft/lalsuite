@@ -31,10 +31,7 @@ AC_CONFIG_FILES([ \
   src/Makefile \
   src/version.c \
   swig/Makefile \
-  test/Makefile \
-  test/baseline/Makefile \
-  test/data/Makefile \
-  test/data/gstlal_reference_psd/Makefile
+  test/Makefile
 ])
 AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE([ \

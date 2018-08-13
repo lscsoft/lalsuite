@@ -282,3 +282,6 @@ class LigoLWSingleEvent(SingleEvent):
 
 
 open = LigoLWEventSource
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.io.events.ligolw')

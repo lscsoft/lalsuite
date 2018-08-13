@@ -129,3 +129,6 @@ def rasterize(moc_data):
         that were in moc_data, with the exception of the UNIQ column.
     """
     return _moc.rasterize(moc_data)
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.moc')

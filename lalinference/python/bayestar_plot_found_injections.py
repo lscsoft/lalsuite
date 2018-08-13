@@ -21,6 +21,9 @@ false alarm rate.
 """
 from __future__ import division
 
+from lalinference.bayestar.deprecation import warn
+warn('ligo-skymap-plot-stats')
+
 # Command line interface.
 import argparse
 from lalinference.bayestar import command

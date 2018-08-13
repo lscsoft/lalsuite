@@ -69,3 +69,6 @@ def get_filename(connection):
     except ValueError:
         raise RuntimeError('Expected exactly one attached database')
     return filename
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.util.sqlite')

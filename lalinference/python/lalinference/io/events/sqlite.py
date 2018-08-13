@@ -48,3 +48,6 @@ class SQLiteEventSource(LigoLWEventSource):
 
 
 open = SQLiteEventSource
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.io.events.sqlite')
