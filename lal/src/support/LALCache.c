@@ -337,8 +337,11 @@ LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn)
         do {
             if ((nextdir = strchr(dirname, ':')))
                 *nextdir++ = 0;
-            snprintf(path, sizeof(path), "%s/%s", *dirname ? dirname : ".",
-                     fnptrn);
+            if (snprintf(path, sizeof(path), "%s/%s", *dirname ? dirname : ".",
+                     fnptrn) >= (int) sizeof(path)) {
+                globfree(&g);
+                XLAL_ERROR_NULL(XLAL_EFUNC, "path too long");
+            }
             glob(path, globflags, NULL, &g);
             fnptrn = path;
             globflags |= GLOB_APPEND;
