@@ -47,9 +47,10 @@ SERIESTYPE *CSERIES (
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
-	if(name)
-		strncpy(new->name, name, LALNameLength);
-	else
+	if(name) {
+		strncpy(new->name, name, LALNameLength - 1);
+		new->name[LALNameLength - 1] = '\0';
+	} else
 		new->name[0] = '\0';
 	new->epoch = *epoch;
 	new->f0 = f0;
