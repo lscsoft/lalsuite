@@ -228,7 +228,7 @@ extern "C" {
     gsl_rng *r;
   } BinaryToSFTparams;
 
-  int XLALReadSFTs(SFTVector**,CHAR *,REAL8,REAL8,INT4,INT4,REAL8,REAL8);
+  int XLALReadSFTs(SFTVector**,CHAR *,REAL8,REAL8,INT4,INT4,LIGOTimeGPSVector *,REAL8,REAL8);
   int XLALComputeFreqGridParamsVector(GridParametersVector**,REAL8Space*,SFTVector*,REAL8,INT4*,REAL8);
   int XLALComputeFreqGridParams(GridParameters **freqgridparams,REAL8Space *pspace, REAL8 tmid,REAL8 tsft, REAL8 mu, INT4 *ndim, REAL8 bins_factor);
   int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, SFTVector *sftvec);

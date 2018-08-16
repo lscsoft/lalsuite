@@ -86,6 +86,7 @@ typedef struct {
   REAL8 mismatch;                   /**< the grid mismatch */
   INT4 gpsstart;                    /**< the min GPS time to include */
   INT4 gpsend;                      /**< the max GPS time to include */
+  CHAR* timestamps_file;            /**< timestamps for input SFTs */
   INT4 seed;                        /**< fix the random number generator seed */
   REAL8 coverage;                   /**< random template bank coverage */
   INT4 blocksize;                  /**< the running median blocksize */
@@ -242,10 +243,19 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
 
   /* load in the SFTs - also fill in the segment parameters structure */
-  if (XLALReadSFTs(&sftvec,uvar.sftbasename,fmin_read,fband_read,uvar.gpsstart,uvar.gpsend,uvar.tsft,uvar.bins_factor)) {
+  LIGOTimeGPSVector *timestamps = NULL;
+  if (uvar.timestamps_file != NULL) {
+    timestamps = XLALReadTimestampsFile(uvar.timestamps_file);
+    if (timestamps == NULL) {
+      LogPrintf(LOG_CRITICAL,"%s : XLALReadTimestampsFile(%s) failed with error = %d\n",__func__,uvar.timestamps_file,xlalErrno);
+      return 1;
+    }
+  }
+  if (XLALReadSFTs(&sftvec,uvar.sftbasename,fmin_read,fband_read,uvar.gpsstart,uvar.gpsend,timestamps,uvar.tsft,uvar.bins_factor)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALReadSFTs() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
+  XLALDestroyTimestampVector(timestamps);
   LogPrintf(LOG_NORMAL,"%s : read in SFTs\n",__func__);
 
   /* define SFT length and the start and span of the observations plus the definitive segment time */
@@ -524,6 +534,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(seed,                    INT4, 'X', OPTIONAL, "The random number seed (0 = clock)");
   XLALRegisterUvarMember(gpsstart,                INT4, 's', OPTIONAL, "The minimum start time (GPS sec)");
   XLALRegisterUvarMember(gpsend,                INT4, 'e', OPTIONAL, "The maximum end time (GPS sec)");
+  XLALRegisterUvarMember(timestamps_file,        STRING, 0, OPTIONAL, "Timestamps for input SFTs");
   XLALRegisterUvarMember(with_chi2_renorm,       BOOLEAN, 0, OPTIONAL,  "Switch on chi^2 renormalisation");
   XLALRegisterUvarMember(with_xbins,             BOOLEAN, 0, DEVELOPER,  "Enable fast summing of extra bins");
   XLALRegisterUvarMember(with_amp_per_SFT,       BOOLEAN, 0, OPTIONAL,  "Enable return of amplitude per SFT");
