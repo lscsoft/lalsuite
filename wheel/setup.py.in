@@ -67,7 +67,7 @@ class build_scripts(_build_scripts):
 
     def run(self):
         old_scripts = self.scripts[:]
-        new_scripts = []
+        new_scripts = set()
         self.mkpath(self.build_dir)
         tmpdir = tempfile.mkdtemp(dir=self.build_dir)
         try:
@@ -86,8 +86,8 @@ class build_scripts(_build_scripts):
                             shutil.copyfileobj(infile, outfile)
                 else:
                     new_script = old_script
-                new_scripts.append(new_script)
-            self.scripts = new_scripts
+                new_scripts.add(new_script)
+            self.scripts = list(new_scripts)
             _build_scripts.run(self)
             self.scripts = old_scripts
         finally:
@@ -121,7 +121,7 @@ setup(
     package_dir={'': PYTHONDIR, 'lalapps.bin': BINDIR},
     package_data={'lalapps.bin': ['*']},
     packages=find_packages(PYTHONDIR) + ['lalapps.bin'],
-    scripts=glob(LIBEXECDIR + '/**/*.py') + glob(BINDIR + '/*'),
+    scripts=glob(BINDIR + '/*') + glob(LIBEXECDIR + '/**/*.py'),
     ext_modules=[Extension(os.path.relpath(filename, PYTHONDIR)
                            .replace('.so', '')
                            .replace('/', '.'), [])
