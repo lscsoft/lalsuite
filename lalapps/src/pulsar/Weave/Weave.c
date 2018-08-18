@@ -872,7 +872,7 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( ckpt_output_count > 0, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Read output results
-      XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out ) == XLAL_SUCCESS, XLAL_EFUNC, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
+      XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out, 0 ) == XLAL_SUCCESS, XLAL_EFUNC, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Restore state of main loop iterator
       XLAL_CHECK_MAIN( XLALWeaveSearchIteratorRestore( main_loop_itr, file ) == XLAL_SUCCESS, XLAL_EFUNC, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
