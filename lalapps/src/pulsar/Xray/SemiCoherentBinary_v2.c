@@ -960,7 +960,7 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
                                     ParameterSpace *pspace,     /**< [in] the parameter space */
                                     CHAR *clargs,               /**< [in] the command line args */
                                     UserInput_t *uvar,		/**< UNDOCUMENTED */
-                                    const CHAR *suffix
+                                    const CHAR *suffix		/**< UNDOCUMENTED */
                                     )
 {
   CHAR outputfile[LONGSTRINGLENGTH];    /* the output filename */
