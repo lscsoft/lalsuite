@@ -144,6 +144,7 @@ int parseargs(int argc, char **argv)
 						fprintf(stderr, "unrecognized detector site %s - must be 'G', 'H', 'L' or 'V'\n", LALoptarg);
 						exit(1);
 				}
+				break;
 			case 'f': /* min-frequency */
 				f_min = atof(LALoptarg);
 				break;
