@@ -85,7 +85,6 @@ liblalinspiral_la_SOURCES = \
 	FindChirpSPData.c \
 	FindChirpSPTemplate.c \
 	FindChirpSimulation.c \
-	FindChirpStoreEvent.c \
 	FindChirpTDData.c \
 	FindChirpTDTemplate.c \
 	FindChirpTemplate.c \
