@@ -880,15 +880,11 @@ CHAR* XLALGetNinjaChannelName(const CHAR *polarisation, UINT4 l, INT4 m)
 
   /* get sign of m */
   if (m < 0)
-  {
     /* negative */
-    strncpy(&sign, "n", 1);
-  }
+    sign = 'n';
   else
-  {
     /* positive */
-    strncpy(&sign, "p", 1);
-  }
+    sign = 'p';
 
   /* set channel name */
   snprintf(channel, LIGOMETA_CHANNEL_MAX, "h%s_l%d_m%c%d", polarisation, l, sign, abs(m));
