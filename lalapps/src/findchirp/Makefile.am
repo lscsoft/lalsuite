@@ -13,8 +13,7 @@ if LALMETAIO
 LALMETAIOPROGRAMS = \
 	lalapps_exc_resp \
 	lalapps_ivana \
-	lalapps_chirplen \
-	lalapps_BankEfficiency
+	lalapps_chirplen
 endif
 bin_PROGRAMS = $(LALINSPIRALPROGRAMS) $(LALMETAIOPROGRAMS)
 
@@ -28,18 +27,12 @@ if LALMETAIO
 lalapps_exc_resp_SOURCES = exc_resp.c
 lalapps_ivana_SOURCES = ivana.c
 lalapps_chirplen_SOURCES = chirplen.c
-lalapps_BankEfficiency_SOURCES = BankEfficiency.c BankEfficiency.h
 endif
 
 CLEANFILES = \
-	lalapps_BankEfficiency  \
 	lalapps_InspiralOverlap
 
 EXTRA_DIST = \
-	BE_create_script.py \
-	BankEfficiency.c \
-	BankEfficiency.dox \
-	BankEfficiency.h \
 	TestRandomBank.c \
 	TestRandomBank.h \
 	chirplen.c \
