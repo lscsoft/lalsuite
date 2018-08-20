@@ -493,23 +493,6 @@ LALFindChirpBCVChisqVeto (
     FindChirpChisqParams       *params
     );
 
-void
-LALFindChirpBCVFilterSegment (
-    LALStatus                  *status,
-    SnglInspiralTable         **eventList,
-    FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params
-    );
-
-void
-LALFindChirpBCVCFilterSegment (
-    LALStatus                  *status,
-    SnglInspiralTable         **eventList,
-    FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params
-    );
-
-
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
