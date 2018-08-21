@@ -1173,6 +1173,11 @@ int IMRPhenomHMCore(
 {
     int retcode;
 
+    // Make a pointer to LALDict to circumvent a memory leak
+    // At the end we will check if we created a LALDict in extraParams
+    // and destroy it if we did.
+    LALDict *extraParams_in = extraParams;
+
     /* evaluate all hlm modes */
     SphHarmFrequencySeries **hlms = XLALMalloc(sizeof(SphHarmFrequencySeries));
     *hlms = NULL;
@@ -1305,6 +1310,12 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
     XLALDestroyValue(ModeArray);
     LALFree(pHMFS);
 
+  /* If extraParams was allocated in this function and not passed in
+   * we need to free it to prevent a leak */
+  if (extraParams && !extraParams_in) {
+    XLALDestroyDict(extraParams);
+  }
+
     return XLAL_SUCCESS;
 }
 
@@ -1336,6 +1347,12 @@ int XLALSimIMRPhenomHMGethlmModes(
 )
 {
     UNUSED int retcode;
+
+    // Make a pointer to LALDict to circumvent a memory leak
+    // At the end we will check if we created a LALDict in extraParams
+    // and destroy it if we did.
+    LALDict *extraParams_in = extraParams;
+
 
     /* sanity checks on input parameters: check pointers, etc. */
 
@@ -1523,6 +1540,12 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
     }
 
     LALFree(pHM);
+
+  /* If extraParams was allocated in this function and not passed in
+   * we need to free it to prevent a leak */
+  if (extraParams && !extraParams_in) {
+    XLALDestroyDict(extraParams);
+  }
 
     return XLAL_SUCCESS;
 }
