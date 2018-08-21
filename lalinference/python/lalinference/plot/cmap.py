@@ -49,3 +49,6 @@ for name in ['cylon']:
     locals().update({name: cmap})
     # Register with Matplotlib.
     cm.register_cmap(cmap=cmap)
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.plot.cmap')

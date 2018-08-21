@@ -429,3 +429,6 @@ def reconstruct_nested(m, order='depthfirst', extra=True):
     # FIXME: Replace with `yield from` in Python 3
     for _ in func(m, extra):
         yield _
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.healpix_tree')

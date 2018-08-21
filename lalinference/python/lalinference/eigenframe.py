@@ -119,3 +119,6 @@ def eigenframe_to_icrs(from_coo, to_frame):
     return np.column_stack((from_coo.e_x.xyz.value,
                             from_coo.e_y.xyz.value,
                             from_coo.e_z.xyz.value))
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.coordinates.eigenframe')

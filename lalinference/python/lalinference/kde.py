@@ -111,3 +111,6 @@ class BoundedKDE(gaussian_kde):
         construct the KDE that have a lower KDE density than ``pt``."""
 
         return np.count_nonzero(self(self.dataset) < self(pt)) / self.n
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.kde')

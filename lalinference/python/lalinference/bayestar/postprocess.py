@@ -584,42 +584,6 @@ def _get_detector_location(ifo):
 
 
 def get_detector_pair_axis(ifo1, ifo2, gmst):
-    """Find the sky position where the line between two detectors pierces the
-    celestial sphere.
-
-    Parameters
-    ----------
-    ifo1, ifo2 : str or `~lal.Detector` or `numpy.ndarray`
-        The detector positions. Can be specifed by name (e.g. `'H1'`), or by
-        `lal.Detector` object (e.g., as returned by
-        `lalsimulation.DetectorPrefixToLALDetector('H1')` or by the geocentric
-        Cartesian position in meters.
-
-    gmst : float
-        The Greenwich mean sidereal time in radians, as returned by
-        `lal.GreenwichMeanSiderealTime`.
-
-    Returns
-    -------
-
-    pole_ra : float
-        The right ascension in radians at which a ray from `ifo1` to `ifo2`
-        would pierce the celestial sphere.
-
-    pole_dec : float
-        The declination in radians at which a ray from `ifo1` to `ifo2` would
-        pierce the celestial sphere.
-
-    light_travel_time : float
-        The light travel time from `ifo1` to `ifo2` in seconds.
-
-    Example
-    -------
-
-    >>> ret = get_detector_pair_axis('H1', 'L1', 41758.384193753656)
-    >>> print(*np.around(ret, 5))
-    5.94546 -0.47622 0.01001
-    """
     ifo1 = _get_detector_location(ifo1)
     ifo2 = _get_detector_location(ifo2)
 

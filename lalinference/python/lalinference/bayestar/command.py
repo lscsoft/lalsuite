@@ -521,3 +521,7 @@ def iterlines(file, start_message=start_msg, stop_message=stop_msg):
 
     if is_tty:
         print(stop_message, file=sys.stderr)
+
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.tool')
