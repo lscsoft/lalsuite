@@ -265,6 +265,11 @@ static int IMRPhenomDGenerateFD(
 ) {
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
 
+  // Make a pointer to LALDict to circumvent a memory leak
+  // At the end we will check if we created a LALDict in extraParams
+  // and destroy it if we did.
+  LALDict *extraParams_in = extraParams;
+
   REAL8 chi1, chi2, m1, m2;
   if (m1_in>m2_in) {
      chi1 = chi1_in;
@@ -419,6 +424,15 @@ static int IMRPhenomDGenerateFD(
   LALFree(pPhi);
   LALFree(pn);
   XLALDestroyREAL8Sequence(freqs);
+
+
+  /* If extraParams was allocated in this function and not passed in
+   * we need to free it to prevent a leak */
+  if (extraParams && !extraParams_in) {
+    XLALDestroyDict(extraParams);
+  } else {
+    XLALSimInspiralWaveformParamsInsertPNSpinOrder(extraParams,LAL_SIM_INSPIRAL_SPIN_ORDER_ALL);
+  }
 
   return status;
 }
