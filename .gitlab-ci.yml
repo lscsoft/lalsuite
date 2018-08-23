@@ -430,7 +430,7 @@ nightly:macos:elcapitan:
     # Build wheel
     - ./00boot
     # FIXME: laldetchar depends on glib >= 2.14, too new for manylinux1
-    - ./configure PYTHON=${PYPREFIX}/bin/python --disable-laldetchar ${EXTRA_CONFIG_FLAGS}
+    - ./configure PYTHON=${PYPREFIX}/bin/python --enable-mpi --disable-laldetchar ${EXTRA_CONFIG_FLAGS}
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - auditwheel repair wheel/*.whl
@@ -461,7 +461,7 @@ nightly:macos:elcapitan:
     - pip install -q git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 'numpy==1.14.5;python_version>="3.7"' 'numpy==1.7.0;python_version<"3.7"'
     # Build wheel
     - ./00boot
-    - ./configure PYTHON=$(which python${PYVERS}) --enable-swig-python ${EXTRA_CONFIG_FLAGS} LDFLAGS=-Wl,-headerpad_max_install_names
+    - ./configure PYTHON=$(which python${PYVERS}) --enable-mpi --enable-swig-python ${EXTRA_CONFIG_FLAGS} LDFLAGS=-Wl,-headerpad_max_install_names
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - delocate-wheel -v -w wheelhouse wheel/*.whl
