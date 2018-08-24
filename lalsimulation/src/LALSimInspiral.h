@@ -366,13 +366,13 @@ typedef enum tagApproximant {
    SpinDominatedWf,     /**< Time domain, inspiral only, 1 spin, precessing waveform, Tapai et al, arXiv: 1209.1722
                          * @remarks Implemented in lalsimulation (time domain). */
    NR_hdf5,              /**< Time domain, NR waveform from HDF file. From INSERT LINKS HERE */
-   NRSur7dq2_HM,         /**< Time domain, fully precessing NR surrogate model with up to ell=4 modes, arxiv: 1705.07089 */
-   NRSur7dq2_L2only,     /**< NRSur7dq2_HM but using only the (2, +/-2) modes in the coorbital frame */
    SEOBNRv4_ROM_NRTidal, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4 [Bohe et al, arXiv:1611.03703] with tidal phase corrections [Dietrich et al, arXiv:1706.02969]
                           * @remarks Implemented in lalsimulation (frequency domain). */
    IMRPhenomD_NRTidal,   /**< Uses arxiv:1706.02969 to upgrad IMRPhenomD to a tidal approximant
                           * @remarks Implemented in lalsimulation (frequency domain). */
    IMRPhenomPv2_NRTidal, /**< FD waveform; the tidal phase is added first and then the twisting is applied */
+   NRSur7dq2_HM,         /**< Time domain, fully precessing NR surrogate model with up to ell=4 modes, arxiv: 1705.07089 */
+   NRSur7dq2_L2only,     /**< NRSur7dq2_HM but using only the (2, +/-2) modes in the coorbital frame */
    NumApproximants	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
