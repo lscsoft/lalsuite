@@ -18,10 +18,31 @@
 *  MA  02111-1307  USA
 */
 
+#include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
+
+/** Like snprintf but doesn't print format truncation warnings with GCC. */
+int XLALStringPrint(char *s, size_t n, const char *fmt, ...)
+{
+        int ret;
+        va_list ap;
+        va_start(ap, fmt);
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+        ret = vsnprintf(s, n, fmt, ap);
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+        va_end(ap);
+        return ret;
+}
+
 
 /** Like strcat but dynamically reallocates string with LALRealloc. */
 char *XLALStringAppend(char *s, const char *append)
