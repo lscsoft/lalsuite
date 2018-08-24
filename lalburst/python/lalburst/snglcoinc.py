@@ -1492,6 +1492,14 @@ class LnLikelihoodRatioMixin(object):
 		The arguments are passed verbatim to the .__call__()
 		methods of the .numerator and .denominator attributes of
 		self.
+
+		NOTE:  it is possible for sub-classes to override this
+		method, and chain to it if they wish.  There is no
+		requirement that this method evaluate the ratio .numerator
+		/ .denominator, for example it would not invalidate the
+		output of .ln_lr_samples() if the computation of the return
+		value includes some kind of cuts, or other non-trivial
+		logic.
 		"""
 		lnP_signal = self.numerator(*args, **kwargs)
 		lnP_noise = self.denominator(*args, **kwargs)
@@ -1522,7 +1530,7 @@ class LnLikelihoodRatioMixin(object):
 				warnings.warn("inf/inf encountered")
 		return  lnP_signal - lnP_noise
 
-	def ln_lr_samples(self, random_params_seq, sampler_coinc_params = None):
+	def ln_lr_samples(self, random_params_seq, signal_noise_pdfs = None):
 		"""
 		Generator that yields an unending sequence of 3-element
 		tuples.  Each tuple's elements are a value of the natural
@@ -1534,11 +1542,11 @@ class LnLikelihoodRatioMixin(object):
 		occurance of that likelihood ratio in the noise population
 		similarly corrected for the relative frequency at which the
 		sampler is yielding that value.  The intention is for the
-		return values to be added to histograms using the given
-		probability densities as weights, i.e., the two relative
-		frequencies give the number of times one should consider
-		this one draw of log likelihood ratio to have occured in
-		the two populations.
+		first element of each tuple to be added to histograms using
+		the two relative frequencies as weights, i.e., the two
+		relative frequencies give the number of times one should
+		consider this one draw of log likelihood ratio to have
+		occured in the two populations.
 
 		random_params_seq is a sequence (generator is OK) yielding
 		3-element tuples whose first two elements provide the *args
@@ -1550,25 +1558,26 @@ class LnLikelihoodRatioMixin(object):
 		On each iteration, the *args and **kwargs values yielded by
 		random_params_seq is passed to our own .__call__() method
 		to evalute the log likelihood ratio at that choice of
-		parameter values.  If sampler_coinc_params is None the
-		parameters are also passed to the .__call__() mehods of the
-		.numerator and .denominator attributes of self to obtain
-		the signal and noise population densities at those
-		parameters.  If sample_coinc_params is not None then,
-		instead, the parameters are passed to the .__call__()
-		methods of its .numerator and .denominator attributes.
+		parameter values.  If signal_noise_pdfs is None the
+		parameters are also passed to the .__call__() mehods of our
+		own .numerator and .denominator attributes to obtain the
+		signal and noise population densities at those parameters.
+		If signal_noise_pdfs is not None then, instead, the
+		parameters are passed to the .__call__() methods of its
+		.numerator and .denominator attributes to obtain those
+		densities.
 
 		If histograming the results as described above, the effect
 		is to draw paramter values from the signal and noise
-		populations defined by sampler_coinc_params' PDFs but with
-		log likelihood ratios evaluted using our own PDFs.
+		populations defined by signal_noise_pdfs' PDFs but with log
+		likelihood ratios evaluated using our own PDFs.
 		"""
-		if sampler_coinc_params is None:
+		if signal_noise_pdfs is None:
 			lnP_signal_func = self.numerator
 			lnP_noise_func = self.denominator
 		else:
-			lnP_signal_func = sampler_coinc_params.numerator
-			lnP_noise_func = sampler_coinc_params.denominator
+			lnP_signal_func = signal_noise_pdfs.numerator
+			lnP_noise_func = signal_noise_pdfs.denominator
 		for args, kwargs, lnP_params in random_params_seq:
 			lnP_signal = lnP_signal_func(*args, **kwargs)
 			lnP_noise = lnP_noise_func(*args, **kwargs)
