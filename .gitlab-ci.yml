@@ -437,7 +437,7 @@ nightly:macos:elcapitan:
     # Test
     - ${PYPREFIX}/bin/virtualenv test
     - source test/bin/activate
-    - pip install -q wheelhouse/*
+    - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []
   only:
@@ -458,7 +458,7 @@ nightly:macos:elcapitan:
     # Enter virtualenv so that we have a controlled version of Numpy
     - virtualenv-${PYVERS} env
     - source env/bin/activate
-    - pip install -q git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 'numpy==1.14.5;python_version>="3.7"' 'numpy==1.7.0;python_version<"3.7"'
+    - pip install git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 'numpy==1.14.5;python_version>="3.7"' 'numpy==1.7.0;python_version<"3.7"'
     # Build wheel
     - ./00boot
     - ./configure PYTHON=$(which python${PYVERS}) --enable-mpi --enable-swig-python ${EXTRA_CONFIG_FLAGS} LDFLAGS=-Wl,-headerpad_max_install_names
@@ -468,7 +468,7 @@ nightly:macos:elcapitan:
     # Test
     - virtualenv-${PYVERS} test
     - source test/bin/activate
-    - pip install -q wheelhouse/*
+    - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []
   only:
