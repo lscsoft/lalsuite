@@ -48,3 +48,11 @@ lalxml_version_SOURCES = version.c
 TESTS = \
 	lalxml_version \
 	$(END_OF_LIST)
+
+pkgdata_DATA = \
+	VOTable-1.1.xsd \
+	$(END_OF_LIST)
+
+EXTRA_DIST = \
+	$(pkgdata_DATA) \
+	$(END_OF_LIST)

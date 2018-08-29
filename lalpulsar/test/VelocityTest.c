@@ -104,8 +104,8 @@
 
 /* Locations of the earth and sun ephemeris data */
 
-#define EARTHDATAFILE TEST_DATA_DIR  "earth00-19-DE405.dat.gz";
-#define SUNDATAFILE TEST_DATA_DIR    "sun00-19-DE405.dat.gz";
+#define EARTHDATAFILE TEST_PKG_DATA_DIR "earth00-19-DE405.dat.gz";
+#define SUNDATAFILE   TEST_PKG_DATA_DIR "sun00-19-DE405.dat.gz";
 
 char EARTHDATA[] = EARTHDATAFILE;
 char SUNDATA[] = SUNDATAFILE;

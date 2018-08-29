@@ -669,8 +669,8 @@ static int SuperskyTests(
     .length = 1,
     .sites = { lalCachedDetectors[LAL_LLO_4K_DETECTOR] }
   };
-  EphemerisData *edat = XLALInitBarycenter( TEST_DATA_DIR "earth00-19-DE405.dat.gz",
-                                            TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
+  EphemerisData *edat = XLALInitBarycenter( TEST_PKG_DATA_DIR "earth00-19-DE405.dat.gz",
+                                            TEST_PKG_DATA_DIR "sun00-19-DE405.dat.gz" );
   XLAL_CHECK( edat != NULL, XLAL_EFUNC );
   const double freq_max = 40.0;
   SuperskyMetrics *metrics = XLALComputeSuperskyMetrics( SUPERSKY_METRIC_TYPE, 1, &ref_time, &segments, freq_max, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );

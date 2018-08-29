@@ -44,7 +44,7 @@ main ( int argc, char *argv[] )
 
   // ----- load ephemeris
   EphemerisData *ephem;
-  XLAL_CHECK ( (ephem = XLALInitBarycenter ( TEST_DATA_DIR "earth00-19-DE405.dat.gz", TEST_DATA_DIR "sun00-19-DE405.dat.gz" )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (ephem = XLALInitBarycenter ( TEST_PKG_DATA_DIR "earth00-19-DE405.dat.gz", TEST_PKG_DATA_DIR "sun00-19-DE405.dat.gz" )) != NULL, XLAL_EFUNC );
 
   // ----- setup injection and data parameters
   LALStringVector *detNames = NULL;
