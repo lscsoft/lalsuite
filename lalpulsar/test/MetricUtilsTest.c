@@ -36,8 +36,8 @@ int main( void )
   {
 
     // Load ephemerides
-    char earthEphem[] = TEST_DATA_DIR "earth00-19-DE200.dat.gz";
-    char sunEphem[]   = TEST_DATA_DIR "sun00-19-DE200.dat.gz";
+    char earthEphem[] = TEST_PKG_DATA_DIR "earth00-19-DE200.dat.gz";
+    char sunEphem[]   = TEST_PKG_DATA_DIR "sun00-19-DE200.dat.gz";
     EphemerisData *edat = XLALInitBarycenter( earthEphem, sunEphem );
     XLAL_CHECK_MAIN( edat != NULL, XLAL_EFUNC );
 

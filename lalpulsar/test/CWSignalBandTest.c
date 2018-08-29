@@ -87,7 +87,7 @@ int main(void)
   LALDetector *detector;
   XLAL_CHECK_MAIN ( (detector = XLALGetSiteInfo ( "H1" )) != NULL, XLAL_EFUNC );
   EphemerisData *edat;
-  XLAL_CHECK_MAIN ( (edat = XLALInitBarycenter ( TEST_DATA_DIR "earth00-19-DE405.dat.gz", TEST_DATA_DIR "sun00-19-DE405.dat.gz" )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (edat = XLALInitBarycenter ( TEST_PKG_DATA_DIR "earth00-19-DE405.dat.gz", TEST_PKG_DATA_DIR "sun00-19-DE405.dat.gz" )) != NULL, XLAL_EFUNC );
   tic = XLALGetCPUTime();
   XLAL_CHECK_MAIN ( (detStates = XLALPrepareCWSignalBand ( &skypos_maxdoppler, t0, Tspan, dT, detector, edat )) != NULL, XLAL_EFUNC );
   REAL8 time_XLALPrepareCWSignalBand = XLALGetCPUTime() - tic;

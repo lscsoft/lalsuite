@@ -24,8 +24,8 @@ import lalpulsar
 from lalpulsar import simulateCW as simCW
 
 # load Earth and Sun ephemerides
-earth_ephem_file = os.path.join(os.environ['LAL_TEST_SRCDIR'], 'earth00-19-DE405.dat.gz')
-sun_ephem_file = os.path.join(os.environ['LAL_TEST_SRCDIR'], 'sun00-19-DE405.dat.gz')
+earth_ephem_file = os.path.join(os.environ['LAL_TEST_PKGDATADIR'], 'earth00-19-DE405.dat.gz')
+sun_ephem_file = os.path.join(os.environ['LAL_TEST_PKGDATADIR'], 'sun00-19-DE405.dat.gz')
 ephemerides = lalpulsar.InitBarycenter(earth_ephem_file, sun_ephem_file)
 
 # amplitude parameters

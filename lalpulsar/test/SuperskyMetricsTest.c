@@ -315,8 +315,8 @@ int main( void )
 {
 
   // Load ephemeris data
-  EphemerisData *edat = XLALInitBarycenter( TEST_DATA_DIR "earth00-19-DE405.dat.gz",
-                                            TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
+  EphemerisData *edat = XLALInitBarycenter( TEST_PKG_DATA_DIR "earth00-19-DE405.dat.gz",
+                                            TEST_PKG_DATA_DIR "sun00-19-DE405.dat.gz" );
   XLAL_CHECK_MAIN( edat != NULL, XLAL_EFUNC );
 
   // Create segment list

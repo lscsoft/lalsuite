@@ -33,10 +33,7 @@ main(int argc, char *argv[])
   XLAL_CHECK ( argc == 1, XLAL_EINVAL, "No input arguments allowed.\n" );
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL );
 
-  char testFile[] = "earth00-19-DE405.dat.gz";
-
-  char *testFilePath;
-  XLAL_CHECK ( (testFilePath = XLALFileResolvePathLong ( testFile, TEST_DATA_DIR )) != NULL, XLAL_EINVAL );
+  char testFilePath[] = TEST_PKG_DATA_DIR "earth00-19-DE405.dat.gz";
 
  // read gzipped ephemeris file once with XLALCHARReadSequence() and once with XLALFileLoad()
   CHARSequence *sequence = NULL;
@@ -82,7 +79,6 @@ main(int argc, char *argv[])
   XLALDestroyCHARVector ( sequence );
   XLALDestroyTokenList ( tokens );
   XLALDestroyParsedDataFile ( content );
-  XLALFree ( testFilePath );
 
   LALCheckMemoryLeaks();
 

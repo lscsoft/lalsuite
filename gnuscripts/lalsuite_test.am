@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"' @AM_CPPFLAGS@
+AM_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"' -DTEST_PKG_DATA_DIR='"$(abs_top_srcdir)/src/"' @AM_CPPFLAGS@
 
 TEST_EXTENSIONS = .sh .m .py
 
@@ -14,6 +14,7 @@ TESTS_ENVIRONMENT = \
 	export LAL_DEBUG_LEVEL; LAL_DEBUG_LEVEL=msglvl1,memdbg; \
 	export LAL_TEST_SRCDIR; LAL_TEST_SRCDIR="$(abs_srcdir)"; \
 	export LAL_TEST_BUILDDIR; LAL_TEST_BUILDDIR="$(abs_builddir)"; \
+	export LAL_TEST_PKGDATADIR; LAL_TEST_PKGDATADIR="$(abs_top_srcdir)/src"; \
 	lalsuite_path="$(abs_top_builddir)/octave"; \
 	test "x$(builddir)" = "x$(srcdir)" || lalsuite_path="$${lalsuite_path}:$(abs_top_srcdir)/octave"; \
 	test "x$(LAL_OCTAVE_PATH)" = x || lalsuite_path="$${lalsuite_path}:$(LAL_OCTAVE_PATH)"; \
