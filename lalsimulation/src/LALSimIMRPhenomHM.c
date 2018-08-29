@@ -1476,7 +1476,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
     phi0 is the correction we need to add to each mode. */
     REAL8 phi_22_at_f_ref = IMRPhenomDPhase_OneFrequency(pHM->Mf_ref, pDPreComp22,
                                                          1.0, 1.0);
-    REAL8 phi0 = 0.5 * phi_22_at_f_ref - phiRef;
+    REAL8 phi0 = 0.5 * phi_22_at_f_ref + phiRef;
 
     /* loop over modes */
     /* at this point ModeArray should contain the list of modes
