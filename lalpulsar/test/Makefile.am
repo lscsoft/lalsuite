@@ -77,7 +77,6 @@ MOSTLYCLEANFILES = \
 	$(END_OF_LIST)
 
 pkgdata_DATA = \
-	circularEphem.dat \
 	earth00-19-DE200.dat.gz \
 	earth00-19-DE405.dat.gz \
 	earth00-19-DE414.dat.gz \
@@ -98,8 +97,6 @@ pkgdata_DATA = \
 	te405_2000-2019.dat.gz \
 	tdb_2000-2040.dat.gz \
 	te405_2000-2040.dat.gz \
-	testTimestamps.dat \
-	testTimestampsNew.dat \
 	$(END_OF_LIST)
 
 EXTRA_DIST += \
@@ -133,6 +130,7 @@ EXTRA_DIST += \
 	SFT-test5 \
 	SFT-test6 \
 	SFT-test7 \
+	circularEphem.dat \
 	earth98.dat \
 	inputsft.0 \
 	inputsft.1 \
