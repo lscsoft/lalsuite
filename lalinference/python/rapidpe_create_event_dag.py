@@ -94,6 +94,8 @@ if opts.coinc_xml is not None:
     event_time = coinc_row.get_end()
     print("Coinc XML loaded, event time: %s" % str(coinc_row.get_end()))
 elif opts.event_time is not None:
+    # FIXME: Bad hack to make the ILE sub writer ignore this parameter
+    opts.coinc_xml = False
     event_time = glue.lal.LIGOTimeGPS(opts.event_time)
     print("Event time from command line: %s" % str(event_time))
 else:
@@ -153,7 +155,7 @@ ile_job_type, ile_sub_name = dagutils.write_integrate_likelihood_extrinsic_sub(
         psd_file=opts.psd_file,
         coinc_xml=opts.coinc_xml,
         reference_freq=opts.reference_freq,
-        fmax=opts.fmax,
+        fmax=(opts.fmax or 2048),
         fmin_template=opts.fmin_template,
 		approximant=opts.approximant,
 		amp_order=opts.amp_order,
@@ -169,7 +171,7 @@ ile_job_type, ile_sub_name = dagutils.write_integrate_likelihood_extrinsic_sub(
         n_chunk=opts.n_chunk,
         adapt_floor_level=opts.adapt_floor_level,
         adapt_weight_exponent=opts.adapt_weight_exponent,
-        skymap_file=opts.skymap_file,
+        skymap_file=(opts.skymap_file or False),
         distance_maximum=opts.distance_maximum
         )
 ile_job_type.write_sub_file()
