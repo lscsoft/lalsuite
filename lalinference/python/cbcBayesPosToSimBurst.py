@@ -30,6 +30,7 @@
 Populate a sim_inspiral table with random draws from an ASCII table.
 """
 from optparse import Option, OptionParser
+from six.moves import range
 import numpy as np
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
@@ -176,7 +177,7 @@ if __name__ == "__main__":
       injections['time_geocent_gps_ns'] = np.modf(est_time)[0] * 10**9
       
     # Populate structured array
-    injections['waveform'] = [opts.approx for i in xrange(N)]
+    injections['waveform'] = [opts.approx for i in range(N)]
     try:
       injections['frequency'] = samples['frequency']
     except:
@@ -205,7 +206,7 @@ if __name__ == "__main__":
     xmldoc.childNodes[0].appendChild(sim_table)
 
     # Add empty rows to the sim_inspiral table
-    for inj in xrange(N):
+    for inj in range(N):
         row = sim_table.RowType()
         for slot in row.__slots__: setattr(row, slot, 0)
         sim_table.append(row)

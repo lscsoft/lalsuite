@@ -21,6 +21,8 @@ from __future__ import division
 import bisect
 from operator import attrgetter
 
+from six.moves import range
+
 import numpy as np
 
 from glue.iterutils import inorder, uniq
@@ -114,7 +116,7 @@ class Bank(object):
     def add_from_hdf(self, hdf_fp):
         num_points = len(hdf_fp['mass1'])
         newtmplts=[]
-        for idx in xrange(num_points):
+        for idx in range(num_points):
             if not idx % 100000:
                 tmp = {}
                 end_idx = min(idx+100000, num_points)

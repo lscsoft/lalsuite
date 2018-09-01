@@ -48,6 +48,7 @@ from sys import exit, stdout, version_info, float_info
 from time import time
 from numpy import sqrt, array, empty, hstack, min, max, reshape, shape, loadtxt, vstack, append, arange, random, column_stack, concatenate, savetxt, log, exp, size, zeros, argmax, argsort, sort, sum, subtract, array_split
 from re import findall
+from six.moves import range
 
 py_version = version_info[:2]
 if py_version < (2, 7):
@@ -182,7 +183,7 @@ def TigerPostProcess(configfile):
 
 	# FETCHING DATA
 	tigerruns = []
-	for i in xrange(len(fetch_type)):
+	for i in range(len(fetch_type)):
 		if fetch_type[i] == 'source':
 			# READING LOCATION FILES
 			locfp = open(fetch_loc[i],'r')
@@ -204,7 +205,7 @@ def TigerPostProcess(configfile):
 	# SAVING DATA BEFORE CUT
 	html_files_sources = []
 	stdout.write('Saving data\n')
-	for i in xrange(len(tigerruns)):
+	for i in range(len(tigerruns)):
 		html_files_sources.append(path.join(localdest,tigerruns[i].label+'.pickle'))
 		tigerruns[i].savetopickle(html_files_sources[-1])
 		stdout.write('... Saving data: %s\n' % html_files_sources[-1])
@@ -225,7 +226,7 @@ def TigerPostProcess(configfile):
 
 	# SAVING DATA AFTER CUT
 	#print 'Saving data - after cut'
-	#for i in xrange(len(tigerruns)):
+	#for i in range(len(tigerruns)):
 		#html_files_sources.append(path.join(localdest,tigerruns[i].label+'_cut'+'.pickle'))
 		#tigerruns[i].savetopickle(html_files_sources[-1])
 		#html_files_sources.append(path.join(localdest,tigerruns[i].label+'_cut'+'.dat'))
@@ -305,7 +306,7 @@ def TigerPostProcess(configfile):
 	html_files_cumfreq = [[]]*len(tigerruns) 
 	if plot_cumfreq == True:
 		stdout.write("... Cumulative frequency\n")
-		for i in xrange(len(tigerruns)):
+		for i in range(len(tigerruns)):
 			html_files_cumfreq[i] = []
 			clf()
 			fig = figure()
@@ -321,11 +322,11 @@ def TigerPostProcess(configfile):
 	stdout.write("... Cumulative Bayes\n")
 	if plot_cumbayes == True:
 		N_sources_cats = array(N_sources[N_sources!=1])
-		for i in xrange(len(tigerruns)):
+		for i in range(len(tigerruns)):
 			html_files_cumbayes[i] = [[]]*len(N_sources_cats)
-			for j in xrange(len(N_sources_cats)):
+			for j in range(len(N_sources_cats)):
 				html_files_cumbayes[i][j] = []
-				for k in xrange(tigerruns[i].nsources/N_sources_cats[j]):
+				for k in range(tigerruns[i].nsources/N_sources_cats[j]):
 					clf()
 					fig = figure()
 					ax = fig.add_subplot(111)
@@ -391,11 +392,11 @@ def TigerPostProcess(configfile):
 		htmltxt+='</tr>'
 
 		background = 0
-		for i in xrange(len(tigerruns)):
+		for i in range(len(tigerruns)):
 			if i != background: # hardcoded for the time being
 				htmltxt+='<tr>'
 				htmltxt+='<td>'+tigerruns[i].label+'</td>'
-				for j in xrange(len(N_sources)):
+				for j in range(len(N_sources)):
 					if i < background:
 						effstr="%.2f "%html_data_efficiencies[j,i,0]+' | '+ '%.2f'% html_data_efficiencies[j,i,1]
 					else:
@@ -417,8 +418,8 @@ def TigerPostProcess(configfile):
 		<td>p value</td>
 		</tr>
 		"""
-		for i in xrange(len(tigerruns)-1):
-			for j in xrange(len(N_sources)):
+		for i in range(len(tigerruns)-1):
+			for j in range(len(N_sources)):
 				htmltxt+='<tr>'
 				htmltxt+='<td>'+'N='+str(N_sources[j])+'</td>'
 				htmltxt+='<td>'+'%.2f'%html_data_ks[i][j][0]+'</td>'
@@ -451,7 +452,7 @@ def TigerPostProcess(configfile):
 	"""
 	<h2>Individual runs</h2>
 	"""
-	for i in xrange(len(tigerruns)):
+	for i in range(len(tigerruns)):
 		htmltxt+="<a href='"+tigerruns[i].label+".html"+"'>"+tigerruns[i].label+"</a>&nbsp;&nbsp;&nbsp;&nbsp;"
 
 	# CLOSE
@@ -462,7 +463,7 @@ def TigerPostProcess(configfile):
 	"""
 
 	# CREATE PAGES FOR INIDVIDUAL RUNS
-	for i in xrange(len(tigerruns)):
+	for i in range(len(tigerruns)):
 		indhtmlfile=open(path.join(localdest,tigerruns[i].label+'.html'), 'w')
 		indhtmltxt=\
 		"""
@@ -494,7 +495,7 @@ def TigerPostProcess(configfile):
 		<h2>Cumulative Bayes factors (per catalog)</h2>
 		"""
 		N_sources_cats = array(N_sources[N_sources!=1])
-		for j in xrange(len(html_files_cumbayes[i])):
+		for j in range(len(html_files_cumbayes[i])):
 			indhtmltxt+="<h2>"+str(N_sources_cats[j])+" sources per catalog"+"</h2>"
 			for item in html_files_cumbayes[i][j]:
 				if ".png" in item:
@@ -610,7 +611,7 @@ class TigerRun:
 
 		# GET SNR FILES
 		#snrfilename = "snr_%s_%.1f.dat"%(self.bayesfiles[k].split('_')[1],int(self.gps[k]))
-		#self.snrfiles = array(["snr_%s_%.1f.dat"%(self.bayesfiles[k].split('_')[1],int(self.gps[k])) for k in xrange(len(self.bayesfiles))])
+		#self.snrfiles = array(["snr_%s_%.1f.dat"%(self.bayesfiles[k].split('_')[1],int(self.gps[k])) for k in range(len(self.bayesfiles))])
 		#self.snrfiles = array(["snr_%s_%.1f.dat"%(x,int(y)) for x,y in zip(self.detectors, self.gps)])
 		self.snrfiles = array([k.replace('_','-').replace('-B.txt','_snr.txt').replace('posterior','lalinferencenest-%s'%(k.split('-')[1].split('.')[0])).replace('%s'%(k.split('-')[0].split('_')[-1]),'%.1f'%(float(k.split('-')[0].split('_')[-1]))) for k in self.bayesfiles])
 		#self.snrfiles = array(["snr_H1L1V1_"+item+".0.dat" for item in self.gps])
@@ -673,7 +674,7 @@ class TigerRun:
 				self.snr = zeros(self.nsources)
 				return
 			count = 0
-			for k in xrange(len(self.gps)):
+			for k in range(len(self.gps)):
 				ndet = len(self.detectors[k])/2
 				if ndet == 1:
 					self.snr.append(float(snrrawdata[count+ndet-1].strip('%s:'%(self.detectors[k])).strip()))
@@ -755,7 +756,7 @@ class TigerSet:
 		# CALCULATING SUBHYPOTHESES
 		self.testcoef = testcoef # testing coefficients
 		self.subhyp=[]
-		for i in xrange(len(self.testcoef)):
+		for i in range(len(self.testcoef)):
 			s = combinations(testcoef, i+1)
 			self.subhyp.extend(["".join(j) for j in s])
 		self.subhyp.insert(0,'GR')
@@ -824,7 +825,7 @@ class TigerSet:
 		CALCULATE THE TOTAL ODDS FROM DATA STRUCTURE
 		"""
 		odds = empty(0)
-		for i in xrange(self.nsources/N):
+		for i in range(self.nsources/N):
 			odds = append(odds,OddsFromBayes(self.bayes[i*N:(i+1)*N,:], len(self.testcoef)))
 		return odds
 
@@ -973,7 +974,7 @@ def OddsFromBayes(matrix, Nhyp):
 
 	TotalOdds = -float_info.max
 	# ONE SMALLER THAN THE WIDTH OF THE MATRIX FOR GR
-	for j in xrange(shape(matrix)[1]-1):
+	for j in range(shape(matrix)[1]-1):
 		TotalOdds = lnPLUS(TotalOdds, sum(matrix[:, j+1]-matrix[:, 0]))
 	TotalOdds -= log(pow(2,Nhyp)-1)
 
@@ -983,7 +984,7 @@ def TigerCreateHistogram(list_tigerruns, axis, N=1, xlim=None,bins=50):
 	"""
 	CREATE TIGER HISTOGRAMS FROM A LIST OF TIGERRUNS
 	"""
-	for i in xrange(len(list_tigerruns)):
+	for i in range(len(list_tigerruns)):
 		if N == 1:
 			# PLOT HISTOGRAMS
 			axis.hist(list_tigerruns[i].odds(N), \
@@ -1026,7 +1027,7 @@ def TigerCalculateEfficiency(list_tigerruns, N=1, beta=[0.95], background=0):
 	efficiencies = []
 	OddsBeta=[mquantiles(list_tigerruns[background].odds(N),prob=[b]) for b in beta]
 	efficiencies = empty((len(list_tigerruns)-1,len(beta)))
-	for i in xrange(len(list_tigerruns)):
+	for i in range(len(list_tigerruns)):
 		if N>list_tigerruns[i].nsources:
 			stdout.write("... Warning: Not sufficient events (%s) to calculate the efficiency for %s sources. Writing zeros\n"%(list_tigerruns[i].nsources,N))
 			if i < background:
@@ -1036,7 +1037,7 @@ def TigerCalculateEfficiency(list_tigerruns, N=1, beta=[0.95], background=0):
 			continue
 		if i != background:
 			tmp = list_tigerruns[i].odds(N)
-			for j in xrange(len(OddsBeta)):
+			for j in range(len(OddsBeta)):
 				msk = tmp>OddsBeta[j]
 				nmsk = tmp<OddsBeta[j]
 				nabovebeta=len(tmp[msk])
@@ -1070,7 +1071,7 @@ def TigerCreateSNRvsOdds(list_tigerruns, axis):
 	axis.set_xlabel("$\mathrm{SNR}$")
 	axis.set_ylabel("$\ln{O_{\mathrm{GR}}^{\mathrm{modGR}}}$")
 
-	for i in xrange(len(list_tigerruns)):
+	for i in range(len(list_tigerruns)):
 		axis.scatter(list_tigerruns[i].snr, list_tigerruns[i].odds(), \
 				color=colors[i], \
 				marker=markers[i], \
@@ -1095,12 +1096,12 @@ def TigerCreateCumFreq(tigerrun, axis):
 	nsnrsteps = len(snrrange) 
 	freqs = zeros((nsnrsteps,tigerrun.nsubhyp)) 
 
-	for i in xrange(nsnrsteps):
+	for i in range(nsnrsteps):
 		if snrrange[i] > min(tigerrun.snr):
 			snrmask = tigerrun.snr<snrrange[i]
 			bayesmasked = tigerrun.bayes[snrmask,:]
 			maxarray = list(argmax(bayesmasked, axis=1))
-			for j in xrange(tigerrun.nsubhyp):
+			for j in range(tigerrun.nsubhyp):
 					freqs[i,j] = maxarray.count(j)
 
 	# CHECK IF TOTAL ADDS UP TO TOTAL NUMBER OF SOURCES
@@ -1113,7 +1114,7 @@ def TigerCreateCumFreq(tigerrun, axis):
 	markerstyles = cycle(['+','*','.','<','d', '^', 'x', 's'])
 	colorstyles = cycle(["b", "g","r","c","m","y","k"])
 
-	for i in xrange(tigerrun.nsubhyp):
+	for i in range(tigerrun.nsubhyp):
 			if tigerrun.subhyp[i].split("_")[-1] =="GR":
 				axis.plot(snrrange, freqs[:,i], label='$\mathcal{H}_{\mathrm{GR}}$', color="black", linewidth=3.0)
 			else:
@@ -1155,8 +1156,8 @@ def TigerCreateCumBayes(tigerrun,axis,nthcat,nsourcespercat):
 	sortorder = argsort(snrcat)
 	snrcatsorted = sort(snrcat)
 	bayescatsorted = bayescat[sortorder,:]
-	cumodds = array([OddsFromBayes(bayescatsorted[:i+1,:],len(tigerrun.testcoef)) for i in xrange(nsourcespercat)])
-	cumbayes = array([sum(subtract(bayescatsorted[:i+1,1:].T,bayescatsorted[:i+1,0]).T,axis=0) for i in xrange(nsourcespercat)])
+	cumodds = array([OddsFromBayes(bayescatsorted[:i+1,:],len(tigerrun.testcoef)) for i in range(nsourcespercat)])
+	cumbayes = array([sum(subtract(bayescatsorted[:i+1,1:].T,bayescatsorted[:i+1,0]).T,axis=0) for i in range(nsourcespercat)])
 
 	markerstyles = cycle(['+','*','.','<','d', '^', 'x', 's'])
 
@@ -1164,7 +1165,7 @@ def TigerCreateCumBayes(tigerrun,axis,nthcat,nsourcespercat):
 	axis.set_ylabel("$\ln{{}^{(cat)}B^{i_1 i_2 \ldots i_k}_{\mathrm{GR}}}$")
 
 	# PLOT BAYESFACTORS
-	for i in xrange(tigerrun.nsubhyp-1):
+	for i in range(tigerrun.nsubhyp-1):
 
 		if tigerrun.engine == 'lalnest':
 			curlabel = "$H_{"+''.join(tigerrun.subhyp[i+1].split("_")[-1].split('dphi'))+"}$"

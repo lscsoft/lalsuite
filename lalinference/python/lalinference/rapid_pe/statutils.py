@@ -15,6 +15,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import math
 
+from six.moves import range
+
 import numpy
 from lal.rate import BinnedDensity, NDBins, IrregularBins, LinearBins
 
@@ -79,7 +81,7 @@ def get_adaptive_binning(samples, edges, nbins=100, bintype='linear'):
 
     ordering = numpy.argsort(samples)
     stride = len(samples) / nbins
-    bins = [samples[ordering[i]] for i in xrange(stride, nbins*stride, stride)]
+    bins = [samples[ordering[i]] for i in range(stride, nbins*stride, stride)]
     bins.insert(0, edges[0])
     bins.append(edges[1])
     return BinnedArray(NDBins((IrregularBins(bins),)))

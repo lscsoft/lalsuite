@@ -19,6 +19,8 @@ Module of routines to compute an effective Fisher matrix and related utilities,
 such as finding a region of interest and laying out a grid over it
 """
 
+from six.moves import range
+
 from . import lalsimutils as lsu
 import numpy as np
 from scipy.optimize import leastsq, brentq
@@ -61,7 +63,7 @@ def evaluate_ip_on_grid(hfSIG, P, IP, param_names, grid):
     Npts = len(grid)
     assert len(grid[0])==Nparams
     return np.array([update_params_ip(hfSIG, P, IP, param_names, grid[i])
-            for i in xrange(Npts)])
+            for i in range(Npts)])
 
 
 def update_params_ip(hfSIG, P, IP, param_names, vals):
@@ -276,7 +278,7 @@ def multi_dim_flatgrid(*arrs):
         [2,4,6,2,4,6,2,4,6]
     """
     outarrs = multi_dim_meshgrid(*arrs)
-    return tuple([ outarrs[i].flatten() for i in xrange(len(outarrs)) ])
+    return tuple([ outarrs[i].flatten() for i in range(len(outarrs)) ])
 
 def multi_dim_grid(*arrs):
     """

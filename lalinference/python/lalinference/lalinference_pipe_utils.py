@@ -19,6 +19,7 @@ from itertools import permutations
 import shutil
 import numpy as np
 import math
+from six.moves import range
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -1240,7 +1241,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
        combinenodes[i].set_pos_output_file(input_file[:input_file_split_index]+'combine_'+input_file[input_file_split_index:])
        combinenodes[i].add_var_arg(input_file)
        number_of_mpi_jobs = self.config.getint('mpi','mpi_task_count')
-       for j in xrange(1,number_of_mpi_jobs):
+       for j in range(1,number_of_mpi_jobs):
           combinenodes[i].add_var_arg(input_file+".%02d" % j)
        self.add_node(combinenodes[i])
     mergenode=MergeNode(self.merge_job,parents=combinenodes,engine='mcmc')
