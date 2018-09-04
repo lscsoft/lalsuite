@@ -965,7 +965,7 @@ class Posterior(object):
                   if injection:
                       inj_time=float(injection.get_end(ifo[0]))
                   location = lal.cached_detector_by_prefix[ifo].location
-                  ifo_times[ifo]=array(map(lambda ra,dec,time: array([time[0]+lal.TimeDelayFromEarthCenter(location,ra[0],dec[0],LIGOTimeGPS(float(time[0])))]), pos[ra_name].samples,pos[dec_name].samples,pos['time'].samples))
+                  ifo_times[ifo]=array(map(lambda ra,dec,time: array([time[0]+TimeDelayFromEarthCenter(location,ra[0],dec[0],LIGOTimeGPS(float(time[0])))]), pos[ra_name].samples,pos[dec_name].samples,pos['time'].samples))
                   loc_end_time=PosteriorOneDPDF(ifo.lower()+'_end_time',ifo_times[ifo],injected_value=inj_time)
                   pos.append(loc_end_time)
               for ifo1 in my_ifos:
