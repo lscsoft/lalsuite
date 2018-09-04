@@ -12,7 +12,6 @@ rc('font', family='lmodern')
 
 small, big = 10, 12
 rc('axes', labelsize=big)
-rc('text', fontsize=big)
 rc('legend', fontsize=small)
 rc('xtick', labelsize=small)
 rc('ytick', labelsize=small)
