@@ -947,11 +947,7 @@ class Posterior(object):
           if ('ra' in pos.names or 'rightascension' in pos.names) \
           and ('declination' in pos.names or 'dec' in pos.names) \
           and 'time' in pos.names:
-              import pylal
-              from pylal import xlal,inject
-              from pylal import date
-              from pylal.date import XLALTimeDelayFromEarthCenter
-              from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+              from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime, LIGOTimeGPS, TimeDelayFromEarthCenter
               import itertools
               from numpy import array
               detMap = {'H1': 'LHO_4k', 'H2': 'LHO_2k', 'L1': 'LLO_4k',
@@ -968,8 +964,8 @@ class Posterior(object):
                   inj_time=None
                   if injection:
                       inj_time=float(injection.get_end(ifo[0]))
-                  location=inject.cached_detector[detMap[ifo]].location
-                  ifo_times[ifo]=array(map(lambda ra,dec,time: array([time[0]+XLALTimeDelayFromEarthCenter(location,ra[0],dec[0],LIGOTimeGPS(float(time[0])))]), pos[ra_name].samples,pos[dec_name].samples,pos['time'].samples))
+                  location = lal.cached_detector_by_prefix[ifo].location
+                  ifo_times[ifo]=array(map(lambda ra,dec,time: array([time[0]+lal.TimeDelayFromEarthCenter(location,ra[0],dec[0],LIGOTimeGPS(float(time[0])))]), pos[ra_name].samples,pos[dec_name].samples,pos['time'].samples))
                   loc_end_time=PosteriorOneDPDF(ifo.lower()+'_end_time',ifo_times[ifo],injected_value=inj_time)
                   pos.append(loc_end_time)
               for ifo1 in my_ifos:
@@ -6408,12 +6404,9 @@ def confidence_interval_uncertainty(cl, cl_bounds, posteriors):
 
 
 def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V1']):
-  import pylal
   import glue
   #import sim inspiral table content handler
-  from pylal.SimInspiralUtils import ExtractSimInspiralTableLIGOLWContentHandler
   from glue.ligolw import lsctables
-  lsctables.use_in(ExtractSimInspiralTableLIGOLWContentHandler)
   from lalsimulation.lalsimulation import SimInspiralChooseTDWaveform,SimInspiralChooseFDWaveform
   from lalsimulation.lalsimulation import SimInspiralImplementedTDApproximants,SimInspiralImplementedFDApproximants
   from lal.lal import StrainUnit
@@ -6422,7 +6415,6 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
   from lal.lal import MSUN_SI as LAL_MSUN_SI
   from lal.lal import PC_SI as LAL_PC_SI
   import lalsimulation as lalsim
-  from pylal import antenna as ant
   from math import cos,sin,sqrt
   from glue.ligolw import utils
   import os
@@ -6467,7 +6459,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
   if siminspiral is not None:
     skip=0
     try:
-      xmldoc = utils.load_filename(siminspiral,contenthandler=ExtractSimInspiralTableLIGOLWContentHandler)
+      xmldoc = utils.load_filename(siminspiral,contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
       tbl = lsctables.table.get_table(xmldoc, "sim_inspiral")
       if event>0:
         tbl=tbl[event]
@@ -6523,7 +6515,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
         return None
 
       for ifo in ifos:
-        (fp,fc,fa,qv)=ant.response(REAL8time,ra,dec,iota,psi,'radians',ifo)
+        fp, fc = ComputeDetAMResponse(lal.cached_detectors_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
         if inj_domain=='T':
           # strain is a temporary container for this IFO strain.
           # Take antenna pattern into accout and window the data
@@ -6685,7 +6677,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
       psi=pos['psi'].samples[which][0]
       fs={}
       for ifo in ifos:
-        (fp,fc,fa,qv)=ant.response(REAL8time,ra,dec,iota,psi,'radians',ifo)
+        fp, fc = ComputeDetAMResponse(lal.cached_detectors_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
         if rec_domain=='T':
           # strain is a temporary container for this IFO strain.
           # Take antenna pattern into accout and window the data
@@ -6976,8 +6968,6 @@ def plot_calibration_pos(pos, level=.9, outpath=None):
 
 
 def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1','V1']):
-
-  import pylal
   import glue
   from lalinference.lalinference import SimBurstChooseFDWaveform,SimBurstChooseTDWaveform
   from lalinference.lalinference import SimBurstImplementedFDApproximants,SimBurstImplementedTDApproximants
@@ -6988,7 +6978,8 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
   from lal.lal import PC_SI as LAL_PC_SI
   import lalsimulation as lalsim
   import lalinference as lalinf
-  from pylal import antenna as ant
+  from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime, LIGOTimeGPS
+
   from math import cos,sin,sqrt
   from glue.ligolw import lsctables
   from glue.ligolw import utils
@@ -7104,7 +7095,7 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
         return None
 
       for ifo in ifos:
-        (fp,fc,fa,qv)=ant.response(REAL8time,ra,dec,0.0,psi,'radians',ifo)
+        fp, fc = ComputeDetAMResponse(lal.cached_detectors_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
         if inj_domain=='T':
           # bin of ref time as seen in strainT
           tCinstrain=np.floor(REAL8time-float(strainTinj.epoch))/deltaT
@@ -7256,7 +7247,7 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
       psi=pos['psi'].samples[which][0]
       fs={}
       for ifo in ifos:
-        (fp,fc,fa,qv)=ant.response(REAL8time,ra,dec,0.0,psi,'radians',ifo)
+        fp, fc = ComputeDetAMResponse(lal.cached_detectors_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
         if rec_domain=='T':
           # bin of ref time as seen in strainT
           tCinstrain=np.floor(REAL8time-float(strainTrec.epoch))/deltaT
