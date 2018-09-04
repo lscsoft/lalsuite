@@ -71,7 +71,6 @@ matplotlib.rcParams.update(
         })
 
 #local application/library specific imports
-from pylal import SimInspiralUtils
 import lalinference.plot
 from lalinference import bayespputils as bppu
 from lalinference import git_version
@@ -104,11 +103,6 @@ def email_notify(address,path):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.STDOUT, shell=True)
     (out, err) = proc.communicate()
     #print "program output %s error %s:"%(out,err)
-
-#Import content handler
-from pylal.SimInspiralUtils import ExtractSimInspiralTableLIGOLWContentHandler
-lsctables.use_in(ExtractSimInspiralTableLIGOLWContentHandler)
-
 
 def pickle_to_file(obj,fname):
     """
@@ -295,12 +289,9 @@ def cbcBayesPostProc(
     injection=None
     if injfile and eventnum is not None:
         print('Looking for event %i in %s\n'%(eventnum,injfile))
-        xmldoc = utils.load_filename(injfile,contenthandler=ExtractSimInspiralTableLIGOLWContentHandler)
+        xmldoc = utils.load_filename(injfile,contenthandler=ligolw.LIGOLWContentHandler)
         siminspiraltable=lsctables.SimInspiralTable.get_table(xmldoc)
         injection=siminspiraltable[eventnum]
-	#injections = SimInspiralUtils.ReadSimInspiralFromFiles([injfile])
-	#if(len(injections)!=1): raise RuntimeError('Error: something unexpected happened while loading the injection file!\n')
-        #injection=injections[0]
 
     #Get trigger
     triggers = None
@@ -357,7 +348,7 @@ def cbcBayesPostProc(
 
     if eventnum is None and injfile is not None:
         import itertools
-        injections = SimInspiralUtils.ReadSimInspiralFromFiles([injfile])
+        injections = lsctables.SimInspiralTable.get_table(utils.load_filename(injfile, contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler)))
 
         if(len(injections)<1):
             try:
