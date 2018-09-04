@@ -36,8 +36,6 @@ import os
 import os.path
 import scipy.stats as ss
 import string
-from pylal.SimInspiralUtils import ExtractSimInspiralTableLIGOLWContentHandler
-lsctables.use_in(ExtractSimInspiralTableLIGOLWContentHandler)
 from lalinference import bayespputils as bppu
 
 posterior_name_to_latex_name = {
@@ -240,7 +238,7 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
 
-    injs = lsctables.SimInspiralTable.get_table(utils.load_filename(options.injxml,contenthandler=ExtractSimInspiralTableLIGOLWContentHandler))
+    injs = lsctables.SimInspiralTable.get_table(utils.load_filename(options.injxml,contenthandler=ligolw.LIGOLWContentHandler))
 
     if options.par == []:
         parameters = ['m1', 'm2', 'mc', 'eta', 'q',  'theta_jn', 'a1', 'a2', 'tilt1', 'tilt2', 'phi12', 'phi_jl', 'ra', 'dec', 'distance', 'time', 'phi_orb', 'psi']
