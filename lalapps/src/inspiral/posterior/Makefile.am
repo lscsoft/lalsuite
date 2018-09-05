@@ -23,12 +23,10 @@ noinst_PROGRAMS = \
 if HAVE_PYTHON
 pybin_scripts = \
 	lalapps_coherence_test \
-	lalinference_burst_pp_pipe \
 	lalinference_pp_pipe \
 	lalinference_multi_pipe \
 	lalinference_tiger_pipe \
-	lalapps_compute_roq_weights \
-	lalapps_merge_posteriors
+	lalapps_compute_roq_weights
 endif
 
 EXTRA_DIST += \

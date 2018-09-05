@@ -33,6 +33,8 @@ pybin_scripts = \
 	rapidpe_calculate_overlap \
 	imrtgr_imr_consistency_test \
 	lalinference_average_skymaps \
+	lalinference_burst_pp_pipe \
+	lalinference_merge_posteriors \
 	lalinference_nest2pos \
 	lalinference_pipe \
 	lalinference_review_test \
