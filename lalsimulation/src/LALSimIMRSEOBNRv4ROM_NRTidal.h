@@ -1,6 +1,18 @@
 #ifndef _LALSIM_IMR_SEOBNRv4_ROM_NRTidal_H
 #define _LALSIM_IMR_SEOBNRv4_ROM_NRTidal_H
 
+static void Self_spin_phase_contributions(
+  const REAL8 m1_SI,     /**< Mass of neutron star 1 (kg) */
+  const REAL8 m2_SI,     /**< Mass of neutron star 2 (kg) */
+  const REAL8 chi1L,     /**< Dimensionless aligned component spin of NS 1 */
+  const REAL8 chi2L,     /**< Dimensionless aligned component spin of NS 2 */
+  const REAL8 qm_def1,   /**< Quadrupole deformation parameter of body 1 (dimensionless) */
+  const REAL8 qm_def2,   /**< Quadrupole deformation parameter of body 2 (dimensionless) */
+                         /**< qm_def1,2 = 1 for BH */
+  REAL8 *pfa_v4_contrib, /**< self-spin contribution to v^4 */
+  REAL8 *pfa_v6_contrib  /**< self-spin contribution to v^6 */
+);
+
 static int SEOBNRv4ROM_NRTidal_Core(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
@@ -14,6 +26,8 @@ static int SEOBNRv4ROM_NRTidal_Core(
   REAL8 chi2,                                   /**< Dimensionless aligned component spin of NS 2 */
   REAL8 Lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
   REAL8 Lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
+  REAL8 qm_def1,                                /**< Spin-induced quadrupole moment of mass 1 */
+  REAL8 qm_def2,                                /**< Spin-induced quadrupole moment of mass 2 */
   const REAL8Sequence *freqs_in,                /**< Frequency points at which to evaluate the waveform (Hz) */
   REAL8 deltaF                                  /**< Sampling frequency (Hz) */
 );
