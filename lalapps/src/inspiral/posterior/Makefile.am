@@ -25,8 +25,7 @@ pybin_scripts = \
 	lalapps_coherence_test \
 	lalinference_pp_pipe \
 	lalinference_multi_pipe \
-	lalinference_tiger_pipe \
-	lalapps_compute_roq_weights
+	lalinference_tiger_pipe
 endif
 
 EXTRA_DIST += \

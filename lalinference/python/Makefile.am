@@ -34,6 +34,7 @@ pybin_scripts = \
 	imrtgr_imr_consistency_test \
 	lalinference_average_skymaps \
 	lalinference_burst_pp_pipe \
+	lalinference_compute_roq_weights \
 	lalinference_merge_posteriors \
 	lalinference_nest2pos \
 	lalinference_pipe \
