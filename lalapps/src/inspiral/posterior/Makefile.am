@@ -8,23 +8,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 SUBDIRS = \
 	mpi
 
-if LALPULSAR
-if LALINFERENCE
-
-if HAVE_BAMBI
-if !HAVE_BAMBI_MPI
-pulsar_progs = lalinference_bambi
-lalinference_bambi_SOURCES = LALInferenceBAMBI.c
-lalinference_bambi_LDADD = ${BAMBI_LIBS}
-endif # bambi_mpi
-endif # bambi
-
-endif # lalinference
-endif # lalpulsar
-
-#bayesline_SOURCES = \
-#	BayesLine.c
-
 dist_bin_SCRIPTS = \
 	lalinference_mpi_wrapper
 
