@@ -120,6 +120,9 @@ vcs_info_sources = LALInferenceVCSInfoHeader.h
 build_info_source = LALInferenceBuildInfoHeader.h
 build_info_dependencies = $(liblalinference_la_DEPENDENCIES)
 
+dist_bin_SCRIPTS = \
+		lalinference_mpi_wrapper
+
 TESTS = \
 	lalinference_version \
 	$(END_OF_LIST)

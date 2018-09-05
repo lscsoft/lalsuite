@@ -8,9 +8,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 SUBDIRS = \
 	mpi
 
-dist_bin_SCRIPTS = \
-	lalinference_mpi_wrapper
-
 bin_PROGRAMS = \
 	$(metaio_progs) \
 	$(frame_progs) \
