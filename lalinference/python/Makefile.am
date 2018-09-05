@@ -38,6 +38,7 @@ pybin_scripts = \
 	lalinference_merge_posteriors \
 	lalinference_nest2pos \
 	lalinference_pipe \
+	lalinference_pp_pipe \
 	lalinference_review_test \
 	cbcBayesBurstPostProc \
 	cbcBayesCombinePosteriors \

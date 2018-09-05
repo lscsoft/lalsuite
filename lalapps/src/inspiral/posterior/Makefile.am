@@ -20,7 +20,6 @@ noinst_PROGRAMS = \
 if HAVE_PYTHON
 pybin_scripts = \
 	lalapps_coherence_test \
-	lalinference_pp_pipe \
 	lalinference_multi_pipe \
 	lalinference_tiger_pipe
 endif
