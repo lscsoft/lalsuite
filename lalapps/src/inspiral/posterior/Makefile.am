@@ -17,13 +17,6 @@ bin_PROGRAMS = \
 noinst_PROGRAMS = \
 	$(td_test_progs)
 
-if HAVE_PYTHON
-pybin_scripts = \
-	lalapps_coherence_test \
-	lalinference_multi_pipe \
-	lalinference_tiger_pipe
-endif
-
 EXTRA_DIST += \
 	LALInferenceMCMCSampler.c \
 	LALInferenceMCMCSampler.h \
