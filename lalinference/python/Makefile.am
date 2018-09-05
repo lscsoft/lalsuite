@@ -33,6 +33,7 @@ pybin_scripts = \
 	rapidpe_calculate_overlap \
 	imrtgr_imr_consistency_test \
 	lalinference_average_skymaps \
+	lalinference_nest2pos \
 	lalinference_pipe \
 	lalinference_review_test \
 	cbcBayesBurstPostProc \

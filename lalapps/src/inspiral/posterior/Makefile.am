@@ -23,7 +23,6 @@ noinst_PROGRAMS = \
 if HAVE_PYTHON
 pybin_scripts = \
 	lalapps_coherence_test \
-	lalapps_nest2pos \
 	lalinference_burst_pp_pipe \
 	lalinference_pp_pipe \
 	lalinference_multi_pipe \
