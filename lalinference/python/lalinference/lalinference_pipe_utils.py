@@ -5,6 +5,7 @@
 import itertools
 import glue
 from glue import pipeline,segmentsUtils,segments
+from glue.ligolw import ligolw, lsctables, utils
 import os
 import socket
 from lalapps import inspiralutils
@@ -362,7 +363,8 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 	if max_cfar!=-1:
 		get_coincs=get_coincs+joinstr+' coinc_inspiral.combined_far < %f'%(max_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
-	from pylal import SnglInspiralUtils
+    # Timeslide functionality requires obsolete pylal - will be removed
+    from pylal import SnglInspiralUtils
 	extra={}
 	for (sngl_time, slide, ifo, coinc_id, snr, chisq, cfar) in db_out:
 		coinc_id=int(coinc_id.split(":")[-1])
@@ -446,15 +448,12 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
     outpath: path where the ascii PSD will be written to
     (end_time): trigtime for this event. Will be used a part of the PSD file name
   """
-  lal=1
   from glue.ligolw import utils as ligolw_utils
   try:
-    #from pylal import series
     from lal import series as lalseries
-    lal=0
   except ImportError:
     print("ERROR, cannot import lal.series in bppu/get_xml_psds()\n")
-    exit(1)
+    raise
 
   out={}
   if not os.path.isdir(outpath):
@@ -501,12 +500,7 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
     if ifodata is None:
       continue
     # we have data. Get psd array
-    if lal==0:
-      #pylal stores the series in ifodata.data
-      data=ifodata
-    else:
-      # lal stores it in ifodata.data.data
-      data=ifodata.data
+    data=ifodata.data
     # Fill a two columns array of (freq, psd) and save it in the ascii file
     f0=ifodata.f0
     deltaF=ifodata.deltaF
@@ -1000,32 +994,25 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         events=[Event(trig_time=time) for time in times]
     # Siminspiral Table
     if self.config.has_option('input','injection-file'):
-      from pylal import SimInspiralUtils
-      injTable=SimInspiralUtils.ReadSimInspiralFromFiles([self.config.get('input','injection-file')])
+      from glue.ligolw import ligolw, lsctables, utils
+      injTable = lsctables.SimInspiralTable.get_table(
+                        utils.load_filename(self.config.get('input','injection-file'),
+                                            contenthandler=ligolw.LIGOLWContentHandler) )
       events=[Event(SimInspiral=inj) for inj in injTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','injection-file'))])
     # SimBurst Table
     if self.config.has_option('input','burst-injection-file'):
-      #from pylal import SimBurstUtils
-      from glue.ligolw import lsctables
-      from glue.ligolw import utils as ligolw_utils
-      from glue.ligolw import ligolw
       injfile=self.config.get('input','burst-injection-file')
-      class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-	pass
-      lsctables.use_in(LIGOLWContentHandler)
-      injTable=lsctables.SimBurstTable.get_table(ligolw_utils.load_filename(injfile,contenthandler = LIGOLWContentHandler))
+      injTable=lsctables.SimBurstTable.get_table(utils.load_filename(injfile,contenthandler = LIGOLWContentHandler))
       events=[Event(SimBurst=inj) for inj in injTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','burst-injection-file'))])
     # SnglInspiral Table
     if self.config.has_option('input','sngl-inspiral-file'):
-      from pylal import SnglInspiralUtils
-      trigTable=SnglInspiralUtils.ReadSnglInspiralFromFiles([self.config.get('input','sngl-inspiral-file')])
+      trigTable = lsctables.SnglInspiralTable.get_table(utils.load_filename(injfile, contenthandler = ligolw.LIGOLWContentHandler))
       events=[Event(SnglInspiral=trig) for trig in trigTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','sngl-inspiral-file'))])
     if self.config.has_option('input','coinc-inspiral-file'):
-      from pylal import CoincInspiralUtils
-      coincTable = CoincInspiralUtils.readCoincInspiralFromFiles([self.config.get('input','coinc-inspiral-file')])
+      coincTable = lsctables.CoincInspiralTable.get_table(utils.load_filename(injfile, contenthandler = ligolw.LIGOLWContentHandler))
       events = [Event(CoincInspiral=coinc) for coinc in coincTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','coinc-inspiral-file'))])
     # LVAlert CoincInspiral Table
