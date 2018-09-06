@@ -1302,8 +1302,8 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
     #pragma omp parallel for
     for (size_t i = pHMFS->ind_min; i < pHMFS->ind_max; i++)
     {
-        ((*hptilde)->data->data)[i] = I * ((*hptilde)->data->data)[i] * amp0;
-        ((*hctilde)->data->data)[i] = -I * ((*hctilde)->data->data)[i] * amp0;
+        ((*hptilde)->data->data)[i] = ((*hptilde)->data->data)[i] * amp0;
+        ((*hctilde)->data->data)[i] = -1 * ((*hctilde)->data->data)[i] * amp0;
     }
 
     /* cleanup */
@@ -1604,7 +1604,7 @@ int IMRPhenomHMEvaluateOnehlmMode(
     for (size_t i = pHM->ind_min; i < pHM->ind_max; i++)
     {
         Mf = freqs_geom->data[i];
-        phase_term1 = t0 * (Mf - pHM->Mf_ref);
+        phase_term1 = - t0 * (Mf - pHM->Mf_ref);
         phase_term2 = phases->data[i] - (mm * phi0);
         ((*hlm)->data->data)[i] = amps->data[i] * cexp(-I * (phase_term1 + phase_term2));
     }
