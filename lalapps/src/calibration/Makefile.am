@@ -5,7 +5,7 @@ EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c
+lalapps_ComputeStrainDriver_SOURCES = ComputeStrainDriver.c ReadFiltersFile.h ReadFiltersFile.c
 lalapps_ComputeFactors_SOURCES = ComputeFactors.c
 lalapps_NoiseComparison_SOURCES = NoiseComparison.c
 

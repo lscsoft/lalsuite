@@ -72,7 +72,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
-#include <lal/ReadFiltersFile.h>
+#include <ReadFiltersFile.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALFrameIO.h>
 #include <lal/LALDetectors.h>

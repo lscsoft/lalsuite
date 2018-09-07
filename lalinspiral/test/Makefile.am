@@ -30,7 +30,6 @@ test_programs += RandomInspiralSignalTest
 #test_programs += ChirpSpace
 #test_programs += FilterTest
 #test_programs += FindChirpACTDTest
-#test_programs += FindChirpBCVTest
 #test_programs += FindChirpSPTest
 #test_programs += FindChirpTmpltTest
 #test_programs += InspiralSpinBankwNDTemplateBankTest

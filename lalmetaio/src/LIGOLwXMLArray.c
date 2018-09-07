@@ -77,8 +77,6 @@
 #include <lal/XLALError.h>
 #include <lal/LIGOLwXMLArray.h>
 
-#define FILE LALFILE
-#define fprintf XLALFilePrintf
 
 /*
  * ============================================================================
@@ -95,7 +93,7 @@
 
 
 static int WriteLIGOLwXMLArrayMeta(
-	FILE *stream,
+	LALFILE *stream,
 	const char *indent,
 	const LIGOTimeGPS *epoch,
 	REAL8 f0
@@ -107,8 +105,8 @@ static int WriteLIGOLwXMLArrayMeta(
 	if(!s)
 		return -1;
 
-	error |= fprintf(stream, "%s<Time Name=\"epoch\" Type=\"GPS\">%s</Time>\n", indent, s) < 0;
-	error |= fprintf(stream, "%s<Param Name=\"f0\" Unit=\"s^-1\" Type=\"real_8\">%.16g</Param>\n", indent, f0) < 0;
+	error |= XLALFilePrintf(stream, "%s<Time Name=\"epoch\" Type=\"GPS\">%s</Time>\n", indent, s) < 0;
+	error |= XLALFilePrintf(stream, "%s<Param Name=\"f0\" Unit=\"s^-1\" Type=\"real_8\">%.16g</Param>\n", indent, f0) < 0;
 
 	XLALFree(s);
 
@@ -122,7 +120,7 @@ static int WriteLIGOLwXMLArrayMeta(
 
 
 static int WriteLIGOLwXMLArrayHeader(
-	FILE *stream,
+	LALFILE *stream,
 	const char *indent,
 	const char *name,
 	const char *type,
@@ -142,20 +140,20 @@ static int WriteLIGOLwXMLArrayHeader(
 	if(!XLALUnitAsString(units2, 100, units))
 		return -1;
 
-	error |= fprintf(stream, "%s<Array Name=\"%s\" Type=\"%s\" Unit=\"%s\">\n", indent, name, type, units2) < 0;
-	error |= fprintf(stream, "%s\t<Dim Name=\"%s\" Unit=\"%s\" Start=\"0\" Scale=\"%.16g\">%d</Dim>\n", indent, dim1, units1, delta, length) < 0;
-	error |= fprintf(stream, "%s\t<Dim Name=\"%s,%s\">%d</Dim>\n", indent, dim1, dim2, is_complex ? 3 : 2) < 0;
+	error |= XLALFilePrintf(stream, "%s<Array Name=\"%s\" Type=\"%s\" Unit=\"%s\">\n", indent, name, type, units2) < 0;
+	error |= XLALFilePrintf(stream, "%s\t<Dim Name=\"%s\" Unit=\"%s\" Start=\"0\" Scale=\"%.16g\">%d</Dim>\n", indent, dim1, units1, delta, length) < 0;
+	error |= XLALFilePrintf(stream, "%s\t<Dim Name=\"%s,%s\">%d</Dim>\n", indent, dim1, dim2, is_complex ? 3 : 2) < 0;
 
 	return error ? -1 : 0;
 }
 
 
 static int WriteLIGOLwXMLArrayFooter(
-	FILE *stream,
+	LALFILE *stream,
 	const char *indent
 )
 {
-	return fprintf(stream, "%s</Array>\n", indent) < 0 ? -1 : 0;
+	return XLALFilePrintf(stream, "%s</Array>\n", indent) < 0 ? -1 : 0;
 }
 
 
@@ -166,7 +164,7 @@ static int WriteLIGOLwXMLArrayFooter(
 
 
 static int WriteLIGOLwXMLArrayREAL4Stream(
-	FILE *stream,
+	LALFILE *stream,
 	const char *indent,
 	int length,
 	double delta,
@@ -176,20 +174,20 @@ static int WriteLIGOLwXMLArrayREAL4Stream(
 	int error = 0;
 	int i;
 
-	error |= fprintf(stream, "%s<Stream Type=\"Local\" Delimiter=\",\">\n", indent) < 0;
+	error |= XLALFilePrintf(stream, "%s<Stream Type=\"Local\" Delimiter=\",\">\n", indent) < 0;
 	if(length) {
 		for(i = 0; i < length - 1; i++)
-			error |= fprintf(stream, "%s\t%.16g,%.8g,\n", indent, i * delta, (double) data[i]) < 0;
-		error |= fprintf(stream, "%s\t%.16g,%.8g\n", indent, i * delta, (double) data[i]) < 0;
+			error |= XLALFilePrintf(stream, "%s\t%.16g,%.8g,\n", indent, i * delta, (double) data[i]) < 0;
+		error |= XLALFilePrintf(stream, "%s\t%.16g,%.8g\n", indent, i * delta, (double) data[i]) < 0;
 	}
-	error |= fprintf(stream, "%s</Stream>\n", indent) < 0;
+	error |= XLALFilePrintf(stream, "%s</Stream>\n", indent) < 0;
 
 	return error ? -1 : 0;
 }
 
 
 static int WriteLIGOLwXMLArrayREAL8Stream(
-	FILE *stream,
+	LALFILE *stream,
 	const char *indent,
 	int length,
 	double delta,
@@ -199,20 +197,20 @@ static int WriteLIGOLwXMLArrayREAL8Stream(
 	int error = 0;
 	int i;
 
-	error |= fprintf(stream, "%s<Stream Type=\"Local\" Delimiter=\",\">\n", indent) < 0;
+	error |= XLALFilePrintf(stream, "%s<Stream Type=\"Local\" Delimiter=\",\">\n", indent) < 0;
 	if(length) {
 		for(i = 0; i < length - 1; i++)
-			error |= fprintf(stream, "%s\t%.16g,%.16g,\n", indent, i * delta, data[i]) < 0;
-		error |= fprintf(stream, "%s\t%.16g,%.16g\n", indent, i * delta, data[i]) < 0;
+			error |= XLALFilePrintf(stream, "%s\t%.16g,%.16g,\n", indent, i * delta, data[i]) < 0;
+		error |= XLALFilePrintf(stream, "%s\t%.16g,%.16g\n", indent, i * delta, data[i]) < 0;
 	}
-	error |= fprintf(stream, "%s</Stream>\n", indent) < 0;
+	error |= XLALFilePrintf(stream, "%s</Stream>\n", indent) < 0;
 
 	return error ? -1 : 0;
 }
 
 
 static int WriteLIGOLwXMLArrayCOMPLEX8Stream(
-	FILE *stream,
+	LALFILE *stream,
 	const char *indent,
 	int length,
 	double delta,
@@ -222,20 +220,20 @@ static int WriteLIGOLwXMLArrayCOMPLEX8Stream(
 	int error = 0;
 	int i;
 
-	error |= fprintf(stream, "%s<Stream Type=\"Local\" Delimiter=\",\">\n", indent) < 0;
+	error |= XLALFilePrintf(stream, "%s<Stream Type=\"Local\" Delimiter=\",\">\n", indent) < 0;
 	if(length) {
 		for(i = 0; i < length - 1; i++)
-			error |= fprintf(stream, "%s\t%.16g,%.8g,%.8g,\n", indent, i * delta, (double) crealf(data[i]), (double) cimagf(data[i])) < 0;
-		error |= fprintf(stream, "%s\t%.16g,%.8g,%.8g\n", indent, i * delta, (double) crealf(data[i]), (double) cimagf(data[i])) < 0;
+			error |= XLALFilePrintf(stream, "%s\t%.16g,%.8g,%.8g,\n", indent, i * delta, (double) crealf(data[i]), (double) cimagf(data[i])) < 0;
+		error |= XLALFilePrintf(stream, "%s\t%.16g,%.8g,%.8g\n", indent, i * delta, (double) crealf(data[i]), (double) cimagf(data[i])) < 0;
 	}
-	error |= fprintf(stream, "%s</Stream>\n", indent) < 0;
+	error |= XLALFilePrintf(stream, "%s</Stream>\n", indent) < 0;
 
 	return error ? -1 : 0;
 }
 
 
 static int WriteLIGOLwXMLArrayCOMPLEX16Stream(
-	FILE *stream,
+	LALFILE *stream,
 	const char *indent,
 	int length,
 	double delta,
@@ -245,13 +243,13 @@ static int WriteLIGOLwXMLArrayCOMPLEX16Stream(
 	int error = 0;
 	int i;
 
-	error |= fprintf(stream, "%s<Stream Type=\"Local\" Delimiter=\",\">\n", indent) < 0;
+	error |= XLALFilePrintf(stream, "%s<Stream Type=\"Local\" Delimiter=\",\">\n", indent) < 0;
 	if(length) {
 		for(i = 0; i < length - 1; i++)
-			error |= fprintf(stream, "%s\t%.16g,%.16g,%.16g,\n", indent, i * delta, creal(data[i]), cimag(data[i])) < 0;
-		error |= fprintf(stream, "%s\t%.16g,%.16g,%.16g\n", indent, i * delta, creal(data[i]), cimag(data[i])) < 0;
+			error |= XLALFilePrintf(stream, "%s\t%.16g,%.16g,%.16g,\n", indent, i * delta, creal(data[i]), cimag(data[i])) < 0;
+		error |= XLALFilePrintf(stream, "%s\t%.16g,%.16g,%.16g\n", indent, i * delta, creal(data[i]), cimag(data[i])) < 0;
 	}
-	error |= fprintf(stream, "%s</Stream>\n", indent) < 0;
+	error |= XLALFilePrintf(stream, "%s</Stream>\n", indent) < 0;
 
 	return error ? -1 : 0;
 }
@@ -264,7 +262,7 @@ static int WriteLIGOLwXMLArrayCOMPLEX16Stream(
 
 
 static int WriteLIGOLwXMLArray(
-	FILE *stream,
+	LALFILE *stream,
 	const char *comment,
 	const char *name,
 	const LIGOTimeGPS *epoch,
@@ -280,9 +278,9 @@ static int WriteLIGOLwXMLArray(
 {
 	int error = 0;
 
-	error |= fprintf(stream, "\t<LIGO_LW Name=\"%s%s\">\n", is_complex ? (is_real4 ? "COMPLEX8" : "COMPLEX16") : (is_real4 ? "REAL4" : "REAL8"), is_tseries ? "TimeSeries" : "FrequencySeries") < 0;
+	error |= XLALFilePrintf(stream, "\t<LIGO_LW Name=\"%s%s\">\n", is_complex ? (is_real4 ? "COMPLEX8" : "COMPLEX16") : (is_real4 ? "REAL4" : "REAL8"), is_tseries ? "TimeSeries" : "FrequencySeries") < 0;
 	if(comment)
-		error |= fprintf(stream, "\t\t<Comment>%s</Comment>\n", comment) < 0;
+		error |= XLALFilePrintf(stream, "\t\t<Comment>%s</Comment>\n", comment) < 0;
 	error |= WriteLIGOLwXMLArrayMeta(stream, "\t\t", epoch, f0) < 0;
 	error |= WriteLIGOLwXMLArrayHeader(stream, "\t\t", name, is_real4 ? "real_4" : "real_8", units, length, delta, is_tseries, is_complex) < 0;
 
@@ -299,7 +297,7 @@ static int WriteLIGOLwXMLArray(
 	}
 
 	error |= WriteLIGOLwXMLArrayFooter(stream, "\t\t") < 0;
-	error |= fprintf(stream, "\t</LIGO_LW>\n") < 0;
+	error |= XLALFilePrintf(stream, "\t</LIGO_LW>\n") < 0;
 
 	return error ? -1 : 0;
 }

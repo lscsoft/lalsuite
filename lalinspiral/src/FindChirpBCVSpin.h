@@ -103,24 +103,6 @@ LALFindChirpBCVSpinData (
     FindChirpDataParams        *params
     );
 
-void
-LALFindChirpBCVSpinTemplate (
-    LALStatus                  *status,
-    FindChirpTemplate          *fcTmplt,
-    InspiralTemplate           *thistmplt,
-    FindChirpTmpltParams       *params,
-    FindChirpDataParams        *fcDataParams
-    );
-
-void
-LALFindChirpBCVSpinFilterSegment (
-    LALStatus                  *status,
-    SnglInspiralTable         **eventList,
-    FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params,
-    FindChirpDataParams        *fcDataParams
-  );
-
 /*@}*/ /* end:FindChirpBCVSpin_h */
 
 #if 0

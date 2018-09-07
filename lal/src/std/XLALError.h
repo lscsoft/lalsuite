@@ -25,6 +25,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <lal/LALAtomicDatatypes.h>
+#include <lal/LALString.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -645,7 +646,7 @@ void XLALError(const char *func,
 #define _XLAL_ERROR_IMPL_(statement, errnum, ...) \
 	do { \
 		char _XLAL_ERROR_IMPL_buf_[1024]; \
-		snprintf(_XLAL_ERROR_IMPL_buf_, sizeof(_XLAL_ERROR_IMPL_buf_), "X" __VA_ARGS__); \
+		XLALStringPrint(_XLAL_ERROR_IMPL_buf_, sizeof(_XLAL_ERROR_IMPL_buf_), "X" __VA_ARGS__); \
 		if (_XLAL_ERROR_IMPL_buf_[1] != 0) { \
 			XLAL_PRINT_ERROR("%s", &_XLAL_ERROR_IMPL_buf_[1]); \
 		} \
@@ -657,7 +658,7 @@ void XLALError(const char *func,
 	do { \
 		if (!(assertion)) { \
 			char _XLAL_CHECK_IMPL_buf_[1024]; \
-			snprintf(_XLAL_CHECK_IMPL_buf_, sizeof(_XLAL_CHECK_IMPL_buf_), "X" __VA_ARGS__); \
+			XLALStringPrint(_XLAL_CHECK_IMPL_buf_, sizeof(_XLAL_CHECK_IMPL_buf_), "X" __VA_ARGS__); \
 			if (_XLAL_CHECK_IMPL_buf_[1] != 0) { \
 				XLAL_PRINT_ERROR("%s", &_XLAL_CHECK_IMPL_buf_[1]); \
 			} else { \

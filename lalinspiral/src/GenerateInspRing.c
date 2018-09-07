@@ -543,8 +543,7 @@ XLALDeriveRingdownParameters(
   XLALPrintInfo( "Calculating (approximate) parameters for the ringdown\n" );
 
   /* waveform */
-  memcpy( ringInj->waveform, "Ringdown",
-      LIGOMETA_WAVEFORM_MAX * sizeof(CHAR));
+  strcpy( ringInj->waveform, "Ringdown" );
   snprintf( ringInj->coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR),
       "EQUATORIAL");
 
