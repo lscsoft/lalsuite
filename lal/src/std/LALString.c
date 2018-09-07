@@ -33,7 +33,9 @@ int XLALStringPrint(char *s, size_t n, const char *fmt, ...)
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpragmas"
+#ifndef __clang__
 #pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
 #endif
         ret = vsnprintf(s, n, fmt, ap);
 #if defined(__GNUC__)
