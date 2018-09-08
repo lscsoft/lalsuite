@@ -60,7 +60,7 @@ def pickle_unit(obj):
     return Unit, (str(obj),)
 
 
-def vector(data):
+def unpickle_vector(data):
     lal_type = numpy_to_lal_types[data.dtype.name]
     creator = globals()['Create{}Vector'.format(lal_type)]
     result = creator(len(data))
@@ -69,10 +69,10 @@ def vector(data):
 
 
 def pickle_vector(obj):
-    return vector, (obj.data,)
+    return unpickle_vector, (obj.data,)
 
 
-def series(attrs):
+def unpickle_series(attrs):
     lal_type = numpy_to_lal_types[attrs['data'].data.dtype.name]
     kind = 'Frequency' if 'deltaF' in attrs else 'Time'
     creator = globals()['{}{}Series'.format(lal_type, kind)]
@@ -89,7 +89,7 @@ def pickle_series(obj):
         attrs['deltaF'] = obj.deltaF
     else:
         attrs['deltaT'] = obj.deltaT
-    return series, (attrs,)
+    return unpickle_series, (attrs,)
 
 
 copyreg.pickle(LIGOTimeGPS, pickle_gps)
