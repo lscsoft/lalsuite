@@ -1,3 +1,9 @@
+lalsimulation (1.8.0-1) unstable; urgency=low
+
+  * pre O3 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 13 Sep 2018 16:09:03 -0700
+
 lalsimulation (1.7.3-1) unstable; urgency=low
 
   * fix Ldot equation in SpinTaylor
