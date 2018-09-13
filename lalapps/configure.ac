@@ -45,7 +45,6 @@ AC_CONFIG_FILES([\
   src/pulsar/Weave/Makefile \
   src/pulsar/Xray/Makefile \
   src/ring/Makefile \
-  src/stochastic/Makefile \
   src/string/Makefile \
 ])
 AC_USE_SYSTEM_EXTENSIONS
@@ -69,7 +68,6 @@ MIN_LALBURST_VERSION="1.4.4"
 MIN_LALINSPIRAL_VERSION="1.7.7"
 MIN_LALPULSAR_VERSION="1.16.0"
 MIN_LALINFERENCE_VERSION="1.9.0"
-MIN_LALSTOCHASTIC_VERSION="1.1.20"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
@@ -78,7 +76,6 @@ AC_SUBST([MIN_LALBURST_VERSION])
 AC_SUBST([MIN_LALINSPIRAL_VERSION])
 AC_SUBST([MIN_LALPULSAR_VERSION])
 AC_SUBST([MIN_LALINFERENCE_VERSION])
-AC_SUBST([MIN_LALSTOCHASTIC_VERSION])
 
 LT_INIT()
 
@@ -114,7 +111,6 @@ LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALINFERENCE
-LALSUITE_ENABLE_LALSTOCHASTIC
 
 # enable Doxygen documentation
 LALSUITE_ENABLE_DOXYGEN
@@ -362,7 +358,6 @@ LALSUITE_CHECK_OPT_LIB([LALBurst],[${MIN_LALBURST_VERSION}],[XLALEPSearch],[lal/
 LALSUITE_CHECK_OPT_LIB([LALInspiral],[${MIN_LALINSPIRAL_VERSION}],[LALInspiralParameterCalc],[lal/LALInspiral.h])
 LALSUITE_CHECK_OPT_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat],[lal/ComputeFstat.h])
 LALSUITE_CHECK_OPT_LIB([LALInference],[${MIN_LALINFERENCE_VERSION}],[LALInferenceAddVariable],[lal/LALInference.h])
-LALSUITE_CHECK_OPT_LIB([LALStochastic],[${MIN_LALSTOCHASTIC_VERSION}],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
 
 # finish boinc checks, and restore compiler after lal library checks
 LALSUITE_END_CHECK_BOINC
@@ -430,7 +425,6 @@ LALApps has now been successfully configured:
 * LALSimulation library support is $LALSIMULATION_ENABLE_VAL
 * LALBurst library support is $LALBURST_ENABLE_VAL
 * LALInspiral library support is $LALINSPIRAL_ENABLE_VAL
-* LALStochastic library support is $LALSTOCHASTIC_ENABLE_VAL
 * LALPulsar library support is $LALPULSAR_ENABLE_VAL
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL

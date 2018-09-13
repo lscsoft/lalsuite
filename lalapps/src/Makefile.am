@@ -10,10 +10,6 @@ if LALINSPIRAL
 SUBDIRS += findchirp
 endif
 
-if LALSTOCHASTIC
-SUBDIRS += stochastic
-endif
-
 if FRAME
 if LALFRAME
 if LALMETAIO
