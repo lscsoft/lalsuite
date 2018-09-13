@@ -34,6 +34,10 @@ of the LAL FFT module
 # psd = spectrum.median_mean(timeseries, 16384, 8192)
 # \endcode
 
+import warnings
+warnings.warn('lal.spectrum is no longer maintained, and may be removed in a '
+              'future release', DeprecationWarning)
+
 from .. import git_version
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.id
