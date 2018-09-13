@@ -1,3 +1,9 @@
+lalinference (1.10.0-1) unstable; urgency=low
+
+  * Pre O3 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 13 Sep 2018 16:44:49 -0700
+
 lalinference (1.9.4-1) unstable; urgency=low
 
   * bayestar_plot_volume: work around broken fonts in SL7
