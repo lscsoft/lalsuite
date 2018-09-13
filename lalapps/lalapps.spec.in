@@ -106,6 +106,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files
 %defattr(-,root,root)
+%license COPYING
 %{_bindir}/*
 %{_datadir}/lalapps/*
 %{_mandir}/man1/*
