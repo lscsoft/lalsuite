@@ -109,6 +109,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files
 %defattr(-,root,root)
+%license COPYING
 %{_bindir}/lal_simd_detect
 %{_bindir}/lal_version
 %{_libdir}/*.so.*
@@ -116,6 +117,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files devel
 %defattr(-,root,root)
+%license COPYING
 %{_includedir}/lal
 %{_libdir}/*.a
 %{_libdir}/*.so
@@ -123,10 +125,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files -n python2-%{name}
 %defattr(-,root,root)
+%license COPYING
 %{python2_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
+%license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lal.oct*
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
