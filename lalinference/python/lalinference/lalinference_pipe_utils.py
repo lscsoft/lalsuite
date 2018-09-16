@@ -363,8 +363,8 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 	if max_cfar!=-1:
 		get_coincs=get_coincs+joinstr+' coinc_inspiral.combined_far < %f'%(max_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
-    # Timeslide functionality requires obsolete pylal - will be removed
-    from pylal import SnglInspiralUtils
+        # Timeslide functionality requires obsolete pylal - will be removed
+        from pylal import SnglInspiralUtils
 	extra={}
 	for (sngl_time, slide, ifo, coinc_id, snr, chisq, cfar) in db_out:
 		coinc_id=int(coinc_id.split(":")[-1])
