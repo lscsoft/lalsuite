@@ -144,9 +144,6 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
   from glue.ligolw import utils as ligolw_utils
   from glue.ligolw import lsctables
   from glue.ligolw import ligolw
-  class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-  lsctables.use_in(LIGOLWContentHandler)
   from lal import series as lalseries
   import lal
   from lalsimulation import SimInspiralChirpTimeBound, GetApproximantFromString, IMRPhenomDGetPeakFreq
@@ -159,7 +156,7 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
   os.chdir(basepath)
   print("Download %s coinc.xml" % gid)
   client = GraceDb()
-  xmldoc = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"), contenthandler = LIGOLWContentHandler)[0]
+  xmldoc = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))[0]
   ligolw_utils.write_filename(xmldoc, "coinc.xml")
   coinc_events = lsctables.CoincInspiralTable.get_table(xmldoc)
   sngl_event_idx = dict((row.event_id, row) for row in lsctables.SnglInspiralTable.get_table(xmldoc))
@@ -520,13 +517,10 @@ def get_trigger_chirpmass(gid=None,gracedb="gracedb"):
   from glue.ligolw import lsctables
   from glue.ligolw import ligolw
   from glue.ligolw import utils as ligolw_utils
-  class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
-    pass
-  lsctables.use_in(LIGOLWContentHandler)
   from ligo.gracedb.rest import GraceDb
   cwd=os.getcwd()
   client = GraceDb()
-  xmldoc = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"), contenthandler = LIGOLWContentHandler)[0]
+  xmldoc = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))[0]
   ligolw_utils.write_filename(xmldoc, "coinc.xml")
   coinc_events = lsctables.CoincInspiralTable.get_table(xmldoc)
   sngl_event_idx = dict((row.event_id, row) for row in lsctables.SnglInspiralTable.get_table(xmldoc))
@@ -998,22 +992,22 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       from glue.ligolw import ligolw, lsctables, utils
       injTable = lsctables.SimInspiralTable.get_table(
                         utils.load_filename(self.config.get('input','injection-file'),
-                                            contenthandler=ligolw.LIGOLWContentHandler) )
+                                            contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler)) )
       events=[Event(SimInspiral=inj) for inj in injTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','injection-file'))])
     # SimBurst Table
     if self.config.has_option('input','burst-injection-file'):
       injfile=self.config.get('input','burst-injection-file')
-      injTable=lsctables.SimBurstTable.get_table(utils.load_filename(injfile,contenthandler = LIGOLWContentHandler))
+      injTable=lsctables.SimBurstTable.get_table(utils.load_filename(injfile,contenthandler = lsctables.use_in(LIGOLWContentHandler)))
       events=[Event(SimBurst=inj) for inj in injTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','burst-injection-file'))])
     # SnglInspiral Table
     if self.config.has_option('input','sngl-inspiral-file'):
-      trigTable = lsctables.SnglInspiralTable.get_table(utils.load_filename(injfile, contenthandler = ligolw.LIGOLWContentHandler))
+      trigTable = lsctables.SnglInspiralTable.get_table(utils.load_filename(injfile, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
       events=[Event(SnglInspiral=trig) for trig in trigTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','sngl-inspiral-file'))])
     if self.config.has_option('input','coinc-inspiral-file'):
-      coincTable = lsctables.CoincInspiralTable.get_table(utils.load_filename(injfile, contenthandler = ligolw.LIGOLWContentHandler))
+      coincTable = lsctables.CoincInspiralTable.get_table(utils.load_filename(injfile, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
       events = [Event(CoincInspiral=coinc) for coinc in coincTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','coinc-inspiral-file'))])
     # LVAlert CoincInspiral Table
