@@ -55,12 +55,14 @@
 
 /* Check that this file is being compiled for x86 */
 #if defined(__x86_64__) || defined(_M_X64)
-#define HAVE_X86   /* x86 64-bit */
+#define HAVE_X86 1   /* x86 64-bit */
 #elif defined(__i386) || defined(_M_IX86)
-#define HAVE_X86   /* x86 32-bit */
+#define HAVE_X86 1   /* x86 32-bit */
+#else
+#define HAVE_X86 0
 #endif
 
-#if defined(HAVE_X86) && ( defined(__GNUC__) || defined(__clang__) ) && defined(HAVE_CPUID_H)
+#if HAVE_X86 && ( defined(__GNUC__) || defined(__clang__) ) && defined(HAVE_CPUID_H)
 #include <cpuid.h>
 #define HAVE__GET_CPUID 1
 #endif
@@ -104,7 +106,7 @@ static int lalOnce = 1;
  */
 static inline UNUSED void cpuid( uint32_t output[4], UNUSED int functionnumber ) {
 
-#if defined(HAVE_X86)
+#if HAVE_X86
 
 #if HAVE__GET_CPUID
 
@@ -145,7 +147,7 @@ static inline UNUSED void cpuid( uint32_t output[4], UNUSED int functionnumber )
  */
 static inline UNUSED int64_t xgetbv( UNUSED int ctr ) {
 
-#if defined(HAVE_X86)
+#if HAVE_X86
 
 #if defined(__GNUC__) || defined(__clang__)
 
