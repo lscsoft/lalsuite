@@ -650,6 +650,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     REAL8 DS, DA; /* Shapiro delay and Abberation delay terms */
     REAL8 Dbb;
     REAL8 DAOP, DSR; /* Kopeikin delay terms */
+    REAL8 fac = 1.;  /* factor in front of fb coefficients */
 
     KopeikinTerms kt;
     REAL8 Ck, Sk;
@@ -677,7 +678,22 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
     tt0 = tb - Tasc;
 
-    orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
+    /* handle higher orbital frequency derivatives if present */
+    if( params->nfb > 0 ){
+      /* set period from first orbital frequency value */
+      Pb = 1./params->fb[0];
+      orbits = tt0/Pb;
+
+      fac = 1.;
+      for ( UINT4 j=1 ; j < (UINT4)params->nfb; j++){
+        fac /= (REAL8)(j+1);
+        orbits += fac*params->fb[j]*pow(tt0,j+1);
+      }
+    }
+    else{
+      orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
+    }
+
     norbits = (INT4)orbits;
     if(orbits < 0.0) norbits--;
 
@@ -1142,6 +1158,7 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
     REAL8 DS, DA; /* Shapiro delay and Abberation delay terms */
     REAL8 Dbb;
     REAL8 DAOP, DSR; /* Kopeikin delay terms */
+    REAL8 fac = 1.;  /* factor in front of fb coefficients */
 
     KopeikinTerms kt;
     REAL8 Ck, Sk;
@@ -1169,7 +1186,24 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
 
     tt0 = tb - Tasc;
 
-    orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
+    /* handle higher orbital frequency derivatives if present */
+    if( PulsarCheckParam(params, "FB") ){
+      const REAL8Vector *fb = PulsarGetREAL8VectorParam(params, "FB");
+
+      /* set period from first orbital frequency value */
+      Pb = 1./fb->data[0];
+      orbits = tt0/Pb;
+
+      fac = 1.;
+      for ( UINT4 j=1 ; j < fb->length; j++){
+        fac /= (REAL8)(j+1);
+        orbits += fac*fb->data[j]*pow(tt0,j+1);
+      }
+    }
+    else{
+      orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
+    }
+
     norbits = (INT4)orbits;
     if(orbits < 0.0) norbits--;
 
