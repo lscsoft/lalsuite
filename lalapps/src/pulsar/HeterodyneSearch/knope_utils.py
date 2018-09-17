@@ -2844,17 +2844,22 @@ class knopeDAG(pipeline.CondorDAG):
             else:
               self.config.set('condor', 'datafind', datafindexec) # set value in config file parser
           else:
-            if not os.path.isfile(datafind[ifo]):
-              print("Warning... frame/SFT cache file '%s' does not exist, try using system gw_data_find instead" % ifo)
-              datafindexec = self.find_exec_file('gw_data_find')
-              if datafindexec is None:
-                print("Error... could not find 'gw_data_find' in your 'PATH'", file=sys.stderr)
-                self.error_code = KNOPE_ERROR_GENERAL
-                return
+            if not isinstance(datafind[ifo], list):
+              datafind[ifo] = [datafind[ifo]]
+            
+            self.cache_files[ifo] = []
+            for cachefile in datafind[ifo]:
+              if not os.path.isfile(cachefile):
+                print("Warning... frame/SFT cache file '%s' does not exist, try using system gw_data_find instead" % ifo)
+                datafindexec = self.find_exec_file('gw_data_find')
+                if datafindexec is None:
+                  print("Error... could not find 'gw_data_find' in your 'PATH'", file=sys.stderr)
+                  self.error_code = KNOPE_ERROR_GENERAL
+                  return
+                else:
+                  self.config.set('condor', 'datafind', datafindexec) # set value in config file parser
               else:
-                self.config.set('condor', 'datafind', datafindexec) # set value in config file parser
-            else:
-              self.cache_files[ifo] = datafind[ifo]
+                self.cache_files[ifo].append(cachefile)
 
         # check if a datafind job is needed for any of the detectors
         if len(self.cache_files) < len(self.ifos):

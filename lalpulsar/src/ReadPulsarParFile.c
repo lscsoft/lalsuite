@@ -991,7 +991,7 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
 
         nsize = num + 1;
         if( PulsarCheckParam( par, pc[i].name ) ){
-          // copy any previous values
+          // count any previous values
           const REAL8Vector *cptr = PulsarGetREAL8VectorParam( par, pc[i].name );
           nsize = (cptr->length > num+1) ? cptr->length : (num + 1);
         }
@@ -1052,14 +1052,17 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
 
         nsize = num + 1;
         if( PulsarCheckParam( par, "WAVESIN" ) && PulsarCheckParam( par, "WAVECOS" ) ){
-          // copy any previous values
+          // count number of values
           const REAL8Vector *cptr = PulsarGetREAL8VectorParam( par, pc[i].name );
+
           nsize = (cptr->length > num+1) ? cptr->length : (num + 1);
         }
 
         // pointers for parameter values
         ptr1 = XLALCreateREAL8Vector( nsize );
         ptr2 = XLALCreateREAL8Vector( nsize );
+        memset(ptr1->data, 0, sizeof(REAL8)*nsize);
+        memset(ptr2->data, 0, sizeof(REAL8)*nsize);
 
         if( PulsarCheckParam( par, "WAVESIN" ) && PulsarCheckParam( par, "WAVECOS" ) ){
           const REAL8Vector *cptr1 = PulsarGetREAL8VectorParam( par, "WAVESIN" );
@@ -1082,10 +1085,11 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
         XLALDestroyREAL8Vector( ptr2 );
 
         /* there are no errors on the wave parameters, so set defaults of zero and then break */
-        UINT4 *fitFlag = (UINT4 *)XLALCalloc(num+1, sizeof(UINT4));
-        REAL8Vector *eptr = XLALCreateREAL8Vector(num+1);
-        memset(eptr, 0, sizeof(REAL8)*(num+1));
-        PulsarSetREAL8VectorParamErr( par, pc[i].name, (const REAL8Vector *)eptr, (const UINT4*)fitFlag );
+        UINT4 *fitFlag = (UINT4 *)XLALCalloc(nsize, sizeof(UINT4));
+        REAL8Vector *eptr = XLALCreateREAL8Vector(nsize);
+        memset(eptr->data, 0, sizeof(REAL8)*nsize);
+        PulsarSetREAL8VectorParamErr( par, "WAVESIN", (const REAL8Vector *)eptr, (const UINT4*)fitFlag );
+        PulsarSetREAL8VectorParamErr( par, "WAVECOS", (const REAL8Vector *)eptr, (const UINT4*)fitFlag );
         XLALDestroyREAL8Vector(eptr);
         XLALFree(fitFlag);
 
@@ -1107,7 +1111,7 @@ static INT4 ParseParLine( PulsarParameters *par, const CHAR *name, FILE *fp ){
 
         nsize = num + 1;
         if( PulsarCheckParam( par, pc[i].name ) ){
-          // copy any previous values
+          // count previous values
           const REAL8Vector *cptr = PulsarGetREAL8VectorParam( par, pc[i].name );
           nsize = (cptr->length > num+1) ? cptr->length : (num + 1);
         }

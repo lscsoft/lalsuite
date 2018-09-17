@@ -19,6 +19,7 @@
 Multi-order coverage (MOC) HEALPix indexing.
 """
 
+from __future__ import absolute_import
 
 import numpy as np
 try:
@@ -129,3 +130,6 @@ def rasterize(moc_data):
         that were in moc_data, with the exception of the UNIQ column.
     """
     return _moc.rasterize(moc_data)
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.moc')

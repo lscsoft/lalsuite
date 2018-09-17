@@ -87,15 +87,18 @@ if __name__ == '__main__':
   parser.add_option("-i", "--insp-post", dest="insp_post", help="file containing the posterior samples from the lalinference inspiral run")
   parser.add_option("-r", "--ring-post", dest="ring_post", help="file containing the posterior samples from the lalinference ringdown run")
   parser.add_option("-m", "--imr-post", dest="imr_post", help="file containing the posterior samples from the full lalinference IMR run")
-  parser.add_option("-f", "--fit-formula", dest="fit_formula", help="fitting formula to be used for the calculation of final mass/spin [options: 'nospin_Pan2011', 'nonprecspin_Healy2014'", default="nonprecspin_Healy2014")
+  parser.add_option("-f", "--fit-formula", dest="fit_formula", help="fitting formula to be used for the calculation of final mass/spin [options: 'nospin_Pan2011', 'nonprecspin_Healy2014', 'bbh_average_fits_precessing'", default="nonprecspin_Healy2014")
   parser.add_option("-p", "--mf-chif-prior", dest="prior_Mfchif_file", help="pickle file containing the interpolation object of the prior in (Mf, chif) used in the lalinference runs", default=None)
   parser.add_option("-o", "--out-dir", dest="out_dir", help="output directory")
   parser.add_option("--insp-fhigh", dest="insp_fhigh", help="Upper cutoff freq for the inspiral analysis")
   parser.add_option("--ring-flow", dest="ring_flow", help="Lower cutoff freq for the ringdown analysis")
   parser.add_option("--m1-inj", dest="m1_inj", help="injected value of component mass m1 (if this is an injection)")
   parser.add_option("--m2-inj", dest="m2_inj", help="injected value of component mass m2 (if this is an injection)")
-  parser.add_option("--chi1-inj", dest="chi1_inj", help="injected value of z-component of spin of mass m1 (if this is an injection)")
-  parser.add_option("--chi2-inj", dest="chi2_inj", help="injected value of z-component of spin of mass m2 (if this is an injection)")
+  parser.add_option("--chi1-inj", dest="chi1_inj", help="injected value of spin magnitude of mass m1 (if this is an injection)")
+  parser.add_option("--chi2-inj", dest="chi2_inj", help="injected value of spin magnitude of mass m2 (if this is an injection)")
+  parser.add_option("--chi1z-inj", dest="chi1z_inj", help="injected value of z-component of spin of mass m1 (if this is an injection)")
+  parser.add_option("--chi2z-inj", dest="chi2z_inj", help="injected value of z-component of spin of mass m2 (if this is an injection)")
+  parser.add_option("--phi12-inj", dest="phi12_inj", help="injected value of the azimuth angle of (hats2 - hats1) from vecL (if this is an injection)", default=0.)
   parser.add_option("-w", "--waveform", dest="waveform", help="waveform used for recovery")
   parser.add_option("-d", "--debug-plots", dest="debug_plots", help="debug plots")
   parser.add_option("--N_bins", type="int", dest="N_bins", default=201, help="number of bins (default=201)")
@@ -151,7 +154,6 @@ if __name__ == '__main__':
   ring_target = os.path.join(out_dir, 'lalinf_ring')
   imr_target = os.path.join(out_dir, 'lalinf_imr')
   
-  print()
   if insp_posplots != insp_target:
     if os.path.islink(insp_target):
       print('... removing existing link %s'%(insp_target))
@@ -170,25 +172,30 @@ if __name__ == '__main__':
       os.system('rm %s'%(imr_target))
     print('... linking %s to %s' %(imr_posplots, imr_target))
     os.system('ln -s %s %s' %(imr_posplots, imr_target))
-  print()
   
   # read the injection mass parameters if this is an injection
   m1_inj = options.m1_inj
   m2_inj = options.m2_inj
   chi1_inj = options.chi1_inj
   chi2_inj = options.chi2_inj
+  chi1z_inj = options.chi1z_inj
+  chi2z_inj = options.chi2z_inj
+  phi12_inj = options.phi12_inj
 
-  if m1_inj == None or m2_inj == None or chi1_inj == None or chi2_inj == None:
+  if m1_inj == None or m2_inj == None or chi1_inj == None or chi2_inj == None or chi1z_inj == None or chi2z_inj == None or phi12_inj == None:
     plot_injection_lines = False
   else:
     m1_inj = float(m1_inj)
     m2_inj = float(m2_inj)
     chi1_inj = float(chi1_inj)
     chi2_inj = float(chi2_inj)
+    chi1z_inj = float(chi1z_inj)
+    chi2z_inj = float(chi2z_inj)
+    phi12_inj = float(phi12_inj)
     plot_injection_lines = True
     q_inj = m1_inj/m2_inj
     eta_inj = q_inj/(1.+q_inj)**2.
-    Mf_inj, chif_inj = tgr.calc_final_mass_spin(m1_inj, m2_inj, chi1_inj, chi2_inj, fit_formula)
+    Mf_inj, chif_inj = tgr.calc_final_mass_spin(m1_inj, m2_inj, chi1_inj, chi2_inj, chi1z_inj, chi2z_inj, phi12_inj, fit_formula)
 
   ###############################################################################################
   # Read the posteriors from the inspiral, ringdown and imr lalinference runs (after post-processing) 
@@ -196,41 +203,39 @@ if __name__ == '__main__':
 
   # read data from the inspiral posterior file 
   insp_data = np.genfromtxt(insp_post, dtype=None, names=True)
-  m1_i, m2_i = insp_data['m1'], insp_data['m2']
-  # if there is a spin column in the posterior, read the spin values. Note that we are using only
-  # the z-component of the spins (component along the orb angular momentum) 
-  if ('a1z' in insp_data.dtype.names) and ('a2z' in insp_data.dtype.names):
-    chi1_i, chi2_i = insp_data['a1z'], insp_data['a2z']
+  m1_i, m2_i, chi1_i, chi2_i, chi1z_i, chi2z_i = insp_data['m1'], insp_data['m2'], insp_data['a1'], insp_data['a2'], insp_data['a1z'], insp_data['a2z']
+  # if there is phi12 in the posterior, read the values. 
+  if 'phi12' in insp_data.dtype.names:
+    phi12_i = insp_data['phi12']
   else:
-    chi1_i, chi2_i = np.zeros(len(m1_i)), np.zeros(len(m2_i))
+    phi12_i = np.zeros(len(m1_i))
   # compute the final mass and spin
-  Mf_i, chif_i = tgr.calc_final_mass_spin(m1_i, m2_i, chi1_i, chi2_i, fit_formula)
+  Mf_i, chif_i = tgr.calc_final_mass_spin(m1_i, m2_i, chi1_i, chi2_i, chi1z_i, chi2z_i, phi12_i, fit_formula)
 
   # read data from the ringdown posterior file 
   ring_data = np.genfromtxt(ring_post, dtype=None, names=True)
-  m1_r, m2_r = ring_data['m1'], ring_data['m2']
-  # if there is a spin column in the posterior, read the spin values. Note that we are using only
-  # the z-component of the spins (component along the orb angular momentum) 
-  if ('a1z' in ring_data.dtype.names) and ('a2z' in ring_data.dtype.names):
-    chi1_r, chi2_r = ring_data['a1z'], ring_data['a2z']
+  m1_r, m2_r, chi1_r, chi2_r, chi1z_r, chi2z_r = ring_data['m1'], ring_data['m2'], ring_data['a1'], ring_data['a2'], ring_data['a1z'], ring_data['a2z']
+  # if there is phi12 in the posterior, read the values. 
+  if 'phi12' in ring_data.dtype.names:
+    phi12_r = ring_data['phi12']
   else:
-    chi1_r, chi2_r = np.zeros(len(m1_r)), np.zeros(len(m2_r))
+    phi12_r = np.zeros(len(m1_r))
   # compute the final mass and spin
-  Mf_r, chif_r = tgr.calc_final_mass_spin(m1_r, m2_r, chi1_r, chi2_r, fit_formula)
+  Mf_r, chif_r = tgr.calc_final_mass_spin(m1_r, m2_r, chi1_r, chi2_r, chi1z_r, chi2z_r, phi12_r, fit_formula)
 
   # read data from the IMR posterior file 
   imr_data = np.genfromtxt(imr_post, dtype=None, names=True)
-  m1_imr, m2_imr = imr_data['m1'], imr_data['m2']
-	# if there is a spin column in the posterior, read the spin values. Note that we are using only
-  # the z-component of the spins (component along the orb angular momentum) 
-  if ('a1z' in imr_data.dtype.names) and ('a2z' in imr_data.dtype.names):
-    chi1_imr, chi2_imr = imr_data['a1z'], imr_data['a2z']
+  m1_imr, m2_imr, chi1_imr, chi2_imr, chi1z_imr, chi2z_imr = imr_data['m1'], imr_data['m2'], imr_data['a1'], imr_data['a2'], imr_data['a1z'], imr_data['a2z']
+  # if there is phi12 in the posterior, read the values. 
+  if 'phi12' in imr_data.dtype.names:
+    phi12_imr = imr_data['phi12']
   else:
-    chi1_imr, chi2_imr = np.zeros(len(m1_imr)), np.zeros(len(m2_imr))
+    phi12_imr = np.zeros(len(m1_imr))
   # compute the final mass and spin
-  Mf_imr, chif_imr = tgr.calc_final_mass_spin(m1_imr, m2_imr, chi1_imr, chi2_imr, fit_formula)
+  Mf_imr, chif_imr = tgr.calc_final_mass_spin(m1_imr, m2_imr, chi1_imr, chi2_imr, chi1z_imr, chi2z_imr, phi12_imr, fit_formula)
 
-  print('... read posteriors')
+
+  print '... read posteriors'
   ###############################################################################################
 
   ###############################################################################################
@@ -297,25 +302,15 @@ if __name__ == '__main__':
     P_Mfchif_r[np.isinf(P_Mfchif_r)] = 0.
     P_Mfchif_imr[np.isinf(P_Mfchif_imr)] = 0.
 
-    print('... computed (prior) corrected posteriors')
+    print '... computed (prior) corrected posteriors'
     
-  ###############################################################################################
-
-  ################################################################################################
-  # compute the posterior of (delta_Mf, delta_chif)
-  ################################################################################################
-  P_dMfdchif = dMf*dchif*ss.correlate2d(P_Mfchif_i, P_Mfchif_r, boundary='fill', mode='same')
-
-  print('... computed P(delta_Mf, delta_chif)')
-  ###############################################################################################
-
   ################################################################################################
   # compute the posterior of (delta_Mf/Mf, delta_chif/chif)
   ################################################################################################
 
   # compute interpolation objects for the Mf,chif posterior and delta_Mf and delta_chif posterior 
-  P_dMfdchif_interp_object = scipy.interpolate.interp2d(Mf_intp, chif_intp, P_dMfdchif, fill_value=0., bounds_error=False)
-  P_Mfchif_imr_interp_object = scipy.interpolate.interp2d(Mf_intp, chif_intp, P_Mfchif_imr, fill_value=0., bounds_error=False)
+  P_Mfchif_i_interp_object = scipy.interpolate.interp2d(Mf_intp, chif_intp, P_Mfchif_i, fill_value=0., bounds_error=False)
+  P_Mfchif_r_interp_object = scipy.interpolate.interp2d(Mf_intp, chif_intp, P_Mfchif_r, fill_value=0., bounds_error=False)
 
   # defining limits of delta_Mf/Mf and delta_chif/chif.
   dMfbyMf_vec = np.linspace(-1.0, 1.0, N_bins)
@@ -330,7 +325,7 @@ if __name__ == '__main__':
   # Approximate the integral in Eq.(6) of the document LIGO-P1500185-v5 by a discrete sum 
   for i, v2 in enumerate(dchifbychif_vec):
     for j, v1 in enumerate(dMfbyMf_vec):
-      P_dMfbyMf_dchifbychif[i,j] = tgr.calc_sum(Mf_intp, chif_intp, v1, v2, P_dMfdchif_interp_object, P_Mfchif_imr_interp_object)*diff_dMfbyMf*diff_dchifbychif
+      P_dMfbyMf_dchifbychif[i,j] = tgr.calc_sum(Mf_intp, chif_intp, v1, v2, P_Mfchif_i_interp_object, P_Mfchif_r_interp_object)
 
   # normalization
   P_dMfbyMf_dchifbychif /= np.sum(P_dMfbyMf_dchifbychif) * diff_dMfbyMf * diff_dchifbychif
@@ -344,7 +339,7 @@ if __name__ == '__main__':
   conf_v1v2 = confidence(P_dMfbyMf_dchifbychif)
   gr_height = P_dMfbyMf_dchifbychif[np.argmin(abs(dMfbyMf_vec)), np.argmin(abs(dchifbychif_vec))] # taking value closest to (0,0)
   gr_conf_level = conf_v1v2.level_from_height(gr_height)
-  print('... no deviation from GR above %.1f%% confidence level'%(100.*gr_conf_level))
+  print '... no deviation from GR above %.1f%% confidence level'%(100.*gr_conf_level)
 
   # creating the parameter table
   param_table = [['Upper cutoff freq for the inspiral analysis: %s Hz'%insp_fhigh],
@@ -359,7 +354,6 @@ if __name__ == '__main__':
   np.savetxt(out_dir+'/data/P_Mfchif_i.dat.gz', P_Mfchif_i)
   np.savetxt(out_dir+'/data/P_Mfchif_r.dat.gz', P_Mfchif_r)
   np.savetxt(out_dir+'/data/P_Mfchif_imr.dat.gz', P_Mfchif_imr)
-  np.savetxt(out_dir+'/data/P_dMfdchif.dat.gz', P_dMfdchif)
   np.savetxt(out_dir+'/data/dMfbyMf_vec.dat.gz', dMfbyMf_vec)
   np.savetxt(out_dir+'/data/dchifbychif_vec.dat.gz', dchifbychif_vec)
   np.savetxt(out_dir+'/data/P_dMfbyMf_dchifbychif.dat.gz', P_dMfbyMf_dchifbychif)
@@ -393,7 +387,7 @@ if __name__ == '__main__':
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(m1_bins_i, m2_bins_i, tgr.gf(P_m1m2_i), cmap='YlOrBr')
-  plt.contour(m1_bins_i[:-1], m2_bins_i[:-1], tgr.gf(P_m1m2_i), levels=(s1_m1m2_i,s2_m1m2_i), linewidths=(1,1.5))
+  plt.contour(m1_bins_i[:-1], m2_bins_i[:-1], tgr.gf(P_m1m2_i), levels=(s2_m1m2_i,s1_m1m2_i), linewidths=(1,1.5))
   if plot_injection_lines == True:
     plt.axvline(x=m1_inj, ls='--', color='k')
     plt.axhline(y=m2_inj, ls='--', color='k')
@@ -420,7 +414,7 @@ if __name__ == '__main__':
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(chi1_bins_i, chi2_bins_i, tgr.gf(P_chi1chi2_i), cmap='YlOrBr')
-  plt.contour(chi1_bins_i[:-1], chi2_bins_i[:-1], tgr.gf(P_chi1chi2_i), levels=(s1_chi1chi2_i,s2_chi1chi2_i), linewidths=(1,1.5))
+  plt.contour(chi1_bins_i[:-1], chi2_bins_i[:-1], tgr.gf(P_chi1chi2_i), levels=(s2_chi1chi2_i,s1_chi1chi2_i), linewidths=(1,1.5))
   if plot_injection_lines == True:
     plt.axvline(x=chi1_inj, ls='--', color='k')
     plt.axhline(y=chi2_inj, ls='--', color='k')
@@ -447,7 +441,7 @@ if __name__ == '__main__':
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(Mf_bins, chif_bins, tgr.gf(P_Mfchif_i), cmap='YlOrBr')
-  plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_i), levels=(s1_Mfchif_i,s2_Mfchif_i), linewidths=(1,1.5))
+  plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_i), levels=(s2_Mfchif_i,s1_Mfchif_i), linewidths=(1,1.5))
   if plot_injection_lines == True:
     plt.axvline(x=Mf_inj, ls='--', color='k')
     plt.axhline(y=chif_inj, ls='--', color='k')
@@ -481,7 +475,7 @@ if __name__ == '__main__':
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(m1_bins_r, m2_bins_r, tgr.gf(P_m1m2_r), cmap='YlOrBr')
-  plt.contour(m1_bins_r[:-1], m2_bins_r[:-1], tgr.gf(P_m1m2_r), levels=(s1_m1m2_r,s2_m1m2_r), linewidths=(1,1.5))
+  plt.contour(m1_bins_r[:-1], m2_bins_r[:-1], tgr.gf(P_m1m2_r), levels=(s2_m1m2_r,s1_m1m2_r), linewidths=(1,1.5))
   if plot_injection_lines == True:
     plt.axvline(x=m1_inj, ls='--', color='k')
     plt.axhline(y=m2_inj, ls='--', color='k')
@@ -508,7 +502,7 @@ if __name__ == '__main__':
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(chi1_bins_r, chi2_bins_r, tgr.gf(P_chi1chi2_r), cmap='YlOrBr')
-  plt.contour(chi1_bins_r[:-1], chi2_bins_r[:-1], tgr.gf(P_chi1chi2_r), levels=(s1_chi1chi2_r,s2_chi1chi2_r), linewidths=(1,1.5))
+  plt.contour(chi1_bins_r[:-1], chi2_bins_r[:-1], tgr.gf(P_chi1chi2_r), levels=(s2_chi1chi2_r,s1_chi1chi2_r), linewidths=(1,1.5))
   if plot_injection_lines == True:
     plt.axvline(x=chi1_inj, ls='--', color='k')
     plt.axhline(y=chi2_inj, ls='--', color='k')
@@ -535,7 +529,7 @@ if __name__ == '__main__':
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(Mf_bins, chif_bins, tgr.gf(P_Mfchif_r), cmap='YlOrBr')
-  plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_r), levels=(s1_Mfchif_r,s2_Mfchif_r), linewidths=(1,1.5))
+  plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_r), levels=(s2_Mfchif_r,s1_Mfchif_r), linewidths=(1,1.5))
   if plot_injection_lines == True:
     plt.axvline(x=Mf_inj, ls='--', color='k')
     plt.axhline(y=chif_inj, ls='--', color='k')
@@ -568,7 +562,7 @@ if __name__ == '__main__':
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(m1_bins_imr, m2_bins_imr, tgr.gf(P_m1m2_imr), cmap='YlOrBr')
-  plt.contour(m1_bins_imr[:-1], m2_bins_imr[:-1], tgr.gf(P_m1m2_imr), levels=(s1_m1m2_imr,s2_m1m2_imr), linewidths=(1,1.5))
+  plt.contour(m1_bins_imr[:-1], m2_bins_imr[:-1], tgr.gf(P_m1m2_imr), levels=(s2_m1m2_imr,s1_m1m2_imr), linewidths=(1,1.5))
   if plot_injection_lines == True:
     plt.axvline(x=m1_inj, ls='--', color='k')
     plt.axhline(y=m2_inj, ls='--', color='k')
@@ -595,7 +589,7 @@ if __name__ == '__main__':
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(chi1_bins_imr, chi2_bins_imr, tgr.gf(P_chi1chi2_imr), cmap='YlOrBr')
-  plt.contour(chi1_bins_imr[:-1], chi2_bins_imr[:-1], tgr.gf(P_chi1chi2_imr), levels=(s1_chi1chi2_imr,s2_chi1chi2_imr), linewidths=(1,1.5))
+  plt.contour(chi1_bins_imr[:-1], chi2_bins_imr[:-1], tgr.gf(P_chi1chi2_imr), levels=(s2_chi1chi2_imr,s1_chi1chi2_imr), linewidths=(1,1.5))
   if plot_injection_lines == True:
     plt.axvline(x=chi1_inj, ls='--', color='k')
     plt.axhline(y=chi2_inj, ls='--', color='k')
@@ -622,7 +616,7 @@ if __name__ == '__main__':
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(Mf_bins, chif_bins, tgr.gf(P_Mfchif_imr), cmap='YlOrBr')
-  plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_imr), levels=(s1_Mfchif_imr,s2_Mfchif_imr), linewidths=(1,1.5))
+  plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_imr), levels=(s2_Mfchif_imr,s1_Mfchif_imr), linewidths=(1,1.5))
   if plot_injection_lines == True:
     plt.axvline(x=Mf_inj, ls='--', color='k')
     plt.axhline(y=chif_inj, ls='--', color='k')
@@ -636,9 +630,9 @@ if __name__ == '__main__':
 
   # IR overlap
   plt.figure(figsize=(5,5))
-  CSi = plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_i), levels=(s1_Mfchif_i,s2_Mfchif_i), linewidths=(1,1.5), colors='orange')
-  CSr = plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_r), levels=(s1_Mfchif_r,s2_Mfchif_r), linewidths=(1,1.5), colors='red')
-  CSimr = plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_imr), levels=(s1_Mfchif_imr,s2_Mfchif_imr), linewidths=(1,1.5), colors='k')
+  CSi = plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_i), levels=(s2_Mfchif_i,s1_Mfchif_i), linewidths=(1,1.5), colors='orange')
+  CSr = plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_r), levels=(s2_Mfchif_r,s1_Mfchif_r), linewidths=(1,1.5), colors='red')
+  CSimr = plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_imr), levels=(s2_Mfchif_imr,s1_Mfchif_imr), linewidths=(1,1.5), colors='k')
   if plot_injection_lines == True:
     plt.axvline(x=Mf_inj, ls='--', color='k')
     plt.axhline(y=chif_inj, ls='--', color='k')
@@ -668,21 +662,6 @@ if __name__ == '__main__':
 
   plt.savefig('%s/img/IMR_overlap.png'%(out_dir), dpi=300)
   plt.savefig('%s/img/IMR_overlap_thumb.png'%(out_dir), dpi=72)
-
-  #(dMf, dchif)
-  conf_dMfdchif = confidence(P_dMfdchif)
-  s1_dMfdchif = conf_dMfdchif.height_from_level(0.68)
-  s2_dMfdchif = conf_dMfdchif.height_from_level(0.95)
-
-  plt.figure(figsize=(5,5))
-  plt.pcolormesh(Mf_bins, chif_bins, tgr.gf(P_dMfdchif), cmap='YlOrBr')
-  plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_dMfdchif), levels=(s1_dMfdchif,s2_dMfdchif), linewidths=(1,1.5))
-  plt.plot(0, 0, 'k+', ms=12, mew=2)
-  plt.xlabel('$\Delta M_f~[M_\odot]$')
-  plt.ylabel('$\Delta \chi_f$')
-  plt.grid()
-  plt.savefig('%s/img/dMfdchif.png'%(out_dir), dpi=300)
-  plt.savefig('%s/img/dMfdchif_thumb.png'%(out_dir), dpi=72)
 
   #(dMf/Mf, dchif/chif)
   conf_v1v2 = confidence(P_dMfbyMf_dchifbychif)
@@ -723,7 +702,7 @@ if __name__ == '__main__':
 
   plt.subplot2grid((3,3), (1,0), colspan=2, rowspan=2)
   plt.pcolormesh(dMfbyMf_vec,dchifbychif_vec,P_dMfbyMf_dchifbychif, cmap='YlOrBr')
-  plt.contour(dMfbyMf_vec,dchifbychif_vec,tgr.gf(P_dMfbyMf_dchifbychif), levels=(s1_v1v2,s2_v1v2), linewidths=(1,1.5))
+  plt.contour(dMfbyMf_vec,dchifbychif_vec,tgr.gf(P_dMfbyMf_dchifbychif), levels=(s2_v1v2,s1_v1v2), linewidths=(1,1.5))
   plt.plot(0, 0, 'k+', ms=12, mew=2)
   plt.xlabel('$\Delta M_f/M_f$')
   plt.ylabel('$\Delta \chi_f/\chi_f$')
@@ -744,8 +723,8 @@ if __name__ == '__main__':
   plt.savefig('%s/img/dMfbyMfdchifbychif.png' %(out_dir), dpi=300)
   plt.savefig('%s/img/dMfbyMfdchifbychif_thumb.png' %(out_dir), dpi=72)
 
-  print('... made summary plots') 
+  print '... made summary plots' 
 
-  print('... completed in %f seconds' %(time.time()-start_time))
+  print '... completed in %f seconds' %(time.time()-start_time)
   #########################################################################################
 

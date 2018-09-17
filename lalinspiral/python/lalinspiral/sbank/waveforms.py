@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from __future__ import division
+from __future__ import (division, print_function)
 
 from math import isnan
 import numpy as np
@@ -54,7 +54,7 @@ class SnglInspiralTable(gluesit):
                 elif _sit_cols[entry] == 'ilwd:char':
                     setattr(self,entry,'')
             else:
-                print >> sys.stderr, "Column %s not recognized" %(entry)
+                print("Column %s not recognized" %(entry), file=sys.stderr)
                 raise ValueError
 
 def compute_mchirp(m1, m2):

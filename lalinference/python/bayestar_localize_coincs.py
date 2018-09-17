@@ -44,6 +44,9 @@ integrator.
 """
 
 
+from lalinference.bayestar.deprecation import warn
+warn('bayestar-localize-coincs')
+
 # Command line interface.
 import argparse
 from lalinference.bayestar import command

@@ -1081,6 +1081,7 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
                  REAL8 freqband,            /**< [in] the bandwidth to read */
                  INT4 start,                /**< [in] the min GPS time of the input data */
                  INT4 end,                  /**< [in] the max GPS time of the input data*/
+                 LIGOTimeGPSVector *timestamps, /**< [in] timestamps vector */
                  REAL8 tsft,                /**< [in] the length of the SFTs */
                  REAL8 bins_factor          /**< [in] the percentage of bins to add to each side of the fft for safety */
                  )
@@ -1126,6 +1127,7 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
   }
   constraints.minStartTime = dummy_gpsstart;
   constraints.maxStartTime = dummy_gpsend;
+  constraints.timestamps = timestamps;
   if ((catalog = XLALSFTdataFind(sftbasename, &constraints))==NULL) {
     LogPrintf(LOG_CRITICAL,"%s : Null pointer returned from XLALSFTdataFind.  Exiting.\n",__func__);
     XLAL_ERROR(XLAL_EINVAL);

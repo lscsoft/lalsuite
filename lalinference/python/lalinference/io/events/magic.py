@@ -81,3 +81,6 @@ def MagicEventSource(f, *args, **kwargs):
 
 
 open = MagicEventSource
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.io.events.magic')

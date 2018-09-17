@@ -35,7 +35,6 @@ import lalsimulation
 # My own imports
 from .decorator import memoized
 
-
 log = logging.getLogger('BAYESTAR')
 
 
@@ -715,3 +714,7 @@ __interpolants = {
 
 def interpolate_max(imax, y, window_length, method='catmull-rom'):
     return __interpolants[method](imax, y, window_length)
+
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.bayestar.filter')

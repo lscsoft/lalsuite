@@ -27,6 +27,8 @@ import stat
 from functools import partial
 from argparse import ArgumentParser
 
+from six.moves import range
+
 import numpy as np
 
 import lal
@@ -312,7 +314,7 @@ else: # do random, uniform placement
 	cart_grid, sph_grid = eff.uniform_random_ellipsoid(Nrandpts, r1, r2)
 # Rotate to get coordinates in parameter basis
 cart_grid = np.array([ np.real( np.dot(rot, cart_grid[i]))
-    for i in xrange(len(cart_grid)) ])
+    for i in range(len(cart_grid)) ])
 # Put in convenient units,
 # change from parameter differential (i.e. dtheta)
 # to absolute parameter value (i.e. theta = theta_true + dtheta)
@@ -353,7 +355,7 @@ if opts.save_ellipsoid_data:
 
 # Convert to m1, m2
 m1m2_grid = np.array([lsu.m1m2(cart_grid[i][0], cart_grid[i][1])
-        for i in xrange(len(cart_grid))])
+        for i in range(len(cart_grid))])
 m1m2_grid /= lal.MSUN_SI
 
 if opts.mass_points_xml:

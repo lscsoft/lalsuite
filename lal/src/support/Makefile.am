@@ -10,7 +10,6 @@ pkginclude_HEADERS = \
 	PrintFTSeries.h \
 	PrintVector.h \
 	ReadFTSeries.h \
-	ReadFiltersFile.h \
 	ReadNoiseSpectrum.h \
 	SegmentsIO.h \
 	StreamInput.h \
@@ -40,7 +39,6 @@ liblalsupport_la_SOURCES = \
 	PrintFrequencySeries.c \
 	PrintTimeSeries.c \
 	PrintVector.c \
-	ReadFiltersFile.c \
 	ReadFrequencySeries.c \
 	ReadTimeSeries.c \
 	ReadNoiseSpectrum.c \
@@ -70,6 +68,7 @@ noinst_HEADERS = \
 	H5FileIOTimeSeries_source.c \
 	H5FileIOVectorHL_source.c \
 	H5FileIOVector_source.c \
+	H5ThreadSafe.c \
 	PrintFrequencySeries_source.c \
 	PrintTimeSeries_source.c \
 	PrintVector_source.c \

@@ -4,6 +4,7 @@
 import sys
 import warnings
 import datetime
+import pickle
 import numpy
 expected_exception = False
 
@@ -1164,6 +1165,53 @@ del u1
 del u2
 lal.CheckMemoryLeaks()
 print("PASSED LALUnit operations")
+
+#
+# FIXME: pickling requires SWIG >= 3.0.11 because of a bug that was fixed in
+# that version. Here's the relevant entry from the SWIG changelog:
+#
+# 2016-10-13: wsfulton
+# [Python] Issue #808 - fix Python pickling and metaclass for builtin wrappers.
+# The metaclass (SwigPyObjectType) for SWIG objects was not defined in
+# a way that let importlib successfully import the Python wrappers.
+# The pickle module previously failed to pickle objects because it couldn't
+# determine what module the SWIG wrapped objects were in.
+#
+if lal.swig_version >= 0x030011:
+    print("checking pickle ...")
+    for datatype in ['INT2', 'INT4', 'INT8', 'UINT2', 'UINT4', 'UINT8',
+                     'REAL4', 'REAL8', 'COMPLEX8', 'COMPLEX16']:
+
+        creator = getattr(lal, 'Create{}FrequencySeries'.format(datatype))
+        a = creator(
+            'foobar', lal.LIGOTimeGPS(1e9), 0, 1, lal.StrainUnit, 1024)
+        a.data.data = numpy.arange(1024)
+        pickled = pickle.dumps(a, 0)
+        print(pickled)
+        b = pickle.loads(pickled)
+        assert type(a) == type(b)
+        assert a.name == b.name
+        assert a.epoch == b.epoch
+        assert a.f0 == b.f0
+        assert a.deltaF == b.deltaF
+        assert a.sampleUnits == b.sampleUnits
+        assert (a.data.data == b.data.data).all()
+
+        creator = getattr(lal, 'Create{}TimeSeries'.format(datatype))
+        a = creator(
+            'foobar', lal.LIGOTimeGPS(1e9), 0, 1, lal.StrainUnit, 1024)
+        a.data.data = numpy.arange(1024)
+        pickled = pickle.dumps(a, 0)
+        print(pickled)
+        b = pickle.loads(pickled)
+        assert type(a) == type(b)
+        assert a.name == b.name
+        assert a.epoch == b.epoch
+        assert a.f0 == b.f0
+        assert a.deltaT == b.deltaT
+        assert a.sampleUnits == b.sampleUnits
+        assert (a.data.data == b.data.data).all()
+    print("PASSED pickle")
 
 # passed all tests!
 print("PASSED all tests")

@@ -43,7 +43,6 @@ from scipy import stats
 
 #local application/library specific imports
 import lalinference.bayespputils as bppu
-from pylal import SimInspiralUtils
 from lalinference import git_version
 
 __author__="Ben Aylott <benjamin.aylott@ligo.org>, Will M. Farr <will.farr@ligo.org>"
@@ -496,7 +495,9 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
     if injection_path is not None and os.path.exists(injection_path) and eventnum is not None:
         eventnum=int(eventnum)
         import itertools
-        injections = SimInspiralUtils.ReadSimInspiralFromFiles([injection_path])
+        from glue.ligolw import ligolw, lsctables, utils
+        injections = lsctables.SimInspiralTable.get_table(
+                utils.load_filename(injection_path, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
         if eventnum is not None:
             if(len(injections)<eventnum):
                 print("Error: You asked for event %d, but %s contains only %d injections" %(eventnum,injection_path,len(injections)))

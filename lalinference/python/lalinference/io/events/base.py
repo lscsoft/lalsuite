@@ -122,3 +122,6 @@ class SingleEvent(six.with_metaclass(ABCMeta)):
         return _fmt(self, keys)
 
     __repr__ = __str__
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.io.events.base')

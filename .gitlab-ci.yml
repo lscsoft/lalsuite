@@ -34,7 +34,6 @@ cache:
   paths:
     - ccache
 
-# FIXME: remove schedules after package builds have been running for a while
 .levelN:package: &levelN-package
   script:
     - cd ${CI_JOB_NAME#level?:*:}
@@ -57,7 +56,6 @@ cache:
       - opt/lalsuite
   only:
     - pushes
-    - schedules
 
 .levelN:package:stretch: &levelN-package-stretch
   image: ligo/lalsuite-dev:stretch
@@ -220,36 +218,6 @@ level4:el7:lalapps:
     - level2:el7:lalstochastic
     - level3:el7:laldetchar
     - level3:el7:lalinference
-
-# FIXME: remove after package builds have been running for a while
-docker:tags:
-  stage: docker
-  before_script: []
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $TAG --file .Dockerfile.gitlab-ci .
-    - docker push $TAG
-  dependencies:
-    - level4:stretch:lalapps
-  only:
-    - tags
-
-# FIXME: remove after package builds have been running for a while
-docker:nightly:
-  stage: docker
-  before_script: []
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $NIGHTLY --file .Dockerfile.gitlab-ci .
-    - docker push $NIGHTLY
-  dependencies:
-    - level4:stretch:lalapps
-  only:
-    - master@lscsoft/lalsuite
-    - schedules
-  except:
-    - pushes
-    - web
 
 nightly:top-level:jessie:
   image: ligo/lalsuite-dev:jessie
@@ -429,15 +397,14 @@ nightly:macos:elcapitan:
     - PYPREFIX=/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux1/\1/')
     # Build wheel
     - ./00boot
-    # FIXME: laldetchar depends on glib >= 2.14, too new for manylinux1
-    - ./configure PYTHON=${PYPREFIX}/bin/python --disable-laldetchar ${EXTRA_CONFIG_FLAGS}
+    - ./configure PYTHON=${PYPREFIX}/bin/python --enable-mpi ${EXTRA_CONFIG_FLAGS}
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - auditwheel repair wheel/*.whl
     # Test
     - ${PYPREFIX}/bin/virtualenv test
     - source test/bin/activate
-    - pip install -q wheelhouse/*
+    - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []
   only:
@@ -458,17 +425,17 @@ nightly:macos:elcapitan:
     # Enter virtualenv so that we have a controlled version of Numpy
     - virtualenv-${PYVERS} env
     - source env/bin/activate
-    - pip install -q git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 numpy==1.7.0
+    - pip install git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 'numpy==1.14.5;python_version>="3.7"' 'numpy==1.7.0;python_version<"3.7"'
     # Build wheel
     - ./00boot
-    - ./configure PYTHON=$(which python${PYVERS}) --enable-swig-python ${EXTRA_CONFIG_FLAGS} LDFLAGS=-Wl,-headerpad_max_install_names
+    - ./configure PYTHON=$(which python${PYVERS}) --enable-mpi --enable-swig-python ${EXTRA_CONFIG_FLAGS} LDFLAGS=-Wl,-headerpad_max_install_names
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - delocate-wheel -v -w wheelhouse wheel/*.whl
     # Test
     - virtualenv-${PYVERS} test
     - source test/bin/activate
-    - pip install -q wheelhouse/*
+    - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []
   only:
@@ -490,11 +457,15 @@ nightly:wheel:cp35-cp35m-manylinux1:
   <<: *nightly-wheel-manylinux1
 nightly:wheel:cp36-cp36m-manylinux1:
   <<: *nightly-wheel-manylinux1
+nightly:wheel:cp37-cp37m-manylinux1:
+  <<: *nightly-wheel-manylinux1
 nightly:wheel:cp27-cp27m-macosx:
   <<: *nightly-wheel-macos
 nightly:wheel:cp35-cp35m-macosx:
   <<: *nightly-wheel-macos
 nightly:wheel:cp36-cp36m-macosx:
+  <<: *nightly-wheel-macos
+nightly:wheel:cp37-cp37m-macosx:
   <<: *nightly-wheel-macos
 
 .levelN:rpm: &levelN-rpm-package
@@ -893,9 +864,11 @@ deploy:wheel:
     - nightly:wheel:cp34-cp34m-manylinux1
     - nightly:wheel:cp35-cp35m-manylinux1
     - nightly:wheel:cp36-cp36m-manylinux1
+    - nightly:wheel:cp37-cp37m-manylinux1
     - nightly:wheel:cp27-cp27m-macosx
     - nightly:wheel:cp35-cp35m-macosx
     - nightly:wheel:cp36-cp36m-macosx
+    - nightly:wheel:cp37-cp37m-macosx
   only:
     - /^lalsuite-v.*$/
     - schedules

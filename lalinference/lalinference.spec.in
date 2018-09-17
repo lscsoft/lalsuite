@@ -157,6 +157,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files
 %defattr(-,root,root)
+%license COPYING
 %{_bindir}/lalinference_*
 %{_datarootdir}/lalinference/*
 %{_libdir}/*.so.*
@@ -164,6 +165,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files devel
 %defattr(-,root,root)
+%license COPYING
 %{_includedir}/lal
 %{_libdir}/*.a
 %{_libdir}/*.so
@@ -171,6 +173,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files -n python2-%{name}
 %defattr(-,root,root)
+%license COPYING
 %{_bindir}/bayestar_*
 %{_bindir}/imrtgr_*
 %{_bindir}/rapidpe_*
@@ -179,6 +182,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files octave
 %defattr(-,root,root)
+%license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lalinference.oct*
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'

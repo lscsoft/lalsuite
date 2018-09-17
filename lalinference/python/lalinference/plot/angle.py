@@ -44,3 +44,6 @@ def wrapped_angle(a):
 def wrapped_angle_deg(a):
     """Convert an angle to a reference angle between 0 and 2*pi."""
     return np.mod(a, 360)
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.plot.angle')

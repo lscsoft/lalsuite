@@ -28,8 +28,9 @@ including:
 """
 
 import os
-import tempfile
 import re
+
+from six import string_types
 
 from lal import (utils as lalutils, lal)
 
@@ -50,7 +51,7 @@ __all__ = ['read_timeseries']
 
 def read_timeseries(source, channel, start=None, duration=None,
                     datatype=None, verbose=False):
-    """Read a TimeSeries of channel data from a source.
+    r"""Read a TimeSeries of channel data from a source.
 
     Acceptable sources are:
         - a .gwf-format framefile (string ending in '.gwf')
@@ -119,21 +120,21 @@ def read_timeseries(source, channel, start=None, duration=None,
 
     """
     # parse channels
-    if isinstance(channel, (str, unicode)):
+    if isinstance(channel, string_types):
         channels = [channel]
     else:
         channels = list(channel)
 
     # read cache file
-    if (isinstance(source, basestring) and
-          re.search('(.lcf|.cache)\Z', source)):
+    if (isinstance(source, string_types) and
+          re.search(r'(.lcf|.cache)\Z', source)):
         source = lal.CacheImport(os.path.expanduser(source))
     # convert GLUE cache file
     if _HAS_GLUE and isinstance(source, gcache.Cache):
         source = lalutils.lalcache_from_gluecache(source)
 
     # read from single frame
-    if isinstance(source, basestring) and source.endswith('.gwf'):
+    if isinstance(source, string_types) and source.endswith('.gwf'):
         out = ts_from_frame_file(source, channels, start=start,
                                  duration=duration, datatype=datatype,
                                  verbose=verbose)
@@ -147,7 +148,7 @@ def read_timeseries(source, channel, start=None, duration=None,
         raise ValueError("Cannot interpret source '%s'." % source)
 
     # return
-    if isinstance(channel, (str, unicode)):
+    if isinstance(channel, string_types):
         return out[0]
     else:
         return out

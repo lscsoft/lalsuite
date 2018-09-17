@@ -24,6 +24,9 @@ import lal
 import lalsimulation
 from lalinference.bayestar import command
 
+from lalinference.bayestar.deprecation import warn
+warn('bayestar-sample-model-psd-stats')
+
 # Get names of PSD functions.
 psd_name_prefix = 'SimNoisePSD'
 psd_names = sorted(

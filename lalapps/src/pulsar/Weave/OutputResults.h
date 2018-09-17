@@ -61,7 +61,8 @@ int XLALWeaveOutputResultsWrite(
   );
 int XLALWeaveOutputResultsReadAppend(
   FITSFile *file,
-  WeaveOutputResults **out
+  WeaveOutputResults **out,
+  UINT4 toplist_limit
   );
 int XLALWeaveOutputResultsCompare(
   BOOLEAN *equal,

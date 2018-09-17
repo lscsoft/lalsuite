@@ -207,6 +207,28 @@ void XLALComputeDetAMResponseExtraModes(
   const double gmst
 );
 
+
+COMPLEX16 XLALComputeDetArmTransferFunction(
+	double beta,
+	double mu
+);
+
+
+void XLALComputeDetAMResponseParts(
+	double *armlen,
+	double *xcos,
+	double *ycos,
+	double *fxplus,
+	double *fyplus,
+	double *fxcross,
+	double *fycross,
+	const LALDetector *detector,
+	double ra,
+	double dec,
+	double psi,
+	double gmst
+);
+
 /*
  * Gives a time series of the detector's response to plus and cross
  * polarization

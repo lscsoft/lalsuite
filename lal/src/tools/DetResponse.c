@@ -19,6 +19,7 @@
 */
 
 #include <math.h>
+#include <gsl/gsl_sf_trig.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALError.h>
@@ -180,6 +181,218 @@ void XLALComputeDetAMResponseExtraModes(
 		*fy += Y[i] * DZ + Z[i] * DY;
 	}
 }
+
+
+/*
+ *
+ * beta = pi f L / c
+ * mu = k . u
+ *
+ * @sa
+ * John T. Whelan, "Higher-Frequency Corrections to Stochastic Formulae",
+ * LIGO-T070172.
+ * @sa
+ * Louis J. Rubbo, Neil J. Cornish, and Olivier Poujade, "Forward modeling of
+ * space-borne gravitational wave detectors", Phys. Rev. D 69, 082003 (2004);
+ * arXiv:gr-qc/0311069.
+ * @sa
+ * Malik Rakhmanov, "Response of LIGO to Gravitational Waves at High
+ * Frequencies and in the Vicinity of the FSR (37.5 kHz)", LIGO-T060237.
+ */
+COMPLEX16 XLALComputeDetArmTransferFunction(double beta, double mu)
+{
+	COMPLEX16 ans;
+	ans = cexp(I * beta * (1.0 - mu)) * gsl_sf_sinc(beta * (1.0 + mu));
+	ans += cexp(-I * beta * (1.0 + mu)) * gsl_sf_sinc(beta * (1.0 - mu));
+	ans *= 0.5;
+	return ans;
+}
+
+
+static void getarm(double u[3], double alt, double azi, double lat, double lon)
+{
+	double cosalt = cos(alt);
+	double sinalt = sin(alt);
+	double cosazi = cos(azi);
+	double sinazi = sin(azi);
+	double coslat = cos(lat);
+	double sinlat = sin(lat);
+	double coslon = cos(lon);
+	double sinlon = sin(lon);
+	double uNorth = cosalt * cosazi;
+	double uEast = cosalt * sinazi;
+	double uUp = sinalt;
+	double uRho = - sinlat * uNorth + coslat * uUp;
+	u[0] = coslon * uRho - sinlon * uEast;
+	u[1] = sinlon * uRho + coslon * uEast;
+	u[2] = coslat * uNorth + sinlat * uUp;
+	return;
+}
+
+
+void XLALComputeDetAMResponseParts(double *armlen, double *xcos, double *ycos, double *fxplus, double *fyplus, double *fxcross, double *fycross, const LALDetector *detector, double ra, double dec, double psi, double gmst)
+{
+	double X[3];	/* wave frame x axis */
+	double Y[3];	/* wave frame y axis */
+	double Z[3];	/* wave frame z axis (propagation direction) */
+	double U[3];	/* x arm unit vector */
+	double V[3];	/* y arm unit vector */
+	double DU[3][3];	/* single arm response tensor for x arm */
+	double DV[3][3];	/* single arm response tensor for y arm */
+	double gha = gmst - ra;	/* greenwich hour angle */
+	double cosgha = cos(gha);
+	double singha = sin(gha);
+	double cosdec = cos(dec);
+	double sindec = sin(dec);
+	double cospsi = cos(psi);
+	double sinpsi = sin(psi);
+	int i, j;
+
+	/* compute unit vectors specifying the wave frame x, y, and z axes */
+
+	X[0] = -cospsi * singha - sinpsi * cosgha * sindec;
+	X[1] = -cospsi * cosgha + sinpsi * singha * sindec;
+	X[2] =  sinpsi * cosdec;
+	Y[0] =  sinpsi * singha - cospsi * cosgha * sindec;
+	Y[1] =  sinpsi * cosgha + cospsi * singha * sindec;
+	Y[2] =  cospsi * cosdec;
+	Z[0] = -cosgha * cosdec;
+	Z[1] =  singha * cosdec;
+	Z[2] = -sindec;
+
+	switch (detector->type) {
+
+	case LALDETECTORTYPE_IFOCOMM:
+	case LALDETECTORTYPE_IFODIFF:
+
+		/* FIXME: should compute the effect of non-equal arm lengths;
+		 * but, for now, just use the mean arm length */
+
+		*armlen = detector->frDetector.xArmMidpoint
+			+ detector->frDetector.yArmMidpoint;
+
+		/* get the unit vectors along the arms */
+
+		getarm(U, detector->frDetector.xArmAltitudeRadians,
+			detector->frDetector.xArmAzimuthRadians,
+			detector->frDetector.vertexLatitudeRadians,
+			detector->frDetector.vertexLongitudeRadians);
+
+		getarm(V, detector->frDetector.yArmAltitudeRadians,
+			detector->frDetector.yArmAzimuthRadians,
+			detector->frDetector.vertexLatitudeRadians,
+			detector->frDetector.vertexLongitudeRadians);
+
+		/* compute direction cosines for the signal direction relative
+		 * to the x-arm and the y-arm */
+
+		*xcos = *ycos = 0.0;
+		for (i = 0; i < 3; ++i) {
+			*xcos += U[i] * Z[i];
+			*ycos += V[i] * Z[i];
+		}
+
+		/* compute the single arm response tensors for the x-arm and
+		 * y-arm */
+
+		for (i = 0; i < 3; ++i) {
+			DU[i][i] = 0.5 * U[i] * U[i];
+			DV[i][i] = 0.5 * V[i] * V[i];
+			for (j = i + 1; j < 3; ++j) {
+				DU[i][j] = DU[j][i] = 0.5 * U[i] * U[j];
+				DV[i][j] = DV[j][i] = 0.5 * V[i] * V[j];
+			}
+		}
+
+		/* compute the beam pattern partial responses for the x-arm and
+		 * y-arm */
+
+		*fxplus = *fxcross = 0.0;
+		*fyplus = *fycross = 0.0;
+		for (i = 0; i < 3; ++i) {
+			double DUX = DU[i][0]*X[0]+DU[i][1]*X[1]+DU[i][2]*X[2];
+			double DUY = DU[i][0]*Y[0]+DU[i][1]*Y[1]+DU[i][2]*Y[2];
+			double DVX = DV[i][0]*X[0]+DV[i][1]*X[1]+DV[i][2]*X[2];
+			double DVY = DV[i][0]*Y[0]+DV[i][1]*Y[1]+DV[i][2]*Y[2];
+			*fxplus  += X[i] * DUX - Y[i] * DUY;
+			*fxcross += X[i] * DUY + Y[i] * DUX;
+			*fyplus  += X[i] * DVX - Y[i] * DVY;
+			*fycross += X[i] * DVY + Y[i] * DVX;
+		}
+
+		/* differential interferometer: arm y is subtracted from
+		 * arm x */
+		if (detector->type == LALDETECTORTYPE_IFODIFF) {
+			*fyplus *= -1;
+			*fycross *= -1;
+		}
+
+		break;
+
+	case LALDETECTORTYPE_IFOXARM:
+
+		/* no y-arm */
+
+		*armlen = 2.0 * detector->frDetector.xArmMidpoint;
+
+		getarm(U, detector->frDetector.xArmAltitudeRadians,
+			detector->frDetector.xArmAzimuthRadians,
+			detector->frDetector.vertexLatitudeRadians,
+			detector->frDetector.vertexLongitudeRadians);
+
+		*xcos = *ycos = 0.0;
+		for (i = 0; i < 3; ++i)
+			*xcos += U[i] * Z[i];
+
+		*fyplus = *fycross = 0.0;
+		XLALComputeDetAMResponse(fxplus, fxcross,
+			(const REAL4(*)[3])detector->response, ra, dec, psi,
+			gmst);
+
+		break;
+
+	case LALDETECTORTYPE_IFOYARM:
+
+		/* no x-arm */
+
+		*armlen = 2.0 * detector->frDetector.yArmMidpoint;
+
+		getarm(V, detector->frDetector.yArmAltitudeRadians,
+			detector->frDetector.yArmAzimuthRadians,
+			detector->frDetector.vertexLatitudeRadians,
+			detector->frDetector.vertexLongitudeRadians);
+
+		*xcos = *ycos = 0.0;
+		for (i = 0; i < 3; ++i)
+			*ycos += V[i] * Z[i];
+
+		*fxplus = *fxcross = 0.0;
+		XLALComputeDetAMResponse(fyplus, fycross,
+			(const REAL4(*)[3])detector->response, ra, dec, psi,
+			gmst);
+
+		break;
+
+	default:
+
+		/* FIXME: could handle this situation properly; fur now, just
+		 * ignore non long-wavelength-limit effects by setting armlen
+		 * to zero; also, pretend that all of the response is
+		 * associated with the x-arm */
+
+		*armlen = *xcos = *ycos = 0.0;
+		*fyplus = *fycross = 0.0;
+		XLALComputeDetAMResponse(fxplus, fxcross,
+			(const REAL4(*)[3])detector->response, ra, dec, psi,
+			gmst);
+
+		break;
+
+	}
+
+	return;
+}
+
 
 /**
  * \deprecated Use XLALComputeDetAMResponse() instead.

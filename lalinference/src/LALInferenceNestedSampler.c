@@ -1219,7 +1219,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       }
       XLALH5FileClose(h5file);
     }
-  
+
     if(output_array) {
       for(i=0;i<N_output_array;i++){
         LALInferenceClearVariables(output_array[i]);

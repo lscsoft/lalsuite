@@ -55,6 +55,7 @@ swig/.swigdeps
 swig/swiglal_*
 swig/swiglalpulsar.i*
 test/BinarySSBTimesTest
+test/CWSignalBandTest
 test/ComputeFstatTest
 test/ConstructPLUTTest
 test/DopplerScanTest

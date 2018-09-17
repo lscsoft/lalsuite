@@ -61,3 +61,6 @@ def TemporaryDirectory(suffix='', prefix='tmp', dir=None, delete=True):
     finally:
         if delete:
             shutil.rmtree(dir)
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.util.file')

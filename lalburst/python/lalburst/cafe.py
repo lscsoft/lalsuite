@@ -278,7 +278,7 @@ class CafePacker(packing.Packer):
 		#
 
 		matching_bins = []
-		for n in xrange(len(self.bins) - 1, -1, -1):
+		for n in range(len(self.bins) - 1, -1, -1):
 			bin = self.bins[n]
 			if bin.extent[1] < new.extent[0] - self.max_gap:
 				break

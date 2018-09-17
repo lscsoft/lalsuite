@@ -25,7 +25,7 @@
 #
 
 import numpy as np
-from pylal import bayespputils as bp
+from lalinference import bayespputils as bp
 from lalinference import git_version
 from optparse import OptionParser
 

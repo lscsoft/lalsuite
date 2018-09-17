@@ -25,7 +25,9 @@ import tempfile
 
 from setuptools import Extension, find_packages, setup
 from setuptools.command.build_ext import build_ext as _build_ext
+from setuptools.command.build_py import build_py as _build_py
 from distutils.command.build_scripts import build_scripts as _build_scripts
+from distutils import log
 
 # Recursive globbing like in Python 3.5
 from glob2 import glob
@@ -34,6 +36,7 @@ from glob2 import glob
 subst = dict(prefix=os.path.abspath('build/inst'))
 subst['exec_prefix'] = Template('@exec_prefix@').substitute(**subst)
 BINDIR = Template('@bindir@').substitute(**subst)
+DATADIR = Template('$prefix/share').substitute(**subst)
 LIBEXECDIR = Template('@libexecdir@').substitute(**subst)
 PYTHONDIR = Template('@pythondir@').substitute(**subst)
 BASE_VERSION = '@BASE_VERSION@'
@@ -54,6 +57,39 @@ class build_ext(_build_ext):
         self.copy_file(src, dst)
 
 
+lal_data_path_fixup = '''
+
+
+#
+# This section was added automatically to support using LALSuite as a wheel.
+#
+import os
+import pkg_resources
+new_path = pkg_resources.resource_filename('lalapps', 'data')
+path = os.environ.get('LAL_DATA_PATH')
+path = path.split(':') if path else []
+if new_path not in path:
+    path.append(new_path)
+os.environ['LAL_DATA_PATH'] = ':'.join(path)
+'''
+
+
+
+class build_py(_build_py):
+    """Override setuptools build_py: add line to fix up LAL_DATA_PATH
+    environment variable."""
+
+    def build_module(self, module, module_file, package):
+        outfile, copied = _build_py.build_module(self, module, module_file,
+                                                 package)
+        if copied and '.' not in package \
+                and os.path.basename(module_file) == '__init__.py':
+            log.info('adding LAL_DATA_PATH patch to %s', outfile)
+            with open(outfile, 'a') as f:
+                f.write(lal_data_path_fixup)
+        return outfile, copied
+
+
 stub = '''\
 #!python
 import os, pkg_resources, sys
@@ -67,7 +103,7 @@ class build_scripts(_build_scripts):
 
     def run(self):
         old_scripts = self.scripts[:]
-        new_scripts = []
+        new_scripts = set()
         self.mkpath(self.build_dir)
         tmpdir = tempfile.mkdtemp(dir=self.build_dir)
         try:
@@ -86,8 +122,8 @@ class build_scripts(_build_scripts):
                             shutil.copyfileobj(infile, outfile)
                 else:
                     new_script = old_script
-                new_scripts.append(new_script)
-            self.scripts = new_scripts
+                new_scripts.add(new_script)
+            self.scripts = list(new_scripts)
             _build_scripts.run(self)
             self.scripts = old_scripts
         finally:
@@ -115,16 +151,25 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Topic :: Scientific/Engineering :: Astronomy',
         'Topic :: Scientific/Engineering :: Physics'],
-    cmdclass={'build_ext': build_ext, 'build_scripts': build_scripts},
-    package_dir={'': PYTHONDIR, 'lalapps.bin': BINDIR},
-    package_data={'lalapps.bin': ['*']},
-    packages=find_packages(PYTHONDIR) + ['lalapps.bin'],
-    scripts=glob(LIBEXECDIR + '/**/*.py') + glob(BINDIR + '/*'),
+    cmdclass={'build_ext': build_ext,
+              'build_py': build_py,
+              'build_scripts': build_scripts},
+    package_dir={'': PYTHONDIR,
+                 'lalapps.bin': BINDIR, 'lalapps.data': DATADIR},
+    package_data={'lalapps.bin': ['*'], 'lalapps.data': ['*']},
+    # FIXME: exclude lalpulsar data files because they cause the wheel to
+    # exceed the PyPI upload size limit.
+    exclude_package_data={'lalapps.data': ['earth*.dat.gz', 'sun*.dat.gz',
+                                           'tdb*.dat.gz', 'te*.dat.gz']},
+    packages=find_packages(PYTHONDIR) + ['lalapps.bin', 'lalapps.data'],
+    scripts=glob(BINDIR + '/*') + glob(LIBEXECDIR + '/**/*.py'),
     ext_modules=[Extension(os.path.relpath(filename, PYTHONDIR)
                            .replace('.so', '')
                            .replace('/', '.'), [])
                  for filename in glob(PYTHONDIR + '/**/*.so')],
-    install_requires=['ligo-segments', 'numpy>=1.7', 'python-dateutil']
+    install_requires=['lscsoft-glue', 'ligo-segments', 'matplotlib',
+                      'numpy>=1.7', 'python-dateutil', 'scipy']
 )

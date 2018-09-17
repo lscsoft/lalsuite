@@ -38,8 +38,6 @@ BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
 BuildRequires: python2-lalburst >= @MIN_LALBURST_VERSION@
 BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: lalstochastic-devel >= @MIN_LALSTOCHASTIC_VERSION@
-BuildRequires: python2-lalstochastic >= @MIN_LALSTOCHASTIC_VERSION@
 BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
 BuildRequires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
 BuildRequires: lalinference-devel >= @MIN_LALINFERENCE_VERSION@
@@ -67,8 +65,6 @@ Requires: lalburst >= @MIN_LALBURST_VERSION@
 Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
 Requires: lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-Requires: lalstochastic >= @MIN_LALSTOCHASTIC_VERSION@
-Requires: python2-lalstochastic >= @MIN_LALSTOCHASTIC_VERSION@
 Requires: lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: lalinference >= @MIN_LALINFERENCE_VERSION@
@@ -106,6 +102,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files
 %defattr(-,root,root)
+%license COPYING
 %{_bindir}/*
 %{_datadir}/lalapps/*
 %{_mandir}/man1/*

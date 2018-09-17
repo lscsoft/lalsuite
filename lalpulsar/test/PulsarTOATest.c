@@ -192,20 +192,20 @@ int main(int argc, char *argv[])
   /* initialise the solar system ephemerides */
   const char *earthFile = NULL, *sunFile = NULL;
   if( par.ephem == NULL ){ /* default to DE405 */
-    earthFile = TEST_DATA_DIR "earth00-19-DE405.dat.gz";
-    sunFile   = TEST_DATA_DIR "sun00-19-DE405.dat.gz";
+    earthFile = TEST_PKG_DATA_DIR "earth00-19-DE405.dat.gz";
+    sunFile   = TEST_PKG_DATA_DIR "sun00-19-DE405.dat.gz";
   }
   else if( strcmp(par.ephem, "DE200") == 0 ){
-    earthFile = TEST_DATA_DIR "earth00-19-DE200.dat.gz";
-    sunFile   = TEST_DATA_DIR "sun00-19-DE200.dat.gz";
+    earthFile = TEST_PKG_DATA_DIR "earth00-19-DE200.dat.gz";
+    sunFile   = TEST_PKG_DATA_DIR "sun00-19-DE200.dat.gz";
   }
   else if( strcmp(par.ephem, "DE405") == 0 ){
-    earthFile = TEST_DATA_DIR "earth00-19-DE405.dat.gz";
-    sunFile   = TEST_DATA_DIR "sun00-19-DE405.dat.gz";
+    earthFile = TEST_PKG_DATA_DIR "earth00-19-DE405.dat.gz";
+    sunFile   = TEST_PKG_DATA_DIR "sun00-19-DE405.dat.gz";
   }
   else if( strcmp(par.ephem, "DE421") == 0 ){
-    earthFile = TEST_DATA_DIR "earth00-19-DE421.dat.gz";
-    sunFile   = TEST_DATA_DIR "sun00-19-DE421.dat.gz";
+    earthFile = TEST_PKG_DATA_DIR "earth00-19-DE421.dat.gz";
+    sunFile   = TEST_PKG_DATA_DIR "sun00-19-DE421.dat.gz";
   }
   else {
     XLAL_ERROR_MAIN ( XLAL_EINVAL, "Invalid ephem='%s', allowed are 'DE200', 'DE405' or 'DE421'\n", par.ephem );
@@ -236,10 +236,10 @@ int main(int argc, char *argv[])
   /* read in the time correction file */
   const char *tcFile = NULL;
   if( ttype == TIMECORRECTION_TEMPO2 || ttype == TIMECORRECTION_TCB ){
-    tcFile = TEST_DATA_DIR "te405_2000-2019.dat.gz";
+    tcFile = TEST_PKG_DATA_DIR "te405_2000-2019.dat.gz";
   }
   else if ( ttype == TIMECORRECTION_TDB ){
-    tcFile = TEST_DATA_DIR "tdb_2000-2019.dat.gz";
+    tcFile = TEST_PKG_DATA_DIR "tdb_2000-2019.dat.gz";
   }
 
   tdat = XLALInitTimeCorrections( tcFile );

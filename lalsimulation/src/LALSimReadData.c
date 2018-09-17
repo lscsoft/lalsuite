@@ -26,6 +26,7 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include <lal/FileIO.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
 #include <lal/LALSimReadData.h>
@@ -51,41 +52,21 @@
  * @details Opens a data file for input with a specified path name.
  * If the path name is an absolute path then this specific file is opened;
  * otherwise, search for the file in paths given in the environment variable
- * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
+ * LAL_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
  * @param[in] fname The path of the file to open.
  * @return A pointer to a LALFILE structure or NULL on failure.
  */
 LALFILE *XLALSimReadDataFileOpen(const char *fname)
 {
-    const char *pkgdatadir = PKG_DATA_DIR;
-    char path[PATH_MAX] = "";
-    LALFILE *fp;
-
-    if (strchr(fname, '/')) {   /* a specific path is given */
-        if (realpath(fname, path) == NULL)
-            XLAL_ERROR_NULL(XLAL_EIO, "Unresolvable path %s\n", path);
-    } else {
-        /* unspecific path given: use LALSIM_DATA_PATH environment */
-        char *env = getenv("LALSIM_DATA_PATH");
-        char *str;
-        char *dir;
-        env = str = XLALStringDuplicate(env ? env : ":");
-        while ((dir = XLALStringToken(&str, ":", 1))) {
-            if (strlen(dir))
-                snprintf(path, sizeof(path), "%s/%s", dir, fname);
-            else        /* use default path */
-                snprintf(path, sizeof(path), "%s/%s", pkgdatadir, fname);
-            if (access(path, R_OK) == 0)        /* found it! */
-                break;
-            *path = 0;
-        }
-        XLALFree(env);
-    }
-    if (!*path) /* could not find file */
-        XLAL_ERROR_NULL(XLAL_EIO, "Could not find data file %s\n", fname);
+    LALFILE *fp = NULL;
+    char *path = XLALFileResolvePathLong(fname, PKG_DATA_DIR);
+    if (!path)  /* could not find file */
+        XLAL_ERROR_FAIL(XLAL_EIO, "Could not find data file %s\n", fname);
     fp = XLALFileOpenRead(path);
     if (!fp)    /* open failure */
-        XLAL_ERROR_NULL(XLAL_EIO, "Could not open data file %s\n", path);
+        XLAL_ERROR_FAIL(XLAL_EIO, "Could not open data file %s\n", path);
+XLAL_FAIL:
+    XLALFree(path);
     return fp;
 }
 
