@@ -660,7 +660,7 @@ docker:tags:el7:
     - export DEBEMAIL="gitlab@git.ligo.org"
     - tar xf ${CI_JOB_NAME#level?:deb:}/${TARBALL}
     - cd ${PACKAGE}-*
-    - dch -v ${VERSION}-1 'Rebuilt automatically on git.ligo.org CI'
+    - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
     # build packages
     - debuild -us -uc -r
   artifacts:
