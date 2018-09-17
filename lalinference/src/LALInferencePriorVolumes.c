@@ -182,13 +182,20 @@ static double mass_outer_integral(LALInferenceVariables *priorArgs){
     fprintf(stderr,"ERROR: chirpmass doesn't seem to be a valid param. Exiting\n");
     exit(1);
     }
-  /* this integrates on chirpmass */
-  int status = gsl_integration_qags (&F, mc_min, mc_max, epsabs, epsrel, wsSize, w, &result, &error); 
   
-  if (status)
-        XLAL_ERROR_REAL8(XLAL_EFUNC | XLAL_EDATA, "Bad data; GSL integration failed.");
-
+  /* Turn off the error handler - must check return values */
+  gsl_error_handler_t *oldhandler=gsl_set_error_handler_off();
+  /* this integrates on chirpmass */
+  int status = gsl_integration_qags (&F, mc_min, mc_max, epsabs, epsrel, wsSize, w, &result, &error);
+  /* Restore error handler */
+  gsl_set_error_handler(oldhandler);
+  /* Free workspace */
   gsl_integration_workspace_free(w);
+  
+  /* Check for errors */
+  if (status)
+        XLAL_ERROR_REAL8(XLAL_EFUNC | XLAL_EDATA, "GSL integration failed in %s. GSL error:\n%s",__func__,gsl_strerror(status));
+
   return result;
   }
 
