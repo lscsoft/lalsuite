@@ -35,6 +35,7 @@ parser.add_option("-g","--gps-time-file",action="store",type="string",default=No
 parser.add_option("-t","--single-triggers",action="store",type="string",default=None,help="SnglInspiralTable trigger list",metavar="SNGL_FILE.xml")
 parser.add_option("-C","--coinc-triggers",action="store",type="string",default=None,help="CoinInspiralTable trigger list",metavar="COINC_FILE.xml")
 parser.add_option("--gid",action="store",type="string",default=None,help="GraceDB ID")
+parser.add_option("--service-url",action="store",type="string",default=None,help="GraceDB url from which xml files are downloaded")
 parser.add_option("-I","--injections",action="store",type="string",default=None,help="List of injections to perform and analyse",metavar="INJFILE.xml")
 parser.add_option("-B","--burst_injections",action="store",type="string",default=None,help="SimBurst table for LIB injections",metavar="INJFILE.xml")
 parser.add_option("-P","--pipedown-db",action="store",type="string",default=None,help="Pipedown database to read and analyse",metavar="pipedown.sqlite")
@@ -177,6 +178,9 @@ if opts.coinc_triggers is not None:
 if opts.gid is not None:
     cp.set('input','gid',opts.gid)
 
+if opts.service_url is not None:
+    cp.set('analysis','service-url',opts.service_url)
+
 if opts.pipedown_db is not None:
     cp.set('input','pipedown-db',os.path.abspath(opts.pipedown_db))
 
@@ -240,15 +244,18 @@ def setup_roq(cp):
         gid=None
         row=None
 
+    service_url = None
+    if cp.has_option('analysis', 'service-url'):
+      service_url = cp.get('analysis', 'service-url')
     roq_bounds = pipe_utils.Query_ROQ_Bounds_Type(path, roq_paths)
     if roq_bounds == 'chirp_mass_q':
         print('ROQ has bounds in chirp mass and mass-ratio')
-        mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=gid, sim_inspiral=row)
+        mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=gid, sim_inspiral=row, service_url=service_url)
     elif roq_bounds == 'component_mass':
         print('ROQ has bounds in component masses')
         # get component mass bounds, then compute the chirp mass that can be safely covered
         # further below we pass along the component mass bounds to the sampler, not the tighter chirp-mass, q bounds
-        m1_priors, m2_priors, trigger_mchirp = pipe_utils.get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=gid, sim_inspiral=row)
+        m1_priors, m2_priors, trigger_mchirp = pipe_utils.get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=gid, sim_inspiral=row, service_url=service_url)
         mc_priors = {}
         for (roq,m1_prior), (roq2,m2_prior) in zip(m1_priors.items(), m2_priors.items()):
             mc_priors[roq] = sorted([pipe_utils.mchirp_from_components(m1_prior[1], m2_prior[0]), pipe_utils.mchirp_from_components(m1_prior[0], m2_prior[1])])

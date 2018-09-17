@@ -134,7 +134,7 @@ class Event():
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
-def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath="./",downloadpsd=True,roq=False):
+def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath="./",downloadpsd=True,roq=False,service_url=None):
   """
   Parse LV alert file, containing coinc, sngl, coinc_event_map.
   and create a list of Events as input for pipeline
@@ -155,7 +155,10 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
   cwd=os.getcwd()
   os.chdir(basepath)
   print("Download %s coinc.xml" % gid)
-  client = GraceDb()
+  if service_url is None:
+    client = GraceDb()
+  else:
+    client = GraceDb(service_url=service_url)
   xmldoc = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))[0]
   ligolw_utils.write_filename(xmldoc, "coinc.xml")
   coinc_events = lsctables.CoincInspiralTable.get_table(xmldoc)
@@ -513,13 +516,16 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
     out[ifo]=os.path.join(outpath,ifo+'_psd_'+time+'.txt')
   return out
 
-def get_trigger_chirpmass(gid=None,gracedb="gracedb"):
+def get_trigger_chirpmass(gid=None,gracedb="gracedb",service_url=None):
   from glue.ligolw import lsctables
   from glue.ligolw import ligolw
   from glue.ligolw import utils as ligolw_utils
   from ligo.gracedb.rest import GraceDb
   cwd=os.getcwd()
-  client = GraceDb()
+  if service_url is None:
+    client = GraceDb()
+  else:
+    client = GraceDb(service_url=service_url)
   xmldoc = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))[0]
   ligolw_utils.write_filename(xmldoc, "coinc.xml")
   coinc_events = lsctables.CoincInspiralTable.get_table(xmldoc)
@@ -541,7 +547,7 @@ def get_trigger_chirpmass(gid=None,gracedb="gracedb"):
 
   return mchirp
 
-def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=None,sim_inspiral=None):
+def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=None,sim_inspiral=None, service_url=None):
 
   ## XML and GID cannot be given at the same time
   ## sim_inspiral must already point at the right row
@@ -567,7 +573,7 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=None,sim_inspira
       mc_priors[roq][1]-= (mc_priors[roq][1]- mc_priors[ordered_roq_paths[i+1]][0])/2.
     i+=1'''
   if gid is not None:
-  	trigger_mchirp = get_trigger_chirpmass(gid)
+        trigger_mchirp = get_trigger_chirpmass(gid=gid,service_url=service_url)
   elif sim_inspiral is not None:
         trigger_mchirp = sim_inspiral.mchirp
   else:
@@ -575,7 +581,7 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=None,sim_inspira
 
   return mc_priors, trigger_mchirp
 
-def get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=None,sim_inspiral=None):
+def get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=None,sim_inspiral=None,service_url=None):
 
   ## XML and GID cannot be given at the same time
   ## sim_inspiral must already point at the right row
@@ -593,7 +599,7 @@ def get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=None,sim
     m2_priors[roq]=[float(roq_params[roq]['mass2min']),float(roq_params[roq]['mass2max'])]
 
   if gid is not None:
-    trigger_mchirp = get_trigger_chirpmass(gid)
+    trigger_mchirp = get_trigger_chirpmass(gid,service_url=service_url)
   elif sim_inspiral is not None:
     trigger_mchirp = sim_inspiral.mchirp
   else:
@@ -1023,8 +1029,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       threshold_snr = None
       if not self.config.has_option('engine','distance-max') and self.config.has_option('input','threshold-snr'):
         threshold_snr=self.config.getfloat('input','threshold-snr')
+      service_url = None
+      if self.config.has_option('analysis','service-url'):
+        service_url = self.config.get('analysis','service-url')
       events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),basepath=self.basepath,downloadpsd=downloadgracedbpsd,
-                           threshold_snr=threshold_snr,roq=self.config.getboolean('analysis','roq'))
+                           threshold_snr=threshold_snr,roq=self.config.getboolean('analysis','roq'),service_url=service_url)
     else: gid=None
     # pipedown-database
     if self.config.has_option('input','gstlal-db'):
