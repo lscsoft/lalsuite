@@ -103,7 +103,7 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 Attributes = ligolw.sax.xmlreader.AttributesImpl
 
-# glue, LAL and pylal imports.
+# glue, LAL imports.
 from glue import segments
 import glue.lal
 import lal

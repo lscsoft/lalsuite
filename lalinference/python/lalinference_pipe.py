@@ -230,9 +230,11 @@ def setup_roq(cp):
     elif opts.injections is not None or cp.has_option('input','injection-file'):
         print("Only 0-th event in the XML table will be considered while running with ROQ\n")
         # Read event 0 from  Siminspiral Table
-        from pylal import SimInspiralUtils
+        from glue.ligolw import ligolw
+        from glue.ligolw import lsctables
+        from glue.ligolw import utils
         inxml=cp.get('input','injection-file')
-        injTable=SimInspiralUtils.ReadSimInspiralFromFiles([inxml])
+        injTable = lsctables.SimInspiralTable.get_table(utils.load_filename(inxml,contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
         row=injTable[0]
     else:
         gid=None
