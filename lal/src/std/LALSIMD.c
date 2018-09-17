@@ -224,7 +224,7 @@ static LAL_SIMD_ISET detect_instruction_set(void) {
   if ((abcd[2] & (1 << 28)) == 0) return iset;		/* no AVX */
   iset = LAL_SIMD_ISET_AVX;				/* AVX detected */
 
-#if HAVE_X86 && defined(__GNUC__) && __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
+#if HAVE_X86 && defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
   /* GCC's __get_cpuid() fails to detect AVX2, see bug report at https://gcc.gnu.org/bugzilla/show_bug.cgi?id=77756 */
   if (!__builtin_cpu_supports("avx2")) return iset;	/* no AVX2 */
 #else
