@@ -227,8 +227,8 @@ static int CheckFITSKeyword( const CHAR *key, CHAR *keyword, CHAR *unit )
 
     // Format a hierarchical FITS keyword
     XLAL_CHECK_FAIL( 9 + strlen( keyword ) < FLEN_KEYWORD, XLAL_EINVAL, "Key '%s' is too long", keyword );
-    CHAR buf[FLEN_KEYWORD-9];
-    strcpy( buf, keyword );
+    CHAR buf[FLEN_KEYWORD - 9];
+    strncpy( buf, keyword, sizeof( buf ) );
     snprintf( keyword, FLEN_KEYWORD, "HIERARCH %s", buf );
 
   }
@@ -1512,11 +1512,13 @@ int XLALFITSHeaderWriteGPSTime( FITSFile UNUSED *file, const CHAR UNUSED *key, c
   CALL_FITS( fits_write_key_str, file->ff, keyword, utc_str, comment );
 
   // Write time in GPS seconds/nanoseconds format
-  CHAR keyword_gps[FLEN_KEYWORD+4];
-  snprintf( keyword_gps, sizeof( keyword_gps ), "%s GPS", keyword );
+  XLAL_CHECK_FAIL( 4 + strlen( keyword ) < FLEN_KEYWORD, XLAL_EINVAL, "Key '%s' is too long", keyword );
+  CHAR buf[FLEN_KEYWORD - 4];
+  strncpy( buf, keyword, sizeof( buf ) );
+  snprintf( keyword, FLEN_KEYWORD, "%s GPS", buf );
   CHAR gps_str[FLEN_VALUE];
   XLAL_CHECK_FAIL( XLALGPSToStr( gps_str, &gps ) != NULL, XLAL_EFUNC );
-  CALL_FITS( fits_write_key_str, file->ff, keyword_gps, gps_str, "UTC value takes precedence" );
+  CALL_FITS( fits_write_key_str, file->ff, keyword, gps_str, "UTC value takes precedence" );
 
   return XLAL_SUCCESS;
 
