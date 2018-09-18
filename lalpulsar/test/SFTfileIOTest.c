@@ -366,7 +366,7 @@ int main( void )
     return EXIT_FAILURE;
 
   /* try to write this v1-SFTs as v2: should fail without detector-info ! */
-  strncpy( sft_vect->data[0].name, "??", 2 );
+  strncpy( sft_vect->data[0].name, "??", 3 );
   XLAL_CHECK_MAIN ( XLALWriteSFT2file(&(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!") != XLAL_SUCCESS, XLAL_EFUNC ); XLALClearErrno();
 
   /* put detector there */
