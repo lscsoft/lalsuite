@@ -18,8 +18,10 @@
  */
 
 #include <lal/LALInference.h>
+#include <lal/LALInferenceVCSInfo.h>
 #include <lal/H5FileIO.h>
-#include "LALInferenceHDF5.h"
+#include <lal/LALVCSInfoType.h>
+#include <lal/LALInferenceHDF5.h>
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <assert.h>
@@ -47,6 +49,8 @@ LALH5File *LALInferenceH5CreateGroupStructure(
     LALH5File *h5file, const char *codename, const char *runID)
 {
     LALH5File *codeGroup = XLALH5GroupOpen(h5file, codename);
+    XLALH5FileAddStringAttribute(codeGroup, "version", XLALVCSInfoString(lalInferenceVCSInfoList, 1, "") );
+
     LALH5File *runGroup = XLALH5GroupOpen(codeGroup, runID);
     XLALH5FileClose(codeGroup);
     return(runGroup);
