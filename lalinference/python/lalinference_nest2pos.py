@@ -6,7 +6,6 @@ import os
 import os.path
 import sys
 
-import lalinference
 from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_dset_name
 from lalinference import LALInferenceHDF5NestedSamplesDatasetName as nested_dset_name
 from lalinference.nest2pos import draw_posterior_many, draw_N_posterior_many, compute_weights
@@ -44,9 +43,10 @@ def read_nested_from_hdf5(nested_path_list):
         for key in attrs:
             if key in metadata[level]:
                     if collision == 'raise':
-                        raise ValueError(
-                            'Metadata mismtach on level %r for key %r:\n\t%r != %r'
-                            % (level, key, attrs[key], metadata[level][key]))
+                        if attrs[key]!=metadata[level][key]:
+                            raise ValueError(
+                                'Metadata mismtach on level %r for key %r:\n\t%r != %r'
+                                % (level, key, attrs[key], metadata[level][key]))
                     elif collision == 'append':
                         if isinstance(metadata[level][key], list):
                             metadata[level][key].append(attrs[key])
