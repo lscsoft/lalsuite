@@ -49,7 +49,9 @@ LALH5File *LALInferenceH5CreateGroupStructure(
     LALH5File *h5file, const char *codename, const char *runID)
 {
     LALH5File *codeGroup = XLALH5GroupOpen(h5file, codename);
-    XLALH5FileAddStringAttribute(codeGroup, "version", XLALVCSInfoString(lalInferenceVCSInfoList, 1, "") );
+    char *versionString = XLALVCSInfoString(lalInferenceVCSInfoList, 1, "");
+    XLALH5FileAddStringAttribute(codeGroup, "version", versionString );
+    XLALFree(versionString);
 
     LALH5File *runGroup = XLALH5GroupOpen(codeGroup, runID);
     XLALH5FileClose(codeGroup);
