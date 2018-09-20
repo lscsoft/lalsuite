@@ -2845,7 +2845,8 @@ class SkyMapJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.set_sub_file(submitFile)
         self.set_stdout_file(os.path.join(logdir,'samples2map-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.join(logdir,'samples2map-$(cluster)-$(process).err'))
-        self.add_condor_cmd('getenv','True')
+        # The user environment PYTHONPATH may be set to python2.7 version of lalsuite, so this is disabled
+        #self.add_condor_cmd('getenv','True')
         # Add user-specified options from ini file
         self.add_ini_opts(cp,'ligo-skymap-from-samples')
 
@@ -2869,7 +2870,8 @@ class PlotSkyMapJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         self.set_sub_file(submitFile)
         self.set_stdout_file(os.path.join(logdir,'plotskymap-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.join(logdir,'plotskymap-$(cluster)-$(process).err'))
-        self.add_condor_cmd('getenv','True')
+        # The user environment PYTHONPATH may be set to python2.7 version of lalsuite, so this is disabled
+        # self.add_condor_cmd('getenv','True')
         # Add user-specified options from ini file
         self.add_ini_opts(cp,'ligo-skymap-plot')
 
