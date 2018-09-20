@@ -60,8 +60,8 @@ Description: transitional package
 
 Package: python-lalsimulation
 Section: python
-Replaces: lalsimulation-python (<< 1.7.3-1~)
-Breaks: lalsimulation-python (<< 1.7.3-1~)
+Replaces: lalsimulation-python (<< 1.7.3.1-1~)
+Breaks: lalsimulation-python (<< 1.7.3.1-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python:Depends},
@@ -82,8 +82,8 @@ Description: transitional package
  this is a transitional package, it can safely be removed.
 
 Package: python3-lalsimulation
-Replaces: lalsimulation-python3 (<< 1.7.3-1~)
-Breaks: lalsimulation-python3 (<< 1.7.3-1~)
+Replaces: lalsimulation-python3 (<< 1.7.3.1-1~)
+Breaks: lalsimulation-python3 (<< 1.7.3.1-1~)
 Section: python
 Architecture: any
 Depends:
