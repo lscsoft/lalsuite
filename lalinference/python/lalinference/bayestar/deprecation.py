@@ -69,4 +69,4 @@ def warn(new=None, old=None, kind='module'):
     message += '    pip install ligo.skymap'
     message += '\n'
 
-    warnings.warn(message, MovedWarning, stacklevel=2)
+    warnings.warn(message, MovedWarning, stacklevel=3)
