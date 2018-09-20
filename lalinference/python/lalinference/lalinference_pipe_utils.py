@@ -2835,6 +2835,10 @@ class SkyMapJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
         pipeline.AnalysisJob.__init__(self,cp)
         requirements=[]
+        if cp.has_option('condor','accounting_group'):
+            self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+        if cp.has_option('condor','accounting_group_user'):
+            self.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
         if cp.has_option('condor','queue'):
             self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
             requirements.append('(TARGET.'+cp.get('condor','queue')+' =?= True)')
@@ -2860,6 +2864,10 @@ class PlotSkyMapJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
         pipeline.CondorDAGJob.__init__(self, "vanilla", exe)
         pipeline.AnalysisJob.__init__(self, cp)
         requirements=[]
+        if cp.has_option('condor','accounting_group'):
+            self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+        if cp.has_option('condor','accounting_group_user'):
+            self.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
         if cp.has_option('condor','queue'):
             self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
             requirements.append('(TARGET.'+cp.get('condor','queue')+' =?= True)')
