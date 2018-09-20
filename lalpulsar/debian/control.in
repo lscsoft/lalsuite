@@ -59,8 +59,8 @@ Description: transitional package
 
 Package: python-lalpulsar
 Section: python
-Replaces: lalpulsar-python (<< 1.16.0-1~)
-Breaks: lalpulsar-python (<< 1.16.0-1~)
+Replaces: lalpulsar-python (<< 1.16.0.1-1~)
+Breaks: lalpulsar-python (<< 1.16.0.1-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python:Depends},
@@ -82,8 +82,8 @@ Description: transitional package
 
 Package: python3-lalpulsar
 Section: python
-Replaces: lalpulsar-python3 (<< 1.16.0-1~)
-Breaks: lalpulsar-python3 (<< 1.16.0-1~)
+Replaces: lalpulsar-python3 (<< 1.16.0.1-1~)
+Breaks: lalpulsar-python3 (<< 1.16.0.1-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},

@@ -61,8 +61,8 @@ Description: transitional package
 
 Package: python-lalframe
 Section: python
-Replaces: lalframe-python (<< 1.4.3-1~)
-Breaks: lalframe-python (<< 1.4.3-1~)
+Replaces: lalframe-python (<< 1.4.3.1-1~)
+Breaks: lalframe-python (<< 1.4.3.1-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python:Depends},
@@ -84,8 +84,8 @@ Description: transitional package
 
 Package: python3-lalframe
 Section: python
-Replaces: lalframe-python3 (<< 1.4.3-1~)
-Breaks: lalframe-python3 (<< 1.4.3-1~)
+Replaces: lalframe-python3 (<< 1.4.3.1-1~)
+Breaks: lalframe-python3 (<< 1.4.3.1-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},

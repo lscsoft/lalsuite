@@ -65,8 +65,8 @@ Description: transitional package
  this is a transitional package, it can safely be removed.
 
 Package: python-lal
-Replaces: lal-python (<< 6.18.0-1~)
-Breaks: lal-python (<< 6.18.0-1~)
+Replaces: lal-python (<< 6.18.0.1-1~)
+Breaks: lal-python (<< 6.18.0.1-1~)
 Section: python
 Architecture: any
 Depends: ${misc:Depends},
@@ -92,8 +92,8 @@ Description: transitional package
 
 Package: python3-lal
 Section: python
-Replaces: lal-python3 (<< 6.18.0-1~)
-Breaks: lal-python3 (<< 6.18.0-1~)
+Replaces: lal-python3 (<< 6.18.0.1-1~)
+Breaks: lal-python3 (<< 6.18.0.1-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},

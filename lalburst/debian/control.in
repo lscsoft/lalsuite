@@ -77,8 +77,8 @@ Description: transitional package
 
 Package: python-lalburst
 Section: python
-Replaces: lalburst-python (<< 1.4.4-2~)
-Breaks: lalburst-python (<< 1.4.4-2)
+Replaces: lalburst-python (<< 1.4.4.1-1~)
+Breaks: lalburst-python (<< 1.4.4.1-1)
 Architecture: any
 Depends: ${misc:Depends},
   ${python:Depends},
@@ -104,8 +104,8 @@ Description: transitional package
 
 Package: python3-lalburst
 Section: python
-Replaces: lalburst-python3 (<< 1.4.4-2~)
-Breaks: lalburst-python3 (<< 1.4.4-2)
+Replaces: lalburst-python3 (<< 1.4.4.1-1~)
+Breaks: lalburst-python3 (<< 1.4.4.1-1)
 Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},
