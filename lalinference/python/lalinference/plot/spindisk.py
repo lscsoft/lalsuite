@@ -66,7 +66,6 @@ def make_disk_plot(post,outpath=None):
       Y = RS * COSTS
 
       HS = np.column_stack((X.flatten(), Y.flatten()))
-      print(HS)
       XS = np.reshape(HS[:,0], (Na+1,Nt+1))
       YS = np.reshape(HS[:,1], (Na+1,Nt+1))
 
