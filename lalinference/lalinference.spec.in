@@ -90,9 +90,6 @@ library.
 %package -n python2-%{name}
 Summary: Python %{python2_version} Bindings for LALInference
 Group: LAL
-Provides: %{name}-python
-Obsoletes: %{name}-python < 1.9.4-2
-Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: healpy >= 1.9.1
 Requires: h5py
@@ -112,6 +109,8 @@ Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
+Obsoletes: %{name}-python
+Provides: %{name}-python
 %description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings for LALInference.
