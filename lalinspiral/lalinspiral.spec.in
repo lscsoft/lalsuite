@@ -70,9 +70,6 @@ library.
 %package -n python2-%{name}
 Summary: Python bindings for LALInspiral
 Group: LAL
-Provides: %{name}-python
-Obsoletes: %{name}-python < 1.7.7-2
-Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
@@ -82,6 +79,8 @@ Requires: python2-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: glue
+Obsoletes: %{name}-python
+Provides: %{name}-python
 %description -n python2-%{name}
 This package provides the Python bindings for LALInspiral.
 
