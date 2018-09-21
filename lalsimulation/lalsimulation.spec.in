@@ -50,13 +50,12 @@ library.
 %package -n python2-%{name}
 Summary: Python %{python2_version} bindings for LALSimulation
 Group: LAL
-Provides: %{name}-python
-Obsoletes: %{name}-python < 1.7.2-2
-Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
+Obsoletes: %{name}-python
+Provides: %{name}-python
 %description -n python2-%{name}
 This package provides the Python %{python2_version} Bindings for LALSimulation.
 
