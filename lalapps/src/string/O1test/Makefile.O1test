@@ -1,0 +1,17 @@
+dag :
+	ligolw_segment_query_dqsegdb --segment-url=https://segments.ligo.org -q --gps-start-time 1127000000 --gps-end-time 1127100000 --include-segments=H1:DCS-ANALYSIS_READY_C02:1 > segmentspadded_H1.xml	
+	ligolw_segment_query_dqsegdb --segment-url=https://segments.ligo.org -q --gps-start-time 1127000000 --gps-end-time 1127100000 --include-segments=L1:DCS-ANALYSIS_READY_C02:1 > segmentspadded_L1.xml	
+	ligolw_add --output segdb.xml.gz segmentspadded_H1.xml segmentspadded_L1.xml
+	# FIXME:  can't enable --verbose because lalapps C programs can't
+	# preserve the NULL values in the process_params table
+	
+	lalapps_gen_timeslides --instrument H1=0:0:0 --instrument L1=78.7653294765398375645:78.7653294765398375645:0 injection_time_slides.xml.gz
+	lalapps_gen_timeslides --instrument H1=0:0:0 --instrument L1=-2835.9261614488255:+2835.9261614488255:3.5449077018110318 background_time_slides_0.xml.gz
+	
+	n=1 ; while [ $$n -le 1 ] ; do \
+	    mkdir -p dag_c$$n ; { cd dag_c$$n || break ; } ; lalapps_cosmicstring_pipe --verbose --config-file ../O1_StringDag.ini --log-path $(TMPDIR) --segments-file ../segdb.xml.gz --segments-name RESULT --injection-time-slides ../injection_time_slides.xml.gz --background-time-slides ../background_time_slides_0.xml.gz ; cd .. ; \
+	    n=$$(($$n + 1)) ; \
+	done 
+
+clean :
+	rm -Rvf segmentspadded*.xml segdb.xml.gz *_time_slides*.xml.gz dag_c*
