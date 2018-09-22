@@ -1,0 +1,42 @@
+dag:
+	#generate injection and background xml files
+	lalapps_gen_timeslides --instrument H1=0:0:0 --instrument L1=78.7653294765398375645:78.7653294765398375645:0 O2_injection_time_slides.xml.gz
+	lalapps_gen_timeslides --inspiral-num-slides=3000:H1=0,L1=3.5449077018110318 O2_background_time_slides_6000.xml.gz	
+# segments
+	ligolw_segment_query_dqsegdb --segment-url=https://segments.ligo.org --query-segments --gps-start-time 1164499217 --gps-end-time 1187740818 --include-segments=H1:DCH-CLEAN_SCIENCE_C02:1 | ligolw_print -t segment -c start_time -c end_time -d ' ' > ./h1.science
+	ligolw_segment_query_dqsegdb --segment-url=https://segments.ligo.org --query-segments --include-segments L1:DCH-CLEAN_SCIENCE_C02:1 --gps-start-time 1164499217 --gps-end-time 1187740818 | ligolw_print -t segment -c start_time -c end_time -d ' ' > ./l1.science
+# exclude segments flagged by CAT1 and CAT4
+	git clone  https://git.ligo.org/detchar/veto-definitions.git
+	ligolw_segments_from_cats_dqsegdb --separate-categories --veto-categories 1 --ifo-list H1,L1 --gps-start-time 1164499217 --gps-end-time 1187740818 --veto-file ./veto-definitions/burst/O2/H1L1V1-HOFT_C02_REPRO2A_O2_BURST_COSMICSTRING.xml --segment-url https://segments.ligo.org
+	ligolw_print -t segment -c start_time -c end_time -d ' ' H1-VETOTIME_CAT1-1164499217-23241601.xml > ./h1.cat1 
+	ligolw_print -t segment -c start_time -c end_time -d ' ' L1-VETOTIME_CAT1-1164499217-23241601.xml > ./l1.cat1
+	ligolw_segments_from_cats_dqsegdb --separate-categories --veto-categories 4 --ifo-list H1,L1 --gps-start-time 1164499217 --gps-end-time 1187740818 --veto-file ./veto-definitions/burst/O2/H1L1V1-HOFT_C02_REPRO2A_O2_BURST_COSMICSTRING.xml --segment-url https://segments.ligo.org
+	ligolw_print -t segment -c start_time -c end_time -d ' ' H1-VETOTIME_CAT4-1164499217-23241601.xml > ./h1.cat4
+	ligolw_print -t segment -c start_time -c end_time -d ' ' L1-VETOTIME_CAT4-1164499217-23241601.xml > ./l1.cat4
+	segexpr 'intersection(./h1.science,veto(./h1.cat1),veto(./h1.cat4))' > ./h1.science_aftercat1_cat4
+	segexpr 'intersection(./l1.science,veto(./l1.cat1),veto(./l1.cat4))' > ./l1.science_aftercat1_cat4
+# download CAT 2 
+	ligolw_segments_from_cats_dqsegdb --separate-categories --veto-categories 2 --ifo-list H1,L1 --gps-start-time 1164499217 --gps-end-time 1187740818 --veto-file ./veto-definitions/burst/O2/H1L1V1-HOFT_C02_REPRO2A_O2_BURST_COSMICSTRING.xml --segment-url https://segments.ligo.org
+	ligolw_print -t segment -c start_time -c end_time -d ' ' H1-VETOTIME_CAT2-1164499217-23241601.xml > ./h1.cat2_without_hveto_upv
+	ligolw_print -t segment -c start_time -c end_time -d ' ' L1-VETOTIME_CAT2-1164499217-23241601.xml > ./l1.cat2_without_hveto_upv
+	segexpr 'union(./l1.cat2_without_hveto_upv, ./veto-definitions/burst/O2/HVETO_L1_O2_C02CLEAN_SEGMENTS.txt, ./L1_ASC_Y_TR_A_NSUM_OUT_DQ_OMICRON_veto.txt)' > ./l1.cat2
+	segexpr 'union(./h1.cat2_without_hveto_upv, ./veto-definitions/burst/O2/HVETO_H1_O2_C02CLEAN_SEGMENTS.txt, ./H1_ASC_Y_TR_A_NSUM_OUT_DQ_OMICRON_veto.txt)' > ./h1.cat2
+# 6 chunks for O2, run all of them.
+
+	echo "1164499217 1166486417" > ./chunk28.txt
+	echo "1167523218 1170547218" > ./chunk29.txt
+	echo "1170547218 1178323218" > ./chunk30.txt
+	echo "1179792018 1183420818" > ./chunk31.txt
+	echo "1183420818 1185580818" > ./chunk32.txt
+	echo "1185580818 1187740818" > ./chunk33.txt
+	for c in 28 29 30 31 32 33; do \
+		segexpr 'intersection(./chunk'$$c'.txt, ./h1.science_aftercat1_cat4)' -include index,duration > o2.C02.h1.segments.c$$c; \
+		segexpr 'intersection(./chunk'$$c'.txt, ./l1.science_aftercat1_cat4)' -include index,duration > o2.C02.l1.segments.c$$c; \
+		ligolw_segments --verbose --coalesce --comment "O2 C02 string cusp search chunk $$c" --name segments --insert-from-segwizard=H1=o2.C02.h1.segments.c$$c --insert-from-segwizard=L1=o2.C02.l1.segments.c$$c --output O2_C02_segments_c$$c.xml.gz; \
+		segexpr 'intersection(./chunk'$$c'.txt, ./h1.cat2)' -include index,duration > o2.C02.h1.vetoes.c$$c; \
+		segexpr 'intersection(./chunk'$$c'.txt, ./l1.cat2)' -include index,duration > o2.C02.l1.vetoes.c$$c; \
+		ligolw_segments --verbose --coalesce --comment "O2 C02 vetoes string cusp search chunk $$c" --name O2vetoes --insert-from-segwizard=H1=o2.C02.h1.vetoes.c$$c --insert-from-segwizard=L1=o2.C02.l1.vetoes.c$$c --output O2_C02_vetoes_c$$c.xml.gz; \
+		mkdir -p dag_c$$c ; { cd dag_c$$c || break ; } ; lalapps_cosmicstring_pipe --verbose --config-file ../O2C02_CuspDag.ini --log-path $(TMPDIR) --segments-file ../O2_C02_segments_c$$c.xml.gz --injection-time-slides ../O2_injection_time_slides.xml.gz --background-time-slides ../O2_background_time_slides_6000.xml.gz --vetoes-file ../O2_C02_vetoes_c$$c.xml.gz --vetoes-name O2vetoes ; cd .. ; done
+
+clean :
+	rm -Rvf O2_*time_slides*.xml.gz *segments.c* *segments*.xml.gz *vetoes.c* *vetoes*.xml.gz dag_c* chunk*.txt  *cat1 *cat4 *cat2* *.science *VETOTIME*.xml
