@@ -627,7 +627,7 @@ docker:tags:el7:
     - level3:rpm:lalinference
     - level4:rpm:lalapps
   only:
-    - tags
+    - /^lalsuite-v.*$/
 
 .levelN:deb: &levelN-deb-package
   image: ligo/lalsuite-dev:stretch
@@ -807,7 +807,7 @@ docker:tags:stretch:
     - level3:deb:lalinference
     - level4:deb:lalapps
   only:
-    - tags
+    - /^lalsuite-v.*$/
 
 pages:
   image: ligo/lalsuite-dev:stretch
