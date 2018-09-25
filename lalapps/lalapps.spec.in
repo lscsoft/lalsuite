@@ -70,6 +70,41 @@ Requires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: lalinference >= @MIN_LALINFERENCE_VERSION@
 Requires: python2-lalinference >= @MIN_LALINFERENCE_VERSION@
 Requires: skyarea
+Obsoletes: lalxml < 1.2.5-1
+Obsoletes: lalxml-debuginfo < 1.2.5-1
+Obsoletes: lalxml-devel < 1.2.5-1
+Obsoletes: lalxml-python < 1.2.5-1
+Obsoletes: lalxml-python3 < 1.2.5-1
+Obsoletes: lalxml-octave < 1.2.5-1
+Obsoletes: laldetchar < 0.3.6-1
+Obsoletes: laldetchar-debuginfo < 0.3.6-1
+Obsoletes: laldetchar-devel < 0.3.6-1
+Obsoletes: laldetchar-python < 0.3.6-1
+Obsoletes: laldetchar-octave < 0.3.6-1
+Obsoletes: lalstochastic < 1.1.21-1
+Obsoletes: lalstochastic-debuginfo < 1.1.21-1
+Obsoletes: lalstochastic-devel < 1.1.21-1
+Obsoletes: lalstochastic-python < 1.1.21-1
+Obsoletes: lalstochastic-python3 < 1.1.21-1
+Obsoletes: lalstochastic-octave < 1.1.21-1
+Provides: lalxml = 1.2.5-1
+Provides: lalxml-debuginfo = 1.2.5-1
+Provides: lalxml-devel = 1.2.5-1
+Provides: lalxml-python = 1.2.5-1
+Provides: lalxml-python3 = 1.2.5-1
+Provides: lalxml-octave = 1.2.5-1
+Provides: laldetchar = 0.3.6-1
+Provides: laldetchar-debuginfo = 0.3.6-1
+Provides: laldetchar-devel = 0.3.6-1
+Provides: laldetchar-python = 0.3.6-1
+Provides: laldetchar-octave = 0.3.6-1
+Provides: lalstochastic = 1.1.21-1
+Provides: lalstochastic-debuginfo = 1.1.21-1
+Provides: lalstochastic-devel = 1.1.21-1
+Provides: lalstochastic-python = 1.1.21-1
+Provides: lalstochastic-python3 = 1.1.21-1
+Provides: lalstochastic-octave = 1.1.21-1
+
 Prefix: %{_prefix}
 
 %description
