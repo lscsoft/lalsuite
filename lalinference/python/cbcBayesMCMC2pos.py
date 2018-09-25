@@ -125,10 +125,6 @@ def downsample_and_evidence(data_hdf5, deltaLogP=None, fixedBurnin=None, nDownsa
 		nDownsample=nDownsample, tablename=None)
 	posterior_samples = apt.Table(samps, names=ps)
 
-	with h5py.File(data_hdf5, 'r') as inp:
-		assert posterior_samples['nTemps'][0] == len(inp[mcmc_group_id]), \
-			'Temperature ladder spread over multiple hdf5 files. Use cbcBayesCombinePTMCMCh5s.py to combine.'
-
 	highTchains = []
 	for i in range(1,int(posterior_samples['nTemps'][0])):
 		ps, samps = peparser.parse(data_hdf5, deltaLogP=deltaLogP, fixedBurnins=fixedBurnin,

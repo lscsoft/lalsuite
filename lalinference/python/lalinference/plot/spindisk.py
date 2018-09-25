@@ -1,5 +1,7 @@
 # Ben Farr 2016
 
+from __future__ import division
+
 import numpy as np
 import os
 from matplotlib.lines import Line2D
@@ -45,24 +47,25 @@ def make_disk_plot(post,outpath=None):
   xticks = [0., .25, .5, .75, 1.]
 
   vmin, vmax = 0., 0.
+  # Work out the colour scale
   for a, tilt in zip([a1, a2], [tilt1, tilt2]):
       asamps=(post[a].samples).flatten()
       tsamps=(post[tilt].samples).flatten()
       
-      H, _, _ = np.histogram2d(asamps, np.cos(tsamps), range=[[0, 1], [-1, 1]], bins=(Na, Nt), normed=False)
-      H /= len(asamps)
+      H, _, _ = np.histogram2d(asamps, np.cos(tsamps), range=[[0, 1], [-1, 1]], bins=(Na, Nt), normed=True)
       vmax = H.max() if H.max() > vmax else vmax
 
+  # Make the plots
   for ax, a, tilt, flip in zip(axs, [a1, a2], [tilt1, tilt2], [True, False]):
+      asamps=(post[a].samples).flatten()
+      tsamps=(post[tilt].samples).flatten()
       plt.sca(ax)
-      H, rs, costs = np.histogram2d(asamps, np.cos(tsamps), range=[[0, 1], [-1, 1]], bins=(Na, Nt), normed=False)
-      H /= len(asamps)
+      H, rs, costs = np.histogram2d(asamps, np.cos(tsamps), range=[[0, 1], [-1, 1]], bins=(Na, Nt), normed=True)
       COSTS, RS = np.meshgrid(costs, rs)
       X = RS * np.sin(np.arccos(COSTS))
       Y = RS * COSTS
 
       HS = np.column_stack((X.flatten(), Y.flatten()))
-
       XS = np.reshape(HS[:,0], (Na+1,Nt+1))
       YS = np.reshape(HS[:,1], (Na+1,Nt+1))
 

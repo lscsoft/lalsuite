@@ -6406,11 +6406,12 @@ def confidence_interval_uncertainty(cl, cl_bounds, posteriors):
 def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V1']):
   import glue
   #import sim inspiral table content handler
-  from glue.ligolw import lsctables
+  from glue.ligolw import lsctables,ligolw
   from lalsimulation.lalsimulation import SimInspiralChooseTDWaveform,SimInspiralChooseFDWaveform
   from lalsimulation.lalsimulation import SimInspiralImplementedTDApproximants,SimInspiralImplementedFDApproximants
   from lal.lal import StrainUnit
   from lal.lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT,CutREAL8TimeSeries
+  from lal.lal import ComputeDetAMResponse, GreenwichMeanSiderealTime
   from lal.lal import LIGOTimeGPS
   from lal.lal import MSUN_SI as LAL_MSUN_SI
   from lal.lal import PC_SI as LAL_PC_SI
@@ -6466,6 +6467,8 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
       else:
         tbl=tbl[0]
     except:
+      e = sys.exc_info()[0]
+      print(e)
       print("Cannot read event %s from table %s. Won't plot injected waveform \n"%(event,siminspiral))
       skip=1
     if not skip:
@@ -6492,30 +6495,40 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
 
       lambda1=0
       lambda2=0
-      waveFlags=None
-      nonGRparams=None
       wf=str(tbl.waveform)
 
       injapproximant=lalsim.GetApproximantFromString(wf)
       amplitudeO=int(tbl.amp_order )
       phaseO=lalsim.GetOrderFromString(wf)
 
+      waveFlags=lal.CreateDict()
+      lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(waveFlags, amplitudeO)
+      lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(waveFlags, phaseO)
+
       ra=tbl.longitude
       dec=tbl.latitude
       psi=tbl.polarization
 
+      
+
       if SimInspiralImplementedFDApproximants(injapproximant):
         inj_domain='F'
-        [plus,cross]=SimInspiralChooseFDWaveform(phiRef, deltaF,  m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,f_min,f_max, f_ref,  r,   iota, lambda1,   lambda2,waveFlags, nonGRparams, amplitudeO, phaseO, injapproximant)
+        [plus,cross]=SimInspiralChooseFDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,r, iota, phiRef,
+                0, 0, 0, # Non-circular binary parameters
+                deltaF, f_min, f_max, f_ref,
+                waveFlags, injapproximant)
       elif SimInspiralImplementedTDApproximants(injapproximant):
         inj_domain='T'
-        [plus,cross]=SimInspiralChooseTDWaveform(phiRef, deltaT,  m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,f_min, f_ref,   r,   iota, lambda1,   lambda2,waveFlags, nonGRparams, amplitudeO, phaseO, injapproximant)
+        [plus,cross]=SimInspiralChooseTDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z, r, iota, phiRef,
+                0, 0, 0, # Non-circular binary parameters
+                deltaT, f_min, f_ref,
+                waveFlags, injapproximant)
       else:
         print("\nThe approximant %s doesn't seem to be recognized by lalsimulation!\n Skipping WF plots\n"%injapproximant)
         return None
 
       for ifo in ifos:
-        fp, fc = ComputeDetAMResponse(lal.cached_detectors_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
+        fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
         if inj_domain=='T':
           # strain is a temporary container for this IFO strain.
           # Take antenna pattern into accout and window the data
@@ -6575,7 +6588,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
 
       q=pos['q'].samples[which][0]
       mc=pos['mc'].samples[which][0]
-      M1,M2=bppu.q2ms(mc,q)
+      M1,M2=q2ms(mc,q)
       if 'dist' in pos.names:
         D=pos['dist'].samples[which][0]
       elif 'distance' in pos.names:
@@ -6654,20 +6667,36 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
 
       r=D*LAL_PC_SI*1.0e6
 
-      lambda1=0
-      lambda2=0
-      waveFlags=None
-      nonGRparams=None
       approximant=int(pos['LAL_APPROXIMANT'].samples[which][0])
       amplitudeO=int(pos['LAL_AMPORDER'].samples[which][0])
       phaseO=int(pos['LAL_PNORDER'].samples[which][0])
 
+      waveFlags=lal.CreateDict()
+      lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(waveFlags, amplitudeO)
+      lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(waveFlags, phaseO)
+      if 'tideO' in pos.names:
+          tidalO=int(pos['tideO'].samples[which][0])
+          lalsim.SimInspiralWaveformParamsInsertPNTidalOrder(waveFlags, tidalO)
+      if 'spinO' in pos.names:
+          spinO=int(pos['spinO'].samples[which][0])
+          lalsim.SimInspiralWaveformParamsInsertPNSpinOrder(waveFlags, spinO)
+      if 'lambda1' in pos.names:
+        lalsim.SimInspiralWaveformParamsInsertTidalLambda1(waveFlags, pos['lambda1'].samples[which][0])
+      if 'lambda2' in pos.names:
+        lalsim.SimInspiralWaveformParamsInsertTidalLambda2(waveFlags, pos['lambda2'].samples[which][0])
+
       if SimInspiralImplementedFDApproximants(approximant):
         rec_domain='F'
-        [plus,cross]=SimInspiralChooseFDWaveform(phiRef, deltaF,  m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,f_min, f_max,   f_ref,r,   iota, lambda1,   lambda2,waveFlags, nonGRparams, amplitudeO, phaseO, approximant)
+        [plus,cross]=SimInspiralChooseFDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,r, iota, phiRef,
+                0, 0, 0, # Non-circular binary parameters
+                deltaF, f_min, f_max, f_ref,
+                waveFlags, approximant)
       elif SimInspiralImplementedTDApproximants(approximant):
         rec_domain='T'
-        [plus,cross]=SimInspiralChooseTDWaveform(phiRef, deltaT,  m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,f_min, f_ref,  r,   iota, lambda1,   lambda2,waveFlags, nonGRparams, amplitudeO, phaseO, approximant)
+        [plus,cross]=SimInspiralChooseTDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z, r, iota, phiRef,
+                0, 0, 0, # Non-circular binary parameters
+                deltaT, f_min, f_ref,
+                waveFlags, approximant)
       else:
         print("The approximant %s doesn't seem to be recognized by lalsimulation!\n Skipping WF plots\n"%approximant)
         return None
@@ -6677,7 +6706,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
       psi=pos['psi'].samples[which][0]
       fs={}
       for ifo in ifos:
-        fp, fc = ComputeDetAMResponse(lal.cached_detectors_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
+        fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
         if rec_domain=='T':
           # strain is a temporary container for this IFO strain.
           # Take antenna pattern into accout and window the data
@@ -7095,7 +7124,7 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
         return None
 
       for ifo in ifos:
-        fp, fc = ComputeDetAMResponse(lal.cached_detectors_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
+        fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
         if inj_domain=='T':
           # bin of ref time as seen in strainT
           tCinstrain=np.floor(REAL8time-float(strainTinj.epoch))/deltaT
@@ -7247,7 +7276,7 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
       psi=pos['psi'].samples[which][0]
       fs={}
       for ifo in ifos:
-        fp, fc = ComputeDetAMResponse(lal.cached_detectors_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
+        fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
         if rec_domain=='T':
           # bin of ref time as seen in strainT
           tCinstrain=np.floor(REAL8time-float(strainTrec.epoch))/deltaT
