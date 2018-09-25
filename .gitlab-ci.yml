@@ -795,7 +795,7 @@ docker:tags:stretch:
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch --file .Dockerfile-stretch.gitlab-ci .
-    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG/stretch
+    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch
   dependencies:
     - level0:deb:lal
     - level1:deb:lalframe
