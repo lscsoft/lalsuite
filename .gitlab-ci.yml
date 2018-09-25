@@ -51,7 +51,7 @@ cache:
     - make -j4 install
     - make -j4 install-html
   artifacts:
-    expire_in: 3h
+    expire_in: 18h
     paths:
       - opt/lalsuite
   only:
@@ -409,7 +409,7 @@ nightly:macos:elcapitan:
     - /^lalsuite-v.*$/
     - schedules
   artifacts:
-    expire_in: 3h
+    expire_in: 18h
     paths:
       - wheelhouse
 
@@ -440,7 +440,7 @@ nightly:macos:elcapitan:
     - /^lalsuite-v.*$/
     - schedules
   artifacts:
-    expire_in: 3h
+    expire_in: 18h
     paths:
       - wheelhouse
 
@@ -478,7 +478,7 @@ nightly:wheel:cp37-cp37m-macosx:
     - make dist
     - rpmbuild -tb --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${CI_JOB_NAME#level?:rpm:}-*.tar.xz
   artifacts:
-    expire_in: 3h
+    expire_in: 18h
     paths:
       - rpmbuild/RPMS/x86_64/${CI_JOB_NAME#level?:rpm:}-*.rpm
       - rpmbuild/RPMS/x86_64/python2-${CI_JOB_NAME#level?:rpm:}-*.rpm
@@ -655,7 +655,7 @@ docker:tags:el7:
     # build packages
     - debuild -us -uc -r
   artifacts:
-    expire_in: 3h
+    expire_in: 18h
     paths:
       - ${CI_JOB_NAME#level?:deb:}*.changes
       - ${CI_JOB_NAME#level?:deb:}*.deb
