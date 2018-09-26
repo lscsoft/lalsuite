@@ -49,13 +49,12 @@ library.
 %package -n python2-%{name}
 Summary: Python %{python2_version} Bindings for LALMetaIO
 Group: LAL
-Provides: %{name}-python
-Obsoletes: %{name}-python < 1.3.1-2
-Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
+Obsoletes: %{name}-python
+Provides: %{name}-python
 %description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings for LALMetaIO.
@@ -121,6 +120,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Sep 13 2018 Adam Mercer <adam.mercer@ligo.org> 1.4.0-1
+- Pre O3 release
+
 * Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.3.1-1
 - O2 release
 

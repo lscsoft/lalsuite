@@ -64,9 +64,6 @@ library.
 %package -n python2-%{name}
 Summary: Python %{python2_version} Bindings for LALBurst
 Group: LAL
-Provides: %{name}-python
-Obsoletes: %{name}-python < 1.4.4-2
-Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
@@ -75,6 +72,8 @@ Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: scipy
 Requires: glue
+Obsoletes: %{name}-python
+Provides: %{name}-python
 %description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings for LALBurst.
@@ -142,6 +141,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Sep 13 2018 Adam Mercer <adam.mercer@ligo.org> 1.5.0-1
+- Pre O3 release
+
 * Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.4.4-1
 - O2 release
 

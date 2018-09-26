@@ -56,13 +56,12 @@ Pulsar library.
 %package -n python2-%{name}
 Summary: Python %{python2_version} bindings for LALPulsar
 Group: LAL
-Provides: %{name}-python
-Obsoletes: %{name}-python < 1.16.0-2
-Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
+Obsoletes: %{name}-python
+Provides: %{name}-python
 %description -n python2-%{name}
 This package provides the Python %{python2_version} bindings for LALPulsar.
 
@@ -127,6 +126,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Sep 13 2018 Adam Mercer <adam.mercer@ligo.org> 1.17.0-1
+- Pre O3 release
+
 * Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.16.0-1
 - O2 release
 

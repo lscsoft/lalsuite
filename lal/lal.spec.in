@@ -37,6 +37,8 @@ Requires: fftw
 Requires: gsl
 Requires: hdf5
 Requires: less
+Obsoletes: python-pylal < 0.13.2-1
+Provides: python-pylal = 0.13.2-1
 Prefix: %{_prefix}
 
 %description
@@ -59,9 +61,6 @@ as well as the documentation for the library.
 %package -n python2-%{name}
 Summary: Python %{python2_version} bindings for LAL
 Group: LAL
-Provides: %{name}-python
-Obsoletes: %{name}-python < 6.18.0-2
-Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: python
 Requires: python-dateutil
@@ -70,6 +69,8 @@ Requires: scipy
 Requires: python-six
 Requires: python2-ligo-segments
 Requires: glue >= @MIN_GLUE_VERSION@
+Obsoletes: %{name}-python
+Provides: %{name}-python
 %description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings.
@@ -135,6 +136,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Sep 13 2018 Adam Mercer <adam.mercer@ligo.org> 6.19.0-1
+- Pre O3 release
+
 * Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 6.18.0-1
 - O2 release
 
