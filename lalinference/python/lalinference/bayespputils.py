@@ -1366,7 +1366,7 @@ class Posterior(object):
         """
         current_item = 0
         while current_item < self.dim:
-            name=self._posterior.keys()[current_item]
+            name=list(self._posterior.keys())[current_item]
             pos=self._posterior[name]
             current_item += 1
             yield name,pos
@@ -3945,8 +3945,8 @@ def plot_one_param_pdf(posterior,plot1DParams,analyticPDF=None,analyticCDF=None,
 
     matplotlib.rcParams['text.usetex']=False
 
-    param=plot1DParams.keys()[0].lower()
-    histbins=plot1DParams.values()[0]
+    param=list(plot1DParams.keys())[0].lower()
+    histbins=list(plot1DParams.values())[0]
 
     pos_samps=posterior[param].samples
     injpar=posterior[param].injval
@@ -5140,8 +5140,8 @@ def greedy_bin_one_param(posterior,greedy1Param,confidence_levels):
     @param confidence_levels: A list of floats of the required confidence intervals [(0-1)].
     """
 
-    paramName=greedy1Param.keys()[0]
-    par_bin=greedy1Param.values()[0]
+    paramName=list(greedy1Param.keys())[0]
+    par_bin=list(greedy1Param.values())[0]
     par_samps=posterior[paramName.lower()].samples
 
     parpos_min=min(par_samps)[0]
@@ -5208,8 +5208,8 @@ def contigious_interval_one_param(posterior,contInt1Params,confidence_levels):
     oneDContCL={}
     oneDContInj={}
 
-    paramName=contInt1Params.keys()[0]
-    par_bin=contInt1Params.values()[0]
+    paramName=list(contInt1Params.keys())[0]
+    par_bin=list(contInt1Params.values())[0]
 
     par_injvalue=posterior[paramName].injval
 
