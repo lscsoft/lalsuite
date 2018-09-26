@@ -56,7 +56,7 @@ def draw_posterior(data, log_wts, verbose=False):
     maxWt=max(log_wts)
     normalised_wts=log_wts-maxWt
     selection=[n > log(uniform()) for n in normalised_wts]
-    idx=filter(lambda i: selection[i], range(len(selection)))
+    idx=list(filter(lambda i: selection[i], range(len(selection))))
     return data[idx]
     
 def draw_posterior_many(datas, Nlives, verbose=False):
