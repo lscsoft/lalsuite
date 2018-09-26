@@ -900,8 +900,8 @@ class Posterior(object):
       else:
           eta_name='eta'
 
-      if 'mass1' in pos.names and 'mass2' in pos.names :
-	  pos.append_mapping(('m1','m2'),lambda x,y:(x,y) ,('mass1','mass2'))
+      if 'mass1' in pos.names and 'mass2' in pos.names:
+          pos.append_mapping(('m1','m2'), lambda x,y:(x,y), ('mass1','mass2'))
 
       if (mchirp_name in pos.names and eta_name in pos.names) and \
       ('mass1' not in pos.names or 'm1' not in pos.names) and \
@@ -928,7 +928,7 @@ class Posterior(object):
 
       my_ifos=['h1','l1','v1']
       for ifo1,ifo2 in combinations(my_ifos,2):
-      	p1=ifo1+'_cplx_snr_arg'
+        p1=ifo1+'_cplx_snr_arg'
         p2=ifo2+'_cplx_snr_arg'
         if p1 in pos.names and p2 in pos.names:
           delta=np.mod(pos[p1].samples - pos[p2].samples + np.pi ,2.0*np.pi)-np.pi
@@ -4185,9 +4185,9 @@ def getRAString(radians,accuracy='auto'):
     if mins>=59.5:
         mins=mins-60
         hours=hours+1
-    if accuracy=='hour': return ur'%ih'%(hours)
-    if accuracy=='min': return ur'%ih%im'%(hours,mins)
-    if accuracy=='sec': return ur'%ih%im%2.0fs'%(hours,mins,secs)
+    if accuracy=='hour': return u'%ih'%(hours)
+    if accuracy=='min': return u'%ih%im'%(hours,mins)
+    if accuracy=='sec': return u'%ih%im%2.0fs'%(hours,mins,secs)
     else:
         if abs(fmod(secs,60.0))>=0.5: return(getRAString(radians,accuracy='sec'))
         if abs(fmod(mins,60.0))>=0.5: return(getRAString(radians,accuracy='min'))
@@ -4218,9 +4218,9 @@ def getDecString(radians,accuracy='auto'):
     #    deg=deg+1
     if (accuracy=='arcmin' or accuracy=='deg') and secs>30: mins=mins+1
     if accuracy=='deg' and mins>30: deg=deg+1
-    if accuracy=='deg': return ur'%i'%(sign*deg)+degsymb
-    if accuracy=='arcmin': return ur'%i%s%i%s'%(sign*deg,degsymb,mins,minsymb)
-    if accuracy=='arcsec': return ur'%i%s%i%s%2.0f%s'%(sign*deg,degsymb,mins,minsymb,secs,secsymb)
+    if accuracy=='deg': return u'%i'%(sign*deg)+degsymb
+    if accuracy=='arcmin': return u'%i%s%i%s'%(sign*deg,degsymb,mins,minsymb)
+    if accuracy=='arcsec': return u'%i%s%i%s%2.0f%s'%(sign*deg,degsymb,mins,minsymb,secs,secsymb)
     else:
     #    if abs(fmod(secs,60.0))>=0.5 and abs(fmod(secs,60)-60)>=0.5 : return(getDecString(sign*radians,accuracy='arcsec'))
     #    if abs(fmod(mins,60.0))>=0.5 and abs(fmod(mins,60)-60)>=0.5: return(getDecString(sign*radians,accuracy='arcmin'))
@@ -4380,7 +4380,7 @@ def plot_two_param_kde_greedy_levels(posteriors_by_name,plot2DkdeParams,levels,c
     for level in levels:
       ilevel = int(Npts*level + 0.5)
       if ilevel >= Npts:
-	ilevel = Npts-1
+        ilevel = Npts-1
       zvalues.append(densort[ilevel])
     CS=plt.contour(x, y, z, zvalues,colors=[colors_by_name[name]],linestyles=line_styles )
     CSlst.append(CS)
@@ -4389,15 +4389,15 @@ def plot_two_param_kde_greedy_levels(posteriors_by_name,plot2DkdeParams,levels,c
       plt.plot([par1_injvalue],[par2_injvalue],'b*',scalex=False,scaley=False,markersize=12)
 
     if par_trigvalues1 is not None and par_trigvalues2 is not None:
-	par1IFOs = set([IFO for IFO in par_trigvalues1.keys()])
-	par2IFOs = set([IFO for IFO in par_trigvalues2.keys()])
-	IFOs = par1IFOs.intersection(par2IFOs)
-	for IFO in IFOs:
-	  if IFO=='H1': color = 'r'
-	  elif IFO=='L1': color = 'g'
-	  elif IFO=='V1': color = 'm'
-	  else: color = 'c'
-	plt.plot([par_trigvalues1[IFO]],[par_trigvalues2[IFO]],color=color,marker='o',scalex=False,scaley=False)
+      par1IFOs = set([IFO for IFO in par_trigvalues1.keys()])
+      par2IFOs = set([IFO for IFO in par_trigvalues2.keys()])
+      IFOs = par1IFOs.intersection(par2IFOs)
+      for IFO in IFOs:
+        if IFO=='H1': color = 'r'
+        elif IFO=='L1': color = 'g'
+        elif IFO=='V1': color = 'm'
+        else: color = 'c'
+        plt.plot([par_trigvalues1[IFO]],[par_trigvalues2[IFO]],color=color,marker='o',scalex=False,scaley=False)
 
   plt.xlabel(plot_label(par1_name))
   plt.ylabel(plot_label(par2_name))
@@ -4526,10 +4526,10 @@ def plot_two_param_kde(posterior,plot2DkdeParams):
     for level in levels:
       ilevel = int(Npts*level + 0.5)
       if ilevel >= Npts:
-	ilevel = Npts-1
-	zvalues.append(densort[ilevel])
+        ilevel = Npts-1
+        zvalues.append(densort[ilevel])
 
-	pp.contour(XS, YS, ZS, zvalues)
+        pp.contour(XS, YS, ZS, zvalues)
 
     asp=xax.ptp()/yax.ptp()
 #    if(asp<0.8 or asp > 1.6): asp=1.4
@@ -4848,16 +4848,16 @@ def plot_two_param_greedy_bins_contour(posteriors_by_name,greedy2Params,confiden
             plt.plot([par2_trigvalues[IFO]],[par1_trigvalues[IFO]],color=color,marker='*',scalex=False,scaley=False)
         CSlst.append(CS)
 
-    	Nchars=max(map(lambda d:len(majorFormatterX.format_data(d)),axes.get_xticks()))
-    	if Nchars>8:
-      		Nticks=3
-    	elif Nchars>5:
-      		Nticks=4
-    	elif Nchars>4:
-      		Nticks=5
-    	else:
-      		Nticks=6
-    	locatorX=matplotlib.ticker.MaxNLocator(nbins=Nticks-1)
+        Nchars=max(map(lambda d:len(majorFormatterX.format_data(d)),axes.get_xticks()))
+        if Nchars>8:
+            Nticks=3
+        elif Nchars>5:
+            Nticks=4
+        elif Nchars>4:
+            Nticks=5
+        else:
+            Nticks=6
+        locatorX=matplotlib.ticker.MaxNLocator(nbins=Nticks-1)
         if par2_name=='rightascension' or par2_name=='ra':
             (ramin,ramax)=plt.xlim()
             locatorX=RALocator(min=ramin,max=ramax)
@@ -4879,8 +4879,8 @@ def plot_two_param_greedy_bins_contour(posteriors_by_name,greedy2Params,confiden
             axes.yaxis.set_major_locator(locatorY)
 
         axes.yaxis.set_major_formatter(majorFormatterY)
-    	#locatorX.view_limits(bins[0],bins[-1])
-    	axes.xaxis.set_major_locator(locatorX)
+        #locatorX.view_limits(bins[0],bins[-1])
+        axes.xaxis.set_major_locator(locatorX)
 
     #plt.title("%s-%s confidence contours (greedy binning)"%(par1_name,par2_name)) # add a title
     plt.xlabel(plot_label(ax2_name))
@@ -5314,7 +5314,7 @@ def burnin(data,spin_flag,deltaLogP,outputfile):
     return pos,bayesfactor
 
 
-class ACLError(StandardError):
+class ACLError(Exception):
     def __init__(self, *args):
         super(ACLError, self).__init__(*args)
 
@@ -6602,18 +6602,18 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
       if 'phi_orb' in pos.names:
         phiRef=pos['phi_orb'].samples[which][0]
       elif 'phase_maxl' in pos.names:
-		phiRef=pos['phase_maxl'].samples[which][0]
-		print('INFO: phi_orb not estimated, using maximum likelihood value')
+        phiRef=pos['phase_maxl'].samples[which][0]
+        print('INFO: phi_orb not estimated, using maximum likelihood value')
       else:
         print('WARNING: phi_orb not found in posterior files. Defaulting to 0.0 which is probably *not* what you want\n')
         phiRef=0.0
 
       try:
-              for name in ['flow','f_lower']:
-                      if name in pos.names:
-                              f_min=pos[name].samples[which][0]
+        for name in ['flow','f_lower']:
+          if name in pos.names:
+            f_min=pos[name].samples[which][0]
       except:
-              pass
+          pass
 
       try:
         for name in ['fref','f_ref','f_Ref','fRef']:
@@ -7637,13 +7637,13 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
             plt.close(acffig)
 
         if not noacf:
-	  if not acfail:
-	    acfhtml='<td width="30%"><img width="100%" src="1Dsamps/'+figname.replace('.png', '_acf.png')+'"/></td>'
-	  else:
-	    acfhtml='<td>ACF generation failed!</td>'
-          html_ompdf_write+='<tr><td width="30%"><img width="100%" src="1Dpdf/'+figname+'"/></td><td width="30%"><img width="100%" src="1Dsamps/'+figname.replace('.png','_samps.png')+'"/></td>'+acfhtml+'</tr>'
+          if not acfail:
+            acfhtml='<td width="30%"><img width="100%" src="1Dsamps/'+figname.replace('.png', '_acf.png')+'"/></td>'
+          else:
+            acfhtml='<td>ACF generation failed!</td>'
+            html_ompdf_write+='<tr><td width="30%"><img width="100%" src="1Dpdf/'+figname+'"/></td><td width="30%"><img width="100%" src="1Dsamps/'+figname.replace('.png','_samps.png')+'"/></td>'+acfhtml+'</tr>'
         else:
-            html_ompdf_write+='<tr><td width="30%"><img width="100%" src="1Dpdf/'+figname+'"/></td><td width="30%"><img width="100%" src="1Dsamps/'+figname.replace('.png','_samps.png')+'"/></td></tr>'
+          html_ompdf_write+='<tr><td width="30%"><img width="100%" src="1Dpdf/'+figname+'"/></td><td width="30%"><img width="100%" src="1Dsamps/'+figname.replace('.png','_samps.png')+'"/></td></tr>'
 
     html_ompdf_write+='</table>'
     html_ompdf.write(html_ompdf_write)

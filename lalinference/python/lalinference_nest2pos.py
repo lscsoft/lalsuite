@@ -5,6 +5,7 @@ import h5py
 import os
 import os.path
 import sys
+from functools import reduce
 
 from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_dset_name
 from lalinference import LALInferenceHDF5NestedSamplesDatasetName as nested_dset_name
