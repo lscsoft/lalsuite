@@ -42,11 +42,11 @@ static const char *print_LIGOTimeGPS(const LIGOTimeGPS *gps)
 static LIGOTimeGPS compute_with_bc(const char *expr)
 {
 	LIGOTimeGPS gps;
-	char cmd[512];
+	char cmd[535];
 	char res[512];
 	FILE *stream;
 
-	sprintf(cmd, "echo 'scale=17 ; %s' | bc", expr);
+	snprintf(cmd, sizeof(cmd), "echo 'scale=17 ; %s' | bc", expr);
 	stream = popen(cmd, "r");
 	fgets(res, 512, stream);
 	pclose(stream);

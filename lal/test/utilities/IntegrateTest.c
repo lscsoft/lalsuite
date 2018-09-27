@@ -55,6 +55,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALgetopt.h>
 #include <lal/Integrate.h>
+#include <lal/LALString.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -927,7 +928,7 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
     REPORTSTATUS (status);
   }
 
-  if (strncpy (str, ignored, sizeof (str)))
+  if (XLALStringCopy(str, ignored, sizeof(str)))
   {
     if ((tok = strtok (str, " ")))
     {
