@@ -50,12 +50,12 @@ parser.add_option("--condor-submit",action="store_true",default=False,help="Auto
 variations={}
 
 def mkdirs(path):
-  """
-  Helper function. Make the given directory, creating intermediate
-  dirs if necessary, and don't complain about it already existing.
-  """
-  if os.access(path,os.W_OK) and os.path.isdir(path): return
-  else: os.makedirs(path)
+    """
+    Helper function. Make the given directory, creating intermediate
+    dirs if necessary, and don't complain about it already existing.
+    """
+    if os.access(path,os.W_OK) and os.path.isdir(path): return
+    else: os.makedirs(path)
 
 def add_variations(cp, section, option, values=None, allowed_values=None):
     """
@@ -114,7 +114,7 @@ def generate_variations(master_cp, variations):
         # Read file back in to get a new object
         cp = configparser.ConfigParser()
         cp.optionxform = str
-	cp.read(masterpath)
+        cp.read(masterpath)
         cp.set(section,opt,val)
         # Append to the paths
         cp.set('paths','basedir',os.path.join(cur_basedir, \
@@ -128,9 +128,9 @@ def generate_variations(master_cp, variations):
             yield sub_cp
 
 if len(args)!=1:
-  parser.print_help()
-  print('Error: must specify one ini file')
-  sys.exit(1)
+    parser.print_help()
+    print('Error: must specify one ini file')
+    sys.exit(1)
 
 inifile=args[0]
 
@@ -246,7 +246,7 @@ def setup_roq(cp):
 
     service_url = None
     if cp.has_option('analysis', 'service-url'):
-      service_url = cp.get('analysis', 'service-url')
+        service_url = cp.get('analysis', 'service-url')
     roq_bounds = pipe_utils.Query_ROQ_Bounds_Type(path, roq_paths)
     if roq_bounds == 'chirp_mass_q':
         print('ROQ has bounds in chirp mass and mass-ratio')
@@ -292,7 +292,7 @@ def setup_roq(cp):
     for roq in roq_paths:
         this_cp = configparser.ConfigParser()
         this_cp.optionxform = str
-	this_cp.read(masterpath)
+        this_cp.read(masterpath)
         basedir = this_cp.get('paths','basedir')
         for dirs in 'basedir','daglogdir','webdir':
             val = this_cp.get('paths',dirs)
@@ -374,7 +374,7 @@ for cp in generate_variations(master_cp,variations):
                 os.link(os.path.abspath(injpath), myinjpath)
                 cp.set('input','injection-file',myinjpath)
 
-        
+
     for this_cp in setup_roq(cp):
         # Create the DAG from the configparser object
         dag=pipe_utils.LALInferencePipelineDAG(this_cp,dax=False)
@@ -394,16 +394,16 @@ outerdag.write_script()
 print('Successfully created DAG file.')
 
 if opts.condor_submit:
-  import subprocess
-  from subprocess import Popen
-  if cp.has_option('condor','notification'):
-    x = subprocess.Popen(['condor_submit_dag','-dont_suppress_notification',outerdag.get_dag_file()])
-  else:
-    x = subprocess.Popen(['condor_submit_dag',outerdag.get_dag_file()])
-  x.wait()
-  if x.returncode==0:
-    print('Submitted DAG file')
-  else:
-    print('Unable to submit DAG file')
+    import subprocess
+    from subprocess import Popen
+    if cp.has_option('condor','notification'):
+        x = subprocess.Popen(['condor_submit_dag','-dont_suppress_notification',outerdag.get_dag_file()])
+    else:
+        x = subprocess.Popen(['condor_submit_dag',outerdag.get_dag_file()])
+    x.wait()
+    if x.returncode==0:
+        print('Submitted DAG file')
+    else:
+        print('Unable to submit DAG file')
 else:
-  print('To submit, run:\n\tcondor_submit_dag {0}'.format(outerdag.get_dag_file()))
+    print('To submit, run:\n\tcondor_submit_dag {0}'.format(outerdag.get_dag_file()))
