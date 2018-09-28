@@ -792,7 +792,7 @@ REAL8 LALInferenceGenerateREAL8OrthonormalBasis(REAL8Array **RBin,
   REAL8Array *RB = NULL;
   UINT4Vector *dims = NULL;
   gsl_matrix_view RBview;
-
+  
   /* this memory should be freed here */
   ts_el         = gsl_vector_alloc(cols);
   last_rb       = gsl_vector_alloc(cols);
@@ -889,16 +889,13 @@ REAL8 LALInferenceGenerateREAL8OrthonormalBasis(REAL8Array **RBin,
     }
     //////////// end check ////////////
 
-    gpts->data[dim_RB] = worst_app;
+    gpts->data[dim_RB] = worst_app; 
+    //greedy_err[dim_RB]    = worst_err; // These aren't used or output at all
 
     /* add worst approximated solution to basis set */
     gsl_matrix_get_row(ortho_basis, &TSview.matrix, worst_app);
-    iterated_modified_gm(ru, ortho_basis, &RBview.matrix, &deltaview.vector, dim_RB); /* use IMGS */
-
-    /* check normalisation of generated orthogonal basis is not NaN (cause by a new orthogonal basis
-      having zero residual with the current basis) - if this is the case do not add the new basis. */
-    if ( gsl_isnan(gsl_vector_get(ru, dim_RB)) ){ break; }
-
+    iterated_modified_gm(ru, ortho_basis, &RBview.matrix, &deltaview.vector, dim_RB); /* use IMGS */ // TODO: need REAL8 version of this
+    
     /* add to reduced basis */
     dims->data[0] = dim_RB+1; /* add row */
     RB = XLALResizeREAL8Array( RB, dims );
@@ -980,6 +977,7 @@ REAL8 LALInferenceGenerateCOMPLEX16OrthonormalBasis(COMPLEX16Array **RBin,
 
   size_t max_RB = rows;
 
+  //REAL8 greedy_err[max_RB];           /* approximate error */
   UINT4Vector *gpts = NULL;
   gpts = XLALCreateUINT4Vector(max_RB); /* selected greedy points (row selection) */
   *greedypoints = gpts;
@@ -1038,6 +1036,7 @@ REAL8 LALInferenceGenerateCOMPLEX16OrthonormalBasis(COMPLEX16Array **RBin,
 
   gpts->data[0] = 0;
   UINT4 dim_RB          = 1;
+  //greedy_err[0]    = 1.0;
 
   /* loop to find reduced basis */
   while( 1 ){
@@ -1094,15 +1093,12 @@ REAL8 LALInferenceGenerateCOMPLEX16OrthonormalBasis(COMPLEX16Array **RBin,
     //////////// end check ////////////
 
     gpts->data[dim_RB] = worst_app;
+    //greedy_err[dim_RB]    = worst_err; // These aren't used or output at all
 
     /* add worst approximated solution to basis set */
     gsl_matrix_complex_get_row(ortho_basis, &TSview.matrix, worst_app);
     iterated_modified_gm_complex(ru, ortho_basis, &RBview.matrix, &deltaview.vector, dim_RB); /* use IMGS */
-
-    /* check normalisation of generated orthogonal basis is not NaN (cause by a new orthogonal basis
-      having zero residual with the current basis) - if this is the case do not add the new basis. */
-    if ( gsl_isnan(GSL_REAL(gsl_vector_complex_get(ru, dim_RB))) ){ break; }
-
+    
     /* add to reduced basis */
     dims->data[0] = dim_RB+1; /* add row */
     RB = XLALResizeCOMPLEX16Array( RB, dims );
@@ -1349,7 +1345,7 @@ REAL8 LALInferenceEnrichREAL8Basis(const REAL8Vector *delta,
 
   if ( keepcounter == 0 ){ return maxprojerr; } // nothing was above the tolerance
 
-  // add vectors used to produce the original reduced basis
+  // add vectors used to produce the orgial reduced basis
   UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
   dims->data[0] = RBin->dimLength->data[0] + keepcounter;
   dims->data[1] = dlength;
