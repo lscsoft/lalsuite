@@ -2,6 +2,8 @@
 Classes needed for ihope.
 """
 
+from __future__ import print_function
+
 __author__ = 'Stephen Fairhurst <sfairhur@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -34,19 +36,19 @@ def make_external_call(command, show_stdout=False, show_command=False):
     """
     Run a program on the shell and print informative messages on failure.
     """
-    if show_command: print command
+    if show_command: print(command)
 
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
       shell=isinstance(command, str))
     out, err = p.communicate()
 
     if p.returncode != 0:
-        print >>sys.stderr, "External call failed."
-        print >>sys.stderr, "  stdout: %s" % out
-        print >>sys.stderr, "  stderr: %s" % err
+        print("External call failed.", file=sys.stderr)
+        print("  stdout: %s" % out, file=sys.stderr)
+        print("  stderr: %s" % err, file=sys.stderr)
         raise subprocess.CalledProcessError(p.returncode, command)
     if show_stdout:
-        print out
+        print(out)
 
 ##############################################################################
 def mkdir( newdir ):
@@ -174,7 +176,7 @@ def science_segments(ifo, config, generate_segments = True):
     if not generate_segments: return segFindFile
 
     whichtoanalyze = ifo.lower() + "-analyze"
-    print "For " + ifo + ", analyze " +config.get("segments",whichtoanalyze)
+    print("For " + ifo + ", analyze " +config.get("segments",whichtoanalyze))
 
     # run segFind to determine science segments
     segFindCall = ' '.join([ config.get("condor", "segfind"),
@@ -205,8 +207,8 @@ def get_hwinj_segments(config,ifos,hw_inj_dir):
     hwinjDefurl = config.get("hardware-injections", "hwinj-def-server-url")
     hwinjDefFile = config.get("hardware-injections", "hwinj-def-file")
 
-    print "Downloading hardware injection list " + hwinjDefFile + " from " \
-          + hwinjDefurl
+    print("Downloading hardware injection list " + hwinjDefFile + " from " \
+          + hwinjDefurl)
     hwinjDefFile, info = urllib.urlretrieve(hwinjDefurl + '/' + hwinjDefFile,
           hwinjDefFile)
     ifostr = ''
@@ -246,7 +248,7 @@ def generate_veto_cat_files(config, vetoDefFile, generateVetoes):
           "--gps-end-time", end ])
 
     if generateVetoes:
-        print "Generating veto category xml files... this may take some time..."
+        print("Generating veto category xml files... this may take some time...")
         make_external_call(genVetoCall)
 
 ##############################################################################
@@ -264,11 +266,11 @@ def convert_veto_cat_xml_to_txt(config, veto_cat_file, output_file):
     """
 
     if not (os.path.isfile(veto_cat_file) and os.access(veto_cat_file,os.R_OK) ):
-        print 'Veto file not found or unreadable, skipping %s'%(veto_cat_file)
+        print('Veto file not found or unreadable, skipping %s'%(veto_cat_file))
         return False
 
-    print "Converting veto-category xml file %s to txt file %s" \
-          %(veto_cat_file, output_file)
+    print("Converting veto-category xml file %s to txt file %s" \
+          %(veto_cat_file, output_file))
     sys.stdout.flush()
     # get xml-to-txt converter
     xml_to_txt_converter = config.get("condor", "ligolw_print")
@@ -329,8 +331,8 @@ def veto_segments(ifo, config, categories, generateVetoes):
         if generateVetoes:
             return_val = convert_veto_cat_xml_to_txt(config, veto_cat_file, vetoFile)
             if not return_val:
-                print "No vetoes found for %s cat %i. %s will contain no segments." \
-                  %(ifo, category, vetoFile)
+                print("No vetoes found for %s cat %i. %s will contain no segments." \
+                  %(ifo, category, vetoFile))
 
 
         # if there are previous vetoes, generate combined
@@ -406,8 +408,8 @@ def datafind_segments(ifo, config):
     dataFindFile = ifo_type + "-" + str(start) + "-" + \
         str(end - start) + ".txt"
 
-    print "Running ligo_data_find to determine available data from " + type + \
-        " frames for " + ifo
+    print("Running ligo_data_find to determine available data from " + type + \
+          " frames for " + ifo)
     dataFindCall = executable
     for opt,arg in config.items("datafind"):
         dataFindCall += " --" + opt + " " + arg
@@ -433,8 +435,8 @@ def copyCategoryFiles(config,vetoes,directory,\
     rel_outfile = "../" + directory + "/" + os.path.basename(infile)
     if "veto-file" in vetoes:
         if infile == "":
-            print >>sys.stderr, "warning: " + vetoes + " left blank; proceeding "\
-              "without DQ vetoes"
+            print(sys.stderr, "warning: " + vetoes + " left blank; proceeding "\
+              "without DQ vetoes", file=sys.stderr)
             outfile += vetoes + "_BLANK.txt"
             rel_outfile += vetoes + "_BLANK.txt"
             open(outfile, "w").write("")  # touch
@@ -455,8 +457,8 @@ def downloadVetoDefFile(config,generate_segments):
     vetoDefFile = config.get("segments", "veto-def-file")
 
     if generate_segments:
-        print "Downloading veto-definer file " + vetoDefFile + " from " \
-            + vetoDefurl
+        print("Downloading veto-definer file " + vetoDefFile + " from " \
+            + vetoDefurl)
         vetoDefFile, info = urllib.urlretrieve(vetoDefurl + '/' + vetoDefFile,
             vetoDefFile)
 
@@ -479,15 +481,14 @@ def downloadDqSegFiles(config,ifo,generate_segments):
         dq_url = config.get("segments","dq-server-url")
         dq_segdb_file = config.get("segments", ifo.lower() + '-dq-file')
         if dq_segdb_file == "":
-            print >>sys.stderr, "warning: no file provided to %s-dq-file; " \
-              "running without data quality" % ifo.lower()
+            print("warning: no file provided to %s-dq-file; " \
+              "running without data quality" % ifo.lower(), file=sys.stderr)
         else:
-            print "Downloading DQ segment file " + dq_segdb_file + " from " \
-                  + dq_url + " to " + dqSegFile + " ...",
-            sys.stdout.flush()
+            print("Downloading DQ segment file " + dq_segdb_file + " from " \
+                  + dq_url + " to " + dqSegFile + " ..." + sys.stdout.flush())
             dqSegFile, info = urllib.urlretrieve(dq_url + '/' + dq_segdb_file,
                   dqSegFile)
-            print "done"
+            print("done")
     return dqSegFile
 
 
@@ -521,18 +522,18 @@ def findSegmentsToAnalyze(config, ifo, veto_categories, generate_segments=True,\
         str(end - start) + ".xml"
 
     if generate_segments:
-        print "Generating science segments for " + ifo + " ...",
-        sys.stdout.flush()
+        print("Generating science segments for " + ifo + " ...",
+              sys.stdout.flush())
     sciSegFile = science_segments(ifo, config, generate_segments)
 
     # generate vetoFiles
     if generate_segments:
         sciSegs = segmentsUtils.fromsegwizard(file(sciSegFile)).coalesce()
-        print " done."
-        print "Generating cat 1 veto segments for " + ifo + " ...",
-        sys.stdout.flush()
+        print(" done.")
+        print("Generating cat 1 veto segments for " + ifo + " ...",
+              sys.stdout.flush())
         vetoFiles = veto_segments(ifo, config, [1], generate_segments)
-        print "done"
+        print("done")
 
         # remove cat 1 veto times
         if os.path.exists(vetoFiles[1]):
@@ -545,13 +546,13 @@ def findSegmentsToAnalyze(config, ifo, veto_categories, generate_segments=True,\
             analyzedSegs = sciSegs.__and__(dfSegs)
             missedSegs = sciSegs.__and__(dfSegs.__invert__())
             segmentsUtils.tosegwizard(file(missedFile,"w"), missedSegs)
-            print "Writing " + ifo + " segments which cannot be analyzed to file " \
-                + missedFile
-            print "Writing " + ifo + " segments which cannot be analyzed to file " \
-                + missedFileXML
-            print "Not analyzing %d s, representing %.2f percent of time" %  \
+            print("Writing " + ifo + " segments which cannot be analyzed to file " \
+                + missedFile)
+            print("Writing " + ifo + " segments which cannot be analyzed to file " \
+                + missedFileXML)
+            print("Not analyzing %d s, representing %.2f percent of time" %  \
                (missedSegs.__abs__(),
-               100. * missedSegs.__abs__() / max(analyzedSegs.__abs__(), 0.1) )
+               100. * missedSegs.__abs__() / max(analyzedSegs.__abs__(), 0.1) ))
 
         else: analyzedSegs = sciSegs
 
@@ -584,17 +585,17 @@ def findSegmentsToAnalyze(config, ifo, veto_categories, generate_segments=True,\
             utils.write_fileobj(xmldoc, fp, gz=False)
         fp.close()
 
-        print "Writing " + ifo + " segments of total time " + \
-            str(analyzedSegs.__abs__()) + "s to file: " + segFile
-        print "Writing " + ifo + " segments of total time " + \
-            str(analyzedSegs.__abs__()) + "s to file: " + segFileXML
-        print "done"
+        print("Writing " + ifo + " segments of total time " + \
+            str(analyzedSegs.__abs__()) + "s to file: " + segFile)
+        print("Writing " + ifo + " segments of total time " + \
+            str(analyzedSegs.__abs__()) + "s to file: " + segFileXML)
+        print("done")
 
     if data_quality_vetoes:
-        print "Generating cat " + str(veto_categories) + " veto segments for " + ifo + "..."
+        print("Generating cat " + str(veto_categories) + " veto segments for " + ifo + "...")
         sys.stdout.flush()
     dqVetoes = veto_segments(ifo, config, veto_categories, data_quality_vetoes )
-    if data_quality_vetoes: print "done"
+    if data_quality_vetoes: print("done")
 
     return tuple([segFile, dqVetoes])
 
@@ -623,8 +624,8 @@ def slide_sanity(config, playOnly = False):
             for ifo in ifos])
         if (maxLength/2/maxSlide - 1) < int(numSlides):
             numSlides = str(maxLength/2/maxSlide - 1)
-            print "Setting number of slides to " + numSlides + \
-                " to avoid double wrapping"
+            print("Setting number of slides to " + numSlides + \
+                  " to avoid double wrapping")
 
     return numSlides
 
@@ -758,8 +759,9 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
         # fail if the seed is not identical to its integer form
         # to prevent later problems with inspinj
         if not ( str(int(injSeed)) == injSeed ):
-            print >>sys.stderr, "Injection seed: " + injSeed + "\n"
-            print >>sys.stderr, "Error: the injection seed must be an integer without leading zeros! Exiting..."
+            print("Injection seed: " + injSeed + "\n", file=sys.stderr)
+            print("Error: the injection seed must be an integer without "
+                  "leading zeros! Exiting...", file=sys.stderr)
             sys.exit(1)
 
         # copy over the arguments from the relevant injection section
@@ -796,17 +798,17 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
 
     hipecp.write(file(iniFile,"w"))
 
-    print "Running hipe in directory " + hipeDir
+    print("Running hipe in directory " + hipeDir)
     if dataFind or tmpltBank:
-        print "Running datafind / template bank generation"
+        print("Running datafind / template bank generation")
     elif injSeed:
-        print "Injection seed: " + injSeed
+        print("Injection seed: " + injSeed)
     else:
-        print "No injections, " + str(hipecp.get("input","num-slides")) + \
-              " time slides"
+        print("No injections, " + str(hipecp.get("input","num-slides")) + \
+              " time slides")
     if vetoCat:
-        print "Running the category " + str(vetoCat) + " vetoes"
-    print
+        print("Running the category " + str(vetoCat) + " vetoes")
+    print()
 
     # work out the hipe call:
     hipeCommand = config.get("condor","hipe")
@@ -1070,12 +1072,12 @@ def plot_setup(plotDir, config, logPath, stage, injectionSuffix,
 
     plotcp.write(file(iniFile,"w"))
 
-    print "Running plot hipe in directory " + plotDir
-    print "Using zero lag sieve: " + zerolagSuffix
-    print "Using time slide sieve: " + slideSuffix
-    print "Using injection sieve: " + injectionSuffix
-    print "Using bank sieve: " + bankSuffix
-    print
+    print("Running plot hipe in directory " + plotDir)
+    print("Using zero lag sieve: " + zerolagSuffix)
+    print("Using time slide sieve: " + slideSuffix)
+    print("Using injection sieve: " + injectionSuffix)
+    print("Using bank sieve: " + bankSuffix)
+    print()
 
     # work out the hipe call:
     plotCommand = config.get("condor","plot")
@@ -1290,8 +1292,8 @@ def hwinj_page_setup(cp,ifos,veto_categories,hw_inj_dir):
         cacheFile = hipe_cache( ifos, usertag, cp.getint("input", "gps-start-time"), cp.getint("input", "gps-end-time") )
 
         if not os.path.isfile(os.path.join("full_data", cacheFile)):
-            print>>sys.stderr, "WARNING: Cache file FULL_DATA/" + cacheFile
-            print>>sys.stderr, "does not exist! This might cause later failures."
+            print("WARNING: Cache file FULL_DATA/" + cacheFile, file=sys.stderr)
+            print("does not exist! This might cause later failures.", file=sys.stderr)
 
         outfilename = os.path.join(hw_inj_dir, ''.join(ifos) + '-HWINJ_SUMMARY')
         if veto:
@@ -1370,7 +1372,7 @@ def followup_setup(followupDir, config, opts, hipeDir):
     # link datafind output from original hipe
     try: os.symlink("../datafind/cache", "hipe_cache")
     except: pass
-    print "Running followup pipe in directory " + followupDir
+    print("Running followup pipe in directory " + followupDir)
 
     # work out the followup_pipe call:
     followupCommand = config.get("condor","follow")
@@ -1399,7 +1401,7 @@ def followup_setup(followupDir, config, opts, hipeDir):
     f.write(followupCommand)
     f.write("cd ..\n")
     f.close()
-    os.chmod(followupDag + ".pre", 0744)
+    os.chmod(followupDag + ".pre", 0o744)
     followupNode.set_pre_script(followupDir + "/" + followupDag + ".pre")
 
     # return to the original directory
@@ -1461,7 +1463,7 @@ def determine_sieve_patterns(cp, plot_name, ifotag, usertag=None):
 def omega_scan_setup(cp,ifos):
     cp.set('omega-scans','do-omega-scan','')
     cp.set('omega-scans','omega-executable',cp.get('condor','omegascan'))
-    print "Beginning set up of omega scan directory."
+    print("Beginning set up of omega scan directory.")
     start = cp.get("input","gps-start-time")
     end = cp.get("input","gps-end-time")
     # First we set up the configuration files
@@ -1521,7 +1523,7 @@ def omega_scan_setup(cp,ifos):
             channel_name = 'virgo-channel'
             type_name = 'virgo-type'
         else:
-            print "IFO " + ifo + " is not yet supported for omega scans in ihope"
+            print("IFO " + ifo + " is not yet supported for omega scans in ihope")
             continue
         if cp.has_option('omega-setup',channel_name):
             channels = (cp.get('omega-setup',channel_name)).split(',')
@@ -1547,7 +1549,7 @@ def omega_scan_setup(cp,ifos):
         outFile.close()
         cp.set('omega-scans',ifo.lower() + '-omega-config-file','../omega_setup/'+ifo + '_omega_config.txt')
 
-    print "Created omega scan configuration files"
+    print("Created omega scan configuration files")
 
     # And we need to create the necessary frame caches
     if not os.path.isdir('cache'):
@@ -1577,7 +1579,7 @@ def omega_scan_setup(cp,ifos):
         make_external_call(convertCall)
         cp.set('omega-scans',ifo.lower() + '-omega-frame-file','../omega_setup/' + 'cache/' + ifo + '_' + start + '_' + end + '_frames.wcache')
 
-    print "Created omega scan frame files \n"
+    print("Created omega scan frame files \n")
 
 
 ###############################################################################
