@@ -2212,10 +2212,6 @@ LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *ru
     LALInferenceVariables *injparams = XLALCalloc(1, sizeof(LALInferenceVariables));
     LALInferenceCopyVariables(model->params, injparams);
 
-    ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine,"--inj");
-    if (!ppt)
-        return(NULL);
-
     SimInspiralTableFromLIGOLw(&injTable, ppt->value, 0, 0);
 
     ppt = LALInferenceGetProcParamVal(runState->commandLine, "--outfile");

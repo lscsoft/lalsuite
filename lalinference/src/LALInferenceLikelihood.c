@@ -374,7 +374,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   /* ROQ likelihood stuff */
   REAL8 d_inner_h=0.0;
   double dist_min, dist_max;
-  
+  int cosmology=0;
   UINT4 margdist = 0;
   if(LALInferenceCheckVariable(model->params, "MARGDIST") && LALInferenceGetVariable(model->params, "MARGDIST"))
   {
@@ -382,6 +382,9 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       LALInferenceGetMinMaxPrior(model->params, "logdistance", &dist_min, &dist_max);
       dist_max=exp(dist_max);
       dist_min=exp(dist_min);
+      if(LALInferenceCheckVariable(model->params,"MARGDIST_COSMOLOGY"))
+        cosmology=LALInferenceGetINT4Variable(currentParams,"MARGDIST_COSMOLOGY");
+
   }
 
   if (LALInferenceCheckVariable(currentParams, "spcal_active") && (*(UINT4 *)LALInferenceGetVariable(currentParams, "spcal_active"))) {
@@ -1061,7 +1064,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_phase,LALINFERENCE_PARAM_OUTPUT);
     if(margdist )
       {
-          XLAL_TRY(model->ifo_loglikelihoods[ifo] = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(this_ifo_S), 2.0*cabs(this_ifo_Rcplx)), errnum);
+          XLAL_TRY(model->ifo_loglikelihoods[ifo] = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(this_ifo_S), 2.0*cabs(this_ifo_Rcplx), cosmology), errnum);
           errnum&=~XLAL_EFUNC;
           if(errnum!=XLAL_SUCCESS)
           {
@@ -1153,7 +1156,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       
       if(margdist )
       {
-        XLAL_TRY(loglikelihood = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), R), errnum);
+        XLAL_TRY(loglikelihood = LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), R, cosmology), errnum);
         errnum&=~XLAL_EFUNC;
         if(errnum!=XLAL_SUCCESS)
         {
@@ -1219,7 +1222,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
               
               if(margdist)
               {
-                XLAL_TRY(dh_S->data[i]=LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), x) + S, errnum);
+                XLAL_TRY(dh_S->data[i]=LALInferenceMarginalDistanceLogLikelihood(dist_min, dist_max, sqrt(S), x, cosmology) + S, errnum);
 	        errnum&=~XLAL_EFUNC;
         	if(errnum!=XLAL_SUCCESS)
 	        {
@@ -1316,7 +1319,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   return(loglikelihood);
 }
 
-double LALInferenceMarginalDistanceLogLikelihood(double dist_min, double dist_max, double OptimalSNR, double d_inner_h)
+double LALInferenceMarginalDistanceLogLikelihood(double dist_min, double dist_max, double OptimalSNR, double d_inner_h, int cosmology)
 {
         static const size_t default_log_radial_integrator_size = 400;
         double loglikelihood=0;
@@ -1329,7 +1332,6 @@ double LALInferenceMarginalDistanceLogLikelihood(double dist_min, double dist_ma
             if (integrator == NULL)
             {
                 printf("Initialising distance integration lookup table\n");
-                int cosmology = 0; /* 0 = euclidean, nonzero co-moving */
                 /* Initialise the integrator for the first time */
                 integrator = log_radial_integrator_init(
                                 dist_min,
