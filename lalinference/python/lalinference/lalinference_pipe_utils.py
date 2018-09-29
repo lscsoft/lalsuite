@@ -2861,6 +2861,8 @@ class SkyMapJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         #self.add_condor_cmd('getenv','True')
         # Add user-specified options from ini file
         self.add_ini_opts(cp,'ligo-skymap-from-samples')
+        if cp.has_option('engine','margdist') or cp.has_option('engine','margdist-comoving'):
+            self.add_opt('disable-distance-map','')
 
 
 class PlotSkyMapJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
