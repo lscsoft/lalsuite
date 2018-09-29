@@ -34,6 +34,9 @@ there is a choice for how to generate perturbed time and phase measurements:
 from __future__ import division
 
 
+from lalinference.bayestar.deprecation import warn
+warn('bayestar-realize-coincs')
+
 # Determine list of known detectors for command line arguments.
 import lal
 available_ifos = sorted(det.frDetector.prefix
@@ -100,7 +103,7 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 Attributes = ligolw.sax.xmlreader.AttributesImpl
 
-# glue, LAL and pylal imports.
+# glue, LAL imports.
 from glue import segments
 import glue.lal
 import lal

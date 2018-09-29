@@ -3,14 +3,16 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
+noinst_HEADERS = \
+	LIGOLwXMLHeaders.h \
+	LIGOLwXMLInspiralHeaders.h
+
 pkginclude_HEADERS = \
 	LALMetaIOConfig.h \
 	LALMetaIOVCSInfo.h \
 	LALMetaIOVCSInfoHeader.h \
 	LIGOLwXML.h \
 	LIGOLwXMLArray.h \
-	LIGOLwXMLHeaders.h \
-	LIGOLwXMLInspiralHeaders.h \
 	LIGOLwXMLRead.h \
 	LIGOMetadataTables.h \
 	LIGOMetadataUtils.h

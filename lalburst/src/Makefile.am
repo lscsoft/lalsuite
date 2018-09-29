@@ -55,6 +55,5 @@ TESTS = \
 
 EXTRA_DIST = \
 	LALBurstConfig.h.in \
-	TFR.dox \
 	config.h.in \
 	$(END_OF_LIST)

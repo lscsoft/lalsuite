@@ -48,6 +48,9 @@ except ImportError:
 import lal
 import lalsimulation
 
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.bayestar')
+
 log = logging.getLogger('BAYESTAR')
 
 

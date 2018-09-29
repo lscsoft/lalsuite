@@ -11,6 +11,7 @@ pymodule_PYTHON = \
 	__init__.py \
 	command.py \
 	decorator.py \
+	deprecation.py \
 	distance.py \
 	filter.py \
 	ligolw.py \

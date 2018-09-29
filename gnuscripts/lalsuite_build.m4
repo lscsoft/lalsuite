@@ -856,7 +856,7 @@ AC_ARG_ENABLE(
       no) laldetchar=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-laldetchar) ;;
     esac
-  ], [ laldetchar=${all_lal:-true} ] )
+  ], [ laldetchar=${all_lal:-false} ] )
 if test "$lalmetaio" = "false"; then
   laldetchar=false
 fi

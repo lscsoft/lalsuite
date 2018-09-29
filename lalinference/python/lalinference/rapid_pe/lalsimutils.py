@@ -17,11 +17,15 @@
 """
 A collection of useful data analysis routines built from the SWIG wrappings of LAL and LALSimulation.
 """
+
 from __future__ import print_function
+
 import sys
 import copy
 import types
 from math import cos, sin, sqrt
+
+from six.moves import range
 
 import numpy as np
 from scipy import interpolate
@@ -266,7 +270,7 @@ def xml_to_ChooseWaveformParams_array(fname, minrow=None, maxrow=None,
         # Copy the information from requested rows to the ChooseWaveformParams
         [Ps[i-minrow].copy_lsctables_sim_inspiral(sim_insp[i]) for i in rng]
     except ValueError:
-        print("No SimInspiral table found in xml file",file=sys.stderr)
+        print("No SimInspiral table found in xml file", file=sys.stderr)
     return Ps
 
 
@@ -333,7 +337,7 @@ class InnerProduct(object):
             WFD.data.data[:] = np.sqrt(self.weights) # W_FD is 1/sqrt(S_n(f))
             WFD.data.data[0] = WFD.data.data[-1] = 0. # zero 0, f_Nyq bins
             lal.REAL8FreqTimeFFT(WTD, WFD, revplan) # IFFT to TD
-            for i in xrange(N_spec/2, self.len2side - N_spec/2):
+            for i in range(N_spec/2, self.len2side - N_spec/2):
                 WTD.data.data[i] = 0. # Zero all but T_spec/2 ends of W_TD
             lal.REAL8TimeFreqFFT(WFD, WTD, fwdplan) # FFT back to FD
             WFD.data.data[0] = WFD.data.data[-1] = 0. # zero 0, f_Nyq bins
@@ -1385,7 +1389,7 @@ def frame_data_to_non_herm_hoff(fname, channel, start=None, stop=None, TDlen=0,
             FDlen)
     lal.COMPLEX16TimeFreqFFT(hf, hoftC, fwdplan)
     if verbose:
-        print(" ++ Loaded data h(f) of length n= ", hf.data.length, " (= ", len(hf.data.data)*ht.deltaT, "s) at sampling rate ", 1./ht.deltaT)
+        print(" ++ Loaded data h(f) of length n= ", hf.data.length, " (= ", len(hf.data.data)*ht.deltaT, "s) at sampling rate ", 1./ht.deltaT)    
     return hf
 
 
@@ -1469,8 +1473,7 @@ if __name__ == "__main__":
             hoft(params)
         except RuntimeError:
             print("TD waveform generation failed for params\n" \
-                "masses: %e %e, spins: %e, %e, approx: %s" % (m1i, m2i, s1zi, s2zi, a) \
-                    ,file=sys.stderr)
+                "masses: %e %e, spins: %e, %e, approx: %s" % (m1i, m2i, s1zi, s2zi, a), file=sys.stderr)
 
         params.deltaF = 1.0/8
         params.fmax = 2048.
@@ -1478,5 +1481,4 @@ if __name__ == "__main__":
             hoff(params)
         except RuntimeError:
             print("FD waveform generation failed for params\n" \
-                "masses: %e %e, spins: %e, %e, approx: %s" % (m1i, m2i, s1zi, s2zi, a) \
-                    , file=sys.stderr)
+                "masses: %e %e, spins: %e, %e, approx: %s" % (m1i, m2i, s1zi, s2zi, a), file=sys.stderr)

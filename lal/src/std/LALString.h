@@ -37,6 +37,7 @@ extern "C" {
  * \brief XLAL string manipulation routines.
  *//*@{*/
 
+int XLALStringPrint(char *s, size_t n, const char *fmt, ...) _LAL_GCC_PRINTF_FORMAT_(3,4);
 char *XLALStringAppend(char *s, const char *append);
 char *XLALStringAppendFmt(char *s, const char *fmt, ...) _LAL_GCC_PRINTF_FORMAT_(2,3);
 char *XLALStringDuplicate(const char *s);

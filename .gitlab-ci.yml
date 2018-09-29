@@ -34,7 +34,6 @@ cache:
   paths:
     - ccache
 
-# FIXME: remove schedules after package builds have been running for a while
 .levelN:package: &levelN-package
   script:
     - cd ${CI_JOB_NAME#level?:*:}
@@ -52,12 +51,13 @@ cache:
     - make -j4 install
     - make -j4 install-html
   artifacts:
-    expire_in: 3h
+    expire_in: 18h
     paths:
       - opt/lalsuite
   only:
     - pushes
-    - schedules
+  except:
+    - tags
 
 .levelN:package:stretch: &levelN-package-stretch
   image: ligo/lalsuite-dev:stretch
@@ -136,8 +136,6 @@ level4:stretch:lalapps:
   <<: *levelN-package-stretch
   stage: level4
   dependencies:
-    - level2:stretch:lalstochastic
-    - level3:stretch:laldetchar
     - level3:stretch:lalinference
 
 .levelN:package:el7: &levelN-package-el7
@@ -217,39 +215,7 @@ level4:el7:lalapps:
   <<: *levelN-package-el7
   stage: level4
   dependencies:
-    - level2:el7:lalstochastic
-    - level3:el7:laldetchar
     - level3:el7:lalinference
-
-# FIXME: remove after package builds have been running for a while
-docker:tags:
-  stage: docker
-  before_script: []
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $TAG --file .Dockerfile.gitlab-ci .
-    - docker push $TAG
-  dependencies:
-    - level4:stretch:lalapps
-  only:
-    - tags
-
-# FIXME: remove after package builds have been running for a while
-docker:nightly:
-  stage: docker
-  before_script: []
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $NIGHTLY --file .Dockerfile.gitlab-ci .
-    - docker push $NIGHTLY
-  dependencies:
-    - level4:stretch:lalapps
-  only:
-    - master@lscsoft/lalsuite
-    - schedules
-  except:
-    - pushes
-    - web
 
 nightly:top-level:jessie:
   image: ligo/lalsuite-dev:jessie
@@ -323,6 +289,18 @@ nightly:top-level:bionic:
     - schedules
     - web
 
+nightly:top-level:cosmic:
+  image: skymoo/ligo-lalsuite-dev:cosmic
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
 # FIXME: It seems that Octave on buster currently has a few bugs which
 # cause the Octave bindings to fail, disable building the Octave SWIG
 # bindings for the time being.
@@ -373,9 +351,6 @@ nightly:python3:stretch:
   only:
     - schedules
     - web
-  # FIXME: there is currently an intermittant LALBurst test failure when
-  # building with python3, temporarily allow this to fail
-  allow_failure: true
 
 nightly:macos:highsierra:
   tags:
@@ -383,7 +358,9 @@ nightly:macos:highsierra:
   stage: nightly
   script:
     - ./00boot
-    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-swig --enable-doxygen
+    # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
+    # is available
+    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
     - make -j4
     - make -j4 check
   dependencies: []
@@ -397,7 +374,9 @@ nightly:macos:elcapitan:
   stage: nightly
   script:
     - ./00boot
-    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-swig --enable-doxygen
+    # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
+    # is available
+    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
     - make -j4
     - make -j4 check
   dependencies: []
@@ -416,22 +395,21 @@ nightly:macos:elcapitan:
     - PYPREFIX=/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux1/\1/')
     # Build wheel
     - ./00boot
-    # FIXME: laldetchar depends on glib >= 2.14, too new for manylinux1
-    - ./configure PYTHON=${PYPREFIX}/bin/python --disable-laldetchar ${EXTRA_CONFIG_FLAGS}
+    - ./configure PYTHON=${PYPREFIX}/bin/python --enable-mpi ${EXTRA_CONFIG_FLAGS}
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - auditwheel repair wheel/*.whl
     # Test
     - ${PYPREFIX}/bin/virtualenv test
     - source test/bin/activate
-    - pip install -q wheelhouse/*
+    - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []
   only:
     - /^lalsuite-v.*$/
     - schedules
   artifacts:
-    expire_in: 3h
+    expire_in: 18h
     paths:
       - wheelhouse
 
@@ -445,24 +423,24 @@ nightly:macos:elcapitan:
     # Enter virtualenv so that we have a controlled version of Numpy
     - virtualenv-${PYVERS} env
     - source env/bin/activate
-    - pip install -q git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 numpy==1.7.0
+    - pip install git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 'numpy==1.14.5;python_version>="3.7"' 'numpy==1.7.0;python_version<"3.7"'
     # Build wheel
     - ./00boot
-    - ./configure PYTHON=$(which python${PYVERS}) --enable-swig-python ${EXTRA_CONFIG_FLAGS} LDFLAGS=-Wl,-headerpad_max_install_names
+    - ./configure PYTHON=$(which python${PYVERS}) --enable-mpi --enable-swig-python ${EXTRA_CONFIG_FLAGS} LDFLAGS=-Wl,-headerpad_max_install_names
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - delocate-wheel -v -w wheelhouse wheel/*.whl
     # Test
     - virtualenv-${PYVERS} test
     - source test/bin/activate
-    - pip install -q wheelhouse/*
+    - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []
   only:
     - /^lalsuite-v.*$/
     - schedules
   artifacts:
-    expire_in: 3h
+    expire_in: 18h
     paths:
       - wheelhouse
 
@@ -477,11 +455,15 @@ nightly:wheel:cp35-cp35m-manylinux1:
   <<: *nightly-wheel-manylinux1
 nightly:wheel:cp36-cp36m-manylinux1:
   <<: *nightly-wheel-manylinux1
+nightly:wheel:cp37-cp37m-manylinux1:
+  <<: *nightly-wheel-manylinux1
 nightly:wheel:cp27-cp27m-macosx:
   <<: *nightly-wheel-macos
 nightly:wheel:cp35-cp35m-macosx:
   <<: *nightly-wheel-macos
 nightly:wheel:cp36-cp36m-macosx:
+  <<: *nightly-wheel-macos
+nightly:wheel:cp37-cp37m-macosx:
   <<: *nightly-wheel-macos
 
 .levelN:rpm: &levelN-rpm-package
@@ -489,14 +471,14 @@ nightly:wheel:cp36-cp36m-macosx:
   variables:
     RPM_BUILD_CPUS: 4
   script:
-    - rpm -ivh rpmbuild/RPMS/x86_64/lal*.rpm rpmbuild/RPMS/x86_64/python2-lal*.rpm || true
+    - if [ -d rpmbuild ]; then yum -y install rpmbuild/RPMS/x86_64/*.rpm; fi
     - cd ${CI_JOB_NAME#level?:rpm:}
     - ./00boot
     - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
     - make dist
     - rpmbuild -tb --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${CI_JOB_NAME#level?:rpm:}-*.tar.xz
   artifacts:
-    expire_in: 3h
+    expire_in: 18h
     paths:
       - rpmbuild/RPMS/x86_64/${CI_JOB_NAME#level?:rpm:}-*.rpm
       - rpmbuild/RPMS/x86_64/python2-${CI_JOB_NAME#level?:rpm:}-*.rpm
@@ -595,11 +577,10 @@ level4:rpm:lalapps:
     - level2:rpm:lalburst
     - level2:rpm:lalinspiral
     - level2:rpm:lalpulsar
-    - level2:rpm:lalstochastic
     - level3:rpm:lalinference
 
 # build a nightly container from the RPMs
-docker:el7:nightly:
+docker:nightly:el7:
   stage: docker
   before_script: []
   script:
@@ -608,26 +589,23 @@ docker:el7:nightly:
     - rm -rf rpmbuild*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/el7:nightly --file .Dockerfile-el7.gitlab-ci .
-    - docker push $CI_REGISTRY_IMAGE/el7:nightly
+    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:el7 --file .Dockerfile-el7.gitlab-ci .
+    - docker push $CI_REGISTRY_IMAGE/nightly:el7
   dependencies:
     - level0:rpm:lal
     - level1:rpm:lalframe
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
-    - level1:rpm:lalxml
     - level2:rpm:lalburst
     - level2:rpm:lalinspiral
     - level2:rpm:lalpulsar
-    - level2:rpm:lalstochastic
-    - level3:rpm:laldetchar
     - level3:rpm:lalinference
     - level4:rpm:lalapps
   only:
     - schedules
 
 # build a tagged container from the RPMs
-docker:el7:tags:
+docker:tags:el7:
   stage: docker
   before_script: []
   script:
@@ -636,23 +614,20 @@ docker:el7:tags:
     - rm -rf rpmbuild*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/el7:$CI_COMMIT_TAG --file .Dockerfile-el7.gitlab-ci .
-    - docker push $CI_REGISTRY_IMAGE/el7:$CI_COMMIT_TAG
+    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7 --file .Dockerfile-el7.gitlab-ci .
+    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7
   dependencies:
     - level0:rpm:lal
     - level1:rpm:lalframe
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
-    - level1:rpm:lalxml
     - level2:rpm:lalburst
     - level2:rpm:lalinspiral
     - level2:rpm:lalpulsar
-    - level2:rpm:lalstochastic
-    - level3:rpm:laldetchar
     - level3:rpm:lalinference
     - level4:rpm:lalapps
   only:
-    - tags
+    - /^lalsuite-v.*$/
 
 .levelN:deb: &levelN-deb-package
   image: ligo/lalsuite-dev:stretch
@@ -676,11 +651,11 @@ docker:el7:tags:
     - export DEBEMAIL="gitlab@git.ligo.org"
     - tar xf ${CI_JOB_NAME#level?:deb:}/${TARBALL}
     - cd ${PACKAGE}-*
-    - dch -v ${VERSION}-1 'Rebuilt automatically on git.ligo.org CI'
+    - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
     # build packages
     - debuild -us -uc -r
   artifacts:
-    expire_in: 3h
+    expire_in: 18h
     paths:
       - ${CI_JOB_NAME#level?:deb:}*.changes
       - ${CI_JOB_NAME#level?:deb:}*.deb
@@ -782,11 +757,10 @@ level4:deb:lalapps:
     - level2:deb:lalburst
     - level2:deb:lalinspiral
     - level2:deb:lalpulsar
-    - level2:deb:lalstochastic
     - level3:deb:lalinference
 
 # build a nightly container from the debian packages
-docker:stretch:nightly:
+docker:nightly:stretch:
   stage: docker
   before_script: []
   script:
@@ -795,26 +769,23 @@ docker:stretch:nightly:
     - rm *.changes *.dsc *.orig.*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/stretch:nightly --file .Dockerfile-stretch.gitlab-ci .
-    - docker push $CI_REGISTRY_IMAGE/stretch:nightly
+    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:stretch --file .Dockerfile-stretch.gitlab-ci .
+    - docker push $CI_REGISTRY_IMAGE/nightly:stretch
   dependencies:
     - level0:deb:lal
     - level1:deb:lalframe
     - level1:deb:lalmetaio
     - level1:deb:lalsimulation
-    - level1:deb:lalxml
     - level2:deb:lalburst
     - level2:deb:lalinspiral
     - level2:deb:lalpulsar
-    - level2:deb:lalstochastic
-    - level3:deb:laldetchar
     - level3:deb:lalinference
     - level4:deb:lalapps
   only:
     - schedules
 
 # build a tagged container from the debian packages
-docker:stretch:tags:
+docker:tags:stretch:
   stage: docker
   before_script: []
   script:
@@ -823,23 +794,20 @@ docker:stretch:tags:
     - rm *.changes *.dsc *.orig.*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/stretch:$CI_COMMIT_TAG --file .Dockerfile-stretch.gitlab-ci .
-    - docker push $CI_REGISTRY_IMAGE/stretch:$CI_COMMIT_TAG
+    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch --file .Dockerfile-stretch.gitlab-ci .
+    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch
   dependencies:
     - level0:deb:lal
     - level1:deb:lalframe
     - level1:deb:lalmetaio
     - level1:deb:lalsimulation
-    - level1:deb:lalxml
     - level2:deb:lalburst
     - level2:deb:lalinspiral
     - level2:deb:lalpulsar
-    - level2:deb:lalstochastic
-    - level3:deb:laldetchar
     - level3:deb:lalinference
     - level4:deb:lalapps
   only:
-    - tags
+    - /^lalsuite-v.*$/
 
 pages:
   image: ligo/lalsuite-dev:stretch
@@ -880,9 +848,11 @@ deploy:wheel:
     - nightly:wheel:cp34-cp34m-manylinux1
     - nightly:wheel:cp35-cp35m-manylinux1
     - nightly:wheel:cp36-cp36m-manylinux1
+    - nightly:wheel:cp37-cp37m-manylinux1
     - nightly:wheel:cp27-cp27m-macosx
     - nightly:wheel:cp35-cp35m-macosx
     - nightly:wheel:cp36-cp36m-macosx
+    - nightly:wheel:cp37-cp37m-macosx
   only:
     - /^lalsuite-v.*$/
     - schedules

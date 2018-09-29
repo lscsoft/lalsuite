@@ -48,7 +48,6 @@
 #include <lal/FindChirpPTF.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
-#include <lal/LIGOLwXMLInspiralHeaders.h>
 #include <lal/DetectorSite.h>
 #include <lal/TimeDelay.h>
 #include <lal/DetResponse.h>

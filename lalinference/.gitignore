@@ -79,8 +79,16 @@ python/lalinference/bayestar/sky_map.so
 python/lalinference/git_version.py
 python/lalinference/lalinference.py
 python/lalinference_average_skymaps
+python/lalinference_burst_pp_pipe
+python/lalinference_coherence_test
+python/lalinference_compute_roq_weights
+python/lalinference_merge_posteriors
+python/lalinference_multi_pipe
+python/lalinference_nest2pos
 python/lalinference_pipe
+python/lalinference_pp_pipe
 python/lalinference_review_test
+python/lalinference_tiger_pipe
 python/rapidpe_calculate_overlap
 python/rapidpe_compute_intrinsic_fisher
 python/rapidpe_compute_intrinsic_grid
@@ -97,6 +105,7 @@ src/git_version
 src/lalinference_bench
 src/lalinference_burst
 src/lalinference_datadump
+src/lalinference_injectedlike
 src/lalinference_nest
 src/lalinference_injectedlike
 src/lalinference_version

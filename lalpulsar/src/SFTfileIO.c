@@ -1662,7 +1662,7 @@ XLALGetMultiSFTCatalogView ( const SFTCatalog *catalog )
   for ( UINT4 k = 0; k < numSFTsTotal; k++)
     {
       CHAR  name[3];
-      strncpy( name, catalog->data[k].header.name, 3 );
+      memcpy( name, catalog->data[k].header.name, 3*sizeof(CHAR) );
 
       UINT4 X;
       /* go through list of ifos till a match is found or list is exhausted */

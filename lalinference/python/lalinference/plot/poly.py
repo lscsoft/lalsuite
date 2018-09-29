@@ -192,3 +192,6 @@ def make_rect_poly(width, height, theta, phi, subdivisions=10):
     else:
         # Return list of vertices as longitude, latitude pairs.
         return np.column_stack((wrapped_angle(phis), 0.5 * np.pi - thetas))
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.plot.poly')

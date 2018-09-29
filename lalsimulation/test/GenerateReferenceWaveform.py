@@ -22,9 +22,9 @@ import numpy as np
 import copy
 import unittest
 from optparse import OptionParser, OptionGroup
-import ConfigParser
 from lalsimulation import git_version
 import io
+from six.moves import configparser
 
 NEW_DATA_STR = '######### NEW DATASET #############\n'
 
@@ -153,9 +153,9 @@ class InputFile:
         self.size = len(self.content)
         self.newapproxindex = [i for i in range(self.size)
                 if self.content[i] == NEW_DATA_STR]
-        ConfigParser.RawConfigParser.optionxform = str
+        configparser.RawConfigParser.optionxform = str
         # prevent ConfigParser to use lower case version of option
-        self.dataset = [ConfigParser.RawConfigParser(defaults = defaultDict)
+        self.dataset = [configparser.RawConfigParser(defaults = defaultDict)
                 for i in range(len(self.newapproxindex))]
         self.newapproxindex.append(self.size)
         for i in range(len(self.newapproxindex) - 1):

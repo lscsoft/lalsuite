@@ -558,3 +558,6 @@ if __name__ == '__main__':
         runtime=21.5)
 
     print(read_sky_map('test.fits.gz'))
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.io.fits')

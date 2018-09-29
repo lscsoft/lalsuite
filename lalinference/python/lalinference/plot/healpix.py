@@ -216,3 +216,6 @@ def outline_text(ax):
     effects = [patheffects.withStroke(linewidth=2, foreground='w')]
     for artist in ax.findobj(text.Text):
         artist.set_path_effects(effects)
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.plot.healpix')

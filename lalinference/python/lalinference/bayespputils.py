@@ -832,12 +832,12 @@ class Posterior(object):
         if 'mchirp' in common_output_table_header and 'eta' in common_output_table_header \
         and (not 'm1' in common_output_table_header) and (not 'm2' in common_output_table_header):
             try:
-                print 'Inferring m1 and m2 from mchirp and eta'
+                print('Inferring m1 and m2 from mchirp and eta')
                 (m1,m2)=mc2ms(self._posterior['mchirp'].samples, self._posterior['eta'].samples)
                 self._posterior['m1']=PosteriorOneDPDF('m1',m1,injected_value=self._getinjpar('m1'),trigger_values=self._gettrigpar('m1'))
                 self._posterior['m2']=PosteriorOneDPDF('m2',m2,injected_value=self._getinjpar('m2'),trigger_values=self._gettrigpar('m2'))
             except KeyError:
-                print 'Unable to deduce m1 and m2 from input columns'
+                print('Unable to deduce m1 and m2 from input columns')
 
 
         logLFound=False
@@ -848,7 +848,7 @@ class Posterior(object):
                 try:
                     self._logL=self._posterior[loglalias].samples
                 except KeyError:
-                    print "No '%s' column in input table!"%loglalias
+                    print("No '%s' column in input table!"%loglalias)
                     continue
                 logLFound=True
 
@@ -861,7 +861,7 @@ class Posterior(object):
                 try:
                     self._logP=self._posterior[logpalias].samples
                 except KeyError:
-                    print "No '%s' column in input table!"%logpalias
+                    print("No '%s' column in input table!"%logpalias)
                     continue
                 if not 'log' in logpalias:
                   self._logP=[np.log(i) for i in self._logP]
@@ -947,11 +947,7 @@ class Posterior(object):
           if ('ra' in pos.names or 'rightascension' in pos.names) \
           and ('declination' in pos.names or 'dec' in pos.names) \
           and 'time' in pos.names:
-              import pylal
-              from pylal import xlal,inject
-              from pylal import date
-              from pylal.date import XLALTimeDelayFromEarthCenter
-              from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+              from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime, LIGOTimeGPS, TimeDelayFromEarthCenter
               import itertools
               from numpy import array
               detMap = {'H1': 'LHO_4k', 'H2': 'LHO_2k', 'L1': 'LLO_4k',
@@ -968,8 +964,8 @@ class Posterior(object):
                   inj_time=None
                   if injection:
                       inj_time=float(injection.get_end(ifo[0]))
-                  location=inject.cached_detector[detMap[ifo]].location
-                  ifo_times[ifo]=array(map(lambda ra,dec,time: array([time[0]+XLALTimeDelayFromEarthCenter(location,ra[0],dec[0],LIGOTimeGPS(float(time[0])))]), pos[ra_name].samples,pos[dec_name].samples,pos['time'].samples))
+                  location = lal.cached_detector_by_prefix[ifo].location
+                  ifo_times[ifo]=array(map(lambda ra,dec,time: array([time[0]+TimeDelayFromEarthCenter(location,ra[0],dec[0],LIGOTimeGPS(float(time[0])))]), pos[ra_name].samples,pos[dec_name].samples,pos['time'].samples))
                   loc_end_time=PosteriorOneDPDF(ifo.lower()+'_end_time',ifo_times[ifo],injected_value=inj_time)
                   pos.append(loc_end_time)
               for ifo1 in my_ifos:
@@ -983,8 +979,8 @@ class Posterior(object):
                       time_delay=PosteriorOneDPDF(ifo1.lower()+ifo2.lower()+'_delay',delay_time,inj_delay)
                       pos.append(time_delay)
       except ImportError:
-          print 'Warning: Could not import lal python bindings, check you ./configured with --enable-swig-python'
-          print 'This means I cannot calculate time delays'
+          print('Warning: Could not import lal python bindings, check you ./configured with --enable-swig-python')
+          print('This means I cannot calculate time delays')
 
       #Calculate new spin angles
       new_spin_params = ['tilt1','tilt2','theta_jn','beta']
@@ -994,7 +990,7 @@ class Posterior(object):
           try:
               pos.append_mapping(new_spin_params, spin_angles, old_params)
           except KeyError:
-              print "Warning: Cannot find spin parameters.  Skipping spin angle calculations."
+              print("Warning: Cannot find spin parameters.  Skipping spin angle calculations.")
 
       #Calculate effective precessing spin magnitude
       if ('a1' in pos.names and 'tilt1' in pos.names and 'm1' in pos.names ) and ('a2' in pos.names and 'tilt2' in pos.names and 'm2' in pos.names):
@@ -1082,7 +1078,7 @@ class Posterior(object):
           try:
               pos.append_mapping(new_tidal_params, symm_tidal_params, old_tidal_params)
           except KeyError:
-              print "Warning: Cannot find tidal parameters.  Skipping tidal calculations."
+              print("Warning: Cannot find tidal parameters.  Skipping tidal calculations.")
 
       #If new spin params present, calculate old ones
       old_spin_params = ['iota', 'theta1', 'phi1', 'theta2', 'phi2', 'beta']
@@ -1093,7 +1089,7 @@ class Posterior(object):
                   if name in pos.names:
                       new_spin_params = ['theta_jn', 'phi_jl', 'tilt1', 'tilt2', 'phi12', 'a1', 'a2', 'm1', 'm2', name]
       except:
-          print "No f_ref for SimInspiralTransformPrecessingNewInitialConditions()."
+          print("No f_ref for SimInspiralTransformPrecessingNewInitialConditions().")
       if set(new_spin_params).issubset(set(pos.names)) and not set(old_spin_params).issubset(set(pos.names)):
         pos.append_mapping(old_spin_params, physical2radiationFrame, new_spin_params)
 
@@ -1109,66 +1105,66 @@ class Posterior(object):
               a1_pos = PosteriorOneDPDF('a1',a1_samps,injected_value=inj_a1)
               pos.append(a1_pos)
           except KeyError:
-              print "Warning: problem accessing spin1 values."
+              print("Warning: problem accessing spin1 values.")
 
           try:
               a2_samps = abs(pos['spin2'].samples)
               a2_pos = PosteriorOneDPDF('a2',a2_samps,injected_value=inj_a2)
               pos.append(a2_pos)
           except KeyError:
-              print "Warning: no spin2 values found."
+              print("Warning: no spin2 values found.")
 
       # Calculate mass and spin of final merged system
       if ('m1' in pos.names) and ('m2' in pos.names):
           if ('tilt1' in pos.names) or ('tilt2' in pos.names):
-              print "A precessing fit formula is not available yet. Using a non-precessing fit formula on the aligned-spin components."
+              print("A precessing fit formula is not available yet. Using a non-precessing fit formula on the aligned-spin components.")
           if ('a1z' in pos.names) and ('a2z' in pos.names):
-              print "Using non-precessing fit formula [Healy at al (2014)] for final mass and spin (on masses and projected spin components)."
+              print("Using non-precessing fit formula [Healy at al (2014)] for final mass and spin (on masses and projected spin components).")
               try:
                   pos.append_mapping('af', bbh_final_spin_non_precessing_Healyetal, ['m1', 'm2', 'a1z', 'a2z'])
                   pos.append_mapping('mf', lambda m1, m2, chi1z, chi2z, chif: bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1z, chi2z, chif=chif), ['m1', 'm2', 'a1z', 'a2z', 'af'])
-              except Exception,e:
-                  print "Could not calculate final parameters. The error was: %s"%(str(e))
+              except Exception as e:
+                  print("Could not calculate final parameters. The error was: %s"%(str(e)))
           elif ('a1' in pos.names) and ('a2' in pos.names):
               if ('tilt1' in pos.names) and ('tilt2' in pos.names):
-                  print "Projecting spin and using non-precessing fit formula [Healy at al (2014)] for final mass and spin."
+                  print("Projecting spin and using non-precessing fit formula [Healy at al (2014)] for final mass and spin.")
                   try:
                       pos.append_mapping('af', bbh_final_spin_projected_spin_Healyetal, ['m1', 'm2', 'a1', 'a2', 'tilt1', 'tilt2'])
                       pos.append_mapping('mf', bbh_final_mass_projected_spin_Healyetal, ['m1', 'm2', 'a1', 'a2', 'tilt1', 'tilt2', 'af'])
-                  except Exception,e:
-                      print "Could not calculate final parameters. The error was: %s"%(str(e))
+                  except Exception as e:
+                      print("Could not calculate final parameters. The error was: %s"%(str(e)))
               else:
-                  print "Using non-precessing fit formula [Healy at al (2014)] for final mass and spin (on masses and spin magnitudes)."
+                  print("Using non-precessing fit formula [Healy at al (2014)] for final mass and spin (on masses and spin magnitudes).")
                   try:
                       pos.append_mapping('af', bbh_final_spin_non_precessing_Healyetal, ['m1', 'm2', 'a1', 'a2'])
                       pos.append_mapping('mf', lambda m1, m2, chi1, chi2, chif: bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=chif), ['m1', 'm2', 'a1', 'a2', 'af'])
-                  except Exception,e:
-                      print "Could not calculate final parameters. The error was: %s"%(str(e))
+                  except Exception as e:
+                      print("Could not calculate final parameters. The error was: %s"%(str(e)))
           else:
-              print "Using non-spinning fit formula [Pan at al (2010)] for final mass and spin."
+              print("Using non-spinning fit formula [Pan at al (2010)] for final mass and spin.")
               try:
                   pos.append_mapping('af', bbh_final_spin_non_spinning_Panetal, ['m1', 'm2'])
                   pos.append_mapping('mf', bbh_final_mass_non_spinning_Panetal, ['m1', 'm2'])
-              except Exception,e:
-                  print "Could not calculate final parameters. The error was: %s"%(str(e))
+              except Exception as e:
+                  print("Could not calculate final parameters. The error was: %s"%(str(e)))
       if ('mf' in pos.names) and ('redshift' in pos.names):
           try:
               pos.append_mapping('mf_source', source_mass, ['mf', 'redshift'])
-          except Exception,e:
-              print "Could not calculate final source frame mass. The error was: %s"%(str(e))
+          except Exception as e:
+              print("Could not calculate final source frame mass. The error was: %s"%(str(e)))
 
       # Calculate radiated energy and peak luminosity
       if ('mtotal_source' in pos.names) and ('mf_source' in pos.names):
           try:
               pos.append_mapping('e_rad', lambda mtot_s, mf_s: mtot_s-mf_s, ['mtotal_source', 'mf_source'])
-          except Exception,e:
-              print "Could not calculate radiated energy. The error was: %s"%(str(e))
+          except Exception as e:
+              print("Could not calculate radiated energy. The error was: %s"%(str(e)))
 
       if ('q' in pos.names) and ('a1z' in pos.names) and ('a2z' in pos.names):
           try:
               pos.append_mapping('l_peak', bbh_aligned_Lpeak_6mode_SHXJDK, ['q', 'a1z', 'a2z'])
-          except Exception,e:
-              print "Could not calculate peak luminosity. The error was: %s"%(str(e))
+          except Exception as e:
+              print("Could not calculate peak luminosity. The error was: %s"%(str(e)))
 
     def bootstrap(self):
         """
@@ -1221,9 +1217,9 @@ class Posterior(object):
         total_samps = len(self)
         nan_samps   = len(nan_idxs)
         if nan_samps is not 0:
-            print "WARNING: removing %i of %i total samples due to NaNs:"% (nan_samps,total_samps)
+            print("WARNING: removing %i of %i total samples due to NaNs:"% (nan_samps,total_samps))
             for param in nan_dict.keys():
-                print "\t%i NaNs in %s."%(nan_dict[param],param)
+                print("\t%i NaNs in %s."%(nan_dict[param],param))
             self.delete_samples_by_idx(nan_idxs)
         return
 
@@ -1488,7 +1484,7 @@ class Posterior(object):
             samps = func(old_post.samples)
             new_post = PosteriorOneDPDF(new_param_names, samps, injected_value=new_inj, trigger_values=new_trigs)
             if new_post.samples.ndim is 0:
-                print "WARNING: No posterior calculated for %s ..." % post.name
+                print("WARNING: No posterior calculated for %s ..." % post.name)
             else:
                 self.append(new_post)
         #MultiD input
@@ -1531,7 +1527,7 @@ class Posterior(object):
                 new_posts = [PosteriorOneDPDF(new_param_name,samp,injected_value=inj,trigger_values=new_trigs) for (new_param_name,samp,inj,new_trigs) in zip(new_param_names,samps,injs,new_trigs)]
                 for post in new_posts:
                     if post.samples.ndim is 0:
-                        print "WARNING: No posterior calculated for %s ..." % post.name
+                        print("WARNING: No posterior calculated for %s ..." % post.name)
                     else:
                         self.append(post)
         return
@@ -1635,7 +1631,7 @@ class Posterior(object):
                 ellipse_samples.append(sample)
 
         if len(ellipse_samples) > 5*n:
-            print 'WARNING: ellpise evidence region encloses significantly more samples than %d'%n
+            print('WARNING: ellpise evidence region encloses significantly more samples than %d'%n)
 
         ellipse_samples=np.array(ellipse_samples)
         ellipse_logl=np.array(ellipse_logl)
@@ -1648,7 +1644,7 @@ class Posterior(object):
             pmu=np.mean(ellipse_samples[:,prior_index])
             pstd=np.std(ellipse_samples[:,prior_index])
             if pstd/pmu > 1.0:
-                print 'WARNING: prior variation greater than 100\% over elliptical volume.'
+                print('WARNING: prior variation greater than 100\% over elliptical volume.')
             approx_prior_integral=ellipse_volume*pmu
         except KeyError:
             # Maybe prior = 1?
@@ -1799,7 +1795,7 @@ class Posterior(object):
             try:
               R = VHat/W
             except:
-              print "Error when computer Gelman-Rubin R statistic for %s.  This may be a fixed parameter"%pname
+              print("Error when computer Gelman-Rubin R statistic for %s.  This may be a fixed parameter"%pname)
               R = np.nan
             return R
         else:
@@ -1933,7 +1929,7 @@ class Posterior(object):
         """
         if inj.longitude>2*pi_constant or inj.longitude<0.0:
             maplong=2*pi_constant*(((float(inj.longitude))/(2*pi_constant)) - floor(((float(inj.longitude))/(2*pi_constant))))
-            print "Warning: Injected longitude/ra (%s) is not within [0,2\pi)! Angles are assumed to be in radians so this will be mapped to [0,2\pi). Mapped value is: %s."%(str(inj.longitude),str(maplong))
+            print("Warning: Injected longitude/ra (%s) is not within [0,2\pi)! Angles are assumed to be in radians so this will be mapped to [0,2\pi). Mapped value is: %s."%(str(inj.longitude),str(maplong)))
             return maplong
         else:
             return inj.longitude
@@ -2112,7 +2108,7 @@ class BurstPosterior(Posterior):
                 try:
                     self._logL=self._posterior[loglalias].samples
                 except KeyError:
-                    print "No '%s' column in input table!"%loglalias
+                    print("No '%s' column in input table!"%loglalias)
                     continue
                 logLFound=True
 
@@ -2125,7 +2121,7 @@ class BurstPosterior(Posterior):
                 try:
                     self._logP=self._posterior[logpalias].samples
                 except KeyError:
-                    print "No '%s' column in input table!"%logpalias
+                    print("No '%s' column in input table!"%logpalias)
                     continue
                 if not 'log' in logpalias:
                   self._logP=[np.log(i) for i in self._logP]
@@ -2148,7 +2144,7 @@ class BurstPosterior(Posterior):
         """
         if inj.ra>2*pi_constant or inj.ra<0.0:
             maplong=2*pi_constant*(((float(inj.ra)/(2*pi_constant)) - floor(((float(inj.ra))/(2*pi_constant)))))
-            print "Warning: Injected longitude/ra (%s) is not within [0,2\pi)! Angles are assumed to be in radians so this will be mapped to [0,2\pi). Mapped value is: %s."%(str(inj.ra),str(maplong))
+            print("Warning: Injected longitude/ra (%s) is not within [0,2\pi)! Angles are assumed to be in radians so this will be mapped to [0,2\pi). Mapped value is: %s."%(str(inj.ra),str(maplong)))
             return maplong
         else:
             return inj.ra
@@ -2541,8 +2537,8 @@ class PosteriorSample(object):
         self._samples=sample_array[:]
         self._headers=headers
         if not (len(sample_array) == len(self._headers)):
-            print "Header length = ", len(self._headers)
-            print "Sample length = ", len(sample_array)
+            print("Header length = ", len(self._headers))
+            print("Sample length = ", len(sample_array))
             raise RuntimeError("parameter and sample lengths do not agree")
         self._coord_names=coord_names
         self._coord_indexes=[self._headers.index(name) for name in coord_names]
@@ -2919,7 +2915,7 @@ def _calculate_confidence_levels(hist, points, injBin, NSamples):
         toppoints.append((points[i,0], points[i,1], i, frac))
         if i == injBin:
             injConf=frac
-            print 'Injection found at confidence level %g'%injConf
+            print('Injection found at confidence level %g'%injConf)
 
     return (injConf, toppoints)
 
@@ -3110,8 +3106,8 @@ def kdtree_bin_sky_area(posterior,confidence_levels,samples_per_bin=10):
         acc_vol+=vol
 
         if confidence_level>confidence_levels[cl_idx]:
-            print str(confidence_level)
-            print acc_vol
+            print(str(confidence_level))
+            print(acc_vol)
             confidence_intervals[confidence_levels[cl_idx]]=acc_vol
             cl_idx+=1
             if cl_idx==len(confidence_levels):
@@ -3120,7 +3116,7 @@ def kdtree_bin_sky_area(posterior,confidence_levels,samples_per_bin=10):
     acc_vol = 0.
     for rho,sample_number,vol,bounds in b:
         acc_vol+=vol
-    print 'total area: ' + str(acc_vol)
+    print('total area: ' + str(acc_vol))
 
     #finds the confidence level of the injection and the volume of the associated contained region
     inj_confidence = None
@@ -3134,7 +3130,7 @@ def kdtree_bin_sky_area(posterior,confidence_levels,samples_per_bin=10):
                 inj_confidence_area = acc_vol
                 injInfo.append(inj_confidence)
                 injInfo.append(inj_confidence_area)
-                print 'inj ' +str(vol)
+                print('inj ' +str(vol))
                 break
     return confidence_intervals, b, injInfo
 
@@ -3149,7 +3145,7 @@ def kdtree_bin(posterior,coord_names,confidence_levels,initial_boundingbox = Non
     Not quite sure that the repeated samples case is fixed, posibility of infinite loop.
     """
     confidence_levels.sort()
-    print confidence_levels
+    print(confidence_levels)
     class Harvester(list):
         """
         when called by kdtree.operate will be used to calculate the density of each bin
@@ -3224,7 +3220,7 @@ def kdtree_bin(posterior,coord_names,confidence_levels,initial_boundingbox = Non
             inj_volume = inj_volume*(bCoord - aCoord)
         inj_number_density=float(injNum)/float(inj_volume)
         inj_rho = inj_number_density / a.unrho
-        print injNum,inj_volume,inj_number_density,a.unrho,injBound
+        print(injNum,inj_volume,inj_number_density,a.unrho,injBound)
     else:
         injInfo = None
         inj_area = None
@@ -3250,7 +3246,7 @@ def kdtree_bin(posterior,coord_names,confidence_levels,initial_boundingbox = Non
     inj_confidence = None
     inj_confidence_area = None
     if inj_rho is not None:
-        print 'calculating cl'
+        print('calculating cl')
         acc_vol=0.
         for rho,confidence_level,vol,bounds in b:
             acc_vol+=vol
@@ -3441,10 +3437,10 @@ def greedy_bin_two_param(posterior,greedy2Params,confidence_levels):
 
         injbin=int(par1_binNumber+par2_binNumber*par1pos_Nbins)
     elif par1_injvalue is None and par2_injvalue is not None:
-        print "Injection value not found for %s!"%par1_name
+        print("Injection value not found for %s!"%par1_name)
 
     elif par1_injvalue is not None and par2_injvalue is None:
-        print "Injection value not found for %s!"%par2_name
+        print("Injection value not found for %s!"%par2_name)
 
     #Bin posterior samples
     for par1_samp,par2_samp in zip(par1pos,par2pos):
@@ -3831,8 +3827,8 @@ def physical2radiationFrame(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1, m
     try:
       import lalsimulation as lalsim
     except ImportError:
-      print 'bayespputils.py: Cannot import lalsimulation SWIG bindings to calculate physical to radiation'
-      print 'frame angles, did you remember to use --enable-swig-python when ./configuring lalsimulation?'
+      print('bayespputils.py: Cannot import lalsimulation SWIG bindings to calculate physical to radiation')
+      print('frame angles, did you remember to use --enable-swig-python when ./configuring lalsimulation?')
       return None
     from numpy import shape
     transformFunc = lalsim.SimInspiralTransformPrecessingNewInitialConditions
@@ -3920,7 +3916,7 @@ def plot_one_param_pdf_kde(fig,onedpos):
     try:
         gkde=onedpos.gaussian_kde
     except np.linalg.linalg.LinAlgError:
-        print 'Singular matrix in KDE. Skipping'
+        print('Singular matrix in KDE. Skipping')
     else:
         ind=np.linspace(np.min(pos_samps),np.max(pos_samps),101)
         kdepdf=gkde.evaluate(ind)
@@ -4245,7 +4241,7 @@ def plot_corner(posterior,levels,parnames=None):
           try:
                   import triangle as corner
           except ImportError:
-                  print 'Cannot load corner module. Try running\n\t$ pip install corner'
+                  print('Cannot load corner module. Try running\n\t$ pip install corner')
                   return None
   parnames=filter(lambda x: x in posterior.names, parnames)
   labels = [plot_label(parname) for parname in parnames]
@@ -4308,7 +4304,7 @@ def plot_two_param_kde_greedy_levels(posteriors_by_name,plot2DkdeParams,levels,c
 
   CSlst=[]
   for name,posterior in posteriors_by_name.items():
-    print 'Plotting '+name
+    print('Plotting '+name)
     name_list.append(name)
     par1_injvalue=posterior[par1_name].injval
     par2_injvalue=posterior[par2_name].injval
@@ -5171,8 +5167,8 @@ def greedy_bin_one_param(posterior,greedy1Param,confidence_levels):
         try:
             greedyHist[par_binNumber]+=1
         except IndexError:
-            print "IndexError: bin number: %i total bins: %i parsamp: %f "\
-                %(par_binNumber,parpos_Nbins,par_samp)
+            print("IndexError: bin number: %i total bins: %i parsamp: %f "\
+                %(par_binNumber,parpos_Nbins,par_samp))
 
     #Find injection bin
     injbin=None
@@ -5232,14 +5228,14 @@ def contigious_interval_one_param(posterior,contInt1Params,confidence_levels):
         try:
             greedyHist[par_binNumber]+=1
         except IndexError:
-            print "IndexError: bin number: %i total bins: %i parsamp: %f bin: %f - %f"\
+            print("IndexError: bin number: %i total bins: %i parsamp: %f bin: %f - %f"\
                 %(
                   par_binNumber,
                   parpos_Nbins,
                   par_samp,
                   greedyPoints[par_binNumber-1,0],
                   greedyPoints[par_binNumber-1,0]+par_bin
-                  )
+                  ))
 
     injbin=None
     #Find injection bin
@@ -5296,7 +5292,7 @@ def contigious_interval_one_param(posterior,contInt1Params,confidence_levels):
             max_frac=None
 
         if max_frac is None:
-            print "Cant determine intervals at %f confidence!"%confidence_level
+            print("Cant determine intervals at %f confidence!"%confidence_level)
         else:
 
             oneDContCL['left']=max_left*par_bin
@@ -5433,7 +5429,7 @@ def find_ndownsample(samples, nDownsample):
     achieve the desired number of posterior samples.
     """
     if nDownsample is None:
-        print "Max ACL(s):"
+        print("Max ACL(s):")
         splineParams=["spcal_npts", "spcal_active","constantcal_active"]
         for i in np.arange(25):
           for k in lal.cached_detector_by_prefix:
@@ -5447,7 +5443,7 @@ def find_ndownsample(samples, nDownsample):
                      "temperature","nifo","nlocaltemps","ntemps","randomseed","samplerate","segmentlength","segmentstart",
                      "t0", "phase_maxl", "azimuth", "cosalpha", "lal_amporder"] + logParams + snrParams + splineParams
         fixedParams = [p for p in samples.colnames if all(x==samples[p][0] for x in samples[p])]
-        print "Fixed parameters: "+str(fixedParams)
+        print("Fixed parameters: "+str(fixedParams))
         nonParams.extend(fixedParams)
         params = [p for p in samples.colnames if p.lower() not in nonParams]
         stride=np.diff(samples['cycle'])[0]
@@ -5458,7 +5454,7 @@ def find_ndownsample(samples, nDownsample):
         maxACLind = np.argmax(ACLs)
         maxACL = ACLs[maxACLind]
         # Get index in header, which includes "non-params"
-        print "%i (%s)." %(stride*maxACL,params[maxACLind])
+        print("%i (%s)." %(stride*maxACL,params[maxACLind]))
 
     nskip = 1
     if nDownsample is not None:
@@ -5513,31 +5509,31 @@ class PEOutputParser(object):
         """
         if not (fixedBurnins is None):
             if not (deltaLogP is None):
-                print "Warning: using deltaLogP criteria in addition to fixed burnin"
+                print("Warning: using deltaLogP criteria in addition to fixed burnin")
             if len(fixedBurnins) == 1 and len(files) > 1:
-                print "Only one fixedBurnin criteria given for more than one output.  Applying this to all outputs."
+                print("Only one fixedBurnin criteria given for more than one output.  Applying this to all outputs.")
                 fixedBurnins = np.ones(len(files),'int')*fixedBurnins[0]
             elif len(fixedBurnins) != len(files):
                 raise RuntimeError("Inconsistent number of fixed burnin criteria and output files specified.")
-            print "Fixed burning criteria: ",fixedBurnins
+            print("Fixed burning criteria: ",fixedBurnins)
         else:
             fixedBurnins = np.zeros(len(files))
         logPThreshold=-np.inf
         if not (deltaLogP is None):
             logPThreshold= - deltaLogP
-            print "Eliminating any samples before log(Post) = ", logPThreshold
+            print("Eliminating any samples before log(Post) = ", logPThreshold)
         nskips=self._find_ndownsample(files, logPThreshold, fixedBurnins, nDownsample)
         if nDownsample is None:
-            print "Downsampling to take only uncorrelated posterior samples from each file."
+            print("Downsampling to take only uncorrelated posterior samples from each file.")
             if len(nskips) == 1 and np.isnan(nskips[0]):
-                print "WARNING: All samples in chain are correlated.  Downsampling to 10000 samples for inspection!!!"
+                print("WARNING: All samples in chain are correlated.  Downsampling to 10000 samples for inspection!!!")
                 nskips=self._find_ndownsample(files, logPThreshold, fixedBurnins, 10000)
             else:
                 for i in range(len(nskips)):
                     if np.isnan(nskips[i]):
-                        print "%s eliminated since all samples are correlated."
+                        print("%s eliminated since all samples are correlated.")
                     else:
-                        print "Downsampling by a factor of ", nskips[0], " to achieve approximately ", nDownsample, " posterior samples"
+                        print("Downsampling by a factor of ", nskips[0], " to achieve approximately ", nDownsample, " posterior samples")
         if outdir is None:
             outdir=''
         runfileName=os.path.join(outdir,"lalinfmcmc_headers.dat")
@@ -5567,11 +5563,11 @@ class PEOutputParser(object):
         for infilename,i,nskip,fixedBurnin in zip(files,range(1,len(files)+1),nskips,fixedBurnins):
             infile=open(infilename,'r')
             try:
-                print "Writing header of %s to %s"%(infilename,runfile.name)
+                print("Writing header of %s to %s"%(infilename,runfile.name))
                 runInfo,header=self._clear_infmcmc_header(infile)
                 runfile.write('Chain '+str(i)+':\n')
                 runfile.writelines(runInfo)
-                print "Processing file %s to %s"%(infilename,outfile.name)
+                print("Processing file %s to %s"%(infilename,outfile.name))
                 write_fref = False
                 if 'f_ref' not in header:
                     write_fref = True
@@ -5620,7 +5616,7 @@ class PEOutputParser(object):
                 if output: acceptedChains += 1
             finally:
                 infile.close()
-        print "%i of %i chains accepted."%(acceptedChains,len(files))
+        print("%i of %i chains accepted."%(acceptedChains,len(files)))
 
     def _swaplabel12(self, label):
         if label[-1] == '1':
@@ -5647,7 +5643,7 @@ class PEOutputParser(object):
                         maxLogP=logP
             finally:
                 infile.close()
-        print "Found max log(post) = ", maxLogP
+        print("Found max log(post) = ", maxLogP)
         return maxLogP
 
     def _find_ndownsample(self, files, logPthreshold, fixedBurnins, nDownsample):
@@ -5659,7 +5655,7 @@ class PEOutputParser(object):
         nfiles = len(files)
         ntots=[]
         nEffectives = []
-        if nDownsample is None: print "Max ACL(s):"
+        if nDownsample is None: print("Max ACL(s):")
         for inpname,fixedBurnin in zip(files,fixedBurnins):
             infile = open(inpname, 'r')
             try:
@@ -5719,10 +5715,10 @@ class PEOutputParser(object):
                         maxACL = ACLs[maxACLind]
                         # Get index in header, which includes "non-params"
                         maxACLind = paramIdxs[maxACLind]
-                        print "%i (%s) for chain %s." %(stride*maxACL,header[maxACLind],inpname)
+                        print("%i (%s) for chain %s." %(stride*maxACL,header[maxACLind],inpname))
                     except:
                         nEffectives.append(None)
-                        print "Error computing effective sample size of %s!"%inpname
+                        print("Error computing effective sample size of %s!"%inpname)
 
             finally:
                 infile.close()
@@ -5839,7 +5835,7 @@ class PEOutputParser(object):
         try:
             from lalapps.nest2pos import draw_N_posterior_many,draw_posterior_many
         except ImportError:
-            print "Need lalapps.nest2pos to convert nested sampling output!"
+            print("Need lalapps.nest2pos to convert nested sampling output!")
             raise
 
         if Nlive is None:
@@ -5854,7 +5850,7 @@ class PEOutputParser(object):
         parsfilename = (it.next()).strip('.gz')+'_params.txt'
 
         if os.path.isfile(parsfilename):
-            print 'Looking for '+parsfilename
+            print('Looking for '+parsfilename)
 
             if os.access(parsfilename,os.R_OK):
 
@@ -5874,7 +5870,7 @@ class PEOutputParser(object):
             if parsvec[i].lower()=='logl':
                 logLcol=i
         if logLcol==-1:
-            print 'Error! Could not find logL column in parameter list: %s'%(outpars)
+            print('Error! Could not find logL column in parameter list: %s'%(outpars))
             raise RuntimeError
 
         inarrays=map(np.loadtxt,files)
@@ -5962,22 +5958,22 @@ class PEOutputParser(object):
         flines=np.array(llines)
         for i in range(0,len(header)):
             if header[i].lower().find('log')!=-1 and header[i].lower() not in logParams and re.sub('log', '', header[i].lower()) not in [h.lower() for h in header]:
-                print 'exponentiating %s'%(header[i])
+                print('exponentiating %s'%(header[i]))
 
                 flines[:,i]=np.exp(flines[:,i])
 
                 header[i]=re.sub('log', '', header[i], flags=re.IGNORECASE)
             if header[i].lower().find('sin')!=-1 and re.sub('sin', '', header[i].lower()) not in [h.lower() for h in header]:
-                print 'asining %s'%(header[i])
+                print('asining %s'%(header[i]))
                 flines[:,i]=np.arcsin(flines[:,i])
                 header[i]=re.sub('sin', '', header[i], flags=re.IGNORECASE)
             if header[i].lower().find('cos')!=-1 and re.sub('cos', '', header[i].lower()) not in [h.lower() for h in header]:
-                print 'acosing %s'%(header[i])
+                print('acosing %s'%(header[i]))
                 flines[:,i]=np.arccos(flines[:,i])
                 header[i]=re.sub('cos', '', header[i], flags=re.IGNORECASE)
             header[i]=header[i].replace('(','')
             header[i]=header[i].replace(')','')
-        print 'Read columns %s'%(str(header))
+        print('Read columns %s'%(str(header)))
         return header,flines
 
     def _hdf5s_to_pos(self, infiles, fixedBurnins=None, deltaLogP=None, nDownsample=None, tablename=None, **kwargs):
@@ -6067,8 +6063,8 @@ class PEOutputParser(object):
         if 'cycle' in params:
             if not (fixedBurnin is None):
                 if not (deltaLogP is None):
-                    print "Warning: using deltaLogP criteria in addition to fixed burnin"
-                print "Fixed burning criteria: ",fixedBurnin
+                    print("Warning: using deltaLogP criteria in addition to fixed burnin")
+                print("Fixed burning criteria: ",fixedBurnin)
             else:
                 fixedBurnin = 0
 
@@ -6079,24 +6075,24 @@ class PEOutputParser(object):
             logPThreshold=-np.inf
             if len(samples) > 0 and not (deltaLogP is None):
                 logPThreshold = max(samples['logpost'])- deltaLogP
-                print "Eliminating any samples before log(post) = ", logPThreshold
+                print("Eliminating any samples before log(post) = ", logPThreshold)
                 burnin_idx = np.arange(len(samples))[samples['logpost'] > logPThreshold][0]
                 samples = samples[burnin_idx:]
 
             if len(samples) > 0:
                 nskip = find_ndownsample(samples, nDownsample)
                 if nDownsample is None:
-                    print "Downsampling to take only uncorrelated posterior samples from each file."
+                    print("Downsampling to take only uncorrelated posterior samples from each file.")
                     if np.isnan(nskip) and not multiple_chains:
-                        print "WARNING: All samples in chain are correlated.  Downsampling to 10000 samples for inspection!!!"
+                        print("WARNING: All samples in chain are correlated.  Downsampling to 10000 samples for inspection!!!")
                         nskip = find_ndownsample(samples, 10000)
                         samples = samples[::nskip]
                 else:
                     if np.isnan(nskip):
-                        print "WARNING: All samples in {} are correlated.".format(infile)
+                        print("WARNING: All samples in {} are correlated.".format(infile))
                         samples = samples[-1:]
                     else:
-                        print "Downsampling by a factor of ", nskip, " to achieve approximately ", nDownsample, " posterior samples"
+                        print("Downsampling by a factor of ", nskip, " to achieve approximately ", nDownsample, " posterior samples")
                         samples = samples[::nskip]
 
         return samples
@@ -6137,7 +6133,7 @@ class PEOutputParser(object):
                 del(sline[-1])
             proceed=True
             if len(sline)<1:
-                print 'Ignoring empty line in input file: %s'%(sline)
+                print('Ignoring empty line in input file: %s'%(sline))
                 proceed=False
             elif len(sline)!=nparams:
                 sys.stderr.write('WARNING: Malformed row %i, read %i elements but there is meant to be %i\n'%(line_number,len(sline),nparams))
@@ -6146,7 +6142,7 @@ class PEOutputParser(object):
             for elemn,st in enumerate(sline):
                 s=st.replace('\n','')
                 if dec.search(s) is None:
-                    print 'Warning! Ignoring non-numeric data after the header: %s. Row = %i,Element=%i'%(s,line_number,elemn)
+                    print('Warning! Ignoring non-numeric data after the header: %s. Row = %i,Element=%i'%(s,line_number,elemn))
                     proceed=False
                 elif s is '\n':
                     proceed=False
@@ -6162,22 +6158,22 @@ class PEOutputParser(object):
 
         for i in range(0,len(header)):
             if header[i].lower().find('log')!=-1 and header[i].lower() not in logParams and re.sub('log', '', header[i].lower()) not in [h.lower() for h in header]:
-                print 'exponentiating %s'%(header[i])
+                print('exponentiating %s'%(header[i]))
 
                 flines[:,i]=np.exp(flines[:,i])
 
                 header[i]=re.sub('log', '', header[i], flags=re.IGNORECASE)
             if header[i].lower().find('sin')!=-1 and re.sub('sin', '', header[i].lower()) not in [h.lower() for h in header]:
-                print 'asining %s'%(header[i])
+                print('asining %s'%(header[i]))
                 flines[:,i]=np.arcsin(flines[:,i])
                 header[i]=re.sub('sin', '', header[i], flags=re.IGNORECASE)
             if header[i].lower().find('cos')!=-1 and re.sub('cos', '', header[i].lower()) not in [h.lower() for h in header]:
-                print 'acosing %s'%(header[i])
+                print('acosing %s'%(header[i]))
                 flines[:,i]=np.arccos(flines[:,i])
                 header[i]=re.sub('cos', '', header[i], flags=re.IGNORECASE)
             header[i]=header[i].replace('(','')
             header[i]=header[i].replace(')','')
-        print 'Read columns %s'%(str(header))
+        print('Read columns %s'%(str(header)))
         return header,flines
 
 
@@ -6239,7 +6235,7 @@ def vo_nest2pos(nsresource,Nlive=None):
         runstateResource = [resource for resource in nsresource.findall("./{%s}RESOURCE"%(xmlns)) if resource.get("utype")=="lalinference:state"][0]
         algTable = [table for table in runstateResource.findall("./{%s}TABLE"%(xmlns)) if table.get("utype")=="lalinference:state:algorithmparams"][0]
         Nlive = int ([param for param in algTable.findall("./{%s}PARAM"%(xmlns)) if param.get("name")=='Nlive'][0].get('value'))
-        print 'Found Nlive %i'%(Nlive)
+        print('Found Nlive %i'%(Nlive))
     if Nlive is None:
         raise RuntimeError("Cannot find number of live points in XML table, please specify")
     logLcol = None
@@ -6408,21 +6404,18 @@ def confidence_interval_uncertainty(cl, cl_bounds, posteriors):
 
 
 def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V1']):
-  import pylal
   import glue
   #import sim inspiral table content handler
-  from pylal.SimInspiralUtils import ExtractSimInspiralTableLIGOLWContentHandler
-  from glue.ligolw import lsctables
-  lsctables.use_in(ExtractSimInspiralTableLIGOLWContentHandler)
+  from glue.ligolw import lsctables,ligolw
   from lalsimulation.lalsimulation import SimInspiralChooseTDWaveform,SimInspiralChooseFDWaveform
   from lalsimulation.lalsimulation import SimInspiralImplementedTDApproximants,SimInspiralImplementedFDApproximants
   from lal.lal import StrainUnit
   from lal.lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT,CutREAL8TimeSeries
+  from lal.lal import ComputeDetAMResponse, GreenwichMeanSiderealTime
   from lal.lal import LIGOTimeGPS
   from lal.lal import MSUN_SI as LAL_MSUN_SI
   from lal.lal import PC_SI as LAL_PC_SI
   import lalsimulation as lalsim
-  from pylal import antenna as ant
   from math import cos,sin,sqrt
   from glue.ligolw import utils
   import os
@@ -6467,14 +6460,16 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
   if siminspiral is not None:
     skip=0
     try:
-      xmldoc = utils.load_filename(siminspiral,contenthandler=ExtractSimInspiralTableLIGOLWContentHandler)
+      xmldoc = utils.load_filename(siminspiral,contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
       tbl = lsctables.table.get_table(xmldoc, "sim_inspiral")
       if event>0:
         tbl=tbl[event]
       else:
         tbl=tbl[0]
     except:
-      print "Cannot read event %s from table %s. Won't plot injected waveform \n"%(event,siminspiral)
+      e = sys.exc_info()[0]
+      print(e)
+      print("Cannot read event %s from table %s. Won't plot injected waveform \n"%(event,siminspiral))
       skip=1
     if not skip:
       REAL8time=tbl.geocent_end_time+1e-9*tbl.geocent_end_time_ns
@@ -6496,34 +6491,44 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
 
       r=D*LAL_PC_SI*1.0e6
       iota=tbl.inclination
-      print "WARNING: Defaulting to inj_fref =100Hz to plot the injected WF. This is hardcoded since xml table does not carry this information\n"
+      print("WARNING: Defaulting to inj_fref =100Hz to plot the injected WF. This is hardcoded since xml table does not carry this information\n")
 
       lambda1=0
       lambda2=0
-      waveFlags=None
-      nonGRparams=None
       wf=str(tbl.waveform)
 
       injapproximant=lalsim.GetApproximantFromString(wf)
       amplitudeO=int(tbl.amp_order )
       phaseO=lalsim.GetOrderFromString(wf)
 
+      waveFlags=lal.CreateDict()
+      lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(waveFlags, amplitudeO)
+      lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(waveFlags, phaseO)
+
       ra=tbl.longitude
       dec=tbl.latitude
       psi=tbl.polarization
 
+      
+
       if SimInspiralImplementedFDApproximants(injapproximant):
         inj_domain='F'
-        [plus,cross]=SimInspiralChooseFDWaveform(phiRef, deltaF,  m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,f_min,f_max, f_ref,  r,   iota, lambda1,   lambda2,waveFlags, nonGRparams, amplitudeO, phaseO, injapproximant)
+        [plus,cross]=SimInspiralChooseFDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,r, iota, phiRef,
+                0, 0, 0, # Non-circular binary parameters
+                deltaF, f_min, f_max, f_ref,
+                waveFlags, injapproximant)
       elif SimInspiralImplementedTDApproximants(injapproximant):
         inj_domain='T'
-        [plus,cross]=SimInspiralChooseTDWaveform(phiRef, deltaT,  m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,f_min, f_ref,   r,   iota, lambda1,   lambda2,waveFlags, nonGRparams, amplitudeO, phaseO, injapproximant)
+        [plus,cross]=SimInspiralChooseTDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z, r, iota, phiRef,
+                0, 0, 0, # Non-circular binary parameters
+                deltaT, f_min, f_ref,
+                waveFlags, injapproximant)
       else:
-        print "\nThe approximant %s doesn't seem to be recognized by lalsimulation!\n Skipping WF plots\n"%injapproximant
+        print("\nThe approximant %s doesn't seem to be recognized by lalsimulation!\n Skipping WF plots\n"%injapproximant)
         return None
 
       for ifo in ifos:
-        (fp,fc,fa,qv)=ant.response(REAL8time,ra,dec,iota,psi,'radians',ifo)
+        fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
         if inj_domain=='T':
           # strain is a temporary container for this IFO strain.
           # Take antenna pattern into accout and window the data
@@ -6567,7 +6572,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
     elif 'time_min' in pos.names and 'time_max' in pos.names:
       REAL8time=pos['time_min'].samples[which][0]+0.5*(pos['time_max'].samples[which][0]-pos['time_min'].samples[which][0])
     else:
-      print "ERROR: could not find any time parameter in the posterior file. Not plotting the WF...\n"
+      print("ERROR: could not find any time parameter in the posterior file. Not plotting the WF...\n")
       return None
 
     # first check we have approx in posterior samples, otherwise skip
@@ -6583,7 +6588,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
 
       q=pos['q'].samples[which][0]
       mc=pos['mc'].samples[which][0]
-      M1,M2=bppu.q2ms(mc,q)
+      M1,M2=q2ms(mc,q)
       if 'dist' in pos.names:
         D=pos['dist'].samples[which][0]
       elif 'distance' in pos.names:
@@ -6598,9 +6603,9 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
         phiRef=pos['phi_orb'].samples[which][0]
       elif 'phase_maxl' in pos.names:
 		phiRef=pos['phase_maxl'].samples[which][0]
-		print 'INFO: phi_orb not estimated, using maximum likelihood value'
+		print('INFO: phi_orb not estimated, using maximum likelihood value')
       else:
-        print 'WARNING: phi_orb not found in posterior files. Defaulting to 0.0 which is probably *not* what you want\n'
+        print('WARNING: phi_orb not found in posterior files. Defaulting to 0.0 which is probably *not* what you want\n')
         phiRef=0.0
 
       try:
@@ -6617,12 +6622,12 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
 
         Fref = np.unique(pos[fname].samples)
         if len(Fref) > 1:
-          print "ERROR: Expected f_ref to be constant for all samples.  Can't tell which value was injected! Defaulting to 100 Hz\n"
-          print Fref
+          print("ERROR: Expected f_ref to be constant for all samples.  Can't tell which value was injected! Defaulting to 100 Hz\n")
+          print(Fref)
         else:
           f_ref = Fref[0]
       except ValueError:
-        print "WARNING: Could not read fref from posterior file! Defaulting to 100 Hz\n"
+        print("WARNING: Could not read fref from posterior file! Defaulting to 100 Hz\n")
 
       try:
         a = pos['a1'].samples[which][0]
@@ -6662,22 +6667,38 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
 
       r=D*LAL_PC_SI*1.0e6
 
-      lambda1=0
-      lambda2=0
-      waveFlags=None
-      nonGRparams=None
       approximant=int(pos['LAL_APPROXIMANT'].samples[which][0])
       amplitudeO=int(pos['LAL_AMPORDER'].samples[which][0])
       phaseO=int(pos['LAL_PNORDER'].samples[which][0])
 
+      waveFlags=lal.CreateDict()
+      lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(waveFlags, amplitudeO)
+      lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(waveFlags, phaseO)
+      if 'tideO' in pos.names:
+          tidalO=int(pos['tideO'].samples[which][0])
+          lalsim.SimInspiralWaveformParamsInsertPNTidalOrder(waveFlags, tidalO)
+      if 'spinO' in pos.names:
+          spinO=int(pos['spinO'].samples[which][0])
+          lalsim.SimInspiralWaveformParamsInsertPNSpinOrder(waveFlags, spinO)
+      if 'lambda1' in pos.names:
+        lalsim.SimInspiralWaveformParamsInsertTidalLambda1(waveFlags, pos['lambda1'].samples[which][0])
+      if 'lambda2' in pos.names:
+        lalsim.SimInspiralWaveformParamsInsertTidalLambda2(waveFlags, pos['lambda2'].samples[which][0])
+
       if SimInspiralImplementedFDApproximants(approximant):
         rec_domain='F'
-        [plus,cross]=SimInspiralChooseFDWaveform(phiRef, deltaF,  m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,f_min, f_max,   f_ref,r,   iota, lambda1,   lambda2,waveFlags, nonGRparams, amplitudeO, phaseO, approximant)
+        [plus,cross]=SimInspiralChooseFDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,r, iota, phiRef,
+                0, 0, 0, # Non-circular binary parameters
+                deltaF, f_min, f_max, f_ref,
+                waveFlags, approximant)
       elif SimInspiralImplementedTDApproximants(approximant):
         rec_domain='T'
-        [plus,cross]=SimInspiralChooseTDWaveform(phiRef, deltaT,  m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,f_min, f_ref,  r,   iota, lambda1,   lambda2,waveFlags, nonGRparams, amplitudeO, phaseO, approximant)
+        [plus,cross]=SimInspiralChooseTDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z, r, iota, phiRef,
+                0, 0, 0, # Non-circular binary parameters
+                deltaT, f_min, f_ref,
+                waveFlags, approximant)
       else:
-        print "The approximant %s doesn't seem to be recognized by lalsimulation!\n Skipping WF plots\n"%approximant
+        print("The approximant %s doesn't seem to be recognized by lalsimulation!\n Skipping WF plots\n"%approximant)
         return None
 
       ra=pos['ra'].samples[which][0]
@@ -6685,7 +6706,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
       psi=pos['psi'].samples[which][0]
       fs={}
       for ifo in ifos:
-        (fp,fc,fa,qv)=ant.response(REAL8time,ra,dec,iota,psi,'radians',ifo)
+        fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
         if rec_domain=='T':
           # strain is a temporary container for this IFO strain.
           # Take antenna pattern into accout and window the data
@@ -6817,7 +6838,7 @@ def plot_psd(psd_files,outpath=None,f_min=30.):
   tmp=[]
   for f in psd_files:
     if not os.path.isfile(f):
-      print "PSD file %s has not been found and won't be plotted\n"%f
+      print("PSD file %s has not been found and won't be plotted\n"%f)
     else:
       tmp.append(f)
   if tmp==[]:
@@ -6976,8 +6997,6 @@ def plot_calibration_pos(pos, level=.9, outpath=None):
 
 
 def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1','V1']):
-
-  import pylal
   import glue
   from lalinference.lalinference import SimBurstChooseFDWaveform,SimBurstChooseTDWaveform
   from lalinference.lalinference import SimBurstImplementedFDApproximants,SimBurstImplementedTDApproximants
@@ -6988,7 +7007,8 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
   from lal.lal import PC_SI as LAL_PC_SI
   import lalsimulation as lalsim
   import lalinference as lalinf
-  from pylal import antenna as ant
+  from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime, LIGOTimeGPS
+
   from math import cos,sin,sqrt
   from glue.ligolw import lsctables
   from glue.ligolw import utils
@@ -7070,7 +7090,7 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
       else:
         tbl=tbl[0]
     except:
-      print "Cannot read event %s from table %s. Won't plot injected waveform \n"%(event,simburst)
+      print("Cannot read event %s from table %s. Won't plot injected waveform \n"%(event,simburst))
       skip=1
     if not skip:
       REAL8time=tbl.time_geocent_gps+1e-9*tbl.time_geocent_gps_ns
@@ -7100,11 +7120,11 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
         inj_domain='T'
         [plus,cross]=SimBurstChooseTDWaveform(deltaT, f0, q,dur, f_min, f_max,hrss,polar_e_angle ,polar_e_ecc,BurstExtraParams, injapproximant)
       else:
-        print "\nThe approximant %s doesn't seem to be recognized by lalinference!\n Skipping WF plots\n"%injapproximant
+        print("\nThe approximant %s doesn't seem to be recognized by lalinference!\n Skipping WF plots\n"%injapproximant)
         return None
 
       for ifo in ifos:
-        (fp,fc,fa,qv)=ant.response(REAL8time,ra,dec,0.0,psi,'radians',ifo)
+        fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
         if inj_domain=='T':
           # bin of ref time as seen in strainT
           tCinstrain=np.floor(REAL8time-float(strainTinj.epoch))/deltaT
@@ -7195,7 +7215,7 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
     elif 'time_min' in pos.names and 'time_max' in pos.names:
       REAL8time=pos['time_min'].samples[which][0]+0.5*(pos['time_max'].samples[which][0]-pos['time_min'].samples[which][0])
     else:
-      print "ERROR: could not find any time parameter in the posterior file. Not plotting the WF...\n"
+      print("ERROR: could not find any time parameter in the posterior file. Not plotting the WF...\n")
       return None
 
     # first check we have approx in posterior samples, otherwise skip
@@ -7249,14 +7269,14 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
         rec_domain='T'
         [plus,cross]=SimBurstChooseTDWaveform(deltaT, f0, q,dur, f_min, f_max,hrss,polar_e_angle ,polar_e_ecc,BurstExtraParams, approximant)
       else:
-        print "The approximant %s doesn't seem to be recognized by lalinference!\n Skipping WF plots\n"%approximant
+        print("The approximant %s doesn't seem to be recognized by lalinference!\n Skipping WF plots\n"%approximant)
         return None
       ra=pos['ra'].samples[which][0]
       dec=pos['dec'].samples[which][0]
       psi=pos['psi'].samples[which][0]
       fs={}
       for ifo in ifos:
-        (fp,fc,fa,qv)=ant.response(REAL8time,ra,dec,0.0,psi,'radians',ifo)
+        fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
         if rec_domain=='T':
           # bin of ref time as seen in strainT
           tCinstrain=np.floor(REAL8time-float(strainTrec.epoch))/deltaT
@@ -7482,7 +7502,7 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
         try:
             par_bin=GreedyRes[par_name]
         except KeyError:
-            print "Bin size is not set for %s, skipping binning."%par_name
+            print("Bin size is not set for %s, skipping binning."%par_name)
             continue
 
         #print "Binning %s to determine confidence levels ..."%par_name
@@ -7491,12 +7511,12 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
         injection_area=None
         if greedy:
           if printed==0:
-            print "Using greedy 1-d binning credible regions\n"
+            print("Using greedy 1-d binning credible regions\n")
             printed=1
           toppoints,injectionconfidence,reses,injection_area,cl_intervals=greedy_bin_one_param(pos,binParams,confidence_levels)
         else:
           if printed==0:
-            print "Using 2-step KDE 1-d credible regions\n"
+            print("Using 2-step KDE 1-d credible regions\n")
             printed=1
           if pos[par_name].injval is None:
             injCoords=None
@@ -7507,7 +7527,7 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
             injectionconfidence=injstats[3]
             injection_area=injstats[4]
         #Generate 1D histogram/kde plots
-        print "Generating 1D plot for %s."%par_name
+        print("Generating 1D plot for %s."%par_name)
         out[par_name]=reses
         #Get analytic description if given
         pdf=cdf=None
@@ -7519,7 +7539,7 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
         try:
             rbins,plotFig=plot_one_param_pdf(pos,oneDPDFParams,pdf,cdf,plotkde=False)
         except:
-            print "Failed to produce plot for %s."%par_name
+            print("Failed to produce plot for %s."%par_name)
             continue
 
         figname=par_name+'.png'
@@ -7529,7 +7549,7 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
         plt.close(plotFig)
 
         if rbins:
-            print "r of injected value of %s (bins) = %f"%(par_name, rbins)
+            print("r of injected value of %s (bins) = %f"%(par_name, rbins))
 
         ##Produce plot of raw samples
         myfig=plt.figure(figsize=(4,3.5),dpi=200)

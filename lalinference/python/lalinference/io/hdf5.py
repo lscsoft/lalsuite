@@ -270,3 +270,6 @@ def write_samples(table, filename, metadata=None, **kwargs):
                         raise KeyError(
                             'Unable to set metadata {0}[{1}] = {2}'.format(
                                 internal_path, key, value))
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.io.hdf5')

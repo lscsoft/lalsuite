@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSuite],[6.48.1],[lal-discuss@ligo.org])
+AC_INIT([LALSuite],[6.49.1],[lal-discuss@ligo.org])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -77,7 +77,7 @@ AC_DEFUN([lalsuite_config_subdir],[
     # export precious environment variables
     uppercase[]_LIBS="${lalsuite_abs_top_builddir}/lowercase/src/lib[]lowercase.la"
     uppercase[]_CFLAGS="-I${lalsuite_abs_top_builddir}/lowercase/include"
-    uppercase[]_DATA_PATH="${lalsuite_abs_top_srcdir}/lowercase/test"
+    uppercase[]_DATA_PATH="${lalsuite_abs_top_srcdir}/lowercase/src:${lalsuite_abs_top_srcdir}/lowercase/test"
     uppercase[]_OCTAVE_PATH="${lalsuite_abs_top_builddir}/lowercase/octave"
     uppercase[]_PYTHON_PATH="${lalsuite_abs_top_builddir}/lowercase/python"
     uppercase[]_HTMLDIR="${htmldir}/../lowercase"

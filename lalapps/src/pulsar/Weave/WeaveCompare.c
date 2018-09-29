@@ -41,6 +41,7 @@ int main( int argc, char *argv[] )
   struct uvar_type {
     CHAR *setup_file, *result_file_1, *result_file_2;
     REAL8 param_tol_mism, result_tol_L1, result_tol_L2, result_tol_angle, result_tol_at_max;
+    UINT4 toplist_limit;
   } uvar_struct = {
     .param_tol_mism = 1e-3,
     .result_tol_L1 = 5.5e-2,
@@ -93,6 +94,10 @@ int main( int argc, char *argv[] )
     result_tol_at_max, REAL8, 'x', OPTIONAL,
     "Allowed tolerance on relative errors at maximum component of each result vector. "
     "Must be within range [0,2]. "
+    );
+  XLALRegisterUvarMember(
+    toplist_limit, UINT4, 'n', OPTIONAL,
+    "Maximum number of candidates to compare in an output toplist; if 0, all candidates are compared. "
     );
 
   // Parse user input
@@ -161,7 +166,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_FAIL( file != NULL, XLAL_EFUNC );
 
     // Read output results
-    XLAL_CHECK_FAIL( XLALWeaveOutputResultsReadAppend( file, &out_1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_FAIL( XLALWeaveOutputResultsReadAppend( file, &out_1, uvar->toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Close result file
     XLALFITSFileClose( file );
@@ -175,7 +180,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_FAIL( file != NULL, XLAL_EFUNC );
 
     // Read output results
-    XLAL_CHECK_FAIL( XLALWeaveOutputResultsReadAppend( file, &out_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_FAIL( XLALWeaveOutputResultsReadAppend( file, &out_2, uvar->toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Close result file
     XLALFITSFileClose( file );

@@ -26,6 +26,7 @@ BuildRequires: swig >= 3.0.7
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
+BuildRequires: python-six
 Requires: gsl
 Requires: lal >= @MIN_LAL_VERSION@
 Prefix: %{_prefix}
@@ -49,13 +50,12 @@ library.
 %package -n python2-%{name}
 Summary: Python %{python2_version} bindings for LALSimulation
 Group: LAL
-Provides: %{name}-python
-Obsoletes: %{name}-python < 1.7.2-2
-Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
+Obsoletes: %{name}-python
+Provides: %{name}-python
 %description -n python2-%{name}
 This package provides the Python %{python2_version} Bindings for LALSimulation.
 
@@ -93,6 +93,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files
 %defattr(-,root,root)
+%license COPYING
 %{_bindir}/lalsim-*
 %{_bindir}/lalsimulation_version
 %{_datarootdir}/lalsimulation/LALSimNeutronStarEOS_*
@@ -100,11 +101,13 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_datarootdir}/lalsimulation/LIGO-P1600143*
 %{_datarootdir}/lalsimulation/LIGO-T0900288*
 %{_datarootdir}/lalsimulation/LIGO-T1600593*
+%{_datarootdir}/lalsimulation/LIGO-T1800042*
 %{_libdir}/*.so.*
 %{_sysconfdir}/*
 
 %files devel
 %defattr(-,root,root)
+%license COPYING
 %{_includedir}/lal
 %{_libdir}/*.a
 %{_libdir}/*.so
@@ -112,14 +115,19 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files -n python2-%{name}
 %defattr(-,root,root)
+%license COPYING
 %{python2_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
+%license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lalsimulation.oct*
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Sep 13 2018 Adam Mercer <adam.mercer@ligo.org> 1.8.0-1
+- Pre O3 release
+
 * Thu Mar 16 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.3-1
 - fix Ldot equation in SpinTaylor
 

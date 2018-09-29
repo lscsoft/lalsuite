@@ -28,21 +28,17 @@ pybin_scripts = \
 	lalapps_power_calc_likelihood \
 	lalapps_power_final \
 	lalapps_power_likelihood_pipe \
-	lalapps_power_online_pipe \
 	lalapps_power_pipe \
 	lalapps_power_plot_binjtf \
 	lalapps_power_plot_burca2 \
 	lalapps_power_plot_burst \
-	lalapps_power_plot_burstrate \
 	lalapps_power_plot_binj \
 	lalapps_power_plot_burca \
-	lalapps_power_plot_detresponse \
-	lalapps_power_veto \
-	lalapps_xml_plotlalseries
+	lalapps_power_veto
 pkgpython_PYTHON = power.py
 endif
 
-pkgdata_DATA = power_pipe.ini power_online_pipe.ini
+pkgdata_DATA = power_pipe.ini
 
 EXTRA_DIST += \
 	H1_L1_dt125_df128.png \
@@ -56,7 +52,6 @@ EXTRA_DIST += \
 	plotbinj_L1_5.png \
 	plotburca2-P-793154128-2525061.png \
 	power.dox \
-	power_online_pipe.ini \
 	power_pipe.ini \
 	psds.png \
 	sk_histogram.png \

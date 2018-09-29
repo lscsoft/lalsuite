@@ -260,7 +260,7 @@ if __name__ == '__main__':
 	      Ninj+=1
 	    except:
 	      # Couldn't read the posterior samples or the XML.
-              print "not found %s \n"%posfile
+              print("not found %s \n"%posfile)
 	      continue
 
 	    for par in parameters:
@@ -296,9 +296,9 @@ if __name__ == '__main__':
             os.system('cp %s %s'%(inf,outf))
             found+=1
           else:
-            print "could not find %s\n"%os.path.join(options.skypp,'p-p.%s'%i)
+            print("could not find %s\n"%os.path.join(options.skypp,'p-p.%s'%i))
       else:
-        print "skyPPfolder %s doesn't seem to be a valid folder or cannot be read. Skipping skyPP plot\n"%os.path.realpath(options.skypp)
+        print("skyPPfolder %s doesn't seem to be a valid folder or cannot be read. Skipping skyPP plot\n"%os.path.realpath(options.skypp))
 
       if found>0:
         skypp=True

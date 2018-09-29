@@ -65,3 +65,6 @@ def reticle(inner=0.5, outer=1.0, angle=0.0, which='lrtb'):
     verts = np.dot(verts, R)
     verts = np.swapaxes([inner * verts, outer * verts], 0, 1).reshape(-1, 2)
     return Path(verts, codes)
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.plot.marker')

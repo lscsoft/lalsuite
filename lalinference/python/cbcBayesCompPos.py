@@ -43,7 +43,6 @@ from scipy import stats
 
 #local application/library specific imports
 import lalinference.bayespputils as bppu
-from pylal import SimInspiralUtils
 from lalinference import git_version
 
 __author__="Ben Aylott <benjamin.aylott@ligo.org>, Will M. Farr <will.farr@ligo.org>"
@@ -124,17 +123,17 @@ def open_url(url,username,password):
         f.write(data)
         f.close()
 
-    except IOError, e:
-        print 'We failed to open "%s".' % url
+    except IOError as e:
+        print('We failed to open "%s".' % url)
         if hasattr(e, 'code'):
-            print 'We failed with error code - %s.' % e.code
+            print('We failed with error code - %s.' % e.code)
         elif hasattr(e, 'reason'):
-            print "The error object has the following 'reason' attribute :", e.reason
-            print "This usually means the server doesn't exist, is down, or we don't have an internet connection."
+            print("The error object has the following 'reason' attribute :", e.reason)
+            print("This usually means the server doesn't exist, is down, or we don't have an internet connection.")
             sys.exit()
     else:
-        print 'Here are the headers of the page :'
-        print handle.info() # handle.read() returns the page, handle.geturl() returns the true url of the page fetched (in case urlopen has followed any redirects, which it sometimes does)
+        print('Here are the headers of the page :')
+        print(handle.info()) # handle.read() returns the page, handle.geturl() returns the true url of the page fetched (in case urlopen has followed any redirects, which it sometimes does)
 
     return HTMLSource
 
@@ -157,7 +156,7 @@ def test_and_switch_param(common_output_table_header,test,switch):
     try:
         idx=common_output_table_header.index(test)
         common_output_table_header[idx]=switch
-        print "Re-labelled %s -> %s"%(test,switch)
+        print("Re-labelled %s -> %s"%(test,switch))
     except:
         pass
 
@@ -188,7 +187,7 @@ def compare_plots_one_param_pdf(list_of_pos_by_name,param,analyticPDF=None):
     allmaxes=map(lambda a: np.max(a[param].samples), list_of_pos)
     min_pos=np.min(allmins)
     max_pos=np.max(allmaxes)
-    print 'Found global min: %f, max: %f'%(min_pos,max_pos)
+    print('Found global min: %f, max: %f'%(min_pos,max_pos))
 
     gkdes={}
     injvals=[]
@@ -228,7 +227,7 @@ def compare_plots_one_param_pdf(list_of_pos_by_name,param,analyticPDF=None):
         except:
           pass
         if injvals:
-            print "Injection parameter is %f"%(float(injvals[0]))
+            print("Injection parameter is %f"%(float(injvals[0])))
             injpar=injvals[0]
             if min(pos_samps)<injpar and max(pos_samps)>injpar:
                 plt.plot([injpar,injpar],[0,max(kdepdf)],'r-.',scalex=False,scaley=False)
@@ -301,7 +300,7 @@ def compare_plots_one_param_line_hist(list_of_pos_by_name,param,cl,color_by_name
         except:
             n,bins=np.histogram(posterior[param].samples,bins=posbins,normed=True)
         if min(bins)==max(bins):
-            print 'Skipping '+param
+            print('Skipping '+param)
             continue
         locmaxy=max(n)
         if locmaxy>max_y: max_y=locmaxy
@@ -336,7 +335,7 @@ def compare_plots_one_param_line_hist(list_of_pos_by_name,param,cl,color_by_name
                 plt.plot([cl_intervals[0][0],cl_intervals[0][0]],[0,max_y],color=colour,linestyle='--')
                 plt.plot([cl_intervals[0][1],cl_intervals[0][1]],[0,max_y],color=colour,linestyle='--')
             except:
-                print "MAX_Y",max_y,[cl_intervals[0][0],cl_intervals[0][0]],[cl_intervals[0][1],cl_intervals[0][1]]
+                print("MAX_Y",max_y,[cl_intervals[0][0],cl_intervals[0][0]],[cl_intervals[0][1],cl_intervals[0][1]])
         top_cl_intervals_list[name]=(cl_intervals[0][0],cl_intervals[0][1])
 
     if cl_lines_flag:
@@ -354,7 +353,7 @@ def compare_plots_one_param_line_hist(list_of_pos_by_name,param,cl,color_by_name
     plt.draw()
     #plt.tight_layout()
     if injvals:
-        print "Injection parameter is %f"%(float(injvals[0]))
+        print("Injection parameter is %f"%(float(injvals[0])))
         injpar=injvals[0]
         #if min(pos_samps)<injpar and max(pos_samps)>injpar:
         plt.plot([injpar,injpar],[0,max_y],'r-.',scalex=False,scaley=False,linewidth=4,label='Injection')
@@ -441,7 +440,7 @@ def compare_plots_one_param_line_hist_cum(list_of_pos_by_name,param,cl,color_by_
             n,bins=np.histogram(posterior[param].samples,bins=posbins,normed=True)
 
         if min(bins)==max(bins):
-            print 'Skipping '+param
+            print('Skipping '+param)
             continue
 
         (n, bins, patches)=plt.hist(posterior[param].samples,bins=bins,histtype='step',label=name,normed=True,hold=True,color=color_by_name[name],cumulative='True')#range=(min_pos,max_pos)
@@ -461,7 +460,7 @@ def compare_plots_one_param_line_hist_cum(list_of_pos_by_name,param,cl,color_by_
                 plt.plot([cl_intervals[0][0],cl_intervals[0][0]],[0,max_y],color=colour,linestyle='--')
                 plt.plot([cl_intervals[0][1],cl_intervals[0][1]],[0,max_y],color=colour,linestyle='--')
             except:
-                print "MAX_Y",max_y,[cl_intervals[0][0],cl_intervals[0][0]],[cl_intervals[0][1],cl_intervals[0][1]]
+                print("MAX_Y",max_y,[cl_intervals[0][0],cl_intervals[0][0]],[cl_intervals[0][1],cl_intervals[0][1]])
         top_cl_intervals_list[name]=(cl_intervals[0][0],cl_intervals[0][1])
 
     if cl_lines_flag:
@@ -480,7 +479,7 @@ def compare_plots_one_param_line_hist_cum(list_of_pos_by_name,param,cl,color_by_
     plt.draw()
     #plt.tight_layout()
     if injvals:
-        print "Injection parameter is %f"%(float(injvals[0]))
+        print("Injection parameter is %f"%(float(injvals[0])))
         injpar=injvals[0]
         #if min(pos_samps)<injpar and max(pos_samps)>injpar:
         plt.plot([injpar,injpar],[0,max_y],'r-.',scalex=False,scaley=False,linewidth=4,label='Injection')
@@ -496,10 +495,12 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
     if injection_path is not None and os.path.exists(injection_path) and eventnum is not None:
         eventnum=int(eventnum)
         import itertools
-        injections = SimInspiralUtils.ReadSimInspiralFromFiles([injection_path])
+        from glue.ligolw import ligolw, lsctables, utils
+        injections = lsctables.SimInspiralTable.get_table(
+                utils.load_filename(injection_path, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
         if eventnum is not None:
             if(len(injections)<eventnum):
-                print "Error: You asked for event %d, but %s contains only %d injections" %(eventnum,injection_path,len(injections))
+                print("Error: You asked for event %d, but %s contains only %d injections" %(eventnum,injection_path,len(injections)))
                 sys.exit(1)
             else:
                 injection=injections[eventnum]
@@ -533,7 +534,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
             else:
                 pos_file_part=pfp_path
             pos_file_url=urlparse.urlunsplit((pfp_scheme,pfp_netloc,os.path.join(pos_file_part,'posterior_samples.dat'),'',''))
-            print pos_file_url
+            print(pos_file_url)
             pos_file=os.path.join(os.getcwd(),downloads_folder,"%s.dat"%name)
 
             if not os.path.exists(pos_file):
@@ -550,18 +551,18 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
             pos_file=os.path.join(pos_folder,'%s.dat'%name)
             # Try looking for posterior_samples.dat if name.dat doesn't exist
             if not os.path.exists(pos_file):
-                print '%s does not exist, trying posterior_samples.dat'%(pos_file)
+                print('%s does not exist, trying posterior_samples.dat'%(pos_file))
                 pos_file=os.path.join(pos_folder,'posterior_samples.dat')
         else:
-            print "Unknown scheme for input data url: %s\nFull URL: %s"%(pfu_scheme,str(pos_folder_url))
+            print("Unknown scheme for input data url: %s\nFull URL: %s"%(pfu_scheme,str(pos_folder_url)))
             exit(0)
 
-        print "Reading posterior samples from %s ..."%pos_file
+        print("Reading posterior samples from %s ..."%pos_file)
 
         try:
             common_output_table_header,common_output_table_raw=peparser.parse(open(pos_file,'r'))
         except:
-            print 'Unable to read file '+pos_file
+            print('Unable to read file '+pos_file)
             continue
 
         test_and_switch_param(common_output_table_header,'distance','dist')
@@ -580,7 +581,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
             try:
 
                 idx=common_output_table_header.index('iota')
-                print "Inverting iota!"
+                print("Inverting iota!")
 
                 common_output_table_raw[:,idx]= np.pi*np.ones(len(common_output_table_raw[:,0])) - common_output_table_raw[:,idx]
 
@@ -597,7 +598,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
         #     pass
 
         try:
-            print "Converting iota-> cos(iota)"
+            print("Converting iota-> cos(iota)")
             idx=common_output_table_header.index('iota')
             common_output_table_header[idx]='cos(iota)'
             common_output_table_raw[:,idx]=np.cos(common_output_table_raw[:,idx])
@@ -621,7 +622,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
         #    pass
 
         try:
-            print "Converting thetas -> cos(thetas)"
+            print("Converting thetas -> cos(thetas)")
             idx=common_output_table_header.index('thetas')
             common_output_table_header[idx]='cos(thetas)'
             common_output_table_raw[:,idx]=np.cos(common_output_table_raw[:,idx])
@@ -629,7 +630,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
             pass
 
         try:
-            print "Converting beta -> cos(beta)"
+            print("Converting beta -> cos(beta)")
             idx=common_output_table_header.index('beta')
             common_output_table_header[idx]='cos(beta)'
             common_output_table_raw[:,idx]=np.cos(common_output_table_raw[:,idx])
@@ -641,7 +642,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
             injFrefs=np.unique(common_output_table_raw[:,idx])
             if len(injFrefs) == 1:
               injFref = injFrefs[0]
-              print "Using f_ref in results as injected value"
+              print("Using f_ref in results as injected value")
         except:
             injFref = None
             pass
@@ -659,10 +660,10 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
 
 
         if 'm1' in pos_temp.names and 'm2' in pos_temp.names:
-          print "Calculating total mass"
+          print("Calculating total mass")
           pos_temp.append_mapping('mtotal', lambda m1,m2: m1+m2, ['m1','m2'])
         if 'mass1' in pos_temp.names and 'mass2' in pos_temp.names:
-          print "Calculating total mass"
+          print("Calculating total mass")
           pos_temp.append_mapping('mtotal', lambda m1,m2: m1+m2, ['mass1','mass2'])
 
         try:
@@ -671,7 +672,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
             idx2=common_output_table_header.index('m2')
 
             if pos_temp['m1'].mean<pos_temp['m2'].mean:
-                print "SWAPPING MASS PARAMS!"
+                print("SWAPPING MASS PARAMS!")
                 common_output_table_header[idx]='x'
                 common_output_table_header[idx2]='m1'
                 common_output_table_header[idx]='m2'
@@ -687,7 +688,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
             set_of_pars = set(pos_temp.names)
             common_params=list(set_of_pars.intersection(common_params))
 
-    print "Common parameters are %s"%str(common_params)
+    print("Common parameters are %s"%str(common_params))
 
     if injection is None and injection_path is not None:
         import itertools
@@ -700,7 +701,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
     set_of_pars = set(allowed_params)
     common_params=list(set_of_pars.intersection(common_params))
 
-    print "Using parameters %s"%str(common_params)
+    print("Using parameters %s"%str(common_params))
 
     if not os.path.exists(os.path.join(os.getcwd(),'results')):
         os.makedirs('results')
@@ -750,7 +751,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
                 if pplst_cond or rpplst_cond:#If this pair of parameters is in the plotting list...
 
                     try:
-                        print '2d plots: building ',i,j
+                        print('2d plots: building ',i,j)
                         greedy2Params={i:greedyBinSizes[i],j:greedyBinSizes[j]}
                     except KeyError:
                         continue
@@ -774,7 +775,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
         confidence_levels=[{},{},{},{}]
         confidence_uncertainty={}
         for param in common_params:
-            print "Plotting comparison for '%s'"%param
+            print("Plotting comparison for '%s'"%param)
 
             cl_table_header='<table><th>Run</th>'
             cl_table={}
@@ -1015,17 +1016,17 @@ if __name__ == '__main__':
     (opts,args)=parser.parse_args()
 
     if opts.outpath is None:
-        print "No output directory specified. Output will be saved to PWD : %s"%os.getcwd()
+        print("No output directory specified. Output will be saved to PWD : %s"%os.getcwd())
         outpath=os.getcwd()
     else:
         outpath=opts.outpath
 
     if opts.pos_list is None:
-        print "No input paths given!"
+        print("No input paths given!")
         exit(1)
 
     if opts.names is None:
-        print "No names given, making some up!"
+        print("No names given, making some up!")
         names=[]
         for i in range(len(opts.pos_list)):
             names.append(str(i))
@@ -1033,7 +1034,7 @@ if __name__ == '__main__':
         names=opts.names
 
     if len(opts.pos_list)!=len(names):
-        print "Either add names for all posteriors or dont put any at all!"
+        print("Either add names for all posteriors or dont put any at all!")
 
     # Sort inputs alphabetically
     names,pos_list = zip(*sorted(zip(names,opts.pos_list)))

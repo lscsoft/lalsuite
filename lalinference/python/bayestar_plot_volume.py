@@ -23,6 +23,9 @@ from __future__ import division
 
 # Command line interface
 
+from lalinference.bayestar.deprecation import warn
+warn('ligo-skymap-plot-volume')
+
 # Set no-op backend, because seaborn imports pyplot and we must not load X11
 import matplotlib
 matplotlib.use('Template')

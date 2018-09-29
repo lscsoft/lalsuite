@@ -17,7 +17,9 @@ ANALYTICFILES = CorrelationMatrix.csv unimodalMeans.csv bimodalMeans.csv
 
 FIDUCIALINJECTIONS = fiducialBBH.xml fiducialBNS.xml
 
-EXAMPLE_CONFIG = lalinference_pipe_example.ini
+EXAMPLE_CONFIG = lalinference_pipe_example.ini \
+				 lib_pipe_example.ini \
+				 config_tiger_example.ini
 
 pkgdata_DATA = $(ANALYTICFILES) $(FIDUCIALINJECTIONS) $(EXAMPLE_CONFIG)
 
@@ -123,6 +125,9 @@ vcs_build_info_source = LALInferenceVCSInfo.c
 vcs_info_sources = LALInferenceVCSInfoHeader.h
 build_info_source = LALInferenceBuildInfoHeader.h
 build_info_dependencies = $(liblalinference_la_DEPENDENCIES)
+
+dist_bin_SCRIPTS = \
+		lalinference_mpi_wrapper
 
 TESTS = \
 	lalinference_version \

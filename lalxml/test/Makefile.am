@@ -9,11 +9,3 @@ test_scripts +=
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
-
-pkgdata_DATA = \
-	VOTable-1.1.xsd \
-	$(END_OF_LIST)
-
-EXTRA_DIST += \
-	$(pkgdata_DATA) \
-	$(END_OF_LIST)

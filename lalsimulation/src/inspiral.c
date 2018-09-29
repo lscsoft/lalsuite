@@ -908,6 +908,7 @@ struct params parseargs(int argc, char **argv)
                 fprintf(stderr, "error: invalid value %s for %s\n", LALoptarg, long_options[option_index].name);
                 exit(1);
             }
+	    break;
         case 'O':      /* phase-order */
             if (p.params == NULL)
                 p.params = XLALCreateDict();

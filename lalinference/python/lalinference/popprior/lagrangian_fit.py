@@ -54,7 +54,7 @@ for i in range(len(lnP[0])):
 #plt.xlim([0,6])
 plt.yscale('log')
 
-print "Elapsed time:", time()-start_time
+print("Elapsed time:", time()-start_time)
 '''
 idx = []
 for i in range(len(lnP[0])):

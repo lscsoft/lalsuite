@@ -90,9 +90,6 @@ library.
 %package -n python2-%{name}
 Summary: Python %{python2_version} Bindings for LALInference
 Group: LAL
-Provides: %{name}-python
-Obsoletes: %{name}-python < 1.9.4-2
-Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: healpy >= 1.9.1
 Requires: h5py
@@ -112,6 +109,8 @@ Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
+Obsoletes: %{name}-python
+Provides: %{name}-python
 %description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings for LALInference.
@@ -157,13 +156,21 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files
 %defattr(-,root,root)
-%{_bindir}/lalinference_*
+%license COPYING
+%{_bindir}/lalinference_bench
+%{_bindir}/lalinference_burst
+%{_bindir}/lalinference_datadump
+%{_bindir}/lalinference_injectedlike
+%{_bindir}/lalinference_nest
+%{_bindir}/lalinference_version
+%{_bindir}/lalinference_mpi_wrapper
 %{_datarootdir}/lalinference/*
 %{_libdir}/*.so.*
 %{_sysconfdir}/*
 
 %files devel
 %defattr(-,root,root)
+%license COPYING
 %{_includedir}/lal
 %{_libdir}/*.a
 %{_libdir}/*.so
@@ -171,18 +178,34 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files -n python2-%{name}
 %defattr(-,root,root)
+%license COPYING
 %{_bindir}/bayestar_*
-%{_bindir}/imrtgr_*
-%{_bindir}/rapidpe_*
 %{_bindir}/cbcBayes*
+%{_bindir}/imrtgr_*
+%{_bindir}/lalinference_average_skymaps
+%{_bindir}/lalinference_burst_pp_pipe
+%{_bindir}/lalinference_coherence_test
+%{_bindir}/lalinference_compute_roq_weights
+%{_bindir}/lalinference_merge_posteriors
+%{_bindir}/lalinference_multi_pipe
+%{_bindir}/lalinference_nest2pos
+%{_bindir}/lalinference_pipe
+%{_bindir}/lalinference_pp_pipe
+%{_bindir}/lalinference_review_test
+%{_bindir}/lalinference_tiger_pipe
+%{_bindir}/rapidpe_*
 %{python2_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
+%license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lalinference.oct*
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Sep 13 2018 Adam Mercer <adam.mercer@ligo.org> 1.10.0-1
+- Pre O3 release
+
 * Thu Jul 27 2017 Adam Mercer <adam.mercer@ligo.org> 1.9.4-1
 - bayestar_plot_volume: work around broken fonts in SL7
 

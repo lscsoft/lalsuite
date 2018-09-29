@@ -14,50 +14,97 @@ import time
 import nrutils as nr
 
 """ calculate the mass and spin of the final black hole using an NR-inspired fitting formula """
-def calc_final_mass_spin(m1, m2, chi1, chi2, fit_formula):
+def calc_final_mass_spin(m1, m2, chi1, chi2, chi1z, chi2z, phi12, fit_formula):
+  """ Calculate the mass and spin of the final black hole using an NR-inspired fitting formula.
+
+  inputs:
+  m1, m2: initial masses 
+  chi1, chi2: initial spin magnitudes
+  chi1z, chi2z: z-components of the initial spins
+  phi12: in-plane angle between initial spins
+  fit_formula: fitting formula to be used for the calculation of final mass/spin
+
+  output:
+  mf, chif: final mass, final spin
+  """
+
+  tilt1 = np.arccos(chi1z/chi1)
+  tilt2 = np.arccos(chi2z/chi2)
   
   if fit_formula == 'nospin_Pan2011':
     chif = nr.bbh_final_spin_non_spinning_Panetal(m1, m2)
     mf = nr.bbh_final_mass_non_spinning_Panetal(m1, m2)
   elif fit_formula == 'nonprecspin_Healy2014':
-    chif = nr.bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2)
-    mf = nr.bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif)
+    chif = nr.bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1z, chi2z, version="2014")
+    mf = nr.bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1z, chi2z, version="2014", chif=chif)
   elif fit_formula == 'nonprecspin_Husa2015':
-    chif = nr.bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2)
-    mf = nr.bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2)
+    chif = nr.bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1z, chi2z)
+    mf = nr.bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1z, chi2z)
+  elif fit_formula == 'bbh_average_fits_precessing':
+    mf_fits = ["UIB2016", "HL2016"]
+    chif_fits = ["UIB2016", "HBR2016", "HL2016"]
+    mf = nr.bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, 0, "Mf", mf_fits)
+    chif = nr.bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, "af", chif_fits)
   else:
     raise ValueError("unknown spin fit formula")
   return mf, chif
 
-""" compute the integrand of P(dMf/Mf, dchif/chif). """
-def P_integrand(chif, Mf, v1, v2, P_dMfdchif_interp_object, P_Mfchif_imr_interp_object):
+""" compute the integrand of P(dMf/Mfbar, dchif/chifbar). """
+def P_integrand(chif, Mf, v1, v2, P_Mfchif_i_interp_object, P_Mfchif_r_interp_object):
+
+  """ Compute the integrand of P(dMf/Mfbar, dchif/chifbar).
+
+  inputs:
+  chif: vector of values of final spin
+  Mf: vector of values of final mass
+  v1: dMf/Mfbar value
+  v2: dchif/chifbar value
+  P_Mfchif_i_interp_object: interpolation function of P_i(Mf, chif)
+  P_Mfchif_r_interp_object: interpolation function of P_r(Mf, chif)
+
+  output: integrand of P(dMf/Mfbar, dchif/chifbar)
+  """
+
 
   Mf_mat, chif_mat = np.meshgrid(Mf, chif)
 
   # Create dMf and dchif vectors corresponding to the given v1 and v2. These vectors have to be 
   # monotonically increasing in order to evaluate the interpolated prob densities. Hence, for 
   # v1, v2 < 0, flip them, evaluate the prob density (in column or row) and flip it back 
-  dMf = v1*Mf
-  dchif = v2*chif
+  dMf_i = (1.+v1/2.)*Mf
+  dchif_i = (1.+v2/2.)*chif
 
-  if v1 < 0.:
-    dMf = np.flipud(dMf)
-  if v2 < 0.:
-    dchif = np.flipud(dchif)
-  P_delta = P_dMfdchif_interp_object(dMf, dchif)
+  dMf_r = (1.-v1/2.)*Mf
+  dchif_r = (1.-v2/2.)*chif
 
-  if v1 < 0.:
-    P_delta = np.fliplr(P_delta)
-  if v2 < 0.:
-    P_delta = np.flipud(P_delta)
+  if (1.+v1/2.) < 0.:
+    dMf_i = np.flipud(dMf_i)
+  if (1.+v2/2.) < 0.:
+    dchif_i = np.flipud(dchif_i)
+  P_i = P_Mfchif_i_interp_object(dMf_i, dchif_i)
 
-  P_imr = P_Mfchif_imr_interp_object(Mf, chif)
-  return P_imr*P_delta*abs(Mf_mat*chif_mat), P_imr, P_delta
+  if (1.+v1/2.) < 0.:
+    P_i = np.fliplr(P_i)
+  if (1.+v2/2.) < 0.:
+    P_i = np.flipud(P_i)
 
-""" compute P(dMf/Mf, dchif/chif). """
-def calc_sum(Mf, chif, v1, v2, P_dMfdchif_interp_object, P_Mfchif_imr_interp_object):
+  if (1.-v1/2.) < 0.:
+    dMf_r = np.flipud(dMf_r)
+  if (1.-v2/2.) < 0.:
+    dchif_r = np.flipud(dchif_r)
+  P_r = P_Mfchif_r_interp_object(dMf_r, dchif_r)
 
-  Pintg, P_imr, P_delta = P_integrand(chif, Mf, v1, v2, P_dMfdchif_interp_object, P_Mfchif_imr_interp_object)
+  if (1.-v1/2.) < 0.:
+    P_r = np.fliplr(P_r)
+  if (1.-v2/2.) < 0.:
+    P_r = np.flipud(P_r)
+
+  return P_i*P_r*abs(Mf_mat*chif_mat), P_i, P_r
+
+""" compute P(dMf/Mfbar, dchif/chifbar). """
+def calc_sum(Mf, chif, v1, v2, P_Mfchif_i_interp_object, P_Mfchif_r_interp_object):
+
+  Pintg, P_i, P_r = P_integrand(chif, Mf, v1, v2, P_Mfchif_i_interp_object, P_Mfchif_r_interp_object)
   return np.sum(Pintg)
 
 """ gaussian filter of histogram """

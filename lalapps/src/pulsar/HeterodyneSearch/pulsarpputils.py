@@ -36,14 +36,13 @@ import numpy as np
 import struct
 import re
 import h5py
-import urllib2
 
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 from scipy.stats import hmean
 from scipy.misc import logsumexp
 
-from types import StringType, FloatType
+from six import string_types
 
 # some common constants taken from psr_constants.py in PRESTO
 ARCSECTORAD = float('4.8481368110953599358991410235794797595635330237270e-6')
@@ -167,7 +166,7 @@ def rad_to_string(rad, ra_or_dec):
   elif ra_or_dec.upper() == 'DEC':
     v, m, s = rad_to_dms(rad)
   else:
-    raise("Unrecognised option: Expected 'ra_or_dec' to be 'RA' or 'DEC'")
+    raise ValueError("Unrecognised option: Expected 'ra_or_dec' to be 'RA' or 'DEC'")
 
   return coord_to_string(v, m, s)
 
@@ -481,7 +480,7 @@ class psr_par:
     out = ""
     for k, v in self.__dict__.items():
       if k[:2]!="__":
-        if type(self.__dict__[k]) is StringType:
+        if isinstance(self.__dict__[k], string_type):
           out += "%10s = '%s'\n" % (k, v)
         else:
           out += "%10s = %-20.15g\n" % (k, v)
@@ -1790,14 +1789,12 @@ def heterodyned_pulsar_signal(pardict, detector, starttime=900000000., duration=
     iota = math.acos(cosiota)
     siniota = math.sin(iota)
   else:
-    print("cos(iota) not defined!", file=sys.stderr)
-    raise KeyError
+    raise KeyError("cos(iota) not defined!")
 
   if 'psi' in pardict:
     psi = pardict['psi']
   else:
-    print("psi not defined!", file=sys.stderr)
-    raise KeyError
+    raise KeyError("psi not defined!")
 
   if 'C22' in pardict:
     C22 = pardict['C22']
@@ -1990,7 +1987,7 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
   try:
     detector=detMap[det]
   except KeyError:
-    raise ValueError, "ERROR. Key %s is not a valid detector name." % (det)
+    raise KeyError("ERROR. Key {} is not a valid detector name.".format(det))
 
   # get detector
   detval = lal.CachedDetectors[detector]
@@ -1998,28 +1995,31 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
 
   # check if ra and dec are floats or strings (if strings in hh/dd:mm:ss.s format then convert to rads)
   if not isinstance(ra, float):
-    if isinstance(ra, basestring):
+    if isinstance(ra, string_types):
       try:
         ra = ra_to_rad(ra)
       except:
-        raise ValueError, "Right ascension string '%s' not formatted properly" % ra
+        raise ValueError("Right ascension string '{}' not formatted properly".format(ra))
     else:
-      raise ValueError, "Right ascension must be a 'float' in radians or a string of the format 'hh:mm:ss.s'"
+      raise ValueError("Right ascension must be a 'float' in radians or a string of the format 'hh:mm:ss.s'")
 
   if not isinstance(dec, float):
-    if isinstance(dec, basestring):
+    if isinstance(dec, string_types):
       try:
         dec = dec_to_rad(dec)
       except:
-        raise ValueError, "Declination string '%s' not formatted properly" % ra
+        raise ValueError("Declination string '{}' not formatted properly".format(ra))
     else:
-      raise ValueError, "Declination must be a 'float' in radians or a string of the format 'dd:mm:ss.s'"
+      raise ValueError("Declination must be a 'float' in radians or a string of the format 'dd:mm:ss.s'")
 
   # check if gpsTime is just a float or int, and if so convert into an array
   if isinstance(gpsTime, float) or isinstance(gpsTime, int):
     gpsTime = np.array([gpsTime])
   else: # make sure it's a numpy array
     gpsTime = np.copy(gpsTime)
+
+  # make sure times are floats
+  gpsTime = gpsTime.astype('float64')
 
   # if gpsTime is a list of regularly spaced values then use ComputeDetAMResponseSeries
   if len(gpsTime) == 1 or np.unique(np.diff(gpsTime)).size == 1:
@@ -2052,7 +2052,7 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
 def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
                          freqfac=[2.0], npsds=None, snrscale=None):
   # if detectors is just a string (i.e. one detector) then make it a list
-  if isinstance(detectors, basestring):
+  if isinstance(detectors, string_types):
     detectors = [detectors]
 
   # if not noise sigma's are given then generate a noise level from the given
@@ -2086,12 +2086,10 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
     npsds = tmpnpsds
 
   if len(freqfac) == 1 and len(detectors) != len(npsds):
-    raise ValueError, "Number of detectors %d not the same as number of "\
-                      "noises %d" % (len(detectors), len(npsds))
+    raise ValueError("Number of detectors {} not the same as number of noises {}".format(len(detectors), len(npsds)))
 
   if len(freqfac) == 2 and 2*len(detectors) != len(npsds):
-    raise ValueError, "Number of detectors %d not half the number of "\
-                      "noises %d" % (len(detectors), len(npsds))
+    raise ValueError("Number of detectors {} not half the number of noises {}".format(len(detectors), len(npsds)))
 
   tss = np.array([])
   ss = np.array([])
@@ -2205,7 +2203,7 @@ def detector_noise( det, f ):
   elif det == 'AL1' or det == 'AH1':
     return lalsimulation.SimNoisePSDaLIGOZeroDetHighPower( f )
   else:
-    raise ValueError, "%s is not a recognised detector" % (det)
+    raise ValueError("{} is not a recognised detector".format(det))
 
 # function to calculate the optimal SNR of a heterodyned pulsar signal - it
 # takes in a complex signal model and noise standard deviation
@@ -2462,7 +2460,7 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
 
         nsResultsObject = (samples.colnames, samples.as_array().view(float).reshape(-1, len(params)))
       except:
-        raise IOError, "Could not import nested samples"
+        raise IOError("Could not import nested samples")
     else: # assume posterior file has been created with lalapps_nest2pos
       peparser = bppu.PEOutputParser('hdf5')
       nsResultsObject = peparser.parse(postfile)
@@ -2880,7 +2878,7 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
 
   # if dets is just a single string
   if not isinstance(dets, list):
-    if isinstance(dets, basestring):
+    if isinstance(dets, string_types):
       dets = [dets] # make into list
     else:
       print('Detector not, or incorrectly, set', file=sys.stderr)
@@ -3075,13 +3073,16 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
 
 
 # current version of the ATNF pulsar catalogue
-ATNF_VERSION = '1.56'
+ATNF_VERSION = '1.58'
 
 def get_atnf_info(psr):
   """
   Get the pulsar (psr) distance (DIST in kpc), proper motion corrected period derivative (P1_I) and any association
   (ASSOC e.g. GC) from the ATNF catalogue.
   """
+
+  from six.moves.urllib.request import urlopen
+  import requests
 
   psrname = re.sub('\+', '%2B', psr) # switch '+' for unicode character
 
@@ -3092,9 +3093,9 @@ def get_atnf_info(psr):
   atnfurl += '&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=linear&y_axis=&y_scale=linear&state=query'
 
   try:
-    urldat = urllib2.urlopen(atnfurl).read() # read ATNF url
-    predat = re.search(r'<pre[^>]*>([^<]+)</pre>', urldat) # to extract data within pre environment (without using BeautifulSoup) see e.g. http://stackoverflow.com/a/3369000/1862861 and http://stackoverflow.com/a/20046030/1862861
-    pdat = predat.group(1).strip().split('\n') # remove preceeding and trailing new lines and split lines
+    urldat = requests.get(atnfurl) # read ATNF url
+    predat = re.search(r'<pre[^>]*>([^<]+)</pre>', str(urldat.content)) # to extract data within pre environment (without using BeautifulSoup) see e.g. http://stackoverflow.com/a/3369000/1862861 and http://stackoverflow.com/a/20046030/1862861
+    pdat = predat.group(1).strip().split(r'\n') # remove preceeding and trailing new lines and split lines
   except:
     print("Warning... could not get information from ATNF pulsar catalogue.", file=sys.stderr)
     return None
@@ -3103,7 +3104,7 @@ def get_atnf_info(psr):
   dist = None
   p1_I = None
   assoc = None
-  for line in pdat:
+  for line in [p for p in pdat if len(p) != 0]:
     if 'WARNING' in line or 'not in catalogue' in line:
       return None
     vals = line.split()

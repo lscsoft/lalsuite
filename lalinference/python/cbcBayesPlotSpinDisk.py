@@ -34,7 +34,7 @@ if __name__=='__main__':
   if opts.outpath is None:
     opts.outpath=os.getcwd()
   if not os.path.isfile(opts.data):
-    print "Cannot find posterior file %s\n"%opts.data
+    print("Cannot find posterior file %s\n"%opts.data)
     sys.exit(1)
   else:
     peparser=bppu.PEOutputParser('common')

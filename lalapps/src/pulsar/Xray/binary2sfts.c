@@ -84,6 +84,7 @@ typedef struct {
   REAL8 tasc_inj;
   REAL8 P_inj;
   REAL8 phi_inj;
+  CHAR *touchfile;
 } UserInput_t;
 
 /***********************************************************************************************/
@@ -218,6 +219,17 @@ int main( int argc, char *argv[] )  {
   }
 
   /**********************************************************************************/
+
+  if (XLALUserVarWasSet(&uvar.touchfile)) {
+    FILE *fp = fopen(uvar.touchfile, "w");
+    XLAL_CHECK(fp != NULL, XLAL_EIO);
+    time_t t;
+    time(&t);
+    struct tm *tm = localtime(&t);
+    fprintf(fp, "%s : %s\n", argv[0], asctime(tm));
+    fclose(fp);
+  }
+
   /* free memory */
   XLALDestroySFTVector(SFTvect);
   XLALFree(logstr);
@@ -279,6 +291,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(P_inj,                 REAL8, 'D', OPTIONAL, "orbital period of injected signal");
   XLALRegisterUvarMember(phi_inj,               REAL8, 'E', OPTIONAL, "initial phase of injected signal");
   XLALRegisterUvarMember(seed,                    INT4, 'r', OPTIONAL, "The random seed");
+  XLALRegisterUvarMember(touchfile,             STRING, 0, OPTIONAL, "Touch file on success (for Makeflow integration)");
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;

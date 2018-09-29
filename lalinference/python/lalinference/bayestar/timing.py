@@ -29,6 +29,8 @@ import lalsimulation
 from scipy import interpolate
 from scipy import linalg
 
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.bayestar.filter')
 
 log = logging.getLogger('BAYESTAR')
 

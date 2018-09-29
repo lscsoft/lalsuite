@@ -2196,6 +2196,11 @@ LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *ru
     char defaultname[]="injection_params.dat";
     FILE *outfile=NULL;
 
+    /* check if the --inj argument has been passed */
+    ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine,"--inj");
+    if (!ppt)
+        return(NULL);
+
     SimInspiralTable *injTable=NULL, *theEventTable=NULL;
     LALInferenceModel *model = LALInferenceInitCBCModel(runState);
     if (LALInferenceGetProcParamVal(runState->commandLine, "--roqtime_steps")){

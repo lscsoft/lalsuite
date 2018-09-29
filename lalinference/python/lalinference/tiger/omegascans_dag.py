@@ -31,13 +31,14 @@ usage="""  omegascans_dag.py config.ini [options]
 ###############################################################################
 
 from glue import pipeline
-from ConfigParser import ConfigParser
 from optparse import OptionParser
 import uuid
 import os
 import sys
 import ast
 from subprocess import Popen,PIPE
+
+from six.moves.configparser import ConfigParser
 
 ###############################################################################
 #

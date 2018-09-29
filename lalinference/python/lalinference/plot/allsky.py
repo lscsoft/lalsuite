@@ -218,3 +218,6 @@ class AstroLambertAxes(LambertAxes):
         self.xaxis.set_major_formatter(self.RaFormatter(degrees))
 
 projection_registry.register(AstroLambertAxes)
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.plot.allsky')

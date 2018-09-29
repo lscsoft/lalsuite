@@ -1,3 +1,9 @@
+lal (6.19.0-1) unstable; urgency=low
+
+  * Pre O3 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 13 Sep 2018 14:58:14 -0700
+
 lal (6.18.0-1) unstable; urgency=low
 
   * LAL 6.18.0

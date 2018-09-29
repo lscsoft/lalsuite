@@ -65,13 +65,9 @@ liblalinspiral_la_SOURCES = \
 	CoincInspiralEllipsoid.c \
 	CoincInspiralUtils.c \
 	CoincRingdownUtils.c \
-	FindChirpBCVCFilter.c \
 	FindChirpBCVChisq.c \
 	FindChirpBCVData.c \
-	FindChirpBCVFilter.c \
 	FindChirpBCVSpinData.c \
-	FindChirpBCVSpinFilter.c \
-	FindChirpBCVSpinTemplate.c \
 	FindChirpBCVTemplate.c \
 	FindChirpBankVeto.c \
 	FindChirpChisq.c \
@@ -89,7 +85,6 @@ liblalinspiral_la_SOURCES = \
 	FindChirpSPData.c \
 	FindChirpSPTemplate.c \
 	FindChirpSimulation.c \
-	FindChirpStoreEvent.c \
 	FindChirpTDData.c \
 	FindChirpTDTemplate.c \
 	FindChirpTemplate.c \

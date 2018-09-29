@@ -22,6 +22,8 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
+from six.moves import range
+
 import matplotlib
 matplotlib.use('Agg') #sets backend to not need to open windows
 
@@ -114,7 +116,7 @@ def downsample_and_evidence(data_hdf5, deltaLogP=None, fixedBurnin=None, nDownsa
     # Compute the evidence for the set of parallel tempered chains through a thermodynamic integral
 
 	if not data_hdf5.lower().endswith(('.hdf5', '.hdf', '.h5')):
-		print 'cbcBayesMCMC2pos only suports hdf5 input, for older file formats plese revert to cbcBayesThermoInt and cbcBayesPosProc'
+		print('cbcBayesMCMC2pos only suports hdf5 input, for older file formats plese revert to cbcBayesThermoInt and cbcBayesPosProc')
 		sys.exit(1)
 
 	peparser = bppu.PEOutputParser('hdf5')
@@ -123,16 +125,12 @@ def downsample_and_evidence(data_hdf5, deltaLogP=None, fixedBurnin=None, nDownsa
 		nDownsample=nDownsample, tablename=None)
 	posterior_samples = apt.Table(samps, names=ps)
 
-	with h5py.File(data_hdf5, 'r') as inp:
-		assert posterior_samples['nTemps'][0] == len(inp[mcmc_group_id]), \
-			'Temperature ladder spread over multiple hdf5 files. Use cbcBayesCombinePTMCMCh5s.py to combine.'
-
 	highTchains = []
-	for i in xrange(1,int(posterior_samples['nTemps'][0])):
+	for i in range(1,int(posterior_samples['nTemps'][0])):
 		ps, samps = peparser.parse(data_hdf5, deltaLogP=deltaLogP, fixedBurnins=fixedBurnin,
 			nDownsample=nDownsample, tablename='chain_'+str('%02.f' %i))
 		highTchains.append(apt.Table(samps, names=ps))
-		if verbose: print 'chain_'+str('%02.f' %i)+' at a temperature '+str(highTchains[i-1]['temperature'].mean())
+		if verbose: print('chain_'+str('%02.f' %i)+' at a temperature '+str(highTchains[i-1]['temperature'].mean()))
 
 	betas = np.zeros(len(highTchains)+1)
 	logls = np.zeros_like(betas)
@@ -140,7 +138,7 @@ def downsample_and_evidence(data_hdf5, deltaLogP=None, fixedBurnin=None, nDownsa
 	betas[0] = 1./np.median(posterior_samples['temperature'])
 	logls[0] = np.median(posterior_samples['logl'])
 
-	for i in xrange(len(highTchains)):
+	for i in range(len(highTchains)):
 		betas[i+1] = 1./np.median(highTchains[i]['temperature'])
 		logls[i+1] = np.median(highTchains[i]['logl'])
 
@@ -169,8 +167,8 @@ def downsample_and_evidence(data_hdf5, deltaLogP=None, fixedBurnin=None, nDownsa
 	posterior_samples['chain_log_bayes_factor'] = posterior_samples['chain_log_evidence'] - posterior_samples['chain_log_noise_evidence']
 
 	if verbose:
-		print 'logZ = '+str(posterior_samples['chain_log_evidence'][0])+'+-'+str(posterior_samples['chain_delta_log_evidence'][0])
-		print 'logB_SN = '+str(posterior_samples['chain_log_bayes_factor'][0])
+		print('logZ = '+str(posterior_samples['chain_log_evidence'][0])+'+-'+str(posterior_samples['chain_delta_log_evidence'][0]))
+		print('logB_SN = '+str(posterior_samples['chain_log_bayes_factor'][0]))
 
 	posterior_samples = reassign_metadata(posterior_samples, data_hdf5)
 
@@ -185,24 +183,24 @@ def weight_and_combine(pos_chains, verbose=False):
 	log_evs = np.zeros(len(pos_chains))
 	log_noise_evs = np.zeros_like(log_evs)
 
-	for i in xrange(len(pos_chains)):
+	for i in range(len(pos_chains)):
 		log_evs[i] = pos_chains[i]['chain_log_evidence'][0]
 		log_noise_evs[i] = pos_chains[i]['chain_log_noise_evidence'][0]
-	if verbose: print 'Computed log_evidences: %s'%(str(log_evs))
+	if verbose: print('Computed log_evidences: %s'%(str(log_evs)))
 
 	max_log_ev = log_evs.max()
 
 	fracs=[np.exp(log_ev-max_log_ev) for log_ev in log_evs]
-	if verbose: print 'Relative weights of input files: %s'%(str(fracs))
+	if verbose: print('Relative weights of input files: %s'%(str(fracs)))
 
-	Ns=[fracs[i]/len(pos_chains[i]) for i in xrange(len(fracs))]
+	Ns=[fracs[i]/len(pos_chains[i]) for i in range(len(fracs))]
 	Ntot=max(Ns)
 	fracs=[n/Ntot for n in Ns]
-	if verbose: print 'Relative weights of input files taking into account their length: %s'%(str(fracs))
+	if verbose: print('Relative weights of input files taking into account their length: %s'%(str(fracs)))
 
 	final_posterior = pos_chains[0][np.random.uniform(size=len(pos_chains[0]))<fracs[0]]
 
-	for i in xrange(1,len(pos_chains)):
+	for i in range(1,len(pos_chains)):
 		final_posterior = apt.vstack([final_posterior,
 			pos_chains[i][np.random.uniform(size=len(pos_chains[i]))<fracs[i]]])
 
@@ -269,7 +267,7 @@ if __name__ == '__main__':
 
 	chain_posteriors = []
 
-	for i in xrange(len(datafiles)):
+	for i in range(len(datafiles)):
 		chain_posteriors.append(downsample_and_evidence(datafiles[i],
 			deltaLogP=opts.deltaLogP, fixedBurnin=fixedBurnins[i], nDownsample=opts.downsample, verbose=opts.verbose))
 

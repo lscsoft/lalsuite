@@ -25,12 +25,7 @@ nodist_liblalxml_la_SOURCES = \
 
 liblalxml_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
-DISTCLEANFILES = \
-	config.h
-
-EXTRA_DIST = \
-	config.h.in \
-	LALXMLConfig.h.in
+DISTCLEANFILES = config.h
 
 vcs_build_info_source = LALXMLVCSInfo.c
 vcs_info_sources = LALXMLVCSInfoHeader.h
@@ -47,4 +42,14 @@ lalxml_version_SOURCES = version.c
 
 TESTS = \
 	lalxml_version \
+	$(END_OF_LIST)
+
+pkgdata_DATA = \
+	VOTable-1.1.xsd \
+	$(END_OF_LIST)
+
+EXTRA_DIST = \
+	$(pkgdata_DATA) \
+	LALXMLConfig.h.in \
+	config.h.in \
 	$(END_OF_LIST)

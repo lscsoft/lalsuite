@@ -83,8 +83,8 @@ Description: transitional package
 
 Package: python-lalinspiral
 Section: python
-Replaces: lalinspiral-python (<< 1.7.7-1~)
-Breaks: lalinspiral-python (<< 1.7.7-1~)
+Replaces: lalinspiral-python (<< 1.7.7.1-1~)
+Breaks: lalinspiral-python (<< 1.7.7.1-1~)
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   lalinspiral (= ${binary:Version}),
@@ -109,8 +109,8 @@ Description: transitional package
 
 Package: python3-lalinspiral
 Section: python
-Replaces: lalinspiral-python3 (<< 1.7.7-1~)
-Breaks: lalinspiral-python3 (<< 1.7.7-1~)
+Replaces: lalinspiral-python3 (<< 1.7.7.1-1~)
+Breaks: lalinspiral-python3 (<< 1.7.7.1-1~)
 Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},

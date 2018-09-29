@@ -278,3 +278,6 @@ class PPPlot(axes.Axes):
         return cls, {}
 
 projection_registry.register(PPPlot)
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.plot.pp')

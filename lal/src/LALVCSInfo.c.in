@@ -137,6 +137,7 @@ const LALVCSInfoList lal@PACKAGE_NAME_NOLAL@VCSInfoList = {
   NULL
 };
 
+#if @PACKAGE_NAME_UCASE@_VERSION_DEVEL != 0
 /*
  * VCS header/library mismatch link check function:
  * This function will successfully link only if the link check functions defined
@@ -147,7 +148,6 @@ const LALVCSInfoList lal@PACKAGE_NAME_NOLAL@VCSInfoList = {
  */
 void @PACKAGE_NAME_UCASE@_VCS_LINK_CHECK(void)
 {
-#if @PACKAGE_NAME_UCASE@_VERSION_DEVEL != 0
 #if defined(HAVE_LIBLAL) && LAL_VERSION_DEVEL != 0
   LAL_VCS_LINK_CHECK();
 #endif
@@ -181,5 +181,5 @@ void @PACKAGE_NAME_UCASE@_VCS_LINK_CHECK(void)
 #if defined(HAVE_LIBLALSTOCHASTIC) && LALSTOCHASTIC_VERSION_DEVEL != 0
   LALSTOCHASTIC_VCS_LINK_CHECK();
 #endif
-#endif
 }
+#endif

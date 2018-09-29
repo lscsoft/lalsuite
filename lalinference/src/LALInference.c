@@ -724,8 +724,8 @@ UINT4 LALInferencePrintNVariableItem(char *out, UINT4 strsize, const LALInferenc
 				  sprintf(arrstr,"");
 				  for(UINT4 i=0;i<vec->length;i++)
 				  {
-						  char this[31];
-						  snprintf(this,30,"%"LAL_UINT4_FORMAT" ",vec->data[i]);
+						  char this[30];
+						  snprintf(this,29,"%"LAL_UINT4_FORMAT" ",vec->data[i]);
 						  strncat(arrstr,this,30);
 				  }
 				  size_t actual_len=strlen(arrstr) +1;
@@ -744,8 +744,8 @@ UINT4 LALInferencePrintNVariableItem(char *out, UINT4 strsize, const LALInferenc
 				  sprintf(arrstr,"");
 				  for(UINT4 i=0;i<vec->length;i++)
 				  {
-						  char this[31];
-						  snprintf(this,30,"%"LAL_INT4_FORMAT" ",vec->data[i]);
+						  char this[30];
+						  snprintf(this,29,"%"LAL_INT4_FORMAT" ",vec->data[i]);
 						  strncat(arrstr,this,30);
 				  }
 				  size_t actual_len=strlen(arrstr) +1;
@@ -770,8 +770,8 @@ UINT4 LALInferencePrintNVariableItem(char *out, UINT4 strsize, const LALInferenc
 				  sprintf(arrstr,"");
 				  for(UINT4 i=0;i<vec->length;i++)
 				  {
-						  char this[31];
-						  snprintf(this,30,"%.20"LAL_REAL8_FORMAT" ",vec->data[i]);
+						  char this[30];
+						  snprintf(this,29,"%.20"LAL_REAL8_FORMAT" ",vec->data[i]);
 						  strncat(arrstr,this,30);
 				  }
 				  size_t actual_len=strlen(arrstr) +1;
@@ -3407,14 +3407,14 @@ void LALInferenceDumpWaveforms(LALInferenceModel *model, const char *basefilenam
     UINT4 i;
     FILE *dumpfile=NULL;
     char basename[1024]="template_dump";
-    char filename[1024]="";
+    char filename[1100]="";
     if(basefilename!=NULL)
     {
         sprintf(basename,"%s",basefilename);
     }
 
     if(model->timehPlus && model->timehCross){
-        sprintf(filename,"%s_time.txt",basename);
+        snprintf(filename,sizeof(filename),"%s_time.txt",basename);
         dumpfile=fopen(filename,"w");
         REAL8 epoch = model->timehPlus->epoch.gpsSeconds + 1e-9*model->timehPlus->epoch.gpsNanoSeconds;
         REAL8 dt=model->timehPlus->deltaT;
@@ -3423,7 +3423,7 @@ void LALInferenceDumpWaveforms(LALInferenceModel *model, const char *basefilenam
         fprintf(stdout,"Dumped file %s\n",filename);
     }
     if(model->freqhPlus && model->freqhCross){
-        sprintf(filename,"%s_freq.txt",basename);
+        snprintf(filename,sizeof(filename),"%s_freq.txt",basename);
         dumpfile=fopen(filename,"w");
         REAL8 fLow=model->freqhPlus->f0;
         REAL8 df=model->freqhPlus->deltaF;

@@ -34,6 +34,10 @@ from __future__ import division
 from __future__ import print_function
 
 
+from lalinference.bayestar.deprecation import warn
+warn('ligo-skymap-stats')
+
+
 # Command line interface.
 import argparse
 from lalinference.bayestar import command

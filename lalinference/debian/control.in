@@ -125,8 +125,8 @@ Depends:
   python-lalinspiral (>= @MIN_LALINSPIRAL_VERSION@~),
   python-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
   lalinference (= ${binary:Version})
-Replaces: lalapps (<< 6.14.0-1), lalinference-python (<< 1.9.4-1~)
-Breaks: lalapps (<< 6.14.0-1), lalinference-python (<< 1.9.4-1~)
+Replaces: lalapps (<< 6.21.0.1-1), lalinference-python (<< 1.9.4.1-1~)
+Breaks: lalapps (<< 6.21.0.1-1), lalinference-python (<< 1.9.4.1-1~)
 Description: Python bindings for LALInference
  The LSC Algorithm Inference Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL Inference library.

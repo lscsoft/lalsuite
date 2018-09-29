@@ -74,3 +74,6 @@ class DetectorDisabledEvent(Event):
         return self.base_event.template_args
 
 open = DetectorDisabledEventSource
+
+from lalinference.bayestar.deprecation import warn
+warn('ligo.skymap.io.events.detector_disabled')

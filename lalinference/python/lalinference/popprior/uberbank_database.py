@@ -65,7 +65,7 @@ class Bank(object):
                     cursor.execute("INSERT INTO bank (filename_id, m1, m2, chi1, chi2, row, column) VALUES ((SELECT filename_id FROM fname WHERE filename = ?),?,?,?,?,?,?)", (filename, m1, m2, chi1, chi2, i if i <= nrows else None, i))
                     #FIXME: After building the database, confirm that each template only appears once in one row of the hdf5 files
             except: # ignore corrupted/broken subbank files
-                print "Cannot load h5py file:", filename
+                print("Cannot load h5py file:", filename)
         cursor.execute("CREATE INDEX template_index ON bank (m1, m2, chi1, chi2)")
         cursor.execute("CREATE INDEX filename_id_index ON bank (filename_id)")
         cursor.execute("CREATE TEMPORARY TABLE template AS SELECT DISTINCT m1,m2,chi1,chi2 FROM bank;")
@@ -115,8 +115,8 @@ if sys.argv[1] == "make_sqlite":
     start_time = time.time()
     Bank.make_db("uberbank_database.sqlite",glob.glob("uberbank/*hdf")) # make sqlite file
     x = Bank(sqlite3.connect("uberbank_database.sqlite"))
-    print "Seconds taken to create database:", time.time()-start_time
+    print("Seconds taken to create database:", time.time()-start_time)
 if sys.argv[1] == "make_ram":
     start_time = time.time()
-    x = Bank(Bank.make_db(":memory:", glob.glob("uberbank/*.hdf")) # in RAM version
-    print "Seconds taken to create database:", time.time()-start_time
+    x = Bank(Bank.make_db(":memory:", glob.glob("uberbank/*.hdf"))) # in RAM version
+    print("Seconds taken to create database:", time.time()-start_time)

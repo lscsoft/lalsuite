@@ -65,20 +65,6 @@ XLALCompareSnglBurstByPeakTimeAndSNR(
 	const SnglBurst * const *b
 );
 
-void
-XLALStringBurstCluster(
-	SnglBurst *a,
-	const SnglBurst *b
-);
-
-void
-XLALClusterSnglBurstTable(
-	SnglBurst  **list,
-	int (*bailoutfunc)(const SnglBurst * const *, const SnglBurst * const *),
-	int (*testfunc)(const SnglBurst * const *, const SnglBurst * const *),
-	void (*clusterfunc)(SnglBurst *, const SnglBurst *)
-);
-
 SnglBurst *
 XLALCreateSnglBurst(
 	void
@@ -97,20 +83,6 @@ XLALDestroySimBurst(
 void
 XLALDestroySimBurstTable(
 	SimBurst *head
-);
-
-int XLALCompareSimBurstByGeocentTimeGPS(
-	const SimBurst * const *a,
-	const SimBurst * const *b
-);
-
-int XLALSimBurstTableLength(
-	SimBurst *head
-);
-
-SimBurst **XLALSortSimBurst(
-	SimBurst **head,
-	int (*comparefunc)(const SimBurst * const *, const SimBurst * const *)
 );
 
 long

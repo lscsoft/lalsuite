@@ -903,7 +903,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   if ( LALInferenceCheckVariable( runState->livePoints[0], "chirpmass" ) ){
     /* If a cbc run, calculate the mass-distance volume and store it to file*/ 
     /* Do it before algorithm starts so that we can kill the run and still get this */
-    logvolume=log(LALInferenceMassDistancePriorVolume(runState));
+    int errnum=0;
+    XLAL_TRY(logvolume=log(LALInferenceMassDistancePriorVolume(runState)), errnum);
+    if(XLAL_IS_REAL8_FAIL_NAN(logvolume))
+    {
+	    XLALPrintWarning("Could not compute log volume: %s\n",XLALErrorString(errnum));
+	    logvolume=0.0;
+    }
   }
 
   if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))
@@ -1219,7 +1225,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       }
       XLALH5FileClose(h5file);
     }
-  
+
     if(output_array) {
       for(i=0;i<N_output_array;i++){
         LALInferenceClearVariables(output_array[i]);

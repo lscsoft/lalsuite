@@ -29,6 +29,9 @@ LIGO Light-Weight XML coincidence analysis front end.
 """
 
 
+from __future__ import print_function
+
+
 import math
 import sys
 
@@ -63,7 +66,7 @@ def load_cache(filename, verbose = False):
 	taken from stdin.
 	"""
 	if verbose:
-		print >>sys.stderr, "reading %s ..." % (filename or "stdin")
+		print("reading %s ..." % (filename or "stdin"), file=sys.stderr)
 	if filename is not None:
 		f = open(filename)
 	else:
@@ -275,7 +278,7 @@ class CafePacker(packing.Packer):
 		#
 
 		matching_bins = []
-		for n in xrange(len(self.bins) - 1, -1, -1):
+		for n in range(len(self.bins) - 1, -1, -1):
 			bin = self.bins[n]
 			if bin.extent[1] < new.extent[0] - self.max_gap:
 				break
@@ -356,7 +359,7 @@ def split_bins(cafepacker, extentlimit, verbose = False):
 
 		extents = [origbin.extent[0]] + [LIGOTimeGPS(origbin.extent[0] + i * float(abs(origbin.extent)) / n) for i in range(1, n)] + [origbin.extent[1]]
 		if verbose:
-			print >>sys.stderr, "\tsplitting cache spanning %s at %s" % (str(origbin.extent), ", ".join(str(extent) for extent in extents[1:-1]))
+			print("\tsplitting cache spanning %s at %s" % (str(origbin.extent), ", ".join(str(extent) for extent in extents[1:-1])), file=sys.stderr)
 		extents = [segments.segment(*bounds) for bounds in zip(extents[:-1], extents[1:])]
 
 		#
@@ -439,11 +442,11 @@ def write_caches(base, bins, instruments = None, verbose = False):
 		filename = pattern % (base, n)
 		filenames.append(filename)
 		if verbose:
-			print >>sys.stderr, "writing %s ..." % filename
+			print("writing %s ..." % filename, file=sys.stderr)
 		f = open(filename, "w")
 		for cacheentry in bin.objects:
 			if instruments is None or (instruments & set(cacheentry.segmentlistdict)):
-				print >>f, str(cacheentry)
+				print(str(cacheentry), file=f)
 	return filenames
 
 
@@ -484,7 +487,7 @@ def ligolw_cafe(cache, offset_vectors, verbose = False, extentlimit = None):
 	#
 
 	if verbose:
-		print >>sys.stderr, "computing segment list ..."
+		print("computing segment list ...", file=sys.stderr)
 	seglists = cache_to_seglistdict(cache)
 
 	#
@@ -507,7 +510,7 @@ def ligolw_cafe(cache, offset_vectors, verbose = False, extentlimit = None):
 	#
 
 	if verbose:
-		print >>sys.stderr, "filtering input cache ..."
+		print("filtering input cache ...", file=sys.stderr)
 	cache = [c for c in cache if seglists.intersects_all(c.segmentlistdict)]
 
 	#
@@ -516,7 +519,7 @@ def ligolw_cafe(cache, offset_vectors, verbose = False, extentlimit = None):
 	#
 
 	if verbose:
-		print >>sys.stderr, "sorting input cache ..."
+		print("sorting input cache ...", file=sys.stderr)
 	cache.sort(key = lambda x: x.segment)
 
 	#
@@ -529,13 +532,13 @@ def ligolw_cafe(cache, offset_vectors, verbose = False, extentlimit = None):
 	packer = CafePacker(outputcaches)
 	packer.set_offset_vectors(offset_vectors)
 	if verbose:
-		print >>sys.stderr, "packing files (considering %s offset vectors) ..." % len(offset_vectors)
+		print("packing files (considering %s offset vectors) ..." % len(offset_vectors), file=sys.stderr)
 	for n, cacheentry in enumerate(cache):
 		if verbose and not n % 13:
-			print >>sys.stderr, "\t%.1f%%\t(%d files, %d caches)\r" % (100.0 * n / len(cache), n + 1, len(outputcaches)),
+			print("\t%.1f%%\t(%d files, %d caches)\r" % (100.0 * n / len(cache), n + 1, len(outputcaches)), end=' ', file=sys.stderr)
 		packer.pack(cacheentry)
 	if verbose:
-		print >>sys.stderr, "\t100.0%%\t(%d files, %d caches)" % (len(cache), len(outputcaches))
+		print("\t100.0%%\t(%d files, %d caches)" % (len(cache), len(outputcaches)), file=sys.stderr)
 
 	#
 	# Split caches with extent more than extentlimit
@@ -543,17 +546,17 @@ def ligolw_cafe(cache, offset_vectors, verbose = False, extentlimit = None):
 
 	if extentlimit is not None:
 		if verbose:
-			print >>sys.stderr, "splitting caches with extent greater than %g s ..." % extentlimit
+			print("splitting caches with extent greater than %g s ..." % extentlimit, file=sys.stderr)
 		split_bins(packer, extentlimit, verbose = verbose)
 		if verbose:
-			print >>sys.stderr, "\t\t(%d files, %d caches)" % (len(cache), len(outputcaches))
+			print("\t\t(%d files, %d caches)" % (len(cache), len(outputcaches)), file=sys.stderr)
 
 	#
 	# Sort output caches
 	#
 
 	if verbose:
-		print >>sys.stderr, "sorting output caches ..."
+		print("sorting output caches ...", file=sys.stderr)
 	for cache in outputcaches:
 		cache.objects.sort()
 

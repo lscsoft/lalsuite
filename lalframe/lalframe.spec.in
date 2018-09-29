@@ -52,13 +52,12 @@ library.
 %package -n python2-%{name}
 Summary: Python %{python2_version} Bindings for LALFrame
 Group: LAL
-Provides: %{name}-python
-Obsoletes: %{name}-python < 1.4.3-2
-Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
+Obsoletes: %{name}-python
+Provides: %{name}-python
 %description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings for LALFrame.
@@ -99,6 +98,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files
 %defattr(-,root,root)
+%license COPYING
 %{_bindir}/lalfr-*
 %{_bindir}/lalframe_version
 %{_datadir}/man/man1/*
@@ -107,6 +107,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files devel
 %defattr(-,root,root)
+%license COPYING
 %{_includedir}/lal
 %{_libdir}/*.a
 %{_libdir}/*.so
@@ -114,14 +115,19 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files -n python2-%{name}
 %defattr(-,root,root)
+%license COPYING
 %{python2_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
+%license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lalframe.oct*
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Sep 13 2018 Adam Mercer <adam.mercer@ligo.org> 1.4.4-1
+- Pre O3 release
+
 * Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.4.3-1
 - O2 release
 

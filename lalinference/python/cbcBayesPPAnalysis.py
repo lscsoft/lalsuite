@@ -36,8 +36,6 @@ import os
 import os.path
 import scipy.stats as ss
 import string
-from pylal.SimInspiralUtils import ExtractSimInspiralTableLIGOLWContentHandler
-lsctables.use_in(ExtractSimInspiralTableLIGOLWContentHandler)
 from lalinference import bayespputils as bppu
 
 posterior_name_to_latex_name = {
@@ -159,7 +157,7 @@ def read_posterior_samples(f,injrow):
     # add tilts, comp masses, tidal...
     try:
       data.extend_posterior()
-    except Exception,e:
+    except Exception as e:
       pass 
     return data
 
@@ -240,7 +238,7 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
 
-    injs = lsctables.SimInspiralTable.get_table(utils.load_filename(options.injxml,contenthandler=ExtractSimInspiralTableLIGOLWContentHandler))
+    injs = lsctables.SimInspiralTable.get_table(utils.load_filename(options.injxml,contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler)))
 
     if options.par == []:
         parameters = ['m1', 'm2', 'mc', 'eta', 'q',  'theta_jn', 'a1', 'a2', 'tilt1', 'tilt2', 'phi12', 'phi_jl', 'ra', 'dec', 'distance', 'time', 'phi_orb', 'psi']
@@ -279,14 +277,14 @@ if __name__ == '__main__':
     # Generate plots, K-S tests
     ks_pvalues = {}
     for par, ps in pvalues.items():
-        print "Trying to create the plot for",par,"."
+        print("Trying to create the plot for",par,".")
         try:
           pp_plot(ps, title=posterior_name_to_latex_name[par], outfile=os.path.join(options.outdir, par))
           pp.clf()
           ks_pvalues[par] = pp_kstest_pvalue(ps)
           np.savetxt(os.path.join(options.outdir, par + '-ps.dat'), np.reshape(ps, (-1, 1)))
         except:
-          print "Could not create the plot for",par,"!!!"
+          print("Could not create the plot for",par,"!!!")
 
     skypp=False
     if options.skypp is not None:
@@ -299,9 +297,9 @@ if __name__ == '__main__':
             os.system('cp %s %s'%(inf,outf))
             found+=1
           else:
-            print "could not find %s\n"%os.path.join(options.skypp,'p-p.%s'%i)
+            print("could not find %s\n"%os.path.join(options.skypp,'p-p.%s'%i))
       else:
-        print "skyPPfolder %s doesn't seem to be a valid folder or cannot be read. Skipping skyPP plot\n"%os.path.realpath(options.skypp)
+        print("skyPPfolder %s doesn't seem to be a valid folder or cannot be read. Skipping skyPP plot\n"%os.path.realpath(options.skypp))
 
       if found>0:
         skypp=True

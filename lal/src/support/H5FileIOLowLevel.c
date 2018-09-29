@@ -26,6 +26,9 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #else
 
+/* replace HDF5 routines with threadsafe versions, if necessary */
+#include "H5ThreadSafe.c"
+
 #define LAL_H5_FILE_MODE_READ  H5F_ACC_RDONLY
 #define LAL_H5_FILE_MODE_WRITE H5F_ACC_TRUNC
 
@@ -53,13 +56,13 @@ static hid_t XLALH5TypeEnum(const char *names[], const int values[], size_t leng
 {
 	hid_t dtype_id;
 	size_t i;
-	dtype_id = H5Tenum_create(H5T_NATIVE_INT);
+	dtype_id = threadsafe_H5Tenum_create(H5T_NATIVE_INT);
 	if (dtype_id < 0)
 		XLAL_ERROR(XLAL_EIO);
 	for (i = 0; i < length; ++i) {
-		herr_t status = H5Tenum_insert(dtype_id, names[i], values + i);
+		herr_t status = threadsafe_H5Tenum_insert(dtype_id, names[i], values + i);
 		if (status < 0) {
-			H5Tclose(dtype_id);
+			threadsafe_H5Tclose(dtype_id);
 			XLAL_ERROR(XLAL_EIO);
 		}
 	}
@@ -71,9 +74,9 @@ typedef struct { float re; float im; } internal_float_complex_type;
 static hid_t XLALH5TypeNativeFloatComplex(void)
 {
 	hid_t dtype_id;
-	dtype_id = H5Tcreate(H5T_COMPOUND, sizeof(internal_float_complex_type));
-	H5Tinsert(dtype_id, "r", HOFFSET(internal_float_complex_type, re), H5T_NATIVE_FLOAT);
-	H5Tinsert(dtype_id, "i", HOFFSET(internal_float_complex_type, im), H5T_NATIVE_FLOAT);
+	dtype_id = threadsafe_H5Tcreate(H5T_COMPOUND, sizeof(internal_float_complex_type));
+	threadsafe_H5Tinsert(dtype_id, "r", HOFFSET(internal_float_complex_type, re), H5T_NATIVE_FLOAT);
+	threadsafe_H5Tinsert(dtype_id, "i", HOFFSET(internal_float_complex_type, im), H5T_NATIVE_FLOAT);
 	return dtype_id;
 }
 
@@ -82,9 +85,9 @@ typedef struct { double re; double im; } internal_double_complex_type;
 static hid_t XLALH5TypeNativeDoubleComplex(void)
 {
 	hid_t dtype_id;
-	dtype_id = H5Tcreate(H5T_COMPOUND, sizeof(internal_double_complex_type));
-	H5Tinsert(dtype_id, "r", HOFFSET(internal_double_complex_type, re), H5T_NATIVE_DOUBLE);
-	H5Tinsert(dtype_id, "i", HOFFSET(internal_double_complex_type, im), H5T_NATIVE_DOUBLE);
+	dtype_id = threadsafe_H5Tcreate(H5T_COMPOUND, sizeof(internal_double_complex_type));
+	threadsafe_H5Tinsert(dtype_id, "r", HOFFSET(internal_double_complex_type, re), H5T_NATIVE_DOUBLE);
+	threadsafe_H5Tinsert(dtype_id, "i", HOFFSET(internal_double_complex_type, im), H5T_NATIVE_DOUBLE);
 	return dtype_id;
 }
 
@@ -93,12 +96,12 @@ static hid_t XLALH5TypeNativeLIGOTimeGPS(void)
 {
 	hid_t dtype_id;
 	hid_t int32_dtype_id;
-	int32_dtype_id = H5Tcopy(H5T_NATIVE_INT);
-	H5Tset_size(int32_dtype_id, 4); // 4 bytes = 32 bits
-	dtype_id = H5Tcreate(H5T_COMPOUND, sizeof(LIGOTimeGPS));
-	H5Tinsert(dtype_id, "gpsSeconds", HOFFSET(LIGOTimeGPS, gpsSeconds), int32_dtype_id);
-	H5Tinsert(dtype_id, "gpsNanoSeconds", HOFFSET(LIGOTimeGPS, gpsNanoSeconds), int32_dtype_id);
-	H5Tclose(int32_dtype_id);
+	int32_dtype_id = threadsafe_H5Tcopy(H5T_NATIVE_INT);
+	threadsafe_H5Tset_size(int32_dtype_id, 4); // 4 bytes = 32 bits
+	dtype_id = threadsafe_H5Tcreate(H5T_COMPOUND, sizeof(LIGOTimeGPS));
+	threadsafe_H5Tinsert(dtype_id, "gpsSeconds", HOFFSET(LIGOTimeGPS, gpsSeconds), int32_dtype_id);
+	threadsafe_H5Tinsert(dtype_id, "gpsNanoSeconds", HOFFSET(LIGOTimeGPS, gpsNanoSeconds), int32_dtype_id);
+	threadsafe_H5Tclose(int32_dtype_id);
 	return dtype_id;
 }
 
@@ -146,10 +149,10 @@ static hid_t XLALH5TypeFromLALType(LALTYPECODE dtype)
 		/* floating point number */
 		switch (size) {
 		case 4:
-			dtype_id = H5Tcopy(H5T_NATIVE_FLOAT);
+			dtype_id = threadsafe_H5Tcopy(H5T_NATIVE_FLOAT);
 			break;
 		case 8:
-			dtype_id = H5Tcopy(H5T_NATIVE_DOUBLE);
+			dtype_id = threadsafe_H5Tcopy(H5T_NATIVE_DOUBLE);
 			break;
 		default:
 			/* it should be impossible to get here */
@@ -159,16 +162,16 @@ static hid_t XLALH5TypeFromLALType(LALTYPECODE dtype)
 		/* unsigned integer */
 		switch (size) {
 		case 1:
-			dtype_id = H5Tcopy(H5T_NATIVE_UCHAR);
+			dtype_id = threadsafe_H5Tcopy(H5T_NATIVE_UCHAR);
 			break;
 		case 2:
-			dtype_id = H5Tcopy(H5T_NATIVE_UINT16);
+			dtype_id = threadsafe_H5Tcopy(H5T_NATIVE_UINT16);
 			break;
 		case 4:
-			dtype_id = H5Tcopy(H5T_NATIVE_UINT32);
+			dtype_id = threadsafe_H5Tcopy(H5T_NATIVE_UINT32);
 			break;
 		case 8:
-			dtype_id = H5Tcopy(H5T_NATIVE_UINT64);
+			dtype_id = threadsafe_H5Tcopy(H5T_NATIVE_UINT64);
 			break;
 		default:
 			/* it should be impossible to get here */
@@ -177,16 +180,16 @@ static hid_t XLALH5TypeFromLALType(LALTYPECODE dtype)
 	} else {
 		switch (size) {
 		case 1:
-			dtype_id = H5Tcopy(H5T_NATIVE_CHAR);
+			dtype_id = threadsafe_H5Tcopy(H5T_NATIVE_CHAR);
 			break;
 		case 2:
-			dtype_id = H5Tcopy(H5T_NATIVE_INT16);
+			dtype_id = threadsafe_H5Tcopy(H5T_NATIVE_INT16);
 			break;
 		case 4:
-			dtype_id = H5Tcopy(H5T_NATIVE_INT32);
+			dtype_id = threadsafe_H5Tcopy(H5T_NATIVE_INT32);
 			break;
 		case 8:
-			dtype_id = H5Tcopy(H5T_NATIVE_INT64);
+			dtype_id = threadsafe_H5Tcopy(H5T_NATIVE_INT64);
 			break;
 		default:
 			/* it should be impossible to get here */
@@ -201,9 +204,9 @@ static hid_t XLALH5TypeFromLALType(LALTYPECODE dtype)
 static LALTYPECODE XLALTypeFromH5Type(hid_t dtype_id)
 {
 	LALTYPECODE dtype = 0;
-	switch (H5Tget_class(dtype_id)) {
+	switch (threadsafe_H5Tget_class(dtype_id)) {
 	case H5T_INTEGER:
-		switch (H5Tget_sign(dtype_id)) {
+		switch (threadsafe_H5Tget_sign(dtype_id)) {
 		case H5T_SGN_NONE:
 			dtype |= LAL_UNSGN_TYPE_FLAG;
 			break;
@@ -211,7 +214,7 @@ static LALTYPECODE XLALTypeFromH5Type(hid_t dtype_id)
 			/* do nothing */
 			break;
 		}
-		switch (H5Tget_size(dtype_id)) {
+		switch (threadsafe_H5Tget_size(dtype_id)) {
 		case 1:
 			dtype |= LAL_1_BYTE_TYPE_SIZE;
 			break;
@@ -231,7 +234,7 @@ static LALTYPECODE XLALTypeFromH5Type(hid_t dtype_id)
 		break;
 	case H5T_FLOAT:
 		dtype |= LAL_FLTPT_TYPE_FLAG;
-		switch (H5Tget_size(dtype_id)) {
+		switch (threadsafe_H5Tget_size(dtype_id)) {
 		case 4:
 			dtype |= LAL_4_BYTE_TYPE_SIZE;
 			break;
@@ -250,17 +253,17 @@ static LALTYPECODE XLALTypeFromH5Type(hid_t dtype_id)
 		/* sanity check the dtype_id */
 
 		/* must have 2 members ... */
-		if (H5Tget_nmembers(dtype_id) != 2)
+		if (threadsafe_H5Tget_nmembers(dtype_id) != 2)
 			XLAL_ERROR(XLAL_ETYPE, "Unsupported data type\n");
 
 		/* both members must be floating-point type ... */
-		if (H5Tget_member_class(dtype_id, 0) != H5T_FLOAT)
+		if (threadsafe_H5Tget_member_class(dtype_id, 0) != H5T_FLOAT)
 			XLAL_ERROR(XLAL_ETYPE, "Unsupported data type\n");
-		if (H5Tget_member_class(dtype_id, 1) != H5T_FLOAT)
+		if (threadsafe_H5Tget_member_class(dtype_id, 1) != H5T_FLOAT)
 			XLAL_ERROR(XLAL_ETYPE, "Unsupported data type\n");
 
 		/* first member name must be something like "real" ... */
-		s = H5Tget_member_name(dtype_id, 0);
+		s = threadsafe_H5Tget_member_name(dtype_id, 0);
 		if (XLALStringNCaseCompare(s, "real", strlen(s)) != 0) {
 			free(s);
 			XLAL_ERROR(XLAL_ETYPE, "Unsupported data type\n");
@@ -268,7 +271,7 @@ static LALTYPECODE XLALTypeFromH5Type(hid_t dtype_id)
 		free(s);
 
 		/* second member name must be something like "imaginary" ... */
-		s = H5Tget_member_name(dtype_id, 1);
+		s = threadsafe_H5Tget_member_name(dtype_id, 1);
 		if (XLALStringNCaseCompare(s, "imaginary", strlen(s)) != 0) {
 			free(s);
 			XLAL_ERROR(XLAL_ETYPE, "Unsupported data type\n");
@@ -276,7 +279,7 @@ static LALTYPECODE XLALTypeFromH5Type(hid_t dtype_id)
 		free(s);
 
 		dtype |= LAL_CMPLX_TYPE_FLAG | LAL_FLTPT_TYPE_FLAG;
-		switch (H5Tget_size(dtype_id)) {
+		switch (threadsafe_H5Tget_size(dtype_id)) {
 		case 8:
 			dtype |= LAL_8_BYTE_TYPE_SIZE;
 			break;
@@ -307,7 +310,7 @@ static LALH5File * XLALH5FileCreate(const char *path)
 	if (!file)
 		XLAL_ERROR_NULL(XLAL_ENOMEM);
 	XLALStringCopy(file->fname, path, sizeof(file->fname));
-	file->file_id = H5Fcreate(tmpfname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+	file->file_id = threadsafe_H5Fcreate(tmpfname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 	if (file->file_id < 0) {
 		LALFree(file);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not create HDF5 file `%s'", path);
@@ -323,7 +326,7 @@ static LALH5File * XLALH5FileOpenRead(const char *path)
 	file = LALCalloc(1, sizeof(*file));
 	if (!file)
 		XLAL_ERROR_NULL(XLAL_ENOMEM);
-	file->file_id = H5Fopen(path, H5F_ACC_RDONLY, H5P_DEFAULT);
+	file->file_id = threadsafe_H5Fopen(path, H5F_ACC_RDONLY, H5P_DEFAULT);
 	if (file->file_id < 0) {
 		LALFree(file);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not open HDF5 file `%s'", path);
@@ -382,26 +385,26 @@ void XLALH5FileClose(LALH5File UNUSED *file)
 #else
 	if (file) {
 		if (file->is_a_group)
-			H5Gclose(file->file_id);
+			threadsafe_H5Gclose(file->file_id);
 		else {
 			if (file->mode == LAL_H5_FILE_MODE_WRITE) {
 				char tmpfname[FILENAME_MAX];
 				size_t namelen;
-				namelen = H5Fget_name(file->file_id, NULL, 0);
+				namelen = threadsafe_H5Fget_name(file->file_id, NULL, 0);
 				if (sizeof(tmpfname) <= namelen) {
-					H5Fclose(file->file_id);
+					threadsafe_H5Fclose(file->file_id);
 					LALFree(file);
 					XLAL_ERROR_VOID(XLAL_EIO, "Failed to move temporary file");
 				}
-				H5Fget_name(file->file_id, tmpfname, sizeof(tmpfname));
-                H5Fflush(file->file_id , H5F_SCOPE_GLOBAL);
+				threadsafe_H5Fget_name(file->file_id, tmpfname, sizeof(tmpfname));
+                threadsafe_H5Fflush(file->file_id , H5F_SCOPE_GLOBAL);
 				if (rename(tmpfname, file->fname) < 0) {
-					H5Fclose(file->file_id);
+					threadsafe_H5Fclose(file->file_id);
 					LALFree(file);
 					XLAL_ERROR_VOID(XLAL_EIO, "Failed to move temporary file");
 				}
 			}
-			H5Fclose(file->file_id);
+			threadsafe_H5Fclose(file->file_id);
 		}
 		LALFree(file);
 	}
@@ -479,16 +482,16 @@ LALH5File * XLALH5GroupOpen(LALH5File UNUSED *file, const char UNUSED *name)
 	if (!name) /* this is the same as the file */
 		group->file_id = file->file_id;
 	else if (group->mode == LAL_H5_FILE_MODE_READ)
-		group->file_id = H5Gopen2(file->file_id, name, H5P_DEFAULT);
+		group->file_id = threadsafe_H5Gopen2(file->file_id, name, H5P_DEFAULT);
 	else if (group->mode == LAL_H5_FILE_MODE_WRITE) {
 		hid_t gcpl; /* property list to allow intermediate groups to be created */
-		gcpl = H5Pcreate(H5P_LINK_CREATE);
-		if (gcpl < 0 || H5Pset_create_intermediate_group(gcpl, 1) < 0) {
+		gcpl = threadsafe_H5Pcreate(H5P_LINK_CREATE);
+		if (gcpl < 0 || threadsafe_H5Pset_create_intermediate_group(gcpl, 1) < 0) {
 			LALFree(group);
 			XLAL_ERROR_NULL(XLAL_EIO);
 		}
-    		group->file_id = H5Gcreate2(file->file_id, name, gcpl, H5P_DEFAULT, H5P_DEFAULT);
-		H5Pclose(gcpl);
+    		group->file_id = threadsafe_H5Gcreate2(file->file_id, name, gcpl, H5P_DEFAULT, H5P_DEFAULT);
+		threadsafe_H5Pclose(gcpl);
 	} else
 		XLAL_ERROR_NULL(XLAL_EINVAL, "Corrupted file structure");
 	if (group->file_id < 0) {
@@ -521,7 +524,7 @@ int XLALH5FileCheckGroupExists(const LALH5File UNUSED *file, const char UNUSED *
     if (file == NULL || name == NULL)
         XLAL_ERROR_VAL(0, XLAL_EFAULT);
     H5G_info_t info;
-    if (H5Gget_info_by_name(file->file_id, name, &info, H5P_DEFAULT) < 0)
+    if (threadsafe_H5Gget_info_by_name(file->file_id, name, &info, H5P_DEFAULT) < 0)
         return 0;
     return 1;
 #endif
@@ -552,28 +555,28 @@ int XLALH5FileCheckDatasetExists(const LALH5File UNUSED *file, const char UNUSED
 	if (file == NULL || name == NULL)
 		XLAL_ERROR_VAL(0, XLAL_EFAULT);
 
-	if (H5Gget_info(file->file_id, &group_info) < 0)
+	if (threadsafe_H5Gget_info(file->file_id, &group_info) < 0)
 		XLAL_ERROR_VAL(0, XLAL_EIO, "Could not read group info");
 
 	for (i = 0; i < group_info.nlinks; ++i) {
 		H5O_info_t obj_info;
-		if (H5Oget_info_by_idx(file->file_id, ".", H5_INDEX_NAME, H5_ITER_INC, i, &obj_info, H5P_DEFAULT) < 0)
+		if (threadsafe_H5Oget_info_by_idx(file->file_id, ".", H5_INDEX_NAME, H5_ITER_INC, i, &obj_info, H5P_DEFAULT) < 0)
 			XLAL_ERROR_VAL(0, XLAL_EIO, "Could not read object info");
 		if (obj_info.type == H5O_TYPE_DATASET) {
 			char *base;
 			hid_t obj_id;
 			int n;
-			obj_id = H5Oopen_by_addr(file->file_id, obj_info.addr);
+			obj_id = threadsafe_H5Oopen_by_addr(file->file_id, obj_info.addr);
 			if (obj_id < 0)
 				XLAL_ERROR_VAL(0, XLAL_EIO, "Could not open object");
-			n = H5Iget_name(obj_id, NULL, 0);
+			n = threadsafe_H5Iget_name(obj_id, NULL, 0);
 			if (n < 0) {
-				H5Oclose(obj_id);
+				threadsafe_H5Oclose(obj_id);
 				XLAL_ERROR_VAL(0, XLAL_EIO, "Could not read object");
 			}
 			char dset_name[n + 1];
-			n = H5Iget_name(obj_id, dset_name, n + 1);
-			H5Oclose(obj_id);
+			n = threadsafe_H5Iget_name(obj_id, dset_name, n + 1);
+			threadsafe_H5Oclose(obj_id);
 			if (n < 0)
 				XLAL_ERROR_VAL(0, XLAL_EIO, "Could not read object");
 			/* get basename */
@@ -612,7 +615,7 @@ int XLALH5CheckGroupExists(LALH5File UNUSED *file, const char UNUSED *name)
         XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
 #else
 	XLAL_PRINT_DEPRECATION_WARNING("XLALH5FileCheckGroupExists");
-        if (H5Gget_objinfo(file->file_id, name, 0, NULL))
+        if (threadsafe_H5Gget_objinfo(file->file_id, name, 0, NULL))
         {
           return 0;
         }
@@ -647,12 +650,12 @@ size_t XLALH5FileQueryNGroups(const LALH5File UNUSED *file)
 	if (file == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	if (H5Gget_info(file->file_id, &group_info) < 0)
+	if (threadsafe_H5Gget_info(file->file_id, &group_info) < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read group info");
 
 	for (i = 0; i < group_info.nlinks; ++i) {
 		H5O_info_t obj_info;
-		if (H5Oget_info_by_idx(file->file_id, ".", H5_INDEX_NAME, H5_ITER_INC, i, &obj_info, H5P_DEFAULT) < 0)
+		if (threadsafe_H5Oget_info_by_idx(file->file_id, ".", H5_INDEX_NAME, H5_ITER_INC, i, &obj_info, H5P_DEFAULT) < 0)
 			XLAL_ERROR(XLAL_EIO, "Could not read object info");
 		if (obj_info.type == H5O_TYPE_GROUP)
 			++num;
@@ -699,22 +702,22 @@ int XLALH5FileQueryGroupName(char UNUSED *name, size_t UNUSED size, const LALH5F
 	if (file == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	if (H5Gget_info(file->file_id, &group_info) < 0)
+	if (threadsafe_H5Gget_info(file->file_id, &group_info) < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read group info");
 
 	for (i = 0; i < group_info.nlinks; ++i) {
 		H5O_info_t obj_info;
-		if (H5Oget_info_by_idx(file->file_id, ".", H5_INDEX_NAME, H5_ITER_INC, i, &obj_info, H5P_DEFAULT) < 0)
+		if (threadsafe_H5Oget_info_by_idx(file->file_id, ".", H5_INDEX_NAME, H5_ITER_INC, i, &obj_info, H5P_DEFAULT) < 0)
 			XLAL_ERROR(XLAL_EIO, "Could not read object info");
 		if (obj_info.type == H5O_TYPE_GROUP) {
 			if (num == (size_t)pos) { /* found it */
 				hid_t obj_id;
 				int n;
-				obj_id = H5Oopen_by_addr(file->file_id, obj_info.addr);
+				obj_id = threadsafe_H5Oopen_by_addr(file->file_id, obj_info.addr);
 				if (obj_id < 0)
 					XLAL_ERROR(XLAL_EIO, "Could not open object");
-				n = H5Iget_name(obj_id, name, size);
-				H5Oclose(obj_id);
+				n = threadsafe_H5Iget_name(obj_id, name, size);
+				threadsafe_H5Oclose(obj_id);
 				if (n < 0)
 					XLAL_ERROR(XLAL_EIO, "Could not read object name");
 				return n;
@@ -750,12 +753,12 @@ size_t XLALH5FileQueryNDatasets(const LALH5File UNUSED *file)
 	if (file == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	if (H5Gget_info(file->file_id, &group_info) < 0)
+	if (threadsafe_H5Gget_info(file->file_id, &group_info) < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read group info");
 
 	for (i = 0; i < group_info.nlinks; ++i) {
 		H5O_info_t obj_info;
-		if (H5Oget_info_by_idx(file->file_id, ".", H5_INDEX_NAME, H5_ITER_INC, i, &obj_info, H5P_DEFAULT) < 0)
+		if (threadsafe_H5Oget_info_by_idx(file->file_id, ".", H5_INDEX_NAME, H5_ITER_INC, i, &obj_info, H5P_DEFAULT) < 0)
 			XLAL_ERROR(XLAL_EIO, "Could not read object info");
 		if (obj_info.type == H5O_TYPE_DATASET)
 			++num;
@@ -802,22 +805,22 @@ int XLALH5FileQueryDatasetName(char UNUSED *name, size_t UNUSED size, const LALH
 	if (file == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	if (H5Gget_info(file->file_id, &group_info) < 0)
+	if (threadsafe_H5Gget_info(file->file_id, &group_info) < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read group info");
 
 	for (i = 0; i < group_info.nlinks; ++i) {
 		H5O_info_t obj_info;
-		if (H5Oget_info_by_idx(file->file_id, ".", H5_INDEX_NAME, H5_ITER_INC, i, &obj_info, H5P_DEFAULT) < 0)
+		if (threadsafe_H5Oget_info_by_idx(file->file_id, ".", H5_INDEX_NAME, H5_ITER_INC, i, &obj_info, H5P_DEFAULT) < 0)
 			XLAL_ERROR(XLAL_EIO, "Could not read object info");
 		if (obj_info.type == H5O_TYPE_DATASET) {
 			if (num == (size_t)pos) { /* found it */
 				hid_t obj_id;
 				int n;
-				obj_id = H5Oopen_by_addr(file->file_id, obj_info.addr);
+				obj_id = threadsafe_H5Oopen_by_addr(file->file_id, obj_info.addr);
 				if (obj_id < 0)
 					XLAL_ERROR(XLAL_EIO, "Could not open object");
-				n = H5Iget_name(obj_id, name, size);
-				H5Oclose(obj_id);
+				n = threadsafe_H5Iget_name(obj_id, name, size);
+				threadsafe_H5Oclose(obj_id);
 				if (n < 0)
 					XLAL_ERROR(XLAL_EIO, "Could not read object name");
 				return n;
@@ -863,14 +866,14 @@ int XLALH5FileGetDatasetNames(LALH5File UNUSED *file, char UNUSED *** names, UIN
 	if (names == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-    H5Gget_num_objs(file->file_id, &ng);
+    threadsafe_H5Gget_num_objs(file->file_id, &ng);
     *N = ng;
 
     /*
      *  Filter objects that don't meet our requirements
      */
     for (i = 0; i < (int)ng; i++) {
-        otype = H5Gget_objtype_by_idx(file->file_id, (size_t)i);
+        otype = threadsafe_H5Gget_objtype_by_idx(file->file_id, (size_t)i);
         if (otype != H5G_DATASET) {
             (*N)--;
         }
@@ -878,14 +881,14 @@ int XLALH5FileGetDatasetNames(LALH5File UNUSED *file, char UNUSED *** names, UIN
     char ** namelist = (char**) XLALMalloc((*N) * sizeof(*names));
 
     for (i = 0; i < (int)ng; i++) {
-        otype = H5Gget_objtype_by_idx(file->file_id, (size_t)i);
+        otype = threadsafe_H5Gget_objtype_by_idx(file->file_id, (size_t)i);
         if (otype != H5G_DATASET) {
             continue;
         }
 
-        ns = H5Gget_objname_by_idx(file->file_id, (size_t)i, NULL, 0) + 1;
+        ns = threadsafe_H5Gget_objname_by_idx(file->file_id, (size_t)i, NULL, 0) + 1;
         namelist[i] = (char*) XLALMalloc(ns * sizeof(namelist[i]));
-        H5Gget_objname_by_idx(file->file_id, (size_t)i, namelist[i], ns);
+        threadsafe_H5Gget_objname_by_idx(file->file_id, (size_t)i, namelist[i], ns);
     }
 
   *names = namelist;
@@ -913,9 +916,9 @@ void XLALH5DatasetFree(LALH5Dataset UNUSED *dset)
 	XLAL_ERROR_VOID(XLAL_EFAILED, "HDF5 support not implemented");
 #else
 	if (dset) {
-		H5Tclose(dset->dtype_id);
-		H5Sclose(dset->space_id);
-		H5Dclose(dset->dataset_id);
+		threadsafe_H5Tclose(dset->dtype_id);
+		threadsafe_H5Sclose(dset->space_id);
+		threadsafe_H5Dclose(dset->dataset_id);
 		LALFree(dset);
 	}
 	return;
@@ -974,7 +977,7 @@ LALH5Dataset * XLALH5DatasetAlloc(LALH5File UNUSED *file, const char UNUSED *nam
 	/* copy dimensions to HDF5 type */
 	dims = LALCalloc(dimLength->length, sizeof(*dims));
 	if (!dims) {
-		H5Tclose(dset->dtype_id);
+		threadsafe_H5Tclose(dset->dtype_id);
 		LALFree(dset);
 		XLAL_ERROR_NULL(XLAL_ENOMEM);
 	}
@@ -982,19 +985,19 @@ LALH5Dataset * XLALH5DatasetAlloc(LALH5File UNUSED *file, const char UNUSED *nam
 		dims[dim] = dimLength->data[dim];
 
 	/* create dataspace */
-	dset->space_id = H5Screate_simple(dimLength->length, dims, NULL);
+	dset->space_id = threadsafe_H5Screate_simple(dimLength->length, dims, NULL);
 	LALFree(dims);
 	if (dset->space_id < 0) {
-		H5Tclose(dset->dtype_id);
+		threadsafe_H5Tclose(dset->dtype_id);
 		LALFree(dset);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not create dataspace for dataset `%s'", name);
 	}
 
 	/* create dataset */
-	dset->dataset_id = H5Dcreate2(file->file_id, name, dset->dtype_id, dset->space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	dset->dataset_id = threadsafe_H5Dcreate2(file->file_id, name, dset->dtype_id, dset->space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	if (dset->dataset_id < 0) {
-		H5Tclose(dset->dtype_id);
-		H5Sclose(dset->space_id);
+		threadsafe_H5Tclose(dset->dtype_id);
+		threadsafe_H5Sclose(dset->space_id);
 		LALFree(dset);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not create dataset `%s'", name);
 	}
@@ -1055,18 +1058,18 @@ LALH5Dataset * XLALH5DatasetAlloc1D(LALH5File UNUSED *file, const char UNUSED *n
 	}
 
 	/* create dataspace */
-	dset->space_id = H5Screate_simple(1, &npoints, NULL);
+	dset->space_id = threadsafe_H5Screate_simple(1, &npoints, NULL);
 	if (dset->space_id < 0) {
-		H5Tclose(dset->dtype_id);
+		threadsafe_H5Tclose(dset->dtype_id);
 		LALFree(dset);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not create dataspace for dataset `%s'", name);
 	}
 
 	/* create dataset */
-	dset->dataset_id = H5Dcreate2(file->file_id, name, dset->dtype_id, dset->space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	dset->dataset_id = threadsafe_H5Dcreate2(file->file_id, name, dset->dtype_id, dset->space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	if (dset->dataset_id < 0) {
-		H5Tclose(dset->dtype_id);
-		H5Sclose(dset->space_id);
+		threadsafe_H5Tclose(dset->dtype_id);
+		threadsafe_H5Sclose(dset->space_id);
 		LALFree(dset);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not create dataset `%s'", name);
 	}
@@ -1096,7 +1099,7 @@ int XLALH5DatasetWrite(LALH5Dataset UNUSED *dset, void UNUSED *data)
 #else
 	if (dset == NULL || data == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
-	if (H5Dwrite(dset->dataset_id, dset->dtype_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0)
+	if (threadsafe_H5Dwrite(dset->dataset_id, dset->dtype_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not write data to dataset");
 	return 0;
 #endif
@@ -1137,30 +1140,30 @@ LALH5Dataset * XLALH5DatasetRead(LALH5File UNUSED *file, const char UNUSED *name
 	if (!dset)
 		XLAL_ERROR_NULL(XLAL_ENOMEM);
 
-	dset->dataset_id = H5Dopen2(file->file_id, name, H5P_DEFAULT);
+	dset->dataset_id = threadsafe_H5Dopen2(file->file_id, name, H5P_DEFAULT);
 	if (dset->dataset_id < 0) {
 		LALFree(dset);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not read dataset `%s'", name);
 	}
 
-	dset->space_id = H5Dget_space(dset->dataset_id);
+	dset->space_id = threadsafe_H5Dget_space(dset->dataset_id);
 	if (dset->space_id < 0) {
 		LALFree(dset);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not read dataspace of dataset `%s'", name);
 	}
 
-	dtype_id = H5Dget_type(dset->dataset_id);
+	dtype_id = threadsafe_H5Dget_type(dset->dataset_id);
 	if (dtype_id < 0) {
-		H5Sclose(dset->space_id);
+		threadsafe_H5Sclose(dset->space_id);
 		LALFree(dset);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not read datatype of dataset `%s'", name);
 	}
 
 	/* convert type to native type */
-	dset->dtype_id = H5Tget_native_type(dtype_id, H5T_DIR_ASCEND);
-	H5Tclose(dtype_id);
+	dset->dtype_id = threadsafe_H5Tget_native_type(dtype_id, H5T_DIR_ASCEND);
+	threadsafe_H5Tclose(dtype_id);
 	if (dset->dtype_id < 0) {
-		H5Sclose(dset->space_id);
+		threadsafe_H5Sclose(dset->space_id);
 		LALFree(dset);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not get native type for dataset `%s'", name);
 	}
@@ -1187,7 +1190,7 @@ size_t XLALH5DatasetQueryNPoints(LALH5Dataset UNUSED *dset)
 	hssize_t npoints;
 	if (dset == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
-	npoints = H5Sget_simple_extent_npoints(dset->space_id);
+	npoints = threadsafe_H5Sget_simple_extent_npoints(dset->space_id);
 	if (npoints < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read number of points in dataspace");
 	return npoints;
@@ -1211,7 +1214,7 @@ size_t XLALH5DatasetQueryNBytes(LALH5Dataset UNUSED *dset)
 	size_t npoints;
 	if (dset == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
-	size = H5Tget_size(dset->dtype_id);
+	size = threadsafe_H5Tget_size(dset->dtype_id);
 	if (size == 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read size of datatype");
 	npoints = XLALH5DatasetQueryNPoints(dset);
@@ -1258,7 +1261,7 @@ int XLALH5DatasetQueryNDim(LALH5Dataset UNUSED *dset)
 	int rank;
 	if (dset == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
-	rank = H5Sget_simple_extent_ndims(dset->space_id);
+	rank = threadsafe_H5Sget_simple_extent_ndims(dset->space_id);
 	if (rank < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read rank of dataset");
 	return rank;
@@ -1291,7 +1294,7 @@ UINT4Vector * XLALH5DatasetQueryDims(LALH5Dataset UNUSED *dset)
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	dims = LALCalloc(rank, sizeof(*dims));
-	if (H5Sget_simple_extent_dims(dset->space_id, dims, NULL) < 0) {
+	if (threadsafe_H5Sget_simple_extent_dims(dset->space_id, dims, NULL) < 0) {
 		LALFree(dims);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not read dimensions of dataspace");
 	}
@@ -1330,7 +1333,7 @@ int XLALH5DatasetQueryData(void UNUSED *data, LALH5Dataset UNUSED *dset)
 #else
 	if (data == NULL || dset == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
-	if (H5Dread(dset->dataset_id, dset->dtype_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0) {
+	if (threadsafe_H5Dread(dset->dataset_id, dset->dtype_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0) {
 		LALFree(data);
 		XLAL_ERROR(XLAL_EIO, "Could not read data from dataset");
 	}
@@ -1390,25 +1393,25 @@ size_t XLALH5AttributeCheckExists(const LALH5Generic UNUSED object, const char U
 	if (obj_id < 0)
 		XLAL_ERROR_VAL(0, XLAL_EINVAL);
 
-	if (H5Oget_info(obj_id, &obj_info) < 0)
+	if (threadsafe_H5Oget_info(obj_id, &obj_info) < 0)
 		XLAL_ERROR_VAL(0, XLAL_EIO, "Could not get HDF5 object info");
 
 	for (i = 0; i < obj_info.num_attrs; ++i) {
 		hid_t attr_id;
 		int n;
 
-		attr_id = H5Aopen_idx(obj_id, i);
+		attr_id = threadsafe_H5Aopen_idx(obj_id, i);
 		if (attr_id < 0)
 			XLAL_ERROR_VAL(0, XLAL_EIO, "Could not read attribute");
 
-		n = H5Aget_name(attr_id, 0, NULL);
+		n = threadsafe_H5Aget_name(attr_id, 0, NULL);
 		if (n < 0) {
-			H5Aclose(attr_id);
+			threadsafe_H5Aclose(attr_id);
 			XLAL_ERROR_VAL(0, XLAL_EIO, "Could not read attribute name");
 		}
 		char attr_name[n + 1];
-		n = H5Aget_name(attr_id, n + 1, attr_name);
-		H5Aclose(attr_id);
+		n = threadsafe_H5Aget_name(attr_id, n + 1, attr_name);
+		threadsafe_H5Aclose(attr_id);
 		if (n < 0)
 			XLAL_ERROR_VAL(0, XLAL_EIO, "Could not read attribute name");
 		if (strcmp(name, attr_name) == 0)
@@ -1445,7 +1448,7 @@ size_t XLALH5AttributeQueryN(const LALH5Generic UNUSED object)
 	if (obj_id < 0)
 		XLAL_ERROR(XLAL_EINVAL);
 
-	if (H5Oget_info(obj_id, &obj_info) < 0)
+	if (threadsafe_H5Oget_info(obj_id, &obj_info) < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not get HDF5 object info");
 
 	return obj_info.num_attrs;
@@ -1494,18 +1497,18 @@ int XLALH5AttributeQueryName(char UNUSED *name, size_t UNUSED size, const LALH5G
 	if (obj_id < 0)
 		XLAL_ERROR(XLAL_EINVAL);
 
-	if (H5Oget_info(obj_id, &obj_info) < 0)
+	if (threadsafe_H5Oget_info(obj_id, &obj_info) < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not get HDF5 object info");
 
 	if ((hsize_t)pos >= obj_info.num_attrs)
 		XLAL_ERROR(XLAL_EINVAL, "No attribute associated with given position");
 
-	attr_id = H5Aopen_idx(obj_id, pos);
+	attr_id = threadsafe_H5Aopen_idx(obj_id, pos);
 	if (attr_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read attribute");
 
-	n = H5Aget_name(attr_id, size, name);
-	H5Aclose(attr_id);
+	n = threadsafe_H5Aget_name(attr_id, size, name);
+	threadsafe_H5Aclose(attr_id);
 	if (n < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read attribute name");
 
@@ -1548,27 +1551,27 @@ int XLALH5AttributeAddScalar(LALH5Generic UNUSED object, const char UNUSED *key,
 	if (dtype_id < 0)
 		XLAL_ERROR(XLAL_EFUNC);
 
-	space_id = H5Screate(H5S_SCALAR);
+	space_id = threadsafe_H5Screate(H5S_SCALAR);
 	if (space_id < 0) {
-		H5Tclose(dtype_id);
+		threadsafe_H5Tclose(dtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not create dataspace for attribute `%s'", key);
 	}
 
-	attr_id = H5Acreate2(obj_id, key, dtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
-	H5Sclose(space_id);
+	attr_id = threadsafe_H5Acreate2(obj_id, key, dtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
+	threadsafe_H5Sclose(space_id);
 	if (attr_id < 0) {
-		H5Tclose(dtype_id);
+		threadsafe_H5Tclose(dtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not create attribute `%s'", key);
 	}
 
-	if (H5Awrite(attr_id, dtype_id, value) < 0) {
-		H5Aclose(attr_id);
-		H5Tclose(dtype_id);
+	if (threadsafe_H5Awrite(attr_id, dtype_id, value) < 0) {
+		threadsafe_H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not write attribute `%s'", key);
 	}
 
-	H5Aclose(attr_id);
-	H5Tclose(dtype_id);
+	threadsafe_H5Aclose(attr_id);
+	threadsafe_H5Tclose(dtype_id);
 	return 0;
 #endif
 }
@@ -1600,36 +1603,36 @@ int XLALH5AttributeAddString(LALH5Generic UNUSED object, const char UNUSED *key,
 	if (obj_id < 0)
 		XLAL_ERROR(XLAL_EINVAL);
 
-	dtype_id = H5Tcopy(H5T_C_S1);
+	dtype_id = threadsafe_H5Tcopy(H5T_C_S1);
 	if (dtype_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not create datatype for attribure `%s'", key);
-	if (H5Tset_size(dtype_id, H5T_VARIABLE) < 0)
+	if (threadsafe_H5Tset_size(dtype_id, H5T_VARIABLE) < 0)
 	{
-		H5Tclose(dtype_id);
+		threadsafe_H5Tclose(dtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not create datatype for attribure `%s'", key);
 	}
 
-	space_id = H5Screate(H5S_SCALAR);
+	space_id = threadsafe_H5Screate(H5S_SCALAR);
 	if (space_id < 0) {
-		H5Tclose(dtype_id);
+		threadsafe_H5Tclose(dtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not create dataspace for attribute `%s'", key);
 	}
 
-	attr_id = H5Acreate2(obj_id, key, dtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
-	H5Sclose(space_id);
+	attr_id = threadsafe_H5Acreate2(obj_id, key, dtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
+	threadsafe_H5Sclose(space_id);
 	if (attr_id < 0) {
-		H5Tclose(dtype_id);
+		threadsafe_H5Tclose(dtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not create attribute `%s'", key);
 	}
 
-	if (H5Awrite(attr_id, dtype_id, &value) < 0) {
-		H5Aclose(attr_id);
-		H5Tclose(dtype_id);
+	if (threadsafe_H5Awrite(attr_id, dtype_id, &value) < 0) {
+		threadsafe_H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not write attribute `%s'", key);
 	}
 
-	H5Aclose(attr_id);
-	H5Tclose(dtype_id);
+	threadsafe_H5Aclose(attr_id);
+	threadsafe_H5Tclose(dtype_id);
 	return 0;
 #endif
 }
@@ -1665,27 +1668,27 @@ int XLALH5AttributeAddLIGOTimeGPS(LALH5Generic UNUSED object, const char UNUSED 
 	if (dtype_id < 0)
 		XLAL_ERROR(XLAL_EFUNC);
 
-	space_id = H5Screate(H5S_SCALAR);
+	space_id = threadsafe_H5Screate(H5S_SCALAR);
 	if (space_id < 0) {
-		H5Tclose(dtype_id);
+		threadsafe_H5Tclose(dtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not create dataspace for attribute `%s'", key);
 	}
 
-	attr_id = H5Acreate2(obj_id, key, dtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
-	H5Sclose(space_id);
+	attr_id = threadsafe_H5Acreate2(obj_id, key, dtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
+	threadsafe_H5Sclose(space_id);
 	if (attr_id < 0) {
-		H5Tclose(dtype_id);
+		threadsafe_H5Tclose(dtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not create attribute `%s'", key);
 	}
 
-	if (H5Awrite(attr_id, dtype_id, value) < 0) {
-		H5Aclose(attr_id);
-		H5Tclose(dtype_id);
+	if (threadsafe_H5Awrite(attr_id, dtype_id, value) < 0) {
+		threadsafe_H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not write attribute `%s'", key);
 	}
 
-	H5Aclose(attr_id);
-	H5Tclose(dtype_id);
+	threadsafe_H5Aclose(attr_id);
+	threadsafe_H5Tclose(dtype_id);
 	return 0;
 #endif
 }
@@ -1730,32 +1733,32 @@ int XLALH5AttributeAddEnumArray1D(LALH5Generic UNUSED object, const char UNUSED 
 	if (edtype_id < 0)
 		XLAL_ERROR(XLAL_EFUNC, "Could not create enum type for attribute `%s'", key);
 
-	adtype_id = H5Tarray_create2(edtype_id, 1, dims);
-	H5Tclose(edtype_id);
+	adtype_id = threadsafe_H5Tarray_create2(edtype_id, 1, dims);
+	threadsafe_H5Tclose(edtype_id);
 	if (adtype_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not create array type for attribute `%s'", key);
 
-	space_id = H5Screate(H5S_SCALAR);
+	space_id = threadsafe_H5Screate(H5S_SCALAR);
 	if (space_id < 0) {
-		H5Tclose(adtype_id);
+		threadsafe_H5Tclose(adtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not create dataspace for attribute `%s'", key);
 	}
 
-	attr_id = H5Acreate2(obj_id, key, adtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
-	H5Sclose(space_id);
+	attr_id = threadsafe_H5Acreate2(obj_id, key, adtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
+	threadsafe_H5Sclose(space_id);
 	if (attr_id < 0) {
-		H5Tclose(adtype_id);
+		threadsafe_H5Tclose(adtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not create attribute `%s'", key);
 	}
 
-	if (H5Awrite(attr_id, adtype_id, value) < 0) {
-		H5Aclose(attr_id);
-		H5Tclose(adtype_id);
+	if (threadsafe_H5Awrite(attr_id, adtype_id, value) < 0) {
+		threadsafe_H5Aclose(attr_id);
+		threadsafe_H5Tclose(adtype_id);
 		XLAL_ERROR(XLAL_EIO, "Could not write attribute `%s'", key);
 	}
 
-	H5Aclose(attr_id);
-	H5Tclose(adtype_id);
+	threadsafe_H5Aclose(attr_id);
+	threadsafe_H5Tclose(adtype_id);
 	return 0;
 #endif
 }
@@ -1787,34 +1790,34 @@ LALTYPECODE XLALH5AttributeQueryScalarType(const LALH5Generic UNUSED object, con
 	if (obj_id < 0)
 		XLAL_ERROR(XLAL_EINVAL);
 
-	attr_id = H5Aopen(obj_id, key, H5P_DEFAULT);
+	attr_id = threadsafe_H5Aopen(obj_id, key, H5P_DEFAULT);
 	if (attr_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read attribute `%s'", key);
 
 	/* sanity check: make sure this is a scalar attribute */
-	space_id = H5Aget_space(attr_id);
+	space_id = threadsafe_H5Aget_space(attr_id);
 	if (space_id < 0) {
-		H5Aclose(attr_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read dataspace of attribute `%s'", key);
 	}
-	if (H5Sget_simple_extent_ndims(space_id) != 0 || H5Sget_simple_extent_npoints(space_id) != 1) {
-		H5Sclose(space_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Sget_simple_extent_ndims(space_id) != 0 || threadsafe_H5Sget_simple_extent_npoints(space_id) != 1) {
+		threadsafe_H5Sclose(space_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Attribute `%s' is not a scalar attribute", key);
 	}
 
-	dtype_id = H5Aget_type(attr_id);
-	H5Aclose(attr_id);
+	dtype_id = threadsafe_H5Aget_type(attr_id);
+	threadsafe_H5Aclose(attr_id);
 	if (attr_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read type of attribute `%s'", key);
 
-	memtype_id = H5Tget_native_type(dtype_id, H5T_DIR_ASCEND);
-	H5Tclose(dtype_id);
+	memtype_id = threadsafe_H5Tget_native_type(dtype_id, H5T_DIR_ASCEND);
+	threadsafe_H5Tclose(dtype_id);
 	if (memtype_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not get native type of attribute `%s'", key);
 
 	dtype = XLALTypeFromH5Type(memtype_id);
-	H5Tclose(memtype_id);
+	threadsafe_H5Tclose(memtype_id);
 	if ((int)dtype < 0)
 		XLAL_ERROR(XLAL_EFUNC);
 
@@ -1856,44 +1859,44 @@ int XLALH5AttributeQueryScalarValue(void UNUSED *value, const LALH5Generic UNUSE
 	if (obj_id < 0)
 		XLAL_ERROR(XLAL_EINVAL);
 
-	attr_id = H5Aopen(obj_id, key, H5P_DEFAULT);
+	attr_id = threadsafe_H5Aopen(obj_id, key, H5P_DEFAULT);
 	if (attr_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read attribute `%s'", key);
 
 	/* sanity check: make sure this is a scalar attribute */
-	space_id = H5Aget_space(attr_id);
+	space_id = threadsafe_H5Aget_space(attr_id);
 	if (space_id < 0) {
-		H5Aclose(attr_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read dataspace of attribute `%s'", key);
 	}
-	if (H5Sget_simple_extent_ndims(space_id) != 0 || H5Sget_simple_extent_npoints(space_id) != 1) {
-		H5Sclose(space_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Sget_simple_extent_ndims(space_id) != 0 || threadsafe_H5Sget_simple_extent_npoints(space_id) != 1) {
+		threadsafe_H5Sclose(space_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Attribute `%s' is not a scalar attribute", key);
 	}
-	H5Sclose(space_id);
+	threadsafe_H5Sclose(space_id);
 
-	dtype_id = H5Aget_type(attr_id);
+	dtype_id = threadsafe_H5Aget_type(attr_id);
 	if (dtype_id < 0) {
-		H5Aclose(attr_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read type of attribute `%s'", key);
 	}
 
-	memtype_id = H5Tget_native_type(dtype_id, H5T_DIR_ASCEND);
-	H5Tclose(dtype_id);
+	memtype_id = threadsafe_H5Tget_native_type(dtype_id, H5T_DIR_ASCEND);
+	threadsafe_H5Tclose(dtype_id);
 	if (memtype_id < 0) {
-		H5Aclose(attr_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not get native type of attribute `%s'", key);
 	}
 
-	if (H5Aread(attr_id, memtype_id, value) < 0) {
-		H5Tclose(memtype_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Aread(attr_id, memtype_id, value) < 0) {
+		threadsafe_H5Tclose(memtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read data from attribute `%s'", key);
 	}
 
-	H5Tclose(memtype_id);
-	H5Aclose(attr_id);
+	threadsafe_H5Tclose(memtype_id);
+	threadsafe_H5Aclose(attr_id);
 	return 0;
 #endif
 }
@@ -1941,51 +1944,51 @@ int XLALH5AttributeQueryStringValue(char UNUSED *value, size_t UNUSED size, cons
 	if (obj_id < 0)
 		XLAL_ERROR(XLAL_EINVAL);
 
-	attr_id = H5Aopen(obj_id, key, H5P_DEFAULT);
+	attr_id = threadsafe_H5Aopen(obj_id, key, H5P_DEFAULT);
 	if (attr_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read attribute `%s'", key);
 
 	/* sanity check: make sure this is just one variable-length string */
-	space_id = H5Aget_space(attr_id);
+	space_id = threadsafe_H5Aget_space(attr_id);
 	if (space_id < 0) {
-		H5Aclose(attr_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read dataspace of attribute `%s'", key);
 	}
-	if (H5Sget_simple_extent_ndims(space_id) != 0) {
-		H5Sclose(space_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Sget_simple_extent_ndims(space_id) != 0) {
+		threadsafe_H5Sclose(space_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Attribute `%s' is not a string", key);
 	}
 
-	dtype_id = H5Aget_type(attr_id);
+	dtype_id = threadsafe_H5Aget_type(attr_id);
 	if (dtype_id < 0) {
-		H5Sclose(space_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Sclose(space_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read type of attribute `%s'", key);
 	}
-	H5Tclose(dtype_id);
+	threadsafe_H5Tclose(dtype_id);
 
-	memtype_id = H5Tcopy(H5T_C_S1);
-	if (memtype_id < 0 || H5Tset_size(memtype_id, H5T_VARIABLE)) {
-		H5Sclose(space_id);
-		H5Aclose(attr_id);
+	memtype_id = threadsafe_H5Tcopy(H5T_C_S1);
+	if (memtype_id < 0 || threadsafe_H5Tset_size(memtype_id, H5T_VARIABLE)) {
+		threadsafe_H5Sclose(space_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO);
 	}
 
-	if (H5Aread(attr_id, memtype_id, &str) < 0) {
-		H5Tclose(memtype_id);
-		H5Sclose(space_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Aread(attr_id, memtype_id, &str) < 0) {
+		threadsafe_H5Tclose(memtype_id);
+		threadsafe_H5Sclose(space_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read data from attribute `%s'", key);
 	}
 
 	n = snprintf(value, value == NULL ? 0 : size, "%s", str);
 
-	H5Dvlen_reclaim(memtype_id, space_id, H5P_DEFAULT, &str);
+	threadsafe_H5Dvlen_reclaim(memtype_id, space_id, H5P_DEFAULT, &str);
 
-	H5Tclose(memtype_id);
-	H5Sclose(space_id);
-	H5Aclose(attr_id);
+	threadsafe_H5Tclose(memtype_id);
+	threadsafe_H5Sclose(space_id);
+	threadsafe_H5Aclose(attr_id);
 	return n;
 #endif
 }
@@ -2020,95 +2023,95 @@ LIGOTimeGPS * XLALH5AttributeQueryLIGOTimeGPSValue(LIGOTimeGPS UNUSED *value, co
 	if (obj_id < 0)
 		XLAL_ERROR_NULL(XLAL_EINVAL);
 
-	attr_id = H5Aopen(obj_id, key, H5P_DEFAULT);
+	attr_id = threadsafe_H5Aopen(obj_id, key, H5P_DEFAULT);
 	if (attr_id < 0)
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not read attribute `%s'", key);
 
 	/* sanity check: make sure this is a scalar attribute */
-	space_id = H5Aget_space(attr_id);
+	space_id = threadsafe_H5Aget_space(attr_id);
 	if (space_id < 0) {
-		H5Aclose(attr_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not read dataspace of attribute `%s'", key);
 	}
-	if (H5Sget_simple_extent_ndims(space_id) != 0 || H5Sget_simple_extent_npoints(space_id) != 1) {
-		H5Sclose(space_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Sget_simple_extent_ndims(space_id) != 0 || threadsafe_H5Sget_simple_extent_npoints(space_id) != 1) {
+		threadsafe_H5Sclose(space_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR_NULL(XLAL_EIO, "Attribute `%s' is not a scalar attribute", key);
 	}
-	H5Sclose(space_id);
+	threadsafe_H5Sclose(space_id);
 
 	/* sanity check the dtype_id */
 
-	dtype_id = H5Aget_type(attr_id);
+	dtype_id = threadsafe_H5Aget_type(attr_id);
 	if (dtype_id < 0) {
-		H5Aclose(attr_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not read type of attribute `%s'", key);
 	}
 
 	/* must be compound data type ... */
-	if (H5Tget_class(dtype_id) != H5T_COMPOUND) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Tget_class(dtype_id) != H5T_COMPOUND) {
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for attribute `%s'", key);
 	}
 
 	/* must have 2 members ... */
-	if (H5Tget_nmembers(dtype_id) != 2) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Tget_nmembers(dtype_id) != 2) {
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for attribute `%s'", key);
 	}
 
 	/* both members must be integer type ... */
-	if (H5Tget_member_class(dtype_id, 0) != H5T_INTEGER) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Tget_member_class(dtype_id, 0) != H5T_INTEGER) {
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for attribute `%s'", key);
 	}
-	if (H5Tget_member_class(dtype_id, 1) != H5T_INTEGER) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Tget_member_class(dtype_id, 1) != H5T_INTEGER) {
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for attribute `%s'", key);
 	}
 
 	/* FIXME: should also check member sizes? */
 
 	/* first member name must be "gpsSeconds" ... */
-	s = H5Tget_member_name(dtype_id, 0);
+	s = threadsafe_H5Tget_member_name(dtype_id, 0);
 	if (strcmp(s, "gpsSeconds") != 0) {
 		free(s);
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for attribute `%s'", key);
 	}
 	free(s);
 
 	/* second member name must be "gpsNanoSeconds" ... */
-	s = H5Tget_member_name(dtype_id, 1);
+	s = threadsafe_H5Tget_member_name(dtype_id, 1);
 	if (strcmp(s, "gpsNanoSeconds") != 0) {
 		free(s);
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for attribute `%s'", key);
 	}
 	free(s);
 
-	H5Tclose(dtype_id);
+	threadsafe_H5Tclose(dtype_id);
 
 	memtype_id = XLALH5TypeNativeLIGOTimeGPS();
 	if (memtype_id < 0) {
-		H5Aclose(attr_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not get native type of attribute `%s'", key);
 	}
 
-	if (H5Aread(attr_id, memtype_id, value) < 0) {
-		H5Tclose(memtype_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Aread(attr_id, memtype_id, value) < 0) {
+		threadsafe_H5Tclose(memtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not read data from attribute `%s'", key);
 	}
 
-	H5Tclose(memtype_id);
-	H5Aclose(attr_id);
+	threadsafe_H5Tclose(memtype_id);
+	threadsafe_H5Aclose(attr_id);
 	return value;
 #endif
 }
@@ -2138,38 +2141,38 @@ size_t XLALH5AttributeQueryEnumArray1DLength(const LALH5Generic UNUSED object, c
 	if (obj_id < 0)
 		XLAL_ERROR(XLAL_EINVAL);
 
-	attr_id = H5Aopen(obj_id, key, H5P_DEFAULT);
+	attr_id = threadsafe_H5Aopen(obj_id, key, H5P_DEFAULT);
 	if (attr_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read attribute `%s'", key);
 
-	dtype_id = H5Aget_type(attr_id);
+	dtype_id = threadsafe_H5Aget_type(attr_id);
 	if (dtype_id < 0) {
-		H5Aclose(attr_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read type of attribute `%s'", key);
 	}
 
 	/* must be array data type ... */
-	if (H5Tget_class(dtype_id) != H5T_ARRAY) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Tget_class(dtype_id) != H5T_ARRAY) {
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_ETYPE, "Incorrect data type for attribute `%s'", key);
 	}
 
 	/* must be a 1d array data type ... */
-	if (H5Tget_array_ndims(dtype_id) != 1) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Tget_array_ndims(dtype_id) != 1) {
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_ETYPE, "Incorrect data type for attribute `%s'", key);
 	}
 
-	if (H5Tget_array_dims2(dtype_id, dims) < 0) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Tget_array_dims2(dtype_id, dims) < 0) {
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_ETYPE, "Could not get array length of attribute `%s'", key);
 	}
 
-	H5Tclose(dtype_id);
-	H5Aclose(attr_id);
+	threadsafe_H5Tclose(dtype_id);
+	threadsafe_H5Aclose(attr_id);
 	return dims[0];
 #endif
 }
@@ -2208,38 +2211,38 @@ int XLALH5AttributeQueryEnumArray1DValue(int UNUSED value[], const LALH5Generic 
 	if (obj_id < 0)
 		XLAL_ERROR(XLAL_EINVAL);
 
-	attr_id = H5Aopen(obj_id, key, H5P_DEFAULT);
+	attr_id = threadsafe_H5Aopen(obj_id, key, H5P_DEFAULT);
 	if (attr_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read attribute `%s'", key);
 
-	dtype_id = H5Aget_type(attr_id);
+	dtype_id = threadsafe_H5Aget_type(attr_id);
 	if (dtype_id < 0) {
-		H5Aclose(attr_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read type of attribute `%s'", key);
 	}
 
 	/* must be array data type ... */
-	if (H5Tget_class(dtype_id) != H5T_ARRAY) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Tget_class(dtype_id) != H5T_ARRAY) {
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_ETYPE, "Incorrect data type for attribute `%s'", key);
 	}
 
 	/* must be a 1d array data type ... */
-	if (H5Tget_array_ndims(dtype_id) != 1) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Tget_array_ndims(dtype_id) != 1) {
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_ETYPE, "Incorrect data type for attribute `%s'", key);
 	}
 
-	if (H5Aread(attr_id, dtype_id, value) < 0) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+	if (threadsafe_H5Aread(attr_id, dtype_id, value) < 0) {
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_ETYPE, "Could not read data from attribute `%s'", key);
 	}
 
-	H5Tclose(dtype_id);
-	H5Aclose(attr_id);
+	threadsafe_H5Tclose(dtype_id);
+	threadsafe_H5Aclose(attr_id);
 	return 0;
 #endif
 }
@@ -2271,45 +2274,45 @@ size_t XLALH5AttributeQueryNEnum(const LALH5Generic UNUSED object, const char UN
 	if (obj_id < 0)
 		XLAL_ERROR(XLAL_EFUNC);
 
-	attr_id = H5Aopen(obj_id, key, H5P_DEFAULT);
+	attr_id = threadsafe_H5Aopen(obj_id, key, H5P_DEFAULT);
 	if (attr_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read attribute `%s'", key);
 
-	dtype_id = H5Aget_type(attr_id);
+	dtype_id = threadsafe_H5Aget_type(attr_id);
 	if (dtype_id < 0) {
-		H5Aclose(attr_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read type of attribute `%s'", key);
 	}
 
-	dtype_class = H5Tget_class(dtype_id);
+	dtype_class = threadsafe_H5Tget_class(dtype_id);
 	if (dtype_class == H5T_ARRAY) {
 		/* get base data type */
 		hid_t super_id;
-		super_id = H5Tget_super(dtype_id);
-		H5Tclose(dtype_id);
+		super_id = threadsafe_H5Tget_super(dtype_id);
+		threadsafe_H5Tclose(dtype_id);
 		dtype_id = super_id;
-		dtype_class = H5Tget_class(dtype_id);
+		dtype_class = threadsafe_H5Tget_class(dtype_id);
 	}
 	if (dtype_class == H5T_NO_CLASS) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read type class of attribute `%s'", key);
 	}
 	if (dtype_class != H5T_ENUM) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Attribute `%s' is not an enum type", key);
 	}
 
-	nenum = H5Tget_nmembers(dtype_id);
+	nenum = threadsafe_H5Tget_nmembers(dtype_id);
 	if (nenum < 0) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read number of enum constants of attribute `%s'", key);
 	}
 
-	H5Tclose(dtype_id);
-	H5Aclose(attr_id);
+	threadsafe_H5Tclose(dtype_id);
+	threadsafe_H5Aclose(attr_id);
 	return nenum;
 #endif
 }
@@ -2360,60 +2363,60 @@ int XLALH5AttributeQueryEnumName(char UNUSED *name, size_t UNUSED size, const LA
 	if (obj_id < 0)
 		XLAL_ERROR(XLAL_EFUNC);
 
-	attr_id = H5Aopen(obj_id, key, H5P_DEFAULT);
+	attr_id = threadsafe_H5Aopen(obj_id, key, H5P_DEFAULT);
 	if (attr_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read attribute `%s'", key);
 
-	dtype_id = H5Aget_type(attr_id);
+	dtype_id = threadsafe_H5Aget_type(attr_id);
 	if (dtype_id < 0) {
-		H5Aclose(attr_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read type of attribute `%s'", key);
 	}
 
-	dtype_class = H5Tget_class(dtype_id);
+	dtype_class = threadsafe_H5Tget_class(dtype_id);
 	if (dtype_class == H5T_ARRAY) {
 		/* get base data type */
 		hid_t super_id;
-		super_id = H5Tget_super(dtype_id);
-		H5Tclose(dtype_id);
+		super_id = threadsafe_H5Tget_super(dtype_id);
+		threadsafe_H5Tclose(dtype_id);
 		dtype_id = super_id;
-		dtype_class = H5Tget_class(dtype_id);
+		dtype_class = threadsafe_H5Tget_class(dtype_id);
 	}
 	if (dtype_class == H5T_NO_CLASS) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read type class of attribute `%s'", key);
 	}
 	if (dtype_class != H5T_ENUM) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Attribute `%s' is not an enum type", key);
 	}
 
-	nenum = H5Tget_nmembers(dtype_id);
+	nenum = threadsafe_H5Tget_nmembers(dtype_id);
 	if (nenum < 0) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read number of enum constants of attribute `%s'", key);
 	}
 	if (pos >= nenum) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EINVAL, "Requested enum constant of attribute `%s' does not exist", key);
 	}
 
-	s = H5Tget_member_name(dtype_id, pos);
+	s = threadsafe_H5Tget_member_name(dtype_id, pos);
 	if (s == NULL) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read enum constant name of attribute `%s'", key);
 	}
 
 	n = snprintf(name, name == NULL ? 0 : size, "%s", s);
 
 	free(s);
-	H5Tclose(dtype_id);
-	H5Aclose(attr_id);
+	threadsafe_H5Tclose(dtype_id);
+	threadsafe_H5Aclose(attr_id);
 	return n;
 #endif
 }
@@ -2448,57 +2451,57 @@ int XLALH5AttributeQueryEnumValue(const LALH5Generic UNUSED object, const char U
 	if (obj_id < 0)
 		XLAL_ERROR(XLAL_EFUNC);
 
-	attr_id = H5Aopen(obj_id, key, H5P_DEFAULT);
+	attr_id = threadsafe_H5Aopen(obj_id, key, H5P_DEFAULT);
 	if (attr_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read attribute `%s'", key);
 
-	dtype_id = H5Aget_type(attr_id);
+	dtype_id = threadsafe_H5Aget_type(attr_id);
 	if (dtype_id < 0) {
-		H5Aclose(attr_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read type of attribute `%s'", key);
 	}
 
-	dtype_class = H5Tget_class(dtype_id);
+	dtype_class = threadsafe_H5Tget_class(dtype_id);
 	if (dtype_class == H5T_ARRAY) {
 		/* get base data type */
 		hid_t super_id;
-		super_id = H5Tget_super(dtype_id);
-		H5Tclose(dtype_id);
+		super_id = threadsafe_H5Tget_super(dtype_id);
+		threadsafe_H5Tclose(dtype_id);
 		dtype_id = super_id;
-		dtype_class = H5Tget_class(dtype_id);
+		dtype_class = threadsafe_H5Tget_class(dtype_id);
 	}
 	if (dtype_class == H5T_NO_CLASS) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read type class of attribute `%s'", key);
 	}
 	if (dtype_class != H5T_ENUM) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Attribute `%s' is not an enum type", key);
 	}
 
-	nenum = H5Tget_nmembers(dtype_id);
+	nenum = threadsafe_H5Tget_nmembers(dtype_id);
 	if (nenum < 0) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read number of enum constants of attribute `%s'", key);
 	}
 	if (pos >= nenum) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EINVAL, "Requested enum constant of attribute `%s' does not exist", key);
 	}
 
-	if (H5Tget_member_value(dtype_id, pos, &val) < 0)
+	if (threadsafe_H5Tget_member_value(dtype_id, pos, &val) < 0)
 	{
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read enum constant value of attribute `%s'", key);
 	}
 
-	H5Tclose(dtype_id);
-	H5Aclose(attr_id);
+	threadsafe_H5Tclose(dtype_id);
+	threadsafe_H5Aclose(attr_id);
 	return val;
 #endif
 }
@@ -2577,15 +2580,15 @@ int XLALH5FileGetAttributeNames(LALH5File UNUSED *file, char UNUSED *** names, U
 	if (names == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-    na = H5Aget_num_attrs(file->file_id);
+    na = threadsafe_H5Aget_num_attrs(file->file_id);
     char ** namelist = (char**) XLALMalloc(na * sizeof(*names));
 
     for (i = 0; i <na; i++) {
-        aid = H5Aopen_idx(file->file_id, (unsigned int)i);
-        ns = H5Aget_name(aid, 0, NULL) + 1;
+        aid = threadsafe_H5Aopen_idx(file->file_id, (unsigned int)i);
+        ns = threadsafe_H5Aget_name(aid, 0, NULL) + 1;
         namelist[i] = (char*) XLALMalloc(ns * sizeof(namelist[i]));
-        H5Aget_name(aid, ns, namelist[i]);
-        H5Aclose(aid);
+        threadsafe_H5Aget_name(aid, ns, namelist[i]);
+        threadsafe_H5Aclose(aid);
     }
 
   *N=na;
@@ -3112,9 +3115,9 @@ LALH5Dataset * XLALH5TableAlloc(LALH5File UNUSED *file, const char UNUSED *name,
 
 	/* make empty table */
 	/* note: table title and dataset name are the same */
-	status = H5TBmake_table(name, file->file_id, name, ncols, 0, rowsz, cols, offsets, dtype_id, chunk_size, NULL, 0, NULL);
+	status = threadsafe_H5TBmake_table(name, file->file_id, name, ncols, 0, rowsz, cols, offsets, dtype_id, chunk_size, NULL, 0, NULL);
 	for (col = 0; col < ncols; ++col)
-		H5Tclose(dtype_id[col]);
+		threadsafe_H5Tclose(dtype_id[col]);
 
 	if (status < 0)
 		XLAL_ERROR_NULL(XLAL_EIO);
@@ -3126,30 +3129,30 @@ LALH5Dataset * XLALH5TableAlloc(LALH5File UNUSED *file, const char UNUSED *name,
 	if (!dset)
 		XLAL_ERROR_NULL(XLAL_ENOMEM);
 
-	dset->dataset_id = H5Dopen2(file->file_id, name, H5P_DEFAULT);
+	dset->dataset_id = threadsafe_H5Dopen2(file->file_id, name, H5P_DEFAULT);
 	if (dset->dataset_id < 0) {
 		LALFree(dset);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not read dataset `%s'", name);
 	}
 
-	dset->space_id = H5Dget_space(dset->dataset_id);
+	dset->space_id = threadsafe_H5Dget_space(dset->dataset_id);
 	if (dset->space_id < 0) {
 		LALFree(dset);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not read dataspace of dataset `%s'", name);
 	}
 
-	tdtype_id = H5Dget_type(dset->dataset_id);
+	tdtype_id = threadsafe_H5Dget_type(dset->dataset_id);
 	if (tdtype_id < 0) {
-		H5Sclose(dset->space_id);
+		threadsafe_H5Sclose(dset->space_id);
 		LALFree(dset);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not read datatype of dataset `%s'", name);
 	}
 
 	/* convert type to native type */
-	dset->dtype_id = H5Tget_native_type(tdtype_id, H5T_DIR_ASCEND);
-	H5Tclose(tdtype_id);
+	dset->dtype_id = threadsafe_H5Tget_native_type(tdtype_id, H5T_DIR_ASCEND);
+	threadsafe_H5Tclose(tdtype_id);
 	if (dset->dtype_id < 0) {
-		H5Sclose(dset->space_id);
+		threadsafe_H5Sclose(dset->space_id);
 		LALFree(dset);
 		XLAL_ERROR_NULL(XLAL_EIO, "Could not get native type for dataset `%s'", name);
 	}
@@ -3217,7 +3220,7 @@ int XLALH5TableAppend(LALH5Dataset UNUSED *dset, const size_t UNUSED *offsets, c
 	if (dset == NULL || offsets == NULL || colsz == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	if (H5TBappend_records(dset->parent_id, dset->name, nrows, rowsz, offsets, colsz, data) < 0)
+	if (threadsafe_H5TBappend_records(dset->parent_id, dset->name, nrows, rowsz, offsets, colsz, data) < 0)
 		XLAL_ERROR(XLAL_EIO);
 
 	return 0;
@@ -3271,7 +3274,7 @@ int XLALH5TableRead(void UNUSED *data, const LALH5Dataset UNUSED *dset, const si
 	if (data == NULL || dset == NULL || offsets == NULL || colsz == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	if (H5TBread_table(dset->parent_id, dset->name, rowsz, offsets, colsz, data) < 0)
+	if (threadsafe_H5TBread_table(dset->parent_id, dset->name, rowsz, offsets, colsz, data) < 0)
 		XLAL_ERROR(XLAL_EIO);
 
 	return 0;
@@ -3328,7 +3331,7 @@ int XLALH5TableReadRows(void UNUSED *data, const LALH5Dataset UNUSED *dset, cons
 	if (data == NULL || dset == NULL || offsets == NULL || colsz == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	if (H5TBread_records(dset->parent_id, dset->name, row0, nrows, rowsz, offsets, colsz, data) < 0)
+	if (threadsafe_H5TBread_records(dset->parent_id, dset->name, row0, nrows, rowsz, offsets, colsz, data) < 0)
 		XLAL_ERROR(XLAL_EIO);
 
 	return 0;
@@ -3386,7 +3389,7 @@ int XLALH5TableReadColumns(void UNUSED *data, const LALH5Dataset UNUSED *dset, c
 	if (data == NULL || dset == NULL || offsets == NULL || colsz == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	if (H5TBread_fields_name(dset->parent_id, dset->name, cols, row0, nrows, rowsz, offsets, colsz, data) < 0)
+	if (threadsafe_H5TBread_fields_name(dset->parent_id, dset->name, cols, row0, nrows, rowsz, offsets, colsz, data) < 0)
 		XLAL_ERROR(XLAL_EIO);
 
 	return 0;
@@ -3410,7 +3413,7 @@ size_t XLALH5TableQueryNRows(const LALH5Dataset UNUSED *dset)
 	if (dset == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	if (H5TBget_table_info(dset->parent_id, dset->name, NULL, &nrows) < 0)
+	if (threadsafe_H5TBget_table_info(dset->parent_id, dset->name, NULL, &nrows) < 0)
 		XLAL_ERROR(XLAL_EIO);
 
 	return nrows;
@@ -3434,7 +3437,7 @@ size_t XLALH5TableQueryNColumns(const LALH5Dataset UNUSED *dset)
 	if (dset == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	if (H5TBget_table_info(dset->parent_id, dset->name, &ncols, NULL) < 0)
+	if (threadsafe_H5TBget_table_info(dset->parent_id, dset->name, &ncols, NULL) < 0)
 		XLAL_ERROR(XLAL_EIO);
 
 	return ncols;
@@ -3459,7 +3462,7 @@ size_t XLALH5TableQueryRowSize(const LALH5Dataset UNUSED *dset)
 	if (dset == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	if (H5TBget_field_info(dset->parent_id, dset->name, NULL, NULL, NULL, &rowsz) < 0)
+	if (threadsafe_H5TBget_field_info(dset->parent_id, dset->name, NULL, NULL, NULL, &rowsz) < 0)
 		XLAL_ERROR(XLAL_EIO);
 
 	return rowsz;
@@ -3505,14 +3508,14 @@ int XLALH5TableQueryColumnName(char UNUSED *name, size_t UNUSED size, const LALH
 	if (dset == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	ncols = H5Tget_nmembers(dset->dtype_id);
+	ncols = threadsafe_H5Tget_nmembers(dset->dtype_id);
 	if (ncols < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read type members");
 
 	if (ncols <= pos)
 		XLAL_ERROR(XLAL_EINVAL, "Requested column does not exist");
 
-	col = H5Tget_member_name(dset->dtype_id, pos);
+	col = threadsafe_H5Tget_member_name(dset->dtype_id, pos);
 	if (col == NULL)
 		XLAL_ERROR(XLAL_EIO, "Could not read column name");
 
@@ -3545,32 +3548,32 @@ size_t XLALH5TableQueryColumnSize(const LALH5Dataset UNUSED *dset, int UNUSED po
 	if (dset == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	ncols = H5Tget_nmembers(dset->dtype_id);
+	ncols = threadsafe_H5Tget_nmembers(dset->dtype_id);
 	if (ncols < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read type members");
 
 	if (ncols <= pos)
 		XLAL_ERROR(XLAL_EINVAL, "Requested column does not exist");
 
-	member_type_id = H5Tget_member_type(dset->dtype_id, pos);
+	member_type_id = threadsafe_H5Tget_member_type(dset->dtype_id, pos);
 	if (member_type_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read column type");
 
-	native_member_type_id = H5Tget_native_type(member_type_id, H5T_DIR_DEFAULT);
+	native_member_type_id = threadsafe_H5Tget_native_type(member_type_id, H5T_DIR_DEFAULT);
 	if (native_member_type_id < 0) {
-		H5Tclose(member_type_id);
+		threadsafe_H5Tclose(member_type_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read column native type");
 	}
 
-	size = H5Tget_size(native_member_type_id);
+	size = threadsafe_H5Tget_size(native_member_type_id);
 	if (size == 0) {
-		H5Tclose(native_member_type_id);
-		H5Tclose(member_type_id);
+		threadsafe_H5Tclose(native_member_type_id);
+		threadsafe_H5Tclose(member_type_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read column size");
 	}
 
-	H5Tclose(native_member_type_id);
-	H5Tclose(member_type_id);
+	threadsafe_H5Tclose(native_member_type_id);
+	threadsafe_H5Tclose(member_type_id);
 
 	return size;
 #endif
@@ -3598,19 +3601,19 @@ LALTYPECODE XLALH5TableQueryColumnType(const LALH5Dataset UNUSED *dset, int UNUS
 	if (dset == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	ncols = H5Tget_nmembers(dset->dtype_id);
+	ncols = threadsafe_H5Tget_nmembers(dset->dtype_id);
 	if (ncols < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read type members");
 
 	if (ncols <= pos)
 		XLAL_ERROR(XLAL_EINVAL, "Requested column does not exist");
 
-	member_type_id = H5Tget_member_type(dset->dtype_id, pos);
+	member_type_id = threadsafe_H5Tget_member_type(dset->dtype_id, pos);
 	if (member_type_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read column type");
 
 	type = XLALTypeFromH5Type(member_type_id);
-	H5Tclose(member_type_id);
+	threadsafe_H5Tclose(member_type_id);
 
 	if ((int)type < 0)
 		XLAL_ERROR(XLAL_EFUNC);
@@ -3639,7 +3642,7 @@ size_t XLALH5TableQueryColumnOffset(const LALH5Dataset UNUSED *dset, int UNUSED 
 	if (dset == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	ncols = H5Tget_nmembers(dset->dtype_id);
+	ncols = threadsafe_H5Tget_nmembers(dset->dtype_id);
 	if (ncols < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read type members");
 
@@ -3647,10 +3650,10 @@ size_t XLALH5TableQueryColumnOffset(const LALH5Dataset UNUSED *dset, int UNUSED 
 		XLAL_ERROR(XLAL_EINVAL, "Requested column does not exist");
 
 	/* H5Tget_member_offset fails iff H5Tget_member_class does */
-	if (H5Tget_member_class(dset->dtype_id, pos) < 0)
+	if (threadsafe_H5Tget_member_class(dset->dtype_id, pos) < 0)
 		XLAL_ERROR(XLAL_EINVAL, "Could not read offset");
 
-	offset = H5Tget_member_offset(dset->dtype_id, pos);
+	offset = threadsafe_H5Tget_member_offset(dset->dtype_id, pos);
 	return offset;
 #endif
 }

@@ -553,7 +553,7 @@ static INT4 EOBNRv2HMROM_Init_LALDATA(void) {
     XLALPrintError("XLAL Error: the environment variable LAL_DATA_PATH, giving the path to the ROM data, seems undefined\n");
     return(XLAL_FAILURE);
   }
-  strncpy(path,envpath,sizeof(path));
+  strncpy(path,envpath,sizeof(path)-1);
 
   for(word=strtok_r(path,":",&brkt); word; word=strtok_r(NULL,":",&brkt))
   {

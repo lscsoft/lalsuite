@@ -3,7 +3,7 @@
 # successfully.
 
 wheel: setup.py
-	$(MAKE) prefix=$(abs_builddir)/build/inst -C .. install-strip && \
+	$(MAKE) prefix=$(abs_builddir)/build/inst pkgdatadir=$(abs_builddir)/build/inst/share -C .. install-strip && \
 	$(PYTHON) setup.py bdist_wheel -d .
 
 clean-local:
