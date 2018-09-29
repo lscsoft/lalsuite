@@ -278,6 +278,8 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, i
     */
     /* const double umax = xmax - vmax; */ /* unused */
 
+    if(cosmology) dVC_dVL_init();
+    
     int interrupted=0;
     OMP_BEGIN_INTERRUPTIBLE
     integrator = malloc(sizeof(*integrator));
