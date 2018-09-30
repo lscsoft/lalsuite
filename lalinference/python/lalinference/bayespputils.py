@@ -146,7 +146,7 @@ energyParams=['e_rad', 'l_peak']
 strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+eosParams+energyParams
 
 #Extrinsic
-distParams=['distance','distMPC','dist']
+distParams=['distance','distMPC','dist','distance_maxl']
 incParams=['iota','inclination','cosiota']
 polParams=['psi','polarisation','polarization']
 skyParams=['ra','rightascension','declination','dec']

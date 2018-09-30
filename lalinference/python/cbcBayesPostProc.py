@@ -729,7 +729,7 @@ def cbcBayesPostProc(
     if not os.path.isdir(cornerdir):
       os.makedirs(cornerdir)
     massParams=['mtotal','m1','m2','mc']
-    distParams=['distance','distMPC','dist']
+    distParams=['distance','distMPC','dist','distance_maxl']
     incParams=['iota','inclination','theta_jn']
     polParams=['psi','polarisation','polarization']
     skyParams=['ra','rightascension','declination','dec']
