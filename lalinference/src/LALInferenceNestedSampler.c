@@ -508,7 +508,7 @@ static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
 	UINT4 Nlive = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
 	UINT4 rnd=gsl_rng_uniform_int(runState->GSLrandom,Nlive);
       /* Single threaded here */
-	LALInferenceCopyVariables(runState->livePoints[rnd],runState->threads[0]->currentParams);
+	LALInferenceCopyVariables(runState->livePoints[rnd],runState->threads[0].currentParams);
         LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max, LALInferenceNestedSamplingSloppySample) ;
         max=10;
         for(LALInferenceVariableItem *this=acls->head;this;this=this->next) {
@@ -528,7 +528,7 @@ static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
     }
     /* Single threaded here */
     if (LALInferenceGetProcParamVal(runState->commandLine,"--proposal-kde"))
-        LALInferenceSetupClusteredKDEProposalFromDEBuffer(runState->threads[0]);
+        LALInferenceSetupClusteredKDEProposalFromDEBuffer(&runState->threads[0]);
     return(max);
 }
 
@@ -730,7 +730,7 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
   REAL8 tmp=0;
 
   /* Single thread only */
-  LALInferenceThreadState *threadState = runState->threads[0];
+  LALInferenceThreadState *threadState = &runState->threads[0];
 
   /* Set up the appropriate functions for the nested sampling algorithm */
   runState->algorithm=&LALInferenceNestedSamplingAlgorithm;
@@ -816,7 +816,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 {
   UINT4 iter=0,i,j,minpos;
   /* Single thread here */
-  LALInferenceThreadState *threadState = runState->threads[0];
+  LALInferenceThreadState *threadState = &runState->threads[0];
   UINT4 HDFOUTPUT=1;
   UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   UINT4 Nruns=100;
@@ -1250,7 +1250,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations, LALInferenceEvolveOneStepFunction evolve)
 {
   /* Single threaded here */
-  LALInferenceThreadState *threadState = runState->threads[0];
+  LALInferenceThreadState *threadState = &runState->threads[0];
   ProcessParamsTable *ppt=NULL;
   char chainfilename[2048]="";
   char acf_file_name[2048]="";
@@ -1430,7 +1430,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
 UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
 {
     /* Single threaded here */
-    LALInferenceThreadState * threadState=runState->threads[0];
+    LALInferenceThreadState * threadState=&runState->threads[0];
     UINT4 outOfBounds=0;
     UINT4 adaptProp=0;
     //LALInferenceVariables tempParams;
@@ -1522,7 +1522,7 @@ INT4 LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState)
 {
   INT4 Naccept=0;
   /* Single thread here */
-  LALInferenceThreadState *threadState = runState->threads[0];
+  LALInferenceThreadState *threadState = &runState->threads[0];
   if(!LALInferenceCheckVariable(runState->algorithmParams,"proposalcache") || !LALInferenceCheckVariable(runState->algorithmParams,"proposalcachesize"))
   {
     fprintf(stderr,"Adding cache variables in the sampler\n");
@@ -1578,7 +1578,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
 {
     LALInferenceVariables oldParams;
     /* Single thread here */
-    LALInferenceThreadState *threadState = runState->threads[0];
+    LALInferenceThreadState *threadState = &runState->threads[0];
     LALInferenceIFOData *data=runState->data;
     REAL8 tmp;
     REAL8 Target=0.3;
@@ -1724,7 +1724,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	 by copying runState->currentParams to all entries in the array*/
 
     /* Single thread here */
-    LALInferenceThreadState *threadState = runState->threads[0];
+    LALInferenceThreadState *threadState = &runState->threads[0];
 
 	UINT4 Nlive=(UINT4)*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
 	UINT4 i;
@@ -1771,7 +1771,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 static void SetupEigenProposals(LALInferenceRunState *runState)
 {
   /* Single thread here */
-  LALInferenceThreadState *threadState = runState->threads[0];
+  LALInferenceThreadState *threadState = &runState->threads[0];
   gsl_matrix *eVectors=NULL;
   gsl_vector *eValues =NULL;
   REAL8Vector *eigenValues=NULL;

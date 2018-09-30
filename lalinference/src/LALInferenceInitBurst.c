@@ -61,7 +61,7 @@ void LALInferenceInitBurstThreads(LALInferenceRunState *run_state, INT4 nthreads
   run_state->threads = LALInferenceInitThreads(nthreads);
 
   for (t = 0; t < nthreads; t++) {
-    thread = run_state->threads[t];
+    thread = &(run_state->threads[t]);
 
     /* Set up CBC model and parameter array */
     thread->model = LALInferenceInitBurstModel(run_state);

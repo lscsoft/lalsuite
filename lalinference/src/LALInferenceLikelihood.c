@@ -127,7 +127,7 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
     ProcessParamsTable *commandLine=runState->commandLine;
     ifo=runState->data;
 
-    LALInferenceThreadState *thread = runState->threads[0];
+    LALInferenceThreadState *thread = &(runState->threads[0]);
 
     REAL8 nullLikelihood = 0.0; // Populated if such a thing exists
 
@@ -185,14 +185,14 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
        runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood ||
        runState->likelihood==&LALInferenceMarginalisedTimePhaseLogLikelihood) {
 
-       void *oldtemplate = runState->threads[0]->model->templt;
-       if (runState->threads[0]->model->domain == LAL_SIM_DOMAIN_FREQUENCY) {
-         runState->threads[0]->model->templt = &LALInferenceTemplateNullFreqdomain;
+       void *oldtemplate = runState->threads[0].model->templt;
+       if (runState->threads[0].model->domain == LAL_SIM_DOMAIN_FREQUENCY) {
+         runState->threads[0].model->templt = &LALInferenceTemplateNullFreqdomain;
        } else {
-         runState->threads[0]->model->templt = &LALInferenceTemplateNullTimedomain;
+         runState->threads[0].model->templt = &LALInferenceTemplateNullTimedomain;
        }
        nullLikelihood = runState->likelihood(thread->currentParams, runState->data, thread->model);
-       runState->threads[0]->model->templt = oldtemplate;
+       runState->threads[0].model->templt = oldtemplate;
 
    }
 
@@ -211,7 +211,7 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
 
    INT4 t;
    for(t=0; t < runState->nthreads; t++)
-       runState->threads[t]->nullLikelihood = nullLikelihood;
+       runState->threads[t].nullLikelihood = nullLikelihood;
 
    LALInferenceAddVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood,
                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);

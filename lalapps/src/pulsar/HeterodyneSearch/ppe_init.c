@@ -281,7 +281,7 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
   ProcessParamsTable *ppt;
   ProcessParamsTable *commandLine = runState->commandLine;
   /* Single thread here */
-  LALInferenceThreadState *threadState = runState->threads[0];
+  LALInferenceThreadState *threadState = &runState->threads[0];
 
   LALInferenceIFOData *data = runState->data;
   LALInferenceIFOModel *ifo_model = threadState->model->ifo;
@@ -578,7 +578,7 @@ void initialise_prior( LALInferenceRunState *runState )
 {
   CHAR *propfile = NULL;
   /* Single thread here */
-  LALInferenceThreadState *threadState = runState->threads[0];
+  LALInferenceThreadState *threadState = &runState->threads[0];
   ProcessParamsTable *ppt;
   ProcessParamsTable *commandLine = runState->commandLine;
 
@@ -892,7 +892,7 @@ void initialise_proposal( LALInferenceRunState *runState ){
   }
 
   /* Single thread here */
-  LALInferenceThreadState *threadState = runState->threads[0];
+  LALInferenceThreadState *threadState = &runState->threads[0];
   threadState->cycle = LALInferenceInitProposalCycle();
   LALInferenceProposalCycle *cycle=threadState->cycle;
   /* add proposals */
@@ -1043,7 +1043,7 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
  */
 void sum_data( LALInferenceRunState *runState ){
   LALInferenceIFOData *data = runState->data;
-  LALInferenceIFOModel *ifomodel = runState->threads[0]->model->ifo;
+  LALInferenceIFOModel *ifomodel = runState->threads[0].model->ifo;
 
   UINT4 gaussianLike = 0, roq = 0, nonGR = 0;
 
@@ -1619,7 +1619,7 @@ void initialise_threads(LALInferenceRunState *state, INT4 nthreads){
   INT4 i,randomseed;
   LALInferenceThreadState *thread;
   for (i=0; i<nthreads; i++){
-    thread=state->threads[i];
+    thread=&state->threads[i];
     //LALInferenceCopyVariables(thread->model->params, thread->currentParams);
     LALInferenceCopyVariables(state->priorArgs, thread->priorArgs);
     LALInferenceCopyVariables(state->proposalArgs, thread->proposalArgs);

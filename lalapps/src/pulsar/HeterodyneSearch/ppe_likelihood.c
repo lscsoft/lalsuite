@@ -331,7 +331,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
  */
 REAL8 noise_only_likelihood( LALInferenceRunState *runState ){
   /* Single thread code */
-  LALInferenceThreadState *threadState=runState->threads[0];
+  LALInferenceThreadState *threadState=&runState->threads[0];
   LALInferenceIFOData *data = runState->data;
   LALInferenceIFOModel *ifo = threadState->model->ifo;
 
@@ -440,7 +440,7 @@ REAL8 noise_only_likelihood( LALInferenceRunState *runState ){
  */
 REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *params, UNUSED LALInferenceModel *model ){
   /* Single thread */
-  LALInferenceThreadState *threadState=runState->threads[0];
+  LALInferenceThreadState *threadState=&runState->threads[0];
   LALInferenceIFOModel *ifo = threadState->model->ifo;
   (void)runState;
   LALInferenceVariableItem *item = params->head;
@@ -726,7 +726,7 @@ void ns_to_posterior( LALInferenceRunState *runState ){
  * \param runState [in] A pointer to the LALInferenceRunState
  */
 void create_kdtree_prior( LALInferenceRunState *runState ){
-  LALInferenceThreadState *threadState = runState->threads[0];
+  LALInferenceThreadState *threadState = &runState->threads[0];
   LALInferenceKDTree *priortree = NULL;
   LALInferenceVariables **posterior = NULL; /* use these samples as prior */
   UINT4 nsamp = 0, i = 0, cnt = 0;

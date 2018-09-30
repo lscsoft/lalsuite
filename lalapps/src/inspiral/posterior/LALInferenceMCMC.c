@@ -323,7 +323,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
 
     /* Give a new set of proposal args to each thread */
     for (i=0; i<runState->nthreads; i++) {
-        thread = runState->threads[i];
+        thread = &runState->threads[i];
 
         thread->id = mpi_rank*ntemps_per_thread + i;
         thread->temperature = ladder[thread->id];
@@ -360,7 +360,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
 
     /* Set counters to negative numbers, indicating adaptation is happening */
     for (i=0; i<runState->nthreads; i++)
-        runState->threads[i]->step = -adaptLength;
+        runState->threads[i].step = -adaptLength;
 
     XLALFree(ladder);
     return XLAL_SUCCESS;

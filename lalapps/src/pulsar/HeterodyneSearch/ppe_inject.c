@@ -46,7 +46,7 @@
  */
 void inject_signal( LALInferenceRunState *runState ){
   LALInferenceIFOData *data = runState->data;
-  LALInferenceIFOModel *ifo_model = runState->threads[0]->model->ifo;
+  LALInferenceIFOModel *ifo_model = runState->threads[0].model->ifo;
 
   CHAR *injectfile = NULL, *snrfile = NULL;
   ProcessParamsTable *ppt;
@@ -133,8 +133,8 @@ void inject_signal( LALInferenceRunState *runState ){
   }
 
   /* check the number of frequency and frequency derivative parameters (add DELTAF parameter) */
-  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "FREQNUM" ) ){
-    UINT4 freqnum = LALInferenceGetUINT4Variable(runState->threads[0]->currentParams, "FREQNUM" );
+  if ( LALInferenceCheckVariable( runState->threads[0].currentParams, "FREQNUM" ) ){
+    UINT4 freqnum = LALInferenceGetUINT4Variable(runState->threads[0].currentParams, "FREQNUM" );
     REAL8Vector *deltafreqs = XLALCreateREAL8Vector( freqnum );
     const REAL8Vector *freqs = NULL;
     REAL8Vector *freqsnew = NULL;
@@ -163,7 +163,7 @@ void inject_signal( LALInferenceRunState *runState ){
     for ( UINT4 i = 0; i < freqnum; i++ ){
       CHAR varname[256];
       snprintf(varname, sizeof(varname), "F%u_FIXED", i);
-      REAL8 f0fixed = LALInferenceGetREAL8Variable( runState->threads[0]->currentParams, varname );
+      REAL8 f0fixed = LALInferenceGetREAL8Variable( runState->threads[0].currentParams, varname );
       deltafreqs->data[i] = freqs->data[i]-f0fixed; /* frequency (derivative) difference */
     }
     PulsarAddREAL8VectorParam( injpars, "DELTAF", (const REAL8Vector*)deltafreqs );
@@ -198,7 +198,7 @@ void inject_signal( LALInferenceRunState *runState ){
     }
     ifo_model = ifo_model->next;
   }
-  ifo_model = runState->threads[0]->model->ifo;
+  ifo_model = runState->threads[0].model->ifo;
 
   /* check whether to inject a non-GR signal (the default will ALWAYS be GR) */
   UINT4 nonGR_search = LALInferenceCheckVariable( ifo_model->params, "nonGR" );
@@ -217,7 +217,7 @@ void inject_signal( LALInferenceRunState *runState ){
         LALInferenceAddVariable( ifo_model->params, "nonGR", &nonGRval, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
         ifo_model = ifo_model->next;
       }
-      ifo_model = runState->threads[0]->model->ifo;
+      ifo_model = runState->threads[0].model->ifo;
       /* setup nonGR lookup tables */
       LALSource psr;
       psr.equatorialCoords.longitude = PulsarGetREAL8ParamOrZero( injpars, "RA" );
@@ -236,7 +236,7 @@ void inject_signal( LALInferenceRunState *runState ){
       LALInferenceRemoveVariable(ifo_model->params, "nonGR");
       ifo_model = ifo_model->next;
     }
-    ifo_model = runState->threads[0]->model->ifo;
+    ifo_model = runState->threads[0].model->ifo;
   }
 
   pulsar_model( injpars, ifo_model );
@@ -247,7 +247,7 @@ void inject_signal( LALInferenceRunState *runState ){
   fprintf(fpsnr, "# Injected SNR\n");
 
   /* reset model to head */
-  ifo_model = runState->threads[0]->model->ifo;
+  ifo_model = runState->threads[0].model->ifo;
 
   /* calculate SNRs */
   while ( data ){
@@ -284,7 +284,7 @@ void inject_signal( LALInferenceRunState *runState ){
     PulsarAddParam( injpars, "C21", &C21, PULSARTYPE_REAL8_t );
 
     /* reset to head */
-    ifo_model = runState->threads[0]->model->ifo;
+    ifo_model = runState->threads[0].model->ifo;
     data = runState->data;
 
     pulsar_model( injpars, ifo_model );
@@ -296,7 +296,7 @@ void inject_signal( LALInferenceRunState *runState ){
     snrmulti = 0;
     ndats = 0;
 
-    ifo_model = runState->threads[0]->model->ifo;
+    ifo_model = runState->threads[0].model->ifo;
 
     while( data ){
       REAL8 snrval = 0.;
@@ -324,7 +324,7 @@ void inject_signal( LALInferenceRunState *runState ){
   fclose( fpsnr );
 
   data = runState->data;
-  ifo_model = runState->threads[0]->model->ifo;
+  ifo_model = runState->threads[0].model->ifo;
 
   /* add signal to data */
   while( data ){
@@ -393,7 +393,7 @@ void inject_signal( LALInferenceRunState *runState ){
   }
 
   /* reset nonGR status */
-  ifo_model = runState->threads[0]->model->ifo;
+  ifo_model = runState->threads[0].model->ifo;
   if ( nonGR_search ){
     if ( !nonGR_injection ){
       UINT4 nonGRval = 1;
@@ -401,7 +401,7 @@ void inject_signal( LALInferenceRunState *runState ){
         LALInferenceAddVariable( ifo_model->params, "nonGR", &nonGRval, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
         ifo_model = ifo_model->next;
       }
-      ifo_model = runState->threads[0]->model->ifo;
+      ifo_model = runState->threads[0].model->ifo;
     }
   }
   else {
@@ -409,14 +409,14 @@ void inject_signal( LALInferenceRunState *runState ){
       LALInferenceRemoveVariable(ifo_model->params, "nonGR");
       ifo_model = ifo_model->next;
     }
-    ifo_model = runState->threads[0]->model->ifo;
+    ifo_model = runState->threads[0].model->ifo;
   }
 
   UINT4 outputchunks = 0, chunkMin = 0, chunkMax = 0;
   INT4 inputsigma = 0;
   if ( LALInferenceGetProcParamVal( commandLine, "--output-chunks" ) ){ outputchunks = 1; }
 
-  ifo_model = runState->threads[0]->model->ifo;
+  ifo_model = runState->threads[0].model->ifo;
   data = runState->data;
   while ( ifo_model ){
     UINT4Vector *chunkLength = NULL;
@@ -628,7 +628,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
 
   LALInferenceVariables *loudestParams = NULL;
   LALInferenceIFOData *data = runState->data;
-  LALInferenceIFOModel *ifo_model = runState->threads[0]->model->ifo;
+  LALInferenceIFOModel *ifo_model = runState->threads[0].model->ifo;
 
   loudestParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
 
@@ -677,7 +677,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   }
 
   /* make sure that the signal model in runState->data is that of the loudest signal */
-  REAL8 logLnew = runState->likelihood( loudestParams, runState->data, runState->threads[0]->model );
+  REAL8 logLnew = runState->likelihood( loudestParams, runState->data, runState->threads[0].model );
 
   if ( !roq ) {
     /* we don't expect exactly identical likelihoods if using ROQ */
@@ -722,7 +722,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
 
   /* get SNR of loudest point and print out to file */
   data = runState->data;
-  ifo_model = runState->threads[0]->model->ifo;
+  ifo_model = runState->threads[0].model->ifo;
 
   //FILE *fp = NULL;
   //fp = fopen("max_like_signal.txt", "w");
