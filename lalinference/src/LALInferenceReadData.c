@@ -210,7 +210,7 @@ static LALCache *GlobFramesPWD(char *ifo)
                         fprintf(stderr,"(%s,%s,%s)\n",frGlobCache->list[i].src,frGlobCache->list[i].dsc,frGlobCache->list[i].url);
         frInCache = XLALCacheDuplicate(frGlobCache);
         XLALCacheSieve(frInCache, 0, 0, ifoRegExPattern, NULL, NULL);
-        if ( ! frGlobCache->length )
+        if ( ! frInCache->length )
         {
             fprintf( stderr, "error: no frame file files found after sieving\n");
             exit( 1 );
@@ -222,7 +222,7 @@ static LALCache *GlobFramesPWD(char *ifo)
                         fprintf(stderr,"(%s,%s,%s)\n",frInCache->list[i].src,frInCache->list[i].dsc,frInCache->list[i].url);
         }
 
-        return(frGlobCache);
+        return(frInCache);
 }
 
 static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS start, REAL8 length)
