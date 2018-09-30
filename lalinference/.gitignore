@@ -107,7 +107,6 @@ src/lalinference_burst
 src/lalinference_datadump
 src/lalinference_injectedlike
 src/lalinference_nest
-src/lalinference_injectedlike
 src/lalinference_version
 src/stamp-h1
 src/stamp-h2
