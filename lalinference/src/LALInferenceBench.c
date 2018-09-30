@@ -72,20 +72,20 @@ void bench_likelihood(LALInferenceRunState *runState,UINT4 Niter)
   struct rusage r_usage_start,r_usage_end;
   
   /* Clear the template */
-  LALInferenceTemplateNullFreqdomain(runState->threads[0]->model);
+  LALInferenceTemplateNullFreqdomain(runState->threads[0].model);
   
-  LALInferenceTemplateFunction old_templt=runState->threads[0]->model->templt;
-  runState->threads[0]->model->templt=LALInferenceTemplateNoop;
+  LALInferenceTemplateFunction old_templt=runState->threads[0].model->templt;
+  runState->threads[0].model->templt=LALInferenceTemplateNoop;
   
   fprintf(stdout,"Benchmarking likelihood:\n");
   getrusage(RUSAGE_SELF, &r_usage_start);
   for(i=0;i<Niter;i++)
   {
-    runState->likelihood(runState->threads[0]->model->params,runState->data, runState->threads[0]->model);
+    runState->likelihood(runState->threads[0].model->params,runState->data, runState->threads[0].model);
   }
   getrusage(RUSAGE_SELF, &r_usage_end);
   fprintf_bench(stdout, r_usage_start, r_usage_end, Niter);
-  runState->threads[0]->model->templt=old_templt;
+  runState->threads[0].model->templt=old_templt;
   
 }
 
@@ -98,7 +98,7 @@ void bench_template(LALInferenceRunState *runState, UINT4 Niter)
   getrusage(RUSAGE_SELF, &r_usage_start);
   for(i=0;i<Niter;i++)
   {
-    runState->threads[0]->model->templt(runState->threads[0]->model);
+    runState->threads[0].model->templt(runState->threads[0].model);
   }
   getrusage(RUSAGE_SELF, &r_usage_end);
   fprintf_bench(stdout, r_usage_start, r_usage_end, Niter);
@@ -144,12 +144,12 @@ int main(int argc, char *argv[]){
   LALInferenceInitLikelihood(runState);
 
   /* Disable waveform caching */
-  runState->threads[0]->model->waveformCache=NULL;
+  runState->threads[0].model->waveformCache=NULL;
   
   if(bench_T)
   {
     printf("Template test will run with parameters:\n");
-    LALInferencePrintVariables(runState->threads[0]->model->params);
+    LALInferencePrintVariables(runState->threads[0].model->params);
     printf("\n");
 
     bench_template(runState,Niter);

@@ -609,13 +609,14 @@ tagLALInferenceRunState
   LALInferenceVariables              *priorArgs,     /** Any special arguments for the prior function */
     *algorithmParams;                                /** Parameters which control the running of the algorithm*/
   LALInferenceVariables				**livePoints; /** Array of live points for Nested Sampling */
-  LALInferenceThreadState          **threads; /** Array of chains for this run */
   INT4 nthreads; /** Number of threads stored in ``threads``. */
   LALInferenceSwapRoutine  parallelSwap;
   gsl_rng *GSLrandom;
   char *outFileName; /** Name for thread's output file */
   char *resumeOutFileName; /** Name for thread's resume file */
   char runID[VARNAME_MAX];
+  LALInferenceThreadState          *threads; /** Array of chains for this run */
+
 } LALInferenceRunState;
 
 
@@ -740,10 +741,10 @@ tagLALInferenceROQModel
  * Structure to contain data-related Reduced Order Quadrature quantities
  */
 /* Initialize an empty thread, saving a timestamp for benchmarking */
-LALInferenceThreadState *LALInferenceInitThread(void);
+LALInferenceThreadState *LALInferenceInitThread(LALInferenceThreadState *thread);
 
 /* Initialize a bunch of threads using LALInferenceInitThread */
-LALInferenceThreadState **LALInferenceInitThreads(INT4 nthreads);
+LALInferenceThreadState *LALInferenceInitThreads(INT4 nthreads);
 
 /** Returns the element of the process params table with "name" */
 ProcessParamsTable *LALInferenceGetProcParamVal(ProcessParamsTable *procparams,const char *name);
