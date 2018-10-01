@@ -26,6 +26,7 @@
 #include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/Random.h>
+#include <lal/LALString.h>
 
 /**
  * \file
@@ -296,7 +297,7 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
     REPORTSTATUS (status);
   }
 
-  if (strncpy (str, ignored, sizeof (str)))
+  if (XLALStringCopy(str, ignored, sizeof(str)))
   {
     if ((tok = strtok (str, " ")))
     {
