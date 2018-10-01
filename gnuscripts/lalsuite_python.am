@@ -39,6 +39,7 @@ pymodule-mostlyclean-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
 		for file in $(pymodule_PYTHON); do \
 			if test -r "$(srcdir)/$${file}"; then \
+				echo " rm -f $(builddir)/$${file} $(builddir)/$${file}c $(builddir)/$${file}o"; \
 				rm -f "$(builddir)/$${file}" "$(builddir)/$${file}c" "$(builddir)/$${file}o" || exit 1; \
 			fi; \
 		done; \
@@ -47,6 +48,7 @@ pyscripts-mostlyclean-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
 		for file in $(pybin_scripts); do \
 			if test -r "$(srcdir)/$${file}.py"; then \
+				echo " rm -f $(builddir)/$${file}.py"; \
 				rm -f "$(builddir)/$${file}.py" || exit 1; \
 			fi; \
 		done; \
