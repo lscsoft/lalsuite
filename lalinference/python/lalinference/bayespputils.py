@@ -62,6 +62,7 @@ import socket
 from itertools import combinations
 from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
 import re
+import six
 
 try:
     import lalsimulation as lalsim
@@ -4185,9 +4186,9 @@ def getRAString(radians,accuracy='auto'):
     if mins>=59.5:
         mins=mins-60
         hours=hours+1
-    if accuracy=='hour': return ur'%ih'%(hours)
-    if accuracy=='min': return ur'%ih%im'%(hours,mins)
-    if accuracy=='sec': return ur'%ih%im%2.0fs'%(hours,mins,secs)
+    if accuracy=='hour': return six.u(r'%ih'%(hours))
+    if accuracy=='min': return six.u(r'%ih%im'%(hours,mins))
+    if accuracy=='sec': return six.u(r'%ih%im%2.0fs'%(hours,mins,secs))
     else:
         if abs(fmod(secs,60.0))>=0.5: return(getRAString(radians,accuracy='sec'))
         if abs(fmod(mins,60.0))>=0.5: return(getRAString(radians,accuracy='min'))
@@ -4218,9 +4219,9 @@ def getDecString(radians,accuracy='auto'):
     #    deg=deg+1
     if (accuracy=='arcmin' or accuracy=='deg') and secs>30: mins=mins+1
     if accuracy=='deg' and mins>30: deg=deg+1
-    if accuracy=='deg': return ur'%i'%(sign*deg)+degsymb
-    if accuracy=='arcmin': return ur'%i%s%i%s'%(sign*deg,degsymb,mins,minsymb)
-    if accuracy=='arcsec': return ur'%i%s%i%s%2.0f%s'%(sign*deg,degsymb,mins,minsymb,secs,secsymb)
+    if accuracy=='deg': return six.u(r'%i'%(sign*deg)+degsymb)
+    if accuracy=='arcmin': return six.u(r'%i%s%i%s'%(sign*deg,degsymb,mins,minsymb))
+    if accuracy=='arcsec': return six.u(r'%i%s%i%s%2.0f%s'%(sign*deg,degsymb,mins,minsymb,secs,secsymb))
     else:
     #    if abs(fmod(secs,60.0))>=0.5 and abs(fmod(secs,60)-60)>=0.5 : return(getDecString(sign*radians,accuracy='arcsec'))
     #    if abs(fmod(mins,60.0))>=0.5 and abs(fmod(mins,60)-60)>=0.5: return(getDecString(sign*radians,accuracy='arcmin'))
