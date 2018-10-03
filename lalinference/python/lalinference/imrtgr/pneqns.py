@@ -94,8 +94,8 @@ def precession_eqns(t, y_vec, m1, m2):
 	Lmag = (eta*m**2./v)*(1.+(1.5+eta/6.)*v**2.)
 
 	# precession freqs. Eqs.(3.8) of Ajith (2011)
-        Omega1= Omega(v, m1, m2, S1, S2, Ln)
-        Omega2= Omega(v, m2, m1, S2, S1, Ln)
+	Omega1= Omega(v, m1, m2, S1, S2, Ln)
+	Omega2= Omega(v, m2, m1, S2, S1, Ln)
 
 	# spin precession eqns. Eqs.(3.7) of Ajith (2011)
 	dS1_dt = np.cross(Omega1, S1)
@@ -110,7 +110,7 @@ def precession_eqns(t, y_vec, m1, m2):
 	return  [dv_dt, dS1_dt[0], dS1_dt[1], dS1_dt[2], dS2_dt[0], dS2_dt[1], dS2_dt[2], dL_dt[0], dL_dt[1], dL_dt[2]]
 
 def evolve_spins_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, Lny, Lnz, v_final, dt):
-	""" evolve the spins and orb ang momentum according to the PN precession eqns."""
+        """ evolve the spins and orb ang momentum according to the PN precession eqns."""
 
         # Set maximum dv/dt for stopping condition
 
@@ -144,32 +144,32 @@ def evolve_spins_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, L
         if dt<0:
             raise ValueError("ERROR: time step is negative")
 
-	m1_sqr = m1*m1
-	m2_sqr = m2*m2
+        m1_sqr = m1*m1
+        m2_sqr = m2*m2
 
-	# pack the inputs
-	y_vec0 = [v0, chi1x*m1_sqr, chi1y*m1_sqr, chi1z*m1_sqr, chi2x*m2_sqr, chi2y*m2_sqr, chi2z*m2_sqr, Lnx, Lny, Lnz]
-	t0 = 0.
+        # pack the inputs
+        y_vec0 = [v0, chi1x*m1_sqr, chi1y*m1_sqr, chi1z*m1_sqr, chi2x*m2_sqr, chi2y*m2_sqr, chi2z*m2_sqr, Lnx, Lny, Lnz]
+        t0 = 0.
 
         # Defining chi_eff and Newtonian chirp time. T_MAX is set to twice of chirp time.
         chi_eff = lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(m1, m2, chi1z, chi2z)
-	T_MAX = 2.* lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(v0**3./(PI*(m1+m2)*MTSUN_SI), m1*MSUN_SI, m2*MSUN_SI, chi_eff, 0)/MTSUN_SI
-	R_TOL = 1e-6
-	A_TOL = 1e-6
+        T_MAX = 2.* lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(v0**3./(PI*(m1+m2)*MTSUN_SI), m1*MSUN_SI, m2*MSUN_SI, chi_eff, 0)/MTSUN_SI
+        R_TOL = 1e-6
+        A_TOL = 1e-6
 
         #print("T_MAX = %f"%(T_MAX))
 
-	# initialize the ODE solver
-	backend = "dopri5"
-	solver = ode(precession_eqns)
-	solver.set_integrator(backend, atol=R_TOL, rtol=R_TOL)  # nsteps=1
-	solver.set_initial_value(y_vec0, t0)
-	solver.set_f_params(m1, m2)
+        # initialize the ODE solver
+        backend = "dopri5"
+        solver = ode(precession_eqns)
+        solver.set_integrator(backend, atol=R_TOL, rtol=R_TOL)  # nsteps=1
+        solver.set_initial_value(y_vec0, t0)
+        solver.set_f_params(m1, m2)
 
-	y_result = []
-	t_output = []
-	y_result.append(y_vec0)
-	t_output.append(t0)
+        y_result = []
+        t_output = []
+        y_result.append(y_vec0)
+        t_output.append(t0)
 
         # Set diagnostic quantities to some initial values that won't trigger any stopping conditions
 
@@ -177,21 +177,21 @@ def evolve_spins_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, L
         dvdt_current = 1.e-5
         Lnorm_current = 1.
 
-	# evolve the eqns
-	while solver.successful() and solver.t < 2.*T_MAX and v_current <= v_final and dvdt_current > 0. and dvdt_current < dvdt_max and abs(Lnorm_current - 1.) < delta_Lnorm_max:
+        # evolve the eqns
+        while solver.successful() and solver.t < 2.*T_MAX and v_current <= v_final and dvdt_current > 0. and dvdt_current < dvdt_max and abs(Lnorm_current - 1.) < delta_Lnorm_max:
 
-		solver.integrate(solver.t + dt, step=1)
-		y_result.append(solver.y)
-		t_output.append(solver.t)
+                solver.integrate(solver.t + dt, step=1)
+                y_result.append(solver.y)
+                t_output.append(solver.t)
 
-		#print '... t = ', solver.t, ' y = ', solver.y
+                #print '... t = ', solver.t, ' y = ', solver.y
 
                 v_current = solver.y[V_POS]
                 dvdt_current = precession_eqns(solver.t,solver.y,m1,m2)[V_POS]
                 Lnorm_current = np.sqrt((solver.y[LNX_POS])**2+(solver.y[LNY_POS])**2+(solver.y[LNZ_POS])**2)
 
-	Y = np.array(y_result)
-	t = np.array(t_output)
+        Y = np.array(y_result)
+        t = np.array(t_output)
 
         # Check if the integration stopped more than delta_vf_max away from v_final. If so, check if this occurred because dv/dt became larger than dvdt_max or negative. In this case, print a warning and remove the offending data, else raise an error
 
@@ -207,23 +207,23 @@ def evolve_spins_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, L
         if abs(Lnorm_current - 1.) >= delta_Lnorm_max:
             raise ValueError("norm of Ln is more than {0:e} different from 1, with distance {1:e}".format(delta_Lnorm_max, abs(Lnorm_current - 1.)))
 
-	v_v, S1x_v, S1y_v, S1z_v, S2x_v, S2y_v, S2z_v, Lx_v, Ly_v, Lz_v  = Y.T
+        v_v, S1x_v, S1y_v, S1z_v, S2x_v, S2y_v, S2z_v, Lx_v, Ly_v, Lz_v  = Y.T
 
-	return v_v, S1x_v/m1_sqr, S1y_v/m1_sqr, S1z_v/m1_sqr, S2x_v/m2_sqr, S2y_v/m2_sqr, S2z_v/m2_sqr, Lx_v, Ly_v, Lz_v
+        return v_v, S1x_v/m1_sqr, S1y_v/m1_sqr, S1z_v/m1_sqr, S2x_v/m2_sqr, S2y_v/m2_sqr, S2z_v/m2_sqr, Lx_v, Ly_v, Lz_v
 
 
 def find_tilts_and_phi12_at_freq(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, Lny, Lnz, v_final, dt):
         """ given the spins and ang momentum at a given frequency, find the tilt and in-plane spin angles at a later frequency """
 
-	print("v0 = %f, m1 = %f, m2 = %f, chi1x = %f, chi1y = %f, chi1z = %f, chi2x = %f, chi2y = %f, chi2z = %f"%(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z))
+        print("v0 = %f, m1 = %f, m2 = %f, chi1x = %f, chi1y = %f, chi1z = %f, chi2x = %f, chi2y = %f, chi2z = %f"%(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z))
 
         # evolve the spins
         v_v, chi1x_v, chi1y_v, chi1z_v, chi2x_v, chi2y_v, chi2z_v, Lnx_v, Lny_v, Lnz_v = evolve_spins_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, Lny, Lnz, v_final, dt)
 
-	chi1_v = np.array([chi1x_v[-1], chi1y_v[-1], chi1z_v[-1]])
-	chi2_v = np.array([chi2x_v[-1], chi2y_v[-1], chi2z_v[-1]])
+        chi1_v = np.array([chi1x_v[-1], chi1y_v[-1], chi1z_v[-1]])
+        chi2_v = np.array([chi2x_v[-1], chi2y_v[-1], chi2z_v[-1]])
 
-	Ln_v = np.array([Lnx_v[-1], Lny_v[-1], Lnz_v[-1]])
+        Ln_v = np.array([Lnx_v[-1], Lny_v[-1], Lnz_v[-1]])
 
         # norms and normalizing
         chi1_norm = norm(chi1_v)
@@ -235,16 +235,16 @@ def find_tilts_and_phi12_at_freq(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, 
         chi1dL_v = np.dot(chi1_v, Ln_v)
         chi2dL_v = np.dot(chi2_v, Ln_v)
 
-	# in-plane spins
+        # in-plane spins
 
-	chi1inplane = chi1_v - chi1dL_v*Ln_v
-	chi2inplane = chi2_v - chi2dL_v*Ln_v
+        chi1inplane = chi1_v - chi1dL_v*Ln_v
+        chi2inplane = chi2_v - chi2dL_v*Ln_v
 
         # Defining cosine of tilts and phi12
         cos_tilt1 = chi1dL_v/chi1_norm
         cos_tilt2 = chi2dL_v/chi2_norm
         cos_phi12 = np.dot(chi1inplane,chi2inplane)/(norm(chi1inplane)*norm(chi2inplane))
 
-	print("cos tilt1 = %f, cos tilt2 = %f, cos phi12 = %f"%(cos_tilt1, cos_tilt2, cos_phi12))
+        print("cos tilt1 = %f, cos tilt2 = %f, cos phi12 = %f"%(cos_tilt1, cos_tilt2, cos_phi12))
 
-	return np.arccos(cos_tilt1), np.arccos(cos_tilt2), np.arccos(cos_phi12)
+        return np.arccos(cos_tilt1), np.arccos(cos_tilt2), np.arccos(cos_phi12)
