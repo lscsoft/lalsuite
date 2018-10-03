@@ -34,7 +34,7 @@ import functools
 
 import healpy
 
-from lalinference.rapid_pe import statutils, synchlib
+from . import statutils, synchlib
 from lal import rate
 
 class NanOrInf(Exception):
