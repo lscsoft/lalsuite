@@ -31,7 +31,10 @@ hatch_default = ['..','//','||']
 #
 ###############################################################################
 
-from ConfigParser import SafeConfigParser
+try:
+    from configparser import ConfigParser
+except ImportError:  # python < 3
+    from ConfigParser import SafeConfigParser as ConfigParser
 from cPickle import dump, load
 from datetime import datetime
 from itertools import combinations
@@ -144,7 +147,7 @@ def TigerPostProcess(configfile):
 	# CONFIGURATION FILE: CHECKING FILE
 	stdout.write("Configuration file: checking file\n")
 	if access(configfile, R_OK): 
-		config = SafeConfigParser()
+		config = ConfigParser()
 		config.read(configfile)
 	else:
 		exit("Configuration file: checking file - file does not exist. Abort script\n")
