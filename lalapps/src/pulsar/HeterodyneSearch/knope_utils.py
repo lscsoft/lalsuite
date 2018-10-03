@@ -166,7 +166,7 @@ class knopeDAG(pipeline.CondorDAG):
       for stkey in dict(self.starttime):
         if isinstance(self.starttime[stkey], int):
           # convert to list
-          self.starttime[stkey] = list(self.starttime[stkey])
+          self.starttime[stkey] = [self.starttime[stkey]]
         elif isinstance(self.starttime[stkey], list):
           # check all values are int
           if len([v for v in self.starttime[stkey] if isinstance(v, int)]) != len(self.starttime[stkey]):
@@ -200,7 +200,7 @@ class knopeDAG(pipeline.CondorDAG):
       for etkey in dict(self.endtime):
         if isinstance(self.endtime[etkey], int):
           # convert to list
-          self.endtime[etkey] = list(self.endtime[etkey])
+          self.endtime[etkey] = [self.endtime[etkey]]
         elif isinstance(self.endtime[etkey], list):
           # check all values are int
           if len([v for v in self.endtime[etkey] if isinstance(v, int)]) != len(self.endtime[etkey]):
