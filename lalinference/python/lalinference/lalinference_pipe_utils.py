@@ -237,13 +237,13 @@ def open_pipedown_database(database_filename,tmp_space):
     Open the connection to the pipedown database
     """
     if not os.access(database_filename,os.R_OK):
-	raise Exception('Unable to open input file: %s'%(database_filename))
+        raise Exception('Unable to open input file: %s'%(database_filename))
     from glue.ligolw import dbtables
     import sqlite3
     working_filename=dbtables.get_connection_filename(database_filename,tmp_path=tmp_space)
     connection = sqlite3.connect(working_filename)
     if tmp_space:
-	dbtables.set_temp_store_directory(connection,tmp_space)
+        dbtables.set_temp_store_directory(connection,tmp_space)
     #dbtables.DBTable_set_connection(connection)
     return (connection,working_filename)
 
@@ -273,10 +273,10 @@ def get_zerolag_lloid(database_connection, dumpfile=None, gpsstart=None, gpsend=
 	if min_cfar != -1:
 		get_coincs=get_coincs+' and coinc_inspiral.combined_far > %f'%(min_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
-    	extra={}
+	extra={}
 	for (sngl_time, ifo, coinc_id, snr, chisq, cfar) in db_out:
-      		coinc_id=int(coinc_id.split(":")[-1])
-	  	if not coinc_id in output.keys():
+		coinc_id=int(coinc_id.split(":")[-1])
+		if not coinc_id in output.keys():
 			output[coinc_id]=Event(trig_time=sngl_time,timeslide_dict={},event_id=int(coinc_id))
 			extra[coinc_id]={}
 		output[coinc_id].timeslides[ifo]=0
@@ -316,10 +316,10 @@ def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpse
 	if min_cfar != -1:
 		get_coincs=get_coincs+' and coinc_inspiral.combined_far > %f'%(min_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
-    	extra={}
+	extra={}
 	for (sngl_time, ifo, coinc_id, snr, chisq, cfar) in db_out:
-      		coinc_id=int(coinc_id.split(":")[-1])
-	  	if not coinc_id in output.keys():
+		coinc_id=int(coinc_id.split(":")[-1])
+		if not coinc_id in output.keys():
 			output[coinc_id]=Event(trig_time=sngl_time,timeslide_dict={},event_id=int(coinc_id))
 			extra[coinc_id]={}
 		output[coinc_id].timeslides[ifo]=0
@@ -363,9 +363,9 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 	if max_cfar!=-1:
 		get_coincs=get_coincs+joinstr+' coinc_inspiral.combined_far < %f'%(max_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
-        # Timeslide functionality requires obsolete pylal - will be removed
-        import pylal
-        from pylal import SnglInspiralUtils
+	# Timeslide functionality requires obsolete pylal - will be removed
+	import pylal
+	from pylal import SnglInspiralUtils
 	extra={}
 	for (sngl_time, slide, ifo, coinc_id, snr, chisq, cfar) in db_out:
 		coinc_id=int(coinc_id.split(":")[-1])
@@ -426,10 +426,10 @@ def scan_timefile(timefile):
     timefilehandle=open(timefile,'r')
     for time in timefilehandle:
       if not p.match(time):
-	continue
+        continue
       if float(time) in times:
-	print('Skipping duplicate time %s'%(time))
-	continue
+        print('Skipping duplicate time %s'%(time))
+        continue
       print('Read time %s'%(time))
       times.append(float(time))
     timefilehandle.close()
@@ -575,7 +575,7 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=None,sim_inspira
   elif sim_inspiral is not None:
         trigger_mchirp = sim_inspiral.mchirp
   else:
-	trigger_mchirp = None
+        trigger_mchirp = None
 
   return mc_priors, trigger_mchirp
 
@@ -1038,13 +1038,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       else:
         mincfar=-1
       if self.config.has_option('input','max-cfar'):
-	maxcfar=self.config.getfloat('input','max-cfar')
+        maxcfar=self.config.getfloat('input','max-cfar')
       else:
-	maxcfar=-1
+        maxcfar=-1
       if self.config.get('input','timeslides').lower()=='true':
-	events=get_timeslides_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend,dumpfile=timeslidedump,max_cfar=maxcfar)
+        events=get_timeslides_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend,dumpfile=timeslidedump,max_cfar=maxcfar)
       else:
-	events=queryfunc(db_connection, gpsstart=gpsstart, gpsend=gpsend, dumpfile=timeslidedump,max_cfar=maxcfar,min_cfar=mincfar)
+        events=queryfunc(db_connection, gpsstart=gpsstart, gpsend=gpsend, dumpfile=timeslidedump,max_cfar=maxcfar,min_cfar=mincfar)
     if(selected_events is not None):
         used_events=[]
         for i in selected_events:
@@ -1278,17 +1278,17 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     os.chdir(segmentdir)
     for ifo in self.ifos:
       (segFileName,dqVetoes)=inspiralutils.findSegmentsToAnalyze(self.config, ifo, self.veto_categories, generate_segments=True,\
-	use_available_data=self.use_available_data , data_quality_vetoes=False)
+        use_available_data=self.use_available_data , data_quality_vetoes=False)
       self.dqVetoes=dqVetoes
       segfile=open(segFileName)
       segs=segmentsUtils.fromsegwizard(segfile)
       segs.coalesce()
       segfile.close()
       for seg in segs:
-	    sciseg=pipeline.ScienceSegment((segs.index(seg),seg[0],seg[1],seg[1]-seg[0]))
-	    df_node=self.get_datafind_node(ifo,self.frtypes[ifo],int(sciseg.start()),int(sciseg.end()))
-	    sciseg.set_df_node(df_node)
-	    self.segments[ifo].append(sciseg)
+        sciseg=pipeline.ScienceSegment((segs.index(seg),seg[0],seg[1],seg[1]-seg[0]))
+        df_node=self.get_datafind_node(ifo,self.frtypes[ifo],int(sciseg.start()),int(sciseg.end()))
+        sciseg.set_df_node(df_node)
+        self.segments[ifo].append(sciseg)
     os.chdir(curdir)
 
   def get_datafind_node(self,ifo,frtype,gpsstart,gpsend):
@@ -1536,7 +1536,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       return None, bayeswavepsdnode
     if extra_options is not None:
       for opt in extra_options.keys():
-	    node.add_var_arg('--'+opt+' '+extra_options[opt])
+        node.add_var_arg('--'+opt+' '+extra_options[opt])
     # Add control options
     if self.config.has_option('input','injection-file'):
        node.set_injection(self.config.get('input','injection-file'),event.event_id)
@@ -1772,8 +1772,8 @@ class SingularityJob(pipeline.CondorDAGJob):
             extra_paths="--bind {cvmfs_frames}".format(cvmfs_frames = self.CVMFS_FRAMES)
             self.add_condor_cmd('+SingularityBindCVMFS','True')
             self.add_condor_cmd('use_x509userproxy','true')
-	if cp.has_option('analysis','roq') and cp.getboolean('analysis','roq'):
-	    extra_paths+=" --bind {roqpath}".format(roqpath=cp.get('paths','roq_b_matrix_directory'))
+        if cp.has_option('analysis','roq') and cp.getboolean('analysis','roq'):
+            extra_paths+=" --bind {roqpath}".format(roqpath=cp.get('paths','roq_b_matrix_directory'))
 
         self.wrapper_string="""
             echo "Workspace on execute node $(hostname -f)"
@@ -1811,7 +1811,7 @@ class SingularityJob(pipeline.CondorDAGJob):
         f.writelines('#!/usr/bin/env bash')
         f.writelines(self.wrapper_string)
         f.close()
-        os.chmod(path,0755)
+        os.chmod(path,0o755)
 
     def write_sub_file(self):
         """
@@ -2142,8 +2142,7 @@ class EngineNode(SingularityNode):
     elif isinstance(filename,list): # A list of LFNs (for DAX mode)
         self.add_var_opt('glob-frame-data',' ')
         if len(filename) == 0:
-          raise pipeline.CondorDAGNodeError, \
-          "LDR did not return any LFNs for query: check ifo and frame type"
+          raise pipeline.CondorDAGNodeError("LDR did not return any LFNs for query: check ifo and frame type")
         for lfn in filename:
             self.lfns.append(lfn)
 
@@ -2528,7 +2527,7 @@ class MergeJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.set_stderr_file(os.path.join(logdir,'merge-$(cluster)-$(process).err'))
       self.add_condor_cmd('getenv','True')
       if cp.has_option('merge','npos') and engine == 'nest':
-      	self.add_opt('npos',cp.get('merge','npos'))
+        self.add_opt('npos',cp.get('merge','npos'))
 
 
 class MergeNode(pipeline.CondorDAGNode):
