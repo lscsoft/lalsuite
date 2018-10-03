@@ -5315,7 +5315,7 @@ def burnin(data,spin_flag,deltaLogP,outputfile):
     return pos,bayesfactor
 
 
-class ACLError(StandardError):
+class ACLError(Exception):
     def __init__(self, *args):
         super(ACLError, self).__init__(*args)
 
