@@ -25,6 +25,7 @@ __version__ = '$Revision$'
 # 12/02/2009 gam; Change checked_freqBand to sft_freqBand, and make sure there are some extra bins in the SFTs to avoid problems at endFreq, since lalapps_spec_avg works on [startFreq,endFreq], not [startFreq,endFreq).
 #25/02/2010 cg; Added extra options to pass the path of ephemerides for source frequency calculations done in spec_avg.c
 #26/04/2010 cg; replaced link to pdf with link to .png files.
+#10/09/2018 gam; Add -K, --coherence-path option to do the coherence using SFTs by a job to run coherenceFromSFTs.py.
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -87,6 +88,7 @@ Usage: [options]
   -e  --html-ref-ifo-epoch   (optional) string that give ifo and GPS start and end times of reference plots, e.g.,H1_840412814_845744945.
   -q  --threshold-snr        (optional) if > 0 and a reference is given, then look for coincident lines with the reference spectra above this threshold.
   -y  --coincidence-deltaf   (optional) if a reference and threshold on snr is given, then use this as the coincidence window on frequency.
+  -K  --coherence-path       (optional) if given, run coherenceFromSFTs.py using SFTs under this path and the SFTs for the input channel.
   -X  --misc-desc            (optional) misc. part of the SFT description field in the filename (also used if -D option is > 0).
   -H, --use-hot              (optional) input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
   -J  --psrInput             (optional) Input the name and path of tempo .par file used to overplot a source's freq onto specgrams
@@ -106,7 +108,7 @@ Usage: [options]
 ####################################
 # PARSE COMMAND LINE OPTIONS 
 #
-shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:P:u:v:c:F:B:b:O:m:A:U:n:w:W:r:e:q:y:D:X:g:t:l:J:j:E:z:hSHZCRI" #cg; shortop is a string.
+shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:P:u:v:c:F:B:b:O:m:A:U:n:w:W:r:e:q:y:K:D:X:g:t:l:J:j:E:z:hSHZCRI" #cg; shortop is a string.
 longop = [  #cg; longopt is a list
   "help",
   "analysis-start-time=",
@@ -144,6 +146,7 @@ longop = [  #cg; longopt is a list
   "html-ref-ifo-epoch=",
   "threshold-snr=",
   "coincidence-deltaf=",
+  "coherence-path=",
   "make-gps-dirs=",
   "misc-desc=",
   "max-num-per-node=",
@@ -206,6 +209,7 @@ htmlReferenceDir = None
 htmlRefIFOEpoch = None
 thresholdSNR = -1
 coincidenceDeltaF = 0
+coherencePath = None
 makeGPSDirs = 0
 miscDesc = None
 maxNumPerNode = 1
@@ -291,6 +295,8 @@ for o, a in opts:
     thresholdSNR = long(a)
   elif o in ("-y", "--coincidence-deltaf"):
     coincidenceDeltaF = long(a)
+  elif o in ("-K", "--coherence-path"):
+    coherencePath = a  
   elif o in ("-D", "--make-gps-dirs"):
     makeGPSDirs = int(a)
   elif o in ("-X", "--misc-desc"):
@@ -701,6 +707,42 @@ if (makePythonPlots):
   runPythonScriptFID.write('queue 1\n')
   runPythonScriptFID.close()
 
+if (coherencePath != None):
+  # MAKE A SUBMIT FILE THAT CHECKS THAT THE SFT JOBS HAVE FINISHED UNDER THE coherencePath
+  checkCoherenceFID = file('checkCoherencePath.sub','w')
+  checkCoherenceLogFile = subLogPath + '/' + 'checkCoherencePath_' + dagFileName + '.log'
+  checkCoherenceFID.write('universe = vanilla\n')
+  checkCoherenceFID.write('executable = $ENV(CHECK_COHERENCE_PATH)/checkCoherencePath.py\n')
+  checkCoherenceFID.write('getenv = True\n')
+  checkCoherenceFID.write('arguments = $(argList)\n')
+  if (accountingGroup != None):
+     checkCoherenceFID.write('accounting_group = %s\n' % accountingGroup)
+  if (accountingGroupUser != None):
+     checkCoherenceFID.write('accounting_group_user = %s\n' % accountingGroupUser)
+  checkCoherenceFID.write('log = %s\n' % checkCoherenceLogFile)
+  checkCoherenceFID.write('error = %s/checkCoherence_$(tagstring).err\n' % logPath)
+  checkCoherenceFID.write('output = %s/checkCoherence_$(tagstring).out\n' % logPath)
+  checkCoherenceFID.write('notification = never\n')
+  checkCoherenceFID.write('queue 1\n')
+  checkCoherenceFID.close()  
+  # MAKE A SUBMIT FILE FOR RUNNING THE COHERENCE SCRIPT
+  runCoherenceFID = file('runCoherence.sub','w')
+  runCoherenceLogFile = subLogPath + '/' + 'runCoherence_' + dagFileName + '.log'
+  runCoherenceFID.write('universe = vanilla\n')
+  runCoherenceFID.write('executable = $ENV(COHERENCE_FROM_SFTS_PATH)/coherenceFromSFTs.py\n')
+  runCoherenceFID.write('getenv = True\n')
+  runCoherenceFID.write('arguments = $(argList)\n')
+  if (accountingGroup != None):
+     runCoherenceFID.write('accounting_group = %s\n' % accountingGroup)
+  if (accountingGroupUser != None):
+     runCoherenceFID.write('accounting_group_user = %s\n' % accountingGroupUser)
+  runCoherenceFID.write('log = %s\n' % runCoherenceLogFile)
+  runCoherenceFID.write('error = %s/runCoherence_$(tagstring).err\n' % logPath)
+  runCoherenceFID.write('output = %s/runCoherence_$(tagstring).out\n' % logPath)
+  runCoherenceFID.write('notification = never\n')
+  runCoherenceFID.write('queue 1\n')
+  runCoherenceFID.close()
+
 #cg; Creates the html file, or at least the initial parts of it.
 if (htmlFilename != None):
   htmlFID = file(htmlFilename,'w')#opens the html file specified in the command line for writing, is having trouble for some reason.
@@ -739,8 +781,10 @@ if (htmlFilename != None):
   htmlFID.write('</div>\n')
   htmlFID.write('<br>\n')  
   htmlFID.write('<form>\n')
-  htmlFID.write('Old <input type = "radio" name = "rad1" onclick = "showDiv()" checked>\n')
-  htmlFID.write('New <input type = "radio" name = "rad1" onclick = "showDiv()">\n')
+  htmlFID.write('Fscan Plots: <input type = "radio" name = "rad1" onclick = "showDiv()" checked>\n')
+  htmlFID.write('Fscans Plots (Reverse Order): <input type = "radio" name = "rad1" onclick = "showDiv()">\n')
+  if (coherencePath != None):
+     htmlFID.write('Coherence Plots: <input type = "radio" name = "rad1" onclick = "showDiv()">\n')
   htmlFID.write('<br><br>\n')
   htmlFID.write('<div id = "div1" style="display:none">\n')
   htmlFID.write('<table style="width: 100%; text-align: left;" border="1" cellpadding="2" cellspacing="2">\n')
@@ -874,7 +918,7 @@ while (thisEndFreq <= endFreq):
     htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (inputFileName,inputFileName))
     htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (inputFileName,inputFileName))
     htmlFID.write('    List of found combs : <a href="%s_combs.txt">%s_combs.txt</a><br>\n' % (inputFileName,inputFileName))
-    htmlFID.write('    Kurtosis test output: <a href="%s_kurtosis">%s_kurtosis</a><br>\n' % (inputFileName,inputFileName))
+    #htmlFID.write('    Kurtosis test output: <a href="%s_kurtosis">%s_kurtosis</a><br>\n' % (inputFileName,inputFileName))
     if (htmlReferenceDir != None) and (thresholdSNR > 0):
         #--------------------------
 	#coincident lines
@@ -909,6 +953,33 @@ while (thisEndFreq <= endFreq):
   thisEndFreq = thisStartFreq + freqSubBand
   nodeCount = nodeCount + 1
 
+# A job that checks that the SFT jobs are done under the coherence path
+# run after the last python plotting script finishes, which means the
+# SFTs for this channel exist.Then the coherence job runs. 
+if (coherencePath != None):
+    # Job that checks the coherence path
+    checkCoherenceJobName = 'checkCoherenceJob'
+    dagFID.write('JOB %s checkCoherencePath.sub\n' % checkCoherenceJobName)
+    dagFID.write('RETRY %s 0\n' % checkCoherenceJobName)
+    # Check that SFTs jobs are done under the coherence Path
+    argList =  '%s' % coherencePath
+    tagStringOut = '%s_%s' % (tagString, 'checkCoherencePath')
+    dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(checkCoherenceJobName,argList,tagStringOut))
+    dagFID.write('PARENT %s CHILD %s\n'%(runPythonPlotScriptJobName,checkCoherenceJobName))
+    # Job that runs the coherence
+    runCoherenceJobName = 'runCoherenceJob'
+    dagFID.write('JOB %s runCoherence.sub\n' % runCoherenceJobName)
+    dagFID.write('RETRY %s 0\n' % runCoherenceJobName)
+    # The coherence will be done between the SFTs under the path to the current channel and the SFTs under the coherence Path
+    coherenceChannelA = plotOutputPath.split('/')[-1]
+    coherenceChannelB = coherencePath.split('/')[-1]
+    pathToSFTsForChannelA = '%s/%s' % (plotOutputPath, 'sfts/tmp')
+    pathToSFTsForChannelB = '%s/%s' % (coherencePath, 'sfts/tmp')
+    argList =  '%s %s' % (pathToSFTsForChannelA,pathToSFTsForChannelB)
+    tagStringOut = '%s_%s' % (tagString, 'coherence')
+    dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runCoherenceJobName,argList,tagStringOut))
+    dagFID.write('PARENT %s CHILD %s\n'%(checkCoherenceJobName,runCoherenceJobName))
+
 # Close the DAG file
 dagFID.close()
 
@@ -937,11 +1008,33 @@ if (htmlFilename != None):
     htmlFID.write('    Freq. vs Power: <a href="' + thisSeg + '.txt">' + thisSeg + '.txt</a><br>')
     htmlFID.write('    Freq. vs Power (Sorted): <a href="' + thisSeg + '_sorted.txt">' + thisSeg + '_sorted.txt</a><br>')
     htmlFID.write('    List of found combs : <a href="%s_combs.txt">%s_combs.txt</a><br>\n' % (inputFileName,inputFileName))
-    htmlFID.write('    Kurtosis test output: <a href="' + thisSeg + '_kurtosis">' + thisSeg + '_kurtosis</a><br>')
+    #htmlFID.write('    Kurtosis test output: <a href="' + thisSeg + '_kurtosis">' + thisSeg + '_kurtosis</a><br>')
     htmlFID.write('  </td>\n')
     htmlFID.write('</tr>\n')
   htmlFID.write('</table>\n')
   htmlFID.write('</div>\n')
+
+  if (coherencePath != None):
+    htmlFID.write('<div id = "div3" style="display:none">\n')
+    htmlFID.write('<table>\n')
+    rows =  freqBand/freqSubBand
+    for i in range(rows):
+      thisStartFreq = freqSubBand*i
+      thisEndFreq = freqSubBand*(i+1)
+      thisCoherence = 'spec_%d.00_%d.00_%s_coherence_%s_and_%s' % (thisStartFreq,thisEndFreq,analysisStartTime,coherenceChannelA,coherenceChannelB)
+      htmlFID.write('<tr>\n')
+      htmlFID.write('  <td>\n')
+      htmlFID.write('    <a href="' + thisCoherence + '.png"><img alt="" src="' + thisCoherence + '.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n')
+      htmlFID.write('  </td>\n')
+      htmlFID.write('</tr>\n')
+      htmlFID.write('<tr>\n')
+      htmlFID.write('  <td>\n')
+      htmlFID.write('    Coherence Data: <a href="' + thisCoherence + '.txt">' + thisCoherence + '.txt</a><br>')
+      htmlFID.write('  </td>\n')
+      htmlFID.write('</tr>\n')
+    htmlFID.write('</table>\n')
+    htmlFID.write('</div>\n')
+
   htmlFID.write('</form>\n')
   htmlFID.write('<script type = "text/javascript">\n')
   htmlFID.write('function showDiv() {\n')
@@ -953,6 +1046,10 @@ if (htmlFilename != None):
   htmlFID.write('if (document.forms[0].rad1[1].checked) {\n')
   htmlFID.write('document.getElementById("div2").style.display="block";\n')
   htmlFID.write('}\n')
+  if (coherencePath != None):  
+    htmlFID.write('if (document.forms[0].rad1[2].checked) {\n')
+    htmlFID.write('document.getElementById("div3").style.display="block";\n')
+    htmlFID.write('}\n')
   htmlFID.write('}\n')
   htmlFID.write('</script>\n')
   htmlFID.write('<span style="text-decoration: underline;"><br>\n')
