@@ -40,7 +40,7 @@ except ImportError:  # python < 3
 from datetime import datetime
 from itertools import combinations
 from itertools import cycle
-from matplotlib import use, rcParams
+from matplotlib import use, rcParams, __version__ as mpl_version
 use('Agg')
 from matplotlib.pyplot import clf, figure, savefig
 from os import access, path, R_OK, makedirs
@@ -73,9 +73,10 @@ fig_width = fig_width_pt*inches_per_pt  # width in inches
 fig_height = fig_width*golden_mean      # height in inches
 fig_size =  [fig_width,fig_height]
 
+fontsize = 'font.size' if mpl_version >= '1.5.0' else 'text.fontsize'
 params = {'backend': 'PDF',
           'axes.labelsize': 24,
-          'text.fontsize': 24,
+          fontsize: 24,
           'legend.fontsize': 20,
           'xtick.labelsize': 24,
           'ytick.labelsize': 24,

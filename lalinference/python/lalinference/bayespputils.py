@@ -50,6 +50,7 @@ import astropy.table
 import numpy as np
 from numpy import fmod
 import matplotlib
+matplotlib.use('agg')
 from matplotlib import pyplot as plt,cm as mpl_cm,lines as mpl_lines
 from scipy import stats
 from scipy import special
