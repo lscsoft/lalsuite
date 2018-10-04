@@ -18,18 +18,20 @@ uninstalled_compiler = $(uninstalled_runner) '$(abs_top_builddir)' '$(abs_buildd
 EXTRA_DIST += $(uninstalled_runner)
 
 all-local: pymodule-all-local pyscripts-all-local
-pymodule-all-local: pymodule-mostlyclean-local
+pymodule-all-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
 		for file in $(pymodule_PYTHON); do \
 			if test -r "$(srcdir)/$${file}"; then \
+				rm -f "$(builddir)/$${file}" || exit 1; \
 				$(LN_S) "$(srcdir)/$${file}" "$(builddir)/$${file}" || exit 1; \
 			fi; \
 		done; \
 	fi
-pyscripts-all-local: pyscripts-mostlyclean-local
+pyscripts-all-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
 		for file in $(pybin_scripts); do \
 			if test -r "$(srcdir)/$${file}.py"; then \
+				rm -f "$(builddir)/$${file}.py" || exit 1; \
 				cp -p "$(srcdir)/$${file}.py" "$(builddir)/$${file}.py" || exit 1; \
 			fi; \
 		done; \
