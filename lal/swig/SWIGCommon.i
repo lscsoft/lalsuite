@@ -467,6 +467,9 @@ struct TAGNAME {
 ///    <li>\b %swiglal_array_viewout...(): output scripting-language array view as a \c SWIG_Object.</li>
 /// </ul>
 ///
+/// In addition, \b %swiglal_array_viewin...() should initialise <tt>dims</tt> regardless of whether
+/// a view is possible, as these values may need to be used by \b %swiglal_array_copyin...().
+///
 
 ///
 /// Names of array conversion functions for array type \c ACFTYPE.
@@ -1021,16 +1024,15 @@ if (strides[I-1] == 0) {
   if (!SWIG_IsOK(res)) {
     typedef struct { SIZET NI; TYPE* DATA; } sizchk_t;
     if (!($disown) && sizeof(sizchk_t) == sizeof(NAME)) {
-      size_t numel = 0;
       size_t dims[] = {0};
       temp.DATA = NULL;
       /* swiglal_array_typeid input type: TYPE* */
       res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
-                                         sizeof(TYPE), 1, &numel, dims,
+                                         sizeof(TYPE), 1, dims,
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                          $disown | %convertptr_flags);
       if (!SWIG_IsOK(res)) {
-        temp_data = temp.DATA = %swiglal_new_array(numel, TYPE);
+        temp_data = temp.DATA = %swiglal_new_array(dims[0], TYPE);
         size_t strides[] = {1};
         res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp.DATA),
                                            sizeof(TYPE), 1, dims, strides,
@@ -1066,12 +1068,11 @@ if (strides[I-1] == 0) {
   if (!SWIG_IsOK(res)) {
     typedef struct { SIZET NI; TYPE* DATA; } sizchk_t;
     if (!($disown) && sizeof(sizchk_t) == sizeof(NAME)) {
-      size_t numel = 0;
       size_t dims[] = {0};
       temp.DATA = NULL;
       /* swiglal_array_typeid input type: TYPE* */
       res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
-                                         sizeof(TYPE), 1, &numel, dims,
+                                         sizeof(TYPE), 1, dims,
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                          $disown | %convertptr_flags);
       if (!SWIG_IsOK(res)) {
@@ -1099,15 +1100,14 @@ if (strides[I-1] == 0) {
   if (!SWIG_IsOK(res)) {
     typedef struct { SIZET NI; TYPE* DATA; } sizchk_t;
     if (!($disown) && sizeof(sizchk_t) == sizeof(NAME)) {
-      size_t numel = 0;
       size_t dims[] = {0};
       /* swiglal_array_typeid input type: TYPE* */
       res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp_data),
-                                         sizeof(TYPE), 1, &numel, dims,
+                                         sizeof(TYPE), 1, dims,
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                          $disown | %convertptr_flags);
-      if (numel > 0) {
-        temp_data = temp.DATA = %swiglal_new_array(numel, TYPE);
+      if (dims[0] > 0) {
+        temp_data = temp.DATA = %swiglal_new_array(dims[0], TYPE);
         size_t strides[] = {1};
         res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp_data),
                                            sizeof(TYPE), 1, dims, strides,
@@ -1163,16 +1163,15 @@ if (strides[I-1] == 0) {
   if (!SWIG_IsOK(res)) {
     typedef struct { SIZET NI; SIZET NJ; TYPE* DATA; } sizchk_t;
     if (!($disown) && sizeof(sizchk_t) == sizeof(NAME)) {
-      size_t numel = 0;
       size_t dims[] = {0, 0};
       temp.DATA = NULL;
       /* swiglal_array_typeid input type: TYPE* */
       res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
-                                         sizeof(TYPE), 2, &numel, dims,
+                                         sizeof(TYPE), 2, dims,
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                          $disown | %convertptr_flags);
       if (!SWIG_IsOK(res)) {
-        temp_data = temp.DATA = %swiglal_new_array(numel, TYPE);
+        temp_data = temp.DATA = %swiglal_new_array(dims[0] * dims[1], TYPE);
         size_t strides[] = {dims[1], 1};
         res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp.DATA),
                                            sizeof(TYPE), 2, dims, strides,
@@ -1210,12 +1209,11 @@ if (strides[I-1] == 0) {
   if (!SWIG_IsOK(res)) {
     typedef struct { SIZET NI; SIZET NJ; TYPE* DATA; } sizchk_t;
     if (!($disown) && sizeof(sizchk_t) == sizeof(NAME)) {
-      size_t numel = 0;
       size_t dims[] = {0, 0};
       temp.DATA = NULL;
       /* swiglal_array_typeid input type: TYPE* */
       res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp.DATA),
-                                         sizeof(TYPE), 2, &numel, dims,
+                                         sizeof(TYPE), 2, dims,
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                          $disown | %convertptr_flags);
       if (!SWIG_IsOK(res)) {
@@ -1244,15 +1242,14 @@ if (strides[I-1] == 0) {
   if (!SWIG_IsOK(res)) {
     typedef struct { SIZET NI; SIZET NJ; TYPE* DATA; } sizchk_t;
     if (!($disown) && sizeof(sizchk_t) == sizeof(NAME)) {
-      size_t numel = 0;
       size_t dims[] = {0, 0};
       /* swiglal_array_typeid input type: TYPE* */
       res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp_data),
-                                         sizeof(TYPE), 2, &numel, dims,
+                                         sizeof(TYPE), 2, dims,
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                          $disown | %convertptr_flags);
-      if (numel > 0) {
-        temp_data = temp.DATA = %swiglal_new_array(numel, TYPE);
+      if (dims[0] * dims[1] > 0) {
+        temp_data = temp.DATA = %swiglal_new_array(dims[0] * dims[1], TYPE);
         size_t strides[] = {dims[1], 1};
         res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp_data),
                                            sizeof(TYPE), 2, dims, strides,

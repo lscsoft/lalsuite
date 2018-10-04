@@ -930,64 +930,65 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
                                                      void** ptr,
                                                      const size_t esize,
                                                      const size_t ndims,
-                                                     size_t* numel,
                                                      size_t dims[],
                                                      const bool isptr,
                                                      swig_type_info *tinfo,
                                                      const int tflags)
   {
 
-    // Cannot handle arrays of pointers.
+    // Check that C array pointer is valid.
+    if (ptr == NULL) {
+      return SWIG_MemoryError;
+    }
+
+    // Convert 'obj' to the desired OVTYPE, store in 'val'.
+    OVTYPE val = obj.OVVALUE();
+
+    // Check that 'val' has the correct number of dimensions.
+    // - 1-D arrays are a special case, since Octave arrays are always at least
+    //   2-dimensional, so need to check that one of those dimensions is singular.
+    dim_vector valdims = val.dims();
+    if (ndims == 1) {
+      if (valdims.length() > 2 || valdims.num_ones() == 0) {
+        return SWIG_ValueError;
+      }
+    }
+    else if (val.ndims() != %reinterpret_cast(ndims, octave_idx_type)) {
+      return SWIG_ValueError;
+    }
+
+    // Return dimensions of Octave array.
+    if (ndims == 1) {
+      dims[0] = val.numel();
+    } else {
+      for (size_t i = 0; i < ndims; ++i) {
+        dims[i] = valdims(i);
+      }
+    }
+
+    // Cannot view an array of pointers.
     if (isptr) {
       return SWIG_TypeError;
     }
 
-    // Check that 'obj' is not itself an Octave view of a C array.
+    // Cannot view an array which is not itself an Octave view of a C array.
     if (obj.type_name().find("swiglal_oct_array_view_") == 0) {
       return SWIG_TypeError;
     }
 
-    // Check that 'obj' is of the correct type, then store value in 'val'.
+    // Since Octave stores arrays in column-major order, we can only view 1-D arrays.
+    if (ndims != 1) {
+      return SWIG_ValueError;
+    }
+
+    // Check that 'obj' is of the correct type.
     if (!(ISOVTYPEEXPR)) {
       return SWIG_TypeError;
     }
-    {
-      OVTYPE val = obj.OVVALUE();
 
-      // Check that the elements of 'val' have the correct size.
-      if (val.byte_size() != val.numel() * esize) {
-        return SWIG_TypeError;
-      }
-
-      // Check that 'val' has the correct number of dimensions.  1-D arrays are a special case,
-      // since Octave arrays are always at least 2-dimensional, so need to check that one of those
-      // dimensions is singular.
-      dim_vector valdims = val.dims();
-      if (ndims == 1) {
-        if (valdims.length() > 2 || valdims.num_ones() == 0) {
-          return SWIG_ValueError;
-        }
-      }
-      else if (val.ndims() != %reinterpret_cast(ndims, octave_idx_type)) {
-        return SWIG_ValueError;
-      }
-
-      // Return number of elements and dimensions of Octave array.
-      *numel = val.numel();
-      if (ndims == 1) {
-        dims[0] = val.numel();
-      } else {
-        for (size_t i = 0; i < ndims; ++i) {
-          dims[i] = valdims(i);
-        }
-      }
-
-    }
-
-    // Since Octave stores arrays in column-major order, we can only view 1-D arrays.  (This check
-    // is performed late so that 'numel' and 'dims' can be filled first.)
-    if (ndims != 1) {
-      return SWIG_ValueError;
+    // Check that the elements of 'val' have the correct size.
+    if (val.byte_size() != val.numel() * esize) {
+      return SWIG_TypeError;
     }
 
     // Get pointer to Octave array data, a highly complicated and dodgy process!  Usually
