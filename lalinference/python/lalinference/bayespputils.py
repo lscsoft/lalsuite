@@ -61,7 +61,7 @@ from numpy import linspace
 import random
 import socket
 from itertools import combinations
-from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
+from .lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
 import re
 import six
 
