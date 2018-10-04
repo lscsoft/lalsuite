@@ -120,5 +120,5 @@ def eigenframe_to_icrs(from_coo, to_frame):
                             from_coo.e_y.xyz.value,
                             from_coo.e_z.xyz.value))
 
-from lalinference.bayestar.deprecation import warn
+from .bayestar.deprecation import warn
 warn('ligo.skymap.coordinates.eigenframe')

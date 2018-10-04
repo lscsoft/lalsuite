@@ -179,7 +179,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %files -n python2-%{name}
 %defattr(-,root,root)
 %license COPYING
-%{_bindir}/bayestar_*
 %{_bindir}/cbcBayes*
 %{_bindir}/imrtgr_*
 %{_bindir}/lalinference_average_skymaps

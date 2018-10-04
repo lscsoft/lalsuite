@@ -50,6 +50,7 @@ import astropy.table
 import numpy as np
 from numpy import fmod
 import matplotlib
+matplotlib.use('agg')
 from matplotlib import pyplot as plt,cm as mpl_cm,lines as mpl_lines
 from scipy import stats
 from scipy import special
@@ -60,8 +61,9 @@ from numpy import linspace
 import random
 import socket
 from itertools import combinations
-from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
+from .lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
 import re
+import six
 
 try:
     import lalsimulation as lalsim
@@ -4185,9 +4187,9 @@ def getRAString(radians,accuracy='auto'):
     if mins>=59.5:
         mins=mins-60
         hours=hours+1
-    if accuracy=='hour': return u'%ih'%(hours)
-    if accuracy=='min': return u'%ih%im'%(hours,mins)
-    if accuracy=='sec': return u'%ih%im%2.0fs'%(hours,mins,secs)
+    if accuracy=='hour': return six.u(r'%ih'%(hours))
+    if accuracy=='min': return six.u(r'%ih%im'%(hours,mins))
+    if accuracy=='sec': return six.u(r'%ih%im%2.0fs'%(hours,mins,secs))
     else:
         if abs(fmod(secs,60.0))>=0.5: return(getRAString(radians,accuracy='sec'))
         if abs(fmod(mins,60.0))>=0.5: return(getRAString(radians,accuracy='min'))
@@ -4218,9 +4220,9 @@ def getDecString(radians,accuracy='auto'):
     #    deg=deg+1
     if (accuracy=='arcmin' or accuracy=='deg') and secs>30: mins=mins+1
     if accuracy=='deg' and mins>30: deg=deg+1
-    if accuracy=='deg': return u'%i'%(sign*deg)+degsymb
-    if accuracy=='arcmin': return u'%i%s%i%s'%(sign*deg,degsymb,mins,minsymb)
-    if accuracy=='arcsec': return u'%i%s%i%s%2.0f%s'%(sign*deg,degsymb,mins,minsymb,secs,secsymb)
+    if accuracy=='deg': return six.u(r'%i'%(sign*deg)+degsymb)
+    if accuracy=='arcmin': return six.u(r'%i%s%i%s'%(sign*deg,degsymb,mins,minsymb))
+    if accuracy=='arcsec': return six.u(r'%i%s%i%s%2.0f%s'%(sign*deg,degsymb,mins,minsymb,secs,secsymb))
     else:
     #    if abs(fmod(secs,60.0))>=0.5 and abs(fmod(secs,60)-60)>=0.5 : return(getDecString(sign*radians,accuracy='arcsec'))
     #    if abs(fmod(mins,60.0))>=0.5 and abs(fmod(mins,60)-60)>=0.5: return(getDecString(sign*radians,accuracy='arcmin'))
@@ -6509,8 +6511,6 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
             dec=tbl.latitude
             psi=tbl.polarization
 
-
-
             if SimInspiralImplementedFDApproximants(injapproximant):
                 inj_domain='F'
                 [plus,cross]=SimInspiralChooseFDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,r, iota, phiRef,
@@ -6530,8 +6530,8 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
             for ifo in ifos:
                 fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
                 if inj_domain=='T':
-            # strain is a temporary container for this IFO strain.
-            # Take antenna pattern into accout and window the data
+                    # strain is a temporary container for this IFO strain.
+                    # Take antenna pattern into accout and window the data
                     for k in np.arange(strainT.data.length):
                         if k<plus.data.length:
                             strainT.data.data[k]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
@@ -6595,7 +6595,6 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
                 D=pos['distance'].samples[which][0]
             elif 'logdistance' in pos.names:
                 D=exp(pos['distance'].samples[which][0])
-
 
             m1=M1*LAL_MSUN_SI
             m2=M2*LAL_MSUN_SI

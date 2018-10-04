@@ -112,5 +112,5 @@ class BoundedKDE(gaussian_kde):
 
         return np.count_nonzero(self(self.dataset) < self(pt)) / self.n
 
-from lalinference.bayestar.deprecation import warn
+from .bayestar.deprecation import warn
 warn('ligo.skymap.kde')

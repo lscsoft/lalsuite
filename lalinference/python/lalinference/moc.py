@@ -131,5 +131,5 @@ def rasterize(moc_data):
     """
     return _moc.rasterize(moc_data)
 
-from lalinference.bayestar.deprecation import warn
+from .bayestar.deprecation import warn
 warn('ligo.skymap.moc')
