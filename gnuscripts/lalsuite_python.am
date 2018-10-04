@@ -8,8 +8,7 @@ SUFFIXES = .py
 
 if HAVE_PYTHON
 
-all: $(pymodule_PYTHON) $(pybin_scripts)
-
+BUILT_SOURCES += $(pymodule_PYTHON) $(pybin_scripts)
 MOSTLYCLEANFILES += $(pybin_scripts)
 
 uninstalled_runner = $(top_srcdir)/gnuscripts/lalsuite_run_uninstalled
