@@ -1,7 +1,9 @@
 SUFFIXES = .py
 
 .PHONY: pymodule-all-local
+.PHONY: pyscripts-all-local
 .PHONY: pymodule-mostlyclean-local
+.PHONY: pyscripts-mostlyclean-local
 .PHONY: pybin-install-exec-local
 .PHONY: pybin-uninstall-local
 .PHONY: pybin-dist-hook
