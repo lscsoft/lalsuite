@@ -4,6 +4,7 @@ SUFFIXES = .py
 .PHONY: pyscripts-all-local
 .PHONY: pymodule-mostlyclean-local
 .PHONY: pyscripts-mostlyclean-local
+.PHONY: py-mostlyclean-local
 .PHONY: pybin-install-exec-local
 .PHONY: pybin-uninstall-local
 .PHONY: pybin-dist-hook
@@ -37,7 +38,7 @@ pyscripts-all-local:
 		done; \
 	fi
 
-mostlyclean-local: pymodule-mostlyclean-local pyscripts-mostlyclean-local
+mostlyclean-local: pymodule-mostlyclean-local pyscripts-mostlyclean-local py-mostlyclean-local
 pymodule-mostlyclean-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
 		for file in $(pymodule_PYTHON); do \
@@ -60,6 +61,8 @@ pyscripts-mostlyclean-local:
 			fi; \
 		done; \
 	fi
+py-mostlyclean-local:
+	-rm -rf __pycache__
 
 $(pybin_scripts): Makefile pyscripts-all-local
 .py:
