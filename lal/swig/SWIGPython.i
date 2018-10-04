@@ -742,8 +742,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
     // Convert the input Python object to a NumPy array.
     if (PyArray_Converter(obj, (PyObject**)&nparr) != NPY_SUCCEED) {
-      res = SWIG_ValueError;
-      goto end;
+      return SWIG_ValueError;
     }
 
     // Check that NumPy array dimensions are consistent with C array dimensions.
