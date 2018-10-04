@@ -42,7 +42,3 @@ pybin_scripts = \
 	$(END_OF_LIST)
 
 endif
-
-# workaround autotools not cleaning up __pycache__
-clean-local:
-	-find . -name "__pycache__" -type d -exec rm -r "{}" \;
