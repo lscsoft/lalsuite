@@ -16,7 +16,7 @@ import socket, time
 import re, string
 from optparse import *
 import tempfile
-import ConfigParser
+from six.moves.configparser import ConfigParser
 import urlparse
 from UserDict import UserDict
 

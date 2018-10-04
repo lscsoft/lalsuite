@@ -11,7 +11,7 @@ __version__ = '$Revision$'
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
 import os, sys, copy, shutil, glob
-from ConfigParser import NoSectionError
+from six.moves.configparser import NoSectionError
 import optparse
 import tempfile
 import urllib
@@ -1432,7 +1432,7 @@ def determine_sieve_patterns(cp, plot_name, ifotag, usertag=None):
 
     Example invocation:
     >>> from lalapps.inspiralutils import determine_sieve_patterns
-    >>> from ConfigParser import ConfigParser
+    >>> from six.moves.configparser import ConfigParser
     >>> cp = ConfigParser()
     >>> cp.read("plot_hipe.ini")
     >>> print(determine_sieve_patterns(cp, "plotinspiral", "H1"))

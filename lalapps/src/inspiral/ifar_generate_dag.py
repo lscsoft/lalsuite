@@ -2,7 +2,7 @@ import sys
 import os
 from optparse import *
 import subprocess
-import ConfigParser as cp
+from six.moves.configparser import ConfigParser as cp
 
 usage = """
         lvS5stat.dag generation script.

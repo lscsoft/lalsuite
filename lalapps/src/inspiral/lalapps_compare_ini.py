@@ -4,7 +4,7 @@ Compare two ini files and print out their differences
 
 import sys
 from optparse import *
-import ConfigParser
+from six.moves import configparser
 
 usage = """usage: %prog [options]
 """
@@ -20,11 +20,11 @@ command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
 # Set the configuration file to cp
-cp = ConfigParser.ConfigParser()
+cp = configparser.ConfigParser()
 cp.read(opts.config_file)
 
 # Set the reference file to cpref
-cpref = ConfigParser.ConfigParser()
+cpref = configparser.ConfigParser()
 cpref.read(opts.ref_file)
 
 # Get the sections in the config file
