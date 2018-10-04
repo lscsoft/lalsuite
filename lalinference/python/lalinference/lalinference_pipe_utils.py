@@ -21,6 +21,7 @@ import shutil
 import numpy as np
 import math
 from six.moves import range
+from six import next
 from functools import reduce
 
 # We use the GLUE pipeline utilities to construct classes for each
@@ -87,7 +88,7 @@ class Event():
     """
     Represents a unique event to run on
     """
-    new_id=itertools.count().next
+    new_id=itertools.count()
     def __init__(self,trig_time=None,SimInspiral=None,SimBurst=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None,trigSNR=None,fhigh=None,horizon_distance=None):
         self.trig_time=trig_time
         self.injection=SimInspiral
@@ -111,7 +112,7 @@ class Event():
         if event_id is not None:
             self.event_id=event_id
         else:
-            self.event_id=Event.new_id()
+            self.event_id=next(Event.new_id)
         if self.injection is not None:
             self.trig_time=self.injection.get_end()
             if event_id is None: self.event_id=int(str(self.injection.simulation_id).split(':')[2])
@@ -1812,7 +1813,7 @@ class SingularityJob(pipeline.CondorDAGJob):
         f.writelines('#!/usr/bin/env bash')
         f.writelines(self.wrapper_string)
         f.close()
-        os.chmod(path,0755)
+        os.chmod(path,0o755)
 
     def write_sub_file(self):
         """
@@ -1986,7 +1987,7 @@ class EngineJob(SingularityJob,pipeline.AnalysisJob):
         pipeline.CondorDAGJob.set_grid_site(self,site)
 
 class EngineNode(SingularityNode):
-    new_id = itertools.count().next
+    new_id = itertools.count()
     def __init__(self,li_job):
         super(EngineNode,self).__init__(li_job)
         self.ifos=[]
@@ -2005,7 +2006,7 @@ class EngineNode(SingularityNode):
         self.psdfiles=None
         self.cachefiles={}
         if li_job.ispreengine is False:
-            self.id=EngineNode.new_id()
+            self.id=next(EngineNode.new_id)
         self.__finaldata=False
         self.fakedata=False
         self.lfns=[] # Local file names (for frame files and pegasus)
@@ -2143,8 +2144,8 @@ class EngineNode(SingularityNode):
         elif isinstance(filename,list): # A list of LFNs (for DAX mode)
             self.add_var_opt('glob-frame-data',' ')
             if len(filename) == 0:
-                raise pipeline.CondorDAGNodeError, \
-                "LDR did not return any LFNs for query: check ifo and frame type"
+                raise pipeline.CondorDAGNodeError(
+                    "LDR did not return any LFNs for query: check ifo and frame type")
             for lfn in filename:
                 self.lfns.append(lfn)
 
