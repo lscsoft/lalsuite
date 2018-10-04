@@ -1030,7 +1030,7 @@ if (strides[I-1] == 0) {
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                          $disown | %convertptr_flags);
       if (!SWIG_IsOK(res)) {
-        temp_data = temp.DATA = %reinterpret_cast(XLALMalloc(numel * sizeof(TYPE)), TYPE*);
+        temp_data = temp.DATA = %swiglal_new_array(numel, TYPE);
         size_t strides[] = {1};
         res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp.DATA),
                                            sizeof(TYPE), 1, dims, strides,
@@ -1107,7 +1107,7 @@ if (strides[I-1] == 0) {
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                          $disown | %convertptr_flags);
       if (numel > 0) {
-        temp_data = temp.DATA = %reinterpret_cast(XLALMalloc(numel * sizeof(TYPE)), TYPE*);
+        temp_data = temp.DATA = %swiglal_new_array(numel, TYPE);
         size_t strides[] = {1};
         res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp_data),
                                            sizeof(TYPE), 1, dims, strides,
@@ -1172,7 +1172,7 @@ if (strides[I-1] == 0) {
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                          $disown | %convertptr_flags);
       if (!SWIG_IsOK(res)) {
-        temp_data = temp.DATA = %reinterpret_cast(XLALMalloc(numel * sizeof(TYPE)), TYPE*);
+        temp_data = temp.DATA = %swiglal_new_array(numel, TYPE);
         size_t strides[] = {dims[1], 1};
         res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp.DATA),
                                            sizeof(TYPE), 2, dims, strides,
@@ -1252,7 +1252,7 @@ if (strides[I-1] == 0) {
                                          $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                          $disown | %convertptr_flags);
       if (numel > 0) {
-        temp_data = temp.DATA = %reinterpret_cast(XLALMalloc(numel * sizeof(TYPE)), TYPE*);
+        temp_data = temp.DATA = %swiglal_new_array(numel, TYPE);
         size_t strides[] = {dims[1], 1};
         res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp_data),
                                            sizeof(TYPE), 2, dims, strides,
