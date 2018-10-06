@@ -8,9 +8,10 @@ import time
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib.pyplot import *
+import matplotlib.pyplot as plt
+matplotlib.rcParams['text.usetex']=False
 from glue import lal
 from pylal import frutils
-import matplotlib.pyplot as plt
 from gwpy.timeseries import TimeSeries
 
 #Written by Kara Merfeld, 2018 (In my defense, I was a little first year grad student when I did this :) )
@@ -285,9 +286,9 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
         fig = plt.figure()
         ax1 = fig.add_subplot(111)
         ax1.plot(Freq[minFreq:maxFreq:1], coh[minFreq:maxFreq:1], label = 'Coherence')
-        ax1.set_xlabel('Frequency (Hz)')
-        ax1.set_title('Coherence: '+CA+' and '+CB+'; '+startTime+'; nAve= '+nAve, fontsize = 9)
-        ax1.set_ylabel('Coherence')
+        ax1.set_xlabel('Frequency (Hz)',fontsize = 10)
+        ax1.set_title(CA+' and '+CB+'; '+startTime+'; nAve= '+nAve, fontsize = 7)
+        ax1.set_ylabel('Coherence',fontsize = 10)
         ax1.set_ylim([0,1])
         savefig(filename+'.png')
         #savefig(path+filename+'.png')
