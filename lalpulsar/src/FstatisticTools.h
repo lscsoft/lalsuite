@@ -33,16 +33,11 @@ extern "C" {
 #endif
 
 ///
-/// \defgroup EstimateAmplitudeParams_h Header EstimateAmplitudeParams.h
+/// \defgroup FstatisticTools_h Header FstatisticTools.h
 /// \ingroup lalpulsar_coh
 /// \authors Reinhard Prix
 ///
 /// \brief Functions to estimate amplitude parameters and convert between different parametrizations.
-/// * ### Synopsis ###
-///
-/// \code
-/// #include <lal/EstimateAmplitudeParams.h>
-/// \endcode
 ///
 
 // @{

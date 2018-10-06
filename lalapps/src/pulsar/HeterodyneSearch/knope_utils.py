@@ -166,7 +166,7 @@ class knopeDAG(pipeline.CondorDAG):
       for stkey in dict(self.starttime):
         if isinstance(self.starttime[stkey], int):
           # convert to list
-          self.starttime[stkey] = list(self.starttime[stkey])
+          self.starttime[stkey] = [self.starttime[stkey]]
         elif isinstance(self.starttime[stkey], list):
           # check all values are int
           if len([v for v in self.starttime[stkey] if isinstance(v, int)]) != len(self.starttime[stkey]):
@@ -200,7 +200,7 @@ class knopeDAG(pipeline.CondorDAG):
       for etkey in dict(self.endtime):
         if isinstance(self.endtime[etkey], int):
           # convert to list
-          self.endtime[etkey] = list(self.endtime[etkey])
+          self.endtime[etkey] = [self.endtime[etkey]]
         elif isinstance(self.endtime[etkey], list):
           # check all values are int
           if len([v for v in self.endtime[etkey] if isinstance(v, int)]) != len(self.endtime[etkey]):
@@ -878,7 +878,7 @@ class knopeDAG(pipeline.CondorDAG):
       resultsnode = resultpageNode(resultpagejob)
       resultsnode.set_config(inifile)
 
-      # add parent lalapps_nest2pos job
+      # add parent lalinference_nest2pos job
       for n2pnode in self.pe_nest2pos_nodes[pname]:
         resultsnode.add_parent(n2pnode)
 
@@ -944,7 +944,7 @@ class knopeDAG(pipeline.CondorDAG):
     self.pe_universe = self.get_config_option('pe', 'universe', default='vanilla')
     if self.error_code != 0: return
 
-    self.pe_nest2pos_nodes = {} # condor nodes for the lalapps_nest2pos jobs (needed to use as parents for results processing jobs)
+    self.pe_nest2pos_nodes = {} # condor nodes for the lalinference_nest2pos jobs (needed to use as parents for results processing jobs)
     self.pe_nest2pos_background_nodes = {} # nodes for background analysis
 
     # see whether to run just as independent detectors, or independently AND coherently over all detectors
@@ -1063,16 +1063,16 @@ class knopeDAG(pipeline.CondorDAG):
     self.pe_use_parameter_errors = self.get_config_option('pe', 'use_parameter_errors', cftype='boolean', default=False)
 
     # check for executable for merging nested sample files/converting them to posteriors
-    self.pe_n2p_exec = self.get_config_option('pe', 'n2p_exec', default='lalapps_nest2pos')
+    self.pe_n2p_exec = self.get_config_option('pe', 'n2p_exec', default='lalinference_nest2pos')
     if self.error_code != 0: return
 
     # check file exists and is executable
     if not os.path.isfile(self.pe_n2p_exec) or not os.access(self.pe_n2p_exec, os.X_OK):
       print("Warning... 'pe_n2p_exec' in '[pe]' does not exist or is not an executable. Try finding code in path.")
-      pen2pexec = self.find_exec_file('lalapps_nest2pos')
+      pen2pexec = self.find_exec_file('lalinference_nest2pos')
 
       if pen2pexec == None:
-        print("Error... could not find 'lalapps_nest2pos' in 'PATH'", file=sys.stderr)
+        print("Error... could not find 'lalinference_nest2pos' in 'PATH'", file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
@@ -1166,7 +1166,7 @@ class knopeDAG(pipeline.CondorDAG):
         self.mkdirs(psrpostdir)
         if self.error_code != 0: return
 
-        n2pnodes[pname] = [] # list of nodes for lalapps_nest2pos jobs for a given pulsar
+        n2pnodes[pname] = [] # list of nodes for lalinference_nest2pos jobs for a given pulsar
 
         for comb in self.pe_combinations:
           dets = comb['detectors']
@@ -1343,7 +1343,7 @@ class knopeDAG(pipeline.CondorDAG):
             counter = counter+1
             i = i+1
 
-          # add lalapps_nest2pos node to combine outputs/convert to posterior samples
+          # add lalinference_nest2pos node to combine outputs/convert to posterior samples
           n2pnode = nest2posNode(n2pjob)
           postfile = os.path.join(ffpostdir, 'posterior_samples_%s.hdf' % pname)
           n2pnode.set_outfile(postfile)     # output posterior file
@@ -4333,7 +4333,7 @@ class collateNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
 class nest2posJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
-  A merge nested sampling files job to use lalapps_nest2pos
+  A merge nested sampling files job to use lalinference_nest2pos
   """
   def __init__(self, execu, univ='local', accgroup=None, accuser=None, logdir=None, rundir=None):
     self.__executable = execu
@@ -4364,7 +4364,7 @@ class nest2posJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
 class nest2posNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
-  A nest2posNode runs a instance of the lalapps_nest2pos to combine individual nested
+  A nest2posNode runs a instance of the lalinference_nest2pos to combine individual nested
   sample files in a condor DAG.
   """
   def __init__(self,job):
