@@ -41,11 +41,3 @@ EXTRA_DIST += $(test_script_runner)
 SH_LOG_COMPILER = $(SHELL)
 M_LOG_COMPILER = $(test_script_compiler) "$(OCTAVE)" -fH
 PY_LOG_COMPILER = $(test_script_compiler) "$(PYTHON)" -u
-
-.PHONY: run-octave
-run-octave: $(octexec_LTLIBRARIES)
-	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) "$(OCTAVE)" $(RUNARGS)
-
-.PHONY: run-python
-run-python: $(pkgpyexec_LTLIBRARIES)
-	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) "$(PYTHON)" $(RUNARGS)
