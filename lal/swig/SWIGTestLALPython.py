@@ -1187,7 +1187,6 @@ if lal.swig_version >= 0x030011:
             'foobar', lal.LIGOTimeGPS(1e9), 0, 1, lal.StrainUnit, 1024)
         a.data.data = numpy.arange(1024)
         pickled = pickle.dumps(a, 0)
-        print(pickled)
         b = pickle.loads(pickled)
         assert type(a) == type(b)
         assert a.name == b.name
@@ -1202,7 +1201,6 @@ if lal.swig_version >= 0x030011:
             'foobar', lal.LIGOTimeGPS(1e9), 0, 1, lal.StrainUnit, 1024)
         a.data.data = numpy.arange(1024)
         pickled = pickle.dumps(a, 0)
-        print(pickled)
         b = pickle.loads(pickled)
         assert type(a) == type(b)
         assert a.name == b.name
