@@ -568,23 +568,23 @@ struct TAGNAME {
 /// Type checkers for overloaded functions:
 ///
 %typecheck(SWIG_TYPECHECK_POINTER) SWIGTYPE[ANY] {
-  $typemap(swiglal_fixarr_ltype, $1_type) temp$argnum[$1_dim0];
+  $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0];
   const size_t dims[] = {$1_dim0};
   const size_t strides[] = {1};
   /* swiglal_array_typeid input type: $1_type */
-  int res = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr(&temp$argnum[0]),
-                                           sizeof(temp$argnum[0]), 1, dims, strides,
+  int res = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr(&temp[0]),
+                                           sizeof(temp[0]), 1, dims, strides,
                                            $typemap(swiglal_fixarr_isptr, $1_type), $typemap(swiglal_fixarr_tinfo, $1_type),
                                            %convertptr_flags);
   $1 = SWIG_CheckState(res);
 }
 %typecheck(SWIG_TYPECHECK_POINTER) SWIGTYPE[ANY][ANY] {
-  $typemap(swiglal_fixarr_ltype, $1_type) temp$argnum[$1_dim0][$1_dim1];
+  $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0][$1_dim1];
   const size_t dims[] = {$1_dim0, $1_dim1};
   const size_t strides[] = {$1_dim1, 1};
   /* swiglal_array_typeid input type: $1_type */
-  int res = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr(&temp$argnum[0]),
-                                           sizeof(temp$argnum[0][0]), 2, dims, strides,
+  int res = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr(&temp[0]),
+                                           sizeof(temp[0][0]), 2, dims, strides,
                                            $typemap(swiglal_fixarr_isptr, $1_type), $typemap(swiglal_fixarr_tinfo, $1_type),
                                            %convertptr_flags);
   $1 = SWIG_CheckState(res);
