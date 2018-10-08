@@ -59,12 +59,12 @@ assert((b == [1.1, 2.2, 3.3]).all())
 del a
 assert((b == [1.1, 2.2, 3.3]).all())
 ts = lal.CreateREAL8TimeSeries("test", lal.LIGOTimeGPS(0), 0, 0.1, lal.DimensionlessUnit, 10)
-ts.data.data = range(0, 10)
+ts.data.data = list(range(0, 10))
 for i in range(0, 7):
     v = ts.data
-assert((v.data == range(0, 10)).all())
+assert((v.data == list(range(0, 10))).all())
 del ts
-assert((v.data == range(0, 10)).all())
+assert((v.data == list(range(0, 10))).all())
 del v
 lal.CheckMemoryLeaks()
 print("PASSED object parent tracking")
@@ -854,8 +854,8 @@ print("PASSED input views of array structs (type safety)")
 
 # check FFT functions with input views
 print("check FFT functions with input views ...")
-r4in = numpy.array(range(0, 32), dtype=numpy.float32)
-r8in = numpy.array(range(0, 64), dtype=numpy.float64)
+r4in = numpy.array(list(range(0, 32)), dtype=numpy.float32)
+r8in = numpy.array(list(range(0, 64)), dtype=numpy.float64)
 c8in = numpy.array(numpy.vectorize(complex)(8 + r4in, r4in), dtype=numpy.complex64)
 c16in = numpy.array(numpy.vectorize(complex)(16 + r8in, r8in), dtype=numpy.complex128)
 c8inv = lal.CreateCOMPLEX8Vector(len(c8in))
