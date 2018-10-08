@@ -65,7 +65,28 @@ void swig_lal_test_copyin_array2(INT4 INPUT[3][2], INT4 scale, INT4 OUTPUT[3][2]
   }
 }
 
-// Test input views of array structs.
+// Test input views of string array structs.
+BOOLEAN swig_lal_test_viewin_LALStringVector(LALStringVector* copyout, const LALStringVector* viewin) {
+  if (!copyout || !copyout->data || !viewin || !viewin->data || copyout->length != viewin->length) {
+    return 0;
+  }
+  for (size_t i = 0; i < viewin->length; ++i) {
+    XLALFree(copyout->data[i]);
+    copyout->data[i] = XLALStringDuplicate(viewin->data[i]);
+  }
+  return 1;
+}
+BOOLEAN swig_lal_test_copyinout_LALStringVector(LALStringVector* copyinout) {
+  if (!copyinout || !copyinout->data) {
+    return 0;
+  }
+  for (size_t i = 0; i < copyinout->length; ++i) {
+    XLALStringToUpperCase(copyinout->data[i]);
+  }
+  return 1;
+}
+
+// Test input views of numeric array structs.
 BOOLEAN swig_lal_test_viewin_REAL4Vector(REAL4Vector* copyout, const REAL4Vector* viewin) {
   if (!copyout || !copyout->data || !viewin || !viewin->data || copyout->length != viewin->length) {
     return 0;

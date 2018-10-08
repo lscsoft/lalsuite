@@ -381,7 +381,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       { }
 
       // Copy the Octave array obj to the C array.
-      int sloav_array_in(octave_value& obj) {
+      int sloav_array_in(octave_value& obj, int *pelemalloc) {
 
         // Check that C array pointer is valid.
         if (!sloav_ptr) {
@@ -411,7 +411,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
           octave_value objelem = obj.subsref(obj.is_cell() ? "{" : "(", objidx);
 
           // Copy the Octave array element to the C array.
-          int res = HELPER::incall(sloav_parent, objelem, sloav_get_element_ptr(idx), sloav_esize, sloav_isptr, sloav_tinfo, sloav_tflags);
+          int res = HELPER::incall(sloav_parent, objelem, sloav_get_element_ptr(idx), pelemalloc, sloav_esize, sloav_isptr, sloav_tinfo, sloav_tflags);
           if (!SWIG_IsOK(res)) {
             return res;
           }
@@ -495,7 +495,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       // Do subscript assignment, and copy result back to C array.
       octave_value subsasgn(const std::string& type, const std::list<octave_value_list>& idx, const octave_value& rhs) {
         octave_value obj = sloav_array_out().subsasgn(type, idx, rhs);
-        int res = sloav_array_in(obj);
+        int elemalloc = 0;
+        int res = sloav_array_in(obj, &elemalloc);
         if (!SWIG_IsOK(res)) {
           std::string n = type_name();
           std::string e = SWIG_ErrorType(res).string_value();
@@ -512,7 +513,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       }
       bool load_ascii(std::istream& is) {
         octave_value obj = sloav_array_out();
-        return obj.load_ascii(is) && SWIG_IsOK(sloav_array_in(obj));
+        int elemalloc = 0;
+        return obj.load_ascii(is) && SWIG_IsOK(sloav_array_in(obj, &elemalloc));
       }
 
       // Save and load from binary.
@@ -521,7 +523,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       }
       bool load_binary(std::istream& is, bool swap, oct_mach_info::float_format fmt) {
         octave_value obj = sloav_array_out();
-        return obj.load_binary(is, swap, fmt) && SWIG_IsOK(sloav_array_in(obj));
+        int elemalloc = 0;
+        return obj.load_binary(is, swap, fmt) && SWIG_IsOK(sloav_array_in(obj, &elemalloc));
       }
 
       // Save and load from HDF5.
@@ -538,17 +541,20 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 %#if SWIG_OCTAVE_PREREQ(4,0,0)
       bool load_hdf5(octave_hdf5_id loc_id, const char *name) {
         octave_value obj = sloav_array_out();
-        return obj.load_hdf5(loc_id, name) && SWIG_IsOK(sloav_array_in(obj));
+        int elemalloc = 0;
+        return obj.load_hdf5(loc_id, name) && SWIG_IsOK(sloav_array_in(obj, &elemalloc));
       }
 %#elif SWIG_OCTAVE_PREREQ(3,3,52)
       bool load_hdf5(hid_t loc_id, const char *name) {
         octave_value obj = sloav_array_out();
-        return obj.load_hdf5(loc_id, name) && SWIG_IsOK(sloav_array_in(obj));
+        int elemalloc = 0;
+        return obj.load_hdf5(loc_id, name) && SWIG_IsOK(sloav_array_in(obj, &elemalloc));
       }
 %#else
       bool load_hdf5(hid_t loc_id, const char *name, bool have_h5giterate_bug) {
         octave_value obj = sloav_array_out();
-        return obj.load_hdf5(loc_id, name, have_h5giterate_bug) && SWIG_IsOK(sloav_array_in(obj));
+        int elemalloc = 0;
+        return obj.load_hdf5(loc_id, name, have_h5giterate_bug) && SWIG_IsOK(sloav_array_in(obj, &elemalloc));
       }
 %#endif
 %#endif
@@ -818,7 +824,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       }
 
       // Convert the octave_value objelem to an array element stored at elemptr.
-      static int incall(const octave_value& parent, octave_value& objelem, void *elemptr, const size_t esize, const bool isptr, swig_type_info *const tinfo, const int tflags)
+      static int incall(const octave_value& parent, octave_value& objelem, void *elemptr, int *pelemalloc, const size_t esize, const bool isptr, swig_type_info *const tinfo, const int tflags)
       {
         return INCALL;
       }
@@ -885,6 +891,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
   SWIGINTERN int %swiglal_array_copyin_func(ACFTYPE)(const octave_value& parent,
                                                      octave_value obj,
                                                      void* ptr,
+                                                     int *pelemalloc,
                                                      const size_t esize,
                                                      const size_t ndims,
                                                      const size_t dims[],
@@ -896,7 +903,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     // Create a local array view, then use its sloav_array_in() member to copy the input Octave
     // array to the viewed C array.
     %swiglal_oct_array_view_class(ACFTYPE) arrview(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags);
-    return arrview.sloav_array_in(obj);
+    return arrview.sloav_array_in(obj, pelemalloc);
   }
 %}
 
@@ -1061,8 +1068,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
 // Array conversion fragments for arrays of LAL strings.  Note that input views are not supported,
 // and so ISOVTYPEEXPR is 'false'.
-%swiglal_oct_array_frags(LALchar, "SWIG_AsNewLALcharPtr", "SWIG_FromLALcharPtr",
-                         %arg(SWIG_AsNewLALcharPtr(objelem, %reinterpret_cast(elemptr, char**))),
+%swiglal_oct_array_frags(LALchar, "SWIG_AsLALcharPtrAndSize", "SWIG_FromLALcharPtr",
+                         %arg(SWIG_AsLALcharPtrAndSize(objelem, %reinterpret_cast(elemptr, char**), 0, pelemalloc)),
                          %arg(SWIG_FromLALcharPtr(*%reinterpret_cast(elemptr, char**))),
                          octave_cell, Cell, cell_value, false);
 

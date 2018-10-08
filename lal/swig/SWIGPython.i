@@ -596,6 +596,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     const int tflags = 0;
     const size_t esize = PyArray_DESCR(nparr)->elsize;
     PyObject* parent = PyArray_BASE(nparr);
+    int elemalloc = 0;
+    int *pelemalloc = &elemalloc;
     int res = INCALL;
     if (!SWIG_IsOK(res)) {
       SWIG_Error(res, "failure in swiglal_py_array_objview_" #ACFTYPE "_setitem()");
@@ -723,6 +725,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
   SWIGINTERN int %swiglal_array_copyin_func(ACFTYPE)(PyObject* parent,
                                                      PyObject* obj,
                                                      void* ptr,
+                                                     int *pelemalloc,
                                                      const size_t esize,
                                                      const size_t ndims,
                                                      const size_t dims[],
@@ -1007,8 +1010,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
                                 %arg(swiglal_from_SWIGTYPE(parent, elemptr, isptr, tinfo, tflags)));
 
 // Array conversion fragments for arrays of LAL strings.
-%swiglal_py_array_objview_frags(LALchar, "SWIG_AsNewLALcharPtr", "SWIG_FromLALcharPtr",
-                                %arg(SWIG_AsNewLALcharPtr(objelem, %reinterpret_cast(elemptr, char**))),
+%swiglal_py_array_objview_frags(LALchar, "SWIG_AsLALcharPtrAndSize", "SWIG_FromLALcharPtr",
+                                %arg(SWIG_AsLALcharPtrAndSize(objelem, %reinterpret_cast(elemptr, char**), 0, pelemalloc)),
                                 %arg(SWIG_FromLALcharPtr(*%reinterpret_cast(elemptr, char**))));
 
 // Macro which generates array conversion function fragments to/from Python arrays for real/fragment

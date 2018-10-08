@@ -69,7 +69,17 @@ extern COMPLEX8 swig_lal_test_COMPLEX8_matrix[2][3];
 void swig_lal_test_copyin_array1(REAL8 INPUT[3], REAL8 scale, REAL8 OUTPUT[3]);
 void swig_lal_test_copyin_array2(INT4 INPUT[3][2], INT4 scale, INT4 OUTPUT[3][2]);
 
-// Test input views of array structs.
+// Test input views of string array structs.
+BOOLEAN swig_lal_test_viewin_LALStringVector(LALStringVector* copyout, const LALStringVector* viewin);
+#ifdef SWIG
+SWIGLAL(COPYINOUT_ARRAYS(LALStringVector, copyinout));
+#endif // SWIG
+BOOLEAN swig_lal_test_copyinout_LALStringVector(LALStringVector* copyinout);
+#ifdef SWIG
+SWIGLAL_CLEAR(COPYINOUT_ARRAYS(LALStringVector, copyinout));
+#endif // SWIG
+
+// Test input views of numeric array structs.
 BOOLEAN swig_lal_test_viewin_REAL4Vector(REAL4Vector* copyout, const REAL4Vector* viewin);
 #ifdef SWIG
 SWIGLAL(VIEWIN_ARRAYS(REAL4Vector, viewin, viewout));

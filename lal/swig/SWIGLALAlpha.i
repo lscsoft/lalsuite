@@ -134,11 +134,10 @@ typedef struct {
 /// </li><li>
 
 /// Typemap which attempts to view pointers to \c const GSL vector.
-%typemap(in, noblock=1) const gsl_vector##NAME* (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp, void *temp_data = 0) %{
+%typemap(in, noblock=1) const gsl_vector##NAME* (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp, void *temp_data = 0, size_t dims[] = {0}, int elemalloc = 0) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     if (!($disown)) {
-      size_t dims[] = {0};
       void *data = NULL;
       /* swiglal_array_typeid input type: TYPE* */
       res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
@@ -148,7 +147,7 @@ typedef struct {
       if (!SWIG_IsOK(res)) {
         temp_data = data = %swiglal_new_array(dims[0], TYPE);
         size_t strides[] = {1};
-        res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(data),
+        res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(data), &elemalloc,
                                            sizeof(TYPE), 1, dims, strides,
                                            $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                            $disown | %convertptr_flags);
@@ -208,11 +207,10 @@ typedef struct {
 /// - If the input argument is a SWIG-wrapped \c NAME*, just unwrap it and return a reference.
 /// - If the input argument is a native scripting-language array, make an internal copy of it,
 ///   use the copy, and return a native scripting-language array copy of the internal copy.
-%typemap(in, noblock=1) gsl_vector##NAME* SWIGLAL_COPYINOUT_ARRAY (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp, SWIG_Object input_ref, void *temp_data = 0) %{
+%typemap(in, noblock=1) gsl_vector##NAME* SWIGLAL_COPYINOUT_ARRAY (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp, SWIG_Object input_ref, void *temp_data = 0, size_t dims[] = {0}, int elemalloc = 0) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     if (!($disown)) {
-      size_t dims[] = {0};
       /* swiglal_array_typeid input type: TYPE* */
       res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp_data),
                                          sizeof(TYPE), 1, dims,
@@ -221,7 +219,7 @@ typedef struct {
       if (dims[0] > 0) {
         temp_data = %swiglal_new_array(dims[0], TYPE);
         size_t strides[] = {1};
-        res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp_data),
+        res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp_data), &elemalloc,
                                            sizeof(TYPE), 1, dims, strides,
                                            $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                            $disown | %convertptr_flags);
@@ -284,11 +282,10 @@ typedef struct {
 /// </li><li>
 
 /// Typemap which attempts to view pointers to \c const GSL matrix.
-%typemap(in, noblock=1) const gsl_matrix##NAME* (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp, void *temp_data = 0) %{
+%typemap(in, noblock=1) const gsl_matrix##NAME* (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp, void *temp_data = 0, size_t dims[] = {0, 0}, int elemalloc = 0) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     if (!($disown)) {
-      size_t dims[] = {0, 0};
       void *data = NULL;
       /* swiglal_array_typeid input type: TYPE* */
       res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&data),
@@ -298,7 +295,7 @@ typedef struct {
       if (!SWIG_IsOK(res)) {
         temp_data = data = %swiglal_new_array(dims[0] * dims[1], TYPE);
         size_t strides[] = {dims[1], 1};
-        res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(data),
+        res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(data), &elemalloc,
                                            sizeof(TYPE), 2, dims, strides,
                                            $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                            $disown | %convertptr_flags);
@@ -358,11 +355,10 @@ typedef struct {
 /// - If the input argument is a SWIG-wrapped \c NAME*, just unwrap it and return a reference.
 /// - If the input argument is a native scripting-language array, make an internal copy of it,
 ///   use the copy, and return a native scripting-language array copy of the internal copy.
-%typemap(in, noblock=1) gsl_matrix##NAME* SWIGLAL_COPYINOUT_ARRAY (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp, SWIG_Object input_ref, void *temp_data = 0) %{
+%typemap(in, noblock=1) gsl_matrix##NAME* SWIGLAL_COPYINOUT_ARRAY (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp, SWIG_Object input_ref, void *temp_data = 0, size_t dims[] = {0, 0}, int elemalloc = 0) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     if (!($disown)) {
-      size_t dims[] = {0, 0};
       /* swiglal_array_typeid input type: TYPE* */
       res = %swiglal_array_viewin(TYPE*)(swiglal_no_self(), $input, %as_voidptrptr(&temp_data),
                                          sizeof(TYPE), 2, dims,
@@ -371,7 +367,7 @@ typedef struct {
       if (dims[0] * dims[1] > 0) {
         temp_data = %swiglal_new_array(dims[0] * dims[1], TYPE);
         size_t strides[] = {dims[1], 1};
-        res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp_data),
+        res = %swiglal_array_copyin(TYPE*)(swiglal_no_self(), $input, %as_voidptr(temp_data), &elemalloc,
                                            sizeof(TYPE), 2, dims, strides,
                                            $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                            $disown | %convertptr_flags);
