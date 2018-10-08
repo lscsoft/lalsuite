@@ -18,10 +18,12 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 .PHONY: swig-octave-clean-local
 .PHONY: swig-octave-install-hook
 .PHONY: swig-octave-uninstall-hook
+.PHONY: check-octave-manual
 .PHONY: swig-python-all-local
 .PHONY: swig-python-clean-local
 .PHONY: swig-python-install-hook
 .PHONY: swig-python-uninstall-hook
+.PHONY: check-python-manual
 
 header-links: header-links-local
 
@@ -191,6 +193,9 @@ swig-octave-uninstall-hook:
 
 test_scripts += SWIGTest$(PACKAGE_NAME)Octave.m
 
+check-octave-manual: $(octexec_LTLIBRARIES)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) $(OCTAVE) $(srcdir)/SWIGTest$(PACKAGE_NAME)Octave.m
+
 endif # SWIG_BUILD_OCTAVE
 
 if SWIG_BUILD_PYTHON
@@ -253,6 +258,9 @@ swig-python-uninstall-hook:
 	rm -f _$(PACKAGE)$(SWIG_SOEXT)
 
 test_scripts += SWIGTest$(PACKAGE_NAME)Python.py
+
+check-python-manual: $(pkgpyexec_LTLIBRARIES)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) $(PYTHON) $(srcdir)/SWIGTest$(PACKAGE_NAME)Python.py
 
 endif # SWIG_BUILD_PYTHON
 
