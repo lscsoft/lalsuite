@@ -1276,7 +1276,7 @@ if (strides[I-1] == 0) {
 %typemap(argout, match="in", noblock=1) NAME* SWIGLAL_COPYINOUT_ARRAY %{
   if (temp_data$argnum) {
     const size_t dims[] = {%static_cast(temp$argnum.NI, size_t), %static_cast(temp$argnum.NJ, size_t)};
-    size_t strides[] = {dims[1], 1};
+    const size_t strides[] = {dims[1], 1};
     /* swiglal_array_typeid input type: TYPE* */
     %append_output(%swiglal_array_copyout(TYPE*)(swiglal_no_self(), %as_voidptr(temp_data$argnum),
                                                  sizeof(TYPE), 2, dims, strides,
