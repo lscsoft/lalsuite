@@ -21,8 +21,8 @@ import json
 import subprocess as sp
 import shutil
 import uuid
-import ConfigParser
-import urlparse
+from six.moves.configparser import ConfigParser
+import six.moves.urllib.parse as urlparse
 from copy import deepcopy
 import numpy as np
 import pickle
@@ -607,7 +607,7 @@ class knopeDAG(pipeline.CondorDAG):
     collatejob = collateJob(self.collate_exec, univ=self.results_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
 
     # create config file for collating results into a results table
-    cpc = ConfigParser.ConfigParser() # create config parser to output .ini file
+    cpc = ConfigParser() # create config parser to output .ini file
     # create configuration .ini file
     cinifile = os.path.join(self.results_basedir, 'collate.ini')
 
@@ -704,7 +704,7 @@ class knopeDAG(pipeline.CondorDAG):
         except:
           print("Warning... could not write out ATNF catalogue information to JSON file '%s'." % jsonfile, file=sys.stderr)
 
-      cp = ConfigParser.ConfigParser() # create config parser to output .ini file
+      cp = ConfigParser() # create config parser to output .ini file
       # create configuration .ini file
       inifile = os.path.join(self.results_pulsar_dir[pname], pname+'.ini')
 
@@ -991,6 +991,22 @@ class knopeDAG(pipeline.CondorDAG):
     self.pe_nmcmc_initial = self.get_config_option('pe', 'n_mcmc_initial', cftype='int', default=500)
     self.pe_non_gr = self.get_config_option('pe', 'non_gr', cftype='boolean', default=False)        # use non-GR parameterisation (default to False)
 
+    # check if only using a section of data
+    self.pe_starttime = self.get_config_option('pe', 'starttime',
+                                               cftype='float', allownone=True)
+    self.pe_endtime = self.get_config_option('pe', 'endtime', cftype='float',
+                                             allownone=True)
+    self.pe_truncate_time = self.get_config_option('pe', 'truncate_time',
+                                                   cftype='float',
+                                                   allownone=True)
+    self.pe_truncate_samples = self.get_config_option('pe', 'truncate_samples',
+                                                      cftype='int',
+                                                      allownone=True)
+    self.pe_truncate_fraction = self.get_config_option('pe',
+                                                       'truncate_fraction',
+                                                       cftype='float',
+                                                       allownone=True)
+
     # parameters for background runs
     self.pe_nruns_background = self.get_config_option('pe', 'n_runs_background', cftype='int', default=1)
     self.pe_nlive_background = self.get_config_option('pe', 'n_live_background', cftype='int', default=1024)
@@ -1231,7 +1247,7 @@ class knopeDAG(pipeline.CondorDAG):
           i = counter = 0
           while counter < nruns+nroqruns: # loop over the required number of runs
             penode = ppeNode(pejob, psrname=pname)
-            if self.pe_random_seed != None:
+            if self.pe_random_seed is not None:
               penode.set_randomseed(self.pe_random_seed)      # set seed for RNG
             penode.set_detectors(','.join(dets))              # add detectors
             penode.set_par_file(self.analysed_pulsars[pname]) # add parameter file
@@ -1241,10 +1257,24 @@ class knopeDAG(pipeline.CondorDAG):
             penode.set_harmonics(','.join([str(ffv) for ffv in self.freq_factors])) # set frequency harmonics
 
             penode.set_Nlive(nlive)                           # set number of live points
-            if self.pe_nmcmc != None:
+            if self.pe_nmcmc is not None:
               penode.set_Nmcmc(self.pe_nmcmc)                 # set number of MCMC iterations for choosing new points
             penode.set_Nmcmcinitial(self.pe_nmcmc_initial)    # set initial number of MCMC interations for reampling the prior
             penode.set_tolerance(self.pe_tolerance)           # set tolerance for ending nested sampling
+
+            if self.pe_starttime is not None:
+              penode.set_start_time(self.pe_starttime)  # set start time of data to use
+            
+            if self.pe_endtime is not None:
+              penode.set_end_time(self.pe_endtime)      # set end time of data to use
+
+            if self.pe_starttime is None and self.pe_endtime is None:
+              if self.pe_truncate_time is not None:
+                penode.set_truncate_time(self.pe_truncate_time)
+              elif self.pe_truncate_samples is not None:
+                penode.set_truncate_samples(self.pe_truncate_samples)
+              elif self.pe_truncate_fraction is not None:
+                penode.set_truncate_fraction(self.pe_truncate_fraction)
 
             # set the output nested samples file
             nestfiles.append(os.path.join(ffdir, 'nested_samples_%s_%05d.hdf' % (pname, i)))
@@ -3864,6 +3894,12 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__biaxial = False
     self.__gaussian_like = False
     self.__randomise = None
+    self.__starttime = None
+    self.__endtime = None
+    self.__truncate_time = None
+    self.__truncate_samples = None
+    self.__truncate_fraction = None
+    self.__veto_threshold = None
 
     self.__Nlive = None
     self.__Nmcmc = None
@@ -3967,6 +4003,39 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set the maximum chunk length
     self.add_var_opt('chunk-max', cmax)
     self.__chunk_max = cmax
+
+  def set_start_time(self, starttime):
+    # set the start time of data to use
+    self.add_var_opt('start-time', starttime)
+    self.__starttime = starttime
+
+  def set_end_time(self, endtime):
+    # set the start time of data to use
+    self.add_var_opt('end-time', endtime)
+    self.__endtime = endtime
+    self.__truncate_time = endtime
+
+  def set_truncate_time(self, trunc):
+    # set the truncation time to use (same as end time)
+    if self.__endtime is None:
+      self.add_var_opt('truncate-time', trunc)
+      self.__truncate_time = trunc
+      self.__endtime = trunc
+
+  def set_truncate_samples(self, trunc):
+    # set the truncation based on number of samples
+    self.add_var_opt('truncate-samples', trunc)
+    self.__truncate_samples = trunc
+
+  def set_truncate_fraction(self, trunc):
+    # set truncation based on fraction of the data
+    self.add_var_opt('truncate-fraction', trunc)
+    self.__truncate_fraction = trunc
+
+  def set_veto_threshold(self, veto):
+    # set value above which to veto data samples
+    self.add_var_opt('veto-threshold', veto)
+    self.__veto_threshold = veto
 
   def set_psi_bins(self, pb):
     # set the number of bins in psi for the psi vs time lookup table

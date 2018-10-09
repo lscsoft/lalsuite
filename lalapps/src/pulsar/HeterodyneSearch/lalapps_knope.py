@@ -27,7 +27,7 @@ from __future__ import print_function, division
 
 from lalapps import knope_utils as knope
 import argparse
-import ConfigParser
+from six.moves.configparser import ConfigParser
 import sys
 import pickle
 
@@ -49,7 +49,7 @@ inifile = opts.inifile
 
 # parser .ini file
 try:
-  cp = ConfigParser.ConfigParser()
+  cp = ConfigParser()
   cp.optionxform = str
   cp.readfp(open(inifile))
 except:
