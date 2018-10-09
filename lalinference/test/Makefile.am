@@ -13,8 +13,12 @@ test_programs += LALInferenceHDF5Test
 
 # Add shell, Python, etc. test scripts to this variable
 # Disable test_multiband.sh for now
-#test_scripts = test_multiband.sh
+# test_scripts = test_multiband.sh
+
+# test lalinference in a higher level rather than unit tests
+
 if SWIG_BUILD_PYTHON
+test_scripts += test_CI.sh
 test_scripts += test_detframe.py
 endif
 
