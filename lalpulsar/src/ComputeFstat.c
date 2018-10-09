@@ -37,6 +37,7 @@
 
 // Internal definition of input data structure
 struct tagFstatInput {
+  REAL8 Tsft;						// Length of input SFTs (for maximum length checking)
   REAL8 minFreqFull;					// Minimum frequency loaded from input SFTs
   REAL8 maxFreqFull;					// Maximum frequency loaded from input SFTs
   int singleFreqBin;					// True if XLALComputeFstat() can only compute a single frequency bin, due to zero dFreq being passed to XLALCreateFstatInput()
@@ -344,8 +345,8 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
 
   }
 
-  // Determine the time baseline of an SFT
-  const REAL8 Tsft = 1.0 / SFTcatalog->data[0].header.deltaF;
+  // Determine the length of an SFT
+  input->Tsft = 1.0 / SFTcatalog->data[0].header.deltaF;
 
   // Compute the mid-time and time-span of the SFTs
   double Tspan = 0;
@@ -353,7 +354,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
     const LIGOTimeGPS startTime = SFTcatalog->data[0].header.epoch;
     const LIGOTimeGPS endTime   = SFTcatalog->data[SFTcatalog->length - 1].header.epoch;
     common->midTime = startTime;
-    Tspan = Tsft + XLALGPSDiff( &endTime, &startTime );
+    Tspan = input->Tsft + XLALGPSDiff( &endTime, &startTime );
     XLALGPSAdd ( &common->midTime, 0.5 * Tspan );
   }
 
@@ -371,11 +372,11 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
     int extraBinsFull = extraBinsMethod + optArgs.runningMedianWindow/2 + 1; // NOTE: running-median window needed irrespective of assumeSqrtSX!
 
     // Extend frequency range by number of extra bins times SFT bin width
-    const REAL8 extraFreqMethod = extraBinsMethod / Tsft;
+    const REAL8 extraFreqMethod = extraBinsMethod / input->Tsft;
     minFreqMethod = minCoverFreq - extraFreqMethod;
     maxFreqMethod = maxCoverFreq + extraFreqMethod;
 
-    const REAL8 extraFreqFull = extraBinsFull / Tsft;
+    const REAL8 extraFreqFull = extraBinsFull / input->Tsft;
     input->minFreqFull = minCoverFreq - extraFreqFull;
     input->maxFreqFull = maxCoverFreq + extraFreqFull;
 
@@ -470,7 +471,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   XLAL_CHECK_NULL ( XLALMultiSFTVectorResizeBand ( multiSFTs, minFreqMethod, maxFreqMethod - minFreqMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Get detector states, with a timestamp shift of Tsft/2
-  const REAL8 tOffset = 0.5 * Tsft;
+  const REAL8 tOffset = 0.5 * input->Tsft;
   XLAL_CHECK_NULL ( (common->multiDetectorStates = XLALGetMultiDetectorStates ( common->multiTimestamps, &common->detectors, ephemerides, tOffset )) != NULL, XLAL_EFUNC );
 
   // Save ephemerides and SSB precision
