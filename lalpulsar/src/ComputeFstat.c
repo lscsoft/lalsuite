@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <gsl/gsl_math.h>
 
 #define _COMPUTE_FSTAT_C
 #include "ComputeFstat_internal.h"
@@ -84,6 +85,73 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
 };
 
 // ==================== Function definitions =================== //
+
+///
+/// Compute the maximum SFT length that can safely be used as input to XLALComputeFstat(), given
+/// the desired range limits in search parameters.
+///
+/// The \f$\mathcal{F}\f$-statistic algorithms implemented in this module assume that the input
+/// SFTs supplied to XLALCreateFstatInput() are of such a length that, within the time span of
+/// each any SFT, the spectrum of any CW signal being search for will be mostly contained within
+/// one SFT bin:
+/// * The \a Demod algorithm make explicit use of this assumption in order to sum up only a few
+///   bins in the Dirichlet kernel, thereby speeding up the computation.
+/// * While the \a Resamp algorithm is in principle independent of the SFT length (as the data
+///   are converted from SFTs back into a time series) it practise it makes use of this assumption
+///   for convenience to linearly approximate the phase over the time span of a single SFT.
+///
+/// In order for this assumption to be valid, the SFT bins must be of a certain minimum size, and
+/// hence the time spans of the SFTs must be of a certain maximum length. This maximum length is
+/// dependent upon the parameter space being searched: searches for isolated CW sources rarely
+/// encounter this restriction by using standard 1800-second SFTs, but searches for CW sources in
+/// binary systems typically must use shorter SFTs.
+///
+/// An expression giving the maximum allowed SFT length is given by \cite LeaciPrix2015 :
+/// \f[
+///   T_{\textrm{SFT-max}} = \sqrt{ \frac{
+///     6 \sqrt{ 5 \mu_{\textrm{SFT}} }
+///   }{
+///     \pi (a \sin\iota / c)_{\textrm{max}} f_{\textrm{max}} \Omega_{\textrm{max}}^2
+///   } } \,,
+/// \f]
+/// This function computes this expression with \f$\mu_{\textrm{SFT}} = 0.01\f$, and
+/// \f$(a \sin\iota / c)_{\textrm{max}}\f$ and \f$\Omega_{\textrm{max}}\f$ set to either the binary
+/// motion of the source, as specified by \p binaryMaxAsini and \p binaryMinPeriod, or the sidereal
+/// motion of the Earth, i.e. with \f$(a \sin\iota / c) \sim 0.02~\textrm{s}\f$ and
+/// \f$\Omega \sim 2\pi / 1~\textrm{day}\f$.
+///
+REAL8 XLALFstatMaximumSFTLength ( const REAL8 maxFreq,          /**< [in] Maximum signal frequency */
+                                  const REAL8 binaryMaxAsini,   /**< [in] Maximum projected semi-major axis a*sini/c (= 0 for isolated sources) */
+                                  const REAL8 binaryMinPeriod   /**< [in] Minimum orbital period (s) */
+  )
+{
+
+  // Check input
+  XLAL_CHECK_REAL8( maxFreq > 0, XLAL_EINVAL );
+  XLAL_CHECK_REAL8( binaryMaxAsini >= 0, XLAL_EINVAL );
+  XLAL_CHECK_REAL8( (binaryMaxAsini == 0) || (binaryMinPeriod > 0), XLAL_EINVAL );	// if binary: P>0
+
+  // Use 1% mismatch in maximum allowed SFT length expression
+  const REAL8 mu_SFT = 0.01;
+
+  // Compute maximum allowed SFT length due to sidereal motion of the Earth
+  const REAL8 earthAsini = LAL_REARTH_SI / LAL_C_SI;
+  const REAL8 earthOmega = LAL_TWOPI / LAL_DAYSID_SI;
+  const REAL8 Tsft_max_earth = sqrt( ( 6.0 * sqrt( 5.0 * mu_SFT ) ) / ( LAL_PI * earthAsini * maxFreq * earthOmega * earthOmega ) );
+  if ( binaryMaxAsini == 0 ) {
+    return Tsft_max_earth;
+  }
+
+  // Compute maximum allowed SFT length due to binary motion of the source
+  const REAL8 binaryMaxOmega = LAL_TWOPI / binaryMinPeriod;
+  const REAL8 Tsft_max_binary = sqrt( ( 6.0 * sqrt( 5.0 * mu_SFT ) ) / ( LAL_PI * binaryMaxAsini * maxFreq * binaryMaxOmega * binaryMaxOmega ) );
+
+  // Compute maximum allowed SFT length
+  const REAL8 Tsft_max = GSL_MIN( Tsft_max_earth, Tsft_max_binary );
+
+  return Tsft_max;
+
+} // XLALFstatMaximumSFTLength()
 
 ///
 /// Create a #FstatInputVector of the given length, for example for setting up

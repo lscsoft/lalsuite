@@ -329,6 +329,8 @@ typedef struct tagFstatTimingModel
 } FstatTimingModel;
 
 // ---------- API function prototypes ----------
+REAL8 XLALFstatMaximumSFTLength ( const REAL8 maxFreq, const REAL8 binaryMaxAsini, const REAL8 binaryMinPeriod );
+
 int XLALFstatMethodIsAvailable ( FstatMethodType method );
 const CHAR *XLALFstatMethodName ( FstatMethodType method );
 const UserChoices *XLALFstatMethodChoices ( void );
