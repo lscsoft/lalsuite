@@ -73,9 +73,9 @@ outfileCFS="CFS.dat";
 mfd_CL1="--refTime=${refTime} --Alpha=$Alpha --Delta=$Delta --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --f1dot=$f1dot --orbitasini=$orbitasini --orbitPeriod=$orbitPeriod --orbitEcc=$orbitEcc --orbitArgp=$orbitArgp --orbitTp=$orbitTp"
 mfd_CL="${mfd_CL1} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/catsft.sft --outSingleSFT --IFO=$IFO"
 cmdline="$mfd_code $mfd_CL"
-if [ "$DEBUG" ]; then echo $cmdline; fi
+echo $cmdline
 echo -n "Running $cmdline ... "
-if ! eval "$cmdline &> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "lalapps_Makefakedata_v4 failed"
     exit 1;
 fi
@@ -83,7 +83,7 @@ echo "done."
 
 ## ---------- predict F-stat value 'PFS'
 cmdline="${pfs_code} --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --DataFiles='$SFTdir/*.sft' --PureSignal --assumeSqrtSX=1"
-if [ "$DEBUG" ]; then echo $cmdline; fi
+echo $cmdline
 echo -n "Running $cmdline ... "
 resPFS0=`$cmdline`
 resPFS=`echo $resPFS0 | awk '{printf "%g", $1}'`
@@ -92,9 +92,9 @@ echo "done:         2F_PFS = $resPFS"
 ## ---------- targeted CFSv2 search
 cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta  --Freq=$Freq --f1dot=$f1dot --orbitasini=$orbitasini --orbitPeriod=$orbitPeriod --orbitEcc=$orbitEcc --orbitArgp=$orbitArgp --orbitTp=$orbitTp --DataFiles='$SFTdir/*.sft' --assumeSqrtSX=1"
 cmdline="$cfs_code $cfs_CL  --outputLoudest=$outfileCFS"
-if [ "$DEBUG" ]; then echo $cmdline; fi
+echo $cmdline
 echo -n "Running $cmdline ... "
-if ! eval "$cmdline &> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1
 fi
