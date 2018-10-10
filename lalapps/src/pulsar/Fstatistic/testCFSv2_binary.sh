@@ -36,9 +36,7 @@ f1dot=1e-09
 IFO=H1
 
 ## fixed binary parameters
-##orbitasini=2.94
-orbitasini=4.94036957341473
-##orbitArgp=5.2
+orbitasini=2.94
 orbitArgp=2.88
 orbitTp=22665.001234567GPS
 
