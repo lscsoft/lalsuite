@@ -692,6 +692,14 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
   XLAL_CHECK ( !input->singleFreqBin || numFreqBins == 1, XLAL_EINVAL, "numFreqBins must be 1 if XLALCreateFstatInput() was passed zero dFreq" );
   XLAL_CHECK ( whatToCompute < FSTATQ_LAST, XLAL_EINVAL);
 
+  // Check that SFT length is within allowed maximum
+  {
+    const REAL8 maxFreq = doppler->fkdot[0] + input->common.dFreq * numFreqBins;
+    const REAL8 Tsft_max = XLALFstatMaximumSFTLength( maxFreq, doppler->asini, doppler->period );
+    XLAL_CHECK ( !XLALIsREAL8FailNaN( Tsft_max ), XLAL_EINVAL );
+    XLAL_CHECK ( input->Tsft < Tsft_max, XLAL_EINVAL, "Length of input SFTs (%g s) must be less than %g s for CW signal with frequency = %g, binary asini = %g, period = %g", input->Tsft, Tsft_max, maxFreq, doppler->asini, doppler->period );
+  }
+
   // Allocate results struct, if needed
   if ( (*Fstats) == NULL ) {
     XLAL_CHECK ( ((*Fstats) = XLALCalloc ( 1, sizeof(**Fstats) )) != NULL, XLAL_ENOMEM );
