@@ -773,11 +773,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         # Save the final configuration that is being used
         # first to the run dir
         conffilename=os.path.join(self.basepath,'config.ini')
-        with open(conffilename,'wb') as conffile:
+        with open(conffilename,'w') as conffile:
             self.config.write(conffile)
         if self.config.has_option('paths','webdir'):
             mkdirs(self.config.get('paths','webdir'))
-            with open(os.path.join(self.config.get('paths','webdir'),'config.ini'),'wb') as conffile:
+            with open(os.path.join(self.config.get('paths','webdir'),'config.ini'),'w') as conffile:
                 self.config.write(conffile)
 
         # Generate the DAG according to the config given
@@ -1377,7 +1377,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             prenode.set_dataseed(self.dataseed+event.event_id)
         gotdata=0
         for ifo in ifos:
-            if event.timeslides.has_key(ifo):
+            if ifo in event.timeslides:
                 slide=event.timeslides[ifo]
             else:
                 slide=0
