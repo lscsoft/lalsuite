@@ -552,7 +552,7 @@ nodeCount         = 0L
 # create datafind.sub
 datafindFID = file('datafind.sub','w')
 datafindLogFile = subLogPath + '/' + 'datafind_' + dagFileName + '.log'
-datafindFID.write('universe = scheduler\n')
+datafindFID.write('universe = vanilla\n')
 datafindFID.write('executable = ' + dataFindExe + '\n')
 if not datafindMatch:
    dataFindMatchString = ''
