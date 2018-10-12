@@ -1148,7 +1148,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     subresnode.set_injection(self.config.get('input','burst-injection-file'),event.event_id)
             coherence_node=CoherenceTestNode(self.coherence_test_job,outfile=os.path.join(self.basepath,'coherence_test','coherence_test_%s_%s.dat'%(myifos,evstring)))
             coherence_node.add_coherent_parent(mergenode)
-            map(coherence_node.add_incoherent_parent, par_mergenodes)
+            for parmergenode in par_mergenodes:
+                coherence_node.add_incoherent_parent(parmergenode)
             self.add_node(coherence_node)
             respagenode.add_parent(coherence_node)
             respagenode.set_bayes_coherent_incoherent(coherence_node.get_output_files()[0])
