@@ -6,12 +6,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 RINGPROG = \
-	lalapps_ring \
-	lalapps_rinj \
-	lalapps_ringread \
-	lalapps_rinca \
 	lalapps_coincringread \
-	lalapps_collatesim \
 	lalapps_coh_PTF_inspiral \
 	lalapps_coh_PTF_spin_checker
 
@@ -39,13 +34,6 @@ COH_PTF_SOURCES = \
 	coh_PTF_output.c \
 	coh_PTF_bankveto.c \
 	coh_PTF_utils.c
-lalapps_ring_SOURCES = \
-	ring.c \
-	ring.h \
-	ring_option.c \
-	ring_filter.c \
-	ring_output.c \
-	$(GENERAL_SOURCES)
 lalapps_coh_PTF_inspiral_SOURCES = \
 	coh_PTF_inspiral.c \
 	$(COH_PTF_SOURCES) \
@@ -54,11 +42,7 @@ lalapps_coh_PTF_spin_checker_SOURCES = \
 	coh_PTF_spin_checker.c \
 	$(COH_PTF_SOURCES) \
 	$(GENERAL_SOURCES)
-lalapps_rinj_SOURCES = rinj.c
-lalapps_ringread_SOURCES = ringread.c
-lalapps_rinca_SOURCES = rinca.c
 lalapps_coincringread_SOURCES = coincringread.c
-lalapps_collatesim_SOURCES = collatesim.c
 
 if HAVE_PYTHON
 pkgpython_PYTHON = ring.py
