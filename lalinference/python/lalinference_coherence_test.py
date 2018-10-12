@@ -50,7 +50,7 @@ def get_metadata_hdf5(filename,key):
             print('Error: multiple runs %s found in input file %s'%g.keys(),filename)
             sys.exit(1)
         # Descend into run group
-        g=g[g.keys()[0]]
+        g=g[list(g.keys())[0]]
         return g.attrs[key]
 
 # Sanity check input arguments
