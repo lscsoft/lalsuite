@@ -967,7 +967,7 @@ class Posterior(object):
                     if injection:
                         inj_time=float(injection.get_end(ifo[0]))
                     location = lal.cached_detector_by_prefix[ifo].location
-                    ifo_times[ifo]=array(map(lambda ra,dec,time: array([time[0]+TimeDelayFromEarthCenter(location,ra[0],dec[0],LIGOTimeGPS(float(time[0])))]), pos[ra_name].samples,pos[dec_name].samples,pos['time'].samples))
+                    ifo_times[ifo]=array(list(map(lambda ra,dec,time: array([time[0]+TimeDelayFromEarthCenter(location,ra[0],dec[0],LIGOTimeGPS(float(time[0])))]), pos[ra_name].samples,pos[dec_name].samples,pos['time'].samples)))
                     loc_end_time=PosteriorOneDPDF(ifo.lower()+'_end_time',ifo_times[ifo],injected_value=inj_time)
                     pos.append(loc_end_time)
                 for ifo1 in my_ifos:
@@ -2179,7 +2179,7 @@ class KDTree(object):
             longest_dim = self._split_dim
             sorted_objects=sorted(self._objects, key=lambda obj: (obj.coord())[longest_dim])
             N = len(sorted_objects)
-            bound=0.5*(sorted_objects[N/2].coord()[longest_dim] + sorted_objects[N/2-1].coord()[longest_dim])
+            bound=0.5*(sorted_objects[int(N/2)].coord()[longest_dim] + sorted_objects[int(N/2)-1].coord()[longest_dim])
             low = [obj for obj in self._objects if obj.coord()[longest_dim] < bound]
             high = [obj for obj in self._objects if obj.coord()[longest_dim] >= bound]
             if len(low)==0:
@@ -2330,7 +2330,7 @@ class KDTreeVolume(object):
             split_dim = self._dimension
             sorted_objects=sorted(self._objects, key=lambda obj: (obj.coord())[split_dim])
             N = len(sorted_objects)
-            self._split_value = 0.5*(sorted_objects[N/2].coord()[split_dim] + sorted_objects[N/2-1].coord()[split_dim])
+            self._split_value = 0.5*(sorted_objects[int(N/2)].coord()[split_dim] + sorted_objects[int(N/2)-1].coord()[split_dim])
             bound = self._split_value
             low = [obj for obj in self._objects if obj.coord()[split_dim] < bound]
             high = [obj for obj in self._objects if obj.coord()[split_dim] >= bound]
@@ -5391,9 +5391,9 @@ def effectiveSampleSize(samples, Nskip=1):
     chains equilibrating after adaptation.
     """
     N = len(samples)
-    acf = autocorrelation(samples[N/2:])
+    acf = autocorrelation(samples[int(N/2):])
     try:
-        acl = autocorrelation_length_estimate(samples[N/2:], acf=acf)
+        acl = autocorrelation_length_estimate(samples[int(N/2):], acf=acf)
     except ACLError:
         acl = N
     Neffective = floor(N/acl)
@@ -5875,7 +5875,7 @@ class PEOutputParser(object):
             print('Error! Could not find logL column in parameter list: %s'%(outpars))
             raise RuntimeError
 
-        inarrays=map(np.loadtxt,files)
+        inarrays=list(map(np.loadtxt,files))
         if Npost is None:
             pos=draw_posterior_many(inarrays,[Nlive for f in files],logLcols=[logLcol for f in files])
         else:
@@ -5956,7 +5956,7 @@ class PEOutputParser(object):
         tabledata=data[0].find('./{%s}TABLEDATA'%(xmlns))
         llines=[]
         for row in tabledata:
-            llines.append(np.array(map(lambda a:float(a.text),row)))
+            llines.append(np.array(list(map(lambda a:float(a.text),row))))
         flines=np.array(llines)
         for i in range(0,len(header)):
             if header[i].lower().find('log')!=-1 and header[i].lower() not in logParams and re.sub('log', '', header[i].lower()) not in [h.lower() for h in header]:
@@ -6150,7 +6150,7 @@ class PEOutputParser(object):
                     proceed=False
 
             if proceed:
-                llines.append(map(float,sline))
+                llines.append(list(map(float,sline)))
 
         flines=np.array(llines)
 
