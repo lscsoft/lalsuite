@@ -250,9 +250,9 @@ def pferrs(porf, porferr, pdorfd=None, pdorfderr=None):
 
 # class to read in a pulsar par file - this is heavily based on the function
 # in parfile.py in PRESTO
-float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10",
-              "PEPOCH", "POSEPOCH", "DM", "START", "FINISH", "NTOA",
-              "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS",
+float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9",
+              "F10", "F11", "F12", "PEPOCH", "POSEPOCH", "DM", "START",
+              "FINISH", "NTOA", "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS",
               "A1", "XDOT", "E", "ECC", "EDOT", "T0", "PB", "PBDOT", "OM",
               "OMDOT", "EPS1", "EPS2", "EPS1DOT", "EPS2DOT", "TASC", "LAMBDA",
               "BETA", "RA_RAD", "DEC_RAD", "GAMMA", "SINI", "M2", "MTOT",
@@ -260,8 +260,9 @@ float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "
               "PB_2", "PB_3", "T0_2", "T0_3", "A1_2", "A1_3", "OM_2", "OM_3",
               "ECC_2", "ECC_3", "PX", "KIN", "KOM", "A0", "B0", "D_AOP",
               # GW PARAMETERS
-              "H0", "COSIOTA", "PSI", "PHI0", "THETA", "I21", "I31", "C22", "HPLUS", "HCROSS",
-              "C21", "PHI22", "PHI21", "SNR", "COSTHETA", "IOTA", "Q22"]
+              "H0", "COSIOTA", "PSI", "PHI0", "THETA", "I21", "I31", "C22",
+              "HPLUS", "HCROSS", "C21", "PHI22", "PHI21", "SNR", "COSTHETA",
+              "IOTA", "Q22"]
 str_keys = ["FILE", "PSR", "PSRJ", "NAME", "RAJ", "DECJ", "RA", "DEC", "EPHEM",
             "CLK", "BINARY", "UNITS"]
 
