@@ -34,7 +34,7 @@ import sys
 import os
 
 from math import ceil,floor
-import cPickle as pickle
+from six.moves import cPickle as pickle
 
 from time import strftime
 
