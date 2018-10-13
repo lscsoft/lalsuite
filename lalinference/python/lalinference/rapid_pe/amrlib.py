@@ -6,7 +6,7 @@ import h5py
 
 import lal
 
-from lalinference.rapid_pe import lalsimutils
+from . import lalsimutils
 
 m1m2 = numpy.vectorize(lalsimutils.m1m2)
 

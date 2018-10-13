@@ -323,7 +323,7 @@ import urlparse
 ##############################################################################
 # import the modules we need to build the pipeline
 from glue import pipeline
-import ConfigParser
+from six.moves import configparser
 from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
 from glue import segments as glue_segments
 from glue import lal
@@ -2722,7 +2722,7 @@ if opts.td_follow_bank or opts.td_follow_inspiral:
   try:
     approximants = cp.get('veto-inspiral', 'approximant')
     cp.remove_option('veto-inspiral', 'approximant')
-  except ConfigParser.NoOptionError:
+  except configparser.NoOptionError:
     print "No approximant in veto-inspiral - using the main one..."
     approximants = cp.get('inspiral', 'approximant')
 

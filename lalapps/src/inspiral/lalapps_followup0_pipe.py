@@ -16,7 +16,7 @@ import socket, time
 import re, string
 from optparse import *
 import tempfile
-import ConfigParser
+from six.moves import configparser
 import urlparse
 import urllib
 from UserDict import UserDict
@@ -286,7 +286,7 @@ if opts.read_times:
   print >> sys.stderr, "Warning: the option read-times disables the standard behaviour of the pipeline. The \"hipe-output-cache\" or \"xml-glob\" files will be ignored. Instead the times to be analysed will be read within the text files specified by the fields \"XXtimes\" of the section [triggers] of the .ini file"
 
 #################### READ IN THE CONFIG (.ini) FILE ########################
-cp = ConfigParser.ConfigParser()
+cp = configparser.ConfigParser()
 cp.read(opts.config_file)
 
 ## set the option to make remote calculations for some Virgo qscans

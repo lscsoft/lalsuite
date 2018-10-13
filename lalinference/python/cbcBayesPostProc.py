@@ -35,7 +35,7 @@ import os
 import socket
 
 from math import ceil,floor
-import cPickle as pickle
+from six.moves import cPickle as pickle
 
 from time import strftime
 
@@ -695,7 +695,7 @@ def cbcBayesPostProc(
 
       BCItableline='<tr><td>%s</td>'%(par_name)
       clasciiout+="%s\t"%par_name
-      cls=reses.keys()
+      cls=list(reses.keys())
       cls.sort()
 
       for cl in cls:
@@ -879,7 +879,7 @@ def cbcBayesPostProc(
 
         #Generate new BCI html table row
         BCItableline='<tr><td>%s-%s</td>'%(par1_name,par2_name)
-        cls=reses.keys()
+        cls=list(reses.keys())
         cls.sort()
 
         for cl in cls:

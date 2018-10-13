@@ -50,6 +50,7 @@ import astropy.table
 import numpy as np
 from numpy import fmod
 import matplotlib
+matplotlib.use('agg')
 from matplotlib import pyplot as plt,cm as mpl_cm,lines as mpl_lines
 from scipy import stats
 from scipy import special
@@ -60,8 +61,9 @@ from numpy import linspace
 import random
 import socket
 from itertools import combinations
-from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
+from .lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
 import re
+import six
 
 try:
     import lalsimulation as lalsim
@@ -77,14 +79,14 @@ except ImportError:
 from matplotlib.ticker import FormatStrFormatter,ScalarFormatter,AutoMinorLocator
 
 try:
-  hostname_short=socket.gethostbyaddr(socket.gethostname())[0].split('.',1)[1]
+    hostname_short=socket.gethostbyaddr(socket.gethostname())[0].split('.',1)[1]
 except:
-  hostname_short='Unknown'
+    hostname_short='Unknown'
 if hostname_short=='ligo.caltech.edu' or hostname_short=='cluster.ldas.cit': #The CIT cluster has troubles with the default 'cm' font. 'custom' has the least troubles, but does not include \odot
-  matplotlib.rcParams.update(
-                             {'mathtext.fontset' : "custom",
-                             'mathtext.fallback_to_cm' : True
-                             })
+    matplotlib.rcParams.update(
+                               {'mathtext.fontset' : "custom",
+                               'mathtext.fallback_to_cm' : True
+                               })
 
 from xml.etree.cElementTree import Element, SubElement, ElementTree, Comment, tostring, XMLParser
 
@@ -163,20 +165,20 @@ confidenceLevels=[0.67,0.9,0.95,0.99]
 
 greedyBinSizes={'mc':0.025,'m1':0.1,'m2':0.1,'mass1':0.1,'mass2':0.1,'mtotal':0.1,'mc_source':0.025,'m1_source':0.1,'m2_source':0.1,'mtotal_source':0.1,'eta':0.001,'q':0.01,'asym_massratio':0.01,'iota':0.01,'cosiota':0.02,'time':1e-4,'time_mean':1e-4,'distance':1.0,'dist':1.0,'redshift':0.01,'mchirp':0.025,'chirpmass':0.025,'spin1':0.04,'spin2':0.04,'a1z':0.04,'a2z':0.04,'a1':0.02,'a2':0.02,'phi1':0.05,'phi2':0.05,'theta1':0.05,'theta2':0.05,'ra':0.05,'dec':0.05,'chi':0.05,'chi_eff':0.05,'chi_tot':0.05,'chi_p':0.05,'costilt1':0.02,'costilt2':0.02,'thatas':0.05,'costheta_jn':0.02,'beta':0.05,'omega':0.05,'cosbeta':0.02,'ppealpha':1.0,'ppebeta':1.0,'ppelowera':0.01,'ppelowerb':0.01,'ppeuppera':0.01,'ppeupperb':0.01,'polarisation':0.04,'rightascension':0.05,'declination':0.05,'massratio':0.001,'inclination':0.01,'phase':0.05,'tilt1':0.05,'tilt2':0.05,'phi_jl':0.05,'theta_jn':0.05,'phi12':0.05,'flow':1.0,'phase_maxl':0.05,'calamp_l1':0.01,'calamp_h1':0.01,'calamp_v1':0.01,'calpha_h1':0.01,'calpha_l1':0.01,'calpha_v1':0.01,'logdistance':0.1,'psi':0.1,'costheta_jn':0.1,'mf':0.1,'mf_source':0.1,'af':0.02,'e_rad':0.1,'l_peak':0.1}
 for s in snrParams:
-  greedyBinSizes[s]=0.05
+    greedyBinSizes[s]=0.05
 for derived_time in ['h1_end_time','l1_end_time','v1_end_time','h1l1_delay','l1v1_delay','h1v1_delay']:
-  greedyBinSizes[derived_time]=greedyBinSizes['time']
+    greedyBinSizes[derived_time]=greedyBinSizes['time']
 for derived_phase in relativePhaseParams:
-  greedyBinSizes[derived_phase]=0.05
+    greedyBinSizes[derived_phase]=0.05
 for param in tigerParams + bransDickeParams + massiveGravitonParams:
-  greedyBinSizes[param]=0.01
+    greedyBinSizes[param]=0.01
 for param in tidalParams:
-  greedyBinSizes[param]=2.5
+    greedyBinSizes[param]=2.5
 for param in eosParams:
-  greedyBinSizes[param]=2.5
-  #Confidence levels
+    greedyBinSizes[param]=2.5
+    #Confidence levels
 for loglname in statsParams:
-  greedyBinSizes[loglname]=0.1
+    greedyBinSizes[loglname]=0.1
 
 #Pre-defined ordered list of line styles for use in matplotlib contour plots.
 __default_line_styles=['solid', 'dashed', 'dashdot', 'dotted']
@@ -362,158 +364,158 @@ def get_prior(name):
 # Function used to generate plot labels.
 #===============================================================================
 def plot_label(param):
-  """
-  A lookup table for plot labels.
-  """
-  m1_names = ['mass1', 'm1']
-  m2_names = ['mass2', 'm2']
-  mc_names = ['mc','mchirp','chirpmass']
-  eta_names = ['eta','massratio','sym_massratio']
-  q_names = ['q','asym_massratio']
-  iota_names = ['iota','incl','inclination']
-  dist_names = ['dist','distance']
-  ra_names = ['rightascension','ra']
-  dec_names = ['declination','dec']
-  phase_names = ['phi_orb', 'phi', 'phase', 'phi0']
-  gr_test_names = ['dchi%d'%i for i in range(8)]+['dchil%d'%i for i in [5,6]]+['dxi%d'%(i+1) for i in range(6)]+['dalpha%d'%(i+1) for i in range(5)]+['dbeta%d'%(i+1) for i in range(3)]+['dsigma%d'%(i+1) for i in range(4)]
+    """
+    A lookup table for plot labels.
+    """
+    m1_names = ['mass1', 'm1']
+    m2_names = ['mass2', 'm2']
+    mc_names = ['mc','mchirp','chirpmass']
+    eta_names = ['eta','massratio','sym_massratio']
+    q_names = ['q','asym_massratio']
+    iota_names = ['iota','incl','inclination']
+    dist_names = ['dist','distance']
+    ra_names = ['rightascension','ra']
+    dec_names = ['declination','dec']
+    phase_names = ['phi_orb', 'phi', 'phase', 'phi0']
+    gr_test_names = ['dchi%d'%i for i in range(8)]+['dchil%d'%i for i in [5,6]]+['dxi%d'%(i+1) for i in range(6)]+['dalpha%d'%(i+1) for i in range(5)]+['dbeta%d'%(i+1) for i in range(3)]+['dsigma%d'%(i+1) for i in range(4)]
 
-  labels={
-      'm1':r'$m_1\,(\mathrm{M}_\odot)$',
-      'm2':r'$m_2\,(\mathrm{M}_\odot)$',
-      'mc':r'$\mathcal{M}\,(\mathrm{M}_\odot)$',
-      'eta':r'$\eta$',
-      'q':r'$q$',
-      'mtotal':r'$M_\mathrm{total}\,(\mathrm{M}_\odot)$',
-      'm1_source':r'$m_{1}^\mathrm{source}\,(\mathrm{M}_\odot)$',
-      'm2_source':r'$m_{2}^\mathrm{source}\,(\mathrm{M}_\odot)$',
-      'mtotal_source':r'$M_\mathrm{total}^\mathrm{source}\,(\mathrm{M}_\odot)$',
-      'mc_source':r'$\mathcal{M}^\mathrm{source}\,(\mathrm{M}_\odot)$',
-      'redshift':r'$z$',
-      'mf':r'$M_\mathrm{final}\,(\mathrm{M}_\odot)$',
-      'mf_source':r'$M_\mathrm{final}^\mathrm{source}\,(\mathrm{M}_\odot)$',
-      'af':r'$a_\mathrm{final}$',
-      'e_rad':r'$E_\mathrm{rad}\,(\mathrm{M}_\odot)$',
-      'l_peak':r'$L_\mathrm{peak}\,(10^{56}\,\mathrm{ergs}\,\mathrm{s}^{-1})$',
-      'spin1':r'$S_1$',
-      'spin2':r'$S_2$',
-      'a1':r'$a_1$',
-      'a2':r'$a_2$',
-      'a1z':r'$a_{1z}$',
-      'a2z':r'$a_{2z}$',
-      'theta1':r'$\theta_1\,(\mathrm{rad})$',
-      'theta2':r'$\theta_2\,(\mathrm{rad})$',
-      'phi1':r'$\phi_1\,(\mathrm{rad})$',
-      'phi2':r'$\phi_2\,(\mathrm{rad})$',
-      'chi_eff':r'$\chi_\mathrm{eff}$',
-      'chi_tot':r'$\chi_\mathrm{total}$',
-      'chi_p':r'$\chi_\mathrm{P}$',
-      'tilt1':r'$t_1\,(\mathrm{rad})$',
-      'tilt2':r'$t_2\,(\mathrm{rad})$',
-      'costilt1':r'$\mathrm{cos}(t_1)$',
-      'costilt2':r'$\mathrm{cos}(t_2)$',
-      'iota':r'$\iota\,(\mathrm{rad})$',
-      'cosiota':r'$\mathrm{cos}(\iota)$',
-      'time':r'$t_\mathrm{c}\,(\mathrm{s})$',
-      'time_mean':r'$<t>\,(\mathrm{s})$',
-      'dist':r'$d_\mathrm{L}\,(\mathrm{Mpc})$',
-      'ra':r'$\alpha$',
-      'dec':r'$\delta$',
-      'phase':r'$\phi\,(\mathrm{rad})$',
-      'psi':r'$\psi\,(\mathrm{rad})$',
-      'theta_jn':r'$\theta_\mathrm{JN}\,(\mathrm{rad})$',
-      'costheta_jn':r'$\mathrm{cos}(\theta_\mathrm{JN})$',
-      'beta':r'$\beta\,(\mathrm{rad})$',
-      'cosbeta':r'$\mathrm{cos}(\beta)$',
-      'phi_jl':r'$\phi_\mathrm{JL}\,(\mathrm{rad})$',
-      'phi12':r'$\phi_\mathrm{12}\,(\mathrm{rad})$',
-      'logl':r'$\mathrm{log}(\mathcal{L})$',
-      'h1_end_time':r'$t_\mathrm{H}$',
-      'l1_end_time':r'$t_\mathrm{L}$',
-      'v1_end_time':r'$t_\mathrm{V}$',
-      'h1l1_delay':r'$\Delta t_\mathrm{HL}$',
-      'h1v1_delay':r'$\Delta t_\mathrm{HV}$',
-      'l1v1_delay':r'$\Delta t_\mathrm{LV}$',
-      'lambdat' : r'$\tilde{\Lambda}$',
-      'dlambdat': r'$\delta \tilde{\Lambda}$',
-      'lambda1' : r'$\lambda_1$',
-      'lambda2': r'$\lambda_2$',
-      'lam_tilde' : r'$\tilde{\Lambda}$',
-      'dlam_tilde': r'$\delta \tilde{\Lambda}$',
-      'logp1':r'$\log(p_1)$',
-      'gamma1':r'$\Gamma_1$',
-      'gamma2':r'$\Gamma_2$',
-      'gamma3':r'$\Gamma_3$',
-      'calamp_h1' : r'$\delta A_{H1}$',
-      'calamp_l1' : r'$\delta A_{L1}$',
-      'calpha_h1' : r'$\delta \phi_{H1}$',
-      'calpha_l1' : r'$\delta \phi_{L1}$',
-      'polar_eccentricity':r'$\epsilon_{polar}$',
-      'polar_angle':r'$\alpha_{polar}$',
-      'alpha':r'$\alpha_{polar}$',
-      'dchi0':r'$d\chi_0$',
-      'dchi1':r'$d\chi_1$',
-      'dchi2':r'$d\chi_2$',
-      'dchi3':r'$d\chi_3$',
-      'dchi4':r'$d\chi_4$',
-      'dchi5':r'$d\chi_5$',
-      'dchi5l':r'$d\chi_{5}^{(l)}$',
-      'dchi6':r'$d\chi_6$',
-      'dchi6l':r'$d\chi_{6}^{(l)}$',
-      'dchi7':r'$d\chi_7$',
-      'dxi1':r'$d\xi_1$',
-      'dxi2':r'$d\xi_2$',
-      'dxi3':r'$d\xi_3$',
-      'dxi4':r'$d\xi_4$',
-      'dxi5':r'$d\xi_5$',
-      'dxi6':r'$d\xi_6$',
-      'dalpha1':r'$d\alpha_1$',
-      'dalpha2':r'$d\alpha_2$',
-      'dalpha3':r'$d\alpha_3$',
-      'dalpha4':r'$d\alpha_4$',
-      'dalpha5':r'$d\alpha_5$',
-      'dbeta1':r'$d\beta_1$',
-      'dbeta2':r'$d\beta_2$',
-      'dbeta3':r'$d\beta_3$',
-      'dsigma1':r'$d\sigma_1$',
-      'dsigma2':r'$d\sigma_2$',
-      'dsigma3':r'$d\sigma_3$',
-      'dsigma4':r'$d\sigma_4$',
-      'optimal_snr':r'$\rho^{opt}$',
-      'h1_optimal_snr':r'$\rho^{opt}_{H1}$',
-      'l1_optimal_snr':r'$\rho^{opt}_{L1}$',
-      'v1_optimal_snr':r'$\rho^{opt}_{V1}$',
-      'matched_filter_snr':r'$\rho^{MF}$'
-    }
+    labels={
+        'm1':r'$m_1\,(\mathrm{M}_\odot)$',
+        'm2':r'$m_2\,(\mathrm{M}_\odot)$',
+        'mc':r'$\mathcal{M}\,(\mathrm{M}_\odot)$',
+        'eta':r'$\eta$',
+        'q':r'$q$',
+        'mtotal':r'$M_\mathrm{total}\,(\mathrm{M}_\odot)$',
+        'm1_source':r'$m_{1}^\mathrm{source}\,(\mathrm{M}_\odot)$',
+        'm2_source':r'$m_{2}^\mathrm{source}\,(\mathrm{M}_\odot)$',
+        'mtotal_source':r'$M_\mathrm{total}^\mathrm{source}\,(\mathrm{M}_\odot)$',
+        'mc_source':r'$\mathcal{M}^\mathrm{source}\,(\mathrm{M}_\odot)$',
+        'redshift':r'$z$',
+        'mf':r'$M_\mathrm{final}\,(\mathrm{M}_\odot)$',
+        'mf_source':r'$M_\mathrm{final}^\mathrm{source}\,(\mathrm{M}_\odot)$',
+        'af':r'$a_\mathrm{final}$',
+        'e_rad':r'$E_\mathrm{rad}\,(\mathrm{M}_\odot)$',
+        'l_peak':r'$L_\mathrm{peak}\,(10^{56}\,\mathrm{ergs}\,\mathrm{s}^{-1})$',
+        'spin1':r'$S_1$',
+        'spin2':r'$S_2$',
+        'a1':r'$a_1$',
+        'a2':r'$a_2$',
+        'a1z':r'$a_{1z}$',
+        'a2z':r'$a_{2z}$',
+        'theta1':r'$\theta_1\,(\mathrm{rad})$',
+        'theta2':r'$\theta_2\,(\mathrm{rad})$',
+        'phi1':r'$\phi_1\,(\mathrm{rad})$',
+        'phi2':r'$\phi_2\,(\mathrm{rad})$',
+        'chi_eff':r'$\chi_\mathrm{eff}$',
+        'chi_tot':r'$\chi_\mathrm{total}$',
+        'chi_p':r'$\chi_\mathrm{P}$',
+        'tilt1':r'$t_1\,(\mathrm{rad})$',
+        'tilt2':r'$t_2\,(\mathrm{rad})$',
+        'costilt1':r'$\mathrm{cos}(t_1)$',
+        'costilt2':r'$\mathrm{cos}(t_2)$',
+        'iota':r'$\iota\,(\mathrm{rad})$',
+        'cosiota':r'$\mathrm{cos}(\iota)$',
+        'time':r'$t_\mathrm{c}\,(\mathrm{s})$',
+        'time_mean':r'$<t>\,(\mathrm{s})$',
+        'dist':r'$d_\mathrm{L}\,(\mathrm{Mpc})$',
+        'ra':r'$\alpha$',
+        'dec':r'$\delta$',
+        'phase':r'$\phi\,(\mathrm{rad})$',
+        'psi':r'$\psi\,(\mathrm{rad})$',
+        'theta_jn':r'$\theta_\mathrm{JN}\,(\mathrm{rad})$',
+        'costheta_jn':r'$\mathrm{cos}(\theta_\mathrm{JN})$',
+        'beta':r'$\beta\,(\mathrm{rad})$',
+        'cosbeta':r'$\mathrm{cos}(\beta)$',
+        'phi_jl':r'$\phi_\mathrm{JL}\,(\mathrm{rad})$',
+        'phi12':r'$\phi_\mathrm{12}\,(\mathrm{rad})$',
+        'logl':r'$\mathrm{log}(\mathcal{L})$',
+        'h1_end_time':r'$t_\mathrm{H}$',
+        'l1_end_time':r'$t_\mathrm{L}$',
+        'v1_end_time':r'$t_\mathrm{V}$',
+        'h1l1_delay':r'$\Delta t_\mathrm{HL}$',
+        'h1v1_delay':r'$\Delta t_\mathrm{HV}$',
+        'l1v1_delay':r'$\Delta t_\mathrm{LV}$',
+        'lambdat' : r'$\tilde{\Lambda}$',
+        'dlambdat': r'$\delta \tilde{\Lambda}$',
+        'lambda1' : r'$\lambda_1$',
+        'lambda2': r'$\lambda_2$',
+        'lam_tilde' : r'$\tilde{\Lambda}$',
+        'dlam_tilde': r'$\delta \tilde{\Lambda}$',
+        'logp1':r'$\log(p_1)$',
+        'gamma1':r'$\Gamma_1$',
+        'gamma2':r'$\Gamma_2$',
+        'gamma3':r'$\Gamma_3$',
+        'calamp_h1' : r'$\delta A_{H1}$',
+        'calamp_l1' : r'$\delta A_{L1}$',
+        'calpha_h1' : r'$\delta \phi_{H1}$',
+        'calpha_l1' : r'$\delta \phi_{L1}$',
+        'polar_eccentricity':r'$\epsilon_{polar}$',
+        'polar_angle':r'$\alpha_{polar}$',
+        'alpha':r'$\alpha_{polar}$',
+        'dchi0':r'$d\chi_0$',
+        'dchi1':r'$d\chi_1$',
+        'dchi2':r'$d\chi_2$',
+        'dchi3':r'$d\chi_3$',
+        'dchi4':r'$d\chi_4$',
+        'dchi5':r'$d\chi_5$',
+        'dchi5l':r'$d\chi_{5}^{(l)}$',
+        'dchi6':r'$d\chi_6$',
+        'dchi6l':r'$d\chi_{6}^{(l)}$',
+        'dchi7':r'$d\chi_7$',
+        'dxi1':r'$d\xi_1$',
+        'dxi2':r'$d\xi_2$',
+        'dxi3':r'$d\xi_3$',
+        'dxi4':r'$d\xi_4$',
+        'dxi5':r'$d\xi_5$',
+        'dxi6':r'$d\xi_6$',
+        'dalpha1':r'$d\alpha_1$',
+        'dalpha2':r'$d\alpha_2$',
+        'dalpha3':r'$d\alpha_3$',
+        'dalpha4':r'$d\alpha_4$',
+        'dalpha5':r'$d\alpha_5$',
+        'dbeta1':r'$d\beta_1$',
+        'dbeta2':r'$d\beta_2$',
+        'dbeta3':r'$d\beta_3$',
+        'dsigma1':r'$d\sigma_1$',
+        'dsigma2':r'$d\sigma_2$',
+        'dsigma3':r'$d\sigma_3$',
+        'dsigma4':r'$d\sigma_4$',
+        'optimal_snr':r'$\rho^{opt}$',
+        'h1_optimal_snr':r'$\rho^{opt}_{H1}$',
+        'l1_optimal_snr':r'$\rho^{opt}_{L1}$',
+        'v1_optimal_snr':r'$\rho^{opt}_{V1}$',
+        'matched_filter_snr':r'$\rho^{MF}$'
+      }
 
-  # Handle cases where multiple names have been used
-  if param in m1_names:
-    param = 'm1'
-  elif param in m2_names:
-    param = 'm2'
-  elif param in mc_names:
-    param = 'mc'
-  elif param in eta_names:
-    param = 'eta'
-  elif param in q_names:
-    param = 'q'
-  elif param in iota_names:
-    param = 'iota'
-  elif param in dist_names:
-    param = 'dist'
-  elif param in ra_names:
-    param = 'ra'
-  elif param in dec_names:
-    param = 'dec'
-  elif param in phase_names:
-    param = 'phase'
+    # Handle cases where multiple names have been used
+    if param in m1_names:
+        param = 'm1'
+    elif param in m2_names:
+        param = 'm2'
+    elif param in mc_names:
+        param = 'mc'
+    elif param in eta_names:
+        param = 'eta'
+    elif param in q_names:
+        param = 'q'
+    elif param in iota_names:
+        param = 'iota'
+    elif param in dist_names:
+        param = 'dist'
+    elif param in ra_names:
+        param = 'ra'
+    elif param in dec_names:
+        param = 'dec'
+    elif param in phase_names:
+        param = 'phase'
 
-  try:
-    label = labels[param]
-  except KeyError:
-    # Use simple string if no formated label is available for param
-    label = param
+    try:
+        label = labels[param]
+    except KeyError:
+        # Use simple string if no formated label is available for param
+        label = param
 
-  return label
+    return label
 
 #===============================================================================
 # Class definitions
@@ -864,7 +866,7 @@ class Posterior(object):
                     print("No '%s' column in input table!"%logpalias)
                     continue
                 if not 'log' in logpalias:
-                  self._logP=[np.log(i) for i in self._logP]
+                    self._logP=[np.log(i) for i in self._logP]
 
         if name is not None:
             self.__name=name
@@ -875,296 +877,296 @@ class Posterior(object):
         return
 
     def extend_posterior(self):
-      """
-      Add some usefule derived parameters (such as tilt angles, time delays, etc) in the Posterior object
-      """
-      injection=self._injection
-      pos=self
-      # Generate component mass posterior samples (if they didnt exist already)
-      if 'mc' in pos.names:
-          mchirp_name = 'mc'
-      elif 'chirpmass' in pos.names:
-          mchirp_name = 'chirpmass'
-      else:
-          mchirp_name = 'mchirp'
+        """
+        Add some usefule derived parameters (such as tilt angles, time delays, etc) in the Posterior object
+        """
+        injection=self._injection
+        pos=self
+        # Generate component mass posterior samples (if they didnt exist already)
+        if 'mc' in pos.names:
+            mchirp_name = 'mc'
+        elif 'chirpmass' in pos.names:
+            mchirp_name = 'chirpmass'
+        else:
+            mchirp_name = 'mchirp'
 
-      if 'asym_massratio' in pos.names:
-          q_name = 'asym_massratio'
-      else:
-          q_name = 'q'
+        if 'asym_massratio' in pos.names:
+            q_name = 'asym_massratio'
+        else:
+            q_name = 'q'
 
-      if 'sym_massratio' in pos.names:
-          eta_name= 'sym_massratio'
-      elif 'massratio' in pos.names:
-          eta_name= 'massratio'
-      else:
-          eta_name='eta'
+        if 'sym_massratio' in pos.names:
+            eta_name= 'sym_massratio'
+        elif 'massratio' in pos.names:
+            eta_name= 'massratio'
+        else:
+            eta_name='eta'
 
-      if 'mass1' in pos.names and 'mass2' in pos.names :
-	  pos.append_mapping(('m1','m2'),lambda x,y:(x,y) ,('mass1','mass2'))
+        if 'mass1' in pos.names and 'mass2' in pos.names:
+            pos.append_mapping(('m1','m2'), lambda x,y:(x,y), ('mass1','mass2'))
 
-      if (mchirp_name in pos.names and eta_name in pos.names) and \
-      ('mass1' not in pos.names or 'm1' not in pos.names) and \
-      ('mass2' not in pos.names or 'm2' not in pos.names):
+        if (mchirp_name in pos.names and eta_name in pos.names) and \
+        ('mass1' not in pos.names or 'm1' not in pos.names) and \
+        ('mass2' not in pos.names or 'm2' not in pos.names):
 
-          pos.append_mapping(('m1','m2'),mc2ms,(mchirp_name,eta_name))
+            pos.append_mapping(('m1','m2'),mc2ms,(mchirp_name,eta_name))
 
-      if (mchirp_name in pos.names and q_name in pos.names) and \
-      ('mass1' not in pos.names or 'm1' not in pos.names) and \
-      ('mass2' not in pos.names or 'm2' not in pos.names):
+        if (mchirp_name in pos.names and q_name in pos.names) and \
+        ('mass1' not in pos.names or 'm1' not in pos.names) and \
+        ('mass2' not in pos.names or 'm2' not in pos.names):
 
-          pos.append_mapping(('m1','m2'),q2ms,(mchirp_name,q_name))
-          pos.append_mapping('eta',q2eta,(mchirp_name,q_name))
+            pos.append_mapping(('m1','m2'),q2ms,(mchirp_name,q_name))
+            pos.append_mapping('eta',q2eta,(mchirp_name,q_name))
 
-      if ('m1' in pos.names and 'm2' in pos.names and not 'mtotal' in pos.names ):
-          pos.append_mapping('mtotal', lambda m1,m2: m1+m2, ('m1','m2') )
+        if ('m1' in pos.names and 'm2' in pos.names and not 'mtotal' in pos.names ):
+            pos.append_mapping('mtotal', lambda m1,m2: m1+m2, ('m1','m2') )
 
-      if('a_spin1' in pos.names): pos.append_mapping('a1',lambda a:a,'a_spin1')
-      if('a_spin2' in pos.names): pos.append_mapping('a2',lambda a:a,'a_spin2')
-      if('phi_spin1' in pos.names): pos.append_mapping('phi1',lambda a:a,'phi_spin1')
-      if('phi_spin2' in pos.names): pos.append_mapping('phi2',lambda a:a,'phi_spin2')
-      if('theta_spin1' in pos.names): pos.append_mapping('theta1',lambda a:a,'theta_spin1')
-      if('theta_spin2' in pos.names): pos.append_mapping('theta2',lambda a:a,'theta_spin2')
+        if('a_spin1' in pos.names): pos.append_mapping('a1',lambda a:a,'a_spin1')
+        if('a_spin2' in pos.names): pos.append_mapping('a2',lambda a:a,'a_spin2')
+        if('phi_spin1' in pos.names): pos.append_mapping('phi1',lambda a:a,'phi_spin1')
+        if('phi_spin2' in pos.names): pos.append_mapping('phi2',lambda a:a,'phi_spin2')
+        if('theta_spin1' in pos.names): pos.append_mapping('theta1',lambda a:a,'theta_spin1')
+        if('theta_spin2' in pos.names): pos.append_mapping('theta2',lambda a:a,'theta_spin2')
 
-      my_ifos=['h1','l1','v1']
-      for ifo1,ifo2 in combinations(my_ifos,2):
-      	p1=ifo1+'_cplx_snr_arg'
-        p2=ifo2+'_cplx_snr_arg'
-        if p1 in pos.names and p2 in pos.names:
-          delta=np.mod(pos[p1].samples - pos[p2].samples + np.pi ,2.0*np.pi)-np.pi
-          pos.append(PosteriorOneDPDF(ifo1+ifo2+'_relative_phase',delta))
+        my_ifos=['h1','l1','v1']
+        for ifo1,ifo2 in combinations(my_ifos,2):
+            p1=ifo1+'_cplx_snr_arg'
+            p2=ifo2+'_cplx_snr_arg'
+            if p1 in pos.names and p2 in pos.names:
+                delta=np.mod(pos[p1].samples - pos[p2].samples + np.pi ,2.0*np.pi)-np.pi
+                pos.append(PosteriorOneDPDF(ifo1+ifo2+'_relative_phase',delta))
 
-      # Ensure that both theta_jn and inclination are output for runs
-      # with zero tilt (for runs with tilt, this will be taken care of
-      # below when the old spin angles are computed as functions of the
-      # new ones
-      # Disabled this since the parameters are degenerate and causing problems
-      #if ('theta_jn' in pos.names) and (not 'tilt1' in pos.names) and (not 'tilt2' in pos.names):
-      #    pos.append_mapping('iota', lambda t:t, 'theta_jn')
+        # Ensure that both theta_jn and inclination are output for runs
+        # with zero tilt (for runs with tilt, this will be taken care of
+        # below when the old spin angles are computed as functions of the
+        # new ones
+        # Disabled this since the parameters are degenerate and causing problems
+        #if ('theta_jn' in pos.names) and (not 'tilt1' in pos.names) and (not 'tilt2' in pos.names):
+        #    pos.append_mapping('iota', lambda t:t, 'theta_jn')
 
-      # Compute time delays from sky position
-      try:
-          if ('ra' in pos.names or 'rightascension' in pos.names) \
-          and ('declination' in pos.names or 'dec' in pos.names) \
-          and 'time' in pos.names:
-              from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime, LIGOTimeGPS, TimeDelayFromEarthCenter
-              import itertools
-              from numpy import array
-              detMap = {'H1': 'LHO_4k', 'H2': 'LHO_2k', 'L1': 'LLO_4k',
-                      'G1': 'GEO_600', 'V1': 'VIRGO', 'T1': 'TAMA_300'}
-              if 'ra' in pos.names:
-                  ra_name='ra'
-              else: ra_name='rightascension'
-              if 'dec' in pos.names:
-                  dec_name='dec'
-              else: dec_name='declination'
-              ifo_times={}
-              my_ifos=['H1','L1','V1']
-              for ifo in my_ifos:
-                  inj_time=None
-                  if injection:
-                      inj_time=float(injection.get_end(ifo[0]))
-                  location = lal.cached_detector_by_prefix[ifo].location
-                  ifo_times[ifo]=array(map(lambda ra,dec,time: array([time[0]+TimeDelayFromEarthCenter(location,ra[0],dec[0],LIGOTimeGPS(float(time[0])))]), pos[ra_name].samples,pos[dec_name].samples,pos['time'].samples))
-                  loc_end_time=PosteriorOneDPDF(ifo.lower()+'_end_time',ifo_times[ifo],injected_value=inj_time)
-                  pos.append(loc_end_time)
-              for ifo1 in my_ifos:
-                  for ifo2 in my_ifos:
-                      if ifo1==ifo2: continue
-                      delay_time=ifo_times[ifo2]-ifo_times[ifo1]
-                      if injection:
-                          inj_delay=float(injection.get_end(ifo2[0])-injection.get_end(ifo1[0]))
-                      else:
-                          inj_delay=None
-                      time_delay=PosteriorOneDPDF(ifo1.lower()+ifo2.lower()+'_delay',delay_time,inj_delay)
-                      pos.append(time_delay)
-      except ImportError:
-          print('Warning: Could not import lal python bindings, check you ./configured with --enable-swig-python')
-          print('This means I cannot calculate time delays')
+        # Compute time delays from sky position
+        try:
+            if ('ra' in pos.names or 'rightascension' in pos.names) \
+            and ('declination' in pos.names or 'dec' in pos.names) \
+            and 'time' in pos.names:
+                from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime, LIGOTimeGPS, TimeDelayFromEarthCenter
+                import itertools
+                from numpy import array
+                detMap = {'H1': 'LHO_4k', 'H2': 'LHO_2k', 'L1': 'LLO_4k',
+                        'G1': 'GEO_600', 'V1': 'VIRGO', 'T1': 'TAMA_300'}
+                if 'ra' in pos.names:
+                    ra_name='ra'
+                else: ra_name='rightascension'
+                if 'dec' in pos.names:
+                    dec_name='dec'
+                else: dec_name='declination'
+                ifo_times={}
+                my_ifos=['H1','L1','V1']
+                for ifo in my_ifos:
+                    inj_time=None
+                    if injection:
+                        inj_time=float(injection.get_end(ifo[0]))
+                    location = lal.cached_detector_by_prefix[ifo].location
+                    ifo_times[ifo]=array(list(map(lambda ra,dec,time: array([time[0]+TimeDelayFromEarthCenter(location,ra[0],dec[0],LIGOTimeGPS(float(time[0])))]), pos[ra_name].samples,pos[dec_name].samples,pos['time'].samples)))
+                    loc_end_time=PosteriorOneDPDF(ifo.lower()+'_end_time',ifo_times[ifo],injected_value=inj_time)
+                    pos.append(loc_end_time)
+                for ifo1 in my_ifos:
+                    for ifo2 in my_ifos:
+                        if ifo1==ifo2: continue
+                        delay_time=ifo_times[ifo2]-ifo_times[ifo1]
+                        if injection:
+                            inj_delay=float(injection.get_end(ifo2[0])-injection.get_end(ifo1[0]))
+                        else:
+                            inj_delay=None
+                        time_delay=PosteriorOneDPDF(ifo1.lower()+ifo2.lower()+'_delay',delay_time,inj_delay)
+                        pos.append(time_delay)
+        except ImportError:
+            print('Warning: Could not import lal python bindings, check you ./configured with --enable-swig-python')
+            print('This means I cannot calculate time delays')
 
-      #Calculate new spin angles
-      new_spin_params = ['tilt1','tilt2','theta_jn','beta']
-      if not set(new_spin_params).issubset(set(pos.names)):
-          old_params = ['f_ref',mchirp_name,'eta','iota','a1','theta1','phi1']
-          if 'a2' in pos.names: old_params += ['a2','theta2','phi2']
-          try:
-              pos.append_mapping(new_spin_params, spin_angles, old_params)
-          except KeyError:
-              print("Warning: Cannot find spin parameters.  Skipping spin angle calculations.")
+        #Calculate new spin angles
+        new_spin_params = ['tilt1','tilt2','theta_jn','beta']
+        if not set(new_spin_params).issubset(set(pos.names)):
+            old_params = ['f_ref',mchirp_name,'eta','iota','a1','theta1','phi1']
+            if 'a2' in pos.names: old_params += ['a2','theta2','phi2']
+            try:
+                pos.append_mapping(new_spin_params, spin_angles, old_params)
+            except KeyError:
+                print("Warning: Cannot find spin parameters.  Skipping spin angle calculations.")
 
-      #Calculate effective precessing spin magnitude
-      if ('a1' in pos.names and 'tilt1' in pos.names and 'm1' in pos.names ) and ('a2' in pos.names and 'tilt2' in pos.names and 'm2' in pos.names):
-          pos.append_mapping('chi_p', chi_precessing, ['a1', 'tilt1', 'm1', 'a2', 'tilt2', 'm2'])
+        #Calculate effective precessing spin magnitude
+        if ('a1' in pos.names and 'tilt1' in pos.names and 'm1' in pos.names ) and ('a2' in pos.names and 'tilt2' in pos.names and 'm2' in pos.names):
+            pos.append_mapping('chi_p', chi_precessing, ['a1', 'tilt1', 'm1', 'a2', 'tilt2', 'm2'])
 
 
-      # Calculate redshift from luminosity distance measurements
-      if('distance' in pos.names):
-          pos.append_mapping('redshift', calculate_redshift, 'distance')
-      elif('dist' in pos.names):
-          pos.append_mapping('redshift', calculate_redshift, 'dist')
+        # Calculate redshift from luminosity distance measurements
+        if('distance' in pos.names):
+            pos.append_mapping('redshift', calculate_redshift, 'distance')
+        elif('dist' in pos.names):
+            pos.append_mapping('redshift', calculate_redshift, 'dist')
 
-          
-      # Calculate source mass parameters
-      if ('m1' in pos.names) and ('redshift' in pos.names):
-          pos.append_mapping('m1_source', source_mass, ['m1', 'redshift'])
 
-      if ('m2' in pos.names) and ('redshift' in pos.names):
-          pos.append_mapping('m2_source', source_mass, ['m2', 'redshift'])
+        # Calculate source mass parameters
+        if ('m1' in pos.names) and ('redshift' in pos.names):
+            pos.append_mapping('m1_source', source_mass, ['m1', 'redshift'])
 
-      if ('mtotal' in pos.names) and ('redshift' in pos.names):
-          pos.append_mapping('mtotal_source', source_mass, ['mtotal', 'redshift'])
+        if ('m2' in pos.names) and ('redshift' in pos.names):
+            pos.append_mapping('m2_source', source_mass, ['m2', 'redshift'])
 
-      if ('mc' in pos.names) and ('redshift' in pos.names):
-          pos.append_mapping('mc_source', source_mass, ['mc', 'redshift'])
+        if ('mtotal' in pos.names) and ('redshift' in pos.names):
+            pos.append_mapping('mtotal_source', source_mass, ['mtotal', 'redshift'])
 
-      #Store signed spin magnitudes in separate parameters and make a1,a2 magnitudes
-      if 'a1' in pos.names:
-          if 'tilt1' in pos.names:
-              pos.append_mapping('a1z', lambda a, tilt: a*np.cos(tilt), ('a1','tilt1'))
-          else:
-              pos.append_mapping('a1z', lambda x: x, 'a1')
-              inj_az = None
-              if injection is not None:
-                  inj_az = injection.spin1z
-              pos['a1z'].set_injval(inj_az)
-              pos.pop('a1')
-              pos.append_mapping('a1', lambda x: np.abs(x), 'a1z')
+        if ('mc' in pos.names) and ('redshift' in pos.names):
+            pos.append_mapping('mc_source', source_mass, ['mc', 'redshift'])
 
-      if 'a2' in pos.names:
-          if 'tilt2' in pos.names:
-              pos.append_mapping('a2z', lambda a, tilt: a*np.cos(tilt), ('a2','tilt2'))
-          else:
-              pos.append_mapping('a2z', lambda x: x, 'a2')
-              inj_az = None
-              if injection is not None:
-                  inj_az = injection.spin2z
-              pos['a2z'].set_injval(inj_az)
-              pos.pop('a2')
-              pos.append_mapping('a2', lambda x: np.abs(x), 'a2z')
+        #Store signed spin magnitudes in separate parameters and make a1,a2 magnitudes
+        if 'a1' in pos.names:
+            if 'tilt1' in pos.names:
+                pos.append_mapping('a1z', lambda a, tilt: a*np.cos(tilt), ('a1','tilt1'))
+            else:
+                pos.append_mapping('a1z', lambda x: x, 'a1')
+                inj_az = None
+                if injection is not None:
+                    inj_az = injection.spin1z
+                pos['a1z'].set_injval(inj_az)
+                pos.pop('a1')
+                pos.append_mapping('a1', lambda x: np.abs(x), 'a1z')
 
-      #Calculate effective spin parallel to L
-      if ('m1' in pos.names and 'a1z' in pos.names) and ('m2' in pos.names and 'a2z' in pos.names):
-         pos.append_mapping('chi_eff', lambda m1,a1z,m2,a2z: (m1*a1z + m2*a2z) / (m1 + m2), ('m1','a1z','m2','a2z'))
+        if 'a2' in pos.names:
+            if 'tilt2' in pos.names:
+                pos.append_mapping('a2z', lambda a, tilt: a*np.cos(tilt), ('a2','tilt2'))
+            else:
+                pos.append_mapping('a2z', lambda x: x, 'a2')
+                inj_az = None
+                if injection is not None:
+                    inj_az = injection.spin2z
+                pos['a2z'].set_injval(inj_az)
+                pos.pop('a2')
+                pos.append_mapping('a2', lambda x: np.abs(x), 'a2z')
 
-      #If precessing spins calculate total effective spin
-      if ('m1' in pos.names and 'a1' in pos.names and 'tilt1' in pos.names) and ('m2' in pos.names and 'a2' in pos.names and 'tilt2' in pos.names):
-         pos.append_mapping('chi_tot', lambda m1,a1,m2,a2: (m1*a1 + m2*a2) / (m1 + m2), ('m1','a1','m2','a2'))
+        #Calculate effective spin parallel to L
+        if ('m1' in pos.names and 'a1z' in pos.names) and ('m2' in pos.names and 'a2z' in pos.names):
+            pos.append_mapping('chi_eff', lambda m1,a1z,m2,a2z: (m1*a1z + m2*a2z) / (m1 + m2), ('m1','a1z','m2','a2z'))
 
-      #Calculate effective precessing spin magnitude
-      if ('m1' in pos.names and 'a1' in pos.names and 'tilt1' in pos.names) and ('m2' in pos.names and 'a2' in pos.names and 'tilt2' in pos.names):
-          pos.append_mapping('chi_p', chi_precessing, ['m1', 'a1', 'tilt1', 'm2', 'a2', 'tilt2'])
+        #If precessing spins calculate total effective spin
+        if ('m1' in pos.names and 'a1' in pos.names and 'tilt1' in pos.names) and ('m2' in pos.names and 'a2' in pos.names and 'tilt2' in pos.names):
+            pos.append_mapping('chi_tot', lambda m1,a1,m2,a2: (m1*a1 + m2*a2) / (m1 + m2), ('m1','a1','m2','a2'))
 
-      # Calculate redshift from luminosity distance measurements
-      if('distance' in pos.names):
-          pos.append_mapping('redshift', calculate_redshift, 'distance')
+        #Calculate effective precessing spin magnitude
+        if ('m1' in pos.names and 'a1' in pos.names and 'tilt1' in pos.names) and ('m2' in pos.names and 'a2' in pos.names and 'tilt2' in pos.names):
+            pos.append_mapping('chi_p', chi_precessing, ['m1', 'a1', 'tilt1', 'm2', 'a2', 'tilt2'])
 
-      # Calculate source mass parameters
-      if ('m1' in pos.names) and ('redshift' in pos.names):
-          pos.append_mapping('m1_source', source_mass, ['m1', 'redshift'])
+        # Calculate redshift from luminosity distance measurements
+        if('distance' in pos.names):
+            pos.append_mapping('redshift', calculate_redshift, 'distance')
 
-      if ('m2' in pos.names) and ('redshift' in pos.names):
-          pos.append_mapping('m2_source', source_mass, ['m2', 'redshift'])
+        # Calculate source mass parameters
+        if ('m1' in pos.names) and ('redshift' in pos.names):
+            pos.append_mapping('m1_source', source_mass, ['m1', 'redshift'])
 
-      if ('mtotal' in pos.names) and ('redshift' in pos.names):
-          pos.append_mapping('mtotal_source', source_mass, ['mtotal', 'redshift'])
+        if ('m2' in pos.names) and ('redshift' in pos.names):
+            pos.append_mapping('m2_source', source_mass, ['m2', 'redshift'])
 
-      if ('mc' in pos.names) and ('redshift' in pos.names):
-          pos.append_mapping('mc_source', source_mass, ['mc', 'redshift'])
+        if ('mtotal' in pos.names) and ('redshift' in pos.names):
+            pos.append_mapping('mtotal_source', source_mass, ['mtotal', 'redshift'])
 
-      #Calculate new tidal parameters
-      new_tidal_params = ['lam_tilde','dlam_tilde']
-      old_tidal_params = ['lambda1','lambda2','eta']
-      if 'lambda1' in pos.names or 'lambda2' in pos.names:
-          try:
-              pos.append_mapping(new_tidal_params, symm_tidal_params, old_tidal_params)
-          except KeyError:
-              print("Warning: Cannot find tidal parameters.  Skipping tidal calculations.")
+        if ('mc' in pos.names) and ('redshift' in pos.names):
+            pos.append_mapping('mc_source', source_mass, ['mc', 'redshift'])
 
-      #If new spin params present, calculate old ones
-      old_spin_params = ['iota', 'theta1', 'phi1', 'theta2', 'phi2', 'beta']
-      new_spin_params = ['theta_jn', 'phi_jl', 'tilt1', 'tilt2', 'phi12', 'a1', 'a2', 'm1', 'm2', 'f_ref']
-      try:
-          if pos['f_ref'].samples[0][0]==0.0:
-              for name in ['flow','f_lower']:
-                  if name in pos.names:
-                      new_spin_params = ['theta_jn', 'phi_jl', 'tilt1', 'tilt2', 'phi12', 'a1', 'a2', 'm1', 'm2', name]
-      except:
-          print("No f_ref for SimInspiralTransformPrecessingNewInitialConditions().")
-      if set(new_spin_params).issubset(set(pos.names)) and not set(old_spin_params).issubset(set(pos.names)):
-        pos.append_mapping(old_spin_params, physical2radiationFrame, new_spin_params)
+        #Calculate new tidal parameters
+        new_tidal_params = ['lam_tilde','dlam_tilde']
+        old_tidal_params = ['lambda1','lambda2','eta']
+        if 'lambda1' in pos.names or 'lambda2' in pos.names:
+            try:
+                pos.append_mapping(new_tidal_params, symm_tidal_params, old_tidal_params)
+            except KeyError:
+                print("Warning: Cannot find tidal parameters.  Skipping tidal calculations.")
 
-      #Calculate spin magnitudes for aligned runs
-      if 'spin1' in pos.names:
-          inj_a1 = inj_a2 = None
-          if injection:
-              inj_a1 = sqrt(injection.spin1x*injection.spin1x + injection.spin1y*injection.spin1y + injection.spin1z*injection.spin1z)
-              inj_a2 = sqrt(injection.spin2x*injection.spin2x + injection.spin2y*injection.spin2y + injection.spin2z*injection.spin2z)
+        #If new spin params present, calculate old ones
+        old_spin_params = ['iota', 'theta1', 'phi1', 'theta2', 'phi2', 'beta']
+        new_spin_params = ['theta_jn', 'phi_jl', 'tilt1', 'tilt2', 'phi12', 'a1', 'a2', 'm1', 'm2', 'f_ref']
+        try:
+            if pos['f_ref'].samples[0][0]==0.0:
+                for name in ['flow','f_lower']:
+                    if name in pos.names:
+                        new_spin_params = ['theta_jn', 'phi_jl', 'tilt1', 'tilt2', 'phi12', 'a1', 'a2', 'm1', 'm2', name]
+        except:
+            print("No f_ref for SimInspiralTransformPrecessingNewInitialConditions().")
+        if set(new_spin_params).issubset(set(pos.names)) and not set(old_spin_params).issubset(set(pos.names)):
+            pos.append_mapping(old_spin_params, physical2radiationFrame, new_spin_params)
 
-          try:
-              a1_samps = abs(pos['spin1'].samples)
-              a1_pos = PosteriorOneDPDF('a1',a1_samps,injected_value=inj_a1)
-              pos.append(a1_pos)
-          except KeyError:
-              print("Warning: problem accessing spin1 values.")
+        #Calculate spin magnitudes for aligned runs
+        if 'spin1' in pos.names:
+            inj_a1 = inj_a2 = None
+            if injection:
+                inj_a1 = sqrt(injection.spin1x*injection.spin1x + injection.spin1y*injection.spin1y + injection.spin1z*injection.spin1z)
+                inj_a2 = sqrt(injection.spin2x*injection.spin2x + injection.spin2y*injection.spin2y + injection.spin2z*injection.spin2z)
 
-          try:
-              a2_samps = abs(pos['spin2'].samples)
-              a2_pos = PosteriorOneDPDF('a2',a2_samps,injected_value=inj_a2)
-              pos.append(a2_pos)
-          except KeyError:
-              print("Warning: no spin2 values found.")
+            try:
+                a1_samps = abs(pos['spin1'].samples)
+                a1_pos = PosteriorOneDPDF('a1',a1_samps,injected_value=inj_a1)
+                pos.append(a1_pos)
+            except KeyError:
+                print("Warning: problem accessing spin1 values.")
 
-      # Calculate mass and spin of final merged system
-      if ('m1' in pos.names) and ('m2' in pos.names):
-          if ('tilt1' in pos.names) or ('tilt2' in pos.names):
-              print("A precessing fit formula is not available yet. Using a non-precessing fit formula on the aligned-spin components.")
-          if ('a1z' in pos.names) and ('a2z' in pos.names):
-              print("Using non-precessing fit formula [Healy at al (2014)] for final mass and spin (on masses and projected spin components).")
-              try:
-                  pos.append_mapping('af', bbh_final_spin_non_precessing_Healyetal, ['m1', 'm2', 'a1z', 'a2z'])
-                  pos.append_mapping('mf', lambda m1, m2, chi1z, chi2z, chif: bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1z, chi2z, chif=chif), ['m1', 'm2', 'a1z', 'a2z', 'af'])
-              except Exception as e:
-                  print("Could not calculate final parameters. The error was: %s"%(str(e)))
-          elif ('a1' in pos.names) and ('a2' in pos.names):
-              if ('tilt1' in pos.names) and ('tilt2' in pos.names):
-                  print("Projecting spin and using non-precessing fit formula [Healy at al (2014)] for final mass and spin.")
-                  try:
-                      pos.append_mapping('af', bbh_final_spin_projected_spin_Healyetal, ['m1', 'm2', 'a1', 'a2', 'tilt1', 'tilt2'])
-                      pos.append_mapping('mf', bbh_final_mass_projected_spin_Healyetal, ['m1', 'm2', 'a1', 'a2', 'tilt1', 'tilt2', 'af'])
-                  except Exception as e:
-                      print("Could not calculate final parameters. The error was: %s"%(str(e)))
-              else:
-                  print("Using non-precessing fit formula [Healy at al (2014)] for final mass and spin (on masses and spin magnitudes).")
-                  try:
-                      pos.append_mapping('af', bbh_final_spin_non_precessing_Healyetal, ['m1', 'm2', 'a1', 'a2'])
-                      pos.append_mapping('mf', lambda m1, m2, chi1, chi2, chif: bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=chif), ['m1', 'm2', 'a1', 'a2', 'af'])
-                  except Exception as e:
-                      print("Could not calculate final parameters. The error was: %s"%(str(e)))
-          else:
-              print("Using non-spinning fit formula [Pan at al (2010)] for final mass and spin.")
-              try:
-                  pos.append_mapping('af', bbh_final_spin_non_spinning_Panetal, ['m1', 'm2'])
-                  pos.append_mapping('mf', bbh_final_mass_non_spinning_Panetal, ['m1', 'm2'])
-              except Exception as e:
-                  print("Could not calculate final parameters. The error was: %s"%(str(e)))
-      if ('mf' in pos.names) and ('redshift' in pos.names):
-          try:
-              pos.append_mapping('mf_source', source_mass, ['mf', 'redshift'])
-          except Exception as e:
-              print("Could not calculate final source frame mass. The error was: %s"%(str(e)))
+            try:
+                a2_samps = abs(pos['spin2'].samples)
+                a2_pos = PosteriorOneDPDF('a2',a2_samps,injected_value=inj_a2)
+                pos.append(a2_pos)
+            except KeyError:
+                print("Warning: no spin2 values found.")
 
-      # Calculate radiated energy and peak luminosity
-      if ('mtotal_source' in pos.names) and ('mf_source' in pos.names):
-          try:
-              pos.append_mapping('e_rad', lambda mtot_s, mf_s: mtot_s-mf_s, ['mtotal_source', 'mf_source'])
-          except Exception as e:
-              print("Could not calculate radiated energy. The error was: %s"%(str(e)))
+        # Calculate mass and spin of final merged system
+        if ('m1' in pos.names) and ('m2' in pos.names):
+            if ('tilt1' in pos.names) or ('tilt2' in pos.names):
+                print("A precessing fit formula is not available yet. Using a non-precessing fit formula on the aligned-spin components.")
+            if ('a1z' in pos.names) and ('a2z' in pos.names):
+                print("Using non-precessing fit formula [Healy at al (2014)] for final mass and spin (on masses and projected spin components).")
+                try:
+                    pos.append_mapping('af', bbh_final_spin_non_precessing_Healyetal, ['m1', 'm2', 'a1z', 'a2z'])
+                    pos.append_mapping('mf', lambda m1, m2, chi1z, chi2z, chif: bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1z, chi2z, chif=chif), ['m1', 'm2', 'a1z', 'a2z', 'af'])
+                except Exception as e:
+                    print("Could not calculate final parameters. The error was: %s"%(str(e)))
+            elif ('a1' in pos.names) and ('a2' in pos.names):
+                if ('tilt1' in pos.names) and ('tilt2' in pos.names):
+                    print("Projecting spin and using non-precessing fit formula [Healy at al (2014)] for final mass and spin.")
+                    try:
+                        pos.append_mapping('af', bbh_final_spin_projected_spin_Healyetal, ['m1', 'm2', 'a1', 'a2', 'tilt1', 'tilt2'])
+                        pos.append_mapping('mf', bbh_final_mass_projected_spin_Healyetal, ['m1', 'm2', 'a1', 'a2', 'tilt1', 'tilt2', 'af'])
+                    except Exception as e:
+                        print("Could not calculate final parameters. The error was: %s"%(str(e)))
+                else:
+                    print("Using non-precessing fit formula [Healy at al (2014)] for final mass and spin (on masses and spin magnitudes).")
+                    try:
+                        pos.append_mapping('af', bbh_final_spin_non_precessing_Healyetal, ['m1', 'm2', 'a1', 'a2'])
+                        pos.append_mapping('mf', lambda m1, m2, chi1, chi2, chif: bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=chif), ['m1', 'm2', 'a1', 'a2', 'af'])
+                    except Exception as e:
+                        print("Could not calculate final parameters. The error was: %s"%(str(e)))
+            else:
+                print("Using non-spinning fit formula [Pan at al (2010)] for final mass and spin.")
+                try:
+                    pos.append_mapping('af', bbh_final_spin_non_spinning_Panetal, ['m1', 'm2'])
+                    pos.append_mapping('mf', bbh_final_mass_non_spinning_Panetal, ['m1', 'm2'])
+                except Exception as e:
+                    print("Could not calculate final parameters. The error was: %s"%(str(e)))
+        if ('mf' in pos.names) and ('redshift' in pos.names):
+            try:
+                pos.append_mapping('mf_source', source_mass, ['mf', 'redshift'])
+            except Exception as e:
+                print("Could not calculate final source frame mass. The error was: %s"%(str(e)))
 
-      if ('q' in pos.names) and ('a1z' in pos.names) and ('a2z' in pos.names):
-          try:
-              pos.append_mapping('l_peak', bbh_aligned_Lpeak_6mode_SHXJDK, ['q', 'a1z', 'a2z'])
-          except Exception as e:
-              print("Could not calculate peak luminosity. The error was: %s"%(str(e)))
+        # Calculate radiated energy and peak luminosity
+        if ('mtotal_source' in pos.names) and ('mf_source' in pos.names):
+            try:
+                pos.append_mapping('e_rad', lambda mtot_s, mf_s: mtot_s-mf_s, ['mtotal_source', 'mf_source'])
+            except Exception as e:
+                print("Could not calculate radiated energy. The error was: %s"%(str(e)))
+
+        if ('q' in pos.names) and ('a1z' in pos.names) and ('a2z' in pos.names):
+            try:
+                pos.append_mapping('l_peak', bbh_aligned_Lpeak_6mode_SHXJDK, ['q', 'a1z', 'a2z'])
+            except Exception as e:
+                print("Could not calculate peak luminosity. The error was: %s"%(str(e)))
 
     def bootstrap(self):
         """
@@ -1366,7 +1368,7 @@ class Posterior(object):
         """
         current_item = 0
         while current_item < self.dim:
-            name=self._posterior.keys()[current_item]
+            name=list(self._posterior.keys())[current_item]
             pos=self._posterior[name]
             current_item += 1
             yield name,pos
@@ -1684,9 +1686,9 @@ class Posterior(object):
         """
         logl_vals=self._logL
         if self._logP is not None:
-          logp_vals=self._logP
+            logp_vals=self._logP
         else:
-          return None
+            return None
 
         max_i=0
         max_pos=logl_vals[0]+logp_vals[0]
@@ -1793,10 +1795,10 @@ class Posterior(object):
             m=len(chainData)
             VHat=sigmaHat2 + BoverN/m
             try:
-              R = VHat/W
+                R = VHat/W
             except:
-              print("Error when computer Gelman-Rubin R statistic for %s.  This may be a fixed parameter"%pname)
-              R = np.nan
+                print("Error when computer Gelman-Rubin R statistic for %s.  This may be a fixed parameter"%pname)
+                R = np.nan
             return R
         else:
             raise RuntimeError('could not find necessary column header "chain" in posterior samples')
@@ -2124,7 +2126,7 @@ class BurstPosterior(Posterior):
                     print("No '%s' column in input table!"%logpalias)
                     continue
                 if not 'log' in logpalias:
-                  self._logP=[np.log(i) for i in self._logP]
+                    self._logP=[np.log(i) for i in self._logP]
         if name is not None:
             self.__name=name
 
@@ -2177,7 +2179,7 @@ class KDTree(object):
             longest_dim = self._split_dim
             sorted_objects=sorted(self._objects, key=lambda obj: (obj.coord())[longest_dim])
             N = len(sorted_objects)
-            bound=0.5*(sorted_objects[N/2].coord()[longest_dim] + sorted_objects[N/2-1].coord()[longest_dim])
+            bound=0.5*(sorted_objects[int(N/2)].coord()[longest_dim] + sorted_objects[int(N/2)-1].coord()[longest_dim])
             low = [obj for obj in self._objects if obj.coord()[longest_dim] < bound]
             high = [obj for obj in self._objects if obj.coord()[longest_dim] >= bound]
             if len(low)==0:
@@ -2328,7 +2330,7 @@ class KDTreeVolume(object):
             split_dim = self._dimension
             sorted_objects=sorted(self._objects, key=lambda obj: (obj.coord())[split_dim])
             N = len(sorted_objects)
-            self._split_value = 0.5*(sorted_objects[N/2].coord()[split_dim] + sorted_objects[N/2-1].coord()[split_dim])
+            self._split_value = 0.5*(sorted_objects[int(N/2)].coord()[split_dim] + sorted_objects[int(N/2)-1].coord()[split_dim])
             bound = self._split_value
             low = [obj for obj in self._objects if obj.coord()[split_dim] < bound]
             high = [obj for obj in self._objects if obj.coord()[split_dim] >= bound]
@@ -2726,7 +2728,7 @@ class htmlChunk(object):
     def tab(self,idtable=None):
         args={}
         if idtable is not None:
-          args={'id':idtable}
+            args={'id':idtable}
 
         Etab=Element('table',args)
         self._html.append(Etab)
@@ -2867,11 +2869,11 @@ class htmlCollapseSection(htmlChunk):
     def write(self,string):
         k=random.randint(1,10000000)
         if self._start_closed:
-          st='<table border="0" align="center" cellpadding="5" cellspacing="0"><tr bgcolor="#4682B4" height="50"><td width="5%%"><font size="4" face="tahoma" color="white"><a href="#"> Top</a></font></td><td width="45%%"><font size="4" face="tahoma" color="white"><strong>%s</strong></font></td><td bgcolor="#4682B4" align="center" width="50%%"><input id="lnk%s" type="button" value="[+] Expand" onclick="toggle_visibility(\'%s\',\'lnk%s\');"></input></td></tr><tr><td colspan="7">'%(self._html.attrib['id'],k,self.table_id,k)
-          string=string.replace('table ', 'table style="display: none" ')
+            st='<table border="0" align="center" cellpadding="5" cellspacing="0"><tr bgcolor="#4682B4" height="50"><td width="5%%"><font size="4" face="tahoma" color="white"><a href="#"> Top</a></font></td><td width="45%%"><font size="4" face="tahoma" color="white"><strong>%s</strong></font></td><td bgcolor="#4682B4" align="center" width="50%%"><input id="lnk%s" type="button" value="[+] Expand" onclick="toggle_visibility(\'%s\',\'lnk%s\');"></input></td></tr><tr><td colspan="7">'%(self._html.attrib['id'],k,self.table_id,k)
+            string=string.replace('table ', 'table style="display: none" ')
         else:
-          st='<table border="0" align="center" cellpadding="5" cellspacing="0"><tr bgcolor="#4682B4" height="50"><td width="5%%"><font size="4" face="tahoma" color="white"><a href="#"> Top</a></font></td><td width="45%%"><font size="4" face="tahoma" color="white"><strong>%s</strong></font></td><td bgcolor="#4682B4" align="center" width="50%%"><input id="lnk%s" type="button" value="[-] Collapse" onclick="toggle_visibility(\'%s\',\'lnk%s\');"></input></td></tr><tr><td colspan="7">'%(self._html.attrib['id'],k,self.table_id,k)
-          string=string.replace('table ', 'table style="display: table" ')
+            st='<table border="0" align="center" cellpadding="5" cellspacing="0"><tr bgcolor="#4682B4" height="50"><td width="5%%"><font size="4" face="tahoma" color="white"><a href="#"> Top</a></font></td><td width="45%%"><font size="4" face="tahoma" color="white"><strong>%s</strong></font></td><td bgcolor="#4682B4" align="center" width="50%%"><input id="lnk%s" type="button" value="[-] Collapse" onclick="toggle_visibility(\'%s\',\'lnk%s\');"></input></td></tr><tr><td colspan="7">'%(self._html.attrib['id'],k,self.table_id,k)
+            string=string.replace('table ', 'table style="display: table" ')
         st+=string
         st+='</td></tr></table>'
         htmlChunk.write(self,st)
@@ -3777,20 +3779,20 @@ def spin_angles(fref,mc,eta,incl,a1,theta1,phi1,a2=None,theta2=None,phi2=None):
     return tilt1, tilt2, theta_jn, beta
 #
 def chi_precessing(m1, a1, tilt1, m2, a2, tilt2):
-	"""
-	Calculate the magnitude of the effective precessing spin
-	following convention from Phys. Rev. D 91, 024043   --   arXiv:1408.1810
-	note: the paper uses naming convention where m1 < m2
-	(and similar for associated spin parameters) and q > 1
-	"""
-	q_inv = m1/m2
-	A1 = 2. + (3.*q_inv/2.)
-	A2 = 2. + 3./(2.*q_inv)
-	S1_perp = a1*np.sin(tilt1)*m1*m1
-	S2_perp = a2*np.sin(tilt2)*m2*m2
-	Sp = np.maximum(A1*S2_perp, A2*S1_perp)
-	chi_p = Sp/(A2*m1*m1)
-	return chi_p
+    """
+    Calculate the magnitude of the effective precessing spin
+    following convention from Phys. Rev. D 91, 024043   --   arXiv:1408.1810
+    note: the paper uses naming convention where m1 < m2
+    (and similar for associated spin parameters) and q > 1
+    """
+    q_inv = m1/m2
+    A1 = 2. + (3.*q_inv/2.)
+    A2 = 2. + 3./(2.*q_inv)
+    S1_perp = a1*np.sin(tilt1)*m1*m1
+    S2_perp = a2*np.sin(tilt2)*m2*m2
+    Sp = np.maximum(A1*S2_perp, A2*S1_perp)
+    chi_p = Sp/(A2*m1*m1)
+    return chi_p
 
 def calculate_redshift(distance,h=0.6790,om=0.3065,ol=0.6935,w0=-1.0):
     """
@@ -3825,11 +3827,11 @@ def physical2radiationFrame(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1, m
     Vectorizes function for use in append_mapping() methods of the posterior class.
     """
     try:
-      import lalsimulation as lalsim
+        import lalsimulation as lalsim
     except ImportError:
-      print('bayespputils.py: Cannot import lalsimulation SWIG bindings to calculate physical to radiation')
-      print('frame angles, did you remember to use --enable-swig-python when ./configuring lalsimulation?')
-      return None
+        print('bayespputils.py: Cannot import lalsimulation SWIG bindings to calculate physical to radiation')
+        print('frame angles, did you remember to use --enable-swig-python when ./configuring lalsimulation?')
+        return None
     from numpy import shape
     transformFunc = lalsim.SimInspiralTransformPrecessingNewInitialConditions
 
@@ -3868,8 +3870,8 @@ def physical2radiationFrame(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1, m
 
             return iota, theta1, phi1, theta2, phi2, beta
         except: # Catch all exceptions, including failure for the transformFunc
-         # Something went wrong, returning None
-          return None
+            # Something went wrong, returning None
+            return None
 
     elif len(shape(ins))<=1:
        # ins is a list of floats (i.e. we are converting the injected values) or empty
@@ -3945,16 +3947,16 @@ def plot_one_param_pdf(posterior,plot1DParams,analyticPDF=None,analyticCDF=None,
 
     matplotlib.rcParams['text.usetex']=False
 
-    param=plot1DParams.keys()[0].lower()
-    histbins=plot1DParams.values()[0]
+    param=list(plot1DParams.keys())[0].lower()
+    histbins=list(plot1DParams.values())[0]
 
     pos_samps=posterior[param].samples
     injpar=posterior[param].injval
     trigvals=posterior[param].trigvals
 
-  #myfig=plt.figure(figsize=(4,3.5),dpi=200)
+    #myfig=plt.figure(figsize=(4,3.5),dpi=200)
     myfig=plt.figure(figsize=(6,4.5),dpi=150)
-  #axes=plt.Axes(myfig,[0.2, 0.2, 0.7,0.7])
+    #axes=plt.Axes(myfig,[0.2, 0.2, 0.7,0.7])
     axes=plt.Axes(myfig,[0.15,0.15,0.6,0.76])
     myfig.add_axes(axes)
     majorFormatterX=ScalarFormatter(useMathText=True)
@@ -3965,11 +3967,11 @@ def plot_one_param_pdf(posterior,plot1DParams,analyticPDF=None,analyticCDF=None,
     majorFormatterY.set_scientific(True)
     offset=0.0
     if param.find('time')!=-1:
-      offset=floor(min(pos_samps))
-      pos_samps=pos_samps-offset
-      if injpar is not None:
-        injpar=injpar-offset
-      ax1_name=param+' + %i'%(int(offset))
+        offset=floor(min(pos_samps))
+        pos_samps=pos_samps-offset
+        if injpar is not None:
+            injpar=injpar-offset
+        ax1_name=param+' + %i'%(int(offset))
     else: ax1_name=param
 
     (n, bins, patches)=plt.hist(pos_samps,histbins,normed='true',facecolor='grey')
@@ -4003,11 +4005,11 @@ def plot_one_param_pdf(posterior,plot1DParams,analyticPDF=None,analyticCDF=None,
         plt.plot(x, analyticPDF(x+offset), color='r', linewidth=2, linestyle='dashed')
         if analyticCDF:
                 # KS underflows with too many samples
-                max_samps=1000
-                from numpy.random import permutation
-                samps = permutation(pos_samps)[:max_samps,:].flatten()
-                D,p = stats.kstest(samps+offset, analyticCDF, mode='asymp')
-                plt.title("%s: ks p-value %.3f"%(param,p))
+            max_samps=1000
+            from numpy.random import permutation
+            samps = permutation(pos_samps)[:max_samps,:].flatten()
+            D,p = stats.kstest(samps+offset, analyticCDF, mode='asymp')
+            plt.title("%s: ks p-value %.3f"%(param,p))
 
     rbins=None
 
@@ -4067,44 +4069,44 @@ class RALocator(matplotlib.ticker.MultipleLocator):
     RA tick locations with some intelligence
     """
     def __init__(self,min=0.0,max=2.0*pi_constant):
-      hour=pi_constant/12.0
-      if(max-min)>12.0*hour:
-        base=3.0*hour
-      elif(max-min)>6.0*hour:
-        base=2.0*hour
-      # Put hour ticks if there are more than 3 hours displayed
-      elif (max-min)>3.0*pi_constant/12.0:
-        base=hour
-      elif (max-min)>hour:
-        base=hour/2.0
-      else:
-        base=hour/4.0
+        hour=pi_constant/12.0
+        if(max-min)>12.0*hour:
+            base=3.0*hour
+        elif(max-min)>6.0*hour:
+            base=2.0*hour
+        # Put hour ticks if there are more than 3 hours displayed
+        elif (max-min)>3.0*pi_constant/12.0:
+            base=hour
+        elif (max-min)>hour:
+            base=hour/2.0
+        else:
+            base=hour/4.0
 
-      matplotlib.ticker.MultipleLocator.__init__(self,base=base)
+        matplotlib.ticker.MultipleLocator.__init__(self,base=base)
 
 class DecLocator(matplotlib.ticker.MultipleLocator):
     """
     Dec tick locations with some intelligence
     """
     def __init__(self, min=-pi_constant/2.0,max=pi_constant/2.0):
-      deg=pi_constant/180.0
-      if (max-min)>60*deg:
-        base=30.0*deg
-      elif (max-min)>20*deg:
-        base=10*deg
-      elif (max-min)>10*deg:
-        base=5*deg
-      else:
-        base=deg
-      matplotlib.ticker.MultipleLocator.__init__(self,base=base)
+        deg=pi_constant/180.0
+        if (max-min)>60*deg:
+            base=30.0*deg
+        elif (max-min)>20*deg:
+            base=10*deg
+        elif (max-min)>10*deg:
+            base=5*deg
+        else:
+            base=deg
+        matplotlib.ticker.MultipleLocator.__init__(self,base=base)
 
 class RAFormatter(matplotlib.ticker.FuncFormatter):
     def __init__(self,accuracy='auto'):
-      matplotlib.ticker.FuncFormatter.__init__(self,getRAString)
+        matplotlib.ticker.FuncFormatter.__init__(self,getRAString)
 
 class DecFormatter(matplotlib.ticker.FuncFormatter):
     def __init__(self,accuracy='auto'):
-      matplotlib.ticker.FuncFormatter.__init__(self,getDecString)
+        matplotlib.ticker.FuncFormatter.__init__(self,getDecString)
 
 def formatRATicks(locs, accuracy='auto'):
     """
@@ -4185,9 +4187,9 @@ def getRAString(radians,accuracy='auto'):
     if mins>=59.5:
         mins=mins-60
         hours=hours+1
-    if accuracy=='hour': return ur'%ih'%(hours)
-    if accuracy=='min': return ur'%ih%im'%(hours,mins)
-    if accuracy=='sec': return ur'%ih%im%2.0fs'%(hours,mins,secs)
+    if accuracy=='hour': return six.u(r'%ih'%(hours))
+    if accuracy=='min': return six.u(r'%ih%im'%(hours,mins))
+    if accuracy=='sec': return six.u(r'%ih%im%2.0fs'%(hours,mins,secs))
     else:
         if abs(fmod(secs,60.0))>=0.5: return(getRAString(radians,accuracy='sec'))
         if abs(fmod(mins,60.0))>=0.5: return(getRAString(radians,accuracy='min'))
@@ -4218,264 +4220,264 @@ def getDecString(radians,accuracy='auto'):
     #    deg=deg+1
     if (accuracy=='arcmin' or accuracy=='deg') and secs>30: mins=mins+1
     if accuracy=='deg' and mins>30: deg=deg+1
-    if accuracy=='deg': return ur'%i'%(sign*deg)+degsymb
-    if accuracy=='arcmin': return ur'%i%s%i%s'%(sign*deg,degsymb,mins,minsymb)
-    if accuracy=='arcsec': return ur'%i%s%i%s%2.0f%s'%(sign*deg,degsymb,mins,minsymb,secs,secsymb)
+    if accuracy=='deg': return six.u(r'%i'%(sign*deg)+degsymb)
+    if accuracy=='arcmin': return six.u(r'%i%s%i%s'%(sign*deg,degsymb,mins,minsymb))
+    if accuracy=='arcsec': return six.u(r'%i%s%i%s%2.0f%s'%(sign*deg,degsymb,mins,minsymb,secs,secsymb))
     else:
     #    if abs(fmod(secs,60.0))>=0.5 and abs(fmod(secs,60)-60)>=0.5 : return(getDecString(sign*radians,accuracy='arcsec'))
     #    if abs(fmod(mins,60.0))>=0.5 and abs(fmod(mins,60)-60)>=0.5: return(getDecString(sign*radians,accuracy='arcmin'))
     #    else: return(getDecString(sign*radians,accuracy='deg'))
-      return(getDecString(sign*radians,accuracy='deg'))
+        return(getDecString(sign*radians,accuracy='deg'))
 
 def plot_corner(posterior,levels,parnames=None):
-  """
-  Make a corner plot using the triangle module
-  (See http://github.com/dfm/corner.py)
-  @param posterior: The Posterior object
-  @param levels: a list of confidence levels
-  @param parnames: list of parameters to include
-  """
-  try:
-    import corner
-  except ImportError:
-          try:
-                  import triangle as corner
-          except ImportError:
-                  print('Cannot load corner module. Try running\n\t$ pip install corner')
-                  return None
-  parnames=filter(lambda x: x in posterior.names, parnames)
-  labels = [plot_label(parname) for parname in parnames]
-  data = np.hstack([posterior[p].samples for p in parnames])
-  if posterior.injection:
-    injvals=[posterior[p].injval for p in parnames]
-    myfig=corner.corner(data,labels=labels,truths=injvals,quantiles=levels,plot_datapoints=False,bins=20)
-  else:
-    myfig=corner.corner(data,labels=labels,quantiles=levels,plot_datapoints=False,bins=20)
-  return(myfig)
+    """
+    Make a corner plot using the triangle module
+    (See http://github.com/dfm/corner.py)
+    @param posterior: The Posterior object
+    @param levels: a list of confidence levels
+    @param parnames: list of parameters to include
+    """
+    try:
+        import corner
+    except ImportError:
+        try:
+            import triangle as corner
+        except ImportError:
+            print('Cannot load corner module. Try running\n\t$ pip install corner')
+            return None
+    parnames=filter(lambda x: x in posterior.names, parnames)
+    labels = [plot_label(parname) for parname in parnames]
+    data = np.hstack([posterior[p].samples for p in parnames])
+    if posterior.injection:
+        injvals=[posterior[p].injval for p in parnames]
+        myfig=corner.corner(data,labels=labels,truths=injvals,quantiles=levels,plot_datapoints=False,bins=20)
+    else:
+        myfig=corner.corner(data,labels=labels,quantiles=levels,plot_datapoints=False,bins=20)
+    return(myfig)
 
 
 def plot_two_param_kde_greedy_levels(posteriors_by_name,plot2DkdeParams,levels,colors_by_name,line_styles=__default_line_styles,figsize=(4,3),dpi=250,figposition=[0.2,0.2,0.48,0.75],legend='right',hatches_by_name=None,Npixels=50):
-  """
-  Plots a 2D kernel density estimate of the 2-parameter marginal posterior.
+    """
+    Plots a 2D kernel density estimate of the 2-parameter marginal posterior.
 
-  @param posteriors_by_name: dictionary of Posterior objects, indexed by name
+    @param posteriors_by_name: dictionary of Posterior objects, indexed by name
 
-  @param plot2DkdeParams: a dict {param1Name:Nparam1Bins,param2Name:Nparam2Bins}
+    @param plot2DkdeParams: a dict {param1Name:Nparam1Bins,param2Name:Nparam2Bins}
 
-  @param levels: list of credible levels
+    @param levels: list of credible levels
 
-  @param colors_by_name: dict of colors, indexed by name
+    @param colors_by_name: dict of colors, indexed by name
 
-  @param line_styles: list of line styles for the credible levels
+    @param line_styles: list of line styles for the credible levels
 
-  @param figsize: figsize to pass to matplotlib
+    @param figsize: figsize to pass to matplotlib
 
-  @param dpi: dpi to pass to matplotlib
+    @param dpi: dpi to pass to matplotlib
 
-  @param figposition: figposition to pass to matplotlib
+    @param figposition: figposition to pass to matplotlib
 
-  @param legend: position of legend
+    @param legend: position of legend
 
-  @param hatches_by_name: dict of hatch styles indexed by name
+    @param hatches_by_name: dict of hatch styles indexed by name
 
-  @param Npixels: Number of pixels in each axis of the 2D grid
-  """
+    @param Npixels: Number of pixels in each axis of the 2D grid
+    """
 
-  from scipy import seterr as sp_seterr
-  confidence_levels=levels
+    from scipy import seterr as sp_seterr
+    confidence_levels=levels
 
-  # Reversed parameter order here for consistency with the other
-  # plotting functions
-  par2_name,par1_name=plot2DkdeParams.keys()
-  xbin=plot2DkdeParams[par1_name]
-  ybin=plot2DkdeParams[par2_name]
-  levels= levels
-  np.seterr(under='ignore')
-  sp_seterr(under='ignore')
+    # Reversed parameter order here for consistency with the other
+    # plotting functions
+    par2_name,par1_name=plot2DkdeParams.keys()
+    xbin=plot2DkdeParams[par1_name]
+    ybin=plot2DkdeParams[par2_name]
+    levels= levels
+    np.seterr(under='ignore')
+    sp_seterr(under='ignore')
 
-  fig=plt.figure(1,figsize=figsize,dpi=dpi)
-  plt.clf()
-  axes=fig.add_axes(figposition)
-  name_list=[]
+    fig=plt.figure(1,figsize=figsize,dpi=dpi)
+    plt.clf()
+    axes=fig.add_axes(figposition)
+    name_list=[]
 
-  #This fixes the precedence of line styles in the plot
-  if len(line_styles)<len(levels):
-    raise RuntimeError("Error: Need as many or more line styles to choose from as confidence levels to plot!")
+    #This fixes the precedence of line styles in the plot
+    if len(line_styles)<len(levels):
+        raise RuntimeError("Error: Need as many or more line styles to choose from as confidence levels to plot!")
 
-  CSlst=[]
-  for name,posterior in posteriors_by_name.items():
-    print('Plotting '+name)
-    name_list.append(name)
-    par1_injvalue=posterior[par1_name].injval
-    par2_injvalue=posterior[par2_name].injval
+    CSlst=[]
+    for name,posterior in posteriors_by_name.items():
+        print('Plotting '+name)
+        name_list.append(name)
+        par1_injvalue=posterior[par1_name].injval
+        par2_injvalue=posterior[par2_name].injval
 
-    par_trigvalues1=posterior[par1_name].trigvals
-    par_trigvalues2=posterior[par2_name].trigvals
-    xdat=posterior[par1_name].samples
-    ydat=posterior[par2_name].samples
-    a=np.squeeze(posterior[par1_name].samples)
-    b=np.squeeze(posterior[par2_name].samples)
-    offset=0.0
-    if par1_name.find('time')!=-1:
-      offset=floor(min(a))
-      a=a-offset
-    if par1_injvalue:
-      par1_injvalue=par1_injvalue-offset
-      ax1_name=par1_name+' + %i'%(int(offset))
-    else: ax1_name=par1_name
+        par_trigvalues1=posterior[par1_name].trigvals
+        par_trigvalues2=posterior[par2_name].trigvals
+        xdat=posterior[par1_name].samples
+        ydat=posterior[par2_name].samples
+        a=np.squeeze(posterior[par1_name].samples)
+        b=np.squeeze(posterior[par2_name].samples)
+        offset=0.0
+        if par1_name.find('time')!=-1:
+            offset=floor(min(a))
+            a=a-offset
+        if par1_injvalue:
+            par1_injvalue=par1_injvalue-offset
+            ax1_name=par1_name+' + %i'%(int(offset))
+        else: ax1_name=par1_name
 
-    if par2_name.find('time')!=-1:
-      offset=floor(min(b))
-      b=b-offset
-    if par2_injvalue:
-      par2_injvalue=par2_injvalue-offset
-      ax2_name=par2_name+' + %i'%(int(offset))
-    else: ax2_name=par2_name
+        if par2_name.find('time')!=-1:
+            offset=floor(min(b))
+            b=b-offset
+        if par2_injvalue:
+            par2_injvalue=par2_injvalue-offset
+            ax2_name=par2_name+' + %i'%(int(offset))
+        else: ax2_name=par2_name
 
-    samp=np.transpose(np.column_stack((xdat,ydat)))
+        samp=np.transpose(np.column_stack((xdat,ydat)))
 
-    try:
-      kde=stats.kde.gaussian_kde(samp)
-      den=kde(samp)
-    except:
-      return None
+        try:
+            kde=stats.kde.gaussian_kde(samp)
+            den=kde(samp)
+        except:
+            return None
 
-    #grid_coords = np.append(x.reshape(-1,1),y.reshape(-1,1),axis=1)
-    Nx=Npixels
-    Ny=Npixels
-    # Ugly hack to produce plots centred on the main mode:
-    # Choose 1%-99% percentile range of the samples
-    # Then zoom out by 0.95 to encompass the contour edges
-    xsorted=np.sort(xdat,axis=None)
-    ysorted=np.sort(ydat,axis=None)
-    imin=int(0.01*len(xsorted))
-    imax=int(0.99*len(xsorted))
-    xmax=xsorted[imax]
-    xmin=xsorted[imin]
-    ymax=ysorted[imax]
-    ymin=ysorted[imin]
-    xmid=0.5*(xmin+xmax)
-    ymid=0.5*(ymin+ymax)
-    xmin=xmid+(xmin-xmid)/0.95
-    xmax=xmid+(xmax-xmid)/0.95
-    ymin=ymid+(ymin-ymid)/0.95
-    ymax=ymid+(ymax-ymid)/0.95
-    xax=np.linspace(xmin,xmax,Nx)
-    yax=np.linspace(ymin,ymax,Ny)
-    #print 'Plot limits %f-%f x %f-%f'%(xmin,xmax,ymin,ymax)
+        #grid_coords = np.append(x.reshape(-1,1),y.reshape(-1,1),axis=1)
+        Nx=Npixels
+        Ny=Npixels
+        # Ugly hack to produce plots centred on the main mode:
+        # Choose 1%-99% percentile range of the samples
+        # Then zoom out by 0.95 to encompass the contour edges
+        xsorted=np.sort(xdat,axis=None)
+        ysorted=np.sort(ydat,axis=None)
+        imin=int(0.01*len(xsorted))
+        imax=int(0.99*len(xsorted))
+        xmax=xsorted[imax]
+        xmin=xsorted[imin]
+        ymax=ysorted[imax]
+        ymin=ysorted[imin]
+        xmid=0.5*(xmin+xmax)
+        ymid=0.5*(ymin+ymax)
+        xmin=xmid+(xmin-xmid)/0.95
+        xmax=xmid+(xmax-xmid)/0.95
+        ymin=ymid+(ymin-ymid)/0.95
+        ymax=ymid+(ymax-ymid)/0.95
+        xax=np.linspace(xmin,xmax,Nx)
+        yax=np.linspace(ymin,ymax,Ny)
+        #print 'Plot limits %f-%f x %f-%f'%(xmin,xmax,ymin,ymax)
 
-    # Original way which includes all samples
-    #xax = np.linspace(np.min(xdat),np.max(xdat),Nx)
-    #yax = np.linspace(np.min(ydat),np.max(ydat),Ny)
+        # Original way which includes all samples
+        #xax = np.linspace(np.min(xdat),np.max(xdat),Nx)
+        #yax = np.linspace(np.min(ydat),np.max(ydat),Ny)
 
-    # Do the actual plotting
-    x,y = np.meshgrid(xax,yax)
-    grid_coords = np.row_stack( (x.flatten(),y.flatten()) )
-    z = kde(grid_coords)
-    z = z.reshape(Nx,Ny)
-    densort=np.sort(den)[::-1]
-    values=[]
-    Npts=xdat.shape[0]
-    zvalues=[]
-    for level in levels:
-      ilevel = int(Npts*level + 0.5)
-      if ilevel >= Npts:
-	ilevel = Npts-1
-      zvalues.append(densort[ilevel])
-    CS=plt.contour(x, y, z, zvalues,colors=[colors_by_name[name]],linestyles=line_styles )
-    CSlst.append(CS)
+        # Do the actual plotting
+        x,y = np.meshgrid(xax,yax)
+        grid_coords = np.row_stack( (x.flatten(),y.flatten()) )
+        z = kde(grid_coords)
+        z = z.reshape(Nx,Ny)
+        densort=np.sort(den)[::-1]
+        values=[]
+        Npts=xdat.shape[0]
+        zvalues=[]
+        for level in levels:
+            ilevel = int(Npts*level + 0.5)
+            if ilevel >= Npts:
+                ilevel = Npts-1
+            zvalues.append(densort[ilevel])
+        CS=plt.contour(x, y, z, zvalues,colors=[colors_by_name[name]],linestyles=line_styles )
+        CSlst.append(CS)
 
-    if par1_injvalue is not None and par2_injvalue is not None:
-      plt.plot([par1_injvalue],[par2_injvalue],'b*',scalex=False,scaley=False,markersize=12)
+        if par1_injvalue is not None and par2_injvalue is not None:
+            plt.plot([par1_injvalue],[par2_injvalue],'b*',scalex=False,scaley=False,markersize=12)
 
-    if par_trigvalues1 is not None and par_trigvalues2 is not None:
-	par1IFOs = set([IFO for IFO in par_trigvalues1.keys()])
-	par2IFOs = set([IFO for IFO in par_trigvalues2.keys()])
-	IFOs = par1IFOs.intersection(par2IFOs)
-	for IFO in IFOs:
-	  if IFO=='H1': color = 'r'
-	  elif IFO=='L1': color = 'g'
-	  elif IFO=='V1': color = 'm'
-	  else: color = 'c'
-	plt.plot([par_trigvalues1[IFO]],[par_trigvalues2[IFO]],color=color,marker='o',scalex=False,scaley=False)
+        if par_trigvalues1 is not None and par_trigvalues2 is not None:
+            par1IFOs = set([IFO for IFO in par_trigvalues1.keys()])
+            par2IFOs = set([IFO for IFO in par_trigvalues2.keys()])
+            IFOs = par1IFOs.intersection(par2IFOs)
+            for IFO in IFOs:
+                if IFO=='H1': color = 'r'
+                elif IFO=='L1': color = 'g'
+                elif IFO=='V1': color = 'm'
+                else: color = 'c'
+                plt.plot([par_trigvalues1[IFO]],[par_trigvalues2[IFO]],color=color,marker='o',scalex=False,scaley=False)
 
-  plt.xlabel(plot_label(par1_name))
-  plt.ylabel(plot_label(par2_name))
-  plt.grid()
+    plt.xlabel(plot_label(par1_name))
+    plt.ylabel(plot_label(par2_name))
+    plt.grid()
 
-  if len(name_list)!=len(CSlst):
-    raise RuntimeError("Error number of contour objects does not equal number of names! Use only *one* contour from each set to associate a name.")
+    if len(name_list)!=len(CSlst):
+        raise RuntimeError("Error number of contour objects does not equal number of names! Use only *one* contour from each set to associate a name.")
 
-  full_name_list=[]
-  dummy_lines=[]
-  for plot_name in name_list:
-    full_name_list.append(plot_name)
-  if len(confidence_levels)>1:
-    for ls_,cl in zip(line_styles[0:len(confidence_levels)],confidence_levels):
-      dummy_lines.append(mpl_lines.Line2D(np.array([0.,1.]),np.array([0.,1.]),ls=ls_,color='k'))
-      full_name_list.append('%s%%'%str(int(cl*100)))
+    full_name_list=[]
+    dummy_lines=[]
+    for plot_name in name_list:
+        full_name_list.append(plot_name)
+    if len(confidence_levels)>1:
+        for ls_,cl in zip(line_styles[0:len(confidence_levels)],confidence_levels):
+            dummy_lines.append(mpl_lines.Line2D(np.array([0.,1.]),np.array([0.,1.]),ls=ls_,color='k'))
+            full_name_list.append('%s%%'%str(int(cl*100)))
 
-  fig_actor_lst = [cs.collections[0] for cs in CSlst]
-  fig_actor_lst.extend(dummy_lines)
-  if legend is not None:
-    try:
-      twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right',framealpha=0.1)
-    except:
-      twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right')
-    for text in twodcontour_legend.get_texts():
-      text.set_fontsize('small')
+    fig_actor_lst = [cs.collections[0] for cs in CSlst]
+    fig_actor_lst.extend(dummy_lines)
+    if legend is not None:
+        try:
+            twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right',framealpha=0.1)
+        except:
+            twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right')
+        for text in twodcontour_legend.get_texts():
+            text.set_fontsize('small')
 
-  majorFormatterX=ScalarFormatter(useMathText=True)
-  majorFormatterX.format_data=lambda data:'%.4g'%(data)
-  majorFormatterY=ScalarFormatter(useMathText=True)
-  majorFormatterY.format_data=lambda data:'%.4g'%(data)
-  majorFormatterX.set_scientific(True)
-  majorFormatterY.set_scientific(True)
-  axes.xaxis.set_major_formatter(majorFormatterX)
-  axes.yaxis.set_major_formatter(majorFormatterY)
-  Nchars=max(map(lambda d:len(majorFormatterX.format_data(d)),axes.get_xticks()))
-  if Nchars>8:
-    Nticks=3
-  elif Nchars>5:
-    Nticks=4
-  elif Nchars>4:
-    Nticks=5
-  else:
-    Nticks=6
-  locatorX=matplotlib.ticker.MaxNLocator(nbins=Nticks-1)
-  if par1_name=='rightascension' or par1_name=='ra':
-    (ramin,ramax)=plt.xlim()
-    locatorX=RALocator(min=ramin,max=ramax)
-    majorFormatterX=RAFormatter()
-  if par1_name=='declination' or par1_name=='dec':
-    (decmin,decmax)=plt.xlim()
-    locatorX=DecLocator(min=decmin,max=decmax)
-    majorFormatterX=DecFormatter()
-  axes.xaxis.set_major_formatter(majorFormatterX)
-  if par2_name=='rightascension' or par2_name=='ra':
-    (ramin,ramax)=plt.ylim()
-    locatorY=RALocator(ramin,ramax)
-    axes.yaxis.set_major_locator(locatorY)
-    majorFormatterY=RAFormatter()
-  if par2_name=='declination' or par2_name=='dec':
-    (decmin,decmax)=plt.ylim()
-    locatorY=DecLocator(min=decmin,max=decmax)
-    majorFormatterY=DecFormatter()
-    axes.yaxis.set_major_locator(locatorY)
+    majorFormatterX=ScalarFormatter(useMathText=True)
+    majorFormatterX.format_data=lambda data:'%.4g'%(data)
+    majorFormatterY=ScalarFormatter(useMathText=True)
+    majorFormatterY.format_data=lambda data:'%.4g'%(data)
+    majorFormatterX.set_scientific(True)
+    majorFormatterY.set_scientific(True)
+    axes.xaxis.set_major_formatter(majorFormatterX)
+    axes.yaxis.set_major_formatter(majorFormatterY)
+    Nchars=max(map(lambda d:len(majorFormatterX.format_data(d)),axes.get_xticks()))
+    if Nchars>8:
+        Nticks=3
+    elif Nchars>5:
+        Nticks=4
+    elif Nchars>4:
+        Nticks=5
+    else:
+        Nticks=6
+    locatorX=matplotlib.ticker.MaxNLocator(nbins=Nticks-1)
+    if par1_name=='rightascension' or par1_name=='ra':
+        (ramin,ramax)=plt.xlim()
+        locatorX=RALocator(min=ramin,max=ramax)
+        majorFormatterX=RAFormatter()
+    if par1_name=='declination' or par1_name=='dec':
+        (decmin,decmax)=plt.xlim()
+        locatorX=DecLocator(min=decmin,max=decmax)
+        majorFormatterX=DecFormatter()
+    axes.xaxis.set_major_formatter(majorFormatterX)
+    if par2_name=='rightascension' or par2_name=='ra':
+        (ramin,ramax)=plt.ylim()
+        locatorY=RALocator(ramin,ramax)
+        axes.yaxis.set_major_locator(locatorY)
+        majorFormatterY=RAFormatter()
+    if par2_name=='declination' or par2_name=='dec':
+        (decmin,decmax)=plt.ylim()
+        locatorY=DecLocator(min=decmin,max=decmax)
+        majorFormatterY=DecFormatter()
+        axes.yaxis.set_major_locator(locatorY)
 
-  axes.yaxis.set_major_formatter(majorFormatterY)
-  #locatorX.view_limits(bins[0],bins[-1])
-  axes.xaxis.set_major_locator(locatorX)
+    axes.yaxis.set_major_formatter(majorFormatterY)
+    #locatorX.view_limits(bins[0],bins[-1])
+    axes.xaxis.set_major_locator(locatorX)
 
-  fix_axis_names(plt,par1_name,par2_name)
+    fix_axis_names(plt,par1_name,par2_name)
 
-  if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
-    xmin,xmax=plt.xlim()
-    if(xmin<0.0): xmin=0.0
-    if(xmax>2.0*pi_constant): xmax=2.0*pi_constant
-    plt.xlim(xmax,xmin)
+    if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
+        xmin,xmax=plt.xlim()
+        if(xmin<0.0): xmin=0.0
+        if(xmax>2.0*pi_constant): xmax=2.0*pi_constant
+        plt.xlim(xmax,xmin)
 
-  return fig
+    return fig
 
 
 def plot_two_param_kde(posterior,plot2DkdeParams):
@@ -4524,12 +4526,12 @@ def plot_two_param_kde(posterior,plot2DkdeParams):
 
     values=[]
     for level in levels:
-      ilevel = int(Npts*level + 0.5)
-      if ilevel >= Npts:
-	ilevel = Npts-1
-	zvalues.append(densort[ilevel])
+        ilevel = int(Npts*level + 0.5)
+        if ilevel >= Npts:
+            ilevel = Npts-1
+            zvalues.append(densort[ilevel])
 
-	pp.contour(XS, YS, ZS, zvalues)
+            pp.contour(XS, YS, ZS, zvalues)
 
     asp=xax.ptp()/yax.ptp()
 #    if(asp<0.8 or asp > 1.6): asp=1.4
@@ -4556,8 +4558,8 @@ def plot_two_param_kde(posterior,plot2DkdeParams):
 
     # For RA and dec set custom labels and for RA reverse
     if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
-            xmin,xmax=plt.xlim()
-            plt.xlim(xmax,xmin)
+        xmin,xmax=plt.xlim()
+        plt.xlim(xmax,xmin)
     #if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
     #        locs, ticks = plt.xticks()
     #        (newlocs, newticks)=formatRATicks(locs, ticks)
@@ -4623,7 +4625,7 @@ def histogram2D(posterior,greedy2Params,confidence_levels):
     j=len(idxes)-1
     for cl in confidence_levels:
         while float(Hsum/np.sum(H))<cl:
-            #ind = np.argsort(temp)
+        #ind = np.argsort(temp)
             max_i=idxes[j]
             j-=1
             val = temp[max_i]
@@ -4675,12 +4677,12 @@ def plot_two_param_greedy_bins_contourf(posteriors_by_name,greedy2Params,confide
         fig_actor_lst = [cs.collections[0] for cs in CSlst]
         fig_actor_lst.extend(dummy_lines)
     if legend is not None:
-      try:
-        twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right',framealpha=0.1)
-      except:
-        twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right')
-      for text in twodcontour_legend.get_texts():
-          text.set_fontsize('small')
+        try:
+            twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right',framealpha=0.1)
+        except:
+            twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right')
+        for text in twodcontour_legend.get_texts():
+            text.set_fontsize('small')
     fix_axis_names(plt,par1_name,par2_name)
     return fig
 
@@ -4692,18 +4694,18 @@ def fix_axis_names(plt,par1_name,par2_name):
 
     # For ra and dec set custom labels and for RA reverse
     if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
-            ymin,ymax=plt.ylim()
-            if(ymin<0.0): ylim=0.0
-            if(ymax>2.0*pi_constant): ymax=2.0*pi_constant
-            plt.ylim(ymax,ymin)
+        ymin,ymax=plt.ylim()
+        if(ymin<0.0): ylim=0.0
+        if(ymax>2.0*pi_constant): ymax=2.0*pi_constant
+        plt.ylim(ymax,ymin)
     if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
-            locs, ticks = plt.yticks()
-            newlocs, newticks = formatRATicks(locs)
-            plt.yticks(newlocs,newticks)
+        locs, ticks = plt.yticks()
+        newlocs, newticks = formatRATicks(locs)
+        plt.yticks(newlocs,newticks)
     if(par1_name.lower()=='dec' or par1_name.lower()=='declination'):
-            locs, ticks = plt.yticks()
-            newlocs,newticks=formatDecTicks(locs)
-            plt.yticks(newlocs,newticks)
+        locs, ticks = plt.yticks()
+        newlocs,newticks=formatDecTicks(locs)
+        plt.yticks(newlocs,newticks)
 
     if(par2_name.lower()=='ra' or par2_name.lower()=='rightascension'):
         xmin,xmax=plt.xlim()
@@ -4787,19 +4789,19 @@ def plot_two_param_greedy_bins_contour(posteriors_by_name,greedy2Params,confiden
         par2pos_Nbins= int(ceil((par2pos_max - par2pos_min)/par2_bin))+1
 
         if par1_name.find('time')!=-1:
-          offset=floor(min(a))
-          a=a-offset
-          if par1_injvalue:
-            par1_injvalue=par1_injvalue-offset
-          ax1_name=par1_name+' + %i'%(int(offset))
+            offset=floor(min(a))
+            a=a-offset
+            if par1_injvalue:
+                par1_injvalue=par1_injvalue-offset
+            ax1_name=par1_name+' + %i'%(int(offset))
         else: ax1_name=par1_name
 
         if par2_name.find('time')!=-1:
-          offset=floor(min(b))
-          b=b-offset
-          if par2_injvalue:
-            par2_injvalue=par2_injvalue-offset
-          ax2_name=par2_name+' + %i'%(int(offset))
+            offset=floor(min(b))
+            b=b-offset
+            if par2_injvalue:
+                par2_injvalue=par2_injvalue-offset
+            ax2_name=par2_name+' + %i'%(int(offset))
         else: ax2_name=par2_name
 
 
@@ -4848,16 +4850,16 @@ def plot_two_param_greedy_bins_contour(posteriors_by_name,greedy2Params,confiden
             plt.plot([par2_trigvalues[IFO]],[par1_trigvalues[IFO]],color=color,marker='*',scalex=False,scaley=False)
         CSlst.append(CS)
 
-    	Nchars=max(map(lambda d:len(majorFormatterX.format_data(d)),axes.get_xticks()))
-    	if Nchars>8:
-      		Nticks=3
-    	elif Nchars>5:
-      		Nticks=4
-    	elif Nchars>4:
-      		Nticks=5
-    	else:
-      		Nticks=6
-    	locatorX=matplotlib.ticker.MaxNLocator(nbins=Nticks-1)
+        Nchars=max(map(lambda d:len(majorFormatterX.format_data(d)),axes.get_xticks()))
+        if Nchars>8:
+            Nticks=3
+        elif Nchars>5:
+            Nticks=4
+        elif Nchars>4:
+            Nticks=5
+        else:
+            Nticks=6
+        locatorX=matplotlib.ticker.MaxNLocator(nbins=Nticks-1)
         if par2_name=='rightascension' or par2_name=='ra':
             (ramin,ramax)=plt.xlim()
             locatorX=RALocator(min=ramin,max=ramax)
@@ -4879,8 +4881,8 @@ def plot_two_param_greedy_bins_contour(posteriors_by_name,greedy2Params,confiden
             axes.yaxis.set_major_locator(locatorY)
 
         axes.yaxis.set_major_formatter(majorFormatterY)
-    	#locatorX.view_limits(bins[0],bins[-1])
-    	axes.xaxis.set_major_locator(locatorX)
+        #locatorX.view_limits(bins[0],bins[-1])
+        axes.xaxis.set_major_locator(locatorX)
 
     #plt.title("%s-%s confidence contours (greedy binning)"%(par1_name,par2_name)) # add a title
     plt.xlabel(plot_label(ax2_name))
@@ -4894,21 +4896,21 @@ def plot_two_param_greedy_bins_contour(posteriors_by_name,greedy2Params,confiden
     for plot_name in name_list:
         full_name_list.append(plot_name)
     if len(confidence_levels)>1:
-      for ls_,cl in zip(line_styles[0:len(confidence_levels)],confidence_levels):
-          dummy_lines.append(mpl_lines.Line2D(np.array([0.,1.]),np.array([0.,1.]),ls=ls_,color='k'))
-          full_name_list.append('%s%%'%str(int(cl*100)))
+        for ls_,cl in zip(line_styles[0:len(confidence_levels)],confidence_levels):
+            dummy_lines.append(mpl_lines.Line2D(np.array([0.,1.]),np.array([0.,1.]),ls=ls_,color='k'))
+            full_name_list.append('%s%%'%str(int(cl*100)))
 
     fig_actor_lst = [cs.collections[0] for cs in CSlst]
 
     fig_actor_lst.extend(dummy_lines)
 
     if legend is not None:
-      try:
-        twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right',framealpha=0.1)
-      except:
-        twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right')
-      for text in twodcontour_legend.get_texts():
-        text.set_fontsize('small')
+        try:
+            twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right',framealpha=0.1)
+        except:
+            twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right')
+        for text in twodcontour_legend.get_texts():
+            text.set_fontsize('small')
 
 
     # For ra and dec set custom labels and for RA reverse
@@ -4985,19 +4987,19 @@ def plot_two_param_greedy_bins_hist(posterior,greedy2Params,confidence_levels):
 
     # Adjust for time parameter
     if par1_name.find('time')!=-1:
-      offset=floor(min(a))
-      a=a-offset
-      if par1_injvalue:
-        par1_injvalue=par1_injvalue-offset
-      ax1_name=par1_name+' + %i'%(int(offset))
+        offset=floor(min(a))
+        a=a-offset
+        if par1_injvalue:
+            par1_injvalue=par1_injvalue-offset
+        ax1_name=par1_name+' + %i'%(int(offset))
     else: ax1_name=par1_name
 
     if par2_name.find('time')!=-1:
-      offset=floor(min(b))
-      b=b-offset
-      if par2_injvalue:
-        par2_injvalue=par2_injvalue-offset
-      ax2_name=par2_name+' + %i'%(int(offset))
+        offset=floor(min(b))
+        b=b-offset
+        if par2_injvalue:
+            par2_injvalue=par2_injvalue-offset
+        ax2_name=par2_name+' + %i'%(int(offset))
     else: ax2_name=par2_name
 
 
@@ -5037,7 +5039,7 @@ def plot_two_param_greedy_bins_hist(posterior,greedy2Params,confidence_levels):
     idxes=np.argsort(temp)
     j=len(idxes)-1
     while Hsum<Hsum_actual:
-        #ind = np.argsort(temp)
+            #ind = np.argsort(temp)
         max_i=idxes[j]
         j-=1
         val = temp[max_i]
@@ -5056,13 +5058,13 @@ def plot_two_param_greedy_bins_hist(posterior,greedy2Params,confidence_levels):
 
     Nchars=max(map(lambda d:len(majorFormatterX.format_data(d)),axes.get_xticks()))
     if Nchars>8:
-      Nticks=3
+        Nticks=3
     elif Nchars>5:
-      Nticks=4
+        Nticks=4
     elif Nchars>4:
-      Nticks=5
+        Nticks=5
     else:
-      Nticks=6
+        Nticks=6
     locatorX=matplotlib.ticker.MaxNLocator(nbins=Nticks-1)
     (xmin,xmax)=plt.xlim()
     (ymin,ymax)=plt.ylim()
@@ -5140,8 +5142,8 @@ def greedy_bin_one_param(posterior,greedy1Param,confidence_levels):
     @param confidence_levels: A list of floats of the required confidence intervals [(0-1)].
     """
 
-    paramName=greedy1Param.keys()[0]
-    par_bin=greedy1Param.values()[0]
+    paramName=list(greedy1Param.keys())[0]
+    par_bin=list(greedy1Param.values())[0]
     par_samps=posterior[paramName.lower()].samples
 
     parpos_min=min(par_samps)[0]
@@ -5208,8 +5210,8 @@ def contigious_interval_one_param(posterior,contInt1Params,confidence_levels):
     oneDContCL={}
     oneDContInj={}
 
-    paramName=contInt1Params.keys()[0]
-    par_bin=contInt1Params.values()[0]
+    paramName=list(contInt1Params.keys())[0]
+    par_bin=list(contInt1Params.values())[0]
 
     par_injvalue=posterior[paramName].injval
 
@@ -5314,7 +5316,7 @@ def burnin(data,spin_flag,deltaLogP,outputfile):
     return pos,bayesfactor
 
 
-class ACLError(StandardError):
+class ACLError(Exception):
     def __init__(self, *args):
         super(ACLError, self).__init__(*args)
 
@@ -5360,7 +5362,7 @@ def autocorrelation_length_estimate(series, acf=None, M=5, K=2):
     autocorrelation length to obtain a consistent ACL estimate."""
 
     if acf is None:
-      acf=autocorrelation(series)
+        acf=autocorrelation(series)
     acf[1:] *= 2.0
 
     imax=int(acf.shape[0]/K)
@@ -5389,11 +5391,11 @@ def effectiveSampleSize(samples, Nskip=1):
     chains equilibrating after adaptation.
     """
     N = len(samples)
-    acf = autocorrelation(samples[N/2:])
+    acf = autocorrelation(samples[int(N/2):])
     try:
-      acl = autocorrelation_length_estimate(samples[N/2:], acf=acf)
+        acl = autocorrelation_length_estimate(samples[int(N/2):], acf=acf)
     except ACLError:
-      acl = N
+        acl = N
     Neffective = floor(N/acl)
     acl *= Nskip
     return (Neffective, acl, acf)
@@ -5432,9 +5434,9 @@ def find_ndownsample(samples, nDownsample):
         print("Max ACL(s):")
         splineParams=["spcal_npts", "spcal_active","constantcal_active"]
         for i in np.arange(25):
-          for k in lal.cached_detector_by_prefix:
-            splineParams.append(k+'_spcal_freq_'+str(i))
-            splineParams.append(k+'_spcal_logfreq_'+str(i))
+            for k in lal.cached_detector_by_prefix:
+                splineParams.append(k+'_spcal_freq_'+str(i))
+                splineParams.append(k+'_spcal_logfreq_'+str(i))
 
         nonParams = ["logpost", "post", "cycle", "timestamp", "snrh1", "snrl1", "snrv1",
                      "margtime","margtimephi","margtime","time_max","time_min",
@@ -5691,9 +5693,9 @@ class PEOutputParser(object):
                     try:
                         splineParams=["spcal_npts", "spcal_active","constantcal_active"]
                         for i in np.arange(5):
-                          for k in ['h1','l1']:
-                            splineParams.append(k+'_spcal_freq'+str(i))
-                            splineParams.append(k+'_spcal_logfreq'+str(i))
+                            for k in ['h1','l1']:
+                                splineParams.append(k+'_spcal_freq'+str(i))
+                                splineParams.append(k+'_spcal_logfreq'+str(i))
 
                         nonParams = ["logpost", "cycle", "timestamp", "snrh1", "snrl1", "snrv1",
                                      "margtime","margtimephi","margtime","time_max","time_min",
@@ -5759,19 +5761,19 @@ class PEOutputParser(object):
         # ***TEMPORARY*** If not in table, check command line.
         #   ...This is messy, but the only option for dealing with old headers
         if not fRef:
-          runInfoIter = iter(runInfo)
-          for line in runInfoIter:
-              headers=line.lstrip().lower().split()
-              try:
-                  if headers[0]=="command":
-                      try:
-                          fRefInd = headers.index('--fref')+1
-                          fRef = headers[fRefInd]
-                      except ValueError:
-                          pass
-                      break
-              except IndexError:
-                  continue
+            runInfoIter = iter(runInfo)
+            for line in runInfoIter:
+                headers=line.lstrip().lower().split()
+                try:
+                    if headers[0]=="command":
+                        try:
+                            fRefInd = headers.index('--fref')+1
+                            fRef = headers[fRefInd]
+                        except ValueError:
+                            pass
+                        break
+                except IndexError:
+                    continue
 
         # If no fRef is found, use lower frequency bound
         if not fRef:
@@ -5873,7 +5875,7 @@ class PEOutputParser(object):
             print('Error! Could not find logL column in parameter list: %s'%(outpars))
             raise RuntimeError
 
-        inarrays=map(np.loadtxt,files)
+        inarrays=list(map(np.loadtxt,files))
         if Npost is None:
             pos=draw_posterior_many(inarrays,[Nlive for f in files],logLcols=[logLcol for f in files])
         else:
@@ -5885,7 +5887,7 @@ class PEOutputParser(object):
 
             for row in pos:
                 for i in row:
-                  posfile.write('%10.12e\t' %(i))
+                    posfile.write('%10.12e\t' %(i))
                 posfile.write('\n')
 
         with open(posfilename,'r') as posfile:
@@ -5913,10 +5915,10 @@ class PEOutputParser(object):
         from xml.etree import ElementTree as ET
         xmlns='http://www.ivoa.net/xml/VOTable/v1.1'
         try:
-                register_namespace=ET.register_namespace
+            register_namespace=ET.register_namespace
         except AttributeError:
-                def register_namespace(prefix,uri):
-                    ET._namespace_map[uri]=prefix
+            def register_namespace(prefix,uri):
+                ET._namespace_map[uri]=prefix
         register_namespace('vot',xmlns)
         tree = ET.ElementTree()
 
@@ -5927,9 +5929,9 @@ class PEOutputParser(object):
             if table.get('utype')=='lalinference:results:posteriorsamples':
                 return(self._VOTTABLE2pos(table))
         for table in tables:
-          if table.get('utype')=='lalinference:results:nestedsamples':
-            nsresource=[node for node in tree.findall('{%s}RESOURCE'%(xmlns)) if node.get('utype')=='lalinference:results'][0]
-            return(self._VOTTABLE2pos(vo_nest2pos(nsresource)))
+            if table.get('utype')=='lalinference:results:nestedsamples':
+                nsresource=[node for node in tree.findall('{%s}RESOURCE'%(xmlns)) if node.get('utype')=='lalinference:results'][0]
+                return(self._VOTTABLE2pos(vo_nest2pos(nsresource)))
         raise RuntimeError('Cannot find "Posterior Samples" TABLE element in XML input file %s'%(infile))
 
     def _VOTTABLE2pos(self,table):
@@ -5954,7 +5956,7 @@ class PEOutputParser(object):
         tabledata=data[0].find('./{%s}TABLEDATA'%(xmlns))
         llines=[]
         for row in tabledata:
-            llines.append(np.array(map(lambda a:float(a.text),row)))
+            llines.append(np.array(list(map(lambda a:float(a.text),row))))
         flines=np.array(llines)
         for i in range(0,len(header)):
             if header[i].lower().find('log')!=-1 and header[i].lower() not in logParams and re.sub('log', '', header[i].lower()) not in [h.lower() for h in header]:
@@ -6112,11 +6114,11 @@ class PEOutputParser(object):
         [headerfile,delimiter]=info
 
         if headerfile==None:
-        	formatstr=infile.readline().lstrip()
+            formatstr=infile.readline().lstrip()
         else:
-        	hf=open(headerfile,'r')
-        	formatstr=hf.readline().lstrip()
-        	hf.close()
+            hf=open(headerfile,'r')
+            formatstr=hf.readline().lstrip()
+            hf.close()
 
         formatstr=formatstr.replace('#','')
         formatstr=formatstr.replace('"','')
@@ -6148,7 +6150,7 @@ class PEOutputParser(object):
                     proceed=False
 
             if proceed:
-                llines.append(map(float,sline))
+                llines.append(list(map(float,sline)))
 
         flines=np.array(llines)
 
@@ -6178,34 +6180,34 @@ class PEOutputParser(object):
 
 
 def parse_converge_output_section(fo):
-        result={}
-        lines=fo.split('\n')
-        chain_line=False
-        for line in lines:
+    result={}
+    lines=fo.split('\n')
+    chain_line=False
+    for line in lines:
 
-            if '[1]' in line:
-                key=line.replace('[1]','').strip(' ').strip('"')
-                result[key]={}
-                out=result[key]
+        if '[1]' in line:
+            key=line.replace('[1]','').strip(' ').strip('"')
+            result[key]={}
+            out=result[key]
+            continue
+        if result is not {}:
+            if 'chain' in line:
+                chain_line=True
                 continue
-            if result is not {}:
-                if 'chain' in line:
-                    chain_line=True
-                    continue
-                if chain_line:
-                    chain_line=False
-                    key=line.strip('"').split()[1]
-                    out[key]=[]
-                    out2=out[key]
-                else:
-                    try:
-                        newline=line.strip('"').split()
-                        if newline is not []:
-                            out2.append(line.strip('"').split())
-                    except:
-                        pass
+            if chain_line:
+                chain_line=False
+                key=line.strip('"').split()[1]
+                out[key]=[]
+                out2=out[key]
+            else:
+                try:
+                    newline=line.strip('"').split()
+                    if newline is not []:
+                        out2.append(line.strip('"').split())
+                except:
+                    pass
 
-        return result
+    return result
 #
 
 def vo_nest2pos(nsresource,Nlive=None):
@@ -6404,476 +6406,473 @@ def confidence_interval_uncertainty(cl, cl_bounds, posteriors):
 
 
 def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V1']):
-  import glue
-  #import sim inspiral table content handler
-  from glue.ligolw import lsctables,ligolw
-  from lalsimulation.lalsimulation import SimInspiralChooseTDWaveform,SimInspiralChooseFDWaveform
-  from lalsimulation.lalsimulation import SimInspiralImplementedTDApproximants,SimInspiralImplementedFDApproximants
-  from lal.lal import StrainUnit
-  from lal.lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT,CutREAL8TimeSeries
-  from lal.lal import ComputeDetAMResponse, GreenwichMeanSiderealTime
-  from lal.lal import LIGOTimeGPS
-  from lal.lal import MSUN_SI as LAL_MSUN_SI
-  from lal.lal import PC_SI as LAL_PC_SI
-  import lalsimulation as lalsim
-  from math import cos,sin,sqrt
-  from glue.ligolw import utils
-  import os
-  import numpy as np
-  from numpy import arange
-  from matplotlib import pyplot as plt,cm as mpl_cm,lines as mpl_lines
-  import copy
-  if path is None:
-    path=os.getcwd()
-  if event is None:
-    event=0
-  colors_inj={'H1':'r','L1':'g','V1':'m','I1':'b','J1':'y'}
-  colors_rec={'H1':'k','L1':'k','V1':'k','I1':'k','J1':'k'}
-  # time and freq data handling variables
-  srate=4096.0
-  seglen=60.
-  length=srate*seglen # lenght of 60 secs, hardcoded. May call a LALSimRoutine to get an idea
-  deltaT=1/srate
-  deltaF = 1.0 / (length* deltaT);
+    import glue
+    #import sim inspiral table content handler
+    from glue.ligolw import lsctables,ligolw
+    from lalsimulation.lalsimulation import SimInspiralChooseTDWaveform,SimInspiralChooseFDWaveform
+    from lalsimulation.lalsimulation import SimInspiralImplementedTDApproximants,SimInspiralImplementedFDApproximants
+    from lal.lal import StrainUnit
+    from lal.lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT,CutREAL8TimeSeries
+    from lal.lal import ComputeDetAMResponse, GreenwichMeanSiderealTime
+    from lal.lal import LIGOTimeGPS
+    from lal.lal import MSUN_SI as LAL_MSUN_SI
+    from lal.lal import PC_SI as LAL_PC_SI
+    import lalsimulation as lalsim
+    from math import cos,sin,sqrt
+    from glue.ligolw import utils
+    import os
+    import numpy as np
+    from numpy import arange
+    from matplotlib import pyplot as plt,cm as mpl_cm,lines as mpl_lines
+    import copy
+    if path is None:
+        path=os.getcwd()
+    if event is None:
+        event=0
+    colors_inj={'H1':'r','L1':'g','V1':'m','I1':'b','J1':'y'}
+    colors_rec={'H1':'k','L1':'k','V1':'k','I1':'k','J1':'k'}
+    # time and freq data handling variables
+    srate=4096.0
+    seglen=60.
+    length=srate*seglen # lenght of 60 secs, hardcoded. May call a LALSimRoutine to get an idea
+    deltaT=1/srate
+    deltaF = 1.0 / (length* deltaT);
 
-  # build window for FFT
-  pad=0.4
-  timeToFreqFFTPlan = CreateForwardREAL8FFTPlan(int(length), 1 );
-  window=CreateTukeyREAL8Window(int(length),2.0*pad*srate/length);
-  WinNorm = sqrt(window.sumofsquares/window.data.length);
-  # time and freq domain strain:
-  segStart=100000000
-  strainT=CreateREAL8TimeSeries("strainT",segStart,0.0,1.0/srate,DimensionlessUnit,int(length));
-  strainF= CreateCOMPLEX16FrequencySeries("strainF",segStart,	0.0,	deltaF,	DimensionlessUnit,int(length/2. +1));
+    # build window for FFT
+    pad=0.4
+    timeToFreqFFTPlan = CreateForwardREAL8FFTPlan(int(length), 1 );
+    window=CreateTukeyREAL8Window(int(length),2.0*pad*srate/length);
+    WinNorm = sqrt(window.sumofsquares/window.data.length);
+    # time and freq domain strain:
+    segStart=100000000
+    strainT=CreateREAL8TimeSeries("strainT",segStart,0.0,1.0/srate,DimensionlessUnit,int(length));
+    strainF= CreateCOMPLEX16FrequencySeries("strainF",segStart,   0.0,    deltaF, DimensionlessUnit,int(length/2. +1));
 
-  f_min=25 # hardcoded default (may be changed below)
-  f_ref=100 # hardcoded default (may be changed below)
-  f_max=srate/2.0
-  plot_fmax=f_max
+    f_min=25 # hardcoded default (may be changed below)
+    f_ref=100 # hardcoded default (may be changed below)
+    f_max=srate/2.0
+    plot_fmax=f_max
 
-  inj_strains=dict((i,{"T":{'x':None,'strain':None},"F":{'x':None,'strain':None}}) for i in ifos)
-  rec_strains=dict((i,{"T":{'x':None,'strain':None},"F":{'x':None,'strain':None}}) for i in ifos)
+    inj_strains=dict((i,{"T":{'x':None,'strain':None},"F":{'x':None,'strain':None}}) for i in ifos)
+    rec_strains=dict((i,{"T":{'x':None,'strain':None},"F":{'x':None,'strain':None}}) for i in ifos)
 
-  inj_domain=None
-  rec_domain=None
-  font_size=26
-  if siminspiral is not None:
-    skip=0
-    try:
-      xmldoc = utils.load_filename(siminspiral,contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
-      tbl = lsctables.table.get_table(xmldoc, "sim_inspiral")
-      if event>0:
-        tbl=tbl[event]
-      else:
-        tbl=tbl[0]
-    except:
-      e = sys.exc_info()[0]
-      print(e)
-      print("Cannot read event %s from table %s. Won't plot injected waveform \n"%(event,siminspiral))
-      skip=1
-    if not skip:
-      REAL8time=tbl.geocent_end_time+1e-9*tbl.geocent_end_time_ns
-      GPStime=LIGOTimeGPS(REAL8time)
-      M1=tbl.mass1
-      M2=tbl.mass2
-      D=tbl.distance
-      m1=M1*LAL_MSUN_SI
-      m2=M2*LAL_MSUN_SI
-      phiRef=tbl.coa_phase
-
-      f_min = tbl.f_lower
-      s1x = tbl.spin1x
-      s1y = tbl.spin1y
-      s1z = tbl.spin1z
-      s2x = tbl.spin2x
-      s2y = tbl.spin2y
-      s2z = tbl.spin2z
-
-      r=D*LAL_PC_SI*1.0e6
-      iota=tbl.inclination
-      print("WARNING: Defaulting to inj_fref =100Hz to plot the injected WF. This is hardcoded since xml table does not carry this information\n")
-
-      lambda1=0
-      lambda2=0
-      wf=str(tbl.waveform)
-
-      injapproximant=lalsim.GetApproximantFromString(wf)
-      amplitudeO=int(tbl.amp_order )
-      phaseO=lalsim.GetOrderFromString(wf)
-
-      waveFlags=lal.CreateDict()
-      lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(waveFlags, amplitudeO)
-      lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(waveFlags, phaseO)
-
-      ra=tbl.longitude
-      dec=tbl.latitude
-      psi=tbl.polarization
-
-      
-
-      if SimInspiralImplementedFDApproximants(injapproximant):
-        inj_domain='F'
-        [plus,cross]=SimInspiralChooseFDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,r, iota, phiRef,
-                0, 0, 0, # Non-circular binary parameters
-                deltaF, f_min, f_max, f_ref,
-                waveFlags, injapproximant)
-      elif SimInspiralImplementedTDApproximants(injapproximant):
-        inj_domain='T'
-        [plus,cross]=SimInspiralChooseTDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z, r, iota, phiRef,
-                0, 0, 0, # Non-circular binary parameters
-                deltaT, f_min, f_ref,
-                waveFlags, injapproximant)
-      else:
-        print("\nThe approximant %s doesn't seem to be recognized by lalsimulation!\n Skipping WF plots\n"%injapproximant)
-        return None
-
-      for ifo in ifos:
-        fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
-        if inj_domain=='T':
-          # strain is a temporary container for this IFO strain.
-          # Take antenna pattern into accout and window the data
-          for k in np.arange(strainT.data.length):
-            if k<plus.data.length:
-              strainT.data.data[k]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
-            else:
-              strainT.data.data[k]=0.0
-            strainT.data.data[k]*=window.data.data[k]
-          # now copy in the dictionary only the part of strain which is not null (that is achieved using plus.data.length as length)
-          inj_strains[ifo]["T"]['strain']=np.array([strainT.data.data[k] for k in arange(plus.data.length)])
-          inj_strains[ifo]["T"]['x']=np.array([REAL8time - deltaT*(plus.data.length-1-k) for k in np.arange(plus.data.length)])
-
-          # Take the FFT
-          for j in arange(strainF.data.length):
-            strainF.data.data[j]=0.0
-          REAL8TimeFreqFFT(strainF,strainT,timeToFreqFFTPlan);
-          for j in arange(strainF.data.length):
-            strainF.data.data[j]/=WinNorm
-          # copy in the dictionary
-          inj_strains[ifo]["F"]['strain']=np.array([strainF.data.data[k] for k in arange(int(strainF.data.length))])
-          inj_strains[ifo]["F"]['x']=np.array([strainF.f0+ k*strainF.deltaF for k in arange(int(strainF.data.length))])
-        elif inj_domain=='F':
-          for k in np.arange(strainF.data.length):
-            if k<plus.data.length:
-              strainF.data.data[k]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
-            else:
-              strainF.data.data[k]=0.0
-          # copy in the dictionary
-          inj_strains[ifo]["F"]['strain']=np.array([strainF.data.data[k] for k in arange(int(strainF.data.length))])
-          inj_strains[ifo]["F"]['x']=np.array([strainF.f0+ k*strainF.deltaF for k in arange(int(strainF.data.length))])
-  if pos is not None:
-
-    # Select the maxP sample
-    _,which=pos._posMap()
-
-    if 'time' in pos.names:
-      REAL8time=pos['time'].samples[which][0]
-    elif 'time_maxl' in pos.names:
-      REAL8time=pos['time_maxl'].samples[which][0]
-    elif 'time_min' in pos.names and 'time_max' in pos.names:
-      REAL8time=pos['time_min'].samples[which][0]+0.5*(pos['time_max'].samples[which][0]-pos['time_min'].samples[which][0])
-    else:
-      print("ERROR: could not find any time parameter in the posterior file. Not plotting the WF...\n")
-      return None
-
-    # first check we have approx in posterior samples, otherwise skip
-    skip=0
-    try:
-      approximant=int(pos['LAL_APPROXIMANT'].samples[which][0])
-      amplitudeO=int(pos['LAL_AMPORDER'].samples[which][0])
-      phaseO=int(pos['LAL_PNORDER'].samples[which][0])
-    except:
-      skip=1
-    if skip==0:
-      GPStime=LIGOTimeGPS(REAL8time)
-
-      q=pos['q'].samples[which][0]
-      mc=pos['mc'].samples[which][0]
-      M1,M2=q2ms(mc,q)
-      if 'dist' in pos.names:
-        D=pos['dist'].samples[which][0]
-      elif 'distance' in pos.names:
-        D=pos['distance'].samples[which][0]
-      elif 'logdistance' in pos.names:
-        D=exp(pos['distance'].samples[which][0])
-
-
-      m1=M1*LAL_MSUN_SI
-      m2=M2*LAL_MSUN_SI
-      if 'phi_orb' in pos.names:
-        phiRef=pos['phi_orb'].samples[which][0]
-      elif 'phase_maxl' in pos.names:
-		phiRef=pos['phase_maxl'].samples[which][0]
-		print('INFO: phi_orb not estimated, using maximum likelihood value')
-      else:
-        print('WARNING: phi_orb not found in posterior files. Defaulting to 0.0 which is probably *not* what you want\n')
-        phiRef=0.0
-
-      try:
-              for name in ['flow','f_lower']:
-                      if name in pos.names:
-                              f_min=pos[name].samples[which][0]
-      except:
-              pass
-
-      try:
-        for name in ['fref','f_ref','f_Ref','fRef']:
-          if name in pos.names:
-            fname=name
-
-        Fref = np.unique(pos[fname].samples)
-        if len(Fref) > 1:
-          print("ERROR: Expected f_ref to be constant for all samples.  Can't tell which value was injected! Defaulting to 100 Hz\n")
-          print(Fref)
-        else:
-          f_ref = Fref[0]
-      except ValueError:
-        print("WARNING: Could not read fref from posterior file! Defaulting to 100 Hz\n")
-
-      try:
-        a = pos['a1'].samples[which][0]
-        the = pos['theta_spin1'].samples[which][0]
-        phi = pos['phi_spin1'].samples[which][0]
-        s1x = (a * sin(the) * cos(phi));
-        s1y = (a * sin(the) * sin(phi));
-        s1z = (a * cos(the));
-        a = pos['a2'].samples[which][0]
-        the = pos['theta_spin2'].samples[which][0]
-        phi = pos['phi_spin2'].samples[which][0]
-        s2x = (a * sin(the) * cos(phi));
-        s2y = (a * sin(the) * sin(phi));
-        s2z = (a * cos(the));
-        iota=pos['inclination'].samples[which][0]
-      except:
+    inj_domain=None
+    rec_domain=None
+    font_size=26
+    if siminspiral is not None:
+        skip=0
         try:
-          iota, s1x, s1y, s1z, s2x, s2y, s2z=lalsim.SimInspiralTransformPrecessingNewInitialConditions(pos['theta_jn'].samples[which][0], pos['phi_JL'].samples[which][0], pos['tilt1'].samples[which][0], pos['tilt2'].samples[which][0], pos['phi12'].samples[which][0], pos['a1'].samples[which][0], pos['a2'].samples[which][0], m1, m2, f_ref)
+            xmldoc = utils.load_filename(siminspiral,contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
+            tbl = lsctables.table.get_table(xmldoc, "sim_inspiral")
+            if event>0:
+                tbl=tbl[event]
+            else:
+                tbl=tbl[0]
         except:
-            if 'a1z' in pos.names:
-                s1z=pos['a1z'].samples[which][0]
-            elif 'a1' in pos.names:
-                s1z=pos['a1'].samples[which][0]
+            e = sys.exc_info()[0]
+            print(e)
+            print("Cannot read event %s from table %s. Won't plot injected waveform \n"%(event,siminspiral))
+            skip=1
+        if not skip:
+            REAL8time=tbl.geocent_end_time+1e-9*tbl.geocent_end_time_ns
+            GPStime=LIGOTimeGPS(REAL8time)
+            M1=tbl.mass1
+            M2=tbl.mass2
+            D=tbl.distance
+            m1=M1*LAL_MSUN_SI
+            m2=M2*LAL_MSUN_SI
+            phiRef=tbl.coa_phase
+
+            f_min = tbl.f_lower
+            s1x = tbl.spin1x
+            s1y = tbl.spin1y
+            s1z = tbl.spin1z
+            s2x = tbl.spin2x
+            s2y = tbl.spin2y
+            s2z = tbl.spin2z
+
+            r=D*LAL_PC_SI*1.0e6
+            iota=tbl.inclination
+            print("WARNING: Defaulting to inj_fref =100Hz to plot the injected WF. This is hardcoded since xml table does not carry this information\n")
+
+            lambda1=0
+            lambda2=0
+            wf=str(tbl.waveform)
+
+            injapproximant=lalsim.GetApproximantFromString(wf)
+            amplitudeO=int(tbl.amp_order )
+            phaseO=lalsim.GetOrderFromString(wf)
+
+            waveFlags=lal.CreateDict()
+            lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(waveFlags, amplitudeO)
+            lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(waveFlags, phaseO)
+
+            ra=tbl.longitude
+            dec=tbl.latitude
+            psi=tbl.polarization
+
+            if SimInspiralImplementedFDApproximants(injapproximant):
+                inj_domain='F'
+                [plus,cross]=SimInspiralChooseFDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,r, iota, phiRef,
+                        0, 0, 0, # Non-circular binary parameters
+                        deltaF, f_min, f_max, f_ref,
+                        waveFlags, injapproximant)
+            elif SimInspiralImplementedTDApproximants(injapproximant):
+                inj_domain='T'
+                [plus,cross]=SimInspiralChooseTDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z, r, iota, phiRef,
+                        0, 0, 0, # Non-circular binary parameters
+                        deltaT, f_min, f_ref,
+                        waveFlags, injapproximant)
             else:
-                s1z=0
-            if 'a2z' in pos.names:
-                s2z=pos['a2z'].samples[which][0]
-            elif 'a2' in pos.names:
-                s2z=pos['a2'].samples[which][0]
+                print("\nThe approximant %s doesn't seem to be recognized by lalsimulation!\n Skipping WF plots\n"%injapproximant)
+                return None
+
+            for ifo in ifos:
+                fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
+                if inj_domain=='T':
+                    # strain is a temporary container for this IFO strain.
+                    # Take antenna pattern into accout and window the data
+                    for k in np.arange(strainT.data.length):
+                        if k<plus.data.length:
+                            strainT.data.data[k]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
+                        else:
+                            strainT.data.data[k]=0.0
+                        strainT.data.data[k]*=window.data.data[k]
+                    # now copy in the dictionary only the part of strain which is not null (that is achieved using plus.data.length as length)
+                    inj_strains[ifo]["T"]['strain']=np.array([strainT.data.data[k] for k in arange(plus.data.length)])
+                    inj_strains[ifo]["T"]['x']=np.array([REAL8time - deltaT*(plus.data.length-1-k) for k in np.arange(plus.data.length)])
+
+                    # Take the FFT
+                    for j in arange(strainF.data.length):
+                        strainF.data.data[j]=0.0
+                    REAL8TimeFreqFFT(strainF,strainT,timeToFreqFFTPlan);
+                    for j in arange(strainF.data.length):
+                        strainF.data.data[j]/=WinNorm
+                    # copy in the dictionary
+                    inj_strains[ifo]["F"]['strain']=np.array([strainF.data.data[k] for k in arange(int(strainF.data.length))])
+                    inj_strains[ifo]["F"]['x']=np.array([strainF.f0+ k*strainF.deltaF for k in arange(int(strainF.data.length))])
+                elif inj_domain=='F':
+                    for k in np.arange(strainF.data.length):
+                        if k<plus.data.length:
+                            strainF.data.data[k]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
+                        else:
+                            strainF.data.data[k]=0.0
+                    # copy in the dictionary
+                    inj_strains[ifo]["F"]['strain']=np.array([strainF.data.data[k] for k in arange(int(strainF.data.length))])
+                    inj_strains[ifo]["F"]['x']=np.array([strainF.f0+ k*strainF.deltaF for k in arange(int(strainF.data.length))])
+    if pos is not None:
+
+        # Select the maxP sample
+        _,which=pos._posMap()
+
+        if 'time' in pos.names:
+            REAL8time=pos['time'].samples[which][0]
+        elif 'time_maxl' in pos.names:
+            REAL8time=pos['time_maxl'].samples[which][0]
+        elif 'time_min' in pos.names and 'time_max' in pos.names:
+            REAL8time=pos['time_min'].samples[which][0]+0.5*(pos['time_max'].samples[which][0]-pos['time_min'].samples[which][0])
+        else:
+            print("ERROR: could not find any time parameter in the posterior file. Not plotting the WF...\n")
+            return None
+
+        # first check we have approx in posterior samples, otherwise skip
+        skip=0
+        try:
+            approximant=int(pos['LAL_APPROXIMANT'].samples[which][0])
+            amplitudeO=int(pos['LAL_AMPORDER'].samples[which][0])
+            phaseO=int(pos['LAL_PNORDER'].samples[which][0])
+        except:
+            skip=1
+        if skip==0:
+            GPStime=LIGOTimeGPS(REAL8time)
+
+            q=pos['q'].samples[which][0]
+            mc=pos['mc'].samples[which][0]
+            M1,M2=q2ms(mc,q)
+            if 'dist' in pos.names:
+                D=pos['dist'].samples[which][0]
+            elif 'distance' in pos.names:
+                D=pos['distance'].samples[which][0]
+            elif 'logdistance' in pos.names:
+                D=exp(pos['distance'].samples[which][0])
+
+            m1=M1*LAL_MSUN_SI
+            m2=M2*LAL_MSUN_SI
+            if 'phi_orb' in pos.names:
+                phiRef=pos['phi_orb'].samples[which][0]
+            elif 'phase_maxl' in pos.names:
+                phiRef=pos['phase_maxl'].samples[which][0]
+                print('INFO: phi_orb not estimated, using maximum likelihood value')
             else:
-                s2z=0
-            s1x=s1y=s2x=s2y=0.0
-            if 'inclination' in pos.names:
+                print('WARNING: phi_orb not found in posterior files. Defaulting to 0.0 which is probably *not* what you want\n')
+                phiRef=0.0
+
+            try:
+                for name in ['flow','f_lower']:
+                    if name in pos.names:
+                        f_min=pos[name].samples[which][0]
+            except:
+                pass
+
+            try:
+                for name in ['fref','f_ref','f_Ref','fRef']:
+                    if name in pos.names:
+                        fname=name
+
+                Fref = np.unique(pos[fname].samples)
+                if len(Fref) > 1:
+                    print("ERROR: Expected f_ref to be constant for all samples.  Can't tell which value was injected! Defaulting to 100 Hz\n")
+                    print(Fref)
+                else:
+                    f_ref = Fref[0]
+            except ValueError:
+                print("WARNING: Could not read fref from posterior file! Defaulting to 100 Hz\n")
+
+            try:
+                a = pos['a1'].samples[which][0]
+                the = pos['theta_spin1'].samples[which][0]
+                phi = pos['phi_spin1'].samples[which][0]
+                s1x = (a * sin(the) * cos(phi));
+                s1y = (a * sin(the) * sin(phi));
+                s1z = (a * cos(the));
+                a = pos['a2'].samples[which][0]
+                the = pos['theta_spin2'].samples[which][0]
+                phi = pos['phi_spin2'].samples[which][0]
+                s2x = (a * sin(the) * cos(phi));
+                s2y = (a * sin(the) * sin(phi));
+                s2z = (a * cos(the));
                 iota=pos['inclination'].samples[which][0]
+            except:
+                try:
+                    iota, s1x, s1y, s1z, s2x, s2y, s2z=lalsim.SimInspiralTransformPrecessingNewInitialConditions(pos['theta_jn'].samples[which][0], pos['phi_JL'].samples[which][0], pos['tilt1'].samples[which][0], pos['tilt2'].samples[which][0], pos['phi12'].samples[which][0], pos['a1'].samples[which][0], pos['a2'].samples[which][0], m1, m2, f_ref)
+                except:
+                    if 'a1z' in pos.names:
+                        s1z=pos['a1z'].samples[which][0]
+                    elif 'a1' in pos.names:
+                        s1z=pos['a1'].samples[which][0]
+                    else:
+                        s1z=0
+                    if 'a2z' in pos.names:
+                        s2z=pos['a2z'].samples[which][0]
+                    elif 'a2' in pos.names:
+                        s2z=pos['a2'].samples[which][0]
+                    else:
+                        s2z=0
+                    s1x=s1y=s2x=s2y=0.0
+                    if 'inclination' in pos.names:
+                        iota=pos['inclination'].samples[which][0]
+                    else:
+                        iota=pos['theta_jn'].samples[which][0]
+
+            r=D*LAL_PC_SI*1.0e6
+
+            approximant=int(pos['LAL_APPROXIMANT'].samples[which][0])
+            amplitudeO=int(pos['LAL_AMPORDER'].samples[which][0])
+            phaseO=int(pos['LAL_PNORDER'].samples[which][0])
+
+            waveFlags=lal.CreateDict()
+            lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(waveFlags, amplitudeO)
+            lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(waveFlags, phaseO)
+            if 'tideO' in pos.names:
+                tidalO=int(pos['tideO'].samples[which][0])
+                lalsim.SimInspiralWaveformParamsInsertPNTidalOrder(waveFlags, tidalO)
+            if 'spinO' in pos.names:
+                spinO=int(pos['spinO'].samples[which][0])
+                lalsim.SimInspiralWaveformParamsInsertPNSpinOrder(waveFlags, spinO)
+            if 'lambda1' in pos.names:
+                lalsim.SimInspiralWaveformParamsInsertTidalLambda1(waveFlags, pos['lambda1'].samples[which][0])
+            if 'lambda2' in pos.names:
+                lalsim.SimInspiralWaveformParamsInsertTidalLambda2(waveFlags, pos['lambda2'].samples[which][0])
+
+            if SimInspiralImplementedFDApproximants(approximant):
+                rec_domain='F'
+                [plus,cross]=SimInspiralChooseFDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,r, iota, phiRef,
+                        0, 0, 0, # Non-circular binary parameters
+                        deltaF, f_min, f_max, f_ref,
+                        waveFlags, approximant)
+            elif SimInspiralImplementedTDApproximants(approximant):
+                rec_domain='T'
+                [plus,cross]=SimInspiralChooseTDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z, r, iota, phiRef,
+                        0, 0, 0, # Non-circular binary parameters
+                        deltaT, f_min, f_ref,
+                        waveFlags, approximant)
             else:
-                iota=pos['theta_jn'].samples[which][0]
+                print("The approximant %s doesn't seem to be recognized by lalsimulation!\n Skipping WF plots\n"%approximant)
+                return None
 
-      r=D*LAL_PC_SI*1.0e6
+            ra=pos['ra'].samples[which][0]
+            dec=pos['dec'].samples[which][0]
+            psi=pos['psi'].samples[which][0]
+            fs={}
+            for ifo in ifos:
+                fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
+                if rec_domain=='T':
+                # strain is a temporary container for this IFO strain.
+                # Take antenna pattern into accout and window the data
+                    for k in np.arange(strainT.data.length):
+                        if k<plus.data.length:
+                            strainT.data.data[k]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
+                        else:
+                            strainT.data.data[k]=0.0
+                        strainT.data.data[k]*=window.data.data[k]
+                    # now copy in the dictionary only the part of strain which is not null (that is achieved using plus.data.length as length)
+                    rec_strains[ifo]["T"]['strain']=np.array([strainT.data.data[k] for k in arange(plus.data.length)])
+                    rec_strains[ifo]["T"]['x']=np.array([REAL8time - deltaT*(plus.data.length-1-k) for k in np.arange(plus.data.length)])
 
-      approximant=int(pos['LAL_APPROXIMANT'].samples[which][0])
-      amplitudeO=int(pos['LAL_AMPORDER'].samples[which][0])
-      phaseO=int(pos['LAL_PNORDER'].samples[which][0])
+                    # Take the FFT
+                    for j in arange(strainF.data.length):
+                        strainF.data.data[j]=0.0
+                    REAL8TimeFreqFFT(strainF,strainT,timeToFreqFFTPlan);
+                    for j in arange(strainF.data.length):
+                        strainF.data.data[j]/=WinNorm
+                    # copy in the dictionary
+                    rec_strains[ifo]["F"]['strain']=np.array([strainF.data.data[k] for k in arange(int(strainF.data.length))])
+                    rec_strains[ifo]["F"]['x']=np.array([strainF.f0+ k*strainF.deltaF for k in arange(int(strainF.data.length))])
+                elif rec_domain=='F':
+                    for k in np.arange(strainF.data.length):
+                        if k<plus.data.length:
+                            strainF.data.data[k]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
+                        else:
+                            strainF.data.data[k]=0.0
+                    # copy in the dictionary
+                    rec_strains[ifo]["F"]['strain']=np.array([strainF.data.data[k] for k in arange(int(strainF.data.length))])
+                    rec_strains[ifo]["F"]['x']=np.array([strainF.f0+ k*strainF.deltaF for k in arange(int(strainF.data.length))])
 
-      waveFlags=lal.CreateDict()
-      lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(waveFlags, amplitudeO)
-      lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(waveFlags, phaseO)
-      if 'tideO' in pos.names:
-          tidalO=int(pos['tideO'].samples[which][0])
-          lalsim.SimInspiralWaveformParamsInsertPNTidalOrder(waveFlags, tidalO)
-      if 'spinO' in pos.names:
-          spinO=int(pos['spinO'].samples[which][0])
-          lalsim.SimInspiralWaveformParamsInsertPNSpinOrder(waveFlags, spinO)
-      if 'lambda1' in pos.names:
-        lalsim.SimInspiralWaveformParamsInsertTidalLambda1(waveFlags, pos['lambda1'].samples[which][0])
-      if 'lambda2' in pos.names:
-        lalsim.SimInspiralWaveformParamsInsertTidalLambda2(waveFlags, pos['lambda2'].samples[which][0])
+    myfig=plt.figure(1,figsize=(23,15))
 
-      if SimInspiralImplementedFDApproximants(approximant):
-        rec_domain='F'
-        [plus,cross]=SimInspiralChooseFDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z,r, iota, phiRef,
-                0, 0, 0, # Non-circular binary parameters
-                deltaF, f_min, f_max, f_ref,
-                waveFlags, approximant)
-      elif SimInspiralImplementedTDApproximants(approximant):
-        rec_domain='T'
-        [plus,cross]=SimInspiralChooseTDWaveform(m1, m2, s1x, s1y, s1z,s2x,s2y,s2z, r, iota, phiRef,
-                0, 0, 0, # Non-circular binary parameters
-                deltaT, f_min, f_ref,
-                waveFlags, approximant)
-      else:
-        print("The approximant %s doesn't seem to be recognized by lalsimulation!\n Skipping WF plots\n"%approximant)
-        return None
+    rows=len(ifos)
+    cols=2
 
-      ra=pos['ra'].samples[which][0]
-      dec=pos['dec'].samples[which][0]
-      psi=pos['psi'].samples[which][0]
-      fs={}
-      for ifo in ifos:
-        fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
-        if rec_domain=='T':
-          # strain is a temporary container for this IFO strain.
-          # Take antenna pattern into accout and window the data
-          for k in np.arange(strainT.data.length):
-            if k<plus.data.length:
-              strainT.data.data[k]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
+    #this variables decide which domain will be plotted on the left column of the plot.
+    # only plot Time domain if both injections and recovery are TD
+    global_domain="F"
+    if rec_domain is not None and inj_domain is not None:
+        if rec_domain=="T" and inj_domain=="T":
+            global_domain="T"
+    elif rec_domain is not None:
+        if rec_domain=="T":
+            global_domain="T"
+    elif inj_domain is not None:
+        if inj_domain=="T":
+            global_domain="T"
+
+    A,axes=plt.subplots(nrows=rows,ncols=cols,sharex=False,sharey=False)
+    plt.setp(A,figwidth=23,figheight=15)
+    for (r,i) in zip(np.arange(rows),ifos):
+        for c in np.arange(cols):
+            ax=axes[r]
+            if type(ax)==np.ndarray:
+                ax=ax[c]
             else:
-              strainT.data.data[k]=0.0
-            strainT.data.data[k]*=window.data.data[k]
-          # now copy in the dictionary only the part of strain which is not null (that is achieved using plus.data.length as length)
-          rec_strains[ifo]["T"]['strain']=np.array([strainT.data.data[k] for k in arange(plus.data.length)])
-          rec_strains[ifo]["T"]['x']=np.array([REAL8time - deltaT*(plus.data.length-1-k) for k in np.arange(plus.data.length)])
+                ax=axes[c]
+            if rec_strains[i]["T"]['strain'] is not None or rec_strains[i]["F"]['strain'] is not None:
+                if c==0:
+                    if global_domain=="T":
+                        ax.plot(rec_strains[i]["T"]['x'],rec_strains[i]["T"]['strain'],colors_rec[i],alpha=0.5,label='%s maP'%i)
+                    else:
+                        data=rec_strains[i]["F"]['strain']
+                        f=rec_strains[i]["F"]['x']
+                        mask=np.logical_and(f>=f_min,f<=plot_fmax)
+                        ys=data
+                        ax.semilogx(f[mask],ys[mask].real,'.-',color=colors_rec[i],alpha=0.5,label='%s maP'%i)
+                else:
+                    data=rec_strains[i]["F"]['strain']
+                    f=rec_strains[i]["F"]['x']
+                    mask=np.logical_and(f>=f_min,f<=plot_fmax)
+                    ys=data
+                    ax.loglog(f[mask],abs(ys[mask]),'--',color=colors_rec[i],alpha=0.5,linewidth=4)
+                    ax.set_xlim([min(f[mask]),max(f[mask])])
+                    ax.grid(True,which='both')
+            if inj_strains[i]["T"]['strain'] is not None or inj_strains[i]["F"]['strain'] is not None:
+                if c==0:
+                    if global_domain=="T":
+                        ax.plot(inj_strains[i]["T"]['x'],inj_strains[i]["T"]['strain'],colors_inj[i],alpha=0.5,label='%s inj'%i)
+                    else:
+                        data=inj_strains[i]["F"]['strain']
+                        f=inj_strains[i]["F"]['x']
+                        mask=np.logical_and(f>=f_min,f<=plot_fmax)
+                        ys=data
+                        ax.plot(f[mask],ys[mask].real,'.-',color=colors_inj[i],alpha=0.5,label='%s inj'%i)
+                else:
+                    data=inj_strains[i]["F"]['strain']
+                    f=inj_strains[i]["F"]['x']
+                    mask=np.logical_and(f>=f_min,f<=plot_fmax)
+                    ys=data
+                    ax.loglog(f[mask],abs(ys[mask]),'--',color=colors_inj[i],alpha=0.5,linewidth=4)
+                    ax.set_xlim([min(f[mask]),max(f[mask])])
+                    ax.grid(True,which='both')
 
-          # Take the FFT
-          for j in arange(strainF.data.length):
-            strainF.data.data[j]=0.0
-          REAL8TimeFreqFFT(strainF,strainT,timeToFreqFFTPlan);
-          for j in arange(strainF.data.length):
-            strainF.data.data[j]/=WinNorm
-          # copy in the dictionary
-          rec_strains[ifo]["F"]['strain']=np.array([strainF.data.data[k] for k in arange(int(strainF.data.length))])
-          rec_strains[ifo]["F"]['x']=np.array([strainF.f0+ k*strainF.deltaF for k in arange(int(strainF.data.length))])
-        elif rec_domain=='F':
-          for k in np.arange(strainF.data.length):
-            if k<plus.data.length:
-              strainF.data.data[k]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
-            else:
-              strainF.data.data[k]=0.0
-          # copy in the dictionary
-          rec_strains[ifo]["F"]['strain']=np.array([strainF.data.data[k] for k in arange(int(strainF.data.length))])
-          rec_strains[ifo]["F"]['x']=np.array([strainF.f0+ k*strainF.deltaF for k in arange(int(strainF.data.length))])
+            if r==0:
+                if c==0:
+                    if global_domain=="T":
+                        ax.set_title(r"$h(t)$",fontsize=font_size)
+                    else:
+                        ax.set_title(r"$\Re[h(f)]$",fontsize=font_size)
+                else:
+                    ax.set_title(r"$|h(f)|$",fontsize=font_size)
+            elif r==rows-1:
+                if c==0:
+                    if global_domain=="T":
+                        ax.set_xlabel("time [s]",fontsize=font_size)
+                    else:
+                        ax.set_xlabel("frequency [Hz]",fontsize=font_size)
+                else:
+                    ax.set_xlabel("frequency [Hz]",fontsize=font_size)
 
-  myfig=plt.figure(1,figsize=(23,15))
+            ax.legend(loc='best')
+            ax.grid(True)
 
-  rows=len(ifos)
-  cols=2
-
-  #this variables decide which domain will be plotted on the left column of the plot.
-  # only plot Time domain if both injections and recovery are TD
-  global_domain="F"
-  if rec_domain is not None and inj_domain is not None:
-    if rec_domain=="T" and inj_domain=="T":
-      global_domain="T"
-  elif rec_domain is not None:
-    if rec_domain=="T":
-      global_domain="T"
-  elif inj_domain is not None:
-    if inj_domain=="T":
-      global_domain="T"
-
-  A,axes=plt.subplots(nrows=rows,ncols=cols,sharex=False,sharey=False)
-  plt.setp(A,figwidth=23,figheight=15)
-  for (r,i) in zip(np.arange(rows),ifos):
-    for c in np.arange(cols):
-      ax=axes[r]
-      if type(ax)==np.ndarray:
-        ax=ax[c]
-      else:
-        ax=axes[c]
-      if rec_strains[i]["T"]['strain'] is not None or rec_strains[i]["F"]['strain'] is not None:
-        if c==0:
-          if global_domain=="T":
-            ax.plot(rec_strains[i]["T"]['x'],rec_strains[i]["T"]['strain'],colors_rec[i],alpha=0.5,label='%s maP'%i)
-          else:
-            data=rec_strains[i]["F"]['strain']
-            f=rec_strains[i]["F"]['x']
-            mask=np.logical_and(f>=f_min,f<=plot_fmax)
-            ys=data
-            ax.semilogx(f[mask],ys[mask].real,'.-',color=colors_rec[i],alpha=0.5,label='%s maP'%i)
-        else:
-            data=rec_strains[i]["F"]['strain']
-            f=rec_strains[i]["F"]['x']
-            mask=np.logical_and(f>=f_min,f<=plot_fmax)
-            ys=data
-            ax.loglog(f[mask],abs(ys[mask]),'--',color=colors_rec[i],alpha=0.5,linewidth=4)
-            ax.set_xlim([min(f[mask]),max(f[mask])])
-            ax.grid(True,which='both')
-      if inj_strains[i]["T"]['strain'] is not None or inj_strains[i]["F"]['strain'] is not None:
-        if c==0:
-          if global_domain=="T":
-            ax.plot(inj_strains[i]["T"]['x'],inj_strains[i]["T"]['strain'],colors_inj[i],alpha=0.5,label='%s inj'%i)
-          else:
-            data=inj_strains[i]["F"]['strain']
-            f=inj_strains[i]["F"]['x']
-            mask=np.logical_and(f>=f_min,f<=plot_fmax)
-            ys=data
-            ax.plot(f[mask],ys[mask].real,'.-',color=colors_inj[i],alpha=0.5,label='%s inj'%i)
-        else:
-            data=inj_strains[i]["F"]['strain']
-            f=inj_strains[i]["F"]['x']
-            mask=np.logical_and(f>=f_min,f<=plot_fmax)
-            ys=data
-            ax.loglog(f[mask],abs(ys[mask]),'--',color=colors_inj[i],alpha=0.5,linewidth=4)
-            ax.set_xlim([min(f[mask]),max(f[mask])])
-            ax.grid(True,which='both')
-
-      if r==0:
-        if c==0:
-          if global_domain=="T":
-            ax.set_title(r"$h(t)$",fontsize=font_size)
-          else:
-            ax.set_title(r"$\Re[h(f)]$",fontsize=font_size)
-        else:
-          ax.set_title(r"$|h(f)|$",fontsize=font_size)
-      elif r==rows-1:
-        if c==0:
-          if global_domain=="T":
-            ax.set_xlabel("time [s]",fontsize=font_size)
-          else:
-            ax.set_xlabel("frequency [Hz]",fontsize=font_size)
-        else:
-          ax.set_xlabel("frequency [Hz]",fontsize=font_size)
-
-      ax.legend(loc='best')
-      ax.grid(True)
-
-      #ax.tight_layout()
-  A.savefig(os.path.join(path,'WF_DetFrame.png'),bbox_inches='tight')
-  return inj_strains,rec_strains
+            #ax.tight_layout()
+    A.savefig(os.path.join(path,'WF_DetFrame.png'),bbox_inches='tight')
+    return inj_strains,rec_strains
 
 
 def plot_psd(psd_files,outpath=None,f_min=30.):
-  myfig2=plt.figure(figsize=(15,15),dpi=500)
-  ax=plt.subplot(1,1,1)
-  colors={'H1':'r','L1':'g','V1':'m','I1':'k','J1':'y'}
+    myfig2=plt.figure(figsize=(15,15),dpi=500)
+    ax=plt.subplot(1,1,1)
+    colors={'H1':'r','L1':'g','V1':'m','I1':'k','J1':'y'}
 
-  if outpath is None:
-    outpath=os.getcwd()
-  tmp=[]
-  for f in psd_files:
-    if not os.path.isfile(f):
-      print("PSD file %s has not been found and won't be plotted\n"%f)
+    if outpath is None:
+        outpath=os.getcwd()
+    tmp=[]
+    for f in psd_files:
+        if not os.path.isfile(f):
+            print("PSD file %s has not been found and won't be plotted\n"%f)
+        else:
+            tmp.append(f)
+    if tmp==[]:
+        return None
     else:
-      tmp.append(f)
-  if tmp==[]:
-     return None
-  else:
-    psd_files=tmp
+        psd_files=tmp
 
-  freqs = {}
-  for f in psd_files:
-    data=np.loadtxt(f)
-    freq=data[:,0]
-    data=data[:,1]
-    idx=f.find('-PSD.dat')
-    ifo=f[idx-2:idx]
-    freqs[ifo.lower()] = freq
-    fr=[]
-    da=[]
-    for (f,d) in zip(freq,data):
-      if f>f_min and d!=0.0 and np.isfinite(d):
-        fr.append(f)
-        da.append(d)
-    plt.loglog(fr,da,colors[ifo],label=ifo,alpha=0.5,linewidth=3)
-  plt.xlim([min(fr),max(fr)])
-  plt.xlabel("Frequency [Hz]",fontsize=26)
-  plt.ylabel("PSD",fontsize=26)
-  plt.legend(loc='best')
-  plt.grid(which='both')
-  try:
-    plt.tight_layout()
-    myfig2.savefig(os.path.join(outpath,'PSD.png'),bbox_inches='tight')
-  except:
-    myfig2.savefig(os.path.join(outpath,'PSD.png'))
-  myfig2.clf()
+    freqs = {}
+    for f in psd_files:
+        data=np.loadtxt(f)
+        freq=data[:,0]
+        data=data[:,1]
+        idx=f.find('-PSD.dat')
+        ifo=f[idx-2:idx]
+        freqs[ifo.lower()] = freq
+        fr=[]
+        da=[]
+        for (f,d) in zip(freq,data):
+            if f>f_min and d!=0.0 and np.isfinite(d):
+                fr.append(f)
+                da.append(d)
+        plt.loglog(fr,da,colors[ifo],label=ifo,alpha=0.5,linewidth=3)
+    plt.xlim([min(fr),max(fr)])
+    plt.xlabel("Frequency [Hz]",fontsize=26)
+    plt.ylabel("PSD",fontsize=26)
+    plt.legend(loc='best')
+    plt.grid(which='both')
+    try:
+        plt.tight_layout()
+        myfig2.savefig(os.path.join(outpath,'PSD.png'),bbox_inches='tight')
+    except:
+        myfig2.savefig(os.path.join(outpath,'PSD.png'))
+    myfig2.clf()
 
-  return freqs
+    return freqs
 
 cred_level = lambda cl, x: np.sort(x, axis=0)[int(cl*len(x))]
 
@@ -6977,9 +6976,9 @@ def plot_calibration_pos(pos, level=.9, outpath=None):
     ax1.tick_params(labelsize=.75*font_size)
     ax2.tick_params(labelsize=.75*font_size)
     try:
-      plt.legend(loc='upper right', prop={'size':.75*font_size}, framealpha=0.1)
+        plt.legend(loc='upper right', prop={'size':.75*font_size}, framealpha=0.1)
     except:
-      plt.legend(loc='upper right', prop={'size':.75*font_size})
+        plt.legend(loc='upper right', prop={'size':.75*font_size})
     ax1.set_xscale('log')
     ax2.set_xscale('log')
 
@@ -6997,453 +6996,453 @@ def plot_calibration_pos(pos, level=.9, outpath=None):
 
 
 def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1','V1']):
-  import glue
-  from lalinference.lalinference import SimBurstChooseFDWaveform,SimBurstChooseTDWaveform
-  from lalinference.lalinference import SimBurstImplementedFDApproximants,SimBurstImplementedTDApproximants
-  from lal.lal import StrainUnit
-  from lal.lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT,CutREAL8TimeSeries,ResampleREAL8TimeSeries,CreateReverseREAL8FFTPlan,REAL8FreqTimeFFT
-  from lal.lal import LIGOTimeGPS
-  from lal.lal import MSUN_SI as LAL_MSUN_SI
-  from lal.lal import PC_SI as LAL_PC_SI
-  import lalsimulation as lalsim
-  import lalinference as lalinf
-  from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime, LIGOTimeGPS
+    import glue
+    from lalinference.lalinference import SimBurstChooseFDWaveform,SimBurstChooseTDWaveform
+    from lalinference.lalinference import SimBurstImplementedFDApproximants,SimBurstImplementedTDApproximants
+    from lal.lal import StrainUnit
+    from lal.lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT,CutREAL8TimeSeries,ResampleREAL8TimeSeries,CreateReverseREAL8FFTPlan,REAL8FreqTimeFFT
+    from lal.lal import LIGOTimeGPS
+    from lal.lal import MSUN_SI as LAL_MSUN_SI
+    from lal.lal import PC_SI as LAL_PC_SI
+    import lalsimulation as lalsim
+    import lalinference as lalinf
+    from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime, LIGOTimeGPS
 
-  from math import cos,sin,sqrt
-  from glue.ligolw import lsctables
-  from glue.ligolw import utils
-  import os
-  import numpy as np
-  from numpy import arange,real,imag,absolute,fabs,pi
-  from matplotlib import pyplot as plt,cm as mpl_cm,lines as mpl_lines
-  import copy
-  if path is None:
-    path=os.getcwd()
-  if event is None:
-    event=0
-  colors_inj={'H1':'r','L1':'g','V1':'m','I1':'b','J1':'y'}
-  colors_rec={'H1':'k','L1':'k','V1':'k','I1':'k','J1':'k'}
-  #import sim inspiral table content handler
-  from glue.ligolw import ligolw
-  from glue.ligolw import table
-  class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
-    def __init__(self,document):
-      ligolw.LIGOLWContentHandler.__init__(self,document)
-      self.tabname=lsctables.SimBurstTable.tableName
-      self.intable=False
-      self.tableElementName=''
-    def startElement(self,name,attrs):
-      if attrs.has_key('Name') and table.Table.TableName(attrs['Name'])==self.tabname:
-        self.tableElementName=name
-        # Got the right table, let's see if it's the right event
-        ligolw.LIGOLWContentHandler.startElement(self,name,attrs)
-        self.intable=True
-      elif self.intable: # We are in the correct table
-        ligolw.LIGOLWContentHandler.startElement(self,name,attrs)
-    def endElement(self,name):
-      if self.intable: ligolw.LIGOLWContentHandler.endElement(self,name)
-      if self.intable and name==self.tableElementName: self.intable=False
+    from math import cos,sin,sqrt
+    from glue.ligolw import lsctables
+    from glue.ligolw import utils
+    import os
+    import numpy as np
+    from numpy import arange,real,imag,absolute,fabs,pi
+    from matplotlib import pyplot as plt,cm as mpl_cm,lines as mpl_lines
+    import copy
+    if path is None:
+        path=os.getcwd()
+    if event is None:
+        event=0
+    colors_inj={'H1':'r','L1':'g','V1':'m','I1':'b','J1':'y'}
+    colors_rec={'H1':'k','L1':'k','V1':'k','I1':'k','J1':'k'}
+    #import sim inspiral table content handler
+    from glue.ligolw import ligolw
+    from glue.ligolw import table
+    class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
+        def __init__(self,document):
+            ligolw.LIGOLWContentHandler.__init__(self,document)
+            self.tabname=lsctables.SimBurstTable.tableName
+            self.intable=False
+            self.tableElementName=''
+        def startElement(self,name,attrs):
+            if attrs.has_key('Name') and table.Table.TableName(attrs['Name'])==self.tabname:
+                self.tableElementName=name
+                # Got the right table, let's see if it's the right event
+                ligolw.LIGOLWContentHandler.startElement(self,name,attrs)
+                self.intable=True
+            elif self.intable: # We are in the correct table
+                ligolw.LIGOLWContentHandler.startElement(self,name,attrs)
+        def endElement(self,name):
+            if self.intable: ligolw.LIGOLWContentHandler.endElement(self,name)
+            if self.intable and name==self.tableElementName: self.intable=False
 
-  lsctables.use_in(LIGOLWContentHandlerExtractSimBurstTable)
+    lsctables.use_in(LIGOLWContentHandlerExtractSimBurstTable)
 
-  # time and freq data handling variables
-  srate=4096.0
-  seglen=10.
-  length=srate*seglen # lenght of 10 secs, hardcoded.
-  deltaT=1/srate
-  deltaF = 1.0 / (length* deltaT);
+    # time and freq data handling variables
+    srate=4096.0
+    seglen=10.
+    length=srate*seglen # lenght of 10 secs, hardcoded.
+    deltaT=1/srate
+    deltaF = 1.0 / (length* deltaT);
 
-  # build window for FFT
-  pad=0.4
-  timeToFreqFFTPlan = CreateForwardREAL8FFTPlan(int(length), 1 );
-  freqToTimeFFTPlan = CreateReverseREAL8FFTPlan(int(length), 1 );
-  window=CreateTukeyREAL8Window(int(length),2.0*pad*srate/length);
-  # A random GPS time to initialize arrays. Epoch will be overwritten with sensible times further down
-  segStart=939936910.000
-  strainFinj= CreateCOMPLEX16FrequencySeries("strainF",segStart,0.0,deltaF,DimensionlessUnit,int(length/2. +1));
-  strainTinj=CreateREAL8TimeSeries("strainT",segStart,0.0,1.0/srate,DimensionlessUnit,int(length));
-  strainFrec= CreateCOMPLEX16FrequencySeries("strainF",segStart,0.0,deltaF,DimensionlessUnit,int(length/2. +1));
-  strainTrec=CreateREAL8TimeSeries("strainT",segStart,0.0,1.0/srate,DimensionlessUnit,int(length));
-  GlobREAL8time=None
-  f_min=25 # hardcoded default (may be changed below)
-  f_ref=100 # hardcoded default (may be changed below)
-  f_max=srate/2.0
+    # build window for FFT
+    pad=0.4
+    timeToFreqFFTPlan = CreateForwardREAL8FFTPlan(int(length), 1 );
+    freqToTimeFFTPlan = CreateReverseREAL8FFTPlan(int(length), 1 );
+    window=CreateTukeyREAL8Window(int(length),2.0*pad*srate/length);
+    # A random GPS time to initialize arrays. Epoch will be overwritten with sensible times further down
+    segStart=939936910.000
+    strainFinj= CreateCOMPLEX16FrequencySeries("strainF",segStart,0.0,deltaF,DimensionlessUnit,int(length/2. +1));
+    strainTinj=CreateREAL8TimeSeries("strainT",segStart,0.0,1.0/srate,DimensionlessUnit,int(length));
+    strainFrec= CreateCOMPLEX16FrequencySeries("strainF",segStart,0.0,deltaF,DimensionlessUnit,int(length/2. +1));
+    strainTrec=CreateREAL8TimeSeries("strainT",segStart,0.0,1.0/srate,DimensionlessUnit,int(length));
+    GlobREAL8time=None
+    f_min=25 # hardcoded default (may be changed below)
+    f_ref=100 # hardcoded default (may be changed below)
+    f_max=srate/2.0
 
-  plot_fmax=2048
-  plot_fmin=0.01
-  plot_tmin=1e11
-  plot_tmax=-1e11
+    plot_fmax=2048
+    plot_fmin=0.01
+    plot_tmin=1e11
+    plot_tmax=-1e11
 
-  inj_strains=dict((i,{"T":{'x':None,'strain':None},"F":{'x':None,'strain':None}}) for i in ifos)
-  rec_strains=dict((i,{"T":{'x':None,'strain':None},"F":{'x':None,'strain':None}}) for i in ifos)
+    inj_strains=dict((i,{"T":{'x':None,'strain':None},"F":{'x':None,'strain':None}}) for i in ifos)
+    rec_strains=dict((i,{"T":{'x':None,'strain':None},"F":{'x':None,'strain':None}}) for i in ifos)
 
-  inj_domain=None
-  rec_domain=None
-  font_size=26
-  if simburst is not None:
-    skip=0
-    try:
-      xmldoc = utils.load_filename(simburst,contenthandler=LIGOLWContentHandlerExtractSimBurstTable)
-      tbl = lsctables.SimBurstTable.get_table(xmldoc)
-      if event>0:
-        tbl=tbl[event]
-      else:
-        tbl=tbl[0]
-    except:
-      print("Cannot read event %s from table %s. Won't plot injected waveform \n"%(event,simburst))
-      skip=1
-    if not skip:
-      REAL8time=tbl.time_geocent_gps+1e-9*tbl.time_geocent_gps_ns
-      GPStime=LIGOTimeGPS(REAL8time)
-      GlobREAL8time=(REAL8time)
-      strainTinj.epoch=LIGOTimeGPS(round(GlobREAL8time,0)-seglen/2.)
-      strainFinj.epoch=LIGOTimeGPS(round(GlobREAL8time,0)-seglen/2.)
-      f0=tbl.frequency
-      q=tbl.q
-      dur=tbl.duration
-      hrss=tbl.hrss
-      polar_e_angle=tbl.pol_ellipse_angle
-      polar_e_ecc=tbl.pol_ellipse_e
-
-      BurstExtraParams=None
-      wf=str(tbl.waveform)
-
-      injapproximant=lalinf.GetBurstApproximantFromString(wf)
-      ra=tbl.ra
-      dec=tbl.dec
-      psi=tbl.psi
-
-      if SimBurstImplementedFDApproximants(injapproximant):
-        inj_domain='F'
-        [plus,cross]=SimBurstChooseFDWaveform(deltaF, deltaT, f0, q,dur, f_min, f_max,hrss,polar_e_angle ,polar_e_ecc,BurstExtraParams, injapproximant)
-      elif SimBurstImplementedTDApproximants(injapproximant):
-        inj_domain='T'
-        [plus,cross]=SimBurstChooseTDWaveform(deltaT, f0, q,dur, f_min, f_max,hrss,polar_e_angle ,polar_e_ecc,BurstExtraParams, injapproximant)
-      else:
-        print("\nThe approximant %s doesn't seem to be recognized by lalinference!\n Skipping WF plots\n"%injapproximant)
-        return None
-
-      for ifo in ifos:
-        fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
-        if inj_domain=='T':
-          # bin of ref time as seen in strainT
-          tCinstrain=np.floor(REAL8time-float(strainTinj.epoch))/deltaT
-          # bin of strainT where we need to start copying the WF over
-          #tSinstrain=floor(tCinstrain-float(plus.data.length)/2.)+1
-          tSinstrain=int(  (REAL8time-fabs(float(plus.epoch)) - fabs(float(strainTinj.epoch)))/deltaT)
-          rem=(REAL8time-fabs(float(plus.epoch)) - fabs(float(strainTinj.epoch)))/deltaT-tSinstrain
-          # strain is a temporary container for this IFO strain.
-          # Zero until tSinstrain
-          for k in np.arange(tSinstrain):
-            strainTinj.data.data[k]=0.0
-          # then copy plus/cross over
-          for k in np.arange(plus.data.length):
-            strainTinj.data.data[k+tSinstrain]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
-          # Then zeros till the end (superfluous)
-          for k in np.arange(strainTinj.data.length- (tSinstrain +plus.data.length)):
-            strainTinj.data.data[k+tSinstrain+plus.data.length]=0.0
-          for k in np.arange(strainTinj.data.length):
-            strainTinj.data.data[k]*=window.data.data[k]
-          np.savetxt('file.out',zip(np.array([strainTinj.epoch + j*deltaT for j in arange(strainTinj.data.length)]),np.array([strainTinj.data.data[j] for j in arange(strainTinj.data.length)])))
-          # now copy in the dictionary
-          inj_strains[ifo]["T"]['strain']=np.array([strainTinj.data.data[j] for j in arange(strainTinj.data.length)])
-          inj_strains[ifo]["T"]['x']=np.array([strainTinj.epoch + j*deltaT for j in arange(strainTinj.data.length)])
-          # Take the FFT
-          for j in arange(strainFinj.data.length):
-            strainFinj.data.data[j]=0.0
-          REAL8TimeFreqFFT(strainFinj,strainTinj,timeToFreqFFTPlan);
-          twopit=2.*np.pi*(rem*deltaT)
-          for k in arange(strainFinj.data.length):
-            re = cos(twopit*deltaF*k)
-            im = -sin(twopit*deltaF*k)
-            strainFinj.data.data[k]*= (re + 1j*im);
-          # copy in the dictionary
-          inj_strains[ifo]["F"]['strain']=np.array([strainFinj.data.data[k] for k in arange(int(strainFinj.data.length))])
-          inj_strains[ifo]["F"]['x']=np.array([strainFinj.f0+ k*strainFinj.deltaF for k in arange(int(strainFinj.data.length))])
-        elif inj_domain=='F':
-          for k in np.arange(strainFinj.data.length):
-            if k<plus.data.length:
-              strainFinj.data.data[k]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
+    inj_domain=None
+    rec_domain=None
+    font_size=26
+    if simburst is not None:
+        skip=0
+        try:
+            xmldoc = utils.load_filename(simburst,contenthandler=LIGOLWContentHandlerExtractSimBurstTable)
+            tbl = lsctables.SimBurstTable.get_table(xmldoc)
+            if event>0:
+                tbl=tbl[event]
             else:
-              strainFinj.data.data[k]=0.0
-          twopit=2.*np.pi*(REAL8time-float(strainFinj.epoch))
-          for k in arange(strainFinj.data.length):
-            re = cos(twopit*deltaF*k)
-            im = -sin(twopit*deltaF*k)
-            strainFinj.data.data[k]*= (re + 1j*im);
-          # copy in the dictionary
-          inj_strains[ifo]["F"]['strain']=np.array([strainFinj.data.data[k] for k in arange(int(strainFinj.data.length))])
-          inj_strains[ifo]["F"]['x']=np.array([strainFinj.f0+ k*strainFinj.deltaF for k in arange(int(strainFinj.data.length))])
-        #update xlimits for plot, go 6 sigmas left and right of f0
-        # This should work for SineGaussians
-        if f0 is not None and f0 is not np.nan:
-          if q is not None and q is not np.nan:
-            sigmaF=f0/q
-            if f0-6.*sigmaF>plot_fmin:
-              plot_fmin=f0-6.*sigmaF
-            if f0+6.*sigmaF<plot_fmax:
-              plot_fmax=f0+6.*sigmaF
-            sigmaT=q/(2.*pi*f0)
-            if REAL8time-6.*sigmaT<plot_tmin:
-              plot_tmin=REAL8time-6.*sigmaT
-            if REAL8time+6.*sigmaT>plot_tmax:
-              plot_tmax=REAL8time+6.*sigmaT
-        # Now handle gaussians. For gaussians f0 is nan (FD centered at f=0)
-        if dur is not None and dur is not np.nan:
-          sigmaF=1./sqrt(2.)/pi/dur
-          if 0+6.*sigmaF<plot_fmax:
-            plot_fmax=0+6.*sigmaF
-          plot_fmin=0.0
-          sigmaT=dur/sqrt(2.)
-          if REAL8time-6.*sigmaT<plot_tmin:
-            plot_tmin=REAL8time-6.*sigmaT
-          if REAL8time+6.*sigmaT>plot_tmax:
-            plot_tmax=REAL8time+6.*sigmaT
+                tbl=tbl[0]
+        except:
+            print("Cannot read event %s from table %s. Won't plot injected waveform \n"%(event,simburst))
+            skip=1
+        if not skip:
+            REAL8time=tbl.time_geocent_gps+1e-9*tbl.time_geocent_gps_ns
+            GPStime=LIGOTimeGPS(REAL8time)
+            GlobREAL8time=(REAL8time)
+            strainTinj.epoch=LIGOTimeGPS(round(GlobREAL8time,0)-seglen/2.)
+            strainFinj.epoch=LIGOTimeGPS(round(GlobREAL8time,0)-seglen/2.)
+            f0=tbl.frequency
+            q=tbl.q
+            dur=tbl.duration
+            hrss=tbl.hrss
+            polar_e_angle=tbl.pol_ellipse_angle
+            polar_e_ecc=tbl.pol_ellipse_e
 
+            BurstExtraParams=None
+            wf=str(tbl.waveform)
 
-  if pos is not None:
+            injapproximant=lalinf.GetBurstApproximantFromString(wf)
+            ra=tbl.ra
+            dec=tbl.dec
+            psi=tbl.psi
 
-    # Select the maxP sample
-    _,which=pos._posMap()
-
-    if 'time' in pos.names:
-      REAL8time=pos['time'].samples[which][0]
-    elif 'time_maxl' in pos.names:
-      REAL8time=pos['time_maxl'].samples[which][0]
-    elif 'time_mean' in pos.names:
-      REAL8time=pos['time_mean'].samples[which][0]
-    elif 'time_min' in pos.names and 'time_max' in pos.names:
-      REAL8time=pos['time_min'].samples[which][0]+0.5*(pos['time_max'].samples[which][0]-pos['time_min'].samples[which][0])
-    else:
-      print("ERROR: could not find any time parameter in the posterior file. Not plotting the WF...\n")
-      return None
-
-    # first check we have approx in posterior samples, otherwise skip
-    skip=0
-
-    try:
-      approximant=int(pos['LAL_APPROXIMANT'].samples[which][0])
-    except:
-      skip=1
-    if skip==0:
-      GPStime=LIGOTimeGPS(REAL8time)
-      if GlobREAL8time is None:
-        GlobREAL8time=REAL8time
-      strainTrec.epoch=LIGOTimeGPS(round(GlobREAL8time,0)-seglen/2.)
-      strainFrec.epoch=LIGOTimeGPS(round(GlobREAL8time,0)-seglen/2.)
-      if "duration" in pos.names:
-        dur=pos["duration"].samples[which][0]
-      else:
-        dur=np.nan
-      if "quality" in pos.names:
-        q=pos['quality'].samples[which][0]
-      else:
-        q=np.nan
-      if 'frequency' in pos.names:
-        f0=pos['frequency'].samples[which][0]
-      else:
-        f0=np.nan
-      try:
-        hrss=pos['hrss'].samples[which][0]
-      except:
-        hrss=exp(pos['loghrss'].samples[which][0])
-      if np.isnan(q) and not np.isnan(dur):
-        q=sqrt(2)*pi*dur
-      alpha=None
-      if 'alpha' in pos.names:
-        alpha=pos['alpha'].samples[which][0]
-        polar_e_angle=alpha
-        polar_e_ecc=pos['polar_eccentricity'].samples[which][0]
-      elif 'polar_ellipse_angle' in pos.names:
-        polar_e_angle=pos['polar_ellipse_angle'].samples[which][0]
-        polar_e_ecc=pos['polar_eccentricity'].samples[which][0]
-
-      BurstExtraParams=None
-      #if alpha:
-      #  BurstExtraParams=lalsim.SimBurstCreateExtraParam("alpha",alpha)
-
-      if SimBurstImplementedFDApproximants(approximant):
-        rec_domain='F'
-        [plus,cross]=SimBurstChooseFDWaveform(deltaF, deltaT, f0, q,dur, f_min, f_max,hrss,polar_e_angle ,polar_e_ecc,BurstExtraParams, approximant)
-      elif SimBurstImplementedTDApproximants(approximant):
-        rec_domain='T'
-        [plus,cross]=SimBurstChooseTDWaveform(deltaT, f0, q,dur, f_min, f_max,hrss,polar_e_angle ,polar_e_ecc,BurstExtraParams, approximant)
-      else:
-        print("The approximant %s doesn't seem to be recognized by lalinference!\n Skipping WF plots\n"%approximant)
-        return None
-      ra=pos['ra'].samples[which][0]
-      dec=pos['dec'].samples[which][0]
-      psi=pos['psi'].samples[which][0]
-      fs={}
-      for ifo in ifos:
-        fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
-        if rec_domain=='T':
-          # bin of ref time as seen in strainT
-          tCinstrain=np.floor(REAL8time-float(strainTrec.epoch))/deltaT
-          # bin of strainT where we need to start copying the WF over
-          tSinstrain=int(  (REAL8time-fabs(float(plus.epoch)) - fabs(float(strainTrec.epoch)))/deltaT)
-          #tSinstrain=floor(tCinstrain-float(plus.data.length)/2.)+1
-          #reminder for fractions of bin, will be added back in the FD WF
-          rem=(REAL8time-fabs(float(plus.epoch)) - fabs(float(strainTrec.epoch)))/deltaT-tSinstrain
-
-          # strain is a temporary container for this IFO strain.
-          # Zero until tSinstrain
-          for k in np.arange(tSinstrain):
-            strainTrec.data.data[k]=0.0
-          # then copy plus/cross over
-          for k in np.arange(plus.data.length):
-            strainTrec.data.data[k+tSinstrain]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
-          # Then zeros till the end (superfluous)
-          for k in np.arange(strainTrec.data.length- (tSinstrain +plus.data.length)):
-            strainTrec.data.data[k+tSinstrain+plus.data.length]=0.0
-          for k in np.arange(strainTrec.data.length):
-            strainTrec.data.data[k]*=window.data.data[k]
-          # now copy in the dictionary
-          rec_strains[ifo]["T"]['strain']=np.array([strainTrec.data.data[j] for j in arange(strainTrec.data.length)])
-          rec_strains[ifo]["T"]['x']=np.array([strainTrec.epoch + j*deltaT for j in arange(strainTrec.data.length)])
-          # Take the FFT
-          for j in arange(strainFrec.data.length):
-            strainFrec.data.data[j]=0.0
-          REAL8TimeFreqFFT(strainFrec,strainTrec,timeToFreqFFTPlan);
-          twopit=2.*np.pi*(rem*deltaT)
-          for k in arange(strainFrec.data.length):
-            re = cos(twopit*deltaF*k)
-            im = -sin(twopit*deltaF*k)
-            strainFrec.data.data[k]*= (re + 1j*im);
-          # copy in the dictionary
-          rec_strains[ifo]["F"]['strain']=np.array([strainFrec.data.data[k] for k in arange(int(strainFrec.data.length))])
-          rec_strains[ifo]["F"]['x']=np.array([strainFrec.f0+ k*strainFrec.deltaF for k in arange(int(strainFrec.data.length))])
-        elif rec_domain=='F':
-          for k in np.arange(strainFrec.data.length):
-            if k<plus.data.length:
-              strainFrec.data.data[k]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
+            if SimBurstImplementedFDApproximants(injapproximant):
+                inj_domain='F'
+                [plus,cross]=SimBurstChooseFDWaveform(deltaF, deltaT, f0, q,dur, f_min, f_max,hrss,polar_e_angle ,polar_e_ecc,BurstExtraParams, injapproximant)
+            elif SimBurstImplementedTDApproximants(injapproximant):
+                inj_domain='T'
+                [plus,cross]=SimBurstChooseTDWaveform(deltaT, f0, q,dur, f_min, f_max,hrss,polar_e_angle ,polar_e_ecc,BurstExtraParams, injapproximant)
             else:
-              strainFrec.data.data[k]=0.0
-          twopit=2.*np.pi*(REAL8time-float(strainFrec.epoch))
-          for k in arange(strainFrec.data.length):
-            re = cos(twopit*deltaF*k)
-            im = -sin(twopit*deltaF*k)
-            strainFrec.data.data[k]*= (re + 1j*im);
-          # copy in the dictionary
-          rec_strains[ifo]["F"]['strain']=np.array([strainFrec.data.data[k] for k in arange(int(strainFrec.data.length))])
-          rec_strains[ifo]["F"]['x']=np.array([strainFrec.f0+ k*strainFrec.deltaF for k in arange(int(strainFrec.data.length))])
-        #update xlimits for plot, go 6 sigmas left and right of f0
-        # This should work for SineGaussians
-        if f0 is not None and f0 is not np.nan:
-          if q is not None and q is not np.nan:
-            sigmaF=f0/q
-            if f0-6.*sigmaF>plot_fmin:
-              plot_fmin=f0-6.*sigmaF
-            if f0+6.*sigmaF<plot_fmax:
-              plot_fmax=f0+6.*sigmaF
-            sigmaT=q/(2.*pi*f0)
-            if REAL8time-6.*sigmaT<plot_tmin:
-              plot_tmin=REAL8time-6.*sigmaT
-            if REAL8time+6.*sigmaT>plot_tmax:
-              plot_tmax=REAL8time+6.*sigmaT
-        # Now handle gaussians. For gaussians f0 is nan (FD centered at f=0)
-        if dur is not None and dur is not np.nan:
-          sigmaF=1./sqrt(2.)/pi/dur
-          if 0+6.*sigmaF<plot_fmax:
-            plot_fmax=0+6.*sigmaF
-          plot_fmin=0.0
-          sigmaT=dur/sqrt(2.)
-          if REAL8time-6.*sigmaT<plot_tmin:
-            plot_tmin=REAL8time-6.*sigmaT
-          if REAL8time+6.*sigmaT>plot_tmax:
-            plot_tmax=REAL8time+6.*sigmaT
+                print("\nThe approximant %s doesn't seem to be recognized by lalinference!\n Skipping WF plots\n"%injapproximant)
+                return None
 
-  myfig=plt.figure(1,figsize=(10,7))
+            for ifo in ifos:
+                fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
+                if inj_domain=='T':
+                    # bin of ref time as seen in strainT
+                    tCinstrain=np.floor(REAL8time-float(strainTinj.epoch))/deltaT
+                    # bin of strainT where we need to start copying the WF over
+                    #tSinstrain=floor(tCinstrain-float(plus.data.length)/2.)+1
+                    tSinstrain=int(  (REAL8time-fabs(float(plus.epoch)) - fabs(float(strainTinj.epoch)))/deltaT)
+                    rem=(REAL8time-fabs(float(plus.epoch)) - fabs(float(strainTinj.epoch)))/deltaT-tSinstrain
+                    # strain is a temporary container for this IFO strain.
+                    # Zero until tSinstrain
+                    for k in np.arange(tSinstrain):
+                        strainTinj.data.data[k]=0.0
+                    # then copy plus/cross over
+                    for k in np.arange(plus.data.length):
+                        strainTinj.data.data[k+tSinstrain]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
+                    # Then zeros till the end (superfluous)
+                    for k in np.arange(strainTinj.data.length- (tSinstrain +plus.data.length)):
+                        strainTinj.data.data[k+tSinstrain+plus.data.length]=0.0
+                    for k in np.arange(strainTinj.data.length):
+                        strainTinj.data.data[k]*=window.data.data[k]
+                    np.savetxt('file.out',zip(np.array([strainTinj.epoch + j*deltaT for j in arange(strainTinj.data.length)]),np.array([strainTinj.data.data[j] for j in arange(strainTinj.data.length)])))
+                    # now copy in the dictionary
+                    inj_strains[ifo]["T"]['strain']=np.array([strainTinj.data.data[j] for j in arange(strainTinj.data.length)])
+                    inj_strains[ifo]["T"]['x']=np.array([strainTinj.epoch + j*deltaT for j in arange(strainTinj.data.length)])
+                    # Take the FFT
+                    for j in arange(strainFinj.data.length):
+                        strainFinj.data.data[j]=0.0
+                    REAL8TimeFreqFFT(strainFinj,strainTinj,timeToFreqFFTPlan);
+                    twopit=2.*np.pi*(rem*deltaT)
+                    for k in arange(strainFinj.data.length):
+                        re = cos(twopit*deltaF*k)
+                        im = -sin(twopit*deltaF*k)
+                        strainFinj.data.data[k]*= (re + 1j*im);
+                    # copy in the dictionary
+                    inj_strains[ifo]["F"]['strain']=np.array([strainFinj.data.data[k] for k in arange(int(strainFinj.data.length))])
+                    inj_strains[ifo]["F"]['x']=np.array([strainFinj.f0+ k*strainFinj.deltaF for k in arange(int(strainFinj.data.length))])
+                elif inj_domain=='F':
+                    for k in np.arange(strainFinj.data.length):
+                        if k<plus.data.length:
+                            strainFinj.data.data[k]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
+                        else:
+                            strainFinj.data.data[k]=0.0
+                    twopit=2.*np.pi*(REAL8time-float(strainFinj.epoch))
+                    for k in arange(strainFinj.data.length):
+                        re = cos(twopit*deltaF*k)
+                        im = -sin(twopit*deltaF*k)
+                        strainFinj.data.data[k]*= (re + 1j*im);
+                    # copy in the dictionary
+                    inj_strains[ifo]["F"]['strain']=np.array([strainFinj.data.data[k] for k in arange(int(strainFinj.data.length))])
+                    inj_strains[ifo]["F"]['x']=np.array([strainFinj.f0+ k*strainFinj.deltaF for k in arange(int(strainFinj.data.length))])
+                #update xlimits for plot, go 6 sigmas left and right of f0
+                # This should work for SineGaussians
+                if f0 is not None and f0 is not np.nan:
+                    if q is not None and q is not np.nan:
+                        sigmaF=f0/q
+                        if f0-6.*sigmaF>plot_fmin:
+                            plot_fmin=f0-6.*sigmaF
+                        if f0+6.*sigmaF<plot_fmax:
+                            plot_fmax=f0+6.*sigmaF
+                        sigmaT=q/(2.*pi*f0)
+                        if REAL8time-6.*sigmaT<plot_tmin:
+                            plot_tmin=REAL8time-6.*sigmaT
+                        if REAL8time+6.*sigmaT>plot_tmax:
+                            plot_tmax=REAL8time+6.*sigmaT
+                # Now handle gaussians. For gaussians f0 is nan (FD centered at f=0)
+                if dur is not None and dur is not np.nan:
+                    sigmaF=1./sqrt(2.)/pi/dur
+                    if 0+6.*sigmaF<plot_fmax:
+                        plot_fmax=0+6.*sigmaF
+                    plot_fmin=0.0
+                    sigmaT=dur/sqrt(2.)
+                    if REAL8time-6.*sigmaT<plot_tmin:
+                        plot_tmin=REAL8time-6.*sigmaT
+                    if REAL8time+6.*sigmaT>plot_tmax:
+                        plot_tmax=REAL8time+6.*sigmaT
 
-  rows=len(ifos)
-  cols=2
 
-  #this variables decide which domain will be plotted on the left column of the plot.
-  # only plot Time domain if both injections and recovery are TD
-  global_domain="F"
-  if rec_domain is not None and inj_domain is not None:
-    if rec_domain=="T" and inj_domain=="T":
-      global_domain="T"
-  elif rec_domain is not None:
-    if rec_domain=="T":
-      global_domain="T"
-  elif inj_domain is not None:
-    if inj_domain=="T":
-      global_domain="T"
+    if pos is not None:
 
-  A,axes=plt.subplots(nrows=rows,ncols=cols,sharex=False,sharey=False)
-  plt.setp(A,figwidth=10,figheight=7)
-  for (r,i) in zip(np.arange(rows),ifos):
-    for c in np.arange(cols):
-      ax=axes[r]
-      if type(ax)==np.ndarray:
-        ax=ax[c]
-      else:
-        ax=axes[c]
-      if rec_strains[i]["T"]['strain'] is not None or rec_strains[i]["F"]['strain'] is not None:
-        if c==0:
-          if global_domain=="T":
-            ax.plot(rec_strains[i]["T"]['x'],rec_strains[i]["T"]['strain'],colors_rec[i],label='%s maP'%i,linewidth=5)
-            ax.set_xlim([plot_tmin,plot_tmax])
-            #ax.vlines(GlobREAL8time,0.9*min(rec_strains[i]["T"]['strain']),1.1*max(rec_strains[i]["T"]['strain']),'k')
-          else:
-            data=rec_strains[i]["F"]['strain']
-            f=rec_strains[i]["F"]['x']
-            mask=np.logical_and(f>=plot_fmin,f<=plot_fmax)
-            ys=data
-            ax.plot(f[mask],real(ys[mask]),'-',color=colors_rec[i],label='%s maP'%i,linewidth=5)
-            ax.set_xlim([plot_fmin,plot_fmax])
+        # Select the maxP sample
+        _,which=pos._posMap()
+
+        if 'time' in pos.names:
+            REAL8time=pos['time'].samples[which][0]
+        elif 'time_maxl' in pos.names:
+            REAL8time=pos['time_maxl'].samples[which][0]
+        elif 'time_mean' in pos.names:
+            REAL8time=pos['time_mean'].samples[which][0]
+        elif 'time_min' in pos.names and 'time_max' in pos.names:
+            REAL8time=pos['time_min'].samples[which][0]+0.5*(pos['time_max'].samples[which][0]-pos['time_min'].samples[which][0])
         else:
-            data=rec_strains[i]["F"]['strain']
-            f=rec_strains[i]["F"]['x']
-            mask=np.logical_and(f>=plot_fmin,f<=plot_fmax)
-            ys=data
-            ax.loglog(f[mask],absolute(ys[mask]),'--',color=colors_rec[i],linewidth=5)
-            ax.grid(True,which='both')
-            ax.set_xlim([plot_fmin,plot_fmax])
-      if inj_strains[i]["T"]['strain'] is not None or inj_strains[i]["F"]['strain'] is not None:
-        if c==0:
-          if global_domain=="T":
-            ax.plot(inj_strains[i]["T"]['x'],inj_strains[i]["T"]['strain'],colors_inj[i],label='%s inj'%i,linewidth=2)
-            ax.set_xlim([plot_tmin,plot_tmax])
-          else:
-            data=inj_strains[i]["F"]['strain']
-            f=inj_strains[i]["F"]['x']
-            mask=np.logical_and(f>=plot_fmin,f<=plot_fmax)
-            ys=data
-            ax.plot(f[mask],real(ys[mask]),'-',color=colors_inj[i],label='%s inj'%i,linewidth=2)
-            ax.set_xlim([plot_fmin,plot_fmax])
-        else:
-            data=inj_strains[i]["F"]['strain']
-            f=inj_strains[i]["F"]['x']
-            mask=np.logical_and(f>=plot_fmin,f<=plot_fmax)
-            ys=data
-            ax.loglog(f[mask],absolute(ys[mask]),'--',color=colors_inj[i],linewidth=2)
-            ax.grid(True,which='both')
-            ax.set_xlim([plot_fmin,plot_fmax])
-      if r==0:
-        if c==0:
-          if global_domain=="T":
-            ax.set_title(r"$h(t)$",fontsize=font_size)
-          else:
-            ax.set_title(r"$\Re[h(f)]$",fontsize=font_size)
-        else:
-          ax.set_title(r"$|h(f)|$",fontsize=font_size)
-      elif r==rows-1:
-        if c==0:
-          if global_domain=="T":
-            ax.set_xlabel("time [s]",fontsize=font_size)
-          else:
-            ax.set_xlabel("frequency [Hz]",fontsize=font_size)
-        else:
-          ax.set_xlabel("frequency [Hz]",fontsize=font_size)
+            print("ERROR: could not find any time parameter in the posterior file. Not plotting the WF...\n")
+            return None
 
-      ax.legend(loc='best')
-      ax.grid(True)
+        # first check we have approx in posterior samples, otherwise skip
+        skip=0
 
-      #ax.tight_layout()
-  A.savefig(os.path.join(path,'WF_DetFrame.png'),bbox_inches='tight')
-  return inj_strains, rec_strains
+        try:
+            approximant=int(pos['LAL_APPROXIMANT'].samples[which][0])
+        except:
+            skip=1
+        if skip==0:
+            GPStime=LIGOTimeGPS(REAL8time)
+            if GlobREAL8time is None:
+                GlobREAL8time=REAL8time
+            strainTrec.epoch=LIGOTimeGPS(round(GlobREAL8time,0)-seglen/2.)
+            strainFrec.epoch=LIGOTimeGPS(round(GlobREAL8time,0)-seglen/2.)
+            if "duration" in pos.names:
+                dur=pos["duration"].samples[which][0]
+            else:
+                dur=np.nan
+            if "quality" in pos.names:
+                q=pos['quality'].samples[which][0]
+            else:
+                q=np.nan
+            if 'frequency' in pos.names:
+                f0=pos['frequency'].samples[which][0]
+            else:
+                f0=np.nan
+            try:
+                hrss=pos['hrss'].samples[which][0]
+            except:
+                hrss=exp(pos['loghrss'].samples[which][0])
+            if np.isnan(q) and not np.isnan(dur):
+                q=sqrt(2)*pi*dur
+            alpha=None
+            if 'alpha' in pos.names:
+                alpha=pos['alpha'].samples[which][0]
+                polar_e_angle=alpha
+                polar_e_ecc=pos['polar_eccentricity'].samples[which][0]
+            elif 'polar_ellipse_angle' in pos.names:
+                polar_e_angle=pos['polar_ellipse_angle'].samples[which][0]
+                polar_e_ecc=pos['polar_eccentricity'].samples[which][0]
+
+            BurstExtraParams=None
+            #if alpha:
+            #  BurstExtraParams=lalsim.SimBurstCreateExtraParam("alpha",alpha)
+
+            if SimBurstImplementedFDApproximants(approximant):
+                rec_domain='F'
+                [plus,cross]=SimBurstChooseFDWaveform(deltaF, deltaT, f0, q,dur, f_min, f_max,hrss,polar_e_angle ,polar_e_ecc,BurstExtraParams, approximant)
+            elif SimBurstImplementedTDApproximants(approximant):
+                rec_domain='T'
+                [plus,cross]=SimBurstChooseTDWaveform(deltaT, f0, q,dur, f_min, f_max,hrss,polar_e_angle ,polar_e_ecc,BurstExtraParams, approximant)
+            else:
+                print("The approximant %s doesn't seem to be recognized by lalinference!\n Skipping WF plots\n"%approximant)
+                return None
+            ra=pos['ra'].samples[which][0]
+            dec=pos['dec'].samples[which][0]
+            psi=pos['psi'].samples[which][0]
+            fs={}
+            for ifo in ifos:
+                fp, fc = ComputeDetAMResponse(lal.cached_detector_by_prefix[ifo].response, ra, dec, psi, GreenwichMeanSiderealTime(REAL8time))
+                if rec_domain=='T':
+                    # bin of ref time as seen in strainT
+                    tCinstrain=np.floor(REAL8time-float(strainTrec.epoch))/deltaT
+                    # bin of strainT where we need to start copying the WF over
+                    tSinstrain=int(  (REAL8time-fabs(float(plus.epoch)) - fabs(float(strainTrec.epoch)))/deltaT)
+                    #tSinstrain=floor(tCinstrain-float(plus.data.length)/2.)+1
+                    #reminder for fractions of bin, will be added back in the FD WF
+                    rem=(REAL8time-fabs(float(plus.epoch)) - fabs(float(strainTrec.epoch)))/deltaT-tSinstrain
+
+                    # strain is a temporary container for this IFO strain.
+                    # Zero until tSinstrain
+                    for k in np.arange(tSinstrain):
+                        strainTrec.data.data[k]=0.0
+                    # then copy plus/cross over
+                    for k in np.arange(plus.data.length):
+                        strainTrec.data.data[k+tSinstrain]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
+                    # Then zeros till the end (superfluous)
+                    for k in np.arange(strainTrec.data.length- (tSinstrain +plus.data.length)):
+                        strainTrec.data.data[k+tSinstrain+plus.data.length]=0.0
+                    for k in np.arange(strainTrec.data.length):
+                        strainTrec.data.data[k]*=window.data.data[k]
+                    # now copy in the dictionary
+                    rec_strains[ifo]["T"]['strain']=np.array([strainTrec.data.data[j] for j in arange(strainTrec.data.length)])
+                    rec_strains[ifo]["T"]['x']=np.array([strainTrec.epoch + j*deltaT for j in arange(strainTrec.data.length)])
+                    # Take the FFT
+                    for j in arange(strainFrec.data.length):
+                        strainFrec.data.data[j]=0.0
+                    REAL8TimeFreqFFT(strainFrec,strainTrec,timeToFreqFFTPlan);
+                    twopit=2.*np.pi*(rem*deltaT)
+                    for k in arange(strainFrec.data.length):
+                        re = cos(twopit*deltaF*k)
+                        im = -sin(twopit*deltaF*k)
+                        strainFrec.data.data[k]*= (re + 1j*im);
+                    # copy in the dictionary
+                    rec_strains[ifo]["F"]['strain']=np.array([strainFrec.data.data[k] for k in arange(int(strainFrec.data.length))])
+                    rec_strains[ifo]["F"]['x']=np.array([strainFrec.f0+ k*strainFrec.deltaF for k in arange(int(strainFrec.data.length))])
+                elif rec_domain=='F':
+                    for k in np.arange(strainFrec.data.length):
+                        if k<plus.data.length:
+                            strainFrec.data.data[k]=((fp*plus.data.data[k]+fc*cross.data.data[k]))
+                        else:
+                            strainFrec.data.data[k]=0.0
+                    twopit=2.*np.pi*(REAL8time-float(strainFrec.epoch))
+                    for k in arange(strainFrec.data.length):
+                        re = cos(twopit*deltaF*k)
+                        im = -sin(twopit*deltaF*k)
+                        strainFrec.data.data[k]*= (re + 1j*im);
+                    # copy in the dictionary
+                    rec_strains[ifo]["F"]['strain']=np.array([strainFrec.data.data[k] for k in arange(int(strainFrec.data.length))])
+                    rec_strains[ifo]["F"]['x']=np.array([strainFrec.f0+ k*strainFrec.deltaF for k in arange(int(strainFrec.data.length))])
+                #update xlimits for plot, go 6 sigmas left and right of f0
+                # This should work for SineGaussians
+                if f0 is not None and f0 is not np.nan:
+                    if q is not None and q is not np.nan:
+                        sigmaF=f0/q
+                        if f0-6.*sigmaF>plot_fmin:
+                            plot_fmin=f0-6.*sigmaF
+                        if f0+6.*sigmaF<plot_fmax:
+                            plot_fmax=f0+6.*sigmaF
+                        sigmaT=q/(2.*pi*f0)
+                        if REAL8time-6.*sigmaT<plot_tmin:
+                            plot_tmin=REAL8time-6.*sigmaT
+                        if REAL8time+6.*sigmaT>plot_tmax:
+                            plot_tmax=REAL8time+6.*sigmaT
+                # Now handle gaussians. For gaussians f0 is nan (FD centered at f=0)
+                if dur is not None and dur is not np.nan:
+                    sigmaF=1./sqrt(2.)/pi/dur
+                    if 0+6.*sigmaF<plot_fmax:
+                        plot_fmax=0+6.*sigmaF
+                    plot_fmin=0.0
+                    sigmaT=dur/sqrt(2.)
+                    if REAL8time-6.*sigmaT<plot_tmin:
+                        plot_tmin=REAL8time-6.*sigmaT
+                    if REAL8time+6.*sigmaT>plot_tmax:
+                        plot_tmax=REAL8time+6.*sigmaT
+
+    myfig=plt.figure(1,figsize=(10,7))
+
+    rows=len(ifos)
+    cols=2
+
+    #this variables decide which domain will be plotted on the left column of the plot.
+    # only plot Time domain if both injections and recovery are TD
+    global_domain="F"
+    if rec_domain is not None and inj_domain is not None:
+        if rec_domain=="T" and inj_domain=="T":
+            global_domain="T"
+    elif rec_domain is not None:
+        if rec_domain=="T":
+            global_domain="T"
+    elif inj_domain is not None:
+        if inj_domain=="T":
+            global_domain="T"
+
+    A,axes=plt.subplots(nrows=rows,ncols=cols,sharex=False,sharey=False)
+    plt.setp(A,figwidth=10,figheight=7)
+    for (r,i) in zip(np.arange(rows),ifos):
+        for c in np.arange(cols):
+            ax=axes[r]
+            if type(ax)==np.ndarray:
+                ax=ax[c]
+            else:
+                ax=axes[c]
+            if rec_strains[i]["T"]['strain'] is not None or rec_strains[i]["F"]['strain'] is not None:
+                if c==0:
+                    if global_domain=="T":
+                        ax.plot(rec_strains[i]["T"]['x'],rec_strains[i]["T"]['strain'],colors_rec[i],label='%s maP'%i,linewidth=5)
+                        ax.set_xlim([plot_tmin,plot_tmax])
+                        #ax.vlines(GlobREAL8time,0.9*min(rec_strains[i]["T"]['strain']),1.1*max(rec_strains[i]["T"]['strain']),'k')
+                    else:
+                        data=rec_strains[i]["F"]['strain']
+                        f=rec_strains[i]["F"]['x']
+                        mask=np.logical_and(f>=plot_fmin,f<=plot_fmax)
+                        ys=data
+                        ax.plot(f[mask],real(ys[mask]),'-',color=colors_rec[i],label='%s maP'%i,linewidth=5)
+                        ax.set_xlim([plot_fmin,plot_fmax])
+                else:
+                    data=rec_strains[i]["F"]['strain']
+                    f=rec_strains[i]["F"]['x']
+                    mask=np.logical_and(f>=plot_fmin,f<=plot_fmax)
+                    ys=data
+                    ax.loglog(f[mask],absolute(ys[mask]),'--',color=colors_rec[i],linewidth=5)
+                    ax.grid(True,which='both')
+                    ax.set_xlim([plot_fmin,plot_fmax])
+            if inj_strains[i]["T"]['strain'] is not None or inj_strains[i]["F"]['strain'] is not None:
+                if c==0:
+                    if global_domain=="T":
+                        ax.plot(inj_strains[i]["T"]['x'],inj_strains[i]["T"]['strain'],colors_inj[i],label='%s inj'%i,linewidth=2)
+                        ax.set_xlim([plot_tmin,plot_tmax])
+                    else:
+                        data=inj_strains[i]["F"]['strain']
+                        f=inj_strains[i]["F"]['x']
+                        mask=np.logical_and(f>=plot_fmin,f<=plot_fmax)
+                        ys=data
+                        ax.plot(f[mask],real(ys[mask]),'-',color=colors_inj[i],label='%s inj'%i,linewidth=2)
+                        ax.set_xlim([plot_fmin,plot_fmax])
+                else:
+                    data=inj_strains[i]["F"]['strain']
+                    f=inj_strains[i]["F"]['x']
+                    mask=np.logical_and(f>=plot_fmin,f<=plot_fmax)
+                    ys=data
+                    ax.loglog(f[mask],absolute(ys[mask]),'--',color=colors_inj[i],linewidth=2)
+                    ax.grid(True,which='both')
+                    ax.set_xlim([plot_fmin,plot_fmax])
+            if r==0:
+                if c==0:
+                    if global_domain=="T":
+                        ax.set_title(r"$h(t)$",fontsize=font_size)
+                    else:
+                        ax.set_title(r"$\Re[h(f)]$",fontsize=font_size)
+                else:
+                    ax.set_title(r"$|h(f)|$",fontsize=font_size)
+            elif r==rows-1:
+                if c==0:
+                    if global_domain=="T":
+                        ax.set_xlabel("time [s]",fontsize=font_size)
+                    else:
+                        ax.set_xlabel("frequency [Hz]",fontsize=font_size)
+                else:
+                    ax.set_xlabel("frequency [Hz]",fontsize=font_size)
+
+            ax.legend(loc='best')
+            ax.grid(True)
+
+            #ax.tight_layout()
+    A.savefig(os.path.join(path,'WF_DetFrame.png'),bbox_inches='tight')
+    return inj_strains, rec_strains
 
 def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,savepdfs,greedy,analyticLikelihood,nDownsample):
 
@@ -7453,9 +7452,9 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
 
     out={}
     if pars==[]:
-      return out
+        return out
     if set(pos.names)-set(pars)==set(pos.names):
-      return out
+        return out
 
     #2D plots list
     tabid='onedmargtable_'+label.lower()
@@ -7510,22 +7509,22 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
         injection_area=None
         injection_area=None
         if greedy:
-          if printed==0:
-            print("Using greedy 1-d binning credible regions\n")
-            printed=1
-          toppoints,injectionconfidence,reses,injection_area,cl_intervals=greedy_bin_one_param(pos,binParams,confidence_levels)
+            if printed==0:
+                print("Using greedy 1-d binning credible regions\n")
+                printed=1
+            toppoints,injectionconfidence,reses,injection_area,cl_intervals=greedy_bin_one_param(pos,binParams,confidence_levels)
         else:
-          if printed==0:
-            print("Using 2-step KDE 1-d credible regions\n")
-            printed=1
-          if pos[par_name].injval is None:
-            injCoords=None
-          else:
-            injCoords=[pos[par_name].injval]
-          _,reses,injstats=kdtree_bin2Step(pos,[par_name],confidence_levels,injCoords=injCoords)
-          if injstats is not None:
-            injectionconfidence=injstats[3]
-            injection_area=injstats[4]
+            if printed==0:
+                print("Using 2-step KDE 1-d credible regions\n")
+                printed=1
+            if pos[par_name].injval is None:
+                injCoords=None
+            else:
+                injCoords=[pos[par_name].injval]
+            _,reses,injstats=kdtree_bin2Step(pos,[par_name],confidence_levels,injCoords=injCoords)
+            if injstats is not None:
+                injectionconfidence=injstats[3]
+                injection_area=injstats[4]
         #Generate 1D histogram/kde plots
         print("Generating 1D plot for %s."%par_name)
         out[par_name]=reses
@@ -7637,11 +7636,11 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
             plt.close(acffig)
 
         if not noacf:
-	  if not acfail:
-	    acfhtml='<td width="30%"><img width="100%" src="1Dsamps/'+figname.replace('.png', '_acf.png')+'"/></td>'
-	  else:
-	    acfhtml='<td>ACF generation failed!</td>'
-          html_ompdf_write+='<tr><td width="30%"><img width="100%" src="1Dpdf/'+figname+'"/></td><td width="30%"><img width="100%" src="1Dsamps/'+figname.replace('.png','_samps.png')+'"/></td>'+acfhtml+'</tr>'
+            if not acfail:
+                acfhtml='<td width="30%"><img width="100%" src="1Dsamps/'+figname.replace('.png', '_acf.png')+'"/></td>'
+            else:
+                acfhtml='<td>ACF generation failed!</td>'
+                html_ompdf_write+='<tr><td width="30%"><img width="100%" src="1Dpdf/'+figname+'"/></td><td width="30%"><img width="100%" src="1Dsamps/'+figname.replace('.png','_samps.png')+'"/></td>'+acfhtml+'</tr>'
         else:
             html_ompdf_write+='<tr><td width="30%"><img width="100%" src="1Dpdf/'+figname+'"/></td><td width="30%"><img width="100%" src="1Dsamps/'+figname.replace('.png','_samps.png')+'"/></td></tr>'
 

@@ -13,7 +13,7 @@ import sys, os
 import popen2, time
 import getopt, re, string
 import socket
-import ConfigParser
+from six.moves import configparser
 import urlparse
 
 # import the modules we need to build the pipeline
@@ -276,7 +276,7 @@ try: os.mkdir('logs')
 except: pass
 
 # create the config parser object and read in the ini file
-cp = ConfigParser.ConfigParser()
+cp = configparser.ConfigParser()
 cp.read(config_file)
 
 ifo_list = ['H1','L1','V1']

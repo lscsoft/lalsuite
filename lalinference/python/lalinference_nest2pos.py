@@ -5,6 +5,7 @@ import h5py
 import os
 import os.path
 import sys
+from functools import reduce
 
 from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_dset_name
 from lalinference import LALInferenceHDF5NestedSamplesDatasetName as nested_dset_name
@@ -284,7 +285,7 @@ if __name__ == '__main__':
       print('Error: No input file were read')
       sys.exit(1)
     headers = input_arrays[0].dtype.names
-    nlive = map(int, nlive)
+    nlive = list(map(int, nlive))
 
     if opts.npos is not None:
         def sampler(datas, Nlives, **kwargs):
@@ -301,7 +302,7 @@ if __name__ == '__main__':
     # posterior = array(posterior)
 
     log_evs, log_wts = zip(*[compute_weights(data['logL'], n)
-                             for data, n in zip(input_arrays, nlive)])
+                             for data, n in list(zip(input_arrays, nlive))])
     if opts.verbose:
         print('Log evidences from input files: %s' % str(log_evs))
 

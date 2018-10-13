@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import log1p, log, logaddexp, array, digitize, loadtxt, zeros, exp, hstack, vstack, reshape, diff, concatenate, all, cumsum, ones, linspace
 from numpy.random import uniform
+from functools import reduce
 
 def logsubexp(x,y):
         assert all(x >= y), 'cannot take log of negative number %s - %s'%(str(x),str(y))
@@ -55,7 +56,7 @@ def draw_posterior(data, log_wts, verbose=False):
     maxWt=max(log_wts)
     normalised_wts=log_wts-maxWt
     selection=[n > log(uniform()) for n in normalised_wts]
-    idx=filter(lambda i: selection[i], range(len(selection)))
+    idx=list(filter(lambda i: selection[i], range(len(selection))))
     return data[idx]
     
 def draw_posterior_many(datas, Nlives, verbose=False):

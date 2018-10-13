@@ -2,7 +2,7 @@ import shutil
 import os
 import sys
 import glob
-import ConfigParser
+from six.moves import configparser
 
 
 # USEFUL FUNCTION DEFINITIONS
@@ -10,7 +10,7 @@ import ConfigParser
 # Function to extract the followup pipeline ini file and get relevant info
 # It assumes the ini file is something like *followup_pipe.ini
 def getIni():
-  cp = ConfigParser.ConfigParser()
+  cp = configparser.ConfigParser()
   path = glob.glob('*followup_pipe.ini')
   if path[0]: cp.read(path[0])
   else:

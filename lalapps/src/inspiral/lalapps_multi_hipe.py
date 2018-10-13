@@ -37,7 +37,7 @@ import sys
 import pylab
 import random
 import string
-import ConfigParser
+from six.moves import configparser
 from optparse import *
 from glue import segments
 from glue import segmentsUtils
@@ -256,7 +256,7 @@ print sys.argv[0:]
 
 ##############################################################################
 # create the config parser object and read in the ini file
-cp = ConfigParser.ConfigParser()
+cp = configparser.ConfigParser()
 cp.read(opts.multi_hipe_config_file)
 numslides = cp.get('input','num-slides')
 
@@ -435,7 +435,7 @@ for interval in search_epochs:
   for inj in range(1,opts.ninjections + 1):
 
     # read in the configuration file for injections
-    cpinj = ConfigParser.ConfigParser()
+    cpinj = configparser.ConfigParser()
     cpinj.read(("injections%02d.ini" % opts.ninjections))
 
     # make the injection directory

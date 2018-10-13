@@ -31,12 +31,16 @@ hatch_default = ['..','//','||']
 #
 ###############################################################################
 
-from ConfigParser import SafeConfigParser
-from cPickle import dump, load
+try:
+    from configparser import ConfigParser
+    from pickle import dump, load
+except ImportError:  # python < 3
+    from ConfigParser import SafeConfigParser as ConfigParser
+    from cPickle import dump, load
 from datetime import datetime
 from itertools import combinations
 from itertools import cycle
-from matplotlib import use, rcParams
+from matplotlib import use, rcParams, __version__ as mpl_version
 use('Agg')
 from matplotlib.pyplot import clf, figure, savefig
 from os import access, path, R_OK, makedirs
@@ -69,9 +73,10 @@ fig_width = fig_width_pt*inches_per_pt  # width in inches
 fig_height = fig_width*golden_mean      # height in inches
 fig_size =  [fig_width,fig_height]
 
+fontsize = 'font.size' if mpl_version >= '1.5.0' else 'text.fontsize'
 params = {'backend': 'PDF',
           'axes.labelsize': 24,
-          'text.fontsize': 24,
+          fontsize: 24,
           'legend.fontsize': 20,
           'xtick.labelsize': 24,
           'ytick.labelsize': 24,
@@ -144,7 +149,7 @@ def TigerPostProcess(configfile):
 	# CONFIGURATION FILE: CHECKING FILE
 	stdout.write("Configuration file: checking file\n")
 	if access(configfile, R_OK): 
-		config = SafeConfigParser()
+		config = ConfigParser()
 		config.read(configfile)
 	else:
 		exit("Configuration file: checking file - file does not exist. Abort script\n")
