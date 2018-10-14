@@ -27,7 +27,7 @@
 import itertools
 
 
-from glue import offsetvector
+from . import offsetvector
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

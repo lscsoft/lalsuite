@@ -37,18 +37,20 @@ import scipy.stats
 import sys
 
 
-import lal
-from lal import rate
-
-
-from glue import segmentsUtils
 from glue.ligolw import ligolw
 from glue.ligolw import array as ligolw_array
 from glue.ligolw import param as ligolw_param
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
-from glue.offsetvector import offsetvector
+import lal
+from lal import rate
+try:
+	from ligo.segments import utils as segmentsUtils
+except ImportError:
+	# fallback for obsolete ligo-segments package
+	from glue import segmentsUtils
+from .offsetvector import offsetvector
 from . import snglcoinc
 
 

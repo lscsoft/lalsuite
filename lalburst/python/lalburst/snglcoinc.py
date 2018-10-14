@@ -52,18 +52,20 @@ import sys
 import warnings
 
 
-import lal
-from lal import rate
-
-
-from glue import offsetvector
-from glue import segmentsUtils
 from glue.ligolw import ligolw
 from glue.ligolw import array as ligolw_array
 from glue.ligolw import param as ligolw_param
 from glue.ligolw import lsctables
 from glue.ligolw.utils import coincs as ligolw_coincs
 from glue.text_progress_bar import ProgressBar
+import lal
+from lal import rate
+try:
+	from ligo.segments import utils as segmentsUtils
+except ImportError:
+	# fall back for obsolete ligo-segments package
+	from glue import segmentsUtils
+from . import offsetvector
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

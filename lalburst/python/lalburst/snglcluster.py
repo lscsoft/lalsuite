@@ -29,8 +29,8 @@ import sys
 
 
 from glue import iterutils
-from glue import segments
 from glue.text_progress_bar import ProgressBar
+from ligo import segments
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
