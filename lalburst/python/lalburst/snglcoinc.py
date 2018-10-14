@@ -56,7 +56,7 @@ import lal
 from lal import rate
 
 
-from glue import offsetvector
+from . import offsetvector
 from glue import segmentsUtils
 from glue.ligolw import ligolw
 from glue.ligolw import array as ligolw_array

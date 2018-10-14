@@ -41,7 +41,7 @@ from lal.utils import CacheEntry
 
 
 from glue import segments
-from glue import offsetvector
+from . import offsetvector
 from . import packing
 
 

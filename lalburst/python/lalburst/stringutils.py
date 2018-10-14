@@ -48,7 +48,7 @@ from glue.ligolw import param as ligolw_param
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
-from glue.offsetvector import offsetvector
+from .offsetvector import offsetvector
 from . import snglcoinc
 
 
