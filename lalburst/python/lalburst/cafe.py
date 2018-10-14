@@ -38,9 +38,9 @@ import sys
 
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
+from ligo import segments
 
 
-from glue import segments
 from . import offsetvector
 from . import packing
 
