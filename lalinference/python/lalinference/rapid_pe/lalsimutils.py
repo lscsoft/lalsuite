@@ -1278,12 +1278,12 @@ def frame_data_to_hoft(fname, channel, start=None, stop=None, window_shape=0.,
             strength over that fraction of each end of the data segment.
     """
     if verbose:
-        print " ++ Loading from cache ", fname, channel
+        print(" ++ Loading from cache ", fname, channel)
 
     duration = stop - start if None not in (start, stop) else None
     
     tmp = read_timeseries(fname, channel, start, stop - start, verbose=verbose)
-    print   "  ++ Frame data sampling rate ", 1./tmp.deltaT, " and epoch ", string_gps_pretty_print(tmp.epoch)
+    print("  ++ Frame data sampling rate ", 1./tmp.deltaT, " and epoch ", string_gps_pretty_print(tmp.epoch))
 
     # Window the data - N.B. default is identity (no windowing)
     hoft_window = lal.CreateTukeyREAL8Window(tmp.data.length, window_shape)
