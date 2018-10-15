@@ -34,8 +34,8 @@ import time
 
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
-from glue import offsetvector
 import lal
+from lalburst import offsetvector
 from lalburst import snglcoinc
 
 
@@ -220,78 +220,84 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 #
 # =============================================================================
 #
-#                            Event List Management
+#                     Coincidence Generator Implementation
 #
 # =============================================================================
 #
 
 
-class InspiralEventList(snglcoinc.EventList):
-	"""
-	A customization of the EventList class for use with the inspiral
-	search.
-	"""
-	@staticmethod
-	def template(event):
-		"""
-		Returns an immutable hashable object (it can be used as a
-		dictionary key) uniquely identifying the template that
-		produced the given event.
-		"""
-		return event.mass1, event.mass2, event.spin1x, event.spin1y, event.spin1z, event.spin2x, event.spin2y, event.spin2z
+class coincgen_doubles(snglcoinc.coincgen_doubles):
+	class singlesqueue(snglcoinc.coincgen_doubles.singlesqueue):
+		@staticmethod
+		def event_time(event):
+			return event.end
 
-	def make_index(self):
-		"""
-		Sort events into bins according to their template so that a
-		dictionary look-up can retrieve all triggers from a given
-		template.  Then sort bins by end time so that a bisection
-		search can retrieve triggers from a template within a
-		window of time.  Note that the bisection search relies on
-		the __cmp__() method of the SnglInspiral row class having
-		previously been set to compare the event's end time to a
-		LIGOTimeGPS.
-		"""
-		self.index = {}
-		for event in self:
-			self.index.setdefault(self.template(event), []).append(event)
-		for events in self.index.values():
-			events.sort(key = lambda event: event.end)
 
-	def get_coincs(self, event_a, offset_a, light_travel_time, delta_t):
-		#
-		# event_a's end time, shifted to be with respect to end
-		# times in this list.
-		#
+	class get_coincs(object):
+		@staticmethod
+		def template(event):
+			"""
+			Returns an immutable hashable object (it can be
+			used as a dictionary key) uniquely identifying the
+			template that produced the given event.
+			"""
+			return event.mass1, event.mass2, event.spin1x, event.spin1y, event.spin1z, event.spin2x, event.spin2y, event.spin2z
 
-		end = event_a.end + offset_a
+		def __init__(self, events):
+			"""
+			Sort events into bins according to their template
+			so that a dictionary look-up can retrieve all
+			triggers from a given template.  The events must be
+			provided in time order so that a bisection search
+			can retrieve triggers from a template within a
+			window of time.  Note that the bisection search
+			relies on the __cmp__() method of the SnglInspiral
+			row class having previously been set to compare the
+			event's end time to a LIGOTimeGPS.
+			"""
+			self.index = {}
+			index_setdefault = self.index.setdefault
+			template = self.template
+			for event in events:
+				index_setdefault(template(event), []).append(event)
 
-		#
-		# the coincidence window
-		#
+		def __call__(self, event_a, offset_a, light_travel_time, delta_t):
+			#
+			# event_a's end time, shifted to be with respect to
+			# end times in this list.
+			#
 
-		coincidence_window = light_travel_time + delta_t
+			end = event_a.end + offset_a
 
-		#
-		# extract the subset of events from this list that pass
-		# coincidence with event_a.  use a bisection search for the
-		# minimum allowed end time and a brute-force scan for the
-		# maximum allowed end time.  because the number of events
-		# in the coincidence window is generally quite small, the
-		# brute-force scan has a lower expected operation count
-		# than a second bisection search to find the upper bound in
-		# the sequence
-		#
+			#
+			# the coincidence window
+			#
 
-		try:
-			events = self.index[self.template(event_a)]
-		except KeyError:
-			# that template didn't produce any events in this
-			# instrument.  this is rare given the SNR thresholds
-			# typical today so trapping the exception is more
-			# efficient than testing
-			return ()
-		stop = end + coincidence_window
-		return tuple(itertools.takewhile(lambda event: event.end <= stop, events[bisect_left(events, end - coincidence_window):]))
+			coincidence_window = light_travel_time + delta_t
+
+			#
+			# extract the subset of events from this list that
+			# pass coincidence with event_a.  use a bisection
+			# search for the minimum allowed end time and a
+			# brute-force scan for the maximum allowed end
+			# time.  because the number of events in the
+			# coincidence window is generally quite small, the
+			# brute-force scan has a lower expected operation
+			# count than a second bisection search to find the
+			# upper bound in the sequence
+			#
+
+			try:
+				events = self.index[self.template(event_a)]
+			except KeyError:
+				# that template didn't produce any events
+				# in this instrument.  this is rare given
+				# the SNR thresholds typical today so
+				# trapping the exception is more efficient
+				# than testing
+				return ()
+			stop = end + coincidence_window
+			return tuple(itertools.takewhile(lambda event: event.end <= stop, events[bisect_left(events, end - coincidence_window):]))
 
 
 #
@@ -326,8 +332,14 @@ def ligolw_thinca(
 	coinc_tables = InspiralCoincTables(xmldoc, coinc_definer_row)
 
 	#
-	# build the event list accessors.  apply vetoes by excluding events
-	# from the lists that fall in vetoed segments
+	# construct offset vector assembly graph
+	#
+
+	time_slide_graph = snglcoinc.TimeSlideGraph(coincgen_doubles, coinc_tables.time_slide_index, delta_t, min_instruments = min_instruments, verbose = verbose)
+
+	#
+	# collect events.  apply vetoes by excluding events from the lists
+	# that fall in vetoed segments
 	#
 
 	sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
@@ -336,12 +348,9 @@ def ligolw_thinca(
 		if seglists is not None:
 			# don't do in-place
 			seglists = seglists - veto_segments
-
-	#
-	# construct offset vector assembly graph
-	#
-
-	time_slide_graph = snglcoinc.TimeSlideGraph(coinc_tables.time_slide_index, min_instruments = min_instruments, verbose = verbose)
+	for instrument, events in itertools.groupby(sorted(sngl_inspiral_table, key = lambda row: row.ifo), lambda event: event.ifo):
+		events = tuple(events)
+		time_slide_graph.push(instrument, events, max(event.end for event in events))
 
 	#
 	# retrieve all coincidences, apply the final n-tuple compare func
@@ -349,11 +358,7 @@ def ligolw_thinca(
 	#
 
 	gps_time_now = float(lal.UTCToGPS(time.gmtime()))
-	for node, events in time_slide_graph.get_coincs(
-		snglcoinc.EventListDict(InspiralEventList, sngl_inspiral_table, instruments = set(coinc_tables.time_slide_table.getColumnByName("instrument"))),
-		delta_t,
-		verbose = verbose
-	):
+	for node, events in time_slide_graph.pull(delta_t, flush = True, verbose = verbose):
 		if not ntuple_comparefunc(events, node.offset_vector):
 			coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, events, seglists = seglists)
 			if likelihood_func is not None:

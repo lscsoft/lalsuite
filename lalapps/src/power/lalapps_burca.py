@@ -132,19 +132,19 @@ if options.coincidence_segments is not None:
 		# for the purposes of the coinc segs feature, the coinc
 		# time is minimum of event peak times.  this is a fast, and
 		# guaranteed reproducible definition
-		return len(events) < min_instruments or min(event.peak + offset_vector[event.ifo] for event in events) not in coinc_segs
+		return min(event.peak + offset_vector[event.ifo] for event in events) not in coinc_segs
 else:
-	def coinc_segs_ntuple_comparefunc(events, offset_vector, min_instruments = options.min_instruments):
-		return len(events) < min_instruments
+	def coinc_segs_ntuple_comparefunc(*args):
+		return False
 
 
 if options.coincidence_algorithm == "excesspower":
-	EventListType = burca.ExcessPowerEventList
+	coincgen_doubles = burca.ep_coincgen_doubles
 	ntuple_comparefunc = coinc_segs_ntuple_comparefunc
 	CoincTables = burca.ExcessPowerCoincTables
 	CoincDef = burca.ExcessPowerBBCoincDef
 elif options.coincidence_algorithm == "stringcusp":
-	EventListType = burca.StringEventList
+	coincgen_doubles = burca.string_coincgen_doubles
 	ntuple_comparefunc = lambda *args: coinc_segs_ntuple_comparefunc(*args) or burca.StringCuspCoincTables.ntuple_comparefunc(*args)
 	CoincTables = burca.StringCuspCoincTables
 	CoincDef = burca.StringCuspBBCoincDef
@@ -195,13 +195,21 @@ for n, filename in enumerate(filenames):
 	# Run coincidence algorithm.
 	#
 
+
+	if options.coincidence_algorithm == "excesspower":
+		delta_t = 2. * bruca.ep_coincgen_doubles.get_coincs.max_edge_peak_delta(lsctables.SnglBurstTable.get_table(xmldoc))
+	elif options.coincidence_algorithm == "stringcusp":
+		delta_t = options.threshold
+	else:
+		raise Exception("should never get here")
 	burca.burca(
 		xmldoc = xmldoc,
 		process_id = process.process_id,
-		EventListType = EventListType,
+		coincgen_doubles = coincgen_doubles,
 		CoincTables = CoincTables,
 		coinc_definer_row = CoincDef,
 		threshold = options.threshold,
+		delta_t = delta_t,
 		ntuple_comparefunc = ntuple_comparefunc,
 		verbose = options.verbose
 	)
