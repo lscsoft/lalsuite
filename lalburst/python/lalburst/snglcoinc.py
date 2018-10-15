@@ -28,20 +28,18 @@ from __future__ import print_function
 
 
 """
-Generic coincidence engine for use with time-based event lists in LIGO
-Light Weight XML documents.
+Generic time interval coincidence engine.
 """
 
 
 from bisect import bisect_left
+import collections
 try:
-	from fpconst import NaN, NegInf, PosInf
+	from fpconst import NegInf
 except ImportError:
 	# fpconst is not part of the standard library and might not be
 	# available
-	NaN = float("nan")
 	NegInf = float("-inf")
-	PosInf = float("+inf")
 import itertools
 import math
 import numpy
@@ -49,22 +47,16 @@ import random
 import scipy.optimize
 from scipy import spatial
 import sys
+import UserDict
 import warnings
 
 
 from glue.ligolw import ligolw
-from glue.ligolw import array as ligolw_array
-from glue.ligolw import param as ligolw_param
 from glue.ligolw import lsctables
 from glue.ligolw.utils import coincs as ligolw_coincs
 from glue.text_progress_bar import ProgressBar
 import lal
-from lal import rate
-try:
-	from ligo.segments import utils as segmentsUtils
-except ImportError:
-	# fall back for obsolete ligo-segments package
-	from glue import segmentsUtils
+from ligo.segments import NegInfinity
 from . import offsetvector
 
 
@@ -76,98 +68,7 @@ from .git_version import version as __version__
 #
 # =============================================================================
 #
-#                             Event List Interface
-#
-# =============================================================================
-#
-
-
-class EventList(list):
-	"""
-	A parent class for managing a list of events, retrieving subsets of
-	the list selected by time interval.  To be useful, this class must
-	be subclassed with overrides provided for certain methods.  The
-	only method that must be overridden in a subclass is the
-	get_coincs() method.  The make_index() method can be overridden if
-	needed.
-	"""
-	def make_index(self):
-		"""
-		Provided to allow for search-specific look-up tables or
-		other indexes to be constructed for use in increasing the
-		speed of the get_coincs() method.  This will be called
-		after all events have been added to the list, and again if
-		the list is ever modified, and before get_coincs() is ever
-		called.
-		"""
-		pass
-
-	def get_coincs(self, event_a, offset_a, light_travel_time, threshold_data):
-		"""
-		Return a sequence of the events from this list that are
-		coincident with event_a.  The object returned by this
-		method must support being passed to bool() to determine if
-		the sequence is empty.
-
-		offset_a is the time shift to be added to the time of
-		event_a before comparing to the times of events in this
-		list.  This behaviour is to support the construction of
-		time shifted coincidences.
-
-		Because it is frequently needed by implementations of this
-		method, the distance in light seconds between the two
-		instruments is provided as the light_travel_time parameter.
-		"""
-		raise NotImplementedError
-
-
-class EventListDict(dict):
-	"""
-	A dictionary of EventList objects, indexed by instrument,
-	initialized from an XML trigger table and a list of process IDs
-	whose events should be included.
-	"""
-	def __new__(cls, *args, **kwargs):
-		# wrapper to shield dict.__new__() from our arguments.
-		return dict.__new__(cls)
-
-	def __init__(self, EventListType, events, instruments):
-		"""
-		Initialize a newly-created instance.  EventListType is a
-		subclass of EventList (the subclass itself, not an instance
-		of the subclass).  events is an iterable of events (e.g.,
-		an instance of a glue.ligolw.table.Table subclass).
-		instruments is an iterable of instrument names.
-
-		For each instrument in instruments, an instance of
-		EventListType will be created, and the event objects in
-		events whose .ifo attribute equals that instrument will be
-		.append()'ed to that list.  If an event has a .ifo value
-		that is not equal to one of the instruments, KeyError is
-		raised.  It is not an error for there to be no events for a
-		given instrument.
-
-		NOTE:  the event objects in events must have a .ifo
-		attribute.
-
-		NOTE:  both the events and instruments iterables will only
-		be iterated over once, so generator expressions are
-		acceptable.
-		"""
-		for instrument in instruments:
-			self[instrument] = EventListType()
-		self.idx = {}
-		for event in events:
-			self[event.ifo].append(event)
-			self.idx[id(event)] = event
-		for l in self.values():
-			l.make_index()
-
-
-#
-# =============================================================================
-#
-#                         Double Coincidence Iterator
+#                    Streaming Double Coincidence Generator
 #
 # =============================================================================
 #
@@ -186,73 +87,399 @@ def light_travel_time(instrument1, instrument2):
 	return math.sqrt((dx * dx).sum()) / lal.C_SI
 
 
-def get_doubles(eventlists, offsetvector, threshold_data, unused):
+class singlesqueue(object):
 	"""
-	Given an instance of an EventListDict, a dictionary of
-	instrument,offset pairs, and threshold data to pass to the
-	comparison function, generate a sequence of tuples of Python IDs of
-	mutually coincident events, and populate a set (unused) of
-	1-element tuples of the Python IDs of the events that did not
-	participate in coincidences.
+	Buffer a partially time-ordered stream of events, sort them into
+	time order, maintain a record of the time up-to which the list of
+	events is complete, and provide events in time order to coincidence
+	tests.
 
-	Each tuple returned by this generator will contain exactly two
-	Python IDs, one from each of the two instruments in the offset
-	vector.
-
-	NOTE:  the offset vector must contain exactly two instruments.
-
-	NOTE:  the "unused" parameter passed to this function must be a set
-	or set-like object.  It will be cleared by invoking .clear(), then
-	populated by invoking .update(), .add(), and .remove().
-
-	NOTE:  the order of the IDs in each tuple returned by this function
-	will be in alphabetical order by instrument.
+	Searches must define a class subclassed from this that defines an
+	override of the .event_time() method.  See coincgen_doubles for
+	information on what to do with the subclass.
 	"""
-	# retrieve the event lists for the requested instrument combination
-	try:
-		instrumenta, instrumentb = sorted(offsetvector)
-	except ValueError:
-		raise ValueError("offsetvector must be for 2 instruments, not %d" % len(offsetvector))
-	eventlista, eventlistb = eventlists[instrumenta], eventlists[instrumentb]
+	@staticmethod
+	def event_time(event):
+		"""
+		Override with a method to extract the "time" of the given
+		event.  The "time" object that is returned must support
+		arithmetic and comparison with python float objects, and
+		support comparison with ligo.segments.PosInfinity and
+		ligo.segments.NegInfinity.  float and lal.LIGOTimeGPS are
+		both suitable.
+		"""
+		raise NotImplementedError
 
-	# compute the time offset and light travel time.
+	def __init__(self, coinc_window):
+		# using .event_time() to define the times of events, this
+		# is the minimum time that must separate events in this
+		# queue from other queues for them to be certain to fail
+		# coincidence.  it is not necessary for this to be exactly
+		# the coincidence window, it is sufficient to bound it from
+		# above, but performance is improved by making this close
+		# to, or ideally exactly, the coincidence window.  NOTE:
+		# this must include light travel time, and any additional
+		# window required to allow for time shift offsets.
+		self.coinc_window = coinc_window
+		# using .event_time() to define the times of events, the
+		# list of events is complete upto but not including
+		# .t_valid.  we can't use fpconst.NegInf because
+		# LIGOTimeGPS objects refuse to be compared to it.  the
+		# NegInfinity object from the segments library, however, is
+		# compatible with LIGOTimeGPS.
+		self.t_complete = NegInfinity
+		# queue of events that are too new to be certain to be able
+		# to construct all possible coincs between themselves and
+		# other queues
+		self.queue = collections.deque()
+		# id() --> event mapping for the contents of queue
+		self.index = {}
 
-	offset_a = offsetvector[instrumenta] - offsetvector[instrumentb]
-	dt = light_travel_time(instrumenta, instrumentb)
+	@property
+	def t_coinc_complete(self):
+		"""
+		Using .event_time() to define the times of events, events
+		whose times are less than this are sufficiently far behind
+		.t_complete that all coincidences that can be formed with
+		those events can now be formed (assuming all queues
+		contributing events to the coincidences share the same
+		.t_complete).  Events with times equal to or later than
+		this are too close to .t_complete to guarantee that all
+		coincidences in which they will participate can now be
+		formed.  After processing the current contents of the
+		queue, it could be flushed up to this time without loss of
+		information.
+		"""
+		return self.t_complete - self.coinc_window
 
-	# choose the shorter of the two lists for the outer loop
+	def push(self, events, t_complete):
+		"""
+		Add events to the queue.  Mark the queue complete up to
+		t_complete, meaning you promise no further events will be
+		added to the queue earlier than t_complete.
 
-	if len(eventlistb) < len(eventlista):
-		eventlista, eventlistb = eventlistb, eventlista
-		offset_a = -offset_a
-		unswap = lambda a, b: (b, a)
-	else:
-		unswap = lambda a, b: (a, b)
+		NOTE:  events will be iterated over multiple times.  It may
+		not be a generator.
+		"""
+		if t_complete < self.t_complete:
+			raise ValueError("t_complete has gone backwards:  last was %g, new is %g" % (self.t_complete, t_complete))
 
-	# populate the unused set with all IDs from list B
+		# add the new events to the ID index
+		#assert all(id(event) not in self.index for event in events)
+		self.index.update((id(event), event) for event in events)
 
-	unused.clear()
-	unused.update((id(event),) for event in eventlistb)
+		# events are allowed to arrive out of order, we only
+		# require that no event arrive earlier than the current
+		# .t_complete.  therefore, we need to insort the new events
+		# with the current tail of the queue.  this is done by
+		# popping events off the queue that are not earlier than
+		# .t_complete, combining them with the new events, sorting,
+		# and pushing the result into the queue.
+		# FIXME:  this might be more costly than tracking two
+		# queues and moving events from one to the next in time
+		# order as .t_complete advances
+		if events and self.event_time(min(events, key = self.event_time)) < self.t_complete:
+			raise ValueError("t_complete violation: earliest event is %g, previous t_complete was %g" % (self.event_time(min(events, key = self.event_time)), self.t_complete))
+		events = list(events)
+		while self.queue and self.event_time(self.queue[-1]) >= self.t_complete:
+			events.append(self.queue.pop())
+		events.sort(key = self.event_time)
+		self.queue.extend(events)
 
-	# for each event in list A, iterate over events from the other list
-	# that are coincident with the event, and return the pairs.  if
-	# nothing is coincident with it add its ID to the set of unused
-	# IDs, otherwise remove the IDs of the things that are coincident
-	# with it from the set.
+		# update the marker labelling time up to which the event
+		# list is complete
+		self.t_complete = t_complete
 
-	eventlistb_get_coincs = eventlistb.get_coincs
-	for eventa in eventlista:
-		eventa_id = id(eventa)
-		matches = eventlistb_get_coincs(eventa, offset_a, dt, threshold_data)
-		if matches:
-			for eventb in matches:
-				eventb_id = id(eventb)
-				unused.discard((eventb_id,))
-				yield unswap(eventa_id, eventb_id)
+	def pull(self, t):
+		"""
+		Returns a pair of tuples.  The first contains the events
+		from the queue upto t;  the second contains any additional
+		events in the queue that can form coincidences with events
+		upto t, i.e., the events from the queue at or following t
+		up to (not including) t + coinc_window.  The events
+		returned in the first of the two tuples are removed from
+		the queue.  The times of events are defined by
+		.event_time(), and both tuples are time-ordered.
+
+		If t is None, then the queue is flushed.  All remaining
+		events are pulled from the queue, .t_complete is reset to
+		-inf and all other internal state is reset.  After calling
+		.pull() with t = None, the object's state is equivalent to
+		its initial state and it is ready to process a new stream
+		of events.
+		"""
+		if t is None:
+			events = tuple(self.queue)
+			self.queue.clear()
+			self.index.clear()
+			self.t_complete = NegInfinity
+			return events, ()
+
+		if t > self.t_coinc_complete:
+			raise ValueError("pull to %g exceeds time to which queue is coinc-complete, %g" % (t, self.t_coinc_complete))
+		# these events will never be used again.  remove them from
+		# the queue, and remove their IDs from the index
+		events = []
+		while self.queue and self.event_time(self.queue[0]) < t:
+			event = self.queue.popleft()
+			self.index.pop(id(event))
+			events.append(event)
+		# return those events, and any that are in the queue that
+		# might also participate in coincidences
+		t += self.coinc_window
+		return tuple(events), tuple(itertools.takewhile(lambda event: self.event_time(event) < t, self.queue))
+
+
+class multidict(object, UserDict.DictMixin):
+	"""
+	Read-only dictionary view into a collection of dictionaries.
+
+	Example:
+
+	>>> x = {"a": 10., "b": 100.}
+	>>> y = {"c": 1000., "d": 10000.}
+	>>> z = multidict(x, y)
+	>>> z["a"]
+	10.0
+	>>> z["c"]
+	1000.0
+	>>> "d" in z
+	True
+	>>> "e" in z
+	False
+	"""
+	def __init__(self, *dicts):
+		self.dicts = dicts
+		if not self.dicts:
+			raise ValueError("len(dicts) must be > 0")
+
+	def __getitem__(self, x):
+		for d in self.dicts:
+			if x in d:
+				return d[x]
+		raise KeyError(x)
+
+	def __contains__(self, x):
+		return any(x in d for d in self.dicts)
+
+	def __iter__(self):
+		return itertools.chain(*(iter(d) for d in self.dicts))
+
+	def iteritems(self):
+		return itertools.chain(*(d.iteritems() for d in self.dicts))
+
+	def keys(self):
+		return list(self)
+
+
+class coincgen_doubles(object):
+	"""
+	Using a pair of singlesqueue objects, constructs pairs of
+	coincident events from streams of partially time-ordered events.
+
+	Searches must subclass this.  The .singlesqueue class attribute
+	must be set to the search-specific singlesqueue implementation to
+	be used.  The internally-defined .get_coincs class must be
+	overridden with an implementation that provides the required
+	.__init__() and .__call__() methods.
+	"""
+	# subclass must override this attribute with a reference to an
+	# implementation of singlesqueue that implements the .event_time()
+	# method.
+	singlesqueue = singlesqueue
+
+	class get_coincs(object):
+		"""
+		Override with a class whose .__init__() accepts a tuple of
+		events, and whose .__call__ behaves as described below.
+		The events will be provided to .__init__() in time order.
+
+		It is not required that the implementation be subclassed
+		from this.  This placeholder implementation is merely
+		provided to document the required interface.
+		"""
+		def __init__(self, events):
+			"""
+			Prepare to search a collection of events for
+			coincidences with other single events.  events is a
+			time-ordered iterable of events.  It is recommended
+			that any additional indexing required to improve
+			search performance be performed in this method.
+			"""
+			raise NotImplementedError
+
+		def __call__(self, event_a, offset_a, light_travel_time, threshold_data):
+			"""
+			Return a sequence of the events from those passed
+			to .__init__() that are coincident with event_a.
+			The sequence need not be in time order.  The object
+			returned by this method must be iterable and
+			support being passed to bool() to test if it is
+			empty.
+
+			offset_a is the time shift to be added to the time
+			of event_a before comparing to the times of events
+			passed to .__init__().  This behaviour is to
+			support the construction of time shifted
+			coincidences.
+
+			Because it is frequently needed by implementations
+			of this method, the distance in light seconds
+			between the two instruments (the instrument that
+			produced event_a, and the instrument that produced
+			this object's events) is provided as the
+			light_travel_time parameter.
+			"""
+			raise NotImplementedError
+
+	def __init__(self, offset_vector, coinc_window):
+		if len(offset_vector) != 2:
+			raise ValueError("offset_vector must name exactly 2 instruments (got %d)" % len(offset_vector))
+		if coinc_window < 0.:
+			raise ValueError("coinc_window must be non-negative (got %g)" % coinc_window)
+		self.offset_vector = offset_vector
+		self.coinc_window = coinc_window
+		# FIXME:  the latency can be reduced by teaching
+		# singlesqueue about the asymmetry of the offsetvector
+		self.queues = dict((instrument, self.singlesqueue(coinc_window + light_travel_time(*offset_vector) + abs(offset_vector))) for instrument in offset_vector)
+		# view into the id() --> event indexes of the queues
+		self.index = multidict(*(queue.index for queue in self.queues.values()))
+		# pre-compute the light travel time
+		self.light_travel_time = light_travel_time(*offset_vector)
+		# Python id()s of events currently in the queue that have
+		# been reported in coincidences
+		self.used = set()
+
+	@property
+	def t_complete(self):
+		"""
+		The earliest of the internal queues' .t_complete.
+		"""
+		return min(queue.t_complete for queue in self.queues.values())
+
+	@property
+	def t_coinc_complete(self):
+		"""
+		The earliest of the internal queues' .t_coinc_complete.
+		"""
+		return min(queue.t_coinc_complete for queue in self.queues.values())
+
+	def push(self, instrument, events, t_complete):
+		"""
+		Push new events from some instrument into the internal
+		queues.  The iterable of events need not be time-ordered.
+		With self.singlesqueue.event_time() defining the time of
+		events, t_complete sets the time up-to which the collection
+		of events is known to be complete.  That is, in the future
+		no new events will be pushed whose times are earlier than
+		t_complete.
+		"""
+		self.queues[instrument].push(events, t_complete)
+
+	def pull(self, t, threshold_data, flushed, flushed_unused):
+		"""
+		Generate a sequence of 2-element tuples of Python IDs of
+		coincident events up to t, i.e., requiring the time of at
+		least one of the events in each coincident pair to precede
+		t.  The internal queues are flushed to t.  t cannot be
+		greater than self.t_complete, or it can be the special
+		value None (see below).
+
+		The order of the IDs in each tuple is alphabetical by
+		instrument.
+
+		The Python IDs of all events flushed from the queues are
+		placed in the flushed set.  The IDs of the flushed events
+		that were never reported in a coincident pair, either now
+		or in a previous call to .pull(), are also placed in the
+		flushed_unused set.
+
+		If t is None, then all events are flushed from the queues,
+		and all remaining coincidences are constructed.  The object
+		is reset to its initial state and can be re-used for a new
+		event stream.
+
+		NOTE:  the flushed and flushed_unused parameters passed to
+		this function must be sets or set-like objects.  They must
+		support Python set manipulation methods, like .clear(),
+		.update(), and so on.
+		"""
+		# get the instrument names in alphabetical order, and
+		# compute the time offset of the one wrt the other.
+
+		instrumenta, instrumentb = sorted(self.offset_vector)
+		offset_a = self.offset_vector[instrumenta] - self.offset_vector[instrumentb]
+
+		# retrieve the event lists.  the .pull() methods will
+		# safety check t, we don't have to do it here.
+
+		flusheda, fornexttimea = self.queues[instrumenta].pull(t)
+		flushedb, fornexttimeb = self.queues[instrumentb].pull(t)
+
+		# choose the shorter of the two lists for the outer loop,
+		# but we must still return coincident pairs with the events
+		# ordered alphabetically by instrument.
+
+		if len(flushedb) < len(flusheda):
+			flusheda, flushedb = flushedb, flusheda
+			fornexttimea, fornexttimeb = fornexttimeb, fornexttimea
+			offset_a = -offset_a
+			unswap = lambda a, b: (b, a)
 		else:
-			unused.add((eventa_id,))
+			unswap = lambda a, b: (a, b)
 
-	# done
+		# for each event in list A, iterate over events from the
+		# other list that are coincident with the event, and return
+		# the pairs.  while doing this, collect the events that are
+		# used in coincidences in a set for later logic.  NOTE:
+		# because we require any coincidence that we report to
+		# contain an event preceding t, the loop is done as a
+		# two-step process.  firstly, we iterate over the "flushed"
+		# sequence for list A but search for coincidences with any
+		# event from the flushed and "for next time" sequences for
+		# list B.  lastly, we iterate over the "for next time"
+		# sequence for list A but search for coincidences only in
+		# the "flushed" sequence for list B.
+		light_travel_time = self.light_travel_time
+		used = set()
+		used_add = used.add
+
+		queueb_get_coincs = self.get_coincs(flushedb + fornexttimeb)
+		for eventa in flusheda:
+			matches = queueb_get_coincs(eventa, offset_a, light_travel_time, threshold_data)
+			if matches:
+				eventa_id = id(eventa)
+				used_add(eventa_id)
+				for eventb in matches:
+					eventb_id = id(eventb)
+					used_add(eventb_id)
+					yield unswap(eventa_id, eventb_id)
+		queueb_get_coincs = self.get_coincs(flushedb)
+		for eventa in fornexttimea:
+			matches = queueb_get_coincs(eventa, offset_a, light_travel_time, threshold_data)
+			if matches:
+				eventa_id = id(eventa)
+				used_add(eventa_id)
+				for eventb in matches:
+					eventb_id = id(eventb)
+					used_add(eventb_id)
+					yield unswap(eventa_id, eventb_id)
+
+		self.used |= used
+
+		# populate the flushed and flushed_unused sets
+
+		flushed.clear()
+		flushed.update(id(event) for event in flusheda)
+		flushed.update(id(event) for event in flushedb)
+		flushed_unused.clear()
+		flushed_unused |= flushed - self.used
+
+		# remove the events being flushed from the used set
+
+		self.used -= flushed
+		# if we've been flushed, there better not be anything left
+		assert t is not None or not self.used
 
 
 #
@@ -264,52 +491,8 @@ def get_doubles(eventlists, offsetvector, threshold_data, unused):
 #
 
 
-class TimeSlideGraphNoOpNode(object):
-	def __init__(self, offset_vector, min_instruments, time_slide_id = None):
-		#
-		# safety check input
-		#
-
-		if len(offset_vector) < 1:
-			raise ValueError("encountered offset vector with fewer than 1 instrument: %s", str(offset_vector))
-
-		#
-		# initialize
-		#
-
-		# time_slide_id is non-None only in head nodes
-		self.time_slide_id = time_slide_id
-		self.offset_vector = offset_vector
-		self.components = None
-
-	def get_coincs(self, eventlists, threshold_data, verbose = False):
-		if verbose:
-			print("\tconstructing %s ..." % str(self.offset_vector), file=sys.stderr)
-
-		#
-		# sanity check input
-		#
-
-		assert set(self.offset_vector) <= set(eventlists), "no event list for instrument(s) %s" % ", ".join(sorted(set(self.offset_vector) - set(eventlists)))
-
-		#
-		# return 1-detector "coincs" and a null set of unused
-		# events
-		#
-
-		instrument, = self.offset_vector
-		return tuple((id(event),) for event in eventlists[instrument]), set()
-
-
 class TimeSlideGraphNode(object):
-	def __init__(self, offset_vector, min_instruments, time_slide_id = None):
-		#
-		# safety check input
-		#
-
-		if len(offset_vector) < 2:
-			raise ValueError("encountered offset vector with fewer than 2 instruments: %s", str(offset_vector))
-
+	def __init__(self, coincgen_doubles_type, offset_vector, coinc_window, min_instruments, time_slide_id = None):
 		#
 		# initialize
 		#
@@ -317,75 +500,180 @@ class TimeSlideGraphNode(object):
 		# time_slide_id non-None only in head nodes
 		self.time_slide_id = time_slide_id
 		self.offset_vector = offset_vector
-		# keep_unused is part of the logic that ensures we only
+		# keep_partial is part of the logic that ensures we only
 		# return coincs that meet the min_instruments criterion
-		self.keep_unused = len(offset_vector) > min_instruments
+		self.keep_partial = len(offset_vector) > min_instruments
 		if len(offset_vector) > 2:
-			self.components = tuple(TimeSlideGraphNode(offset_vector, min_instruments) for offset_vector in offsetvector.component_offsetvectors([offset_vector], len(offset_vector) - 1))
+			self.components = tuple(TimeSlideGraphNode(offset_vector, coinc_window, min_instruments) for offset_vector in offsetvector.component_offsetvectors([offset_vector], len(offset_vector) - 1))
+			# view into the id() --> event indexes of the
+			# nodes
+			self.index = multidict(*(node.index for node in self.components))
+		elif len(offset_vector) == 2:
+			self.components = (coincgen_doubles_type(offset_vector, coinc_window),)
+			self.index = self.components[0].index
+		elif len(offset_vector) == 1:
+			# use a singles queue directly, no coincidence
+			self.components = (coincgen_doubles_type.singlesqueue(coinc_window),)
+			self.index = self.components[0].index
 		else:
-			self.components = None
+			raise ValueError("offset_vector cannot be empty")
 
-	def get_coincs(self, eventlists, threshold_data, verbose = False):
+	@property
+	def t_complete(self):
+		"""
+		The earliest of the component nodes' .t_complete.
+		"""
+		return min(node.t_complete for node in self.components)
+
+	@property
+	def t_coinc_complete(self):
+		"""
+		The earliest of the component nodes' .t_coinc_complete.
+		"""
+		return min(node.t_coinc_complete for node in self.components)
+
+	def push(self, instrument, events, t_complete):
+		"""
+		Push new events from some instrument into the internal
+		queues.  The iterable of events need not be time-ordered.
+		With self.singlesqueue.event_time() defining the time of
+		events, t_complete sets the time up-to which the collection
+		of events is known to be complete.  That is, in the future
+		no new events will be pushed whose times are earlier than
+		t_complete.
+		"""
+		if len(self.offset_vector) == 1:
+			# push directly into the singles queue
+			assert (instrument,) == self.offset_vector.keys()
+			self.components[0].push(events, t_complete)
+		else:
+			for node in self.components:
+				if instrument in node.offset_vector:
+					node.push(instrument, events, t_complete)
+
+	def pull(self, t, threshold_data, verbose = False):
+		"""
+		Using the events contained in the internal queues upto t,
+		construct and return all coincidences they participate in.
+		Three objects are returned:  a tuple of the (n=N)-way
+		coincidences, where N is the number of instruments in this
+		node's offset vector, a tuple of the
+		(min_instruments<=n<N)-way coincidences, which will be
+		empty if N < min_instruments, and a set of the Python IDs
+		of events that have been flushed from all internal queues
+		by this operation.
+
+		For the two tuples, the coincidences are reported as tuples
+		of the Python id()'s of the events that form coincidences.
+		The .index look-up table can be used to map these id()'s
+		back to the original events.  To do that, however, a copy
+		of the contents of the .index mapping must be made before
+		calling this method because this method will result in some
+		of the events in question being removed from the queues,
+		and thus also from the .index mapping.
+		"""
+		#
+		# NOTE:  it is essential that the same t be used for all
+		# nodes when walking the graph.  the code assumes this to
+		# be true to determine which events have been and have not
+		# been used to construct coincidences:  we assume that
+		# events that are being flushed from one instrument's queue
+		# in one part of the graph must also be getting flushed
+		# from all other queues for that same instrument elsewhere
+		# in the graph, and so if they have not been used to form a
+		# coincidence by now then they won't ever be.
+		#
+		# It is not possible to encode a safety check to ensure
+		# this invariant, it is left to developers not to screw
+		# with the graph traversal in that way.
+		#
+
+		#
+		# is this a "no-op" node?  return 1-detector "coincs" and a
+		# null set of "partial coincs".  NOTE:  the "no-op" node
+		# concept exists to enable single-detector searches, i.e.,
+		# searches where there is not, in fact, any coincidence
+		# analysis to perform.  it's here so that calling codes
+		# don't need to implement special cases themselves to
+		# handle this.
+		#
+
+		if len(self.offset_vector) == 1:
+			flushed = self.components[0].pull(t)[0]
+			return tuple((eventid,) for eventid in flushed), set(), set(flushed)
+
 		#
 		# is this a leaf node?  construct the coincs explicitly
 		#
 
-		if self.components is None:
+		if len(self.offset_vector) == 2:
 			if verbose:
 				print("\tconstructing %s ..." % str(self.offset_vector), file=sys.stderr)
-
-			#
-			# sanity check input
-			#
-
-			assert set(self.offset_vector) <= set(eventlists), "no event list for instrument(s) %s" % ", ".join(sorted(set(self.offset_vector) - set(eventlists)))
 
 			#
 			# search for and record coincidences.  coincs is a
 			# sorted tuple of event ID pairs, where each pair
 			# of IDs is, itself, ordered alphabetically by
-			# instrument name.
+			# instrument name.  here, for the two-instrument
+			# case, the "partial coincs" are any singles that
+			# failed to form coincidences, which corresponds to
+			# the "flushed_unused" parameter of the
+			# coincgen_doubles' .pull() method, but we convert
+			# the set into a set of 1-element tuples so they
+			# take the form of 1-detector coincs
 			#
 
-			unused_coincs = set()
-			coincs = tuple(sorted(get_doubles(eventlists, self.offset_vector, threshold_data, unused_coincs)))
-			return coincs, (unused_coincs if self.keep_unused else set())
-
-		#
-		# len(self.components) == 1 or 2 are impossible
-		#
-
-		assert len(self.components) > 2
+			flushed = set()
+			partial_coincs = set()
+			coincs = tuple(sorted(self.components[0].pull(t, threshold_data, flushed, partial_coincs)))
+			return coincs, (set((eventid,) for eventid in partial_coincs) if self.keep_partial else set()), flushed
 
 		#
 		# this is a regular node in the graph.  use coincidence
 		# synthesis algorithm to populate its coincs
 		#
 
-		# first collect all coincs and unused partial coincs from
-		# the component nodes in the graph
-		component_coincs_and_unused_coincs = tuple(component.get_coincs(eventlists, threshold_data, verbose = verbose) for component in self.components)
-		component_coincs = tuple(elem[0] for elem in component_coincs_and_unused_coincs)
+		#
+		# double-check the consistency of our structure
+		#
 
-		if self.keep_unused:
-			# all coincs with n-1 instruments from the
-			# component time slides are potentially unused.
-			# they all go into our unused_coincs pile, and
-			# we'll remove things from this set as we use them
-			unused_coincs = set(itertools.chain(*component_coincs))
+		assert len(self.components) > 2
 
-			# of the (< n-1)-instrument coincs that were not
-			# used in forming the (n-1)-instrument coincs, any
-			# that remained unused after forming two
-			# compontents cannot have been used by any other
-			# components, they definitely won't be used to
-			# construct our n-instrument coincs, and so they go
-			# into our unused pile
-			for unused_coincsa, unused_coincsb in itertools.combinations((elem[1] for elem in component_coincs_and_unused_coincs), 2):
-				unused_coincs |= unused_coincsa & unused_coincsb
+		# first collect all coincs and partial coincs from the
+		# component nodes in the graph
+		component_coincs_and_partial_coincs_and_flushed = tuple(component.pull(t, threshold_data, verbose = verbose) for component in self.components)
+		component_coincs = tuple(elem[0] for elem in component_coincs_and_partial_coincs_and_flushed)
+		flushed = reduce((lambda a, b: a | b), (elem[2] for elem in component_coincs_and_partial_coincs_and_flushed), set())
+
+		if self.keep_partial:
+			# any coinc with n-1 instruments from the component
+			# time slides might fail to form an n instrument
+			# coincidence.  we put them all into our
+			# partial_coincs set now, and we'll remove them
+			# from this set as we discover which particiapte in
+			# n instrument coincidences
+			partial_coincs = set(itertools.chain(*component_coincs))
+
+			# the (< n-1)-instrument partial coincs are more
+			# complicated.  for example, H+L doubles are sought
+			# out when forming H+L+V triples and also when
+			# forming H+K+L triples, and if we are now trying
+			# to form H+K+L+V quadruples we will have been
+			# given two sets of "unused" H+L doubles, and there
+			# is no reason for them to agree.  it can be shown
+			# that if a (< n-1)-instrument coinc went unused in
+			# forming any two of our (n-1)-instrument
+			# components, then it cannot have been used to form
+			# any of our (n-1)-instrument components.  we find
+			# the unused (< n-1)-instrument partial coincs from
+			# the union of all pair-wise intersections of the
+			# (< n-1)-instrument partial coincs from our
+			# components.
+			for partial_coincsa, partial_coincsb in itertools.combinations((elem[1] for elem in component_coincs_and_partial_coincs_and_flushed), 2):
+				partial_coincs |= partial_coincsa & partial_coincsb
 		else:
-			unused_coincs = set()
-		del component_coincs_and_unused_coincs
+			partial_coincs = set()
+		del component_coincs_and_partial_coincs_and_flushed
 
 		if verbose:
 			print("\tassembling %s ..." % str(self.offset_vector), file=sys.stderr)
@@ -446,7 +734,7 @@ class TimeSlideGraphNode(object):
 					# remove them from the unused list
 					# because we just used them, then
 					# record the coinc and move on
-					unused_coincs.difference_update(itertools.combinations(new_coinc, len(new_coinc) - 1))
+					partial_coincs.difference_update(itertools.combinations(new_coinc, len(new_coinc) - 1))
 					coincs.append(new_coinc)
 		# sort the coincs we just constructed by the component
 		# event IDs and convert to a tuple for speed
@@ -457,11 +745,11 @@ class TimeSlideGraphNode(object):
 		# done.
 		#
 
-		return coincs, unused_coincs
+		return coincs, partial_coincs, flushed
 
 
 class TimeSlideGraph(object):
-	def __init__(self, offset_vector_dict, min_instruments = 2, verbose = False):
+	def __init__(self, coincgen_doubles_type, offset_vector_dict, coinc_window, min_instruments = 2, verbose = False):
 		#
 		# populate the graph head nodes.  these represent the
 		# target offset vectors requested by the calling code.
@@ -478,10 +766,19 @@ class TimeSlideGraph(object):
 		if verbose:
 			print("constructing coincidence assembly graph for %d offset vectors ..." % len(offset_vector_dict), file=sys.stderr)
 		self.head = tuple(
-			(TimeSlideGraphNode if len(offset_vector) >= 2 else TimeSlideGraphNoOpNode)(
-				offset_vector, min_instruments, time_slide_id = time_slide_id
+			TimeSlideGraphNode(
+				coincgen_doubles_type, offset_vector, coinc_window, min_instruments, time_slide_id = time_slide_id
 			) for time_slide_id, offset_vector in sorted(offset_vector_dict.items())
 		)
+		# the set of the Python id()'s of the events contained in
+		# the internal queues that have been reported in
+		# coincidences (including single-detector coincidences if
+		# min_instruments = 1).  this is used to allow .pull() to
+		# report which of the events it has found in coincidences
+		# is being reported in a coincidence for the first time.
+		# this can be used by calling code to be informed of which
+		# events should be moved to an output document for storage.
+		self.used = set()
 
 		#
 		# done
@@ -491,25 +788,74 @@ class TimeSlideGraph(object):
 			def walk(node):
 				# return the number of leaf and non-leaf
 				# nodes in the graph rooted on this node
-				return numpy.array((1, 0)) if node.components is None else numpy.array((0, 1)) + sum(walk(node) for node in node.components)
+				return numpy.array((1, 0)) if len(node.components) == 1 else numpy.array((0, 1)) + sum(walk(node) for node in node.components)
 			print("graph contains %d fundamental nodes, %d higher-order nodes" % tuple(sum(walk(node) for node in self.head)), file=sys.stderr)
 
 
-	def get_coincs(self, eventlists, threshold_data, verbose = False):
+	def push(self, instrument, events, t_complete):
+		"""
+		Push new events from some instrument into the internal
+		queues.  The iterable of events need not be time-ordered.
+		With self.singlesqueue.event_time() defining the time of
+		events, t_complete sets the time up-to which the collection
+		of events is known to be complete.  That is, in the future
+		no new events will be pushed whose times are earlier than
+		t_complete.
+		"""
+		for node in self.head:
+			if instrument in node.offset_vector:
+				node.push(instrument, events, t_complete)
+
+
+	def pull(self, threshold_data, newly_used = None, flushed = None, flush = False, verbose = False):
+		# FIXME:  note that we call each time slide's head node
+		# with a different t, which means we cannot compare the
+		# reported unused flushed events from one with another.
+		# we'll have to find a way to do our own book-keeping here.
 		if verbose:
 			print("constructing coincs for target offset vectors ...", file=sys.stderr)
-		# don't do attribute look-ups in the loop
-		sngl_index = eventlists.idx
+		# flatten ID index for faster performance in loop.  NOTE:
+		# this must be done before calling .pull() on the graph
+		# because that operation will flush events from the
+		# internal index, leaving it incomplete for our needs.  we
+		# do it outside the loop over nodes because we'll need it
+		# when the loop terminates
+		index = dict(itertools.chain(*(node.index.iteritems() for node in self.head)))
+
+		newly_used_ids = set()
+		flushed_ids = set()
 		for n, node in enumerate(self.head, start = 1):
 			if verbose:
 				print("%d/%d: %s" % (n, len(self.head), str(node.offset_vector)), file=sys.stderr)
-			for coinc in itertools.chain(*node.get_coincs(eventlists, threshold_data, verbose)):
-				# we don't need to check that coinc
-				# contains at least min_instruments events
-				# because those that don't meet the
-				# criteria are excluded during coinc
-				# construction.
-				yield node, tuple(sngl_index[event_id] for event_id in coinc)
+			# we don't need to check that the coincs or partial
+			# coincs contain at least min_instruments events
+			# because those that don't meet the criteria are
+			# excluded during coinc construction.
+			coincs, partial_coincs, _flushed_ids = node.pull((None if flush else node.t_coinc_complete), threshold_data, verbose)
+			flushed_ids |= _flushed_ids
+			for coinc in itertools.chain(coincs, partial_coincs):
+				newly_used_ids.update(coinc)
+				# use the index to convert Python IDs back
+				# to event objects
+				yield node, tuple(index[event_id] for event_id in coinc)
+		newly_used_ids -= self.used
+		self.used |= newly_used_ids
+		self.used -= flushed_ids
+		# if we've been flushed then there can't be any events left
+		# in the queues
+		assert not flush or not self.used
+
+		# use the index to populate newly_used and flushed with event objects
+		if newly_used is not None:
+			newly_used[:] = (index[event_id] for event_id in newly_used_ids)
+		# FIXME:  this is broken unless only one time slide is
+		# being considered.  See above.  this is OK for the
+		# inspiral online search and also for any offline
+		# application (which do not make use of this information),
+		# but will have to be fixed if an online analysis wishes to
+		# consider more than one offset vector.
+		if flushed is not None:
+			flushed[:] = (index[event_id] for event_id in flushed_ids)
 
 
 #
@@ -1558,7 +1904,7 @@ class LnLikelihoodRatioMixin(object):
 		parameters have been drawn evaluated at the parameters.
 
 		On each iteration, the *args and **kwargs values yielded by
-		random_params_seq is passed to our own .__call__() method
+		random_params_seq are passed to our own .__call__() method
 		to evalute the log likelihood ratio at that choice of
 		parameter values.  If signal_noise_pdfs is None the
 		parameters are also passed to the .__call__() mehods of our
