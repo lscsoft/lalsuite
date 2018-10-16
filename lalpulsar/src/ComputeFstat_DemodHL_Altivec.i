@@ -17,6 +17,10 @@
 // MA  02111-1307  USA
 //
 
+/*
+  optimized F-statistic hotloop for Altivec instruction set
+*/
+
 {
   {
     REAL4 s_alpha, c_alpha;   /* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */

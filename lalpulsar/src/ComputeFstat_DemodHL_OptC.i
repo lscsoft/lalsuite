@@ -17,6 +17,10 @@
 // MA  02111-1307  USA
 //
 
+/*
+  optimized F-statistic hotloop
+*/
+
 /* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
  * the trig-functions need to be calculated only once!
  * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
