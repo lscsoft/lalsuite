@@ -4202,9 +4202,9 @@ def getDecString(radians,accuracy='auto'):
         minsymb="'"
         secsymb="''"
     else:
-        degsymb=u'\u00B0'
-        minsymb=u'\u0027'
-        secsymb=u'\u2033'
+        degsymb=six.unichr(0x0B0)
+        minsymb=six.unichr(0x027)
+        secsymb=six.unichr(0x2033)
     if(radians<0):
         radians=-radians
         sign=-1
@@ -4220,9 +4220,9 @@ def getDecString(radians,accuracy='auto'):
     #    deg=deg+1
     if (accuracy=='arcmin' or accuracy=='deg') and secs>30: mins=mins+1
     if accuracy=='deg' and mins>30: deg=deg+1
-    if accuracy=='deg': return six.u(r'%i'%(sign*deg)+degsymb)
-    if accuracy=='arcmin': return six.u(r'%i%s%i%s'%(sign*deg,degsymb,mins,minsymb))
-    if accuracy=='arcsec': return six.u(r'%i%s%i%s%2.0f%s'%(sign*deg,degsymb,mins,minsymb,secs,secsymb))
+    if accuracy=='deg': return '%i'%(sign*deg)+degsymb
+    if accuracy=='arcmin': return '%i%s%i%s'%(sign*deg,degsymb,mins,minsymb)
+    if accuracy=='arcsec': return '%i%s%i%s%2.0f%s'%(sign*deg,degsymb,mins,minsymb,secs,secsymb)
     else:
     #    if abs(fmod(secs,60.0))>=0.5 and abs(fmod(secs,60)-60)>=0.5 : return(getDecString(sign*radians,accuracy='arcsec'))
     #    if abs(fmod(mins,60.0))>=0.5 and abs(fmod(mins,60)-60)>=0.5: return(getDecString(sign*radians,accuracy='arcmin'))
