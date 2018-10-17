@@ -96,8 +96,8 @@ clean-local:
 EXTRA_DIST = \
 	check_tags.py \
 	exclude.list \
-	filter_i.sed \
 	filter_py.py \
+	filter_swig.sed \
 	install_regex.py \
 	layout.xml \
 	mathjax.js \
