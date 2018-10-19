@@ -504,6 +504,9 @@ class TimeSlideGraphNode(object):
 		# time_slide_id non-None only in head nodes
 		self.time_slide_id = time_slide_id
 		self.offset_vector = offset_vector
+		# not used here, but helpful to calling codes to avoid
+		# repeating this test inside loops
+		self.is_zero_lag = not any(offset_vector.values())
 		# keep_partial is part of the logic that ensures we only
 		# return coincs that meet the min_instruments criterion
 		self.keep_partial = len(offset_vector) > min_instruments
