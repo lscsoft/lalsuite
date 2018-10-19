@@ -186,7 +186,7 @@ else:
     
     testSize = sizeList[minIndex] / fracWeight[minIndex]
 
-    weightNum = np.around(fracWeight * testSize)
+    weightNum = np.around(fracWeight * testSize).astype(int)
     sizeOut = sum(weightNum)
     samplesOut = np.empty(sizeOut, dtype=datatypes)
 
