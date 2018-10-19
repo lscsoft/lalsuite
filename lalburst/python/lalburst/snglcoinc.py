@@ -814,7 +814,7 @@ class TimeSlideGraph(object):
 				node.push(instrument, events, t_complete)
 
 
-	def pull(self, threshold_data, newly_used = None, flushed = None, flush = False, verbose = False):
+	def pull(self, threshold_data, newly_used = None, flushed = None, flushed_unused = None, flush = False, verbose = False):
 		# FIXME:  note that we call each time slide's head node
 		# with a different t, which means we cannot compare the
 		# reported unused flushed events from one with another.
@@ -847,22 +847,24 @@ class TimeSlideGraph(object):
 				yield node, tuple(index[event_id] for event_id in coinc)
 		newly_used_ids -= self.used
 		self.used |= newly_used_ids
+		flushed_unused_ids = flushed_ids - self.used
 		self.used -= flushed_ids
 		# if we've been flushed then there can't be any events left
 		# in the queues
 		assert not flush or not self.used
 
-		# use the index to populate newly_used and flushed with event objects
+		# use the index to populate newly_used, flushed, and
+		# flushed_unused with event objects
 		if newly_used is not None:
 			newly_used[:] = (index[event_id] for event_id in newly_used_ids)
-		# FIXME:  this is broken unless only one time slide is
-		# being considered.  See above.  this is OK for the
-		# inspiral online search and also for any offline
-		# application (which do not make use of this information),
-		# but will have to be fixed if an online analysis wishes to
-		# consider more than one offset vector.
+		# FIXME:  these next two are broken unless only one time
+		# slide is being considered.  See above.  this is OK for
+		# the inspiral online search which only does a zero-lag
+		# analysis, but will have to be fixed for offline analyses
 		if flushed is not None:
 			flushed[:] = (index[event_id] for event_id in flushed_ids)
+		if flushed_unused is not None:
+			flushed_unused[:] = (index[event_id] for event_id in flushed_unused_ids)
 
 
 #
