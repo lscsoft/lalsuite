@@ -47,7 +47,11 @@ import random
 import scipy.optimize
 from scipy import spatial
 import sys
-import UserDict
+try:
+	from UserDict import DictMixin as UserDict
+except ImportError:
+	# python 3
+	from collections import UserDict
 import warnings
 
 
@@ -230,7 +234,7 @@ class singlesqueue(object):
 		return tuple(events), tuple(itertools.takewhile(lambda event: self.event_time(event) < t, self.queue))
 
 
-class multidict(object, UserDict.DictMixin):
+class multidict(object, UserDict):
 	"""
 	Read-only dictionary view into a collection of dictionaries.
 
