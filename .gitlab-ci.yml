@@ -522,18 +522,6 @@ nightly:openmp:stretch:
     - schedules
     - web
 
-nightly:python3:stretch:
-  image: ligo/lalsuite-dev:stretch
-  stage: nightly
-  script:
-    - ./00boot
-    - PYTHON=python3 ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
 nightly:macos:highsierra:
   tags:
     - macos_highsierra
