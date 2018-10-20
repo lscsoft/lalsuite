@@ -85,7 +85,7 @@ typedef struct tagFstatInputVector {
 /// Not all options are supported by all \f$\mathcal{F}\f$-statistic methods.
 ///
 typedef enum tagFstatQuantities {
-  FSTATQ_NONE           = 0x00,		///< Dont compute F-statistic, still compute buffered quantities
+  FSTATQ_NONE           = 0x00,         ///< Do not compute \f$\mathcal{F}\f$-statistic, still compute buffered quantities
   FSTATQ_2F             = 0x01,         ///< Compute multi-detector \f$2\mathcal{F}\f$.
   FSTATQ_FAFB           = 0x02,         ///< Compute multi-detector \f$F_a\f$ and \f$F_b\f$.
   FSTATQ_2F_PER_DET     = 0x04,         ///< Compute \f$2\mathcal{F}\f$ for each detector.
@@ -95,7 +95,7 @@ typedef enum tagFstatQuantities {
 } FstatQuantities;
 
 ///
-/// Different methods available to compute the F-statistic, falling into two broad classes:
+/// Different methods available to compute the \f$\mathcal{F}\f$-statistic, falling into two broad classes:
 /// * \a Demod: Dirichlet kernel-based demodulation \cite Williams1999
 /// * \a Resamp: FFT-based resampling \cite JKS98
 ///
@@ -316,7 +316,7 @@ static char FstatTimingGenericHelp[] =
 #endif
 
 #define TIMING_MODEL_MAX_VARS 10
-/// Struct to carry the F-statistic method-specific timing *model* in terms of
+/// Struct to carry the \f$\mathcal{F}\f$-statistic method-specific timing *model* in terms of
 /// a list of variable names and corresponding REAL4 values, including a help-string documenting
 /// the timing model variables.
 /// See https://dcc.ligo.org/LIGO-T1600531-v4 for a more detailed discussion of the F-stat timing model.
