@@ -1456,11 +1456,11 @@ int XLALBinaryToSFTVector( SFTVector **SFTvect,    /**< [out] copied SFT (needs 
   LogPrintf( LOG_DEBUG, "made timeseries with length %f sec\n", Tseries->deltaT * Tseries->data->length );
 
   /* read in the data to the timeseries */
-  INT8 sum = 0;
+  REAL8 sum = 0;
   for ( i = 0; i < Nfile; i++ ) {
     fread( &dummy, sizeof( REAL4 ), 1, binfp );
     Tseries->data->data[i] = ( REAL4 )dummy;
-    sum += ( INT8 )Tseries->data->data[i];
+    sum += Tseries->data->data[i];
   }
 
   /* check for zero data */
@@ -1468,7 +1468,7 @@ int XLALBinaryToSFTVector( SFTVector **SFTvect,    /**< [out] copied SFT (needs 
     LogPrintf( LOG_CRITICAL, "%s : found no photons in file %s.\n", __func__, filename );
     return XLAL_FAILURE;
   }
-  LogPrintf( LOG_DEBUG, "the total number of photons in the binary file = %" LAL_INT8_FORMAT "\n", sum );
+  LogPrintf( LOG_DEBUG, "the total number of photons in the binary file = %g\n", sum );
 
   /* inject signal if requested */
   if ( par->amp_inj > 0 ) {
@@ -1518,9 +1518,9 @@ int XLALBinaryToSFTVector( SFTVector **SFTvect,    /**< [out] copied SFT (needs 
       sum = 0;
       INT4 j;
       for ( j = 0; j < Ndt; j++ ) {
-        sum += ( INT8 )Tseries->data->data[cnt++];
+        sum += Tseries->data->data[cnt++];
       }
-      LogPrintf( LOG_DEBUG, "the photon sum for the current SFT is %" LAL_INT8_FORMAT "\n", sum );
+      LogPrintf( LOG_DEBUG, "the photon sum for the current SFT is %g\n", sum );
       if ( sum > 0 ) {
         memcpy( &( timestamps.data[Nsft] ), &( par->tstart ), sizeof( LIGOTimeGPS ) );
         LogPrintf( LOG_DEBUG, "about to add %f to %d %d\n", ( REAL8 )( i * par->tsft ), timestamps.data[Nsft].gpsSeconds, timestamps.data[Nsft].gpsNanoSeconds );
