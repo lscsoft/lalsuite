@@ -1459,7 +1459,7 @@ int XLALBinaryToSFTVector( SFTVector **SFTvect,    /**< [out] copied SFT (needs 
   REAL8 sum = 0;
   for ( i = 0; i < Nfile; i++ ) {
     fread( &dummy, sizeof( REAL4 ), 1, binfp );
-    Tseries->data->data[i] = ( REAL4 )dummy;
+    Tseries->data->data[i] = dummy;
     sum += Tseries->data->data[i];
   }
 
