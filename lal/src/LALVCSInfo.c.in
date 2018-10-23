@@ -42,9 +42,6 @@
 #if defined(HAVE_LIBLALBURST)
 #include <lal/LALBurstVCSInfoHeader.h>
 #endif
-#if defined(HAVE_LIBLALDETCHAR)
-#include <lal/LALDetCharVCSInfoHeader.h>
-#endif
 #if defined(HAVE_LIBLALINSPIRAL)
 #include <lal/LALInspiralVCSInfoHeader.h>
 #endif
@@ -112,9 +109,6 @@ const LALVCSInfoList lal@PACKAGE_NAME_NOLAL@VCSInfoList = {
 #if defined(HAVE_LIBLALBURST)
   &lalBurstVCSInfo,
 #endif
-#if defined(HAVE_LIBLALDETCHAR)
-  &lalDetCharVCSInfo,
-#endif
 #if defined(HAVE_LIBLALINSPIRAL)
   &lalInspiralVCSInfo,
 #endif
@@ -156,9 +150,6 @@ void @PACKAGE_NAME_UCASE@_VCS_LINK_CHECK(void)
 #endif
 #if defined(HAVE_LIBLALBURST) && LALBURST_VERSION_DEVEL != 0
   LALBURST_VCS_LINK_CHECK();
-#endif
-#if defined(HAVE_LIBLALDETCHAR) && LALDETCHAR_VERSION_DEVEL != 0
-  LALDETCHAR_VCS_LINK_CHECK();
 #endif
 #if defined(HAVE_LIBLALINSPIRAL) && LALINSPIRAL_VERSION_DEVEL != 0
   LALINSPIRAL_VCS_LINK_CHECK();
