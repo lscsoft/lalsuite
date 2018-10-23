@@ -105,13 +105,6 @@ level2:rpm:lalpulsar:
   dependencies:
     - level0:rpm:lal
 
-level2:rpm:lalstochastic:
-  <<: *levelN-rpm-package
-  stage: level2
-  dependencies:
-   - level0:rpm:lal
-   - level1:rpm:lalmetaio
-
 level3:rpm:lalinference:
   <<: *levelN-rpm-package
   stage: level3
@@ -278,13 +271,6 @@ level2:deb:lalpulsar:
   stage: level2
   dependencies:
     - level0:deb:lal
-
-level2:deb:lalstochastic:
-  <<: *levelN-deb-package
-  stage: level2
-  dependencies:
-   - level0:deb:lal
-   - level1:deb:lalmetaio
 
 level3:deb:lalinference:
   <<: *levelN-deb-package
