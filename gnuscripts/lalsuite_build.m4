@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 151
+# serial 152
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -866,22 +866,6 @@ AC_ARG_ENABLE(
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalpulsar) ;;
     esac
   ], [ lalpulsar=${all_lal:-true} ] )
-])
-
-AC_DEFUN([LALSUITE_ENABLE_LALSTOCHASTIC],
-[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
-AC_ARG_ENABLE(
-  [lalstochastic],
-  AC_HELP_STRING([--enable-lalstochastic],[compile code that requires lalstochastic library [default=yes]]),
-  [ case "${enableval}" in
-      yes) lalstochastic=true;;
-      no) lalstochastic=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalstochastic) ;;
-    esac
-  ], [ lalstochastic=${all_lal:-false} ] )
-if test "$lalmetaio" = "false"; then
-  lalstochastic=false
-fi
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALINFERENCE],
