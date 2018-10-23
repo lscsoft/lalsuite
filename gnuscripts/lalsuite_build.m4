@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 149
+# serial 150
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -799,19 +799,6 @@ AC_ARG_ENABLE(
 if test "$metaio" = "false"; then
   lalmetaio=false
 fi
-])
-
-AC_DEFUN([LALSUITE_ENABLE_LALXML],
-[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
-AC_ARG_ENABLE(
-  [lalxml],
-  AC_HELP_STRING([--enable-lalxml],[compile code that requires lalxml library [default=no]]),
-  [ case "${enableval}" in
-      yes) lalxml=true;;
-      no) lalxml=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalxml) ;;
-    esac
-  ], [ lalxml=${all_lal:-false} ] )
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALSIMULATION],

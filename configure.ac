@@ -33,7 +33,6 @@ LALSUITE_ENABLE_ALL_LAL
 lal=true
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
-LALSUITE_ENABLE_LALXML
 LALSUITE_ENABLE_LALSIMULATION
 LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALDETCHAR
@@ -124,7 +123,6 @@ export LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALSUPPORT_DATA_PATH LALSUPPORT_OCTAVE_
 # configure optional packages
 lalsuite_config_subdir([LALFrame])
 lalsuite_config_subdir([LALMetaIO])
-lalsuite_config_subdir([LALXML])
 lalsuite_config_subdir([LALSimulation])
 lalsuite_config_subdir([LALBurst])
 lalsuite_config_subdir([LALDetChar])
@@ -150,7 +148,6 @@ LALSuite has now been successfully configured:
 
 * LALFrame library support is $LALFRAME_ENABLE_VAL
 * LALMetaIO library support is $LALMETAIO_ENABLE_VAL
-* LALXML library support is $LALXML_ENABLE_VAL
 * LALSimulation library support is $LALSIMULATION_ENABLE_VAL
 * LALBurst library support is $LALBURST_ENABLE_VAL
 * LALDetChar library support is $LALDETCHAR_ENABLE_VAL
