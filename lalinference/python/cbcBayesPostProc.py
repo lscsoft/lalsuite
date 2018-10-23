@@ -260,7 +260,7 @@ def cbcBayesPostProc(
         else:
             fixedBurnins = fixedBurnins if fixedBurnins is not None else None
             peparser = bppu.PEOutputParser('hdf5')
-            commonResultsObj=peparser.parse(data[0],deltaLogP=deltaLogP,fixedBurnin=fixedBurnins,nDownsample=nDownsample)
+            commonResultsObj=peparser.parse(data[0],deltaLogP=deltaLogP,fixedBurnins=fixedBurnins,nDownsample=nDownsample)
     else:
         peparser=bppu.PEOutputParser('common')
         commonResultsObj=peparser.parse(open(data[0],'r'),info=[header,None])

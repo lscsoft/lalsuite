@@ -6100,7 +6100,7 @@ class PEOutputParser(object):
         return samples
 
     def _hdf5_to_pos(self, infile, fixedBurnins=None, deltaLogP=None, nDownsample=None, tablename=None, **kwargs):
-        samples = self._hdf5_to_table(infile, fixedBurnins=fixedBurnins, deltaLogP=deltaLogP, nDownsample=nDownsample, tablename=tablename, **kwargs)
+        samples = self._hdf5_to_table(infile, fixedBurnin=fixedBurnins, deltaLogP=deltaLogP, nDownsample=nDownsample, tablename=tablename, **kwargs)
 
         return samples.colnames, as_array(samples).view(float).reshape(-1, len(samples.columns))
 
