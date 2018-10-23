@@ -51,9 +51,6 @@
 #if defined(HAVE_LIBLALINFERENCE)
 #include <lal/LALInferenceVCSInfoHeader.h>
 #endif
-#if defined(HAVE_LIBLALSTOCHASTIC)
-#include <lal/LALStochasticVCSInfoHeader.h>
-#endif
 
 #include "@PACKAGE_NAME@VCSInfoHeader.h"
 #include "@PACKAGE_NAME@BuildInfoHeader.h"
@@ -118,9 +115,6 @@ const LALVCSInfoList lal@PACKAGE_NAME_NOLAL@VCSInfoList = {
 #if defined(HAVE_LIBLALINFERENCE)
   &lalInferenceVCSInfo,
 #endif
-#if defined(HAVE_LIBLALSTOCHASTIC)
-  &lalStochasticVCSInfo,
-#endif
   &lal@PACKAGE_NAME_NOLAL@VCSInfo,
   NULL
 };
@@ -159,9 +153,6 @@ void @PACKAGE_NAME_UCASE@_VCS_LINK_CHECK(void)
 #endif
 #if defined(HAVE_LIBLALINFERENCE) && LALINFERENCE_VERSION_DEVEL != 0
   LALINFERENCE_VCS_LINK_CHECK();
-#endif
-#if defined(HAVE_LIBLALSTOCHASTIC) && LALSTOCHASTIC_VERSION_DEVEL != 0
-  LALSTOCHASTIC_VCS_LINK_CHECK();
 #endif
 }
 #endif
