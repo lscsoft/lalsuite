@@ -463,7 +463,7 @@ int main ( int argc, char *argv[] )
   memcpy( bankFileNameHead, bankFileName, 
       (size_t) gpsHyphen - (size_t) bankFileName < FILENAME_MAX ? 
       (gpsHyphen - bankFileName) * sizeof(CHAR) : FILENAME_MAX * sizeof(CHAR) );
-  strncpy( bankFileNameTail, gpsHyphen + 1, FILENAME_MAX );
+  strncpy( bankFileNameTail, gpsHyphen + 1, FILENAME_MAX - 1 );
 
   if ( vrbflg )
   {
@@ -489,8 +489,9 @@ int main ( int argc, char *argv[] )
   {
     /* open the output xml file */
     memset( outBankFileName, 0, FILENAME_MAX * sizeof(CHAR) );
-    snprintf( outBankFileName, FILENAME_MAX, "%s_%2.2d-%s", 
-        bankFileNameHead, i, bankFileNameTail );
+    if(snprintf( outBankFileName, FILENAME_MAX, "%s_%02d-%s", 
+        bankFileNameHead, i, bankFileNameTail ) >= FILENAME_MAX)
+      abort();
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
     LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, outBankFileName), 
         &status );
