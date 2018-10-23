@@ -110,7 +110,6 @@ int main(int argc, char *argv[])
   LALStatus        status=blank_status;
   CHAR                inputfile[FILENAME_MAX];
   CHAR                outputpath[1000];
-  CHAR            adjustedfile[FILENAME_MAX+10];
   CHAR                injtype[30];
   CHAR                det_name[10];
   INT8                detectorFlags;
@@ -526,8 +525,8 @@ int main(int argc, char *argv[])
     MDT.simInspiralTable = headTable;
         
     fprintf(stderr,"Overwriting %s with adjusted distances\n",inputfile);
-    strncat(adjustedfile,inputfile,strlen(inputfile)-4); /* Cut off the .xml */
-    sprintf(inputfile,"%s_adj.xml",adjustedfile);
+    inputfile[strlen(inputfile)-4] = 0; /* Cut off the .xml */
+    strncat(inputfile,"_adj.xml",FILENAME_MAX-1);
     xmlfp=XLALOpenLIGOLwXMLFile((const char *)inputfile);
     if(xmlfp==NULL) fprintf(stderr,"Error! Cannot open %s for writing\n",inputfile);
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, xmlfp, sim_inspiral_table ), &status );

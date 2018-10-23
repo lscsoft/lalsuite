@@ -179,7 +179,7 @@ ProcessParamsTable *next_process_param(
     snprintf( pp->param, LIGOMETA_PARAM_MAX, "-userTag" );
   else
     snprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
-  strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
+  strncpy( pp->type, type, LIGOMETA_TYPE_MAX - 1 );
   va_start( ap, fmt );
   vsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
   va_end( ap );

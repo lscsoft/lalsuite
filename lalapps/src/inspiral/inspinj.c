@@ -539,7 +539,6 @@ INT4  pntMass2=1;
 REAL4 deltaMass1=-1;
 REAL4 deltaMass2=-1;
 INT4 bandPassInj = 0;
-INT4 writeSimRing = 0;
 LALSimInspiralApplyTaper taperInj = LAL_SIM_INSPIRAL_TAPER_NONE;
 AlignmentType alignInj = notAligned;
 REAL8 redshift;
@@ -933,7 +932,7 @@ ProcessParamsTable *next_process_param( const char *name, const char *type,
   }
   strncpy( pp->program, PROGRAM_NAME, LIGOMETA_PROGRAM_MAX );
   snprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
-  strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
+  strncpy( pp->type, type, LIGOMETA_TYPE_MAX - 1 );
   va_start( ap, fmt );
   vsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
   va_end( ap );
@@ -1111,9 +1110,6 @@ static void print_usage(char *program)
       "  [--taper-injection] OPT  Taper the inspiral template using option OPT\n"\
       "                            (start|end|startend) \n"\
       "  [--band-pass-injection]  sets the tapering method of the injected waveform\n\n");
-  fprintf(stderr,
-      "Output:\n"\
-      " [--write-sim-ring]        Writes a sim_ringdown table\n\n");
 }
 
 
@@ -1454,7 +1450,7 @@ sourceComplete()
 
   /* Other Variables */
   int edgenum    = (int) ceil((M_min-M_max)/edgestep); /* Number of magnitude bins */
-  char galaxyname[LIGOMETA_SOURCE_MAX] = "Fake";       /* Beginning of name for all added (non-real) galaxies */
+  const char *galaxyname = "Fake";       /* Beginning of name for all added (non-real) galaxies */
   int distnum    = (maxDistance-initDistance)/DeltaD;  /* Number of elements in Distance vector */
   int k_at_25Mpc = floor((25000-initDistance)/DeltaD); /* Initial index for Distance vector - no galaxies added before 25Mpc */
   int j,k,q;            /* Indices for loops */
@@ -2020,7 +2016,6 @@ int main( int argc, char *argv[] )
     {"write-compress",          no_argument,       &outCompress,       1},
     {"taper-injection",         required_argument, 0,                '*'},
     {"band-pass-injection",     no_argument,       0,                '}'},
-    {"write-sim-ring",          no_argument,       0,                '{'},
     {"ipn-file",                required_argument, 0,                '^'},
     {"spin-gaussian",           no_argument,       0,                 1002},
     {"stdev-spin1",             required_argument, 0,                 1003},
@@ -3113,14 +3108,6 @@ int main( int argc, char *argv[] )
           next_process_param( long_options[option_index].name, "string",
               "" );
         bandPassInj = 1;
-        break;
-
-      case '{':
-        /* write out a sim_ringdown table */
-        this_proc_param = this_proc_param->next =
-          next_process_param( long_options[option_index].name, "string",
-              "" );
-        writeSimRing = 1;
         break;
 
       case '*':
@@ -4442,43 +4429,6 @@ int main( int argc, char *argv[] )
     simTable->bandpass = bandPassInj;
 
 
-    /* populate the sim_ringdown table */
-    if ( writeSimRing )
-    {
-       memcpy( simRingTable->waveform, "Ringdown",
-          sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
-       memcpy( simRingTable->coordinates, "EQUATORIAL",
-          sizeof(CHAR) * LIGOMETA_COORDINATES_MAX );
-       simRingTable->geocent_start_time = simTable->geocent_end_time;
-       simRingTable->h_start_time = simTable->h_end_time;
-       simRingTable->l_start_time = simTable->l_end_time;
-       simRingTable->v_start_time = simTable->v_end_time;
-       simRingTable->start_time_gmst = simTable->end_time_gmst;
-       simRingTable->longitude = simTable->longitude;
-       simRingTable->latitude = simTable->latitude;
-       simRingTable->distance = simTable->distance;
-       simRingTable->inclination = simTable->inclination;
-       simRingTable->polarization = simTable->polarization;
-       simRingTable->phase = 0;
-       simRingTable->mass = XLALNonSpinBinaryFinalBHMass(simTable->eta, simTable->mass1, simTable->mass2);
-       /* The final spin calc has been generalized so as to allow initially spinning systems*/
-       /* simRingTable->spin = XLALNonSpinBinaryFinalBHSpin(simTable->eta); */
-       simRingTable->spin = XLALSpinBinaryFinalBHSpin(simTable->eta, simTable->mass1, simTable->mass2,
-          simTable->spin1x, simTable->spin2x,simTable->spin1y, simTable->spin2y, simTable->spin1z, simTable->spin2z);
-       simRingTable->frequency = XLALBlackHoleRingFrequency( simRingTable->mass, simRingTable->spin);
-       simRingTable->quality = XLALBlackHoleRingQuality(simRingTable->spin);
-       simRingTable->epsilon = 0.01;
-       simRingTable->amplitude = XLALBlackHoleRingAmplitude( simRingTable->frequency, simRingTable->quality, simRingTable->distance, simRingTable->epsilon );
-       simRingTable->eff_dist_h = simTable->eff_dist_h;
-       simRingTable->eff_dist_l = simTable->eff_dist_l;
-       simRingTable->eff_dist_v = simTable->eff_dist_v;
-       simRingTable->hrss = XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 2., 0. );
-       // need hplus & hcross in each detector to populate these
-       simRingTable->hrss_h = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
-       simRingTable->hrss_l = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
-       simRingTable->hrss_v = 0.; //XLALBlackHoleRingHRSS( simRingTable->frequency, simRingTable->quality, simRingTable->amplitude, 0., 0. );
-    }
-
     /* increment current time, avoiding roundoff error;
        check if end of loop is reached */
     if (tDistr == LALINSPIRAL_EXPONENTIAL_TIME_DIST)
@@ -4555,18 +4505,6 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections,
           sim_inspiral_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
-  }
-
-  if ( writeSimRing )
-  {
-    if ( ringparams.simRingdownTable )
-    {
-      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_ringdown_table ),
-          &status );
-      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, ringparams,
-          sim_ringdown_table ), &status );
-      LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
-    }
   }
 
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
