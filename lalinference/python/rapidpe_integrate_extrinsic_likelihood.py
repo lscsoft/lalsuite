@@ -34,7 +34,6 @@ from glue.ligolw import utils, lsctables, table, ligolw
 lsctables.use_in(ligolw.LIGOLWContentHandler)
 from glue.ligolw.utils import process
 import glue.lal
-import pylal
 
 # our analysis stuff
 from lalinference.rapid_pe import lalsimutils, factored_likelihood, mcsampler, xmlutils, common_cl
