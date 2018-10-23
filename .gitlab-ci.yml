@@ -112,15 +112,6 @@ level2:rpm:lalstochastic:
    - level0:rpm:lal
    - level1:rpm:lalmetaio
 
-level3:rpm:laldetchar:
-  <<: *levelN-rpm-package
-  stage: level3
-  dependencies:
-    - level0:rpm:lal
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-    - level2:rpm:lalburst
-
 level3:rpm:lalinference:
   <<: *levelN-rpm-package
   stage: level3
@@ -294,15 +285,6 @@ level2:deb:lalstochastic:
   dependencies:
    - level0:deb:lal
    - level1:deb:lalmetaio
-
-level3:deb:laldetchar:
-  <<: *levelN-deb-package
-  stage: level3
-  dependencies:
-    - level0:deb:lal
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-    - level2:deb:lalburst
 
 level3:deb:lalinference:
   <<: *levelN-deb-package
