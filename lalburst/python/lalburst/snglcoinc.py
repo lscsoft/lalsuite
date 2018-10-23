@@ -149,7 +149,7 @@ class singlesqueue(object):
 		of the oldest event in the queue or segments.NegInfinity if
 		the queue is empty.
 		"""
-		return self.end_time(self.queue[0]) if self.queue else NegInfinity
+		return self.event_time(self.queue[0]) if self.queue else NegInfinity
 
 	@property
 	def t_coinc_complete(self):
