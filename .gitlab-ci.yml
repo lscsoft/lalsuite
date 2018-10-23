@@ -82,12 +82,6 @@ level1:rpm:lalsimulation:
   dependencies:
     - level0:rpm:lal
 
-level1:rpm:lalxml:
-  <<: *levelN-rpm-package
-  stage: level1
-  dependencies:
-    - level0:rpm:lal
-
 level2:rpm:lalburst:
   <<: *levelN-rpm-package
   stage: level2
@@ -266,12 +260,6 @@ level1:deb:lalmetaio:
     - level0:deb:lal
 
 level1:deb:lalsimulation:
-  <<: *levelN-deb-package
-  stage: level1
-  dependencies:
-    - level0:deb:lal
-
-level1:deb:lalxml:
   <<: *levelN-deb-package
   stage: level1
   dependencies:
