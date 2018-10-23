@@ -36,9 +36,6 @@
 #if defined(HAVE_LIBLALMETAIO)
 #include <lal/LALMetaIOVCSInfoHeader.h>
 #endif
-#if defined(HAVE_LIBLALXML)
-#include <lal/LALXMLVCSInfoHeader.h>
-#endif
 #if defined(HAVE_LIBLALSIMULATION)
 #include <lal/LALSimulationVCSInfoHeader.h>
 #endif
@@ -109,9 +106,6 @@ const LALVCSInfoList lal@PACKAGE_NAME_NOLAL@VCSInfoList = {
 #if defined(HAVE_LIBLALMETAIO)
   &lalMetaIOVCSInfo,
 #endif
-#if defined(HAVE_LIBLALXML)
-  &lalXMLVCSInfo,
-#endif
 #if defined(HAVE_LIBLALSIMULATION)
   &lalSimulationVCSInfo,
 #endif
@@ -156,9 +150,6 @@ void @PACKAGE_NAME_UCASE@_VCS_LINK_CHECK(void)
 #endif
 #if defined(HAVE_LIBLALMETAIO) && LALMETAIO_VERSION_DEVEL != 0
   LALMETAIO_VCS_LINK_CHECK();
-#endif
-#if defined(HAVE_LIBLALXML) && LALXML_VERSION_DEVEL != 0
-  LALXML_VCS_LINK_CHECK();
 #endif
 #if defined(HAVE_LIBLALSIMULATION) && LALSIMULATION_VERSION_DEVEL != 0
   LALSIMULATION_VCS_LINK_CHECK();
