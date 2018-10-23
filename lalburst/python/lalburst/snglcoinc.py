@@ -140,6 +140,15 @@ class singlesqueue(object):
 		self.index = {}
 
 	@property
+	def age(self):
+		"""
+		Using .event_time() to define the times of events, the time
+		of the oldest event in the queue or segments.NegInfinity if
+		the queue is empty.
+		"""
+		return self.end_time(self.queue[0]) if self.queue else NegInfinity
+
+	@property
 	def t_coinc_complete(self):
 		"""
 		Using .event_time() to define the times of events, events
@@ -355,6 +364,13 @@ class coincgen_doubles(object):
 		self.used = set()
 
 	@property
+	def age(self):
+		"""
+		The earliest of the internal queues' .age.
+		"""
+		return min(queue.age for queue in self.queues.values())
+
+	@property
 	def t_complete(self):
 		"""
 		The earliest of the internal queues' .t_complete.
@@ -524,6 +540,13 @@ class TimeSlideGraphNode(object):
 			self.index = self.components[0].index
 		else:
 			raise ValueError("offset_vector cannot be empty")
+
+	@property
+	def age(self):
+		"""
+		The earliest of the component nodes' .age.
+		"""
+		return min(node.age for node in self.components)
 
 	@property
 	def t_complete(self):
@@ -797,6 +820,14 @@ class TimeSlideGraph(object):
 				# nodes in the graph rooted on this node
 				return numpy.array((1, 0)) if len(node.components) == 1 else numpy.array((0, 1)) + sum(walk(node) for node in node.components)
 			print("graph contains %d fundamental nodes, %d higher-order nodes" % tuple(sum(walk(node) for node in self.head)), file=sys.stderr)
+
+
+	@property
+	def age(self):
+		"""
+		The earliest of the graph's head nodes' .age.
+		"""
+		return min(node.age for node in self.head)
 
 
 	def push(self, instrument, events, t_complete):
