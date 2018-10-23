@@ -35,7 +35,6 @@ LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALSIMULATION
 LALSUITE_ENABLE_LALBURST
-LALSUITE_ENABLE_LALDETCHAR
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALSTOCHASTIC
 LALSUITE_ENABLE_LALPULSAR
@@ -125,7 +124,6 @@ lalsuite_config_subdir([LALFrame])
 lalsuite_config_subdir([LALMetaIO])
 lalsuite_config_subdir([LALSimulation])
 lalsuite_config_subdir([LALBurst])
-lalsuite_config_subdir([LALDetChar])
 lalsuite_config_subdir([LALInspiral])
 lalsuite_config_subdir([LALStochastic])
 lalsuite_config_subdir([LALPulsar])
@@ -150,7 +148,6 @@ LALSuite has now been successfully configured:
 * LALMetaIO library support is $LALMETAIO_ENABLE_VAL
 * LALSimulation library support is $LALSIMULATION_ENABLE_VAL
 * LALBurst library support is $LALBURST_ENABLE_VAL
-* LALDetChar library support is $LALDETCHAR_ENABLE_VAL
 * LALInspiral library support is $LALINSPIRAL_ENABLE_VAL
 * LALStochastic library support is $LALSTOCHASTIC_ENABLE_VAL
 * LALPulsar library support is $LALPULSAR_ENABLE_VAL
