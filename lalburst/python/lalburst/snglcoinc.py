@@ -48,7 +48,10 @@ import scipy.optimize
 from scipy import spatial
 import sys
 try:
-	from UserDict import DictMixin as UserDict
+	# python 2
+	from UserDict import DictMixin
+	class UserDict(object, DictMixin):
+		pass
 except ImportError:
 	# python 3
 	from collections import UserDict
@@ -243,7 +246,7 @@ class singlesqueue(object):
 		return tuple(events), tuple(itertools.takewhile(lambda event: self.event_time(event) < t, self.queue))
 
 
-class multidict(object, UserDict):
+class multidict(UserDict):
 	"""
 	Read-only dictionary view into a collection of dictionaries.
 
