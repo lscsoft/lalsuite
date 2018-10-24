@@ -41,13 +41,13 @@ import matplotlib
 matplotlib.use("Agg")
 
 #local application/library specific imports
-from pylal import git_version
+from lalapps import git_version
 from lalapps.pulsarpputils import *
 from lalapps.pulsarhtmlutils import *
 
-__author__="Matthew Pitkin <matthew.pitkin@ligo.org>"
-__version__= "git id %s"%git_version.id
-__date__= git_version.date
+__author__ = "Matthew Pitkin <matthew.pitkin@ligo.org>"
+__version__ = "git id {}".format(git_version.id)
+__date__ = git_version.date
 
 
 # create format for the output page
