@@ -368,6 +368,8 @@ static int init_PhenomHM_Storage(
         PhenomInternal_nudge(&(p->eta), 0.25, 1e-6);
     if (p->eta > 0.25 || p->eta < 0.0)
         XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
+    if (p->eta < MAX_ALLOWED_ETA)
+        XLAL_PRINT_WARNING("Warning: The model is not calibrated for mass-ratios above 20\n");
 
     retcode = 0;
     retcode = PhenomInternal_AlignedSpinEnforcePrimaryIsm1(

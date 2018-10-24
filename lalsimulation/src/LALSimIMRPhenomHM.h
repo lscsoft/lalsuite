@@ -25,6 +25,15 @@ extern "C" {
 #define PHENOMHM_DEFAULT_MF_MAX 0.5
 
 /**
+ * eta is the symmetric mass-ratio.
+ * This number corresponds to a mass-ratio of 20
+ * The underlying PhenomD model was calibrated to mass-ratio 18
+ * simulations. We choose mass-ratio 20 as a conservative
+ * limit on where the model should be accurate.
+ */
+#define MAX_ALLOWED_ETA 0.045351
+
+/**
  * Maximum number of (l,m) mode paris PhenomHM models.
  * Only count positive 'm' modes.
  * Used to set default mode array
