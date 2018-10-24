@@ -35,6 +35,29 @@ cache:
     - ccache
 
 #
+# ci documentation
+#
+
+documentation:
+  image: ligo/lalsuite-dev:stretch
+  stage: level0
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen --prefix=${LAL_DIR}
+    - make -j4 install-html
+    - pushd ${LAL_DIR}/share/doc
+    - cp lalsuite/index.html index.html
+    - sed -i 's/..\/lal/lal/g' index.html
+    - popd
+  artifacts:
+    expire_in: 18h
+    paths:
+      - ${LAL_DIR}/share/doc
+  only:
+    - pushes
+    - web
+
+#
 # build rpms
 #
 
