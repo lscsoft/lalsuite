@@ -862,10 +862,16 @@ class TimeSlideGraph(object):
 		of events is known to be complete.  That is, in the future
 		no new events will be pushed whose times are earlier than
 		t_complete.
+
+		Returns True if the graph state has changed in a way that
+		might allow new candidates to be constructed, False if it
+		is not possible for new candidates to be constructed.
 		"""
+		t_before = self.t_coinc_complete
 		for node in self.head:
 			if instrument in node.offset_vector:
 				node.push(instrument, events, t_complete)
+		return self.t_coinc_complete != t_before
 
 
 	def pull(self, threshold_data, newly_used = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = (lambda events: False), verbose = False):
