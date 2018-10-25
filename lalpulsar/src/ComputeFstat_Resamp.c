@@ -39,7 +39,7 @@
 /// \defgroup ComputeFstat_Resamp_c Module ComputeFstat_Resamp.c
 /// \ingroup ComputeFstat_h
 /// \brief Implements the \a Resamp: FFT-based resampling algorithm for
-/// computing the \f$\mathcal{F}\f$-statistic \cite JKS98
+/// computing the \f$\mathcal{F}\f$-statistic \cite JKS98 .
 ///
 
 // @{

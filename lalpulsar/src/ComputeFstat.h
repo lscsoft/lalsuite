@@ -96,8 +96,8 @@ typedef enum tagFstatQuantities {
 
 ///
 /// Different methods available to compute the \f$\mathcal{F}\f$-statistic, falling into two broad classes:
-/// * \a Demod: Dirichlet kernel-based demodulation \cite Williams1999
-/// * \a Resamp: FFT-based resampling \cite JKS98
+/// * \a Demod: Dirichlet kernel-based demodulation \cite Williams1999 .
+/// * \a Resamp: FFT-based resampling \cite JKS98 .
 ///
 typedef enum tagFstatMethodType {
 
