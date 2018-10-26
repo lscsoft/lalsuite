@@ -254,7 +254,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
     LALInferenceNameOutputs(runState);
     LALInferenceResumeMCMC(runState);
-    if (MPIrank == 0)
+    if (MPIrank == 0){
         /* TODO: Write metadata */
         LALInferenceVariables *injParams = NULL;
         output = XLALH5FileOpen(runState->outFileName, "w");
@@ -272,7 +272,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         }
         XLALH5FileClose(group);
         XLALH5FileClose(output);
-
+    }
+    
     if (benchmark) {
         struct timeval start_tv;
         gettimeofday(&start_tv, NULL);
