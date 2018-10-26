@@ -35,7 +35,7 @@
 /// \defgroup ComputeFstat_Demod_c Module ComputeFstat_Demod.c
 /// \ingroup ComputeFstat_h
 /// \brief Implements the \a Demod Dirichlet kernel-based demodulation algorithm
-/// for computing the \f$\mathcal{F}\f$-statistic \cite Williams1999
+/// for computing the \f$\mathcal{F}\f$-statistic \cite Williams1999 .
 ///
 
 // @{
