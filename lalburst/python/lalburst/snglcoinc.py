@@ -816,14 +816,24 @@ class TimeSlideGraph(object):
 		)
 		self.index = multidict(*(node.index for node in self.head))
 		# the set of the Python id()'s of the events contained in
-		# the internal queues that have been reported in
-		# coincidences (including single-detector coincidences if
+		# the internal queues that have formed coincident
+		# candidates (including single-detector coincidences if
+		# min_instruments = 1).  this is used to allow .pull() to
+		# determine which of the events being flushed from the
+		# internal queues has never been reported in a candidate.
+		# calling codes can use this information to identify noise
+		# samples for use in defining background models.
+		self.used_ids = set()
+
+		# the set of the Python id()'s of the events contained in
+		# the internal queues that have been reported in coincident
+		# candidates (including single-detector coincidences if
 		# min_instruments = 1).  this is used to allow .pull() to
 		# report which of the events it has found in coincidences
 		# is being reported in a coincidence for the first time.
 		# this can be used by calling code to be informed of which
 		# events should be moved to an output document for storage.
-		self.used = set()
+		self.reported_ids = set()
 
 		#
 		# done
@@ -874,7 +884,7 @@ class TimeSlideGraph(object):
 		return self.t_coinc_complete != t_before
 
 
-	def pull(self, threshold_data, newly_used = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = (lambda events: False), verbose = False):
+	def pull(self, threshold_data, newly_reported = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = None, verbose = False):
 		if verbose:
 			print("constructing coincs for target offset vectors ...", file=sys.stderr)
 
@@ -901,8 +911,12 @@ class TimeSlideGraph(object):
 		# when the loop terminates
 		index = dict(self.index.iteritems())
 
-		newly_used_ids = set()
-		sieved_ids = set()
+		# default the coinc sieve
+		if coinc_sieve is None:
+			coinc_sieve = lambda events: False
+
+		used_ids = set()
+		newly_reported_ids = set()
 		flushed_ids = set()
 		for n, node in enumerate(self.head, start = 1):
 			if verbose:
@@ -914,31 +928,36 @@ class TimeSlideGraph(object):
 			coincs, partial_coincs, _flushed_ids = node.pull(t, threshold_data, verbose)
 			flushed_ids |= _flushed_ids
 			for coinc in itertools.chain(coincs, partial_coincs):
+				used_ids.update(coinc)
 				# use the index to convert Python IDs back
 				# to event objects
 				events = tuple(index[event_id] for event_id in coinc)
 				# apply the coinc sieve test.  this lever
 				# allows calling code to reduce the event
 				# rate going into output documents
-				if coinc_sieve(events):
-					sieved_ids.update(coinc)
-				else:
-					newly_used_ids.update(coinc)
+				if not coinc_sieve(events):
+					newly_reported_ids.update(coinc)
 					yield node, events
-		if newly_used_ids or sieved_ids:
-			newly_used_ids -= self.used
-			sieved_ids -= self.used
-			self.used |= newly_used_ids | sieved_ids
-		flushed_unused_ids = flushed_ids - self.used
-		self.used -= flushed_ids
+		self.used_ids |= used_ids
+		if newly_reported_ids:
+			newly_reported_ids -= self.reported_ids
+			self.reported_ids |= newly_reported_ids
+		if flushed_ids:
+			flushed_unused_ids = flushed_ids - self.used_ids
+			self.used_ids -= flushed_ids
+			self.reported_ids -= flushed_ids
+		else:
+			flushed_unused_ids = set()
+
 		# if we've been flushed then there can't be any events left
-		# in the queues
-		assert not flush or not (self.used or self.index)
+		# in the queues (the or in parentheses is a boolean
+		# operation, not a set operation)
+		assert not flush or not (self.used_ids or self.reported_ids)
 
 		# use the index to populate newly_used, flushed, and
 		# flushed_unused with event objects
-		if newly_used is not None:
-			newly_used[:] = (index[event_id] for event_id in newly_used_ids)
+		if newly_reported is not None:
+			newly_reported[:] = (index[event_id] for event_id in newly_reported_ids)
 		if flushed is not None:
 			flushed[:] = (index[event_id] for event_id in flushed_ids)
 		if flushed_unused is not None:
