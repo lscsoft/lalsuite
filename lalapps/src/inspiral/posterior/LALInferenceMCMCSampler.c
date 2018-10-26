@@ -257,6 +257,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     if (MPIrank == 0){
         /* TODO: Write metadata */
         LALInferenceVariables *injParams = NULL;
+        LALH5File *output = NULL;
         output = XLALH5FileOpen(runState->outFileName, "w");
         if(output == NULL){
             XLALErrorHandler = XLALExitErrorHandler;
