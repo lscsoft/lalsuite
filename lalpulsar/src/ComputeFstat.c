@@ -106,7 +106,7 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
 /// encounter this restriction by using standard 1800-second SFTs, but searches for CW sources in
 /// binary systems typically must use shorter SFTs.
 ///
-/// An expression giving the maximum allowed SFT length is given by \cite LeaciPrix2015 :
+/// An expression giving the maximum allowed SFT length is given by \cite LeaciPrix2015 , eq. (C2):
 /// \f[
 ///   T_{\textrm{SFT-max}} = \sqrt{ \frac{
 ///     6 \sqrt{ 5 \mu_{\textrm{SFT}} }
