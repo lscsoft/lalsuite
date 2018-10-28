@@ -16,13 +16,6 @@ export LC_ALL=C
 builddir="./";
 injectdir="../Injections/"
 
-## ----- user-controlled level of debug-output detail
-if [ -n "$DEBUG" ]; then
-    debug=${DEBUG}
-else
-    debug=0	## default=quiet
-fi
-
 ## ----- allow user-control of hotloop variant to use
 if [ -n "$FSTAT_METHOD" ]; then
     FstatMethod="--FstatMethod=${FSTAT_METHOD}"
@@ -139,7 +132,7 @@ fi
 
 cmdline="$mfd_code $mfd_CL --randSeed=1"
 echo $cmdline;
-if ! eval "$cmdline 2> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$mfd_code' ..."
     exit 1
 fi
@@ -162,7 +155,7 @@ cfs_CL_run1="${cfs_CL_base} ${cfs_searchBand} --outputFstat=${outfile_Fstat1} --
 
 cmdline="$cfsv2_code $cfs_CL_run1"
 echo $cmdline;
-if ! eval "$cmdline 2> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$cfsv2_code' ..."
     exit 1;
 fi
@@ -260,7 +253,7 @@ t0Band=$(echo $Tdata $taumin | awk '{printf "%d", $1-$2 }');
 cfs_CL_run2="${cfs_CL_base} ${cfs_searchBand} --outputFstat=${outfile_Fstat2} --outputLoudest=${outfile_Loudest2} --outputTransientStats=${outfile_transient2} --transient-WindowType=rect --transient-t0Epoch=$t0min --transient-t0Band=$t0Band --transient-dt0=$Tsft --transient-tau=$taumin --transient-tauBand=$tauBand --transient-dtau=$Tsft"
 cmdline="$cfsv2_code $cfs_CL_run2"
 echo $cmdline;
-if ! eval "$cmdline 2> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$cfsv2_code' ..."
     exit 1;
 fi
@@ -398,7 +391,7 @@ echo
 cfs_CL_run3="${cfs_CL_base} --Freq=$Freq --FreqBand=0 --dFreq=0 --f1dot=$f1dot --f1dotBand=0 --df1dot=0 --outputTransientStatsAll=${outfile_transientMap3} --transient-WindowType=rect --transient-t0Epoch=$t0min --transient-t0Band=$t0Band --transient-dt0=$Tsft --transient-tau=$taumin --transient-tauBand=$tauBand --transient-dtau=$Tsft"
 cmdline="$cfsv2_code $cfs_CL_run3"
 echo $cmdline;
-if ! eval "$cmdline 2> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$cfsv2_code' ..."
     exit 1;
 fi

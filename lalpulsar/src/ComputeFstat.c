@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <gsl/gsl_math.h>
 
 #define _COMPUTE_FSTAT_C
 #include "ComputeFstat_internal.h"
@@ -37,6 +38,7 @@
 
 // Internal definition of input data structure
 struct tagFstatInput {
+  REAL8 Tsft;						// Length of input SFTs (for maximum length checking)
   REAL8 minFreqFull;					// Minimum frequency loaded from input SFTs
   REAL8 maxFreqFull;					// Maximum frequency loaded from input SFTs
   int singleFreqBin;					// True if XLALComputeFstat() can only compute a single frequency bin, due to zero dFreq being passed to XLALCreateFstatInput()
@@ -83,6 +85,73 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
 };
 
 // ==================== Function definitions =================== //
+
+///
+/// Compute the maximum SFT length that can safely be used as input to XLALComputeFstat(), given
+/// the desired range limits in search parameters.
+///
+/// The \f$\mathcal{F}\f$-statistic algorithms implemented in this module assume that the input
+/// SFTs supplied to XLALCreateFstatInput() are of such a length that, within the time span of
+/// each any SFT, the spectrum of any CW signal being search for will be mostly contained within
+/// one SFT bin:
+/// * The \a Demod algorithm make explicit use of this assumption in order to sum up only a few
+///   bins in the Dirichlet kernel, thereby speeding up the computation.
+/// * While the \a Resamp algorithm is in principle independent of the SFT length (as the data
+///   are converted from SFTs back into a time series) it practise it makes use of this assumption
+///   for convenience to linearly approximate the phase over the time span of a single SFT.
+///
+/// In order for this assumption to be valid, the SFT bins must be of a certain minimum size, and
+/// hence the time spans of the SFTs must be of a certain maximum length. This maximum length is
+/// dependent upon the parameter space being searched: searches for isolated CW sources rarely
+/// encounter this restriction by using standard 1800-second SFTs, but searches for CW sources in
+/// binary systems typically must use shorter SFTs.
+///
+/// An expression giving the maximum allowed SFT length is given by \cite LeaciPrix2015 , eq. (C2):
+/// \f[
+///   T_{\textrm{SFT-max}} = \sqrt{ \frac{
+///     6 \sqrt{ 5 \mu_{\textrm{SFT}} }
+///   }{
+///     \pi (a \sin\iota / c)_{\textrm{max}} f_{\textrm{max}} \Omega_{\textrm{max}}^2
+///   } } \,,
+/// \f]
+/// This function computes this expression with \f$\mu_{\textrm{SFT}} = 0.01\f$, and
+/// \f$(a \sin\iota / c)_{\textrm{max}}\f$ and \f$\Omega_{\textrm{max}}\f$ set to either the binary
+/// motion of the source, as specified by \p binaryMaxAsini and \p binaryMinPeriod, or the sidereal
+/// motion of the Earth, i.e. with \f$(a \sin\iota / c) \sim 0.02~\textrm{s}\f$ and
+/// \f$\Omega \sim 2\pi / 1~\textrm{day}\f$.
+///
+REAL8 XLALFstatMaximumSFTLength ( const REAL8 maxFreq,          /**< [in] Maximum signal frequency */
+                                  const REAL8 binaryMaxAsini,   /**< [in] Maximum projected semi-major axis a*sini/c (= 0 for isolated sources) */
+                                  const REAL8 binaryMinPeriod   /**< [in] Minimum orbital period (s) */
+  )
+{
+
+  // Check input
+  XLAL_CHECK_REAL8( maxFreq > 0, XLAL_EINVAL );
+  XLAL_CHECK_REAL8( binaryMaxAsini >= 0, XLAL_EINVAL );
+  XLAL_CHECK_REAL8( (binaryMaxAsini == 0) || (binaryMinPeriod > 0), XLAL_EINVAL );	// if binary: P>0
+
+  // Use 1% mismatch in maximum allowed SFT length expression
+  const REAL8 mu_SFT = 0.01;
+
+  // Compute maximum allowed SFT length due to sidereal motion of the Earth
+  const REAL8 earthAsini = LAL_REARTH_SI / LAL_C_SI;
+  const REAL8 earthOmega = LAL_TWOPI / LAL_DAYSID_SI;
+  const REAL8 Tsft_max_earth = sqrt( ( 6.0 * sqrt( 5.0 * mu_SFT ) ) / ( LAL_PI * earthAsini * maxFreq * earthOmega * earthOmega ) );
+  if ( binaryMaxAsini == 0 ) {
+    return Tsft_max_earth;
+  }
+
+  // Compute maximum allowed SFT length due to binary motion of the source
+  const REAL8 binaryMaxOmega = LAL_TWOPI / binaryMinPeriod;
+  const REAL8 Tsft_max_binary = sqrt( ( 6.0 * sqrt( 5.0 * mu_SFT ) ) / ( LAL_PI * binaryMaxAsini * maxFreq * binaryMaxOmega * binaryMaxOmega ) );
+
+  // Compute maximum allowed SFT length
+  const REAL8 Tsft_max = GSL_MIN( Tsft_max_earth, Tsft_max_binary );
+
+  return Tsft_max;
+
+} // XLALFstatMaximumSFTLength()
 
 ///
 /// Create a #FstatInputVector of the given length, for example for setting up
@@ -344,8 +413,8 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
 
   }
 
-  // Determine the time baseline of an SFT
-  const REAL8 Tsft = 1.0 / SFTcatalog->data[0].header.deltaF;
+  // Determine the length of an SFT
+  input->Tsft = 1.0 / SFTcatalog->data[0].header.deltaF;
 
   // Compute the mid-time and time-span of the SFTs
   double Tspan = 0;
@@ -353,7 +422,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
     const LIGOTimeGPS startTime = SFTcatalog->data[0].header.epoch;
     const LIGOTimeGPS endTime   = SFTcatalog->data[SFTcatalog->length - 1].header.epoch;
     common->midTime = startTime;
-    Tspan = Tsft + XLALGPSDiff( &endTime, &startTime );
+    Tspan = input->Tsft + XLALGPSDiff( &endTime, &startTime );
     XLALGPSAdd ( &common->midTime, 0.5 * Tspan );
   }
 
@@ -371,11 +440,11 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
     int extraBinsFull = extraBinsMethod + optArgs.runningMedianWindow/2 + 1; // NOTE: running-median window needed irrespective of assumeSqrtSX!
 
     // Extend frequency range by number of extra bins times SFT bin width
-    const REAL8 extraFreqMethod = extraBinsMethod / Tsft;
+    const REAL8 extraFreqMethod = extraBinsMethod / input->Tsft;
     minFreqMethod = minCoverFreq - extraFreqMethod;
     maxFreqMethod = maxCoverFreq + extraFreqMethod;
 
-    const REAL8 extraFreqFull = extraBinsFull / Tsft;
+    const REAL8 extraFreqFull = extraBinsFull / input->Tsft;
     input->minFreqFull = minCoverFreq - extraFreqFull;
     input->maxFreqFull = maxCoverFreq + extraFreqFull;
 
@@ -470,7 +539,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   XLAL_CHECK_NULL ( XLALMultiSFTVectorResizeBand ( multiSFTs, minFreqMethod, maxFreqMethod - minFreqMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Get detector states, with a timestamp shift of Tsft/2
-  const REAL8 tOffset = 0.5 * Tsft;
+  const REAL8 tOffset = 0.5 * input->Tsft;
   XLAL_CHECK_NULL ( (common->multiDetectorStates = XLALGetMultiDetectorStates ( common->multiTimestamps, &common->detectors, ephemerides, tOffset )) != NULL, XLAL_EFUNC );
 
   // Save ephemerides and SSB precision
@@ -622,6 +691,14 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
   XLAL_CHECK ( numFreqBins > 0, XLAL_EINVAL);
   XLAL_CHECK ( !input->singleFreqBin || numFreqBins == 1, XLAL_EINVAL, "numFreqBins must be 1 if XLALCreateFstatInput() was passed zero dFreq" );
   XLAL_CHECK ( whatToCompute < FSTATQ_LAST, XLAL_EINVAL);
+
+  // Check that SFT length is within allowed maximum
+  {
+    const REAL8 maxFreq = doppler->fkdot[0] + input->common.dFreq * numFreqBins;
+    const REAL8 Tsft_max = XLALFstatMaximumSFTLength( maxFreq, doppler->asini, doppler->period );
+    XLAL_CHECK ( !XLALIsREAL8FailNaN( Tsft_max ), XLAL_EINVAL );
+    XLAL_CHECK ( input->Tsft < Tsft_max, XLAL_EINVAL, "Length of input SFTs (%g s) must be less than %g s for CW signal with frequency = %g, binary asini = %g, period = %g", input->Tsft, Tsft_max, maxFreq, doppler->asini, doppler->period );
+  }
 
   // Allocate results struct, if needed
   if ( (*Fstats) == NULL ) {

@@ -1422,6 +1422,10 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     XLALFree ( detector );
   }
 
+  /* maximum ranges of binary orbit parameters */
+  const REAL8 binaryMaxAsini = MYMAX( uvar->orbitasini, uvar->orbitasini + uvar->orbitasiniBand );
+  const REAL8 binaryMinPeriod = MYMIN( uvar->orbitPeriod, uvar->orbitPeriod + uvar->orbitPeriodBand );
+  const REAL8 binaryMaxEcc = MYMAX( uvar->orbitEcc, uvar->orbitEcc + uvar->orbitEccBand );
 
   { /* ----- What frequency-band do we need to read from the SFTs?
      * propagate spin-range from refTime to startTime and endTime of observation
@@ -1443,12 +1447,17 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     memcpy ( cfg->searchRegion.fkdotBand, spinRangeRef.fkdotBand, sizeof(cfg->searchRegion.fkdotBand) );
 
     // Compute covering frequency range, accounting for Doppler modulation due to the Earth and any binary companion */
-    const REAL8 binaryMaxAsini = MYMAX( uvar->orbitasini, uvar->orbitasini + uvar->orbitasiniBand );
-    const REAL8 binaryMinPeriod = MYMIN( uvar->orbitPeriod, uvar->orbitPeriod + uvar->orbitPeriodBand );
-    const REAL8 binaryMaxEcc = MYMAX( uvar->orbitEcc, uvar->orbitEcc + uvar->orbitEccBand );
     XLALCWSignalCoveringBand( &fCoverMin, &fCoverMax, &cfg->startTime, &endTime, &spinRangeRef, binaryMaxAsini, binaryMinPeriod, binaryMaxEcc );
 
   } /* extrapolate spin-range */
+
+  /* check that SFT length is within allowed maximum */
+  {
+    /* use fCoverMax here to work with loading grid from file (--gridType=6) */
+    const REAL8 Tsft_max = XLALFstatMaximumSFTLength( fCoverMax, binaryMaxAsini, binaryMinPeriod );
+    XLAL_CHECK ( !XLALIsREAL8FailNaN( Tsft_max ), XLAL_EINVAL );
+    XLAL_CHECK ( cfg->Tsft < Tsft_max, XLAL_EINVAL, "Length of input SFTs (%g s) must be less than %g s for CW signal with frequency = %g, binary asini = %g, period = %g", cfg->Tsft, Tsft_max, fCoverMax, binaryMaxAsini, binaryMinPeriod );
+  }
 
   /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
   MultiNoiseFloor s_assumeSqrtSX, *assumeSqrtSX;
