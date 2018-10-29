@@ -73,7 +73,7 @@
  * ### Uses ###
  *
  * <tt>fopen()</tt>
- * <tt>fprintf()</tt>
+ * <tt>XLALFilePrintf()</tt>
  * <tt>fclose()</tt>
  *
  * ### Notes ###
@@ -95,7 +95,7 @@
  * \ref LIGOLwXMLHeaders.h.  For example, to change the <tt> sngl_inspiral</tt>
  * table, you must edit \c SNGL_INSPIRAL_ROW.</li>
  *
- * <li> Change the fprintf command which writes the table rows.  This is contained
+ * <li> Change the XLALFilePrintf command which writes the table rows.  This is contained
  * in \ref LIGOLwXML.c.
  * </ol>
  *

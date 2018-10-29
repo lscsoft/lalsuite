@@ -20,7 +20,6 @@ pkginclude_HEADERS = \
 lib_LTLIBRARIES = liblalmetaio.la
 
 liblalmetaio_la_SOURCES = \
-	CreateMetaTableDir.c \
 	LIGOLwXML.c \
 	LIGOLwXMLArray.c \
 	LIGOLwXMLRead.c \
