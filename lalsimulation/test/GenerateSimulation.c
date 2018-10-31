@@ -403,7 +403,7 @@ static int dump_FD(FILE *f, COMPLEX16FrequencySeries *hptilde,
 
     fprintf(f, "# f hptilde.re hptilde.im hctilde.re hctilde.im\n");
     for (i=0; i < hptilde->data->length; i++)
-        fprintf(f, "%25.16e %25.16e %25.16e %25.16e %25.16e\n",
+        fprintf(f, "%.16e %.16e %.16e %.16e %.16e\n",
                 hptilde->f0 + i * hptilde->deltaF,
                 creal(dataPtr1[i]), cimag(dataPtr1[i]), creal(dataPtr2[i]), cimag(dataPtr2[i]));
     return 0;

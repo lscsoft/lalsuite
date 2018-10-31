@@ -543,7 +543,6 @@ int XLALSimInspiralTaylorF2(
 
     return ret;
 }
-/* include eccentric TaylorF2 waveform added by KGWG PE team */
 #include "LALSimInspiralTaylorF2Ecc.c"
 
 /** @} */
