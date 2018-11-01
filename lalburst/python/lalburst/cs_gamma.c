@@ -1,6 +1,7 @@
 /*
 *  Copyright (C) 2007 Xavier Siemens
 *  Copyright (C) 2010 Andrew Mergl
+*  Copyright (C) 2018 Daichi Tsuna
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -19,19 +20,22 @@
 */
 
 /*********************************************************************************/
-/*            Cosmic string burst rate computation code for small loops          */
+/*         Cosmic string burst rate computation code for small/large loops       */
 /*                                                                               */
 /*                  Xavier Siemens, Jolien Creighton, Irit Maor                  */
 /*                                                                               */
 /*                         UWM/Caltech - September 2006                          */
 /*********************************************************************************/
 /*Modified June 2010 by Andrew Mergl for use with Python*/
+/* Modified November 2018 by Daichi Tsuna to include large loop scenarios */
+/* Updated to be able to test 3 models of large loop distributions */
 
 #include <Python.h>
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_errno.h>
@@ -195,6 +199,180 @@ static PyObject *cs_gamma_findzofA(PyObject *self, PyObject *args)
   return Numpy_zofA;
 }
 
+
+/*******************************************************************************/
+/* nu(double Gmu, double Gamma, double *amp, double *z, char model)
+ * Find loop distribution givem Gmu, Gamma, amplitude, z, and a particular large loop model.
+ * The loop distribution nu is calculated as a function of amp and z, and is
+ * returned as an array having a size of Namp * Nz.
+ */
+/*****************************************************************************/
+static double nu(double Gmu, double Gamma, double A, double z, double phit, double phiA, const char *model)
+{
+	double l = pow( A / Gmu / H0 * pow(1.0+z,1.0/3.0)* phiA, 3.0/2.0);
+	double alpha, nuR, nuM;
+	double P_R=1.60, P_M=1.41, a_index_R=1.0/2.0, a_index_M=2.0/3.0;
+	double Upsilon = 10.0;
+	double chi_R=1.0-P_R/2.0;
+	double chi_M=1.0-P_M/2.0;
+	double gamma_c_R, gamma_c_M;
+	double t=phit/H0;
+	double cuspdist;
+	double teq=8.122570474611143e+11;
+	double crateR, crateRadStragglers, crateM;
+	double crate;
+
+	if (strcmp(model,"Siemens06") == 0) {
+		alpha=1e-1;
+		nuR=0.4*15*sqrt(alpha);
+		nuM=0.12*4;
+		/* Radiation era loops */
+		crateR = 0.0;
+		if( (l < alpha*t) && (t < teq) )
+			crateR = nuR * pow(t,-1.5) * pow( l + Gamma*Gmu/H0 * phit, -2.5 );
+
+		/* Radiation stragglers */
+		crateRadStragglers = 0.0;
+		if ( (l <  alpha*teq-Gamma*Gmu*(t-teq) ) && ( t > teq ) )
+			crateRadStragglers = nuR*pow(teq, 0.5)/t/t* pow( l + Gamma*Gmu/H0 * phit, -2.5);
+
+		/* matter era loops */
+		crateM = 0.0;
+		if( (l < alpha*t) && (t > teq) && (l >  alpha*teq-Gamma*Gmu*(t-teq)) )
+			crateM = nuM / t / t / ( l + Gamma*Gmu/H0 * phit) / ( l + Gamma*Gmu/H0 * phit);
+
+		crate = crateR + crateRadStragglers + crateM;
+		} else if (strcmp(model,"Blanco-Pillado14") == 0) {
+		alpha = 0.1;
+		nuR = 0.18;
+		/* Radiation era loops */
+		crateR = 0.0;
+		if( (l < alpha*t) && (t < teq) )
+			crateR = nuR * pow(t,-1.5) * pow( l + Gamma*Gmu/H0 * phit, -2.5 );
+
+		/* Radiation stragglers */
+		crateRadStragglers = 0.0;
+		if ( (l <  alpha*teq-Gamma*Gmu*(t-teq) ) && ( t > teq ) )
+			crateRadStragglers = nuR*pow(teq, 0.5)/t/t* pow( l + Gamma*Gmu/H0 * phit, -2.5);
+
+		/* matter era loops */
+		crateM = 0.0;
+		if( (l < 0.18*t) && (t > teq) && (l >  alpha*teq-Gamma*Gmu*(t-teq)) )
+			crateM = (0.27-0.45*pow(l/t,0.31)) / t / t / ( l + Gamma*Gmu/H0 * phit) / ( l + Gamma*Gmu/H0 * phit);
+
+		crate = crateR + crateRadStragglers + crateM;
+	} else if (strcmp(model,"Ringeval07") == 0) {
+		nuR = 0.21 * pow(1.0-a_index_R, 3.0-P_R);
+		nuM = 0.09 * pow(1.0-a_index_M, 3.0-P_M);
+		crateR = 0.0;
+		crateM = 0.0;
+		gamma_c_R = Upsilon * pow(Gmu,1.0+2.0*chi_R);
+		gamma_c_M = Upsilon * pow(Gmu,1.0+2.0*chi_M);
+		/* Radiation era loops */
+		if( (l > Gamma * Gmu * t) && (l <= t/(1.0-a_index_R)) )
+			crateR = pow(t,-4.0) * nuR / pow(l/t + Gamma*Gmu, P_R+1);
+
+		if( (l > gamma_c_R * t) && (l <= Gamma * Gmu * t) )
+			crateR = pow(t,-4.0) * nuR * (3.0*a_index_R-2.0*chi_R-1.0) / (2.0-2.0*chi_R) / (Gamma*Gmu) / pow(l/t,P_R);
+
+		if(l <= gamma_c_R * t)
+			crateR = pow(t,-4.0) * nuR * (3.0*a_index_R-2.0*chi_R-1.0) / (2.0-2.0*chi_R) / (Gamma*Gmu) / pow(gamma_c_R,P_R);
+		/* Matter era loops */
+		if( (l > Gamma * Gmu * t) && (l <= t/(1.0-a_index_M)) )
+			crateM = pow(t,-4.0) * nuM / pow(l/t + Gamma*Gmu, P_M+1);
+
+		if( (l > gamma_c_M * t) && (l <= Gamma * Gmu * t) )
+			crateM = pow(t,-4.0) * nuM * (3.0*a_index_M-2.0*chi_M-1.0) / (2.0-2.0*chi_M) / (Gamma*Gmu) / pow(l/t,P_M);
+
+		if(l <= gamma_c_M * t)
+			crateM = pow(t,-4.0) * nuM * (3.0*a_index_M-2.0*chi_M-1.0) / (2.0-2.0*chi_M) / (Gamma*Gmu) / pow(gamma_c_M,P_M);
+
+		crate = crateR + crateM;
+	}
+
+	cuspdist = 3.0/A * crate;
+
+	return cuspdist;
+}
+
+/*******************************************************************************/
+/* finddRdzdA(double Gmu, double f, double Gamma, double *amp, double *z, double *nu)
+ * Find d^2R/dzdA givem Gmu, f, Gamma, amplitude, z, and the loop distribution.
+ * Using the equations formulated in e.g. arXiv:1712.01168 Appendix B, d^2R/dzdA is calculated
+ * as a function of amp and z, and is returned as an array having a size of Namp * Nz.
+ */
+/*****************************************************************************/
+static PyObject *cs_gamma_finddRdzdA(PyObject *self, PyObject *args)
+{
+	PyArrayObject *Numpy_amp, *Numpy_z;
+	PyObject *Numpy_dRdzdA;
+	double Gmu, f, Gamma, *amp, *z;
+	long int Namp, Nz;
+	int i,j;
+	char *model;
+	cs_cosmo_functions_t cosmofns;
+	(void)self;   /* silence unused parameter warning */
+
+	if (!PyArg_ParseTuple(args, "dddO!O!s", &Gmu, &f, &Gamma, &PyArray_Type, &Numpy_amp, &PyArray_Type, &Numpy_z, &model))
+		return NULL;
+
+	Numpy_amp = PyArray_GETCONTIGUOUS(Numpy_amp);
+	Numpy_z = PyArray_GETCONTIGUOUS(Numpy_z);
+	if(!Numpy_amp || !Numpy_z){
+		Py_DECREF(Numpy_amp);
+		Py_DECREF(Numpy_z);
+		return NULL;
+	}
+	Namp = PyArray_DIM(Numpy_amp, 0);
+	amp = PyArray_DATA(Numpy_amp);
+	Nz = PyArray_DIM(Numpy_z, 0);
+	z = PyArray_DATA(Numpy_z);
+
+	{
+	npy_intp dims[] = {Namp,Nz};
+	Numpy_dRdzdA = PyArray_SimpleNew(2, dims, NPY_DOUBLE);
+	}
+
+	cosmofns = XLALCSCosmoFunctions(z, Nz);
+
+	/* loop over amplitudes */
+	for ( i = 0; i < Namp; i++ ){
+		double A = amp[i];
+		/* loop over redshifts */
+		for ( j = 0; j < Nz; j++ ){
+			double phit = cosmofns.phit[j];
+			double phiA = cosmofns.phiA[j];
+			double phiV = cosmofns.phiV[j];
+			double l = pow ( A / Gmu / H0 * pow(1+z[j],1.0/3.0)* phiA, 3.0/2.0);
+			double theta = pow(f*(1+z[j])*l, -1.0/3.0);
+			double dRdzdA;
+
+			if(theta > 1.0){
+				dRdzdA = 0.0;
+			} else {
+				double Delta = 0.25*theta*theta;
+				dRdzdA = pow(H0,-3.0) * phiV / (1.0+z[j]) * nu(Gmu, Gamma, A, z[j], phit, phiA, model) * Delta;
+				if(gsl_isnan(dRdzdA)) {
+					Py_DECREF(Numpy_dRdzdA);
+					Numpy_dRdzdA = NULL;
+					XLALCSCosmoFunctionsFree( cosmofns );
+					Py_DECREF(Numpy_amp);
+					Py_DECREF(Numpy_z);
+					return NULL;
+				}
+			}
+			*(double *) PyArray_GETPTR2((PyArrayObject *) Numpy_dRdzdA, i, j) = dRdzdA;
+		}
+	}
+
+	XLALCSCosmoFunctionsFree( cosmofns );
+	Py_DECREF(Numpy_amp);
+	Py_DECREF(Numpy_z);
+
+	return Numpy_dRdzdA;
+}
+
+
 /*******************************************************************************/
 
 //List of functions available to the Python module.
@@ -203,6 +381,8 @@ static PyMethodDef cs_gammaMethods[] = {
   "Function to find z(A). From cs_gamma.c; modified to be called from Python."},
   {"finddRdz", cs_gamma_finddRdz, METH_VARARGS,
   "Function to find dR/dz. From cs_gamma.c; modified to be called from Python."},
+  {"finddRdzdA", cs_gamma_finddRdzdA, METH_VARARGS,
+  "Function to find d^2R/dzdA. From cs_gammaLargeLoops.c; modified to be called from Python."},
   {NULL, NULL, 0, NULL}
 };
 
@@ -223,3 +403,6 @@ PyInit_cs_gamma(void)
 
 
 SIX_COMPAT_MODULE(cs_gamma)
+
+
+
