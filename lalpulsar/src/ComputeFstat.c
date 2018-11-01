@@ -114,7 +114,7 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
 ///     \pi (a \sin\iota / c)_{\textrm{max}} f_{\textrm{max}} \Omega_{\textrm{max}}^2
 ///   } } \,,
 /// \f]
-/// This function computes this expression with \f$\mu_{\textrm{SFT}} = 0.01\f$, and
+/// This function computes this expression with \f$\mu_{\textrm{SFT}} = 0.05\f$, and
 /// \f$(a \sin\iota / c)_{\textrm{max}}\f$ and \f$\Omega_{\textrm{max}}\f$ set to either the binary
 /// motion of the source, as specified by \p binaryMaxAsini and \p binaryMinPeriod, or the sidereal
 /// motion of the Earth, i.e. with \f$(a \sin\iota / c) \sim 0.02~\textrm{s}\f$ and
@@ -131,8 +131,10 @@ REAL8 XLALFstatMaximumSFTLength ( const REAL8 maxFreq,          /**< [in] Maximu
   XLAL_CHECK_REAL8( binaryMaxAsini >= 0, XLAL_EINVAL );
   XLAL_CHECK_REAL8( (binaryMaxAsini == 0) || (binaryMinPeriod > 0), XLAL_EINVAL );	// if binary: P>0
 
-  // Use 1% mismatch in maximum allowed SFT length expression
-  const REAL8 mu_SFT = 0.01;
+  // Use 5% mismatch in maximum allowed SFT length expression
+  // - This currently hard-coded value allows a search using 1800-second SFTs for isolated CW signals with frequencies <~ 2054 Hz,
+  //   while preventing a search using 1800-second SFTs for a Sco X-1-like binary CW signal (which would require <~ 200-second SFTs)
+  const REAL8 mu_SFT = 0.05;
 
   // Compute maximum allowed SFT length due to sidereal motion of the Earth
   const REAL8 earthAsini = LAL_REARTH_SI / LAL_C_SI;
