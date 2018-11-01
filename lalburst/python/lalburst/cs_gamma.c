@@ -403,6 +403,3 @@ PyInit_cs_gamma(void)
 
 
 SIX_COMPAT_MODULE(cs_gamma)
-
-
-
