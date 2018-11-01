@@ -183,9 +183,9 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
                 psd = lalseries.read_psd_xmldoc(xmlpsd)
                 ligolw_utils.write_filename(xmlpsd, "psd.xml.gz", gz = True)
             else:
-                open("psd.xml.gz", "w").write(psdfileobj.read())
+                open("psd.xml.gz", "wb").write(psdfileobj.read())
             psdasciidic = get_xml_psds(os.path.realpath("./psd.xml.gz"),ifos,os.path.realpath('./PSDs'),end_time=None)
-            combine = np.loadtxt(psdasciidic[psdasciidic.keys()[0]])
+            combine = np.loadtxt(psdasciidic[list(psdasciidic.keys())[0]])
             srate_psdfile = pow(2.0, ceil( log(float(combine[-1][0]), 2) ) ) * 2
     coinc_map = lsctables.CoincMapTable.get_table(xmldoc)
     for coinc in coinc_events:
@@ -485,13 +485,13 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
     xmlpsd =  lalseries.read_psd_xmldoc(ligolw_utils.load_filename(psdxml,contenthandler = lalseries.PSDContentHandler))
     # Check the psd file contains all the IFOs we want to analize
     for ifo in ifos:
-        if not ifo in [i.encode('ascii') for i in xmlpsd.keys()]:
+        if not ifo in xmlpsd:
             print("ERROR. The PSD for the ifo %s does not seem to be contained in %s\n"%(ifo,psdxml))
             sys.exit(1)
     #loop over ifos in psd xml file
     for instrument in xmlpsd.keys():
         #name of the ascii file we are going to write the PSD into
-        path_to_ascii_psd=os.path.join(outpath,instrument.encode('ascii')+'_psd_'+time+'.txt')
+        path_to_ascii_psd=os.path.join(outpath,instrument+'_psd_'+time+'.txt')
         # Check we don't already have that ascii (e.g. because we are running parallel runs of the save event
         if os.path.isfile(path_to_ascii_psd):
             continue
@@ -511,7 +511,7 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
         for i in np.arange(len(data.data.data)) :
             combine.append([f0+i*deltaF,data.data.data[i]])
         np.savetxt(path_to_ascii_psd,combine)
-        ifo=instrument.encode('ascii')
+        ifo=instrument
         # set node.psds dictionary with the path to the ascii files
         out[ifo]=os.path.join(outpath,ifo+'_psd_'+time+'.txt')
     return out
