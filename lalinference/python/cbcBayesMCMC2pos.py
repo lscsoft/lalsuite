@@ -23,6 +23,7 @@
 #       MA 02110-1301, USA.
 
 from six.moves import range
+from functools import reduce
 
 import matplotlib
 matplotlib.use('Agg') #sets backend to not need to open windows
