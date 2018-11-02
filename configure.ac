@@ -33,12 +33,9 @@ LALSUITE_ENABLE_ALL_LAL
 lal=true
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
-LALSUITE_ENABLE_LALXML
 LALSUITE_ENABLE_LALSIMULATION
 LALSUITE_ENABLE_LALBURST
-LALSUITE_ENABLE_LALDETCHAR
 LALSUITE_ENABLE_LALINSPIRAL
-LALSUITE_ENABLE_LALSTOCHASTIC
 LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALINFERENCE
 LALSUITE_ENABLE_LALAPPS
@@ -124,12 +121,9 @@ export LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALSUPPORT_DATA_PATH LALSUPPORT_OCTAVE_
 # configure optional packages
 lalsuite_config_subdir([LALFrame])
 lalsuite_config_subdir([LALMetaIO])
-lalsuite_config_subdir([LALXML])
 lalsuite_config_subdir([LALSimulation])
 lalsuite_config_subdir([LALBurst])
-lalsuite_config_subdir([LALDetChar])
 lalsuite_config_subdir([LALInspiral])
-lalsuite_config_subdir([LALStochastic])
 lalsuite_config_subdir([LALPulsar])
 lalsuite_config_subdir([LALInference])
 
@@ -150,12 +144,9 @@ LALSuite has now been successfully configured:
 
 * LALFrame library support is $LALFRAME_ENABLE_VAL
 * LALMetaIO library support is $LALMETAIO_ENABLE_VAL
-* LALXML library support is $LALXML_ENABLE_VAL
 * LALSimulation library support is $LALSIMULATION_ENABLE_VAL
 * LALBurst library support is $LALBURST_ENABLE_VAL
-* LALDetChar library support is $LALDETCHAR_ENABLE_VAL
 * LALInspiral library support is $LALINSPIRAL_ENABLE_VAL
-* LALStochastic library support is $LALSTOCHASTIC_ENABLE_VAL
 * LALPulsar library support is $LALPULSAR_ENABLE_VAL
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
 * LALApps library support is $LALAPPS_ENABLE_VAL
