@@ -331,7 +331,9 @@ src/string/lalapps_cosmicstring_pipe
 src/string/lalapps_string_apply_vetoes
 src/string/lalapps_string_calc_likelihood
 src/string/lalapps_string_contour_plotter
+src/string/lalapps_string_contour_plotter_largeloops
 src/string/lalapps_string_cs_gamma
+src/string/lalapps_string_cs_gamma_largeloops
 src/string/lalapps_string_final
 src/string/lalapps_string_meas_likelihood
 src/string/lalapps_string_plot_binj

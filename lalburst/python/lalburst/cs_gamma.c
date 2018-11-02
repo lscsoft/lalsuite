@@ -242,7 +242,7 @@ static double nu(double Gmu, double Gamma, double A, double z, double phit, doub
 			crateM = nuM / t / t / ( l + Gamma*Gmu/H0 * phit) / ( l + Gamma*Gmu/H0 * phit);
 
 		crate = crateR + crateRadStragglers + crateM;
-		} else if (strcmp(model,"Blanco-Pillado14") == 0) {
+	} else if (strcmp(model,"Blanco-Pillado14") == 0) {
 		alpha = 0.1;
 		nuR = 0.18;
 		/* Radiation era loops */
