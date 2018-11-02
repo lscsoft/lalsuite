@@ -1433,15 +1433,12 @@ int XLALReadFITSArrayData(XTEUINT4Array **array,      /**< [out] the output data
 
     /* output debugging information */
     {
-      char temp1[STRINGLENGTH],temp2[STRINGLENGTH];
       int M = (*array)->channeldata[i].length > 10 ? 10 : (*array)->channeldata[i].length;
-      sprintf(temp1,"");
-      sprintf(temp2,"");
+      LogPrintf(LOG_DEBUG,"%s : read array data as : ",fn);
       for (j=0;j<M;j++) {
-	sprintf(temp2,"%s%d(%d),",temp1,(*array)->channeldata[i].data[j],(*array)->channeldata[i].undefined[j]);
-	strcpy(temp1,temp2);
+			  LogPrintf(LOG_DEBUG,"%d(%d),",(*array)->channeldata[i].data[j],(*array)->channeldata[i].undefined[j]);
       }
-      LogPrintf(LOG_DEBUG,"%s : read array data as : %s ...\n",fn,temp2);
+	  LogPrintf(LOG_DEBUG,"...\n");
     }
 
   }
@@ -1555,15 +1552,12 @@ int XLALReadFITSEventData(XTECHARArray **event,       /**< [out] The FITSdata st
   /* output debugging information */
   {
     int i;
-    char temp1[STRINGLENGTH],temp2[STRINGLENGTH];
     int M = (*event)->channeldata[0].nevents > 100 ? 100 : (*event)->channeldata[0].nevents;
-    sprintf(temp1,"");
-    sprintf(temp2,"");
+    LogPrintf(LOG_DEBUG,"%s : read array data as : ",fn);
     for (i=0;i<M;i++) {
-      sprintf(temp2,"%s%d,",temp1,(*event)->channeldata[0].data[(*event)->channeldata[0].rowlength*i]);
-      strcpy(temp1,temp2);
+			LogPrintf(LOG_DEBUG,"%d,",(*event)->channeldata[0].data[(*event)->channeldata[0].rowlength*i]);
     }
-    LogPrintf(LOG_DEBUG,"%s : read array data as : %s ...\n",fn,temp2);
+	LogPrintf(LOG_DEBUG,"\n");
   }
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
