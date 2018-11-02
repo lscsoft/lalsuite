@@ -479,20 +479,25 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
   *dS2y=0.;
   *dS2z=0.;
 
+  REAL8 dLNx=0.; // Derivative of the spin-independent part of the angular momentum
+  REAL8 dLNy=0.;
+  REAL8 dLNz=0.;
+
+  const REAL8 eta=params->eta;
+  const REAL8 LN0mag=eta/v;
+  REAL8 LNmag=LN0mag;
+
   /* Phasing is given in terms of LNhat, however we know the
    * evolution equation for L, which is not parallel to LN, because
    * of S terms at 1.5PN order wrt leading order.
-   * Thus we have  $dL/dt = \Omega \times L = d L_LN/dt + dL_S/dt
+   * Thus we have  $dL/dt = \Omega x L = d L_LN/dt + dL_S/dt
+   * which can be inverted to give \Omega = L x dL/dt
    * where we have separated L = L_LN + L_S in its contributions
    * (in)dependent on spins. Note the L_S has in general components along
    * L_LN and orthogonal to it.
    * Since L_S depends on LN as well as on the spins, we have to compute
    * dS AND dL_LN in order to have dL_S which we will eventually subtract from
    * dL to obtain dLN, from which we will derive dLNhat.
-   * dLN at NLO will be computed below in terms of dS_i.
-   * Since the Spins are 1.5PN contribution
-   * to L, it is enough to have dS at v5 and v6 order (i.e. up to NLO)
-   * to estimate their contribution to dL.
    */
 
   /*
@@ -503,183 +508,192 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
 
   if ( (params->spinO>=3) || (params->spinO<0) ) {
     /* dS1,2 leading terms: eq. (8) of gr-qc/0405090.*/
-    REAL8 v2=v*v;
-    REAL8 omega=v2*v;
-    REAL8 v4=omega*v;
-    REAL8 v5=omega*v2;
-    REAL8 omega2=omega*omega;
+    const REAL8 v2=v*v;
+    const REAL8 omega=v2*v;
+    const REAL8 v5=omega*v2;
 
     REAL8 *LNcS1=NULL;
     XLALSimInspiralVectorCrossProduct(&LNcS1,LNhx,LNhy,LNhz,S1x,S1y,S1z);
 
-    *dS1x += params->S1dot3 * v5 * LNcS1[0];
-    *dS1y += params->S1dot3 * v5 * LNcS1[1];
-    *dS1z += params->S1dot3 * v5 * LNcS1[2];
+    const REAL8 dS1xL = params->S1dot3 * v5 * LNcS1[0];
+    const REAL8 dS1yL = params->S1dot3 * v5 * LNcS1[1];
+    const REAL8 dS1zL = params->S1dot3 * v5 * LNcS1[2];
+    *dS1x =dS1xL;
+    *dS1y =dS1yL;
+    *dS1z =dS1zL;
 
     REAL8 *LNcS2=NULL;
     XLALSimInspiralVectorCrossProduct(&LNcS2,LNhx,LNhy,LNhz,S2x,S2y,S2z);
 
-    *dS2x += params->S2dot3 * v5 * LNcS2[0];
-    *dS2y += params->S2dot3 * v5 * LNcS2[1];
-    *dS2z += params->S2dot3 * v5 * LNcS2[2];
+    REAL8 dS2xL = params->S2dot3 * v5 * LNcS2[0];
+    REAL8 dS2yL = params->S2dot3 * v5 * LNcS2[1];
+    REAL8 dS2zL = params->S2dot3 * v5 * LNcS2[2];
 
-    REAL8 *S1cS2=NULL;
+    *dS2x =dS2xL;
+    *dS2y =dS2yL;
+    *dS2z =dS2zL;
+
+    dLNx -= dS1xL+ dS2xL;
+    dLNy -= dS1yL+ dS2yL;
+    dLNz -= dS1zL+ dS2zL;
+
     if ( (params->spinO>=4) || (params->spinO<0.) ) {
-      /* dS1,2 next-to-leading term */
+      REAL8 omega2=omega*omega;
+      REAL8 *S1cS2=NULL;
+      /* dS1,2 NLO term (v x leading), Spin^2 terms */
 
       /* S1S2 contribution, see. eq. 2.23 of arXiv:0812.4413 */
       XLALSimInspiralVectorCrossProduct(&S1cS2,S1x,S1y,S1z,S2x,S2y,S2z);
-      *dS1x += omega2 * (-params->Sdot4S2Avg*S1cS2[0] + params->Sdot4S2OAvg * LNhdotS2 * LNcS1[0]);
-      *dS1y += omega2 * (-params->Sdot4S2Avg*S1cS2[1] + params->Sdot4S2OAvg * LNhdotS2 * LNcS1[1]);
-      *dS1z += omega2 * (-params->Sdot4S2Avg*S1cS2[2] + params->Sdot4S2OAvg * LNhdotS2 * LNcS1[2]);
+      REAL8 dS1xNL = omega2 * (-params->Sdot4S2Avg*S1cS2[0] + params->Sdot4S2OAvg * LNhdotS2 * LNcS1[0]);
+      REAL8 dS1yNL = omega2 * (-params->Sdot4S2Avg*S1cS2[1] + params->Sdot4S2OAvg * LNhdotS2 * LNcS1[1]);
+      REAL8 dS1zNL = omega2 * (-params->Sdot4S2Avg*S1cS2[2] + params->Sdot4S2OAvg * LNhdotS2 * LNcS1[2]);
 
-      *dS2x += omega2 * (params->Sdot4S2Avg*S1cS2[0] + params->Sdot4S2OAvg * LNhdotS1 * LNcS2[0]);
-      *dS2y += omega2 * (params->Sdot4S2Avg*S1cS2[1] + params->Sdot4S2OAvg * LNhdotS1 * LNcS2[1]);
-      *dS2z += omega2 * (params->Sdot4S2Avg*S1cS2[2] + params->Sdot4S2OAvg * LNhdotS1 * LNcS2[2]);
+      REAL8 dS2xNL = omega2 * (params->Sdot4S2Avg*S1cS2[0] + params->Sdot4S2OAvg * LNhdotS1 * LNcS2[0]);
+      REAL8 dS2yNL = omega2 * (params->Sdot4S2Avg*S1cS2[1] + params->Sdot4S2OAvg * LNhdotS1 * LNcS2[1]);
+      REAL8 dS2zNL = omega2 * (params->Sdot4S2Avg*S1cS2[2] + params->Sdot4S2OAvg * LNhdotS1 * LNcS2[2]);
 
       /* S1S1 contribution */
-      *dS1x += omega2 * params->S1dot4QMS1OAvg * LNhdotS1 * LNcS1[0];
-      *dS1y += omega2 * params->S1dot4QMS1OAvg * LNhdotS1 * LNcS1[1];
-      *dS1z += omega2 * params->S1dot4QMS1OAvg * LNhdotS1 * LNcS1[2];;
+      dS1xNL += omega2 * params->S1dot4QMS1OAvg * LNhdotS1 * LNcS1[0]; // v6 terms
+      dS1yNL += omega2 * params->S1dot4QMS1OAvg * LNhdotS1 * LNcS1[1];
+      dS1zNL += omega2 * params->S1dot4QMS1OAvg * LNhdotS1 * LNcS1[2];
 
       /* S2S2 contribution */
-      *dS2x += omega2 * params->S2dot4QMS2OAvg * LNhdotS2 * LNcS2[0];
-      *dS2y += omega2 * params->S2dot4QMS2OAvg * LNhdotS2 * LNcS2[1];
-      *dS2z += omega2 * params->S2dot4QMS2OAvg * LNhdotS2 * LNcS2[2];
+      dS2xNL += omega2 * params->S2dot4QMS2OAvg * LNhdotS2 * LNcS2[0];
+      dS2yNL += omega2 * params->S2dot4QMS2OAvg * LNhdotS2 * LNcS2[1];
+      dS2zNL += omega2 * params->S2dot4QMS2OAvg * LNhdotS2 * LNcS2[2];
 
-    }
-    XLALFree(LNcS1);
-    XLALFree(LNcS2);
+      dLNx -= dS1xNL + dS2xNL;
+      dLNy -= dS1yNL + dS2yNL;
+      dLNz -= dS1zNL + dS2zNL;
 
-    /* At NLO we can compute dLNh from dS, see eq. 3.20 of arXiv:0810.5336*/
-    REAL8 dLNhatx=-v*((*dS1x)+(*dS2x))/params->eta;
-    REAL8 dLNhaty=-v*((*dS1y)+(*dS2y))/params->eta;
-    REAL8 dLNhatz=-v*((*dS1z)+(*dS2z))/params->eta;
-    /* This is dLNhat only up to NLO, up to this order LNhat = Lhat.*/
-    /* Now we compute OmegaLN, defined by dLNhat=OmegaLN x LNhat,
-     * which can be inverted to OmegaLN=LNhat x dLNhat.
-     */
+      /* This is dLNhat is parallel to dL only until NLO (v x leading),
+       * since up to this order LNhat = Lhat.
+       * at NNL order we have to include spin dependent terms in the orbital angular momentum.
+       */
 
-    REAL8 *OmegaLN=NULL;
-    XLALSimInspiralVectorCrossProduct(&OmegaLN,LNhx,LNhy,LNhz,dLNhatx,dLNhaty,dLNhatz);
-    REAL8 OmegaLx=OmegaLN[0];
-    REAL8 OmegaLy=OmegaLN[1];
-    REAL8 OmegaLz=OmegaLN[2];
-    XLALFree(OmegaLN);
+      if ( (params->spinO>=5) || (params->spinO<0) ) {
+	const REAL8 L1PN=XLALSimInspiralL_2PN(eta);
+	REAL8 v7=omega2*v;
+	LNmag+=LN0mag*v2*L1PN;
 
-    /* We have now all the ingredients to compute dL at NLO with.
-     * The cSi-s are the coefficients multiplying the S.LNhat contribution to L,
-     * see eqs. (2.9) of arXiv:gr-qc/9506022.
-     * Again orbital average here is taken.
-     */
-    REAL8 cS1=-0.5*XLALSimInspiralL_3PNScoeff(params->m1M);
-    REAL8 cS2=-0.5*XLALSimInspiralL_3PNScoeff(params->m2M);
+	/* dS1,2 NNNLO, eq. 7.8 of Blanchet et al. gr-qc/0605140 */
+	const REAL8 dS1xNNL = params->S1dot5S2 * v7 * LNcS1[0]; // v7 terms
+	const REAL8 dS1yNNL = params->S1dot5S2 * v7 * LNcS1[1];
+	const REAL8 dS1zNNL = params->S1dot5S2 * v7 * LNcS1[2];
 
-    REAL8 dLNhdotS1=(*dS1x)*LNhx+(*dS1y)*LNhy+(*dS1z)*LNhz + S1x*dLNhatx+S1y*dLNhaty+S1z*dLNhatz;
-    REAL8 dLNhdotS2=(*dS2x)*LNhx+(*dS2y)*LNhy+(*dS2z)*LNhz + S2x*dLNhatx+S2y*dLNhaty+S2z*dLNhatz;
-    REAL8 dL_Sx=omega*( cS1*((*dS1x) + dLNhdotS1*LNhx + LNhdotS1*dLNhatx)
-			+ cS2*((*dS2x) + dLNhdotS2*LNhx + LNhdotS2*dLNhatx) );
-    REAL8 dL_Sy=omega*( cS1*((*dS1y) + dLNhdotS1*LNhy + LNhdotS1*dLNhaty)
-			+ cS2*((*dS2y) + dLNhdotS2*LNhy + LNhdotS2*dLNhaty) );
-    REAL8 dL_Sz=omega*( cS1*((*dS1z) + dLNhdotS1*LNhz + LNhdotS1*dLNhatz)
-			+ cS2*((*dS2z) + dLNhdotS2*LNhz + LNhdotS2*dLNhatz) );
+	const REAL8 dS2xNNL = params->S2dot5S1 * v7 * LNcS2[0];
+	const REAL8 dS2yNNL = params->S2dot5S1 * v7 * LNcS2[1];
+	const REAL8 dS2zNNL = params->S2dot5S1 * v7 * LNcS2[2];
 
-    /*
-     * Now we compute L in order to derive its derivative \Omega_L x L.
-     * We start by computing its spin-dependent part, then we add the part
-     * proportional to LN.
-     */
+	/* At this order we include only the derivative of the spins*/
+	const REAL8 cS1 =XLALSimInspiralL_3PNSiAvgcoeff(params->m1M);
+	const REAL8 cS2 =XLALSimInspiralL_3PNSiAvgcoeff(params->m2M);
+	const REAL8 dLSxL=v2*( cS1*dS1xL + cS2*dS2xL);
+	const REAL8 dLSyL=v2*( cS1*dS1yL + cS2*dS2yL);
+	const REAL8 dLSzL=v2*( cS1*dS1zL + cS2*dS2zL);
 
-    REAL8 L_Sx=omega*(cS1*(S1x+LNhdotS1*LNhx) + cS2*(S2x+LNhdotS2*LNhx));
-    REAL8 L_Sy=omega*(cS1*(S1y+LNhdotS1*LNhy) + cS2*(S2y+LNhdotS2*LNhy));
-    REAL8 L_Sz=omega*(cS1*(S1z+LNhdotS1*LNhz) + cS2*(S2z+LNhdotS2*LNhz));
-    REAL8 LNmagv4=(1.+v2*XLALSimInspiralL_2PN(params->eta)+v4*XLALSimInspiralL_4PN(params->eta));
+	dLNx -= dLSxL + dS1xNNL + dS2xNNL;
+	dLNy -= dLSyL + dS1yNNL + dS2yNNL;
+	dLNz -= dLSzL + dS1zNNL + dS2zNNL;
 
-    REAL8 Lx=LNmagv4*LNhx+L_Sx;
-    REAL8 Ly=LNmagv4*LNhy+L_Sy;
-    REAL8 Lz=LNmagv4*LNhz+L_Sz;
+	if ( (params->spinO>=6) || (params->spinO<0) ) {
+	  /* TODO:
+	   * missing NNNL terms, which are 1PN corrections to the leading
+	   * spin^2 terms.
+	   */
+	  REAL8 dS1xN3L=0.;
+	  REAL8 dS1yN3L=0.;
+	  REAL8 dS1zN3L=0.;
+	  REAL8 dS2xN3L=0.;
+	  REAL8 dS2yN3L=0.;
+	  REAL8 dS2zN3L=0.;
 
-    /*
-     * Now we can add NNLO effects in \Omega_L. For NNNLO effects one should now
-     * the instantaneous orbital variables, which are not used here.
-     * For reference the NNNNLO terms are added.
-     */
-    if ( (params->spinO>=5) || (params->spinO<0) ) {
-      REAL8 v7=omega2*v;
-      REAL8 v8=omega2*v2;
+	  /* Here below we compute contribution to dL coming from dS and from
+	   * derivative of cS S + cSL (S.Lhat) Lhat.
+	   * It is enough to have the v^6 term in dLNh */
+	  const REAL8 dLNhxL=-v/eta*(-dS1xL-dS2xL); // v6 terms
+	  const REAL8 dLNhyL=-v/eta*(-dS1yL-dS2yL);
+	  const REAL8 dLNhzL=-v/eta*(-dS1zL-dS2zL);
 
-      OmegaLx+= v8 * ( params->Ldot5S1O * S1x + params->Ldot5S2O * S2x );
-      OmegaLy+= v8 * ( params->Ldot5S1O * S1y + params->Ldot5S2O * S2y );
-      OmegaLz+= v8 * ( params->Ldot5S1O * S1z + params->Ldot5S2O * S2z );
+	  const REAL8 cS1L=XLALSimInspiralL_3PNLiSLAvgcoeff(params->m1M);
+	  const REAL8 cS2L=XLALSimInspiralL_3PNLiSLAvgcoeff(params->m2M);
+	  const REAL8 dLNhdotS1L = dLNhxL*S1x+LNhx*dS1xNL+dLNhyL*S1y+LNhy*dS1yNL+dLNhzL*S1z+LNhz*dS1zNL; // v6 terms
+	  const REAL8 dLNhdotS2L = dLNhxL*S2x+LNhx*dS2xNL+dLNhyL*S2y+LNhy*dS2yNL+dLNhzL*S2z+LNhz*dS2zNL;
+	  const REAL8 dLSxNL=v2*( cS1*dS1xNL + cS1L*(dLNhdotS1L*LNhx+LNhdotS1*dLNhxL) + cS2*dS2xNL + cS2L*(dLNhdotS2L*LNhx+LNhdotS2*dLNhxL) );
+	  const REAL8 dLSyNL=v2*( cS1*dS1yNL + cS1L*(dLNhdotS1L*LNhy+LNhdotS1*dLNhyL) + cS2*dS2yNL + cS2L*(dLNhdotS2L*LNhy+LNhdotS2*dLNhyL) );
+	  const REAL8 dLSzNL=v2*( cS1*dS1zNL + cS1L*(dLNhdotS1L*LNhz+LNhdotS1*dLNhzL) + cS2*dS2zNL + cS2L*(dLNhdotS2L*LNhz+LNhdotS2*dLNhzL) );
 
-      /* dS1,2 NNNLO, eq. 7.8 of Blanchet et al. gr-qc/0605140 */
-      *dS1x -= params->S1dot5S2 * v7 * S1cS2[0];
-      *dS1y -= params->S1dot5S2 * v7 * S1cS2[1];
-      *dS1z -= params->S1dot5S2 * v7 * S1cS2[2];
+	  dLNx += (dLSxNL - dS1xN3L - dS2xN3L); // v8 terms
+	  dLNy += (dLSyNL - dS1yN3L - dS2yN3L);
+	  dLNz += (dLSzNL - dS1zN3L - dS2zN3L);
 
-      *dS2x += params->S2dot5S1 * v7 * S1cS2[0];
-      *dS2y += params->S2dot5S1 * v7 * S1cS2[1];
-      *dS2z += params->S2dot5S1 * v7 * S1cS2[2];
+	  if ( (params->spinO>=7) || (params->spinO<0) ) {
+	    const REAL8 L2PN=XLALSimInspiralL_4PN(eta);
+	    const REAL8 v4=v2*v2;
+	    LNmag+=LN0mag*v4*L2PN;
+	    const REAL8 omega3=omega2*omega;
 
-    if ( (params->spinO>=7) || (params->spinO<0) ) {
-	REAL8 omega3=omega2*omega;
-	REAL8 v10=omega3*v;
+	    /* dS1,2 at NNNNLO, eq. */
+	    const REAL8 dS1xN4L = params->S1dot7S2 * omega3 * LNcS1[0]; //v9 terms
+	    const REAL8 dS1yN4L = params->S1dot7S2 * omega3 * LNcS1[1];
+	    const REAL8 dS1zN4L = params->S1dot7S2 * omega3 * LNcS1[2];
 
-	OmegaLx+= v10 * ( params->Ldot7S1 * S1x + params->Ldot7S2 * S2x);
-	OmegaLy+= v10 * ( params->Ldot7S1 * S1y + params->Ldot7S2 * S2y);
-	OmegaLz+= v10 * ( params->Ldot7S1 * S1z + params->Ldot7S2 * S2z);
+	    const REAL8 dS2xN4L = params->S2dot7S1 * omega3 * LNcS2[0];
+	    const REAL8 dS2yN4L = params->S2dot7S1 * omega3 * LNcS2[1];
+	    const REAL8 dS2zN4L = params->S2dot7S1 * omega3 * LNcS2[2];
 
-	/* dS1,2 at NNNNNLO, eq. */
-	*dS1x -= params->S1dot7S2 * omega3 * S1cS2[0];
-	*dS1y -= params->S1dot7S2 * omega3 * S1cS2[1];
-	*dS1z -= params->S1dot7S2 * omega3 * S1cS2[2];
+	    const REAL8 dLNhxNL=-v/eta*(-dS1xNL-dS2xNL); //v7 terms
+	    const REAL8 dLNhyNL=-v/eta*(-dS1yNL-dS2yNL);
+	    const REAL8 dLNhzNL=-v/eta*(-dS1zNL-dS2zNL);
 
-	*dS2x += params->S2dot7S1 * omega3 * S1cS2[0];
-	*dS2y += params->S2dot7S1 * omega3 * S1cS2[1];
-	*dS2z += params->S2dot7S1 * omega3 * S1cS2[2];
+	    const REAL8 dLNhdotS1NL = dLNhxNL*S1x+LNhx*dS1xNNL+dLNhyNL*S1y+LNhy*dS1yNNL+dLNhzNL*S1z+LNhz*dS1zNNL;
+	    const REAL8 dLNhdotS2NL = dLNhxNL*S2x+LNhx*dS2xNNL+dLNhyNL*S2y+LNhy*dS2yNNL+dLNhzNL*S2z+LNhz*dS2zNNL;
+	    const REAL8 dLSxNNL=v2*( cS1*(dS1xNNL - dLNhdotS1NL*LNhx - LNhdotS1*dLNhxNL) + cS2*(dS2xNNL - dLNhdotS2NL*LNhx -LNhdotS2*dLNhxNL) );
+	    const REAL8 dLSyNNL=v2*( cS1*(dS1yNNL - dLNhdotS1NL*LNhy - LNhdotS1*dLNhyNL) + cS2*(dS2yNNL - dLNhdotS2NL*LNhy -LNhdotS2*dLNhyNL) );
+	    const REAL8 dLSzNNL=v2*( cS1*(dS1zNNL - dLNhdotS1NL*LNhz - LNhdotS1*dLNhzNL) + cS2*(dS2zNNL - dLNhdotS2NL*LNhz -LNhdotS2*dLNhzNL) );
+
+	    dLNx += dLSxNNL - dS1xN4L - dS2xN4L;
+	    dLNy += dLSyNNL - dS1yN4L - dS2yN4L;
+	    dLNz += dLSzNNL - dS1zN4L - dS2zN4L;
+
+	  }
+	}
       }
+      XLALFree(S1cS2);S1cS2=NULL;
     }
-    XLALFree(S1cS2);
-
-    /* We now obtain the derivative of the spin-independent part of the
-     * total angular momentum, which is parallel to the Newtonian angular
-     * momentum.
-     */
-
-    /*dL is the derivative of the total angular momentum*/
-    REAL8 *dL=NULL;
-    XLALSimInspiralVectorCrossProduct(&dL,OmegaLx,OmegaLy,OmegaLz,Lx,Ly,Lz);
-    REAL8 dLNhx_tmp=(dL[0]-dL_Sx-dLNhdotS1*LNhx-LNhdotS1*dLNhatx)/LNmagv4;
-    REAL8 dLNhy_tmp=(dL[1]-dL_Sy-dLNhdotS1*LNhy-LNhdotS1*dLNhaty)/LNmagv4;
-    REAL8 dLNhz_tmp=(dL[2]-dL_Sz-dLNhdotS1*LNhz-LNhdotS1*dLNhatz)/LNmagv4;
-    XLALFree(dL);
-
-    /* We now define the OmegaLNE precession vector as above as the cross
-     * product of L and dL.
-     */
-    REAL8 *OmegaLNE=NULL;
-    XLALSimInspiralVectorCrossProduct(&OmegaLNE,LNhx,LNhy,LNhz,dLNhx_tmp,dLNhy_tmp,dLNhz_tmp);
-
-    /*
-     * dE1
-     *
-     * d E_1 / d \hat{t} = M * d E_1 / dt
-     * Computed from \Omega_L and \hat{L_N} with Eq. (15)-(16) of gr-qc/0310034
-     */
-
-    /* Take cross product of \Omega_E with E_1 */
-    *dE1x = (-OmegaLNE[2]*E1y + OmegaLNE[1]*E1z);
-    *dE1y = (-OmegaLNE[0]*E1z + OmegaLNE[2]*E1x);
-    *dE1z = (-OmegaLNE[1]*E1x + OmegaLNE[0]*E1y);
-    XLALFree(OmegaLNE);
-
-    /* Make dLNh orthogonal to LNh befire returning it*/
-    REAL8 dLNhdotLNh=dLNhx_tmp*LNhx+dLNhy_tmp*LNhy+dLNhz_tmp*LNhz;
-    *dLNhx=dLNhx_tmp-dLNhdotLNh*LNhx;
-    *dLNhy=dLNhy_tmp-dLNhdotLNh*LNhy;
-    *dLNhz=dLNhz_tmp-dLNhdotLNh*LNhz;
-
+    XLALFree(LNcS1);LNcS1=NULL;
+    XLALFree(LNcS2);LNcS2=NULL;
   }
+
+  /* We have computed the derivative of the spin-independent part of the
+   * orbital angular momentum, which is parallel to the Newtonian angular momentum.
+   */
+
+  /* We now copute the precession vector Om */
+  REAL8 *Om=NULL;
+  const REAL8 dLNhx_tmp=dLNx/LNmag;
+  const REAL8 dLNhy_tmp=dLNy/LNmag;
+  const REAL8 dLNhz_tmp=dLNz/LNmag;
+  XLALSimInspiralVectorCrossProduct(&Om,LNhx,LNhy,LNhz,dLNhx_tmp,dLNhy_tmp,dLNhz_tmp);
+
+  /*
+   * dE1
+   *
+   * d E_1 / d \hat{t} = M * d E_1 / dt
+   * Computed from \Omega_L and \hat{L_N} with Eq. (15)-(16) of gr-qc/0310034
+   */
+
+  /* Take cross product of \Omega_E with E_1 */
+  *dE1x = -Om[2]*E1y + Om[1]*E1z;
+  *dE1y = -Om[0]*E1z + Om[2]*E1x;
+  *dE1z = -Om[1]*E1x + Om[0]*E1y;
+  XLALFree(Om);Om=NULL;
+
+  /* Make dLNh orthogonal to LNh before returning it*/
+  REAL8 dLNhdotLNh=dLNhx_tmp*LNhx+dLNhy_tmp*LNhy+dLNhz_tmp*LNhz;
+  *dLNhx=dLNhx_tmp-dLNhdotLNh*LNhx;
+  *dLNhy=dLNhy_tmp-dLNhdotLNh*LNhy;
+  *dLNhz=dLNhz_tmp-dLNhdotLNh*LNhz;
 
   return XLAL_SUCCESS;
 

@@ -1962,13 +1962,41 @@ XLALSimInspiralL_2PN(
 }
 
 /* Orbital averaged from eq. 2.9c of
- *arXiv:gr-qc/9506022
+ *arXiv:gr-qc/9506022, see also 4.7 of arXiv:1212.5520
  */
 static REAL8 UNUSED
-XLALSimInspiralL_3PNScoeff(
+XLALSimInspiralL_3PNSiAvgcoeff(
         REAL8 mByM)
 {
-        return 0.5*(3.+1./mByM);
+        return -0.25*(3.+1./mByM);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralL_3PNLiSLAvgcoeff(
+        REAL8 mByM)
+{
+        return -1./12.-2.25/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralL_3PNniSncoeff(
+        REAL8 mByM)
+{
+        return -0.5+0.5/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralL_3PNviSvcoeff(
+        REAL8 mByM)
+{
+        return -1.-1./mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralL_3PNLiSLcoeff(
+        REAL8 mByM)
+{
+        return -5./6.-2.5/mByM;
 }
 
 /* eq. 4.7 of http://arxiv.org/pdf/1212.5520.pdf */
