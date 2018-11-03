@@ -400,6 +400,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
  * - AP2
  * - AP3
  * - AP4
+ * - APR4_EPP
  * - BBB2
  * - BGN1H1
  * - BPAL12
@@ -420,6 +421,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
  * - H7
  * - MPA1
  * - MS1B
+ * - MS1B_PP
+ * - MS1_PP
  * - MS1
  * - MS2
  * - PAL6

@@ -78,15 +78,15 @@ struct tagLALSimNeutronStarEOS {
 /** @endcond */
 
 /** Recognised equations of state names */
-const char * const lalSimNeutronStarEOSNames[42] = {
+const char * const lalSimNeutronStarEOSNames[45] = {
         "ALF1", "ALF2", "ALF3", "ALF4",
-        "AP1", "AP2", "AP3", "AP4",
+        "AP1", "AP2", "AP3", "AP4", "APR4_EPP",
         "BBB2", "BGN1H1", "BPAL12", 
         "BSK19", "BSK20", "BSK21",
         "ENG", "FPS", "GNH3",
         "GS1", "GS2",
         "H1", "H2", "H3", "H4", "H5", "H6", "H7",
-        "MPA1", "MS1B", "MS1", "MS2",
+        "MPA1", "MS1B", "MS1B_PP", "MS1_PP", "MS1", "MS2",
         "PAL6", "PCL2", "PS",
         "QMC700",
         "SLY4", "SLY",
