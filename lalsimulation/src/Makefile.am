@@ -52,6 +52,7 @@ EOSDATAFILES = \
 	LALSimNeutronStarEOS_AP2.dat \
 	LALSimNeutronStarEOS_AP3.dat \
 	LALSimNeutronStarEOS_AP4.dat \
+	LALSimNeutronStarEOS_APR4_EPP.dat \
 	LALSimNeutronStarEOS_BBB2.dat \
 	LALSimNeutronStarEOS_BGN1H1.dat \
 	LALSimNeutronStarEOS_BPAL12.dat \
@@ -72,6 +73,8 @@ EOSDATAFILES = \
 	LALSimNeutronStarEOS_H7.dat \
 	LALSimNeutronStarEOS_MPA1.dat \
 	LALSimNeutronStarEOS_MS1B.dat \
+	LALSimNeutronStarEOS_MS1B_PP.dat \
+	LALSimNeutronStarEOS_MS1_PP.dat \
 	LALSimNeutronStarEOS_MS1.dat \
 	LALSimNeutronStarEOS_MS2.dat \
 	LALSimNeutronStarEOS_PAL6.dat \
