@@ -144,6 +144,9 @@ def compute_chirptimes(mchirp, eta, chi, flow):
 def compute_tau0(mc, flow):
     return 5. * mc * MTSUN_SI / (256 * (PI * flow * mc * MTSUN_SI)**(8./3))
 
+def compute_tau0_40(mc):
+    return compute_tau0(mc, 40.)
+
 
 class AlignedSpinTemplate(object):
     """
@@ -195,6 +198,7 @@ class AlignedSpinTemplate(object):
         self._metric = None
         self.sigmasq = 0.
         self._mchirp = compute_mchirp(m1, m2)
+        self.tau0_40 = compute_tau0_40(self._mchirp)
         self.tau0 = compute_tau0(self._mchirp, bank.flow)
         self._dur = duration
         self._f_final = None
