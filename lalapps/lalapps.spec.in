@@ -69,7 +69,6 @@ Requires: lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: lalinference >= @MIN_LALINFERENCE_VERSION@
 Requires: python2-lalinference >= @MIN_LALINFERENCE_VERSION@
-Requires: skyarea
 Obsoletes: lalxml < 1.2.5-1
 Obsoletes: lalxml-debuginfo < 1.2.5-1
 Obsoletes: lalxml-devel < 1.2.5-1
