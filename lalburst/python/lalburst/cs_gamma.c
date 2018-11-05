@@ -269,23 +269,27 @@ static double nu(double Gmu, double Gamma, double A, double z, double phit, doub
 		gamma_c_R = Upsilon * pow(Gmu,1.0+2.0*chi_R);
 		gamma_c_M = Upsilon * pow(Gmu,1.0+2.0*chi_M);
 		/* Radiation era loops */
-		if( (l > Gamma * Gmu * t) && (l <= t/(1.0-a_index_R)) )
-			crateR = pow(t,-4.0) * nuR / pow(l/t + Gamma*Gmu, P_R+1);
+		if (t <= teq){
+			if( (l > Gamma * Gmu * t) && (l <= t/(1.0-a_index_R)) )
+				crateR = pow(t,-4.0) * nuR / pow(l/t + Gamma*Gmu, P_R+1);
 
-		if( (l > gamma_c_R * t) && (l <= Gamma * Gmu * t) )
-			crateR = pow(t,-4.0) * nuR * (3.0*a_index_R-2.0*chi_R-1.0) / (2.0-2.0*chi_R) / (Gamma*Gmu) / pow(l/t,P_R);
+			if( (l > gamma_c_R * t) && (l <= Gamma * Gmu * t) )
+				crateR = pow(t,-4.0) * nuR * (3.0*a_index_R-2.0*chi_R-1.0) / (2.0-2.0*chi_R) / (Gamma*Gmu) / pow(l/t,P_R);
 
-		if(l <= gamma_c_R * t)
-			crateR = pow(t,-4.0) * nuR * (3.0*a_index_R-2.0*chi_R-1.0) / (2.0-2.0*chi_R) / (Gamma*Gmu) / pow(gamma_c_R,P_R);
+			if(l <= gamma_c_R * t)
+				crateR = pow(t,-4.0) * nuR * (3.0*a_index_R-2.0*chi_R-1.0) / (2.0-2.0*chi_R) / (Gamma*Gmu) / pow(gamma_c_R,P_R);
+		}
 		/* Matter era loops */
-		if( (l > Gamma * Gmu * t) && (l <= t/(1.0-a_index_M)) )
-			crateM = pow(t,-4.0) * nuM / pow(l/t + Gamma*Gmu, P_M+1);
+		if (t > teq){
+			if( (l > Gamma * Gmu * t) && (l <= t/(1.0-a_index_M)) )
+				crateM = pow(t,-4.0) * nuM / pow(l/t + Gamma*Gmu, P_M+1);
 
-		if( (l > gamma_c_M * t) && (l <= Gamma * Gmu * t) )
-			crateM = pow(t,-4.0) * nuM * (3.0*a_index_M-2.0*chi_M-1.0) / (2.0-2.0*chi_M) / (Gamma*Gmu) / pow(l/t,P_M);
+			if( (l > gamma_c_M * t) && (l <= Gamma * Gmu * t) )
+				crateM = pow(t,-4.0) * nuM * (3.0*a_index_M-2.0*chi_M-1.0) / (2.0-2.0*chi_M) / (Gamma*Gmu) / pow(l/t,P_M);
 
-		if(l <= gamma_c_M * t)
-			crateM = pow(t,-4.0) * nuM * (3.0*a_index_M-2.0*chi_M-1.0) / (2.0-2.0*chi_M) / (Gamma*Gmu) / pow(gamma_c_M,P_M);
+			if(l <= gamma_c_M * t)
+				crateM = pow(t,-4.0) * nuM * (3.0*a_index_M-2.0*chi_M-1.0) / (2.0-2.0*chi_M) / (Gamma*Gmu) / pow(gamma_c_M,P_M);
+		}
 
 		crate = crateR + crateM;
 	}
