@@ -29,7 +29,7 @@
 /**
  * \author Brown, D. A., and Brady, P. R.
  * \file
- * \ingroup lalmetaio_general
+ * \ingroup lalinspiral
  * \brief Construct a \c MetaTableDirectory for a given LIGOLwXML table.
  *
  * ### Description ###
@@ -61,16 +61,14 @@
  *
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <metaio.h>
+#include <string.h>
 
+#include "CreateMetaTableDir.h"
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/XLALError.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -341,60 +339,4 @@ MetaTableDirectory* XLALCreateMetaTableDir(
   }
 
   return tableDir;
-}
-
-
-void
-LALCreateMetaTableDir(
-    LALStatus              *status,
-    MetaTableDirectory    **tableDir,
-    struct MetaioParseEnvironment *const env UNUSED,
-    MetadataTableType       table
-    )
-
-{
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
-  /* check the inputs */
-  ASSERT( !*tableDir, status, LIGOLWXMLREADH_ENNUL, LIGOLWXMLREADH_MSGENNUL );
-
-  switch( table )
-  {
-    case no_table:
-      ABORT( status, LIGOLWXMLREADH_EMTAB, LIGOLWXMLREADH_MSGEMTAB );
-      break;
-    case process_table:
-      ABORT( status, LIGOLWXMLREADH_EMTAB, LIGOLWXMLREADH_MSGEMTAB );
-      break;
-    case process_params_table:
-      ABORT( status, LIGOLWXMLREADH_EMTAB, LIGOLWXMLREADH_MSGEMTAB );
-      break;
-    case search_summary_table:
-      ABORT( status, LIGOLWXMLREADH_EMTAB, LIGOLWXMLREADH_MSGEMTAB );
-      break;
-    case search_summvars_table:
-      ABORT( status, LIGOLWXMLREADH_EMTAB, LIGOLWXMLREADH_MSGEMTAB );
-      break;
-    case sngl_inspiral_table:
-      ABORT( status, LIGOLWXMLREADH_EMTAB, LIGOLWXMLREADH_MSGEMTAB );
-      break;
-    case multi_inspiral_table:
-      ABORT( status, LIGOLWXMLREADH_EMTAB, LIGOLWXMLREADH_MSGEMTAB );
-      break;
-    case sim_inspiral_table:
-      ABORT( status, LIGOLWXMLREADH_EMTAB, LIGOLWXMLREADH_MSGEMTAB );
-      break;
-    case summ_value_table:
-      ABORT( status, LIGOLWXMLREADH_EMTAB, LIGOLWXMLREADH_MSGEMTAB );
-      break;
-    default:
-      ABORT( status, LIGOLWXMLREADH_EUTAB, LIGOLWXMLREADH_MSGEUTAB );
-  }
-
-  (void)tableDir;
-
-  /* Normal exit */
-  DETATCHSTATUSPTR (status);
-  RETURN( status );
 }

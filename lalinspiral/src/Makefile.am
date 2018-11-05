@@ -4,6 +4,9 @@ include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 include $(top_srcdir)/gnuscripts/lalsuite_cuda.am
 
+noinst_HEADERS = \
+	CreateMetaTableDir.h
+
 pkginclude_HEADERS = \
 	BBHPhenomCoeffs.h \
 	Chisq_CPU.h \
@@ -58,13 +61,12 @@ lib_LTLIBRARIES = liblalinspiral.la
 liblalinspiral_la_SOURCES = \
 	BandPassInspiralTemplate.c \
 	Chisq_CPU.c \
-	InjectTimeSeries.c \
-	LALInspiralPyCBCTemplate.c \
 	CoherentInspiralFilter.c \
 	CoherentInspiralInput.c \
 	CoincInspiralEllipsoid.c \
 	CoincInspiralUtils.c \
 	CoincRingdownUtils.c \
+	CreateMetaTableDir.c \
 	FindChirpBCVChisq.c \
 	FindChirpBCVData.c \
 	FindChirpBCVSpinData.c \
@@ -96,6 +98,7 @@ liblalinspiral_la_SOURCES = \
 	GenerateRing.c \
 	GetErrorMatrixFromSnglInspiral.c \
 	GetInspiralParams.c \
+	InjectTimeSeries.c \
 	InspiralBankGeneration.c \
 	InspiralInjectionParams.c \
 	InspiralSpinBank.c \
@@ -149,6 +152,7 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralPhasing3.c \
 	LALInspiralPhiofVIntegrand.c \
 	LALInspiralPolarizations.c \
+	LALInspiralPyCBCTemplate.c \
 	LALInspiralRingdownWave.c \
 	LALInspiralSBankOverlap.c \
 	LALInspiralSetParams.c \
