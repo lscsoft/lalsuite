@@ -913,7 +913,7 @@ class TimeSlideGraph(object):
 
 		# default the coinc sieve
 		if coinc_sieve is None:
-			coinc_sieve = lambda events: False
+			coinc_sieve = lambda events, offset_vector: False
 
 		used_ids = set()
 		newly_reported_ids = set()
@@ -935,7 +935,7 @@ class TimeSlideGraph(object):
 				# apply the coinc sieve test.  this lever
 				# allows calling code to reduce the event
 				# rate going into output documents
-				if not coinc_sieve(events):
+				if not coinc_sieve(events, node.offset_vector):
 					newly_reported_ids.update(coinc)
 					yield node, events
 		self.used_ids |= used_ids
