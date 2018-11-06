@@ -1559,7 +1559,7 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 
 
 /**
- * Write a sim_burst table to an XML file.
+ * Write a time_slide table to an XML file.
  */
 
 
@@ -1610,6 +1610,11 @@ int XLALWriteLIGOLwXMLTimeSlideTable(
 
 	return 0;
 }
+
+
+/**
+ * Write a segment table to an XML file.
+ */
 
 int XLALWriteLIGOLwXMLSegmentTable(
 	LIGOLwXMLStream *xml,
