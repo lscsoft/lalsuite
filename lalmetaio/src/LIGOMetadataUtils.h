@@ -180,7 +180,7 @@ XLALReturnDetector(
 
 
 int
-LALCompareSearchSummaryByOutTime (
+XLALCompareSearchSummaryByOutTime (
     const void *a,
     const void *b
     );
@@ -213,4 +213,3 @@ XLALIfoScanSearchSummary(
 #endif
 
 #endif /* _LIGOMETADATAUTILS_H */
-

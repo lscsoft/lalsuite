@@ -230,7 +230,7 @@ XLALReturnDetector(
 
 
 int
-LALCompareSearchSummaryByOutTime (
+XLALCompareSearchSummaryByOutTime (
     const void *a,
     const void *b
     )
@@ -416,7 +416,7 @@ LALCheckOutTimeFromSearchSummary (
   thisIFOSummList = XLALIfoScanSearchSummary( summList, ifo );
 
   /* now, time sort the output list */
-  XLALTimeSortSearchSummary ( &thisIFOSummList, LALCompareSearchSummaryByOutTime );
+  XLALTimeSortSearchSummary ( &thisIFOSummList, XLALCompareSearchSummaryByOutTime );
 
   /* calculate requested start and end time in NS */
   startTimeNS = XLALGPSToINT8NS( startTime );
@@ -839,4 +839,3 @@ void XLALDestroyTimeSlideSegmentMapTable(TimeSlideSegmentMapTable *head)
     head = next;
   }
 }
-
