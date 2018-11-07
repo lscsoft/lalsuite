@@ -24,6 +24,7 @@ extern "C" {
 
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LALInspiral.h>
+#include <lal/Segments.h>
 #include <lal/GeneratePPNInspiral.h>
 
 

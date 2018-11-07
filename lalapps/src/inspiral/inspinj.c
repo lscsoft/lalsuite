@@ -373,7 +373,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/Random.h>
 #include <lal/AVFactories.h>
 #include <lal/InspiralInjectionParams.h>

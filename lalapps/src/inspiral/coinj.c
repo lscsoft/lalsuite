@@ -28,7 +28,7 @@
 #include <lal/LALStdio.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/FindChirp.h>
