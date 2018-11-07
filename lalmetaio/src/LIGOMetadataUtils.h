@@ -63,15 +63,12 @@ extern "C" {
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LALDetectors.h>
-#include <lal/Segments.h>
 
 /**\name Error Codes */ /*@{*/
 #define LIGOMETADATAUTILSH_ENULL 1
 #define LIGOMETADATAUTILSH_ENNUL 2
 #define LIGOMETADATAUTILSH_ETIME 3
 #define LIGOMETADATAUTILSH_ECOOR 4
-#define LIGOMETADATAUTILSH_ESGAP 5
-#define LIGOMETADATAUTILSH_ESDUB 6
 #define LIGOMETADATAUTILSH_ETEST 7
 #define LIGOMETADATAUTILSH_EDET 8
 #define LIGOMETADATAUTILSH_EDIST 9
@@ -79,8 +76,6 @@ extern "C" {
 #define LIGOMETADATAUTILSH_MSGENNUL "Non-null pointer"
 #define LIGOMETADATAUTILSH_MSGETIME "Invalid GPS Time"
 #define LIGOMETADATAUTILSH_MSGECOOR "Invalid Coordinate System"
-#define LIGOMETADATAUTILSH_MSGESGAP "Gap in Search Summary Input"
-#define LIGOMETADATAUTILSH_MSGESDUB "Repeated data in Search Summary Input"
 #define LIGOMETADATAUTILSH_MSGETEST "Unknown parameter test for sorting events"
 #define LIGOMETADATAUTILSH_MSGEDET "Unknown detector"
 #define LIGOMETADATAUTILSH_MSGEDIST "No horizon distance for consistency cut"
@@ -189,15 +184,6 @@ int
 XLALTimeSortSearchSummary(
     SearchSummaryTable  **summHead,
     int(*comparfunc)    (const void *, const void *)
-    );
-
-void
-LALCheckOutTimeFromSearchSummary (
-    LALStatus            *status,
-    SearchSummaryTable   *summList,
-    CHAR                 *ifo,
-    LIGOTimeGPS          *startTime,
-    LIGOTimeGPS          *endTime
     );
 
 SearchSummaryTable *

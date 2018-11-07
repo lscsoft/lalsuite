@@ -241,6 +241,106 @@ static void print_usage(char *program)
 }
 
 
+#define LIGOMETADATAUTILSH_ESGAP 5
+#define LIGOMETADATAUTILSH_ESDUB 6
+#define LIGOMETADATAUTILSH_MSGESGAP "Gap in Search Summary Input"
+#define LIGOMETADATAUTILSH_MSGESDUB "Repeated data in Search Summary Input"
+
+static void
+LALCheckOutTimeFromSearchSummary (
+    LALStatus            *status,
+    SearchSummaryTable   *summList,
+    CHAR                 *ifo,
+    LIGOTimeGPS          *startTime,
+    LIGOTimeGPS          *endTime
+    )
+
+{
+  SearchSummaryTable   *thisIFOSummList = NULL;
+  SearchSummaryTable   *thisSearchSumm = NULL;
+  INT8  startTimeNS = 0;
+  INT8  endTimeNS = 0;
+  INT8  unsearchedStartNS = 0;
+  INT8  outStartNS = 0;
+  INT8  outEndNS = 0;
+
+
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR( status );
+
+  /* check that the data has been searched once
+     and only once for the given IFO */
+
+  /* first, create a list of search summary tables applicable to this IFO */
+  thisIFOSummList = XLALIfoScanSearchSummary( summList, ifo );
+
+  /* now, time sort the output list */
+  XLALTimeSortSearchSummary ( &thisIFOSummList, XLALCompareSearchSummaryByOutTime );
+
+  /* calculate requested start and end time in NS */
+  startTimeNS = XLALGPSToINT8NS( startTime );
+  endTimeNS = XLALGPSToINT8NS( endTime );
+
+  unsearchedStartNS = startTimeNS;
+
+  /* check that all times are searched */
+  for ( thisSearchSumm = thisIFOSummList; thisSearchSumm;
+      thisSearchSumm = thisSearchSumm->next )
+  {
+    outStartNS = XLALGPSToINT8NS( &(thisSearchSumm->out_start_time) );
+
+    if ( outStartNS < startTimeNS )
+    {
+      /* file starts before requested start time */
+      outEndNS = XLALGPSToINT8NS( &(thisSearchSumm->out_end_time) );
+
+      if ( outEndNS > startTimeNS )
+      {
+        /* file is partially in requested times, update unsearchedStart */
+        unsearchedStartNS = outEndNS;
+      }
+    }
+    else if ( outStartNS == unsearchedStartNS )
+    {
+      /* this file starts at the beginning of the unsearched data */
+      /* calculate the end time and set unsearched start to this */
+      outEndNS = XLALGPSToINT8NS( &(thisSearchSumm->out_end_time) );
+
+      unsearchedStartNS = outEndNS;
+    }
+    else if ( outStartNS > unsearchedStartNS )
+    {
+      /* there is a gap in the searched data between unsearchedStart
+         and outStart */
+      ABORT( status, LIGOMETADATAUTILSH_ESGAP, LIGOMETADATAUTILSH_MSGESGAP );
+    }
+    else if ( outStartNS < unsearchedStartNS )
+    {
+      /* there is a region of data which was searched twice */
+      ABORT( status, LIGOMETADATAUTILSH_ESDUB, LIGOMETADATAUTILSH_MSGESDUB );
+    }
+  }
+
+  /* check that we got to the end of the requested time */
+  if ( unsearchedStartNS < endTimeNS )
+  {
+    ABORT( status, LIGOMETADATAUTILSH_ESGAP, LIGOMETADATAUTILSH_MSGESGAP );
+  }
+
+  /* free memory allocated in LALIfoScanSearchSummary */
+  while ( thisIFOSummList )
+  {
+    thisSearchSumm = thisIFOSummList;
+    thisIFOSummList = thisIFOSummList->next;
+    LALFree( thisSearchSumm );
+  }
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+}
+
+
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
