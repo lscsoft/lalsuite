@@ -64,24 +64,6 @@ extern "C" {
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LALDetectors.h>
 
-/**\name Error Codes */ /*@{*/
-#define LIGOMETADATAUTILSH_ENULL 1
-#define LIGOMETADATAUTILSH_ENNUL 2
-#define LIGOMETADATAUTILSH_ETIME 3
-#define LIGOMETADATAUTILSH_ECOOR 4
-#define LIGOMETADATAUTILSH_ETEST 7
-#define LIGOMETADATAUTILSH_EDET 8
-#define LIGOMETADATAUTILSH_EDIST 9
-#define LIGOMETADATAUTILSH_MSGENULL "Null pointer"
-#define LIGOMETADATAUTILSH_MSGENNUL "Non-null pointer"
-#define LIGOMETADATAUTILSH_MSGETIME "Invalid GPS Time"
-#define LIGOMETADATAUTILSH_MSGECOOR "Invalid Coordinate System"
-#define LIGOMETADATAUTILSH_MSGETEST "Unknown parameter test for sorting events"
-#define LIGOMETADATAUTILSH_MSGEDET "Unknown detector"
-#define LIGOMETADATAUTILSH_MSGEDIST "No horizon distance for consistency cut"
-
-/*@}*/
-
 /**
  * The \c LALPlaygroundDataMask contains an enum type for describing the
  * subset of data to be used, \c playground_only, \c exclude_play and \c all_data.
