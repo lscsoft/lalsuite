@@ -27,7 +27,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/SegmentsIO.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOLwXMLInspiralRead.h>

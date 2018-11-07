@@ -26,7 +26,7 @@
 #include <lal/GenerateInspiral.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOLwXMLRingdownRead.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOMetadataRingdownUtils.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
