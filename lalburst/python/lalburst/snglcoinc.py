@@ -541,7 +541,7 @@ class TimeSlideGraphNode(object):
 		# return coincs that meet the min_instruments criterion
 		self.keep_partial = len(offset_vector) > min_instruments
 		if len(offset_vector) > 2:
-			self.components = tuple(TimeSlideGraphNode(offset_vector, coinc_window, min_instruments) for offset_vector in offsetvector.component_offsetvectors([offset_vector], len(offset_vector) - 1))
+			self.components = tuple(TimeSlideGraphNode(coincgen_doubles_type, offset_vector, coinc_window, min_instruments) for offset_vector in offsetvector.component_offsetvectors([offset_vector], len(offset_vector) - 1))
 			# view into the id() --> event indexes of the
 			# nodes
 			self.index = multidict(*(node.index for node in self.components))
