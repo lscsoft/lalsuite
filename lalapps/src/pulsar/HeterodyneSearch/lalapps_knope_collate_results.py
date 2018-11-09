@@ -205,7 +205,7 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
     sys.exit(1)
 
   resultsdata = {} # dictionary to hold results data
-  sourcedirs = [os.path.join(inpath, rd) for rd in resdirs if os.path.isdir(os.path.join(inpath, rd))]
+  sourcedirs = [os.path.join(inpath, rd) for rd in resdirs if os.path.isfile(os.path.join(inpath, rd, '{}.ini'.format(rd)))]
   totalsources = len(sourcedirs)
   cursources = 0 # currently number of completed sources
   for d in sourcedirs:
