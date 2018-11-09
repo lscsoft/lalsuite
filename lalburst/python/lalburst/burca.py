@@ -134,8 +134,8 @@ class ExcessPowerCoincTables(snglcoinc.CoincTables):
 
 		return multiburst
 
-	def coinc_rows(self, process_id, time_slide_id, events):
-		coinc, coincmaps = super(ExcessPowerCoincTables, self).coinc_rows(process_id, time_slide_id, events)
+	def coinc_rows(self, process_id, time_slide_id, events, table_name):
+		coinc, coincmaps = super(ExcessPowerCoincTables, self).coinc_rows(process_id, time_slide_id, events, table_name)
 		coinc.insts = (event.ifo for event in events)
 		return coinc, coincmaps, self.make_multi_burst(process_id, coinc.coinc_event_id, events, self.time_slide_index[time_slide_id])
 
@@ -162,8 +162,8 @@ class StringCuspCoincTables(snglcoinc.CoincTables):
 		# this
 		return set(event.ifo for event in events) == disallowed
 
-	def coinc_rows(self, process_id, time_slide_id, events):
-		coinc, coincmaps = super(StringCuspCoincTables, self).coinc_rows(process_id, time_slide_id, events)
+	def coinc_rows(self, process_id, time_slide_id, events, table_name):
+		coinc, coincmaps = super(StringCuspCoincTables, self).coinc_rows(process_id, time_slide_id, events, table_name)
 		coinc.insts = (event.ifo for event in events)
 		return coinc, coincmaps
 
@@ -320,7 +320,7 @@ def burca(
 
 	for node, events in time_slide_graph.pull(threshold, flush = True, verbose = verbose):
 		if not ntuple_comparefunc(events, node.offset_vector):
-			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, events))
+			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, events, u"sngl_burst"))
 
 	#
 	# done

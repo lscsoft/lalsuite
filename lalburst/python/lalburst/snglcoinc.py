@@ -1001,7 +1001,7 @@ class CoincTables(object):
 		self.time_slide_table = lsctables.TimeSlideTable.get_table(xmldoc)
 		self.time_slide_index = self.time_slide_table.as_dict()
 
-	def coinc_rows(self, process_id, time_slide_id, events):
+	def coinc_rows(self, process_id, time_slide_id, events, table_name):
 		"""
 		From a process ID, a time slide ID, and a sequence of
 		events (generator expressions are OK), constructs and
@@ -1028,7 +1028,7 @@ class CoincTables(object):
 		"""
 		coincmaps = [self.coincmaptable.RowType(
 			coinc_event_id = None,
-			table_name = event.event_id.table_name,
+			table_name = table_name,
 			event_id = event.event_id
 		) for event in events]
 		assert coincmaps, "coincs must contain >= 1 event"
