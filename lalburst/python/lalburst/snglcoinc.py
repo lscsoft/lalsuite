@@ -151,10 +151,10 @@ class singlesqueue(object):
 	def age(self):
 		"""
 		Using .event_time() to define the times of events, the time
-		of the oldest event in the queue or segments.NegInfinity if
-		the queue is empty.
+		of the oldest event in the queue or self.t_complete if the
+		queue is empty.
 		"""
-		return self.event_time(self.queue[0]) if self.queue else NegInfinity
+		return self.event_time(self.queue[0]) if self.queue else self.t_complete
 
 	@property
 	def t_coinc_complete(self):
