@@ -155,7 +155,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 
 
 	def coinc_rows(self, process_id, time_slide_id, events, seglists = None):
-		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, events)
+		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, events, u"sngl_inspiral")
 
 		#
 		# populate the coinc_inspiral table:
