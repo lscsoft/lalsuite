@@ -480,6 +480,7 @@ nightly:top-level:buster:
   only:
     - schedules
     - web
+  allow_failure: true
 
 nightly:top-level:clang:
   image: skymoo/ligo-lalsuite-clang:jessie
