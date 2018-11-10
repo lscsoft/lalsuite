@@ -425,6 +425,7 @@ nightly:top-level:trusty:
   only:
     - schedules
     - web
+  allow_failure: true
 
 nightly:top-level:xenial:
   image: skymoo/ligo-lalsuite-dev:xenial
@@ -437,6 +438,7 @@ nightly:top-level:xenial:
   only:
     - schedules
     - web
+  allow_failure: true
 
 nightly:top-level:bionic:
   image: skymoo/ligo-lalsuite-dev:bionic
@@ -449,6 +451,7 @@ nightly:top-level:bionic:
   only:
     - schedules
     - web
+  allow_failure: true
 
 nightly:top-level:cosmic:
   image: skymoo/ligo-lalsuite-dev:cosmic
@@ -461,6 +464,7 @@ nightly:top-level:cosmic:
   only:
     - schedules
     - web
+  allow_failure: true
 
 # FIXME: It seems that Octave on buster currently has a few bugs which
 # cause the Octave bindings to fail, disable building the Octave SWIG
@@ -476,6 +480,7 @@ nightly:top-level:buster:
   only:
     - schedules
     - web
+  allow_failure: true
 
 nightly:top-level:clang:
   image: skymoo/ligo-lalsuite-clang:jessie
