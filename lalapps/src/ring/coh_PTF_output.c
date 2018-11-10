@@ -19,6 +19,7 @@
 
 #include "config.h"
 #include "coh_PTF.h"
+#include <lal/LIGOLwXMLlegacy.h>
 
 /*
  *
