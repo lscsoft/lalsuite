@@ -67,16 +67,9 @@ Depends: ${misc:Depends},
   lalinference (>= @MIN_LALINFERENCE_VERSION@~),
   python-lalinference (>= @MIN_LALINFERENCE_VERSION@~)
 Breaks: lalinference-python (<< 1.94.1-1~)
-Provides: python-bayestar-localization, python-bayestar
-Conflicts: python-bayestar-localization, python-bayestar
-Replaces: python-bayestar-localization,
-  python-bayestar,
-  pylal (<< 0.13.1),
-  lalstochastic,
-  lalstochastic-dev,
-  lalstochastic-python,
-  lalstochastic-python3,
-  lalstochastic-octave
+Provides: python-bayestar-localization, python-bayestar, python-pylal
+Conflicts: python-bayestar-localization, python-bayestar, python-pylal
+Replaces: python-bayestar-localization, python-bayestar, python-pylal
 Description: LSC Algorithm Library Applications
  The LSC Algorithm Library Applications for gravitational wave data analysis.
  This package contains applications that are built on tools in the
