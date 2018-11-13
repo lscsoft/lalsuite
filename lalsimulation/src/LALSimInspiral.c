@@ -384,6 +384,10 @@ int XLALSimInspiralChooseTDWaveform(
     UINT4 PrecEOBversion;
     REAL8 spin1[3], spin2[3];
 
+    REAL8 maxamp = 0;
+    INT4 loopi = 0;
+    INT4 maxind = 0;
+
     //LIGOTimeGPS epoch = LIGOTIMEGPSZERO;
 
     /* General sanity check the input parameters - only give warnings! */
@@ -735,11 +739,10 @@ int XLALSimInspiralChooseTDWaveform(
 	    // calculated from hplus and hcross, apply inclination-dependent factors
 	    // in loop below
 	    ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, 0., phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
-	    REAL8 maxamp=0;
+	    maxamp=0;
         REAL8TimeSeries *hp = *hplus;
         REAL8TimeSeries *hc = *hcross;
-        INT4 maxind=hp->data->length - 1;
-	    INT4 loopi;
+        maxind=hp->data->length - 1;
 	    const REAL8 cfac=cos(inclination);
 	    const REAL8 pfac = 0.5 * (1. + cfac*cfac);
         for (loopi=hp->data->length - 1; loopi > -1; loopi--)
@@ -766,23 +769,21 @@ int XLALSimInspiralChooseTDWaveform(
 	    if( !checkTidesZero(lambda1, lambda2) )
 		    ABORT_NONZERO_TIDES(LALparams);
 
-        /* To ensure that the TD version of phenomHM peaks at t=0 we
-           decided to call phenomD as the computational overhead is small
-           and compute the epoch from phenomD.
-           We can't use the same method with phenomHM because due to the higher
-           modes there might not be a peak at t=0. */
-        REAL8TimeSeries *hplus_pd = NULL;
-        REAL8TimeSeries *hcross_pd = NULL;
-        ret = XLALSimInspiralChooseTDWaveform(&hplus_pd, &hcross_pd, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, IMRPhenomD);
-        LIGOTimeGPS epoch = hplus_pd->epoch;
-        XLALDestroyREAL8TimeSeries(hplus_pd);
-        XLALDestroyREAL8TimeSeries(hcross_pd);
-
         ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
-
-        /* Assign epoch computed from phenomD */
-        (*hplus)->epoch = epoch;
-        (*hcross)->epoch = epoch;
+        maxamp = 0;
+        maxind = (*hplus)->data->length - 1;
+        for (loopi = (*hplus)->data->length - 1; loopi > -1; loopi--)
+        {
+            REAL8 ampsqr = ((*hplus)->data->data[loopi]) * ((*hplus)->data->data[loopi]) +
+                           ((*hcross)->data->data[loopi]) * ((*hcross)->data->data[loopi]);
+            if (ampsqr > maxamp)
+            {
+                maxind = loopi;
+                maxamp = ampsqr;
+            }
+        }
+        XLALGPSSetREAL8(&((*hplus)->epoch), (-1.) * deltaT * maxind);
+        XLALGPSSetREAL8(&((*hcross)->epoch), (-1.) * deltaT * maxind);
         break;
 
 	case IMRPhenomPv2:
@@ -4717,6 +4718,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case PhenSpinTaylor:
         case IMRPhenomC:
 	case IMRPhenomD:
+    case IMRPhenomHM:
 	case IMRPhenomPv2:
         case IMRPhenomPv2_NRTidal:
         case PhenSpinTaylorRD:
