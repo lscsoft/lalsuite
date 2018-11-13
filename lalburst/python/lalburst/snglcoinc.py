@@ -884,7 +884,7 @@ class TimeSlideGraph(object):
 		return self.t_coinc_complete != t_before
 
 
-	def pull(self, threshold_data, newly_reported = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = None, verbose = False):
+	def pull(self, threshold_data, newly_reported = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = None, event_collector = None, verbose = False):
 		if verbose:
 			print("constructing coincs for target offset vectors ...", file=sys.stderr)
 
@@ -911,9 +911,15 @@ class TimeSlideGraph(object):
 		# when the loop terminates
 		index = dict(self.index.iteritems())
 
-		# default the coinc sieve
+		# default coinc sieve
 		if coinc_sieve is None:
 			coinc_sieve = lambda events, offset_vector: False
+
+		# default event_collector:
+		if event_collector is None:
+			event_collector_push = lambda event_ids, offset_vector: None
+		else:
+			event_collector_push = event_collector.push
 
 		used_ids = set()
 		newly_reported_ids = set()
@@ -929,6 +935,7 @@ class TimeSlideGraph(object):
 			flushed_ids |= _flushed_ids
 			for coinc in itertools.chain(coincs, partial_coincs):
 				used_ids.update(coinc)
+				event_collector_push(coinc, node.offset_vector)
 				# use the index to convert Python IDs back
 				# to event objects
 				events = tuple(index[event_id] for event_id in coinc)
