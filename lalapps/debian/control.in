@@ -66,7 +66,7 @@ Depends: ${misc:Depends},
   python-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
   lalinference (>= @MIN_LALINFERENCE_VERSION@~),
   python-lalinference (>= @MIN_LALINFERENCE_VERSION@~)
-Breaks: lalinference-python (<< 1.94.1-1~)
+Breaks: lalinference-python (<< 1.9.4.1-1~)
 Provides: python-bayestar-localization, python-bayestar, python-pylal
 Conflicts: python-bayestar-localization, python-bayestar, python-pylal
 Replaces: python-bayestar-localization, python-bayestar, python-pylal
