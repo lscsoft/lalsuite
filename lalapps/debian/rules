@@ -2,5 +2,15 @@
 CONFIGUREARGS = --enable-swig --enable-openmp --enable-mpi
 include debian/lalsuite.mk
 
+DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+TEST_FOR_GNU_TYPE := x86_64-linux-gnu
+
 override_dh_auto_install:
 	dh_auto_install --destdir=debian/tmp
+
+override_dh_auto_test:
+	if [ $(DEB_BUILD_GNU_TYPE) = $(TEST_FOR_GNU_TYPE) ]; then \
+	    dh_auto_test; \
+	else \
+	    echo Tests skipped for non-X86_64 architecture; \
+	fi
