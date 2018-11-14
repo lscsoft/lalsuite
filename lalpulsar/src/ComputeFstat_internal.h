@@ -59,6 +59,7 @@ typedef struct {
   SSBprecision SSBprec;					// Barycentric transformation precision
   void *workspace;					// F-statistic method workspace
   BOOLEAN isTimeslice;                                  //Flag if this is a timeslice of another FstatInput struct
+  REAL8 allowedMismatchFromSFTLength; // optional override for XLALFstatCheckSFTLengthMismatch()
 } FstatCommon;
 
 
