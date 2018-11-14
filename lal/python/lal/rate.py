@@ -108,13 +108,19 @@ class Bins(object):
 		"""
 		raise NotImplementedError
 
-	def __cmp__(self, other):
+	def __eq__(self, other):
 		"""
 		Two binnings are the same if they are instances of the same
 		class, and describe the same binnings.  Subclasses should
 		override this method but need not.
 		"""
 		raise NotImplementedError
+
+	def __ne__(self, other):
+		# this can be removed when we require Python 3, since in
+		# Python 3 this relationship between the operators is the
+		# default.
+		return not self.__eq__(other)
 
 	def __getitem__(self, x):
 		"""
@@ -342,15 +348,13 @@ class LoHiCountBins(Bins):
 	def __len__(self):
 		return self.n
 
-	def __cmp__(self, other):
+	def __eq__(self, other):
 		"""
 		Two binnings are the same if they are instances of the same
 		class, have the same lower and upper bounds, and the same
 		count of bins.
 		"""
-		if not isinstance(other, type(self)):
-			return -1
-		return cmp((type(self), self.min, self.max, self.n), (type(other), other.min, other.max, other.n))
+		return isinstance(other, type(self)) and (self.min, self.max, self.n) == (other.min, other.max, other.n)
 
 	#
 	# XML I/O related methods and data
@@ -427,14 +431,12 @@ class IrregularBins(Bins):
 		if any(a > b for a, b in zip(self.boundaries[:-1], self.boundaries[1:])):
 			raise ValueError("non-monotonic boundaries provided")
 
-	def __cmp__(self, other):
+	def __eq__(self, other):
 		"""
 		Two binnings are the same if they are instances of the same
 		class, and have the same boundaries.
 		"""
-		if not isinstance(other, type(self)):
-			return -1
-		return cmp(self.boundaries, other.boundaries)
+		return isinstance(other, type(self)) and self.boundaries == other.boundaries
 
 	def __len__(self):
 		return len(self.boundaries) - 1
@@ -963,10 +965,8 @@ class Categories(Bins):
 				return i
 		raise IndexError(value)
 
-	def __cmp__(self, other):
-		if not isinstance(other, type(self)):
-			return -1
-		return cmp(self.containers, other.containers)
+	def __eq__(self, other):
+		return isinstance(other, type(self)) and self.containers == other.containers
 
 	def centres(self):
 		return self.containers
