@@ -92,12 +92,12 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
 ///
 /// The \f$\mathcal{F}\f$-statistic algorithms implemented in this module assume that the input
 /// SFTs supplied to XLALCreateFstatInput() are of such a length that, within the time span of
-/// each any SFT, the spectrum of any CW signal being search for will be mostly contained within
+/// each SFT, the spectrum of any CW signal being searched for will be mostly contained within
 /// one SFT bin:
-/// * The \a Demod algorithm make explicit use of this assumption in order to sum up only a few
+/// * The \a Demod algorithm makes explicit use of this assumption in order to sum up only a few
 ///   bins in the Dirichlet kernel, thereby speeding up the computation.
 /// * While the \a Resamp algorithm is in principle independent of the SFT length (as the data
-///   are converted from SFTs back into a time series) it practise it makes use of this assumption
+///   are converted from SFTs back into a time series), in practise it makes use of this assumption
 ///   for convenience to linearly approximate the phase over the time span of a single SFT.
 ///
 /// In order for this assumption to be valid, the SFT bins must be of a certain minimum size, and
@@ -114,7 +114,8 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
 ///     \pi (a \sin\iota / c)_{\textrm{max}} f_{\textrm{max}} \Omega_{\textrm{max}}^2
 ///   } } \,,
 /// \f]
-/// This function computes this expression with \f$\mu_{\textrm{SFT}} = 0.05\f$, and
+/// This function computes this expression with a user-given acceptable
+/// maximum mismatch \f$\mu_{\textrm{SFT}}\f$, and
 /// \f$(a \sin\iota / c)_{\textrm{max}}\f$ and \f$\Omega_{\textrm{max}}\f$ set to either the binary
 /// motion of the source, as specified by \p binaryMaxAsini and \p binaryMinPeriod, or the sidereal
 /// motion of the Earth, i.e. with \f$(a \sin\iota / c) \sim 0.02~\textrm{s}\f$ and
@@ -122,7 +123,8 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
 ///
 REAL8 XLALFstatMaximumSFTLength ( const REAL8 maxFreq,          /**< [in] Maximum signal frequency */
                                   const REAL8 binaryMaxAsini,   /**< [in] Maximum projected semi-major axis a*sini/c (= 0 for isolated sources) */
-                                  const REAL8 binaryMinPeriod   /**< [in] Minimum orbital period (s) */
+                                  const REAL8 binaryMinPeriod,  /**< [in] Minimum orbital period (s) */
+                                  const REAL8 mu_SFT            /**< [in] Maximum allowed fractional mismatch */
   )
 {
 
@@ -130,11 +132,7 @@ REAL8 XLALFstatMaximumSFTLength ( const REAL8 maxFreq,          /**< [in] Maximu
   XLAL_CHECK_REAL8( maxFreq > 0, XLAL_EINVAL );
   XLAL_CHECK_REAL8( binaryMaxAsini >= 0, XLAL_EINVAL );
   XLAL_CHECK_REAL8( (binaryMaxAsini == 0) || (binaryMinPeriod > 0), XLAL_EINVAL );	// if binary: P>0
-
-  // Use 5% mismatch in maximum allowed SFT length expression
-  // - This currently hard-coded value allows a search using 1800-second SFTs for isolated CW signals with frequencies <~ 2054 Hz,
-  //   while preventing a search using 1800-second SFTs for a Sco X-1-like binary CW signal (which would require <~ 200-second SFTs)
-  const REAL8 mu_SFT = 0.05;
+  XLAL_CHECK_REAL8( mu_SFT >= 0, XLAL_EINVAL );
 
   // Compute maximum allowed SFT length due to sidereal motion of the Earth
   const REAL8 earthAsini = LAL_REARTH_SI / LAL_C_SI;
@@ -154,6 +152,37 @@ REAL8 XLALFstatMaximumSFTLength ( const REAL8 maxFreq,          /**< [in] Maximu
   return Tsft_max;
 
 } // XLALFstatMaximumSFTLength()
+
+///
+/// Check that the SFT length \f$T_{\textrm{SFT}}\f$ does not exceed the result
+/// of XLALFstatMaximumSFTLength(), in which case a large unexpected mismatch
+/// would be produced.
+/// See documentation of that function for parameter dependence.
+/// If allowedMismatch==0, the default value is taken
+/// from #DEFAULT_MAX_MISMATCH_FROM_SFT_LENGTH .
+///
+int XLALFstatCheckSFTLengthMismatch ( const REAL8 Tsft,             /**< [in] actual SFT length */
+                                      const REAL8 maxFreq,          /**< [in] Maximum signal frequency */
+                                      const REAL8 binaryMaxAsini,   /**< [in] Maximum projected semi-major axis a*sini/c (= 0 for isolated sources) */
+                                      const REAL8 binaryMinPeriod,  /**< [in] Minimum orbital period (s) */
+                                      const REAL8 allowedMismatch   /**< [in] Maximum allowed fractional mismatch */
+  )
+{
+
+  // Use user-given maximum allowed mismatch, or fall back to hardcoded default
+  XLAL_CHECK_REAL8( allowedMismatch >= 0, XLAL_EINVAL );
+  REAL8 mu_SFT = DEFAULT_MAX_MISMATCH_FROM_SFT_LENGTH;
+  if ( allowedMismatch>0 ) {
+      mu_SFT = allowedMismatch;
+  }
+
+  const REAL8 Tsft_max = XLALFstatMaximumSFTLength ( maxFreq, binaryMaxAsini, binaryMinPeriod, mu_SFT );
+  XLAL_CHECK ( !XLALIsREAL8FailNaN( Tsft_max ), XLAL_EINVAL );
+  XLAL_CHECK ( Tsft < Tsft_max, XLAL_EINVAL, "Length of input SFTs (%g s) must be less than %g s for CW signal with frequency = %g, binary asini = %g, period = %g to stay below mismatch of %g.", Tsft, Tsft_max, maxFreq, binaryMaxAsini, binaryMinPeriod, mu_SFT );
+
+  return XLAL_SUCCESS;
+
+} // XLALFstatCheckSFTLengthMismatch()
 
 ///
 /// Create a #FstatInputVector of the given length, for example for setting up
@@ -417,6 +446,8 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
 
   // Determine the length of an SFT
   input->Tsft = 1.0 / SFTcatalog->data[0].header.deltaF;
+
+  common->allowedMismatchFromSFTLength = optArgs.allowedMismatchFromSFTLength;
 
   // Compute the mid-time and time-span of the SFTs
   double Tspan = 0;
@@ -697,9 +728,7 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
   // Check that SFT length is within allowed maximum
   {
     const REAL8 maxFreq = doppler->fkdot[0] + input->common.dFreq * numFreqBins;
-    const REAL8 Tsft_max = XLALFstatMaximumSFTLength( maxFreq, doppler->asini, doppler->period );
-    XLAL_CHECK ( !XLALIsREAL8FailNaN( Tsft_max ), XLAL_EINVAL );
-    XLAL_CHECK ( input->Tsft < Tsft_max, XLAL_EINVAL, "Length of input SFTs (%g s) must be less than %g s for CW signal with frequency = %g, binary asini = %g, period = %g", input->Tsft, Tsft_max, maxFreq, doppler->asini, doppler->period );
+    XLAL_CHECK ( XLALFstatCheckSFTLengthMismatch ( input->Tsft, maxFreq, doppler->asini, doppler->period, input->common.allowedMismatchFromSFTLength ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Allocate results struct, if needed
