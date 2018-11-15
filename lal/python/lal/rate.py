@@ -1119,6 +1119,15 @@ class NDBins(tuple):
 	"""
 	def __init__(self, binnings):
 		self._getitems = tuple(binning.__getitem__ for binning in binnings)
+		# instances cannot define a .__call__() attribute to make
+		# themselves callable, Python always looks up .__call__()
+		# on the class.  so we define .__realcall__() here and then
+		# have .__call__() chain to it.
+		define__realcall__ = """def __realcall__(self, %s):
+	_getitems = self._getitems
+	return %s""" % (", ".join("x%d" % i for i in range(len(binnings))), ", ".join("_getitems[%d](x%d)" % (i, i) for i in range(len(binnings))))
+		exec(define__realcall__)
+		self.__realcall__ = __realcall__.__get__(self)
 
 	def __getitem__(self, coords):
 		"""
@@ -1178,9 +1187,7 @@ class NDBins(tuple):
 		Each co-ordinate can be anything the corresponding Bins
 		instance will accept.
 		"""
-		if len(coords) != len(self):
-			raise ValueError("dimension mismatch")
-		return tuple(g(c) for g, c in zip(self._getitems, coords))
+		return self.__realcall__(*coords)
 
 	@property
 	def shape(self):
