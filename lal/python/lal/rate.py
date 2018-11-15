@@ -35,7 +35,6 @@ smoothing contour plots.
 """
 
 
-from bisect import bisect_right
 from functools import reduce
 try:
 	from fpconst import PosInf, NegInf
@@ -138,7 +137,7 @@ class Bins(object):
 		to handle slices:
 
 		def __getitem__(self, x):
-			if isinstance(x, slice)
+			if type(x) is slice:
 				return super(type(self), self).__getitem__(x)
 			# now handle non-slices ...
 		"""
@@ -427,35 +426,38 @@ class IrregularBins(Bins):
 		# check pre-conditions
 		if len(boundaries) < 2:
 			raise ValueError("less than two boundaries provided")
-		self.boundaries = tuple(boundaries)
-		if any(a > b for a, b in zip(self.boundaries[:-1], self.boundaries[1:])):
+		self.boundaries = numpy.array(boundaries)
+		if (self.boundaries[:-1] > self.boundaries[1:]).any():
 			raise ValueError("non-monotonic boundaries provided")
+		self.lo, self.hi = float(self.boundaries[0]), float(self.boundaries[-1])
 
 	def __eq__(self, other):
 		"""
 		Two binnings are the same if they are instances of the same
 		class, and have the same boundaries.
 		"""
-		return isinstance(other, type(self)) and self.boundaries == other.boundaries
+		return isinstance(other, type(self)) and (self.boundaries == other.boundaries).all()
 
 	def __len__(self):
 		return len(self.boundaries) - 1
 
 	def __getitem__(self, x):
-		if isinstance(x, slice):
+		# slice cannot be sub-classed so no need to use
+		# isinstance()
+		if type(x) is slice:
 			return super(IrregularBins, self).__getitem__(x)
-		if self.boundaries[0] <= x < self.boundaries[-1]:
-			return bisect_right(self.boundaries, x) - 1
+		if self.lo <= x < self.hi:
+			return self.boundaries.searchsorted(x, side = "right") - 1
 		# special measure-zero edge case
-		if x == self.boundaries[-1]:
+		if x == self.hi:
 			return len(self.boundaries) - 2
 		raise IndexError(x)
 
 	def lower(self):
-		return numpy.array(self.boundaries[:-1])
+		return self.boundaries[:-1]
 
 	def upper(self):
-		return numpy.array(self.boundaries[1:])
+		return self.boundaries[1:]
 
 	def centres(self):
 		return (self.lower() + self.upper()) / 2.0
@@ -532,7 +534,9 @@ class LinearBins(LoHiCountBins):
 		self.delta = float(max - min) / n
 
 	def __getitem__(self, x):
-		if isinstance(x, slice):
+		# slice cannot be sub-classed so no need to use
+		# isinstance()
+		if type(x) is slice:
 			return super(LinearBins, self).__getitem__(x)
 		if self.min <= x < self.max:
 			return int(math.floor((x - self.min) / self.delta))
@@ -607,7 +611,9 @@ class LinearPlusOverflowBins(LoHiCountBins):
 		self.delta = float(max - min) / (n - 2)
 
 	def __getitem__(self, x):
-		if isinstance(x, slice):
+		# slice cannot be sub-classed so no need to use
+		# isinstance()
+		if type(x) is slice:
 			return super(LinearPlusOverflowBins, self).__getitem__(x)
 		if self.min <= x < self.max:
 			return int(math.floor((x - self.min) / self.delta)) + 1
@@ -662,7 +668,9 @@ class LogarithmicBins(LoHiCountBins):
 		self.delta = (math.log(max) - math.log(min)) / n
 
 	def __getitem__(self, x):
-		if isinstance(x, slice):
+		# slice cannot be sub-classed so no need to use
+		# isinstance()
+		if type(x) is slice:
 			return super(LogarithmicBins, self).__getitem__(x)
 		if self.min <= x < self.max:
 			return int(math.floor((math.log(x) - math.log(self.min)) / self.delta))
@@ -731,7 +739,9 @@ class LogarithmicPlusOverflowBins(LoHiCountBins):
 		self.delta = (math.log(max) - math.log(min)) / (n - 2)
 
 	def __getitem__(self, x):
-		if isinstance(x, slice):
+		# slice cannot be sub-classed so no need to use
+		# isinstance()
+		if type(x) is slice:
 			return super(LogarithmicPlusOverflowBins, self).__getitem__(x)
 		if self.min <= x < self.max:
 			return 1 + int(math.floor((math.log(x) - math.log(self.min)) / self.delta))
@@ -795,7 +805,9 @@ class ATanBins(LoHiCountBins):
 		self.delta = 1.0 / n
 
 	def __getitem__(self, x):
-		if isinstance(x, slice):
+		# slice cannot be sub-classed so no need to use
+		# isinstance()
+		if type(x) is slice:
 			return super(ATanBins, self).__getitem__(x)
 		# map to the domain [0, 1]
 		x = math.atan(float(x - self.mid) * self.scale) / math.pi + 0.5
@@ -1107,6 +1119,15 @@ class NDBins(tuple):
 	"""
 	def __init__(self, binnings):
 		self._getitems = tuple(binning.__getitem__ for binning in binnings)
+		# instances cannot define a .__call__() attribute to make
+		# themselves callable, Python always looks up .__call__()
+		# on the class.  so we define .__realcall__() here and then
+		# have .__call__() chain to it.
+		define__realcall__ = """def __realcall__(self, %s):
+	_getitems = self._getitems
+	return %s""" % (", ".join("x%d" % i for i in range(len(binnings))), ", ".join("_getitems[%d](x%d)" % (i, i) for i in range(len(binnings))))
+		exec(define__realcall__)
+		self.__realcall__ = __realcall__.__get__(self)
 
 	def __getitem__(self, coords):
 		"""
@@ -1166,9 +1187,7 @@ class NDBins(tuple):
 		Each co-ordinate can be anything the corresponding Bins
 		instance will accept.
 		"""
-		if len(coords) != len(self):
-			raise ValueError("dimension mismatch")
-		return tuple(g(c) for g, c in zip(self._getitems, coords))
+		return self.__realcall__(*coords)
 
 	@property
 	def shape(self):
