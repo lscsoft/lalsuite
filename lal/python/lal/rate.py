@@ -35,7 +35,6 @@ smoothing contour plots.
 """
 
 
-from bisect import bisect_right
 from functools import reduce
 try:
 	from fpconst import PosInf, NegInf
@@ -427,16 +426,17 @@ class IrregularBins(Bins):
 		# check pre-conditions
 		if len(boundaries) < 2:
 			raise ValueError("less than two boundaries provided")
-		self.boundaries = tuple(boundaries)
-		if any(a > b for a, b in zip(self.boundaries[:-1], self.boundaries[1:])):
+		self.boundaries = numpy.array(boundaries)
+		if (self.boundaries[:-1] > self.boundaries[1:]).any():
 			raise ValueError("non-monotonic boundaries provided")
+		self.lo, self.hi = float(self.boundaries[0]), float(self.boundaries[-1])
 
 	def __eq__(self, other):
 		"""
 		Two binnings are the same if they are instances of the same
 		class, and have the same boundaries.
 		"""
-		return isinstance(other, type(self)) and self.boundaries == other.boundaries
+		return isinstance(other, type(self)) and (self.boundaries == other.boundaries).all()
 
 	def __len__(self):
 		return len(self.boundaries) - 1
@@ -446,18 +446,18 @@ class IrregularBins(Bins):
 		# isinstance()
 		if type(x) is slice:
 			return super(IrregularBins, self).__getitem__(x)
-		if self.boundaries[0] <= x < self.boundaries[-1]:
-			return bisect_right(self.boundaries, x) - 1
+		if self.lo <= x < self.hi:
+			return self.boundaries.searchsorted(x, side = "right") - 1
 		# special measure-zero edge case
-		if x == self.boundaries[-1]:
+		if x == self.hi:
 			return len(self.boundaries) - 2
 		raise IndexError(x)
 
 	def lower(self):
-		return numpy.array(self.boundaries[:-1])
+		return self.boundaries[:-1]
 
 	def upper(self):
-		return numpy.array(self.boundaries[1:])
+		return self.boundaries[1:]
 
 	def centres(self):
 		return (self.lower() + self.upper()) / 2.0
