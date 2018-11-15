@@ -1039,8 +1039,8 @@ COMPLEX16 IMRPhenomHMOnePointFiveSpinPN(
             + \
             v4 * \
                 ( \
-                Xa * (4771.0 / 1344 - eta * 11941.0 / 336) + \
-                delta * Xs * (4771.0 / 1344 - eta * 2549 / 336) + \
+                Xa * (3427.0 / 1344 - eta * 2101.0 / 336) + \
+                delta * Xs * (3427.0 / 1344 - eta * 965 / 336) + \
                 delta * (-I * 0.5 - LAL_PI - 2 * I * 0.69314718056) \
                 )
             );
