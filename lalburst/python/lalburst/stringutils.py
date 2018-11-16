@@ -121,7 +121,7 @@ def triangulators(timing_uncertainties):
 #
 
 
-def InstrumentBins(names = ("E0", "E1", "E2", "E3", "G1", "H1", "H2", "H1H2+", "H1H2-", "L1", "V1")):
+class InstrumentBins(rate.HashableBins):
 	"""
 	Example:
 
@@ -131,7 +131,29 @@ def InstrumentBins(names = ("E0", "E1", "E2", "E3", "G1", "H1", "H2", "H1H2+", "
 	>>> x.centres()[55]
 	frozenset(['H1', 'L1'])
 	"""
-	return rate.HashableBins(frozenset(combo) for n in range(len(names) + 1) for combo in itertools.combinations(names, n))
+
+	names = ("E0", "E1", "E2", "E3", "G1", "H1", "H2", "H1H2+", "H1H2-", "L1", "V1")
+
+	def __init__(self):
+		super(InstrumentBins, self).__init__(frozenset(combo) for n in range(len(names) + 1) for combo in itertools.combinations(names, n))
+
+	# FIXME:  hack to allow instrument binnings to be included as a
+	# dimension in multi-dimensional PDFs by defining a volume for
+	# them.  investigate more sensible ways to do this.  maybe NDBins
+	# and BinnedDensity should understand the difference between
+	# functional and parametric co-ordinates.
+	def lower(self):
+		return numpy.arange(0, len(self), dtype = "double")
+	def upper(self):
+		return numpy.arange(1, len(self) + 1, dtype = "double")
+
+	xml_bins_name = u"instrumentbins"
+
+# NOTE:  side effect of importing this module:
+rate.NDBins.xml_bins_name_mapping.update({
+	InstrumentBins.xml_bins_name: InstrumentBins,
+	InstrumentBins: InstrumentBins.xml_bins_name
+})
 
 
 #

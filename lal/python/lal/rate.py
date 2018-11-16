@@ -665,7 +665,9 @@ class LogarithmicBins(LoHiCountBins):
 	"""
 	def __init__(self, min, max, n):
 		super(LogarithmicBins, self).__init__(min, max, n)
-		self.delta = (math.log(max) - math.log(min)) / n
+		self.logmin = math.log(min)
+		self.logmax = math.log(max)
+		self.delta = (self.logmax - self.logmin) / n
 
 	def __getitem__(self, x):
 		# slice cannot be sub-classed so no need to use
@@ -673,20 +675,20 @@ class LogarithmicBins(LoHiCountBins):
 		if type(x) is slice:
 			return super(LogarithmicBins, self).__getitem__(x)
 		if self.min <= x < self.max:
-			return int(math.floor((math.log(x) - math.log(self.min)) / self.delta))
+			return int(math.floor((math.log(x) - self.logmin) / self.delta))
 		if x == self.max:
 			# special "measure zero" corner case
 			return len(self) - 1
 		raise IndexError(x)
 
 	def lower(self):
-		return numpy.exp(numpy.linspace(math.log(self.min), math.log(self.max) - self.delta, len(self)))
+		return numpy.exp(numpy.linspace(self.logmin, self.logmax - self.delta, len(self)))
 
 	def centres(self):
-		return numpy.exp(numpy.linspace(math.log(self.min), math.log(self.max) - self.delta, len(self)) + self.delta / 2.)
+		return numpy.exp(numpy.linspace(self.logmin, self.logmax - self.delta, len(self)) + self.delta / 2.)
 
 	def upper(self):
-		return numpy.exp(numpy.linspace(math.log(self.min) + self.delta, math.log(self.max), len(self)))
+		return numpy.exp(numpy.linspace(self.logmin + self.delta, self.logmax, len(self)))
 
 	#
 	# XML I/O related methods and data
@@ -736,7 +738,9 @@ class LogarithmicPlusOverflowBins(LoHiCountBins):
 		if n < 3:
 			raise ValueError("n must be >= 3")
 		super(LogarithmicPlusOverflowBins, self).__init__(min, max, n)
-		self.delta = (math.log(max) - math.log(min)) / (n - 2)
+		self.logmin = math.log(min)
+		self.logmax = math.log(max)
+		self.delta = (self.logmax - self.logmin) / (n - 2)
 
 	def __getitem__(self, x):
 		# slice cannot be sub-classed so no need to use
@@ -744,7 +748,7 @@ class LogarithmicPlusOverflowBins(LoHiCountBins):
 		if type(x) is slice:
 			return super(LogarithmicPlusOverflowBins, self).__getitem__(x)
 		if self.min <= x < self.max:
-			return 1 + int(math.floor((math.log(x) - math.log(self.min)) / self.delta))
+			return 1 + int(math.floor((math.log(x) - self.logmin) / self.delta))
 		if x >= self.max:
 			# infinity overflow bin
 			return len(self) - 1
@@ -754,13 +758,13 @@ class LogarithmicPlusOverflowBins(LoHiCountBins):
 		raise IndexError(x)
 
 	def lower(self):
-		return numpy.concatenate((numpy.array([0.]), numpy.exp(numpy.linspace(math.log(self.min), math.log(self.max), len(self) - 1))))
+		return numpy.concatenate((numpy.array([0.]), numpy.exp(numpy.linspace(self.logmin, self.logmax, len(self) - 1))))
 
 	def centres(self):
-		return numpy.concatenate((numpy.array([0.]), numpy.exp(numpy.linspace(math.log(self.min), math.log(self.max) - self.delta, len(self) - 2) + self.delta / 2.), numpy.array([PosInf])))
+		return numpy.concatenate((numpy.array([0.]), numpy.exp(numpy.linspace(self.logmin, self.logmax - self.delta, len(self) - 2) + self.delta / 2.), numpy.array([PosInf])))
 
 	def upper(self):
-		return numpy.concatenate((numpy.exp(numpy.linspace(math.log(self.min), math.log(self.max), len(self) - 1)), numpy.array([PosInf])))
+		return numpy.concatenate((numpy.exp(numpy.linspace(self.logmin, self.logmax, len(self) - 1)), numpy.array([PosInf])))
 
 	#
 	# XML I/O related methods and data
@@ -1037,20 +1041,6 @@ class HashableBins(Categories):
 			return self.mapping[value]
 		except (KeyError, TypeError):
 			raise IndexError(value)
-
-	# FIXME:  hack to allow instrument binnings to be included as a
-	# dimension in multi-dimensional PDFs by defining a volume for
-	# them.  investigate more sensible ways to do this.  a
-	# purpose-built instrument binning could be introduced but that (a)
-	# breaks on-going analysis code by changing the file format of
-	# ranking statistic data files and (b) doesn't solve the problem
-	# when something else like this comes along.  maybe NDBins and
-	# BinnedDensity should understand the difference between functional
-	# and parametric co-ordinates.
-	def lower(self):
-		return numpy.arange(0, len(self), dtype = "double")
-	def upper(self):
-		return numpy.arange(1, len(self) + 1, dtype = "double")
 
 	xml_bins_name = u"hashablebins"
 
