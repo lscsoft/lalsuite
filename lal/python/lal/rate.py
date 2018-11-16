@@ -1042,20 +1042,6 @@ class HashableBins(Categories):
 		except (KeyError, TypeError):
 			raise IndexError(value)
 
-	# FIXME:  hack to allow instrument binnings to be included as a
-	# dimension in multi-dimensional PDFs by defining a volume for
-	# them.  investigate more sensible ways to do this.  a
-	# purpose-built instrument binning could be introduced but that (a)
-	# breaks on-going analysis code by changing the file format of
-	# ranking statistic data files and (b) doesn't solve the problem
-	# when something else like this comes along.  maybe NDBins and
-	# BinnedDensity should understand the difference between functional
-	# and parametric co-ordinates.
-	def lower(self):
-		return numpy.arange(0, len(self), dtype = "double")
-	def upper(self):
-		return numpy.arange(1, len(self) + 1, dtype = "double")
-
 	xml_bins_name = u"hashablebins"
 
 
