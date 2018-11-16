@@ -982,14 +982,7 @@ class Categories(Bins):
 		Construct a LIGO Light Weight XML representation of the
 		Bins instance.
 		"""
-		# FIXME:  switch to "pickle" type for params when it won't
-		# break on-going O2 analyses
-		#return ligolw_param.Param.build(self.xml_bins_name_enc(self.xml_bins_name), u"pickle", self.containers)
-		import pickle
-		return ligolw_param.Param.from_pyvalue(self.xml_bins_name_enc(self.xml_bins_name), pickle.dumps(self.containers))
-		# FIXME:  switch to "yaml" type if we can rely on the yaml
-		# module's availability
-		#return ligolw_param.Param.build(self.xml_bins_name_enc(self.xml_bins_name), u"yaml", self.containers)
+		return ligolw_param.Param.build(self.xml_bins_name_enc(self.xml_bins_name), u"yaml", self.containers)
 
 	@classmethod
 	def from_xml(cls, xml):
@@ -999,11 +992,7 @@ class Categories(Bins):
 		"""
 		if not cls.xml_bins_check(xml, cls.xml_bins_name):
 			raise ValueError("not a %s" % repr(cls))
-		# FIXME:  replace with commented-out code when we can rely
-		# on new "pickle" type for params
-		#return cls(xml.pcdata)
-		import pickle
-		return cls(pickle.loads(xml.pcdata))
+		return cls(xml.pcdata)
 
 
 class HashableBins(Categories):
