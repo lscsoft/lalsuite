@@ -149,7 +149,7 @@ if options.coinc_end_time_segs is not None:
 		"""
 		return thinca.coinc_inspiral_end_time(events, offset_vector) not in seg
 else:
-	ntuple_comparefunc = thinca.InspiralCoincTables.ntuple_comparefunc
+	ntuple_comparefunc = None
 
 
 #
