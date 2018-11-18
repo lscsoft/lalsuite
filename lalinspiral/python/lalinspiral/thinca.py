@@ -157,23 +157,24 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, events, u"sngl_inspiral")
 
 		#
-		# populate the coinc_inspiral table:
+		# populate the coinc_inspiral table.  assume exact-match
+		# coincidence, so pick one trigger to provide template
+		# parameters.  otherwise:
 		#
 		# - end_time is the end time of the first trigger in
 		#   alphabetical order by instrument (!?) time-shifted
 		#   according to the coinc's offset vector
-		# - mass is average of total masses
-		# - mchirp is average of mchirps
 		# - snr is root-sum-square of SNRs
 		# - false-alarm rates are blank
 		#
 
 		offsetvector = self.time_slide_index[time_slide_id]
 		end = coinc_inspiral_end_time(events, offsetvector)
+		refevent = events[0]
 		coinc_inspiral = self.coinc_inspiral_table.RowType(
 			coinc_event_id = coinc.coinc_event_id,	# = None
-			mass = sum(event.mass1 + event.mass2 for event in events) / len(events),
-			mchirp = sum(event.mchirp for event in events) / len(events),
+			mass = refevent.mass1 + refevent.mass2,
+			mchirp = refevent.mchirp,
 			snr = math.sqrt(sum(event.snr**2. for event in events)),
 			false_alarm_rate = None,
 			combined_far = None,
@@ -254,19 +255,6 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 
 		def __call__(self, event_a, offset_a, light_travel_time, delta_t):
 			#
-			# event_a's end time, shifted to be with respect to
-			# end times in this list.
-			#
-
-			end = event_a.end + offset_a
-
-			#
-			# the coincidence window
-			#
-
-			coincidence_window = light_travel_time + delta_t
-
-			#
 			# extract the subset of events from this list that
 			# pass coincidence with event_a.  use a bisection
 			# search for the minimum allowed end time and a
@@ -287,7 +275,30 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 				# trapping the exception is more efficient
 				# than testing
 				return ()
+
+			#
+			# event_a's end time, shifted to be with respect to
+			# end times in this list.
+			#
+
+			end = event_a.end + offset_a
+
+			#
+			# the coincidence window
+			#
+
+			coincidence_window = light_travel_time + delta_t
+
+			#
+			# where to stop the scan
+			#
+
 			stop = end + coincidence_window
+
+			#
+			# return coincident events
+			#
+
 			return tuple(itertools.takewhile(lambda event: event.end <= stop, events[bisect_left(events, end - coincidence_window):]))
 
 
