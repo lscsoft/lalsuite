@@ -29,7 +29,6 @@ from bisect import bisect_left
 import itertools
 import math
 import sys
-import time
 
 
 from glue.ligolw import ligolw
@@ -158,23 +157,24 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, events, u"sngl_inspiral")
 
 		#
-		# populate the coinc_inspiral table:
+		# populate the coinc_inspiral table.  assume exact-match
+		# coincidence, so pick one trigger to provide template
+		# parameters.  otherwise:
 		#
 		# - end_time is the end time of the first trigger in
 		#   alphabetical order by instrument (!?) time-shifted
 		#   according to the coinc's offset vector
-		# - mass is average of total masses
-		# - mchirp is average of mchirps
 		# - snr is root-sum-square of SNRs
 		# - false-alarm rates are blank
 		#
 
 		offsetvector = self.time_slide_index[time_slide_id]
 		end = coinc_inspiral_end_time(events, offsetvector)
+		refevent = events[0]
 		coinc_inspiral = self.coinc_inspiral_table.RowType(
 			coinc_event_id = coinc.coinc_event_id,	# = None
-			mass = sum(event.mass1 + event.mass2 for event in events) / len(events),
-			mchirp = sum(event.mchirp for event in events) / len(events),
+			mass = refevent.mass1 + refevent.mass2,
+			mchirp = refevent.mchirp,
 			snr = math.sqrt(sum(event.snr**2. for event in events)),
 			false_alarm_rate = None,
 			combined_far = None,
@@ -200,14 +200,6 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		#
 
 		return coinc, coincmaps, coinc_inspiral
-
-
-	@staticmethod
-	def ntuple_comparefunc(events, offset_vector):
-		"""
-		Default ntuple test function.  Accept all ntuples.
-		"""
-		return False
 
 
 	def append_coinc(self, coinc_event, coinc_event_maps, coinc_inspiral):
@@ -263,19 +255,6 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 
 		def __call__(self, event_a, offset_a, light_travel_time, delta_t):
 			#
-			# event_a's end time, shifted to be with respect to
-			# end times in this list.
-			#
-
-			end = event_a.end + offset_a
-
-			#
-			# the coincidence window
-			#
-
-			coincidence_window = light_travel_time + delta_t
-
-			#
 			# extract the subset of events from this list that
 			# pass coincidence with event_a.  use a bisection
 			# search for the minimum allowed end time and a
@@ -296,7 +275,30 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 				# trapping the exception is more efficient
 				# than testing
 				return ()
+
+			#
+			# event_a's end time, shifted to be with respect to
+			# end times in this list.
+			#
+
+			end = event_a.end + offset_a
+
+			#
+			# the coincidence window
+			#
+
+			coincidence_window = light_travel_time + delta_t
+
+			#
+			# where to stop the scan
+			#
+
 			stop = end + coincidence_window
+
+			#
+			# return coincident events
+			#
+
 			return tuple(itertools.takewhile(lambda event: event.end <= stop, events[bisect_left(events, end - coincidence_window):]))
 
 
@@ -313,13 +315,12 @@ def ligolw_thinca(
 	xmldoc,
 	process_id,
 	delta_t,
-	ntuple_comparefunc = InspiralCoincTables.ntuple_comparefunc,
+	ntuple_comparefunc = None,
 	seglists = None,
 	veto_segments = None,
 	likelihood_func = None,
 	fapfar = None,
 	min_instruments = 2,
-	min_log_L = None,
 	coinc_definer_row = InspiralCoincDef,
 	verbose = False
 ):
@@ -357,28 +358,17 @@ def ligolw_thinca(
 	# and record the survivors
 	#
 
-	gps_time_now = float(lal.UTCToGPS(time.gmtime()))
-	for node, events in time_slide_graph.pull(delta_t, flush = True, verbose = verbose):
-		if not ntuple_comparefunc(events, node.offset_vector):
-			coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, events, seglists = seglists)
-			if likelihood_func is not None:
-				coinc.likelihood = likelihood_func(events, node.offset_vector)
-				if fapfar is not None:
-					# FIXME:  add proper columns to
-					# store these values in
-					coinc_inspiral.combined_far = fapfar.far_from_rank(coinc.likelihood)
-					coinc_inspiral.false_alarm_rate = fapfar.fap_from_rank(coinc.likelihood)
-			# if min_log_L is None, this test always passes,
-			# regardless of the value of .likelihood, be it
-			# None, some number, -inf or even nan.
-			if coinc.likelihood >= min_log_L:
-				# set latency.
-				# NOTE:  this is nonsense unless running
-				# live.
-				# FIXME: add a proper column for this
-				coinc_inspiral.minimum_duration = gps_time_now - float(coinc_inspiral.end)
-				# finally, append coinc to tables
-				coinc_tables.append_coinc(coinc, coincmaps, coinc_inspiral)
+	for node, events in time_slide_graph.pull(delta_t, coinc_sieve = ntuple_comparefunc, flush = True, verbose = verbose):
+		coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, events, seglists = seglists)
+		if likelihood_func is not None:
+			coinc.likelihood = likelihood_func(events, node.offset_vector)
+			if fapfar is not None:
+				# FIXME:  add proper columns to
+				# store these values in
+				coinc_inspiral.combined_far = fapfar.far_from_rank(coinc.likelihood)
+				coinc_inspiral.false_alarm_rate = fapfar.fap_from_rank(coinc.likelihood)
+		# finally, append coinc to tables
+		coinc_tables.append_coinc(coinc, coincmaps, coinc_inspiral)
 
 	#
 	# done
