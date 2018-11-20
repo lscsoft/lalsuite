@@ -1101,11 +1101,15 @@ class NDBins(tuple):
 		# instances cannot define a .__call__() attribute to make
 		# themselves callable, Python always looks up .__call__()
 		# on the class.  so we define .__realcall__() here and then
-		# have .__call__() chain to it.
+		# have .__call__() chain to it.  Python3 does not transfer
+		# the current variable scope into exec() so we have to do
+		# it for it ... whatever.
 		define__realcall__ = """def __realcall__(self, %s):
 	_getitems = self._getitems
 	return %s""" % (", ".join("x%d" % i for i in range(len(binnings))), ", ".join("_getitems[%d](x%d)" % (i, i) for i in range(len(binnings))))
-		exec(define__realcall__)
+		l = {}
+		exec(define__realcall__, globals(), l)
+		__realcall__ = l["__realcall__"]
 		self.__realcall__ = __realcall__.__get__(self)
 
 	def __getitem__(self, coords):
