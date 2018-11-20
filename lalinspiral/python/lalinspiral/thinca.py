@@ -153,7 +153,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 			xmldoc.childNodes[0].appendChild(self.coinc_inspiral_table)
 
 
-	def coinc_rows(self, process_id, time_slide_id, events, seglists = None):
+	def coinc_rows(self, process_id, time_slide_id, events, seglists):
 		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, events, u"sngl_inspiral")
 
 		#
@@ -178,6 +178,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		# another.
 		refevent = max(events, key = lambda event: event.snr)
 		end = refevent.end + offsetvector[refevent.ifo]
+		participating_instruments = frozenset(event.ifo for event in events)
 		coinc_inspiral = self.coinc_inspiral_table.RowType(
 			coinc_event_id = coinc.coinc_event_id,	# = None
 			mass = refevent.mass1 + refevent.mass2,
@@ -187,7 +188,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 			combined_far = None,
 			minimum_duration = None,
 			end = end,
-			instruments = (event.ifo for event in events)
+			instruments = participating_instruments
 		)
 
 		#
@@ -198,9 +199,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		# lists
 		#
 
-		coinc.insts = set(event.ifo for event in events)
-		if seglists is not None:
-			coinc.insts |= set(instrument for instrument, segs in seglists.items() if end - offsetvector[instrument] in segs)
+		coinc.insts = set(instrument for instrument, segs in seglists.items() if end - offsetvector[instrument] in segs) | participating_instruments
 
 		#
 		# done
@@ -312,8 +311,8 @@ def ligolw_thinca(
 	xmldoc,
 	process_id,
 	delta_t,
+	seglists,
 	ntuple_comparefunc = None,
-	seglists = None,
 	veto_segments = None,
 	likelihood_func = None,
 	fapfar = None,
@@ -343,9 +342,8 @@ def ligolw_thinca(
 	sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
 	if veto_segments is not None:
 		sngl_inspiral_table = (event for event in sngl_inspiral_table if event.ifo not in veto_segments or event.end not in veto_segments[event.ifo])
-		if seglists is not None:
-			# don't do in-place
-			seglists = seglists - veto_segments
+		# don't do in-place
+		seglists = seglists - veto_segments
 	for instrument, events in itertools.groupby(sorted(sngl_inspiral_table, key = lambda row: row.ifo), lambda event: event.ifo):
 		events = tuple(events)
 		time_slide_graph.push(instrument, events, max(event.end for event in events))
