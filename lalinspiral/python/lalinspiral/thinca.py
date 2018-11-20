@@ -226,15 +226,6 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 
 
 	class get_coincs(object):
-		@staticmethod
-		def template(event):
-			"""
-			Returns an immutable hashable object (it can be
-			used as a dictionary key) uniquely identifying the
-			template that produced the given event.
-			"""
-			return event.mass1, event.mass2, event.spin1x, event.spin1y, event.spin1z, event.spin2x, event.spin2y, event.spin2z
-
 		def __init__(self, events):
 			"""
 			Sort events into bins according to their template
@@ -249,9 +240,8 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 			"""
 			self.index = {}
 			index_setdefault = self.index.setdefault
-			template = self.template
 			for event in events:
-				index_setdefault(template(event), []).append(event)
+				index_setdefault(event.template_id, []).append(event)
 
 		def __call__(self, event_a, offset_a, light_travel_time, delta_t):
 			#
@@ -267,7 +257,7 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 			#
 
 			try:
-				events = self.index[self.template(event_a)]
+				events = self.index[event_a.template_id]
 			except KeyError:
 				# that template didn't produce any events
 				# in this instrument.  this is rare given
