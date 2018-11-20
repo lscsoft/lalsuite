@@ -161,16 +161,23 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		# coincidence, so pick one trigger to provide template
 		# parameters.  otherwise:
 		#
-		# - end_time is the end time of the first trigger in
-		#   alphabetical order by instrument (!?) time-shifted
-		#   according to the coinc's offset vector
+		# - end time is end time of highest SNR trigger
+		#   time-shifted according to the coinc's offset vector
 		# - snr is root-sum-square of SNRs
 		# - false-alarm rates are blank
 		#
 
 		offsetvector = self.time_slide_index[time_slide_id]
-		end = coinc_inspiral_end_time(events, offsetvector)
-		refevent = events[0]
+		# the selection of an "end time" for the coincidence agrees
+		# with the coinc_inspiral_end_time() function above, but
+		# that's not necessary.  lalapps_thinca's ability to split
+		# coincs across boundaries only requires
+		# coinc_inspiral_end_time() to be used by all jobs and
+		# yield reproducible results, not that all "end times" that
+		# might be associated with a candidate agree with one
+		# another.
+		refevent = max(events, key = lambda event: event.snr)
+		end = refevent.end + offsetvector[refevent.ifo]
 		coinc_inspiral = self.coinc_inspiral_table.RowType(
 			coinc_event_id = coinc.coinc_event_id,	# = None
 			mass = refevent.mass1 + refevent.mass2,
