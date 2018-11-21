@@ -153,7 +153,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 			xmldoc.childNodes[0].appendChild(self.coinc_inspiral_table)
 
 
-	def coinc_rows(self, process_id, time_slide_id, events, seglists = None):
+	def coinc_rows(self, process_id, time_slide_id, events, seglists):
 		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, events, u"sngl_inspiral")
 
 		#
@@ -161,16 +161,24 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		# coincidence, so pick one trigger to provide template
 		# parameters.  otherwise:
 		#
-		# - end_time is the end time of the first trigger in
-		#   alphabetical order by instrument (!?) time-shifted
-		#   according to the coinc's offset vector
+		# - end time is end time of highest SNR trigger
+		#   time-shifted according to the coinc's offset vector
 		# - snr is root-sum-square of SNRs
 		# - false-alarm rates are blank
 		#
 
 		offsetvector = self.time_slide_index[time_slide_id]
-		end = coinc_inspiral_end_time(events, offsetvector)
-		refevent = events[0]
+		# the selection of an "end time" for the coincidence agrees
+		# with the coinc_inspiral_end_time() function above, but
+		# that's not necessary.  lalapps_thinca's ability to split
+		# coincs across boundaries only requires
+		# coinc_inspiral_end_time() to be used by all jobs and
+		# yield reproducible results, not that all "end times" that
+		# might be associated with a candidate agree with one
+		# another.
+		refevent = max(events, key = lambda event: event.snr)
+		end = refevent.end + offsetvector[refevent.ifo]
+		participating_instruments = frozenset(event.ifo for event in events)
 		coinc_inspiral = self.coinc_inspiral_table.RowType(
 			coinc_event_id = coinc.coinc_event_id,	# = None
 			mass = refevent.mass1 + refevent.mass2,
@@ -180,7 +188,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 			combined_far = None,
 			minimum_duration = None,
 			end = end,
-			instruments = (event.ifo for event in events)
+			instruments = participating_instruments
 		)
 
 		#
@@ -191,9 +199,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		# lists
 		#
 
-		coinc.insts = set(event.ifo for event in events)
-		if seglists is not None:
-			coinc.insts |= set(instrument for instrument, segs in seglists.items() if end - offsetvector[instrument] in segs)
+		coinc.insts = set(instrument for instrument, segs in seglists.items() if end - offsetvector[instrument] in segs) | participating_instruments
 
 		#
 		# done
@@ -226,15 +232,6 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 
 
 	class get_coincs(object):
-		@staticmethod
-		def template(event):
-			"""
-			Returns an immutable hashable object (it can be
-			used as a dictionary key) uniquely identifying the
-			template that produced the given event.
-			"""
-			return event.mass1, event.mass2, event.spin1x, event.spin1y, event.spin1z, event.spin2x, event.spin2y, event.spin2z
-
 		def __init__(self, events):
 			"""
 			Sort events into bins according to their template
@@ -249,9 +246,8 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 			"""
 			self.index = {}
 			index_setdefault = self.index.setdefault
-			template = self.template
 			for event in events:
-				index_setdefault(template(event), []).append(event)
+				index_setdefault(event.template_id, []).append(event)
 
 		def __call__(self, event_a, offset_a, light_travel_time, delta_t):
 			#
@@ -267,7 +263,7 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 			#
 
 			try:
-				events = self.index[self.template(event_a)]
+				events = self.index[event_a.template_id]
 			except KeyError:
 				# that template didn't produce any events
 				# in this instrument.  this is rare given
@@ -315,8 +311,8 @@ def ligolw_thinca(
 	xmldoc,
 	process_id,
 	delta_t,
+	seglists,
 	ntuple_comparefunc = None,
-	seglists = None,
 	veto_segments = None,
 	likelihood_func = None,
 	fapfar = None,
@@ -346,9 +342,8 @@ def ligolw_thinca(
 	sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
 	if veto_segments is not None:
 		sngl_inspiral_table = (event for event in sngl_inspiral_table if event.ifo not in veto_segments or event.end not in veto_segments[event.ifo])
-		if seglists is not None:
-			# don't do in-place
-			seglists = seglists - veto_segments
+		# don't do in-place
+		seglists = seglists - veto_segments
 	for instrument, events in itertools.groupby(sorted(sngl_inspiral_table, key = lambda row: row.ifo), lambda event: event.ifo):
 		events = tuple(events)
 		time_slide_graph.push(instrument, events, max(event.end for event in events))
