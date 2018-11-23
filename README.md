@@ -24,6 +24,25 @@ The Doxygen Documentation is built under GitLab-CI every night and can be viewed
 
 https://docs.ligo.org/lscsoft/lalsuite/
 
+## Citing LALSuite
+
+The whole software suite can be cited with the doi
+[10.7935/GT1W-FZ16](https://doi.org/10.7935/GT1W-FZ16).
+An example bibtex entry could look like this:
+```
+@misc{lalsuite,
+      author         = "{LIGO Scientific Collaboration}",
+      title          = "{LIGO} {A}lgorithm {L}ibrary - {LALS}uite",
+      howpublished   = "free software (GPL)",
+      doi            = "10.7935/GT1W-FZ16",
+      year           = "2018"
+}
+```
+In addition, many codes contained in LALSuite are directly based on
+one or several scientific papers,
+many (not all) of which can be discovered through the documentation,
+and should be cited when using those specific codes.
+
 ## Notes on Ancient History
 
 LALSuite was transferred to git.ligo.org in December 2017. Older history has been imported, though commit hashes were rewritten during the GitLFS conversion. Please note:
