@@ -210,7 +210,6 @@ for n, filename in enumerate(filenames):
 		coincgen_doubles = coincgen_doubles,
 		CoincTables = CoincTables,
 		coinc_definer_row = CoincDef,
-		threshold = options.threshold,
 		delta_t = delta_t,
 		ntuple_comparefunc = ntuple_comparefunc,
 		verbose = options.verbose

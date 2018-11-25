@@ -337,7 +337,7 @@ class coincgen_doubles(object):
 			"""
 			raise NotImplementedError
 
-		def __call__(self, event_a, offset_a, light_travel_time, threshold_data):
+		def __call__(self, event_a, offset_a, coinc_window):
 			"""
 			Return a sequence of the events from those passed
 			to .__init__() that are coincident with event_a.
@@ -352,29 +352,38 @@ class coincgen_doubles(object):
 			support the construction of time shifted
 			coincidences.
 
-			Because it is frequently needed by implementations
-			of this method, the distance in light seconds
-			between the two instruments (the instrument that
-			produced event_a, and the instrument that produced
-			this object's events) is provided as the
-			light_travel_time parameter.
+			coinc_window is the maximum time, in seconds,
+			separating events from the shifted time of event_a.
+			This is the value passed to coincgen_doubles()'s
+			.__init__() method with the light travel time
+			between this event list's detector and the detector
+			of event_a added.
 			"""
 			raise NotImplementedError
 
 	def __init__(self, offset_vector, coinc_window):
+		"""
+		offset_vector must be a two-instrument offset vector.  This
+		sets which two instruments' events are to be processed by
+		this object, and the offsets that should be applied to
+		their events when searching for coincidences.  coinc_window
+		is the coincidence window in seconds, *not including* the
+		light travel time between the instruments.  For covenience,
+		the light travel time will be added internally by this
+		object.
+		"""
 		if len(offset_vector) != 2:
 			raise ValueError("offset_vector must name exactly 2 instruments (got %d)" % len(offset_vector))
 		if coinc_window < 0.:
 			raise ValueError("coinc_window must be non-negative (got %g)" % coinc_window)
 		self.offset_vector = offset_vector
-		self.coinc_window = coinc_window
+		# add the light travel time to coinc_window
+		self.coinc_window = coinc_window + light_travel_time(*offset_vector)
 		# FIXME:  the latency can be reduced by teaching
 		# singlesqueue about the asymmetry of the offsetvector
-		self.queues = dict((instrument, self.singlesqueue(coinc_window + light_travel_time(*offset_vector) + abs(offset_vector))) for instrument in offset_vector)
+		self.queues = dict((instrument, self.singlesqueue(coinc_window + abs(offset_vector))) for instrument in offset_vector)
 		# view into the id() --> event indexes of the queues
 		self.index = multidict(*(queue.index for queue in self.queues.values()))
-		# pre-compute the light travel time
-		self.light_travel_time = light_travel_time(*offset_vector)
 		# Python id()s of events currently in the queues that have
 		# been reported in coincidences
 		self.used = set()
@@ -412,7 +421,7 @@ class coincgen_doubles(object):
 		"""
 		self.queues[instrument].push(events, t_complete)
 
-	def pull(self, t, threshold_data, flushed, flushed_unused):
+	def pull(self, t, flushed, flushed_unused):
 		"""
 		Generate a sequence of 2-element tuples of Python IDs of
 		coincident events up to t, i.e., requiring the time of at
@@ -476,13 +485,13 @@ class coincgen_doubles(object):
 		# list B.  lastly, we iterate over the "for next time"
 		# sequence for list A but search for coincidences only in
 		# the "flushed" sequence for list B.
-		light_travel_time = self.light_travel_time
+		coinc_window = self.coinc_window
 		used = set()
 		used_add = used.add
 
 		queueb_get_coincs = self.get_coincs(flushedb + fornexttimeb)
 		for eventa in flusheda:
-			matches = queueb_get_coincs(eventa, offset_a, light_travel_time, threshold_data)
+			matches = queueb_get_coincs(eventa, offset_a, coinc_window)
 			if matches:
 				eventa_id = id(eventa)
 				used_add(eventa_id)
@@ -492,7 +501,7 @@ class coincgen_doubles(object):
 					yield unswap(eventa_id, eventb_id)
 		queueb_get_coincs = self.get_coincs(flushedb)
 		for eventa in fornexttimea:
-			matches = queueb_get_coincs(eventa, offset_a, light_travel_time, threshold_data)
+			matches = queueb_get_coincs(eventa, offset_a, coinc_window)
 			if matches:
 				eventa_id = id(eventa)
 				used_add(eventa_id)
@@ -597,7 +606,7 @@ class TimeSlideGraphNode(object):
 				if instrument in node.offset_vector:
 					node.push(instrument, events, t_complete)
 
-	def pull(self, t, threshold_data, verbose = False):
+	def pull(self, t, verbose = False):
 		"""
 		Using the events contained in the internal queues upto t,
 		construct and return all coincidences they participate in.
@@ -671,7 +680,7 @@ class TimeSlideGraphNode(object):
 
 			flushed = set()
 			partial_coincs = set()
-			coincs = tuple(sorted(self.components[0].pull(t, threshold_data, flushed, partial_coincs)))
+			coincs = tuple(sorted(self.components[0].pull(t, flushed, partial_coincs)))
 			return coincs, (set((eventid,) for eventid in partial_coincs) if self.keep_partial else set()), flushed
 
 		#
@@ -687,7 +696,7 @@ class TimeSlideGraphNode(object):
 
 		# first collect all coincs and partial coincs from the
 		# component nodes in the graph
-		component_coincs_and_partial_coincs_and_flushed = tuple(component.pull(t, threshold_data, verbose = verbose) for component in self.components)
+		component_coincs_and_partial_coincs_and_flushed = tuple(component.pull(t, verbose = verbose) for component in self.components)
 		component_coincs = tuple(elem[0] for elem in component_coincs_and_partial_coincs_and_flushed)
 		flushed = reduce((lambda a, b: a | b), (elem[2] for elem in component_coincs_and_partial_coincs_and_flushed), set())
 
@@ -886,7 +895,7 @@ class TimeSlideGraph(object):
 		return self.t_coinc_complete != t_before
 
 
-	def pull(self, threshold_data, newly_reported = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = None, event_collector = None, verbose = False):
+	def pull(self, newly_reported = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = None, event_collector = None, verbose = False):
 		if verbose:
 			print("constructing coincs for target offset vectors ...", file=sys.stderr)
 
@@ -933,7 +942,7 @@ class TimeSlideGraph(object):
 			# coincs contain at least min_instruments events
 			# because those that don't meet the criteria are
 			# excluded during coinc construction.
-			coincs, partial_coincs, _flushed_ids = node.pull(t, threshold_data, verbose)
+			coincs, partial_coincs, _flushed_ids = node.pull(t, verbose)
 			flushed_ids |= _flushed_ids
 			for coinc in itertools.chain(coincs, partial_coincs):
 				used_ids.update(coinc)

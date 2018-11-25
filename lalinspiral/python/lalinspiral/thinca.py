@@ -267,7 +267,7 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 			for event in events:
 				index_setdefault(event.template_id, []).append(event)
 
-		def __call__(self, event_a, offset_a, light_travel_time, delta_t):
+		def __call__(self, event_a, offset_a, coinc_window):
 			#
 			# extract the subset of events from this list that
 			# pass coincidence with event_a.  use a bisection
@@ -298,22 +298,16 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 			end = event_a.end + offset_a
 
 			#
-			# the coincidence window
-			#
-
-			coincidence_window = light_travel_time + delta_t
-
-			#
 			# where to stop the scan
 			#
 
-			stop = end + coincidence_window
+			stop = end + coinc_window
 
 			#
 			# return coincident events
 			#
 
-			return tuple(itertools.takewhile(lambda event: event.end <= stop, events[bisect_left(events, end - coincidence_window):]))
+			return tuple(itertools.takewhile(lambda event: event <= stop, events[bisect_left(events, end - coinc_window):]))
 
 
 #
@@ -371,7 +365,7 @@ def ligolw_thinca(
 	# and record the survivors
 	#
 
-	for node, events in time_slide_graph.pull(delta_t, coinc_sieve = ntuple_comparefunc, flush = True, verbose = verbose):
+	for node, events in time_slide_graph.pull(coinc_sieve = ntuple_comparefunc, flush = True, verbose = verbose):
 		coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, events, seglists = seglists)
 		if likelihood_func is not None:
 			coinc.likelihood = likelihood_func(events, node.offset_vector)
