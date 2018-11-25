@@ -241,14 +241,16 @@ class singlesqueue(object):
 		# these events will never be used again.  remove them from
 		# the queue, and remove their IDs from the index
 		events = []
-		while self.queue and self.event_time(self.queue[0]) < t:
-			event = self.queue.popleft()
+		event_time = self.event_time
+		queue = self.queue
+		while queue and event_time(queue[0]) < t:
+			event = queue.popleft()
 			self.index.pop(id(event))
 			events.append(event)
 		# return those events, and any that are in the queue that
 		# might also participate in coincidences
 		t += self.coinc_window
-		return tuple(events), tuple(itertools.takewhile(lambda event: self.event_time(event) < t, self.queue))
+		return tuple(events), tuple(itertools.takewhile(lambda event: event_time(event) < t, self.queue))
 
 
 class multidict(UserDict):
