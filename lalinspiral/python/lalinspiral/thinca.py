@@ -60,11 +60,30 @@ from .git_version import version as __version__
 
 class SnglInspiral(lsctables.SnglInspiral):
 	__slots__ = ()
-	def __cmp__(self, other):
-		# compare self's end time to the LIGOTimeGPS instance
-		# other.  allows bisection searches by GPS time to find
-		# ranges of triggers quickly
-		return cmp(self.end, other)
+
+	#
+	# compare self's end time to the LIGOTimeGPS instance other.
+	# allows bisection searches by GPS time to find ranges of triggers
+	# quickly
+	#
+
+	def __lt__(self, other):
+		return self.end < other
+
+	def __le__(self, other):
+		return self.end <= other
+
+	def __eq__(self, other):
+		return self.end == other
+
+	def __ne__(self, other):
+		return self.end != other
+
+	def __ge__(self, other):
+		return self.end >= other
+
+	def __gt__(self, other):
+		return self.end > other
 
 	#
 	# simulate mtotal, eta, and mchirp from mass1 and mass2.  this (a)
