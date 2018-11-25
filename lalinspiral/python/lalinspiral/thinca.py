@@ -28,6 +28,7 @@ from __future__ import print_function
 from bisect import bisect_left
 import itertools
 import math
+import operator
 import sys
 
 
@@ -245,9 +246,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 
 class coincgen_doubles(snglcoinc.coincgen_doubles):
 	class singlesqueue(snglcoinc.coincgen_doubles.singlesqueue):
-		@staticmethod
-		def event_time(event):
-			return event.end
+		event_time = operator.attrgetter("end")
 
 
 	class get_coincs(object):
