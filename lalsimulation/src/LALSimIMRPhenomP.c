@@ -98,6 +98,10 @@ const double sqrt_6 = 2.44948974278317788;
  * @attention A time-domain implementation of IMRPhenomPv2 is available in XLALChooseTDWaveform().
  * This is based on a straight-forward inverse Fourier transformation via XLALSimInspiralTDfromFD(),
  * but it was not included in the IMRPhenomPv2 review. Use it at your own risk.
+ * IMRPhenomPv2_NRTidal is also available in the time domain through the same transformation. 
+ * Visual checks have been performed during the review, and unphysical features may arise for
+ * mass ratios smaller than 1.5 and when both tidal parameters are greater than 2000. In this
+ * case, a warning is issued, both for the time and frequency domain version.
  */
 
 static REAL8 atan2tol(REAL8 a, REAL8 b, REAL8 tol)
