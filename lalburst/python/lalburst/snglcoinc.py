@@ -109,13 +109,25 @@ class singlesqueue(object):
 	def event_time(event):
 		"""
 		Override with a method to extract the "time" of the given
-		event.  The "time" object that is returned must support
-		arithmetic and comparison with python float objects, and
-		support comparison with ligo.segments.PosInfinity and
-		ligo.segments.NegInfinity.  float and lal.LIGOTimeGPS are
-		both suitable.
+		event.  The "time" object that is returned should be a
+		lal.LIGOTimeGPS object.  The object must support arithmetic
+		and comparison with python float objects and
+		lal.LIGOTimeGPS objects, and support comparison with
+		ligo.segments.PosInfinity and ligo.segments.NegInfinity,
+		and it must have a .__dict__ or other mechanism allowing a
+		an additional attribute named .event to be set on the
+		object.  float is not suitable.
 		"""
 		raise NotImplementedError
+
+
+	def queueentry_from_event(self, event):
+		"""
+		For internal use.
+		"""
+		entry = self.event_time(event)
+		entry.event = event
+		return entry
 
 	def __init__(self, coinc_window):
 		# using .event_time() to define the times of events, this
@@ -154,7 +166,7 @@ class singlesqueue(object):
 		of the oldest event in the queue or self.t_complete if the
 		queue is empty.
 		"""
-		return self.event_time(self.queue[0]) if self.queue else self.t_complete
+		return self.queue[0] if self.queue else self.t_complete
 
 	@property
 	def t_coinc_complete(self):
@@ -186,7 +198,6 @@ class singlesqueue(object):
 			raise ValueError("t_complete has gone backwards:  last was %g, new is %g" % (self.t_complete, t_complete))
 
 		# add the new events to the ID index
-		#assert all(id(event) not in self.index for event in events)
 		self.index.update((id(event), event) for event in events)
 
 		# events are allowed to arrive out of order, we only
@@ -199,13 +210,13 @@ class singlesqueue(object):
 		# FIXME:  this might be more costly than tracking two
 		# queues and moving events from one to the next in time
 		# order as .t_complete advances
-		events = list(events)
-		while self.queue and self.event_time(self.queue[-1]) >= self.t_complete:
-			events.append(self.queue.pop())
-		events.sort(key = self.event_time)
-		if events and self.event_time(events[0]) < self.t_complete:
-			raise ValueError("t_complete violation: earliest event is %g, previous t_complete was %g" % (self.event_time(events[0]), self.t_complete))
-		self.queue.extend(events)
+		entries = map(self.queueentry_from_event, events)
+		while self.queue and self.queue[-1] >= self.t_complete:
+			entries.append(self.queue.pop())
+		entries.sort()
+		if entries and entries[0] < self.t_complete:
+			raise ValueError("t_complete violation: earliest event is %g, previous t_complete was %g" % (entries[0], self.t_complete))
+		self.queue.extend(entries)
 
 		# update the marker labelling time up to which the event
 		# list is complete
@@ -230,7 +241,7 @@ class singlesqueue(object):
 		of events.
 		"""
 		if t is None:
-			events = tuple(self.queue)
+			events = tuple(entry.event for entry in self.queue)
 			self.queue.clear()
 			self.index.clear()
 			self.t_complete = NegInfinity
@@ -241,16 +252,14 @@ class singlesqueue(object):
 		# these events will never be used again.  remove them from
 		# the queue, and remove their IDs from the index
 		events = []
-		event_time = self.event_time
 		queue = self.queue
-		while queue and event_time(queue[0]) < t:
-			event = queue.popleft()
+		while queue and queue[0] < t:
+			event = queue.popleft().event
 			self.index.pop(id(event))
 			events.append(event)
 		# return those events, and any that are in the queue that
 		# might also participate in coincidences
-		t += self.coinc_window
-		return tuple(events), tuple(itertools.takewhile(lambda event: event_time(event) < t, self.queue))
+		return tuple(events), tuple(entry.event for entry in itertools.takewhile((t + self.coinc_window).__gt__, self.queue))
 
 
 class multidict(UserDict):
