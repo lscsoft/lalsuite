@@ -1223,6 +1223,8 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  * @review original IMRPhenomP not reviewed, nor going to be.
  * IMRPhenomPv2 reviewed by Capano, Pürrer, Bohe et al. Conludeded
  * with git hash 1354291cf6a897995a04cd12dce42b7acaca7b34 (May 2016)
+ *
+ * @review IMRPhenomPv2_NRTidal currently under review (2018).
  * @{
  */
 
