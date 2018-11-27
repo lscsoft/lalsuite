@@ -482,7 +482,7 @@ int XLALSimIMRPhenomP(
   const REAL8 f_max,                          /**< End frequency; 0 defaults to ringdown cutoff freq */
   const REAL8 f_ref,                          /**< Reference frequency */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD, IMRPhenomPv2_NRTidal uses NRTidal framework with IMRPhenomPv2 */
-  LALDict *extraParams) /**<linked list containing the extra testing GR parameters */
+  LALDict *extraParams) /**<linked list that may contain the extra testing GR parameters and/or tidal parameters */
 {
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
   // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame
@@ -536,7 +536,7 @@ int XLALSimIMRPhenomPFrequencySequence(
   const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 f_ref,                          /**< Reference frequency */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD, IMRPhenomPv2_NRTidal uses NRTidal framework with IMRPhenomPv2 */
-  LALDict *extraParams) /**<linked list containing the extra testing GR parameters */
+  LALDict *extraParams) /**<linked list that may contain the extra testing GR parameters and/or tidal parameters */
 {
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
   // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame
@@ -580,7 +580,7 @@ static int PhenomPCore(
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD, IMRPhenomPv2_NRTidal uses NRTidal framework with IMRPhenomPv2 */
-  LALDict *extraParams /**<linked list containing the extra testing GR parameters */
+  LALDict *extraParams /**<linked list that may contain the extra testing GR parameters and/or tidal parameters */
   )
 {
   /* Check inputs for sanity */
@@ -1710,7 +1710,7 @@ UNUSED static BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
   const REAL8 m2,   /**< Mass of companion 2 (solar masses) */
   const REAL8 chi,  /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
   const REAL8 chip, /**< Dimensionless spin in the orbital plane */
-  LALDict *extraParams) /**< linked list containing the extra testing GR parameters */
+  LALDict *extraParams) /**< linked list that may contain the extra testing GR parameters and/or tidal parameters */
 {
 
   BBHPhenomCParams *p = NULL;
