@@ -26,6 +26,7 @@
 
 from __future__ import print_function
 from bisect import bisect_left
+import collections
 import itertools
 import math
 import operator
@@ -262,10 +263,9 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 			row class having previously been set to compare the
 			event's end time to a LIGOTimeGPS.
 			"""
-			self.index = {}
-			index_setdefault = self.index.setdefault
+			self.index = index = collections.defaultdict(list)
 			for event in events:
-				index_setdefault(event.template_id, []).append(event)
+				index[event.template_id].append(event)
 
 		def __call__(self, event_a, offset_a, coinc_window):
 			#
@@ -280,15 +280,7 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 			# upper bound in the sequence
 			#
 
-			try:
-				events = self.index[event_a.template_id]
-			except KeyError:
-				# that template didn't produce any events
-				# in this instrument.  this is rare given
-				# the SNR thresholds typical today so
-				# trapping the exception is more efficient
-				# than testing
-				return ()
+			events = self.index[event_a.template_id]
 
 			#
 			# event_a's end time, shifted to be with respect to
