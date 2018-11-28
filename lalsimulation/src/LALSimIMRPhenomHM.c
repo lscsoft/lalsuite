@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2017 Sebastian Khan
+ *  Copyright (C) 2017 Sebastian Khan, Francesco Pannarale, Lionel London
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,19 +15,6 @@
  *  along with with program; see the file COPYING. If not, write to the
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
- */
-
-/**
- * \author Sebastian Khan
- *
- * \file
- *
- * \brief PhenomHM model
- *
- * Inspiral-merger and ringdown phenomenological, frequecny domain
- * waveform model for binary black holes systems.
- * Models not only the dominant (l,|m|) = (2,2) modes
- * but also some of the sub-domant modes too.
  */
 
 #include <lal/LALSimIMR.h>
@@ -71,7 +58,6 @@ LALDict *IMRPhenomHM_setup_mode_array(
     LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(extraParams);
     if (ModeArray == NULL)
     { /* Default behaviour */
-        /* TODO: Move this into a function */
         XLAL_PRINT_INFO("Using default modes for PhenomHM.\n");
         ModeArray = XLALSimInspiralCreateModeArray();
         /* Only need to define the positive m modes/
@@ -93,7 +79,6 @@ LALDict *IMRPhenomHM_setup_mode_array(
     }
 
     XLALDestroyValue(ModeArray);
-    /*TODO: Add an error check here somehow?*/
 
     return extraParams;
 }
@@ -167,8 +152,6 @@ int IMRPhenomHMFDAddMode(
     UINT4 j;
     COMPLEX16 hlm; /* helper variable that contain a single point of hlmtilde */
 
-    /* Checks LAL_CHECK_VALID_SERIES and LAL_CHECK_CONSISTENT_TIME_SERIES removed
-     * - they do not seem available for frequency series ? */
     INT4 minus1l; /* (-1)^l */
     if (l % 2)
         minus1l = -1;
@@ -697,8 +680,6 @@ int IMRPhenomHMFreqDomainMapParams(
         XLAL_ERROR(XLAL_EDOM);
     }
 
-    // *f2lm = 0.5 * ( *fr + *fi );
-
     return XLAL_SUCCESS;
 }
 
@@ -733,17 +714,15 @@ double IMRPhenomHMFreqDomainMap(
     return Mf22;
 }
 
-/*
+/**
+ * If A_lm(f) = alpha_lm * f^klm then this function
+ * returns f^klm / f^k22
  * For a given frequency and ell and m spherical harmonic mode
  * return the frequency scaled to give the leading order PN
  * amplitude for the given ell and m modes.
  * Calcuated from mathematica function: FrequencyPower[f, {ell, m}] / FrequencyPower[f, {2, 2}]
  * FrequencyPower function just returns the leading order PN term in the amplitude.
  */
-/**
-   * If A_lm(f) = alpha_lm * f^klm then this function
-   * returns f^klm / f^k22
-   */
 double IMRPhenomHMPNFrequencyScale(
     PhenomHMUsefulPowers *p,
     REAL8 Mf,
@@ -921,7 +900,7 @@ int IMRPhenomHMPhasePreComp(
 
     const INT4 AmpFlag = 0;
 
-    /* NOTE: As long as Mfshit + f2lm isn't >= fr then the value of the shift is arbitrary. */
+    /* NOTE: As long as Mfshit isn't >= fr then the value of the shift is arbitrary. */
     const REAL8 Mfshift = 0.0001;
 
     int ret = IMRPhenomHMFreqDomainMapParams(&ai, &bi, &fi, &fr, &f1, Mfshift, ell, mm, pHM, AmpFlag);
@@ -1081,9 +1060,36 @@ COMPLEX16 IMRPhenomHMOnePointFiveSpinPN(
 }
 
 /**
- * h = h+ - i*hx = Sum hlm * Ylm
- * Returns h+ and hx in the frequency domain
- * evaluated at a user defined set of frequencies.
+ * @addtogroup LALSimIMRPhenom_c
+ * @{
+ *
+ * @name Routines for IMR Phenomenological Model "HM"
+ * @{
+ *
+ * @author Sebastian Khan, Francesco Pannarale, Lionel London
+ *
+ * @brief C code for IMRPhenomHM phenomenological waveform model.
+ *
+ * Inspiral-merger and ringdown phenomenological, frequecny domain
+ * waveform model for binary black holes systems.
+ * Models not only the dominant (l,|m|) = (2,2) modes
+ * but also some of the sub-domant modes too.
+ * Model described in \cite PhysRevLett.120.161102.
+ * The model is based on IMRPhenomD (\cite Husa:2015iqa, \cite Khan:2015jqa)
+ *
+ * @note The higher mode information was not calibrated to Numerical Relativity
+ * simulation therefore the calibration range is inherited from PhenomD.
+ *
+ * @attention The model is usable outside this parameter range,
+ * and in tests to date gives sensible physical results,
+ * but conclusive statements on the physical fidelity of
+ * the model for these parameters await comparisons against further
+ * numerical-relativity simulations. For more information, see the review wiki
+ * under https://git.ligo.org/waveforms/reviews/phenomhm/wikis/home
+ */
+
+/**
+ * Returns h+ and hx in the frequency domain.
  *
  * This function can be called in the usual sense
  * where you supply a f_min, f_max and deltaF.
@@ -1151,6 +1157,9 @@ UNUSED int XLALSimIMRPhenomHM(
 
     return XLAL_SUCCESS;
 }
+
+/** @} */
+/** @} */
 
 /**
  * internal function that returns h+ and hx.
@@ -1298,7 +1307,6 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
     XLALDestroySphHarmFrequencySeries(*hlms);
     XLALFree(hlms);
 
-    // NOTE: SK: HERE I SWAP hplus with hcross to conform with LAL phase convension //CHECK ME
     /* Compute the amplitude pre-factor */
     const REAL8 amp0 = XLALSimPhenomUtilsFDamp0(Mtot, distance);
     #pragma omp parallel for
@@ -1329,11 +1337,6 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
  * These have the correct relative phases between modes.
  * Note this has a similar interface to XLALSimIMRPhenomHM
  * because it is designed so it can be used independently.
- * Function to compute the hlm modes.
- * TODO: add documention on how to use the freqs and deltaF together
- * to either generate a uniform frequency array from f_min to f_max
- * with spacing deltaF or to an arbitrary frequency array
- * that is monotonic.
  */
 int XLALSimIMRPhenomHMGethlmModes(
     UNUSED SphHarmFrequencySeries **hlms, /**< [out] SphHarmFrequencySeries struct containing hlm modes */
@@ -1355,7 +1358,6 @@ int XLALSimIMRPhenomHMGethlmModes(
     // and destroy it if we did.
     LALDict *extraParams_in = extraParams;
 
-
     /* sanity checks on input parameters: check pointers, etc. */
 
     /* Check inputs for sanity */
@@ -1374,13 +1376,7 @@ positive.\n"); /* FIXME: check this one */
     extraParams = IMRPhenomHM_setup_mode_array(extraParams);
     LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(extraParams);
 
-    /* HERE */
-    /* move init_PhenomHM_Storage to HERE
-    and remove the function init_IMRPhenomHMGet_FrequencyBounds_storage
-    to fix all problems :) */
-
     /* setup frequency sequency */
-
     REAL8Sequence *amps = NULL;
     REAL8Sequence *phases = NULL;
     REAL8Sequence *freqs_geom = NULL; /* freqs is in geometric units */
@@ -1730,7 +1726,6 @@ int IMRPhenomHMAmplitude(
  * returns IMRPhenomHM phase evaluated at a set of input frequencies
  * for the l,m mode
  */
-
 int IMRPhenomHMPhase(
     UNUSED REAL8Sequence *phases,     /**< [out] phase frequency sequence */
     UNUSED REAL8Sequence *freqs_geom, /**< dimensionless frequency sequence */
@@ -1804,4 +1799,6 @@ int IMRPhenomHMPhase(
     }
 
     return XLAL_SUCCESS;
+
+
 }
