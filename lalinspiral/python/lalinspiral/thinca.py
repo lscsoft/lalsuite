@@ -221,7 +221,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		# lists
 		#
 
-		coinc.insts = set(instrument for instrument, segs in seglists.items() if end - offsetvector[instrument] in segs) | participating_instruments
+		coinc.insts = set(instrument for instrument, segs in seglists.items() if float(end - offsetvector[instrument]) in segs) | participating_instruments
 
 		#
 		# done
