@@ -252,11 +252,14 @@ class singlesqueue(object):
 		# these events will never be used again.  remove them from
 		# the queue, and remove their IDs from the index
 		events = []
+		events_append = events.append
 		queue = self.queue
+		queue_popleft = queue.popleft
+		index_pop = self.index.pop
 		while queue and queue[0] < t:
-			event = queue.popleft().event
-			self.index.pop(id(event))
-			events.append(event)
+			event = queue_popleft().event
+			index_pop(id(event))
+			events_append(event)
 		# return those events, and any that are in the queue that
 		# might also participate in coincidences
 		return tuple(events), tuple(entry.event for entry in itertools.takewhile((t + self.coinc_window).__gt__, self.queue))

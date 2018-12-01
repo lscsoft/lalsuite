@@ -38,6 +38,7 @@ from glue.ligolw import lsctables
 import lal
 from lalburst import offsetvector
 from lalburst import snglcoinc
+from . import _thinca
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -220,7 +221,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		# lists
 		#
 
-		coinc.insts = set(instrument for instrument, segs in seglists.items() if end - offsetvector[instrument] in segs) | participating_instruments
+		coinc.insts = set(instrument for instrument, segs in seglists.items() if float(end - offsetvector[instrument]) in segs) | participating_instruments
 
 		#
 		# done
@@ -250,56 +251,7 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 		event_time = operator.attrgetter("end")
 
 
-	class get_coincs(object):
-		def __init__(self, events):
-			"""
-			Sort events into bins according to their template
-			so that a dictionary look-up can retrieve all
-			triggers from a given template.  The events must be
-			provided in time order so that a bisection search
-			can retrieve triggers from a template within a
-			window of time.  Note that the bisection search
-			relies on the __cmp__() method of the SnglInspiral
-			row class having previously been set to compare the
-			event's end time to a LIGOTimeGPS.
-			"""
-			self.index = index = collections.defaultdict(list)
-			for event in events:
-				index[event.template_id].append(event)
-
-		def __call__(self, event_a, offset_a, coinc_window):
-			#
-			# extract the subset of events from this list that
-			# pass coincidence with event_a.  use a bisection
-			# search for the minimum allowed end time and a
-			# brute-force scan for the maximum allowed end
-			# time.  because the number of events in the
-			# coincidence window is generally quite small, the
-			# brute-force scan has a lower expected operation
-			# count than a second bisection search to find the
-			# upper bound in the sequence
-			#
-
-			events = self.index[event_a.template_id]
-
-			#
-			# event_a's end time, shifted to be with respect to
-			# end times in this list.
-			#
-
-			end = event_a.end + offset_a
-
-			#
-			# where to stop the scan
-			#
-
-			stop = end + coinc_window
-
-			#
-			# return coincident events
-			#
-
-			return tuple(itertools.takewhile(lambda event: event <= stop, events[bisect_left(events, end - coinc_window):]))
+	get_coincs = _thinca.get_coincs
 
 
 #
