@@ -147,9 +147,11 @@ class singlesqueue(object):
 		# NegInfinity object from the segments library, however, is
 		# compatible with LIGOTimeGPS.
 		self.t_complete = NegInfinity
-		# queue of events.  the queue's contents are time-ordered,
-		# but not necessarily complete beyond self.t_complete
-		self.queue = collections.deque()
+		# queues of events.  the queues' contents are time-ordered,
+		# they contain the events upto .t_complete and from
+		# .t_complete on, respectively.
+		self.complete = []
+		self.incomplete = []
 		# id() --> event mapping for the contents of queue.  sets
 		# will be used to track the status of events, e.g. which
 		# have and haven't been used to form candidates.  we don't
@@ -166,7 +168,7 @@ class singlesqueue(object):
 		of the oldest event in the queue or self.t_complete if the
 		queue is empty.
 		"""
-		return self.queue[0] if self.queue else self.t_complete
+		return self.complete[0] if self.complete else self.t_complete
 
 	@property
 	def t_coinc_complete(self):
@@ -195,28 +197,24 @@ class singlesqueue(object):
 		not be a generator.
 		"""
 		if t_complete < self.t_complete:
-			raise ValueError("t_complete has gone backwards:  last was %g, new is %g" % (self.t_complete, t_complete))
+			raise ValueError("t_complete has gone backwards:  last was %s, new is %s" % (self.t_complete, t_complete))
 
-		# add the new events to the ID index
-		self.index.update((id(event), event) for event in events)
+		if events:
+			# add the new events to the ID index
+			self.index.update((id(event), event) for event in events)
 
-		# events are allowed to arrive out of order, we only
-		# require that no event arrive earlier than the current
-		# .t_complete.  therefore, we need to insort the new events
-		# with the current tail of the queue.  this is done by
-		# popping events off the queue that are not earlier than
-		# .t_complete, combining them with the new events, sorting,
-		# and pushing the result into the queue.
-		# FIXME:  this might be more costly than tracking two
-		# queues and moving events from one to the next in time
-		# order as .t_complete advances
-		entries = map(self.queueentry_from_event, events)
-		while self.queue and self.queue[-1] >= self.t_complete:
-			entries.append(self.queue.pop())
-		entries.sort()
-		if entries and entries[0] < self.t_complete:
-			raise ValueError("t_complete violation: earliest event is %g, previous t_complete was %g" % (entries[0], self.t_complete))
-		self.queue.extend(entries)
+			# construct queue entries from the new events and
+			# insort with current "incomplete" queue
+			self.incomplete += map(self.queueentry_from_event, events)
+			self.incomplete.sort()
+			if self.incomplete[0] < self.t_complete:
+				raise ValueError("t_complete violation: earliest event is %s, previous t_complete was %s" % (self.incomplete[0], self.t_complete))
+
+		# move events preceding the new t_complete from the
+		# incomplete to the complete queue.
+		i = bisect_left(self.incomplete, t_complete)
+		self.complete += self.incomplete[:i]
+		del self.incomplete[:i]
 
 		# update the marker labelling time up to which the event
 		# list is complete
@@ -241,28 +239,29 @@ class singlesqueue(object):
 		of events.
 		"""
 		if t is None:
-			events = tuple(entry.event for entry in self.queue)
-			self.queue.clear()
+			events = tuple(entry.event for entry in self.complete) + tuple(entry.event for entry in self.incomplete)
+			del self.complete[:]
+			del self.incomplete[:]
 			self.index.clear()
 			self.t_complete = NegInfinity
 			return events, ()
 
 		if t > self.t_coinc_complete:
 			raise ValueError("pull to %g exceeds time to which queue is coinc-complete, %g" % (t, self.t_coinc_complete))
+
 		# these events will never be used again.  remove them from
 		# the queue, and remove their IDs from the index
-		events = []
-		events_append = events.append
-		queue = self.queue
-		queue_popleft = queue.popleft
-		index_pop = self.index.pop
-		while queue and queue[0] < t:
-			event = queue_popleft().event
-			index_pop(id(event))
-			events_append(event)
-		# return those events, and any that are in the queue that
-		# might also participate in coincidences
-		return tuple(events), tuple(entry.event for entry in itertools.takewhile((t + self.coinc_window).__gt__, self.queue))
+		i = bisect_left(self.complete, t)
+		events = tuple(entry.event for entry in self.complete[:i])
+		del self.complete[:i]
+		for event in events:
+			self.index.pop(id(event))
+		t += self.coinc_window
+		if t <= self.t_complete:
+			other_events = tuple(entry.event for entry in self.complete[:bisect_left(self.complete, t)])
+		else:
+			other_events = tuple(entry.event for entry in self.complete) + tuple(entry.event for entry in self.incomplete[:bisect_left(self.incomplete, t)])
+		return events, other_events
 
 
 class multidict(UserDict):
