@@ -213,14 +213,16 @@ static PyObject *event_sequence_extract(struct event_sequence *event_sequence, P
 	}
 
 	for(hi = lo; hi < event_sequence->length; hi++) {
-		int GT = PyObject_RichCompareBool(event_sequence->events[hi], stop, Py_GT);
-		if(GT == 0)
+		int LT = PyObject_RichCompareBool(event_sequence->events[hi], stop, Py_LT);
+		if(LT > 0)
+			/* events[hi] < stop */
 			continue;
-		if(GT < 0) {
-			Py_DECREF(stop);
-			return NULL;
-		}
-		break;
+		else if(LT == 0)
+			/* events[hi] >= stop */
+			break;
+		/* error */
+		Py_DECREF(stop);
+		return NULL;
 	}
 	Py_DECREF(stop);
 
@@ -355,6 +357,9 @@ static PyObject *get_coincs__call__(PyObject *self, PyObject *args, PyObject *kw
 	if(compute_start_stop(&start, &stop, event_a, offset_a, coinc_window) < 0)
 		return NULL;
 
+	/* return the events matching event_a's .template_id and having end
+	 * times in the range t - coinc_window <= end < t + coinc_window
+	 * where t = event_a.end + offset_a */
 	return event_sequence_extract(event_sequence, start, stop);
 }
 
