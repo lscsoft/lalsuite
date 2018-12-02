@@ -500,19 +500,11 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
         #check data is not empty
         if ifodata is None:
             continue
-        # we have data. Get psd array
-        data=ifodata.data
-        # Fill a two columns array of (freq, psd) and save it in the ascii file
-        f0=ifodata.f0
-        deltaF=ifodata.deltaF
-
-        combine=[]
-
-        for i in np.arange(len(data.data.data)) :
-            combine.append([f0+i*deltaF,data.data.data[i]])
+        # write down PSD into an ascii file
+        combine = np.c_[ifodata.f0 + np.arange(ifodata.data.length) * ifodata.deltaF, ifodata.data.data]
         np.savetxt(path_to_ascii_psd,combine)
-        ifo=instrument
         # set node.psds dictionary with the path to the ascii files
+        ifo=instrument
         out[ifo]=os.path.join(outpath,ifo+'_psd_'+time+'.txt')
     return out
 
