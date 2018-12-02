@@ -229,7 +229,9 @@ noinst_HEADERS = \
 	LALSimIMRNRSur7dq2.h \
 	LALSimNRSurrogateUtilities.h \
 	LALSimNRTunedTides.h \
-	LALSimRingdownCW.h
+	LALSimRingdownCW.h \
+	LALSimNRHybSurUtilities.h \
+	LALSimIMRNRHybSur3dq8.h
 
 
 lib_LTLIBRARIES = liblalsimulation.la
@@ -315,7 +317,9 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRNRSur7dq2.c \
 	LALSimNRSurrogateUtilities.c \
 	LALSimUniversalRelations.c \
-        LALSimInspiralEOS.c
+        LALSimInspiralEOS.c \
+	LALSimNRHybSurUtilities.c \
+	LALSimIMRNRHybSur3dq8.c
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \
