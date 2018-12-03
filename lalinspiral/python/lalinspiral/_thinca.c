@@ -370,10 +370,15 @@ static PyObject *get_coincs__call__(PyObject *self, PyObject *args, PyObject *kw
 
 
 static PyTypeObject get_coincs_Type = {
+#if PY_MAJOR_VERSION < 3
 	PyObject_HEAD_INIT(NULL)
+#else
+	PyVarObject_HEAD_INIT(NULL, 0)
+#endif
+	.tp_name = MODULE_NAME ".get_coincs",
 	.tp_basicsize = sizeof(struct get_coincs),
-	.tp_call = get_coincs__call__,
 	.tp_dealloc = get_coincs__del__,
+	.tp_call = get_coincs__call__,
 	.tp_doc = "",
 #if PY_MAJOR_VERSION < 3
 	.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES,
@@ -381,7 +386,6 @@ static PyTypeObject get_coincs_Type = {
 	.tp_flags = Py_TPFLAGS_DEFAULT,
 #endif
 	.tp_init = get_coincs__init__,
-	.tp_name = MODULE_NAME ".get_coincs",
 	.tp_new = PyType_GenericNew,
 };
 
@@ -403,10 +407,10 @@ void init_thinca(void)
 #else
 	static struct PyModuleDef modef = {
 		PyModuleDef_HEAD_INIT,
-		MODULE_NAME,
-		"",
-		-1,
-		NULL
+		.m_name = MODULE_NAME,
+		.m_doc = "",
+		.m_size = -1,
+		.m_methods = NULL,
 	};
 	PyObject *module = PyModule_Create(&modef);
 #endif
