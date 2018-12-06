@@ -639,7 +639,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
   /* see Appendix A, Ch. Lange etal, MNRAS (2001) (also accept T2 model if
    eps values are set - this will include Kopeikin terms if necessary) */
   if( !strcmp(model, "ELL1") || (!strcmp(model, "T2") && eps1 != 0. ) ){
-    REAL8 nb = LAL_TWOPI/Pb;
+    REAL8 nb;
     REAL8 tt0;
     REAL8 w_int; /* omega internal to this model */
     REAL8 orbits, phase;
@@ -693,6 +693,8 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     else{
       orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
     }
+
+    nb = LAL_TWOPI/Pb
 
     norbits = (INT4)orbits;
     if(orbits < 0.0) norbits--;
