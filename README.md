@@ -22,7 +22,7 @@ The guide to [Contributing](https://git.ligo.org/lscsoft/lalsuite/blob/master/CO
 
 The Doxygen Documentation is built under GitLab-CI every night and can be viewed at:
 
-https://docs.ligo.org/lscsoft/lalsuite/
+https://lscsoft.docs.ligo.org/lalsuite
 
 ## Citing LALSuite
 
