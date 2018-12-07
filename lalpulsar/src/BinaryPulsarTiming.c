@@ -694,7 +694,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
     }
 
-    nb = LAL_TWOPI/Pb
+    nb = LAL_TWOPI/Pb;
 
     norbits = (INT4)orbits;
     if(orbits < 0.0) norbits--;
