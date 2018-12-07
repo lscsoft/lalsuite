@@ -2,7 +2,7 @@
 
 This is the main LALSuite development repository.
 
-We now utilize [git-lfs](https://wiki.ligo.org/DASWG/GitLFS#Install_the_git_LFS_client) for the managament of large files and as such `git-lfs` needs to be installed and configured to correctly clone this repository. After installing `git-lfs` it can be configured using:
+We now utilize [git-lfs](https://wiki.ligo.org/Computing/DASWG/GitLFS#Install_the_git_LFS_client) for the managament of large files and as such `git-lfs` needs to be installed and configured to correctly clone this repository. After installing `git-lfs` it can be configured using:
 
 ```
 $ git lfs install
@@ -22,7 +22,7 @@ The guide to [Contributing](https://git.ligo.org/lscsoft/lalsuite/blob/master/CO
 
 The Doxygen Documentation is built under GitLab-CI every night and can be viewed at:
 
-https://docs.ligo.org/lscsoft/lalsuite/
+https://lscsoft.docs.ligo.org/lalsuite
 
 ## Citing LALSuite
 
