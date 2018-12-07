@@ -24,7 +24,9 @@ FFTSRC = \
 	IntelRealFFT.c \
 	FFTWMutex.c \
 	$(QTHREADSRC)
-FFTHDR =
+FFTHDR = \
+	IntelComplexFFT_source.c \
+	IntelRealFFT_source.c
 FFTCXXSRC =
 FFTCXXGENSRC =
 FFTLIBCXX =
@@ -77,6 +79,7 @@ CLEANFILES = CudaFFT.cpp
 
 EXTRA_DIST = \
 	ComplexFFT.c \
+	ComplexFFT_source.c \
 	CudaComplexFFT.c \
 	CudaFFT.cu \
 	CudaFFT.h \
@@ -84,7 +87,9 @@ EXTRA_DIST = \
 	CudaRealFFT.c \
 	FFTWMutex.c \
 	IntelComplexFFT.c \
+	IntelComplexFFT_source.c \
 	IntelRealFFT.c \
+	IntelRealFFT_source.c \
 	RealFFT.c \
 	RealFFT_source.c \
 	TimeFreqFFT.c \
