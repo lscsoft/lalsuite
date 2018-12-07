@@ -2,7 +2,7 @@
 
 This is the main LALSuite development repository.
 
-We now utilize [git-lfs](https://wiki.ligo.org/DASWG/GitLFS#Install_the_git_LFS_client) for the managament of large files and as such `git-lfs` needs to be installed and configured to correctly clone this repository. After installing `git-lfs` it can be configured using:
+We now utilize [git-lfs](https://wiki.ligo.org/Computing/DASWG/GitLFS#Install_the_git_LFS_client) for the managament of large files and as such `git-lfs` needs to be installed and configured to correctly clone this repository. After installing `git-lfs` it can be configured using:
 
 ```
 $ git lfs install
