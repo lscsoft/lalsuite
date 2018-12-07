@@ -4610,6 +4610,7 @@ class nest2posJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
       self.set_stdout_file('n2p-$(cluster).out')
       self.set_stderr_file('n2p-$(cluster).err')
 
+    self.add_arg('--non-strict-versions') # force use of --non-strict-versions flag
     self.add_arg('$(macroinputfiles)') # macro for input nested sample files
 
     if rundir != None:
