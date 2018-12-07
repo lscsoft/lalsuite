@@ -440,6 +440,7 @@ class knopeDAG(pipeline.CondorDAG):
         self.skipped_pulsars = prevdag.skipped_pulsars
         self.processed_files = prevdag.processed_files
       else: # if analysing only selected pulsars (from pulsarlist) just get information on them
+        self.processed_files = {}
         for psrl in pulsarlist:
           if psrl not in prevdag.analysed_pulsars:
             print("Error... specified pulsar '%s' could not be found in previous run pickle file '%s'." % (psrl, preprocessed_pickle))
@@ -452,7 +453,6 @@ class knopeDAG(pipeline.CondorDAG):
             self.modified_pulsars[psrl] = prevdag.modified_pulsars[psrl]
 
           self.analysed_pulsars[psrl] = prevdag.analysed_pulsars[psrl]
-          self.processed_files = {}
           self.processed_files[psrl] = prevdag.processed_files[psrl]
 
     if self.preprocessing_only: # end class initialisation
