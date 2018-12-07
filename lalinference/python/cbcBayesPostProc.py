@@ -89,7 +89,7 @@ from lalinference.lalinference_pipe_utils import guess_url
 def email_notify(address,path):
     import smtplib
     import subprocess
-    USER = os.environ('USER')
+    USER = os.environ['USER']
     HOST = socket.getfqdn()
     address=address.split(',')
     FROM=USER+'@'+HOST
