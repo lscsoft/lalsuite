@@ -249,18 +249,18 @@ ProcessTable *coh_PTF_create_process_table( struct coh_PTF_params *params )
   }
   else if( params->numIFO == 2 )
   {   
-    snprintf( processTable->ifos, LIGOMETA_IFOS_MAX,\
+    XLALStringPrint( processTable->ifos, LIGOMETA_IFOS_MAX,\
               "%s%s", params->ifoName[0], params->ifoName[1] );
   }
   else if ( params->numIFO == 3 )
   {
-    snprintf( processTable->ifos, LIGOMETA_IFOS_MAX,\
+    XLALStringPrint( processTable->ifos, LIGOMETA_IFOS_MAX,\
               "%s%s%s", params->ifoName[0], params->ifoName[1],
         params->ifoName[2] );
   }
   else if ( params->numIFO == 4 )
   {
-    snprintf( processTable->ifos, LIGOMETA_IFOS_MAX,\
+    XLALStringPrint( processTable->ifos, LIGOMETA_IFOS_MAX,\
               "%s%s%s%s", params->ifoName[0], params->ifoName[1],
               params->ifoName[2], params->ifoName[3]);
   } 
@@ -318,18 +318,18 @@ SearchSummaryTable *coh_PTF_create_search_summary( struct coh_PTF_params *params
   }
   else if( params->numIFO == 2 )
   {
-    snprintf( searchSummary->ifos, LIGOMETA_IFOS_MAX,\
+    XLALStringPrint( searchSummary->ifos, LIGOMETA_IFOS_MAX,\
               "%s%s", params->ifoName[0], params->ifoName[1] );
   }
   else if ( params->numIFO == 3 )
   {
-    snprintf( searchSummary->ifos, LIGOMETA_IFOS_MAX,\
+    XLALStringPrint( searchSummary->ifos, LIGOMETA_IFOS_MAX,\
               "%s%s%s", params->ifoName[0], params->ifoName[1],
         params->ifoName[2] );
   }
   else if ( params->numIFO == 4 )
   {
-    snprintf( searchSummary->ifos, LIGOMETA_IFOS_MAX,\
+    XLALStringPrint( searchSummary->ifos, LIGOMETA_IFOS_MAX,\
               "%s%s%s%s", params->ifoName[0], params->ifoName[1],
               params->ifoName[2], params->ifoName[3]);
   }
