@@ -256,6 +256,8 @@ class singlesqueue(object):
 		del self.complete[:i]
 		for event in events:
 			self.index.pop(id(event))
+		# collect other events that might be used again but that
+		# can form coincidences with things up to t
 		t += self.coinc_window
 		if t <= self.t_complete:
 			other_events = tuple(entry.event for entry in self.complete[:bisect_left(self.complete, t)])
