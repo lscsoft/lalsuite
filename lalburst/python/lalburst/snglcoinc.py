@@ -1635,11 +1635,11 @@ class TOATriangulator(object):
 		self.R = self.rs - rbar
 
 		# ith row is \sigma_i^-2 (r_i - \bar{r}) / c
-		M = self.R / (self.v * self.sigmas[:,numpy.newaxis]**2)
+		M = self.R / (self.v * self.sigmas[:,numpy.newaxis])
+
+		self.U, self.S, self.VT = numpy.linalg.svd(M)
 
 		if len(rs) >= 3:
-			self.U, self.S, self.VT = numpy.linalg.svd(M)
-
 			# if the smallest singular value is less than 10^-8 * the
 			# largest singular value, assume the network is degenerate
 			self.singular = abs(self.S.min() / self.S.max()) < 1e-8
@@ -1691,10 +1691,19 @@ class TOATriangulator(object):
 		... ])
 		...
 		>>> n
-		array([ 0.28747132, -0.37035214,  0.88328904])
-		>>> testing.assert_approx_equal(toa, 794546669.409)
-		>>> testing.assert_approx_equal(chi2_per_dof, 2.74075797279)
-		>>> testing.assert_approx_equal(dt, 0.01433725385)
+		array([[-0.45605637,  0.75800934,  0.46629865],
+		       [-0.45605637,  0.75800934,  0.46629865]])
+		>>> testing.assert_approx_equal(toa, 794546669.4269662)
+		>>> testing.assert_approx_equal(chi2_per_dof, 0.47941941158371465)
+		>>> testing.assert_approx_equal(dt, 0.005996370224459011)
+
+		NOTE: if len(rs) >= 4, n is a 1x3 array.
+		      if len(rs) == 3, n is a 2x3 array.
+		      if len(rs) == 2, n is None.
+		NOTE: n is not the sorce direction but the propagation direction of GW.
+		      Therefore, if you want source direction, you have to multiply -1.
+		NOTE: n is represented by earth fixed coordinate, not celestial coordinate.
+		      Up to your purpose, you should transform \\phi -> RA.
 		"""
 		assert len(ts) == len(self.sigmas)
 
@@ -1705,20 +1714,41 @@ class TOATriangulator(object):
 		# sigma^-2 -weighted mean of arrival times
 		tbar = sum(ts / self.sigmas**2) / sum(1 / self.sigmas**2)
 		# the i-th element is ts - tbar for the i-th location
-		tau = ts - tbar
+		tau = (ts - tbar) / self.sigmas
+
+		tau_prime = numpy.dot(self.U.T, tau)[:3]
 
 		if len(self.rs) >= 3:
-			tau_prime = numpy.dot(self.U.T, tau)[:3]
-
 			if self.singular:
-				l = 0.0
-				np = tau_prime / self.S
+				# len(rs) == 3
+				np = numpy.array([tau_prime / self.S, tau_prime / self.S])
 				try:
-					np[2] = math.sqrt(1.0 - np[0]**2 - np[1]**2)
+					np[0][2] =  math.sqrt(1.0 - np[0][0]**2 - np[0][1]**2)
+					np[1][2] = -math.sqrt(1.0 - np[1][0]**2 - np[1][1]**2)
 				except ValueError:
-					np[2] = 0.0
-					np /= math.sqrt(numpy.dot(np, np))
+					# two point is mergered, n_0 = n_1
+					np.T[2] = 0.0
+					np /= math.sqrt(numpy.dot(np[0], np[0]))
+
+				# compute n from n'
+				n = numpy.array([numpy.zeros(3), numpy.zeros(3)])
+				n = numpy.dot(self.VT.T, np.T).T
+
+				# safety check the nomalization of the result
+				assert abs(numpy.dot(n[0], n[0]) - 1.0) < 1e-8
+				assert abs(numpy.dot(n[1], n[1]) - 1.0) < 1e-8
+
+				# arrival time at origin
+				toa = sum((ts - numpy.dot(self.rs, n[0]) / self.v) / self.sigmas**2) / sum(1 / self.sigmas**2)
+
+				# chi^{2}
+				chi2 = sum((numpy.dot(self.R, n[0]) / (self.v * self.sigmas) - tau)**2)
+
+				# root-sum-square timing residual
+				dt = ts - toa - numpy.dot(self.rs, n[0]) / self.v
+				dt = math.sqrt(numpy.dot(dt, dt))
 			else:
+				# len(rs) >= 4
 				def n_prime(l, Stauprime = self.S * tau_prime, S2 = self.S * self.S):
 					return Stauprime / (S2 + l)
 				def secular_equation(l):
@@ -1753,6 +1783,33 @@ class TOATriangulator(object):
 				# compute n'
 				np = n_prime(l)
 
+				# compute n from n'
+				n = numpy.dot(self.VT.T, np)
+
+				# safety check the nomalization of the result
+				assert abs(numpy.dot(n, n) - 1.0) < 1e-8
+
+				# arrival time at origin
+				toa = sum((ts - numpy.dot(self.rs, n) / self.v) / self.sigmas**2) / sum(1 / self.sigmas**2)
+
+				# chi^{2}
+				chi2 = sum((numpy.dot(self.R, n) / (self.v * self.sigmas) - tau)**2)
+
+				# root-sum-square timing residual
+				dt = ts - toa - numpy.dot(self.rs, n) / self.v
+				dt = math.sqrt(numpy.dot(dt, dt))
+		else:
+			# len(rs) == 2
+			# s_1 == s_2 == 0
+
+			# compute an n'
+			xp = tau_prime[0] / self.S[0]
+			try:
+				np = numpy.array([xp, 0, math.sqrt(1-xp**2)])
+			except ValueError:
+				# two point is mergered, n_0 = n_1
+				np = numpy.array([xp, 0, 0])
+
 			# compute n from n'
 			n = numpy.dot(self.VT.T, np)
 
@@ -1763,18 +1820,14 @@ class TOATriangulator(object):
 			toa = sum((ts - numpy.dot(self.rs, n) / self.v) / self.sigmas**2) / sum(1 / self.sigmas**2)
 
 			# chi^{2}
-			chi2 = sum(((numpy.dot(self.R, n) / self.v - tau) / self.sigmas)**2)
+			chi2 = sum((numpy.dot(self.R, n) / (self.v * self.sigmas) - tau)**2)
 
 			# root-sum-square timing residual
 			dt = ts - toa - numpy.dot(self.rs, n) / self.v
 			dt = math.sqrt(numpy.dot(dt, dt))
-		else:
-			# len(rs) == 2
-			# FIXME:  fill in n and toa (is chi2 right?)
-			n = numpy.zeros((3,), dtype = "double")
-			toa = 0.0
-			dt = max(abs(ts[1] - ts[0]) - self.max_dt, 0)
-			chi2 = dt**2 / sum(self.sigmas**2)
+
+			# set n None
+			n = None
 
 		# done
 		return n, t0 + toa, chi2 / len(self.sigmas), dt
