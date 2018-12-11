@@ -1,4 +1,4 @@
-# Copyright (C) 2006--2017  Kipp Cannon, Drew G. Keppel, Jolien Creighton
+# Copyright (C) 2006--2018  Kipp Cannon, Drew G. Keppel, Jolien Creighton
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -256,6 +256,8 @@ class singlesqueue(object):
 		del self.complete[:i]
 		for event in events:
 			self.index.pop(id(event))
+		# collect other events that might be used again but that
+		# can form coincidences with things up to t
 		t += self.coinc_window
 		if t <= self.t_complete:
 			other_events = tuple(entry.event for entry in self.complete[:bisect_left(self.complete, t)])
@@ -432,6 +434,46 @@ class coincgen_doubles(object):
 		"""
 		self.queues[instrument].push(events, t_complete)
 
+	def doublesgen(self, eventsa, offset_a, eventsb):
+		"""
+		For internal use only.
+		"""
+		# choose the longer of the two lists for the outer loop.
+		# yes, it's counter-interuitive, it's because of the high
+		# cost of indexing events for the inner loop.  in any case
+		# we must still return coincident pairs with the events
+		# ordered as supplied so if the event lists are swapped we
+		# need to unswap the pairs that we return.
+		# FIXME:  hopefully later improvements to the scaling will
+		# change the logic here, and we'll need to switch to using
+		# the shorter list for the outer loop after-all.
+
+		if len(eventsb) > len(eventsa):
+			eventsa, eventsb = eventsb, eventsa
+			offset_a = -offset_a
+			unswap = lambda a, b: (b, a)
+		else:
+			unswap = lambda a, b: (a, b)
+
+		# for each event in list A, iterate over events from the
+		# other list that are coincident with the event, and return
+		# the pairs.  while doing this, collect the events that are
+		# used in coincidences in a set for later logic.
+		coinc_window = self.coinc_window
+		used = set()
+		used_add = used.add
+		queueb_get_coincs = self.get_coincs(eventsb)
+		for eventa in eventsa:
+			matches = queueb_get_coincs(eventa, offset_a, coinc_window)
+			if matches:
+				eventa_id = id(eventa)
+				used_add(eventa_id)
+				for eventb in matches:
+					eventb_id = id(eventb)
+					used_add(eventb_id)
+					yield unswap(eventa_id, eventb_id)
+		self.used |= used
+
 	def pull(self, t, flushed, flushed_unused):
 		"""
 		Generate a sequence of 2-element tuples of Python IDs of
@@ -472,56 +514,22 @@ class coincgen_doubles(object):
 		flusheda, fornexttimea = self.queues[instrumenta].pull(t)
 		flushedb, fornexttimeb = self.queues[instrumentb].pull(t)
 
-		# choose the shorter of the two lists for the outer loop,
-		# but we must still return coincident pairs with the events
-		# ordered alphabetically by instrument.
+		# construct coincident pairs.  NOTE: because we require any
+		# coincidence that we report to contain an event preceding
+		# t, the loop is done as a two-step process.  firstly, we
+		# iterate over the "flushed" sequence for list A but search
+		# for coincidences with any event from the flushed and "for
+		# next time" sequences for list B.  lastly, we iterate over
+		# the "for next time" sequence for list A but search for
+		# coincidences only in the "flushed" sequence for list B.
 
-		if len(flushedb) < len(flusheda):
-			flusheda, flushedb = flushedb, flusheda
-			fornexttimea, fornexttimeb = fornexttimeb, fornexttimea
-			offset_a = -offset_a
-			unswap = lambda a, b: (b, a)
-		else:
-			unswap = lambda a, b: (a, b)
-
-		# for each event in list A, iterate over events from the
-		# other list that are coincident with the event, and return
-		# the pairs.  while doing this, collect the events that are
-		# used in coincidences in a set for later logic.  NOTE:
-		# because we require any coincidence that we report to
-		# contain an event preceding t, the loop is done as a
-		# two-step process.  firstly, we iterate over the "flushed"
-		# sequence for list A but search for coincidences with any
-		# event from the flushed and "for next time" sequences for
-		# list B.  lastly, we iterate over the "for next time"
-		# sequence for list A but search for coincidences only in
-		# the "flushed" sequence for list B.
-		coinc_window = self.coinc_window
-		used = set()
-		used_add = used.add
-
-		queueb_get_coincs = self.get_coincs(flushedb + fornexttimeb)
-		for eventa in flusheda:
-			matches = queueb_get_coincs(eventa, offset_a, coinc_window)
-			if matches:
-				eventa_id = id(eventa)
-				used_add(eventa_id)
-				for eventb in matches:
-					eventb_id = id(eventb)
-					used_add(eventb_id)
-					yield unswap(eventa_id, eventb_id)
-		queueb_get_coincs = self.get_coincs(flushedb)
-		for eventa in fornexttimea:
-			matches = queueb_get_coincs(eventa, offset_a, coinc_window)
-			if matches:
-				eventa_id = id(eventa)
-				used_add(eventa_id)
-				for eventb in matches:
-					eventb_id = id(eventb)
-					used_add(eventb_id)
-					yield unswap(eventa_id, eventb_id)
-
-		self.used |= used
+		# FIXME:  when switching to Python 3 use
+		#yield from self.doublesgen(flusheda, offset_a, flushedb + fornexttimeb)
+		#yield from self.doublesgen(fornexttimea, offset_a, flushedb)
+		for pair in self.doublesgen(flusheda, offset_a, flushedb + fornexttimeb):
+			yield pair
+		for pair in self.doublesgen(fornexttimea, offset_a, flushedb):
+			yield pair
 
 		# populate the flushed and flushed_unused sets
 
