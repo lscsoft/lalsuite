@@ -147,8 +147,10 @@ static int event_sequence_insert(struct event_sequence **event_sequences, int *n
 	PyObject **new_events;
 	int need_sort = 0;
 
-	if(template_id < 0)
+	if(template_id < 0) {
+		Py_DECREF(event);
 		return -1;
+	}
 
 	event_sequence = event_sequence_get(*event_sequences, *n, template_id);
 	if(!event_sequence) {
@@ -309,11 +311,15 @@ static int get_coincs__init__(PyObject *self, PyObject *args, PyObject *kwds)
 		long template_id = get_template_id(*item);
 		if(template_id < 0) {
 			event_sequence_free(get_coincs->event_sequences, get_coincs->n_sequences);
+			get_coincs->event_sequences = NULL;
+			get_coincs->n_sequences = 0;
 			return -1;
 		}
 		Py_INCREF(*item);
 		if(event_sequence_insert(&get_coincs->event_sequences, &get_coincs->n_sequences, *item) < 0) {
 			event_sequence_free(get_coincs->event_sequences, get_coincs->n_sequences);
+			get_coincs->event_sequences = NULL;
+			get_coincs->n_sequences = 0;
 			return -1;
 		}
 	}
