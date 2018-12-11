@@ -8,8 +8,9 @@ test_programs +=
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts += \
-	test_rate.py \
-	utils_cache_verify.py
+    test_antenna.py \
+    test_rate.py \
+    utils_cache_verify.py
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
