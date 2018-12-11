@@ -405,8 +405,13 @@ static PyTypeObject get_coincs_Type = {
  */
 
 
-void init_thinca(void);	/* silence warning */
-void init_thinca(void)
+#if PY_MAJOR_VERSION < 3
+PyMODINIT_FUNC init_thinca(void);	/* silence warning */
+PyMODINIT_FUNC init_thinca(void)
+#else
+PyMODINIT_FUNC PyInit__thinca(void);	/* silence warning */
+PyMODINIT_FUNC PyInit__thinca(void)
+#endif
 {
 #if PY_MAJOR_VERSION < 3
 	PyObject *module = Py_InitModule3(MODULE_NAME, NULL, "");
@@ -425,4 +430,9 @@ void init_thinca(void)
 		return;
 	Py_INCREF((PyObject *) &get_coincs_Type);
 	PyModule_AddObject(module, "get_coincs", (PyObject *) &get_coincs_Type);
+
+#if PY_MAJOR_VERSION < 3
+#else
+	return module;
+#endif
 }
