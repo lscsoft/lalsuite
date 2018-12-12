@@ -620,7 +620,7 @@ int XLALAdaptiveRungeKuttaDenseandSparseOutput(LALAdaptiveRungeKuttaIntegrator *
     /* Integration and interpolation variables */
     size_t dim = integrator->sys->dimension;
     UINT4 sparse_outputlength = 0;
-    UINT4 dense_outputlength = 0;
+    UINT4 dense_outputlength = 1;
     size_t sparse_bufferlength, dense_bufferlength, retries;
     REAL8 t = tinit;
     REAL8 tnew;
@@ -763,8 +763,8 @@ int XLALAdaptiveRungeKuttaDenseandSparseOutput(LALAdaptiveRungeKuttaIntegrator *
           const REAL8 interp_t_old = interp_t;
           const UINT4 dense_outputlength_old = dense_outputlength;
           while (interp_t < tnew) {
-            dense_outputlength++;
             dense_buffers->data[dense_outputlength] = interp_t;
+            dense_outputlength++;
             interp_t += deltat;
           }
           interp_t = interp_t_old;
@@ -782,13 +782,10 @@ int XLALAdaptiveRungeKuttaDenseandSparseOutput(LALAdaptiveRungeKuttaIntegrator *
 	    REAL8 yi = y[i];
 
 	    while (interp_t < tnew) {
-	      dense_outputlength++;
-
 	      const REAL8 theta = (interp_t - t)*h_inv;
-
 	      dense_buffers->data[(i+1)*dense_bufferlength + dense_outputlength] =
                 (1.0 - theta)*y0i + theta*yi + theta*(theta-1.0)*( (1.0 - 2.0*theta)*(yi - y0i) + h*( (theta-1.0)*dydt_in[i] + theta*dydt_out[i]));
-
+	      dense_outputlength++;
 	      interp_t += deltat;
 	    }
 
@@ -830,12 +827,11 @@ int XLALAdaptiveRungeKuttaDenseandSparseOutput(LALAdaptiveRungeKuttaIntegrator *
 
     /* Copy the final state into yinit and dense_output. */
     memcpy(yinit, y, dim * sizeof(REAL8));
-    dense_outputlength++;
     dense_buffers->data[dense_outputlength] = t;
     for (UINT4 i = 1; i <= dim; i++)
       dense_buffers->data[i * dense_bufferlength + dense_outputlength] = y[i - 1];
 
-    if (sparse_outputlength == 0 || dense_outputlength == 0)
+    if (sparse_outputlength == 0 || dense_outputlength == 1)
         goto bail_out;
 
     sparse_outputlength++;
