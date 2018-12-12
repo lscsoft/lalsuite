@@ -426,12 +426,21 @@ PyMODINIT_FUNC PyInit__thinca(void)
 	PyObject *module = PyModule_Create(&modef);
 #endif
 
-	if(PyType_Ready(&get_coincs_Type) < 0)
-		return;
+	if(PyType_Ready(&get_coincs_Type) < 0) {
+		Py_DECREF(module);
+		module = NULL;
+		goto done;
+	}
 	Py_INCREF((PyObject *) &get_coincs_Type);
-	PyModule_AddObject(module, "get_coincs", (PyObject *) &get_coincs_Type);
+	if(PyModule_AddObject(module, "get_coincs", (PyObject *) &get_coincs_Type) < 0) {
+		Py_DECREF(module);
+		module = NULL;
+		goto done;
+	}
 
+done:
 #if PY_MAJOR_VERSION < 3
+	return;
 #else
 	return module;
 #endif
