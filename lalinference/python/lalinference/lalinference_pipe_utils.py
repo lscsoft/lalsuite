@@ -8,7 +8,6 @@ from glue import pipeline,segmentsUtils,segments
 from glue.ligolw import ligolw, lsctables, utils
 import os
 import socket
-from lalapps import inspiralutils
 import uuid
 import ast
 import pdb
@@ -27,6 +26,26 @@ from functools import reduce
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
 # join together types of jobs into a DAG.
+
+def findSegmentsToAnalyze(flag, gpsstart, gpsend, url=None):
+    """
+    Return segments with given DQ flag
+    Parameters
+    ----
+    flag : string
+        name of DQ flag
+    gpsstart, gpsend : float
+        GPS period to analyse
+    """
+    try:
+        from gwpy.segments import DataQualityFlag
+    except ImportError:
+        print('Unable to import gwpy. Querying science segments not possible. Please try installing gwpy')
+        raise
+    if url is None:
+	return DataQualityFlag.query_dqsegdb(flag, gpsstart, gpsend).active
+    else:
+	return DataQualityFlag.query_dqsegdb(flag, gpsstart, gpsend, url=url).active
 
 def guess_url(fslocation):
     """
@@ -796,7 +815,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         """
         Create a pegasus cache file name, uses inspiralutils
         """
-        import inspiralutils as iu
+        from lalapps import inspiralutils as iu
         gpsstart=self.config.get('input','gps-start-time')
         gpsend=self.config.get('input','gps-end-time')
         pfnfile=iu.create_frame_pfn_file(self.frtypes,gpsstart,gpsend)
@@ -1255,10 +1274,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     def add_science_segments(self):
         # Query the segment database for science segments and
         # add them to the pool of segments
+        start=self.config.getfloat('input','gps-start-time')
+        end=self.config.getfloat('input','gps-end-time')
         if self.config.has_option('input','ignore-science-segments'):
             if self.config.getboolean('input','ignore-science-segments'):
-                start=self.config.getfloat('input','gps-start-time')
-                end=self.config.getfloat('input','gps-end-time')
                 i=0
                 for ifo in self.ifos:
                     sciseg=pipeline.ScienceSegment((i,start,end,end-start))
@@ -1268,24 +1287,19 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     i+=1
                 return
         # Look up science segments as required
-        segmentdir=os.path.join(self.basepath,'segments')
-        mkdirs(segmentdir)
-        curdir=os.getcwd()
-        os.chdir(segmentdir)
+        segurl = None # No segment URL will default to $DEFAULT_SEGMENT_SERVER from env
+        if self.config.has_option('segfind','segment-url'):
+            segurl = self.config.get('segfind','segment-url')
         for ifo in self.ifos:
-            (segFileName,dqVetoes)=inspiralutils.findSegmentsToAnalyze(self.config, ifo, self.veto_categories, generate_segments=True,\
-              use_available_data=self.use_available_data , data_quality_vetoes=False)
-            self.dqVetoes=dqVetoes
-            segfile=open(segFileName)
-            segs=segmentsUtils.fromsegwizard(segfile)
+	    print('Querying segment database for {0} data between {1} and {2}'.format(ifo,start,end))
+            segs = findSegmentsToAnalyze(self.config.get('segments',ifo.lower()+'-analyze'),
+                start, end, url=segurl)
             segs.coalesce()
-            segfile.close()
             for seg in segs:
                 sciseg=pipeline.ScienceSegment((segs.index(seg),seg[0],seg[1],seg[1]-seg[0]))
                 df_node=self.get_datafind_node(ifo,self.frtypes[ifo],int(sciseg.start()),int(sciseg.end()))
                 sciseg.set_df_node(df_node)
                 self.segments[ifo].append(sciseg)
-        os.chdir(curdir)
 
     def get_datafind_node(self,ifo,frtype,gpsstart,gpsend):
         node=pipeline.LSCDataFindNode(self.datafind_job)
@@ -2183,11 +2197,17 @@ class EngineNode(SingularityNode):
         self.__GPSend=0
         length=maxLength
         dt=self.seglen/4.
-
-        while(self.GPSstart+length>=trig_time):
-        ### or self.GPSstart not in  Science) --><-- here we should also have checked that we are in science mode, but I'm not sure how to do that yet.
+        # First find appropriate start time
+        while ((self.GPSstart+length>=trig_time) or any( [self.GPSstart < seg.start()+self.padding for seg in self.scisegs.values() ] )) and length>0:
             self.GPSstart+=dt
             length-=dt
+        # Now adjust so length fits inside segment
+        while any([self.GPSstart+length>=seg.end()-self.padding for seg in self.scisegs.values()]) and length>0:
+            length-=dt
+        if length<=0:
+            print('Unable to find data for event {0}'.format(trig_time))
+        if length<maxLength:
+            print('Trimmed analysis data for trigger {}. Analysing {} -- {} ({}s of data)'.format(trig_time, self.GPSstart, self.GPSstart+length,length))
 
         if self.psdstart is not None:
             self.GPSstart=self.psdstart
