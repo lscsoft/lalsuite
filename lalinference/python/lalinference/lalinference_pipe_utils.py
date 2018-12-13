@@ -1762,8 +1762,9 @@ class SingularityJob(pipeline.CondorDAGJob):
         if self.osg and not self.singularity:
             raise Exception("Running on the OSG requires singularity=True in [analysis] section of ini file")
         self.basedir = cp.get('paths','basedir')
-        self.add_condor_cmd('initialdir',self.basedir)
+        #self.add_condor_cmd('initialdir',self.basedir)
         if not self.singularity:
+            self.add_condor_cmd('getenv','true')
             return
         if cp.has_option('condor','singularity'):
             self.singularity_path = cp.get('condor','singularity')
@@ -1781,65 +1782,33 @@ class SingularityJob(pipeline.CondorDAGJob):
         else:
             extra_paths="--bind {cvmfs_frames}".format(cvmfs_frames = self.CVMFS_FRAMES)
             self.add_condor_cmd('+SingularityBindCVMFS','True')
-            self.add_condor_cmd('use_x509userproxy','true')
-        if cp.has_option('analysis','roq') and cp.getboolean('analysis','roq'):
-            extra_paths+=" --bind {roqpath}".format(roqpath=cp.get('paths','roq_b_matrix_directory'))
-
-        self.wrapper_string="""
-            echo "Workspace on execute node $(hostname -f)"
-            echo "PWD" ${{PWD}}
-            echo "contents"
-            ls -l
-            set -e
-            {executable} \\
-                    "$@"
-            """.format(singularity = self.singularity_path,
-                    basedir=self.basedir,
-                    extra_paths = extra_paths,
-                    executable = super(SingularityJob,self).get_executable(),
-                    image = self.image
-                    )
+            self.add_condor_cmd('use_x509userproxy','True')
+            self.requirements.append('HAS_LIGO_FRAMES =?= TRUE')
+	if cp.has_option('analysis','roq') and cp.getboolean('analysis','roq'):
+	    extra_paths+=" --bind {roqpath}".format(roqpath=cp.get('paths','roq_b_matrix_directory'))
 
         if self.osg:
             self.add_condor_cmd('+OpenScienceGrid','True')
-            self.requirements.append('IS_GLIDEIN==True')
+            self.requirements.append('IS_GLIDEIN=?=True')
             # Add requested sites if specified
             if cp.has_option('condor','desired-sites'):
                 self.add_condor_cmd('+DESIRED_Sites',cp.get('condor','desired-sites'))
         if self.singularity:
-            self.requirements.append('HasSingularity == TRUE')
+            self.requirements.append('HAS_SINGULARITY =?= TRUE')
             self.add_condor_cmd('+SingularityImage','"{0}"'.format(self.image))
+            self.add_condor_cmd('transfer_executable','False')
         # Add data transfer options
         self.add_condor_cmd('should_transfer_files','YES')
         self.add_condor_cmd('when_to_transfer_output','ON_EXIT_OR_EVICT')
 
-    def write_script(self,path):
-        """
-        Write the wrapper script
-        """
-        f=open(path,'w')
-        f.writelines('#!/usr/bin/env bash')
-        f.writelines(self.wrapper_string)
-        f.close()
-        os.chmod(path,0o755)
-
     def write_sub_file(self):
         """
-        Over-load CondorDAGJob.write_sub_file to write the wrapper script and
-        set the exe to call it
+        Over-load CondorDAGJob.write_sub_file to write the requirements
         """
-        true_exec = self.get_executable()
         self.add_condor_cmd('requirements','&&'.join('({0})'.format(r) for r in self.requirements))
-        if self.singularity:
-            # Write the wrapper script
-            wrapper=os.path.splitext(self.get_sub_file())[0] +'_wrapper.sh'
-            self.write_script( wrapper )
-            # Over-write the executable to set the wrapper script
-            self.set_executable( wrapper )
+        
         # Call the parent method to do the rest
         super(SingularityJob,self).write_sub_file()
-        # Put the true exe back just in case
-        self.set_executable(true_exec)
 
 
 
@@ -1934,7 +1903,6 @@ class EngineJob(SingularityJob,pipeline.AnalysisJob):
                 self.set_executable_installed(False)
         # Set the options which are always used
         self.set_sub_file(os.path.abspath(submitFile))
-        self.add_condor_cmd('getenv','true')
         if self.engine=='lalinferencemcmc':
             self.binary=cp.get('condor',self.engine.replace('mpi',''))
             self.mpirun=cp.get('condor','mpirun')
