@@ -244,7 +244,7 @@ static PyObject *event_sequence_extract(struct event_sequence *event_sequence, P
 /*
  * ============================================================================
  *
- *                    Rate Estimation --- Posterior Class
+ *                              get_coincs Class
  *
  * ============================================================================
  */
