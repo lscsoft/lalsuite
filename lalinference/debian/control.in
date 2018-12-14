@@ -119,6 +119,7 @@ Depends:
   python-six,
   python-glue (>= @MIN_GLUE_VERSION@),
   python-ligo-gracedb,
+  python-gwpy,
   python-lal (>= @MIN_LAL_VERSION@~),
   python-lalframe (>= @MIN_LALFRAME_VERSION@~),
   python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
