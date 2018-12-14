@@ -43,9 +43,9 @@ def findSegmentsToAnalyze(flag, gpsstart, gpsend, url=None):
         print('Unable to import gwpy. Querying science segments not possible. Please try installing gwpy')
         raise
     if url is None:
-	return DataQualityFlag.query_dqsegdb(flag, gpsstart, gpsend).active
+        return DataQualityFlag.query_dqsegdb(flag, gpsstart, gpsend).active
     else:
-	return DataQualityFlag.query_dqsegdb(flag, gpsstart, gpsend, url=url).active
+        return DataQualityFlag.query_dqsegdb(flag, gpsstart, gpsend, url=url).active
 
 def guess_url(fslocation):
     """
@@ -1291,7 +1291,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         if self.config.has_option('segfind','segment-url'):
             segurl = self.config.get('segfind','segment-url')
         for ifo in self.ifos:
-	    print('Querying segment database for {0} data between {1} and {2}'.format(ifo,start,end))
+            print('Querying segment database for {0} data between {1} and {2}'.format(ifo,start,end))
             segs = findSegmentsToAnalyze(self.config.get('segments',ifo.lower()+'-analyze'),
                 start, end, url=segurl)
             segs.coalesce()
@@ -1784,8 +1784,8 @@ class SingularityJob(pipeline.CondorDAGJob):
             self.add_condor_cmd('+SingularityBindCVMFS','True')
             self.add_condor_cmd('use_x509userproxy','True')
             self.requirements.append('HAS_LIGO_FRAMES =?= TRUE')
-	if cp.has_option('analysis','roq') and cp.getboolean('analysis','roq'):
-	    extra_paths+=" --bind {roqpath}".format(roqpath=cp.get('paths','roq_b_matrix_directory'))
+        if cp.has_option('analysis','roq') and cp.getboolean('analysis','roq'):
+            extra_paths+=" --bind {roqpath}".format(roqpath=cp.get('paths','roq_b_matrix_directory'))
 
         if self.osg:
             self.add_condor_cmd('+OpenScienceGrid','True')
@@ -1806,7 +1806,7 @@ class SingularityJob(pipeline.CondorDAGJob):
         Over-load CondorDAGJob.write_sub_file to write the requirements
         """
         self.add_condor_cmd('requirements','&&'.join('({0})'.format(r) for r in self.requirements))
-        
+
         # Call the parent method to do the rest
         super(SingularityJob,self).write_sub_file()
 
