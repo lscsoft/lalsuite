@@ -473,22 +473,6 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
     if(LALInferenceGetVariableVaryType(params,"declination")==LALINFERENCE_PARAM_LINEAR)
       logPrior+=log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))));
   }
-  if(LALInferenceCheckVariable(params,"tilt_spin1"))
-  {
-    LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(params,"tilt_spin1");
-    if(vtype!=LALINFERENCE_PARAM_FIXED && vtype!=LALINFERENCE_PARAM_OUTPUT)
-    {
-      logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"tilt_spin1"))));
-    }
-  }
-  if(LALInferenceCheckVariable(params,"tilt_spin2"))
-  {
-    LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(params,"tilt_spin2");
-    if(vtype!=LALINFERENCE_PARAM_FIXED && vtype!=LALINFERENCE_PARAM_OUTPUT)
-    {
-      logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"tilt_spin2"))));
-    }
-  }
 
   if(LALInferenceCheckVariable(params,"logmc")) {
     mc=exp(*(REAL8 *)LALInferenceGetVariable(params,"logmc"));
@@ -600,9 +584,9 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
        if(volumetric_spins)
        {
               /* Volumetric prior marginalised onto z component */
-                REAL8 a = LALInferenceGetREAL8Variable(params,"a_spin1");
+                REAL8 a = LALInferenceGetREAL8Variable(params,"a_spin2");
                 REAL8 a_max,a_min;
-                LALInferenceGetMinMaxPrior(runState->priorArgs,"a_spin1",&a_min,&a_max);
+                LALInferenceGetMinMaxPrior(runState->priorArgs,"a_spin2",&a_min,&a_max);
                 REAL8 V = (4./3.)*LAL_PI * (a_max*a_max*a_max);
                 logPrior+=log(fabs((3./4.)*(a_max*a_max - a*a)))-log(fabs(V));
             
