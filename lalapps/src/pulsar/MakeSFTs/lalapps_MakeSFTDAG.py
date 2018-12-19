@@ -94,6 +94,9 @@ Usage: MakeSFTDAG [options]
   -S, --use-single           (optional) use single precision in MakeSFTs for windowing, plan and fft; filtering is always done in double precision. Use of double precision in MakeSFTs is the default.
   -H, --use-hot              (optional) input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
   -u  --frame-struct-type    (optional) string specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.
+  -j, --datafind-path        (optional) string specifying a path to look for the gw_data_find executable; if not set, will use LSC_DATAFIND_PATH env variable or system default (in that order).
+  -J, --makesfts-path        (optional) string specifying a path to look for the lalapps_MakeSFTs executable; if not set, will use MAKESFTS_PATH env variable or system default (in that order).
+  -Y, --request-memory       (optional) memory allocation in MB to request from condor for lalapps_MakeSFTs step
 """
   print >> sys.stdout, msg
 
@@ -134,7 +137,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
 #
 
 # parse the command line options
-shortop = "s:e:a:b:f:t:G:d:x:M:y:k:T:p:C:O:o:N:i:w:P:u:v:c:F:B:D:X:m:L:g:q:Q:A:U:R:l:hSHZ"
+shortop = "s:e:a:b:f:t:G:d:x:M:y:k:T:p:C:O:o:N:i:w:P:u:v:c:F:B:D:X:m:L:g:q:Q:A:U:R:l:hSHZj:J:Y:"
 longop = [
   "help",
   "gps-start-time=",
@@ -177,6 +180,9 @@ longop = [
   "use-single=",  
   "use-hot",
   "make-tmp-file",
+  "datafind-path=",
+  "makesfts-path=",
+  "request-memory="
   ]
 
 try:
@@ -229,6 +235,9 @@ minSegLength = 0L
 useSingle = False
 useHoT = False
 makeTmpFile = False
+datafindPath = None
+makeSFTsPath = None
+requestMemory = None
 
 for o, a in opts:
   if o in ("-h", "--help"):
@@ -314,6 +323,12 @@ for o, a in opts:
     useHoT = True
   elif o in ("-Z", "--make-tmp-file"):
     makeTmpFile = True
+  elif o in ("-j", "--datafind-path"):
+    datafindPath = a
+  elif o in ("-J", "--makesfts-path"):
+    makeSFTsPath = a
+  elif o in ("-Y", "--request-memory"):
+    requestMemory = a
   else:
     print >> sys.stderr, "Unknown option:", o
     usage()
@@ -413,6 +428,18 @@ if not maxNumPerNode:
   print >> sys.stderr, "No maximum number of SFTs per node specified."
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
+
+dataFindExe = 'gw_data_find'
+if datafindPath:
+    dataFindExe = os.path.join(datafindPath,dataFindExe)
+elif 'LSC_DATAFIND_PATH' in os.environ:
+    dataFindExe = os.path.join('$ENV(LSC_DATAFIND_PATH)',dataFindExe)
+
+makeSFTsExe = 'lalapps_MakeSFTs'
+if makeSFTsPath:
+    makeSFTsExe = os.path.join(makeSFTsPath,makeSFTsExe)
+elif 'MAKESFTS_PATH' in os.environ:
+    makeSFTsExe = os.path.join('$ENV(MAKESFTS_PATH)',makeSFTsExe)
 
 # try and make a directory to store the cache files and job logs
 try: os.mkdir(logPath)
@@ -525,8 +552,8 @@ nodeCount         = 0L
 # create datafind.sub
 datafindFID = file('datafind.sub','w')
 datafindLogFile = subLogPath + '/' + 'datafind_' + dagFileName + '.log'
-datafindFID.write('universe = scheduler\n')
-datafindFID.write('executable = $ENV(LSC_DATAFIND_PATH)/gw_data_find\n')
+datafindFID.write('universe = vanilla\n')
+datafindFID.write('executable = ' + dataFindExe + '\n')
 if not datafindMatch:
    dataFindMatchString = ''
 else:
@@ -548,7 +575,7 @@ datafindFID.close
 MakeSFTsFID = file('MakeSFTs.sub','w')
 MakeSFTsLogFile = subLogPath + '/' + 'MakeSFTs_' + dagFileName + '.log'
 MakeSFTsFID.write('universe = vanilla\n')
-MakeSFTsFID.write('executable = $ENV(MAKESFTS_PATH)/lalapps_MakeSFTs\n')
+MakeSFTsFID.write('executable = '+ makeSFTsExe + '\n')
 MakeSFTsFID.write('arguments = $(argList)\n')
 if (accountingGroup != None):
    MakeSFTsFID.write('accounting_group = %s\n' % accountingGroup)
@@ -558,6 +585,9 @@ MakeSFTsFID.write('log = %s\n' % MakeSFTsLogFile)
 MakeSFTsFID.write('error = %s/MakeSFTs_$(tagstring).err\n' % logPath)
 MakeSFTsFID.write('output = %s/MakeSFTs_$(tagstring).out\n' % logPath)
 MakeSFTsFID.write('notification = never\n')
+if (requestMemory != None):
+    MakeSFTsFID.write('RequestMemory = %s\n' % requestMemory)
+MakeSFTsFID.write('RequestCpus = 1\n')
 MakeSFTsFID.write('queue 1\n')
 MakeSFTsFID.close
 
