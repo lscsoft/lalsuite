@@ -1,6 +1,6 @@
 # Contributing to LALSuite
 
-This page outlines the recommended procedure for contributing changes to the LALSuite repository. Please read the introduction to [GitLab on git.ligo.org](https://wiki.ligo.org/Computing/DASWG/GitLigoOrg) before you start. 
+This page outlines the recommended procedure for contributing changes to the LALSuite repository. Please read the introduction to [GitLab on git.ligo.org](https://wiki.ligo.org/Computing/GitLigoOrg) before you start. 
 
 ## Reporting Issues
 
@@ -25,7 +25,7 @@ If you can't see the *Fork* button, make sure that you are logged in by checking
 
 ### Clone your fork
 
-Make sure that you have installed and configured [git-lfs](https://wiki.ligo.org/Computing/DASWG/GitLFS#Install_the_git_LFS_client) for the management of large files. This is required to successfully build and install your development fork. 
+Make sure that you have installed and configured [git-lfs](https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client) for the management of large files. This is required to successfully build and install your development fork. 
 
 Then, clone your fork with 
 
