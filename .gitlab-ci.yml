@@ -380,6 +380,7 @@ docker:tags:stretch:
 
 # compilers
 
+# FIXME: allow failure due to #122
 nightly:top-level:clang:
   image: skymoo/ligo-lalsuite-clang:jessie
   stage: nightly
@@ -391,9 +392,11 @@ nightly:top-level:clang:
   only:
     - schedules
     - web
+  allow_failure: true
 
 # debian
 
+# FIXME: allow failure due to #122
 nightly:top-level:jessie:
   image: ligo/lalsuite-dev:jessie
   stage: nightly
@@ -405,6 +408,7 @@ nightly:top-level:jessie:
   only:
     - schedules
     - web
+  allow_failure: true
 
 # FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
 # available
@@ -423,6 +427,7 @@ nightly:top-level:buster:
 
 # el7
 
+# FIXME: allow failure due to #122
 nightly:top-level:el7-cr:
   image: ligo/lalsuite-dev:el7-cr
   stage: nightly
@@ -434,7 +439,9 @@ nightly:top-level:el7-cr:
   only:
     - schedules
     - web
+  allow_failure: true
 
+# FIXME: allow failure due to #122
 nightly:top-level:sl7:
   image: ligo/lalsuite-dev:sl7
   stage: nightly
@@ -446,6 +453,7 @@ nightly:top-level:sl7:
   only:
     - schedules
     - web
+  allow_failure: true
 
 # macOS
 
