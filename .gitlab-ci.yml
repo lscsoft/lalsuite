@@ -378,6 +378,25 @@ docker:tags:stretch:
 # nightly builds
 #
 
+# compilers
+
+# FIXME: allow failure due to #122
+nightly:top-level:clang:
+  image: skymoo/ligo-lalsuite-clang:jessie
+  stage: nightly
+  script:
+    - ./00boot
+    - CC=clang CXX=clang++ ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+# debian
+
+# FIXME: allow failure due to #122
 nightly:top-level:jessie:
   image: ligo/lalsuite-dev:jessie
   stage: nightly
@@ -389,86 +408,11 @@ nightly:top-level:jessie:
   only:
     - schedules
     - web
-
-nightly:top-level:el7-cr:
-  image: ligo/lalsuite-dev:el7-cr
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:top-level:sl7:
-  image: ligo/lalsuite-dev:sl7
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:top-level:trusty:
-  image: skymoo/ligo-lalsuite-dev:trusty
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --disable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
   allow_failure: true
 
-nightly:top-level:xenial:
-  image: skymoo/ligo-lalsuite-dev:xenial
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --disable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-  allow_failure: true
-
-nightly:top-level:bionic:
-  image: skymoo/ligo-lalsuite-dev:bionic
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-  allow_failure: true
-
-nightly:top-level:cosmic:
-  image: skymoo/ligo-lalsuite-dev:cosmic
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-  allow_failure: true
-
-# FIXME: It seems that Octave on buster currently has a few bugs which
-# cause the Octave bindings to fail, disable building the Octave SWIG
-# bindings for the time being.
+# FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
+# available
+# FIXME: allow failure due to #124
 nightly:top-level:buster:
   image: skymoo/ligo-lalsuite-dev:buster
   stage: nightly
@@ -482,29 +426,37 @@ nightly:top-level:buster:
     - web
   allow_failure: true
 
-nightly:top-level:clang:
-  image: skymoo/ligo-lalsuite-clang:jessie
-  stage: nightly
-  script:
-    - ./00boot
-    - CC=clang CXX=clang++ ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
+# el7
 
-nightly:openmp:stretch:
-  image: ligo/lalsuite-dev:stretch
+# FIXME: allow failure due to #122
+nightly:top-level:el7-cr:
+  image: ligo/lalsuite-dev:el7-cr
   stage: nightly
-  dependencies: []
   script:
     - ./00boot
-    - ./configure --enable-swig --enable-doxygen --enable-openmp
+    - ./configure --enable-swig --enable-doxygen
     - make -j4 distcheck
+  dependencies: []
   only:
     - schedules
     - web
+  allow_failure: true
+
+# FIXME: allow failure due to #122
+nightly:top-level:sl7:
+  image: ligo/lalsuite-dev:sl7
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+# macOS
 
 nightly:macos:highsierra:
   tags:
@@ -537,6 +489,63 @@ nightly:macos:elcapitan:
   only:
     - schedules
     - web
+
+# ubuntu
+
+# FIXME: allow failure due to #123
+nightly:top-level:trusty:
+  image: skymoo/ligo-lalsuite-dev:trusty
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --disable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+# FIXME: allow failure due to #123
+nightly:top-level:xenial:
+  image: skymoo/ligo-lalsuite-dev:xenial
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --disable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+nightly:top-level:bionic:
+  image: skymoo/ligo-lalsuite-dev:bionic
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+# FIXME: allow failure due to #124
+nightly:top-level:cosmic:
+  image: skymoo/ligo-lalsuite-dev:cosmic
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
 
 #
 # python wheels
