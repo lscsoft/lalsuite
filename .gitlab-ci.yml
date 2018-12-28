@@ -378,6 +378,22 @@ docker:tags:stretch:
 # nightly builds
 #
 
+# compilers
+
+nightly:top-level:clang:
+  image: skymoo/ligo-lalsuite-clang:jessie
+  stage: nightly
+  script:
+    - ./00boot
+    - CC=clang CXX=clang++ ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+# debian
+
 nightly:top-level:jessie:
   image: ligo/lalsuite-dev:jessie
   stage: nightly
@@ -389,6 +405,23 @@ nightly:top-level:jessie:
   only:
     - schedules
     - web
+
+# FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
+# available
+nightly:top-level:buster:
+  image: skymoo/ligo-lalsuite-dev:buster
+  stage: nightly
+  dependencies: []
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+# el7
 
 nightly:top-level:el7-cr:
   image: ligo/lalsuite-dev:el7-cr
@@ -413,6 +446,42 @@ nightly:top-level:sl7:
   only:
     - schedules
     - web
+
+# macOS
+
+nightly:macos:highsierra:
+  tags:
+    - macos_highsierra
+  stage: nightly
+  script:
+    - ./00boot
+    # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
+    # is available
+    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
+    - make -j4
+    - make -j4 check
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+nightly:macos:elcapitan:
+  tags:
+    - macos_elcapitan
+  stage: nightly
+  script:
+    - ./00boot
+    # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
+    # is available
+    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
+    - make -j4
+    - make -j4 check
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+# ubuntu
 
 nightly:top-level:trusty:
   image: skymoo/ligo-lalsuite-dev:trusty
@@ -465,65 +534,6 @@ nightly:top-level:cosmic:
     - schedules
     - web
   allow_failure: true
-
-# FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
-# available
-nightly:top-level:buster:
-  image: skymoo/ligo-lalsuite-dev:buster
-  stage: nightly
-  dependencies: []
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  only:
-    - schedules
-    - web
-  allow_failure: true
-
-nightly:top-level:clang:
-  image: skymoo/ligo-lalsuite-clang:jessie
-  stage: nightly
-  script:
-    - ./00boot
-    - CC=clang CXX=clang++ ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:macos:highsierra:
-  tags:
-    - macos_highsierra
-  stage: nightly
-  script:
-    - ./00boot
-    # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
-    # is available
-    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
-    - make -j4
-    - make -j4 check
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:macos:elcapitan:
-  tags:
-    - macos_elcapitan
-  stage: nightly
-  script:
-    - ./00boot
-    # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
-    # is available
-    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
-    - make -j4
-    - make -j4 check
-  dependencies: []
-  only:
-    - schedules
-    - web
 
 #
 # python wheels
