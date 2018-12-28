@@ -412,6 +412,7 @@ nightly:top-level:jessie:
 
 # FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
 # available
+# FIXME: allow failure due to #124
 nightly:top-level:buster:
   image: skymoo/ligo-lalsuite-dev:buster
   stage: nightly
@@ -491,6 +492,7 @@ nightly:macos:elcapitan:
 
 # ubuntu
 
+# FIXME: allow failure due to #123
 nightly:top-level:trusty:
   image: skymoo/ligo-lalsuite-dev:trusty
   stage: nightly
@@ -504,6 +506,7 @@ nightly:top-level:trusty:
     - web
   allow_failure: true
 
+# FIXME: allow failure due to #123
 nightly:top-level:xenial:
   image: skymoo/ligo-lalsuite-dev:xenial
   stage: nightly
@@ -530,6 +533,7 @@ nightly:top-level:bionic:
     - web
   allow_failure: true
 
+# FIXME: allow failure due to #124
 nightly:top-level:cosmic:
   image: skymoo/ligo-lalsuite-dev:cosmic
   stage: nightly
