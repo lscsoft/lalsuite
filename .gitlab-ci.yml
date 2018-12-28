@@ -466,9 +466,8 @@ nightly:top-level:cosmic:
     - web
   allow_failure: true
 
-# FIXME: It seems that Octave on buster currently has a few bugs which
-# cause the Octave bindings to fail, disable building the Octave SWIG
-# bindings for the time being.
+# FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
+# available
 nightly:top-level:buster:
   image: skymoo/ligo-lalsuite-dev:buster
   stage: nightly
