@@ -493,18 +493,6 @@ nightly:top-level:clang:
     - schedules
     - web
 
-nightly:openmp:stretch:
-  image: ligo/lalsuite-dev:stretch
-  stage: nightly
-  dependencies: []
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --enable-openmp
-    - make -j4 distcheck
-  only:
-    - schedules
-    - web
-
 nightly:macos:highsierra:
   tags:
     - macos_highsierra
