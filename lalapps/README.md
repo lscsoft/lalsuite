@@ -1,19 +1,16 @@
-LALApps
-================================
+# LALApps
 
 Collection of gravitational wave data analysis codes and pipelines
 utilising the LAL libraries.
 
-Acknowledgment
---------------------------------
+## Acknowledgment
 
 We request that any academic report, publication, or other academic
 disclosure of results derived from the use of this software acknowledge
 the use of the software by an appropriate acknowledgment or citation.
 
-The whole LALSuite software suite can be cited with the doi
-[10.7935/GT1W-FZ16](https://doi.org/10.7935/GT1W-FZ16).
-An example bibtex entry could look like this:
+The whole LALSuite software suite can be cited with the DOI
+[10.7935/GT1W-FZ16][doi]. An example BibTeX entry could look like this:
 
      @misc{lalsuite,
            author         = "{LIGO Scientific Collaboration}",
@@ -23,13 +20,12 @@ An example bibtex entry could look like this:
            year           = "2018"
      }
 
-In addition, some codes contained in this package may be directly based on
-one or several scientific papers,
-which should be cited when using those specific codes;
-some of these can be discovered through the documentation.
+In addition, some codes contained in this package may be directly based
+on one or several scientific papers, which should be cited when using
+those specific codes; some of these can be discovered through the
+documentation.
 
-Basic Build Instructions
---------------------------------
+## Basic Build Instructions
 
      ./configure --prefix=...
      make
@@ -38,19 +34,18 @@ Basic Build Instructions
 Please read the [LALSuite install how-to][install] for more detailed
 build instructions.
 
-Bug Reporting
---------------------------------
+## Bug Reporting
 
 Please visit the [LALSuite bug reporting system][bugs] (LIGO.org
-authentication required to submit new issues),
-or use the e-mail helpdesk:
-`contact+lscsoft/lalsuite@support.ligo.org`
+authentication required to submit new issues), or use the [e-mail
+helpdesk][helpdesk].
 
-For More Information
---------------------------------
+## For More Information
 
 Please visit the [LALSuite project page][project].
 
-[install]: https://wiki.ligo.org/Computing/DASWG/LALSuiteInstall
-[bugs]:    https://git.ligo.org/lscsoft/lalsuite/issues/
-[project]: https://wiki.ligo.org/Computing/DASWG/LALSuite
+[doi]:          https://doi.org/10.7935/GT1W-FZ16
+[helpdesk]:     mailto:contact+lscsoft/lalsuite@support.ligo.org
+[install]:      https://wiki.ligo.org/Computing/DASWG/LALSuiteInstall
+[bugs]:         https://git.ligo.org/lscsoft/lalsuite/issues/
+[project]:      https://wiki.ligo.org/Computing/DASWG/LALSuite
