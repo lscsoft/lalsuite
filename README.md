@@ -4,15 +4,11 @@ This is the main LALSuite development repository.
 
 We now utilize [git-lfs](https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client) for the managament of large files and as such `git-lfs` needs to be installed and configured to correctly clone this repository. After installing `git-lfs` it can be configured using:
 
-```
-$ git lfs install
-```
+     $ git lfs install
 
 This only needs to be done once for each machine you access the repository. It can then be cloned using:
 
-```
-$ git clone git@git.ligo.org:lscsoft/lalsuite.git
-```
+     $ git clone git@git.ligo.org:lscsoft/lalsuite.git
 
 ## Contributing to LALSuite
 
@@ -29,15 +25,15 @@ https://lscsoft.docs.ligo.org/lalsuite
 The whole software suite can be cited with the doi
 [10.7935/GT1W-FZ16](https://doi.org/10.7935/GT1W-FZ16).
 An example bibtex entry could look like this:
-```
-@misc{lalsuite,
-      author         = "{LIGO Scientific Collaboration}",
-      title          = "{LIGO} {A}lgorithm {L}ibrary - {LALS}uite",
-      howpublished   = "free software (GPL)",
-      doi            = "10.7935/GT1W-FZ16",
-      year           = "2018"
-}
-```
+
+     @misc{lalsuite,
+           author         = "{LIGO Scientific Collaboration}",
+           title          = "{LIGO} {A}lgorithm {L}ibrary - {LALS}uite",
+           howpublished   = "free software (GPL)",
+           doi            = "10.7935/GT1W-FZ16",
+           year           = "2018"
+     }
+
 In addition, many codes contained in LALSuite are directly based on
 one or several scientific papers,
 many (not all) of which can be discovered through the documentation,
