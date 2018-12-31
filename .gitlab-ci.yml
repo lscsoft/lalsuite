@@ -380,7 +380,7 @@ docker:tags:stretch:
 
 # compilers
 
-nightly:top-level:clang6:
+nightly:clang:6:
   image: skymoo/ligo-lalsuite-clang:6
   stage: nightly
   script:
@@ -392,7 +392,7 @@ nightly:top-level:clang6:
     - schedules
     - web
 
-nightly:top-level:clang7:
+nightly:clang:7:
   image: skymoo/ligo-lalsuite-clang:7
   stage: nightly
   script:
@@ -404,7 +404,7 @@ nightly:top-level:clang7:
     - schedules
     - web
 
-nightly:top-level:clang8:
+nightly:clang:8:
   image: skymoo/ligo-lalsuite-clang:8
   stage: nightly
   script:
@@ -416,7 +416,7 @@ nightly:top-level:clang8:
     - schedules
     - web
 
-nightly:top-level:gcc7:
+nightly:gcc:7:
   image: skymoo/ligo-lalsuite-gcc:7
   stage: nightly
   script:
@@ -429,7 +429,7 @@ nightly:top-level:gcc7:
     - web
 
 # FIXME: allow failure due to #125
-nightly:top-level:gcc8:
+nightly:gcc:8:
   image: skymoo/ligo-lalsuite-gcc:8
   stage: nightly
   script:
@@ -444,7 +444,7 @@ nightly:top-level:gcc8:
 
 # debian
 
-nightly:top-level:jessie:
+nightly:debian:jessie:
   image: ligo/lalsuite-dev:jessie
   stage: nightly
   script:
@@ -459,7 +459,7 @@ nightly:top-level:jessie:
 # FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
 # available
 # FIXME: allow failure due to #124
-nightly:top-level:buster:
+nightly:debian:buster:
   image: skymoo/ligo-lalsuite-dev:buster
   stage: nightly
   dependencies: []
@@ -474,7 +474,7 @@ nightly:top-level:buster:
 
 # el7
 
-nightly:top-level:el7-cr:
+nightly:rhel:el7-cr:
   image: ligo/lalsuite-dev:el7-cr
   stage: nightly
   script:
@@ -486,7 +486,7 @@ nightly:top-level:el7-cr:
     - schedules
     - web
 
-nightly:top-level:sl7:
+nightly:rhel:sl7:
   image: ligo/lalsuite-dev:sl7
   stage: nightly
   script:
@@ -535,7 +535,7 @@ nightly:macos:elcapitan:
 # ubuntu
 
 # FIXME: allow failure due to #123
-nightly:top-level:trusty:
+nightly:ubuntu:trusty:
   image: skymoo/ligo-lalsuite-dev:trusty
   stage: nightly
   script:
@@ -549,7 +549,7 @@ nightly:top-level:trusty:
   allow_failure: true
 
 # FIXME: allow failure due to #123
-nightly:top-level:xenial:
+nightly:ubuntu:xenial:
   image: skymoo/ligo-lalsuite-dev:xenial
   stage: nightly
   script:
@@ -562,7 +562,7 @@ nightly:top-level:xenial:
     - web
   allow_failure: true
 
-nightly:top-level:bionic:
+nightly:ubuntu:bionic:
   image: skymoo/ligo-lalsuite-dev:bionic
   stage: nightly
   script:
@@ -575,7 +575,7 @@ nightly:top-level:bionic:
     - web
 
 # FIXME: allow failure due to #124
-nightly:top-level:cosmic:
+nightly:ubuntu:cosmic:
   image: skymoo/ligo-lalsuite-dev:cosmic
   stage: nightly
   script:
