@@ -392,6 +392,32 @@ nightly:top-level:clang:
     - schedules
     - web
 
+nightly:top-level:gcc7:
+  image: skymoo/ligo-lalsuite-gcc:7
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+# FIXME: allow failure due to #125
+nightly:top-level:gcc8:
+  image: skymoo/ligo-lalsuite-gcc:8
+  stage: nightly
+  script:
+    - ./00boot
+    - :./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
 # debian
 
 nightly:top-level:jessie:
