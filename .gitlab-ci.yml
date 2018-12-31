@@ -380,12 +380,36 @@ docker:tags:stretch:
 
 # compilers
 
-nightly:top-level:clang:
-  image: skymoo/ligo-lalsuite-clang:jessie
+nightly:top-level:clang6:
+  image: skymoo/ligo-lalsuite-clang:6
   stage: nightly
   script:
     - ./00boot
-    - CC=clang CXX=clang++ ./configure --enable-swig --enable-doxygen
+    - CC=clang-6.0 CXX=clang++-6.0 ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+nightly:top-level:clang7:
+  image: skymoo/ligo-lalsuite-clang:7
+  stage: nightly
+  script:
+    - ./00boot
+    - CC=clang-7 CXX=clang++-7 ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+nightly:top-level:clang8:
+  image: skymoo/ligo-lalsuite-clang:8
+  stage: nightly
+  script:
+    - ./00boot
+    - CC=clang-8 CXX=clang++-8 ./configure --enable-swig --enable-doxygen
     - make -j4 distcheck
   dependencies: []
   only:
