@@ -229,7 +229,7 @@ opts.complete_cache = (opts.run_data_quality or opts.run_plots or opts.run_piped
 def check_grid_proxy(path):
   try:
     proxy = M2Crypto.X509.load_cert(path)
-  except Exception, e:
+  except Exception as e:
     msg = "Unable to load proxy from path %s : %s" % (path, e)
     raise RuntimeError(msg)
 
@@ -246,7 +246,7 @@ def check_grid_proxy(path):
     expireGMT  = time.strptime(expireASN1, "%b %d %H:%M:%S %Y %Z")
     expireUTC  = calendar.timegm(expireGMT)
     now = int(time.time())
-  except Exception, e:
+  except Exception as e:
     msg = "could not determine time left on proxy: %s" % e
     raise RuntimeError(msg)
 

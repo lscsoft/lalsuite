@@ -224,11 +224,11 @@ for seg in data:
     gps_str=str(chunk.start())
     gps_time_first_four=gps_str[0]+gps_str[1]+gps_str[2]+gps_str[3]
     try: os.mkdir(base_data_dirL1+'/'+ifo[0]+'-'+frametypeL1+'-'+gps_time_first_four)
-    except OSError, err:
+    except OSError as err:
       import errno
       #print "Warning:", err
     try: os.mkdir(base_data_dirL2+'/'+ifo[0]+'-'+frametypeL2+'-'+gps_time_first_four)
-    except OSError, err:
+    except OSError as err:
       import errno
       #print "Warning:", err
 

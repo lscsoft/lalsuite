@@ -37,7 +37,7 @@ except:
 disableGraphics=False
 try:
     from pylab import *
-except Exception, errorInfo:
+except Exception as errorInfo:
     disableGraphics=True
     sys.stderr.write("Error trying to import pylab!\n")
     sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
@@ -104,7 +104,7 @@ def wrapperGraphTriggers(candidateObject):
                 sys.stdout.flush()
             candidateObject.__loadfileQuick__(candidateObject.filename[0])
         candidateObject.graphTriggers(graph2file,graphGPSoffset,timescale)
-    except Exception, errorInfo:
+    except Exception as errorInfo:
         sys.stderr.write("Problem trying to create plot, %s !\n"%(os.path.basename(graph2file)))
         sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
         sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
@@ -154,7 +154,7 @@ def wrapperShowHistogram(candidateObject):
                                           graph2file,
                                           newHistCol,
                                           topTol)
-        except Exception, errorInfo:
+        except Exception as errorInfo:
             sys.stderr.write("Problem trying to create histogram plot ::: %s :::\n"%(os.path.basename(graph2file)))
             sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
             sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
@@ -196,7 +196,7 @@ def wrapperShowScatterPlot(candidateObject):
                                             myTraitY,
 					    graph2file,
                                             formatString)
-        except Exception, errorInfo:
+        except Exception as errorInfo:
             sys.stderr.write("Problem trying to create scatter plot ::: %s :::\n"%(os.path.basename(graph2file)))
             sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
             sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))

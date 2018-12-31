@@ -43,7 +43,7 @@ if os.getenv("DISPLAY") == None:
         import matplotlib
         matplotlib.use("Agg")
         import pylab
-    except Exception, errorInfo: #RuntimeError,ImportError:
+    except Exception as errorInfo: #RuntimeError,ImportError:
         disableGraphics=True
         sys.stderr.write("Error trying to import NON-INTERACTIVE pylab!\n")
         sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
@@ -53,7 +53,7 @@ else:
     #Interactive
     try:
         import pylab
-    except Exception, errorInfo: #RuntimeError,ImportError:
+    except Exception as errorInfo: #RuntimeError,ImportError:
         disableGraphics=True
         sys.stderr.write("Error trying to import INTERACTIVE pylab!\n")
         sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))

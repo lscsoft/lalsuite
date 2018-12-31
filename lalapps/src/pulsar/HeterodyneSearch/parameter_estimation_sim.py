@@ -52,7 +52,7 @@ try:
   f1 = open('/home/matthew/test/grid_based.sub', 'w')
   f2 = open('/home/matthew/test/mcmc_four.sub', 'w')
   f3 = open('/home/matthew/test/mcmc_multi.sub', 'w')
-except Exception, e:
+except Exception as e:
   print("Can't open subfiles!", file=sys.stderr)
   sys.exit(1)
 
@@ -130,7 +130,7 @@ while i < count:
   try:
     # open file for output
     f = open(finefile, 'w')
-  except Exception, e:
+  except Exception as e:
     print("Can't open file %s!" % finefile, file=sys.stderr)
     sys.exit(1)
 

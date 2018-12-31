@@ -347,7 +347,7 @@ for interval in search_epochs:
         modifiedstart = max( \
             min( tmpseg[1] - minsciseg, interval[0] - overlap/2 - paddata - 1 ),\
             tmpseg[0] )
-    except ValueError, e:
+    except ValueError as e:
       modifiedstart = interval[0]
       if opts.verbose:
         print(ifo + ": No segment containing interval start " + str(e))
@@ -362,7 +362,7 @@ for interval in search_epochs:
         modifiedend = min( \
             max( tmpseg[0] + minsciseg, interval[1] + overlap/2 + paddata + 1 ),\
             tmpseg[1] )
-    except ValueError, e:
+    except ValueError as e:
       modifiedend = interval[1]
       if opts.verbose:
         print(ifo + ": No segment containing interval end " + str(e))

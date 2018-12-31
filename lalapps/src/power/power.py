@@ -90,7 +90,7 @@ def get_triggers_dir(config_parser):
 def make_dir_if_not_exists(dir):
 	try:
 		os.mkdir(dir)
-	except OSError, e:
+	except OSError as e:
 		if e.errno != errno.EEXIST:
 			# OK if directory exists, otherwise report error
 			raise e
