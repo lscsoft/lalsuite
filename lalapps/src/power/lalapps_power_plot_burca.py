@@ -25,6 +25,9 @@
 #
 
 
+from __future__ import print_function
+
+
 import math
 import matplotlib.cm
 import numpy
@@ -587,7 +590,7 @@ plots = new_plots(options.plot)
 
 for n, filename in enumerate(ligolw_utils.sort_files_by_size(filenames, options.verbose, reverse = True)[options.skip:]):
 	if options.verbose:
-		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames) - options.skip, filename)
+		print("%d/%d: %s" % (n + 1, len(filenames) - options.skip, filename), file=sys.stderr)
 
 	database = SnglBurstUtils.CoincDatabase(sqlite3.connect(filename), options.live_time_program)
 	if options.verbose:
@@ -595,7 +598,7 @@ for n, filename in enumerate(ligolw_utils.sort_files_by_size(filenames, options.
 
 	for n, plot in zip(options.plot, plots):
 		if options.verbose:
-			print >>sys.stderr, "adding to burca plot %d ..." % n
+			print("adding to burca plot %d ..." % n, file=sys.stderr)
 		plot.add_contents(database)
 
 	database.connection.close()
@@ -607,13 +610,13 @@ format = "%%s%%0%dd.%%s" % (int(math.log10(max(options.plot) or 1)) + 1)
 while len(plots):
 	filename = format % (options.base, options.plot[n], options.format)
 	if options.verbose:
-		print >>sys.stderr, "finishing plot %d ..." % options.plot[n]
+		print("finishing plot %d ..." % options.plot[n], file=sys.stderr)
 	plots[0].finish()
 	if options.verbose:
-		print >>sys.stderr, "writing %s ..." % filename
+		print("writing %s ..." % filename, file=sys.stderr)
 	plots[0].fig.savefig(filename)
 	del plots[0]
 	n += 1
 
 if options.verbose:
-	print >>sys.stderr, "done."
+	print("done.", file=sys.stderr)

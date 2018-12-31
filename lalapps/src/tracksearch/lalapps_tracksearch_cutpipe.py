@@ -102,10 +102,10 @@ iniFile=os.path.normpath(options.iniFile)
 listOfFiles=generateFileList(singleList)
 
 if not os.path.exists(iniFile):
-    print 'Can not find iniFile: ',os.path.basename(iniFile)
+    print('Can not find iniFile: ',os.path.basename(iniFile))
     os.abort()
 if not os.path.exists(singleList):
-    print 'Can not find segentlist: ',os.path.basename(singleList)
+    print('Can not find segentlist: ',os.path.basename(singleList))
     os.abort()
 
 #Load up the iniFile
@@ -122,7 +122,7 @@ myDag.set_dag_file(os.path.normpath(str(outputName)))
 tsHandler=os.path.expanduser(cp.get('condor','clustertool'))
 tsUniverse=str(cp.get('condor','clustertool_universe')).lower()
 if not os.path.exists(str(tsHandler)):
-    print "ERROR: Can't find tracksearch handler executable."
+    print("ERROR: Can't find tracksearch handler executable.")
     os.abort()
     
 
@@ -136,7 +136,7 @@ myJob.set_stderr_file(os.path.abspath(os.path.normpath(logDir+"/log_$(cluster)_$
 
 #All all the proper options and macro handles
 if not cp.has_section('candidatethreshold'):
-    print "NO [candidatethreshold] section!\n"
+    print("NO [candidatethreshold] section!\n")
     os.abort()
 else:
     if cp.has_option('candidatethreshold','expression-threshold'):
@@ -148,7 +148,7 @@ else:
 
 if not (not buildFigures and not plotTriggers):
     if not cp.has_section('graphicsthreshold'):
-        print "NO [graphicsthreshold] section!\n"
+        print("NO [graphicsthreshold] section!\n")
         os.abort()
     else:
         if not plotTriggers:
@@ -174,12 +174,12 @@ buildDir(outputResultsPath)
 #Setup dag nodes
 #Loop over files to process
 if not cp.has_section('pylibraryfiles'):
-    print "NO [pylibraryfiles] section!\n"
+    print("NO [pylibraryfiles] section!\n")
     os.abort()
 else:
     libraryFile=os.path.expanduser(cp.get('pylibraryfiles','pyutilfile'))
     if not os.path.exists(str(libraryFile)):
-                         print "ERROR: Library file not found."
+                         print("ERROR: Library file not found.")
                          os.abort()
 
 for thisFile in listOfFiles:

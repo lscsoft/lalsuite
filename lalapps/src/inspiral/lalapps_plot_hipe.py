@@ -5,6 +5,8 @@ This script generates a condor DAG to make plots that summarize the
 results of an inspiral search
 """
 
+from __future__ import print_function
+
 __author__ = 'Patrick Brady <patrick@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -43,7 +45,7 @@ def set_common_options(cp, this_section):
     try:
       cp.set(this_section, common_option,  string.strip(cp.get('common',common_option)))
     except:
-      print "warning:", common_option, "is strongly recommended in the [common] section of your ini file"
+      print("warning:", common_option, "is strongly recommended in the [common] section of your ini file")
       pass
 
   return cp
@@ -175,7 +177,7 @@ command_line = sys.argv[1:]
 #################################
 # if --version flagged
 if opts.version:
-  print "$Id$"
+  print("$Id$")
   sys.exit(0)
 
 #################################
@@ -184,37 +186,37 @@ if opts.version:
 
 # Checks for config file
 if not opts.config_file:
-  print >> sys.stderr, "No configuration file specified."
-  print >> sys.stderr, "Use --config-file FILE to specify location."
+  print("No configuration file specified.", file=sys.stderr)
+  print("Use --config-file FILE to specify location.", file=sys.stderr)
   sys.exit(1)
 
 # Checks for log path
 if not opts.log_path:
-  print >> sys.stderr, "No log file path specified."
-  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  print("No log file path specified.", file=sys.stderr)
+  print("Use --log-path PATH to specify a location.", file=sys.stderr)
   sys.exit(1)
 
 # Checks for at least one ifo is specified  
 if not opts.g1_data and not opts.h1_data and not opts.h2_data and \
     not opts.l1_data and not opts.v1_data:
-  print >> sys.stderr, "No ifos specified.  Please specify at least one of"
-  print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data, --v1-data"
-  print >> sys.stderr, "or use --analyze-all to analyze all ifos"
+  print("No ifos specified.  Please specify at least one of", file=sys.stderr)
+  print("--g1-data, --h1-data, --h2-data, --l1-data, --v1-data", file=sys.stderr)
+  print("or use --analyze-all to analyze all ifos", file=sys.stderr)
   sys.exit(1)
 
 # Checks for H1 and H2 data when running ploteffdistcut
 if opts.ploteffdistcut and not (opts.h1_data and opts.h2_data):
-  print >> sys.stderr, "How can I plot effdistcut when H1 and H2 are not"
-  print >> sys.stderr, "being analysed??? I will not run ploteffdistcut."
+  print("How can I plot effdistcut when H1 and H2 are not", file=sys.stderr)
+  print("being analysed??? I will not run ploteffdistcut.", file=sys.stderr)
   opts.ploteffdistcut = False
 
 # Checks for plots which require more than two ifos
 if ((opts.plotthinca or opts.plotethinca or opts.plotinspmissed or \
     opts.plotinspinj or opts.plotsnrchi or opts.ploteffdistcut) and \
     not (opts.two_ifo or opts.three_ifo or opts.four_ifo or opts.analyze_all)):
-  print >> sys.stderr, "No number of ifos given. Please specify at least one of"
-  print >> sys.stderr, "--two-ifo, --three-ifo, --four-ifo"
-  print >> sys.stderr, "or use --analyze-all to analyze all ifos"
+  print("No number of ifos given. Please specify at least one of", file=sys.stderr)
+  print("--two-ifo, --three-ifo, --four-ifo", file=sys.stderr)
+  print("or use --analyze-all to analyze all ifos", file=sys.stderr)
   sys.exit(1)
 
 ##############################################################################
@@ -428,7 +430,7 @@ if opts.plotnumtemplates:
   plotnumtemplates_jobs.set_sub_file( basename + '.plotnumtemplates_' + subsuffix)
   pattern_dict = determine_sieve_patterns(cp, this_section, "", input_user_tag)
   for opt, val in pattern_dict.iteritems():
-    print >> sys.stderr, opt, val
+    print(opt, val, file=sys.stderr)
     if opt=="bank-pattern": val = "TMPLTBANK"
     plotnumtemplates_jobs.add_opt(opt, val)
   
@@ -600,7 +602,7 @@ if opts.plotsnrchi:
   cp = set_common_options(cp, this_section)
 
   if opts.first_stage:
-    print >>sys.stderr, "warning: plotsnrchi can only run with second stage inputs.  Skipping..."
+    print("warning: plotsnrchi can only run with second stage inputs.  Skipping...", file=sys.stderr)
   if opts.second_stage:
     for ifo in ifolist:   
       plotsnrchi_jobs[ifo] = inspiral.PlotSnrchiJob(cp)
@@ -776,9 +778,9 @@ if opts.write_script:
 
 ##############################################################################  
 # write a message telling the user that the DAG has been written
-print "\nCreated a DAG file which can be submitted by executing"
-print "\n   condor_submit_dag", dag.get_dag_file()
-print "\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)"
+print("\nCreated a DAG file which can be submitted by executing")
+print("\n   condor_submit_dag", dag.get_dag_file())
+print("\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)")
 
 ##############################################################################
 # write out a log file for this script

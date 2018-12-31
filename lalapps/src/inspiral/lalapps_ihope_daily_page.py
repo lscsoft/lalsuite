@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from optparse import OptionParser
 
 from matplotlib import use
@@ -179,22 +181,22 @@ class Tree:
 
     def render_job(self, out, follow=True):
         if self.local:
-            print >>out, 'JOB %s daily_ihope_page_local.sub' % self.id
+            print('JOB %s daily_ihope_page_local.sub' % self.id, file=out)
         else:
-            print >>out, 'JOB %s daily_ihope_page.sub' % self.id
+            print('JOB %s daily_ihope_page.sub' % self.id, file=out)
 
-        print >>out, 'RETRY %s 3' % self.id
-        print >>out, 'VARS %s macroaction="%s" macroconfig="%s" macroifo="%s" macrocategory="%d" macrocluster="%s" macrogpsstarttime="%s" macrogpsendtime="%s" macroflower="%f"' % (self.id, self.action, self.config['filename'], self.ifo, self.level, self.cluster, self.start_time, self.end_time, self.flower)
+        print('RETRY %s 3' % self.id, file=out)
+        print('VARS %s macroaction="%s" macroconfig="%s" macroifo="%s" macrocategory="%d" macrocluster="%s" macrogpsstarttime="%s" macrogpsendtime="%s" macroflower="%f"' % (self.id, self.action, self.config['filename'], self.ifo, self.level, self.cluster, self.start_time, self.end_time, self.flower), file=out)
 
 	if self.action in ['make_glitch_page','make_hwinj_page']:
-	    print >>out, 'CATEGORY %s database' % self.id
+	    print('CATEGORY %s database' % self.id, file=out)
 
         for c in self.children:
             c.render_job(out)
 
     def render_relationships(self, out):
         for c in self.children:
-            print >>out, 'PARENT %s CHILD %s' % (self.id, c.id)
+            print('PARENT %s CHILD %s' % (self.id, c.id), file=out)
             c.render_relationships(out)
 
 
@@ -267,12 +269,12 @@ def make_dag(config, ifo, category, cluster, start_time, end_time):
     for root in roots:
         root.render_relationships(out)
 
-    print >>out, "MAXJOBS database 4"
+    print("MAXJOBS database 4", file=out)
     out.close()
 
 
     out = open(config['tmp_dir'] + '/daily_ihope_page.sub','w')
-    print >>out, """universe = vanilla
+    print("""universe = vanilla
 executable = %s
 arguments = " --config $(macroconfig) --action $(macroaction) --ifos $(macroifo) --veto-categories $(macrocategory) --cluster-categories $(macrocluster) --gps-start-time $(macrogpsstarttime) --gps-end-time $(macrogpsendtime) --flower $(macroflower)"
 priority     = 20
@@ -281,11 +283,11 @@ log          = %s/log/daily_plot.log
 error        = logs/daily_plot-$(cluster)-$(process).err
 output       = logs/daily_plot-$(cluster)-$(process).out
 notification = never
-queue 1""" % (config['ihope_daily_page'], config['tmp_dir'])
+queue 1""" % (config['ihope_daily_page'], config['tmp_dir']), file=out)
     out.close()
 
     out = open(config['tmp_dir'] + '/daily_ihope_page_local.sub','w')
-    print >>out, """universe = local
+    print("""universe = local
 executable = %s
 arguments = " --config $(macroconfig) --action $(macroaction) --ifos $(macroifo) --veto-categories $(macrocategory) --cluster-categories $(macrocluster) --gps-start-time $(macrogpsstarttime) --gps-end-time $(macrogpsendtime) "
 priority = 20
@@ -294,7 +296,7 @@ log = %s/log/daily_plot.log
 error = logs/daily_plot-$(cluster)-$(process).err
 output = logs/daily_plot-$(cluster)-$(process).out
 notification = never
-queue 1""" % (config['ihope_daily_page'], config['tmp_dir'])
+queue 1""" % (config['ihope_daily_page'], config['tmp_dir']), file=out)
     out.close()
 
 
@@ -325,10 +327,10 @@ def parse_command_line():
     options, filenames = parser.parse_args()
 
     if not options.action:
-        print >>sys.stderr, "Please specify --action"
+        print("Please specify --action", file=sys.stderr)
         sys.exit(-1)
     if not options.ifos:
-        print >>sys.stderr, "Please specify --ifos"
+        print("Please specify --ifos", file=sys.stderr)
         sys.exit(-1)
 
     return options
@@ -341,11 +343,11 @@ def parse_command_line():
 #########################
 def parse_config(filename):
     if not os.path.exists(filename):
-        print >>sys.stderr, "Config file %s does not exist" % filename
+        print("Config file %s does not exist" % filename, file=sys.stderr)
         sys.exit(1)
 
     if not os.path.isfile(filename):
-        print >>sys.stderr, "Config file %s is not a file" % filename
+        print("Config file %s is not a file" % filename, file=sys.stderr)
         sys.exit(1)
 
     ret = {'filename':filename}
@@ -488,7 +490,7 @@ def make_caches(config, ifo, level, cluster, start, end):
     sys.stdout.flush()
 
     f = open('%s/%s-INSPIRAL_%s.cache' % (config['tmp_dir'], ifo, cluster),'w')
-    print >>f, out.strip()
+    print(out.strip(), file=f)
     f.close()
 
     # templates
@@ -497,7 +499,7 @@ def make_caches(config, ifo, level, cluster, start, end):
     out, err = proc.communicate("\n".join(files))
 
     f = open('%s/%s-TMPLTBANK_%s.cache' % (config['tmp_dir'], ifo, cluster),'w')
-    print >>f, out.strip()
+    print(out.strip(), file=f)
     f.close()
 
 
@@ -531,8 +533,8 @@ def make_csv(config, ifo, category, cluster, start, end):
             for l in in_f:
                 end_time = int(l.split(',')[0])
                 if end_time >= start and end_time < end:
-                    print >>out_f, l,
-                    print l,
+                    print(l, end=' ', file=out_f)
+                    print(l, end=' ')
             in_f.close()
             out_f.close()
             os.remove('%s/%s-0-INSPIRAL_%s_tmp.csv' % (config['tmp_dir'], ifo, cluster))
@@ -552,7 +554,7 @@ def make_csv(config, ifo, category, cluster, start, end):
                 # if they don't overlap this will fail
                 try:
                     overlap = search_seg & seg
-                    print >>out_f, '%d,%d' % (overlap[0], overlap[1])
+                    print('%d,%d' % (overlap[0], overlap[1]), file=out_f)
                 except:
                     pass
 
@@ -587,7 +589,7 @@ def make_csv(config, ifo, category, cluster, start, end):
     for l in infile:
         end_time = int(l[0:9])   # assumes that end_time is the first field and has only 9 digits!
         if end_time not in vetoed_times:
-            print >>outfile, l,
+            print(l, end=' ', file=outfile)
 
     infile.close()
     outfile.close()
@@ -601,7 +603,7 @@ def make_csv(config, ifo, category, cluster, start, end):
 
     new_summary = summary - vetoed_times
     for l in new_summary:
-        print >>outfile, '%d,%d' % (l[0], l[1])
+        print('%d,%d' % (l[0], l[1]), file=outfile)
 
     infile.close()
     outfile.close()
@@ -675,10 +677,10 @@ def make_summary_table(config, ifo, veto_level, cluster, start_time, end_time):
     analyzed_time = abs(t)
 
     out = open('%s/%s-%d_%s_summary_table.html' % (config['out_dir'], ifo, veto_level, cluster), 'w')
-    print >>out, """<table>
+    print("""<table>
 <tr><th>Veto level</th><th>Analyzed Time (s)</th><th>Num. Triggers</th></tr>
 <tr><td>%d</td><td>%d</td><td>%d</td></tr>
-</table>""" % (veto_level, analyzed_time, num_triggers)
+</table>""" % (veto_level, analyzed_time, num_triggers), file=out)
     out.close()
 
 
@@ -727,34 +729,34 @@ def make_glitchy_times_table(config, ifo, veto_level, cluster, start_time, end_t
                 seg_start = -1
                 seg_end   = -1
 
-    print >>out, "<h3>Times when trigger rate over 1 s interval exceeds 500 Hz</h3>"
-    print >>out, '<table>'
-    print >>out, '<tr><th>GPS Start</th><th>GPS End</th><th>Duration (sec)</th><th>Avg. rate (Hz)</th><th>UTC Start</th><th>UTC End</th></tr>'
+    print("<h3>Times when trigger rate over 1 s interval exceeds 500 Hz</h3>", file=out)
+    print('<table>', file=out)
+    print('<tr><th>GPS Start</th><th>GPS End</th><th>Duration (sec)</th><th>Avg. rate (Hz)</th><th>UTC Start</th><th>UTC End</th></tr>', file=out)
 
     for r in sorted(results, cmp = lambda x,y: cmp(y[2], x[2])):
         if r[2] > 500:
-            print >>out, '<tr><td>%d</td><td>%d</td><td>%d</td><td>%.0f</td><td>%s</td><td>%s</td></tr>' % (r[0], r[1], r[3], r[2], tconvert(r[0]), tconvert(r[1])) 
+            print('<tr><td>%d</td><td>%d</td><td>%d</td><td>%.0f</td><td>%s</td><td>%s</td></tr>' % (r[0], r[1], r[3], r[2], tconvert(r[0]), tconvert(r[1])), file=out) 
 
-    print >>out, '</table>'
+    print('</table>', file=out)
 
 
-    print >>out, "<h3>Times when trigger rate exceedes 200 Hz for more than 10 seconds</h3>"
-    print >>out, '<table>'
-    print >>out, '<tr><th>GPS Start</th><th>GPS End</th><th>Duration (sec)</th><th>Avg. rate (Hz)</th><th>UTC Start</th><th>UTC End</th></tr>'
+    print("<h3>Times when trigger rate exceedes 200 Hz for more than 10 seconds</h3>", file=out)
+    print('<table>', file=out)
+    print('<tr><th>GPS Start</th><th>GPS End</th><th>Duration (sec)</th><th>Avg. rate (Hz)</th><th>UTC Start</th><th>UTC End</th></tr>', file=out)
 
     long = sorted( [r for r in results if r[3] >= 10], cmp = lambda x, y: cmp(y[3], x[3]) )
     for r in long:
-        print >>out, '<tr><td>%d</td><td>%d</td><td>%d</td><td>%.0f</td><td>%s</td><td>%s</td></tr>' % (r[0], r[1], (r[1] - r[0]), r[2], tconvert(r[0]), tconvert(r[1])) 
+        print('<tr><td>%d</td><td>%d</td><td>%d</td><td>%.0f</td><td>%s</td><td>%s</td></tr>' % (r[0], r[1], (r[1] - r[0]), r[2], tconvert(r[0]), tconvert(r[1])), file=out) 
 
-    print >>out, '</table>'
+    print('</table>', file=out)
 
-    print >>out, '<a href="%s-%d_%s_glitchy_times.txt">All times with rates greater than 200 Hz</a>' % (ifo, veto_level, cluster)
+    print('<a href="%s-%d_%s_glitchy_times.txt">All times with rates greater than 200 Hz</a>' % (ifo, veto_level, cluster), file=out)
     out.close()
 
     out = open('%s/%s-%d_%s_glitchy_times.txt' % (config['out_dir'], ifo, veto_level, cluster), 'w')
-    print >>out, "# start time, end time, avg rate, duration"
+    print("# start time, end time, avg rate, duration", file=out)
     for r in results:
-        print >>out, "%d\t%d\t%.0f\t%d" % r
+        print("%d\t%d\t%.0f\t%d" % r, file=out)
     out.close()
 
 
@@ -784,22 +786,22 @@ def make_usage_table(config, ifo, veto_level, cluster, start_time, end_time):
     seglists       = [(y[0], segmentlist([segment(x[0],x[1]) for x in y[1]])) for y in vetoes]
 
     if veto_level == 1:
-        print >>out, "<h3>Efficiency of category 1 vetoes</h3>"
+        print("<h3>Efficiency of category 1 vetoes</h3>", file=out)
     else:
-        print >>out, "<h3>Efficiency of category %d vetoes on triggers that passed category %d</h3>" % (veto_level, veto_level - 1)
+        print("<h3>Efficiency of category %d vetoes on triggers that passed category %d</h3>" % (veto_level, veto_level - 1), file=out)
 
-    print >>out
+    print(file=out)
 
     if total_triggers == 0:
-        print >>out, "Note: no triggers at this veto level<p>"
+        print("Note: no triggers at this veto level<p>", file=out)
 
     atime = float(abs(analysis_time))
 
     if atime == 0.0:
-        print >>out, "Note: no analysis time at this veto level<p>"
+        print("Note: no analysis time at this veto level<p>", file=out)
 
-    print >>out, "<table>"
-    print >>out, "<tr><th>Name:Version</th><th>Efficiency (%)</th><th>Deadtime (%)</th><th>Efficiency / Deadtime</th></tr>"
+    print("<table>", file=out)
+    print("<tr><th>Name:Version</th><th>Efficiency (%)</th><th>Deadtime (%)</th><th>Efficiency / Deadtime</th></tr>", file=out)
 
     for seg in seglists:
         if len(seg[1]) == 0:
@@ -827,9 +829,9 @@ def make_usage_table(config, ifo, veto_level, cluster, start_time, end_time):
         else:
             ratio = 'NA'
 
-        print >>out, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (seg[0], efficiency, dead_time, ratio)
+        print("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % (seg[0], efficiency, dead_time, ratio), file=out)
 
-    print >>out, "</table>"
+    print("</table>", file=out)
 
     out.close()
 
@@ -840,15 +842,15 @@ def make_glitch_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_t
 
     out = open('%s/%s_CAT%d_%s_Glitch.html' % (config['out_dir'], ifo, veto_level, cluster), 'w')
 
-    print >>out, '<html>'
-    print >>out, '<head>'
-    print >>out, '  <link media="all" href="../../auxfiles/ihope_daily_style.css" type="text/css" rel="stylesheet" />'
-    print >>out, '</head>'
+    print('<html>', file=out)
+    print('<head>', file=out)
+    print('  <link media="all" href="../../auxfiles/ihope_daily_style.css" type="text/css" rel="stylesheet" />', file=out)
+    print('</head>', file=out)
 
-    print >>out, '<body>'
+    print('<body>', file=out)
 
     if cluster != '16SEC_CLUSTERED':
-        print >>out, "<p><p><H3>The glitch page is only available for triggers that have been clustered with a 16-second window</H3>"
+        print("<p><p><H3>The glitch page is only available for triggers that have been clustered with a 16-second window</H3>", file=out)
     else:
         tmpfile = '%s/%s-%d_glitchout.html' % (config['tmp_dir'], ifo, veto_level)
 
@@ -871,10 +873,10 @@ def make_glitch_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_t
 
         os.remove(tmpfile)
 
-        print >>out, glitch_text
+        print(glitch_text, file=out)
 
-    print >>out, '</body>'
-    print >>out, '</html>'
+    print('</body>', file=out)
+    print('</html>', file=out)
     out.close()
 
 
@@ -896,15 +898,15 @@ def make_hwinj_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
 
     if cluster != '16SEC_CLUSTERED':
         out = open('%s/%s_CAT%d_%s_Hwinj.html' % (config['out_dir'], ifo, veto_level, cluster), 'w')
-        print >>out, '<html>'
-        print >>out, '<head>'
-        print >>out, '  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />'
-        print >>out, '</head>'
+        print('<html>', file=out)
+        print('<head>', file=out)
+        print('  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />', file=out)
+        print('</head>', file=out)
 
-        print >>out, '<body>'
-        print >>out, "<p><p><H3>The hardware injection page is only available for triggers that have been clustered with a 16-second window</H3>"
-        print >>out, '</body>'
-        print >>out, '</html>'
+        print('<body>', file=out)
+        print("<p><p><H3>The hardware injection page is only available for triggers that have been clustered with a 16-second window</H3>", file=out)
+        print('</body>', file=out)
+        print('</html>', file=out)
         out.close()
     else:
         cmd  = '%s ' % config['ligolw_cbc_hardware_inj_page']
@@ -931,7 +933,7 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
     template          = html_template % map
 
     out = open('%s/index.html' % config['out_dir'],'w')
-    print >>out, template
+    print(template, file=out)
     out.close()
 
     for ifo in ifos:
@@ -940,92 +942,92 @@ def make_index_page(config, ifo, veto_level, cluster, gps_start_time, gps_end_ti
                 # Make the summary section
 
                 out = open('%s/%s_CAT%d_%s_Summary.html' % (config['out_dir'], ifo, cat, cluster), 'w')
-                print >>out, '<html>'
-                print >>out, '<head>'
-                print >>out, '  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />'
-                print >>out, '</head>'
+                print('<html>', file=out)
+                print('<head>', file=out)
+                print('  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />', file=out)
+                print('</head>', file=out)
 
-                print >>out, '<body>'
+                print('<body>', file=out)
 
                 for name in summary_names:
                     in_f = open(config['out_dir'] + '/' + name % (ifo, cat, cluster))
 
                     for l in in_f:
-                        print >>out, l
+                        print(l, file=out)
 
                     in_f.close()
 
-                print >>out, '</body>'
-                print >>out, '</html>'
+                print('</body>', file=out)
+                print('</html>', file=out)
                 out.close()
 
                 # Make the bank chisq page
                 out = open('%s/%s_CAT%d_%s_bankchisq.html' % (config['out_dir'], ifo, cat, cluster), 'w')
-                print >>out, '<html>'
-                print >>out, '<head>'
-                print >>out, '  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />'
-                print >>out, '</head>'
-                print >>out, '<body>'
+                print('<html>', file=out)
+                print('<head>', file=out)
+                print('  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />', file=out)
+                print('</head>', file=out)
+                print('<body>', file=out)
 
                 #imgs = sorted(glob.glob('%s/%s_%d_%s_bank_veto_dof_*.png' % (config['out_dir'], ifo, cat, cluster)))
                 #for i in imgs:
                 #    print >>out, '<img src="%s"><p>' % i.split('/')[-1]
-                print >>out, '<img src="%s_%d_%s_chisq.png"><p>' % (ifo, cat, cluster)
-                print >>out, '<img src="%s_%d_%s_bank_veto.png"><p>' % (ifo, cat, cluster)
-                print >>out, '<img src="%s_%d_%s_cont_veto.png"><p>' % (ifo, cat, cluster)
+                print('<img src="%s_%d_%s_chisq.png"><p>' % (ifo, cat, cluster), file=out)
+                print('<img src="%s_%d_%s_bank_veto.png"><p>' % (ifo, cat, cluster), file=out)
+                print('<img src="%s_%d_%s_cont_veto.png"><p>' % (ifo, cat, cluster), file=out)
 
-                print >>out, '</body>'
-                print >>out, '</html>'
+                print('</body>', file=out)
+                print('</html>', file=out)
                 out.close()
 
                 # Add the images
                 for name in image_names:
                     out = open('%s/%s_CAT%d_%s_%s.html' % (config['out_dir'], ifo, cat, cluster, name), 'w')
 
-                    print >>out, '<html>'
-                    print >>out, '<head>'
-                    print >>out, '  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />'
-                    print >>out, '</head>'
-                    print >>out, '<body>'
+                    print('<html>', file=out)
+                    print('<head>', file=out)
+                    print('  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />', file=out)
+                    print('</head>', file=out)
+                    print('<body>', file=out)
 
                     if name == 'glitchgram':
-                        print >>out, '<p><img src="%s_%d_%s_new_glitchgram.png"><p>' % (ifo, cat, cluster)
+                        print('<p><img src="%s_%d_%s_new_glitchgram.png"><p>' % (ifo, cat, cluster), file=out)
 
                     if name == 'snr_hist':
-                        print >>out, '<p><img src="%s_%d_%s_new_snr_hist.png"><p>' % (ifo, cat, cluster)
-                        print >>out, '<p><img src="%s_%d_%s_%s_all.png">' % (ifo, cat, cluster, name)
+                        print('<p><img src="%s_%d_%s_new_snr_hist.png"><p>' % (ifo, cat, cluster), file=out)
+                        print('<p><img src="%s_%d_%s_%s_all.png">' % (ifo, cat, cluster, name), file=out)
 
-                    print >>out, '<img src="%s_%d_%s_%s.png">' % (ifo, cat, cluster, name)
+                    print('<img src="%s_%d_%s_%s.png">' % (ifo, cat, cluster, name), file=out)
 
                     if name == 'rate_vs_time':
-                        print >>out, '<img src="%s_%d_%s_newsnr_vs_time.png"><p>' % (ifo, cat, cluster)
-                        print >>out, '<img src="%s_%d_%s_snr_vs_time.png">' % (ifo, cat, cluster)
+                        print('<img src="%s_%d_%s_newsnr_vs_time.png"><p>' % (ifo, cat, cluster), file=out)
+                        print('<img src="%s_%d_%s_snr_vs_time.png">' % (ifo, cat, cluster), file=out)
 
                         in_f = open('%s/%s-%d_%s_glitchy_times_table.html' % (config['tmp_dir'], ifo, cat, cluster))
                         for l in in_f:
-                            print >>out, l, 
+                            print(l, end=' ', file=out) 
                         in_f.close()
 
-                    print >>out, '</body>'
-                    print >>out, '</html>'
+                    print('</body>', file=out)
+                    print('</html>', file=out)
                     out.close()
 
                 # And the template page
                 out = open('%s/%s_CAT%d_%s_template.html' % (config['out_dir'], ifo, cat, cluster), 'w')
-                print >>out, '<html>'
-                print >>out, '<head>'
-                print >>out, '  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />'
-                print >>out, '</head>'
+                print('<html>', file=out)
+                print('<head>', file=out)
+                print('  <link media="all" href="ihope_daily_style.css" type="text/css" rel="stylesheet" />', file=out)
+                print('</head>', file=out)
 
-                print >>out, '<body>'
+                print('<body>', file=out)
 
-                print >>out, '<img src="%s_%d_%s_mass_hist.png">' % (ifo, cat, cluster)
-                print >>out, '<img src="%s_%d_%s_tmpl_hist.png">' % (ifo, cat, cluster)
-                print >>out, '<img src="%s_%d_%s_mass_hist_norm.png">' % (ifo, cat, cluster)
-                print >>out, '<img src="%s_%d_%s_template_counts.png">' % (ifo, cat, cluster)
-                print >>out, '<img src="%s_%d_%s_hexmass.png">' % (ifo, cat, cluster)
-                print >>out, '</body>'
-                print >>out, '</html>'
+                print('<img src="%s_%d_%s_mass_hist.png">' % (ifo, cat, cluster), file=out)
+                print('<img src="%s_%d_%s_tmpl_hist.png">' % (ifo, cat, cluster), file=out)
+                print('<img src="%s_%d_%s_mass_hist_norm.png">' % (ifo, cat, cluster), file=out)
+                print('<img src="%s_%d_%s_template_counts.png">' % (ifo, cat, cluster), file=out)
+                print('<img src="%s_%d_%s_hexmass.png">' % (ifo, cat, cluster), file=out)
+                print('</body>', file=out)
+                print('</html>', file=out)
                 out.close()
 
     # Copy asset files
@@ -1080,7 +1082,7 @@ def plot_snr_vs_time(config, ifo, veto_level, cluster, start_time, end_time):
         pylab.text(time[maxindex], snr[maxindex]*1.04, 'Max: GPS %.3f' % (gps[maxindex]+1e-9*gpsns[maxindex]), size='medium')
         if len(infTimes):
             pylab.text(0.5, max(snr)*1.07, 'One or more SNRs were inf!! See .err file for a list of times')
-            print >>sys.stderr, 'Times with SNR=inf:', infTimes
+            print('Times with SNR=inf:', infTimes, file=sys.stderr)
 
     pylab.title(make_timeless_title(ifo, veto_level, cluster, start_time))
     pylab.xlabel(make_time_label(start_time))
@@ -1122,7 +1124,7 @@ def wait_for(filename):
         count -= 1
 
     if not os.path.exists(filename):
-        print >>sys.stderr, "Needed file %s not found, aborting" % filename
+        print("Needed file %s not found, aborting" % filename, file=sys.stderr)
         sys.exit(1)
 
     # wait for it to stabalize
@@ -1409,7 +1411,7 @@ def plot_snr_hist(config, ifo, veto_level, cluster, start_time, end_time):
         non_gaussianity = gtotal / total_count
 
         f_out = open('%s/%s-%d-%s_nongaussianity.txt' % (config['out_dir'], ifo, veto_level, cluster), 'w')
-        print >>f_out, non_gaussianity
+        print(non_gaussianity, file=f_out)
         f_out.close()
 
         # Plot up to 200, with a cumulative dot showing the remaining
@@ -1481,7 +1483,7 @@ def plot_snr_hist(config, ifo, veto_level, cluster, start_time, end_time):
             try:
                 bins.append(1e-40)
             except:
-                print "Unable to allocate %f" % newsnr
+                print("Unable to allocate %f" % newsnr)
 
         bins[newsnr] += 1
 
@@ -1722,7 +1724,7 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
 
     for r in ranges:
         subset = pylab.logical_and(snr>=r[0], snr<r[1])
-        print 'Plotting trigs for snr between', r[0], r[1]
+        print('Plotting trigs for snr between', r[0], r[1])
         if len(time[subset]):
             pylab.scatter(time[subset], duration[subset], edgecolor='none', c=r[2], s=r[3])
     snrmax_index = pylab.argmax(snr)
@@ -1749,7 +1751,7 @@ def plot_glitchgram(config, ifo, veto_level, cluster, start_time, end_time):
 
     for r in ranges:
         subset = pylab.logical_and(newsnr>=r[0], newsnr<r[1])
-        print 'Plotting trigs for newsnr between', r[0], r[1]
+        print('Plotting trigs for newsnr between', r[0], r[1])
         if len(time[subset]):
             pylab.scatter(time[subset], duration[subset], edgecolor='none', c=r[2], s=r[3])
     newsnrmax_index = pylab.argmax(newsnr)

@@ -7,6 +7,8 @@
   multi-parameter MCMC modes
 """
 
+from __future__ import print_function
+
 # import required modules
 import sys
 import os
@@ -51,7 +53,7 @@ try:
   f2 = open('/home/matthew/test/mcmc_four.sub', 'w')
   f3 = open('/home/matthew/test/mcmc_multi.sub', 'w')
 except Exception, e:
-  print >> sys.stderr, "Can't open subfiles!"
+  print("Can't open subfiles!", file=sys.stderr)
   sys.exit(1)
 
 univ = 'universe = standard\n'
@@ -129,7 +131,7 @@ while i < count:
     # open file for output
     f = open(finefile, 'w')
   except Exception, e:
-    print >> sys.stderr, "Can't open file %s!" % finefile
+    print("Can't open file %s!" % finefile, file=sys.stderr)
     sys.exit(1)
 
   # generate real and imaginary noise and output to file

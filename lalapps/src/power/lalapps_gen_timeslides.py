@@ -25,6 +25,9 @@
 #
 
 
+from __future__ import print_function
+
+
 from optparse import OptionParser
 import sys
 
@@ -138,7 +141,7 @@ for filename in options.add_to:
 	time_slide_table = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = LIGOLWContentHandler))
 	extra_time_slides = time_slide_table.as_dict().values()
 	if options.verbose:
-		print >>sys.stderr, "Loaded %d time slides." % len(extra_time_slides)
+		print("Loaded %d time slides." % len(extra_time_slides), file=sys.stderr)
 	for offsetvect in extra_time_slides:
 		time_slides[lsctables.TimeSlideTable.get_next_id()] = offsetvect
 
@@ -149,7 +152,7 @@ for filename in options.add_to:
 
 
 if options.verbose:
-	print >>sys.stderr, "Computing new time slides ..."
+	print("Computing new time slides ...", file=sys.stderr)
 
 # dictionary mapping time_slide_id --> (dictionary mapping insrument --> offset)
 
@@ -160,7 +163,7 @@ for inspiral_slidespec in options.inspiral_num_slides:
 		time_slides[lsctables.TimeSlideTable.get_next_id()] = offsetvect
 
 if options.verbose:
-	print >>sys.stderr, "Total of %d time slides." % len(time_slides)
+	print("Total of %d time slides." % len(time_slides), file=sys.stderr)
 
 
 #
@@ -169,12 +172,12 @@ if options.verbose:
 
 
 if options.verbose:
-	print >>sys.stderr, "Identifying and removing duplicates ..."
+	print("Identifying and removing duplicates ...", file=sys.stderr)
 
 map(time_slides.pop, ligolw_time_slide.time_slides_vacuum(time_slides, verbose = options.verbose).keys())
 
 if options.verbose:
-	print >>sys.stderr, "%d time slides remain." % len(time_slides)
+	print("%d time slides remain." % len(time_slides), file=sys.stderr)
 
 
 #
@@ -184,14 +187,14 @@ if options.verbose:
 
 if options.remove_zero_lag:
 	if options.verbose:
-		print >>sys.stderr, "Identifying and removing zero-lag ..."
+		print("Identifying and removing zero-lag ...", file=sys.stderr)
 
 	null_ids = [time_slide_id for time_slide_id, offsetvect in time_slides.items() if not any(offsetvect.deltas.values())]
 	for time_slide_id in null_ids:
 		del time_slides[time_slide_id]
 
 	if options.verbose:
-		print >>sys.stderr, "%d time slides remain." % len(time_slides)
+		print("%d time slides remain." % len(time_slides), file=sys.stderr)
 
 
 #
@@ -210,7 +213,7 @@ time_slides = time_slides.values()
 
 if options.normalize:
 	if options.verbose:
-		print >>sys.stderr, "Normalizing the time slides ..."
+		print("Normalizing the time slides ...", file=sys.stderr)
 	constraints = parse_normalize(options.normalize)
 	time_slides = [offsetvect.normalize(**constraints) for offsetvect in time_slides]
 

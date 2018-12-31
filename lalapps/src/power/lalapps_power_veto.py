@@ -25,6 +25,9 @@
 #
 
 
+from __future__ import print_function
+
+
 from optparse import OptionParser
 import sqlite3
 import sys
@@ -82,14 +85,14 @@ def parse_command_line():
 
 def load_segments(filename, name, verbose = False):
 	if verbose:
-		print >>sys.stderr, "loading \"%s\" segments ... " % name,
+		print("loading \"%s\" segments ... " % name, end=' ', file=sys.stderr)
 	connection = sqlite3.connect(filename)
 	segs = ligolw_segments.segmenttable_get_by_name(dbtables.get_xml(connection), name).coalesce()
 	connection.close()
 	if verbose:
-		print >>sys.stderr, "done."
+		print("done.", file=sys.stderr)
 		for ifo in segs:
-			print >>sys.stderr, "loaded %d veto segment(s) for %s totalling %g s" % (len(segs[ifo]), ifo, float(abs(segs[ifo])))
+			print("loaded %d veto segment(s) for %s totalling %g s" % (len(segs[ifo]), ifo, float(abs(segs[ifo]))), file=sys.stderr)
 	return segs
 
 
@@ -117,8 +120,8 @@ def apply_excess_power_veto(contents, veto_segs, verbose = False):
 	#
 
 	if verbose:
-		print >>sys.stderr, "applying excess power event veto strategy:"
-		print >>sys.stderr, "\tremoving vetoed burst <--> burst coincs ..."
+		print("applying excess power event veto strategy:", file=sys.stderr)
+		print("\tremoving vetoed burst <--> burst coincs ...", file=sys.stderr)
 	cursor.execute("""
 DELETE FROM
 	coinc_event
@@ -144,7 +147,7 @@ WHERE
 
 	if contents.sc_definer_id is not None:
 		if verbose:
-			print >>sys.stderr, "\tremoving vetoed sim <--> coinc coincs ..."
+			print("\tremoving vetoed sim <--> coinc coincs ...", file=sys.stderr)
 		cursor.execute("""
 DELETE FROM
 	coinc_event
@@ -172,7 +175,7 @@ WHERE
 	#
 
 	if verbose:
-		print >>sys.stderr, "\tremoving vetoed bursts from coinc_def_map table ..."
+		print("\tremoving vetoed bursts from coinc_def_map table ...", file=sys.stderr)
 	cursor.execute("""
 DELETE FROM
 	coinc_event_map
@@ -196,7 +199,7 @@ WHERE
 
 	if contents.sb_definer_id is not None:
 		if verbose:
-			print >>sys.stderr, "\tupdating sim <--> burst event counts ..."
+			print("\tupdating sim <--> burst event counts ...", file=sys.stderr)
 		cursor.execute("""
 UPDATE
 	coinc_event
@@ -206,7 +209,7 @@ WHERE
 	coinc_event.coinc_def_id == ?
 		""", (contents.sb_definer_id,))
 		if verbose:
-			print >>sys.stderr, "\tremoving empty sim <--> burst coincs ..."
+			print("\tremoving empty sim <--> burst coincs ...", file=sys.stderr)
 		cursor.execute("""
 DELETE FROM
 	coinc_event
@@ -222,7 +225,7 @@ WHERE
 	#
 
 	if verbose:
-		print >>sys.stderr, "\ttrimming coinc_event_map table ..."
+		print("\ttrimming coinc_event_map table ...", file=sys.stderr)
 	cursor.execute("""
 DELETE FROM
 	coinc_event_map
@@ -236,7 +239,7 @@ WHERE
 	""")
 
 	if verbose:
-		print >>sys.stderr, "\ttrimming multi_burst table ..."
+		print("\ttrimming multi_burst table ...", file=sys.stderr)
 	cursor.execute("""
 DELETE FROM
 	multi_burst
@@ -255,7 +258,7 @@ WHERE
 	#
 
 	if verbose:
-		print >>sys.stderr, "\tdone (excess power event vetos)."
+		print("\tdone (excess power event vetos).", file=sys.stderr)
 
 
 #
@@ -294,7 +297,7 @@ for n, filename in enumerate(filenames):
 	#
 
 	if options.verbose:
-		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename),
+		print("%d/%d: %s" % (n + 1, len(filenames), filename), end=' ', file=sys.stderr)
 
 	working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
 	connection = sqlite3.connect(working_filename)
@@ -312,17 +315,17 @@ for n, filename in enumerate(filenames):
 	#
 
 	if options.verbose:
-		print >>sys.stderr, "committing ..."
+		print("committing ...", file=sys.stderr)
 	connection.commit()
 	if not options.no_vacuum:
 		if options.verbose:
-			print >>sys.stderr, "vacuuming ..."
+			print("vacuuming ...", file=sys.stderr)
 		connection.cursor().execute("VACUUM;")
 	connection.close()
 	del connection
 	dbtables.put_connection_filename(filename, working_filename, verbose = options.verbose)
 	if options.verbose:
-		print >>sys.stderr, "done (%s)." % filename
+		print("done (%s)." % filename, file=sys.stderr)
 
 
 #
@@ -331,4 +334,4 @@ for n, filename in enumerate(filenames):
 
 
 if options.verbose:
-	print >>sys.stderr, "done."
+	print("done.", file=sys.stderr)

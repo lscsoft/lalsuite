@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from __future__ import division
+from __future__ import (division, print_function)
 
 from time import strftime
 from collections import deque
@@ -126,7 +126,7 @@ SBank will fill in whichever gaps remain. See also lalapps_cbc_sbank_pipe.
 #
 def checkpoint_save(xmldoc, fout, process):
 
-    print >>sys.stderr, "\t[Checkpointing ...]"
+    print("\t[Checkpointing ...]", file=sys.stderr)
 
     # save rng state
     rng_state = np.random.get_state()
@@ -355,12 +355,12 @@ if opts.reference_psd is not None:
     f_max_orig = max(f_orig)
     if opts.fhigh_max:
         if opts.fhigh_max > f_max_orig:
-            print >> sys.stderr, "Warning: requested fhigh-max (%.3f Hz) exceeds limits of PSD (%.3f Hz). Using PSD limit instead!" \
-                    % (opts.fhigh_max, f_max_orig)
+            print("Warning: requested fhigh-max (%.3f Hz) exceeds limits of PSD (%.3f Hz). Using PSD limit instead!" \
+                    % (opts.fhigh_max, f_max_orig), file=sys.stderr)
             opts.fhigh_max = float(f_max_orig)
     else:
-        print >> sys.stderr, "Warning: fhigh-max not specified, using maximum frequency in the PSD (%.3f Hz)" \
-                % f_max_orig
+        print("Warning: fhigh-max not specified, using maximum frequency in the PSD (%.3f Hz)" \
+                % f_max_orig, file=sys.stderr)
         opts.fhigh_max = float(f_max_orig)
 
     interpolator = UnivariateSpline(f_orig, np.log(psddata), s=0)
@@ -395,7 +395,7 @@ for file_approx in opts.bank_seed:
         bank.add_from_sngls(sngl_inspiral, seed_waveform)
 
         if opts.verbose:
-            print>>sys.stdout,"Added %d %s seed templates from %s to initial bank." % (len(sngl_inspiral), approx, seed_file)
+            print("Added %d %s seed templates from %s to initial bank." % (len(sngl_inspiral), approx, seed_file))
 
         tmpdoc.unlink()
         del sngl_inspiral, tmpdoc
@@ -406,7 +406,7 @@ for file_approx in opts.bank_seed:
         hdf_fp.close()
 
 if opts.verbose:
-    print>>sys.stdout,"Initialized the template bank to seed with %d precomputed templates." % len(bank)
+    print("Initialized the template bank to seed with %d precomputed templates." % len(bank))
 
 
 #
@@ -420,8 +420,8 @@ if opts.checkpoint and os.path.exists( opts.output_filename + "_checkpoint.gz" )
     [bank.insort(t) for t in Bank.from_sngls(tbl, tmplt_class, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)]
 
     if opts.verbose:
-        print >>sys.stdout,"Found checkpoint file %s with %d precomputed templates." % (opts.output_filename + "_checkpoint.gz", len(tbl))
-        print >>sys.stdout, "Resuming from checkpoint with %d total templates..." % len(bank)
+        print("Found checkpoint file %s with %d precomputed templates." % (opts.output_filename + "_checkpoint.gz", len(tbl)))
+        print("Resuming from checkpoint with %d total templates..." % len(bank))
 
     # reset rng state
     rng_state = np.load(opts.output_filename + "_checkpoint.rng.npz")
@@ -542,10 +542,10 @@ for tmplt in proposal:
         bank.insort(tmplt)
         ks.append(k)
         if opts.verbose:
-            print "\nbank size: %d\t\tproposed: %d\trejection rate: %.6f / (%.6f)" % (len(bank), nprop, 1 - float(len(ks))/float(sum(ks)), 1 - 1./opts.convergence_threshold )
-            print >>sys.stdout, "accepted:\t\t", tmplt
+            print("\nbank size: %d\t\tproposed: %d\trejection rate: %.6f / (%.6f)" % (len(bank), nprop, 1 - float(len(ks))/float(sum(ks)), 1 - 1./opts.convergence_threshold ))
+            print("accepted:\t\t", tmplt)
             if matcher is not None:
-                print >>sys.stdout, "max match (%.4f):\t" % match, matcher
+                print("max match (%.4f):\t" % match, matcher)
         k = 0
 
         # Add to single inspiral table. Do not store templates that
@@ -582,9 +582,9 @@ for tmplt in proposal:
 
 
 if opts.verbose:
-    print "\ntotal number of proposed templates: %d" % nprop
-    print "total number of match calculations: %d" % bank._nmatch
-    print "final bank size: %d" % len(bank)
+    print("\ntotal number of proposed templates: %d" % nprop)
+    print("total number of match calculations: %d" % bank._nmatch)
+    print("final bank size: %d" % len(bank))
 
 bank.clear()  # clear caches
 

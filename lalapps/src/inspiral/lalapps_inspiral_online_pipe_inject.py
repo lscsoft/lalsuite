@@ -5,6 +5,8 @@ This script produced the necessary condor submit and dag files to run
 a prototype online analysis in E11
 """
 
+from __future__ import print_function
+
 __author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -33,7 +35,7 @@ Usage: lalapps_inspiral_pipe [options]
   -f, --config-file FILE   use configuration file FILE
   -l, --log-path PATH      directory to write condor log file
 """
-  print >> sys.stderr, msg
+  print(msg, file=sys.stderr)
 
 # pasrse the command line options to figure out what we should do
 shortop = "hvf:l:"
@@ -56,7 +58,7 @@ log_path = None
 
 for o, a in opts:
   if o in ("-v", "--version"):
-    print "$Id$"
+    print("$Id$")
     sys.exit(0)
   elif o in ("-h", "--help"):
     usage()
@@ -66,18 +68,18 @@ for o, a in opts:
   elif o in ("-l", "--log-path"):
     log_path = a
   else:
-    print >> sys.stderr, "Unknown option:", o
+    print("Unknown option:", o, file=sys.stderr)
     usage()
     sys.exit(1)
 
 if not config_file:
-  print >> sys.stderr, "No configuration file specified."
-  print >> sys.stderr, "Use --config-file FILE to specify location."
+  print("No configuration file specified.", file=sys.stderr)
+  print("Use --config-file FILE to specify location.", file=sys.stderr)
   sys.exit(1)
 
 if not log_path:
-  print >> sys.stderr, "No log file path specified."
-  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  print("No log file path specified.", file=sys.stderr)
+  print("Use --log-path PATH to specify a location.", file=sys.stderr)
   sys.exit(1)
 
 try: os.mkdir('cache')
@@ -272,13 +274,13 @@ total_data = 0
 for seg in data:
   for chunk in seg:
     total_data += len(chunk)
-print >> log_fh, "total data =", total_data
+print("total data =", total_data, file=log_fh)
 
-print >> log_fh, "\n===========================================\n"
-print >> log_fh, data
+print("\n===========================================\n", file=log_fh)
+print(data, file=log_fh)
 for seg in data:
-  print >> log_fh, seg
+  print(seg, file=log_fh)
   for chunk in seg:
-    print >> log_fh, chunk
+    print(chunk, file=log_fh)
 
 sys.exit(0)

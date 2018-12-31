@@ -25,6 +25,9 @@
 #
 
 
+from __future__ import print_function
+
+
 from optparse import OptionParser
 from matplotlib import figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -159,10 +162,10 @@ for n, filename in enumerate(filenames):
 	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
 
 	if options.verbose:
-		print >>sys.stderr, "plotting ..."
+		print("plotting ...", file=sys.stderr)
 	plot = Plot(xmldoc, options.x_instrument, options.y_instrument, require_instruments = options.require_instruments)
 
 	output = options.output.replace("%n", "%d" % n)
 	if options.verbose:
-		print >>sys.stderr, "writing %s ..." % output
+		print("writing %s ..." % output, file=sys.stderr)
 	plot.fig.savefig(output)

@@ -343,8 +343,7 @@ The default is to run the full post processing pipeline, various steps can be sk
     parser.error('Must give --config-file')
 
   if not opts.inj_config_file:
-    print >>sys.stdout,\
-         "Injection config file not given. Running with no injections."
+    print("Injection config file not given. Running with no injections.")
     opts.skip_injfind=True
     opts.skip_injcombiner=True
   #  parser.error('Must give --inj-config-file')
@@ -362,9 +361,9 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
 
   # load ini files
   if verbose:
-    print >>sys.stdout
-    print >>sys.stdout, 'Initialising post processing driver, '+\
-                        'loading configuration files...'
+    print()
+    print('Initialising post processing driver, '+\
+                        'loading configuration files...')
 
   # get directory
   grbdir = os.path.abspath('%s/GRB%s' % (rundir, grb))
@@ -500,8 +499,8 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   # ==========
 
   if verbose:
-    print >>sys.stdout
-    print >>sys.stdout, "Generating dag..."
+    print()
+    print("Generating dag...")
 
   # initialise uberdag
   dagtag  = os.path.splitext(os.path.basename(inifile))[0]
@@ -914,23 +913,23 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   uberdag.write_dag()
 
   # print message
-  print >>sys.stdout
-  print >>sys.stdout, '------------------------------------'
-  print >>sys.stdout, 'Ready. To submit, run:'
-  print >>sys.stdout
+  print()
+  print('------------------------------------')
+  print('Ready. To submit, run:')
+  print()
   subcmd = 'condor_submit_dag '
   if cp.has_option('pipeline', 'maxjobs'):
     subcmd += '-maxjobs %s ' % cp.getint('pipeline', 'maxjobs')
   subcmd += os.path.abspath(uberdag.get_dag_file())
-  print >>sys.stdout, subcmd
-  print >>sys.stdout
+  print(subcmd)
+  print()
 
-  print >>sys.stdout, 'Once submitted, to monitor status, run:'
-  print >>sys.stdout
-  print >>sys.stdout, 'lalapps_ihope_status --dag-file %s'\
-                      % (os.path.abspath(uberdag.get_dag_file()))
-  print >>sys.stdout, '------------------------------------'
-  print >>sys.stdout
+  print('Once submitted, to monitor status, run:')
+  print()
+  print('lalapps_ihope_status --dag-file %s'\
+                      % (os.path.abspath(uberdag.get_dag_file())))
+  print('------------------------------------')
+  print()
 
 
 if __name__=='__main__':

@@ -308,13 +308,13 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
 #print sys.argv[0]
 
 if len(sys.argv) < 3:
-   print ' '
-   print 'Find the coherence between SFTs in two specified directories '
-   print ' '
-   print 'Usage: %s <pathToSFTsChanA> <pathToSFTsChanB> [subBand]' % sys.argv[0]
-   print ' '
-   print 'The optional subBand is the band in Hz to output in each plot. (Default is 100 Hz)'
-   print ' '
+   print(' ')
+   print('Find the coherence between SFTs in two specified directories ')
+   print(' ')
+   print('Usage: %s <pathToSFTsChanA> <pathToSFTsChanB> [subBand]' % sys.argv[0])
+   print(' ')
+   print('The optional subBand is the band in Hz to output in each plot. (Default is 100 Hz)')
+   print(' ')
    exit(0) 
 
 #print sys.argv[1]

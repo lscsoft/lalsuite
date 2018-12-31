@@ -22,6 +22,8 @@ chirp mass boundaries.  The edges are taken from the input parameters
 of the ligolw_cbc_sbank job that produced them unless overridden.
 """
 
+from __future__ import print_function
+
 import sys
 import numpy
 from bisect import bisect_left, bisect_right
@@ -121,4 +123,4 @@ if options.mchirp_min:
 
 # output
 with open(options.output_file, "w") as outfile:
-    print >>outfile, "\n".join(map(str, boundaries))
+    print("\n".join(map(str, boundaries)), file=outfile)

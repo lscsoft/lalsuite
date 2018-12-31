@@ -6,6 +6,8 @@ Loosely based on lalapps_strain_pipe
 
 """
 
+from __future__ import print_function
+
 __author__ = 'Greg Mendell<gmendell@ligo-wa.caltech.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -98,7 +100,7 @@ Usage: MakeSFTDAG [options]
   -J, --makesfts-path        (optional) string specifying a path to look for the lalapps_MakeSFTs executable; if not set, will use MAKESFTS_PATH env variable or system default (in that order).
   -Y, --request-memory       (optional) memory allocation in MB to request from condor for lalapps_MakeSFTs step
 """
-  print >> sys.stdout, msg
+  print(msg)
 
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
@@ -330,103 +332,103 @@ for o, a in opts:
   elif o in ("-Y", "--request-memory"):
     requestMemory = a
   else:
-    print >> sys.stderr, "Unknown option:", o
+    print("Unknown option:", o, file=sys.stderr)
     usage()
     sys.exit(1)
 
 if not dagFileName:
-  print >> sys.stderr, "No dag filename specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No dag filename specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not tagString:
-  print >> sys.stderr, "No tag string specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No tag string specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not inputDataType:
-  print >> sys.stderr, "No input data type specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No input data type specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if extraDatafindTime < 0L:
-  print >> sys.stderr, "Invalid extra datafind time specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid extra datafind time specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if synchronizeStart<0 or synchronizeStart>1:
-  print >> sys.stderr, "Invalid use of synchronize-start."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid use of synchronize-start.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
   
 if filterKneeFreq < 0:
-  print >> sys.stderr, "No filter knee frequency specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No filter knee frequency specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not timeBaseline:
-  print >> sys.stderr, "No time baseline specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No time baseline specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not outputSFTPath:
-  print >> sys.stderr, "No output SFT path specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No output SFT path specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
   
 if not cachePath:
-  print >> sys.stderr, "No cache path specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No cache path specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not logPath:
-  print >> sys.stderr, "No log path specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No log path specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not subLogPath:
-  print >> sys.stderr, "No sub log path specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No sub log path specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not channelName:
-  print >> sys.stderr, "No channel name specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No channel name specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (windowType != 0) and (windowType != 1) and (windowType != 2) and (windowType != 3):
-  print >> sys.stderr, "Invalid window type specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid window type specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (overlapFraction < 0.0) or (overlapFraction >= 1.0):
-  print >> sys.stderr, "Invalid make overlap fraction specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid make overlap fraction specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (sftVersion != 1) and (sftVersion != 2):
-  print >> sys.stderr, "Invalid SFT version specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid SFT version specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (startFreq < 0.0):
-  print >> sys.stderr, "Invalid start freq specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid start freq specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (freqBand < 0.0):
-  print >> sys.stderr, "Invalid band specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid band specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (makeGPSDirs < 0) or (makeGPSDirs > 10):
-  print >> sys.stderr, "Invalid make gps dirs specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid make gps dirs specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not maxNumPerNode:
-  print >> sys.stderr, "No maximum number of SFTs per node specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No maximum number of SFTs per node specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 dataFindExe = 'gw_data_find'
@@ -452,11 +454,11 @@ nodeList = [];
 if (nodeListFile != None):
 
     if not nodePath:
-       print >> sys.stderr, "Node file list given, but no node path specified."
+       print("Node file list given, but no node path specified.", file=sys.stderr)
        sys.exit(1)
     
     if (outputJobsPerNode < 1L):
-       print >> sys.stderr, "Node file list given, but invalid output jobs per node specified."
+       print("Node file list given, but invalid output jobs per node specified.", file=sys.stderr)
        sys.exit(1)
 
     try:
@@ -466,10 +468,10 @@ if (nodeListFile != None):
              nodeList.append(splitLine[0])
          # End for line in open(nodeListFile)
          if (len(nodeList) < 1):
-             print >> sys.stderr, "No nodes found in node list file: %s." % nodeListFile
+             print("No nodes found in node list file: %s." % nodeListFile, file=sys.stderr)
              sys.exit(1)
     except:
-         print >> sys.stderr, "Error reading or parsing node list file: %s." % nodeListFile
+         print("Error reading or parsing node list file: %s." % nodeListFile, file=sys.stderr)
          sys.exit(1)
 
     # Set flag to use list of nodes in constructing output files
@@ -483,8 +485,8 @@ adjustSegExtraTime = False
 if (segmentFile != None):
 
     if minSegLength < 0L:
-      print >> sys.stderr, "Invalid minimum segment length specified."
-      print >> sys.stderr, "Use --help for usage details."
+      print("Invalid minimum segment length specified.", file=sys.stderr)
+      print("Use --help for usage details.", file=sys.stderr)
       sys.exit(1)
 
     # the next flag causes extra time that cannot be processes to be trimmed from the start and end of a segment
@@ -507,25 +509,25 @@ if (segmentFile != None):
                  pass
          # End for line in open(segmentFile)
          if (len(segList) < 1):
-             print >> sys.stderr, "No segments found in segment file: %s." % segmentFile
+             print("No segments found in segment file: %s." % segmentFile, file=sys.stderr)
              sys.exit(1)
     except:
-         print >> sys.stderr, "Error reading or parsing segment file: %s." % segmentFile
+         print("Error reading or parsing segment file: %s." % segmentFile, file=sys.stderr)
          sys.exit(1)
 else:
     if not analysisStartTime:
-      print >> sys.stderr, "No GPS analysis start time specified."
-      print >> sys.stderr, "Use --help for usage details."
+      print("No GPS analysis start time specified.", file=sys.stderr)
+      print("Use --help for usage details.", file=sys.stderr)
       sys.exit(1)
 
     if not analysisEndTime:
-      print >> sys.stderr, "No GPS analysis end time specified."
-      print >> sys.stderr, "Use --help for usage details."
+      print("No GPS analysis end time specified.", file=sys.stderr)
+      print("Use --help for usage details.", file=sys.stderr)
       sys.exit(1)
 
     if not maxLengthAllJobs:
-      print >> sys.stderr, "No maximum length of all jobs specified."
-      print >> sys.stderr, "Use --help for usage details."
+      print("No maximum length of all jobs specified.", file=sys.stderr)
+      print("Use --help for usage details.", file=sys.stderr)
       sys.exit(1)
 
     # Make sure not to exceed maximum allow analysis
@@ -538,7 +540,7 @@ else:
         oneSeg.append(analysisEndTime);
         segList.append(oneSeg);
     except:
-        print >> sys.stderr, "There was a problem setting up the segment to run on: [%s, %s)." % (analysisStartTime,analysisEndTime)
+        print("There was a problem setting up the segment to run on: [%s, %s)." % (analysisStartTime,analysisEndTime), file=sys.stderr)
         sys.exit(1)
     
 # END if (segmentFile != None)
@@ -700,13 +702,13 @@ dagFID.close
 endTimeAllNodes = endTimeThisNode
 
 if not startTimeAllNodes:
-  print >> sys.stderr, "The startTimeAllNodes == none; the DAG file contains no jobs!"
+  print("The startTimeAllNodes == none; the DAG file contains no jobs!", file=sys.stderr)
   sys.exit(1)
 
 if (endTimeAllNodes <= startTimeAllNodes):
-  print >> sys.stderr, "The endTimeAllNodes <= startTimeAllNodes; the DAG file contains no jobs!"
+  print("The endTimeAllNodes <= startTimeAllNodes; the DAG file contains no jobs!", file=sys.stderr)
   sys.exit(1)
 
-print >> sys.stdout, startTimeAllNodes, endTimeAllNodes
+print(startTimeAllNodes, endTimeAllNodes)
 
 sys.exit(0)

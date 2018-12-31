@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 import sys
 import os
 from optparse import *
@@ -173,11 +175,11 @@ if opts.glob is not None:
     corsefiles.extend(glob.glob(gl))
 elif opts.cache_file is not None:
   # currently not a working feature; just print warning message and exit
-  print >> sys.stderr, "--cache-file option currently not available; " + \
-        "please  use --glob option instead."
+  print("--cache-file option currently not available; " + \
+        "please  use --glob option instead.", file=sys.stderr)
   sys.exit(1)
 if not corsefiles:
-  print >> sys.stderr, "No corse files could be found. Check input args."
+  print("No corse files could be found. Check input args.", file=sys.stderr)
   sys.exit(1)
 
 maxBkgFAN = {}
@@ -198,7 +200,7 @@ for thisfile in corsefiles:
     summfile = glob.glob(thisfile.rstrip('.xml.gz') + '.txt')
   # check if corse file has a corresponding summary file
   if not summfile:
-    print >>sys.stderr, "A summary file for %s could not be found." %(thisfile)
+    print("A summary file for %s could not be found." %(thisfile), file=sys.stderr)
     sys.exit(1)
   # get needed info from summary file
   file = open(summfile[0], 'r')
@@ -361,10 +363,10 @@ if opts.min_rate:
   if len(loudestTrig) == 0:
     for trig in loudestTrigTemp:
       loudestTrig.append(trig)
-  print >> sys.stdout, 'The time analyzed was' , FrgrndTime
-  print >> sys.stdout, 'Accepting triggers with IFAN >' , minIFAN
-  print >> sys.stdout, 'Accepting triggers with FAN <' , maxFAN
-  print >> sys.stdout, 'Accepted' , len(loudestTrig) , ' SINGLE triggers.'
+  print('The time analyzed was' , FrgrndTime)
+  print('Accepting triggers with IFAN >' , minIFAN)
+  print('Accepting triggers with FAN <' , maxFAN)
+  print('Accepted' , len(loudestTrig) , ' SINGLE triggers.')
 
 flag = False
 integ = 0

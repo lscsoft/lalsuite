@@ -158,7 +158,7 @@ if __name__ == '__main__':
     incount = len(trigs)
 
     if incount == 0:
-        print "No triggers found"
+        print("No triggers found")
         sys.exit(0)
 
     for filename in others:
@@ -174,10 +174,10 @@ if __name__ == '__main__':
         efficiency  = (float(incount) - float(outcount)) / float(incount) * 100.0
         deadtime    = float(abs(summ) - abs(new_summary))  / float(abs(summ)) * 100.0
 
-        print "File: ", filename
-        print "Efficiency: %.2f" % efficiency
-        print "Deadtime: %.2f" % deadtime
-        print "Ratio: %s" % (deadtime > 0 and "%.2f" % (efficiency / deadtime) or 'NA')
-        print "Loudest remaining trigger at %d with snr %.2f" % (new_trigs[0][0], new_trigs[0][1])
-        print
+        print("File: ", filename)
+        print("Efficiency: %.2f" % efficiency)
+        print("Deadtime: %.2f" % deadtime)
+        print("Ratio: %s" % (deadtime > 0 and "%.2f" % (efficiency / deadtime) or 'NA'))
+        print("Loudest remaining trigger at %d with snr %.2f" % (new_trigs[0][0], new_trigs[0][1]))
+        print()
 

@@ -17,6 +17,9 @@
   *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
   *  MA  02111-1307  USA
 """
+
+from __future__ import print_function
+
 __author__ = 'Cristina Torres <cristina@phys.utb.edu>'
 __date__ = '$Date$'
 __version__ = ''
@@ -209,7 +212,7 @@ class kurve:
         if self.element.__len__() > 0:
             result=self.element[0][2].display()
         else:
-            print "Object appears to be empty!"
+            print("Object appears to be empty!")
             result=''
         return result
     #End method print StartGPS
@@ -221,7 +224,7 @@ class kurve:
         if self.element.__len__() > 0:
             result=self.element[0][2]
         else:
-            print "Object appears to be empty!"
+            print("Object appears to be empty!")
             result=gpsInt(0,0)
         return result
     #End method startGPS
@@ -234,7 +237,7 @@ class kurve:
         if curveSize > 0:
             result=self.element[curveSize-1][2].display()
         else:
-            print "Object appears to be empty!"
+            print("Object appears to be empty!")
             result=''
         return result
     #End method print StopGPS
@@ -247,7 +250,7 @@ class kurve:
         if curveSize > 0:
             result=self.element[curveSize-1][2]
         else:
-            print "Object appears to be empty!"
+            print("Object appears to be empty!")
             result=gpsInt(0,0)
         return result
     #End method stopGPS
@@ -260,7 +263,7 @@ class kurve:
         if curveSize > 0:
             result=self.element[0][3]
         else:
-            print "Object appears to be empty!"
+            print("Object appears to be empty!")
             result=float(-1)
         return result
     #End method printStartFreq
@@ -273,7 +276,7 @@ class kurve:
         if curveSize > 0:
             result=self.element[curveSize-1][3]
         else:
-            print "Object appears to be empty!"
+            print("Object appears to be empty!")
             result=float(-1)
         return result
     #End method printStopFreq
@@ -432,7 +435,7 @@ class kurve:
         """
         curveSize=self.element.__len__()
         if ((n >= curveSize) and (n < 0)):
-            print "Requested Index exceeds available data! :",n,curveSize
+            print("Requested Index exceeds available data! :",n,curveSize)
             return gpsInt(-1,0),float(-1),float(-1)
         else:
             return self.element[n][2],self.element[n][3],self.element[n][4]
@@ -446,7 +449,7 @@ class kurve:
         """
         curveSize=element.__len__()
         if ((n > curveSize) and (n >= 0)):
-            print "Requested Index exceeds available data! :",n
+            print("Requested Index exceeds available data! :",n)
             return int(-1),int(-1)
         else:
             return element[n][0],element[n][1]
@@ -512,7 +515,7 @@ class kurve:
         for entry in keyedList:
             sortedData.append(dataBlock[entry[1]])
         if sortedData.__len__() != dataBlock.__len__():
-            print "Fatal error sorting a curve by pixel brightness!"
+            print("Fatal error sorting a curve by pixel brightness!")
             os.abort()
         return sortedData
         #end getSortedByBrightness method
@@ -541,7 +544,7 @@ class kurve:
         """
         dataBlock=self.getSortedByBrightness()
         if dataBlock.__len__() < 1:
-            print "Fatal Error unexpected curve length of zero for this curve!"
+            print("Fatal Error unexpected curve length of zero for this curve!")
             os.abort()
         brightestPixel=dataBlock[dataBlock.__len__()-1]
         return brightestPixel
@@ -574,7 +577,7 @@ class kurve:
         try:
             return self.element[rCM]
         except:
-            print rCM,self.element.__len__()
+            print(rCM,self.element.__len__())
             os.abort()
     #End def getCMPixel()
 
@@ -630,9 +633,9 @@ class gpsInt:
         except ValueError:
             foundType1=type(gpsSeconds)
             foundType2=type(gpsNanoSeconds)
-            print "Error can not cast input arguments to integer types."
-            print "Found types :",foundType1,foundType2
-            print "Values      :",gpsSeconds,gpsNanoSeconds
+            print("Error can not cast input arguments to integer types.")
+            print("Found types :",foundType1,foundType2)
+            print("Values      :",gpsSeconds,gpsNanoSeconds)
             os.abort()
     #End init method
 
@@ -648,17 +651,17 @@ class gpsInt:
         try:
             intIn=int(secPartIn+nanoPartIn)
         except ValueError:
-            print "Error with gpsInt structure. Inconsistent values in fields!"
-            print "Seconds :",self.gpsSeconds," NanoSeconds :",self.gpsNanoSeconds
+            print("Error with gpsInt structure. Inconsistent values in fields!")
+            print("Seconds :",self.gpsSeconds," NanoSeconds :",self.gpsNanoSeconds)
             if (self.gpsNanoSeconds < 0) and (self.gpsSeconds >= 0):
-                print "Assuming - sign belongs on gpsSeconds field."
+                print("Assuming - sign belongs on gpsSeconds field.")
                 self.gpsSeconds= self.gpsSeconds * -1
                 self.gpsNanoSeconds = abs(self.gpsNanoSeconds)
                 secPartIn=str(self.gpsSeconds)
                 nanoPartIn=str(str(self.gpsNanoSeconds).rjust(9)).replace(' ','0')
                 intIn=int(secPartIn+nanoPartIn)
             else:
-                print "Error is not recoverable! Please check candidate files."
+                print("Error is not recoverable! Please check candidate files.")
                 os.abort()
         return intIn
     #End __makeInt__ method
@@ -733,8 +736,8 @@ class gpsInt:
 
     def __abs__(self):
         if (self.gpsSeconds < 0) and (self.gpsNanoSeconds < 0):
-            print "Major weirdness with data! See ",self.gpsSeconds,self,gpsNanoSeconds
-            print "If you see this something went really wrong!"
+            print("Major weirdness with data! See ",self.gpsSeconds,self,gpsNanoSeconds)
+            print("If you see this something went really wrong!")
             os.abort()
         return gpsInt(abs(self.gpsSeconds),abs(self.gpsNanoSeconds))
     #End of __abs__ method
@@ -993,7 +996,7 @@ class candidateList:
         file name to write to the disk with.
         """
         if self.filename.__len__() == 0:
-            print 'Error with header information in instance, using default DefaultName.file'
+            print('Error with header information in instance, using default DefaultName.file')
             return 'DefaultName.file'
         else:
             filename='GLOB::'+os.path.basename(self.filename[0])+\
@@ -1052,17 +1055,17 @@ class candidateList:
         try:
             input_fp=open(inputFilename,'r')
         except IOError:
-            print "File IO error"
-            print "Check : ",inputFilename
-            print ""
+            print("File IO error")
+            print("Check : ",inputFilename)
+            print("")
             return
         content=input_fp.readlines()
         input_fp.close()
         if content.__len__() < 1:
-            print "Error no lines in file?"
-            print "Check :",inputFilename
+            print("Error no lines in file?")
+            print("Check :",inputFilename)
             self.totalCount=0
-            print "Object memory left untouched!"
+            print("Object memory left untouched!")
             return
         self.totalCount=int(list(content[0].split(':'))[1])
         self.filename=[str(inputFilename)]
@@ -1084,7 +1087,7 @@ class candidateList:
             content.pop(index)
         #Simple file parity check
         if ((int(content.__len__()).__mod__(2) != 0)):
-            print 'Error parsing :',self.filename," Number of data lines :",content.__len__()
+            print('Error parsing :',self.filename," Number of data lines :",content.__len__())
             os.abort()
 #        if (content.__len__() > 1) and (self.totalCount == 0):
 #            print "File has ",content.__len__(),"lines with header listing ",self.totalCount," entries."
@@ -1118,15 +1121,15 @@ class candidateList:
              if self.totalCount > 0:
                  try: self.findBinWidths()
                  except ValueError:
-                     print "Can not estimate the bin widths from file:",inputFilename
-                     print "Assuming file is invalid! Forgeting data."
+                     print("Can not estimate the bin widths from file:",inputFilename)
+                     print("Assuming file is invalid! Forgeting data.")
                      self.curves=[]
                      self.gpsWidth=gpsInt(0,0)
                      self.freqWidth=float(0)
              if self.totalCount != self.curves.__len__():
-                 print "Possible problem, Inconsistent file :",inputFilename
+                 print("Possible problem, Inconsistent file :",inputFilename)
         else:
-            print "No candidate entries found in:",inputFilename
+            print("No candidate entries found in:",inputFilename)
         self.__timeOrderLibrary__()
         self.validCurves=bool(True)
         self.createTraitSummary()
@@ -1149,15 +1152,15 @@ class candidateList:
         """
         try:
             if self.verboseMode:
-                print "Trying to open file."
+                print("Trying to open file.")
             input_fp=open(inputFilename,'r')
         except IOError:
-            print "File IO error"
-            print "Check : ",inputFilename
-            print ""
+            print("File IO error")
+            print("Check : ",inputFilename)
+            print("")
             return
         if self.verboseMode:
-            print "Open successful."
+            print("Open successful.")
         self.filename=[str(inputFilename)]
         line=str(' ')
         curveCount=0
@@ -1179,7 +1182,7 @@ class candidateList:
                         #Advance to next data line expected!
                         line=input_fp.readline()
                         if not line.__contains__(';'):
-                            print "Data file seems corrupted:",inputFilename
+                            print("Data file seems corrupted:",inputFilename)
                         tmpLine=str(line).replace(';',',').split(':')
                         for pixel in tmpLine:
                             [a,b,c,d,e,f]=str(pixel).split(',')
@@ -1194,14 +1197,14 @@ class candidateList:
                         del tmpLine
             spinner.closeSpinner()
         except MemoryError:
-            print "Consumed maximum allow OS memory!"
-            print "Candidates file to large to process properly."
-            print "Only manages to load ",curveCount," lines before failing."
-            print "Try using text editor or shell to break this file down into smaller sets."
-            print "If using Linux/UNIX try:"
-            print "grep -v # FILE.candidates > FILE2.candidates; split -n -a 2 -l ",int(curveCount/10)," FILE2.candidates"
-            print "File in question is:",inputFilename
-            print "Returning empty structure!"
+            print("Consumed maximum allow OS memory!")
+            print("Candidates file to large to process properly.")
+            print("Only manages to load ",curveCount," lines before failing.")
+            print("Try using text editor or shell to break this file down into smaller sets.")
+            print("If using Linux/UNIX try:")
+            print("grep -v # FILE.candidates > FILE2.candidates; split -n -a 2 -l ",int(curveCount/10)," FILE2.candidates")
+            print("File in question is:",inputFilename)
+            print("Returning empty structure!")
             input_fp.close()
             del self.curves
             del line
@@ -1209,18 +1212,18 @@ class candidateList:
         del line
         input_fp.close()
         if self.curves.__len__() < 1:
-            print "Error no lines in file?"
-            print "Check :",inputFilename
+            print("Error no lines in file?")
+            print("Check :",inputFilename)
             self.totalCount=0
-            print "Object memory left untouched!"
+            print("Object memory left untouched!")
             return
         self.totalCount=int(self.curves.__len__())
         #Determine the bin widths in this structure
         if self.totalCount > 0:
             try: self.findBinWidths()
             except ValueError:
-                print "Can not estimate the bin widths from file:",inputFilename
-                print "Assuming file is invalid! Forgeting data."
+                print("Can not estimate the bin widths from file:",inputFilename)
+                print("Assuming file is invalid! Forgeting data.")
                 self.curves=[]
                 self.gpsWidth=gpsInt(0,0)
                 self.freqWidth=float(0)
@@ -1294,7 +1297,7 @@ class candidateList:
             for entry in keyedList:
                 newList.append(self.curves[entry[1]])
             if newList.__len__() != self.curves.__len__():
-                print "Error with sorting routine!"
+                print("Error with sorting routine!")
                 os.abort()
             #Reassign the list to newly sorted version
             self.sorted=True
@@ -1326,14 +1329,14 @@ class candidateList:
             try:
                 curveElement=self.curves[currentIndex]
             except IndexError:
-                print "Current Index     :",currentIndex
-                print "Length self.curves:",self.curves.__len__()
-                print "File being loaded :",self.filename[0]
+                print("Current Index     :",currentIndex)
+                print("Length self.curves:",self.curves.__len__())
+                print("File being loaded :",self.filename[0])
                 if currentIndex<0:
-                    print "Invalid index: Skipping bin width calculation"
+                    print("Invalid index: Skipping bin width calculation")
                     return
                 else:
-                    print "Continuing!"
+                    print("Continuing!")
             for entry in curveElement.getKurveDataBlock():
                 TDArrayFreq.append(entry[3])
                 TDArrayGPSFloat.append(entry[2].getAsFloat())
@@ -1361,27 +1364,27 @@ class candidateList:
             diff_F.append(uniqF[i]-uniqF[i-1])
         diff_F.sort()
         if uniqF.__len__() < 2:
-            print "Warning unable to uniquely determine f bin width!"
+            print("Warning unable to uniquely determine f bin width!")
             self.freqWidth=0
             avgF=0
         else:
             avgF=diff_F[0]
         if uniqT.__len__() < 2:
-            print "Warning unable to uniquely determine t bin width!"
+            print("Warning unable to uniquely determine t bin width!")
             self.gpsWidth=gpsInt(0,0)
             avgT=0
         else:
             avgT=diff_T[0]
         if (uniqT.__len__() < 10):
-            print "Warning less than ten intervals used to determine bin time width!"
+            print("Warning less than ten intervals used to determine bin time width!")
         if (uniqF.__len__() < 10):
-            print "Warning less than ten intervals used to determine bin frequency width!"
+            print("Warning less than ten intervals used to determine bin frequency width!")
         self.freqWidth=float(avgF)
         ans=str("%10.9f"%float(avgT)).split('.')
         self.gpsWidth=gpsInt(ans[0],ans[1])
         if self.verboseMode:
             outString='Found: FRes %2.3f TRes %s'%(self.freqWidth,self.gpsWidth.display())
-            print outString
+            print(outString)
         del uniqT
         del uniqF
         del diff_T
@@ -1422,7 +1425,7 @@ class candidateList:
             if int(TDArrayGPS[i][0]) - int(TDArrayGPS[i-1][0]) == 1:
                 AddMe=TDArrayGPS[i][1].__sub__(TDArrayGPS[i-1][1])
                 AddMe=AddMe.__abs__()
-                print TDArrayGPS[i][1].display(),"   ",TDArrayGPS[i-1][1].display(),"    ",AddMe.display()
+                print(TDArrayGPS[i][1].display(),"   ",TDArrayGPS[i-1][1].display(),"    ",AddMe.display())
                 gpsSum=gpsSum.__add__(AddMe)
                 gpsSumCount=gpsSumCount+1
 
@@ -1446,16 +1449,16 @@ class candidateList:
         try:
             file2_fp=file(file2,'r')
         except IOError:
-            print "File IO error"
-            print "Check : ",inputFilename
-            print "Glob skipped thie file!"
-            print ""
+            print("File IO error")
+            print("Check : ",inputFilename)
+            print("Glob skipped thie file!")
+            print("")
             return
         try:
             file1_fp.write(file2_fp.read())
         except IOError:
-            print "Error writing glob file!"
-            print "Check disk space!"
+            print("Error writing glob file!")
+            print("Check disk space!")
             return
         return
     #End globListFile method
@@ -1491,7 +1494,7 @@ class candidateList:
             globList.filename.extend(iCL.filename)
             globList.curves.extend(iCL.curves)
             if (force == True):
-                print "Avoiding:Bin width differences (Hz,Time):",float(self.freqWidth-iCL.freqWidth),float(self.gpsWidth.getAsFloat()-iCL.gpsWidth.getAsFloat())
+                print("Avoiding:Bin width differences (Hz,Time):",float(self.freqWidth-iCL.freqWidth),float(self.gpsWidth.getAsFloat()-iCL.gpsWidth.getAsFloat()))
             return globList
         elif ((self.freqWidth==0) or (int(self.gpsWidth.__makeInt__())==0)):
             globList.freqWidth=self.freqWidth
@@ -1508,12 +1511,12 @@ class candidateList:
             globList.curves.extend(iCL.curves)
             return globList
         else :
-            print "Can not glob lists, due to inconsistent values!"
-            print "Original List VS List to Glob"
-            print globList.freqWidth,'VS',iCL.freqWidth
-            print globList.gpsWidth.display(),'VS',iCL.gpsWidth.display()
-            print "Returning original list with no additional entries!"
-            print "Orignal list entry count:",self.totalCount," Ignored list entry count:",iCL.totalCount
+            print("Can not glob lists, due to inconsistent values!")
+            print("Original List VS List to Glob")
+            print(globList.freqWidth,'VS',iCL.freqWidth)
+            print(globList.gpsWidth.display(),'VS',iCL.gpsWidth.display())
+            print("Returning original list with no additional entries!")
+            print("Orignal list entry count:",self.totalCount," Ignored list entry count:",iCL.totalCount)
             return globList
     #End globList method
 
@@ -1538,10 +1541,10 @@ class candidateList:
         iRLStart=(self.curves[0].startGPS()).__makeInt__()
         iRLStop=(self.curves[self.curves.__len__()-1].stopGPS()).__makeInt__()
         if not((selfStop >= iRLStart) or (iRLStop >= selfStart)):
-            print "It appears as if these two candidateList instances do not have overlapping data!"
-            print "Self's    Boundaries: ",selfStart,selfStop
-            print "Clobber's Boundaries: ",iRLStart,iRLStop
-            print "Returning copy of the original instance."
+            print("It appears as if these two candidateList instances do not have overlapping data!")
+            print("Self's    Boundaries: ",selfStart,selfStop)
+            print("Clobber's Boundaries: ",iRLStart,iRLStop)
+            print("Returning copy of the original instance.")
             return copy.deepcopy(self)
         #Since lists overlap start processing candidates.
         #Setup bin sizes
@@ -1738,7 +1741,7 @@ class candidateList:
         coincident processed library with a frequency coincident
         processed library.
         """
-        print "HI"
+        print("HI")
     #END conincidenceGetUnion
     def candidateStats(self):
         """
@@ -1768,7 +1771,7 @@ class candidateList:
             Psum=Psum.__add__(float(entry.power))
             PsumSqr=PsumSqr + (float(entry.power)*float(entry.power))
         if (curveCount.__len__() < 1):
-            print "Stats can not be performed on candidateless candidateList instance!."
+            print("Stats can not be performed on candidateless candidateList instance!.")
             return []
         gpsStamps.sort()
         meanL=meanP=float(0)
@@ -1813,8 +1816,8 @@ class candidateList:
                 try:
                     (curveNum,L,P)=str(line.split(':')[1]).split(',')
                 except IndexError:
-                    print "Problem with file:",inputFilename
-                    print "Returning zeroes for this file stats!"
+                    print("Problem with file:",inputFilename)
+                    print("Returning zeroes for this file stats!")
                     return [0,0,0,0,0,0,0]
                 L=float(L)
                 P=float(P)
@@ -1861,9 +1864,9 @@ class candidateList:
             line=str('start')
             input_fp=open(inputFilename,'r')
         except IOError:
-            print "File IO error"
-            print "Check : ",inputFilename
-            print ""
+            print("File IO error")
+            print("Check : ",inputFilename)
+            print("")
             line=str('')
             return []
         #Loop through file lines
@@ -1874,8 +1877,8 @@ class candidateList:
                 try:
                     (curveNum,L,P)=str(line.split(':')[1]).split(',')
                 except IndexError:
-                    print "Problem with file:",inputFilename
-                    print "Returning zeroes for this file stats!"
+                    print("Problem with file:",inputFilename)
+                    print("Returning zeroes for this file stats!")
                     return [0,0,0,0,0,0,0,0,0]
                 L=float(L)
                 P=float(P)
@@ -1997,13 +2000,13 @@ class candidateList:
         to TRUE before calling self.createTraitSummary
         """
         if self.verboseMode:
-            print "Creating trait summary structure."
+            print("Creating trait summary structure.")
         if not self.validCurves:
-            print "Valid curve structure not found.  Trying to load file."
+            print("Valid curve structure not found.  Trying to load file.")
             if ((self.curves.__len__() > 0) and (not self.validCurves)):
-                print "Unexpected behavior aborting!"
-                print "Curve structure listed as invalid but the structure has data in it!"
-                print "Resulting candidates file may be corrupted!"
+                print("Unexpected behavior aborting!")
+                print("Curve structure listed as invalid but the structure has data in it!")
+                print("Resulting candidates file may be corrupted!")
             self.__loadfileQuick__(self.filename[0])
         for element in self.curves:
             tmpTrait=[]
@@ -2190,7 +2193,7 @@ class candidateList:
         else:
             sourceFile=override
         if self.verboseMode:
-            print "Writing Summary Information."
+            print("Writing Summary Information.")
         outRoot,outExt=os.path.splitext(sourceFile)
         outFile=outRoot+'.summary'
         try:
@@ -2214,13 +2217,13 @@ class candidateList:
         createSummaryStructure method to the screen.
         """
         sourceFile=self.filename[0]
-        print "#"
-        print "#"+sourceFile
-        print "#The fields are:"
+        print("#")
+        print("#"+sourceFile)
+        print("#The fields are:")
         key=self.__summaryHeader__()
-        print key
+        print(key)
         for entry in self.createSummaryStructure():
-            print entry,
+            print(entry, end=' ')
     # End printSummary method
     
     def applyPercentageThreshold(self,propertyString="P",percentile=0.05):
@@ -2232,10 +2235,10 @@ class candidateList:
         percentile=float(percentile)
         #Load up curve elements and make a vector to find stats
         if self.curves.__len__() < 1:
-            print "Warning no information to threshold."
+            print("Warning no information to threshold.")
             return self
         if propertyString.lower().strip() == "curveid":
-            print "Warning can not threashold on CURVEID"
+            print("Warning can not threashold on CURVEID")
             return self
         #Is negate symbol present?
         topCut=True
@@ -2311,7 +2314,7 @@ class candidateList:
         """
         #If the variable self.curves is empty just return nothing!
         if self.curves.__len__() < 1:
-            print "Warning no information to threshold."
+            print("Warning no information to threshold.")
             return self
         #If verbose call setup spinner
         spinner=progressSpinner(self.spinnerVerboseMode)
@@ -2360,8 +2363,8 @@ class candidateList:
                 if self.verboseMode:
                     sys.stdout.write("Division by zero encountered Ignoring trigger.\n")
             except :
-                print "Unknown error with expression string syntax."
-                print "Received string:  ",str(testExp).upper()
+                print("Unknown error with expression string syntax.")
+                print("Received string:  ",str(testExp).upper())
                 os.abort()
             if evalResult:
                 resultsList.append(lineInfo)
@@ -2423,7 +2426,7 @@ class candidateList:
         The start time should be listed in the filename! (I hope)
         """
         if type(style) != type(str('test')):
-            print "Error on type of pixel list file!"
+            print("Error on type of pixel list file!")
             os.abort
         try:
             output_fp=open(filename,'w')
@@ -2442,7 +2445,7 @@ class candidateList:
         except IndexError:
             output_fp.close()
             return
-        print "You requested ",style
+        print("You requested ",style)
         if style.lower() == 'tfp':
             for line in self.getGnuplotPixelList(0):
                 output_fp.write(format3C%(line[0],line[1],line[2]))
@@ -2709,7 +2712,7 @@ class candidateList:
         #If we are using version 0.80.0 of below
         version800=int(str('0.80.0').replace('.',''))
         if matplotlibVersion<=version800:
-            print "Matlib plot version ",matplotlibVersion
+            print("Matlib plot version ",matplotlibVersion)
             pylab.imshow(linearValueMatrix,cmap=pylab.cm.get_cmap(myColorMap),origin="upper",extent=[0,0.01,0,0.01])
             pylab.delaxes()
             pylab.hold(True)
@@ -2786,7 +2789,7 @@ class candidateList:
         version877=int(str('0.87.7').replace('.',''))
         if ((version800 < matplotlibVersion <= version877) or
             (matplotlibVersion > version877)):
-            print "Matlib plot version ",matplotlibVersion
+            print("Matlib plot version ",matplotlibVersion)
             sys.stderr.write("Error setting colorbar! Sorry, figure will have no colorbar.\n")
             sys.stderr.write("Using matlibplot version :"+pylab.matplotlib.__version__+"\n")
         pylab.grid(True)
@@ -2856,9 +2859,9 @@ class candidateList:
                 [entries,bins,patches]=pylab.hist(powList,colCount,bottom=1)
             except:
                 sys.stderr.writelines('Error trying to create histogram.\n')
-                print "Entries :",entries
-                print "Bins    :",bins
-                print "colCount:",colCount
+                print("Entries :",entries)
+                print("Bins    :",bins)
+                print("colCount:",colCount)
             sys.stderr.flush()
         pylab.grid(True)
         if bins.__len__() > 0 :
@@ -2880,7 +2883,7 @@ class candidateList:
         Symmetry weights -- Z scores replace this field!
         """
         if self.verboseMode:
-            print "Generating glitch DB file."
+            print("Generating glitch DB file.")
         weight=1
         glitchDatabase=[]
         spinner=progressSpinner(self.spinnerVerboseMode,2)
@@ -3125,7 +3128,7 @@ def generateFileList(inputTXT):
                 #This is a single candidate file specified
                 objList=[dirnameFilename]
     else:
-        print "Error with getting candidate information from: ",absPathFilename
+        print("Error with getting candidate information from: ",absPathFilename)
         objList=[]
     return objList
 #End generateFileList method

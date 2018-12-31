@@ -31,6 +31,9 @@ summary tables.
 """
 
 
+from __future__ import print_function
+
+
 import glob
 from optparse import OptionParser
 import os
@@ -125,7 +128,7 @@ options, filenames = parse_command_line()
 for n, filename in enumerate(filenames):
 	# load document and extract search summary table
 	if options.verbose:
-		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
+		print("%d/%d:" % (n + 1, len(filenames)), end=' ', file=sys.stderr)
 	xmldoc = utils.load_filename(filename, verbose = options.verbose, contenthandler = ContentHandler)
 	searchsumm = lsctables.SearchSummaryTable.get_table(xmldoc)
 
@@ -166,7 +169,7 @@ for n, filename in enumerate(filenames):
 	url = "file://localhost" + os.path.abspath(filename)
 
 	# write cache entry
-	print >>options.output, str(CacheEntry(observatory, description, seglists.extent_all(), url))
+	print(str(CacheEntry(observatory, description, seglists.extent_all(), url)), file=options.output)
 
 	# allow garbage collection
 	xmldoc.unlink()

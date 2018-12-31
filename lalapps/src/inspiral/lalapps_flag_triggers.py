@@ -126,7 +126,7 @@ if __name__ == '__main__':
     all_triggers = get_triggers(basedir, ifo, cluster, cat, start, end, snrifier, filter_func)
     num_triggers = len(all_triggers)
 
-    print "Found %d triggers\n\n" % num_triggers
+    print("Found %d triggers\n\n" % num_triggers)
 
     # divide by 100 = multiply percentage by 100 below
     num_triggers = float(num_triggers)
@@ -146,5 +146,5 @@ if __name__ == '__main__':
     use_percents = sorted(use_percents, cmp=lambda x,y:cmp(len(y[1]),len(x[1])))
 
     for name, triggers in use_percents:
-        print '%-45s        %.2f' % (name[3:], 100.0 * (float(len(triggers)) / num_triggers))
+        print('%-45s        %.2f' % (name[3:], 100.0 * (float(len(triggers)) / num_triggers)))
 

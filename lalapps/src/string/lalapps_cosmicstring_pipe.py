@@ -17,6 +17,9 @@ the standalone ring code on LIGO data
 """
 
 
+from __future__ import print_function
+
+
 import ConfigParser
 import itertools
 from optparse import OptionParser
@@ -103,10 +106,10 @@ basename = os.path.splitext(os.path.basename(options.config_file))[0]
 log_fh = open(basename + '.pipeline.log', 'w')
 # FIXME: the following code uses obsolete CVS ID tags.
 # It should be modified to use git version information.
-print >>log_fh, "$Id$\nInvoked with arguments:"
+print("$Id$\nInvoked with arguments:", file=log_fh)
 for name_value in options.__dict__.items():
-	print >>log_fh, "%s %s" % name_value
-print >>log_fh
+	print("%s %s" % name_value, file=log_fh)
+print(file=log_fh)
 
 #
 # create the config parser object and read in the ini file
@@ -179,7 +182,7 @@ seglists = ligolw_segments.segmenttable_get_by_name(ligolw_utils.load_filename(o
 # remove extra instruments
 for instrument in set(seglists) - instruments:
 	if options.verbose:
-		print >>sys.stderr, "warning: ignoring segments for '%s' found in '%s'" % (instrument, options.segments_file)
+		print("warning: ignoring segments for '%s' found in '%s'" % (instrument, options.segments_file), file=sys.stderr)
 	del seglists[instrument]
 # check for missing instruments
 if not instruments.issubset(set(seglists)):
@@ -193,7 +196,7 @@ del instruments
 #
 
 if options.verbose:
-	print >>sys.stderr, "Computing segments for which lalapps_StringSearch jobs are required ..."
+	print("Computing segments for which lalapps_StringSearch jobs are required ...", file=sys.stderr)
 
 background_time_slides = {}
 background_seglists = segments.segmentlistdict()
@@ -317,7 +320,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	coinc_nodes = []
 	for n, (time_slides_cache_entry, these_time_slides) in enumerate(time_slides.items()):
 		if verbose:
-			print >>sys.stderr, "%s %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path)
+			print("%s %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path), file=sys.stderr)
 		coinc_nodes.append(set())
 
 		#
@@ -369,10 +372,10 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		#
 
 		if verbose:
-			print >>sys.stderr, "building burca jobs ..."
+			print("building burca jobs ...", file=sys.stderr)
 		coinc_nodes[-1] |= power.make_burca_fragment(dag, lladd_nodes, "%s_%d" % (tag, n), verbose = verbose)
 		if verbose:
-			print >>sys.stderr, "done %s %d/%d" % (tag, n + 1, len(time_slides))
+			print("done %s %d/%d" % (tag, n + 1, len(time_slides)), file=sys.stderr)
 
 	#
 	# lalapps_binjfind
@@ -380,7 +383,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 
 	if do_injections:
 		if verbose:
-			print >>sys.stderr, "building binjfind jobs ..."
+			print("building binjfind jobs ...", file=sys.stderr)
 		coinc_nodes = [power.make_binjfind_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n), verbose = verbose) for n, these_coinc_nodes in enumerate(coinc_nodes)]
 
 	#
@@ -388,7 +391,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	#
 
 	if verbose:
-		print >>sys.stderr, "building sqlite jobs ..."
+		print("building sqlite jobs ...", file=sys.stderr)
 	coinc_nodes = [power.make_sqlite_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n), verbose = verbose) for n, these_coinc_nodes in enumerate(coinc_nodes)]
 	coinc_nodes = [cosmicstring.make_run_sqlite_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n), clipsegments_sql_filename) for n, these_coinc_nodes in enumerate(coinc_nodes)]
 
@@ -397,7 +400,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	#
 
 	if verbose:
-		print >>sys.stderr, "building lalapps_string_meas_likelihood jobs ..."
+		print("building lalapps_string_meas_likelihood jobs ...", file=sys.stderr)
 	likelihood_nodes = [cosmicstring.make_meas_likelihood_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n)) for n, these_coinc_nodes in enumerate(coinc_nodes)]
 
 	#
@@ -405,7 +408,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 	#
 
 	if verbose:
-		print >>sys.stderr, "writing output cache ..."
+		print("writing output cache ...", file=sys.stderr)
 	for n, (these_coinc_nodes, these_likelihood_nodes) in enumerate(zip(coinc_nodes, likelihood_nodes)):
 		power.write_output_cache(these_coinc_nodes | these_likelihood_nodes, "%s_%s_output.cache" % (os.path.splitext(dag.get_dag_file())[0], "%s_%d" % (tag, n)))
 
@@ -455,7 +458,7 @@ all_injection_likelihood_nodes = flatten_node_groups(injection_likelihood_nodes)
 
 
 if options.verbose:
-	print >>sys.stderr, "building lalapps_string_calc_likelihood jobs ..."
+	print("building lalapps_string_calc_likelihood jobs ...", file=sys.stderr)
 
 def round_robin_and_flatten(injection_coinc_node_groups, injection_likelihood_node_groups):
 	# round-robin the node lists
@@ -499,7 +502,7 @@ coinc_nodes |= cosmicstring.make_calc_likelihood_fragment(dag, flatten_node_grou
 #
 
 if options.verbose:
-	print >>sys.stderr, "writing dag ..."
+	print("writing dag ...", file=sys.stderr)
 dag.write_sub_files()
 dag.write_dag()
 cosmicstring.write_clip_segment_sql_file(clipsegments_sql_filename)
@@ -508,7 +511,7 @@ cosmicstring.write_clip_segment_sql_file(clipsegments_sql_filename)
 # write a message telling the user that the DAG has been written
 #
 
-print """Created a DAG file which can be submitted by executing
+print("""Created a DAG file which can be submitted by executing
 
 $ condor_submit_dag %s
 
@@ -520,4 +523,4 @@ submit machine by running the commands
 $ unset X509_USER_PROXY
 $ grid-proxy-init -hours $((24*7)):00
 
-""" % dag.get_dag_file()
+""" % dag.get_dag_file())

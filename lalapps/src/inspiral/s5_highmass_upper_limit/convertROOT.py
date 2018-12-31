@@ -287,7 +287,7 @@ xmldoc.appendChild(ligolw.LIGO_LW());
 create_tables(xmldoc, rootfiles)
 
 if opts.outputname == None :
-  print "Assigning name to output xml"
+  print("Assigning name to output xml")
   output = "convertROOT.xml.gz"
 else :
   output = "%s.xml.gz" % opts.outputname

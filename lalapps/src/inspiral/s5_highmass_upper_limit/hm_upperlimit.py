@@ -1,4 +1,6 @@
 #!/usr/bin/python
+from __future__ import print_function
+
 import scipy
 from scipy import interpolate
 import numpy
@@ -52,7 +54,7 @@ class upper_limit(object):
     self.maxtotal = None
 
     for f in flist: 
-      if opts.verbose: print >> sys.stderr, "Gathering stats from: %s...." % (f,)
+      if opts.verbose: print("Gathering stats from: %s...." % (f,), file=sys.stderr)
       working_filename = dbtables.get_connection_filename(f, verbose = opts.verbose)
       connection = sqlite3.connect(working_filename)
       dbtables.DBTable_set_connection(connection)
@@ -89,12 +91,12 @@ class upper_limit(object):
       # FIXME this bombs if any of the FARS are zero. maybe it should continue
       # and just remove that instrument combo from the calculation
       if self.far[i] == 0: 
-        print >> sys.stderr, "Encountered 0 FAR in %s, ABORTING" % (i,)
+        print("Encountered 0 FAR in %s, ABORTING" % (i,), file=sys.stderr)
         sys.exit(1)
       self.zero_lag_segments[i] = self.segments.intersection(i) - self.segments.union(set(self.segments.keys()) - i)
       # Livetime must have playground removed
       self.livetime[i] = float(abs(self.zero_lag_segments[i] - segmentsUtils.S2playground(self.segments.extent_all())))
-      if opts.verbose: print >> sys.stderr, "%s FAR %e, livetime %f" % (",".join(sorted(list(i))), self.far[i], self.livetime[i])
+      if opts.verbose: print("%s FAR %e, livetime %f" % (",".join(sorted(list(i))), self.far[i], self.livetime[i]), file=sys.stderr)
 
     # get a 2D mass binning
     self.twoDMassBins = self.get_2d_mass_bins(self.minmass, self.maxmass, opts.mass_bins)
@@ -102,13 +104,13 @@ class upper_limit(object):
   def get_distance_bins(self, instruments, found=None, missed=None):
     if not found and not missed: found, missed = self.get_injections(instruments)
     if not found:  
-      print >>sys.stderr,"Found no injections cannot compute distance bins ABORTING"
+      print("Found no injections cannot compute distance bins ABORTING", file=sys.stderr)
       sys.exit(1)
     #Give the bins some padding based on the errors
     maxdist = max([s.distance for s in found])
     mindist = min([s.distance for s in found])
     if (maxdist < 0) or (mindist < 0) or (mindist > maxdist):
-      print >>sys.stderr, "minimum and maximum distances are screwy, maybe the distance errors given in the options don't make sense? ABORTING"
+      print("minimum and maximum distances are screwy, maybe the distance errors given in the options don't make sense? ABORTING", file=sys.stderr)
       sys.exit(1)
     self.dBin[instruments] = rate.LogarithmicBins(mindist,maxdist,self.opts.dist_bins)
 
@@ -118,7 +120,7 @@ class upper_limit(object):
     if opts.instruments in self.instruments:
       return frozenset(lsctables.instrument_set_from_ifos(i[0]))
     else:
-      print >> sys.stderr, "Instruments %s do not exist in DB, nothing will be calculated" % (str(frozenset(lsctables.instrument_set_from_ifos(i[0]))),)  
+      print("Instruments %s do not exist in DB, nothing will be calculated" % (str(frozenset(lsctables.instrument_set_from_ifos(i[0]))),), file=sys.stderr)  
       return []
 
   def get_mass_ranges(self, connection):
@@ -145,7 +147,7 @@ class upper_limit(object):
     """
     live_time_program = opts.live_time_program
     verbose = opts.verbose
-    if self.opts.verbose: print >>sys.stderr, "getting FAR thresholds..."
+    if self.opts.verbose: print("getting FAR thresholds...", file=sys.stderr)
     # extract false alarm rate threshold
     query = 'CREATE TEMPORARY TABLE distinct_instruments AS SELECT DISTINCT(instruments) as instruments FROM coinc_event;'
     connection.cursor().execute(query)
@@ -186,7 +188,7 @@ class upper_limit(object):
     vA = []
     vA2 = []
     for far in FARS.centres():
-      print >>sys.stderr, "computing volume at FAR " + str(far)
+      print("computing volume at FAR " + str(far), file=sys.stderr)
       vAt, vA2t = self.twoD_SearchVolume(instruments, dbin=dbin, FAR = far, bootnum=1)
       # we need to compute derivitive of log according to ul paper
       vAt.array = scipy.log10(vAt.array + 0.001)
@@ -238,9 +240,9 @@ class upper_limit(object):
 
     found = []
     missed = []
-    print >>sys.stderr, ""
+    print("", file=sys.stderr)
     for cnt, f in enumerate(injfnames):
-      print >>sys.stderr, "getting injections below FAR: " + str(FAR) + ":\t%.1f%%\r" % (100.0 * cnt / len(injfnames),),
+      print("getting injections below FAR: " + str(FAR) + ":\t%.1f%%\r" % (100.0 * cnt / len(injfnames),), end=' ', file=sys.stderr)
       working_filename = dbtables.get_connection_filename(f, tmp_path = None, verbose = verbose)
       connection = sqlite3.connect(working_filename)
       connection.create_function("injection_was_made", 2, injection_was_made)
@@ -285,7 +287,7 @@ WHERE
       dbtables.discard_connection_filename(f, working_filename, verbose = verbose)
       dbtables.DBTable_set_connection(None)
 
-    print >>sys.stderr, "\nFound = %d Missed = %d" % (len(found), len(missed))
+    print("\nFound = %d Missed = %d" % (len(found), len(missed)), file=sys.stderr)
     return found, missed
 
 
@@ -304,7 +306,7 @@ WHERE
       for j in range(y):
         if c1[i] > c2[j] or (c1[i] + c2[j]) > maxM or (c1[i]+c2[j]) < minM: eff.array[i][j] = minthresh
         else: numbins+=1
-    print "found " + str(numbins) + " bins within total mass"
+    print("found " + str(numbins) + " bins within total mass")
 
   def fix_masses(self, sims):
     """
@@ -441,11 +443,11 @@ WHERE
         integrand = 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
         volArray.array += integrand
         tmpArray2.array += integrand #4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
-        print >>sys.stderr, "bootstrapping:\t%.1f%% and Calculating smoothed volume:\t%.1f%%\r" % ((100.0 * n / bootnum), (100.0 * k / z)),
+        print("bootstrapping:\t%.1f%% and Calculating smoothed volume:\t%.1f%%\r" % ((100.0 * n / bootnum), (100.0 * k / z)), end=' ', file=sys.stderr)
       tmpArray2.array *= tmpArray2.array
       volArray2.array += tmpArray2.array
     
-    print >>sys.stderr, "" 
+    print("", file=sys.stderr) 
     #Mean and variance
     volArray.array /= bootnum
     volArray2.array /= bootnum
@@ -500,7 +502,7 @@ def parse_command_line():
 
   if opts.instruments: opts.instruments = lsctables.instrument_set_from_ifos(opts.instruments)
   if not filenames: 
-    print >>sys.stderr, "must specify at least one database file"
+    print("must specify at least one database file", file=sys.stderr)
     sys.exit(1)
   return opts, filenames
 
@@ -514,7 +516,7 @@ UL = upper_limit(filenames, opts)
 
 #loop over the requested instruments
 for instruments in UL.set_instruments_to_calculate():
-  if opts.verbose: print >>sys.stderr, "calculating upper limit for %s" % (",".join(sorted(list(instruments))),)
+  if opts.verbose: print("calculating upper limit for %s" % (",".join(sorted(list(instruments))),), file=sys.stderr)
 
   #compute volume derivitive
   dvA = UL.get_volume_derivative(instruments)

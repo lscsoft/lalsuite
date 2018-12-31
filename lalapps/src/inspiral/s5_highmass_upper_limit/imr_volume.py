@@ -1,4 +1,6 @@
 #!/usr/bin/python
+from __future__ import print_function
+
 import scipy
 from scipy import interpolate
 import numpy
@@ -40,7 +42,7 @@ def get_far_threshold_and_segments(zerofname, live_time_program, instruments, ve
 
   # extract false alarm rate threshold
   query = 'SELECT MIN(coinc_inspiral.combined_far) FROM coinc_inspiral JOIN coinc_event ON (coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id) WHERE (coinc_event.instruments == "' + str(instruments) + '") AND NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0);'
-  print query
+  print(query)
   far, = connection.cursor().execute(query).fetchone()
 
   # extract segments.
@@ -50,13 +52,13 @@ def get_far_threshold_and_segments(zerofname, live_time_program, instruments, ve
   connection.close()
   dbtables.discard_connection_filename(zerofname, working_filename, verbose = verbose)
   dbtables.DBTable_set_connection(None)
-  print >>sys.stderr, "WARNING replacing far with 10^-7"
+  print("WARNING replacing far with 10^-7", file=sys.stderr)
   far = 1.0e-7
   return far, seglists
 
 def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, zero_lag_segments, gw):
   if (FAR == 0):
-    print "\n\nFAR = 0\n \n"
+    print("\n\nFAR = 0\n \n")
     # FIXME lambda = ~inf if loudest event is above loudest timeslide?
     output = rate.BinnedArray(twoDMassBins)
     output.array = 10**6 * numpy.ones(output.array.shape)
@@ -70,7 +72,7 @@ def get_volume_derivative(injfnames, twoDMassBins, dBin, FAR, zero_lag_segments,
   vA2 = []
   for far in FARS.centres():
     m, f = get_injections(injfnames, far, zero_lag_segments)
-    print >>sys.stderr, "computing volume at FAR " + str(far)
+    print("computing volume at FAR " + str(far), file=sys.stderr)
     vAt, vA2t = twoD_SearchVolume(f, m, twoDMassBins, dBin, gw, livetime, 1)  
     # we need to compute derivitive of log according to ul paper
     vAt.array = scipy.log10(vAt.array + 0.001)
@@ -84,7 +86,7 @@ def get_burst_injections(fname):
   for l in open(fname).readlines():
     if '#' in l: continue
     s.append(bsim(l.split()))
-  print >>sys.stderr, "\n%s has %d injections\n" % (fname, len(s))
+  print("\n%s has %d injections\n" % (fname, len(s)), file=sys.stderr)
   return s    
      
   
@@ -125,9 +127,9 @@ def get_injections(injfnames, FAR, zero_lag_segments, verbose = False):
 
   found = []
   missed = []
-  print >>sys.stderr, ""
+  print("", file=sys.stderr)
   for cnt, f in enumerate(injfnames):
-    print >>sys.stderr, "getting injections below FAR: " + str(FAR) + ":\t%.1f%%\r" % (100.0 * cnt / len(injfnames),),
+    print("getting injections below FAR: " + str(FAR) + ":\t%.1f%%\r" % (100.0 * cnt / len(injfnames),), end=' ', file=sys.stderr)
     working_filename = dbtables.get_connection_filename(f, tmp_path = None, verbose = verbose)
     connection = sqlite3.connect(working_filename)
     connection.create_function("injection_was_made", 2, injection_was_made)
@@ -172,7 +174,7 @@ WHERE
     dbtables.discard_connection_filename(f, working_filename, verbose = verbose)
     dbtables.DBTable_set_connection(None)
 
-  print >>sys.stderr, "\nFound = %d Missed = %d" % (len(found), len(missed))
+  print("\nFound = %d Missed = %d" % (len(found), len(missed)), file=sys.stderr)
   return found, missed
 
 
@@ -190,7 +192,7 @@ def trim_mass_space(eff, twodbin, minthresh=0.0, minM=25.0, maxM=100.0):
     for j in range(y):
       if c1[i] > c2[j] or (c1[i] + c2[j]) > maxM or (c1[i]+c2[j]) < minM: eff.array[i][j] = minthresh
       else: numbins+=1
-  print "found " + str(numbins) + " bins within total mass"
+  print("found " + str(numbins) + " bins within total mass")
 
 def fix_masses(sims):
   """
@@ -283,11 +285,11 @@ def twoD_SearchVolume(found, missed, twodbin, dbin, wnfunc, livetime, bootnum=1,
       integrand = 4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
       volArray.array += integrand
       tmpArray2.array += integrand #4.0 * pi * tbins.ratio() * dbin.centres()[k]**3 * dbin.delta
-      print >>sys.stderr, "bootstrapping:\t%.1f%% and Calculating smoothed volume:\t%.1f%%\r" % ((100.0 * n / bootnum), (100.0 * k / z)),
+      print("bootstrapping:\t%.1f%% and Calculating smoothed volume:\t%.1f%%\r" % ((100.0 * n / bootnum), (100.0 * k / z)), end=' ', file=sys.stderr)
     tmpArray2.array *= tmpArray2.array
     volArray2.array += tmpArray2.array
     
-  print >>sys.stderr, "" 
+  print("", file=sys.stderr) 
   #Mean and variance
   volArray.array /= bootnum
   volArray2.array /= bootnum
@@ -366,7 +368,7 @@ if not opts.burst_found and not opts.burst_missed:
   zero_lag_segments = seglists.intersection(opts.instruments) - seglists.union(set(seglists.keys()) - opts.instruments)
 
   live_time = float(abs(zero_lag_segments))
-  print FAR, live_time
+  print(FAR, live_time)
 
   Found, Missed = get_injections(opts.injfnames, FAR, zero_lag_segments, verbose = opts.verbose)
 

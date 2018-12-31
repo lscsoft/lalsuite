@@ -165,13 +165,13 @@ for file_approx in opts.template_bank:
     bank.add_from_sngls(sngl_inspiral, seed_waveform)
 
     if opts.verbose:
-        print "Added %d %s templates from %s to bank." % (len(sngl_inspiral), approx, seed_file)
+        print("Added %d %s templates from %s to bank." % (len(sngl_inspiral), approx, seed_file))
 
     tmpdoc.unlink()
     del sngl_inspiral, tmpdoc
 
 if opts.verbose:
-    print "Initialized the template bank with %d templates." % len(bank)
+    print("Initialized the template bank with %d templates." % len(bank))
 
 
 #
@@ -208,7 +208,7 @@ for s in sims:
 sims = newtbl
 
 if verbose:
-    print "Loaded %d injections" % len(sims)
+    print("Loaded %d injections" % len(sims))
     inj_format = "".join("%s: %s   " % name_format for name_format in zip(inj_approx.param_names, inj_approx.param_formats))
 
 # main worker loop
@@ -221,22 +221,22 @@ for j, sim in enumerate(sims):
     inj_wf = inj_approx.from_sim(sim, bank=inj_bank)
     inj_ind = opts.injection_min + j
     if verbose:
-        print "injection %d/%d" % (j+1, len(sims))
-        print inj_format % inj_wf.params
+        print("injection %d/%d" % (j+1, len(sims)))
+        print(inj_format % inj_wf.params)
 
     # NB: sigmasq set during argmax_match
     match_tup = bank.argmax_match(inj_wf)
 
     if verbose:
-        print "\tbest matching template:  ",
-        print bank._templates[match_tup[1]].params
-        print "\tbest match:  %f\n" % match_tup[0]
+        print("\tbest matching template:  ", end=' ')
+        print(bank._templates[match_tup[1]].params)
+        print("\tbest match:  %f\n" % match_tup[0])
 
     match_map[j] = (match_tup[0], inj_wf.sigmasq)
     tmplts.append(bank._templates[match_tup[1]].to_sngl())
 
 if verbose:
-    print "total number of match calculations:", bank._nmatch
+    print("total number of match calculations:", bank._nmatch)
 
 # write out results
 h5file = H5File("%s.h5" % usertag, "w")

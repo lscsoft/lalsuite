@@ -12,6 +12,9 @@ Classes needed for the cosmic string analysis pipeline.
 """
 
 
+from __future__ import print_function
+
+
 import math
 import os
 import sys
@@ -123,7 +126,7 @@ class MeasLikelihoodNode(pipeline.CondorDAGNode):
 	def write_input_files(self, *args):
 		f = file(self.cache_name, "w")
 		for c in self.input_cache:
-			print >>f, str(c)
+			print(str(c), file=f)
 		pipeline.CondorDAGNode.write_input_files(self, *args)
 
 	def get_output_files(self):
@@ -187,10 +190,10 @@ class CalcLikelihoodNode(pipeline.CondorDAGNode):
 	def write_input_files(self, *args):
 		f = file(self.cache_name, "w")
 		for c in self.input_cache:
-			print >>f, str(c)
+			print(str(c), file=f)
 		f = file(self.likelihood_cache_name, "w")
 		for c in self.likelihood_cache:
-			print >>f, str(c)
+			print(str(c), file=f)
 		pipeline.CondorDAGNode.write_input_files(self, *args)
 
 	def get_output_files(self):
@@ -555,7 +558,7 @@ def make_string_segment_fragment(dag, datafindnodes, instrument, seg, tag, min_s
 		injargs = {}
 	seglist = split_segment(seg, min_segment_length, pad, overlap, short_segment_duration, max_job_length)
 	if verbose:
-		print >>sys.stderr, "Segment split: " + str(seglist)
+		print("Segment split: " + str(seglist), file=sys.stderr)
 	nodes = set()
 	for seg in seglist:
 		nodes |= make_string_fragment(dag, datafindnodes | binjnodes, instrument, seg, tag, framecache, injargs = injargs)
@@ -572,7 +575,7 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_l
 	for instrument, seglist in seglistdict.items():
 		for seg in seglist:
 			if verbose:
-				print >>sys.stderr, "generating %s fragment %s" % (instrument, str(seg))
+				print("generating %s fragment %s" % (instrument, str(seg)), file=sys.stderr)
 
 			# find the datafind job this job is going to need
 			dfnodes = set([node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))])
@@ -605,7 +608,7 @@ WHERE
 
 VACUUM;"""
 
-	print >>file(filename, "w"), code
+	print(code, file=file(filename, "w"))
 
 	return filename
 

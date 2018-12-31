@@ -82,6 +82,8 @@ the standalone inspiral code on LIGO data
 # Duncan Brown</dd>
 # </dl>
 
+from __future__ import print_function
+
 __author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -120,7 +122,7 @@ Usage: lalapps_inspiral_pipe [options]
 
   -x, --dax                write abstract DAX file
 """
-  print >> sys.stderr, msg
+  print(msg, file=sys.stderr)
 
 # pasrse the command line options to figure out what we should do
 shortop = "hvdtiTICpj:u:P:f:l:x"
@@ -165,7 +167,7 @@ dax = False
 
 for o, a in opts:
   if o in ("-v", "--version"):
-    print "$Id$"
+    print("$Id$")
     sys.exit(0)
   elif o in ("-h", "--help"):
     usage()
@@ -197,18 +199,18 @@ for o, a in opts:
   elif o in ("-x", "--dax"): 	 
     dax = True
   else:
-    print >> sys.stderr, "Unknown option:", o
+    print("Unknown option:", o, file=sys.stderr)
     usage()
     sys.exit(1)
 
 if not config_file:
-  print >> sys.stderr, "No configuration file specified."
-  print >> sys.stderr, "Use --config-file FILE to specify location."
+  print("No configuration file specified.", file=sys.stderr)
+  print("Use --config-file FILE to specify location.", file=sys.stderr)
   sys.exit(1)
 
 if not log_path:
-  print >> sys.stderr, "No log file path specified."
-  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  print("No log file path specified.", file=sys.stderr)
+  print("Use --log-path PATH to specify a location.", file=sys.stderr)
   sys.exit(1)
 
 # try and make a directory to store the cache files and job logs
@@ -490,17 +492,17 @@ dag.write_dag()
 
 # write a message telling the user that the DAG has been written
 if dax: 	 
-  print """\nCreated a DAX file which can be submitted to the Grid using 	 
+  print("""\nCreated a DAX file which can be submitted to the Grid using 	 
 Pegasus. See the page: 	 
   	 
   http://www.lsc-group.phys.uwm.edu/lscdatagrid/griphynligo/vds_howto.html 	 
   	 
 for instructions.
-"""
+""")
 else:
-  print "\nCreated a DAG file which can be submitted by executing"
-  print "\n   condor_submit_dag", dag.get_dag_file()
-  print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
+  print("\nCreated a DAG file which can be submitted by executing")
+  print("\n   condor_submit_dag", dag.get_dag_file())
+  print("""\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
 If you are running LSCdataFind jobs, do not forget to initialize your grid 
 proxy certificate on the condor submit machine by running the commands
 
@@ -523,7 +525,7 @@ you should use
 
 Contact the administrator of your cluster to find the hostname and port of the
 LSCdataFind server.
-"""
+""")
 
 # write out a log file for this script
 if usertag:
@@ -543,14 +545,14 @@ total_data = 0
 for seg in data:
   for chunk in seg:
     total_data += len(chunk)
-print >> log_fh, "total data =", total_data
+print("total data =", total_data, file=log_fh)
 
-print >> log_fh, "\n===========================================\n"
-print >> log_fh, data
+print("\n===========================================\n", file=log_fh)
+print(data, file=log_fh)
 for seg in data:
-  print >> log_fh, seg
+  print(seg, file=log_fh)
   for chunk in seg:
-    print >> log_fh, chunk
+    print(chunk, file=log_fh)
 
 sys.exit(0)
 

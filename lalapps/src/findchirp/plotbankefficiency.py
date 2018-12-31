@@ -31,7 +31,7 @@ def setTickSize(fontsize):
 
 def fastoptionRelated(results):
   if opts.verbose:
-    print 'Entering fastoptionRelated ---------------------------------------- '
+    print('Entering fastoptionRelated ---------------------------------------- ')
   # ----------------------------------------------------related to the fast option.
   name = __name__+'_totalmass_sim_fastoption'
   try:
@@ -77,7 +77,7 @@ def fastoptionRelated(results):
 
 def EMatchRelated(results):
   if opts.verbose:
-    print 'Entering EMatchRelated -------------------------------------------- '
+    print('Entering EMatchRelated -------------------------------------------- ')
   
   name = __name__+'_snr_versus_EMatch'
   try:
@@ -90,13 +90,13 @@ def EMatchRelated(results):
     mysavefig(opts,name + '.png')
     plotting.hold = False
   except:
-    print 'Problem inside plotting.plot '+ name
+    print('Problem inside plotting.plot '+ name)
     pass
 
 
 def accuraciesRelated(results):
   if opts.verbose:
-    print 'Entering accuraciesRelated ---------------------------------------- '
+    print('Entering accuraciesRelated ---------------------------------------- ')
   
   # --------------------------------------------------- accuracies
   for param in ['totalmass', 'eta', 'chirpmass','tau0','tau3','phase','ecc','ffinal']:
@@ -108,13 +108,13 @@ def accuraciesRelated(results):
       ylabel(r'$\rho$',fontsize=opts.fontsize)
       mysavefig(opts, name+'.png')
     except:
-      print 'Problem inside plot '+name
+      print('Problem inside plot '+name)
       pass
 
 
 def HistogramRelated(results):
   if opts.verbose:
-    print 'Entering HistogramRelated ----------------------------------------- '
+    print('Entering HistogramRelated ----------------------------------------- ')
     
   params = ['snr','mass1_sim', 'mass2_sim', 'ecc_sim', 'totalmass_sim',
      'polarisation_sim','inclination_sim']
@@ -128,7 +128,7 @@ def HistogramRelated(results):
       ylabel(r'\#', fontsize=opts.fontsize)
       mysavefig(opts,name+'.png')
     except:
-      print 'Problem inside plot_histogram_and_fit' + name
+      print('Problem inside plot_histogram_and_fit' + name)
       pass
 
 
@@ -136,7 +136,7 @@ def HistogramRelated(results):
 
 def BankRelated(results, bank):
   if opts.verbose:
-    print 'Entering BankRelated ---------------------------------------------- '
+    print('Entering BankRelated ---------------------------------------------- ')
   
   #------------------------------------- position of the injections in t0/t3 plane
   plotting.plot(results['tau0_sim'],results['tau3_sim'], \
@@ -157,7 +157,7 @@ def BankRelated(results, bank):
 
 def SNRRelated(results):
   if opts.verbose:
-    print 'Entering SNRRelated ----------------------------------------------- '
+    print('Entering SNRRelated ----------------------------------------------- ')
   
   params = ['totalmass_sim','eta_sim','chirpmass_sim','inclination_sim',\
           'polarisation_sim','phase_sim']
@@ -172,14 +172,14 @@ def SNRRelated(results):
       ylabel(r'Overlap (\%)',fontsize=opts.fontsize)
       mysavefig(opts, name + '.png')
     except:
-      print 'Problem inside plotting.plot '+ name
+      print('Problem inside plotting.plot '+ name)
       pass
 
 
 
 def comparisonRelated(results, results2):
   if opts.verbose:
-    print 'Entering comparisonRelated ---------------------------------------- '
+    print('Entering comparisonRelated ---------------------------------------- ')
   try:
     clf()
     plotting.plot(results['totalmass_sim'], results['snr']/results2['snr'])
@@ -187,7 +187,7 @@ def comparisonRelated(results, results2):
     ylabel('SNR in file 1 /  SNR in file 2',fontsize=opts.fontsize)
     mysavefig(opts, 'plotbankefficiency_compare_totalmass_versus_snr_ratio.png')
   except: 
-    print 'Problem in comparisonRelated. Maybe the two files do not have the same size.'
+    print('Problem in comparisonRelated. Maybe the two files do not have the same size.')
     pass
   try:
     clf()
@@ -199,13 +199,13 @@ def comparisonRelated(results, results2):
     ylabel('SNR in file 1 /  SNR in file 2',fontsize=opts.fontsize)
     mysavefig(opts, 'plotbankefficiency_compare_totalmass_versus_snr.png')
   except: 
-    print 'Problem in comparisonRelated. Maybe the two files do not have the same size.'
+    print('Problem in comparisonRelated. Maybe the two files do not have the same size.')
     pass
 
 
 def bcvRelated(results):
   if opts.verbose:
-    print 'BCV related plotting ---------------------------------------------- '
+    print('BCV related plotting ---------------------------------------------- ')
   try:
     plotting.plot(results['totalmass_sim'],results['alpha_f'])
     xlabel('total mass',fontsize=opts.fontsize)
@@ -217,7 +217,7 @@ def bcvRelated(results):
 
 def eccentricityRelated(results, results2, nbin=40):
   if opts.verbose:
-    print 'Eccentricity related plotting ------------------------------------ '
+    print('Eccentricity related plotting ------------------------------------ ')
 
   totMass = results['totalmass_sim']
   snr = results['snr'] 
@@ -235,7 +235,7 @@ def eccentricityRelated(results, results2, nbin=40):
     ylabel(r'TotalMass ($M_\odot$)',fontsize=opts.fontsize)
     mysavefig(opts,name+'.png')
   except:
-    print 'Problem inside scatter1 ' +name
+    print('Problem inside scatter1 ' +name)
     pass
 
   if opts.compare_with is not None:
@@ -249,7 +249,7 @@ def eccentricityRelated(results, results2, nbin=40):
       ylabel(r'TotalMass ($M_\odot$)',fontsize=opts.fontsize)
       mysavefig(opts, name+'.png')
     except:
-      print 'Problem inside scatter2 ' +name,
+      print('Problem inside scatter2 ' +name, end=' ')
       pass
   if opts.compare_with is not None:
     name = __name__ + '_compare_snr_versus_totalmass_ecc'    
@@ -262,7 +262,7 @@ def eccentricityRelated(results, results2, nbin=40):
       ylabel(r'Overlap (\%)')
       mysavefig(opts,name+'.png')
     except:
-      print 'Problem inside plot ' +name
+      print('Problem inside plot ' +name)
       pass
 
 
@@ -275,7 +275,7 @@ def eccentricityRelated(results, results2, nbin=40):
     #pylab.axis([0,0.4,0.7,1])
     mysavefig(opts,name+'.png')
   except:
-    print 'Problem inside plot ' +name
+    print('Problem inside plot ' +name)
     pass
 
   # contour plots of SNR versus eccentricity (at 2*fl/3) and SNR
@@ -291,7 +291,7 @@ def eccentricityRelated(results, results2, nbin=40):
     ylabel(r'Total mass $(M_\odot)$',fontsize=opts.fontsize)
     mysavefig(opts,name+'.png')
   except:
-    print 'Problem inside surf ' + name
+    print('Problem inside surf ' + name)
     pass
   
   # create 4 plots for chirpmass and totalMass
@@ -334,7 +334,7 @@ def eccentricityRelated(results, results2, nbin=40):
     title(r'Simulated $\tau_0$ divided by estimated $\tau_0$')
     mysavefig(opts,name+'.png')  
   except: 
-    print 'Problem in '+ name
+    print('Problem in '+ name)
     pass
 
   try:
@@ -347,7 +347,7 @@ def eccentricityRelated(results, results2, nbin=40):
     title(r'Simulated $\tau_3$ divided by estimated $\tau_3$')
     mysavefig(opts,name+'.png')  
   except:
-    print 'Problem in '+ name
+    print('Problem in '+ name)
     pass
 
   
@@ -358,7 +358,7 @@ def mysavefig(opts, title):
   newtitle = title.replace('plotbankefficiency', \
                         'plotbankefficiency_'+opts.user_tag)
   if opts.verbose:
-    print 'saving picture ' + newtitle
+    print('saving picture ' + newtitle)
   
   savefig(newtitle)
 ##############################################################################
@@ -459,15 +459,15 @@ if __name__ == 'plotbankefficiency':
 
   if opts.skip_snr is False:
     try: SNRRelated(results)
-    except: print 'Problem in SNRRelated)'
+    except: print('Problem in SNRRelated)')
 
   if opts.skip_bank is False:
     try: BankRelated(results,bank)
-    except: print 'Problem in BankRelated'
+    except: print('Problem in BankRelated')
   
   if opts.skip_histogram is False:  
     try: HistogramRelated(results)
-    except: print 'Problem in HistogramRelated'
+    except: print('Problem in HistogramRelated')
 
   if opts.skip_eccentricity is False:
     if signal=='Eccentricity':
@@ -482,19 +482,19 @@ if __name__ == 'plotbankefficiency':
 # --------------------------------------------------- compare-with a second file
   if results2 is not None:
     try: comparisonRelated(results, results2)
-    except: print 'Problem in comparison related'
+    except: print('Problem in comparison related')
   
   if opts.skip_accuracy is False:
     try: accuraciesRelated(results)
-    except: print 'Problem in accuraciesRelated'
+    except: print('Problem in accuraciesRelated')
 
   if opts.skip_fast is False:
     try: fastoptionRelated(results)
-    except: print 'Problem in fast option related'
+    except: print('Problem in fast option related')
 
   if opts.skip_ematch is False:
     try: EMatchRelated(results)
-    except:print 'Problem in EMatchRelated'
+    except:print('Problem in EMatchRelated')
 
 
   if opts.show_plot:

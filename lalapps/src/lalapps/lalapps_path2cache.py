@@ -25,6 +25,9 @@
 #
 
 
+from __future__ import print_function
+
+
 import os.path
 import re
 import sys
@@ -121,7 +124,7 @@ for line in src:
 			continue
 		else:
 			raise e
-	print >>dst, str(cache_entry)
+	print(str(cache_entry), file=dst)
 	path_count += 1
 	if cache_entry.segment is not None:
 		seglists |= cache_entry.segmentlistdict.coalesce()
@@ -133,12 +136,12 @@ for line in src:
 
 
 if options.verbose:
-	print >>sys.stderr, "Size of cache: %d URLs" % path_count
+	print("Size of cache: %d URLs" % path_count, file=sys.stderr)
 	for instrument, seglist in seglists.items():
 		ext = seglist.extent()
 		dur = abs(seglist)
-		print >>sys.stderr, "Interval spanned by %s: %s (%s s total, %.4g%% duty cycle)" % (instrument, str(ext), str(dur), 100.0 * float(dur) / float(abs(ext)))
+		print("Interval spanned by %s: %s (%s s total, %.4g%% duty cycle)" % (instrument, str(ext), str(dur), 100.0 * float(dur) / float(abs(ext))), file=sys.stderr)
 	span = seglists.union(seglists)
 	ext = span.extent()
 	dur = abs(span)
-	print >>sys.stderr, "Interval spanned by union: %s (%s s total, %.4g%% duty cycle)" % (str(ext), str(dur), 100.0 * float(dur) / float(abs(ext)))
+	print("Interval spanned by union: %s (%s s total, %.4g%% duty cycle)" % (str(ext), str(dur), 100.0 * float(dur) / float(abs(ext))), file=sys.stderr)

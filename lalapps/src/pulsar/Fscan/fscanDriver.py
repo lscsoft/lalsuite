@@ -8,6 +8,8 @@ fscanDriver.py - Driver script for calling other code to generates SFTs and turn
 
 """
 
+from __future__ import print_function
+
 __author__ = 'Rejean Dupuis <rejean@caltech.edu> & Greg Mendell<gmendell@ligo-wa.caltech.edu> & Colin Gill <c.gill@astro.gla.ac.uk>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -97,7 +99,7 @@ Usage: [options]
   -z  --sunFile              (optional) Input the name and path of the .dat file for the Sun.  Only used if source details are given.
   
 """
-  print >> sys.stdout, msg
+  print(msg)
 
 #letters left for short options, a f, n, A, K, Q, U, V, Y.
 
@@ -328,7 +330,7 @@ for o, a in opts:
   elif o in ("-z", "--sunFile"):
     sunFile = a
   else:
-    print >> sys.stderr, "Unknown option:", o
+    print("Unknown option:", o, file=sys.stderr)
     usage()
     sys.exit(1)
 
@@ -336,110 +338,110 @@ for o, a in opts:
 # VET OPTIONS
 #    
 if not analysisStartTime:
-  print >> sys.stderr, "No analysisStartTime specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No analysisStartTime specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not duration:
-  print >> sys.stderr, "No duration specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No duration specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
  
 analysisEndTime = analysisStartTime + duration
 
 if not tagString:
-  print >> sys.stderr, "No tag string specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No tag string specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not inputDataType:
-  print >> sys.stderr, "No input data type specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No input data type specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if extraDatafindTime < 0L:
-  print >> sys.stderr, "Invalid extra datafind time specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid extra datafind time specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
   
 if filterKneeFreq < 0:
-  print >> sys.stderr, "No filter knee frequency specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No filter knee frequency specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not timeBaseline:
-  print >> sys.stderr, "No time baseline specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No time baseline specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not pathToSFTs:
-  print >> sys.stderr, "No output SFT path specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No output SFT path specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
   
 if not cachePath:
-  print >> sys.stderr, "No cache path specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No cache path specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not logPath:
-  print >> sys.stderr, "No log path specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No log path specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not subLogPath:
-  print >> sys.stderr, "No sub log path specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No sub log path specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not channelName:
-  print >> sys.stderr, "No channel name specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No channel name specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (windowType != 0) and (windowType != 1) and (windowType != 2) and (windowType != 3):
-  print >> sys.stderr, "Invalid window type specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid window type specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (overlapFraction < 0.0) or (overlapFraction >= 1.0):
-  print >> sys.stderr, "Invalid make overlap fraction specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid make overlap fraction specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (sftVersion != 1) and (sftVersion != 2):
-  print >> sys.stderr, "Invalid SFT version specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid SFT version specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (startFreq < 0.0):
-  print >> sys.stderr, "Invalid start freq specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid start freq specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (freqBand < 0.0):
-  print >> sys.stderr, "Invalid band specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid band specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (freqSubBand < 0.0):
-  print >> sys.stderr, "Invalid sub-band specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid sub-band specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (makeGPSDirs < 0) or (makeGPSDirs > 10):
-  print >> sys.stderr, "Invalid make gps dirs specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid make gps dirs specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (freqRes < 0.001) or (freqRes > 100.0):
-  print >> sys.stderr, "Specify a frequency resoltuion between 100 and 0.001"
-  print >> sys.stderr, "Use --help for usage details."
+  print("Specify a frequency resoltuion between 100 and 0.001", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not maxNumPerNode:
-  print >> sys.stderr, "No maximum number of SFTs per node specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No maximum number of SFTs per node specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (plotOutputPath == None):
@@ -467,7 +469,7 @@ else:
   ifo = segIFO
   makeSFTIFO = segIFO
 
-print >> sys.stdout,'\nTHE FSCAN DRIVER SCRIPT HAS STARTED!\n'
+print('\nTHE FSCAN DRIVER SCRIPT HAS STARTED!\n')
   
 ###################################################
 # CHECK IF SFTS NEED TO BE GENERATED
@@ -476,7 +478,7 @@ if (createSFTs):
   
   # For safety, add /tmp to the path to avoid overwriting existing SFTs.
   pathToSFTs = pathToSFTs + '/tmp'
-  print >> sys.stdout,'Will generate SFTs in %s \n' % pathToSFTs
+  print('Will generate SFTs in %s \n' % pathToSFTs)
   try: os.makedirs(pathToSFTs)
   except: pass
 
@@ -492,34 +494,34 @@ if (createSFTs):
        segmentType = "%s:DMT-SCIENCE:4" % segIFO
     #segCommand = 'LSCsegFind --type Science,Injection --interferometer %s --gps-start-time %d --gps-end-time %d > %s' % (segIFO,analysisStartTime, analysisEndTime,segmentFile)
     segCommand = "ligolw_segment_query --database --query-segments --include-segments %s --gps-start-time %d --gps-end-time %d | grep -v \"0, 0\" | ligolw_print -t segment:table -c start_time -c end_time -d \" \" > %s" % (segmentType,analysisStartTime,analysisEndTime,segmentFile)
-    print >> sys.stdout,"Trying: ",segCommand,"\n"
+    print("Trying: ",segCommand,"\n")
     try:
       segFindExit = os.system(segCommand)
       if (segFindExit > 0):
-         print >> sys.stderr, 'ligolw_segment_query failed: %s \n' % segFindExit
+         print('ligolw_segment_query failed: %s \n' % segFindExit, file=sys.stderr)
          sys.exit(1)
       else:
-         print >> sys.stderr, 'ligolw_segment_query succeeded! \n'
+         print('ligolw_segment_query succeeded! \n', file=sys.stderr)
     except:
-      print >> sys.stderr, 'ligolw_segment_query failed: %s \n' % segFindExit
+      print('ligolw_segment_query failed: %s \n' % segFindExit, file=sys.stderr)
       sys.exit(1)
   elif segmentFile == "ALL":
     segmentFile = 'tmpSegs%stmp.txt' % tagString
     segCommand = '/bin/echo %d %d > %s' % (analysisStartTime,analysisEndTime,segmentFile)
-    print >> sys.stdout,"Trying: ",segCommand,"\n"
+    print("Trying: ",segCommand,"\n")
     try:
       segFindExit = os.system(segCommand)
       if (segFindExit > 0):
-         print >> sys.stderr, 'Failed: %s \n' % segFindExit
+         print('Failed: %s \n' % segFindExit, file=sys.stderr)
          sys.exit(1)
       else:
-         print >> sys.stderr, 'Succeeded! \n'
+         print('Succeeded! \n', file=sys.stderr)
     except:
-      print >> sys.stderr, 'Failed: %s \n' % segFindExit
+      print('Failed: %s \n' % segFindExit, file=sys.stderr)
       sys.exit(1)  
   else:
     # Just continue with the name given on the command line.
-    print >> sys.stderr, 'Using segmentFile == %s \n' % segmentFile
+    print('Using segmentFile == %s \n' % segmentFile, file=sys.stderr)
 
   ###################################################
   # Intersect with existing data if intersectData = True
@@ -530,31 +532,31 @@ if (createSFTs):
     dataFindSegmentFile = 'tmpDataFindSegs%stmp.txt' % tagString 
     #dataFindCommand = "gw_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
     dataFindCommand = "gw_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times | /bin/grep -v seg | /bin/awk '{print $2 \" \" $3}' > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
-    print >> sys.stdout,"Trying: ",dataFindCommand,"\n"
+    print("Trying: ",dataFindCommand,"\n")
     try:
       dataFindExit = os.system(dataFindCommand)
       if (dataFindExit > 0):
-         print >> sys.stderr, 'gw_data_find failed: %s \n' % dataFindExit
+         print('gw_data_find failed: %s \n' % dataFindExit, file=sys.stderr)
          sys.exit(1)
       else:
-         print >> sys.stderr, 'gw_data_find succeeded! \n'
+         print('gw_data_find succeeded! \n', file=sys.stderr)
     except:
-      print >> sys.stderr, 'gw_data_find failed: %s \n' % dataFindExit
+      print('gw_data_find failed: %s \n' % dataFindExit, file=sys.stderr)
       sys.exit(1)
 
     # Intersect the segments to run on with the segments data exist
     intersectedSegmentFile = 'tmpIntersectedSegs%stmp.txt' % tagString
     segexprCommand = "segexpr \"intersection(%s,%s)\" %s" % (segmentFile,dataFindSegmentFile,intersectedSegmentFile)
-    print >> sys.stdout,"Trying: ",segexprCommand,"\n"
+    print("Trying: ",segexprCommand,"\n")
     try:
       segexprExit = os.system(segexprCommand)
       if (segexprExit > 0):
-         print >> sys.stderr, 'segexpr failed: %s \n' % segexprExit
+         print('segexpr failed: %s \n' % segexprExit, file=sys.stderr)
          sys.exit(1)
       else:
-         print >> sys.stderr, 'segexpr succeeded! \n'
+         print('segexpr succeeded! \n', file=sys.stderr)
     except:
-      print >> sys.stderr, 'segexpr failed: %s \n' % segexprExit
+      print('segexpr failed: %s \n' % segexprExit, file=sys.stderr)
       sys.exit(1)
 
     # set the segmentFile equal to the intersection of the segments to run on with the segments data exist
@@ -585,10 +587,10 @@ if (createSFTs):
             pass
     # End for line in open(segmentFile)
     if (len(segList) < 1):
-       print >> sys.stderr, "No segments found in segment file: %s. \n" % segmentFile
+       print("No segments found in segment file: %s. \n" % segmentFile, file=sys.stderr)
        sys.exit(1)
   except:
-    print >> sys.stderr, "Error reading or parsing segment file: %s. \n" % segmentFile
+    print("Error reading or parsing segment file: %s. \n" % segmentFile, file=sys.stderr)
     sys.exit(1)
   
   ###################################################
@@ -611,21 +613,21 @@ if (createSFTs):
      makeDAGCommand = makeDAGCommand + ' -A %s' % accountingGroup
   if (accountingGroupUser != None):
      makeDAGCommand = makeDAGCommand + ' -U %s' % accountingGroupUser   
-  print >> sys.stdout,"Trying: ",makeDAGCommand,"\n"
+  print("Trying: ",makeDAGCommand,"\n")
   try:
     makeDAGExit = os.system(makeDAGCommand)
     if (makeDAGExit > 0):
-       print >> sys.stderr, 'MakeSFTDAG failed: %s \n' % makeDAGExit
+       print('MakeSFTDAG failed: %s \n' % makeDAGExit, file=sys.stderr)
        sys.exit(1)
     else:
-       print >> sys.stderr, 'MakeSFTDAG succeeded! \n'
+       print('MakeSFTDAG succeeded! \n', file=sys.stderr)
   except:
-    print >> sys.stderr, 'MakeSFTDAG failed: %s \n' % makeDAGExit
+    print('MakeSFTDAG failed: %s \n' % makeDAGExit, file=sys.stderr)
     sys.exit(1)
 else:
   # else if not createSFTs the SFTs already exist, so just continue
   sftDAGFile = None
-  print >> sys.stdout,'Will use SFTs already in %s \n' % pathToSFTs
+  print('Will use SFTs already in %s \n' % pathToSFTs)
 
 
 #####################################################
@@ -819,7 +821,7 @@ while (thisEndFreq <= endFreq):
   freqRes=(1/float(timeBaseline))*NumBinsAvg#sets the freqRes so its an multiple of the raw sft freqres.
   if (freqRes < (1/float(timeBaseline))):#makes sure that this is not less than raw sft freqres, it mght be zero.
       freqRes = (1/float(timeBaseline))#if it is zero, just make it so that its the same res as the raw sft res
-      print >> sys.stderr, 'freqRes changed to: %f \n' % freqRes#let user know its been changed,
+      print('freqRes changed to: %f \n' % freqRes, file=sys.stderr)#let user know its been changed,
   effTBaseFull = timeBaseline
   effTBase = 1/freqRes
   #end of freqres checking
@@ -1068,20 +1070,20 @@ if (htmlFilename != None):
 # SUBMIT THE .dag FILE TO CONDOR; RUN condor_submit_dag
 #
 runDAGCommand = 'condor_submit_dag -maxjobs %d %s' % (maxJobs,dagFileName)
-print >> sys.stdout,"Trying: ",runDAGCommand,"\n"
+print("Trying: ",runDAGCommand,"\n")
 if (runCondorSubmitDag):
    try:
        runDAGExit = os.system(runDAGCommand)
        if (runDAGExit > 0):
-          print >> sys.stderr, 'condor_submit_dag failed: %s \n' % runDAGExit
+          print('condor_submit_dag failed: %s \n' % runDAGExit, file=sys.stderr)
           sys.exit(1)
        else:
-          print >> sys.stderr, 'condor_submit_dag succeeded! \n'
+          print('condor_submit_dag succeeded! \n', file=sys.stderr)
    except:
-       print >> sys.stderr, 'condor_submit_dag failed: %s \n' % runDAGExit
+       print('condor_submit_dag failed: %s \n' % runDAGExit, file=sys.stderr)
        sys.exit(1)
 else:
-   print >> sys.stderr, 'TRIAL RUN ONLY!!! Either submit %s by hand or run this script with the -R or --run option! \n' % dagFileName
+   print('TRIAL RUN ONLY!!! Either submit %s by hand or run this script with the -R or --run option! \n' % dagFileName, file=sys.stderr)
    sys.exit(1)
 
 ###################################################

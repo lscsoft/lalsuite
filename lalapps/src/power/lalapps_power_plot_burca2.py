@@ -25,6 +25,9 @@
 #
 
 
+from __future__ import print_function
+
+
 try:
 	from fpconst import PosInf, NegInf
 except ImportError:
@@ -261,19 +264,19 @@ filenames.sort()
 
 distributions, seglists = burca_tailor.EPGalacticCoreCoincParamsDistributions.from_filenames(filenames, u"lalapps_burca_tailor", verbose = options.verbose)
 if options.verbose:
-	print >>sys.stderr, "applying filters ..."
+	print("applying filters ...", file=sys.stderr)
 distributions.finish()
 
 
 for gmst in numpy.arange(0.0, 2 * math.pi, 2 * math.pi / 10):
 	filename = "%s-%%s-%d-%d-%s.%s" % (options.base, int(seglists.extent_all()[0]), int(abs(seglists.extent_all())), ("%.2f" % gmst).replace(".", "_"), options.format)
 	if options.verbose:
-		print >>sys.stderr, "writing %s ..." % (filename % "P")
+		print("writing %s ..." % (filename % "P"), file=sys.stderr)
 	plot_coinc_params(distributions, gmst, plottype = "P", with_zero_lag = options.with_zero_lag).savefig(filename % "P")
 	if options.verbose:
-		print >>sys.stderr, "writing %s ..." % (filename % "LR")
+		print("writing %s ..." % (filename % "LR"), file=sys.stderr)
 	plot_coinc_params(distributions, gmst, plottype = "LR").savefig(filename % "LR")
 
 
 if options.verbose:
-	print >>sys.stderr, "done."
+	print("done.", file=sys.stderr)

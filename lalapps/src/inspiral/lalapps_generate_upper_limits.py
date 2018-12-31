@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import sys,os,math
 from optparse import *
 import random
@@ -499,7 +501,7 @@ def parse_command_line():
 # -- get command line arguments
 opts, args = parse_command_line()
 if not opts.config_file:
-  print >> sys.stderr , 'You must specify a config file'
+  print('You must specify a config file', file=sys.stderr)
   sys.exit(1)
 
 ###################################

@@ -28,6 +28,9 @@ Excess power pipeline construction tools.
 """
 
 
+from __future__ import print_function
+
+
 import errno
 import math
 import os
@@ -217,7 +220,7 @@ def cache_span(cache):
 def write_output_cache(nodes, filename):
 	f = file(filename, "w")
 	for cache_entry, node in collect_output_caches(nodes):
-		print >>f, str(cache_entry)
+		print(str(cache_entry), file=f)
 
 
 #
@@ -497,7 +500,7 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 	def write_input_files(self, *args):
 		f = file(self.cache_name, "w")
 		for c in self.input_cache:
-			print >>f, str(c)
+			print(str(c), file=f)
 		pipeline.LigolwAddNode.write_input_files(self, *args)
 
 	def get_output_files(self):
@@ -593,7 +596,7 @@ class BuclusterNode(pipeline.CondorDAGNode):
 	def write_input_files(self, *args):
 		f = file(self.cache_name, "w")
 		for c in self.input_cache:
-			print >>f, str(c)
+			print(str(c), file=f)
 		pipeline.CondorDAGNode.write_input_files(self, *args)
 
 	def get_input_cache(self):
@@ -840,7 +843,7 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 			if "--add-from-cache" in arg:
 				f = file(self.cache_name, "w")
 				for c in self.input_cache:
-					print >>f, str(c)
+					print(str(c), file=f)
 				pipeline.CondorDAGNode.write_input_files(self, *args)
 				break
 
@@ -1254,7 +1257,7 @@ def make_burca2_fragment(dag, coinc_cache, likelihood_parents, tag):
 	likelihood_data_cache_filename = os.path.join(burca2job.cache_dir, "burca2_%s.cache" % tag)
 	likelihood_data_cache_file = file(likelihood_data_cache_filename, "w")
 	for cache_entry in [cache_entry for node in likelihood_parents for cache_entry in node.get_output_cache()]:
-		print >>likelihood_data_cache_file, str(cache_entry)
+		print(str(cache_entry), file=likelihood_data_cache_file)
 
 	nodes = set()
 	max_cost_per_job = 10	# 10000 s -equivalent files
@@ -1288,7 +1291,7 @@ def make_burca2_fragment(dag, coinc_cache, likelihood_parents, tag):
 
 def make_datafind_stage(dag, seglists, verbose = False):
 	if verbose:
-		print >>sys.stderr, "building ligo_data_find jobs ..."
+		print("building ligo_data_find jobs ...", file=sys.stderr)
 
 	#
 	# Fill gaps smaller than the padding added to each datafind job.
@@ -1310,7 +1313,7 @@ def make_datafind_stage(dag, seglists, verbose = False):
 	nodes = set()
 	for seg, instrument in segs:
 		if verbose:
-			print >>sys.stderr, "making datafind job for %s spanning %s" % (instrument, seg)
+			print("making datafind job for %s spanning %s" % (instrument, seg), file=sys.stderr)
 		new_nodes = make_datafind_fragment(dag, instrument, seg)
 		nodes |= new_nodes
 
@@ -1352,7 +1355,7 @@ def make_power_segment_fragment(dag, datafindnodes, instrument, segment, tag, ti
 		injargs = {}
 	seglist = split_segment(timing_params, segment, psds_per_job)
 	if verbose:
-		print >>sys.stderr, "Segment split: " + str(seglist)
+		print("Segment split: " + str(seglist), file=sys.stderr)
 	nodes = set()
 	for seg in seglist:
 		nodes |= make_power_fragment(dag, datafindnodes | binjnodes, instrument, seg, tag, framecache, injargs = injargs)
@@ -1369,7 +1372,7 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, timing_params
 	for instrument, seglist in seglistdict.iteritems():
 		for seg in seglist:
 			if verbose:
-				print >>sys.stderr, "generating %s fragment %s" % (instrument, str(seg))
+				print("generating %s fragment %s" % (instrument, str(seg)), file=sys.stderr)
 
 			# find the datafind job this job is going to need
 			dfnodes = set([node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))])
@@ -1398,7 +1401,7 @@ def group_coinc_parents(parents, offset_vectors, extentlimit = None, verbose = F
 		return []
 
 	if verbose:
-		print >>sys.stderr, "Grouping jobs for coincidence analysis:"
+		print("Grouping jobs for coincidence analysis:", file=sys.stderr)
 
 	#
 	# use ligolw_cafe to group each output file according to how they
@@ -1444,13 +1447,13 @@ def group_coinc_parents(parents, offset_vectors, extentlimit = None, verbose = F
 	#
 
 	if verbose:
-		print >>sys.stderr, "Matching jobs to caches ..."
+		print("Matching jobs to caches ...", file=sys.stderr)
 	parent_groups, unused = match_nodes_to_caches(parents, caches)
 	if verbose and unused:
 		# there were parents that didn't match any caches.  this
 		# happens if ligolw_cafe decides their outputs aren't
 		# needed
-		print >>sys.stderr, "Notice:  %d jobs (of %d) produce output that will not be used by a coincidence job" % (unused, len(parents))
+		print("Notice:  %d jobs (of %d) produce output that will not be used by a coincidence job" % (unused, len(parents)), file=sys.stderr)
 
 	#
 	# done

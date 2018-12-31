@@ -119,7 +119,7 @@ def get_status(filename, totals, debug=False):
           totals[7] += 1 
 
   if output != 0:
-    print output[:-1]
+    print(output[:-1])
 
   return dag_status
 
@@ -140,7 +140,7 @@ def get_status(filename, totals, debug=False):
     by itself, and in such case we search for the .dagman.out file.
 """
 
-print 'Parsing ' + options.dag_file + '...'
+print('Parsing ' + options.dag_file + '...')
 sleep(1.5)
 
 # Look for sub dags
@@ -168,15 +168,15 @@ for line in lines:
 dagFile.close()
 
 if len(filenames)==0:
-  print 'No dag files found in ' + options.dag_file
-  print 'Assuming that ' + options.dag_file + ' is the dag file you want to parse'
+  print('No dag files found in ' + options.dag_file)
+  print('Assuming that ' + options.dag_file + ' is the dag file you want to parse')
   sub_dags = 0
 else:
   sub_dags = len( filenames )
-  print 'Found', str( sub_dags ), 'subdags'
+  print('Found', str( sub_dags ), 'subdags')
 done_dags = 0  
 
-print 'Parsing the dag files for status...\n'
+print('Parsing the dag files for status...\n')
 ### we found some dag files hopefully
 
 sleep(1.5)
@@ -186,39 +186,39 @@ totals = [0,0,0,0,0,0,0,0]
 for i in xrange(0,len(filenames), 1):
   filename = filenames[i]
 
-  print '-------------------------------------------------------------------------'
+  print('-------------------------------------------------------------------------')
   # How many jobs are completed/failed ?
-  print "Parsing " + filenames[i]
+  print("Parsing " + filenames[i])
 
   status = get_status(filename, totals)
   
   if status==1: 
     done_dags += 1 
-    print "COMPLETE :)"
+    print("COMPLETE :)")
   elif status==0:
-    print "incomplete :("
+    print("incomplete :(")
   elif status==-1:
-   print "dag not yet started!"
+   print("dag not yet started!")
   elif status==-2:
-   print "dag pending and not yet planned!"
+   print("dag pending and not yet planned!")
 
 
 # Print totals
-print "  --------------------------- "
-print "      Done    =", totals[0]
+print("  --------------------------- ")
+print("      Done    =", totals[0])
 #print " Pre     =", totals[1]
-print "      Queued  =", totals[2]
+print("      Queued  =", totals[2])
 #print " Post    =", totals[3]
-print "      Ready   =", totals[4]
-print "      Unready =", totals[5]
-print "      Failed  =", totals[6]
-print "  ----------------------------------- "
-print "      Completed Jobs = " + str( totals[0] )
-print "      Submitted Jobs = " + str( sum( totals[:7] ) )
-print "      Total Jobs     = " + str( sum(totals[:]) )
+print("      Ready   =", totals[4])
+print("      Unready =", totals[5])
+print("      Failed  =", totals[6])
+print("  ----------------------------------- ")
+print("      Completed Jobs = " + str( totals[0] ))
+print("      Submitted Jobs = " + str( sum( totals[:7] ) ))
+print("      Total Jobs     = " + str( sum(totals[:]) ))
 if sub_dags != 0:
-  print "      Sub-dags       =", str( done_dags ) + "/" + str( sub_dags )
-print "  ----------------------------------- "
+  print("      Sub-dags       =", str( done_dags ) + "/" + str( sub_dags ))
+print("  ----------------------------------- ")
 
 # Confirm if completed
 dagFile = open(options.dag_file + '.dagman.out', 'r')
@@ -228,10 +228,10 @@ for line in lines:
   if "EXITING WITH STATUS 0" in line:
     uber = 1
 if uber == 1:
-  print "  ihope status... COMPLETED!"
+  print("  ihope status... COMPLETED!")
 else:
-  print "  ihope status... incomplete."
-print ""
+  print("  ihope status... incomplete.")
+print("")
   
 
 

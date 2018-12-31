@@ -69,32 +69,32 @@ h2l1doublelist = h2l1doublelist - triplelist
 if opts.injection_file:
   flist = [ opts.injection_file ]
   injections = readMeta.metaDataTable( flist, "sim_inspiral")
-  print "No triple injections: %d" % \
-      getSegments(injections, triplelist, "geocent_end_time").nevents()
-  print "No H1H2 injections: %d" % \
-      getSegments(injections, h1h2doublelist, "geocent_end_time").nevents()
-  print "No H1L1 injections: %d" % \
-      getSegments(injections, h1l1doublelist, "geocent_end_time").nevents()
-  print "No H2L1 injections: %d" % \
-      getSegments(injections, h2l1doublelist, "geocent_end_time").nevents()
+  print("No triple injections: %d" % \
+      getSegments(injections, triplelist, "geocent_end_time").nevents())
+  print("No H1H2 injections: %d" % \
+      getSegments(injections, h1h2doublelist, "geocent_end_time").nevents())
+  print("No H1L1 injections: %d" % \
+      getSegments(injections, h1l1doublelist, "geocent_end_time").nevents())
+  print("No H2L1 injections: %d" % \
+      getSegments(injections, h2l1doublelist, "geocent_end_time").nevents())
 
 if opts.glitch_time:
   if triplelist.__contains__(opts.glitch_time):
-    print "Time " + str(opts.glitch_time) + " is in triple time"
+    print("Time " + str(opts.glitch_time) + " is in triple time")
   if h1h2doublelist.__contains__(opts.glitch_time):
-    print "Time " + str(opts.glitch_time) + " is in h1h2 only time"
+    print("Time " + str(opts.glitch_time) + " is in h1h2 only time")
   if h1l1doublelist.__contains__(opts.glitch_time):
-    print "Time " + str(opts.glitch_time) + " is in h1l1 only time"
+    print("Time " + str(opts.glitch_time) + " is in h1l1 only time")
   if h2l1doublelist.__contains__(opts.glitch_time):
-    print "Time " + str(opts.glitch_time) + " is in h2l1 only time"
+    print("Time " + str(opts.glitch_time) + " is in h2l1 only time")
 else:
   tmptime=triplelist.duration()
-  print "Total triple time: %d s, %f yr" % (tmptime, tmptime/(365.25 * 24.0 * 3600.0))
+  print("Total triple time: %d s, %f yr" % (tmptime, tmptime/(365.25 * 24.0 * 3600.0)))
   tmptime=h1h2doublelist.duration()
-  print "Total H1H2-only time: %d, %f yr" % (tmptime, tmptime/(365.25 * 24.0 * 3600.0))
+  print("Total H1H2-only time: %d, %f yr" % (tmptime, tmptime/(365.25 * 24.0 * 3600.0)))
   tmptime=h1l1doublelist.duration()
-  print "Total H1L1-only time: %d, %f yr" % (tmptime, tmptime/(365.25 * 24.0 * 3600.0))
+  print("Total H1L1-only time: %d, %f yr" % (tmptime, tmptime/(365.25 * 24.0 * 3600.0)))
   tmptime=h2l1doublelist.duration()
-  print "Total H2L1-only time: %d, %f yr" % (tmptime, tmptime/(365.25 * 24.0 * 3600.0))
+  print("Total H2L1-only time: %d, %f yr" % (tmptime, tmptime/(365.25 * 24.0 * 3600.0)))
   tmptime=triplelist.duration()+ h1h2doublelist.duration() + h1l1doublelist.duration() + h2l1doublelist.duration()
-  print "Total time: %d, %f yr" % (tmptime, tmptime/(365.25 * 24.0 * 3600.0))
+  print("Total time: %d, %f yr" % (tmptime, tmptime/(365.25 * 24.0 * 3600.0)))
