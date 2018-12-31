@@ -369,7 +369,7 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   # get directory
   grbdir = os.path.abspath('%s/GRB%s' % (rundir, grb))
   if not os.path.isdir(grbdir):
-    raise ValueError, 'Cannot find directory GRB%s in %s' % (grb, rundir)
+    raise ValueError('Cannot find directory GRB%s in %s' % (grb, rundir))
 
   # generate post processing directory
   if not os.path.isdir(outdir):
@@ -419,7 +419,7 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
                 % (grbdir, ifotag, grb)
   datafindglob = glob.glob(datafindstr)
   if len(datafindglob)!=1:
-    raise ValueError, 'Cannot find single datafind cache matching %s' % datafindstr
+    raise ValueError('Cannot find single datafind cache matching %s' % datafindstr)
   datafindcache = datafindglob[0]
 
   datastart, dataduration = map(int, os.path.splitext(datafindcache)[0]\
@@ -667,7 +667,7 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     # find buffer segments
     buffseg = '%s/%s' % (grbdir, 'bufferSeg.txt')
     if not os.path.isfile(buffseg):
-      raise ValueError, 'Cannot find buffer segment file as %s' % buffseg
+      raise ValueError('Cannot find buffer segment file as %s' % buffseg)
   
     tag = 'injfinder'
     exe = cp.get('condor', tag)
@@ -761,8 +761,8 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
           distRun = run
           break
       if not distRun:
-        raise BrokenError, "Cannot find any injections matching %s in ini file"\
-                           % (injpattern)
+        raise BrokenError("Cannot find any injections matching %s in ini file"\
+                           % (injpattern))
       for inc in inclinations:
         injrun = 'injectionsAstro%s_FILTERED_%d' % (injpattern,inc)
         filteredInjRuns.append(injrun)

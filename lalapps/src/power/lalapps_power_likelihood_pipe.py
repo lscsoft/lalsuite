@@ -74,7 +74,7 @@ def parse_command_line():
 	options, filenames = parser.parse_args()
 
 	if options.distribution_segments is None:
-		raise ValueError, "missing required argument --distribution-segments"
+		raise ValueError("missing required argument --distribution-segments")
 	options.distribution_segments = segmentsUtils.fromsegwizard(file(options.distribution_segments), coltype = lal.LIGOTimeGPS)
 
 	options.input_cache = set([CacheEntry(line) for filename in options.input_cache for line in file(filename)])

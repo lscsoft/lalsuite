@@ -78,14 +78,14 @@ def parse_command_line():
 	options, filenames = parser.parse_args()
 
 	if options.variant not in ("injections", "noninjections", "both"):
-		raise ValueError, "unrecognized --variant %s" % options.variant
+		raise ValueError("unrecognized --variant %s" % options.variant)
 	options.do_injections = options.variant in ("injections", "both")
 	options.do_noninjections = options.variant in ("noninjections", "both")
 
 	if options.do_injections and not options.injection_time_slides:
-		raise ValueError, "missing required --injection-time-slides argument"
+		raise ValueError("missing required --injection-time-slides argument")
 	if options.do_noninjections and not options.background_time_slides:
-		raise ValueError, "missing required --background-time-slides argument"
+		raise ValueError("missing required --background-time-slides argument")
 
 	# simplifies life later by allowing the background and injection
 	# branches of the dag to be constructed with nearly identical code

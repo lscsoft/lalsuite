@@ -1814,7 +1814,7 @@ def heading(page, title="None", label="Switch details on/off", heading="h3"):
   elif heading == 'h3':
     section_num = str(h2_num)+"."+str(h3_num)+"."
   else:
-    raise ValueError, "heading must be either h2 or h3 in heading function"
+    raise ValueError("heading must be either h2 or h3 in heading function")
 
 
   page.add("<"+heading+">"+ section_num+ title)

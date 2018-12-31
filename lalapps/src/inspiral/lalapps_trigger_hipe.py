@@ -232,7 +232,7 @@ class hipe_run(object):
     # determine how many ifos to analyze
     n = len(self._ifos)
     if n < 1 or n > 4:
-      raise ValueError, "cannot handle less than one or more than four IFOs"
+      raise ValueError("cannot handle less than one or more than four IFOs")
     number_words = {1: "one", 2: "two", 3: "three", 4: "four"}
     for i in range(n):
       self._hipe_args.append("--%s-ifo" % number_words[i+1])
@@ -273,7 +273,7 @@ class hipe_run(object):
 
     if only_run is not None:
       if not (set(only_run) <= allowed_stages):
-        raise ValueError, "stage not in allowed stages"
+        raise ValueError("stage not in allowed stages")
       self._stages = only_run
     else:
       if dont_run is not None:
@@ -428,7 +428,7 @@ class ptf_run(hipe_run):
 
     if only_run is not None:
       if not (set(only_run) <= allowed_stages):
-        raise ValueError, "stage not in allowed stages"
+        raise ValueError("stage not in allowed stages")
       self._stages = only_run
     else:
       if dont_run is not None:
@@ -604,9 +604,9 @@ parser.add_option("", "--make-xml", action="store_true", default=False,
 required_opts = ["name", "time", "padding_time", "config_file", "injection_config", "log_path"]
 for opt in required_opts:
     if getattr(opts, opt) is None:
-        raise ValueError, "--%s is a required option" % opt
+        raise ValueError("--%s is a required option" % opt)
 if not opts.grb_file and (not opts.time or not opts.name):
-    raise ValueError, "Either a valid GRB xml file must be specified or the GPS time and name of the GRB!"
+    raise ValueError("Either a valid GRB xml file must be specified or the GPS time and name of the GRB!")
 
 ##############################################################################
 # find available data
@@ -644,8 +644,8 @@ if len(opts.name) > 0:
 
   if len(ext_trigs) != len(opts.name):
     missing = set(opts.name) - set([row.event_number_grb for row in ext_trigs])
-    raise ValueError, "could not find the following requested GRBs: " \
-      + "".join(missing)
+    raise ValueError("could not find the following requested GRBs: " \
+      + "".join(missing))
 
 if opts.verbose:
   print "Will construct workflows to analyze:", \

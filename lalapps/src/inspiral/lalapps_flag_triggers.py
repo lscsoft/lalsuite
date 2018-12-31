@@ -55,22 +55,22 @@ def parse_command_line():
     options, others = parser.parse_args()
 
     if not options.ifo:
-        raise ValueError, "missing required argument --ifo"
+        raise ValueError("missing required argument --ifo")
 
     if not options.gps_end_time:
-        raise ValueError, "missing required argument --gps-end_time"
+        raise ValueError("missing required argument --gps-end_time")
    
     if not options.gps_start_time:
-        raise ValueError, "missing required argument --gps-start_time"
+        raise ValueError("missing required argument --gps-start_time")
    
     if not options.veto_category:
-        raise ValueError, "missing required argument --veto-category"
+        raise ValueError("missing required argument --veto-category")
    
     if len( [x for x in (options.unclustered, options.thirty_ms, options.sixteen_sec) if x] ) != 1:
-        raise ValueError, "must provide one of [--unclustered | --thirty-ms | --sixteen-sec]"
+        raise ValueError("must provide one of [--unclustered | --thirty-ms | --sixteen-sec]")
 
     if len( [x for x in (options.min_snr, options.min_new_snr) if x] ) != 1:
-        raise ValueError, "must provide exactly one of [--min-snr | --min-new-snr]"
+        raise ValueError("must provide exactly one of [--min-snr | --min-new-snr]")
 
     return options
 

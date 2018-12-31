@@ -105,7 +105,7 @@ def parse_command_line():
     opts, args = parser.parse_args()
 
     if opts.reference_psd and not opts.instrument:
-        raise ValueError, "--instrument is a required option when specifying reference PSD"
+        raise ValueError("--instrument is a required option when specifying reference PSD")
 
     return opts, args
 

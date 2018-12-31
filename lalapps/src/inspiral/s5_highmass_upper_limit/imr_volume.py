@@ -326,7 +326,7 @@ def parse_command_line():
   opts, filenames = parser.parse_args()
 
   if opts.instruments is None:
-    raise ValueError, "missing required argument --instruments"
+    raise ValueError("missing required argument --instruments")
   opts.instruments = lsctables.instrument_set_from_ifos(opts.instruments)
 
   opts.injfnames = glob.glob(opts.inj_data_glob)

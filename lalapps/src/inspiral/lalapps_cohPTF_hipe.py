@@ -958,8 +958,8 @@ for ifo in ifo_list:
     data_out[ifo].intersection(temp)
     sys.stdout.flush()
   else:
-    raise ValueError, "exttrig-analyze has been set to a bad value.  It "\
-      "must be {on_source | off_source | all} or omitted."
+    raise ValueError("exttrig-analyze has been set to a bad value.  It "\
+      "must be {on_source | off_source | all} or omitted.")
 
   not_data_out[ifo] = copy.deepcopy(data_out[ifo])
   not_data_out[ifo].coalesce()

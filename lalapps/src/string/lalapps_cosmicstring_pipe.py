@@ -72,7 +72,7 @@ def parse_command_line():
 	required_options = ["log_path", "config_file", "background_time_slides", "injection_time_slides", "segments_file"]
 	missing_options = [option for option in required_options if getattr(options, option) is None]
 	if missing_options:
-		raise ValueError, "missing required options %s" % ", ".join(sorted("--%s" % option.replace("_", "-") for option in missing_options))
+		raise ValueError("missing required options %s" % ", ".join(sorted("--%s" % option.replace("_", "-") for option in missing_options)))
 
 	if options.vetoes_file is not None:
 		options.vetoes_cache = set([CacheEntry(None, "VETO", None, "file://localhost" + os.path.abspath(options.vetoes_file))])
@@ -183,7 +183,7 @@ for instrument in set(seglists) - instruments:
 	del seglists[instrument]
 # check for missing instruments
 if not instruments.issubset(set(seglists)):
-	raise ValueError, "segment lists retrieved from '%s' missing segments for instruments %s" % (options.segments_file, ", ".join(instruments - set(seglists)))
+	raise ValueError("segment lists retrieved from '%s' missing segments for instruments %s" % (options.segments_file, ", ".join(instruments - set(seglists))))
 # now rely on seglists' keys to provide the instruments
 del instruments
 
@@ -230,7 +230,7 @@ def check_for_reused_offsetvectors(background_time_slides, injection_time_slides
 	for background_cache_entry, background_offsetvector in [(cache_entry, offsetvector) for cache_entry, offsetvectors in background_time_slides.items() for offsetvector in offsetvectors]:
 		for injection_cache_entry, injection_offsetvector in [(cache_entry, offsetvector) for cache_entry, offsetvectors in injection_time_slides.items() for offsetvector in offsetvectors]:
 			if background_offsetvector.deltas == injection_offsetvector.deltas:
-				raise ValueError, "injections offset vector %s from %s is the same as non-injections offset vector %s from %s.  to avoid a self-selection bias, injections must not be performed at the same relative time shifts as a non-injection run" % (str(injection_offsetvector), injection_cache_entry.url, str(background_offsetvector), background_cache_entry.url)
+				raise ValueError("injections offset vector %s from %s is the same as non-injections offset vector %s from %s.  to avoid a self-selection bias, injections must not be performed at the same relative time shifts as a non-injection run" % (str(injection_offsetvector), injection_cache_entry.url, str(background_offsetvector), background_cache_entry.url))
 
 check_for_reused_offsetvectors(background_time_slides, injection_time_slides)
 

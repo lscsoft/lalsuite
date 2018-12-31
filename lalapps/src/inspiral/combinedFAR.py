@@ -150,12 +150,12 @@ def parse_command_line():
   (options,args) = parser.parse_args()
   #check if required options specified and for self-consistency
   if not options.glob or options.cache_file:
-    raise ValueError, "--glob or --cache-file must be specified"
+    raise ValueError("--glob or --cache-file must be specified")
   if not options.output_path:
-    raise ValueError, "--output-file must be specified"
+    raise ValueError("--output-file must be specified")
   return options, sys.argv[1:]
   if not options.num_slides:
-    raise ValueError, "--num-slides must be specified"
+    raise ValueError("--num-slides must be specified")
 
 
 opts, args = parse_command_line()
@@ -252,7 +252,7 @@ for thisfile in corsefiles:
         FrgrndTime = float( line.split()[6] )
     corrfile.close()
   else:
-    raise ValueError, "Must specify --time-correct-file"
+    raise ValueError("Must specify --time-correct-file")
 
   # calculate min/max BkgFANs
   minBkgFAN[thisfile] = FrgrndTime/BkgTime

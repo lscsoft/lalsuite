@@ -228,7 +228,7 @@ def check_grid_proxy(path):
     proxy = M2Crypto.X509.load_cert(path)
   except Exception, e:
     msg = "Unable to load proxy from path %s : %s" % (path, e)
-    raise RuntimeError, msg
+    raise RuntimeError(msg)
 
   try:
     proxy.get_ext("proxyCertInfo")
@@ -236,7 +236,7 @@ def check_grid_proxy(path):
     subject = proxy.get_subject().as_text()
     if re.search(r'.+CN=proxy$', subject):
       msg = "Proxy %s is not RFC compliant" % path
-      raise RuntimeError, msg
+      raise RuntimeError(msg)
 
   try:
     expireASN1 = proxy.get_not_after().__str__()
@@ -245,7 +245,7 @@ def check_grid_proxy(path):
     now = int(time.time())
   except Exception, e:
     msg = "could not determine time left on proxy: %s" % e
-    raise RuntimeError, msg
+    raise RuntimeError(msg)
 
   return expireUTC - now
 
@@ -278,10 +278,10 @@ try:
   # check that the proxy is valid and that enough time remains
   time_left = check_grid_proxy(proxy_path)
   if time_left < 0:
-    raise RuntimeError, "Proxy has expired."
+    raise RuntimeError("Proxy has expired.")
   elif time_left < time_needed:
     msg = "Not enough time left on grid proxy (%d seconds)." % time_left
-    raise RuntimeError, msg
+    raise RuntimeError(msg)
   else:
     os.environ['X509_USER_PROXY'] = proxy_path
 

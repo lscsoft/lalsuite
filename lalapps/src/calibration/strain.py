@@ -228,7 +228,7 @@ class NoiseNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
         # set the frame type based on the LFNs returned by datafind
         #self.add_var_opt('frame-type',b)
       else:
-        raise CondorDAGNodeError, "Unknown LFN cache format"
+        raise CondorDAGNodeError("Unknown LFN cache format")
 
 # Convenience functions to cat together noise output files.
 def open_noise_cat_file(dir):

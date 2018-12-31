@@ -39,22 +39,22 @@ def parse_command_line():
     options, others = parser.parse_args()
 
     if not (options.run_chisq or options.assemble_results):
-        raise ValueError, "Missing required argument, one of --run-chisq or --assemble-results"
+        raise ValueError("Missing required argument, one of --run-chisq or --assemble-results")
 
     if (options.run_chisq and options.assemble_results):
-        raise ValueError, "Please specify only one of --run-chisq or --assemble-results"
+        raise ValueError("Please specify only one of --run-chisq or --assemble-results")
 
     if not options.gps_start_time:
-        raise ValueError, "Missing required argument --gps-start-time"
+        raise ValueError("Missing required argument --gps-start-time")
 
     if not options.gps_end_time:
-        raise ValueError, "Missing required argument --gps-end-time"
+        raise ValueError("Missing required argument --gps-end-time")
 
     if not options.snr_threshold:
-        raise ValueError, "Missing required argument --snr-threshold"
+        raise ValueError("Missing required argument --snr-threshold")
 
     if not options.ifo:
-        raise ValueError, "Missing required argument --ifo"
+        raise ValueError("Missing required argument --ifo")
     
     return options
 

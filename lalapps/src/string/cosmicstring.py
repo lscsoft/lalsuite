@@ -75,7 +75,7 @@ class MeasLikelihoodJob(pipeline.CondorDAGJob):
 		self.output_dir = "."
 		self.files_per_meas_likelihood = get_files_per_meas_likelihood(config_parser)
 		if self.files_per_meas_likelihood < 1:
-			raise ValueError, "files_per_meas_likelihood < 1"
+			raise ValueError("files_per_meas_likelihood < 1")
 
 
 class MeasLikelihoodNode(pipeline.CondorDAGNode):
@@ -95,7 +95,7 @@ class MeasLikelihoodNode(pipeline.CondorDAGNode):
 
 	def add_input_cache(self, cache):
 		if self.output_cache:
-			raise AttributeError, "cannot change attributes after computing output cache"
+			raise AttributeError("cannot change attributes after computing output cache")
 		self.input_cache.extend(cache)
 
 	def add_file_arg(self, filename):
@@ -103,7 +103,7 @@ class MeasLikelihoodNode(pipeline.CondorDAGNode):
 
 	def set_output(self, description):
 		if self.output_cache:
-			raise AttributeError, "cannot change attributes after computing output cache"
+			raise AttributeError("cannot change attributes after computing output cache")
 		cache_entry = power.make_cache_entry(self.input_cache, description, "")
 		filename = os.path.join(self.output_dir, "%s-STRING_LIKELIHOOD_%s-%d-%d.xml.gz" % (cache_entry.observatory, cache_entry.description, int(cache_entry.segment[0]), int(abs(cache_entry.segment))))
 		cache_entry.url = "file://localhost" + os.path.abspath(filename)
@@ -117,7 +117,7 @@ class MeasLikelihoodNode(pipeline.CondorDAGNode):
 
 	def get_output_cache(self):
 		if not self.output_cache:
-			raise AttributeError, "must call set_output(description) first"
+			raise AttributeError("must call set_output(description) first")
 		return self.output_cache
 
 	def write_input_files(self, *args):
@@ -145,7 +145,7 @@ class CalcLikelihoodJob(pipeline.CondorDAGJob):
 		self.cache_dir = power.get_cache_dir(config_parser)
 		self.files_per_calc_likelihood = get_files_per_calc_likelihood(config_parser)
 		if self.files_per_calc_likelihood < 1:
-			raise ValueError, "files_per_calc_likelihood < 1"
+			raise ValueError("files_per_calc_likelihood < 1")
 
 
 class CalcLikelihoodNode(pipeline.CondorDAGNode):
@@ -246,14 +246,14 @@ class StringNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     the config file.
     """
     if self.output_cache:
-      raise AttributeError, "cannot change attributes after computing output cache"
+      raise AttributeError("cannot change attributes after computing output cache")
     pipeline.AnalysisNode.set_ifo(self, instrument)
     for optvalue in self.job()._AnalysisJob__cp.items("lalapps_StringSearch_%s" % instrument):
       self.add_var_arg("--%s %s" % optvalue)
 
   def set_user_tag(self, tag):
     if self.output_cache:
-      raise AttributeError, "cannot change attributes after computing output cache"
+      raise AttributeError("cannot change attributes after computing output cache")
     self.__usertag = tag
     self.add_var_opt("user-tag", self.__usertag)
 
@@ -280,7 +280,7 @@ class StringNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     if self._AnalysisNode__output is None:
       if None in (self.get_start(), self.get_end(), self.get_ifo(), self.__usertag):
-        raise ValueError, "start time, end time, ifo, or user tag has not been set"
+        raise ValueError("start time, end time, ifo, or user tag has not been set")
       seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
       self.set_output(os.path.join(self.output_dir, "%s-STRINGSEARCH_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))))
 
@@ -316,7 +316,7 @@ class RunSqliteJob(pipeline.CondorDAGJob):
                 self.set_sub_file("lalapps_run_sqlite.sub")
 		self.files_per_run_sqlite = get_files_per_run_sqlite(config_parser)
 		if self.files_per_run_sqlite < 1:
-			raise ValueError, "files_per_run_sqlite < 1"
+			raise ValueError("files_per_run_sqlite < 1")
 
 
 class RunSqliteNode(pipeline.CondorDAGNode):
@@ -513,7 +513,7 @@ def make_string_fragment(dag, parents, instrument, seg, tag, framecache, injargs
 def split_segment(seg, min_segment_length, pad, overlap, short_segment_duration, max_job_length):
 	# avoid infinite loop
 	if min_segment_length + 2 * pad <= overlap:
-		raise ValueError, "infinite loop: min_segment_length + 2 * pad must be > overlap"
+		raise ValueError("infinite loop: min_segment_length + 2 * pad must be > overlap")
 
 	# clip max_job_length down to an allowed size
 	max_job_length = clip_segment_length(max_job_length, pad, short_segment_duration)
@@ -528,11 +528,11 @@ def split_segment(seg, min_segment_length, pad, overlap, short_segment_duration,
 		assert abs(seglist[-1]) != 0	# safety-check for no-op
 		# bounds must be integers
 		if abs((int(seglist[-1][0]) - seglist[-1][0]) / seglist[-1][0]) > 1e-14 or abs((int(seglist[-1][1]) - seglist[-1][1]) / seglist[-1][1]) > 1e-14:
-			raise ValueError, "segment %s does not have integer boundaries" % str(seglist[-1])
+			raise ValueError("segment %s does not have integer boundaries" % str(seglist[-1]))
 		# advance segment
 		seg = segments.segment(seglist[-1][1] - overlap, seg[1])
 	if not seglist:
-		raise ValueError, "unable to use segment %s" % str(seg)
+		raise ValueError("unable to use segment %s" % str(seg))
 	return seglist
 
 
@@ -577,7 +577,7 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, min_segment_l
 			# find the datafind job this job is going to need
 			dfnodes = set([node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))])
 			if len(dfnodes) != 1:
-				raise ValueError, "error, not exactly 1 datafind is suitable for trigger generator job at %s in %s" % (str(seg), instrument)
+				raise ValueError("error, not exactly 1 datafind is suitable for trigger generator job at %s in %s" % (str(seg), instrument))
 
 			# trigger generator jobs
 			nodes |= make_string_segment_fragment(dag, dfnodes, instrument, seg, tag, min_segment_length, pad, overlap, short_segment_duration, max_job_length, binjnodes = binjnodes, verbose = verbose)

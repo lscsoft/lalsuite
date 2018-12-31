@@ -139,11 +139,11 @@ for n, filename in enumerate(filenames):
 	# extract segment lists
 	seglists = searchsumm.get_out_segmentlistdict(process_ids).coalesce()
 	if not seglists:
-		raise ValueError, "%s: no matching rows found in search summary table" % filename
+		raise ValueError("%s: no matching rows found in search summary table" % filename)
 	if None in seglists:
 		if options.program is not None:
-			raise ValueError, "%s: null value in ifos column in search_summary table" % filename
-		raise ValueError, "%s: null value in ifos column in search_summary table, try using --program" % filename
+			raise ValueError("%s: null value in ifos column in search_summary table" % filename)
+		raise ValueError("%s: null value in ifos column in search_summary table, try using --program" % filename)
 
 	# extract observatory
 	observatory = (options.observatory and options.observatory.strip()) or "+".join(sorted(seglists))
@@ -157,9 +157,9 @@ for n, filename in enumerate(filenames):
 		else:
 			description = set(row.comment for row in searchsumm if row.process_id in process_ids)
 		if len(description) < 1:
-			raise ValueError, "%s: no matching rows found in search summary table" % filename
+			raise ValueError("%s: no matching rows found in search summary table" % filename)
 		if len(description) > 1:
-			raise ValueError, "%s: comments in matching rows of search summary table are not identical" % filename
+			raise ValueError("%s: comments in matching rows of search summary table are not identical" % filename)
 		description = description.pop().strip() or None
 
 	# set URL

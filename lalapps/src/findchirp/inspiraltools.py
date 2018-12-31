@@ -267,9 +267,9 @@ class ReadXMLFiles:
         except:
           self.params = None
           self.values = None
-          raise ValueError, """ The XMl file must contain a process_params table 
+          raise ValueError(""" The XMl file must contain a process_params table 
     with the --fl option at least. It does not seem to be present in the file 
-    provide."""
+    provide.""")
 
         #try:
         results = self.readXML(file, 'bankefficiency')

@@ -308,7 +308,7 @@ class BurstInjNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
 	def get_user_tag(self):
 		if self.output_cache:
-			raise AttributeError, "cannot change attributes after computing output cache"
+			raise AttributeError("cannot change attributes after computing output cache")
 		return self.__usertag
 
 	def set_time_slide_file(self, filename):
@@ -319,7 +319,7 @@ class BurstInjNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
 	def set_start(self, start):
 		if self.output_cache:
-			raise AttributeError, "cannot change attributes after computing output cache"
+			raise AttributeError("cannot change attributes after computing output cache")
 		self.add_var_opt("gps-start-time", start)
 
 	def get_start(self):
@@ -327,7 +327,7 @@ class BurstInjNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
 	def set_end(self, end):
 		if self.output_cache:
-			raise AttributeError, "cannot change attributes after computing output cache"
+			raise AttributeError("cannot change attributes after computing output cache")
 		self.add_var_opt("gps-end-time", end)
 
 	def get_end(self):
@@ -350,7 +350,7 @@ class BurstInjNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 	def get_output(self):
 		if self._AnalysisNode__output is None:
 			if None in (self.get_start(), self.get_end(), self.__usertag):
-				raise ValueError, "start time, end time, ifo, or user tag has not been set"
+				raise ValueError("start time, end time, ifo, or user tag has not been set")
 			seg = segments.segment(lal.LIGOTimeGPS(self.get_start()), lal.LIGOTimeGPS(self.get_end()))
 			self.set_output(os.path.join(self.output_dir, "G1+H1+H2+L1+T1+V1-INJECTIONS_%s-%d-%d.xml.gz" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))))
 		return self._AnalysisNode__output
@@ -396,14 +396,14 @@ class PowerNode(pipeline.AnalysisNode):
 		the config file.
 		"""
 		if self.output_cache:
-			raise AttributeError, "cannot change attributes after computing output cache"
+			raise AttributeError("cannot change attributes after computing output cache")
 		pipeline.AnalysisNode.set_ifo(self, instrument)
 		for optvalue in self.job()._AnalysisJob__cp.items("lalapps_power_%s" % instrument):
 			self.add_var_arg("--%s %s" % optvalue)
 
 	def set_user_tag(self, tag):
 		if self.output_cache:
-			raise AttributeError, "cannot change attributes after computing output cache"
+			raise AttributeError("cannot change attributes after computing output cache")
 		self.__usertag = tag
 		self.add_var_opt("user-tag", self.__usertag)
 
@@ -426,7 +426,7 @@ class PowerNode(pipeline.AnalysisNode):
 	def get_output(self):
 		if self._AnalysisNode__output is None:
 			if None in (self.get_start(), self.get_end(), self.get_ifo(), self.__usertag):
-				raise ValueError, "start time, end time, ifo, or user tag has not been set"
+				raise ValueError("start time, end time, ifo, or user tag has not been set")
 			seg = segments.segment(lal.LIGOTimeGPS(self.get_start()), lal.LIGOTimeGPS(self.get_end()))
 			self.set_output(os.path.join(self.output_dir, "%s-POWER_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))))
 		return self._AnalysisNode__output
@@ -520,7 +520,7 @@ class BucutJob(pipeline.CondorDAGJob):
 
 		self.files_per_bucut = get_files_per_bucut(config_parser)
 		if self.files_per_bucut < 1:
-			raise ValueError, "files_per_bucut < 1"
+			raise ValueError("files_per_bucut < 1")
 
 
 class BucutNode(pipeline.CondorDAGNode):
@@ -568,7 +568,7 @@ class BuclusterJob(pipeline.CondorDAGJob):
 
 		self.files_per_bucluster = get_files_per_bucluster(config_parser)
 		if self.files_per_bucluster < 1:
-			raise ValueError, "files_per_bucluster < 1"
+			raise ValueError("files_per_bucluster < 1")
 
 
 class BuclusterNode(pipeline.CondorDAGNode):
@@ -621,7 +621,7 @@ class BinjfindJob(pipeline.CondorDAGJob):
 
 		self.files_per_binjfind = get_files_per_binjfind(config_parser)
 		if self.files_per_binjfind < 1:
-			raise ValueError, "files_per_binjfind < 1"
+			raise ValueError("files_per_binjfind < 1")
 
 
 class BinjfindNode(pipeline.CondorDAGNode):
@@ -667,7 +667,7 @@ class BurcaJob(pipeline.CondorDAGJob):
 
 		self.files_per_burca = get_files_per_burca(config_parser)
 		if self.files_per_burca < 1:
-			raise ValueError, "files_per_burca < 1"
+			raise ValueError("files_per_burca < 1")
 
 
 class Burca2Job(pipeline.CondorDAGJob):
@@ -746,7 +746,7 @@ class SQLiteNode(pipeline.CondorDAGNode):
 
 	def add_input_cache(self, cache):
 		if self.output_cache:
-			raise AttributeError, "cannot change attributes after computing output cache"
+			raise AttributeError("cannot change attributes after computing output cache")
 		self.input_cache.extend(cache)
 		for c in cache:
 			filename = c.path
@@ -758,7 +758,7 @@ class SQLiteNode(pipeline.CondorDAGNode):
 
 	def set_output(self, filename):
 		if self.output_cache:
-			raise AttributeError, "cannot change attributes after computing output cache"
+			raise AttributeError("cannot change attributes after computing output cache")
 		self.add_macro("macrodatabase", filename)
 
 	def get_input_cache(self):
@@ -805,7 +805,7 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 
 	def add_input_cache(self, cache):
 		if self.output_cache:
-			raise AttributeError, "cannot change attributes after computing output cache"
+			raise AttributeError("cannot change attributes after computing output cache")
 		self.input_cache.extend(cache)
 		for c in cache:
 			filename = c.path
@@ -817,7 +817,7 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 
 	def set_output(self, description):
 		if self.output_cache:
-			raise AttributeError, "cannot change attributes after computing output cache"
+			raise AttributeError("cannot change attributes after computing output cache")
 		cache_entry = make_cache_entry(self.input_cache, description, "")
 		filename = os.path.join(self.output_dir, "%s-%s-%d-%d.xml.gz" % (cache_entry.observatory, cache_entry.description, int(cache_entry.segment[0]), int(abs(cache_entry.segment))))
 		self.add_var_opt("output", filename)
@@ -831,7 +831,7 @@ class BurcaTailorNode(pipeline.CondorDAGNode):
 
 	def get_output_cache(self):
 		if not self.output_cache:
-			raise AttributeError, "must call set_output(description) first"
+			raise AttributeError("must call set_output(description) first")
 		return self.output_cache
 
 	def write_input_files(self, *args):
@@ -949,7 +949,7 @@ def psds_from_job_length(timing_params, t):
 	seconds.  In general, the return value is a non-integer.
 	"""
 	if t < 0:
-		raise ValueError, t
+		raise ValueError(t)
 	# convert to samples, and remove filter corruption
 	t = t * timing_params.resample_rate - 2 * timing_params.filter_corruption
 	if t < timing_params.psd_length:
@@ -963,7 +963,7 @@ def job_length_from_psds(timing_params, psds):
 	of the job in seconds.
 	"""
 	if psds < 1:
-		raise ValueError, psds
+		raise ValueError(psds)
 	# number of samples
 	result = (psds - 1) * timing_params.psd_shift + timing_params.psd_length
 	# add filter corruption
@@ -1374,7 +1374,7 @@ def make_single_instrument_stage(dag, datafinds, seglistdict, tag, timing_params
 			# find the datafind job this job is going to need
 			dfnodes = set([node for node in datafinds if (node.get_ifo() == instrument) and (seg in segments.segment(node.get_start(), node.get_end()))])
 			if len(dfnodes) != 1:
-				raise ValueError, "error, not exactly 1 datafind is suitable for trigger generator job at %s in %s" % (str(seg), instrument)
+				raise ValueError("error, not exactly 1 datafind is suitable for trigger generator job at %s in %s" % (str(seg), instrument))
 
 			# trigger generator jobs
 			nodes += make_power_segment_fragment(dag, dfnodes, instrument, seg, tag, timing_params, psds_per_job, binjnodes = binjnodes, verbose = verbose)

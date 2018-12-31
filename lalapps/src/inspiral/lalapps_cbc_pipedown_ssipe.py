@@ -111,11 +111,11 @@ parser.add_option( "", "--generate-all-data-plots", action = "store_true",
 ##############################################################################
 # Sanity check of input arguments
 if not options.ihope_cache:
-  raise ValueError, "An ihope-cache file is required."
+  raise ValueError("An ihope-cache file is required.")
 if not options.config_file:
-  raise ValueError, "A config-file is required."
+  raise ValueError("A config-file is required.")
 if not options.log_path:
-  raise ValueError, "A log-path is required."
+  raise ValueError("A log-path is required.")
 
 ##############################################################################
 # Create log file
@@ -376,7 +376,7 @@ for tag in user_tags:
     inj_file = inj_file[0].url
     sim_tags.append(tag.split('_CAT_')[0])
   else:
-    raise ValueError, "More than one injection file found for %s" % tag
+    raise ValueError("More than one injection file found for %s" % tag)
 
   ############################################################################
   # Creating the thinca_user_tag cache file and writing it to disk
@@ -403,7 +403,7 @@ for tag in user_tags:
     '.xml' ])
   veto_file = '/'.join([ veto_file_path, veto_file_name ])
   if not os.path.exists( veto_file ):
-    raise ValueError, "Veto file %s could not be found." % veto_file
+    raise ValueError("Veto file %s could not be found." % veto_file)
   # store the veto file for additional later use
   veto_cat = '_'.join(['CAT', cat_num, 'VETO'])
   veto_files[veto_cat] = veto_file
