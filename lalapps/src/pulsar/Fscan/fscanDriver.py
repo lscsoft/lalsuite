@@ -179,7 +179,7 @@ analysisEndTime = None
 duration = None
 tagString = None
 inputDataType = None
-extraDatafindTime = 256L
+extraDatafindTime = 256
 datafindMatch = None
 filterKneeFreq = 40
 timeBaseline = None
@@ -218,7 +218,7 @@ maxNumPerNode = 1
 maxLengthAllJobs = None
 segmentFile = None
 segmentType = None
-minSegLength = 0L
+minSegLength = 0
 useSingle = False
 useHoT = False
 makeTmpFile = False
@@ -234,21 +234,21 @@ for o, a in opts:
     usage()
     sys.exit(0)
   elif o in ("-s", "--analysis-start-time"):
-    analysisStartTime = long(a)
+    analysisStartTime = int(a)
   elif o in ("-L", "--duration"):
-    duration = long(a)
+    duration = int(a)
   elif o in ("-G", "--tag-string"):
     tagString = a
   elif o in ("-d", "--input-data-type"):
     inputDataType = a
   elif o in ("-x", "--extra-datafind-time"):
-    extraDatafindTime = long(a)
+    extraDatafindTime = int(a)
   elif o in ("-M", "--datafind-match"):
     datafindMatch = a
   elif o in ("-k", "--filter-knee-freq"):
     filterKneeFreq = int(a)
   elif o in ("-T", "--time-baseline"):
-    timeBaseline = long(a)
+    timeBaseline = int(a)
   elif o in ("-p", "--sft-path"):
     pathToSFTs = a
   elif o in ("-c", "--freq-res"):
@@ -270,11 +270,11 @@ for o, a in opts:
   elif o in ("-v", "--sft-version"):
     sftVersion = int(a)
   elif o in ("-F", "--start-freq"):
-    startFreq = long(a)
+    startFreq = int(a)
   elif o in ("-B", "--band"):
-    freqBand = long(a)
+    freqBand = int(a)
   elif o in ("-b", "--sub-band"):
-    freqSubBand = long(a)
+    freqSubBand = int(a)
   elif o in ("-O", "--plot-output-path"):
     plotOutputPath = a
   elif o in ("-m", "--matlab-path"):
@@ -294,9 +294,9 @@ for o, a in opts:
   elif o in ("-e", "--html-ref-ifo-epoch"):
     htmlRefIFOEpoch = a
   elif o in ("-q", "--threshold-snr"):
-    thresholdSNR = long(a)
+    thresholdSNR = int(a)
   elif o in ("-y", "--coincidence-deltaf"):
-    coincidenceDeltaF = long(a)
+    coincidenceDeltaF = int(a)
   elif o in ("-K", "--coherence-path"):
     coherencePath = a  
   elif o in ("-D", "--make-gps-dirs"):
@@ -304,15 +304,15 @@ for o, a in opts:
   elif o in ("-X", "--misc-desc"):
     miscDesc = a
   elif o in ("-m", "--max-num-per-node"):
-    maxNumPerNode = long(a)
+    maxNumPerNode = int(a)
   elif o in ("-L", "--max-length-all-jobs"):
-    maxLengthAllJobs = long(a)
+    maxLengthAllJobs = int(a)
   elif o in ("-g", "--segment-file"):
     segmentFile = a
   elif o in ("-t", "--segment-type"):
     segmentType = a
   elif o in ("-l", "--min-seg-length"):
-    minSegLength = long(a)
+    minSegLength = int(a)
   elif o in ("-S", "--use-single"):
     useSingle = True    
   elif o in ("-H", "--use-hot"):
@@ -359,7 +359,7 @@ if not inputDataType:
   print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
-if extraDatafindTime < 0L:
+if extraDatafindTime < 0:
   print("Invalid extra datafind time specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
@@ -575,8 +575,8 @@ if (createSFTs):
             splitLine = line.split();
             try: 
                 oneSeg = [];
-                oneSeg.append(long(splitLine[0]));
-                oneSeg.append(long(splitLine[1]));
+                oneSeg.append(int(splitLine[0]));
+                oneSeg.append(int(splitLine[1]));
                 if ((oneSeg[1] - oneSeg[0]) >= minSegLength):
                     segList.append(oneSeg)
                 else:
@@ -667,7 +667,7 @@ if (createSFTs):
   #dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(sftDAGSUBJobName,argList,tagStringOut))
   
   # 03/02/2009 gam; instead of above, add splice in SFT DAG:
-  sftNodeCount = 0L
+  sftNodeCount = 0
   spliceSFTDAGName = 'spliceSFTDAG_%i' % sftNodeCount
   dagFID.write('SPLICE %s %s\n' % (spliceSFTDAGName, sftDAGFile))
 
@@ -799,7 +799,7 @@ if (freqSubBand  > freqBand):
 endFreq = startFreq + freqBand
 thisStartFreq = startFreq
 thisEndFreq = thisStartFreq + freqSubBand
-nodeCount = 0L
+nodeCount = 0
 
 # Next lines should not be needed because sft_freqBand goes beyond endFreq above
 #if (thisEndFreq == endFreq):

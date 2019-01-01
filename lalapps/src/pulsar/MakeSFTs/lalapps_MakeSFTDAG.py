@@ -202,7 +202,7 @@ dagFileName = None
 auxPath = "."
 tagString = None
 inputDataType = None
-extraDatafindTime = 0L
+extraDatafindTime = 0
 datafindMatch = None
 synchronizeStart = 0
 filterKneeFreq = -1
@@ -229,11 +229,11 @@ nodeListFile = None
 accountingGroup = None
 accountingGroupUser = None
 nodePath = None
-outputJobsPerNode = 0L
+outputJobsPerNode = 0
 useNodeList = False
-nodeListIndex = 0L
+nodeListIndex = 0
 savedOutputSFTPath = None
-minSegLength = 0L
+minSegLength = 0
 useSingle = False
 useHoT = False
 makeTmpFile = False
@@ -246,13 +246,13 @@ for o, a in opts:
     usage()
     sys.exit(0)
   elif o in ("-s", "--gps-start-time"):
-    gpsStartTime = long(a)
+    gpsStartTime = int(a)
   elif o in ("-e", "--gps-end-time"):
-    gpsEndTime = long(a)
+    gpsEndTime = int(a)
   elif o in ("-a", "--analysis-start-time"):
-    analysisStartTime = long(a)
+    analysisStartTime = int(a)
   elif o in ("-b", "--analysis-end-time"):
-    analysisEndTime = long(a)    
+    analysisEndTime = int(a)    
   elif o in ("-f", "--dag-file"):
     dagFileName = a   
   elif o in ("-t", "--aux-path"):
@@ -262,7 +262,7 @@ for o, a in opts:
   elif o in ("-d", "--input-data-type"):
     inputDataType = a
   elif o in ("-x", "--extra-datafind-time"):
-    extraDatafindTime = long(a)
+    extraDatafindTime = int(a)
   elif o in ("-M", "--datafind-match"):
     datafindMatch = a
   elif o in ("-y", "--synchronize-start"):
@@ -270,7 +270,7 @@ for o, a in opts:
   elif o in ("-k", "--filter-knee-freq"):
     filterKneeFreq = int(a)
   elif o in ("-T", "--time-baseline"):
-    timeBaseline = long(a)
+    timeBaseline = int(a)
   elif o in ("-p", "--output-sft-path"):
     outputSFTPath = a
   elif o in ("-C", "--cache-path"):
@@ -294,17 +294,17 @@ for o, a in opts:
   elif o in ("-c", "--comment-field"):
     commentField = a
   elif o in ("-F", "--start-freq"):
-    startFreq = long(a)
+    startFreq = int(a)
   elif o in ("-B", "--band"):
-    freqBand = long(a)
+    freqBand = int(a)
   elif o in ("-D", "--make-gps-dirs"):
     makeGPSDirs = int(a)
   elif o in ("-X", "--misc-desc"):
     miscDesc = a
   elif o in ("-m", "--max-num-per-node"):
-    maxNumPerNode = long(a)
+    maxNumPerNode = int(a)
   elif o in ("-L", "--max-length-all-jobs"):
-    maxLengthAllJobs = long(a)
+    maxLengthAllJobs = int(a)
   elif o in ("-g", "--segment-file"):
     segmentFile = a
   elif o in ("-q", "--list-of-nodes"):
@@ -316,9 +316,9 @@ for o, a in opts:
   elif o in ("-Q", "--node-path"):
     nodePath = a
   elif o in ("-R", "--output-jobs-per-node"):
-    outputJobsPerNode = long(a)
+    outputJobsPerNode = int(a)
   elif o in ("-l", "--min-seg-length"):
-    minSegLength = long(a)
+    minSegLength = int(a)
   elif o in ("-S", "--use-single"):
     useSingle = True    
   elif o in ("-H", "--use-hot"):
@@ -351,7 +351,7 @@ if not inputDataType:
   print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
-if extraDatafindTime < 0L:
+if extraDatafindTime < 0:
   print("Invalid extra datafind time specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
@@ -457,7 +457,7 @@ if (nodeListFile != None):
        print("Node file list given, but no node path specified.", file=sys.stderr)
        sys.exit(1)
     
-    if (outputJobsPerNode < 1L):
+    if (outputJobsPerNode < 1):
        print("Node file list given, but invalid output jobs per node specified.", file=sys.stderr)
        sys.exit(1)
 
@@ -484,7 +484,7 @@ segList = [];
 adjustSegExtraTime = False
 if (segmentFile != None):
 
-    if minSegLength < 0L:
+    if minSegLength < 0:
       print("Invalid minimum segment length specified.", file=sys.stderr)
       print("Use --help for usage details.", file=sys.stderr)
       sys.exit(1)
@@ -497,8 +497,8 @@ if (segmentFile != None):
                  splitLine = line.split();
                  try: 
                      oneSeg = [];
-                     oneSeg.append(long(splitLine[0]));
-                     oneSeg.append(long(splitLine[1]));
+                     oneSeg.append(int(splitLine[0]));
+                     oneSeg.append(int(splitLine[1]));
                      if ((oneSeg[1] - oneSeg[0]) >= minSegLength):
                          segList.append(oneSeg)
                      else:
@@ -549,7 +549,7 @@ else:
 site = channelName[0]
 
 # initialize count of nodes
-nodeCount         = 0L
+nodeCount         = 0
 
 # create datafind.sub
 datafindFID = file('datafind.sub','w')
@@ -601,8 +601,8 @@ startTimeAllNodes = None
 firstSFTstartTime = 0
 for seg in segList:
     # Each segment in the segList runs on one or more nodes; initialize the number SFTs produced by the current node:
-    numThisNode = 0L
-    numThisSeg = 0L
+    numThisNode = 0
+    numThisSeg = 0
     if (adjustSegExtraTime and synchronizeStart==0):
        segStartTime = seg[0]
        segEndTime = seg[1]
@@ -610,12 +610,12 @@ for seg in segList:
        if overlapFraction != 0.0:
           # handle overlap
           if (segEndTime - segStartTime) > timeBaseline:
-             segExtraTime = (segEndTime - segStartTime - timeBaseline) % long((1.0 - overlapFraction)*timeBaseline)
+             segExtraTime = (segEndTime - segStartTime - timeBaseline) % int((1.0 - overlapFraction)*timeBaseline)
           # else there will just one SFT this segment
        else:
           # default case, no overlap
           segExtraTime = (segEndTime - segStartTime) % timeBaseline
-       segExtraStart =  long(segExtraTime / 2)
+       segExtraStart =  int(segExtraTime / 2)
        segExtraEnd = segExtraTime - segExtraStart
        #print segStartTime,segEndTime, segExtraTime, segExtraStart, segExtraEnd
        analysisStartTime = segStartTime + segExtraStart
@@ -626,9 +626,9 @@ for seg in segList:
        segStartTime = seg[0]
        segEndTime = seg[1]
        if firstSFTstartTime == 0: firstSFTstartTime = segStartTime
-       analysisStartTime = long(round(math.ceil((segStartTime - firstSFTstartTime)/((1.0 - overlapFraction)*timeBaseline))*(1.0 - overlapFraction)*timeBaseline)) + firstSFTstartTime
+       analysisStartTime = int(round(math.ceil((segStartTime - firstSFTstartTime)/((1.0 - overlapFraction)*timeBaseline))*(1.0 - overlapFraction)*timeBaseline)) + firstSFTstartTime
        if analysisStartTime > segEndTime: analysisStartTime = segEndTime
-       analysisEndTime = long(round(math.floor((segEndTime - analysisStartTime - timeBaseline)/((1.0 - overlapFraction)*timeBaseline))*(1.0 - overlapFraction)*timeBaseline)) + timeBaseline + analysisStartTime
+       analysisEndTime = int(round(math.floor((segEndTime - analysisStartTime - timeBaseline)/((1.0 - overlapFraction)*timeBaseline))*(1.0 - overlapFraction)*timeBaseline)) + timeBaseline + analysisStartTime
        if analysisEndTime < segStartTime: analysisEndTime = segStartTime
     else:
        analysisStartTime = seg[0]
@@ -642,10 +642,10 @@ for seg in segList:
          # increment endTimeAllNodes by the timeBaseline until we get past the analysisEndTime
          if overlapFraction != 0.0:
             # handle overlap
-            if numThisSeg == 0L:
+            if numThisSeg == 0:
                endTimeAllNodes = endTimeAllNodes + timeBaseline
             else:
-               endTimeAllNodes = endTimeAllNodes + long((1.0 - overlapFraction)*timeBaseline)
+               endTimeAllNodes = endTimeAllNodes + int((1.0 - overlapFraction)*timeBaseline)
          else:
             # default case, no overlap
             endTimeAllNodes = endTimeAllNodes + timeBaseline
@@ -662,31 +662,31 @@ for seg in segList:
 
                if (useNodeList):
                   outputSFTPath = nodePath + nodeList[nodeListIndex] + savedOutputSFTPath
-                  if ((nodeCount % outputJobsPerNode) == 0L):
-                     nodeListIndex = nodeListIndex + 1L
+                  if ((nodeCount % outputJobsPerNode) == 0):
+                     nodeListIndex = nodeListIndex + 1
                   # END if ((nodeCount % outputJobsPerNode) == 0L)
                # END if (useNodeList)
 
                if (nodeCount == 1): startTimeAllNodes = startTimeThisNode
                writeToDag(dagFID,nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, cachePath, startTimeThisNode, endTimeThisNode, channelName, site, inputDataType, extraDatafindTime, useSingle, useHoT, makeTmpFile, tagString, windowType, overlapFraction, sftVersion, makeGPSDirs, miscDesc, commentField, startFreq, freqBand, frameStructType, IFO)
                # Update for next node
-               numThisNode       = 0L
+               numThisNode       = 0
                if overlapFraction != 0.0:
                   # handle overlap
-                  startTimeThisNode = endTimeThisNode - long((overlapFraction)*timeBaseline)
+                  startTimeThisNode = endTimeThisNode - int((overlapFraction)*timeBaseline)
                else:
                   # default case, no overlap
                   startTimeThisNode = endTimeThisNode
     else:
          # we are at or past the analysisEndTime; output job for last node if needed.
-         if (numThisNode > 0L):
+         if (numThisNode > 0):
             # write jobs to dag for this node
             nodeCount = nodeCount + 1
 
             if (useNodeList):
                outputSFTPath = nodePath + nodeList[nodeListIndex] + savedOutputSFTPath
-               if ((nodeCount % outputJobsPerNode) == 0L):
-                  nodeListIndex = nodeListIndex + 1L
+               if ((nodeCount % outputJobsPerNode) == 0):
+                  nodeListIndex = nodeListIndex + 1
                # END if ((nodeCount % outputJobsPerNode) == 0L)
             # END if (useNodeList)
 
