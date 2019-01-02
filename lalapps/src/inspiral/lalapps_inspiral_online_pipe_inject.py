@@ -161,7 +161,7 @@ publish_script.write("cp -f ${1} %s\n" % publish_location)
 publish_script.write("ldbdc --server %s --insert %s --pfn %s\n"
   % ( cp.get('publish','ldbdserver'), publish_location, pfn_location ) )
 publish_script.close()
-os.chmod('publish.sh',0755)
+os.chmod('publish.sh',0o755)
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df = None

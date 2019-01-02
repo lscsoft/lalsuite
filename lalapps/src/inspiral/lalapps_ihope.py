@@ -422,7 +422,7 @@ peg_frame_cache = os.path.join(os.getcwd(),inspiralutils.create_pegasus_cache_fi
 tmp_exec_dir = tempfile.mkdtemp( prefix="%s-%s-%s-%d." % (''.join(ifos),
   basename, opts.gps_start_time, 
   int(opts.gps_end_time) - int(opts.gps_start_time)) )
-os.chmod(tmp_exec_dir, 0755)
+os.chmod(tmp_exec_dir, 0o755)
 
 ##############################################################################
 # Determine the segments to analyze
