@@ -1708,10 +1708,14 @@ class TOATriangulator(object):
 		NOTE: if len(rs) >= 4, n is a 1x3 array.
 		      if len(rs) == 3, n is a 2x3 array.
 		      if len(rs) == 2, n is None.
-		NOTE: n is not the sorce direction but the propagation direction of GW.
-		      Therefore, if you want source direction, you have to multiply -1.
-		NOTE: n is represented by earth fixed coordinate, not celestial coordinate.
+		NOTE: n is not the source direction but the propagation
+		      direction of GW.
+		      Therefore, if you want source direction, you have to
+		      multiply -1.
+		NOTE: n is represented by earth fixed coordinate, not
+		      celestial coordinate.
 		      Up to your purpose, you should transform \\phi -> RA.
+		      To do it, you can use dir2coord.
 		"""
 		assert len(ts) == len(self.sigmas)
 
@@ -1839,6 +1843,36 @@ class TOATriangulator(object):
 
 		# done
 		return n, t0 + toa, chi2 / len(self.sigmas), dt
+
+	@staticmethod
+	def dir2coord(n, gps):
+		"""
+		This transforms from propagation direction vector to right
+		ascension and declination source co-ordinates.
+
+		The input is the propagation vector, n, in Earth fixed
+		co-ordinates (x axis through Greenwich merdian and equator,
+		z axis through North Pole), and the time.  n does not need
+		to be a unit vector.  The return value is the (ra, dec)
+		pair, in radians.  NOTE:  right ascension is not
+		necessarily in [0, 2\\pi).
+		"""
+		# safety checks
+		if len(n) != 3:
+			raise ValueError("n must be a 3-vector")
+
+		# normalize n
+		n /= math.sqrt(numpy.dot(n, n))
+
+		# transform from propagation to source direction
+		n = -n
+
+		# compute ra, dec
+		RA = numpy.arctan2(n[1], n[0]) + lal.GreenwichMeanSiderealTime(gps)
+		DEC = numpy.arcsin(n[2])
+
+		# done
+		return RA, DEC
 
 
 #
