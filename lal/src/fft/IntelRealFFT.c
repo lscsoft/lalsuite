@@ -30,30 +30,29 @@
 /** \cond DONT_DOXYGEN */
 
 
-#define CHECKINTELFFTSTATUS( fstat )               \
-  if ( (fstat) != DFTI_NO_ERROR )                  \
-  {                                                \
-    char *errmsg = DftiErrorMessage( fftStat );    \
-    XLAL_ERROR( REALFFTH_EINTL, errmsg );          \
-  }                                                \
+#define CHECKINTELFFTSTATUS( fstat )                 \
+  if ( (fstat) != DFTI_NO_ERROR )                    \
+  {                                                  \
+    char *errmsg = DftiErrorMessage( fftStat );      \
+    XLAL_ERROR( REALFFTH_EINTL, "%s", errmsg );      \
+  }                                                  \
   else (void)(0)
 
-#define CHECKINTELFFTSTATUS_NULL( fstat )          \
-  if ( (fstat) != DFTI_NO_ERROR )                  \
-  {                                                \
-    char *errmsg = DftiErrorMessage( fftStat );    \
-    XLAL_ERROR_NULL( REALFFTH_EINTL, errmsg );     \
-  }                                                \
+#define CHECKINTELFFTSTATUS_NULL( fstat )            \
+  if ( (fstat) != DFTI_NO_ERROR )                    \
+  {                                                  \
+    char *errmsg = DftiErrorMessage( fftStat );      \
+    XLAL_ERROR_NULL( REALFFTH_EINTL, "%s", errmsg ); \
+  }                                                  \
   else (void)(0)
 
-#define CHECKINTELFFTSTATUS_VOID( fstat )          \
-  if ( (fstat) != DFTI_NO_ERROR )                  \
-  {                                                \
-    char *errmsg = DftiErrorMessage( fftStat );    \
-    XLAL_ERROR_VOID( REALFFTH_EINTL, errmsg );     \
-  }                                                \
+#define CHECKINTELFFTSTATUS_VOID( fstat )            \
+  if ( (fstat) != DFTI_NO_ERROR )                    \
+  {                                                  \
+    char *errmsg = DftiErrorMessage( fftStat );      \
+    XLAL_ERROR_VOID( REALFFTH_EINTL, "%s", errmsg ); \
+  }                                                  \
   else (void)(0)
-
 
 /*
  * Plan to perform FFT of REAL4 data.

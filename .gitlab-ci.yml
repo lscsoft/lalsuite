@@ -34,190 +34,417 @@ cache:
   paths:
     - ccache
 
-.levelN:package: &levelN-package
+#
+# ci documentation
+#
+
+documentation:
+  image: ligo/lalsuite-dev:stretch
+  stage: level0
   script:
-    - cd ${CI_JOB_NAME#level?:*:}
     - ./00boot
-    - ./configure --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
-    - make dist
-    - cd ${CI_PROJECT_DIR}
-    - tar xf ${CI_JOB_NAME#level?:*:}/lal*.tar.xz
-    - cd lal*-*
-    - mkdir -p subdir
-    - cd subdir
-    - ../configure --enable-swig --enable-doxygen --enable-mpi --prefix=${LAL_DIR}
-    - make -j4 V=1
-    - make -j4 V=1 VERBOSE=1 check
-    - make -j4 install
+    - ./configure --enable-doxygen --prefix=${LAL_DIR}
     - make -j4 install-html
+    - pushd ${LAL_DIR}/share/doc
+    - cp lalsuite/index.html index.html
+    - sed -i 's/..\/lal/lal/g' index.html
+    - popd
   artifacts:
     expire_in: 18h
     paths:
-      - opt/lalsuite
+      - ${LAL_DIR}/share/doc
   only:
     - pushes
-  except:
-    - tags
+    - web
 
-.levelN:package:stretch: &levelN-package-stretch
-  image: ligo/lalsuite-dev:stretch
-  <<: *levelN-package
+#
+# build rpms
+#
 
-level0:stretch:lal:
-  <<: *levelN-package-stretch
-  stage: level0
-
-level1:stretch:lalframe:
-  <<: *levelN-package-stretch
-  stage: level1
-  dependencies:
-    - level0:stretch:lal
-
-level1:stretch:lalmetaio:
-  <<: *levelN-package-stretch
-  stage: level1
-  dependencies:
-    - level0:stretch:lal
-
-level1:stretch:lalsimulation:
-  <<: *levelN-package-stretch
-  stage: level1
-  dependencies:
-    - level0:stretch:lal
-
-level1:stretch:lalxml:
-  <<: *levelN-package-stretch
-  stage: level1
-  dependencies:
-    - level0:stretch:lal
-
-level2:stretch:lalburst:
-  <<: *levelN-package-stretch
-  stage: level2
-  dependencies:
-    - level1:stretch:lalmetaio
-    - level1:stretch:lalsimulation
-
-level2:stretch:lalinspiral:
-  <<: *levelN-package-stretch
-  stage: level2
-  dependencies:
-    - level1:stretch:lalframe
-    - level1:stretch:lalmetaio
-    - level1:stretch:lalsimulation
-
-level2:stretch:lalpulsar:
-  <<: *levelN-package-stretch
-  stage: level2
-  dependencies:
-    - level0:stretch:lal
-
-level2:stretch:lalstochastic:
-  <<: *levelN-package-stretch
-  stage: level2
-  dependencies:
-    - level1:stretch:lalmetaio
-
-level3:stretch:laldetchar:
-  <<: *levelN-package-stretch
-  stage: level3
-  dependencies:
-    - level2:stretch:lalburst
-
-level3:stretch:lalinference:
-  <<: *levelN-package-stretch
-  stage: level3
-  dependencies:
-    - level2:stretch:lalburst
-    - level2:stretch:lalinspiral
-    - level2:stretch:lalpulsar
-
-level4:stretch:lalapps:
-  <<: *levelN-package-stretch
-  stage: level4
-  dependencies:
-    - level3:stretch:lalinference
-
-.levelN:package:el7: &levelN-package-el7
+.levelN:rpm: &levelN-rpm-package
   image: ligo/lalsuite-dev:el7
-  <<: *levelN-package
+  variables:
+    RPM_BUILD_CPUS: 4
+  script:
+    - if [ -d rpmbuild ]; then yum -y install rpmbuild/RPMS/x86_64/*.rpm; fi
+    - cd ${CI_JOB_NAME#level?:rpm:}
+    - ./00boot
+    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
+    - make dist
+    - rpmbuild -tb --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${CI_JOB_NAME#level?:rpm:}-*.tar.xz
+  artifacts:
+    expire_in: 18h
+    paths:
+      - rpmbuild/RPMS/x86_64/${CI_JOB_NAME#level?:rpm:}-*.rpm
+      - rpmbuild/RPMS/x86_64/python2-${CI_JOB_NAME#level?:rpm:}-*.rpm
+  only:
+    - pushes
+    - schedules
+    - tags
+    - web
 
-level0:el7:lal:
-  <<: *levelN-package-el7
+level0:rpm:lal:
+  <<: *levelN-rpm-package
   stage: level0
 
-level1:el7:lalframe:
-  <<: *levelN-package-el7
+level1:rpm:lalframe:
+  <<: *levelN-rpm-package
   stage: level1
   dependencies:
-    - level0:el7:lal
+    - level0:rpm:lal
 
-level1:el7:lalmetaio:
-  <<: *levelN-package-el7
+level1:rpm:lalmetaio:
+  <<: *levelN-rpm-package
   stage: level1
   dependencies:
-    - level0:el7:lal
+    - level0:rpm:lal
 
-level1:el7:lalsimulation:
-  <<: *levelN-package-el7
+level1:rpm:lalsimulation:
+  <<: *levelN-rpm-package
   stage: level1
   dependencies:
-    - level0:el7:lal
+    - level0:rpm:lal
 
-level1:el7:lalxml:
-  <<: *levelN-package-el7
-  stage: level1
-  dependencies:
-    - level0:el7:lal
-
-level2:el7:lalburst:
-  <<: *levelN-package-el7
+level2:rpm:lalburst:
+  <<: *levelN-rpm-package
   stage: level2
   dependencies:
-    - level1:el7:lalmetaio
-    - level1:el7:lalsimulation
+    - level0:rpm:lal
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
 
-level2:el7:lalinspiral:
-  <<: *levelN-package-el7
+level2:rpm:lalinspiral:
+  <<: *levelN-rpm-package
   stage: level2
   dependencies:
-    - level1:el7:lalframe
-    - level1:el7:lalmetaio
-    - level1:el7:lalsimulation
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
 
-level2:el7:lalpulsar:
-  <<: *levelN-package-el7
+level2:rpm:lalpulsar:
+  <<: *levelN-rpm-package
   stage: level2
   dependencies:
-    - level0:el7:lal
+    - level0:rpm:lal
 
-level2:el7:lalstochastic:
-  <<: *levelN-package-el7
-  stage: level2
-  dependencies:
-    - level1:el7:lalmetaio
-
-level3:el7:laldetchar:
-  <<: *levelN-package-el7
+level3:rpm:lalinference:
+  <<: *levelN-rpm-package
   stage: level3
   dependencies:
-    - level2:el7:lalburst
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level2:rpm:lalburst
+    - level2:rpm:lalinspiral
+    - level2:rpm:lalpulsar
 
-level3:el7:lalinference:
-  <<: *levelN-package-el7
-  stage: level3
-  dependencies:
-    - level2:el7:lalburst
-    - level2:el7:lalinspiral
-    - level2:el7:lalpulsar
-
-level4:el7:lalapps:
-  <<: *levelN-package-el7
+level4:rpm:lalapps:
+  <<: *levelN-rpm-package
   stage: level4
   dependencies:
-    - level3:el7:lalinference
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level2:rpm:lalburst
+    - level2:rpm:lalinspiral
+    - level2:rpm:lalpulsar
+    - level3:rpm:lalinference
 
-nightly:top-level:jessie:
+#
+# docker container from RPMs
+#
+
+# build a nightly container from the RPMs
+docker:nightly:el7:
+  stage: docker
+  before_script: []
+  script:
+    # add RPMs to directory to pass to docker
+    - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
+    - rm -rf rpmbuild*
+    # build container and push to registry
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:el7 --file .Dockerfile-el7.gitlab-ci .
+    - docker push $CI_REGISTRY_IMAGE/nightly:el7
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level2:rpm:lalburst
+    - level2:rpm:lalinspiral
+    - level2:rpm:lalpulsar
+    - level3:rpm:lalinference
+    - level4:rpm:lalapps
+  only:
+    - schedules
+
+# build a tagged container from the rpms
+docker:tags:el7:
+  stage: docker
+  before_script: []
+  script:
+    # add RPMs to directory to pass to docker
+    - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
+    - rm -rf rpmbuild*
+    # build container and push to registry
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7 --file .Dockerfile-el7.gitlab-ci .
+    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level2:rpm:lalburst
+    - level2:rpm:lalinspiral
+    - level2:rpm:lalpulsar
+    - level3:rpm:lalinference
+    - level4:rpm:lalapps
+  only:
+    - /^lalsuite-v.*$/
+
+#
+# build debs
+#
+
+.levelN:deb: &levelN-deb-package
+  image: ligo/lalsuite-dev:stretch
+  script:
+    # install debs from artifacts
+    - dpkg -i *.deb || true
+    # make dist tarball
+    - cd ${CI_JOB_NAME#level?:deb:}
+    - ./00boot
+    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
+    - make dist
+    # create orig tarball
+    - PACKAGE=$(echo ${CI_JOB_NAME} | sed 's/.*://')
+    - TARBALL="${PACKAGE}-*.tar.*"
+    - SUFFIX=$(echo $TARBALL | sed 's/.*\.\(tar\..*\)/\1/')
+    - VERSION=$(echo $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '~')
+    - cd ${CI_PROJECT_DIR}
+    - cp ${CI_JOB_NAME#level?:deb:}/${TARBALL} ${PACKAGE}_${VERSION}.orig.${SUFFIX}
+    # update changelog
+    - export DEBFULLNAME="GitLab"
+    - export DEBEMAIL="gitlab@git.ligo.org"
+    - tar xf ${CI_JOB_NAME#level?:deb:}/${TARBALL}
+    - cd ${PACKAGE}-*
+    - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
+    # build packages
+    - debuild -us -uc -r
+  artifacts:
+    expire_in: 18h
+    paths:
+      - ${CI_JOB_NAME#level?:deb:}*.changes
+      - ${CI_JOB_NAME#level?:deb:}*.deb
+      - python*-${CI_JOB_NAME#level?:deb:}*.deb
+      - ${CI_JOB_NAME#level?:deb:}*.dsc
+      - ${CI_JOB_NAME#level?:deb:}*.orig.*
+  only:
+    - pushes
+    - schedules
+    - tags
+    - web
+
+level0:deb:lal:
+  <<: *levelN-deb-package
+  stage: level0
+
+level1:deb:lalframe:
+  <<: *levelN-deb-package
+  stage: level1
+  dependencies:
+    - level0:deb:lal
+
+level1:deb:lalmetaio:
+  <<: *levelN-deb-package
+  stage: level1
+  dependencies:
+    - level0:deb:lal
+
+level1:deb:lalsimulation:
+  <<: *levelN-deb-package
+  stage: level1
+  dependencies:
+    - level0:deb:lal
+
+level2:deb:lalburst:
+  <<: *levelN-deb-package
+  stage: level2
+  dependencies:
+    - level0:deb:lal
+    - level1:deb:lalmetaio
+    - level1:deb:lalsimulation
+
+level2:deb:lalinspiral:
+  <<: *levelN-deb-package
+  stage: level2
+  dependencies:
+    - level0:deb:lal
+    - level1:deb:lalframe
+    - level1:deb:lalmetaio
+    - level1:deb:lalsimulation
+
+level2:deb:lalpulsar:
+  <<: *levelN-deb-package
+  stage: level2
+  dependencies:
+    - level0:deb:lal
+
+level3:deb:lalinference:
+  <<: *levelN-deb-package
+  stage: level3
+  dependencies:
+    - level0:deb:lal
+    - level1:deb:lalframe
+    - level1:deb:lalmetaio
+    - level1:deb:lalsimulation
+    - level2:deb:lalburst
+    - level2:deb:lalinspiral
+    - level2:deb:lalpulsar
+
+level4:deb:lalapps:
+  <<: *levelN-deb-package
+  stage: level4
+  dependencies:
+    - level0:deb:lal
+    - level1:deb:lalframe
+    - level1:deb:lalmetaio
+    - level1:deb:lalsimulation
+    - level2:deb:lalburst
+    - level2:deb:lalinspiral
+    - level2:deb:lalpulsar
+    - level3:deb:lalinference
+
+#
+# docker container from the debs
+#
+
+# build a nightly container from the debian packages
+docker:nightly:stretch:
+  stage: docker
+  before_script: []
+  script:
+    # add deb packages to directory to pass to docker
+    - mkdir debs && mv *.deb debs
+    - rm *.changes *.dsc *.orig.*
+    # build container and push to registry
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:stretch --file .Dockerfile-stretch.gitlab-ci .
+    - docker push $CI_REGISTRY_IMAGE/nightly:stretch
+  dependencies:
+    - level0:deb:lal
+    - level1:deb:lalframe
+    - level1:deb:lalmetaio
+    - level1:deb:lalsimulation
+    - level2:deb:lalburst
+    - level2:deb:lalinspiral
+    - level2:deb:lalpulsar
+    - level3:deb:lalinference
+    - level4:deb:lalapps
+  only:
+    - schedules
+
+# build a tagged container from the debian packages
+docker:tags:stretch:
+  stage: docker
+  before_script: []
+  script:
+    # add deb packages to directory to pass to docker
+    - mkdir debs && mv *.deb debs
+    - rm *.changes *.dsc *.orig.*
+    # build container and push to registry
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch --file .Dockerfile-stretch.gitlab-ci .
+    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch
+  dependencies:
+    - level0:deb:lal
+    - level1:deb:lalframe
+    - level1:deb:lalmetaio
+    - level1:deb:lalsimulation
+    - level2:deb:lalburst
+    - level2:deb:lalinspiral
+    - level2:deb:lalpulsar
+    - level3:deb:lalinference
+    - level4:deb:lalapps
+  only:
+    - /^lalsuite-v.*$/
+
+#
+# nightly builds
+#
+
+# compilers
+
+nightly:clang:6:
+  image: skymoo/ligo-lalsuite-clang:6
+  stage: nightly
+  script:
+    - ./00boot
+    - CC=clang-6.0 CXX=clang++-6.0 ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+nightly:clang:7:
+  image: skymoo/ligo-lalsuite-clang:7
+  stage: nightly
+  script:
+    - ./00boot
+    - CC=clang-7 CXX=clang++-7 ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+nightly:clang:8:
+  image: skymoo/ligo-lalsuite-clang:8
+  stage: nightly
+  script:
+    - ./00boot
+    - CC=clang-8 CXX=clang++-8 ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+nightly:gcc:7:
+  image: skymoo/ligo-lalsuite-gcc:7
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+# FIXME: allow failure due to #125
+nightly:gcc:8:
+  image: skymoo/ligo-lalsuite-gcc:8
+  stage: nightly
+  script:
+    - ./00boot
+    - :./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+# debian
+
+nightly:debian:jessie:
   image: ligo/lalsuite-dev:jessie
   stage: nightly
   script:
@@ -229,7 +456,25 @@ nightly:top-level:jessie:
     - schedules
     - web
 
-nightly:top-level:el7-cr:
+# FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
+# available
+# FIXME: allow failure due to #124
+nightly:debian:buster:
+  image: skymoo/ligo-lalsuite-dev:buster
+  stage: nightly
+  dependencies: []
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+# el7
+
+nightly:rhel:el7-cr:
   image: ligo/lalsuite-dev:el7-cr
   stage: nightly
   script:
@@ -241,7 +486,7 @@ nightly:top-level:el7-cr:
     - schedules
     - web
 
-nightly:top-level:sl7:
+nightly:rhel:sl7:
   image: ligo/lalsuite-dev:sl7
   stage: nightly
   script:
@@ -253,104 +498,7 @@ nightly:top-level:sl7:
     - schedules
     - web
 
-nightly:top-level:trusty:
-  image: skymoo/ligo-lalsuite-dev:trusty
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --disable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:top-level:xenial:
-  image: skymoo/ligo-lalsuite-dev:xenial
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --disable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:top-level:bionic:
-  image: skymoo/ligo-lalsuite-dev:bionic
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:top-level:cosmic:
-  image: skymoo/ligo-lalsuite-dev:cosmic
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-# FIXME: It seems that Octave on buster currently has a few bugs which
-# cause the Octave bindings to fail, disable building the Octave SWIG
-# bindings for the time being.
-nightly:top-level:buster:
-  image: skymoo/ligo-lalsuite-dev:buster
-  stage: nightly
-  dependencies: []
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  only:
-    - schedules
-    - web
-
-nightly:top-level:clang:
-  image: skymoo/ligo-lalsuite-clang:jessie
-  stage: nightly
-  script:
-    - ./00boot
-    - CC=clang CXX=clang++ ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:openmp:stretch:
-  image: ligo/lalsuite-dev:stretch
-  stage: nightly
-  dependencies: []
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --enable-openmp
-    - make -j4 distcheck
-  only:
-    - schedules
-    - web
-
-nightly:python3:stretch:
-  image: ligo/lalsuite-dev:stretch
-  stage: nightly
-  script:
-    - ./00boot
-    - PYTHON=python3 ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
+# macOS
 
 nightly:macos:highsierra:
   tags:
@@ -383,6 +531,66 @@ nightly:macos:elcapitan:
   only:
     - schedules
     - web
+
+# ubuntu
+
+# FIXME: allow failure due to #123
+nightly:ubuntu:trusty:
+  image: skymoo/ligo-lalsuite-dev:trusty
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --disable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+# FIXME: allow failure due to #123
+nightly:ubuntu:xenial:
+  image: skymoo/ligo-lalsuite-dev:xenial
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --disable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+nightly:ubuntu:bionic:
+  image: skymoo/ligo-lalsuite-dev:bionic
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+# FIXME: allow failure due to #124
+nightly:ubuntu:cosmic:
+  image: skymoo/ligo-lalsuite-dev:cosmic
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+#
+# python wheels
+#
 
 # Build receipe for standalone wheels on Linux
 .nightly:wheel:manylinux1: &nightly-wheel-manylinux1
@@ -466,371 +674,6 @@ nightly:wheel:cp36-cp36m-macosx:
 nightly:wheel:cp37-cp37m-macosx:
   <<: *nightly-wheel-macos
 
-.levelN:rpm: &levelN-rpm-package
-  image: ligo/lalsuite-dev:el7
-  variables:
-    RPM_BUILD_CPUS: 4
-  script:
-    - if [ -d rpmbuild ]; then yum -y install rpmbuild/RPMS/x86_64/*.rpm; fi
-    - cd ${CI_JOB_NAME#level?:rpm:}
-    - ./00boot
-    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
-    - make dist
-    - rpmbuild -tb --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${CI_JOB_NAME#level?:rpm:}-*.tar.xz
-  artifacts:
-    expire_in: 18h
-    paths:
-      - rpmbuild/RPMS/x86_64/${CI_JOB_NAME#level?:rpm:}-*.rpm
-      - rpmbuild/RPMS/x86_64/python2-${CI_JOB_NAME#level?:rpm:}-*.rpm
-  only:
-    - schedules
-    - tags
-    - web
-
-level0:rpm:lal:
-  <<: *levelN-rpm-package
-  stage: level0
-
-level1:rpm:lalframe:
-  <<: *levelN-rpm-package
-  stage: level1
-  dependencies:
-    - level0:rpm:lal
-
-level1:rpm:lalmetaio:
-  <<: *levelN-rpm-package
-  stage: level1
-  dependencies:
-    - level0:rpm:lal
-
-level1:rpm:lalsimulation:
-  <<: *levelN-rpm-package
-  stage: level1
-  dependencies:
-    - level0:rpm:lal
-
-level1:rpm:lalxml:
-  <<: *levelN-rpm-package
-  stage: level1
-  dependencies:
-    - level0:rpm:lal
-
-level2:rpm:lalburst:
-  <<: *levelN-rpm-package
-  stage: level2
-  dependencies:
-    - level0:rpm:lal
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-
-level2:rpm:lalinspiral:
-  <<: *levelN-rpm-package
-  stage: level2
-  dependencies:
-    - level0:rpm:lal
-    - level1:rpm:lalframe
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-
-level2:rpm:lalpulsar:
-  <<: *levelN-rpm-package
-  stage: level2
-  dependencies:
-    - level0:rpm:lal
-
-level2:rpm:lalstochastic:
-  <<: *levelN-rpm-package
-  stage: level2
-  dependencies:
-   - level0:rpm:lal
-   - level1:rpm:lalmetaio
-
-level3:rpm:laldetchar:
-  <<: *levelN-rpm-package
-  stage: level3
-  dependencies:
-    - level0:rpm:lal
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-    - level2:rpm:lalburst
-
-level3:rpm:lalinference:
-  <<: *levelN-rpm-package
-  stage: level3
-  dependencies:
-    - level0:rpm:lal
-    - level1:rpm:lalframe
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-    - level2:rpm:lalburst
-    - level2:rpm:lalinspiral
-    - level2:rpm:lalpulsar
-
-level4:rpm:lalapps:
-  <<: *levelN-rpm-package
-  stage: level4
-  dependencies:
-    - level0:rpm:lal
-    - level1:rpm:lalframe
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-    - level2:rpm:lalburst
-    - level2:rpm:lalinspiral
-    - level2:rpm:lalpulsar
-    - level3:rpm:lalinference
-
-# build a nightly container from the RPMs
-docker:nightly:el7:
-  stage: docker
-  before_script: []
-  script:
-    # add RPMs to directory to pass to docker
-    - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
-    - rm -rf rpmbuild*
-    # build container and push to registry
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:el7 --file .Dockerfile-el7.gitlab-ci .
-    - docker push $CI_REGISTRY_IMAGE/nightly:el7
-  dependencies:
-    - level0:rpm:lal
-    - level1:rpm:lalframe
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-    - level2:rpm:lalburst
-    - level2:rpm:lalinspiral
-    - level2:rpm:lalpulsar
-    - level3:rpm:lalinference
-    - level4:rpm:lalapps
-  only:
-    - schedules
-
-# build a tagged container from the RPMs
-docker:tags:el7:
-  stage: docker
-  before_script: []
-  script:
-    # add RPMs to directory to pass to docker
-    - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
-    - rm -rf rpmbuild*
-    # build container and push to registry
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7 --file .Dockerfile-el7.gitlab-ci .
-    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7
-  dependencies:
-    - level0:rpm:lal
-    - level1:rpm:lalframe
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-    - level2:rpm:lalburst
-    - level2:rpm:lalinspiral
-    - level2:rpm:lalpulsar
-    - level3:rpm:lalinference
-    - level4:rpm:lalapps
-  only:
-    - /^lalsuite-v.*$/
-
-.levelN:deb: &levelN-deb-package
-  image: ligo/lalsuite-dev:stretch
-  script:
-    # install debs from artifacts
-    - dpkg -i *.deb || true
-    # make dist tarball
-    - cd ${CI_JOB_NAME#level?:deb:}
-    - ./00boot
-    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
-    - make dist
-    # create orig tarball
-    - PACKAGE=$(echo ${CI_JOB_NAME} | sed 's/.*://')
-    - TARBALL="${PACKAGE}-*.tar.*"
-    - SUFFIX=$(echo $TARBALL | sed 's/.*\.\(tar\..*\)/\1/')
-    - VERSION=$(echo $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '~')
-    - cd ${CI_PROJECT_DIR}
-    - cp ${CI_JOB_NAME#level?:deb:}/${TARBALL} ${PACKAGE}_${VERSION}.orig.${SUFFIX}
-    # update changelog
-    - export DEBFULLNAME="GitLab"
-    - export DEBEMAIL="gitlab@git.ligo.org"
-    - tar xf ${CI_JOB_NAME#level?:deb:}/${TARBALL}
-    - cd ${PACKAGE}-*
-    - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
-    # build packages
-    - debuild -us -uc -r
-  artifacts:
-    expire_in: 18h
-    paths:
-      - ${CI_JOB_NAME#level?:deb:}*.changes
-      - ${CI_JOB_NAME#level?:deb:}*.deb
-      - python*-${CI_JOB_NAME#level?:deb:}*.deb
-      - ${CI_JOB_NAME#level?:deb:}*.dsc
-      - ${CI_JOB_NAME#level?:deb:}*.orig.*
-  only:
-    - schedules
-    - tags
-    - web
-
-level0:deb:lal:
-  <<: *levelN-deb-package
-  stage: level0
-
-level1:deb:lalframe:
-  <<: *levelN-deb-package
-  stage: level1
-  dependencies:
-    - level0:deb:lal
-
-level1:deb:lalmetaio:
-  <<: *levelN-deb-package
-  stage: level1
-  dependencies:
-    - level0:deb:lal
-
-level1:deb:lalsimulation:
-  <<: *levelN-deb-package
-  stage: level1
-  dependencies:
-    - level0:deb:lal
-
-level1:deb:lalxml:
-  <<: *levelN-deb-package
-  stage: level1
-  dependencies:
-    - level0:deb:lal
-
-level2:deb:lalburst:
-  <<: *levelN-deb-package
-  stage: level2
-  dependencies:
-    - level0:deb:lal
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-
-level2:deb:lalinspiral:
-  <<: *levelN-deb-package
-  stage: level2
-  dependencies:
-    - level0:deb:lal
-    - level1:deb:lalframe
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-
-level2:deb:lalpulsar:
-  <<: *levelN-deb-package
-  stage: level2
-  dependencies:
-    - level0:deb:lal
-
-level2:deb:lalstochastic:
-  <<: *levelN-deb-package
-  stage: level2
-  dependencies:
-   - level0:deb:lal
-   - level1:deb:lalmetaio
-
-level3:deb:laldetchar:
-  <<: *levelN-deb-package
-  stage: level3
-  dependencies:
-    - level0:deb:lal
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-    - level2:deb:lalburst
-
-level3:deb:lalinference:
-  <<: *levelN-deb-package
-  stage: level3
-  dependencies:
-    - level0:deb:lal
-    - level1:deb:lalframe
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-    - level2:deb:lalburst
-    - level2:deb:lalinspiral
-    - level2:deb:lalpulsar
-
-level4:deb:lalapps:
-  <<: *levelN-deb-package
-  stage: level4
-  dependencies:
-    - level0:deb:lal
-    - level1:deb:lalframe
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-    - level2:deb:lalburst
-    - level2:deb:lalinspiral
-    - level2:deb:lalpulsar
-    - level3:deb:lalinference
-
-# build a nightly container from the debian packages
-docker:nightly:stretch:
-  stage: docker
-  before_script: []
-  script:
-    # add deb packages to directory to pass to docker
-    - mkdir debs && mv *.deb debs
-    - rm *.changes *.dsc *.orig.*
-    # build container and push to registry
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:stretch --file .Dockerfile-stretch.gitlab-ci .
-    - docker push $CI_REGISTRY_IMAGE/nightly:stretch
-  dependencies:
-    - level0:deb:lal
-    - level1:deb:lalframe
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-    - level2:deb:lalburst
-    - level2:deb:lalinspiral
-    - level2:deb:lalpulsar
-    - level3:deb:lalinference
-    - level4:deb:lalapps
-  only:
-    - schedules
-
-# build a tagged container from the debian packages
-docker:tags:stretch:
-  stage: docker
-  before_script: []
-  script:
-    # add deb packages to directory to pass to docker
-    - mkdir debs && mv *.deb debs
-    - rm *.changes *.dsc *.orig.*
-    # build container and push to registry
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch --file .Dockerfile-stretch.gitlab-ci .
-    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch
-  dependencies:
-    - level0:deb:lal
-    - level1:deb:lalframe
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-    - level2:deb:lalburst
-    - level2:deb:lalinspiral
-    - level2:deb:lalpulsar
-    - level3:deb:lalinference
-    - level4:deb:lalapps
-  only:
-    - /^lalsuite-v.*$/
-
-pages:
-  image: ligo/lalsuite-dev:stretch
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 install-html
-    - cp -r ${LAL_DIR}/share/doc public/
-    - pushd public
-    - cp lalsuite/index.html index.html
-    - sed -i 's/..\/lal/lal/g' index.html
-    - popd
-  dependencies: []
-  artifacts:
-    paths:
-      - public
-  only:
-    - master@lscsoft/lalsuite
-  except:
-    - pushes
-    - web
-
 deploy:wheel:
   stage: deploy
   image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
@@ -856,3 +699,29 @@ deploy:wheel:
   only:
     - /^lalsuite-v.*$/
     - schedules
+
+#
+# documentation
+#
+
+pages:
+  image: ligo/lalsuite-dev:stretch
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen --prefix=${LAL_DIR}
+    - make -j4 install-html
+    - cp -r ${LAL_DIR}/share/doc public/
+    - pushd public
+    - cp lalsuite/index.html index.html
+    - sed -i 's/..\/lal/lal/g' index.html
+    - popd
+  dependencies: []
+  artifacts:
+    paths:
+      - public
+  only:
+    - master@lscsoft/lalsuite
+  except:
+    - pushes
+    - web
