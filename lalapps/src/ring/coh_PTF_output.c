@@ -283,7 +283,7 @@ SearchSummaryTable *coh_PTF_create_search_summary( struct coh_PTF_params *params
 
   /* setup search summary table */
   searchSummary = LALCalloc( 1, sizeof( *searchSummary ) );
-  strncpy( searchSummary->comment, params->programName, LIGOMETA_COMMENT_MAX );
+  strncpy( searchSummary->comment, params->programName, LIGOMETA_COMMENT_MAX-1 );
   searchSummary->nnodes = 1;
 
   /* compute the start and end times of data analyzed */

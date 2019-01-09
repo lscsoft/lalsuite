@@ -66,7 +66,7 @@ int ring_inject_signal(
   INT4                     stopSec;
   int                      strainData;
   char                     ifoName[3];
-  char                     name[LALNameLength+4];
+  char                     name[LALNameLength];
   REAL8                    sampleRate;
   INT4                     calType=0;
 
@@ -78,7 +78,7 @@ int ring_inject_signal(
  
   /* copy injectFile to injFile (to get rid of const qual) */
   strncpy( injFile, injectFile, sizeof( injFile ) - 1 );
-  snprintf( name, sizeof( name ), "%s_INJ", series->name );
+  if(snprintf( name, sizeof( name ), "%s_INJ", series->name ) >= (int) sizeof( name )) abort();
   strncpy( ifoName, series->name, 2 );
   ifoName[2] = 0;
 
@@ -166,7 +166,7 @@ int ring_inject_signal(
     }
 
     /* correct the name */
-    strncpy( series->name, name, sizeof( series->name ) - 1 );
+    strncpy( series->name, name, sizeof( series->name ) );
 
     /* reset units if necessary */
     if ( strainData )
