@@ -1458,7 +1458,10 @@ int XLALBinaryToSFTVector( SFTVector **SFTvect,    /**< [out] copied SFT (needs 
   /* read in the data to the timeseries */
   REAL8 sum = 0;
   for ( i = 0; i < Nfile; i++ ) {
-    fread( &dummy, sizeof( REAL4 ), 1, binfp );
+    if ( fread( &dummy, sizeof( REAL4 ), 1, binfp ) != 1 ) {
+      LogPrintf( LOG_CRITICAL, "%s: Error, unable to read timeseries data\n", __func__ );
+      return XLAL_FAILURE;
+    }
     Tseries->data->data[i] = dummy;
     sum += Tseries->data->data[i];
   }
