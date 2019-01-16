@@ -25,6 +25,9 @@
 #
 
 
+from __future__ import print_function
+
+
 import math
 import numpy
 from optparse import OptionParser
@@ -90,7 +93,7 @@ def parse_command_line():
 	filenames = filenames or []
 	for cache in options.input_cache:
 		if options.verbose:
-			print >>sys.stderr, "reading '%s' ..." % cache
+			print("reading '%s' ..." % cache, file=sys.stderr)
 		filenames += [CacheEntry(line).path for line in file(cache)]
 	if not filenames:
 		raise ValueError("Nothing to do!")
@@ -479,7 +482,7 @@ if options.plot is not None:
 
 for n, filename in enumerate(ligolw_utils.sort_files_by_size(filenames, options.verbose, reverse = True)):
 	if options.verbose:
-		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+		print("%d/%d: %s" % (n + 1, len(filenames), filename), file=sys.stderr)
 	working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
 	database = SnglBurstUtils.CoincDatabase(sqlite3.connect(working_filename), options.live_time_program, search = "StringCusp")
 	if options.verbose:
@@ -511,7 +514,7 @@ AS
 		if requires_injection_db and not is_injection_db:
 			continue
 		if options.verbose:
-			print >>sys.stderr, "adding to plot group %d ..." % n
+			print("adding to plot group %d ..." % n, file=sys.stderr)
 		plot.add_contents(database)
 	database.connection.close()
 	dbtables.discard_connection_filename(filename, working_filename, verbose = options.verbose)
@@ -526,15 +529,15 @@ format = "%%s%%0%dd%%s.%%s" % (int(math.log10(len(plots) or 1)) + 1)
 while len(plots):
 	n, requires_injection_db, plot = plots.pop(0)
 	if options.verbose:
-		print >>sys.stderr, "finishing plot group %d ..." % n
+		print("finishing plot group %d ..." % n, file=sys.stderr)
 	try:
 		figs = plot.finish()
 	except ValueError as e:
-		print >>sys.stderr, "can't finish plot group %d: %s" % (n, str(e))
+		print("can't finish plot group %d: %s" % (n, str(e)), file=sys.stderr)
 	else:
 		for f, fig in enumerate(figs):
 			for extension in options.format:
 				filename = format % (options.base, n, chr(97 + f), extension)
 				if options.verbose:
-					print >>sys.stderr, "writing %s ..." % filename
+					print("writing %s ..." % filename, file=sys.stderr)
 				fig.savefig(filename)

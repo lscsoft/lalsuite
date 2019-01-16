@@ -36,7 +36,7 @@ os.system('rm -rf plotdata/')
 os.system('mkdir plotdata/')
 
 for time in peak_time:
-	print 'Producing plot data for trigger at: ', time
+	print('Producing plot data for trigger at: ', time)
 	seg_file=open('seg.txt',mode='r')
 	seg_list=seg_file.readlines()
         #do the slides

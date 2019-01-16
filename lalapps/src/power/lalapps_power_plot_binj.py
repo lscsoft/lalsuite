@@ -25,6 +25,9 @@
 #
 
 
+from __future__ import print_function
+
+
 import math
 import numpy
 from optparse import OptionParser
@@ -100,7 +103,7 @@ def parse_command_line():
 	filenames = filenames or []
 	for cache in options.input_cache:
 		if options.verbose:
-			print >>sys.stderr, "reading '%s' ..." % cache
+			print("reading '%s' ..." % cache, file=sys.stderr)
 		filenames += [CacheEntry(line).path for line in file(cache)]
 
 	return options, filenames
@@ -722,7 +725,7 @@ def new_coinc_plots(instruments, amplitude_func, amplitude_lbl, plots):
 
 options, filenames = parse_command_line()
 if not options.plot and not options.coinc_plot or not filenames:
-	print >>sys.stderr, "Nothing to do!"
+	print("Nothing to do!", file=sys.stderr)
 	sys.exit(0)
 
 
@@ -736,7 +739,7 @@ coincplots = new_coinc_plots(("H1", "H2", "L1"), options.amplitude_func, options
 
 for n, filename in enumerate(utils.sort_files_by_size(filenames, options.verbose, reverse = True)):
 	if options.verbose:
-		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+		print("%d/%d: %s" % (n + 1, len(filenames), filename), file=sys.stderr)
 	working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
 	database = SnglBurstUtils.CoincDatabase(sqlite3.connect(working_filename), options.live_time_program)
 	if options.verbose:
@@ -764,7 +767,7 @@ AS
 				plots[instrument] = new_plots(instrument, options.amplitude_func, options.amplitude_lbl, options.plot)
 			for n, plot in zip(options.plot, plots[instrument]):
 				if options.verbose:
-					print >>sys.stderr, "adding to %s plot %d ..." % (instrument, n)
+					print("adding to %s plot %d ..." % (instrument, n), file=sys.stderr)
 				plot.add_contents(database)
 	if options.coinc_plot:
 		database.connection.cursor().execute("""
@@ -785,7 +788,7 @@ AS
 		""")
 		for n, plot in enumerate(coincplots):
 			if options.verbose:
-				print >>sys.stderr, "adding to coinc plot %d ..." % options.coinc_plot[n]
+				print("adding to coinc plot %d ..." % options.coinc_plot[n], file=sys.stderr)
 			plot.add_contents(database)
 	database.connection.close()
 	dbtables.discard_connection_filename(filename, working_filename, verbose = options.verbose)
@@ -823,7 +826,7 @@ for instrument in plots:
 		plot = plots[instrument].pop(0)
 		filename = format % (options.base, options.plot[n], options.format)
 		if options.verbose:
-			print >>sys.stderr, "finishing %s plot %d ..." % (instrument, options.plot[n])
+			print("finishing %s plot %d ..." % (instrument, options.plot[n]), file=sys.stderr)
 		try:
 			if isinstance(plot, SimBurstUtils.Efficiency_hrss_vs_freq):
 				plot.finish(binning = binning)
@@ -833,10 +836,10 @@ for instrument in plots:
 				plot.finish()
 				fig = plot.fig
 		except ValueError as e:
-			print >>sys.stderr, "can't finish %s plot %d: %s" % (instrument, options.plot[n], str(e))
+			print("can't finish %s plot %d: %s" % (instrument, options.plot[n], str(e)), file=sys.stderr)
 		else:
 			if options.verbose:
-				print >>sys.stderr, "writing %s ..." % filename
+				print("writing %s ..." % filename, file=sys.stderr)
 			fig.savefig(filename)
 		n += 1
 
@@ -850,7 +853,7 @@ for n, plot in enumerate(coincplots):
 	format = "%%s%s_%%0%dd.%%s" % ("coinc", int(math.log10(max(options.coinc_plot) or 1)) + 1)
 	filename = format % (options.base, options.coinc_plot[n], options.format)
 	if options.verbose:
-		print >>sys.stderr, "finishing coinc plot %d ..." % options.coinc_plot[n]
+		print("finishing coinc plot %d ..." % options.coinc_plot[n], file=sys.stderr)
 	try:
 		if isinstance(plot, SimBurstUtils.Efficiency_hrss_vs_freq):
 			plot.finish(binning = binning)
@@ -859,10 +862,10 @@ for n, plot in enumerate(coincplots):
 			plot.finish()
 			fig = plot.fig
 	except ValueError as e:
-		print >>sys.stderr, "can't finish coinc plot %d: %s" % (options.coinc_plot[n], str(e))
+		print("can't finish coinc plot %d: %s" % (options.coinc_plot[n], str(e)), file=sys.stderr)
 	else:
 		if options.verbose:
-			print >>sys.stderr, "writing %s ..." % filename
+			print("writing %s ..." % filename, file=sys.stderr)
 		fig.savefig(filename)
 
 
@@ -925,9 +928,9 @@ def plot_multi_Efficiency_hrss_vs_freq(efficiencies):
 
 if efficiencies:
 	if options.verbose:
-		print >>sys.stderr, "computing theoretical coincident detection efficiency ..."
+		print("computing theoretical coincident detection efficiency ...", file=sys.stderr)
 	fig = plot_multi_Efficiency_hrss_vs_freq(efficiencies)
 	filename = "%scoincidence.png" % options.base
 	if options.verbose:
-		print >>sys.stderr, "writing %s ..." % filename
+		print("writing %s ..." % filename, file=sys.stderr)
 	fig.savefig(filename)

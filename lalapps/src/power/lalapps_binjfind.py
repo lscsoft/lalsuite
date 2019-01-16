@@ -30,6 +30,9 @@ Command-line interface to burst injection identification code.
 """
 
 
+from __future__ import print_function
+
+
 from optparse import OptionParser
 import sys
 
@@ -146,7 +149,7 @@ for n, filename in enumerate(filenames):
 	#
 
 	if options.verbose:
-		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
+		print("%d/%d:" % (n + 1, len(filenames)), end=' ', file=sys.stderr)
 	xmldoc = utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
 	binjfind.lsctables.table.InterningRowBuilder.strings.clear()
 
@@ -156,13 +159,13 @@ for n, filename in enumerate(filenames):
 
 	if ligolw_process.doc_includes_process(xmldoc, binjfind.process_program_name):
 		if options.verbose:
-			print >>sys.stderr, "warning: %s already processed," % (filename or "stdin"),
+			print("warning: %s already processed," % (filename or "stdin"), end=' ', file=sys.stderr)
 		if not options.force:
 			if options.verbose:
-				print >>sys.stderr, "skipping (use --force to force)"
+				print("skipping (use --force to force)", file=sys.stderr)
 			continue
 		if options.verbose:
-			print >>sys.stderr, "continuing by --force"
+			print("continuing by --force", file=sys.stderr)
 
 	#
 	# add process metadata to document

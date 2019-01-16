@@ -16,9 +16,9 @@ from pylab import *
 try:
     from scipy.sandbox import delaunay
 except:
-    print """"Warning: the delaunay package could not be imported. 
+    print(""""Warning: the delaunay package could not be imported. 
     Functionalities such as the contour or surf plots will not be available. 
-    Fix your configuration and packages."""    
+    Fix your configuration and packages.""")    
 #import numpy.core.ma as ma
 from numpy import *
 from math import log10
@@ -177,12 +177,12 @@ class ReadXMLFiles:
     file = open(filename, "r")
     line = file.readline()  
     # first, we search for the requested table
-    if self.verbose : print "searching for the table "+table 
+    if self.verbose : print("searching for the table "+table) 
     while line and line.find(table) < 0:
       line = file.readline() 
     
 
-    if self.verbose: print "reading the data..."
+    if self.verbose: print("reading the data...")
     if not line:
       return None
     # create a dictionary using the parameters of the xml table as keys
@@ -221,21 +221,21 @@ class ReadXMLFiles:
     
       
     # check that the file was properly closed with a </stream> tag
-    if self.verbose: print "Found "+str(count-1)+" elements"
+    if self.verbose: print("Found "+str(count-1)+" elements")
       
     #convert  
-    if self.verbose : print "converting to arrays"
+    if self.verbose : print("converting to arrays")
     for key in sortDict:
       try:
         table_summ[key] = array(table_summ[key])
       except:
-        print 'skip array conversion for '+ key 
+        print('skip array conversion for '+ key) 
         pass
   
     file.close()
     
     if table_summ is None: 
-        print 'Warning: '+ table +'table cannot be found in'+filename
+        print('Warning: '+ table +'table cannot be found in'+filename)
     return table_summ
 
 
@@ -247,15 +247,15 @@ class ReadXMLFiles:
     """    
     # right now only one file can be read.
     if len(self.files)>1:
-        print "Warning: More than 1 file match your --glob argument. use the last one. Fix me"
+        print("Warning: More than 1 file match your --glob argument. use the last one. Fix me")
     
     if len(self.files)==0:
-      print 'Error, no file to read. check the spelling'
+      print('Error, no file to read. check the spelling')
       sys.exit(1)
     
     for file in self.files:
       if self.verbose is True:
-          print 'Reading ' + file
+          print('Reading ' + file)
       # first we need to read the process_params, and extract Fl, the lower cut-
       # off frequency, which will be used later on  
       if name is None:
@@ -267,9 +267,9 @@ class ReadXMLFiles:
         except:
           self.params = None
           self.values = None
-          raise ValueError, """ The XMl file must contain a process_params table 
+          raise ValueError(""" The XMl file must contain a process_params table 
     with the --fl option at least. It does not seem to be present in the file 
-    provide."""
+    provide.""")
 
         #try:
         results = self.readXML(file, 'bankefficiency')
@@ -306,9 +306,8 @@ class ReadXMLFiles:
           pass
     
       if self.bank is None:
-        print \
-"""Warning: no sngl_inspiral table found. so,no information
-         related to the template bank can be extracted"""
+        print("""Warning: no sngl_inspiral table found. so,no information
+         related to the template bank can be extracted""")
     
     if name is not None:
       try:
@@ -339,7 +338,7 @@ class Plotting:
     fig = None
     if self.hold is False:
       if self.verbose is True:
-        print 'Plotting '+ str(self.figure_num) +' in progress...',
+        print('Plotting '+ str(self.figure_num) +' in progress...', end=' ')
       fig = figure(self.figure_num)
       self.figure_num += 1
     return fig
@@ -357,7 +356,7 @@ class Plotting:
     try:
       n, bins, patches = hist(data, nbins, normed=1)
     except:
-      print """Error inside histogram (hist function)""" 
+      print("""Error inside histogram (hist function)""") 
         
     if fit is True:
       try:
@@ -369,7 +368,7 @@ class Plotting:
         except:pass
         
       except:
-        print """Error inside histogram (normpdf function)""" 
+        print("""Error inside histogram (normpdf function)""") 
     if self.title is not None:
       title(self.title) 
     
@@ -416,7 +415,7 @@ class Plotting:
       if self.title is not None:
           title(self.title) 
     except: 
-      print """Error inside scatter plots"""      
+      print("""Error inside scatter plots""")      
       
     return fig,handle
     
@@ -456,14 +455,14 @@ class Plotting:
            markersize=markersize,alpha=alpha,linewidth=linewidth)
       if self.title is not None:
           title(self.title) 
-    except: print """Error inside plot"""
+    except: print("""Error inside plot""")
     
     gca().grid(True)
     return fig,handle
 
   def griddata(self,xdata,ydata,zdata,xbin=20,ybin=20):
     
-    if self.verbose: print 'Entering griddata...',
+    if self.verbose: print('Entering griddata...', end=' ')
     
     xmin = min(xdata)
     xmax = max(xdata)
@@ -472,23 +471,23 @@ class Plotting:
     ymin = min(ydata)
     ymax = max(ydata)
     ystep = (ymax - ymin)/ybin
-    print xmin,xmax,xstep,ymin,ymax,ystep
+    print(xmin,xmax,xstep,ymin,ymax,ystep)
     xi, yi = mgrid[xmin:xmax:xstep, ymin:ymax:ystep]
     # triangulate data
     
     try:
         
-      print 'here1'  
+      print('here1')  
       tri = delaunay.Triangulation(xdata,ydata)
-      print 'here2'
+      print('here2')
       interp = tri.nn_interpolator(zdata)    
-      print 'here3'
+      print('here3')
       zi = interp(xi,yi)
-      print 'here4'
+      print('here4')
     except:
-      print 'Problem in griddata'
+      print('Problem in griddata')
 
-    if self.verbose: print 'Done'
+    if self.verbose: print('Done')
     return xi,yi,zi
 
   def surf(self,xdata,ydata,zdata,xbin=20,ybin=20,vmin=0,vmax=1):

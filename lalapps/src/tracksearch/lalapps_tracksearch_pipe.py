@@ -100,10 +100,10 @@ uniquePath=str(options.uniquePath)
 specificGPS=float(options.specificGPS)
 
 if not os.path.exists(iniFile):
-    print 'Can not find iniFile: ',os.path.basename(iniFile)
+    print('Can not find iniFile: ',os.path.basename(iniFile))
     os.abort()
 if (not os.path.exists(segmentList) and specificGPS == 0):
-    print 'Can not find segentlist: ',os.path.basename(segmentList)
+    print('Can not find segentlist: ',os.path.basename(segmentList))
     os.abort()
     
 #Read in the configuration file options
@@ -127,19 +127,19 @@ cp.set('filelayout','logpath',newLogPath)
 
 #Use config information to remove files if requested
 if removepipeline:
-    print "Removing this particular pipeline setup!"
+    print("Removing this particular pipeline setup!")
     #print "Waiting 3 seconds..."
     #time.sleep(4)
     pathList=[]
     for option in cp.options('filelayout'):
         workpath=cp.get('filelayout',option)
         if os.path.isdir(workpath):
-            print "Removing:",workpath
-            print "Feature not available yet."
+            print("Removing:",workpath)
+            print("Feature not available yet.")
             pathList.append(workpath)
-    print "For now cut and paste the following."
+    print("For now cut and paste the following.")
     for entry in pathList:
-        print "rm -rf ",entry
+        print("rm -rf ",entry)
     sys.exit(0)
     
 #Run iniFile partial option sanity check
@@ -157,18 +157,18 @@ if testIniFile.numberWarnings() > 0:
 #Print memory use estimate!
 memoryEstimate=testIniFile.getMemoryUseEstimate()
 psdSmoothBandEstimate=testIniFile.getBandwithSmoothedEstimate()
-print "***"
-print "For this dag configuration the peak memory use estimate is: "+str(memoryEstimate)+" MBs."
-print "As a rule of thumb this value should be about one third of the systems available memory or less."
-print "***"
+print("***")
+print("For this dag configuration the peak memory use estimate is: "+str(memoryEstimate)+" MBs.")
+print("As a rule of thumb this value should be about one third of the systems available memory or less.")
+print("***")
 if verbose:
-	print "For this dag setup if smoothing is used we estimate that a band of "+str(psdSmoothBandEstimate)+" Hz will be smoothed during the whitening process."
+	print("For this dag setup if smoothing is used we estimate that a band of "+str(psdSmoothBandEstimate)+" Hz will be smoothed during the whitening process.")
 
 #Check ini file for an injection block heading.
 if (injectFileFlag == True):
-    print "Checking injection options."
+    print("Checking injection options.")
     if not(testIniFile.hasInjectSec()):
-        print "Double check the parameter file's injection section!"
+        print("Double check the parameter file's injection section!")
         os.abort()
 
 #We assume the input segment list has entries exceeding layerTopBlockSize
@@ -190,13 +190,13 @@ else:
     setSize=int(cp.get('layerconfig','layer1SetSize'))
     timeScale=float(cp.get('layerconfig','layer1TimeScale'))
     minSize=setSize*timeScale
-    print "Building pipe with rubber block size option enabled."
-    print "Minimum duration block: "+str(minSize)
-    print "Maximum duration block: "+str(dataBlockSize)
+    print("Building pipe with rubber block size option enabled.")
+    print("Minimum duration block: "+str(minSize))
+    print("Maximum duration block: "+str(dataBlockSize))
     for opt in cp.options('layerconfig'):
         if str(opt).lower().__contains__(str('layer2TimeScale').lower()):
-            print "Error found additional layerconfig options for multi-resolution search."
-            print "Aborting pipeline construction."
+            print("Error found additional layerconfig options for multi-resolution search.")
+            print("Aborting pipeline construction.")
             os.abort
     rubberSegList=tracksearch.tracksearchConvertSegList(segmentList,minSize,cp,topBlockFloat,overrideBurn)
     rubberSegList.writeSegList()
@@ -209,10 +209,10 @@ else:
 logFilePath=cp.get('filelayout','logpath')
 logFileMask=logFilePath+'/logFile_'
 if not(os.path.isdir(logFilePath)):
-       print 'Log path does not exist!'
-       print 'Expected to find:',logFilePath
+       print('Log path does not exist!')
+       print('Expected to find:',logFilePath)
        tracksearch.buildDir(logFilePath)
-       print 'Created...'
+       print('Created...')
 
 indexA=0
 # The pipeline needs a method change for handling large segment lists
@@ -224,7 +224,7 @@ indexA=0
 # stored independently
 
 #Write out the data chunks actually configured for search.
-print "Writing the actual segment list to disk for reference."
+print("Writing the actual segment list to disk for reference.")
 tracksearch.writeChunkListToDisk(allData,str(segmentListName+".dataUsed"))
 
 ##### New initialization method
@@ -233,19 +233,19 @@ tracksearchBlock=tracksearch.tracksearch(cp,injectFileFlag,tracksearchLogFile)
 progress=progressSpinner(verbose,2)
 progress.setTag('Building ')
 if allData.__len__() == 0:
-    print "Please check your segment list."
-    print "Also check INI files option in section [layerconfig]"
+    print("Please check your segment list.")
+    print("Also check INI files option in section [layerconfig]")
     os.abort()
 else:
-    print "Building :"+str(allData.__len__())+" blocks into pipe."
+    print("Building :"+str(allData.__len__())+" blocks into pipe.")
 for block in allData:
     progress.updateSpinner()
     tracksearchBlock.createJobs(block)
 progress.closeSpinner
 tracksearchBlock.writePipelineDAG()
         
-print "\n We prepared "+str(allData.__len__())+" analysis segments."
-print "The dag info should be found in :",cp.get('filelayout','dagpath')
+print("\n We prepared "+str(allData.__len__())+" analysis segments.")
+print("The dag info should be found in :",cp.get('filelayout','dagpath'))
 sys.exit(0)
 
 

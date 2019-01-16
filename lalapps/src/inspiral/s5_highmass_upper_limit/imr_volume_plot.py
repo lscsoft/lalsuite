@@ -88,9 +88,9 @@ vA[vA==0] = 0.01
 for i, l in enumerate(vA):
   for j, m in enumerate(l):
     for k, n in enumerate(m):
-      if n == 0: print i,j,k,n #vA[i][j][k] = 0.01
+      if n == 0: print(i,j,k,n) #vA[i][j][k] = 0.01
     #if k = 0 k = 0.01
-print vA.shape
+print(vA.shape)
 bins, vA2, ulA = get_combined_array("2DsearchvolumeSecondMoment", 1)
 #bins, dvA, ulA = get_combined_array("2DsearchvolumeDerivative", 2)
 #bins, vAD, ulA = get_combined_array("2DsearchvolumeDistance", 3)
@@ -150,11 +150,11 @@ if vA.shape[0] == 2:
   pylab.figure(3)
   #pylab.gray()
   vA0 = vA[0]
-  print vA0.min()
+  print(vA0.min())
   vA0[vA0 == vA0.min()] = 1.0
   vA1 = vA[1]
   vA1[vA1 == vA1.min()] = 1.0
-  print vA1.min()
+  print(vA1.min())
   pylab.pcolor(X,Y, pylab.log10(vA0 /  vA1), vmin=-1, vmax=1)
   #pylab.hold(1)
   #cn = pylab.contour(bins.centres()[0], bins.centres()[1], ul)

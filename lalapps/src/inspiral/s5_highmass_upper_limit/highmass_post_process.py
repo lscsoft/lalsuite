@@ -2,6 +2,8 @@
 This program makes the S5 high mass post processing dag
 """
 
+from __future__ import print_function
+
 __author__ = 'Chad Hanna <channa@caltech.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -589,7 +591,7 @@ def ifo_seg_dict(cp):
         instruments.add(i)
         cat_list.add(c)
     combos[c] = ifo_combos(out[c])
-    print>>sys.stderr, "\tfound these " + c + " combos:", combos[c]
+    print("\tfound these " + c + " combos:", combos[c], file=sys.stderr)
 
   #FIXME use proper instruments utilities
   instruments = list(instruments)
@@ -597,7 +599,7 @@ def ifo_seg_dict(cp):
   cat_list = list(cat_list)
   cat_list.sort()
   if len(out['CAT_2']) and len(out['CAT_2']) and ( len(out['CAT_2']) != len(out['CAT_3']) ):
-    print >>sys.stderr, "cat 2 instruments don't agree with cat3 instruments, aborting."
+    print("cat 2 instruments don't agree with cat3 instruments, aborting.", file=sys.stderr)
     sys.exit(1)
   return out, cat_list, combos, ",".join(instruments)
 
@@ -626,7 +628,7 @@ def grep_pieces_and_append(string, inname, outname, append_cache=None):
         outnames.append(outname+"/"+outname+"_"+str(i))
         o = open(outnames[-1]+".cache", "w")
         if append_cache: o.write(''.join(append_cache))
-	print >>sys.stderr, "\tbreaking up full data into pieces %f%%\r" % (float(i) / len(new_list) * 100.0,), 
+	print("\tbreaking up full data into pieces %f%%\r" % (float(i) / len(new_list) * 100.0,), end=' ', file=sys.stderr) 
       o.write(new_list[i])
       o.write(new_list[i].replace('THINCA_SECOND','THINCA_SLIDE_SECOND'))
     return outnames
@@ -642,12 +644,12 @@ def get_doubles(instruments):
 # MAIN PROGRAM
 ###############################################################################
 
-print >> sys.stderr, "\n...WELCOME FRIENDOS...\n"
+print("\n...WELCOME FRIENDOS...\n", file=sys.stderr)
 
 cp = ConfigParser.ConfigParser()
 try: cp.read("hm_post.ini")
 except: 
-  print "couldn't find hm_post.ini"
+  print("couldn't find hm_post.ini")
   sys.exit(1)
 
 try: os.mkdir("logs")
@@ -744,7 +746,7 @@ timestr = str(start_time) + "-" + str(end_time)
 # LOOP OVER CATS
 ###############################################
 for cat in cats:
-  print >>sys.stderr, "\nAnalyzing " + cat
+  print("\nAnalyzing " + cat, file=sys.stderr)
   p_nodes = {}
   p_nodes[cat] = []
   ###############################################
@@ -774,9 +776,9 @@ for cat in cats:
   ###############################################
   # INJECTION THINCA TO COINC AND CLUSTERING ETC
   ###############################################
-  print >> sys.stderr, "\n"
+  print("\n", file=sys.stderr)
   for injnum, inj in enumerate(injcache):
-    print >> sys.stderr, "\tprocessing injection %f %%\r" % (float(injnum) / len(injcache) * 100.00,),
+    print("\tprocessing injection %f %%\r" % (float(injnum) / len(injcache) * 100.00,), end=' ', file=sys.stderr)
     type = "_".join(inj.description.split("_")[2:])
     tag = type + "_" + cat
     url = inj.url
@@ -859,7 +861,7 @@ dag.write_sub_files()
 dag.write_dag()
 dag.write_script()
 
-print "\n\nYour database output should be...\n"
+print("\n\nYour database output should be...\n")
 for cat in cats:
-  print "\t" + cat + ":\n", " ".join(db[cat]) + "\n"
-print "\n\n\tnow run condor_submit_dag hm_post.dag\n\n\tGOOD LUCK!"
+  print("\t" + cat + ":\n", " ".join(db[cat]) + "\n")
+print("\n\n\tnow run condor_submit_dag hm_post.dag\n\n\tGOOD LUCK!")

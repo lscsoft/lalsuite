@@ -146,7 +146,7 @@ if opts.source_file:
     l=(lumsum[n]/(dv[n]))
     suml = suml+l
     if opts.verbose:
-      print "%f (%f) L_10/Mpc^3" % (l,suml/(float(i+1)))
+      print("%f (%f) L_10/Mpc^3" % (l,suml/(float(i+1))))
 
   luminosity_extrapolation_factor = suml/float(opts.nbins)
 

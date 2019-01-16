@@ -307,6 +307,8 @@ run with injections.
 # Steve Fairhurst, Darren Woods</dd>
 # </dl>
 
+from __future__ import print_function
+
 __author__ = 'Stephen Fairhurst <sfairhur@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -341,7 +343,7 @@ def write_local_tc(cp):
   try:
     tc = open('tc.data','w')
   except:
-    print >> sys.stderr, "Cannot open transformation catalog for writing"
+    print("Cannot open transformation catalog for writing", file=sys.stderr)
     sys.exit(1)
 
   # write a line to the transformation catalog for each executable
@@ -457,7 +459,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   if ifo_name == 'G1':
     try: GeoBank = cp.get('input','geo-bank')
     except: GeoBank = None
-    if GeoBank: print "For G1 we use bank ", GeoBank
+    if GeoBank: print("For G1 we use bank ", GeoBank)
 
   data_opts, type, channel = get_data_options(cp,ifo_name)
 
@@ -473,7 +475,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   # see if we are using calibrated data
   if cp.has_section(data_opts) and cp.has_option(data_opts,'calibrated-data'):
     calibrated = True
-    print "we use calibrated data for ", ifo_name 
+    print("we use calibrated data for ", ifo_name) 
   else: calibrated = False
 
   # prepare the exttrig injection filename
@@ -1805,55 +1807,55 @@ command_line = sys.argv[1:]
 #################################
 # if --version flagged
 if opts.version:
-  print "$Id$"
+  print("$Id$")
   sys.exit(0)
 
 #################################
 # Sanity check of input arguments
 if not opts.config_file:
-  print >> sys.stderr, "No configuration file specified."
-  print >> sys.stderr, "Use --config-file FILE to specify location."
+  print("No configuration file specified.", file=sys.stderr)
+  print("Use --config-file FILE to specify location.", file=sys.stderr)
   sys.exit(1)
 
 if not opts.log_path:
-  print >> sys.stderr, "No log file path specified."
-  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  print("No log file path specified.", file=sys.stderr)
+  print("Use --log-path PATH to specify a location.", file=sys.stderr)
   sys.exit(1)
 
 if not opts.g1_data and not opts.h1_data and not opts.h2_data and \
     not opts.l1_data and not opts.v1_data and not opts.analyze_all:
-  print >> sys.stderr, "No ifos specified.  Please specify at least one of"
-  print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data, --v1-data"
-  print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
+  print("No ifos specified.  Please specify at least one of", file=sys.stderr)
+  print("--g1-data, --h1-data, --h2-data, --l1-data, --v1-data", file=sys.stderr)
+  print("or use --analyze-all to analyze all ifos all data", file=sys.stderr)
   sys.exit(1)
 elif opts.analyze_all:
-  print >> sys.stderr, "The --analyze-all flag is currently not available."
-  print >> sys.stderr, "The code supports quadruple coincidence, so you can"
-  print >> sys.stderr, "choose at most four instruments to analyze."
+  print("The --analyze-all flag is currently not available.", file=sys.stderr)
+  print("The code supports quadruple coincidence, so you can", file=sys.stderr)
+  print("choose at most four instruments to analyze.", file=sys.stderr)
   sys.exit(1)
 
 if opts.g1_data and opts.h1_data and opts.h2_data and opts.l1_data \
     and opts.v1_data:
-  print >> sys.stderr, "Too many IFOs specified. " \
-      "Please choose up to four IFOs, but not five."
+  print("Too many IFOs specified. " \
+      "Please choose up to four IFOs, but not five.", file=sys.stderr)
   sys.exit(1)
 
 if not opts.one_ifo and not opts.two_ifo and not opts.three_ifo and \
     not opts.four_ifo and not opts.analyze_all:
-  print >> sys.stderr, "No number of ifos given. Please specify at least one of"
-  print >> sys.stderr, "--one-ifo, --two-ifo, --three-ifo, --four-ifo"
-  print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
+  print("No number of ifos given. Please specify at least one of", file=sys.stderr)
+  print("--one-ifo, --two-ifo, --three-ifo, --four-ifo", file=sys.stderr)
+  print("or use --analyze-all to analyze all ifos all data", file=sys.stderr)
   sys.exit(1)
 elif opts.analyze_all:
-  print >> sys.stderr, "The --analyze-all flag can not be used to specify the"
-  print >> sys.stderr, "number of ifos to analyze. The code supports quadruple"
-  print >> sys.stderr, "coincidence, so you can choose at most four instruments"
-  print >> sys.stderr, "to analyze."
+  print("The --analyze-all flag can not be used to specify the", file=sys.stderr)
+  print("number of ifos to analyze. The code supports quadruple", file=sys.stderr)
+  print("coincidence, so you can choose at most four instruments", file=sys.stderr)
+  print("to analyze.", file=sys.stderr)
   sys.exit(1)
 
 if opts.inspiral_veto and opts.td_follow_inspiral:
-  print >> sys.stderr, "Please specify only one of"
-  print >> sys.stderr, "--inspiral-veto, --td-follow-inspiral."
+  print("Please specify only one of", file=sys.stderr)
+  print("--inspiral-veto, --td-follow-inspiral.", file=sys.stderr)
  
 if not opts.datafind and not opts.template_bank and not opts.write_script and \
      not opts.inspiral and not opts.sire_inspiral and \
@@ -1865,14 +1867,14 @@ if not opts.datafind and not opts.template_bank and not opts.write_script and \
      not opts.coherent_bank and not opts.coherent_inspiral and \
      not opts.summary_inspiral_triggers and not opts.summary_coinc_triggers and \
      not opts.cohire and not opts.summary_coherent_inspiral_triggers:
-  print >> sys.stderr, """  No steps of the pipeline specified.
+  print("""  No steps of the pipeline specified.
   Please specify at least one of
   --datafind, --template-bank, --inspiral, --sire-inspiral, --coincidence,
   --coire-coincidence, --trigbank, --inspiral-veto, --sire-inspiral-veto,
   --td-follow-bank, --td-follow-inspiral, --second-coinc,
   --coire-second-coinc, --sire-second-coinc, --coherent-bank,
   --coherent-inspiral, --summary-inspiral-triggers --summary-coinc-triggers,
-  --cohire, --summary-coherent-inspiral-triggers"""
+  --cohire, --summary-coherent-inspiral-triggers""", file=sys.stderr)
   sys.exit(1)
 
 ifo_list = ['H1','H2','L1','V1','G1']
@@ -2039,11 +2041,11 @@ if doExtTrig:
 
   # check the values given
   if startExttrig < 1:
-    print >> sys.stderr, "exttrig-inj-start must be larger than 0."
+    print("exttrig-inj-start must be larger than 0.", file=sys.stderr)
     sys.exit(1)
   if startExttrig > stopExttrig:
-    print >> sys.stderr, "exttrig-inj-stop must be larger than "\
-                         "exttrig-inj-start."
+    print("exttrig-inj-stop must be larger than "\
+                         "exttrig-inj-start.", file=sys.stderr)
     sys.exit(1)
 else:
   exttrigInjections=[0,0]
@@ -2375,7 +2377,7 @@ elif play_data_mask == 'all_data':
     job.add_opt('data-type','all_data')
 
 else:
-  print "Invalid playground data mask " + play_data_mask + " specified"
+  print("Invalid playground data mask " + play_data_mask + " specified")
   sys.exit(1)
 
  
@@ -2442,7 +2444,7 @@ else:
 #   Step 1: read science segs that are greater or equal to a chunk 
 #   from the input file
 
-print "reading in single ifo science segments and creating master chunks...",
+print("reading in single ifo science segments and creating master chunks...", end=' ')
 sys.stdout.flush()
 
 segments = {}
@@ -2461,7 +2463,7 @@ for ifo in ifo_list:
     data[ifo].make_chunks_from_unused(length,overlap/2,playground_only,
         0,0,overlap/2,pad)
 
-print "done"
+print("done")
 
 # work out the earliest and latest times that are being analyzed
 if not gps_start_time:
@@ -2469,8 +2471,8 @@ if not gps_start_time:
   for ifo in ifo_list:
     if data[ifo] and (data[ifo][0].start() < gps_start_time):
       gps_start_time = data[ifo][0].start()
-  print "GPS start time not specified, obtained from segment lists as " + \
-    str(gps_start_time)
+  print("GPS start time not specified, obtained from segment lists as " + \
+    str(gps_start_time))
 
 
 if not gps_end_time:
@@ -2478,8 +2480,8 @@ if not gps_end_time:
   for ifo in ifo_list:
     if data[ifo] and (data[ifo][-1].end() > gps_end_time):
       gps_end_time = data[ifo][0].end()
-  print "GPS end time not specified, obtained from segment lists as " + \
-    str(gps_end_time)
+  print("GPS end time not specified, obtained from segment lists as " + \
+    str(gps_end_time))
 
 ##############################################################################
 #   Step 2: determine analyzable times
@@ -2546,7 +2548,7 @@ if cp.has_option("input","hardware-injection"):
   inspinj.set_end(gps_end_time)
   inspinj.set_seed(0)
   inj_file = inspinj.get_output()
-  print inj_file
+  print(inj_file)
   shutil.copy( inj_file_loc, inj_file)
   inspinj = None
 elif seed:
@@ -2601,7 +2603,7 @@ chunks_analyzed = {}
 prev_df = None
 
 for ifo in ifo_list:
-  print "setting up jobs to filter " + ifo + " data...",
+  print("setting up jobs to filter " + ifo + " data...", end=' ')
   sys.stdout.flush()
 
   (prev_df,chunks_analyzed[ifo]) = analyze_ifo(ifo,data[ifo],data_to_do[ifo],  
@@ -2620,14 +2622,14 @@ for ifo in ifo_list:
         ifotag="SUMMARY_FIRST", usertag = usertag, 
         inspinjNode=inspinj)
 
-  print "done" 
+  print("done") 
 
 
 ##############################################################################
 # Step 5: Run inca in single ifo mode on the single ifo triggers.
 
 if not opts.ringdown:
-  print "setting up jobs to inca single IFO data...",
+  print("setting up jobs to inca single IFO data...", end=' ')
   sys.stdout.flush()
 
   single_coinc_nodes = {}
@@ -2641,7 +2643,7 @@ if not opts.ringdown:
         opts.coire_coincidence, opts.coincidence, ifo,
         inj_file=inj_file, usertag=usertag, ifotag="FIRST", inspinjNode = inspinj)
 
-  print "done"
+  print("done")
   
  
 ##############################################################################
@@ -2651,7 +2653,7 @@ coinc_nodes = {}
 coinc_slide_nodes = {}
 
 for ifos in ifo_coincs:
-  print "setting up thinca jobs on " + ifos + " data...",
+  print("setting up thinca jobs on " + ifos + " data...", end=' ')
   sys.stdout.flush()
 
   if cp.has_section('thinca-1'): thinca_jobs[ifos].add_ini_opts(cp, 'thinca-1')
@@ -2710,7 +2712,7 @@ for ifos in ifo_coincs:
   # Concatenate the zerolag and slide nodes
   coinc_nodes[ifos] = coinc_nodes[ifos] + coinc_slide_nodes[ifos]
   
-  print "done"
+  print("done")
 
 
 ##############################################################################
@@ -2723,7 +2725,7 @@ if opts.td_follow_bank or opts.td_follow_inspiral:
     approximants = cp.get('veto-inspiral', 'approximant')
     cp.remove_option('veto-inspiral', 'approximant')
   except configparser.NoOptionError:
-    print "No approximant in veto-inspiral - using the main one..."
+    print("No approximant in veto-inspiral - using the main one...")
     approximants = cp.get('inspiral', 'approximant')
 
   approximants = approximants.split(',')
@@ -2747,8 +2749,8 @@ for ifos in ifo_coincs:
  
   for ifo in ifo_list:
     if ifo in ifos:
-      print "setting up jobs to filter " + ifo + \
-        " data with coinc trigs from " + ifos + " times ...",
+      print("setting up jobs to filter " + ifo + \
+        " data with coinc trigs from " + ifos + " times ...", end=' ')
       sys.stdout.flush()
 
       if opts.td_follow_bank or opts.td_follow_inspiral:
@@ -2769,7 +2771,7 @@ for ifos in ifo_coincs:
               inj_file = inj_file, usertag = usertag, 
               ifotag="SNGL_SECOND_" + ifo, inspinjNode = inspinj)
 
-      print "done"
+      print("done")
 
 
 ##############################################################################
@@ -2781,7 +2783,7 @@ coire2_nodes = {}
 coire2_slide_nodes = {}
 
 for ifos in ifo_coincs:
-  print "setting up second thinca jobs on " + ifos + " data...",
+  print("setting up second thinca jobs on " + ifos + " data...", end=' ')
   sys.stdout.flush()
 
   if cp.has_section('thinca-2'):
@@ -2884,7 +2886,7 @@ for ifos in ifo_coincs:
                   ifotag="SUMMARY_SECOND_" + ifos, usertag = usertag)
 
 
-  print "done"
+  print("done")
 
 ##############################################################################
 # Step 9: Create coherent (template) banks:
@@ -2894,7 +2896,7 @@ if not opts.ringdown:
   if num_slides: cohbank_slide_nodes = {}
 
   for ifos in ifo_coincs:
-    print "setting up coherent-bank jobs on " + ifos + " data...",
+    print("setting up coherent-bank jobs on " + ifos + " data...", end=' ')
     sys.stdout.flush()
 
     if cp.has_section('thinca-2') :
@@ -2917,7 +2919,7 @@ if not opts.ringdown:
       cohbank_nodes[ifos] = coherent_bank(ifos,cb_job,dag,coinc2_nodes[ifos],
           exttrigInjections,0,0,usertag=usertag)
 
-    print "done"
+    print("done")
 
 ##############################################################################
 # Step 10: Construct single-ifo CData frame files for the coherent analyses:
@@ -2935,8 +2937,8 @@ if not opts.ringdown:
       if ifo in ifos:
         data_opts[ifo] = {}
 
-        print "setting up jobs to filter " + ifo + \
-          " data with cohbank templates from " + ifos + " times ...",
+        print("setting up jobs to filter " + ifo + \
+          " data with cohbank templates from " + ifos + " times ...", end=' ')
         sys.stdout.flush()
 
         # add ifo specific options
@@ -2983,7 +2985,7 @@ if not opts.ringdown:
 	    data[ifo],ifo,cohbank_slide_nodes[ifos],ifos,trig_coh_jobs[ifo],
 	    insp_coh_jobs[ifo],dag,calibrated,exttrigInjections,1,usertag,inspinj)
 
-        print "done"
+        print("done")
 
 ##############################################################################
 # Step 11: Create network trigger banks with inspiral-coherent triggers:
@@ -2998,7 +3000,7 @@ if not opts.ringdown:
     cohinspbank_job.add_ini_opts(cp, 'cohinspbank')
 
   for ifos in ifo_coincs:
-    print "setting up network-trigger-bank jobs on " + ifos + " data...",
+    print("setting up network-trigger-bank jobs on " + ifos + " data...", end=' ')
     sys.stdout.flush()
 
     cohinspbank_nodes[ifos] = coherent_inspiral_bank(ifos,cohinspbank_job,dag,
@@ -3018,7 +3020,7 @@ if not opts.ringdown:
         analyzed_trig_coh_slide_data[ifos],exttrigInjections,
         num_slides,1,usertag=usertag)
 
-    print "done"
+    print("done")
 
 ##############################################################################
 # Step 12: Do the coherent analyses:
@@ -3040,7 +3042,7 @@ if not opts.ringdown:
       cohire_slide_summary_job.add_ini_opts(cp, 'cohire')
 
   for ifos in ifo_coincs:
-    print "setting up coherent-analysis jobs on " + ifos + " data...",
+    print("setting up coherent-analysis jobs on " + ifos + " data...", end=' ')
     sys.stdout.flush()
 
     if cp.has_section('data') and not opts.ringdown:
@@ -3087,13 +3089,13 @@ if not opts.ringdown:
              num_slides, inj_file=inj_file, ifotag="SUMMARY_COHERENT_" + ifos,
              usertag=usertag,inspinjNode=inspinj)
 
-    print "done"
+    print("done")
 
 ##############################################################################
 # Step 13: Write out the LAL cache files for the various output data
 
 if gps_start_time is not None and gps_end_time is not None:
-  print "generating cache files for output data products...",
+  print("generating cache files for output data products...", end=' ')
   cache_fname = ''
   for ifo in ifo_analyze: 
     cache_fname += ifo
@@ -3117,9 +3119,9 @@ if gps_start_time is not None and gps_end_time is not None:
       output_data_cache.append(lal.Cache.from_urls([node.get_missed()])[0])
 
   output_data_cache.tofile(open(cache_fname, "w"))
-  print "done"
+  print("done")
 else:
-  print "gps start and stop times not specified: cache files not generated"
+  print("gps start and stop times not specified: cache files not generated")
 
 
 ##############################################################################
@@ -3146,16 +3148,16 @@ if opts.write_script:
 # write a message telling the user that the DAG has been written
 if opts.dax:
   
-  print "\nCreated an abstract DAX file", dag.get_dag_file()
-  print "which can be transformed into a concrete DAG with gencdag."
-  print "\nSee the documentation on http://www.lsc-group.phys.uwm.edu/lscdatagrid/griphynligo/pegasus_lsc.html"
+  print("\nCreated an abstract DAX file", dag.get_dag_file())
+  print("which can be transformed into a concrete DAG with gencdag.")
+  print("\nSee the documentation on http://www.lsc-group.phys.uwm.edu/lscdatagrid/griphynligo/pegasus_lsc.html")
 
 
 
 else:
-  print "\nCreated a DAG file which can be submitted by executing"
-  print "\n   condor_submit_dag", dag.get_dag_file()
-  print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
+  print("\nCreated a DAG file which can be submitted by executing")
+  print("\n   condor_submit_dag", dag.get_dag_file())
+  print("""\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
   If you are running LSCdataFind jobs, do not forget to initialize your grid 
   proxy certificate on the condor submit machine by running the commands
   
@@ -3178,7 +3180,7 @@ else:
   
   Contact the administrator of your cluster to find the hostname and port of the
   LSCdataFind server.
-  """
+  """)
 
 ##############################################################################
 # write out a log file for this script
@@ -3202,38 +3204,38 @@ log_fh.write( "Config file has CVS strings:\n" )
 log_fh.write( cp.get('pipeline','version') + "\n" )
 log_fh.write( cp.get('pipeline','cvs-tag') + "\n\n" )
 
-print >> log_fh, "\n===========================================\n"
-print >> log_fh, "Science Segments and master chunks:\n"
+print("\n===========================================\n", file=log_fh)
+print("Science Segments and master chunks:\n", file=log_fh)
 
 for ifo in ifo_list:
-  print >> log_fh, "\n===========================================\n"
-  print >> log_fh, ifo + "Data\n"
+  print("\n===========================================\n", file=log_fh)
+  print(ifo + "Data\n", file=log_fh)
   for seg in data[ifo]:
-    print >> log_fh, " ", seg
+    print(" ", seg, file=log_fh)
     for chunk in seg:
-      print >> log_fh, "   ", chunk
+      print("   ", chunk, file=log_fh)
 
 
 for ifo in ifo_list:
-  print >> log_fh, "\n===========================================\n"
+  print("\n===========================================\n", file=log_fh)
   log_fh.write( 
     "Filtering " + str(len(chunks_analyzed[ifo])) + " " + ifo + \
     " master chunks\n" )
   total_time = 0
   for ifo_done in chunks_analyzed[ifo]:
-    print >> log_fh, ifo_done.get_chunk()
+    print(ifo_done.get_chunk(), file=log_fh)
     total_time += len(ifo_done.get_chunk())
-  print >> log_fh, "\n total time", total_time, "seconds"
+  print("\n total time", total_time, "seconds", file=log_fh)
 
 for ifo in ifo_list:
-  print >> log_fh, "\n===========================================\n"
+  print("\n===========================================\n", file=log_fh)
   log_fh.write( "Writing " + str(len(analyzed_data[ifo])) + " " + ifo + \
     " single IFO science segments\n" )
   total_time = 0
   for seg in analyzed_data[ifo]:
-    print >> log_fh, seg
+    print(seg, file=log_fh)
     total_time += seg.dur()
-  print >> log_fh, "\n total time", total_time, "seconds"
+  print("\n total time", total_time, "seconds", file=log_fh)
 
   if opts.output_segs and len(analyzed_data[ifo]):
     if playground_only:
@@ -3247,14 +3249,14 @@ for ifo in ifo_list:
 
 
 for ifos in ifo_coincs:  
-  print >> log_fh, "\n===========================================\n"
+  print("\n===========================================\n", file=log_fh)
   log_fh.write( "Writing " + str(len(analyzed_data[ifos])) + " " + ifos + \
     " coincident segments\n" )
   total_time = 0
   for seg in analyzed_data[ifos]:
-    print >> log_fh, seg
+    print(seg, file=log_fh)
     total_time += seg.dur()
-  print >> log_fh, "\n total time", total_time, "seconds"
+  print("\n total time", total_time, "seconds", file=log_fh)
 
   if opts.output_segs and len(analyzed_data[ifos]):
     if playground_only:

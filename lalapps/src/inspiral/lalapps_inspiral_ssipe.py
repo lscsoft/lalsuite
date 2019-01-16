@@ -8,6 +8,8 @@ single, double, triple and quadro ifo times accordingly.  It can also be
 run with injections.
 """
 
+from __future__ import print_function
+
 __author__ = 'Stephen Fairhurst <sfairhur@gravity.phys.uwm.edu>, Drew Keppel <drew.keppel@ligo.org>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -111,7 +113,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   # we may use a fixed bank specified in ini file
   try:
     FixedBank = cp.get('input','fixed-bank')
-    print "For %s we use bank %s"%(ifo_name, FixedBank)
+    print("For %s we use bank %s"%(ifo_name, FixedBank))
   except:
     FixedBank = None
 
@@ -130,7 +132,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   # see if we are using calibrated data
   if cp.has_section(data_opts) and cp.has_option(data_opts,'calibrated-data'):
     calibrated = True
-    print "we use calibrated data for", ifo_name
+    print("we use calibrated data for", ifo_name)
   else: calibrated = False
 
   # prepare the injection filename
@@ -576,57 +578,57 @@ command_line = sys.argv[1:]
 #################################
 # if --version flagged
 if opts.version:
-  print "$Id$"
+  print("$Id$")
   sys.exit(0)
 
 #################################
 # Sanity check of input arguments
 if not opts.config_file:
-  print >> sys.stderr, "No configuration file specified."
-  print >> sys.stderr, "Use --config-file FILE to specify location."
+  print("No configuration file specified.", file=sys.stderr)
+  print("Use --config-file FILE to specify location.", file=sys.stderr)
   sys.exit(1)
 
 if not opts.log_path:
-  print >> sys.stderr, "No log file path specified."
-  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  print("No log file path specified.", file=sys.stderr)
+  print("Use --log-path PATH to specify a location.", file=sys.stderr)
   sys.exit(1)
 
 if not opts.g1_data and not opts.h1_data and not opts.h2_data and \
     not opts.l1_data and not opts.v1_data and not opts.analyze_all:
-  print >> sys.stderr, "No ifos specified.  Please specify at least one of"
-  print >> sys.stderr, "--g1-data, --h1-data, --h2-data, --l1-data, --v1-data"
-  print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
+  print("No ifos specified.  Please specify at least one of", file=sys.stderr)
+  print("--g1-data, --h1-data, --h2-data, --l1-data, --v1-data", file=sys.stderr)
+  print("or use --analyze-all to analyze all ifos all data", file=sys.stderr)
   sys.exit(1)
 elif opts.analyze_all:
-  print >> sys.stderr, "The --analyze-all flag is currently not available."
-  print >> sys.stderr, "The code supports quadruple coincidence, so you can"
-  print >> sys.stderr, "choose at most four instruments to analyze."
+  print("The --analyze-all flag is currently not available.", file=sys.stderr)
+  print("The code supports quadruple coincidence, so you can", file=sys.stderr)
+  print("choose at most four instruments to analyze.", file=sys.stderr)
   sys.exit(1)
 
 if opts.g1_data and opts.h1_data and opts.h2_data and opts.l1_data \
     and opts.v1_data:
-  print >> sys.stderr, "Too many IFOs specified. " \
-      "Please choose up to four IFOs, but not five."
+  print("Too many IFOs specified. " \
+      "Please choose up to four IFOs, but not five.", file=sys.stderr)
   sys.exit(1)
 
 if not opts.one_ifo and not opts.two_ifo and not opts.three_ifo and \
     not opts.four_ifo and not opts.analyze_all:
-  print >> sys.stderr, "No number of ifos given. Please specify at least one of"
-  print >> sys.stderr, "--one-ifo, --two-ifo, --three-ifo, --four-ifo"
-  print >> sys.stderr, "or use --analyze-all to analyze all ifos all data"
+  print("No number of ifos given. Please specify at least one of", file=sys.stderr)
+  print("--one-ifo, --two-ifo, --three-ifo, --four-ifo", file=sys.stderr)
+  print("or use --analyze-all to analyze all ifos all data", file=sys.stderr)
   sys.exit(1)
 elif opts.analyze_all:
-  print >> sys.stderr, "The --analyze-all flag can not be used to specify the"
-  print >> sys.stderr, "number of ifos to analyze. The code supports quadruple"
-  print >> sys.stderr, "coincidence, so you can choose at most four instruments"
-  print >> sys.stderr, "to analyze."
+  print("The --analyze-all flag can not be used to specify the", file=sys.stderr)
+  print("number of ifos to analyze. The code supports quadruple", file=sys.stderr)
+  print("coincidence, so you can choose at most four instruments", file=sys.stderr)
+  print("to analyze.", file=sys.stderr)
   sys.exit(1)
 
 if not (opts.datafind or opts.template_bank or opts.inspiral \
     or opts.sire_inspiral or opts.coincidence):
-  print >> sys.stderr, """  No steps of the pipeline specified.
+  print("""  No steps of the pipeline specified.
   Please specify at least one of
-  --datafind, --template-bank, --inspiral, --sire-inspiral, --coincidence"""
+  --datafind, --template-bank, --inspiral, --sire-inspiral, --coincidence""", file=sys.stderr)
   sys.exit(1)
    
 ifo_list = ['H1','H2','L1','V1','G1']
@@ -897,7 +899,7 @@ elif play_data_mask == 'all_data':
     job.add_opt('data-type','all_data')
 
 else:
-  print "Invalid playground data mask " + play_data_mask + " specified"
+  print("Invalid playground data mask " + play_data_mask + " specified")
   sys.exit(1)
 
  
@@ -945,7 +947,7 @@ overlap = o / r
 #   Step 1: read science segs that are greater or equal to a chunk 
 #   from the input file
 
-print "reading in single ifo science segments and creating master chunks...",
+print("reading in single ifo science segments and creating master chunks...", end=' ')
 sys.stdout.flush()
 
 segments = {}
@@ -964,7 +966,7 @@ for ifo in ifo_list:
     data[ifo].make_chunks_from_unused(length,overlap/2,playground_only,
         0,0,overlap/2,pad)
 
-print "done"
+print("done")
 
 # work out the earliest and latest times that are being analyzed
 if not gps_start_time:
@@ -972,8 +974,8 @@ if not gps_start_time:
   for ifo in ifo_list:
     if data[ifo] and (data[ifo][0].start() < gps_start_time):
       gps_start_time = data[ifo][0].start()
-  print "GPS start time not specified, obtained from segment lists as " + \
-    str(gps_start_time)
+  print("GPS start time not specified, obtained from segment lists as " + \
+    str(gps_start_time))
 
 
 if not gps_end_time:
@@ -981,8 +983,8 @@ if not gps_end_time:
   for ifo in ifo_list:
     if data[ifo] and (data[ifo][-1].end() > gps_end_time):
       gps_end_time = data[ifo][0].end()
-  print "GPS end time not specified, obtained from segment lists as " + \
-    str(gps_end_time)
+  print("GPS end time not specified, obtained from segment lists as " + \
+    str(gps_end_time))
 
 ##############################################################################
 #   Step 2: determine analyzable times
@@ -1046,7 +1048,7 @@ if cp.has_option("input","hardware-injection"):
   inspinj.set_end(gps_end_time)
   inspinj.set_seed(0)
   inj_file = inspinj.get_output()
-  print inj_file
+  print(inj_file)
   shutil.copy( inj_file_loc, inj_file)
   inspinj = None
 elif seed:
@@ -1082,7 +1084,7 @@ chunks_analyzed = {}
 prev_df = None
 
 for ifo in ifo_list:
-  print "setting up jobs to filter " + ifo + " data..."
+  print("setting up jobs to filter " + ifo + " data...")
   sys.stdout.flush()
 
   (prev_df,chunks_analyzed[ifo]) = analyze_ifo(ifo,data[ifo],data_to_do[ifo],  
@@ -1099,14 +1101,14 @@ for ifo in ifo_list:
         gps_start_time, gps_end_time, inj_file = inj_file, 
         ifotag="SUMMARY_FIRST", usertag = usertag, inspinjNode=inspinj)
 
-  print "done" 
+  print("done") 
 
 
 ##############################################################################
 # Step 6: Run thinca on each of the disjoint sets of coincident data
 
 if opts.coincidence:
-  print "setting up thinca jobs..."
+  print("setting up thinca jobs...")
   sys.stdout.flush()
 
   # create a cache of the inspiral jobs
@@ -1144,7 +1146,7 @@ if opts.coincidence:
 
     # create cafe caches
     cafe_extent_limit = float(cp.get("ligolw_cafe","extentlimit"))
-    print "\tsetting up cafe caches for tisi file %s"%tisi_file_name
+    print("\tsetting up cafe caches for tisi file %s"%tisi_file_name)
     cafe_caches = ligolw_cafe.ligolw_cafe(inspiral_cache,
         ligolw_tisi.load_time_slides(tisi_file_name,
             gz = tisi_file_name.endswith(".gz")).values(),
@@ -1165,14 +1167,14 @@ if opts.coincidence:
 
     coinc_nodes.extend(new_coinc_nodes)
 
-  print "done"
+  print("done")
 
 
 ##############################################################################
 # Step 7: Write out the LAL cache files for the various output data
 
 if gps_start_time is not None and gps_end_time is not None:
-  print "generating cache files for output data products...",
+  print("generating cache files for output data products...", end=' ')
   cache_fname = ''
   for ifo in ifo_analyze:
     cache_fname += ifo
@@ -1197,9 +1199,9 @@ if gps_start_time is not None and gps_end_time is not None:
       output_data_cache.append(lal.Cache.from_urls([node.get_missed()])[0])
 
   output_data_cache.tofile(open(cache_fname, "w"))
-  print "done"
+  print("done")
 else:
-  print "gps start and stop times not specified: cache files not generated"     
+  print("gps start and stop times not specified: cache files not generated")     
 
 ##############################################################################
 # Step 8: Setup the Maximum number of jobs for different categories
@@ -1225,16 +1227,16 @@ if opts.write_script:
 # write a message telling the user that the DAG has been written
 if opts.dax:
   
-  print "\nCreated an abstract DAX file", dag.get_dag_file()
-  print "which can be transformed into a concrete DAG with gencdag."
-  print "\nSee the documentation on http://www.lsc-group.phys.uwm.edu/lscdatagrid/griphynligo/pegasus_lsc.html"
+  print("\nCreated an abstract DAX file", dag.get_dag_file())
+  print("which can be transformed into a concrete DAG with gencdag.")
+  print("\nSee the documentation on http://www.lsc-group.phys.uwm.edu/lscdatagrid/griphynligo/pegasus_lsc.html")
 
 
 
 else:
-  print "\nCreated a DAG file which can be submitted by executing"
-  print "\n   condor_submit_dag", dag.get_dag_file()
-  print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
+  print("\nCreated a DAG file which can be submitted by executing")
+  print("\n   condor_submit_dag", dag.get_dag_file())
+  print("""\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
   If you are running LSCdataFind jobs, do not forget to initialize your grid 
   proxy certificate on the condor submit machine by running the commands
   
@@ -1257,7 +1259,7 @@ else:
   
   Contact the administrator of your cluster to find the hostname and port of the
   LSCdataFind server.
-  """
+  """)
 
 ##############################################################################
 # write out a log file for this script
@@ -1281,38 +1283,38 @@ log_fh.write( "Config file has CVS strings:\n" )
 log_fh.write( cp.get('pipeline','version') + "\n" )
 log_fh.write( cp.get('pipeline','cvs-tag') + "\n\n" )
 
-print >> log_fh, "\n===========================================\n"
-print >> log_fh, "Science Segments and master chunks:\n"
+print("\n===========================================\n", file=log_fh)
+print("Science Segments and master chunks:\n", file=log_fh)
 
 for ifo in ifo_list:
-  print >> log_fh, "\n===========================================\n"
-  print >> log_fh, ifo + "Data\n"
+  print("\n===========================================\n", file=log_fh)
+  print(ifo + "Data\n", file=log_fh)
   for seg in data[ifo]:
-    print >> log_fh, " ", seg
+    print(" ", seg, file=log_fh)
     for chunk in seg:
-      print >> log_fh, "   ", chunk
+      print("   ", chunk, file=log_fh)
 
 
 for ifo in ifo_list:
-  print >> log_fh, "\n===========================================\n"
+  print("\n===========================================\n", file=log_fh)
   log_fh.write( 
     "Filtering " + str(len(chunks_analyzed[ifo])) + " " + ifo + \
     " master chunks\n" )
   total_time = 0
   for ifo_done in chunks_analyzed[ifo]:
-    print >> log_fh, ifo_done.get_chunk()
+    print(ifo_done.get_chunk(), file=log_fh)
     total_time += len(ifo_done.get_chunk())
-  print >> log_fh, "\n total time", total_time, "seconds"
+  print("\n total time", total_time, "seconds", file=log_fh)
 
 for ifo in ifo_list:
-  print >> log_fh, "\n===========================================\n"
+  print("\n===========================================\n", file=log_fh)
   log_fh.write( "Writing " + str(len(analyzed_data[ifo])) + " " + ifo + \
     " single IFO science segments\n" )
   total_time = 0
   for seg in analyzed_data[ifo]:
-    print >> log_fh, seg
+    print(seg, file=log_fh)
     total_time += seg.dur()
-  print >> log_fh, "\n total time", total_time, "seconds"
+  print("\n total time", total_time, "seconds", file=log_fh)
 
   if opts.output_segs and len(analyzed_data[ifo]):
     if playground_only:
@@ -1326,14 +1328,14 @@ for ifo in ifo_list:
 
 
 for ifos in ifo_coincs:  
-  print >> log_fh, "\n===========================================\n"
+  print("\n===========================================\n", file=log_fh)
   log_fh.write( "Writing " + str(len(analyzed_data[ifos])) + " " + ifos + \
     " coincident segments\n" )
   total_time = 0
   for seg in analyzed_data[ifos]:
-    print >> log_fh, seg
+    print(seg, file=log_fh)
     total_time += seg.dur()
-  print >> log_fh, "\n total time", total_time, "seconds"
+  print("\n total time", total_time, "seconds", file=log_fh)
 
   if opts.output_segs and len(analyzed_data[ifos]):
     if playground_only:

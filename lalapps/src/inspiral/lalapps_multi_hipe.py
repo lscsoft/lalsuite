@@ -251,7 +251,7 @@ parser.add_option("-x","--dax", action="store_true", default=False,\
 
 ##############################################################################
 # write command line to a file
-print sys.argv[0:]
+print(sys.argv[0:])
 
 
 ##############################################################################
@@ -319,7 +319,7 @@ multi_hipe_options = ["verbose", "h1_segments", "h2_segments", "l1_segments", "v
 hipe_arguments_tmp=" ".join("--%s %s" % (name.replace("_","-"), value) for name, value in opts.__dict__.items() if value is not None and value is not False and name not in multi_hipe_options)
 
 hipe_arguments=hipe_arguments_tmp + " --config-file config.ini"
-print hipe_arguments
+print(hipe_arguments)
 
 ##############################################################################
 # loop over the intervals, constructing overlapping segment lists,
@@ -347,10 +347,10 @@ for interval in search_epochs:
         modifiedstart = max( \
             min( tmpseg[1] - minsciseg, interval[0] - overlap/2 - paddata - 1 ),\
             tmpseg[0] )
-    except ValueError, e:
+    except ValueError as e:
       modifiedstart = interval[0]
       if opts.verbose:
-        print ifo + ": No segment containing interval start " + str(e)
+        print(ifo + ": No segment containing interval start " + str(e))
 
     # ....... and now the one overlapping the end time .......
     try:
@@ -362,10 +362,10 @@ for interval in search_epochs:
         modifiedend = min( \
             max( tmpseg[0] + minsciseg, interval[1] + overlap/2 + paddata + 1 ),\
             tmpseg[1] )
-    except ValueError, e:
+    except ValueError as e:
       modifiedend = interval[1]
       if opts.verbose:
-        print ifo + ": No segment containing interval end " + str(e)
+        print(ifo + ": No segment containing interval end " + str(e))
 
     modifiedinterval = segments.segmentlist(\
         [segments.segment(modifiedstart,modifiedend)])

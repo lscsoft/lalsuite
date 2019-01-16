@@ -25,6 +25,9 @@
 #
 
 
+from __future__ import print_function
+
+
 import math
 from optparse import OptionParser
 import numpy
@@ -473,7 +476,7 @@ seglists = segments.segmentlistdict()
 
 for n, filename in enumerate(ligolw_utils.sort_files_by_size(filenames, options.verbose, reverse = True)):
 	if options.verbose:
-		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
+		print("%d/%d:" % (n + 1, len(filenames)), end=' ', file=sys.stderr)
 	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
 	seglists |= ligolw_search_summary.segmentlistdict_fromsearchsummary(xmldoc, options.livetime_program).coalesce()
 	xmldoc.unlink()
@@ -507,11 +510,11 @@ for ifo in summary.keys():
 	for plotnum, plot in zip(options.plot, new_plots(ifo, options.plot)):
 		filename = format % (options.base, plotnum, options.format)
 		if options.verbose:
-			print >>sys.stderr, "adding to %s plot %d ..." % (ifo, plotnum)
+			print("adding to %s plot %d ..." % (ifo, plotnum), file=sys.stderr)
 		plot.add_contents(summary, seglists)
 		if options.verbose:
-			print >>sys.stderr, "finishing %s plot %d ..." % (ifo, plotnum)
+			print("finishing %s plot %d ..." % (ifo, plotnum), file=sys.stderr)
 		plot.finish()
 		if options.verbose:
-			print >>sys.stderr, "writing %s ..." % filename
+			print("writing %s ..." % filename, file=sys.stderr)
 		plot.fig.savefig(filename)

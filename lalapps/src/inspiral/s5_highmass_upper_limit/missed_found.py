@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import sys
 import sqlite3
 from optparse import OptionParser
@@ -42,7 +44,7 @@ class Summary(object):
 		self.coinc_inspiral_table = None
 
 		for f in flist:
-			if opts.verbose: print >> sys.stderr, "Gathering stats from: %s...." % (f,)
+			if opts.verbose: print("Gathering stats from: %s...." % (f,), file=sys.stderr)
 			working_filename = dbtables.get_connection_filename(f, tmp_path=opts.tmp_space, verbose = opts.verbose)
 			connection = sqlite3.connect(working_filename)
 			dbtables.DBTable_set_connection(connection)
@@ -67,7 +69,7 @@ class Summary(object):
 			except ValueError:
 				self.coinc_inspiral_table = None
 			if self.multi_burst_table and self.coinc_inspiral_table:
-				print >>sys.stderr, "both burst and inspiral tables found.  Aborting"
+				print("both burst and inspiral tables found.  Aborting", file=sys.stderr)
 				raise ValueError
 
 			if not sim:
@@ -113,9 +115,9 @@ class Summary(object):
 		verbose = self.opts.verbose
 		found = []
 		missed = []
-		print >>sys.stderr, ""
+		print("", file=sys.stderr)
 		for cnt, f in enumerate(injfnames):
-			print >>sys.stderr, "getting injections below FAR: " + str(FAR) + ":\t%.1f%%\r" % (100.0 * cnt / len(injfnames),),
+			print("getting injections below FAR: " + str(FAR) + ":\t%.1f%%\r" % (100.0 * cnt / len(injfnames),), end=' ', file=sys.stderr)
 			working_filename = dbtables.get_connection_filename(f, tmp_path = opts.tmp_space, verbose = verbose)
 			connection = sqlite3.connect(working_filename)
 			dbtables.DBTable_set_connection(connection)
@@ -220,7 +222,7 @@ WHERE
 			dbtables.discard_connection_filename(f, working_filename, verbose = verbose)
 			dbtables.DBTable_set_connection(None)
 
-			print >>sys.stderr, "\nFound = %d Missed = %d" % (len(found), len(missed))
+			print("\nFound = %d Missed = %d" % (len(found), len(missed)), file=sys.stderr)
 		return found, missed
 
 	def set_instruments_to_calculate(self):
@@ -228,7 +230,7 @@ WHERE
 		if self.opts.instruments in self.instruments:
 			return frozenset(lsctables.instrument_set_from_ifos(i[0]))
 		else:
-			print >> sys.stderr, "Instruments %s do not exist in DB, nothing will be calculated" % (str(frozenset(lsctables.instrument_set_from_ifos(i[0]))),)
+			print("Instruments %s do not exist in DB, nothing will be calculated" % (str(frozenset(lsctables.instrument_set_from_ifos(i[0]))),), file=sys.stderr)
 		return []
 
 
@@ -245,7 +247,7 @@ def parse_command_line():
 
 	if opts.instruments: opts.instruments = lsctables.instrument_set_from_ifos(opts.instruments)
 	if not filenames:
-		print >>sys.stderr, "must specify at least one database file"
+		print("must specify at least one database file", file=sys.stderr)
 		sys.exit(1)
 	return opts, filenames
 

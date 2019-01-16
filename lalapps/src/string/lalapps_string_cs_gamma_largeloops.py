@@ -30,6 +30,8 @@
 #Original C source code by Xavier Siemens
 #Port by Daichi Tsuna, November 2018
 
+from __future__ import print_function
+
 import math
 import numpy
 from optparse import OptionParser
@@ -100,7 +102,7 @@ for i in range(ops.np):
 	P = math.exp(math.log(ops.pstart) + i * (math.log(ops.pend) - math.log(ops.pstart)) / (ops.np - 1))
 	for j in range(ops.nGmu):
 		Gmu = math.exp(math.log(ops.Gmustart) + j * (math.log(ops.Gmuend) - math.log(ops.Gmustart)) / (ops.nGmu - 1))
-		print >>sys.stderr, "%.1f%%: Gmu=%10.4g, p=%4.2g\r" % (100.0 * (i * ops.nGmu + j) / (ops.np * ops.nGmu), Gmu, P)
+		print("%.1f%%: Gmu=%10.4g, p=%4.2g\r" % (100.0 * (i * ops.nGmu + j) / (ops.np * ops.nGmu), Gmu, P), file=sys.stderr)
 
 		dRdzdA = cs_gamma.finddRdzdA(Gmu, ops.frequency, LOOPS_RAD_POWER, amp, z, ops.model)
 
@@ -113,4 +115,4 @@ for i in range(ops.np):
 		gammaMax = scipy.integrate.simps(numpy.clip(eff[:-1] + Deff[:-1], 0.0, 1.0) * dRdA[:-1] * amp[:-1] * dlnA) * CUSPS_PER_LOOP / P
 
 		outfile.write("%.17g  %.17g  %.17g  %.17g  %.17g\n" % (P, Gmu, gammaAverage, gammaMin, gammaMax))
-print >>sys.stderr, "100.0%%: Gmu=%10.4g, p=%4.2g" % (Gmu, P)
+print("100.0%%: Gmu=%10.4g, p=%4.2g" % (Gmu, P), file=sys.stderr)

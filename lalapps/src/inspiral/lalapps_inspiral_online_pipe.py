@@ -5,6 +5,8 @@ This script produced the necessary condor submit and dag files to run
 a prototype online analysis in S6
 """
 
+from __future__ import print_function
+
 from pylal import git_version
 
 
@@ -119,39 +121,39 @@ def get_all_files_in_range(dirname, starttime, endtime, pad=64):
 
 
 def get_valid_segments(segment_url, base_dir, ifo, science_flag, start_time, end_time):
-    print "Finding valid analysis times for %s, please hold..." % ifo
+    print("Finding valid analysis times for %s, please hold..." % ifo)
 
     cmd  = 'ligolw_segment_query --query-segments --segment-url %s --include-segments %s --gps-start-time %d --gps-end-time %d | ligolw_print -t segment -c start_time -c end_time' % (segment_url, science_flag, start_time, end_time)
     pipe = os.popen(cmd)
 
-    print cmd
+    print(cmd)
 
     results   = [x.strip().split(',') for x in pipe]
     science   = segments.segmentlist([segments.segment(int(x[0]), int(x[1])) for x in results])
     science.coalesce()
 
-    print "Science: "
+    print("Science: ")
     for s in science:
-       print s[0], s[1]
+       print(s[0], s[1])
 
     framedir  = base_dir + '/' + ifo[0] + '1'
     chunks    = [f.split('.')[0].split('-') for f in get_all_files_in_range(framedir, start_time, end_time)]
     available = segments.segmentlist([ segments.segment( int(x[-2]), int(x[-2]) + int(x[-1]) ) for x in chunks if len(x) == 6 ])
     available.coalesce()
 
-    print "Available:"
+    print("Available:")
     for s in available:
-       print s[0], s[1]
+       print(s[0], s[1])
 
     result = science & available
 
     result.coalesce()
 
-    print "Result:"
+    print("Result:")
     for s in result:
-       print s[0], s[1]
+       print(s[0], s[1])
 
-    print "done."
+    print("done.")
 
     return result
 
@@ -176,7 +178,7 @@ Usage: lalapps_inspiral_online_pipe [options]
   -l, --log-path PATH            directory to write condor log file
   -p, --coh-ptf                 Use coh_PTF_inspiral.c instead of inspiral.c
 """
-  print >> sys.stderr, msg
+  print(msg, file=sys.stderr)
 
 # pasrse the command line options to figure out what we should do
 shortop = "hvs:e:a:b:f:t:c:l:p:"
@@ -212,7 +214,7 @@ doCohPTF = False
 
 for o, a in opts:
   if o in ("-v", "--version"):
-    print git_version.verbose_msg
+    print(git_version.verbose_msg)
     sys.exit(0)
   elif o in ("-h", "--help"):
     usage()
@@ -236,38 +238,38 @@ for o, a in opts:
   elif o in ("-p", "--coh-ptf"):
     doCohPTF = True
   else:
-    print >> sys.stderr, "Unknown option:", o
+    print("Unknown option:", o, file=sys.stderr)
     usage()
     sys.exit(1)
 
 if not gps_start_time:
-  print >> sys.stderr, "No GPS start time specified."
-  print >> sys.stderr, "Use --gps-start-time SEC to specify start time."
+  print("No GPS start time specified.", file=sys.stderr)
+  print("Use --gps-start-time SEC to specify start time.", file=sys.stderr)
   sys.exit(1)
 
 if not gps_end_time:
-  print >> sys.stderr, "No GPS end time specified."
-  print >> sys.stderr, "Use --gps-end-time SEC to specify end time."
+  print("No GPS end time specified.", file=sys.stderr)
+  print("Use --gps-end-time SEC to specify end time.", file=sys.stderr)
   sys.exit(1)
 
 if not dag_file_name:
-  print >> sys.stderr, "No DAG file name specified."
-  print >> sys.stderr, "Use --dag-file-name NAME to specify output DAG file."
+  print("No DAG file name specified.", file=sys.stderr)
+  print("Use --dag-file-name NAME to specify output DAG file.", file=sys.stderr)
   sys.exit(1)
 
 if not aux_data_path:
-  print >> sys.stderr, "No auxiliary data path specified."
-  print >> sys.stderr, "Use --aux-data-path PATH to specify directory."
+  print("No auxiliary data path specified.", file=sys.stderr)
+  print("Use --aux-data-path PATH to specify directory.", file=sys.stderr)
   sys.exit(1)
 
 if not config_file:
-  print >> sys.stderr, "No configuration file specified."
-  print >> sys.stderr, "Use --config-file FILE to specify location."
+  print("No configuration file specified.", file=sys.stderr)
+  print("Use --config-file FILE to specify location.", file=sys.stderr)
   sys.exit(1)
 
 if not log_path:
-  print >> sys.stderr, "No log file path specified."
-  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  print("No log file path specified.", file=sys.stderr)
+  print("Use --log-path PATH to specify a location.", file=sys.stderr)
   sys.exit(1)
 
 try: os.mkdir('cache')
@@ -309,7 +311,7 @@ for ifo in ifo_list:
     available_segments = get_valid_segments(cp.get('segfind','segment-url'), cp.get('framefind','base-dir'), ifo, cp.get('segments',ifo.lower() + '-analyze'), gps_start_time, gps_end_time)
 
     if not available_segments:
-        print "No available segments for %s, skipping" % ifo
+        print("No available segments for %s, skipping" % ifo)
         continue
     
     
@@ -529,8 +531,8 @@ for ifo in ifo_list:
                 [instrument, type, start, duration, extension, gz] = tmp
                 extension = extension + "." + gz
 
-            print >> insp_cache_file, instrument[0], type, start, duration, \
-                     os.path.join(path , file)
+            print(instrument[0], type, start, duration, \
+                     os.path.join(path , file), file=insp_cache_file)
 
             lwadd.add_parent(insp)
 
@@ -590,7 +592,7 @@ for a in in_f:
         a = a.replace('macrotype="ER_C00_L1"','macrotype="L1_ER_C00_L1"')
         a = a.replace('macrotype="DMT_C00_L2"','macrotype="L1_DMT_C00_L2"')
 
-    print >>out_f, a,
+    print(a, end=' ', file=out_f)
 
 in_f.close()
 out_f.close()
