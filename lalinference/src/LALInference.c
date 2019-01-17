@@ -4257,12 +4257,12 @@ void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadS
         size_t j;
 
         for (j = 0; j < ncal; j++) {
-            snprintf(parname, VARNAME_MAX, "%sspcalamp%02ld", ifo_names[i], j);
+            snprintf(parname, VARNAME_MAX, "%sspcalamp%02zd", ifo_names[i], j);
             fprintf(output, "%s\t", parname);
         }
 
         for (j = 0; j < ncal; j++) {
-          snprintf(parname, VARNAME_MAX, "%sspcalphase%02ld", ifo_names[i], j);
+          snprintf(parname, VARNAME_MAX, "%sspcalphase%02zd", ifo_names[i], j);
           fprintf(output, "%s\t", parname);
         }
     }
