@@ -410,7 +410,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
     {
       while(injTable)
       {
-        if(injTable->simulation_id == (UINT4)atoi(procparam->value)) break;
+        if(injTable->simulation_id == atol(procparam->value)) break;
         else injTable=injTable->next;
       }
       if(!injTable){
@@ -2361,7 +2361,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	    {
 	      while(injTable)
 	      {
-		if(injTable->simulation_id == (UINT4)atoi(procparam->value)) break;
+		if(injTable->simulation_id == atol(procparam->value)) break;
 		else injTable=injTable->next;
 	      }
 	      if(!injTable){
@@ -2472,7 +2472,7 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
 	    {
 	      while(injTable)
 	      {
-		if(injTable->simulation_id == (UINT4)atoi(procparam->value)) break;
+		if(injTable->simulation_id == atol(procparam->value)) break;
 		else injTable=injTable->next;
 	      }
 	      if(!injTable){
@@ -2628,7 +2628,7 @@ static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable 
                 {
                 while(inspiralTable)
                 {
-                if(inspiralTable->simulation_id == (UINT4)atoi(procparam->value)) break;
+                if(inspiralTable->simulation_id == atol(procparam->value)) break;
                 else inspiralTable=inspiralTable->next;
                 }
                 if(!inspiralTable){
