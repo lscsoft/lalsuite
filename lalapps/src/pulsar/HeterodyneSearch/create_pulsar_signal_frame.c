@@ -317,7 +317,11 @@ int main(int argc, char **argv){
   }
 
   CHAR OUTFILE[256];
+/* FIXME: do not treat these format overflow warnings as errors, but do fix them later. */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wformat-overflow"
   sprintf(OUTFILE, "%s/%s", inputs.outDir, out_file);
+#pragma GCC diagnostic pop
 
   if (  XLALFrameWrite(outFrame, OUTFILE)){
     LogPrintf(LOG_CRITICAL, "%s : XLALFrameWrite() failed with error = %d.\n", fn, xlalErrno);
