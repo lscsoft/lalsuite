@@ -330,8 +330,11 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     # Octave without having to add to OCTAVE_PATH
     AC_MSG_CHECKING([${OCTAVE} .oct installation directory])
     # at least in Debian Buster, "HOME" has been dropped in favour of "OCTAVE_HOME"
-    # should we be worried that Wheezy didn't know about OCTAVE_HOME yet?
     octave_prefix=[`${octave_cfg} -p OCTAVE_HOME 2>/dev/null | ${SED} -e 's|/*$||'`]
+    # fallback if OCTAVE_HOME is yet unknown
+    AS_IF([test "x${octave_prefix}" = x],[
+      octave_prefix=[`${octave_cfg} -p PREFIX 2>/dev/null | ${SED} -e 's|/*$||'`]
+    ])                                                                                                                                                                                                                                                            
     octexecdir=[`${octave_cfg} -p LOCALVEROCTFILEDIR 2>/dev/null | ${SED} -e 's|/*$||'`]
     octexecdir=[`echo ${octexecdir} | ${SED} -e "s|^${octave_prefix}/||"`]
     AS_IF([test "x`echo ${octexecdir} | ${SED} -n -e '\|^/|p'`" != x],[
