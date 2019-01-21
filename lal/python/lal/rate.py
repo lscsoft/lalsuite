@@ -1778,7 +1778,7 @@ def InterpBinnedArray(binnedarray, fill_value = 0.0):
 
 		slices.append(slice(lo, hi + 1))
 	coords = tuple(c[s] for c, s in zip(coords, slices))
-	z = z[slices]
+	z = z[tuple(slices)]
 
 	# build the interpolator from the co-ordinates and array data.
 	# scipy/numpy interpolators return an array-like thing so we have
@@ -2443,7 +2443,7 @@ def filter_array(a, window, cyclic = False, use_fft = True):
 			window_slices.append(slice(first, first + n))
 		else:
 			window_slices.append(slice(0, window.shape[d]))
-	window = window[window_slices]
+	window = window[tuple(window_slices)]
 
 	if use_fft:
 		# this loop works around dynamic range limits in the FFT
