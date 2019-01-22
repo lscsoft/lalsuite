@@ -122,8 +122,8 @@ main ( int argc, char *argv[] )
 
   uvar->Dterms = 8;
 
-  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
   uvar->randSeed = 1;
 
   XLAL_CHECK_MAIN ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_EFUNC );

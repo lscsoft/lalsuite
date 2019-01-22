@@ -342,8 +342,8 @@ EphemerisData *InitEphemeris (const CHAR *ephemType, const CHAR *ephemDir){
     XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
-  snprintf(EphemEarth, FNAME_LENGTH, "%s/earth00-19-%s.dat.gz", ephemDir, ephemType);
-  snprintf(EphemSun, FNAME_LENGTH, "%s/sun00-19-%s.dat.gz", ephemDir, ephemType);
+  snprintf(EphemEarth, FNAME_LENGTH, "%s/earth00-40-%s.dat.gz", ephemDir, ephemType);
+  snprintf(EphemSun, FNAME_LENGTH, "%s/sun00-40-%s.dat.gz", ephemDir, ephemType);
 
   EphemEarth[FNAME_LENGTH-1]=0;
   EphemSun[FNAME_LENGTH-1]=0;

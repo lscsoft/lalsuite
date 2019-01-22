@@ -232,14 +232,14 @@ int main( int argc, char **argv ){
   }
 
   /* load all types of ephemeris files, as uses little RAM/computational effort, and different parfiles may use a combination */
-  if ( (int)sizeof(outputFilename) <= snprintf(earthfile200, FILENAME_MAXLEN, "%s/earth00-19-DE200.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
-  if ( (int)sizeof(outputFilename) <= snprintf(sunfile200, FILENAME_MAXLEN, "%s/sun00-19-DE200.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
-  if ( (int)sizeof(outputFilename) <= snprintf(earthfile405, FILENAME_MAXLEN, "%s/earth00-19-DE405.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
-  if ( (int)sizeof(outputFilename) <= snprintf(sunfile405, FILENAME_MAXLEN, "%s/sun00-19-DE405.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
-  if ( (int)sizeof(outputFilename) <= snprintf(earthfile414, FILENAME_MAXLEN, "%s/earth00-19-DE414.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
-  if ( (int)sizeof(outputFilename) <= snprintf(sunfile414, FILENAME_MAXLEN, "%s/sun00-19-DE414.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
-  if ( (int)sizeof(outputFilename) <= snprintf(earthfile421, FILENAME_MAXLEN, "%s/earth00-19-DE421.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
-  if ( (int)sizeof(outputFilename) <= snprintf(sunfile421, FILENAME_MAXLEN, "%s/sun00-19-DE421.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(earthfile200, FILENAME_MAXLEN, "%s/earth00-40-DE200.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(sunfile200, FILENAME_MAXLEN, "%s/sun00-40-DE200.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(earthfile405, FILENAME_MAXLEN, "%s/earth00-40-DE405.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(sunfile405, FILENAME_MAXLEN, "%s/sun00-40-DE405.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(earthfile414, FILENAME_MAXLEN, "%s/earth00-19-DE414.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); } /* no earth00-40-DE414 available */
+  if ( (int)sizeof(outputFilename) <= snprintf(sunfile414, FILENAME_MAXLEN, "%s/sun00-19-DE414.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); } /* no sun00-40-DE414 available */
+  if ( (int)sizeof(outputFilename) <= snprintf(earthfile421, FILENAME_MAXLEN, "%s/earth00-40-DE421.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(sunfile421, FILENAME_MAXLEN, "%s/sun00-40-DE421.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
 
   edat200 = XLALMalloc(sizeof(*edat200));
   edat405 = XLALMalloc(sizeof(*edat405));
@@ -247,8 +247,8 @@ int main( int argc, char **argv ){
   edat421 = XLALMalloc(sizeof(*edat421));
 
   /* Load time correction files. */
-  if ( (int)sizeof(outputFilename) <= snprintf(timefileTDB, FILENAME_MAXLEN, "%s/tdb_2000-2019.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
-  if ( (int)sizeof(outputFilename) <= snprintf(timefileTE405, FILENAME_MAXLEN, "%s/te405_2000-2019.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(timefileTDB, FILENAME_MAXLEN, "%s/tdb_2000-2040.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
+  if ( (int)sizeof(outputFilename) <= snprintf(timefileTE405, FILENAME_MAXLEN, "%s/te405_2000-2040.dat.gz",inputParams.ephemdir) ){ XLAL_ERROR(XLAL_FAILURE,"String truncated"); }
 
   /*  read in ephemeris files */
   edat200 = XLALInitBarycenter(earthfile200, sunfile200);
