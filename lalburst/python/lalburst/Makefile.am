@@ -20,6 +20,7 @@ pymodule_PYTHON = \
 	cafe.py \
 	date.py \
 	git_version.py \
+	offsetvector.py \
 	packing.py \
 	SimBurstUtils.py \
 	SnglBurstUtils.py \

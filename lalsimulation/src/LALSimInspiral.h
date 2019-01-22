@@ -59,11 +59,11 @@ extern "C" {
  * double S2y = 0.0;              // y-component of dimensionless spin of body 2
  * double S2z = 0.0;              // z-component of dimensionless spin of body 2
  * double r = 1e6 * LAL_PC_SI;    // distance
- * double i = 0.0;                // inclination
- * double phiRef = 0.0;           // gravitational wave phase at reference
- * double longAscNodes=0.0;       // longitude of ascending nodes, degenerate with the polarization angle, Omega in documentation
- * double eccentricity=0.0;       // eccentrocity at reference epoch
- * double meanPerAno=0.0;         // mean anomaly of periastron
+ * double inclination = 0.0;      // angle between L and view direction, \iota in @image
+ * double phiRef = 0.0;           // orbital phase at reference, helf of main GW phase at reference
+ * double longAscNodes=0.0;       // longitude of ascending nodes, degenerate with the polarization angle, related to Omega in @image by Omega=longAscNodes+pi/2
+ * double eccentricity=0.0;       // eccentricity at reference epoch
+ * double meanPerAno=0.0;         // mean anomaly at reference epoch, i.e. the ratio of time passed since last periastron passage to the time interval between two periastron passages, times 2pi.  Note: This is not a geometric angle that can be visualized in @image
  * double deltaT = 1.0/16384.0;   // series sampling interval
  * double f_min = 40.0;           // start frequency of inspiral
  * double f_ref = 0.0;            // reference frequency: 0 means waveform end
@@ -89,11 +89,11 @@ extern "C" {
  * double S2y = 0.0;                  // y-component of dimensionless spin of body 2
  * double S2z = 0.0;                  // z-component of dimensionless spin of body 2
  * double distance = 1e6 * LAL_PC_SI; // distance
- * double inclination = 0.0;          // inclination
- * double phiRef = 0;                 // gravitational wave phase at end
- * double longAscNodes=0.0;           // longitude of ascending nodes, degenerate with the polarization angle, Omega in documentation
+ * double inclination = 0.0;          // angle between L and view direction, \iota in @image
+ * double phiRef = 0;                 // orbital phase at reference, half of main GW phase at reference
+ * double longAscNodes=0.0;           // longitude of ascending nodes, degenerate with the polarization angle, related to Omega in @image by Omega=longAscNodes+pi/2
  * double eccentricity=0.0;           // eccentricity at reference epoch
- * double meanPerAno=0.0;             // mean anomaly of periastron
+ * double meanPerAno=0.0;             // mean anomaly at reference epoch, i.e. the ratio of time passed since last periastron passage to the time interval between two periastron passages, times 2pi.  Note: This is not a geometric angle that can be visualized in @image 
  * double deltaF = 1.;                // frequency sampling interval
  * double f_min = 40.0;               // start frequency of inspiral
  * double f_max = 0.0;                // end frequency of inspiral: 0 means use default
@@ -120,7 +120,7 @@ extern "C" {
  *
  * The binary's instantaneous orbital angular momentum @b L at the
  * reference gravitational wave frequency @p f_ref defines the z-axis of the
- * binary system, while the direction to the periapsis defines the x-axis of
+ * binary system, while the unit vector from body 2 to body 1 defines the x-axis of
  * the binary system.  The x-y-plane is therefore the orbital plane, at least
  * at the moment the binary system is at the reference gravitational wave
  * frequency.
@@ -164,8 +164,11 @@ extern "C" {
  *    @attention
  *    In the present implementation, the Y-axis in the wave frame is defined to
  *    be the ascending node @htmlonly &#x260A; @endhtmlonly.
- *    Therefore, &Omega;=&pi; /2 by definition with the consequences that
+ *    Therefore, &Omega;=&pi; /2 by default with the consequences that
  *    the z axis lies in the X-Z plane, with positive projection over X.
+ *    Value of &Omega; can be changed providing a non zero
+ *    longAscNodes= &Omega; - &pi; /2, this corresponding to a rotation in the
+ *    observation direction, i.e. a polarization rotation.
  *    Another consequence is that the Z axis lies in the plane spanned by z
  *    and the axis perpendicular both z and the line of ascending nodes
  *    (i.e. y at &Phi;=0) with positive projection over the latter.
@@ -213,6 +216,7 @@ extern "C" {
 #define LAL_PN_MODE_L_MAX 3
 /* (2x) Highest available PN order - UPDATE IF NEW ORDERS ADDED!!*/
 #define LAL_MAX_PN_ORDER 8
+#define LAL_MAX_ECC_PN_ORDER 6
 
 /**
  * Enum that specifies the PN approximant to be used in computing the waveform.
@@ -239,6 +243,8 @@ typedef enum tagApproximant {
    EccentricFD,         /**< Frequency domain waveform in the SPA to describe low eccentricity systems.
                          * @remarks Implemented in lalsimulation (frequency domain). */
    TaylorF2,		/**< The standard stationary phase approximation; Outputs a frequency-domain wave.
+                         * @remarks Implemented in lalsimulation (frequency domain). */
+   TaylorF2Ecc,		/**< The standard stationary phase approximation with eccentricity; Outputs a frequency-domain wave.
                          * @remarks Implemented in lalsimulation (frequency domain). */
    TaylorF2NLTides,     /**< The standard stationary phase approximation including a phenomenological model of nonlinear tidal effects; Outputs a frequency-domain wave.
                          * @remarks Implemented in lalsimulation (frequency domain). */
@@ -634,12 +640,17 @@ int XLALHGimriGenerator(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8
 
 /* TaylorF2 functions */
 /* in module LALSimInspiralTaylorF2.c */
-
 int XLALSimInspiralTaylorF2AlignedPhasing(PNPhasingSeries **pfa, const REAL8 m1, const REAL8 m2, const REAL8 chi1, const REAL8 chi2, LALDict *extraPars);
 int XLALSimInspiralTaylorF2AlignedPhasingArray(REAL8Vector **phasingvals, REAL8Vector mass1, REAL8Vector mass2, REAL8Vector chi1, REAL8Vector chi2, REAL8Vector lambda1, REAL8Vector lambda2, REAL8Vector dquadmon1, REAL8Vector dquadmon2);
 int XLALSimInspiralTaylorF2Core(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi_ref, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 f_ref, const REAL8 shft, const REAL8 r, LALDict *LALparams, PNPhasingSeries *pfaP);
 
 int XLALSimInspiralTaylorF2(COMPLEX16FrequencySeries **htilde, const REAL8 phi_ref, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, LALDict *LALpars);
+
+/* TaylorF2Ecc functions */
+/* in module LALSimInspiralTaylorF2Ecc.c */
+int XLALSimInspiralTaylorF2CoreEcc(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi_ref, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 f_ref, const REAL8 shft, const REAL8 r, const REAL8 eccentricity, LALDict *LALparams, PNPhasingSeries *pfaP);
+int XLALSimInspiralTaylorF2Ecc(COMPLEX16FrequencySeries **htilde, const REAL8 phi_ref, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, const REAL8 eccentricity, LALDict *LALparams);
+int LALSimInspiralEccentricityIsCorrect(REAL8 eccentricity, LALDict *params);
 
 /* TaylorF2NLPhase functions */
 /* in module LALSimInspiralTaylorF2NLTides.c */

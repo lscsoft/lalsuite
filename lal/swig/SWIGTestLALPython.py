@@ -59,12 +59,12 @@ assert((b == [1.1, 2.2, 3.3]).all())
 del a
 assert((b == [1.1, 2.2, 3.3]).all())
 ts = lal.CreateREAL8TimeSeries("test", lal.LIGOTimeGPS(0), 0, 0.1, lal.DimensionlessUnit, 10)
-ts.data.data = range(0, 10)
+ts.data.data = list(range(0, 10))
 for i in range(0, 7):
     v = ts.data
-assert((v.data == range(0, 10)).all())
+assert((v.data == list(range(0, 10))).all())
 del ts
-assert((v.data == range(0, 10)).all())
+assert((v.data == list(range(0, 10))).all())
 del v
 lal.CheckMemoryLeaks()
 print("PASSED object parent tracking")
@@ -291,8 +291,37 @@ except:
 assert(not expected_exception)
 print("PASSED fixed and dynamic arrays typemaps")
 
-## check input views of array structs
-print("checking input views of array structs ...")
+## check input views of string array structs
+print("checking input views of string array structs ...")
+svdat = ["a", "bc", "def"]
+sv = lal.CreateEmptyStringVector(len(svdat))
+sv.data = svdat;
+svout = lal.CreateEmptyStringVector(len(svdat));
+svout.data = [""] * len(svdat)
+assert(lal.swig_lal_test_viewin_LALStringVector(svout, sv))
+assert(all(map(lambda x, y: x == y, svout.data, sv.data)))
+svout.data = [""] * len(svdat)
+assert(lal.swig_lal_test_viewin_LALStringVector(svout, svdat))
+assert(all(map(lambda x, y: x == y, svout.data, svdat)))
+sv.data = svdat
+assert(lal.swig_lal_test_copyinout_LALStringVector(sv))
+assert(all(map(lambda x, y: x == y.upper(), sv.data, svdat)))
+sv.data = svdat
+retn, sv = lal.swig_lal_test_copyinout_LALStringVector(sv)
+assert(retn)
+assert(all(map(lambda x, y: x == y.upper(), sv.data, svdat)))
+sv = svdat
+retn, sv = lal.swig_lal_test_copyinout_LALStringVector(sv)
+assert(retn)
+assert(all(map(lambda x, y: x == y.upper(), sv, svdat)))
+del sv
+del svout
+del svdat
+lal.CheckMemoryLeaks()
+print("PASSED input views of string array structs")
+
+## check input views of numeric array structs
+print("checking input views of numeric array structs ...")
 r4dat = numpy.array([1.2, 2.3, 3.4, 4.5, 5.6], dtype=numpy.float32)
 r8dat = numpy.array([3.4, 4.5, 5.6, 6.7, 7.8, 8.9], dtype=numpy.float64)
 c8dat = numpy.array(numpy.vectorize(complex)(r4dat, 8 + r4dat), dtype=numpy.complex64)
@@ -541,7 +570,7 @@ del c16
 del c16out
 del c16dat
 lal.CheckMemoryLeaks()
-print("PASSED input views of array structs (LAL)")
+print("PASSED input views of numeric array structs (LAL)")
 vfdat = numpy.array([1.2, 2.3, 3.4, 4.5, 5.6], dtype=numpy.float32)
 vddat = numpy.array([3.4, 4.5, 5.6, 6.7, 7.8, 8.9], dtype=numpy.float64)
 vcfdat = numpy.array(numpy.vectorize(complex)(vfdat, 8 + vfdat), dtype=numpy.complex64)
@@ -790,7 +819,7 @@ del mcd
 del mcdout
 del mcddat
 lal.CheckMemoryLeaks()
-print("PASSED input views of array structs (GSL)")
+print("PASSED input views of numeric array structs (GSL)")
 def check_input_view_type_safety(f, a, b, expect_exception):
     expected_exception = False
     if expect_exception:
@@ -850,12 +879,12 @@ del r8
 del c8
 del c16
 lal.CheckMemoryLeaks()
-print("PASSED input views of array structs (type safety)")
+print("PASSED input views of numeric array structs (type safety)")
 
 # check FFT functions with input views
 print("check FFT functions with input views ...")
-r4in = numpy.array(range(0, 32), dtype=numpy.float32)
-r8in = numpy.array(range(0, 64), dtype=numpy.float64)
+r4in = numpy.array(list(range(0, 32)), dtype=numpy.float32)
+r8in = numpy.array(list(range(0, 64)), dtype=numpy.float64)
 c8in = numpy.array(numpy.vectorize(complex)(8 + r4in, r4in), dtype=numpy.complex64)
 c16in = numpy.array(numpy.vectorize(complex)(16 + r8in, r8in), dtype=numpy.complex128)
 c8inv = lal.CreateCOMPLEX8Vector(len(c8in))
@@ -1187,7 +1216,6 @@ if lal.swig_version >= 0x030011:
             'foobar', lal.LIGOTimeGPS(1e9), 0, 1, lal.StrainUnit, 1024)
         a.data.data = numpy.arange(1024)
         pickled = pickle.dumps(a, 0)
-        print(pickled)
         b = pickle.loads(pickled)
         assert type(a) == type(b)
         assert a.name == b.name
@@ -1202,7 +1230,6 @@ if lal.swig_version >= 0x030011:
             'foobar', lal.LIGOTimeGPS(1e9), 0, 1, lal.StrainUnit, 1024)
         a.data.data = numpy.arange(1024)
         pickled = pickle.dumps(a, 0)
-        print(pickled)
         b = pickle.loads(pickled)
         assert type(a) == type(b)
         assert a.name == b.name

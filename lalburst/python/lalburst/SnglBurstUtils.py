@@ -51,12 +51,12 @@ from glue.ligolw import lsctables
 from glue.ligolw import dbtables
 from glue.ligolw.utils import search_summary as ligolw_search_summary
 from glue.ligolw.utils import segments as ligolw_segments
-from glue.offsetvector import offsetvector
+from .offsetvector import offsetvector
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from git_version import date as __date__
-from git_version import version as __version__
+from .git_version import date as __date__
+from .git_version import version as __version__
 
 
 #

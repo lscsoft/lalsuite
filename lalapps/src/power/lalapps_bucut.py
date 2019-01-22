@@ -25,6 +25,9 @@
 #
 
 
+from __future__ import print_function
+
+
 from optparse import OptionParser
 import sys
 
@@ -365,21 +368,21 @@ def apply_filters(contents, burst_test_func, veto_segments, del_non_coincs = Fal
 	removed_ids = set()
 	if veto_segments:
 		if verbose:
-			print >>sys.stderr, "applying veto segment list ..."
+			print("applying veto segment list ...", file=sys.stderr)
 		removed_ids |= remove_events_by_segment(contents, veto_segments)
 	if verbose:
-		print >>sys.stderr, "filtering sngl_burst rows by parameters ..."
+		print("filtering sngl_burst rows by parameters ...", file=sys.stderr)
 	removed_ids |= remove_events_by_parameters(contents, burst_test_func)
 	if del_skipped_injections:
 		if verbose:
-			print >>sys.stderr, "removing injections that weren't performed ..."
+			print("removing injections that weren't performed ...", file=sys.stderr)
 		remove_skipped_injections(contents)
 	if verbose:
-		print >>sys.stderr, "removing broken coincidences ..."
+		print("removing broken coincidences ...", file=sys.stderr)
 	clean_coinc_tables(contents, removed_ids)
 	if del_non_coincs:
 		if verbose:
-			print >>sys.stderr, "removing non-coincident events ..."
+			print("removing non-coincident events ...", file=sys.stderr)
 		remove_non_coincidences(contents)
 
 

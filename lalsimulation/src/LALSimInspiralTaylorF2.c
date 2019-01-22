@@ -543,6 +543,7 @@ int XLALSimInspiralTaylorF2(
 
     return ret;
 }
+#include "LALSimInspiralTaylorF2Ecc.c"
 
 /** @} */
 /** @} */

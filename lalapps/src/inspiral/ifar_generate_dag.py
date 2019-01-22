@@ -2,7 +2,7 @@ import sys
 import os
 from optparse import *
 import subprocess
-import ConfigParser as cp
+from six.moves.configparser import ConfigParser as cp
 
 usage = """
         lvS5stat.dag generation script.
@@ -52,7 +52,7 @@ while dagstatus==1:
     sexit=sline.rstrip()
     iexit=iline.rstrip()
     if zexit == "STATUS 0" and sexit == "STATUS 0" and iexit == "STATUS 0":
-      print "The septime dags are complete!"
+      print("The septime dags are complete!")
       dagstatus=0
     else:
       dagstatus=1
@@ -85,7 +85,7 @@ while firstcoiredagstatus==1:
     scode=sval.rstrip()
     icode=ival.rstrip()
     if zcode == "STATUS 0" and scode == "STATUS 0" and icode == "STATUS 0":
-      print "The first coire dags are complete!"
+      print("The first coire dags are complete!")
       firstcoiredagstatus=0
     else:
       firstcoiredagstatus=1
@@ -120,9 +120,9 @@ dag_file.write("PARENT 1 2 3 CHILD 4" + "\n")
 dag_file.write("PARENT 4 CHILD 5" + "\n")
 dag_file.close()
 
-print "\nCreated a DAG file which can be submitted by executing"
-print "\n   condor_submit_dag lvS5stat.dag"
-print "\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)"
+print("\nCreated a DAG file which can be submitted by executing")
+print("\n   condor_submit_dag lvS5stat.dag")
+print("\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)")
 
 subprocess.call(["condor_submit_dag lvS5stat.dag"],shell=True)
 
@@ -138,7 +138,7 @@ while dagstatus==1:
   for line in dagfile:
     dexit=line.rstrip()
     if dexit == "STATUS 0":
-      print "The lvS5stat dag is complete!"
+      print("The lvS5stat dag is complete!")
       dagstatus=0
     else:
       dagstatus=1

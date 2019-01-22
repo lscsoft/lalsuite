@@ -14,6 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from __future__ import print_function
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
@@ -33,7 +34,7 @@ def which(prog):
     which = subprocess.Popen(['/usr/bin/which', prog], stdout=subprocess.PIPE)
     out = which.stdout.read().strip()
     if not out:
-        print >>sys.stderr, "ERROR: could not find %s in your path, have you built the proper software and source the proper env. scripts?" % (prog,prog)
+        print("ERROR: could not find %s in your path, have you built the proper software and source the proper env. scripts?" % (prog,prog), file=sys.stderr)
         raise ValueError
     return out
 

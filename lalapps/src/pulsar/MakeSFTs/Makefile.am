@@ -6,10 +6,8 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 if FRAME
 frameprogs = lalapps_MakeSFTs
-frameexprogs = lalapps_MakeCleanSFTs
 else
 frameprogs =
-frameexprogs =
 endif
 
 ## PSS requires FrameLib anyway
@@ -22,11 +20,9 @@ pssinterface =
 endif
 
 bin_PROGRAMS = $(frameprogs) $(pss_progs)
-EXTRA_PROGRAMS = $(frameexprogs)
 
 if FRAME
 lalapps_MakeSFTs_SOURCES = MakeSFTs.c $(pss_src)
-lalapps_MakeCleanSFTs_SOURCES = MakeCleanSFTs.c
 endif
 
 lalapps_MakeSFTs_CPPFLAGS = $(AM_CPPFLAGS)

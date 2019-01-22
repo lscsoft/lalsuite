@@ -25,6 +25,9 @@
 #
 
 
+from __future__ import print_function
+
+
 import math
 from optparse import OptionParser
 import sys
@@ -114,7 +117,7 @@ options, filenames = parse_command_line()
 
 
 if options.verbose:
-	print >>sys.stderr, "time-frequency tiles have %g degrees of freedom" % (2 * options.delta_t * options.delta_f)
+	print("time-frequency tiles have %g degrees of freedom" % (2 * options.delta_t * options.delta_f), file=sys.stderr)
 
 
 xmldoc = ligolw.Document()
@@ -123,7 +126,7 @@ process = ligolw_process.register_to_xmldoc(xmldoc, u"lalapps_binj_pic", options
 time_slide_table = xmldoc.childNodes[-1].appendChild(lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(options.time_slide_xml, verbose = options.verbose, contenthandler = LIGOLWContentHandler)))
 time_slide_id = time_slide_table[0].time_slide_id
 if options.verbose:
-	print >>sys.stderr, "associating injections with time slide ID \"%s\":  %s" % (time_slide_id, time_slide_table.as_dict()[time_slide_id])
+	print("associating injections with time slide ID \"%s\":  %s" % (time_slide_id, time_slide_table.as_dict()[time_slide_id]), file=sys.stderr)
 for row in time_slide_table:
 	row.process_id = process.process_id
 sim_burst_tbl = xmldoc.childNodes[-1].appendChild(lsctables.New(lsctables.SimBurstTable, ["process_id", "simulation_id", "time_slide_id", "waveform", "waveform_number", "ra", "dec", "psi", "time_geocent_gps", "time_geocent_gps_ns", "duration", "frequency", "bandwidth", "egw_over_rsquared", "pol_ellipse_angle", "pol_ellipse_e"]))
@@ -131,13 +134,13 @@ sim_burst_tbl = xmldoc.childNodes[-1].appendChild(lsctables.New(lsctables.SimBur
 
 for filename in filenames:
 	if options.verbose:
-		print >>sys.stderr, "loading %s ..." % filename
+		print("loading %s ..." % filename, file=sys.stderr)
 	img = Image.open(filename)
 
 	width, height = img.size
 	width, height = int(round(width / float(height) * options.height)), options.height
 	if options.verbose:
-		print >>sys.stderr, "converting to %dx%d grayscale ... " % (width, height)
+		print("converting to %dx%d grayscale ... " % (width, height), file=sys.stderr)
 	img = img.resize((width, height)).convert("L")
 
 	for i in xrange(width):
@@ -175,9 +178,9 @@ for filename in filenames:
 				row.egw_over_rsquared *= row.hrss / lalsimulation.MeasureHrss(*lalburst.GenerateSimBurst(row, 1.0 / 16384))
 				sim_burst_tbl.append(row)
 			if options.verbose:
-				print >>sys.stderr, "generating sim_burst table ... %d injections\r" % len(sim_burst_tbl),
+				print("generating sim_burst table ... %d injections\r" % len(sim_burst_tbl), end=' ', file=sys.stderr)
 	if options.verbose:
-		print >>sys.stderr
+		print(file=sys.stderr)
 
 
 ligolw_utils.write_filename(xmldoc, options.output, gz = (options.output or "stdout").endswith(".gz"), verbose = options.verbose)

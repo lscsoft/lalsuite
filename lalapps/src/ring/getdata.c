@@ -367,7 +367,7 @@ int resample_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 sampleRate )
     LAL_CALL( LALResampleREAL4TimeSeries( &status, series, &resamplepar ),
         &status );
     strncpy( name, series->name, LALNameLength * sizeof(char) );
-    snprintf( series->name, sizeof( series->name ),
+    XLALStringPrint(series->name, sizeof( series->name ),
         "%s_RSMPL", name );
   }
   return 0;
@@ -392,8 +392,9 @@ int highpass_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 frequency )
     LAL_CALL( LALDButterworthREAL4TimeSeries( &status, series, &highpasspar ),
         &status );
     strncpy( name, series->name, LALNameLength * sizeof(char) );
-    snprintf( series->name, sizeof( series->name ),
+    XLALStringPrint( series->name, sizeof( series->name ),
         "%s_HPFLTR", name );
+
   }
   return 0;
 }
@@ -416,7 +417,7 @@ int highpass_REAL8TimeSeries( REAL8TimeSeries *series, REAL8 frequency )
     LAL_CALL( LALButterworthREAL8TimeSeries( &status, series, &highpasspar ),
         &status );
     strncpy( name, series->name, LALNameLength * sizeof(char) );
-    snprintf( series->name, sizeof( series->name ),
+    XLALStringPrint( series->name, sizeof( series->name ),
         "%s_HPFLTR", name );
   }
   return 0;
@@ -434,7 +435,7 @@ int trimpad_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 padData )
   {
     series = XLALResizeREAL4TimeSeries(series, padSamples, blockSamples);
     strncpy( name, series->name, LALNameLength * sizeof(char) );
-    snprintf( series->name, sizeof( series->name ),
+    XLALStringPrint( series->name, sizeof( series->name ),
         "%s_STRIPPAD", name );
   }
 

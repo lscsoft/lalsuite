@@ -20,7 +20,6 @@ NOISEPSDFILES = \
 	LIGO-P1200087-v18-AdV_MID_LOW.txt \
 	LIGO-P1200087-v18-aLIGO_BNS_OPTIMIZED.txt \
 	LIGO-P1200087-v18-aLIGO_DESIGN.txt \
-	LIGO-T1800042-v5-aLIGO_APLUS.txt \
 	LIGO-P1200087-v18-aLIGO_EARLY_HIGH.txt \
 	LIGO-P1200087-v18-aLIGO_EARLY_LOW.txt \
 	LIGO-P1200087-v18-aLIGO_LATE_HIGH.txt \
@@ -37,11 +36,22 @@ NOISEPSDFILES = \
 	LIGO-T0900288-v3-NSNS_Opt.txt \
 	LIGO-T0900288-v3-ZERO_DET_high_P.txt \
 	LIGO-T0900288-v3-ZERO_DET_low_P.txt \
-	LIGO-T1600593-v1-KAGRA_Opening.txt \
+	LIGO-T1600593-v1-KAGRA_Design.txt \
 	LIGO-T1600593-v1-KAGRA_Early.txt \
-	LIGO-T1600593-v1-KAGRA_Mid.txt \
 	LIGO-T1600593-v1-KAGRA_Late.txt \
-	LIGO-T1600593-v1-KAGRA_Design.txt
+	LIGO-T1600593-v1-KAGRA_Mid.txt \
+	LIGO-T1600593-v1-KAGRA_Opening.txt \
+	LIGO-T1800042-v5-aLIGO_APLUS.txt \
+	LIGO-T1800044-v5-aLIGO_DESIGN.txt \
+	LIGO-T1800545-v1-AdV_O3low.txt \
+	LIGO-T1800545-v1-AdV_O4.txt \
+	LIGO-T1800545-v1-AdV_O4intermediate.txt \
+	LIGO-T1800545-v1-KAGRA_128Mpc.txt \
+	LIGO-T1800545-v1-KAGRA_25Mpc.txt \
+	LIGO-T1800545-v1-KAGRA_80Mpc.txt \
+	LIGO-T1800545-v1-aLIGO_140Mpc.txt \
+	LIGO-T1800545-v1-aLIGO_175Mpc.txt \
+	LIGO-T1800545-v1-aLIGO_O3low.txt
 
 EOSDATAFILES = \
 	LALSimNeutronStarEOS_ALF1.dat \
@@ -52,6 +62,7 @@ EOSDATAFILES = \
 	LALSimNeutronStarEOS_AP2.dat \
 	LALSimNeutronStarEOS_AP3.dat \
 	LALSimNeutronStarEOS_AP4.dat \
+	LALSimNeutronStarEOS_APR4_EPP.dat \
 	LALSimNeutronStarEOS_BBB2.dat \
 	LALSimNeutronStarEOS_BGN1H1.dat \
 	LALSimNeutronStarEOS_BPAL12.dat \
@@ -72,6 +83,8 @@ EOSDATAFILES = \
 	LALSimNeutronStarEOS_H7.dat \
 	LALSimNeutronStarEOS_MPA1.dat \
 	LALSimNeutronStarEOS_MS1B.dat \
+	LALSimNeutronStarEOS_MS1B_PP.dat \
+	LALSimNeutronStarEOS_MS1_PP.dat \
 	LALSimNeutronStarEOS_MS1.dat \
 	LALSimNeutronStarEOS_MS2.dat \
 	LALSimNeutronStarEOS_PAL6.dat \
@@ -85,7 +98,27 @@ EOSDATAFILES = \
 	LALSimNeutronStarEOS_SQM3.dat \
 	LALSimNeutronStarEOS_WFF1.dat \
 	LALSimNeutronStarEOS_WFF2.dat \
-	LALSimNeutronStarEOS_WFF3.dat
+	LALSimNeutronStarEOS_WFF3.dat \
+	LALSimNeutronStarEOS_APR.dat \
+	LALSimNeutronStarEOS_BHF_BBB2.dat \
+	LALSimNeutronStarEOS_KDE0V.dat \
+	LALSimNeutronStarEOS_KDE0V1.dat \
+	LALSimNeutronStarEOS_RS.dat \
+	LALSimNeutronStarEOS_SK255.dat \
+	LALSimNeutronStarEOS_SK272.dat \
+	LALSimNeutronStarEOS_SKA.dat \
+	LALSimNeutronStarEOS_SKB.dat \
+	LALSimNeutronStarEOS_SKI2.dat \
+	LALSimNeutronStarEOS_SKI3.dat \
+	LALSimNeutronStarEOS_SKI4.dat \
+	LALSimNeutronStarEOS_SKI5.dat \
+	LALSimNeutronStarEOS_SKI6.dat \
+	LALSimNeutronStarEOS_SKMP.dat \
+	LALSimNeutronStarEOS_SKOP.dat \
+	LALSimNeutronStarEOS_SLY2.dat \
+	LALSimNeutronStarEOS_SLY230A.dat \
+	LALSimNeutronStarEOS_SLY9.dat \
+	LALSimNeutronStarEOS_HQC18.dat
 
 LDADD = liblalsimulation.la
 
@@ -185,6 +218,7 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBInitialConditions.c \
 	LALSimIMRSpinEOBInitialConditionsPrec.c \
 	LALSimInspiralPNCoefficients.c \
+	LALSimInspiralTaylorF2Ecc.c \
 	LALSimInspiraldEnergyFlux.c \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
@@ -220,8 +254,8 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRPhenomD.c \
 	LALSimIMRPhenomD_NRTidal.c \
 	LALSimIMRPhenomP.c \
-    LALSimIMRPhenomInternalUtils.c \
-    LALSimIMRPhenomUtils.c \
+	LALSimIMRPhenomInternalUtils.c \
+	LALSimIMRPhenomUtils.c \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimPhenSpinRingDown.c \
 	LALSimInspiralWaveformFlags.c \

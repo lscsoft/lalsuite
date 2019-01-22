@@ -22,12 +22,13 @@ Requires python SWIG bindings of the LIGO Algorithms Library (LAL)
 from __future__ import print_function
 import lal
 import lalsimulation as lalsim
-from lalinference.rapid_pe import lalsimutils as lsu
 import numpy as np
 from scipy import interpolate, integrate
 from scipy import special
 from itertools import product
-from common_cl import distRef
+
+from . import lalsimutils as lsu
+from .common_cl import distRef
 
 __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, R. O'Shaughnessy"
 

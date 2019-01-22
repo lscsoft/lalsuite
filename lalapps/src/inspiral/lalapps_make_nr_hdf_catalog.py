@@ -20,6 +20,8 @@ It also holds the pointers to the NR data directories. Any catalog generated tha
 lalapps_inspinj.
 """
 
+from __future__ import print_function
+
 import sys, argparse
 
 import h5py
@@ -56,7 +58,7 @@ def fill_missing_columns(sim):
             elif entry == 'simulation_id' or entry == 'process_id':
                 continue
             else:
-                print >> sys.stderr, "Column %s not recognized" %(entry)
+                print("Column %s not recognized" %(entry), file=sys.stderr)
                 raise ValueError
 
 _desc = __doc__[1:]

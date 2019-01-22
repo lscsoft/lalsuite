@@ -529,7 +529,7 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
  *   - "uniform": A flat distribution between a minimum and maximum range (with zero probabiility outside that range);
  *   - "gaussian": A Gaussian/Normal distribution defined by a mean and standard devaition;
  *   - "fermidirac": A Fermi-Dirac-like distribution defined by a knee and attenuation width;
- *   - "gmm": A one-dimensional Gaussian Mixture model defined by the means, standard deviations and weights of each mode.
+ *   - "gmm": A one- or more-dimensional Gaussian Mixture model defined by the means, standard deviations and weights of each mode.
  *   - "loguniform": A flat distribution in log-space (proportional to the inverse of the value in non-log-space)
  * For all priors the first two columns of the prior definition should be:
  *   -# the name of a parameter to be searched over, and
@@ -538,10 +538,12 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
  *   -# the lower limit ("uniform" and "loguniform"), mean ("gaussian"), or sigma ("fermidirac") of the distribution;
  *   -# the upper limit ("uniform" and "loguniform"), standard deviation ("gaussian"), or r ("fermidirac") of the distribution.
  * For the "gmm" prior the file should contain at least a further four columns. The third column gives the number of modes
- * for the mixture. For each mode there should then be a tuple of numbers giving the mean, standard deviation and weight
- * of each mode (weights can be relative weights as they will be normalised when parsed by the code). Finally, there can
- * be two additional columns giving lower and upper limits of the distribution (note that the weights given are weights
- * assuming that there are no bounds on the distributions).
+ * for the mixture. The fourth columns is a list of means for each mode (with sub-lists of means
+ * for each parameter). The fifth column is a list of covariance matrices for each mode. The sixth
+ * column is a list of weights for each mode (weights can be relative weights as they will be
+ * normalised when parsed by the code). Finally, there can be additional lists containing pairs
+ * of values for each parameter giving lower and upper limits of the distribution (note that the 
+ * weights given are weights assuming that there are no bounds on the distributions).
  *
  * Some examples of files are:
  * \code
@@ -559,7 +561,7 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
  * \endcode
  * or
  * \code
- * H0 gmm 3 1e-25 2e-24 1.5 2e-25 3e-24 2.5 1e-26 1e-25 0.2 0.0 1e-20
+ * H0 gmm 3 [[1e-25],[2e-25],[1e-26]] [[[2e-24]],[[3e-24]],[[1e-25]]] [1.5,2.5,0.2] [0.0,1e-20]
  * PHI0 uniform 0 3.14159265359
  * COSIOTA uniform -1 1
  * PSI uniform -0.785398163397448 0.785398163397448

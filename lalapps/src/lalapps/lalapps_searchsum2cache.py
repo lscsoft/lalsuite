@@ -31,6 +31,9 @@ summary tables.
 """
 
 
+from __future__ import print_function
+
+
 import glob
 from optparse import OptionParser
 import os
@@ -125,7 +128,7 @@ options, filenames = parse_command_line()
 for n, filename in enumerate(filenames):
 	# load document and extract search summary table
 	if options.verbose:
-		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
+		print("%d/%d:" % (n + 1, len(filenames)), end=' ', file=sys.stderr)
 	xmldoc = utils.load_filename(filename, verbose = options.verbose, contenthandler = ContentHandler)
 	searchsumm = lsctables.SearchSummaryTable.get_table(xmldoc)
 
@@ -139,11 +142,11 @@ for n, filename in enumerate(filenames):
 	# extract segment lists
 	seglists = searchsumm.get_out_segmentlistdict(process_ids).coalesce()
 	if not seglists:
-		raise ValueError, "%s: no matching rows found in search summary table" % filename
+		raise ValueError("%s: no matching rows found in search summary table" % filename)
 	if None in seglists:
 		if options.program is not None:
-			raise ValueError, "%s: null value in ifos column in search_summary table" % filename
-		raise ValueError, "%s: null value in ifos column in search_summary table, try using --program" % filename
+			raise ValueError("%s: null value in ifos column in search_summary table" % filename)
+		raise ValueError("%s: null value in ifos column in search_summary table, try using --program" % filename)
 
 	# extract observatory
 	observatory = (options.observatory and options.observatory.strip()) or "+".join(sorted(seglists))
@@ -157,16 +160,16 @@ for n, filename in enumerate(filenames):
 		else:
 			description = set(row.comment for row in searchsumm if row.process_id in process_ids)
 		if len(description) < 1:
-			raise ValueError, "%s: no matching rows found in search summary table" % filename
+			raise ValueError("%s: no matching rows found in search summary table" % filename)
 		if len(description) > 1:
-			raise ValueError, "%s: comments in matching rows of search summary table are not identical" % filename
+			raise ValueError("%s: comments in matching rows of search summary table are not identical" % filename)
 		description = description.pop().strip() or None
 
 	# set URL
 	url = "file://localhost" + os.path.abspath(filename)
 
 	# write cache entry
-	print >>options.output, str(CacheEntry(observatory, description, seglists.extent_all(), url))
+	print(str(CacheEntry(observatory, description, seglists.extent_all(), url)), file=options.output)
 
 	# allow garbage collection
 	xmldoc.unlink()

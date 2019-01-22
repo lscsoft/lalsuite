@@ -28,7 +28,14 @@
 
 #include "SinCosLUT.i"
 
-// ----- Akos hotloop precalc SSE code (Dterms=8) ----------
+///
+/// \file ComputeFstat_DemodHL_SSE.c
+/// \ingroup ComputeFstat_Demod_c
+/// \brief Akos hotloop precalc SSE code (Dterms=8)
+///
+/// \snippet ComputeFstat_DemodHL_SSE.i hotloop
+///
+
 #define FUNC XLALComputeFaFb_SSE
 #define HOTLOOP_SOURCE "ComputeFstat_DemodHL_SSE.i"
 #include "ComputeFstat_Demod_ComputeFaFb.c"

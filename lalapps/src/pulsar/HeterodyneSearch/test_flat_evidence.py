@@ -117,10 +117,10 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
   stdchi = np.sqrt(2.*float(len(h0uls)))/float(len(h0uls)) # standard deviation of chi-squared distribution
   nsigma = np.abs(p-1.)/stdchi
 
-  print "Reduced chi-squared test for linear relation = %f" % (p)
+  print("Reduced chi-squared test for linear relation = %f" % (p))
 
   if nsigma > 2.:
-    print "This is potentially significantly (%f sigma) different from a flat line" % nsigma
+    print("This is potentially significantly (%f sigma) different from a flat line" % nsigma)
 
   # plot figure
   ax.errorbar(-np.array(logpriors), odds_prior, yerr=std_odds_prior, fmt='o', label=labels[i], color=pcolor[i])

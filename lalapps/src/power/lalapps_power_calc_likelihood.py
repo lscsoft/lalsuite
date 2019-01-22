@@ -25,6 +25,9 @@
 #
 
 
+from __future__ import print_function
+
+
 from optparse import OptionParser
 import sys
 import sqlite3
@@ -132,7 +135,7 @@ for n, filename in enumerate(filenames):
 
 
 	if options.verbose:
-		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+		print("%d/%d: %s" % (n + 1, len(filenames), filename), file=sys.stderr)
 	working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
 	connection = sqlite3.connect(working_filename)
 	connection.execute("PRAGMA temp_store_directory = '%s';" % dbtables.tempfile.gettempdir())

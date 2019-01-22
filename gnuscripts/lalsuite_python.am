@@ -1,14 +1,17 @@
 SUFFIXES = .py
 
 .PHONY: pymodule-all-local
+.PHONY: pyscripts-all-local
 .PHONY: pymodule-mostlyclean-local
+.PHONY: pyscripts-mostlyclean-local
+.PHONY: py-mostlyclean-local
 .PHONY: pybin-install-exec-local
 .PHONY: pybin-uninstall-local
 .PHONY: pybin-dist-hook
 
 if HAVE_PYTHON
 
-BUILT_SOURCES += $(pymodule_PYTHON) $(pybin_scripts)
+BUILT_SOURCES += $(pybin_scripts)
 MOSTLYCLEANFILES += $(pybin_scripts)
 
 uninstalled_runner = $(top_srcdir)/gnuscripts/lalsuite_run_uninstalled
@@ -16,40 +19,50 @@ uninstalled_compiler = $(uninstalled_runner) '$(abs_top_builddir)' '$(abs_buildd
 EXTRA_DIST += $(uninstalled_runner)
 
 all-local: pymodule-all-local pyscripts-all-local
-pymodule-all-local: pymodule-mostlyclean-local
+pymodule-all-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
 		for file in $(pymodule_PYTHON); do \
 			if test -r "$(srcdir)/$${file}"; then \
+				rm -f "$(builddir)/$${file}" || exit 1; \
 				$(LN_S) "$(srcdir)/$${file}" "$(builddir)/$${file}" || exit 1; \
 			fi; \
 		done; \
 	fi
-pyscripts-all-local: pyscripts-mostlyclean-local
+pyscripts-all-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
 		for file in $(pybin_scripts); do \
 			if test -r "$(srcdir)/$${file}.py"; then \
+				rm -f "$(builddir)/$${file}.py" || exit 1; \
 				cp -p "$(srcdir)/$${file}.py" "$(builddir)/$${file}.py" || exit 1; \
 			fi; \
 		done; \
 	fi
 
-mostlyclean-local: pymodule-mostlyclean-local pyscripts-mostlyclean-local
+mostlyclean-local: pymodule-mostlyclean-local pyscripts-mostlyclean-local py-mostlyclean-local
 pymodule-mostlyclean-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
 		for file in $(pymodule_PYTHON); do \
 			if test -r "$(srcdir)/$${file}"; then \
-				rm -f "$(builddir)/$${file}" "$(builddir)/$${file}c" "$(builddir)/$${file}o" || exit 1; \
+				echo " rm -f $(builddir)/$${file}"; \
+				rm -f "$(builddir)/$${file}" || exit 1; \
 			fi; \
 		done; \
-	fi
+	fi; \
+	for file in $(pymodule_PYTHON); do \
+		echo " rm -f $(builddir)/$${file}c $(builddir)/$${file}o"; \
+		rm -f "$(builddir)/$${file}c" "$(builddir)/$${file}o" || exit 1; \
+	done
 pyscripts-mostlyclean-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
 		for file in $(pybin_scripts); do \
 			if test -r "$(srcdir)/$${file}.py"; then \
+				echo " rm -f $(builddir)/$${file}.py"; \
 				rm -f "$(builddir)/$${file}.py" || exit 1; \
 			fi; \
 		done; \
 	fi
+py-mostlyclean-local:
+	-rm -rf __pycache__
 
 $(pybin_scripts): Makefile pyscripts-all-local
 .py:

@@ -6,6 +6,9 @@ of LIGO and GEO data.  It takes in the start and end times, generates the
 segment lists, runs the zero-lag, time shift and injection analyses, generates
 summary information and plots and follows up the loudest events.
 """
+
+from __future__ import print_function
+
 __author__ = 'Stephen Fairhurst <sfairhur@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -184,38 +187,38 @@ command_line = sys.argv[1:]
 ##############################################################################
 # Sanity check of input arguments
 if not opts.config_file:
-  print >> sys.stderr, "No configuration file specified."
-  print >> sys.stderr, "Use --config-file FILE to specify location."
+  print("No configuration file specified.", file=sys.stderr)
+  print("Use --config-file FILE to specify location.", file=sys.stderr)
   sys.exit(1)
 
 if not opts.config_file[-4:]==".ini":
-  print >> sys.stderr, "Configuration file name must end in '.ini'!" 
+  print("Configuration file name must end in '.ini'!", file=sys.stderr) 
   sys.exit(1)
 
 if not opts.log_path:
-  print >> sys.stderr, "No log file path specified."
-  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  print("No log file path specified.", file=sys.stderr)
+  print("Use --log-path PATH to specify a location.", file=sys.stderr)
   sys.exit(1)
 
 if opts.run_pipedown:
   if not opts.node_local_dir:
-    print >> sys.stderr, "No local dir specified. If running with pipedown"
-    print >> sys.stderr, "use --node-local-dir to specify a local directory"
-    print >> sys.stderr, "Use --help for more information"
+    print("No local dir specified. If running with pipedown", file=sys.stderr)
+    print("use --node-local-dir to specify a local directory", file=sys.stderr)
+    print("Use --help for more information", file=sys.stderr)
     sys.exit(1)
 
 if not opts.gps_start_time:
-  print >> sys.stderr, "No GPS start time specified for the analysis"
-  print >> sys.stderr, "Use --gps-start-time GPS_START to specify a location."
+  print("No GPS start time specified for the analysis", file=sys.stderr)
+  print("Use --gps-start-time GPS_START to specify a location.", file=sys.stderr)
   sys.exit(1)
 
 if not opts.gps_end_time:
-  print >> sys.stderr, "No GPS end time specified for the analysis"
-  print >> sys.stderr, "Use --gps-end-time GPS_END to specify a location."
+  print("No GPS end time specified for the analysis", file=sys.stderr)
+  print("Use --gps-end-time GPS_END to specify a location.", file=sys.stderr)
   sys.exit(1)
 
 if opts.gps_end_time < opts.gps_start_time:
-  print >> sys.stderr, "The GPS end time must be after the GPS start time"
+  print("The GPS end time must be after the GPS start time", file=sys.stderr)
   sys.exit(1)
 
 opts.complete_cache = (opts.run_data_quality or opts.run_plots or opts.run_pipedown or opts.run_search)
@@ -226,9 +229,9 @@ opts.complete_cache = (opts.run_data_quality or opts.run_plots or opts.run_piped
 def check_grid_proxy(path):
   try:
     proxy = M2Crypto.X509.load_cert(path)
-  except Exception, e:
+  except Exception as e:
     msg = "Unable to load proxy from path %s : %s" % (path, e)
-    raise RuntimeError, msg
+    raise RuntimeError(msg)
 
   try:
     proxy.get_ext("proxyCertInfo")
@@ -236,16 +239,16 @@ def check_grid_proxy(path):
     subject = proxy.get_subject().as_text()
     if re.search(r'.+CN=proxy$', subject):
       msg = "Proxy %s is not RFC compliant" % path
-      raise RuntimeError, msg
+      raise RuntimeError(msg)
 
   try:
     expireASN1 = proxy.get_not_after().__str__()
     expireGMT  = time.strptime(expireASN1, "%b %d %H:%M:%S %Y %Z")
     expireUTC  = calendar.timegm(expireGMT)
     now = int(time.time())
-  except Exception, e:
+  except Exception as e:
     msg = "could not determine time left on proxy: %s" % e
-    raise RuntimeError, msg
+    raise RuntimeError(msg)
 
   return expireUTC - now
 
@@ -278,15 +281,15 @@ try:
   # check that the proxy is valid and that enough time remains
   time_left = check_grid_proxy(proxy_path)
   if time_left < 0:
-    raise RuntimeError, "Proxy has expired."
+    raise RuntimeError("Proxy has expired.")
   elif time_left < time_needed:
     msg = "Not enough time left on grid proxy (%d seconds)." % time_left
-    raise RuntimeError, msg
+    raise RuntimeError(msg)
   else:
     os.environ['X509_USER_PROXY'] = proxy_path
 
 except:
-  print >> sys.stderr, """
+  print("""
 Error: Could not find a valid grid proxy. Please run 
 
    ligo-proxy-init albert.einstein
@@ -301,7 +304,7 @@ You can check the status of your grid proxy by running
   grid-proxy-info
 
 At least %d seconds must be left before your proxy expires to run ihope.
-""" % time_needed
+""" % time_needed, file=sys.stderr)
   raise
 
 ##############################################################################
@@ -385,16 +388,15 @@ for option in ["g1-data","h1-data","h2-data","l1-data","v1-data"]:
   if cp.has_option("ifo-details",option): ifos.append(option[0:2].upper() )
 
 if cp.has_option("ifo-details","analyze-all"): 
-  print >> sys.stderr, \
-      "The inspiral pipeline does not yet support coincidence between"
-  print >> sys.stderr, "all five IFOs. Do not use the analyze-all option."
+  print("The inspiral pipeline does not yet support coincidence between", file=sys.stderr)
+  print("all five IFOs. Do not use the analyze-all option.", file=sys.stderr)
   sys.exit(1)
 
 ifos.sort()
 
-print "Setting up an analysis for " + str(ifos) + " from " + \
-    str(opts.gps_start_time) + " to "  + str(opts.gps_end_time)
-print
+print("Setting up an analysis for " + str(ifos) + " from " + \
+    str(opts.gps_start_time) + " to "  + str(opts.gps_end_time))
+print()
 sys.stdout.flush()
 
 
@@ -420,7 +422,7 @@ peg_frame_cache = os.path.join(os.getcwd(),inspiralutils.create_pegasus_cache_fi
 tmp_exec_dir = tempfile.mkdtemp( prefix="%s-%s-%s-%d." % (''.join(ifos),
   basename, opts.gps_start_time, 
   int(opts.gps_end_time) - int(opts.gps_start_time)) )
-os.chmod(tmp_exec_dir, 0755)
+os.chmod(tmp_exec_dir, 0o755)
 
 ##############################################################################
 # Determine the segments to analyze
@@ -517,7 +519,7 @@ cachefilename = basename + ".cache"
 # Run lalapps_inspiral_hipe for datafind and template bank generation
 
 if opts.run_datafind or opts.run_tmpltbank:
-  print "Running inspiral hipe for datafind/template bank run"
+  print("Running inspiral hipe for datafind/template bank run")
   hipeDfNode = inspiralutils.hipe_setup("datafind", cp, ifos, \
       opts.log_path, dataFind = opts.run_datafind, tmpltBank = opts.run_tmpltbank,
       dax=opts.dax, local_exec_dir=tmp_exec_dir, static_pfn_cache=peg_frame_cache,
@@ -548,7 +550,7 @@ if opts.complete_cache:
   injSection = "injections"
 
   if opts.reverse_analysis:
-    print "Setting up dags for a reverse chirp analysis"
+    print("Setting up dags for a reverse chirp analysis")
     cp.set("inspiral", "reverse-chirp-bank","")
     # Add reverse to directories to specify that a reverse chirp search is being done
     playDir += "_reverse"
@@ -561,11 +563,11 @@ if opts.complete_cache:
       break
 
     if opts.run_search:
-      print "Setting up the category " + str(category) + " veto dags"
+      print("Setting up the category " + str(category) + " veto dags")
 
     if opts.run_playground:
       if opts.run_search:
-        print "Running inspiral hipe for playground with vetoes"
+        print("Running inspiral hipe for playground with vetoes")
         hipePlayVetoNode[category] = inspiralutils.hipe_setup(
             playDir, cp, ifos, opts.log_path, \
             playOnly = True, vetoCat = category, vetoFiles = dqVetoes, \
@@ -594,13 +596,13 @@ if opts.complete_cache:
         if os.path.isfile(playDir + "/" + cacheFile):
           cachelist.append(playDir + "/" + cacheFile)
         else:
-          print>>sys.stderr, "WARNING: Cache file " + playDir + "/" + cacheFile
-          print>>sys.stderr, "does not exist! This might cause later failures."
+          print("WARNING: Cache file " + playDir + "/" + cacheFile, file=sys.stderr)
+          print("does not exist! This might cause later failures.", file=sys.stderr)
 
 
     if opts.run_full_data:
       if opts.run_search:
-        print "Running inspiral hipe for full data with vetoes"
+        print("Running inspiral hipe for full data with vetoes")
         hipeAnalysisVetoNode[category] = inspiralutils.hipe_setup(
             fullDir, cp, ifos, opts.log_path, \
             vetoCat = category, vetoFiles = dqVetoes, \
@@ -631,8 +633,8 @@ if opts.complete_cache:
         if os.path.isfile(fullDir + "/" + cacheFile):
           cachelist.append(fullDir + "/" + cacheFile)
         else:
-          print>>sys.stderr, "WARNING: Cache file " + fullDir + "/" + cacheFile
-          print>>sys.stderr, "does not exist! This might cause later failures."
+          print("WARNING: Cache file " + fullDir + "/" + cacheFile, file=sys.stderr)
+          print("does not exist! This might cause later failures.", file=sys.stderr)
 
 
     if opts.run_injections:
@@ -641,7 +643,7 @@ if opts.complete_cache:
 
       for (injDir, injSeed) in cp.items( injSection ):
         if opts.run_search:
-          print "Running inspiral hipe for " + injDir + " with vetoes"
+          print("Running inspiral hipe for " + injDir + " with vetoes")
           hipeInjVetoNode[category][injDir] = inspiralutils.hipe_setup(
               injDir, cp, ifos, opts.log_path, \
               injSeed = injSeed, vetoCat = category, vetoFiles = dqVetoes, \
@@ -672,8 +674,8 @@ if opts.complete_cache:
           if os.path.isfile(injDir + "/" + cacheFile):
             cachelist.append(injDir + "/" + cacheFile)
           else:
-            print>>sys.stderr, "WARNING: Cache file " + injDir + "/" + cacheFile
-            print>>sys.stderr, "does not exist! This might cause later failures."
+            print("WARNING: Cache file " + injDir + "/" + cacheFile, file=sys.stderr)
+            print("does not exist! This might cause later failures.", file=sys.stderr)
 
 
 ##############################################################################
@@ -705,7 +707,7 @@ if opts.run_pipedown:
 
   playgroundOnly = False
 
-  print "Running lalapps_pipedown"
+  print("Running lalapps_pipedown")
   dag = inspiralutils.pipedownSetup(dag,cp,opts.log_path,"pipedown",\
                             "../" + cachefilename,parentNodes,playgroundOnly,opts.run_mvsc)
 
@@ -739,7 +741,7 @@ if opts.run_plots:
       parentVetoNodes = [hipePlayVetoNodeWithout1]
     else: parentVetoNodes = None
     
-    print "Making plots depending only on the playground"
+    print("Making plots depending only on the playground")
     dag = inspiralutils.zeroSlidePlots(dag, "playground_summary_plots", cp, \
         opts.log_path, "PLAYGROUND", "PLAYGROUND", "../" + cachefilename, \
         opts.do_dag_categories, parentNodes, parentVetoNodes, \
@@ -759,7 +761,7 @@ if opts.run_plots:
       parentVetoNodes = [hipeAnalysisVetoNodeWithout1]
     else: parentVetoNodes = None
 
-    print "Making full data zero lag plots"
+    print("Making full data zero lag plots")
     dag = inspiralutils.zeroSlidePlots(dag, "full_data_summary_plots", cp, \
         opts.log_path, "FULL_DATA", "FULL_DATA", "../" + cachefilename, \
         opts.do_dag_categories, parentNodes, parentVetoNodes, \
@@ -777,7 +779,7 @@ if opts.run_plots:
       parentVetoNodes = [hipePlayVetoNodeWithout1, hipeAnalysisVetoNodeWithout1]
     else: parentVetoNodes = None
 
-    print "Making plots with full data slides, playground zero lag"
+    print("Making plots with full data slides, playground zero lag")
     dag = inspiralutils.zeroSlidePlots(dag, "full_data_slide_summary_plots", \
         cp, opts.log_path, "PLAYGROUND", "FULL_DATA", "../" + cachefilename, \
         opts.do_dag_categories, parentNodes, parentVetoNodes, \
@@ -788,7 +790,7 @@ if opts.run_plots:
 
     hipeInjNode = {}
 
-    print "Making plots depending on the injection runs"
+    print("Making plots depending on the injection runs")
 
     if opts.run_full_data:
       slideSuffix = "FULL_DATA"
@@ -829,7 +831,7 @@ if opts.run_plots:
           "../" + cachefilename, opts.do_dag_categories, parentNodes, 
           parentVetoNodes, vetocats_without1, ifos)
 
-    print "Making plots of all injection runs together"
+    print("Making plots of all injection runs together")
 
     # set up parents
     if opts.run_search:
@@ -861,7 +863,7 @@ if opts.run_plots:
 
 if opts.run_hardware_inj:
 
-  print "Setting up hardware injection summary jobs"
+  print("Setting up hardware injection summary jobs")
 
   # set up parents
   parentNodes = []
@@ -918,10 +920,10 @@ dag.prepare_dax(tmp_exec_dir=tmp_exec_dir,grid_site=exec_site)
 dag.write_sub_files()
 dag.write_dag()
 
-print 
-print "Created a workflow file which can be submitted by executing"
-print "\n    cd " + analysisDirectory
-print """
+print() 
+print("Created a workflow file which can be submitted by executing")
+print("\n    cd " + analysisDirectory)
+print("""
 and then
 
     ./pegasus_submit_dax
@@ -939,7 +941,7 @@ can run the command
     pegasus-analyzer -t -i `./pegasus_basedir`
 
 to debug any failed jobs.
-"""
+""")
 
 ##############################################################################
 # write out a log file for this script

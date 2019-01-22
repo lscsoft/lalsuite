@@ -170,11 +170,6 @@ while [ $iFreq -le $numFreqBands ]; do
     if [ $iFreq -eq 2 ]; then
         cmdline="$cmdline --injectionSources=\"{Freq=$Freq; f1dot=$f1dot; f2dot=$f2dot; Alpha=$Alpha; Delta=$Delta; psi=$psi; phi0=$phi0; h0=$h0; cosi=$cosi; refTime=$refTime}\""
     fi
-    if [ -n "$DEBUG" ]; then
-        cmdline="$cmdline"
-    else
-        cmdline="$cmdline &> /dev/null"
-    fi
     echo "$cmdline";
     if ! eval "$cmdline"; then
         echo "Error.. something failed when running '$mfd_code' ..."
@@ -212,11 +207,6 @@ if [ ! -r "$outfile_cfs" ]; then
 
         # ----- get multi-IFO + single-IFO F-stat values
         cmdline="$cfs_CL --DataFiles='$SFTfiles'"
-        if [ -n "$DEBUG" ]; then
-            cmdline="$cmdline"
-        else
-            cmdline="$cmdline &> /dev/null"
-        fi
         echo "$cmdline"
         if ! eval "$cmdline"; then
 	    echo "Error.. something failed when running '$cfs_code' ..."
@@ -277,11 +267,6 @@ outfile_GCT_RS="${testDir}/GCT_RS.dat"
 timingsfile_RS="${testDir}/timing_RS.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' ${BSGL_flags}"
-if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline"
-else
-    cmdline="$cmdline &> /dev/null"
-fi
 echo "$cmdline"
 if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$gct_code' ..."
@@ -307,11 +292,6 @@ outfile_GCT_DM="${testDir}/GCT_DM.dat"
 timingsfile_DM="${testDir}/timing_DM.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=DemodBest --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' ${BSGL_flags}"
-if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline"
-else
-    cmdline="$cmdline &> /dev/null"
-fi
 
 echo $cmdline
 if ! eval "$cmdline"; then
@@ -339,11 +319,6 @@ outfile_GCT_DM_BSGL="${testDir}/GCT_DM_BSGL.dat"
 timingsfile_DM_BSGL="${testDir}/timing_DM_BSGL.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=DemodBest ${BSGL_flags} --SortToplist=2 --fnameout='$outfile_GCT_DM_BSGL' --outputTiming='$timingsfile_DM_BSGL'"
-if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline"
-else
-    cmdline="$cmdline &> /dev/null"
-fi
 
 echo $cmdline
 if ! eval "$cmdline"; then
@@ -368,11 +343,6 @@ outfile_GCT_DM_DUAL="${testDir}/GCT_DM_DUAL.dat"
 timingsfile_DM_DUAL="${testDir}/timing_DM_DUAL.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=DemodBest --SortToplist=3 ${BSGL_flags} --fnameout='$outfile_GCT_DM_DUAL' --outputTiming='$timingsfile_DM_DUAL'"
-if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline"
-else
-    cmdline="$cmdline &> /dev/null"
-fi
 
 echo $cmdline
 if ! eval "$cmdline"; then
@@ -408,11 +378,6 @@ export LAL_FSTAT_FFT_PLAN_TIMEOUT=30
 
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' --outputTiming='$timingsfile_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=6"
-if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline"
-else
-    cmdline="$cmdline &> /dev/null"
-fi
 
 echo $cmdline
 if ! eval "$cmdline"; then
@@ -424,11 +389,6 @@ fi
 # second variant of triple toplists, with 2F sorted first toplist
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple2' --outputTiming='$timingsfile_RS_triple2' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=7"
-if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline"
-else
-    cmdline="$cmdline &> /dev/null"
-fi
 
 echo $cmdline
 if ! eval "$cmdline"; then
@@ -444,11 +404,6 @@ fi
 outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_0.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=0"
-if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline"
-else
-    cmdline="$cmdline &> /dev/null"
-fi
 
 echo $cmdline
 if ! eval "$cmdline"; then
@@ -461,11 +416,6 @@ fi
 outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_1.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=2"
-if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline"
-else
-    cmdline="$cmdline &> /dev/null"
-fi
 
 echo $cmdline
 if ! eval "$cmdline"; then
@@ -476,11 +426,6 @@ fi
 outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_2.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=4"
-if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline"
-else
-    cmdline="$cmdline &> /dev/null"
-fi
 
 echo $cmdline
 if ! eval "$cmdline"; then
@@ -491,11 +436,6 @@ fi
 outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_3.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=5"
-if [ -n "$DEBUG" ]; then
-    cmdline="$cmdline"
-else
-    cmdline="$cmdline &> /dev/null"
-fi
 
 echo $cmdline
 if ! eval "$cmdline"; then

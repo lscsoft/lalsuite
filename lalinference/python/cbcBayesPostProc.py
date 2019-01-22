@@ -35,7 +35,7 @@ import os
 import socket
 
 from math import ceil,floor
-import cPickle as pickle
+from six.moves import cPickle as pickle
 
 from time import strftime
 
@@ -89,7 +89,7 @@ from lalinference.lalinference_pipe_utils import guess_url
 def email_notify(address,path):
     import smtplib
     import subprocess
-    USER = os.environ('USER')
+    USER = os.environ['USER']
     HOST = socket.getfqdn()
     address=address.split(',')
     FROM=USER+'@'+HOST
@@ -260,7 +260,7 @@ def cbcBayesPostProc(
         else:
             fixedBurnins = fixedBurnins if fixedBurnins is not None else None
             peparser = bppu.PEOutputParser('hdf5')
-            commonResultsObj=peparser.parse(data[0],deltaLogP=deltaLogP,fixedBurnin=fixedBurnins,nDownsample=nDownsample)
+            commonResultsObj=peparser.parse(data[0],deltaLogP=deltaLogP,fixedBurnins=fixedBurnins,nDownsample=nDownsample)
     else:
         peparser=bppu.PEOutputParser('common')
         commonResultsObj=peparser.parse(open(data[0],'r'),info=[header,None])
@@ -695,7 +695,7 @@ def cbcBayesPostProc(
 
       BCItableline='<tr><td>%s</td>'%(par_name)
       clasciiout+="%s\t"%par_name
-      cls=reses.keys()
+      cls=list(reses.keys())
       cls.sort()
 
       for cl in cls:
@@ -879,7 +879,7 @@ def cbcBayesPostProc(
 
         #Generate new BCI html table row
         BCItableline='<tr><td>%s-%s</td>'%(par1_name,par2_name)
-        cls=reses.keys()
+        cls=list(reses.keys())
         cls.sort()
 
         for cl in cls:

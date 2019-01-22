@@ -16,7 +16,7 @@ import socket, time
 import re, string
 from optparse import *
 import tempfile
-import ConfigParser
+from six.moves.configparser import ConfigParser
 import urlparse
 from UserDict import UserDict
 
@@ -240,17 +240,17 @@ command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
 if opts.version:
-  print "$Id$"
+  print("$Id$")
   sys.exit(0)
 
 if not opts.cache_path:
-  print >> sys.stderr, "No cache path specified."
-  print >> sys.stderr, "Use --cache-path PATH to specify a location."
+  print("No cache path specified.", file=sys.stderr)
+  print("Use --cache-path PATH to specify a location.", file=sys.stderr)
   sys.exit(1)
 
 if not opts.science_run:
-  print >> sys.stderr, "No science run specified."
-  print >> sys.stderr, "Use --science-run RUN to specify a run."
+  print("No science run specified.", file=sys.stderr)
+  print("Use --science-run RUN to specify a run.", file=sys.stderr)
   sys.exit(1)
 
 #if not opts.xml_glob:
@@ -261,15 +261,15 @@ if not opts.science_run:
 #  print >> sys.stderr, "Must specify a statistic to use"
 #  sys.exit(1)
 
-print opts.log_path
+print(opts.log_path)
 ############# TURN THE HIPE OUTPUT INTO LAL CACHE FILES #######################
 
 cache = getCache(opts)
 cache.getCacheAll()
 cache.writeCacheAll()
-print >> sys.stderr, "\nHIPE CACHE FILES WRITTEN TO:"
+print("\nHIPE CACHE FILES WRITTEN TO:", file=sys.stderr)
 for n, t in cache.nameMaps:
-  print >> sys.stderr, " * " + n + " [" + str(len(cache[t])) + "]"
+  print(" * " + n + " [" + str(len(cache[t])) + "]", file=sys.stderr)
 
 ##############################################################################
 # create a log file that the Condor jobs will write to
@@ -294,7 +294,7 @@ found, coincs = readFiles(opts.xml_glob,getstatistic(opts))
 missed = None
 followuptrigs = getfollowuptrigs(opts,coincs,missed)
 
-print "\n.......Found " + str(len(coincs)) + " trigs to follow up" 
+print("\n.......Found " + str(len(coincs)) + " trigs to follow up") 
 
 trigJob = trigBankFollowUpJob(opts)
 inspJob = inspiralFollowUpJob(opts)
@@ -304,7 +304,7 @@ trigJobCnt = 0
 inspJobCnt = 0
 plotJobCnt = 0
 
-print "\n.......Setting up pipeline jobs"
+print("\n.......Setting up pipeline jobs")
 for trig in followuptrigs:
   try:
     trig_process_params = cache.getProcessParamsFromCache( \
@@ -326,7 +326,7 @@ for trig in followuptrigs:
         trigJobCnt+=1
       except:
         trigNode = None
-        print "couldn't add trigbank job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
+        print("couldn't add trigbank job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo]))
       if trigNode:
         try:
           inspiralNode = inspiralFollowUpNode(inspJob,trig.gpsTime[ifo],inspiral_process_params[ifo],opts,trigNode.output_file_name)
@@ -335,7 +335,7 @@ for trig in followuptrigs:
           inspJobCnt+=1
         except: 
           inspiralNode = None
-          print "couldn't add inspiral job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
+          print("couldn't add inspiral job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo]))
       if inspiralNode:
         try:
           plotNode = plotSNRCHISQNode(plotJob,trig.gpsTime[ifo],inspiralNode.output_file_name)
@@ -343,13 +343,13 @@ for trig in followuptrigs:
           dag.add_node(plotNode)
           plotJobCnt+=1
         except:
-          print "couldn't add plot job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo])
+          print("couldn't add plot job for " + str(ifo) + "@ "+ str(trig.gpsTime[ifo]))
 
 
-print "\nFound " + str(trigJobCnt)+ " trig bank jobs and "+ str(inspJobCnt) +" inspiral Jobs " \
-      + str(plotJobCnt) + " plot jobs"
+print("\nFound " + str(trigJobCnt)+ " trig bank jobs and "+ str(inspJobCnt) +" inspiral Jobs " \
+      + str(plotJobCnt) + " plot jobs")
 
-print "\n.......Writing DAG"
+print("\n.......Writing DAG")
 dag.write_sub_files()
 dag.write_dag()
 

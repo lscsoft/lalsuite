@@ -12,10 +12,8 @@ pymodule_PYTHON = \
 	command.py \
 	decorator.py \
 	deprecation.py \
-	distance.py \
 	filter.py \
 	ligolw.py \
-	moc.py \
 	sky_map.py \
 	postprocess.py \
 	timing.py \

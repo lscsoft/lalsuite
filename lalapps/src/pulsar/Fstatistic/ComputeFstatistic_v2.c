@@ -315,6 +315,8 @@ typedef struct {
   int FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
 
   BOOLEAN resampFFTPowerOf2;	//!< in Resamp: enforce FFT length to be a power of two (by rounding up)
+  REAL8 allowedMismatchFromSFTLength; /**< maximum allowed mismatch from SFTs being too long */
+
   LALStringVector *injectionSources;    /**< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}') */
   LALStringVector *injectSqrtSX; 	/**< Add Gaussian noise: list of respective detectors' noise-floors sqrt{Sn}" */
   LALStringVector *IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector */
@@ -1019,6 +1021,7 @@ initUserVars ( UserInput_t *uvar )
   uvar->transient_WindowType = XLALStringDuplicate ( "none" );
   uvar->transient_useFReg = 0;
   uvar->resampFFTPowerOf2 = TRUE;
+  uvar->allowedMismatchFromSFTLength = 0;
   uvar->injectionSources = NULL;
   uvar->injectSqrtSX = NULL;
   uvar->IFOs = NULL;
@@ -1151,6 +1154,8 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember(outputFstatTiming,    STRING, 0,  DEVELOPER, "Append F-statistic timing measurements and parameters into this file");
 
   XLALRegisterUvarMember(resampFFTPowerOf2,  BOOLEAN, 0,  DEVELOPER, "For Resampling methods: enforce FFT length to be a power of two (by rounding up)" );
+
+  XLALRegisterUvarMember(allowedMismatchFromSFTLength, REAL8, 0, DEVELOPER, "Maximum allowed mismatch from SFTs being too long [Default: what's hardcoded in XLALFstatMaximumSFTLength]" );
 
   /* inject signals into the data being analyzed */
   XLALRegisterUvarMember(injectionSources,  STRINGVector, 0, DEVELOPER, "CSV list of files containing signal parameters for injection [see mfdv5]");
@@ -1422,6 +1427,10 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     XLALFree ( detector );
   }
 
+  /* maximum ranges of binary orbit parameters */
+  const REAL8 binaryMaxAsini = MYMAX( uvar->orbitasini, uvar->orbitasini + uvar->orbitasiniBand );
+  const REAL8 binaryMinPeriod = MYMIN( uvar->orbitPeriod, uvar->orbitPeriod + uvar->orbitPeriodBand );
+  const REAL8 binaryMaxEcc = MYMAX( uvar->orbitEcc, uvar->orbitEcc + uvar->orbitEccBand );
 
   { /* ----- What frequency-band do we need to read from the SFTs?
      * propagate spin-range from refTime to startTime and endTime of observation
@@ -1443,12 +1452,13 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     memcpy ( cfg->searchRegion.fkdotBand, spinRangeRef.fkdotBand, sizeof(cfg->searchRegion.fkdotBand) );
 
     // Compute covering frequency range, accounting for Doppler modulation due to the Earth and any binary companion */
-    const REAL8 binaryMaxAsini = MYMAX( uvar->orbitasini, uvar->orbitasini + uvar->orbitasiniBand );
-    const REAL8 binaryMinPeriod = MYMIN( uvar->orbitPeriod, uvar->orbitPeriod + uvar->orbitPeriodBand );
-    const REAL8 binaryMaxEcc = MYMAX( uvar->orbitEcc, uvar->orbitEcc + uvar->orbitEccBand );
     XLALCWSignalCoveringBand( &fCoverMin, &fCoverMax, &cfg->startTime, &endTime, &spinRangeRef, binaryMaxAsini, binaryMinPeriod, binaryMaxEcc );
 
   } /* extrapolate spin-range */
+
+  /* check that SFT length is within allowed maximum */
+  /* use fCoverMax here to work with loading grid from file (--gridType=6) */
+  XLAL_CHECK ( XLALFstatCheckSFTLengthMismatch ( cfg->Tsft, fCoverMax, binaryMaxAsini, binaryMinPeriod, uvar->allowedMismatchFromSFTLength ) == XLAL_SUCCESS, XLAL_EFUNC, "Excessive mismatch would be incurred due to SFTs being too long for the current search setup. Please double-check your parameter ranges or provide shorter input SFTs. If you really know what you're doing, you could also consider using the --allowedMismatchFromSFTLength override." );
 
   /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
   MultiNoiseFloor s_assumeSqrtSX, *assumeSqrtSX;
@@ -1495,6 +1505,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   optionalArgs.FstatMethod = uvar->FstatMethod;
   optionalArgs.resampFFTPowerOf2 = uvar->resampFFTPowerOf2;
   optionalArgs.collectTiming = XLALUserVarWasSet ( &uvar->outputFstatTiming );
+  optionalArgs.allowedMismatchFromSFTLength = uvar->allowedMismatchFromSFTLength;
 
 
   XLAL_CHECK ( (cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax, cfg->dFreq, cfg->ephemeris, &optionalArgs )) != NULL, XLAL_EFUNC );

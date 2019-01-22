@@ -56,12 +56,6 @@
    pulsar-specific cross-correlation search.
 @}
 
-\defgroup lalpulsar_xml			XML Serialization Routines
-@{
-   \brief This package provides routines for serializing pulsar data
-   structures to and from XML files.
-@}
-
 \defgroup lalpulsar_swig		SWIG Interfaces
 @{
    \brief This package provides Octave and Python wrappings of LALPulsar

@@ -159,7 +159,8 @@ setup(
               'build_scripts': build_scripts},
     package_dir={'': PYTHONDIR,
                  'lalapps.bin': BINDIR, 'lalapps.data': DATADIR},
-    package_data={'lalapps.bin': ['*'], 'lalapps.data': ['*']},
+    package_data={'lalapps.bin': ['*'], 'lalapps.data': ['*'],
+                  '': ['*.csv']},
     # FIXME: exclude lalpulsar data files because they cause the wheel to
     # exceed the PyPI upload size limit.
     exclude_package_data={'lalapps.data': ['earth*.dat.gz', 'sun*.dat.gz',

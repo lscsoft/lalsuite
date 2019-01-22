@@ -4,6 +4,8 @@ Something
 This program creates cache files for the output of inspiral hipe
 """
 
+from __future__ import print_function
+
 __author__ = 'Chad Hanna <channa@ligo.caltech.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -16,7 +18,7 @@ import socket, time
 import re, string
 from optparse import *
 import tempfile
-import ConfigParser
+from six.moves import configparser
 import urlparse
 import urllib
 from UserDict import UserDict
@@ -232,19 +234,19 @@ command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
 if opts.version:
-  print "$Id$"
+  print("$Id$")
   sys.exit(0)
 
 ####################### SANITY CHECKS #####################################
 
 if not opts.config_file:
-  print >> sys.stderr, "No configuration file specified."
-  print >> sys.stderr, "Use --config-file FILE to specify location" 
+  print("No configuration file specified.", file=sys.stderr)
+  print("Use --config-file FILE to specify location", file=sys.stderr) 
   sys.exit(1)
 
 if not opts.log_path and not opts.write_to_iulgroup:
-  print >> sys.stderr, "No log file path specified"
-  print >> sys.stderr, "Use --log-path PATH to specify a location"
+  print("No log file path specified", file=sys.stderr)
+  print("Use --log-path PATH to specify a location", file=sys.stderr)
   sys.exit(1)
 
 if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
@@ -263,30 +265,30 @@ if not opts.write_to_iulgroup and not opts.generate_fu_cache and \
   and not opts.make_checklist and not opts.create_localcopy \
   and not opts.followup_triggers and not opts.spin_mcmc:
 
-  print >> sys.stderr, "No steps of the pipeline specified."
-  print >> sys.stderr, "Please specify at least one of"
-  print >> sys.stderr, "--generate-fu-cache, --trig-bank, --inspiral, --plots,"
-  print >> sys.stderr, "--datafind, --qscan, --hoft-qscan, --seis-qscan,"
-  print >> sys.stderr, "--background-qscan, --background-hoft-qscan,"
-  print >> sys.stderr, "--background-seis-qscan, --hoft-datafind,"
-  print >> sys.stderr, "--generate-segments, --frame-check, --inspiral-datafind,"
-  print >> sys.stderr, "--analyse-qscan, --analyse-seis-qscan,"
-  print >> sys.stderr, "--analyse-hoft-qscan, --distrib-remote-q,"
-  print >> sys.stderr, "--mcmc, --plot-mcmc, --coh-inspiral, --plot-chia,"
-  print >> sys.stderr, "--sky-map, --sky-map-plot, --followup-triggers,"
-  print >> sys.stderr, "--convert-eventid, --create-localcopy,"
-  print >> sys.stderr, "--ifo-status-check, --single-qevent, --H1H2-qevent"
-  print >> sys.stderr, "--make-checklist or --spin-mcmc or --write-to-iulgroup" 
+  print("No steps of the pipeline specified.", file=sys.stderr)
+  print("Please specify at least one of", file=sys.stderr)
+  print("--generate-fu-cache, --trig-bank, --inspiral, --plots,", file=sys.stderr)
+  print("--datafind, --qscan, --hoft-qscan, --seis-qscan,", file=sys.stderr)
+  print("--background-qscan, --background-hoft-qscan,", file=sys.stderr)
+  print("--background-seis-qscan, --hoft-datafind,", file=sys.stderr)
+  print("--generate-segments, --frame-check, --inspiral-datafind,", file=sys.stderr)
+  print("--analyse-qscan, --analyse-seis-qscan,", file=sys.stderr)
+  print("--analyse-hoft-qscan, --distrib-remote-q,", file=sys.stderr)
+  print("--mcmc, --plot-mcmc, --coh-inspiral, --plot-chia,", file=sys.stderr)
+  print("--sky-map, --sky-map-plot, --followup-triggers,", file=sys.stderr)
+  print("--convert-eventid, --create-localcopy,", file=sys.stderr)
+  print("--ifo-status-check, --single-qevent, --H1H2-qevent", file=sys.stderr)
+  print("--make-checklist or --spin-mcmc or --write-to-iulgroup", file=sys.stderr) 
   sys.exit(1)
 
 if opts.disable_followup:
-  print >> sys.stderr, "Warning: the option disable-followup disables any followup jobs, only qscan datafind and background qscan jobs will be run..."
+  print("Warning: the option disable-followup disables any followup jobs, only qscan datafind and background qscan jobs will be run...", file=sys.stderr)
 
 if opts.read_times:
-  print >> sys.stderr, "Warning: the option read-times disables the standard behaviour of the pipeline. The \"hipe-output-cache\" or \"xml-glob\" files will be ignored. Instead the times to be analysed will be read within the text files specified by the fields \"XXtimes\" of the section [triggers] of the .ini file"
+  print("Warning: the option read-times disables the standard behaviour of the pipeline. The \"hipe-output-cache\" or \"xml-glob\" files will be ignored. Instead the times to be analysed will be read within the text files specified by the fields \"XXtimes\" of the section [triggers] of the .ini file", file=sys.stderr)
 
 #################### READ IN THE CONFIG (.ini) FILE ########################
-cp = ConfigParser.ConfigParser()
+cp = configparser.ConfigParser()
 cp.read(opts.config_file)
 
 ## set the option to make remote calculations for some Virgo qscans
@@ -321,11 +323,11 @@ if not opts.disable_followup and not opts.read_times:
     if not os.access('LOCAL_XML_COPY',os.F_OK):
       os.mkdir('LOCAL_XML_COPY')
     else: pass
-  print "Reading files from cache..."
+  print("Reading files from cache...")
   numtrigs, found, coincs, search = cache.readTriggerFiles(cp,opts)
   missed = None
-  if coincs: print "found " + str(len(coincs)) + " triggers..."
-  else: print "WARNING: NO COINCS FOUND..."
+  if coincs: print("found " + str(len(coincs)) + " triggers...")
+  else: print("WARNING: NO COINCS FOUND...")
   if opts.trig_bank: trigbank_test = 1
   else: trigbank_test = 0
   if opts.disable_ifarsorting: ifar = False
@@ -337,7 +339,7 @@ if not opts.disable_followup and not opts.read_times:
   for trig in followuptrigs: trig.write_trigger_info(trigInfo)
   trigInfo.close()
 
-  print "\n.......Found " + str(len(followuptrigs)) + " trigs to follow up" 
+  print("\n.......Found " + str(len(followuptrigs)) + " trigs to follow up") 
 
 ############ SET UP THE REQUESTED JOBS ########################################
 
@@ -377,7 +379,7 @@ dataJob         = followupDataFindJob(cp,'futrig')
 qscanBgJob      = qscanJob(opts,cp,'QSCANLITE')
 distribQJob     = distributeQscanJob(cp)
 
-print "\n.......Setting up pipeline jobs"
+print("\n.......Setting up pipeline jobs")
 
 dq_url_pattern = "http://ldas-cit.ligo.caltech.edu/segments/S5/%s/dq_segments.txt"
 
@@ -408,7 +410,7 @@ if opts.do_remote_ifo and not opts.activate_cm_messages:
     if cp.has_option("followup-"+depQscan, depIfoIniConfig):
       qscanConfig = string.strip(cp.get("followup-"+depQscan, depIfoIniConfig))
       if qscanConfig!='':
-        print 'copy '+qscanConfig+' -----> '+depIfoDir+'/CONFIG/'+depQscan+'_config.txt'
+        print('copy '+qscanConfig+' -----> '+depIfoDir+'/CONFIG/'+depQscan+'_config.txt')
         os.system('cp '+qscanConfig+' '+depIfoDir+'/CONFIG/'+depQscan+'_config.txt')
   
   # Copy the scripts used in the remote computing center

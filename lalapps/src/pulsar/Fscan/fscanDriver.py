@@ -8,6 +8,8 @@ fscanDriver.py - Driver script for calling other code to generates SFTs and turn
 
 """
 
+from __future__ import print_function
+
 __author__ = 'Rejean Dupuis <rejean@caltech.edu> & Greg Mendell<gmendell@ligo-wa.caltech.edu> & Colin Gill <c.gill@astro.gla.ac.uk>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -25,6 +27,7 @@ __version__ = '$Revision$'
 # 12/02/2009 gam; Change checked_freqBand to sft_freqBand, and make sure there are some extra bins in the SFTs to avoid problems at endFreq, since lalapps_spec_avg works on [startFreq,endFreq], not [startFreq,endFreq).
 #25/02/2010 cg; Added extra options to pass the path of ephemerides for source frequency calculations done in spec_avg.c
 #26/04/2010 cg; replaced link to pdf with link to .png files.
+#10/09/2018 gam; Add -K, --coherence-path option to do the coherence using SFTs by a job to run coherenceFromSFTs.py.
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -87,6 +90,7 @@ Usage: [options]
   -e  --html-ref-ifo-epoch   (optional) string that give ifo and GPS start and end times of reference plots, e.g.,H1_840412814_845744945.
   -q  --threshold-snr        (optional) if > 0 and a reference is given, then look for coincident lines with the reference spectra above this threshold.
   -y  --coincidence-deltaf   (optional) if a reference and threshold on snr is given, then use this as the coincidence window on frequency.
+  -K  --coherence-path       (optional) if given, run coherenceFromSFTs.py using SFTs under this path and the SFTs for the input channel.
   -X  --misc-desc            (optional) misc. part of the SFT description field in the filename (also used if -D option is > 0).
   -H, --use-hot              (optional) input data is from h(t) calibrated frames (h of t = hot!) (0 or 1).
   -J  --psrInput             (optional) Input the name and path of tempo .par file used to overplot a source's freq onto specgrams
@@ -95,7 +99,7 @@ Usage: [options]
   -z  --sunFile              (optional) Input the name and path of the .dat file for the Sun.  Only used if source details are given.
   
 """
-  print >> sys.stdout, msg
+  print(msg)
 
 #letters left for short options, a f, n, A, K, Q, U, V, Y.
 
@@ -106,7 +110,7 @@ Usage: [options]
 ####################################
 # PARSE COMMAND LINE OPTIONS 
 #
-shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:P:u:v:c:F:B:b:O:m:A:U:n:w:W:r:e:q:y:D:X:g:t:l:J:j:E:z:hSHZCRI" #cg; shortop is a string.
+shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:P:u:v:c:F:B:b:O:m:A:U:n:w:W:r:e:q:y:K:D:X:g:t:l:J:j:E:z:hSHZCRI" #cg; shortop is a string.
 longop = [  #cg; longopt is a list
   "help",
   "analysis-start-time=",
@@ -144,6 +148,7 @@ longop = [  #cg; longopt is a list
   "html-ref-ifo-epoch=",
   "threshold-snr=",
   "coincidence-deltaf=",
+  "coherence-path=",
   "make-gps-dirs=",
   "misc-desc=",
   "max-num-per-node=",
@@ -174,7 +179,7 @@ analysisEndTime = None
 duration = None
 tagString = None
 inputDataType = None
-extraDatafindTime = 256L
+extraDatafindTime = 256
 datafindMatch = None
 filterKneeFreq = 40
 timeBaseline = None
@@ -206,13 +211,14 @@ htmlReferenceDir = None
 htmlRefIFOEpoch = None
 thresholdSNR = -1
 coincidenceDeltaF = 0
+coherencePath = None
 makeGPSDirs = 0
 miscDesc = None
 maxNumPerNode = 1
 maxLengthAllJobs = None
 segmentFile = None
 segmentType = None
-minSegLength = 0L
+minSegLength = 0
 useSingle = False
 useHoT = False
 makeTmpFile = False
@@ -228,21 +234,21 @@ for o, a in opts:
     usage()
     sys.exit(0)
   elif o in ("-s", "--analysis-start-time"):
-    analysisStartTime = long(a)
+    analysisStartTime = int(a)
   elif o in ("-L", "--duration"):
-    duration = long(a)
+    duration = int(a)
   elif o in ("-G", "--tag-string"):
     tagString = a
   elif o in ("-d", "--input-data-type"):
     inputDataType = a
   elif o in ("-x", "--extra-datafind-time"):
-    extraDatafindTime = long(a)
+    extraDatafindTime = int(a)
   elif o in ("-M", "--datafind-match"):
     datafindMatch = a
   elif o in ("-k", "--filter-knee-freq"):
     filterKneeFreq = int(a)
   elif o in ("-T", "--time-baseline"):
-    timeBaseline = long(a)
+    timeBaseline = int(a)
   elif o in ("-p", "--sft-path"):
     pathToSFTs = a
   elif o in ("-c", "--freq-res"):
@@ -264,11 +270,11 @@ for o, a in opts:
   elif o in ("-v", "--sft-version"):
     sftVersion = int(a)
   elif o in ("-F", "--start-freq"):
-    startFreq = long(a)
+    startFreq = int(a)
   elif o in ("-B", "--band"):
-    freqBand = long(a)
+    freqBand = int(a)
   elif o in ("-b", "--sub-band"):
-    freqSubBand = long(a)
+    freqSubBand = int(a)
   elif o in ("-O", "--plot-output-path"):
     plotOutputPath = a
   elif o in ("-m", "--matlab-path"):
@@ -288,23 +294,25 @@ for o, a in opts:
   elif o in ("-e", "--html-ref-ifo-epoch"):
     htmlRefIFOEpoch = a
   elif o in ("-q", "--threshold-snr"):
-    thresholdSNR = long(a)
+    thresholdSNR = int(a)
   elif o in ("-y", "--coincidence-deltaf"):
-    coincidenceDeltaF = long(a)
+    coincidenceDeltaF = int(a)
+  elif o in ("-K", "--coherence-path"):
+    coherencePath = a  
   elif o in ("-D", "--make-gps-dirs"):
     makeGPSDirs = int(a)
   elif o in ("-X", "--misc-desc"):
     miscDesc = a
   elif o in ("-m", "--max-num-per-node"):
-    maxNumPerNode = long(a)
+    maxNumPerNode = int(a)
   elif o in ("-L", "--max-length-all-jobs"):
-    maxLengthAllJobs = long(a)
+    maxLengthAllJobs = int(a)
   elif o in ("-g", "--segment-file"):
     segmentFile = a
   elif o in ("-t", "--segment-type"):
     segmentType = a
   elif o in ("-l", "--min-seg-length"):
-    minSegLength = long(a)
+    minSegLength = int(a)
   elif o in ("-S", "--use-single"):
     useSingle = True    
   elif o in ("-H", "--use-hot"):
@@ -322,7 +330,7 @@ for o, a in opts:
   elif o in ("-z", "--sunFile"):
     sunFile = a
   else:
-    print >> sys.stderr, "Unknown option:", o
+    print("Unknown option:", o, file=sys.stderr)
     usage()
     sys.exit(1)
 
@@ -330,110 +338,110 @@ for o, a in opts:
 # VET OPTIONS
 #    
 if not analysisStartTime:
-  print >> sys.stderr, "No analysisStartTime specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No analysisStartTime specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not duration:
-  print >> sys.stderr, "No duration specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No duration specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
  
 analysisEndTime = analysisStartTime + duration
 
 if not tagString:
-  print >> sys.stderr, "No tag string specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No tag string specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not inputDataType:
-  print >> sys.stderr, "No input data type specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No input data type specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
-if extraDatafindTime < 0L:
-  print >> sys.stderr, "Invalid extra datafind time specified."
-  print >> sys.stderr, "Use --help for usage details."
+if extraDatafindTime < 0:
+  print("Invalid extra datafind time specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
   
 if filterKneeFreq < 0:
-  print >> sys.stderr, "No filter knee frequency specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No filter knee frequency specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not timeBaseline:
-  print >> sys.stderr, "No time baseline specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No time baseline specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not pathToSFTs:
-  print >> sys.stderr, "No output SFT path specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No output SFT path specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
   
 if not cachePath:
-  print >> sys.stderr, "No cache path specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No cache path specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not logPath:
-  print >> sys.stderr, "No log path specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No log path specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not subLogPath:
-  print >> sys.stderr, "No sub log path specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No sub log path specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not channelName:
-  print >> sys.stderr, "No channel name specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No channel name specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (windowType != 0) and (windowType != 1) and (windowType != 2) and (windowType != 3):
-  print >> sys.stderr, "Invalid window type specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid window type specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (overlapFraction < 0.0) or (overlapFraction >= 1.0):
-  print >> sys.stderr, "Invalid make overlap fraction specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid make overlap fraction specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (sftVersion != 1) and (sftVersion != 2):
-  print >> sys.stderr, "Invalid SFT version specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid SFT version specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (startFreq < 0.0):
-  print >> sys.stderr, "Invalid start freq specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid start freq specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (freqBand < 0.0):
-  print >> sys.stderr, "Invalid band specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid band specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (freqSubBand < 0.0):
-  print >> sys.stderr, "Invalid sub-band specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid sub-band specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (makeGPSDirs < 0) or (makeGPSDirs > 10):
-  print >> sys.stderr, "Invalid make gps dirs specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("Invalid make gps dirs specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (freqRes < 0.001) or (freqRes > 100.0):
-  print >> sys.stderr, "Specify a frequency resoltuion between 100 and 0.001"
-  print >> sys.stderr, "Use --help for usage details."
+  print("Specify a frequency resoltuion between 100 and 0.001", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not maxNumPerNode:
-  print >> sys.stderr, "No maximum number of SFTs per node specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No maximum number of SFTs per node specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (plotOutputPath == None):
@@ -461,7 +469,7 @@ else:
   ifo = segIFO
   makeSFTIFO = segIFO
 
-print >> sys.stdout,'\nTHE FSCAN DRIVER SCRIPT HAS STARTED!\n'
+print('\nTHE FSCAN DRIVER SCRIPT HAS STARTED!\n')
   
 ###################################################
 # CHECK IF SFTS NEED TO BE GENERATED
@@ -470,7 +478,7 @@ if (createSFTs):
   
   # For safety, add /tmp to the path to avoid overwriting existing SFTs.
   pathToSFTs = pathToSFTs + '/tmp'
-  print >> sys.stdout,'Will generate SFTs in %s \n' % pathToSFTs
+  print('Will generate SFTs in %s \n' % pathToSFTs)
   try: os.makedirs(pathToSFTs)
   except: pass
 
@@ -486,34 +494,34 @@ if (createSFTs):
        segmentType = "%s:DMT-SCIENCE:4" % segIFO
     #segCommand = 'LSCsegFind --type Science,Injection --interferometer %s --gps-start-time %d --gps-end-time %d > %s' % (segIFO,analysisStartTime, analysisEndTime,segmentFile)
     segCommand = "ligolw_segment_query --database --query-segments --include-segments %s --gps-start-time %d --gps-end-time %d | grep -v \"0, 0\" | ligolw_print -t segment:table -c start_time -c end_time -d \" \" > %s" % (segmentType,analysisStartTime,analysisEndTime,segmentFile)
-    print >> sys.stdout,"Trying: ",segCommand,"\n"
+    print("Trying: ",segCommand,"\n")
     try:
       segFindExit = os.system(segCommand)
       if (segFindExit > 0):
-         print >> sys.stderr, 'ligolw_segment_query failed: %s \n' % segFindExit
+         print('ligolw_segment_query failed: %s \n' % segFindExit, file=sys.stderr)
          sys.exit(1)
       else:
-         print >> sys.stderr, 'ligolw_segment_query succeeded! \n'
+         print('ligolw_segment_query succeeded! \n', file=sys.stderr)
     except:
-      print >> sys.stderr, 'ligolw_segment_query failed: %s \n' % segFindExit
+      print('ligolw_segment_query failed: %s \n' % segFindExit, file=sys.stderr)
       sys.exit(1)
   elif segmentFile == "ALL":
     segmentFile = 'tmpSegs%stmp.txt' % tagString
     segCommand = '/bin/echo %d %d > %s' % (analysisStartTime,analysisEndTime,segmentFile)
-    print >> sys.stdout,"Trying: ",segCommand,"\n"
+    print("Trying: ",segCommand,"\n")
     try:
       segFindExit = os.system(segCommand)
       if (segFindExit > 0):
-         print >> sys.stderr, 'Failed: %s \n' % segFindExit
+         print('Failed: %s \n' % segFindExit, file=sys.stderr)
          sys.exit(1)
       else:
-         print >> sys.stderr, 'Succeeded! \n'
+         print('Succeeded! \n', file=sys.stderr)
     except:
-      print >> sys.stderr, 'Failed: %s \n' % segFindExit
+      print('Failed: %s \n' % segFindExit, file=sys.stderr)
       sys.exit(1)  
   else:
     # Just continue with the name given on the command line.
-    print >> sys.stderr, 'Using segmentFile == %s \n' % segmentFile
+    print('Using segmentFile == %s \n' % segmentFile, file=sys.stderr)
 
   ###################################################
   # Intersect with existing data if intersectData = True
@@ -524,31 +532,31 @@ if (createSFTs):
     dataFindSegmentFile = 'tmpDataFindSegs%stmp.txt' % tagString 
     #dataFindCommand = "gw_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
     dataFindCommand = "gw_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times | /bin/grep -v seg | /bin/awk '{print $2 \" \" $3}' > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
-    print >> sys.stdout,"Trying: ",dataFindCommand,"\n"
+    print("Trying: ",dataFindCommand,"\n")
     try:
       dataFindExit = os.system(dataFindCommand)
       if (dataFindExit > 0):
-         print >> sys.stderr, 'gw_data_find failed: %s \n' % dataFindExit
+         print('gw_data_find failed: %s \n' % dataFindExit, file=sys.stderr)
          sys.exit(1)
       else:
-         print >> sys.stderr, 'gw_data_find succeeded! \n'
+         print('gw_data_find succeeded! \n', file=sys.stderr)
     except:
-      print >> sys.stderr, 'gw_data_find failed: %s \n' % dataFindExit
+      print('gw_data_find failed: %s \n' % dataFindExit, file=sys.stderr)
       sys.exit(1)
 
     # Intersect the segments to run on with the segments data exist
     intersectedSegmentFile = 'tmpIntersectedSegs%stmp.txt' % tagString
     segexprCommand = "segexpr \"intersection(%s,%s)\" %s" % (segmentFile,dataFindSegmentFile,intersectedSegmentFile)
-    print >> sys.stdout,"Trying: ",segexprCommand,"\n"
+    print("Trying: ",segexprCommand,"\n")
     try:
       segexprExit = os.system(segexprCommand)
       if (segexprExit > 0):
-         print >> sys.stderr, 'segexpr failed: %s \n' % segexprExit
+         print('segexpr failed: %s \n' % segexprExit, file=sys.stderr)
          sys.exit(1)
       else:
-         print >> sys.stderr, 'segexpr succeeded! \n'
+         print('segexpr succeeded! \n', file=sys.stderr)
     except:
-      print >> sys.stderr, 'segexpr failed: %s \n' % segexprExit
+      print('segexpr failed: %s \n' % segexprExit, file=sys.stderr)
       sys.exit(1)
 
     # set the segmentFile equal to the intersection of the segments to run on with the segments data exist
@@ -567,8 +575,8 @@ if (createSFTs):
             splitLine = line.split();
             try: 
                 oneSeg = [];
-                oneSeg.append(long(splitLine[0]));
-                oneSeg.append(long(splitLine[1]));
+                oneSeg.append(int(splitLine[0]));
+                oneSeg.append(int(splitLine[1]));
                 if ((oneSeg[1] - oneSeg[0]) >= minSegLength):
                     segList.append(oneSeg)
                 else:
@@ -579,10 +587,10 @@ if (createSFTs):
             pass
     # End for line in open(segmentFile)
     if (len(segList) < 1):
-       print >> sys.stderr, "No segments found in segment file: %s. \n" % segmentFile
+       print("No segments found in segment file: %s. \n" % segmentFile, file=sys.stderr)
        sys.exit(1)
   except:
-    print >> sys.stderr, "Error reading or parsing segment file: %s. \n" % segmentFile
+    print("Error reading or parsing segment file: %s. \n" % segmentFile, file=sys.stderr)
     sys.exit(1)
   
   ###################################################
@@ -605,21 +613,21 @@ if (createSFTs):
      makeDAGCommand = makeDAGCommand + ' -A %s' % accountingGroup
   if (accountingGroupUser != None):
      makeDAGCommand = makeDAGCommand + ' -U %s' % accountingGroupUser   
-  print >> sys.stdout,"Trying: ",makeDAGCommand,"\n"
+  print("Trying: ",makeDAGCommand,"\n")
   try:
     makeDAGExit = os.system(makeDAGCommand)
     if (makeDAGExit > 0):
-       print >> sys.stderr, 'MakeSFTDAG failed: %s \n' % makeDAGExit
+       print('MakeSFTDAG failed: %s \n' % makeDAGExit, file=sys.stderr)
        sys.exit(1)
     else:
-       print >> sys.stderr, 'MakeSFTDAG succeeded! \n'
+       print('MakeSFTDAG succeeded! \n', file=sys.stderr)
   except:
-    print >> sys.stderr, 'MakeSFTDAG failed: %s \n' % makeDAGExit
+    print('MakeSFTDAG failed: %s \n' % makeDAGExit, file=sys.stderr)
     sys.exit(1)
 else:
   # else if not createSFTs the SFTs already exist, so just continue
   sftDAGFile = None
-  print >> sys.stdout,'Will use SFTs already in %s \n' % pathToSFTs
+  print('Will use SFTs already in %s \n' % pathToSFTs)
 
 
 #####################################################
@@ -659,7 +667,7 @@ if (createSFTs):
   #dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(sftDAGSUBJobName,argList,tagStringOut))
   
   # 03/02/2009 gam; instead of above, add splice in SFT DAG:
-  sftNodeCount = 0L
+  sftNodeCount = 0
   spliceSFTDAGName = 'spliceSFTDAG_%i' % sftNodeCount
   dagFID.write('SPLICE %s %s\n' % (spliceSFTDAGName, sftDAGFile))
 
@@ -701,6 +709,42 @@ if (makePythonPlots):
   runPythonScriptFID.write('queue 1\n')
   runPythonScriptFID.close()
 
+if (coherencePath != None):
+  # MAKE A SUBMIT FILE THAT CHECKS THAT THE SFT JOBS HAVE FINISHED UNDER THE coherencePath
+  checkCoherenceFID = file('checkCoherencePath.sub','w')
+  checkCoherenceLogFile = subLogPath + '/' + 'checkCoherencePath_' + dagFileName + '.log'
+  checkCoherenceFID.write('universe = vanilla\n')
+  checkCoherenceFID.write('executable = $ENV(CHECK_COHERENCE_PATH)/checkCoherencePath.py\n')
+  checkCoherenceFID.write('getenv = True\n')
+  checkCoherenceFID.write('arguments = $(argList)\n')
+  if (accountingGroup != None):
+     checkCoherenceFID.write('accounting_group = %s\n' % accountingGroup)
+  if (accountingGroupUser != None):
+     checkCoherenceFID.write('accounting_group_user = %s\n' % accountingGroupUser)
+  checkCoherenceFID.write('log = %s\n' % checkCoherenceLogFile)
+  checkCoherenceFID.write('error = %s/checkCoherence_$(tagstring).err\n' % logPath)
+  checkCoherenceFID.write('output = %s/checkCoherence_$(tagstring).out\n' % logPath)
+  checkCoherenceFID.write('notification = never\n')
+  checkCoherenceFID.write('queue 1\n')
+  checkCoherenceFID.close()  
+  # MAKE A SUBMIT FILE FOR RUNNING THE COHERENCE SCRIPT
+  runCoherenceFID = file('runCoherence.sub','w')
+  runCoherenceLogFile = subLogPath + '/' + 'runCoherence_' + dagFileName + '.log'
+  runCoherenceFID.write('universe = vanilla\n')
+  runCoherenceFID.write('executable = $ENV(COHERENCE_FROM_SFTS_PATH)/coherenceFromSFTs.py\n')
+  runCoherenceFID.write('getenv = True\n')
+  runCoherenceFID.write('arguments = $(argList)\n')
+  if (accountingGroup != None):
+     runCoherenceFID.write('accounting_group = %s\n' % accountingGroup)
+  if (accountingGroupUser != None):
+     runCoherenceFID.write('accounting_group_user = %s\n' % accountingGroupUser)
+  runCoherenceFID.write('log = %s\n' % runCoherenceLogFile)
+  runCoherenceFID.write('error = %s/runCoherence_$(tagstring).err\n' % logPath)
+  runCoherenceFID.write('output = %s/runCoherence_$(tagstring).out\n' % logPath)
+  runCoherenceFID.write('notification = never\n')
+  runCoherenceFID.write('queue 1\n')
+  runCoherenceFID.close()
+
 #cg; Creates the html file, or at least the initial parts of it.
 if (htmlFilename != None):
   htmlFID = file(htmlFilename,'w')#opens the html file specified in the command line for writing, is having trouble for some reason.
@@ -739,8 +783,10 @@ if (htmlFilename != None):
   htmlFID.write('</div>\n')
   htmlFID.write('<br>\n')  
   htmlFID.write('<form>\n')
-  htmlFID.write('Old <input type = "radio" name = "rad1" onclick = "showDiv()" checked>\n')
-  htmlFID.write('New <input type = "radio" name = "rad1" onclick = "showDiv()">\n')
+  htmlFID.write('Fscan Plots: <input type = "radio" name = "rad1" onclick = "showDiv()" checked>\n')
+  htmlFID.write('Fscans Plots (Reverse Order): <input type = "radio" name = "rad1" onclick = "showDiv()">\n')
+  if (coherencePath != None):
+     htmlFID.write('Coherence Plots: <input type = "radio" name = "rad1" onclick = "showDiv()">\n')
   htmlFID.write('<br><br>\n')
   htmlFID.write('<div id = "div1" style="display:none">\n')
   htmlFID.write('<table style="width: 100%; text-align: left;" border="1" cellpadding="2" cellspacing="2">\n')
@@ -753,7 +799,7 @@ if (freqSubBand  > freqBand):
 endFreq = startFreq + freqBand
 thisStartFreq = startFreq
 thisEndFreq = thisStartFreq + freqSubBand
-nodeCount = 0L
+nodeCount = 0
 
 # Next lines should not be needed because sft_freqBand goes beyond endFreq above
 #if (thisEndFreq == endFreq):
@@ -775,7 +821,7 @@ while (thisEndFreq <= endFreq):
   freqRes=(1/float(timeBaseline))*NumBinsAvg#sets the freqRes so its an multiple of the raw sft freqres.
   if (freqRes < (1/float(timeBaseline))):#makes sure that this is not less than raw sft freqres, it mght be zero.
       freqRes = (1/float(timeBaseline))#if it is zero, just make it so that its the same res as the raw sft res
-      print >> sys.stderr, 'freqRes changed to: %f \n' % freqRes#let user know its been changed,
+      print('freqRes changed to: %f \n' % freqRes, file=sys.stderr)#let user know its been changed,
   effTBaseFull = timeBaseline
   effTBase = 1/freqRes
   #end of freqres checking
@@ -874,7 +920,7 @@ while (thisEndFreq <= endFreq):
     htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (inputFileName,inputFileName))
     htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (inputFileName,inputFileName))
     htmlFID.write('    List of found combs : <a href="%s_combs.txt">%s_combs.txt</a><br>\n' % (inputFileName,inputFileName))
-    htmlFID.write('    Kurtosis test output: <a href="%s_kurtosis">%s_kurtosis</a><br>\n' % (inputFileName,inputFileName))
+    #htmlFID.write('    Kurtosis test output: <a href="%s_kurtosis">%s_kurtosis</a><br>\n' % (inputFileName,inputFileName))
     if (htmlReferenceDir != None) and (thresholdSNR > 0):
         #--------------------------
 	#coincident lines
@@ -909,6 +955,33 @@ while (thisEndFreq <= endFreq):
   thisEndFreq = thisStartFreq + freqSubBand
   nodeCount = nodeCount + 1
 
+# A job that checks that the SFT jobs are done under the coherence path
+# run after the last python plotting script finishes, which means the
+# SFTs for this channel exist.Then the coherence job runs. 
+if (coherencePath != None):
+    # Job that checks the coherence path
+    checkCoherenceJobName = 'checkCoherenceJob'
+    dagFID.write('JOB %s checkCoherencePath.sub\n' % checkCoherenceJobName)
+    dagFID.write('RETRY %s 0\n' % checkCoherenceJobName)
+    # Check that SFTs jobs are done under the coherence Path
+    argList =  '%s' % coherencePath
+    tagStringOut = '%s_%s' % (tagString, 'checkCoherencePath')
+    dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(checkCoherenceJobName,argList,tagStringOut))
+    dagFID.write('PARENT %s CHILD %s\n'%(runPythonPlotScriptJobName,checkCoherenceJobName))
+    # Job that runs the coherence
+    runCoherenceJobName = 'runCoherenceJob'
+    dagFID.write('JOB %s runCoherence.sub\n' % runCoherenceJobName)
+    dagFID.write('RETRY %s 0\n' % runCoherenceJobName)
+    # The coherence will be done between the SFTs under the path to the current channel and the SFTs under the coherence Path
+    coherenceChannelA = plotOutputPath.split('/')[-1]
+    coherenceChannelB = coherencePath.split('/')[-1]
+    pathToSFTsForChannelA = '%s/%s' % (plotOutputPath, 'sfts/tmp')
+    pathToSFTsForChannelB = '%s/%s' % (coherencePath, 'sfts/tmp')
+    argList =  '%s %s' % (pathToSFTsForChannelA,pathToSFTsForChannelB)
+    tagStringOut = '%s_%s' % (tagString, 'coherence')
+    dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runCoherenceJobName,argList,tagStringOut))
+    dagFID.write('PARENT %s CHILD %s\n'%(checkCoherenceJobName,runCoherenceJobName))
+
 # Close the DAG file
 dagFID.close()
 
@@ -937,11 +1010,33 @@ if (htmlFilename != None):
     htmlFID.write('    Freq. vs Power: <a href="' + thisSeg + '.txt">' + thisSeg + '.txt</a><br>')
     htmlFID.write('    Freq. vs Power (Sorted): <a href="' + thisSeg + '_sorted.txt">' + thisSeg + '_sorted.txt</a><br>')
     htmlFID.write('    List of found combs : <a href="%s_combs.txt">%s_combs.txt</a><br>\n' % (inputFileName,inputFileName))
-    htmlFID.write('    Kurtosis test output: <a href="' + thisSeg + '_kurtosis">' + thisSeg + '_kurtosis</a><br>')
+    #htmlFID.write('    Kurtosis test output: <a href="' + thisSeg + '_kurtosis">' + thisSeg + '_kurtosis</a><br>')
     htmlFID.write('  </td>\n')
     htmlFID.write('</tr>\n')
   htmlFID.write('</table>\n')
   htmlFID.write('</div>\n')
+
+  if (coherencePath != None):
+    htmlFID.write('<div id = "div3" style="display:none">\n')
+    htmlFID.write('<table>\n')
+    rows =  freqBand/freqSubBand
+    for i in range(rows):
+      thisStartFreq = freqSubBand*i
+      thisEndFreq = freqSubBand*(i+1)
+      thisCoherence = 'spec_%d.00_%d.00_%s_coherence_%s_and_%s' % (thisStartFreq,thisEndFreq,analysisStartTime,coherenceChannelA,coherenceChannelB)
+      htmlFID.write('<tr>\n')
+      htmlFID.write('  <td>\n')
+      htmlFID.write('    <a href="' + thisCoherence + '.png"><img alt="" src="' + thisCoherence + '.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n')
+      htmlFID.write('  </td>\n')
+      htmlFID.write('</tr>\n')
+      htmlFID.write('<tr>\n')
+      htmlFID.write('  <td>\n')
+      htmlFID.write('    Coherence Data: <a href="' + thisCoherence + '.txt">' + thisCoherence + '.txt</a><br>')
+      htmlFID.write('  </td>\n')
+      htmlFID.write('</tr>\n')
+    htmlFID.write('</table>\n')
+    htmlFID.write('</div>\n')
+
   htmlFID.write('</form>\n')
   htmlFID.write('<script type = "text/javascript">\n')
   htmlFID.write('function showDiv() {\n')
@@ -953,6 +1048,10 @@ if (htmlFilename != None):
   htmlFID.write('if (document.forms[0].rad1[1].checked) {\n')
   htmlFID.write('document.getElementById("div2").style.display="block";\n')
   htmlFID.write('}\n')
+  if (coherencePath != None):  
+    htmlFID.write('if (document.forms[0].rad1[2].checked) {\n')
+    htmlFID.write('document.getElementById("div3").style.display="block";\n')
+    htmlFID.write('}\n')
   htmlFID.write('}\n')
   htmlFID.write('</script>\n')
   htmlFID.write('<span style="text-decoration: underline;"><br>\n')
@@ -971,20 +1070,20 @@ if (htmlFilename != None):
 # SUBMIT THE .dag FILE TO CONDOR; RUN condor_submit_dag
 #
 runDAGCommand = 'condor_submit_dag -maxjobs %d %s' % (maxJobs,dagFileName)
-print >> sys.stdout,"Trying: ",runDAGCommand,"\n"
+print("Trying: ",runDAGCommand,"\n")
 if (runCondorSubmitDag):
    try:
        runDAGExit = os.system(runDAGCommand)
        if (runDAGExit > 0):
-          print >> sys.stderr, 'condor_submit_dag failed: %s \n' % runDAGExit
+          print('condor_submit_dag failed: %s \n' % runDAGExit, file=sys.stderr)
           sys.exit(1)
        else:
-          print >> sys.stderr, 'condor_submit_dag succeeded! \n'
+          print('condor_submit_dag succeeded! \n', file=sys.stderr)
    except:
-       print >> sys.stderr, 'condor_submit_dag failed: %s \n' % runDAGExit
+       print('condor_submit_dag failed: %s \n' % runDAGExit, file=sys.stderr)
        sys.exit(1)
 else:
-   print >> sys.stderr, 'TRIAL RUN ONLY!!! Either submit %s by hand or run this script with the -R or --run option! \n' % dagFileName
+   print('TRIAL RUN ONLY!!! Either submit %s by hand or run this script with the -R or --run option! \n' % dagFileName, file=sys.stderr)
    sys.exit(1)
 
 ###################################################

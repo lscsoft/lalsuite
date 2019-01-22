@@ -62,18 +62,18 @@ class tuneObject:
         self.masterIni=cp.get('all','masterini')
         self.cpIni=ConfigParser.ConfigParser()
         if not os.path.isfile(self.masterIni):
-            print "Error with masterIni in tun configuration file!"
-            print self.masterIni
+            print("Error with masterIni in tun configuration file!")
+            print(self.masterIni)
             os.abort()
         self.cpIni.read(self.masterIni)
         self.lambaList=[]
         self.lamHopts=cp.get('all','LH')
         self.lamLopts=cp.get('all','LL')
         if self.lamHopts.count(";")!=2:
-            print "Error with LH ini file delimiters!"
+            print("Error with LH ini file delimiters!")
             os.abort()
         if self.lamLopts.count(";")!=2:
-            print "Error with LL ini file delimiters!"
+            print("Error with LL ini file delimiters!")
             os.abort()
         self.LH=self.lamHopts.split(";")
         self.LL=self.lamLopts.split(";")
@@ -112,10 +112,10 @@ class tuneObject:
         stoph=float(self.LH[0])
         stopl=float(self.LL[0])
         if h>stoph:
-            print "Error in config, inconsistent LH options."
+            print("Error in config, inconsistent LH options.")
             os.abort()
         if l>stopl:
-            print "Error in config, inconsistent LL options."
+            print("Error in config, inconsistent LL options.")
             os.abort()
         while (h <= stoph):
             l=float(self.LL[2])
@@ -210,17 +210,17 @@ class tuneObject:
         This module uses the shell and find utilities to locate all dags for inclusion.
         """
         fileList=self.__findFiles__(root2dags,['.dag'])
-        print "The master DAG will have ",fileList.__len__()," nodes/subdags."
-        print "You should find the master dag contained in:",root2dags
-        print "Preparing the master dag may take awhile."
+        print("The master DAG will have ",fileList.__len__()," nodes/subdags.")
+        print("You should find the master dag contained in:",root2dags)
+        print("Preparing the master dag may take awhile.")
         for dagEntry in fileList:
             cmdString2='condor_submit_dag -no_submit '+dagEntry
             errs=commands.getstatusoutput(cmdString2)
             if errs[0] != 0:
-                print "There is a problem creating Master DAG node :",dagEntry
-                print errs[1]
-                print " "
-                print " "
+                print("There is a problem creating Master DAG node :",dagEntry)
+                print(errs[1])
+                print(" ")
+                print(" ")
         i=0
         masterDAG_fp=file(dagFilename,'w')
         masterDAG_fp.write('DOT MasterDag.dot\n')
@@ -228,7 +228,7 @@ class tuneObject:
             masterDAG_fp.write('Job '+str(i)+' '+str(entry)+'.condor.sub \n')
             i=i+1
         masterDAG_fp.close()
-        print "Master dag is ready."
+        print("Master dag is ready.")
     #End __buildDAGfrom__
 
     def __writeFAfiles__(self,auxoutData,outputData):
@@ -287,16 +287,16 @@ class tuneObject:
         LH and LL.  This is used as the off-source background rate.
         """
         if self.curveFoundPickle == []:
-            print "Pickle unopen trying to load:",curvePickleFile
-            print "Returning 1% of seen noise background rate, due to expected Z P,L choices."
+            print("Pickle unopen trying to load:",curvePickleFile)
+            print("Returning 1% of seen noise background rate, due to expected Z P,L choices.")
             if not(os.path.isfile(curvePickleFile)):
-                print "Did you remember to run the false alarm calculate feature? ./tuneTSpipe.py --file=file.tun -c"
+                print("Did you remember to run the false alarm calculate feature? ./tuneTSpipe.py --file=file.tun -c")
                 os.abort()
             input_fp=file(curvePickleFile,'r')
             self.curveFoundPickle=pickle.load(input_fp)
             self.curveFoundPickle.sort()
             input_fp.close()
-            print "Done loading pickle jar."
+            print("Done loading pickle jar.")
         start=0
         stop=self.curveFoundPickle.__len__()
         current=int(round(stop/2))
@@ -328,7 +328,7 @@ class tuneObject:
                 start=tmp
             if current<start or current>stop:
                 return int(0)
-        print "This error should never happen!"
+        print("This error should never happen!")
         return int(0)
     #End getBackground()
     
@@ -336,7 +336,7 @@ class tuneObject:
         buildDir(self.installPipes)
         buildDir(self.installIni)
         self.__createLHLL__()
-        print "Creating each pipe configuration script."
+        print("Creating each pipe configuration script.")
         countMe=0
         modValue=10
         for pipe in self.FApipeNames:
@@ -345,8 +345,8 @@ class tuneObject:
                 sys.stdout.writelines('.')
                 sys.stdout.flush()
             countMe=countMe+1
-        print " "
-        print "Building ",self.FApipeNames.__len__()," pipes. This may take awhile."
+        print(" ")
+        print("Building ",self.FApipeNames.__len__()," pipes. This may take awhile.")
         countMe=0
         for pipe in self.FApipeNames:
             #False turns off possible injections.
@@ -355,8 +355,8 @@ class tuneObject:
                 sys.stdout.writelines('.')
                 sys.stdout.flush()
             countMe=countMe+1
-        print " "
-        print "Ok. Finished"
+        print(" ")
+        print("Ok. Finished")
         #Search the workspace to construct a huge parent DAG for submitting all the DAGs
         root2dags=os.path.normpath(self.dagpath+'/FA/')
         dagFilename=os.path.normpath(self.dagpath+'/FA/FA_tuning.dag')
@@ -405,11 +405,11 @@ class tuneObject:
             commandLine=path2bin+' --file='+pipeIniName+' --segment_file='+seglist
         commandOut=commands.getstatusoutput(commandLine)
         if commandOut[0] != 0:
-            print " "
-            print "There was a problem installing a pipe for ini file :",pipeIniName
-            print " "
-            print commandOut[1]
-            print " "
+            print(" ")
+            print("There was a problem installing a pipe for ini file :",pipeIniName)
+            print(" ")
+            print(commandOut[1])
+            print(" ")
     # End method createPipe
 
     def performFAcalc(self):
@@ -429,7 +429,7 @@ class tuneObject:
         # Determine the pipe that should be installed based on tun file.
         # resultFiles=self.__findResultFiles__(self.installPipes)
         resultFiles=self.__findFiles__(self.installPipes,['_1.candidates','RESULTS'])
-        print "Checking ",resultFiles.__len__()," total candidate files. This may take a while."
+        print("Checking ",resultFiles.__len__()," total candidate files. This may take a while.")
         auxoutData=[]
         outputData=[]
         contourData=[]
@@ -477,7 +477,7 @@ class tuneObject:
                 auxoutData.append([float(myLH),float(myLL),float(meanL),float(stdL),float(meanP),float(stdP),int(curves)])
                 outputData.append([float(myLH),float(myLL),float(threshP),float(threshL)])
                 contourData.append([float(myLH),float(myLL),float(threshP),float(threshL)])
-        print " "
+        print(" ")
         self.__writeFAfiles__(auxoutData,outputData)
     #End performFAcalc method
 
@@ -511,7 +511,7 @@ class tuneObject:
         rawText=[]
         importFile=self.home+'/FA_results.pickle'
         if not(os.path.isfile(importFile)):
-            print "Did you remember to run the false alarm calculate feature? ./tuneTSpipe.py --file=file.tun -c"
+            print("Did you remember to run the false alarm calculate feature? ./tuneTSpipe.py --file=file.tun -c")
             os.abort()
         import_fp=open(importFile,'r')
         FAresults=pickle.load(import_fp)
@@ -538,7 +538,7 @@ class tuneObject:
             results.append([h,l,p,3])
             #Setup L entry
             results.append([h,l,0,len])
-        print "The detection efficiency pipes to be created are",results.__len__()," this may take a while."
+        print("The detection efficiency pipes to be created are",results.__len__()," this may take a while.")
         countMe=0
         modValue=10
         for entry in results:
@@ -586,7 +586,7 @@ class tuneObject:
         newCP.set('tracksearchbase','power_threshold',P)
         # The master Ini must have an injection section to continue
         if not newCP.has_section('tracksearchinjection'):
-            print "Error the master ini in our tun file has no injection section!"
+            print("Error the master ini in our tun file has no injection section!")
             os.abort
         # Write out this modified ini file to disk
         fp=open(iniName,'w')
@@ -612,7 +612,7 @@ class tuneObject:
         newCP.set('candidatethreshold','expression_threshold',expString)
         # The master Ini must have an injection section to continue
         if not newCP.has_section('tracksearchinjection'):
-            print "Error the master ini in our tun file has no injection section!"
+            print("Error the master ini in our tun file has no injection section!")
             os.abort
         # Write out this modified ini file to disk
         fp=open(iniName,'w')
@@ -631,24 +631,24 @@ class tuneObject:
         at one injection per map! This is critical, see masterIni
         [tracksearchinjection] to verify this!
         """
-        print "Remember we assumed that masterIni configured with 1 injection per map!"
-        print "Options in [tracksearchinjection]"
+        print("Remember we assumed that masterIni configured with 1 injection per map!")
+        print("Options in [tracksearchinjection]")
         for entry in self.cpIni.options('tracksearchinjection'):
-            print entry," ",self.cpIni.get('tracksearchinjection',entry)
-        print ""
+            print(entry," ",self.cpIni.get('tracksearchinjection',entry))
+        print("")
         if self.cpIni.has_section('layerconfig'):
             topBlockSize=int(self.cpIni.get('layerconfig','layerTopBlockSize'))
             timeScale=float(self.cpIni.get('layerconfig','layer1TimeScale'))
             deltaT=timeScale
             mapCounts=topBlockSize/timeScale
         else:
-            print "Error missing required section LAYERCONFIG"
+            print("Error missing required section LAYERCONFIG")
             os.abort
         if self.cpIni.has_section('candidatethreshold'):
-            print "Ok.  There is a problem. Please review your tuning setup.  You have a candidateThreshold section in the masterIni file.  We can't do python thresholding with this tuning subroutine."
-            print "Trying alternate tuning routine: self.__performMapDEcalc__"
-            print "BE WARNED THIS ALTERNATIVE ROUTINE IS REALLY REALLY SLOW!!!"
-            print "Please see tuneTSpipe.py comments for explaination."
+            print("Ok.  There is a problem. Please review your tuning setup.  You have a candidateThreshold section in the masterIni file.  We can't do python thresholding with this tuning subroutine.")
+            print("Trying alternate tuning routine: self.__performMapDEcalc__")
+            print("BE WARNED THIS ALTERNATIVE ROUTINE IS REALLY REALLY SLOW!!!")
+            print("Please see tuneTSpipe.py comments for explaination.")
             [outputPickle,outputP,outputL,outputContour]=self.__performMapDEcalc__()
             return [outputPickle,outputP,outputL,outputContour]
         else:
@@ -656,10 +656,10 @@ class tuneObject:
             #Waste of CPU cycles to guess the number of files to process
             #globFiles=self.__findFiles__(self.installPipes2,['Glob','_1.candidates','DE_'])
         #Scan for directories /1/ labeled
-        print "Checking for output files in tuning directory."
+        print("Checking for output files in tuning directory.")
         shortCircuit=True #Stops tranversing once a path ending in arg2 is determined!
         foundDirs=self.__findDirs__(self.installPipes2,'1',shortCircuit)
-        print "\n Calculating efficiencies for approximately ",foundDirs.__len__()," trials."
+        print("\n Calculating efficiencies for approximately ",foundDirs.__len__()," trials.")
         countMe=0
         modValue=10
         outputPickle=[]
@@ -693,10 +693,10 @@ class tuneObject:
                     outputL.append([float(h),float(l),int(float(len)),float(eff),int(curveCount),int(mapCounts)])
                 outputContour.append([float(h),float(l),float(p),int(curveCount)])
             else:
-                print "Omit::Problem checking results for :",entry
-                print "Found opts::",myOpts
+                print("Omit::Problem checking results for :",entry)
+                print("Found opts::",myOpts)
         #End the loop
-        print " "
+        print(" ")
         debugFile.close()
         return [outputPickle,outputP,outputL,outputContour]
     #end __performShellDEcalc__()
@@ -715,13 +715,13 @@ class tuneObject:
             deltaT=timeScale
             mapCounts=topBlockSize/timeScale
         else:
-            print "Error missing required section LAYERCONFIG"
+            print("Error missing required section LAYERCONFIG")
             os.abort
         if self.cpIni.has_section('candidatethreshold'):
             globFiles=self.__findFiles__(self.installPipes2,['Glob','_1.candidates','DE_','Threshold:'])
         else:
             globFiles=self.__findFiles__(self.installPipes2,['Glob','_1.candidates','DE_'])
-        print "Calculating efficiencies for ",globFiles.__len__()," files."
+        print("Calculating efficiencies for ",globFiles.__len__()," files.")
         countMe=0
         modValue=10
         outputPickle=[]
@@ -771,7 +771,7 @@ class tuneObject:
                 outputL.append([float(h),float(l),int(float(len)),float(eff),int(curveCount),int(numInjections)])
             outputContour.append([float(h),float(l),float(p),int(curveCount)])
         #End the loop
-        print " "
+        print(" ")
         return [outputPickle,outputP,outputL,outputContour]
     #end __performMapDEcalc__()
 
@@ -793,7 +793,7 @@ class tuneObject:
         outputContour=[]
         numInjections=int(self.cpIni.get('tracksearchinjection','inject_count'))
         numInjections=0
-        print "Calculating efficiencies for ",globFiles.__len__()," files."
+        print("Calculating efficiencies for ",globFiles.__len__()," files.")
         countMe=0
         modValue=10
         for entry in globFiles:
@@ -817,7 +817,7 @@ class tuneObject:
             if float(len)>3:
                 outputL.append([float(h),float(l),int(float(len)),float(eff),int(curveCount),int(numInjections)])
             outputContour.append([float(h),float(l),float(p),int(curveCount)])
-        print " "
+        print(" ")
         return [outputPickle,outputP,outputL,outputContour]
     #End __performNonMapDEcalc__()
         
@@ -928,10 +928,10 @@ FAcalc=bool(options.FAcalc)
 FAagain=bool(options.FAagain)
 DEcalc=bool(options.DEcalc)
 if options.tunFile == "":
-    print "The tun file required to perform any step of the tuning process is not specified!"
+    print("The tun file required to perform any step of the tuning process is not specified!")
     os.abort()
 elif not os.path.exists(tunFile):
-    print 'Can not find iniFile: ',os.path.basename(tunFile),' in path ',os.path.dirname(tunFile)
+    print('Can not find iniFile: ',os.path.basename(tunFile),' in path ',os.path.dirname(tunFile))
     os.abort()
 countOpts=0
 
@@ -946,7 +946,7 @@ if DEcalc: #NOT READY
 if FAagain:
     countOpts=countOpts+1
 if countOpts != 1:
-    print "There is a problem with the options specified at the command line.  Only one action at a time can be specified!"
+    print("There is a problem with the options specified at the command line.  Only one action at a time can be specified!")
     os.abort()
 #
 # Setup the configuration file (tun) variable which points to the needed vals
@@ -968,7 +968,7 @@ elif DEcalc:
 elif FAagain:
     tuner.rewriteFARfile()
 else:
-    print "This should never happen!"
+    print("This should never happen!")
     os.abort()
 #
 # End main program

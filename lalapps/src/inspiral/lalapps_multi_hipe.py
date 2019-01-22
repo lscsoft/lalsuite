@@ -37,7 +37,7 @@ import sys
 import pylab
 import random
 import string
-import ConfigParser
+from six.moves import configparser
 from optparse import *
 from glue import segments
 from glue import segmentsUtils
@@ -251,12 +251,12 @@ parser.add_option("-x","--dax", action="store_true", default=False,\
 
 ##############################################################################
 # write command line to a file
-print sys.argv[0:]
+print(sys.argv[0:])
 
 
 ##############################################################################
 # create the config parser object and read in the ini file
-cp = ConfigParser.ConfigParser()
+cp = configparser.ConfigParser()
 cp.read(opts.multi_hipe_config_file)
 numslides = cp.get('input','num-slides')
 
@@ -319,7 +319,7 @@ multi_hipe_options = ["verbose", "h1_segments", "h2_segments", "l1_segments", "v
 hipe_arguments_tmp=" ".join("--%s %s" % (name.replace("_","-"), value) for name, value in opts.__dict__.items() if value is not None and value is not False and name not in multi_hipe_options)
 
 hipe_arguments=hipe_arguments_tmp + " --config-file config.ini"
-print hipe_arguments
+print(hipe_arguments)
 
 ##############################################################################
 # loop over the intervals, constructing overlapping segment lists,
@@ -347,10 +347,10 @@ for interval in search_epochs:
         modifiedstart = max( \
             min( tmpseg[1] - minsciseg, interval[0] - overlap/2 - paddata - 1 ),\
             tmpseg[0] )
-    except ValueError, e:
+    except ValueError as e:
       modifiedstart = interval[0]
       if opts.verbose:
-        print ifo + ": No segment containing interval start " + str(e)
+        print(ifo + ": No segment containing interval start " + str(e))
 
     # ....... and now the one overlapping the end time .......
     try:
@@ -362,10 +362,10 @@ for interval in search_epochs:
         modifiedend = min( \
             max( tmpseg[0] + minsciseg, interval[1] + overlap/2 + paddata + 1 ),\
             tmpseg[1] )
-    except ValueError, e:
+    except ValueError as e:
       modifiedend = interval[1]
       if opts.verbose:
-        print ifo + ": No segment containing interval end " + str(e)
+        print(ifo + ": No segment containing interval end " + str(e))
 
     modifiedinterval = segments.segmentlist(\
         [segments.segment(modifiedstart,modifiedend)])
@@ -435,7 +435,7 @@ for interval in search_epochs:
   for inj in range(1,opts.ninjections + 1):
 
     # read in the configuration file for injections
-    cpinj = ConfigParser.ConfigParser()
+    cpinj = configparser.ConfigParser()
     cpinj.read(("injections%02d.ini" % opts.ninjections))
 
     # make the injection directory

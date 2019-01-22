@@ -80,10 +80,10 @@ class Bank(object):
         # Obtain the overlaps, given a template_number (integer)
         overlaps = np.zeros(self.numtemplates)
         cursor = self.connection.cursor()
-        for (filename, column), k in itertools.groupby(cursor.execute("SELECT fname.filename, a.column, b.k FROM bank AS a JOIN bank AS b ON (b.filename_id = a.filename_id) JOIN fname ON (fname.filename_id=a.filename_id) WHERE a.k = ? AND a.row IS NULL AND b.row IS NOT NULL ORDER BY fname.filename, b.row;", (template_number,)), lambda (fn, c, k_idx): (fn, c)):
+        for (filename, column), k in itertools.groupby(cursor.execute("SELECT fname.filename, a.column, b.k FROM bank AS a JOIN bank AS b ON (b.filename_id = a.filename_id) JOIN fname ON (fname.filename_id=a.filename_id) WHERE a.k = ? AND a.row IS NULL AND b.row IS NOT NULL ORDER BY fname.filename, b.row;", (template_number,)), lambda x: (x[0], x[1])):
             f = h5py.File(filename, "r")
             overlaps[[x[-1] for x in k]] = f[f.keys()[0]]['overlaps'].value[:,column]
-        for (filename, row), k in itertools.groupby(cursor.execute("SELECT fname.filename, a.row, b.k FROM bank AS a JOIN bank AS b ON (b.filename_id = a.filename_id) JOIN fname ON (fname.filename_id = a.filename_id) WHERE a.k = ? AND a.row IS NOT NULL ORDER BY fname.filename, b.column;", (template_number,)), lambda (fn, r, k_idx): (fn, r)):
+        for (filename, row), k in itertools.groupby(cursor.execute("SELECT fname.filename, a.row, b.k FROM bank AS a JOIN bank AS b ON (b.filename_id = a.filename_id) JOIN fname ON (fname.filename_id = a.filename_id) WHERE a.k = ? AND a.row IS NOT NULL ORDER BY fname.filename, b.column;", (template_number,)), lambda x: (x[0], x[1])):
             f = h5py.File(filename, "r")
             overlaps[[x[-1] for x in k]] = f[f.keys()[0]]['overlaps'].value[row,:]
         return overlaps

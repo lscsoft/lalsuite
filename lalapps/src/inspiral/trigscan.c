@@ -37,7 +37,7 @@
 #include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LALTrigScanCluster.h>

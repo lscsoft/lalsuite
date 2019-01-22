@@ -285,7 +285,7 @@
 #include <lal/FrameCalibration.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
@@ -872,13 +872,15 @@ int main( int argc, char *argv[] )
 
       if( userTag )
       {
-        snprintf( fname, FILENAME_MAX, "%s_%s-%d-%d.gwf", outfileName,
-            userTag, output.epoch.gpsSeconds, frameLength );
+        if(snprintf( fname, FILENAME_MAX, "%s_%s-%d-%d.gwf", outfileName,
+            userTag, output.epoch.gpsSeconds, frameLength ) >= FILENAME_MAX)
+          abort();
       }
       else
       {
-        snprintf( fname, FILENAME_MAX, "%s-%d-%d.gwf", outfileName,
-            output.epoch.gpsSeconds, frameLength );
+        if(snprintf( fname, FILENAME_MAX, "%s-%d-%d.gwf", outfileName,
+            output.epoch.gpsSeconds, frameLength ) >= FILENAME_MAX)
+          abort();
       }
 
       if ( vrbflg ) fprintf( stdout, "writing frame data to %s... ", fname );
@@ -912,28 +914,31 @@ int main( int argc, char *argv[] )
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if( userTag && outCompress )
   {
-    snprintf( fname, FILENAME_MAX, "%s_%s-%d-%d.xml.gz", outfileName,
+    if(snprintf( fname, FILENAME_MAX, "%s_%s-%d-%d.xml.gz", outfileName,
         userTag, gpsStartTime.gpsSeconds, 
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds ) >= FILENAME_MAX)
+      abort();
   }
   else if( userTag && !outCompress )
   {
-    snprintf( fname, FILENAME_MAX, "%s_%s-%d-%d.xml", outfileName,
+    if(snprintf( fname, FILENAME_MAX, "%s_%s-%d-%d.xml", outfileName,
         userTag, gpsStartTime.gpsSeconds,
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds ) >= FILENAME_MAX)
+      abort();
   }
   else if( !userTag && outCompress )
   {
-    snprintf( fname, FILENAME_MAX, "%s-%d-%d.xml.gz", outfileName,
+    if(snprintf( fname, FILENAME_MAX, "%s-%d-%d.xml.gz", outfileName,
         gpsStartTime.gpsSeconds,
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds ) >= FILENAME_MAX)
+      abort();
   }
   else
   {
-    snprintf( fname, FILENAME_MAX, "%s-%d-%d.xml", outfileName,
+    if(snprintf( fname, FILENAME_MAX, "%s-%d-%d.xml", outfileName,
         gpsStartTime.gpsSeconds, 
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds ) >= FILENAME_MAX)
+      abort();
   }
 
   if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", fname );

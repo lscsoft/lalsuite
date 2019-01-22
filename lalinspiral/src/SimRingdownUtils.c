@@ -140,7 +140,7 @@ XLALSimRingdownInSearchedData(
 
   int numInj = 0;
 
-  XLALTimeSortSearchSummary( summList, LALCompareSearchSummaryByOutTime );
+  XLALTimeSortSearchSummary( summList, XLALCompareSearchSummaryByOutTime );
   XLALSortSimRingdown( eventHead, XLALCompareSimRingdownByGeocentStartTime );
 
   thisEvent = *eventHead;

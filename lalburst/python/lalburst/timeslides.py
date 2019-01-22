@@ -27,12 +27,12 @@
 import itertools
 
 
-from glue import offsetvector
+from . import offsetvector
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from git_version import date as __date__
-from git_version import version as __version__
+from .git_version import date as __date__
+from .git_version import version as __version__
 
 
 #

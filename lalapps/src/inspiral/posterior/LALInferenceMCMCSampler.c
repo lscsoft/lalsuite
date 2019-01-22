@@ -1412,15 +1412,14 @@ void LALInferenceWriteMCMCSamples(LALInferenceRunState *runState) {
             /* Create run identifier group */
             LALInferenceH5VariablesArrayToDataset(group, output_array, N_output_array, thread->name);
         }
-
-        /* TODO: Write metadata */
-        LALInferenceVariables *injParams = NULL;
-        if ( (injParams=LALInferencePrintInjectionSample(runState)) )
-        {
-            LALInferenceH5VariablesArrayToDataset(group, &injParams, 1, "injection_params");
-            LALInferenceClearVariables(injParams);
-            XLALFree(injParams);
-        }
+    }
+    /* TODO: Write metadata */
+    LALInferenceVariables *injParams = NULL;
+    if ( (injParams=LALInferencePrintInjectionSample(runState)) )
+    {
+	    LALInferenceH5VariablesArrayToDataset(group, &injParams, 1, "injection_params");
+	    LALInferenceClearVariables(injParams);
+	    XLALFree(injParams);
     }
     XLALH5FileClose(group);
 

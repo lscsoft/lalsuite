@@ -85,6 +85,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(TaylorT3),
     INITIALIZE_NAME(TaylorF1),
     INITIALIZE_NAME(TaylorF2),
+    INITIALIZE_NAME(TaylorF2Ecc),
     INITIALIZE_NAME(TaylorF2NLTides),
     INITIALIZE_NAME(TaylorR2F4),
     INITIALIZE_NAME(TaylorF2RedSpin),
@@ -1059,6 +1060,37 @@ int XLALSimInspiralChooseFDWaveform(
             ret = XLALSimInspiralTaylorF2(hptilde, phiRef, deltaF, m1, m2,
                     S1z, S2z, f_min, f_max, f_ref, distance,
                     LALparams);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            /* Produce both polarizations */
+            *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+                    &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
+                    &((*hptilde)->sampleUnits), (*hptilde)->data->length);
+            for(j = 0; j < (*hptilde)->data->length; j++) {
+                (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j];
+                (*hptilde)->data->data[j] *= pfac;
+            }
+            break;
+
+        case TaylorF2Ecc:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALparams) )
+                ABORT_NONDEFAULT_FRAME_AXIS(LALparams);
+            if( !XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALparams) )
+                ABORT_NONDEFAULT_MODES_CHOICE(LALparams);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+            if( !LALSimInspiralEccentricityIsCorrect(eccentricity, LALparams) ){
+                /* we set f_ecc to be f_ref for wrong eccentricity specification after long discussion. */
+                REAL8 f_ecc = f_ref;
+                if( f_ecc == 0 ) f_ecc = f_min;
+                XLALSimInspiralWaveformParamsInsertEccentricityFreq(LALparams, f_ecc);
+                XLAL_PRINT_WARNING("Warning... The reference frequency for eccentricity was set as default value(%f). This might be not optimal case for you.\n", f_ecc);
+            }
+
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralTaylorF2Ecc(hptilde, phiRef, deltaF, m1, m2,
+                    S1z, S2z, f_min, f_max, f_ref, distance,
+                    eccentricity, LALparams);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
@@ -2124,6 +2156,7 @@ int XLALSimInspiralFD(
         /* upper bound on the final plunge, merger, and ringdown time */
         switch (approximant) {
         case TaylorF2:
+        case TaylorF2Ecc:
         case TaylorF2NLTides:
         case SpinTaylorF2:
         case TaylorF2RedSpin:
@@ -4646,6 +4679,7 @@ int XLALSimInspiralImplementedFDApproximants(
 		case SEOBNRv4_ROM_NRTidal:
         //case TaylorR2F4:
         case TaylorF2:
+        case TaylorF2Ecc:
         case TaylorF2NLTides:
 	case EccentricFD:
         case SpinTaylorF2:
@@ -5053,6 +5087,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
       spin_support=LAL_SIM_INSPIRAL_SINGLESPIN;
       break;
     case TaylorF2:
+    case TaylorF2Ecc:
     case TaylorF2NLTides:
     case TaylorF2RedSpin:
     case TaylorF2RedSpinTidal:
@@ -5184,6 +5219,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;
     case TaylorF2:
+    case TaylorF2Ecc:
     case TaylorF2NLTides:
     case SpinTaylorF2:
     case EccentricFD:
@@ -5560,6 +5596,7 @@ double XLALSimInspiralGetFinalFreq(
         case EccentricTD:
         case EccentricFD:
         case TaylorF2:
+        case TaylorF2Ecc:
         case TaylorF2NLTides:
         case TaylorF2RedSpin:
         case TaylorF2RedSpinTidal:

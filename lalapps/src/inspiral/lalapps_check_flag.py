@@ -60,25 +60,25 @@ def parse_command_line():
     options, others = parser.parse_args()
 
     if not options.ifo:
-        raise ValueError, "missing required argument --ifo"
+        raise ValueError("missing required argument --ifo")
 
     if not options.gps_end_time:
-        raise ValueError, "missing required argument --gps-end_time"
+        raise ValueError("missing required argument --gps-end_time")
    
     if not options.gps_start_time:
-        raise ValueError, "missing required argument --gps-start_time"
+        raise ValueError("missing required argument --gps-start_time")
    
     if not options.veto_category:
-        raise ValueError, "missing required argument --veto-category"
+        raise ValueError("missing required argument --veto-category")
    
     if len( [x for x in (options.unclustered, options.thirty_ms, options.sixteen_sec) if x] ) != 1:
-        raise ValueError, "must provide one of [--unclustered | --thirty-ms | --sixteen-sec]"
+        raise ValueError("must provide one of [--unclustered | --thirty-ms | --sixteen-sec]")
 
     if len( [x for x in (options.min_snr, options.min_new_snr) if x] ) != 1:
-        raise ValueError, "must provide exactly one of [--min-snr | --min-new-snr]"
+        raise ValueError("must provide exactly one of [--min-snr | --min-new-snr]")
 
     if len(others) == 0:
-        raise ValueError, "must provide at least one file of segments"
+        raise ValueError("must provide at least one file of segments")
 
     return options, others
 
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     incount = len(trigs)
 
     if incount == 0:
-        print "No triggers found"
+        print("No triggers found")
         sys.exit(0)
 
     for filename in others:
@@ -174,10 +174,10 @@ if __name__ == '__main__':
         efficiency  = (float(incount) - float(outcount)) / float(incount) * 100.0
         deadtime    = float(abs(summ) - abs(new_summary))  / float(abs(summ)) * 100.0
 
-        print "File: ", filename
-        print "Efficiency: %.2f" % efficiency
-        print "Deadtime: %.2f" % deadtime
-        print "Ratio: %s" % (deadtime > 0 and "%.2f" % (efficiency / deadtime) or 'NA')
-        print "Loudest remaining trigger at %d with snr %.2f" % (new_trigs[0][0], new_trigs[0][1])
-        print
+        print("File: ", filename)
+        print("Efficiency: %.2f" % efficiency)
+        print("Deadtime: %.2f" % deadtime)
+        print("Ratio: %s" % (deadtime > 0 and "%.2f" % (efficiency / deadtime) or 'NA'))
+        print("Loudest remaining trigger at %d with snr %.2f" % (new_trigs[0][0], new_trigs[0][1]))
+        print()
 

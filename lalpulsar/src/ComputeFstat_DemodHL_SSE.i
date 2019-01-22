@@ -17,6 +17,7 @@
 // MA  02111-1307  USA
 //
 
+/// [hotloop]
 /** SSE version with precalculated divisors from Akos */
 {
   {
@@ -188,3 +189,4 @@
 
   }
 }
+/// [hotloop]

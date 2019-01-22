@@ -26,7 +26,14 @@
 #include <lal/Factorial.h>
 #include <lal/SinCosLUT.h>
 
-// ----- old (pre-Akos) LALDemod hotloop variant (unrestricted Dterms) ----------
+///
+/// \file ComputeFstat_DemodHL_Generic.c
+/// \ingroup ComputeFstat_Demod_c
+/// \brief Old (pre-Akos) LALDemod hotloop variant (unrestricted Dterms)
+///
+/// \snippet ComputeFstat_DemodHL_Generic.i hotloop
+///
+
 #define FUNC XLALComputeFaFb_Generic
 #define HOTLOOP_SOURCE "ComputeFstat_DemodHL_Generic.i"
 #include "ComputeFstat_Demod_ComputeFaFb.c"

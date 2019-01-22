@@ -37,24 +37,26 @@ import scipy.stats
 import sys
 
 
-import lal
-from lal import rate
-
-
-from glue import segmentsUtils
 from glue.ligolw import ligolw
 from glue.ligolw import array as ligolw_array
 from glue.ligolw import param as ligolw_param
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
-from glue.offsetvector import offsetvector
+import lal
+from lal import rate
+try:
+	from ligo.segments import utils as segmentsUtils
+except ImportError:
+	# fallback for obsolete ligo-segments package
+	from glue import segmentsUtils
+from .offsetvector import offsetvector
 from . import snglcoinc
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from git_version import date as __date__
-from git_version import version as __version__
+from .git_version import date as __date__
+from .git_version import version as __version__
 
 
 #
@@ -119,7 +121,7 @@ def triangulators(timing_uncertainties):
 #
 
 
-def InstrumentBins(names = ("E0", "E1", "E2", "E3", "G1", "H1", "H2", "H1H2+", "H1H2-", "L1", "V1")):
+class InstrumentBins(rate.HashableBins):
 	"""
 	Example:
 
@@ -129,7 +131,29 @@ def InstrumentBins(names = ("E0", "E1", "E2", "E3", "G1", "H1", "H2", "H1H2+", "
 	>>> x.centres()[55]
 	frozenset(['H1', 'L1'])
 	"""
-	return rate.HashableBins(frozenset(combo) for n in range(len(names) + 1) for combo in itertools.combinations(names, n))
+
+	names = ("E0", "E1", "E2", "E3", "G1", "H1", "H2", "H1H2+", "H1H2-", "L1", "V1")
+
+	def __init__(self):
+		super(InstrumentBins, self).__init__(frozenset(combo) for n in range(len(names) + 1) for combo in itertools.combinations(names, n))
+
+	# FIXME:  hack to allow instrument binnings to be included as a
+	# dimension in multi-dimensional PDFs by defining a volume for
+	# them.  investigate more sensible ways to do this.  maybe NDBins
+	# and BinnedDensity should understand the difference between
+	# functional and parametric co-ordinates.
+	def lower(self):
+		return numpy.arange(0, len(self), dtype = "double")
+	def upper(self):
+		return numpy.arange(1, len(self) + 1, dtype = "double")
+
+	xml_bins_name = u"instrumentbins"
+
+# NOTE:  side effect of importing this module:
+rate.NDBins.xml_bins_name_mapping.update({
+	InstrumentBins.xml_bins_name: InstrumentBins,
+	InstrumentBins: InstrumentBins.xml_bins_name
+})
 
 
 #

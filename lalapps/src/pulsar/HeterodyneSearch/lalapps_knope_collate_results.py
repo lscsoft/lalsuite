@@ -41,13 +41,13 @@ import matplotlib
 matplotlib.use("Agg")
 
 #local application/library specific imports
-from pylal import git_version
+from lalapps import git_version
 from lalapps.pulsarpputils import *
 from lalapps.pulsarhtmlutils import *
 
-__author__="Matthew Pitkin <matthew.pitkin@ligo.org>"
-__version__= "git id %s"%git_version.id
-__date__= git_version.date
+__author__ = "Matthew Pitkin <matthew.pitkin@ligo.org>"
+__version__ = "git id {}".format(git_version.id)
+__date__ = git_version.date
 
 
 # create format for the output page
@@ -205,7 +205,7 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
     sys.exit(1)
 
   resultsdata = {} # dictionary to hold results data
-  sourcedirs = [os.path.join(inpath, rd) for rd in resdirs if os.path.isdir(os.path.join(inpath, rd))]
+  sourcedirs = [os.path.join(inpath, rd) for rd in resdirs if os.path.isfile(os.path.join(inpath, rd, '{}.ini'.format(rd)))]
   totalsources = len(sourcedirs)
   cursources = 0 # currently number of completed sources
   for d in sourcedirs:

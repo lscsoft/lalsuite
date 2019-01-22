@@ -31,16 +31,16 @@ import math
 import sys
 
 
-from glue import segments
 from glue.ligolw import lsctables
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
+from ligo import segments
 from . import snglcluster
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from git_version import date as __date__
-from git_version import version as __version__
+from .git_version import date as __date__
+from .git_version import version as __version__
 
 
 #

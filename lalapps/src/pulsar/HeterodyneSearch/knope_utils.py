@@ -14,6 +14,7 @@ __version__ = '$Revision$'
 
 import string
 import os
+import re
 from glue import pipeline
 import sys
 import ast
@@ -21,8 +22,8 @@ import json
 import subprocess as sp
 import shutil
 import uuid
-import ConfigParser
-import urlparse
+from six.moves.configparser import ConfigParser
+import six.moves.urllib.parse as urlparse
 from copy import deepcopy
 import numpy as np
 import pickle
@@ -166,7 +167,7 @@ class knopeDAG(pipeline.CondorDAG):
       for stkey in dict(self.starttime):
         if isinstance(self.starttime[stkey], int):
           # convert to list
-          self.starttime[stkey] = list(self.starttime[stkey])
+          self.starttime[stkey] = [self.starttime[stkey]]
         elif isinstance(self.starttime[stkey], list):
           # check all values are int
           if len([v for v in self.starttime[stkey] if isinstance(v, int)]) != len(self.starttime[stkey]):
@@ -200,7 +201,7 @@ class knopeDAG(pipeline.CondorDAG):
       for etkey in dict(self.endtime):
         if isinstance(self.endtime[etkey], int):
           # convert to list
-          self.endtime[etkey] = list(self.endtime[etkey])
+          self.endtime[etkey] = [self.endtime[etkey]]
         elif isinstance(self.endtime[etkey], list):
           # check all values are int
           if len([v for v in self.endtime[etkey] if isinstance(v, int)]) != len(self.endtime[etkey]):
@@ -607,7 +608,7 @@ class knopeDAG(pipeline.CondorDAG):
     collatejob = collateJob(self.collate_exec, univ=self.results_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
 
     # create config file for collating results into a results table
-    cpc = ConfigParser.ConfigParser() # create config parser to output .ini file
+    cpc = ConfigParser() # create config parser to output .ini file
     # create configuration .ini file
     cinifile = os.path.join(self.results_basedir, 'collate.ini')
 
@@ -704,7 +705,7 @@ class knopeDAG(pipeline.CondorDAG):
         except:
           print("Warning... could not write out ATNF catalogue information to JSON file '%s'." % jsonfile, file=sys.stderr)
 
-      cp = ConfigParser.ConfigParser() # create config parser to output .ini file
+      cp = ConfigParser() # create config parser to output .ini file
       # create configuration .ini file
       inifile = os.path.join(self.results_pulsar_dir[pname], pname+'.ini')
 
@@ -878,7 +879,7 @@ class knopeDAG(pipeline.CondorDAG):
       resultsnode = resultpageNode(resultpagejob)
       resultsnode.set_config(inifile)
 
-      # add parent lalapps_nest2pos job
+      # add parent lalinference_nest2pos job
       for n2pnode in self.pe_nest2pos_nodes[pname]:
         resultsnode.add_parent(n2pnode)
 
@@ -944,7 +945,7 @@ class knopeDAG(pipeline.CondorDAG):
     self.pe_universe = self.get_config_option('pe', 'universe', default='vanilla')
     if self.error_code != 0: return
 
-    self.pe_nest2pos_nodes = {} # condor nodes for the lalapps_nest2pos jobs (needed to use as parents for results processing jobs)
+    self.pe_nest2pos_nodes = {} # condor nodes for the lalinference_nest2pos jobs (needed to use as parents for results processing jobs)
     self.pe_nest2pos_background_nodes = {} # nodes for background analysis
 
     # see whether to run just as independent detectors, or independently AND coherently over all detectors
@@ -991,6 +992,22 @@ class knopeDAG(pipeline.CondorDAG):
     self.pe_nmcmc_initial = self.get_config_option('pe', 'n_mcmc_initial', cftype='int', default=500)
     self.pe_non_gr = self.get_config_option('pe', 'non_gr', cftype='boolean', default=False)        # use non-GR parameterisation (default to False)
 
+    # check if only using a section of data
+    self.pe_starttime = self.get_config_option('pe', 'starttime',
+                                               cftype='float', allownone=True)
+    self.pe_endtime = self.get_config_option('pe', 'endtime', cftype='float',
+                                             allownone=True)
+    self.pe_truncate_time = self.get_config_option('pe', 'truncate_time',
+                                                   cftype='float',
+                                                   allownone=True)
+    self.pe_truncate_samples = self.get_config_option('pe', 'truncate_samples',
+                                                      cftype='int',
+                                                      allownone=True)
+    self.pe_truncate_fraction = self.get_config_option('pe',
+                                                       'truncate_fraction',
+                                                       cftype='float',
+                                                       allownone=True)
+
     # parameters for background runs
     self.pe_nruns_background = self.get_config_option('pe', 'n_runs_background', cftype='int', default=1)
     self.pe_nlive_background = self.get_config_option('pe', 'n_live_background', cftype='int', default=1024)
@@ -1027,9 +1044,9 @@ class knopeDAG(pipeline.CondorDAG):
     self.pe_prior_options = self.get_config_option('pe', 'prior_options', cftype='dict')
     self.pe_premade_prior_file = self.get_config_option('pe', 'premade_prior_file', allownone=True)
 
-    if self.pe_premade_prior_file != None:
+    if self.pe_premade_prior_file is not None:
       if not os.path.isfile(self.pe_premade_prior_file):
-        print("Error... pre-made prior file '%s' does not exist!" % self.pe_premade_prior_file, file=sys.stderr)
+        print("Error... pre-made prior file '{}' does not exist!".format(self.pe_premade_prior_file), file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
         return
 
@@ -1063,16 +1080,16 @@ class knopeDAG(pipeline.CondorDAG):
     self.pe_use_parameter_errors = self.get_config_option('pe', 'use_parameter_errors', cftype='boolean', default=False)
 
     # check for executable for merging nested sample files/converting them to posteriors
-    self.pe_n2p_exec = self.get_config_option('pe', 'n2p_exec', default='lalapps_nest2pos')
+    self.pe_n2p_exec = self.get_config_option('pe', 'n2p_exec', default='lalinference_nest2pos')
     if self.error_code != 0: return
 
     # check file exists and is executable
     if not os.path.isfile(self.pe_n2p_exec) or not os.access(self.pe_n2p_exec, os.X_OK):
       print("Warning... 'pe_n2p_exec' in '[pe]' does not exist or is not an executable. Try finding code in path.")
-      pen2pexec = self.find_exec_file('lalapps_nest2pos')
+      pen2pexec = self.find_exec_file('lalinference_nest2pos')
 
       if pen2pexec == None:
-        print("Error... could not find 'lalapps_nest2pos' in 'PATH'", file=sys.stderr)
+        print("Error... could not find 'lalinference_nest2pos' in 'PATH'", file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
@@ -1166,7 +1183,7 @@ class knopeDAG(pipeline.CondorDAG):
         self.mkdirs(psrpostdir)
         if self.error_code != 0: return
 
-        n2pnodes[pname] = [] # list of nodes for lalapps_nest2pos jobs for a given pulsar
+        n2pnodes[pname] = [] # list of nodes for lalinference_nest2pos jobs for a given pulsar
 
         for comb in self.pe_combinations:
           dets = comb['detectors']
@@ -1231,7 +1248,7 @@ class knopeDAG(pipeline.CondorDAG):
           i = counter = 0
           while counter < nruns+nroqruns: # loop over the required number of runs
             penode = ppeNode(pejob, psrname=pname)
-            if self.pe_random_seed != None:
+            if self.pe_random_seed is not None:
               penode.set_randomseed(self.pe_random_seed)      # set seed for RNG
             penode.set_detectors(','.join(dets))              # add detectors
             penode.set_par_file(self.analysed_pulsars[pname]) # add parameter file
@@ -1241,10 +1258,24 @@ class knopeDAG(pipeline.CondorDAG):
             penode.set_harmonics(','.join([str(ffv) for ffv in self.freq_factors])) # set frequency harmonics
 
             penode.set_Nlive(nlive)                           # set number of live points
-            if self.pe_nmcmc != None:
+            if self.pe_nmcmc is not None:
               penode.set_Nmcmc(self.pe_nmcmc)                 # set number of MCMC iterations for choosing new points
             penode.set_Nmcmcinitial(self.pe_nmcmc_initial)    # set initial number of MCMC interations for reampling the prior
             penode.set_tolerance(self.pe_tolerance)           # set tolerance for ending nested sampling
+
+            if self.pe_starttime is not None:
+              penode.set_start_time(self.pe_starttime)  # set start time of data to use
+            
+            if self.pe_endtime is not None:
+              penode.set_end_time(self.pe_endtime)      # set end time of data to use
+
+            if self.pe_starttime is None and self.pe_endtime is None:
+              if self.pe_truncate_time is not None:
+                penode.set_truncate_time(self.pe_truncate_time)
+              elif self.pe_truncate_samples is not None:
+                penode.set_truncate_samples(self.pe_truncate_samples)
+              elif self.pe_truncate_fraction is not None:
+                penode.set_truncate_fraction(self.pe_truncate_fraction)
 
             # set the output nested samples file
             nestfiles.append(os.path.join(ffdir, 'nested_samples_%s_%05d.hdf' % (pname, i)))
@@ -1343,7 +1374,7 @@ class knopeDAG(pipeline.CondorDAG):
             counter = counter+1
             i = i+1
 
-          # add lalapps_nest2pos node to combine outputs/convert to posterior samples
+          # add lalinference_nest2pos node to combine outputs/convert to posterior samples
           n2pnode = nest2posNode(n2pjob)
           postfile = os.path.join(ffpostdir, 'posterior_samples_%s.hdf' % pname)
           n2pnode.set_outfile(postfile)     # output posterior file
@@ -1390,17 +1421,18 @@ class knopeDAG(pipeline.CondorDAG):
     outfile = os.path.join(outputpath, '%s.prior' % pname)
 
     # if using a pre-made prior file then just create a symbolic link to that file into outputpath
-    if self.pe_premade_prior_file != None:
+    if self.pe_premade_prior_file is not None:
       try:
         os.symlink(self.pe_premade_prior_file, outfile)
       except:
         print("Error... could not create symbolic link to prior file '%s'" % self.pe_premade_prior_file, file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
+
       return outfile
 
     # check if requiring to add parameters with errors in the .par file to the prior options
     prior_options = {}
-    if self.pe_prior_options != None:
+    if self.pe_prior_options is not None:
       prior_options = deepcopy(self.pe_prior_options)
 
       if self.pe_use_parameter_errors:
@@ -1495,24 +1527,116 @@ class knopeDAG(pipeline.CondorDAG):
           print("Error... no 'priortype' given for parameter '%s'" % prioritem, file=sys.stderr)
           self.error_code = KNOPE_ERROR_GENERAL
           return outfile
-        if 'ranges' not in prior_options[prioritem]:
-          print("Error... no 'ranges' given for parameter '%s'" % prioritem, file=sys.stderr)
-          self.error_code = KNOPE_ERROR_GENERAL
-          return outfile
-
+        
         ptype = prior_options[prioritem]['priortype']
-        rangevals = prior_options[prioritem]['ranges']
 
-        if len(rangevals) != 2:
-          print("Error... 'ranges' for parameter '%s' must be a list or tuple with two entries" % prioritem, file=sys.stderr)
-          self.error_code = KNOPE_ERROR_GENERAL
-          return outfile
+        if ptype != 'gmm':
+          if 'ranges' not in prior_options[prioritem]:
+            print("Error... no 'ranges' given for parameter '%s'" % prioritem, file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
 
-        # ignore cosiota if using previous posterior file as prior
-        if posteriorfile is not None and prioritem.upper() == 'COSIOTA':
-          continue
+          rangevals = prior_options[prioritem]['ranges']
+
+          if len(rangevals) != 2:
+            print("Error... 'ranges' for parameter '%s' must be a list or tuple with two entries" % prioritem, file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          # ignore cosiota if using previous posterior file as prior
+          if posteriorfile is not None and prioritem.upper() == 'COSIOTA':
+            continue
+          else:
+            fp.write('%s\t%s\t%.16le\t%.16le\n' % (prioritem, ptype, rangevals[0], rangevals[1]))
         else:
-          fp.write('%s\t%s\t%.16le\t%.16le\n' % (prioritem, ptype, rangevals[0], rangevals[1]))
+          # check if item is prior for multiple parameters
+          npars = len(prioritem.split(':'))
+
+          # output if a Gaussian Mixture Model prior is set
+          if 'nmodes' not in prior_options[prioritem]:
+            print("Error... no 'nmodes' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          nmodes = prior_options[prioritem]['nmodes']
+
+          if 'means' not in prior_options[prioritem]:
+            print("Error... no 'means' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          means = prior_options[prioritem]['means']
+
+          if len(means) != nmodes:
+            print("Error... number of mean values must be equal to the number of modes", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          for mean in means:
+            if len(mean) != npars:
+              print("Error... number of mean values must be equal to the number of parameters", file=sys.stderr)
+              self.error_code = KNOPE_ERROR_GENERAL
+              return outfile
+
+          if 'covs' not in prior_options[prioritem]:
+            print("Error... no 'covs' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          covs = prior_options[prioritem]['covs']
+
+          if len(means) != nmodes:
+            print("Error... number of covariance matrices values must be equal to the number of modes", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          for cov in covs:
+            npcov = np.array(cov)
+            if npcov.shape[0] != npcov.shape[1] and npcov.shape[1] != npars:
+              print("Error... number of covariance matrices rows/columns must be equal to the number of parameters", file=sys.stderr)
+              self.error_code = KNOPE_ERROR_GENERAL
+              return outfile
+
+          if 'weights' not in prior_options[prioritem]:
+            print("Error... no 'weights' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          weights = prior_options[prioritem]['weights']
+
+          if len(weights) != nmodes:
+            print("Error... number of weights must be equal to the number of modes", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+          
+          if 'ranges' in prior_options[prioritem]:
+            ranges = prior_options[prioritem]['ranges']
+
+            if len(ranges) != npars:
+              print("Error... number of ranges must be equal to the number of parameters", file=sys.stderr)
+              self.error_code = KNOPE_ERROR_GENERAL
+              return outfile
+
+            for rangevals in ranges:
+              if len(rangevals) != 2:
+                print("Error... ranges must have two values", file=sys.stderr)
+                self.error_code = KNOPE_ERROR_GENERAL
+                return outfile
+          else:
+            ranges = None
+
+          fp.write('{}\tgmm\t'.format(prioritem))
+          fp.write('{}\t'.format(nmodes))
+          fp.write('{}\t'.format(re.sub(r'\s+', '', str(means))))
+          fp.write('{}\t'.format(re.sub(r'\s+', '', str(covs))))
+          fp.write('{}'.format(re.sub(r'\s+', '', str(weights))))
+
+          if ranges is not None:
+            for rangevals in ranges:
+              fp.write('\t')
+              fp.write('{}'.format(re.sub(r'\s+', '', str(rangevals))))
+
+          fp.write('\n')
 
       # set the required amplitude priors or parameters to estimate from previous posterior samples (and limits)
       requls = {} # dictionary to contain the required upper limits
@@ -1712,12 +1836,105 @@ class knopeDAG(pipeline.CondorDAG):
 
       for prioritem in prior_options:
         ptype = prior_options[prioritem]['priortype']
-        rangevals = prior_options[prioritem]['ranges']
-        if len(rangevals) != 2:
-          print("Error... the ranges in the prior for '%s' are not set properly" % prioritem, file=sys.stderr)
-          self.error_code = KNOPE_ERROR_GENERAL
-          return outfile
-        fp.write("%s\t%s\t%.16e\t%.16e\n" % (prioritem, ptype, rangevals[0], rangevals[1]))
+        
+        if ptype != 'gmm':
+          rangevals = prior_options[prioritem]['ranges']
+        
+          if len(rangevals) != 2:
+            print("Error... the ranges in the prior for '%s' are not set properly" % prioritem, file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+          fp.write("%s\t%s\t%.16e\t%.16e\n" % (prioritem, ptype, rangevals[0], rangevals[1]))
+        else:
+              # check if item is prior for multiple parameters
+          npars = len(prioritem.split(':'))
+
+          # output if a Gaussian Mixture Model prior is set
+          if 'nmodes' not in prior_options[prioritem]:
+            print("Error... no 'nmodes' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          nmodes = prior_options[prioritem]['nmodes']
+
+          if 'means' not in prior_options[prioritem]:
+            print("Error... no 'means' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          means = prior_options[prioritem]['means']
+
+          if len(means) != nmodes:
+            print("Error... number of mean values must be equal to the number of modes", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          for mean in means:
+            if len(mean) != npars:
+              print("Error... number of mean values must be equal to the number of parameters", file=sys.stderr)
+              self.error_code = KNOPE_ERROR_GENERAL
+              return outfile
+
+          if 'covs' not in prior_options[prioritem]:
+            print("Error... no 'covs' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          covs = prior_options[prioritem]['covs']
+
+          if len(means) != nmodes:
+            print("Error... number of covariance matrices values must be equal to the number of modes", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          for cov in covs:
+            npcov = np.array(cov)
+            if npcov.shape[0] != npcov.shape[1] and npcov.shape[1] != npars:
+              print("Error... number of covariance matrices rows/columns must be equal to the number of parameters", file=sys.stderr)
+              self.error_code = KNOPE_ERROR_GENERAL
+              return outfile
+
+          if 'weights' not in prior_options[prioritem]:
+            print("Error... no 'weights' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          weights = prior_options[prioritem]['weights']
+
+          if len(weights) != nmodes:
+            print("Error... number of weights must be equal to the number of modes", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+          
+          if 'ranges' in prior_options[prioritems]:
+            ranges = prior_options[prioritem]['ranges']
+
+            if len(ranges) != npars:
+              print("Error... number of ranges must be equal to the number of parameters", file=sys.stderr)
+              self.error_code = KNOPE_ERROR_GENERAL
+              return outfile
+
+            for rangevals in ranges:
+              if len(rangevals) != 2:
+                print("Error... ranges must have two values", file=sys.stderr)
+                self.error_code = KNOPE_ERROR_GENERAL
+                return outfile
+          else:
+            ranges = None
+
+          fp.write('{}\tgmm\t'.format(prioritem))
+          fp.write('{}\t'.format(nmodes))
+          fp.write('{}\t'.format(re.sub(r'\s+', '', str(means))))
+          fp.write('{}\t'.format(re.sub(r'\s+', '', str(covs))))
+          fp.write('{}'.format(re.sub(r'\s+', '', str(weights))))
+
+          if ranges is not None:
+            for rangevals in ranges:
+              fp.write('\t')
+              fp.write('{}'.format(re.sub(r'\s+', '', str(rangevals))))
+
+          fp.write('\n')
+
       fp.close()
 
     return outfile
@@ -3864,6 +4081,12 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__biaxial = False
     self.__gaussian_like = False
     self.__randomise = None
+    self.__starttime = None
+    self.__endtime = None
+    self.__truncate_time = None
+    self.__truncate_samples = None
+    self.__truncate_fraction = None
+    self.__veto_threshold = None
 
     self.__Nlive = None
     self.__Nmcmc = None
@@ -3967,6 +4190,39 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set the maximum chunk length
     self.add_var_opt('chunk-max', cmax)
     self.__chunk_max = cmax
+
+  def set_start_time(self, starttime):
+    # set the start time of data to use
+    self.add_var_opt('start-time', starttime)
+    self.__starttime = starttime
+
+  def set_end_time(self, endtime):
+    # set the start time of data to use
+    self.add_var_opt('end-time', endtime)
+    self.__endtime = endtime
+    self.__truncate_time = endtime
+
+  def set_truncate_time(self, trunc):
+    # set the truncation time to use (same as end time)
+    if self.__endtime is None:
+      self.add_var_opt('truncate-time', trunc)
+      self.__truncate_time = trunc
+      self.__endtime = trunc
+
+  def set_truncate_samples(self, trunc):
+    # set the truncation based on number of samples
+    self.add_var_opt('truncate-samples', trunc)
+    self.__truncate_samples = trunc
+
+  def set_truncate_fraction(self, trunc):
+    # set truncation based on fraction of the data
+    self.add_var_opt('truncate-fraction', trunc)
+    self.__truncate_fraction = trunc
+
+  def set_veto_threshold(self, veto):
+    # set value above which to veto data samples
+    self.add_var_opt('veto-threshold', veto)
+    self.__veto_threshold = veto
 
   def set_psi_bins(self, pb):
     # set the number of bins in psi for the psi vs time lookup table
@@ -4333,7 +4589,7 @@ class collateNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
 class nest2posJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
-  A merge nested sampling files job to use lalapps_nest2pos
+  A merge nested sampling files job to use lalinference_nest2pos
   """
   def __init__(self, execu, univ='local', accgroup=None, accuser=None, logdir=None, rundir=None):
     self.__executable = execu
@@ -4354,6 +4610,7 @@ class nest2posJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
       self.set_stdout_file('n2p-$(cluster).out')
       self.set_stderr_file('n2p-$(cluster).err')
 
+    self.add_arg('--non-strict-versions') # force use of --non-strict-versions flag
     self.add_arg('$(macroinputfiles)') # macro for input nested sample files
 
     if rundir != None:
@@ -4364,7 +4621,7 @@ class nest2posJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
 class nest2posNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
-  A nest2posNode runs a instance of the lalapps_nest2pos to combine individual nested
+  A nest2posNode runs a instance of the lalinference_nest2pos to combine individual nested
   sample files in a condor DAG.
   """
   def __init__(self,job):

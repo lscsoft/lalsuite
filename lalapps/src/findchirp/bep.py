@@ -95,8 +95,8 @@ def create_bank(configcp, arguments):
   arguments = arguments + ' --n 1 --check --print-bank --xml-output'
   os.system('rm -f BE_Bank.dat BE_Bank.xml')
   
-  print '###'
-  print ' We are creating the template bank for sanity check. Please wait'
+  print('###')
+  print(' We are creating the template bank for sanity check. Please wait')
   fp =open('BankEfficiency_createbank','w');
   fp.write( configcp.get("main", "executable") + arguments +' \
       1> ./log/bankefficiency_tmpltbank.out 2>./log/bankefficiency_tmpltbank.err'+'\n')
@@ -105,9 +105,9 @@ def create_bank(configcp, arguments):
   a=os.system('./BankEfficiency_createbank')
   
   if a==0:
-    print '... done (your parameters seems correct). See BE_Bank.xml file.'
+    print('... done (your parameters seems correct). See BE_Bank.xml file.')
   else:
-    print '... failed (your parameters seems correct)'
+    print('... failed (your parameters seems correct)')
     sys.exit()
 
 def create_dag_file(configcp):
@@ -118,7 +118,7 @@ def create_dag_file(configcp):
   """
   
   njobs = int(configcp.get("simulation", "njobs"))
-  print '--- Generating the dag file'
+  print('--- Generating the dag file')
   fp=open('bep.dag', 'w')
   for id in range(1,njobs+1,1):
     fp.write('JOB '+str(id)+' bep.sub\n')
@@ -130,7 +130,7 @@ def create_dag_file(configcp):
     fp.write('PARENT ' + str(id)+' CHILD '+str(njobs+1)+'\n')
     
   fp.close()
-  print '... done'
+  print('... done')
 
 def create_finalise_condor(configcp):
   """
@@ -177,13 +177,13 @@ def check_executable(configcp):
   A routine to check that the executable is accessible
   """
   try:
-    print '--- Check that the executable ('+ configcp.get("main","executable")  +')is present in '+path
+    print('--- Check that the executable ('+ configcp.get("main","executable")  +')is present in '+path)
     f = open(configcp("main", "executable"), 'r')
     f.close()
   except:
-    print '### Can not find ' + configcp("main", "executable")
+    print('### Can not find ' + configcp("main", "executable"))
     sys.exit()
-  print '... executable found. Going ahead'
+  print('... executable found. Going ahead')
 	
 
 
@@ -192,7 +192,7 @@ def parse_arguments():
   """
   The user interface
   """
-  print '--- Parsing user arguments'
+  print('--- Parsing user arguments')
   parser = OptionParser()
   parser.add_option( "--config-file")
   
@@ -210,13 +210,13 @@ configcp.read(options.config_file)
     
 os.system('mkdir log')
 arguments = create_condor_file(configcp)
-print """
+print("""
 	The condor script will use the following arguments 
 	-------------------------------------------
-    """
-print arguments
-print '\n--- The number of simulation requested is '+configcp.get("simulation", "ntrial")
-print '--- They will be split into '+ configcp.get("simulation", "njobs")+' jobs'
+    """)
+print(arguments)
+print('\n--- The number of simulation requested is '+configcp.get("simulation", "ntrial"))
+print('--- They will be split into '+ configcp.get("simulation", "njobs")+' jobs')
 
 # create the condor file using the input parameter stored in BE
 create_finalise_script(configcp)
@@ -224,14 +224,14 @@ create_finalise_condor(configcp)
 create_dag_file(configcp)
 create_bank(configcp, arguments)
 
-print '--- Generating the prototype xml file for merging condor job'
+print('--- Generating the prototype xml file for merging condor job')
 command = configcp.get("main", "executable") + ' ' + arguments +' --print-prototype \
     1>./log/bankefficiency_prototype.out 2>./log/bankefficiency_prototype.err'
 os.system(command)
-print '... done'
+print('... done')
 time.sleep(.5)
     
-print """--- In order to start the job, type
+print("""--- In order to start the job, type
 --------------------------------------------
 condor_submit_dag -maxjobs 100  bep.dag
 
@@ -243,7 +243,7 @@ condor_submit_dag -maxjobs 100  -f bep.dag
 Once the dag is finished and all the job are completed, get back all
 the results together within an xml file by using the script called : finalise.sh
 
-Ideally, this script should be put within the daga file"""
+Ideally, this script should be put within the daga file""")
 
 create_finalise_script(configcp)
 os.system('mkdir log')

@@ -64,11 +64,13 @@ def find_ln_p_j_voronoi(m, f, popt):
     p_tj = p_tj/sum(p_tj)
     return np.log(p_tj), all_p, all_i
 
-def trivol((a, b, c)):
+def trivol(abc):
+    a, b, c = abc
     # Calculates area of triangle
     return abs(np.cross((c-a),(c-b)))/2.
 
-def tetravol((a, b, c, d)):
+def tetravol(abcd):
+    abcd = a, b, c, d
     # Calculates volume of tetrahedron, given vertices a, b, c, d (triplets)
     return abs(np.dot((a-d), np.cross(b-d),(c-d)))/6.
 

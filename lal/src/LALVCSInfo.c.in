@@ -36,17 +36,11 @@
 #if defined(HAVE_LIBLALMETAIO)
 #include <lal/LALMetaIOVCSInfoHeader.h>
 #endif
-#if defined(HAVE_LIBLALXML)
-#include <lal/LALXMLVCSInfoHeader.h>
-#endif
 #if defined(HAVE_LIBLALSIMULATION)
 #include <lal/LALSimulationVCSInfoHeader.h>
 #endif
 #if defined(HAVE_LIBLALBURST)
 #include <lal/LALBurstVCSInfoHeader.h>
-#endif
-#if defined(HAVE_LIBLALDETCHAR)
-#include <lal/LALDetCharVCSInfoHeader.h>
 #endif
 #if defined(HAVE_LIBLALINSPIRAL)
 #include <lal/LALInspiralVCSInfoHeader.h>
@@ -56,9 +50,6 @@
 #endif
 #if defined(HAVE_LIBLALINFERENCE)
 #include <lal/LALInferenceVCSInfoHeader.h>
-#endif
-#if defined(HAVE_LIBLALSTOCHASTIC)
-#include <lal/LALStochasticVCSInfoHeader.h>
 #endif
 
 #include "@PACKAGE_NAME@VCSInfoHeader.h"
@@ -109,17 +100,11 @@ const LALVCSInfoList lal@PACKAGE_NAME_NOLAL@VCSInfoList = {
 #if defined(HAVE_LIBLALMETAIO)
   &lalMetaIOVCSInfo,
 #endif
-#if defined(HAVE_LIBLALXML)
-  &lalXMLVCSInfo,
-#endif
 #if defined(HAVE_LIBLALSIMULATION)
   &lalSimulationVCSInfo,
 #endif
 #if defined(HAVE_LIBLALBURST)
   &lalBurstVCSInfo,
-#endif
-#if defined(HAVE_LIBLALDETCHAR)
-  &lalDetCharVCSInfo,
 #endif
 #if defined(HAVE_LIBLALINSPIRAL)
   &lalInspiralVCSInfo,
@@ -129,9 +114,6 @@ const LALVCSInfoList lal@PACKAGE_NAME_NOLAL@VCSInfoList = {
 #endif
 #if defined(HAVE_LIBLALINFERENCE)
   &lalInferenceVCSInfo,
-#endif
-#if defined(HAVE_LIBLALSTOCHASTIC)
-  &lalStochasticVCSInfo,
 #endif
   &lal@PACKAGE_NAME_NOLAL@VCSInfo,
   NULL
@@ -157,17 +139,11 @@ void @PACKAGE_NAME_UCASE@_VCS_LINK_CHECK(void)
 #if defined(HAVE_LIBLALMETAIO) && LALMETAIO_VERSION_DEVEL != 0
   LALMETAIO_VCS_LINK_CHECK();
 #endif
-#if defined(HAVE_LIBLALXML) && LALXML_VERSION_DEVEL != 0
-  LALXML_VCS_LINK_CHECK();
-#endif
 #if defined(HAVE_LIBLALSIMULATION) && LALSIMULATION_VERSION_DEVEL != 0
   LALSIMULATION_VCS_LINK_CHECK();
 #endif
 #if defined(HAVE_LIBLALBURST) && LALBURST_VERSION_DEVEL != 0
   LALBURST_VCS_LINK_CHECK();
-#endif
-#if defined(HAVE_LIBLALDETCHAR) && LALDETCHAR_VERSION_DEVEL != 0
-  LALDETCHAR_VCS_LINK_CHECK();
 #endif
 #if defined(HAVE_LIBLALINSPIRAL) && LALINSPIRAL_VERSION_DEVEL != 0
   LALINSPIRAL_VCS_LINK_CHECK();
@@ -177,9 +153,6 @@ void @PACKAGE_NAME_UCASE@_VCS_LINK_CHECK(void)
 #endif
 #if defined(HAVE_LIBLALINFERENCE) && LALINFERENCE_VERSION_DEVEL != 0
   LALINFERENCE_VCS_LINK_CHECK();
-#endif
-#if defined(HAVE_LIBLALSTOCHASTIC) && LALSTOCHASTIC_VERSION_DEVEL != 0
-  LALSTOCHASTIC_VCS_LINK_CHECK();
 #endif
 }
 #endif

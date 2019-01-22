@@ -40,11 +40,11 @@ parser.add_argument('--outdir', type=str, help='Output directory', default='outp
 parser.add_argument('--executable', type=str, help='Path to compiled binary executable', default='/home/grant.meadors/TwoSpect/dev1/bin/lalapps_TwoSpect')
 args = parser.parse_args()
 if args.singleBand or args.templateSearch: 
-    print 'Looking only in a 5 Hz band from the MDCv6 data set at the following pulsar: ' + str(args.singleBand)
+    print('Looking only in a 5 Hz band from the MDCv6 data set at the following pulsar: ' + str(args.singleBand))
 elif args.templateSearchOpen or args.templateSearchClosed:
-    print 'Looking in 5 Hz bands from the MDCv6 data set.'
+    print('Looking in 5 Hz bands from the MDCv6 data set.')
 if args.skyGrid:
-    print 'Running over a grid of multiple sky locations'
+    print('Running over a grid of multiple sky locations')
 
 def sftFileListParts():
     #For the closed search
@@ -70,17 +70,17 @@ def sftFileListParts():
     sftFileListPart1Closed, sftFileListPart2Closed]
 
 def sftFileBin(finj, fstart, fjobspan, fwingsize, tcoh):
-    print 'Frequency of test start (Hz): ' + str(finj)
-    print 'Frequency of start for all bands (Hz): ' + str(fstart)
-    print 'Frequency of job span (Hz): ' + str(fjobspan)
-    print 'Frequency of job span, including wings (Hz): ' + str(fwingsize)
+    print('Frequency of test start (Hz): ' + str(finj))
+    print('Frequency of start for all bands (Hz): ' + str(fstart))
+    print('Frequency of job span (Hz): ' + str(fjobspan))
+    print('Frequency of job span, including wings (Hz): ' + str(fwingsize))
     bandCountFreq = np.floor( (finj - fstart)/fjobspan )
     bandStartFreq = fstart + fjobspan*bandCountFreq
     bandStartBin = bandStartFreq*tcoh
     wingsBelowStartBin = (fwingsize - fjobspan)/2 * tcoh 
     completeStartBin = bandStartBin - wingsBelowStartBin
     return completeStartBin
-    print 'Frequency start bins for SFTs in real S6 search'
+    print('Frequency start bins for SFTs in real S6 search')
     
 
 
@@ -107,8 +107,8 @@ def sftNameMaker(observatory, tcoh, binname, args):
     return sftFileRoot + str(tcoh) + sftFilePart1 + str(tcoh) + sftFilePart2 + str(binname)
  
 def tablereader(tableName, observatory, args):
-    print 'Name of the MDC table:'
-    print tableName
+    print('Name of the MDC table:')
+    print(tableName)
     tableData = open(tableName, "r")
         
     for k, tableLine in enumerate(tableData):
@@ -178,7 +178,7 @@ def tablereader(tableName, observatory, args):
     for binnumber in sftFileListPart2]
             
     if args.templateSearchClosed:
-        print 'Done sorting closed pulsar table.'
+        print('Done sorting closed pulsar table.')
     else:
         raInjList = raInjList[1:]
         decInjList = decInjList[1:]
@@ -258,10 +258,10 @@ def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobIn
         raRange = raInj
         decRange = decInj
     if args.skyGrid:
-        print 'Right ascension range (radians):'
-        print raRange
-        print 'Declination range (radians):'
-        print decRange
+        print('Right ascension range (radians):')
+        print(raRange)
+        print('Declination range (radians):')
+        print(decRange)
     if (args.singleBand or args.templateSearch or \
     args.templateSearchOpen or args.templateSearchClosed) or args.noiseTest:
         sftFileListPartList = sftFileListParts()
@@ -274,7 +274,7 @@ def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobIn
             if int(fBinMatchList[-1]) == int(sftFile.split('_')[-1]):
                  return fBinMatchList[-1]
             else:
-                print 'Error: SFT bins for this pulsar appear incorrect'
+                print('Error: SFT bins for this pulsar appear incorrect')
                 return None
         if Tcoh == 840:
             floorFlag = 0
@@ -290,7 +290,7 @@ def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobIn
         args.templateSearchOpen or args.templateSearchClosed:
             fInterval = 1 / (2 * float(Tcoh))
         else:
-            print 'Conditional statements may be mixed-up'
+            print('Conditional statements may be mixed-up')
         dfInterval = 1 / (4 * float (Tcoh))
         fBound = 5
         fSteps = int(fBound / fInterval)
@@ -441,7 +441,7 @@ def dagWriter(g, observatory, headJobName, jobNumber, rightAscension, declinatio
         elif str(observatory) == 'V1':
             startTime = str(1230337080)
         else:
-            print 'Observatory choice (argument 1) not understood: choose H1, L1, or V1'
+            print('Observatory choice (argument 1) not understood: choose H1, L1, or V1')
     elif str(Tcoh) == '840':
         if str(observatory) == 'H1':
             startTime = str(1230338760)
@@ -450,9 +450,9 @@ def dagWriter(g, observatory, headJobName, jobNumber, rightAscension, declinatio
         elif str(observatory) == 'V1':
             startTime = str(1230337080)
         else:
-            print 'Observatory choice (argument 1) not understood: choose H1, L1, or V1'
+            print('Observatory choice (argument 1) not understood: choose H1, L1, or V1')
     else:
-        print 'Coherence time incorrectly assigned: must be 360 or 840 s'
+        print('Coherence time incorrectly assigned: must be 360 or 840 s')
         
     if args.templateSearch or \
     args.templateSearchOpen or args.templateSearchClosed:
@@ -508,7 +508,7 @@ def dagWriter(g, observatory, headJobName, jobNumber, rightAscension, declinatio
 observatoryChoice = args.observatory
 
 if args.templateSearchClosed:
-    print 'Preparing MDCv6 closed search, reading band table...'
+    print('Preparing MDCv6 closed search, reading band table...')
     tableName = 'MDCv6_freqband.dat'
 else:
     tableName = 'MDCv6_open_table.dat'
@@ -529,12 +529,12 @@ dfSteps = args.dfSteps
 
 # A search over real data from S6 for Scorpius X-1
 if args.real:
-    print 'Generating Condor files for search in real data'
+    print('Generating Condor files for search in real data')
     fStartList = np.arange(args.fmin, args.fmax, args.jobspan)
     if fStartList[-1] + args.jobspan > args.fmax:
         fStartList = fStartList[0:-1]
-    print 'Starting frequency of bands to be searched:'
-    print fStartList
+    print('Starting frequency of bands to be searched:')
+    print(fStartList)
     
     for m, BandNo in enumerate(fStartList):
         jobsPerBand = int(args.jobspan/args.fspan) 
@@ -543,17 +543,17 @@ if args.real:
 
 # Below are all the generators for the MDC
 elif args.templateSearchClosed:
-    print 'Generating Condor files for MDCv6 closed search'
+    print('Generating Condor files for MDCv6 closed search')
     for m, pulsarNo in enumerate(pulsarNoList):
         shortNo = str(pulsarNo).strip('[').strip(']').strip("'").zfill(3)
-        print 'Looking at band, using templateSearchClosed, for pulsar: ' + shortNo
+        print('Looking at band, using templateSearchClosed, for pulsar: ' + shortNo)
         jobsPerPulsar = 50
         jobInc = m * jobsPerPulsar
         categorizer(TcohList[m][0], raInjList[m][0], decInjList[m][0], fInjList[m][0], observatoryChoice, "pulsar-" + shortNo, sftFileList[m], jobInc, PList[m], asiniList[m], fSteps, dfSteps, args)
 else:
     for m, pulsarNo in enumerate(pulsarNoList):
         shortNo = str(pulsarNo).strip('[').strip(']').strip("'").zfill(3)
-        print shortNo
+        print(shortNo)
         jobsPerPulsar = fSteps * dfSteps
         if args.skyGrid:
             jobsPerPulsar = jobsPerPulsar * args.skyGrid**2
@@ -561,18 +561,18 @@ else:
         # Just one pulsar
             singleBandCode = str(args.singleBand).zfill(3)
             if shortNo == singleBandCode:
-                print 'Looking at single band for pulsar: ' + shortNo
+                print('Looking at single band for pulsar: ' + shortNo)
                 jobInc = 0
                 categorizer(TcohList[m][0], raInjList[m][0], decInjList[m][0], fInjList[m][0], observatoryChoice, "pulsar-" + shortNo, sftFileList[m], jobInc, PList[m], asiniList[m], fSteps, dfSteps, args)
         elif args.onlyOne:
         # Again, just one pulsar
             singleCode = str(args.onlyOne).zfill(3)
             if shortNo == singleCode:
-                print 'Looking at this pulsar only: ' + shortNo
+                print('Looking at this pulsar only: ' + shortNo)
                 jobInc = 0
                 categorizer(TcohList[m][0], raInjList[m][0], decInjList[m][0], fInjList[m][0], observatoryChoice, "pulsar-" + shortNo, sftFileList[m], jobInc, PList[m], asiniList[m], fSteps, dfSteps, args)
         elif args.templateSearchOpen:
-            print 'Looking at band, using templateSearchOpen, for pulsar: ' + shortNo
+            print('Looking at band, using templateSearchOpen, for pulsar: ' + shortNo)
             jobsPerPulsar = 5
             jobInc = m * jobsPerPulsar
             categorizer(TcohList[m][0], raInjList[m][0], decInjList[m][0], fInjList[m][0], observatoryChoice, "pulsar-" + shortNo, sftFileList[m], jobInc, PList[m], asiniList[m], fSteps, dfSteps, args)
@@ -581,7 +581,7 @@ else:
             # Using the templateSearch option to scan a 5 Hz band
                 templateSearchCode = str(args.templateSearch).zfill(3)
                 if shortNo == templateSearchCode:
-                    print 'Looking at single band, using templateSearch, for pulsar: ' + shortNo
+                    print('Looking at single band, using templateSearch, for pulsar: ' + shortNo)
                     jobInc = 0
                     categorizer(TcohList[m][0], raInjList[m][0], decInjList[m][0], fInjList[m][0], observatoryChoice, "pulsar-" + shortNo, sftFileList[m], jobInc, PList[m], asiniList[m], fSteps, dfSteps, args)
         else:
