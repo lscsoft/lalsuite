@@ -103,7 +103,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_datarootdir}/lalsimulation/LIGO-T1600593*
 %{_datarootdir}/lalsimulation/LIGO-T1800042*
 %{_datarootdir}/lalsimulation/LIGO-T1800044*
-%{_datarootdir}/lalsimulation/LIGO-T1800044*
 %{_datarootdir}/lalsimulation/LIGO-T1800545*
 %{_libdir}/*.so.*
 %{_sysconfdir}/*
