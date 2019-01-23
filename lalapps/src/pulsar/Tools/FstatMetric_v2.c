@@ -308,8 +308,8 @@ initUserVars (UserVariables_t *uvar)
 {
 
   /* set a few defaults */
-  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   uvar->Freq = 100;
   uvar->f1dot = 0.0;

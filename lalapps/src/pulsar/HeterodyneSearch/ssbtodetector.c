@@ -227,8 +227,8 @@ int main( int argc, char *argv[] ){
   params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
 
   /* get the Earth and Sun ephemeris files - note yo may have to change this for different systems */
-  sprintf(earth, "%s/share/lalpulsar/earth00-19-DE405.dat.gz", getenv("LALPULSAR_PREFIX"));
-  sprintf(sun, "%s/share/lalpulsar/sun00-19-DE405.dat.gz", getenv("LALPULSAR_PREFIX"));
+  sprintf(earth, "%s/share/lalpulsar/earth00-40-DE405.dat.gz", getenv("LALPULSAR_PREFIX"));
+  sprintf(sun, "%s/share/lalpulsar/sun00-40-DE405.dat.gz", getenv("LALPULSAR_PREFIX"));
 
   /* double check that the files exist */
   if( fopen(sun, "r") == NULL || fopen(earth, "r") == NULL ){

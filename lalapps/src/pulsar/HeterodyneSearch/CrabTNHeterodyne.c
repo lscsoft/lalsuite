@@ -51,9 +51,9 @@
 2004) */
 #define NUM 1000
 
-#define EARTHFILE "earth00-19-DE200.dat.gz"
-#define SUNFILE "sun00-19-DE200.dat.gz"
-#define TIMEFILE "tdb_2000-2019.dat.gz"
+#define EARTHFILE "earth00-40-DE200.dat.gz"
+#define SUNFILE "sun00-40-DE200.dat.gz"
+#define TIMEFILE "tdb_2000-2040.dat.gz"
 
 int main(int argc, char *argv[]){
   static LALStatus status;

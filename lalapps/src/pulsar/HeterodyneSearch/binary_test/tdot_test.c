@@ -51,9 +51,9 @@ int main (int argv, char **argc){
   sunFile = XLALStringDuplicate(lalpath);
 
   earthFile = XLALStringAppend( earthFile,
-                                "/share/lalpulsar/earth00-19-DE405.dat.gz");
+                                "/share/lalpulsar/earth00-40-DE405.dat.gz");
   sunFile = XLALStringAppend( sunFile,
-                              "/share/lalpulsar/sun00-19-DE405.dat.gz");
+                              "/share/lalpulsar/sun00-40-DE405.dat.gz");
 
   edat = XLALInitBarycenter( earthFile, sunFile );
 
@@ -64,11 +64,11 @@ int main (int argv, char **argc){
   /* read in the time correction file */
   if( ttype == TYPE_TEMPO2 || ttype == TYPE_TCB ){
     tcFile = XLALStringAppend( tcFile,
-                               "/share/lalpulsar/te405_2000-2019.dat.gz" );
+                               "/share/lalpulsar/te405_2000-2040.dat.gz" );
   }
   else if ( ttype == TYPE_TDB ){
     tcFile = XLALStringAppend( tcFile,
-                               "/share/lalpulsar/tdb_2000-2019.dat.gz" );
+                               "/share/lalpulsar/tdb_2000-2040.dat.gz" );
   }
 
   tdat = XLALInitTimeCorrections( tcFile );

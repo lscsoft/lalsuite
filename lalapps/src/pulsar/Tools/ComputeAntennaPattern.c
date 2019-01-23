@@ -278,8 +278,8 @@ XLALInitUserVars ( UserVariables_t *uvar )
   /* set a few defaults */
   XLAL_CHECK ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_ENOMEM, "Call to XLALCreateStringVector() failed." );
 
-  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   uvar->Alpha     = 0.0;
   uvar->Delta     = 0.0;

@@ -679,8 +679,8 @@ InitUserVars ( UserInput_t *uvar,      /**< [out] UserInput structure to be fill
 
   /* some defaults */
   uvar->srate=16384;
-  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   /* Register User Variables*/
   /*    XLALRegisterUvarMember(out_chan,   STRING, 'o', OPTIONAL, "Output channel i.e. (IFO)_LDAS_C02_L2_CWINJ");*/
