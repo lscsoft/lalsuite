@@ -102,6 +102,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_datarootdir}/lalsimulation/LIGO-T0900288*
 %{_datarootdir}/lalsimulation/LIGO-T1600593*
 %{_datarootdir}/lalsimulation/LIGO-T1800042*
+%{_datarootdir}/lalsimulation/LIGO-T1800044*
+%{_datarootdir}/lalsimulation/LIGO-T1800545*
 %{_libdir}/*.so.*
 %{_sysconfdir}/*
 
@@ -125,6 +127,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Wed Jan 23 2019 Adam Mercer <adam.mercer@ligo.org> 1.8.1-1
+- added noise PSD files from LIGO-T1800545
+
 * Thu Sep 13 2018 Adam Mercer <adam.mercer@ligo.org> 1.8.0-1
 - Pre O3 release
 

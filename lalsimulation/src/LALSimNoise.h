@@ -197,6 +197,20 @@ int XLALSimNoisePSDaLIGOAPlusDesignSensitivityT1800042(REAL8FrequencySeries *psd
 
 int XLALSimNoisePSDaLIGOaLIGODesignSensitivityT1800044(REAL8FrequencySeries *psd, double flow);
 
+/*
+ * NOISE PSDs FROM LIGO-P1800545
+ */
+
+int XLALSimNoisePSDaLIGOaLIGOO3LowT1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDaLIGOaLIGO140MpcT1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDaLIGOaLIGO175MpcT1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDaLIGOAdVO4IntermediateT1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDaLIGOAdVO4T1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDaLIGOAdVO3LowT1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDaLIGOKAGRA128MpcT1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDaLIGOKAGRA25MpcT1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDaLIGOKAGRA80MpcT1800545(REAL8FrequencySeries *psd, double flow);
+
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)

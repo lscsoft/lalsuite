@@ -1,3 +1,9 @@
+lalsimulation (1.8.1-1) unstable; urgency=low
+
+  * added noise PSD files from LIGO-T1800545
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 23 Jan 2019 10:28:59 -0700
+
 lalsimulation (1.8.0-1) unstable; urgency=low
 
   * pre O3 release
