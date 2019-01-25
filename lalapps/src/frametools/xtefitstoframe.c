@@ -559,7 +559,10 @@ int XLALReadFITSFile(FITSData **fitsfiledata,        /**< [out] FITS file null d
   LogPrintf(LOG_DEBUG,"%s : opened the input FITS file\n",fn);
 
   /* add full file path to the header information */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
   strncpy(header->file,filepath,STRINGLENGTH);
+#pragma GCC diagnostic pop
 
   /* read the header information from the first extension */
   if (XLALReadFITSHeader(header,fptr)) {
@@ -788,11 +791,9 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
   /* first we extract the filename from the full file path */
   {
     char *c;
-    int len = 0;
     if ((c = strrchr(header->file,'/'))) c++;
     else c = header->file;
-    len = strlen(c) + 1;
-    strncpy(header->filename,c,len);
+    strcpy(header->filename,c);
   }
   LogPrintf(LOG_DEBUG,"%s : extracted filename as %s\n",fn,header->filename);
 
@@ -1951,7 +1952,7 @@ int XLALEventDataToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,   /**< 
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for FITS header dump copy.\n",fn);
     XLAL_ERROR(XLAL_ENOMEM);
   }
-  strncpy((*ts)->headerdump,fits->header->headerdump,strlen(fits->header->headerdump)*sizeof(CHAR));
+  strcpy((*ts)->headerdump,fits->header->headerdump);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
   return XLAL_SUCCESS;
@@ -2138,7 +2139,7 @@ int XLALArrayDataToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,   /**< 
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for FITS header dump copy.\n",fn);
     XLAL_ERROR(XLAL_ENOMEM);
   }
-  strncpy((*ts)->headerdump,fits->header->headerdump,strlen(fits->header->headerdump)*sizeof(CHAR));
+  strcpy((*ts)->headerdump,fits->header->headerdump);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
   return XLAL_SUCCESS;

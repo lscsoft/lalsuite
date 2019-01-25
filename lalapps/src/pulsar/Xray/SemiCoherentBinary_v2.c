@@ -206,10 +206,18 @@ int main( int argc, char *argv[] )
     if ( mkdir( newtemp, 0755 ) != 0 && errno != EEXIST ) {
       LogPrintf( LOG_DEBUG, "%s : Unable to make temporary directory %s.  Might be a problem.\n", __func__, newtemp );
     }
+/* FIXME: do not treat these format overflow warnings as errors, but do fix them later. */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wformat-overflow"
     sprintf( newnewtemp, "%s/%.3f-%.3f", newtemp, uvar.freq, uvar.freq + uvar.freqband );
+#pragma GCC diagnostic pop
 
   } else {
+/* FIXME: do not treat these format overflow warnings as errors, but do fix them later. */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wformat-overflow"
     sprintf( newnewtemp, "%s/%.3f-%.3f", uvar.outputdir, uvar.freq, uvar.freq + uvar.freqband );
+#pragma GCC diagnostic pop
   }
 
   /* make frequency+band directory inside output/temporary directory */
