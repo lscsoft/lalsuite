@@ -318,10 +318,14 @@ int main(int argc, char **argv){
 
   CHAR OUTFILE[256];
 /* FIXME: do not treat these format overflow warnings as errors, but do fix them later. */
+#if __GNUC__ >= 8
 #pragma GCC diagnostic push
 #pragma GCC diagnostic warning "-Wformat-overflow"
+#endif
   sprintf(OUTFILE, "%s/%s", inputs.outDir, out_file);
+#if __GNUC__ >= 8
 #pragma GCC diagnostic pop
+#endif
 
   if (  XLALFrameWrite(outFrame, OUTFILE)){
     LogPrintf(LOG_CRITICAL, "%s : XLALFrameWrite() failed with error = %d.\n", fn, xlalErrno);

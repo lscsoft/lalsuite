@@ -548,10 +548,14 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
     strcpy ( dateStr, asctime(&utc) );
     dateStr[ strlen(dateStr) - 1 ] = 0;
 /* FIXME: do not treat these format overflow warnings as errors, but do fix them later. */
+#if __GNUC__ >= 8
 #pragma GCC diagnostic push
 #pragma GCC diagnostic warning "-Wformat-overflow"
+#endif
     sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", XLALGPSGetREAL8(&startTime), dateStr);
+#if __GNUC__ >= 8
 #pragma GCC diagnostic pop
+#endif
     strcat ( summary, line );
     sprintf (line, "%%%% Total amount of data: Tdata = %12.3f s  (%.2f days)\n", Tdata, Tdata/86400 );
     strcat ( summary, line );
