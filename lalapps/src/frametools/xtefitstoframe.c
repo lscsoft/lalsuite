@@ -560,6 +560,7 @@ int XLALReadFITSFile(FITSData **fitsfiledata,        /**< [out] FITS file null d
 
   /* add full file path to the header information */
 #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragma"
 #pragma GCC diagnostic ignored "-Wstringop-truncation"
   strncpy(header->file,filepath,STRINGLENGTH);
 #pragma GCC diagnostic pop
