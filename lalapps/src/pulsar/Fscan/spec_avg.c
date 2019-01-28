@@ -159,15 +159,19 @@ int main(int argc, char **argv)
     strcpy(outbase, outputBname);
     else
 /* FIXME: do not treat these format overflow warnings as errors, but do fix them later. */
+#if __GNUC__ >= 8
 #pragma GCC diagnostic push
 #pragma GCC diagnostic warning "-Wformat-overflow"
+#endif
     sprintf(outbase, "spec_%.2f_%.2f_%s_%d_%d", f_min,f_max,constraints.detector,startTime.gpsSeconds,endTime.gpsSeconds);/*cg; this is the default name for producing the output files, the different suffixes are just added to this*/
     sprintf(outfile,  "%s", outbase);/*cg; name of first file to be output*/
     sprintf(outfile2, "%s_timestamps", outbase);/*cg: name of second file to be output*/
     /* sprintf(outfile3, "%s.txt", outbase); */ /*cg; name of third file to be output*/
     sprintf(outfile3, "%s_timeaverage", outbase); /* Use the old outfile3 name from this code; python code will output the .txt version of this file. */
     sprintf(outfile4, "%s_date", outbase);/*cg;file for outputting the date, which is used in matlab plotting.*/
+#if __GNUC__ >= 8
 #pragma GCC diagnostic pop
+#endif
 
     fp = fopen(outfile, "w");/*cg;  open all three files for writing, if they don't exist create them, if they do exist overwrite them*/
     fp2 = fopen(outfile2, "w");

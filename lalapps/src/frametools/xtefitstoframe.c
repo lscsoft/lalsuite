@@ -559,11 +559,14 @@ int XLALReadFITSFile(FITSData **fitsfiledata,        /**< [out] FITS file null d
   LogPrintf(LOG_DEBUG,"%s : opened the input FITS file\n",fn);
 
   /* add full file path to the header information */
+#if __GNUC__ >= 8
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpragma"
 #pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
   strncpy(header->file,filepath,STRINGLENGTH);
+#if __GNUC__ >= 8
 #pragma GCC diagnostic pop
+#endif
 
   /* read the header information from the first extension */
   if (XLALReadFITSHeader(header,fptr)) {
