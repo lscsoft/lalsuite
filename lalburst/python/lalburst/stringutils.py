@@ -33,6 +33,7 @@ except ImportError:
 	NegInf = float("-inf")
 import itertools
 import math
+import numpy
 import scipy.stats
 import sys
 
@@ -134,7 +135,7 @@ class InstrumentBins(rate.HashableBins):
 
 	names = ("E0", "E1", "E2", "E3", "G1", "H1", "H2", "H1H2+", "H1H2-", "L1", "V1")
 
-	def __init__(self):
+	def __init__(self, names):
 		super(InstrumentBins, self).__init__(frozenset(combo) for n in range(len(names) + 1) for combo in itertools.combinations(names, n))
 
 	# FIXME:  hack to allow instrument binnings to be included as a
@@ -179,7 +180,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 		# but we want a binning that's linear at the origin so
 		# instead of inventing a new one we just use atan bins that
 		# are symmetric about 0
-		self.densities["instrumentgroup,rss_timing_residual"] = rate.BinnedLnPDF(rate.NDBins((InstrumentBins(names = instruments), rate.ATanBins(-0.02, +0.02, 1001))))
+		self.densities["instrumentgroup,rss_timing_residual"] = rate.BinnedLnPDF(rate.NDBins((InstrumentBins(instruments), rate.ATanBins(-0.02, +0.02, 1001))))
 
 	def __call__(self, **params):
 		try:
