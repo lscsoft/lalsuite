@@ -16,6 +16,7 @@ pymodule_PYTHON = \
 	simulateCW.py \
 	NstarTools.py \
 	PulsarParametersWrapper.py \
+	simulateHeterodynedCW.py \
 	$(END_OF_LIST)
 
 endif
