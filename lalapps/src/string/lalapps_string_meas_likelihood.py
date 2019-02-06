@@ -37,7 +37,6 @@ import sys
 from lal.utils import CacheEntry
 
 
-from glue import segments
 from glue.ligolw import dbtables
 from glue.ligolw import ligolw
 from glue.ligolw import utils as ligolw_utils
@@ -46,6 +45,7 @@ from glue.ligolw.utils import search_summary as ligolw_search_summary
 from lalburst import SnglBurstUtils
 from lalburst import git_version
 from lalburst import stringutils
+from ligo import segments
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

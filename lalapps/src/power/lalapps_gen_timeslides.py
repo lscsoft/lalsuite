@@ -37,8 +37,8 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import time_slide as ligolw_time_slide
-from glue import offsetvector
 from lalapps import git_version
+from lalburst import offsetvector
 from lalburst import timeslides
 
 

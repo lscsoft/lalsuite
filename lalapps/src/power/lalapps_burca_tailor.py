@@ -34,13 +34,13 @@ import sys
 
 from lal.utils import CacheEntry
 
-from glue import segments
 from glue.ligolw import dbtables
 from glue.ligolw import utils
 from lalburst import burca_tailor
 from lalburst import SnglBurstUtils
 from lalburst.SimBurstUtils import MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD
 from lalburst import git_version
+from ligo import segments
 
 
 # characters allowed to appear in the description string

@@ -37,7 +37,6 @@ import sqlite3
 import sys
 
 
-from glue import segments
 from glue.ligolw import dbtables
 from glue.ligolw import utils as ligolw_utils
 import lal
@@ -45,6 +44,7 @@ from lal import rate
 from lalburst import git_version
 from lalburst import SnglBurstUtils
 from lalburst import SimBurstUtils
+from ligo import segments
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

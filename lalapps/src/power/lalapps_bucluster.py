@@ -83,23 +83,6 @@ def parse_command_line():
 #
 # =============================================================================
 #
-#                                    Input
-#
-# =============================================================================
-#
-
-
-#
-# Use interning row builder to save memory.
-#
-
-
-lsctables.table.TableStream.RowBuilder = lsctables.table.InterningRowBuilder
-
-
-#
-# =============================================================================
-#
 #                                     Main
 #
 # =============================================================================
@@ -135,7 +118,6 @@ for filename in filenames:
 	#
 
 	xmldoc = utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
-	lsctables.table.InterningRowBuilder.strings.clear()
 
 	# FIXME:  don't do this:  fix lalapps_power's output
 	if options.cluster_algorithm in ("excesspower",):

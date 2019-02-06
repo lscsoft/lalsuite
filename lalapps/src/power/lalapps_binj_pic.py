@@ -34,23 +34,21 @@ import sys
 from PIL import Image
 
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
 import lalburst
 import lalmetaio
 import lalsimulation
 from lalburst import git_version
 
 
+@lsctables.use_in
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 	pass
-lsctables.use_in(LIGOLWContentHandler)
 
 
-# FIXME:  the lalmetaio.SimBurst type needs to be subclassed to get the ID
-# columns to behave like ilwd:char strings.
 lsctables.SimBurst = lsctables.SimBurstTable.RowType = lalmetaio.SimBurst
 
 
@@ -143,13 +141,13 @@ for filename in filenames:
 		print("converting to %dx%d grayscale ... " % (width, height), file=sys.stderr)
 	img = img.resize((width, height)).convert("L")
 
-	for i in xrange(width):
-		for j in xrange(height):
+	for i in range(width):
+		for j in range(height):
 			# new row
 			row = lsctables.SimBurst()
-			row.process_id = int(process.process_id)
-			row.simulation_id = int(sim_burst_tbl.get_next_id())
-			row.time_slide_id = int(time_slide_id)
+			row.process_id = process.process_id
+			row.simulation_id = sim_burst_tbl.get_next_id()
+			row.time_slide_id = time_slide_id
 
 			# source orientation
 			row.ra = row.dec = row.psi = 0

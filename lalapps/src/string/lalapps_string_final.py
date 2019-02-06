@@ -53,8 +53,6 @@ import sys
 import traceback
 
 
-from glue import segments
-from glue import segmentsUtils
 from glue.ligolw import dbtables
 from glue.ligolw.utils import process as ligolwprocess
 import lal
@@ -65,6 +63,8 @@ from lalburst import packing
 from lalburst import SimBurstUtils
 from lalburst import SnglBurstUtils
 from lalburst import stringutils
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 
 
 SnglBurstUtils.matplotlib.rcParams.update({
