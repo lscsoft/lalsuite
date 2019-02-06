@@ -32,7 +32,6 @@ from optparse import OptionParser
 import sys
 
 
-from glue import segments
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
@@ -40,6 +39,7 @@ from glue.ligolw.utils import segments as ligolw_segments
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
 from lalburst import git_version
+from ligo import segments
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

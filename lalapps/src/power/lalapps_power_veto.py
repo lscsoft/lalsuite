@@ -33,12 +33,12 @@ import sqlite3
 import sys
 
 
-from glue import segments
 from glue.ligolw import dbtables
 from glue.ligolw import utils
 from glue.ligolw.utils import segments as ligolw_segments
 from lalburst import git_version
 from lalburst import SnglBurstUtils
+from ligo import segments
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

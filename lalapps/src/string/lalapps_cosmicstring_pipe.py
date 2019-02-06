@@ -29,17 +29,18 @@ import tempfile
 
 
 from glue import pipeline
-from glue import segments
-from glue import segmentsUtils
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import segments as ligolw_segments
 from glue import offsetvector
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
+from lalburst import offsetvector
 from lalburst import timeslides
 from lalapps import cosmicstring
 from lalapps import power
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
 __date__ = '$Date$'

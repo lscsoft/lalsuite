@@ -37,9 +37,9 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import segments as ligolw_segments
-from glue import segmentsUtils
 import lal
 from lalinspiral import thinca
+from ligo.segments import utils as segmentsUtils
 
 
 lsctables.use_in(ligolw.LIGOLWContentHandler)
@@ -208,7 +208,7 @@ for n, filename in enumerate(filenames, start = 1):
 	#
 	# Extract veto segments if present.
 	#
-	# FIXME:  using the tools in the glue.ligolw.utils.segments module
+	# FIXME:  using the tools in the ligo.lw.utils.segments module
 	# it's not hard to modify the veto segments in the .xml to be just
 	# those that intersect the search summary segments.  That way, if
 	# multiple documents are inserted into the same database, or merged

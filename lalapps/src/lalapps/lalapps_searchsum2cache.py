@@ -39,11 +39,11 @@ from optparse import OptionParser
 import os
 import sys
 
-from glue.lal import CacheEntry
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw import utils
+from lal.utils import CacheEntry
 #from lalapps import git_version
 
 

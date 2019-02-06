@@ -34,7 +34,6 @@ import numpy
 import sys
 
 
-from glue import segments
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
@@ -43,6 +42,7 @@ from lal import rate
 from lal.utils import CacheEntry
 from lalburst import git_version
 from lalburst import SnglBurstUtils
+from ligo import segments
 
 
 lsctables.use_in(ligolw.LIGOLWContentHandler)

@@ -46,11 +46,7 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
 import lal
 from lal import rate
-try:
-	from ligo.segments import utils as segmentsUtils
-except ImportError:
-	# fallback for obsolete ligo-segments package
-	from glue import segmentsUtils
+from ligo.segments import utils as segmentsUtils
 from .offsetvector import offsetvector
 from . import snglcoinc
 
