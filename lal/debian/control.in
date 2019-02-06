@@ -89,6 +89,7 @@ Depends: ${misc:Depends},
   python-six,
   python-dateutil,
   lal (= ${binary:Version})
+Recommends: python-ligo-lw
 Description: Python bindings for LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains Python bindings for the LAL library.
@@ -116,6 +117,7 @@ Depends: ${misc:Depends},
   python3-six,
   python3-dateutil,
   lal (= ${binary:Version})
+Recommends: python3-ligo-lw
 Description: Python 3 bindings for LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains Python 3 bindings for the LAL library.

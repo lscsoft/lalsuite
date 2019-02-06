@@ -64,10 +64,10 @@ from scipy.signal import signaltools
 
 from ligo import segments
 
-from glue.ligolw import ligolw
-from glue.ligolw import array as ligolw_array
-from glue.ligolw import param as ligolw_param
-from glue.ligolw import types as ligolw_types
+from ligo.lw import ligolw
+from ligo.lw import array as ligolw_array
+from ligo.lw import param as ligolw_param
+from ligo.lw import types as ligolw_types
 import lal
 from . import iterutils
 from . import git_version
@@ -1081,7 +1081,7 @@ class NDBins(tuple):
 	>>> y = NDBins((LogarithmicBins(1, 25, 3), LogarithmicBins(1, 25, 3)))
 	>>> x == y
 	False
-	>>> from glue.ligolw.ligolw import LIGO_LW
+	>>> from ligo.lw.ligolw import LIGO_LW
 	>>> import sys
 	>>> elem = x.to_xml(LIGO_LW())
 	>>> elem.write(sys.stdout)	# doctest: +NORMALIZE_WHITESPACE

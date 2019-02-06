@@ -29,9 +29,9 @@ the DMT to store time- and frequency-series data in XML files,
 """
 
 
-from glue.ligolw import ligolw
-from glue.ligolw import array as ligolw_array
-from glue.ligolw import param as ligolw_param
+from ligo.lw import ligolw
+from ligo.lw import array as ligolw_array
+from ligo.lw import param as ligolw_param
 import lal
 import six
 import numpy as np
