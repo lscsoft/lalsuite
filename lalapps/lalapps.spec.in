@@ -115,6 +115,8 @@ Algorithm Library.
 %setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
 
 %build
+# force linking agsinst system libmpi
+export OMPI_LIBS="-lmpi -Wl,--disable-new-dtags"
 %configure --disable-gcc-flags --enable-cfitsio --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc MPICXX=/usr/lib64/openmpi/bin/mpicxx MPIFC=/usr/lib64/openmpi/bin/mpifc
 %{__make} %{?_smp_mflags} V=1
 
