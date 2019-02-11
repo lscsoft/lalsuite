@@ -514,21 +514,21 @@ nightly:macos:highsierra:
     - schedules
     - web
 
-nightly:macos:elcapitan:
-  tags:
-    - macos_elcapitan
-  stage: nightly
-  script:
-    - ./00boot
-    # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
-    # is available
-    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
-    - make -j4
-    - make -j4 check
-  dependencies: []
-  only:
-    - schedules
-    - web
+#nightly:macos:elcapitan:
+#  tags:
+#    - macos_elcapitan
+#  stage: nightly
+#  script:
+#    - ./00boot
+#    # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
+#    # is available
+#    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
+#    - make -j4
+#    - make -j4 check
+#  dependencies: []
+#  only:
+#    - schedules
+#    - web
 
 # ubuntu
 
@@ -663,14 +663,14 @@ nightly:wheel:cp36-cp36m-manylinux1:
   <<: *nightly-wheel-manylinux1
 nightly:wheel:cp37-cp37m-manylinux1:
   <<: *nightly-wheel-manylinux1
-nightly:wheel:cp27-cp27m-macosx:
-  <<: *nightly-wheel-macos
-nightly:wheel:cp35-cp35m-macosx:
-  <<: *nightly-wheel-macos
-nightly:wheel:cp36-cp36m-macosx:
-  <<: *nightly-wheel-macos
-nightly:wheel:cp37-cp37m-macosx:
-  <<: *nightly-wheel-macos
+#nightly:wheel:cp27-cp27m-macosx:
+#  <<: *nightly-wheel-macos
+#nightly:wheel:cp35-cp35m-macosx:
+#  <<: *nightly-wheel-macos
+#nightly:wheel:cp36-cp36m-macosx:
+#  <<: *nightly-wheel-macos
+#nightly:wheel:cp37-cp37m-macosx:
+#  <<: *nightly-wheel-macos
 
 deploy:wheel:
   stage: deploy
@@ -690,10 +690,10 @@ deploy:wheel:
     - nightly:wheel:cp35-cp35m-manylinux1
     - nightly:wheel:cp36-cp36m-manylinux1
     - nightly:wheel:cp37-cp37m-manylinux1
-    - nightly:wheel:cp27-cp27m-macosx
-    - nightly:wheel:cp35-cp35m-macosx
-    - nightly:wheel:cp36-cp36m-macosx
-    - nightly:wheel:cp37-cp37m-macosx
+#    - nightly:wheel:cp27-cp27m-macosx
+#    - nightly:wheel:cp35-cp35m-macosx
+#    - nightly:wheel:cp36-cp36m-macosx
+#    - nightly:wheel:cp37-cp37m-macosx
   only:
     - /^lalsuite-v.*$/
     - schedules
