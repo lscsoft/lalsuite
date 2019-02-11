@@ -124,7 +124,7 @@ def as_array(table):
 logParams=['logl','loglh1','loglh2','logll1','loglv1','deltalogl','deltaloglh1','deltalogll1','deltaloglv1','logw','logprior','logpost','nulllogl','chain_log_evidence','chain_delta_log_evidence','chain_log_noise_evidence','chain_log_bayes_factor']
 #Parameters known to cbcBPP
 relativePhaseParams=[ a+b+'_relative_phase' for a,b in combinations(['h1','l1','v1'],2)]
-snrParams=['snr','optimal_snr','matched_filter_snr','coherence'] + ['%s_optimal_snr'%(i) for i in ['h1','l1','v1']] + ['%s_cplx_snr_amp'%(i) for i in ['h1','l1','v1']] + ['%s_cplx_snr_arg'%(i) for i in ['h1', 'l1', 'v1']] + relativePhaseParams
+snrParams=['snr','optimal_snr','matched_filter_snr'] + ['%s_optimal_snr'%(i) for i in ['h1','l1','v1']] + ['%s_cplx_snr_amp'%(i) for i in ['h1','l1','v1']] + ['%s_cplx_snr_arg'%(i) for i in ['h1', 'l1', 'v1']] + relativePhaseParams
 calAmpParams=['calamp_%s'%(ifo) for ifo in ['h1','l1','v1']]
 calPhaseParams=['calpha_%s'%(ifo) for ifo in ['h1','l1','v1']]
 calParams = calAmpParams + calPhaseParams
@@ -148,7 +148,7 @@ energyParams=['e_rad', 'l_peak']
 strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+eosParams+energyParams
 
 #Extrinsic
-distParams=['distance','distMPC','dist','distance_maxl']
+distParams=['distance','distMPC','dist']
 incParams=['iota','inclination','cosiota']
 polParams=['psi','polarisation','polarization']
 skyParams=['ra','rightascension','declination','dec']
@@ -7605,10 +7605,7 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
                         last_color = lines[-1].get_color()
                         plt.axvline(acl/Nskip, linestyle='-.', color=last_color)
                         plt.title('ACL = %i   N = %i'%(acl,Neff))
-                    acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.png')))
-                    if(savepdfs): acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.pdf')))
-                    plt.close(acffig)
-                except:
+                except FloatingPointError:
                     # Ignore
                     acfail=1
                     pass
@@ -7629,13 +7626,14 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
                         plt.title('Autocorrelation Function')
                     else:
                         plt.title('ACL = %i  N = %i'%(max(acls),Nsamps))
-                    acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.png')))
-                    if(savepdfs): acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.pdf')))
-                    plt.close(acffig)
-                except:
+                except FloatingPointError:
                     # Ignore
                     acfail=1
                     pass
+
+            acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.png')))
+            if(savepdfs): acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.pdf')))
+            plt.close(acffig)
 
         if not noacf:
             if not acfail:

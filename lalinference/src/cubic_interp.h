@@ -36,12 +36,12 @@
 /* exclude from SWIG interface and C++ code */
 #if !defined(SWIG) && !defined(__cplusplus)
 
-typedef struct tagcubic_interp {
+typedef struct {
     double f, t0, length;
     double a[][4];
 } cubic_interp;
 
-typedef struct tagbicubic_interp {
+typedef struct {
     double fs, ft, s0, t0, slength, tlength;
     double a[][4][4];
 } bicubic_interp;

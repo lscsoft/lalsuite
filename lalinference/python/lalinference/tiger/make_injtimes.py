@@ -202,7 +202,7 @@ class segment:
       print("Wrong arguments to create segment!")
       return -1
 #    if self._len != (self._end - self._start):
-#      print("Error in segment data: inconsistent length! " + str(self._len) + " " + str(self._end - self._start))
+#      print "Error in segment data: inconsistent length! " + str(self._len) + " " + str(self._end - self._start)
 
   def intersectWithList(self, id0, other, sortedlist=True, startid=None):
     '''Intersect segment with list of (non-overlapping) segments'''
@@ -289,7 +289,7 @@ class segmentData:
     notlist = []
     c = 0
     times = array(self._seglist)[:,[1,2]]
-    # print(shape(times))
+    # print shape(times)
     times = times[argsort(times[:,1])]
     t1 = start
     for i in (arange(len(times))):

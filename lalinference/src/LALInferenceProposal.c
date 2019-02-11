@@ -304,10 +304,6 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
 
     ProcessParamsTable *command_line = runState->commandLine;
 
-    if(LALInferenceGetProcParamVal(command_line, "--margdist")
-        ||LALInferenceGetProcParamVal(command_line,"--margdist-comoving"))
-            distance=0;
-
     INT4 verbose = 0;
     if (LALInferenceGetProcParamVal(command_line, "--verbose"))
         verbose = 1;

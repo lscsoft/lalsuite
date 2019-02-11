@@ -1288,27 +1288,8 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     Dinitial=atof(ppt->value);
     distanceVary = LALINFERENCE_PARAM_FIXED;
   }
-  
-  LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", log(Dinitial), log(Dmin), log(Dmax), distanceVary) ;
-  if(LALInferenceGetProcParamVal(commandLine,"--margdist")||LALInferenceGetProcParamVal(commandLine,"--margdist-comoving"))
-  {
-      if(! (LALInferenceGetProcParamVal(commandLine,"--margphi") || LALInferenceGetProcParamVal(commandLine, "--margtimephi")))
-      {
-          fprintf(stderr,"ERROR: --margdist requires either --margphi or --margtimephi to be enabled");
-          exit(1);
-      }
-      /* If using margdist, remove the distance parameters and add the ranges into the model params as a way of passing them in */
-      REAL8 a = log(Dmin), b=log(Dmax);
-      LALInferenceAddMinMaxPrior(model->params, "logdistance", &a, &b, LALINFERENCE_REAL8_t);
-      UINT4 margdist=1;
-      int cosmology=0;
-      LALInferenceAddVariable(model->params, "MARGDIST", &margdist, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-	  LALInferenceRemoveVariable(model->params, "logdistance");
-      if(LALInferenceGetProcParamVal(commandLine,"--margdist-comoving"))
-          cosmology=1;
-      LALInferenceAddINT4Variable(model->params,"MARGDIST_COSMOLOGY",cosmology, LALINFERENCE_PARAM_FIXED);
-  }
-  
+
+  LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", log(Dinitial), log(Dmin), log(Dmax), distanceVary);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "costheta_jn", zero, costhetaJNmin, costhetaJNmax,LALINFERENCE_PARAM_LINEAR);
 
