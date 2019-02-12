@@ -73,17 +73,6 @@ typedef enum tagLALSimInspiralSpinOrder {
  * In addition, LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL = -1
  * is a flag to include all available tidal effects
  */
-
-/**
- * The default tidal order -1 now includes up to 6.5PN
- * and NOT up to 7.5PN although the additional terms
- * 7PN and 7.5PN are coded up.
- * Please specify explicitly to use 7PN and/or 7.5PN.
- * This choice is being made because the 7PN term includes 
- * only the energy and not the flux, so although
- * the 7.5PN term is complete, it is only up to
- * 6.5PN, that ALL terms are complete.
- */
 typedef enum tagLALSimInspiralTidalOrder {
     LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN =  0,
     LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN = 10,

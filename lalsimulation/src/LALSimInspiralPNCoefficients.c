@@ -957,6 +957,7 @@ XLALSimInspiralPNPhasing_F2(
     REAL8 lambda2=XLALSimInspiralWaveformParamsLookupTidalLambda2(p);
     switch( XLALSimInspiralWaveformParamsLookupPNTidalOrder(p) )
     {
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_75PN:
             pfa->v[15] = (lambda1*XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(m1M) + lambda2*XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(m2M));
 #if __GNUC__ >= 7
@@ -967,7 +968,6 @@ XLALSimInspiralPNPhasing_F2(
 #if __GNUC__ >= 7
             __attribute__ ((fallthrough));
 #endif
-        case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL: /* the default tidal PN-order is now 6.5, please explicitly specify the tidal order to use up to 7.5PN */
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_65PN:
             pfa->v[13] = (lambda1*XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(m1M) + lambda2*XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(m2M));
 #if __GNUC__ >= 7
