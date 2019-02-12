@@ -63,7 +63,8 @@ extern "C" {
 
 typedef enum tagIMRPhenomP_version_type {
  IMRPhenomPv1_V, /**< version 1: based on IMRPhenomC */
- IMRPhenomPv2_V  /**< version 2: based on IMRPhenomD */
+ IMRPhenomPv2_V,  /**< version 2: based on IMRPhenomD */
+ IMRPhenomPv2NRTidal_V /**< version Pv2_NRTidal: based on IMRPhenomPv2; NRTides (https://arxiv.org/pdf/1706.02969.pdf) added before precession */
 } IMRPhenomP_version_type;
 
 /** @} */

@@ -804,6 +804,51 @@ XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(
   return (-15895./28. + 4595./28.*mByM + 5715./14.*mByM*mByM - 325./7.*mByM*mByM*mByM)*mByM*mByM*mByM*mByM;
 }
 
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(
+      REAL8 mByM /**< ratio of object mass to total mass */
+    ) 
+/*  literature: Agathos et al (arxiv 1503.0545) eq (5)
+ * the coefficient mByM4 conversion & transformation (6.5PN, 7PN, 7.5PN):
+ * mByM=mA/M: mA= mass star A, M is total mass (mA+mB)
+ * Lambda (unitless) = lambda(m) / mA^5 
+ * to call the function: 
+ * Lambda * XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff 
+ * lambda(m)*mByM^4/mA^5= lambda(m)*(mA/M)^4/(mA)^5= lambda/(M^4*mA) 
+ * =lambda/(mByM*M^5) eq (5) 
+ */
+{
+  return mByM*mByM*mByM*mByM * 24.L*(12.L - 11.L*mByM)*LAL_PI;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(
+      REAL8 mByM /**< ratio of object mass to total mass */
+    )
+/* literature: Agathos et al (arxiv 1503.0545) eq (5)
+ * caveat: these are incomplete terms
+ * conversion see XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff above
+ */
+{
+  REAL8 mByM3 = mByM*mByM*mByM;
+  REAL8 mByM4 = mByM3 * mByM;
+  return - mByM4 * 24.L*(39927845.L/508032.L - 480043345.L/9144576.L*mByM + 9860575.L/127008.L*mByM*mByM - 421821905.L/2286144.L*mByM3 + 4359700.L/35721.L*mByM4 - 10578445.L/285768.L*mByM4*mByM);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(
+      REAL8 mByM /**< ratio of object mass to total mass */
+    )
+/* literature: Agathos et al (arxiv 1503.0545) eq (5)
+ * conversion see XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff above 
+ */
+{
+  REAL8 mByM2 = mByM*mByM;
+  REAL8 mByM3 = mByM2*mByM;
+  REAL8 mByM4 = mByM3*mByM;
+  return mByM4 * 1.L/28.L*LAL_PI*(27719.L - 22127.L*mByM + 7022.L*mByM2 - 10232.L*mByM3) ;
+}
+
 /* The phasing function for TaylorF2 frequency-domain waveform.
  * This function is tested in ../test/PNCoefficients.c for consistency
  * with the energy and flux in this file.
@@ -913,6 +958,21 @@ XLALSimInspiralPNPhasing_F2(
     switch( XLALSimInspiralWaveformParamsLookupPNTidalOrder(p) )
     {
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_75PN:
+            pfa->v[15] = (lambda1*XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(m1M) + lambda2*XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(m2M));
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_7PN:
+            pfa->v[14] = (lambda1*XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(m1M) + lambda2*XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(m2M));
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_65PN:
+            pfa->v[13] = (lambda1*XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(m1M) + lambda2*XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(m2M));
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
             pfa->v[12] = (lambda1*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m1M) + lambda2*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m2M) );
 #if __GNUC__ >= 7

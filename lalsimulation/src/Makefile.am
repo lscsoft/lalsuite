@@ -161,7 +161,8 @@ pkginclude_HEADERS = \
 	LALSimulationConfig.h \
 	LALSimulationVCSInfo.h \
 	LALSimulationVCSInfoHeader.h \
-	LALSimUniversalRelations.h
+	LALSimUniversalRelations.h \
+        LALSimInspiralEOS.h
 
 noinst_HEADERS = \
 	LALSimIMRSpinEOBHcapExactDerivativePrec_v3opt.c \
@@ -308,7 +309,8 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRNRSur4d2s.c \
 	LALSimIMRNRSur7dq2.c \
 	LALSimNRSurrogateUtilities.c \
-	LALSimUniversalRelations.c
+	LALSimUniversalRelations.c \
+        LALSimInspiralEOS.c
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \

@@ -24,6 +24,7 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
 #include <lal/LALConstants.h>
+#include <lal/LALSimInspiralEOS.h>
 
 #include "check_waveform_macros.h"
 #include "LALSimInspiralPNCoefficients.c"
@@ -930,6 +931,14 @@ int XLALSimInspiralChooseFDWaveformSequence(
 
     REAL8 lambda1=XLALSimInspiralWaveformParamsLookupTidalLambda1(LALpars);
     REAL8 lambda2=XLALSimInspiralWaveformParamsLookupTidalLambda2(LALpars);
+    if ((!XLALDictContains(LALpars, "dQuadMon1"))) {
+      REAL8 quadparam1_in = XLALSimInspiralEOSQfromLambda(lambda1);
+      XLALSimInspiralWaveformParamsInsertdQuadMon1(LALpars, quadparam1_in);
+    }
+    if ((!XLALDictContains(LALpars, "dQuadMon2"))) {
+      REAL8 quadparam2_in = XLALSimInspiralEOSQfromLambda(lambda2);
+      XLALSimInspiralWaveformParamsInsertdQuadMon2(LALpars, quadparam2_in);
+    }
 
     switch (approximant)
     {
@@ -1166,6 +1175,32 @@ int XLALSimInspiralChooseFDWaveformSequence(
             }
             break;
 
+        case IMRPhenomPv2_NRTidal:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
+                ABORT_NONDEFAULT_FRAME_AXIS(LALpars);/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
+            if( !XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars) )
+                ABORT_NONDEFAULT_MODES_CHOICE(LALpars);
+            /* Tranform to model parameters */
+            if(f_ref==0.0)
+              f_ref = f_min; /* Default reference frequency is minimum frequency */
+            XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame(
+                &chi1_l, &chi2_l, &chip, &thetaJN, &alpha0, &phi_aligned, &zeta_polariz,
+                m1, m2, f_ref, phiRef, inclination,
+                S1x, S1y, S1z,
+                S2x, S2y, S2z, IMRPhenomPv2NRTidal_V);
+            /* Call the waveform driver routine */
+            ret = XLALSimIMRPhenomPFrequencySequence(hptilde, hctilde, frequencies,
+              chi1_l, chi2_l, chip, thetaJN,
+              m1, m2, distance, alpha0, phi_aligned, f_ref, IMRPhenomPv2NRTidal_V, LALpars);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            for (UINT4 idx=0;idx<(*hptilde)->data->length;idx++) {
+                PhPpolp=(*hptilde)->data->data[idx];
+                PhPpolc=(*hctilde)->data->data[idx];
+                (*hptilde)->data->data[idx] =cos(2.*zeta_polariz)*PhPpolp+sin(2.*zeta_polariz)*PhPpolc;
+                (*hctilde)->data->data[idx]=cos(2.*zeta_polariz)*PhPpolc-sin(2.*zeta_polariz)*PhPpolp;
+            } 
+            break;
 
         default:
             XLALPrintError("FD version of approximant not implemented in lalsimulation\n");
