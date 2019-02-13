@@ -6600,6 +6600,8 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
             m2=M2*LAL_MSUN_SI
             if 'phi_orb' in pos.names:
                 phiRef=pos['phi_orb'].samples[which][0]
+            elif 'phase' in pos.names:
+                phiRef=pos['phase'].samples[which][0]
             elif 'phase_maxl' in pos.names:
                 phiRef=pos['phase_maxl'].samples[which][0]
                 print('INFO: phi_orb not estimated, using maximum likelihood value')
@@ -6644,7 +6646,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
                 iota=pos['inclination'].samples[which][0]
             except:
                 try:
-                    iota, s1x, s1y, s1z, s2x, s2y, s2z=lalsim.SimInspiralTransformPrecessingNewInitialConditions(pos['theta_jn'].samples[which][0], pos['phi_JL'].samples[which][0], pos['tilt1'].samples[which][0], pos['tilt2'].samples[which][0], pos['phi12'].samples[which][0], pos['a1'].samples[which][0], pos['a2'].samples[which][0], m1, m2, f_ref)
+                    iota, s1x, s1y, s1z, s2x, s2y, s2z=lalsim.SimInspiralTransformPrecessingNewInitialConditions(pos['theta_jn'].samples[which][0], pos['phi_JL'].samples[which][0], pos['tilt1'].samples[which][0], pos['tilt2'].samples[which][0], pos['phi12'].samples[which][0], pos['a1'].samples[which][0], pos['a2'].samples[which][0], m1, m2, f_ref, phiRef)
                 except:
                     if 'a1z' in pos.names:
                         s1z=pos['a1z'].samples[which][0]
