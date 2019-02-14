@@ -78,6 +78,7 @@ Requires: python2-lalburst
 Requires: python2-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python2-ligo-segments
 Requires: glue
 Obsoletes: %{name}-python
 Provides: %{name}-python

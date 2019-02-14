@@ -70,6 +70,7 @@ Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python2-ligo-segments
 Requires: scipy
 Requires: glue
 Obsoletes: %{name}-python
