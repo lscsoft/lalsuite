@@ -53,8 +53,8 @@ import sys
 import traceback
 
 
-from glue.ligolw import dbtables
-from glue.ligolw.utils import process as ligolwprocess
+from ligo.lw import dbtables
+from ligo.lw.utils import process as ligolwprocess
 import lal
 from lal import rate
 from lal.utils import CacheEntry

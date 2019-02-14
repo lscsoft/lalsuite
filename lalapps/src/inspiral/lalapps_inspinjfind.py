@@ -36,9 +36,9 @@ from optparse import OptionParser
 import sys
 
 
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
 from lalinspiral import inspinjfind
 
 

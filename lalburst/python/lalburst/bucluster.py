@@ -31,9 +31,9 @@ import math
 import sys
 
 
-from glue.ligolw import lsctables
-from glue.ligolw.utils import process as ligolw_process
-from glue.ligolw.utils import search_summary as ligolw_search_summary
+from ligo.lw import lsctables
+from ligo.lw.utils import process as ligolw_process
+from ligo.lw.utils import search_summary as ligolw_search_summary
 from ligo import segments
 from . import snglcluster
 

@@ -33,7 +33,7 @@ import sys
 import sqlite3
 
 
-from glue.ligolw import dbtables
+from ligo.lw import dbtables
 from lal.utils import CacheEntry
 from lalburst import git_version
 from lalburst import burca_tailor

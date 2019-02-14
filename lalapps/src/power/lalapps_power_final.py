@@ -85,7 +85,7 @@ import sys
 
 
 from glue import iterutils
-from glue.ligolw import dbtables
+from ligo.lw import dbtables
 from lal import rate
 from lalburst import git_version
 from lalburst import SimBurstUtils

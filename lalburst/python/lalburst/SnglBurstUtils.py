@@ -46,11 +46,10 @@ import re
 import sys
 
 
-from glue.ligolw import ilwd
-from glue.ligolw import lsctables
-from glue.ligolw import dbtables
-from glue.ligolw.utils import search_summary as ligolw_search_summary
-from glue.ligolw.utils import segments as ligolw_segments
+from ligo.lw import lsctables
+from ligo.lw import dbtables
+from ligo.lw.utils import search_summary as ligolw_search_summary
+from ligo.lw.utils import segments as ligolw_segments
 from .offsetvector import offsetvector
 
 

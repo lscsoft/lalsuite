@@ -46,10 +46,10 @@ import sys
 
 
 from glue import iterutils
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw.utils import coincs as ligolw_coincs
-from glue.ligolw.utils import time_slide as ligolw_time_slide
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw.utils import coincs as ligolw_coincs
+from ligo.lw.utils import time_slide as ligolw_time_slide
 from glue.text_progress_bar import ProgressBar
 from . import thinca
 

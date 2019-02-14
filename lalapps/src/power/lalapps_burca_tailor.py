@@ -34,8 +34,8 @@ import sys
 
 from lal.utils import CacheEntry
 
-from glue.ligolw import dbtables
-from glue.ligolw import utils
+from ligo.lw import dbtables
+from ligo.lw import utils as ligolw_utils
 from lalburst import burca_tailor
 from lalburst import SnglBurstUtils
 from lalburst.SimBurstUtils import MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD
@@ -203,4 +203,4 @@ else:
 
 
 xmldoc = burca_tailor.gen_likelihood_control(distributions, segs)
-utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
+ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))

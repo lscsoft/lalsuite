@@ -33,10 +33,10 @@ from optparse import OptionParser
 import sys
 
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
 from lalburst import git_version
 from lalburst import burca
 from ligo.segments import utils as segmentsUtils

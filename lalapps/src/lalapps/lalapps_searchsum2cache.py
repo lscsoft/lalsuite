@@ -39,11 +39,10 @@ from optparse import OptionParser
 import os
 import sys
 
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import utils
 from lal.utils import CacheEntry
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils as ligolw_utils
 #from lalapps import git_version
 
 
@@ -129,7 +128,7 @@ for n, filename in enumerate(filenames):
 	# load document and extract search summary table
 	if options.verbose:
 		print("%d/%d:" % (n + 1, len(filenames)), end=' ', file=sys.stderr)
-	xmldoc = utils.load_filename(filename, verbose = options.verbose, contenthandler = ContentHandler)
+	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ContentHandler)
 	searchsumm = lsctables.SearchSummaryTable.get_table(xmldoc)
 
 	# extract process_ids for the requested program

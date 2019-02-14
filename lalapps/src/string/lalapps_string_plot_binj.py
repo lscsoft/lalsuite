@@ -35,8 +35,8 @@ import sqlite3
 import sys
 
 
-from glue.ligolw import dbtables
-from glue.ligolw import utils as ligolw_utils
+from ligo.lw import dbtables
+from ligo.lw import utils as ligolw_utils
 from lal import rate
 from lal.utils import CacheEntry
 from lalburst import git_version
