@@ -1343,7 +1343,7 @@ class NDBins(tuple):
 
 def bins_spanned(bins, seglist):
 	"""
-	Input is a Bins subclass instance and a glue.segments.segmentlist
+	Input is a Bins subclass instance and a ligo.segments.segmentlist
 	instance.  The output is an array object the length of the binning,
 	which each element in the array set to the interval in the
 	corresponding bin spanned by the segment list.
