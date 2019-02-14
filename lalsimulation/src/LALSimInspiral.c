@@ -5270,8 +5270,6 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case IMRPhenomD:
     case IMRPhenomP:
     case IMRPhenomPv2:
-      testGR_accept=LAL_SIM_INSPIRAL_TESTGR_PARAMS;
-      break;
     case IMRPhenomPv2_NRTidal:
       testGR_accept=LAL_SIM_INSPIRAL_TESTGR_PARAMS;
       break;
