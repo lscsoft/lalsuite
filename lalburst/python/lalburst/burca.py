@@ -33,7 +33,7 @@ import math
 import sys
 
 
-from glue.ligolw import lsctables
+from ligo.lw import lsctables
 from . import snglcoinc
 
 

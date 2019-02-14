@@ -22,9 +22,9 @@ from optparse import OptionParser
 import sqlite3
 import sys
 
-from glue.ligolw import ligolw
-from glue.ligolw import dbtables
-from glue.ligolw.utils import ligolw_sqlite
+from ligo.lw import ligolw
+from ligo.lw import dbtables
+from ligo.lw.utils import ligolw_sqlite
 from lalapps import git_version
 
 __author__ = "Chad Hanna <channa@ligo.caltech.edu>"

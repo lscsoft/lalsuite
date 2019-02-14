@@ -32,12 +32,12 @@ from optparse import OptionParser
 import sys
 
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import segments as ligolw_segments
-from glue.ligolw.utils import process as ligolw_process
-from glue.ligolw.utils import search_summary as ligolw_search_summary
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import segments as ligolw_segments
+from ligo.lw.utils import process as ligolw_process
+from ligo.lw.utils import search_summary as ligolw_search_summary
 from lalburst import git_version
 from ligo import segments
 

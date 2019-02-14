@@ -34,8 +34,8 @@ from optparse import OptionParser
 import sys
 
 
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
 from lalburst import git_version
 from lalburst import cafe
 

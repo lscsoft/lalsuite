@@ -37,10 +37,10 @@ from optparse import OptionParser
 import sys
 
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
 from lalburst import git_version
 from lalburst import binjfind
 
@@ -150,7 +150,7 @@ for n, filename in enumerate(filenames):
 
 	if options.verbose:
 		print("%d/%d:" % (n + 1, len(filenames)), end=' ', file=sys.stderr)
-	xmldoc = utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
+	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
 	binjfind.lsctables.table.InterningRowBuilder.strings.clear()
 
 	#
@@ -189,6 +189,6 @@ for n, filename in enumerate(filenames):
 	# done
 	#
 
-	utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
+	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
 	xmldoc.unlink()
 	lsctables.reset_next_ids(lsctables.TableByName.values())

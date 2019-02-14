@@ -34,10 +34,10 @@ import numpy
 import sys
 
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import search_summary as ligolw_search_summary
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import search_summary as ligolw_search_summary
 from lal import rate
 from lal.utils import CacheEntry
 from lalburst import git_version

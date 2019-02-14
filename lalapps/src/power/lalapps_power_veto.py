@@ -33,9 +33,8 @@ import sqlite3
 import sys
 
 
-from glue.ligolw import dbtables
-from glue.ligolw import utils
-from glue.ligolw.utils import segments as ligolw_segments
+from ligo.lw import dbtables
+from ligo.lw.utils import segments as ligolw_segments
 from lalburst import git_version
 from lalburst import SnglBurstUtils
 from ligo import segments

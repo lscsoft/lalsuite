@@ -29,10 +29,9 @@ import tempfile
 
 
 from glue import pipeline
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import segments as ligolw_segments
-from glue import offsetvector
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import segments as ligolw_segments
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
 from lalburst import offsetvector

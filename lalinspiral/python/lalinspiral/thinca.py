@@ -33,8 +33,8 @@ import operator
 import sys
 
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
+from ligo.lw import ligolw
+from ligo.lw import lsctables
 import lal
 from lalburst import offsetvector
 from lalburst import snglcoinc
@@ -360,12 +360,12 @@ class sngl_inspiral_coincs(object):
 
 	>>> coincs = sngl_inspiral_coincs(xmldoc)
 	>>> print(coincs.coinc_def_id)
-	coinc_definer:coinc_def_id:0
+	0
 	>>> coincs.keys()
-	[<glue.ligolw.ilwd.cached_ilwdchar_class object at 0x41a4328>]
+	[0]
 	>>> coinc_id = coincs.keys()[0]
 	>>> print(coinc_id)
-	coinc_event:coinc_event_id:83763
+	83763
 	>>> coincs[coinc_id].write()
 	<?xml version='1.0' encoding='utf-8'?>
 	<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">
