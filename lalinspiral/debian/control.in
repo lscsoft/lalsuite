@@ -93,6 +93,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   python-lalframe (>= @MIN_LALFRAME_VERSION@~),
   python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
+  python-ligo-segments,
   python-glue
 Description: Python bindings for LALInspiral
  The LSC Algorithm Inspiral Library for gravitational wave data analysis.
@@ -120,6 +121,7 @@ Depends: ${misc:Depends},
   python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
   python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
+  python3-ligo-segments,
   lalinspiral (= ${binary:Version}),
   python3-glue
 Description: Python 3 bindings for LALInspiral
