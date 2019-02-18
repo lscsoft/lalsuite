@@ -44,7 +44,19 @@
  * @addtogroup LALSimInspiralTaylorXX_c
  * @{
  *
- * @name Routines for TaylorF2Ecc
+ * @review TaylorF2 routines reviewed by Frank Ohme, Andrew Lundgren, Alex Nitz,
+ * Alex Nielsen, Salvatore Vitale, Jocelyn Read, Sebastian Khan.
+ * The review concluded with git hash 6106138b2140ffb11bc38fc914e0a1de7082dc4d (Nov 2014)
+ *
+ * @name Routines for TaylorF2Ecc Waveforms
+ * @sa
+ * Section IIIF of Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ *
+ * Eccenctric phase are based on Marc, et al paper Phys. Rev. D 93, 124061 (2016),   arXiv:1605.00304.
+ * review page is https://git.ligo.org/waveforms/reviews/taylorf2ecc/wikis/Eccentric-phase-PN-coefficient-form.
  *
  * @{
  */
