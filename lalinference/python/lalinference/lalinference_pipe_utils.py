@@ -2783,9 +2783,9 @@ class SkyMapNode(pipeline.CondorDAGNode):
     def set_outdir(self, outdir):
         self.outdir=outdir
         if self.prefix:
-            name = self.prefix+'.fits.gz'
+            name = self.prefix+'.fits'
         else:
-            name = 'skymap.fits.gz'
+            name = 'skymap.fits'
         self.outfits = os.path.join(outdir,name)
     def set_posfile(self, posfile):
         self.posfile=posfile
