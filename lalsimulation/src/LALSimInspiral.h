@@ -374,6 +374,7 @@ typedef enum tagApproximant {
                          * @remarks Implemented in lalsimulation (frequency domain).  */
    IMRPhenomPv2,		/**< Frequency domain (generic spins) inspiral-merger-ringdown templates of Hannam et al., arXiv:1308.3271 [gr-qc]. Based on IMRPhenomD, arXiv:1508.07250 and arXiv:1508.07253.
                          * @remarks Implemented in lalsimulation (frequency domain).  */
+   IMRPhenomPv2_NRTidal, /**< Frequency domain tidal version of IMRPhenomPv2, using NRTidal framework from arXiv:1706.02969 */
    IMRPhenomFC,		/**< Frequency domain (non-precessing spins) inspiral-merger-ringdown templates of Santamaria et al [Santamaria:2010yb] with phenomenological coefficients defined in the Table II of [Santamaria:2010yb]
                          * @attention Not implemented in lalsimulation.*/
    TaylorEt,		/**< UNDOCUMENTED
@@ -463,7 +464,7 @@ typedef enum tagTestGRaccept {
  * Structure for passing around PN phasing coefficients.
  * For use with the TaylorF2 waveform.
  */
-#define PN_PHASING_SERIES_MAX_ORDER 12
+#define PN_PHASING_SERIES_MAX_ORDER 15
 typedef struct tagPNPhasingSeries
 {
     REAL8 v[PN_PHASING_SERIES_MAX_ORDER+1];
@@ -819,6 +820,8 @@ int XLALSimInspiralREAL8WaveTaper(REAL8Vector *signalvec, LALSimInspiralApplyTap
 /* in module LALSimInspiralTEOBResumROM.c */
 
 int XLALSimInspiralTEOBResumROM(REAL8TimeSeries **hPlus, REAL8TimeSeries **hCross, REAL8 phiRef, REAL8 deltaT, REAL8 fLow, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 lambda1, REAL8 lambda2);
+
+int XLALSimInspiralSetQuadMonParamsFromLambdas(LALDict *LALpars);
 
 
 
