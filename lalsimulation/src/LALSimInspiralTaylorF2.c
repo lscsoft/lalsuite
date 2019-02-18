@@ -48,7 +48,9 @@
  * @review TaylorF2 routines reviewed by Frank Ohme, Andrew Lundgren, Alex Nitz,
  * Alex Nielsen, Salvatore Vitale, Jocelyn Read, Sebastian Khan.
  * The review concluded with git hash 6106138b2140ffb11bc38fc914e0a1de7082dc4d (Nov 2014)
- * Additional tidal terms up to 7.5PN order currently under review (2018).
+ * Additional tidal terms up to 7.5PN order reviewed by Ohme, Haney, Khan, Samajdar,
+ * Riemenschneider, Setyawati, Hinderer. Concluded with git hash
+ * f15615215a7e70488d32137a827d63192cbe3ef6 (February 2019).
  *
  * @name Routines for TaylorF2 Waveforms
  * @sa
