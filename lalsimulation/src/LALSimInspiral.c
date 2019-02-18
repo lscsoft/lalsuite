@@ -4223,8 +4223,14 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
 /** @} */
 
 /**
- * @defgroup lalsimulation_inference XLALSimInspiralTransformPrecessingNewInitialConditions()
+ * @defgroup lalsimulation_inference LALSimulation-LALInference parameter transformations
+ * @author Riccardo Sturani
  *
+ * @brief Functions to transform waveform parameters between LALSimulation and LALInference coordinate conventions
+ */
+
+/**
+ * @ingroup lalsimulation_inference
  * @brief Transform Precessing Parameters
  *
  * @details Routine for transforming LALInference geometric variables to ChooseWaveform input
@@ -4234,7 +4240,6 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
  * orbital angular momentum as needed to specify binary configuration for
  * ChooseTDWaveform.
  *
- * @anchor lalsiminspiral_orbitelementsJ
  * @image html lalsiminspiral_orbitelementsJ.svg Representation of input variables.
  *
  * ### Input:
@@ -4480,8 +4485,11 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(
 	return XLAL_SUCCESS;
 }
 
-/********************************************
- * This function performs inverse transformation to
+/**
+ * @ingroup lalsimulation_inference
+ * @brief inverse to XLALSimInspiralTransformPrecessingNewInitialConditions()
+ *
+ * @details This function performs inverse transformation to
  * XLALSimInspiralTransformPrecessingNewInitialConditions()
  * it takes as input waveform parameters, assume to be defined in the
  * L=z, n=x (L-robital momentum at fRef, n is orbital separation at fRef.
@@ -4605,12 +4613,12 @@ int XLALSimInspiralTransformPrecessingWvf2PE(
 
     ROTATEZ(-phiJ, LNhx, LNhy, LNhz);
     ROTATEY(-thetaJL, LNhx, LNhy, LNhz);
-    /** You can check the rotation by uncommenting the lines below*/
+    /* You can check the rotation by uncommenting the lines below*/
     /*ROTATEZ(-phiJ, Jhatx, Jhaty, Jhatz);
     ROTATEY(-thetaJL, Jhatx, Jhaty, Jhatz);*/
 
     phiN = atan2(Ny, Nx);
-    /** N in J-frame should be in y-z plane
+    /* N in J-frame should be in y-z plane
      * After rotation defined below N should be in y-z plane inclined by thetaJN to J=z*/
     /*ROTATEZ(0.5*LAL_PI - phiN, Nx, Ny, Nz);*/
     ROTATEZ(0.5*LAL_PI - phiN, LNhx, LNhy, LNhz);
