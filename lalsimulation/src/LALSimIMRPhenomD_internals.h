@@ -313,20 +313,8 @@ typedef struct tagPhiInsPrefactors
 	double minus_third;
 	double minus_two_thirds;
 	double minus_one;
-<<<<<<< HEAD
-<<<<<<< HEAD
-        double minus_four_thirds;
+  double minus_four_thirds;
 	double minus_five_thirds;
-=======
-  //Expect the following term. Probably a git confict will occur here!
-  // double minus_four_thirds;
-  double minus_five_thirds;
->>>>>>> adding phenomHM
-=======
-  //Expect the following term. Probably a git confict will occur here!
-  // double minus_four_thirds;
-  double minus_five_thirds;
->>>>>>> adding phenomHM
 } PhiInsPrefactors;
 
 /**
