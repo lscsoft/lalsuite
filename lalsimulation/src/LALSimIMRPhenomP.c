@@ -1225,7 +1225,7 @@ static int PhenomPCoreOneFrequency_withTides(
   errcode = init_useful_powers(&powers_of_f, f);
   XLAL_CHECK(errcode == XLAL_SUCCESS, errcode, "init_useful_powers failed for f");
   aPhenom = IMRPhenDAmplitude(f, pAmp, &powers_of_f, amp_prefactors);
-  phPhenom = IMRPhenDPhase(f, pPhi, PNparams, &powers_of_f, phi_prefactors);
+  phPhenom = IMRPhenDPhase(f, pPhi, PNparams, &powers_of_f, phi_prefactors, 1.0, 1.0);
 
   phPhenom -= 2.*phic; /* Note: phic is orbital phase */
   REAL8 amp0 = M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
