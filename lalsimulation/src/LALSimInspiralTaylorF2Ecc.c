@@ -240,7 +240,7 @@ int XLALSimInspiralTaylorF2CoreEcc(
 
     REAL8 v_ecc_ref = 0.0;
     REAL8 f_ecc = XLALSimInspiralWaveformParamsLookupEccentricityFreq(p);
-    if( eccentricity > 0 && f_ecc > 0) {
+    if( eccentricity > 0) {
         v_ecc_ref = cbrt(piM*f_ecc);
     }
 
@@ -280,7 +280,7 @@ int XLALSimInspiralTaylorF2CoreEcc(
         ref_phasing += pft10 * v10ref;
 
         /* Eccentricity terms in phasing */
-        if( eccentricity > 0 && f_ecc > 0) {
+        if( eccentricity > 0 ) {
           ref_phasing += eccentricityPhasing_F2(vref, v_ecc_ref, eccentricity, eta, ecc_order);
         }
 
@@ -321,7 +321,7 @@ int XLALSimInspiralTaylorF2CoreEcc(
         phasing += pft10 * v10;
 
         /* Eccentricity terms in phasing */
-        if( eccentricity > 0 && f_ecc > 0) {
+        if( eccentricity > 0 ) {
           phasing += eccentricityPhasing_F2(v, v_ecc_ref, eccentricity, eta, ecc_order);
         }
         phasing /= v5;
@@ -449,6 +449,7 @@ int XLALSimInspiralTaylorF2Ecc(
     if (fStart <= 0) XLAL_ERROR(XLAL_EDOM);
     if (f_ref < 0) XLAL_ERROR(XLAL_EDOM);
     if (r <= 0) XLAL_ERROR(XLAL_EDOM);
+    if (eccentricity < 0.0 || eccentricity >= 1.0) XLAL_ERROR(XLAL_EDOM);
 
     /* allocate htilde */
     if ( fEnd == 0. || fEnd > fISCO) // End at ISCO
@@ -489,23 +490,6 @@ int XLALSimInspiralTaylorF2Ecc(
     *htilde_out = htilde;
 
     return ret;
-}
-
-/**
- * Returns true if f_ecc and eccentricity were set correctly, check for the case of non-zero eccentricity without setting f_ecc
- * value; returns false otherwise.
- * Pointed out by Riccaro Sturani
- */
-int LALSimInspiralEccentricityIsCorrect(REAL8 eccentricity, LALDict *params)
-{
-  /** 
-   * returns true for the case
-   * 1) eccentricity = 0.0, no eccentricity effect is required
-   * 2) eccentricy > 0.0 and eccentricity < 1.0 and f_ecc > 0.0, f_ecc and eccentricity were set intentionally. Default value of f_ecc = -1.0
-   */
-  REAL8 f_ecc = 0;
-  f_ecc = XLALSimInspiralWaveformParamsLookupEccentricityFreq(params); /** get f_ecc */
-  return ( eccentricity == 0.0 || (eccentricity > 0.0 && eccentricity < 1.0 && f_ecc > 0.0));
 }
 
 /** @} */
