@@ -535,22 +535,5 @@ int XLALSimInspiralTaylorF2Ecc(
     return ret;
 }
 
-/**
- * Returns true if f_ecc and eccentricity were set correctly, check for the case of non-zero eccentricity without setting f_ecc
- * value; returns false otherwise.
- * Pointed out by Riccaro Sturani
- */
-int LALSimInspiralEccentricityIsCorrect(REAL8 eccentricity, LALDict *params)
-{
-  /** 
-   * returns true for the case
-   * 1) eccentricity = 0.0, no eccentricity effect is required
-   * 2) eccentricy > 0.0 and eccentricity < 1.0 and f_ecc > 0.0, f_ecc and eccentricity were set intentionally. Default value of f_ecc = -1.0
-   */
-  REAL8 f_ecc = 0;
-  f_ecc = XLALSimInspiralWaveformParamsLookupEccentricityFreq(params); /** get f_ecc */
-  return ( eccentricity == 0.0 || (eccentricity > 0.0 && eccentricity < 1.0 && f_ecc > 0.0));
-}
-
 /** @} */
 /** @} */
