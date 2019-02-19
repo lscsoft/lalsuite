@@ -20,7 +20,6 @@ AC_CONFIG_FILES([ \
   python/lalinference/bayestar/Makefile \
   python/lalinference/imrtgr/Makefile \
   python/lalinference/io/Makefile \
-  python/lalinference/io/events/Makefile \
   python/lalinference/plot/Makefile \
   python/lalinference/popprior/Makefile \
   python/lalinference/rapid_pe/Makefile \

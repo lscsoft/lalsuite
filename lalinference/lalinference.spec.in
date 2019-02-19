@@ -182,7 +182,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %license COPYING
 %{_bindir}/cbcBayes*
 %{_bindir}/imrtgr_*
-%{_bindir}/lalinference_average_skymaps
 %{_bindir}/lalinference_burst_pp_pipe
 %{_bindir}/lalinference_coherence_test
 %{_bindir}/lalinference_compute_roq_weights
