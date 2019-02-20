@@ -4,7 +4,9 @@
 
 import itertools
 import glue
-from glue import pipeline,segmentsUtils,segments
+from glue import pipeline
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 from glue.ligolw import ligolw, lsctables, utils
 import os
 import socket
