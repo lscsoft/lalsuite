@@ -137,11 +137,11 @@ def downsample_and_evidence(data_hdf5, deltaLogP=None, fixedBurnin=None, nDownsa
 	logls = np.zeros_like(betas)
 
 	betas[0] = 1./np.median(posterior_samples['temperature'])
-	logls[0] = np.median(posterior_samples['logl'])
+	logls[0] = np.mean(posterior_samples['logl'])
 
 	for i in range(len(highTchains)):
 		betas[i+1] = 1./np.median(highTchains[i]['temperature'])
-		logls[i+1] = np.median(highTchains[i]['logl'])
+		logls[i+1] = np.mean(highTchains[i]['logl'])
 
 	inds = np.argsort(betas)[::-1]
 
