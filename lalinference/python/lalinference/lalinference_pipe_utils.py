@@ -1093,8 +1093,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         # Set up the parallel engine nodes
         enginenodes=[]
         bwpsdnodes={}
+        bwpostnodes={}
         for i in range(Npar):
-            n,bwpsdnodes=self.add_engine_node(event,bwpsdnodes)
+            n,bwpsdnodes,bwpostnodes=self.add_engine_node(event,bwpsdnodes,bwpostnodes)
             if n is not None:
                 if i>0:
                     n.add_var_arg('--dont-dump-extras')
@@ -1130,7 +1131,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 co_merge_job.set_grid_site('local')
                 cotest_nodes=[]
                 for i in range(Npar):
-                    cot_node,bwpsdnodes=self.add_engine_node(event,bwpsdnodes,ifos=[ifo],co_test=True)
+                    cot_node,bwpsdnodes,bwpostnodes=self.add_engine_node(event,bwpsdnodes,bwpostnodes,ifos=[ifo],co_test=True)
                     if cot_node is not None:
                         if i>0:
                             cot_node.add_var_arg('--dont-dump-extras')
@@ -1223,8 +1224,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             Npar=2
         enginenodes=[]
         bwpsdnodes={}
+        bwpostnodes={}
         for i in range(Npar):
-            n,bwpsdnodes=self.add_engine_node(event,bwpsdnodes)
+            n,bwpsdnodes,bwpostnodes=self.add_engine_node(event,bwpsdnodes,bwpostnodes)
             if n is not None:
                 if i>0:
                     n.add_var_arg('--dont-dump-extras')
@@ -1506,7 +1508,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                                 bayeswavepsdnode[ifo].set_dataseed(self.dataseed+event.event_id)
 
                         if ifo not in bayeswavepostnode:
-                            bayeswavepostnode[ifo]=self.add_bayeswaveost_node(ifo)
+                            bayeswavepostnode[ifo]=self.add_bayeswaveost_node(ifo,parent=bayeswavepsdnode[ifo])
                             bayeswavepostnode[ifo].add_var_arg('--0noise')
                             bayeswavepostnode[ifo].add_var_arg('--bayesLine')
                             bayeswavepostnode[ifo].add_var_arg('--cleanOnly')
@@ -1530,8 +1532,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                                         fakecachefiles=ast.literal_eval(self.config.get('lalinference','fake-cache'))
                                         bayeswavepostnode[ifo].add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],self.channels[ifo],timeslide=slide)
                             if self.config.has_option('lalinference','flow'):
-                                bayeswavepostnode[ifo].flows[ifo]=np.power(2,np.floor(np.log2(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])))
-                                print('BayesWave requires f_low being a power of 2, therefore f_low for '+ifo+' has been changed from '+str(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])+' to '+str(np.power(2,np.floor(np.log2(ast.literal_eval(self.config.get('lalinference','flow'))[ifo]))))+' Hz (for the BayesWave job only, in the main LALInference jobs f_low will still be '+str(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])+' Hz)')
+                                bayeswavepostnode[ifo].flows[ifo]=np.power(2,np.floor(np.log2(ast.literal_eval(self.config.get('lalinference','flow'))[ifo]))).config.get('lalinference','flow'))[ifo])+' to '+str(np.power(2,np.floor(np.log2(ast.literal_eval(self.config.get('lalinference','flow'))[ifo]))))+' Hz (for the BayesWave job only, in the main LALInference jobs f_low will still be '+str(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])+' Hz)')
                             bayeswavepostnode[ifo].set_seed(randomseed)
                             if self.dataseed:
                                 bayeswavepostnode[ifo].set_dataseed(self.dataseed+event.event_id)
@@ -1651,19 +1652,19 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 node.add_input_file(os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
                 prenode.psds[ifo]=os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat')
                 prenode.add_input_file(os.path.join(roqeventpath,'BayesLine_PSD_'+ifo+'.dat'))
-        if self.config.has_option('condor','bayeswave') and bayeswavepsdnode:
+        if self.config.has_option('condor','bayeswave') and bayeswavepostnode:
             for ifo in ifos:
-                node.psds[ifo]=os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat')
-                node.add_input_file(os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat'))
-                prenode.psds[ifo]=os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat')
-                prenode.add_input_file(os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat'))
+                node.psds[ifo]=os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_post/noise_median_PSD_forLI_'+ifo+'.dat')
+                node.add_input_file(os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_post/noise_median_PSD_forLI_'+ifo+'.dat'))
+                prenode.psds[ifo]=os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_post/noise_median_PSD_forLI_'+ifo+'.dat')
+                prenode.add_input_file(os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_post/noise_median_PSD_forLI_'+ifo+'.dat'))
         for (opt,arg) in event.engine_opts.items():
             node.add_var_opt(opt,arg)
-        if self.config.has_option('condor','bayeswave') and self.engine is not 'bayeswave':
+        if self.config.has_option('condor','bayeswave') and self.engine not in ['bayeswave','bayeswavepost']:
             for ifo in ifos:
-                node.add_parent(bayeswavepsdnode[ifo])
-                prenode.add_parent(bayeswavepsdnode[ifo])
-        return node,bayeswavepsdnode
+                node.add_parent(bayeswavepostnode[ifo])
+                prenode.add_parent(bayeswavepostnode[ifo])
+        return node,bayeswavepsdnode,bayeswavepostnode
 
     def add_results_page_node(self,resjob=None,outdir=None,parent=None,extra_options=None,gzip_output=None,ifos=None):
         if resjob is None:
