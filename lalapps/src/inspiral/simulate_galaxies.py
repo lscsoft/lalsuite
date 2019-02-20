@@ -10,8 +10,8 @@ import string
 from optparse import *
 from types import *
 from pylab import *
-from glue import segments
-from glue import segmentsUtils
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables

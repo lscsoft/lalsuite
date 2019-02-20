@@ -28,7 +28,6 @@ import itertools
 ##############################################################################
 # import the modules we need to build the pipeline
 from glue import pipeline
-from glue import segments as glue_segments
 from glue import lal
 from lalapps import inspiral
 

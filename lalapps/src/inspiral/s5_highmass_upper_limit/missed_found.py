@@ -3,13 +3,13 @@ from __future__ import print_function
 import sys
 import sqlite3
 from optparse import OptionParser
-from glue import segments
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import dbtables
 from glue.ligolw import utils
 from glue.ligolw import table
-from glue import segmentsUtils
 
 from pylal import db_thinca_rings
 from pylal import llwapp

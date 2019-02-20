@@ -41,8 +41,8 @@ import sys
 import tempfile
 
 
+from ligo.segments import utils as segmentsUtils
 from glue import pipeline
-from glue import segmentsUtils
 import lal
 from lal.utils import CacheEntry
 from lalapps import power

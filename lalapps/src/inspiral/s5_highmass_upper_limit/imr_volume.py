@@ -11,7 +11,7 @@ import glob
 import copy
 from optparse import OptionParser
 
-from glue import segments
+from ligo import segments
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import dbtables

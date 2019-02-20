@@ -327,7 +327,6 @@ import urlparse
 from glue import pipeline
 from six.moves import configparser
 from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
-from glue import segments as glue_segments
 from glue import lal
 from lalapps import inspiral
 from lalapps.inspiralutils import get_data_options

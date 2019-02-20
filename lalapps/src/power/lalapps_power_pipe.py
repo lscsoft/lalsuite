@@ -41,9 +41,9 @@ import sys
 import tempfile
 
 
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 from glue import pipeline
-from glue import segments
-from glue import segmentsUtils
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
 from lalburst import cafe

@@ -39,9 +39,9 @@ import sys
 import time
 
 
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 from glue import iterutils
-from glue import segments
-from glue import segmentsUtils
 from glue import pipeline
 import lal
 from lal.utils import CacheEntry

@@ -26,7 +26,6 @@ import urlparse
 ##############################################################################
 # import the modules we need to build the pipeline
 from glue import pipeline
-from glue import segments as glue_segments
 from glue import lal
 from lalburst import timeslides as ligolw_tisi
 from pylal import ligolw_cafe

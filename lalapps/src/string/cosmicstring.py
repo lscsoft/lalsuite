@@ -20,9 +20,9 @@ import os
 import sys
 
 
+from ligo import segments
 from glue import iterutils
 from glue import pipeline
-from glue import segments
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
 from lalburst import cafe
