@@ -637,6 +637,30 @@ int XLALSimInspiralChooseTDWaveform(
                     phaseO, amplitudeO);
             break;
 
+        case SpinTaylorT5:
+            /* Waveform-specific sanity checks */
+	    //if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) && (XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALparams)>5) )
+	    //  ABORT_NONZERO_TRANSVERSE_SPINS_HIGH_SPINO(LALparams);
+            XLALSimInspiralInitialConditionsPrecessingApproxs(&incl,&spin1x,&spin1y,&spin1z,&spin2x,&spin2y,&spin2z,inclination,S1x,S1y,S1z,S2x,S2y,S2z,m1,m2,f_ref,phiRef,XLALSimInspiralWaveformParamsLookupFrameAxis(LALparams));
+            LNhatx = sin(incl);
+            LNhaty = 0.;
+            LNhatz = cos(incl);
+            E1x = 0.;
+            E1y = 1.;
+            E1z = 0.;
+	    polariz+=LAL_PI/2.;
+            /* Maximum PN amplitude order for precessing waveforms is
+             * MAX_PRECESSING_AMP_PN_ORDER */
+            amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ?
+                    amplitudeO : MAX_PRECESSING_AMP_PN_ORDER;
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralSpinTaylorT5(hplus, hcross, phiRef, v0, deltaT,
+                    m1, m2, f_min, f_ref, distance, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
+                    LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2,
+	            quadparam1, quadparam2, LALparams,
+                    phaseO, amplitudeO);
+            break;
+
 	 case SpinTaylorT1:
             /* Waveform-specific sanity checks */
             /* Waveform-specific sanity checks */

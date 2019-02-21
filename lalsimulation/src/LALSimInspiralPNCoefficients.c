@@ -1942,6 +1942,202 @@ XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(
         return mByM*mByM*mByM*mByM * (4421./56. - 12263./56.*mByM + 1893./4.*mByM*mByM - 661./2.*mByM*mByM*mByM);
 }
 
+/**
+ * Computes the PN Coefficients for using in the TaylorT4 frequency equation.
+ *
+ * See https://arxiv.org/pdf/1107.1267v2.pdf
+ *** UNREVIEWED ****
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_2PNCoeff(
+	REAL8 eta)
+{
+        return -XLALSimInspiralTaylorT4wdot_2PNCoeff(eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_3PNCoeff(
+	REAL8 UNUSED eta)
+{
+        return -XLALSimInspiralTaylorT4wdot_3PNCoeff(eta);
+
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_3PNSOCoeff(
+	REAL8 mByM)
+{
+	return -XLALSimInspiralTaylorT4wdot_3PNSOCoeff(mByM);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_4PNCoeff(
+	REAL8 eta)
+{
+  return 3.058673/1.016064+5.429/1.008*eta+6.17/1.44*eta*eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_4PNS1S2Coeff(
+	REAL8 eta)
+{
+        return -XLALSimInspiralTaylorT4wdot_4PNS1S2Coeff(eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_4PNS1S2CoeffAvg(
+	REAL8 eta)
+{
+	return -XLALSimInspiralTaylorT4wdot_4PNS1S2CoeffAvg(eta);
+}
+
+static REAL8 UNUSED XLALSimInspiralTaylorT5wdot_4PNS1S2OCoeff(
+	REAL8 eta)
+{
+	return -XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeff(eta);
+}
+
+static REAL8 UNUSED XLALSimInspiralTaylorT5wdot_4PNS1S2OCoeffAvg(
+	REAL8 eta)
+{
+	return -XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeffAvg(eta);
+}
+
+static REAL8 UNUSED XLALSimInspiralTaylorT5wdot_4PNS1S2nCoeff(
+	REAL8 eta)
+{
+        return -XLALSimInspiralTaylorT4wdot_4PNS1S2nCoeff(eta);
+}
+
+static REAL8 UNUSED XLALSimInspiralTaylorT5wdot_4PNSelf2SCoeff(
+        REAL8 mByM)
+{
+  return -XLALSimInspiralTaylorT4wdot_4PNSelf2SCoeff(mByM);
+}
+
+static REAL8 UNUSED XLALSimInspiralTaylorT5wdot_4PNSelf2SCoeffAvg(
+        REAL8 mByM)
+{
+  return -XLALSimInspiralTaylorT4wdot_4PNSelf2SCoeffAvg(mByM);
+}
+
+static REAL8 UNUSED XLALSimInspiralTaylorT5wdot_4PNSelf2SOCoeff(
+        REAL8 mByM)
+{
+  return -XLALSimInspiralTaylorT4wdot_4PNSelf2SOCoeff(mByM);
+}
+
+static REAL8 UNUSED XLALSimInspiralTaylorT5wdot_4PNSelf2SOCoeffAvg(
+        REAL8 mByM)
+{
+  return -XLALSimInspiralTaylorT4wdot_4PNSelf2SOCoeffAvg(mByM);
+}
+
+static REAL8 UNUSED XLALSimInspiralTaylorT5wdot_4PNSelf2SnCoeff(
+        REAL8 mByM)
+{
+  return -XLALSimInspiralTaylorT4wdot_4PNSelf2SnCoeff(mByM);
+}
+
+static REAL8 UNUSED XLALSimInspiralTaylorT5wdot_4PNQM2SCoeff(
+        REAL8 mByM)
+{
+  return -XLALSimInspiralTaylorT4wdot_4PNQM2SCoeff(mByM);
+}
+
+static REAL8 UNUSED XLALSimInspiralTaylorT5wdot_4PNQM2SCoeffAvg(
+        REAL8 mByM)
+{
+  return -XLALSimInspiralTaylorT4wdot_4PNQM2SCoeffAvg(mByM);
+}
+
+static REAL8 UNUSED XLALSimInspiralTaylorT5wdot_4PNQM2SOCoeff(
+        REAL8 mByM)
+{
+  return -XLALSimInspiralTaylorT4wdot_4PNQM2SOCoeff(mByM);
+}
+
+static REAL8 UNUSED XLALSimInspiralTaylorT5wdot_4PNQM2SOCoeffAvg(
+        REAL8 mByM)
+{
+  return -XLALSimInspiralTaylorT4wdot_4PNQM2SOCoeffAvg(mByM);
+}
+
+static REAL8 UNUSED XLALSimInspiralTaylorT5wdot_4PNQM2SnCoeff(
+        REAL8 mByM)
+{
+        return -XLALSimInspiralTaylorT5wdot_4PNQM2SnCoeff(mByM);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_5PNCoeff(
+	REAL8 eta)
+{
+  return LAL_PI*(-77.29/6.72+13.*eta/8.);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_5PNSOCoeff(
+	REAL8 mByM)
+{
+  return  83.49/(2.24*mByM)+124.9/3.6+5.*mByM-17./4.*mByM*mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_6PNCoeff(
+	REAL8 eta)
+{
+  return -1081.7850546611/9.3884313600 + eta*314.7553127/1.2192768 - eta*eta*15.211/6.912 + eta*eta*eta*25.565/5.184 + 17.12*LAL_GAMMA/1.05 + LAL_PI*LAL_PI*(32./3. - 45.1/4.8*eta) + 17.12*log(4)/1.05;
+}
+
+/* The coefficient of the log is normalized for the argument of the log to be v=(M omega)^(1/3) */
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_6PNLogCoeff(
+	REAL8 UNUSED eta)
+{
+  return -XLALSimInspiralTaylorT4wdot_6PNLogCoeff(eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_6PNSOCoeff(
+	REAL8 mByM)
+{
+  return -LAL_PI*(13.+149./6./mByM);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_7PNCoeff(
+	REAL8 eta)
+{
+  return LAL_PI*(-15.419335/1.016064-eta*75.703/6.048+eta*eta*14.809/3.024);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_7PNSOCoeff(
+	REAL8 mByM)
+{
+  return 133.100377/6.096384 + 341.95607/(1.93536*mByM) + 707.767*mByM/3.456 + 17.6383*mByM*mByM/1.2096 - 17.41*mByM*mByM*mByM/1.92 + 10.69*mByM*mByM*mByM*mByM/2.88;
+}
+
+/*
+ * Tidal correction coefficients to DOmega/dt
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_10PNTidalCoeff(
+        REAL8 mByM)
+{
+  return -XLALSimInspiralTaylorT4wdot_10PNTidalCoeff(mByM);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT5wdot_12PNTidalCoeff(
+        REAL8 mByM)
+{
+  return mByM*mByM*mByM*mByM*(-3179./8.+919./8.*mByM+1143/4.*mByM*mByM-65./2.*mByM*mByM*mByM);
+}
+
 /*
  * For L see eq. 2.9 of arxiv:gr-qc/9506022
  */
