@@ -24,9 +24,9 @@ where veto_category is 0 (science), 1, 2, or 4 and clustering is UNCLUSTERED
 
 import sys
 import os
-from glue.segments import segment, segmentlist
+from ligo.segments import segment, segmentlist
 from optparse import OptionParser
-from glue import git_version
+from lalapps import git_version
 
 
 

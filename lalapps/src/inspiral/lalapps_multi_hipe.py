@@ -39,8 +39,8 @@ import random
 import string
 from six.moves import configparser
 from optparse import *
-from glue import segments
-from glue import segmentsUtils
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 from pylal import readMeta
 
 ##############################################################################

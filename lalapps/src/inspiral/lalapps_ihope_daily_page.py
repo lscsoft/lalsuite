@@ -22,12 +22,12 @@ import pylab
 from pylab import exp
 from pylab import sqrt
 
+from ligo.segments import segment, segmentlist
+
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import table
 from glue.ligolw import utils
-
-from glue.segments import segment, segmentlist
 
 from glue.segmentdb import segmentdb_utils
 

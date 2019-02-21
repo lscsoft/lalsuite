@@ -1,7 +1,7 @@
 import sys 
 from optparse import *
-from glue import segments
-from glue import segmentsUtils
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 from pylal import readMeta
 
 def cleanlist(seglist, min_length):

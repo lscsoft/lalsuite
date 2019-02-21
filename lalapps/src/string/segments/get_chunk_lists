@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from glue import segments
-from glue import segmentsUtils
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 
 S5h1_seg=segmentsUtils.fromsegwizard(open("../S5-H1segments-cat1.txt")).coalesce()
 S5h2_seg=segmentsUtils.fromsegwizard(open("../S5-H2segments-cat1.txt")).coalesce()

@@ -19,8 +19,8 @@ from six.moves import configparser
 import urlparse
 
 # import the modules we need to build the pipeline
+from ligo import segments
 from glue import pipeline
-from glue import segments
 from lalapps import inspiral
 
 

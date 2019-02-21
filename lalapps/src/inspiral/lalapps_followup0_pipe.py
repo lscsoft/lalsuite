@@ -25,10 +25,10 @@ from UserDict import UserDict
 
 ##############################################################################
 # import the modules we need to build the pipeline
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 from glue import pipeline
 from glue import lal
-from glue import segments 
-from glue import segmentsUtils
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables

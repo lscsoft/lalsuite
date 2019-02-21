@@ -18,8 +18,8 @@ import glob
 import shutil
 import StringIO
 from optparse import *
+from ligo import segments
 from glue import markup
-from glue import segments
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import table

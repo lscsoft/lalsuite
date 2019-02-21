@@ -10,9 +10,10 @@ import glob
 from types import * #!!!what does this do?
 from operator import itemgetter
 
+from ligo import segments #!!!do I need this?
+from ligo.segments import utils as segmentsUtils #!!!do I need this?
+
 from glue import lal
-from glue import segments #!!!do I need this?
-from glue import segmentsUtils #!!!do I need this?
 from glue.ligolw import ligolw
 from glue.ligolw import table as tab #!!!why as tab?
 from glue.ligolw import lsctables

@@ -34,8 +34,8 @@ import sys
 from optparse import OptionParser
 
 
+from ligo import segments
 from glue import lal
-from glue import segments
 #from lalapps import git_version
 
 

@@ -21,13 +21,14 @@ import subprocess
 
 import numpy
 
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
+
 from glue.ligolw import ligolw
 from glue.ligolw import utils
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue import lal
-from glue import segments
-from glue import segmentsUtils
 from glue import pipeline
 from pylal import grbsummary
 from pylal import exttrig_dataquery
