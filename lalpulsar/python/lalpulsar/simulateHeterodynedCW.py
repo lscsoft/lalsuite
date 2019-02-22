@@ -267,6 +267,14 @@ class HeterodynedCWSimulator(object):
         return self.__detector
 
     @property
+    def resp(self):
+        """
+        Return the response function look-up table.
+        """
+
+        return self.__resp
+
+    @property
     def times(self):
         return self.__times
 
@@ -407,7 +415,7 @@ class HeterodynedCWSimulator(object):
                                                          int(updateSSB),  # the SSB delay should be updated compared to hetSSBdelay
                                                          self.__hetBSBdelay,
                                                          int(updateBSB),  # the BSB delay should be updated compared to hetBSBdelay
-                                                         self.__resp,
+                                                         self.resp,
                                                          self.__edat,
                                                          self.__tdat,
                                                          self.__units_type)
