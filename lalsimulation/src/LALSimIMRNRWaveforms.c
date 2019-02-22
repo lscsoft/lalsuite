@@ -493,8 +493,10 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
       *psi = 2 * LAL_PI - *psi;
       y_val = sin(*psi) * sin(*theta);
     }
-    if( fabs(y_val - z_wave_y) > 0.0001)
+    if( fabs(y_val - z_wave_y) > 0.005)
     {
+      XLAL_PRINT_ERROR("orb_phase = %.16f\n", orb_phase);
+      XLAL_PRINT_ERROR("y_val = %.16f, z_wave_y = %.16f, fabs(y_val - z_wave_y) = %.16f\n", y_val, z_wave_y, fabs(y_val - z_wave_y));
       XLAL_ERROR(XLAL_EDOM, "Something's wrong in Ian's math. Tell him he's an idiot!");
     }
   }
