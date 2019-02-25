@@ -167,29 +167,32 @@ extern "C" {
 /** Enumeration of Detectors: follows order of DQ bit assignments */
 enum {
 	LAL_TAMA_300_DETECTOR	=	0,
-	LAL_VIRGO_DETECTOR	=	1,
-	LAL_GEO_600_DETECTOR	=	2,
-	LAL_LHO_2K_DETECTOR	=	3,
-	LAL_LHO_4K_DETECTOR	=	4,
-	LAL_LLO_4K_DETECTOR	=	5,
-	LAL_CIT_40_DETECTOR	=	6,
-	LAL_ALLEGRO_DETECTOR	=	7,
-	LAL_AURIGA_DETECTOR	=	8,
-	LAL_EXPLORER_DETECTOR	=	9,
-	LAL_NIOBE_DETECTOR	=	10,
-	LAL_NAUTILUS_DETECTOR	=	11,
-	LAL_ET1_DETECTOR	=	12,
-	LAL_ET2_DETECTOR	=	13,
-	LAL_ET3_DETECTOR	=	14,
-	LAL_ET0_DETECTOR	=	15,
-	LAL_KAGRA_DETECTOR	=	16,
-	LAL_LIO_4K_DETECTOR =   17,
-	LAL_NUM_DETECTORS	=	18
+	LAL_VIRGO_CITF_DETECTOR	=	1,
+	LAL_VIRGO_DETECTOR	=	2,
+	LAL_GEO_600_DETECTOR	=	3,
+	LAL_LHO_2K_DETECTOR	=	4,
+	LAL_LHO_4K_DETECTOR	=	5,
+	LAL_LLO_4K_DETECTOR	=	6,
+	LAL_CIT_40_DETECTOR	=	7,
+	LAL_ALLEGRO_DETECTOR	=	8,
+	LAL_AURIGA_DETECTOR	=	9,
+	LAL_EXPLORER_DETECTOR	=	10,
+	LAL_NIOBE_DETECTOR	=	11,
+	LAL_NAUTILUS_DETECTOR	=	12,
+	LAL_ACIGA_DETECTOR	=	13,
+	LAL_KAGRA_DETECTOR	=	14,
+	LAL_LIO_4K_DETECTOR	=	15,
+	LAL_ET1_DETECTOR	=	16,
+	LAL_ET2_DETECTOR	=	17,
+	LAL_ET3_DETECTOR	=	18,
+	LAL_ET0_DETECTOR	=	19,
+	LAL_NUM_DETECTORS	=	20
 };
 
 /** Detector DQ bit assignments (2 bits per detector) */
 enum {
 	LAL_TAMA_300_DETECTOR_BIT	=	LAL_INT8_C(1) << 2 * LAL_TAMA_300_DETECTOR,
+	LAL_VIRGO_CITF_DETECTOR_BIT   	=	LAL_INT8_C(1) << 2 * LAL_VIRGO_CITF_DETECTOR,
 	LAL_VIRGO_DETECTOR_BIT   	=	LAL_INT8_C(1) << 2 * LAL_VIRGO_DETECTOR,
 	LAL_GEO_600_DETECTOR_BIT 	=	LAL_INT8_C(1) << 2 * LAL_GEO_600_DETECTOR,
 	LAL_LHO_2K_DETECTOR_BIT  	=	LAL_INT8_C(1) << 2 * LAL_LHO_2K_DETECTOR,
@@ -200,12 +203,13 @@ enum {
 	LAL_AURIGA_DETECTOR_BIT  	=	LAL_INT8_C(1) << 2 * LAL_AURIGA_DETECTOR,
 	LAL_NIOBE_DETECTOR_BIT   	=	LAL_INT8_C(1) << 2 * LAL_NIOBE_DETECTOR,
 	LAL_NAUTILUS_DETECTOR_BIT	=	LAL_INT8_C(1) << 2 * LAL_NAUTILUS_DETECTOR,
+	LAL_ACIGA_DETECTOR_BIT		=	LAL_INT8_C(1) << 2 * LAL_ACIGA_DETECTOR,
+	LAL_KAGRA_DETECTOR_BIT     	=	LAL_INT8_C(1) << 2 * LAL_KAGRA_DETECTOR,
+	LAL_LIO_4K_DETECTOR_BIT    	=	LAL_INT8_C(1) << 2 * LAL_LIO_4K_DETECTOR,
 	LAL_ET1_DETECTOR_BIT     	=	LAL_INT8_C(1) << 2 * LAL_ET1_DETECTOR,
 	LAL_ET2_DETECTOR_BIT     	=	LAL_INT8_C(1) << 2 * LAL_ET2_DETECTOR,
 	LAL_ET3_DETECTOR_BIT     	=	LAL_INT8_C(1) << 2 * LAL_ET3_DETECTOR,
 	LAL_ET0_DETECTOR_BIT     	=	LAL_INT8_C(1) << 2 * LAL_ET0_DETECTOR,
-	LAL_KAGRA_DETECTOR_BIT     	=	LAL_INT8_C(1) << 2 * LAL_KAGRA_DETECTOR,
-	LAL_LIO_4K_DETECTOR_BIT    	=	LAL_INT8_C(1) << 2 * LAL_LIO_4K_DETECTOR,
 };
 
 
@@ -352,6 +356,33 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_TAMA_300_ARM_Y_DIRECTION_Z           	-0.81232223390	/**< TAMA_300 z-component of unit vector pointing along y arm in Earth-centered frame */
 /*@}*/
 
+/**
+ * \name VIRGO_CITF Interferometric Detector constants
+ * The following constants describe the location and geometry of the
+ * VIRGO_CITF Interferometric Detector.  FIXME: the armlength is a stub.
+ */
+/*@{*/
+#define LAL_VIRGO_CITF_DETECTOR_NAME               	"VIRGO_CITF"	/**< VIRGO_CITF detector name string */
+#define LAL_VIRGO_CITF_DETECTOR_PREFIX             	"V1"	/**< VIRGO_CITF detector prefix string */
+#define LAL_VIRGO_CITF_DETECTOR_LONGITUDE_RAD      	0.18333805213	/**< VIRGO_CITF vertex longitude (rad) */
+#define LAL_VIRGO_CITF_DETECTOR_LATITUDE_RAD       	0.76151183984	/**< VIRGO_CITF vertex latitude (rad) */
+#define LAL_VIRGO_CITF_DETECTOR_ELEVATION_SI       	51.884	/**< VIRGO_CITF vertex elevation (m) */
+#define LAL_VIRGO_CITF_DETECTOR_ARM_X_AZIMUTH_RAD  	0.33916285222	/**< VIRGO_CITF x arm azimuth (rad) */
+#define LAL_VIRGO_CITF_DETECTOR_ARM_Y_AZIMUTH_RAD  	5.05155183261	/**< VIRGO_CITF y arm azimuth (rad) */
+#define LAL_VIRGO_CITF_DETECTOR_ARM_X_ALTITUDE_RAD 	0.00000000000	/**< VIRGO_CITF x arm altitude (rad) */
+#define LAL_VIRGO_CITF_DETECTOR_ARM_Y_ALTITUDE_RAD 	0.00000000000	/**< VIRGO_CITF y arm altitude (rad) */
+#define LAL_VIRGO_CITF_DETECTOR_ARM_X_MIDPOINT_SI  	0.00000000000	/**< VIRGO_CITF x arm midpoint (m) */
+#define LAL_VIRGO_CITF_DETECTOR_ARM_Y_MIDPOINT_SI  	0.00000000000	/**< VIRGO_CITF y arm midpoint (m) */
+#define LAL_VIRGO_CITF_VERTEX_LOCATION_X_SI        	4.54637409900e+06	/**< VIRGO_CITF x-component of vertex location in Earth-centered frame (m) */
+#define LAL_VIRGO_CITF_VERTEX_LOCATION_Y_SI        	8.42989697626e+05	/**< VIRGO_CITF y-component of vertex location in Earth-centered frame (m) */
+#define LAL_VIRGO_CITF_VERTEX_LOCATION_Z_SI        	4.37857696241e+06	/**< VIRGO_CITF z-component of vertex location in Earth-centered frame (m) */
+#define LAL_VIRGO_CITF_ARM_X_DIRECTION_X           	-0.70045821479	/**< VIRGO_CITF x-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_VIRGO_CITF_ARM_X_DIRECTION_Y           	0.20848948619	/**< VIRGO_CITF y-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_VIRGO_CITF_ARM_X_DIRECTION_Z           	0.68256166277	/**< VIRGO_CITF z-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_VIRGO_CITF_ARM_Y_DIRECTION_X           	-0.05379255368	/**< VIRGO_CITF x-component of unit vector pointing along y arm in Earth-centered frame */
+#define LAL_VIRGO_CITF_ARM_Y_DIRECTION_Y           	-0.96908180549	/**< VIRGO_CITF y-component of unit vector pointing along y arm in Earth-centered frame */
+#define LAL_VIRGO_CITF_ARM_Y_DIRECTION_Z           	0.24080451708	/**< VIRGO_CITF z-component of unit vector pointing along y arm in Earth-centered frame */
+/*@}*/
 
 /**
  * \name VIRGO 3km Interferometric Detector constants
@@ -537,7 +568,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
  */
 /*@{*/
 #define LAL_CIT_40_DETECTOR_NAME               	"CIT_40"	/**< CIT_40 detector name string */
-#define LAL_CIT_40_DETECTOR_PREFIX             	"P1"	/**< CIT_40 detector prefix string */
+#define LAL_CIT_40_DETECTOR_PREFIX             	"C1"	/**< CIT_40 detector prefix string */
 #define LAL_CIT_40_DETECTOR_LONGITUDE_RAD      	-2.06175744538	/**< CIT_40 vertex longitude (rad) */
 #define LAL_CIT_40_DETECTOR_LATITUDE_RAD       	0.59637900541	/**< CIT_40 vertex latitude (rad) */
 #define LAL_CIT_40_DETECTOR_ELEVATION_SI       	0	/**< CIT_40 vertex elevation (m) */
@@ -687,6 +718,35 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 /*@}*/
 
 
+/**
+ * \name ACIGA Interferometric Detector constants (not implemented)
+ * The following constants are stubs for the location and geometry of the
+ * ACIGA Interferometric Detector.
+ */
+/*@{*/
+#define LAL_ACIGA_DETECTOR_NAME               	"ACIGA"	/**< ACIGA detector name string */
+#define LAL_ACIGA_DETECTOR_PREFIX             	"U1"	/**< ACIGA detector prefix string */
+#define LAL_ACIGA_DETECTOR_LONGITUDE_RAD      	0.0	/**< ACIGA vertex longitude (rad) */
+#define LAL_ACIGA_DETECTOR_LATITUDE_RAD       	0.0	/**< ACIGA vertex latitude (rad) */
+#define LAL_ACIGA_DETECTOR_ELEVATION_SI       	0.0	/**< ACIGA vertex elevation (m) */
+#define LAL_ACIGA_DETECTOR_ARM_X_AZIMUTH_RAD  	0.0	/**< ACIGA x arm azimuth (rad) */
+#define LAL_ACIGA_DETECTOR_ARM_Y_AZIMUTH_RAD  	0.0	/**< ACIGA y arm azimuth (rad) */
+#define LAL_ACIGA_DETECTOR_ARM_X_ALTITUDE_RAD 	0.0	/**< ACIGA x arm altitude (rad) */
+#define LAL_ACIGA_DETECTOR_ARM_Y_ALTITUDE_RAD 	0.0	/**< ACIGA y arm altitude (rad) */
+#define LAL_ACIGA_DETECTOR_ARM_X_MIDPOINT_SI  	0.0	/**< ACIGA x arm midpoint (m) */
+#define LAL_ACIGA_DETECTOR_ARM_Y_MIDPOINT_SI  	0.0	/**< ACIGA y arm midpoint (m) */
+#define LAL_ACIGA_VERTEX_LOCATION_X_SI        	0.0	/**< ACIGA x-component of vertex location in Earth-centered frame (m) */
+#define LAL_ACIGA_VERTEX_LOCATION_Y_SI        	0.0	/**< ACIGA y-component of vertex location in Earth-centered frame (m) */
+#define LAL_ACIGA_VERTEX_LOCATION_Z_SI        	0.0	/**< ACIGA z-component of vertex location in Earth-centered frame (m) */
+#define LAL_ACIGA_ARM_X_DIRECTION_X           	0.0	/**< ACIGA x-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ACIGA_ARM_X_DIRECTION_Y           	0.0	/**< ACIGA y-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ACIGA_ARM_X_DIRECTION_Z           	0.0	/**< ACIGA z-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_ACIGA_ARM_Y_DIRECTION_X           	0.0	/**< ACIGA x-component of unit vector pointing along y arm in Earth-centered frame */
+#define LAL_ACIGA_ARM_Y_DIRECTION_Y           	0.0	/**< ACIGA y-component of unit vector pointing along y arm in Earth-centered frame */
+#define LAL_ACIGA_ARM_Y_DIRECTION_Z           	0.0	/**< ACIGA z-component of unit vector pointing along y arm in Earth-centered frame */
+/*@}*/
+
+
 /* Resonant Mass (Bar) Detectors */
 
 
@@ -747,7 +807,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
  */
 /*@{*/
 #define LAL_EXPLORER_DETECTOR_NAME               	"EXPLORER"	/**< EXPLORER detector name string */
-#define LAL_EXPLORER_DETECTOR_PREFIX             	"C1"	        /**< EXPLORER detector prefix string */
+#define LAL_EXPLORER_DETECTOR_PREFIX             	"X1"	        /**< EXPLORER detector prefix string */
 #define LAL_EXPLORER_DETECTOR_LONGITUDE_RAD      	0.10821041362	/**< EXPLORER vertex longitude (rad) */
 #define LAL_EXPLORER_DETECTOR_LATITUDE_RAD       	0.81070543755	/**< EXPLORER vertex latitude (rad) */
 #define LAL_EXPLORER_DETECTOR_ELEVATION_SI       	0	/**< EXPLORER vertex elevation (m) */
