@@ -392,7 +392,7 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
     extra={}
     for (sngl_time, slide, ifo, coinc_id, snr, chisq, cfar) in db_out:
         coinc_id=int(coinc_id.split(":")[-1])
-        seg=filter(lambda seg:sngl_time in seg,seglist)[0]
+        seg=list(filter(lambda seg:sngl_time in seg,seglist))[0]
         slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
         if not coinc_id in output.keys():
             output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={},event_id=int(coinc_id))
@@ -1069,9 +1069,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 used_events.append(e)
             events=used_events
         if gpsstart is not None:
-            events = filter(lambda e: not e.trig_time<gpsstart, events)
+            events = list(filter(lambda e: not e.trig_time<gpsstart, events))
         if gpsend is not None:
-            events = filter(lambda e: not e.trig_time>gpsend, events)
+            events = list(filter(lambda e: not e.trig_time>gpsend, events))
         return events
 
     def add_full_analysis_lalinferencenest(self,event):
