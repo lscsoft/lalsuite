@@ -102,6 +102,7 @@ bin_PROGRAMS = \
 	lalinference_datadump \
 	lalinference_bench \
 	lalinference_version \
+	$(mpi_progs)
 	$(END_OF_LIST)
 
 lalinference_nest_SOURCES = LALInferenceNest.c
@@ -119,6 +120,9 @@ EXTRA_DIST = \
 	$(EXAMPLE_CONFIG) \
 	config.h.in
 
+SUBDIRS = \
+	mpi
+
 DISTCLEANFILES = config.h
 
 vcs_build_info_source = LALInferenceVCSInfo.c
@@ -132,3 +136,9 @@ dist_bin_SCRIPTS = \
 TESTS = \
 	lalinference_version \
 	$(END_OF_LIST)
+
+EXTRA_DIST += \
+	LALInferenceMCMCSampler.c \
+	LALInferenceMCMCSampler.h \
+	LALInferenceKombineSampler.c \
+	LALInferenceKombineSampler.h
