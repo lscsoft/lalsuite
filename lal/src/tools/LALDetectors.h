@@ -360,10 +360,11 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
  * \name VIRGO_CITF Interferometric Detector constants
  * The following constants describe the location and geometry of the
  * VIRGO_CITF Interferometric Detector.  FIXME: the armlength is a stub.
+ * FIXME: this IFO is called V0 rather than to avoid name clash.
  */
 /*@{*/
 #define LAL_VIRGO_CITF_DETECTOR_NAME               	"VIRGO_CITF"	/**< VIRGO_CITF detector name string */
-#define LAL_VIRGO_CITF_DETECTOR_PREFIX             	"V1"	/**< VIRGO_CITF detector prefix string */
+#define LAL_VIRGO_CITF_DETECTOR_PREFIX             	"V0"	/**< VIRGO_CITF detector prefix string */
 #define LAL_VIRGO_CITF_DETECTOR_LONGITUDE_RAD      	0.18333805213	/**< VIRGO_CITF vertex longitude (rad) */
 #define LAL_VIRGO_CITF_DETECTOR_LATITUDE_RAD       	0.76151183984	/**< VIRGO_CITF vertex latitude (rad) */
 #define LAL_VIRGO_CITF_DETECTOR_ELEVATION_SI       	51.884	/**< VIRGO_CITF vertex elevation (m) */
