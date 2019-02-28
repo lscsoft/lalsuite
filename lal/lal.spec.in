@@ -136,6 +136,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Feb 25 2019 Adam Mercer <adam.mercer@ligo.org> 6.19.2-1
+- ER13 release
+
 * Mon Jan 07 2019 Adam Mercer <adam.mercer@ligo.org> 6.19.1-1
 - Intel FFT complilation fixes
 
