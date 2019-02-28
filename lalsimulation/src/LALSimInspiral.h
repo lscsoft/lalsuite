@@ -394,6 +394,8 @@ typedef enum tagApproximant {
    NR_hdf5,              /**< Time domain, NR waveform from HDF file. From INSERT LINKS HERE */
    NRSur4d2s,
    NRSur7dq2,           /**< Time domain, fully precessing NR surrogate model with up to ell=4 modes, arxiv: 1705.07089 */
+   SEOBNRv4HM,	/**< Spin nonprecessing EOBNR model v4 with higher modes, PhysRevD.98.084028 [arXiv:1803.10701]
+                     * @remarks Implemented in lalsimulation (time domain). */
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
