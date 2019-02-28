@@ -157,7 +157,7 @@ class Event():
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
-def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath="./",downloadpsd=True,roq=False,service_url=None):
+def readLValert(threshold_snr=None,gid=None,flow=20.0,basepath="./",downloadpsd=True,roq=False,service_url=None):
     """
     Parse LV alert file, containing coinc, sngl, coinc_event_map.
     and create a list of Events as input for pipeline
@@ -529,7 +529,7 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
         out[ifo]=os.path.join(outpath,ifo+'_psd_'+time+'.txt')
     return out
 
-def get_trigger_chirpmass(gid=None,gracedb="gracedb",service_url=None):
+def get_trigger_chirpmass(gid=None,service_url=None):
     from glue.ligolw import lsctables
     from glue.ligolw import ligolw
     from glue.ligolw import utils as ligolw_utils
@@ -1031,7 +1031,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             service_url = None
             if self.config.has_option('analysis','service-url'):
                 service_url = self.config.get('analysis','service-url')
-            events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),basepath=self.basepath,downloadpsd=downloadgracedbpsd,
+            events = readLValert(gid=gid,flow=flow,basepath=self.basepath,downloadpsd=downloadgracedbpsd,
                                  threshold_snr=threshold_snr,roq=self.config.getboolean('analysis','roq'),service_url=service_url)
         else: gid=None
         # pipedown-database
