@@ -134,6 +134,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SEOBNRv4_opt),
     INITIALIZE_NAME(SEOBNRv2T),
     INITIALIZE_NAME(SEOBNRv4T),
+    INITIALIZE_NAME(SEOBNRv4HM),
     INITIALIZE_NAME(SEOBNRv1_ROM_EffectiveSpin),
     INITIALIZE_NAME(SEOBNRv1_ROM_DoubleSpin),
     INITIALIZE_NAME(SEOBNRv2_ROM_EffectiveSpin),
@@ -785,6 +786,7 @@ int XLALSimInspiralChooseTDWaveform(
         case SEOBNRv2:
         case SEOBNRv4_opt:
         case SEOBNRv4:
+		case SEOBNRv4HM:
             /* Waveform-specific sanity checks */
 	    if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
 	        ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
@@ -795,14 +797,18 @@ int XLALSimInspiralChooseTDWaveform(
             if( f_ref != 0.)
                 XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
             /* Call the waveform driver routine */
+            polariz+=-LAL_PI/2.;
+            //R.C. this rotation of -pi/2 is needed to go from the EOB wave frame to the LAL wave frame, see slide 9 of https://git.ligo.org/waveforms/reviews/SEOBNRv4HM/blob/master/tests/conventions/conventions.pdf
             if(approximant==SEOBNRv1) SpinAlignedEOBversion = 1;
             if(approximant==SEOBNRv2) SpinAlignedEOBversion = 2;
             if(approximant==SEOBNRv2_opt) SpinAlignedEOBversion = 200;
             if(approximant==SEOBNRv4) SpinAlignedEOBversion = 4;
             if(approximant==SEOBNRv4_opt) SpinAlignedEOBversion = 400;
+			if(approximant==SEOBNRv4HM) SpinAlignedEOBversion = 41;
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
                     deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
             break;
+
 
         case SEOBNRv3_opt_rk4:
         case SEOBNRv3_opt:
@@ -913,7 +919,7 @@ int XLALSimInspiralChooseTDWaveform(
             XLALPrintError("TD version of approximant not implemented in lalsimulation\n");
             XLAL_ERROR(XLAL_EINVAL);
     }
-
+    //R.C.: here's the reference explaining why we perform this rotation https://dcc.ligo.org/LIGO-G1900275
     if (polariz && (*hplus) && (*hcross) ) {
       REAL8 tmpP,tmpC;
       REAL8 cp=cos(2.*polariz);
@@ -4687,6 +4693,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case NR_hdf5:
         case NRSur7dq2:
         case TEOBResum_ROM:
+        case SEOBNRv4HM:
             return 1;
 
         default:
@@ -5149,6 +5156,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv4_opt:
     case SEOBNRv2T:
     case SEOBNRv4T:
+    case SEOBNRv4HM:
     case SEOBNRv1_ROM_EffectiveSpin:
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
@@ -5240,6 +5248,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv4_opt:
     case SEOBNRv2T:
     case SEOBNRv4T:
+    case SEOBNRv4HM:
     case SEOBNRv1_ROM_EffectiveSpin:
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
