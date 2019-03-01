@@ -24,6 +24,7 @@ BuildRequires: gsl-devel
 BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
+BuildRequires: python2-astropy
 BuildRequires: swig >= 3.0.7
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
@@ -60,6 +61,7 @@ Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
+Requires: python2-astropy
 Obsoletes: %{name}-python
 Provides: %{name}-python
 %description -n python2-%{name}
