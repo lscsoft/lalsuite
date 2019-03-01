@@ -10,6 +10,9 @@ import ast
 import os
 import uuid
 from glue import pipeline
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils 
 from math import ceil
 
 usage=""" %prog [options] config.ini
@@ -224,9 +227,6 @@ def setup_roq(cp):
     # Get file object of coinc.xml
     if opts.gid is not None:
         from ligo.gracedb.rest import GraceDb
-        from glue.ligolw import ligolw
-        from glue.ligolw import lsctables
-        from glue.ligolw import utils as ligolw_utils
         gid=opts.gid
         cwd=os.getcwd()
         if cp.has_option('analysis', 'service-url'):
@@ -235,17 +235,11 @@ def setup_roq(cp):
             client = GraceDb()
         coinc_xml_obj = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))[0]
     elif cp.has_option('input', 'coinc-xml'):
-        from glue.ligolw import ligolw
-        from glue.ligolw import lsctables
-        from glue.ligolw import utils as ligolw_utils
         coinc_xml_obj = ligolw_utils.load_fileobj(open(cp.get('input', 'coinc-xml'), "rb"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))[0]
 
     # Get sim_inspiral from injection file
     if cp.has_option('input','injection-file'):
         print("Only 0-th event in the XML table will be considered while running with ROQ\n")
-        from glue.ligolw import ligolw
-        from glue.ligolw import lsctables
-        from glue.ligolw import utils as ligolw_utils
         row = lsctables.SimInspiralTable.get_table(
                   utils.load_filename(cp.get('input','injection-file'),contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
               )[0]

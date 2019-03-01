@@ -7,7 +7,8 @@ import glue
 from glue import pipeline
 from ligo import segments
 from ligo.segments import utils as segmentsUtils
-from glue.ligolw import ligolw, lsctables, utils
+from glue.ligolw import ligolw, lsctables
+from glue.ligolw import utils as ligolw_utils
 import os
 import socket
 import uuid
@@ -178,9 +179,6 @@ def create_events_from_coinc_and_psd(
         Whether the run uses ROQ or not
     """
     output=[]
-    from glue.ligolw import utils as ligolw_utils
-    from glue.ligolw import lsctables
-    from glue.ligolw import ligolw
     from lal import series as lalseries
     import lal
     from lalsimulation import SimInspiralChirpTimeBound, GetApproximantFromString, IMRPhenomDGetPeakFreq
@@ -462,7 +460,6 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
       outpath: path where the ascii PSD will be written to
       (end_time): trigtime for this event. Will be used a part of the PSD file name
     """
-    from glue.ligolw import utils as ligolw_utils
     try:
         from lal import series as lalseries
     except ImportError:
@@ -522,7 +519,6 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
     return out
 
 def get_trigger_chirpmass(coinc_xml_obj):
-    from glue.ligolw import lsctables
     coinc_events = lsctables.CoincInspiralTable.get_table(coinc_xml_obj)
     sngl_event_idx = dict((row.event_id, row) for row in lsctables.SnglInspiralTable.get_table(coinc_xml_obj))
     coinc_map = lsctables.CoincMapTable.get_table(coinc_xml_obj)
@@ -975,16 +971,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 events=[Event(trig_time=time) for time in times]
         # Siminspiral Table
         if self.config.has_option('input','injection-file'):
-            from glue.ligolw import ligolw, lsctables, utils
             injTable = lsctables.SimInspiralTable.get_table(
-                              utils.load_filename(self.config.get('input','injection-file'),
+                              ligolw_utils.load_filename(self.config.get('input','injection-file'),
                                                   contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler)) )
             events=[Event(SimInspiral=inj) for inj in injTable]
             self.add_pfn_cache([create_pfn_tuple(self.config.get('input','injection-file'))])
         # SimBurst Table
         if self.config.has_option('input','burst-injection-file'):
             injfile=self.config.get('input','burst-injection-file')
-            injTable=lsctables.SimBurstTable.get_table(utils.load_filename(injfile,contenthandler = lsctables.use_in(LIGOLWContentHandler)))
+            injTable=lsctables.SimBurstTable.get_table(ligolw_utils.load_filename(injfile,contenthandler = lsctables.use_in(LIGOLWContentHandler)))
             events=[Event(SimBurst=inj) for inj in injTable]
             self.add_pfn_cache([create_pfn_tuple(self.config.get('input','burst-injection-file'))])
         # LVAlert CoincInspiral Table
@@ -998,9 +993,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 threshold_snr=self.config.getfloat('input','threshold-snr')
 
             # get coinc object and psd object
-            from glue.ligolw import utils as ligolw_utils
-            from glue.ligolw import lsctables
-            from glue.ligolw import ligolw
             from lal import series as lalseries
             psd_file_obj = None
             if self.config.has_option('input', 'gid'):
