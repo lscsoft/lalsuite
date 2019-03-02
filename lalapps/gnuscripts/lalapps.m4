@@ -49,18 +49,6 @@ AC_DEFUN([LALAPPS_ENABLE_STATIC_BINARIES], [
   ])
 ])
 
-AC_DEFUN([LALAPPS_ENABLE_MPI],
-[AC_ARG_ENABLE(
-  [mpi],
-  AC_HELP_STRING([--enable-mpi],[compile using MPI for supported codes [default=no]]),
-  [ case "${enableval}" in
-      yes) mpi=true;;
-      no)  mpi=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-mpi) ;;
-    esac
-  ], [ mpi=false ] )
-])
-
 AC_DEFUN([LALAPPS_ENABLE_FFTW],
 [AC_ARG_ENABLE(
   [fftw],
@@ -157,38 +145,3 @@ fi
 ,
 AC_MSG_RESULT([no]),
 AC_MSG_RESULT([unknown]) ) ] )
-
-AC_DEFUN([LALAPPS_ENABLE_BAMBI],
-[AC_ARG_ENABLE(
-  [bambi],
-  AC_HELP_STRING([--enable-bambi],[build LALInferenceBAMBI [default=no]]),
-  [ case "${enableval}" in
-      yes) bambi=true;;
-      no)  bambi=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-bambi) ;;
-    esac
-  ], [ bambi=false ] )
-])
-
-AC_DEFUN([LALAPPS_CHECK_BAMBI],[
-  PKG_CHECK_MODULES([BAMBI],[bambi],[
-    AC_LANG([C])
-    AX_CBLAS([
-      BAMBI_LIBS="$CBLAS_LIBS $BAMBI_LIBS"
-      AC_CHECK_HEADERS([cblas.h],[
-        AX_LAPACK([
-          BAMBI_LIBS="$BAMBI_LIBS $LAPACK_LIBS $BLAS_LIBS $FLIBS"
-          BAMBI_ENABLE_VAL="ENABLED"
-          hbf=true
-        ],[
-          AC_MSG_WARN([could not find LAPACK library])
-        ])
-      ],[
-        AC_MSG_WARN([could not find the cblas.h header])
-      ])
-    ],[
-      AC_MSG_WARN([could not find CBLAS library])
-    ])
-  ])
-  AS_IF([test "$hbf" = "false"],[bambimpi=false])
-])
