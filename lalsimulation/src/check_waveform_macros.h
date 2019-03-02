@@ -100,6 +100,17 @@ XLAL_ERROR(XLAL_EINVAL);\
 
 /*
  * Macro procedure for aborting if non-zero transverse spin
+ * components given to a non-precessing approximant
+ */
+#define ABORT_NONZERO_TRANSVERSE_SPINS_NULL(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
+XLALPrintError("XLAL Error - %s: Non-zero transverse spins were given, but this is a non-precessing approximant.\n", __func__);\
+XLAL_ERROR_NULL(XLAL_EINVAL);\
+} while (0)
+
+/*
+ * Macro procedure for aborting if non-zero transverse spin
  * components given to a SpinTaylor approximant with spinO>5
  */
 #define ABORT_NONZERO_TRANSVERSE_SPINS_HIGH_SPINO(LALparams)\
@@ -129,6 +140,17 @@ do {\
 XLALDestroyDict(LALparams);\
 XLALPrintError("XLAL Error - %s: Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.\n", __func__);\
 XLAL_ERROR(XLAL_EINVAL);\
+} while (0)
+
+/*
+ * Macro procedure for aborting if non-zero tidal parameters
+ * given to an approximant with no tidal corrections
+ */
+#define ABORT_NONZERO_TIDES_NULL(LALparams)\
+do {\
+XLALDestroyDict(LALparams);\
+XLALPrintError("XLAL Error - %s: Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.\n", __func__);\
+XLAL_ERROR_NULL(XLAL_EINVAL);\
 } while (0)
 
 /*
