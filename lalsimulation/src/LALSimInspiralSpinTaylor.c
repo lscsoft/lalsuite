@@ -702,9 +702,9 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
 	    const REAL8 dLSyNNL=v2*( cS1*(dS1yNNL - dLNhdotS1NL*LNhy - LNhdotS1*dLNhyNL) + cS2*(dS2yNNL - dLNhdotS2NL*LNhy -LNhdotS2*dLNhyNL) );
 	    const REAL8 dLSzNNL=v2*( cS1*(dS1zNNL - dLNhdotS1NL*LNhz - LNhdotS1*dLNhzNL) + cS2*(dS2zNNL - dLNhdotS2NL*LNhz -LNhdotS2*dLNhzNL) );
 
-	    dLNx += LSCORR*dLSxNNL - dS1xN4L - dS2xN4L;
-	    dLNy += LSCORR*dLSyNNL - dS1yN4L - dS2yN4L;
-	    dLNz += LSCORR*dLSzNNL - dS1zN4L - dS2zN4L;
+	    dLNx += LSCORR*dLSxNNL;
+	    dLNy += LSCORR*dLSyNNL;
+	    dLNz += LSCORR*dLSzNNL;
 #endif
 	    dLNx -= dS1xN4L + dS2xN4L;
 	    dLNy -= dS1yN4L + dS2yN4L;
@@ -3043,7 +3043,7 @@ static int XLALSimInspiralSpinTaylorT5Derivatives(
      * where \f$\hat{\omega} = M \omega\f$ and \f$\hat{t} = t / M\f$
      * Therefore \f$domega = M^2 * d\omega / dt\f$
      *
-     * See Eqs. (1)-(7) of gr-qc/0405090 But note that our spin variables 
+     * See Eqs. (1)-(7) of gr-qc/0405090 But note that our spin variables
      * are scaled by component masses relative to that paper.
      * i.e. \f$S_i = (m_i/M)^2 * \hat{S_i}\f$
      *

@@ -93,7 +93,7 @@ extern "C" {
  * double phiRef = 0;                 // orbital phase at reference, half of main GW phase at reference
  * double longAscNodes=0.0;           // longitude of ascending nodes, degenerate with the polarization angle, related to Omega in @image by Omega=longAscNodes+pi/2
  * double eccentricity=0.0;           // eccentricity at reference epoch
- * double meanPerAno=0.0;             // mean anomaly at reference epoch, i.e. the ratio of time passed since last periastron passage to the time interval between two periastron passages, times 2pi.  Note: This is not a geometric angle that can be visualized in @image 
+ * double meanPerAno=0.0;             // mean anomaly at reference epoch, i.e. the ratio of time passed since last periastron passage to the time interval between two periastron passages, times 2pi.  Note: This is not a geometric angle that can be visualized in @image
  * double deltaF = 1.;                // frequency sampling interval
  * double f_min = 40.0;               // start frequency of inspiral
  * double f_max = 0.0;                // end frequency of inspiral: 0 means use default

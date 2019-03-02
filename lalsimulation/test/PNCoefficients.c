@@ -142,6 +142,7 @@ static REAL8 sumE(
     return accum;
 }
 
+/* Helper function to calculate sum of (1+j/2)flux[j]*wdot[k-j] from 1 to k-1 */
 static REAL8 sumF(
     REAL8 *flux,
     REAL8 *wdotm1,
@@ -780,6 +781,8 @@ static void T5wdot_from_pncoefficients(
     return;
 }
 
+/* Check consistency between hard coded wdot coefficients
+ * and those computed from energy and flux*/
 static int test_consistency_T5(
     const REAL8 m1M,
     const REAL8 chi1,
