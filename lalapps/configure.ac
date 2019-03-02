@@ -17,8 +17,6 @@ AC_CONFIG_FILES([\
   src/frametools/Makefile \
   src/hwinjection/Makefile \
   src/inspiral/Makefile \
-  src/inspiral/posterior/Makefile \
-  src/inspiral/posterior/mpi/Makefile \
   src/lalapps/LALAppsVCSInfo.c \
   src/lalapps/LALAppsVCSInfo.h \
   src/lalapps/Makefile \

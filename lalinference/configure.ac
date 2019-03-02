@@ -27,6 +27,7 @@ AC_CONFIG_FILES([ \
   src/LALInferenceVCSInfo.c \
   src/LALInferenceVCSInfo.h \
   src/Makefile \
+  src/mpi/Makefile \
   src/version.c \
   swig/Makefile \
   test/Makefile \
@@ -91,6 +92,8 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
+LALSUITE_ENABLE_MPI
+
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
 
@@ -121,6 +124,23 @@ AM_SILENT_RULES([yes])
 
 # check for required compilers
 LALSUITE_PROG_COMPILERS
+
+# check for MPI compilers
+bambimpi=false
+if test "x$mpi" = "xtrue"; then
+  AX_MPI([mpi=true],[mpi=false])
+  AS_IF([test "$bambi" = "true"], [
+    MPILIBS_SAVE="${MPILIBS}"
+    AC_LANG([C++])
+    AX_MPI([bambimpi=true],[])
+    AC_LANG([Fortran])
+    AX_MPI([],[bambimpi=false])
+    AC_LANG([C])
+    MPILIBS="${MPILIBS_SAVE}"
+  ])
+  AC_LANG([C])
+fi
+LALSUITE_ENABLE_MODULE([MPI])
 
 # checks for programs
 AC_PROG_INSTALL

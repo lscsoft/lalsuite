@@ -5,8 +5,6 @@ EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-SUBDIRS = posterior
-
 TMPLTBANKSRC = tmpltbank.c inspiralutils.c inspiral.h
 INSPINJSRC = inspinj.c inspiralutils.c inspiral.h
 INJCUTSRC = injcut.c

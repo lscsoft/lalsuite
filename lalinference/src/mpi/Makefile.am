@@ -1,16 +1,12 @@
-MOSTLYCLEANFILES =
-include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
 CC = $(MPICC) -std=gnu99
 AM_CPPFLAGS += -I $(srcdir)/..
 LIBS += $(MPILIBS)
 
-if LALINFERENCE
 if MPI
 mpi_progs = lalinference_mcmc
 mpi_progs += lalinference_kombine
-endif
 endif
 
 lalinference_mcmc_SOURCES = \
