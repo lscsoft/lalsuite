@@ -770,6 +770,11 @@ int XLALSimInspiralChooseTDWaveform(
 		    ABORT_NONZERO_TIDES(LALparams);
 
         ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
+        /*
+         * NOTE: We enforce that the hp**2 + hx**2 peaks at t=0
+         * see the wiki page from phenomHM review
+         * https://git.ligo.org/waveforms/reviews/phenomhm/wikis/time-domain-behaviour
+         */
         maxamp = 0;
         maxind = (*hplus)->data->length - 1;
         for (loopi = (*hplus)->data->length - 1; loopi > -1; loopi--)
@@ -7149,11 +7154,11 @@ int XLALSimInspiralChooseFDWaveformOLD(
     return ret;
 }
 
-/** 
+/**
  * if you do NOT provide a quadparam[1,2] term and you DO provide
  * lamdba[1,2] then we calculate quad-mono term using universal relations
  * quadparam[1,2]_UR: Quadrupole-Monopole parameter computed using
- * universal relations (UR) 
+ * universal relations (UR)
  */
 
 int XLALSimInspiralSetQuadMonParamsFromLambdas(
