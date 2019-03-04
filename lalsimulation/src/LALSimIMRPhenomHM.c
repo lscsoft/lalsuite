@@ -472,25 +472,6 @@ static int init_PhenomHM_Storage(
     p->Rholm[ell][mm] = p->Mf_RD_22 / p->PhenomHMfring[ell][mm];
     p->Taulm[ell][mm] = p->PhenomHMfdamp[ell][mm] / p->Mf_DM_22;
 
-    /* populate Blm_prefactor array */
-    /* see equ.(4) from 1708.00404 */
-    /* A bunch of useful powers used in XLALSimIMRPhenomHMPNAmplitudeLeadingOrder */
-    /* pow_Mf_wf_prefactor are the coefficients from the leading order amplitude terms for each l,m mode we consider.  */
-    /* If A_lm(f) = alpha_lm * f^klm then pow_Mf_wf_prefactor = alpha_lm */
-    /* note The factors of pi's normally multiplying with the frequency are factored into these terms. */
-    /* note delta == sqrt(1. - 4.*eta) */
-    /* note delta2 == 1. - 4.*eta */
-    // REAL8 sqrteta = sqrt(p->eta);
-    REAL8 Seta = sqrt(1.0 - 4.0 * p->eta);
-    REAL8 delta = Seta;
-    REAL8 delta2 = 1.0 - 4.0 * p->eta;
-    p->Blm_prefactor[2][2] = 1.0;
-    p->Blm_prefactor[2][1] = delta * pow(LAL_PI, 1.0 / 3.0) / 3.0;
-    p->Blm_prefactor[3][3] = (3.0 / 4.0) * sqrt(15.0 / 14.0) * pow(LAL_PI, 1.0 / 3.0) * delta;
-    p->Blm_prefactor[3][2] = sqrt(5.0 / 63.0) * pow(LAL_PI, 2.0 / 3.0) * (delta2 + p->eta);
-    p->Blm_prefactor[4][4] = sqrt(320.0 / 567.0) * pow(LAL_PI, 2.0 / 3.0) * (delta2 + p->eta);
-    p->Blm_prefactor[4][3] = sqrt(81.0 / 1120.0) * LAL_PI * (delta2 + 2 * p->eta) * delta;
-
     return XLAL_SUCCESS;
 };
 

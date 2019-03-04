@@ -186,7 +186,6 @@ typedef struct tagPhenomHMStorage
     REAL8 PhenomHMfdamp[L_MAX_PLUS_1][L_MAX_PLUS_1];
     REAL8 Rholm[L_MAX_PLUS_1][L_MAX_PLUS_1]; /**< ratio of (2,2) mode to (l,m) mode ringdown frequency */
     REAL8 Taulm[L_MAX_PLUS_1][L_MAX_PLUS_1]; /**< ratio of (l,m) mode to (2,2) mode damping time */
-    REAL8 Blm_prefactor[L_MAX_PLUS_1][L_MAX_PLUS_1];
 } PhenomHMStorage;
 
 static int init_PhenomHM_Storage(
