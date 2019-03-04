@@ -1207,11 +1207,7 @@ int IMRPhenomHMCore(
     XLAL_CHECK(XLAL_SUCCESS == retcode,
                XLAL_EFUNC, "XLALSimIMRPhenomHMGethlmModes failed");
 
-    /* need to compute the frequency bounds again
-     * a little unfortunate to compute this again. */
-    //actually don't have to because at this point
-    // the 'freqs' array will be determined to be
-    // either uniformly or (potentially) not-uniformly spaced.
+    /* compute the frequency bounds */
     const REAL8 Mtot = (m1_SI + m2_SI) / LAL_MSUN_SI;
     PhenomHMFrequencyBoundsStorage *pHMFS;
     pHMFS = XLALMalloc(sizeof(PhenomHMFrequencyBoundsStorage));
