@@ -1083,6 +1083,7 @@ COMPLEX16 IMRPhenomHMOnePointFiveSpinPN(
  * the model for these parameters await comparisons against further
  * numerical-relativity simulations. For more information, see the review wiki
  * under https://git.ligo.org/waveforms/reviews/phenomhm/wikis/home
+ * Also a technical document in the DCC https://dcc.ligo.org/LIGO-T1800295
  */
 
 /**
