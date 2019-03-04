@@ -1364,7 +1364,7 @@ must be <= 1 in magnitude!\n", chi1z);
     XLAL_CHECK(fabs(chi2z) <= 1.0, XLAL_EDOM, "Aligned spin chi2z=%g \
 must be <= 1 in magnitude!\n", chi2z);
     XLAL_CHECK(f_ref >= 0, XLAL_EDOM, "Reference frequency must be \
-positive.\n"); /* FIXME: check this one */
+positive.\n");
 
     /* setup ModeArray */
     if (extraParams == NULL)
@@ -1410,7 +1410,6 @@ failed");
         {                                     /* populate the frequency unitformly from zero - this is the standard
              convention we use when generating waveforms in LAL. */
             freqs->data[i] = i * pHM->deltaF; /* This is in Hz */
-            //FIXME: memset
             phases->data[i] = 0;              /* initalise all phases to zero. */
             amps->data[i] = 0;                /* initalise all amps to zero. */
         }
@@ -1430,7 +1429,6 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
         amps = XLALCreateREAL8Sequence(freqs->length);
         for (size_t i = 0; i < pHM->npts; i++)
         {
-            //FIXME: memset
             phases->data[i] = 0; /* initalise all phases to zero. */
             amps->data[i] = 0;   /* initalise all phases to zero. */
         }
