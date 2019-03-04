@@ -395,7 +395,6 @@ static int init_PhenomHM_Storage(
 
     /* populate the ringdown frequency array */
     /* If you want to model a new mode then you have to add it here. */
-    /* TODO: Fix this to run over a loop of allowed modes. */
     /* (l,m) = (2,2) */
     IMRPhenomHMGetRingdownFrequency(
         &p->PhenomHMfring[2][2],
