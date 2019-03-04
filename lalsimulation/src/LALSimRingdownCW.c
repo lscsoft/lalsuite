@@ -39,6 +39,7 @@
 #include "LALSimRingdownCW.h"
 
 /*
+* Based on the paper by London and Fauchon-Jones: https://arxiv.org/abs/1810.03550
 * Basic NOTE(s):
 *   - This file contains a function, CW07102016, which outputs complex valued, UNITLESS, QNM frequencies (i.e. Mw) for various QNMs
 *   - Usage: cw = CW07102016( kappa, l, m, n ); where cw = Mw + 1i*M/tau; NOTE that kappa is a function of final spin, l and m
