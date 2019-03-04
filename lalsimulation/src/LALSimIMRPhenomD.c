@@ -988,7 +988,6 @@ int IMRPhenomDSetupAmpAndPhaseCoefficients(
   pDPreComp->pAmp = *pAmp;
   pDPreComp->amp_prefactors = amp_prefactors;
 
-  //FIXME: Is it correct to free these pointers here? SK
   LALFree(pn);
   LALFree(pPhi);
   LALFree(pAmp);
