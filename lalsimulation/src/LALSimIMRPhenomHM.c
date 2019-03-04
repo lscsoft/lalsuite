@@ -262,8 +262,6 @@ int init_IMRPhenomHMGet_FrequencyBounds_storage(
 
         /* If p->f_max == 0. Then we default to the ending frequency
          * for PhenomHM
-         * TODO: Check the ending frequency
-         * TODO: Want to implement variable ending frequency for each mode.
          */
         if (p->f_max == 0.)
         {
