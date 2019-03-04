@@ -476,7 +476,6 @@ static int init_PhenomHM_Storage(
 };
 
 /**
- * mathematica function postfRDflm
  * domain mapping function - ringdown
  */
 double IMRPhenomHMTrd(
