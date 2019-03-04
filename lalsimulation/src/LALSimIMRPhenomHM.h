@@ -267,17 +267,6 @@ double IMRPhenomHMFreqDomainMap(
     PhenomHMStorage *pHM,
     const int AmpFlag);
 
-double IMRPhenomHMPNFrequencyScale(
-    PhenomHMUsefulPowers *p,
-    REAL8 Mf,
-    INT4 ell,
-    INT4 mm);
-
-double IMRPhenomHMPNAmplitudeLeadingOrderFpow(
-    INT4 ell,
-    INT4 mm,
-    REAL8 Mf);
-
 int IMRPhenomHMPhasePreComp(
     HMPhasePreComp *q,
     const INT4 ell,
