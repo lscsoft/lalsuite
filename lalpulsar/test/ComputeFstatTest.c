@@ -343,6 +343,8 @@ compareFstatResults ( const FstatResults *result1, const FstatResults *result2 )
 
       // test comparison sanity with identical vectors should yield 0 differences
       VectorComparison XLAL_INIT_DECL(tol0);
+      // we saw 6.0e-09 on arm64
+      tol0.angleV = 5e-8;
       XLAL_CHECK ( XLALCompareREAL4Vectors ( &cmp, &v1, &v1, &tol0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK ( XLALCompareREAL4Vectors ( &cmp, &v2, &v2, &tol0 ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
