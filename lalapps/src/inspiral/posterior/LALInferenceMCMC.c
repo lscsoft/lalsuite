@@ -91,7 +91,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     ----------------------------------------------\n\
     (--nsteps n)        Maximum number of steps to take (1e7)\n\
     (--neff N)          Number of independent samples to collect (nsteps)\n\
-    (--skip n)          Number of steps between writing samples to file (100)\n\
+    (--skip n)          Number of steps between writing samples to file (2000)\n\
     (--adapt-tau)       Adaptation decay power, results in adapt length of 10^tau (5)\n\
     (--no-adapt)        Do not adapt run\n\
     (--randomseed seed) Random seed of sampling distribution (random)\n\
