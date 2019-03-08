@@ -1473,7 +1473,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             if self.engine=='lalinferenceburst': prefix='LIB'
             else: prefix='LALInference'
             mapnode = SkyMapNode(self.mapjob, posfile = mergenode.get_pos_file(), parent=mergenode,
-                    prefix= prefix, outdir=pagedir)
+                    prefix= prefix, outdir=pagedir, ifos=enginenodes[0].get_ifos())
             plotmapnode = PlotSkyMapNode(self.plotmapjob, parent=mapnode, inputfits = mapnode.outfits, output=os.path.join(pagedir,'skymap.png'))
             self.add_node(mapnode)
             self.add_node(plotmapnode)
@@ -1586,7 +1586,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     self.add_gracedb_log_node(respagenode,event.GID,server=gdb_srv)
         if self.config.has_option('condor','ligo-skymap-plot') and self.config.has_option('condor','ligo-skymap-from-samples'):
             mapnode = SkyMapNode(self.mapjob, posfile = mergenode.get_pos_file(), parent=mergenode,
-                    prefix= 'LALInference', outdir=pagedir)
+                    prefix= 'LALInference', outdir=pagedir, ifos=enginenodes[0].get_ifos())
             plotmapnode = PlotSkyMapNode(self.plotmapjob, parent=mapnode, inputfits = mapnode.outfits, output=os.path.join(pagedir,'skymap.png'))
             self.add_node(mapnode)
             self.add_node(plotmapnode)
@@ -3434,13 +3434,15 @@ class BayesLineNode(LALInferenceDAGNode):
         super(BayesLineNode,self).__init__(bayesline_job)
         self.__finalized=False
 
-class SkyMapNode(LALInferenceDAGNode):
-    def __init__(self, skymap_job, posfile=None, parent=None, objid=None, prefix=None, outdir=None):
+
+class SkyMapNode(pipeline.CondorDAGNode):
+    def __init__(self, skymap_job, posfile=None, parent=None, objid=None, prefix=None, outdir=None, ifos=None):
         self.prefix=prefix
         super(SkyMapNode, self).__init__(skymap_job)
         self.objid=None
         self.outdir=None
         self.finalized=False
+        self.ifos=None
         if parent:
             self.add_parent(parent)
         if posfile:
@@ -3449,6 +3451,8 @@ class SkyMapNode(LALInferenceDAGNode):
             self.set_objid(objid)
         if outdir:
             self.set_outdir(outdir)
+        if ifos:
+            self.ifos=ifos
     def set_outdir(self, outdir):
         self.outdir=outdir
         if self.prefix:
@@ -3477,6 +3481,8 @@ class SkyMapNode(LALInferenceDAGNode):
         self.add_file_opt('outdir',self.outdir, file_is_output_file=True)
         if self.objid:
             self.add_var_opt('objid',self.objid)
+        if self.ifos:
+            self.add_var_opt('instruments',str(self.ifos))
         super(SkyMapNode,self).finalize()
 
 class SkyMapJob(LALInferenceDAGSharedFSJob, pipeline.CondorDAGJob,pipeline.AnalysisJob):
