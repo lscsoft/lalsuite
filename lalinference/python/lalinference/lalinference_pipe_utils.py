@@ -3503,6 +3503,7 @@ class SkyMapJob(LALInferenceDAGSharedFSJob, pipeline.CondorDAGJob,pipeline.Analy
         self.add_ini_opts(cp,'ligo-skymap-from-samples')
         if cp.has_option('engine','margdist') or cp.has_option('engine','margdist-comoving'):
             self.add_opt('disable-distance-map','')
+        self.add_opt('enable-multiresolution','')
 
 
 class PlotSkyMapJob(LALInferenceDAGSharedFSJob, pipeline.CondorDAGJob, pipeline.AnalysisJob):
