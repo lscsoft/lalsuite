@@ -52,6 +52,11 @@
  * Riemenschneider, Setyawati, Hinderer. Concluded with git hash
  * f15615215a7e70488d32137a827d63192cbe3ef6 (February 2019).
  *
+ * @note If not specified explicitly by the user, the default tidal order will be
+ * chosen as 7.0PN, based on the good performance found in
+ * https://arxiv.org/pdf/1804.02235.pdf (Fig. 10). However, the user is free to specify
+ * any tidal order up to 7.5PN passing the relevant flag through the LALDict.
+ *
  * @name Routines for TaylorF2 Waveforms
  * @sa
  * Section IIIF of Alessandra Buonanno, Bala R Iyer, Evan
@@ -269,9 +274,12 @@ int XLALSimInspiralTaylorF2Core(
     REAL8 pft15 = 0.;
     switch( XLALSimInspiralWaveformParamsLookupPNTidalOrder(p) )
     {
-        case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_75PN:
             pft15 = pfa.v[15];
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT:
 #if __GNUC__ >= 7
             __attribute__ ((fallthrough));
 #endif
