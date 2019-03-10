@@ -71,7 +71,9 @@ typedef enum tagLALSimInspiralSpinOrder {
  * Numerically, they are equal to twice the PN order, so e.g.
  * LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN = 10
  * In addition, LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL = -1
- * is a flag to include all available tidal effects
+ * is a flag to include all tidal PN orders up to the default
+ * value (which currently is 7PN for TaylorF2, 6PN for all
+ * other approximants).
  */
 typedef enum tagLALSimInspiralTidalOrder {
     LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN =  0,
