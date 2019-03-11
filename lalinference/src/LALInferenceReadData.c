@@ -88,7 +88,7 @@ struct fvec {
   REAL8 x;
 };
 
-#define LALINFERENCE_DEFAULT_FLOW "40.0"
+#define LALINFERENCE_DEFAULT_FLOW "20.0"
 
 static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable *commandLine);
 struct fvec *interpFromFile(char *filename, REAL8 squareinput);
