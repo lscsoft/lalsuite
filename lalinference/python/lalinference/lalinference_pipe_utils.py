@@ -1372,10 +1372,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             seglen=event.duration
         segstart=end_time+2-seglen
         segend=segstart+seglen
+        if self.config.has_option('input', 'minimum_realizations_number'):
+            psdstart = segstart - self.config.getint('input','padding') - \
+                self.config.getint('input', 'minimum_realizations_number') * seglen
+        else:
+            psdstart = segstart
         myifos=set([])
         for ifo in ifos:
             for seg in self.segments[ifo]:
-                if segstart >= seg.start() and segend <= seg.end():
+                if psdstart >= seg.start() and segend <= seg.end():
                     myifos.add(ifo)
         ifos=myifos
         if len(ifos)==0:
