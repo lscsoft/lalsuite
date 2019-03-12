@@ -579,6 +579,7 @@ MakeSFTsLogFile = subLogPath + '/' + 'MakeSFTs_' + dagFileName + '.log'
 MakeSFTsFID.write('universe = vanilla\n')
 MakeSFTsFID.write('executable = '+ makeSFTsExe + '\n')
 MakeSFTsFID.write('arguments = $(argList)\n')
+MakeSFTsFID.write('getenv = True\n')
 if (accountingGroup != None):
    MakeSFTsFID.write('accounting_group = %s\n' % accountingGroup)
 if (accountingGroupUser != None):

@@ -24,6 +24,7 @@ BuildRequires: gsl-devel
 BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
+BuildRequires: python2-astropy
 BuildRequires: swig >= 3.0.7
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
@@ -60,6 +61,7 @@ Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
+Requires: python2-astropy
 Obsoletes: %{name}-python
 Provides: %{name}-python
 %description -n python2-%{name}
@@ -126,6 +128,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Feb 25 2019 Adam Mercer <adam.mercer@ligo.org> 1.17.1-1
+- ER14 release
+
 * Thu Sep 13 2018 Adam Mercer <adam.mercer@ligo.org> 1.17.0-1
 - Pre O3 release
 

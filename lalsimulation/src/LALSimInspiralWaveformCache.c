@@ -929,16 +929,8 @@ int XLALSimInspiralChooseFDWaveformSequence(
     cfac = cos(inclination);
     pfac = 0.5 * (1. + cfac*cfac);
 
-    REAL8 lambda1=XLALSimInspiralWaveformParamsLookupTidalLambda1(LALpars);
-    REAL8 lambda2=XLALSimInspiralWaveformParamsLookupTidalLambda2(LALpars);
-    if ((!XLALDictContains(LALpars, "dQuadMon1"))) {
-      REAL8 quadparam1_in = XLALSimInspiralEOSQfromLambda(lambda1);
-      XLALSimInspiralWaveformParamsInsertdQuadMon1(LALpars, quadparam1_in);
-    }
-    if ((!XLALDictContains(LALpars, "dQuadMon2"))) {
-      REAL8 quadparam2_in = XLALSimInspiralEOSQfromLambda(lambda2);
-      XLALSimInspiralWaveformParamsInsertdQuadMon2(LALpars, quadparam2_in);
-    }
+    REAL8 lambda1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALpars);
+    REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALpars);
 
     switch (approximant)
     {
@@ -953,11 +945,13 @@ int XLALSimInspiralChooseFDWaveformSequence(
                 ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
 
             /* Call the waveform driver routine */
+            ret = XLALSimInspiralSetQuadMonParamsFromLambdas(LALpars);
+            XLAL_CHECK(ret == XLAL_SUCCESS, XLAL_EFUNC, "Failed to set quadparams from Universal relation.\n");
             XLALSimInspiralPNPhasing_F2(&pfa, m1/LAL_MSUN_SI, m2/LAL_MSUN_SI,
                                         S1z, S2z, S1z*S1z, S2z*S2z,
                                         S1z*S2z, LALpars);
             ret = XLALSimInspiralTaylorF2Core(hptilde, frequencies, phiRef,
-                    m1, m2, f_ref, 0., distance, LALpars, NULL);
+                    m1, m2, f_ref, 0., distance, LALpars, &pfa);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",

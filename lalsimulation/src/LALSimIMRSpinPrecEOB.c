@@ -1293,7 +1293,7 @@ int XLALSimIMRSpinEOBWaveformAll(
         chiS = 0.5*(seobParams.chi1 + seobParams.chi2);
         chiA = 0.5*(seobParams.chi1 - seobParams.chi2);
         tplspin = (1.-2.*eta) * chiS + (m1 - m2)/(m1 + m2) * chiA;
-        if ( XLALSimIMREOBCalcSpinFacWaveformCoefficients( seobParams.eobParams->hCoeffs, m1, m2, eta, tplspin, chiS, chiA, SpinAlignedEOBversion, &seobParams ) == XLAL_FAILURE ) /* This function returns XLAL_SUCCESS or calls XLAL_ERROR( XLAL_EINVAL ) */
+      if ( XLALSimIMREOBCalcSpinFacWaveformCoefficients( seobParams.eobParams->hCoeffs, &seobParams, m1, m2, eta, tplspin, chiS, chiA, SpinAlignedEOBversion ) == XLAL_FAILURE ) /* This function returns XLAL_SUCCESS or calls XLAL_ERROR( XLAL_EINVAL ) */
       {
 	failure_flag = 1;
             XLALPrintError("XLALSimIMREOBCalcSpinFacWaveformCoefficients failed!\n");

@@ -88,7 +88,7 @@ struct fvec {
   REAL8 x;
 };
 
-#define LALINFERENCE_DEFAULT_FLOW "40.0"
+#define LALINFERENCE_DEFAULT_FLOW "20.0"
 
 static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable *commandLine);
 struct fvec *interpFromFile(char *filename, REAL8 squareinput);
@@ -254,7 +254,7 @@ static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS 
 }
 
 /**
- * Parse the command line looking for options of the kind --ifo H1 --H1-channel H1:LDAS_STRAIN --H1-cache H1.cache --H1-flow 40.0 --H1-fhigh 4096.0 --H1-timeslide 100.0 --H1-asd asd_ascii.txt --H1-psd psd_ascii.txt ...
+ * Parse the command line looking for options of the kind --ifo H1 --H1-channel H1:LDAS_STRAIN --H1-cache H1.cache --H1-flow 20.0 --H1-fhigh 4096.0 --H1-timeslide 100.0 --H1-asd asd_ascii.txt --H1-psd psd_ascii.txt ...
  * It is necessary to use this method instead of the old method for the pipeline to work in DAX mode. Warning: do not mix options between
  * the old and new style.
  */
@@ -514,7 +514,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
     (--srate rate)              Downsample data to rate in Hz (4096.0,)\n\
     (--padding PAD [sec]        Override default 0.4 seconds padding\n\
     (--injectionsrate rate)     Downsample injection signal to rate in Hz (--srate)\n\
-    (--IFO1-flow freq1          Specify lower frequency cutoff for overlap integral (40.0)\n\
+    (--IFO1-flow freq1          Specify lower frequency cutoff for overlap integral (20.0)\n\
      [--IFO2-flow freq2 ...])\n\
     (--IFO1-fhigh freq1         Specify higher frequency cutoff for overlap integral (Nyquist\n\
      [--IFO2-fhigh freq2 ...])      freq 0.5*srate)\n\
