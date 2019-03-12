@@ -357,7 +357,7 @@ for cp in generate_variations(master_cp,variations):
         injpath=cp.get('input','injection-file')
         myinjpath=os.path.join(basepath,os.path.basename(injpath))
         if os.path.abspath(myinjpath) != os.path.abspath(injpath):
-            # If the injection file does not exist in the run dir, link it in place
+            # If the injection file does not exist in the run dir, link it into place
             # Useful for singularity jobs which see only rundir
             if os.path.lexists(myinjpath):
                 # If the path exists, see if it is a link to the current file
@@ -372,9 +372,12 @@ for cp in generate_variations(master_cp,variations):
                     sys.exit(1)
             else:
                 # The link doens't exist, so create it and update config
-                os.link(os.path.abspath(injpath), myinjpath)
+                try:
+                    os.link(os.path.abspath(injpath), myinjpath)
+                except:
+                    from shutil import copyfile
+                    copyfile(injpath,myinjpath)
                 cp.set('input','injection-file',myinjpath)
-
 
     for this_cp in setup_roq(cp):
         # Create the DAG from the configparser object
