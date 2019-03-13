@@ -207,14 +207,16 @@ def set_fiducial_bbh(cp):
     cp.set('lalinference','fake-cache',"{'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
     cp.set('analysis','dataseed','1234')
     cp.set('engine','0noise','')
+    cp.remove_option('engine','margphi')
 
     cp.set('paths','webdir',web_outputdir+'/fiducialBBH/webdir/')
-    cp.set('lalinference','flow',"{'H1':40,'L1':40,'V1':40}")
+    #cp.set('lalinference','flow',"{'H1':40,'L1':40,'V1':40}")
     cp.set('engine','approx','IMRPhenomPv2pseudoFourPN')
     cp.set('analysis','roq','True')
     cp.remove_option('engine','disable-spin')
     cp.set('resultspage','deltaLogP','6')
-    cp.set('engine','distance-max','2000')
+    cp.set('engine','distance-max','1000')
+    cp.set('engine','inj-fref','100')
 
     cp.set('engine','neff','500')
     cp.set('engine','nlive','512')
