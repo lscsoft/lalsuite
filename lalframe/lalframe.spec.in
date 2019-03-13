@@ -18,6 +18,7 @@ Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRequires: python2-rpm-macros
+BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
 BuildRequires: libframe-devel
 BuildRequires: numpy

@@ -12,6 +12,6 @@ LALPULSAR_PYTHON_PATH=@pyexecdir@
 Name: LALPulsar
 Description: LAL Pulsar Library
 Version: @VERSION@
-Requires: gsl, lal >= @LAL_VERSION@
+Requires.private: gsl, lal >= @LAL_VERSION@
 Libs: -L${libdir} -llalpulsar
 Cflags: -I${includedir}
