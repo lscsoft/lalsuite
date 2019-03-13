@@ -1508,14 +1508,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                                 bayeswavepsdnode[ifo].set_dataseed(self.dataseed+event.event_id)
 
                         if ifo not in bayeswavepostnode:
-                            bayeswavepostnode[ifo]=self.add_bayeswaveost_node(ifo,parent=bayeswavepsdnode[ifo])
+                            bayeswavepostnode[ifo]=self.add_bayeswavepost_node(ifo,parent=bayeswavepsdnode[ifo])
                             bayeswavepostnode[ifo].add_var_arg('--0noise')
+                            bayeswavepostnode[ifo].add_var_arg('--lite')
                             bayeswavepostnode[ifo].add_var_arg('--bayesLine')
                             bayeswavepostnode[ifo].add_var_arg('--cleanOnly')
                             bayeswavepostnode[ifo].add_var_arg('--checkpoint')
                             bayeswavepostnode[ifo].add_var_arg('--outputDir '+roqeventpath)
                             bayeswavepostnode[ifo].add_var_arg('--runName BayesWave_PSD_'+ifo)
-                            bayeswavepostnode[ifo].add_output_file(os.path.join(roqeventpath, 'noise_median_PSD_forLI_'+ifo+'.dat'))
+                            bayeswavepostnode[ifo].add_output_file(os.path.join(roqeventpath, 'BayesWave_PSD_'+ifo+'/noise_median_PSD_forLI_'+ifo+'.dat'))
                             bayeswavepostnode[ifo].set_trig_time(end_time)
                             bayeswavepostnode[ifo].set_seglen(bw_seglen)
                             bayeswavepostnode[ifo].set_psdlength(bw_seglen)
@@ -1532,7 +1533,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                                         fakecachefiles=ast.literal_eval(self.config.get('lalinference','fake-cache'))
                                         bayeswavepostnode[ifo].add_fake_ifo_data(ifo,seg,fakecachefiles[ifo],self.channels[ifo],timeslide=slide)
                             if self.config.has_option('lalinference','flow'):
-                                bayeswavepostnode[ifo].flows[ifo]=np.power(2,np.floor(np.log2(ast.literal_eval(self.config.get('lalinference','flow'))[ifo]))).config.get('lalinference','flow'))[ifo])+' to '+str(np.power(2,np.floor(np.log2(ast.literal_eval(self.config.get('lalinference','flow'))[ifo]))))+' Hz (for the BayesWave job only, in the main LALInference jobs f_low will still be '+str(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])+' Hz)')
+                                bayeswavepostnode[ifo].flows[ifo]=np.power(2,np.floor(np.log2(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])))
                             bayeswavepostnode[ifo].set_seed(randomseed)
                             if self.dataseed:
                                 bayeswavepostnode[ifo].set_dataseed(self.dataseed+event.event_id)
@@ -2384,7 +2385,7 @@ class BayesWavePostJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.add_condor_cmd('getenv','True')
         self.ispreengine = False
 
-class BayesWavePSDNode(EngineNode):
+class BayesWavePostNode(EngineNode):
     def __init__(self,bayeswavepost_job):
         super(BayesWavePostNode,self).__init__(bayeswavepost_job)
         self.engine='bayeswavepost'
