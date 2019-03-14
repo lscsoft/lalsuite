@@ -3482,7 +3482,7 @@ class SkyMapNode(pipeline.CondorDAGNode):
         if self.objid:
             self.add_var_opt('objid',self.objid)
         if self.ifos:
-            self.add_var_opt('instruments',str(self.ifos))
+            self.add_var_opt('instruments',' '.join(self.ifos))
         super(SkyMapNode,self).finalize()
 
 class SkyMapJob(LALInferenceDAGSharedFSJob, pipeline.CondorDAGJob,pipeline.AnalysisJob):
