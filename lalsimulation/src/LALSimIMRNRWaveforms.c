@@ -251,9 +251,9 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(
         (file, "position2y-vs-time", ref_time);
     pos2z = XLALSimInspiralNRWaveformGetInterpValueFromGroupAtPoint
         (file, "position2z-vs-time", ref_time);
-    n_hat_x = pos2x - pos1x;
-    n_hat_y = pos2y - pos1y;
-    n_hat_z = pos2z - pos1z;
+    n_hat_x = pos1x - pos2x;
+    n_hat_y = pos1y - pos2y;
+    n_hat_z = pos1z - pos2z;
     n_norm = sqrt(n_hat_x*n_hat_x + n_hat_y*n_hat_y + n_hat_z*n_hat_z);
     n_hat_x = n_hat_x / n_norm;
     n_hat_y = n_hat_y / n_norm;
@@ -404,9 +404,9 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
         (filepointer, "position2y-vs-time", ref_time);
     pos2z = XLALSimInspiralNRWaveformGetInterpValueFromGroupAtPoint
         (filepointer, "position2z-vs-time", ref_time);
-    n_hat_x = pos2x - pos1x;
-    n_hat_y = pos2y - pos1y;
-    n_hat_z = pos2z - pos1z;
+    n_hat_x = pos1x - pos2x;
+    n_hat_y = pos1y - pos2y;
+    n_hat_z = pos1z - pos2z;
   }
   else
   {
