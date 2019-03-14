@@ -151,6 +151,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(IMRPhenomC),
     INITIALIZE_NAME(IMRPhenomD),
     INITIALIZE_NAME(IMRPhenomD_NRTidal),
+    INITIALIZE_NAME(IMRPhenomHM),
     INITIALIZE_NAME(IMRPhenomP),
     INITIALIZE_NAME(IMRPhenomPv2),
     INITIALIZE_NAME(IMRPhenomPv2_NRTidal),
@@ -383,6 +384,10 @@ int XLALSimInspiralChooseTDWaveform(
     /* SEOBNR flag for precessing model version. 3 for SEOBNRv3, 300 for SEOBNRv3_opt */
     UINT4 PrecEOBversion;
     REAL8 spin1[3], spin2[3];
+
+    REAL8 maxamp = 0;
+    INT4 loopi = 0;
+    INT4 maxind = 0;
 
     //LIGOTimeGPS epoch = LIGOTIMEGPSZERO;
 
@@ -735,15 +740,13 @@ int XLALSimInspiralChooseTDWaveform(
 	    // calculated from hplus and hcross, apply inclination-dependent factors
 	    // in loop below
 	    ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, 0., phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
-	    REAL8 maxamp=0;
-	    REAL8TimeSeries *hp = *hplus;
-	    REAL8TimeSeries *hc = *hcross;
-	    INT4 maxind=hp->data->length - 1;
-	    INT4 loopi;
+	    maxamp=0;
+        REAL8TimeSeries *hp = *hplus;
+        REAL8TimeSeries *hc = *hcross;
+        maxind=hp->data->length - 1;
 	    const REAL8 cfac=cos(inclination);
 	    const REAL8 pfac = 0.5 * (1. + cfac*cfac);
-
-	    for (loopi=hp->data->length - 1; loopi > -1; loopi--)
+        for (loopi=hp->data->length - 1; loopi > -1; loopi--)
 	    {
 		    REAL8 ampsqr = (hp->data->data[loopi])*(hp->data->data[loopi]) +
 			   (hc->data->data[loopi])*(hc->data->data[loopi]);
@@ -757,7 +760,37 @@ int XLALSimInspiralChooseTDWaveform(
 	    }
 	    XLALGPSSetREAL8(&(hp->epoch), (-1.) * deltaT * maxind);
 	    XLALGPSSetREAL8(&(hc->epoch), (-1.) * deltaT * maxind);
-	    break;
+        break;
+
+    case IMRPhenomHM:
+	    if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+		    ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+	    if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+		    ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+	    if( !checkTidesZero(lambda1, lambda2) )
+		    ABORT_NONZERO_TIDES(LALparams);
+
+        ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
+        /*
+         * NOTE: We enforce that the hp**2 + hx**2 peaks at t=0
+         * see the wiki page from phenomHM review
+         * https://git.ligo.org/waveforms/reviews/phenomhm/wikis/time-domain-behaviour
+         */
+        maxamp = 0;
+        maxind = (*hplus)->data->length - 1;
+        for (loopi = (*hplus)->data->length - 1; loopi > -1; loopi--)
+        {
+            REAL8 ampsqr = ((*hplus)->data->data[loopi]) * ((*hplus)->data->data[loopi]) +
+                           ((*hcross)->data->data[loopi]) * ((*hcross)->data->data[loopi]);
+            if (ampsqr > maxamp)
+            {
+                maxind = loopi;
+                maxamp = ampsqr;
+            }
+        }
+        XLALGPSSetREAL8(&((*hplus)->epoch), (-1.) * deltaT * maxind);
+        XLALGPSSetREAL8(&((*hcross)->epoch), (-1.) * deltaT * maxind);
+        break;
 
 	case IMRPhenomPv2:
 	    ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
@@ -1339,6 +1372,27 @@ int XLALSimInspiralChooseFDWaveform(
                 (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j];
                 (*hptilde)->data->data[j] *= pfac;
             }
+            break;
+
+        case IMRPhenomHM:
+            /* Waveform-specific sanity checks */
+            // if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+            // ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+            if (!checkTransverseSpinsZero(S1x, S1y, S2x, S2y))
+                ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+            if (!checkTidesZero(lambda1, lambda2))
+                ABORT_NONZERO_TIDES(LALparams);
+            /* Call the waveform driver routine */
+
+            REAL8Sequence *freqs = XLALCreateREAL8Sequence(2);
+            freqs->data[0] = f_min;
+            freqs->data[1] = f_max;
+            ret = XLALSimIMRPhenomHM(hptilde, hctilde, freqs, m1, m2,
+                                     S1z, S2z, distance, inclination, phiRef, deltaF, f_ref,
+                                     LALparams);
+            if (ret == XLAL_FAILURE)
+                XLAL_ERROR(XLAL_EFUNC);
+            XLALDestroyREAL8Sequence(freqs);
             break;
 
         case EOBNRv2_ROM:
@@ -4675,6 +4729,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case PhenSpinTaylor:
         case IMRPhenomC:
 	case IMRPhenomD:
+    case IMRPhenomHM:
 	case IMRPhenomPv2:
         case IMRPhenomPv2_NRTidal:
         case PhenSpinTaylorRD:
@@ -4717,6 +4772,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomC:
         case IMRPhenomD:
         case IMRPhenomD_NRTidal:
+        case IMRPhenomHM:
         case IMRPhenomP:
         case IMRPhenomPv2:
         case IMRPhenomPv2_NRTidal:
@@ -5149,6 +5205,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case IMRPhenomC:
     case IMRPhenomD:
     case IMRPhenomD_NRTidal:
+    case IMRPhenomHM:
     case SEOBNRv1:
     case SEOBNRv2:
     case SEOBNRv4:
@@ -5271,6 +5328,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case NR_hdf5:
     case NRSur4d2s:
     case NRSur7dq2:
+    case IMRPhenomHM:
     case NumApproximants:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;
@@ -7105,11 +7163,11 @@ int XLALSimInspiralChooseFDWaveformOLD(
     return ret;
 }
 
-/** 
+/**
  * if you do NOT provide a quadparam[1,2] term and you DO provide
  * lamdba[1,2] then we calculate quad-mono term using universal relations
  * quadparam[1,2]_UR: Quadrupole-Monopole parameter computed using
- * universal relations (UR) 
+ * universal relations (UR)
  */
 
 int XLALSimInspiralSetQuadMonParamsFromLambdas(

@@ -1206,9 +1206,11 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  *    (should be used instead of IMRPhenomP,
  *    unless there are good reasons not to).
  *  * IMRPhenomPv2_NRTidal models precessing binaries,
- *    adds NRTides (https://arxiv.org/pdf/1706.02969.pdf) 
- *    to IMRPhenomD phasing and twists the waveform 
+ *    adds NRTides (https://arxiv.org/pdf/1706.02969.pdf)
+ *    to IMRPhenomD phasing and twists the waveform
  *    to generate the corresponding precessing waveform.
+ *  * IMRPhenomHM models spinning, non-precessing binaries,
+ *    based on IMRPhenomD that also includes higher order modes.
  *
  * @review IMRPhenomB routines reviewed by Frank Ohme, P. Ajith, Alex Nitz
  * and Riccardo Sturani. The review concluded with git hash
@@ -1227,6 +1229,9 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  * @review IMRPhenomPv2_NRTidal reviewed by Ohme, Haney, Khan, Samajdar,
  * Riemenschneider, Setyawati, Hinderer. Concluded with git hash
  * f15615215a7e70488d32137a827d63192cbe3ef6 (February 2019).
+ *
+ * @review IMRPhenomHM review wiki page can be found here
+ * https://git.ligo.org/waveforms/reviews/phenomhm/wikis/home
  * @{
  */
 

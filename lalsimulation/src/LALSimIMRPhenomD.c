@@ -22,6 +22,9 @@
 #include <gsl/gsl_math.h>
 #include "LALSimIMRPhenomD_internals.c"
 #include <lal/Sequence.h>
+
+#include "LALSimIMRPhenomInternalUtils.h"
+
 UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
 
 #ifndef _OPENMP
@@ -262,6 +265,11 @@ static int IMRPhenomDGenerateFD(
 ) {
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
 
+  // Make a pointer to LALDict to circumvent a memory leak
+  // At the end we will check if we created a LALDict in extraParams
+  // and destroy it if we did.
+  LALDict *extraParams_in = extraParams;
+
   REAL8 chi1, chi2, m1, m2;
   if (m1_in>m2_in) {
      chi1 = chi1_in;
@@ -289,7 +297,7 @@ static int IMRPhenomDGenerateFD(
   REAL8 eta = m1 * m2 / (M * M);
 
   if (eta > 0.25)
-      nudge(&eta, 0.25, 1e-6);
+      PhenomInternal_nudge(&eta, 0.25, 1e-6);
   if (eta > 0.25 || eta < 0.0)
       XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
 
@@ -341,12 +349,16 @@ static int IMRPhenomDGenerateFD(
           XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
                           the model might misbehave here.", finspin);
 
-  IMRPhenomDAmplitudeCoefficients *pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi1, chi2, finspin);
+  IMRPhenomDAmplitudeCoefficients *pAmp;
+  pAmp = XLALMalloc(sizeof(IMRPhenomDAmplitudeCoefficients));
+  ComputeIMRPhenomDAmplitudeCoefficients(pAmp, eta, chi1, chi2, finspin);
   if (!pAmp) XLAL_ERROR(XLAL_EFUNC);
   if (extraParams==NULL)
     extraParams=XLALCreateDict();
   XLALSimInspiralWaveformParamsInsertPNSpinOrder(extraParams,LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
-  IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin, extraParams);
+  IMRPhenomDPhaseCoefficients *pPhi;
+  pPhi = XLALMalloc(sizeof(IMRPhenomDPhaseCoefficients));
+  ComputeIMRPhenomDPhaseCoefficients(pPhi, eta, chi1, chi2, finspin, extraParams);
   if (!pPhi) XLAL_ERROR(XLAL_EFUNC);
   PNPhasingSeries *pn = NULL;
   XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, extraParams);
@@ -358,18 +370,18 @@ static int IMRPhenomDGenerateFD(
   testGRcor += XLALSimInspiralWaveformParamsLookupNonGRDChi6(extraParams);
 
   // was not available when PhenomD was tuned.
-  pn->v[6] -= (Subtract3PNSS(m1, m2, M, chi1, chi2) * pn->v[0])* testGRcor;
+  pn->v[6] -= (Subtract3PNSS(m1, m2, M, eta, chi1, chi2) * pn->v[0]) * testGRcor;
 
   PhiInsPrefactors phi_prefactors;
   status = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
   XLAL_CHECK(XLAL_SUCCESS == status, status, "init_phi_ins_prefactors failed");
 
   // Compute coefficients to make phase C^1 continuous (phase and first derivative)
-  ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn, &phi_prefactors);
+  ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn, &phi_prefactors, 1.0, 1.0);
 
   //time shift so that peak amplitude is approximately at t=0
   //For details see https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/timedomain
-  const REAL8 t0 = DPhiMRD(pAmp->fmaxCalc, pPhi);
+  const REAL8 t0 = DPhiMRD(pAmp->fmaxCalc, pPhi, 1.0, 1.0);
 
   AmpInsPrefactors amp_prefactors;
   status = init_amp_ins_prefactors(&amp_prefactors, pAmp);
@@ -380,7 +392,7 @@ static int IMRPhenomDGenerateFD(
   UsefulPowers powers_of_fRef;
   status = init_useful_powers(&powers_of_fRef, MfRef);
   XLAL_CHECK(XLAL_SUCCESS == status, status, "init_useful_powers failed for MfRef");
-  const REAL8 phifRef = IMRPhenDPhase(MfRef, pPhi, pn, &powers_of_fRef, &phi_prefactors);
+  const REAL8 phifRef = IMRPhenDPhase(MfRef, pPhi, pn, &powers_of_fRef, &phi_prefactors, 1.0, 1.0);
 
   // factor of 2 b/c phi0 is orbital phase
   const REAL8 phi_precalc = 2.*phi0 + phifRef;
@@ -401,7 +413,7 @@ static int IMRPhenomDGenerateFD(
     }
     else {
       REAL8 amp = IMRPhenDAmplitude(Mf, pAmp, &powers_of_f, &amp_prefactors);
-      REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn, &powers_of_f, &phi_prefactors);
+      REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn, &powers_of_f, &phi_prefactors, 1.0, 1.0);
 
       phi -= t0*(Mf-MfRef) + phi_precalc;
       ((*htilde)->data->data)[j] = amp0 * amp * cexp(-I * phi);
@@ -412,6 +424,15 @@ static int IMRPhenomDGenerateFD(
   LALFree(pPhi);
   LALFree(pn);
   XLALDestroyREAL8Sequence(freqs);
+
+
+  /* If extraParams was allocated in this function and not passed in
+   * we need to free it to prevent a leak */
+  if (extraParams && !extraParams_in) {
+    XLALDestroyDict(extraParams);
+  } else {
+    XLALSimInspiralWaveformParamsInsertPNSpinOrder(extraParams,LAL_SIM_INSPIRAL_SPIN_ORDER_ALL);
+  }
 
   return status;
 }
@@ -453,7 +474,7 @@ double XLALIMRPhenomDGetPeakFreq(
     REAL8 eta = m1 * m2 / (M * M);
 
     if (eta > 0.25)
-        nudge(&eta, 0.25, 1e-6);
+        PhenomInternal_nudge(&eta, 0.25, 1e-6);
     if (eta > 0.25 || eta < 0.0)
         XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
 
@@ -463,7 +484,9 @@ double XLALIMRPhenomDGetPeakFreq(
     if (finspin < MIN_FINAL_SPIN)
           XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
                           the model might misbehave here.", finspin);
-    IMRPhenomDAmplitudeCoefficients *pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi1, chi2, finspin);
+    IMRPhenomDAmplitudeCoefficients *pAmp;
+    pAmp = XLALMalloc(sizeof(IMRPhenomDAmplitudeCoefficients));
+    ComputeIMRPhenomDAmplitudeCoefficients(pAmp, eta, chi1, chi2, finspin);
     if (!pAmp) XLAL_ERROR(XLAL_EFUNC);
 
     // PeakFreq, converted to Hz
@@ -498,7 +521,7 @@ static double PhenDPhaseDerivFrequencyPoint(double Mf, IMRPhenomDPhaseCoefficien
 
   if (StepFunc_boolean(Mf, p->fMRDJoin))	// MRD range
   {
-      double DPhiMRDval = DPhiMRD(Mf, p) + p->C2MRD;
+      double DPhiMRDval = DPhiMRD(Mf, p, 1.0, 1.0) + p->C2MRD;
 	  return DPhiMRDval;
   }
 
@@ -558,7 +581,7 @@ double XLALSimIMRPhenomDChirpTime(
     REAL8 eta = m1 * m2 / (M * M);
 
     if (eta > 0.25)
-        nudge(&eta, 0.25, 1e-6);
+        PhenomInternal_nudge(&eta, 0.25, 1e-6);
     if (eta > 0.25 || eta < 0.0)
       XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
 
@@ -576,7 +599,9 @@ double XLALSimIMRPhenomDChirpTime(
     if (extraParams == NULL)
       extraParams = XLALCreateDict();
     XLALSimInspiralWaveformParamsInsertPNSpinOrder(extraParams, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
-    IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin, extraParams);
+    IMRPhenomDPhaseCoefficients *pPhi;
+    pPhi = XLALMalloc(sizeof(IMRPhenomDPhaseCoefficients));
+    ComputeIMRPhenomDPhaseCoefficients(pPhi, eta, chi1, chi2, finspin, extraParams);
     if (!pPhi) XLAL_ERROR(XLAL_EFUNC);
     PNPhasingSeries *pn = NULL;
     XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, extraParams);
@@ -585,7 +610,7 @@ double XLALSimIMRPhenomDChirpTime(
     // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
     // (LALSimInspiralPNCoefficients.c -> XLALSimInspiralPNPhasing_F2), but
     // was not available when PhenomD was tuned.
-    pn->v[6] -= (Subtract3PNSS(m1, m2, M, chi1, chi2) * pn->v[0]);
+    pn->v[6] -= (Subtract3PNSS(m1, m2, M, eta, chi1, chi2) * pn->v[0]);
 
 
     PhiInsPrefactors phi_prefactors;
@@ -593,7 +618,7 @@ double XLALSimIMRPhenomDChirpTime(
     XLAL_CHECK(XLAL_SUCCESS == status, status, "init_phi_ins_prefactors failed");
 
     // Compute coefficients to make phase C^1 continuous (phase and first derivative)
-    ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn, &phi_prefactors);
+    ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn, &phi_prefactors, 1.0, 1.0);
 
     // We estimate the length of the time domain signal (i.e., the chirp time)
     // By computing the difference between the values of the Fourier domain
@@ -649,7 +674,7 @@ double XLALSimIMRPhenomDFinalSpin(
     REAL8 eta = m1 * m2 / (M * M);
 
     if (eta > 0.25)
-        nudge(&eta, 0.25, 1e-6);
+        PhenomInternal_nudge(&eta, 0.25, 1e-6);
     if (eta > 0.25 || eta < 0.0)
         XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
 
@@ -662,25 +687,329 @@ double XLALSimIMRPhenomDFinalSpin(
     return finspin;
 }
 
-// Taken from LALSimIMRPhenomP.c
-// This function determines whether x and y are approximately equal to a relative accuracy epsilon.
-// Note that x and y are compared to relative accuracy, so this function is not suitable for testing whether a value is approximately zero.
-static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon) {
-  return !gsl_fcmp(x, y, epsilon);
+/**
+ * Helper function used in PhenomHM and PhenomPv3HM
+ * Returns the final mass from the fit used in PhenomD
+ */
+double IMRPhenomDFinalMass(
+    REAL8 m1,    /**< mass of primary in solar masses */
+    REAL8 m2,    /**< mass of secondary in solar masses */
+    REAL8 chi1z, /**< aligned-spin component on primary */
+    REAL8 chi2z  /**< aligned-spin component on secondary */
+)
+{
+  int retcode = 0;
+  retcode = PhenomInternal_AlignedSpinEnforcePrimaryIsm1(
+      &m1,
+      &m2,
+      &chi1z,
+      &chi2z);
+  XLAL_CHECK(
+      XLAL_SUCCESS == retcode,
+      XLAL_EFUNC,
+      "PhenomInternal_AlignedSpinEnforcePrimaryIsm1 failed");
+  REAL8 Mtot = m1 + m2;
+  REAL8 eta = m1 * m2 / (Mtot * Mtot);
+
+  if (eta > 0.25)
+    PhenomInternal_nudge(&eta, 0.25, 1e-6);
+  if (eta > 0.25 || eta < 0.0)
+    XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
+
+  return (1.0 - EradRational0815(eta, chi1z, chi2z));
 }
 
-// If x and X are approximately equal to relative accuracy epsilon then set x = X.
-// If X = 0 then use an absolute comparison.
-// Taken from LALSimIMRPhenomP.c
-static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
-  if (X != 0.0) {
-    if (approximately_equal(*x, X, epsilon)) {
-      XLAL_PRINT_INFO("Nudging value %.15g to %.15g\n", *x, X);
-      *x = X;
+/* IMRPhenomDSetupPhase */
+/* IMRPhenomDEvaluatePhaseFrequencySequence */
+
+
+
+
+
+/**
+ * Helper function used in PhenomHM and PhenomPv3HM
+ * Returns the phenomD phase, with modified QNM
+ */
+int IMRPhenomDPhaseFrequencySequence(
+    REAL8Sequence *phases, /**< [out] phase evaluated at input freqs */
+    REAL8Sequence *freqs,  /**< Sequency of Geometric frequencies */
+    size_t ind_min,        /**< start index for frequency loop */
+    size_t ind_max,        /**< end index for frequency loop */
+    REAL8 m1,              /**< mass of primary in solar masses */
+    REAL8 m2,              /**< mass of secondary in solar masses */
+    REAL8 chi1z,           /**< dimensionless aligned-spin of primary */
+    REAL8 chi2z,           /**< dimensionless aligned-spin of secondary */
+    REAL8 Rholm,           /**< ratio of ringdown frequencies f_RD_22/f_RD_lm */
+    REAL8 Taulm,           /**< ratio of ringdown damping times f_RM_22/f_RM_lm */
+    LALDict *extraParams   /**< linked list containing the extra testing GR parameters */
+)
+{
+  int retcode = 0;
+  PhenDAmpAndPhasePreComp pD;
+  retcode = IMRPhenomDSetupAmpAndPhaseCoefficients(
+    &pD, m1, m2, chi1z,
+    chi2z, Rholm, Taulm, extraParams);
+  if (retcode != XLAL_SUCCESS)
+  {
+    XLALPrintError("XLAL Error - IMRPhenomDSetupAmpAndPhaseCoefficients failed\n");
+    XLAL_ERROR(XLAL_EDOM);
+  }
+
+  int status_in_for = XLAL_SUCCESS;
+  /* Now generate the waveform */
+  #pragma omp parallel for
+  for (size_t i = ind_min; i < ind_max; i++)
+  {
+    REAL8 Mf = freqs->data[i]; // geometric frequency
+
+    UsefulPowers powers_of_f;
+    status_in_for = init_useful_powers(&powers_of_f, Mf);
+    if (XLAL_SUCCESS != status_in_for)
+    {
+      XLALPrintError("init_useful_powers failed for Mf, status_in_for=%d\n", status_in_for);
+      retcode = status_in_for;
+    }
+    else
+    {
+      phases->data[i] = IMRPhenDPhase(Mf, &(pD.pPhi), &(pD.pn), &powers_of_f,
+                                      &(pD.phi_prefactors), Rholm, Taulm);
     }
   }
-  else {
-    if (fabs(*x - X) < epsilon)
-      *x = X;
+
+  // LALFree(pPhi);
+  // LALFree(pn);
+
+  return XLAL_SUCCESS;
+}
+
+/* IMRPhenomDSetupAmplitude */
+/* IMRPhenomDEvaluateAmplitude */
+
+/**
+ * Helper function used in PhenomHM and PhenomPv3HM
+ * Returns the phenomD amplitude
+ */
+int IMRPhenomDAmpFrequencySequence(
+    REAL8Sequence *amps,  /**< [out] phase evaluated at input freqs */
+    REAL8Sequence *freqs, /**< Sequency of Geometric frequencies */
+    size_t ind_min,       /**< start index for frequency loop */
+    size_t ind_max,       /**< end index for frequency loop */
+    REAL8 m1,             /**< mass of primary in solar masses */
+    REAL8 m2,             /**< mass of secondary in solar masses */
+    REAL8 chi1z,          /**< dimensionless aligned-spin of primary */
+    REAL8 chi2z           /**< dimensionless aligned-spin of secondary */
+)
+{
+  int retcode;
+
+  /* It's difficult to see in the code but you need to setup the
+     * powers_of_pi.
+     */
+  retcode = 0;
+  retcode = init_useful_powers(&powers_of_pi, LAL_PI);
+  XLAL_CHECK(XLAL_SUCCESS == retcode, retcode, "Failed to initiate useful powers of pi.");
+
+  PhenomInternal_AlignedSpinEnforcePrimaryIsm1(&m1, &m2, &chi1z, &chi2z);
+  const REAL8 Mtot = m1 + m2;
+  const REAL8 eta = m1 * m2 / (Mtot * Mtot);
+
+  // Calculate phenomenological parameters
+  const REAL8 finspin = FinalSpin0815(eta, chi1z, chi2z); //FinalSpin0815 - 0815 is like a version number
+
+  if (finspin < MIN_FINAL_SPIN)
+    XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
+                            the model might misbehave here.",
+                       finspin);
+
+  IMRPhenomDAmplitudeCoefficients *pAmp;
+  pAmp = XLALMalloc(sizeof(IMRPhenomDAmplitudeCoefficients));
+  ComputeIMRPhenomDAmplitudeCoefficients(pAmp, eta, chi1z, chi2z, finspin);
+  if (!pAmp)
+    XLAL_ERROR(XLAL_EFUNC);
+
+  AmpInsPrefactors amp_prefactors;
+  retcode = 0;
+  retcode = init_amp_ins_prefactors(&amp_prefactors, pAmp);
+  XLAL_CHECK(XLAL_SUCCESS == retcode, retcode, "init_amp_ins_prefactors failed");
+
+  int status_in_for = XLAL_SUCCESS;
+/* Now generate the waveform */
+#pragma omp parallel for
+  for (size_t i = ind_min; i < ind_max; i++)
+  {
+    REAL8 Mf = freqs->data[i]; // geometric frequency
+
+    UsefulPowers powers_of_f;
+    status_in_for = init_useful_powers(&powers_of_f, Mf);
+    if (XLAL_SUCCESS != status_in_for)
+    {
+      XLALPrintError("init_useful_powers failed for Mf, status_in_for=%d", status_in_for);
+      retcode = status_in_for;
+    }
+    else
+    {
+      amps->data[i] = IMRPhenDAmplitude(Mf, pAmp, &powers_of_f, &amp_prefactors);
+    }
   }
+
+  LALFree(pAmp);
+
+  return XLAL_SUCCESS;
+}
+
+/**
+ * computes the time shift as the approximate time of the peak of the 22 mode.
+ */
+REAL8 IMRPhenomDComputet0(
+    REAL8 eta,           /**< symmetric mass-ratio */
+    REAL8 chi1z,         /**< dimensionless aligned-spin of primary */
+    REAL8 chi2z,         /**< dimensionless aligned-spin of secondary */
+    REAL8 finspin,       /**< final spin */
+    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+)
+{
+
+  if (extraParams == NULL)
+    extraParams = XLALCreateDict();
+
+  IMRPhenomDPhaseCoefficients *pPhi;
+  pPhi = XLALMalloc(sizeof(IMRPhenomDPhaseCoefficients));
+  ComputeIMRPhenomDPhaseCoefficients(pPhi, eta, chi1z, chi2z, finspin, extraParams);
+  if (!pPhi)
+    XLAL_ERROR(XLAL_EFUNC);
+
+  IMRPhenomDAmplitudeCoefficients *pAmp;
+  pAmp = XLALMalloc(sizeof(IMRPhenomDAmplitudeCoefficients));
+  ComputeIMRPhenomDAmplitudeCoefficients(pAmp, eta, chi1z, chi2z, finspin);
+  if (!pAmp)
+    XLAL_ERROR(XLAL_EFUNC);
+
+  // double Rholm = XLALSimIMRPhenomHMRholm(eta, chi1z, chi2z, ell, mm);
+  // double Taulm = XLALSimIMRPhenomHMTaulm(eta, chi1z, chi2z, ell, mm);
+
+  //time shift so that peak amplitude is approximately at t=0
+  //For details see https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/timedomain
+  //NOTE: All modes will have the same time offset. So we use the 22 mode.
+  //If we just use the 22 mode then we pass 1.0, 1.0 into DPhiMRD.
+  const REAL8 t0 = DPhiMRD(pAmp->fmaxCalc, pPhi, 1.0, 1.0);
+
+  LALFree(pPhi);
+  LALFree(pAmp);
+
+  return t0;
+}
+
+/**
+ * Function to compute the amplitude and phase coefficients for PhenomD
+ * Used to optimise the calls to IMRPhenDPhase and IMRPhenDAmplitude
+ */
+int IMRPhenomDSetupAmpAndPhaseCoefficients(
+    PhenDAmpAndPhasePreComp *pDPreComp,
+    REAL8 m1,
+    REAL8 m2,
+    REAL8 chi1z,
+    REAL8 chi2z,
+    const REAL8 Rholm,
+    const REAL8 Taulm,
+    LALDict *extraParams)
+{
+
+  /* It's difficult to see in the code but you need to setup the
+     * powers_of_pi.
+     */
+  int retcode = 0;
+  retcode = init_useful_powers(&powers_of_pi, LAL_PI);
+  XLAL_CHECK(XLAL_SUCCESS == retcode, retcode, "Failed to initiate useful powers of pi.");
+
+  PhenomInternal_AlignedSpinEnforcePrimaryIsm1(&m1, &m2, &chi1z, &chi2z);
+  const REAL8 Mtot = m1 + m2;
+  const REAL8 eta = m1 * m2 / (Mtot * Mtot);
+
+  // Calculate phenomenological parameters
+  const REAL8 finspin = FinalSpin0815(eta, chi1z, chi2z); //FinalSpin0815 - 0815 is like a version number
+
+  if (finspin < MIN_FINAL_SPIN)
+    XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
+                            the model might misbehave here.",
+                       finspin);
+
+  //start phase
+  if (extraParams == NULL)
+  {
+    extraParams = XLALCreateDict();
+  }
+
+  XLALSimInspiralWaveformParamsInsertPNSpinOrder(extraParams, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
+
+  IMRPhenomDPhaseCoefficients *pPhi;
+  pPhi = XLALMalloc(sizeof(IMRPhenomDPhaseCoefficients));
+  ComputeIMRPhenomDPhaseCoefficients(pPhi, eta, chi1z, chi2z, finspin, extraParams);
+  if (!pPhi)
+    XLAL_ERROR(XLAL_EFUNC);
+  PNPhasingSeries *pn = NULL;
+  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1z, chi2z, extraParams);
+  if (!pn)
+    XLAL_ERROR(XLAL_EFUNC);
+
+  // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
+  // (LALSimInspiralPNCoefficients.c -> XLALSimInspiralPNPhasing_F2), but
+  // was not available when PhenomD was tuned.
+  REAL8 testGRcor = 1.0;
+  testGRcor += XLALSimInspiralWaveformParamsLookupNonGRDChi6(extraParams);
+  pn->v[6] -= (Subtract3PNSS(m1, m2, Mtot, eta, chi1z, chi2z) * pn->v[0]) * testGRcor;
+
+  PhiInsPrefactors phi_prefactors;
+  retcode = 0;
+  retcode = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
+  XLAL_CHECK(XLAL_SUCCESS == retcode, retcode, "init_phi_ins_prefactors failed");
+
+  // Compute coefficients to make phase C^1 continuous (phase and first derivative)
+  ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn, &phi_prefactors, Rholm, Taulm);
+  //end phase
+
+  //start amp
+  IMRPhenomDAmplitudeCoefficients *pAmp;
+  pAmp = XLALMalloc(sizeof(IMRPhenomDAmplitudeCoefficients));
+  ComputeIMRPhenomDAmplitudeCoefficients(pAmp, eta, chi1z, chi2z, finspin);
+  if (!pAmp)
+    XLAL_ERROR(XLAL_EFUNC);
+
+  AmpInsPrefactors amp_prefactors;
+  retcode = 0;
+  retcode = init_amp_ins_prefactors(&amp_prefactors, pAmp);
+  XLAL_CHECK(XLAL_SUCCESS == retcode, retcode, "init_amp_ins_prefactors failed");
+  //end amp
+
+  //output
+  pDPreComp->pn = *pn;
+  pDPreComp->pPhi = *pPhi;
+  pDPreComp->phi_prefactors = phi_prefactors;
+
+  pDPreComp->pAmp = *pAmp;
+  pDPreComp->amp_prefactors = amp_prefactors;
+
+  LALFree(pn);
+  LALFree(pPhi);
+  LALFree(pAmp);
+
+  return XLAL_SUCCESS;
+}
+
+/**
+ * Function to return the phenomD phase using the
+ * IMRPhenomDSetupAmpAndPhaseCoefficients struct
+ */
+UNUSED REAL8 IMRPhenomDPhase_OneFrequency(
+    REAL8 Mf,
+    PhenDAmpAndPhasePreComp pD,
+    REAL8 Rholm,
+    REAL8 Taulm)
+{
+
+  UsefulPowers powers_of_f;
+  int status = init_useful_powers(&powers_of_f, Mf);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initiate init_useful_powers");
+  REAL8 phase = IMRPhenDPhase(Mf, &(pD.pPhi), &(pD.pn), &powers_of_f,
+                              &(pD.phi_prefactors), Rholm, Taulm);
+  return phase;
 }

@@ -17,12 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-#ifdef __GNUC__
-#define UNUSED __attribute__ ((unused))
-#else
-#define UNUSED
-#endif
-
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
@@ -45,6 +39,7 @@
 #include <lal/LALStddef.h>
 
 #include "LALSimIMR.h"
+#include "LALSimIMRPhenomInternalUtils.h"
 /* This is ugly, but allows us to reuse internal IMRPhenomC and IMRPhenomD functions without making those functions XLAL */
 #include "LALSimIMRPhenomC_internals.c"
 #include "LALSimIMRPhenomD_internals.c"
@@ -98,7 +93,7 @@ const double sqrt_6 = 2.44948974278317788;
  * @attention A time-domain implementation of IMRPhenomPv2 is available in XLALChooseTDWaveform().
  * This is based on a straight-forward inverse Fourier transformation via XLALSimInspiralTDfromFD(),
  * but it was not included in the IMRPhenomPv2 review. Use it at your own risk.
- * IMRPhenomPv2_NRTidal is also available in the time domain through the same transformation. 
+ * IMRPhenomPv2_NRTidal is also available in the time domain through the same transformation.
  * Visual checks have been performed during the review, and unphysical features may arise for
  * mass ratios smaller than 1.5 and when both tidal parameters are greater than 2000. In this
  * case, a warning is issued, both for the time and frequency domain version.
@@ -627,8 +622,8 @@ static int PhenomPCore(
   if (IMRPhenomP_version == IMRPhenomPv2NRTidal_V) {
     int retcode;
     retcode = XLALSimInspiralSetQuadMonParamsFromLambdas(extraParams);
-    XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to set quadparams from Universal relation.\n"); 
-    lambda1_in = XLALSimInspiralWaveformParamsLookupTidalLambda1(extraParams); 
+    XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to set quadparams from Universal relation.\n");
+    lambda1_in = XLALSimInspiralWaveformParamsLookupTidalLambda1(extraParams);
     lambda2_in = XLALSimInspiralWaveformParamsLookupTidalLambda2(extraParams);
     quadparam1_in = 1. + XLALSimInspiralWaveformParamsLookupdQuadMon1(extraParams);
     quadparam2_in = 1. + XLALSimInspiralWaveformParamsLookupdQuadMon2(extraParams);
@@ -775,8 +770,10 @@ static int PhenomPCore(
         finspin = copysign(1.0, finspin);
       }
       // IMRPhenomD assumes that m1 >= m2.
-      pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi2_l, chi1_l, finspin);
-      pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi2_l, chi1_l, finspin, extraParams);
+      pAmp = XLALMalloc(sizeof(IMRPhenomDAmplitudeCoefficients));
+      ComputeIMRPhenomDAmplitudeCoefficients(pAmp, eta, chi2_l, chi1_l, finspin);
+      pPhi = XLALMalloc(sizeof(IMRPhenomDPhaseCoefficients));
+      ComputeIMRPhenomDPhaseCoefficients(pPhi, eta, chi2_l, chi1_l, finspin, extraParams);
       if (extraParams==NULL)
       {
               extraParams=XLALCreateDict();
@@ -801,13 +798,13 @@ static int PhenomPCore(
       // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
       // (LALSimInspiralPNCoefficients.c -> XLALSimInspiralPNPhasing_F2), but
       // was not available when PhenomD was tuned.
-      pn->v[6] -= (Subtract3PNSS(m1, m2, M, chi1_l, chi2_l) * pn->v[0]);
+      pn->v[6] -= (Subtract3PNSS(m1, m2, M, eta, chi1_l, chi2_l) * pn->v[0]);
 
       PhiInsPrefactors phi_prefactors;
       errcode = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
       XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "init_phi_ins_prefactors failed");
 
-      ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn, &phi_prefactors);
+      ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn, &phi_prefactors, 1.0, 1.0);
       // This should be the same as the ending frequency in PhenomD
       fCut = f_CUT / m_sec;
       f_final = pAmp->fRD / m_sec;
@@ -1172,7 +1169,7 @@ static int PhenomPCoreOneFrequency(
       errcode = init_useful_powers(&powers_of_f, f);
       XLAL_CHECK(errcode == XLAL_SUCCESS, errcode, "init_useful_powers failed for f");
       aPhenom = IMRPhenDAmplitude(f, pAmp, &powers_of_f, amp_prefactors);
-      phPhenom = IMRPhenDPhase(f, pPhi, PNparams, &powers_of_f, phi_prefactors);
+      phPhenom = IMRPhenDPhase(f, pPhi, PNparams, &powers_of_f, phi_prefactors, 1.0, 1.0);
       break;
     case IMRPhenomPv2NRTidal_V:
       XLAL_ERROR( XLAL_EINVAL, "Only v1 and v2 are valid IMRPhenomP versions here! The tidal version of IMRPhenomPv2 uses a separate internal function function to generate polarizations and phasing." );
@@ -1228,7 +1225,7 @@ static int PhenomPCoreOneFrequency_withTides(
   errcode = init_useful_powers(&powers_of_f, f);
   XLAL_CHECK(errcode == XLAL_SUCCESS, errcode, "init_useful_powers failed for f");
   aPhenom = IMRPhenDAmplitude(f, pAmp, &powers_of_f, amp_prefactors);
-  phPhenom = IMRPhenDPhase(f, pPhi, PNparams, &powers_of_f, phi_prefactors);
+  phPhenom = IMRPhenDPhase(f, pPhi, PNparams, &powers_of_f, phi_prefactors, 1.0, 1.0);
 
   phPhenom -= 2.*phic; /* Note: phic is orbital phase */
   REAL8 amp0 = M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;

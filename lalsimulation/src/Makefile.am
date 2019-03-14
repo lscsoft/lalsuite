@@ -191,6 +191,7 @@ noinst_HEADERS = \
 	LALSimIMRPhenomD.h \
 	LALSimIMRPhenomD_internals.c \
 	LALSimIMRPhenomD_internals.h \
+	LALSimIMRPhenomHM.h \
 	LALSimIMRPhenomP.c \
 	LALSimIMRPhenomP.h \
 	LALSimIMRPhenomInternalUtils.h \
@@ -227,7 +228,8 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBHamiltonian.h \
 	LALSimIMRNRSur7dq2.h \
 	LALSimNRSurrogateUtilities.h \
-	LALSimNRTunedTides.h
+	LALSimNRTunedTides.h \
+	LALSimRingdownCW.h
 
 
 lib_LTLIBRARIES = liblalsimulation.la
@@ -254,6 +256,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRPhenomC.c \
 	LALSimIMRPhenomD.c \
 	LALSimIMRPhenomD_NRTidal.c \
+	LALSimIMRPhenomHM.c \
 	LALSimIMRPhenomP.c \
 	LALSimIMRPhenomInternalUtils.c \
 	LALSimIMRPhenomUtils.c \
@@ -299,6 +302,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimSGWBORF.c \
 	LALSimSphHarmMode.c \
 	LALSimSphHarmSeries.c \
+	LALSimRingdownCW.c \
 	LALSimUnicorn.c \
 	LALSimUtils.c \
 	check_series_macros.h \
