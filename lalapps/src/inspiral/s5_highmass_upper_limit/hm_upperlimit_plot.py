@@ -1,4 +1,6 @@
 #!/usr/bin/python
+from __future__ import print_function
+
 import sys
 from lal import rate
 from pylal import SimInspiralUtils
@@ -298,5 +300,5 @@ pylab.savefig(combined_ifos + '_upper_limit.png')
 pylab.clf()
 
 
-print >> sys.stderr, "ALL FINNISH!"
+print("ALL FINNISH!", file=sys.stderr)
 sys.exit(0)

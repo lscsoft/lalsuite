@@ -82,10 +82,10 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
 
   stat, p = ss.kstest(nc, 'uniform')
 
-  print "K-S test p-value for upper range of %e = %f" % (h0ul, p)
+  print("K-S test p-value for upper range of %e = %f" % (h0ul, p))
 
   if p < 0.005:
-    print "There might be a problem for this prior distribution"
+    print("There might be a problem for this prior distribution")
     import matplotlib.pyplot as pl
     fig, ax = pl.subplots(1, 1)
     ax.hist(h0samps, bins=20, normed=True, cumulative=True, histtype='stepfilled', alpha=0.2)

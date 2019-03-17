@@ -221,7 +221,7 @@ XLALSimIMRSpinEOBFluxCalculateNewtonianMultipole(
 
 /* In the calculation of the Newtonian multipole, we only use
  * the spherical harmonic with theta set to pi/2. Since this
- * is always the case, we can use this information to use a 
+ * is always the case, we can use this information to use a
  * faster version of the spherical harmonic code
  */
 
@@ -321,7 +321,7 @@ XLALAssociatedLegendreXIsZero( const int l,
     XLALPrintError( "l cannot be < 0\n" );
     XLAL_ERROR_REAL8( XLAL_EINVAL );
   }
-  
+
   if ( m < 0 || m > l )
   {
     XLALPrintError( "Invalid value of m!\n" );
@@ -534,9 +534,9 @@ CalculateThisMultipolePrefix(
    n = 0.0;
 
    totalMass = m1 + m2;
- 
+
    epsilon = ( l + m )  % 2;
- 
+
    x1 = m1 / totalMass;
    x2 = m2 / totalMass;
 
@@ -551,14 +551,14 @@ CalculateThisMultipolePrefix(
      sign = -1;
    }
    /*
-    * Eq. 7 of Damour, Iyer and Nagar 2008. 
-    * For odd m, c is proportional to dM = m1-m2. In the equal-mass case, c = dM = 0. 
+    * Eq. 7 of Damour, Iyer and Nagar 2008.
+    * For odd m, c is proportional to dM = m1-m2. In the equal-mass case, c = dM = 0.
     * In the equal-mass unequal-spin case, however, when spins are different, the odd m term is generally not zero.
     * In this case, c can be written as c0 * dM, while spins terms in PN expansion may take the form chiA/dM.
     * Although the dM's cancel analytically, we can not implement c and chiA/dM with the possibility of dM -> 0.
     * Therefore, for this case, we give numerical values of c0 for relevant modes, and c0 is calculated as
     * c / dM in the limit of dM -> 0. Consistently, for this case, we implement chiA instead of chiA/dM
-    * in LALSimIMRSpinEOBFactorizedWaveform.c. 
+    * in LALSimIMRSpinEOBFactorizedWaveform.c.
     */
    if  ( m1 != m2 || sign == 1 )
    {
@@ -577,6 +577,9 @@ CalculateThisMultipolePrefix(
        case 4:
          c = -0.5;
          break;
+       case 5:
+         c = -0.5;
+         break;
        default:
          c = 0.0;
          break;
@@ -586,10 +589,10 @@ CalculateThisMultipolePrefix(
    /* Eqs 5 and 6. Dependent on the value of epsilon (parity), we get different n */
    if ( epsilon == 0 )
    {
-  
+
      n = I * m;
      n = cpow( n, (REAL8)l );
-  
+
      mult1 = 8.0 * LAL_PI / gsl_sf_doublefact(2u*l + 1u);
      mult2 = (REAL8)((l+1) * (l+2)) / (REAL8)(l * ((INT4)l - 1));
      mult2 = sqrt(mult2);
@@ -599,7 +602,7 @@ CalculateThisMultipolePrefix(
   }
   else if ( epsilon == 1 )
   {
-  
+
      n = I * m;
      n = cpow( n, (REAL8)l );
      n = -n;

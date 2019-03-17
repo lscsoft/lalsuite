@@ -8,8 +8,6 @@
 #include <lal/Random.h>
 #include <lal/Sort.h>
 
-#include <fftw3.h>
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else

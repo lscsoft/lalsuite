@@ -1,3 +1,15 @@
+lalsimulation (1.8.2-1) unstable; urgency=low
+
+  * ER14 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 25 Feb 2019 09:24:50 -0700
+
+lalsimulation (1.8.1-1) unstable; urgency=low
+
+  * added noise PSD files from LIGO-T1800545
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 23 Jan 2019 10:28:59 -0700
+
 lalsimulation (1.8.0-1) unstable; urgency=low
 
   * pre O3 release

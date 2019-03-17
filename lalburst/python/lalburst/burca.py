@@ -33,7 +33,7 @@ import math
 import sys
 
 
-from glue.ligolw import lsctables
+from ligo.lw import lsctables
 from . import snglcoinc
 
 
@@ -134,8 +134,8 @@ class ExcessPowerCoincTables(snglcoinc.CoincTables):
 
 		return multiburst
 
-	def coinc_rows(self, process_id, time_slide_id, events):
-		coinc, coincmaps = super(ExcessPowerCoincTables, self).coinc_rows(process_id, time_slide_id, events)
+	def coinc_rows(self, process_id, time_slide_id, events, table_name):
+		coinc, coincmaps = super(ExcessPowerCoincTables, self).coinc_rows(process_id, time_slide_id, events, table_name)
 		coinc.insts = (event.ifo for event in events)
 		return coinc, coincmaps, self.make_multi_burst(process_id, coinc.coinc_event_id, events, self.time_slide_index[time_slide_id])
 
@@ -162,8 +162,8 @@ class StringCuspCoincTables(snglcoinc.CoincTables):
 		# this
 		return set(event.ifo for event in events) == disallowed
 
-	def coinc_rows(self, process_id, time_slide_id, events):
-		coinc, coincmaps = super(StringCuspCoincTables, self).coinc_rows(process_id, time_slide_id, events)
+	def coinc_rows(self, process_id, time_slide_id, events, table_name):
+		coinc, coincmaps = super(StringCuspCoincTables, self).coinc_rows(process_id, time_slide_id, events, table_name)
 		coinc.insts = (event.ifo for event in events)
 		return coinc, coincmaps
 
@@ -199,17 +199,17 @@ class ep_coincgen_doubles(snglcoinc.coincgen_doubles):
 			return max(max(float(event.peak - event.start), float(event.start + event.duration - event.peak)) for event in events)
 
 		@staticmethod
-		def comparefunc(a, offseta, b, light_travel_time):
+		def comparefunc(a, offseta, b, coinc_window):
 			if abs(a.central_freq - b.central_freq) > (a.bandwidth + b.bandwidth) / 2:
 				return True
 
 			astart = a.start + offseta
 			bstart = b.start
-			if astart > bstart + b.duration + light_travel_time:
+			if astart > bstart + b.duration + coinc_window:
 				# a starts after the end of b
 				return True
 
-			if bstart > astart + a.duration + light_travel_time:
+			if bstart > astart + a.duration + coinc_window:
 				# b starts after the end of a
 				return True
 
@@ -222,7 +222,7 @@ class ep_coincgen_doubles(snglcoinc.coincgen_doubles):
 			# pre-computed value
 			self.max_edge_peak_delta = self.max_edge_peak_delta(events)
 
-		def __call__(self, event_a, offset_a, light_travel_time, ignored):
+		def __call__(self, event_a, offset_a, coinc_window):
 			# event_a's peak time
 			peak = event_a.peak
 
@@ -239,7 +239,7 @@ class ep_coincgen_doubles(snglcoinc.coincgen_doubles):
 			# this much from the peak time of an event in this
 			# list then it is *impossible* for them to be
 			# coincident)
-			dt += self.max_edge_peak_delta + light_travel_time
+			dt += self.max_edge_peak_delta + coinc_window
 
 			# apply time shift
 			peak += offset_a
@@ -249,7 +249,7 @@ class ep_coincgen_doubles(snglcoinc.coincgen_doubles):
 			# searches for the minimum and maximum allowed peak
 			# times to quickly identify a subset of the full
 			# list)
-			return [event_b for event_b in self.events[bisect_left(self.events, peak - dt) : bisect_right(self.events, peak + dt)] if not self.comparefunc(event_a, offset_a, event_b, light_travel_time)]
+			return [event_b for event_b in self.events[bisect_left(self.events, peak - dt) : bisect_right(self.events, peak + dt)] if not self.comparefunc(event_a, offset_a, event_b, coinc_window)]
 
 
 
@@ -263,9 +263,8 @@ class string_coincgen_doubles(ep_coincgen_doubles):
 		def __init__(self, events):
 			self.events = events
 
-		def __call__(self, event_a, offset_a, light_travel_time, threshold):
+		def __call__(self, event_a, offset_a, coinc_window):
 			peak = event_a.peak + offset_a
-			coinc_window = threshold + light_travel_time
 			return self.events[bisect_left(self.events, peak - coinc_window) : bisect_right(self.events, peak + coinc_window)]
 
 
@@ -284,7 +283,6 @@ def burca(
 	coincgen_doubles,
 	CoincTables,
 	coinc_definer_row,
-	threshold,
 	delta_t,
 	ntuple_comparefunc = lambda events, offset_vector: False,
 	min_instruments = 2,
@@ -318,9 +316,9 @@ def burca(
 	# and record the survivors
 	#
 
-	for node, events in time_slide_graph.pull(threshold, flush = True, verbose = verbose):
+	for node, events in time_slide_graph.pull(flush = True, verbose = verbose):
 		if not ntuple_comparefunc(events, node.offset_vector):
-			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, events))
+			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, events, u"sngl_burst"))
 
 	#
 	# done

@@ -2,7 +2,7 @@
 #define _LALSIM_IMR_PHENOMD_INTERNALS_H
 
 /*
- * Copyright (C) 2015 Michael Puerrer, Sebastian Khan, Frank Ohme, Ofek Birnholtz, Lionel London
+ * Copyright (C) 2015 Michael Puerrer, Sebastian Khan, Frank Ohme, Ofek Birnholtz, Lionel London, Francesco Pannarale
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,9 +20,8 @@
  *  MA  02111-1307  USA
  */
 
-
 /**
- * \author Michael Puerrer, Sebastian Khan, Frank Ohme, Ofek Birnholtz, Lionel London
+ * \author Michael Puerrer, Sebastian Khan, Frank Ohme, Ofek Birnholtz, Lionel London, Francesco Pannarale
  *
  * \file
  *
@@ -82,12 +81,6 @@ of this waveform.
 */
 
 
-#ifdef __GNUC__
-#define UNUSED __attribute__ ((unused))
-#else
-#define UNUSED
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -105,6 +98,9 @@ of this waveform.
 
 #include "LALSimIMRPhenomD.h"
 
+//PI^(-1/6) [http://oeis.org/A093207]
+#define PI_M_SIXTH 0.8263074871107581108331125856317241299
+
 // NOTE: At the moment we have separate functions for each Phenom coefficient;
 // these could be collected together
 
@@ -113,6 +109,13 @@ of this waveform.
   */
 typedef struct tagIMRPhenomDAmplitudeCoefficients {
   double eta;         // symmetric mass-ratio
+  double etaInv;      // 1/eta
+  double chi12;       // chi1*chi1;
+  double chi22;       // chi2*chi2;
+  double eta2;        // eta*eta;
+  double eta3;        // eta*eta*eta;
+  double Seta;        // sqrt(1.0 - 4.0*eta);
+  double SetaPlus1;   // (1.0 + Seta);
   double chi1, chi2;  // dimensionless aligned spins, convention m1 >= m2.
   double q;           // asymmetric mass-ratio (q>=1)
   double chi;         // PN reduced spin parameter
@@ -155,6 +158,9 @@ IMRPhenomDAmplitudeCoefficients;
   */
 typedef struct tagIMRPhenomDPhaseCoefficients {
   double eta;         // symmetric mass-ratio
+  double etaInv;      // 1/eta
+  double eta2;        // eta*eta
+  double Seta;        // sqrt(1.0 - 4.0*eta);
   double chi1, chi2;  // dimensionless aligned spins, convention m1 >= m2.
   double q;           // asymmetric mass-ratio (q>=1)
   double chi;         // PN reduced spin parameter
@@ -218,8 +224,8 @@ typedef struct tagdeltaUtility {
 
 ////////////////////////////// Miscellaneous functions //////////////////////////////
 
-static double chiPN(double eta, double chi1, double chi2);
-static size_t NextPow2(const size_t n);
+static double chiPN(double Seta, double eta, double chi1, double chi2);
+UNUSED static size_t NextPow2(const size_t n);
 // static double StepFunc(const double t, const double t1);
 static bool StepFunc_boolean(const double t, const double t1);
 
@@ -227,24 +233,30 @@ static inline double pow_2_of(double number);
 static inline double pow_3_of(double number);
 static inline double pow_4_of(double number);
 
-static double Subtract3PNSS(double m1, double m2, double M, double chi1, double chi2);
+UNUSED static double Subtract3PNSS(double m1, double m2, double M, double eta, double chi1, double chi2);
 
 /******************************* Constants to save floating-point pow calculations *******************************/
 
 /**
- * useful powers in GW waveforms: 1/6, 1/3, 2/3, 4/3, 5/3, 7/3, 8/3
+ * useful powers in GW waveforms: 1/6, 1/3, 2/3, 4/3, 5/3, 2, 7/3, 8/3, -1, -1/6, -7/6, -1/3, -2/3, -5/3
  * calculated using only one invocation of 'pow', the rest are just multiplications and divisions
  */
 typedef struct tagUsefulPowers
 {
-    REAL8 sixth;
+    //REAL8 sixth; //FP
     REAL8 third;
     REAL8 two_thirds;
     REAL8 four_thirds;
     REAL8 five_thirds;
-	REAL8 two;
+    REAL8 two;
     REAL8 seven_thirds;
     REAL8 eight_thirds;
+    REAL8 inv;
+    //REAL8 m_sixth; //FP
+    REAL8 m_seven_sixths;
+    REAL8 m_third;
+    REAL8 m_two_thirds;
+    REAL8 m_five_thirds;
 } UsefulPowers;
 
 /**
@@ -261,7 +273,7 @@ static int init_useful_powers(UsefulPowers * p, REAL8 number);
 extern UsefulPowers powers_of_pi;
 
 /**
- * used to cache the recurring (frequency-independant) prefactors of AmpInsAnsatz. Must be inited with a call to
+ * used to cache the recurring (frequency-independent) prefactors of AmpInsAnsatz. Must be inited with a call to
  * init_amp_ins_prefactors(&prefactors, p);
  */
 typedef struct tagAmpInsPrefactors
@@ -284,7 +296,7 @@ typedef struct tagAmpInsPrefactors
 static int init_amp_ins_prefactors(AmpInsPrefactors * prefactors, IMRPhenomDAmplitudeCoefficients* p);
 
 /**
- * used to cache the recurring (frequency-independant) prefactors of PhiInsAnsatzInt. Must be inited with a call to
+ * used to cache the recurring (frequency-independent) prefactors of PhiInsAnsatzInt. Must be inited with a call to
  * init_phi_ins_prefactors(&prefactors, p, pn);
  */
 typedef struct tagPhiInsPrefactors
@@ -301,13 +313,14 @@ typedef struct tagPhiInsPrefactors
 	double minus_third;
 	double minus_two_thirds;
 	double minus_one;
+  double minus_four_thirds;
 	double minus_five_thirds;
 } PhiInsPrefactors;
 
 /**
  * must be called before the first usage of *prefactors
  */
-static int init_phi_ins_prefactors(PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients* p, PNPhasingSeries *pn);
+UNUSED static int init_phi_ins_prefactors(PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients* p, PNPhasingSeries *pn);
 
 
 /******************************* integer powers floating-point pow calculations *******************************/
@@ -352,17 +365,17 @@ static double amp0Func(double eta);
 
 ///////////////////////////// Amplitude: Inspiral functions /////////////////////////
 
-static double rho1_fun(double eta, double chiPN);
-static double rho2_fun(double eta, double chiPN);
-static double rho3_fun(double eta, double chiPN);
-static double AmpInsAnsatz(double Mf, UsefulPowers * powers_of_Mf, AmpInsPrefactors * prefactors);
-static double DAmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p);
+static double rho1_fun(double eta, double eta2, double xi);
+static double rho2_fun(double eta, double eta2, double xi);
+static double rho3_fun(double eta, double eta2, double xi);
+static double AmpInsAnsatz(double Mf, UsefulPowers *powers_of_Mf, AmpInsPrefactors * prefactors);
+static double DAmpInsAnsatz(double Mf, UsefulPowers *powers_of_Mf, IMRPhenomDAmplitudeCoefficients* p);
 
 ////////////////////////// Amplitude: Merger-Ringdown functions //////////////////////
 
-static double gamma1_fun(double eta, double chiPN);
-static double gamma2_fun(double eta, double chiPN);
-static double gamma3_fun(double eta, double chiPN);
+static double gamma1_fun(double eta, double eta2, double xi);
+static double gamma2_fun(double eta, double eta2, double xi);
+static double gamma3_fun(double eta, double eta2, double xi);
 static double AmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
 static double DAmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
 static double fmaxCalc(IMRPhenomDAmplitudeCoefficients* p);
@@ -370,7 +383,7 @@ static double fmaxCalc(IMRPhenomDAmplitudeCoefficients* p);
 //////////////////////////// Amplitude: Intermediate functions ///////////////////////
 
 static double AmpIntAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
-static double AmpIntColFitCoeff(double eta, double chiPN); //this is the v2 value
+static double AmpIntColFitCoeff(double eta, double eta2, double chiPN); //this is the v2 value
 static double delta0_fun(IMRPhenomDAmplitudeCoefficients* p, DeltaUtility* d);
 static double delta1_fun(IMRPhenomDAmplitudeCoefficients* p, DeltaUtility* d);
 static double delta2_fun(IMRPhenomDAmplitudeCoefficients* p, DeltaUtility* d);
@@ -380,43 +393,77 @@ static void ComputeDeltasFromCollocation(IMRPhenomDAmplitudeCoefficients* p);
 
 ///////////////////////////// Amplitude: glueing function ////////////////////////////
 
-static IMRPhenomDAmplitudeCoefficients* ComputeIMRPhenomDAmplitudeCoefficients(double eta, double chi1, double chi2, double finspin);
-static double IMRPhenDAmplitude(double f, IMRPhenomDAmplitudeCoefficients *p, UsefulPowers *powers_of_f, AmpInsPrefactors * prefactors);
+UNUSED static void ComputeIMRPhenomDAmplitudeCoefficients(IMRPhenomDAmplitudeCoefficients *p, double eta, double chi1, double chi2, double finspin);
+UNUSED static double IMRPhenDAmplitude(double f, IMRPhenomDAmplitudeCoefficients *p, UsefulPowers *powers_of_f, AmpInsPrefactors *prefactors);
 
 /********************************* Phase functions *********************************/
 
 /////////////////////////////// Phase: Ringdown functions ////////////////////////////
 
-static double alpha1Fit(double eta, double chiPN);
-static double alpha2Fit(double eta, double chiPN);
-static double alpha3Fit(double eta, double chiPN);
-static double alpha4Fit(double eta, double chiPN);
-static double alpha5Fit(double eta, double chiPN);
-static double PhiMRDAnsatzInt(double f, IMRPhenomDPhaseCoefficients *p);
-static double DPhiMRD(double f, IMRPhenomDPhaseCoefficients *p);
+static double alpha1Fit(double eta, double eta2, double xi);
+static double alpha2Fit(double eta, double eta2, double xi);
+static double alpha3Fit(double eta, double eta2, double xi);
+static double alpha4Fit(double eta, double eta2, double xi);
+static double alpha5Fit(double eta, double eta2, double xi);
+static double PhiMRDAnsatzInt(double f, IMRPhenomDPhaseCoefficients *p, double Rholm, double Taulm);
+static double DPhiMRD(double f, IMRPhenomDPhaseCoefficients *p, double Rholm, double Taulm);
 
 /////////////////////////// Phase: Intermediate functions ///////////////////////////
 
-static double beta1Fit(double eta, double chiPN);
-static double beta2Fit(double eta, double chiPN);
-static double beta3Fit(double eta, double chiPN);
+static double beta1Fit(double eta, double eta2, double xi);
+static double beta2Fit(double eta, double eta2, double xi);
+static double beta3Fit(double eta, double eta2, double xi);
 static double PhiIntAnsatz(double f, IMRPhenomDPhaseCoefficients *p);
 static double DPhiIntAnsatz(double f, IMRPhenomDPhaseCoefficients *p);
 static double DPhiIntTemp(double ff, IMRPhenomDPhaseCoefficients *p);
 
 ///////////////////////////// Phase: Inspiral functions /////////////////////////////
 
-static double sigma1Fit(double eta, double chiPN);
-static double sigma2Fit(double eta, double chiPN);
-static double sigma3Fit(double eta, double chiPN);
-static double sigma4Fit(double eta, double chiPN);
-static double PhiInsAnsatzInt(double f, UsefulPowers * powers_of_Mf, PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
+static double sigma1Fit(double eta, double eta2, double xi);
+static double sigma2Fit(double eta, double eta2, double xi);
+static double sigma3Fit(double eta, double eta2, double xi);
+static double sigma4Fit(double eta, double eta2, double xi);
+static double PhiInsAnsatzInt(double f, UsefulPowers *powers_of_Mf, PhiInsPrefactors *prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
 static double DPhiInsAnsatzInt(double ff, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
 
 ////////////////////////////// Phase: glueing function //////////////////////////////
 
-static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin, LALDict *extraParams);
-static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, PhiInsPrefactors * prefactors);
-static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, UsefulPowers *powers_of_f, PhiInsPrefactors * prefactors);
+UNUSED static void ComputeIMRPhenomDPhaseCoefficients(IMRPhenomDPhaseCoefficients *p, double eta, double chi1, double chi2, double finspin, LALDict *extraParams);
+UNUSED static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, PhiInsPrefactors *prefactors, double Rholm, double Taulm);
+UNUSED static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, UsefulPowers *powers_of_f, PhiInsPrefactors *prefactors, double Rholm, double Taulm);
 
+/* Non-reviewd functions using written for PhenomHM */
+
+/**
+ * A struct the store the amplitude and phase structs for phenomD
+ */
+typedef struct tagPhenDAmpAndPhasePreComp
+{
+  PNPhasingSeries pn;
+  IMRPhenomDPhaseCoefficients pPhi;
+  PhiInsPrefactors phi_prefactors;
+  IMRPhenomDAmplitudeCoefficients pAmp;
+  AmpInsPrefactors amp_prefactors;
+} PhenDAmpAndPhasePreComp;
+
+/**
+ * Function to populate the PhenDAmpAndPhasePreComp struct
+ * with quantities that can be computed outside a frequency loop
+ * when you want to generate the PhenomD amplitude and phase.
+ */
+UNUSED int IMRPhenomDSetupAmpAndPhaseCoefficients(
+    PhenDAmpAndPhasePreComp *pDPreComp,
+    REAL8 m1,
+    REAL8 m2,
+    REAL8 chi1z,
+    REAL8 chi2z,
+    const REAL8 Rholm,
+    const REAL8 Taulm,
+    LALDict *extraParams);
+
+UNUSED REAL8 IMRPhenomDPhase_OneFrequency(
+    REAL8 Mf,
+    PhenDAmpAndPhasePreComp pD,
+    REAL8 Rholm,
+    REAL8 Taulm);
 #endif	// of #ifndef _LALSIM_IMR_PHENOMD_INTERNALS_H

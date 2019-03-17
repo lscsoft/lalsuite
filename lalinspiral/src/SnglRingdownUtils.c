@@ -29,6 +29,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <lal/LALError.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
@@ -510,7 +511,7 @@ LALClusterSnglRingdownTable (
   ATTATCHSTATUSPTR( status );
 
   ASSERT( ringdownEvent, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
 
   thisEvent = ringdownEvent->next;
   prevEvent = ringdownEvent;
@@ -781,9 +782,9 @@ LALIfoCountSingleRingdown(
 
   /* check that output is null and input non-null */
   ASSERT( !(*numTrigs), status,
-      LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
+      LAL_NNULL_ERR, LAL_NNULL_MSG );
   ASSERT( input, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
 
   /* Scan through a linked list of sngl_ringdown tables and return a
      pointer to the head of a linked list of tables for a specific IFO */
@@ -826,7 +827,7 @@ LALTimeSlideSingleRingdown(
 
   /* check that input non-null */
   ASSERT( triggerList, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
 
   if ( startTime )
   {

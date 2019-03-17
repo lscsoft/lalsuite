@@ -62,7 +62,7 @@ from .git_version import version as __version__
 def load_cache(filename, verbose = False):
 	"""
 	Parse a LAL cache file named filename into a list of
-	glue.lal.CacheEntry objects.  If filename is None then input is
+	lal.utils.CacheEntry objects.  If filename is None then input is
 	taken from stdin.
 	"""
 	if verbose:
@@ -77,7 +77,7 @@ def load_cache(filename, verbose = False):
 def cache_to_seglistdict(cache):
 	"""
 	Construct a coalesced segmentlistdict object from a list of
-	glue.lal.CacheEntry objects.
+	lal.utils.CacheEntry objects.
 	"""
 	s = segments.segmentlistdict()
 	for c in cache:
@@ -191,8 +191,8 @@ class LALCacheBin(packing.Bin):
 	"""
 	Subclass of the packing.Bin class representing a LAL file cache.
 	The files contained in the bin are available in the .objects
-	attribute, which is a list of glue.lal.CacheEntry objects.  The
-	.size attribute holds a glue.segments.segmentlistdict object giving
+	attribute, which is a list of lal.utils.CacheEntry objects.  The
+	.size attribute holds a ligo.segments.segmentlistdict object giving
 	the times spanned by the files in the bin.  The .extent attribute
 	holds the result of running .extent_all() on the .size attribute.
 	"""
@@ -250,7 +250,7 @@ class CafePacker(packing.Packer):
 
 	def pack(self, cache_entry):
 		"""
-		Find all bins in which this glue.lal.CacheEntry instance
+		Find all bins in which this lal.utils.CacheEntry instance
 		belongs, merge them, and add this cache entry to the
 		result.  Create a new bin for this cache entry if it does
 		not belong in any of the existing bins.
@@ -472,12 +472,12 @@ def ligolw_cafe(cache, offset_vectors, verbose = False, extentlimit = None):
 	will involve the application of the given offset vectors.
 
 	cache is a sequence (e.g., list, tuple, etc.) of
-	glue.lal.CacheEntry objects.  offset_vectors is a sequence of
+	lal.utils.CacheEntry objects.  offset_vectors is a sequence of
 	instrument/offset dictionaries describing the offset vectors to
 	consider.  Set verbose to True for verbosity.
 
 	The output is a two-element tuple.  The first element is a
-	glue.segments.segmentlistdict object describing the times for which
+	ligo.segments.segmentlistdict object describing the times for which
 	coincident data is available (derived from the segment metadata of
 	the input cache).  The second element is a list of LALCacheBin
 	objects, providing the file groups.

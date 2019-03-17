@@ -26,6 +26,8 @@
 # This script will create a dag to produce a results page from the known pulsar
 # analysis (using the MCMC results)
 
+from __future__ import print_function
+
 # import required modules
 import sys
 import os
@@ -70,7 +72,7 @@ if __name__=='__main__':
   (opts, args) = parser.parse_args()
 
   if not opts.configfile:
-    print >> sys.stderr, "Error, not .ini file given"
+    print("Error, not .ini file given", file=sys.stderr)
     sys.exit(1)
 
   inifile = opts.configfile
@@ -80,13 +82,13 @@ if __name__=='__main__':
     # the 'allow_no_value' arg only appeared in python 2.7, so check this
     if sys.version_info < (2, 7):
       cp = ConfigParser.ConfigParser()
-      print >> sys.stderr, "Python version is < 2.7, so make sure configuration\
- file has un-needed values left out."
+      print("Python version is < 2.7, so make sure configuration\
+ file has un-needed values left out.", file=sys.stderr)
     else:
       cp = ConfigParser.ConfigParser()#allow_no_value=True)
     cp.read(inifile)
   except:
-    print >> sys.stderr, "Cannot read configuration file %s" % inifile
+    print("Cannot read configuration file %s" % inifile, file=sys.stderr)
     sys.exit(1)
 
   """
@@ -96,14 +98,14 @@ if __name__=='__main__':
     # the accouting group
     accgroup = cp.get('accounting', 'group')
   except:
-    print >> sys.stderr, "Condor accounting group is required!"
+    print("Condor accounting group is required!", file=sys.stderr)
     sys.exit(1)
 
   try:
     # the accounting group user
     accuser = cp.get('accounting', 'user')
   except:
-    print >> sys.stderr, "Condor accounting group user is required!"
+    print("Condor accounting group user is required!", file=sys.stderr)
     sys.exit(1)
 
   """
@@ -116,7 +118,7 @@ if __name__=='__main__':
     outdir = None
 
   if not outdir:
-    print >> sys.stderr, "No output directory specified!"
+    print("No output directory specified!", file=sys.stderr)
     sys.exit(1)
 
   try:
@@ -126,7 +128,7 @@ if __name__=='__main__':
     parfile = None
 
   if not parfile:
-    print >> sys.stderr, "No parameter file/directory specified!"
+    print("No parameter file/directory specified!", file=sys.stderr)
     sys.exit(1)
 
   """
@@ -139,7 +141,7 @@ if __name__=='__main__':
     logdir = None
 
   if not logdir:
-    print >> sys.stderr, "No DAG log directory specified!"
+    print("No DAG log directory specified!", file=sys.stderr)
     sys.exit(1)
 
   """
@@ -152,7 +154,7 @@ if __name__=='__main__':
     rexec = None
 
   if not rexec or not os.path.isfile(rexec):
-    print >> sys.stderr, "No results page executive script given!"
+    print("No results page executive script given!", file=sys.stderr)
     sys.exit(1)
 
   try:
@@ -175,11 +177,11 @@ if __name__=='__main__':
     nestednotfile = ['_params.txt', '_SNR', '_Znoise', '_B.txt']
 
   if not mcmcdirs and not nesteddirs:
-    print >> sys.stderr, "No MCMC or nested sampling input directories specified!"
+    print("No MCMC or nested sampling input directories specified!", file=sys.stderr)
     sys.exit(1)
 
   if mcmcdirs and nesteddirs:
-    print >> sys.stderr, "Specify only a set of nested sampling, OR MCMC, directories, not both!"
+    print("Specify only a set of nested sampling, OR MCMC, directories, not both!", file=sys.stderr)
     sys.exit(1)
 
   try:
@@ -190,7 +192,7 @@ if __name__=='__main__':
     ifosr = []
 
   if not ifosr:
-    print >> sys.stderr, "No interferometers specified!"
+    print("No interferometers specified!", file=sys.stderr)
     sys.exit(1)
 
   try:
@@ -202,7 +204,7 @@ if __name__=='__main__':
 
   if len(ifosr) == 1 or mcmcdirs:
     if len(bkdirs) != len(ifosr):
-      print >> sys.stderr, "Heterodyned data directories and IFOs not consistent!"
+      print("Heterodyned data directories and IFOs not consistent!", file=sys.stderr)
       sys.exit(1)
 
   if len(ifosr) > 1 and nesteddirs:
@@ -212,7 +214,7 @@ if __name__=='__main__':
       nifos = len(ifosr)-1
 
     if len(bkdirs) != nifos:
-      print >> sys.stderr, "Heterodyned data directories and IFOs not consistent!"
+      print("Heterodyned data directories and IFOs not consistent!", file=sys.stderr)
       sys.exit(1)
 
   try:
@@ -255,7 +257,7 @@ if __name__=='__main__':
     cexec = None
 
   if not cexec or not os.path.isfile(cexec):
-    print >> sys.stderr, "No collation page executive script given!"
+    print("No collation page executive script given!", file=sys.stderr)
     sys.exit(1)
 
   try:
@@ -324,7 +326,7 @@ if __name__=='__main__':
     fh = open(logfile, "w" ) # creates file
     fh.close()
   else:
-    print >> sys.stderr, "DAG log directory does not exist!"
+    print("DAG log directory does not exist!", file=sys.stderr)
     sys.exit(1)
 
   # create the DAG writing the log to the specified directory
@@ -341,7 +343,7 @@ if __name__=='__main__':
       inlimlist = True
       continue
     else:
-      print >> sys.stderr, "Limit %s not recognised!" % lim
+      print("Limit %s not recognised!" % lim, file=sys.stderr)
       inlimlist = False
       break
 
@@ -354,7 +356,7 @@ if __name__=='__main__':
       invallist = True
       continue
     else:
-      print >> sys.stderr, "Parameter value %s not recognised!" % val
+      print("Parameter value %s not recognised!" % val, file=sys.stderr)
       invallist = False
       break
 
@@ -376,14 +378,14 @@ if __name__=='__main__':
         if '.par' in f: # only use .par files
           param_files.append(os.path.join(parfile, f))
     else:
-      print >> sys.stderr, "No par file or directory specified!"
+      print("No par file or directory specified!", file=sys.stderr)
       sys.exit(1)
 
   # set collate page values
   collatepage.set_parfile(parfile)
 
   if not os.path.isdir(outdir):
-    print >> sys.stderr, "Output directory %s does not exist!" % outdir
+    print("Output directory %s does not exist!" % outdir, file=sys.stderr)
     sys.exit(1)
   else:
     collatepage.set_outpath(outdir)
@@ -393,14 +395,14 @@ if __name__=='__main__':
     if sorttype in ['name', 'freq', 'ra', 'dec']:
       collatepage.set_sorttype(sorttype)
     else:
-      print >> sys.stderr, "Invalid sort type %s - using default" % sorttype
+      print("Invalid sort type %s - using default" % sorttype, file=sys.stderr)
 
 
   for ifo in ifolist:
     # check ifos are in the individual results page list
     if ifo != 'Joint': # ifosr should not contain 'Joint'
       if ifo not in ifosr:
-        print >> sys.stderr, "%d is not in the results page IFO list" % ifo
+        print("%d is not in the results page IFO list" % ifo, file=sys.stderr)
         sys.exit(1)
 
   collatepage.set_ifos(ifolist)
@@ -458,7 +460,7 @@ if __name__=='__main__':
     if mcmcdirs:
       for mcmcdir in mcmcdirs:
         if not os.path.isdir(mcmcdir):
-          print >> sys.stderr, "MCMC directory %s not found!" % mcmcdir
+          print("MCMC directory %s not found!" % mcmcdir, file=sys.stderr)
           sys.exit(1)
 
       resultsnode.set_domcmc()
@@ -478,7 +480,7 @@ if __name__=='__main__':
           try:
             name = psr['NAME']
           except:
-            print >> sys.stderr, "Cannot get pulsar name from par file" % mcmcdir
+            print("Cannot get pulsar name from par file" % mcmcdir, file=sys.stderr)
             sys.exit(1)
 
       # if name is one of the standard hardware injection names set hwinj to true
@@ -501,7 +503,7 @@ if __name__=='__main__':
 
     for bkdir in bkdirs:
       if not os.path.isdir(bkdir):
-        print >> sys.stderr, "Fine heterodyne directory %s not found!" % bkdir
+        print("Fine heterodyne directory %s not found!" % bkdir, file=sys.stderr)
         sys.exit(1)
 
     resultsnode.set_bkfiles(bkdirs)

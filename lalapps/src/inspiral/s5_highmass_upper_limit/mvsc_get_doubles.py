@@ -1,4 +1,6 @@
 #!/usr/bin/python
+from __future__ import print_function
+
 import sqlite3
 from glue.ligolw import dbtables 
 from glue.ligolw import table
@@ -61,7 +63,7 @@ for database in databases:
     def calc_delta_t_inj(trigger1_end_time, trigger1_end_time_ns, trigger2_end_time, trigger2_end_time_ns):
       try:
         return abs((trigger1_end_time - trigger2_end_time) + (trigger1_end_time_ns - trigger2_end_time)*1e-9)
-      except: print "calc_delta_t_inj() failed"
+      except: print("calc_delta_t_inj() failed")
     connection.create_function("calc_delta_t_inj", 4, calc_delta_t_inj)
     connection.create_function("calc_effective_snr", 3, calc_effective_snr)
     
@@ -115,7 +117,7 @@ for database in databases:
     offset_vectors = dbtables.lsctables.TimeSlideTable.get_table(dbtables.get_xml(connection)).as_dict()
   
     def calc_delta_t(trigger1_ifo, trigger1_end_time, trigger1_end_time_ns, trigger2_ifo, trigger2_end_time, trigger2_end_time_ns, time_slide_id, rings = rings, offset_vectors = offset_vectors):
-      print >>sys.stderr, "calculating delta_t"
+      print("calculating delta_t", file=sys.stderr)
       trigger1_true_end_time = dbtables.lsctables.LIGOTimeGPS(trigger1_end_time, trigger1_end_time_ns)
       trigger2_true_end_time = dbtables.lsctables.LIGOTimeGPS(trigger2_end_time, trigger2_end_time_ns)
       # find the instruments that were on at trigger 1's end time and
@@ -126,7 +128,7 @@ for database in databases:
         # FIXME THERE SEEMS TO BE A BUG IN  THINCA!  Occasionally thinca records a trigger on the upper boundary
         # of its ring.  This would make it outside the ring which is very problematic.  It needs to be fixed in thinca
         # for now we'll allow the additional check that the other trigger is in the ring and use it.
-          print >>sys.stderr, "trigger1 found not on a ring, trying trigger2"
+          print("trigger1 found not on a ring, trying trigger2", file=sys.stderr)
           [ring] = [segs[segs.find(trigger2_end_time)] for segs in rings.values() if trigger2_end_time in segs]
       # now we can unslide the triggers on the ring
       try:
@@ -135,7 +137,7 @@ for database in databases:
         out = abs(trigger1_true_end_time - trigger2_true_end_time)
         return float(out)
       except:
-        print "calc delta t failed",trigger1_true_end_time, trigger2_true_end_time, ring
+        print("calc delta t failed",trigger1_true_end_time, trigger2_true_end_time, ring)
         return float(abs(trigger1_true_end_time - trigger2_true_end_time)) % 1
   
     
@@ -207,7 +209,7 @@ for database in databases:
 Nrounds = opts.number
 Ninj = len(injections)
 Nslide = len(timeslides)
-print >>sys.stderr, injections
+print(injections, file=sys.stderr)
 Nparams = len(injections[0][:]) - 1
 
 trstr = opts.trainingstr
@@ -225,8 +227,8 @@ for i in range(Nrounds):
   f_testing_info=open(''.join(ifos) + '_set' + str(i) + '_' + str(testr) + '_info.pat', 'w')
   set_inj = list(injections)
   set_inj_info = list(injections_info)
-  print len(set_inj)
-  print len(set_inj_info)
+  print(len(set_inj))
+  print(len(set_inj_info))
   set_slide = list(timeslides)
   set_slide_info = list(timeslides_info)
   # get 10% of the timeslides and injections, which you will run through the forest that you've trained on the other 90%
@@ -235,8 +237,8 @@ for i in range(Nrounds):
   set_i_inj_info= set_inj_info[i*Ninj/Nrounds : (i+1)*Ninj/Nrounds]
   set_i_slide = set_slide[i*Nslide/Nrounds : (i+1)*Nslide/Nrounds]
   set_i_slide_info = set_slide_info[i*Nslide/Nrounds : (i+1)*Nslide/Nrounds]
-  print len(set_i_inj)
-  print len(set_i_inj_info)
+  print(len(set_i_inj))
+  print(len(set_i_inj_info))
   #print set_i_inj_info
   for row in set_i_inj:
     f_testing.write("%s\n" % " ".join(map(str,row)))
@@ -266,4 +268,4 @@ for row in zerolag_info:
 
 time2=time()
 elapsed_time=time2-time1
-print "elapsed time:", elapsed_time
+print("elapsed time:", elapsed_time)

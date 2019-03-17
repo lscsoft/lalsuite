@@ -124,7 +124,7 @@ def as_array(table):
 logParams=['logl','loglh1','loglh2','logll1','loglv1','deltalogl','deltaloglh1','deltalogll1','deltaloglv1','logw','logprior','logpost','nulllogl','chain_log_evidence','chain_delta_log_evidence','chain_log_noise_evidence','chain_log_bayes_factor']
 #Parameters known to cbcBPP
 relativePhaseParams=[ a+b+'_relative_phase' for a,b in combinations(['h1','l1','v1'],2)]
-snrParams=['snr','optimal_snr','matched_filter_snr'] + ['%s_optimal_snr'%(i) for i in ['h1','l1','v1']] + ['%s_cplx_snr_amp'%(i) for i in ['h1','l1','v1']] + ['%s_cplx_snr_arg'%(i) for i in ['h1', 'l1', 'v1']] + relativePhaseParams
+snrParams=['snr','optimal_snr','matched_filter_snr','coherence'] + ['%s_optimal_snr'%(i) for i in ['h1','l1','v1']] + ['%s_cplx_snr_amp'%(i) for i in ['h1','l1','v1']] + ['%s_cplx_snr_arg'%(i) for i in ['h1', 'l1', 'v1']] + relativePhaseParams
 calAmpParams=['calamp_%s'%(ifo) for ifo in ['h1','l1','v1']]
 calPhaseParams=['calpha_%s'%(ifo) for ifo in ['h1','l1','v1']]
 calParams = calAmpParams + calPhaseParams
@@ -148,7 +148,7 @@ energyParams=['e_rad', 'l_peak']
 strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+eosParams+energyParams
 
 #Extrinsic
-distParams=['distance','distMPC','dist']
+distParams=['distance','distMPC','dist','distance_maxl']
 incParams=['iota','inclination','cosiota']
 polParams=['psi','polarisation','polarization']
 skyParams=['ra','rightascension','declination','dec']
@@ -4245,7 +4245,7 @@ def plot_corner(posterior,levels,parnames=None):
         except ImportError:
             print('Cannot load corner module. Try running\n\t$ pip install corner')
             return None
-    parnames=filter(lambda x: x in posterior.names, parnames)
+    parnames=list(filter(lambda x: x in posterior.names, parnames))
     labels = [plot_label(parname) for parname in parnames]
     data = np.hstack([posterior[p].samples for p in parnames])
     if posterior.injection:
@@ -6600,6 +6600,8 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
             m2=M2*LAL_MSUN_SI
             if 'phi_orb' in pos.names:
                 phiRef=pos['phi_orb'].samples[which][0]
+            elif 'phase' in pos.names:
+                phiRef=pos['phase'].samples[which][0]
             elif 'phase_maxl' in pos.names:
                 phiRef=pos['phase_maxl'].samples[which][0]
                 print('INFO: phi_orb not estimated, using maximum likelihood value')
@@ -6644,7 +6646,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
                 iota=pos['inclination'].samples[which][0]
             except:
                 try:
-                    iota, s1x, s1y, s1z, s2x, s2y, s2z=lalsim.SimInspiralTransformPrecessingNewInitialConditions(pos['theta_jn'].samples[which][0], pos['phi_JL'].samples[which][0], pos['tilt1'].samples[which][0], pos['tilt2'].samples[which][0], pos['phi12'].samples[which][0], pos['a1'].samples[which][0], pos['a2'].samples[which][0], m1, m2, f_ref)
+                    iota, s1x, s1y, s1z, s2x, s2y, s2z=lalsim.SimInspiralTransformPrecessingNewInitialConditions(pos['theta_jn'].samples[which][0], pos['phi_JL'].samples[which][0], pos['tilt1'].samples[which][0], pos['tilt2'].samples[which][0], pos['phi12'].samples[which][0], pos['a1'].samples[which][0], pos['a2'].samples[which][0], m1, m2, f_ref, phiRef)
                 except:
                     if 'a1z' in pos.names:
                         s1z=pos['a1z'].samples[which][0]
@@ -7605,7 +7607,10 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
                         last_color = lines[-1].get_color()
                         plt.axvline(acl/Nskip, linestyle='-.', color=last_color)
                         plt.title('ACL = %i   N = %i'%(acl,Neff))
-                except FloatingPointError:
+                    acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.png')))
+                    if(savepdfs): acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.pdf')))
+                    plt.close(acffig)
+                except:
                     # Ignore
                     acfail=1
                     pass
@@ -7626,14 +7631,13 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
                         plt.title('Autocorrelation Function')
                     else:
                         plt.title('ACL = %i  N = %i'%(max(acls),Nsamps))
-                except FloatingPointError:
+                    acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.png')))
+                    if(savepdfs): acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.pdf')))
+                    plt.close(acffig)
+                except:
                     # Ignore
                     acfail=1
                     pass
-
-            acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.png')))
-            if(savepdfs): acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.pdf')))
-            plt.close(acffig)
 
         if not noacf:
             if not acfail:

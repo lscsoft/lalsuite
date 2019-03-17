@@ -145,7 +145,7 @@
 #include <lal/LALError.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 

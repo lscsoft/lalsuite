@@ -20,6 +20,7 @@ pkginclude_HEADERS = \
 	GenerateSpinOrbitCW.h \
 	GenerateTaylorCW.h \
 	GetEarthTimes.h \
+	HeterodynedPulsarModel.h \
 	HoughMap.h \
 	LALBarycenter.h \
 	LALComputeAM.h \
@@ -85,6 +86,7 @@ liblalpulsar_la_SOURCES = \
 	GenerateSpinOrbitCW.c \
 	GenerateTaylorCW.c \
 	GetEarthTimes.c \
+	HeterodynedPulsarModel.c \
 	HoughMap.c \
 	LALBarycenter.c \
 	LALComputeAM.c \

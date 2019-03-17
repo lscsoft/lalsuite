@@ -268,7 +268,7 @@ int invert_spectrum(
       segmentLength, truncateLength, fwdPlan, revPlan );
 
   strncpy( name, spectrum->name, LALNameLength * sizeof(char) );
-  snprintf( spectrum->name, sizeof( spectrum->name ),
+  XLALStringPrint( spectrum->name, sizeof( spectrum->name ),
       "%s_INV", name );
 
   return 0;
@@ -319,7 +319,7 @@ int calibrate_spectrum(
           &response->sampleUnits );
     }
   strncpy( name, spectrum->name, LALNameLength * sizeof(char) );
-    snprintf( spectrum->name, sizeof( spectrum->name ),
+    XLALStringPrint( spectrum->name, sizeof( spectrum->name ),
         "%s_CAL", name );
   }
 

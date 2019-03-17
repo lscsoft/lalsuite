@@ -31,10 +31,10 @@ from optparse import OptionParser
 from lal.utils import CacheEntry
 
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
 from lalburst import git_version
 from lalburst import bucluster
 
@@ -83,23 +83,6 @@ def parse_command_line():
 #
 # =============================================================================
 #
-#                                    Input
-#
-# =============================================================================
-#
-
-
-#
-# Use interning row builder to save memory.
-#
-
-
-lsctables.table.TableStream.RowBuilder = lsctables.table.InterningRowBuilder
-
-
-#
-# =============================================================================
-#
 #                                     Main
 #
 # =============================================================================
@@ -134,8 +117,7 @@ for filename in filenames:
 	# Load document
 	#
 
-	xmldoc = utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
-	lsctables.table.InterningRowBuilder.strings.clear()
+	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
 
 	# FIXME:  don't do this:  fix lalapps_power's output
 	if options.cluster_algorithm in ("excesspower",):
@@ -175,5 +157,5 @@ for filename in filenames:
 	#
 
 	if changed:
-		utils.write_filename(xmldoc, filename, gz = (filename or "stdout").endswith(".gz"), verbose = options.verbose)
+		ligolw_utils.write_filename(xmldoc, filename, gz = (filename or "stdout").endswith(".gz"), verbose = options.verbose)
 	xmldoc.unlink()

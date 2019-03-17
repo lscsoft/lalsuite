@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInference],[1.10.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALInference],[1.10.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([src/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -20,7 +20,6 @@ AC_CONFIG_FILES([ \
   python/lalinference/bayestar/Makefile \
   python/lalinference/imrtgr/Makefile \
   python/lalinference/io/Makefile \
-  python/lalinference/io/events/Makefile \
   python/lalinference/plot/Makefile \
   python/lalinference/popprior/Makefile \
   python/lalinference/rapid_pe/Makefile \
@@ -47,13 +46,13 @@ AM_INIT_AUTOMAKE([ \
 
 # version requirements
 MIN_GLUE_VERSION="1.54.1"
-MIN_LAL_VERSION="6.19.0"
-MIN_LALMETAIO_VERSION="1.4.0"
+MIN_LAL_VERSION="6.19.2"
+MIN_LALMETAIO_VERSION="1.5.0"
 MIN_LALFRAME_VERSION="1.4.0"
-MIN_LALSIMULATION_VERSION="1.8.0"
-MIN_LALBURST_VERSION="1.5.0"
-MIN_LALINSPIRAL_VERSION="1.8.0"
-MIN_LALPULSAR_VERSION="1.17.0"
+MIN_LALSIMULATION_VERSION="1.8.2"
+MIN_LALBURST_VERSION="1.5.1"
+MIN_LALINSPIRAL_VERSION="1.8.1"
+MIN_LALPULSAR_VERSION="1.17.1"
 AC_SUBST([MIN_GLUE_VERSION])
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
@@ -84,9 +83,9 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[15])
+AC_SUBST([LIBCURRENT],[16])
 AC_SUBST([LIBREVISION],[0])
-AC_SUBST([LIBAGE],[0])
+AC_SUBST([LIBAGE],[1])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build
@@ -192,7 +191,7 @@ fi
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
-LALSUITE_CHECK_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALLIGOLwHasTable],[lal/LIGOLwXMLRead.h])
 LALSUITE_CHECK_LIB([LALFrame],[${MIN_LALFRAME_VERSION}],[LALFrOpen],[lal/LALFrameL.h])
 LALSUITE_CHECK_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_LIB([LALInspiral],[${MIN_LALINSPIRAL_VERSION}],[LALInspiralParameterCalc],[lal/LALInspiral.h])

@@ -43,79 +43,17 @@
 #ifndef _LIGOLWXMLREAD_H
 #define _LIGOLWXMLREAD_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <lal/LALDatatypes.h>
-#include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
-/**\name Error Codes */ /*@{*/
-#define LIGOLWXMLREADH_ENULL 1
-#define LIGOLWXMLREADH_ENNUL 2
-#define LIGOLWXMLREADH_EALOC 3
-#define LIGOLWXMLREADH_EUTAB 4
-#define LIGOLWXMLREADH_ENCOL 5
-#define LIGOLWXMLREADH_ENTAB 6
-#define LIGOLWXMLREADH_EPARS 7
-#define LIGOLWXMLREADH_EMTAB 8
-#define LIGOLWXMLREADH_EENDT 9
-#define LIGOLWXMLREADH_ETMSM 10
-#define LIGOLWXMLREADH_ETNOP 11
-
-#define LIGOLWXMLREADH_MSGENULL "Null pointer"
-#define LIGOLWXMLREADH_MSGENNUL "Non-null pointer"
-#define LIGOLWXMLREADH_MSGEALOC "Memory allocation error"
-#define LIGOLWXMLREADH_MSGEUTAB "Unknown metadata table type"
-#define LIGOLWXMLREADH_MSGENCOL "Unable to find table column"
-#define LIGOLWXMLREADH_MSGENTAB "Requested table not found in file"
-#define LIGOLWXMLREADH_MSGEPARS "Error parsing table"
-#define LIGOLWXMLREADH_MSGEMTAB "No table type specified"
-#define LIGOLWXMLREADH_MSGEENDT "Ending a table without an beginning a table"
-#define LIGOLWXMLREADH_MSGETMSM "Table type mismatch"
-#define LIGOLWXMLREADH_MSGETNOP "Table not begun for writing"
-/*@}*/
-
-/* Forward declarations of MetaIO types */
+/* Forward declarations of MetaIO types.  Note that metaio.h is not
+ * included by this header file, so the metaio API does not become part of
+ * the API exported by lalmetaio.  The MetaioParseEnvironment structure is
+ * an opaque type, here, and is why the forward declaration is neeed. */
 struct MetaioParseEnvironment;
-
-/**
- * This structure allows for the association of entries in a MetaDataTable
- * with columns in an xml file.
- * <dl>
- * <dt>name</dt><dd> The name of the column in the XML table.</dd>
- * <dt>pos</dt><dd> The position of this column in the XML table.</dd>
- * <dt>idx</dt><dd> The id number of the column.</dd>
- * </dl>
- *
- */
-#ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IMMUTABLE_MEMBERS(tagMetaTableDirectory, name));
-#endif /* SWIG */
-typedef struct
-tagMetaTableDirectory
-{
-  const CHAR *name;
-  INT4   pos;
-  INT4   idx;
-}
-MetaTableDirectory;
-
-MetaTableDirectory* XLALCreateMetaTableDir(
-    struct MetaioParseEnvironment *const env,
-    MetadataTableType       table
-    );
-
-void
-LALCreateMetaTableDir(
-    LALStatus              *status,
-    MetaTableDirectory    **tableDir,
-    struct MetaioParseEnvironment *const env,
-    MetadataTableType       table
-    );
 
 int
 XLALLIGOLwFindColumn(
@@ -157,7 +95,7 @@ XLALTimeSlideTableFromLIGOLw (
 
 SearchSummaryTable *
 XLALSearchSummaryTableFromLIGOLw (
-    const CHAR          *fileName
+    const char *fileName
     );
 
 #ifdef  __cplusplus

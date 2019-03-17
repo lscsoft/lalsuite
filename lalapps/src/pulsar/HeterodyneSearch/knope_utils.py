@@ -14,6 +14,7 @@ __version__ = '$Revision$'
 
 import string
 import os
+import re
 from glue import pipeline
 import sys
 import ast
@@ -1043,9 +1044,9 @@ class knopeDAG(pipeline.CondorDAG):
     self.pe_prior_options = self.get_config_option('pe', 'prior_options', cftype='dict')
     self.pe_premade_prior_file = self.get_config_option('pe', 'premade_prior_file', allownone=True)
 
-    if self.pe_premade_prior_file != None:
+    if self.pe_premade_prior_file is not None:
       if not os.path.isfile(self.pe_premade_prior_file):
-        print("Error... pre-made prior file '%s' does not exist!" % self.pe_premade_prior_file, file=sys.stderr)
+        print("Error... pre-made prior file '{}' does not exist!".format(self.pe_premade_prior_file), file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
         return
 
@@ -1420,17 +1421,18 @@ class knopeDAG(pipeline.CondorDAG):
     outfile = os.path.join(outputpath, '%s.prior' % pname)
 
     # if using a pre-made prior file then just create a symbolic link to that file into outputpath
-    if self.pe_premade_prior_file != None:
+    if self.pe_premade_prior_file is not None:
       try:
         os.symlink(self.pe_premade_prior_file, outfile)
       except:
         print("Error... could not create symbolic link to prior file '%s'" % self.pe_premade_prior_file, file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
+
       return outfile
 
     # check if requiring to add parameters with errors in the .par file to the prior options
     prior_options = {}
-    if self.pe_prior_options != None:
+    if self.pe_prior_options is not None:
       prior_options = deepcopy(self.pe_prior_options)
 
       if self.pe_use_parameter_errors:
@@ -1525,24 +1527,116 @@ class knopeDAG(pipeline.CondorDAG):
           print("Error... no 'priortype' given for parameter '%s'" % prioritem, file=sys.stderr)
           self.error_code = KNOPE_ERROR_GENERAL
           return outfile
-        if 'ranges' not in prior_options[prioritem]:
-          print("Error... no 'ranges' given for parameter '%s'" % prioritem, file=sys.stderr)
-          self.error_code = KNOPE_ERROR_GENERAL
-          return outfile
-
+        
         ptype = prior_options[prioritem]['priortype']
-        rangevals = prior_options[prioritem]['ranges']
 
-        if len(rangevals) != 2:
-          print("Error... 'ranges' for parameter '%s' must be a list or tuple with two entries" % prioritem, file=sys.stderr)
-          self.error_code = KNOPE_ERROR_GENERAL
-          return outfile
+        if ptype != 'gmm':
+          if 'ranges' not in prior_options[prioritem]:
+            print("Error... no 'ranges' given for parameter '%s'" % prioritem, file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
 
-        # ignore cosiota if using previous posterior file as prior
-        if posteriorfile is not None and prioritem.upper() == 'COSIOTA':
-          continue
+          rangevals = prior_options[prioritem]['ranges']
+
+          if len(rangevals) != 2:
+            print("Error... 'ranges' for parameter '%s' must be a list or tuple with two entries" % prioritem, file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          # ignore cosiota if using previous posterior file as prior
+          if posteriorfile is not None and prioritem.upper() == 'COSIOTA':
+            continue
+          else:
+            fp.write('%s\t%s\t%.16le\t%.16le\n' % (prioritem, ptype, rangevals[0], rangevals[1]))
         else:
-          fp.write('%s\t%s\t%.16le\t%.16le\n' % (prioritem, ptype, rangevals[0], rangevals[1]))
+          # check if item is prior for multiple parameters
+          npars = len(prioritem.split(':'))
+
+          # output if a Gaussian Mixture Model prior is set
+          if 'nmodes' not in prior_options[prioritem]:
+            print("Error... no 'nmodes' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          nmodes = prior_options[prioritem]['nmodes']
+
+          if 'means' not in prior_options[prioritem]:
+            print("Error... no 'means' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          means = prior_options[prioritem]['means']
+
+          if len(means) != nmodes:
+            print("Error... number of mean values must be equal to the number of modes", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          for mean in means:
+            if len(mean) != npars:
+              print("Error... number of mean values must be equal to the number of parameters", file=sys.stderr)
+              self.error_code = KNOPE_ERROR_GENERAL
+              return outfile
+
+          if 'covs' not in prior_options[prioritem]:
+            print("Error... no 'covs' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          covs = prior_options[prioritem]['covs']
+
+          if len(means) != nmodes:
+            print("Error... number of covariance matrices values must be equal to the number of modes", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          for cov in covs:
+            npcov = np.array(cov)
+            if npcov.shape[0] != npcov.shape[1] and npcov.shape[1] != npars:
+              print("Error... number of covariance matrices rows/columns must be equal to the number of parameters", file=sys.stderr)
+              self.error_code = KNOPE_ERROR_GENERAL
+              return outfile
+
+          if 'weights' not in prior_options[prioritem]:
+            print("Error... no 'weights' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          weights = prior_options[prioritem]['weights']
+
+          if len(weights) != nmodes:
+            print("Error... number of weights must be equal to the number of modes", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+          
+          if 'ranges' in prior_options[prioritem]:
+            ranges = prior_options[prioritem]['ranges']
+
+            if len(ranges) != npars:
+              print("Error... number of ranges must be equal to the number of parameters", file=sys.stderr)
+              self.error_code = KNOPE_ERROR_GENERAL
+              return outfile
+
+            for rangevals in ranges:
+              if len(rangevals) != 2:
+                print("Error... ranges must have two values", file=sys.stderr)
+                self.error_code = KNOPE_ERROR_GENERAL
+                return outfile
+          else:
+            ranges = None
+
+          fp.write('{}\tgmm\t'.format(prioritem))
+          fp.write('{}\t'.format(nmodes))
+          fp.write('{}\t'.format(re.sub(r'\s+', '', str(means))))
+          fp.write('{}\t'.format(re.sub(r'\s+', '', str(covs))))
+          fp.write('{}'.format(re.sub(r'\s+', '', str(weights))))
+
+          if ranges is not None:
+            for rangevals in ranges:
+              fp.write('\t')
+              fp.write('{}'.format(re.sub(r'\s+', '', str(rangevals))))
+
+          fp.write('\n')
 
       # set the required amplitude priors or parameters to estimate from previous posterior samples (and limits)
       requls = {} # dictionary to contain the required upper limits
@@ -1742,12 +1836,105 @@ class knopeDAG(pipeline.CondorDAG):
 
       for prioritem in prior_options:
         ptype = prior_options[prioritem]['priortype']
-        rangevals = prior_options[prioritem]['ranges']
-        if len(rangevals) != 2:
-          print("Error... the ranges in the prior for '%s' are not set properly" % prioritem, file=sys.stderr)
-          self.error_code = KNOPE_ERROR_GENERAL
-          return outfile
-        fp.write("%s\t%s\t%.16e\t%.16e\n" % (prioritem, ptype, rangevals[0], rangevals[1]))
+        
+        if ptype != 'gmm':
+          rangevals = prior_options[prioritem]['ranges']
+        
+          if len(rangevals) != 2:
+            print("Error... the ranges in the prior for '%s' are not set properly" % prioritem, file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+          fp.write("%s\t%s\t%.16e\t%.16e\n" % (prioritem, ptype, rangevals[0], rangevals[1]))
+        else:
+              # check if item is prior for multiple parameters
+          npars = len(prioritem.split(':'))
+
+          # output if a Gaussian Mixture Model prior is set
+          if 'nmodes' not in prior_options[prioritem]:
+            print("Error... no 'nmodes' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          nmodes = prior_options[prioritem]['nmodes']
+
+          if 'means' not in prior_options[prioritem]:
+            print("Error... no 'means' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          means = prior_options[prioritem]['means']
+
+          if len(means) != nmodes:
+            print("Error... number of mean values must be equal to the number of modes", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          for mean in means:
+            if len(mean) != npars:
+              print("Error... number of mean values must be equal to the number of parameters", file=sys.stderr)
+              self.error_code = KNOPE_ERROR_GENERAL
+              return outfile
+
+          if 'covs' not in prior_options[prioritem]:
+            print("Error... no 'covs' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          covs = prior_options[prioritem]['covs']
+
+          if len(means) != nmodes:
+            print("Error... number of covariance matrices values must be equal to the number of modes", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          for cov in covs:
+            npcov = np.array(cov)
+            if npcov.shape[0] != npcov.shape[1] and npcov.shape[1] != npars:
+              print("Error... number of covariance matrices rows/columns must be equal to the number of parameters", file=sys.stderr)
+              self.error_code = KNOPE_ERROR_GENERAL
+              return outfile
+
+          if 'weights' not in prior_options[prioritem]:
+            print("Error... no 'weights' given for parameter '{}'".format(prioritem), file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+
+          weights = prior_options[prioritem]['weights']
+
+          if len(weights) != nmodes:
+            print("Error... number of weights must be equal to the number of modes", file=sys.stderr)
+            self.error_code = KNOPE_ERROR_GENERAL
+            return outfile
+          
+          if 'ranges' in prior_options[prioritems]:
+            ranges = prior_options[prioritem]['ranges']
+
+            if len(ranges) != npars:
+              print("Error... number of ranges must be equal to the number of parameters", file=sys.stderr)
+              self.error_code = KNOPE_ERROR_GENERAL
+              return outfile
+
+            for rangevals in ranges:
+              if len(rangevals) != 2:
+                print("Error... ranges must have two values", file=sys.stderr)
+                self.error_code = KNOPE_ERROR_GENERAL
+                return outfile
+          else:
+            ranges = None
+
+          fp.write('{}\tgmm\t'.format(prioritem))
+          fp.write('{}\t'.format(nmodes))
+          fp.write('{}\t'.format(re.sub(r'\s+', '', str(means))))
+          fp.write('{}\t'.format(re.sub(r'\s+', '', str(covs))))
+          fp.write('{}'.format(re.sub(r'\s+', '', str(weights))))
+
+          if ranges is not None:
+            for rangevals in ranges:
+              fp.write('\t')
+              fp.write('{}'.format(re.sub(r'\s+', '', str(rangevals))))
+
+          fp.write('\n')
+
       fp.close()
 
     return outfile
@@ -4423,6 +4610,7 @@ class nest2posJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
       self.set_stdout_file('n2p-$(cluster).out')
       self.set_stderr_file('n2p-$(cluster).err')
 
+    self.add_arg('--non-strict-versions') # force use of --non-strict-versions flag
     self.add_arg('$(macroinputfiles)') # macro for input nested sample files
 
     if rundir != None:

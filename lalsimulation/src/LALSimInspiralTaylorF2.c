@@ -30,6 +30,7 @@
 #include <lal/LALConstants.h>
 #include <lal/Sequence.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALSimInspiralEOS.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/Units.h>
 #include <lal/XLALError.h>
@@ -47,6 +48,14 @@
  * @review TaylorF2 routines reviewed by Frank Ohme, Andrew Lundgren, Alex Nitz,
  * Alex Nielsen, Salvatore Vitale, Jocelyn Read, Sebastian Khan.
  * The review concluded with git hash 6106138b2140ffb11bc38fc914e0a1de7082dc4d (Nov 2014)
+ * Additional tidal terms up to 7.5PN order reviewed by Ohme, Haney, Khan, Samajdar,
+ * Riemenschneider, Setyawati, Hinderer. Concluded with git hash
+ * f15615215a7e70488d32137a827d63192cbe3ef6 (February 2019).
+ *
+ * @note If not specified explicitly by the user, the default tidal order will be
+ * chosen as 7.0PN, based on the good performance found in
+ * https://arxiv.org/pdf/1804.02235.pdf (Fig. 10). However, the user is free to specify
+ * any tidal order up to 7.5PN passing the relevant flag through the LALDict.
  *
  * @name Routines for TaylorF2 Waveforms
  * @sa
@@ -260,9 +269,30 @@ int XLALSimInspiralTaylorF2Core(
      */
     REAL8 pft10 = 0.;
     REAL8 pft12 = 0.;
+    REAL8 pft13 = 0.;
+    REAL8 pft14 = 0.;
+    REAL8 pft15 = 0.;
     switch( XLALSimInspiralWaveformParamsLookupPNTidalOrder(p) )
     {
-        case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_75PN:
+            pft15 = pfa.v[15];
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT:
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_7PN:
+            pft14 = pfa.v[14];
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_65PN:
+            pft13 = pfa.v[13];
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
 	    pft12 = pfa.v[12];
 #if __GNUC__ >= 7
@@ -330,6 +360,9 @@ int XLALSimInspiralTaylorF2Core(
         const REAL8 v9ref = vref * v8ref;
         const REAL8 v10ref = vref * v9ref;
         const REAL8 v12ref = v2ref * v10ref;
+        const REAL8 v13ref = vref * v12ref;
+        const REAL8 v14ref = vref * v13ref;
+        const REAL8 v15ref = vref * v14ref;
         ref_phasing += pfa7 * v7ref;
         ref_phasing += (pfa6 + pfl6 * logvref) * v6ref;
         ref_phasing += (pfa5 + pfl5 * logvref) * v5ref;
@@ -340,6 +373,9 @@ int XLALSimInspiralTaylorF2Core(
         ref_phasing += pfaN;
 
         /* Tidal terms in reference phasing */
+        ref_phasing += pft15 * v15ref;
+        ref_phasing += pft14 * v14ref;
+        ref_phasing += pft13 * v13ref;
         ref_phasing += pft12 * v12ref;
         ref_phasing += pft10 * v10ref;
 
@@ -361,6 +397,9 @@ int XLALSimInspiralTaylorF2Core(
         const REAL8 v9 = v * v8;
         const REAL8 v10 = v * v9;
         const REAL8 v12 = v2 * v10;
+        const REAL8 v13 = v * v12;
+        const REAL8 v14 = v * v13;
+        const REAL8 v15 = v * v14;
         REAL8 phasing = 0.;
         REAL8 dEnergy = 0.;
         REAL8 flux = 0.;
@@ -376,6 +415,9 @@ int XLALSimInspiralTaylorF2Core(
         phasing += pfaN;
 
         /* Tidal terms in phasing */
+        phasing += pft15 * v15;
+        phasing += pft14 * v14;
+        phasing += pft13 * v13;
         phasing += pft12 * v12;
         phasing += pft10 * v10;
 
@@ -490,6 +532,13 @@ int XLALSimInspiralTaylorF2(
     REAL8Sequence *freqs = NULL;
     LIGOTimeGPS tC = {0, 0};
     int ret;
+    int retcode;
+    REAL8 fCONT;
+    INT4 tideO = XLALSimInspiralWaveformParamsLookupPNTidalOrder(p);
+    REAL8 lambda1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(p);
+    REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(p);
+    retcode = XLALSimInspiralSetQuadMonParamsFromLambdas(p);
+    XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to set quadparams from Universal relation.\n");
 
     COMPLEX16FrequencySeries *htilde = NULL;
 
@@ -503,8 +552,12 @@ int XLALSimInspiralTaylorF2(
     if (r <= 0) XLAL_ERROR(XLAL_EDOM);
 
     /* allocate htilde */
-    if ( fEnd == 0. ) // End at ISCO
+    if (( fEnd == 0. ) && ( tideO == 0 )) // End at ISCO
         f_max = fISCO;
+    else if (( fEnd == 0. ) && ( tideO != 0 )) { // End at the minimum of the contact and ISCO frequencies only when tides are enabled
+        fCONT = XLALSimInspiralContactFrequency(m1, lambda1, m2, lambda2); /* Contact frequency of two compact objects */
+        f_max = (fCONT > fISCO) ? fISCO : fCONT;
+    }
     else // End at user-specified freq.
         f_max = fEnd;
     if (f_max <= fStart) XLAL_ERROR(XLAL_EDOM);
@@ -543,6 +596,7 @@ int XLALSimInspiralTaylorF2(
 
     return ret;
 }
+#include "LALSimInspiralTaylorF2Ecc.c"
 
 /** @} */
 /** @} */

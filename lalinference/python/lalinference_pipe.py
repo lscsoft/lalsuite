@@ -10,6 +10,9 @@ import ast
 import os
 import uuid
 from glue import pipeline
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils 
 from math import ceil
 
 usage=""" %prog [options] config.ini
@@ -30,10 +33,7 @@ The user must also specify and ini file which will contain the main analysis con
 parser=OptionParser(usage)
 parser.add_option("-r","--run-path",default=None,action="store",type="string",help="Directory to run pipeline in (default: $PWD)",metavar="RUNDIR")
 parser.add_option("-p","--daglog-path",default=None,action="store",type="string",help="Path to directory to contain DAG log file. SHOULD BE LOCAL TO SUBMIT NODE",metavar="LOGDIR")
-parser.add_option("--gps",action="append",type="string",default=None,help="Analyse GPS time",metavar="GPSTIME")
 parser.add_option("-g","--gps-time-file",action="store",type="string",default=None,help="Text file containing list of GPS times to analyse",metavar="TIMES.txt")
-parser.add_option("-t","--single-triggers",action="store",type="string",default=None,help="SnglInspiralTable trigger list",metavar="SNGL_FILE.xml")
-parser.add_option("-C","--coinc-triggers",action="store",type="string",default=None,help="CoinInspiralTable trigger list",metavar="COINC_FILE.xml")
 parser.add_option("--gid",action="store",type="string",default=None,help="GraceDB ID")
 parser.add_option("--service-url",action="store",type="string",default=None,help="GraceDB url from which xml files are downloaded")
 parser.add_option("-I","--injections",action="store",type="string",default=None,help="List of injections to perform and analyse",metavar="INJFILE.xml")
@@ -160,9 +160,6 @@ mkdirs(daglogdir)
 if opts.gps_time_file is not None:
     cp.set('input','gps-time-file',os.path.abspath(opts.gps_time_file))
 
-if opts.single_triggers is not None:
-    cp.set('input','sngl-inspiral-file',os.path.abspath(opts.single_triggers))
-
 if opts.injections is not None:
     cp.set('input','injection-file',os.path.abspath(opts.injections))
 
@@ -171,9 +168,6 @@ if opts.burst_injections is not None:
         print("ERROR: cannot pass both inspiral and burst tables for injection\n")
         sys.exit(1)
     cp.set('input','burst-injection-file',os.path.abspath(opts.burst_injections))
-
-if opts.coinc_triggers is not None:
-    cp.set('input','coinc-inspiral-file',os.path.abspath(opts.coinc_triggers))
 
 if opts.gid is not None:
     cp.set('input','gid',opts.gid)
@@ -224,38 +218,45 @@ def setup_roq(cp):
         print("WARNING: Forcing the f_low to ", str(roq_force_flow), "Hz")
         print("WARNING: Overwriting user choice of flow, srate, seglen, and (mc_min, mc_max and q-min) or (mass1_min, mass1_max, mass2_min, mass2_max)")
 
-    gid=None
-    row=None
     def key(item): # to order the ROQ bases
         return float(item[1]['seglen'])
 
-    if opts.gid is not None:
-        gid=opts.gid
-    elif opts.injections is not None or cp.has_option('input','injection-file'):
-        print("Only 0-th event in the XML table will be considered while running with ROQ\n")
-        # Read event 0 from  Siminspiral Table
-        from glue.ligolw import ligolw
-        from glue.ligolw import lsctables
-        from glue.ligolw import utils
-        inxml=cp.get('input','injection-file')
-        injTable = lsctables.SimInspiralTable.get_table(utils.load_filename(inxml,contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
-        row=injTable[0]
-    else:
-        gid=None
-        row=None
+    coinc_xml_obj = None
+    row=None
 
-    service_url = None
-    if cp.has_option('analysis', 'service-url'):
-        service_url = cp.get('analysis', 'service-url')
+    # Get file object of coinc.xml
+    if opts.gid is not None:
+        from ligo.gracedb.rest import GraceDb
+        gid=opts.gid
+        cwd=os.getcwd()
+        if cp.has_option('analysis', 'service-url'):
+            client = GraceDb(cp.get('analysis', 'service-url'))
+        else:
+            client = GraceDb()
+        coinc_xml_obj = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))[0]
+    elif cp.has_option('input', 'coinc-xml'):
+        coinc_xml_obj = ligolw_utils.load_fileobj(open(cp.get('input', 'coinc-xml'), "rb"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))[0]
+
+    # Get sim_inspiral from injection file
+    if cp.has_option('input','injection-file'):
+        print("Only 0-th event in the XML table will be considered while running with ROQ\n")
+        row = lsctables.SimInspiralTable.get_table(
+                  utils.load_filename(cp.get('input','injection-file'),contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
+              )[0]
+
     roq_bounds = pipe_utils.Query_ROQ_Bounds_Type(path, roq_paths)
     if roq_bounds == 'chirp_mass_q':
         print('ROQ has bounds in chirp mass and mass-ratio')
-        mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=gid, sim_inspiral=row, service_url=service_url)
+        mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(
+            path, roq_paths, roq_params, key, coinc_xml_obj=coinc_xml_obj, sim_inspiral=row
+        )
     elif roq_bounds == 'component_mass':
         print('ROQ has bounds in component masses')
         # get component mass bounds, then compute the chirp mass that can be safely covered
         # further below we pass along the component mass bounds to the sampler, not the tighter chirp-mass, q bounds
-        m1_priors, m2_priors, trigger_mchirp = pipe_utils.get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=gid, sim_inspiral=row, service_url=service_url)
+        m1_priors, m2_priors, trigger_mchirp = pipe_utils.get_roq_component_mass_priors(
+            path, roq_paths, roq_params, key, coinc_xml_obj=coic_xml_obj, sim_inspiral=row
+        )
         mc_priors = {}
         for (roq,m1_prior), (roq2,m2_prior) in zip(m1_priors.items(), m2_priors.items()):
             mc_priors[roq] = sorted([pipe_utils.mchirp_from_components(m1_prior[1], m2_prior[0]), pipe_utils.mchirp_from_components(m1_prior[0], m2_prior[1])])
@@ -267,7 +268,7 @@ def setup_roq(cp):
         print('WARNING: Rescaling ROQ basis, please ensure it is allowed with the model used.')
 
     # If the true chirp mass is unknown, add variations over the mass bins
-    if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')) or cp.has_option('lalinference','trigger_mchirp'):
+    if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')) or cp.has_option('lalinference','trigger_mchirp') or cp.has_option('input', 'coinc-xml'):
 
         for mc_prior in mc_priors:
             mc_priors[mc_prior] = array(mc_priors[mc_prior])
@@ -356,7 +357,7 @@ for cp in generate_variations(master_cp,variations):
         injpath=cp.get('input','injection-file')
         myinjpath=os.path.join(basepath,os.path.basename(injpath))
         if os.path.abspath(myinjpath) != os.path.abspath(injpath):
-            # If the injection file does not exist in the run dir, link it in place
+            # If the injection file does not exist in the run dir, link it into place
             # Useful for singularity jobs which see only rundir
             if os.path.lexists(myinjpath):
                 # If the path exists, see if it is a link to the current file
@@ -371,9 +372,12 @@ for cp in generate_variations(master_cp,variations):
                     sys.exit(1)
             else:
                 # The link doens't exist, so create it and update config
-                os.link(os.path.abspath(injpath), myinjpath)
+                try:
+                    os.link(os.path.abspath(injpath), myinjpath)
+                except:
+                    from shutil import copyfile
+                    copyfile(injpath,myinjpath)
                 cp.set('input','injection-file',myinjpath)
-
 
     for this_cp in setup_roq(cp):
         # Create the DAG from the configparser object

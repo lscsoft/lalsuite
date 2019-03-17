@@ -223,7 +223,7 @@ int main( void ) { fprintf( stderr, "no gsl: disabled\n" ); return 77; }
 #include <lal/LALConstants.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/GeneratePPNInspiral.h>

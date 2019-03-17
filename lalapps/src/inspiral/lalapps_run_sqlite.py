@@ -16,13 +16,15 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
+from __future__ import print_function
+
 from optparse import OptionParser
 import sqlite3
 import sys
 
-from glue.ligolw import ligolw
-from glue.ligolw import dbtables
-from glue.ligolw.utils import ligolw_sqlite
+from ligo.lw import ligolw
+from ligo.lw import dbtables
+from ligo.lw.utils import ligolw_sqlite
 from lalapps import git_version
 
 __author__ = "Chad Hanna <channa@ligo.caltech.edu>"
@@ -68,7 +70,7 @@ for n, filename in enumerate(databases, 1):
 	#
 
 	if options.verbose:
-		print >>sys.stderr, "%d/%d:" % (n, len(databases)),
+		print("%d/%d:" % (n, len(databases)), end=' ', file=sys.stderr)
 	if filename.endswith(".xml") or filename.endswith(".xml.gz"):
 		# load XML file into in-ram database for processing
 		fileformat = "xml"
@@ -96,16 +98,16 @@ for n, filename in enumerate(databases, 1):
 	#
 
 	if options.verbose:
-		print >>sys.stderr, "Executing SQL ..."
+		print("Executing SQL ...", file=sys.stderr)
 	cursor = connection.cursor()
 	for statement in sql:
 		if options.verbose:
-			print >>sys.stderr, statement
+			print(statement, file=sys.stderr)
 		cursor.execute(statement)
 		connection.commit()
 	cursor.close()
 	if options.verbose:
-		print >>sys.stderr, "... Done."
+		print("... Done.", file=sys.stderr)
 
 	#
 	# commit changes

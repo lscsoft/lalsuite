@@ -1,4 +1,4 @@
-# Copyright (C) 2006--2017  Kipp Cannon, Drew G. Keppel, Jolien Creighton
+# Copyright (C) 2006--2018  Kipp Cannon, Drew G. Keppel, Jolien Creighton
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -58,9 +58,9 @@ except ImportError:
 import warnings
 
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw.utils import coincs as ligolw_coincs
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw.utils import coincs as ligolw_coincs
 from glue.text_progress_bar import ProgressBar
 import lal
 from ligo.segments import NegInfinity
@@ -109,13 +109,25 @@ class singlesqueue(object):
 	def event_time(event):
 		"""
 		Override with a method to extract the "time" of the given
-		event.  The "time" object that is returned must support
-		arithmetic and comparison with python float objects, and
-		support comparison with ligo.segments.PosInfinity and
-		ligo.segments.NegInfinity.  float and lal.LIGOTimeGPS are
-		both suitable.
+		event.  The "time" object that is returned should be a
+		lal.LIGOTimeGPS object.  The object must support arithmetic
+		and comparison with python float objects and
+		lal.LIGOTimeGPS objects, and support comparison with
+		ligo.segments.PosInfinity and ligo.segments.NegInfinity,
+		and it must have a .__dict__ or other mechanism allowing a
+		an additional attribute named .event to be set on the
+		object.  float is not suitable.
 		"""
 		raise NotImplementedError
+
+
+	def queueentry_from_event(self, event):
+		"""
+		For internal use.
+		"""
+		entry = self.event_time(event)
+		entry.event = event
+		return entry
 
 	def __init__(self, coinc_window):
 		# using .event_time() to define the times of events, this
@@ -135,9 +147,11 @@ class singlesqueue(object):
 		# NegInfinity object from the segments library, however, is
 		# compatible with LIGOTimeGPS.
 		self.t_complete = NegInfinity
-		# queue of events.  the queue's contents are time-ordered,
-		# but not necessarily complete beyond self.t_complete
-		self.queue = collections.deque()
+		# queues of events.  the queues' contents are time-ordered,
+		# they contain the events upto .t_complete and from
+		# .t_complete on, respectively.
+		self.complete = []
+		self.incomplete = []
 		# id() --> event mapping for the contents of queue.  sets
 		# will be used to track the status of events, e.g. which
 		# have and haven't been used to form candidates.  we don't
@@ -151,10 +165,10 @@ class singlesqueue(object):
 	def age(self):
 		"""
 		Using .event_time() to define the times of events, the time
-		of the oldest event in the queue or segments.NegInfinity if
-		the queue is empty.
+		of the oldest event in the queue or self.t_complete if the
+		queue is empty.
 		"""
-		return self.event_time(self.queue[0]) if self.queue else NegInfinity
+		return self.complete[0] if self.complete else self.t_complete
 
 	@property
 	def t_coinc_complete(self):
@@ -183,29 +197,24 @@ class singlesqueue(object):
 		not be a generator.
 		"""
 		if t_complete < self.t_complete:
-			raise ValueError("t_complete has gone backwards:  last was %g, new is %g" % (self.t_complete, t_complete))
+			raise ValueError("t_complete has gone backwards:  last was %s, new is %s" % (self.t_complete, t_complete))
 
-		# add the new events to the ID index
-		#assert all(id(event) not in self.index for event in events)
-		self.index.update((id(event), event) for event in events)
+		if events:
+			# add the new events to the ID index
+			self.index.update((id(event), event) for event in events)
 
-		# events are allowed to arrive out of order, we only
-		# require that no event arrive earlier than the current
-		# .t_complete.  therefore, we need to insort the new events
-		# with the current tail of the queue.  this is done by
-		# popping events off the queue that are not earlier than
-		# .t_complete, combining them with the new events, sorting,
-		# and pushing the result into the queue.
-		# FIXME:  this might be more costly than tracking two
-		# queues and moving events from one to the next in time
-		# order as .t_complete advances
-		events = list(events)
-		while self.queue and self.event_time(self.queue[-1]) >= self.t_complete:
-			events.append(self.queue.pop())
-		events.sort(key = self.event_time)
-		if events and self.event_time(events[0]) < self.t_complete:
-			raise ValueError("t_complete violation: earliest event is %g, previous t_complete was %g" % (self.event_time(events[0]), self.t_complete))
-		self.queue.extend(events)
+			# construct queue entries from the new events and
+			# insort with current "incomplete" queue
+			self.incomplete += map(self.queueentry_from_event, events)
+			self.incomplete.sort()
+			if self.incomplete[0] < self.t_complete:
+				raise ValueError("t_complete violation: earliest event is %s, previous t_complete was %s" % (self.incomplete[0], self.t_complete))
+
+		# move events preceding the new t_complete from the
+		# incomplete to the complete queue.
+		i = bisect_left(self.incomplete, t_complete)
+		self.complete += self.incomplete[:i]
+		del self.incomplete[:i]
 
 		# update the marker labelling time up to which the event
 		# list is complete
@@ -230,25 +239,31 @@ class singlesqueue(object):
 		of events.
 		"""
 		if t is None:
-			events = tuple(self.queue)
-			self.queue.clear()
+			events = tuple(entry.event for entry in self.complete) + tuple(entry.event for entry in self.incomplete)
+			del self.complete[:]
+			del self.incomplete[:]
 			self.index.clear()
 			self.t_complete = NegInfinity
 			return events, ()
 
 		if t > self.t_coinc_complete:
 			raise ValueError("pull to %g exceeds time to which queue is coinc-complete, %g" % (t, self.t_coinc_complete))
+
 		# these events will never be used again.  remove them from
 		# the queue, and remove their IDs from the index
-		events = []
-		while self.queue and self.event_time(self.queue[0]) < t:
-			event = self.queue.popleft()
+		i = bisect_left(self.complete, t)
+		events = tuple(entry.event for entry in self.complete[:i])
+		del self.complete[:i]
+		for event in events:
 			self.index.pop(id(event))
-			events.append(event)
-		# return those events, and any that are in the queue that
-		# might also participate in coincidences
+		# collect other events that might be used again but that
+		# can form coincidences with things up to t
 		t += self.coinc_window
-		return tuple(events), tuple(itertools.takewhile(lambda event: self.event_time(event) < t, self.queue))
+		if t <= self.t_complete:
+			other_events = tuple(entry.event for entry in self.complete[:bisect_left(self.complete, t)])
+		else:
+			other_events = tuple(entry.event for entry in self.complete) + tuple(entry.event for entry in self.incomplete[:bisect_left(self.incomplete, t)])
+		return events, other_events
 
 
 class multidict(UserDict):
@@ -335,7 +350,7 @@ class coincgen_doubles(object):
 			"""
 			raise NotImplementedError
 
-		def __call__(self, event_a, offset_a, light_travel_time, threshold_data):
+		def __call__(self, event_a, offset_a, coinc_window):
 			"""
 			Return a sequence of the events from those passed
 			to .__init__() that are coincident with event_a.
@@ -350,29 +365,38 @@ class coincgen_doubles(object):
 			support the construction of time shifted
 			coincidences.
 
-			Because it is frequently needed by implementations
-			of this method, the distance in light seconds
-			between the two instruments (the instrument that
-			produced event_a, and the instrument that produced
-			this object's events) is provided as the
-			light_travel_time parameter.
+			coinc_window is the maximum time, in seconds,
+			separating events from the shifted time of event_a.
+			This is the value passed to coincgen_doubles()'s
+			.__init__() method with the light travel time
+			between this event list's detector and the detector
+			of event_a added.
 			"""
 			raise NotImplementedError
 
 	def __init__(self, offset_vector, coinc_window):
+		"""
+		offset_vector must be a two-instrument offset vector.  This
+		sets which two instruments' events are to be processed by
+		this object, and the offsets that should be applied to
+		their events when searching for coincidences.  coinc_window
+		is the coincidence window in seconds, *not including* the
+		light travel time between the instruments.  For covenience,
+		the light travel time will be added internally by this
+		object.
+		"""
 		if len(offset_vector) != 2:
 			raise ValueError("offset_vector must name exactly 2 instruments (got %d)" % len(offset_vector))
 		if coinc_window < 0.:
 			raise ValueError("coinc_window must be non-negative (got %g)" % coinc_window)
 		self.offset_vector = offset_vector
-		self.coinc_window = coinc_window
+		# add the light travel time to coinc_window
+		self.coinc_window = coinc_window + light_travel_time(*offset_vector)
 		# FIXME:  the latency can be reduced by teaching
 		# singlesqueue about the asymmetry of the offsetvector
-		self.queues = dict((instrument, self.singlesqueue(coinc_window + light_travel_time(*offset_vector) + abs(offset_vector))) for instrument in offset_vector)
+		self.queues = dict((instrument, self.singlesqueue(coinc_window + abs(offset_vector))) for instrument in offset_vector)
 		# view into the id() --> event indexes of the queues
 		self.index = multidict(*(queue.index for queue in self.queues.values()))
-		# pre-compute the light travel time
-		self.light_travel_time = light_travel_time(*offset_vector)
 		# Python id()s of events currently in the queues that have
 		# been reported in coincidences
 		self.used = set()
@@ -410,7 +434,47 @@ class coincgen_doubles(object):
 		"""
 		self.queues[instrument].push(events, t_complete)
 
-	def pull(self, t, threshold_data, flushed, flushed_unused):
+	def doublesgen(self, eventsa, offset_a, eventsb):
+		"""
+		For internal use only.
+		"""
+		# choose the longer of the two lists for the outer loop.
+		# yes, it's counter-interuitive, it's because of the high
+		# cost of indexing events for the inner loop.  in any case
+		# we must still return coincident pairs with the events
+		# ordered as supplied so if the event lists are swapped we
+		# need to unswap the pairs that we return.
+		# FIXME:  hopefully later improvements to the scaling will
+		# change the logic here, and we'll need to switch to using
+		# the shorter list for the outer loop after-all.
+
+		if len(eventsb) > len(eventsa):
+			eventsa, eventsb = eventsb, eventsa
+			offset_a = -offset_a
+			unswap = lambda a, b: (b, a)
+		else:
+			unswap = lambda a, b: (a, b)
+
+		# for each event in list A, iterate over events from the
+		# other list that are coincident with the event, and return
+		# the pairs.  while doing this, collect the events that are
+		# used in coincidences in a set for later logic.
+		coinc_window = self.coinc_window
+		used = set()
+		used_add = used.add
+		queueb_get_coincs = self.get_coincs(eventsb)
+		for eventa in eventsa:
+			matches = queueb_get_coincs(eventa, offset_a, coinc_window)
+			if matches:
+				eventa_id = id(eventa)
+				used_add(eventa_id)
+				for eventb in matches:
+					eventb_id = id(eventb)
+					used_add(eventb_id)
+					yield unswap(eventa_id, eventb_id)
+		self.used |= used
+
+	def pull(self, t, flushed, flushed_unused):
 		"""
 		Generate a sequence of 2-element tuples of Python IDs of
 		coincident events up to t, i.e., requiring the time of at
@@ -450,56 +514,22 @@ class coincgen_doubles(object):
 		flusheda, fornexttimea = self.queues[instrumenta].pull(t)
 		flushedb, fornexttimeb = self.queues[instrumentb].pull(t)
 
-		# choose the shorter of the two lists for the outer loop,
-		# but we must still return coincident pairs with the events
-		# ordered alphabetically by instrument.
+		# construct coincident pairs.  NOTE: because we require any
+		# coincidence that we report to contain an event preceding
+		# t, the loop is done as a two-step process.  firstly, we
+		# iterate over the "flushed" sequence for list A but search
+		# for coincidences with any event from the flushed and "for
+		# next time" sequences for list B.  lastly, we iterate over
+		# the "for next time" sequence for list A but search for
+		# coincidences only in the "flushed" sequence for list B.
 
-		if len(flushedb) < len(flusheda):
-			flusheda, flushedb = flushedb, flusheda
-			fornexttimea, fornexttimeb = fornexttimeb, fornexttimea
-			offset_a = -offset_a
-			unswap = lambda a, b: (b, a)
-		else:
-			unswap = lambda a, b: (a, b)
-
-		# for each event in list A, iterate over events from the
-		# other list that are coincident with the event, and return
-		# the pairs.  while doing this, collect the events that are
-		# used in coincidences in a set for later logic.  NOTE:
-		# because we require any coincidence that we report to
-		# contain an event preceding t, the loop is done as a
-		# two-step process.  firstly, we iterate over the "flushed"
-		# sequence for list A but search for coincidences with any
-		# event from the flushed and "for next time" sequences for
-		# list B.  lastly, we iterate over the "for next time"
-		# sequence for list A but search for coincidences only in
-		# the "flushed" sequence for list B.
-		light_travel_time = self.light_travel_time
-		used = set()
-		used_add = used.add
-
-		queueb_get_coincs = self.get_coincs(flushedb + fornexttimeb)
-		for eventa in flusheda:
-			matches = queueb_get_coincs(eventa, offset_a, light_travel_time, threshold_data)
-			if matches:
-				eventa_id = id(eventa)
-				used_add(eventa_id)
-				for eventb in matches:
-					eventb_id = id(eventb)
-					used_add(eventb_id)
-					yield unswap(eventa_id, eventb_id)
-		queueb_get_coincs = self.get_coincs(flushedb)
-		for eventa in fornexttimea:
-			matches = queueb_get_coincs(eventa, offset_a, light_travel_time, threshold_data)
-			if matches:
-				eventa_id = id(eventa)
-				used_add(eventa_id)
-				for eventb in matches:
-					eventb_id = id(eventb)
-					used_add(eventb_id)
-					yield unswap(eventa_id, eventb_id)
-
-		self.used |= used
+		# FIXME:  when switching to Python 3 use
+		#yield from self.doublesgen(flusheda, offset_a, flushedb + fornexttimeb)
+		#yield from self.doublesgen(fornexttimea, offset_a, flushedb)
+		for pair in self.doublesgen(flusheda, offset_a, flushedb + fornexttimeb):
+			yield pair
+		for pair in self.doublesgen(fornexttimea, offset_a, flushedb):
+			yield pair
 
 		# populate the flushed and flushed_unused sets
 
@@ -541,7 +571,7 @@ class TimeSlideGraphNode(object):
 		# return coincs that meet the min_instruments criterion
 		self.keep_partial = len(offset_vector) > min_instruments
 		if len(offset_vector) > 2:
-			self.components = tuple(TimeSlideGraphNode(offset_vector, coinc_window, min_instruments) for offset_vector in offsetvector.component_offsetvectors([offset_vector], len(offset_vector) - 1))
+			self.components = tuple(TimeSlideGraphNode(coincgen_doubles_type, offset_vector, coinc_window, min_instruments) for offset_vector in offsetvector.component_offsetvectors([offset_vector], len(offset_vector) - 1))
 			# view into the id() --> event indexes of the
 			# nodes
 			self.index = multidict(*(node.index for node in self.components))
@@ -595,7 +625,7 @@ class TimeSlideGraphNode(object):
 				if instrument in node.offset_vector:
 					node.push(instrument, events, t_complete)
 
-	def pull(self, t, threshold_data, verbose = False):
+	def pull(self, t, verbose = False):
 		"""
 		Using the events contained in the internal queues upto t,
 		construct and return all coincidences they participate in.
@@ -669,7 +699,7 @@ class TimeSlideGraphNode(object):
 
 			flushed = set()
 			partial_coincs = set()
-			coincs = tuple(sorted(self.components[0].pull(t, threshold_data, flushed, partial_coincs)))
+			coincs = tuple(sorted(self.components[0].pull(t, flushed, partial_coincs)))
 			return coincs, (set((eventid,) for eventid in partial_coincs) if self.keep_partial else set()), flushed
 
 		#
@@ -685,7 +715,7 @@ class TimeSlideGraphNode(object):
 
 		# first collect all coincs and partial coincs from the
 		# component nodes in the graph
-		component_coincs_and_partial_coincs_and_flushed = tuple(component.pull(t, threshold_data, verbose = verbose) for component in self.components)
+		component_coincs_and_partial_coincs_and_flushed = tuple(component.pull(t, verbose = verbose) for component in self.components)
 		component_coincs = tuple(elem[0] for elem in component_coincs_and_partial_coincs_and_flushed)
 		flushed = reduce((lambda a, b: a | b), (elem[2] for elem in component_coincs_and_partial_coincs_and_flushed), set())
 
@@ -816,14 +846,24 @@ class TimeSlideGraph(object):
 		)
 		self.index = multidict(*(node.index for node in self.head))
 		# the set of the Python id()'s of the events contained in
-		# the internal queues that have been reported in
-		# coincidences (including single-detector coincidences if
+		# the internal queues that have formed coincident
+		# candidates (including single-detector coincidences if
+		# min_instruments = 1).  this is used to allow .pull() to
+		# determine which of the events being flushed from the
+		# internal queues has never been reported in a candidate.
+		# calling codes can use this information to identify noise
+		# samples for use in defining background models.
+		self.used_ids = set()
+
+		# the set of the Python id()'s of the events contained in
+		# the internal queues that have been reported in coincident
+		# candidates (including single-detector coincidences if
 		# min_instruments = 1).  this is used to allow .pull() to
 		# report which of the events it has found in coincidences
 		# is being reported in a coincidence for the first time.
 		# this can be used by calling code to be informed of which
 		# events should be moved to an output document for storage.
-		self.used = set()
+		self.reported_ids = set()
 
 		#
 		# done
@@ -874,7 +914,7 @@ class TimeSlideGraph(object):
 		return self.t_coinc_complete != t_before
 
 
-	def pull(self, threshold_data, newly_used = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = (lambda events: False), verbose = False):
+	def pull(self, newly_reported = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = None, event_collector = None, verbose = False):
 		if verbose:
 			print("constructing coincs for target offset vectors ...", file=sys.stderr)
 
@@ -901,8 +941,18 @@ class TimeSlideGraph(object):
 		# when the loop terminates
 		index = dict(self.index.iteritems())
 
-		newly_used_ids = set()
-		sieved_ids = set()
+		# default coinc sieve
+		if coinc_sieve is None:
+			coinc_sieve = lambda events, offset_vector: False
+
+		# default event_collector:
+		if event_collector is None:
+			event_collector_push = lambda event_ids, offset_vector: None
+		else:
+			event_collector_push = event_collector.push
+
+		used_ids = set()
+		newly_reported_ids = set()
 		flushed_ids = set()
 		for n, node in enumerate(self.head, start = 1):
 			if verbose:
@@ -911,34 +961,40 @@ class TimeSlideGraph(object):
 			# coincs contain at least min_instruments events
 			# because those that don't meet the criteria are
 			# excluded during coinc construction.
-			coincs, partial_coincs, _flushed_ids = node.pull(t, threshold_data, verbose)
+			coincs, partial_coincs, _flushed_ids = node.pull(t, verbose)
 			flushed_ids |= _flushed_ids
 			for coinc in itertools.chain(coincs, partial_coincs):
+				used_ids.update(coinc)
+				event_collector_push(coinc, node.offset_vector)
 				# use the index to convert Python IDs back
 				# to event objects
 				events = tuple(index[event_id] for event_id in coinc)
 				# apply the coinc sieve test.  this lever
 				# allows calling code to reduce the event
 				# rate going into output documents
-				if coinc_sieve(events):
-					sieved_ids.update(coinc)
-				else:
-					newly_used_ids.update(coinc)
+				if not coinc_sieve(events, node.offset_vector):
+					newly_reported_ids.update(coinc)
 					yield node, events
-		if newly_used_ids or sieved_ids:
-			newly_used_ids -= self.used
-			sieved_ids -= self.used
-			self.used |= newly_used_ids | sieved_ids
-		flushed_unused_ids = flushed_ids - self.used
-		self.used -= flushed_ids
+		self.used_ids |= used_ids
+		if newly_reported_ids:
+			newly_reported_ids -= self.reported_ids
+			self.reported_ids |= newly_reported_ids
+		if flushed_ids:
+			flushed_unused_ids = flushed_ids - self.used_ids
+			self.used_ids -= flushed_ids
+			self.reported_ids -= flushed_ids
+		else:
+			flushed_unused_ids = set()
+
 		# if we've been flushed then there can't be any events left
-		# in the queues
-		assert not flush or not (self.used or self.index)
+		# in the queues (the or in parentheses is a boolean
+		# operation, not a set operation)
+		assert not flush or not (self.used_ids or self.reported_ids)
 
 		# use the index to populate newly_used, flushed, and
 		# flushed_unused with event objects
-		if newly_used is not None:
-			newly_used[:] = (index[event_id] for event_id in newly_used_ids)
+		if newly_reported is not None:
+			newly_reported[:] = (index[event_id] for event_id in newly_reported_ids)
 		if flushed is not None:
 			flushed[:] = (index[event_id] for event_id in flushed_ids)
 		if flushed_unused is not None:
@@ -982,7 +1038,7 @@ class CoincTables(object):
 		self.time_slide_table = lsctables.TimeSlideTable.get_table(xmldoc)
 		self.time_slide_index = self.time_slide_table.as_dict()
 
-	def coinc_rows(self, process_id, time_slide_id, events):
+	def coinc_rows(self, process_id, time_slide_id, events, table_name):
 		"""
 		From a process ID, a time slide ID, and a sequence of
 		events (generator expressions are OK), constructs and
@@ -1009,7 +1065,7 @@ class CoincTables(object):
 		"""
 		coincmaps = [self.coincmaptable.RowType(
 			coinc_event_id = None,
-			table_name = event.event_id.table_name,
+			table_name = table_name,
 			event_id = event.event_id
 		) for event in events]
 		assert coincmaps, "coincs must contain >= 1 event"
@@ -1587,11 +1643,11 @@ class TOATriangulator(object):
 		self.R = self.rs - rbar
 
 		# ith row is \sigma_i^-2 (r_i - \bar{r}) / c
-		M = self.R / (self.v * self.sigmas[:,numpy.newaxis]**2)
+		M = self.R / (self.v * self.sigmas[:,numpy.newaxis])
+
+		self.U, self.S, self.VT = numpy.linalg.svd(M)
 
 		if len(rs) >= 3:
-			self.U, self.S, self.VT = numpy.linalg.svd(M)
-
 			# if the smallest singular value is less than 10^-8 * the
 			# largest singular value, assume the network is degenerate
 			self.singular = abs(self.S.min() / self.S.max()) < 1e-8
@@ -1643,10 +1699,23 @@ class TOATriangulator(object):
 		... ])
 		...
 		>>> n
-		array([ 0.28747132, -0.37035214,  0.88328904])
-		>>> testing.assert_approx_equal(toa, 794546669.409)
-		>>> testing.assert_approx_equal(chi2_per_dof, 2.74075797279)
-		>>> testing.assert_approx_equal(dt, 0.01433725385)
+		array([[-0.45605637,  0.75800934,  0.46629865],
+		       [-0.45605637,  0.75800934,  0.46629865]])
+		>>> testing.assert_approx_equal(toa, 794546669.4269662)
+		>>> testing.assert_approx_equal(chi2_per_dof, 0.47941941158371465)
+		>>> testing.assert_approx_equal(dt, 0.005996370224459011)
+
+		NOTE: if len(rs) >= 4, n is a 1x3 array.
+		      if len(rs) == 3, n is a 2x3 array.
+		      if len(rs) == 2, n is None.
+		NOTE: n is not the source direction but the propagation
+		      direction of GW.
+		      Therefore, if you want source direction, you have to
+		      multiply -1.
+		NOTE: n is represented by earth fixed coordinate, not
+		      celestial coordinate.
+		      Up to your purpose, you should transform \\phi -> RA.
+		      To do it, you can use dir2coord.
 		"""
 		assert len(ts) == len(self.sigmas)
 
@@ -1657,20 +1726,41 @@ class TOATriangulator(object):
 		# sigma^-2 -weighted mean of arrival times
 		tbar = sum(ts / self.sigmas**2) / sum(1 / self.sigmas**2)
 		# the i-th element is ts - tbar for the i-th location
-		tau = ts - tbar
+		tau = (ts - tbar) / self.sigmas
+
+		tau_prime = numpy.dot(self.U.T, tau)[:3]
 
 		if len(self.rs) >= 3:
-			tau_prime = numpy.dot(self.U.T, tau)[:3]
-
 			if self.singular:
-				l = 0.0
-				np = tau_prime / self.S
+				# len(rs) == 3
+				np = numpy.array([tau_prime / self.S, tau_prime / self.S])
 				try:
-					np[2] = math.sqrt(1.0 - np[0]**2 - np[1]**2)
+					np[0][2] =  math.sqrt(1.0 - np[0][0]**2 - np[0][1]**2)
+					np[1][2] = -math.sqrt(1.0 - np[1][0]**2 - np[1][1]**2)
 				except ValueError:
-					np[2] = 0.0
-					np /= math.sqrt(numpy.dot(np, np))
+					# two point is mergered, n_0 = n_1
+					np.T[2] = 0.0
+					np /= math.sqrt(numpy.dot(np[0], np[0]))
+
+				# compute n from n'
+				n = numpy.array([numpy.zeros(3), numpy.zeros(3)])
+				n = numpy.dot(self.VT.T, np.T).T
+
+				# safety check the nomalization of the result
+				assert abs(numpy.dot(n[0], n[0]) - 1.0) < 1e-8
+				assert abs(numpy.dot(n[1], n[1]) - 1.0) < 1e-8
+
+				# arrival time at origin
+				toa = sum((ts - numpy.dot(self.rs, n[0]) / self.v) / self.sigmas**2) / sum(1 / self.sigmas**2)
+
+				# chi^{2}
+				chi2 = sum((numpy.dot(self.R, n[0]) / (self.v * self.sigmas) - tau)**2)
+
+				# root-sum-square timing residual
+				dt = ts - toa - numpy.dot(self.rs, n[0]) / self.v
+				dt = math.sqrt(numpy.dot(dt, dt))
 			else:
+				# len(rs) >= 4
 				def n_prime(l, Stauprime = self.S * tau_prime, S2 = self.S * self.S):
 					return Stauprime / (S2 + l)
 				def secular_equation(l):
@@ -1705,6 +1795,33 @@ class TOATriangulator(object):
 				# compute n'
 				np = n_prime(l)
 
+				# compute n from n'
+				n = numpy.dot(self.VT.T, np)
+
+				# safety check the nomalization of the result
+				assert abs(numpy.dot(n, n) - 1.0) < 1e-8
+
+				# arrival time at origin
+				toa = sum((ts - numpy.dot(self.rs, n) / self.v) / self.sigmas**2) / sum(1 / self.sigmas**2)
+
+				# chi^{2}
+				chi2 = sum((numpy.dot(self.R, n) / (self.v * self.sigmas) - tau)**2)
+
+				# root-sum-square timing residual
+				dt = ts - toa - numpy.dot(self.rs, n) / self.v
+				dt = math.sqrt(numpy.dot(dt, dt))
+		else:
+			# len(rs) == 2
+			# s_1 == s_2 == 0
+
+			# compute an n'
+			xp = tau_prime[0] / self.S[0]
+			try:
+				np = numpy.array([xp, 0, math.sqrt(1-xp**2)])
+			except ValueError:
+				# two point is mergered, n_0 = n_1
+				np = numpy.array([xp, 0, 0])
+
 			# compute n from n'
 			n = numpy.dot(self.VT.T, np)
 
@@ -1715,21 +1832,47 @@ class TOATriangulator(object):
 			toa = sum((ts - numpy.dot(self.rs, n) / self.v) / self.sigmas**2) / sum(1 / self.sigmas**2)
 
 			# chi^{2}
-			chi2 = sum(((numpy.dot(self.R, n) / self.v - tau) / self.sigmas)**2)
+			chi2 = sum((numpy.dot(self.R, n) / (self.v * self.sigmas) - tau)**2)
 
 			# root-sum-square timing residual
 			dt = ts - toa - numpy.dot(self.rs, n) / self.v
 			dt = math.sqrt(numpy.dot(dt, dt))
-		else:
-			# len(rs) == 2
-			# FIXME:  fill in n and toa (is chi2 right?)
-			n = numpy.zeros((3,), dtype = "double")
-			toa = 0.0
-			dt = max(abs(ts[1] - ts[0]) - self.max_dt, 0)
-			chi2 = dt**2 / sum(self.sigmas**2)
+
+			# set n None
+			n = None
 
 		# done
 		return n, t0 + toa, chi2 / len(self.sigmas), dt
+
+	@staticmethod
+	def dir2coord(n, gps):
+		"""
+		This transforms from propagation direction vector to right
+		ascension and declination source co-ordinates.
+
+		The input is the propagation vector, n, in Earth fixed
+		co-ordinates (x axis through Greenwich merdian and equator,
+		z axis through North Pole), and the time.  n does not need
+		to be a unit vector.  The return value is the (ra, dec)
+		pair, in radians.  NOTE:  right ascension is not
+		necessarily in [0, 2\\pi).
+		"""
+		# safety checks
+		if len(n) != 3:
+			raise ValueError("n must be a 3-vector")
+
+		# normalize n
+		n /= math.sqrt(numpy.dot(n, n))
+
+		# transform from propagation to source direction
+		n = -n
+
+		# compute ra, dec
+		RA = numpy.arctan2(n[1], n[0]) + lal.GreenwichMeanSiderealTime(gps)
+		DEC = numpy.arcsin(n[2])
+
+		# done
+		return RA, DEC
 
 
 #

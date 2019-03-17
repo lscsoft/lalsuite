@@ -25,18 +25,21 @@
 #
 
 
+from __future__ import print_function
+
+
 from optparse import OptionParser
 import sys
 
 
-from glue import segments
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import segments as ligolw_segments
-from glue.ligolw.utils import process as ligolw_process
-from glue.ligolw.utils import search_summary as ligolw_search_summary
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import segments as ligolw_segments
+from ligo.lw.utils import process as ligolw_process
+from ligo.lw.utils import search_summary as ligolw_search_summary
 from lalburst import git_version
+from ligo import segments
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -365,21 +368,21 @@ def apply_filters(contents, burst_test_func, veto_segments, del_non_coincs = Fal
 	removed_ids = set()
 	if veto_segments:
 		if verbose:
-			print >>sys.stderr, "applying veto segment list ..."
+			print("applying veto segment list ...", file=sys.stderr)
 		removed_ids |= remove_events_by_segment(contents, veto_segments)
 	if verbose:
-		print >>sys.stderr, "filtering sngl_burst rows by parameters ..."
+		print("filtering sngl_burst rows by parameters ...", file=sys.stderr)
 	removed_ids |= remove_events_by_parameters(contents, burst_test_func)
 	if del_skipped_injections:
 		if verbose:
-			print >>sys.stderr, "removing injections that weren't performed ..."
+			print("removing injections that weren't performed ...", file=sys.stderr)
 		remove_skipped_injections(contents)
 	if verbose:
-		print >>sys.stderr, "removing broken coincidences ..."
+		print("removing broken coincidences ...", file=sys.stderr)
 	clean_coinc_tables(contents, removed_ids)
 	if del_non_coincs:
 		if verbose:
-			print >>sys.stderr, "removing non-coincident events ..."
+			print("removing non-coincident events ...", file=sys.stderr)
 		remove_non_coincidences(contents)
 
 

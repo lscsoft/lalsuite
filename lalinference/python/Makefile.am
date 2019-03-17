@@ -15,7 +15,6 @@ pybin_scripts = \
 	rapidpe_compute_intrinsic_grid \
 	rapidpe_calculate_overlap \
 	imrtgr_imr_consistency_test \
-	lalinference_average_skymaps \
 	lalinference_burst_pp_pipe \
 	lalinference_coherence_test \
 	lalinference_compute_roq_weights \

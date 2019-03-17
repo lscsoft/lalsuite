@@ -317,7 +317,15 @@ int main(int argc, char **argv){
   }
 
   CHAR OUTFILE[256];
+/* FIXME: do not treat these format overflow warnings as errors, but do fix them later. */
+#if __GNUC__ >= 8
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wformat-overflow"
+#endif
   sprintf(OUTFILE, "%s/%s", inputs.outDir, out_file);
+#if __GNUC__ >= 8
+#pragma GCC diagnostic pop
+#endif
 
   if (  XLALFrameWrite(outFrame, OUTFILE)){
     LogPrintf(LOG_CRITICAL, "%s : XLALFrameWrite() failed with error = %d.\n", fn, xlalErrno);
@@ -342,8 +350,8 @@ EphemerisData *InitEphemeris (const CHAR *ephemType, const CHAR *ephemDir){
     XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
-  snprintf(EphemEarth, FNAME_LENGTH, "%s/earth00-19-%s.dat.gz", ephemDir, ephemType);
-  snprintf(EphemSun, FNAME_LENGTH, "%s/sun00-19-%s.dat.gz", ephemDir, ephemType);
+  snprintf(EphemEarth, FNAME_LENGTH, "%s/earth00-40-%s.dat.gz", ephemDir, ephemType);
+  snprintf(EphemSun, FNAME_LENGTH, "%s/sun00-40-%s.dat.gz", ephemDir, ephemType);
 
   EphemEarth[FNAME_LENGTH-1]=0;
   EphemSun[FNAME_LENGTH-1]=0;

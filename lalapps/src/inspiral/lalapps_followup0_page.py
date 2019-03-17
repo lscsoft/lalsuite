@@ -14,7 +14,7 @@ def getIni():
   path = glob.glob('*followup_pipe.ini')
   if path[0]: cp.read(path[0])
   else:
-    print "Could not find a match to *followup_pipe.ini"
+    print("Could not find a match to *followup_pipe.ini")
     sys.exit(1)
   dest = cp.get('followup-output','page')
   server = cp.get('followup-output','url')
@@ -152,14 +152,14 @@ def setup(dest, server):
 
   # Make a destination directory if it doesn't exist
   if not os.path.isdir(dest):
-    print "destination:" + dest + " does not exist, I'll make it for you..."
+    print("destination:" + dest + " does not exist, I'll make it for you...")
     os.makedirs(dest)
 
   # copy the data to the webspace - sort of painful probably could omit some
   for sec in sections:
-    print "...copying " + sec + " to " + dest
+    print("...copying " + sec + " to " + dest)
     try: shutil.copytree(sec, os.path.join(dest,sec))
-    except: print "could not copy, destination probably exists"
+    except: print("could not copy, destination probably exists")
 
 # table of contents
 def write_header(wiki):

@@ -24,6 +24,9 @@
 #
 
 
+from __future__ import print_function
+
+
 import math
 from optparse import OptionParser
 import sqlite3
@@ -34,15 +37,15 @@ import sys
 from lal.utils import CacheEntry
 
 
-from glue import segments
-from glue.ligolw import dbtables
-from glue.ligolw import ligolw
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
-from glue.ligolw.utils import search_summary as ligolw_search_summary
+from ligo.lw import dbtables
+from ligo.lw import ligolw
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
+from ligo.lw.utils import search_summary as ligolw_search_summary
 from lalburst import SnglBurstUtils
 from lalburst import git_version
 from lalburst import stringutils
+from ligo import segments
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -189,7 +192,7 @@ for n, filename in enumerate(filenames):
 	#
 
 	if options.verbose:
-		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+		print("%d/%d: %s" % (n + 1, len(filenames), filename), file=sys.stderr)
 
 	working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
 	connection = sqlite3.connect(working_filename)
@@ -204,7 +207,7 @@ for n, filename in enumerate(filenames):
 	if options.verbose:
 		SnglBurstUtils.summarize_coinc_database(contents)
 	if not contents.seglists and options.verbose:
-		print >>sys.stderr, "\twarning:  no segments found"
+		print("\twarning:  no segments found", file=sys.stderr)
 	segs |= contents.seglists
 
 	#

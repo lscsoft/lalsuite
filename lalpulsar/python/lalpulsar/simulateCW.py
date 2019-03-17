@@ -77,6 +77,8 @@ from __future__ import (division, print_function)
 import os
 import re
 import math
+import numpy as np
+from six import string_types
 
 try:
     import lal

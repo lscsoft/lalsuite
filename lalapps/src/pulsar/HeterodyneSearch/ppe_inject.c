@@ -55,7 +55,7 @@ void inject_signal( LALInferenceRunState *runState ){
   PulsarParameters *injpars = XLALCalloc(sizeof(*injpars),1);
 
   FILE *fpsnr = NULL; /* output file for SNRs */
-  INT4 ndats = 0, j = 1;
+  INT4 ndats = 0;
 
   REAL8Vector *freqFactors = NULL;
   REAL8 snrmulti = 0.;
@@ -325,6 +325,7 @@ void inject_signal( LALInferenceRunState *runState ){
 
   data = runState->data;
   ifo_model = runState->threads[0]->model->ifo;
+  ndats = 0;
 
   /* add signal to data */
   while( data ){
@@ -347,7 +348,7 @@ void inject_signal( LALInferenceRunState *runState ){
       outfile = XLALStringAppend( outfile, data->detector->frDetector.prefix );
 
       /* append the harmonic frequency of the signal in the file */
-      sf = sprintf(suffix, "_%.1lf", freqFactors->data[(INT4)fmod(j,freqFactors->length)]);
+      sf = sprintf(suffix, "_%.1lf", freqFactors->data[ndats%(INT4)freqFactors->length]);
       outfile = XLALStringAppend( outfile, suffix );
 
       if ( (fp = fopen(outfile, "w")) == NULL || !sf ){
@@ -389,7 +390,7 @@ void inject_signal( LALInferenceRunState *runState ){
 
     data = data->next;
     ifo_model = ifo_model->next;
-    j++;
+    ndats++;
   }
 
   /* reset nonGR status */

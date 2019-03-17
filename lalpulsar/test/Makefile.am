@@ -43,6 +43,7 @@ test_programs += XLALMultiNoiseWeightsTest
 test_scripts += pulsar_toa_test.sh
 if SWIG_BUILD_PYTHON
 test_scripts += simulateCWTest.py
+test_scripts += heterodyned_model_test.py
 endif
 
 # Add any helper programs required by tests to this variable

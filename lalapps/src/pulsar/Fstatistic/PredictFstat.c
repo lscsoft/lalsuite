@@ -227,8 +227,8 @@ initUserVars ( UserInput_t *uvar )
   /* set a few defaults */
   uvar->RngMedWindow = 50;	/* for running-median */
 
-  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   uvar->outputFstat = NULL;
   uvar->printFstat = 1;
@@ -547,7 +547,15 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
     utc = *XLALGPSToUTC( &utc, (INT4)XLALGPSGetREAL8(&startTime) );
     strcpy ( dateStr, asctime(&utc) );
     dateStr[ strlen(dateStr) - 1 ] = 0;
+/* FIXME: do not treat these format overflow warnings as errors, but do fix them later. */
+#if __GNUC__ >= 8
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wformat-overflow"
+#endif
     sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", XLALGPSGetREAL8(&startTime), dateStr);
+#if __GNUC__ >= 8
+#pragma GCC diagnostic pop
+#endif
     strcat ( summary, line );
     sprintf (line, "%%%% Total amount of data: Tdata = %12.3f s  (%.2f days)\n", Tdata, Tdata/86400 );
     strcat ( summary, line );

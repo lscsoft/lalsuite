@@ -105,12 +105,6 @@ level1:rpm:lalsimulation:
   dependencies:
     - level0:rpm:lal
 
-level1:rpm:lalxml:
-  <<: *levelN-rpm-package
-  stage: level1
-  dependencies:
-    - level0:rpm:lal
-
 level2:rpm:lalburst:
   <<: *levelN-rpm-package
   stage: level2
@@ -133,22 +127,6 @@ level2:rpm:lalpulsar:
   stage: level2
   dependencies:
     - level0:rpm:lal
-
-level2:rpm:lalstochastic:
-  <<: *levelN-rpm-package
-  stage: level2
-  dependencies:
-   - level0:rpm:lal
-   - level1:rpm:lalmetaio
-
-level3:rpm:laldetchar:
-  <<: *levelN-rpm-package
-  stage: level3
-  dependencies:
-    - level0:rpm:lal
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-    - level2:rpm:lalburst
 
 level3:rpm:lalinference:
   <<: *levelN-rpm-package
@@ -294,12 +272,6 @@ level1:deb:lalsimulation:
   dependencies:
     - level0:deb:lal
 
-level1:deb:lalxml:
-  <<: *levelN-deb-package
-  stage: level1
-  dependencies:
-    - level0:deb:lal
-
 level2:deb:lalburst:
   <<: *levelN-deb-package
   stage: level2
@@ -322,22 +294,6 @@ level2:deb:lalpulsar:
   stage: level2
   dependencies:
     - level0:deb:lal
-
-level2:deb:lalstochastic:
-  <<: *levelN-deb-package
-  stage: level2
-  dependencies:
-   - level0:deb:lal
-   - level1:deb:lalmetaio
-
-level3:deb:laldetchar:
-  <<: *levelN-deb-package
-  stage: level3
-  dependencies:
-    - level0:deb:lal
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-    - level2:deb:lalburst
 
 level3:deb:lalinference:
   <<: *levelN-deb-package
@@ -422,7 +378,71 @@ docker:tags:stretch:
 # nightly builds
 #
 
-nightly:top-level:jessie:
+# compilers
+
+nightly:clang:6:
+  image: skymoo/ligo-lalsuite-clang:6
+  stage: nightly
+  script:
+    - ./00boot
+    - CC=clang-6.0 CXX=clang++-6.0 ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+nightly:clang:7:
+  image: skymoo/ligo-lalsuite-clang:7
+  stage: nightly
+  script:
+    - ./00boot
+    - CC=clang-7 CXX=clang++-7 ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+nightly:clang:8:
+  image: skymoo/ligo-lalsuite-clang:8
+  stage: nightly
+  script:
+    - ./00boot
+    - CC=clang-8 CXX=clang++-8 ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+nightly:gcc:7:
+  image: skymoo/ligo-lalsuite-gcc:7
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+nightly:gcc:8:
+  image: skymoo/ligo-lalsuite-gcc:8
+  stage: nightly
+  script:
+    - ./00boot
+    - :./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+# debian
+
+nightly:debian:jessie:
   image: ligo/lalsuite-dev:jessie
   stage: nightly
   script:
@@ -434,7 +454,25 @@ nightly:top-level:jessie:
     - schedules
     - web
 
-nightly:top-level:el7-cr:
+# FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
+# available
+# FIXME: allow failure due to #124
+nightly:debian:buster:
+  image: skymoo/ligo-lalsuite-dev:buster
+  stage: nightly
+  dependencies: []
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+# el7
+
+nightly:rhel:el7-cr:
   image: ligo/lalsuite-dev:el7-cr
   stage: nightly
   script:
@@ -446,7 +484,7 @@ nightly:top-level:el7-cr:
     - schedules
     - web
 
-nightly:top-level:sl7:
+nightly:rhel:sl7:
   image: ligo/lalsuite-dev:sl7
   stage: nightly
   script:
@@ -458,92 +496,7 @@ nightly:top-level:sl7:
     - schedules
     - web
 
-nightly:top-level:trusty:
-  image: skymoo/ligo-lalsuite-dev:trusty
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --disable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:top-level:xenial:
-  image: skymoo/ligo-lalsuite-dev:xenial
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --disable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:top-level:bionic:
-  image: skymoo/ligo-lalsuite-dev:bionic
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:top-level:cosmic:
-  image: skymoo/ligo-lalsuite-dev:cosmic
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-# FIXME: It seems that Octave on buster currently has a few bugs which
-# cause the Octave bindings to fail, disable building the Octave SWIG
-# bindings for the time being.
-nightly:top-level:buster:
-  image: skymoo/ligo-lalsuite-dev:buster
-  stage: nightly
-  dependencies: []
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  only:
-    - schedules
-    - web
-
-nightly:top-level:clang:
-  image: skymoo/ligo-lalsuite-clang:jessie
-  stage: nightly
-  script:
-    - ./00boot
-    - CC=clang CXX=clang++ ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:openmp:stretch:
-  image: ligo/lalsuite-dev:stretch
-  stage: nightly
-  dependencies: []
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --enable-openmp
-    - make -j4 distcheck
-  only:
-    - schedules
-    - web
+# macOS
 
 nightly:macos:highsierra:
   tags:
@@ -561,9 +514,9 @@ nightly:macos:highsierra:
     - schedules
     - web
 
-nightly:macos:elcapitan:
+nightly:macos:sierra:
   tags:
-    - macos_elcapitan
+    - macos_sierra
   stage: nightly
   script:
     - ./00boot
@@ -576,6 +529,62 @@ nightly:macos:elcapitan:
   only:
     - schedules
     - web
+
+# ubuntu
+
+# FIXME: allow failure due to #123
+nightly:ubuntu:trusty:
+  image: skymoo/ligo-lalsuite-dev:trusty
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --disable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+# FIXME: allow failure due to #123
+nightly:ubuntu:xenial:
+  image: skymoo/ligo-lalsuite-dev:xenial
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --disable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+nightly:ubuntu:bionic:
+  image: skymoo/ligo-lalsuite-dev:bionic
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+# FIXME: allow failure due to #124
+nightly:ubuntu:cosmic:
+  image: skymoo/ligo-lalsuite-dev:cosmic
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
 
 #
 # python wheels
@@ -599,6 +608,7 @@ nightly:macos:elcapitan:
     # Test
     - ${PYPREFIX}/bin/virtualenv test
     - source test/bin/activate
+    - pip install cryptography==2.5  # FIXME: cryptography 2.6 was released recently but doesn't have all necessary wheels uploaded to PyPI yet
     - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []
@@ -613,7 +623,7 @@ nightly:macos:elcapitan:
 # Build receipe for standalone wheels on macOS
 .nightly:wheel:macos: &nightly-wheel-macos
   tags:
-    - macos_elcapitan
+    - macos_sierra
   stage: wheels
   script:
     - PYVERS=$(echo ${CI_JOB_NAME} | sed 's/.*:cp\(.\)\(.\).*/\1.\2/')
@@ -630,6 +640,7 @@ nightly:macos:elcapitan:
     # Test
     - virtualenv-${PYVERS} test
     - source test/bin/activate
+    - pip install cryptography==2.5  # FIXME: cryptography 2.6 was released recently but doesn't have all necessary wheels uploaded to PyPI yet
     - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []

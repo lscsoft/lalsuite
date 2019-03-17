@@ -30,6 +30,9 @@ Excess power offline pipeline's likelihood stage construction script.
 """
 
 
+from __future__ import print_function
+
+
 import ConfigParser
 import glob
 import itertools
@@ -38,8 +41,8 @@ import sys
 import tempfile
 
 
+from ligo.segments import utils as segmentsUtils
 from glue import pipeline
-from glue import segmentsUtils
 import lal
 from lal.utils import CacheEntry
 from lalapps import power
@@ -74,7 +77,7 @@ def parse_command_line():
 	options, filenames = parser.parse_args()
 
 	if options.distribution_segments is None:
-		raise ValueError, "missing required argument --distribution-segments"
+		raise ValueError("missing required argument --distribution-segments")
 	options.distribution_segments = segmentsUtils.fromsegwizard(file(options.distribution_segments), coltype = lal.LIGOTimeGPS)
 
 	options.input_cache = set([CacheEntry(line) for filename in options.input_cache for line in file(filename)])
@@ -94,7 +97,7 @@ def parse_command_line():
 
 def parse_config_file(options):
 	if options.verbose:
-		print >>sys.stderr, "reading %s ..." % options.config_file
+		print("reading %s ..." % options.config_file, file=sys.stderr)
 	config = ConfigParser.SafeConfigParser()
 	config.read(options.config_file)
 
@@ -176,7 +179,7 @@ input_cache_nodes = set()
 round_robin_cache_nodes = [set() for cache in options.round_robin_cache]
 for seg in options.distribution_segments:
 	if options.verbose:
-		print >>sys.stderr, "generating distribution measurement jobs for %s ..." % str(seg)
+		print("generating distribution measurement jobs for %s ..." % str(seg), file=sys.stderr)
 	input_cache_nodes |= power.make_burca_tailor_fragment(dag, set([entry for entry in options.input_cache if entry.segmentlistdict.intersects_segment(seg)]), seg, "LIKELIHOOD_MAIN")
 	for i, (nodes, cache) in enumerate(zip(round_robin_cache_nodes, options.round_robin_cache)):
 		nodes |= power.make_burca_tailor_fragment(dag, set([entry for entry in cache if entry.segmentlistdict.intersects_segment(seg)]), seg, "LIKELIHOOD_RR%02d" % i)
@@ -188,7 +191,7 @@ for seg in options.distribution_segments:
 
 
 if options.verbose:
-	print >>sys.stderr, "generating likelihood assignment jobs for main group ..."
+	print("generating likelihood assignment jobs for main group ...", file=sys.stderr)
 parents = reduce(lambda a, b: a | b, round_robin_cache_nodes, input_cache_nodes)
 nodes = power.make_burca2_fragment(dag, options.input_cache, parents, "LIKELIHOOD_MAIN")
 
@@ -201,7 +204,7 @@ def round_robin(round_robin_cache_nodes, round_robin_cache):
 
 for i, (parents, apply_to_cache) in enumerate(round_robin(round_robin_cache_nodes, options.round_robin_cache)):
 	if options.verbose:
-		print >>sys.stderr, "generating likelihood assignment jobs for round-robin group %d ..." % i
+		print("generating likelihood assignment jobs for round-robin group %d ..." % i, file=sys.stderr)
 	nodes |= power.make_burca2_fragment(dag, apply_to_cache, parents | input_cache_nodes, "LIKELIHOOD_RR%02d" % i)
 
 
@@ -211,6 +214,6 @@ for i, (parents, apply_to_cache) in enumerate(round_robin(round_robin_cache_node
 
 
 if options.verbose:
-	print >>sys.stderr, "writing dag ..."
+	print("writing dag ...", file=sys.stderr)
 dag.write_sub_files()
 dag.write_dag()

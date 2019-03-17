@@ -927,7 +927,7 @@ XLALGetSiteInfo ( const CHAR *name )
       break;
 
     case 'Z':       // create dummy-sites for LISA
-      XLAL_CHECK_NULL ( XLALcreateLISA ( site, prefix[1] ) != XLAL_SUCCESS, XLAL_EFUNC, "Failed to created LISA detector 'name=%s, prefix=%s'\n", name, prefix );
+      XLAL_CHECK_NULL ( XLALcreateLISA ( site, prefix[1] ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to created LISA detector 'name=%s, prefix=%s'\n", name, prefix );
       break;
 
     default:

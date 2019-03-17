@@ -30,6 +30,8 @@
 #Original C source code by Xavier Seimens
 #Port by Andrew Mergl, June 2010
 
+from __future__ import print_function
+
 import math
 import numpy
 from optparse import OptionParser
@@ -90,7 +92,7 @@ for i in range(ops.nepsilon):
     epsilon = math.exp(math.log(ops.epsilonstart) + i * (math.log(ops.epsilonend) - math.log(ops.epsilonstart)) / (ops.nepsilon - 1))
     for j in range(ops.nGmu):
         Gmu = math.exp(math.log(ops.Gmustart) + j * (math.log(ops.Gmuend) - math.log(ops.Gmustart)) / (ops.nGmu - 1))
-        print >>sys.stderr, "%.1f%%: Gmu=%10.4g, epsilon=%10.4g, p=%4.2g\r" % (100.0 * (i * ops.nGmu + j) / (ops.nepsilon * ops.nGmu), Gmu, epsilon, P),
+        print("%.1f%%: Gmu=%10.4g, epsilon=%10.4g, p=%4.2g\r" % (100.0 * (i * ops.nGmu + j) / (ops.nepsilon * ops.nGmu), Gmu, epsilon, P), end=' ', file=sys.stderr)
 
         alpha = epsilon * (LOOPS_RAD_POWER * Gmu)**ops.index
 
@@ -104,4 +106,4 @@ for i in range(ops.nepsilon):
         gammaMax = scipy.integrate.simps(numpy.clip(eff[:-1] + Deff[:-1], 0.0, 1.0) * zofA[:-1] * dRdz[:-1] * -Dlnz) * CUSPS_PER_LOOP / P
 
         outfile.write("%.17g  %.17g  %.17g  %.17g  %.17g  %.17g  %.17g\n" % (P, ops.index, epsilon, Gmu, gammaAverage, gammaMin, gammaMax))
-print >>sys.stderr, "100.0%%: Gmu=%10.4g, epsilon=%10.4g, p=%4.2g" % (Gmu, epsilon, P)
+print("100.0%%: Gmu=%10.4g, epsilon=%10.4g, p=%4.2g" % (Gmu, epsilon, P), file=sys.stderr)

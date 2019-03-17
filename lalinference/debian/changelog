@@ -1,3 +1,15 @@
+lalinference (1.10.2-1) unstable; urgency=low
+
+  * ER14 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 25 Feb 2019 15:19:34 -0700
+
+lalinference (1.10.1-1) unstable; urgency=low
+
+  * Fix spin2 prior
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 22 Jan 2019 15:40:19 -0700
+
 lalinference (1.10.0-1) unstable; urgency=low
 
   * Pre O3 release

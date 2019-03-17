@@ -1430,11 +1430,8 @@ void LALInferenceWriteMCMCSamples(LALInferenceRunState *runState) {
             /* Create run identifier group */
             LALInferenceH5VariablesArrayToDataset(group, output_array, N_output_array, thread->name);
         }
-
-        /* TODO: Write metadata */
     }
     XLALH5FileClose(group);
-
     XLALH5FileClose(output);
     return;
 }

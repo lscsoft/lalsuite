@@ -11,8 +11,10 @@ Build-Depends: debhelper (>= 9),
   liboctave-dev,
   pkg-config,
   python-all-dev,
+  python-astropy,
   python-numpy,
   python3-all-dev,
+  python3-astropy,
   python3-numpy,
   swig (>= 3.0.7),
   lal-dev (>= @MIN_LAL_VERSION@~),
@@ -65,6 +67,7 @@ Architecture: any
 Depends: ${misc:Depends},
   ${python:Depends},
   ${shlibs:Depends},
+  python-astropy,
   python-lal (>= @MIN_LAL_VERSION@~),
   lalpulsar (= ${binary:Version})
 Description: Python bindings for LALPulsar.
@@ -88,6 +91,7 @@ Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},
   ${shlibs:Depends},
+  python3-astropy,
   python3-lal (>= @MIN_LAL_VERSION@~),
   lalpulsar (= ${binary:Version})
 Description: Python 3 bindings for LALPulsar.

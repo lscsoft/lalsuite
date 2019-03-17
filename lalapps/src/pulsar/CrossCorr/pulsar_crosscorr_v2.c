@@ -984,8 +984,8 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->mismatchT = 0.1;
   uvar->mismatchP = 0.1;
 
-  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   uvar->sftLocation = XLALCalloc(1, MAXFILENAMELENGTH+1);
 

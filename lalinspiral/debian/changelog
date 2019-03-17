@@ -1,3 +1,9 @@
+lalinspiral (1.8.1-1) unstable; urgency=low
+
+  * ER14 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 25 Feb 2019 09:51:00 -0700
+
 lalinspiral (1.8.0-1) unstable; urgency=low
 
   * Pre O3 release

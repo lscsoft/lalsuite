@@ -111,11 +111,11 @@ parser.add_option( "", "--generate-all-data-plots", action = "store_true",
 ##############################################################################
 # Sanity check of input arguments
 if not options.ihope_cache:
-  raise ValueError, "An ihope-cache file is required."
+  raise ValueError("An ihope-cache file is required.")
 if not options.config_file:
-  raise ValueError, "A config-file is required."
+  raise ValueError("A config-file is required.")
 if not options.log_path:
-  raise ValueError, "A log-path is required."
+  raise ValueError("A log-path is required.")
 
 ##############################################################################
 # Create log file
@@ -163,7 +163,7 @@ dag.set_dag_file(basename)
 ##############################################################################
 # Open the ihope cache and create THINCA cache
 
-print "Parsing the ihope cache..."
+print("Parsing the ihope cache...")
 
 coinc_tag = cp.get('pipeline', 'coinc-file-tag')
 ihope_cache = [line for line in file(options.ihope_cache) \
@@ -197,7 +197,7 @@ non_sim_dbs = []
 # Get the time column name (for inspiral, it is end_time; for ringdown, it is 
 # start_time)
 
-print "Getting the name of the time column..."
+print("Getting the name of the time column...")
 time_column = cp.get('pipeline', 'time-column')
 
 ##############################################################################
@@ -361,7 +361,7 @@ sim_tags = []
 
 for tag in user_tags:
 
-  print "Creating jobs for %s..." % tag
+  print("Creating jobs for %s..." % tag)
   
   # determine whether or not this was an injection run by checking if there
   # is an injection file for this tag
@@ -376,12 +376,12 @@ for tag in user_tags:
     inj_file = inj_file[0].url
     sim_tags.append(tag.split('_CAT_')[0])
   else:
-    raise ValueError, "More than one injection file found for %s" % tag
+    raise ValueError("More than one injection file found for %s" % tag)
 
   ############################################################################
   # Creating the thinca_user_tag cache file and writing it to disk
 
-  print "\tcreating the thinca_usertag cache file..."
+  print("\tcreating the thinca_usertag cache file...")
 
   # sieve thinca_cache for THINCA files with this tag
   file_sieve = '*' + tag
@@ -403,7 +403,7 @@ for tag in user_tags:
     '.xml' ])
   veto_file = '/'.join([ veto_file_path, veto_file_name ])
   if not os.path.exists( veto_file ):
-    raise ValueError, "Veto file %s could not be found." % veto_file
+    raise ValueError("Veto file %s could not be found." % veto_file)
   # store the veto file for additional later use
   veto_cat = '_'.join(['CAT', cat_num, 'VETO'])
   veto_files[veto_cat] = veto_file
@@ -421,7 +421,7 @@ for tag in user_tags:
   ############################################################################
   # Setup a LigolwSqliteNode for putting thinca into a sql db
 
-  print "\tsetting up node to put thinca files into a SQLite database..."
+  print("\tsetting up node to put thinca files into a SQLite database...")
   
   # set node options
   t2sql_node = pipeline.LigolwSqliteNode( sql_replace_job )
@@ -436,8 +436,8 @@ for tag in user_tags:
     'sqlite' ])
   # check to make sure the database doesn't already exist
   if os.path.exists( raw_result_db ):
-    print "WARNING: Raw result database %s already exists; " % raw_result_db + \
-    "if it isn't moved, it will be overwritten when DAG is submitted."
+    print("WARNING: Raw result database %s already exists; " % raw_result_db + \
+    "if it isn't moved, it will be overwritten when DAG is submitted.")
     
   t2sql_node.set_database( raw_result_db )
   
@@ -446,7 +446,7 @@ for tag in user_tags:
   ############################################################################
   # Setup a DBSimplifyNode to clean up the output of the t2sql_node 
   
-  print "\tsetting up dbsimplify node to clean the database..."
+  print("\tsetting up dbsimplify node to clean the database...")
   
   # set node options
   dbsimplify_node = inspiral.DBSimplifyNode( dbsimplify_job )
@@ -462,7 +462,7 @@ for tag in user_tags:
   ############################################################################
   # Make the detection statistic nicer and Kipp and Duncan happier
  
-  print "\tsetting up repop_coinc node to recalculate detection statistic..."
+  print("\tsetting up repop_coinc node to recalculate detection statistic...")
 
   # set node options
   last_node = dbsimplify_node
@@ -483,7 +483,7 @@ for tag in user_tags:
   #############################################################################
   # Setup a ClusterCoincsNode to cluster the output of dbsimplify_node
   
-  print "\tsetting up cluster node to cluster coincs in the database..."
+  print("\tsetting up cluster node to cluster coincs in the database...")
   
   # set node options
   # for the first clustering job, we want the input to be the raw_result_db,
@@ -520,7 +520,7 @@ for tag in user_tags:
 
   if simulation:
     # add dbaddinj node
-    print "\tsetting up dbaddinj node to add the injection file..."
+    print("\tsetting up dbaddinj node to add the injection file...")
 
     # set node options
     dbaddinj_node = inspiral.DBAddInjNode( dbaddinj_job )
@@ -534,7 +534,7 @@ for tag in user_tags:
     dag.add_node( dbaddinj_node )
 
     # add sqlite extract node
-    print "\tsetting up ligolw_sqlite node to extract the injection database to an xml..."
+    print("\tsetting up ligolw_sqlite node to extract the injection database to an xml...")
     
     # set node options
     simxml_node = pipeline.LigolwSqliteNode( sql_extract_job )
@@ -561,7 +561,7 @@ for tag in user_tags:
 # done cycling over tags: Create injfind job and node
 
 # cache the sim xmls by veto category
-print "Creating injfind nodes..."
+print("Creating injfind nodes...")
 
 injfind_nodes = {}
 sim_caches = {}
@@ -607,7 +607,7 @@ result_dbs_cache = lal.Cache().from_urls( non_sim_dbs )
 for result_db in result_dbs_cache:
   
   # get tag and veto_cat
-  print "Creating jobs for %s database..." % result_db.description
+  print("Creating jobs for %s database..." % result_db.description)
   tag = result_db.description.replace('_CLUSTERED_CBC_RESULTS', '')
   cat_num = get_veto_cat_from_tag( tag )
   veto_cat = '_'.join([ 'CAT', str(cat_num), 'VETO' ])
@@ -642,7 +642,7 @@ for result_db in result_dbs_cache:
     dbsimplify2_node.add_parent( sim2fulldb_node )
     dag.add_node( dbsimplify2_node )
 
-    print "\tsetting up dbinjfind node to add exact/nearby definitions..."
+    print("\tsetting up dbinjfind node to add exact/nearby definitions...")
 
     # set dbinjfind node options
     last_node = dbsimplify2_node
@@ -682,7 +682,7 @@ for result_db in result_dbs_cache:
   ############################################################################
   # Compute durations in the database
 
-  print "\tsetting up compute_durations node..."
+  print("\tsetting up compute_durations node...")
 
   # set node options
   comp_durs_node = inspiral.ComputeDurationsNode( comp_durs_job)
@@ -699,7 +699,7 @@ for result_db in result_dbs_cache:
   # MVSC Calculation
 
   if 'FULL_DATA' in tag and veto_cat in sim_caches:
-    print "\tsetting up MVSC dag..."
+    print("\tsetting up MVSC dag...")
     mvsc_dag_name = options.config_file.replace('.ini','')+'_mvsc_'+tag+'_n'+cp.get("mvsc_dag","number-of-trees")+'_l'+cp.get("mvsc_dag","leaf-size")+'_s'+cp.get("mvsc_dag","sampled-parameters")+'_c'+cp.get("mvsc_dag","criterion-for-optimization")+'.dag'
     mvsc_dag_generator_job = inspiral.MVSCDagGenerationJob(cp)
     for key,val in cp.items("mvsc_dag"):
@@ -718,8 +718,8 @@ for result_db in result_dbs_cache:
   ############################################################################
   # Compute the uncombined false alarm rates
   
-  print "\tsetting up cfar nodes:"
-  print "\t\tfor uncombined false alarm rates..."
+  print("\tsetting up cfar nodes:")
+  print("\t\tfor uncombined false alarm rates...")
   
   # set node options: output database is same as input
   ucfar_node = inspiral.CFarNode( ucfar_job )
@@ -738,7 +738,7 @@ for result_db in result_dbs_cache:
   ############################################################################
   # Compute the combined false alarm rates
   
-  print "\t\tfor combined false alarm rates..."
+  print("\t\tfor combined false alarm rates...")
   
   # set node options: output database is same as input
   ccfar_node = inspiral.CFarNode( ccfar_job )
@@ -798,7 +798,7 @@ for result_db in result_dbs_cache:
   # Summary: Setup PrintLC and MiniFollowup Nodes to generate a summary of 
   # loudest non-simulation events
 
-  print "\tsetting up printlc and minifollowup nodes..."
+  print("\tsetting up printlc and minifollowup nodes...")
 
   # set datatypes to generate files for
   if 'PLAYGROUND' in tag:
@@ -809,7 +809,7 @@ for result_db in result_dbs_cache:
   lc_nodes = []
 
   for datatype in datatypes:
-    print "\t\tfor %s..." % datatype
+    print("\t\tfor %s..." % datatype)
 
     # set file naming type
     type_prefix = tag
@@ -871,7 +871,7 @@ for result_db in result_dbs_cache:
   # Injection summary: Setup printsims, minifollowup, and printmissed nodes
 
   if 'PLAYGROUND' not in tag:
-    print "\tsetting up injection summary nodes..."
+    print("\tsetting up injection summary nodes...")
 
     # cycle over all the different types of injections
     for sim_tag in sim_tags:
@@ -1049,10 +1049,10 @@ for result_db in result_dbs_cache:
   ############################################################################
   # Plotting: Generate all result plots
   
-  print "\tsetting up plotting jobs..."
+  print("\tsetting up plotting jobs...")
 
   # Write plotslides node
-  print "\t\tcreating plotslides node..."
+  print("\t\tcreating plotslides node...")
   if not options.generate_all_data_plots or 'PLAYGROUND' in tag:
     plotslides_node = inspiral.PlotSlidesNode( plotslides_play_job )
   else:
@@ -1067,7 +1067,7 @@ for result_db in result_dbs_cache:
   dag.add_node( plotslides_node )
 
   # create plotcumhist node
-  print "\t\tcreating plotcumhist node..."
+  print("\t\tcreating plotcumhist node...")
   if not options.generate_all_data_plots or 'PLAYGROUND' in tag:
     plotcumhist_node = inspiral.PlotCumhistNode( plotcumhist_play_job )
   else:
@@ -1082,12 +1082,12 @@ for result_db in result_dbs_cache:
   dag.add_node( plotcumhist_node )
 
   # Write plotifar nodes for different datatypes
-  print "\t\tcreating plotifar node for datatypes:"
+  print("\t\tcreating plotifar node for datatypes:")
   for datatype in ['all_data', 'playground', 'exclude_play']: 
     # only create nodes for non-playground if options.plot-playground-only not set
     if (not options.generate_all_data_plots or 'PLAYGROUND' in tag)  and datatype != 'playground':
       continue
-    print "\t\t\t%s..." % datatype
+    print("\t\t\t%s..." % datatype)
     plotifar_node = inspiral.PlotIfarNode( plotifar_job )
     plotifar_node.set_category('plotifar')
     plotifar_node.set_tmp_space( tmp_space )
@@ -1136,7 +1136,7 @@ if cp.has_section("extended-background"):
 ##############################################################################
 # Final Step: Write the DAG
 
-print "Writing DAG and sub files..."
+print("Writing DAG and sub files...")
 
 # set max-jobs: currently, only minifollowups is set
 dag.add_maxjobs_category('minifollowups', 15)
@@ -1149,8 +1149,8 @@ dag.write_dag()
 process.set_process_end_time(proc_id)
 utils.write_filename(logdoc, basename+'.log.xml', xsl_file = "ligolw.xsl")
 
-print "Finished!"
-print "Now run:\n\tcondor_submit_dag %s" % os.path.basename(dag.get_dag_file())
+print("Finished!")
+print("Now run:\n\tcondor_submit_dag %s" % os.path.basename(dag.get_dag_file()))
 
 sys.exit(0)
 

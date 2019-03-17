@@ -39,13 +39,13 @@ def summarizer(mdcVersion, observatory, pulsar, args):
     outdirectory = 'output_' + headJobName + "_pulsar-" + pulsar
     if args.elsewhere:
         outdirectory = args.elsewhere + outdirectory
-    print outdirectory
+    print(outdirectory)
     verboseSummaryFile = 'verbose_summary_' + headJobName + '-' + pulsar +'.txt'
 
     if args.bypassSummary:
-        print 'Bypassing summary file creation'
+        print('Bypassing summary file creation')
     elif args.massiveSummary:
-        print 'Taking alternate approach to a large output directory' 
+        print('Taking alternate approach to a large output directory') 
         dagFileCore = headJobName
         if args.closed:
             dagFileCore = dagFileCore + '_closed'
@@ -69,13 +69,13 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         for ll, outfileEntry in enumerate(outfilenameList):
             if ll < 1e6: 
                 if ll % 1e3 == 0:
-                    print ll
+                    print(ll)
                 fileLocation = outdirectory + '/' + outfileEntry 
                 grepCommand = 'grep -i ' + fileLocation + ' -e h0'
                 os.system(grepCommand + ' >> ' + verboseSummaryFile)
-        print 'Done'
+        print('Done')
     elif args.J1751:
-        print 'Analyzing J1751'
+        print('Analyzing J1751')
         outJ1751directory = args.elsewhere + '/output_' + mdcVersion + \
         '_J1751_' + observatory
         outJ1751file = 'out_' + mdcVersion + '_J1751_' + observatory + \
@@ -83,7 +83,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         os.system('cat ' + outJ1751directory + '/' + outJ1751file + \
         ' | grep "h0 =" >> '+ verboseSummaryFile)
     elif args.ScoX1S6:
-        print 'Analyzing ScoX1'
+        print('Analyzing ScoX1')
         outScoX1directory = args.elsewhere + '/output_S6' + \
         '_ScoX1_' + observatory + '-band-' + str(args.pulsar).zfill(4)
         outScoX1file = 'out_S6_ScoX1_' + observatory + \
@@ -93,7 +93,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
     else:
         # When already done, one need not repeat this step
         if args.skyGrid:
-            print 'Producing output summary'
+            print('Producing output summary')
             listingOfSkyFiles = os.listdir(outdirectory)
             listingOfErrorFiles = [s for s in listingOfSkyFiles if 'err' in s]
             rangeOfErrorFiles = range(1, len(listingOfErrorFiles) + 1)
@@ -163,7 +163,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
     if (args.band or args.noiseTest) or \
     (args.templateSearch or args.multiTemplateSearch) or \
     args.J1751 or args.ScoX1S6:
-        print 'Frequency list encompasses this many bins: ' + str(len(fArray))
+        print('Frequency list encompasses this many bins: ' + str(len(fArray)))
     else:
         # Adjust f Array to represent frequency offset from injection
         fArray = fArray - fArray[(len(fArray)-1)/2]
@@ -171,7 +171,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
     if (args.band or args.noiseTest) or \
     (args.templateSearch or args.multiTemplateSearch) or \
     args.J1751 or args.ScoX1S6:
-        print 'Frequency modulation list encompasses this many bins: ' + str(len(dfArray))
+        print('Frequency modulation list encompasses this many bins: ' + str(len(dfArray)))
     RArray = np.array(RList)
     ProbArray = np.array(ProbList)
 
@@ -202,7 +202,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         # values of declination is conceptually simplest:
         # This provides a key that we can use for all the matrices
         # Finally, it has to be flipped up-down
-        print decShaped.shape
+        print(decShaped.shape)
         I = np.argsort(decShaped[:,0])
         decShaped = decShaped[I,:]
         decShaped = decShaped[::-1,:]
@@ -276,9 +276,9 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         #'\n RA 9h, dec +16 deg'
         #'\n (note: RA is 0h on left, 12h center, increasing left-to-right)')
         if args.plotSkyContour:
-            print 'Plotting sky contour around this (alpha, delta) location: ' + \
+            print('Plotting sky contour around this (alpha, delta) location: ' + \
             str(args.plotSkyContour[0]) + ' ' + \
-            str(args.plotSkyContour[1])
+            str(args.plotSkyContour[1]))
             gcDistanceArray = np.asarray(gcDistance).reshape(y.shape[1],-1)
             m.contour(mapx,mapy,gcDistanceArray)
         canvas = matplotlib.backends.backend_agg.FigureCanvasAgg(fig)
@@ -325,9 +325,9 @@ def summarizer(mdcVersion, observatory, pulsar, args):
                 fStart = float(fArray[0])
                 fEnd = float(fArray[-1])
                 fSpan = (float(fEnd)-float(fStart))/float(args.multiTemplateSearch)
-                print 'fSpan (Hz) of each band is ' + str(fSpan)
-                print 'Starting frequency (Hz) is ' + str(fStart)
-                print 'Ending frequency (Hz) is ' + str(fEnd)
+                print('fSpan (Hz) of each band is ' + str(fSpan))
+                print('Starting frequency (Hz) is ' + str(fStart))
+                print('Ending frequency (Hz) is ' + str(fEnd))
                 for nn in range(0, int(args.multiTemplateSearch)):
                    counterLeft = int( (int(nn) + 1)/float(fSpan))
                    counterRight = int( int(args.multiTemplateSearch)/float(fSpan))
@@ -338,17 +338,17 @@ def summarizer(mdcVersion, observatory, pulsar, args):
                        startCount[nn] = len([ff for ff in fArray if abs(ff - (float(fStart) + float(nn)*fSpan) ) < fpTolerance])
                        midCount[nn] = len([ff for ff in fArray if abs(ff - (float(fStart) + float(nn+0.5)*fSpan) ) < fpTolerance])
                    elif counterLeft == counterRight:
-                       print 'Ending after this many Hertz ' + str((nn+1)*fSpan)
+                       print('Ending after this many Hertz ' + str((nn+1)*fSpan))
                        dfLenCml[nn] = len([ff for ff in fArray if (ff <= float(fStart)+float(nn+1)*fSpan)])
                        #dfLenPer[nn] = len([ff for ff in fArray if (ff >= fStart + nn) and (ff <= fStart+nn+1)])
                        startCount[nn] = len([ff for ff in fArray if abs(ff - (float(fStart) + float(nn)*fSpan) ) < fpTolerance])
                        midCount[nn] = len([ff for ff in fArray if abs(ff - (float(fStart) + float(nn+0.5)*fSpan) ) < fpTolerance])
                    else:
-                       print 'Malfunction, reached nn of ' + str(nn)
-                print 'startCount, midCount, dfLenCml:'
-                print startCount
-                print midCount
-                print dfLenCml
+                       print('Malfunction, reached nn of ' + str(nn))
+                print('startCount, midCount, dfLenCml:')
+                print(startCount)
+                print(midCount)
+                print(dfLenCml)
                 for qq in range(0, int(args.multiTemplateSearch)):
                     if qq == 0:
                         startIndex = 0
@@ -401,15 +401,15 @@ def summarizer(mdcVersion, observatory, pulsar, args):
                 fShaped = np.reshape(fArray, (fLen, dfLen)).T
                 dfShaped = np.reshape(dfArray, (fLen, dfLen)).T
             elif args.ScoX1S6:
-                print 'Shape of real-data Scorpius X-1 array: '
-                print str(dfShaped.shape)
+                print('Shape of real-data Scorpius X-1 array: ')
+                print(str(dfShaped.shape))
         else:
             fShaped = np.reshape(fArray, (fLen, dfLen)).T
             dfShaped = np.reshape(dfArray, (fLen, dfLen)).T
         if (args.band or args.noiseTest) or \
         (args.templateSearch or args.multiTemplateSearch) or \
         args.J1751 or args.ScoX1S6: 
-            print 'Number of bins in data arrays: ' + str(fShaped.shape)
+            print('Number of bins in data arrays: ' + str(fShaped.shape))
         x, y = np.meshgrid(fShaped[0, :], dfShaped[:, 0])
         extensions = [x[0, 0], x[-1, -1], y[0, 0], y[-1, -1]]
         if not args.multiTemplateSearch:
@@ -443,7 +443,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         paramSpacePixelMap = fig.colorbar(paramSpacePixelMap, shrink = 0.5, extend = 'both')
         if (args.templateSearch or args.multiTemplateSearch) or \
         args.J1751 or args.ScoX1S6:
-            print 'Skipping probability grid'
+            print('Skipping probability grid')
         else:
             ax.grid('True')
         if (args.band or args.noiseTest) or \
@@ -484,7 +484,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         paramSpacePixelMap = fig.colorbar(paramSpacePixelMap, shrink = 0.5, extend = 'both')
         if (args.templateSearch or args.multiTemplateSearch) or \
         args.J1751 or args.ScoX1S6:
-            print 'Skipping R grid'
+            print('Skipping R grid')
         else:
             ax.grid('True')
         if (args.band or args.noiseTest) or \

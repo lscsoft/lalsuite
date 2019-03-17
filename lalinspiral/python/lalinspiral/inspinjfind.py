@@ -46,10 +46,10 @@ import sys
 
 
 from glue import iterutils
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw.utils import coincs as ligolw_coincs
-from glue.ligolw.utils import time_slide as ligolw_time_slide
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw.utils import coincs as ligolw_coincs
+from ligo.lw.utils import time_slide as ligolw_time_slide
 from glue.text_progress_bar import ProgressBar
 from . import thinca
 
@@ -305,18 +305,18 @@ def add_sim_inspiral_coinc(contents, sim, inspirals):
 	coinc.insts = (event.ifo for event in inspirals)
 	coinc.nevents = len(inspirals)
 
-	coincmap = lsctables.CoincMap()
-	coincmap.coinc_event_id = coinc.coinc_event_id
-	coincmap.table_name = sim.simulation_id.table_name
-	coincmap.event_id = sim.simulation_id
-	contents.coincmaptable.append(coincmap)
+	contents.coincmaptable.append(lsctables.CoincMap(
+		coinc_event_id = coinc.coinc_event_id,
+		table_name = u"sim_inspiral",
+		event_id = sim.simulation_id
+	))
 
 	for event in inspirals:
-		coincmap = lsctables.CoincMap()
-		coincmap.coinc_event_id = coinc.coinc_event_id
-		coincmap.table_name = event.event_id.table_name
-		coincmap.event_id = event.event_id
-		contents.coincmaptable.append(coincmap)
+		contents.coincmaptable.append(lsctables.CoincMap(
+			coinc_event_id = coinc.coinc_event_id,
+			table_name = u"sngl_inspiral",
+			event_id = event.event_id
+		))
 
 
 #
@@ -367,18 +367,18 @@ def add_sim_coinc_coinc(contents, sim, coinc_event_ids, coinc_def_id):
 	coinc = contents.new_coinc(coinc_def_id)
 	coinc.nevents = len(coinc_event_ids)
 
-	coincmap = lsctables.CoincMap()
-	coincmap.coinc_event_id = coinc.coinc_event_id
-	coincmap.table_name = sim.simulation_id.table_name
-	coincmap.event_id = sim.simulation_id
-	contents.coincmaptable.append(coincmap)
+	contents.coincmaptable.append(lsctables.CoincMap(
+		coinc_event_id = coinc.coinc_event_id,
+		table_name = u"sim_inspiral",
+		event_id = sim.simulation_id
+	))
 
 	for coinc_event_id in coinc_event_ids:
-		coincmap = lsctables.CoincMap()
-		coincmap.coinc_event_id = coinc.coinc_event_id
-		coincmap.table_name = coinc_event_id.table_name
-		coincmap.event_id = coinc_event_id
-		contents.coincmaptable.append(coincmap)
+		contents.coincmaptable.append(lsctables.CoincMap(
+			coinc_event_id = coinc.coinc_event_id,
+			table_name = u"coinc_event",
+			event_id = coinc_event_id
+		))
 
 
 #

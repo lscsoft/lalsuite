@@ -4,11 +4,13 @@
 
 import itertools
 import glue
-from glue import pipeline,segmentsUtils,segments
-from glue.ligolw import ligolw, lsctables, utils
+from glue import pipeline
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
+from glue.ligolw import ligolw, lsctables
+from glue.ligolw import utils as ligolw_utils
 import os
 import socket
-from lalapps import inspiralutils
 import uuid
 import ast
 import pdb
@@ -27,6 +29,26 @@ from functools import reduce
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
 # join together types of jobs into a DAG.
+
+def findSegmentsToAnalyze(flag, gpsstart, gpsend, url=None):
+    """
+    Return segments with given DQ flag
+    Parameters
+    ----
+    flag : string
+        name of DQ flag
+    gpsstart, gpsend : float
+        GPS period to analyse
+    """
+    try:
+        from gwpy.segments import DataQualityFlag
+    except ImportError:
+        print('Unable to import gwpy. Querying science segments not possible. Please try installing gwpy')
+        raise
+    if url is None:
+        return DataQualityFlag.query_dqsegdb(flag, gpsstart, gpsend).active
+    else:
+        return DataQualityFlag.query_dqsegdb(flag, gpsstart, gpsend, url=url).active
 
 def guess_url(fslocation):
     """
@@ -136,16 +158,27 @@ class Event():
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
-def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath="./",downloadpsd=True,roq=False,service_url=None):
-    """
-    Parse LV alert file, containing coinc, sngl, coinc_event_map.
-    and create a list of Events as input for pipeline
-    Based on Chris Pankow's script
+def create_events_from_coinc_and_psd(
+    coinc_xml_obj, psd_dict, gid=None, threshold_snr=None, flow=20.0, roq=False
+):
+    """This function calculates seglen, fhigh, srate and horizon distance from
+    coinc.xml and psd.xml.gz from GraceDB and create list of Events as input of
+    pipeline. This function is based on Chris Pankow's script.
+
+    Parameters
+    ----------
+    coinc_xml_obj: glue.ligolw.ligolw.Document
+        file object of coinc.xml
+    psd_dict: dictionary of REAL8FrequencySeries
+        PSDs of all the ifos
+    threshold_snr: float
+        snr threshold for detection
+    flow: float
+        lower frequecy cutoff for overlap calculation
+    roq: bool
+        Whether the run uses ROQ or not
     """
     output=[]
-    from glue.ligolw import utils as ligolw_utils
-    from glue.ligolw import lsctables
-    from glue.ligolw import ligolw
     from lal import series as lalseries
     import lal
     from lalsimulation import SimInspiralChirpTimeBound, GetApproximantFromString, IMRPhenomDGetPeakFreq
@@ -154,40 +187,19 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
         from gstlal import reference_psd
     except ImportError:
         reference_psd = None
-    cwd=os.getcwd()
-    os.chdir(basepath)
-    print("Download %s coinc.xml" % gid)
-    if service_url is None:
-        client = GraceDb()
-    else:
-        client = GraceDb(service_url=service_url)
-    xmldoc = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))[0]
-    ligolw_utils.write_filename(xmldoc, "coinc.xml")
-    coinc_events = lsctables.CoincInspiralTable.get_table(xmldoc)
-    sngl_event_idx = dict((row.event_id, row) for row in lsctables.SnglInspiralTable.get_table(xmldoc))
+    coinc_events = lsctables.CoincInspiralTable.get_table(coinc_xml_obj)
+    sngl_event_idx = dict((row.event_id, row) for row in lsctables.SnglInspiralTable.get_table(coinc_xml_obj))
     ifos = sorted(coinc_events[0].instruments)
     trigSNR = coinc_events[0].snr
     # Parse PSD
     srate_psdfile=16384
     fhigh=None
-    psdfileobj = None
-    if downloadpsd:
-        print("Download %s psd.xml.gz" % gid)
-        try:
-            psdfileobj = client.files(gid, "psd.xml.gz")
-        except HTTPError:
-            print("Failed to download %s psd.xml.gz. lalinference will estimate the psd itself." % gid)
-        if psdfileobj is not None:
-            if reference_psd is not None:
-                xmlpsd = ligolw_utils.load_fileobj(psdfileobj, contenthandler = lalseries.PSDContentHandler)[0]
-                psd = lalseries.read_psd_xmldoc(xmlpsd)
-                ligolw_utils.write_filename(xmlpsd, "psd.xml.gz", gz = True)
-            else:
-                open("psd.xml.gz", "w").write(psdfileobj.read())
-            psdasciidic = get_xml_psds(os.path.realpath("./psd.xml.gz"),ifos,os.path.realpath('./PSDs'),end_time=None)
-            combine = np.loadtxt(psdasciidic[psdasciidic.keys()[0]])
-            srate_psdfile = pow(2.0, ceil( log(float(combine[-1][0]), 2) ) ) * 2
-    coinc_map = lsctables.CoincMapTable.get_table(xmldoc)
+    if psd_dict is not None:
+        psd = list(psd_dict.values())[0]
+        srate_psdfile = pow(
+            2.0, ceil(log(psd.f0 + psd.deltaF * (psd.data.length - 1), 2))
+        ) * 2
+    coinc_map = lsctables.CoincMapTable.get_table(coinc_xml_obj)
     for coinc in coinc_events:
         these_sngls = [sngl_event_idx[c.event_id] for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id]
         dur=[]
@@ -207,17 +219,17 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
                     else:
                         horizon_distance.append(2 * e.eff_distance)
                 else:
-                    if reference_psd is not None and psdfileobj is not None:
+                    if reference_psd is not None and psd_dict is not None:
                         if not roq==False:
                             fstop = IMRPhenomDGetPeakFreq(e.mass1, e.mass2, 0.0, 0.0)
                         HorizonDistanceObj = reference_psd.HorizonDistance(f_min = flow, f_max = fstop, delta_f = 1.0 / 32.0, m1 = e.mass1, m2 = e.mass2)
-                        horizon_distance.append(HorizonDistanceObj(psd[e.ifo], snr = threshold_snr)[0])
+                        horizon_distance.append(HorizonDistanceObj(psd_dict[e.ifo], snr = threshold_snr)[0])
         if srate:
             if max(srate)<srate_psdfile:
                 srate = max(srate)
             else:
                 srate = srate_psdfile
-                if psdfileobj is not None:
+                if psd_dict is not None:
                     fhigh = srate_psdfile/2.0 * 0.95 # Because of the drop-off near Nyquist of the PSD from gstlal
         else:
             srate = None
@@ -231,7 +243,6 @@ def readLValert(threshold_snr=None,gid=None,flow=20.0,gracedb="gracedb",basepath
         output.append(ev)
 
     print("Found %d coinc events in table." % len(coinc_events))
-    os.chdir(cwd)
     return output
 
 def open_pipedown_database(database_filename,tmp_space):
@@ -371,7 +382,7 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
     extra={}
     for (sngl_time, slide, ifo, coinc_id, snr, chisq, cfar) in db_out:
         coinc_id=int(coinc_id.split(":")[-1])
-        seg=filter(lambda seg:sngl_time in seg,seglist)[0]
+        seg=list(filter(lambda seg:sngl_time in seg,seglist))[0]
         slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
         if not coinc_id in output.keys():
             output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={},event_id=int(coinc_id))
@@ -449,7 +460,6 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
       outpath: path where the ascii PSD will be written to
       (end_time): trigtime for this event. Will be used a part of the PSD file name
     """
-    from glue.ligolw import utils as ligolw_utils
     try:
         from lal import series as lalseries
     except ImportError:
@@ -485,13 +495,13 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
     xmlpsd =  lalseries.read_psd_xmldoc(ligolw_utils.load_filename(psdxml,contenthandler = lalseries.PSDContentHandler))
     # Check the psd file contains all the IFOs we want to analize
     for ifo in ifos:
-        if not ifo in [i.encode('ascii') for i in xmlpsd.keys()]:
+        if not ifo in xmlpsd:
             print("ERROR. The PSD for the ifo %s does not seem to be contained in %s\n"%(ifo,psdxml))
             sys.exit(1)
     #loop over ifos in psd xml file
     for instrument in xmlpsd.keys():
         #name of the ascii file we are going to write the PSD into
-        path_to_ascii_psd=os.path.join(outpath,instrument.encode('ascii')+'_psd_'+time+'.txt')
+        path_to_ascii_psd=os.path.join(outpath,instrument+'_psd_'+time+'.txt')
         # Check we don't already have that ascii (e.g. because we are running parallel runs of the save event
         if os.path.isfile(path_to_ascii_psd):
             continue
@@ -500,37 +510,18 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
         #check data is not empty
         if ifodata is None:
             continue
-        # we have data. Get psd array
-        data=ifodata.data
-        # Fill a two columns array of (freq, psd) and save it in the ascii file
-        f0=ifodata.f0
-        deltaF=ifodata.deltaF
-
-        combine=[]
-
-        for i in np.arange(len(data.data.data)) :
-            combine.append([f0+i*deltaF,data.data.data[i]])
+        # write down PSD into an ascii file
+        combine = np.c_[ifodata.f0 + np.arange(ifodata.data.length) * ifodata.deltaF, ifodata.data.data]
         np.savetxt(path_to_ascii_psd,combine)
-        ifo=instrument.encode('ascii')
         # set node.psds dictionary with the path to the ascii files
+        ifo=instrument
         out[ifo]=os.path.join(outpath,ifo+'_psd_'+time+'.txt')
     return out
 
-def get_trigger_chirpmass(gid=None,gracedb="gracedb",service_url=None):
-    from glue.ligolw import lsctables
-    from glue.ligolw import ligolw
-    from glue.ligolw import utils as ligolw_utils
-    from ligo.gracedb.rest import GraceDb
-    cwd=os.getcwd()
-    if service_url is None:
-        client = GraceDb()
-    else:
-        client = GraceDb(service_url=service_url)
-    xmldoc = ligolw_utils.load_fileobj(client.files(gid, "coinc.xml"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))[0]
-    ligolw_utils.write_filename(xmldoc, "coinc.xml")
-    coinc_events = lsctables.CoincInspiralTable.get_table(xmldoc)
-    sngl_event_idx = dict((row.event_id, row) for row in lsctables.SnglInspiralTable.get_table(xmldoc))
-    coinc_map = lsctables.CoincMapTable.get_table(xmldoc)
+def get_trigger_chirpmass(coinc_xml_obj):
+    coinc_events = lsctables.CoincInspiralTable.get_table(coinc_xml_obj)
+    sngl_event_idx = dict((row.event_id, row) for row in lsctables.SnglInspiralTable.get_table(coinc_xml_obj))
+    coinc_map = lsctables.CoincMapTable.get_table(coinc_xml_obj)
     mass1 = []
     mass2 = []
     for coinc in coinc_events:
@@ -543,18 +534,17 @@ def get_trigger_chirpmass(gid=None,gracedb="gracedb",service_url=None):
     assert len(set(mass2)) == 1
 
     mchirp = (mass1[0]*mass2[0])**(3./5.) / ( (mass1[0] + mass2[0])**(1./5.) )
-    os.remove("coinc.xml")
 
     return mchirp
 
-def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=None,sim_inspiral=None, service_url=None):
+def get_roq_mchirp_priors(path, roq_paths, roq_params, key, coinc_xml_obj=None, sim_inspiral=None):
 
     ## XML and GID cannot be given at the same time
     ## sim_inspiral must already point at the right row
     mc_priors = {}
 
-    if gid is not None and sim_inspiral is not None:
-        print("Error in get_roq_mchirp_priors, cannot use both gid and sim_inspiral\n")
+    if coinc_xml_obj is not None and sim_inspiral is not None:
+        print("Error in get_roq_mchirp_priors, cannot use both coinc.xml and sim_inspiral\n")
         sys.exit(1)
 
     for roq in roq_paths:
@@ -572,8 +562,8 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=None,sim_inspira
       if i<len(roq_paths)-1:
         mc_priors[roq][1]-= (mc_priors[roq][1]- mc_priors[ordered_roq_paths[i+1]][0])/2.
       i+=1'''
-    if gid is not None:
-        trigger_mchirp = get_trigger_chirpmass(gid=gid,service_url=service_url)
+    if coinc_xml_obj is not None:
+        trigger_mchirp = get_trigger_chirpmass(coinc_xml_obj)
     elif sim_inspiral is not None:
         trigger_mchirp = sim_inspiral.mchirp
     else:
@@ -581,15 +571,15 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=None,sim_inspira
 
     return mc_priors, trigger_mchirp
 
-def get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=None,sim_inspiral=None,service_url=None):
+def get_roq_component_mass_priors(path, roq_paths, roq_params, key, coinc_xml_obj=None, sim_inspiral=None):
 
-    ## XML and GID cannot be given at the same time
+    ## coinc_xml_obj and sim_inspiral cannot be given at the same time
     ## sim_inspiral must already point at the right row
     m1_priors = {}
     m2_priors = {}
 
-    if gid is not None and sim_inspiral is not None:
-        print("Error in get_roq_mchirp_priors, cannot use both gid and sim_inspiral\n")
+    if coinc_xml_obj is not None and sim_inspiral is not None:
+        print("Error in get_roq_mchirp_priors, cannot use both coinc.xml and sim_inspiral\n")
         sys.exit(1)
 
     for roq in roq_paths:
@@ -598,8 +588,8 @@ def get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=None,sim
         m1_priors[roq]=[float(roq_params[roq]['mass1min']),float(roq_params[roq]['mass1max'])]
         m2_priors[roq]=[float(roq_params[roq]['mass2min']),float(roq_params[roq]['mass2max'])]
 
-    if gid is not None:
-        trigger_mchirp = get_trigger_chirpmass(gid,service_url=service_url)
+    if coinc_xml_obj is not None:
+        trigger_mchirp = get_trigger_chirpmass(coinc_xml_obj)
     elif sim_inspiral is not None:
         trigger_mchirp = sim_inspiral.mchirp
     else:
@@ -804,7 +794,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         """
         Create a pegasus cache file name, uses inspiralutils
         """
-        import inspiralutils as iu
+        from lalapps import inspiralutils as iu
         gpsstart=self.config.get('input','gps-start-time')
         gpsend=self.config.get('input','gps-end-time')
         pfnfile=iu.create_frame_pfn_file(self.frtypes,gpsstart,gpsend)
@@ -893,7 +883,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             gpsstart=self.config.getfloat('input','gps-start-time')
         if self.config.has_option('input','gps-end-time'):
             gpsend=self.config.getfloat('input','gps-end-time')
-        inputnames=['gps-time-file','burst-injection-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-db','gid','gstlal-db']
+        inputnames=['gps-time-file','burst-injection-file','injection-file','coinc-xml','pipedown-db','gid','gstlal-db']
         ReadInputFromList=sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])
         # If no input events given, just return an empty list (e.g. for PP pipeline)
         if ReadInputFromList!=1 and (gpsstart is None or gpsend is None):
@@ -981,46 +971,92 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 events=[Event(trig_time=time) for time in times]
         # Siminspiral Table
         if self.config.has_option('input','injection-file'):
-            from glue.ligolw import ligolw, lsctables, utils
             injTable = lsctables.SimInspiralTable.get_table(
-                              utils.load_filename(self.config.get('input','injection-file'),
+                              ligolw_utils.load_filename(self.config.get('input','injection-file'),
                                                   contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler)) )
             events=[Event(SimInspiral=inj) for inj in injTable]
             self.add_pfn_cache([create_pfn_tuple(self.config.get('input','injection-file'))])
         # SimBurst Table
         if self.config.has_option('input','burst-injection-file'):
             injfile=self.config.get('input','burst-injection-file')
-            injTable=lsctables.SimBurstTable.get_table(utils.load_filename(injfile,contenthandler = lsctables.use_in(LIGOLWContentHandler)))
+            injTable=lsctables.SimBurstTable.get_table(ligolw_utils.load_filename(injfile,contenthandler = lsctables.use_in(LIGOLWContentHandler)))
             events=[Event(SimBurst=inj) for inj in injTable]
             self.add_pfn_cache([create_pfn_tuple(self.config.get('input','burst-injection-file'))])
-        # SnglInspiral Table
-        if self.config.has_option('input','sngl-inspiral-file'):
-            trigTable = lsctables.SnglInspiralTable.get_table(utils.load_filename(injfile, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
-            events=[Event(SnglInspiral=trig) for trig in trigTable]
-            self.add_pfn_cache([create_pfn_tuple(self.config.get('input','sngl-inspiral-file'))])
-        if self.config.has_option('input','coinc-inspiral-file'):
-            coincTable = lsctables.CoincInspiralTable.get_table(utils.load_filename(injfile, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
-            events = [Event(CoincInspiral=coinc) for coinc in coincTable]
-            self.add_pfn_cache([create_pfn_tuple(self.config.get('input','coinc-inspiral-file'))])
         # LVAlert CoincInspiral Table
-        if self.config.has_option('input','gid'):
-            gid=self.config.get('input','gid')
+        gid = None
+        if self.config.has_option('input','gid') or self.config.has_option('input', 'coinc-xml'):
             flow=20.0
             if self.config.has_option('lalinference','flow'):
                 flow=min(ast.literal_eval(self.config.get('lalinference','flow')).values())
-            downloadgracedbpsd=True
-            if self.config.has_option('input','ignore-gracedb-psd'):
-                if self.config.getboolean('input','ignore-gracedb-psd'):
-                    downloadgracedbpsd=False
             threshold_snr = None
             if not self.config.has_option('engine','distance-max') and self.config.has_option('input','threshold-snr'):
                 threshold_snr=self.config.getfloat('input','threshold-snr')
-            service_url = None
-            if self.config.has_option('analysis','service-url'):
-                service_url = self.config.get('analysis','service-url')
-            events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),basepath=self.basepath,downloadpsd=downloadgracedbpsd,
-                                 threshold_snr=threshold_snr,roq=self.config.getboolean('analysis','roq'),service_url=service_url)
-        else: gid=None
+
+            # get coinc object and psd object
+            from lal import series as lalseries
+            psd_file_obj = None
+            if self.config.has_option('input', 'gid'):
+                from ligo.gracedb.rest import GraceDb, HTTPError
+                gid = self.config.get('input', 'gid')
+                if self.config.has_option('analysis','service-url'):
+                    client = GraceDb(
+                        service_url=self.config.get('analysis', 'service-url')
+                    )
+                else:
+                    client = GraceDb()
+                print("Download %s coinc.xml" % gid)
+                coinc_file_obj = client.files(gid, "coinc.xml")
+                try:
+                    downloadpsd = (not self.config.getboolean('input','ignore-gracedb-psd'))
+                except:
+                    downloadpsd = True
+                if downloadpsd:
+                    print("Download %s psd.xml.gz" % gid)
+                    try:
+                        psd_file_obj = client.files(gid, "psd.xml.gz")
+                    except HTTPError:
+                        print("Failed to download %s psd.xml.gz. lalinference will estimate the psd itself." % gid)
+            else:
+                coinc_file_obj = open(self.config.get('input', 'coinc-xml'), "rb")
+                try:
+                    psd_file_obj =  open(self.config.get('input', 'psd-xml-gz'), "rb")
+                except:
+                    print("lalinference will estimate the psd itself.")
+
+            # write down the objects to files
+            coinc_xml_obj = ligolw_utils.load_fileobj(
+                coinc_file_obj,
+                contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)
+            )[0]
+            ligolw_utils.write_filename(
+                coinc_xml_obj, os.path.join(self.basepath, "coinc.xml")
+            )
+            if psd_file_obj is not None:
+                path_to_psd = os.path.join(self.basepath, "psd.xml.gz")
+                psd_xml_obj = ligolw_utils.load_fileobj(
+                    psd_file_obj,
+                    contenthandler = lalseries.PSDContentHandler
+                )[0]
+                psd_dict = lalseries.read_psd_xmldoc(psd_xml_obj)
+                ligolw_utils.write_filename(psd_xml_obj, path_to_psd, gz = True)
+                ifos = sorted(
+                    lsctables.CoincInspiralTable.get_table(
+                        coinc_xml_obj
+                    )[0].instruments
+                )
+                get_xml_psds(
+                    os.path.realpath(path_to_psd), ifos,
+                    os.path.realpath(os.path.join(self.basepath, "PSDs")),
+                    end_time=None
+                )
+            else:
+                psd_dict = None
+
+            events = create_events_from_coinc_and_psd(
+                         coinc_xml_obj, psd_dict, gid, threshold_snr=None, flow=flow,
+                         roq=self.config.getboolean('analysis','roq')
+                     )
+
         # pipedown-database
         if self.config.has_option('input','gstlal-db'):
             queryfunc=get_zerolag_lloid
@@ -1056,9 +1092,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 used_events.append(e)
             events=used_events
         if gpsstart is not None:
-            events = filter(lambda e: not e.trig_time<gpsstart, events)
+            events = list(filter(lambda e: not e.trig_time<gpsstart, events))
         if gpsend is not None:
-            events = filter(lambda e: not e.trig_time>gpsend, events)
+            events = list(filter(lambda e: not e.trig_time>gpsend, events))
         return events
 
     def add_full_analysis_lalinferencenest(self,event):
@@ -1105,7 +1141,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             respagenode.set_psd_files(enginenodes[0].get_psd_files())
             respagenode.set_snr_file(enginenodes[0].get_snr_file())
             if os.path.exists(self.basepath+'/coinc.xml'):
-                respagenode.set_coinc_file(self.basepath+'/coinc.xml',self.config.get('input','gid'))
+                try:
+                    gid = self.config.get('input','gid')
+                except:
+                    gid = None
+                respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
             mkdirs(os.path.join(self.basepath,'coherence_test'))
             par_mergenodes=[]
             for ifo in enginenodes[0].ifos:
@@ -1142,7 +1182,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 subresnode.set_psd_files(cotest_nodes[0].get_psd_files())
                 subresnode.set_snr_file(cotest_nodes[0].get_snr_file())
                 if os.path.exists(self.basepath+'/coinc.xml'):
-                    subresnode.set_coinc_file(self.basepath+'/coinc.xml',self.config.get('input','gid'))
+                    try:
+                        gid = self.config.get('input','gid')
+                    except:
+                        gid = None
+                    subresnode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
                 if self.config.has_option('input','injection-file') and event.event_id is not None:
                     subresnode.set_injection(self.config.get('input','injection-file'),event.event_id)
                 elif self.config.has_option('input','burst-injection-file') and event.event_id is not None:
@@ -1164,7 +1208,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             respagenode.set_psd_files(enginenodes[0].get_psd_files())
             respagenode.set_snr_file(enginenodes[0].get_snr_file())
             if os.path.exists(self.basepath+'/coinc.xml'):
-                respagenode.set_coinc_file(self.basepath+'/coinc.xml',self.config.get('input','gid'))
+                try:
+                    gid = self.config.get('input','gid')
+                except:
+                    gid = None
+                respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
         if self.config.has_option('input','injection-file') and event.event_id is not None:
             respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
         elif self.config.has_option('input','burst-injection-file') and event.event_id is not None:
@@ -1243,7 +1291,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         respagenode.set_psd_files(enginenodes[0].get_psd_files())
         respagenode.set_snr_file(enginenodes[0].get_snr_file())
         if os.path.exists(self.basepath+'/coinc.xml'):
-            respagenode.set_coinc_file(self.basepath+'/coinc.xml',self.config.get('input','gid'))
+            try:
+                gid = self.config.get('input','gid')
+            except:
+                gid = None
+            respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
         if self.config.has_option('input','injection-file') and event.event_id is not None:
             respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
         if self.config.has_option('input','burst-injection-file') and event.event_id is not None:
@@ -1263,10 +1315,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     def add_science_segments(self):
         # Query the segment database for science segments and
         # add them to the pool of segments
+        start=self.config.getfloat('input','gps-start-time')
+        end=self.config.getfloat('input','gps-end-time')
         if self.config.has_option('input','ignore-science-segments'):
             if self.config.getboolean('input','ignore-science-segments'):
-                start=self.config.getfloat('input','gps-start-time')
-                end=self.config.getfloat('input','gps-end-time')
                 i=0
                 for ifo in self.ifos:
                     sciseg=pipeline.ScienceSegment((i,start,end,end-start))
@@ -1276,24 +1328,19 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     i+=1
                 return
         # Look up science segments as required
-        segmentdir=os.path.join(self.basepath,'segments')
-        mkdirs(segmentdir)
-        curdir=os.getcwd()
-        os.chdir(segmentdir)
+        segurl = None # No segment URL will default to $DEFAULT_SEGMENT_SERVER from env
+        if self.config.has_option('segfind','segment-url'):
+            segurl = self.config.get('segfind','segment-url')
         for ifo in self.ifos:
-            (segFileName,dqVetoes)=inspiralutils.findSegmentsToAnalyze(self.config, ifo, self.veto_categories, generate_segments=True,\
-              use_available_data=self.use_available_data , data_quality_vetoes=False)
-            self.dqVetoes=dqVetoes
-            segfile=open(segFileName)
-            segs=segmentsUtils.fromsegwizard(segfile)
+            print('Querying segment database for {0} data between {1} and {2}'.format(ifo,start,end))
+            segs = findSegmentsToAnalyze(self.config.get('segments',ifo.lower()+'-analyze'),
+                start, end, url=segurl)
             segs.coalesce()
-            segfile.close()
             for seg in segs:
                 sciseg=pipeline.ScienceSegment((segs.index(seg),seg[0],seg[1],seg[1]-seg[0]))
                 df_node=self.get_datafind_node(ifo,self.frtypes[ifo],int(sciseg.start()),int(sciseg.end()))
                 sciseg.set_df_node(df_node)
                 self.segments[ifo].append(sciseg)
-        os.chdir(curdir)
 
     def get_datafind_node(self,ifo,frtype,gpsstart,gpsend):
         node=pipeline.LSCDataFindNode(self.datafind_job)
@@ -1756,8 +1803,9 @@ class SingularityJob(pipeline.CondorDAGJob):
         if self.osg and not self.singularity:
             raise Exception("Running on the OSG requires singularity=True in [analysis] section of ini file")
         self.basedir = cp.get('paths','basedir')
-        self.add_condor_cmd('initialdir',self.basedir)
+        #self.add_condor_cmd('initialdir',self.basedir)
         if not self.singularity:
+            self.add_condor_cmd('getenv','true')
             return
         if cp.has_option('condor','singularity'):
             self.singularity_path = cp.get('condor','singularity')
@@ -1775,65 +1823,33 @@ class SingularityJob(pipeline.CondorDAGJob):
         else:
             extra_paths="--bind {cvmfs_frames}".format(cvmfs_frames = self.CVMFS_FRAMES)
             self.add_condor_cmd('+SingularityBindCVMFS','True')
-            self.add_condor_cmd('use_x509userproxy','true')
+            self.add_condor_cmd('use_x509userproxy','True')
+            self.requirements.append('HAS_LIGO_FRAMES =?= TRUE')
         if cp.has_option('analysis','roq') and cp.getboolean('analysis','roq'):
             extra_paths+=" --bind {roqpath}".format(roqpath=cp.get('paths','roq_b_matrix_directory'))
 
-        self.wrapper_string="""
-            echo "Workspace on execute node $(hostname -f)"
-            echo "PWD" ${{PWD}}
-            echo "contents"
-            ls -l
-            set -e
-            {executable} \\
-                    "$@"
-            """.format(singularity = self.singularity_path,
-                    basedir=self.basedir,
-                    extra_paths = extra_paths,
-                    executable = super(SingularityJob,self).get_executable(),
-                    image = self.image
-                    )
-
         if self.osg:
             self.add_condor_cmd('+OpenScienceGrid','True')
-            self.requirements.append('IS_GLIDEIN==True')
+            self.requirements.append('IS_GLIDEIN=?=True')
             # Add requested sites if specified
             if cp.has_option('condor','desired-sites'):
                 self.add_condor_cmd('+DESIRED_Sites',cp.get('condor','desired-sites'))
         if self.singularity:
-            self.requirements.append('HasSingularity == TRUE')
+            self.requirements.append('HAS_SINGULARITY =?= TRUE')
             self.add_condor_cmd('+SingularityImage','"{0}"'.format(self.image))
+            self.add_condor_cmd('transfer_executable','False')
         # Add data transfer options
         self.add_condor_cmd('should_transfer_files','YES')
         self.add_condor_cmd('when_to_transfer_output','ON_EXIT_OR_EVICT')
 
-    def write_script(self,path):
-        """
-        Write the wrapper script
-        """
-        f=open(path,'w')
-        f.writelines('#!/usr/bin/env bash')
-        f.writelines(self.wrapper_string)
-        f.close()
-        os.chmod(path,0o755)
-
     def write_sub_file(self):
         """
-        Over-load CondorDAGJob.write_sub_file to write the wrapper script and
-        set the exe to call it
+        Over-load CondorDAGJob.write_sub_file to write the requirements
         """
-        true_exec = self.get_executable()
         self.add_condor_cmd('requirements','&&'.join('({0})'.format(r) for r in self.requirements))
-        if self.singularity:
-            # Write the wrapper script
-            wrapper=os.path.splitext(self.get_sub_file())[0] +'_wrapper.sh'
-            self.write_script( wrapper )
-            # Over-write the executable to set the wrapper script
-            self.set_executable( wrapper )
+
         # Call the parent method to do the rest
         super(SingularityJob,self).write_sub_file()
-        # Put the true exe back just in case
-        self.set_executable(true_exec)
 
 
 
@@ -1928,7 +1944,6 @@ class EngineJob(SingularityJob,pipeline.AnalysisJob):
                 self.set_executable_installed(False)
         # Set the options which are always used
         self.set_sub_file(os.path.abspath(submitFile))
-        self.add_condor_cmd('getenv','true')
         if self.engine=='lalinferencemcmc':
             self.binary=cp.get('condor',self.engine.replace('mpi',''))
             self.mpirun=cp.get('condor','mpirun')
@@ -2191,11 +2206,17 @@ class EngineNode(SingularityNode):
         self.__GPSend=0
         length=maxLength
         dt=self.seglen/4.
-
-        while(self.GPSstart+length>=trig_time):
-        ### or self.GPSstart not in  Science) --><-- here we should also have checked that we are in science mode, but I'm not sure how to do that yet.
+        # First find appropriate start time
+        while ((self.GPSstart+length>=trig_time) or any( [self.GPSstart < seg.start()+self.padding for seg in self.scisegs.values() ] )) and length>0:
             self.GPSstart+=dt
             length-=dt
+        # Now adjust so length fits inside segment
+        while any([self.GPSstart+length>=seg.end()-self.padding for seg in self.scisegs.values()]) and length>0:
+            length-=dt
+        if length<=0:
+            print('Unable to find data for event {0}'.format(trig_time))
+        if length<maxLength:
+            print('Trimmed analysis data for trigger {}. Analysing {} -- {} ({}s of data)'.format(trig_time, self.GPSstart, self.GPSstart+length,length))
 
         if self.psdstart is not None:
             self.GPSstart=self.psdstart
@@ -2803,9 +2824,9 @@ class SkyMapNode(pipeline.CondorDAGNode):
     def set_outdir(self, outdir):
         self.outdir=outdir
         if self.prefix:
-            name = self.prefix+'.fits.gz'
+            name = self.prefix+'.fits'
         else:
-            name = 'skymap.fits.gz'
+            name = 'skymap.fits'
         self.outfits = os.path.join(outdir,name)
     def set_posfile(self, posfile):
         self.posfile=posfile
@@ -2857,6 +2878,8 @@ class SkyMapJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         #self.add_condor_cmd('getenv','True')
         # Add user-specified options from ini file
         self.add_ini_opts(cp,'ligo-skymap-from-samples')
+        if cp.has_option('engine','margdist') or cp.has_option('engine','margdist-comoving'):
+            self.add_opt('disable-distance-map','')
 
 
 class PlotSkyMapJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):

@@ -11,11 +11,12 @@
 import sys
 from optparse import OptionParser
 
+from ligo import segments
+
 try:
   # ligo_lw xml handling modules
   import glue
 
-  from glue import segments
   from glue.ligolw import ligolw
   from glue.ligolw import lsctables
   from glue.ligolw import table
@@ -287,7 +288,7 @@ xmldoc.appendChild(ligolw.LIGO_LW());
 create_tables(xmldoc, rootfiles)
 
 if opts.outputname == None :
-  print "Assigning name to output xml"
+  print("Assigning name to output xml")
   output = "convertROOT.xml.gz"
 else :
   output = "%s.xml.gz" % opts.outputname

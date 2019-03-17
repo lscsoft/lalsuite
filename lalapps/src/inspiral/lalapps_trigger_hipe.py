@@ -3,7 +3,7 @@
 trigger_hipe.in - externally triggered hierarchical inspiral pipeline driver
 script
 """
-from __future__ import division
+from __future__ import (division, print_function)
 
 __author__ = 'Patrick Brady <patrick@gravity.phys.uwm.edu>, Nickolas Fotopoulos <foton@caltech.edu>, Ian Harry <ian.harry@astro.cf.ac.uk>'
 
@@ -21,13 +21,14 @@ import subprocess
 
 import numpy
 
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
+
 from glue.ligolw import ligolw
 from glue.ligolw import utils
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue import lal
-from glue import segments
-from glue import segmentsUtils
 from glue import pipeline
 from pylal import grbsummary
 from pylal import exttrig_dataquery
@@ -41,7 +42,7 @@ def mkdir( directory, overwrite ):
     os.mkdir(directory)
   except OSError:
     if overwrite:
-      print "Warning: Overwriting contents in existing directory %s" % directory
+      print("Warning: Overwriting contents in existing directory %s" % directory)
     else:
       raise
 
@@ -173,7 +174,7 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
       str(jitter_sigma_deg), "--output-file", new_injFile,
       new_injFile + ".prejitter"])
     if verbose:
-      print " ".join(cmd)
+      print(" ".join(cmd))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     if p.returncode != 0:
@@ -186,7 +187,7 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
     cmd = ["ligolw_cbc_align_total_spin", "--output-file", new_injFile,
       new_injFile + ".prealign"]
     if verbose:
-      print " ".join(cmd)
+      print(" ".join(cmd))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     if p.returncode != 0:
@@ -232,7 +233,7 @@ class hipe_run(object):
     # determine how many ifos to analyze
     n = len(self._ifos)
     if n < 1 or n > 4:
-      raise ValueError, "cannot handle less than one or more than four IFOs"
+      raise ValueError("cannot handle less than one or more than four IFOs")
     number_words = {1: "one", 2: "two", 3: "three", 4: "four"}
     for i in range(n):
       self._hipe_args.append("--%s-ifo" % number_words[i+1])
@@ -273,7 +274,7 @@ class hipe_run(object):
 
     if only_run is not None:
       if not (set(only_run) <= allowed_stages):
-        raise ValueError, "stage not in allowed stages"
+        raise ValueError("stage not in allowed stages")
       self._stages = only_run
     else:
       if dont_run is not None:
@@ -428,7 +429,7 @@ class ptf_run(hipe_run):
 
     if only_run is not None:
       if not (set(only_run) <= allowed_stages):
-        raise ValueError, "stage not in allowed stages"
+        raise ValueError("stage not in allowed stages")
       self._stages = only_run
     else:
       if dont_run is not None:
@@ -489,7 +490,7 @@ def make_ligolw_add(orig_cache, pattern, outfile, logdir, cp, ligolw_job=None):
   # determine the files to ligolw_add
   sub_cache = orig_cache.sieve(description=pattern)
   if len(sub_cache) == 0:
-    print >>sys.stderr, "warning: no files on which to run ligolw_add"
+    print("warning: no files on which to run ligolw_add", file=sys.stderr)
     return None
 
   # create the cache-file
@@ -604,9 +605,9 @@ parser.add_option("", "--make-xml", action="store_true", default=False,
 required_opts = ["name", "time", "padding_time", "config_file", "injection_config", "log_path"]
 for opt in required_opts:
     if getattr(opts, opt) is None:
-        raise ValueError, "--%s is a required option" % opt
+        raise ValueError("--%s is a required option" % opt)
 if not opts.grb_file and (not opts.time or not opts.name):
-    raise ValueError, "Either a valid GRB xml file must be specified or the GPS time and name of the GRB!"
+    raise ValueError("Either a valid GRB xml file must be specified or the GPS time and name of the GRB!")
 
 ##############################################################################
 # find available data
@@ -634,7 +635,7 @@ cp.read(exttrig_config_file)
 ext_trigs = grbsummary.load_external_triggers('grb%s.xml'%opts.name[0])
 
 if ext_trigs is None:
-  print >>sys.stderr, "No external triggers found.  Nothing to do."
+  print("No external triggers found.  Nothing to do.", file=sys.stderr)
   sys.exit()
 
 if len(opts.name) > 0:
@@ -644,12 +645,12 @@ if len(opts.name) > 0:
 
   if len(ext_trigs) != len(opts.name):
     missing = set(opts.name) - set([row.event_number_grb for row in ext_trigs])
-    raise ValueError, "could not find the following requested GRBs: " \
-      + "".join(missing)
+    raise ValueError("could not find the following requested GRBs: " \
+      + "".join(missing))
 
 if opts.verbose:
-  print "Will construct workflows to analyze:", \
-    ", ".join(["GRB" + trig.event_number_grb for trig in ext_trigs])
+  print("Will construct workflows to analyze:", \
+    ", ".join(["GRB" + trig.event_number_grb for trig in ext_trigs]))
 
 if opts.do_coh_PTF:
   for program in ['coh_PTF_inspiral','coh_PTF_spin_checker']:
@@ -678,7 +679,7 @@ for grb in ext_trigs:
   # name and the directory
   idirectory = "GRB" + str(grb.event_number_grb)
   if opts.verbose:
-    print "* Constructing workflow for", idirectory
+    print("* Constructing workflow for", idirectory)
   mkdir(idirectory, opts.overwrite_dir)
 
   ##############################################################################
@@ -695,10 +696,10 @@ for grb in ext_trigs:
   ifo_times = "".join(grb_ifolist)
 
   if offSourceSegment is None:
-    print >>sys.stderr, "Warning: insufficient multi-IFO data to construct an off-source segment for GRB %s; skipping" % grb.event_number_grb
+    print("Warning: insufficient multi-IFO data to construct an off-source segment for GRB %s; skipping" % grb.event_number_grb, file=sys.stderr)
     continue
   elif opts.verbose:
-    print "Sufficient off-source data has been found in", ifo_times, "time."
+    print("Sufficient off-source data has been found in", ifo_times, "time.")
 
   # write out the segment list to a segwizard file
   offsource_segfile = idirectory + "/offSourceSeg.txt"
@@ -715,8 +716,8 @@ for grb in ext_trigs:
                             segments.segmentlist([bufferSegment]))
 
   if opts.verbose:
-    print "on-source segment: ", onSourceSegment
-    print "off-source segment: ", offSourceSegment
+    print("on-source segment: ", onSourceSegment)
+    print("off-source segment: ", offSourceSegment)
 
   ############################################################################
   # set up the analysis dag for this interval
@@ -736,7 +737,7 @@ for grb in ext_trigs:
   hipe_caches = []
 
   if opts.do_datafind:
-    if opts.verbose: print "Creating datafind DAG"
+    if opts.verbose: print("Creating datafind DAG")
     datafind_run = ["datafind"]
     if opts.do_coh_PTF:
       datafind_run.append("template-bank")
@@ -752,7 +753,7 @@ for grb in ext_trigs:
     datafind_node = None
 
   if opts.do_onoff:
-    if opts.verbose: print "Creating DAG for zero lag analysis"
+    if opts.verbose: print("Creating DAG for zero lag analysis")
     if opts.do_coh_PTF:
       onoff_analysis = ptf_run(idirectory + "/onoff", cp, grb_ifolist,
                         opts.log_path, source_file, "zero_lag",
@@ -772,7 +773,7 @@ for grb in ext_trigs:
     hipe_caches.append(onoff_analysis.get_cache_name())
 
   if opts.do_slides:
-    if opts.verbose: print "Creating DAG for time slide analysis"
+    if opts.verbose: print("Creating DAG for time slide analysis")
     if opts.do_coh_PTF:
       slide_analysis = ptf_run(idirectory + "/timeslides", cp, grb_ifolist,
                         opts.log_path, source_file, "slides",
@@ -798,7 +799,7 @@ for grb in ext_trigs:
     ############################################################################
     # set up the injection dag for this interval
     for injrun in cpinj.sections():
-      if opts.verbose: print "Creating DAG for", injrun
+      if opts.verbose: print("Creating DAG for", injrun)
       hipe_dir = os.path.join(idirectory, injrun)
       usertag = idirectory + "_" + injrun
 
@@ -814,7 +815,7 @@ for grb in ext_trigs:
                     "coire-coincidence"])
 
       # create the master injection file and get its content
-      if opts.verbose: print "  Creating injections..."
+      if opts.verbose: print("  Creating injections...")
       if opts.ipn:
         ipnstart = ext_trigs[0].start_time
       else:
@@ -827,7 +828,7 @@ for grb in ext_trigs:
       new_injfiles = [injFile]
 
       # split the injections
-      if opts.verbose: print "  Splitting injections..."
+      if opts.verbose: print("  Splitting injections...")
       safetyInterval = 800 # safety time in seconds between two injections
       deltaIndex = int(safetyInterval // injInterval) + 1
       for i in range(deltaIndex):
@@ -839,7 +840,7 @@ for grb in ext_trigs:
           new_injfiles.append(inj_file_name)
 
       # fixing the right parameters
-      if opts.verbose: print "  Writing DAG..."
+      if opts.verbose: print("  Writing DAG...")
       if not opts.do_coh_PTF:
         injection_analysis.set_numslides(0)
       else:
@@ -889,13 +890,13 @@ for grb in ext_trigs:
   concatenate_files(hipe_caches, grb_cache_name)
   grb_caches.append(grb_cache_name)
 
-if opts.verbose: print "Writing sub files and uber-DAG..."
+if opts.verbose: print("Writing sub files and uber-DAG...")
 uberdag.write_sub_files()
 uberdag.write_dag()
 
 concatenate_files(grb_caches, tag + ".cache")
 
-print """
+print("""
 If you run the uber-dag, you probably have to tell Condor not to
 complain that your DAG logs are on NFS volumes:
 
@@ -904,4 +905,4 @@ export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
 
 tcsh users:
 setenv _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR FALSE
-"""
+""")

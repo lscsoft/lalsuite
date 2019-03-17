@@ -1,1 +1,0 @@
-../../gnuscripts/lalsuite_gccflags.m4

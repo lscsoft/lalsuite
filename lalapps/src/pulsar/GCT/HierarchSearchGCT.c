@@ -480,8 +480,8 @@ int MAIN( int argc, char *argv[]) {
   // XLALReadSegmentsFromFile(): continue to support deprecated 4-column format (startGPS endGPS duration NumSFTs, duration is ignored)
   XLALReadSegmentsFromFile_support_4column_format = 1;
 
-  uvar_ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar_ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar_ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar_ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   uvar_skyRegion = LALCalloc( strlen(SKYREGION) + 1, sizeof(CHAR) );
   strcpy(uvar_skyRegion, SKYREGION);

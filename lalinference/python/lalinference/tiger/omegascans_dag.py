@@ -438,7 +438,7 @@ class OmegaScansDAG(pipeline.CondorDAG):
           timeslides[ifo] = info[ifo][n]
           self.add_node(node)
         self.add_table_entry(info['trigtime'][n],timeslides,self.ifos,0.0)
-    print("succes!")
+    print("success!")
 
     self.write_table()
 

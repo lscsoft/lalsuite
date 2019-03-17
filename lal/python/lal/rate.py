@@ -35,7 +35,6 @@ smoothing contour plots.
 """
 
 
-from bisect import bisect_right
 from functools import reduce
 try:
 	from fpconst import PosInf, NegInf
@@ -108,13 +107,19 @@ class Bins(object):
 		"""
 		raise NotImplementedError
 
-	def __cmp__(self, other):
+	def __eq__(self, other):
 		"""
 		Two binnings are the same if they are instances of the same
 		class, and describe the same binnings.  Subclasses should
 		override this method but need not.
 		"""
 		raise NotImplementedError
+
+	def __ne__(self, other):
+		# this can be removed when we require Python 3, since in
+		# Python 3 this relationship between the operators is the
+		# default.
+		return not self.__eq__(other)
 
 	def __getitem__(self, x):
 		"""
@@ -132,7 +137,7 @@ class Bins(object):
 		to handle slices:
 
 		def __getitem__(self, x):
-			if isinstance(x, slice)
+			if type(x) is slice:
 				return super(type(self), self).__getitem__(x)
 			# now handle non-slices ...
 		"""
@@ -342,15 +347,13 @@ class LoHiCountBins(Bins):
 	def __len__(self):
 		return self.n
 
-	def __cmp__(self, other):
+	def __eq__(self, other):
 		"""
 		Two binnings are the same if they are instances of the same
 		class, have the same lower and upper bounds, and the same
 		count of bins.
 		"""
-		if not isinstance(other, type(self)):
-			return -1
-		return cmp((type(self), self.min, self.max, self.n), (type(other), other.min, other.max, other.n))
+		return isinstance(other, type(self)) and (self.min, self.max, self.n) == (other.min, other.max, other.n)
 
 	#
 	# XML I/O related methods and data
@@ -423,37 +426,38 @@ class IrregularBins(Bins):
 		# check pre-conditions
 		if len(boundaries) < 2:
 			raise ValueError("less than two boundaries provided")
-		self.boundaries = tuple(boundaries)
-		if any(a > b for a, b in zip(self.boundaries[:-1], self.boundaries[1:])):
+		self.boundaries = numpy.array(boundaries)
+		if (self.boundaries[:-1] > self.boundaries[1:]).any():
 			raise ValueError("non-monotonic boundaries provided")
+		self.lo, self.hi = float(self.boundaries[0]), float(self.boundaries[-1])
 
-	def __cmp__(self, other):
+	def __eq__(self, other):
 		"""
 		Two binnings are the same if they are instances of the same
 		class, and have the same boundaries.
 		"""
-		if not isinstance(other, type(self)):
-			return -1
-		return cmp(self.boundaries, other.boundaries)
+		return isinstance(other, type(self)) and (self.boundaries == other.boundaries).all()
 
 	def __len__(self):
 		return len(self.boundaries) - 1
 
 	def __getitem__(self, x):
-		if isinstance(x, slice):
+		# slice cannot be sub-classed so no need to use
+		# isinstance()
+		if type(x) is slice:
 			return super(IrregularBins, self).__getitem__(x)
-		if self.boundaries[0] <= x < self.boundaries[-1]:
-			return bisect_right(self.boundaries, x) - 1
+		if self.lo <= x < self.hi:
+			return self.boundaries.searchsorted(x, side = "right") - 1
 		# special measure-zero edge case
-		if x == self.boundaries[-1]:
+		if x == self.hi:
 			return len(self.boundaries) - 2
 		raise IndexError(x)
 
 	def lower(self):
-		return numpy.array(self.boundaries[:-1])
+		return self.boundaries[:-1]
 
 	def upper(self):
-		return numpy.array(self.boundaries[1:])
+		return self.boundaries[1:]
 
 	def centres(self):
 		return (self.lower() + self.upper()) / 2.0
@@ -530,7 +534,9 @@ class LinearBins(LoHiCountBins):
 		self.delta = float(max - min) / n
 
 	def __getitem__(self, x):
-		if isinstance(x, slice):
+		# slice cannot be sub-classed so no need to use
+		# isinstance()
+		if type(x) is slice:
 			return super(LinearBins, self).__getitem__(x)
 		if self.min <= x < self.max:
 			return int(math.floor((x - self.min) / self.delta))
@@ -605,7 +611,9 @@ class LinearPlusOverflowBins(LoHiCountBins):
 		self.delta = float(max - min) / (n - 2)
 
 	def __getitem__(self, x):
-		if isinstance(x, slice):
+		# slice cannot be sub-classed so no need to use
+		# isinstance()
+		if type(x) is slice:
 			return super(LinearPlusOverflowBins, self).__getitem__(x)
 		if self.min <= x < self.max:
 			return int(math.floor((x - self.min) / self.delta)) + 1
@@ -657,26 +665,30 @@ class LogarithmicBins(LoHiCountBins):
 	"""
 	def __init__(self, min, max, n):
 		super(LogarithmicBins, self).__init__(min, max, n)
-		self.delta = (math.log(max) - math.log(min)) / n
+		self.logmin = math.log(min)
+		self.logmax = math.log(max)
+		self.delta = (self.logmax - self.logmin) / n
 
 	def __getitem__(self, x):
-		if isinstance(x, slice):
+		# slice cannot be sub-classed so no need to use
+		# isinstance()
+		if type(x) is slice:
 			return super(LogarithmicBins, self).__getitem__(x)
 		if self.min <= x < self.max:
-			return int(math.floor((math.log(x) - math.log(self.min)) / self.delta))
+			return int(math.floor((math.log(x) - self.logmin) / self.delta))
 		if x == self.max:
 			# special "measure zero" corner case
 			return len(self) - 1
 		raise IndexError(x)
 
 	def lower(self):
-		return numpy.exp(numpy.linspace(math.log(self.min), math.log(self.max) - self.delta, len(self)))
+		return numpy.exp(numpy.linspace(self.logmin, self.logmax - self.delta, len(self)))
 
 	def centres(self):
-		return numpy.exp(numpy.linspace(math.log(self.min), math.log(self.max) - self.delta, len(self)) + self.delta / 2.)
+		return numpy.exp(numpy.linspace(self.logmin, self.logmax - self.delta, len(self)) + self.delta / 2.)
 
 	def upper(self):
-		return numpy.exp(numpy.linspace(math.log(self.min) + self.delta, math.log(self.max), len(self)))
+		return numpy.exp(numpy.linspace(self.logmin + self.delta, self.logmax, len(self)))
 
 	#
 	# XML I/O related methods and data
@@ -726,13 +738,17 @@ class LogarithmicPlusOverflowBins(LoHiCountBins):
 		if n < 3:
 			raise ValueError("n must be >= 3")
 		super(LogarithmicPlusOverflowBins, self).__init__(min, max, n)
-		self.delta = (math.log(max) - math.log(min)) / (n - 2)
+		self.logmin = math.log(min)
+		self.logmax = math.log(max)
+		self.delta = (self.logmax - self.logmin) / (n - 2)
 
 	def __getitem__(self, x):
-		if isinstance(x, slice):
+		# slice cannot be sub-classed so no need to use
+		# isinstance()
+		if type(x) is slice:
 			return super(LogarithmicPlusOverflowBins, self).__getitem__(x)
 		if self.min <= x < self.max:
-			return 1 + int(math.floor((math.log(x) - math.log(self.min)) / self.delta))
+			return 1 + int(math.floor((math.log(x) - self.logmin) / self.delta))
 		if x >= self.max:
 			# infinity overflow bin
 			return len(self) - 1
@@ -742,13 +758,13 @@ class LogarithmicPlusOverflowBins(LoHiCountBins):
 		raise IndexError(x)
 
 	def lower(self):
-		return numpy.concatenate((numpy.array([0.]), numpy.exp(numpy.linspace(math.log(self.min), math.log(self.max), len(self) - 1))))
+		return numpy.concatenate((numpy.array([0.]), numpy.exp(numpy.linspace(self.logmin, self.logmax, len(self) - 1))))
 
 	def centres(self):
-		return numpy.concatenate((numpy.array([0.]), numpy.exp(numpy.linspace(math.log(self.min), math.log(self.max) - self.delta, len(self) - 2) + self.delta / 2.), numpy.array([PosInf])))
+		return numpy.concatenate((numpy.array([0.]), numpy.exp(numpy.linspace(self.logmin, self.logmax - self.delta, len(self) - 2) + self.delta / 2.), numpy.array([PosInf])))
 
 	def upper(self):
-		return numpy.concatenate((numpy.exp(numpy.linspace(math.log(self.min), math.log(self.max), len(self) - 1)), numpy.array([PosInf])))
+		return numpy.concatenate((numpy.exp(numpy.linspace(self.logmin, self.logmax, len(self) - 1)), numpy.array([PosInf])))
 
 	#
 	# XML I/O related methods and data
@@ -793,7 +809,9 @@ class ATanBins(LoHiCountBins):
 		self.delta = 1.0 / n
 
 	def __getitem__(self, x):
-		if isinstance(x, slice):
+		# slice cannot be sub-classed so no need to use
+		# isinstance()
+		if type(x) is slice:
 			return super(ATanBins, self).__getitem__(x)
 		# map to the domain [0, 1]
 		x = math.atan(float(x - self.mid) * self.scale) / math.pi + 0.5
@@ -963,10 +981,8 @@ class Categories(Bins):
 				return i
 		raise IndexError(value)
 
-	def __cmp__(self, other):
-		if not isinstance(other, type(self)):
-			return -1
-		return cmp(self.containers, other.containers)
+	def __eq__(self, other):
+		return isinstance(other, type(self)) and self.containers == other.containers
 
 	def centres(self):
 		return self.containers
@@ -982,14 +998,7 @@ class Categories(Bins):
 		Construct a LIGO Light Weight XML representation of the
 		Bins instance.
 		"""
-		# FIXME:  switch to "pickle" type for params when it won't
-		# break on-going O2 analyses
-		#return ligolw_param.Param.build(self.xml_bins_name_enc(self.xml_bins_name), u"pickle", self.containers)
-		import pickle
-		return ligolw_param.Param.from_pyvalue(self.xml_bins_name_enc(self.xml_bins_name), pickle.dumps(self.containers))
-		# FIXME:  switch to "yaml" type if we can rely on the yaml
-		# module's availability
-		#return ligolw_param.Param.build(self.xml_bins_name_enc(self.xml_bins_name), u"yaml", self.containers)
+		return ligolw_param.Param.build(self.xml_bins_name_enc(self.xml_bins_name), u"yaml", self.containers)
 
 	@classmethod
 	def from_xml(cls, xml):
@@ -999,11 +1008,7 @@ class Categories(Bins):
 		"""
 		if not cls.xml_bins_check(xml, cls.xml_bins_name):
 			raise ValueError("not a %s" % repr(cls))
-		# FIXME:  replace with commented-out code when we can rely
-		# on new "pickle" type for params
-		#return cls(xml.pcdata)
-		import pickle
-		return cls(pickle.loads(xml.pcdata))
+		return cls(xml.pcdata)
 
 
 class HashableBins(Categories):
@@ -1036,20 +1041,6 @@ class HashableBins(Categories):
 			return self.mapping[value]
 		except (KeyError, TypeError):
 			raise IndexError(value)
-
-	# FIXME:  hack to allow instrument binnings to be included as a
-	# dimension in multi-dimensional PDFs by defining a volume for
-	# them.  investigate more sensible ways to do this.  a
-	# purpose-built instrument binning could be introduced but that (a)
-	# breaks on-going analysis code by changing the file format of
-	# ranking statistic data files and (b) doesn't solve the problem
-	# when something else like this comes along.  maybe NDBins and
-	# BinnedDensity should understand the difference between functional
-	# and parametric co-ordinates.
-	def lower(self):
-		return numpy.arange(0, len(self), dtype = "double")
-	def upper(self):
-		return numpy.arange(1, len(self) + 1, dtype = "double")
 
 	xml_bins_name = u"hashablebins"
 
@@ -1107,6 +1098,19 @@ class NDBins(tuple):
 	"""
 	def __init__(self, binnings):
 		self._getitems = tuple(binning.__getitem__ for binning in binnings)
+		# instances cannot define a .__call__() attribute to make
+		# themselves callable, Python always looks up .__call__()
+		# on the class.  so we define .__realcall__() here and then
+		# have .__call__() chain to it.  Python3 does not transfer
+		# the current variable scope into exec() so we have to do
+		# it for it ... whatever.
+		define__realcall__ = """def __realcall__(self, %s):
+	_getitems = self._getitems
+	return %s""" % (", ".join("x%d" % i for i in range(len(binnings))), ", ".join("_getitems[%d](x%d)" % (i, i) for i in range(len(binnings))))
+		l = {}
+		exec(define__realcall__, globals(), l)
+		__realcall__ = l["__realcall__"]
+		self.__realcall__ = __realcall__.__get__(self)
 
 	def __getitem__(self, coords):
 		"""
@@ -1166,9 +1170,7 @@ class NDBins(tuple):
 		Each co-ordinate can be anything the corresponding Bins
 		instance will accept.
 		"""
-		if len(coords) != len(self):
-			raise ValueError("dimension mismatch")
-		return tuple(g(c) for g, c in zip(self._getitems, coords))
+		return self.__realcall__(*coords)
 
 	@property
 	def shape(self):
@@ -1341,7 +1343,7 @@ class NDBins(tuple):
 
 def bins_spanned(bins, seglist):
 	"""
-	Input is a Bins subclass instance and a glue.segments.segmentlist
+	Input is a Bins subclass instance and a ligo.segments.segmentlist
 	instance.  The output is an array object the length of the binning,
 	which each element in the array set to the interval in the
 	corresponding bin spanned by the segment list.
@@ -1776,7 +1778,7 @@ def InterpBinnedArray(binnedarray, fill_value = 0.0):
 
 		slices.append(slice(lo, hi + 1))
 	coords = tuple(c[s] for c, s in zip(coords, slices))
-	z = z[slices]
+	z = z[tuple(slices)]
 
 	# build the interpolator from the co-ordinates and array data.
 	# scipy/numpy interpolators return an array-like thing so we have
@@ -2441,7 +2443,7 @@ def filter_array(a, window, cyclic = False, use_fft = True):
 			window_slices.append(slice(first, first + n))
 		else:
 			window_slices.append(slice(0, window.shape[d]))
-	window = window[window_slices]
+	window = window[tuple(window_slices)]
 
 	if use_fft:
 		# this loop works around dynamic range limits in the FFT

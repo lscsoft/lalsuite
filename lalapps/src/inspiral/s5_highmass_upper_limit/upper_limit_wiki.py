@@ -1,5 +1,7 @@
 #!/usr/bin/env /usr/bin/python
 
+from __future__ import print_function
+
 import shutil
 import os
 import sys
@@ -15,7 +17,7 @@ class wiki(object):
   def image_link(self,path,webserver):
     thumb = "thumb_" + path
     command = 'convert ' + path + ' -resize 300x300 ' + thumb
-    print command
+    print(command)
     popen = subprocess.Popen(command.split())
     popen.communicate()
     status = popen.returncode
@@ -39,7 +41,7 @@ class wiki(object):
 
 try: webserver = sys.argv[1]
 except:
-  print >>sys.stderr, "YOU MUST SPECIFY A WEBSERVER AS THE FIRST ARGUMENT (e.g. https://ldas-jobs.ligo.caltech.edu/~channa/highmass_months_23-24_summary_page)"
+  print("YOU MUST SPECIFY A WEBSERVER AS THE FIRST ARGUMENT (e.g. https://ldas-jobs.ligo.caltech.edu/~channa/highmass_months_23-24_summary_page)", file=sys.stderr)
   sys.exit(1)
 
 page = wiki()

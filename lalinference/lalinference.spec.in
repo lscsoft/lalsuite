@@ -15,7 +15,7 @@ Summary: LSC Algorithm Inference Library
 License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
-URL: https://wiki.ligo.org/DASWG/LALSuite
+URL: https://wiki.ligo.org/Computing/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRequires: python2-rpm-macros
 BuildRequires: chealpix-devel >= 3.30.0
@@ -103,6 +103,7 @@ Requires: python-six
 Requires: python-seaborn
 Requires: glue >= @MIN_GLUE_VERSION@
 Requires: ligo-gracedb
+Requires: python-gwpy
 Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
@@ -181,7 +182,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %license COPYING
 %{_bindir}/cbcBayes*
 %{_bindir}/imrtgr_*
-%{_bindir}/lalinference_average_skymaps
 %{_bindir}/lalinference_burst_pp_pipe
 %{_bindir}/lalinference_coherence_test
 %{_bindir}/lalinference_compute_roq_weights
@@ -202,6 +202,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Feb 25 2019 Adam Mercer <adam.mercer@ligo.org> 1.10.2-1
+- ER14 release
+
+* Tue Jan 22 2019 Adam Mercer <adam.mercer@ligo.org> 1.10.1-1
+- Fix spin2 prior
+
 * Thu Sep 13 2018 Adam Mercer <adam.mercer@ligo.org> 1.10.0-1
 - Pre O3 release
 
