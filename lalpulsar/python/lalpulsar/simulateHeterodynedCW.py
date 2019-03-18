@@ -126,6 +126,8 @@ __version__ = git_version.id
 __date__ = git_version.date
 
 
+DOWNLOAD_URL = 'https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/src/{}'
+
 class HeterodynedCWSimulator(object):
     
     def __init__(self, par, det, times=None, earth_ephem=None,
@@ -472,13 +474,28 @@ class HeterodynedCWSimulator(object):
 
         try:
             edat = lalpulsar.InitBarycenter(earthfile, sunfile)
-        except Exception as e:
-            raise IOError("Could not read in ephemeris files: {}".format(e))
+        except RuntimeError:
+            try:
+                # try downloading the ephemeris files
+                from astropy.utils.data import download_file
+
+                efile = download_file(DOWNLOAD_URL.format(earthfile), cache=True)
+                sfile = download_file(DOWNLOAD_URL.format(sunfile), cache=True)
+                edat = lalpulsar.InitBarycenter(efile, sfile)
+            except Exception as e:
+                raise IOError("Could not read in ephemeris files: {}".format(e))
 
         try:
             tdat = lalpulsar.InitTimeCorrections(timefile)
-        except Exception as e:
-            raise IOError("Could not read in time correction file: {}".format(e))
+        except RuntimeError:
+            try:
+                # try downloading the ephemeris files
+                from astropy.utils.data import download_file
+
+                tfile = download_file(DOWNLOAD_URL.format(timefile), cache=True)
+                tdat = lalpulsar.InitTimeCorrections(tfile)
+            except Exception as e:
+                raise IOError("Could not read in time correction file: {}".format(e))
 
         return edat, tdat
 
