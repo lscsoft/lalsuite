@@ -885,7 +885,7 @@ COMPLEX16 IMRPhenomHMOnePointFiveSpinPN(
  * waveform model for binary black holes systems.
  * Models not only the dominant (l,|m|) = (2,2) modes
  * but also some of the sub-domant modes too.
- * Model described in \cite PhysRevLett.120.161102.
+ * Model described in PhysRevLett.120.161102/1708.00404.
  * The model is based on IMRPhenomD (\cite Husa:2015iqa, \cite Khan:2015jqa)
  *
  * @note The higher mode information was not calibrated to Numerical Relativity
