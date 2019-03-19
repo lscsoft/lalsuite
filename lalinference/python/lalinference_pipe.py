@@ -241,7 +241,7 @@ def setup_roq(cp):
     if cp.has_option('input','injection-file'):
         print("Only 0-th event in the XML table will be considered while running with ROQ\n")
         row = lsctables.SimInspiralTable.get_table(
-                  utils.load_filename(cp.get('input','injection-file'),contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
+                  ligolw_utils.load_filename(cp.get('input','injection-file'),contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
               )[0]
 
     roq_bounds = pipe_utils.Query_ROQ_Bounds_Type(path, roq_paths)
