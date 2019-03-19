@@ -128,8 +128,14 @@ def set_fiducial_bns(cp):
     cp.set('engine','approx','SEOBNRv4_ROMpseudoFourPN')
     cp.set('resultspage','deltaLogP','5')
     cp.set('engine','comp-max','3.5')
-    cp.set('engine','comp-min','0.8')
-
+    cp.set('engine','comp-min','0.5')
+    cp.remove_option('engine','disable-spin')
+    cp.set('engine','a_spin1-max','0.1')
+    cp.set('engine','a_spin1-min','-0.1')
+    cp.set('engine','a_spin2-max','0.1')
+    cp.set('engine','a_spin2-min','-0.1')
+    cp.set('engine','alignedspin-zprior','')
+    cp.set('engine','distance-max','500')
     cp.set('engine','neff','500')
     cp.set('engine','nlive','512')
 
@@ -266,7 +272,7 @@ def set_analytic_test(cp, test_func):
     cp.set('engine','approx','SpinTaylorT4')
     cp.set('engine',test_func,'')
     cp.set('engine','neff','10000')
-    cp.set('engine','nlive','512')
+    cp.set('engine','nlive','2048')
 
     cp.set('resultspage','deltaLogP','7')
     if test_func != "rosenbrockLikelihood":
