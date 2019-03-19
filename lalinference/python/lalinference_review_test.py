@@ -128,8 +128,14 @@ def set_fiducial_bns(cp):
     cp.set('engine','approx','SEOBNRv4_ROMpseudoFourPN')
     cp.set('resultspage','deltaLogP','5')
     cp.set('engine','comp-max','3.5')
-    cp.set('engine','comp-min','0.8')
-
+    cp.set('engine','comp-min','0.5')
+    cp.remove_option('engine','disable-spin')
+    cp.set('engine','a_spin1-max','0.1')
+    cp.set('engine','a_spin1-min','-0.1')
+    cp.set('engine','a_spin2-max','0.1')
+    cp.set('engine','a_spin2-min','-0.1')
+    cp.set('engine','alignedspin-zprior','')
+    cp.set('engine','distance-max','500')
     cp.set('engine','neff','500')
     cp.set('engine','nlive','512')
 
@@ -207,14 +213,16 @@ def set_fiducial_bbh(cp):
     cp.set('lalinference','fake-cache',"{'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
     cp.set('analysis','dataseed','1234')
     cp.set('engine','0noise','')
+    cp.remove_option('engine','margphi')
 
     cp.set('paths','webdir',web_outputdir+'/fiducialBBH/webdir/')
-    cp.set('lalinference','flow',"{'H1':40,'L1':40,'V1':40}")
+    #cp.set('lalinference','flow',"{'H1':40,'L1':40,'V1':40}")
     cp.set('engine','approx','IMRPhenomPv2pseudoFourPN')
     cp.set('analysis','roq','True')
     cp.remove_option('engine','disable-spin')
     cp.set('resultspage','deltaLogP','6')
-    cp.set('engine','distance-max','2000')
+    cp.set('engine','distance-max','1000')
+    cp.set('engine','inj-fref','100')
 
     cp.set('engine','neff','500')
     cp.set('engine','nlive','512')
@@ -264,7 +272,7 @@ def set_analytic_test(cp, test_func):
     cp.set('engine','approx','SpinTaylorT4')
     cp.set('engine',test_func,'')
     cp.set('engine','neff','10000')
-    cp.set('engine','nlive','512')
+    cp.set('engine','nlive','2048')
 
     cp.set('resultspage','deltaLogP','7')
     if test_func != "rosenbrockLikelihood":
