@@ -1236,6 +1236,7 @@ if __name__=='__main__':
         twoDGreedyMenu.append(['lam_tilde','dlam_tilde'])
         twoDGreedyMenu.append(['lambdat','dlambdat'])
         twoDGreedyMenu.append(['logp1','gamma1','gamma2','gamma3'])
+        twoDGreedyMenu.append(['SDgamma0','SDgamma1','SDgamma2','SDgamma3'])
         for psip in polParams:
             for phip in phaseParams:
                 twoDGreedyMenu.append([psip,phip])

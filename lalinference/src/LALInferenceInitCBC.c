@@ -792,6 +792,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
      gamma3                       gamma3.\n\
      (requires --BinaryLove)\n\
      lambdaS                      Symmetric tidal deformability.\n\
+     (requires --4SpectralDecomp):\n\
+     SDgamma0                     SDgamma0.\n\
+     SDgamma1                     SDgamma1.\n\
+     SDgamma2                     SDgamma2.\n\
+     SDgamma3                     SDgamma3.\n\
     * \n\
     ----------------------------------------------\n\
     --- Prior Ranges -----------------------------\n\
@@ -882,6 +887,14 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   REAL8 gamma3Max=4.5;
   REAL8 lambdaSMin=0.0;
   REAL8 lambdaSMax=5000.0;
+  REAL8 SDgamma0Min=0.2;
+  REAL8 SDgamma0Max=2.0;
+  REAL8 SDgamma1Min=-1.6;
+  REAL8 SDgamma1Max=1.7;
+  REAL8 SDgamma2Min=-0.6;
+  REAL8 SDgamma2Max=0.6;
+  REAL8 SDgamma3Min=-0.02;
+  REAL8 SDgamma3Max=0.02;
   gsl_rng *GSLrandom=state->GSLrandom;
   REAL8 endtime=0.0, timeParam=0.0;
   REAL8 timeMin=endtime-dt,timeMax=endtime+dt;
@@ -1387,6 +1400,12 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma1", zero, gamma1Min, gamma1Max, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma2", zero, gamma2Min, gamma2Max, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma3", zero, gamma3Min, gamma3Max, LALINFERENCE_PARAM_LINEAR);
+  // Pull in spectral decomposition parameters (SDgamma0,SDgamma1,SDgamma2,SDgamma3)
+  } else  if(LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")){
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "SDgamma0", zero, SDgamma0Min, SDgamma0Max, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "SDgamma1", zero, SDgamma1Min, SDgamma1Max, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "SDgamma2", zero, SDgamma2Min, SDgamma2Max, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "SDgamma3", zero, SDgamma3Min, SDgamma3Max, LALINFERENCE_PARAM_LINEAR);
   } else if((ppt=LALInferenceGetProcParamVal(commandLine,"--eos"))){
     LALSimNeutronStarEOS *eos=NULL;
     errnum=XLAL_SUCCESS;
