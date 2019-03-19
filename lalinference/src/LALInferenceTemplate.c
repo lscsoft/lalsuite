@@ -406,7 +406,8 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
     SDgamma2 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma2");
     SDgamma3 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma3");
     REAL8 gamma[] = {SDgamma0,SDgamma1,SDgamma2,SDgamma3};
-    LALInferenceSDGammasMasses2Lambdas(gamma,m1,m2,&lambda1,&lambda2,4);
+    if(LALInferenceSDGammaCheck(gamma, 4) == XLAL_SUCCESS)
+      LALInferenceSDGammasMasses2Lambdas(gamma,m1,m2,&lambda1,&lambda2,4);
     XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
     XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
   }
@@ -937,7 +938,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     SDgamma2 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma2");
     SDgamma3 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma3");
     REAL8 gamma[] = {SDgamma0,SDgamma1,SDgamma2,SDgamma3};
-    LALInferenceSDGammasMasses2Lambdas(gamma,m1,m2,&lambda1,&lambda2,4);
+    if(LALInferenceSDGammaCheck(gamma, 4) == XLAL_SUCCESS)
+      LALInferenceSDGammasMasses2Lambdas(gamma,m1,m2,&lambda1,&lambda2,4);
     XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
     XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
   }
@@ -1474,7 +1476,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
       SDgamma2 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma2");
       SDgamma3 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma3");
       REAL8 gamma[] = {SDgamma0,SDgamma1,SDgamma2,SDgamma3};
-      LALInferenceSDGammasMasses2Lambdas(gamma,m1,m2,&lambda1,&lambda2,4);
+      if(LALInferenceSDGammaCheck(gamma, 4) == XLAL_SUCCESS)
+        LALInferenceSDGammasMasses2Lambdas(gamma,m1,m2,&lambda1,&lambda2,4);
       XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
       XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
     }
