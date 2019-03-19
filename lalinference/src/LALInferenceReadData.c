@@ -536,6 +536,10 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
     (--inj-gamma1)              value of gamma1 to be injected\n\
     (--inj-gamma2)              value of gamma2 to be injected\n\
     (--inj-gamma3)              value of gamma3 to be injected\n\
+    (--inj-SDgamma0)            value of SDgamma0 to be injected (0)\n\
+    (--inj-SDgamma1)            value of SDgamma1 to be injected (0)\n\
+    (--inj-SDgamma2)            value of SDgamma2 to be injected (0)\n\
+    (--inj-SDgamma3)            value of SDgamma3 to be injected (0)\n\
     (--inj-spinOrder PNorder)   Specify twice the injection PN order (e.g. 5 <==> 2.5PN)\n\
                                     of spin effects effects to use, only for LALSimulation\n\
                                     (default: -1 <==> Use all spin effects).\n\
@@ -1625,6 +1629,27 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         */
       }
 
+      // Inject 4-coef. spectral eos
+      REAL8 SDgamma0=0.0;
+      REAL8 SDgamma1=0.0;
+      REAL8 SDgamma2=0.0;
+      REAL8 SDgamma3=0.0;
+      if(LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma0") && LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma1") && LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma2") && LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma3")){
+        SDgamma0= atof(LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma0")->value);
+        SDgamma1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma1")->value);
+       SDgamma2= atof(LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma2")->value);
+        SDgamma3= atof(LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma3")->value);
+        REAL8 gamma[]={SDgamma0,SDgamma1,SDgamma2,SDgamma3};
+        LALInferenceSDGammasMasses2Lambdas(gamma,m1,m2,&lambda1,&lambda2,4);
+        fprintf(stdout,"Injection SDgamma0 set to %lf\n",SDgamma0);
+        fprintf(stdout,"Injection SDgamma1 set to %lf\n",SDgamma1);
+        fprintf(stdout,"Injection SDgamma2 set to %lf\n",SDgamma2);
+        fprintf(stdout,"Injection SDgamma3 set to %lf\n",SDgamma3);
+        fprintf(stdout,"lambda1 set to %f\n",lambda1);
+        fprintf(stdout,"lambda2 set to %f\n",lambda2);
+      }
+
+
       REAL8 fref = 100.;
       if(LALInferenceGetProcParamVal(commandLine,"--inj-fref")) {
         fref = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-fref")->value);
@@ -1893,6 +1918,27 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
      injEvent->gamma3= gamma3;
      */
    }
+
+   // Inject 4-coef. spectral eos
+   REAL8 SDgamma0=0.0;
+   REAL8 SDgamma1=0.0;
+   REAL8 SDgamma2=0.0;
+   REAL8 SDgamma3=0.0;
+   if(LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma0") && LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma1") && LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma2") && LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma3")){
+     SDgamma0= atof(LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma0")->value);
+     SDgamma1= atof(LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma1")->value);
+     SDgamma2= atof(LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma2")->value);
+     SDgamma3= atof(LALInferenceGetProcParamVal(commandLine,"--inj-SDgamma3")->value);
+     REAL8 gamma[]={SDgamma0,SDgamma1,SDgamma2,SDgamma3};
+     LALInferenceSDGammasMasses2Lambdas(gamma,inj_table->mass1,inj_table->mass2,&lambda1,&lambda2,4);
+     fprintf(stdout,"Injection SDgamma0 set to %lf\n",SDgamma0);
+     fprintf(stdout,"Injection SDgamma1 set to %lf\n",SDgamma1);
+     fprintf(stdout,"Injection SDgamma2 set to %lf\n",SDgamma2);
+     fprintf(stdout,"Injection SDgamma3 set to %lf\n",SDgamma3);
+     fprintf(stdout,"lambda1 set to %f\n",lambda1);
+     fprintf(stdout,"lambda2 set to %f\n",lambda2);
+   }
+
 
 	/* FIXME: One also need to code the same manipulations done to f_max in LALInferenceTemplateXLALSimInspiralChooseWaveform line 856 circa*/
 
