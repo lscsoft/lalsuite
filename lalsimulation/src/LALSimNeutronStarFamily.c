@@ -157,10 +157,14 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
             &fam->kdat[i], fam->pdat[i], eos);
 
         /* resize arrays */
-        if(fam->pdat[i] == fam->pdat[i-1])
+        if(fam->pdat[i] <= fam->pdat[i-1]){
+            fam->pdat[i-1] = fam->pdat[i];
             ndat = i;
-        else
+        }
+        else{
             ndat = i + 1;
+        }
+
         fam->pdat = LALRealloc(fam->pdat, ndat * sizeof(*fam->pdat));
         fam->mdat = LALRealloc(fam->mdat, ndat * sizeof(*fam->mdat));
         fam->rdat = LALRealloc(fam->rdat, ndat * sizeof(*fam->rdat));
@@ -176,7 +180,7 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
 
     fam->p_of_m_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
     fam->r_of_m_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    fam->k_of_m_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+    fam->k_of_m_interp = gsl_interp_alloc(gsl_interp_linear, ndat);
 
     gsl_interp_init(fam->p_of_m_interp, fam->mdat, fam->pdat, ndat);
     gsl_interp_init(fam->r_of_m_interp, fam->mdat, fam->rdat, ndat);
