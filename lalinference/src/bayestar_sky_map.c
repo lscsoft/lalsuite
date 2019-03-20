@@ -248,7 +248,7 @@ static void u_points_weights_init(void)
         /* Look up Gauss-Legendre abscissa and weight. */
         int ret = gsl_integration_glfixed_point(
             -1, 1, iu, &u_points_weights[iu][0], &weight, gltable);
-
+        (void) ret;
         /* Don't bother checking return value; the only
          * possible failure is in index bounds checking. */
         assert(ret == GSL_SUCCESS);
@@ -504,6 +504,7 @@ static void bayestar_init_func(void)
 static void bayestar_init(void)
 {
     int ret = pthread_once(&bayestar_init_once, bayestar_init_func);
+    (void) ret;
     assert(ret == 0);
 }
 

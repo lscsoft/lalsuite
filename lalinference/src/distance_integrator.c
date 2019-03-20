@@ -77,6 +77,7 @@ void dVC_dVL_init(void)
     for (size_t i = 0; i < len; i ++)
         x[i] = dVC_dVL_tmin + i * dVC_dVL_dt;
     int ret = gsl_spline_init(dVC_dVL_interp, x, dVC_dVL_data, len);
+    (void) ret;
     assert(ret == GSL_SUCCESS);
 }
 
