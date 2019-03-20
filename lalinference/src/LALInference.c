@@ -2457,7 +2457,7 @@ double dlogp = (logpmax - logpmin) / 100;
 // Need at least 4 points
 for (int i = 0; i < 4; ++i) {
    pdat = exp(logpmin + i * dlogp);
-   XLALSimNeutronStarTOVODEIntegrate(&rdat, &mdat, &kdat, &pdat, eos);
+   XLALSimNeutronStarTOVODEIntegrate(&rdat, &mdat, &kdat, pdat, eos);
    /* determine if maximum mass has been found */
    if (mdat <= mdat_prev){
       fprintf(stdout,"EOS has too few points. Sample rejected.\n");
