@@ -2440,15 +2440,15 @@ else {
 /* FIXME: This is a little clunky,
   Check to make sure family will contain
   enough pts for interpolation */
-size_t ndat = 100;
-double *pdat;
-double *mdat;
-double *rdat;
-double *kdat;
-pdat = LALMalloc(ndat * sizeof(pdat));
-mdat = LALMalloc(ndat * sizeof(mdat));
-rdat = LALMalloc(ndat * sizeof(rdat));
-kdat = LALMalloc(ndat * sizeof(kdat));
+double pdat;
+double mdat;
+double mdat_prev;
+double rdat;
+double kdat;
+
+/* Initialize previous value for mdat comparison, set to something that will always
+   make (mdat <= mdat_prev) == true. */
+mdat_prev = 0.0;
 
 // Ensure mass turnover does not happen too soon
 const double logpmin = 75.5;
@@ -2456,27 +2456,19 @@ double logpmax = log(XLALSimNeutronStarEOSMaxPressure(eos));
 double dlogp = (logpmax - logpmin) / 100;
 // Need at least 4 points
 for (int i = 0; i < 4; ++i) {
-   pdat[i] = exp(logpmin + i * dlogp);
-   XLALSimNeutronStarTOVODEIntegrate(&rdat[i], &mdat[i],
-   &kdat[i], pdat[i], eos);
+   pdat = exp(logpmin + i * dlogp);
+   XLALSimNeutronStarTOVODEIntegrate(&rdat, &mdat, &kdat, &pdat, eos);
    /* determine if maximum mass has been found */
-   if (mdat[i] <= mdat[i-1]){
+   if (mdat <= mdat_prev){
       fprintf(stdout,"EOS has too few points. Sample rejected.\n");
       // Clean up
-      LALFree(pdat);
-      LALFree(mdat);
-      LALFree(rdat);
-      LALFree(kdat);
       XLALDestroySimNeutronStarFamily(fam);
       XLALDestroySimNeutronStarEOS(eos);
       return XLAL_FAILURE;
     }
+    mdat_prev = mdat;
 }
-// Clean up
-LALFree(pdat);
-LALFree(mdat);
-LALFree(rdat);
-LALFree(kdat);
+
 
 // Make family
 fam = XLALCreateSimNeutronStarFamily(eos);
