@@ -218,6 +218,7 @@ extern "C" {
 /* (2x) Highest available PN order - UPDATE IF NEW ORDERS ADDED!!*/
 #define LAL_MAX_PN_ORDER 8
 #define LAL_MAX_ECC_PN_ORDER 6
+#define LAL_DEFAULT_F_ECC -1.0
 
 /**
  * Enum that specifies the PN approximant to be used in computing the waveform.
