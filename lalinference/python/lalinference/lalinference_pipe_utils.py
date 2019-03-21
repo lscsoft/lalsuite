@@ -1357,6 +1357,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         Will determine the data to be read and the output file.
         Will use all IFOs known to the DAG, unless otherwise specified as a list of strings
         """
+        if self.config.has_option('analysis','ifos'):
+            ifos = ast.literal_eval(self.config.get('analysis','ifos'))
         if ifos is None and len(event.ifos)>0:
             ifos=event.ifos
         if ifos is None:
@@ -1370,10 +1372,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             seglen=event.duration
         segstart=end_time+2-seglen
         segend=segstart+seglen
+        if self.config.has_option('input', 'minimum_realizations_number'):
+            psdstart = segstart - self.config.getint('input','padding') - \
+                self.config.getint('input', 'minimum_realizations_number') * seglen
+        else:
+            psdstart = segstart
         myifos=set([])
         for ifo in ifos:
             for seg in self.segments[ifo]:
-                if segstart >= seg.start() and segend <= seg.end():
+                if psdstart >= seg.start() and segend <= seg.end():
                     myifos.add(ifo)
         ifos=myifos
         if len(ifos)==0:
