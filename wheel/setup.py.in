@@ -171,6 +171,9 @@ setup(
                            .replace('.so', '')
                            .replace('/', '.'), [])
                  for filename in glob(PYTHONDIR + '/**/*.so')],
+    extras_require={
+        'lalinference': ['gwpy', 'gwdatafind']
+    },
     install_requires=['lscsoft-glue', 'ligo-segments', 'matplotlib',
                       'numpy>=1.7', 'python-dateutil', 'scipy']
 )
