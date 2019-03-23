@@ -30,25 +30,43 @@ from functools import reduce
 # type of job. Each class has inputs and outputs, which are used to
 # join together types of jobs into a DAG.
 
-def findSegmentsToAnalyze(flag, gpsstart, gpsend, url=None):
-    """
-    Return segments with given DQ flag
+def findSegmentsToAnalyze(ifo, frametype, state_vector_channel, bits, gpsstart, gpsend):
+    """Return list of segments whose data quality is good enough for PE. The data
+    quality is examined with statevector in frame files. If frame files do not
+    exist, return empty list.
+
     Parameters
     ----
-    flag : string
-        name of DQ flag
-    gpsstart, gpsend : float
+    ifo: string
+    frametype: string
+    state_vector_channel: string
+    bits: list of string
+        List of bits. This function extracts the data taken when all of the
+        bits in this list are "active" assuming such data is good enough for
+        PE.
+    gpsstart, gpsend: float
         GPS period to analyse
     """
     try:
-        from gwpy.segments import DataQualityFlag
+        from glue.lal import Cache
+        from gwdatafind import find_urls
+        import gwpy
+        from gwpy.timeseries import StateVector
     except ImportError:
-        print('Unable to import gwpy. Querying science segments not possible. Please try installing gwpy')
+        print('Unable to import necessary modules. Querying science segments not possible. Please try installing gwdatafind and gwpy')
         raise
-    if url is None:
-        return DataQualityFlag.query_dqsegdb(flag, gpsstart, gpsend).active
-    else:
-        return DataQualityFlag.query_dqsegdb(flag, gpsstart, gpsend, url=url).active
+    # search for frame file and read its statevector channel
+    datacache = Cache.from_urls(find_urls(ifo[0], frametype, gpsstart, gpsend))
+    if not datacache:
+        return gwpy.segments.SegmentList([])
+    flags = gwpy.timeseries.StateVector.read(
+        datacache, state_vector_channel, start=gpsstart, end=gpsend
+    ).to_dqflags()
+    # extract segments all of whose bits are active
+    segments = flags[bits[0]].active
+    for bit in bits:
+        segments -= ~flags[bit].active
+    return segments
 
 def guess_url(fslocation):
     """
@@ -1317,8 +1335,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         # add them to the pool of segments
         start=self.config.getfloat('input','gps-start-time')
         end=self.config.getfloat('input','gps-end-time')
-        if self.config.has_option('input','ignore-science-segments'):
-            if self.config.getboolean('input','ignore-science-segments'):
+        if self.config.has_option('input','ignore-state-vector'):
+            if self.config.getboolean('input','ignore-state-vector'):
                 i=0
                 for ifo in self.ifos:
                     sciseg=pipeline.ScienceSegment((i,start,end,end-start))
@@ -1327,14 +1345,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     self.segments[ifo].append(sciseg)
                     i+=1
                 return
-        # Look up science segments as required
-        segurl = None # No segment URL will default to $DEFAULT_SEGMENT_SERVER from env
-        if self.config.has_option('segfind','segment-url'):
-            segurl = self.config.get('segfind','segment-url')
+        # Read state vector
         for ifo in self.ifos:
-            print('Querying segment database for {0} data between {1} and {2}'.format(ifo,start,end))
-            segs = findSegmentsToAnalyze(self.config.get('segments',ifo.lower()+'-analyze'),
-                start, end, url=segurl)
+            print('Read state vector for {0} data between {1} and {2}'.format(ifo,start,end))
+            segs = findSegmentsToAnalyze(
+                ifo, self.frtypes[ifo], ast.literal_eval(self.config.get('statevector', 'state-vector-channel'))[ifo],
+                ast.literal_eval(self.config.get('statevector', 'bits')), start, end
+            )
             segs.coalesce()
             for seg in segs:
                 sciseg=pipeline.ScienceSegment((segs.index(seg),seg[0],seg[1],seg[1]-seg[0]))
@@ -2204,7 +2221,7 @@ class EngineNode(SingularityNode):
                 c) go define GPSstart= trigtime - PSDlength - seglen - padding -2
 
                 By definition this means that GPSstart+ PSDlengh with never overlap with trigtime. Furthermore running on the same event will lead to the same PSDstart and lenght, no matter of whether that is a one-event or multi-event run.
-                We should check that the PSDstart so obtained is in science mode. This is what the while loop 9 lines below is meant for. However that part is not active yet because I need to learn how to use scisegs. That is not a problem right now since we do run with disable-science (Since the searches will already have checked that the ~1-2 minutes of time prior to the event are in science. It might be a problem if one runs with hour-long slides).
+                We should check that the PSDstart so obtained is in science mode. This is what the while loop 9 lines below is meant for.
         """
         trig_time=self.get_trig_time()
         maxLength=self.maxlength
