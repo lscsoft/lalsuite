@@ -13,7 +13,6 @@ test_programs += LALHashFuncTest
 test_programs += LALHashTblTest
 test_programs += LALHeapTest
 test_programs += LALRunningMedianTest
-test_programs += MersenneRandomTest
 test_programs += ODETest
 test_programs += RandomTest
 test_programs += RngMedBiasTest

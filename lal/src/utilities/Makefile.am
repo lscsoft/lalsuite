@@ -37,7 +37,6 @@ libutilities_la_SOURCES = \
 	LALPearsonHash.c \
 	LALRunningMedian.c \
 	MatrixOps.c \
-	MersenneRandom.c \
 	ODE.c \
 	Random.c \
 	RngMedBias.c \

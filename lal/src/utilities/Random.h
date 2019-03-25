@@ -128,29 +128,6 @@ LALNormalDeviates (
     RandomParams *params
     );
 
-void LALMersenneRandom(
-    LALStatus      *status,
-    REAL8          *output,
-    MTRandomParams *params
-    );
-
-void LALMersenneRandomVector(
-    LALStatus      *status,
-    REAL8Vector    *output,
-    MTRandomParams *params
-    );
-
-void LALCreateMTRandomParams(
-    LALStatus       *status,
-    REAL8            seed,
-    MTRandomParams **params
-    );
-
-void LALDestroyMTRandomParams(
-    LALStatus       *status,
-    MTRandomParams **params
-    );
-
 #ifdef  __cplusplus
 }
 #endif
