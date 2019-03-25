@@ -656,7 +656,7 @@ void  skygrid_add(skygrid_t sum, const skygrid_t a, const skygrid_t b);
 void  skygrid_subtract(skygrid_t sum, const skygrid_t a, const skygrid_t b);
 void  skygrid_scalar_mult(skygrid_t result, const skygrid_t a, REAL4 b);
 
-void  setup_global_detectors(LALStatus *status);
+void  setup_global_detectors(void);
 void  set_source_params(LALSource * source, const char *name, REAL8 ra_rad,
                         REAL8 dec_rad, REAL8 orien_rad);
 void  print_source_maybe(const LALSource * source);
@@ -853,7 +853,7 @@ int main(int argc, char *argv[])
       verbose_p     = verbose_level;
     }
 
-  setup_global_detectors(&status);
+  setup_global_detectors();
   setup_global_sources();
 
 
@@ -892,7 +892,7 @@ int main(int argc, char *argv[])
 
   if (verbose_p)
     {
-      printf("TEST OF LALCreateDetector()\n");
+      printf("TEST OF XLALCreateDetector()\n");
       printf("---------------------------\n\n");
       printf("Manual inspection required.\n");
     }
@@ -906,7 +906,7 @@ int main(int argc, char *argv[])
   frdet.xArmAzimuthRadians     = deg_to_rad(90.);
   frdet.yArmAzimuthRadians     = deg_to_rad(0.);
 
-  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
+  XLALCreateDetector(&detector, &frdet, LALDETECTORTYPE_IFODIFF);
 
   if (verbose_p)
     {
@@ -958,7 +958,7 @@ int main(int argc, char *argv[])
   frdet.xArmAzimuthRadians     = deg_to_rad(324.0006);
   frdet.yArmAzimuthRadians     = deg_to_rad(234.0006);
 
-  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
+  XLALCreateDetector(&detector, &frdet, LALDETECTORTYPE_IFODIFF);
 
   if (!detector_ok_p(&detector, &(lalCachedDetectors[LALDetectorIndexLHODIFF])))
     {
@@ -989,7 +989,7 @@ int main(int argc, char *argv[])
   frdet.yArmAzimuthRadians     = deg_to_rad(215.9994);
   /* check: y-arm azi - x-arm azi = 90deg */
 
-  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
+  XLALCreateDetector(&detector, &frdet, LALDETECTORTYPE_IFODIFF);
 
   if (!detector_ok_p(&detector, &(lalCachedDetectors[LALDetectorIndexLHODIFF])))
     {
@@ -1017,7 +1017,7 @@ int main(int argc, char *argv[])
   frdet.yArmAzimuthRadians     = deg_to_rad(234.0006);
   /* check: y-arm azi - x-arm azi = -90deg ; ok, i think. */
 
-  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
+  XLALCreateDetector(&detector, &frdet, LALDETECTORTYPE_IFODIFF);
 
   if (!detector_ok_p(&detector, &(lalCachedDetectors[LALDetectorIndexLHODIFF])))
     {
@@ -1063,12 +1063,10 @@ int main(int argc, char *argv[])
   frdet.xArmAzimuthRadians     = deg_to_rad(180.);
   frdet.yArmAzimuthRadians     = deg_to_rad( 90.);
 
-  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
-
-  if (status.statusCode && lalDebugLevel)
+  if (!XLALCreateDetector(&detector, &frdet, LALDETECTORTYPE_IFODIFF) && lalDebugLevel)
     {
       fprintf(stderr,
-              "LALTestDetResponse0: LALCreateDetector failed, line %i, %s\n",
+              "LALTestDetResponse0: XLALCreateDetector failed, line %i, %s\n",
               __LINE__, "$Id$");
       REPORTSTATUS(&status);
       return status.statusCode;
@@ -1177,7 +1175,7 @@ int main(int argc, char *argv[])
   frdet.xArmAzimuthRadians     = deg_to_rad(180.);
   frdet.yArmAzimuthRadians     = deg_to_rad( 90.);
 
-  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
+  XLALCreateDetector(&detector, &frdet, LALDETECTORTYPE_IFODIFF);
 
   if (verbose_p)
     PrintLALDetector(&detector);
@@ -1257,12 +1255,10 @@ int main(int argc, char *argv[])
   frdet.xArmAzimuthRadians     = deg_to_rad(180.);
   frdet.yArmAzimuthRadians     = deg_to_rad( 90.);
 
-  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
-
-  if (status.statusCode && lalDebugLevel)
+  if (!XLALCreateDetector(&detector, &frdet, LALDETECTORTYPE_IFODIFF) && lalDebugLevel)
     {
       fprintf(stderr,
-              "LALTestDetResponse0: LALCreateDetector failed, line %i, %s\n",
+              "LALTestDetResponse0: XLALCreateDetector failed, line %i, %s\n",
               __LINE__, "$Id$");
       REPORTSTATUS(&status);
       return status.statusCode;
@@ -1345,7 +1341,7 @@ int main(int argc, char *argv[])
   (void)laldr_strlcpy(frdet.name, "TRIVIAL 3", LALNameLength);
   frdet.vertexLongitudeRadians = deg_to_rad(15.);
 
-  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
+  XLALCreateDetector(&detector, &frdet, LALDETECTORTYPE_IFODIFF);
 
   if (verbose_p)
     PrintLALDetector(&detector);
@@ -1388,7 +1384,7 @@ int main(int argc, char *argv[])
   frdet.xArmAzimuthRadians     = deg_to_rad(90.);
   frdet.yArmAzimuthRadians     = deg_to_rad( 0.);
 
-  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
+  XLALCreateDetector(&detector, &frdet, LALDETECTORTYPE_IFODIFF);
 
   /* override - try the cached LHO */
   /* detector = lalCachedDetectors[LALDetectorIndexLHODIFF]; */
@@ -2507,7 +2503,7 @@ REAL4 resp_local(REAL8 psi, REAL8 theta, REAL8 phi, GWPolarization pol)
 
 
 
-void setup_global_detectors(LALStatus *status)
+void setup_global_detectors(void)
 {
   /*
     LALDetector det_north_pole;
@@ -2535,8 +2531,7 @@ void setup_global_detectors(LALStatus *status)
       frdet.xArmAzimuthRadians     = deg_to_rad(180.);
       frdet.yArmAzimuthRadians     = deg_to_rad(90.);
 
-      LALCreateDetector(status, &det_north_pole, &frdet,
-                        LALDETECTORTYPE_IFODIFF);
+      XLALCreateDetector(&det_north_pole, &frdet, LALDETECTORTYPE_IFODIFF);
 
       if (verbose_level & 4)
         {
@@ -2554,8 +2549,7 @@ void setup_global_detectors(LALStatus *status)
       frdet.xArmAzimuthRadians     = deg_to_rad(180.);
       frdet.yArmAzimuthRadians     = deg_to_rad(90.);
 
-      LALCreateDetector(status, &det_south_pole, &frdet,
-                        LALDETECTORTYPE_IFODIFF);
+      XLALCreateDetector(&det_south_pole, &frdet, LALDETECTORTYPE_IFODIFF);
 
       if (verbose_level & 4)
         {
@@ -2573,8 +2567,7 @@ void setup_global_detectors(LALStatus *status)
       frdet.xArmAzimuthRadians     = deg_to_rad(180.);
       frdet.yArmAzimuthRadians     = deg_to_rad(90.);
 
-      LALCreateDetector(status, &det_green_equator, &frdet,
-                        LALDETECTORTYPE_IFODIFF);
+      XLALCreateDetector(&det_green_equator, &frdet, LALDETECTORTYPE_IFODIFF);
 
       if (verbose_level & 4)
         {
@@ -2592,8 +2585,7 @@ void setup_global_detectors(LALStatus *status)
       frdet.xArmAzimuthRadians     = deg_to_rad(180.);
       frdet.yArmAzimuthRadians     = deg_to_rad(90.);
 
-      LALCreateDetector(status, &det_green_tropic_of_cancer, &frdet,
-                        LALDETECTORTYPE_IFODIFF);
+      XLALCreateDetector(&det_green_tropic_of_cancer, &frdet, LALDETECTORTYPE_IFODIFF);
 
       if (verbose_level & 4)
         {
@@ -2611,8 +2603,7 @@ void setup_global_detectors(LALStatus *status)
       frdet.xArmAzimuthRadians     = deg_to_rad(180.);
       frdet.yArmAzimuthRadians     = deg_to_rad(90.);
 
-      LALCreateDetector(status, &det_foo_tropic_of_cancer, &frdet,
-                        LALDETECTORTYPE_IFODIFF);
+      XLALCreateDetector(&det_foo_tropic_of_cancer, &frdet, LALDETECTORTYPE_IFODIFF);
 
       if (verbose_level & 4)
         {
