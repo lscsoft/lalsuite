@@ -765,7 +765,7 @@ int XLALAdaptiveRungeKuttaDenseandSparseOutput(LALAdaptiveRungeKuttaIntegrator *
           while (interp_t < tnew) {
             dense_buffers->data[dense_outputlength] = interp_t;
             dense_outputlength++;
-            interp_t += deltat;
+            interp_t = tinit + dense_outputlength*deltat;
           }
           interp_t = interp_t_old;
           dense_outputlength = dense_outputlength_old;
@@ -786,7 +786,7 @@ int XLALAdaptiveRungeKuttaDenseandSparseOutput(LALAdaptiveRungeKuttaIntegrator *
 	      dense_buffers->data[(i+1)*dense_bufferlength + dense_outputlength] =
                 (1.0 - theta)*y0i + theta*yi + theta*(theta-1.0)*( (1.0 - 2.0*theta)*(yi - y0i) + h*( (theta-1.0)*dydt_in[i] + theta*dydt_out[i]));
 	      dense_outputlength++;
-	      interp_t += deltat;
+	      interp_t = tinit + dense_outputlength*deltat;
 	    }
 
 	    if(i<(dim-1)){
@@ -824,12 +824,6 @@ int XLALAdaptiveRungeKuttaDenseandSparseOutput(LALAdaptiveRungeKuttaIntegrator *
         for (UINT4 i = 1; i <= dim; i++)
             sparse_buffers->data[i * sparse_bufferlength + sparse_outputlength] = y[i - 1];
     }
-
-    /* Copy the final state into yinit and dense_output. */
-    memcpy(yinit, y, dim * sizeof(REAL8));
-    dense_buffers->data[dense_outputlength] = t;
-    for (UINT4 i = 1; i <= dim; i++)
-      dense_buffers->data[i * dense_bufferlength + dense_outputlength] = y[i - 1];
 
     if (sparse_outputlength == 0 || dense_outputlength == 1)
         goto bail_out;
