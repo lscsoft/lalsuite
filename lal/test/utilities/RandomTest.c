@@ -120,8 +120,9 @@ main (int argc, char *argv[])
     printf ("\n===== Test Random Routines =====\n");
   }
 
-  LALCreateRandomParams (&status, &randpar, 0);
-  TestStatus (&status, CODES(0), 1);
+  randpar = XLALCreateRandomParams (0);
+  if (!randpar)
+    exit (1);
 
 
   /*
@@ -133,13 +134,12 @@ main (int argc, char *argv[])
 
   for (i = 0; i < vector->length; ++i)
   {
-    LALUniformDeviate (&status, vector->data + i, randpar);
-    if (status.statusCode)
+    vector->data[i] = XLALUniformDeviate (randpar);
+    if (XLALIsREAL4FailNaN(vector->data[i]))
     {
-      break;
+      exit (1);
     }
   }
-  TestStatus (&status, CODES(0), 1);
 
   if (output)
   {
@@ -159,8 +159,8 @@ main (int argc, char *argv[])
    */
 
 
-  LALNormalDeviates (&status, vector, randpar);
-  TestStatus (&status, CODES(0), 1);
+  if (XLALNormalDeviates (vector, randpar))
+    exit (1);
 
   if (output)
   {
@@ -188,55 +188,6 @@ main (int argc, char *argv[])
       printf ("\n===== Check Errors =====\n");
     }
 
-    /* non-null pointer error */
-
-    if (verbose)
-    {
-      printf ("\n----- Non-Null Pointer Error: Code 2\n");
-    }
-
-    LALCreateRandomParams (&status, &randpar, 0);
-    TestStatus (&status, CODES(RANDOMH_ENNUL), 1);
-
-    /* null pointer error */
-
-    if (verbose)
-    {
-      printf ("\n----- Null Pointer Error: Code 1 (8 times)\n");
-    }
-
-    LALCreateRandomParams (&status, NULL, 0);
-    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-
-    LALDestroyRandomParams (&status, NULL);
-    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-
-    {
-      RandomParams *tmp = NULL;
-      LALDestroyRandomParams (&status, &tmp);
-    }
-    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-
-    LALUniformDeviate (&status, NULL, randpar);
-    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-
-    LALUniformDeviate (&status, vector->data, NULL);
-    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-
-    LALNormalDeviates (&status, NULL, randpar);
-    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-
-    {
-      REAL4Vector tmp;
-      tmp.length = 10;
-      tmp.data   = NULL;
-      LALNormalDeviates (&status, &tmp, randpar);
-    }
-    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-
-    LALNormalDeviates (&status, vector, NULL);
-    TestStatus (&status, CODES(RANDOMH_ENULL), 1);
-
     /* vector length error */
 
     if (verbose)
@@ -248,9 +199,10 @@ main (int argc, char *argv[])
       REAL4Vector tmp;
       tmp.length = 0;
       tmp.data   = (REAL4 *)1;
-      LALNormalDeviates (&status, &tmp, randpar);
+      if (!XLALNormalDeviates (&tmp, randpar))
+        exit (1);
+      XLALClearErrno();
     }
-    TestStatus (&status, CODES(RANDOMH_ESIZE), 1);
   }
 #endif
 
@@ -267,8 +219,7 @@ main (int argc, char *argv[])
     printf ("\n===== Clean up and Exit =====\n");
   }
 
-  LALDestroyRandomParams (&status, &randpar);
-  TestStatus (&status, CODES(0), 1);
+  XLALDestroyRandomParams (randpar);
 
   LALDestroyVector (&status, &vector);
   TestStatus (&status, CODES(0), 1);

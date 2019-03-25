@@ -274,17 +274,15 @@ main( int argc, char **argv )
   if ( !xyz ) {
     REAL4 lon, coslat, sinlat, rad; /* polar coordinates */
     RandomParams *rparams = NULL;   /* pseudorandom sequence parameters */
-    SUB( LALCreateRandomParams( &stat, &rparams, 0 ), &stat );
-    SUB( LALUniformDeviate( &stat, &lon, rparams ), &stat );
-    lon *= LAL_TWOPI;
-    SUB( LALUniformDeviate( &stat, &sinlat, rparams ), &stat );
+    rparams = XLALCreateRandomParams( 0 );
+    lon = LAL_TWOPI * XLALUniformDeviate( rparams );
+    sinlat = XLALUniformDeviate( rparams );
     coslat = sqrt( 1.0 - sinlat*sinlat );
-    SUB( LALUniformDeviate( &stat, &rad, rparams ), &stat );
-    rad = 1.5*rad + 0.5;
+    rad = 1.5*XLALUniformDeviate( rparams ) + 0.5;
     x_1 = x_2 = rad*coslat*cos( lon );
     y_1 = y_2 = rad*coslat*sin( lon );
     z_1 = z_2 = rad*sinlat;
-    SUB( LALDestroyRandomParams( &stat, &rparams ), &stat );
+    XLALDestroyRandomParams( rparams );
   }
 
   /* Compute stepsizes. */

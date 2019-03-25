@@ -72,12 +72,9 @@ int main( void )
   tseries.data->data[seglen/2+1] = 1;
   */
   /* create white Gaussian noise */
-  LALCreateRandomParams( &status, &randpar, 0 );
-  TESTSTATUS( &status );
-  LALNormalDeviates( &status, tseries.data, randpar );
-  TESTSTATUS( &status );
-  LALDestroyRandomParams( &status, &randpar );
-  TESTSTATUS( &status );
+  randpar = XLALCreateRandomParams( 0 );
+  XLALNormalDeviates( tseries.data, randpar );
+  XLALDestroyRandomParams( randpar );
 
   /* resample */
   resamplepar.deltaT = resamplefac * tseries.deltaT;

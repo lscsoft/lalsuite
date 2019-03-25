@@ -409,12 +409,12 @@ main(int argc, char **argv)
   /* Create the input time series. */
   SUB( LALSCreateVector( &stat, &sInput, npts ), &stat );
   if ( doTime ) {
-    RandomParams *params = NULL; /* Params for random generator */
-    SUB( LALCreateRandomParams( &stat, &params, 0 ), &stat );
+    RandomParams *params; /* Params for random generator */
+    params = XLALCreateRandomParams( 0 );
     INFO( "Begining generation of Gaussian random deviates.\n" );
-    SUB( LALNormalDeviates( &stat, sInput, params ), &stat );
+    XLALNormalDeviates( sInput, params );
     INFO( "Finished generating random deviates.\n" );
-    SUB( LALDestroyRandomParams( &stat, &params ), &stat );
+    XLALDestroyRandomParams( params );
   } else {
     memset( sInput->data, 0, npts*sizeof(REAL4) );
     sInput->data[npts/2] = 1.0;

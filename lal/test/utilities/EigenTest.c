@@ -341,21 +341,18 @@ main( int argc, char **argv )
 
   /* Generate random matrix. */
   else {
-    RandomParams *params = NULL;
-    SUB( LALCreateRandomParams( &stat, &params, 0 ), &stat );
+    RandomParams *params;
+    params = XLALCreateRandomParams( 0 );
     dimLength.data[0] = dimLength.data[1] = n;
 
     /* Single-precision mode: */
     if ( single ) {
       SUB( LALSCreateArray( &stat, &sMatrix, &dimLength ), &stat );
       for ( i = 0; i < n; i++ ) {
-	REAL4 x;
 	for ( j = 0; j < i; j++ ) {
-	  SUB( LALUniformDeviate( &stat, &x, params ), &stat );
-	  sMatrix->data[i*n+j] = sMatrix->data[j*n+i] = 2.0*x - 1.0;
+	  sMatrix->data[i*n+j] = sMatrix->data[j*n+i] = 2.0*XLALUniformDeviate( params ) - 1.0;
 	}
-	SUB( LALUniformDeviate( &stat, &x, params ), &stat );
-	sMatrix->data[i*(n+1)] = 2.0*x - 1.0;
+	sMatrix->data[i*(n+1)] = 2.0*XLALUniformDeviate( params ) - 1.0;
       }
     }
 
@@ -363,18 +360,15 @@ main( int argc, char **argv )
     else {
       SUB( LALDCreateArray( &stat, &dMatrix, &dimLength ), &stat );
       for ( i = 0; i < n; i++ ) {
-	REAL4 x;
 	for ( j = 0; j < i; j++ ) {
-	  SUB( LALUniformDeviate( &stat, &x, params ), &stat );
 	  dMatrix->data[i*n+j] = dMatrix->data[j*n+i]
-	    = 2.0*(REAL8)( x ) - 1.0;
+	    = 2.0*(REAL8)( XLALUniformDeviate( params ) ) - 1.0;
 	}
-	SUB( LALUniformDeviate( &stat, &x, params ), &stat );
-	dMatrix->data[i*(n+1)] = 2.0*(REAL8)( x ) - 1.0;
+	dMatrix->data[i*(n+1)] = 2.0*(REAL8)( XLALUniformDeviate( params ) ) - 1.0;
       }
     }
 
-    SUB( LALDestroyRandomParams( &stat, &params ), &stat );
+    XLALDestroyRandomParams( params );
   }
 
   /* Write input matrix to output file. */

@@ -104,7 +104,7 @@ main(void)
   /* Initialize input */
   in.Ndetectors = Ndetectors;
   in.data = (REAL4TimeSeries *)LALMalloc(Ndetectors * sizeof(REAL4TimeSeries));
-  LALCreateRandomParams( &stat, &noiseParams, seed );
+  noiseParams = XLALCreateRandomParams( seed );
 
   for(i=0;i<Ndetectors;i++) {
 
@@ -117,7 +117,7 @@ main(void)
 
     LALCreateVector(&stat, &tmpVect, length);
     in.data[i].data = tmpVect;
-    LALNormalDeviates(&stat, in.data[i].data, noiseParams);
+    XLALNormalDeviates(in.data[i].data, noiseParams);
 
     /*
     LALIIRFilterREAL4Vector(&stat, in.data[i].data, params.filters[0]);
@@ -128,6 +128,8 @@ main(void)
 
     LALDIIRFilterREAL4Vector(&stat, in.data[i].data, filt);
   }
+
+  XLALDestroyRandomParams( noiseParams );
 
   /* allocate output */
   outputData = NULL;

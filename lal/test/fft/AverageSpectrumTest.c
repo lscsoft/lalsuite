@@ -57,12 +57,9 @@ int main( void )
         *tseries.data->data ) );
   tseries.data->data[0] = 1;
   */
-  LALCreateRandomParams( &status, &randpar, 1 );
-  TESTSTATUS( &status );
-  LALNormalDeviates( &status, tseries.data, randpar );
-  TESTSTATUS( &status );
-  LALDestroyRandomParams( &status, &randpar );
-  TESTSTATUS( &status );
+  randpar = XLALCreateRandomParams( 1 );
+  XLALNormalDeviates( tseries.data, randpar );
+  XLALDestroyRandomParams( randpar );
 
   /* prepare average spectrum parameters */
   specpar.method  = useMedian;
