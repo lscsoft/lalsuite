@@ -102,12 +102,12 @@ def guess_url(fslocation):
                 onweb=False
     if 'atlas' in HOST:
         url="https://atlas1.atlas.aei.uni-hannover.de/"
-    elif 'cit' in HOST or 'caltech' in HOST:
-        url="https://ldas-jobs.ligo.caltech.edu/"
     elif 'ligo-wa' in HOST:
         url="https://ldas-jobs.ligo-wa.caltech.edu/"
     elif 'ligo-la' in HOST:
         url="https://ldas-jobs.ligo-la.caltech.edu/"
+    elif 'cit' in HOST or 'caltech' in HOST:
+        url="https://ldas-jobs.ligo.caltech.edu/"
     elif 'uwm' in HOST or 'nemo' in HOST:
         url="https://ldas-jobs.phys.uwm.edu/"
     elif 'phy.syr.edu' in HOST:
