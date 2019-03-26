@@ -91,6 +91,65 @@ def add_variations(cp, section, option, values=None, allowed_values=None):
                                                                    option=option)))
         return {}
 
+def check_priors_are_compatible(cp):
+    """Check that the priors are compatible with the fixed parameters
+
+    Parameters
+    ----------
+    cp: configparser.ConfigParser
+        an opened config parser object
+    """
+    fixed = {
+        key.split("fix-")[1]: float(item) for key, item in cp.items("engine") if
+        "fix-" in key
+        }
+    p_min = {
+        key.split("-min")[0]: float(item) for key, item in cp.items("engine") if
+        "-min" in key
+        }
+    p_max = {
+        key.split("-max")[0]: float(item) for key, item in cp.items("engine") if
+        "-max" in key
+        }
+
+    condition = "comp" in p_min.keys() or "comp" in p_max.keys()
+    condition2 = "chirpmass" in fixed.keys() and "q" or "eta" in fixed.keys()
+
+    if condition and condition2:
+
+        mchirp = float(fixed["chirpmass"])
+        if "q" in fixed.keys():
+            q = float(fixed["q"])
+
+            m1 = (q**(2./5.))*((1.0 + q)**(1./5.))*mchirp
+            m2 = (q**(-3./5.))*((1.0 + q)**(1./5.))*mchirp
+
+        if "eta" in fixed.keys():
+            eta = float(fixed["eta"])
+
+            mtotal = mchirp / (eta**(3./5.))
+            m1 = 0.5 * mtotal * (1.0 + (1.0 - 4.0 * eta)**0.5)
+            m2 = 0.5 * mtotal * (1.0 - (1.0 - 4.0 * eta)**0.5)
+
+        fixed["mass1"] = max(m1, m2)
+        fixed["mass2"] = min(m1, m2)
+        p_min["mass1"] = p_min["comp"]
+        p_min["mass2"] = p_min["comp"]
+        p_max["mass1"] = p_max["comp"]
+        p_max["mass2"] = p_max["comp"]
+
+    condition = lambda i: i in p_min.keys() and p_min[i] > fixed[i] or \
+                          i in p_max.keys() and p_max[i] < fixed[i]
+
+    for i in fixed.keys():
+
+        if condition(i):
+            raise Exception(
+                "The fixed parameter %s lies outside of the bound for the prior. "
+                "Either change your prior bounds or change your fixed parameter"
+                % (i)
+                )
+
 def generate_variations(master_cp, variations):
     """
     Generate config parser objects for each of the variations
@@ -187,6 +246,10 @@ approx='approx'
 if not (cp.has_option('engine','approx') or cp.has_option('engine','approximant') ):
     print("Error: was expecting an 'approx' filed in the [engine] section\n")
     sys.exit(1)
+
+# Check the priors are compatible with fixed parameters as part of the sanity
+# checking
+check_priors_are_compatible(cp)
 
 # Build a list of allowed variations
 variations.update(add_variations(cp, 'engine','approx'))
