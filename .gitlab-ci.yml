@@ -442,18 +442,6 @@ nightly:gcc:8:
 
 # debian
 
-nightly:debian:jessie:
-  image: ligo/lalsuite-dev:jessie
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
 # FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
 # available
 # FIXME: allow failure due to #124
