@@ -1545,7 +1545,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                             bayeswavepsdnode[ifo].set_seglen(bw_seglen)
                             bayeswavepsdnode[ifo].set_psdlength(bw_seglen)
                             bayeswavepsdnode[ifo].set_srate(bw_srate)
-                            if event.timeslides.has_key(ifo):
+                            if ifo in event.timeslides:
                                 slide=event.timeslides[ifo]
                             else:
                                 slide=0
