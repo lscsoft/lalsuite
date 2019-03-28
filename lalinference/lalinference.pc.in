@@ -12,6 +12,6 @@ LALINFERENCE_PYTHON_PATH=@pyexecdir@
 Name: LALInference
 Description: LAL Inference Library Support
 Version: @VERSION@
-Requires: gsl, lal >= @LAL_VERSION@, libmetaio, lalmetaio >= @LALMETAIO_VERSION@, lalinspiral >= @LALINSPIRAL_VERSION@, lalpulsar >= @LALPULSAR_VERSION@
+Requires.private: gsl, lal >= @LAL_VERSION@, libmetaio, lalmetaio >= @LALMETAIO_VERSION@, lalinspiral >= @LALINSPIRAL_VERSION@, lalpulsar >= @LALPULSAR_VERSION@
 Libs: -L${libdir} -llalinference
 Cflags: -I${includedir} @OPENMP_CFLAGS@

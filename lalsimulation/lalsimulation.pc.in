@@ -12,6 +12,6 @@ LALSIMULATION_PYTHON_PATH=@pyexecdir@
 Name: LALSimulation
 Description: LAL Simulation Library Support
 Version: @VERSION@
-Requires: lal >= @LAL_VERSION@
+Requires.private: lal >= @LAL_VERSION@
 Libs: -L${libdir} -llalsimulation
 Cflags: -I${includedir} @OPENMP_CFLAGS@
