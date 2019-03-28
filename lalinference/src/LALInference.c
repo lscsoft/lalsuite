@@ -2363,31 +2363,40 @@ XLALDestroySimNeutronStarEOS(eos);
 /* Find lambda1,2(m1,2|eos) for spectral EOS model */
 void LALInferenceSDGammasMasses2Lambdas(REAL8 gamma[], REAL8 mass1, REAL8 mass2, REAL8 *lambda1, REAL8 *lambda2, int size){
 
-// Convert to SI
-double mass1_kg=mass1*LAL_MSUN_SI;
-double mass2_kg=mass2*LAL_MSUN_SI;
+// If unreasonable gammas, do not find lambdas
+if(LALInferenceSDGammaCheck(gamma, 4) == XLAL_FAILURE){
+  *lambda1= 0.;
+  *lambda2= 0.;
+}
+// Else calculate lambdas
+else{
+  // Convert to SI
+  double mass1_kg=mass1*LAL_MSUN_SI;
+  double mass2_kg=mass2*LAL_MSUN_SI;
 
-// Make eos
-LALSimNeutronStarEOS *eos = NULL;
-LALSimNeutronStarFamily *fam = NULL;
-eos = XLALSimNeutronStarEOSSpectralDecomposition(gamma,size);
-fam = XLALCreateSimNeutronStarFamily(eos);
+  // Make eos
+  LALSimNeutronStarEOS *eos = NULL;
+  LALSimNeutronStarFamily *fam = NULL;
+  eos = XLALSimNeutronStarEOSSpectralDecomposition(gamma,size);
+  fam = XLALCreateSimNeutronStarFamily(eos);
 
-// Calculate lambda1(m1|eos)
-double r = XLALSimNeutronStarRadius(mass1_kg, fam);
-double k = XLALSimNeutronStarLoveNumberK2(mass1_kg, fam);
-double c = mass1 * LAL_MRSUN_SI / r;
-*lambda1= (2.0/3.0) * k / pow(c , 5.0);
+  // Calculate lambda1(m1|eos)
+  double r = XLALSimNeutronStarRadius(mass1_kg, fam);
+  double k = XLALSimNeutronStarLoveNumberK2(mass1_kg, fam);
+  double c = mass1 * LAL_MRSUN_SI / r;
+  *lambda1= (2.0/3.0) * k / pow(c , 5.0);
 
-// Calculate lambda2(m1|eos)
-r = XLALSimNeutronStarRadius(mass2_kg, fam);
-k = XLALSimNeutronStarLoveNumberK2(mass2_kg, fam);
-c = mass2 * LAL_MRSUN_SI / r;
-*lambda2= (2.0/3.0) * k / pow(c , 5.0);
+  // Calculate lambda2(m1|eos)
+  r = XLALSimNeutronStarRadius(mass2_kg, fam);
+  k = XLALSimNeutronStarLoveNumberK2(mass2_kg, fam);
+  c = mass2 * LAL_MRSUN_SI / r;
+  *lambda2= (2.0/3.0) * k / pow(c , 5.0);
 
-// Clean up
-XLALDestroySimNeutronStarFamily(fam);
-XLALDestroySimNeutronStarEOS(eos);
+  // Clean up
+  XLALDestroySimNeutronStarFamily(fam);
+  XLALDestroySimNeutronStarEOS(eos);
+}
+
 }
 
 
@@ -2461,6 +2470,15 @@ for (int i = 0; i < 4; ++i) {
    /* determine if maximum mass has been found */
    if (mdat <= mdat_prev){
       fprintf(stdout,"EOS has too few points. Sample rejected.\n");
+      if( LALInferenceCheckVariable(params,"SDgamma0") && LALInferenceCheckVariable(params,"SDgamma1") && LALInferenceCheckVariable(params,"SDgamma2") && LALInferenceCheckVariable(params,"SDgamma3"))
+      {
+        // Retrieve EOS params from params linked list
+        double SDgamma0=*(double *)LALInferenceGetVariable(params,"SDgamma0");
+        double SDgamma1=*(double *)LALInferenceGetVariable(params,"SDgamma1");
+        double SDgamma2=*(double *)LALInferenceGetVariable(params,"SDgamma2");
+        double SDgamma3=*(double *)LALInferenceGetVariable(params,"SDgamma3");
+        fprintf(stdout,"%f %f %f %f\n",SDgamma0,SDgamma1,SDgamma2,SDgamma3);
+      }
       // Clean up
       XLALDestroySimNeutronStarFamily(fam);
       XLALDestroySimNeutronStarEOS(eos);
