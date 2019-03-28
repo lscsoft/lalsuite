@@ -914,6 +914,11 @@ int IMRPhenomDSetupAmpAndPhaseCoefficients(
     LALDict *extraParams)
 {
 
+  // Make a pointer to LALDict to circumvent a memory leak
+  // At the end we will check if we created a LALDict in extraParams
+  // and destroy it if we did.
+  LALDict *extraParams_in = extraParams;
+
   /* It's difficult to see in the code but you need to setup the
      * powers_of_pi.
      */
@@ -991,6 +996,14 @@ int IMRPhenomDSetupAmpAndPhaseCoefficients(
   LALFree(pn);
   LALFree(pPhi);
   LALFree(pAmp);
+
+  /* If extraParams was allocated in this function and not passed in
+  * we need to free it to prevent a leak */
+  if (extraParams && !extraParams_in) {
+    XLALDestroyDict(extraParams);
+  } else {
+    XLALSimInspiralWaveformParamsInsertPNSpinOrder(extraParams,LAL_SIM_INSPIRAL_SPIN_ORDER_ALL);
+  }
 
   return XLAL_SUCCESS;
 }
