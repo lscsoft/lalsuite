@@ -25,7 +25,7 @@ import stat
 import argparse
 from ConfigParser import ConfigParser
 
-from pylal import git_version
+from lalapps import git_version
 
 # try importing astropy
 try:
