@@ -2363,11 +2363,11 @@ XLALDestroySimNeutronStarEOS(eos);
 /* Find lambda1,2(m1,2|eos) for spectral EOS model */
 void LALInferenceSDGammasMasses2Lambdas(REAL8 gamma[], REAL8 mass1, REAL8 mass2, REAL8 *lambda1, REAL8 *lambda2, int size){
 
-// If unreasonable gammas, do not find lambdas
+// If gammas outside prior, do not find lambdas
 if(LALInferenceSDGammaCheck(gamma, 4) == XLAL_FAILURE){
   *lambda1= 0.;
   *lambda2= 0.;
-}
+  }
 // Else calculate lambdas
 else{
   // Convert to SI
@@ -2395,7 +2395,7 @@ else{
   // Clean up
   XLALDestroySimNeutronStarFamily(fam);
   XLALDestroySimNeutronStarEOS(eos);
-}
+  }
 
 }
 

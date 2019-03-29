@@ -1275,8 +1275,7 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
 
     const char *flat_params[] = {"q", "eta", "t0", "azimuth", "cosalpha", "time", "phase", "polarisation",
                                  "rightascension", "costheta_jn", "phi_jl",
-                                 "phi12", "a_spin1", "a_spin2", "logp1", "gamma1", "gamma2", "gamma3",
-                                 "SDgamma0","SDgamma1","SDgamma2","SDgamma3", NULL};
+                                 "phi12", "a_spin1", "a_spin2", "logp1", "gamma1", "gamma2", "gamma3", NULL};
 
     LALInferenceVariables *args = thread->proposalArgs;
 
@@ -1293,6 +1292,29 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
         }
     } else {
         logBackwardJump = approxLogPrior(currentParams);
+
+        if (LALInferenceCheckVariableNonFixed(proposedParams, "SDgamma0")) {
+        // Find EOS spectral params in prior range
+        const char *gamma_params[] = {"SDgamma0","SDgamma1","SDgamma2","SDgamma3", NULL};
+        double gamma[]={*(double *)LALInferenceGetVariable(proposedParams,"SDgamma0"),
+                        *(double *)LALInferenceGetVariable(proposedParams,"SDgamma1"),
+                        *(double *)LALInferenceGetVariable(proposedParams,"SDgamma2"),
+                        *(double *)LALInferenceGetVariable(proposedParams,"SDgamma3")};
+        // Draw from flat prior until GammaCheck (another prior constraint) is passed
+        do{
+        for (i = 0; gamma_params[i] != NULL; i++) {
+            if (LALInferenceCheckVariableNonFixed(proposedParams, gamma_params[i])) {
+                REAL8 val = draw_flat(thread, gamma_params[i]);
+                LALInferenceSetVariable(proposedParams, gamma_params[i], &val);
+            }
+        }
+            // Fill gamma array for GammaCheck
+            gamma[0]=*(double *)LALInferenceGetVariable(proposedParams,"SDgamma0");
+            gamma[1]=*(double *)LALInferenceGetVariable(proposedParams,"SDgamma1");
+            gamma[2]=*(double *)LALInferenceGetVariable(proposedParams,"SDgamma2");
+            gamma[3]=*(double *)LALInferenceGetVariable(proposedParams,"SDgamma3");
+        }while(LALInferenceSDGammaCheck(gamma, 4) == XLAL_FAILURE);
+        }
 
         for (i = 0; flat_params[i] != NULL; i++) {
             if (LALInferenceCheckVariableNonFixed(proposedParams, flat_params[i])) {
