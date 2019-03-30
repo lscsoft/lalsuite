@@ -34,6 +34,8 @@ BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: scipy >= 0.8
 BuildRequires: swig >= 3.0.7
+BuildRequires: python2-gwdatafind
+BuildRequires: python2-gwpy
 BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
@@ -99,12 +101,12 @@ Requires: numpy >= 1.7
 Requires: python
 Requires: scipy >= 0.8
 Requires: python-astropy >= 1.1.1
+Requires: python2-gwdatafind
 Requires: python-matplotlib >= 1.2.0
 Requires: python-six
-Requires: python-seaborn
 Requires: glue >= @MIN_GLUE_VERSION@
 Requires: ligo-gracedb
-Requires: python-gwpy
+Requires: python2-gwpy
 Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
