@@ -521,20 +521,6 @@ nightly:macos:sierra:
 # ubuntu
 
 # FIXME: allow failure due to #123
-nightly:ubuntu:trusty:
-  image: skymoo/ligo-lalsuite-dev:trusty
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --disable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-  allow_failure: true
-
-# FIXME: allow failure due to #123
 nightly:ubuntu:xenial:
   image: skymoo/ligo-lalsuite-dev:xenial
   stage: nightly
