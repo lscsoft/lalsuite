@@ -30,6 +30,9 @@ String cusp search final output rendering tool.
 """
 
 
+from __future__ import print_function
+
+
 import bisect
 import copy_reg
 import heapq
@@ -50,10 +53,8 @@ import sys
 import traceback
 
 
-from glue import segments
-from glue import segmentsUtils
-from glue.ligolw import dbtables
-from glue.ligolw.utils import process as ligolwprocess
+from ligo.lw import dbtables
+from ligo.lw.utils import process as ligolwprocess
 import lal
 from lal import rate
 from lal.utils import CacheEntry
@@ -62,6 +63,8 @@ from lalburst import packing
 from lalburst import SimBurstUtils
 from lalburst import SnglBurstUtils
 from lalburst import stringutils
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 
 
 SnglBurstUtils.matplotlib.rcParams.update({
@@ -301,28 +304,28 @@ WHERE
 		self.candidates.sort()
 
 		f = file("string_most_significant_background.txt", "w")
-		print >>f, "Highest-Ranked Background Events"
-		print >>f, "================================"
+		print("Highest-Ranked Background Events", file=f)
+		print("================================", file=f)
 		for ln_likelihood_ratio, filename, coinc_event_id, instruments, peak_time in self.most_significant_background:
-			print >>f
-			print >>f, "%s in %s:" % (str(coinc_event_id), filename)
-			print >>f, "Recovered in: %s" % ", ".join(sorted(instruments or []))
-			print >>f, "Mean peak time:  %.16g s GPS" % peak_time
-			print >>f, "\\log \\Lambda:  %.16g" % ln_likelihood_ratio
+			print(file=f)
+			print("%s in %s:" % (str(coinc_event_id), filename), file=f)
+			print("Recovered in: %s" % ", ".join(sorted(instruments or [])), file=f)
+			print("Mean peak time:  %.16g s GPS" % peak_time, file=f)
+			print("\\log \\Lambda:  %.16g" % ln_likelihood_ratio, file=f)
 
 		f = file("string_candidates.txt", "w")
-		print >>f, "Highest-Ranked Zero-Lag Events"
-		print >>f, "=============================="
+		print("Highest-Ranked Zero-Lag Events", file=f)
+		print("==============================", file=f)
 		if self.open_box:
 			for ln_likelihood_ratio, filename, coinc_event_id, instruments, peak_time in self.candidates:
-				print >>f
-				print >>f, "%s in %s:" % (str(coinc_event_id), filename)
-				print >>f, "Recovered in: %s" % ", ".join(sorted(instruments or []))
-				print >>f, "Mean peak time:  %.16g s GPS" % peak_time
-				print >>f, "\\log \\Lambda:  %.16g" % ln_likelihood_ratio
+				print(file=f)
+				print("%s in %s:" % (str(coinc_event_id), filename), file=f)
+				print("Recovered in: %s" % ", ".join(sorted(instruments or [])), file=f)
+				print("Mean peak time:  %.16g s GPS" % peak_time, file=f)
+				print("\\log \\Lambda:  %.16g" % ln_likelihood_ratio, file=f)
 		else:
-			print >>f
-			print >>f, "List suppressed:  box is closed"
+			print(file=f)
+			print("List suppressed:  box is closed", file=f)
 
 		#
 		# sort the ranking statistics and convert to arrays.
@@ -476,9 +479,9 @@ def lower_err(y, yerr, deltax):
 
 
 def write_efficiency(fileobj, bins, eff, yerr):
-	print >>fileobj, "# A	e	D[e]"
+	print("# A	e	D[e]", file=fileobj)
 	for A, e, De in zip(bins.centres()[0], eff, yerr):
-		print >>fileobj, "%.16g	%.16g	%.16g" % (A, e, De)
+		print("%.16g	%.16g	%.16g" % (A, e, De), file=fileobj)
 
 
 def render_data_from_bins(dump_file, axes, efficiency_num, efficiency_den, cal_uncertainty, filter_width, colour = "k", erroralpha = 0.3, linestyle = "-"):
@@ -525,8 +528,8 @@ def render_data_from_bins(dump_file, axes, efficiency_num, efficiency_den, cal_u
 	# print some analysis FIXME:  this calculation needs attention
 	num_injections = efficiency_den.array.sum()
 	num_samples = len(efficiency_den.array)
-	print >>sys.stderr, "Bins were %g samples wide, ideal would have been %g" % (filter_width, (num_samples / num_injections / interpolate.interp1d(x, dydx)(A50)**2.0)**(1.0/3.0))
-	print >>sys.stderr, "Average number of injections in each bin = %g" % efficiency_den.array.mean()
+	print("Bins were %g samples wide, ideal would have been %g" % (filter_width, (num_samples / num_injections / interpolate.interp1d(x, dydx)(A50)**2.0)**(1.0/3.0)), file=sys.stderr)
+	print("Average number of injections in each bin = %g" % efficiency_den.array.mean(), file=sys.stderr)
 
 	return line, A50, A50_err
 
@@ -612,7 +615,7 @@ FROM
 						heapq.heappushpop(self.loudest_missed, record)
 			elif found:
 				# no, but it was found anyway
-				print >>sys.stderr, "%s: odd, injection %s was found but not injected ..." % (contents.filename, sim.simulation_id)
+				print("%s: odd, injection %s was found but not injected ..." % (contents.filename, sim.simulation_id), file=sys.stderr)
 
 	def finish(self):
 		fig, axes = SnglBurstUtils.make_burst_plot(r"Injection Amplitude (\(\mathrm{s}^{-\frac{1}{3}}\))", "Detection Efficiency", width = 108.0)
@@ -655,7 +658,7 @@ FROM
 		efficiency_den.array[(efficiency_num.array == 0) & (efficiency_den.array == 0)] = 1
 
 		line1, A50, A50_err = render_data_from_bins(file("string_efficiency.dat", "w"), axes, efficiency_num, efficiency_den, self.cal_uncertainty, self.filter_width, colour = "k", linestyle = "-", erroralpha = 0.2)
-		print >>sys.stderr, "Pipeline's 50%% efficiency point for all detections = %g +/- %g%%\n" % (A50, A50_err * 100)
+		print("Pipeline's 50%% efficiency point for all detections = %g +/- %g%%\n" % (A50, A50_err * 100), file=sys.stderr)
 
 		# add a legend to the axes
 		axes.legend((line1,), (r"\noindent Injections recovered with $\log \Lambda > %.2f$" % self.detection_threshold,), loc = "lower right")
@@ -673,44 +676,44 @@ FROM
 		self.quietest_found.sort(reverse = True)
 
 		f = file("string_loud_missed_injections.txt", "w")
-		print >>f, "Highest Amplitude Missed Injections"
-		print >>f, "==================================="
+		print("Highest Amplitude Missed Injections", file=f)
+		print("===================================", file=f)
 		for amplitude, sim, offsetvector, filename, ln_likelihood_ratio in self.loudest_missed:
-			print >>f
-			print >>f, "%s in %s:" % (str(sim.simulation_id), filename)
+			print(file=f)
+			print("%s in %s:" % (str(sim.simulation_id), filename), file=f)
 			if ln_likelihood_ratio is None:
-				print >>f, "Not recovered"
+				print("Not recovered", file=f)
 			else:
-				print >>f, "Recovered with \\log \\Lambda = %.16g, detection threshold was %.16g" % (ln_likelihood_ratio, self.detection_threshold)
+				print("Recovered with \\log \\Lambda = %.16g, detection threshold was %.16g" % (ln_likelihood_ratio, self.detection_threshold), file=f)
 			for instrument in self.seglists:
-				print >>f, "In %s:" % instrument
-				print >>f, "\tInjected amplitude:\t%.16g" % SimBurstUtils.string_amplitude_in_instrument(sim, instrument, offsetvector)
-				print >>f, "\tTime of injection:\t%s s" % sim.time_at_instrument(instrument, offsetvector)
-			print >>f, "Amplitude in waveframe:\t%.16g" % sim.amplitude
+				print("In %s:" % instrument, file=f)
+				print("\tInjected amplitude:\t%.16g" % SimBurstUtils.string_amplitude_in_instrument(sim, instrument, offsetvector), file=f)
+				print("\tTime of injection:\t%s s" % sim.time_at_instrument(instrument, offsetvector), file=f)
+			print("Amplitude in waveframe:\t%.16g" % sim.amplitude, file=f)
 			t = sim.get_time_geocent()
-			print >>f, "Time at geocentre:\t%s s" % t
-			print >>f, "Segments within 60 seconds:\t%s" % segmentsUtils.segmentlistdict_to_short_string(self.seglists & segments.segmentlistdict((instrument, segments.segmentlist([segments.segment(t-offsetvector[instrument]-60, t-offsetvector[instrument]+60)])) for instrument in self.seglists))
-			print >>f, "Vetoes within 60 seconds:\t%s" % segmentsUtils.segmentlistdict_to_short_string(self.vetoseglists & segments.segmentlistdict((instrument, segments.segmentlist([segments.segment(t-offsetvector[instrument]-60, t-offsetvector[instrument]+60)])) for instrument in self.vetoseglists))
+			print("Time at geocentre:\t%s s" % t, file=f)
+			print("Segments within 60 seconds:\t%s" % segmentsUtils.segmentlistdict_to_short_string(self.seglists & segments.segmentlistdict((instrument, segments.segmentlist([segments.segment(t-offsetvector[instrument]-60, t-offsetvector[instrument]+60)])) for instrument in self.seglists)), file=f)
+			print("Vetoes within 60 seconds:\t%s" % segmentsUtils.segmentlistdict_to_short_string(self.vetoseglists & segments.segmentlistdict((instrument, segments.segmentlist([segments.segment(t-offsetvector[instrument]-60, t-offsetvector[instrument]+60)])) for instrument in self.vetoseglists)), file=f)
 
 		f = file("string_quiet_found_injections.txt", "w")
-		print >>f, "Lowest Amplitude Found Injections"
-		print >>f, "================================="
+		print("Lowest Amplitude Found Injections", file=f)
+		print("=================================", file=f)
 		for inv_amplitude, sim, offsetvector, filename, ln_likelihood_ratio in self.quietest_found:
-			print >>f
-			print >>f, "%s in %s:" % (str(sim.simulation_id), filename)
+			print(file=f)
+			print("%s in %s:" % (str(sim.simulation_id), filename), file=f)
 			if ln_likelihood_ratio is None:
-				print >>f, "Not recovered"
+				print("Not recovered", file=f)
 			else:
-				print >>f, "Recovered with \\log \\Lambda = %.16g, detection threshold was %.16g" % (ln_likelihood_ratio, self.detection_threshold)
+				print("Recovered with \\log \\Lambda = %.16g, detection threshold was %.16g" % (ln_likelihood_ratio, self.detection_threshold), file=f)
 			for instrument in self.seglists:
-				print >>f, "In %s:" % instrument
-				print >>f, "\tInjected amplitude:\t%.16g" % SimBurstUtils.string_amplitude_in_instrument(sim, instrument, offsetvector)
-				print >>f, "\tTime of injection:\t%s s" % sim.time_at_instrument(instrument, offsetvector)
-			print >>f, "Amplitude in waveframe:\t%.16g" % sim.amplitude
+				print("In %s:" % instrument, file=f)
+				print("\tInjected amplitude:\t%.16g" % SimBurstUtils.string_amplitude_in_instrument(sim, instrument, offsetvector), file=f)
+				print("\tTime of injection:\t%s s" % sim.time_at_instrument(instrument, offsetvector), file=f)
+			print("Amplitude in waveframe:\t%.16g" % sim.amplitude, file=f)
 			t = sim.get_time_geocent()
-			print >>f, "Time at geocentre:\t%s s" % t
-			print >>f, "Segments within 60 seconds:\t%s" % segmentsUtils.segmentlistdict_to_short_string(self.seglists & segments.segmentlistdict((instrument, segments.segmentlist([segments.segment(t-offsetvector[instrument]-60, t-offsetvector[instrument]+60)])) for instrument in self.seglists))
-			print >>f, "Vetoes within 60 seconds:\t%s" % segmentsUtils.segmentlistdict_to_short_string(self.vetoseglists & segments.segmentlistdict((instrument, segments.segmentlist([segments.segment(t-offsetvector[instrument]-60, t-offsetvector[instrument]+60)])) for instrument in self.vetoseglists))
+			print("Time at geocentre:\t%s s" % t, file=f)
+			print("Segments within 60 seconds:\t%s" % segmentsUtils.segmentlistdict_to_short_string(self.seglists & segments.segmentlistdict((instrument, segments.segmentlist([segments.segment(t-offsetvector[instrument]-60, t-offsetvector[instrument]+60)])) for instrument in self.seglists)), file=f)
+			print("Vetoes within 60 seconds:\t%s" % segmentsUtils.segmentlistdict_to_short_string(self.vetoseglists & segments.segmentlistdict((instrument, segments.segmentlist([segments.segment(t-offsetvector[instrument]-60, t-offsetvector[instrument]+60)])) for instrument in self.vetoseglists)), file=f)
 
 		#
 		# done
@@ -734,15 +737,15 @@ def group_files(filenames, verbose = False):
 	noninjection_filenames = []
 	for n, filename in enumerate(filenames):
 		if verbose:
-			print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+			print("%d/%d: %s" % (n + 1, len(filenames), filename), file=sys.stderr)
 		connection = sqlite3.connect(filename)
 		if "sim_burst" in dbtables.get_table_names(connection):
 			if verbose:
-				print >>sys.stderr, "\t--> injections"
+				print("\t--> injections", file=sys.stderr)
 			injection_filenames.append(filename)
 		else:
 			if verbose:
-				print >>sys.stderr, "\t--> non-injections"
+				print("\t--> non-injections", file=sys.stderr)
 			noninjection_filenames.append(filename)
 		connection.close()
 	return injection_filenames, noninjection_filenames
@@ -759,18 +762,18 @@ def import_dumps(filenames, verbose = False):
 	efficiency = None
 	for filename in filenames:
 		if verbose:
-			print >>sys.stderr, "\t%s ..." % filename,
+			print("\t%s ..." % filename, end=' ', file=sys.stderr)
 		dump = pickle.load(open(filename))
 		if type(dump) is RateVsThreshold:
 			if verbose:
-				print >>sys.stderr, "found rate vs. threshold data"
+				print("found rate vs. threshold data", file=sys.stderr)
 			if rate_vs_threshold is None:
 				rate_vs_threshold = dump
 			else:
 				rate_vs_threshold += dump
 		elif type(dump) is Efficiency:
 			if verbose:
-				print >>sys.stderr, "found efficiency data"
+				print("found efficiency data", file=sys.stderr)
 			if efficiency is None:
 				efficiency = dump
 			else:
@@ -818,7 +821,7 @@ def process_file(filename, products, live_time_program, tmp_path = None, veto_se
 
 	for n, product in enumerate(products):
 		if verbose:
-			print >>sys.stderr, "%s: adding to product %d ..." % (working_filename, n)
+			print("%s: adding to product %d ..." % (working_filename, n), file=sys.stderr)
 		product.add_contents(contents, verbose = verbose)
 
 	#
@@ -832,7 +835,7 @@ def process_file(filename, products, live_time_program, tmp_path = None, veto_se
 def process_files(filenames, products, live_time_program, tmp_path = None, veto_segments_name = None, verbose = False):
 	for n, filename in enumerate(filenames):
 		if verbose:
-			print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+			print("%d/%d: %s" % (n + 1, len(filenames), filename), file=sys.stderr)
 		process_file(filename, products, live_time_program, tmp_path = tmp_path, veto_segments_name = veto_segments_name, verbose = verbose)
 
 
@@ -841,42 +844,42 @@ def write_products(products, prefix, image_formats, verbose = False):
 	n = 1
 	while products:
 		if verbose:
-			print >>sys.stderr, "finishing product %d ..." % (n - 1)
+			print("finishing product %d ..." % (n - 1), file=sys.stderr)
 		product = products.pop(0)
 		# write dump of raw data
 		filename = "%sdump_%d.pickle" % (prefix, n)
 		if verbose:
-			print >>sys.stderr, "\twriting %s ..." % filename,
+			print("\twriting %s ..." % filename, end=' ', file=sys.stderr)
 		pickle.dump(product, open(filename, "w"))
 		if verbose:
-			print >>sys.stderr, "done"
+			print("done", file=sys.stderr)
 		# write plots
 		for m, fig in enumerate(product.finish()):
 			for ext in image_formats:
 				filename = format % (prefix, n, chr(m + 97), ext)
 				if verbose:
-					print >>sys.stderr, "\twriting %s ..." % filename,
+					print("\twriting %s ..." % filename, end=' ', file=sys.stderr)
 				fig.savefig(filename)
 				if verbose:
-					print >>sys.stderr, "done"
+					print("done", file=sys.stderr)
 		n += 1
 
 
 options, filenames = parse_command_line()
 
 
-print >>sys.stderr, """Command line:
+print("""Command line:
 
 $ %s
-""" % " ".join(sys.argv)
+""" % " ".join(sys.argv), file=sys.stderr)
 if options.open_box:
-	print >>sys.stderr, """
+	print("""
 
 ---=== !! BOX IS OPEN !! ===---
 
 PRESS CTRL-C SOON IF YOU DIDN'T MEAN TO OPEN THE BOX
 
-"""
+""", file=sys.stderr)
 
 
 #
@@ -885,7 +888,7 @@ PRESS CTRL-C SOON IF YOU DIDN'T MEAN TO OPEN THE BOX
 
 
 if options.verbose:
-	print >>sys.stderr, "Identifying injection and non-injection databases ..."
+	print("Identifying injection and non-injection databases ...", file=sys.stderr)
 injection_filenames, noninjection_filenames = group_files(filenames, verbose = options.verbose)
 
 
@@ -896,7 +899,7 @@ injection_filenames, noninjection_filenames = group_files(filenames, verbose = o
 
 if options.import_dump:
 	if options.verbose:
-		print >>sys.stderr, "Loading dump files ..."
+		print("Loading dump files ...", file=sys.stderr)
 	rate_vs_threshold, efficiency = import_dumps(options.import_dump, verbose = options.verbose)
 	# override box openness in rate-vs-threshold data
 	if rate_vs_threshold is not None:
@@ -914,7 +917,7 @@ else:
 
 if options.detection_threshold is None:
 	if options.verbose:
-		print >>sys.stderr, "Collecting background and zero-lag statistics ..."
+		print("Collecting background and zero-lag statistics ...", file=sys.stderr)
 
 	children = {}
 	rate_vs_thresholds = []
@@ -958,7 +961,7 @@ if options.detection_threshold is None:
 				else:
 					rate_vs_threshold += process_output
 			else:
-				print >>sys.stderr, process_output
+				print(process_output, file=sys.stderr)
 			del process_output
 			if exit_status:
 				sys.exit(exit_status)
@@ -971,17 +974,17 @@ if options.detection_threshold is None:
 	# print summary information, and set detection threshold
 	if options.open_box:
 		try:
-			print >>sys.stderr, "Zero-lag events: %d" % len(rate_vs_threshold.zero_lag)
+			print("Zero-lag events: %d" % len(rate_vs_threshold.zero_lag), file=sys.stderr)
 		except OverflowError:
 			# python < 2.5 can't handle list-like things with more than 2**31 elements
 			# FIXME:  remove when we can rely on python >= 2.5
-			print >>sys.stderr, "Zero-lag events: %d" % rate_vs_threshold.zero_lag.n
-	print >>sys.stderr, "Total time in zero-lag segments: %s s" % str(rate_vs_threshold.zero_lag_time)
-	print >>sys.stderr, "Time-slide events: %d" % rate_vs_threshold.n_background
-	print >>sys.stderr, "Total time in time-slide segments: %s s" % str(rate_vs_threshold.background_time)
+			print("Zero-lag events: %d" % rate_vs_threshold.zero_lag.n, file=sys.stderr)
+	print("Total time in zero-lag segments: %s s" % str(rate_vs_threshold.zero_lag_time), file=sys.stderr)
+	print("Time-slide events: %d" % rate_vs_threshold.n_background, file=sys.stderr)
+	print("Total time in time-slide segments: %s s" % str(rate_vs_threshold.background_time), file=sys.stderr)
 	if options.open_box:
 		detection_threshold = rate_vs_threshold.zero_lag[-1]
-		print >>sys.stderr, "Likelihood ratio for highest-ranked zero-lag survivor: %.9g" % detection_threshold
+		print("Likelihood ratio for highest-ranked zero-lag survivor: %.9g" % detection_threshold, file=sys.stderr)
 	else:
 		# if the background and zero-lag live times are identical,
 		# then the loudest zero-lag event is simulated by the
@@ -991,10 +994,10 @@ if options.detection_threshold is None:
 		# simulated by the next-to-loudest background event so we
 		# want entry -2 in the sorted list.
 		detection_threshold = sorted(rate_vs_threshold.background)[-int(round(rate_vs_threshold.background_time / rate_vs_threshold.zero_lag_time))]
-		print >>sys.stderr, "Simulated \\log \\Lambda for highest-ranked zero-lag survivor: %.9g" % detection_threshold
+		print("Simulated \\log \\Lambda for highest-ranked zero-lag survivor: %.9g" % detection_threshold, file=sys.stderr)
 else:
 	detection_threshold = options.detection_threshold
-	print >>sys.stderr, "Likelihood ratio for highest-ranked zero-lag survivor from command line: %.9g" % detection_threshold
+	print("Likelihood ratio for highest-ranked zero-lag survivor from command line: %.9g" % detection_threshold, file=sys.stderr)
 
 
 #
@@ -1004,7 +1007,7 @@ else:
 
 
 if options.verbose:
-	print >>sys.stderr, "Collecting efficiency statistics ..."
+	print("Collecting efficiency statistics ...", file=sys.stderr)
 children = {}
 # group files into bins of about the same total number of bytes.  don't try
 # to create more groups than there are files
@@ -1046,7 +1049,7 @@ while children:
 			else:
 				efficiency += process_output
 		else:
-			print >>sys.stderr, process_output
+			print(process_output, file=sys.stderr)
 		del process_output
 		if exit_status:
 			sys.exit(exit_status)
@@ -1055,7 +1058,7 @@ if efficiency is not None:
 	write_products([efficiency], "string_efficiency_", options.image_formats, verbose = options.verbose)
 else:
 	if options.verbose:
-		print >>sys.stderr, "no injection data available, not writing efficiency data products."
+		print("no injection data available, not writing efficiency data products.", file=sys.stderr)
 
 if options.verbose:
-	print >>sys.stderr, "done."
+	print("done.", file=sys.stderr)

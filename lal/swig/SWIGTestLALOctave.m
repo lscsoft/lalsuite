@@ -287,8 +287,38 @@ end_try_catch
 assert(!expected_exception);
 disp("PASSED fixed and dynamic arrays typemaps")
 
-## check input views of array structs
-disp("checking input views of array structs ...");
+## check input views of string array structs
+disp("checking input views of string array structs ...");
+svdat = {"a"; "bc"; "def"};
+sv = XLALCreateEmptyStringVector(length(svdat));
+sv.data = svdat;
+svout = XLALCreateEmptyStringVector(length(svdat));
+[svout.data{1:length(svdat)}] = deal("");
+assert(swig_lal_test_viewin_LALStringVector(svout, sv));
+assert(all(cellfun(@(x, y) strcmp(x, y), svout.data, sv.data)));
+[svout.data{1:length(svdat)}] = deal("");
+assert(swig_lal_test_viewin_LALStringVector(svout, svdat));
+assert(all(cellfun(@(x, y) strcmp(x, y), svout.data, svdat)));
+sv.data = svdat;
+assert(swig_lal_test_copyinout_LALStringVector(sv));
+assert(all(cellfun(@(x, y) strcmp(x, toupper(y)), sv.data, svdat)));
+sv.data = svdat;
+[retn, sv] = swig_lal_test_copyinout_LALStringVector(sv);
+assert(retn);
+assert(all(cellfun(@(x, y) strcmp(x, toupper(y)), sv.data, svdat)));
+sv = svdat;
+[retn, sv] = swig_lal_test_copyinout_LALStringVector(sv);
+assert(retn);
+assert(all(cellfun(@(x, y) strcmp(x, toupper(y)), sv, svdat)));
+clear sv;
+clear svout;
+clear svdat;
+clear ans;
+LALCheckMemoryLeaks();
+disp("PASSED input views of string array structs");
+
+## check input views of numeric array structs
+disp("checking input views of numeric array structs ...");
 r4dat = single([1.2; 2.3; 3.4; 4.5; 5.6]);
 r8dat = double([3.4; 4.5; 5.6; 6.7; 7.8; 8.9]);
 c8dat = complex(r4dat, 8 + r4dat);
@@ -521,7 +551,7 @@ clear c16out;
 clear c16dat;
 clear ans;
 LALCheckMemoryLeaks();
-disp("PASSED input views of array structs (LAL)");
+disp("PASSED input views of numeric array structs (LAL)");
 vfdat = single([1.2; 2.3; 3.4; 4.5; 5.6]);
 vddat = double([3.4; 4.5; 5.6; 6.7; 7.8; 8.9]);
 vcfdat = complex(vfdat, 8 + vfdat);
@@ -754,7 +784,7 @@ clear mcdout;
 clear mcddat;
 clear ans;
 LALCheckMemoryLeaks();
-disp("PASSED input views of array structs (GSL)");
+disp("PASSED input views of numeric array structs (GSL)");
 function check_input_view_type_safety(f, a, b, expect_exception)
   expected_exception = 0;
   if expect_exception
@@ -815,7 +845,7 @@ clear c8;
 clear c16;
 clear ans;
 LALCheckMemoryLeaks();
-disp("PASSED input views of array structs (type safety)");
+disp("PASSED input views of numeric array structs (type safety)");
 
 ## check FFT functions with input views
 disp("check FFT functions with input views ...");

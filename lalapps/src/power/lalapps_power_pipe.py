@@ -30,6 +30,9 @@ Excess power offline pipeline construction script.
 """
 
 
+from __future__ import print_function
+
+
 import ConfigParser
 import math
 from optparse import OptionParser
@@ -38,9 +41,9 @@ import sys
 import tempfile
 
 
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 from glue import pipeline
-from glue import segments
-from glue import segmentsUtils
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
 from lalburst import cafe
@@ -78,14 +81,14 @@ def parse_command_line():
 	options, filenames = parser.parse_args()
 
 	if options.variant not in ("injections", "noninjections", "both"):
-		raise ValueError, "unrecognized --variant %s" % options.variant
+		raise ValueError("unrecognized --variant %s" % options.variant)
 	options.do_injections = options.variant in ("injections", "both")
 	options.do_noninjections = options.variant in ("noninjections", "both")
 
 	if options.do_injections and not options.injection_time_slides:
-		raise ValueError, "missing required --injection-time-slides argument"
+		raise ValueError("missing required --injection-time-slides argument")
 	if options.do_noninjections and not options.background_time_slides:
-		raise ValueError, "missing required --background-time-slides argument"
+		raise ValueError("missing required --background-time-slides argument")
 
 	# simplifies life later by allowing the background and injection
 	# branches of the dag to be constructed with nearly identical code
@@ -105,7 +108,7 @@ def parse_command_line():
 
 def parse_config_file(options):
 	if options.verbose:
-		print >>sys.stderr, "reading %s ..." % options.config_file
+		print("reading %s ..." % options.config_file, file=sys.stderr)
 	config = ConfigParser.SafeConfigParser()
 	config.read(options.config_file)
 
@@ -141,7 +144,7 @@ def parse_config_file(options):
 
 def compute_segment_lists(seglistdict, time_slides, minimum_gap, timing_params, full_segments = True, verbose = False):
 	if verbose:
-		print >>sys.stderr, "constructing segment list ..."
+		print("constructing segment list ...", file=sys.stderr)
 
 	seglistdict = seglistdict.copy()
 
@@ -253,7 +256,7 @@ power.init_job_types(config_parser)
 
 
 if options.verbose:
-	print >>sys.stderr, "Computing segments for which lalapps_power jobs are required ..."
+	print("Computing segments for which lalapps_power jobs are required ...", file=sys.stderr)
 
 background_time_slides = {}
 background_seglistdict = segments.segmentlistdict()
@@ -318,7 +321,7 @@ def make_coinc_branch(dag, datafinds, seglistdict, time_slides, timing_params, p
 	if do_injections:
 		assert len(time_slides) == 1
 		if verbose:
-			print >>sys.stderr, "Building lalapps_binj jobs ..."
+			print("Building lalapps_binj jobs ...", file=sys.stderr)
 		binjnodes = power.make_binj_fragment(dag, seglistdict.extent_all(), time_slides.keys()[0], tag, 0.0, float(power.powerjob.get_opts()["low-freq-cutoff"]), float(power.powerjob.get_opts()["low-freq-cutoff"]) + float(power.powerjob.get_opts()["bandwidth"]))
 		# add binj nodes as parents of the datafinds to force the binj's to
 		# be run first.  this ensures that once a datafind has run the
@@ -337,7 +340,7 @@ def make_coinc_branch(dag, datafinds, seglistdict, time_slides, timing_params, p
 	trigger_nodes = power.make_single_instrument_stage(dag, datafinds, seglistdict, tag, timing_params, psds_per_power, binjnodes = binjnodes, verbose = verbose)
 	if enable_clustering:
 		if verbose:
-			print >>sys.stderr, "building pre-lladd bucluster jobs ..."
+			print("building pre-lladd bucluster jobs ...", file=sys.stderr)
 		trigger_nodes = power.make_bucluster_fragment(dag, trigger_nodes, "PRELLADD_%s" % tag, verbose = verbose)
 
 
@@ -351,7 +354,7 @@ def make_coinc_branch(dag, datafinds, seglistdict, time_slides, timing_params, p
 	assert len(binj_cache) < 2
 	for n, (time_slides_cache_entry, these_time_slides) in enumerate(time_slides.items()):
 		if verbose:
-			print >>sys.stderr, "%s %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path)
+			print("%s %d/%d (%s):" % (tag, n + 1, len(time_slides), time_slides_cache_entry.path), file=sys.stderr)
 		tisi_cache = set([time_slides_cache_entry])
 		if do_injections:
 			# lalapps_binj has already copied the time slide
@@ -366,13 +369,13 @@ def make_coinc_branch(dag, datafinds, seglistdict, time_slides, timing_params, p
 			nodes |= power.make_lladd_fragment(dag, parents | binjnodes, "%s_%d" % (tag, n), segment = seg, input_cache = cache | binj_cache, extra_input_cache = extra_input_cache, remove_input = do_injections, preserve_cache = binj_cache | tisi_cache)
 		if enable_clustering:
 			if verbose:
-				print >>sys.stderr, "building post-lladd bucluster jobs ..."
+				print("building post-lladd bucluster jobs ...", file=sys.stderr)
 			nodes = power.make_bucluster_fragment(dag, nodes, "POSTLLADD_%s_%d" % (tag, n), verbose = verbose)
 		if verbose:
-			print >>sys.stderr, "building burca jobs ..."
+			print("building burca jobs ...", file=sys.stderr)
 		coinc_nodes |= power.make_burca_fragment(dag, nodes, "%s_%d" % (tag, n), verbose = verbose)
 		if verbose:
-			print >>sys.stderr, "done %s %d/%d" % (tag, n + 1, len(time_slides))
+			print("done %s %d/%d" % (tag, n + 1, len(time_slides)), file=sys.stderr)
 
 
 	# injection identification
@@ -380,7 +383,7 @@ def make_coinc_branch(dag, datafinds, seglistdict, time_slides, timing_params, p
 
 	if do_injections:
 		if verbose:
-			print >>sys.stderr, "building binjfind jobs ..."
+			print("building binjfind jobs ...", file=sys.stderr)
 		coinc_nodes = power.make_binjfind_fragment(dag, coinc_nodes, tag, verbose = verbose)
 
 
@@ -388,7 +391,7 @@ def make_coinc_branch(dag, datafinds, seglistdict, time_slides, timing_params, p
 
 
 	if verbose:
-		print >>sys.stderr, "building sqlite jobs ..."
+		print("building sqlite jobs ...", file=sys.stderr)
 	coinc_nodes = power.make_sqlite_fragment(dag, coinc_nodes, tag, verbose = verbose)
 
 
@@ -409,6 +412,6 @@ inj_coinc_nodes = make_coinc_branch(dag, datafinds, injection_seglistdict, injec
 
 
 if options.verbose:
-	print >>sys.stderr, "writing dag ..."
+	print("writing dag ...", file=sys.stderr)
 dag.write_sub_files()
 dag.write_dag()

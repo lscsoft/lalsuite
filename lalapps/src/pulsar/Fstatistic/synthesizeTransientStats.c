@@ -490,8 +490,8 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->dataStartGPS = 814838413;	/* 1 Nov 2005, ~ start of S5 */
   uvar->dataDuration = (INT4) round ( LAL_YRSID_SI );	/* 1 year of data */
 
-  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   uvar->numDraws = 1;
   uvar->TAtom = 1800;

@@ -4,6 +4,8 @@ This script produced the necessary condor submit and dag files to run
 the standalone inspiral code on LIGO data
 """
 
+from __future__ import print_function
+
 __author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -59,7 +61,7 @@ class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         self.add_ini_opts(mycp, sec)
 
       else:
-        print >>sys.stderr, "warning: config file is missing section [" + sec + "]"
+        print("warning: config file is missing section [" + sec + "]", file=sys.stderr)
 
     self.set_stdout_file('logs/' + exec_name + \
         '-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
@@ -269,8 +271,8 @@ class InspiralJob(InspiralAnalysisJob):
       # make sure the vanilla universe is being used
       universe = cp.get('condor', 'universe')
       if universe != 'vanilla':
-        raise RuntimeError, 'Cannot run GPU inspiral jobs on Condor ' + \
-            universe + ' universe. Please use vanilla.'
+        raise RuntimeError('Cannot run GPU inspiral jobs on Condor ' + \
+            universe + ' universe. Please use vanilla.')
       # make sure the executable has CUDA dependencies
       executable = cp.get('condor', exec_name)
       objdump_re = re.compile(r'^\s*NEEDED\s*(libcufft\.|libcudart\.).*')
@@ -283,8 +285,8 @@ class InspiralJob(InspiralAnalysisJob):
           cuda_deps = True
           break
       if not cuda_deps:
-        raise RuntimeError, 'Inspiral executable has no CUDA ' + \
-            'dependencies. Please use a CUDA-enabled build.'
+        raise RuntimeError('Inspiral executable has no CUDA ' + \
+            'dependencies. Please use a CUDA-enabled build.')
       self.add_opt('gpu-device-id', '0')
       self.add_condor_cmd('+WantGPU', 'true')
       self.add_condor_cmd('Requirements', '( GPU_PRESENT =?= true)')
@@ -420,7 +422,7 @@ class ThincaJob(InspiralAnalysisJob):
             os.symlink(arg,os.path.split(arg)[-1])
             self.add_file_opt(opt,fname)
           except:
-            print >>sys.stderr, "sym link failed for " + arg + " grid workflows might be broken"
+            print("sym link failed for " + arg + " grid workflows might be broken", file=sys.stderr)
             self.add_file_opt(opt,arg)
         else:
           self.add_file_opt(opt,fname)
@@ -725,7 +727,7 @@ class InspiralAnalysisNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
     IFO-EXECUTABLE_IFOTAG_USERTAG-GPS_START-DURATION
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo():
-      raise InspiralError, "Start time, end time or ifo has not been set"
+      raise InspiralError("Start time, end time or ifo has not been set")
 
     filebase = self.get_ifo() + '-' + self.job().get_exec_name().upper()
 
@@ -905,7 +907,7 @@ class BbhInjNode(InspiralAnalysisNode):
     must be kept synchronized with the name of the output file in bbhinj.c.
     """
     if not self.get_start() or not self.get_end():
-      raise InspiralError, "Start time or end time has not been set"
+      raise InspiralError("Start time or end time has not been set")
     if self.get_user_tag():
       bbhinject = 'HL-INJECTIONS_' + self.get_user_tag() + '-'
       bbhinject = bbhinject + str(self.get_start()) + '-'
@@ -952,7 +954,7 @@ class RandomBankNode(InspiralAnalysisNode):
     be kept synchronized with the name of the output file in randombank.c.
     """
     if not self.get_start() or not self.get_end():
-      raise InspiralError, "Start time or end time has not been set"
+      raise InspiralError("Start time or end time has not been set")
     if self.get_user_tag():
       bank = 'P-TMPLTBANK_' + self.get_user_tag() + '-' 
       bank = bank + str(self.get_start())
@@ -999,7 +1001,7 @@ class SplitBankNode(InspiralAnalysisNode):
     synchronized with the name of the output files in splitbank.c.
     """
     if not self.get_bank() or not self.get_num_banks():
-      raise InspiralError, "Bank file or number of banks has not been set"
+      raise InspiralError("Bank file or number of banks has not been set")
 
     banks = []
     x = self.__bankfile.split('-')
@@ -1233,7 +1235,7 @@ class IncaNode(InspiralAnalysisNode):
     synchronized with the name of the output file in inca.c.
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo_a():
-      raise InspiralError, "Start time, end time or ifo a has not been set"
+      raise InspiralError("Start time, end time or ifo a has not been set")
 
     basename = self.get_ifo_a() + '-INCA'
 
@@ -1260,7 +1262,7 @@ class IncaNode(InspiralAnalysisNode):
     synchronized with the name of the output file in inca.c.
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo_b():
-      raise InspiralError, "Start time, end time or ifo a has not been set"
+      raise InspiralError("Start time, end time or ifo a has not been set")
 
     basename = self.get_ifo_b() + '-INCA'
 
@@ -1405,7 +1407,7 @@ class ThincaNode(InspiralAnalysisNode):
     synchronized with the name of the output file in thinca.c.
     """
     if not self.get_start() or not self.get_end() or not self.get_ifos():
-      raise InspiralError, "Start time, end time or ifos have not been set"
+      raise InspiralError("Start time, end time or ifos have not been set")
     
     if self.__num_slides:
       basename = self.get_ifos() + '-' + self.job().get_exec_name().upper() \
@@ -1468,7 +1470,7 @@ class ThincaToCoincNode(InspiralAnalysisNode):
     thinca_to_coinc node is being run.
     """
     if not self.__input_cache:
-      raise ValueError, "no input-cache specified"
+      raise ValueError("no input-cache specified")
     # open the input cache file
     fp = open(self.__input_cache, 'r')
     input_cache = lal.Cache().fromfile(fp).sieve( description = coinc_file_tag )
@@ -1677,7 +1679,7 @@ class SireNode(InspiralAnalysisNode):
     get the name of the output file
     """
     if not self.get_ifo():
-      raise InspiralError, "ifos have not been set"
+      raise InspiralError("ifos have not been set")
 
     fname = self.get_ifo() + "-SIRE"
     if self.get_inj_file():
@@ -1689,7 +1691,7 @@ class SireNode(InspiralAnalysisNode):
 
     if (self.get_start() and not self.get_end()) or \
         (self.get_end() and not self.get_start()):
-      raise InspiralError, "If one of start and end is set, both must be"
+      raise InspiralError("If one of start and end is set, both must be")
 
     if (self.get_start()):
       duration=self.get_end()- self.get_start()
@@ -1832,15 +1834,15 @@ class CoireNode(InspiralAnalysisNode):
     get the name of the output file
     """
     if not self.get_ifos():
-      raise InspiralError, "ifos have not been set"
+      raise InspiralError("ifos have not been set")
 
     self.set_output_tag()
     fname = self.get_ifos() + '-' + self.get_output_tag()
 
     if (self.get_start() and not self.get_end()) or \
            (self.get_end() and not self.get_start()):
-      raise InspiralError, "If one of start and end is set, "\
-            "both must be"
+      raise InspiralError("If one of start and end is set, "\
+            "both must be")
 
     if (self.get_start()):
       duration=self.get_end() - self.get_start()
@@ -1963,7 +1965,7 @@ class CohBankNode(InspiralAnalysisNode):
     """
 
     if not self.get_ifos():
-      raise InspiralError, "Ifos have not been set"
+      raise InspiralError("Ifos have not been set")
 
     basename = self.get_ifos() + '-COHBANK'
 
@@ -2021,7 +2023,7 @@ class CohInspBankNode(InspiralAnalysisNode):
     """
 
     if not self.get_ifos():
-      raise InspiralError, "Ifos have not been set"
+      raise InspiralError("Ifos have not been set")
 
     basename = self.get_ifos() + '-COHINSPBANK'
 
@@ -2076,7 +2078,7 @@ class ChiaNode(InspiralAnalysisNode):
     Returns the file name of output from coherent inspiral.
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo_tag():
-      raise InspiralError, "Start time, end time or ifos have not been set"
+      raise InspiralError("Start time, end time or ifos have not been set")
       
     basename = self.get_ifo_tag() + '-CHIA'
 
@@ -2204,15 +2206,15 @@ class CohireNode(InspiralAnalysisNode):
     get the name of the output file
     """
     if not self.get_ifos():
-      raise InspiralError, "ifos have not been set"
+      raise InspiralError("ifos have not been set")
 
     self.set_output_tag()
     fname = self.get_ifos() + '-' + self.get_output_tag()
 
     if (self.get_start() and not self.get_end()) or \
            (self.get_end() and not self.get_start()):
-      raise InspiralError, "If one of start and end is set, "\
-            "both must be"
+      raise InspiralError("If one of start and end is set, "\
+            "both must be")
 
     if (self.get_start()):
       duration=self.get_end() - self.get_start()

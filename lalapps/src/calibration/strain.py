@@ -228,7 +228,7 @@ class NoiseNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
         # set the frame type based on the LFNs returned by datafind
         #self.add_var_opt('frame-type',b)
       else:
-        raise CondorDAGNodeError, "Unknown LFN cache format"
+        raise CondorDAGNodeError("Unknown LFN cache format")
 
 # Convenience functions to cat together noise output files.
 def open_noise_cat_file(dir):
@@ -300,11 +300,11 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
     amphf[f] = 0.0
   freqcnt = 0;
 
-  print "\tfirst pass through systematics files..."
+  print("\tfirst pass through systematics files...")
   for file in flist:
     try: input = open(file,'r')
     except:
-      print "WARNING: file " + file + " doesn't exist"
+      print("WARNING: file " + file + " doesn't exist")
       continue
     for line in input.readlines():
       tmp = line.split()
@@ -394,12 +394,12 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
 
   freqcnt = 0;
 
-  print "\tsecond pass through systematics files..."
+  print("\tsecond pass through systematics files...")
   #Compute the moments of the distribution
   for file in flist:
     try: input = open(file,'r')
     except:
-      print "WARNING: file " + file + " doesn't exist"
+      print("WARNING: file " + file + " doesn't exist")
       continue
     for line in input.readlines():
       tmp = line.split()
@@ -458,7 +458,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
 
   fl.close()
   # Plot the results
-  print "\tplotting..."
+  print("\tplotting...")
   # Plot the systematic in magnitude
   magfigname = "sys_mag"+epoch[1]+"-"+epoch[2]+".png"
   figure(1)
@@ -592,7 +592,7 @@ def plot_systematics(filelist,cp,dir,epoch,dag,opts):
   page.write('<h3>Raw distribution of residual noise</h3><hr><br>\n')
   for f in freq:
     #time.sleep(10)
-    print "plotting "+str(f)
+    print("plotting "+str(f))
     figname = "n_hist_"+str(f)+'_'+epoch[1]+"-"+epoch[2]+".png"
     #figure(1)
     plot(binVec,realHistVecs[f])
@@ -647,7 +647,7 @@ def plot_noise_jobs(filelist,cp,dir,epoch,dag,qjob,opts):
   for file in filelist:
     try: input = open(file,'r')
     except:
-      print "WARNING: file " + file + " doesn't exist"
+      print("WARNING: file " + file + " doesn't exist")
       continue
     #if STOP > 100: break
     #STOP+=1
@@ -769,7 +769,7 @@ def plot_noise_spec(specList,cp,dir,dag,qjob,qfile,tftuple):
   A = array(specList,typecode='f')
   figure(1)
   pcolor(X,Y,A.transpose(),shading='flat',vmin=0.95,vmax=1.05)
-  print "...plotting qscan for " + start
+  print("...plotting qscan for " + start)
   title('h(t) and h(f) power ratios per freq bin GPS '+start + '\n min = '+str(MIN) + ' max = '+str(MAX) )
   xlabel('Time')
   ylabel('Frequency')
@@ -897,7 +897,7 @@ class qscanNode(pipeline.CondorDAGNode):
       # just look at darm and h(t) for puny outliers.
       self.add_file_arg(qfile)
     else:
-      print ".....found 10% outlier running full qscan\n"
+      print(".....found 10% outlier running full qscan\n")
       # run the standard qscan on outliers greater than 10%
       self.add_file_arg(qfile+'FULL')
     self.add_var_arg('@default')

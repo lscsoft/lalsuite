@@ -17,6 +17,7 @@
 // MA  02111-1307  USA
 //
 
+/// [hotloop]
 /* NOTE: sin[ 2pi (Dphi_alpha - k) ] = sin [ 2pi Dphi_alpha ], therefore
  * the trig-functions need to be calculated only once!
  * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the
@@ -69,3 +70,4 @@
   /* real- and imaginary part of e^{i 2 pi lambda_alpha } */
   XLALSinCos2PiLUT ( &imagQ, &realQ, lambda_alpha );
 }
+/// [hotloop]

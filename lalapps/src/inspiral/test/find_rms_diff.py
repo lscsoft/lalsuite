@@ -98,13 +98,13 @@ matplotlib.use('Agg')
 from pylab import *
 
 if (opts.ref_dir == None or opts.test_dir == None) and not opts.unit_test:
-  print "You must supply a reference directory and a test directory or "\
-  "give the unit_test option which will set the directories for you."
+  print("You must supply a reference directory and a test directory or "\
+  "give the unit_test option which will set the directories for you.")
   sys.exit(1)
 
 if (opts.ref_dir or opts.test_dir) and opts.unit_test:
-  print "You cannot give the ref or test directory when the "\
-  "unit test is specified."
+  print("You cannot give the ref or test directory when the "\
+  "unit test is specified.")
   sys.exit(1)
 
 if opts.output_file == None:

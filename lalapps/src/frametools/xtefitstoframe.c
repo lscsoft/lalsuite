@@ -559,7 +559,14 @@ int XLALReadFITSFile(FITSData **fitsfiledata,        /**< [out] FITS file null d
   LogPrintf(LOG_DEBUG,"%s : opened the input FITS file\n",fn);
 
   /* add full file path to the header information */
+#if __GNUC__ >= 8
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+#endif
   strncpy(header->file,filepath,STRINGLENGTH);
+#if __GNUC__ >= 8
+#pragma GCC diagnostic pop
+#endif
 
   /* read the header information from the first extension */
   if (XLALReadFITSHeader(header,fptr)) {
@@ -788,11 +795,9 @@ int XLALReadFITSHeader(FITSHeader *header,        /**< [out] The FITS file heade
   /* first we extract the filename from the full file path */
   {
     char *c;
-    int len = 0;
     if ((c = strrchr(header->file,'/'))) c++;
     else c = header->file;
-    len = strlen(c) + 1;
-    strncpy(header->filename,c,len);
+    strcpy(header->filename,c);
   }
   LogPrintf(LOG_DEBUG,"%s : extracted filename as %s\n",fn,header->filename);
 
@@ -1433,15 +1438,12 @@ int XLALReadFITSArrayData(XTEUINT4Array **array,      /**< [out] the output data
 
     /* output debugging information */
     {
-      char temp1[STRINGLENGTH],temp2[STRINGLENGTH];
       int M = (*array)->channeldata[i].length > 10 ? 10 : (*array)->channeldata[i].length;
-      sprintf(temp1,"");
-      sprintf(temp2,"");
+      LogPrintf(LOG_DEBUG,"%s : read array data as : ",fn);
       for (j=0;j<M;j++) {
-	sprintf(temp2,"%s%d(%d),",temp1,(*array)->channeldata[i].data[j],(*array)->channeldata[i].undefined[j]);
-	strcpy(temp1,temp2);
+			  LogPrintf(LOG_DEBUG,"%d(%d),",(*array)->channeldata[i].data[j],(*array)->channeldata[i].undefined[j]);
       }
-      LogPrintf(LOG_DEBUG,"%s : read array data as : %s ...\n",fn,temp2);
+	  LogPrintf(LOG_DEBUG,"...\n");
     }
 
   }
@@ -1555,15 +1557,12 @@ int XLALReadFITSEventData(XTECHARArray **event,       /**< [out] The FITSdata st
   /* output debugging information */
   {
     int i;
-    char temp1[STRINGLENGTH],temp2[STRINGLENGTH];
     int M = (*event)->channeldata[0].nevents > 100 ? 100 : (*event)->channeldata[0].nevents;
-    sprintf(temp1,"");
-    sprintf(temp2,"");
+    LogPrintf(LOG_DEBUG,"%s : read array data as : ",fn);
     for (i=0;i<M;i++) {
-      sprintf(temp2,"%s%d,",temp1,(*event)->channeldata[0].data[(*event)->channeldata[0].rowlength*i]);
-      strcpy(temp1,temp2);
+			LogPrintf(LOG_DEBUG,"%d,",(*event)->channeldata[0].data[(*event)->channeldata[0].rowlength*i]);
     }
-    LogPrintf(LOG_DEBUG,"%s : read array data as : %s ...\n",fn,temp2);
+	LogPrintf(LOG_DEBUG,"\n");
   }
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
@@ -1957,7 +1956,7 @@ int XLALEventDataToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,   /**< 
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for FITS header dump copy.\n",fn);
     XLAL_ERROR(XLAL_ENOMEM);
   }
-  strncpy((*ts)->headerdump,fits->header->headerdump,strlen(fits->header->headerdump)*sizeof(CHAR));
+  strcpy((*ts)->headerdump,fits->header->headerdump);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
   return XLAL_SUCCESS;
@@ -2144,7 +2143,7 @@ int XLALArrayDataToXTEUINT4TimeSeriesArray(XTEUINT4TimeSeriesArray **ts,   /**< 
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for FITS header dump copy.\n",fn);
     XLAL_ERROR(XLAL_ENOMEM);
   }
-  strncpy((*ts)->headerdump,fits->header->headerdump,strlen(fits->header->headerdump)*sizeof(CHAR));
+  strcpy((*ts)->headerdump,fits->header->headerdump);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",fn);
   return XLAL_SUCCESS;

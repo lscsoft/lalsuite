@@ -10,8 +10,8 @@ import string
 from optparse import *
 from types import *
 from pylab import *
-from glue import segments
-from glue import segmentsUtils
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
@@ -146,7 +146,7 @@ if opts.source_file:
     l=(lumsum[n]/(dv[n]))
     suml = suml+l
     if opts.verbose:
-      print "%f (%f) L_10/Mpc^3" % (l,suml/(float(i+1)))
+      print("%f (%f) L_10/Mpc^3" % (l,suml/(float(i+1))))
 
   luminosity_extrapolation_factor = suml/float(opts.nbins)
 

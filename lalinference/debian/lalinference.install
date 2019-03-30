@@ -1,8 +1,10 @@
 etc/*
-usr/bin/lalinference_datadump
-usr/bin/lalinference_nest
-usr/bin/lalinference_burst
+usr/bin//lalinference_mpi_wrapper
 usr/bin/lalinference_bench
+usr/bin/lalinference_burst
+usr/bin/lalinference_datadump
+usr/bin/lalinference_injectedlike
+usr/bin/lalinference_nest
 usr/bin/lalinference_version
 usr/lib/*/*.so.*
 usr/share/lalinference/*.csv

@@ -25,6 +25,8 @@
 Some helper classes and functions for outputing html and LaTeX pages
 """
 
+from __future__ import print_function
+
 import re
 import numpy as np
 import math
@@ -724,7 +726,7 @@ class latextable:
 # convert a floating point number into a string in X.X x 10^Z format
 def exp_str(f, p=1, otype='html'):
   if p > 16:
-    print >> sys.stderr, "Precision must be less than 16 d.p."
+    print("Precision must be less than 16 d.p.", file=sys.stderr)
     p = 16
 
   s = '%.16e' % f

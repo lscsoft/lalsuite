@@ -114,8 +114,8 @@ int main(int argc, char *argv[]) {
   INT8 MC_trials_reset;
   gsl_vector_int *twoF_pdf_hist = NULL;
 
-  ephem_earth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  ephem_sun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  ephem_earth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  ephem_sun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   /* Initialise LAL error handler */
   lal_errhandler = LAL_ERR_EXIT;

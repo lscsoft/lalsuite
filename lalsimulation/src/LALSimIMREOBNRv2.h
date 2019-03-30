@@ -157,6 +157,10 @@ typedef struct tagFacWaveformCoeffs
   REAL8 f21v1S;
   REAL8 f21v3;
   REAL8 f21v3S;
+  REAL8 f21v4;
+  REAL8 f21v5;
+  REAL8 f21v6;
+  REAL8 f21v7c;
 
   REAL8 delta33vh3;
   REAL8 delta33vh6;
@@ -178,9 +182,15 @@ typedef struct tagFacWaveformCoeffs
   REAL8 rho33v7S;
   REAL8 rho33v8;
   REAL8 rho33v8l;
+  REAL8 rho33v10;
+  REAL8 rho33v10l;
 
   REAL8 f33v3;
+  REAL8 f33v4;
+  REAL8 f33v5;
+  REAL8 f33v6;
   REAL8 f33v3S;
+  REAL8 f33vh6;
 
   REAL8 delta32vh3;
   REAL8 delta32vh4;
@@ -232,6 +242,7 @@ typedef struct tagFacWaveformCoeffs
 
   REAL8 delta44vh3;
   REAL8 delta44vh6;
+  REAL8 delta44vh9;
   REAL8 delta44vh6S;
   REAL8 delta44v5;
 
@@ -245,6 +256,10 @@ typedef struct tagFacWaveformCoeffs
   REAL8 rho44v6;
   REAL8 rho44v6S;
   REAL8 rho44v6l;
+  REAL8 rho44v8;
+  REAL8 rho44v8l;
+  REAL8 rho44v10;
+  REAL8 rho44v10l;
 
   REAL8 delta43vh3;
   REAL8 delta43vh4;
@@ -296,6 +311,8 @@ typedef struct tagFacWaveformCoeffs
   REAL8 f41vS;
 
   REAL8 delta55vh3;
+  REAL8 delta55vh6;
+  REAL8 delta55vh9;
   REAL8 delta55v5;
   REAL8 rho55v2;
   REAL8 rho55v3;
@@ -305,6 +322,15 @@ typedef struct tagFacWaveformCoeffs
   REAL8 rho55v5;
   REAL8 rho55v5S;
   REAL8 rho55v6;
+  REAL8 rho55v6l;
+  REAL8 rho55v8;
+  REAL8 rho55v8l;
+  REAL8 rho55v10;
+  REAL8 rho55v10l;
+  REAL8 f55v3;
+  REAL8 f55v4;
+  REAL8 f55v5c;
+
 
   REAL8 delta54vh3;
   REAL8 delta54vh4;

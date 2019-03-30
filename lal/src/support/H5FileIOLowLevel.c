@@ -180,7 +180,7 @@ static hid_t XLALH5TypeFromLALType(LALTYPECODE dtype)
 	} else {
 		switch (size) {
 		case 1:
-			dtype_id = threadsafe_H5Tcopy(H5T_NATIVE_CHAR);
+			dtype_id = threadsafe_H5Tcopy(H5T_NATIVE_SCHAR);
 			break;
 		case 2:
 			dtype_id = threadsafe_H5Tcopy(H5T_NATIVE_INT16);

@@ -5,6 +5,7 @@ AM_CPPFLAGS += -I$(top_srcdir)/src
 # Add compiled test programs to this variable
 test_programs += EOBNRv2Test
 test_programs += GRFlagsTest
+test_programs += LALSimulationTest
 test_programs += PhenomPTest
 test_programs += PNCoefficients
 test_programs += PrecessWaveformEOBNRTest

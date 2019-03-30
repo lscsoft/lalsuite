@@ -5,6 +5,8 @@ This script produces the condor submit and dag files to run
 the standalone strain
 """
 
+from __future__ import print_function
+
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -34,7 +36,7 @@ Usage: lalapps_ring_pipe [options]
   -f, --dag-file           basename for .dag file (excluding the .dag)
   -t, --aux-path           path to auxiliary files
 """
-  print >> sys.stderr, msg
+  print(msg, file=sys.stderr)
 
 # pasrse the command line options to figure out what we should do
 shortop = "hv:s:e:S:f:t:a:b:"
@@ -66,7 +68,7 @@ segment_filename = None
 
 for o, a in opts:
   if o in ("-v", "--version"):
-    print "$Id$"
+    print("$Id$")
     sys.exit(0)
   elif o in ("-h", "--help"):
     usage()
@@ -86,7 +88,7 @@ for o, a in opts:
   elif o in ("-b", "--trig-end"):
     pass
   else:
-    print >> sys.stderr, "Unknown option:", o
+    print("Unknown option:", o, file=sys.stderr)
     usage()
     sys.exit(1)
 
@@ -95,29 +97,29 @@ log_path = '/usr1/xsiemens/'
 df_pad=128
 
 if not config_file:
-  print >> sys.stderr, "No configuration file specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No configuration file specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not log_path:
-  print >> sys.stderr, "No log file path specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No log file path specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if (not GPSStart or not GPSEnd) and not segment_filename:
-  print >> sys.stderr, "No GPS start time and end times or segment filename specified."
-  print >> sys.stderr, "Either GPS start time and end times, or a segment filename must be specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No GPS start time and end times or segment filename specified.", file=sys.stderr)
+  print("Either GPS start time and end times, or a segment filename must be specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not basename:
-  print >> sys.stderr, "No dag file base name specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No dag file base name specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not aux_path:
-  print >> sys.stderr, "No auxiliary file path specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No auxiliary file path specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 # try and make a directory to store the cache files and job logs
@@ -159,7 +161,7 @@ strain_job.set_sub_file( basename + '.strain' + subsuffix )
 # if runnign on-line make segments filename
 if running_online:
   segment_file=open('strain_segment.txt',mode='w')
-  print >> segment_file, '1',GPSStart,' ',GPSEnd,' ',int(GPSEnd)-int(GPSStart)
+  print('1',GPSStart,' ',GPSEnd,' ',int(GPSEnd)-int(GPSStart), file=segment_file)
   segment_file.close()
   segment_filename='strain_segment.txt'
 
@@ -206,7 +208,7 @@ for seg in data:
 
   command = "/archive/home/xsiemens/lscsoft/glue/bin/LSCdataFindcheck --gps-start-time "+str(seg.start())+\
   " --gps-end-time "+str(seg.end())+" "+df.get_output()
-  print >> cachecheck_file, command
+  print(command, file=cachecheck_file)
 
   if prev_df:
     df.add_parent(prev_df)
@@ -222,11 +224,11 @@ for seg in data:
     gps_str=str(chunk.start())
     gps_time_first_four=gps_str[0]+gps_str[1]+gps_str[2]+gps_str[3]
     try: os.mkdir(base_data_dirL1+'/'+ifo[0]+'-'+frametypeL1+'-'+gps_time_first_four)
-    except OSError, err:
+    except OSError as err:
       import errno
       #print "Warning:", err
     try: os.mkdir(base_data_dirL2+'/'+ifo[0]+'-'+frametypeL2+'-'+gps_time_first_four)
-    except OSError, err:
+    except OSError as err:
       import errno
       #print "Warning:", err
 
@@ -241,9 +243,9 @@ for seg in data:
     strain1.add_parent(df)
     dag.add_node(strain1)
 
-    print >> framelist_file, 'ls '+directory+'/'+ifo[0] \
+    print('ls '+directory+'/'+ifo[0] \
     +'-'+frametype+'-'+str(int(chunk.start())+int(overlap))+'-' \
-    +str(int(chunk.end())-int(chunk.start())-2*int(overlap))+'.gwf > /dev/null'
+    +str(int(chunk.end())-int(chunk.start())-2*int(overlap))+'.gwf > /dev/null', file=framelist_file)
 
 cachecheck_file.close()
 framelist_file.close()
@@ -267,24 +269,24 @@ total_data = 0
 for seg in data:
   for chunk in seg:
     total_data += len(chunk)
-print >> log_fh, "total data =", total_data
+print("total data =", total_data, file=log_fh)
 
-print >> log_fh, "\n===========================================\n"
-print >> log_fh, data
+print("\n===========================================\n", file=log_fh)
+print(data, file=log_fh)
 for seg in data:
-  print >> log_fh, seg
+  print(seg, file=log_fh)
   for chunk in seg:
-    print >> log_fh, chunk, 'length', int(chunk.end())-int(chunk.start())
+    print(chunk, 'length', int(chunk.end())-int(chunk.start()), file=log_fh)
     endgps=chunk.end()
 
 if running_online:
-  print >> sys.stdout, seg.start()+overlap,int(chunk.end())-overlap
+  print(seg.start()+overlap,int(chunk.end())-overlap)
 
 if not running_online:
   # write a message telling the user that the DAG has been written
-  print "\nCreated a DAG file which can be submitted by executing"
-  print "\n   condor_submit_dag", dag.get_dag_file()
-  print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
+  print("\nCreated a DAG file which can be submitted by executing")
+  print("\n   condor_submit_dag", dag.get_dag_file())
+  print("""\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
   If you are running LSCdataFind jobs, do not forget to initialize your grid
   proxy certificate on the condor submit machine by running the commands
 
@@ -307,7 +309,7 @@ if not running_online:
 
   Contact the administrator of your cluster to find the hostname and port of the
   LSCdataFind server.
-  """
+  """)
 
 sys.exit(0)
 

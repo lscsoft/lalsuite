@@ -250,9 +250,9 @@ def pferrs(porf, porferr, pdorfd=None, pdorfderr=None):
 
 # class to read in a pulsar par file - this is heavily based on the function
 # in parfile.py in PRESTO
-float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10",
-              "PEPOCH", "POSEPOCH", "DM", "START", "FINISH", "NTOA",
-              "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS",
+float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9",
+              "F10", "F11", "F12", "PEPOCH", "POSEPOCH", "DM", "START",
+              "FINISH", "NTOA", "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS",
               "A1", "XDOT", "E", "ECC", "EDOT", "T0", "PB", "PBDOT", "OM",
               "OMDOT", "EPS1", "EPS2", "EPS1DOT", "EPS2DOT", "TASC", "LAMBDA",
               "BETA", "RA_RAD", "DEC_RAD", "GAMMA", "SINI", "M2", "MTOT",
@@ -260,8 +260,9 @@ float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "
               "PB_2", "PB_3", "T0_2", "T0_3", "A1_2", "A1_3", "OM_2", "OM_3",
               "ECC_2", "ECC_3", "PX", "KIN", "KOM", "A0", "B0", "D_AOP",
               # GW PARAMETERS
-              "H0", "COSIOTA", "PSI", "PHI0", "THETA", "I21", "I31", "C22", "HPLUS", "HCROSS",
-              "C21", "PHI22", "PHI21", "SNR", "COSTHETA", "IOTA", "Q22"]
+              "H0", "COSIOTA", "PSI", "PHI0", "THETA", "I21", "I31", "C22",
+              "HPLUS", "HCROSS", "C21", "PHI22", "PHI21", "SNR", "COSTHETA",
+              "IOTA", "Q22"]
 str_keys = ["FILE", "PSR", "PSRJ", "NAME", "RAJ", "DECJ", "RA", "DEC", "EPHEM",
             "CLK", "BINARY", "UNITS"]
 
@@ -1995,7 +1996,7 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
 
   # check if ra and dec are floats or strings (if strings in hh/dd:mm:ss.s format then convert to rads)
   if not isinstance(ra, float):
-    if isinstance(ra, basestring):
+    if isinstance(ra, string_types):
       try:
         ra = ra_to_rad(ra)
       except:
@@ -2004,7 +2005,7 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
       raise ValueError("Right ascension must be a 'float' in radians or a string of the format 'hh:mm:ss.s'")
 
   if not isinstance(dec, float):
-    if isinstance(dec, basestring):
+    if isinstance(dec, string_types):
       try:
         dec = dec_to_rad(dec)
       except:
@@ -2017,6 +2018,9 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
     gpsTime = np.array([gpsTime])
   else: # make sure it's a numpy array
     gpsTime = np.copy(gpsTime)
+
+  # make sure times are floats
+  gpsTime = gpsTime.astype('float64')
 
   # if gpsTime is a list of regularly spaced values then use ComputeDetAMResponseSeries
   if len(gpsTime) == 1 or np.unique(np.diff(gpsTime)).size == 1:
@@ -2049,7 +2053,7 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
 def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
                          freqfac=[2.0], npsds=None, snrscale=None):
   # if detectors is just a string (i.e. one detector) then make it a list
-  if isinstance(detectors, basestring):
+  if isinstance(detectors, string_types):
     detectors = [detectors]
 
   # if not noise sigma's are given then generate a noise level from the given
@@ -2875,7 +2879,7 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
 
   # if dets is just a single string
   if not isinstance(dets, list):
-    if isinstance(dets, basestring):
+    if isinstance(dets, string_types):
       dets = [dets] # make into list
     else:
       print('Detector not, or incorrectly, set', file=sys.stderr)

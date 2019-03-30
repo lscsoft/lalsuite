@@ -16,13 +16,6 @@ export LC_ALL=C
 builddir="./";
 injectdir="../Injections/"
 
-## ----- user-controlled level of debug-output detail
-if [ -n "$DEBUG" ]; then
-    debug=${DEBUG}
-else
-    debug=0	## default=quiet
-fi
-
 ## ----- allow user-control of hotloop variant to use
 if [ -n "$FSTAT_METHOD" ]; then
     FstatMethod="--FstatMethod=${FSTAT_METHOD}"
@@ -116,7 +109,7 @@ fi
 
 cmdline="$mfd_code $mfd_CL --randSeed=1"
 echo $cmdline;
-if ! eval "$cmdline 2> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$mfd_code' ..."
     exit 1
 fi
@@ -145,7 +138,7 @@ fi
 
 cmdline="$cfsv2_code $cfs_CL --outputFstat=${outfile_Fstat} --TwoFthreshold=0 --FreqBand=$cfs_FreqBand"
 echo $cmdline;
-if ! eval "$cmdline 2> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi

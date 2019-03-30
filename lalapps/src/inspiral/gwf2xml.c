@@ -33,7 +33,7 @@
 #include <lal/LALFrameL.h>
 #include <lal/LALgetopt.h>
 #include <lal/Date.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 

@@ -54,6 +54,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALgetopt.h>
 #include <lal/FindRoot.h>
+#include <lal/LALString.h>
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
@@ -386,7 +387,7 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
     REPORTSTATUS (status);
   }
 
-  if (strncpy (str, ignored, sizeof (str)))
+  if (XLALStringCopy(str, ignored, sizeof(str)))
   {
     if ((tok = strtok (str, " ")))
     {

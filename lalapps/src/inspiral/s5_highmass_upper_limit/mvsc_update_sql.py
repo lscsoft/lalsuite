@@ -1,4 +1,6 @@
 #!/usr/bin/python
+from __future__ import print_function
+
 import sqlite3
 from glue.ligolw import dbtables 
 from pylal import SnglInspiralUtils
@@ -33,7 +35,7 @@ def files_to_dict(f1, f1_info, databases, ldict):
   f1lines.pop(0)
   f1_infolines = open(f1_info).readlines()
   if len(f1lines) != len(f1_infolines): 
-    print>> sys.stderr, "file " + f1 + " and " +f1_info + " have different lengths"
+    print("file " + f1 + " and " +f1_info + " have different lengths", file=sys.stderr)
     sys.exit(1)
   for i, f1row in enumerate(f1lines):
     likelihood = float(f1row.split()[-1])
@@ -62,12 +64,12 @@ for database in databases:
 files.sort()
 infofiles.sort()
 if len(files) != len(infofiles): 
-  print>> sys.stderr, "the number of infofiles does not match the number of files"
+  print("the number of infofiles does not match the number of files", file=sys.stderr)
   sys.exit(1)
 file_map=[]
 for i in range(len(files)):
   file_map.append([files[i],infofiles[i]])
-print file_map
+print(file_map)
 
 ldict = {}
 for pair in file_map:
@@ -95,6 +97,6 @@ for f in databases:
 
 time2=time()
 elapsed_time=time2-time1
-print elapsed_time
+print(elapsed_time)
 
 

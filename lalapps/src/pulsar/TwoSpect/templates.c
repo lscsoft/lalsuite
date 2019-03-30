@@ -121,10 +121,10 @@ void destroyTwoSpectTemplateVector(TwoSpectTemplateVector *vector)
    if ((!vector->length || !vector->data) && (vector->length || vector->data)) XLAL_ERROR_VOID(XLAL_EINVAL);
    if (vector->data) {
       for (UINT4 ii=0; ii<vector->length; ii++) destroyTwoSpectTemplate(vector->data[ii]);
-      XLALFree((TwoSpectTemplate*)vector->data);
+      XLALFree(vector->data);
    }
    vector->data = NULL;
-   XLALFree((TwoSpectTemplateVector*)vector);
+   XLALFree(vector);
    return;
 }
 

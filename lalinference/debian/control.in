@@ -11,18 +11,19 @@ Build-Depends: debhelper (>= 9),
   libhdf5-dev,
   libmetaio-dev (>= 8.2),
   liboctave-dev,
-  pkg-config,
+  pkg-config (>= 0.18.0),
   python-all-dev,
   python-astropy (>= 1.1.1),
+  python-gwdatafind,
+  python-gwpy,
   python-h5py,
   python-healpy (>= 1.9.1),
   python-matplotlib (>= 1.2.0),
   python-numpy (>= 1.7),
   python-scipy (>= 0.8),
-  python-seaborn,
   python-shapely,
   python-pytest,
-  swig (>= 3.0.7),
+  swig (>= 3.0.7) | swig3.0 (>= 3.0.7),
   zlib1g-dev,
   python-glue (>= @MIN_GLUE_VERSION@),
   lal-dev (>= @MIN_LAL_VERSION@~),
@@ -62,6 +63,8 @@ Depends: ${misc:Depends},
   lalburst (>= @MIN_LALBURST_VERSION@~),
   lalinspiral (>= @MIN_LALINSPIRAL_VERSION@~),
   lalpulsar (>= @MIN_LALPULSAR_VERSION@~)
+Breaks: lalapps (<< 6.22)
+Replaces: lalapps (<< 6.22)
 Description: LSC Algorithm Library Inference
  The LSC Algorithm Inspiral Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
@@ -108,15 +111,16 @@ Depends:
   ${python:Depends},
   ${shlibs:Depends},
   python-astropy (>= 1.1.1),
+  python-gwdatafind,
   python-h5py,
   python-matplotlib (>= 1.2.0),
   python-pkg-resources,
   python-scipy (>= 0.8),
-  python-seaborn,
   python-shapely,
   python-six,
   python-glue (>= @MIN_GLUE_VERSION@),
   python-ligo-gracedb,
+  python-gwpy,
   python-lal (>= @MIN_LAL_VERSION@~),
   python-lalframe (>= @MIN_LALFRAME_VERSION@~),
   python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
@@ -125,8 +129,8 @@ Depends:
   python-lalinspiral (>= @MIN_LALINSPIRAL_VERSION@~),
   python-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
   lalinference (= ${binary:Version})
-Replaces: lalapps (<< 6.14.0-1), lalinference-python (<< 1.9.4.1-1~)
-Breaks: lalapps (<< 6.14.0-1), lalinference-python (<< 1.9.4.1-1~)
+Replaces: lalapps (<< 6.21.0.1-1), lalinference-python (<< 1.9.4.1-1~)
+Breaks: lalapps (<< 6.21.0.1-1), lalinference-python (<< 1.9.4.1-1~)
 Description: Python bindings for LALInference
  The LSC Algorithm Inference Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL Inference library.

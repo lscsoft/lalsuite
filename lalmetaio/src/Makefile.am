@@ -4,8 +4,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
 noinst_HEADERS = \
-	LIGOLwXMLHeaders.h \
-	LIGOLwXMLInspiralHeaders.h
+	LIGOLwXMLHeaders.h
 
 pkginclude_HEADERS = \
 	LALMetaIOConfig.h \
@@ -13,6 +12,7 @@ pkginclude_HEADERS = \
 	LALMetaIOVCSInfoHeader.h \
 	LIGOLwXML.h \
 	LIGOLwXMLArray.h \
+	LIGOLwXMLlegacy.h \
 	LIGOLwXMLRead.h \
 	LIGOMetadataTables.h \
 	LIGOMetadataUtils.h
@@ -20,8 +20,8 @@ pkginclude_HEADERS = \
 lib_LTLIBRARIES = liblalmetaio.la
 
 liblalmetaio_la_SOURCES = \
-	CreateMetaTableDir.c \
 	LIGOLwXML.c \
+	LIGOLwXMLlegacy.c \
 	LIGOLwXMLArray.c \
 	LIGOLwXMLRead.c \
 	LIGOMetadataUtils.c \

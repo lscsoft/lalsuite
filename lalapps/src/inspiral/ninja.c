@@ -45,7 +45,7 @@
 #include <lal/AVFactories.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/Inject.h>
 #include <lal/FileIO.h>

@@ -11,18 +11,13 @@ pymodule_PYTHON = \
 	__init__.py \
 	allsky.py \
 	angle.py \
-	backend_pdf_vcs_friendly.py \
 	cmap.py \
 	healpix.py \
-	marker.py \
-	poly.py \
-	pp.py \
 	spindisk.py \
 	$(END_OF_LIST)
 
 dist_pymodule_DATA = \
 	cylon.csv \
-	ne_simplified_coastline.json \
 	$(END_OF_LIST)
 
 all-local: data-all-local

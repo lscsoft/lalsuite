@@ -47,7 +47,7 @@ mydotfile=str(options.dotFile)
 mydagfile=str(options.dagFile)
 myoutfile=str(options.outFile)
 if mydotfile == '' or mydagfile == '':
-    print "Error with input file args!."
+    print("Error with input file args!.")
     os.abort()
 
 dot_fp=open(mydotfile,'r')

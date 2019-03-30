@@ -16,12 +16,6 @@ export LC_ALL=C
 builddir="./";
 injectdir="../Injections/"
 
-## ----- user-controlled level of debug-output detail
-debug=0	## default=quiet
-if [ -n "$DEBUG" ]; then
-    debug=${DEBUG}
-fi
-
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v5"
 cmp_code="${builddir}lalapps_compareFstats"
@@ -117,7 +111,7 @@ dataSpec="--Tsft=$Tsft --startTime=$startTime --duration=$duration --sqrtSX=${sq
 mfd_CL_comp="${dataSpec} --injectionSources='${injectionSources}' --outSingleSFT --outSFTdir=${SFTdir2} --randSeed=1 --IFOs=H1,L1"
 cmdline="$mfd_code $mfd_CL_comp "
 echo $cmdline;
-if ! eval "$cmdline &> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$mfd_code' ..."
     exit 1
 fi
@@ -126,7 +120,7 @@ echo
 mfd_CL="${dataSpec} --outSingleSFT --outSFTdir=${SFTdir} --randSeed=1 --IFOs=H1,L1"
 cmdline="$mfd_code $mfd_CL "
 echo $cmdline;
-if ! eval "$cmdline &> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$mfd_code' ..."
     exit 1
 fi
@@ -142,7 +136,7 @@ echo "----------------------------------------------------------------------"
 echo
 cmdline="$cfs_code $cfs_CL --FstatMethod=DemodBest --DataFiles='$SFTdir2/*.sft' --outputFstat=$outfile_Comp --outputTiming=$timefile_Comp --outputLoudest=${loudest_Comp} "
 echo $cmdline;
-if ! eval "$cmdline &> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1
 fi
@@ -154,7 +148,7 @@ echo "----------------------------------------------------------------------"
 echo
 cmdline="$cfs_code $cfs_CL --injectionSources='${injectionSources}' --FstatMethod=DemodBest --DataFiles='$SFTdir/*.sft' --outputFstat=$outfile_Demod --outputTiming=$timefile_Demod --outputLoudest=${loudest_Demod} "
 echo $cmdline;
-if ! eval "$cmdline &> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1
 fi
@@ -166,7 +160,7 @@ echo "----------------------------------------------------------------------"
 echo
 cmdline="$cfs_code $cfs_CL --injectionSources='${injectionSources}' --FstatMethod=ResampBest --DataFiles='$SFTdir/*.sft' --outputFstat=$outfile_Resamp --outputTiming=$timefile_Resamp  --outputLoudest=${loudest_Resamp}"
 echo $cmdline;
-if ! eval "$cmdline 2> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi

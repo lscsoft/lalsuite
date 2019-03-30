@@ -202,8 +202,9 @@ void XLALComputeDetAMResponseExtraModes(
 COMPLEX16 XLALComputeDetArmTransferFunction(double beta, double mu)
 {
 	COMPLEX16 ans;
-	ans = cexp(I * beta * (1.0 - mu)) * gsl_sf_sinc(beta * (1.0 + mu));
-	ans += cexp(-I * beta * (1.0 + mu)) * gsl_sf_sinc(beta * (1.0 - mu));
+	double Pibeta = LAL_PI * beta;
+	ans = cexp(I * Pibeta * (1.0 - mu)) * gsl_sf_sinc(beta * (1.0 + mu));
+	ans += cexp(-I * Pibeta * (1.0 + mu)) * gsl_sf_sinc(beta * (1.0 - mu));
 	ans *= 0.5;
 	return ans;
 }

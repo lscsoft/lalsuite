@@ -29,7 +29,14 @@
 // must be #included last, as it redefines meaning of 'vector'
 #include <altivec.h>
 
-// ----- Akos hotloop Altivec code (Dterms=8) ----------
+///
+/// \file ComputeFstat_DemodHL_Altivec.c
+/// \ingroup ComputeFstat_Demod_c
+/// \brief Akos hotloop Altivec code (Dterms=8)
+///
+/// \snippet ComputeFstat_DemodHL_Altivec.i hotloop
+///
+
 #define FUNC XLALComputeFaFb_Altivec
 #define HOTLOOP_SOURCE "ComputeFstat_DemodHL_Altivec.i"
 #include "ComputeFstat_Demod_ComputeFaFb.c"

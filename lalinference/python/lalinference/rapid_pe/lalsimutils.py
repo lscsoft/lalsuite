@@ -40,8 +40,7 @@ import lalsimulation as lalsim
 import lalinspiral
 import lalmetaio
 
-import pylal
-from pylal import frutils
+from lalframe.frread import read_timeseries
 from lal import series
 
 __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, R. O'Shaughnessy"
@@ -1280,29 +1279,16 @@ def frame_data_to_hoft(fname, channel, start=None, stop=None, window_shape=0.,
     """
     if verbose:
         print(" ++ Loading from cache ", fname, channel)
-    with open(fname) as cfile:
-        cachef = Cache.fromfile(cfile)
-    for i in range(len(cachef))[::-1]:
-        # FIXME: HACKHACKHACK
-        if cachef[i].observatory != channel[0]:
-            del cachef[i]
-    if verbose:
-        print(cachef.to_segmentlistdict())
-    fcache = frutils.FrameCache(cachef)
-    # FIXME: Horrible, horrible hack -- will only work if all requested channels
-    # span the cache *exactly*
-    if start is None:
-        start = cachef.to_segmentlistdict()[channel[0]][0][0]
-    if stop is None:
-        stop = cachef.to_segmentlistdict()[channel[0]][-1][-1]
+
+    duration = stop - start if None not in (start, stop) else None
     
-    ht = fcache.fetch(channel, start, stop)
-        
-    tmp = lal.CreateREAL8TimeSeries("h(t)", 
-            lal.LIGOTimeGPS(float(ht.metadata.segments[0][0])),
-            0., ht.metadata.dt, lal.DimensionlessUnit, len(ht))
-    print("  ++ Frame data sampling rate ", 1./tmp.deltaT, " and epoch ", string_gps_pretty_print(tmp.epoch))
-    tmp.data.data[:] = ht
+
+    with open(fname) as fobj:
+        cache = Cache.fromfile(fobj)
+
+    cache = cache.sieve(ifos=channel[:1])
+    tmp = read_timeseries(cache, channel, start, stop - start, verbose=verbose)
+
     # Window the data - N.B. default is identity (no windowing)
     hoft_window = lal.CreateTukeyREAL8Window(tmp.data.length, window_shape)
     tmp.data.data *= hoft_window.data.data

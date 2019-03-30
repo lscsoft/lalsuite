@@ -15,7 +15,9 @@ pybin_scripts = \
 	lalapps_string_apply_vetoes \
 	lalapps_string_calc_likelihood \
 	lalapps_string_contour_plotter \
+	lalapps_string_contour_plotter_largeloops \
 	lalapps_string_cs_gamma \
+	lalapps_string_cs_gamma_largeloops \
 	lalapps_string_meas_likelihood \
 	lalapps_string_plot_binj \
 	lalapps_string_plot_likelihood \

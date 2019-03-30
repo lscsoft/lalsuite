@@ -254,9 +254,27 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
     LALInferenceNameOutputs(runState);
     LALInferenceResumeMCMC(runState);
-    if (MPIrank == 0)
-        LALInferencePrintInjectionSample(runState);
-
+    if (MPIrank == 0){
+        /* TODO: Write metadata */
+        LALInferenceVariables *injParams = NULL;
+        LALH5File *output = NULL;
+        output = XLALH5FileOpen(runState->outFileName, "w");
+        if(output == NULL){
+            XLALErrorHandler = XLALExitErrorHandler;
+            XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
+            XLAL_ERROR_VOID(XLAL_EIO);
+        }
+        LALH5File *group = LALInferenceH5CreateGroupStructure(output, "lalinference", runState->runID);
+        if ( (injParams=LALInferencePrintInjectionSample(runState)) )
+        {
+            LALInferenceH5VariablesArrayToDataset(group, &injParams, 1, "injection_params");
+            LALInferenceClearVariables(injParams);
+            XLALFree(injParams);
+        }
+        XLALH5FileClose(group);
+        XLALH5FileClose(output);
+    }
+    
     if (benchmark) {
         struct timeval start_tv;
         gettimeofday(&start_tv, NULL);
@@ -1412,18 +1430,8 @@ void LALInferenceWriteMCMCSamples(LALInferenceRunState *runState) {
             /* Create run identifier group */
             LALInferenceH5VariablesArrayToDataset(group, output_array, N_output_array, thread->name);
         }
-
-        /* TODO: Write metadata */
-        LALInferenceVariables *injParams = NULL;
-        if ( (injParams=LALInferencePrintInjectionSample(runState)) )
-        {
-            LALInferenceH5VariablesArrayToDataset(group, &injParams, 1, "injection_params");
-            LALInferenceClearVariables(injParams);
-            XLALFree(injParams);
-        }
     }
     XLALH5FileClose(group);
-
     XLALH5FileClose(output);
     return;
 }
@@ -1632,7 +1640,9 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
         sy = theEventTable->spin2y;
         sz = theEventTable->spin2z;
 
-        REAL8 a_spin2 = sqrt(sx*sx + sy*sy + sz*sz), theta_spin2, phi_spin2;
+        REAL8 a_spin2 = sqrt(sx*sx + sy*sy + sz*sz);
+        
+        REAL8 theta_spin2, phi_spin2;
         if (a_spin2 == 0.0) {
             theta_spin2 = 0.0;
             phi_spin2 = 0.0;

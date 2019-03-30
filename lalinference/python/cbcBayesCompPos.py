@@ -180,8 +180,8 @@ def compare_plots_one_param_pdf(list_of_pos_by_name,param,analyticPDF=None):
     #Create common figure
     myfig=plt.figure(figsize=(6,4.5),dpi=150)
 
-    list_of_pos=list_of_pos_by_name.values()
-    list_of_pos_names=list_of_pos_by_name.keys()
+    list_of_pos=list(list_of_pos_by_name.values())
+    list_of_pos_names=list(list_of_pos_by_name.keys())
 
     allmins=map(lambda a: np.min(a[param].samples), list_of_pos)
     allmaxes=map(lambda a: np.max(a[param].samples), list_of_pos)
@@ -274,8 +274,8 @@ def compare_plots_one_param_line_hist(list_of_pos_by_name,param,cl,color_by_name
     majorFormatterX.set_scientific(True)
     majorFormatterY.set_scientific(True)
 
-    list_of_pos=list_of_pos_by_name.values()
-    list_of_pos_names=list_of_pos_by_name.keys()
+    list_of_pos=list(list_of_pos_by_name.values())
+    list_of_pos_names=list(list_of_pos_by_name.keys())
 
     allmins=map(lambda a: np.min(a[param].samples), list_of_pos)
     allmaxes=map(lambda a: np.max(a[param].samples), list_of_pos)
@@ -323,7 +323,7 @@ def compare_plots_one_param_line_hist(list_of_pos_by_name,param,cl,color_by_name
 
     plt.xlim(min_pos,max_pos)
     top_cl_intervals_list={}
-    pos_names=list_of_pos_by_name.keys()
+    pos_names=list(list_of_pos_by_name.keys())
 
 
     for name,posterior in list_of_pos_by_name.items():
@@ -414,8 +414,8 @@ def compare_plots_one_param_line_hist_cum(list_of_pos_by_name,param,cl,color_by_
     #Create common figure
     myfig=plt.figure(figsize=(6,4.5),dpi=150)
     myfig.add_axes([0.15,0.15,0.6,0.76])
-    list_of_pos=list_of_pos_by_name.values()
-    list_of_pos_names=list_of_pos_by_name.keys()
+    list_of_pos=list(list_of_pos_by_name.values())
+    list_of_pos_names=list(list_of_pos_by_name.keys())
 
     injvals=[]
     allmins=map(lambda a: np.min(a[param].samples), list_of_pos)
@@ -448,7 +448,7 @@ def compare_plots_one_param_line_hist_cum(list_of_pos_by_name,param,cl,color_by_
         patch_list.append(patches[0])
 
     top_cl_intervals_list={}
-    pos_names=list_of_pos_by_name.keys()
+    pos_names=list(list_of_pos_by_name.keys())
 
 
     for name,posterior in list_of_pos_by_name.items():
@@ -893,7 +893,7 @@ def output_confidence_levels_tex(clevels,outpath):
     """Outputs a LaTeX table of parameter and run medians and confidence levels."""
     outfile=open(os.path.join(outpath,'confidence_table.tex'), 'w')
     for level_index in range(len(OneDconfidenceLevels)):
-        params=clevels[level_index].keys()
+        params=list(clevels[level_index].keys())
 
         clevels_by_name={}
         for param in clTableParams:
@@ -935,7 +935,7 @@ def output_confidence_levels_dat(clevels,outpath):
     """Outputs a LaTeX table of parameter and run medians and confidence levels."""
     outfile=open(os.path.join(outpath,'confidence_table.dat'), 'w')
     for level_index in range(len(OneDconfidenceLevels)):
-        params=clevels[level_index].keys()
+        params=list(clevels[level_index].keys())
 
         clevels_by_name={}
         for param in clTableParams:
@@ -967,8 +967,8 @@ def output_confidence_levels_dat(clevels,outpath):
 def output_confidence_uncertainty(cluncertainty, outpath):
     outfile=open(os.path.join(outpath, 'confidence_uncertainty.dat'), 'w')
     try:
-        params=cluncertainty.keys()
-        uncer=cluncertainty.values()
+        params=list(cluncertainty.keys())
+        uncer=list(cluncertainty.values())
 
         outfile.write('# Uncertainty in confidence levels.\n')
         outfile.write('# First row is relative uncertainty (wrt to parameter mean).\n')

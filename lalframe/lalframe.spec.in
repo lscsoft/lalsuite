@@ -15,9 +15,10 @@ Summary: LSC Algorithm Frame Library
 License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
-URL: https://wiki.ligo.org/DASWG/LALSuite
+URL: https://wiki.ligo.org/Computing/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRequires: python2-rpm-macros
+BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
 BuildRequires: libframe-devel
 BuildRequires: numpy
@@ -52,13 +53,12 @@ library.
 %package -n python2-%{name}
 Summary: Python %{python2_version} Bindings for LALFrame
 Group: LAL
-Provides: %{name}-python
-Obsoletes: %{name}-python < 1.4.3-2
-Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
+Obsoletes: %{name}-python
+Provides: %{name}-python
 %description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings for LALFrame.
@@ -126,6 +126,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Sep 13 2018 Adam Mercer <adam.mercer@ligo.org> 1.4.4-1
+- Pre O3 release
+
 * Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.4.3-1
 - O2 release
 

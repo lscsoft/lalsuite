@@ -12,7 +12,6 @@ LALINSPIRALPROGRAMS = \
 if LALMETAIO
 LALMETAIOPROGRAMS = \
 	lalapps_exc_resp \
-	lalapps_ivana \
 	lalapps_chirplen
 endif
 bin_PROGRAMS = $(LALINSPIRALPROGRAMS) $(LALMETAIOPROGRAMS)
@@ -25,7 +24,6 @@ lalapps_effdist_SOURCES = effdist.c
 lalapps_InspiralOverlap_SOURCES = InspiralOverlap.c
 if LALMETAIO
 lalapps_exc_resp_SOURCES = exc_resp.c
-lalapps_ivana_SOURCES = ivana.c
 lalapps_chirplen_SOURCES = chirplen.c
 endif
 
@@ -37,6 +35,5 @@ EXTRA_DIST = \
 	TestRandomBank.h \
 	chirplen.c \
 	exc_resp.c \
-	ivana.c \
 	snr_versus_totalmass.png \
 	$(END_OF_LIST)

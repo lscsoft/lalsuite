@@ -96,12 +96,12 @@ parser.add_option("-r", "--run-names",action="store",\
 if opts.old_cache_file is not None:
   cache = lal.Cache.fromfile(open(opts.old_cache_file))
 else:
-  print "Must specify a cache file"
+  print("Must specify a cache file")
   exit(1)
 
 if not opts.run_names:
-  print "Must specify the names of the runs. For example, --run-names "\
-    "playground,inj001,inj002"
+  print("Must specify the names of the runs. For example, --run-names "\
+    "playground,inj001,inj002")
   exit(1)
 
 # Split the names of the runs into a list. On the command line,
@@ -166,14 +166,14 @@ for filetype,filedir in zip(filetypes,directoryList):
   # them in the found and missed lists.
   (tmpfound,tmpmissed) = tmpcache.checkfilesexist()
   if len(tmpmissed)>0:
-    print "Warning: These files do not exist on disk, but are listed in the cache."
+    print("Warning: These files do not exist on disk, but are listed in the cache.")
     for missingfile in tmpmissed:
-      print "Missing file: " + str(missingfile)
+      print("Missing file: " + str(missingfile))
   if len(tmpfound)==0:
-    print "Nothing matched the sieve pattern: "+filetype
+    print("Nothing matched the sieve pattern: "+filetype)
   # Make the links and append the new file name to filelist
   if opts.make_links and len(tmpfound)>0:
-    print "Linking the " + filetype + " files..."
+    print("Linking the " + filetype + " files...")
     for file in tmpfound.pfnlist():
       os.symlink(file,filedir+"/"+os.path.basename(file))
       filelist.append(filedir+"/"+os.path.basename(file))

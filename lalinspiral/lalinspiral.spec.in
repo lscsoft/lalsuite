@@ -15,9 +15,10 @@ Summary: LSC Algorithm Inspiral Library
 License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
-URL: https://wiki.ligo.org/DASWG/LALSuite
+URL: https://wiki.ligo.org/Computing/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRequires: python2-rpm-macros
+BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: gsl-devel
 BuildRequires: libmetaio-devel
 BuildRequires: numpy
@@ -70,9 +71,6 @@ library.
 %package -n python2-%{name}
 Summary: Python bindings for LALInspiral
 Group: LAL
-Provides: %{name}-python
-Obsoletes: %{name}-python < 1.7.7-2
-Conflicts: %{name}-python
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
@@ -81,7 +79,10 @@ Requires: python2-lalburst
 Requires: python2-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python2-ligo-segments
 Requires: glue
+Obsoletes: %{name}-python
+Provides: %{name}-python
 %description -n python2-%{name}
 This package provides the Python bindings for LALInspiral.
 
@@ -148,6 +149,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Feb 25 2019 Adam Mercer <adam.mercer@ligo.org> 1.8.1-1
+- ER14 release
+
+* Thu Sep 13 2018 Adam Mercer <adam.mercer@ligo.org> 1.8.0-1
+- Pre O3 release
+
 * Tue Feb 07 2017 Adam Mercer <adam.mercer@ligo.org> 1.7.7-1
 - O2 release
 

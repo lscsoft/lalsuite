@@ -4,7 +4,7 @@ export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
 
 echo "=== Create search setup with 3 segments spanning ~3.6 days ==="
 set -x
-${builddir}/lalapps_WeaveSetup --ref-time=1122334444 --first-segment=1122332211/88000 --segment-count=3 --segment-gap=25000 --detectors=H1,L1 --output-file=WeaveSetup.fits
+${builddir}/lalapps_WeaveSetup --ephem-earth=earth00-19-DE405.dat.gz --ephem-sun=sun00-19-DE405.dat.gz --ref-time=1122334444 --first-segment=1122332211/88000 --segment-count=3 --segment-gap=25000 --detectors=H1,L1 --output-file=WeaveSetup.fits
 set +x
 echo
 
