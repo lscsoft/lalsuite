@@ -1071,7 +1071,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 psd_dict = None
 
             events = create_events_from_coinc_and_psd(
-                         coinc_xml_obj, psd_dict, gid, threshold_snr=None, flow=flow,
+                         coinc_xml_obj, psd_dict, gid, threshold_snr=threshold_snr, flow=flow,
                          roq=self.config.getboolean('analysis','roq')
                      )
 
