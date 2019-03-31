@@ -1374,7 +1374,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         Will determine the data to be read and the output file.
         Will use all IFOs known to the DAG, unless otherwise specified as a list of strings
         """
-        if self.config.has_option('analysis','ifos'):
+        if ifos is None and self.config.has_option('analysis','ifos'):
             ifos = ast.literal_eval(self.config.get('analysis','ifos'))
         if ifos is None and len(event.ifos)>0:
             ifos=event.ifos
