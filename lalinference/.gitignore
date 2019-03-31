@@ -51,6 +51,7 @@ python/cbcBayesPosToSimBurst
 python/cbcBayesPosToSimInspiral
 python/cbcBayesPostProc
 python/cbcBayesThermoInt
+python/cbcBayesGraceDBinfo
 python/imrtgr_imr_consistency_test
 python/lalinference/__init__.py
 python/lalinference/_bayespputils.so
