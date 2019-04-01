@@ -1084,7 +1084,7 @@ class Posterior(object):
 
         #If new spin params present, calculate old ones
         old_spin_params = ['iota', 'theta1', 'phi1', 'theta2', 'phi2', 'beta']
-        new_spin_params = ['theta_jn', 'phi_jl', 'tilt1', 'tilt2', 'phi12', 'a1', 'a2', 'm1', 'm2', 'f_ref']
+        new_spin_params = ['theta_jn', 'phi_jl', 'tilt1', 'tilt2', 'phi12', 'a1', 'a2', 'm1', 'm2', 'f_ref','coa_phase']
         try:
             if pos['f_ref'].samples[0][0]==0.0:
                 for name in ['flow','f_lower']:
@@ -2013,14 +2013,13 @@ class Posterior(object):
 
             # J should now be || z and L should have a azimuthal angle phi_jl
             phi_jl = np.arctan2(L[1], L[0])
-            phi_jl = np.pi - phi_jl
-            spins['phi_jl'] = phi_jl
+            spins['phi_jl'] = np.pi + phi_jl
 
             # bring L in the Z-X plane, with negative x
-            J = ROTATEZ(phi_jl, J[0], J[1], J[2])
-            L = ROTATEZ(phi_jl, L[0], L[1], L[2])
-            S1 = ROTATEZ(phi_jl, S1[0], S1[1], S1[2])
-            S2 = ROTATEZ(phi_jl, S2[0], S2[1], S2[2])
+            J = ROTATEZ(np.pi-phi_jl, J[0], J[1], J[2])
+            L = ROTATEZ(np.pi-phi_jl, L[0], L[1], L[2])
+            S1 = ROTATEZ(np.pi-phi_jl, S1[0], S1[1], S1[2])
+            S2 = ROTATEZ(np.pi-phi_jl, S2[0], S2[1], S2[2])
 
             theta0 = array_polar_ang(L)
             J = ROTATEY(theta0, J[0], J[1], J[2])
@@ -3821,7 +3820,7 @@ def source_mass(mass, redshift):
     """
     return mass / (1.0 + redshift)
 
-def physical2radiationFrame(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1, m2, fref):
+def physical2radiationFrame(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1, m2, fref,phiref):
     """
     Wrapper function for SimInspiralTransformPrecessingNewInitialConditions().
     Vectorizes function for use in append_mapping() methods of the posterior class.
@@ -3840,7 +3839,7 @@ def physical2radiationFrame(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1, m
     m2_SI = m2*lal.MSUN_SI
 
     # Flatten arrays
-    ins = [theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1_SI, m2_SI, fref]
+    ins = [theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1_SI, m2_SI, fref,phiref]
     if len(shape(ins))>1:
         # ins is a list of lists (i.e. we are converting full posterior chains)
         try:
@@ -3850,7 +3849,7 @@ def physical2radiationFrame(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1, m
             pass
 
         try:
-            results = np.array([transformFunc(t_jn, p_jl, t1, t2, p12, a1, a2, m1_SI, m2_SI, f) for (t_jn, p_jl, t1, t2, p12, a1, a2, m1_SI, m2_SI, f) in zip(*ins)])
+            results = np.array([transformFunc(t_jn, p_jl, t1, t2, p12, a1, a2, m1_SI, m2_SI, f,phir) for (t_jn, p_jl, t1, t2, p12, a1, a2, m1_SI, m2_SI, f,phir) in zip(*ins)])
             iota = results[:,0].reshape(-1,1)
             spin1x = results[:,1].reshape(-1,1)
             spin1y = results[:,2].reshape(-1,1)
@@ -3882,7 +3881,7 @@ def physical2radiationFrame(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1, m
             pass
 
         try:
-            results = np.array(transformFunc(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1_SI, m2_SI, fref))
+            results = np.array(transformFunc(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1_SI, m2_SI, fref,phiref))
             iota = results[0]
             spin1x = results[1]
             spin1y = results[2]
