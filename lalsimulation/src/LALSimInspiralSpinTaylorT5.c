@@ -163,7 +163,7 @@ static void rotateVector(double a[3], double b[3], double phi, double theta, dou
 /**
  * Generate time-domain generic spinning PN waveforms in the SpinTaylorT5 approximaton.
  */
-int XLALSimInspiralSpinTaylorT5old(
+int XLALSimInspiralSpinTaylorT5(
 		REAL8TimeSeries **hplus,        /**< +-polarization waveform */
 		REAL8TimeSeries **hcross,       /**< x-polarization waveform */
 		REAL8 phiRef,                   /**< orbital phase at reference pt. */

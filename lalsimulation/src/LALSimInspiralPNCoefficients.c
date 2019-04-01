@@ -1943,7 +1943,7 @@ XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(
 }
 
 /**
- * Computes the PN Coefficients for using in the TaylorT4 frequency equation.
+ * Computes the PN Coefficients for using in the TaylorT5 frequency equation.
  *
  * See https://arxiv.org/pdf/1107.1267v2.pdf
  *** UNREVIEWED ****

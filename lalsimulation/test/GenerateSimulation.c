@@ -94,7 +94,6 @@ const char * usage =
 "                             SEOBNRv2T\n"
 "                             SEOBNRv4T\n"
 "                             SpinTaylorT4\n"
-"                             SpinTaylorT5\n"
 "                             SpinTaylorT2\n"
 "                             PhenSpinTaylor\n"
 "                             PhenSpinTaylorRD\n"
