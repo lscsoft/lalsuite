@@ -1710,7 +1710,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
     def add_gracedb_start_node(self,gid,name='',parent=None):
 
-        node=GraceDBNode(self.gracedbjob,parent=parent,gid=gid,command='creat log',tag='pe')
+        node=GraceDBNode(self.gracedbjob,parent=parent,gid=gid,command='create log',tag='pe')
         node.set_message(name+' online parameter estimation started.')
         self.add_node(node)
         return node
