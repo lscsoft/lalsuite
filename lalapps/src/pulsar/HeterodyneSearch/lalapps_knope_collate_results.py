@@ -30,7 +30,7 @@ import shutil
 import datetime
 import json
 import argparse
-from ConfigParser import ConfigParser
+from six.moves.configparser import ConfigParser
 import subprocess as sp
 import ast
 

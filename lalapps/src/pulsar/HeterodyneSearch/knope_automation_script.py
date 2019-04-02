@@ -23,7 +23,7 @@ import smtplib
 import stat
 
 import argparse
-from ConfigParser import ConfigParser
+from six.moves.configparser import ConfigParser
 
 from lalapps import git_version
 
