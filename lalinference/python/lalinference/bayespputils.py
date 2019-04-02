@@ -1085,7 +1085,7 @@ class Posterior(object):
 
         #If new spin params present, calculate old ones
         old_spin_params = ['iota', 'theta1', 'phi1', 'theta2', 'phi2', 'beta']
-        new_spin_params = ['theta_jn', 'phi_jl', 'tilt1', 'tilt2', 'phi12', 'a1', 'a2', 'm1', 'm2', 'f_ref','coa_phase']
+        new_spin_params = ['theta_jn', 'phi_jl', 'tilt1', 'tilt2', 'phi12', 'a1', 'a2', 'm1', 'm2', 'f_ref','phase']
         try:
             if pos['f_ref'].samples[0][0]==0.0:
                 for name in ['flow','f_lower']:
@@ -1958,14 +1958,7 @@ class Posterior(object):
             iota=inj.inclination
             m1, m2 = inj.mass1, inj.mass2
             mc, eta = inj.mchirp, inj.eta
-            #iota, s1x, s1y, s1z, s2x, s2y, s2z = \
-            #    lalsim.SimInspiralInitialConditionsPrecessingApproxs(inj.inclination,
-            #                                                         inj.spin1x, inj.spin1y, inj.spin1z,
-            #                                                         inj.spin2x, inj.spin2y, inj.spin2z,
-            #                                                         m1*lal.MSUN_SI, m2*lal.MSUN_SI, f_ref, inj.coa_phase, axis)
 
-            m1, m2 = inj.mass1, inj.mass2
-            mc, eta = inj.mchirp, inj.eta
             a1, theta1, phi1 = cart2sph(s1x, s1y, s1z)
             a2, theta2, phi2 = cart2sph(s2x, s2y, s2z)
 
@@ -1990,134 +1983,33 @@ class Posterior(object):
             S2 *= m2**2
             J = L + S1 + S2
 
-            tilt1 = array_ang_sep(L, S1)
-            tilt2 = array_ang_sep(L, S2)
             beta  = array_ang_sep(J, L)
             spins['beta'] = beta
             spins['spinchi'] = chi
-
+            # Huge caveat: SimInspiralTransformPrecessingWvf2PE assumes that the cartesian spins in the XML table  are given in the L frame, ie. in  a frame where L||z. While this is the default in inspinj these days, other possibilities exist.
+            # Unfortunately, we don't have a function (AFIK), that transforms spins from an arbitrary  frame to an arbitrary frame, otherwise I'd have called it here to be sure we convert in the L frame. 
+            # FIXME: add that function here if it ever gets written. For the moment just check
+            if not frame=='OrbitalL':
+                print("I cannot calculate the injected values of the spin angles unless frame is OrbitalL. Skipping...")
+                return spins
+            # m1 and m2 here are NOT in SI, but in Msun, this is not a typo.
             theta_jn,phi_jl,tilt1,tilt2,phi12,chi1,chi2=SimInspiralTransformPrecessingWvf2PE(inj.inclination,inj.spin1x, inj.spin1y, inj.spin1z,inj.spin2x, inj.spin2y, inj.spin2z, m1, m2, f_ref, inj.coa_phase)
-            print 'fref ',f_ref
-            #theta_jn,phi_jl,tilt1,tilt2,phi12,chi1,chi2=SimInspiralTransformPrecessingWvf2PE(iota, s1x, s1y, s1z, s2x, s2y, s2z,m1*lal.MSUN_SI, m2*lal.MSUN_SI, f_ref, inj.coa_phase)
-            print inj.inclination
-            print inj.spin1x, inj.spin1y, inj.spin1z
-            print inj.spin2x, inj.spin2y, inj.spin2z
-            print  m1, m2, f_ref, inj.coa_phase
-            print "in polar" , theta_jn,phi_jl,tilt1,tilt2,phi12,chi1,chi2
             spins['theta_jn']=theta_jn
             spins['phi12']=phi12
             spins['tilt1']=tilt1
             spins['tilt2']=tilt2
             spins['phi_jl']=phi_jl
 
-            ## print trying to inverst
-            print "Inverting "
+            """ 
+            #If everything is all right, this function should give back the cartesian spins. Uncomment to check
+            print("Inverting ")
             iota_back,a1x_back,a1y_back,a1z_back,a2x_back,a2y_back,a2z_back = \
     lalsim.SimInspiralTransformPrecessingNewInitialConditions(theta_jn,phi_jl,tilt1,tilt2,phi12,chi1,chi2,m1*lal.MSUN_SI,m2*lal.MSUN_SI,f_ref,inj.coa_phase)
-            print a1x_back,a1y_back,a1z_back
-            print a2x_back,a2y_back,a2z_back
-            print iota_back
-            print "ODL WAY"
-            iota, s1x, s1y, s1z, s2x, s2y, s2z = \
-                lalsim.SimInspiralInitialConditionsPrecessingApproxs(inj.inclination,
-                                                                     inj.spin1x, inj.spin1y, inj.spin1z,
-                                                                     inj.spin2x, inj.spin2y, inj.spin2z,
-                                                                     m1*lal.MSUN_SI, m2*lal.MSUN_SI, f_ref, inj.coa_phase, axis)
-            theta_jn,phi_jl,tilt1,tilt2,phi12,chi1,chi2=SimInspiralTransformPrecessingWvf2PE(iota, s1x, s1y, s1z, s2x, s2y, s2z,m1, m2, f_ref, inj.coa_phase)
-            print theta_jn,phi_jl,tilt1,tilt2,phi12,chi1,chi2
-            
+            print(a1x_back,a1y_back,a1z_back)
+            print(a2x_back,a2y_back,a2z_back)
+            print(iota_back)
+            """            
 
-            # Convert to radiation frame
-            """iota, s1x, s1y, s1z, s2x, s2y, s2z = \
-                lalsim.SimInspiralInitialConditionsPrecessingApproxs(inj.inclination,
-                                                                     inj.spin1x, inj.spin1y, inj.spin1z,
-                                                                     inj.spin2x, inj.spin2y, inj.spin2z,
-                                                                     m1*lal.MSUN_SI, m2*lal.MSUN_SI, f_ref, inj.coa_phase, axis)
-
-            a1, theta1, phi1 = cart2sph(s1x, s1y, s1z)
-            a2, theta2, phi2 = cart2sph(s2x, s2y, s2z)
-
-            spins = {'a1':a1, 'theta1':theta1, 'phi1':phi1,
-                     'a2':a2, 'theta2':theta2, 'phi2':phi2,
-                     'iota':iota}
-
-            # If spins are aligned, save the sign of the z-component
-            if inj.spin1x == inj.spin1y == inj.spin2x == inj.spin2y == 0.:
-                spins['a1z'] = inj.spin1z
-                spins['a2z'] = inj.spin2z
-
-            L  = orbital_momentum(f_ref, m1,m2, iota)
-            S1 = np.hstack((s1x, s1y, s1z))
-            S2 = np.hstack((s2x, s2y, s2z))
-
-            zhat = np.array([0., 0., 1.])
-            aligned_comp_spin1 = array_dot(S1, zhat)
-            aligned_comp_spin2 = array_dot(S2, zhat)
-            chi = aligned_comp_spin1 + aligned_comp_spin2 + \
-                  np.sqrt(1. - 4.*eta) * (aligned_comp_spin1 - aligned_comp_spin2)
-
-            spins['spinchi'] = chi
-
-            S1 *= m1**2
-            S2 *= m2**2
-            J = L + S1 + S2
-
-            tilt1 = array_ang_sep(L, S1)
-            tilt2 = array_ang_sep(L, S2)
-            beta  = array_ang_sep(J, L)
-
-            spins['tilt1'] = tilt1
-            spins['tilt2'] = tilt2
-            spins['beta'] = beta
-
-            # Need to do rotations of XLALSimInspiralTransformPrecessingInitialConditioin inverse order to go in the L frame
-            # first rotation: bring J in the N-x plane, with negative x component
-            phi0 = np.arctan2(J[1], J[0])
-            phi0 = np.pi - phi0
-
-            J = ROTATEZ(phi0, J[0], J[1], J[2])
-            L = ROTATEZ(phi0, L[0], L[1], L[2])
-            S1 = ROTATEZ(phi0, S1[0], S1[1], S1[2])
-            S2 = ROTATEZ(phi0, S2[0], S2[1], S2[2])
-
-            # now J in in the N-x plane and form an angle theta_jn with N, rotate by -theta_jn around y to have J along z
-            theta_jn = array_polar_ang(J)
-            spins['theta_jn'] = theta_jn
-
-            J = ROTATEY(theta_jn, J[0], J[1], J[2])
-            L = ROTATEY(theta_jn, L[0], L[1], L[2])
-            S1 = ROTATEY(theta_jn, S1[0], S1[1], S1[2])
-            S2 = ROTATEY(theta_jn, S2[0], S2[1], S2[2])
-
-            # J should now be || z and L should have a azimuthal angle phi_jl
-            phi_jl = np.arctan2(L[1], L[0])
-            print "pure phijl from atan before manupulations" ,  phi_jl
-            print "-----> inj.coa_phase ",inj.coa_phase 
-            spins['phi_jl'] = np.pi/2. + phi_jl
-
-            # bring L in the Z-X plane, with negative x
-            J = ROTATEZ(np.pi-phi_jl, J[0], J[1], J[2])
-            L = ROTATEZ(np.pi-phi_jl, L[0], L[1], L[2])
-            S1 = ROTATEZ(np.pi-phi_jl, S1[0], S1[1], S1[2])
-            S2 = ROTATEZ(np.pi-phi_jl, S2[0], S2[1], S2[2])
-
-            theta0 = array_polar_ang(L)
-            J = ROTATEY(theta0, J[0], J[1], J[2])
-            L = ROTATEY(theta0, L[0], L[1], L[2])
-            S1 = ROTATEY(theta0, S1[0], S1[1], S1[2])
-            S2 = ROTATEY(theta0, S2[0], S2[1], S2[2])
-
-            # The last rotation is useless as it won't change the differenze in spins' azimuthal angles
-            phi1 = np.arctan2(S1[1], S1[0])
-            phi2 = np.arctan2(S2[1], S2[0])
-            if phi2 < phi1:
-                phi12 = phi2 - phi1 + 2.*np.pi
-            else:
-                phi12 = phi2 - phi1
-            spins['phi12'] = phi12
-            """
-
-            
         return spins
 
 class BurstPosterior(Posterior):
