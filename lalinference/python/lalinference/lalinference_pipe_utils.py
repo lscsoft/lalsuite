@@ -1710,14 +1710,14 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
     def add_gracedb_start_node(self,gid,name='',parent=None):
 
-        node=GraceDBNode(self.gracedbjob,parent=parent,gid=gid,command='log',tag='pe')
+        node=GraceDBNode(self.gracedbjob,parent=parent,gid=gid,command='creat log',tag='pe')
         node.set_message(name+' online parameter estimation started.')
         self.add_node(node)
         return node
 
     def add_gracedb_log_node(self,respagenode,gid):
         nodes=[]
-        node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='log',tag='pe')
+        node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='create log',tag='pe')
         resurl=respagenode.webpath.replace(self.gracedbjob.basepath,self.gracedbjob.baseurl)
         #node.set_message('online parameter estimation results:  '+resurl+'/posplots.html')
         node.set_message("LALInference online parameter estimation finished. <a href="+resurl+"/posplots.html>results</a>")
