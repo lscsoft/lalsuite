@@ -762,6 +762,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         self.gracedbjob.set_grid_site('local')
         self.mapjob = SkyMapJob(cp, os.path.join(self.basepath,'skymap.sub'), self.logpath)
         self.plotmapjob = PlotSkyMapJob(cp, os.path.join(self.basepath,'plotskymap.sub'),self.logpath)
+        self.postruninfojob=PostRunInfoJob(self.config,os.path.join(self.basepath,'postrungdbinfo.sub'),self.logpath,dax=self.is_dax())
         # Process the input to build list of analyses to do
         self.events=self.setup_from_inputs()
 
@@ -794,6 +795,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         if self.config.has_option('analysis','upload-to-gracedb'):
             if self.config.getboolean('analysis','upload-to-gracedb'):
                 self.add_gracedb_FITSskymap_upload(self.events[0],engine=self.engine)
+            if self.config.has_option('condor','gdbinfo') and self.config.has_option('analysis','ugid') and self.config.getboolean('analysis','upload-to-gracedb'):
+                self.add_gracedb_info_node(None,event.GID,analysis='LIB',issky=True)
+
         self.dagfilename="lalinference_%s-%s"%(self.config.get('input','gps-start-time'),self.config.get('input','gps-end-time'))
         self.set_dag_file(os.path.join(self.basepath,self.dagfilename))
         if self.is_dax():
@@ -1246,8 +1250,14 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 # To avoid that, LIB will read the gracedDB id to upload info to as an ugid=ID option
                 # in the analysis section.
                 ugid=self.config.get('analysis','ugid')
+                event.GID=ugid
                 self.add_gracedb_start_node(ugid,'LIB',[sciseg.get_df_node() for sciseg in enginenodes[0].scisegs.values()])
-                self.add_gracedb_log_node(respagenode,ugid)
+                self.add_gracedb_log_node(respagenode,ugid,burst=True)
+                if self.config.has_option('resultspage','email'):
+                  emailto=self.config.get('resultspage','email')
+                else:
+                  emailto=None
+                temp_node=self.add_gracedb_info_node(respagenode,ugid,analysis='LIB',email=emailto)
         if self.config.has_option('condor','ligo-skymap-plot') and self.config.has_option('condor','ligo-skymap-from-samples'):
             if self.engine=='lalinferenceburst': prefix='LIB'
             else: prefix='LALInference'
@@ -1715,7 +1725,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         self.add_node(node)
         return node
 
-    def add_gracedb_log_node(self,respagenode,gid):
+    def add_gracedb_log_node(self,respagenode,gid,burst=False):
         nodes=[]
         node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='create log',tag='pe')
         resurl=respagenode.webpath.replace(self.gracedbjob.basepath,self.gracedbjob.baseurl)
@@ -1728,21 +1738,21 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         if self.config.has_option('analysis','add-lvem-tag'):
             if self.config.getboolean('analysis','add-lvem-tag'):
                 tag='pe,lvem'
+        if burst is False:
+	  node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag=tag)
+	  node.set_filename(respagenode.webpath+'/corner/extrinsic.png')
+	  self.add_node(node)
+	  nodes.append(node)
 
-        node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag=tag)
-        node.set_filename(respagenode.webpath+'/corner/extrinsic.png')
-        self.add_node(node)
-        nodes.append(node)
+          node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag='pe')
+	  node.set_filename(respagenode.webpath+'/corner/intrinsic.png')
+	  self.add_node(node)
+	  nodes.append(node)
 
-        node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag='pe')
-        node.set_filename(respagenode.webpath+'/corner/intrinsic.png')
-        self.add_node(node)
-        nodes.append(node)
-
-        node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag='pe')
-        node.set_filename(respagenode.webpath+'/corner/sourceFrame.png')
-        self.add_node(node)
-        nodes.append(node)
+	  node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag='pe')
+	  node.set_filename(respagenode.webpath+'/corner/sourceFrame.png')
+	  self.add_node(node)
+	  nodes.append(node)
 
         return nodes
 
@@ -1777,6 +1787,46 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                             self.add_node(node)
                             nodes.append(node)
         return nodes
+
+    def add_gracedb_info_node(self,respagenode,gid,analysis='LALInference',issky=False,prefix="LIB",email=None):
+
+      # if issky=True, this node will upload the FITS file into GDB. BCI and BSN will be used to decide which tags to use
+      # Otherwise, this node will upload information about parameters and bayes factors
+
+      if respagenode is not None:
+	samples=respagenode.posfile
+      else:
+	# Try to find it
+	resnodes=filter(lambda x: isinstance(x,ResultsPageNode) ,self.get_nodes())
+	for rs in resnodes:
+	  if len(rs.ifos)>1:
+	    respagenode=rs
+
+      if self.postruninfojob.isdefined is False:
+	return None
+      if issky is False:
+	node=PostRunInfoNode(self.postruninfojob,parent=respagenode,gid=gid,samples=samples)
+        if email is not None:
+          node.set_email(email)
+      else:
+	skynodes=filter(lambda x: isinstance(x,SkyMapNode) ,self.get_nodes())
+	for sk in skynodes:
+	    skymap=sk.outdir+'/%s.fits'%prefix
+	    message=' %s FITS sky map'%prefix
+	    node=PostRunInfoNode(self.postruninfojob,parent=sk,gid=gid,samples=None)
+	    node.set_skymap(skymap)
+	    node.set_message(message)
+
+      bci=respagenode.get_bcifile()
+      if bci is not None:
+	node.set_bci(bci)
+      bsn=respagenode.get_bsnfile()
+      if bsn is not None:
+	node.set_bsn(bsn)
+      node.set_analysis(analysis)
+      node.finalize()
+      self.add_node(node)
+      return node
 
     def add_rom_weights_node(self,ifo,parent=None):
         #try:
@@ -2402,6 +2452,8 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         self.__event=0
         self.ifos=None
         self.injfile=None
+        self.bcifile=None
+        self.bsnfile=None
 
     def set_gzip_output(self,path):
         self.add_file_opt('archive',path,file_is_output_file=True)
@@ -2469,9 +2521,16 @@ class ResultsPageNode(pipeline.CondorDAGNode):
 
     def set_bayes_coherent_incoherent(self,bcifile):
         self.add_file_opt('bci',bcifile)
+        self.bcifile=bcifile
+
+    def get_bcifile(self):
+        return self.bcifile
 
     def set_bayes_coherent_noise(self,bsnfile):
         self.add_file_opt('bsn',bsnfile)
+        self.bsnfile=bsnfile
+    def get_bsnfile(self):
+        return self.bsnfile
 
     def set_header_file(self,headerfile):
         self.add_file_opt('header',headerfile)
@@ -2960,3 +3019,57 @@ class PlotSkyMapNode(pipeline.CondorDAGNode):
         self.add_file_arg(self.fitsfile)
         self.add_file_opt('output',self.outfile, file_is_output_file=True)
         super(PlotSkyMapNode,self).finalize()
+
+class PostRunInfoJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
+  def __init__(self,cp,submitFile,logdir,dax=False):
+
+    self.isdefined=True
+    if not cp.has_option('condor','gdbinfo'):
+      self.isdefined=False
+      return
+    exe=cp.get('condor','gdbinfo')
+    pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
+    pipeline.AnalysisJob.__init__(self,cp,dax=dax) # Job always runs locally
+    if cp.has_option('analysis','accounting_group'):
+      self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
+    self.set_sub_file(os.path.abspath(submitFile))
+    self.set_stdout_file(os.path.join(logdir,'gdbinfo-$(cluster)-$(process).out'))
+    self.set_stderr_file(os.path.join(logdir,'gdbinfo-$(cluster)-$(process).err'))
+    self.add_condor_cmd('getenv','True')
+    self.add_condor_cmd('RequestMemory','1000')
+
+class PostRunInfoNode(pipeline.CondorDAGNode):
+    def __init__(self,post_run_info_job,gid=None,parent=None,samples=None):
+        pipeline.CondorDAGNode.__init__(self,post_run_info_job)
+        self.bci=None
+        self.bsn=None
+        self.analysis='LALInference'
+        self.__finalized=False
+        self.set_samples(samples)
+        self.set_parent(parent)
+        self.set_gid(gid)
+
+    def finalize(self):
+        self.add_var_opt('analysis',self.analysis)
+        self.__finalized=True
+    def set_parent(self,parentnode):
+      self.add_parent(parentnode)
+    def set_samples(self,samples):
+      if samples is not None:
+        self.add_var_arg('--samples %s'%samples)
+    def set_skymap(self,skymap):
+        self.add_var_arg('--skymap %s'%skymap)
+    def set_message(self,message):
+        self.add_var_arg("--message '%s'"%message)
+    def set_email(self,email):
+      self.add_var_arg('--email %s'%email)
+    def set_gid(self,gid):
+      self.add_var_opt('gid',gid)
+    def set_bci(self,bci):
+      self.add_file_opt('bci',bci)
+    def set_bsn(self,bsn):
+      self.add_file_opt('bsn',bsn)
+    def set_analysis(self,analysis):
+      self.analysis=analysis
+
+
