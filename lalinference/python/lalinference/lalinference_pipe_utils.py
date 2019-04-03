@@ -2720,7 +2720,7 @@ class GraceDBNode(pipeline.CondorDAGNode):
         if self.filename:
             self.add_var_arg(self.filename+' ')
         if self.message:
-            self.add_var_arg(self.message)
+            self.add_var_arg("'{}'".format(self.message))
         self.__finalized=True
 
 class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
