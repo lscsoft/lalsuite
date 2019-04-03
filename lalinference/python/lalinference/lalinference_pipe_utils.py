@@ -1705,6 +1705,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             node.add_parent(parent)
             infile=parent.get_pos_file()
             node.add_file_arg(infile)
+            node.append_in_files(infile)
+
         node.set_output_path(outdir)
         if gzip_output is not None:
             node.set_gzip_output(gzip_output)
@@ -1795,17 +1797,20 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
       if respagenode is not None:
 	samples=respagenode.posfile
+        hdf5samples=respagenode.get_in_files()[0] # This should only  be called by LIB, which only uses one file
       else:
 	# Try to find it
 	resnodes=filter(lambda x: isinstance(x,ResultsPageNode) ,self.get_nodes())
 	for rs in resnodes:
 	  if len(rs.ifos)>1:
 	    respagenode=rs
+            samples=respagenode.posfile
+            hdf5samples=respagenode.get_in_files()[0] # This should only  be called by LIB, which only uses one file
 
       if self.postruninfojob.isdefined is False:
 	return None
       if issky is False:
-	node=PostRunInfoNode(self.postruninfojob,parent=respagenode,gid=gid,samples=samples)
+	node=PostRunInfoNode(self.postruninfojob,parent=respagenode,gid=gid,samples=hdf5samples)
         if email is not None:
           node.set_email(email)
       else:
@@ -2454,6 +2459,7 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         self.injfile=None
         self.bcifile=None
         self.bsnfile=None
+        self.infiles=[]
 
     def set_gzip_output(self,path):
         self.add_file_opt('archive',path,file_is_output_file=True)
@@ -2508,6 +2514,10 @@ class ResultsPageNode(pipeline.CondorDAGNode):
             return
         self.add_var_arg('--trig '+coinc)
 
+    def append_in_files(self,this_file):
+
+        self.infiles.append(this_file)
+
     def add_engine_parent(self,node):
         """
         Add a parent node which is one of the engine nodes
@@ -2515,9 +2525,11 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         """
         self.add_parent(node)
         self.add_file_arg(node.get_pos_file())
-        self.infiles.append(node.get_pos_file())
+        self.append_in_files(node.get_pos_file())
 
     def get_pos_file(self): return self.posfile
+
+    def get_in_files(self): return self.infiles
 
     def set_bayes_coherent_incoherent(self,bcifile):
         self.add_file_opt('bci',bcifile)
