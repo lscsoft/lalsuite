@@ -56,8 +56,13 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
   g=ligo.gracedb.rest.GraceDb()
   if samples is not None:
     samples=os.path.realpath(samples)
-    peparser=bppu.PEOutputParser('common')
-    commonResultsObj=peparser.parse(open(samples,'r'))
+    if '.hdf' in samples  or '.h5' in samples:
+      peparser = bppu.PEOutputParser('hdf5')
+      commonResultsObj=peparser.parse(samples)
+    else:
+      peparser=bppu.PEOutputParser('common')
+      commonResultsObj=peparser.parse(open(samples,'r'))
+
     try:
       pos = bppu.BurstPosterior(commonResultsObj)
       pars=['frequency','quality','hrss']
@@ -78,18 +83,29 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
           outstr+='<tr><td align=left>%s %s</td>'%(i,units[i])
           outstr+='<td align=left>%.3f &plusmn; %.3f</td></tr>'%(pos[i].samples[which][0],pos[i].stdev)
     if bcifile is not None and os.path.isfile(bcifile):
-      bci=np.loadtxt(bcifile)
+      bci=np.loadtxt(bcifile)	
     else: bci=None
     if bci is not None:
       outstr+='<tr><td align=left>logBCI</td>'
       outstr+='<td align=center>%.2f</td></tr>'%(bci)
 
+    bsn=None
     if bsnfile is not None and os.path.isfile(bsnfile):
       bsn=np.loadtxt(bsnfile)
-    else: bsn=None
+      bsn=bsn[0]
+    else:
+      try:
+        import h5py
+        with h5py.File(samples,'r') as h5grp:
+          tmp=h5grp['lalinference']['lalinference_nest'].attrs
+          bsn=tmp['log_bayes_factor']
+      except Exception,e:
+        print("Could not obtain BNS\n")
+        print(e)
+
     if bsn is not None:
       outstr+='<tr><td align=left>logBSN</td>'
-      outstr+='<td align=center>%.2f</td></tr>'%(bsn[0])
+      outstr+='<td align=center>%.2f</td></tr>'%(bsn)
     outstr+='</table>'
 
     if email is not None and bci is not None:
@@ -132,8 +148,8 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
       bsn=np.loadtxt(bsnfile)
     else: bsn=None
     tag=['sky_loc']
-    if bci is not None and bsn[0] is not None:
-      if bsn[0]>5. and bci>2.:
+    if bci is not None and bsn is not None:
+      if bsn>5. and bci>2.:
         tag.append('lvem')
 
     g.writeLog(gid,message,filename=skymap,tagname=tag)
@@ -144,10 +160,10 @@ if __name__=='__main__':
     from optparse import OptionParser
     parser=OptionParser(USAGE)
     parser.add_option("-g","--gid", dest="gid",help="GraceDB id", metavar="G123456",default=None)
-    parser.add_option("-s","--samples",dest="samples",help="posterior_samples.dat",default=None)
+    parser.add_option("-s","--samples",dest="samples",help="posterior_samples.hdf5/dat",default=None)
     parser.add_option("--analysis",help="Prefix to use for the graceDB entries. Should be the name of the analysis (default LALInference)",default='LALInference')
     parser.add_option("--bci",dest="bci",help="coherence test file: bci.dat",default=None)
-    parser.add_option("--bsn",dest="bsn",help="evidence file: bsn.dat",default=None)
+    parser.add_option("--bsn",dest="bsn",help="evidence file: bsn.dat [Deprecated, now is read from samples.hdf5]",default=None)
     parser.add_option("--skymap",dest="skymap",help="FITS file skymap",default=None)
     parser.add_option("--message",dest="message",type='str', help="Message to go with skymap uplaod",default=None)
     parser.add_option('--email',dest='email',help="Will email when run is done.",default=None)
