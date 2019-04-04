@@ -1163,7 +1163,7 @@ if __name__=='__main__':
     else:
       fixedBurnins = None
 
-    from lalinference.bayespputils import massParams,spinParams,cosmoParam,strongFieldParams,distParams,incParams,polParams,skyParams,phaseParams,timeParams,endTimeParams,statsParams,calibParams,snrParams,tidalParams,eosParams
+    from lalinference.bayespputils import massParams,spinParams,cosmoParam,strongFieldParams,distParams,incParams,polParams,skyParams,phaseParams,timeParams,endTimeParams,statsParams,calibParams,snrParams,tidalParams,fourPiecePolyParams,spectralParams
 
     oneDMenus={'Masses':None,'SourceFrame':None,'Timing':None,'Extrinsic':None,'Spins':None,'StrongField':None,'Others':None}
 
@@ -1228,6 +1228,12 @@ if __name__=='__main__':
             twoDGreedyMenu.append([dc1,dc2])
         for mp in massParams:
              for tp in tidalParams:
+                 if not (mp == tp):
+                     twoDGreedyMenu.append([mp, tp])
+             for tp in fourPiecePolyParams:
+                 if not (mp == tp):
+                     twoDGreedyMenu.append([mp, tp])
+             for tp in spectralParams:
                  if not (mp == tp):
                      twoDGreedyMenu.append([mp, tp])
         for sp1,sp2 in combinations(snrParams,2):
