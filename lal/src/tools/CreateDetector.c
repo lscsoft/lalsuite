@@ -804,35 +804,4 @@ LALDetector * XLALCreateDetector( LALDetector *detector,
   detector->type = type;
   return detector;
 }
-
-/**
- * DEPRECATED.
- * \deprecated Use XLALCreateDetector() instead.
- */
-void LALCreateDetector( LALStatus             *status,
-                        LALDetector           *output,
-                        const LALFrDetector   *input,
-                        const LALDetectorType  type )
-{
-  INITSTATUS(status);
-
-  ASSERT( input != NULL, status, LALDETECTORSH_ENULLP,
-          LALDETECTORSH_MSGENULLP );
-
-  ASSERT( output != NULL, status, LALDETECTORSH_ENULLP,
-          LALDETECTORSH_MSGENULLP );
-
-  output = XLALCreateDetector( output, input, type );
-  if ( ! output )
-    switch ( XLALClearErrno() )
-    {
-      case XLAL_EINVAL:
-        ABORT( status, LALDETECTORSH_ETYPE, LALDETECTORSH_MSGETYPE );
-        break;
-      default:
-        ABORTXLAL( status );
-    }
-
-  RETURN(status);
-}
 /*@}*/

@@ -280,7 +280,6 @@ extern const LALDetector lalCachedDetectors[LAL_NUM_DETECTORS];
 
 /* Routine to create a LALDetector. */
 LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *frDetector, LALDetectorType type );
-void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetector *input, const LALDetectorType type );
 
 
 
