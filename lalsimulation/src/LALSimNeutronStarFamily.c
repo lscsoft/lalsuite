@@ -98,7 +98,7 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
     LALSimNeutronStarEOS * eos)
 {
     LALSimNeutronStarFamily * fam;
-    const size_t ndatmax = 100;
+    const size_t ndatmax = 1000;
     const double logpmin = 75.5;
     double logpmax;
     double dlogp;
