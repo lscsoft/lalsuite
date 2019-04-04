@@ -2463,8 +2463,8 @@ mdat_prev = 0.0;
 const double logpmin = 75.5;
 double logpmax = log(XLALSimNeutronStarEOSMaxPressure(eos));
 double dlogp = (logpmax - logpmin) / 100;
-// Need at least 4 points
-for (int i = 0; i < 4; ++i) {
+// Need at least 8 points
+for (int i = 0; i < 8; ++i) {
    pdat = exp(logpmin + i * dlogp);
    XLALSimNeutronStarTOVODEIntegrate(&rdat, &mdat, &kdat, pdat, eos);
    /* determine if maximum mass has been found */
