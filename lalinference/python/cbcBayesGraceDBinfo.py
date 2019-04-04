@@ -148,10 +148,11 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
       bsn=np.loadtxt(bsnfile)
     else: bsn=None
     tag=['sky_loc']
+    """
     if bci is not None and bsn is not None:
       if bsn>5. and bci>2.:
         tag.append('lvem')
-
+    """
     g.writeLog(gid,message,filename=skymap,tagname=tag)
 
 
