@@ -50,8 +50,29 @@
  *
  */
 #include <lal/LALNoiseModelsInspiral.h>
+#include <lal/LALNoiseModels.h>
 
-void LALInspiralGetOrthoNormalFilter(REAL4Vector *filter2, REAL4Vector *filter1);
+/* Routine to compute a vector that is orthogonal to the input vector
+ * without changing its norm by multiplying with e^(i pi/2);  Assumes
+ * that the input vector is the Fourier transform with the positive
+ * and negative frequencies pairs arranged as in fftw: f[i] <->f[ n-i].
+ */
+
+static void LALInspiralGetOrthoNormalFilter(REAL4Vector *filter2, REAL4Vector *filter1)
+{
+    int i,n,nby2;
+
+    n = filter1->length;
+    nby2 = n/2;
+    filter2->data[0] = filter1->data[0];
+    filter2->data[nby2] = filter1->data[nby2];
+    for (i=1; i<nby2; i++)
+    {
+        filter2->data[i] = -filter1->data[n-i];
+        filter2->data[n-i] = filter1->data[i];
+    }
+}
+
 
 void
 LALInspiralWaveOverlap
@@ -327,26 +348,4 @@ LALInspiralWaveOverlap
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
-
-/* Routine to compute a vector that is orthogonal to the input vector
- * without changing its norm by multiplying with e^(i pi/2);  Assumes
- * that the input vector is the Fourier transform with the positive
- * and negative frequencies pairs arranged as in fftw: f[i] <->f[ n-i].
- */
-
-void LALInspiralGetOrthoNormalFilter(REAL4Vector *filter2, REAL4Vector *filter1)
-{
-    int i,n,nby2;
-
-    n = filter1->length;
-    nby2 = n/2;
-    filter2->data[0] = filter1->data[0];
-    filter2->data[nby2] = filter1->data[nby2];
-    for (i=1; i<nby2; i++)
-    {
-        filter2->data[i] = -filter1->data[n-i];
-        filter2->data[n-i] = filter1->data[i];
-    }
-}
-
 

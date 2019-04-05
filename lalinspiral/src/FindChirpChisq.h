@@ -133,37 +133,6 @@ FindChirpChisqParams;
 
 /* ---------- Function prototypes ---------- */
 
-void
-LALFindChirpChisqVetoInit (
-    LALStatus                  *status,
-    FindChirpChisqParams       *params,
-    UINT4                       numChisqBins,
-    UINT4                       numPoints
-    );
-
-void
-LALFindChirpChisqVetoFinalize (
-    LALStatus                  *status,
-    FindChirpChisqParams       *params,
-    UINT4                       numChisqBins
-    );
-
-void
-LALFindChirpComputeChisqBins(
-    LALStatus                  *status,
-    UINT4Vector                *chisqBinVec,
-    FindChirpSegment           *fcSeg,
-    UINT4                       kmax
-    );
-
-void
-LALFindChirpChisqVeto (
-    LALStatus                  *status,
-    REAL4Vector                *chisqVec,
-    FindChirpChisqInput        *input,
-    FindChirpChisqParams       *params
-    );
-
 /*@}*/ /* end:FindChirpChisq_h */
 
 #if 0

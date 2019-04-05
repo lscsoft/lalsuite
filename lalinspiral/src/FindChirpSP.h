@@ -93,14 +93,6 @@ extern "C" {
 #define FINDCHIRPSPH_MSGEORDR "Invalid post-Newtonian order"
 /** \endcond */
 
-void
-LALFindChirpSPData (
-    LALStatus                  *status,
-    FindChirpSegmentVector     *fcSegVec,
-    DataSegmentVector          *dataSegVec,
-    FindChirpDataParams        *params
-    );
-
 double
 XLALFindChirpChirpTime (double m1,
 			double m2,

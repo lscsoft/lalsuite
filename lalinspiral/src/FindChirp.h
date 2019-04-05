@@ -76,16 +76,6 @@ extern "C" {
  * are prototyped in \ref FindChirpSP.h and \ref FindChirpTD.h.
  * Full documentation of the filtering algorithm used can be found in the
  * documentation of the module \ref FindChirpFilter.c.</li>
- *
- * <li> Functions to filter interferometer data for using the frequency
- * domain non-spinning black hole detection template family known as BCV.
- * These functions are protoyped by the header \ref FindChirpBCV.h
- * which contains documentation of the algorithms used.</li>
- *
- * <li> Functions to filter interferometer data for using the frequency domain
- * spinning black hole detection template family known as BCVSpin.  These
- * functions are protoyped by the header \ref FindChirpBCVSpin.h which
- * contains documentation of the algorithms used.</li>
  * </ol>
  *
  * The goal of all the filtering functions is to determine if the
@@ -168,97 +158,6 @@ extern "C" {
 #define FINDCHIRPH_MSGEIMRW "Error computing IMR waveform"
 #define FINDCHIRPH_MSGEFLOX "Error calculating an appropriate value of f_low"
 /** \endcond */
-
-/**
- * This structure provides the essential information for the
- * filter initialisation and memory allocation functions used by findchirp.
- */
-typedef struct
-tagFindChirpInitParams
-{
-  UINT4                         numSegments;	/**< The number of data segments in the input \c DataSegmentVector and a the \c FindChirpSegmentVector */
-  UINT4                         numPoints;	/**< The number of discrete data points \f$N\f$ in each data segment */
-  UINT4                         ovrlap;		/**< The number of sample points by which each data segment overlaps */
-  UINT4                         numChisqBins;	/**< The number of bins \f$p\f$ used to contruct the \f$\chi^2\f$ veto */
-  BOOLEAN                       createRhosqVec;	/**< Flag that controls whether or not the filter function should store the output of the matched filter,
-                                                 * \f$\rho^2(t)\f$, as well as the events; Memory is allocated for this vector if the flag is set to 1
-                                                 */
-  BOOLEAN                       createCVec;	/**< Flag that controls whether or not the filter function should store the complex filter output \f$x(t) + i y(t)\f$
-                                                 * needed by the coherent inspiral code;  Memory is allocated for this vector if the flag is set to 1
-                                                 */
-  Approximant                   approximant;	/**< Initialize the findchirp routines to fiter with templates of type \c approximant; Valid approximants are
-                                                 * #TaylorT1, #TaylorT2, #TaylorT3, #PadeT1, #EOB, #FindChirpSP, #BCV and #BCVSpin
-                                                 */
-  LALPNOrder                    order;
-}
-FindChirpInitParams;
-
-
-/**
- * This structure contains the parameters needed to call the data
- * conditioning functions <tt>FindChirpSPData()</tt>, <tt>FindChirpTDData()</tt>,
- * <tt>FindChirpBCVData()</tt> or <tt>FindChirpBCVSpinData()</tt>. It should be
- * initialized by <tt>FindChirpDataInit()</tt> and destroyed by
- * <tt>FindChirpDataFinalize()</tt>.
- */
-typedef struct
-tagFindChirpDataParams
-{
-  REAL4Vector                  *ampVec;			/**< A vector containing the frequency domain
-                                                         * quantity \f$(k/N)^{-7/6}\f$, where \f$k\f$ is the frequency series index and \f$N\f$ is the
-                                                         * number of points in a data segment; NB: for time domain templates, this is set
-                                                         * to unity by the function <tt>FindChirpTDData()</tt>
-                                                         */
-  REAL4Vector                  *ampVecBCV;		/**< A vector containing the frequency domain
-                                                         * quantity \f$(k/N)^{-1/2}\f$, where \f$k\f$ is the frequency series index and \f$N\f$ is the
-                                                         * number of points in a data segment
-                                                         */
-  REAL8Vector                  *ampVecBCVSpin1;		/**< Undocumented spinning BCV amplitude vector */
-  REAL8Vector                  *ampVecBCVSpin2;		/**< Undocumented spinning BCV amplitude vector */
-  RealFFTPlan                  *fwdPlan;		/**< An FFTW plan used to transform the time domain interferometer data \f$v(t_j)\f$ into its DFT \f$\tilde{v}_k\f$ */
-  RealFFTPlan                  *invPlan;		/**< An FFTW plan used to transform the
-                                                         * dimensionless frequency domain interferometer strain \f$\tilde{w}_k\f$ into
-                                                         * the quantity \f$N w(t_j)\f$ to allow time domain trunction of the inverse
-                                                         * power spectrum
-                                                         */
-  REAL4Vector                  *wVec;			/**< A vector used as workspace when truncating the inverse power spectrum in the time domain */
-  COMPLEX8Vector               *wtildeVec;		/**< A vector which on exit from
-                                                         * the data conditioning function contains the inverse of the strain one sided
-                                                         * power spectral density, after trunction in the time domain, <em>for the last
-                                                         * data segment conditioned</em>; Typically all the data segments are conditioned
-                                                         * using the same power spectrum, so this quantity is identical for all data
-                                                         * segments; It contains:
-                                                         * \f{equation}{
-                                                         * \tilde{w}_k = {1}/{S}
-                                                         * \f}
-                                                         */
-  REAL4Vector                  *tmpltPowerVec;		/**< A vector which on exit from
-                                                         * <tt>FindChirpSPData()</tt> or from <tt>FindChirpBCVData()</tt>
-                                                         * contains the quantity
-                                                         * \f{equation}{
-                                                         * \mathtt{tmpltPower[k]} = \frac{f^{-7/3}}{S}
-                                                         * \f}
-                                                         */
-  REAL4Vector                  *tmpltPowerVecBCV;	/**< A vector which on exit from
-                                                         * <tt>FindChirpBCVData()</tt>
-                                                         * contains the quantity
-                                                         * \f{equation}{
-                                                         * \mathtt{tmpltPowerBCV[k]} = \frac{f^{-1}}{S}
-                                                         * \f}
-                                                         */
-  REAL4                         fLow;			/**< The frequency domain low frequency cutoff \f$f_\mathrm{low}\f$; All frequency domain data is set to zero below this frequency */
-  REAL4                         dynRange;		/**< A dynamic range factor \f$d\f$ which cancels from the filter output;  This allows quantities to be stored in the range of
-                                                         * \c REAL4 rather than \c REAL8; This must be set to the same value as \c dynRange in the \c FindChirpTmpltParams; For LIGO data a
-                                                         * value of \f$d = 2^{69}\f$ is appropriate
-                                                         */
-  UINT4                         invSpecTrunc;		/**< The length to which to truncate the inverse power spectral density of the data in the time domain; If set to zero, no
-                                                         * truncation is performed
-                                                         */
-  Approximant                   approximant;		/**< Condition the data for templates of type \c approximant;
-                                                         * Valid approximants are #TaylorT1, #TaylorT2, #TaylorT3, #PadeT1, #EOB, #FindChirpSP, #BCV and #BCVSpin
-                                                         */
-}
-FindChirpDataParams;
 
 /**
  * This structure contains the parameters for generation of templates
@@ -504,121 +403,11 @@ LALFindChirpDestroyTmpltNode (
     InspiralTemplateNode      **tmpltNode
     );
 
-void
-LALInitializeDataSegmentVector (
-    LALStatus                  *status,
-    DataSegmentVector         **dataSegVec,
-    REAL4TimeSeries            *chan,
-    REAL4FrequencySeries       *spec,
-    COMPLEX8FrequencySeries    *resp,
-    FindChirpInitParams        *params
-    );
-
-void
-LALFinalizeDataSegmentVector (
-    LALStatus                  *status,
-    DataSegmentVector         **vector
-    );
-
-void
-LALCreateDataSegmentVector (
-    LALStatus                  *status,
-    DataSegmentVector         **vector,
-    FindChirpInitParams        *params
-    );
-
-void
-LALDestroyDataSegmentVector (
-    LALStatus                  *status,
-    DataSegmentVector         **vector
-    );
-
-void
-LALCreateFindChirpSegmentVector (
-    LALStatus                  *status,
-    FindChirpSegmentVector    **vector,
-    FindChirpInitParams        *params
-    );
-
-void
-LALDestroyFindChirpSegmentVector (
-    LALStatus                  *status,
-    FindChirpSegmentVector    **vector
-    );
-
-
-/*
- *
- * function prototypes for initialization, finalization of data functions
- *
- */
-
-void
-LALFindChirpDataInit (
-    LALStatus                  *status,
-    FindChirpDataParams       **output,
-    FindChirpInitParams        *params
-    );
-
-void
-LALFindChirpDataFinalize (
-    LALStatus                  *status,
-    FindChirpDataParams       **output
-    );
-
-
-/*
- *
- * function prototypes for initialization, finalization of template functions
- *
- */
-
-void
-LALFindChirpTemplateInit (
-    LALStatus                  *status,
-    FindChirpTmpltParams      **output,
-    FindChirpInitParams        *params
-    );
-
-void
-LALFindChirpTemplateFinalize (
-    LALStatus                  *status,
-    FindChirpTmpltParams      **output
-    );
-
-
-
 /*
  *
  * function prototypes for initialization, finalization and filter functions
  *
  */
-
-void
-LALFindChirpFilterInit (
-    LALStatus                  *status,
-    FindChirpFilterParams     **output,
-    FindChirpInitParams        *params
-    );
-
-void
-LALFindChirpFilterFinalize (
-    LALStatus                  *status,
-    FindChirpFilterParams     **output
-    );
-
-void
-LALCreateFindChirpInput (
-    LALStatus                  *status,
-    FindChirpFilterInput      **output,
-    FindChirpInitParams        *params
-    );
-
-void
-LALDestroyFindChirpInput (
-    LALStatus                  *status,
-    FindChirpFilterInput      **output
-    );
 
 void
 LALFindChirpCreateCoherentInput(
@@ -629,23 +418,6 @@ LALFindChirpCreateCoherentInput(
      REAL4                      coherentSegmentLength,
      INT4                       corruptedDataLength
      );
-
-void
-LALFindChirpFilterSegment (
-    LALStatus                  *status,
-    SnglInspiralTable         **eventList,
-    FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params
-    );
-
-void
-LALFindChirpFilterOutputVeto(
-    LALStatus                          *status,
-    SnglInspiralTable                 **eventList,
-    FindChirpFilterInput               *input,
-    FindChirpFilterParams              *fcParams
-    );
-
 
 void
 LALFindChirpInjectSignals (
@@ -688,20 +460,6 @@ XLALFindChirpSetFollowUpSegment (
     SnglInspiralTable          **events
     );
 
-void
-LALFindChirpSetAnalyseTemplate (
-    LALStatus                    *status,
-    UINT4                        *analyseThisTmplt,
-    REAL4                        mmFast,
-    REAL8                        deltaF,
-    INT4                         sampleRate,
-    FindChirpDataParams          *fcDataParams,
-    int                          numTmplts,
-    InspiralTemplate             *tmpltHead,
-    int                          numInjections,
-    SimInspiralTable             *injections
-    );
-
 UINT4
 XLALCmprSgmntTmpltFlags (
     UINT4 numInjections,
@@ -722,13 +480,6 @@ XLALFindChirpBankSimInjectSignal (
     COMPLEX8FrequencySeries    *resp,
     SimInspiralTable           *injParams,
     FindChirpBankSimParams     *simParams
-    );
-
-REAL4
-XLALFindChirpBankSimSignalNorm(
-    FindChirpDataParams         *fcDataParams,
-    FindChirpSegmentVector      *fcSegVec,
-    UINT4                        cut
     );
 
 SimInstParamsTable *
