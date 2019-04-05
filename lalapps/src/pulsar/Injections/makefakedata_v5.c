@@ -474,6 +474,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       XLAL_CHECK ( (cfg->multiTimestamps->length > 0) && (cfg->multiTimestamps->data != NULL), XLAL_EINVAL, "Got empty timestamps-list from XLALReadMultiTimestampsFiles()\n" );
 
       for ( UINT4 X=0; X < cfg->multiTimestamps->length; X ++ ) {
+        XLAL_CHECK ( (cfg->multiTimestamps->data[X]->length > 0) && (cfg->multiTimestamps->data[X]->data != NULL), XLAL_EINVAL, "Got empty timestamps-list for detector %s", cfg->multiIFO.sites[X].frDetector.prefix );
         cfg->multiTimestamps->data[X]->deltaT = uvar->Tsft;	// Tsft information not given by timestamps-file
       }
     } // endif have_timestampsFiles
