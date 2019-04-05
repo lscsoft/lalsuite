@@ -109,6 +109,7 @@ typedef struct {
   CHAR *IFO;		/**< IFO name */
   INT4 dataStartGPS;	/**< data start-time in GPS seconds */
   INT4 dataDuration;	/**< data-span to generate */
+  LALStringVector *timestampsFiles;	/**< per-detector file(s) with timestamps list */
   INT4 TAtom;		/**< Fstat atoms time baseline */
 
   BOOLEAN computeFtotal; /**< Also compute 'total' F-statistic over the full data-span */
@@ -552,6 +553,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( IFO,	        STRING, 'I', OPTIONAL, "Detector: 'G1','L1','H1,'H2', 'V1', ... ");
   XLALRegisterUvarMember( dataStartGPS,	 	 INT4, 0,  OPTIONAL, "data start-time in GPS seconds");
   XLALRegisterUvarMember( dataDuration,	 	 INT4, 0,  OPTIONAL, "data-span to generate (in seconds)");
+  XLALRegisterUvarMember( timestampsFiles,	        STRINGVector, 0,  OPTIONAL, "ALTERNATIVE: file(s) to read timestamps from (file-format: lines with <seconds> [<nanoseconds>]; nanoseconds currently ignored; only 1 detector/file currently supported)");
 
   /* transient window ranges: for injection ... */
   XLALRegisterUvarMember( injectWindow_type,    STRING, 0, OPTIONAL, "Type of transient window to inject ('none', 'rect', 'exp')");
@@ -672,27 +674,52 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   multiDet.sites[0] = (*site); 	/* copy! */
   XLALFree ( site );
 
-  /* init timestamps vector covering observation time */
-  UINT4 numSteps = (UINT4) ceil ( uvar->dataDuration / uvar->TAtom );
+  /* TIMESTAMPS: either from --startTime+duration OR --timestampsFiles */
+  BOOLEAN have_startTime = XLALUserVarWasSet ( &uvar->dataStartGPS );
+  BOOLEAN have_duration = XLALUserVarWasSet ( &uvar->dataDuration );
+  BOOLEAN have_timestampsFiles = XLALUserVarWasSet ( &uvar->timestampsFiles );
+  XLAL_CHECK ( ( have_duration && have_startTime) || !( have_duration || have_startTime ), XLAL_EINVAL, "Need BOTH {--startTime,--duration} or NONE\n");
+  // at least one of {startTime,timestamps} required
+  XLAL_CHECK ( have_timestampsFiles || have_startTime, XLAL_EINVAL, "Need either --startTime and --duration, OR --timestampsFiles}\n" );
+  // don't allow timestamps + {startTime+duration}
+  XLAL_CHECK ( !have_timestampsFiles || !have_startTime, XLAL_EINVAL, "--timestampsFiles incompatible with --startTime and --duration}\n");
   MultiLIGOTimeGPSVector * multiTS;
-  if ( (multiTS = XLALCalloc ( 1, sizeof(*multiTS))) == NULL ) {
-    XLAL_ERROR ( XLAL_ENOMEM );
-  }
-  multiTS->length = 1;
-  if ( (multiTS->data = XLALCalloc (1, sizeof(*multiTS->data))) == NULL ) {
-    XLAL_ERROR ( XLAL_ENOMEM );
-  }
-  if ( (multiTS->data[0] = XLALCreateTimestampVector (numSteps)) == NULL ) {
-    XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", __func__, numSteps );
-  }
-  multiTS->data[0]->deltaT = uvar->TAtom;
-  UINT4 i;
-  for ( i=0; i < numSteps; i ++ )
+  UINT4 numSteps = 0;
+  INT4 dataStartGPS = 0;
+  INT4 dataDuration = 0;
+  /* now handle the two mutually-exclusive cases */
+  if ( have_timestampsFiles )
     {
-      UINT4 ti = uvar->dataStartGPS + i * uvar->TAtom;
-      multiTS->data[0]->data[i].gpsSeconds = ti;
-      multiTS->data[0]->data[i].gpsNanoSeconds = 0;
-    }
+      /* NOTE: nanoseconds will be truncated! */
+      XLAL_CHECK ( (multiTS = XLALReadMultiTimestampsFiles ( uvar->timestampsFiles )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (multiTS->length > 0) && (multiTS->data != NULL), XLAL_EINVAL, "Got empty timestamps-list from XLALReadMultiTimestampsFiles()\n" );
+      XLAL_CHECK ( (multiTS->length == 1) , XLAL_EINVAL, "Can currently deal only with one --timestampsFiles entry for a single detector!\n" );
+      XLAL_CHECK ( (multiTS->data[0]->length > 0) && (multiTS->data[0]->data != NULL), XLAL_EINVAL, "Got empty timestamps-list for detector %s", uvar->IFO );
+      numSteps = multiTS->data[0]->length;
+      multiTS->data[0]->deltaT = uvar->TAtom; // Tsft information not given by timestamps-file
+      dataStartGPS = multiTS->data[0]->data[0].gpsSeconds;
+      dataDuration = uvar->TAtom + multiTS->data[0]->data[numSteps-1].gpsSeconds - dataStartGPS; // difference of last and first timestamp, plus one extra atom length
+    } // endif have_timestampsFiles
+  else
+    {
+      /* init timestamps vector covering observation time */
+      XLAL_CHECK ( (multiTS = XLALCalloc ( 1, sizeof(*multiTS))) != NULL, XLAL_ENOMEM );
+      multiTS->length = 1;
+      XLAL_CHECK ( (multiTS->data = XLALCalloc (1, sizeof(*multiTS->data))) != NULL, XLAL_ENOMEM );
+      dataStartGPS = uvar->dataStartGPS;
+      dataDuration = uvar->dataDuration;
+      numSteps = (UINT4) ceil ( dataDuration / uvar->TAtom );
+      XLAL_CHECK ( (multiTS->data[0] = XLALCreateTimestampVector (numSteps)) != NULL, XLAL_EFUNC, "XLALCreateTimestampVector(%d) failed.", numSteps );
+      multiTS->data[0]->deltaT = uvar->TAtom;
+      UINT4 i;
+      for ( i=0; i < numSteps; i ++ )
+        {
+          UINT4 ti = dataStartGPS + i * uvar->TAtom;
+          multiTS->data[0]->data[i].gpsSeconds = ti;
+          multiTS->data[0]->data[i].gpsNanoSeconds = 0;
+        }
+    } // endif !have_noiseSFTs
+  XLAL_CHECK(numSteps>=2,XLAL_EINVAL,"Need timestamps covering at least 2 atoms!");
 
   /* get detector states */
   if ( (cfg->multiDetStates = XLALGetMultiDetectorStates ( multiTS, &multiDet, edat, 0.5 * uvar->TAtom )) == NULL ) {
@@ -727,13 +754,13 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   }
 
   /* apply correct defaults if unset: t0=dataStart, t0Band=dataDuration-3*tauMax */
-  InjectRange.t0 = uvar->dataStartGPS + uvar->injectWindow_t0Days * DAY24;
+  InjectRange.t0 = dataStartGPS + uvar->injectWindow_t0Days * DAY24;
 
   REAL8 tauMax = ( uvar->injectWindow_tauDays +  uvar->injectWindow_tauDaysBand ) * DAY24;
   if ( XLALUserVarWasSet (&uvar->injectWindow_t0DaysBand ) )
     InjectRange.t0Band  = uvar->injectWindow_t0DaysBand * DAY24;
   else
-    InjectRange.t0Band  = fmax ( 0.0, uvar->dataDuration - TRANSIENT_EXP_EFOLDING * tauMax - InjectRange.t0 ); 	/* make sure it's >= 0 */
+    InjectRange.t0Band  = fmax ( 0.0, dataDuration - TRANSIENT_EXP_EFOLDING * tauMax - InjectRange.t0 ); 	/* make sure it's >= 0 */
 
   InjectRange.tau     = (UINT4) ( uvar->injectWindow_tauDays * DAY24 );
   InjectRange.tauBand = (UINT4) ( uvar->injectWindow_tauDaysBand * DAY24 );
@@ -751,7 +778,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   if ( !XLALUserVarWasSet ( &uvar->searchWindow_t0Days ) )
     SearchRange.t0      = InjectRange.t0;
   else
-    SearchRange.t0      = uvar->dataStartGPS + uvar->searchWindow_t0Days * DAY24;
+    SearchRange.t0      = dataStartGPS + uvar->searchWindow_t0Days * DAY24;
   if ( !XLALUserVarWasSet ( &uvar->searchWindow_t0DaysBand ) )
     SearchRange.t0Band = InjectRange.t0Band;
   else
