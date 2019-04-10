@@ -205,6 +205,11 @@ def create_events_from_coinc_and_psd(
         from gstlal import reference_psd
     except ImportError:
         reference_psd = None
+    try:
+        from gwpy.frequencyseries import FrequencySeries
+        from gwpy.astro import inspiral_range
+    except ImportError:
+        inspiral_range = None
     coinc_events = lsctables.CoincInspiralTable.get_table(coinc_xml_obj)
     sngl_event_idx = dict((row.event_id, row) for row in lsctables.SnglInspiralTable.get_table(coinc_xml_obj))
     ifos = sorted(coinc_events[0].instruments)
@@ -237,11 +242,43 @@ def create_events_from_coinc_and_psd(
                     else:
                         horizon_distance.append(2 * e.eff_distance)
                 else:
-                    if reference_psd is not None and psd_dict is not None:
+                    if psd_dict is not None:
+                        # Calculate horizon distance from psd to determine
+                        # upper limit of distance prior.
+                        psd = psd_dict[e.ifo]
+                        # If roq is not used, fstop has not been calculated up
+                        # to this point.
                         if not roq==False:
                             fstop = IMRPhenomDGetPeakFreq(e.mass1, e.mass2, 0.0, 0.0)
-                        HorizonDistanceObj = reference_psd.HorizonDistance(f_min = flow, f_max = fstop, delta_f = 1.0 / 32.0, m1 = e.mass1, m2 = e.mass2)
-                        horizon_distance.append(HorizonDistanceObj(psd_dict[e.ifo], snr = threshold_snr)[0])
+                        # reference_psd.HorizonDistance is more precise
+                        # calculator of horizon distance than
+                        # gwpy.astro.inspiral_range.
+                        if reference_psd is not None:
+                            HorizonDistanceObj = reference_psd.HorizonDistance(
+                                f_min = flow, f_max = fstop, delta_f = 1.0 / 32.0,
+                                m1 = e.mass1, m2 = e.mass2
+                            )
+                            horizon_distance.append(
+                                HorizonDistanceObj(psd, snr = threshold_snr)[0]
+                            )
+                        # If reference_psd is not available, use
+                        # gwpy.astro.inspiral_range.
+                        elif inspiral_range is not None:
+                            gwpy_psd = FrequencySeries(
+                                psd.data.data, f0 = psd.f0, df = psd.deltaF
+                            )
+                            try:
+                                horizon_distance.append(
+                                    inspiral_range(
+                                        gwpy_psd, threshold_snr, e.mass1, e.mass2,
+                                        flow, fstop, True
+                                    ).value
+                                )
+                            # If flow of psd is lower than f_ISCO, inspiral_range
+                            # raises IndexError. In this case, nothing is
+                            # appended to horizon_distance.
+                            except IndexError:
+                                pass
         if srate:
             if max(srate)<srate_psdfile:
                 srate = max(srate)
