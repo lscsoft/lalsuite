@@ -115,6 +115,7 @@ void XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect );
 
 void XLALDestroyPulsarParams ( PulsarParams *params );
 
+int XLALPrintInjectionSourcesHelp ( FILE *file );
 
 /*@}*/
 

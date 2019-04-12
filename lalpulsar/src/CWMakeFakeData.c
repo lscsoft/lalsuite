@@ -1159,3 +1159,34 @@ XLALPulsarParamsVectorAppend ( PulsarParamsVector *list, const PulsarParamsVecto
   return ret;
 
 } // XLALPulsarParamsVectorAppend()
+
+/**
+ * helper function for lalapps codes which implement an --injectionSources option
+ * (or similar, calling XLALPulsarParamsFromUserInput()),
+ * printing some syntax documentation and usage examples.
+ *
+ * NOTE: This documentation is by no means complete yet!
+ */
+int
+XLALPrintInjectionSourcesHelp ( FILE *file )
+ {
+
+   /* Print usage: only required and regular arguments are printed */
+   fprintf( file, "\nTo define source parameters to inject, you can pass a comma-separated list of file-patterns and/or direct config-strings ('{...}').\n\n");
+   fprintf( file, "Syntax for config-strings:\n");
+   fprintf( file, "Enclose with curly braces ('{}').\n");
+   fprintf( file, "Give pulsar parameters as key=value pairs with a '=' separator.\n");
+   fprintf( file, "Separate each key=value pair with a semicolon (';').\n");
+   fprintf( file, "Required parameters: Alpha, Delta, Freq, refTime\n");
+   fprintf( file, "Optional parameters (list not complete): f1dot, f2dot, h0, cosi, psi, phi0, transientWindowType, transientStartTime, transientTauDays, the usual binary parameters, ...\n");
+   fprintf( file, "\n");
+   fprintf( file, "Example:\n");
+   fprintf( file, "--injectionSources='{Alpha=0; Delta=0; Freq=50; f1dot=1e-11; f2dot=0; refTime=1000000000; h0=1.00000000e-23; cosi=0; psi=0; phi0=0;}'\n\n");
+   fprintf( file, "File patterns and config-strings can also be freely mixed, example:\n");
+   fprintf( file, "--injectionSources='file1.dat,someFiles*.txt,{Alpha=0;Delta=0;Freq=0;refTime=1000000000;},someOtherFiles[0-9].dat'\n");
+   fprintf( file, "\nThis documentation is by no means complete yet; see the source code of XLALPulsarParamsFromUserInput for its full features.\n");
+   fprintf( file, "\n");
+
+  return XLAL_SUCCESS;
+
+ } // XLALPrintInjectionSourcesHelp()

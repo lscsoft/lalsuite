@@ -459,6 +459,7 @@ int MAIN( int argc, char *argv[]) {
   timingInfo_t XLAL_INIT_DECL(timing);
 
   LALStringVector *uvar_injectionSources = NULL;
+  BOOLEAN uvar_injectionSourcesHelp = FALSE;
 
   // timing values
   REAL8 tic_RecalcToplist, time_RecalcToplist = 0;
@@ -499,7 +500,7 @@ int MAIN( int argc, char *argv[]) {
   /* register user input variables */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_log,                 "log",                 BOOLEAN,      0,   OPTIONAL,   "Write log file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_semiCohToplist,      "semiCohToplist",      BOOLEAN,      0,   OPTIONAL,   "Print toplist of semicoherent candidates" ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_DataFiles1,          "DataFiles1",          STRING,       0,   REQUIRED,   "1st SFT file pattern") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_DataFiles1,          "DataFiles1",          STRING,       0,   OPTIONAL,   "REQUIRED: 1st SFT file pattern") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_skyRegion,           "skyRegion",           STRING,       0,   OPTIONAL,   "sky-region polygon (or 'allsky')") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_numSkyPartitions,    "numSkyPartitions",    INT4,         0,   OPTIONAL,   "No. of (equi-)partitions to split skygrid into") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_partitionIndex,      "partitionIndex",      INT4,         0,   OPTIONAL,   "Index [0,numSkyPartitions-1] of sky-partition to generate") == XLAL_SUCCESS, XLAL_EFUNC);
@@ -569,13 +570,24 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_loudestTwoFPerSeg,   "loudestTwoFPerSeg",   BOOLEAN,      0, DEVELOPER, "Output loudest per-segment Fstat values into file '_loudestTwoFPerSeg'" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* inject signals into the data being analyzed */
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar ( &uvar_injectionSources, "injectionSources",      STRINGVector, 0, DEVELOPER,     "CSV list of files containing signal parameters for injection [see mfdv5]") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar ( &uvar_injectionSources, "injectionSources",      STRINGVector, 0, DEVELOPER,     "Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}'). See --injectionSourcesHelp for details.") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar ( &uvar_injectionSourcesHelp, "injectionSourcesHelp", BOOLEAN, 0, DEVELOPER,  "Display more information on syntax for --injectionSources option." ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
   XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     return(1);
+
+  /* special case: injectionSourcesHelp requested */
+  if ( uvar_injectionSourcesHelp ) {
+    XLAL_CHECK( XLALPrintInjectionSourcesHelp( stdout ) == XLAL_SUCCESS, XLAL_EFUNC );
+    exit (1);
+  }
+  else if (!XLALUserVarWasSet(&uvar_DataFiles1)) {
+      fprintf(stderr, "required option `--DataFiles1' has not been specified!\n");
+      return( HIERARCHICALSEARCH_EVAL );
+  }
 
   /* assemble version string */
   CHAR *VCSInfoString;

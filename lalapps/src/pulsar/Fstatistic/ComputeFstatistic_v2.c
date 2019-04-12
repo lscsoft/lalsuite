@@ -318,6 +318,7 @@ typedef struct {
   REAL8 allowedMismatchFromSFTLength; /**< maximum allowed mismatch from SFTs being too long */
 
   LALStringVector *injectionSources;    /**< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}') */
+  BOOLEAN injectionSourcesHelp;     /**< switch to output help message and then exit */
   LALStringVector *injectSqrtSX; 	/**< Add Gaussian noise: list of respective detectors' noise-floors sqrt{Sn}" */
   LALStringVector *IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector */
   LALStringVector *timestampsFiles;     /**< Names of numDet timestamps files */
@@ -402,6 +403,12 @@ int main(int argc,char *argv[])
   BOOLEAN should_exit = 0;
   XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
+    exit (1);
+  }
+
+  /* special case: injectionSourcesHelp requested */
+  if ( uvar.injectionSourcesHelp ) {
+    XLAL_CHECK( XLALPrintInjectionSourcesHelp( stdout ) == XLAL_SUCCESS, XLAL_EFUNC );
     exit (1);
   }
 
@@ -1023,6 +1030,7 @@ initUserVars ( UserInput_t *uvar )
   uvar->resampFFTPowerOf2 = TRUE;
   uvar->allowedMismatchFromSFTLength = 0;
   uvar->injectionSources = NULL;
+  uvar->injectionSourcesHelp = FALSE;
   uvar->injectSqrtSX = NULL;
   uvar->IFOs = NULL;
   uvar->timestampsFiles = NULL;
@@ -1158,7 +1166,8 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember(allowedMismatchFromSFTLength, REAL8, 0, DEVELOPER, "Maximum allowed mismatch from SFTs being too long [Default: what's hardcoded in XLALFstatMaximumSFTLength]" );
 
   /* inject signals into the data being analyzed */
-  XLALRegisterUvarMember(injectionSources,  STRINGVector, 0, DEVELOPER, "CSV list of files containing signal parameters for injection [see mfdv5]");
+  XLALRegisterUvarMember(injectionSources,  STRINGVector, 0, DEVELOPER, "Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}'). See --injectionSourcesHelp for details." );
+  XLALRegisterUvarMember( injectionSourcesHelp, BOOLEAN, 0, DEVELOPER,  "Display more information on syntax for --injectionSources option." );
   XLALRegisterUvarMember(injectSqrtSX,	    STRINGVector, 0, DEVELOPER, "Generate Gaussian Noise SFTs on-the-fly: CSV list of detectors' noise-floors sqrt{Sn}");
   XLALRegisterUvarMember(IFOs,	            STRINGVector, 0, DEVELOPER, "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\", when no SFT files are specified");
   XLALRegisterUvarMember(timestampsFiles,   STRINGVector, 0, DEVELOPER, 

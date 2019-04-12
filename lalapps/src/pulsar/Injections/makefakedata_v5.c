@@ -140,7 +140,8 @@ typedef struct
   CHAR *ephemSun;		/**< Sun ephemeris file to use */
 
   /* pulsar parameters */
-  LALStringVector *injectionSources;	///< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}')
+  LALStringVector *injectionSources;	/**< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}') */
+  BOOLEAN injectionSourcesHelp;	/**< switch to output help message and then exit */
 
   INT4 randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
@@ -650,7 +651,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember(  SFTWindowBeta,        REAL8, 0, OPTIONAL, "Window 'beta' parameter required for a few window-types (eg. 'tukey')");
 
   /* pulsar params */
-  XLALRegisterUvarMember( injectionSources,     STRINGVector, 0, OPTIONAL,  "Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}')" );
+  XLALRegisterUvarMember( injectionSources,     STRINGVector, 0, OPTIONAL,  "Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}'). See --injectionSourcesHelp for details." );
+  XLALRegisterUvarMember( injectionSourcesHelp, BOOLEAN, 0, OPTIONAL,  "Display more information on syntax for --injectionSources option." );
 
   /* noise */
   XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps, and frequency range unless separately specified.)");
@@ -685,6 +687,12 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   BOOLEAN should_exit = 0;
   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
+    exit (1);
+  }
+
+  /* special case: injectionSourcesHelp requested */
+  if ( uvar->injectionSourcesHelp ) {
+    XLAL_CHECK( XLALPrintInjectionSourcesHelp( stdout ) == XLAL_SUCCESS, XLAL_EFUNC );
     exit (1);
   }
 
