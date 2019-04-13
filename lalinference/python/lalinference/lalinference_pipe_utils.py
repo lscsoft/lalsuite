@@ -1436,7 +1436,17 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             seglen=event.duration
         segstart=end_time+2-seglen
         segend=segstart+seglen
-        if self.config.has_option('input', 'minimum_realizations_number'):
+        # check whether lalinference psd is used or not
+        try:
+            use_gracedbpsd = (not self.config.getboolean('input','ignore-gracedb-psd'))
+        except:
+            use_gracedbpsd = True
+        use_lalinference_psd = not ((use_gracedbpsd and os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')))
+                                    or self.config.has_option('condor','bayesline')
+                                    or self.config.has_option('condor','bayeswave'))
+        print(use_lalinference_psd)
+        # if lalinference psd is used and minimum_realizations_number is specified, lengthen the required science segment.
+        if use_lalinference_psd and self.config.has_option('input', 'minimum_realizations_number'):
             psdstart = segstart - self.config.getint('input','padding') - \
                 self.config.getint('input', 'minimum_realizations_number') * seglen
         else:
