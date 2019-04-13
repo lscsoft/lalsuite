@@ -144,7 +144,7 @@ int main( int argc, char *argv[] )
   REAL4DemodulatedPowerVector *dmpower = NULL;    /* contains the demodulated power for all SFTs */
   GridParametersVector *freqgridparams = NULL;  /* the coherent grid on the frequency derivitive parameter space */
   GridParameters *bingridparams = NULL;
-  CHAR newnewtemp[LONGSTRINGLENGTH];
+  CHAR newnewtemp[2*LONGSTRINGLENGTH];
   /*  REAL8Vector *SemiCo = NULL;                   /\* the semi-coherent statistic results *\/    */
   REAL8 fmin_read, fmax_read, fband_read;       /* the range of frequencies to be read from SFTs */
   UINT4 i;                                      /* counters */
@@ -206,26 +206,10 @@ int main( int argc, char *argv[] )
     if ( mkdir( newtemp, 0755 ) != 0 && errno != EEXIST ) {
       LogPrintf( LOG_DEBUG, "%s : Unable to make temporary directory %s.  Might be a problem.\n", __func__, newtemp );
     }
-/* FIXME: do not treat these format overflow warnings as errors, but do fix them later. */
-#if __GNUC__ >= 8
-#pragma GCC diagnostic push
-#pragma GCC diagnostic warning "-Wformat-overflow"
-#endif
-    sprintf( newnewtemp, "%s/%.3f-%.3f", newtemp, uvar.freq, uvar.freq + uvar.freqband );
-#if __GNUC__ >= 8
-#pragma GCC diagnostic pop
-#endif
+    snprintf( newnewtemp, sizeof(newnewtemp), "%s/%.3f-%.3f", newtemp, uvar.freq, uvar.freq + uvar.freqband );
 
   } else {
-/* FIXME: do not treat these format overflow warnings as errors, but do fix them later. */
-#if __GNUC__ >= 8
-#pragma GCC diagnostic push
-#pragma GCC diagnostic warning "-Wformat-overflow"
-#endif
-    sprintf( newnewtemp, "%s/%.3f-%.3f", uvar.outputdir, uvar.freq, uvar.freq + uvar.freqband );
-#if __GNUC__ >= 8
-#pragma GCC diagnostic pop
-#endif
+    snprintf( newnewtemp, sizeof(newnewtemp), "%s/%.3f-%.3f", uvar.outputdir, uvar.freq, uvar.freq + uvar.freqband );
   }
 
   /* make frequency+band directory inside output/temporary directory */
