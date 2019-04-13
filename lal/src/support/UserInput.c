@@ -881,9 +881,29 @@ XLALUserVarPrintHelp ( FILE *file )
   }
   fprintf( f, "\n" );
   fprintf( f, "\nSYNOPSIS\n" );
-  fprintf( f, "       %s -h|--help\n", program_name );
-  fprintf( f, "       %s -v|--version[=verbose]\n", program_name );
-  fprintf( f, "       %s [@<config-file>] [<options>...]\n", program_name );
+  {
+    fprintf( f, "       %s --help\n", program_name );
+    CHAR help_str[] = "Display this help page.";
+    fprint_wrapped( f, line_width, "           ", help_str );
+  }
+  fprintf( f, "\n" );
+  {
+    fprintf( f, "       %s -h\n", program_name );
+    CHAR help_str[] = "Display a short usage string of available options.";
+    fprint_wrapped( f, line_width, "           ", help_str );
+  }
+  fprintf( f, "\n" );
+  {
+    fprintf( f, "       %s -v|--version[=verbose]\n", program_name );
+    CHAR help_str[] = "Display (verbose) version information.";
+    fprint_wrapped( f, line_width, "           ", help_str );
+  }
+  fprintf( f, "\n" );
+  {
+    fprintf( f, "       %s [@<config-file>] [<options>...]\n", program_name );
+    CHAR help_str[] = "Run the program. Options are parsed from, if given:\n- Configuration file <config-file>: format is INI file style, one <option>=<value> pair per line.\n- Command line <options>: format is --<option>=<value>, --<option> <value>, or -<short-option> <value>.";
+    fprint_wrapped( f, line_width, "           ", help_str );
+  }
   if ( lalUserVarHelpDescription != NULL ) {
     CHAR *description = XLALStringDuplicate( lalUserVarHelpDescription );
     XLAL_CHECK_FAIL ( description != NULL, XLAL_EFUNC );
