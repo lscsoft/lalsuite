@@ -94,12 +94,14 @@ main ( int argc, char *argv[] )
 
   // ----- CW sources to injet ----------
   REAL8 Freq = 100.0;
+  REAL8 h0 = 1.0;
+  REAL8 cosi = 0.5;
 
   PulsarParamsVector *injectSources;
   XLAL_CHECK ( (injectSources = XLALCreatePulsarParamsVector(1)) != NULL, XLAL_EFUNC );
 
-  injectSources->data[0].Amp.h0   = 1;
-  injectSources->data[0].Amp.cosi = 0.5;
+  injectSources->data[0].Amp.aPlus  = 0.5 * h0 * (1.0 + cosi * cosi);
+  injectSources->data[0].Amp.aCross = h0 * cosi;
   injectSources->data[0].Amp.psi  = 0.1;
   injectSources->data[0].Amp.phi0 = 1.2;
 

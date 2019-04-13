@@ -56,10 +56,10 @@ extern "C" {
 
 /** Type containing the JKS 'amplitude parameters' {h0, cosi, phi0, psi} */
 typedef struct tagPulsarAmplitudeParams {
-  REAL8 h0;	/**< overall signal amplitude */
-  REAL8 cosi;	/**< cos(iota) of inclination angle iota of spin-axis wrt line of sight */
   REAL8 psi;	/**< polarization angle psi */
   REAL8 phi0;	/**< initial signal-phase (at some reference time) */
+  REAL8 aPlus;  /**< Signal amplitude (plus) */
+  REAL8 aCross; /**< Signal amplitude (cross) */
 } PulsarAmplitudeParams;
 
 /** Struct for 'canonical' coordinates in amplitude-params space A^mu = {A1, A2, A3, A4} */

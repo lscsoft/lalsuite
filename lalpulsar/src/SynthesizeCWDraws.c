@@ -537,6 +537,8 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
                                const MultiNoiseWeights *multiNoiseWeights	/** [in] per-detector noise weights SX^-1/S^-1, no per-SFT variation (can be NULL for unit weights) */
                                )
 {
+  REAL8 h0, cosi;
+
   /* check input */
   XLAL_CHECK_NULL ( rng && multiAMBuffer && multiDetStates, XLAL_EINVAL, "Invalid NULL input!\n");
   XLAL_CHECK_NULL ( !multiNoiseWeights || multiNoiseWeights->data, XLAL_EINVAL, "Invalid NULL input for multiNoiseWeights->data!\n" );
@@ -580,13 +582,15 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
   /* ----- draw amplitude vector A^mu from given ranges in {h0, cosi, psi, phi0} */
   PulsarAmplitudeParams Amp;
   if ( AmpPrior.fixedSNR > 0 )	/* special treatment of fixed-SNR: use h0=1, later rescale signal */
-    Amp.h0 = 1.0;
+    h0 = 1.0;
   else if ( AmpPrior.fixedSNR == 0 )/* same as setting h0 = 0 */
-    Amp.h0 = 0;
+    h0 = 0;
   else					/* otherwise, draw from h0-prior */
-    Amp.h0 = XLALDrawFromPDF1D ( AmpPrior.pdf_h0Nat, rng );
+    h0 = XLALDrawFromPDF1D ( AmpPrior.pdf_h0Nat, rng );
 
-  Amp.cosi = XLALDrawFromPDF1D ( AmpPrior.pdf_cosi, rng );
+  cosi = XLALDrawFromPDF1D ( AmpPrior.pdf_cosi, rng );
+  Amp.aPlus = 0.5 * h0 * (1.0 + SQ(cosi));
+  Amp.aCross = h0 * cosi;
   Amp.psi  = XLALDrawFromPDF1D ( AmpPrior.pdf_psi,  rng );
   Amp.phi0 = XLALDrawFromPDF1D ( AmpPrior.pdf_phi0, rng );
 
@@ -637,7 +641,8 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,			/**< [out] return su
         XLAL_ERROR_NULL ( XLAL_EFUNC );
       }
 
-      Amp.h0 *= rescale;	      /* rescale amplitude-params for consistency */
+      Amp.aPlus *= rescale;		      /* rescale amplitude-params for consistency */
+      Amp.aCross *= rescale;
       UINT4 i; for (i=0; i < 4; i ++) A_Mu[i] *= rescale;
 
       rho2 *= SQ(rescale);	      /* rescale reported optimal SNR */
@@ -768,7 +773,7 @@ write_InjParams_to_fp ( FILE * fp,			/**< [in] file-pointer to output file */
   ret = fprintf ( fp, " %5.3f %6.3f   %6.3f  %7.3g %6.3f %6.3f %6.3f % 9.3g % 9.3g % 9.3g % 9.3g %10.5g %10.5g %10.5g %10.5g    %9.3f  %9.3f    %1d %9.3g%s\n",
                   par->skypos.longitude, par->skypos.latitude,						/* skypos */
                   par->SNR,										/* SNR */
-                  par->ampParams.h0, par->ampParams.cosi, par->ampParams.psi, par->ampParams.phi0,	/* amplitude params {h0,cosi,psi,phi0}*/
+                  par->ampParams.aPlus, par->ampParams.aCross, par->ampParams.psi, par->ampParams.phi0,	/* amplitude params {aPlus,aCross,psi,phi0}*/
                   par->ampVect[0], par->ampVect[1], par->ampVect[2], par->ampVect[3],			/* ampltiude vector A^mu */
                   par->multiAM.Mmunu.Ad, par->multiAM.Mmunu.Bd, par->multiAM.Mmunu.Cd, par->multiAM.Mmunu.Dd,	/* antenna-pattern matrix components */
                   t0_d, tau_d, par->transientWindow.type,		/* transient-window params */

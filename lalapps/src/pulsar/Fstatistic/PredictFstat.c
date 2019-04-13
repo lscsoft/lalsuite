@@ -325,13 +325,13 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
     /* ----- internally we always use h0, cosi */
     if ( have_h0 )
       {
-        cfg->pap.h0=uvar->h0;
-        cfg->pap.cosi=uvar->cosi;
+        cfg->pap.aPlus = 0.5 * uvar->h0 * (1.0 + SQ(uvar->cosi));
+        cfg->pap.aCross = uvar->h0 * uvar->cosi;
       }
     else
       {
-        cfg->pap.h0 = uvar->aPlus + sqrt( SQ( uvar->aPlus ) - SQ( uvar->aCross ) );
-        cfg->pap.cosi= uvar->aCross / cfg->pap.h0;
+        cfg->pap.aPlus = uvar->aPlus;
+        cfg->pap.aCross = uvar->aCross;
       }
     cfg->pap.psi=uvar->psi;
     cfg->pap.phi0=uvar->phi0;

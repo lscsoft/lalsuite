@@ -851,11 +851,10 @@ InitCode ( ConfigVariables *cfg,
   XLAL_CHECK ( cfg->multiAMcoe != NULL, XLAL_EFUNC );
 
   /* ----- compute amplitude-factors alpha1, alpha2, alpha3 ----- */
-  REAL8 cosi = metricParams->signalParams.Amp.cosi;
   REAL8 psi  = metricParams->signalParams.Amp.psi;
 
-  REAL8 Aplus = 0.5 * ( 1.0 + SQ(cosi) );
-  REAL8 Across = cosi;
+  REAL8 Aplus = metricParams->signalParams.Amp.aPlus;
+  REAL8 Across = metricParams->signalParams.Amp.aCross;
   REAL8 cos2psi = cos(2.0 * psi );
   REAL8 sin2psi = sin(2.0 * psi );
   cfg->Al1 = SQ(Aplus) * SQ( cos2psi ) + SQ(Across) * SQ(sin2psi);

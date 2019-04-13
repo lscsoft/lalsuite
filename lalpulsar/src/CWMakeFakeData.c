@@ -393,10 +393,8 @@ XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams,	///< input CW pulsar-
   XLAL_CHECK_NULL ( fHet >= 0, XLAL_EDOM );
 
   // translate amplitude params
-  REAL8 h0     = pulsarParams->Amp.h0;
-  REAL8 cosi   = pulsarParams->Amp.cosi;
-  REAL8 aPlus  = 0.5 * h0 * ( 1.0 + SQ(cosi) );
-  REAL8 aCross = h0 * cosi;
+  REAL8 aPlus  = pulsarParams->Amp.aPlus;
+  REAL8 aCross = pulsarParams->Amp.aCross;
   // translate 'modern' fkdot into 'old-style' spindown-vector
   UINT4 s_max;
   for ( s_max = PULSAR_MAX_SPINS-1; s_max > 0; s_max -- )
@@ -825,21 +823,13 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   // {h0,cosi} or {aPlus, aCross} mutually exclusive sets
   XLAL_CHECK ( ! ( have_h0 && have_aPlus ), XLAL_EINVAL );
 
-  if ( have_aPlus )	/* translate A_{+,x} into {h_0, cosi} */
+  if ( have_h0 )	/* translate {h_0, cosi} into A_{+,x}*/
     {
-      XLAL_CHECK ( fabs ( aCross ) <= aPlus, XLAL_EDOM, "ERROR: |aCross| (= %g) must be <= aPlus (= %g).\n", fabs(aCross), aPlus );
-      REAL8 disc = sqrt ( SQ(aPlus) - SQ(aCross) );
-      h0 = aPlus + disc;
-      if ( h0 > 0 ) {
-        cosi = aCross / h0;	// avoid division by 0!
-      }
-    } //if {aPlus, aCross}
-
-  XLAL_CHECK ( h0 >= 0, XLAL_EDOM );
-  pulsarParams->Amp.h0 	= h0;
-
-  XLAL_CHECK ( (cosi >= -1) && (cosi <= 1), XLAL_EDOM );
-  pulsarParams->Amp.cosi= cosi;
+        XLAL_CHECK ( h0 >= 0, XLAL_EDOM );
+        XLAL_CHECK ( (cosi >= -1) && (cosi <= 1), XLAL_EDOM );
+        pulsarParams->Amp.aPlus = 0.5 * h0 * (1.0 + SQ(cosi));
+        pulsarParams->Amp.aCross = h0 * cosi;
+    } //if {h0, cosi}
 
   // ----- psi
   REAL8 psi = 0; BOOLEAN have_psi;
