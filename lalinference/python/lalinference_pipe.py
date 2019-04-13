@@ -36,6 +36,7 @@ parser.add_option("-p","--daglog-path",default=None,action="store",type="string"
 parser.add_option("-g","--gps-time-file",action="store",type="string",default=None,help="Text file containing list of GPS times to analyse",metavar="TIMES.txt")
 parser.add_option("--gid",action="store",type="string",default=None,help="GraceDB ID")
 parser.add_option("--coinc",action="store",type="string",default=None,help="Path to coinc.xml")
+parser.add_option("--psd",action="store",type="string",default=None,help="Path to psd.xml.gz")
 parser.add_option("--service-url",action="store",type="string",default=None,help="GraceDB url from which xml files are downloaded")
 parser.add_option("-I","--injections",action="store",type="string",default=None,help="List of injections to perform and analyse",metavar="INJFILE.xml")
 parser.add_option("-B","--burst_injections",action="store",type="string",default=None,help="SimBurst table for LIB injections",metavar="INJFILE.xml")
@@ -234,6 +235,9 @@ if opts.gid is not None:
 
 if opts.coinc is not None:
     cp.set('input', 'coinc-xml', os.path.abspath(opts.coinc))
+
+if opts.psd is not None:
+    cp.set('input', 'psd-xml-gz', os.path.abspath(opts.psd))
 
 if opts.service_url is not None:
     cp.set('analysis','service-url',opts.service_url)
