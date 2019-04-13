@@ -83,6 +83,7 @@
 
 #define TRUE (1==1)
 #define FALSE (1==0)
+#define SQ(x) ( (x) * (x) )
 
 /*----- SWITCHES -----*/
 /*----- Macros -----*/
@@ -2098,14 +2099,39 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   fprintf (fp, "\n");
 
   /* Amplitude parameters with error-estimates */
-  fprintf (fp, "h0       = % .6g;\n", pulsarParams->Amp.h0 );
-  fprintf (fp, "dh0      = % .6g;\n", pulsarParams->dAmp.h0 );
-  fprintf (fp, "cosi     = % .6g;\n", pulsarParams->Amp.cosi );
-  fprintf (fp, "dcosi    = % .6g;\n", pulsarParams->dAmp.cosi );
+  fprintf (fp, "aPlus    = % .6g;\n", pulsarParams->Amp.aPlus );
+  fprintf (fp, "daPlus   = % .6g;\n", pulsarParams->dAmp.aPlus );
+  fprintf (fp, "aCross   = % .6g;\n", pulsarParams->Amp.aCross );
+  fprintf (fp, "daCross  = % .6g;\n", pulsarParams->dAmp.aCross );
   fprintf (fp, "phi0     = % .6g;\n", pulsarParams->Amp.phi0 );
   fprintf (fp, "dphi0    = % .6g;\n", pulsarParams->dAmp.phi0 );
   fprintf (fp, "psi      = % .6g;\n", pulsarParams->Amp.psi );
   fprintf (fp, "dpsi     = % .6g;\n", pulsarParams->dAmp.psi );
+
+  /* To allow arbitrary aPlus/aCross amplitudes, we have switched to output-variables A^\nu = (aPlus, aCross, phi0, psi)
+   * and hence using a different Jacobian matrix. The dh0 and dcosi recovered below are only valid when GW is emitted at
+   * twice the spin frequency, and are derived from dA+, dAx. Since both the current and original calculations ignore 
+   * off-diagonal items in computing the errors, the dh0 and dcosi below are expected to be slightly different from the
+   * original estimate when the output-variables are B^\nu = (h0, cosi, phi0, psi). Since they are only used for sanity 
+   * checks, it should not impact any usage. */
+  if ( fabs(pulsarParams->Amp.aPlus) >= fabs(pulsarParams->Amp.aCross) ){ /* Assume GW at twice the spin frequency only */
+    REAL8 h0, dh0, cosi, dcosi;
+    h0 = pulsarParams->Amp.aPlus + sqrt( SQ(pulsarParams->Amp.aPlus) - SQ(pulsarParams->Amp.aCross) );
+    if (h0 > 0)
+      cosi = pulsarParams->Amp.aCross/h0;
+    else
+      cosi = 0;
+    dh0 = (pulsarParams->Amp.aPlus + pulsarParams->dAmp.aPlus) + sqrt( SQ(pulsarParams->Amp.aPlus + pulsarParams->dAmp.aPlus) - SQ(fabs(pulsarParams->Amp.aCross) + pulsarParams->dAmp.aCross) ) - h0;
+    if ( (h0+dh0) > 0 )
+      dcosi = fabs( (fabs(pulsarParams->Amp.aCross) + pulsarParams->dAmp.aCross) / (h0 + dh0) - fabs(cosi) );
+    else
+      dcosi = 0;
+    
+    fprintf (fp, "h0    = % .6g;\n", h0 );
+    fprintf (fp, "dh0   = % .6g;\n", dh0 );
+    fprintf (fp, "cosi  = % .6g;\n", cosi );
+    fprintf (fp, "dcosi = % .6g;\n", dcosi );
+  }
 
   fprintf (fp, "\n");
 
