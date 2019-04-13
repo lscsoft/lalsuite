@@ -1159,7 +1159,7 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember(allowedMismatchFromSFTLength, REAL8, 0, DEVELOPER, "Maximum allowed mismatch from SFTs being too long [Default: what's hardcoded in XLALFstatMaximumSFTLength]" );
 
   /* inject signals into the data being analyzed */
-  XLALRegisterUvarMember(injectionSources,  STRINGVector, 0, DEVELOPER, "CSV list of files containing signal parameters for injection [see mfdv5]");
+  XLALRegisterUvarMember(injectionSources,  STRINGVector, 0, DEVELOPER, "%s", InjectionSourcesHelpString );
   XLALRegisterUvarMember(injectSqrtSX,	    STRINGVector, 0, DEVELOPER, "Generate Gaussian Noise SFTs on-the-fly: CSV list of detectors' noise-floors sqrt{Sn}");
   XLALRegisterUvarMember(IFOs,	            STRINGVector, 0, DEVELOPER, "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\", when no SFT files are specified");
   XLALRegisterUvarMember(timestampsFiles,   STRINGVector, 0, DEVELOPER, 
