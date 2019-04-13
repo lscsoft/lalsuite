@@ -71,7 +71,7 @@ int main(int argc, char **argv)
     /*REAL4 PWR,SNR;*/ /* 06/15/2017 gam; No longer compute SNR in this code.  */ 
     REAL4 PWR;
     REAL8 f =0;
-    CHAR outbase[256],outfile[256],outfile2[256],outfile3[256], outfile4[256]; /*, outfile6[256]; */
+    CHAR outbase[256],outfile[512],outfile2[512],outfile3[512], outfile4[512]; /*, outfile6[512]; */
     REAL8 NumBinsAvg =0;
     REAL8 timebaseline =0;
     
@@ -158,20 +158,12 @@ int main(int argc, char **argv)
     if (XLALUserVarWasSet(&outputBname))
     strcpy(outbase, outputBname);
     else
-/* FIXME: do not treat these format overflow warnings as errors, but do fix them later. */
-#if __GNUC__ >= 8
-#pragma GCC diagnostic push
-#pragma GCC diagnostic warning "-Wformat-overflow"
-#endif
-    sprintf(outbase, "spec_%.2f_%.2f_%s_%d_%d", f_min,f_max,constraints.detector,startTime.gpsSeconds,endTime.gpsSeconds);/*cg; this is the default name for producing the output files, the different suffixes are just added to this*/
-    sprintf(outfile,  "%s", outbase);/*cg; name of first file to be output*/
-    sprintf(outfile2, "%s_timestamps", outbase);/*cg: name of second file to be output*/
-    /* sprintf(outfile3, "%s.txt", outbase); */ /*cg; name of third file to be output*/
-    sprintf(outfile3, "%s_timeaverage", outbase); /* Use the old outfile3 name from this code; python code will output the .txt version of this file. */
-    sprintf(outfile4, "%s_date", outbase);/*cg;file for outputting the date, which is used in matlab plotting.*/
-#if __GNUC__ >= 8
-#pragma GCC diagnostic pop
-#endif
+    snprintf(outbase, sizeof(outbase), "spec_%.2f_%.2f_%s_%d_%d", f_min,f_max,constraints.detector,startTime.gpsSeconds,endTime.gpsSeconds);/*cg; this is the default name for producing the output files, the different suffixes are just added to this*/
+    snprintf(outfile, sizeof(outfile),  "%s", outbase);/*cg; name of first file to be output*/
+    snprintf(outfile2, sizeof(outfile2), "%s_timestamps", outbase);/*cg: name of second file to be output*/
+    /* snprintf(outfile3, sizeof(outfile3), "%s.txt", outbase); */ /*cg; name of third file to be output*/
+    snprintf(outfile3, sizeof(outfile3), "%s_timeaverage", outbase); /* Use the old outfile3 name from this code; python code will output the .txt version of this file. */
+    snprintf(outfile4, sizeof(outfile4), "%s_date", outbase);/*cg;file for outputting the date, which is used in matlab plotting.*/
 
     fp = fopen(outfile, "w");/*cg;  open all three files for writing, if they don't exist create them, if they do exist overwrite them*/
     fp2 = fopen(outfile2, "w");
@@ -343,11 +335,7 @@ int main(int argc, char **argv)
 
     char outfile5[256];
     FILE *fp5 = NULL;
-/* FIXME: do not treat these format overflow warnings as errors, but do fix them later. */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic warning "-Wformat-overflow"
-    sprintf(outfile5, "%s_crab", outbase);
-#pragma GCC diagnostic pop
+    snprintf(outfile5, sizeof(outfile5), "%s_crab", outbase);
     fp5 = fopen(outfile5, "w");
 
     /*----------------------------------------------------------------------------------------------------------------*/
