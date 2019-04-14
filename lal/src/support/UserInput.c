@@ -784,7 +784,7 @@ fprint_wrapped( FILE *file, int line_width, const char *prefix, char *text )
 
   /* Iterate over text */
   char *pstart = text, *pbreak = NULL;
-  char empty_line[2] = {'\0', '\0'};
+  char empty_line[2] = "";
   for ( char *pend = text; *pend != '\0'; ++pend )
     {
 
@@ -802,12 +802,12 @@ fprint_wrapped( FILE *file, int line_width, const char *prefix, char *text )
           const char old_pbreak = *pbreak;
           *pbreak = '\0';
           fprintf( file, "%s%s%s\n", empty_line, prefix, pstart );
-          empty_line[0] = '\0';
+          strcpy( empty_line, "" );
           *pbreak = old_pbreak;
 
           /* Save an empty line for the next time a non-empty line is printed */
           for ( pend = pbreak + 1; *pend != '\0' && *pend == '\n'; ++pend ) {
-            empty_line[0] = '\n';
+            strcpy( empty_line, "\n" );
           }
 
           /* Start from next non-printed character */
@@ -822,7 +822,7 @@ fprint_wrapped( FILE *file, int line_width, const char *prefix, char *text )
           const char old_pend = *pend;
           *pend = '\0';
           fprintf( file, "%s%s%s-\n", empty_line, prefix, pstart );
-          empty_line[0] = '\0';
+          strcpy( empty_line, "" );
           *pend = old_pend;
 
           /* Start from next non-printed character */
@@ -836,7 +836,7 @@ fprint_wrapped( FILE *file, int line_width, const char *prefix, char *text )
   /* Print remaining text */
   if ( strlen( pstart ) > 0 ) {
     fprintf( file, "%s%s%s\n", empty_line, prefix, pstart );
-    empty_line[0] = '\0';
+    strcpy( empty_line, "" );
   }
 
 }
