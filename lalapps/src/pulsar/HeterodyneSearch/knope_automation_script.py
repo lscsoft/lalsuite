@@ -23,7 +23,7 @@ import smtplib
 import stat
 
 import argparse
-from six.moves.configparser import ConfigParser
+from six.moves.configparser import RawConfigParser
 
 from lalapps import git_version
 
@@ -102,7 +102,7 @@ A configuration .ini file is required.
   cronid = 'knopeJob' # default ID for the crontab job
 
   # open and parse config file
-  cp = ConfigParser()
+  cp = RawConfigParser()
   try:
     cp.read(inifile)
   except:
@@ -135,7 +135,7 @@ A configuration .ini file is required.
   if cp.has_option('configuration', 'kerberos'):
     kerberos = cp.get('configuration', 'kerberos')
 
-  cprun = ConfigParser()
+  cprun = RawConfigParser()
   try:
     cprun.read(runconfig)
   except:
@@ -486,6 +486,9 @@ A configuration .ini file is required.
       except:
         print("Error... if specifying a virtualenv the 'WORKON_HOME' environment must exist", file=sys.stderr)
         sys.exit(1)
+    elif cp.has_option('configuration', 'conda'):  # assumes using conda
+      virtualenv = cp.get('configuration', 'conda')
+      wov = 'conda activate {}'.format(virtualenv)
 
     # check for .bash_profile, or similar file, to invoke
     profile = None
@@ -511,7 +514,7 @@ A configuration .ini file is required.
       cronwrapperscript = os.path.splitext(inifile)[0] + '.sh'
       cronwrapper = """#!/bin/bash
 source {0} # source profile
-{1}        # enable virtual environment (assumes you have virtualenvwrapper.sh)
+{1}        # enable virtual environment (assumes you have virtualenvwrapper.sh/conda)
 {2}        # export kerberos certificate location (if required)
 {3}        # create proxy (if required)
 %s {4}     # re-run this script
