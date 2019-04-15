@@ -162,7 +162,7 @@ static INT4 XLALCheck_EOB_mode_array_structure(
  * See Eq.(2) in https://arxiv.org/pdf/1504.01764.pdf with coefficients
  * given by the 3rd row of Table II therein. Compared to NR for 0 <= kappa2T <= 500
  */
-static REAL8 XLALSimNSNSMergerFreq(
+UNUSED REAL8 XLALSimNSNSMergerFreq(
                                        TidalEOBParams *tidal1, /**< Tidal parameters of body 1 */
                                        TidalEOBParams *tidal2  /**< Tidal parameters of body 2 */
 )

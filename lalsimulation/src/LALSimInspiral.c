@@ -143,6 +143,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(Lackey_Tidal_2013_SEOBNRv2_ROM),
     INITIALIZE_NAME(SEOBNRv4_ROM),
     INITIALIZE_NAME(SEOBNRv4_ROM_NRTidal),
+    INITIALIZE_NAME(SEOBNRv4T_surrogate),
     INITIALIZE_NAME(HGimri),
     INITIALIZE_NAME(IMRPhenomA),
     INITIALIZE_NAME(IMRPhenomB),
@@ -1517,6 +1518,19 @@ int XLALSimInspiralChooseFDWaveform(
 				XLAL_ERROR(XLAL_EFUNC, "lambda1 = %f, lambda2 = %f. Both should be greater than zero for SEOBNRv4_ROM_NRTidal", lambda1, lambda2);
             ret = XLALSimIMRSEOBNRv4ROMNRTidal(hptilde, hctilde,
                     phiRef, deltaF, f_min, f_max, f_ref, distance, inclination, m1, m2, S1z, S2z, lambda1, lambda2);
+            break;
+
+        case SEOBNRv4T_surrogate:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+
+            ret = XLALSimIMRSEOBNRv4TSurrogate(hptilde, hctilde,
+                    phiRef, deltaF, f_min, f_max, f_ref, distance, inclination,
+                    m1, m2, S1z, S2z, lambda1, lambda2,
+                    SEOBNRv4TSurrogate_CUBIC);
             break;
 
         case Lackey_Tidal_2013_SEOBNRv2_ROM:
@@ -4786,6 +4800,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case Lackey_Tidal_2013_SEOBNRv2_ROM:
         case SEOBNRv4_ROM:
 		case SEOBNRv4_ROM_NRTidal:
+        case SEOBNRv4T_surrogate:
         //case TaylorR2F4:
         case TaylorF2:
         case TaylorF2Ecc:
@@ -5222,6 +5237,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case Lackey_Tidal_2013_SEOBNRv2_ROM:
     case SEOBNRv4_ROM:
 	case SEOBNRv4_ROM_NRTidal:
+    case SEOBNRv4T_surrogate:
     case TaylorR2F4:
     case IMRPhenomFB:
     case FindChirpSP:
@@ -5314,6 +5330,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case Lackey_Tidal_2013_SEOBNRv2_ROM:
     case SEOBNRv4_ROM:
 	case SEOBNRv4_ROM_NRTidal:
+    case SEOBNRv4T_surrogate:
     case IMRPhenomA:
     case IMRPhenomB:
     case IMRPhenomFA:

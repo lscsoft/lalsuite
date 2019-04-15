@@ -250,6 +250,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRSEOBNRv2ChirpTime.c \
 	LALSimIMRSEOBNRv4ROM.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.c \
+	LALSimIMRSEOBNRv4TSurrogate.c \
 	LALSimIMREOBNRv2HMROM.c \
 	LALSimIMRLackeyTidal2013.c \
 	LALSimIMRPhenom.c \
