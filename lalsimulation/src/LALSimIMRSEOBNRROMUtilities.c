@@ -54,7 +54,7 @@ UNUSED static int ReadHDF5RealMatrixDataset(LALH5File *file, const char *name, g
 UNUSED static int ReadHDF5LongVectorDataset(LALH5File *file, const char *name, gsl_vector_long **data);
 UNUSED static int ReadHDF5LongMatrixDataset(LALH5File *file, const char *name, gsl_matrix_long **data);
 UNUSED static void PrintInfoStringAttribute(LALH5File *file, const char attribute[]);
-UNUSED static int ROM_check_version_number(LALH5File *file, 	INT4 version_major_in, INT4 version_minor_in, INT4 version_micro_in);
+UNUSED static int ROM_check_version_number(LALH5File *file, INT4 version_major_in, INT4 version_minor_in, INT4 version_micro_in);
 #endif
 
 UNUSED static REAL8 Interpolate_Coefficent_Tensor(

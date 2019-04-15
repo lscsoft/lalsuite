@@ -67,6 +67,11 @@ typedef enum tagIMRPhenomP_version_type {
  IMRPhenomPv2NRTidal_V /**< version Pv2_NRTidal: based on IMRPhenomPv2; NRTides (https://arxiv.org/pdf/1706.02969.pdf) added before precession */
 } IMRPhenomP_version_type;
 
+typedef enum tagSEOBNRv4TSurrogate_spline_order {
+  SEOBNRv4TSurrogate_CUBIC, /**< use cubic splines in frequency */
+  SEOBNRv4TSurrogate_LINEAR /**< use linear splines in frequency */
+} SEOBNRv4TSurrogate_spline_order;
+
 /** @} */
 
 /* in module LALSimIMRPhenom.c */
@@ -220,6 +225,12 @@ int XLALSimIMRSEOBNRv4ROMFrequencyOfTime(REAL8 *frequency, REAL8 t, REAL8 m1SI, 
 
 int XLALSimIMRSEOBNRv4ROMNRTidalFrequencySequence(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 Lambda1, REAL8 Lambda2);
 int XLALSimIMRSEOBNRv4ROMNRTidal(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 Lambda1, REAL8 Lambda2);
+
+/* in module LALSimIMRSEOBNRv4TSurrogate.c */
+
+int XLALSimIMRSEOBNRv4TSurrogate(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, REAL8 lambda1, REAL8 lambda2, SEOBNRv4TSurrogate_spline_order spline_order);
+int XLALSimIMRSEOBNRv4TSurrogateFrequencySequence(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, REAL8 lambda1, REAL8 lambda2, SEOBNRv4TSurrogate_spline_order spline_order);
+
 
 /* in module LALSimIMRPSpinInspiralRD.c */
 

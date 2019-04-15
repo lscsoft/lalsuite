@@ -530,6 +530,16 @@ typedef struct tagPr3In
 
 } pr3In;
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
+UNUSED REAL8 XLALSimNSNSMergerFreq(
+ TidalEOBParams *tidal1, /**< Tidal parameters of body 1 */
+ TidalEOBParams *tidal2  /**< Tidal parameters of body 2 */
+);
 
 #if 0
 {				/* so that editors will match succeeding brace */
