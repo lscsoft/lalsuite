@@ -23,7 +23,7 @@ import smtplib
 import stat
 
 import argparse
-from six.moves.configparser import ConfigParser
+from six.moves.configparser import RawConfigParser
 
 from lalapps import git_version
 
@@ -85,7 +85,8 @@ if __name__=='__main__':
 A configuration .ini file is required.
   """
 
-  parser = argparse.ArgumentParser( description = description, version = __version__ )
+  parser = argparse.ArgumentParser(description=description)
+  parser.add_argument('--version', action='version', version=__version__)
   parser.add_argument("inifile", help="The configuration (.ini) file")
 
   # parse input options
@@ -102,7 +103,7 @@ A configuration .ini file is required.
   cronid = 'knopeJob' # default ID for the crontab job
 
   # open and parse config file
-  cp = ConfigParser()
+  cp = RawConfigParser()
   try:
     cp.read(inifile)
   except:
@@ -130,7 +131,12 @@ A configuration .ini file is required.
   if cp.has_option('configuration', 'cronid'):
     cronid = cp.get('configuration', 'cronid')
 
-  cprun = ConfigParser()
+  # check for kerberos certificate
+  kerberos = None
+  if cp.has_option('configuration', 'kerberos'):
+    kerberos = cp.get('configuration', 'kerberos')
+
+  cprun = RawConfigParser()
   try:
     cprun.read(runconfig)
   except:
@@ -481,6 +487,9 @@ A configuration .ini file is required.
       except:
         print("Error... if specifying a virtualenv the 'WORKON_HOME' environment must exist", file=sys.stderr)
         sys.exit(1)
+    elif cp.has_option('configuration', 'conda'):  # assumes using conda
+      virtualenv = cp.get('configuration', 'conda')
+      wov = 'conda activate {}'.format(virtualenv)
 
     # check for .bash_profile, or similar file, to invoke
     profile = None
@@ -493,18 +502,27 @@ A configuration .ini file is required.
       print("Error... no profile file is given", file=sys.stderr)
       sys.exit(1)
 
+    if kerberos is not None:
+      krbcert = "export KRB5CCNAME={}".format(kerberos)
+      ligoproxyinit = "/usr/bin/ligo-proxy-init -k"
+    else:
+      krbcert = ""
+      ligoproxyinit = ""
+
     # output wrapper script
     try:
       # set the cron wrapper script (which will re-run this script)
       cronwrapperscript = os.path.splitext(inifile)[0] + '.sh'
       cronwrapper = """#!/bin/bash
 source {0} # source profile
-{1}        # enable virtual environment (assumes you have virtualenvwrapper.sh)
-%s {2}     # re-run this script
+{1}        # enable virtual environment (assumes you have virtualenvwrapper.sh/conda)
+{2}        # export kerberos certificate location (if required)
+{3}        # create proxy (if required)
+%s {4}     # re-run this script
 """ % sys.argv[0]
 
       fp = open(cronwrapperscript, 'w')
-      fp.write(cronwrapper.format(profile, wov, inifile))
+      fp.write(cronwrapper.format(profile, wov, krbcert, ligoproxyinit, inifile))
       fp.close()
       os.chmod(cronwrapperscript, stat.S_IRWXU | stat.S_IRWXG | stat.S_IXOTH) # make executable
     except:
