@@ -131,10 +131,20 @@ A configuration .ini file is required.
   if cp.has_option('configuration', 'cronid'):
     cronid = cp.get('configuration', 'cronid')
 
-  # check for kerberos certificate
-  kerberos = None
-  if cp.has_option('configuration', 'kerberos'):
-    kerberos = cp.get('configuration', 'kerberos')
+  # check for kerberos keytab and certificate
+  keytab = None
+  if cp.has_option('kerberos', 'keytab'):
+    keytab = cp.get('kerberos', 'keytab')
+
+    if cp.has_option('kerberos', 'certificate'):
+      certificate = cp.get('kerberos', 'certificate')
+
+      if cp.has_option('kerberos', 'auth_princ'):
+        authprinc = cp.get('kerberos', 'auth_princ')
+      else:
+        raise RuntimeError("No kerberos authentication principle")
+    else:
+      raise RuntimeError("Problem with kerberos certificate")
 
   cprun = RawConfigParser()
   try:
@@ -502,11 +512,13 @@ A configuration .ini file is required.
       print("Error... no profile file is given", file=sys.stderr)
       sys.exit(1)
 
-    if kerberos is not None:
-      krbcert = "export KRB5CCNAME={}".format(kerberos)
+    if keytab is not None:
+      krbcert = "export KRB5CCNAME={}".format(certificate)
+      kinit = "/usr/bin/kinit -a -P -F -k -t {} {}".format(keytab, authprinc)
       ligoproxyinit = "/usr/bin/ligo-proxy-init -k"
     else:
       krbcert = ""
+      kinit = ""
       ligoproxyinit = ""
 
     # output wrapper script
@@ -517,12 +529,13 @@ A configuration .ini file is required.
 source {0} # source profile
 {1}        # enable virtual environment (assumes you have virtualenvwrapper.sh/conda)
 {2}        # export kerberos certificate location (if required)
-{3}        # create proxy (if required)
-%s {4}     # re-run this script
+{3}        # generate kerberos certificate (if required)
+{4}        # create proxy (if required)
+%s {5}     # re-run this script
 """ % sys.argv[0]
 
       fp = open(cronwrapperscript, 'w')
-      fp.write(cronwrapper.format(profile, wov, krbcert, ligoproxyinit, inifile))
+      fp.write(cronwrapper.format(profile, wov, krbcert, kinit, ligoproxyinit, inifile))
       fp.close()
       os.chmod(cronwrapperscript, stat.S_IRWXU | stat.S_IRWXG | stat.S_IXOTH) # make executable
     except:
