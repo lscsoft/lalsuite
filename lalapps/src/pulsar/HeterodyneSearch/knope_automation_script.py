@@ -85,7 +85,8 @@ if __name__=='__main__':
 A configuration .ini file is required.
   """
 
-  parser = argparse.ArgumentParser( description = description, version = __version__ )
+  parser = argparse.ArgumentParser(description=description)
+  parser.add_argument('--version', action='version', version=__version__)
   parser.add_argument("inifile", help="The configuration (.ini) file")
 
   # parse input options
