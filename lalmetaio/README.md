@@ -45,6 +45,6 @@ Please visit the [LALSuite project page][project].
 
 [doi]:          https://doi.org/10.7935/GT1W-FZ16
 [helpdesk]:     mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
-[install]:      https://wiki.ligo.org/Computing/DASWG/LALSuiteInstall
+[install]:      https://wiki.ligo.org/Computing/LALSuiteInstall
 [bugs]:         https://git.ligo.org/lscsoft/lalsuite/issues/
-[project]:      https://wiki.ligo.org/Computing/DASWG/LALSuite
+[project]:      https://wiki.ligo.org/Computing/LALSuite
