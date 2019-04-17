@@ -76,4 +76,4 @@ Please visit the [LALSuite project page][project].
 [nightlydocs]:  https://lscsoft.docs.ligo.org/lalsuite
 [oldlalsuite]:  https://git.ligo.org/lscsoft/lalsuite-archive
 [oldredmine]:   https://bugs.ligo.org/redmine/projects/lalsuite
-[project]:      https://wiki.ligo.org/Computing/DASWG/LALSuite
+[project]:      https://wiki.ligo.org/Computing/LALSuite
