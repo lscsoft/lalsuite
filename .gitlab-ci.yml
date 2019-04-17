@@ -433,7 +433,7 @@ nightly:gcc:8:
   stage: nightly
   script:
     - ./00boot
-    - :./configure --enable-doxygen
+    - ./configure --enable-doxygen
     - make -j4 distcheck
   dependencies: []
   only:
