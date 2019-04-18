@@ -316,8 +316,8 @@ int main(int argc, char **argv){
       XLAL_ERROR(XLAL_EFAILED);
   }
 
-  CHAR OUTFILE[256];
-  sprintf(OUTFILE, "%s/%s", inputs.outDir, out_file);
+  CHAR OUTFILE[512];
+  snprintf(OUTFILE, sizeof(OUTFILE), "%s/%s", inputs.outDir, out_file);
 
   if (  XLALFrameWrite(outFrame, OUTFILE)){
     LogPrintf(LOG_CRITICAL, "%s : XLALFrameWrite() failed with error = %d.\n", fn, xlalErrno);
@@ -342,8 +342,8 @@ EphemerisData *InitEphemeris (const CHAR *ephemType, const CHAR *ephemDir){
     XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
-  snprintf(EphemEarth, FNAME_LENGTH, "%s/earth00-19-%s.dat.gz", ephemDir, ephemType);
-  snprintf(EphemSun, FNAME_LENGTH, "%s/sun00-19-%s.dat.gz", ephemDir, ephemType);
+  snprintf(EphemEarth, FNAME_LENGTH, "%s/earth00-40-%s.dat.gz", ephemDir, ephemType);
+  snprintf(EphemSun, FNAME_LENGTH, "%s/sun00-40-%s.dat.gz", ephemDir, ephemType);
 
   EphemEarth[FNAME_LENGTH-1]=0;
   EphemSun[FNAME_LENGTH-1]=0;

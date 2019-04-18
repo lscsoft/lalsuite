@@ -37,7 +37,7 @@ except:
 disableGraphics=False
 try:
     from pylab import *
-except Exception, errorInfo:
+except Exception as errorInfo:
     disableGraphics=True
     sys.stderr.write("Error trying to import pylab!\n")
     sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
@@ -58,8 +58,8 @@ def buildCandidateGlob(fileList,verboseSwitch=False):
     canList=fileList
     if canList.__len__() == 1:
         if verboseSwitch:
-            print "Globbing is not possible only one file found!"
-            print "Returning the result as that entry!"
+            print("Globbing is not possible only one file found!")
+            print("Returning the result as that entry!")
         tmpObject=candidateList()
         tmpObject.__loadfileQuick__(canList.pop(0))
         newCandidateObject=copy.deepcopy(tmpObject)
@@ -68,8 +68,8 @@ def buildCandidateGlob(fileList,verboseSwitch=False):
         newCandidateObject.__loadfileQuick__(canList.pop(0))
     for entry in canList:
         if verboseSwitch:
-            print " "
-            print "Loading candidate list file: ",entry
+            print(" ")
+            print("Loading candidate list file: ",entry)
         tmpCandidate=candidateList()
         tmpCandidate.__loadfileQuick__(entry)
         newCandidateObject=newCandidateObject.globList(tmpCandidate,True)
@@ -104,7 +104,7 @@ def wrapperGraphTriggers(candidateObject):
                 sys.stdout.flush()
             candidateObject.__loadfileQuick__(candidateObject.filename[0])
         candidateObject.graphTriggers(graph2file,graphGPSoffset,timescale)
-    except Exception, errorInfo:
+    except Exception as errorInfo:
         sys.stderr.write("Problem trying to create plot, %s !\n"%(os.path.basename(graph2file)))
         sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
         sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
@@ -154,7 +154,7 @@ def wrapperShowHistogram(candidateObject):
                                           graph2file,
                                           newHistCol,
                                           topTol)
-        except Exception, errorInfo:
+        except Exception as errorInfo:
             sys.stderr.write("Problem trying to create histogram plot ::: %s :::\n"%(os.path.basename(graph2file)))
             sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
             sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
@@ -196,7 +196,7 @@ def wrapperShowScatterPlot(candidateObject):
                                             myTraitY,
 					    graph2file,
                                             formatString)
-        except Exception, errorInfo:
+        except Exception as errorInfo:
             sys.stderr.write("Problem trying to create scatter plot ::: %s :::\n"%(os.path.basename(graph2file)))
             sys.stderr.write("Exception Instance :%s\n"%(str(type(errorInfo))))
             sys.stderr.write("Exception Args     :%s\n"%(str(errorInfo.args)))
@@ -358,10 +358,10 @@ dqList=int(options.makeDQlist)
 showLegend=bool(options.legend)
 
 if verboseSwitch:
-    print "Setting verbose mode to candidateHandler call."
+    print("Setting verbose mode to candidateHandler call.")
 
 if (filename == "" and not showLegend):
-    print "Filename argument either not specified or invalid!"
+    print("Filename argument either not specified or invalid!")
     os.abort()
 
 #Load the file/dir/single file specified by --file option
@@ -380,8 +380,8 @@ elif (glob and (canList.__len__() >= 1)):
         #If file preexists erase it first!
         if os.path.isfile(outName):
             if verboseSwitch:
-                print "Prexisting file found:",outName
-                print "Removing!"
+                print("Prexisting file found:",outName)
+                print("Removing!")
             os.unlink(outName)
     #Depending on the presence of the --glue switch we actually read
     #the data or just concatenate the files together.
@@ -431,8 +431,8 @@ elif (clobberFilename != '') and (canList.__len__() == 1):
     #Create a lineplot on screen of the curves in the candidateList
 elif (linePlot and not createHistogram and (canList.__len__() >=1) and ((graph2screen>0) or (graph2file!=''))):
     if ((graph2screen < canList.__len__()) and (graph2file=='')):
-        print "Number of images to create exceeds your request!"
-        print "Estimate images in this data structure are ",canList.__len__()
+        print("Number of images to create exceeds your request!")
+        print("Estimate images in this data structure are ",canList.__len__())
         #Needs continue anyway option here!
         os.abort()
     if ((graph2file != 'AUTO') and (canList.__len__() > 1) and (graph2screen==0)):
@@ -525,7 +525,7 @@ elif (((expThreshold != "") or (percentileCut != ""))and (canList.__len__() >=1)
                 if (outfile != "") and (canList.__len__() == 1):
                     candidateResults.writefile(outfile)
                     if verboseSwitch:
-                        print "Wrote file :",outfile
+                        print("Wrote file :",outfile)
                     if dumpSummaryDisk:
                         candidateResults.writeSummary(outfile)
                     if glitchdb:
@@ -537,7 +537,7 @@ elif (((expThreshold != "") or (percentileCut != ""))and (canList.__len__() >=1)
                     saveFiles=pathName+'/Threshold:'+str(singleCompleteName)+':'+os.path.basename(entry)
                     candidateResults.writefile(saveFiles)
                     if verboseSwitch:
-                        print "Wrote file :",saveFiles
+                        print("Wrote file :",saveFiles)
                     if dumpSummaryDisk:
                             candidateResults.writeSummary(saveFiles)
                     if glitchdb:
@@ -609,7 +609,7 @@ elif ((canList.__len__() >=1) and (dumpSummaryDisk or glitchdb) and (expThreshol
         if muteSpinner:
             candidateObject.spinnerVerboseMode=False        
         if verboseSwitch:
-            print "Processing:",entry
+            print("Processing:",entry)
         candidateObject.summaryRead(entry)
         if ((outfile != "") and dumpSummaryDisk):
             candidateObject.writeSummary(outfile)
@@ -645,16 +645,16 @@ elif ((canList.__len__() >=1) and dqList >= 0):
 
     #IF there are no files to work on found.    
 elif (canList.__len__() < 0):
-      print "It appears there are no files to process!"
+      print("It appears there are no files to process!")
 
     #THIS SECTION SHOULD NEVER HAPPEN
 else:
-    print "Error with combination of arguments given!"
-    print "Legitimate command line arguments don't get this error!"
-    print "Options in parser data structure."
-    print options
-    print "Corresponding argument values."
-    print args
-    print "Candidates files found :",canList.__len__()
+    print("Error with combination of arguments given!")
+    print("Legitimate command line arguments don't get this error!")
+    print("Options in parser data structure.")
+    print(options)
+    print("Corresponding argument values.")
+    print(args)
+    print("Candidates files found :",canList.__len__())
     os.abort()
  

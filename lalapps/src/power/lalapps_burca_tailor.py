@@ -24,6 +24,8 @@
 # =============================================================================
 #
 
+from __future__ import print_function
+
 import math
 from optparse import OptionParser
 import sqlite3
@@ -32,13 +34,13 @@ import sys
 
 from lal.utils import CacheEntry
 
-from glue import segments
-from glue.ligolw import dbtables
-from glue.ligolw import utils
+from ligo.lw import dbtables
+from ligo.lw import utils as ligolw_utils
 from lalburst import burca_tailor
 from lalburst import SnglBurstUtils
 from lalburst.SimBurstUtils import MW_CENTER_J2000_RA_RAD, MW_CENTER_J2000_DEC_RAD
 from lalburst import git_version
+from ligo import segments
 
 
 # characters allowed to appear in the description string
@@ -138,7 +140,7 @@ for n, filename in enumerate(filenames):
 	#
 
 	if options.verbose:
-		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+		print("%d/%d: %s" % (n + 1, len(filenames), filename), file=sys.stderr)
 
 	working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
 	connection = sqlite3.connect(working_filename)
@@ -201,4 +203,4 @@ else:
 
 
 xmldoc = burca_tailor.gen_likelihood_control(distributions, segs)
-utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
+ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))

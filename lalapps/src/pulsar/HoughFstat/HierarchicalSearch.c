@@ -433,8 +433,8 @@ int MAIN( int argc, char *argv[]) {
 
 #ifdef EAH_LALDEBUGLEVEL
 #endif
-  uvar_ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar_ephemSun   = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar_ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar_ephemSun   = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   uvar_skyRegion = LALCalloc( alloc_len = strlen(SKYREGION) + 1, sizeof(CHAR) );
   XLAL_CHECK ( uvar_skyRegion != NULL, XLAL_ENOMEM, "Failed to allocated memory LALCalloc(1, %d)\n", alloc_len );

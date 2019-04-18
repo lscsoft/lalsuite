@@ -29,13 +29,13 @@ import sys
 
 
 from glue import iterutils
-from glue import segments
 from glue.text_progress_bar import ProgressBar
+from ligo import segments
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from git_version import date as __date__
-from git_version import version as __version__
+from .git_version import date as __date__
+from .git_version import version as __version__
 
 
 #

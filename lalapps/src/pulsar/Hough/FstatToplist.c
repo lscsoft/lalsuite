@@ -385,8 +385,8 @@ static int _atomic_write_fstat_toplist_to_file(toplist_t *l, const char *filenam
       LogPrintf (LOG_CRITICAL, "Could not allocate new filename\n");
       return(-1);
     }
-    strncpy(tempname,filename,s);
-    strncat(tempname,TEMP_EXT,s);
+    strcpy(tempname,filename);
+    strcat(tempname,TEMP_EXT);
 
     fpnew=fopen(tempname, "wb");
     if(!fpnew) {
@@ -493,7 +493,7 @@ int fstat_cpt_file_create (FstatCheckpointFile **cptf,
   }
 
   /* initialization */
-  strncpy((*cptf)->filename,filename,strlen(filename)+1);
+  strcpy((*cptf)->filename,filename);
 
   (*cptf)->bytes = 0;
   (*cptf)->bufsize = bufsize;

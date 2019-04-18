@@ -17,6 +17,7 @@
 // MA  02111-1307  USA
 //
 
+/// [hotloop]
 {
   {
     REAL4 s_alpha, c_alpha;   /* sin(2pi kappa_alpha) and (cos(2pi kappa_alpha)-1) */
@@ -104,3 +105,4 @@
     XLALSinCos2PiLUT( &imagQ, &realQ, _lambda_alpha );
   }
 }
+/// [hotloop]

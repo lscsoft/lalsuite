@@ -22,6 +22,8 @@
 #       MA 02110-1301, USA.
 #
 
+from __future__ import print_function
+
 #standard library imports
 import sys
 import os
@@ -141,7 +143,7 @@ th{
 # convert a floating point number into a string in X.X x 10^Z format
 def exp_str(f, p=1):
   if p > 16:
-    print >> sys.stderr, "Precision must be less than 16 d.p."
+    print("Precision must be less than 16 d.p.", file=sys.stderr)
     p = 16
 
   s = '%.16e' % f
@@ -151,7 +153,7 @@ def exp_str(f, p=1):
 
 def exp_latex_str(f, p=1):
   if p > 16:
-    print >> sys.stderr, "Precision must be less than 16 d.p."
+    print("Precision must be less than 16 d.p.", file=sys.stderr)
     p = 16
 
   s = '%.16e' % f
@@ -235,7 +237,7 @@ def output_fig(myfig, outpath, fname, ftypes):
   fnameret = {}
 
   if not ftypes or not fname or not outpath:
-    print >> sys.stderr, "Error, problem outputting figure"
+    print("Error, problem outputting figure", file=sys.stderr)
     sys.exit(1)
 
   for i, t in enumerate(ftypes):
@@ -245,7 +247,7 @@ def output_fig(myfig, outpath, fname, ftypes):
     try:
       myfig.savefig(plotpath)
     except:
-      print >> sys.stderr, "Error outputting figure %s" % plotpath
+      print("Error outputting figure %s" % plotpath, file=sys.stderr)
       sys.exit(1)
 
     myfig.clf()
@@ -477,7 +479,7 @@ table."""
 
   # check that output path has been given
   if not opts.__dict__['outpath']:
-    print "Must specify an output path"
+    print("Must specify an output path")
     parser.print_help()
     exit(-1)
   else:
@@ -485,7 +487,7 @@ table."""
 
   # check that some data has been given
   if not opts.__dict__['inpath']:
-    print "Must specify in input directory containing the pulsars"
+    print("Must specify in input directory containing the pulsars")
     parser.print_help()
     exit(-1)
   else:
@@ -496,7 +498,7 @@ table."""
     try:
       os.mkdir(outpath)
     except:
-      print >> sys.stderr, "Cannot create output directory %s" % outpath
+      print("Cannot create output directory %s" % outpath, file=sys.stderr)
       sys.exit(1)
 
   # if no particular outputs are specified default to h0 ul, ell ul and spin-down ratio ul
@@ -523,7 +525,7 @@ table."""
         if '.par' in f: # only use .par files
           param_files.append(opts.parfile + '/' + f)
     else:
-      print >> sys.stderr, "No par file or directory specified!"
+      print("No par file or directory specified!", file=sys.stderr)
       sys.exit(1)
 
   sorttype = opts.sorttype
@@ -548,7 +550,7 @@ table."""
     cssfile = os.path.join(outpath, cssname)
     css = open(cssfile, 'w')
   except:
-    print >> sys.stderr, "Cannot open CSS file %s" % cssfile
+    print("Cannot open CSS file %s" % cssfile, file=sys.stderr)
     sys.exit(1)
 
   css.write(csstext);
@@ -563,7 +565,7 @@ table."""
   try:
     htmlout = open(htmlpage, 'w')
   except:
-    print >> sys.stderr, 'Could not open html page %s' % htmlpage
+    print('Could not open html page %s' % htmlpage, file=sys.stderr)
 
   htmltext = []
   htmltext.append( \
@@ -590,7 +592,7 @@ table."""
   try:
     latexout = open(latexpage, 'w')
   except:
-    print >> sys.stderr, 'Could not open LaTeX page %s' % htmlpage
+    print('Could not open LaTeX page %s' % htmlpage, file=sys.stderr)
 
   latextext = []
   latextext.append( \
@@ -615,7 +617,7 @@ table."""
     try:
       par = pppu.psr_par(parfile)
     except:
-      print >> sys.stderr, "Par file %s could not be opened!" % parfile
+      print("Par file %s could not be opened!" % parfile, file=sys.stderr)
       # remove from list and move on to next pulsar
       param_files.remove(i)
       continue
@@ -674,7 +676,7 @@ table."""
 
   # loop through par files to produce plots
   for idx in sortidx:
-    print 'Results for pulsar ' + names[idx]
+    print('Results for pulsar ' + names[idx])
 
     skip = False
 
@@ -682,14 +684,14 @@ table."""
     # using in the PSRJ name (as will be the case with pulsar_mcmc_create_results_page.py
     puldir = os.path.join(inpath, names[idx])
     if not os.path.isdir(puldir):
-      print >> sys.stderr, "No directory for PSR%s, skip this pulsar" % names[idx]
+      print("No directory for PSR%s, skip this pulsar" % names[idx], file=sys.stderr)
       continue
 
     # get the shelved database of information
     try:
       psrshelf = shelve.open(os.path.join(puldir, names[idx]+'.db'))
     except:
-      print >> sys.stderr, "No database information for PSR%s. Skip this pulsar" % names[idx]
+      print("No database information for PSR%s. Skip this pulsar" % names[idx], file=sys.stderr)
       psrshelf.close()
       continue
 
@@ -713,7 +715,7 @@ table."""
           ifolisttmp.append(ifo)
 
       if not ifolisttmp:
-        print >> sys.stderr, "No data for the specified IFOs: %s!" % ', '.join(ifolist)
+        print("No data for the specified IFOs: %s!" % ', '.join(ifolist), file=sys.stderr)
         sys.exit(1)
       else:
         ifolist = ifolisttmp
@@ -770,13 +772,13 @@ solid #000; border-bottom:1px solid #000">%s</th>""" % (ifo, numlims, ifo))
 
     else: # check that the number of IFOS
       if nifoprev != nifos:
-        print >> sys.stderr, "Number of IFOs for pulsar %s is not the same as previous pulsar. Skip." % names[idx]
+        print("Number of IFOs for pulsar %s is not the same as previous pulsar. Skip." % names[idx], file=sys.stderr)
         psrshelf.close()
         continue
       else: # check the ifos are the same
         for ifo in ifolist:
           if ifo not in ifosprev:
-            print >> sys.stderr, "An IFOs for pulsar %s is not the same as for the previous pulsar. Skip." % names[idx]
+            print("An IFOs for pulsar %s is not the same as for the previous pulsar. Skip." % names[idx], file=sys.stderr)
             psrshelf.close()
             continue
 
@@ -804,7 +806,7 @@ solid #000; border-bottom:1px solid #000">%s</th>""" % (ifo, numlims, ifo))
       try:
         preval = psrshelf[prepar]
       except:
-        print >> sys.stderr, "Error getting %s for PSR%s. Skipping pulsar." % (prepar, names[idx])
+        print("Error getting %s for PSR%s. Skipping pulsar." % (prepar, names[idx]), file=sys.stderr)
         skip = True
         break
 
@@ -829,7 +831,7 @@ solid #000; border-bottom:1px solid #000">%s</th>""" % (ifo, numlims, ifo))
         try:
           limvals = psrshelf[limpar]
         except:
-          print >> sys.stderr, "Error getting %s for PSR%s. Skipping pulsar." % (limpar, names[idx])
+          print("Error getting %s for PSR%s. Skipping pulsar." % (limpar, names[idx]), file=sys.stderr)
           skip = True
           break
 

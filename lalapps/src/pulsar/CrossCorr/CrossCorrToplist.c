@@ -692,8 +692,8 @@ static int _atomic_write_crossCorr_toplist_to_file(toplist_t *l, const char *fil
       LogPrintf (LOG_CRITICAL, "Could not allocate new filename\n");
       return(-1);
     }
-    strncpy(tempname,filename,s);
-    strncat(tempname,TEMP_EXT,s);
+    strcpy(tempname,filename);
+    strcat(tempname,TEMP_EXT);
 
     fpnew=fopen(tempname, "wb");
     if(!fpnew) {
@@ -756,8 +756,8 @@ static int _atomic_write_crossCorrBinary_toplist_to_file(toplist_t *l, const cha
       LogPrintf (LOG_CRITICAL, "Could not allocate new filename\n");
       return(-1);
     }
-    strncpy(tempname,filename,s);
-    strncat(tempname,TEMP_EXT,s);
+    strcpy(tempname,filename);
+    strcat(tempname,TEMP_EXT);
 
     fpnew=fopen(tempname, "wb");
     if(!fpnew) {
@@ -867,8 +867,8 @@ int write_cc_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEA
     LogPrintf(LOG_CRITICAL,"Couldn't allocate tmpfilename\n");
     return(-2);
   }
-  strncpy(tmpfilename,filename,len);
-  strncat(tmpfilename,TMP_EXT,len);
+  strcpy(tmpfilename,filename);
+  strcat(tmpfilename,TMP_EXT);
 
   /* calculate checksum */
   checksum = 0;

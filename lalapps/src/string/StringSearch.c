@@ -579,7 +579,7 @@ int FindEvents(struct CommandLineArgsTag CLA, const StringTemplate *strtemplate,
       strncpy( new->ifo, CLA.ChannelName, 2 );
       new->ifo[2] = 0;
       strncpy( new->search, "StringCusp", sizeof( new->search ) );
-      strncpy( new->channel, CLA.ChannelName, sizeof( new->channel ) );
+      strncpy( new->channel, CLA.ChannelName, sizeof( new->channel )  - 1);
 
       /* compute start and peak time and duration, give 1 sample of fuzz on
        * both sides */

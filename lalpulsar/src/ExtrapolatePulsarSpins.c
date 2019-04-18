@@ -365,17 +365,19 @@ XLALCWSignalBand ( REAL8 *minFreq,                          /**< [out] Minimum f
 
 /**
  * (Optional) Helper function for using XLALCWSignalBand():
- * compute DetectorStateSeries for given time-span and detector, also
+ * compute DetectorStateSeries for given time-span and detector,
+ * and optionally also the sky-position with maximal Doppler band-width.
+ *
  * The calculation accounts for the spin evolution of the signals, and the actual Dopper modulation
  * due to detector motion, and (for binary signals) binary orbital motion.
  */
 DetectorStateSeries *
-XLALPrepareCWSignalBand ( SkyPosition *skypos_maxdoppler, //< [out] [optional] sky-position of maximal Doppler band-width over the sky
-                          const LIGOTimeGPS tStart,	  //< [in] start GPS time of observing interval
-                          const REAL8 Tspan,              //< [in] total span of observing interval in seconds
-                          const REAL8 dT,                 //< [in] step-size (in seconds) to use to sample output detector-state series
-                          const LALDetector *detector,    //< [in] detector
-                          const EphemerisData *edat       //< [in] ephemeris data, cf XLALInitBarycenter()
+XLALPrepareCWSignalBand ( SkyPosition *skypos_maxdoppler, /**< [out] [optional] sky-position of maximal Doppler band-width over the sky */
+                          const LIGOTimeGPS tStart,       /**< [in] start GPS time of observing interval */
+                          const REAL8 Tspan,              /**< [in] total span of observing interval in seconds */
+                          const REAL8 dT,                 /**< [in] step-size (in seconds) to use to sample output detector-state series */
+                          const LALDetector *detector,    /**< [in] detector, cf XLALGetSiteInfo() */
+                          const EphemerisData *edat       /**< [in] ephemeris data, cf XLALInitBarycenter() */
                           )
 {
   XLAL_CHECK_NULL ( detector != NULL, XLAL_EINVAL );

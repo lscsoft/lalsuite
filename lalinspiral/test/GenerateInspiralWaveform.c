@@ -474,7 +474,7 @@ ParseParameters( UINT4              argc,
       }
       else if( strcmp(argv[i],"--tag") == 0 )
       {
-        strncpy(otherIn->tag, argv[++i], sizeof(otherIn->tag));
+        strncpy(otherIn->tag, argv[++i], sizeof(otherIn->tag) - 1);
       }
       else if( strcmp(argv[i],"--approximant") == 0 )
       {

@@ -83,6 +83,7 @@
 
 #define TRUE (1==1)
 #define FALSE (1==0)
+#define SQ(x) ( (x) * (x) )
 
 /*----- SWITCHES -----*/
 /*----- Macros -----*/
@@ -315,6 +316,8 @@ typedef struct {
   int FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
 
   BOOLEAN resampFFTPowerOf2;	//!< in Resamp: enforce FFT length to be a power of two (by rounding up)
+  REAL8 allowedMismatchFromSFTLength; /**< maximum allowed mismatch from SFTs being too long */
+
   LALStringVector *injectionSources;    /**< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}') */
   LALStringVector *injectSqrtSX; 	/**< Add Gaussian noise: list of respective detectors' noise-floors sqrt{Sn}" */
   LALStringVector *IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector */
@@ -948,8 +951,8 @@ initUserVars ( UserInput_t *uvar )
   // Dterms-default used to be 16, but has to be 8 for SSE version
   uvar->Dterms 	= 8;
 
-  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   uvar->assumeSqrtSX = NULL;
   uvar->SignalOnly = 0;
@@ -1019,6 +1022,7 @@ initUserVars ( UserInput_t *uvar )
   uvar->transient_WindowType = XLALStringDuplicate ( "none" );
   uvar->transient_useFReg = 0;
   uvar->resampFFTPowerOf2 = TRUE;
+  uvar->allowedMismatchFromSFTLength = 0;
   uvar->injectionSources = NULL;
   uvar->injectSqrtSX = NULL;
   uvar->IFOs = NULL;
@@ -1152,8 +1156,10 @@ initUserVars ( UserInput_t *uvar )
 
   XLALRegisterUvarMember(resampFFTPowerOf2,  BOOLEAN, 0,  DEVELOPER, "For Resampling methods: enforce FFT length to be a power of two (by rounding up)" );
 
+  XLALRegisterUvarMember(allowedMismatchFromSFTLength, REAL8, 0, DEVELOPER, "Maximum allowed mismatch from SFTs being too long [Default: what's hardcoded in XLALFstatMaximumSFTLength]" );
+
   /* inject signals into the data being analyzed */
-  XLALRegisterUvarMember(injectionSources,  STRINGVector, 0, DEVELOPER, "CSV list of files containing signal parameters for injection [see mfdv5]");
+  XLALRegisterUvarMember(injectionSources,  STRINGVector, 0, DEVELOPER, "%s", InjectionSourcesHelpString );
   XLALRegisterUvarMember(injectSqrtSX,	    STRINGVector, 0, DEVELOPER, "Generate Gaussian Noise SFTs on-the-fly: CSV list of detectors' noise-floors sqrt{Sn}");
   XLALRegisterUvarMember(IFOs,	            STRINGVector, 0, DEVELOPER, "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\", when no SFT files are specified");
   XLALRegisterUvarMember(timestampsFiles,   STRINGVector, 0, DEVELOPER, 
@@ -1422,6 +1428,10 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     XLALFree ( detector );
   }
 
+  /* maximum ranges of binary orbit parameters */
+  const REAL8 binaryMaxAsini = MYMAX( uvar->orbitasini, uvar->orbitasini + uvar->orbitasiniBand );
+  const REAL8 binaryMinPeriod = MYMIN( uvar->orbitPeriod, uvar->orbitPeriod + uvar->orbitPeriodBand );
+  const REAL8 binaryMaxEcc = MYMAX( uvar->orbitEcc, uvar->orbitEcc + uvar->orbitEccBand );
 
   { /* ----- What frequency-band do we need to read from the SFTs?
      * propagate spin-range from refTime to startTime and endTime of observation
@@ -1443,12 +1453,13 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     memcpy ( cfg->searchRegion.fkdotBand, spinRangeRef.fkdotBand, sizeof(cfg->searchRegion.fkdotBand) );
 
     // Compute covering frequency range, accounting for Doppler modulation due to the Earth and any binary companion */
-    const REAL8 binaryMaxAsini = MYMAX( uvar->orbitasini, uvar->orbitasini + uvar->orbitasiniBand );
-    const REAL8 binaryMinPeriod = MYMIN( uvar->orbitPeriod, uvar->orbitPeriod + uvar->orbitPeriodBand );
-    const REAL8 binaryMaxEcc = MYMAX( uvar->orbitEcc, uvar->orbitEcc + uvar->orbitEccBand );
     XLALCWSignalCoveringBand( &fCoverMin, &fCoverMax, &cfg->startTime, &endTime, &spinRangeRef, binaryMaxAsini, binaryMinPeriod, binaryMaxEcc );
 
   } /* extrapolate spin-range */
+
+  /* check that SFT length is within allowed maximum */
+  /* use fCoverMax here to work with loading grid from file (--gridType=6) */
+  XLAL_CHECK ( XLALFstatCheckSFTLengthMismatch ( cfg->Tsft, fCoverMax, binaryMaxAsini, binaryMinPeriod, uvar->allowedMismatchFromSFTLength ) == XLAL_SUCCESS, XLAL_EFUNC, "Excessive mismatch would be incurred due to SFTs being too long for the current search setup. Please double-check your parameter ranges or provide shorter input SFTs. If you really know what you're doing, you could also consider using the --allowedMismatchFromSFTLength override." );
 
   /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
   MultiNoiseFloor s_assumeSqrtSX, *assumeSqrtSX;
@@ -1495,6 +1506,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   optionalArgs.FstatMethod = uvar->FstatMethod;
   optionalArgs.resampFFTPowerOf2 = uvar->resampFFTPowerOf2;
   optionalArgs.collectTiming = XLALUserVarWasSet ( &uvar->outputFstatTiming );
+  optionalArgs.allowedMismatchFromSFTLength = uvar->allowedMismatchFromSFTLength;
 
 
   XLAL_CHECK ( (cfg->Fstat_in = XLALCreateFstatInput( catalog, fCoverMin, fCoverMax, cfg->dFreq, cfg->ephemeris, &optionalArgs )) != NULL, XLAL_EFUNC );
@@ -2087,14 +2099,39 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   fprintf (fp, "\n");
 
   /* Amplitude parameters with error-estimates */
-  fprintf (fp, "h0       = % .6g;\n", pulsarParams->Amp.h0 );
-  fprintf (fp, "dh0      = % .6g;\n", pulsarParams->dAmp.h0 );
-  fprintf (fp, "cosi     = % .6g;\n", pulsarParams->Amp.cosi );
-  fprintf (fp, "dcosi    = % .6g;\n", pulsarParams->dAmp.cosi );
+  fprintf (fp, "aPlus    = % .6g;\n", pulsarParams->Amp.aPlus );
+  fprintf (fp, "daPlus   = % .6g;\n", pulsarParams->dAmp.aPlus );
+  fprintf (fp, "aCross   = % .6g;\n", pulsarParams->Amp.aCross );
+  fprintf (fp, "daCross  = % .6g;\n", pulsarParams->dAmp.aCross );
   fprintf (fp, "phi0     = % .6g;\n", pulsarParams->Amp.phi0 );
   fprintf (fp, "dphi0    = % .6g;\n", pulsarParams->dAmp.phi0 );
   fprintf (fp, "psi      = % .6g;\n", pulsarParams->Amp.psi );
   fprintf (fp, "dpsi     = % .6g;\n", pulsarParams->dAmp.psi );
+
+  /* To allow arbitrary aPlus/aCross amplitudes, we have switched to output-variables A^\nu = (aPlus, aCross, phi0, psi)
+   * and hence using a different Jacobian matrix. The dh0 and dcosi recovered below are only valid when GW is emitted at
+   * twice the spin frequency, and are derived from dA+, dAx. Since both the current and original calculations ignore 
+   * off-diagonal items in computing the errors, the dh0 and dcosi below are expected to be slightly different from the
+   * original estimate when the output-variables are B^\nu = (h0, cosi, phi0, psi). Since they are only used for sanity 
+   * checks, it should not impact any usage. */
+  if ( fabs(pulsarParams->Amp.aPlus) >= fabs(pulsarParams->Amp.aCross) ){ /* Assume GW at twice the spin frequency only */
+    REAL8 h0, dh0, cosi, dcosi;
+    h0 = pulsarParams->Amp.aPlus + sqrt( SQ(pulsarParams->Amp.aPlus) - SQ(pulsarParams->Amp.aCross) );
+    if (h0 > 0)
+      cosi = pulsarParams->Amp.aCross/h0;
+    else
+      cosi = 0;
+    dh0 = (pulsarParams->Amp.aPlus + pulsarParams->dAmp.aPlus) + sqrt( SQ(pulsarParams->Amp.aPlus + pulsarParams->dAmp.aPlus) - SQ(fabs(pulsarParams->Amp.aCross) + pulsarParams->dAmp.aCross) ) - h0;
+    if ( (h0+dh0) > 0 )
+      dcosi = fabs( (fabs(pulsarParams->Amp.aCross) + pulsarParams->dAmp.aCross) / (h0 + dh0) - fabs(cosi) );
+    else
+      dcosi = 0;
+    
+    fprintf (fp, "h0    = % .6g;\n", h0 );
+    fprintf (fp, "dh0   = % .6g;\n", dh0 );
+    fprintf (fp, "cosi  = % .6g;\n", cosi );
+    fprintf (fp, "dcosi = % .6g;\n", dcosi );
+  }
 
   fprintf (fp, "\n");
 

@@ -29,6 +29,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <lal/LALError.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
@@ -708,7 +709,7 @@ LALClusterSnglInspiralTable (
   ATTATCHSTATUSPTR( status );
 
   ASSERT( inspiralEvent, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
 
   XLALClusterSnglInspiralTable ( inspiralEvent, dtimeNS, clusterchoice );
 
@@ -1324,9 +1325,9 @@ LALIfoCountSingleInspiral(
 
   /* check that output is null and input non-null */
   ASSERT( !(*numTrigs), status,
-      LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
+      LAL_NNULL_ERR, LAL_NNULL_MSG );
   ASSERT( input, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
 
   /* Scan through a linked list of sngl_inspiral tables and return a
      pointer to the head of a linked list of tables for a specific IFO */
@@ -1652,7 +1653,7 @@ LALCreateTrigBank(
   }
   else
   {
-    ABORT( status, LIGOMETADATAUTILSH_ETEST, LIGOMETADATAUTILSH_MSGETEST );
+    ABORT( status, LAL_BADPARM_ERR, LAL_BADPARM_MSG );
   }
 
   /* create a linked list of sorted templates */
@@ -1696,7 +1697,7 @@ LALCreateTrigBank(
     }
     else
     {
-      ABORT( status, LIGOMETADATAUTILSH_ETEST, LIGOMETADATAUTILSH_MSGETEST );
+      ABORT( status, LAL_BADPARM_ERR, LAL_BADPARM_MSG );
     }
   }
 

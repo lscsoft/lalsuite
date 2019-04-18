@@ -308,8 +308,8 @@ initUserVars (UserVariables_t *uvar)
 {
 
   /* set a few defaults */
-  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   uvar->Freq = 100;
   uvar->f1dot = 0.0;
@@ -450,8 +450,9 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     }
 
   /* ----- get parameter-space point from user-input) */
-  cfg->signalParams.Amp.h0 = uvar->h0;
-  cfg->signalParams.Amp.cosi = uvar->cosi;
+    
+  cfg->signalParams.Amp.aPlus = 0.5 * uvar->h0 * (1.0 + SQ(uvar->cosi));
+  cfg->signalParams.Amp.aCross = uvar->h0 * uvar->cosi;
   cfg->signalParams.Amp.psi = uvar->psi;
   cfg->signalParams.Amp.phi0 = uvar->phi0;
 
@@ -585,11 +586,21 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerPhaseMetric *Pmetric, const Dop
   }
 
   fprintf ( fp, "%%%% DetectorMotionType = '%s'\n", XLALDetectorMotionName(meta->detMotionType) );
-  fprintf ( fp, "h0 = %g;\ncosi = %g;\npsi = %g;\nphi0 = %g;\n", Amp->h0, Amp->cosi, Amp->psi, Amp->phi0 );
+  fprintf ( fp, "aPlus = %g;\naCross = %g;\npsi = %g;\nphi0 = %g;\n", Amp->aPlus, Amp->aCross, Amp->psi, Amp->phi0 );
+  if ( fabs(Amp->aPlus) >= fabs(Amp->aCross) ){ /* Assume GW at twice the spin frequency only */
+    REAL8 h0, cosi;
+    h0 = Amp->aPlus + sqrt( SQ(Amp->aPlus) - SQ(Amp->aCross) );
+    if (h0 > 0)
+      cosi = Amp->aCross/h0;
+    else
+      cosi = 0;
+    fprintf ( fp, "h0 = %g;\ncosi = %g;\n", h0, cosi);
+  }
   fprintf ( fp, "%%%% DopplerPoint = {\n");
   fprintf ( fp, "refTime = %.1f;\n", XLALGPSGetREAL8 ( &doppler->refTime ) );
   fprintf ( fp, "Alpha   = %f;\nDelta = %f;\n", doppler->Alpha, doppler->Delta );
   fprintf ( fp, "fkdot   = [%f, %g, %g, %g ];\n", doppler->fkdot[0], doppler->fkdot[1], doppler->fkdot[2], doppler->fkdot[3] );
+
   if ( doppler->asini > 0 )
     {
       fprintf ( fp, "%%%% 	   orbit = { \n");

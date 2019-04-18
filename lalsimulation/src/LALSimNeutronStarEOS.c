@@ -78,20 +78,30 @@ struct tagLALSimNeutronStarEOS {
 /** @endcond */
 
 /** Recognised equations of state names */
-const char * const lalSimNeutronStarEOSNames[42] = {
+const char * const lalSimNeutronStarEOSNames[65] = {
         "ALF1", "ALF2", "ALF3", "ALF4",
-        "AP1", "AP2", "AP3", "AP4",
+        "AP1", "AP2", "AP3", "AP4", "APR4_EPP",
         "BBB2", "BGN1H1", "BPAL12", 
         "BSK19", "BSK20", "BSK21",
         "ENG", "FPS", "GNH3",
         "GS1", "GS2",
         "H1", "H2", "H3", "H4", "H5", "H6", "H7",
-        "MPA1", "MS1B", "MS1", "MS2",
+        "MPA1", "MS1B", "MS1B_PP", "MS1_PP", "MS1", "MS2",
         "PAL6", "PCL2", "PS",
         "QMC700",
         "SLY4", "SLY",
         "SQM1", "SQM2", "SQM3",
-        "WFF1", "WFF2", "WFF3"
+        "WFF1", "WFF2", "WFF3",
+        /* From here, EOSs are coming from CompOSE via Ian */
+        "APR", "BHF_BBB2",
+        "KDE0V", "KDE0V1", "RS", "SK255", "SK272",
+        "SKA", "SKB", "SKI2", "SKI3", "SKI4", "SKI5", "SKI6",
+        "SKMP", "SKOP",
+        "SLY2", "SLY230A", "SLY9",
+        /* This EOS was added by request from
+         * http://user.numazu-ct.ac.jp/~sumi/eos/HQC18_submit
+         */
+        "HQC18"
     };
 
 /**

@@ -45,7 +45,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOMetadataRingdownUtils.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/Inject.h>
@@ -179,7 +179,7 @@ ProcessParamsTable *next_process_param(
     snprintf( pp->param, LIGOMETA_PARAM_MAX, "-userTag" );
   else
     snprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
-  strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
+  strncpy( pp->type, type, LIGOMETA_TYPE_MAX - 1 );
   va_start( ap, fmt );
   vsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
   va_end( ap );

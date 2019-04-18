@@ -283,6 +283,9 @@ set fixedComparisonChanDir "";
 set fixedComparisonString "";
 set fixedComparisonSNR "";
 
+# If runCoherence is 1 then add -K ../thisComparisonChan option to fscanDriver to do coherence with the comparison channel.
+set runCoherence 0; 
+
 # If these are set then SFTs are moved from the moveSFTsFromDirList rather than generated. 
 set moveSFTsFromDirList "";
 set moveSFTsFromSuffix "";
@@ -651,9 +654,14 @@ for {set i 0} {$i < [llength $::masterList]} {incr i} {
            append thisComparisonString "$startTime";
            append thisComparisonString "_";
            append thisComparisonString "$endTime";
+           set thisComparisonSNR 0; # Turn off comparison computations when comparing with a currently running Fscan.
          }
        }
        append cmd " -r $thisComparisonChanDir -e $thisComparisonString -q $thisComparisonSNR"
+       if {$runCoherence} {
+          # Add the option to do the coherence with the comparison channel
+          append cmd " -K ../$thisComparisonChan"
+       } 
     }
     if {$intersectData} {
         # Append option to run ligo_data_find and intersect segments with times data exists.

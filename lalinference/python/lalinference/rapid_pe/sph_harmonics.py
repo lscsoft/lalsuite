@@ -97,23 +97,23 @@ def _compute_sph_l_eq_4(theta, phi, selected_modes=None):
         if selected_modes is not None and (4,m) not in selected_modes:
             continue
         if m == -4:			
-		Ylms [(4,m)] = _a4m4 * (cos2th**2.0 * sin2th**6.0) * np.exp(1j*m*phi)
+            Ylms [(4,m)] = _a4m4 * (cos2th**2.0 * sin2th**6.0) * np.exp(1j*m*phi)
         if m == -3:			
-		Ylms [(4,m)] = _a4m3 * (cos2th * (1.0 + 2.0 * costh) * sin2th**5.0) * np.exp(1j*m*phi)
+            Ylms [(4,m)] = _a4m3 * (cos2th * (1.0 + 2.0 * costh) * sin2th**5.0) * np.exp(1j*m*phi)
         if m == -2:			
-		Ylms [(4,m)] = _a4m2 * ((9.0 + 14.0 * costh + 7.0*np.cos(2.0*theta)) * sin2th**4.0) * np.exp(1j*m*phi) 
+            Ylms [(4,m)] = _a4m2 * ((9.0 + 14.0 * costh + 7.0*np.cos(2.0*theta)) * sin2th**4.0) * np.exp(1j*m*phi) 
         if m == -1:			
-		Ylms [(4,m)] = _a4m1 * (3.0 * sinth + 2.0 * np.sin(2.0 * theta) + 7.0 * np.sin(3.0 * theta) - 7.0 * np.sin(4.0 * theta)) * np.exp(1j*m*phi) 
+            Ylms [(4,m)] = _a4m1 * (3.0 * sinth + 2.0 * np.sin(2.0 * theta) + 7.0 * np.sin(3.0 * theta) - 7.0 * np.sin(4.0 * theta)) * np.exp(1j*m*phi) 
         if m ==  0:			
-		Ylms [(4,m)] = _a40  * ((5.0 + 7.0 * np.cos(2.0 * theta)) * sinth**2.0) * np.exp(1j*m*phi)
+            Ylms [(4,m)] = _a40  * ((5.0 + 7.0 * np.cos(2.0 * theta)) * sinth**2.0) * np.exp(1j*m*phi)
         if m ==  1:			
-		Ylms [(4,m)] = _a41  * (3.0 * sinth - 2.0 * np.sin(2.0 * theta) + 7.0 * np.sin(3.0 * theta) + 7.0 * np.sin(4.0 * theta)) * np.exp(1j*m*phi) 
+            Ylms [(4,m)] = _a41  * (3.0 * sinth - 2.0 * np.sin(2.0 * theta) + 7.0 * np.sin(3.0 * theta) + 7.0 * np.sin(4.0 * theta)) * np.exp(1j*m*phi) 
         if m ==  2:			
-		Ylms [(4,m)] = _a42  * (cos2th**4.0 * (9.0 - 14.0*costh + 7.0 * np.cos(2.0 * theta))) * np.exp(1j*m*phi)
+            Ylms [(4,m)] = _a42  * (cos2th**4.0 * (9.0 - 14.0*costh + 7.0 * np.cos(2.0 * theta))) * np.exp(1j*m*phi)
         if m ==  3:			
-		Ylms [(4,m)] = _a43  * (cos2th**5.0 * (-1.0 + 2.0 * costh) * sin2th) * np.exp(1j*m*phi)
+            Ylms [(4,m)] = _a43  * (cos2th**5.0 * (-1.0 + 2.0 * costh) * sin2th) * np.exp(1j*m*phi)
         if m ==  4:			
-		Ylms [(4,m)] = _a44  * (cos2th**6.0 * sin2th**2.0) * np.exp(1j*m*phi)
+            Ylms [(4,m)] = _a44  * (cos2th**6.0 * sin2th**2.0) * np.exp(1j*m*phi)
 
     return Ylms
 
@@ -146,27 +146,27 @@ def _compute_sph_l_eq_5(theta, phi, selected_modes=None):
         if selected_modes is not None and (5,m) not in selected_modes:
             continue
         if m == -5: 
-	    Ylms[(5,m)] = _a5m5 * (cos2th**3.0 * sin2th**7.0) * np.exp(1j*m*phi)
+            Ylms[(5,m)] = _a5m5 * (cos2th**3.0 * sin2th**7.0) * np.exp(1j*m*phi)
         if m == -4: 
-	    Ylms[(5,m)] = _a5m4 * (cos2th**2.0 * (2.0 + 5.0 * costh) * sin2th**6.0) * np.exp(1j*m*phi)
+            Ylms[(5,m)] = _a5m4 * (cos2th**2.0 * (2.0 + 5.0 * costh) * sin2th**6.0) * np.exp(1j*m*phi)
         if m == -3: 
-	    Ylms[(5,m)] = _a5m3 * (17.0 + 24.0 * np.cos(theta) + 15.0 * np.cos(2.0 * theta)) * cos2th * sin2th**5.0 * np.exp(1j*m*phi)
+            Ylms[(5,m)] = _a5m3 * (17.0 + 24.0 * np.cos(theta) + 15.0 * np.cos(2.0 * theta)) * cos2th * sin2th**5.0 * np.exp(1j*m*phi)
         if m == -2: 
-	    Ylms[(5,m)] = _a5m2 * (32.0 + 57.0 * costh + 36.0 * np.cos(2.0 * theta) + 15.0 * np.cos(3.0 * theta)) * sin2th**4.0 * np.exp(1j*m*phi)
+            Ylms[(5,m)] = _a5m2 * (32.0 + 57.0 * costh + 36.0 * np.cos(2.0 * theta) + 15.0 * np.cos(3.0 * theta)) * sin2th**4.0 * np.exp(1j*m*phi)
         if m == -1: 
-	    Ylms[(5,m)] = _a5m1 * (2.0 * sinth + 8.0 * np.sin(2.0 * theta) + 3.0 * np.sin(3.0*theta) + 12.0 * np.sin(4.0 * theta) - 15.0 * np.sin(5.0 * theta)) * np.exp(1j*m*phi)
+            Ylms[(5,m)] = _a5m1 * (2.0 * sinth + 8.0 * np.sin(2.0 * theta) + 3.0 * np.sin(3.0*theta) + 12.0 * np.sin(4.0 * theta) - 15.0 * np.sin(5.0 * theta)) * np.exp(1j*m*phi)
         if m == 0: 
-	    Ylms[(5,m)] = _a50 * (5.0 * costh + 3.0 * np.cos(3.0 * theta)) * sinth**2.0 * np.exp(1j*m*phi)
+            Ylms[(5,m)] = _a50 * (5.0 * costh + 3.0 * np.cos(3.0 * theta)) * sinth**2.0 * np.exp(1j*m*phi)
         if m ==  1: 
-	    Ylms[(5,m)] = _a51 * (-2.0 * sinth + 8.0 * np.sin(2.0 * theta) - 3.0 * np.sin(3.0 * theta) + 12.0 * np.sin(4.0*theta) + 15.0 * np.sin(5.0*theta)) * np.exp(1j*m*phi)
+            Ylms[(5,m)] = _a51 * (-2.0 * sinth + 8.0 * np.sin(2.0 * theta) - 3.0 * np.sin(3.0 * theta) + 12.0 * np.sin(4.0*theta) + 15.0 * np.sin(5.0*theta)) * np.exp(1j*m*phi)
         if m ==  2: 
-	    Ylms[(5,m)] = _a52 * (-32.0 + 57.0 * costh - 36.0 * np.cos(2.0 * theta) + 15.0 * np.cos(3.0 * theta))* cos2th**4.0 * np.exp(1j*m*phi)
+            Ylms[(5,m)] = _a52 * (-32.0 + 57.0 * costh - 36.0 * np.cos(2.0 * theta) + 15.0 * np.cos(3.0 * theta))* cos2th**4.0 * np.exp(1j*m*phi)
         if m ==  3: 
-	    Ylms[(5,m)] = _a53 * (17.0 - 24.0 * costh + 15.0 * np.cos(2.0 * theta)) * cos2th**5.0 * sin2th * np.exp(1j*m*phi)
+            Ylms[(5,m)] = _a53 * (17.0 - 24.0 * costh + 15.0 * np.cos(2.0 * theta)) * cos2th**5.0 * sin2th * np.exp(1j*m*phi)
         if m ==  4: 
-	    Ylms[(5,m)] = _a54 * (-2.0 + 5.0 * costh) * cos2th**6.0 * sin2th**2  * np.exp(1j*m*phi)
+            Ylms[(5,m)] = _a54 * (-2.0 + 5.0 * costh) * cos2th**6.0 * sin2th**2  * np.exp(1j*m*phi)
         if m ==  5: 
-	    Ylms[(5,m)] = _a55 * cos2th**7.0 * sin2th **3.0 * np.exp(1j*m*phi)
+            Ylms[(5,m)] = _a55 * cos2th**7.0 * sin2th **3.0 * np.exp(1j*m*phi)
 
 
     return Ylms
@@ -197,7 +197,7 @@ def _compute_sph_l_eq_6(theta, phi, selected_modes=None):
     sinth = np.sin(theta)
     for m in range(-6, 7):
         if selected_modes is not None and (6,m) not in selected_modes:
-	    continue
+            continue
         if m == -6:
             Ylms[(6,m)] = _a6m6 * cos2th**4.0 * sin2th**8.0 * np.exp(1j*m*pi)
         if m == -5:
@@ -251,7 +251,7 @@ if __name__ == "__main__":
     # Do unit tests
     Ylm = compute_spherical_harmonics(2, theta, phi, None)
     for (l, m), val in Ylm.iteritems():
-	if np.isclose(lal.SpinWeightedSphericalHarmonic(theta, phi, -2, l, m), val):	
-		print("Test successful for (l,m) = (%d, %d)" % (l, m))
-	else:
-		print("Test unsucessful for (l,m) = (%d, %d)" % (l, m))
+        if np.isclose(lal.SpinWeightedSphericalHarmonic(theta, phi, -2, l, m), val):	
+            print("Test successful for (l,m) = (%d, %d)" % (l, m))
+        else:
+            print("Test unsucessful for (l,m) = (%d, %d)" % (l, m))

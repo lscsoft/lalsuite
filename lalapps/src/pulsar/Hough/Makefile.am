@@ -4,12 +4,11 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 AM_CPPFLAGS += -I$(top_srcdir)/src/pulsar/Fstatistic
 
-bin_PROGRAMS = lalapps_SFTclean lalapps_HoughValidate \
+bin_PROGRAMS = lalapps_HoughValidate \
 	lalapps_DriveHoughMulti lalapps_MCInjectHoughMulti lalapps_MultiWeights \
 	lalapps_ValidateHoughMulti lalapps_ValidateChi2Test lalapps_MCInjectHoughMultiChi2Test \
 	lalapps_HoughValidateAM lalapps_HoughMismatch
 
-lalapps_SFTclean_SOURCES = SFTclean.c
 lalapps_HoughValidate_SOURCES = HoughValidate.c MCInjectComputeHough.h DriveHoughColor.h PeakSelect.h PeakSelect.c SFTfileIOv1.h SFTfileIOv1.c
 lalapps_DriveHoughMulti_SOURCES = DriveHoughMulti.c  DriveHoughColor.h PeakSelect.c PeakSelect.h \
 	 FstatToplist.c FstatToplist.h \

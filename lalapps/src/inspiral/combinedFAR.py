@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 import sys
 import os
 from optparse import *
@@ -8,9 +10,10 @@ import glob
 from types import * #!!!what does this do?
 from operator import itemgetter
 
+from ligo import segments #!!!do I need this?
+from ligo.segments import utils as segmentsUtils #!!!do I need this?
+
 from glue import lal
-from glue import segments #!!!do I need this?
-from glue import segmentsUtils #!!!do I need this?
 from glue.ligolw import ligolw
 from glue.ligolw import table as tab #!!!why as tab?
 from glue.ligolw import lsctables
@@ -150,12 +153,12 @@ def parse_command_line():
   (options,args) = parser.parse_args()
   #check if required options specified and for self-consistency
   if not options.glob or options.cache_file:
-    raise ValueError, "--glob or --cache-file must be specified"
+    raise ValueError("--glob or --cache-file must be specified")
   if not options.output_path:
-    raise ValueError, "--output-file must be specified"
+    raise ValueError("--output-file must be specified")
   return options, sys.argv[1:]
   if not options.num_slides:
-    raise ValueError, "--num-slides must be specified"
+    raise ValueError("--num-slides must be specified")
 
 
 opts, args = parse_command_line()
@@ -173,11 +176,11 @@ if opts.glob is not None:
     corsefiles.extend(glob.glob(gl))
 elif opts.cache_file is not None:
   # currently not a working feature; just print warning message and exit
-  print >> sys.stderr, "--cache-file option currently not available; " + \
-        "please  use --glob option instead."
+  print("--cache-file option currently not available; " + \
+        "please  use --glob option instead.", file=sys.stderr)
   sys.exit(1)
 if not corsefiles:
-  print >> sys.stderr, "No corse files could be found. Check input args."
+  print("No corse files could be found. Check input args.", file=sys.stderr)
   sys.exit(1)
 
 maxBkgFAN = {}
@@ -198,7 +201,7 @@ for thisfile in corsefiles:
     summfile = glob.glob(thisfile.rstrip('.xml.gz') + '.txt')
   # check if corse file has a corresponding summary file
   if not summfile:
-    print >>sys.stderr, "A summary file for %s could not be found." %(thisfile)
+    print("A summary file for %s could not be found." %(thisfile), file=sys.stderr)
     sys.exit(1)
   # get needed info from summary file
   file = open(summfile[0], 'r')
@@ -252,7 +255,7 @@ for thisfile in corsefiles:
         FrgrndTime = float( line.split()[6] )
     corrfile.close()
   else:
-    raise ValueError, "Must specify --time-correct-file"
+    raise ValueError("Must specify --time-correct-file")
 
   # calculate min/max BkgFANs
   minBkgFAN[thisfile] = FrgrndTime/BkgTime
@@ -361,10 +364,10 @@ if opts.min_rate:
   if len(loudestTrig) == 0:
     for trig in loudestTrigTemp:
       loudestTrig.append(trig)
-  print >> sys.stdout, 'The time analyzed was' , FrgrndTime
-  print >> sys.stdout, 'Accepting triggers with IFAN >' , minIFAN
-  print >> sys.stdout, 'Accepting triggers with FAN <' , maxFAN
-  print >> sys.stdout, 'Accepted' , len(loudestTrig) , ' SINGLE triggers.'
+  print('The time analyzed was' , FrgrndTime)
+  print('Accepting triggers with IFAN >' , minIFAN)
+  print('Accepting triggers with FAN <' , maxFAN)
+  print('Accepted' , len(loudestTrig) , ' SINGLE triggers.')
 
 flag = False
 integ = 0

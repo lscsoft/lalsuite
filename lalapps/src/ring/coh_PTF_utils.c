@@ -2876,17 +2876,17 @@ MultiInspiralTable* coh_PTF_create_multi_event(
   }
   else if(params->numIFO == 2)
   {
-    snprintf(currEvent->ifos, LIGOMETA_IFOS_MAX, "%s%s",
+    XLALStringPrint(currEvent->ifos, LIGOMETA_IFOS_MAX, "%s%s",
              params->ifoName[0], params->ifoName[1]);
   }
   else if (params->numIFO == 3)
   {
-    snprintf(currEvent->ifos, LIGOMETA_IFOS_MAX, "%s%s%s",
+    XLALStringPrint(currEvent->ifos, LIGOMETA_IFOS_MAX, "%s%s%s",
              params->ifoName[0], params->ifoName[1], params->ifoName[2]);
   }
   else if (params->numIFO == 4)
   {
-    snprintf(currEvent->ifos, LIGOMETA_IFOS_MAX, "%s%s%s%s",
+    XLALStringPrint(currEvent->ifos, LIGOMETA_IFOS_MAX, "%s%s%s%s",
              params->ifoName[0], params->ifoName[1], params->ifoName[2],
              params->ifoName[3]);
   }

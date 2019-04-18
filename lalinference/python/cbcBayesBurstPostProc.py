@@ -34,7 +34,7 @@ import sys
 import os
 
 from math import ceil,floor
-import cPickle as pickle
+from six.moves import cPickle as pickle
 
 from time import strftime
 
@@ -50,11 +50,12 @@ from matplotlib import pyplot as plt
 from lalinference import bayespputils as bppu
 
 from lalinference import git_version
-
+import glue
 from glue.ligolw import table
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import utils
+
 try:
   os.environ['PATH'] = os.environ['PATH'] + ':/usr/texbin'
 except:
@@ -191,6 +192,27 @@ def multipleFileCB(opt, opt_str, value, parser):
         oldargs.extend(args)
         args = oldargs
     setattr(parser.values, opt.dest, args)
+def dict2html(d,parent=None):
+    if not d: return ""
+    out=bppu.htmlChunk('div',parent=parent)
+    tab=out.tab()
+    row=out.insert_row(tab)
+    for key in d.keys():
+        out.insert_td(row,str(key))
+    row2=out.insert_row(tab)
+    for val in d.values():
+        out.insert_td(row2,str(val))
+    return out
+
+def extract_hdf5_metadata(h5grp,parent=None):
+    import h5py
+    #out=bppu.htmlChunk('div',parent=parent)
+    sec=bppu.htmlSection(h5grp.name,htmlElement=parent)
+    dict2html(h5grp.attrs,parent=sec)
+    for group in h5grp:
+        if(isinstance(h5grp[group],h5py.Group)):
+            extract_hdf5_metadata(h5grp[group],sec)
+    return h5grp
 
 def cbcBayesBurstPostProc(
                         outdir,data,oneDMenu,twoDGreedyMenu,GreedyRes,
@@ -312,8 +334,11 @@ def cbcBayesBurstPostProc(
     injection=None
     if injfile and eventnum is not None:
         print('Looking for event %i in %s\n'%(eventnum,injfile))
+        import itertools
+        from glue.ligolw import ligolw
+        from glue.ligolw import lsctables
+        from glue.ligolw import utils
         xmldoc = utils.load_filename(injfile,contenthandler=LIGOLWContentHandlerExtractSimBurstTable)
-        from glue.ligolw import table
         got_burst_table=1
         try:
             lsctables.use_in(LIGOLWContentHandlerExtractSimBurstTable)
@@ -367,9 +392,9 @@ def cbcBayesBurstPostProc(
     #Create an instance of the posterior class using the posterior values loaded
     #from the file and any injection information (if given).
     if got_inspiral_table==1:
-        pos = bppu.Posterior(commonResultsObj,SimInspiralTableEntry=injection,injFref=injFref,SnglInspiralList=triggers,votfile=votfile)
+        pos = bppu.Posterior(commonResultsObj,SimInspiralTableEntry=injection,injFref=injFref,SnglInspiralList=triggers)
     else:
-        pos = bppu.BurstPosterior(commonResultsObj,SimBurstTableEntry=injection,injFref=injFref,SnglBurstList=triggers,votfile=votfile)
+        pos = bppu.BurstPosterior(commonResultsObj,SimBurstTableEntry=injection,injFref=injFref,SnglBurstList=triggers)
     #Create analytic likelihood functions if covariance matrices and mean vectors were given
     analyticLikelihood = None
     if covarianceMatrices and meanVectors:
@@ -405,7 +430,7 @@ def cbcBayesBurstPostProc(
                 pos.set_injection(injection)
             except KeyError:
                 print("Warning: No 'time' column!")
-
+    """
         # Compute time delays from sky position
     if ('ra' in pos.names or 'rightascension' in pos.names) \
     and ('declination' in pos.names or 'dec' in pos.names) \
@@ -441,7 +466,7 @@ def cbcBayesBurstPostProc(
                 time_delay=bppu.PosteriorOneDPDF(ifo1.lower()+ifo2.lower()+'_delay',delay_time,inj_delay)
                 pos.append(time_delay)
 
-    
+    """
     #Perform necessary mappings
     functions = {'cos':cos,'sin':sin,'exp':exp,'log':log}
     for pos_name in oneDMenu:
@@ -730,7 +755,7 @@ def cbcBayesBurstPostProc(
 
         #Generate new BCI html table row
         BCItableline='<tr><td>%s</td>'%(par_name)
-        cls=reses.keys()
+        cls=list(reses.keys())
         cls.sort()
 
         for cl in cls:
@@ -963,7 +988,7 @@ def cbcBayesBurstPostProc(
 
         #Generate new BCI html table row
         BCItableline='<tr><td>%s-%s</td>'%(par1_name,par2_name)
-        cls=reses.keys()
+        cls=list(reses.keys())
         cls.sort()
 
         for cl in cls:
@@ -1143,11 +1168,6 @@ def cbcBayesBurstPostProc(
     cov_table_string+='</table>'
     html_stats_cov.write(cov_table_string)
                 
-    #Create a section for run configuration information if it exists
-    if pos._votfile is not None:
-	html_vot=html.add_section('Run information',legend=legend)
-	html_vot.write(pos.write_vot_info())
-    
     html_footer=html.add_section('')
     html_footer.p('Produced using cbcBayesPostProc.py at '+strftime("%Y-%m-%d %H:%M:%S")+' .')
 

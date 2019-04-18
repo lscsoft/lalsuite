@@ -5,6 +5,8 @@ This script produces the condor submit and dag files to run
 the noise comparison between h(t) and calibrated DARM_ERR
 """
 
+from __future__ import print_function
+
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
@@ -77,18 +79,18 @@ parser.add_option("-V", "--veto-list",action="store_true",default=False,\
 df_pad=128
 
 if not opts.config_file:
-  print >> sys.stderr, "No configuration file specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No configuration file specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not opts.segment_filename:
-  print >> sys.stderr, "No segment filename specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No segment filename specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 if not opts.basename:
-  print >> sys.stderr, "No dag file base name specified."
-  print >> sys.stderr, "Use --help for usage details."
+  print("No dag file base name specified.", file=sys.stderr)
+  print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
 
 # create the config parser object and read in the ini file
@@ -142,11 +144,11 @@ epochs = strain.EpochData(cp,opts)
 epoch_cnt = 0;
 
 # loop over the segments defined by the calibration epochs
-print "\n"
+print("\n")
 for epoch in epochs.epoch_segs():
   noise_output_files = []
   noise_output_files2 = []
-  print "setting up jobs for calibration epoch " + str(epoch[1])+" - "+str(epoch[2]) + "..."
+  print("setting up jobs for calibration epoch " + str(epoch[1])+" - "+str(epoch[2]) + "...")
   #output the epochs in their own directories
   epoch_dir = 'EPOCH'+'-'+str(epoch[1])+'-'+str(epoch[2])
   mkdir_node2 = strain.MkdirNode(mkdir_job,epoch_dir)
@@ -270,7 +272,7 @@ if not opts.cat_noise_jobs:
   if opts.write_dax: dag.write_pegasus_rls_cache(cp.get("ldgsubmitdax","gsiftp"),cp.get("ldgsubmitdax","pool"))
   if opts.write_script: dag.write_script()
 
-  print "\nDAG contains " + str(len(dag.get_nodes())) + " nodes.\n"
+  print("\nDAG contains " + str(len(dag.get_nodes())) + " nodes.\n")
 
   # write out a log file for this script
   log_fh = open(opts.basename + '.pipeline.log', 'w')
@@ -291,21 +293,21 @@ if not opts.cat_noise_jobs:
   for seg in data:
     for chunk in seg:
       total_data += len(chunk)
-  print >> log_fh, "total data =", total_data
+  print("total data =", total_data, file=log_fh)
 
-  print >> log_fh, "\n===========================================\n"
-  print >> log_fh, data
+  print("\n===========================================\n", file=log_fh)
+  print(data, file=log_fh)
   for seg in data:
-    print >> log_fh, seg
+    print(seg, file=log_fh)
     for chunk in seg:
-      print >> log_fh, chunk, 'length', int(chunk.end())-int(chunk.start())
+      print(chunk, 'length', int(chunk.end())-int(chunk.start()), file=log_fh)
       endgps=chunk.end()
 
 if not opts.cat_noise_jobs:
   # write a message telling the user that the DAG has been written
-  print "\nCreated a DAG file which can be submitted by executing"
-  print "\n   condor_submit_dag", dag.get_dag_file()
-  print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
+  print("\nCreated a DAG file which can be submitted by executing")
+  print("\n   condor_submit_dag", dag.get_dag_file())
+  print("""\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
   If you are running LSCdataFind jobs, do not forget to initialize your grid
   proxy certificate on the condor submit machine by running the commands
 
@@ -328,7 +330,7 @@ if not opts.cat_noise_jobs:
 
   Contact the administrator of your cluster to find the hostname and port of the
   LSCdataFind server.
-  """
+  """)
 
 sys.exit(0)
 

@@ -1,4 +1,6 @@
+MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
+include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 TEST_EXTENSIONS = .sh
 SH_LOG_COMPILER = /bin/bash $(srcdir)/test-compiler.sh

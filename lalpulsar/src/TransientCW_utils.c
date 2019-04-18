@@ -1046,7 +1046,7 @@ int write_transientFstatMap_to_fp ( LALFILE *fp, const transientFstatMap_t *Fsta
       UINT4 N_t0Range  = (UINT4) floor ( windowRange->t0Band / windowRange->dt0 ) + 1;
       UINT4 N_tauRange = (UINT4) floor ( windowRange->tauBand / windowRange->dtau ) + 1;
       if ( ( N_t0Range != FstatMap->F_mn->size1 ) || ( N_tauRange != FstatMap->F_mn->size2 ) ) {
-        XLAL_ERROR ( XLAL_EDOM, "Inconsistent dimensions of windowRange (%ux%u) and FstatMap GSL matrix (%lux%lu).", N_t0Range, N_tauRange, FstatMap->F_mn->size1, FstatMap->F_mn->size2 );
+        XLAL_ERROR ( XLAL_EDOM, "Inconsistent dimensions of windowRange (%ux%u) and FstatMap GSL matrix (%zux%zu).", N_t0Range, N_tauRange, FstatMap->F_mn->size1, FstatMap->F_mn->size2 );
       }
 
       /* ----- OUTER loop over start-times [t0,t0+t0Band] ---------- */

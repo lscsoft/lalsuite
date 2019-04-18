@@ -17,11 +17,10 @@
  * 02111-1307  USA
  */
 
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <metaio.h>
 
+#include "CreateMetaTableDir.h"
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 

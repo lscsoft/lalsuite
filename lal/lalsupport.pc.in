@@ -12,6 +12,7 @@ LALSUPPORT_PYTHON_PATH=@pyexecdir@
 Name: LALSupport
 Description: LSC Algorithm Support Library (useful but non-conforming routines)
 Version: @VERSION@
-Requires: lal = @VERSION@
-Libs: -L${libdir} -llalsupport @PTHREAD_LIBS@ @ZLIB_LIBS@
+Requires.private: lal = @VERSION@
+Libs.private: -L${libdir} -llalsupport @PTHREAD_LIBS@ @ZLIB_LIBS@
+Libs: -L${libdir} -llalsupport
 Cflags: -I${includedir} @PTHREAD_CFLAGS@ @ZLIB_CFLAGS@

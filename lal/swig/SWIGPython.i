@@ -596,6 +596,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     const int tflags = 0;
     const size_t esize = PyArray_DESCR(nparr)->elsize;
     PyObject* parent = PyArray_BASE(nparr);
+    int elemalloc = 0;
+    int *pelemalloc = &elemalloc;
     int res = INCALL;
     if (!SWIG_IsOK(res)) {
       SWIG_Error(res, "failure in swiglal_py_array_objview_" #ACFTYPE "_setitem()");
@@ -723,6 +725,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
   SWIGINTERN int %swiglal_array_copyin_func(ACFTYPE)(PyObject* parent,
                                                      PyObject* obj,
                                                      void* ptr,
+                                                     int *pelemalloc,
                                                      const size_t esize,
                                                      const size_t ndims,
                                                      const size_t dims[],
@@ -742,8 +745,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
     // Convert the input Python object to a NumPy array.
     if (PyArray_Converter(obj, (PyObject**)&nparr) != NPY_SUCCEED) {
-      res = SWIG_ValueError;
-      goto end;
+      return SWIG_ValueError;
     }
 
     // Check that NumPy array dimensions are consistent with C array dimensions.
@@ -860,60 +862,83 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
                                                      void** ptr,
                                                      const size_t esize,
                                                      const size_t ndims,
-                                                     size_t* numel,
                                                      size_t dims[],
                                                      const bool isptr,
                                                      swig_type_info *tinfo,
                                                      const int tflags)
   {
+    PyArrayObject* nparr = NULL;
+    int res = 0;
 
-    // Cannot handle arrays of pointers.
-    if (isptr) {
-      return SWIG_TypeError;
+    // Check that C array pointer is valid.
+    if (ptr == NULL) {
+      return SWIG_MemoryError;
     }
 
-    // Cannot handle object types.
-    if (NPYTYPE == NPY_OBJECT) {
-      return SWIG_TypeError;
-    }
-
-    // Check that 'obj' is a NumPy array.
-    if (!PyArray_Check(obj)) {
-      return SWIG_TypeError;
-    }
-    PyArrayObject* nparr = (PyArrayObject*)obj;
-
-    // Check that 'nparr' is of the correct type and has the required flags.
-    if (PyArray_TYPE(nparr) != NPYTYPE) {
-      return SWIG_TypeError;
-    }
-    if (!PyArray_ISCARRAY(nparr)) {
-      return SWIG_TypeError;
-    }
-
-    // Check that the elements of 'nparr' have the correct size.
-    if (((size_t)PyArray_ITEMSIZE(nparr)) != esize) {
-      return SWIG_TypeError;
+    // Convert the input Python object to a NumPy array.
+    if (PyArray_Converter(obj, (PyObject**)&nparr) != NPY_SUCCEED) {
+      return SWIG_ValueError;
     }
 
     // Check that 'nparr' has the correct number of dimensions.
     if (((size_t)PyArray_NDIM(nparr)) != ndims) {
-      return SWIG_ValueError;
+      res = SWIG_ValueError;
+      goto end;
     }
 
-    // Return number of elements and dimensions of Python array.
-    *numel = PyArray_SIZE(nparr);
+    // Return dimensions of Python array.
     for (size_t i = 0; i < ndims; ++i) {
       dims[i] = PyArray_DIM(nparr, i);
+    }
+
+    // Cannot view an object which is not a NumPy array.
+    if (!PyArray_Check(obj)) {
+      res = SWIG_TypeError;
+      goto end;
+    }
+
+    // Cannot view an array of pointers.
+    if (isptr) {
+      res = SWIG_TypeError;
+      goto end;
+    }
+
+    // Cannot view an array of objects.
+    if (NPYTYPE == NPY_OBJECT) {
+      res = SWIG_TypeError;
+      goto end;
+    }
+
+    // Cannot view an array which is not in C-array order.
+    if (!PyArray_ISCARRAY(nparr)) {
+      res = SWIG_TypeError;
+      goto end;
+    }
+
+    // Check that 'nparr' is of the correct type.
+    if (PyArray_TYPE(nparr) != NPYTYPE) {
+      res = SWIG_TypeError;
+      goto end;
+    }
+
+    // Check that the elements of 'nparr' have the correct size.
+    if (((size_t)PyArray_ITEMSIZE(nparr)) != esize) {
+      res = SWIG_TypeError;
+      goto end;
     }
 
     // Get pointer to Python array data.
     *ptr = PyArray_DATA(nparr);
     if (*ptr == NULL) {
-      return SWIG_ValueError;
+      res = SWIG_ValueError;
+      goto end;
     }
 
-    return SWIG_OK;
+    res = SWIG_OK;
+
+  end:
+    Py_CLEAR(nparr);
+    return res;
 
   }
 }
@@ -985,8 +1010,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
                                 %arg(swiglal_from_SWIGTYPE(parent, elemptr, isptr, tinfo, tflags)));
 
 // Array conversion fragments for arrays of LAL strings.
-%swiglal_py_array_objview_frags(LALchar, "SWIG_AsNewLALcharPtr", "SWIG_FromLALcharPtr",
-                                %arg(SWIG_AsNewLALcharPtr(objelem, %reinterpret_cast(elemptr, char**))),
+%swiglal_py_array_objview_frags(LALchar, "SWIG_AsLALcharPtrAndSize", "SWIG_FromLALcharPtr",
+                                %arg(SWIG_AsLALcharPtrAndSize(objelem, %reinterpret_cast(elemptr, char**), 0, pelemalloc)),
                                 %arg(SWIG_FromLALcharPtr(*%reinterpret_cast(elemptr, char**))));
 
 // Macro which generates array conversion function fragments to/from Python arrays for real/fragment

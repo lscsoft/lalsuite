@@ -82,9 +82,9 @@ mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbna
 
 ## ---------- Run MFDv4 ----------
 cmdline="$mfd_path $mfd_CL";
-if [ "$DEBUG" ]; then echo $cmdline; fi
+echo $cmdline
 echo -n "Running ${mfd_code} ... "
-if ! eval "$cmdline 2> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "FAILED:"
     echo $cmdline
     exit 1
@@ -94,7 +94,7 @@ fi
 
 ## ---------- Run SemiAnalyticF ----------
 cmdline="$saf_path $saf_CL  --sqrtSh=$noiseSqrtSh"
-if [ "$DEBUG" ]; then echo $cmdline; fi
+echo $cmdline
 echo -n "Running ${saf_code} ... "
 if ! tmp=`eval $cmdline 2> /dev/null`; then
     echo "FAILED:"
@@ -110,7 +110,7 @@ pfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --cosi=$cosi --h0=$h0 --psi=$psi"
 outfile_pfs1="__tmp_PFS1.dat";
 pfs_CL="${pfs_CL_common} --DataFiles=\"${SFTdir}/*.sft\" --Freq=$Freq --outputFstat=$outfile_pfs1"
 cmdline="$pfs_path $pfs_CL"
-if [ "$DEBUG" ]; then echo $cmdline; fi
+echo $cmdline
 echo -n "Running ${pfs_code}{NoiseWeights} ... "
 if ! tmp=`eval ${cmdline}`; then
     echo "FAILED:"
@@ -125,7 +125,7 @@ resPFS1=`echo $tmp | awk '{printf "%g", $1}'`
 outfile_pfs0="__tmp_PFS0.dat";
 pfs_CL="${pfs_CL_common} --DataFiles=\"${SFTdir}/*.sft\" --outputFstat=$outfile_pfs0 --assumeSqrtSX=${noiseSqrtSh}"
 cmdline="$pfs_path $pfs_CL"
-if [ "$DEBUG" ]; then echo $cmdline; fi
+echo $cmdline
 echo -n "Running ${pfs_code}{assumeSqrtSX} ... "
 if ! tmp=`eval $cmdline`; then
     echo "FAILED:"
@@ -140,7 +140,7 @@ resPFS0=`echo $tmp | awk '{printf "%g", $1}'`
 outfile_pfs2="__tmp_PFS2.dat";
 pfs_CL="${pfs_CL_common} --timestampsFiles=${timestamps} --Tsft=$Tsft --outputFstat=$outfile_pfs2 --assumeSqrtSX=${noiseSqrtSh} --IFOs=$IFO"
 cmdline="$pfs_path $pfs_CL"
-if [ "$DEBUG" ]; then echo $cmdline; fi
+echo $cmdline
 echo -n "Running ${pfs_code}{timestamps,assumeSqrtSX} ... "
 if ! tmp=`eval $cmdline`; then
     echo "FAILED:"
@@ -155,7 +155,7 @@ resPFS2=`echo $tmp | awk '{printf "%g", $1}'`
 outfile_pfs3="__tmp_PFS3.dat";
 pfs_CL="${pfs_CL_common} --minStartTime=$startTime --maxStartTime=$endTime --Tsft=$Tsft --outputFstat=$outfile_pfs3 --assumeSqrtSX=${noiseSqrtSh} --IFOs=$IFO"
 cmdline="$pfs_path $pfs_CL"
-if [ "$DEBUG" ]; then echo $cmdline; fi
+echo $cmdline
 echo -n "Running ${pfs_code}{minStartTime+maxStartTime,assumeSqrtSX} ... "
 if ! tmp=`eval $cmdline`; then
     echo "FAILED:"

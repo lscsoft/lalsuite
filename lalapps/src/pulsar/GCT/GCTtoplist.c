@@ -532,8 +532,8 @@ static int _atomic_write_gctFstat_toplist_to_file(toplist_t *l, const char *file
     LogPrintf (LOG_CRITICAL, "Could not allocate new filename\n");
     return(-1);
   }
-  strncpy(tempname,filename,s);
-  strncat(tempname,TEMP_EXT,s);
+  strcpy(tempname,filename);
+  strcat(tempname,TEMP_EXT);
 
   fpnew=LALFopen(tempname, "wb");
   if(!fpnew) {

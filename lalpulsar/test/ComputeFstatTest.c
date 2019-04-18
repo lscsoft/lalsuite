@@ -94,12 +94,14 @@ main ( int argc, char *argv[] )
 
   // ----- CW sources to injet ----------
   REAL8 Freq = 100.0;
+  REAL8 h0 = 1.0;
+  REAL8 cosi = 0.5;
 
   PulsarParamsVector *injectSources;
   XLAL_CHECK ( (injectSources = XLALCreatePulsarParamsVector(1)) != NULL, XLAL_EFUNC );
 
-  injectSources->data[0].Amp.h0   = 1;
-  injectSources->data[0].Amp.cosi = 0.5;
+  injectSources->data[0].Amp.aPlus  = 0.5 * h0 * (1.0 + cosi * cosi);
+  injectSources->data[0].Amp.aCross = h0 * cosi;
   injectSources->data[0].Amp.psi  = 0.1;
   injectSources->data[0].Amp.phi0 = 1.2;
 
@@ -343,6 +345,8 @@ compareFstatResults ( const FstatResults *result1, const FstatResults *result2 )
 
       // test comparison sanity with identical vectors should yield 0 differences
       VectorComparison XLAL_INIT_DECL(tol0);
+      // we saw 6.0e-09 on arm64
+      tol0.angleV = 5e-8;
       XLAL_CHECK ( XLALCompareREAL4Vectors ( &cmp, &v1, &v1, &tol0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK ( XLALCompareREAL4Vectors ( &cmp, &v2, &v2, &tol0 ) == XLAL_SUCCESS, XLAL_EFUNC );
     }

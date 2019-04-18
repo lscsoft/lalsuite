@@ -430,5 +430,5 @@ def reconstruct_nested(m, order='depthfirst', extra=True):
     for _ in func(m, extra):
         yield _
 
-from lalinference.bayestar.deprecation import warn
+from .bayestar.deprecation import warn
 warn('ligo.skymap.healpix_tree')

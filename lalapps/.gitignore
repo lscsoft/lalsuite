@@ -235,16 +235,12 @@ src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation
 src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation_nested
 src/pulsar/HeterodyneSearch/lalapps_ssbtodetector
 src/pulsar/Hough/lalapps_DriveHoughMulti
-src/pulsar/Hough/lalapps_DriveHough_v3
 src/pulsar/Hough/lalapps_HoughMismatch
 src/pulsar/Hough/lalapps_HoughValidate
 src/pulsar/Hough/lalapps_HoughValidateAM
 src/pulsar/Hough/lalapps_MCInjectHoughMulti
 src/pulsar/Hough/lalapps_MCInjectHoughMultiChi2Test
-src/pulsar/Hough/lalapps_MCInjectS2
 src/pulsar/Hough/lalapps_MultiWeights
-src/pulsar/Hough/lalapps_NstarClean
-src/pulsar/Hough/lalapps_SFTclean
 src/pulsar/Hough/lalapps_ValidateChi2Test
 src/pulsar/Hough/lalapps_ValidateHoughMulti
 src/pulsar/HoughFstat/lalapps_HierarchicalSearch
@@ -279,6 +275,7 @@ src/pulsar/SFTTools/SFT-test7
 src/pulsar/SFTTools/lalapps_ComputePSD
 src/pulsar/SFTTools/lalapps_ConvertToSFTv2
 src/pulsar/SFTTools/lalapps_GetSFTVelocities
+src/pulsar/SFTTools/lalapps_SFTclean
 src/pulsar/SFTTools/lalapps_SFTdumpall
 src/pulsar/SFTTools/lalapps_SFTdumpheader
 src/pulsar/SFTTools/lalapps_SFTvalidate
@@ -331,7 +328,9 @@ src/string/lalapps_cosmicstring_pipe
 src/string/lalapps_string_apply_vetoes
 src/string/lalapps_string_calc_likelihood
 src/string/lalapps_string_contour_plotter
+src/string/lalapps_string_contour_plotter_largeloops
 src/string/lalapps_string_cs_gamma
+src/string/lalapps_string_cs_gamma_largeloops
 src/string/lalapps_string_final
 src/string/lalapps_string_meas_likelihood
 src/string/lalapps_string_plot_binj

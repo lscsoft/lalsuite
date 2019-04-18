@@ -43,9 +43,9 @@
 #ifndef _LIGOLWXML_H
 #define _LIGOLWXML_H
 
-#include <stdio.h>
+#include <stdlib.h>
 #include <lal/FileIO.h>
-#include <lal/LALDatatypes.h>
+#include <lal/LALAtomicDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
 
 #if defined(__cplusplus)
@@ -53,31 +53,6 @@ extern "C" {
 #elif 0
 } /* so that editors will match preceding brace */
 #endif
-
-/**\name Error Codes */ /*@{*/
-#define LIGOLWXMLH_ENULL 1
-#define LIGOLWXMLH_ENNUL 2
-#define LIGOLWXMLH_EALOC 3
-#define LIGOLWXMLH_EUTAB 4
-#define LIGOLWXMLH_EOPEN 5
-#define LIGOLWXMLH_ECLOS 6
-#define LIGOLWXMLH_EBGNT 7
-#define LIGOLWXMLH_ENTAB 8
-#define LIGOLWXMLH_EENDT 8
-#define LIGOLWXMLH_ETMSM 9
-#define LIGOLWXMLH_ETNOP 10
-#define LIGOLWXMLH_MSGENULL "Null pointer"
-#define LIGOLWXMLH_MSGENNUL "Non-null pointer"
-#define LIGOLWXMLH_MSGEALOC "Memory allocation error"
-#define LIGOLWXMLH_MSGEUTAB "Unknown metadata table type"
-#define LIGOLWXMLH_MSGEOPEN "Error opening XML file"
-#define LIGOLWXMLH_MSGECLOS "Closing an XML file with an open table"
-#define LIGOLWXMLH_MSGEBGNT "Begining a table without ending previous table"
-#define LIGOLWXMLH_MSGENTAB "No table type specified"
-#define LIGOLWXMLH_MSGEENDT "Ending a table without an beginning a table"
-#define LIGOLWXMLH_MSGETMSM "Table type mismatch"
-#define LIGOLWXMLH_MSGETNOP "Table not begun for writing"
-/*@}*/
 
 /**
  * This structure contains the file stream and current table type for
@@ -110,40 +85,6 @@ XLALOpenLIGOLwXMLFile (
 int
 XLALCloseLIGOLwXMLFile (
     LIGOLwXMLStream *xml
-    );
-
-void
-LALOpenLIGOLwXMLFile (
-    LALStatus           *status,
-    LIGOLwXMLStream     *xml,
-    const CHAR          *path
-    );
-
-void
-LALCloseLIGOLwXMLFile (
-    LALStatus           *status,
-    LIGOLwXMLStream     *xml
-    );
-
-void
-LALBeginLIGOLwXMLTable (
-    LALStatus           *status,
-    LIGOLwXMLStream     *xml,
-    MetadataTableType    table
-    );
-
-void
-LALEndLIGOLwXMLTable (
-    LALStatus           *status,
-    LIGOLwXMLStream     *xml
-    );
-
-void
-LALWriteLIGOLwXMLTable (
-    LALStatus           *status,
-    LIGOLwXMLStream     *xml,
-    MetadataTable        tablePtr,
-    MetadataTableType    table
     );
 
 int XLALWriteLIGOLwXMLProcessTable(

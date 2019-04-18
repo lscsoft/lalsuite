@@ -14,7 +14,7 @@ from glue.ligolw import ligolw, utils, lsctables
 from glue.ligolw.utils import process
 
 lsctables.use_in(ligolw.LIGOLWContentHandler)
-from pylal.series import read_psd_xmldoc, LIGOLWContentHandler
+from lal.series import read_psd_xmldoc, PSDContentHandler
 
 VALID_TMPLT_GENS = {"lalapps_cbc_sbank": "--flow", "tmpltbank": "--low-frequency-cutoff", "pycbc_geom_aligned_bank": "--f-low", "gstlal_bank_splitter": "--f-low"}
 def infer_flow(xmldoc):
@@ -50,7 +50,7 @@ def parse_psd_file(filestr, fvals):
             pass
 
     try:
-        xmldoc = utils.load_filename(filestr, contenthandler=LIGOLWContentHandler)
+        xmldoc = utils.load_filename(filestr, contenthandler=PSDContentHandler)
         psd = read_psd_xmldoc(xmldoc).values()[0]
         f = numpy.arange(0, len(psd.data)*psd.deltaF, psd.deltaF)
         psd = psd.data

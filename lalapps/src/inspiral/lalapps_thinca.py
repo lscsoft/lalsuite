@@ -25,18 +25,21 @@
 #
 
 
+from __future__ import print_function
+
+
 from optparse import OptionParser
 import sys
 
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
-from glue.ligolw.utils import segments as ligolw_segments
-from glue import segmentsUtils
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
+from ligo.lw.utils import segments as ligolw_segments
 import lal
 from lalinspiral import thinca
+from ligo.segments import utils as segmentsUtils
 
 
 lsctables.use_in(ligolw.LIGOLWContentHandler)
@@ -149,7 +152,7 @@ if options.coinc_end_time_segs is not None:
 		"""
 		return thinca.coinc_inspiral_end_time(events, offset_vector) not in seg
 else:
-	ntuple_comparefunc = thinca.InspiralCoincTables.ntuple_comparefunc
+	ntuple_comparefunc = None
 
 
 #
@@ -163,7 +166,7 @@ for n, filename in enumerate(filenames, start = 1):
 	#
 
 	if options.verbose:
-		print >>sys.stderr, "%d/%d:" % (n, len(filenames)),
+		print("%d/%d:" % (n, len(filenames)), end=' ', file=sys.stderr)
 	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
 
 	#
@@ -172,13 +175,13 @@ for n, filename in enumerate(filenames, start = 1):
 
 	if ligolw_process.doc_includes_process(xmldoc, process_program_name):
 		if options.verbose:
-			print >>sys.stderr, "warning: %s already processed," % (filename or "stdin"),
+			print("warning: %s already processed," % (filename or "stdin"), end=' ', file=sys.stderr)
 		if not options.force:
 			if options.verbose:
-				print >>sys.stderr, "skipping"
+				print("skipping", file=sys.stderr)
 			continue
 		if options.verbose:
-			print >>sys.stderr, "continuing by --force"
+			print("continuing by --force", file=sys.stderr)
 
 	#
 	# Add an entry to the process table.
@@ -205,7 +208,7 @@ for n, filename in enumerate(filenames, start = 1):
 	#
 	# Extract veto segments if present.
 	#
-	# FIXME:  using the tools in the glue.ligolw.utils.segments module
+	# FIXME:  using the tools in the ligo.lw.utils.segments module
 	# it's not hard to modify the veto segments in the .xml to be just
 	# those that intersect the search summary segments.  That way, if
 	# multiple documents are inserted into the same database, or merged
@@ -214,11 +217,11 @@ for n, filename in enumerate(filenames, start = 1):
 
 	if not ligolw_segments.has_segment_tables(xmldoc):
 		if options.verbose:
-			print >>sys.stderr, "warning: no segment definitions found, vetoes will not be applied"
+			print("warning: no segment definitions found, vetoes will not be applied", file=sys.stderr)
 		vetoes = None
 	elif not ligolw_segments.has_segment_tables(xmldoc, name = options.vetoes_name):
 		if options.verbose:
-			print >>sys.stderr, "warning: document contains segment definitions but none named \"%s\", vetoes will not be applied" % options.vetoes_name
+			print("warning: document contains segment definitions but none named \"%s\", vetoes will not be applied" % options.vetoes_name, file=sys.stderr)
 		vetoes = None
 	else:
 		vetoes = ligolw_segments.segmenttable_get_by_name(xmldoc, options.vetoes_name).coalesce()

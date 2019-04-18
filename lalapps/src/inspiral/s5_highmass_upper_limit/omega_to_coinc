@@ -1,12 +1,12 @@
 #!/usr/bin/python
 from math import *
+from ligo import segments
 import glue
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import table
 from glue.ligolw.utils import ligolw_add
 from glue.ligolw import utils
-from glue import segments
 import sys
 
 from optparse import OptionParser

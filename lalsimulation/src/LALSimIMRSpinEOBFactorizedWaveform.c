@@ -27,13 +27,13 @@
  * All equation numbers in this file refer to equations of this paper,
  * unless otherwise specified.
  * Coefficients of the so-called "deltalm" terms are given by
- * Damour et al. PRD 79, 064004 (2009) and Pan et al. PRD 83, 064003 (2011),
+ * Damour et al. PRD 79, 064004 (2009) [arXiv:0811.2069] and Pan et al. PRD 83, 064003 (2011) [arXiv:1006.0431],
  * henceforth DIN and PBFRT.
  *
  * Functions to compute the factorized waveform for the purpose of computing the
  * flux, i.e. returning only the absolute value of the multipoles. The tail term
  * Tlm is used in its resummed form, given by Eq. (42) of Damour, Nagar and
- * Bernuzzi, PRD 87 084035 (2013), called DNB here.
+ * Bernuzzi, PRD 87 084035 (2013) [arxiv:1212.4357], called DNB here.
  *
  */
 
@@ -41,6 +41,12 @@
 #define _LALSIMIMRSPINEOBFACTORIZEDWAVEFORM_C
 
 #include <complex.h>
+
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_spline.h>
+#include <gsl/gsl_linalg.h>
+
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 
@@ -68,20 +74,42 @@ UNUSED static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restr
 								      /**< Use optimized v2? */
   );
 
+UNUSED static INT4 XLALSimIMRSpinEOBGetAmplitudeResidual (COMPLEX16 * restrict rholmpwrl, const REAL8 v, const REAL8 Hreal, const INT4 modeL, const INT4 modeM, SpinEOBParams * restrict params);
+
 static INT4 XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm, REAL8Vector * restrict values, const REAL8 v, const REAL8 Hreal, const INT4 l, const INT4 m, SpinEOBParams * restrict params, INT4 use_optimized_v2,
 								       /**< Use optimized v2? */
 							    REAL8 * vPhil2m2);
 
 static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs *
 							 const coeffs,
+               SpinEOBParams * restrict params,
 							 const REAL8 m1,
 							 const REAL8 m2,
 							 const REAL8 eta,
 							 const REAL8 a,
 							 const REAL8 chiS,
 							 const REAL8 chiA,
-							 const UINT4 SpinAlignedEOBversion,
-						   SpinEOBParams * params);
+							 const UINT4 SpinAlignedEOBversion);
+
+UNUSED static int XLALSimIMREOBCalcCalibCoefficientHigherModes(FacWaveformCoeffs *
+							 const coeffs,/**< Output */
+               SpinEOBParams * restrict UNUSED params, /**< Additional structure which might be useful in the future */
+               const UINT4 modeL, /**< Mode index L */
+               const UINT4 modeM, /**< Mode index M */
+               REAL8Vector * restrict phaseVec, /**< Orbital phase, function of time */
+               REAL8Vector * restrict rVec,			   /**< Position-vector, function of time */
+               REAL8Vector * restrict prVec,			   /**< Momentum vector, function of time */
+               REAL8Vector * restrict orbOmegaVec,		   /**< Orbital frequency, func of time */
+               REAL8Vector * restrict HamVec,		   /**< Hamiltonian vector, func of time */
+               REAL8Vector * restrict pPhiVec,		   /**< Angular momentum vector, func of time */
+               const REAL8 timePeak, /**< Time of peak orbital frequency */
+               const REAL8 m1, /**< Component mass 1 */
+               const REAL8 m2, /**< Component mass 2 */
+               const REAL8 UNUSED chiS, /**< Symmetric dimensionless spin combination */
+               const REAL8 UNUSED chiA, /**< Asymmetric dimensionless spin combination */
+               const REAL8 UNUSED deltaT  /**< Sampling interval */
+             );
+
 
 
 /*------------------------------------------------------------------------------------------
@@ -193,6 +221,572 @@ static COMPLEX16 XLALhTidal(
     return eta*hNewtonTidal*hhatTidal*( cos(-m*phase) + I * sin(-m*phase) );
 }
 
+/**This function calculate the residue amplitude terms */
+/* rholm is the 4th term in Eq. 4.5 of https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028 given by Eqs. A6 - A9 */
+/* auxflm is a special part of the 4th term in Eq. 4.5 of https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028, given by Eq. A10-A12 */
+UNUSED static INT4 XLALSimIMRSpinEOBGetAmplitudeResidual (COMPLEX16 * restrict rholmpwrl, const REAL8 v, const REAL8 Hreal, const INT4 modeL, const INT4 modeM, SpinEOBParams * restrict params)
+  {
+    INT4 use_hm = 0;
+    INT4 i = 0;
+    REAL8 eta, vh3, Omega;
+    REAL8 eulerlogxabs;
+    REAL8 rholm;
+    REAL8 v2 = v * v;
+    COMPLEX16 auxflm = 0.0;
+    COMPLEX16 rholmPwrl;
+    FacWaveformCoeffs *hCoeffs = params->eobParams->hCoeffs;
+    Omega = v2 * v;
+    vh3 = Hreal * Omega;
+    eulerlogxabs = LAL_GAMMA + log (2.0 * (REAL8) modeM * v);
+
+    if (abs (modeM) >  modeL)
+      {
+        XLAL_ERROR (XLAL_EINVAL);
+      }
+      if (modeM == 0)
+      {
+        XLAL_ERROR (XLAL_EINVAL);
+      }
+      use_hm = params->use_hm;
+      eta = params->eobParams->eta;
+
+      /* Check our eta was sensible */
+      if (eta > 0.25 && eta < 0.25 +1e-4) {
+        eta = 0.25;
+      }
+      if (eta > 0.25)
+      {
+        XLALPrintError
+	       ("XLAL Error - %s: Eta = %.16f seems to be > 0.25 - this isn't allowed!\n",
+	        __func__,eta);
+          XLAL_ERROR (XLAL_EINVAL);
+        }
+  switch (modeL)
+  {
+          case 2:
+      switch (abs (modeM))
+	{
+	case 2:
+	  rholm =
+	    1. + v2 * (hCoeffs->rho22v2 +
+		       v * (hCoeffs->rho22v3 +
+			    v * (hCoeffs->rho22v4 +
+				 v * (hCoeffs->rho22v5 +
+				      v * (hCoeffs->rho22v6 +
+					   hCoeffs->rho22v6l * eulerlogxabs +
+					   v * (hCoeffs->rho22v7 +
+						v * (hCoeffs->rho22v8 +
+						     hCoeffs->rho22v8l *
+						     eulerlogxabs +
+						     (hCoeffs->rho22v10 +
+						      hCoeffs->rho22v10l *
+						      eulerlogxabs) *
+						     v2)))))));
+	  break;
+	case 1:
+	  {
+	    rholm =
+	      1. + v * (hCoeffs->rho21v1 +
+			v * (hCoeffs->rho21v2 +
+			     v * (hCoeffs->rho21v3 +
+				  v * (hCoeffs->rho21v4 +
+				       v * (hCoeffs->rho21v5 +
+					    v * (hCoeffs->rho21v6 +
+						 hCoeffs->rho21v6l *
+						 eulerlogxabs +
+						 v * (hCoeffs->rho21v7 +
+						      hCoeffs->rho21v7l *
+						      eulerlogxabs +
+						      v * (hCoeffs->rho21v8 +
+							   hCoeffs->rho21v8l *
+							   eulerlogxabs +
+							   v2*(hCoeffs->
+							    rho21v10 +
+							    hCoeffs->
+							    rho21v10l *
+							    eulerlogxabs)))))))));
+       auxflm = v * hCoeffs->f21v1;
+                 if (use_hm){
+                   //RC: This terms are in Eq.A11 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+                   auxflm = v * (hCoeffs->f21v1 + v2 * (hCoeffs->f21v3 + v * hCoeffs->f21v4 + v2 * (hCoeffs->f21v5 + v * hCoeffs->f21v6)));
+                 }
+               }
+	  break;
+	default:
+	  XLAL_ERROR (XLAL_EINVAL);
+	  break;
+	}
+      break;
+    case 3:
+      switch (modeM)
+	{
+	case 3:
+  if(use_hm){
+    //RC: This terms are in Eq.A6 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+    rholm =
+        1. + v2 * (hCoeffs->rho33v2 +
+                   v * (hCoeffs->rho33v3 +
+                        v * (hCoeffs->rho33v4 +
+                             v * (hCoeffs->rho33v5 +
+                                  v * (hCoeffs->rho33v6 +
+                                       hCoeffs->rho33v6l * eulerlogxabs +
+                                       v * (hCoeffs->rho33v7 +
+                                            v * (hCoeffs->rho33v8 +
+                                             hCoeffs->rho33v8l *
+                                             eulerlogxabs +
+                                           v2*(hCoeffs->rho33v10 + hCoeffs->rho33v10l*eulerlogxabs))))))));
+     //RC: This terms are in Eq.A10 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+      auxflm = v * (v2 * (hCoeffs->f33v3 + v * (hCoeffs->f33v4 + v * (hCoeffs->f33v5  + v * hCoeffs->f33v6)))) + _Complex_I * vh3 * vh3 * hCoeffs->f33vh6;
+          }
+          else
+          {
+          rholm =
+              1. + v2 * (hCoeffs->rho33v2 +
+                         v * (hCoeffs->rho33v3 +
+                              v * (hCoeffs->rho33v4 +
+                                   v * (hCoeffs->rho33v5 +
+                                        v * (hCoeffs->rho33v6 +
+                                             hCoeffs->rho33v6l * eulerlogxabs +
+                                             v * (hCoeffs->rho33v7 +
+                                                  v * (hCoeffs->rho33v8 +
+                                                   hCoeffs->rho33v8l *
+                                                   eulerlogxabs)))))));
+          auxflm = v * v2 * hCoeffs->f33v3;
+          }
+  break;
+	case 2:
+	  rholm =
+	    1. + v * (hCoeffs->rho32v +
+		      v * (hCoeffs->rho32v2 +
+			   v * (hCoeffs->rho32v3 +
+				v * (hCoeffs->rho32v4 +
+				     v * (hCoeffs->rho32v5 +
+					  v * (hCoeffs->rho32v6 +
+					       hCoeffs->rho32v6l *
+					       eulerlogxabs +
+					       (hCoeffs->rho32v8 +
+						hCoeffs->rho32v8l *
+						eulerlogxabs) * v2))))));
+	  break;
+	case 1:
+	  rholm =
+	    1. + v2 * (hCoeffs->rho31v2 +
+		       v * (hCoeffs->rho31v3 +
+			    v * (hCoeffs->rho31v4 +
+				 v * (hCoeffs->rho31v5 +
+				      v * (hCoeffs->rho31v6 +
+					   hCoeffs->rho31v6l * eulerlogxabs +
+					   v * (hCoeffs->rho31v7 +
+						(hCoeffs->rho31v8 +
+						 hCoeffs->rho31v8l *
+						 eulerlogxabs) * v))))));
+	  auxflm = v * v2 * hCoeffs->f31v3;
+	  break;
+	default:
+	  XLAL_ERROR (XLAL_EINVAL);
+	  break;
+	}
+      break;
+    case 4:
+      switch (modeM)
+	{
+    case 4:
+      if(use_hm){
+        //RC: This terms are in Eq.A8 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+        rholm = 1. + v2 * (hCoeffs->rho44v2
+                 + v * (hCoeffs->rho44v3 + v * (hCoeffs->rho44v4
+                        +
+                        v *
+                        (hCoeffs->
+                         rho44v5 +
+                         v * (hCoeffs->
+                          rho44v6 +
+                          hCoeffs->
+                          rho44v6l *
+                          eulerlogxabs +
+                        v2 *( hCoeffs->rho44v8 + hCoeffs->rho44v8l * eulerlogxabs
+                          +v2 * (hCoeffs->rho44v10 + hCoeffs->rho44v10l * eulerlogxabs) ) )))));
+      }
+      else{
+      rholm = 1. + v2 * (hCoeffs->rho44v2
+               + v * (hCoeffs->rho44v3 + v * (hCoeffs->rho44v4
+                      +
+                      v *
+                      (hCoeffs->
+                       rho44v5 +
+                       (hCoeffs->
+                        rho44v6 +
+                        hCoeffs->
+                        rho44v6l *
+                        eulerlogxabs) *
+                       v))));
+      }
+
+  	  break;
+	case 3:
+	  rholm =
+	    1. + v * (hCoeffs->rho43v +
+		      v * (hCoeffs->rho43v2 +
+			   v2 * (hCoeffs->rho43v4 +
+				 v * (hCoeffs->rho43v5 +
+				      (hCoeffs->rho43v6 +
+				       hCoeffs->rho43v6l * eulerlogxabs) *
+				      v))));
+	  auxflm = v * hCoeffs->f43v;
+	  break;
+	case 2:
+	  rholm = 1. + v2 * (hCoeffs->rho42v2
+			     + v * (hCoeffs->rho42v3 +
+				    v * (hCoeffs->rho42v4 +
+					 v * (hCoeffs->rho42v5 +
+					      (hCoeffs->rho42v6 +
+					       hCoeffs->rho42v6l *
+					       eulerlogxabs) * v))));
+	  break;
+	case 1:
+	  rholm =
+	    1. + v * (hCoeffs->rho41v +
+		      v * (hCoeffs->rho41v2 +
+			   v2 * (hCoeffs->rho41v4 +
+				 v * (hCoeffs->rho41v5 +
+				      (hCoeffs->rho41v6 +
+				       hCoeffs->rho41v6l * eulerlogxabs) *
+				      v))));
+	  auxflm = v * hCoeffs->f41v;
+	  break;
+	default:
+	  XLAL_ERROR (XLAL_EINVAL);
+	  break;
+	}
+      break;
+    case 5:
+      switch (modeM)
+	{
+    case 5:
+    if(use_hm){
+      //RC: This terms are in Eq.A9 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+      rholm =
+        1. + v2 * (hCoeffs->rho55v2 +
+             v * (hCoeffs->rho55v3 +
+            v * (hCoeffs->rho55v4 +
+           v * (hCoeffs->rho55v5 +
+              v * (hCoeffs->rho55v6 + hCoeffs->rho55v6l * eulerlogxabs +
+            v2 * (hCoeffs->rho55v8 + hCoeffs->rho55v8l * eulerlogxabs +
+          v2 * (hCoeffs->rho55v10 + hCoeffs->rho55v10l * eulerlogxabs )))))));
+      //RC: This terms are in Eq.A12 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+      auxflm = v2 * v * (hCoeffs->f55v3 + v * (hCoeffs->f55v4));
+    }
+    else
+    {
+  	  rholm =
+  	    1. + v2 * (hCoeffs->rho55v2 +
+  		       v * (hCoeffs->rho55v3 +
+  			    v * (hCoeffs->rho55v4 +
+  				 v * (hCoeffs->rho55v5 +
+  				      hCoeffs->rho55v6 * v))));
+              }
+  	  break;
+	case 4:
+	  rholm = 1. + v2 * (hCoeffs->rho54v2 + v * (hCoeffs->rho54v3
+						     + hCoeffs->rho54v4 * v));
+	  break;
+	case 3:
+	  rholm = 1. + v2 * (hCoeffs->rho53v2
+			     + v * (hCoeffs->rho53v3 +
+				    v * (hCoeffs->rho53v4 +
+					 hCoeffs->rho53v5 * v)));
+	  break;
+	case 2:
+	  rholm = 1. + v2 * (hCoeffs->rho52v2 + v * (hCoeffs->rho52v3
+						     + hCoeffs->rho52v4 * v));
+	  break;
+	case 1:
+	  rholm = 1. + v2 * (hCoeffs->rho51v2
+			     + v * (hCoeffs->rho51v3 +
+				    v * (hCoeffs->rho51v4 +
+					 hCoeffs->rho51v5 * v)));
+	  break;
+	default:
+	  XLAL_ERROR (XLAL_EINVAL);
+	  break;
+	}
+      break;
+    case 6:
+      switch (modeM)
+	{
+	case 6:
+	  rholm = 1. + v2 * (hCoeffs->rho66v2 + v * (hCoeffs->rho66v3
+						     + hCoeffs->rho66v4 * v));
+	  break;
+	case 5:
+	  rholm = 1. + v2 * (hCoeffs->rho65v2 + hCoeffs->rho65v3 * v);
+	  break;
+	case 4:
+	  rholm = 1. + v2 * (hCoeffs->rho64v2 + v * (hCoeffs->rho64v3
+						     + hCoeffs->rho64v4 * v));
+	  break;
+	case 3:
+	  rholm = 1. + v2 * (hCoeffs->rho63v2 + hCoeffs->rho63v3 * v);
+	  break;
+	case 2:
+	  rholm = 1. + v2 * (hCoeffs->rho62v2 + v * (hCoeffs->rho62v3
+						     + hCoeffs->rho62v4 * v));
+	  break;
+	case 1:
+	  rholm = 1. + v2 * (hCoeffs->rho61v2 + hCoeffs->rho61v3 * v);
+	  break;
+	default:
+	  XLAL_ERROR (XLAL_EINVAL);
+	  break;
+	}
+      break;
+    case 7:
+      switch (modeM)
+	{
+	case 7:
+	  rholm = 1. + v2 * (hCoeffs->rho77v2 + hCoeffs->rho77v3 * v);
+	  break;
+	case 6:
+	  rholm = 1. + hCoeffs->rho76v2 * v2;
+	  break;
+	case 5:
+	  rholm = 1. + v2 * (hCoeffs->rho75v2 + hCoeffs->rho75v3 * v);
+	  break;
+	case 4:
+	  rholm = 1. + hCoeffs->rho74v2 * v2;
+	  break;
+	case 3:
+	  rholm = 1. + v2 * (hCoeffs->rho73v2 + hCoeffs->rho73v3 * v);
+	  break;
+	case 2:
+	  rholm = 1. + hCoeffs->rho72v2 * v2;
+	  break;
+	case 1:
+	  rholm = 1. + v2 * (hCoeffs->rho71v2 + hCoeffs->rho71v3 * v);
+	  break;
+	default:
+	  XLAL_ERROR (XLAL_EINVAL);
+	  break;
+	}
+      break;
+    case 8:
+      switch (modeM)
+	{
+	case 8:
+	  rholm = 1. + hCoeffs->rho88v2 * v2;
+	  break;
+	case 7:
+	  rholm = 1. + hCoeffs->rho87v2 * v2;
+	  break;
+	case 6:
+	  rholm = 1. + hCoeffs->rho86v2 * v2;
+	  break;
+	case 5:
+	  rholm = 1. + hCoeffs->rho85v2 * v2;
+	  break;
+	case 4:
+	  rholm = 1. + hCoeffs->rho84v2 * v2;
+	  break;
+	case 3:
+	  rholm = 1. + hCoeffs->rho83v2 * v2;
+	  break;
+	case 2:
+	  rholm = 1. + hCoeffs->rho82v2 * v2;
+	  break;
+	case 1:
+	  rholm = 1. + hCoeffs->rho81v2 * v2;
+	  break;
+	default:
+	  XLAL_ERROR (XLAL_EINVAL);
+	  break;
+	}
+      break;
+    default:
+      XLAL_ERROR (XLAL_EINVAL);
+      break;
+    }
+
+  /* Raise rholm to the lth power */
+  rholmPwrl = 1.0;
+  for(i = 0 ; i < modeL ; i++) rholmPwrl *= rholm;
+  /* In the equal-mass odd m case, there is no contribution from nonspin terms,
+   * and the only contribution comes from the auxflm term that is proportional to chiA (asymmetric spins).
+   * In this case, we must ignore the nonspin terms directly, since the leading term defined by
+   * CalculateThisMultipolePrefix in LALSimIMREOBNewtonianMultipole.c is not zero (see comments there).
+   */
+  if (eta == 0.25 && modeM % 2)
+    {
+      rholmPwrl = auxflm;
+    }
+  else
+    {
+      rholmPwrl += auxflm;
+    }
+    *rholmpwrl = rholmPwrl;
+return XLAL_SUCCESS;
+}
+
+
+
+/**
+* This function calculate the calibration parameter for the amplitude of
+* the factorized-resummed waveforms in the case of the 21 and the 55 mode
+*/
+static int XLALSimIMREOBCalcCalibCoefficientHigherModes (FacWaveformCoeffs *
+							 const coeffs, /** Output **/
+               SpinEOBParams * restrict UNUSED params, /**Additional structure which might be useful in the future **/
+               const UINT4 modeL, /** Mode index L **/
+               const UINT4 modeM, /**Mode index M **/
+               REAL8Vector * restrict phaseVec, /** Orbital phase, function of time **/
+               REAL8Vector * restrict rVec,			   /**<< Position-vector, function of time */
+               REAL8Vector * restrict prVec,			   /**<< Momentum vector, function of time */
+               REAL8Vector * restrict orbOmegaVec,		   /**<< Orbital frequency, func of time */
+               REAL8Vector * restrict HamVec,		   /**<< Hamiltonian vector, func of time */
+               REAL8Vector * restrict pPhiVec,		   /**<< Angular momentum vector, func of time */
+               const REAL8 timewavePeak, /** Time of the attachment between inspiral and merger-RD */
+               const REAL8 m1, /**Component mass 1 */
+               const REAL8 m2, /**Component mass 2 */
+               const REAL8 UNUSED chiS, /** Symmetric dimensionless spin combination */
+               const REAL8 UNUSED chiA, /**Asymmetric dimensionless spin combination */
+               const REAL8 UNUSED deltaT  /**<< Sampling interval */
+             )
+               {
+                 /* Status of function calls */
+                 UINT4 i;
+                 REAL8 eta = m1*m2/((m1+m2)*(m1+m2));
+
+                 /** Physical quantities */
+                 REAL8Vector *timeVec = NULL, *hLMdivrholmVec;
+                 REAL8 omegaAttachmentPoint, hLMdivrholmAttachmentPoint, rholmNRAttachmentPoint,rholmBeforeCalibAttachmentPoint;
+                 REAL8 v;
+                 COMPLEX16Vector *hLMVec = NULL, *rholmpwrlVec = NULL;
+                 REAL8Vector *values = NULL, *rholmpwrlVecReal = NULL;
+
+                 /* The calibration parameter is only used for 21 and 55 modes, if you try to use this function for other modes, you get an error */
+
+                 if (!((modeL == 2 && modeM == 1) || (modeL == 5 && modeM == 5)))
+                   {
+                     XLALPrintError ("Mode %d,%d is not supported by this function.\n", modeL,
+                        modeM);
+                     XLAL_ERROR (XLAL_EINVAL);
+                   }
+
+
+                /* Create dynamical arrays */
+
+                 values = XLALCreateREAL8Vector (4);
+                 memset (values->data, 0, values->length * sizeof (REAL8));
+                 hLMVec = XLALCreateCOMPLEX16Vector (phaseVec->length);
+                 rholmpwrlVec = XLALCreateCOMPLEX16Vector (phaseVec->length);
+                 timeVec = XLALCreateREAL8Vector (phaseVec->length);
+                 hLMdivrholmVec = XLALCreateREAL8Vector (phaseVec->length);
+                 rholmpwrlVecReal = XLALCreateREAL8Vector (phaseVec->length);
+                 if (!hLMVec || !rholmpwrlVec|| !values|| !timeVec|| !hLMdivrholmVec || !rholmpwrlVecReal){
+                   if(hLMVec) XLALDestroyCOMPLEX16Vector(hLMVec);
+                   if(rholmpwrlVec) XLALDestroyCOMPLEX16Vector(rholmpwrlVec);
+                   if(values) XLALDestroyREAL8Vector(values);
+                   if(timeVec) XLALDestroyREAL8Vector(timeVec);
+                   if(hLMdivrholmVec) XLALDestroyREAL8Vector(hLMdivrholmVec);
+                   if(rholmpwrlVecReal) XLALDestroyREAL8Vector(rholmpwrlVecReal);
+                   XLAL_ERROR (XLAL_ENOMEM);
+                 }
+
+
+
+
+                 /* Stuff for interpolating function */
+                 gsl_spline *spline = NULL;
+                 gsl_interp_accel *acc = NULL;
+
+                 /* Populate time vector as necessary */
+                 for (i = 0; i < timeVec->length; i++)
+                   {
+                     timeVec->data[i] = i * deltaT;
+                   }
+                 /**Initializing stuff for interpolation */
+                 spline = gsl_spline_alloc (gsl_interp_cspline, phaseVec->length);
+                 acc = gsl_interp_accel_alloc ();
+                 /* Calculation of the frequency at the attachment point */
+                 gsl_spline_init (spline, timeVec->data, phaseVec->data, phaseVec->length);
+                 gsl_interp_accel_reset (acc);
+                 omegaAttachmentPoint = gsl_spline_eval_deriv (spline, timewavePeak, acc);
+
+                 /** Calculation and interpolation at the matching point of rho_lm^l + f_lm */
+                 for(i=0; i<phaseVec->length; i++){
+                     values->data[0] = rVec->data[i];
+                     values->data[1] = phaseVec->data[i];
+                     values->data[2] = prVec->data[i];
+                     values->data[3] = pPhiVec->data[i];
+                     v = cbrt (orbOmegaVec->data[i]);
+                     if (XLALSimIMRSpinEOBGetSpinFactorizedWaveform
+                         (&(hLMVec->data[i]), values, v, HamVec->data[i], modeL, modeM, params,
+                         0) == XLAL_FAILURE)
+                     {
+                       if(hLMVec) XLALDestroyCOMPLEX16Vector(hLMVec);
+                       if(rholmpwrlVec) XLALDestroyCOMPLEX16Vector(rholmpwrlVec);
+                       if(values) XLALDestroyREAL8Vector(values);
+                       if(timeVec) XLALDestroyREAL8Vector(timeVec);
+                       if(hLMdivrholmVec) XLALDestroyREAL8Vector(hLMdivrholmVec);
+                       if(rholmpwrlVecReal) XLALDestroyREAL8Vector(rholmpwrlVecReal);
+                       gsl_spline_free (spline);
+                       gsl_interp_accel_free (acc);
+                       XLAL_ERROR (XLAL_EFUNC);
+                     }
+                     if (XLALSimIMRSpinEOBGetAmplitudeResidual (&(rholmpwrlVec->data[i]), v, HamVec->data[i], modeL, modeM, params) == XLAL_FAILURE)
+                     //RC: for the 21 and 55 mode rholmpwrlVec is always real. This is not true for the 33 mode. For this reason, in order to make this function general, we use a complex variable for it.
+                     {
+                       if(hLMVec) XLALDestroyCOMPLEX16Vector(hLMVec);
+                       if(rholmpwrlVec) XLALDestroyCOMPLEX16Vector(rholmpwrlVec);
+                       if(values) XLALDestroyREAL8Vector(values);
+                       if(timeVec) XLALDestroyREAL8Vector(timeVec);
+                       if(hLMdivrholmVec) XLALDestroyREAL8Vector(hLMdivrholmVec);
+                       if(rholmpwrlVecReal) XLALDestroyREAL8Vector(rholmpwrlVecReal);
+                       gsl_spline_free (spline);
+                       gsl_interp_accel_free (acc);
+                       XLAL_ERROR (XLAL_EFUNC);
+                     }
+                     rholmpwrlVecReal->data[i] = (REAL8)creal(rholmpwrlVec->data[i]);
+                     hLMdivrholmVec->data[i] = ((REAL8)cabs(hLMVec->data[i]))/fabs(rholmpwrlVecReal->data[i]);
+                    }
+
+                    gsl_spline_init (spline, timeVec->data, hLMdivrholmVec->data, hLMdivrholmVec->length);
+                    gsl_interp_accel_reset (acc);
+                    hLMdivrholmAttachmentPoint = gsl_spline_eval (spline, timewavePeak, acc);
+                    REAL8 nra = 0;
+                    nra = XLALSimIMREOBGetNRSpinPeakAmplitudeV4 (modeL, modeM, m1, m2,chiS, chiA);
+                    if((fabs(nra/eta)< 3e-2) && ((modeL == 2) && (modeM == 1))){
+                      //R.C.: safeguard to avoid the 21 mode to go to 0
+                      nra = GSL_SIGN(nra)*eta*3e-2;
+                    }
+                    rholmNRAttachmentPoint = nra/hLMdivrholmAttachmentPoint;
+                    gsl_spline_init (spline, timeVec->data, rholmpwrlVecReal->data, rholmpwrlVecReal->length);
+                    gsl_interp_accel_reset (acc);
+                    /* rho_lm^l + f_lm before the calibration parameter is set */
+                    rholmBeforeCalibAttachmentPoint = gsl_spline_eval (spline, timewavePeak, acc);
+                    if ((modeL == 2) && (modeM == 1))
+                      {
+                      /* Here we compute ((rho_lm^l + f_lm + CalPar*omega^7/3)_NR - (rho_lm^l + f_lm)_EOB)/omega^7/3 to get CalPar. */
+                      coeffs->f21v7c = (rholmNRAttachmentPoint - rholmBeforeCalibAttachmentPoint)/(pow(omegaAttachmentPoint,7./3.));
+                    }
+                    if ((modeL == 5) && (modeM == 5)){
+
+                      coeffs->f55v5c = (rholmNRAttachmentPoint - rholmBeforeCalibAttachmentPoint)/(pow(omegaAttachmentPoint,5./3.));
+                    }
+
+
+
+                    gsl_spline_free (spline);
+                    gsl_interp_accel_free (acc);
+                    XLALDestroyREAL8Vector (hLMdivrholmVec);
+                    XLALDestroyCOMPLEX16Vector (hLMVec);
+                    XLALDestroyREAL8Vector (values);
+                    XLALDestroyREAL8Vector (timeVec);
+                    XLALDestroyCOMPLEX16Vector (rholmpwrlVec);
+                    XLALDestroyREAL8Vector (rholmpwrlVecReal);
+
+
+               return XLAL_SUCCESS;}
+
 /**
  * This function calculates hlm mode factorized-resummed waveform
  * for given dynamical variables. This is optimized for flux calculation,
@@ -200,7 +794,7 @@ static COMPLEX16 XLALhTidal(
  * Changes:
  * (i) Complex Argument of Tlm not exponentiated.
  * (ii) \f$exp(\ii deltalm)\f$ set to 1.
- * Eq. 17 and the entire Appendix of the paper.
+ * Eq. 17 and the entire Appendix of the paper https://journals.aps.org/prd/abstract/10.1103/PhysRevD.86.024011.
  */
 static INT4
 XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
@@ -253,6 +847,7 @@ XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
 
   eta = params->eobParams->eta;
 
+
   /* Check our eta was sensible */
    if (eta > 0.25 && eta < 0.25 +1e-4) {
         eta = 0.25;
@@ -260,8 +855,8 @@ XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
   if (eta > 0.25)
     {
       XLALPrintError
-	("XLAL Error - %s: Eta seems to be > 0.25 - this isn't allowed!\n",
-	 __func__);
+	("XLAL Error - %s: Eta = %.16f seems to be > 0.25 - this isn't allowed!\n",
+	 __func__,eta);
       XLAL_ERROR (XLAL_EINVAL);
     }
   /*else if ( eta == 0.25 && m % 2 )
@@ -353,7 +948,8 @@ XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
   XLAL_CALLGSL (status = gsl_sf_fact_e (l, &z2));
   if (status != GSL_SUCCESS)
     {
-      XLALPrintError ("XLAL Error - %s: Error in GSL function\n", __func__);
+      XLALPrintError ("XLAL Error - %s: Error in GSL function: %s\n",
+                      __func__, gsl_strerror (status));
       XLAL_ERROR (XLAL_EFUNC);
     }
   /*
@@ -723,48 +1319,55 @@ XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
 /**
  * This function calculates coefficients for hlm mode factorized-resummed waveform.
  * The coefficients are pre-computed and stored in the SpinEOBParams structure.
- * Appendix of the paper, and papers DIN (PRD 79, 064004 (2009)) and PBFRT (PRD 83, 064003 (2011)).
+ * Appendix of the paper, and papers DIN (PRD 79, 064004 (2009) [arXiv:0811.2069]) and PBFRT (PRD 83, 064003 (2011)).
  * Concerning SEOBNRv4 see also https://dcc.ligo.org/T1600383
  */
 
 static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * const coeffs,
-					    /**< OUTPUT, pre-computed waveform coefficients */
-							 const REAL8 m1,
+              /**< OUTPUT, pre-computed waveform coefficients */
+              SpinEOBParams * restrict params,
+              /**< Others parameters like use_hm */
+					    const REAL8 m1,
 					    /**< mass 1 */
 							 const REAL8 m2,
 					    /**< mass 2 */
 							 const REAL8 eta,
 					    /**< symmetric mass ratio */
-							 const REAL8 a,
+              REAL8 a,
 					    /**< Kerr spin parameter for test-particle terms */
 							 const REAL8 chiS,
 					    /**< (chi1+chi2)/2 */
 							 const REAL8 chiA,
 					    /**< (chi1-chi2)/2 */
-							 const UINT4 SpinAlignedEOBversion,
+							 const UINT4 SpinAlignedEOBversion
 							   /**< 1 for SEOBNRv1; 2 for SEOBNRv2; 4 for SEOBNRv4 */
-							 SpinEOBParams * params
-							 /**< parameters */
   )
 {
   if ( SpinAlignedEOBversion != 1 && SpinAlignedEOBversion != 2 && SpinAlignedEOBversion != 4)
    {
         XLALPrintError
-        ("XLAL Error - %s: wrong SpinAlignedEOBversion value, must be 1 or 2 or 4!\n",
-         __func__);
+        ("XLAL Error - %s: SpinAlignedEOBversion = %u is wrong, must be 1 or 2 or 4!\n",
+         __func__, SpinAlignedEOBversion);
         XLAL_ERROR (XLAL_EINVAL);
    }
+
+  INT4 use_hm = params->use_hm;
+
 
   REAL8 eta2 = eta * eta;
   REAL8 eta3 = eta2 * eta;
 
-  REAL8 dM, dM2;		//dM3;
+  REAL8 dM, dM2, chiA2, chiS2;		//dM3;
   REAL8 aDelta, a2, a3;
 
   /* Combination which appears a lot */
   REAL8 m1Plus3eta, m1Plus3eta2, m1Plus3eta3;
 
   dM2 = 1. - 4. * eta;
+  chiA2 = chiA * chiA;
+  chiS2 = chiS * chiS;
+  REAL8 chiA3 = chiA2 * chiA;
+  REAL8 chiS3 = chiS2 * chiS;
 
 	/* Combinations of kappa_1,2, coefficients of the spin-induced quadrupole */
 	REAL8 kappaS, kappaA;
@@ -778,8 +1381,8 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
   if (dM2 < 0)
     {
       XLALPrintError
-	("XLAL Error - %s: eta seems to be > 0.25 - this isn't allowed!\n",
-	 __func__);
+	("XLAL Error - %s: dM2 = %.16f < -1e-4 this isn't allowed!\n",
+	 __func__,dM2);
       XLAL_ERROR (XLAL_EINVAL);
     }
 
@@ -847,8 +1450,8 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
       break;
     default:
       XLALPrintError
-	("XLAL Error - %s: wrong SpinAlignedEOBversion value, must be 1 or 2 or 4!\n",
-	 __func__);
+	("XLAL Error - %s: SpinAlignedEOBversion = %u is wrong, must be 1 or 2 or 4!\n",
+	 __func__,SpinAlignedEOBversion);
       XLAL_ERROR (XLAL_EINVAL);
       break;
     }
@@ -890,8 +1493,8 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
       break;
     default:
       XLALPrintError
-	("XLAL Error - %s: wrong SpinAlignedEOBversion value, must be 1 or 2 or 4!\n",
-	 __func__);
+	("XLAL Error - %s: SpinAlignedEOBversion = %u is wrong, must be 1 or 2 or 4!\n",
+	 __func__,SpinAlignedEOBversion);
       XLAL_ERROR (XLAL_EINVAL);
       break;
     }
@@ -905,13 +1508,25 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
      coeffs->rho22v6l, coeffs->rho22v7, coeffs->rho22v8, coeffs->rho22v8l, coeffs->rho22v10,
      coeffs->rho22v10l ); */
 
+     /*RC the HM model does not include spinning test mass terms in the higher-order modes */
+     if(use_hm){
+       a = 0;
+       a2 = 0;
+       a3 = 0;
+     }
+
+     //RC: The delta coefficient before were put inside the if(dM2). This is wrong.
+     //it didn't effect the models before because this function is used only to
+     //calculate the 22 mode and the flux of the other modes, but for the flux
+     //you only need |h_lm|. This error was present in all the modes, and now is fixed.
+     //Is not a problem for the 22 mode because there is no if(dM2) for the 22
+     coeffs->delta21vh3 = 2. / 3.;
+     coeffs->delta21vh6 = (-17. * aDelta) / 35. + (107. * LAL_PI) / 105.;
+     coeffs->delta21vh7 = (3. * aDelta * aDelta) / 140.;
+     coeffs->delta21vh9 = -272. / 81. + (214. * LAL_PI * LAL_PI) / 315.;
+     coeffs->delta21v5 = -493. * eta / 42.;
   if (dM2)
     {
-      coeffs->delta21vh3 = 2. / 3.;
-      coeffs->delta21vh6 = (-17. * aDelta) / 35. + (107. * LAL_PI) / 105.;
-      coeffs->delta21vh7 = (3. * aDelta * aDelta) / 140.;
-      coeffs->delta21vh9 = -272. / 81. + (214. * LAL_PI * LAL_PI) / 315.;
-      coeffs->delta21v5 = -493. * eta / 42.;
 
       //coeffs->rho21v1   = (-3.*(chiS+chiA/dM))/(4.);
       coeffs->rho21v1 = 0.0;
@@ -929,8 +1544,8 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 	  break;
 	default:
 	  XLALPrintError
-	    ("XLAL Error - %s: wrong SpinAlignedEOBversion value, must be 1 or 2 or 4!\n",
-	     __func__);
+	    ("XLAL Error - %s: SpinAlignedEOBversion = %u is wrong, must be 1 or 2 or 4!\n",
+	     __func__,SpinAlignedEOBversion);
 	  XLAL_ERROR (XLAL_EINVAL);
 	  break;
 	}
@@ -968,11 +1583,25 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 	  coeffs->f21v3 =
 	    (chiS * dM * (427. + 79. * eta) +
 	     chiA * (147. + 280. * dM * dM + 1251. * eta)) / 84. / dM;
+       /*RC: New terms for SEOBNRv4HM, they are put to zero if use_hm == 0 */
+       coeffs->f21v4 = 0.0;
+        coeffs->f21v5 = 0.0;
+        coeffs->f21v6 = 0.0;
+        coeffs->f21v7c = 0;
+      if(use_hm){
+          //RC: This terms are in Eq.A11 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+          coeffs->f21v4 = (-3.-2.*eta)*chiA2 + (-3.+ eta/2.)*chiS2 + (-6.+21.*eta/2.)*chiS*chiA/dM;
+          coeffs->f21v5 = (3./4.-3.*eta)*chiA3/dM + (-81./16. +1709.*eta/1008. + 613.*eta2/1008.+(9./4.-3*eta)*chiA2)*chiS + 3./4.*chiS3
+          + (-81./16. - 703.*eta2/112. + 8797.*eta/1008.+(9./4. - 6.*eta)*chiS2)*chiA/dM;
+          coeffs->f21v6 = (4163./252.-9287.*eta/1008. - 85.*eta2/112.)*chiA2 + (4163./252. - 2633.*eta/1008. + 461.*eta2/1008.)*chiS2 + (4163./126.-1636.*eta/21. + 1088.*eta2/63.)*chiS*chiA/dM;
+          coeffs->f21v7c = 0; //RC: this is the calibration parameter which is initially set to 0
+      }
+      /* End new terms for SEOBNRv4HM */
 	  break;
 	default:
 	  XLALPrintError
-	    ("XLAL Error - %s: wrong SpinAlignedEOBversion value, must be 1 or 2 or 4!\n",
-	     __func__);
+	    ("XLAL Error - %s: SpinAlignedEOBversion = %u is wrong, must be 1 or 2 or 4!\n",
+	     __func__,SpinAlignedEOBversion);
 	  XLAL_ERROR (XLAL_EINVAL);
 	  break;
 	}
@@ -990,44 +1619,88 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 	  coeffs->f21v3 =
 	    (chiS * dM * (427. + 79. * eta) +
 	     chiA * (147. + 280. * dM * dM + 1251. * eta)) / 84.;
+      /* New terms for SEOBNRv4HM, they are put to zero if use_hm == 0 */
+        coeffs->f21v4 = 0.0;
+        coeffs->f21v5 = 0.0;
+        coeffs->f21v6 = 0.0;
+      if(use_hm){
+        //RC: This terms are in Eq.A11 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+        coeffs->f21v4 = (-6+21*eta/2.)*chiS*chiA;
+        coeffs->f21v5 = (3./4.-3.*eta)*chiA3  + (-81./16. - 703.*eta2/112. + 8797.*eta/1008. + (9./4. - 6.*eta)*chiS2)*chiA;
+        coeffs->f21v6 = (4163./126.-1636.*eta/21. + 1088.*eta2/63.)*chiS*chiA;
+            }
+      /* End new terms for SEOBNRv4HM */
 	  break;
 	default:
 	  XLALPrintError
-	    ("XLAL Error - %s: wrong SpinAlignedEOBversion value, must be 1 or 2 or 4!\n",
-	     __func__);
+	    ("XLAL Error - %s: SpinAlignedEOBversion = %u is wrong, must be 1 or 2 or 4!\n",
+	     __func__,SpinAlignedEOBversion);
 	  XLAL_ERROR (XLAL_EINVAL);
 	  break;
 	}
     }
 
+
   /* l = 3, Eqs. A9a - A9c for rho, Eqs. A15b and A15c for f,
      Eqs. 22 - 24 of DIN and Eqs. 27c - 27e of PBFRT for delta */
+     coeffs->delta33vh3 = 13. / 10.;
+     coeffs->delta33vh6 = (-81. * aDelta) / 20. + (39. * LAL_PI) / 7.;
+     coeffs->delta33vh9 = -227827. / 3000. + (78. * LAL_PI * LAL_PI) / 7.;
+     coeffs->delta33v5 = -80897. * eta / 2430.;
   if (dM2)
     {
-      coeffs->delta33vh3 = 13. / 10.;
-      coeffs->delta33vh6 = (-81. * aDelta) / 20. + (39. * LAL_PI) / 7.;
-      coeffs->delta33vh9 = -227827. / 3000. + (78. * LAL_PI * LAL_PI) / 7.;
-      coeffs->delta33v5 = -80897. * eta / 2430.;
-
       coeffs->rho33v2 = -7. / 6. + (2. * eta) / 3.;
       //coeffs->rho33v3 = (chiS*dM*(-4. + 5.*eta) + chiA*(-4. + 19.*eta))/(6.*dM);
       coeffs->rho33v3 = 0.0;
       coeffs->rho33v4 =
-	-6719. / 3960. + a2 / 2. - (1861. * eta) / 990. +
-	(149. * eta2) / 330.;
+        -6719. / 3960. + a2 / 2. - (1861. * eta) / 990. +
+        (149. * eta2) / 330.;
       coeffs->rho33v5 = (-4. * a) / 3.;
       coeffs->rho33v6 = 3203101567. / 227026800. + (5. * a2) / 36.;
       coeffs->rho33v6l = -26. / 7.;
       coeffs->rho33v7 = (5297. * a) / 2970. + a * a2 / 3.;
       coeffs->rho33v8 = -57566572157. / 8562153600.;
       coeffs->rho33v8l = 13. / 3.;
+      coeffs->rho33v10 = 0;
+      coeffs->rho33v10l = 0;
+      if(use_hm){
+        //RC: This terms are in Eq.A6 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+        coeffs->rho33v6 = 3203101567. / 227026800. + (5. * a2) / 36. + (-129509./25740. + 41./192. * LAL_PI*LAL_PI)*eta - 274621./154440.*eta2+ 12011./46332.*eta3;
+        coeffs->rho33v10 = -903823148417327./30566888352000.;
+        coeffs->rho33v10l = 87347./13860.;
+      }
+
+
+
 
       coeffs->f33v3 =
 	(chiS * dM * (-4. + 5. * eta) + chiA * (-4. + 19. * eta)) / (2. * dM);
+      coeffs->f33v4 = 0;
+      coeffs->f33v5 = 0;
+      coeffs->f33v6 = 0;
+      coeffs->f33vh6 = 0;
+      if(use_hm){
+        //RC: This terms are in Eq.A10 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+        coeffs->f33v4 = (3./2. * chiS2 * dM + (3. - 12 * eta) * chiA * chiS + dM * (3./2. -6. * eta) * chiA2)/(dM);
+        coeffs->f33v5 = (dM * (241./30. * eta2 + 11./20. * eta + 2./3.) * chiS + (407./30. * eta2 - 593./60. * eta + 2./3.)* chiA)/(dM);
+        coeffs->f33v6 = (dM * (6. * eta2 -27. / 2. * eta - 7./ 4.) * chiS2 + (44. * eta2 - 1. * eta - 7./2.) * chiA * chiS + dM * (-12 * eta2 + 11./2. * eta - 7./4.) * chiA2)/dM;
+        coeffs->f33vh6 = (dM * (593. / 108. * eta - 81./20.) * chiS + (7339./540. * eta - 81./20.) * chiA)/(dM);
+      }
     }
   else
     {
       coeffs->f33v3 = chiA * 3. / 8.;
+      coeffs->f33v4 = 0;
+      coeffs->f33v5 = 0;
+      coeffs->f33v6 = 0;
+      coeffs->f33vh6 = 0;
+      if(use_hm){
+        //RC: This terms are in Eq.A10 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+        coeffs->f33v4 = ((3. - 12 * eta) * chiA * chiS);
+        coeffs->f33v5 = ((407./30. * eta2 - 593./60. * eta + 2./3.)* chiA);
+        coeffs->f33v6 = ((44. * eta2 - 1. * eta - 7./2.) * chiA * chiS);
+        coeffs->f33vh6 = ((7339./540. * eta - 81./20.) * chiA);
+      }
     }
 
   coeffs->delta32vh3 = (10. + 33. * eta) / (-15. * m1Plus3eta);
@@ -1061,13 +1734,13 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
   coeffs->rho32v8 = -10607269449358. / 3072140846775.;
   coeffs->rho32v8l = 17056. / 8505.;
 
+  coeffs->delta31vh3 = 13. / 30.;
+  coeffs->delta31vh6 = (61. * aDelta) / 20. + (13. * LAL_PI) / 21.;
+  coeffs->delta31vh7 = (-24. * aDelta * aDelta) / 5.;
+  coeffs->delta31vh9 = -227827. / 81000. + (26. * LAL_PI * LAL_PI) / 63.;
+  coeffs->delta31v5 = -17. * eta / 10.;
   if (dM2)
     {
-      coeffs->delta31vh3 = 13. / 30.;
-      coeffs->delta31vh6 = (61. * aDelta) / 20. + (13. * LAL_PI) / 21.;
-      coeffs->delta31vh7 = (-24. * aDelta * aDelta) / 5.;
-      coeffs->delta31vh9 = -227827. / 81000. + (26. * LAL_PI * LAL_PI) / 63.;
-      coeffs->delta31v5 = -17. * eta / 10.;
 
       coeffs->rho31v2 = -13. / 18. - (2. * eta) / 9.;
       //coeffs->rho31v3  = (chiA*(-4. + 11.*eta) + chiS*dM*(-4. + 13.*eta))/(6.*dM);
@@ -1095,25 +1768,48 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 
   coeffs->delta44vh3 = (112. + 219. * eta) / (-120. * m1Plus3eta);
   coeffs->delta44vh6 = (-464. * aDelta) / 75. + (25136. * LAL_PI) / 3465.;
+  coeffs->delta44vh9 = 0.;
+  if(use_hm){
+  //RC: This terms are in Eq.A15 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+  coeffs->delta44vh9 = -55144./375. + 201088.*LAL_PI*LAL_PI/10395.;
+  }
 
   coeffs->rho44v2 =
     (1614. - 5870. * eta + 2625. * eta2) / (1320. * m1Plus3eta);
   coeffs->rho44v3 =
     (chiA * (10. - 39. * eta) * dM +
      chiS * (10. - 41. * eta + 42. * eta2)) / (15. * m1Plus3eta);
-  coeffs->rho44v4 =
-    a2 / 2. + (-511573572. + 2338945704. * eta - 313857376. * eta2 -
-	       6733146000. * eta3 +
-	       1252563795. * eta2 * eta2) / (317116800. * m1Plus3eta2);
-  coeffs->rho44v5 = (-69. * a) / 55.;
+ coeffs->rho44v4 =
+ a2 / 2. + (-511573572. + 2338945704. * eta - 313857376. * eta2 -
+     6733146000. * eta3 +
+     1252563795. * eta2 * eta2) / (317116800. * m1Plus3eta2);
+ coeffs->rho44v5 = (-69. * a) / 55.;
+ coeffs->rho44v8 = 0.;
+ coeffs->rho44v8l = 0.;
+ coeffs->rho44v10 = 0.;
+ coeffs->rho44v10l = 0;
+  if(use_hm){
+    //RC: This terms are in Eq.A8 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+    coeffs->rho44v4 =
+    (-511573572. + 2338945704. * eta - 313857376. * eta2 -
+         6733146000. * eta3 +
+         1252563795. * eta2 * eta2) / (317116800. * m1Plus3eta2)
+         + chiS2/2. + dM*chiS*chiA + dM2*chiA2/2.;
+    coeffs->rho44v5 = chiA*dM*(-8280. + 42716.*eta - 57990.*eta2 + 8955*eta3)/(6600.*m1Plus3eta2)
+    + chiS*(-8280. + 66284.*eta-176418.*eta2+128085.*eta3 + 88650*eta2*eta2)/(6600.*m1Plus3eta2);
+    coeffs->rho44v8 = -172066910136202271./19426955708160000.;
+    coeffs->rho44v8l = 845198./190575.;
+    coeffs->rho44v10 = - 17154485653213713419357./568432724020761600000.;
+    coeffs->rho44v10l = 22324502267./3815311500;
+  }
   coeffs->rho44v6 = 16600939332793. / 1098809712000. + (217. * a2) / 3960.;
   coeffs->rho44v6l = -12568. / 3465.;
 
+  coeffs->delta43vh3 = (486. + 4961. * eta) / (810. * (1. - 2. * eta));
+  coeffs->delta43vh4 = (11. * aDelta) / 4.;
+  coeffs->delta43vh6 = 1571. * LAL_PI / 385.;
   if (dM2)
     {
-      coeffs->delta43vh3 = (486. + 4961. * eta) / (810. * (1. - 2. * eta));
-      coeffs->delta43vh4 = (11. * aDelta) / 4.;
-      coeffs->delta43vh6 = 1571. * LAL_PI / 385.;
 
       //coeffs->rho43v   = (5.*(chiA - chiS*dM)*eta)/(8.*dM*(-1. + 2.*eta));
       coeffs->rho43v = 0.0;
@@ -1148,11 +1844,12 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
   coeffs->rho42v6 = 848238724511. / 219761942400. + (2323. * a2) / 3960.;
   coeffs->rho42v6l = -3142. / 3465.;
 
+  coeffs->delta41vh3 = (2. + 507. * eta) / (10. * (1. - 2. * eta));
+  coeffs->delta41vh4 = (11. * aDelta) / 12.;
+  coeffs->delta41vh6 = 1571. * LAL_PI / 3465.;
+
   if (dM2)
     {
-      coeffs->delta41vh3 = (2. + 507. * eta) / (10. * (1. - 2. * eta));
-      coeffs->delta41vh4 = (11. * aDelta) / 12.;
-      coeffs->delta41vh6 = 1571. * LAL_PI / 3465.;
 
       //coeffs->rho41v   = (5.*(chiA - chiS*dM)*eta)/(8.*dM*(-1. + 2.*eta));
       coeffs->rho41v = 0.0;
@@ -1173,17 +1870,63 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 
   /* l = 5, Eqs. A11a - A11e for rho,
      Eq. 29 of DIN and Eqs. E1a and E1b of PBFRT for delta */
+     coeffs->delta55vh3 =
+(96875. + 857528. * eta) / (131250. * (1 - 2 * eta));
+    coeffs->delta55vh6 = 0;
+    coeffs->delta55vh9 = 0;
+ if(use_hm){
+     //RC: This terms are in Eq.A16 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+     coeffs->delta55vh6 = 3865./429.*LAL_PI;
+     coeffs->delta55vh9 = (-7686949127. + 954500400.*LAL_PI*LAL_PI)/31783752.;
+ }
   if (dM2)
     {
-      coeffs->delta55vh3 =
-	(96875. + 857528. * eta) / (131250. * (1 - 2 * eta));
 
       coeffs->rho55v2 =
 	(487. - 1298. * eta + 512. * eta2) / (390. * (-1. + 2. * eta));
       coeffs->rho55v3 = (-2. * a) / 3.;
       coeffs->rho55v4 = -3353747. / 2129400. + a2 / 2.;
       coeffs->rho55v5 = -241. * a / 195.;
+      coeffs->rho55v6 = 0.;
+      coeffs->rho55v6l = 0.;
+      coeffs->rho55v8 = 0.;
+      coeffs->rho55v8l = 0.;
+      coeffs->rho55v10 = 0.;
+      coeffs->rho55v10l = 0.;
+      coeffs->f55v3 = 0.;
+      coeffs->f55v4 = 0.;
+      coeffs->f55v5c = 0;
+      if(use_hm){
+        //RC: This terms are in Eq.A9 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+        coeffs->rho55v6 = 190606537999247./11957879934000.;
+        coeffs->rho55v6l = - 1546./429.;
+        coeffs->rho55v8 = - 1213641959949291437./118143853747920000.;
+        coeffs->rho55v8l = 376451./83655.;
+        coeffs->rho55v10 = -150082616449726042201261./4837990810977324000000.;
+        coeffs->rho55v10l = 2592446431./456756300.;
+
+        coeffs->f55v3 = chiA/dM *(10./(3.*(-1.+2.*eta)) - 70.*eta/(3.*(-1.+2.*eta)) + 110.*eta2/(3.*(-1.+2.*eta)) ) +
+        chiS*(10./(3.*(-1.+2.*eta)) -10.*eta/(-1.+2.*eta) + 10*eta2/(-1.+2.*eta));
+        coeffs->f55v4 = chiS2*(-5./(2.*(-1.+2.*eta)) + 5.*eta/(-1.+2.*eta)) +
+        chiA*chiS/dM *(-5./(-1.+2.*eta) + 30.*eta/(-1.+2.*eta) - 40.*eta2/(-1.+2.*eta)) +
+        chiA2*(-5./(2.*(-1.+2.*eta)) + 15.*eta/(-1.+2.*eta) - 20.*eta2/(-1.+2.*eta));
+        coeffs->f55v5c = 0; //RC: this is the calibration parameter which is initially set to 0.
+      }
+
     }
+    else{
+      coeffs->f55v3 = 0;
+      coeffs->f55v4 = 0;
+      coeffs->f55v5c = 0;
+      if(use_hm){
+        //RC: This terms are in Eq.A12 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+        coeffs->f55v3 = chiA *(10./(3.*(-1.+2.*eta)) - 70.*eta/(3.*(-1.+2.*eta)) + 110.*eta2/(3.*(-1.+2.*eta)) );
+        coeffs->f55v4 = chiA*chiS *(-5./(-1.+2.*eta) + 30.*eta/(-1.+2.*eta) - 40.*eta2/(-1.+2.*eta));
+        coeffs->f55v5c = 0;
+      }
+    }
+
+
 
   coeffs->delta54vh3 = 8. / 15.;
   coeffs->delta54vh4 = 12. * aDelta / 5.;
@@ -1194,9 +1937,9 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
   coeffs->rho54v3 = (-2. * a) / 15.;
   coeffs->rho54v4 = -16213384. / 15526875. + (2. * a2) / 5.;
 
+  coeffs->delta53vh3 = 31. / 70.;
   if (dM2)
     {
-      coeffs->delta53vh3 = 31. / 70.;
 
       coeffs->rho53v2 =
 	(375. - 850. * eta + 176. * eta2) / (390. * (-1. + 2. * eta));
@@ -1214,9 +1957,9 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
   coeffs->rho52v3 = (-2. * a) / 15.;
   coeffs->rho52v4 = -7187914. / 15526875. + (2. * a2) / 5.;
 
+  coeffs->delta51vh3 = 31. / 210.;
   if (dM2)
     {
-      coeffs->delta51vh3 = 31. / 210.;
 
       coeffs->rho51v2 =
 	(319. - 626. * eta + 8. * eta2) / (390. * (-1. + 2. * eta));
@@ -1234,9 +1977,9 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
   coeffs->rho66v3 = (-2. * a) / 3.;
   coeffs->rho66v4 = -1025435. / 659736. + a2 / 2.;
 
+  coeffs->delta65vh3 = 10. / 21.;
   if (dM2)
     {
-      coeffs->delta65vh3 = 10. / 21.;
 
       coeffs->rho65v2 = (-185. + 838. * eta - 910. * eta2
 			 + 220. * eta3) / (144. * (dM2 + 3. * eta2));
@@ -1250,9 +1993,9 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
   coeffs->rho64v3 = (-2. * a) / 3.;
   coeffs->rho64v4 = -476887. / 659736. + a2 / 2.;
 
+  coeffs->delta63vh3 = 2. / 7.;
   if (dM2)
     {
-      coeffs->delta63vh3 = 2. / 7.;
 
       coeffs->rho63v2 = (-169. + 742. * eta - 750. * eta2
 			 + 156. * eta3) / (144. * (dM2 + 3. * eta2));
@@ -1266,9 +2009,9 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
   coeffs->rho62v3 = (-2. * a) / 3.;
   coeffs->rho62v4 = -817991. / 3298680. + a2 / 2.;
 
+  coeffs->delta61vh3 = 2. / 21.;
   if (dM2)
     {
-      coeffs->delta61vh3 = 2. / 21.;
 
       coeffs->rho61v2 = (-161. + 694. * eta - 670. * eta2
 			 + 124. * eta3) / (144. * (dM2 + 3. * eta2));
@@ -1276,9 +2019,9 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
     }
 
   /* l = 7, Eqs. A13a - A13g for rho, Eqs. E1e and E1f of PBFRT for delta */
+  coeffs->delta77vh3 = 19. / 36.;
   if (dM2)
     {
-      coeffs->delta77vh3 = 19. / 36.;
 
       coeffs->rho77v2 = (-906. + 4246. * eta - 4963. * eta2
 			 + 1380. * eta3) / (714. * (dM2 + 3. * eta2));
@@ -1290,9 +2033,9 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 							14 * eta2 +
 							7 * eta3));
 
+  coeffs->delta75vh3 = 95. / 252.;
   if (dM2)
     {
-      coeffs->delta75vh3 = 95. / 252.;
 
       coeffs->rho75v2 = (-762. + 3382. * eta - 3523. * eta2
 			 + 804. * eta3) / (714. * (dM2 + 3. * eta2));
@@ -1304,9 +2047,9 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 							  14. * eta2 +
 							  7. * eta3));
 
+  coeffs->delta73vh3 = 19. / 84.;
   if (dM2)
     {
-      coeffs->delta73vh3 = 19. / 84.;
 
       coeffs->rho73v2 = (-666. + 2806. * eta - 2563. * eta2
 			 + 420. * eta3) / (714. * (dM2 + 3. * eta2));
@@ -1318,9 +2061,9 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 							  14. * eta2 +
 							  7. * eta3));
 
+  coeffs->delta71vh3 = 19. / 252.;
   if (dM2)
     {
-      coeffs->delta71vh3 = 19. / 252.;
 
       coeffs->rho71v2 = (-618. + 2518. * eta - 2083. * eta2
 			 + 228. * eta3) / (714. * (dM2 + 3. * eta2));
@@ -1382,7 +2125,6 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
     }
 
   /* All relevant coefficients should be set, so we return */
-
   return XLAL_SUCCESS;
 }
 
@@ -1416,12 +2158,14 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
   /* Status of function calls */
   INT4 status;
   INT4 i;
+  INT4 use_hm = 0;
+
 
   REAL8 eta;
   REAL8 r, pp, Omega, v2, vh, vh3, k, hathatk, eulerlogxabs;	//pr
-  REAL8 Slm, deltalm, rholm, rholmPwrl;
-  REAL8 auxflm = 0.0;
-  COMPLEX16 Tlm;
+  REAL8 Slm, deltalm, rholm;
+  COMPLEX16 auxflm = 0.0;
+  COMPLEX16 Tlm, rholmPwrl;
   COMPLEX16 hNewton;
   gsl_sf_result lnr1, arg1, z2;
 
@@ -1431,7 +2175,7 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
   /* Pre-computed coefficients */
   FacWaveformCoeffs *hCoeffs = params->eobParams->hCoeffs;
 
-  if (abs (m) > (INT4) l)
+  if (abs (m) > l)
     {
       XLAL_ERROR (XLAL_EINVAL);
     }
@@ -1439,7 +2183,7 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
     {
       XLAL_ERROR (XLAL_EINVAL);
     }
-
+  use_hm = params->use_hm;
   eta = params->eobParams->eta;
 
   /* Check our eta was sensible */
@@ -1449,8 +2193,8 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
   if (eta > 0.25)
     {
       XLALPrintError
-	("XLAL Error - %s: Eta seems to be > 0.25 - this isn't allowed!\n",
-	 __func__);
+	("XLAL Error - %s: Eta = %.16f seems to be > 0.25 - this isn't allowed!\n",
+	 __func__,eta);
       XLAL_ERROR (XLAL_EINVAL);
     }
   /*else if ( eta == 0.25 && m % 2 )
@@ -1460,33 +2204,9 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
      return XLAL_SUCCESS;
      } */
 
-  // YP: !!!!! SEOBNRv3devel temporary change !!!!!
   r = values->data[0];
   //pr    = values->data[2];
   pp = values->data[3];
-#if YPPrecWave
-  r =
-    sqrt (values->data[0] * values->data[0] +
-	  values->data[1] * values->data[1] +
-	  values->data[2] * values->data[2]);
-  pp =
-    sqrt ((values->data[0] * values->data[4] -
-	   values->data[1] * values->data[3]) * (values->data[0] *
-						 values->data[4] -
-						 values->data[1] *
-						 values->data[3]) +
-	  (values->data[2] * values->data[3] -
-	   values->data[0] * values->data[5]) * (values->data[2] *
-						 values->data[3] -
-						 values->data[0] *
-						 values->data[5]) +
-	  (values->data[1] * values->data[5] -
-	   values->data[2] * values->data[4]) * (values->data[1] *
-						 values->data[5] -
-						 values->data[2] *
-						 values->data[4]));
-#endif
-  // YP: !!!!! SEOBNRv3devel temporary change !!!!!
 
   v2 = v * v;
   Omega = v2 * v;
@@ -1530,7 +2250,6 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
       vPhi = v;
       vPhi2 = v2;
     }
-
   /* Calculate the newtonian multipole, 1st term in Eq. 17, given by Eq. A1 */
   // YP: !!!!! SEOBNRv3devel temporary change !!!!!
   status = XLALSimIMRSpinEOBCalculateNewtonianMultipole (&hNewton, vPhi2, r,
@@ -1569,13 +2288,15 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
 					  &arg1));
   if (status != GSL_SUCCESS)
     {
-      XLALPrintError ("XLAL Error - %s: Error in GSL function\n", __func__);
+      XLALPrintError ("XLAL Error - %s: Error in GSL function: %s\n",
+                      __func__, gsl_strerror (status));
       XLAL_ERROR (XLAL_EFUNC);
     }
   XLAL_CALLGSL (status = gsl_sf_fact_e (l, &z2));
   if (status != GSL_SUCCESS)
     {
-      XLALPrintError ("XLAL Error - %s: Error in GSL function\n", __func__);
+      XLALPrintError ("XLAL Error - %s: Error in GSL function: %s\n",
+                      __func__, gsl_strerror (status));
       XLAL_ERROR (XLAL_EFUNC);
     }
   Tlm =
@@ -1652,8 +2373,14 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
 							    rho21v10l *
 							    eulerlogxabs) *
 							   v2))))))));
-	    auxflm = v * hCoeffs->f21v1;
-	  }
+                 if (use_hm){
+                   //RC: This terms are in Eq.A11 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+                   auxflm = v * (hCoeffs->f21v1 + v2 * (hCoeffs->f21v3 + v * hCoeffs->f21v4 + v2 * (hCoeffs->f21v5 + v * hCoeffs->f21v6 + v2*hCoeffs->f21v7c)));
+                 }
+                 else{
+                   auxflm = v * hCoeffs->f21v1;
+                 }
+               }
 	  break;
 	default:
 	  XLAL_ERROR (XLAL_EINVAL);
@@ -1664,23 +2391,42 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
       switch (m)
 	{
 	case 3:
-	  deltalm =
-	    vh3 * (hCoeffs->delta33vh3 +
-		   vh3 * (hCoeffs->delta33vh6 + hCoeffs->delta33vh9 * vh3)) +
-	    hCoeffs->delta33v5 * v * v2 * v2 +
-	    hCoeffs->delta33v7 * v2 * v2 * v2 * v;
-	  rholm =
-	    1. + v2 * (hCoeffs->rho33v2 +
-		       v * (hCoeffs->rho33v3 +
-			    v * (hCoeffs->rho33v4 +
-				 v * (hCoeffs->rho33v5 +
-				      v * (hCoeffs->rho33v6 +
-					   hCoeffs->rho33v6l * eulerlogxabs +
-					   v * (hCoeffs->rho33v7 +
-						(hCoeffs->rho33v8 +
-						 hCoeffs->rho33v8l *
-						 eulerlogxabs) * v))))));
-	  auxflm = v * v2 * hCoeffs->f33v3;
+    deltalm =
+        vh3 * (hCoeffs->delta33vh3 +
+             vh3 * (hCoeffs->delta33vh6 + hCoeffs->delta33vh9 * vh3)) +
+             hCoeffs->delta33v5 * v * v2 * v2;
+    if(use_hm){
+      //RC: This terms are in Eq.A6 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+      rholm =
+          1. + v2 * (hCoeffs->rho33v2 +
+                     v * (hCoeffs->rho33v3 +
+                          v * (hCoeffs->rho33v4 +
+                               v * (hCoeffs->rho33v5 +
+                                    v * (hCoeffs->rho33v6 +
+                                         hCoeffs->rho33v6l * eulerlogxabs +
+                                         v * (hCoeffs->rho33v7 +
+                                              v * (hCoeffs->rho33v8 +
+                                               hCoeffs->rho33v8l *
+                                               eulerlogxabs +
+                                             v2*(hCoeffs->rho33v10 + hCoeffs->rho33v10l*eulerlogxabs))))))));
+       //RC: This terms are in Eq.A10 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+        auxflm = v * (v2 * (hCoeffs->f33v3 + v * (hCoeffs->f33v4 + v * (hCoeffs->f33v5  + v * hCoeffs->f33v6)))) + _Complex_I * vh3 * vh3 * hCoeffs->f33vh6;
+            }
+            else
+            {
+            rholm =
+                1. + v2 * (hCoeffs->rho33v2 +
+                           v * (hCoeffs->rho33v3 +
+                                v * (hCoeffs->rho33v4 +
+                                     v * (hCoeffs->rho33v5 +
+                                          v * (hCoeffs->rho33v6 +
+                                               hCoeffs->rho33v6l * eulerlogxabs +
+                                               v * (hCoeffs->rho33v7 +
+                                                    v * (hCoeffs->rho33v8 +
+                                                     hCoeffs->rho33v8l *
+                                                     eulerlogxabs)))))));
+            auxflm = v * v2 * hCoeffs->f33v3;
+            }
 	  break;
 	case 2:
 	  deltalm =
@@ -1731,21 +2477,43 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
       switch (m)
 	{
 	case 4:
-
+    if(use_hm){
+      //RC: This terms are in Eq.A15 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+      deltalm = vh3 * (hCoeffs->delta44vh3 + vh3 * (hCoeffs->delta44vh6 + vh3 * hCoeffs->delta44vh9))
+        + hCoeffs->delta44v5 * v2 * v2 * v;
+      //RC: This terms are in Eq.A8 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+      rholm = 1. + v2 * (hCoeffs->rho44v2
+               + v * (hCoeffs->rho44v3 + v * (hCoeffs->rho44v4
+                      +
+                      v *
+                      (hCoeffs->
+                       rho44v5 +
+                       v * (hCoeffs->
+                        rho44v6 +
+                        hCoeffs->
+                        rho44v6l *
+                        eulerlogxabs +
+                      v2 *( hCoeffs->rho44v8 + hCoeffs->rho44v8l * eulerlogxabs
+                        +v2 * (hCoeffs->rho44v10 + hCoeffs->rho44v10l * eulerlogxabs) ) )))));
+    }
+    else{
 	  deltalm = vh3 * (hCoeffs->delta44vh3 + hCoeffs->delta44vh6 * vh3)
 	    + hCoeffs->delta44v5 * v2 * v2 * v;
-	  rholm = 1. + v2 * (hCoeffs->rho44v2
-			     + v * (hCoeffs->rho44v3 + v * (hCoeffs->rho44v4
-							    +
-							    v *
-							    (hCoeffs->
-							     rho44v5 +
-							     (hCoeffs->
-							      rho44v6 +
-							      hCoeffs->
-							      rho44v6l *
-							      eulerlogxabs) *
-							     v))));
+
+    rholm = 1. + v2 * (hCoeffs->rho44v2
+             + v * (hCoeffs->rho44v3 + v * (hCoeffs->rho44v4
+                    +
+                    v *
+                    (hCoeffs->
+                     rho44v5 +
+                     (hCoeffs->
+                      rho44v6 +
+                      hCoeffs->
+                      rho44v6l *
+                      eulerlogxabs) *
+                     v))));
+    }
+
 	  break;
 	case 3:
 	  deltalm = vh3 * (hCoeffs->delta43vh3 + vh * (hCoeffs->delta43vh4
@@ -1796,6 +2564,25 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
       switch (m)
 	{
 	case 5:
+  if(use_hm){
+    //RC: This terms are in Eq.A16 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+    deltalm =
+       vh3 *(hCoeffs->delta55vh3 +vh3*(hCoeffs->delta55vh6 +vh3 *(hCoeffs->delta55vh9)))
+       + hCoeffs->delta55v5 * v2 * v2 * v;
+    //RC: This terms are in Eq.A9 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+    rholm =
+      1. + v2 * (hCoeffs->rho55v2 +
+           v * (hCoeffs->rho55v3 +
+          v * (hCoeffs->rho55v4 +
+         v * (hCoeffs->rho55v5 +
+            v * (hCoeffs->rho55v6 + hCoeffs->rho55v6l * eulerlogxabs +
+          v2 * (hCoeffs->rho55v8 + hCoeffs->rho55v8l * eulerlogxabs +
+        v2 * (hCoeffs->rho55v10 + hCoeffs->rho55v10l * eulerlogxabs )))))));
+    //RC: This terms are in Eq.A12 in https://journals.aps.org/prd/abstract/10.1103/PhysRevD.98.084028
+    auxflm = v2 * v * (hCoeffs->f55v3 + v * (hCoeffs->f55v4 + v * (hCoeffs->f55v5c) ));
+  }
+  else
+  {
 	  deltalm =
 	    hCoeffs->delta55vh3 * vh3 + hCoeffs->delta55v5 * v2 * v2 * v;
 	  rholm =
@@ -1804,6 +2591,7 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
 			    v * (hCoeffs->rho55v4 +
 				 v * (hCoeffs->rho55v5 +
 				      hCoeffs->rho55v6 * v))));
+            }
 	  break;
 	case 4:
 	  deltalm = vh3 * (hCoeffs->delta54vh3 + hCoeffs->delta54vh4 * vh);
@@ -1952,11 +2740,7 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
 
   /* Raise rholm to the lth power */
   rholmPwrl = 1.0;
-  i = l;
-  while (i--)
-    {
-      rholmPwrl *= rholm;
-    }
+  for(i = 0 ; i < l ; i++) rholmPwrl *= rholm;
   /* In the equal-mass odd m case, there is no contribution from nonspin terms,
    * and the only contribution comes from the auxflm term that is proportional to chiA (asymmetric spins).
    * In this case, we must ignore the nonspin terms directly, since the leading term defined by
@@ -1970,14 +2754,6 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
     {
       rholmPwrl += auxflm;
     }
-
-  /*if (r > 8.5)
-     {
-     printf("YP::dynamics variables in waveform: %i, %i, %e, %e, %e\n",l,m,r,pp,values->data[1]);
-     printf( "rholm^l = %.16e, Tlm = %.16e + i %.16e, |Tlm| = %.16e \nSlm = %.16e, hNewton = %.16e + i %.16e, delta = %.16e\n", rholmPwrl, creal(Tlm), cimag(Tlm), cabs(Tlm), Slm, creal(hNewton), cimag(hNewton), deltalm );
-     printf("delta22 coeffs: vh3C = %.16e, vh6C = %.16e, vh9C = %.16e, v5C = %.16e, v6C = %.16e, v8C = %.16e\n",hCoeffs->delta22vh3,hCoeffs->delta22vh6,hCoeffs->delta22vh9,hCoeffs->delta22v5,hCoeffs->delta22v6,hCoeffs->delta22v8);
-     printf("hNewt amp = %.16e, arg = %.16e\n",cabs(hNewton),carg(hNewton));
-     } */
   /* Put all factors in Eq. 17 together */
   *hlm = Tlm * cexp (I * deltalm) * Slm * rholmPwrl;
   *hlm *= hNewton;
@@ -2008,7 +2784,7 @@ XLALSimIMRSpinEOBWaveformTidal (COMPLEX16 * restrict hlm,
 )
 {
     REAL8 eta;
-    if (abs (m) > (INT4) l)
+    if (abs (m) > l)
     {
         XLAL_ERROR (XLAL_EINVAL);
     }
@@ -2026,8 +2802,8 @@ XLALSimIMRSpinEOBWaveformTidal (COMPLEX16 * restrict hlm,
     if (eta > 0.25)
     {
         XLALPrintError
-        ("XLAL Error - %s: Eta seems to be > 0.25 - this isn't allowed!\n",
-         __func__);
+        ("XLAL Error - %s: Eta = %.16f seems to be > 0.25 - this isn't allowed!\n",
+         __func__,eta);
         XLAL_ERROR (XLAL_EINVAL);
     }
 

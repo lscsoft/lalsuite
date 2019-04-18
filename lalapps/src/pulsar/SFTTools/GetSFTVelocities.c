@@ -92,8 +92,8 @@ int main(int argc, char *argv[]){
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
   
-  uvar_earthEphemeris = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar_sunEphemeris = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar_earthEphemeris = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar_sunEphemeris = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   /* register user input variables */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris, "earthEphemeris", STRING, 'E', OPTIONAL, "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);

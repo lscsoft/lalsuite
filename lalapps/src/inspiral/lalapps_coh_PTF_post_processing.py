@@ -343,8 +343,7 @@ The default is to run the full post processing pipeline, various steps can be sk
     parser.error('Must give --config-file')
 
   if not opts.inj_config_file:
-    print >>sys.stdout,\
-         "Injection config file not given. Running with no injections."
+    print("Injection config file not given. Running with no injections.")
     opts.skip_injfind=True
     opts.skip_injcombiner=True
   #  parser.error('Must give --inj-config-file')
@@ -362,14 +361,14 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
 
   # load ini files
   if verbose:
-    print >>sys.stdout
-    print >>sys.stdout, 'Initialising post processing driver, '+\
-                        'loading configuration files...'
+    print()
+    print('Initialising post processing driver, '+\
+                        'loading configuration files...')
 
   # get directory
   grbdir = os.path.abspath('%s/GRB%s' % (rundir, grb))
   if not os.path.isdir(grbdir):
-    raise ValueError, 'Cannot find directory GRB%s in %s' % (grb, rundir)
+    raise ValueError('Cannot find directory GRB%s in %s' % (grb, rundir))
 
   # generate post processing directory
   if not os.path.isdir(outdir):
@@ -419,7 +418,7 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
                 % (grbdir, ifotag, grb)
   datafindglob = glob.glob(datafindstr)
   if len(datafindglob)!=1:
-    raise ValueError, 'Cannot find single datafind cache matching %s' % datafindstr
+    raise ValueError('Cannot find single datafind cache matching %s' % datafindstr)
   datafindcache = datafindglob[0]
 
   datastart, dataduration = map(int, os.path.splitext(datafindcache)[0]\
@@ -500,8 +499,8 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   # ==========
 
   if verbose:
-    print >>sys.stdout
-    print >>sys.stdout, "Generating dag..."
+    print()
+    print("Generating dag...")
 
   # initialise uberdag
   dagtag  = os.path.splitext(os.path.basename(inifile))[0]
@@ -667,7 +666,7 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     # find buffer segments
     buffseg = '%s/%s' % (grbdir, 'bufferSeg.txt')
     if not os.path.isfile(buffseg):
-      raise ValueError, 'Cannot find buffer segment file as %s' % buffseg
+      raise ValueError('Cannot find buffer segment file as %s' % buffseg)
   
     tag = 'injfinder'
     exe = cp.get('condor', tag)
@@ -761,8 +760,8 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
           distRun = run
           break
       if not distRun:
-        raise BrokenError, "Cannot find any injections matching %s in ini file"\
-                           % (injpattern)
+        raise BrokenError("Cannot find any injections matching %s in ini file"\
+                           % (injpattern))
       for inc in inclinations:
         injrun = 'injectionsAstro%s_FILTERED_%d' % (injpattern,inc)
         filteredInjRuns.append(injrun)
@@ -914,23 +913,23 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
   uberdag.write_dag()
 
   # print message
-  print >>sys.stdout
-  print >>sys.stdout, '------------------------------------'
-  print >>sys.stdout, 'Ready. To submit, run:'
-  print >>sys.stdout
+  print()
+  print('------------------------------------')
+  print('Ready. To submit, run:')
+  print()
   subcmd = 'condor_submit_dag '
   if cp.has_option('pipeline', 'maxjobs'):
     subcmd += '-maxjobs %s ' % cp.getint('pipeline', 'maxjobs')
   subcmd += os.path.abspath(uberdag.get_dag_file())
-  print >>sys.stdout, subcmd
-  print >>sys.stdout
+  print(subcmd)
+  print()
 
-  print >>sys.stdout, 'Once submitted, to monitor status, run:'
-  print >>sys.stdout
-  print >>sys.stdout, 'lalapps_ihope_status --dag-file %s'\
-                      % (os.path.abspath(uberdag.get_dag_file()))
-  print >>sys.stdout, '------------------------------------'
-  print >>sys.stdout
+  print('Once submitted, to monitor status, run:')
+  print()
+  print('lalapps_ihope_status --dag-file %s'\
+                      % (os.path.abspath(uberdag.get_dag_file())))
+  print('------------------------------------')
+  print()
 
 
 if __name__=='__main__':
