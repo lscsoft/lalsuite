@@ -117,7 +117,8 @@ class LALInferenceCBCWrapper(object):
             List of command line arguments that will be used to
             set up the lalinference state. (similar to argv)
         """
-        procParams=li.ParseCommandLine(len(argv),argv)
+        
+        procParams=li.ParseStringVector(lal.CreateStringVector(*argv))
         self.state = li.InitRunState(procParams)
         self.state.commandLine=procParams
         li.InitCBCThreads(self.state,1)

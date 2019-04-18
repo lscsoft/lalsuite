@@ -1831,12 +1831,19 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
 }
 
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
+{
+    return LALInferenceParseStringVector(XLALCreateStringVector(argv));
+}
+
+ProcessParamsTable *LALInferenceParseStringVector(LALStringVector *arglist)
 /* parse command line and set up & fill in 'ProcessParamsTable' linked list.          */
 /* If no command line arguments are supplied, the 'ProcessParamsTable' still contains */
 /* one empty entry.                                                                   */
 {
   int i, state=1;
+  int argc = arglist->count;
   int dbldash;
+  char *argv[] = arglist->data;
   ProcessParamsTable *head, *ptr=NULL;
   /* always (even for argc==1, i.e. no arguments) put one element in list: */
   head = (ProcessParamsTable*) XLALCalloc(1, sizeof(ProcessParamsTable));
