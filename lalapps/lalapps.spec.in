@@ -48,6 +48,7 @@ Requires: fftw
 Requires: gsl
 Requires: h5py
 Requires: healpy
+Requires: six
 Requires: less
 Requires: libframe
 Requires: libmetaio
