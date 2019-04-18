@@ -445,7 +445,7 @@ int LALInferenceInspiralPriorTest(void)
 	LALInferenceRunState *runState = XLALCalloc(1, sizeof(LALInferenceRunState));
     LALInferenceThreadState *thread = XLALCalloc(1, sizeof(LALInferenceThreadState));
     runState->threads = XLALCalloc(1, sizeof(LALInferenceThreadState*));
-    runState->threads[0] = thread;
+    runState->threads[0] = *thread;
 	LALInferenceVariables *params = XLALCalloc(1, sizeof(LALInferenceVariables));
 	LALInferenceVariables *priorArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
 
