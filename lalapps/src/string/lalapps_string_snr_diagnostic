@@ -370,7 +370,7 @@ plots = [
 #
 
 
-from glue.ligolw import dbtables
+from ligo.lw import dbtables
 
 for n, filename in enumerate(filenames):
 	if options.verbose:

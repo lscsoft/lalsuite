@@ -131,6 +131,7 @@ tagSpinEOBParams
   int                     tortoise;
   int                     ignoreflux;
   REAL8 deltaT;
+  int                     use_hm;
 }
 SpinEOBParams;
 

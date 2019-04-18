@@ -43,7 +43,7 @@
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/GeneratePPNInspiral.h>
@@ -204,7 +204,7 @@ static ProcessParamsTable *next_process_param( const char *name, const char *typ
   }
   strncpy( pp->program, PROGRAM_NAME, LIGOMETA_PROGRAM_MAX );
   snprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
-  strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
+  strncpy( pp->type, type, LIGOMETA_TYPE_MAX - 1 );
   va_start( ap, fmt );
   vsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
   va_end( ap );

@@ -1,7 +1,7 @@
 BUILT_SOURCES += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish
 sysconf_DATA += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish
 MOSTLYCLEANFILES += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish $(PACKAGE)-user-env.shell
-EXTRA_DIST += gnuscripts/generate_user_env.awk
+EXTRA_DIST += README.md gnuscripts/generate_user_env.awk
 
 $(PACKAGE)-user-env.shell: Makefile $(srcdir)/gnuscripts/generate_user_env.awk
 	$(AM_V_GEN)if echo "$(user_environment)" | $(AWK) -f $(srcdir)/gnuscripts/generate_user_env.awk >$@; then \

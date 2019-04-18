@@ -142,7 +142,7 @@ class CacheEntry(object):
 
     See also:
 
-    glue.segmentsUtils.fromlalcache()
+    ligo.segments.utils..fromlalcache()
     """
     # How to parse a line in a LAL cache file.  Five white-space
     # delimited columns.
@@ -307,7 +307,7 @@ class CacheEntry(object):
         The \"observatory\" column of the cache entry, which is frequently
         used to store instrument names, is parsed into instrument names for
         the dictionary keys using the same rules as
-        glue.ligolw.lsctables.instrumentsproperty.get().
+        ligo.lw.lsctables.instrumentsproperty.get().
 
         Example:
 
@@ -317,7 +317,12 @@ class CacheEntry(object):
         """
         # the import has to be done here to break the cyclic
         # dependancy
-        from glue.ligolw.lsctables import instrumentsproperty
+        try:
+            from ligo.lw.lsctables import instrumentsproperty
+        except ImportError:
+            # FIXME:  remove when we can rely on ligo.lw being installed
+            # (why isn't it!?)
+            from glue.ligolw.lsctables import instrumentsproperty
         instruments = instrumentsproperty.get(self.observatory) or (None,)
         return segments.segmentlistdict((instrument, segments.segmentlist(self.segment is not None and [self.segment] or [])) for instrument in instruments)
 

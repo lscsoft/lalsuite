@@ -17,6 +17,7 @@
 // MA  02111-1307  USA
 //
 
+/// [hotloop]
 {
   /* old 'vanilla' (pre-Akos) LALDemod hotloop algorithm, unrestricted
    * Dterms: based on version 5b0343e65a5a820d3e21a2afd9ba72123b05309c of
@@ -61,3 +62,4 @@
   /* real- and imaginary part of e^{i 2 pi lambda_alpha } */
   XLALSinCos2PiLUT ( &imagQ, &realQ, lambda_alpha );
 }
+/// [hotloop]

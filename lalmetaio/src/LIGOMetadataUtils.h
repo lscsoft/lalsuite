@@ -63,29 +63,6 @@ extern "C" {
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LALDetectors.h>
-#include <lal/Segments.h>
-
-/**\name Error Codes */ /*@{*/
-#define LIGOMETADATAUTILSH_ENULL 1
-#define LIGOMETADATAUTILSH_ENNUL 2
-#define LIGOMETADATAUTILSH_ETIME 3
-#define LIGOMETADATAUTILSH_ECOOR 4
-#define LIGOMETADATAUTILSH_ESGAP 5
-#define LIGOMETADATAUTILSH_ESDUB 6
-#define LIGOMETADATAUTILSH_ETEST 7
-#define LIGOMETADATAUTILSH_EDET 8
-#define LIGOMETADATAUTILSH_EDIST 9
-#define LIGOMETADATAUTILSH_MSGENULL "Null pointer"
-#define LIGOMETADATAUTILSH_MSGENNUL "Non-null pointer"
-#define LIGOMETADATAUTILSH_MSGETIME "Invalid GPS Time"
-#define LIGOMETADATAUTILSH_MSGECOOR "Invalid Coordinate System"
-#define LIGOMETADATAUTILSH_MSGESGAP "Gap in Search Summary Input"
-#define LIGOMETADATAUTILSH_MSGESDUB "Repeated data in Search Summary Input"
-#define LIGOMETADATAUTILSH_MSGETEST "Unknown parameter test for sorting events"
-#define LIGOMETADATAUTILSH_MSGEDET "Unknown detector"
-#define LIGOMETADATAUTILSH_MSGEDIST "No horizon distance for consistency cut"
-
-/*@}*/
 
 /**
  * The \c LALPlaygroundDataMask contains an enum type for describing the
@@ -180,28 +157,7 @@ XLALReturnDetector(
 
 
 int
-XLALPlaygroundInSearchSummary (
-    SearchSummaryTable *ssTable,
-    LIGOTimeGPS        *inPlayTime,
-    LIGOTimeGPS        *outPlayTime
-    );
-
-void
-LALPlaygroundInSearchSummary (
-    LALStatus          *status,
-    SearchSummaryTable *ssTable,
-    LIGOTimeGPS        *inPlayTime,
-    LIGOTimeGPS        *outPlayTime
-    );
-
-int
-LALCompareSearchSummaryByInTime (
-    const void *a,
-    const void *b
-    );
-
-int
-LALCompareSearchSummaryByOutTime (
+XLALCompareSearchSummaryByOutTime (
     const void *a,
     const void *b
     );
@@ -212,82 +168,11 @@ XLALTimeSortSearchSummary(
     int(*comparfunc)    (const void *, const void *)
     );
 
-void
-LALTimeSortSearchSummary (
-    LALStatus            *status,
-    SearchSummaryTable  **summHead,
-    int(*comparfunc)    (const void *, const void *)
-    );
-
-void
-LALIfoScanSearchSummary(
-    LALStatus                  *status,
-    SearchSummaryTable        **output,
-    SearchSummaryTable         *input,
-    CHAR                       *ifo
-    );
-
-void
-LALDistanceScanSummValueTable (
-    LALStatus            *status,
-    SummValueTable       *summValueList,
-    LIGOTimeGPS          gps,
-    const CHAR           *ifo,
-    REAL4                *distance
-    );
-
-void
-LALCheckOutTimeFromSearchSummary (
-    LALStatus            *status,
-    SearchSummaryTable   *summList,
-    CHAR                 *ifo,
-    LIGOTimeGPS          *startTime,
-    LIGOTimeGPS          *endTime
-    );
-
 SearchSummaryTable *
 XLALIfoScanSearchSummary(
     SearchSummaryTable         *input,
     CHAR                       *ifos
     );
-
-void
-LALIfoScanSummValue(
-    LALStatus                  *status,
-    SummValueTable            **output,
-    SummValueTable             *input,
-    CHAR                       *ifo
-    );
-
-int
-LALCompareSummValueByTime (
-    const void *a,
-    const void *b
-    );
-
-int
-XLALTimeSortSummValue (
-    SummValueTable      **summHead,
-    int(*comparfunc)    (const void *, const void *)
-    );
-
-void
-LALTimeSortSummValue (
-    LALStatus            *status,
-    SummValueTable      **summHead,
-    int(*comparfunc)    (const void *, const void *)
-    );
-
-
-
-
-
-
-
-
-
-
-
 
 #if 0
 { /* so that editors will match succeeding brace */
@@ -296,4 +181,3 @@ LALTimeSortSummValue (
 #endif
 
 #endif /* _LIGOMETADATAUTILS_H */
-

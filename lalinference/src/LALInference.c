@@ -1831,12 +1831,19 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
 }
 
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
+{
+    return LALInferenceParseStringVector(XLALCreateStringVector(argv));
+}
+
+ProcessParamsTable *LALInferenceParseStringVector(LALStringVector *arglist)
 /* parse command line and set up & fill in 'ProcessParamsTable' linked list.          */
 /* If no command line arguments are supplied, the 'ProcessParamsTable' still contains */
 /* one empty entry.                                                                   */
 {
   int i, state=1;
+  int argc = arglist->count;
   int dbldash;
+  char *argv[] = arglist->data;
   ProcessParamsTable *head, *ptr=NULL;
   /* always (even for argc==1, i.e. no arguments) put one element in list: */
   head = (ProcessParamsTable*) XLALCalloc(1, sizeof(ProcessParamsTable));
@@ -4258,12 +4265,12 @@ void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadS
         size_t j;
 
         for (j = 0; j < ncal; j++) {
-            snprintf(parname, VARNAME_MAX, "%sspcalamp%02ld", ifo_names[i], j);
+            snprintf(parname, VARNAME_MAX, "%sspcalamp%02zd", ifo_names[i], j);
             fprintf(output, "%s\t", parname);
         }
 
         for (j = 0; j < ncal; j++) {
-          snprintf(parname, VARNAME_MAX, "%sspcalphase%02ld", ifo_names[i], j);
+          snprintf(parname, VARNAME_MAX, "%sspcalphase%02zd", ifo_names[i], j);
           fprintf(output, "%s\t", parname);
         }
     }

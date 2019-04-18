@@ -6,5 +6,5 @@ includedir=${prefix}/include
 Name: ZLIB
 Description: zlib Compression Library
 Version: 1.2.3
-Libs: -L${libdir} -lz
+Libs.private: -L${libdir} -lz
 Cflags: -I${includedir}

@@ -25,6 +25,9 @@
 #
 
 
+from __future__ import print_function
+
+
 import math
 from matplotlib import cm, colors, collections
 import numpy
@@ -34,10 +37,10 @@ import sqlite3
 import sys
 
 
-from glue import segments
-from glue.ligolw import dbtables
+from ligo.lw import dbtables
 from lalburst import git_version
 from lalburst import SnglBurstUtils
+from ligo import segments
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -290,7 +293,7 @@ WHERE
 
 for n, filename in enumerate(filenames):
 	if options.verbose:
-		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+		print("%d/%d: %s" % (n + 1, len(filenames), filename), file=sys.stderr)
 	database = SnglBurstUtils.CoincDatabase(sqlite3.connect(filename), "lalapps_power")
 	if options.verbose:
 		SnglBurstUtils.summarize_coinc_database(database)
@@ -298,6 +301,6 @@ for n, filename in enumerate(filenames):
 		for sim in found_injections(database, instrument):
 			plotname = "%s%d_%s.%s" % (options.base, sim.time_at_instrument(instrument).seconds, instrument, options.format)
 			if options.verbose:
-				print >>sys.stderr, "--> %s" % plotname
+				print("--> %s" % plotname, file=sys.stderr)
 			time_freq_plot(database, instrument, sim).savefig(plotname)
 	database.connection.close()

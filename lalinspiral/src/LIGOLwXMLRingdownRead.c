@@ -31,6 +31,7 @@
 #include <string.h>
 #include <metaio.h>
 
+#include "CreateMetaTableDir.h"
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>

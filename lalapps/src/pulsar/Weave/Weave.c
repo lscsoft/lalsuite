@@ -119,11 +119,7 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarMember(
     injections, STRINGVector, 'J', NODEFAULT,
-    "Inject simulated CW signals in the loaded/generated SFTs. Possibilities for <string> are:\n"
-    "  <config-file>\n"
-    "  {parameter=value; ...} where:\n"
-    "    required parameters are: (h0, cosi) or (aPlus, aCross), Alpha, Delta, Freq\n"
-    "    optional parameters are: refTime, psi, phi0, f<n>dot, ..."
+    "%s", InjectionSourcesHelpString
     );
   //
   // - Search parameter space

@@ -170,28 +170,28 @@ INT4 main( INT4 argc, CHAR *argv[] ){
     /* initialise some required values if running on test Gaussian likelihood */
     REAL8 h0val = 0., h0sigma = 2.5e-24, h0mean = 0.;
     runState.data = NULL;
-    runState.threads[0]->model = XLALCalloc(1, sizeof(LALInferenceModel));
+    runState.threads[0].model = XLALCalloc(1, sizeof(LALInferenceModel));
     runState.data = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
     runState.data->likeli_counter = 0;
     runState.data->templa_counter = 0;
     runState.data->next = NULL;
-    runState.threads[0]->model->ifo = XLALMalloc(sizeof(LALInferenceIFOModel));
-    runState.threads[0]->model->ifo->params = XLALCalloc(1, sizeof(LALInferenceVariables) );
-    runState.threads[0]->model->ifo->next = NULL;
-    runState.threads[0]->model->ifo_loglikelihoods = XLALMalloc( sizeof(REAL8) );
-    runState.threads[0]->model->ifo_SNRs = XLALMalloc( sizeof(REAL8) );
-    runState.threads[0]->currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+    runState.threads[0].model->ifo = XLALMalloc(sizeof(LALInferenceIFOModel));
+    runState.threads[0].model->ifo->params = XLALCalloc(1, sizeof(LALInferenceVariables) );
+    runState.threads[0].model->ifo->next = NULL;
+    runState.threads[0].model->ifo_loglikelihoods = XLALMalloc( sizeof(REAL8) );
+    runState.threads[0].model->ifo_SNRs = XLALMalloc( sizeof(REAL8) );
+    runState.threads[0].currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
 
     /* add parameters of the Gaussian */
-    LALInferenceAddVariable( runState.threads[0]->currentParams, "H0", &h0val, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add H0 parameter */
+    LALInferenceAddVariable( runState.threads[0].currentParams, "H0", &h0val, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add H0 parameter */
     if ( LALInferenceGetProcParamVal(param_table, "--test-gaussian-sigma") ){
       h0sigma = atof(LALInferenceGetProcParamVal(param_table, "--test-gaussian-sigma")->value);
     }
-    LALInferenceAddVariable( runState.threads[0]->currentParams, "H0SIGMA", &h0sigma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add standard deviation */
+    LALInferenceAddVariable( runState.threads[0].currentParams, "H0SIGMA", &h0sigma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add standard deviation */
     if ( LALInferenceGetProcParamVal(param_table, "--test-gaussian-mean") ){
       h0mean = atof(LALInferenceGetProcParamVal(param_table, "--test-gaussian-mean")->value);
     }
-    LALInferenceAddVariable( runState.threads[0]->currentParams, "H0MEAN", &h0mean, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add standard deviation */
+    LALInferenceAddVariable( runState.threads[0].currentParams, "H0MEAN", &h0mean, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add standard deviation */
   }
 
   /* set algorithm to use Nested Sampling */
@@ -212,7 +212,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
 
   /* set signal model/template */
   if ( !testgausslike ){
-    runState.threads[0]->model->templt = &get_pulsar_model;
+    runState.threads[0].model->templt = &get_pulsar_model;
   }
 
   /* add injections if requested */

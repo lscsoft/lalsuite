@@ -31,6 +31,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <lal/LALError.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
@@ -128,9 +129,9 @@ LALCreateTwoIFORingdownCoincList(
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coincOutput, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
   ASSERT( ! *coincOutput, status,
-      LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
+      LAL_NNULL_ERR, LAL_NNULL_MSG );
 
   memset( currentTriggerNS, 0, 2 * sizeof(INT8) );
   memset( currentTrigger, 0, 2 * sizeof(SnglRingdownTable *) );
@@ -624,9 +625,9 @@ LALAddSnglRingdownToCoinc(
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coincPtr, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
   ASSERT( snglRingdown, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
 
   *coincPtr = XLALAddSnglRingdownToCoinc(*coincPtr, snglRingdown);
 
@@ -1648,7 +1649,7 @@ LALCoincCutSnglInspiral(
 
   /* check that eventHead is non-null */
   ASSERT( eventHead, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
 
 
   /* Scan through a linked list of sngl_inspiral tables and return a

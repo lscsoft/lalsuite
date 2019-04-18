@@ -32,7 +32,7 @@ const char LALInferenceHDF5PosteriorSamplesDatasetName[] = "posterior_samples";
 const char LALInferenceHDF5NestedSamplesDatasetName[] = "nested_samples";
 
 
-static void assert_not_reached(void) __attribute__ ((noreturn));
+static void assert_not_reached(void);
 static void assert_not_reached(void)
 {
 #ifndef NDEBUG
@@ -71,6 +71,7 @@ int LALInferenceH5DatasetToVariablesArray(
     size_t column_offsets[Nvary];
     LALInferenceVariableType column_types[Nvary];
     int ret;
+    (void) ret;
 
     for (size_t i = 0; i < Nvary; i ++)
     {
@@ -182,6 +183,7 @@ int LALInferenceH5DatasetToVariablesArray(
                 va[j], pname, value, lalinftype, LALINFERENCE_PARAM_FIXED);
     } /* End loop over fixed_params */
 
+
     /* Construct the array of LALInferenceVariables */
     *varsArray = va;
     *N = Nsamples;
@@ -279,6 +281,7 @@ int LALInferenceH5VariablesArrayToDataset(
     assert(dataset);
     int ret = XLALH5TableAppend(
         dataset, column_offsets, column_sizes, N, type_size, data);
+    (void) ret;
     assert(ret == 0);
     XLALFree(data);
 

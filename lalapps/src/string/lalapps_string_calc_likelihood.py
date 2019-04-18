@@ -25,12 +25,15 @@
 #
 
 
+from __future__ import print_function
+
+
 from optparse import OptionParser
 import sqlite3
 import sys
 
 
-from glue.ligolw import dbtables
+from ligo.lw import dbtables
 from lal.utils import CacheEntry
 from lalburst import git_version
 from lalburst import calc_likelihood
@@ -104,7 +107,7 @@ options, filenames = parse_command_line()
 
 coincparamsdistributions, likelihood_seglists = stringutils.load_likelihood_data(options.likelihood_filenames, verbose = options.verbose)
 if options.verbose:
-	print >>sys.stderr, "computing event densities ..."
+	print("computing event densities ...", file=sys.stderr)
 coincparamsdistributions.finish()
 
 
@@ -119,7 +122,7 @@ for n, filename in enumerate(filenames):
 	#
 
 	if options.verbose:
-		print >>sys.stderr, "%d/%d: %s" % (n + 1, len(filenames), filename)
+		print("%d/%d: %s" % (n + 1, len(filenames), filename), file=sys.stderr)
 
 	working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
 	connection = sqlite3.connect(working_filename)
@@ -134,7 +137,7 @@ for n, filename in enumerate(filenames):
 	if options.verbose:
 		SnglBurstUtils.summarize_coinc_database(contents)
 	if not contents.seglists and options.verbose:
-		print >>sys.stderr, "\twarning:  no segments found"
+		print("\twarning:  no segments found", file=sys.stderr)
 
 	#
 	# Build triangulators.  The timing uncertainty of +/- 8e-5 s was

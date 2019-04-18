@@ -47,7 +47,7 @@ These files are written to the settings["datadir"] path and have the form:
 ### As in the TGR paper:
 from matplotlib import rc
 import matplotlib
-matplotlib.rc('text.latex', preamble = '\usepackage{txfonts}')
+matplotlib.rc('text.latex', preamble = r'\usepackage{txfonts}')
 rc('text', usetex=True)
 rc('font', family='serif')
 rc('font', serif='times')

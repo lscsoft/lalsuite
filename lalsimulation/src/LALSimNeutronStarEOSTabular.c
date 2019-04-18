@@ -400,6 +400,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
  * - AP2
  * - AP3
  * - AP4
+ * - APR4_EPP
  * - BBB2
  * - BGN1H1
  * - BPAL12
@@ -420,6 +421,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
  * - H7
  * - MPA1
  * - MS1B
+ * - MS1B_PP
+ * - MS1_PP
  * - MS1
  * - MS2
  * - PAL6
@@ -434,6 +437,29 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
  * - WFF1
  * - WFF2
  * - WFF3
+ * We also include more modern equations from the CompOSE website
+ * https://compose.obspm.fr/ downloaded on 18 June 2018. These EOSs are:
+ * - APR
+ * - BHF_BBB2
+ * - KDE0V
+ * - KDE0V1
+ * - RS
+ * - SK255
+ * - SK272
+ * - SKA
+ * - SKB
+ * - SKI2
+ * - SKI3
+ * - SKI4
+ * - SKI5
+ * - SKI6
+ * - SKMP
+ * - SKOP
+ * - SLY2
+ * - SLY230A
+ * - SLY9
+ * And we include HQC18 from http://user.numazu-ct.ac.jp/~sumi/eos/HQC18_submit
+ * - HQC18
  * @param[in] name The name of the equation of state.
  * @return A pointer to neutron star equation of state structure.
  */

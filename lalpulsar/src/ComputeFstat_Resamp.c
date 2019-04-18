@@ -35,6 +35,15 @@
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 
+///
+/// \defgroup ComputeFstat_Resamp_c Module ComputeFstat_Resamp.c
+/// \ingroup ComputeFstat_h
+/// \brief Implements the \a Resamp: FFT-based resampling algorithm for
+/// computing the \f$\mathcal{F}\f$-statistic \cite JKS98 .
+///
+
+// @{
+
 // ========== Resamp internals ==========
 
 // ----- local macros ----------
@@ -1207,3 +1216,5 @@ XLALGetFstatTiming_Resamp ( const void *method_data, FstatTimingGeneric *timingG
 
   return XLAL_SUCCESS;
 } // XLALGetFstatTiming_Resamp()
+
+// @}

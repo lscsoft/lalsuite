@@ -126,8 +126,8 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
    XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
    XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Invalid NULL input 'argv'\n");
 
-   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+   uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+   uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
    uvar->outfilename = XLALStringDuplicate("skygrid.dat");
    uvar->skyRegion = XLALStringDuplicate("allsky");
    uvar->Tsft = 1800;

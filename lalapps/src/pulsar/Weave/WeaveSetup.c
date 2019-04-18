@@ -47,8 +47,8 @@ int main( int argc, char *argv[] )
     UINT4 segment_count, spindowns;
   } uvar_struct = {
     .detector_motion = XLALStringDuplicate( "spin+orbit" ),
-    .ephem_earth = XLALStringDuplicate( "earth00-19-DE405.dat.gz" ),
-    .ephem_sun = XLALStringDuplicate( "sun00-19-DE405.dat.gz" ),
+    .ephem_earth = XLALStringDuplicate( "earth00-40-DE405.dat.gz" ),
+    .ephem_sun = XLALStringDuplicate( "sun00-40-DE405.dat.gz" ),
     .segment_count = 1,
     .spindowns = 1,
   };

@@ -203,6 +203,8 @@ extern "C" {
 " --randomise         Set this, with an INT seed, to randomise the data (through permutations\n\
                      of the time stamps) for use in Monte-Carlo studies. NOTE: this will not\n\
                      work if using the code to create injections\n"\
+" --start-time        (REAL8) only use data after the given GPS start time\n"\
+" --end-time          (REAL8) discard data after the given GPS end time\n"\
 " --truncate-time     maximum GPS time to be analyzed (discards data with larger\n\
                      timestamp)\n"\
 " --truncate-samples  maximum sample number to be analyzed (analyzes only first\n\

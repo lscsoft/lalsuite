@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <lal/XLALError.h>
+#include <lal/LALError.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
@@ -177,7 +178,7 @@ XLALSimInspiralInSearchedData(
 
   int numInj = 0;
 
-  XLALTimeSortSearchSummary( summList, LALCompareSearchSummaryByOutTime );
+  XLALTimeSortSearchSummary( summList, XLALCompareSearchSummaryByOutTime );
   XLALSortSimInspiral( eventHead, XLALCompareSimInspiralByGeocentEndTime );
 
   thisEvent = *eventHead;
@@ -441,11 +442,11 @@ LALGalacticInspiralParamsToSimInspiralTable(
   ATTATCHSTATUSPTR( status );
 
   ASSERT( output, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
   ASSERT( input, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
   ASSERT( params, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
 
 
   /*
@@ -462,7 +463,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
 
   if ( ppnParams.position.system != COORDINATESYSTEM_EQUATORIAL )
   {
-    ABORT( status, LIGOMETADATAUTILSH_ECOOR, LIGOMETADATAUTILSH_MSGECOOR );
+    ABORT( status, LAL_BADPARM_ERR, LAL_BADPARM_MSG );
   }
 
   /* copy the inspiral data into sim_inspiral table */
@@ -586,15 +587,15 @@ LALInspiralSiteTimeAndDist(
 
   /* check that the arguments are not null */
   ASSERT( output, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
   ASSERT( detector, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
   ASSERT( endTime, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
   ASSERT( effDist, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
   ASSERT( skyPos, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
 
   memset( &source, 0, sizeof(LALSource) );
   memset( &detAndSource, 0, sizeof(LALDetAndSource) );
@@ -652,7 +653,7 @@ LALPopulateSimInspiralSiteInfo(
   ATTATCHSTATUSPTR( status );
 
   ASSERT( output, status,
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+      LAL_NULL_ERR, LAL_NULL_MSG );
 
   /* set up params for the geocent end time and source location */
   memset( &skyPos, 0, sizeof(SkyPosition) );

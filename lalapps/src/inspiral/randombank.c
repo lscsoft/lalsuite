@@ -49,7 +49,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/Units.h>
 #include <lal/Date.h>

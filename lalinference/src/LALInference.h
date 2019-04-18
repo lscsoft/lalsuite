@@ -765,6 +765,9 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
 /** Return a ProcessParamsTable from the command line arguments */
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[]);
 
+/** Return a ProcessParamsTrable from a string vector */
+ProcessParamsTable *LALInferenceParseStringVector(LALStringVector *arglist)
+
 /** Return a ProcessParamsTable from the command line arguments (SWIG version) */
 ProcessParamsTable *LALInferenceParseCommandLineStringVector(LALStringVector *args);
 

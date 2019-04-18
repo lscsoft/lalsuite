@@ -71,6 +71,7 @@ test/EOBNRv2Test
 test/GRFlagsTest
 test/GenerateSimulation
 test/InitialSpinRotationTest
+test/LALSimulationTest
 test/OpenMPTest
 test/PNCoefficients
 test/PhenomPTest

@@ -3,6 +3,8 @@ This program simply computes the bayes factor between the coherent and incoheren
 given as input the B files for the run.
 '''
 
+from __future__ import print_function
+
 from optparse import OptionParser
 import sys
 import os
@@ -48,27 +50,27 @@ def get_metadata_hdf5(filename,key):
             print('Error: multiple runs %s found in input file %s'%g.keys(),filename)
             sys.exit(1)
         # Descend into run group
-        g=g[g.keys()[0]]
+        g=g[list(g.keys())[0]]
         return g.attrs[key]
 
 # Sanity check input arguments
 if len(args)==0:
-	print 'No input files specified'
+	print('No input files specified')
 	sys.exit(1)
 
 if( sum([opts.ci,opts.cin,opts.cin_or_n])!=1):
-	print 'Please specify one of -c, -n or -b. See help for details.'
+	print('Please specify one of -c, -n or -b. See help for details.')
 	sys.exit(1)
 
 cofile=args[0]
 incofiles=args[1:]
 
 if len(incofiles)<2:
-	print 'Cannot perform coherence test on less than 2 IFOs'
+	print('Cannot perform coherence test on less than 2 IFOs')
 	sys.exit(0)
 
 if len(incofiles)==0:
-	print 'Error: You must specify incoherent input files'
+	print('Error: You must specify incoherent input files')
 	sys.exit(1)
 
 def logadd(a,b):
@@ -76,7 +78,7 @@ def logadd(a,b):
     return (b+log(1+exp(a-b)))
 
 def get_metadata_old(Bfile,key):
-    print 'Looking for '+Bfile
+    print('Looking for '+Bfile)
     if os.access(Bfile,os.R_OK):
         outstat = loadtxt(Bfile)
         if key=='log_evidence':
@@ -85,7 +87,7 @@ def get_metadata_old(Bfile,key):
             return outstat[2]
         if key=='log_bayes_factor':
             return outstat[0]
-        print 'Unknown key %s'%(key)
+        print('Unknown key %s'%(key))
         return None
     else:
         return None
@@ -126,8 +128,8 @@ if (opts.cin):
 if(opts.cin_or_n):
     B=Zco-Z_incoherentORnoise
 
-print '%.3f'%(B)
+print('%.3f'%(B))
 
 if(opts.outfile is not None ):
-	print >>out,'%.3f'%(B)
+	print('%.3f'%(B), file=out)
 	out.close()

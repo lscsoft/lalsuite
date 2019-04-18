@@ -224,7 +224,8 @@ if __name__ == "__main__":
                 samples['a1'],
                 samples['a2'],
                 m1, m2,
-                samples['f_ref'])
+                samples['f_ref'],
+                samples['phi_orb'])
         inclination = inclination.flatten()
         theta1 = theta1.flatten()
         phi1 = phi1.flatten()

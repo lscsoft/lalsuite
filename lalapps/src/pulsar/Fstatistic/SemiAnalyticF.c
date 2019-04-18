@@ -225,8 +225,8 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   CLA->sqrtSh=1.0;
   
   /** Default year-span of ephemeris-files to be used */
-  CLA->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  CLA->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  CLA->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  CLA->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
   
   /* ---------- register all our user-variable ---------- */
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->Alpha),      "Alpha",          REAL8,  'a', OPTIONAL,  "Sky position Alpha (equatorial coordinates) in radians") == XLAL_SUCCESS, XLAL_EFUNC);

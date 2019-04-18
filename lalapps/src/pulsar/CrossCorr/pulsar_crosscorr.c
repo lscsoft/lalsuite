@@ -1733,8 +1733,8 @@ void initUserVars (LALStatus *status)
   uvar_brakingindexResolution = uvar_brakingindex/10.0;
   uvar_fRef = 1.0;
 
-  uvar_ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar_ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar_ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar_ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   uvar_dirnameOut = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
   strcpy(uvar_dirnameOut,DIROUT);

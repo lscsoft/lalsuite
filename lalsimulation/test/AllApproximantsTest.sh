@@ -131,7 +131,7 @@ do
 done
 
 # Test FD aligned-spin, tidal approximants
-approx="TaylorF2 TaylorF2RedSpinTidal"
+approx="TaylorF2 TaylorF2RedSpinTidal TaylorF2Ecc"
 
 for i in $approx;
 do

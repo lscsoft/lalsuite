@@ -33,7 +33,7 @@
   if ( (fstat) != DFTI_NO_ERROR )                       \
   {                                                     \
     char *errmsg = DftiErrorMessage( fftStat );         \
-    XLAL_ERROR( COMPLEXFFTH_EINTL, errmsg );            \
+    XLAL_ERROR( COMPLEXFFTH_EINTL, "%s", errmsg );      \
   }                                                     \
   else (void)(0)
 
@@ -41,7 +41,7 @@
   if ( (fstat) != DFTI_NO_ERROR )                       \
   {                                                     \
     char *errmsg = DftiErrorMessage( fftStat );         \
-    XLAL_ERROR_NULL( COMPLEXFFTH_EINTL, errmsg );       \
+    XLAL_ERROR_NULL( COMPLEXFFTH_EINTL, "%s", errmsg ); \
   }                                                     \
   else (void)(0)
 
@@ -49,7 +49,7 @@
   if ( (fstat) != DFTI_NO_ERROR )                       \
   {                                                     \
     char *errmsg = DftiErrorMessage( fftStat );         \
-    XLAL_ERROR_VOID( COMPLEXFFTH_EINTL, errmsg );       \
+    XLAL_ERROR_VOID( COMPLEXFFTH_EINTL, "%s", errmsg ); \
   }                                                     \
   else (void)(0)
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env /usr/bin/python
 
+from __future__ import print_function
+
 import shutil
 import os
 import sys
@@ -17,7 +19,7 @@ class wiki(object):
   def image_link(self,path,webserver):
     thumb = "thumb_" + path
     command = 'convert ' + path + ' -resize 300x300 -antialias ' + thumb
-    print command
+    print(command)
     popen = subprocess.Popen(command.split())
     popen.communicate()
     status = popen.returncode
@@ -58,7 +60,7 @@ def parse_command_line():
   opts, filenames = parser.parse_args()
 
   if not opts.webserver:
-    print >>sys.stderr, "must specify a webserver"
+    print("must specify a webserver", file=sys.stderr)
     sys.exit(1)
   return opts, filenames
 
@@ -72,7 +74,7 @@ webserver = opts.webserver
 open_box = opts.open_box
 base_name = opts.output_name_tag
 
-if open_box: print >>sys.stderr, "WARNING: OPENING THE BOX"
+if open_box: print("WARNING: OPENING THE BOX", file=sys.stderr)
 
 page = wiki(open_box, fname=base_name+"wiki.txt")
 
@@ -117,10 +119,10 @@ page.image_table(image_list,webserver)
 
 try:
   for l in open(base_name+"playground_summary_table.txt").readlines(): page.write(l)
-except: print >>sys.stderr, "WARNING: couldn't find playground summary, continuing"
+except: print("WARNING: couldn't find playground summary, continuing", file=sys.stderr)
 
 if open_box:
-    print >>sys.stderr, "WARNING: OPENING THE BOX"
+    print("WARNING: OPENING THE BOX", file=sys.stderr)
 
     page.section("Full Data Chi-squared")
     image_list = page.image_glob(base_name+'3_chi2_vs_rho_*.png')
@@ -144,7 +146,7 @@ if open_box:
 
     try:
       for l in open(base_name+"summary_table.txt").readlines(): page.write(l)
-    except: print >>sys.stderr, "WARNING: couldn't find summary, continuing"
+    except: print("WARNING: couldn't find summary, continuing", file=sys.stderr)
 
     # UPPER LIMIT PLOTS
     #ifos_list = [f.replace('volume_time.png','') for f in page.image_glob('*volume_time.png')]
@@ -152,7 +154,7 @@ if open_box:
     page.section("Volume x time ")
     try:
       filenames = page.image_glob(base_name+'-*_range_summary.txt')
-      print filenames
+      print(filenames)
       files = [open(f).readlines() for f in filenames]
       for f in filenames:
         page.write("|| '''!%s''' || || || || ||" % (f.replace('range_summary.txt','').replace(base_name, "").replace('_','').replace('-',''),) )
@@ -161,7 +163,7 @@ if open_box:
         for f in files: 
           page.write(f[i].strip())
         page.write("\n")
-    except: print >>sys.stderr, "WARNING: couldn't find Range summary , continuing"
+    except: print("WARNING: couldn't find Range summary , continuing", file=sys.stderr)
 
     page.write("\n")
     image_list = page.image_glob(base_name+'-*_volume_time.png') 
@@ -189,6 +191,6 @@ if open_box:
 
 try: 
   for l in open(base_name+"plotsummary.txt").readlines(): page.write(l)
-except: print >>sys.stderr, "WARNING couldn't find plotsummary.txt"
+except: print("WARNING couldn't find plotsummary.txt", file=sys.stderr)
 
 page.finish()

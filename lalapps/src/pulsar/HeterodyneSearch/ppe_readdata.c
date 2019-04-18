@@ -141,7 +141,7 @@ void read_pulsar_data( LALInferenceRunState *runState ){
 
   /* Initialize the model, as it will hold IFO params and signal buffers */
   /* single thread */
-  runState->threads[0]->model = XLALCalloc(1, sizeof(LALInferenceModel));
+  runState->threads[0].model = XLALCalloc(1, sizeof(LALInferenceModel));
 
   /* timing values */
   struct timeval time1, time2;
@@ -389,8 +389,8 @@ number of detectors specified (no. dets =%d)\n", ml, ml, numDets);
 
   XLALFree( tempdets );
 
-  runState->threads[0]->model->ifo_loglikelihoods = XLALMalloc( sizeof(REAL8)*ml*numDets );
-  runState->threads[0]->model->ifo_SNRs = XLALMalloc( sizeof(REAL8)*ml*numDets );
+  runState->threads[0].model->ifo_loglikelihoods = XLALMalloc( sizeof(REAL8)*ml*numDets );
+  runState->threads[0].model->ifo_SNRs = XLALMalloc( sizeof(REAL8)*ml*numDets );
 
   UINT4 nstreams = ml*numDets;
   LALInferenceAddVariable( runState->algorithmParams, "numstreams", &nstreams, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
@@ -441,7 +441,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     if ( *LALInferenceGetProcParamVal( commandLine, "--reheterodyne")->value == '\0'){
     fprintf(stderr, "Error... --reheterodyne needs frequency as argument.\n");
     fprintf(stderr, "Provide argument or remove flag\n.");
-    exit(0);
+    exit(1);
     }
     else {
     rehetfreq = atof( LALInferenceGetProcParamVal( commandLine, "--reheterodyne" )->value );
@@ -455,6 +455,52 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
 
   /* initialise random number generator if seed is zero */
   if ( seed == 0 ){ randomParams = XLALCreateRandomParams( 0 ); }
+
+  /* check if truncating data or only using part of it - the "--start-time" and
+     "--end-time" flags can be used to specify a chunk of data to use, and these
+     will overrule any "--truncate-*" flags that are used. This flags will only
+     be used if using real data, but not if generating fake data. */
+  REAL8 startTimeValue = 0., endTimeValue = INFINITY;
+  if ( LALInferenceGetProcParamVal( commandLine, "--start-time" ) ){
+    startTimeValue = atof(LALInferenceGetProcParamVal( commandLine, "--start-time" )->value);
+  }
+  if ( LALInferenceGetProcParamVal( commandLine, "--end-time" ) ){
+    endTimeValue = atof(LALInferenceGetProcParamVal( commandLine, "--end-time" )->value);
+  }
+
+  if ( endTimeValue <= startTimeValue ){
+    fprintf(stderr, "Error... start time is before end time.\n");
+    exit(1);
+  }
+
+  if ( ( startTimeValue == 0 ) && ( endTimeValue == INFINITY ) ){
+    /* there are three truncation modes: "--truncate-time" uses a maximum */
+    /* GPS time, "--truncate-samples" uses maximum number of samples and */
+    /* "--truncate-fraction" uses a fraction of the number of samples. */
+    UINT4 truncate = 0;
+    char truncationFlags[][25] = { "--truncate-time", "--truncate-samples", "--truncate-fraction" };
+
+    size_t trunci = 0;
+    for( trunci = 0; trunci < sizeof(truncationFlags) / sizeof(truncationFlags[0]); trunci++){
+      if ( LALInferenceGetProcParamVal( commandLine, truncationFlags[trunci] ) ){
+        if ( *LALInferenceGetProcParamVal( commandLine, truncationFlags[trunci] )-> value != '\0'){
+         truncate++;
+         endTimeValue = atof( LALInferenceGetProcParamVal( commandLine, truncationFlags[trunci] )->value );
+        }
+        else {
+          fprintf(stderr, "Error... truncation option requires a value.\n");
+          fprintf(stderr, USAGE, commandLine->program);
+          exit(1);
+        }
+      }
+    }
+
+    if ( truncate > 1 ){
+      fprintf(stderr, "Error... can only take one truncation flag.\n");
+      fprintf(stderr, USAGE, commandLine->program);
+      exit(1);
+    }
+  }
 
   /* read in data, needs to read in two sets of data for each ifo for pinsf model */
   for( i = 0, prev=NULL, prevmodel=NULL ; i < ml*numDets ; i++, prev=ifodata, prevmodel=ifomodel ){
@@ -502,40 +548,9 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       }
     }
 
-    /* check if truncating data */
-    /* there are three truncation modes: "--truncate-time" uses a maximum */
-    /* GPS time, "--truncate-samples" uses maximum number of samples and */
-    /* "--truncate-fraction" uses a fraction of the number of samples. */
-    UINT4 truncate = 0;
-    REAL8 truncateValue = 0;
-    char truncationFlags[][25] = { "--truncate-time", "--truncate-samples", "--truncate-fraction" };
-
-    size_t trunci = 0;
-    for( trunci = 0; trunci < sizeof(truncationFlags) / sizeof(truncationFlags[0]); trunci++)
-    {
-      if ( LALInferenceGetProcParamVal( commandLine, truncationFlags[trunci] ) ){
-        if ( *LALInferenceGetProcParamVal( commandLine, truncationFlags[trunci] )-> value != '\0'){
-         truncate++;
-         truncateValue = atof( LALInferenceGetProcParamVal( commandLine, truncationFlags[trunci] )->value );
-        }
-        else {
-          fprintf(stderr, "Error... truncation option requires a value.\n");
-          fprintf(stderr, USAGE, commandLine->program);
-          exit(0);
-        }
-      }
-    }
-
-    if ( truncate > 1 ){
-      fprintf(stderr, "Error... can only take one truncation flag.\n");
-      fprintf(stderr, USAGE, commandLine->program);
-      exit(0);
-    }
-
-
     if( i == 0 ) {
         runState->data = ifodata;
-        runState->threads[0]->model->ifo = ifomodel;
+        runState->threads[0].model->ifo = ifomodel;
     }
     if( i > 0 ) {
         prev->next = ifodata;
@@ -628,20 +643,26 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
             if ( notunique ){ continue; }
           }
         }
-        /* at this point, we haven't added this item to the data yet */
-        /* check truncation conditions before doing so */
-        if ( LALInferenceGetProcParamVal( commandLine, "--truncate-time" ) ){
-          /* assume truncateValue is a GPS time */
-          if ( times > truncateValue ){
-            /* exit loop */
-            break;
+        
+        /* check whether to only inlcude a section of the data */
+        if ( !isinf(endTimeValue) || (startTimeValue != 0.) ){
+          if ( times < startTimeValue ){ continue; }
+
+          if ( LALInferenceGetProcParamVal( commandLine, "--end-time" ) ||
+               LALInferenceGetProcParamVal( commandLine, "--truncate-time" ) ){
+            /* assume endTimeValue is a GPS time */
+            if ( times > endTimeValue ){
+              /* exit loop */
+              break;
+            }
           }
-        }
-        if ( LALInferenceGetProcParamVal( commandLine, "--truncate-samples" ) ){
-          /* assume truncateValue is an index */
-          if ( j >= truncateValue ){
-            /* exit loop */
-            break;
+        
+          if ( LALInferenceGetProcParamVal( commandLine, "--truncate-samples" ) ){
+            /* assume endTimeValue is an index */
+            if ( j >= (UINT4)endTimeValue ){
+              /* exit loop */
+              break;
+            }
           }
         }
 
@@ -683,15 +704,17 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       datalength = j;
 
       /* truncate data if --truncate-fraction was passed */
-      if ( LALInferenceGetProcParamVal( commandLine, "--truncate-fraction" ) ){
-        /* assume truncateValue is a decimal between 0 and 1 */
+      if ( LALInferenceGetProcParamVal( commandLine, "--truncate-fraction" ) &&
+           !LALInferenceGetProcParamVal( commandLine, "--start-time" ) &&
+           !LALInferenceGetProcParamVal( commandLine, "--end-time" ) ){
+        /* assume endTimeValue is a decimal between 0 and 1 */
         /* (fraction of the number of samples) */
-        if ( truncateValue <= 0 || truncateValue > 1 ){
+        if ( endTimeValue <= 0 || endTimeValue > 1 ){
             fprintf(stderr, "Error... truncation fraction must be between 0 and 1");
             exit(3);
         } else {
           /* discard excess data */
-          int truncationIndex = floor(truncateValue * datalength );
+          int truncationIndex = floor(endTimeValue * datalength );
           ifodata->compTimeData = XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, truncationIndex );
           ifomodel->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifomodel->compTimeSignal, 0, truncationIndex );
           ifodata->varTimeData = XLALResizeREAL8TimeSeries( ifodata->varTimeData, 0, truncationIndex );
@@ -862,7 +885,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
   else { chunkMax = CHUNKMAX; } /* default maximum chunk length */
 
   LALInferenceIFOData *datatmp = runState->data;
-  LALInferenceIFOModel *modeltmp = runState->threads[0]->model->ifo;
+  LALInferenceIFOModel *modeltmp = runState->threads[0].model->ifo;
   while ( modeltmp ){
     UINT4Vector *chunkLength = NULL;
 
@@ -1025,29 +1048,29 @@ void setup_from_par_file( LALInferenceRunState *runState )
   /* Setup lookup tables for amplitudes */
   setup_lookup_tables( runState, &psr );
 
-  runState->threads[0]->model->params = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-  runState->threads[0]->model->domain = LAL_SIM_DOMAIN_TIME;
+  runState->threads[0].model->params = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+  runState->threads[0].model->domain = LAL_SIM_DOMAIN_TIME;
 
-  runState->threads[0]->currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+  runState->threads[0].currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
 
   /* Add initial (unchanging) variables for the model from the par file */
-  add_initial_variables( runState->threads[0]->currentParams, pulsar );
+  add_initial_variables( runState->threads[0].currentParams, pulsar );
 
   /* check for binary model */
   CHAR *binarymodel = NULL;
-  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "BINARY" ) ){
-    binarymodel = XLALStringDuplicate(*(CHAR**)LALInferenceGetVariable( runState->threads[0]->currentParams, "BINARY" ));
+  if ( LALInferenceCheckVariable( runState->threads[0].currentParams, "BINARY" ) ){
+    binarymodel = XLALStringDuplicate(*(CHAR**)LALInferenceGetVariable( runState->threads[0].currentParams, "BINARY" ));
 
     /* now remove from runState->params (as it conflict with calls to LALInferenceCompareVariables in the proposal) */
-    LALInferenceRemoveVariable( runState->threads[0]->currentParams, "BINARY" );
+    LALInferenceRemoveVariable( runState->threads[0].currentParams, "BINARY" );
   }
 
   /* check for glitches */
   UINT4 glitches = 0;
-  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "GLNUM" ) ){ glitches = 1; }
+  if ( LALInferenceCheckVariable( runState->threads[0].currentParams, "GLNUM" ) ){ glitches = 1; }
 
   /* Setup barycentring delays */
-  LALInferenceIFOModel *ifo_model = runState->threads[0]->model->ifo;
+  LALInferenceIFOModel *ifo_model = runState->threads[0].model->ifo;
   while( data ){
     REAL8Vector *freqFactors = NULL;
     UINT4 j = 0, k = 0;
@@ -1104,7 +1127,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
 
   /* set frequency bin step from longest data time span */
   REAL8 df = 1./(2.*DeltaT);
-  LALInferenceAddVariable( runState->threads[0]->currentParams, "df", &df, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+  LALInferenceAddVariable( runState->threads[0].currentParams, "df", &df, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
   return;
 }
@@ -1244,8 +1267,8 @@ void samples_prior( LALInferenceRunState *runState ){
            and par file, otherwise set the parameter to fixed */
         LALInferenceParamVaryType vary;
 
-        if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, paramNames->data[j] ) ){
-          vary = LALInferenceGetVariableVaryType( runState->threads[0]->currentParams, paramNames->data[j] );
+        if ( LALInferenceCheckVariable( runState->threads[0].currentParams, paramNames->data[j] ) ){
+          vary = LALInferenceGetVariableVaryType( runState->threads[0].currentParams, paramNames->data[j] );
         }
         else { vary = LALINFERENCE_PARAM_FIXED; }
 

@@ -159,6 +159,31 @@ XLALCreateStringVector ( const CHAR *str1, ... )
 
 
 /**
+ * Create an empty string vector of the given length
+ */
+LALStringVector *XLALCreateEmptyStringVector ( UINT4 length )
+{
+  LALStringVector * vector;
+  vector = LALMalloc( sizeof( *vector ) );
+  if ( ! vector )
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  vector->length = length;
+  if ( ! length ) /* zero length: set data pointer to be NULL */
+    vector->data = NULL;
+  else /* non-zero length: allocate memory for data */
+  {
+    vector->data = LALCalloc( length, sizeof( *vector->data ) );
+    if ( ! vector->data )
+    {
+      LALFree( vector );
+      XLAL_ERROR_NULL( XLAL_ENOMEM );
+    }
+  }
+  return vector;
+}
+
+
+/**
  * Create a copy of a string vector
  */
 LALStringVector *XLALCopyStringVector( const LALStringVector *vect )

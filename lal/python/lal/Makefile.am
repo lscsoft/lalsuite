@@ -17,6 +17,7 @@ pymoduledir = $(pkgpythondir)
 
 pymodule_PYTHON = \
 	__init__.py \
+	antenna.py \
 	git_version.py \
 	gpstime.py \
 	rate.py \
