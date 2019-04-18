@@ -1832,7 +1832,14 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
 
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
 {
-    return LALInferenceParseStringVector(XLALCreateStringVector(argv));
+    LALStringVector *args=NULL;
+	for(int i=0;i<argc;i++)
+	{
+		XLALAppendString2Vector(args, argv[i]);
+	}
+    ProcessParamsTable *ppt=LALInferenceParseStringVector(args);
+	XLALDestroyStringVector(args);
+	return(ppt);
 }
 
 ProcessParamsTable *LALInferenceParseStringVector(LALStringVector *arglist)
@@ -1841,9 +1848,9 @@ ProcessParamsTable *LALInferenceParseStringVector(LALStringVector *arglist)
 /* one empty entry.                                                                   */
 {
   int i, state=1;
-  int argc = arglist->count;
+  int argc = arglist->length;
   int dbldash;
-  char *argv[] = arglist->data;
+  char **argv = arglist->data;
   ProcessParamsTable *head, *ptr=NULL;
   /* always (even for argc==1, i.e. no arguments) put one element in list: */
   head = (ProcessParamsTable*) XLALCalloc(1, sizeof(ProcessParamsTable));
