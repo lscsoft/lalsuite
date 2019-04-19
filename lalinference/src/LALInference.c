@@ -1835,7 +1835,7 @@ ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
     LALStringVector *args=NULL;
 	for(int i=0;i<argc;i++)
 	{
-		XLALAppendString2Vector(args, argv[i]);
+		args=XLALAppendString2Vector(args, argv[i]);
 	}
     ProcessParamsTable *ppt=LALInferenceParseStringVector(args);
 	XLALDestroyStringVector(args);
