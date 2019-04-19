@@ -443,16 +443,15 @@ int LALInferenceInspiralPriorTest(void)
 
 	REAL8 result;
 	LALInferenceRunState *runState = XLALCalloc(1, sizeof(LALInferenceRunState));
-    LALInferenceThreadState *thread = XLALCalloc(1, sizeof(LALInferenceThreadState));
-    runState->threads = XLALCalloc(1, sizeof(LALInferenceThreadState*));
-    runState->threads[0] = *thread;
 	LALInferenceVariables *params = XLALCalloc(1, sizeof(LALInferenceVariables));
 	LALInferenceVariables *priorArgs = XLALCalloc(1, sizeof(LALInferenceVariables));
+	runState->threads = XLALCalloc(1,sizeof(LALInferenceThreadState));
+    LALInferenceInitThread(&runState->threads[0]);
 
 	// Standard null reference check.
 	int failed = 1;
 	runState->priorArgs = NULL;
-    thread->model = NULL;
+	LALInferenceThreadState *thread = &runState->threads[0];
 	XLAL_TRY(result = LALInferenceInspiralPrior(runState, params, thread->model), errnum);
 	failed &= !XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_EFAULT;
 	runState->priorArgs = priorArgs;
