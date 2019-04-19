@@ -1832,7 +1832,7 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
 
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
 {
-    LALStringVector *args=NULL;
+    LALStringVector *args=XLALCreateStringVector(NULL);
 	for(int i=0;i<argc;i++)
 	{
 		args=XLALAppendString2Vector(args, argv[i]);
