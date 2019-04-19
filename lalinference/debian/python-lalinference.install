@@ -10,5 +10,6 @@ usr/bin/lalinference_pipe
 usr/bin/lalinference_pp_pipe
 usr/bin/lalinference_review_test
 usr/bin/lalinference_tiger_pipe
+usr/bin/lalinference_cpnest
 usr/bin/rapidpe_*
 usr/lib/python2*
