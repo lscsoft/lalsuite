@@ -1,3 +1,4 @@
+import lal
 import lalinference as li
 import collections
 
@@ -117,8 +118,10 @@ class LALInferenceCBCWrapper(object):
             List of command line arguments that will be used to
             set up the lalinference state. (similar to argv)
         """
-        
-        procParams=li.ParseStringVector(lal.CreateStringVector(*argv))
+        strvec = lal.CreateStringVector(argv[0])
+        for a in argv[1:]:
+            strvec=lal.AppendString2Vector(strvec, a)
+        procParams=li.ParseStringVector(strvec)
         self.state = li.InitRunState(procParams)
         self.state.commandLine=procParams
         li.InitCBCThreads(self.state,1)

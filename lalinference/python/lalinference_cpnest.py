@@ -32,7 +32,7 @@ if __name__=='__main__':
     opts, args = parser.parse_known_args(sys.argv)
     print(args)
     LIstate = LIModel(sys.argv)
-    nest=cpnest.CPNest(LIstate, Nlive=opts.nlive, Nthreads=opts.nthreads, verbose=opts.verbose, maxmcmc=opts.maxmcmc, Poolsize=opts.poolsize)
+    nest=cpnest.CPNest(LIstate, nlive=opts.nlive, nthreads=opts.nthreads, verbose=opts.verbose, maxmcmc=opts.maxmcmc, poolsize=opts.poolsize)
     nest.run()
     if opts.plot:
         nest.plot()
