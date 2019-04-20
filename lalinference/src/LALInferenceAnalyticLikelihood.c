@@ -184,7 +184,7 @@ static void extractBurstDimensionlessVariableVector(LALInferenceVariables *curre
   frequency = LALInferenceGetREAL8Variable(currentParams, "frequency");
   q = LALInferenceGetREAL8Variable(currentParams, "quality");
   psi = LALInferenceGetREAL8Variable(currentParams, "polarisation");
-  alpha = LALInferenceGetREAL8Variable(currentParams, "alpha");
+  alpha = LALInferenceGetREAL8Variable(currentParams, "polar_angle");
   ra = LALInferenceGetREAL8Variable(currentParams, "rightascension");
   dec = LALInferenceGetREAL8Variable(currentParams, "declination");
   t = LALInferenceGetREAL8Variable(currentParams, "time");
