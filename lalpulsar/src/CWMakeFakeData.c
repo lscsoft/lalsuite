@@ -55,6 +55,23 @@
 // ---------- Global variables
 const REAL8 eps = 10 * LAL_REAL8_EPS;
 
+const char *const InjectionSourcesHelpString = "Source parameters to inject for simulated signal(s).\n"
+"This is a comma-separated list of file patterns for configuration files,\n"
+"or else direct configuration strings in the following format:\n"
+"  * Enclose with curly braces ('{}').\n"
+"  * Give pulsar parameters as key=value pairs with a '=' separator.\n"
+"  * Separate each key=value pair with a semicolon (';').\n"
+"Available parameters are:\n"
+"  * Required parameters: Alpha, Delta, Freq, refTime\n"
+"  * Optional parameters:\n"
+"    - Injection amplitudes: either (h0, cosi) or (aPlus, aCross), psi, phi0\n"
+"    - Higher-order spindowns: f1dot, f2dot, ... f6dot\n"
+"    - Binary sources: orbitTp, orbitArgp, orbitasini, orbitEcc, orbitPeriod\n"
+"    - Transient injections: transientWindowType, transientStartTime, transientTau\n"
+"Examples:\n"
+"  * '{Alpha=0; Delta=0; Freq=50; f1dot=1e-11; f2dot=0; refTime=1000000000; h0=1.00000000e-23; cosi=0; psi=0; phi0=0;}'\n"
+"  * 'file1.dat,someFiles*.txt,{Alpha=0;Delta=0;Freq=0;refTime=1000000000;},someOtherFiles[0-9].dat'\n\n";
+
 // ---------- local prototypes
 static UINT4 gcd (UINT4 numer, UINT4 denom);
 int XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne );
@@ -393,10 +410,8 @@ XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams,	///< input CW pulsar-
   XLAL_CHECK_NULL ( fHet >= 0, XLAL_EDOM );
 
   // translate amplitude params
-  REAL8 h0     = pulsarParams->Amp.h0;
-  REAL8 cosi   = pulsarParams->Amp.cosi;
-  REAL8 aPlus  = 0.5 * h0 * ( 1.0 + SQ(cosi) );
-  REAL8 aCross = h0 * cosi;
+  REAL8 aPlus  = pulsarParams->Amp.aPlus;
+  REAL8 aCross = pulsarParams->Amp.aCross;
   // translate 'modern' fkdot into 'old-style' spindown-vector
   UINT4 s_max;
   for ( s_max = PULSAR_MAX_SPINS-1; s_max > 0; s_max -- )
@@ -790,7 +805,7 @@ XLALDestroyPulsarParams ( PulsarParams *params )
  * OPTIONAL:
  * f1dot, f2dot, f3dot, f4dot, f5dot, f6dot
  * {h0, cosi} or {aPlus, aCross}, psi, phi0
- * transientWindowType, transientStartTime, transientTauDays
+ * transientWindowType, transientStartTime, transientTau
  *
  * Other config-variables found in the file will ... ?? error or accept?
  */
@@ -825,21 +840,13 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   // {h0,cosi} or {aPlus, aCross} mutually exclusive sets
   XLAL_CHECK ( ! ( have_h0 && have_aPlus ), XLAL_EINVAL );
 
-  if ( have_aPlus )	/* translate A_{+,x} into {h_0, cosi} */
+  if ( have_h0 )	/* translate {h_0, cosi} into A_{+,x}*/
     {
-      XLAL_CHECK ( fabs ( aCross ) <= aPlus, XLAL_EDOM, "ERROR: |aCross| (= %g) must be <= aPlus (= %g).\n", fabs(aCross), aPlus );
-      REAL8 disc = sqrt ( SQ(aPlus) - SQ(aCross) );
-      h0 = aPlus + disc;
-      if ( h0 > 0 ) {
-        cosi = aCross / h0;	// avoid division by 0!
-      }
-    } //if {aPlus, aCross}
-
-  XLAL_CHECK ( h0 >= 0, XLAL_EDOM );
-  pulsarParams->Amp.h0 	= h0;
-
-  XLAL_CHECK ( (cosi >= -1) && (cosi <= 1), XLAL_EDOM );
-  pulsarParams->Amp.cosi= cosi;
+        XLAL_CHECK ( h0 >= 0, XLAL_EDOM );
+        XLAL_CHECK ( (cosi >= -1) && (cosi <= 1), XLAL_EDOM );
+        pulsarParams->Amp.aPlus = 0.5 * h0 * (1.0 + SQ(cosi));
+        pulsarParams->Amp.aCross = h0 * cosi;
+    } //if {h0, cosi}
 
   // ----- psi
   REAL8 psi = 0; BOOLEAN have_psi;
@@ -947,9 +954,11 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   char *transientWindowType = NULL; BOOLEAN have_transientWindowType;
   XLAL_CHECK ( XLALReadConfigSTRINGVariable ( &transientWindowType, cfgdata, secName, "transientWindowType", &have_transientWindowType ) == XLAL_SUCCESS, XLAL_EFUNC );
   // ----- t0
-  REAL8 transientStartTime = 0; BOOLEAN have_transientStartTime;
-  XLAL_CHECK ( XLALReadConfigREAL8Variable ( &transientStartTime, cfgdata, secName, "transientStartTime", &have_transientStartTime ) == XLAL_SUCCESS, XLAL_EFUNC );
-  // ----- tau
+  UINT4 transientStartTime = 0; BOOLEAN have_transientStartTime;
+  XLAL_CHECK ( XLALReadConfigUINT4Variable ( &transientStartTime, cfgdata, secName, "transientStartTime", &have_transientStartTime ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // ----- tau (still keeping deprecated Days variant for backwards compatibility, for now)
+  UINT4 transientTau = 0; BOOLEAN have_transientTau;
+  XLAL_CHECK ( XLALReadConfigUINT4Variable ( &transientTau, cfgdata, secName, "transientTau", &have_transientTau ) == XLAL_SUCCESS, XLAL_EFUNC );
   REAL8 transientTauDays = 0; BOOLEAN have_transientTauDays;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &transientTauDays, cfgdata, secName, "transientTauDays", &have_transientTauDays ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -962,16 +971,22 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
 
   if ( pulsarParams->Transient.type != TRANSIENT_NONE )
     {
-      XLAL_CHECK ( have_transientStartTime && have_transientTauDays, XLAL_EINVAL );
-      XLAL_CHECK ( transientStartTime >= 0, XLAL_EDOM );
-      XLAL_CHECK ( transientTauDays > 0, XLAL_EDOM );
+      XLAL_CHECK ( have_transientStartTime && (have_transientTau || have_transientTauDays), XLAL_EINVAL, "For transientWindowType!=None, we also need transientStartTime and either transientTau (deprecated) or transientTau.");
+      XLAL_CHECK ( !(have_transientTau && have_transientTauDays), XLAL_EINVAL, "Cannot have both transientTau and transientTauDays; the latter is deprecated." );
 
-      pulsarParams->Transient.t0   = (UINT4) round ( transientStartTime );
-      pulsarParams->Transient.tau  = (UINT4) round ( transientTauDays * 86400 );
+      pulsarParams->Transient.t0   = transientStartTime;
+      if ( have_transientTauDays ) {
+        XLAL_CHECK ( transientTauDays > 0, XLAL_EDOM );
+        printf("Warning: Option transientTauDays is deprecated, please switch to using transientTau [UINT4, in seconds] instead.\n");
+        pulsarParams->Transient.tau  = (UINT4) round ( transientTauDays * 86400 );
+      }
+      else {
+        pulsarParams->Transient.tau  = transientTau;
+      }
     } /* if transient window != none */
   else
     {
-      XLAL_CHECK ( !(have_transientStartTime || have_transientTauDays), XLAL_EINVAL );
+      XLAL_CHECK ( !(have_transientStartTime || have_transientTau || have_transientTauDays), XLAL_EINVAL, "Cannot use transientStartTime, transientTau or transientTauDays without transientWindowType!" );
     }
 
   return XLAL_SUCCESS;

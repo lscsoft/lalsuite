@@ -53,7 +53,7 @@
  * ### Uses ###
  *
  * \code
- * LALCreateDetector()
+ * XLALCreateDetector()
  * \endcode
  */
 
@@ -89,9 +89,6 @@ Usage (const char *program, int exitflag);
 static void
 ParseOptions (int argc, char *argv[]);
 
-static void
-TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
-
 #define DETECTORSITETESTC_LOCTOL 3e-2
 #define DETECTORSITETESTC_RESTOL 1e-06
 
@@ -124,7 +121,7 @@ PrintLALDetector(LALDetector *detector)
 
 
 static int
-CheckDetector(LALStatus *status, LALDetector *cachedDetector)
+CheckDetector(LALDetector *cachedDetector)
 {
   LALDetector          constructedDetector;
   LALDetectorType      type = cachedDetector->type;
@@ -137,8 +134,7 @@ CheckDetector(LALStatus *status, LALDetector *cachedDetector)
 
   printf("  Changing to \"%s\",\n", frDetector.name);
 
-  LALCreateDetector( status, &constructedDetector, &frDetector, type );
-  TestStatus( status, CODES(0), DETECTORSITETESTC_EFLS );
+  XLALCreateDetector(&constructedDetector, &frDetector, type );
 
   printf("  Enum'ed type is %d (LALDETECTORTYPE_IFODIFF=%d)\n",
          constructedDetector.type, LALDETECTORTYPE_IFODIFF);
@@ -250,7 +246,6 @@ CheckDetector(LALStatus *status, LALDetector *cachedDetector)
 /* The main function */
 int main( int argc, char *argv[] )
 {
-  static LALStatus     status;
   int                  code;
 
   /*
@@ -305,28 +300,28 @@ int main( int argc, char *argv[] )
   printf("Checking LHO...\n");
   cachedDetector = lalCachedDetectors[LALDetectorIndexLHODIFF];
 
-  if ( ( code = CheckDetector( &status, &cachedDetector ) ) )
+  if ( ( code = CheckDetector( &cachedDetector ) ) )
   {
     return code;
   }
 
   printf("Checking LLO...\n");
   cachedDetector = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if ( ( code = CheckDetector( &status, &cachedDetector ) ) )
+  if ( ( code = CheckDetector( &cachedDetector ) ) )
   {
     return code;
   }
 
   printf("Checking VIRGO...\n");
   cachedDetector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
-  if ( ( code = CheckDetector( &status, &cachedDetector ) ) )
+  if ( ( code = CheckDetector( &cachedDetector ) ) )
   {
     return code;
   }
 
   printf("Checking GEO600...\n");
   cachedDetector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if ( ( code = CheckDetector( &status, &cachedDetector ) ) )
+  if ( ( code = CheckDetector( &cachedDetector ) ) )
   {
     return code;
   }
@@ -334,14 +329,14 @@ int main( int argc, char *argv[] )
 
   printf("Checking TAMA300...\n");
   cachedDetector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-  if ( ( code = CheckDetector( &status, &cachedDetector ) ) )
+  if ( ( code = CheckDetector( &cachedDetector ) ) )
   {
     return code;
   }
 
   printf("Checking CIT40...\n");
   cachedDetector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
-  if ( ( code = CheckDetector( &status, &cachedDetector ) ) )
+  if ( ( code = CheckDetector( &cachedDetector ) ) )
   {
     return code;
   }
@@ -349,7 +344,7 @@ int main( int argc, char *argv[] )
   /*
   printf("Checking trivial detector...\n");
 
-  if ( code = CheckDetector( &status, &testDetector ) )
+  if ( code = CheckDetector( &testDetector ) )
   {
     return code;
   }
@@ -360,13 +355,13 @@ int main( int argc, char *argv[] )
   PrintLALDetector(&lalCachedDetector[LALDetectorIndexLHODIFF]);
   PrintLALDetector(&lalCachedDetector[LALDetectorIndexLLODIFF]);
 
-  LALCreateDetector( &status, &lalDetector, &testFrDetector, &type );
+  XLALCreateDetector( &lalDetector, &testFrDetector, &type );
   PrintLALDetector( &lalDetector );
 
-  LALCreateDetector( &status, &lalDetector, &lloFrDetector, &type );
+  XLALCreateDetector( &lalDetector, &lloFrDetector, &type );
   PrintLALDetector( &lalDetector );
 
-  LALCreateDetector( &status, &lalDetector, &lhoFrDetector, &type );
+  XLALCreateDetector( &lalDetector, &lhoFrDetector, &type );
   PrintLALDetector( &lalDetector );
 
   printf("%15g %15g %15g\n\n", lalDetector.location[0],
@@ -389,51 +384,6 @@ int main( int argc, char *argv[] )
 
 /*----------------------------------------------------------------------*/
 
-
-/*
- * TestStatus ()
- *
- * Routine to check that the status code status->statusCode agrees with one of
- * the codes specified in the space-delimited string ignored; if not,
- * exit to the system with code exitcode.
- *
- */
-static void
-TestStatus (LALStatus *status, const char *ignored, int exitcode)
-{
-  char  str[64];
-  char *tok;
-
-  if (verbose)
-  {
-    REPORTSTATUS (status);
-  }
-
-  if (strncpy (str, ignored, sizeof (str)))
-  {
-    if ((tok = strtok (str, " ")))
-    {
-      do
-      {
-        if (status->statusCode == atoi (tok))
-        {
-          return;
-        }
-      }
-      while ((tok = strtok (NULL, " ")));
-    }
-    else
-    {
-      if (status->statusCode == atoi (tok))
-      {
-        return;
-      }
-    }
-  }
-
-  fprintf (stderr, "\nExiting to system with code %d\n", exitcode);
-  exit (exitcode);
-}
 
 /*
  * Usage ()

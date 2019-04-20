@@ -380,18 +380,6 @@ docker:tags:stretch:
 
 # compilers
 
-nightly:clang:6:
-  image: skymoo/ligo-lalsuite-clang:6
-  stage: nightly
-  script:
-    - ./00boot
-    - CC=clang-6.0 CXX=clang++-6.0 ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
 nightly:clang:7:
   image: skymoo/ligo-lalsuite-clang:7
   stage: nightly
@@ -416,6 +404,18 @@ nightly:clang:8:
     - schedules
     - web
 
+nightly:clang:9:
+  image: skymoo/ligo-lalsuite-clang:9
+  stage: nightly
+  script:
+    - ./00boot
+    - CC=clang-9 CXX=clang++-9 ./configure --enable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
 nightly:gcc:7:
   image: skymoo/ligo-lalsuite-gcc:7
   stage: nightly
@@ -433,7 +433,7 @@ nightly:gcc:8:
   stage: nightly
   script:
     - ./00boot
-    - :./configure --enable-doxygen
+    - ./configure --enable-doxygen
     - make -j4 distcheck
   dependencies: []
   only:
@@ -441,18 +441,6 @@ nightly:gcc:8:
     - web
 
 # debian
-
-nightly:debian:jessie:
-  image: ligo/lalsuite-dev:jessie
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
 
 # FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
 # available
@@ -531,20 +519,6 @@ nightly:macos:sierra:
     - web
 
 # ubuntu
-
-# FIXME: allow failure due to #123
-nightly:ubuntu:trusty:
-  image: skymoo/ligo-lalsuite-dev:trusty
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --disable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-  allow_failure: true
 
 # FIXME: allow failure due to #123
 nightly:ubuntu:xenial:

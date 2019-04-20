@@ -830,7 +830,7 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, mplparams=F
         ax1 = plt.subplot(gs[:-1])
         ax2 = plt.subplot(gs[-1])
 
-    pos = poslist[idx]
+    pos = list(poslist)[idx]
 
     # check for cosiota
     if 'iota' == param:
@@ -1390,7 +1390,7 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
     Bkfig = plt.figure(figsize=(11,3.5), dpi=200)
     Bkfig.subplots_adjust(bottom=0.15, left=0.09, right=0.94)
 
-    tms = map(lambda x: x-gpstime[0], gpstime)
+    tms = list(map(lambda x: x-gpstime[0], gpstime))
 
     plt.plot(tms, Bkabs, '.', color=coldict[ifo], markersize=1)
     plt.xlabel(r'GPS - %d' % int(gpstime[0]), fontsize=14, fontweight=100)
@@ -1415,7 +1415,7 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
       # zero pad the data and bin each point in the nearest bin
       datazeropad = np.zeros(int(math.ceil(totlen/mindt))+1, dtype=complex)
 
-      idx = map(lambda x: int(math.floor((x/mindt)+0.5)), tms)
+      idx = list(map(lambda x: int(math.floor((x/mindt)+0.5)), tms))
       for i in range(0, len(idx)):
         datazeropad[idx[i]] = complex(Bk[i,1], Bk[i,2])
 

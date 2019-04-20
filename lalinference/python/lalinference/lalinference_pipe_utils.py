@@ -205,6 +205,11 @@ def create_events_from_coinc_and_psd(
         from gstlal import reference_psd
     except ImportError:
         reference_psd = None
+    try:
+        from gwpy.frequencyseries import FrequencySeries
+        from gwpy.astro import inspiral_range
+    except ImportError:
+        inspiral_range = None
     coinc_events = lsctables.CoincInspiralTable.get_table(coinc_xml_obj)
     sngl_event_idx = dict((row.event_id, row) for row in lsctables.SnglInspiralTable.get_table(coinc_xml_obj))
     ifos = sorted(coinc_events[0].instruments)
@@ -237,11 +242,43 @@ def create_events_from_coinc_and_psd(
                     else:
                         horizon_distance.append(2 * e.eff_distance)
                 else:
-                    if reference_psd is not None and psd_dict is not None:
+                    if psd_dict is not None:
+                        # Calculate horizon distance from psd to determine
+                        # upper limit of distance prior.
+                        psd = psd_dict[e.ifo]
+                        # If roq is not used, fstop has not been calculated up
+                        # to this point.
                         if not roq==False:
                             fstop = IMRPhenomDGetPeakFreq(e.mass1, e.mass2, 0.0, 0.0)
-                        HorizonDistanceObj = reference_psd.HorizonDistance(f_min = flow, f_max = fstop, delta_f = 1.0 / 32.0, m1 = e.mass1, m2 = e.mass2)
-                        horizon_distance.append(HorizonDistanceObj(psd_dict[e.ifo], snr = threshold_snr)[0])
+                        # reference_psd.HorizonDistance is more precise
+                        # calculator of horizon distance than
+                        # gwpy.astro.inspiral_range.
+                        if reference_psd is not None:
+                            HorizonDistanceObj = reference_psd.HorizonDistance(
+                                f_min = flow, f_max = fstop, delta_f = 1.0 / 32.0,
+                                m1 = e.mass1, m2 = e.mass2
+                            )
+                            horizon_distance.append(
+                                HorizonDistanceObj(psd, snr = threshold_snr)[0]
+                            )
+                        # If reference_psd is not available, use
+                        # gwpy.astro.inspiral_range.
+                        elif inspiral_range is not None:
+                            gwpy_psd = FrequencySeries(
+                                psd.data.data, f0 = psd.f0, df = psd.deltaF
+                            )
+                            try:
+                                horizon_distance.append(
+                                    inspiral_range(
+                                        gwpy_psd, threshold_snr, e.mass1, e.mass2,
+                                        flow, fstop, True
+                                    ).value
+                                )
+                            # If flow of psd is lower than f_ISCO, inspiral_range
+                            # raises IndexError. In this case, nothing is
+                            # appended to horizon_distance.
+                            except IndexError:
+                                pass
         if srate:
             if max(srate)<srate_psdfile:
                 srate = max(srate)
@@ -1418,7 +1455,17 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             seglen=event.duration
         segstart=end_time+2-seglen
         segend=segstart+seglen
-        if self.config.has_option('input', 'minimum_realizations_number'):
+        # check whether lalinference psd is used or not
+        try:
+            use_gracedbpsd = (not self.config.getboolean('input','ignore-gracedb-psd'))
+        except:
+            use_gracedbpsd = True
+        use_lalinference_psd = not ((use_gracedbpsd and os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')))
+                                    or self.config.has_option('condor','bayesline')
+                                    or self.config.has_option('condor','bayeswave'))
+        print(use_lalinference_psd)
+        # if lalinference psd is used and minimum_realizations_number is specified, lengthen the required science segment.
+        if use_lalinference_psd and self.config.has_option('input', 'minimum_realizations_number'):
             psdstart = segstart - self.config.getint('input','padding') - \
                 self.config.getint('input', 'minimum_realizations_number') * seglen
         else:
@@ -1853,8 +1900,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       return node
 
     def add_rom_weights_node(self,ifo,parent=None):
-        #try:
-        #node=self.computeroqweightsnodes[ifo]
+            #try:
+            #node=self.computeroqweightsnodes[ifo]
                 #except KeyError:
         node=ROMNode(self.computeroqweights_job,ifo,parent.seglen,parent.flows[ifo])
         self.computeroqweightsnode[ifo]=node
@@ -3113,4 +3160,3 @@ class PostRunInfoNode(pipeline.CondorDAGNode):
       self.server=server
       if server is not None:
         self.add_var_arg('--server %s'%self.server)
-

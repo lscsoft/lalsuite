@@ -783,8 +783,9 @@ fprint_wrapped( FILE *file, int line_width, const char *prefix, char *text )
   }
 
   /* Iterate over text */
-  char *pstart = text, *pbreak = NULL;
-  char empty_line[2] = {'\0', '\0'};
+  char *pstart = text, *pline = text, *pbreak = NULL;
+  char empty_line[2] = "";
+  char list_indent[16] = "";
   for ( char *pend = text; *pend != '\0'; ++pend )
     {
 
@@ -793,21 +794,36 @@ fprint_wrapped( FILE *file, int line_width, const char *prefix, char *text )
         pbreak = pend;
       }
 
+      /* Determine indent for lists (lines with start with spaces/dashes) */
+      strcpy( list_indent, "" );
+      if ( pline != pstart ) {
+        for ( size_t i = 0; i + 1 < XLAL_NUM_ELEM( list_indent ) && strchr( " -", pline[i] ) != NULL; ++i ) {
+          list_indent[i] = ' ';
+        }
+      }
+
       /* If at end of line, or encountered a newline */
-      if ( ( pend - pstart ) == line_width || *pend == '\n' ) {
+      int indented_line_width = line_width - strlen( list_indent );
+      if ( ( pend - pstart ) == indented_line_width || *pend == '\n' ) {
+
+        /* Save beginning of line for determining list indent */
+        if ( *pend == '\n' ) {
+          pline = pend + 1;
+        }
 
         if ( pbreak != NULL ) {   /* If we have a space character */
 
           /* Print text up to before last space character */
           const char old_pbreak = *pbreak;
           *pbreak = '\0';
-          fprintf( file, "%s%s%s\n", empty_line, prefix, pstart );
-          empty_line[0] = '\0';
+          fprintf( file, "%s%s%s%s\n", empty_line, prefix, list_indent, pstart );
+          strcpy( empty_line, "" );
           *pbreak = old_pbreak;
 
           /* Save an empty line for the next time a non-empty line is printed */
           for ( pend = pbreak + 1; *pend != '\0' && *pend == '\n'; ++pend ) {
-            empty_line[0] = '\n';
+            strcpy( empty_line, "\n" );
+            pline = pend + 1;
           }
 
           /* Start from next non-printed character */
@@ -821,8 +837,8 @@ fprint_wrapped( FILE *file, int line_width, const char *prefix, char *text )
           /* Print unbroken line, ending with hyphen */
           const char old_pend = *pend;
           *pend = '\0';
-          fprintf( file, "%s%s%s-\n", empty_line, prefix, pstart );
-          empty_line[0] = '\0';
+          fprintf( file, "%s%s%s%s-\n", empty_line, prefix, list_indent, pstart );
+          strcpy( empty_line, "" );
           *pend = old_pend;
 
           /* Start from next non-printed character */
@@ -835,8 +851,8 @@ fprint_wrapped( FILE *file, int line_width, const char *prefix, char *text )
 
   /* Print remaining text */
   if ( strlen( pstart ) > 0 ) {
-    fprintf( file, "%s%s%s\n", empty_line, prefix, pstart );
-    empty_line[0] = '\0';
+    fprintf( file, "%s%s%s%s\n", empty_line, prefix, list_indent, pstart );
+    strcpy( empty_line, "" );
   }
 
 }
@@ -881,9 +897,29 @@ XLALUserVarPrintHelp ( FILE *file )
   }
   fprintf( f, "\n" );
   fprintf( f, "\nSYNOPSIS\n" );
-  fprintf( f, "       %s -h|--help\n", program_name );
-  fprintf( f, "       %s -v|--version[=verbose]\n", program_name );
-  fprintf( f, "       %s [@<config-file>] [<options>...]\n", program_name );
+  {
+    fprintf( f, "       %s --help\n", program_name );
+    CHAR help_str[] = "Display this help page.";
+    fprint_wrapped( f, line_width, "           ", help_str );
+  }
+  fprintf( f, "\n" );
+  {
+    fprintf( f, "       %s -h\n", program_name );
+    CHAR help_str[] = "Display a short usage string of available options.";
+    fprint_wrapped( f, line_width, "           ", help_str );
+  }
+  fprintf( f, "\n" );
+  {
+    fprintf( f, "       %s -v|--version[=verbose]\n", program_name );
+    CHAR help_str[] = "Display (verbose) version information.";
+    fprint_wrapped( f, line_width, "           ", help_str );
+  }
+  fprintf( f, "\n" );
+  {
+    fprintf( f, "       %s [@<config-file>] [<options>...]\n", program_name );
+    CHAR help_str[] = "Run the program. Options are parsed from, if given:\n- Configuration file <config-file>: format is INI file style, one <option>=<value> pair per line.\n- Command line <options>: format is --<option>=<value>, --<option> <value>, or -<short-option> <value>.";
+    fprint_wrapped( f, line_width, "           ", help_str );
+  }
   if ( lalUserVarHelpDescription != NULL ) {
     CHAR *description = XLALStringDuplicate( lalUserVarHelpDescription );
     XLAL_CHECK_FAIL ( description != NULL, XLAL_EFUNC );

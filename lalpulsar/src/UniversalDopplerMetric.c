@@ -1514,7 +1514,12 @@ XLALComputeDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< 
       }
 
       /* ----- compute the F-metric gF_ij and related matrices ---------- */
-      REAL8 cosi = metricParams->signalParams.Amp.cosi;
+      REAL8 h0 = metricParams->signalParams.Amp.aPlus + sqrt ( POW2(metricParams->signalParams.Amp.aPlus) - POW2(metricParams->signalParams.Amp.aCross) );
+      REAL8 cosi;
+      if (h0 > 0)
+        cosi = metricParams->signalParams.Amp.aCross/h0;
+      else
+        cosi = 0;
       REAL8 psi  = metricParams->signalParams.Amp.psi;
 
       if ( (metric_k = XLALComputeFmetricFromAtoms ( atoms, cosi, psi)) == NULL ) {

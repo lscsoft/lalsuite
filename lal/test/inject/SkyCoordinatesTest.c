@@ -319,7 +319,6 @@ main( int argc, char **argv )
   /* If no arguments were given, convert a random position and check
      the result. */
   if ( !in && !out && !gd && !gc && !alt && !t ) {
-    REAL4 deviate;    /* random number between 0 and 1 */
     REAL8 diff;       /* difference in converted longitude */
     SkyPosition sky2; /* converted celestial coordinates */
     RandomParams *rparams = NULL; /* pseudorandom sequence parameters */
@@ -327,12 +326,10 @@ main( int argc, char **argv )
 
     printf ("Testing LALConvertSkyCoordinates()\n");
     /* Set up random Galactic position. */
-    SUB( LALCreateRandomParams( &stat, &rparams, 0 ), &stat );
-    SUB( LALUniformDeviate( &stat, &deviate, rparams ), &stat );
-    sky.latitude = LAL_PI*deviate - LAL_PI_2;
-    SUB( LALUniformDeviate( &stat, &deviate, rparams ), &stat );
-    sky.longitude = LAL_TWOPI*deviate;
-    SUB( LALDestroyRandomParams( &stat, &rparams ), &stat );
+    rparams = XLALCreateRandomParams( 0 );
+    sky.latitude = LAL_PI*XLALUniformDeviate( rparams ) - LAL_PI_2;
+    sky.longitude = LAL_TWOPI*XLALUniformDeviate( rparams );
+    XLALDestroyRandomParams( rparams );
     sky.system = COORDINATESYSTEM_GALACTIC;
 
     /* Convert to Ecliptic and back. */

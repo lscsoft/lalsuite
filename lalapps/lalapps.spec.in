@@ -17,7 +17,7 @@ Summary: LSC Algorithm Library Applications
 License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
-URL: https://wiki.ligo.org/Computing/DASWG/LALSuite
+URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: cfitsio-devel

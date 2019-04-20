@@ -22,7 +22,7 @@ import json
 import subprocess as sp
 import shutil
 import uuid
-from six.moves.configparser import ConfigParser
+from six.moves.configparser import RawConfigParser
 import six.moves.urllib.parse as urlparse
 from copy import deepcopy
 import numpy as np
@@ -440,6 +440,7 @@ class knopeDAG(pipeline.CondorDAG):
         self.skipped_pulsars = prevdag.skipped_pulsars
         self.processed_files = prevdag.processed_files
       else: # if analysing only selected pulsars (from pulsarlist) just get information on them
+        self.processed_files = {}
         for psrl in pulsarlist:
           if psrl not in prevdag.analysed_pulsars:
             print("Error... specified pulsar '%s' could not be found in previous run pickle file '%s'." % (psrl, preprocessed_pickle))
@@ -452,7 +453,6 @@ class knopeDAG(pipeline.CondorDAG):
             self.modified_pulsars[psrl] = prevdag.modified_pulsars[psrl]
 
           self.analysed_pulsars[psrl] = prevdag.analysed_pulsars[psrl]
-          self.processed_files = {}
           self.processed_files[psrl] = prevdag.processed_files[psrl]
 
     if self.preprocessing_only: # end class initialisation
@@ -608,7 +608,7 @@ class knopeDAG(pipeline.CondorDAG):
     collatejob = collateJob(self.collate_exec, univ=self.results_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
 
     # create config file for collating results into a results table
-    cpc = ConfigParser() # create config parser to output .ini file
+    cpc = RawConfigParser() # create config parser to output .ini file
     # create configuration .ini file
     cinifile = os.path.join(self.results_basedir, 'collate.ini')
 
@@ -683,7 +683,7 @@ class knopeDAG(pipeline.CondorDAG):
         if os.path.isfile(jsonfile):
           # append starttime (which will be the end time of the previous results) timestamp to JSON file
           try:
-            shutil.copyfile(jsonfile, jsonfile + '_%d' % self.starttime.values()[0])
+            shutil.copyfile(jsonfile, jsonfile + '_%d' % list(self.starttime.values())[0])
           except:
             print("Warning... could not copy previous results JSON file '%s'. Previous results may get overwritten." % jsonfile, file=sys.stderr)
 
@@ -705,7 +705,7 @@ class knopeDAG(pipeline.CondorDAG):
         except:
           print("Warning... could not write out ATNF catalogue information to JSON file '%s'." % jsonfile, file=sys.stderr)
 
-      cp = ConfigParser() # create config parser to output .ini file
+      cp = RawConfigParser() # create config parser to output .ini file
       # create configuration .ini file
       inifile = os.path.join(self.results_pulsar_dir[pname], pname+'.ini')
 
@@ -809,7 +809,7 @@ class knopeDAG(pipeline.CondorDAG):
         if self.autonomous:
           if os.path.isfile(posteriorsfiles[det]):
             try: # copy to file with the start time (i.e. the end time of the previous analysis for which the posterior file belongs) appended
-              shutil.copyfile(posteriorsfiles[det], posteriorsfiles[det].strip('.hdf') + '_%d.hdf' % self.starttime.values()[0])
+              shutil.copyfile(posteriorsfiles[det], posteriorsfiles[det].strip('.hdf') + '_%d.hdf' % list(self.starttime.values())[0])
             except:
               print("Warning... could not create copy of current posterior samples file '%s'. This will get overwritten on next autonomous run." % posteriorsfiles[det], file=sys.stderr)
 
@@ -3080,12 +3080,12 @@ class knopeDAG(pipeline.CondorDAG):
 
         # check if a datafind job is needed for any of the detectors
         if len(self.cache_files) < len(self.ifos):
-          self.datafind_job = pipeline.LSCDataFindJob(self.preprocessing_base_dir.values()[0], self.log_dir, self.config)
+          self.datafind_job = pipeline.LSCDataFindJob(list(self.preprocessing_base_dir.values())[0], self.log_dir, self.config)
       else: # a data find exectable has been given
         datafind = self.get_config_option('condor', 'datafind')
 
         if os.path.isfile(datafind) and os.access(datafind, os.X_OK):
-          self.datafind_job = pipeline.LSCDataFindJob(self.preprocessing_base_dir.values()[0], self.log_dir, self.config)
+          self.datafind_job = pipeline.LSCDataFindJob(list(self.preprocessing_base_dir.values())[0], self.log_dir, self.config)
         else:
           print("Warning... data find executable '%s' does not exist, or is not executable, try using system gw_data_find instead" % datafind)
           datafindexec = self.find_exec_file('gw_data_find')
@@ -3095,7 +3095,7 @@ class knopeDAG(pipeline.CondorDAG):
             return
           else:
             self.config.set('condor', 'datafind', datafindexec) # set value in config file parser
-            self.datafind_job = pipeline.LSCDataFindJob(self.preprocessing_base_dir.values()[0], self.log_dir, self.config)
+            self.datafind_job = pipeline.LSCDataFindJob(list(self.preprocessing_base_dir.values())[0], self.log_dir, self.config)
     else:
       # if no data find is specified try using the system gw_data_find
       datafindexec = self.find_exec_file('gw_data_find')
@@ -3105,7 +3105,7 @@ class knopeDAG(pipeline.CondorDAG):
         return
       else:
         self.config.set('condor', 'datafind', datafindexec) # set value in config file parser
-        self.datafind_job = pipeline.LSCDataFindJob(self.preprocessing_base_dir.values()[0], self.log_dir, self.config)
+        self.datafind_job = pipeline.LSCDataFindJob(list(self.preprocessing_base_dir.values())[0], self.log_dir, self.config)
 
     # add additional options to data find job
     if self.datafind_job is not None:

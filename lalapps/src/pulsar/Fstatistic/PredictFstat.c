@@ -325,13 +325,13 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
     /* ----- internally we always use h0, cosi */
     if ( have_h0 )
       {
-        cfg->pap.h0=uvar->h0;
-        cfg->pap.cosi=uvar->cosi;
+        cfg->pap.aPlus = 0.5 * uvar->h0 * (1.0 + SQ(uvar->cosi));
+        cfg->pap.aCross = uvar->h0 * uvar->cosi;
       }
     else
       {
-        cfg->pap.h0 = uvar->aPlus + sqrt( SQ( uvar->aPlus ) - SQ( uvar->aCross ) );
-        cfg->pap.cosi= uvar->aCross / cfg->pap.h0;
+        cfg->pap.aPlus = uvar->aPlus;
+        cfg->pap.aCross = uvar->aCross;
       }
     cfg->pap.psi=uvar->psi;
     cfg->pap.phi0=uvar->phi0;
@@ -536,7 +536,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
   {
     struct tm utc;
     time_t tp;
-    CHAR dateStr[512], line[512], summary[1024];
+    CHAR dateStr[512], line[1024], summary[2048];
     tp = time(NULL);
     sprintf (summary, "%%%% Date: %s", asctime( gmtime( &tp ) ) );
     strcat (summary, "%% Loaded SFTs: [ " );
@@ -547,15 +547,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
     utc = *XLALGPSToUTC( &utc, (INT4)XLALGPSGetREAL8(&startTime) );
     strcpy ( dateStr, asctime(&utc) );
     dateStr[ strlen(dateStr) - 1 ] = 0;
-/* FIXME: do not treat these format overflow warnings as errors, but do fix them later. */
-#if __GNUC__ >= 8
-#pragma GCC diagnostic push
-#pragma GCC diagnostic warning "-Wformat-overflow"
-#endif
-    sprintf (line, "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", XLALGPSGetREAL8(&startTime), dateStr);
-#if __GNUC__ >= 8
-#pragma GCC diagnostic pop
-#endif
+    snprintf (line, sizeof(line), "%%%% Start GPS time tStart = %12.3f    (%s GMT)\n", XLALGPSGetREAL8(&startTime), dateStr);
     strcat ( summary, line );
     sprintf (line, "%%%% Total amount of data: Tdata = %12.3f s  (%.2f days)\n", Tdata, Tdata/86400 );
     strcat ( summary, line );

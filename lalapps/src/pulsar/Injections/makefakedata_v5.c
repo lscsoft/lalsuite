@@ -474,6 +474,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       XLAL_CHECK ( (cfg->multiTimestamps->length > 0) && (cfg->multiTimestamps->data != NULL), XLAL_EINVAL, "Got empty timestamps-list from XLALReadMultiTimestampsFiles()\n" );
 
       for ( UINT4 X=0; X < cfg->multiTimestamps->length; X ++ ) {
+        XLAL_CHECK ( (cfg->multiTimestamps->data[X]->length > 0) && (cfg->multiTimestamps->data[X]->data != NULL), XLAL_EINVAL, "Got empty timestamps-list for detector %s", cfg->multiIFO.sites[X].frDetector.prefix );
         cfg->multiTimestamps->data[X]->deltaT = uvar->Tsft;	// Tsft information not given by timestamps-file
       }
     } // endif have_timestampsFiles
@@ -649,7 +650,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember(  SFTWindowBeta,        REAL8, 0, OPTIONAL, "Window 'beta' parameter required for a few window-types (eg. 'tukey')");
 
   /* pulsar params */
-  XLALRegisterUvarMember( injectionSources,     STRINGVector, 0, OPTIONAL,  "Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}')" );
+  XLALRegisterUvarMember( injectionSources,     STRINGVector, 0, OPTIONAL, "%s", InjectionSourcesHelpString );
 
   /* noise */
   XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps, and frequency range unless separately specified.)");
