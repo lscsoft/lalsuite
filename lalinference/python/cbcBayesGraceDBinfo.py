@@ -45,7 +45,7 @@ For the moment this is maximum a posteriori and stdev for the parameters in the 
 
 '''
 
-def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference', bcifile=None,bsnfile=None,email=None,message=None):
+def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference', bcifile=None,bsnfile=None,email=None,message=None,server="https://gracedb.ligo.org/api/"):
 
   if gid is None or (samples is None and skymap is None):
     print "Must provide both a graceDB id and a posterior samples file or skymap file\n"
@@ -53,7 +53,10 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
 
   import ligo.gracedb.rest 
   import os
-  g=ligo.gracedb.rest.GraceDb()
+  if server is not None:
+    g=ligo.gracedb.rest.GraceDb(server)
+  else:
+    g=ligo.gracedb.rest.GraceDb()
   if samples is not None:
     samples=os.path.realpath(samples)
     if '.hdf' in samples  or '.h5' in samples:
@@ -168,6 +171,8 @@ if __name__=='__main__':
     parser.add_option("--skymap",dest="skymap",help="FITS file skymap",default=None)
     parser.add_option("--message",dest="message",type='str', help="Message to go with skymap uplaod",default=None)
     parser.add_option('--email',dest='email',help="Will email when run is done.",default=None)
+    parser.add_option('--server',dest='server',help="GraceDB server to interact with.",default="https://gracedb.ligo.org/api/")
+
     (opts,args)=parser.parse_args()
     if opts.gid is None:
       print "Must provide a graceDB id with --gid/-g "
@@ -175,4 +180,4 @@ if __name__=='__main__':
     if opts.samples is None and opts.skymap is None:
       print "Must provide lalinference posterior samples with --samples/-s or FITS skymap with --skymap "
       sys.exit(1)
-    cbcBayesGraceDBinfo(opts.gid, opts.samples,analysis=opts.analysis,bcifile=opts.bci,bsnfile=opts.bsn,email=opts.email,skymap=opts.skymap,message=opts.message)
+    cbcBayesGraceDBinfo(opts.gid, opts.samples,analysis=opts.analysis,bcifile=opts.bci,bsnfile=opts.bsn,email=opts.email,skymap=opts.skymap,message=opts.message,server=opts.server)
