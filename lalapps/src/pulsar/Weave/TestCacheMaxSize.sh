@@ -9,7 +9,7 @@ for setup in short long; do
         short)
             verb="Perform"
             weave_setup_options="--segment-count=3"
-            weave_sft_options="--rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt"
+            weave_sft_options="--rand-seed=3456 --sft-timebase=1800 --sft-noise-sqrtSX=1,1 --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt"
             weave_search_options="--alpha=0.9/1.4 --delta=-1.2/2.3 --freq=50.5/0.01 --f1dot=-1.5e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.3"
             weave_cache_options="--cache-max-size=2"
             weave_recomp_threshold=0.0

@@ -103,8 +103,8 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   const PulsarDopplerParams *max_phys,
   const double dfreq,
   const EphemerisData *ephemerides,
-  const LALStringVector *sft_noise_psd,
-  const LALStringVector *Fstat_assume_psd,
+  const LALStringVector *sft_noise_sqrtSX,
+  const LALStringVector *Fstat_assume_sqrtSX,
   FstatOptionalArgs *Fstat_opt_args,
   const WeaveStatisticsParams *statistics_params,
   BOOLEAN recalc_stage
