@@ -472,18 +472,6 @@ nightly:rhel:el7-cr:
     - schedules
     - web
 
-nightly:rhel:sl7:
-  image: ligo/lalsuite-dev:sl7
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
 # macOS
 
 nightly:macos:highsierra:
