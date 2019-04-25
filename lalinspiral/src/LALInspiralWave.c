@@ -438,8 +438,6 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
            break;
       case SpinTaylor:
-           /*GenerateTimeDomainWaveformForInjection (status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);*/
 	   /* this generate the h+ waveform whereas the one above takes into
             * account h+, hx and orientation of the system*/
            LALSTPNWaveform(status->statusPtr, signalvec, params);

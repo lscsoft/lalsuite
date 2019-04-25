@@ -24,20 +24,17 @@ test_programs += MetricTest
 test_programs += MetricTestBCV
 test_programs += MetricTestPTF
 test_programs += PNTemplates
-test_programs += RandomInspiralSignalTest
 # non-building tests:
 #test_programs += BCVSpinTemplates
 #test_programs += ChirpSpace
 #test_programs += FilterTest
 #test_programs += FindChirpACTDTest
-#test_programs += FindChirpSPTest
 #test_programs += FindChirpTmpltTest
 #test_programs += InspiralSpinBankwNDTemplateBankTest
 #test_programs += NRWaveInjectTest
 #test_programs += RingTest
 #test_programs += TestRingdown
 # failing tests:
-#test_programs += FindChirpTDTest
 #test_programs += LALHybridTest
 #test_programs += NRWaveIOTest
 #test_programs += SpaceCovering
@@ -60,6 +57,5 @@ EXTRA_DIST += \
 	LALSQTPNWaveformTest.c \
 	NRWaveIOTest.cfg \
 	NRWaveIOTest.data \
-	RandomInspiralSignalTest.par \
 	injection.xml \
 	$(END_OF_LIST)
