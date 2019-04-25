@@ -608,7 +608,7 @@ int main(int argc, char **argv)
           {
             if (! params->writeSnglInspiralTable)
             {
-              params->numEvents = XLALCountMultiInspiral(eventList);
+              params->numEvents = XLALCountMultiInspiralTable(eventList);
             }
             else
             {
@@ -686,7 +686,7 @@ int main(int argc, char **argv)
   /* calulate number of events and cluster if needed */
   if (! params->writeSnglInspiralTable)
   {
-    params->numEvents = XLALCountMultiInspiral(eventList);
+    params->numEvents = XLALCountMultiInspiralTable(eventList);
   }
   else
   {
@@ -699,7 +699,7 @@ int main(int argc, char **argv)
     if (! params->writeSnglInspiralTable)
     {
       coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
-      params->numEvents = XLALCountMultiInspiral(eventList);
+      params->numEvents = XLALCountMultiInspiralTable(eventList);
     }
     else
     {
