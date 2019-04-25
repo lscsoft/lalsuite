@@ -38,7 +38,6 @@
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceInit.h>
-#include <lalapps.h>
 #include <lal/LALInferenceCalibrationErrors.h>
 
 #include <mpi.h>
