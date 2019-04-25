@@ -1531,7 +1531,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 node.ifos=ifos
                 prenode.ifos=ifos
             gotdata=1
-        if self.config.has_option('input','gid'):
+        try:
+            use_gracedbpsd = (not self.config.getboolean('input','ignore-gracedb-psd'))
+        except:
+            use_gracedbpsd = True
+        if use_gracedbpsd:
             if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')):
                 psdpath=os.path.join(self.basepath,'psd.xml.gz')
                 node.psds=get_xml_psds(psdpath,ifos,os.path.join(self.basepath,'PSDs'),end_time=None)
