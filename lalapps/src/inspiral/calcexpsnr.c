@@ -68,8 +68,6 @@
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 #include <lal/FindChirpTD.h>
-#include <lal/FindChirpBCV.h>
-#include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
 #include <lal/LALTrigScanCluster.h>
 #include <lal/PrintFTSeries.h>
