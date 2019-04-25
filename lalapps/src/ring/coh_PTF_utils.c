@@ -941,7 +941,6 @@ void coh_PTF_calculate_det_stuff(
 
 void coh_PTF_initialize_structures(
   struct coh_PTF_params    *params,
-  FindChirpInitParams      **fcInitParamsP,
   FindChirpTemplate        **fcTmpltP,
   FindChirpTmpltParams     **fcTmpltParamsP,
   REAL8Array               **PTFM,
@@ -952,7 +951,6 @@ void coh_PTF_initialize_structures(
 {
   UINT4 ifoNumber;
 
-  FindChirpInitParams *fcInitParams;
   FindChirpTemplate *fcTmplt;
   FindChirpTmpltParams *fcTmpltParams;
 
@@ -961,7 +959,6 @@ void coh_PTF_initialize_structures(
   coh_PTF_set_null_input_COMPLEX8VectorSequence(PTFqVec,LAL_NUM_IFO+1);
 
   /* finchirp parameters */
-  fcInitParams               = LALCalloc(1, sizeof(*fcInitParams));
   fcTmplt                    = LALCalloc(1, sizeof(*fcTmplt));
   fcTmpltParams              = LALCalloc(1, sizeof(*fcTmpltParams));
   fcTmpltParams->approximant = params->approximant;
@@ -1066,7 +1063,6 @@ void coh_PTF_initialize_structures(
   }  
   /* Send the output back to the parent function */
   *fcTmpltP = fcTmplt;
-  *fcInitParamsP = fcInitParams;
   *fcTmpltParamsP = fcTmpltParams; 
 
 }
@@ -3205,7 +3201,6 @@ void coh_PTF_cleanup(
     InspiralTemplate        *PTFbankhead,
     FindChirpTemplate       *fcTmplt,
     FindChirpTmpltParams    *fcTmpltParams,
-    FindChirpInitParams     *fcInitParams,
     REAL8Array              **PTFM,
     REAL8Array              **PTFN,
     COMPLEX8VectorSequence  **PTFqVec,
@@ -3343,8 +3338,6 @@ void coh_PTF_cleanup(
       XLALDestroyCOMPLEX8Vector( fcTmplt->data );
     LALFree( fcTmplt );
   }
-  if ( fcInitParams )
-    LALFree( fcInitParams );
   if ( timeOffsets )
     LALFree( timeOffsets );
   if ( slidTimeOffsets)

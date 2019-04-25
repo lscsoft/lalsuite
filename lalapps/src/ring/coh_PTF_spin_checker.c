@@ -53,7 +53,6 @@ int main( int argc, char **argv )
   SnglInspiralTable       *PTFLastTmplt = NULL;
   FindChirpTemplate       *fcTmplt     = NULL;
   FindChirpTmpltParams    *fcTmpltParams      = NULL;
-  FindChirpInitParams     *fcInitParams = NULL;
   UINT4                   numPoints,ifoNumber,spinTemplate;
   REAL8Array              *PTFM[LAL_NUM_IFO+1];
   REAL8Array              *PTFN[LAL_NUM_IFO+1];
@@ -213,7 +212,6 @@ int main( int argc, char **argv )
   PTFqVec[ifoNumber] = NULL;
 
   /* Create the relevant structures that will be needed */
-  fcInitParams = LALCalloc( 1, sizeof( *fcInitParams ));
   fcTmplt = LALCalloc( 1, sizeof( *fcTmplt ) );
   fcTmpltParams = LALCalloc ( 1, sizeof( *fcTmpltParams ) );
   fcTmpltParams->approximant = FindChirpPTF;
@@ -326,7 +324,7 @@ int main( int argc, char **argv )
   LALFree(timeSlideVectors);
   coh_PTF_cleanup(params,procpar,fwdplan,psdplan,revplan,invPlan,channel,
       invspec,segments,eventList,NULL,PTFbankhead,fcTmplt,fcTmpltParams,
-      fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,NULL,Fplus,Fcross,NULL,NULL,\
+      PTFM,PTFN,PTFqVec,timeOffsets,NULL,Fplus,Fcross,NULL,NULL,\
       NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
   while ( PTFSpinTmpltHead )
   {
