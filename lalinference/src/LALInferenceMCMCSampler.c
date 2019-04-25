@@ -36,7 +36,6 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/TimeDelay.h>
-#include <lalapps.h>
 #include <mpi.h>
 #include <lal/LALInference.h>
 #include "LALInferenceMCMCSampler.h"
