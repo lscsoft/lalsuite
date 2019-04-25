@@ -871,15 +871,17 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 seglen = int(np.ceil(self.config.getfloat('engine','seglen')))
             if self.config.has_option('lalinference','seglen'):
                 seglen = self.config.getint('lalinference','seglen')
-
-            if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')) or self.config.has_option('condor','bayesline') or self.config.has_option('condor','bayeswave'):
+            try:
+                use_gracedbpsd = (not self.config.getboolean('input','ignore-gracedb-psd'))
+            except:
+                use_gracedbpsd = True
+            if (use_gracedbpsd and os.path.isfile(os.path.join(self.basepath,'psd.xml.gz'))) or self.config.has_option('condor','bayesline') or self.config.has_option('condor','bayeswave'):
                 psdlength = 0
                 padding = 0
                 self.config.set('input','padding',str(padding))
                 if self.config.has_option('condor','bayeswave'):
                     if (np.log2(seglen)%1):
                         seglen = np.power(2., np.ceil(np.log2(seglen)))
-
             else:
                 psdlength = 32*seglen
         else:
@@ -1066,16 +1068,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     client = GraceDb()
                 print("Download %s coinc.xml" % gid)
                 coinc_file_obj = client.files(gid, "coinc.xml")
+                print("Download %s psd.xml.gz" % gid)
                 try:
-                    downloadpsd = (not self.config.getboolean('input','ignore-gracedb-psd'))
-                except:
-                    downloadpsd = True
-                if downloadpsd:
-                    print("Download %s psd.xml.gz" % gid)
-                    try:
-                        psd_file_obj = client.files(gid, "psd.xml.gz")
-                    except HTTPError:
-                        print("Failed to download %s psd.xml.gz. lalinference will estimate the psd itself." % gid)
+                    psd_file_obj = client.files(gid, "psd.xml.gz")
+                except HTTPError:
+                    print("Failed to download %s psd.xml.gz. lalinference will estimate the psd itself." % gid)
             else:
                 coinc_file_obj = open(self.config.get('input', 'coinc-xml'), "rb")
                 try:
