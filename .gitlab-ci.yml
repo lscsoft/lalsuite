@@ -8,6 +8,7 @@ variables:
   NIGHTLY: $CI_REGISTRY_IMAGE:nightly
   TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
   LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
+  CONDA_DIR: $CI_PROJECT_DIR/opt/conda
 
 stages:
   - level0
@@ -439,6 +440,80 @@ nightly:gcc:8:
   only:
     - schedules
     - web
+
+# conda
+
+# FIXME: currently using --disable-doxygen as documentation currently
+# fails to build under Conda
+
+# FIXME: currently using --disable-gcc-flags as there are various
+# compilation errors when using the strict GCC flags and the Conda
+# compiler
+
+# FIXME: there currently seems to be an issue with performing FFTs using
+# the MKL libraries, disable the use of MKL until this is understood
+# https://git.ligo.org/lscsoft/lalsuite/issues/161
+
+.conda-build: &conda-build
+  image: continuumio/miniconda3
+  variables:
+    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda-pkgs"
+  stage: nightly
+  dependencies: []
+  before_script:
+    # configure conda
+    - source /opt/conda/etc/profile.d/conda.sh
+    - conda config --set always_yes yes
+    - conda config --add channels conda-forge
+    - conda update conda
+    - conda info --all
+    # build lalsuite environment
+    - conda env create -f ${CONDA_ENV_FILE}
+    - conda activate lal-development
+    # hack the build to get LDFLAGS set properly
+    - export PREFIX="${CONDA_PREFIX}"
+    - export CONDA_BUILD="1"
+    - set +o pipefail  # one of the deactivate scripts pipefails
+    - conda activate lal-development
+    - set -o pipefail
+    - conda list
+  script:
+    # build lalsuite
+    - ./00boot
+    - ./configure --disable-doxygen --disable-gcc-flags
+    - make -j4 distcheck
+  only:
+    - schedules
+    - web
+  cache:
+    paths:
+      - conda-pkgs
+  artifacts:
+    paths:
+      - "config.log"
+      - "*/config.log"
+      - "*/test/test-suite.log"
+      - "*/*/*/*/test/test-suite.log"
+    when: on_failure
+  allow_failure: true
+
+conda:python27:
+  <<: *conda-build
+  image: continuumio/miniconda2
+  variables:
+    CONDA_ENV_FILE: "conda/environment-lal-development-py27.yml"
+
+conda:python36:
+  <<: *conda-build
+  image: continuumio/miniconda3
+  variables:
+    CONDA_ENV_FILE: "conda/environment-lal-development-py36.yml"
+
+conda:python37:
+  <<: *conda-build
+  image: continuumio/miniconda3
+  variables:
+    CONDA_ENV_FILE: "conda/environment-lal-development-py37.yml"
 
 # debian
 
