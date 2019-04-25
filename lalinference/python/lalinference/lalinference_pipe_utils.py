@@ -1442,7 +1442,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         use_lalinference_psd = not ((use_gracedbpsd and os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')))
                                     or self.config.has_option('condor','bayesline')
                                     or self.config.has_option('condor','bayeswave'))
-        print(use_lalinference_psd)
         # if lalinference psd is used and minimum_realizations_number is specified, lengthen the required science segment.
         if use_lalinference_psd and self.config.has_option('input', 'minimum_realizations_number'):
             psdstart = segstart - self.config.getint('input','padding') - \
