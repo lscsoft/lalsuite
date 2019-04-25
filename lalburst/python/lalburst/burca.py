@@ -53,11 +53,30 @@ from .git_version import version as __version__
 
 class SnglBurst(lsctables.SnglBurst):
 	__slots__ = ()
-	def __cmp__(self, other):
-		# compare self's peak time to the LIGOTimeGPS instance
-		# other.  allows bisection searches by GPS time to find
-		# ranges of triggers quickly
-		return cmp(self.peak, other)
+
+	#
+	# compare self's peak time to the LIGOTimeGPS instance other.
+	# allows bisection searches by GPS time to find ranges of triggers
+	# quickly
+	#
+
+	def __lt__(self, other):
+		return self.peak < other
+
+	def __le__(self, other):
+		return self.peak <= other
+
+	def __eq__(self, other):
+		return self.peak == other
+
+	def __ne__(self, other):
+		return self.peak != other
+
+	def __ge__(self, other):
+		return self.peak >= other
+
+	def __gt__(self, other):
+		return self.peak > other
 
 
 #
