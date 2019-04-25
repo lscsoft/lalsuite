@@ -60,7 +60,8 @@ def findSegmentsToAnalyze(ifo, frametype, state_vector_channel, bits, gpsstart, 
     if not datacache:
         return gwpy.segments.SegmentList([])
     flags = gwpy.timeseries.StateVector.read(
-        datacache, state_vector_channel, start=gpsstart, end=gpsend
+        datacache, state_vector_channel, start=gpsstart, end=gpsend,
+        pad=0  # padding data so that errors are not raised even if found data are not continuous.
     ).to_dqflags()
     # extract segments all of whose bits are active
     segments = flags[bits[0]].active
