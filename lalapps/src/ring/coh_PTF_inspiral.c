@@ -77,7 +77,6 @@ int main(int argc, char **argv)
   FindChirpTemplate        *fcTmplt                 = NULL;
   FindChirpTemplate        *bankFcTmplts            = NULL;
   FindChirpTmpltParams     *fcTmpltParams           = NULL;
-  FindChirpInitParams      *fcInitParams            = NULL;
   UINT4                    ifoNumber,spinTemplate;
   REAL8Array               *PTFM[LAL_NUM_IFO+1];
   REAL8Array               *PTFN[LAL_NUM_IFO+1];
@@ -186,7 +185,7 @@ int main(int argc, char **argv)
   Fcrosstrig  = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL4));
 
   /* Initialize template and filtering structures */
-  coh_PTF_initialize_structures(params,&fcInitParams,&fcTmplt,&fcTmpltParams,\
+  coh_PTF_initialize_structures(params,&fcTmplt,&fcTmpltParams,\
                                 PTFM,PTFN,PTFqVec,fwdplan);
 
   /*------------------------------------------------------------------------*
@@ -721,7 +720,7 @@ int main(int argc, char **argv)
   coh_PTF_cleanup(params,procpar,fwdplan,psdplan,revplan,invplan,channel,
       invspec,segments,eventList,snglEventList,\
       PTFbankhead,fcTmplt,fcTmpltParams,
-      fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,slidTimeOffsets,Fplus,Fcross,\
+      PTFM,PTFN,PTFqVec,timeOffsets,slidTimeOffsets,Fplus,Fcross,\
       Fplustrig,Fcrosstrig,skyPoints,time_slide_head,longTimeSlideList,
       shortTimeSlideList,timeSlideVectors,detectors, slideIDList,\
       time_slide_map_head,segment_table_head);

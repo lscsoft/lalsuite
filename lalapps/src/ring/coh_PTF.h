@@ -508,7 +508,6 @@ void coh_PTF_create_time_slide_table(
 
 void coh_PTF_initialize_structures(
   struct coh_PTF_params    *params,
-  FindChirpInitParams      **fcInitParamsP,
   FindChirpTemplate        **fcTmpltP,
   FindChirpTmpltParams     **fcTmpltParamsP,
   REAL8Array               **PTFM,
@@ -875,7 +874,6 @@ void coh_PTF_cleanup(
     InspiralTemplate        *PTFbankhead,
     FindChirpTemplate       *fcTmplt,
     FindChirpTmpltParams    *fcTmpltParams,
-    FindChirpInitParams     *fcInitParams,
     REAL8Array              **PTFM,
     REAL8Array              **PTFN,
     COMPLEX8VectorSequence  **PTFqVec,
