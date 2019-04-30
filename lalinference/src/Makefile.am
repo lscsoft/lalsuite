@@ -13,15 +13,24 @@ BAYESTARHDR = bayestar_sky_map.h bayestar_distance.h bayestar_moc.h
 BAYESTARSRC = bayestar_sky_map.c bayestar_distance.c bayestar_moc.c
 endif
 
-ANALYTICFILES = CorrelationMatrix.csv unimodalMeans.csv bimodalMeans.csv
+ANALYTICFILES = \
+	CorrelationMatrix.csv \
+	bimodalMeans.csv \
+	unimodalMeans.csv
 
-FIDUCIALINJECTIONS = fiducialBBH.xml fiducialBNS.xml
+FIDUCIALINJECTIONS = \
+	fiducialBBH.xml \
+	fiducialBNS.xml
 
-EXAMPLE_CONFIG = lalinference_pipe_example.ini \
-	lib_pipe_example.ini \
-	config_tiger_example.ini
+EXAMPLE_CONFIG = \
+	config_tiger_example.ini \
+	lalinference_pipe_example.ini \
+	lib_pipe_example.ini
 
-pkgdata_DATA = $(ANALYTICFILES) $(FIDUCIALINJECTIONS) $(EXAMPLE_CONFIG)
+pkgdata_DATA = \
+	$(ANALYTICFILES) \
+	$(EXAMPLE_CONFIG) \
+	$(FIDUCIALINJECTIONS)
 
 pkginclude_HEADERS = \
 	LALInference.h \
@@ -85,7 +94,10 @@ nodist_liblalinference_la_SOURCES = \
 	LALInferenceVCSInfo.c \
 	$(END_OF_LIST)
 
-noinst_HEADERS = six.h bayestar_cosmology.h omp_interruptible.h
+noinst_HEADERS = \
+	bayestar_cosmology.h \
+	omp_interruptible.h \
+	six.h
 
 liblalinference_la_CFLAGS = $(AM_CFLAGS) $(HDF5_CFLAGS)
 liblalinference_la_CPPFLAGS = $(AM_CPPFLAGS) $(HDF5_CPPFLAGS)
