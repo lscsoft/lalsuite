@@ -48,8 +48,7 @@ pkginclude_HEADERS = \
 	LALInferenceDistanceMarg.h \
 	cubic_interp.h \
 	distance_integrator.h \
-	$(BAYESTARHDR) \
-	$(XMLHDR)
+	$(BAYESTARHDR)
 
 lib_LTLIBRARIES = liblalinference.la
 
@@ -79,8 +78,7 @@ liblalinference_la_SOURCES = \
 	logaddexp.h \
 	cubic_interp.c \
 	distance_integrator.c \
-	$(BAYESTARSRC) \
-	$(XMLSRC)
+	$(BAYESTARSRC)
 
 nodist_liblalinference_la_SOURCES = \
 	LALInferenceBuildInfoHeader.h \
