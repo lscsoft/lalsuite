@@ -26,7 +26,7 @@
 #include <lal/LALInferenceProposal.h>
 #include <lal/LALInferenceClusteredKDE.h>
 
-#include <LALAppsVCSInfo.h>
+#include <lal/LALInferenceVCSInfo.h>
 
 #define PROGRAM_NAME "LALInferenceKombineSampler.c"
 #define CVS_ID_STRING "$Id$"
@@ -595,8 +595,8 @@ FILE *print_ensemble_header(LALInferenceRunState *run_state, INT4 rank) {
     /* Write the header information to file */
     fprintf(output,
             "  LALInference version:%s,%s,%s,%s,%s\n",
-            lalAppsVCSInfo.vcsId, lalAppsVCSInfo.vcsDate, lalAppsVCSInfo.vcsBranch,
-            lalAppsVCSInfo.vcsAuthor, lalAppsVCSInfo.vcsStatus);
+            lalInferenceVCSInfo.vcsId, lalInferenceVCSInfo.vcsDate, lalInferenceVCSInfo.vcsBranch,
+            lalInferenceVCSInfo.vcsAuthor, lalInferenceVCSInfo.vcsStatus);
 
     fprintf(output, "  %s\n", cmd_str);
 
