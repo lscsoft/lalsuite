@@ -1,5 +1,13 @@
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 
+BUILT_SOURCES = liblalinference
+
+.PHONY: liblalinference
+liblalinference:
+	@cd $(top_builddir)/src && $(MAKE) liblalinference.la
+
+#LDADD += $(top_builddir)/src/liblalinference.la
+
 CC = $(MPICC) -std=gnu99
 AM_CPPFLAGS += -I $(srcdir)/..
 LIBS += $(MPILIBS)
