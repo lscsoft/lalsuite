@@ -456,7 +456,7 @@ int main(int argc, char **argv)
 	      XLAL_ERROR ( XLAL_EFUNC );
 	    }
 
-            REAL8Vector *fs = PulsarGetREAL8VectorParam(pulparams[h], "F");
+            const REAL8Vector *fs = PulsarGetREAL8VectorParam(pulparams[h], "F");
             fprintf(stderr,"Your f0 is %f\n",fs->data[0]);
 
 	    /*Convert location with proper motion */
@@ -493,10 +493,10 @@ int main(int argc, char **argv)
 	    params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
 
 	    params.pulsar.f0 = 2.*fs->data[0];
-            for ( UINT4 k = 0; k < 3; k++ ){
+            for ( UINT4 kk = 0; kk < 3; kk++ ){
               // set frequency derivaties (up to third derivative)
-              if ( fs->length > k ){ params.pulsar.spindown->data[k] = 2.*fs->data[k+1]; }
-              else { params.pulsar.spindown->data[k] = 0.; }
+              if ( fs->length > kk ){ params.pulsar.spindown->data[kk] = 2.*fs->data[kk+1]; }
+              else { params.pulsar.spindown->data[kk] = 0.; }
             }
 	    if (( XLALGPSSetREAL8(&(params.pulsar.refTime),PulsarGetREAL8Param(pulparams[h], "PEPOCH")) ) == NULL ){
 	      XLAL_ERROR ( XLAL_EFUNC );
