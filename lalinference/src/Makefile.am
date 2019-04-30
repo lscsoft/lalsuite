@@ -102,7 +102,6 @@ bin_PROGRAMS = \
 	lalinference_datadump \
 	lalinference_bench \
 	lalinference_version \
-	$(mpi_progs)
 	$(END_OF_LIST)
 
 lalinference_nest_SOURCES = LALInferenceNest.c
