@@ -145,9 +145,3 @@ dist_bin_SCRIPTS = \
 TESTS = \
 	lalinference_version \
 	$(END_OF_LIST)
-
-EXTRA_DIST += \
-	LALInferenceMCMCSampler.c \
-	LALInferenceMCMCSampler.h \
-	LALInferenceKombineSampler.c \
-	LALInferenceKombineSampler.h
