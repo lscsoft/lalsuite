@@ -676,7 +676,8 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
           LALInferenceExecuteFT(model);
         }
         else {
-          double norm
+          /* FD templates need to be amplified by the window power loss factor */
+          double norm;
           norm=sqrt(dataPtr->window->data->length/dataPtr->window->sumofsquares);
 
           for(i=0;i<model->freqhPlus->data->length;i++){
