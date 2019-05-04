@@ -491,9 +491,9 @@ int XLALSimInspiralTaylorF2Ecc(
     if (eccentricity < 0.0 || eccentricity >= 1.0) XLAL_ERROR(XLAL_EDOM);
 
     /* allocate htilde */
-    if ( (fEnd == 0. || fEnd > fISCO) && ( tideO == 0)) // End at ISCO
+    if ( (fEnd == 0.) && ( tideO == 0)) // End at ISCO
         f_max = fISCO;
-    else if (( fEnd == 0. || fEnd > fISCO) && ( tideO != 0 )) { // End at the minimum of the contact and ISCO frequencies only when tides are enabled
+    else if ( (fEnd == 0.) && ( tideO != 0 )) { // End at the minimum of the contact and ISCO frequencies only when tides are enabled
         fCONT = XLALSimInspiralContactFrequency(m1, lambda1, m2, lambda2); /* Contact frequency of two compact objects */
         f_max = (fCONT > fISCO) ? fISCO : fCONT;
     }
