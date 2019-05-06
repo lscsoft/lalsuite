@@ -21,13 +21,15 @@ typedef struct tagradial_integrand_params {
     double p;
     double b;
     int k, cosmology;
+    int gaussian;
 } radial_integrand_params;
 
 double log_dVC_dVL(double DL);
 void dVC_dVL_init(void);
 
 double log_radial_integrand(double r, void *params);
-double log_radial_integral(double r1, double r2, double p, double b, int k, int cosmology);
+double log_radial_integral(double r1, double r2, double p, double b, int k,
+                           int cosmology, int gaussian);
 
 /**
  * Distance integrator for marginalisation. Assumes a besselI0-type marginalised phase likelihood.
@@ -37,8 +39,9 @@ double log_radial_integral(double r1, double r2, double p, double b, int k, int 
  * @param cosmology 0: Euclidean, 1: use co-moving volume prior
  * @param pmax: The maximum optimal SNR to allow
  * @param size: Size of lookup table
+ * @param gaussian: Use gaussian likelihood instead of phase-marginalised one
  */
-log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, int cosmology, double pmax, size_t size);
+log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, int cosmology, double pmax, size_t size, int gaussian);
 
 /**
  * Free an integrator

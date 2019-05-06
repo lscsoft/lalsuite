@@ -88,15 +88,25 @@ static double radial_integrand(double r, void *params)
     const double p = integrand_params->p;
     const double b = integrand_params->b;
     const int k = integrand_params->k;
+    const int gaussian_flag = integrand_params->gaussian;
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
     double ret = scale - gsl_pow_2(p / r - 0.5 * b / p);
     int retval=GSL_SUCCESS;
     gsl_sf_result result;
     if (integrand_params->cosmology)
         ret += log_dVC_dVL(r);
-    retval = gsl_sf_exp_mult_e(
-        ret, gsl_sf_bessel_I0_scaled(b / r) * gsl_pow_int(r, k),
-        &result);
+    if (!gaussian_flag)
+    {
+        retval = gsl_sf_exp_mult_e(
+            ret, gsl_sf_bessel_I0_scaled(b / r) * gsl_pow_int(r, k),
+            &result);
+    }
+    else
+    {
+        retval = gsl_sf_exp_mult_e(
+            ret, gsl_pow_int(r, k),
+            &result);
+    }
     gsl_set_error_handler(old_handler);
     switch (retval)
     {
@@ -119,17 +129,23 @@ double log_radial_integrand(double r, void *params)
     const double p = integrand_params->p;
     const double b = integrand_params->b;
     const int k = integrand_params->k;
-    double ret = log(gsl_sf_bessel_I0_scaled(b / r) * gsl_pow_int(r, k))
+    const int gaussian_flag = integrand_params->gaussian;
+    double ret = 0;
+    if (!gaussian_flag)
+        ret = log(gsl_sf_bessel_I0_scaled(b / r) * gsl_pow_int(r, k))
         + scale - gsl_pow_2(p / r - 0.5 * b / p);
+    else
+        ret = ((double) k)*log(r) + scale - gsl_pow_2(p / r - 0.5 * b / p);
     if (integrand_params->cosmology)
         ret += log_dVC_dVL(r);
     return ret;
 }
 
 
-double log_radial_integral(double r1, double r2, double p, double b, int k, int cosmology)
+double log_radial_integral(double r1, double r2, double p, double b, int k,
+                           int cosmology, int gaussian)
 {
-    radial_integrand_params params = {0, p, b, k, cosmology};
+    radial_integrand_params params = {0, p, b, k, cosmology, gaussian};
     double breakpoints[5];
     unsigned char nbreakpoints = 0;
     double result = 0, abserr, log_offset = -INFINITY;
@@ -250,7 +266,8 @@ double log_radial_integral(double r1, double r2, double p, double b, int k, int 
 }
 
 
-log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, int cosmology, double pmax, size_t size)
+log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, int cosmology,
+                                                  double pmax, size_t size, int gaussian)
 {
     log_radial_integrator *integrator = NULL;
     bicubic_interp *region0 = NULL;
@@ -302,7 +319,7 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, i
         const double r0 = exp(y);
         const double b = 2 * gsl_pow_2(p) / r0;
         /* Note: using this where p > r0; could reduce evaluations by half */
-        z0[ix*size + iy] = log_radial_integral(r1, r2, p, b, k, cosmology);
+        z0[ix*size + iy] = log_radial_integral(r1, r2, p, b, k, cosmology, gaussian);
     }
     gsl_set_error_handler(old_handler);
     
