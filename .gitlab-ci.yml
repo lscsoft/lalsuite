@@ -432,6 +432,11 @@ nightly:gcc:8:
   <<: *gcc-build
   image: skymoo/ligo-lalsuite-gcc:8
 
+nightly:gcc:9:
+  <<: *gcc-build
+  image: skymoo/ligo-lalsuite-gcc:9
+  allow_failure: true
+
 # conda
 
 # FIXME: currently using --disable-doxygen as documentation currently
