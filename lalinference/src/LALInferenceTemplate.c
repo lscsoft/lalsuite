@@ -922,7 +922,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   if(model->domain == LAL_SIM_DOMAIN_FREQUENCY) {
       deltaF = model->deltaF;
       /* Correct distance to account for renormalisation of data due to window RMS */
-      double corrected_distance = distance * sqrt(model->window->sumofsquares/model->window->length);
+      double corrected_distance = distance * sqrt(model->window->sumofsquares/model->window->data->length);
       XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
             deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
             spin2x, spin2y, spin2z, f_start, f_max, f_ref, corrected_distance, inclination, model->LALpars,
@@ -1422,7 +1422,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
     /* ==== Call the waveform generator ==== */
     if(model->domain == LAL_SIM_DOMAIN_FREQUENCY) {
         if(!frequencies) frequencies = LALInferenceMultibandFrequencies(Nbands,f_start,0.5/deltaT, model->deltaF, mc_min);
-        double corrected_distance = distance * sqrt(model->window->sumofsquares/model->window->length);
+        double corrected_distance = distance * sqrt(model->window->sumofsquares/model->window->data->length);
 
 
         XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
@@ -1728,7 +1728,7 @@ void LALInferenceTemplateXLALSimBurstChooseWaveform(LALInferenceModel *model)
 	/*Create BurstExtra params here and set depending on approx or let chooseFD do that*/
 
       /* Correct hrss to account for bias introduced by window normalisation */
-      double corrected_hrss = hrss / sqrt(model->window->sumofsquares/model->window->length);
+      double corrected_hrss = hrss / sqrt(model->window->sumofsquares/model->window->data->length);
 
   XLAL_TRY(ret=XLALSimBurstChooseFDWaveformFromCache(&hptilde, &hctilde, deltaF,deltaT,freq,quality,duration,f_low,f_max,corrected_hrss,polar_angle,polar_ecc,extraParams,approximant,model->burstWaveformCache), errnum);
   //XLAL_TRY(ret=XLALSimBurstChooseFDWaveform(&hptilde, &hctilde, deltaF,deltaT,freq,quality,duration,f_low,f_max,hrss,polar_angle,polar_ecc,extraParams,approximant), errnum);
@@ -1973,7 +1973,7 @@ void LALInferenceTemplateXLALSimBurstSineGaussianF(LALInferenceModel *model)
 
   deltaF = model->deltaF;
     /* Compute corrected hrss to account for bias introduced by window normalisation */
-  double corrected_hrss = hrss / sqrt(model->window->sumofsquares/model->window->length);
+  double corrected_hrss = hrss / sqrt(model->window->sumofsquares/model->window->data->length);
 
   XLAL_TRY(ret=XLALInferenceBurstSineGaussianFFast(&hptilde, &hctilde, quality,freq, corrected_hrss, polar_ecc, polar_angle,deltaF,deltaT), errnum);
   if (ret == XLAL_FAILURE)
