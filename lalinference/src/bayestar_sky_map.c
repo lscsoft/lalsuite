@@ -550,7 +550,7 @@ bayestar_pixel *bayestar_sky_map_toa_phoa_snr(
         {
             integrators[k] = log_radial_integrator_init(
                 min_distance, max_distance, prior_distance_power + k, cosmology,
-                pmax, default_log_radial_integrator_size);
+                pmax, default_log_radial_integrator_size, 0);
             if (!integrators[k])
             {
                 for (unsigned char kk = 0; kk < k; kk ++)
@@ -865,7 +865,7 @@ static void test_log_radial_integral(
 {
     const double p = sqrt(p2);
     log_radial_integrator *integrator = log_radial_integrator_init(
-        r1, r2, k, 0, p + 0.5, default_log_radial_integrator_size);
+        r1, r2, k, 0, p + 0.5, default_log_radial_integrator_size, 0);
 
     gsl_test(!integrator, "testing that integrator object is non-NULL");
     if (integrator)
@@ -996,7 +996,7 @@ int bayestar_test(void)
         const int k = 2;
         const double tol = 1e-5;
         log_radial_integrator *integrator = log_radial_integrator_init(
-            r1, r2, k, 0, pmax, default_log_radial_integrator_size);
+            r1, r2, k, 0, pmax, default_log_radial_integrator_size, 0);
 
         gsl_test(!integrator, "testing that integrator object is non-NULL");
         if (integrator)
@@ -1008,7 +1008,7 @@ int bayestar_test(void)
                     const double r0 = 2 * gsl_pow_2(p) / b;
                     const double x = log(p);
                     const double y = log(r0);
-                    const double expected = exp(log_radial_integral(r1, r2, p, b, k, 0));
+                    const double expected = exp(log_radial_integral(r1, r2, p, b, k, 0, 0));
                     const double result = exp(log_radial_integrator_eval(integrator, p, b, log(p), log(b)) - gsl_pow_2(0.5 * b / p));
                     gsl_test_abs(
                         result, expected, tol, "testing log_radial_integrator_eval("
