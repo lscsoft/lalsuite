@@ -413,29 +413,24 @@ nightly:clang:9:
     CLANG: clang-9
     CLANGXX: clang++-9
 
-nightly:gcc:7:
-  image: skymoo/ligo-lalsuite-gcc:7
+.gcc-build: &gcc-build
   stage: nightly
+  dependencies: []
   script:
     - ./00boot
     - ./configure --enable-doxygen
     - make -j4 distcheck
-  dependencies: []
   only:
     - schedules
     - web
 
+nightly:gcc:7:
+  <<: *gcc-build
+  image: skymoo/ligo-lalsuite-gcc:7
+
 nightly:gcc:8:
+  <<: *gcc-build
   image: skymoo/ligo-lalsuite-gcc:8
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
 
 # conda
 
