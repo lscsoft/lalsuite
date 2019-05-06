@@ -135,12 +135,17 @@ for ifo in options.IFOs:
     dat_file = np.column_stack( np.loadtxt(options.data_file[i]) )
     data = dat_file[1] + 1j*dat_file[2]
     fseries = dat_file[0]
-    deltaF = fseries[1] - fseries[0]
+    if options.seglen:
+        deltaF = 1./options.seglen
+    else:
+        deltaF = fseries[1] - fseries[0]
     if options.fHigh:
         fHigh = options.fHigh
     else:
         fHigh = fseries[-1]
     fHigh_index = int(fHigh / deltaF)
+
+    print('Desired fHigh is', fHigh,', actual fHigh is', fseries[fHigh_index])
 
     if options.fLow:
         fLow = options.fLow
@@ -151,6 +156,8 @@ for ifo in options.IFOs:
         assert fHigh == basis_params[1]
     fLow_index = int(fLow / deltaF)
 
+    print('Desired fLow is', fLow,', actual fLow is', fseries[fLow_index])
+
     fseries = fseries[fLow_index:fHigh_index]
     data = data[fLow_index:fHigh_index]
 
@@ -158,8 +165,7 @@ for ifo in options.IFOs:
     psd = psdfile[1]
 
     psd[-1] = psd[-1 -1 ]
-
-    psd = psd[int(fLow/deltaF):fHigh_index]
+    psd = psd[fLow_index:fHigh_index]
     data /= psd
 
     # only get frequency components up to fHigh
