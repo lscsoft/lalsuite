@@ -920,10 +920,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
   /* ==== Call the waveform generator ==== */
   if(model->domain == LAL_SIM_DOMAIN_FREQUENCY) {
-    deltaF = model->deltaF;
-    XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
+      deltaF = model->deltaF;
+      /* Correct distance to account for renormalisation of data due to window RMS */
+      double corrected_distance = distance * sqrt(model->window->sumofsquares/model->window->length);
+      XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
             deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
-            spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination, model->LALpars,
+            spin2x, spin2y, spin2z, f_start, f_max, f_ref, corrected_distance, inclination, model->LALpars,
 							      approximant,model->waveformCache, NULL), errnum);
 
     /* if the waveform failed to generate, fill the buffer with zeros
