@@ -388,9 +388,9 @@ def setup_roq(cp):
         else:
             tmp={}
             ifos=eval(this_cp.get('analysis','ifos'))
-            for i in ifos:
-                tmp[i]=flow
-                this_cp.set('lalinference','flow',str(tmp))
+        for i in ifos:
+            tmp[i]=flow
+            this_cp.set('lalinference','flow',str(tmp))
         if roq_bounds == 'chirp_mass_q':
             mc_min=mc_priors[roq][0]*roq_mass_freq_scale_factor
             mc_max=mc_priors[roq][1]*roq_mass_freq_scale_factor
