@@ -360,6 +360,7 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
   REAL8 orb_phase, ln_hat_x, ln_hat_y, ln_hat_z, ln_hat_norm, ref_time;
   REAL8 n_hat_x, n_hat_y, n_hat_z, n_hat_norm;
   REAL8 pos1x, pos1y, pos1z, pos2x, pos2y, pos2z;
+  REAL8 r_x, r_y, r_z, r_norm;
   REAL8 corb_phase, sorb_phase, sinclination, cinclination;
   REAL8 ln_cross_n_x, ln_cross_n_y, ln_cross_n_z, ln_cross_n_norm;
   REAL8 z_wave_x, z_wave_y, z_wave_z, z_wave_norm;
@@ -404,9 +405,13 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
         (filepointer, "position2y-vs-time", ref_time);
     pos2z = XLALSimInspiralNRWaveformGetInterpValueFromGroupAtPoint
         (filepointer, "position2z-vs-time", ref_time);
-    n_hat_x = pos1x - pos2x;
-    n_hat_y = pos1y - pos2y;
-    n_hat_z = pos1z - pos2z;
+    r_x = pos1x - pos2x;
+    r_y = pos1y - pos2y;
+    r_z = pos1z - pos2z;
+    r_norm=sqrt(r_x*r_x+ r_y*r_y + r_z*r_z);
+    n_hat_x=r_x/r_norm;
+    n_hat_y=r_y/r_norm;
+    n_hat_z=r_z/r_norm;
   }
   else
   {
