@@ -374,8 +374,8 @@ def setup_roq(cp):
         this_cp.set('paths','roq_b_matrix_directory',os.path.join(cp.get('paths','roq_b_matrix_directory'),roq))
         flow=roq_params[roq]['flow'] / roq_mass_freq_scale_factor
         srate=2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor
-        if srate > 8192:
-            srate = 8192
+        #if srate > 8192:
+        #    srate = 8192
 
         seglen=roq_params[roq]['seglen'] * roq_mass_freq_scale_factor
         # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
@@ -388,9 +388,9 @@ def setup_roq(cp):
         else:
             tmp={}
             ifos=eval(this_cp.get('analysis','ifos'))
-            for i in ifos:
-                tmp[i]=flow
-                this_cp.set('lalinference','flow',str(tmp))
+        for i in ifos:
+            tmp[i]=flow
+            this_cp.set('lalinference','flow',str(tmp))
         if roq_bounds == 'chirp_mass_q':
             mc_min=mc_priors[roq][0]*roq_mass_freq_scale_factor
             mc_max=mc_priors[roq][1]*roq_mass_freq_scale_factor
