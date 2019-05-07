@@ -5277,6 +5277,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case TaylorR2F4:
     case IMRPhenomFB:
     case FindChirpSP:
+    case NRHybSur3dq8:
       spin_support=LAL_SIM_INSPIRAL_ALIGNEDSPIN;
       break;
     case TaylorEt:
@@ -5381,6 +5382,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case NR_hdf5:
     case NRSur4d2s:
     case NRSur7dq2:
+    case NRHybSur3dq8:
     case IMRPhenomHM:
     case NumApproximants:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
