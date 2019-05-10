@@ -418,12 +418,14 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
     }
   }
 
+  /* Correct distance to account for renormalisation of data due to window RMS */
+  double corrected_distance = distance * sqrt(model->window->sumofsquares/model->window->data->length);
   /* ==== Call the waveform generator ==== */
     XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformSequence (&(model->roq->hptildeLinear), &(model->roq->hctildeLinear), phi0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
-                spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, distance, inclination, model->LALpars, approximant, (model->roq->frequencyNodesLinear)), errnum);
+                spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, corrected_distance, inclination, model->LALpars, approximant, (model->roq->frequencyNodesLinear)), errnum);
 
     XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformSequence (&(model->roq->hptildeQuadratic), &(model->roq->hctildeQuadratic), phi0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
-							spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, distance, inclination, model->LALpars, approximant, (model->roq->frequencyNodesQuadratic)), errnum);
+							spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, corrected_distance, inclination, model->LALpars, approximant, (model->roq->frequencyNodesQuadratic)), errnum);
 
     REAL8 instant = model->freqhPlus->epoch.gpsSeconds + 1e-9*model->freqhPlus->epoch.gpsNanoSeconds;
     LALInferenceSetVariable(model->params, "time", &instant);
