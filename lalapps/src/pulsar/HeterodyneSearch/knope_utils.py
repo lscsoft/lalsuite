@@ -3245,18 +3245,13 @@ class knopeDAG(pipeline.CondorDAG):
             self.error_code = KNOPE_ERROR_GENERAL
           return # exit function
 
-    # otherwise try and get the segment list
-    segfind = self.get_config_option('segmentfind', 'segfind', default='ligolw_segment_query_dqsegdb')
-
-    # check segment finding file exists and is executable
-    if not os.path.isfile(segfind) or not os.access(segfind, os.X_OK):
-      print("Warning... '%s' executable for segment finding does not exist or is not an executable. Try finding code in path." % segfind)
-      segfind = self.find_exec_file('ligolw_segment_query_dqsegdb')
-
-      if segfind is None:
-        print("Error... could not find 'ligolw_segment_query_dqsegdb' in 'PATH'", file=sys.stderr)
-        self.error_code = KNOPE_ERROR_GENERAL
-        return
+    # otherwise try and get the segment list using gwpy
+    try:
+      from gwpy.segments import DataQualityFlag
+    except ImportError:
+      print("Error... gwpy is required for finding segment lists")
+      self.error_code = KNOPE_ERROR_GENERAL
+      return
 
     # get server
     server = self.get_config_option('segmentfind', 'server', default='https://segments.ligo.org')
@@ -3295,6 +3290,13 @@ class knopeDAG(pipeline.CondorDAG):
       return
 
     sidx = 0
+    try:
+      segfp = open(outfile, 'w')
+    except IOError:
+      print("Error... could not open segment list file")
+      self.error_code = KNOPE_ERROR_GENERAL
+      return
+
     # loop over start and end time pairs
     for st, et in zip(sts, ets):
       # check whether there are different segment types for the different times
@@ -3317,79 +3319,59 @@ class knopeDAG(pipeline.CondorDAG):
         else:
           segmenttype = segmenttypes[ifo]
       
-      segFindCall = ' '.join([segfind, '--segment-url', server,
-                              '--query-segments',
-                              '--include-segments', segmenttype,
-                              '--gps-start-time', str(st),
-                              '--gps-end-time', str(et)])
+      # is multiple segment types are specified (comma seperated string), loop
+      # over them and find the intersection
+      segtypes = [sts.strip() for sts in segmenttype.split(',')]  # split and strip whitespace
 
-      if excludesegs is not None:
-        # check whether there are different exclusion types for the different times
-        if ifo in excludesegs:
-          if isinstance(excludesegs[ifo], list):
-            if not isinstance(excludesegs[ifo][sidx], string_types):
-              print("Error... exclude types must be a string")
-              self.error_code = KNOPE_ERROR_GENERAL
-              return
-            elif len(excludesegs[ifo]) != len(sts):
-              print("Error... number of exclude types is not the same as the number of start times")
-              self.error_code = KNOPE_ERROR_GENERAL
-              return
+      segquery = None
+      for i in range(len(segtypes)):
+        # create query
+        query = DataQualityFlag.query_dqsegdb(segtypes[i], st, et, url=server)
+
+        if excludesegs is not None:
+          # check whether there are different exclusion types for the different times
+          if ifo in excludesegs:
+            if isinstance(excludesegs[ifo], list):
+              if not isinstance(excludesegs[ifo][sidx], string_types):
+                print("Error... exclude types must be a string")
+                self.error_code = KNOPE_ERROR_GENERAL
+                return
+              elif len(excludesegs[ifo]) != len(sts):
+                print("Error... number of exclude types is not the same as the number of start times")
+                self.error_code = KNOPE_ERROR_GENERAL
+                return
+              else:
+                excludetype = excludesegs[ifo][sidx]
             else:
-              excludetype = excludesegs[ifo][sidx]
-          else:
-            if not isinstance(excludesegs[ifo], string_types):
-              print("Error... exclude types must be a string")
-              self.error_code = KNOPE_ERROR_GENERAL
-              return
-            else:
-              excludetype = excludesegs[ifo]
+              if not isinstance(excludesegs[ifo], string_types):
+                print("Error... exclude types must be a string")
+                self.error_code = KNOPE_ERROR_GENERAL
+                return
+              else:
+                excludetype = excludesegs[ifo]
 
-          if len(excludetype) > 0:
-            segFindCall += ' --exclude-segments ' + excludetype
+            if len(excludetype) > 0:
+              segextypes = [sts.strip() for sts in excludetype.split(',')]  # split and strip whitespace
 
-      ligolwprint = self.get_config_option('segmentfind', 'ligolw_print', default='ligolw_print')
+              for j in range(len(segextypes)):
+                exquery = DataQualityFlag.query_dqsegdb(segextypes[i], st, et, url=server)
+                
+                # exclude segments
+                query = query & ~exquery
+        
+        if segquery is None:
+          segquery = query.copy()
+        else:
+          # get intersection of segments
+          segquery = segquery & query
 
-      # check ligolw_print file exists and is executable
-      if not os.path.isfile(ligolwprint) or not os.access(ligolwprint, os.X_OK):
-        print("Warning... '%s' executable does not exist or is not an executable. Try finding code in path." % ligolwprint)
-        ligolwprint = self.find_exec_file('ligolw_print')
-
-        if ligolwprint is None:
-          print("Error... could not find 'ligolw_print' in 'PATH'", file=sys.stderr)
-          self.error_code = KNOPE_ERROR_GENERAL
-          return
-
-      if sidx == 0: # create file
-        xmlToTxtCall = ' '.join([ligolwprint,
-                                 "--table segment --column start_time --column end_time --delimiter ' '",
-                                 '>', outfile])
-      else: # append to file
-        xmlToTxtCall = ' '.join([ligolwprint,
-                                 "--table segment --column start_time --column end_time --delimiter ' '",
-                                 '>>', outfile])
-
-      segCall = ' '.join([segFindCall, '|', xmlToTxtCall])
-
-      print("Generating segments: " + segCall)
-
-      p = sp.Popen(segCall, stdout=sp.PIPE, stderr=sp.PIPE, shell=True)
-      out, err = p.communicate()
-
-      if p.returncode != 0:
-        print("Error... could not generate segment list. Call returned with error:", file=sys.stderr)
-        print("\tstdout: %s" % out, file=sys.stderr)
-        print("\tstderr: %s" % err, file=sys.stderr)
-        self.error_code = KNOPE_ERROR_GENERAL
-        return
-
-      # check whether the segment file contains any segments
-      p = sp.check_output('wc -l {}'.format(outfile), shell=True)
-      if int(p.split()[0]) == 0:
-        print("Warning... no segments found for {}", file=sys.stderr)
-        self.warning_code = KNOPE_WARNING_NO_SEGMENTS
+        # write out segment list
+        for thisseg in segquery.active:
+          segfp.write('{} {}\n'.format(int(thisseg[0]), int(thisseg[1])))
 
       sidx += 1
+
+    segfp.close()
 
 
   def find_exec_file(self, filename):
