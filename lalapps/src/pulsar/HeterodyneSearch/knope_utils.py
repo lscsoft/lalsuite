@@ -3365,9 +3365,9 @@ class knopeDAG(pipeline.CondorDAG):
           # get intersection of segments
           segquery = segquery & query
 
-        # write out segment list
-        for thisseg in segquery.active:
-          print(int(thisseg[0]), int(thisseg[1]), file=segfp)
+      # write out segment list
+      for thisseg in segquery.active:
+        print(int(thisseg[0]), int(thisseg[1]), file=segfp)
 
       sidx += 1
 
