@@ -3367,7 +3367,7 @@ class knopeDAG(pipeline.CondorDAG):
 
         # write out segment list
         for thisseg in segquery.active:
-          segfp.write('{} {}\n'.format(int(thisseg[0]), int(thisseg[1])))
+          print(int(thisseg[0]), int(thisseg[1]), file=segfp)
 
       sidx += 1
 
