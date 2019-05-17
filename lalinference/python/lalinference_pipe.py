@@ -326,7 +326,7 @@ def setup_roq(cp):
         # get component mass bounds, then compute the chirp mass that can be safely covered
         # further below we pass along the component mass bounds to the sampler, not the tighter chirp-mass, q bounds
         m1_priors, m2_priors, trigger_mchirp = pipe_utils.get_roq_component_mass_priors(
-            path, roq_paths, roq_params, key, coinc_xml_obj=coic_xml_obj, sim_inspiral=row
+            path, roq_paths, roq_params, key, coinc_xml_obj=coinc_xml_obj, sim_inspiral=row
         )
         mc_priors = {}
         for (roq,m1_prior), (roq2,m2_prior) in zip(m1_priors.items(), m2_priors.items()):
