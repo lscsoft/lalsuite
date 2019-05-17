@@ -2028,6 +2028,11 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 
     re = cos(twopit * deltaF * lower);
     im = -sin(twopit * deltaF * lower);
+
+    /* When analysing TD data, FD templates need to be amplified by the window power loss factor */
+    double windowFactor;
+    windowFactor=sqrt(dataPtr->window->data->length/dataPtr->window->sumofsquares);
+
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
       if (i < hptilde->data->length) {
@@ -2045,6 +2050,10 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
       /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
       templateReal = (plainTemplateReal*re - plainTemplateImag*im);
       templateImag = (plainTemplateReal*im + plainTemplateImag*re);
+
+      /* apply windowing factor */
+      templateReal *= ((REAL8) windowFactor);
+      templateImag *= ((REAL8) windowFactor);
 
       /* Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 */
       dim = -sin(twopit*deltaF);
