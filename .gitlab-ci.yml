@@ -168,7 +168,7 @@ docker:nightly:el7:
     - rm -rf rpmbuild*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:el7 --file .gitlab-ci.el7.Dockerfile .
+    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:el7 --file .gitlab-ci-el7.Dockerfile .
     - docker push $CI_REGISTRY_IMAGE/nightly:el7
   dependencies:
     - level0:rpm:lal
