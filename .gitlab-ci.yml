@@ -461,6 +461,9 @@ nightly:gcc:8:
   stage: nightly
   dependencies: []
   before_script:
+    # determine conda environment
+    - PYVERSION=$(echo ${CI_JOB_NAME} | sed 's/conda:python//')
+    - CONDA_ENV_FILE="conda/environment-lal-development-py${PYVERSION}.yml"
     # configure conda
     - source /opt/conda/etc/profile.d/conda.sh
     - conda config --set always_yes yes
@@ -500,20 +503,14 @@ nightly:gcc:8:
 conda:python27:
   <<: *conda-build
   image: continuumio/miniconda2
-  variables:
-    CONDA_ENV_FILE: "conda/environment-lal-development-py27.yml"
 
 conda:python36:
   <<: *conda-build
   image: continuumio/miniconda3
-  variables:
-    CONDA_ENV_FILE: "conda/environment-lal-development-py36.yml"
 
 conda:python37:
   <<: *conda-build
   image: continuumio/miniconda3
-  variables:
-    CONDA_ENV_FILE: "conda/environment-lal-development-py37.yml"
 
 # debian
 
