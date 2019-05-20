@@ -381,65 +381,61 @@ docker:tags:stretch:
 
 # compilers
 
-nightly:clang:7:
-  image: skymoo/ligo-lalsuite-clang:7
+.clang-build: &clang-build
   stage: nightly
+  dependencies: []
   script:
     - ./00boot
-    - CC=clang-7 CXX=clang++-7 ./configure --enable-swig --enable-doxygen
+    - CC=${CLANG} CXX=${CLANGXX} ./configure --enable-swig --enable-doxygen
     - make -j4 distcheck
-  dependencies: []
   only:
     - schedules
     - web
+
+nightly:clang:7:
+  <<: *clang-build
+  image: skymoo/ligo-lalsuite-clang:7
+  variables:
+    CLANG: clang-7
+    CLANGXX: clang++-7
 
 nightly:clang:8:
+  <<: *clang-build
   image: skymoo/ligo-lalsuite-clang:8
-  stage: nightly
-  script:
-    - ./00boot
-    - CC=clang-8 CXX=clang++-8 ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
+  variables:
+    CLANG: clang-8
+    CLANGXX: clang++-8
 
 nightly:clang:9:
+  <<: *clang-build
   image: skymoo/ligo-lalsuite-clang:9
+  variables:
+    CLANG: clang-9
+    CLANGXX: clang++-9
+
+.gcc-build: &gcc-build
   stage: nightly
+  dependencies: []
   script:
     - ./00boot
-    - CC=clang-9 CXX=clang++-9 ./configure --enable-swig --enable-doxygen
+    - ./configure --enable-doxygen
     - make -j4 distcheck
-  dependencies: []
   only:
     - schedules
     - web
 
 nightly:gcc:7:
+  <<: *gcc-build
   image: skymoo/ligo-lalsuite-gcc:7
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
 
 nightly:gcc:8:
+  <<: *gcc-build
   image: skymoo/ligo-lalsuite-gcc:8
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
+
+nightly:gcc:9:
+  <<: *gcc-build
+  image: skymoo/ligo-lalsuite-gcc:9
+  allow_failure: true
 
 # conda
 
