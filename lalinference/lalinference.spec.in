@@ -191,6 +191,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_bindir}/lalinference_merge_posteriors
 %{_bindir}/lalinference_multi_pipe
 %{_bindir}/lalinference_nest2pos
+%{_bindir}/lalinference_cpnest
 %{_bindir}/lalinference_pipe
 %{_bindir}/lalinference_pp_pipe
 %{_bindir}/lalinference_review_test

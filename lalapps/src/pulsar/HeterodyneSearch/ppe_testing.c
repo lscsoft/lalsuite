@@ -49,7 +49,7 @@ static double ul_gauss_CDFRoot( double mu, double sigma, double min, double max 
  * \param runState [in] The analysis information structure
  */
 void gridOutput( LALInferenceRunState *runState ){
-  LALInferenceThreadState *threadState=runState->threads[0];
+  LALInferenceThreadState *threadState=&runState->threads[0];
   REAL8 h0min = 0.;
   REAL8 h0max = 0.;
   REAL8 h0range = 0, h0step = 0;
@@ -247,8 +247,8 @@ void test_gaussian_output( LALInferenceRunState *runState ){
 
   /* get mean and standard deviation */
   REAL8 h0mean = 0., h0sigma = 0., h0sigma2 = 0., h095 = 0.;
-  h0mean = LALInferenceGetREAL8Variable( runState->threads[0]->currentParams, "H0MEAN" );
-  h0sigma = LALInferenceGetREAL8Variable( runState->threads[0]->currentParams, "H0SIGMA" );
+  h0mean = LALInferenceGetREAL8Variable( runState->threads[0].currentParams, "H0MEAN" );
+  h0sigma = LALInferenceGetREAL8Variable( runState->threads[0].currentParams, "H0SIGMA" );
   h0sigma2 = h0sigma*h0sigma;
 
   /* calculate the log evidence */
@@ -443,7 +443,7 @@ void compare_likelihoods( LALInferenceRunState *rs ){
 
   /* allocate memory for nested samples */
   curparams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-  LALInferenceCopyVariables( rs->threads[0]->currentParams, curparams );
+  LALInferenceCopyVariables( rs->threads[0].currentParams, curparams );
 
   /* read in parameter names from header file */
   ppt = LALInferenceGetProcParamVal( rs->commandLine, "--sample-file-header" );
@@ -491,7 +491,7 @@ void compare_likelihoods( LALInferenceRunState *rs ){
     }
 
     logL = LALInferenceGetREAL8Variable( curparams, "logL" );
-    logLnew = rs->likelihood( curparams, rs->data, rs->threads[0]->model );
+    logLnew = rs->likelihood( curparams, rs->data, rs->threads[0].model );
     fprintf(stderr, "%.16le\t%.16le\t%.16le\n", logL, logLnew, logL-logLnew);
     fprintf(fp, "%.16le\t%.16le\t%.16le\n", logL, logLnew, logL-logLnew);
 

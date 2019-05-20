@@ -124,8 +124,8 @@ int main(int argc, char *argv[]){
   
   for(INT4 i=0;i<state->nthreads;i++)
   {
-    state->threads[i]->cycle=LALInferenceSetupDefaultInspiralProposalCycle(state->threads[i]->proposalArgs);
-    LALInferenceRandomizeProposalCycle(state->threads[i]->cycle,state->GSLrandom);
+    state->threads[i].cycle=LALInferenceSetupDefaultInspiralProposalCycle(state->threads[i].proposalArgs);
+    LALInferenceRandomizeProposalCycle(state->threads[i].cycle,state->GSLrandom);
   }
 
   /* Choose the likelihood and set some auxiliary variables */

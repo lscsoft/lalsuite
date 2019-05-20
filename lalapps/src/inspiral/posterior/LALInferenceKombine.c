@@ -81,7 +81,7 @@ INT4 on_your_marks(LALInferenceRunState *run_state) {
 
     ProcessParamsTable *command_line = run_state->commandLine;
 
-    LALInferenceThreadState *thread = run_state->threads[0];
+    LALInferenceThreadState *thread = &run_state->threads[0];
     LALInferenceVariables *current_param = thread->currentParams;
     INT4 ndim = LALInferenceGetVariableDimensionNonFixed(thread->currentParams);
 
@@ -155,7 +155,7 @@ INT4 on_your_marks(LALInferenceRunState *run_state) {
 
         REAL8 *parameters = XLALCalloc(ndim, sizeof(REAL8));
         for (walker=0; walker<run_state->nthreads; walker++) {
-            thread = run_state->threads[walker];
+            thread = &run_state->threads[walker];
 
             for (i = 0; i < ndim; i++)
                 parameters[i] = sampleArray[mpi_rank*nwalkers_per_thread*ndim + walker*ndim + col_order[i]];
@@ -187,7 +187,7 @@ INT4 on_your_marks(LALInferenceRunState *run_state) {
     /* Set starting likelihood values (prior function hasn't changed) */
     #pragma omp parallel for
     for (walker = 0; walker < nwalkers_per_thread; walker++)
-        thread = run_state->threads[walker];
+        thread = &run_state->threads[walker];
 
         thread->currentLikelihood = run_state->likelihood(thread->currentParams,
                                     run_state->data,
@@ -334,7 +334,7 @@ INT4 init_ensemble(LALInferenceRunState *run_state) {
     init_mpi_randomstate(run_state);
 
     for (i=0; i<run_state->nthreads; i++) {
-        thread = run_state->threads[i];
+        thread = &run_state->threads[i];
 
         thread->id = mpi_rank*nwalkers_per_thread + i;
         thread->proposalArgs = LALInferenceParseProposalArgs(run_state);

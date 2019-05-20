@@ -18,6 +18,7 @@ pybin_scripts = \
 	lalinference_burst_pp_pipe \
 	lalinference_coherence_test \
 	lalinference_compute_roq_weights \
+	lalinference_cpnest \
 	lalinference_merge_posteriors \
 	lalinference_multi_pipe \
 	lalinference_nest2pos \

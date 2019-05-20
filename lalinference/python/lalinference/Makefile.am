@@ -28,6 +28,7 @@ pymodule_PYTHON = \
 	lalinference_pipe_utils.py \
 	moc.py \
 	nest2pos.py \
+	wrapper.py \
 	bayespputils.py \
 	git_version.py \
 	$(END_OF_LIST)

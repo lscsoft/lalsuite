@@ -63,37 +63,37 @@ int compare_template(LALInferenceRunState *runState)
   COMPLEX16FrequencySeries *oldTemplatePlus=NULL,*oldTemplateCross=NULL,*newTemplatePlus=NULL,*newTemplateCross=NULL;
 
   
-  runState->threads[0]->model->templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
-  LALInferenceTemplateNullFreqdomain(runState->threads[0]->model);
+  runState->threads[0].model->templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
+  LALInferenceTemplateNullFreqdomain(runState->threads[0].model);
   /* FIXME: Have to call the function once before result is repeatable!!! */
-  runState->likelihood(runState->threads[0]->model->params,runState->data, runState->threads[0]->model);
-  oldTemplatePlus = runState->threads[0]->model->freqhPlus;
-  oldTemplateCross = runState->threads[0]->model->freqhCross;
+  runState->likelihood(runState->threads[0].model->params,runState->data, runState->threads[0].model);
+  oldTemplatePlus = runState->threads[0].model->freqhPlus;
+  oldTemplateCross = runState->threads[0].model->freqhCross;
 
-  runState->threads[0]->model->freqhPlus=XLALCreateCOMPLEX16FrequencySeries("mbtemplate",&oldTemplatePlus->epoch,oldTemplatePlus->f0,oldTemplatePlus->deltaF,&lalDimensionlessUnit,oldTemplatePlus->data->length);
-  runState->threads[0]->model->freqhCross=XLALCreateCOMPLEX16FrequencySeries("mbtemplate",&oldTemplateCross->epoch,oldTemplateCross->f0,oldTemplateCross->deltaF,&lalDimensionlessUnit,oldTemplateCross->data->length);
+  runState->threads[0].model->freqhPlus=XLALCreateCOMPLEX16FrequencySeries("mbtemplate",&oldTemplatePlus->epoch,oldTemplatePlus->f0,oldTemplatePlus->deltaF,&lalDimensionlessUnit,oldTemplatePlus->data->length);
+  runState->threads[0].model->freqhCross=XLALCreateCOMPLEX16FrequencySeries("mbtemplate",&oldTemplateCross->epoch,oldTemplateCross->f0,oldTemplateCross->deltaF,&lalDimensionlessUnit,oldTemplateCross->data->length);
   
   /* Clear the template */
-  LALInferenceTemplateNullFreqdomain(runState->threads[0]->model);
+  LALInferenceTemplateNullFreqdomain(runState->threads[0].model);
 
-  runState->likelihood(runState->threads[0]->model->params,runState->data, runState->threads[0]->model);
-  LALInferenceDumpWaveforms(runState->threads[0]->model, "normal");
-  if(LALInferenceCheckVariable(runState->threads[0]->model->params,"phase_maxl"))
-    oldPhase=LALInferenceGetREAL8Variable(runState->threads[0]->model->params,"phase_maxl");
+  runState->likelihood(runState->threads[0].model->params,runState->data, runState->threads[0].model);
+  LALInferenceDumpWaveforms(runState->threads[0].model, "normal");
+  if(LALInferenceCheckVariable(runState->threads[0].model->params,"phase_maxl"))
+    oldPhase=LALInferenceGetREAL8Variable(runState->threads[0].model->params,"phase_maxl");
   
-  runState->threads[0]->model->templt=&LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated;
+  runState->threads[0].model->templt=&LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated;
   
-  runState->likelihood(runState->threads[0]->model->params,runState->data, runState->threads[0]->model);
-  LALInferenceDumpWaveforms(runState->threads[0]->model, "multiband");
+  runState->likelihood(runState->threads[0].model->params,runState->data, runState->threads[0].model);
+  LALInferenceDumpWaveforms(runState->threads[0].model, "multiband");
   
-  REAL8 SNRsqPlus =LALInferenceComputeFrequencyDomainOverlap(runState->data,runState->threads[0]->model->freqhPlus->data,runState->threads[0]->model->freqhPlus->data);
-  REAL8 SNRsqCross =LALInferenceComputeFrequencyDomainOverlap(runState->data,runState->threads[0]->model->freqhCross->data,runState->threads[0]->model->freqhCross->data);
+  REAL8 SNRsqPlus =LALInferenceComputeFrequencyDomainOverlap(runState->data,runState->threads[0].model->freqhPlus->data,runState->threads[0].model->freqhPlus->data);
+  REAL8 SNRsqCross =LALInferenceComputeFrequencyDomainOverlap(runState->data,runState->threads[0].model->freqhCross->data,runState->threads[0].model->freqhCross->data);
   
-  if(LALInferenceCheckVariable(runState->threads[0]->model->params,"phase_maxl"))
-    mbPhase=LALInferenceGetREAL8Variable(runState->threads[0]->model->params,"phase_maxl");
+  if(LALInferenceCheckVariable(runState->threads[0].model->params,"phase_maxl"))
+    mbPhase=LALInferenceGetREAL8Variable(runState->threads[0].model->params,"phase_maxl");
   
-  newTemplatePlus = runState->threads[0]->model->freqhPlus;
-  newTemplateCross = runState->threads[0]->model->freqhCross;
+  newTemplatePlus = runState->threads[0].model->freqhPlus;
+  newTemplateCross = runState->threads[0].model->freqhCross;
 
   h0MatchPlus = LALInferenceComputeFrequencyDomainOverlap(runState->data,oldTemplatePlus->data,oldTemplatePlus->data);
   h0MatchCross = LALInferenceComputeFrequencyDomainOverlap(runState->data,oldTemplateCross->data,oldTemplateCross->data);
@@ -103,7 +103,7 @@ int compare_template(LALInferenceRunState *runState)
   /* Want to check that <h0|h0>+<h_mb|h_mb>-2<h0|h_mb> < tolerance */
   
   fprintf(stdout,"Parameter values:\n");
-  LALInferencePrintVariables(runState->threads[0]->model->params);
+  LALInferencePrintVariables(runState->threads[0].model->params);
   
   COMPLEX16 mismatchplus = compute_mismatch(runState->data, newTemplatePlus , oldTemplatePlus);
   COMPLEX16 mismatchcross = compute_mismatch(runState->data, newTemplateCross , oldTemplateCross);
@@ -125,7 +125,7 @@ int compare_template(LALInferenceRunState *runState)
   fprintf(stdout,"Interpolation good up to SNR %lf (+), %lf (x)\n",
 	  sqrt(tolerance*target_snr*target_snr *SNRsqPlus/ mismatchplus),
 	  sqrt(tolerance*target_snr*target_snr *SNRsqCross/ mismatchplus) );
-  if(LALInferenceCheckVariable(runState->threads[0]->model->params,"phase_maxl"))
+  if(LALInferenceCheckVariable(runState->threads[0].model->params,"phase_maxl"))
     fprintf(stdout,"max Like phase:\tnormal = %lf, phaseinterp = %lf\n",oldPhase,mbPhase);
   return(result);
 }
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]){
   LALInferenceInitLikelihood(runState);
 
   /* Disable waveform caching */
-  runState->threads[0]->model->waveformCache=NULL;
+  runState->threads[0].model->waveformCache=NULL;
   
   int result = compare_template(runState);
   

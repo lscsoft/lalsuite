@@ -131,7 +131,7 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
         XLAL_ERROR_VOID(XLAL_EINVAL);
     }
 
-    LALInferenceThreadState *thread = run_state->threads[0];
+    LALInferenceThreadState *thread = &(run_state->threads[0]);
     INT4 t;
 
     /* If using a malmquist prior, force a strict prior window on distance for starting point, otherwise
@@ -157,7 +157,7 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
     for (t = 0; t < run_state->nthreads; t++) {
         LALInferenceVariables *priorDraw = XLALCalloc(1, sizeof(LALInferenceVariables));
 
-        thread = run_state->threads[t];
+        thread = &(run_state->threads[t]);
 
         /* Try not to clobber values given on the command line */
         LALInferenceCopyVariables(thread->currentParams, priorDraw);
@@ -217,7 +217,7 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
   run_state->threads = LALInferenceInitThreads(nthreads);
 
   for (t = 0; t < nthreads; t++) {
-    thread = run_state->threads[t];
+    thread = &(run_state->threads[t]);
 
     /* Link back to run-state */
     thread->parent = run_state;
