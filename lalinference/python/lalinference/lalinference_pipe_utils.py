@@ -905,7 +905,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 psdlength = 32*seglen
         else:
             seglen = max(e.duration for e in self.events)
-            if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')) or self.config.has_option('condor','bayesline') or self.config.has_option('condor','bayeswave'):
+            try:
+                use_gracedbpsd = (not self.config.getboolean('input','ignore-gracedb-psd'))
+            except:
+                use_gracedbpsd = True
+            if (use_gracedbpsd and os.path.isfile(os.path.join(self.basepath,'psd.xml.gz'))) or self.config.has_option('condor','bayesline') or self.config.has_option('condor','bayeswave'):
                 psdlength = 0
                 padding = 0
                 self.config.set('input','padding',str(padding))
