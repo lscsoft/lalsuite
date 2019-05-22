@@ -29,3 +29,6 @@ gnuscripts/         @adam-mercer
 COPYING             @adam-mercer
 Makefile.am         @adam-mercer
 configure.ac        @adam-mercer
+
+# SWIG files belong to Karl
+swig/               @karl-wette
