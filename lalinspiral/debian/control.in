@@ -5,7 +5,6 @@ Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
 Build-Depends: debhelper (>= 9),
   dh-python,
-  libframe-dev (>= 8.0),
   libgsl-dev | libgsl0-dev (>= 1.9),
   libmetaio-dev (>= 8.2),
   liboctave-dev,
@@ -42,7 +41,6 @@ Package: lalinspiral
 Architecture: any
 Depends: ${misc:Depends},
   ${shlibs:Depends},
-  libframe1 (>= 8.0),
   libmetaio1 (>= 8.2),
   lal (>= @MIN_LAL_VERSION@~),
   lalframe (>= @MIN_LALFRAME_VERSION@~),
@@ -58,7 +56,6 @@ Section: libdevel
 Architecture: any
 Depends: ${misc:Depends},
   ${shlibs:Depends},
-  libframe-dev (>= 8.0),
   libgsl-dev | libgsl0-dev (>= 1.9),
   libmetaio-dev (>= 8.2),
   zlib1g-dev,
