@@ -19,12 +19,12 @@ lalapps/src/pulsar/              @karl-wette @david-keitel @reinhard-prix @bernd
 lalapps/src/string/              @kipp.cannon @florent-robinet @imene.belahcene @daichi.tsuna
 
 # build files all belong to Adam
-.gitlab/            @adam-mercer
-conda/              @adam-mercer
-debian/             @adam-mercer
+.gitlab/            @adam-mercer @duncanmmacleod
+conda/              @adam-mercer @duncanmmacleod
+debian/             @adam-mercer @duncanmmacleod
 gnuscripts/         @adam-mercer
-*.spec.in           @adam-mercer
-*.pc.in             @adam-mercer
+*.spec.in           @adam-mercer @duncanmmacleod
+*.pc.in             @adam-mercer @duncanmmacleod
 00boot              @adam-mercer
 COPYING             @adam-mercer
 Makefile.am         @adam-mercer
