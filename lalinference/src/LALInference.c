@@ -1832,14 +1832,14 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
 
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
 {
-    LALStringVector *args=XLALCreateStringVector(NULL);
-	for(int i=0;i<argc;i++)
-	{
-		args=XLALAppendString2Vector(args, argv[i]);
-	}
+    LALStringVector *args=XLALCreateEmptyStringVector(0);
+    for(int i=0;i<argc;i++)
+    {
+	    args=XLALAppendString2Vector(args, argv[i]);
+    }
     ProcessParamsTable *ppt=LALInferenceParseStringVector(args);
-	XLALDestroyStringVector(args);
-	return(ppt);
+    XLALDestroyStringVector(args);
+    return(ppt);
 }
 
 ProcessParamsTable *LALInferenceParseStringVector(LALStringVector *arglist)
