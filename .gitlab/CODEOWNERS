@@ -1,0 +1,31 @@
+# package-level owners
+lal/                @adam-mercer @jolien-creighton
+lalframe/           @adam-mercer @jolien-creighton @ed-maros
+lalmetaio/          @adam-mercer @jolien-creighton
+lalsimulation/      @riccardo-sturani @frank-ohme
+lalburst/           @salvatore-vitale @ryan-lynch
+lalpulsar/          @karl-wette @david-keitel @reinhard-prix @bernd.machenschalk
+lalinspiral/        @jolien-creighton
+lalinference/       @john-veitch @vivien
+
+# lalapps
+lalapps/src/findchirp/           @jolien-creighton
+lalapps/src/frametools/          @adam-mercer @jolien-creighton
+lalapps/src/hwinjection/         @karl-wette @david-keitel @reinhard-prix @bernd.machenschalk
+lalapps/src/inspiral/posterior/  @john-veitch @bfarr @vivien @will-farr @salvatore-vitale @ryan-lynch
+lalapps/src/lalapps/             @adam-mercer @jolien-creighton
+lalapps/src/power/               @kipp.cannon @xavier.siemens
+lalapps/src/pulsar/              @karl-wette @david-keitel @reinhard-prix @bernd.machenschalk
+lalapps/src/string/              @kipp.cannon @florent-robinet @imene.belahcene @daichi.tsuna
+
+# build files all belong to Adam
+.gitlab/            @adam-mercer
+conda/              @adam-mercer
+debian/             @adam-mercer
+gnuscripts/         @adam-mercer
+*.spec.in           @adam-mercer
+*.pc.in             @adam-mercer
+00boot              @adam-mercer
+COPYING             @adam-mercer
+Makefile.am         @adam-mercer
+configure.ac        @adam-mercer
