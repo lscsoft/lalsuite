@@ -1,3 +1,9 @@
+lalmetaio (1.5.1-1) unstable; urgency=low
+
+  * O3 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 23 May 2019 08:45:13 -0700
+
 lalmetaio (1.5.0-1) unstable; urgency=low
 
   * ER14 release
