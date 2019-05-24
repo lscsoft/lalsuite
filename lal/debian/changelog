@@ -1,3 +1,9 @@
+lal (6.20.1-1) unstable; urgency=low
+
+  * O3 point release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 24 May 2019 10:16:11 -0700
+
 lal (6.20.0-1) unstable; urgency=low
 
   * O3 release
