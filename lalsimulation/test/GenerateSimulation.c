@@ -236,7 +236,7 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(params->params, 0.);
     XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode1(params->params, 0.);
     XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(params->params, 0.);
-    strncpy(params->outname, "simulation.dat", 256); /* output to this file */
+    snprintf(params->outname, sizeof(params->outname), "simulation.dat"); /* output to this file */
     params->verbose = 0; /* No verbosity */
 
     /* consume command line */
@@ -359,7 +359,7 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
 	      XLALSimInspiralWaveformParamsInsertNonGRPhi1(params->params,atof(argv[++i]));
 	    }
         } else if (strcmp(argv[i], "--outname") == 0) {
-            strncpy(params->outname, argv[++i], 256);
+            snprintf(params->outname, sizeof(params->outname), "%s", argv[++i]);
         } else {
             XLALPrintError("Error: invalid option: %s\n", argv[i]);
             goto fail;
