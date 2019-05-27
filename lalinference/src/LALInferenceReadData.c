@@ -384,7 +384,6 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
   LALInferenceIFOData *thisData=IFOdata;
   UINT4 q=0;
   UINT4 event=0;
-  char *chartmp=NULL;
   ProcessParamsTable *procparam=NULL,*ppt=NULL;
   SimInspiralTable *injTable=NULL;
   //ProcessParamsTable *pptdatadump=NULL;
@@ -422,7 +421,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
 
   if(LALInferenceGetProcParamVal(commandLine,"--trigtime")){
     procparam=LALInferenceGetProcParamVal(commandLine,"--trigtime");
-    LALStringToGPS(&status,&GPStrig,procparam->value,&chartmp);
+    XLALStrToGPS(&GPStrig,procparam->value,NULL);
   }
   else{
     if(injTable) memcpy(&GPStrig,&(injTable->geocent_end_time),sizeof(GPStrig));
@@ -575,7 +574,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     REAL8 scalefactor=1;
     RandomParams *datarandparam;
     int globFrames=0; // 0 = no, 1 = will search for frames in PWD
-    char *chartmp=NULL;
     char **channels=NULL;
     char **caches=NULL;
     char **asds=NULL;
@@ -645,7 +643,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
     procparam=LALInferenceGetProcParamVal(commandLine,"--psdstart");
     if (procparam) {
-        LALStringToGPS(&status,&GPSstart,procparam->value,&chartmp);
+        XLALStrToGPS(&GPSstart,procparam->value,NULL);
         if(status.statusCode) REPORTSTATUS(&status);
     } else
         XLALINT8NSToGPS(&GPSstart, 0);
@@ -2343,7 +2341,6 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
   memset(&status,0,sizeof(status));
   UINT4 q=0;
   UINT4 event=0;
-  char *chartmp=NULL;
   ProcessParamsTable *procparam=NULL,*ppt=NULL;
   SimInspiralTable *injTable=NULL;
   FILE *tempfp;
@@ -2383,7 +2380,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 
 	  if(LALInferenceGetProcParamVal(commandLine,"--trigtime")){
 	    procparam=LALInferenceGetProcParamVal(commandLine,"--trigtime");
-	    LALStringToGPS(&status,&GPStrig,procparam->value,&chartmp);
+	    XLALStrToGPS(&GPStrig,procparam->value,NULL);
 	  }
 	  else{
 	    if(injTable) memcpy(&GPStrig,&(injTable->geocent_end_time),sizeof(GPStrig));
@@ -2625,7 +2622,6 @@ static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable 
     ProcessParamsTable *procparam;
     SimInspiralTable *inspiralTable=NULL;
     SimBurst *burstTable=NULL;
-    char *chartmp=NULL;
     UINT4 event=0;
     UINT4 q=0;
     LALStatus status;
@@ -2634,7 +2630,7 @@ static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable 
     /* First check if trigtime has been given as an option */
     if(LALInferenceGetProcParamVal(commandLine,"--trigtime")){
         procparam=LALInferenceGetProcParamVal(commandLine,"--trigtime");
-        LALStringToGPS(&status,GPStrig,procparam->value,&chartmp);
+        XLALStrToGPS(GPStrig,procparam->value,NULL);
         fprintf(stdout,"Set trigtime to %.10f\n",GPStrig->gpsSeconds+1.0e-9 * GPStrig->gpsNanoSeconds);
         return;
 
