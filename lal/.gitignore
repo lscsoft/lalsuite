@@ -109,7 +109,6 @@ test/support/ParseStringValueTest
 test/support/PrintFTSeriesTest
 test/support/PrintVectorTest
 test/support/ReadFTSeriesTest
-test/support/SegmentsIOTest
 test/support/SegmentsOutput1.data
 test/support/StreamInputTest
 test/support/StreamSeriesInputTest
