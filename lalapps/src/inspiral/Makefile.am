@@ -8,7 +8,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 SUBDIRS = posterior
 
 TMPLTBANKSRC = tmpltbank.c inspiralutils.c inspiral.h
-SIVASRC = siva.c
 INSPINJSRC = inspinj.c inspiralutils.c inspiral.h
 INJCUTSRC = injcut.c
 MINJSRC = minj.c
@@ -31,7 +30,6 @@ STOCHBANKSRC = stochasticbank.c
 if LALMETAIO
 LALMETAIO_PROGS = \
 	lalapps_tmpltbank \
-	lalapps_siva \
 	lalapps_inspinj \
 	lalapps_injcut \
 	lalapps_splitbank \
@@ -51,7 +49,6 @@ LALMETAIO_PROGS = \
 	lalapps_coinj \
 	lalapps_cbc_stochasticbank
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
-lalapps_siva_SOURCES = $(SIVASRC)
 lalapps_inspinj_SOURCES = $(INSPINJSRC)
 lalapps_injcut_SOURCES = $(INJCUTSRC)
 lalapps_minj_SOURCES = $(MINJSRC)
@@ -217,7 +214,6 @@ EXTRA_DIST += \
 	$(DATA) \
 	$(INSPINJSRC) \
 	$(MINJSRC) \
-	$(SIVASRC) \
 	$(SPLITBANKSRC) \
 	$(TMPLTBANKSRC) \
 	effective_distance_comparison.png \
