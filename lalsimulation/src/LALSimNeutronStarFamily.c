@@ -179,7 +179,7 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
     fam->k_of_m_acc = gsl_interp_accel_alloc();
 
     fam->p_of_m_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    fam->r_of_m_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
+    fam->r_of_m_interp = gsl_interp_alloc(gsl_interp_linear, ndat);
     fam->k_of_m_interp = gsl_interp_alloc(gsl_interp_linear, ndat);
 
     gsl_interp_init(fam->p_of_m_interp, fam->mdat, fam->pdat, ndat);
