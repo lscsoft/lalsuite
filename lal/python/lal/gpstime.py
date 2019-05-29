@@ -97,7 +97,9 @@ def gps_to_utc(gps_time):
 
     @returns a Python `datetime.datetime` object in UTC
     """
-    return _datetime.datetime(*_gps_to_utc(int(gps_time))[:7])
+    return _datetime.datetime(
+        *_gps_to_utc(int(gps_time))[:7]
+    ).replace(microsecond=0)
 
 
 def utc_time_now():
@@ -105,8 +107,7 @@ def utc_time_now():
 
     @returns a Python `datetime.datetime` object in UTC
     """
-    gps = _gps_time_now()
-    return gps_to_utc(gps)
+    return gps_to_utc(_gps_time_now())
 
 
 def str_to_gps(time_string=None):
