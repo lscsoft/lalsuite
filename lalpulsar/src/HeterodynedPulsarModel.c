@@ -983,7 +983,7 @@ void XLALDestroyDetResponseTimeLookupTable(DetResponseTimeLookupTable* resp){
 
 
 /**
- * \brief Convert sources parameters into amplitude and phase notation parameters
+ * \brief Convert source parameters into amplitude and phase notation parameters
  *
  * Convert the physical source parameters into the amplitude and phase notation
  * given in Eqns 62-65 of \cite Jones2015 .
@@ -1007,14 +1007,41 @@ void XLALPulsarSourceToWaveformParams( PulsarParameters *params ){
   REAL8 phi22 = PulsarGetREAL8ParamOrZero( params, "PHI22" );
   REAL8 lambda = PulsarGetREAL8ParamOrZero( params, "LAMBDA" );
   REAL8 costheta = PulsarGetREAL8ParamOrZero( params, "COSTHETA" );
+  REAL8 q22 = PulsarGetREAL8ParamOrZero( params, "Q22" );
+  REAL8 dist = PulsarGetREAL8ParamOrZero( params, "DIST" );
 
-  if ( h0 != 0.){
-    phi22 = 2.*phi0;
-    phi22 = phi22 - LAL_TWOPI*floor(phi22/LAL_TWOPI);
-    PulsarAddParam( params, "PHI22", &phi22, PULSARTYPE_REAL8_t );
+  if ( ( q22 != 0. && dist != 0. ) && ( I21 == 0. && I21 == 0. && C21 == 0. && C22 == 0. ) ){
+    /* convert mass quadrupole to C22 parameter */
+    if ( !PulsarCheckParam( params, "F") ){
+      XLAL_ERROR_VOID( XLAL_EINVAL, "Error... not frequency values given" );
+    }
 
+    REAL8 f0 = PulsarGetREAL8VectorParamIndividual( params, "F0" );
+    if ( f0 == 0. ){
+      XLAL_ERROR_VOID( XLAL_EINVAL, "Error... frequency is zero" );
+    }
+
+    /* convert q22 to h0 */
+    h0 = q22 * sqrt(8. * LAL_PI / 15.) * 16. * LAL_PI * LAL_PI * LAL_G_SI * f0 * f0 / (LAL_C_SI * LAL_C_SI * LAL_C_SI * LAL_C_SI * dist);
+
+    C22 = -0.5*h0;
+    PulsarAddParam( params, "C22", &C22, PULSARTYPE_REAL8_t );
+
+    if ( phi22 == 0. ){
+      phi22 = 2.*phi0;
+      phi22 = phi22 - LAL_TWOPI*floor(phi22/LAL_TWOPI);
+      PulsarAddParam( params, "PHI22", &phi22, PULSARTYPE_REAL8_t );
+    }
+  }
+  else if ( h0 != 0.){
     C22 = -0.5*h0; /* note the change in sign so that the triaxial model conforms to the convertion in JKS98 */
     PulsarAddParam( params, "C22", &C22, PULSARTYPE_REAL8_t );
+
+    if ( phi22 == 0. ){
+      phi22 = 2.*phi0;
+      phi22 = phi22 - LAL_TWOPI*floor(phi22/LAL_TWOPI);
+      PulsarAddParam( params, "PHI22", &phi22, PULSARTYPE_REAL8_t );
+    }
   }
   else if ( ( I21 != 0. || I31 != 0. ) && ( C22 == 0. && C21 == 0. ) ) {
     sinlambda = sin( lambda );
