@@ -1,3 +1,27 @@
+lal (6.20.1-1) unstable; urgency=low
+
+  * O3 point release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 24 May 2019 10:16:11 -0700
+
+lal (6.20.0-1) unstable; urgency=low
+
+  * O3 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 23 May 2019 08:30:40 -0700
+
+lal (6.19.2-1) unstable; urgency=low
+
+  * ER14 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 25 Feb 2019 09:11:52 -0700
+
+lal (6.19.1-1) unstable; urgency=low
+
+  * Intel FFT complilation fixes
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 07 Jan 2019 14:02:28 +0000
+
 lal (6.19.0-1) unstable; urgency=low
 
   * Pre O3 release

@@ -25,18 +25,21 @@
 #
 
 
+from __future__ import print_function
+
+
 import glob
 from optparse import OptionParser
 import sys
 
 
-from glue import segmentsUtils
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils as ligolw_utils
+from ligo.lw.utils import process as ligolw_process
 from lalburst import git_version
 from lalburst import burca
+from ligo.segments import utils as segmentsUtils
 
 
 @lsctables.use_in
@@ -73,7 +76,7 @@ def parse_command_line():
 	parser.add_option("-a", "--coincidence-algorithm", metavar = "[excesspower|stringcusp]", default = None, help = "Select the coincidence test algorithm to use (required).")
 	parser.add_option("-s", "--coincidence-segments", metavar = "start:end[,start:end,...]", help = "Set the GPS segments in which to retain coincidences.  Multiple segments can be specified by separating them with commas.  If either start or end is absent from a segment then the interval is unbounded on that side, for example \"874000000:\" causes all coincidences starting at 874000000 to be retained.  The \"time\" of a coincidence is ambiguous, and is different for different search algorithms, but a deterministic algorithm is used in all cases so the same coincidence of events will always be assigned the same time.  This feature is intended to allow large input files to be analyzed;  the procedure is to make n copies of the file and run n instances of burca specifying disjoint --coincidence-segments for each.")
 	parser.add_option("-m", "--min-instruments", metavar = "N", type = "int", default = 2, help = "Set the minimum number of instruments required to form a coincidence (default = 2).")
-	parser.add_option("-t", "--threshold", metavar = "threshold", type = "float", help = "Set the coincidence algorithm's threshold.  For excesspower this parameter is not used.  For stringcusp, this parameter sets the maximum peak time difference in seconds not including light travel time (which will be added internally).")
+	parser.add_option("-t", "--threshold", metavar = "threshold", type = "float", help = "Set the coincidence algorithm's threshold.  For excesspower this parameter is not used and must not be set.  For stringcusp, this parameter sets the maximum peak time difference in seconds not including light travel time (which will be added internally).")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 	options, filenames = parser.parse_args()
 
@@ -96,6 +99,8 @@ def parse_command_line():
 
 	if options.coincidence_algorithm == "stringcusp" and options.threshold is None:
 		raise ValueError("--threshold is required for --coincidence-algorithm stringcusp")
+	elif options.coincidence_algorithm == "excesspower" and options.threshold is not None:
+		raise ValueError("--threshold is meaningless for --coincidence-algorithm excesspower")
 
 	#
 	# done
@@ -163,7 +168,7 @@ for n, filename in enumerate(filenames):
 	#
 
 	if options.verbose:
-		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
+		print("%d/%d:" % (n + 1, len(filenames)), end=' ', file=sys.stderr)
 	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = LIGOLWContentHandler)
 
 	#
@@ -172,13 +177,13 @@ for n, filename in enumerate(filenames):
 
 	if ligolw_process.doc_includes_process(xmldoc, process_program_name):
 		if options.verbose:
-			print >>sys.stderr, "warning: %s already processed," % (filename or "stdin"),
+			print("warning: %s already processed," % (filename or "stdin"), end=' ', file=sys.stderr)
 		if not options.force:
 			if options.verbose:
-				print >>sys.stderr, "skipping"
+				print("skipping", file=sys.stderr)
 			continue
 		if options.verbose:
-			print >>sys.stderr, "continuing by --force"
+			print("continuing by --force", file=sys.stderr)
 
 	#
 	# Add an entry to the process table.
@@ -208,7 +213,6 @@ for n, filename in enumerate(filenames):
 		coincgen_doubles = coincgen_doubles,
 		CoincTables = CoincTables,
 		coinc_definer_row = CoincDef,
-		threshold = options.threshold,
 		delta_t = delta_t,
 		ntuple_comparefunc = ntuple_comparefunc,
 		verbose = options.verbose

@@ -251,9 +251,9 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(
         (file, "position2y-vs-time", ref_time);
     pos2z = XLALSimInspiralNRWaveformGetInterpValueFromGroupAtPoint
         (file, "position2z-vs-time", ref_time);
-    n_hat_x = pos2x - pos1x;
-    n_hat_y = pos2y - pos1y;
-    n_hat_z = pos2z - pos1z;
+    n_hat_x = pos1x - pos2x;
+    n_hat_y = pos1y - pos2y;
+    n_hat_z = pos1z - pos2z;
     n_norm = sqrt(n_hat_x*n_hat_x + n_hat_y*n_hat_y + n_hat_z*n_hat_z);
     n_hat_x = n_hat_x / n_norm;
     n_hat_y = n_hat_y / n_norm;
@@ -360,9 +360,10 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
   REAL8 orb_phase, ln_hat_x, ln_hat_y, ln_hat_z, ln_hat_norm, ref_time;
   REAL8 n_hat_x, n_hat_y, n_hat_z, n_hat_norm;
   REAL8 pos1x, pos1y, pos1z, pos2x, pos2y, pos2z;
+  REAL8 r_x, r_y, r_z, r_norm;
   REAL8 corb_phase, sorb_phase, sinclination, cinclination;
-  REAL8 ln_cross_n_x, ln_cross_n_y, ln_cross_n_z;
-  REAL8 z_wave_x, z_wave_y, z_wave_z;
+  REAL8 ln_cross_n_x, ln_cross_n_y, ln_cross_n_z, ln_cross_n_norm;
+  REAL8 z_wave_x, z_wave_y, z_wave_z, z_wave_norm;
   REAL8 stheta, ctheta, spsi, cpsi, theta_hat_x, theta_hat_y, theta_hat_z;
   REAL8 psi_hat_x, psi_hat_y, psi_hat_z;
   REAL8 n_dot_theta, ln_cross_n_dot_theta, n_dot_psi, ln_cross_n_dot_psi;
@@ -404,9 +405,13 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
         (filepointer, "position2y-vs-time", ref_time);
     pos2z = XLALSimInspiralNRWaveformGetInterpValueFromGroupAtPoint
         (filepointer, "position2z-vs-time", ref_time);
-    n_hat_x = pos2x - pos1x;
-    n_hat_y = pos2y - pos1y;
-    n_hat_z = pos2z - pos1z;
+    r_x = pos1x - pos2x;
+    r_y = pos1y - pos2y;
+    r_z = pos1z - pos2z;
+    r_norm=sqrt(r_x*r_x+ r_y*r_y + r_z*r_z);
+    n_hat_x=r_x/r_norm;
+    n_hat_y=r_y/r_norm;
+    n_hat_z=r_z/r_norm;
   }
   else
   {
@@ -420,11 +425,23 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
 
   ln_hat_norm = sqrt(ln_hat_x * ln_hat_x + ln_hat_y * ln_hat_y + ln_hat_z * ln_hat_z);
 
+  if (fabs(ln_hat_norm - 1) > 0.001)
+  {
+    XLAL_PRINT_ERROR("ln_hat_mag = %.16f\n", ln_hat_norm);
+    XLAL_ERROR(XLAL_EDOM, "The size of the LN hat vector in the supplied HDF file is not equal to unity");
+  }
+
   ln_hat_x = ln_hat_x / ln_hat_norm;
   ln_hat_y = ln_hat_y / ln_hat_norm;
   ln_hat_z = ln_hat_z / ln_hat_norm;
 
   n_hat_norm = sqrt(n_hat_x * n_hat_x + n_hat_y * n_hat_y + n_hat_z * n_hat_z);
+
+  if (fabs(n_hat_norm - 1) > 0.001)
+  {
+    XLAL_PRINT_ERROR("n_hat_mag = %.16f\n", n_hat_norm);
+    XLAL_ERROR(XLAL_EDOM, "The size of the n hat vector in the supplied HDF file is not equal to unity");
+  }
 
   n_hat_x = n_hat_x / n_hat_norm;
   n_hat_y = n_hat_y / n_hat_norm;
@@ -441,6 +458,17 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
   ln_cross_n_y = ln_hat_z * n_hat_x - ln_hat_x * n_hat_z;
   ln_cross_n_z = ln_hat_x * n_hat_y - ln_hat_y * n_hat_x;
 
+  ln_cross_n_norm = sqrt(ln_cross_n_x*ln_cross_n_x + ln_cross_n_y*ln_cross_n_y + ln_cross_n_z*ln_cross_n_z);
+  ln_cross_n_x = ln_cross_n_x / ln_cross_n_norm;
+  ln_cross_n_y = ln_cross_n_y / ln_cross_n_norm;
+  ln_cross_n_z = ln_cross_n_z / ln_cross_n_norm;
+
+  if (fabs(ln_cross_n_norm - 1) > 0.001)
+  {
+    XLAL_PRINT_ERROR("ln_cross_n mag = %.16f\n", ln_cross_n_norm);
+    XLAL_ERROR(XLAL_EDOM, "The size of the LN x n vector computed here is not equal to unity. This shouldn't be possible, please email lalsimulation developers.");
+  }
+
   z_wave_x = sinclination * (sorb_phase * n_hat_x + corb_phase * ln_cross_n_x);
   z_wave_y = sinclination * (sorb_phase * n_hat_y + corb_phase * ln_cross_n_y);
   z_wave_z = sinclination * (sorb_phase * n_hat_z + corb_phase * ln_cross_n_z);
@@ -448,6 +476,18 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
   z_wave_x += cinclination * ln_hat_x;
   z_wave_y += cinclination * ln_hat_y;
   z_wave_z += cinclination * ln_hat_z;
+
+  z_wave_norm = sqrt(z_wave_x * z_wave_x + z_wave_y * z_wave_y + z_wave_z * z_wave_z);
+
+  z_wave_x = z_wave_x / z_wave_norm;
+  z_wave_y = z_wave_y / z_wave_norm;
+  z_wave_z = z_wave_z / z_wave_norm;
+
+  if (fabs(z_wave_norm - 1) > 0.001)
+  {
+    XLAL_PRINT_ERROR("Z mag = %.16f\n", z_wave_norm);
+    XLAL_ERROR(XLAL_EDOM, "The size of the Z vector computed here is not equal to unity. This shouldn't be possible, please email lalsimulation developers.");
+  }
 
   /* Step 3.1: Extract theta and psi from Z in the lal wave frame
    * NOTE: Theta can only run between 0 and pi, so no problem with arccos here
@@ -480,6 +520,12 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
           *psi = 0.;
         }
       }
+      else
+      {
+        XLAL_PRINT_ERROR("z_wave_x = %.16f\n", z_wave_x);
+        XLAL_PRINT_ERROR("sin(theta) = %.16f\n", sin(*theta));
+        XLAL_ERROR(XLAL_EDOM, "Z_x cannot be bigger than sin(theta). Please email lalsimulation developers.");
+      }
     }
     else
     {
@@ -493,8 +539,10 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
       *psi = 2 * LAL_PI - *psi;
       y_val = sin(*psi) * sin(*theta);
     }
-    if( fabs(y_val - z_wave_y) > 0.0001)
+    if( fabs(y_val - z_wave_y) > 0.005)
     {
+      XLAL_PRINT_ERROR("orb_phase = %.16f\n", orb_phase);
+      XLAL_PRINT_ERROR("y_val = %.16f, z_wave_y = %.16f, fabs(y_val - z_wave_y) = %.16f\n", y_val, z_wave_y, fabs(y_val - z_wave_y));
       XLAL_ERROR(XLAL_EDOM, "Something's wrong in Ian's math. Tell him he's an idiot!");
     }
   }

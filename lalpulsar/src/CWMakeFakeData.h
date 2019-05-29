@@ -84,6 +84,8 @@ typedef struct tagCWMFDataParams
 
 // ---------- Global variables ----------
 
+extern const char *const InjectionSourcesHelpString;
+
 // ---------- exported prototypes [API] ----------
 
 #ifdef SWIG // SWIG interface directives

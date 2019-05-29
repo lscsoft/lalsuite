@@ -61,15 +61,13 @@
 #include <lal/BandPassTimeSeries.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 #include <lal/FindChirpTD.h>
-#include <lal/FindChirpBCV.h>
-#include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpChisq.h>
 #include <lal/LALTrigScanCluster.h>
 #include <lal/PrintFTSeries.h>

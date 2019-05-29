@@ -15,9 +15,10 @@ Summary: LSC Algorithm Frame Library
 License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
-URL: https://wiki.ligo.org/DASWG/LALSuite
+URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRequires: python2-rpm-macros
+BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
 BuildRequires: libframe-devel
 BuildRequires: numpy
@@ -125,6 +126,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu May 23 2019 Adam Mercer <adam.mercer@ligo.org> 1.4.5-1
+- O3 release
+
 * Thu Sep 13 2018 Adam Mercer <adam.mercer@ligo.org> 1.4.4-1
 - Pre O3 release
 

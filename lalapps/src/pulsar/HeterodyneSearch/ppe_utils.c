@@ -678,8 +678,8 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR **efile, CHAR **sfile, CHAR *
     XLAL_ERROR(XLAL_EFUNC, "Start and end times are outside the ephemeris file ranges!" );
   }
 
-  *efile = XLALStringDuplicate("earth00-19-");
-  *sfile = XLALStringDuplicate("sun00-19-");
+  *efile = XLALStringDuplicate("earth00-40-");
+  *sfile = XLALStringDuplicate("sun00-40-");
 
   if( !PulsarCheckParam(pulsar, "EPHEM") ){
     /* default to use DE405 */
@@ -703,16 +703,16 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR **efile, CHAR **sfile, CHAR *
 
   if( !PulsarCheckParam( pulsar, "UNITS" ) ){
     /* default to using TCB units */
-    *tfile = XLALStringDuplicate("te405_2000-2019.dat.gz");
+    *tfile = XLALStringDuplicate("te405_2000-2040.dat.gz");
     ttype = TIMECORRECTION_TCB;
   }
   else{
     if ( !strcmp( PulsarGetStringParam(pulsar, "UNITS"), "TDB" ) ){
-      *tfile = XLALStringDuplicate("tdb_2000-2019.dat.gz");
+      *tfile = XLALStringDuplicate("tdb_2000-2040.dat.gz");
       ttype = TIMECORRECTION_TDB;
     }
     else if ( !strcmp( PulsarGetStringParam(pulsar, "UNITS"), "TCB" ) ) {
-      *tfile = XLALStringDuplicate("te405_2000-2019.dat.gz");
+      *tfile = XLALStringDuplicate("te405_2000-2040.dat.gz");
       ttype = TIMECORRECTION_TCB;
     }
     else{

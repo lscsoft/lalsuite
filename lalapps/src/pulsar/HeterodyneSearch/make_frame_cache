@@ -1,10 +1,12 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 """
 Matt Pitkin - 13/11/06
 code to take scan a directory of frame files and output it as a frame cache file between given
 times
 """
+
+from __future__ import print_function
 
 # import modules
 import sys
@@ -25,7 +27,7 @@ Usage: make_frame_cache [options]
   -e, --gps-end-time      end time fo frames to output
   -o, --output-file       file to output frame cache to
   """
-  print >> sys.stderr, msg
+  print(msg, file=sys.stderr)
 
 # parse command line
 shortop = "hd:s:e:o:"
@@ -59,23 +61,23 @@ for o, a in opts:
   elif o in ("-o", "--output-file"):
     output = a
   else:
-    print >> sys.sdterr, "Unknown option:", o
+    print("Unknown option: {}".format(o), file=sys.stderr)
     usage()
     sys.exit(1)
 
 # get all files in frame dir
 try:
   files = os.listdir(frame_dir)
-  print >> sys.stderr, files[0]
-except Exception, e:
-  print >> sys.stderr, "Problem listing directory %s" % (frame_dir)
+  print(files[0], file=sys.stderr)
+except Exception as e:
+  print("Problem listing directory {}".format(frame_dir), file=sys.stderr)
   sys.exit(1)
 
 # open output file
 try:
   f = open(output, 'w')
-except Exception, e:
-  print >> sys.stderr, "Can't open file %s" % (output)
+except Exception as e:
+  print("Can't open file {}".format(output), file=sys.stderr)
   sys.exit(1)
 
 files.sort()
@@ -90,7 +92,7 @@ while i < len(files):
     ifo = files[i][0]
     frinfo = files[i].split('-')
     channel = frinfo[1] # channel should be first field
-    time = int(frinfo[2]) # time should be the seond field
+    time = int(frinfo[2]) # time should be the second field
 
     # find the - before the duration (last value)
     index1 = files[i].rfind('-')
@@ -112,7 +114,7 @@ f.close()
 
 # if no frame files were found then say so
 if j == 0:
-  print >> sys.stderr, "No frames files between %d and %d." % (start, end)
+  print("No frames files between {} and {}.".format(start, end), file=sys.stderr)
   os.remove(output)
 
 sys.exit(0)

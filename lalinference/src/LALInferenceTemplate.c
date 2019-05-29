@@ -284,8 +284,14 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
       fprintf(stderr,"No mass parameters found!");
       exit(0);
     }
-
-  distance = exp(LALInferenceGetREAL8Variable(model->params, "logdistance"))* LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
+  if(LALInferenceCheckVariable(model->params,"logdistance"))
+  {
+      distance = exp(LALInferenceGetREAL8Variable(model->params, "logdistance"))* LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
+  }
+  else
+  {
+      distance = LAL_PC_SI * 1.0e6; /* 1Mpc default */
+  }
 
   phi0 = LALInferenceGetREAL8Variable(model->params, "phase"); /* START phase as per lalsimulation convention, radians*/
   /* Zenith angle between J and N in radians. Also known as inclination angle when spins are aligned */
@@ -413,11 +419,13 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
   }
 
   /* ==== Call the waveform generator ==== */
+    /* Correct distance to account for renormalisation of data due to window RMS */
+    double corrected_distance = distance * sqrt(model->window->sumofsquares/model->window->data->length);
     XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformSequence (&(model->roq->hptildeLinear), &(model->roq->hctildeLinear), phi0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
-                spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, distance, inclination, model->LALpars, approximant, (model->roq->frequencyNodesLinear)), errnum);
+                spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, corrected_distance, inclination, model->LALpars, approximant, (model->roq->frequencyNodesLinear)), errnum);
 
     XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformSequence (&(model->roq->hptildeQuadratic), &(model->roq->hctildeQuadratic), phi0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
-							spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, distance, inclination, model->LALpars, approximant, (model->roq->frequencyNodesQuadratic)), errnum);
+							spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_ref, corrected_distance, inclination, model->LALpars, approximant, (model->roq->frequencyNodesQuadratic)), errnum);
 
     REAL8 instant = model->freqhPlus->epoch.gpsSeconds + 1e-9*model->freqhPlus->epoch.gpsNanoSeconds;
     LALInferenceSetVariable(model->params, "time", &instant);
@@ -709,8 +717,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       exit(0);
     }
 
-  distance	= exp(LALInferenceGetREAL8Variable(model->params, "logdistance"))* LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
-
+    if(!LALInferenceCheckVariable(model->params,"logdistance")) distance=LAL_PC_SI * 1e6; /* If distance not given, 1Mpc used */
+    else
+    {
+        distance	= exp(LALInferenceGetREAL8Variable(model->params, "logdistance"))* LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
+    }
   phi0		= LALInferenceGetREAL8Variable(model->params, "phase"); /* START phase as per lalsimulation convention, radians*/
 
   /* Zenith angle between J and N in radians. Also known as inclination angle when spins are aligned */
@@ -911,10 +922,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
   /* ==== Call the waveform generator ==== */
   if(model->domain == LAL_SIM_DOMAIN_FREQUENCY) {
-    deltaF = model->deltaF;
-    XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
+      deltaF = model->deltaF;
+      /* Correct distance to account for renormalisation of data due to window RMS */
+      double corrected_distance = distance * sqrt(model->window->sumofsquares/model->window->data->length);
+      XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
             deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
-            spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination, model->LALpars,
+            spin2x, spin2y, spin2z, f_start, f_max, f_ref, corrected_distance, inclination, model->LALpars,
 							      approximant,model->waveformCache, NULL), errnum);
 
     /* if the waveform failed to generate, fill the buffer with zeros
@@ -1411,11 +1424,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
     /* ==== Call the waveform generator ==== */
     if(model->domain == LAL_SIM_DOMAIN_FREQUENCY) {
         if(!frequencies) frequencies = LALInferenceMultibandFrequencies(Nbands,f_start,0.5/deltaT, model->deltaF, mc_min);
+        double corrected_distance = distance * sqrt(model->window->sumofsquares/model->window->data->length);
 
 
         XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
                                                               0.0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
-                                                              spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination, model->LALpars,
+                                                              spin2x, spin2y, spin2z, f_start, f_max, f_ref, corrected_distance, inclination, model->LALpars,
                                                               approximant,model->waveformCache, frequencies), errnum);
 
         /* if the waveform failed to generate, fill the buffer with zeros
@@ -1715,8 +1729,10 @@ void LALInferenceTemplateXLALSimBurstChooseWaveform(LALInferenceModel *model)
 
 	/*Create BurstExtra params here and set depending on approx or let chooseFD do that*/
 
+      /* Correct hrss to account for bias introduced by window normalisation */
+      double corrected_hrss = hrss / sqrt(model->window->sumofsquares/model->window->data->length);
 
-  XLAL_TRY(ret=XLALSimBurstChooseFDWaveformFromCache(&hptilde, &hctilde, deltaF,deltaT,freq,quality,duration,f_low,f_max,hrss,polar_angle,polar_ecc,extraParams,approximant,model->burstWaveformCache), errnum);
+  XLAL_TRY(ret=XLALSimBurstChooseFDWaveformFromCache(&hptilde, &hctilde, deltaF,deltaT,freq,quality,duration,f_low,f_max,corrected_hrss,polar_angle,polar_ecc,extraParams,approximant,model->burstWaveformCache), errnum);
   //XLAL_TRY(ret=XLALSimBurstChooseFDWaveform(&hptilde, &hctilde, deltaF,deltaT,freq,quality,duration,f_low,f_max,hrss,polar_angle,polar_ecc,extraParams,approximant), errnum);
   if (ret == XLAL_FAILURE)
       {
@@ -1958,7 +1974,10 @@ void LALInferenceTemplateXLALSimBurstSineGaussianF(LALInferenceModel *model)
   }
 
   deltaF = model->deltaF;
-  XLAL_TRY(ret=XLALInferenceBurstSineGaussianFFast(&hptilde, &hctilde, quality,freq,hrss, polar_ecc, polar_angle,deltaF,deltaT), errnum);
+    /* Compute corrected hrss to account for bias introduced by window normalisation */
+  double corrected_hrss = hrss / sqrt(model->window->sumofsquares/model->window->data->length);
+
+  XLAL_TRY(ret=XLALInferenceBurstSineGaussianFFast(&hptilde, &hctilde, quality,freq, corrected_hrss, polar_ecc, polar_angle,deltaF,deltaT), errnum);
   if (ret == XLAL_FAILURE)
       {
         XLALPrintError(" ERROR in LALInferenceTemplateXLALSimBurstChooseWaveform(). errnum=%d: %s\n",errnum,XLALErrorString(errnum) );

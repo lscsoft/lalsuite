@@ -45,7 +45,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOMetadataRingdownUtils.h>
-#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/Inject.h>

@@ -30,7 +30,7 @@ import shutil
 import datetime
 import json
 import argparse
-from ConfigParser import ConfigParser
+from six.moves.configparser import ConfigParser
 import subprocess as sp
 import ast
 
@@ -205,7 +205,7 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
     sys.exit(1)
 
   resultsdata = {} # dictionary to hold results data
-  sourcedirs = [os.path.join(inpath, rd) for rd in resdirs if os.path.isdir(os.path.join(inpath, rd))]
+  sourcedirs = [os.path.join(inpath, rd) for rd in resdirs if os.path.isfile(os.path.join(inpath, rd, '{}.ini'.format(rd)))]
   totalsources = len(sourcedirs)
   cursources = 0 # currently number of completed sources
   for d in sourcedirs:
@@ -323,7 +323,7 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
     datastyle = "border-bottom:1px solid #000" # style for first value
     for ol in outputlims:
       if ol[-2:] == 'UL': # if value is an upper limit add credible region
-        cr = resultsdata.values()[0][ifo]['Upper limits']['credible region']
+        cr = list(resultsdata.values())[0][ifo]['Upper limits']['credible region']
         restable.adddata(paramhtmldict[ol].format(cr), dataclass=dataclass, datastyle=datastyle, header=True)
         ltable.adddata(paramlatexdict[ol].format(cr))
       else:

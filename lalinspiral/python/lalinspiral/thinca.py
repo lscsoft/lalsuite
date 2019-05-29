@@ -26,17 +26,19 @@
 
 from __future__ import print_function
 from bisect import bisect_left
+import collections
 import itertools
 import math
+import operator
 import sys
-import time
 
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
+from ligo.lw import ligolw
+from ligo.lw import lsctables
 import lal
 from lalburst import offsetvector
 from lalburst import snglcoinc
+from . import _thinca
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -61,11 +63,30 @@ from .git_version import version as __version__
 
 class SnglInspiral(lsctables.SnglInspiral):
 	__slots__ = ()
-	def __cmp__(self, other):
-		# compare self's end time to the LIGOTimeGPS instance
-		# other.  allows bisection searches by GPS time to find
-		# ranges of triggers quickly
-		return cmp(self.end, other)
+
+	#
+	# compare self's end time to the LIGOTimeGPS instance other.
+	# allows bisection searches by GPS time to find ranges of triggers
+	# quickly
+	#
+
+	def __lt__(self, other):
+		return self.end < other
+
+	def __le__(self, other):
+		return self.end <= other
+
+	def __eq__(self, other):
+		return self.end == other
+
+	def __ne__(self, other):
+		return self.end != other
+
+	def __ge__(self, other):
+		return self.end >= other
+
+	def __gt__(self, other):
+		return self.end > other
 
 	#
 	# simulate mtotal, eta, and mchirp from mass1 and mass2.  this (a)
@@ -154,33 +175,42 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 			xmldoc.childNodes[0].appendChild(self.coinc_inspiral_table)
 
 
-	def coinc_rows(self, process_id, time_slide_id, events, seglists = None):
-		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, events)
+	def coinc_rows(self, process_id, time_slide_id, events, seglists):
+		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, events, u"sngl_inspiral")
 
 		#
-		# populate the coinc_inspiral table:
+		# populate the coinc_inspiral table.  assume exact-match
+		# coincidence, so pick one trigger to provide template
+		# parameters.  otherwise:
 		#
-		# - end_time is the end time of the first trigger in
-		#   alphabetical order by instrument (!?) time-shifted
-		#   according to the coinc's offset vector
-		# - mass is average of total masses
-		# - mchirp is average of mchirps
+		# - end time is end time of highest SNR trigger
+		#   time-shifted according to the coinc's offset vector
 		# - snr is root-sum-square of SNRs
 		# - false-alarm rates are blank
 		#
 
 		offsetvector = self.time_slide_index[time_slide_id]
-		end = coinc_inspiral_end_time(events, offsetvector)
+		# the selection of an "end time" for the coincidence agrees
+		# with the coinc_inspiral_end_time() function above, but
+		# that's not necessary.  lalapps_thinca's ability to split
+		# coincs across boundaries only requires
+		# coinc_inspiral_end_time() to be used by all jobs and
+		# yield reproducible results, not that all "end times" that
+		# might be associated with a candidate agree with one
+		# another.
+		refevent = max(events, key = lambda event: event.snr)
+		end = refevent.end + offsetvector[refevent.ifo]
+		participating_instruments = frozenset(event.ifo for event in events)
 		coinc_inspiral = self.coinc_inspiral_table.RowType(
 			coinc_event_id = coinc.coinc_event_id,	# = None
-			mass = sum(event.mass1 + event.mass2 for event in events) / len(events),
-			mchirp = sum(event.mchirp for event in events) / len(events),
+			mass = refevent.mass1 + refevent.mass2,
+			mchirp = refevent.mchirp,
 			snr = math.sqrt(sum(event.snr**2. for event in events)),
 			false_alarm_rate = None,
 			combined_far = None,
 			minimum_duration = None,
 			end = end,
-			instruments = (event.ifo for event in events)
+			instruments = participating_instruments
 		)
 
 		#
@@ -191,23 +221,13 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		# lists
 		#
 
-		coinc.insts = set(event.ifo for event in events)
-		if seglists is not None:
-			coinc.insts |= set(instrument for instrument, segs in seglists.items() if end - offsetvector[instrument] in segs)
+		coinc.insts = set(instrument for instrument, segs in seglists.items() if float(end - offsetvector[instrument]) in segs) | participating_instruments
 
 		#
 		# done
 		#
 
 		return coinc, coincmaps, coinc_inspiral
-
-
-	@staticmethod
-	def ntuple_comparefunc(events, offset_vector):
-		"""
-		Default ntuple test function.  Accept all ntuples.
-		"""
-		return False
 
 
 	def append_coinc(self, coinc_event, coinc_event_maps, coinc_inspiral):
@@ -228,76 +248,10 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 
 class coincgen_doubles(snglcoinc.coincgen_doubles):
 	class singlesqueue(snglcoinc.coincgen_doubles.singlesqueue):
-		@staticmethod
-		def event_time(event):
-			return event.end
+		event_time = operator.attrgetter("end")
 
 
-	class get_coincs(object):
-		@staticmethod
-		def template(event):
-			"""
-			Returns an immutable hashable object (it can be
-			used as a dictionary key) uniquely identifying the
-			template that produced the given event.
-			"""
-			return event.mass1, event.mass2, event.spin1x, event.spin1y, event.spin1z, event.spin2x, event.spin2y, event.spin2z
-
-		def __init__(self, events):
-			"""
-			Sort events into bins according to their template
-			so that a dictionary look-up can retrieve all
-			triggers from a given template.  The events must be
-			provided in time order so that a bisection search
-			can retrieve triggers from a template within a
-			window of time.  Note that the bisection search
-			relies on the __cmp__() method of the SnglInspiral
-			row class having previously been set to compare the
-			event's end time to a LIGOTimeGPS.
-			"""
-			self.index = {}
-			index_setdefault = self.index.setdefault
-			template = self.template
-			for event in events:
-				index_setdefault(template(event), []).append(event)
-
-		def __call__(self, event_a, offset_a, light_travel_time, delta_t):
-			#
-			# event_a's end time, shifted to be with respect to
-			# end times in this list.
-			#
-
-			end = event_a.end + offset_a
-
-			#
-			# the coincidence window
-			#
-
-			coincidence_window = light_travel_time + delta_t
-
-			#
-			# extract the subset of events from this list that
-			# pass coincidence with event_a.  use a bisection
-			# search for the minimum allowed end time and a
-			# brute-force scan for the maximum allowed end
-			# time.  because the number of events in the
-			# coincidence window is generally quite small, the
-			# brute-force scan has a lower expected operation
-			# count than a second bisection search to find the
-			# upper bound in the sequence
-			#
-
-			try:
-				events = self.index[self.template(event_a)]
-			except KeyError:
-				# that template didn't produce any events
-				# in this instrument.  this is rare given
-				# the SNR thresholds typical today so
-				# trapping the exception is more efficient
-				# than testing
-				return ()
-			stop = end + coincidence_window
-			return tuple(itertools.takewhile(lambda event: event.end <= stop, events[bisect_left(events, end - coincidence_window):]))
+	get_coincs = _thinca.get_coincs
 
 
 #
@@ -313,13 +267,12 @@ def ligolw_thinca(
 	xmldoc,
 	process_id,
 	delta_t,
-	ntuple_comparefunc = InspiralCoincTables.ntuple_comparefunc,
-	seglists = None,
+	seglists,
+	ntuple_comparefunc = None,
 	veto_segments = None,
 	likelihood_func = None,
 	fapfar = None,
 	min_instruments = 2,
-	min_log_L = None,
 	coinc_definer_row = InspiralCoincDef,
 	verbose = False
 ):
@@ -345,9 +298,8 @@ def ligolw_thinca(
 	sngl_inspiral_table = lsctables.SnglInspiralTable.get_table(xmldoc)
 	if veto_segments is not None:
 		sngl_inspiral_table = (event for event in sngl_inspiral_table if event.ifo not in veto_segments or event.end not in veto_segments[event.ifo])
-		if seglists is not None:
-			# don't do in-place
-			seglists = seglists - veto_segments
+		# don't do in-place
+		seglists = seglists - veto_segments
 	for instrument, events in itertools.groupby(sorted(sngl_inspiral_table, key = lambda row: row.ifo), lambda event: event.ifo):
 		events = tuple(events)
 		time_slide_graph.push(instrument, events, max(event.end for event in events))
@@ -357,28 +309,17 @@ def ligolw_thinca(
 	# and record the survivors
 	#
 
-	gps_time_now = float(lal.UTCToGPS(time.gmtime()))
-	for node, events in time_slide_graph.pull(delta_t, flush = True, verbose = verbose):
-		if not ntuple_comparefunc(events, node.offset_vector):
-			coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, events, seglists = seglists)
-			if likelihood_func is not None:
-				coinc.likelihood = likelihood_func(events, node.offset_vector)
-				if fapfar is not None:
-					# FIXME:  add proper columns to
-					# store these values in
-					coinc_inspiral.combined_far = fapfar.far_from_rank(coinc.likelihood)
-					coinc_inspiral.false_alarm_rate = fapfar.fap_from_rank(coinc.likelihood)
-			# if min_log_L is None, this test always passes,
-			# regardless of the value of .likelihood, be it
-			# None, some number, -inf or even nan.
-			if coinc.likelihood >= min_log_L:
-				# set latency.
-				# NOTE:  this is nonsense unless running
-				# live.
-				# FIXME: add a proper column for this
-				coinc_inspiral.minimum_duration = gps_time_now - float(coinc_inspiral.end)
-				# finally, append coinc to tables
-				coinc_tables.append_coinc(coinc, coincmaps, coinc_inspiral)
+	for node, events in time_slide_graph.pull(coinc_sieve = ntuple_comparefunc, flush = True, verbose = verbose):
+		coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, events, seglists = seglists)
+		if likelihood_func is not None:
+			coinc.likelihood = likelihood_func(events, node.offset_vector)
+			if fapfar is not None:
+				# FIXME:  add proper columns to
+				# store these values in
+				coinc_inspiral.combined_far = fapfar.far_from_rank(coinc.likelihood)
+				coinc_inspiral.false_alarm_rate = fapfar.fap_from_rank(coinc.likelihood)
+		# finally, append coinc to tables
+		coinc_tables.append_coinc(coinc, coincmaps, coinc_inspiral)
 
 	#
 	# done
@@ -419,12 +360,12 @@ class sngl_inspiral_coincs(object):
 
 	>>> coincs = sngl_inspiral_coincs(xmldoc)
 	>>> print(coincs.coinc_def_id)
-	coinc_definer:coinc_def_id:0
+	0
 	>>> coincs.keys()
-	[<glue.ligolw.ilwd.cached_ilwdchar_class object at 0x41a4328>]
+	[0]
 	>>> coinc_id = coincs.keys()[0]
 	>>> print(coinc_id)
-	coinc_event:coinc_event_id:83763
+	83763
 	>>> coincs[coinc_id].write()
 	<?xml version='1.0' encoding='utf-8'?>
 	<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt">

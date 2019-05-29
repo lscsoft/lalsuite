@@ -139,8 +139,8 @@ prior2injjob.set_sub_file(convertsub)
 prior2injjob.set_stderr_file(converterr)
 prior2injjob.set_stdout_file(convertout)
 prior2injjob.add_condor_cmd('getenv','True')
-if main_cp.has_option('analysis','accounting_group'):
-  prior2injjob.add_condor_cmd('accounting_group',main_cp.get('analysis','accounting_group'))
+if main_cp.has_option('condor','accounting_group'):
+  prior2injjob.add_condor_cmd('accounting_group',main_cp.get('condor','accounting_group'))
 prior2injnode=pipeline.CondorDAGNode(prior2injjob)
 prior2injnode.add_var_opt('output',injfile)
 prior2injnode.add_var_opt('num-of-injs',str(opts.trials))
@@ -202,8 +202,8 @@ if skyarea:
   sajob.set_stderr_file(saerr)
   sajob.set_stdout_file(saout)
   sajob.add_condor_cmd('getenv','True')
-  if main_cp.has_option('analysis','accounting_group'):
-    sajob.add_condor_cmd('accounting_group',main_cp.get('analysis','accounting_group'))
+  if main_cp.has_option('condor','accounting_group'):
+    sajob.add_condor_cmd('accounting_group',main_cp.get('condor','accounting_group'))
 
   sanode=pipeline.CondorDAGNode(sajob)
   sanode.add_var_opt('prefix',skyoutdir)
@@ -224,8 +224,8 @@ ppjob.set_sub_file(ppsub)
 ppjob.set_stderr_file(pperr)
 ppjob.set_stdout_file(ppout)
 ppjob.add_condor_cmd('getenv','True')
-if main_cp.has_option('analysis','accounting_group'):
-  ppjob.add_condor_cmd('accounting_group',main_cp.get('analysis','accounting_group'))
+if main_cp.has_option('condor','accounting_group'):
+  ppjob.add_condor_cmd('accounting_group',main_cp.get('condor','accounting_group'))
 
 ppnode=pipeline.CondorDAGNode(ppjob)
 ppnode.add_var_opt('injXML',injfile)

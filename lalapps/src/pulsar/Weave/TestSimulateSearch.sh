@@ -44,7 +44,7 @@ for setup in short mid long; do
     set -x
     ${builddir}/lalapps_Weave --output-file=WeaveOutNoSim.fits \
         --toplists=all --toplist-limit=2321 --segment-info --setup-file=WeaveSetup.fits \
-        --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
+        --rand-seed=3456 --sft-timebase=1800 --sft-noise-sqrtSX=1,1 \
         --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
         ${weave_search_options}
     set +x
@@ -65,7 +65,7 @@ for setup in short mid long; do
     set -x
     ${builddir}/lalapps_Weave --simulate-search --output-file=WeaveOutSimFull.fits \
         --toplists=all --toplist-limit=2321 --segment-info --setup-file=WeaveSetup.fits \
-        --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
+        --rand-seed=3456 --sft-timebase=1800 --sft-noise-sqrtSX=1,1 \
         --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
         ${weave_search_options}
     set +x
@@ -113,7 +113,7 @@ for setup in short mid long; do
     set -x
     peak_mem_no_sim=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'PEAKMEM' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%.16g", $1}'`
     peak_mem_sim_full=`${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'PEAKMEM' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%.16g", $1}'`
-    awk "BEGIN { print x = ${peak_mem_sim_full} / ${peak_mem_no_sim}; exit ( ( 0.9 < x && x < 1.0 ) ? 0 : 1 ) }"
+    awk "BEGIN { if ( ${peak_mem_sim_full} > 0 && ${peak_mem_no_sim} > 0 ) { print x = ${peak_mem_sim_full} / ${peak_mem_no_sim}; exit ( ( 0.9 < x && x < 1.0 ) ? 0 : 1 ) }; exit 0 }"
     set +x
     echo
 

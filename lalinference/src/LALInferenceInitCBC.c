@@ -131,7 +131,7 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
         XLAL_ERROR_VOID(XLAL_EINVAL);
     }
 
-    LALInferenceThreadState *thread = run_state->threads[0];
+    LALInferenceThreadState *thread = &(run_state->threads[0]);
     INT4 t;
 
     /* If using a malmquist prior, force a strict prior window on distance for starting point, otherwise
@@ -157,7 +157,7 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
     for (t = 0; t < run_state->nthreads; t++) {
         LALInferenceVariables *priorDraw = XLALCalloc(1, sizeof(LALInferenceVariables));
 
-        thread = run_state->threads[t];
+        thread = &(run_state->threads[t]);
 
         /* Try not to clobber values given on the command line */
         LALInferenceCopyVariables(thread->currentParams, priorDraw);
@@ -217,7 +217,7 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
   run_state->threads = LALInferenceInitThreads(nthreads);
 
   for (t = 0; t < nthreads; t++) {
-    thread = run_state->threads[t];
+    thread = &(run_state->threads[t]);
 
     /* Link back to run-state */
     thread->parent = run_state;
@@ -1288,8 +1288,22 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     Dinitial=atof(ppt->value);
     distanceVary = LALINFERENCE_PARAM_FIXED;
   }
-
-  LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", log(Dinitial), log(Dmin), log(Dmax), distanceVary);
+  
+  LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", log(Dinitial), log(Dmin), log(Dmax), distanceVary) ;
+  if(LALInferenceGetProcParamVal(commandLine,"--margdist")||LALInferenceGetProcParamVal(commandLine,"--margdist-comoving"))
+  {
+      /* If using margdist, remove the distance parameters and add the ranges into the model params as a way of passing them in */
+      REAL8 a = log(Dmin), b=log(Dmax);
+      LALInferenceAddMinMaxPrior(model->params, "logdistance", &a, &b, LALINFERENCE_REAL8_t);
+      UINT4 margdist=1;
+      int cosmology=0;
+      LALInferenceAddVariable(model->params, "MARGDIST", &margdist, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+	  LALInferenceRemoveVariable(model->params, "logdistance");
+      if(LALInferenceGetProcParamVal(commandLine,"--margdist-comoving"))
+          cosmology=1;
+      LALInferenceAddINT4Variable(model->params,"MARGDIST_COSMOLOGY",cosmology, LALINFERENCE_PARAM_FIXED);
+  }
+  
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "costheta_jn", zero, costhetaJNmin, costhetaJNmax,LALINFERENCE_PARAM_LINEAR);
 

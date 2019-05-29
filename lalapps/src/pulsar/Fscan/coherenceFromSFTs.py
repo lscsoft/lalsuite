@@ -32,7 +32,7 @@ def parseSFT(SFTinput):
     elif type(SFTinput) == file:
         SFTfile = SFTinput
     else:
-        raise TypeError, 'Argument must be a string (filename) or open file object.'
+        raise TypeError('Argument must be a string (filename) or open file object.')
 
     sfts = []
     while True: # Loop over SFTs in the file
@@ -56,7 +56,7 @@ def parseSFT(SFTinput):
 
         # Check version (and endianness)
         if version != 2.0:
-            raise ValueError, ('Can only parse SFTs of version 2, not %f'
+            raise ValueError('Can only parse SFTs of version 2, not %f'
                                % version)
 
         # TODO: check crc64 checksum
@@ -308,13 +308,13 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
 #print sys.argv[0]
 
 if len(sys.argv) < 3:
-   print ' '
-   print 'Find the coherence between SFTs in two specified directories '
-   print ' '
-   print 'Usage: %s <pathToSFTsChanA> <pathToSFTsChanB> [subBand]' % sys.argv[0]
-   print ' '
-   print 'The optional subBand is the band in Hz to output in each plot. (Default is 100 Hz)'
-   print ' '
+   print(' ')
+   print('Find the coherence between SFTs in two specified directories ')
+   print(' ')
+   print('Usage: %s <pathToSFTsChanA> <pathToSFTsChanB> [subBand]' % sys.argv[0])
+   print(' ')
+   print('The optional subBand is the band in Hz to output in each plot. (Default is 100 Hz)')
+   print(' ')
    exit(0) 
 
 #print sys.argv[1]

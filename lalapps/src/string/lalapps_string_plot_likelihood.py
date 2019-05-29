@@ -25,6 +25,9 @@
 #
 
 
+from __future__ import print_function
+
+
 import math
 import matplotlib
 matplotlib.rcParams.update({
@@ -294,7 +297,7 @@ options, filenames = parse_command_line()
 coincparamsdistributions, seglists = stringutils.load_likelihood_data(filenames, verbose = options.verbose)
 
 if options.verbose:
-	print >>sys.stderr, "computing event densities ..."
+	print("computing event densities ...", file=sys.stderr)
 if not options.no_filter:
 	coincparamsdistributions.finish(verbose = options.verbose)
 
@@ -304,18 +307,18 @@ for (denominator_name, denominator_pdf), (numerator_name, numerator_pdf) in zip(
 	instruments = set(name.split("_")) & set(stringutils.StringCoincParamsDistributions.instrument_categories)
 	if name.endswith("_snr2_chi2"):
 		if options.verbose:
-			print >>sys.stderr, "generating plots for %s ..." % name
+			print("generating plots for %s ..." % name, file=sys.stderr)
 		denominator_xcoords, denominator_ycoords, denominator_data = clip_binned_array_2d(denominator_pdf, [10, 1e6], [.01, 1e4])
 		numerator_xcoords, numerator_ycoords, numerator_data = clip_binned_array_2d(numerator_pdf, [10, 1e6], [.01, 1e4])
 		fig = snr2_chi2_plot("%s" % name.replace("_", "-"), denominator_xcoords, denominator_ycoords, denominator_data, numerator_xcoords, numerator_ycoords, numerator_data)
 		for extension in options.format:
 			outname = "%s.%s" % (name, extension)
 			if options.verbose:
-				print >>sys.stderr, "\twriting %s ..." % outname
+				print("\twriting %s ..." % outname, file=sys.stderr)
 			fig.savefig(outname)
 	elif name.endswith("_dt"):
 		if options.verbose:
-			print >>sys.stderr, "generating plots for %s ..." % name
+			print("generating plots for %s ..." % name, file=sys.stderr)
 		dt = .010 + snglcoinc.light_travel_time(*instruments)
 		denominator_coords, denominator_data = clip_binned_array_1d(denominator_pdf, (-dt, +dt))
 		numerator_coords, numerator_data = clip_binned_array_1d(numerator_pdf, (-dt, +dt))
@@ -323,56 +326,56 @@ for (denominator_name, denominator_pdf), (numerator_name, numerator_pdf) in zip(
 		for extension in options.format:
 			outname = "%s.%s" % (name, extension)
 			if options.verbose:
-				print >>sys.stderr, "\twriting %s ..." % outname
+				print("\twriting %s ..." % outname, file=sys.stderr)
 			fig.savefig(outname)
 	elif name.endswith("_dA"):
 		if options.verbose:
-			print >>sys.stderr, "generating plots for %s ..." % name
+			print("generating plots for %s ..." % name, file=sys.stderr)
 		denominator_coords, denominator_data = clip_binned_array_1d(denominator_pdf, (-2, +2))
 		numerator_coords, numerator_data = clip_binned_array_1d(numerator_pdf, (-2, +2))
 		fig = dA_plot("%s" % name.replace("_", "-"), denominator_coords, denominator_data, numerator_coords, numerator_data)
 		for extension in options.format:
 			outname = "%s.%s" % (name, extension)
 			if options.verbose:
-				print >>sys.stderr, "\twriting %s ..." % outname
+				print("\twriting %s ..." % outname, file=sys.stderr)
 			fig.savefig(outname)
 	elif name.endswith("_df"):
 		if options.verbose:
-			print >>sys.stderr, "generating plots for %s ..." % name
+			print("generating plots for %s ..." % name, file=sys.stderr)
 		denominator_coords, denominator_data = clip_binned_array_1d(denominator_pdf, (-0.6, +0.6))
 		numerator_coords, numerator_data = clip_binned_array_1d(numerator_pdf, (-0.6, +0.6))
 		fig = df_plot("%s" % name.replace("_", "-"), denominator_coords, denominator_data, numerator_coords, numerator_data)
 		for extension in options.format:
 			outname = "%s.%s" % (name, extension)
 			if options.verbose:
-				print >>sys.stderr, "\twriting %s ..." % outname
+				print("\twriting %s ..." % outname, file=sys.stderr)
 			fig.savefig(outname)
 	elif name == "nevents":
 		if options.verbose:
-			print >>sys.stderr, "generating plots for %s ..." % name
+			print("generating plots for %s ..." % name, file=sys.stderr)
 		fig = nevents_plot("%s" % name.replace("_", "-"), denominator_pdf.centres()[0], denominator_pdf.array, numerator_pdf.array)
 		for extension in options.format:
 			outname = "%s.%s" % (name, extension)
 			if options.verbose:
-				print >>sys.stderr, "\twriting %s ..." % outname
+				print("\twriting %s ..." % outname, file=sys.stderr)
 			fig.savefig(outname)
 	elif name == "instrumentgroup":
 		if options.verbose:
-			print >>sys.stderr, "generating plots for %s ..." % name
+			print("generating plots for %s ..." % name, file=sys.stderr)
 		fig = instrumentgroup_plot("%s" % name.replace("_", "-"), denominator_pdf.centres()[0], denominator_pdf.array, numerator_pdf.array)
 		for extension in options.format:
 			outname = "%s.%s" % (name, extension)
 			if options.verbose:
-				print >>sys.stderr, "\twriting %s ..." % outname
+				print("\twriting %s ..." % outname, file=sys.stderr)
 			fig.savefig(outname)
 	elif name == "instrumentgroup,rss_timing_residual":
 		if options.verbose:
-			print >>sys.stderr, "generating plots for %s ..." % name
+			print("generating plots for %s ..." % name, file=sys.stderr)
 		denominator_xcoords, denominator_ycoords, denominator_data = clip_binned_array_2d(denominator_pdf, [1, denominator_pdf.array.shape[0] + 0.5], [0, .02])
 		numerator_xcoords, numerator_ycoords, numerator_data = clip_binned_array_2d(numerator_pdf, [1, denominator_pdf.array.shape[0] + 0.5], [0, .02])
 		fig = instrumentgroup_timingresidual_plot("%s" % name.replace("_", "-").replace(",", "--"), denominator_xcoords, denominator_ycoords, denominator_data, numerator_xcoords, numerator_ycoords, numerator_data)
 		for extension in options.format:
 			outname = "%s.%s" % (name.replace(",", "_"), extension)
 			if options.verbose:
-				print >>sys.stderr, "\twriting %s ..." % outname
+				print("\twriting %s ..." % outname, file=sys.stderr)
 			fig.savefig(outname)

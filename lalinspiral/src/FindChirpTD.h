@@ -96,27 +96,11 @@ extern "C" {
 /** \endcond */
 
 void
-LALFindChirpTDData (
-    LALStatus                  *status,
-    FindChirpSegmentVector     *fcSegVec,
-    DataSegmentVector          *dataSegVec,
-    FindChirpDataParams        *params
-    );
-
-void
 LALFindChirpTDTemplate (
     LALStatus                  *status,
     FindChirpTemplate          *fcTmplt,
     InspiralTemplate           *theTmplt,
     FindChirpTmpltParams       *params
-    );
-
-void
-LALFindChirpTDNormalize(
-    LALStatus                  *status,
-    FindChirpTemplate          *fcTmplt,
-    FindChirpSegment           *fcSeg,
-    FindChirpDataParams        *params
     );
 
 

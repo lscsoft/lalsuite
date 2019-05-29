@@ -23,9 +23,9 @@ args = parser.parse_args()
 
 def tfplane(path, Tobs, Tcoh, fftf): 
         if fftf:
-            print 'Printing data for frequency-frequency plane'
+            print('Printing data for frequency-frequency plane')
         else:
-            print 'Printing data for time-frequency plane'
+            print('Printing data for time-frequency plane')
 
         # Read in data
         tfPlaneData = open(args.path,"r")
@@ -37,10 +37,10 @@ def tfplane(path, Tobs, Tcoh, fftf):
 
         # Calculate expected number of SFTs
         nsft = int(np.floor(2 * Tobs / Tcoh)) - 1 
-        print 'nsft = ' + str(nsft)
+        print('nsft = ' + str(nsft))
         # Calculate expected number of second Fourier transforms
         ntft = int(np.floor(nsft/2) + 1)
-        print 'ntft = ' + str(ntft)
+        print('ntft = ' + str(ntft))
 
         # This really seems to be the right way to do it, with the transpose
         if fftf:

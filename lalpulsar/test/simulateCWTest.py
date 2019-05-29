@@ -73,8 +73,8 @@ def compute_Fstat_spindown_reference():
 
     # create injection parameters
     Fstat_signal = lalpulsar.CreatePulsarParamsVector(1);
-    Fstat_signal.data[0].Amp.h0 = h0
-    Fstat_signal.data[0].Amp.cosi = cosi
+    Fstat_signal.data[0].Amp.aPlus = 0.5 * h0 * (1.0 + cosi * cosi)
+    Fstat_signal.data[0].Amp.aCross = h0 * cosi
     Fstat_signal.data[0].Amp.psi = psi
     Fstat_signal.data[0].Amp.phi0 = phi0
     Fstat_signal.data[0].Doppler.refTime = tref

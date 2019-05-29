@@ -283,8 +283,8 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
       PulsarParams XLAL_INIT_DECL(pulsarParams);
       LIGOTimeGPS SSBepoch = multissb->data[0]->refTime, spinEpoch;
       XLALGPSAdd(&SSBepoch, multissb->data[0]->DeltaT->data[0]-params->SFToverlap);
-      pulsarParams.Amp.h0 = 0.0;   //arbitrary, we only care about frequency
-      pulsarParams.Amp.cosi = 0.0; //arbitrary, we only care about frequency
+      pulsarParams.Amp.aPlus = 0.0;   //arbitrary, we only care about frequency
+      pulsarParams.Amp.aCross = 0.0; //arbitrary, we only care about frequency
       pulsarParams.Amp.psi = 0.0;  //arbitrary, we only care about frequency
       pulsarParams.Amp.phi0 = 0.0; //arbitrary, we only care about frequency
       if (NSparams->assumeNSrefTime == NULL) {
@@ -637,13 +637,10 @@ REAL4TimeSeries * computeNSfreqTS(const PulsarParams *pulsarParams, LIGOTimeGPS 
 {
    XLAL_CHECK_NULL( pulsarParams != NULL && duration > 0, XLAL_EINVAL );
 
-   REAL8 h0 = pulsarParams->Amp.h0;
-   REAL8 cosi = pulsarParams->Amp.cosi;
-
    SpinOrbitCWParamStruc XLAL_INIT_DECL(sourceParams);
    sourceParams.psi = pulsarParams->Amp.psi;
-   sourceParams.aPlus = 0.5*h0*(1.0+cosi*cosi);
-   sourceParams.aCross = h0*cosi;
+   sourceParams.aPlus = pulsarParams->Amp.aPlus;
+   sourceParams.aCross = pulsarParams->Amp.aCross;
    sourceParams.phi0 = pulsarParams->Amp.phi0;
    sourceParams.f0 = pulsarParams->Doppler.fkdot[0];
    sourceParams.position.latitude = pulsarParams->Doppler.Delta;
@@ -1328,7 +1325,10 @@ MultiSFTVector * generateSFTdata(UserInput_t *uvar, const MultiLALDetector *dete
             XLAL_CHECK_NULL ( (marginalizedSignalData = XLALCreateREAL8Vector(multiSFTvector->data[0]->data->data->length)) != NULL, XLAL_EFUNC );
             memset(marginalizedSignalData->data, 0, sizeof(REAL8)*marginalizedSignalData->length);
             for (UINT4 jj=0; jj<300; jj++) {
-               oneSignal->data[0].Amp.cosi = 2.0*gsl_rng_uniform(rng) - 1.0;
+               REAL8 cosi = 2.0*gsl_rng_uniform(rng) - 1.0;
+               REAL8 h0 = 1.0;
+               oneSignal->data[0].Amp.aPlus = 0.5 * h0 * (1.0 + cosi * cosi);
+               oneSignal->data[0].Amp.aCross = h0 * cosi;
                oneSignal->data[0].Amp.psi = LAL_TWOPI*gsl_rng_uniform(rng);
                oneSignal->data[0].Amp.phi0 = LAL_TWOPI*gsl_rng_uniform(rng);
                oneSignal->data[0].Doppler.argp = LAL_TWOPI*gsl_rng_uniform(rng);

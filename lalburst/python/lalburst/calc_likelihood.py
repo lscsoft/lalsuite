@@ -31,7 +31,7 @@ import sys
 import traceback
 
 
-from glue.ligolw import lsctables
+from ligo.lw import lsctables
 from glue.text_progress_bar import ProgressBar
 
 
@@ -58,14 +58,6 @@ def assign_likelihood_ratios(connection, coinc_def_id, offset_vectors, vetosegli
 	"""
 	Assigns likelihood ratio values to coincidences.
 	"""
-	#
-	# Convert offset vector keys to strings so that we can use the
-	# dictionary inside an SQL query (they might be
-	# glue.ligolw.ilwd_char objects)
-	#
-
-	offset_vectors = dict((unicode(time_slide_id), offset_vector) for time_slide_id, offset_vector in offset_vectors.items())
-
 	#
 	# Create a cursor object for events_func() to reuse
 	#

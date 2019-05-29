@@ -19,7 +19,7 @@ Code to compute the log likelihood of parameters of a gravitational waveform. Pr
 
 Requires python SWIG bindings of the LIGO Algorithms Library (LAL)
 """
-
+from __future__ import print_function
 import lal
 import lalsimulation as lalsim
 import numpy as np

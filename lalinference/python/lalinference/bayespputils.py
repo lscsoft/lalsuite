@@ -124,7 +124,7 @@ def as_array(table):
 logParams=['logl','loglh1','loglh2','logll1','loglv1','deltalogl','deltaloglh1','deltalogll1','deltaloglv1','logw','logprior','logpost','nulllogl','chain_log_evidence','chain_delta_log_evidence','chain_log_noise_evidence','chain_log_bayes_factor']
 #Parameters known to cbcBPP
 relativePhaseParams=[ a+b+'_relative_phase' for a,b in combinations(['h1','l1','v1'],2)]
-snrParams=['snr','optimal_snr','matched_filter_snr'] + ['%s_optimal_snr'%(i) for i in ['h1','l1','v1']] + ['%s_cplx_snr_amp'%(i) for i in ['h1','l1','v1']] + ['%s_cplx_snr_arg'%(i) for i in ['h1', 'l1', 'v1']] + relativePhaseParams
+snrParams=['snr','optimal_snr','matched_filter_snr','coherence'] + ['%s_optimal_snr'%(i) for i in ['h1','l1','v1']] + ['%s_cplx_snr_amp'%(i) for i in ['h1','l1','v1']] + ['%s_cplx_snr_arg'%(i) for i in ['h1', 'l1', 'v1']] + relativePhaseParams
 calAmpParams=['calamp_%s'%(ifo) for ifo in ['h1','l1','v1']]
 calPhaseParams=['calpha_%s'%(ifo) for ifo in ['h1','l1','v1']]
 calParams = calAmpParams + calPhaseParams
@@ -148,7 +148,7 @@ energyParams=['e_rad', 'l_peak']
 strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+eosParams+energyParams
 
 #Extrinsic
-distParams=['distance','distMPC','dist']
+distParams=['distance','distMPC','dist','distance_maxl']
 incParams=['iota','inclination','cosiota']
 polParams=['psi','polarisation','polarization']
 skyParams=['ra','rightascension','declination','dec']
@@ -804,6 +804,7 @@ class Posterior(object):
                             'end_time': lambda inj:float(inj.get_end()),
                             'phi0':lambda inj:inj.phi0,
                             'phi_orb': lambda inj: inj.coa_phase,
+                            'phase': lambda inj: inj.coa_phase,
                             'dist':lambda inj:inj.distance,
                             'distance':lambda inj:inj.distance,
                             'ra':self._inj_longitude,
@@ -1084,7 +1085,7 @@ class Posterior(object):
 
         #If new spin params present, calculate old ones
         old_spin_params = ['iota', 'theta1', 'phi1', 'theta2', 'phi2', 'beta']
-        new_spin_params = ['theta_jn', 'phi_jl', 'tilt1', 'tilt2', 'phi12', 'a1', 'a2', 'm1', 'm2', 'f_ref']
+        new_spin_params = ['theta_jn', 'phi_jl', 'tilt1', 'tilt2', 'phi12', 'a1', 'a2', 'm1', 'm2', 'f_ref','phase']
         try:
             if pos['f_ref'].samples[0][0]==0.0:
                 for name in ['flow','f_lower']:
@@ -1935,8 +1936,11 @@ class Posterior(object):
             return maplong
         else:
             return inj.longitude
-
+        
     def _inj_spins(self, inj, frame='OrbitalL'):
+
+        from lalsimulation import SimInspiralTransformPrecessingWvf2PE
+
         spins = {}
         f_ref = self._injFref
 
@@ -1945,16 +1949,15 @@ class Posterior(object):
 
         else:
             axis = lalsim.SimInspiralGetFrameAxisFromString(frame)
-
+            s1x=inj.spin1x
+            s1y=inj.spin1y
+            s1z=inj.spin1z
+            s2x=inj.spin2x
+            s2y=inj.spin2y
+            s2z=inj.spin2z
+            iota=inj.inclination
             m1, m2 = inj.mass1, inj.mass2
             mc, eta = inj.mchirp, inj.eta
-
-            # Convert to radiation frame
-            iota, s1x, s1y, s1z, s2x, s2y, s2z = \
-                lalsim.SimInspiralInitialConditionsPrecessingApproxs(inj.inclination,
-                                                                     inj.spin1x, inj.spin1y, inj.spin1z,
-                                                                     inj.spin2x, inj.spin2y, inj.spin2z,
-                                                                     m1*lal.MSUN_SI, m2*lal.MSUN_SI, f_ref, inj.coa_phase, axis)
 
             a1, theta1, phi1 = cart2sph(s1x, s1y, s1z)
             a2, theta2, phi2 = cart2sph(s2x, s2y, s2z)
@@ -1962,7 +1965,6 @@ class Posterior(object):
             spins = {'a1':a1, 'theta1':theta1, 'phi1':phi1,
                      'a2':a2, 'theta2':theta2, 'phi2':phi2,
                      'iota':iota}
-
             # If spins are aligned, save the sign of the z-component
             if inj.spin1x == inj.spin1y == inj.spin2x == inj.spin2y == 0.:
                 spins['a1z'] = inj.spin1z
@@ -1977,65 +1979,36 @@ class Posterior(object):
             aligned_comp_spin2 = array_dot(S2, zhat)
             chi = aligned_comp_spin1 + aligned_comp_spin2 + \
                   np.sqrt(1. - 4.*eta) * (aligned_comp_spin1 - aligned_comp_spin2)
-
-            spins['spinchi'] = chi
-
             S1 *= m1**2
             S2 *= m2**2
             J = L + S1 + S2
 
-            tilt1 = array_ang_sep(L, S1)
-            tilt2 = array_ang_sep(L, S2)
             beta  = array_ang_sep(J, L)
-
-            spins['tilt1'] = tilt1
-            spins['tilt2'] = tilt2
             spins['beta'] = beta
+            spins['spinchi'] = chi
+            # Huge caveat: SimInspiralTransformPrecessingWvf2PE assumes that the cartesian spins in the XML table  are given in the L frame, ie. in  a frame where L||z. While this is the default in inspinj these days, other possibilities exist.
+            # Unfortunately, we don't have a function (AFIK), that transforms spins from an arbitrary  frame to an arbitrary frame, otherwise I'd have called it here to be sure we convert in the L frame. 
+            # FIXME: add that function here if it ever gets written. For the moment just check
+            if not frame=='OrbitalL':
+                print("I cannot calculate the injected values of the spin angles unless frame is OrbitalL. Skipping...")
+                return spins
+            # m1 and m2 here are NOT in SI, but in Msun, this is not a typo.
+            theta_jn,phi_jl,tilt1,tilt2,phi12,chi1,chi2=SimInspiralTransformPrecessingWvf2PE(inj.inclination,inj.spin1x, inj.spin1y, inj.spin1z,inj.spin2x, inj.spin2y, inj.spin2z, m1, m2, f_ref, inj.coa_phase)
+            spins['theta_jn']=theta_jn
+            spins['phi12']=phi12
+            spins['tilt1']=tilt1
+            spins['tilt2']=tilt2
+            spins['phi_jl']=phi_jl
 
-            # Need to do rotations of XLALSimInspiralTransformPrecessingInitialConditioin inverse order to go in the L frame
-            # first rotation: bring J in the N-x plane, with negative x component
-            phi0 = np.arctan2(J[1], J[0])
-            phi0 = np.pi - phi0
-
-            J = ROTATEZ(phi0, J[0], J[1], J[2])
-            L = ROTATEZ(phi0, L[0], L[1], L[2])
-            S1 = ROTATEZ(phi0, S1[0], S1[1], S1[2])
-            S2 = ROTATEZ(phi0, S2[0], S2[1], S2[2])
-
-            # now J in in the N-x plane and form an angle theta_jn with N, rotate by -theta_jn around y to have J along z
-            theta_jn = array_polar_ang(J)
-            spins['theta_jn'] = theta_jn
-
-            J = ROTATEY(theta_jn, J[0], J[1], J[2])
-            L = ROTATEY(theta_jn, L[0], L[1], L[2])
-            S1 = ROTATEY(theta_jn, S1[0], S1[1], S1[2])
-            S2 = ROTATEY(theta_jn, S2[0], S2[1], S2[2])
-
-            # J should now be || z and L should have a azimuthal angle phi_jl
-            phi_jl = np.arctan2(L[1], L[0])
-            phi_jl = np.pi - phi_jl
-            spins['phi_jl'] = phi_jl
-
-            # bring L in the Z-X plane, with negative x
-            J = ROTATEZ(phi_jl, J[0], J[1], J[2])
-            L = ROTATEZ(phi_jl, L[0], L[1], L[2])
-            S1 = ROTATEZ(phi_jl, S1[0], S1[1], S1[2])
-            S2 = ROTATEZ(phi_jl, S2[0], S2[1], S2[2])
-
-            theta0 = array_polar_ang(L)
-            J = ROTATEY(theta0, J[0], J[1], J[2])
-            L = ROTATEY(theta0, L[0], L[1], L[2])
-            S1 = ROTATEY(theta0, S1[0], S1[1], S1[2])
-            S2 = ROTATEY(theta0, S2[0], S2[1], S2[2])
-
-            # The last rotation is useless as it won't change the differenze in spins' azimuthal angles
-            phi1 = np.arctan2(S1[1], S1[0])
-            phi2 = np.arctan2(S2[1], S2[0])
-            if phi2 < phi1:
-                phi12 = phi2 - phi1 + 2.*np.pi
-            else:
-                phi12 = phi2 - phi1
-            spins['phi12'] = phi12
+            """ 
+            #If everything is all right, this function should give back the cartesian spins. Uncomment to check
+            print("Inverting ")
+            iota_back,a1x_back,a1y_back,a1z_back,a2x_back,a2y_back,a2z_back = \
+    lalsim.SimInspiralTransformPrecessingNewInitialConditions(theta_jn,phi_jl,tilt1,tilt2,phi12,chi1,chi2,m1*lal.MSUN_SI,m2*lal.MSUN_SI,f_ref,inj.coa_phase)
+            print(a1x_back,a1y_back,a1z_back)
+            print(a2x_back,a2y_back,a2z_back)
+            print(iota_back)
+            """            
 
         return spins
 
@@ -3821,7 +3794,7 @@ def source_mass(mass, redshift):
     """
     return mass / (1.0 + redshift)
 
-def physical2radiationFrame(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1, m2, fref):
+def physical2radiationFrame(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1, m2, fref,phiref):
     """
     Wrapper function for SimInspiralTransformPrecessingNewInitialConditions().
     Vectorizes function for use in append_mapping() methods of the posterior class.
@@ -3840,7 +3813,7 @@ def physical2radiationFrame(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1, m
     m2_SI = m2*lal.MSUN_SI
 
     # Flatten arrays
-    ins = [theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1_SI, m2_SI, fref]
+    ins = [theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1_SI, m2_SI, fref,phiref]
     if len(shape(ins))>1:
         # ins is a list of lists (i.e. we are converting full posterior chains)
         try:
@@ -3850,7 +3823,7 @@ def physical2radiationFrame(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1, m
             pass
 
         try:
-            results = np.array([transformFunc(t_jn, p_jl, t1, t2, p12, a1, a2, m1_SI, m2_SI, f) for (t_jn, p_jl, t1, t2, p12, a1, a2, m1_SI, m2_SI, f) in zip(*ins)])
+            results = np.array([transformFunc(t_jn, p_jl, t1, t2, p12, a1, a2, m1_SI, m2_SI, f,phir) for (t_jn, p_jl, t1, t2, p12, a1, a2, m1_SI, m2_SI, f,phir) in zip(*ins)])
             iota = results[:,0].reshape(-1,1)
             spin1x = results[:,1].reshape(-1,1)
             spin1y = results[:,2].reshape(-1,1)
@@ -3882,7 +3855,7 @@ def physical2radiationFrame(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1, m
             pass
 
         try:
-            results = np.array(transformFunc(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1_SI, m2_SI, fref))
+            results = np.array(transformFunc(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1_SI, m2_SI, fref,phiref))
             iota = results[0]
             spin1x = results[1]
             spin1y = results[2]
@@ -4245,7 +4218,7 @@ def plot_corner(posterior,levels,parnames=None):
         except ImportError:
             print('Cannot load corner module. Try running\n\t$ pip install corner')
             return None
-    parnames=filter(lambda x: x in posterior.names, parnames)
+    parnames=list(filter(lambda x: x in posterior.names, parnames))
     labels = [plot_label(parname) for parname in parnames]
     data = np.hstack([posterior[p].samples for p in parnames])
     if posterior.injection:
@@ -6600,6 +6573,8 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
             m2=M2*LAL_MSUN_SI
             if 'phi_orb' in pos.names:
                 phiRef=pos['phi_orb'].samples[which][0]
+            elif 'phase' in pos.names:
+                phiRef=pos['phase'].samples[which][0]
             elif 'phase_maxl' in pos.names:
                 phiRef=pos['phase_maxl'].samples[which][0]
                 print('INFO: phi_orb not estimated, using maximum likelihood value')
@@ -6644,7 +6619,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
                 iota=pos['inclination'].samples[which][0]
             except:
                 try:
-                    iota, s1x, s1y, s1z, s2x, s2y, s2z=lalsim.SimInspiralTransformPrecessingNewInitialConditions(pos['theta_jn'].samples[which][0], pos['phi_JL'].samples[which][0], pos['tilt1'].samples[which][0], pos['tilt2'].samples[which][0], pos['phi12'].samples[which][0], pos['a1'].samples[which][0], pos['a2'].samples[which][0], m1, m2, f_ref)
+                    iota, s1x, s1y, s1z, s2x, s2y, s2z=lalsim.SimInspiralTransformPrecessingNewInitialConditions(pos['theta_jn'].samples[which][0], pos['phi_JL'].samples[which][0], pos['tilt1'].samples[which][0], pos['tilt2'].samples[which][0], pos['phi12'].samples[which][0], pos['a1'].samples[which][0], pos['a2'].samples[which][0], m1, m2, f_ref, phiRef)
                 except:
                     if 'a1z' in pos.names:
                         s1z=pos['a1z'].samples[which][0]
@@ -7605,7 +7580,10 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
                         last_color = lines[-1].get_color()
                         plt.axvline(acl/Nskip, linestyle='-.', color=last_color)
                         plt.title('ACL = %i   N = %i'%(acl,Neff))
-                except FloatingPointError:
+                    acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.png')))
+                    if(savepdfs): acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.pdf')))
+                    plt.close(acffig)
+                except:
                     # Ignore
                     acfail=1
                     pass
@@ -7626,14 +7604,13 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
                         plt.title('Autocorrelation Function')
                     else:
                         plt.title('ACL = %i  N = %i'%(max(acls),Nsamps))
-                except FloatingPointError:
+                    acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.png')))
+                    if(savepdfs): acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.pdf')))
+                    plt.close(acffig)
+                except:
                     # Ignore
                     acfail=1
                     pass
-
-            acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.png')))
-            if(savepdfs): acffig.savefig(os.path.join(sampsdir,figname.replace('.png','_acf.pdf')))
-            plt.close(acffig)
 
         if not noacf:
             if not acfail:

@@ -374,7 +374,7 @@ int main( int argc, char *argv[] )
       testFrDetector.vertexElevation = 0.0;
       testFrDetector.xArmAltitudeRadians = 0.0;
       testFrDetector.yArmAltitudeRadians = 0.0;
-      LALCreateDetector( &status, &detector, &testFrDetector, LALDETECTORTYPE_IFODIFF);
+      XLALCreateDetector( &detector, &testFrDetector, LALDETECTORTYPE_IFODIFF);
       /* 10/14/04 gam; fill in independent values for detector geometry: */
       indXArmAzimuthRadians = testFrDetector.xArmAzimuthRadians;
       indVertexLongitudeRadians = testFrDetector.vertexLongitudeRadians;

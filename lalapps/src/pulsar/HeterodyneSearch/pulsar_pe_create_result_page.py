@@ -22,6 +22,8 @@
 #       MA 02110-1301, USA.
 #
 
+from __future__ import print_function
+
 #standard library imports
 import sys
 import os
@@ -229,7 +231,7 @@ th{
 # convert a floating point number into a string in X.X x 10^Z format
 def exp_str(f, p=1):
   if p > 16:
-    print >> sys.stderr, "Precision must be less than 16 d.p."
+    print("Precision must be less than 16 d.p.", file=sys.stderr)
     p = 16
 
   s = '%.16e' % f
@@ -239,7 +241,7 @@ def exp_str(f, p=1):
 
 def exp_latex_str(f, p=1):
   if p > 16:
-    print >> sys.stderr, "Precision must be less than 16 d.p."
+    print("Precision must be less than 16 d.p.", file=sys.stderr)
     p = 16
 
   s = '%.16e' % f
@@ -454,7 +456,7 @@ def output_fig(myfig, outpath, fname, ftypes):
   fnameret = {}
 
   if not ftypes or not fname or not outpath:
-    print >> sys.stderr, "Error, problem outputting figure"
+    print("Error, problem outputting figure", file=sys.stderr)
     sys.exit(1)
 
   for i, t in enumerate(ftypes):
@@ -464,7 +466,7 @@ def output_fig(myfig, outpath, fname, ftypes):
     try:
       myfig.savefig(plotpath)
     except:
-      print >> sys.stderr, "Error outputting figure %s" % plotpath
+      print("Error outputting figure %s" % plotpath, file=sys.stderr)
       sys.exit(1)
 
   return fnameret
@@ -573,14 +575,14 @@ include one posterior sample file for each IFO.")
   for arg in sys.argv:
     p_args += arg + ' '
 
-  print >> sys.stderr, p_args
+  print(p_args, file=sys.stderr)
 
   # parse input options
   (opts, args) = parser.parse_args()
 
   # check that output path has been given
   if not opts.__dict__['outpath']:
-    print >> sys.stderr, "Must specify an output path"
+    print("Must specify an output path", file=sys.stderr)
     parser.print_help()
     sys.exit(0)
   else:
@@ -592,7 +594,7 @@ include one posterior sample file for each IFO.")
   # check that some data has been given
   if usemcmc:
     if not opts.__dict__['mcmcdirs']:
-      print >> sys.stderr, "Must specify MCMC chain directories"
+      print("Must specify MCMC chain directories", file=sys.stderr)
       parser.print_help()
       sys.exit(0)
     else:
@@ -600,24 +602,24 @@ include one posterior sample file for each IFO.")
       mcmcdirs = opts.mcmcdirs
   elif usenested:
     if not opts.__dict__['nestedfiles']:
-      print >> sys.stderr, "Must specify nested sampling files."
+      print("Must specify nested sampling files.", file=sys.stderr)
       parser.print_help()
       sys.exit(0)
     else:
       nestedfiles = opts.nestedfiles
   else:
-    print >> sys.stderr, "Must specify using either the MCMC or nested sampling inputs."
+    print("Must specify using either the MCMC or nested sampling inputs.", file=sys.stderr)
     parser.print_help()
     sys.exit(0)
 
   # check that parfile has been given
   if not opts.__dict__['parfile']:
-    print >> sys.stderr, "Must specify a pulsar TEMPO .par file"
+    print("Must specify a pulsar TEMPO .par file", file=sys.stderr)
     parser.print_help()
     sys.exit(0)
 
   if not opts.__dict__['ifos']:
-    print >> sys.stderr, "Must specify the interferometers analysed"
+    print("Must specify the interferometers analysed", file=sys.stderr)
     parser.print_help()
     sys.exit(0)
   else:
@@ -646,7 +648,7 @@ include one posterior sample file for each IFO.")
     try:
       os.mkdir(outpath)
     except:
-      print >> sys.stderr, "Cannot create output directory %s" % outpath
+      print("Cannot create output directory %s" % outpath, file=sys.stderr)
       sys.exit(0)
 
   # check that number of ifos is the same as the number of data lists (for MCMC)
@@ -678,14 +680,14 @@ include one posterior sample file for each IFO.")
   # check that number of ifos is the same as the number of data lists (for MCMC)
   if not jointonly: # if we only want a Joint output don't perform this check
     if nifos != ndata:
-      print >> sys.stderr, "Number of IFOs and data lists are not equal"
+      print("Number of IFOs and data lists are not equal", file=sys.stderr)
       sys.exit(0)
 
   # check if parfile is a single file or a directory
   if os.path.isfile(opts.parfile):
     parfile = opts.parfile
   else:
-    print >> sys.stderr, "No par file specified!"
+    print("No par file specified!", file=sys.stderr)
     sys.exit(0)
 
   # get time/date for file creation
@@ -700,16 +702,16 @@ include one posterior sample file for each IFO.")
   try:
     par = pppu.psr_par(parfile)
   except:
-    print >> sys.stderr, "Par file %s could not be opened!" % parfile
+    print("Par file %s could not be opened!" % parfile, file=sys.stderr)
     sys.exit(0)
 
   pname = par['PSRJ']
   if not pname:
-    print >> sys.stderr, "No PSRJ value in par file %s" % parfile
+    print("No PSRJ value in par file %s" % parfile, file=sys.stderr)
 
     pname = par['PSR']
     if not pname:
-      print >> sys.stderr, "No PSR value in par file %s" % parfile
+      print("No PSR value in par file %s" % parfile, file=sys.stderr)
       sys.exit(0)
 
   # check if heterodyned data exists for this pulsar and each detector
@@ -720,7 +722,7 @@ include one posterior sample file for each IFO.")
 
       # check files exist if not then skip the pulsar
       if not os.path.isfile(Bkdata[i]) and not os.path.isfile(Bkdata[i]+'.gz'):
-        print >> sys.stderr, "No heterodyne file %s" % Bkdata[i]
+        print("No heterodyne file %s" % Bkdata[i], file=sys.stderr)
         sys.exit(0)
 
   # check that MCMC chains exist for this pulsar and each detector (including
@@ -731,31 +733,31 @@ include one posterior sample file for each IFO.")
         cfile = os.path.join(chaindir, 'MCMCchain_' + pname + '_' + ifo)
 
         if not os.path.isfile(cfile):
-          print >> sys.stderr, "No MCMC file %s" % cfile
+          print("No MCMC file %s" % cfile, file=sys.stderr)
           sys.exit(0)
   if usenested:
     if len(ifosNew) != len(nestedfiles):
-      print >> sys.stderr, "Number of nested sampling file lists must be equal to number of IFOs."
+      print("Number of nested sampling file lists must be equal to number of IFOs.", file=sys.stderr)
       sys.exit(-1)
 
     # check files exist
     for nfile in nestedfiles:
       if not os.path.isfile(nfile):
-        print >> sys.stderr, "No nested sampling file %s" % nfile
+        print("No nested sampling file %s" % nfile, file=sys.stderr)
         sys.exit(0)
 
   # check required parameters
   f0 = par['F0']
   if not f0:
-    print >> sys.stderr, "No F0 value in par file %s" % parfile
+    print("No F0 value in par file %s" % parfile, file=sys.stderr)
     sys.exit(0)
 
   f1 = par['F1']
   if not f1:
-    print >> sys.stderr, "No F1 value in par file %s, setting to zero" % parfile
+    print("No F1 value in par file %s, setting to zero" % parfile, file=sys.stderr)
     f1 = 0.
 
-  print 'Results for pulsar ' + pname
+  print('Results for pulsar ' + pname)
 
   # create output directory for pulsar
   puldir = os.path.join(outpath, pname)
@@ -766,7 +768,7 @@ include one posterior sample file for each IFO.")
   try:
     psrshelf = shelve.open(os.path.join(puldir, pname+'.db'))
   except:
-    print >> sys.stderr, "Can't open shelf database!"
+    print("Can't open shelf database!", file=sys.stderr)
     sys.exit(1)
 
   psrshelf['par'] = par
@@ -778,7 +780,7 @@ include one posterior sample file for each IFO.")
     cssfile = os.path.join(puldir, cssname)
     css = open(cssfile, 'w')
   except:
-    print >> sys.stderr, "Cannot open CSS file %s" % cssfile
+    print("Cannot open CSS file %s" % cssfile, file=sys.stderr)
     sys.exit(1)
 
   css.write(csstext);
@@ -813,7 +815,7 @@ include one posterior sample file for each IFO.")
     else:
       notinatnf = True
       atnfurl = None
-      print >> sys.stderr, 'Problem accessing ATNF for %s!' % pname
+      print('Problem accessing ATNF for %s!' % pname, file=sys.stderr)
 
   if ages:
     if len(ages) > 1:
@@ -821,7 +823,7 @@ include one posterior sample file for each IFO.")
         age_i = float(ages[1])
         intrinsicsd = True # using intrinsic spin-down
       except:
-        print >> sys.stderr, "%s: Age is not a number!" % pname
+        print("%s: Age is not a number!" % pname, file=sys.stderr)
         age_i = None
         f1sd = None
 
@@ -858,7 +860,7 @@ include one posterior sample file for each IFO.")
 
   # if pulsar is not in atnf and there's not distance in the par file then skip it
   if notinatnf and not dist:
-    print >> sys.stderr, "No distance available for %s" % pname
+    print("No distance available for %s" % pname, file=sys.stderr)
 
   # if not available look in download value
   if not notinatnf and not dist:
@@ -868,10 +870,10 @@ include one posterior sample file for each IFO.")
         try:
           dist = float(dists[1])
         except:
-          print >> sys.stderr, "%s: Distance not a number!" % pname
+          print("%s: Distance not a number!" % pname, file=sys.stderr)
           dist = None
       else:
-        print >> sys.stderr, "%s: Distance not a number!" % pname
+        print("%s: Distance not a number!" % pname, file=sys.stderr)
         dist = None
 
   psrshelf['dist'] = dist
@@ -881,7 +883,7 @@ include one posterior sample file for each IFO.")
   try:
     htmlpout = open(htmlppage, 'w')
   except:
-    print >> sys.stderr, 'Could not open html page %s' % htmlppage
+    print('Could not open html page %s' % htmlppage, file=sys.stderr)
 
   htmlptext = None
   htmlptext = []
@@ -977,7 +979,7 @@ function toggle(id) {
       if not os.path.isfile(Bkdata[i]):
         Bkdata[i] = Bkdata[i]+'.gz' # try gzipped file
         if not os.path.isfile(Bkdata[i]):
-          print >> sys.stderr, "Error... could not find Bk data file %s" % Bkdata[i]
+          print("Error... could not find Bk data file %s" % Bkdata[i], file=sys.stderr)
 
     asdtime = 14400 # set time over which to produce the asds
 
@@ -1043,7 +1045,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
         errfile = open(outerrfile, 'a') # append to file
         errfile.write('MCMC files for %s and %s could not be read in\n' % (pname, ifo))
         errfile.close()
-        print >> sys.stderr, "Error in MCMC chain reading!"
+        print("Error in MCMC chain reading!", file=sys.stderr)
 
         try:
           shutil.rmtree(puldir)
@@ -1076,7 +1078,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
         pos.pop('phi0')
         pos.append(phi0new)
       except:
-        print "No PHI0 parameter for hardware injection"
+        print("No PHI0 parameter for hardware injection")
 
     poslist.append(pos) # append posterior object to list
 
@@ -1167,7 +1169,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
       phi0val = 2.*parinj['PHI0']
       setattr(parinj, 'PHI0', phi0val)
     except:
-      print "No PHI0 for hardware injection"
+      print("No PHI0 for hardware injection")
 
   # output the MAIN posterior plots
   # h0
@@ -1363,12 +1365,12 @@ psifigname['png'], psifigname['png'] ))
 
       # get the previous h0 upper limit from that prior file
       h0prior = pppu.h0ul_from_prior_file(priorfile, ulval=0.95)
-      print h0prior
+      print(h0prior)
     else:
       figprior = h0prior = None
 
     if not figprior or not h0prior:
-      print >> sys.stderr, "Could not create prior file figures"
+      print("Could not create prior file figures", file=sys.stderr)
       priorfile = None
       h0prior = None
     else:

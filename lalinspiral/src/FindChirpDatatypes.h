@@ -169,10 +169,6 @@ tagFindChirpSegment
                                                          * {d^2|R|^2S_v\left(\left|f_k\right|\right)}
                                                          * \f}
                                                          */
-  COMPLEX8FrequencySeries      *dataBCV;		/**< Conditioned input data used
-                                                         * only for the BCV templates;  The conditioning performed is as described in the
-                                                         * documentation for \ref LALFindChirpBCVData().
-                                                         */
   REAL4TimeSeries              *dataPower;		/**< UNDOCUMENTED */
   UINT4Vector                  *chisqBinVec;		/**< A vector containing the indices of
                                                          * the boundaries of the bins of equal power for the \f$\chi^2\f$ veto for this

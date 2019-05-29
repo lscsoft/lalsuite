@@ -113,8 +113,8 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   const PulsarDopplerParams *max_phys,
   const double dfreq,
   const EphemerisData *ephemerides,
-  const LALStringVector *sft_noise_psd,
-  const LALStringVector *Fstat_assume_psd,
+  const LALStringVector *sft_noise_sqrtSX,
+  const LALStringVector *Fstat_assume_sqrtSX,
   FstatOptionalArgs *Fstat_opt_args,
   const WeaveStatisticsParams *statistics_params,
   BOOLEAN recalc_stage
@@ -183,19 +183,19 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   double sft_min_cover_freq = 0, sft_max_cover_freq = 0;
   XLAL_CHECK_NULL( XLALCWSignalCoveringBand( &sft_min_cover_freq, &sft_max_cover_freq, &sft_start, &sft_end, &spin_range, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Parse SFT noise PSD string vector for detectors in this segment
+  // Parse SFT noise sqrt(Sh) string vector for detectors in this segment
   // - This is important when segments contain data from a subset of detectors
   MultiNoiseFloor Fstat_injectSqrtSX;
-  if ( sft_noise_psd != NULL ) {
-    XLAL_CHECK_NULL( XLALParseMultiNoiseFloorMapped( &Fstat_injectSqrtSX, sft_catalog_seg_detectors, sft_noise_psd, setup_detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( sft_noise_sqrtSX != NULL ) {
+    XLAL_CHECK_NULL( XLALParseMultiNoiseFloorMapped( &Fstat_injectSqrtSX, sft_catalog_seg_detectors, sft_noise_sqrtSX, setup_detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
     Fstat_opt_args->injectSqrtSX = &Fstat_injectSqrtSX;
   }
 
-  // Parse F-statistic assumed PSD string vector for detectors in this segment
+  // Parse F-statistic assumed sqrt(Sh) string vector for detectors in this segment
   // - This is important when segments contain data from a subset of detectors
   MultiNoiseFloor Fstat_assumeSqrtSX;
-  if ( Fstat_assume_psd != NULL ) {
-    XLAL_CHECK_NULL( XLALParseMultiNoiseFloorMapped( &Fstat_assumeSqrtSX, sft_catalog_seg_detectors, Fstat_assume_psd, setup_detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( Fstat_assume_sqrtSX != NULL ) {
+    XLAL_CHECK_NULL( XLALParseMultiNoiseFloorMapped( &Fstat_assumeSqrtSX, sft_catalog_seg_detectors, Fstat_assume_sqrtSX, setup_detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
     Fstat_opt_args->assumeSqrtSX = &Fstat_assumeSqrtSX;
   }
 

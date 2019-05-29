@@ -1,4 +1,6 @@
 #!/usr/bin/python
+from __future__ import print_function
+
 import scipy
 from scipy import interpolate
 import numpy
@@ -9,7 +11,7 @@ import glob
 import copy
 from optparse import OptionParser
 
-from glue import segments
+from ligo import segments
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import dbtables
@@ -34,7 +36,7 @@ def get_far_threshold_and_segments(zerofname, instruments, live_time_program, ve
 
   # extract false alarm rate threshold
   query = 'SELECT MIN(coinc_inspiral.false_alarm_rate) FROM coinc_inspiral JOIN coinc_event ON (coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id) WHERE ( coinc_event.instruments = "' + instruments + '" AND NOT EXISTS(SELECT * FROM time_slide WHERE time_slide.time_slide_id == coinc_event.time_slide_id AND time_slide.offset != 0) );'
-  print "\n", query
+  print("\n", query)
   far, = connection.cursor().execute(query).fetchone()
 
   # extract segments.
@@ -59,9 +61,9 @@ def get_injections(injfnames, zero_lag_segments, ifos="H1,H2,L1", FAR=1.0, verbo
 
   found = []
   missed = []
-  print >>sys.stderr, ""
+  print("", file=sys.stderr)
   for cnt, f in enumerate(injfnames):
-    print >>sys.stderr, "getting injections: " + str(FAR) + ":\t%.1f%%\r" % (100.0 * cnt / len(injfnames),),
+    print("getting injections: " + str(FAR) + ":\t%.1f%%\r" % (100.0 * cnt / len(injfnames),), end=' ', file=sys.stderr)
     working_filename = dbtables.get_connection_filename(f, tmp_path = None, verbose = verbose)
     connection = sqlite3.connect(working_filename)
     connection.create_function("injection_was_made", 2, injection_was_made)
@@ -112,7 +114,7 @@ WHERE
     dbtables.discard_connection_filename(f, working_filename, verbose = verbose)
     dbtables.DBTable_set_connection(None)
 
-  print >>sys.stderr, "\nFound = %d Missed = %d" % (len(found), len(missed))
+  print("\nFound = %d Missed = %d" % (len(found), len(missed)), file=sys.stderr)
   return found, missed
 
 
@@ -209,7 +211,7 @@ class LVstat(object):
       dbtables.DBTable_set_connection(connection)
       connection.create_function("lvstat", 3, self.lvstat)
       query = "UPDATE coinc_event SET likelihood = (SELECT lvstat(coinc_event.instruments, coinc_inspiral.ifos, coinc_inspiral.false_alarm_rate) FROM coinc_inspiral WHERE coinc_event.coinc_event_id == coinc_inspiral.coinc_event_id)"
-      print query
+      print(query)
 
       connection.cursor().execute(query)
       connection.commit()
@@ -249,7 +251,7 @@ for on_ifos in get_on_instruments(sys.argv[1]):
     key = (on_ifos[0], trigger_ifos[0])
     f, m = get_injections(sys.argv[2:], zero_lag_segments, trigger_ifos[0])
     lvs.calc_eff_factor(on_ifos[0], trigger_ifos[0], m, f)
-    print "Eff factor: ", lvs.eff_factor[key], " key: ", key
+    print("Eff factor: ", lvs.eff_factor[key], " key: ", key)
 
 # update the coincs with the effective likelihood
 lvs.update_coincs(sys.argv)

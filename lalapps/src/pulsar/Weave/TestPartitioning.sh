@@ -55,7 +55,7 @@ for setup in onefreq short long; do
     set -x
     ${builddir}/lalapps_Weave --output-file=WeaveOutNoPart.fits \
         --toplists=mean2F --toplist-limit=2321 --segment-info --setup-file=WeaveSetup.fits \
-        --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
+        --rand-seed=3456 --sft-timebase=1800 --sft-noise-sqrtSX=1,1 \
         --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
         ${weave_search_options}
     set +x
@@ -84,7 +84,7 @@ for setup in onefreq short long; do
     set -x
     ${builddir}/lalapps_Weave ${weave_part_options} --output-file=WeaveOutPart.fits \
         --toplists=mean2F --toplist-limit=2321 --segment-info --setup-file=WeaveSetup.fits \
-        --rand-seed=3456 --sft-timebase=1800 --sft-noise-psd=1,1 \
+        --rand-seed=3456 --sft-timebase=1800 --sft-noise-sqrtSX=1,1 \
         --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
         ${weave_search_options}
     set +x

@@ -78,34 +78,34 @@ parser.add_option(\
 (options,args)=parser.parse_args()
 masks=str(options.removeMasks).split(',');
 if (masks == ""):
-    print "You didn't specify a file extension mask to remove!"
+    print("You didn't specify a file extension mask to remove!")
     os.abort()
 else:
-    print "Processing the following mask(s)."
-    print masks
+    print("Processing the following mask(s).")
+    print(masks)
 
 action=str(options.action).lower().lstrip().rstrip()
 actionKeywords=['yes','no','archive']
 if not(actionKeywords.__contains__(action)):
-    print "Error with action specified! ",action," keyword not defined."
+    print("Error with action specified! ",action," keyword not defined.")
     os.abort()
 if action == 'archive':
-    print "Sorry the tar feature is not implemented yet!"
-    print "Rerun with yes/no options."
+    print("Sorry the tar feature is not implemented yet!")
+    print("Rerun with yes/no options.")
     os.abort()
 
 parentDir=os.path.abspath(str(options.parent))
 if (parentDir == '/'):
-    print "You requested cleaning starting and the file system root / ARE YOU SURE?"
-    print "This is unsafe. Sorry I'm aborting."
+    print("You requested cleaning starting and the file system root / ARE YOU SURE?")
+    print("This is unsafe. Sorry I'm aborting.")
     os.abort()
 
 ignorePathStr=str(options.ignore)
 if (ignorePathStr == ""):
-    print "You are choosing to process all subdirectories of ",parentDir
-    print "No files matching MASKS will be spared!"
+    print("You are choosing to process all subdirectories of ",parentDir)
+    print("No files matching MASKS will be spared!")
 else:
-    print "Ignoring paths containing the string :",ignorePathStr
+    print("Ignoring paths containing the string :",ignorePathStr)
 
 migrateTo=options.migrateto
 migrateFrom=options.migratefrom
@@ -126,7 +126,7 @@ for root,dir,files in os.walk(parentDir):
 #Keep only files which are not in the ignorePathStr
 files2remove=[]
 if (ignorePathStr != ""):
-    print "Checking for files to keep."
+    print("Checking for files to keep.")
     for entry in files2clean:
         if not(entry.__contains__(ignorePathStr)):
             files2remove.append(entry)
@@ -134,22 +134,22 @@ else:
    files2remove=files2clean
     
 # Report number of files 2 clean
-print "We found ",files2remove.__len__()," files in ",parentDir," and its subdirectories to clean."
-print "We spared ",files2clean.__len__() - files2remove.__len__()," files from cleaning."
+print("We found ",files2remove.__len__()," files in ",parentDir," and its subdirectories to clean.")
+print("We spared ",files2clean.__len__() - files2remove.__len__()," files from cleaning.")
 fileSizeSum=sum([os.path.getsize(entry) for entry in files2remove])
 fileSizeSpared=sum([os.path.getsize(entry) for entry in files2clean])-fileSizeSum
-print "Matching files to remove consume ",fileSizeSum," bytes of disk space."
-print "Clearing additional spared file(s) will restore ",fileSizeSpared," more bytes of disk space freed."
+print("Matching files to remove consume ",fileSizeSum," bytes of disk space.")
+print("Clearing additional spared file(s) will restore ",fileSizeSpared," more bytes of disk space freed.")
 
 #Remove the files we are supposed to remove!
 if (action == 'yes'):
-    print "Removing files listed below: "
+    print("Removing files listed below: ")
     for file in files2remove:
-        print file
+        print(file)
         os.remove(file)
-    print "Done."
+    print("Done.")
 else:
-    print "Leaving file system intact!"
+    print("Leaving file system intact!")
  
 #Migrate files not cleaned out of the directory structure
 if (migrateTo != None) and (migrateFrom != None):
@@ -165,6 +165,6 @@ if (migrateTo != None) and (migrateFrom != None):
         for file in allFilesSeen:
             #If file lives in migrateFrom path
             if file.__contains__(migrateFrom):
-                print "Moving file ",file," to ",migrateTo
+                print("Moving file ",file," to ",migrateTo)
                 shutil.move(file,migrateTo)
 

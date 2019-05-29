@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import sys
 import os
 import glob
@@ -39,22 +41,22 @@ def parse_command_line():
     options, others = parser.parse_args()
 
     if not (options.run_chisq or options.assemble_results):
-        raise ValueError, "Missing required argument, one of --run-chisq or --assemble-results"
+        raise ValueError("Missing required argument, one of --run-chisq or --assemble-results")
 
     if (options.run_chisq and options.assemble_results):
-        raise ValueError, "Please specify only one of --run-chisq or --assemble-results"
+        raise ValueError("Please specify only one of --run-chisq or --assemble-results")
 
     if not options.gps_start_time:
-        raise ValueError, "Missing required argument --gps-start-time"
+        raise ValueError("Missing required argument --gps-start-time")
 
     if not options.gps_end_time:
-        raise ValueError, "Missing required argument --gps-end-time"
+        raise ValueError("Missing required argument --gps-end-time")
 
     if not options.snr_threshold:
-        raise ValueError, "Missing required argument --snr-threshold"
+        raise ValueError("Missing required argument --snr-threshold")
 
     if not options.ifo:
-        raise ValueError, "Missing required argument --ifo"
+        raise ValueError("Missing required argument --ifo")
     
     return options
 
@@ -209,7 +211,7 @@ def make_chisq_dir(basedir, ifo, trigger_time):
             f = [l for l in open('%s/daily.dag' % dir) if l.find('UNCLUSTERED_00') > 0 and l.find(timearg) > 0]
 
             if f == []:
-                print "No line in dag to create triggers at time %d" % tme
+                print("No line in dag to create triggers at time %d" % tme)
                 sys.exit(0)
 
             jobid = f[0].split(' ')[1]
@@ -247,14 +249,14 @@ def make_chisq_dir(basedir, ifo, trigger_time):
 
             # Create a submit file.
             newsub = open('chisq.sub','w')
-            print >>newsub,"""Executable = /archive/home/cbc/opt/s6b/latest/bin/lalapps_populate_chisq
+            print("""Executable = /archive/home/cbc/opt/s6b/latest/bin/lalapps_populate_chisq
 Args       = %s
 getenv     = True
 Universe   = local
 output     = chisq.$(cluster).$(process).out
 error      = chisq.$(cluster).$(process).error
 Log        = chisq.$(cluster).$(process).log
-Queue""" % job
+Queue""" % job, file=newsub)
 
             newsub.close()
 
@@ -312,12 +314,12 @@ if __name__ == '__main__':
             make_chisq_dir(basedir, ifo, t_end_time)
 
     if options.assemble_results:
-        print '|| OL end time || OL end time ns || OL SNR || NL end time || NL end time ns || NL new SNR || Vetoed at cat ||',
+        print('|| OL end time || OL end time ns || OL SNR || NL end time || NL end time ns || NL new SNR || Vetoed at cat ||', end=' ')
 
         if options.baseurl:
-            print '  Unclustered || 100 millisec clustered || New SNR ||'
+            print('  Unclustered || 100 millisec clustered || New SNR ||')
         else:
-            print
+            print()
 
         cwd = os.getcwd()
 
@@ -332,7 +334,7 @@ if __name__ == '__main__':
             chisq_trig_file       = glob.glob('*CHISQ*')
 
             if chisq_trig_file == []:
-                print >>sys.stderr,"Job in directory %s did not succeed" % chisq_dir
+                print("Job in directory %s did not succeed" % chisq_dir, file=sys.stderr)
                 continue
 
             chisq_trig_file = chisq_trig_file[0]
@@ -357,15 +359,15 @@ if __name__ == '__main__':
                     vetoed = str(cat)
                     break
             
-            print '|| %d.%d || %.2f || %.2f || %.2f || %d.%d || %.2f || %s ||' % (t_end_time, t_end_time_ns, snr, original_chisq, original_new_snr, loudest_t, loudest_t_ns, loudest_new_snr, vetoed),
+            print('|| %d.%d || %.2f || %.2f || %.2f || %d.%d || %.2f || %s ||' % (t_end_time, t_end_time_ns, snr, original_chisq, original_new_snr, loudest_t, loudest_t_ns, loudest_new_snr, vetoed), end=' ')
 
             if options.baseurl:
                 u = options.baseurl
                 t = t_end_time
 
-                print ' [[%s/%d_unclustered.png|img]] || [[%s/%d_clustered.png|img]] || [[%s/%d_chisq.png|img]]  ||' % (u, t, u, t, u, t)
+                print(' [[%s/%d_unclustered.png|img]] || [[%s/%d_clustered.png|img]] || [[%s/%d_chisq.png|img]]  ||' % (u, t, u, t, u, t))
             else:
-                print
+                print()
 
 
 

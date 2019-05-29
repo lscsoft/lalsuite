@@ -62,6 +62,13 @@ extern "C" {
 
 // @{
 
+/// default maximum allowed F-stat mismatch from SFTs being too long,
+/// to be used in XLALFstatCheckSFTLengthMismatch()
+/// - this value allows a search using 1800-second SFTs for isolated CW signals with frequencies <~ 2054 Hz,
+///   while preventing a search using 1800-second SFTs for a Sco X-1-like binary CW signal
+///   (which would require <~ 200-second SFTs)
+#define DEFAULT_MAX_MISMATCH_FROM_SFT_LENGTH 0.05
+
 ///
 /// XLALComputeFstat() input data structure. Encapsulates all data, buffers, etc. used by the
 /// \f$\mathcal{F}\f$-statistic methods.
@@ -136,6 +143,7 @@ typedef struct tagFstatOptionalArgs {
   FstatInput *prevInput;		///< An \c FstatInput structure from a previous call to XLALCreateFstatInput(); may contain common workspace data than can be re-used to save memory.
   BOOLEAN collectTiming;		///< a flag to turn on/off the collection of F-stat-method-specific timing-data
   BOOLEAN resampFFTPowerOf2;		///< \a Resamp: round up FFT lengths to next power of 2; see #FstatMethodType.
+  REAL8 allowedMismatchFromSFTLength;      ///<  Optional override for XLALFstatCheckSFTLengthMismatch().
 } FstatOptionalArgs;
 
 ///
@@ -329,6 +337,10 @@ typedef struct tagFstatTimingModel
 } FstatTimingModel;
 
 // ---------- API function prototypes ----------
+REAL8 XLALFstatMaximumSFTLength ( const REAL8 maxFreq, const REAL8 binaryMaxAsini, const REAL8 binaryMinPeriod, const REAL8 mu_SFT
+);
+int XLALFstatCheckSFTLengthMismatch ( const REAL8 Tsft, const REAL8 maxFreq, const REAL8 binaryMaxAsini, const REAL8 binaryMinPeriod, const REAL8 allowedMismatch );
+
 int XLALFstatMethodIsAvailable ( FstatMethodType method );
 const CHAR *XLALFstatMethodName ( FstatMethodType method );
 const UserChoices *XLALFstatMethodChoices ( void );

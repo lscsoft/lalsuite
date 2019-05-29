@@ -572,7 +572,6 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
               LALInferenceGetMinMaxPrior(runState->priorArgs,"a_spin1",&a_min,&a_max);
               REAL8 V = (4./3.)*LAL_PI * (a_max*a_max*a_max);
               logPrior+=log(fabs((3./4.)*(a_max*a_max - a*a)))-log(fabs(V));
-            
      }
   }
   if(LALInferenceCheckVariable(params,"tilt_spin2"))
@@ -596,12 +595,11 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
      if(volumetric_spins)
      {
             /* Volumetric prior marginalised onto z component */
-              REAL8 a = LALInferenceGetREAL8Variable(params,"a_spin1");
+              REAL8 a = LALInferenceGetREAL8Variable(params,"a_spin2");
               REAL8 a_max,a_min;
-              LALInferenceGetMinMaxPrior(runState->priorArgs,"a_spin1",&a_min,&a_max);
+              LALInferenceGetMinMaxPrior(runState->priorArgs,"a_spin2",&a_min,&a_max);
               REAL8 V = (4./3.)*LAL_PI * (a_max*a_max*a_max);
               logPrior+=log(fabs((3./4.)*(a_max*a_max - a*a)))-log(fabs(V));
-            
      }
   }
   
@@ -1067,61 +1065,88 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
 
 void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
                                        LALInferenceVariables *priorArgs){
-  REAL8 val;
+  REAL8 val, offset, delta, min, max;
+  UINT8 n;
+
   if (parameter == NULL || priorArgs == NULL)
     XLAL_ERROR_VOID(XLAL_EFAULT, "Null arguments received.");
 
   /* Apply cyclic and reflective boundaries to parameter to bring it back
      within the prior */
   LALInferenceVariableItem *paraHead=NULL;
-  REAL8 min,max;
-  for (paraHead=parameter->head;paraHead;paraHead=paraHead->next) {
+
+  for (paraHead=parameter->head; paraHead; paraHead=paraHead->next) {
     if( paraHead->vary==LALINFERENCE_PARAM_FIXED ||
         paraHead->vary==LALINFERENCE_PARAM_OUTPUT ||
         !LALInferenceCheckMinMaxPrior(priorArgs, paraHead->name) ) continue;
 
     LALInferenceGetMinMaxPrior(priorArgs,paraHead->name, &min, &max);
 
-  /* Check that the minimum and maximum make sense. */
-  if (min >= max) {
-    XLAL_ERROR_VOID(XLAL_EINVAL, "Minimum %f for variable '%s' is not less than maximum %f.", min, paraHead->name, max);
-  }
+    /* Check that the minimum and maximum make sense. */
+    if (min >= max) {
+      XLAL_ERROR_VOID(XLAL_EINVAL, "Minimum %f for variable '%s' is not less than maximum %f.", min, paraHead->name, max);
+    }
+    delta = max - min;
 
     val = *(REAL8 *)paraHead->value;
-    if (val == INFINITY)
-        return;
+
+    if (val == INFINITY) 
+      return;
+
+    // Nothing to do if between bounds
+    if ((val >= min) && (val <= max))
+      continue;
 
     if(paraHead->vary==LALINFERENCE_PARAM_CIRCULAR) {
       /* For cyclic boundaries, mod out by range. */
-
       if (val > max) {
-        REAL8 offset = val - min;
-        REAL8 delta = max-min;
-
-        *(REAL8 *)paraHead->value = min + fmod(offset, delta);
+	offset = val - min;
+	*(REAL8 *)paraHead->value = min + fmod(offset, delta);
       } else {
-        REAL8 offset = max - val;
-        REAL8 delta = max - min;
-
-        *(REAL8 *)paraHead->value = max - fmod(offset, delta);
+	offset = max - val;
+	*(REAL8 *)paraHead->value = max - fmod(offset, delta);
       }
     } else if (paraHead->vary==LALINFERENCE_PARAM_LINEAR && paraHead->type==LALINFERENCE_REAL8_t) {
       /* For linear boundaries, reflect about endpoints of range until
-         withoun range.
-         SKIP NOISE PARAMETERS (ONLY CHECK REAL8) */
-      while(1) {
-        /* Loop until broken. */
-        val = *(REAL8 *)paraHead->value;
-        if (val > max) {
-          /* val <-- max - (val - max) */
-          *(REAL8 *)paraHead->value = 2.0*max - val;
-        } else if (val < min) {
-          /* val <-- min + (min - val) */
-          *(REAL8 *)paraHead->value = 2.0*min - val;
-        } else {
-          /* In range, so break. */
-          break;
-        }
+	 within range. SKIP NOISE PARAMETERS (ONLY CHECK REAL8) */
+      /*
+	This reflection is accomplished by also modding out the 'excess' (that is,
+	the difference between the value and the upper or lower bound, as appropriate)
+	as done above for cyclic parameters.  However, unlike in the cyclic case, to actually
+	agree with what the reflection would give, we must also note whether the range divides
+	into the excess an even or an odd number of times, and therefore whether we add the
+	remainder to the lower bound or subtract it from the upper bound. Which we do also
+	depends on whether the value was below the minimum or above the maximum.
+       */
+      if (val > max) {
+	offset = val - max;
+	// How many times do we fold?
+	n = (UINT8) (offset/delta);
+	// Now make offset the remainder
+	offset = fmod(offset, delta);
+	if (n % 2){
+	  // If we fold an odd number of times,
+	  // then add offset to min
+	  *(REAL8 *)paraHead->value = min + offset;
+	} else {
+	  // Otherwise, subtract it from max
+	  *(REAL8 *)paraHead->value = max - offset;
+	}
+      } else {
+	// We only get here if val <  min
+	offset = min - val;
+	// How many times do we fold?
+	n = (UINT8) (offset/delta);
+	// Now make offset the remainder
+	offset = fmod(offset, delta);
+	if (n % 2){
+	  // If we fold an odd number of times,
+	  // then subtract offset from max
+	  *(REAL8 *)paraHead->value = max - offset;
+	} else {
+	  // Otherwise, add it to min
+	  *(REAL8 *)paraHead->value = min + offset;
+	}
       }
     }
   }

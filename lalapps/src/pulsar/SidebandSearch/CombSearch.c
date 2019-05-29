@@ -344,7 +344,7 @@ int ReadInput(UserInput_t *uvar, ParamStruct *userParams, VectorStruct *Fstat, E
       CHAR* tempstring = XLALCalloc(len+1,sizeof(CHAR));
       totlen += len;
       Fstat->comment = XLALRealloc(Fstat->comment,(totlen+1)*sizeof(CHAR));
-      strncpy (tempstring, line, len);  
+      strcpy (tempstring, line);
       strcat(Fstat->comment, tempstring);
       XLALFree(tempstring);
     }

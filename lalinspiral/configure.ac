@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInspiral],[1.8.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALInspiral],[1.9.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALInspiralConfig.h])
 AC_CONFIG_SRCDIR([src/LALInspiral.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -37,10 +37,10 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.19.0"
+MIN_LAL_VERSION="6.20.0"
 MIN_LALFRAME_VERSION="1.4.0"
-MIN_LALMETAIO_VERSION="1.4.0"
-MIN_LALSIMULATION_VERSION="1.8.0"
+MIN_LALMETAIO_VERSION="1.5.0"
+MIN_LALSIMULATION_VERSION="1.9.0"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
@@ -67,16 +67,13 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[12])
+AC_SUBST([LIBCURRENT],[14])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
-
-# enable CUDA support
-LALSUITE_WITH_CUDA
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
@@ -150,7 +147,7 @@ AC_CHECK_HEADERS([FrameL.h],,[AC_MSG_ERROR([could not find the FrameL.h header])
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
-LALSUITE_CHECK_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALLIGOLwHasTable],[lal/LIGOLwXMLRead.h])
 LALSUITE_CHECK_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_LIB([LALFrame],[${MIN_LALFRAME_VERSION}],[LALFrOpen],[lal/LALFrameL.h])
 
@@ -159,11 +156,6 @@ LALSUITE_USE_SWIG
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
-
-# define if CUDA is enabled
-if test "${cuda}" = "true"; then
-  AC_DEFINE([LALINSPIRAL_CUDA_ENABLED],[1],[Define if using cuda library])
-fi
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
@@ -190,7 +182,6 @@ AC_MSG_NOTICE([
 LALInspiral has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
-* CUDA support is $CUDA_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL

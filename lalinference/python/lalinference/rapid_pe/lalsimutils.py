@@ -1282,8 +1282,12 @@ def frame_data_to_hoft(fname, channel, start=None, stop=None, window_shape=0.,
 
     duration = stop - start if None not in (start, stop) else None
     
-    tmp = read_timeseries(fname, channel, start, stop - start, verbose=verbose)
-    print("  ++ Frame data sampling rate ", 1./tmp.deltaT, " and epoch ", string_gps_pretty_print(tmp.epoch))
+
+    with open(fname) as fobj:
+        cache = Cache.fromfile(fobj)
+
+    cache = cache.sieve(ifos=channel[:1])
+    tmp = read_timeseries(cache, channel, start, stop - start, verbose=verbose)
 
     # Window the data - N.B. default is identity (no windowing)
     hoft_window = lal.CreateTukeyREAL8Window(tmp.data.length, window_shape)

@@ -12,6 +12,6 @@ LALINSPIRAL_PYTHON_PATH=@pyexecdir@
 Name: LALInspiral
 Description: LAL Inspiral Library Support
 Version: @VERSION@
-Requires: gsl, lal >= @LAL_VERSION@, libmetaio, lalmetaio >= @LALMETAIO_VERSION@, lalsimulation >= @LALSIMULATION_VERSION@
+Requires.private: gsl, lal >= @LAL_VERSION@, libmetaio, lalmetaio >= @LALMETAIO_VERSION@, lalsimulation >= @LALSIMULATION_VERSION@
 Libs: -L${libdir} -llalinspiral
 Cflags: -I${includedir}

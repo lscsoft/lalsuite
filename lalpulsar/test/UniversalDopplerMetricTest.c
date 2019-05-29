@@ -163,7 +163,8 @@ test_XLALComputeDopplerMetrics ( void )
 
   // prepare metric parameters for modern XLALComputeDopplerFstatMetric() and mid-old XLALOldDopplerFstatMetric()
   const DopplerCoordinateSystem coordSys = { 4, { DOPPLERCOORD_FREQ, DOPPLERCOORD_ALPHA, DOPPLERCOORD_DELTA, DOPPLERCOORD_F1DOT } };
-  const PulsarAmplitudeParams Amp = { 0.03, -0.3, 0.5, 0.0 };	// h0, cosi, psi, phi0
+  //const PulsarAmplitudeParams Amp = { 0.03, -0.3, 0.5, 0.0 };	// h0, cosi, psi, phi0
+  const PulsarAmplitudeParams Amp = { 0.5, 0.0, 0.01635, -0.009 };	// psi, phi0, aPlus, aCross
   const PulsarDopplerParams dop = {
     .refTime  = startTimeGPS,
     .Alpha    = Alpha,

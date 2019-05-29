@@ -480,8 +480,8 @@ int MAIN( int argc, char *argv[]) {
   // XLALReadSegmentsFromFile(): continue to support deprecated 4-column format (startGPS endGPS duration NumSFTs, duration is ignored)
   XLALReadSegmentsFromFile_support_4column_format = 1;
 
-  uvar_ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar_ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar_ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar_ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   uvar_skyRegion = LALCalloc( strlen(SKYREGION) + 1, sizeof(CHAR) );
   strcpy(uvar_skyRegion, SKYREGION);
@@ -569,7 +569,7 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_loudestTwoFPerSeg,   "loudestTwoFPerSeg",   BOOLEAN,      0, DEVELOPER, "Output loudest per-segment Fstat values into file '_loudestTwoFPerSeg'" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* inject signals into the data being analyzed */
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar ( &uvar_injectionSources, "injectionSources",      STRINGVector, 0, DEVELOPER,     "CSV list of files containing signal parameters for injection [see mfdv5]") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar ( &uvar_injectionSources, "injectionSources",      STRINGVector, 0, DEVELOPER, "%s", InjectionSourcesHelpString) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;

@@ -8,6 +8,7 @@ variables:
   NIGHTLY: $CI_REGISTRY_IMAGE:nightly
   TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
   LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
+  CONDA_DIR: $CI_PROJECT_DIR/opt/conda
 
 stages:
   - level0
@@ -105,12 +106,6 @@ level1:rpm:lalsimulation:
   dependencies:
     - level0:rpm:lal
 
-level1:rpm:lalxml:
-  <<: *levelN-rpm-package
-  stage: level1
-  dependencies:
-    - level0:rpm:lal
-
 level2:rpm:lalburst:
   <<: *levelN-rpm-package
   stage: level2
@@ -133,22 +128,6 @@ level2:rpm:lalpulsar:
   stage: level2
   dependencies:
     - level0:rpm:lal
-
-level2:rpm:lalstochastic:
-  <<: *levelN-rpm-package
-  stage: level2
-  dependencies:
-   - level0:rpm:lal
-   - level1:rpm:lalmetaio
-
-level3:rpm:laldetchar:
-  <<: *levelN-rpm-package
-  stage: level3
-  dependencies:
-    - level0:rpm:lal
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-    - level2:rpm:lalburst
 
 level3:rpm:lalinference:
   <<: *levelN-rpm-package
@@ -189,7 +168,7 @@ docker:nightly:el7:
     - rm -rf rpmbuild*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:el7 --file .Dockerfile-el7.gitlab-ci .
+    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:el7 --file .gitlab-ci-el7.Dockerfile .
     - docker push $CI_REGISTRY_IMAGE/nightly:el7
   dependencies:
     - level0:rpm:lal
@@ -214,7 +193,7 @@ docker:tags:el7:
     - rm -rf rpmbuild*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7 --file .Dockerfile-el7.gitlab-ci .
+    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7 --file .gitlab-ci-el7.Dockerfile .
     - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7
   dependencies:
     - level0:rpm:lal
@@ -294,12 +273,6 @@ level1:deb:lalsimulation:
   dependencies:
     - level0:deb:lal
 
-level1:deb:lalxml:
-  <<: *levelN-deb-package
-  stage: level1
-  dependencies:
-    - level0:deb:lal
-
 level2:deb:lalburst:
   <<: *levelN-deb-package
   stage: level2
@@ -322,22 +295,6 @@ level2:deb:lalpulsar:
   stage: level2
   dependencies:
     - level0:deb:lal
-
-level2:deb:lalstochastic:
-  <<: *levelN-deb-package
-  stage: level2
-  dependencies:
-   - level0:deb:lal
-   - level1:deb:lalmetaio
-
-level3:deb:laldetchar:
-  <<: *levelN-deb-package
-  stage: level3
-  dependencies:
-    - level0:deb:lal
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-    - level2:deb:lalburst
 
 level3:deb:lalinference:
   <<: *levelN-deb-package
@@ -378,7 +335,7 @@ docker:nightly:stretch:
     - rm *.changes *.dsc *.orig.*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:stretch --file .Dockerfile-stretch.gitlab-ci .
+    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:stretch --file .gitlab-ci-stretch.Dockerfile .
     - docker push $CI_REGISTRY_IMAGE/nightly:stretch
   dependencies:
     - level0:deb:lal
@@ -403,7 +360,7 @@ docker:tags:stretch:
     - rm *.changes *.dsc *.orig.*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch --file .Dockerfile-stretch.gitlab-ci .
+    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch --file .gitlab-ci-stretch.Dockerfile .
     - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch
   dependencies:
     - level0:deb:lal
@@ -422,19 +379,156 @@ docker:tags:stretch:
 # nightly builds
 #
 
-nightly:top-level:jessie:
-  image: ligo/lalsuite-dev:jessie
+# compilers
+
+.clang-build: &clang-build
   stage: nightly
+  dependencies: []
   script:
     - ./00boot
-    - ./configure --enable-swig --enable-doxygen
+    - CC=${CLANG} CXX=${CLANGXX} ./configure --enable-swig --enable-doxygen
     - make -j4 distcheck
-  dependencies: []
   only:
     - schedules
     - web
 
-nightly:top-level:el7-cr:
+nightly:clang:7:
+  <<: *clang-build
+  image: skymoo/ligo-lalsuite-clang:7
+  variables:
+    CLANG: clang-7
+    CLANGXX: clang++-7
+
+nightly:clang:8:
+  <<: *clang-build
+  image: skymoo/ligo-lalsuite-clang:8
+  variables:
+    CLANG: clang-8
+    CLANGXX: clang++-8
+
+nightly:clang:9:
+  <<: *clang-build
+  image: skymoo/ligo-lalsuite-clang:9
+  variables:
+    CLANG: clang-9
+    CLANGXX: clang++-9
+
+.gcc-build: &gcc-build
+  stage: nightly
+  dependencies: []
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  only:
+    - schedules
+    - web
+
+nightly:gcc:7:
+  <<: *gcc-build
+  image: skymoo/ligo-lalsuite-gcc:7
+
+nightly:gcc:8:
+  <<: *gcc-build
+  image: skymoo/ligo-lalsuite-gcc:8
+
+nightly:gcc:9:
+  <<: *gcc-build
+  image: skymoo/ligo-lalsuite-gcc:9
+  allow_failure: true
+
+# conda
+
+# FIXME: currently using --disable-doxygen as documentation currently
+# fails to build under Conda
+
+# FIXME: currently using --disable-gcc-flags as there are various
+# compilation errors when using the strict GCC flags and the Conda
+# compiler
+
+# FIXME: there currently seems to be an issue with performing FFTs using
+# the MKL libraries, disable the use of MKL until this is understood
+# https://git.ligo.org/lscsoft/lalsuite/issues/161
+
+.conda-build: &conda-build
+  image: continuumio/miniconda3
+  variables:
+    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda-pkgs"
+  stage: nightly
+  dependencies: []
+  before_script:
+    # determine conda environment
+    - PYVERSION=$(echo ${CI_JOB_NAME} | sed 's/conda:python//')
+    - CONDA_ENV_FILE="conda/environment-lal-development-py${PYVERSION}.yml"
+    # configure conda
+    - source /opt/conda/etc/profile.d/conda.sh
+    - conda config --set always_yes yes
+    - conda config --add channels conda-forge
+    - conda update conda
+    - conda info --all
+    # build lalsuite environment
+    - conda env create -f ${CONDA_ENV_FILE}
+    - conda activate lal-development
+    # hack the build to get LDFLAGS set properly
+    - export PREFIX="${CONDA_PREFIX}"
+    - export CONDA_BUILD="1"
+    - set +o pipefail  # one of the deactivate scripts pipefails
+    - conda activate lal-development
+    - set -o pipefail
+    - conda list
+  script:
+    # build lalsuite
+    - ./00boot
+    - ./configure --disable-doxygen --disable-gcc-flags
+    - make -j4 distcheck
+  only:
+    - schedules
+    - web
+  cache:
+    paths:
+      - conda-pkgs
+  artifacts:
+    paths:
+      - "config.log"
+      - "*/config.log"
+      - "*/test/test-suite.log"
+      - "*/*/*/*/test/test-suite.log"
+    when: on_failure
+  allow_failure: true
+
+conda:python27:
+  <<: *conda-build
+  image: continuumio/miniconda2
+
+conda:python36:
+  <<: *conda-build
+  image: continuumio/miniconda3
+
+conda:python37:
+  <<: *conda-build
+  image: continuumio/miniconda3
+
+# debian
+
+# FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
+# available
+# FIXME: allow failure due to #124
+nightly:debian:buster:
+  image: skymoo/ligo-lalsuite-dev:buster
+  stage: nightly
+  dependencies: []
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+# el7
+
+nightly:rhel:el7-cr:
   image: ligo/lalsuite-dev:el7-cr
   stage: nightly
   script:
@@ -446,104 +540,7 @@ nightly:top-level:el7-cr:
     - schedules
     - web
 
-nightly:top-level:sl7:
-  image: ligo/lalsuite-dev:sl7
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:top-level:trusty:
-  image: skymoo/ligo-lalsuite-dev:trusty
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --disable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:top-level:xenial:
-  image: skymoo/ligo-lalsuite-dev:xenial
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --disable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:top-level:bionic:
-  image: skymoo/ligo-lalsuite-dev:bionic
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:top-level:cosmic:
-  image: skymoo/ligo-lalsuite-dev:cosmic
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-# FIXME: It seems that Octave on buster currently has a few bugs which
-# cause the Octave bindings to fail, disable building the Octave SWIG
-# bindings for the time being.
-nightly:top-level:buster:
-  image: skymoo/ligo-lalsuite-dev:buster
-  stage: nightly
-  dependencies: []
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  only:
-    - schedules
-    - web
-
-nightly:top-level:clang:
-  image: skymoo/ligo-lalsuite-clang:jessie
-  stage: nightly
-  script:
-    - ./00boot
-    - CC=clang CXX=clang++ ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-
-nightly:openmp:stretch:
-  image: ligo/lalsuite-dev:stretch
-  stage: nightly
-  dependencies: []
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen --enable-openmp
-    - make -j4 distcheck
-  only:
-    - schedules
-    - web
+# macOS
 
 nightly:macos:highsierra:
   tags:
@@ -561,9 +558,9 @@ nightly:macos:highsierra:
     - schedules
     - web
 
-nightly:macos:elcapitan:
+nightly:macos:sierra:
   tags:
-    - macos_elcapitan
+    - macos_sierra
   stage: nightly
   script:
     - ./00boot
@@ -576,6 +573,48 @@ nightly:macos:elcapitan:
   only:
     - schedules
     - web
+
+# ubuntu
+
+# FIXME: allow failure due to #123
+nightly:ubuntu:xenial:
+  image: skymoo/ligo-lalsuite-dev:xenial
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --disable-swig --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
+
+nightly:ubuntu:bionic:
+  image: skymoo/ligo-lalsuite-dev:bionic
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+
+# FIXME: allow failure due to #124
+nightly:ubuntu:cosmic:
+  image: skymoo/ligo-lalsuite-dev:cosmic
+  stage: nightly
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen
+    - make -j4 distcheck
+  dependencies: []
+  only:
+    - schedules
+    - web
+  allow_failure: true
 
 #
 # python wheels
@@ -599,6 +638,7 @@ nightly:macos:elcapitan:
     # Test
     - ${PYPREFIX}/bin/virtualenv test
     - source test/bin/activate
+    - pip install cryptography==2.5  # FIXME: cryptography 2.6 was released recently but doesn't have all necessary wheels uploaded to PyPI yet
     - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []
@@ -613,7 +653,7 @@ nightly:macos:elcapitan:
 # Build receipe for standalone wheels on macOS
 .nightly:wheel:macos: &nightly-wheel-macos
   tags:
-    - macos_elcapitan
+    - macos_sierra
   stage: wheels
   script:
     - PYVERS=$(echo ${CI_JOB_NAME} | sed 's/.*:cp\(.\)\(.\).*/\1.\2/')
@@ -630,6 +670,7 @@ nightly:macos:elcapitan:
     # Test
     - virtualenv-${PYVERS} test
     - source test/bin/activate
+    - pip install cryptography==2.5  # FIXME: cryptography 2.6 was released recently but doesn't have all necessary wheels uploaded to PyPI yet
     - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []

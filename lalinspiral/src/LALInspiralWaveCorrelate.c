@@ -1,4 +1,4 @@
-	/*
+/*
 *  Copyright (C) 2007 David Churches, B.S. Sathyaprakash
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -60,6 +60,7 @@
 
 #include <lal/LALNoiseModelsInspiral.h>
 #include <lal/RealFFT.h>
+#include <lal/LALNoiseModels.h>
 
 void
 LALInspiralWaveCorrelate

@@ -27,6 +27,7 @@
 
 
 #include <math.h>
+#include <gsl/gsl_sf_expint.h>
 #include <lal/LALSimulation.h>
 #include <lal/LALDetectors.h>
 #include <lal/DetResponse.h>
@@ -161,6 +162,42 @@ REAL8TimeSeries * XLALSimQuasiPeriodicInjectionREAL8TimeSeries( REAL8TimeSeries 
 #endif
 
 
+struct highfreq_kernel_data {
+	double welch_factor;
+	double T; /*armlen/(c*deltaT)*/
+	double armcos;
+};
+
+
+/**
+ * This kernel function incorporates beyond-long-wavelength effects.
+ * The derivation of the formula is summarized in
+ * Soichiro Morisaki, "Kernel function for injection of signals with short
+ * wavelength", LIGO-T1800394.
+ */
+static void highfreq_kernel(double *cached_kernel, int kernel_length, double residual, void *data)
+{
+	struct highfreq_kernel_data *kernel_data = data;
+	double welch_factor = kernel_data->welch_factor;
+	double T = kernel_data->T;
+	double armcos = kernel_data->armcos;
+	double *stop = cached_kernel + kernel_length;
+	int i;
+
+	for(i = -(kernel_length - 1) / 2; cached_kernel < stop; i++) {
+		double x = i + residual;
+		double y = welch_factor * x;
+		if(fabs(y) < 1.) {
+			double Si1 = gsl_sf_Si(LAL_PI * (x + T * armcos));
+			double Si2 = gsl_sf_Si(LAL_PI * (x + T));
+			double Si3 = gsl_sf_Si(LAL_PI * (x - T));
+			*cached_kernel++ = ((Si2 - Si1) / (T * (1. - armcos)) + (Si1 - Si3) / (T * (1. + armcos))) * (1. - y * y) / LAL_TWOPI;
+		} else
+			*cached_kernel++ = 0.;
+	}
+};
+
+
 /**
  * @brief Transforms the waveform polarizations into a detector strain
  * @details
@@ -223,14 +260,23 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	const LALDetector *detector
 )
 {
-	/* samples */
-	const int kernel_length = 19;
+	/* mean arm length in samples */
+	const double arm_length_samples = (detector->frDetector.xArmMidpoint + detector->frDetector.yArmMidpoint) / (LAL_C_SI * hplus->deltaT);
+	/* kernel length in samples.  increase by 28 times the arm length
+	 * to accomodate the additional signal delay. */
+	const int kernel_length = 67 + 48 * lround(2.0 * arm_length_samples);
 	/* 0.25 s or 1 sample whichever is larger */
-	const unsigned det_resp_interval = round(0.25 / hplus->deltaT) < 1 ? 1 : round(.25 / hplus->deltaT);
-	LALREAL8TimeSeriesInterp *hplusinterp = NULL;
-	LALREAL8TimeSeriesInterp *hcrossinterp = NULL;
-	double fplus = XLAL_REAL8_FAIL_NAN;
-	double fcross = XLAL_REAL8_FAIL_NAN;
+	const unsigned det_resp_interval = round(0.25 / hplus->deltaT) < 1 ? 1 : round(0.25 / hplus->deltaT);
+	REAL8TimeSeries *xsignal = NULL;
+	REAL8TimeSeries *ysignal = NULL;
+	LALREAL8TimeSeriesInterp *xinterp = NULL;
+	LALREAL8TimeSeriesInterp *yinterp = NULL;
+	struct highfreq_kernel_data xdata;
+	struct highfreq_kernel_data ydata;
+	double fxplus = XLAL_REAL8_FAIL_NAN;
+	double fxcross = XLAL_REAL8_FAIL_NAN;
+	double fyplus = XLAL_REAL8_FAIL_NAN;
+	double fycross = XLAL_REAL8_FAIL_NAN;
 	double geometric_delay = XLAL_REAL8_FAIL_NAN;
 	LIGOTimeGPS t;	/* a time */
 	double dt;	/* an offset */
@@ -244,7 +290,7 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	LAL_CHECK_VALID_SERIES(hcross, NULL);
 	LAL_CHECK_CONSISTENT_TIME_SERIES(hplus, hcross, NULL);
 	/* test that the input's length can be treated as a signed valued
-	 * without overflow, and that adding the kernel length plus the an
+	 * without overflow, and that adding the kernel length plus an
 	 * Earth diameter's worth of samples won't overflow */
 	if((int) hplus->data->length < 0 || (int) (hplus->data->length + kernel_length + 2.0 * LAL_REARTH_SI / LAL_C_SI / hplus->deltaT) < 0) {
 		XLALPrintError("%s(): error: input series too long\n", __func__);
@@ -278,8 +324,9 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	}
 	/* change in geometric delay from start to end */
 	dt = XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &hplus->epoch) - XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &t);
-	/* allocate */
-	h = XLALCreateREAL8TimeSeries(name, &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, (int) hplus->data->length + kernel_length - 1 + ceil(dt / hplus->deltaT));
+	/* allocate, lengthen sequence to incorporate time delay caused by
+	 * beyond-long-wavelength effect */
+	h = XLALCreateREAL8TimeSeries(name, &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, (int) hplus->data->length + kernel_length - 1 + ceil(dt / hplus->deltaT) + lround(4.0 * arm_length_samples));
 	XLALFree(name);
 	if(!h)
 		goto error;
@@ -310,12 +357,45 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	dt = XLALGPSModf(&dt, &h->epoch);
 	XLALGPSAdd(&h->epoch, round(dt / h->deltaT) * h->deltaT - dt);
 
-	/* project + and x time series onto detector */
+	/* Compute signals at the times of samples in hplus in advance.
+	 * It reduces the computational cost for interpolation */
 
-	hplusinterp = XLALREAL8TimeSeriesInterpCreate(hplus, kernel_length, NULL, NULL);
-	hcrossinterp = XLALREAL8TimeSeriesInterpCreate(hcross, kernel_length, NULL, NULL);
-	if(!hplusinterp || !hcrossinterp)
+	xsignal = XLALCreateREAL8TimeSeries("xsignal", &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, (int) hplus->data->length);
+	ysignal = XLALCreateREAL8TimeSeries("ysignal", &hplus->epoch, hplus->f0, hplus->deltaT, &hplus->sampleUnits, (int) hplus->data->length);
+	for(i = 0; i < hplus->data->length; i++) {
+		t = hplus->epoch;
+		if(!XLALGPSAdd(&t, i * hplus->deltaT))
+			goto error;
+		/* Compute detector's response. Here the geometric delay
+		 * from geocenter is neglected since it is small compared
+		 * to the rotational period of the Earth */
+		if(!(i % det_resp_interval)) {
+			double armlen = XLAL_REAL8_FAIL_NAN;
+			double xcos = XLAL_REAL8_FAIL_NAN;
+			double ycos = XLAL_REAL8_FAIL_NAN;
+			XLALComputeDetAMResponseParts(&armlen, &xcos, &ycos, &fxplus, &fyplus, &fxcross, &fycross, detector, right_ascension, declination, psi, XLALGreenwichMeanSiderealTime(&t));
+		}
+		xsignal->data->data[i] = fxplus * hplus->data->data[i] + fxcross * hcross->data->data[i];
+		ysignal->data->data[i] = fyplus * hplus->data->data[i] + fycross * hcross->data->data[i];
+		if(XLAL_IS_REAL8_FAIL_NAN(xsignal->data->data[i]) || XLAL_IS_REAL8_FAIL_NAN(ysignal->data->data[i]))
+			goto error;
+	}
+
+	/* initialize interpolators. */
+
+	/* use filtering interpolators.  see TimeSeriesInterp.c for
+	 * meaning of welch_factor */
+	xdata.welch_factor = ydata.welch_factor = 1.0 / ((kernel_length - 1.) / 2. + 1.);
+	xinterp = XLALREAL8TimeSeriesInterpCreate(xsignal, kernel_length, highfreq_kernel, &xdata);
+	yinterp = XLALREAL8TimeSeriesInterpCreate(ysignal, kernel_length, highfreq_kernel, &ydata);
+	if(!xinterp || !yinterp)
 		goto error;
+
+	/* compute output sample by sample */
+	/* FIXME: Now xdata and ydata are not renewed until geometric delay
+	 * changes significantly. This can cause systematic errors. For
+	 * example, if the detector is on the North pole, xdata and ydata
+	 * are never renewed although armcos can be changing. */
 
 	for(i = 0; i < h->data->length; i++) {
 		/* time of sample in detector */
@@ -323,13 +403,19 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 		if(!XLALGPSAdd(&t, i * h->deltaT))
 			goto error;
 
-		/* detector's response and geometric delay from geocentre
-		 * at that time */
+		/* geometric delay from geocentre and highfreq_kernel_data */
 		if(!(i % det_resp_interval)) {
-			XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])detector->response, right_ascension, declination, psi, XLALGreenwichMeanSiderealTime(&t));
 			geometric_delay = -XLALTimeDelayFromEarthCenter(detector->location, right_ascension, declination, &t);
+			/* Compute highfreq_kernel_data */
+			double armlen = XLAL_REAL8_FAIL_NAN;
+			XLALComputeDetAMResponseParts(&armlen, &xdata.armcos, &ydata.armcos, &fxplus, &fyplus, &fxcross, &fycross, detector, right_ascension, declination, psi, XLALGreenwichMeanSiderealTime(&t));
+			armlen /= LAL_C_SI * h->deltaT;
+			xdata.T = armlen;
+			ydata.T = armlen;
 		}
-		if(XLAL_IS_REAL8_FAIL_NAN(fplus) || XLAL_IS_REAL8_FAIL_NAN(fcross) || XLAL_IS_REAL8_FAIL_NAN(geometric_delay))
+		if(XLAL_IS_REAL8_FAIL_NAN(geometric_delay))
+			goto error;
+		if(XLAL_IS_REAL8_FAIL_NAN(xdata.T) || XLAL_IS_REAL8_FAIL_NAN(ydata.T) || XLAL_IS_REAL8_FAIL_NAN(xdata.armcos) || XLAL_IS_REAL8_FAIL_NAN(ydata.armcos))
 			goto error;
 
 		/* time of sample at geocentre */
@@ -337,20 +423,24 @@ REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 			goto error;
 
 		/* evaluate linear combination of interpolators */
-		h->data->data[i] = fplus * XLALREAL8TimeSeriesInterpEval(hplusinterp, &t, 0) + fcross * XLALREAL8TimeSeriesInterpEval(hcrossinterp, &t, 0);
+		h->data->data[i] = XLALREAL8TimeSeriesInterpEval(xinterp, &t, 0) + XLALREAL8TimeSeriesInterpEval(yinterp, &t, 0);
+
 		if(XLAL_IS_REAL8_FAIL_NAN(h->data->data[i]))
 			goto error;
 	}
-	XLALREAL8TimeSeriesInterpDestroy(hplusinterp);
-	XLALREAL8TimeSeriesInterpDestroy(hcrossinterp);
 
 	/* done */
-
+	XLALREAL8TimeSeriesInterpDestroy(xinterp);
+	XLALREAL8TimeSeriesInterpDestroy(yinterp);
+	XLALDestroyREAL8TimeSeries(xsignal);
+	XLALDestroyREAL8TimeSeries(ysignal);
 	return h;
 
 error:
-	XLALREAL8TimeSeriesInterpDestroy(hplusinterp);
-	XLALREAL8TimeSeriesInterpDestroy(hcrossinterp);
+	XLALREAL8TimeSeriesInterpDestroy(xinterp);
+	XLALREAL8TimeSeriesInterpDestroy(yinterp);
+	XLALDestroyREAL8TimeSeries(xsignal);
+	XLALDestroyREAL8TimeSeries(ysignal);
 	XLALDestroyREAL8TimeSeries(h);
 	XLAL_ERROR_NULL(XLAL_EFUNC);
 }
@@ -957,7 +1047,7 @@ static int XLALSimComputeStrainSegmentREAL8TimeSeries(
 
 	for (k = 0; k < work1->data->length; ++k) {
 		double f = work1->f0 + k * work1->deltaF;
-		double beta = LAL_PI * f * armlen / LAL_C_SI;
+		double beta = f * armlen / LAL_C_SI;
 		COMPLEX16 Tx, Ty; /* x- and y-arm transfer functions */
 		COMPLEX16 gplus, gcross;
 		COMPLEX16 fac;
@@ -1101,7 +1191,7 @@ static int XLALSimComputeStrainSegmentREAL4TimeSeries(
 
 	for (k = 0; k < work1->data->length; ++k) {
 		double f = work1->f0 + k * work1->deltaF;
-		double beta = LAL_PI * f * armlen / LAL_C_SI;
+		double beta = f * armlen / LAL_C_SI;
 		COMPLEX16 Tx, Ty; /* x- and y-arm transfer functions */
 		COMPLEX16 gplus, gcross;
 		COMPLEX16 fac;

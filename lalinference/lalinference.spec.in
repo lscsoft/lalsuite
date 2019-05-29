@@ -15,9 +15,10 @@ Summary: LSC Algorithm Inference Library
 License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
-URL: https://wiki.ligo.org/DASWG/LALSuite
+URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRequires: python2-rpm-macros
+BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: chealpix-devel >= 3.30.0
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
@@ -33,6 +34,8 @@ BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: scipy >= 0.8
 BuildRequires: swig >= 3.0.7
+BuildRequires: python2-gwdatafind
+BuildRequires: python2-gwpy
 BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
@@ -98,11 +101,12 @@ Requires: numpy >= 1.7
 Requires: python
 Requires: scipy >= 0.8
 Requires: python-astropy >= 1.1.1
+Requires: python2-gwdatafind
 Requires: python-matplotlib >= 1.2.0
 Requires: python-six
-Requires: python-seaborn
 Requires: glue >= @MIN_GLUE_VERSION@
 Requires: ligo-gracedb
+Requires: python2-gwpy
 Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
@@ -181,13 +185,13 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %license COPYING
 %{_bindir}/cbcBayes*
 %{_bindir}/imrtgr_*
-%{_bindir}/lalinference_average_skymaps
 %{_bindir}/lalinference_burst_pp_pipe
 %{_bindir}/lalinference_coherence_test
 %{_bindir}/lalinference_compute_roq_weights
 %{_bindir}/lalinference_merge_posteriors
 %{_bindir}/lalinference_multi_pipe
 %{_bindir}/lalinference_nest2pos
+%{_bindir}/lalinference_cpnest
 %{_bindir}/lalinference_pipe
 %{_bindir}/lalinference_pp_pipe
 %{_bindir}/lalinference_review_test
@@ -202,6 +206,18 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Tue May 21 2019 Adam Mercer <adam.mercer@ligo.org> 1.11.0-1
+- O3 point release
+
+* Wed May 01 2019 Adam Mercer <adam.mercer@ligo.org> 1.10.3-1
+- O3 point release
+
+* Mon Feb 25 2019 Adam Mercer <adam.mercer@ligo.org> 1.10.2-1
+- ER14 release
+
+* Tue Jan 22 2019 Adam Mercer <adam.mercer@ligo.org> 1.10.1-1
+- Fix spin2 prior
+
 * Thu Sep 13 2018 Adam Mercer <adam.mercer@ligo.org> 1.10.0-1
 - Pre O3 release
 

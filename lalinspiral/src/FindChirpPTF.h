@@ -65,14 +65,6 @@ LALFindChirpPTFTemplate (
     FindChirpTmpltParams       *params
     );
 
-void
-LALFindChirpPTFNormalize(
-    LALStatus                  *status,
-    FindChirpTemplate          *fcTmplt,
-    FindChirpSegment           *fcSeg,
-    FindChirpDataParams        *params
-    );
-
 REAL4Vector*
 XLALPTFOmegaPNCoeffsOrbital(
     REAL4                m1,

@@ -7,6 +7,8 @@
   subset of radio telescopes.)
 """
 
+from __future__ import print_function
+
 import lal
 import lalpulsar
 
@@ -69,28 +71,28 @@ e.g. H1")
 
   # check options
   if not opts.__dict__['mjdtime']:
-    print >> sys.stderr, "Must specify an MJD time of arrival"
+    print("Must specify an MJD time of arrival", file=sys.stderr)
     parser.print_help()
     sys.exit(1)
   else:
     mjd = opts.mjdtime
 
   if not opts.__dict__['ra']:
-    print >> sys.stderr, "Must specify a source right ascension"
+    print("Must specify a source right ascension", file=sys.stderr)
     parser.print_help()
     sys.exit(1)
   else:
     ra = opts.ra
 
   if not opts.__dict__['dec']:
-    print >> sys.stderr, "Must specify a source declination"
+    print("Must specify a source declination", file=sys.stderr)
     parser.print_help()
     sys.exit(1)
   else:
     dec = opts.dec
 
   if not opts.__dict__['det']:
-    print >> sys.stderr, "Must specify a detector"
+    print("Must specify a detector", file=sys.stderr)
     parser.print_help()
     sys.exit(1)
   else:
@@ -100,7 +102,7 @@ e.g. H1")
   try:
     ephpath = os.environ['LALPULSAR_PREFIX']
   except:
-    print >> sys.stderr, "Need environment variables 'LALPULSAR_PREFIX' to be set"
+    print("Need environment variables 'LALPULSAR_PREFIX' to be set", file=sys.stderr)
     sys.exit(1)
 
   earth = ephpath + '/share/lalpulsar/earth00-19-DE405.dat.gz'
@@ -108,7 +110,7 @@ e.g. H1")
 
   # check files exist
   if not os.path.isfile(earth) or not os.path.isfile(sun):
-    print >> sys.stderr, "Earth or Sun ephemeris file does not exist"
+    print("Earth or Sun ephemeris file does not exist", file=sys.stderr)
     sys.exit(1)
 
   # get ephemerides
@@ -122,7 +124,7 @@ e.g. H1")
   ephemend = 1261872015  # GPS time of Jan 1, 2020, 00:00:00 UTC
 
   if gpstime < ephemstart or gpstime > ephemend:
-    print >> sys.stderr, "Times (GPS %.9f) is outside the ephemeris file ranges!\n" % gpstime
+    print("Times (GPS %.9f) is outside the ephemeris file ranges!\n" % gpstime, file=sys.stderr)
     sys.exit(1)
 
   # convert time to LIGOTimeGPS structure
@@ -154,6 +156,6 @@ e.g. H1")
 
   # output the time
   #print >> sys.stdout, "%.9f" % (toadet.gpsSeconds + toadet.gpsNanoSeconds*1e-9)
-  print >> sys.stdout, "%d.%09d" % (toadet.gpsSeconds, toadet.gpsNanoSeconds)
+  print("%d.%09d" % (toadet.gpsSeconds, toadet.gpsNanoSeconds))
 
   sys.exit(0)

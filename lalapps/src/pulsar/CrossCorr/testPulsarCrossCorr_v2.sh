@@ -68,9 +68,9 @@ pcc_CL="--startTime=$startTime --endTime=$endTime --sftLocation='$SFTdir/*.sft' 
 
 ## ---------- Run MFDv4 ----------
 cmdline="$mfd_path $mfd_CL1";
-if [ "$DEBUG" ]; then echo $cmdline; fi
+echo $cmdline
 echo -n "Running ${mfd_code} ... "
-if ! eval "$cmdline 2> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "FAILED:"
     echo $cmdline
     exit 1
@@ -79,9 +79,9 @@ else
 fi
 
 cmdline="$mfd_path $mfd_CL2";
-if [ "$DEBUG" ]; then echo $cmdline; fi
+echo $cmdline
 echo -n "Running ${mfd_code} ... "
-if ! eval "$cmdline 2> /dev/null"; then
+if ! eval "$cmdline"; then
     echo "FAILED:"
     echo $cmdline
     exit 1
@@ -91,7 +91,7 @@ fi
 
 ## ---------- Run PulsarCrossCorr_v2 ----------
 cmdline="$pcc_path $pcc_CL"
-if [ "$DEBUG" ]; then echo $cmdline; fi
+echo $cmdline
 echo -n "Running ${pcc_code} ... "
 if ! tmp=`eval $cmdline 2> /dev/null`; then
     echo "FAILED:"

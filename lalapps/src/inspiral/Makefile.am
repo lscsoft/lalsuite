@@ -25,7 +25,6 @@ NINJASRC = ninja.c
 FRNINJASRC = fr_ninja.c
 MDCNINJASRC = mdc_ninja.c inspiralutils.c inspiral.h
 CALCEXPSNRSRC = calcexpsnr.c
-SKYMAPSRC = skymap.c
 COINJSRC = coinj.c
 STOCHBANKSRC = stochasticbank.c
 
@@ -49,7 +48,6 @@ LALMETAIO_PROGS = \
 	lalapps_fr_ninja \
 	lalapps_mdc_ninja \
 	lalapps_calcexpsnr \
-	lalapps_skymap \
 	lalapps_coinj \
 	lalapps_cbc_stochasticbank
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
@@ -70,7 +68,6 @@ lalapps_ninja_SOURCES = $(NINJASRC)
 lalapps_fr_ninja_SOURCES = $(FRNINJASRC)
 lalapps_mdc_ninja_SOURCES = $(MDCNINJASRC)
 lalapps_calcexpsnr_SOURCES = $(CALCEXPSNRSRC)
-lalapps_skymap_SOURCES = $(SKYMAPSRC)
 lalapps_coinj_SOURCES = $(COINJSRC)
 lalapps_cbc_stochasticbank_SOURCES = $(STOCHBANKSRC)
 endif

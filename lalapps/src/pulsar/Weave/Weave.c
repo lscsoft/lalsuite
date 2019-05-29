@@ -49,7 +49,7 @@ int main( int argc, char *argv[] )
   struct uvar_type {
     BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, toplist_tmpl_idx, segment_info, simulate_search, time_search, cache_all_gc;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
-    LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd, *lrs_oLGX;
+    LALStringVector *sft_timestamps_files, *sft_noise_sqrtSX, *injections, *Fstat_assume_sqrtSX, *lrs_oLGX;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
     UINT4 sky_patch_count, sky_patch_index, freq_partitions, f1dot_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size;
@@ -111,19 +111,15 @@ int main( int argc, char *argv[] )
     "The timebase of the generated SFTs is specified by " UVAR_STR( sft_timebase ) ". "
     );
   XLALRegisterUvarMember(
-    sft_noise_psd, STRINGVector, 'p', NODEFAULT,
-    "Inject fake Gaussian noise with these power spectral densities (PSDs) into the generated SFTs. "
+    sft_noise_sqrtSX, STRINGVector, 'p', NODEFAULT,
+    "Inject fake Gaussian noise with these amplitude spectral densities [sqrt(Sh)] into the generated SFTs. "
     "Arguments correspond to the detectors in the setup file given by " UVAR_STR( setup_file )
     "; for example, if the setup file was created with " UVAR_STR( detectors ) " set to 'H1,L1', then an argument of "
-    "'1.2,3.4' to this option will generate H1 SFTs with a noise PSD of 1.2, and L1 SFTs with a noise PSD of 3.4. "
+    "'1.2,3.4' to this option will generate H1 SFTs with a noise sqrt(Sh) of 1.2, and L1 SFTs with a noise sqrt(Sh) of 3.4. "
     );
   XLALRegisterUvarMember(
     injections, STRINGVector, 'J', NODEFAULT,
-    "Inject simulated CW signals in the loaded/generated SFTs. Possibilities for <string> are:\n"
-    "  <config-file>\n"
-    "  {parameter=value; ...} where:\n"
-    "    required parameters are: (h0, cosi) or (aPlus, aCross), Alpha, Delta, Freq\n"
-    "    optional parameters are: refTime, psi, phi0, f<n>dot, ..."
+    "%s", InjectionSourcesHelpString
     );
   //
   // - Search parameter space
@@ -221,13 +217,13 @@ int main( int argc, char *argv[] )
     "Size of the running median window used to normalise SFTs and compute noise weight. "
     );
   XLALRegisterUvarMember(
-    Fstat_assume_psd, STRINGVector, 'q', DEVELOPER,
-    "Assume that the noise in the SFTs have known power spectral densities (PSDs), which are given by the arguments to "
-    "this option, and normalise the SFTs by these given PSDs. "
+    Fstat_assume_sqrtSX, STRINGVector, 'q', DEVELOPER,
+    "Assume that the noise in the SFTs have known amplitude spectral densities [sqrt(Sh)], which are given by the arguments to "
+    "this option, and normalise the SFTs by these given sqrt(Sh). "
     "Arguments correspond to the detectors in the setup file given by " UVAR_STR( setup_file )
     "; for example, if the setup file was created with " UVAR_STR( detectors ) " set to 'H1,L1', then an argument of "
-    "'3.2,4.3' to this option will assume that H1 SFTs contain noise with a PSD of 3.2, and L1 SFTs contain noise with a PSD of 4.3. "
-    "If this option is not given, the SFTs are normalised using noise PSDs estimated from the SFTs themselves. "
+    "'3.2,4.3' to this option will assume that H1 SFTs contain noise with a sqrt(Sh) of 3.2, and L1 SFTs contain noise with a sqrt(Sh) of 4.3. "
+    "If this option is not given, the SFTs are normalised using noise sqrt(Sh) estimated from the SFTs themselves. "
     );
   XLALRegisterUvarMember(
     Fstat_Dterms, UINT4, 0, DEVELOPER,
@@ -351,8 +347,8 @@ int main( int argc, char *argv[] )
                     uvar->simulate_search || UVAR_SET2( sft_files, sft_timebase ) == 1,
                     "Exactly one of " UVAR_STR2OR( sft_files, sft_timebase ) " must be specified" );
   XLALUserVarCheck( &should_exit,
-                    !UVAR_SET( sft_files ) || !UVAR_ALLSET3( sft_timebase, sft_timestamps_files, sft_noise_psd ),
-                    UVAR_STR( sft_files ) " are mutually exclusive with " UVAR_STR3AND( sft_timebase, sft_timestamps_files, sft_noise_psd ) );
+                    !UVAR_SET( sft_files ) || !UVAR_ALLSET3( sft_timebase, sft_timestamps_files, sft_noise_sqrtSX ),
+                    UVAR_STR( sft_files ) " are mutually exclusive with " UVAR_STR3AND( sft_timebase, sft_timestamps_files, sft_noise_sqrtSX ) );
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( validate_sft_files ) || UVAR_SET( sft_files ),
                     UVAR_STR( validate_sft_files ) " requires " UVAR_STR( sft_files ) );
@@ -808,11 +804,11 @@ int main( int argc, char *argv[] )
   Fstat_opt_args.collectTiming = uvar->time_search;
 
   // Load input data required for computing coherent results
-  const LALStringVector *sft_noise_psd = UVAR_SET( sft_noise_psd ) ? uvar->sft_noise_psd : NULL;
-  const LALStringVector *Fstat_assume_psd = UVAR_SET( Fstat_assume_psd ) ? uvar->Fstat_assume_psd : NULL;
+  const LALStringVector *sft_noise_sqrtSX = UVAR_SET( sft_noise_sqrtSX ) ? uvar->sft_noise_sqrtSX : NULL;
+  const LALStringVector *Fstat_assume_sqrtSX = UVAR_SET( Fstat_assume_sqrtSX ) ? uvar->Fstat_assume_sqrtSX : NULL;
   LogPrintf( LOG_NORMAL, "Loading input data for coherent results ...\n" );
   for ( size_t i = 0; i < nsegments; ++i ) {
-    statistics_params->coh_input[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], dfreq, setup.ephemerides, sft_noise_psd, Fstat_assume_psd, &Fstat_opt_args, statistics_params, 0 );
+    statistics_params->coh_input[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], dfreq, setup.ephemerides, sft_noise_sqrtSX, Fstat_assume_sqrtSX, &Fstat_opt_args, statistics_params, 0 );
     XLAL_CHECK_MAIN( statistics_params->coh_input[i] != NULL, XLAL_EFUNC );
   }
   statistics_params->ref_time = setup.ref_time;
@@ -1099,7 +1095,7 @@ int main( int argc, char *argv[] )
     Fstat_opt_args_recalc.FstatMethod = FMETHOD_DEMOD_BEST;
     Fstat_opt_args_recalc.prevInput = NULL;
     for ( size_t i = 0; i < nsegments; ++i ) {
-      statistics_params->coh_input_recalc[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], 0, setup.ephemerides, sft_noise_psd, Fstat_assume_psd, &Fstat_opt_args_recalc, statistics_params, 1 );
+      statistics_params->coh_input_recalc[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], 0, setup.ephemerides, sft_noise_sqrtSX, Fstat_assume_sqrtSX, &Fstat_opt_args_recalc, statistics_params, 1 );
       XLAL_CHECK_MAIN( statistics_params->coh_input_recalc[i] != NULL, XLAL_EFUNC );
     }
   }

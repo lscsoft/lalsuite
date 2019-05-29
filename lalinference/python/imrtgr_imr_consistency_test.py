@@ -21,6 +21,8 @@ import pickle, gzip
 import sys 
 from lalinference import git_version
 
+from scipy.stats import gaussian_kde   #rahul: for KDE implementation
+
 from matplotlib import rc
 import matplotlib
 matplotlib.rc('text.latex', preamble = '\usepackage{txfonts}')
@@ -102,8 +104,12 @@ if __name__ == '__main__':
   parser.add_option("-w", "--waveform", dest="waveform", help="waveform used for recovery")
   parser.add_option("-d", "--debug-plots", dest="debug_plots", help="debug plots")
   parser.add_option("--N_bins", type="int", dest="N_bins", default=201, help="number of bins (default=201)")
+  parser.add_option("--dMfbyMf_lim", type="float", dest="dMfbyMf_lim", default=1., help="absolute value of limit for range of dMfbyMf_vec, defined as [-dMfbyMf_lim, +dMfbyMf_lim]")
+  parser.add_option("--dchifbychif_lim", type="float", dest="dchifbychif_lim", default=1., help="absolute value of limit for range of dchifbychif_vec, defined as [-dchifbychif_lim, +dchifbychif_lim]")  
+  parser.add_option("--use_KDE", type="int", dest="MfafKDE", help="use KDE or not after getting samples of Mf, af")  
+  
   (options, args) = parser.parse_args()
-
+  MfafKDE = options.MfafKDE
   insp_post = options.insp_post
   ring_post = options.ring_post
   imr_post = options.imr_post
@@ -126,7 +132,8 @@ if __name__ == '__main__':
     print('Recovery approximant not provided. To have it displayed on the results page, please pass command line option --waveform.')
   
   N_bins = int(options.N_bins) # Number of grid points along either axis (dMfbyMf, dchifbychif) for computation of the posteriors
-
+  dMfbyMf_lim = float(options.dMfbyMf_lim)
+  dchifbychif_lim = float(options.dchifbychif_lim)
   lalinference_datadir = os.getenv('LALINFERENCE_DATADIR')
 
   # create output directory and copy the script 
@@ -257,19 +264,47 @@ if __name__ == '__main__':
 
   Mf_intp = (Mf_bins[:-1] + Mf_bins[1:])/2.
   chif_intp = (chif_bins[:-1] + chif_bins[1:])/2.
-  
-  # compute the 2D posterior distributions for the inspiral, ringodwn and IMR analyses 
-  P_Mfchif_i, Mf_bins, chif_bins = np.histogram2d(Mf_i, chif_i, bins=(Mf_bins, chif_bins), normed=True)
-  P_Mfchif_r, Mf_bins, chif_bins = np.histogram2d(Mf_r, chif_r, bins=(Mf_bins, chif_bins), normed=True)
-  P_Mfchif_imr, Mf_bins, chif_bins = np.histogram2d(Mf_imr, chif_imr, bins=(Mf_bins, chif_bins), normed=True)
-  
-  # transpose to go from (X,Y) indexing returned by np.histogram2d() to array (i,j) indexing for further
-  # computations. From now onwards, different rows (i) correspond to different values of Mf and different 
-  # columns (j) correspond to different values of chif 
-  P_Mfchif_i = P_Mfchif_i.T
-  P_Mfchif_r = P_Mfchif_r.T
-  P_Mfchif_imr = P_Mfchif_imr.T
-  
+
+
+  print 'useKDE=',MfafKDE
+  if MfafKDE==1:
+    print 'replacing lal P(Mfaf) with its KDE pdf'
+    M_i,C_i=np.meshgrid(Mf_intp,chif_intp)
+    
+    joint_data=np.vstack([Mf_i,chif_i]);kernel=gaussian_kde(joint_data)
+    f_i = lambda x,y:kernel.evaluate([x,y])
+    print "for inspiral kernel",kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim])
+    P_Mfchif_i = np.vectorize(f_i)(M_i,C_i)/kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim])
+
+    joint_data=np.vstack([Mf_r,chif_r]);kernel=gaussian_kde(joint_data)#;M_i,C_i=np.meshgrid(Mf_bins,chif_bins)
+    f_r = lambda x,y:kernel.evaluate([x,y])
+    print "for post-inspiral kernel",kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim])
+    P_Mfchif_r = np.vectorize(f_r)(M_i,C_i)/kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim])
+
+    joint_data=np.vstack([Mf_imr,chif_imr]);kernel=gaussian_kde(joint_data)#;M_i,C_i=np.meshgrid(Mf_bins,chif_bins)
+    f_imr = lambda x,y:kernel.evaluate([x,y])
+    print "for imr kernel",kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim])
+    P_Mfchif_imr = np.vectorize(f_imr)(M_i,C_i)/kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim])
+    
+    
+    #rahul: end KDE of Mf,af
+    
+  elif MfafKDE==0:
+    print 'using default samples, NOKDE'
+    # compute the 2D posterior distributions for the inspiral, ringodwn and IMR analyses
+    P_Mfchif_i, Mf_bins, chif_bins = np.histogram2d(Mf_i, chif_i, bins=(Mf_bins, chif_bins), normed=True)
+    P_Mfchif_r, Mf_bins, chif_bins = np.histogram2d(Mf_r, chif_r, bins=(Mf_bins, chif_bins), normed=True)
+    P_Mfchif_imr, Mf_bins, chif_bins = np.histogram2d(Mf_imr, chif_imr, bins=(Mf_bins, chif_bins), normed=True)
+    # transpose to go from (X,Y) indexing returned by np.histogram2d() to array (i,j) indexing for further
+    # computations. From now onwards, different rows (i) correspond to different values of Mf and different
+    # columns (j) correspond to different values of chif
+    #rahul:Transpose is forbidden if using KDE
+    P_Mfchif_i = P_Mfchif_i.T
+    P_Mfchif_r = P_Mfchif_r.T
+    P_Mfchif_imr = P_Mfchif_imr.T
+    print 'computed P_Mfchif without using KDE'
+
+
   ###############################################################################################
 
 
@@ -313,8 +348,8 @@ if __name__ == '__main__':
   P_Mfchif_r_interp_object = scipy.interpolate.interp2d(Mf_intp, chif_intp, P_Mfchif_r, fill_value=0., bounds_error=False)
 
   # defining limits of delta_Mf/Mf and delta_chif/chif.
-  dMfbyMf_vec = np.linspace(-1.0, 1.0, N_bins)
-  dchifbychif_vec = np.linspace(-1.0, 1.0, N_bins)
+  dMfbyMf_vec = np.linspace(-dMfbyMf_lim, dMfbyMf_lim, N_bins)
+  dchifbychif_vec = np.linspace(-dchifbychif_lim, dchifbychif_lim, N_bins)
 
   # compute the P(dMf/Mf, dchif/chif) by evaluating the integral 
   diff_dMfbyMf = np.mean(np.diff(dMfbyMf_vec))
@@ -642,23 +677,27 @@ if __name__ == '__main__':
   plt.ylabel('$\chi_f$')
   plt.grid()
 
+  CSi.levels = np.asarray(CSi.levels)
+  CSr.levels = np.asarray(CSr.levels)
+  CSimr.levels = np.asarray(CSimr.levels)
+
   strs_i = [ 'inspiral', 'inspiral' ]
   strs_r = [ 'ringdown', 'ringdown' ]
   strs_imr = [ 'IMR', 'IMR' ]
   fmt_i = {}
   fmt_r = {}
   fmt_imr = {}
-  #for l,s in zip(CSi.levels, strs_i):
-    #fmt_i[l] = s
-  #for l,s in zip(CSr.levels, strs_r):
-    #fmt_r[l] = s
-  #for l,s in zip(CSimr.levels, strs_imr):
-    #fmt_imr[l] = s
+  for l,s in zip(CSi.levels, strs_i):
+    fmt_i[l] = s
+  for l,s in zip(CSr.levels, strs_r):
+    fmt_r[l] = s
+  for l,s in zip(CSimr.levels, strs_imr):
+    fmt_imr[l] = s
 
   ## Label every other level using strings
-  #plt.clabel(CSi,CSi.levels[::2],inline=True,fmt=fmt_i,fontsize=14, use_clabeltext=True)
-  #plt.clabel(CSr,CSr.levels[::2],inline=True,fmt=fmt_r,fontsize=14, use_clabeltext=True)
-  #plt.clabel(CSimr,CSimr.levels[::2],inline=True,fmt=fmt_imr,fontsize=10)
+  plt.clabel(CSi,CSi.levels[::2],inline=True,fmt=fmt_i,fontsize=14, use_clabeltext=True)
+  plt.clabel(CSr,CSr.levels[::2],inline=True,fmt=fmt_r,fontsize=14, use_clabeltext=True)
+  plt.clabel(CSimr,CSimr.levels[::2],inline=True,fmt=fmt_imr,fontsize=10)
 
   plt.savefig('%s/img/IMR_overlap.png'%(out_dir), dpi=300)
   plt.savefig('%s/img/IMR_overlap_thumb.png'%(out_dir), dpi=72)
@@ -706,8 +745,8 @@ if __name__ == '__main__':
   plt.plot(0, 0, 'k+', ms=12, mew=2)
   plt.xlabel('$\Delta M_f/M_f$')
   plt.ylabel('$\Delta \chi_f/\chi_f$')
-  plt.xlim([-1.,1.])
-  plt.ylim([-1.,1.])
+  plt.xlim([-dMfbyMf_lim,dMfbyMf_lim])
+  plt.ylim([-dchifbychif_lim,dchifbychif_lim])
   plt.grid()
 
   plt.subplot2grid((3,3), (1,2), rowspan=2)

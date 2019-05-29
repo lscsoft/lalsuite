@@ -31,6 +31,8 @@ while (<IN>) {
 }
 close IN;
 
+my @mailmap;
+
 foreach my $pname (sort { $a cmp $b } keys(%name2mails)) {
 
   my $pname2mail = lc($pname);
@@ -49,14 +51,20 @@ foreach my $pname (sort { $a cmp $b } keys(%name2mails)) {
 
   next unless keys(%{$name2mails{$pname}}) > 1 || $name2mails{$pname}->{$pmail} <= 0;
 
-  print "$pname <$pmail>\n";
+  push @mailmap, "$pname <$pmail>";
   foreach my $mail (sort { $a cmp $b } keys(%{$name2mails{$pname}})) {
     next if $mail eq $pmail;
     if ($cmail2cname{$mail} ne "") {
-      print "$pname <$pmail> $cmail2cname{$mail} <$mail>\n";
+      push @mailmap, "$pname <$pmail> $cmail2cname{$mail} <$mail>";
     } else {
-      print "$pname <$pmail> <$mail>\n";
+      push @mailmap, "$pname <$pmail> <$mail>";
     }
   }
 
 }
+
+open OUT, ">.mailmap" or die $!;
+foreach my $line (@mailmap) {
+  print OUT "$line\n";
+}
+close OUT;

@@ -482,6 +482,7 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
   REAL8 phi0Max = phi0Min + AmpRange.phi0Band;
   REAL8 SNR = AmpRange.SNR;
   REAL8 res_rho2;
+  REAL8 h0, cosi;
 
   int gslstat;
 
@@ -536,8 +537,10 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
     {
       PulsarAmplitudeParams Amp;
 
-      Amp.h0   = gsl_ran_flat ( rng, h0NatMin, h0NatMax );
-      Amp.cosi = gsl_ran_flat ( rng, cosiMin, cosiMax );
+      h0   = gsl_ran_flat ( rng, h0NatMin, h0NatMax );
+      cosi = gsl_ran_flat ( rng, cosiMin, cosiMax );
+      Amp.aPlus = 0.5 * h0 * (1.0 + SQ(cosi));
+      Amp.aCross = h0 * cosi;
       Amp.psi  = gsl_ran_flat ( rng, psiMin, psiMax );
       Amp.phi0 = gsl_ran_flat ( rng, phi0Min, phi0Max );
 
@@ -580,7 +583,8 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
       /* if specified SNR: rescale signal to this SNR */
       if ( SNR > 0 ) {
 	REAL8 rescale_h0 = SNR / sqrt ( res_rho2 );
-	Amp.h0 *= rescale_h0;
+	Amp.aPlus *= rescale_h0;
+	Amp.aCross *= rescale_h0;
 	res_rho2 = SQ(SNR);
 	gsl_vector_scale ( &A_Mu.vector, rescale_h0);
 	gsl_vector_scale ( &s_mu.vector, rescale_h0);
@@ -588,8 +592,8 @@ XLALsynthesizeSignals ( gsl_matrix **A_Mu_i,		/**< [OUT] list of numDraws 4D lin
 
       gsl_vector_set ( *rho2_i, row, res_rho2 );
 
-      gsl_matrix_set ( *Amp_i,  row, 0, Amp.h0   );
-      gsl_matrix_set ( *Amp_i,  row, 1, Amp.cosi );
+      gsl_matrix_set ( *Amp_i,  row, 0, h0   );
+      gsl_matrix_set ( *Amp_i,  row, 1, cosi );
       gsl_matrix_set ( *Amp_i,  row, 2, Amp.psi  );
       gsl_matrix_set ( *Amp_i,  row, 3, Amp.phi0 );
 

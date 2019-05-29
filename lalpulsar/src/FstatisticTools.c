@@ -67,7 +67,6 @@ XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out]
   REAL8 beta;
   REAL8 phi0, psi;
   REAL8 b1, b2, b3;
-  REAL8 h0, cosi;
 
   REAL8 cosphi0, sinphi0, cos2psi, sin2psi;
 
@@ -188,42 +187,33 @@ XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out]
                        __func__, tolerance );
   }
 
-  // translate A_{+,x} into {h_0, cosi}
-  h0 = aPlus + sqrt ( disc );  // not yet normalized !
-  cosi = aCross / h0;
-
   // ========== Estimate the errors ==========
 
-  // ----- compute derivatives \partial A^\mu / \partial B^\nu, where
-  // we consider the output-variables B^\nu = (h0, cosi, phi0, psi)
+  // ----- compute derivatives \partial A^\mu / \partial A^\nu, where
+  // we consider the output-variables A^\nu = (aPlus, aCross, phi0, psi)
   // where aPlus = 0.5 * h0 * (1 + cosi^2)  and aCross = h0 * cosi
-  { // Ahat^mu is defined as A^mu with the replacements: A_+ --> A_x, and A_x --> h0
-    REAL8 A1hat =   aCross * cosphi0 * cos2psi - h0 * sinphi0 * sin2psi;
-    REAL8 A2hat =   aCross * cosphi0 * sin2psi + h0 * sinphi0 * cos2psi;
-    REAL8 A3hat = - aCross * sinphi0 * cos2psi - h0 * cosphi0 * sin2psi;
-    REAL8 A4hat = - aCross * sinphi0 * sin2psi + h0 * cosphi0 * cos2psi;
-
+  { // Eqn (114) in T0900149 v5
     // ----- A1 =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi; -----
-    gsl_matrix_set (Jh_Mu_nu, 0, 0,   A1h / h0 );       /* dA1/h0 */
-    gsl_matrix_set (Jh_Mu_nu, 0, 1,   A1hat );          /* dA1/dcosi */
+    gsl_matrix_set (Jh_Mu_nu, 0, 0,   cosphi0 * cos2psi );       /* dA1/daPlus */
+    gsl_matrix_set (Jh_Mu_nu, 0, 1, - sinphi0 * sin2psi );       /* dA1/daCross */
     gsl_matrix_set (Jh_Mu_nu, 0, 2,   A3h );            /* dA1/dphi0 */
     gsl_matrix_set (Jh_Mu_nu, 0, 3, - 2.0 * A2h );      /* dA1/dpsi */
 
     // ----- A2 =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi; -----
-    gsl_matrix_set (Jh_Mu_nu, 1, 0,   A2h / h0 );       /* dA2/h0 */
-    gsl_matrix_set (Jh_Mu_nu, 1, 1,   A2hat );          /* dA2/dcosi */
+    gsl_matrix_set (Jh_Mu_nu, 1, 0,   cosphi0 * sin2psi );       /* dA2/daPlus */
+    gsl_matrix_set (Jh_Mu_nu, 1, 1,   sinphi0 * cos2psi );       /* dA2/daCross */
     gsl_matrix_set (Jh_Mu_nu, 1, 2,   A4h );            /* dA2/dphi0 */
     gsl_matrix_set (Jh_Mu_nu, 1, 3,   2.0 * A1h );      /* dA2/dpsi */
 
     // ----- A3 = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi; -----
-    gsl_matrix_set (Jh_Mu_nu, 2, 0,   A3h / h0 );       /* dA3/h0 */
-    gsl_matrix_set (Jh_Mu_nu, 2, 1,   A3hat );          /* dA3/dcosi */
+    gsl_matrix_set (Jh_Mu_nu, 2, 0, - sinphi0 * cos2psi );       /* dA3/daPlus */
+    gsl_matrix_set (Jh_Mu_nu, 2, 1, - cosphi0 * sin2psi );       /* dA3/daCross */
     gsl_matrix_set (Jh_Mu_nu, 2, 2, - A1h );            /* dA3/dphi0 */
     gsl_matrix_set (Jh_Mu_nu, 2, 3, - 2.0 * A4h );      /* dA3/dpsi */
 
     // ----- A4 = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi; -----
-    gsl_matrix_set (Jh_Mu_nu, 3, 0,   A4h / h0 );       /* dA4/h0 */
-    gsl_matrix_set (Jh_Mu_nu, 3, 1,   A4hat );          /* dA4/dcosi */
+    gsl_matrix_set (Jh_Mu_nu, 3, 0, - sinphi0 * sin2psi );       /* dA4/daPlus */
+    gsl_matrix_set (Jh_Mu_nu, 3, 1,   cosphi0 * cos2psi );       /* dA4/daCross */
     gsl_matrix_set (Jh_Mu_nu, 3, 2, - A2h );            /* dA4/dphi0 */
     gsl_matrix_set (Jh_Mu_nu, 3, 3,   2.0 * A3h );      /* dA4/dpsi */
   }
@@ -258,14 +248,14 @@ XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out]
   XLAL_CHECK( XLALExtrapolatePulsarPhase( &phi0, pulsarParams->Doppler.fkdot, phi0, dtau ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // fill candidate-struct with the obtained signal-parameters and error-estimations
-  pulsarParams->Amp.h0     = normAmu * h0;
-  pulsarParams->Amp.cosi   = cosi;
+  pulsarParams->Amp.aPlus    = normAmu * aPlus;
+  pulsarParams->Amp.aCross   = normAmu * aCross;
   pulsarParams->Amp.phi0   = phi0;
   pulsarParams->Amp.psi    = psi;
 
   // read out principal estimation-errors from diagonal elements of inverse Fisher-matrix
-  pulsarParams->dAmp.h0     = normAmu * sqrt( gsl_matrix_get (Jh_Mu_nu, 0, 0 ) );
-  pulsarParams->dAmp.cosi   = sqrt( gsl_matrix_get (Jh_Mu_nu, 1, 1 ) );
+  pulsarParams->dAmp.aPlus  = normAmu * sqrt( gsl_matrix_get (Jh_Mu_nu, 0, 0 ) );
+  pulsarParams->dAmp.aCross = normAmu * sqrt( gsl_matrix_get (Jh_Mu_nu, 1, 1 ) );
   pulsarParams->dAmp.phi0   = sqrt( gsl_matrix_get (Jh_Mu_nu, 2, 2 ) );
   pulsarParams->dAmp.psi    = sqrt( gsl_matrix_get (Jh_Mu_nu, 3, 3 ) );
   // return also the full Amplitude-Fisher matrix: invert Jh_Mu_nu
@@ -296,8 +286,8 @@ XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu,		///< [out] Canonical ampli
                            )
 {
 
-  REAL8 aPlus = 0.5 * Amp.h0 * ( 1.0 + SQ(Amp.cosi) );
-  REAL8 aCross = Amp.h0 * Amp.cosi;
+  REAL8 aPlus = Amp.aPlus;
+  REAL8 aCross = Amp.aCross;
   REAL8 cos2psi = cos ( 2.0 * Amp.psi );
   REAL8 sin2psi = sin ( 2.0 * Amp.psi );
   REAL8 cosphi0 = cos ( Amp.phi0 );
@@ -324,7 +314,7 @@ XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,		///< [out] Physical ampl
                            )
 {
 
-  REAL8 h0Ret, cosiRet, psiRet, phi0Ret;
+  REAL8 psiRet, phi0Ret;
 
   REAL8 A1, A2, A3, A4, Asq, Da, disc;
   REAL8 Ap2, Ac2, aPlus, aCross;
@@ -365,9 +355,6 @@ XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,		///< [out] Physical ampl
     phi0Ret += LAL_PI;
   }
 
-  h0Ret = aPlus + sqrt ( disc );
-  cosiRet = aCross / h0Ret;
-
   // make unique by fixing the gauge to be psi in [-pi/4, pi/4], phi0 in [0, 2*pi]
   while ( psiRet > LAL_PI_4 ) {
     psiRet  -= LAL_PI_2;
@@ -386,8 +373,8 @@ XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,		///< [out] Physical ampl
   }
 
   // Return final answer
-  Amp->h0   = h0Ret;
-  Amp->cosi = cosiRet;
+  Amp->aPlus   = aPlus;
+  Amp->aCross = aCross;
   Amp->psi  = psiRet;
   Amp->phi0 = phi0Ret;
 
@@ -404,25 +391,25 @@ XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,		///< [out] Physical ampl
  * E[2F] = 4 + SNR^2 for a template perfectly matching the signal, ie SNR^2 = (signal|signal).
  */
 REAL8
-XLALComputeOptimalSNR2FromMmunu ( const PulsarAmplitudeParams pap, /**< [in] PulsarAmplitudeParameter {h0, cosi, psi, phi0} */
+XLALComputeOptimalSNR2FromMmunu ( const PulsarAmplitudeParams pap, /**< [in] PulsarAmplitudeParameter {aPlus, aCross, psi, phi0} */
                                   const AntennaPatternMatrix Mmunu /**< [in] Antenna-pattern Matrix */
                                   )
 {
   // Calculate the SNR using the expressions from the 'CFSv2 notes' T0900149-v5
   // https://dcc.ligo.org/LIGO-T0900149-v5/public, namely Eqs.(77)-(80), keeping in mind
   // that Mmunu.{Ad,Bd,Cd} = Nsft * {A,B,C}, and Tdata = Nsft * Tsft
+
   REAL8 cos2psi   = cos ( 2.0 * pap.psi );
   REAL8 sin2psi   = sin ( 2.0 * pap.psi );
   REAL8 cos2psiSq = SQ( cos2psi );
   REAL8 sin2psiSq = SQ( sin2psi );
-  REAL8 etaSq     = SQ(pap.cosi);
 
-  REAL8 al1 = 0.25 * SQ( 1.0 + etaSq ) * cos2psiSq + etaSq * sin2psiSq;  // Eq.(78)
-  REAL8 al2 = 0.25 * SQ( 1.0 + etaSq ) * sin2psiSq + etaSq * cos2psiSq;  // Eq.(79)
-  REAL8 al3 = 0.25 * SQ( 1.0 - etaSq ) * sin2psi * cos2psi;              // Eq.(80)
-
+  REAL8 h0sq_al1 = SQ( pap.aPlus ) * cos2psiSq + SQ( pap.aCross ) * sin2psiSq;  // Eq.(78) generalised to (aPlus,aCross)
+  REAL8 h0sq_al2 = SQ( pap.aPlus ) * sin2psiSq + SQ( pap.aCross ) * cos2psiSq;  // Eq.(79) generalised to (aPlus,aCross)
+  REAL8 h0sq_al3 = ( SQ( pap.aPlus ) - SQ( pap.aCross ) ) * sin2psi * cos2psi;  // Eq.(80) generalised to (aPlus,aCross)
+  
   // SNR^2: Eq.(77)
-  REAL8 rho2 = SQ(pap.h0) * ( al1 * Mmunu.Ad + al2 * Mmunu.Bd + 2.0 * al3 * Mmunu.Cd ) * Mmunu.Sinv_Tsft;
+  REAL8 rho2 = ( h0sq_al1 * Mmunu.Ad + h0sq_al2 * Mmunu.Bd + 2.0 * h0sq_al3 * Mmunu.Cd ) * Mmunu.Sinv_Tsft;
 
   return rho2;
 

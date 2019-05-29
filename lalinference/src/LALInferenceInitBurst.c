@@ -61,7 +61,7 @@ void LALInferenceInitBurstThreads(LALInferenceRunState *run_state, INT4 nthreads
   run_state->threads = LALInferenceInitThreads(nthreads);
 
   for (t = 0; t < nthreads; t++) {
-    thread = run_state->threads[t];
+    thread = &(run_state->threads[t]);
 
     /* Set up CBC model and parameter array */
     thread->model = LALInferenceInitBurstModel(run_state);
@@ -516,7 +516,7 @@ LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_unimod(LALInferenceR
     {.name="polarisation", .val=0.73, .min=0.425622, .max=0.974378},
     {.name="rightascension", .val=LAL_PI, .min=2.864650, .max=3.418535},
     {.name="declination", .val=0.04, .min=-0.306437, .max=0.306437},
-    {.name="alpha", .val=0.58, .min=0.224279, .max=0.775721},
+    {.name="polar_angle", .val=0.58, .min=0.224279, .max=0.775721},
     {.name="polar_eccentricity",.val=0.3,.min=0.0760747287,.max=0.4239252713},
     {.name="END", .val=0., .min=0., .max=0.}
   };
@@ -569,7 +569,7 @@ LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_bimod(LALInferenceRu
     {.name="polarisation", .val=0.93, .min=0.425622,.max=1.413383},
     {.name="rightascension", .val=LAL_PI, .min=2.864650, .max=3.861644},
     {.name="declination", .val=0.0, .min=-0.306437, .max=0.796736},
-    {.name="alpha", .val=0.75, .min=0.224279, .max=1.216874},
+    {.name="polar_angle", .val=0.75, .min=0.224279, .max=1.216874},
     {.name="polar_eccentricity",.val=0.4,.min=0.076075,.max=0.702206},
     {.name="END", .val=0., .min=0., .max=0.}
   };

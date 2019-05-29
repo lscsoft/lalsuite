@@ -70,6 +70,7 @@
  *
  */
 #include <lal/LALNoiseModelsInspiral.h>
+#include <lal/LALNoiseModels.h>
 
 void
 LALInspiralWaveNormaliseLSO

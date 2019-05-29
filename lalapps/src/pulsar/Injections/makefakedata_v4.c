@@ -255,12 +255,8 @@ main(int argc, char *argv[])
   params.pulsar.position.system    = COORDINATESYSTEM_EQUATORIAL;
   params.pulsar.position.longitude = GV.pulsar.Doppler.Alpha;
   params.pulsar.position.latitude  = GV.pulsar.Doppler.Delta;
-  {
-    REAL8 h0   = GV.pulsar.Amp.h0;
-    REAL8 cosi = GV.pulsar.Amp.cosi;
-    params.pulsar.aPlus		   = 0.5 * h0 * ( 1.0 + SQ(cosi) );
-    params.pulsar.aCross	   = h0 * cosi;
-  }
+  params.pulsar.aPlus		   = GV.pulsar.Amp.aPlus;
+  params.pulsar.aCross         = GV.pulsar.Amp.aCross;
   params.pulsar.phi0		   = GV.pulsar.Amp.phi0;
   params.pulsar.psi 		   = GV.pulsar.Amp.psi;
 
@@ -659,26 +655,21 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       XLAL_ERROR ( XLAL_EINVAL, "Need BOTH --aPlus and --aCross !\n\n");
     }
     if ( have_h0 && have_cosi )
-      {
-	cfg->pulsar.Amp.h0 = uvar->h0;
-	cfg->pulsar.Amp.cosi = uvar->cosi;
+      {   /* translate {h_0, cosi} into A_{+,x} */
+          /* assume at 2f */
+          REAL8 h0 = uvar->h0;
+          REAL8 cosi = uvar->cosi;
+          cfg->pulsar.Amp.aPlus = 0.5 * h0 * (1.0 + SQ(cosi));
+          cfg->pulsar.Amp.aCross = h0 * cosi;
       }
     else if ( have_aPlus && have_aCross )
-      {  /* translate A_{+,x} into {h_0, cosi} */
-	REAL8 disc;
-	if ( fabs(uvar->aCross) > uvar->aPlus ) {
-          XLAL_ERROR ( XLAL_EINVAL, "Invalid input parameters: |aCross| = %g must be <= than aPlus = %g.\n", fabs(uvar->aCross), uvar->aPlus );
-        }
-	disc = sqrt ( SQ(uvar->aPlus) - SQ(uvar->aCross) );
-	cfg->pulsar.Amp.h0   = uvar->aPlus + disc;
-        if ( cfg->pulsar.Amp.h0 > 0 )
-          cfg->pulsar.Amp.cosi = uvar->aCross / cfg->pulsar.Amp.h0;	// avoid division by 0!
-        else
-          cfg->pulsar.Amp.cosi = 0;
+      {
+          cfg->pulsar.Amp.aPlus = uvar->aPlus;
+          cfg->pulsar.Amp.aCross = uvar->aCross;
       }
     else {
-      cfg->pulsar.Amp.h0 = 0.0;
-      cfg->pulsar.Amp.cosi = 0.0;
+        cfg->pulsar.Amp.aPlus = 0.0;
+        cfg->pulsar.Amp.aCross = 0.0;
     }
     cfg->pulsar.Amp.phi0 = uvar->phi0;
     cfg->pulsar.Amp.psi  = uvar->psi;
@@ -1198,8 +1189,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Invalid NULL input 'argv'\n");
 
   // ---------- set a few defaults ----------
-  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   uvar->Tsft = 1800;
 
@@ -1251,8 +1242,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember(  Alpha,		 RAJ, 0, OPTIONAL, "Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
   XLALRegisterUvarMember(  Delta,		 DECJ, 0, OPTIONAL, "Sky: equatorial J2000 declination (in radians or degrees:minutes:seconds)");
 
-  XLALRegisterUvarMember(  h0,                   REAL8, 0, OPTIONAL, "Overall signal-amplitude h0");
-  XLALRegisterUvarMember(  cosi,                 REAL8, 0, OPTIONAL, "cos(iota) of inclination-angle iota");
+  XLALRegisterUvarMember(  h0,                   REAL8, 0, OPTIONAL, "Overall signal-amplitude h0 (for emission at twice spin frequency only)");
+  XLALRegisterUvarMember(  cosi,                 REAL8, 0, OPTIONAL, "cos(iota) of inclination-angle iota (for emission at twice spin frequency only)");
   XLALRegisterUvarMember(  aPlus,                REAL8, 0, OPTIONAL, "ALTERNATIVE to {--h0,--cosi}: A_+ amplitude");
   XLALRegisterUvarMember(  aCross,               REAL8, 0, OPTIONAL, "ALTERNATIVE to {--h0,--cosi}: A_x amplitude");
 

@@ -1929,18 +1929,18 @@ int WriteSFT(struct CommandLineArgsTag CLA)
     /* set up sftnameFinal with usual SFT name */
     strcpy(sftnameFinal,sftname);
     strcat(sftnameFinal,"/SFT_");
-    strncat(sftnameFinal,ifo,2);
+    strcat(sftnameFinal,ifo);
     strcat(sftnameFinal,".");
     strcat(sftnameFinal,gpstime);
     /* sftname begins with . and ends in .tmp */
     strcat(sftname,"/.SFT_");
-    strncat(sftname,ifo,2);
+    strcat(sftname,ifo);
     strcat(sftname,".");
     strcat(sftname,gpstime);
     strcat(sftname,".tmp");
   } else {     
     strcat(sftname,"/SFT_");
-    strncat(sftname,ifo,2);
+    strcat(sftname,ifo);
     strcat(sftname,".");
     strcat(sftname,gpstime);
   }  

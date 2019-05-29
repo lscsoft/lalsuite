@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 import sys
 from optparse import *
 from types import *
@@ -47,8 +49,8 @@ def parse_command_line():
 opts, args = parse_command_line()
 
 if not opts.input_file:
-  print >>sys.stderr, "Must specify a file in --input-file to read"
-  print >>sys.stderr, "Enter 'add_septime --help' for usage"
+  print("Must specify a file in --input-file to read", file=sys.stderr)
+  print("Enter 'add_septime --help' for usage", file=sys.stderr)
   sys.exit(1)
 
 
@@ -61,7 +63,7 @@ if opts.input_file is not None:
     allfiles.append(file.replace('\n',''))
   fp.close()
   if len(allfiles) < 1:
-    print >>sys.stderr, "The glob for " + opts.glob + " returned no files" 
+    print("The glob for " + opts.glob + " returned no files", file=sys.stderr) 
     sys.exit(1)
 
 ##################################
@@ -117,5 +119,5 @@ if opts.output_file:
   fp.close()
 else:
   for slide in slides:
-    print slide,analyzedTimes[str(slide)]
+    print(slide,analyzedTimes[str(slide)])
 

@@ -531,17 +531,17 @@ class tracksearchConvertSegList:
         totalTimeLostDueToMinBlockSize+=self.unusedCompleteSegsTime
         percentTTTA=float("%3.3f"%(100*totalTimeToAnalyze/float(totalTimeInSegmentList)))
         percentTLDTMBS=float("%3.3f"%(100*totalTimeLostDueToMinBlockSize/float(totalTimeInSegmentList)))
-        print "Total time available in segment list       :"+str(totalTimeInSegmentList)
-        print "Segments ignored due to minimum segment length requirements :"+str(self.unusedCompleteSegs.__len__())
-        print "Total time ignored in these segments :"+str(self.unusedCompleteSegsTime)
-        print "Total time to be analyzed :"+str(totalTimeToAnalyze)+" Percentage :"+str(percentTTTA)
+        print("Total time available in segment list       :"+str(totalTimeInSegmentList))
+        print("Segments ignored due to minimum segment length requirements :"+str(self.unusedCompleteSegs.__len__()))
+        print("Total time ignored in these segments :"+str(self.unusedCompleteSegsTime))
+        print("Total time to be analyzed :"+str(totalTimeToAnalyze)+" Percentage :"+str(percentTTTA))
         if not self.overrideBurnBorderReset:
             percentTTB=float("%3.3f"%(100*totalTimeBurned/float(totalTimeInSegmentList)))
-            print "Total time burned from data segments       :"+str(totalTimeBurned)+" Percentage: "+str(percentTTB)
+            print("Total time burned from data segments       :"+str(totalTimeBurned)+" Percentage: "+str(percentTTB))
             percentTTB=float("%3.3f"%(totalTimeBurned/float(totalTimeInSegmentList)))
         else:
-            print "Total time burned not applicable, using override."
-        print "Total time lost due to min Block Size req  :"+str(totalTimeLostDueToMinBlockSize)+" Percentage: "+str(percentTLDTMBS)
+            print("Total time burned not applicable, using override.")
+        print("Total time lost due to min Block Size req  :"+str(totalTimeLostDueToMinBlockSize)+" Percentage: "+str(percentTLDTMBS))
         output_fp.close
 
     def writeLostDataSegmentToDisk(self):

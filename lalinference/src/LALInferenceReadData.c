@@ -88,7 +88,7 @@ struct fvec {
   REAL8 x;
 };
 
-#define LALINFERENCE_DEFAULT_FLOW "40.0"
+#define LALINFERENCE_DEFAULT_FLOW "20.0"
 
 static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable *commandLine);
 struct fvec *interpFromFile(char *filename, REAL8 squareinput);
@@ -254,7 +254,7 @@ static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS 
 }
 
 /**
- * Parse the command line looking for options of the kind --ifo H1 --H1-channel H1:LDAS_STRAIN --H1-cache H1.cache --H1-flow 40.0 --H1-fhigh 4096.0 --H1-timeslide 100.0 --H1-asd asd_ascii.txt --H1-psd psd_ascii.txt ...
+ * Parse the command line looking for options of the kind --ifo H1 --H1-channel H1:LDAS_STRAIN --H1-cache H1.cache --H1-flow 20.0 --H1-fhigh 4096.0 --H1-timeslide 100.0 --H1-asd asd_ascii.txt --H1-psd psd_ascii.txt ...
  * It is necessary to use this method instead of the old method for the pipeline to work in DAX mode. Warning: do not mix options between
  * the old and new style.
  */
@@ -410,7 +410,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
     {
       while(injTable)
       {
-        if(injTable->simulation_id == (UINT4)atoi(procparam->value)) break;
+        if(injTable->simulation_id == atol(procparam->value)) break;
         else injTable=injTable->next;
       }
       if(!injTable){
@@ -514,7 +514,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
     (--srate rate)              Downsample data to rate in Hz (4096.0,)\n\
     (--padding PAD [sec]        Override default 0.4 seconds padding\n\
     (--injectionsrate rate)     Downsample injection signal to rate in Hz (--srate)\n\
-    (--IFO1-flow freq1          Specify lower frequency cutoff for overlap integral (40.0)\n\
+    (--IFO1-flow freq1          Specify lower frequency cutoff for overlap integral (20.0)\n\
      [--IFO2-flow freq2 ...])\n\
     (--IFO1-fhigh freq1         Specify higher frequency cutoff for overlap integral (Nyquist\n\
      [--IFO2-fhigh freq2 ...])      freq 0.5*srate)\n\
@@ -2028,6 +2028,11 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 
     re = cos(twopit * deltaF * lower);
     im = -sin(twopit * deltaF * lower);
+
+    /* When analysing TD data, FD templates need to be amplified by the window power loss factor */
+    double windowFactor;
+    windowFactor=sqrt(dataPtr->window->data->length/dataPtr->window->sumofsquares);
+
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
       if (i < hptilde->data->length) {
@@ -2045,6 +2050,10 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
       /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
       templateReal = (plainTemplateReal*re - plainTemplateImag*im);
       templateImag = (plainTemplateReal*im + plainTemplateImag*re);
+
+      /* apply windowing factor */
+      templateReal *= ((REAL8) windowFactor);
+      templateImag *= ((REAL8) windowFactor);
 
       /* Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 */
       dim = -sin(twopit*deltaF);
@@ -2339,6 +2348,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
   SimInspiralTable *injTable=NULL;
   FILE *tempfp;
   unsigned int n_basis_linear=0, n_basis_quadratic=0, n_samples=0, time_steps=0;
+  int errsave;
 
   LIGOTimeGPS GPStrig;
   REAL8 endtime=0.0;
@@ -2361,7 +2371,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	    {
 	      while(injTable)
 	      {
-		if(injTable->simulation_id == (UINT4)atoi(procparam->value)) break;
+		if(injTable->simulation_id == atol(procparam->value)) break;
 		else injTable=injTable->next;
 	      }
 	      if(!injTable){
@@ -2388,10 +2398,17 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	  if(LALInferenceGetProcParamVal(commandLine,"--roqtime_steps")){
 	    ppt=LALInferenceGetProcParamVal(commandLine,"--roqtime_steps");
 	    tempfp = fopen (ppt->value,"r");
-	    fscanf (tempfp, "%u", &time_steps);
-	    fscanf (tempfp, "%u", &n_basis_linear);
-	    fscanf (tempfp, "%u", &n_basis_quadratic);
-	    fscanf (tempfp, "%u", &n_samples);
+	    if (tempfp == NULL){
+	        errsave = errno;
+		fprintf(stderr, "Error: cannot find file %s \n", ppt->value);
+		fprintf(stderr, "Error code %i: %s\n", errsave, strerror(errsave));
+		exit(errsave);
+	    }
+	    fscanf(tempfp, "%u", &time_steps);
+	    fscanf(tempfp, "%u", &n_basis_linear);
+	    fscanf(tempfp, "%u", &n_basis_quadratic);
+	    fscanf(tempfp, "%u", &n_samples);
+	    fclose(tempfp);
 	    fprintf(stderr, "loaded --roqtime_steps\n");
 	  }
 
@@ -2411,38 +2428,44 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 
 	    model->roq->nodesFileLinear = fopen(ppt->value, "rb");
 	    if (!(model->roq->nodesFileLinear)) {
-		fprintf(stderr,"Error: cannot find file %s \n", ppt->value);
-		exit(1);} // check file exists
+	        errsave = errno;
+		fprintf(stderr, "Error: cannot find file %s \n", ppt->value);
+		fprintf(stderr, "Error code %i: %s\n", errsave, strerror(errsave));
+		exit(errsave);
+	    } // check file exists
 	    fprintf(stderr, "read model->roq->frequencyNodesLinear");
 
 	    for(unsigned int linsize = 0; linsize < n_basis_linear; linsize++){
 	      fread(&(model->roq->frequencyNodesLinear->data[linsize]), sizeof(REAL8), 1, model->roq->nodesFileLinear);
 	    }
-		fprintf(stderr, "loaded --roqnodesLinear\n");
+	    fclose(model->roq->nodesFileLinear);
+	    model->roq->nodesFileLinear = NULL;
+	    fprintf(stderr, "loaded --roqnodesLinear\n");
 	  }
 
 	  if(LALInferenceGetProcParamVal(commandLine,"--roqnodesQuadratic")){
 	    ppt=LALInferenceGetProcParamVal(commandLine,"--roqnodesQuadratic");
-
-	     model->roq->nodesFileQuadratic = fopen(ppt->value, "rb");
+	    model->roq->nodesFileQuadratic = fopen(ppt->value, "rb");
 	    if (!(model->roq->nodesFileQuadratic)) {
-	      fprintf(stderr,"Error: cannot find file %s \n", ppt->value);
-	      exit(1);} // check file exists
+	      errsave = errno;
+	      fprintf(stderr, "Error: cannot find file %s \n", ppt->value);
+	      fprintf(stderr, "Error code %i: %s\n", errsave, strerror(errsave));
+	      exit(errsave);
+	    } // check file exists
 
 	    for(unsigned int quadsize = 0; quadsize < n_basis_quadratic; quadsize++){
 	      fread(&(model->roq->frequencyNodesQuadratic->data[quadsize]), sizeof(REAL8), 1, model->roq->nodesFileQuadratic);
 	    }
-	fprintf(stderr, "loaded --roqnodesQuadratic\n");
+	    fclose(model->roq->nodesFileQuadratic);
+	    model->roq->nodesFileQuadratic = NULL;
+	    fprintf(stderr, "loaded --roqnodesQuadratic\n");
 
 
 
-  }
-
-
+	  }
 }
 
 void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine){
-
   LALStatus status;
   memset(&status,0,sizeof(status));
   LALInferenceIFOData *thisData=IFOdata;
@@ -2455,56 +2478,62 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
   //REAL8 timeMin=0.0,timeMax=0.0;
   FILE *tempfp;
   char tmp[320];
+  int errsave;
 
-	  procparam=LALInferenceGetProcParamVal(commandLine,"--inj");
-	  if(procparam){
-	    SimInspiralTableFromLIGOLw(&injTable,procparam->value,0,0);
-	    if(!injTable){
-	      fprintf(stderr,"Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
-	      exit(1);
-	    }
-	    procparam=LALInferenceGetProcParamVal(commandLine,"--event");
-	    if(procparam) {
-	      event=atoi(procparam->value);
-	      while(q<event) {q++; injTable=injTable->next;}
-	    }
-	    else if ((procparam=LALInferenceGetProcParamVal(commandLine,"--event-id")))
-	    {
-	      while(injTable)
-	      {
-		if(injTable->simulation_id == (UINT4)atoi(procparam->value)) break;
-		else injTable=injTable->next;
-	      }
-	      if(!injTable){
-		fprintf(stderr,"Error, cannot find simulation id %s in injection file\n",procparam->value);
-		exit(1);
-	      }
-	    }
-	  }
+  procparam=LALInferenceGetProcParamVal(commandLine,"--inj");
+  if(procparam) {
+    SimInspiralTableFromLIGOLw(&injTable,procparam->value,0,0);
+    if (!injTable) {
+      fprintf(stderr,"Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
+      exit(1);
+    }
+    procparam=LALInferenceGetProcParamVal(commandLine,"--event");
+    if (procparam) {
+      event=atoi(procparam->value);
+      while(q<event) {
+	q++;
+	injTable=injTable->next;
+      }
+    } else if ((procparam=LALInferenceGetProcParamVal(commandLine,"--event-id"))) {
+      while (injTable) {
+	if (injTable->simulation_id == atol(procparam->value)) {
+	  break;
+	} else {
+	  injTable=injTable->next;
+	}
+      }
+      if (!injTable) {
+	fprintf(stderr, "Error, cannot find simulation id %s in injection file\n", procparam->value);
+	exit(1);
+      }
+    }
+  }
 
-	  ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
-	  if(ppt){
-	    dt=atof(ppt->value);
-	  }
+  ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
+  if(ppt){
+    dt=atof(ppt->value);
+  }
 
-	  if(LALInferenceGetProcParamVal(commandLine,"--roqtime_steps")){
-	    ppt=LALInferenceGetProcParamVal(commandLine,"--roqtime_steps");
-	    tempfp = fopen (ppt->value,"r");
-	    fscanf (tempfp, "%u", &time_steps);
-	    fscanf (tempfp, "%u", &n_basis_linear);
-	    fscanf (tempfp, "%u", &n_basis_quadratic);
-	    fscanf (tempfp, "%u", &n_samples);
-	    fprintf(stderr, "loaded --roqtime_steps\n");
-	  }
+  if (LALInferenceGetProcParamVal(commandLine,"--roqtime_steps")) {
+    ppt = LALInferenceGetProcParamVal(commandLine,"--roqtime_steps");
+    tempfp = fopen (ppt->value,"r");
+    if (tempfp == NULL){
+      errsave = errno;
+      fprintf(stderr, "Error: cannot find file %s \n", ppt->value);
+      fprintf(stderr, "Error code %i: %s\n", errsave, strerror(errsave));
+      exit(errsave);
+    }
+    fscanf(tempfp, "%u", &time_steps);
+    fscanf(tempfp, "%u", &n_basis_linear);
+    fscanf(tempfp, "%u", &n_basis_quadratic);
+    fscanf(tempfp, "%u", &n_samples);
+    fclose(tempfp);
+    fprintf(stderr, "loaded --roqtime_steps\n");
+  }
 
 
-
-
-    thisData=IFOdata;
+  thisData=IFOdata;
     while (thisData) {
-
-
-
       thisData->roq = XLALMalloc(sizeof(LALInferenceROQData));
 
       thisData->roq->weights_linear = XLALMalloc(n_basis_linear*sizeof(LALInferenceROQSplineWeights));
@@ -2513,7 +2542,12 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
       ppt = LALInferenceGetProcParamVal(commandLine,tmp);
 
       thisData->roq->weightsFileLinear = fopen(ppt->value, "rb");
-      assert(thisData->roq->weightsFileLinear!=NULL);
+      if (thisData->roq->weightsFileLinear == NULL){
+	errsave = errno;
+	fprintf(stderr, "Error: cannot find file %s \n", ppt->value);
+	fprintf(stderr, "Error code %i: %s\n", errsave, strerror(errsave));
+	exit(errsave);
+      }
       thisData->roq->weightsLinear = (double complex*)malloc(n_basis_linear*time_steps*(sizeof(double complex)));
 
       //0.045 comes from the diameter of the earth in light seconds: the maximum time-delay between earth-based observatories
@@ -2522,8 +2556,8 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
       thisData->roq->n_time_steps = time_steps;
 
 
-	fprintf(stderr, "basis_size = %d\n", n_basis_linear);
-	fprintf(stderr, "time steps = %d\n", time_steps);
+      fprintf(stderr, "basis_size = %d\n", n_basis_linear);
+      fprintf(stderr, "time steps = %d\n", time_steps);
 
       double *tmp_real_weight = malloc(time_steps*(sizeof(double)));
       double *tmp_imag_weight = malloc(time_steps*(sizeof(double)));
@@ -2533,54 +2567,54 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
       sprintf(tmp, "--roq-times");
       ppt = LALInferenceGetProcParamVal(commandLine,tmp);
 
-	FILE *tcFile = fopen(ppt->value, "rb");
-      assert(tcFile!=NULL);
+      FILE *tcFile = fopen(ppt->value, "rb");
+      if (tcFile == NULL) {
+	errsave = errno;
+	fprintf(stderr, "Error: cannot find file %s \n", ppt->value);
+	fprintf(stderr, "Error code %i: %s\n", errsave, strerror(errsave));
+	exit(errsave);
+      }
 
-	for(unsigned int gg=0;gg < time_steps; gg++){
-
-		fread(&(tmp_tcs[gg]), sizeof(double), 1, tcFile);
-	}
-
+      for(unsigned int gg=0;gg < time_steps; gg++){
+	fread(&(tmp_tcs[gg]), sizeof(double), 1, tcFile);
+      }
 
       for(unsigned int ii=0; ii<n_basis_linear;ii++){
-		for(unsigned int jj=0; jj<time_steps;jj++){
-
-      		fread(&(thisData->roq->weightsLinear[ii*time_steps + jj]), sizeof(double complex), 1, thisData->roq->weightsFileLinear);
-		tmp_real_weight[jj] = creal(thisData->roq->weightsLinear[ii*time_steps + jj]);
-		tmp_imag_weight[jj] = cimag(thisData->roq->weightsLinear[ii*time_steps + jj]);
-
-      		}
+	for(unsigned int jj=0; jj<time_steps;jj++){
+	  fread(&(thisData->roq->weightsLinear[ii*time_steps + jj]), sizeof(double complex), 1, thisData->roq->weightsFileLinear);
+	  tmp_real_weight[jj] = creal(thisData->roq->weightsLinear[ii*time_steps + jj]);
+	  tmp_imag_weight[jj] = cimag(thisData->roq->weightsLinear[ii*time_steps + jj]);
+	}
   //gsl_interp_accel is not thread-safe, and each OpenMP thread will need its
   //own gsl_interp_accel object.
 	thisData->roq->weights_linear[ii].acc_real_weight_linear = NULL;
  	thisData->roq->weights_linear[ii].acc_imag_weight_linear = NULL;
 
-	thisData->roq->weights_linear[ii].spline_real_weight_linear = gsl_spline_alloc (gsl_interp_linear, time_steps);
+	thisData->roq->weights_linear[ii].spline_real_weight_linear = gsl_spline_alloc (gsl_interp_cspline, time_steps);
         gsl_spline_init(thisData->roq->weights_linear[ii].spline_real_weight_linear, tmp_tcs, tmp_real_weight, time_steps);
 
-        thisData->roq->weights_linear[ii].spline_imag_weight_linear = gsl_spline_alloc (gsl_interp_linear, time_steps);
+        thisData->roq->weights_linear[ii].spline_imag_weight_linear = gsl_spline_alloc (gsl_interp_cspline, time_steps);
         gsl_spline_init(thisData->roq->weights_linear[ii].spline_imag_weight_linear, tmp_tcs, tmp_imag_weight, time_steps);
-
       }
-
-
       fclose(thisData->roq->weightsFileLinear);
+      thisData->roq->weightsFileLinear = NULL;
       fclose(tcFile);
+
       sprintf(tmp, "--%s-roqweightsQuadratic", thisData->name);
-
       ppt = LALInferenceGetProcParamVal(commandLine,tmp);
-
       thisData->roq->weightsQuadratic = (double*)malloc(n_basis_quadratic*sizeof(double));
-
       thisData->roq->weightsFileQuadratic = fopen(ppt->value, "rb");
-
-      for(unsigned int ii=0; ii<n_basis_quadratic;ii++){
-
-		fread(&(thisData->roq->weightsQuadratic[ii]), sizeof(double), 1, thisData->roq->weightsFileQuadratic);
+      if (thisData->roq->weightsFileQuadratic == NULL){
+	errsave = errno;
+	fprintf(stderr, "Error: cannot find file %s \n", ppt->value);
+	fprintf(stderr, "Error code %i: %s\n", errsave, strerror(errsave));
+	exit(errsave);
       }
-
-
-
+      for(unsigned int ii=0; ii<n_basis_quadratic;ii++){
+	fread(&(thisData->roq->weightsQuadratic[ii]), sizeof(double), 1, thisData->roq->weightsFileQuadratic);
+      }
+      fclose(thisData->roq->weightsFileQuadratic);
+      thisData->roq->weightsFileQuadratic = NULL;
       fprintf(stderr, "loaded %s ROQ weights\n", thisData->name);
       thisData = thisData->next;
     }
@@ -2628,7 +2662,7 @@ static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable 
                 {
                 while(inspiralTable)
                 {
-                if(inspiralTable->simulation_id == (UINT4)atoi(procparam->value)) break;
+                if(inspiralTable->simulation_id == atol(procparam->value)) break;
                 else inspiralTable=inspiralTable->next;
                 }
                 if(!inspiralTable){

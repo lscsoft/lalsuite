@@ -102,13 +102,14 @@ size_t LALInferenceTypeSize[] = {sizeof(INT4),
 
 
 /* Initialize an empty thread, saving a timestamp for benchmarking */
-LALInferenceThreadState *LALInferenceInitThread(void) {
+LALInferenceThreadState *LALInferenceInitThread(LALInferenceThreadState *thread) {
     struct timeval tv;
 
     /* Get creation time */
     gettimeofday(&tv, NULL);
 
-    LALInferenceThreadState *thread = XLALCalloc(1, sizeof(LALInferenceThreadState));
+    if(!thread)
+        thread = XLALCalloc(1, sizeof(LALInferenceThreadState));
 
     thread->step = 0;
     thread->temperature = 1.0;
@@ -134,13 +135,13 @@ LALInferenceThreadState *LALInferenceInitThread(void) {
 }
 
 /* Initialize a bunch of threads using LALInferenceInitThread */
-LALInferenceThreadState **LALInferenceInitThreads(INT4 nthreads) {
+LALInferenceThreadState *LALInferenceInitThreads(INT4 nthreads) {
     INT4 t;
 
-    LALInferenceThreadState **threads = XLALCalloc(nthreads, sizeof(LALInferenceThreadState*));
+    LALInferenceThreadState *threads = XLALCalloc(nthreads, sizeof(LALInferenceThreadState));
 
     for (t = 0; t < nthreads; t++)
-        threads[t] = LALInferenceInitThread();
+        LALInferenceInitThread(&threads[t]);
 
     return threads;
 }
@@ -1830,12 +1831,26 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
 }
 
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[])
+{
+    LALStringVector *args=XLALCreateEmptyStringVector(0);
+    for(int i=0;i<argc;i++)
+    {
+	    args=XLALAppendString2Vector(args, argv[i]);
+    }
+    ProcessParamsTable *ppt=LALInferenceParseStringVector(args);
+    XLALDestroyStringVector(args);
+    return(ppt);
+}
+
+ProcessParamsTable *LALInferenceParseStringVector(LALStringVector *arglist)
 /* parse command line and set up & fill in 'ProcessParamsTable' linked list.          */
 /* If no command line arguments are supplied, the 'ProcessParamsTable' still contains */
 /* one empty entry.                                                                   */
 {
   int i, state=1;
+  int argc = arglist->length;
   int dbldash;
+  char **argv = arglist->data;
   ProcessParamsTable *head, *ptr=NULL;
   /* always (even for argc==1, i.e. no arguments) put one element in list: */
   head = (ProcessParamsTable*) XLALCalloc(1, sizeof(ProcessParamsTable));
@@ -3305,13 +3320,13 @@ INT4 LALInferenceSanityCheck(LALInferenceRunState *state)
     data=data->next;
   }
 
-  LALInferenceThreadState **thread=state->threads;
+  LALInferenceThreadState *thread=state->threads;
   if(!thread) {
   fprintf(stderr,"NULL thread pointer!\n");
         return(1);
   }
   for(INT4 i=0;i<state->nthreads;i++){
-    LALInferenceModel *model = state->threads[i]->model;
+    LALInferenceModel *model = state->threads[i].model;
     if(!model) {
   	fprintf(stderr,"NULL model pointer in thread %d!\n",i);
           return(1);
@@ -4257,12 +4272,12 @@ void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadS
         size_t j;
 
         for (j = 0; j < ncal; j++) {
-            snprintf(parname, VARNAME_MAX, "%sspcalamp%02ld", ifo_names[i], j);
+            snprintf(parname, VARNAME_MAX, "%sspcalamp%02zd", ifo_names[i], j);
             fprintf(output, "%s\t", parname);
         }
 
         for (j = 0; j < ncal; j++) {
-          snprintf(parname, VARNAME_MAX, "%sspcalphase%02ld", ifo_names[i], j);
+          snprintf(parname, VARNAME_MAX, "%sspcalphase%02zd", ifo_names[i], j);
           fprintf(output, "%s\t", parname);
         }
     }

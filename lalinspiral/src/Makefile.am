@@ -2,22 +2,19 @@ BUILT_SOURCES =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
-include $(top_srcdir)/gnuscripts/lalsuite_cuda.am
+
+noinst_HEADERS = \
+	CreateMetaTableDir.h
 
 pkginclude_HEADERS = \
 	BBHPhenomCoeffs.h \
-	Chisq_CPU.h \
-	Chisq_GPU.h \
 	LALInspiralPyCBCTemplate.h \
 	CoherentInspiral.h \
 	CoincInspiralEllipsoid.h \
 	FindChirp.h \
 	FindChirpACTD.h \
-	FindChirpBCV.h \
-	FindChirpBCVSpin.h \
 	FindChirpChisq.h \
 	FindChirpDatatypes.h \
-	FindChirpFilterOutputVeto.h \
 	FindChirpPTF.h \
 	FindChirpSP.h \
 	FindChirpTD.h \
@@ -57,37 +54,21 @@ lib_LTLIBRARIES = liblalinspiral.la
 
 liblalinspiral_la_SOURCES = \
 	BandPassInspiralTemplate.c \
-	Chisq_CPU.c \
-	InjectTimeSeries.c \
-	LALInspiralPyCBCTemplate.c \
 	CoherentInspiralFilter.c \
 	CoherentInspiralInput.c \
 	CoincInspiralEllipsoid.c \
 	CoincInspiralUtils.c \
 	CoincRingdownUtils.c \
-	FindChirpBCVChisq.c \
-	FindChirpBCVData.c \
-	FindChirpBCVSpinData.c \
-	FindChirpBCVTemplate.c \
+	CreateMetaTableDir.c \
 	FindChirpBankVeto.c \
-	FindChirpChisq.c \
-	FindChirpChisqInit.c \
-	FindChirpData.c \
-	FindChirpFilter.c \
-	FindChirpFilterInit.c \
-	FindChirpFilterOutputVeto.c \
 	FindChirpIMRSimulation.c \
 	FindChirpLinkedList.c \
-	FindChirpMemory.c \
 	FindChirpPTFTemplate.c \
 	FindChirpPTFWaveform.c \
 	FindChirpPhenomWaveform.c \
-	FindChirpSPData.c \
 	FindChirpSPTemplate.c \
 	FindChirpSimulation.c \
-	FindChirpTDData.c \
 	FindChirpTDTemplate.c \
-	FindChirpTemplate.c \
 	GenerateInspRing.c \
 	GenerateInspiral.c \
 	GenerateInspiralSmooth.c \
@@ -96,20 +77,18 @@ liblalinspiral_la_SOURCES = \
 	GenerateRing.c \
 	GetErrorMatrixFromSnglInspiral.c \
 	GetInspiralParams.c \
+	InjectTimeSeries.c \
 	InspiralBankGeneration.c \
 	InspiralInjectionParams.c \
 	InspiralSpinBank.c \
 	LALBCVWaveform.c \
 	LALDeterminant3.c \
-	LALDiscoverInspiralEvents.c \
 	LALEOBGetFactorizedWaveform.c \
 	LALEOBWaveform.c \
 	LALEOBNonQCCorrection.c \
 	LALEOBPPWaveform.c \
-	LALEstimateEffectiveDistance.c \
 	LALEtaTau02.c \
 	LALEtaTau04.c \
-	LALEvaluateInspiralChisqTest.c \
 	LALFactorizedFlux.c \
 	LALHexagonVertices.c \
 	LALInsidePolygon.c \
@@ -119,18 +98,13 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralBankList.c \
 	LALInspiralBankUtils.c \
 	LALInspiralChooseModel.c \
-	LALInspiralComputeChisq.c \
 	LALInspiralComputeMetric.c \
 	LALInspiralComputePTFMetric.c \
 	LALInspiralComputeParams.c \
-	LALInspiralComputeSNRIntegrand.c \
 	LALInspiralCreateCoarseBank.c \
 	LALInspiralCreateFineBank.c \
 	LALInspiralDerivatives.c \
 	LALInspiralEccentricity.c \
-	LALInspiralFindEvents.c \
-	LALInspiralFindEventsCluster.c \
-	LALInspiralFindLoudestEvent.c \
 	LALInspiralFrequency3.c \
 	LALInspiralGetApproximantString.c \
 	LALInspiralHexagonalBank.c \
@@ -149,6 +123,7 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralPhasing3.c \
 	LALInspiralPhiofVIntegrand.c \
 	LALInspiralPolarizations.c \
+	LALInspiralPyCBCTemplate.c \
 	LALInspiralRingdownWave.c \
 	LALInspiralSBankOverlap.c \
 	LALInspiralSetParams.c \
@@ -183,7 +158,6 @@ liblalinspiral_la_SOURCES = \
 	LALPSpinInspiralRD.c \
 	LALPSpinInspiralRingdownWave.c \
 	LALPrintTimeseries.c \
-	LALRandomInspiralSignal.c \
 	LALRectangleVertices.c \
 	LALRungeKutta4.c \
 	LALSTPNWaveform.c \
@@ -194,10 +168,8 @@ liblalinspiral_la_SOURCES = \
 	LALSQTPNWaveformInterface.c \
 	LALTaylorF2ReducedSpin.c\
 	LALTrigScanCluster.c \
-	LALTruncateInvSpectrum.c \
 	LIGOLwXMLInspiralRead.c \
 	LIGOLwXMLRingdownRead.c \
-	MultiInspiralUtils.c \
 	NDTemplateBank.c \
 	NRWaveIO.c \
 	NRWaveInject.c \
@@ -215,25 +187,7 @@ nodist_liblalinspiral_la_SOURCES = \
 	LALInspiralVCSInfo.c \
 	$(END_OF_LIST)
 
-if CUDA
-INSPCXXSRC =
-INSPCXXGENSRC = Chisq_GPU.cpp
-INSPLIBCXX = liblalinspiralcxx.la
-else
-INSPCXXSRC =
-INSPCXXGENSRC =
-INSPLIBCXX =
-endif
-
-noinst_LTLIBRARIES = $(INSPLIBCXX)
-liblalinspiralcxx_la_SOURCES = $(INSPCXXSRC)
-nodist_liblalinspiralcxx_la_SOURCES = $(INSPCXXGENSRC)
-liblalinspiral_la_LIBADD = $(INSPLIBCXX)
-
 liblalinspiral_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
-
-CLEANFILES = \
-	Chisq_GPU.cpp
 
 DISTCLEANFILES = config.h
 
@@ -255,7 +209,6 @@ TESTS = \
 	$(END_OF_LIST)
 
 EXTRA_DIST = \
-	Chisq_GPU.cu \
 	LALInspiralBankH4Figures.png \
 	LALInspiralBankHCoarse2.png \
 	LALInspiralBankHequalmass.png \

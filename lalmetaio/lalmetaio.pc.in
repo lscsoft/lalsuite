@@ -12,6 +12,6 @@ LALMETAIO_PYTHON_PATH=@pyexecdir@
 Name: LALMetaIO
 Description: LAL MetaIO Library Support
 Version: @VERSION@
-Requires: lal >= @LAL_VERSION@, libmetaio
+Requires.private: lal >= @LAL_VERSION@, libmetaio
 Libs: -L${libdir} -llalmetaio
 Cflags: -I${includedir}

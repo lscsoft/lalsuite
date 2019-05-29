@@ -276,7 +276,7 @@ class PulsarParametersPy(object):
             geterr = True
             tkey = key[:-4] # get the actual parameter key name
 
-        # check if the key is asking for an individal parameter from a vector parameter
+        # check if the key is asking for an individual parameter from a vector parameter
         # (e.g. 'F0' gets the first value from the 'F' vector)
         sname = re.sub(r'_\d', '', tkey) if '_' in tkey else re.sub(r'\d', '', tkey)
         sidx = None
@@ -292,6 +292,11 @@ class PulsarParametersPy(object):
             if sidx is not None:
                 indkey = tkey # key with index
                 tkey = sname
+
+            # check if parameter key is present otherwise switch back to original name
+            # (needed for, e.g., 'H0', 'PHI0', ...)
+            if not lalpulsar.PulsarCheckParam(self._pulsarparameters, tkey):
+                tkey = indkey
 
         # check if parameter given by the key is present
         if not lalpulsar.PulsarCheckParam(self._pulsarparameters, tkey):

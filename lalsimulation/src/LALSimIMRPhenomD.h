@@ -490,8 +490,42 @@ static const double QNMData_fdamp[] = {0.0140098,0.0140102,0.0140106,0.0140114, 
 0.00677358, 0.00657914, 0.00637134, 0.00614819, 0.00590712, \
 0.00564485, 0.00535699, 0.0050375, 0.00467763, 0.00426389, 0.00377349,    0.0031618,0.0023131,0.0016762,0.0002908};
 
-// Taken from LALSimIMRPhenomP.h
-static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon);
-static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
+/* Non-reviewd functions */
+
+double IMRPhenomDFinalMass(
+    REAL8 m1,
+    REAL8 m2,
+    REAL8 chi1z,
+    REAL8 chi2z);
+
+int IMRPhenomDPhaseFrequencySequence(
+    REAL8Sequence *phases,
+    REAL8Sequence *freqs,
+    size_t ind_min,
+    size_t ind_max,
+    REAL8 m1,
+    REAL8 m2,
+    REAL8 chi1z,
+    REAL8 chi2z,
+    REAL8 Rholm,
+    REAL8 Taulm,
+    LALDict *extraParams);
+
+int IMRPhenomDAmpFrequencySequence(
+    REAL8Sequence *phases,
+    REAL8Sequence *freqs,
+    size_t ind_min,
+    size_t ind_max,
+    REAL8 m1,
+    REAL8 m2,
+    REAL8 chi1z,
+    REAL8 chi2z);
+
+REAL8 IMRPhenomDComputet0(
+    REAL8 eta,
+    REAL8 chi1z,
+    REAL8 chi2z,
+    REAL8 finspin,
+    LALDict *extraParams);
 
 #endif /* _LALSIM_IMR_PHENOMD_H */

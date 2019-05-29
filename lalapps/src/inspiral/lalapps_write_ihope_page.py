@@ -1,6 +1,9 @@
 """
 Tools to create a HTML document that summarizes results produced by ihope. 
 """
+
+from __future__ import print_function
+
 __author__ = "Thomas Cokelaer <thomas.cokelaer@astro.cf.ac.uk>"
 __version__ = "$Revision$"
 __date__ = "$Date$"
@@ -15,8 +18,8 @@ import glob
 import shutil
 import StringIO
 from optparse import *
+from ligo import segments
 from glue import markup
-from glue import segments
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import table
@@ -67,7 +70,7 @@ def write_sub_page(opts,section,html_sections,style,script):
   """
   global h2_num
   global h3_num
-  print "...Processing " + section
+  print("...Processing " + section)
   subPage = initialize_page(section,style,script)
   subPage.p(e.br())
   subPage.add("<!-- beginning of a sub section -->")
@@ -104,7 +107,7 @@ def functionId(nFramesUp):
     co = sys._getframe(nFramesUp+1).f_code
     msg = "%s (%s @ %d)" % (co.co_name, co.co_filename, co.co_firstlineno)
     if msg.startswith("?") is False:
-      print "-->ERROR in function: " + msg
+      print("-->ERROR in function: " + msg)
   except:
     msg="?"
 
@@ -126,7 +129,7 @@ def logText(logfile, text, tag="done"):
     msg= "<"+tag+">"+text+"</"+tag+">\n"
     logfile.write(msg)
     if opts.verbose is True:
-      print >>sys.stdout,text
+      print(text)
   elif tag=="error":
     msg = "<"+tag+">"+text
     logfile.write(msg)
@@ -139,12 +142,12 @@ def logText(logfile, text, tag="done"):
         logfile.write("</"+tag+">\n")
         msg=[]
       i=i+1
-    print >>sys.stderr, text
+    print(text, file=sys.stderr)
   else :
     msg = "<"+tag+">"+text+"</"+tag+">\n"
     logfile.write( msg )
     if opts.verbose is True:
-      print >>sys.stdout,text
+      print(text)
 
 # ***************************************************************************
 def patternFoundInFilename(filename, pattern):
@@ -192,23 +195,23 @@ def make_external_call(\
 
   """
   if show_command and opts.verbose is True: 
-    print "--- Trying this command :" + command
+    print("--- Trying this command :" + command)
 
   stdin, out, err = os.popen3(command)
   pid, status = os.wait()
   this_output = out.read()
   if show_error & status != 0:
-    print >>sys.stderr, "External call failed."
-    print >>sys.stderr, "  status: %d" % status
-    print >>sys.stderr, "  stdout: %s" % this_output
-    print >>sys.stderr, "  stderr: %s" % err.read()
-    print >>sys.stderr, "  command: %s" % command
+    print("External call failed.", file=sys.stderr)
+    print("  status: %d" % status, file=sys.stderr)
+    print("  stdout: %s" % this_output, file=sys.stderr)
+    print("  stderr: %s" % err.read(), file=sys.stderr)
+    print("  command: %s" % command, file=sys.stderr)
     sys.exit(status)
   if show_stdout:
     if this_output[0:1]=='\n': 
-      print  this_output[1:]  #first character is \n
+      print(this_output[1:])  #first character is \n
     else:
-      print this_output
+      print(this_output)
 
   stdin.close()
   out.close()
@@ -223,7 +226,7 @@ def mkdir( newdir ):
   @param newdir : name of directory to be created (type: string)
   """
   if os.path.isdir(newdir): 
-    print >>sys.stdout,"WARNING: this directory already exists (" + newdir +")."
+    print("WARNING: this directory already exists (" + newdir +").")
     pass
   elif os.path.isfile(newdir):
     raise OSError("a file with the same name as the desired " \
@@ -269,7 +272,7 @@ def write_results(page, opts, section,injection=None):
   """
 
   if opts.verbose is True:
-    print >>sys.stdout,"--------------------- Creating section "+section
+    print("--------------------- Creating section "+section)
   if section=='general':
     page = write_general(page, opts)
   elif section=='datainfo':
@@ -393,7 +396,7 @@ def write_general(page,opts):
 
   # The search parameters
   if opts.verbose is True: 
-    print "Extracting the version and tag of the executables..." 
+    print("Extracting the version and tag of the executables...") 
   
   # todo : get the list of executables  from the ini file
   executables = []
@@ -528,7 +531,7 @@ def write_summary(page,opts,thisSearch='playground',injection = 'allinj',
     ZLdir='full_data_summary_plots/'
     ifartag=['FULL_DATA','ALL_DATA','OPEN_BOX']
   else:
-    print 'Error in write_analysis function: thisSearch is not valid'
+    print('Error in write_analysis function: thisSearch is not valid')
     sys.exit(1)
   IJdir = injection + '_summary_plots/'
   PDdir = pipedown + '/'
@@ -838,7 +841,7 @@ def write_upperlimit(page, opts, thisSearch='playground', pipedown='pipedown'):
     ifartag=['FULL_DATA','ALL_DATA','OPEN_BOX']
     FARtext="""the combined FAR of the loudest full data event."""
   else:
-    print 'Error in write_analysis function: thisSearch is not valid'
+    print('Error in write_analysis function: thisSearch is not valid')
     sys.exit(1)
   PDdir = pipedown + '/'
 
@@ -972,7 +975,7 @@ def write_analysis(page, opts, thisSearch='playground',pipedown='pipedown'):
     images_dir='full_data_summary_plots/'
     ifartag=['FULL_DATA','ALL_DATA','OPEN_BOX']
   else:
-    print 'Error in write_analysis function: thisSearch is not valid'
+    print('Error in write_analysis function: thisSearch is not valid')
     sys.exit(1)
   PDdir = pipedown + '/'
   if opts.symlink_plots:
@@ -1814,7 +1817,7 @@ def heading(page, title="None", label="Switch details on/off", heading="h3"):
   elif heading == 'h3':
     section_num = str(h2_num)+"."+str(h3_num)+"."
   else:
-    raise ValueError, "heading must be either h2 or h3 in heading function"
+    raise ValueError("heading must be either h2 or h3 in heading function")
 
 
   page.add("<"+heading+">"+ section_num+ title)
@@ -2203,7 +2206,7 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
   # At the moment this flag is unused but is kept as it may be used again.
   if not os.path.isdir(webDir):
     mkdir(webDir)
-    print >> sys.stdout, ' .../ copying all' + dataDir + ' files to ' + webDir
+    print(' .../ copying all' + dataDir + ' files to ' + webDir)
     # Copy the html and cache files
     copy_files(dataDir,webDir,'*html')
     copy_files(dataDir,webDir,'*cache')
@@ -2232,7 +2235,7 @@ def copy_plot_directory(dataDir,webDir,open_box = True):
       errMsg = "Directory %s does not exist." %(from_path,)
       logText(logfile, errMsg, "warning")
 
-    print >> sys.stdout, '... Done'
+    print('... Done')
 
 def symlink_plot_directory(dataDir,webDir):
   '''
@@ -2245,10 +2248,10 @@ def symlink_plot_directory(dataDir,webDir):
     if webDir[-1] == '/':
       webDir = webDir[:-1]
     command = 'ln -s ' + dataDir + ' ' + webDir
-    print command
-    print >> sys.stdout, ' .../symlinking all' + dataDir + ' files to ' + webDir
+    print(command)
+    print(' .../symlinking all' + dataDir + ' files to ' + webDir)
     make_external_call(command, opts.debug, opts.debug, True)
-    print >> sys.stdout, '... Done'
+    print('... Done')
 
     
 # ***************************************************************************
@@ -2278,7 +2281,7 @@ def fom(page, opts, cachefile_tag=None, caption="fix me",\
   cachefileList =  glob.glob(thisglob)
   
   if opts.verbose is True: 
-    print "        Searching for files with this(ese) tag(s): " +str(image_tag)
+    print("        Searching for files with this(ese) tag(s): " +str(image_tag))
 
   # for each cachefile we create a div figure section with all 
   # figures whose name is part of the image_tag list
@@ -2292,7 +2295,7 @@ def fom(page, opts, cachefile_tag=None, caption="fix me",\
     href = None
     #for each file contained in the cachefile
     if opts.debug is True :
-      print >>sys.stdout, "        --> Copying files from " +eachcache
+      print("        --> Copying files from " +eachcache)
 
     for filename in this:
       filename = filename.replace("\n","")
@@ -2368,7 +2371,7 @@ def html_and_plot(page, opts, cachefile_tag=None,\
       cacheFiles[ifo] = file
       fileListDict.append(ifo)
     else:
-      print >> sys.stderr,"WARNING: file doesn't seem to match an ifo combo!"
+      print("WARNING: file doesn't seem to match an ifo combo!", file=sys.stderr)
 
   for file in htmlfileList:
     ifo = None
@@ -2378,12 +2381,12 @@ def html_and_plot(page, opts, cachefile_tag=None,\
     if ifo:
       htmlFiles[ifo] = file
     else:
-      print >> sys.stderr,"WARNING: file doesn't seem to match an ifo combo!"
+      print("WARNING: file doesn't seem to match an ifo combo!", file=sys.stderr)
     if ifo not in cacheFiles.keys():
-      print >> sys.stderr,"WARNING: file doesn't seem to correspond to cache file list"
+      print("WARNING: file doesn't seem to correspond to cache file list", file=sys.stderr)
 
   if opts.verbose is True:
-    print "        Searching for files with this(ese) tag(s): " +str(image_tag)
+    print("        Searching for files with this(ese) tag(s): " +str(image_tag))
 
   for ifo in fileListDict:
     if ifo in htmlFiles.keys():
@@ -2396,7 +2399,7 @@ def html_and_plot(page, opts, cachefile_tag=None,\
       #for each file contained in the cachefile
 
       if opts.debug is True:
-        print >>sys.stdout, "        --> Copying files from " +cacheFiles[ifo]
+        print("        --> Copying files from " +cacheFiles[ifo])
 
       for filename in this:
         filename = filename.replace("\n","")
@@ -2463,7 +2466,7 @@ def html_insert(page,opts, html_tag=None,\
   htmlfileList =  glob.glob(thisglob)
 
   if opts.verbose is True:
-    print "        Copying this html file : " +str(html_tag)
+    print("        Copying this html file : " +str(html_tag))
 
   # for each cachefile we create a div figure section with all 
   # figures whose name is part of the image_tag list
@@ -2512,7 +2515,7 @@ def set_style():
     return tmp[len(tmp)-1]
     
   except:
-    print sys.stderr()<< 'could not copy the style file'
+    print('could not copy the style file', file=sys.stderr)
     pass
     return ""
 
@@ -2604,10 +2607,10 @@ opts.config = config # save the name of the ini file, why ?
 configcp = glue.pipeline.DeepCopyableConfigParser()
 configcp.read(config)
 maxdiv = 200
-print >>sys.stdout, "|------------------- Initialisation"
+print("|------------------- Initialisation")
 # First, we open an xml file, for the log file
 logfile_name = __name__+".xml"
-print >>sys.stdout,"Openning the log file (" +logfile_name+")."
+print("Openning the log file (" +logfile_name+").")
 logfile = open(logfile_name, "w")
 logfile.write("""<?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="write_ihope_page.xsl"?>
@@ -2616,7 +2619,7 @@ logfile.write("""<?xml version="1.0" encoding="ISO-8859-1"?>
 
 #---------------------------------------
 # then, we parse the write_ihope_page.ini file
-print >>sys.stdout,"Parsing the ini file: " + opts.config
+print("Parsing the ini file: " + opts.config)
 try:
   opts.config_file 	= configcp.get("main", "ihope-ini-file")
   opts.gps_start_time 	= configcp.get("main", "gps-start-time")
@@ -2629,9 +2632,9 @@ try:
   Second                = configcp.get("main", "second").replace( '"', '' )
   Notes                 = configcp.get("main", "notes").replace( '"', '' )
 except:
-  print >> sys.stderr, "ERROR::The ini file does not have the proper field in the [main] section" 
-  print >> sys.stderr, """       Consider adding one of those fields if missing: ihope-ini-file, \
-	gps-start-time,gps-end-time, ihope-directory, title,url, username, output"""
+  print("ERROR::The ini file does not have the proper field in the [main] section", file=sys.stderr) 
+  print("""       Consider adding one of those fields if missing: ihope-ini-file, \
+	gps-start-time,gps-end-time, ihope-directory, title,url, username, output""", file=sys.stderr)
   raise
   
 #------------------------------------
@@ -2647,19 +2650,19 @@ opts.txt_suffix = '-'+opts.gps_start_time+'-'+opts.duration+'.txt'
 
 #----------------------
 # openning the html file
-print >>sys.stdout,"Openning the HTML (" + opts.output+")"
+print("Openning the HTML (" + opts.output+")")
 try:
   html_file = file(opts.output,"w")
 except:
   msg = "Cannot open %" % opts.output
-  print >>sys.stderr, msg
+  print(msg, file=sys.stderr)
   raise
 
 
 #-----------------------------------------
 # here is the directory we want to extract information from
 msg = "Entering this directory (where we will get all the relevant information)" + opts.datadir
-print >> sys.stdout, msg
+print(msg)
 if not  os.path.isdir(opts.datadir):
   raise  "%s is not a valid directory. Check your gps time." % opts.datadir
 # which physical name is 
@@ -2724,8 +2727,8 @@ if opts.injection is True:
     html_sections['allinj'] = 'All Injections Combined'
   else:
     opts.injection = False
-    print >> sys.stderr, "No injections section found in ini file."
-    print >> sys.stderr, "Now running with --skip-injections"
+    print("No injections section found in ini file.", file=sys.stderr)
+    print("Now running with --skip-injections", file=sys.stderr)
 if opts.hardware_injection is True: 
   html_sections['hardware_injections'] = "Hardware Injection"
 if opts.full_data is True: html_sections['full_data'] = "Full Data"
@@ -2808,9 +2811,9 @@ if opts.full_data:
 
 # that's it for the html creation. let us copy it to the requested directory  
 
-print '---------------------FINISHED ---------------------'
-print '--- HTML file created. '
-print '--- Copying html documents in ' +opts.physdir
+print('---------------------FINISHED ---------------------')
+print('--- HTML file created. ')
+print('--- Copying html documents in ' +opts.physdir)
 make_external_call('mv  '+opts.output +' ' + opts.physdir, opts.debug, opts.debug, True)
 make_external_call( 'mv toggle.js '+ opts.physdir, opts.debug, opts.debug,  True)
 
@@ -2822,13 +2825,13 @@ output, status = make_external_call( 'grep WARNING '+ logfile +'| wc - | awk \'{
 
 if status==0:
   if int(output)==0:
-    print 'No warnings'
+    print('No warnings')
   else:
-    print '\n\n\nThere are warnings : '+str(int(output))+' . Check the log file '+logfile
+    print('\n\n\nThere are warnings : '+str(int(output))+' . Check the log file '+logfile)
   
   output, status = make_external_call('mv '+logfile + " "+opts.physdir, True,True,True) 
 else:
-  print 'Could not find the log file ' +logfile
+  print('Could not find the log file ' +logfile)
   
  
 #Finally create the xsl for the log xml file

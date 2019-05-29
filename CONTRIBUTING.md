@@ -1,10 +1,15 @@
 # Contributing to LALSuite
 
-This page outlines the recommended procedure for contributing changes to the LALSuite repository. Please read the introduction to [GitLab on git.ligo.org](https://wiki.ligo.org/DASWG/GitLigoOrg) before you start. 
+This page outlines the recommended procedure for contributing changes to the LALSuite repository. Please read the introduction to [GitLab on git.ligo.org](https://wiki.ligo.org/Computing/GitLigoOrg) before you start. 
 
 ## Reporting Issues
 
-When reporting issues, please include as much detail as possible to reproduce the error, including information about your operating system and the version of each (relevant) component of LALSuite.
+If you have ligo.org authentication, please report issues directly through gitlab.
+Otherwise, you can use the service desk address
+contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
+to send bug reports by e-mail.
+
+In either case, please include as much detail as possible to reproduce the error, including information about your operating system and the version of each (relevant) component of LALSuite.
 If possible, please include a brief, self-contained code example that demonstrates the problem.
 
 ## Contributing code
@@ -25,7 +30,7 @@ If you can't see the *Fork* button, make sure that you are logged in by checking
 
 ### Clone your fork
 
-Make sure that you have installed and configured [git-lfs](https://wiki.ligo.org/DASWG/GitLFS#Install_the_git_LFS_client) for the management of large files. This is required to successfully build and install your development fork. 
+Make sure that you have installed and configured [git-lfs](https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client) for the management of large files. This is required to successfully build and install your development fork. 
 
 Then, clone your fork with 
 
@@ -129,8 +134,8 @@ A feature branch should *not* be repurposed for further development as this can 
 ### Special case: CW codes in LALPulsar and LALApps
 
 For the continuous-wave (CW) related codes in the `lalpulsar/` and `lalapps/src/pulsar` directories,
-issues should preferentially be reported [in the CW fork tracker](https://git.ligo.org/CW/lalsuite/issues).
-Branches in that fork can also be used for short-term development, please also see the special contributing guide [here](https://git.ligo.org/CW/lalsuite/wikis/contributing).
+issues should preferentially be reported [in the CW fork tracker](https://git.ligo.org/CW/software/lalsuite/issues).
+Branches in that fork can also be used for short-term development, please also see the special contributing guide [here](https://git.ligo.org/CW/software/lalsuite/wikis/contributing).
 
 ## More Information
 

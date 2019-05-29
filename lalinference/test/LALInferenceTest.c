@@ -446,7 +446,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	
 	irs = XLALCalloc(1, sizeof(LALInferenceRunState));
     LALInferenceInitCBCThreads(irs, 1);
-    thread = irs->threads[0];
+    thread = &irs->threads[0];
 
 	/* read data from files: */
 	fprintf(stdout, " LALInferenceReadData(): started.\n");
@@ -505,7 +505,7 @@ void BasicMCMCOneStep(LALInferenceRunState *runState)
   LALInferenceVariables proposedParams;
   REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
   REAL8 logAcceptanceProbability;
-  LALInferenceThreadState *thread = runState->threads[0];
+  LALInferenceThreadState *thread = &runState->threads[0];
 
   // current values:
   logPriorCurrent      = runState->prior(runState, thread->currentParams, thread->model);
@@ -545,7 +545,7 @@ void MCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
   //int i;
   REAL8 dummyR8;
-  LALInferenceThreadState *thread = runState->threads[0];
+  LALInferenceThreadState *thread = &runState->threads[0];
 
   printf(" MCMCAlgorithm(); starting parameter values:\n");
   LALInferencePrintVariables(thread->currentParams);
@@ -574,7 +574,7 @@ void NelderMeadEval(struct tagLALInferenceRunState *runState,
   //int i;
   // copy over (subset of) values from "value" argument
   // (other parameter values, if any, remain as they are):
-  LALInferenceThreadState *thread = runState->threads[0];
+  LALInferenceThreadState *thread = &runState->threads[0];
   for (i=0; i<dim; ++i)
     LALInferenceSetVariable(thread->currentParams, names[i], &values[i]);
   // evaluate prior & likelihood:
@@ -636,7 +636,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
   int terminate=0;
   int mini, maxi;
   
-  LALInferenceThreadState *thread = runState->threads[0];
+  LALInferenceThreadState *thread = &runState->threads[0];
 
   printf(" NelderMeadAlgorithm(); current parameter values:\n");
   LALInferencePrintVariables(thread->currentParams);
@@ -990,7 +990,7 @@ printf("Likelihood %g NullLikelihood %g RelativeLikelihood %g\n", likelihood, nu
 
 void SingleIFOLikelihoodTest(void)
 {
-    LALInferenceThreadState *thread = runstate->threads[0];
+    LALInferenceThreadState *thread = &runstate->threads[0];
 	fprintf(stdout, "Single IFO likelihood test\n");
 	//COMPLEX16Vector *freqModel1=XLALCreateCOMPLEX16Vector(runstate->data->freqData->data->length);
 	//COMPLEX16Vector *freqModel2=XLALCreateCOMPLEX16Vector(runstate->data->freqData->data->length);
@@ -1032,7 +1032,7 @@ void SingleIFOLikelihoodTest(void)
 
 void TemplateDumpTest(void)
 {
-    LALInferenceThreadState *thread = runstate->threads[0];
+    LALInferenceThreadState *thread = &runstate->threads[0];
 
  /* NOTE: try out the "forceTimeLocation" flag within the "templateLAL()" function */
     /*       for aligning (time domain) templates.                                    */
@@ -1140,7 +1140,7 @@ void TemplateDumpTest(void)
 void PTMCMCTest(void)
 {
 	fprintf(stdout, "PTMCMC test\n");
-    LALInferenceThreadState *thread = runstate->threads[0];
+    LALInferenceThreadState *thread = &runstate->threads[0];
 	//runstate->algorithm=PTMCMCAlgorithm;
 	//runstate->evolve=PTMCMCOneStep;
 	//runstate->prior=PTUniformLALPrior;
