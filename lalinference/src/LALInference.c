@@ -2386,21 +2386,32 @@ else{
   double c = mass1 * LAL_MRSUN_SI / r;
   *lambda1= (2.0/3.0) * k / pow(c , 5.0);
 
+  if(r<0){
+    printf("Warning: Negative radius, r1 = %e\n",r);
+    printf("Setting lambda1 = 0.0\n");
+    *lambda1=0.0;
+  }
+  if(k<0){
+    printf("Warning: Negative love number, k1 = %e\n",k);
+    printf("Setting lambda1 = 0.0\n");
+    *lambda1=0.0;
+  }
+
   // Calculate lambda2(m1|eos)
   r = XLALSimNeutronStarRadius(mass2_kg, fam);
   k = XLALSimNeutronStarLoveNumberK2(mass2_kg, fam);
   c = mass2 * LAL_MRSUN_SI / r;
   *lambda2= (2.0/3.0) * k / pow(c , 5.0);
 
-  if(lambda1<0){
-    printf("Warning: Negative tides, lambda1 = %e\n",lambda1);
-    printf("Setting lambda1 = 0.0\n");
-    lambda1=0.0;
-  }
-  if(lambda2<0){
-    printf("Warning: Negative tides, lambda2 = %e\n",lambda2);
+  if(r<0){
+    printf("Warning: Negative radius, r2 = %e\n",r);
     printf("Setting lambda2 = 0.0\n");
-    lambda2=0.0;
+    *lambda2=0.0;
+  }
+  if(k<0){
+    printf("Warning: Negative love number, k2 = %e\n",k);
+    printf("Setting lambda2 = 0.0\n");
+    *lambda2=0.0;
   }
 
   // Clean up
