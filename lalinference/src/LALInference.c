@@ -2392,6 +2392,17 @@ else{
   c = mass2 * LAL_MRSUN_SI / r;
   *lambda2= (2.0/3.0) * k / pow(c , 5.0);
 
+  if(lambda1<0){
+    printf("Warning: Negative tides, lambda1 = %e\n",lambda1);
+    printf("Setting lambda1 = 0.0\n");
+    lambda1=0.0;
+  }
+  if(lambda2<0){
+    printf("Warning: Negative tides, lambda2 = %e\n",lambda2);
+    printf("Setting lambda2 = 0.0\n");
+    lambda2=0.0;
+  }
+
   // Clean up
   XLALDestroySimNeutronStarFamily(fam);
   XLALDestroySimNeutronStarEOS(eos);
@@ -2462,7 +2473,7 @@ mdat_prev = 0.0;
 // Ensure mass turnover does not happen too soon
 const double logpmin = 75.5;
 double logpmax = log(XLALSimNeutronStarEOSMaxPressure(eos));
-double dlogp = (logpmax - logpmin) / 1000;
+double dlogp = (logpmax - logpmin) / 1000.;
 // Need at least 8 points
 for (int i = 0; i < 8; ++i) {
    pdat = exp(logpmin + i * dlogp);
