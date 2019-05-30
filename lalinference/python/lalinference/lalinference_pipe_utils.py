@@ -1218,55 +1218,50 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 zipfilename='postproc_'+evstring+'.tar.gz'
             else:
                 zipfilename=None
-            par_mergenodes=[]
-            for ifo in enginenodes[0].ifos:
-                co_merge_job = MergeJob(self.config,os.path.join(self.basepath,'merge_runs_%s.sub'%(ifo)),self.logpath,dax=self.is_dax(),engine='nest')
-                co_merge_job.set_grid_site('local')
-                cotest_nodes=[]
-                for i in range(Npar):
-                    cot_node,bwpsdnodes,bwpostnodes=self.add_engine_node(event,bwpsd=bwpsdnodes,bwpost=bwpostnodes,ifos=[ifo],co_test=True)
-                    if cot_node is not None:
-                        if i>0:
-                            cot_node.add_var_arg('--dont-dump-extras')
-                        cotest_nodes.append(cot_node)
-                if len(cotest_nodes)==0:
-                    return False
-                for co in cotest_nodes:
-                    co.set_psdstart(enginenodes[0].GPSstart)
-                    co.set_psdlength(enginenodes[0].psdlength)
-                    if co!=cotest_nodes[0]:
-                        co.add_var_arg('--dont-dump-extras')
+            if "summarypages" not in self.config.get('condor','resultspage'):
+                respagenode=self.add_results_page_node(resjob=self.cotest_results_page_job,outdir=pagedir,parent=mergenode,gzip_output=zipfilename,ifos=enginenodes[0].ifos)
+                respagenode.set_psd_files(enginenodes[0].get_psd_files())
+                respagenode.set_snr_file(enginenodes[0].get_snr_file())
+                if os.path.exists(self.basepath+'/coinc.xml'):
+                    try:
+                        gid = self.config.get('input','gid')
+                    except:
+                        gid = None
+                    respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
+
+                par_mergenodes=[]
+                for ifo in enginenodes[0].ifos:
+                    co_merge_job = MergeJob(self.config,os.path.join(self.basepath,'merge_runs_%s.sub'%(ifo)),self.logpath,dax=self.is_dax(),engine='nest')
+                    co_merge_job.set_grid_site('local')
+                    cotest_nodes=[]
+                    for i in range(Npar):
+                        cot_node,bwpsdnodes,bwpostnodes=self.add_engine_node(event,bwpsd=bwpsdnodes,bwpost=bwpostnodes,ifos=[ifo],co_test=True)
+                        if cot_node is not None:
+                            if i>0:
+                                cot_node.add_var_arg('--dont-dump-extras')
+                            cotest_nodes.append(cot_node)
+                    if len(cotest_nodes)==0:
+                        return False
+                    for co in cotest_nodes:
+                        co.set_psdstart(enginenodes[0].GPSstart)
+                        co.set_psdlength(enginenodes[0].psdlength)
+                        if co!=cotest_nodes[0]:
+                            co.add_var_arg('--dont-dump-extras')
+                        else:
+                            co.set_psd_files()
+                            co.set_snr_file()
+                    pmergenode=MergeNode(co_merge_job,parents=cotest_nodes,engine='nest')
+                    pmergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.hdf5'%(ifo,evstring)))
+                    self.add_node(pmergenode)
+                    par_mergenodes.append(pmergenode)
+                    presultsdir=os.path.join(pagedir,ifo)
+                    mkdirs(presultsdir)
+                    if self.site!='local':
+                        pzipfilename='postproc_'+evstring+'_'+ifo+'.tar.gz'
                     else:
-                        co.set_psd_files()
-                        co.set_snr_file()
-                pmergenode=MergeNode(co_merge_job,parents=cotest_nodes,engine='nest')
-                pmergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.hdf5'%(ifo,evstring)))
-                self.add_node(pmergenode)
-                par_mergenodes.append(pmergenode)
-                presultsdir=os.path.join(pagedir,ifo)
-                mkdirs(presultsdir)
-                if self.site!='local':
-                    pzipfilename='postproc_'+evstring+'_'+ifo+'.tar.gz'
-                else:
-                    pzipfilename=None
+                        pzipfilename=None
 
-                if "summarypages" not in self.config.get('condor','resultspage'):
-                    respagenode=self.add_results_page_node(resjob=self.cotest_results_page_job,outdir=pagedir,parent=mergenode,gzip_output=zipfilename,ifos=enginenodes[0].ifos)
-                    respagenode.set_psd_files(enginenodes[0].get_psd_files())
-                    respagenode.set_snr_file(enginenodes[0].get_snr_file())
-                    if os.path.exists(self.basepath+'/coinc.xml'):
-                        try:
-                            gid = self.config.get('input','gid')
-                        except:
-                            gid = None
-                        respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
                     mkdirs(os.path.join(self.basepath,'coherence_test'))
-                    respagenode=self.add_results_page_node(resjob=self.cotest_results_page_job,outdir=pagedir,parent=mergenode,gzip_output=zipfilename,ifos=enginenodes[0].ifos)
-                    respagenode.set_psd_files(enginenodes[0].get_psd_files())
-                    respagenode.set_snr_file(enginenodes[0].get_snr_file())
-                    if os.path.exists(self.basepath+'/coinc.xml'):
-                        respagenode.set_coinc_file(self.basepath+'/coinc.xml',self.config.get('input','gid'))
-
                     subresnode=self.add_results_page_node(outdir=presultsdir,parent=pmergenode, gzip_output=pzipfilename,ifos=ifo)
                     subresnode.set_psd_files(cotest_nodes[0].get_psd_files())
                     subresnode.set_snr_file(cotest_nodes[0].get_snr_file())
@@ -1280,16 +1275,57 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                         subresnode.set_injection(self.config.get('input','injection-file'),event.event_id)
                     elif self.config.has_option('input','burst-injection-file') and event.event_id is not None:
                         subresnode.set_injection(self.config.get('input','burst-injection-file'),event.event_id)
-                    coherence_node=CoherenceTestNode(self.coherence_test_job,outfile=os.path.join(self.basepath,'coherence_test','coherence_test_%s_%s.dat'%(myifos,evstring)))
-                    coherence_node.add_coherent_parent(mergenode)
-                    for parmergenode in par_mergenodes:
-                        coherence_node.add_incoherent_parent(parmergenode)
+                coherence_node=CoherenceTestNode(self.coherence_test_job,outfile=os.path.join(self.basepath,'coherence_test','coherence_test_%s_%s.dat'%(myifos,evstring)))
+                coherence_node.add_coherent_parent(mergenode)
+                for parmergenode in par_mergenodes:
+                    coherence_node.add_incoherent_parent(parmergenode)
+                self.add_node(coherence_node)
+                respagenode.add_parent(coherence_node)
+                #respagenode.set_bayes_coherent_incoherent(coherence_node.get_output_files()[0])
 
+            elif "summarypages" in self.config.get('condor','resultspage'):
+                par_mergenodes=[]
+                for ifo in enginenodes[0].ifos:
+                    co_merge_job = MergeJob(self.config,os.path.join(self.basepath,'merge_runs_%s.sub'%(ifo)),self.logpath,dax=self.is_dax(),engine='nest')
+                    co_merge_job.set_grid_site('local')
+                    cotest_nodes=[]
+                    for i in range(Npar):
+                        cot_node,bwpsdnodes,bwpostnodes=self.add_engine_node(event,bwpsd=bwpsdnodes,bwpost=bwpostnodes,ifos=[ifo],co_test=True)
+                        if cot_node is not None:
+                            if i>0:
+                                cot_node.add_var_arg('--dont-dump-extras')
+                            cotest_nodes.append(cot_node)
+                    if len(cotest_nodes)==0:
+                        return False
+                    for co in cotest_nodes:
+                        co.set_psdstart(enginenodes[0].GPSstart)
+                        co.set_psdlength(enginenodes[0].psdlength)
+                        if co!=cotest_nodes[0]:
+                            co.add_var_arg('--dont-dump-extras')
+                        else:
+                            co.set_psd_files()
+                            co.set_snr_file()
+                    pmergenode=MergeNode(co_merge_job,parents=cotest_nodes,engine='nest')
+                    pmergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.hdf5'%(ifo,evstring)))
+                    self.add_node(pmergenode)
+                    par_mergenodes.append(pmergenode)
+                    presultsdir=os.path.join(pagedir,ifo)
+                    mkdirs(presultsdir)
+                    if self.site!='local':
+                        pzipfilename='postproc_'+evstring+'_'+ifo+'.tar.gz'
+                    else:
+                        pzipfilename=None
 
-            if "summarypages" in self.config.get('condor','resultspage'):
                 respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos,
                     evstring=evstring, coherence=True)
-                respagenode.set_psd_files(enginenodes[0].get_psd_files())
+                respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
+                if os.path.exists(self.basepath+'/coinc.xml'):
+                    try:
+                        gid = self.config.get('input','gid')
+                    except:
+                        gid = None
+                    respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
+
         else:
             if self.site!='local':
                 zipfilename='postproc_'+evstring+'.tar.gz'
@@ -1300,7 +1336,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             if "summarypages" in self.config.get('condor','resultspage'):
                 respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos,
                     evstring=evstring, coherence=False)
-                respagenode.set_psd_files(enginenodes[0].get_psd_files())
+                respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
+                if os.path.exists(self.basepath+'/coinc.xml'):
+                    try:
+                        gid = self.config.get('input','gid')
+                    except:
+                        gid = None
+                    respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
             else:
                 respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos)
                 respagenode.set_psd_files(enginenodes[0].get_psd_files())
@@ -1309,12 +1351,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     try:
                         gid = self.config.get('input','gid')
                     except:
-                        gid = None
+                        gid = none
                     respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
-            if self.config.has_option('input','injection-file') and event.event_id is not None:
-                respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
-            elif self.config.has_option('input','burst-injection-file') and event.event_id is not None:
-                respagenode.set_injection(self.config.get('input','burst-injection-file'),event.event_id)
+                if self.config.has_option('input','injection-file') and event.event_id is not None:
+                    respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
+                elif self.config.has_option('input','burst-injection-file') and event.event_id is not None:
+                    respagenode.set_injection(self.config.get('input','burst-injection-file'),event.event_id)
 
         if self.config.has_option('analysis','upload-to-gracedb'):
             if self.config.has_option('gracedbinfo','server'):
@@ -1405,7 +1447,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
         if "summarypages" in self.config.get('condor','resultspage'):
             respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos, evstring=evstring, coherence=self.config.getboolean('analysis','coherence-test'))
-            respagenode.set_psd_files(enginenodes[0].get_psd_files())
+            respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
+            if os.path.exists(self.basepath+'/coinc.xml'):
+                try:
+                    gid = self.config.get('input','gid')
+                except:
+                    gid = None
+                respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
         else:
             respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos)
             respagenode.set_psd_files(enginenodes[0].get_psd_files())
@@ -1879,7 +1927,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             calibration = []
             for ifo in ifos:
                 try:
-                    calibration.append(self.config.get("engine", "%s-spcal-envelope" %(ifo)))
+                    calibration_envelope = self.config.get("engine", "%s-spcal-envelope" %(ifo))
+                    calibration.append("%s:%s" %(ifo, calibration_envelope))
                 except:
                     pass
             if len(calibration) > 0:
@@ -2792,16 +2841,22 @@ class PESummaryResultsPageNode(pipeline.CondorDAGNode):
     def get_event_number(self):
         return self.__event
 
-    def set_psd_files(self,st):
+    def set_psd_files(self,ifos,st):
         if st is None:
             return
-        psds = " ".join(st.split(','))
-        self.add_var_arg('--psd %s'%psds)
+        psds = ""
+        st = st.split(",")
+        for num, i in enumerate(ifos):
+            psds += " %s:%s" %(i, st[num])
+        self.add_var_arg('--psd%s'%psds)
 
-    def set_calibration_files(self,st):
+    def set_calibration_files(self,ifos,st):
         if st is None:
             return
-        calibration = " ".join(st.split(','))
+        calibration = ""
+        st = st.split(",")
+        for num, i in enumerate(ifos):
+            calibration += " %s:%s" %(i, st[num])
         self.add_var_arg('--calibration %s' %calibration)
 
     def set_snr_file(self,st):
@@ -2813,6 +2868,7 @@ class PESummaryResultsPageNode(pipeline.CondorDAGNode):
             self.__event=gid
         if coinc is None:
             return
+        self.add_var_arg('--trigfile '+coinc)
 
     def add_engine_parent(self,node):
         """
