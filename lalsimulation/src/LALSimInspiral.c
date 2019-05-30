@@ -97,10 +97,9 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(BCV),
     INITIALIZE_NAME(BCVSpin),
     INITIALIZE_NAME(SpinTaylorT1),
-    INITIALIZE_NAME(SpinTaylorT2),
+    INITIALIZE_NAME(SpinTaylorT5),
     INITIALIZE_NAME(SpinTaylorT3),
     INITIALIZE_NAME(SpinTaylorT4),
-    INITIALIZE_NAME(SpinTaylorT5),
     INITIALIZE_NAME(SpinTaylorF2),
     INITIALIZE_NAME(SpinTaylorFrameless),
     INITIALIZE_NAME(SpinTaylor),
@@ -269,7 +268,7 @@ static double fixReferenceFrequency(const double f_ref, const double f_min, cons
     if (f_ref == 0)
         switch (approximant) {
         case SpinTaylorT1:
-        case SpinTaylorT2:
+        case SpinTaylorT5:
         case SpinTaylorT3:
         case SpinTaylorT4:
         case SpinTaylorT2Fourier:
@@ -582,7 +581,7 @@ int XLALSimInspiralChooseTDWaveform(
             break;
 
         /* spinning inspiral-only models */
-        case SpinTaylorT2:
+        case SpinTaylorT5:
             /* Waveform-specific sanity checks */
 	    //if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) && (XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALparams)>5) )
 	  //ABORT_NONZERO_TRANSVERSE_SPINS_HIGH_SPINO(LALparams);
@@ -599,7 +598,7 @@ int XLALSimInspiralChooseTDWaveform(
             amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ?
                     amplitudeO : MAX_PRECESSING_AMP_PN_ORDER;
             /* Call the waveform driver routine */
-            ret = XLALSimInspiralSpinTaylorT2(hplus, hcross, phiRef, v0, deltaT,
+            ret = XLALSimInspiralSpinTaylorT5(hplus, hcross, phiRef, v0, deltaT,
 					      m1, m2, f_min, f_ref, distance, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
 					      LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2,
 					      quadparam1, quadparam2,
@@ -4770,7 +4769,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case HGimri:
         case IMRPhenomA:
         case EOBNRv2HM:
-        case SpinTaylorT2:
+        case SpinTaylorT5:
         case SpinTaylorT4:
         case SpinTaylorT1:
         case IMRPhenomB:
@@ -5224,7 +5223,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SpinTaylor:
     case SpinTaylorFrameless:
     case SpinTaylorT4:
-    case SpinTaylorT2:
+    case SpinTaylorT5:
     case PhenSpinTaylor:
     case PhenSpinTaylorRD:
     case SpinTaylorT3:
@@ -5326,10 +5325,9 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case BCV:
     case BCVSpin:
     case SpinTaylorT1:
-    case SpinTaylorT2:
+    case SpinTaylorT5:
     case SpinTaylorT3:
     case SpinTaylorT4:
-    case SpinTaylorT5:
     case SpinTaylorFrameless:
     case SpinTaylor:
     case SpinQuadTaylor:
@@ -5811,7 +5809,7 @@ double XLALSimInspiralGetFinalFreq(
 
         // FIXME: Following I don't know how to calculate */
         /* Spinning inspiral-only time domain */
-        case SpinTaylorT2:
+        case SpinTaylorT5:
         case SpinTaylorT4:
         case SpinTaylorT1:
         case PhenSpinTaylor:
@@ -5995,7 +5993,7 @@ int XLALSimInspiralTDConditionStage2(REAL8TimeSeries *hplus, REAL8TimeSeries *hc
 REAL8 XLALSimInspiralfLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant)
 {
   if (ampOrder == -1) {
-      if (approximant == SpinTaylorT2 || approximant == SpinTaylorT4)
+      if (approximant == SpinTaylorT5 || approximant == SpinTaylorT4)
           ampOrder = MAX_PRECESSING_AMP_PN_ORDER;
       else
           ampOrder = MAX_NONPRECESSING_AMP_PN_ORDER;
@@ -6256,7 +6254,7 @@ int XLALSimInspiralChooseTDWaveformOLD(
             break;
 
         /* spinning inspiral-only models */
-        case SpinTaylorT2:
+        case SpinTaylorT5:
             /* Waveform-specific sanity checks */
             /* Sanity check unused fields of waveFlags */
 	    XLALSimInspiralInitialConditionsPrecessingApproxs(&incl,&spin1x,&spin1y,&spin1z,&spin2x,&spin2y,&spin2z,inclination,S1x,S1y,S1z,S2x,S2y,S2z,m1,m2,f_ref,phiRef,XLALSimInspiralGetFrameAxis(waveFlags));
@@ -6272,7 +6270,7 @@ int XLALSimInspiralChooseTDWaveformOLD(
             amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ?
                     amplitudeO : MAX_PRECESSING_AMP_PN_ORDER;
             /* Call the waveform driver routine */
-            ret = XLALSimInspiralSpinTaylorT2(hplus, hcross, phiRef, v0, deltaT,
+            ret = XLALSimInspiralSpinTaylorT5(hplus, hcross, phiRef, v0, deltaT,
 					      m1, m2, f_min, f_ref, distance, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
 					      LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2,
 					      quadparam1, quadparam2,

@@ -85,7 +85,7 @@ static int XLALSimInspiralSpinTaylorStoppingTest(double t,
 	const double values[], double dvalues[], void *mparams);
 static int XLALSimInspiralSpinTaylorT1Derivatives(double t,
 	const double values[], double dvalues[], void *mparams);
-static int XLALSimInspiralSpinTaylorT2Derivatives(double t,
+static int XLALSimInspiralSpinTaylorT5Derivatives(double t,
 	const double values[], double dvalues[], void *mparams);
 static int XLALSimInspiralSpinTaylorT1Setup(XLALSimInspiralSpinTaylorTxCoeffs **params, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 lambda1, REAL8 lambda2,
 	REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, INT4 lscorr);
@@ -1167,7 +1167,7 @@ static int XLALSimInspiralSpinTaylorT1Setup(
     return errCode;
 }
 
-int XLALSimInspiralSpinTaylorT2Setup(
+int XLALSimInspiralSpinTaylorT5Setup(
     XLALSimInspiralSpinTaylorTxCoeffs **params, /**< UNDOCUMENTED */
     const REAL8 m1_SI,                    /**< mass of body 1 (kg) */
     const REAL8 m2_SI,                    /**< mass of body 2 (kg) */
@@ -1383,7 +1383,7 @@ int XLALSimInspiralSpinTaylorT2Setup(
 }
 
 /*
- * Internal driver function to generate any of SpinTaylorT2/T4 in the Fourier domain.
+ * Internal driver function to generate any of SpinTaylorT1/T5/T4 in the Fourier domain.
  */
 static int XLALSimInspiralSpinTaylorDriverFourier(
         COMPLEX16FrequencySeries **hplus,        /**< +-polarization waveform */
@@ -1418,7 +1418,7 @@ static int XLALSimInspiralSpinTaylorDriverFourier(
 	LALDict *LALparams,             /**< LAL dictionary containing accessory parameters */
         INT4 phaseO,                    /**< twice PN phase order */
         INT4 amplitudeO,                /**< twice PN amplitude order */
-        Approximant approx,             /**< PN approximant (SpinTaylorT1/T2/T4) */
+        Approximant approx,             /**< PN approximant (SpinTaylorT1/T5/T4) */
         INT4 phiRefAtEnd                /**< whether phiRef corresponds to the end of the inspiral */
         )
 {
@@ -2396,7 +2396,7 @@ INT4 XLALSimInspiralSetEnergyPNTerms(REAL8 *Espin3,
  * 3) The orbital frequency becomes infinite
  * 4) The orbital frequency has gone outside the requested bounds
  * 5) The PN parameter v/c becomes >= 1
- * SpinTaylorT4 and SpinTaylorT2 both use this same stopping test
+ * SpinTaylorT4 and SpinTaylorT5 both use this same stopping test
  */
 static int XLALSimInspiralSpinTaylorStoppingTest(
 	double UNUSED t,
@@ -2820,7 +2820,7 @@ static int XLALSimInspiralSpinTaylorT1Derivatives(
  * as Eqs. (1), (8) - (10) of gr-qc/0405090
  * The derivative of E1 is Eq. (15)-(16) of gr-qc/0310034
  */
-static int XLALSimInspiralSpinTaylorT2Derivatives(
+static int XLALSimInspiralSpinTaylorT5Derivatives(
 	double UNUSED t,
 	const double values[],
 	double dvalues[],
@@ -2992,7 +2992,7 @@ static REAL8TimeSeries *appendTSandFree(REAL8TimeSeries *start,
 }
 
 /**
- * Internal driver function to generate any of SpinTaylorT1/T2/T4
+ * Internal driver function to generate any of SpinTaylorT1/T5/T4
  * REVIEWED completed on git hash 6640e79e60791d5230731acc63351676ce7ce413
  */
 static int XLALSimInspiralSpinTaylorDriver(
@@ -3025,7 +3025,7 @@ static int XLALSimInspiralSpinTaylorDriver(
 	LALDict *LALparams,             /**< LAL dictionary containing accessory parameters */
 	int phaseO,                     /**< twice PN phase order */
 	int amplitudeO,                 /**< twice PN amplitude order */
-        Approximant approx              /**< PN approximant (SpinTaylorT1/T2/T4) */
+        Approximant approx              /**< PN approximant (SpinTaylorT1/T5/T4) */
 	)
 {
     REAL8TimeSeries *V, *Phi, *S1x, *S1y, *S1z, *S2x, *S2y, *S2z;
@@ -3247,7 +3247,7 @@ static int XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(
         LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
         LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
         INT4 phaseO,                    /**< twice post-Newtonian order */
-    Approximant approx              /**< PN approximant (SpinTaylorT1/T2/T4) */
+    Approximant approx              /**< PN approximant (SpinTaylorT1/T5/T4) */
         )
 {
     INT4 intreturn;
@@ -3295,12 +3295,12 @@ static int XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(
 	        lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, 0);
         params = (void *) &paramsT4;
     }
-    else if( approx == SpinTaylorT2 )
+    else if( approx == SpinTaylorT5 )
     {
-        XLALSimInspiralSpinTaylorTxCoeffs *paramsT2;
-        XLALSimInspiralSpinTaylorT2Setup(&paramsT2, m1, m2, fStart, fEnd,
+        XLALSimInspiralSpinTaylorTxCoeffs *paramsT5;
+        XLALSimInspiralSpinTaylorT5Setup(&paramsT5, m1, m2, fStart, fEnd,
 		lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, 0);
-        params = (void *) &paramsT2;
+        params = (void *) &paramsT5;
     }
     else if( approx == SpinTaylorT1 )
     {
@@ -3359,9 +3359,9 @@ static int XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(
                 XLALSimInspiralSpinTaylorT4Derivatives,
                 XLALSimInspiralSpinTaylorStoppingTest,
                 LAL_ST4_ABSOLUTE_TOLERANCE, LAL_ST4_RELATIVE_TOLERANCE);
-    else if( approx == SpinTaylorT2 )
+    else if( approx == SpinTaylorT5 )
         integrator = XLALAdaptiveRungeKutta4Init(LAL_NUM_ST4_VARIABLES,
-                XLALSimInspiralSpinTaylorT2Derivatives,
+                XLALSimInspiralSpinTaylorT5Derivatives,
                 XLALSimInspiralSpinTaylorStoppingTest,
                 LAL_ST4_ABSOLUTE_TOLERANCE, LAL_ST4_RELATIVE_TOLERANCE);
     else if( approx == SpinTaylorT1 )
@@ -3886,7 +3886,7 @@ int XLALSimInspiralInitialConditionsPrecessingApproxs(
 
 /**
  * This function evolves the orbital equations for a precessing binary using
- * the \"TaylorT1/T2/T4\" approximant for solving the orbital dynamics
+ * the \"TaylorT1/T5/T4\" approximant for solving the orbital dynamics
  * (see arXiv:0907.0700 for a review of the various PN approximants).
  *
  * It returns time series of the \"orbital velocity\", orbital phase,
@@ -3950,7 +3950,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
 	LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
 	INT4 phaseO,                    /**< twice post-Newtonian order */
 	INT4 lscorr,                   /**< flag to control L_S terms */
-	Approximant approx              /**< PN approximant (SpinTaylorT1/T2/T4) */
+	Approximant approx              /**< PN approximant (SpinTaylorT1/T5/T4) */
 	)
 {
     INT4 intreturn;
@@ -4012,9 +4012,9 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
         XLALSimInspiralSpinTaylorT4Setup(&params, m1_SI, m2_SI, fStart, fEnd,
 					 lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, lscorr);
     }
-    else if( approx == SpinTaylorT2 )
+    else if( approx == SpinTaylorT5 )
     {
-        XLALSimInspiralSpinTaylorT2Setup(&params, m1_SI, m2_SI, fStart, fEnd,
+        XLALSimInspiralSpinTaylorT5Setup(&params, m1_SI, m2_SI, fStart, fEnd,
 					 lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO,lscorr);
     }
     else if( approx == SpinTaylorT1 )
@@ -4024,7 +4024,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     }
     else
     {
-        XLALPrintError("XLAL Error - %s: Approximant must be one of SpinTaylorT1, SpinTaylorT2, SpinTaylorT4, but %i provided\n",
+        XLALPrintError("XLAL Error - %s: Approximant must be one of SpinTaylorT1, SpinTaylorT5, SpinTaylorT4, but %i provided\n",
                 __func__, approx);
         XLAL_ERROR(XLAL_EINVAL);
 
@@ -4072,9 +4072,9 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
                 XLALSimInspiralSpinTaylorT4Derivatives,
                 XLALSimInspiralSpinTaylorStoppingTest,
                 LAL_ST4_ABSOLUTE_TOLERANCE, LAL_ST4_RELATIVE_TOLERANCE);
-    else if( approx == SpinTaylorT2 )
+    else if( approx == SpinTaylorT5 )
         integrator = XLALAdaptiveRungeKutta4Init(LAL_NUM_ST4_VARIABLES,
-                XLALSimInspiralSpinTaylorT2Derivatives,
+                XLALSimInspiralSpinTaylorT5Derivatives,
                 XLALSimInspiralSpinTaylorStoppingTest,
                 LAL_ST4_ABSOLUTE_TOLERANCE, LAL_ST4_RELATIVE_TOLERANCE);
     else if( approx == SpinTaylorT1 )
@@ -4084,7 +4084,7 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
                 LAL_ST4_ABSOLUTE_TOLERANCE, LAL_ST4_RELATIVE_TOLERANCE);
     else
     {
-        XLALPrintError("XLAL Error - %s: Approximant must be one of SpinTaylorT1, SpinTaylorT2, SpinTaylorT4, but %i provided\n",
+        XLALPrintError("XLAL Error - %s: Approximant must be one of SpinTaylorT1, SpinTaylorT5, SpinTaylorT4, but %i provided\n",
                 __func__, approx);
         XLAL_ERROR(XLAL_EINVAL);
 
@@ -4381,7 +4381,7 @@ int XLALSimInspiralSpinTaylorT1(
 
 /**
  * Driver routine to compute a precessing post-Newtonian inspiral waveform
- * with phasing computed from energy balance using the so-called \"T2\" method.
+ * with phasing computed from energy balance using the so-called \"T5\" method.
  *
  * This routine allows the user to specify different pN orders
  * for the phasing, amplitude, spin and tidal effects of the waveform.
@@ -4408,7 +4408,7 @@ int XLALSimInspiralSpinTaylorT1(
  * REVIEW completed on git hash 6640e79e60791d5230731acc63351676ce7ce413
  *
  */
-int XLALSimInspiralSpinTaylorT2(
+int XLALSimInspiralSpinTaylorT5(
 	REAL8TimeSeries **hplus,        /**< +-polarization waveform */
 	REAL8TimeSeries **hcross,       /**< x-polarization waveform */
 	REAL8 phiRef,                   /**< orbital phase at reference pt. */
@@ -4440,7 +4440,7 @@ int XLALSimInspiralSpinTaylorT2(
 	int amplitudeO                  /**< twice PN amplitude order */
 	)
 {
-    Approximant approx = SpinTaylorT2;
+    Approximant approx = SpinTaylorT5;
     int n = XLALSimInspiralSpinTaylorDriver(hplus, hcross, phiRef, v0, deltaT,
             m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z,
             lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
@@ -4842,7 +4842,7 @@ int XLALSimInspiralSpinTaylorT2Fourier(
         INT4 phiRefAtEnd                /**< whether phiRef corresponds to the end of the inspiral */
         )
 {
-    Approximant approx = SpinTaylorT2;
+    Approximant approx = SpinTaylorT5;
     int n = XLALSimInspiralSpinTaylorDriverFourier(hplus, hcross, fMin,
             fMax, deltaF, kMax, phiRef, v0,
             m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z,
