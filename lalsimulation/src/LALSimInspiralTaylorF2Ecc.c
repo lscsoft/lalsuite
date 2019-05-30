@@ -1,11 +1,11 @@
 /*
- *  Copyright (C) 2007 Jolien Creighton, B.S. Sathyaprakash, Thomas Cokelaer
- *  Copyright (C) 2012 Leo Singer, Evan Ochsner, Les Wade, Alex Nitz
+ *  Copyright (C) 2019 HyunWon Lee, JeongCho Kim, Chunglee Kim, Marc Favata, K.G. Arun
  *  Assembled from code found in:
  *    - LALInspiralStationaryPhaseApproximation2.c
  *    - LALInspiralChooseModel.c
  *    - LALInspiralSetup.c
  *    - LALSimInspiralTaylorF2ReducedSpin.c
+ *    - LALSimInspiralTaylorF2.c
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,9 +46,8 @@
  * @addtogroup LALSimInspiralTaylorXX_c
  * @{
  *
- * @review TaylorF2 routines reviewed by Frank Ohme, Andrew Lundgren, Alex Nitz,
- * Alex Nielsen, Salvatore Vitale, Jocelyn Read, Sebastian Khan.
- * The review concluded with git hash 6106138b2140ffb11bc38fc914e0a1de7082dc4d (Nov 2014)
+ * @review TaylorF2Ecc routines are reviewing by Vivien Raymond, Maria Haney, SangHoon Oh (May 2019)
+ * The review concluded with git hash *** 
  *
  * @name Routines for TaylorF2Ecc Waveforms
  * @sa
@@ -57,7 +56,7 @@
  * templates for compact binary inspiral signals in gravitational-wave
  * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
  *
- * Eccenctric phase are based on Marc, et al paper Phys. Rev. D 93, 124061 (2016),   arXiv:1605.00304.
+ * Section IV of Marc, et al paper Phys. Rev. D 93, 124061 (2016), arXiv:1605.00304.
  * review page is https://git.ligo.org/waveforms/reviews/taylorf2ecc/wikis/Eccentric-phase-PN-coefficient-form.
  *
  * @{
