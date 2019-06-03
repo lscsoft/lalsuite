@@ -995,31 +995,6 @@ class Posterior(object):
             except KeyError:
                 print("Warning: Cannot find spin parameters.  Skipping spin angle calculations.")
 
-        #Calculate effective precessing spin magnitude
-        if ('a1' in pos.names and 'tilt1' in pos.names and 'm1' in pos.names ) and ('a2' in pos.names and 'tilt2' in pos.names and 'm2' in pos.names):
-            pos.append_mapping('chi_p', chi_precessing, ['a1', 'tilt1', 'm1', 'a2', 'tilt2', 'm2'])
-
-
-        # Calculate redshift from luminosity distance measurements
-        if('distance' in pos.names):
-            pos.append_mapping('redshift', calculate_redshift, 'distance')
-        elif('dist' in pos.names):
-            pos.append_mapping('redshift', calculate_redshift, 'dist')
-
-
-        # Calculate source mass parameters
-        if ('m1' in pos.names) and ('redshift' in pos.names):
-            pos.append_mapping('m1_source', source_mass, ['m1', 'redshift'])
-
-        if ('m2' in pos.names) and ('redshift' in pos.names):
-            pos.append_mapping('m2_source', source_mass, ['m2', 'redshift'])
-
-        if ('mtotal' in pos.names) and ('redshift' in pos.names):
-            pos.append_mapping('mtotal_source', source_mass, ['mtotal', 'redshift'])
-
-        if ('mc' in pos.names) and ('redshift' in pos.names):
-            pos.append_mapping('mc_source', source_mass, ['mc', 'redshift'])
-
         #Store signed spin magnitudes in separate parameters and make a1,a2 magnitudes
         if 'a1' in pos.names:
             if 'tilt1' in pos.names:
@@ -1060,6 +1035,8 @@ class Posterior(object):
         # Calculate redshift from luminosity distance measurements
         if('distance' in pos.names):
             pos.append_mapping('redshift', calculate_redshift, 'distance')
+        elif('dist' in pos.names):
+            pos.append_mapping('redshift', calculate_redshift, 'dist')
 
         # Calculate source mass parameters
         if ('m1' in pos.names) and ('redshift' in pos.names):
