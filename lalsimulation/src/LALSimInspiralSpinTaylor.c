@@ -762,6 +762,9 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
 
 }
 
+/**
+ * See arXiv:0907.0700 for TaylorT4 definition.
+ */
 INT4 XLALSimInspiralSpinTaylorT4Setup(
     XLALSimInspiralSpinTaylorTxCoeffs **params, /**< UNDOCUMENTED */
     const REAL8 m1_SI,                    /**< mass of body 1 (kg) */
@@ -964,6 +967,9 @@ INT4 XLALSimInspiralSpinTaylorT4Setup(
     return errCode;
 }
 
+/**
+ * See arXiv:0907.0700 for taylorT1 definition.
+ */
 static int XLALSimInspiralSpinTaylorT1Setup(
     XLALSimInspiralSpinTaylorTxCoeffs **params, /**< UNDOCUMENTED */
     const REAL8 m1_SI,                       /**< mass of body 1 (kg) */
@@ -1167,6 +1173,11 @@ static int XLALSimInspiralSpinTaylorT1Setup(
     return errCode;
 }
 
+/**
+ * See arXiv:1107.1267 for TaylorT5 approximant definition. It is a variant
+ * of TaylorT2 (see arXiv:0907.0700). SpinTaylorT5 as implemented in this
+ * code was previously (earlier than June 2019) named TaylorT2.
+ */
 int XLALSimInspiralSpinTaylorT5Setup(
     XLALSimInspiralSpinTaylorTxCoeffs **params, /**< UNDOCUMENTED */
     const REAL8 m1_SI,                    /**< mass of body 1 (kg) */
@@ -4774,7 +4785,9 @@ int XLALSimInspiralSpinTaylorT4Fourier(
 
 /**
  * Driver routine to compute a precessing post-Newtonian inspiral waveform in the Fourier domain
- * with phasing computed from energy balance using the so-called \"T2\" method.
+ * with phasing computed from energy balance using the so-called \"T2\" method
+ * see arXiv: 0907.0700 for its defition,
+ * but in its \"T5\" variant, see arXiv: 1107.1267.
  *
  * This routine allows the user to specify different pN orders
  * for the phasing and amplitude of the waveform.
@@ -4806,7 +4819,7 @@ int XLALSimInspiralSpinTaylorT4Fourier(
  *
  * !!!UNREVIEWED!!!
  */
-int XLALSimInspiralSpinTaylorT2Fourier(
+int XLALSimInspiralSpinTaylorT5Fourier(
         COMPLEX16FrequencySeries **hplus,        /**< +-polarization waveform */
         COMPLEX16FrequencySeries **hcross,       /**< x-polarization waveform */
         REAL8 fMin,                     /**< minimum frequency of the returned series */

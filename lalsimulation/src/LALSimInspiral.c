@@ -161,7 +161,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(EccentricTD),
     INITIALIZE_NAME(TaylorN),
     INITIALIZE_NAME(SpinTaylorT4Fourier),
-    INITIALIZE_NAME(SpinTaylorT2Fourier),
+    INITIALIZE_NAME(SpinTaylorT5Fourier),
     INITIALIZE_NAME(SpinDominatedWf),
     INITIALIZE_NAME(NRSur4d2s),
     INITIALIZE_NAME(NRSur7dq2),
@@ -271,7 +271,7 @@ static double fixReferenceFrequency(const double f_ref, const double f_min, cons
         case SpinTaylorT5:
         case SpinTaylorT3:
         case SpinTaylorT4:
-        case SpinTaylorT2Fourier:
+        case SpinTaylorT5Fourier:
         case SpinTaylorT4Fourier:
         case SpinTaylorF2:
         case IMRPhenomP:
@@ -1685,7 +1685,7 @@ int XLALSimInspiralChooseFDWaveform(
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
-        case SpinTaylorT2Fourier:
+        case SpinTaylorT5Fourier:
             /* Waveform-specific sanity checks */
 	    if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALparams) )
                 ABORT_NONDEFAULT_FRAME_AXIS(LALparams);
@@ -1720,7 +1720,7 @@ int XLALSimInspiralChooseFDWaveform(
             }
             // default quadparams are for black holes. Replace by ~2-12 for neutron stars
             /* Call the waveform driver routine */
-            ret = XLALSimInspiralSpinTaylorT2Fourier(hptilde, hctilde,
+            ret = XLALSimInspiralSpinTaylorT5Fourier(hptilde, hctilde,
               f_min, f_max, deltaF, kMax, phiRef, v0, m1, m2, fStart, f_ref, distance, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2, quadparam1, quadparam2, LALparams, phaseO, amplitudeO, phiRefAtEnd);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
@@ -4845,7 +4845,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case TaylorF2RedSpin:
         case TaylorF2RedSpinTidal:
         case SpinTaylorT4Fourier:
-        case SpinTaylorT2Fourier:
+        case SpinTaylorT5Fourier:
         case NRSur4d2s:
             return 1;
 
@@ -5230,7 +5230,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case IMRPhenomP:
     case IMRPhenomPv2:
     case IMRPhenomPv2_NRTidal:
-    case SpinTaylorT2Fourier:
+    case SpinTaylorT5Fourier:
     case SpinTaylorT4Fourier:
     case SpinDominatedWf:
     case SEOBNRv3:
@@ -5371,7 +5371,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case IMRPhenomFA:
     case IMRPhenomFB:
     case IMRPhenomFC:
-    case SpinTaylorT2Fourier:
+    case SpinTaylorT5Fourier:
     case SpinTaylorT4Fourier:
     case TaylorEt:
     case TaylorT4:
@@ -7152,7 +7152,7 @@ int XLALSimInspiralChooseFDWaveformOLD(
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
-        case SpinTaylorT2Fourier:
+        case SpinTaylorT5Fourier:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralFrameAxisIsDefault(
                     XLALSimInspiralGetFrameAxis(waveFlags) ) )
@@ -7189,7 +7189,7 @@ int XLALSimInspiralChooseFDWaveformOLD(
             }
             // default quadparams are for black holes. Replace by ~2-12 for neutron stars
             /* Call the waveform driver routine */
-            ret = XLALSimInspiralSpinTaylorT2Fourier(hptilde, hctilde,
+            ret = XLALSimInspiralSpinTaylorT5Fourier(hptilde, hctilde,
 						     f_min, f_max, deltaF, kMax, phiRef, v0, m1, m2, fStart, f_ref, distance, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2, quadparam1, quadparam2, NULL, phaseO, amplitudeO, phiRefAtEnd);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;

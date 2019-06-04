@@ -1961,8 +1961,9 @@ XLALSimInspiralL_2PN(
         return 3./2. + eta/6.;
 }
 
-/* Orbital averaged from eq. 2.9c of
- *arXiv:gr-qc/9506022, see also 4.7 of arXiv:1212.5520
+/* Orbital averaged from eq.(2.9c) of
+ * \cite Kidder:1995zr, see also eq.(4.7) of \cite Bohe:2012mr.
+ * Explicit formula can be found in https://dcc.ligo.org/T1500554.
  */
 static REAL8 UNUSED
 XLALSimInspiralL_3PNSiAvgcoeff(
