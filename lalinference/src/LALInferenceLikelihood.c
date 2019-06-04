@@ -1372,6 +1372,21 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
   //loglikelihood = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
 
+  if(LALInferenceCheckVariable(model->params, "lambdaS")){
+     REAL8 lambda1 = *(REAL8 *)LALInferenceGetVariable(model->params,"lambda1");
+     REAL8 lambda2 = *(REAL8 *)LALInferenceGetVariable(model->params,"lambda2");
+     LALInferenceAddVariable(currentParams,"lambda1",&lambda1,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+     LALInferenceAddVariable(currentParams,"lambda2",&lambda2,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+     // The BinaryLove model is only physically valid where lambda2 > lambda1 as it assumes m1 > m2
+     // It also assumes both lambda1 and lambda2 to be positive
+     // This is an explicit feature of the "raw" model fit, but since this implementation also incorporates
+     // marginalisation over the fit uncertainty, there can be instances where those assumptions are randomly broken
+     // for those cases, set logL = -inf.
+     if( (lambda1 > lambda2) || (lambda1 < 0.0) || (lambda2 < 0.0)){
+        loglikelihood = -INFINITY;
+     }
+  }
+
   return(loglikelihood);
 }
 
