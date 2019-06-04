@@ -4314,3 +4314,102 @@ void LALInferencePrintSplineCalibration(FILE *output, LALInferenceThreadState *t
         }
     }
 }
+
+void LALInferenceBinaryLove(LALInferenceVariables *vars, REAL8 *lambda1, REAL8 *lambda2){
+
+    /**
+    *  Implelentation of the parametrization from Chatziioannou, Haster, Zimmerman (2018)
+    *  https://doi.org/10.1103/PhysRevD.97.104036
+    */
+
+    REAL8 lambdaS = *(REAL8*) LALInferenceGetVariable(vars, "lambdaS");
+    REAL8 lambdaSm1o5 = pow(lambdaS,-1.0/5.0);
+    REAL8 lambdaSm2o5 = lambdaSm1o5*lambdaSm1o5;
+    REAL8 lambdaSm3o5 = lambdaSm2o5*lambdaSm1o5;
+    REAL8 lambdaSsqrt = sqrt(lambdaS);
+
+    REAL8 q=1.0;
+
+    if (LALInferenceCheckVariable(vars,"q")) {
+        q = *(REAL8 *)LALInferenceGetVariable(vars,"q");
+    }
+    else{
+        REAL8 m1 = *(REAL8 *)LALInferenceGetVariable(vars,"mass1");
+        REAL8 m2 = *(REAL8 *)LALInferenceGetVariable(vars,"mass2");
+        q = m2/m1;
+    }
+    REAL8 q2 = q*q;
+
+    /* Eqn 2 , incorporating the dependance on mass ratio */
+
+    REAL8 BL_n = 0.743;
+    REAL8 q_for_Fnofq = pow(q,10.0/(3.0-BL_n));
+    REAL8 Fnofq = (1.0-q_for_Fnofq)/(1.0+q_for_Fnofq);
+
+    /* bXX and cXX coefficients are given in Table I */
+
+    REAL8 b11 = -27.7408;
+    REAL8 b12 = 8.42358;
+    REAL8 b21 = 122.686;
+    REAL8 b22 = -19.7551;
+    REAL8 b31 = -175.496;
+    REAL8 b32 = 133.708;
+
+    REAL8 c11 = -25.5593;
+    REAL8 c12 = 5.58527;
+    REAL8 c21 = 92.0337;
+    REAL8 c22 = 26.8586;
+    REAL8 c31 = -70.247;
+    REAL8 c32 = -56.3076i;
+
+    /* Eqn 1, giving the lambdaA_fitOnly, not yet accounting for the uncertainty in the fit */
+
+    REAL8 numerator = 1.0 + (b11*q*lambdaSm1o5) + (b12*q2*lambdaSm1o5) + (b21*q*lambdaSm2o5) + (b22*q2*lambdaSm2o5) + (b31*q*lambdaSm3o5) + (b32*q2*lambdaSm3o5);
+
+    REAL8 denominator = 1.0 + (c11*q*lambdaSm1o5) + (c12*q2*lambdaSm1o5) + (c21*q*lambdaSm2o5) + (c22*q2*lambdaSm2o5) + (c31*q*lambdaSm3o5) + (c32*q2*lambdaSm3o5);
+
+    REAL8 lambdaA_fitOnly = Fnofq*lambdaS*numerator/denominator;
+
+    /* Eqn 6, correction on fit for lambdaA caused by uncertainty in the mean of the lambdaS residual fit, 
+    *         using coefficients mu_1, mu_2 and mu_3 from Table II */
+
+    REAL8 lambdaA_lambdaS_meanCorr = (137.1252739/(lambdaS*lambdaS)) - (32.8026613/lambdaS) + 0.5168637;
+
+    /* Eqn 8, correction on fit for lambdaA caused by uncertainty in the standard deviation of lambdaS residual fit,
+    *         using coefficients sigma_1, sigma_2 sigma_3 and  sigma_4 from Table II */
+
+    REAL8 lambdaA_lambdaS_stdCorr = (-0.0000739*lambdaS*lambdaSsqrt) + (0.0103778*lambdaS) + (0.4581717*lambdaSsqrt)  - 0.8341913;
+
+    /* Eqn 7, correction on fit for lambdaA caused by uncertainty in the mean of the q residual fit, 
+    *         using coefficients mu_4 and mu_5 from Table II */
+
+    REAL8 lambdaA_q_meanCorr = (-11.2765281*q2) + (14.9499544*q) - 4.6638851;
+
+    /* Eqn 9, correction on fit for lambdaA caused by uncertainty in the standard deviation of the q residual fit, 
+    *         using coefficients sigma_5, sigma_6 and sigma_7 from Table II */
+
+    REAL8 lambdaA_q_stdCorr = (-201.4323962*q2) + (273.9268276*q) - 71.2342246;
+
+    /* Eqn 4, averaging the corrections from the mean of the residual fits */
+
+    REAL8 lambdaA_meanCorr = (lambdaA_lambdaS_meanCorr + lambdaA_q_meanCorr)/2.0;
+
+    /* Eqn 5, averaging the corrections from the standard deviations of the residual fits */
+
+    REAL8 lambdaA_stdCorr = sqrt((lambdaA_lambdaS_stdCorr*lambdaA_lambdaS_stdCorr) + (lambdaA_q_stdCorr*lambdaA_q_stdCorr));
+
+    /* Draw a correction on the fit from a Gaussian distribution wiht width lambdaA_stdCorr 
+    *  this is done by sampling a inverse cdf through a U{0,1} variable called BLuni */
+
+    REAL8 BLuni = *(REAL8*) LALInferenceGetVariable(vars, "BLuni");
+
+    REAL8 lambdaA_scatter = gsl_cdf_gaussian_Pinv(BLuni, lambdaA_stdCorr);
+
+    /* Add the correction of the residual mean and the Gaussian scatter to the lambdaA_fitOnly value */
+
+    REAL8 lambdaA = lambdaA_fitOnly + (lambdaA_meanCorr + lambdaA_scatter);
+
+    *lambda1 = lambdaS - lambdaA;
+    *lambda2 = lambdaS + lambdaA;
+    return;
+}

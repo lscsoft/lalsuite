@@ -392,6 +392,17 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
     XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
   }
 
+  /* ==== BINARY_LOVE PARAMETERS ==== */
+  if(LALInferenceCheckVariable(model->params, "lambdaS")){
+    REAL8 lambda1=0.;
+    REAL8 lambda2=0.;
+    LALInferenceBinaryLove(model->params, &lambda1, &lambda2);
+    XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
+    XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+    LALInferenceAddVariable(model->params, "lambda1", &lambda1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(model->params, "lambda2", &lambda2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+  }
+
   /* Only use GR templates */
   /* Fill in the extra parameters for testing GR, if necessary */
   for (UINT4 k=0; k<N_extra_params; k++)
@@ -894,6 +905,17 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
   }
 
+  /* ==== BINARY_LOVE PARAMETERS ==== */
+  if(LALInferenceCheckVariable(model->params, "lambdaS")){
+     REAL8 lambda1=0.;
+     REAL8 lambda2=0.;
+     LALInferenceBinaryLove(model->params, &lambda1, &lambda2);
+     XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
+     XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+     LALInferenceAddVariable(model->params, "lambda1", &lambda1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+     LALInferenceAddVariable(model->params, "lambda2", &lambda2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+   }
+
   /* Only use GR templates */
   /* Fill in the extra parameters for testing GR, if necessary */
   for (UINT4 k=0; k<N_extra_params; k++)
@@ -1372,6 +1394,16 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
         LALInferenceLambdaTsEta2Lambdas(lambdaT,dLambdaT,sym_mass_ratio_eta,&lambda1,&lambda2);
         XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
         XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+    }
+    /* ==== BINARY_LOVE PARAMETERS ==== */
+    if(LALInferenceCheckVariable(model->params, "lambdaS")){
+       REAL8 lambda1=0.;
+       REAL8 lambda2=0.;
+       LALInferenceBinaryLove(model->params, &lambda1, &lambda2);
+       XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
+       XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+       LALInferenceAddVariable(model->params, "lambda1", &lambda1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+       LALInferenceAddVariable(model->params, "lambda2", &lambda2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
     }
 
     /* ==== 4-PIECE POLYTROPE EOS PARAMETERS ==== */

@@ -86,6 +86,8 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_complex_math.h>
+#include <gsl/gsl_cdf.h>
+
 #include <sys/time.h>
 
 /*LIB imports*/
@@ -1181,6 +1183,12 @@ SWIGLAL_CLEAR(OWNS_THIS_STRING(const CHAR*, value));
  * Print spline calibration parameter names as tab-separated ASCII
  */
 void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadState *thread);
+
+/**
+ * Compute Tidal deformabilities following BinaryLove Universal relations
+ */
+void LALInferenceBinaryLove(LALInferenceVariables *vars, REAL8 *lambda1, REAL8 *lambda2);
+
 
 /**
  * Conversion routines between Equatorial (RA,DEC) and detector-based coordinate systems, where

@@ -142,7 +142,7 @@ ppEParams=['ppEalpha','ppElowera','ppEupperA','ppEbeta','ppElowerb','ppEupperB',
 tigerParams=['dchi%i'%(i) for i in range(8)] + ['dchi%il'%(i) for i in [5,6] ] + ['dxi%d'%(i+1) for i in range(6)] + ['dalpha%i'%(i+1) for i in range(5)] + ['dbeta%i'%(i+1) for i in range(3)] + ['dsigma%i'%(i+1) for i in range(4)]
 bransDickeParams=['omegaBD','ScalarCharge1','ScalarCharge2']
 massiveGravitonParams=['lambdaG']
-tidalParams=['lambda1','lambda2','lam_tilde','dlam_tilde','lambdat','dlambdat']
+tidalParams=['lambda1','lambda2','lam_tilde','dlam_tilde','lambdat','dlambdat','lambdas','bluni']
 eosParams=['logp1','gamma1','gamma2','gamma3']
 energyParams=['e_rad', 'l_peak']
 strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+eosParams+energyParams
@@ -343,6 +343,8 @@ def get_prior(name):
       'lambda2': 'uniform',
       'lam_tilde' : None,
       'dlam_tilde': None,
+      'lambdas':'uniform',
+      'bluni':'uniform',
       'logp1':None,
       'gamma1':None,
       'gamma2':None,
@@ -484,7 +486,9 @@ def plot_label(param):
         'h1_optimal_snr':r'$\rho^{opt}_{H1}$',
         'l1_optimal_snr':r'$\rho^{opt}_{L1}$',
         'v1_optimal_snr':r'$\rho^{opt}_{V1}$',
-        'matched_filter_snr':r'$\rho^{MF}$'
+        'matched_filter_snr':r'$\rho^{MF}$',
+        'lambdas':r'$\Lambda_S$',
+        'bluni' : r'$BL_{uniform}$'
       }
 
     # Handle cases where multiple names have been used
@@ -5393,7 +5397,7 @@ def find_ndownsample(samples, nDownsample):
                      "time_mean", "time_maxl","sky_frame","psdscaleflag","logdeltaf","flow","f_ref",
                      "lal_amporder","lal_pnorder","lal_approximant","tideo","spino","signalmodelflag",
                      "temperature","nifo","nlocaltemps","ntemps","randomseed","samplerate","segmentlength","segmentstart",
-                     "t0", "phase_maxl", "azimuth", "cosalpha", "lal_amporder"] + logParams + snrParams + splineParams
+                     "t0", "phase_maxl", "azimuth", "cosalpha", "lal_amporder", "bluni"] + logParams + snrParams + splineParams
         fixedParams = [p for p in samples.colnames if all(x==samples[p][0] for x in samples[p])]
         print("Fixed parameters: "+str(fixedParams))
         nonParams.extend(fixedParams)
