@@ -1281,7 +1281,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     coherence_node.add_incoherent_parent(parmergenode)
                 self.add_node(coherence_node)
                 respagenode.add_parent(coherence_node)
-                #respagenode.set_bayes_coherent_incoherent(coherence_node.get_output_files()[0])
+                respagenode.set_bayes_coherent_incoherent(coherence_node.get_output_files()[0])
 
             elif "summarypages" in self.config.get('condor','resultspage'):
                 par_mergenodes=[]
