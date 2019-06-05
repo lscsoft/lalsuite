@@ -2578,7 +2578,6 @@ if(mass1_kg <= max_mass_kg && mass2_kg <= max_mass_kg && mass1_kg >= min_mass_kg
 // Clean up
 XLALDestroySimNeutronStarFamily(fam);
 XLALDestroySimNeutronStarEOS(eos);
-LALCheckMemoryLeaks();
 return ret;
 }
 
