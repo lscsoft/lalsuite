@@ -5389,8 +5389,8 @@ def find_ndownsample(samples, nDownsample):
         splineParams=["spcal_npts", "spcal_active","constantcal_active"]
         for i in np.arange(25):
             for k in lal.cached_detector_by_prefix:
-                splineParams.append(k+'_spcal_freq_'+str(i))
-                splineParams.append(k+'_spcal_logfreq_'+str(i))
+                splineParams.append(k.lower()+'_spcal_freq_'+str(i))
+                splineParams.append(k.lower()+'_spcal_logfreq_'+str(i))
 
         nonParams = ["logpost", "post", "cycle", "timestamp", "snrh1", "snrl1", "snrv1",
                      "margtime","margtimephi","margtime","time_max","time_min",
