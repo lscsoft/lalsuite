@@ -968,7 +968,7 @@ INT4 XLALSimInspiralSpinTaylorT4Setup(
 }
 
 /**
- * See arXiv:0907.0700 for taylorT1 definition.
+ * See arXiv:0907.0700 for TaylorT1 definition.
  */
 static int XLALSimInspiralSpinTaylorT1Setup(
     XLALSimInspiralSpinTaylorTxCoeffs **params, /**< UNDOCUMENTED */
@@ -1176,7 +1176,7 @@ static int XLALSimInspiralSpinTaylorT1Setup(
 /**
  * See arXiv:1107.1267 for TaylorT5 approximant definition. It is a variant
  * of TaylorT2 (see arXiv:0907.0700). SpinTaylorT5 as implemented in this
- * code was previously (earlier than June 2019) named TaylorT2.
+ * code was previously (earlier than June 2019) named SpinTaylorT2.
  */
 int XLALSimInspiralSpinTaylorT5Setup(
     XLALSimInspiralSpinTaylorTxCoeffs **params, /**< UNDOCUMENTED */
@@ -1740,7 +1740,7 @@ static int XLALSimInspiralSpinTaylorDriverFourier(
 
     XLAL_BEGINGSL;
 
-    // The TaylorT2 version sometimes returns duplicate time steps (i.e. two different steps happen at the same time, because df/dt is too large near the end)
+    // The TaylorT5 version sometimes returns duplicate time steps (i.e. two different steps happen at the same time, because df/dt is too large near the end)
     // So if this happens, we have to remove the duplicates and try again. If it fails then, there is another problem and the function exits with an error.
     UINT4 weHadAProblem = 0;
 
@@ -3209,7 +3209,7 @@ static int XLALSimInspiralSpinTaylorDriver(
 
 /**
  * This function evolves the orbital equations for a precessing binary using
- * the \"TaylorT2/T4\" approximant for solving the orbital dynamics
+ * the \"TaylorT5/T4\" approximant for solving the orbital dynamics
  * (see arXiv:0907.0700 for a review of the various PN approximants).
  *
  * It returns time series of the \"orbital velocity\", orbital phase,
@@ -3322,7 +3322,7 @@ static int XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(
     }
     else
     {
-        XLALPrintError("XLAL Error - %s: Approximant must be one of SpinTaylorT1, SpinTaylorT2, SpinTaylorT4, but %i provided\n",
+        XLALPrintError("XLAL Error - %s: Approximant must be one of SpinTaylorT1, SpinTaylorT5, SpinTaylorT4, but %i provided\n",
                 __func__, approx);
         XLAL_ERROR(XLAL_EINVAL);
 
@@ -3382,7 +3382,7 @@ static int XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(
                 LAL_ST4_ABSOLUTE_TOLERANCE, LAL_ST4_RELATIVE_TOLERANCE);
     else
     {
-        XLALPrintError("XLAL Error - %s: Approximant must be one of SpinTaylorT1, SpinTaylorT2, SpinTaylorT4, but %i provided\n",
+        XLALPrintError("XLAL Error - %s: Approximant must be one of SpinTaylorT1, SpinTaylorT5, SpinTaylorT4, but %i provided\n",
                 __func__, approx);
         XLAL_ERROR(XLAL_EINVAL);
 
@@ -4786,7 +4786,7 @@ int XLALSimInspiralSpinTaylorT4Fourier(
 /**
  * Driver routine to compute a precessing post-Newtonian inspiral waveform in the Fourier domain
  * with phasing computed from energy balance using the so-called \"T2\" method
- * see arXiv: 0907.0700 for its defition,
+ * see arXiv: 0907.0700 for its definition,
  * but in its \"T5\" variant, see arXiv: 1107.1267.
  *
  * This routine allows the user to specify different pN orders

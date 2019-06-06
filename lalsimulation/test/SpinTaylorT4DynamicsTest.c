@@ -102,15 +102,15 @@ int main (int argc , char **argv)
     }
     fclose(f);
 
-    // Test SpinTaylorT2
-    approx = SpinTaylorT2;
+    // Test SpinTaylorT5
+    approx = SpinTaylorT5;
     XLALSimInspiralSpinTaylorPNEvolveOrbit(&V, &Phi, &S1x, &S1y,
             &S1z, &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
             deltaT, m1, m2, fStart, fEnd, s1x, s1y, s1z, s2x, s2y,
             s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
             quadparam1, quadparam2, spinO, tideO, phaseO, approx);
     len = V->data->length;
-    f = fopen("ST2-dynamics.dat", "w");
+    f = fopen("ST5-dynamics.dat", "w");
     for(i = 0; i < len; i++)
     {
         fprintf(f, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",

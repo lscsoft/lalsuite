@@ -878,8 +878,8 @@ class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
         return row
 
 
-class SpinTaylorT2FourierTemplate(InspiralPrecessingSpinTemplate):
-    approximant = "SpinTaylorT2Fourier"
+class SpinTaylorT5FourierTemplate(InspiralPrecessingSpinTemplate):
+    approximant = "SpinTaylorT5Fourier"
 
 class SpinTaylorT4Template(InspiralPrecessingSpinTemplate):
     approximant = "SpinTaylorT4"
@@ -959,7 +959,7 @@ waveforms = {
     "SpinTaylorT4": SpinTaylorT4Template,
     "SpinTaylorT5": SpinTaylorT5Template,
     "SpinTaylorF2": SpinTaylorF2Template,
-    "SpinTaylorT2Fourier": SpinTaylorT2FourierTemplate,
+    "SpinTaylorT5Fourier": SpinTaylorT5FourierTemplate,
     "SEOBNRv3":SEOBNRv3Template,
     "EOBNRv2HM_ROM":EOBNRHigherOrderModeTemplate,
     "EOBNRv2HM_ROM_AmpMax":EOBNRHigherOrderModeAmpMaxTemplate,

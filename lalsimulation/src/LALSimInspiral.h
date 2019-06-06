@@ -267,11 +267,13 @@ typedef enum tagApproximant {
                          * @attention Not implemented in lalsimulation. */
    SpinTaylorT1,	/**< Spinning case T1 models.
                          * @remarks Implemented in lalsimulation (time domain). */
+   SpinTaylorT2,	/**< Spinning case T2 models
+                         * @attention Not implemented in lalsimulation. */
    SpinTaylorT3,	/**< Spinning case T3 models
                          * @attention Not implemented in lalsimulation. */
    SpinTaylorT4,	/**< Spinning case T4 models (lalsimulation's equivalent of SpinTaylorFrameless).
                          * @remarks Implemented in lalsimulation (time domain). */
-   SpinTaylorT5,        /**< Spinning case T5 models, which is a variant of the original SpinTaylorT2 (see \cite Buonanno:2009zt) described in sec. III of \cite Ajith:2011ec. SpinTaylorT2 is NOT implemented in LALSimulation.
+   SpinTaylorT5,        /**< Spinning case T5 models, which is a variant of the spinning version of the original TaylorT2 (see \cite Buonanno:2009zt) described in sec. III of \cite Ajith:2011ec. SpinTaylorT2 is NOT implemented in LALSimulation.
 		         * @remarks Implemented in lalsimulation (time domain). */
    SpinTaylorF2,	/**< Spinning case F2 models (single spin only).
                          * @remarks Implemented in lalsimulation (frequency domain). */

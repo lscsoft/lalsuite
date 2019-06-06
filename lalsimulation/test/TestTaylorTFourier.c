@@ -506,11 +506,11 @@ INT4 main (INT4 argc, char* argv[])
 
 
 
-  printf("\nTaylorT2:\nStarting time domain...\n");
+  printf("\nTaylorT5:\nStarting time domain...\n");
 
   // compute TD WF with deltaT=1 to get signal time duration
   deltaT = 1.;
-  XLALSimInspiralSpinTaylorT2(&hPlus, &hCross, phiRef, v0, deltaT, m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, amplitudeO);
+  XLALSimInspiralSpinTaylorT5(&hPlus, &hCross, phiRef, v0, deltaT, m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, amplitudeO);
 
   // compute deltaT necessary for Nyquist frequency at fMax
   tTot = -(hPlus->epoch.gpsSeconds + 1.e-9*hPlus->epoch.gpsNanoSeconds);
@@ -521,7 +521,7 @@ INT4 main (INT4 argc, char* argv[])
   // compute TD WF with good deltaT
   XLALDestroyREAL8TimeSeries(hPlus);
   XLALDestroyREAL8TimeSeries(hCross);
-  XLALSimInspiralSpinTaylorT2(&hPlus, &hCross, phiRef, v0, deltaT, m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, amplitudeO);
+  XLALSimInspiralSpinTaylorT5(&hPlus, &hCross, phiRef, v0, deltaT, m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, amplitudeO);
 
   // define and allocate DFT of TD WF
   hPlusTildeTD = (COMPLEX16*)malloc(sizeof(COMPLEX16)*(hPlus->data->length));
@@ -617,9 +617,9 @@ INT4 main (INT4 argc, char* argv[])
   for(kMax = 0; kMax <= 10; kMax++) // loop over kMax
   {
     //compute FD WF
-    XLALSimInspiralSpinTaylorT2Fourier(&hPlusTildeFD, &hCrossTildeFD, fMin, fMax, deltaF, kMax, phiRef, v0, m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, amplitudeO, phiRefAtEnd);
+    XLALSimInspiralSpinTaylorT5Fourier(&hPlusTildeFD, &hCrossTildeFD, fMin, fMax, deltaF, kMax, phiRef, v0, m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, amplitudeO, phiRefAtEnd);
 
-    // XLALSimInspiralSpinTaylorT2 and XLALSimInspiralSpinTaylorT2Fourier return with a slight time offset between the two. We get rid of that.
+    // XLALSimInspiralSpinTaylorT5 and XLALSimInspiralSpinTaylorT5Fourier return with a slight time offset between the two. We get rid of that.
     if(startAtZero)
     {
       meanDeltaT = meanTimeOffset(hPlusTildeFD, hCrossTildeFD, hPlusTildeTD, hCrossTildeTD, Fplus, Fcross, iStart, jStart, nSkip, nMax, 0., deltaF);
