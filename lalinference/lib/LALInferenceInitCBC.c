@@ -2318,14 +2318,14 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
         REAL8 dbeta_min=-1.;
         REAL8 dsigma_max=1.;
         REAL8 dsigma_min=-1.;
-        REAL8 dQuadMon1_min=0.0;
-        REAL8 dQuadMon1_max=20.0;
-        REAL8 dQuadMon2_min=0.0;
-        REAL8 dQuadMon2_max=20.0;
-        REAL8 dQuadMonS_min=0.0;
-        REAL8 dQuadMonS_max=20.0;
-        REAL8 dQuadMonA_min=0.0;
-        REAL8 dQuadMonA_max=20.0;
+        REAL8 dQuadMon1_min=-200.0;
+        REAL8 dQuadMon1_max=200.0;
+        REAL8 dQuadMon2_min=-200.0;
+        REAL8 dQuadMon2_max=200.0;
+        REAL8 dQuadMonS_min=-200.0;
+        REAL8 dQuadMonS_max=200.0;
+        REAL8 dQuadMonA_min=-200.0;
+        REAL8 dQuadMonA_max=200.0;
         REAL8 tmpVal=0.0;
         if ((pptb=LALInferenceGetProcParamVal(commandLine,"--LIV_A_sign"))) {
           REAL8 LIV_A_sign;
