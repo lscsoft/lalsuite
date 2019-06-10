@@ -11,7 +11,6 @@ pkginclude_HEADERS = \
 	PrintVector.h \
 	ReadFTSeries.h \
 	ReadNoiseSpectrum.h \
-	SegmentsIO.h \
 	StreamInput.h \
 	StreamOutput.h \
 	TranslateAngles.h \
@@ -42,7 +41,6 @@ liblalsupport_la_SOURCES = \
 	ReadFrequencySeries.c \
 	ReadTimeSeries.c \
 	ReadNoiseSpectrum.c \
-	SegmentsIO.c \
 	StreamSeriesInput.c \
 	StreamSeriesOutput.c \
 	StreamSequenceInput.c \
