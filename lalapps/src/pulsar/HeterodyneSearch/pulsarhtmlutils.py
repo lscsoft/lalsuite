@@ -30,6 +30,7 @@ from __future__ import print_function
 import re
 import numpy as np
 import math
+import six
 
 from lalapps.pulsarpputils import rad_to_dms, rad_to_hms
 
@@ -741,7 +742,7 @@ def exp_str(f, p=1, otype='html'):
 
 # convert a right ascension string in format 'hh:mm:ss.s' to a html/LaTeX string like H^h M^m S^s.ss
 def ra_str(ra, otype='html'):
-  if isinstance(ra, str) or isinstance(ra, unicode):
+  if isinstance(ra, six.string_types):
     hms = ra.split(":")
   elif isinstance(ra, float):
     hms = [str(v) for v in rad_to_hms(ra)]
@@ -766,7 +767,7 @@ def ra_str(ra, otype='html'):
 
 # convert a declination string in format 'dd:mm:ss.s' to a html/LaTeX string like dd^o mm' ss''.ss
 def dec_str(dec, otype='html'):
-  if isinstance(dec, str) or isinstance(dec, unicode):
+  if isinstance(dec, six.string_types):
     dms = dec.split(":")
   elif isinstance(dec, float):
     dms = [str(v) for v in rad_to_dms(dec)]

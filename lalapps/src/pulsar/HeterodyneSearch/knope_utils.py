@@ -3891,6 +3891,7 @@ class removeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
 
     self.__files = None
+    self.set_retry(1)  # retry the node once
 
   def set_files(self, files):
     # set file(s) to be removed, where "files" is a list containing all files
@@ -3944,6 +3945,7 @@ class moveNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     self.__sourcefile = None
     self.__destinationfile = None
+    self.set_retry(1)  # retry the node once
 
   def set_source(self, sfile):
     # set file to be moved
@@ -4002,6 +4004,7 @@ class copyNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     self.__sourcefile = None
     self.__destinationfile = None
+    self.set_retry(1)  # retry the node once
 
   def set_source(self, sfile):
     # set file to be moved
@@ -4630,6 +4633,7 @@ class nest2posNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
+    self.set_retry(1)  # retry the node once
 
     # initilise job variables
     self.__nest_files = None
