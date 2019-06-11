@@ -595,7 +595,14 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
   UINT4 i = 0;
 
   REAL8 T, twopsi, t0;
-  REAL8 cosiota = PulsarGetREAL8ParamOrZero( pars, "COSIOTA" );
+  REAL8 cosiota = 0.;
+  if ( PulsarCheckParam( pars, "IOTA" ) ){
+    /* use IOTA if present */
+    cosiota = cos(PulsarGetREAL8Param( pars, "IOTA" ));
+  }
+  else{
+    cosiota = PulsarGetREAL8ParamOrZero( pars, "COSIOTA" );
+  }
   REAL8 siniota = sin(acos(cosiota));
   REAL8 s2psi = 0., c2psi = 0., spsi = 0., cpsi = 0.;
 
