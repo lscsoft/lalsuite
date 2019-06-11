@@ -295,6 +295,7 @@ int POWER_SPECTRUM_FUNCTION(REAL_VECTOR_TYPE * spec, const REAL_VECTOR_TYPE * da
         REAL_TYPE re = plan->tmp[2 * k - 1];
         REAL_TYPE im = plan->tmp[2 * k];
         spec->data[k] = re * re + im * im;
+        spec->data[k] *= 2.0;  /* accounts for negative frequency part */
     }
 
     /* Nyquist frequency */
