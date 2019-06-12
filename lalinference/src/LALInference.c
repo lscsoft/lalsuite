@@ -2386,33 +2386,11 @@ else{
   double c = mass1 * LAL_MRSUN_SI / r;
   *lambda1= (2.0/3.0) * k / pow(c , 5.0);
 
-  if(r<0){
-    printf("Warning: Negative radius, r1 = %e\n",r);
-    printf("Setting lambda1 = 0.0\n");
-    *lambda1=0.0;
-  }
-  if(k<0){
-    printf("Warning: Negative love number, k1 = %e\n",k);
-    printf("Setting lambda1 = 0.0\n");
-    *lambda1=0.0;
-  }
-
   // Calculate lambda2(m1|eos)
   r = XLALSimNeutronStarRadius(mass2_kg, fam);
   k = XLALSimNeutronStarLoveNumberK2(mass2_kg, fam);
   c = mass2 * LAL_MRSUN_SI / r;
   *lambda2= (2.0/3.0) * k / pow(c , 5.0);
-
-  if(r<0){
-    printf("Warning: Negative radius, r2 = %e\n",r);
-    printf("Setting lambda2 = 0.0\n");
-    *lambda2=0.0;
-  }
-  if(k<0){
-    printf("Warning: Negative love number, k2 = %e\n",k);
-    printf("Setting lambda2 = 0.0\n");
-    *lambda2=0.0;
-  }
 
   // Clean up
   XLALDestroySimNeutronStarFamily(fam);
@@ -2484,9 +2462,9 @@ mdat_prev = 0.0;
 // Ensure mass turnover does not happen too soon
 const double logpmin = 75.5;
 double logpmax = log(XLALSimNeutronStarEOSMaxPressure(eos));
-double dlogp = (logpmax - logpmin) / 1000.;
+double dlogp = (logpmax - logpmin) / 100.;
 // Need at least 8 points
-for (int i = 0; i < 8; ++i) {
+for (int i = 0; i < 4; ++i) {
    pdat = exp(logpmin + i * dlogp);
    XLALSimNeutronStarTOVODEIntegrate(&rdat, &mdat, &kdat, pdat, eos);
    /* determine if maximum mass has been found */
@@ -2499,7 +2477,7 @@ for (int i = 0; i < 8; ++i) {
         double SDgamma1=*(double *)LALInferenceGetVariable(params,"SDgamma1");
         double SDgamma2=*(double *)LALInferenceGetVariable(params,"SDgamma2");
         double SDgamma3=*(double *)LALInferenceGetVariable(params,"SDgamma3");
-        fprintf(stdout,"%f %f %f %f\n",SDgamma0,SDgamma1,SDgamma2,SDgamma3);
+        fprintf(stdout,"spectral: %f %f %f %f\n",SDgamma0,SDgamma1,SDgamma2,SDgamma3);
       }
       // Clean up
       XLALDestroySimNeutronStarFamily(fam);

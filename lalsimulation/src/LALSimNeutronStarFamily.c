@@ -28,6 +28,7 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_min.h>
+GSL_VAR const gsl_interp_type * lal_gsl_interp_steffen;
 
 #include <lal/LALStdlib.h>
 #include <lal/LALSimNeutronStar.h>
@@ -98,7 +99,7 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
     LALSimNeutronStarEOS * eos)
 {
     LALSimNeutronStarFamily * fam;
-    const size_t ndatmax = 1000;
+    const size_t ndatmax = 100;
     const double logpmin = 75.5;
     double logpmax;
     double dlogp;
@@ -179,8 +180,8 @@ LALSimNeutronStarFamily * XLALCreateSimNeutronStarFamily(
     fam->k_of_m_acc = gsl_interp_accel_alloc();
 
     fam->p_of_m_interp = gsl_interp_alloc(gsl_interp_cspline, ndat);
-    fam->r_of_m_interp = gsl_interp_alloc(gsl_interp_linear, ndat);
-    fam->k_of_m_interp = gsl_interp_alloc(gsl_interp_linear, ndat);
+    fam->r_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
+    fam->k_of_m_interp = gsl_interp_alloc(lal_gsl_interp_steffen, ndat);
 
     gsl_interp_init(fam->p_of_m_interp, fam->mdat, fam->pdat, ndat);
     gsl_interp_init(fam->r_of_m_interp, fam->mdat, fam->rdat, ndat);
