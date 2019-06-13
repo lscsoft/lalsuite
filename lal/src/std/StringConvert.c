@@ -63,22 +63,14 @@
  * second <tt>'.'</tt> character), which may or may not be the intended
  * conversion.
  *
- * GPS conversion is similar to floating-point conversion, but the result
- * is stored in a \c LIGOTimeGPS structure as two integer values
- * representing seconds and nanoseconds.  The \c LALStringToGPS
- * function does \e not convert the string to an intermediate
- * \c REAL8 value, but parses the string specially to retain the
- * full precision of the string representation to the nearest nanosecond.
- *
  * ### Algorithm ###
  *
- * These functions (other than \c LALStringToGPS())
- * emulate the standard C functions <tt>strtol()</tt>,
+ * These functions emulate the standard C functions <tt>strtol()</tt>,
  * <tt>strtoul()</tt>, and <tt>strtod()</tt>, except that they follow LAL
- * calling conventions and return values of the appropriate LAL
- * datatypes.  For integer conversion, only base-ten (decimal)
- * representations are supported.  Otherwise, the valid format is as for
- * the corresponding C functions, which we summarize below:
+ * calling conventions and return values of the appropriate LAL datatypes.
+ * For integer conversion, only base-ten (decimal) representations are
+ * supported.  Otherwise, the valid format is as for the corresponding C
+ * functions, which we summarize below:
  *
  * A string to be converted to an \c INT\f$n\f$ (where \f$n\f$=2, 4, or 8)
  * consists of zero or more whitespace characters as determined by
@@ -86,54 +78,33 @@
  * <tt>'-'</tt> character, followed by one or more decimal digits;
  * conversion stops at the first non-digit character after this.  If the
  * result would overflow or underflow the \c INT\f$n\f$ representation,
- * then the value is set to \c LAL_INT\f$n\f$\c _MAX\f$=2^{8n-1}-1\f$ or
- * \c LAL_INT\f$n\f$\c _MIN\f$=-2^{8n-1}\f$, respectively.
+ * then the value is set to \c LAL_INT\f$n\f$\c _MAX\f$=2^{8n-1}-1\f$ or \c
+ * LAL_INT\f$n\f$\c _MIN\f$=-2^{8n-1}\f$, respectively.
  *
  * A string to be converted to a \c UINT\f$n\f$ follows the same format,
- * except that a leading negative sign character <tt>'-'</tt> is
- * \e ignored (the routine will compute the magnitude of the result),
- * and the return value is capped at
- * \c LAL_UINT\f$n\f$\c _MAX\f$=2^{8n}-1\f$.
+ * except that a leading negative sign character <tt>'-'</tt> is \e ignored
+ * (the routine will compute the magnitude of the result), and the return
+ * value is capped at \c LAL_UINT\f$n\f$\c _MAX\f$=2^{8n}-1\f$.
  *
- * A string to be converted to a floating-point number (\c REAL4 or
- * \c REAL8) consists of zero or more whitespace characters as
- * determined by <tt>isspace()</tt>, followed optionally by a single
- * <tt>'+'</tt> or <tt>'-'</tt> character, followed by a sequence of one or
- * more decimal digits optionally containing a decimal point <tt>'.'</tt>,
- * optionally followed by an exponent.  An exponent consists of a single
- * <tt>'E'</tt> or <tt>'e'</tt> character, followed optionally by a single
- * <tt>'+'</tt> or <tt>'-'</tt> character, followed by a sequence of one or
- * more decimal digits.  If the converted value would overflow,
- * \f$\pm\f$\c LAL_REAL\f$n\f$\c _MAX is returned, as appropriate.  If
- * the value would underflow, 0 is returned.
+ * A string to be converted to a floating-point number (\c REAL4 or \c
+ * REAL8) consists of zero or more whitespace characters as determined by
+ * <tt>isspace()</tt>, followed optionally by a single <tt>'+'</tt> or
+ * <tt>'-'</tt> character, followed by a sequence of one or more decimal
+ * digits optionally containing a decimal point <tt>'.'</tt>, optionally
+ * followed by an exponent.  An exponent consists of a single <tt>'E'</tt>
+ * or <tt>'e'</tt> character, followed optionally by a single <tt>'+'</tt>
+ * or <tt>'-'</tt> character, followed by a sequence of one or more decimal
+ * digits.  If the converted value would overflow, \f$\pm\f$\c
+ * LAL_REAL\f$n\f$\c _MAX is returned, as appropriate.  If the value would
+ * underflow, 0 is returned.
  *
- * A string to be converted to a complex number (\c COMPLEX8 or
- * \c COMPLEX16) consists of two floating-point format substrings
- * concatenated together, where the first character of the second
- * substring cannot be interpreted as a continuation of the first number.
- * Usually this means that the second substring will contain at least one
- * leading whitespace character, though this is not strictly necessary.
- * Overflow or underflow is dealt with as above.
- *
- * A string to be converted to a GPS time can have the format of an integer
- * or a floating-point number, as described above.  The optional exponent
- * in the floating-point form is supported, and both positive and negative
- * GPS times are permitted.  If the result would overflow the
- * \c LIGOTimeGPS representation (too far in the future), then the
- * \c gpsSeconds and \c gpsNanoSeconds fields are set to
- * \c LAL_INT4_MAX and \f$999999999\f$, respectively.
- * For an underflow (too far in the past), the fields
- * are set to \c LAL_INT4_MIN and \f$0\f$.
- *
- * Internally, the floating-point conversion routines call
- * <tt>strtod()</tt>, then cap and cast the result as necessary.  The
- * complex conversion routines simply call their floating-point
- * counterpart twice.  The integer routines call an internal function
- * <tt>LALStringToU8AndSign()</tt>, which does what you would expect, then
- * cap and cast the result as necessary.  (The C routines <tt>strtol()</tt>
- * and <tt>strtol()</tt> are not used as they are not guaranteed to have
- * 8-byte precision.)
- *
+ * A string to be converted to a complex number (\c COMPLEX8 or \c
+ * COMPLEX16) consists of two floating-point format substrings concatenated
+ * together, where the first character of the second substring cannot be
+ * interpreted as a continuation of the first number.  Usually this means
+ * that the second substring will contain at least one leading whitespace
+ * character, though this is not strictly necessary.  Overflow or underflow
+ * is dealt with as above.
  */
 
 /** \cond DONT_DOXYGEN */
@@ -579,224 +550,6 @@ LALStringToZ(LALStatus * stat, COMPLEX16 * value, const CHAR * string,
     *value += im * I;
     if (endptr)
         *endptr = end;
-    DETATCHSTATUSPTR(stat);
-    RETURN(stat);
-}
-
-
-
-void
-LALStringToGPS(LALStatus * stat, LIGOTimeGPS * value, const CHAR * string,
-               CHAR ** endptr)
-{
-
-    /* Trick borrowed from LALStringToU8AndSign() to avoid compiler warnings */
-    union {
-        char *s;
-        const char *cs;
-    } bad;      /* there is a REASON for warnings... */
-
-    const CHAR *here = string;  /* current position in string */
-    INT4 signval;       /* sign of value (+1 or -1) */
-    CHAR mantissa[32];  /* local string to store mantissa digits */
-    INT4 mdigits;       /* number of digits in mantissa */
-    INT4 dppos; /* position of decimal point in mantissa, i.e. the
-                   number of mantissa digits preceding the decimal point
-                   (initially -1 if no decimal point in input.) */
-    const CHAR *ehere;  /* string pointer for parsing exponent */
-    INT4 exponent;      /* exponent given in string */
-    INT2 esignval;      /* sign of exponent value (+1 or -1) */
-    UINT8 absValue;     /* magnitude of parsed number */
-    CHAR *eend; /* substring following parsed number */
-    INT4 nanosecSet;    /* flag to indicate if nanoseconds field has been set */
-    INT4 idigit;        /* Digit value: 0 for 1s digit, 1 for 10s digit, etc. */
-
-    INITSTATUS(stat);
-    ATTATCHSTATUSPTR(stat);
-
-    /* Check for valid input arguments. */
-    ASSERT(value, stat, STRINGINPUTH_ENUL, STRINGINPUTH_MSGENUL);
-    ASSERT(string, stat, STRINGINPUTH_ENUL, STRINGINPUTH_MSGENUL);
-
-    /* Skip leading space, and read sign character, if any. */
-    signval = 1;
-    while (isspace(*here))
-        here++;
-    if (*here == '+')
-        here++;
-    else if (*here == '-') {
-        signval = -1;
-        here++;
-    }
-
-    /* Copy the mantissa into a local string, keeping track of the
-       location of the decimal point */
-    mdigits = 0;
-    dppos = -1;
-    while ((*here >= '0' && *here <= '9') || (*here == '.')) {
-
-        if (*here == '.') {
-            /* This is a decimal point */
-            if (dppos >= 0) {
-                /* This is second decimal point encountered, so parsing must stop */
-                break;
-            } else {
-                /* Record the position of the decimal point */
-                dppos = mdigits;
-            }
-
-        } else if (*here == '0' && mdigits == 1 && mantissa[0] == '0') {
-            /* We only want to keep at most one leading zero.  This is an
-               additional leading zero, so simply ignore it. */
-
-        } else {
-            /* This is a digit.  Append it to the local mantissa string, unless
-               the mantissa string is already full, in which case ignore it */
-            if ((UINT4) mdigits < sizeof(mantissa)) {
-                mantissa[mdigits] = *here;
-                mdigits++;
-            }
-        }
-
-        here++;
-
-    }
-
-    /* If there is no mantissa, then return without consuming any characters
-       and without modifying 'value' */
-    if (mdigits == 0) {
-        if (endptr) {
-            bad.cs = string;    /* ... and this avoids the warnings... BAD! */
-            *endptr = bad.s;
-        }
-        DETATCHSTATUSPTR(stat);
-        RETURN(stat);
-    }
-
-    /* If there was no explicit decimal point, then it is implicitly
-       after all of the mantissa digits */
-    if (dppos == -1) {
-        dppos = mdigits;
-    }
-
-    /* Read the exponent, if present */
-    exponent = 0;
-    if (*here == 'E' || *here == 'e') {
-        /* So far, this looks like an exponent.  Set working pointer. */
-        ehere = here + 1;
-
-        /* Parse the exponent value */
-        absValue = LALStringToU8AndSign(&esignval, ehere, &eend);
-        if (eend == ehere) {
-            /* Nothing was parsed, so this isn't a valid exponent.  Leave
-               things as they are, with 'here' pointing to the 'E' or 'e'
-               that we thought introduced an exponent. */
-        } else {
-            /* We successfully parsed the exponent */
-            exponent = (INT4) (esignval * absValue);
-            /* Update the 'here' pointer to just after the exponent */
-            here = eend;
-        }
-
-    }
-
-    /* The exponent simply modifies the decimal point position */
-    dppos += exponent;
-
-    /* OK, now we have the sign ('signval'), mantissa string, and
-       decimal point location, and the 'here' pointer points to the
-       first character after the part of the string we parsed. */
-
-    nanosecSet = 0;
-
-    if (dppos > 11) {
-        /* This is an overflow (positive) or underflow (negative) */
-        if (signval == 1) {
-            value->gpsSeconds = (INT4) LAL_INT4_MAX;
-            value->gpsNanoSeconds = 999999999;
-        } else {
-            value->gpsSeconds = (INT4) (-LAL_INT4_ABSMIN);
-            value->gpsNanoSeconds = 0;
-        }
-
-    } else if (dppos < -9) {
-        /* The time is effectively zero */
-        value->gpsSeconds = 0;
-        value->gpsNanoSeconds = 0;
-
-    } else {
-
-        /* Pick out the integer part */
-        absValue = 0;
-        for (idigit = 0; idigit < dppos && idigit < mdigits; idigit++) {
-            absValue = 10 * absValue + (UINT8) (mantissa[idigit] - '0');
-        }
-        /* Fill in missing powers of ten if not all digits were present */
-        for (; idigit < dppos; idigit++) {
-            absValue *= 10;
-        }
-
-        /* Cap (if necessary) and cast */
-        if (signval > 0) {
-            if (absValue > LAL_INT4_MAX) {
-                value->gpsSeconds = (INT4) (LAL_INT4_MAX);
-                value->gpsNanoSeconds = 999999999;
-                nanosecSet = 1;
-            } else
-                value->gpsSeconds = (INT4) (absValue);
-        } else {
-            if (absValue >= LAL_INT4_ABSMIN) {
-                value->gpsSeconds = (INT4) (-LAL_INT4_ABSMIN);
-                value->gpsNanoSeconds = 0;
-                nanosecSet = 1;
-            } else
-                value->gpsSeconds = (INT4) (-absValue);
-        }
-
-        /* Finally, set nanoseconds field (if not already set by over/underflow) */
-        if (!nanosecSet) {
-
-            absValue = 0;
-            INT4 limit = dppos+9 < mdigits ? dppos+9 : mdigits;
-            for (idigit = dppos; idigit < limit; idigit++) {
-                if (idigit >= 0) {
-                    absValue =
-                        10 * absValue + (UINT8) (mantissa[idigit] - '0');
-                }
-            }
-            /* If there is another digit, use it to round */
-            if (idigit == dppos + 9 && idigit < mdigits) {
-                if (mantissa[idigit] >= '5') {
-                    absValue++;
-                }
-            }
-            /* Fill in missing powers of ten if not all digits were present */
-            for (; idigit < dppos + 9; idigit++) {
-                absValue *= 10;
-            }
-
-            value->gpsNanoSeconds = (INT4) (signval * absValue);
-
-            /* Check for wraparound due to rounding */
-            if (value->gpsNanoSeconds >= 1000000000) {
-                value->gpsNanoSeconds -= 1000000000;
-                value->gpsSeconds += 1;
-            }
-            /* Ensure that nanoseconds field is nonnegative */
-            while (value->gpsNanoSeconds < 0) {
-                value->gpsNanoSeconds += 1000000000;
-                value->gpsSeconds -= 1;
-            }
-
-        }
-
-    }
-
-    /* Set end pointer (if passed) and return. */
-    if (endptr) {
-        bad.cs = here;  /* ... and this avoids the warnings... BAD! */
-        *endptr = bad.s;
-    }
     DETATCHSTATUSPTR(stat);
     RETURN(stat);
 }
