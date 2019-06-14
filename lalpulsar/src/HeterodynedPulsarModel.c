@@ -1019,10 +1019,10 @@ void XLALPulsarSourceToWaveformParams( PulsarParameters *params ){
   
   REAL8 dist = 0.;  /* distance in metres */
   /* set distance (a DIST param takes precedence over PX) */
-  if ( PulsarCheckParam( pars, "DIST") ){
+  if ( PulsarCheckParam( params, "DIST") ){
     dist = PulsarGetREAL8Param( params, "DIST" );
   }
-  else if ( PulsarCheckParam( pars, "PX" ) ){
+  else if ( PulsarCheckParam( params, "PX" ) ){
     dist = LAL_AU_SI / PulsarGetREAL8Param( params, "PX" );
   }
 
