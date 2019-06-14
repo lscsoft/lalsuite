@@ -136,7 +136,7 @@ spinParamsAli=['spin1','spin2','a1z','a2z']
 spinParamsEff=['chi','effectivespin','chi_eff','chi_tot','chi_p']
 spinParams=spinParamsPrec+spinParamsEff+spinParamsAli
 # Source frame params
-cosmoParam=['m1_source','m2_source','mtotal_source','mc_source','redshift','mf_source']
+cosmoParam=['m1_source','m2_source','mtotal_source','mc_source','redshift','mf_source','m1_source_maxldist','m2_source_maxldist','mtotal_source_maxldist','mc_source_maxldist','redshift_maxldist','mf_source_maxldist']
 #Strong Field
 ppEParams=['ppEalpha','ppElowera','ppEupperA','ppEbeta','ppElowerb','ppEupperB','alphaPPE','aPPE','betaPPE','bPPE']
 tigerParams=['dchi%i'%(i) for i in range(8)] + ['dchi%il'%(i) for i in [5,6] ] + ['dxi%d'%(i+1) for i in range(6)] + ['dalpha%i'%(i+1) for i in range(5)] + ['dbeta%i'%(i+1) for i in range(3)] + ['dsigma%i'%(i+1) for i in range(4)]
@@ -144,7 +144,7 @@ bransDickeParams=['omegaBD','ScalarCharge1','ScalarCharge2']
 massiveGravitonParams=['lambdaG']
 tidalParams=['lambda1','lambda2','lam_tilde','dlam_tilde','lambdat','dlambdat','lambdas','bluni']
 eosParams=['logp1','gamma1','gamma2','gamma3']
-energyParams=['e_rad', 'l_peak']
+energyParams=['e_rad', 'l_peak','e_rad_maxldist']
 strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+eosParams+energyParams
 
 #Extrinsic
@@ -163,7 +163,7 @@ calibParams=['calpha_l1','calpha_h1','calpha_v1','calamp_l1','calamp_h1','calamp
 ## Greedy bin sizes for cbcBPP and confidence leves used for the greedy bin intervals
 confidenceLevels=[0.67,0.9,0.95,0.99]
 
-greedyBinSizes={'mc':0.025,'m1':0.1,'m2':0.1,'mass1':0.1,'mass2':0.1,'mtotal':0.1,'mc_source':0.025,'m1_source':0.1,'m2_source':0.1,'mtotal_source':0.1,'eta':0.001,'q':0.01,'asym_massratio':0.01,'iota':0.01,'cosiota':0.02,'time':1e-4,'time_mean':1e-4,'distance':1.0,'dist':1.0,'redshift':0.01,'mchirp':0.025,'chirpmass':0.025,'spin1':0.04,'spin2':0.04,'a1z':0.04,'a2z':0.04,'a1':0.02,'a2':0.02,'phi1':0.05,'phi2':0.05,'theta1':0.05,'theta2':0.05,'ra':0.05,'dec':0.05,'chi':0.05,'chi_eff':0.05,'chi_tot':0.05,'chi_p':0.05,'costilt1':0.02,'costilt2':0.02,'thatas':0.05,'costheta_jn':0.02,'beta':0.05,'omega':0.05,'cosbeta':0.02,'ppealpha':1.0,'ppebeta':1.0,'ppelowera':0.01,'ppelowerb':0.01,'ppeuppera':0.01,'ppeupperb':0.01,'polarisation':0.04,'rightascension':0.05,'declination':0.05,'massratio':0.001,'inclination':0.01,'phase':0.05,'tilt1':0.05,'tilt2':0.05,'phi_jl':0.05,'theta_jn':0.05,'phi12':0.05,'flow':1.0,'phase_maxl':0.05,'calamp_l1':0.01,'calamp_h1':0.01,'calamp_v1':0.01,'calpha_h1':0.01,'calpha_l1':0.01,'calpha_v1':0.01,'logdistance':0.1,'psi':0.1,'costheta_jn':0.1,'mf':0.1,'mf_source':0.1,'af':0.02,'e_rad':0.1,'l_peak':0.1}
+greedyBinSizes={'mc':0.025,'m1':0.1,'m2':0.1,'mass1':0.1,'mass2':0.1,'mtotal':0.1,'mc_source':0.025,'m1_source':0.1,'m2_source':0.1,'mtotal_source':0.1,'mc_source_maxldist':0.025,'m1_source_maxldist':0.1,'m2_source_maxldist':0.1,'mtotal_source_maxldist':0.1,'eta':0.001,'q':0.01,'asym_massratio':0.01,'iota':0.01,'cosiota':0.02,'time':1e-4,'time_mean':1e-4,'distance':1.0,'dist':1.0,'distance_maxl':1.0,'redshift':0.01,'redshift_maxldist':0.01,'mchirp':0.025,'chirpmass':0.025,'spin1':0.04,'spin2':0.04,'a1z':0.04,'a2z':0.04,'a1':0.02,'a2':0.02,'phi1':0.05,'phi2':0.05,'theta1':0.05,'theta2':0.05,'ra':0.05,'dec':0.05,'chi':0.05,'chi_eff':0.05,'chi_tot':0.05,'chi_p':0.05,'costilt1':0.02,'costilt2':0.02,'thatas':0.05,'costheta_jn':0.02,'beta':0.05,'omega':0.05,'cosbeta':0.02,'ppealpha':1.0,'ppebeta':1.0,'ppelowera':0.01,'ppelowerb':0.01,'ppeuppera':0.01,'ppeupperb':0.01,'polarisation':0.04,'rightascension':0.05,'declination':0.05,'massratio':0.001,'inclination':0.01,'phase':0.05,'tilt1':0.05,'tilt2':0.05,'phi_jl':0.05,'theta_jn':0.05,'phi12':0.05,'flow':1.0,'phase_maxl':0.05,'calamp_l1':0.01,'calamp_h1':0.01,'calamp_v1':0.01,'calpha_h1':0.01,'calpha_l1':0.01,'calpha_v1':0.01,'logdistance':0.1,'psi':0.1,'costheta_jn':0.1,'mf':0.1,'mf_source':0.1,'mf_source_maxldist':0.1,'af':0.02,'e_rad':0.1,'e_rad_maxldist':0.1,'l_peak':0.1}
 for s in snrParams:
     greedyBinSizes[s]=0.05
 for derived_time in ['h1_end_time','l1_end_time','v1_end_time','h1l1_delay','l1v1_delay','h1v1_delay']:
@@ -293,10 +293,17 @@ def get_prior(name):
       'mtotal_source':None,
       'mc_source':None,
       'redshift':None,
+      'm1_source_maxldist':None,
+      'm2_source_maxldist':None,
+      'mtotal_source_maxldist':None,
+      'mc_source_maxldist':None,
+      'redshift_maxldist':None,
       'mf':None,
       'mf_source':None,
+      'mf_source_maxldist':None,
       'af':None,
       'e_rad':None,
+      'e_rad_maxldist':None,
       'l_peak':None,
       'spin1':'uniform',
       'spin2':'uniform',
@@ -320,6 +327,7 @@ def get_prior(name):
       'time':'uniform',
       'time_mean':'uniform',
       'dist':'x**2',
+      'distance_maxl':'x**2',
       'ra':'uniform',
       'dec':'np.cos',
       'phase':'uniform',
@@ -393,10 +401,17 @@ def plot_label(param):
         'mtotal_source':r'$M_\mathrm{total}^\mathrm{source}\,(\mathrm{M}_\odot)$',
         'mc_source':r'$\mathcal{M}^\mathrm{source}\,(\mathrm{M}_\odot)$',
         'redshift':r'$z$',
+        'm1_source_maxldist':r'$m_{1}^\mathrm{source - maxLdist}\,(\mathrm{M}_\odot)$',
+        'm2_source_maxldist':r'$m_{2}^\mathrm{source - maxLdist}\,(\mathrm{M}_\odot)$',
+        'mtotal_source_maxldist':r'$M_\mathrm{total}^\mathrm{source - maxLdist}\,(\mathrm{M}_\odot)$',
+        'mc_source_maxldist':r'$\mathcal{M}^\mathrm{source - maxLdist}\,(\mathrm{M}_\odot)$',
+        'redshift_maxldist':r'$z^\mathrm{maxLdist}$',
         'mf':r'$M_\mathrm{final}\,(\mathrm{M}_\odot)$',
         'mf_source':r'$M_\mathrm{final}^\mathrm{source}\,(\mathrm{M}_\odot)$',
+        'mf_source_maxldist':r'$M_\mathrm{final}^\mathrm{source - maxLdist}\,(\mathrm{M}_\odot)$',
         'af':r'$a_\mathrm{final}$',
         'e_rad':r'$E_\mathrm{rad}\,(\mathrm{M}_\odot)$',
+        'e_rad_maxldist':r'$E_\mathrm{rad}^\mathrm{maxLdist}\,(\mathrm{M}_\odot)$',
         'l_peak':r'$L_\mathrm{peak}\,(10^{56}\,\mathrm{ergs}\,\mathrm{s}^{-1})$',
         'spin1':r'$S_1$',
         'spin2':r'$S_2$',
@@ -420,9 +435,11 @@ def plot_label(param):
         'time':r'$t_\mathrm{c}\,(\mathrm{s})$',
         'time_mean':r'$<t>\,(\mathrm{s})$',
         'dist':r'$d_\mathrm{L}\,(\mathrm{Mpc})$',
+        'distance_maxl':r'$d_\mathrm{L}^\mathrm{maxL}\,(\mathrm{Mpc})$',
         'ra':r'$\alpha$',
         'dec':r'$\delta$',
         'phase':r'$\phi\,(\mathrm{rad})$',
+        'phase_maxl':r'$\phi^\mathrm{maxL}\,(\mathrm{rad})$',
         'psi':r'$\psi\,(\mathrm{rad})$',
         'theta_jn':r'$\theta_\mathrm{JN}\,(\mathrm{rad})$',
         'costheta_jn':r'$\mathrm{cos}(\theta_\mathrm{JN})$',
@@ -1041,6 +1058,9 @@ class Posterior(object):
             pos.append_mapping('redshift', calculate_redshift, 'distance')
         elif('dist' in pos.names):
             pos.append_mapping('redshift', calculate_redshift, 'dist')
+        # If using the DistanceMarginalisation, compute the maxL redshift distribution from the maxL d_L
+        elif('distance_maxl' in pos.names):
+            pos.append_mapping('redshift_maxldist', calculate_redshift, 'distance_maxl')
 
         # Calculate source mass parameters
         if ('m1' in pos.names) and ('redshift' in pos.names):
@@ -1054,6 +1074,19 @@ class Posterior(object):
 
         if ('mc' in pos.names) and ('redshift' in pos.names):
             pos.append_mapping('mc_source', source_mass, ['mc', 'redshift'])
+
+        # Calculate source mass parameters if DistanceMarginalisation was used, using the maxL distance and redshift
+        if ('m1' in pos.names) and ('redshift_maxldist' in pos.names):
+            pos.append_mapping('m1_source_maxldist', source_mass, ['m1', 'redshift_maxldist'])
+
+        if ('m2' in pos.names) and ('redshift_maxldist' in pos.names):
+            pos.append_mapping('m2_source_maxldist', source_mass, ['m2', 'redshift_maxldist'])
+
+        if ('mtotal' in pos.names) and ('redshift_maxldist' in pos.names):
+            pos.append_mapping('mtotal_source_maxldist', source_mass, ['mtotal', 'redshift_maxldist'])
+
+        if ('mc' in pos.names) and ('redshift_maxldist' in pos.names):
+            pos.append_mapping('mc_source_maxldist', source_mass, ['mc', 'redshift_maxldist'])
 
         #Calculate new tidal parameters
         new_tidal_params = ['lam_tilde','dlam_tilde']
@@ -1137,10 +1170,22 @@ class Posterior(object):
             except Exception as e:
                 print("Could not calculate final source frame mass. The error was: %s"%(str(e)))
 
+        if ('mf' in pos.names) and ('redshift_maxldist' in pos.names):
+            try:
+                pos.append_mapping('mf_source_maxldist', source_mass, ['mf', 'redshift_maxldist'])
+            except Exception as e:
+                print("Could not calculate final source frame mass. The error was: %s"%(str(e)))
+
         # Calculate radiated energy and peak luminosity
         if ('mtotal_source' in pos.names) and ('mf_source' in pos.names):
             try:
                 pos.append_mapping('e_rad', lambda mtot_s, mf_s: mtot_s-mf_s, ['mtotal_source', 'mf_source'])
+            except Exception as e:
+                print("Could not calculate radiated energy. The error was: %s"%(str(e)))
+
+        if ('mtotal_source_maxldist' in pos.names) and ('mf_source_maxldist' in pos.names):
+            try:
+                pos.append_mapping('e_rad_maxldist', lambda mtot_s, mf_s: mtot_s-mf_s, ['mtotal_source_maxldist', 'mf_source_maxldist'])
             except Exception as e:
                 print("Could not calculate radiated energy. The error was: %s"%(str(e)))
 
