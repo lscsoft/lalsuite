@@ -68,7 +68,7 @@ Depends: ${misc:Depends},
   python-lalinference (>= @MIN_LALINFERENCE_VERSION@~),
   python-ligo-segments
 Breaks: lalinference-python (<< 1.9.4.1-1~)
-Provides: python-bayestar-localization, python-bayestar, python-pylal
+Provides: python-bayestar-localization, python-bayestar
 Conflicts: python-bayestar-localization, python-bayestar, python-pylal
 Replaces: python-bayestar-localization, python-bayestar, python-pylal
 Description: LSC Algorithm Library Applications
