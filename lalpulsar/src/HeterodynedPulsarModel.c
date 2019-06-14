@@ -363,9 +363,17 @@ REAL8Vector *XLALHeterodynedPulsarGetSSBDelay( PulsarParameters *pars,
   REAL8 pmdec = PulsarGetREAL8ParamOrZero( pars, "PMDEC" );
   REAL8 pepoch = PulsarGetREAL8ParamOrZero( pars, "PEPOCH" );
   REAL8 posepoch = PulsarGetREAL8ParamOrZero( pars, "POSEPOCH" );
-  REAL8 px = PulsarGetREAL8ParamOrZero( pars, "PX" );     /* parallax */
+  
+  REAL8 dist = 0.;  /* distance in light seconds */
+  /* set distance (a DIST param takes precedence over PX) */
+  if ( PulsarCheckParam( pars, "DIST") ){
+    dist = PulsarGetREAL8Param( pars, "DIST" ) / LAL_C_SI;
+  }
+  else if ( PulsarCheckParam( pars, "PX" ) ){
+    dist = (LAL_AU_SI/LAL_C_SI) / PulsarGetREAL8Param( pars, "PX" );
+  }
 
-   /* set the position and frequency epochs if not already set */
+  /* set the position and frequency epochs if not already set */
   if( pepoch == 0. && posepoch != 0.) { pepoch = posepoch; }
   else if( posepoch == 0. && pepoch != 0. ) { posepoch = pepoch; }
 
@@ -374,8 +382,8 @@ REAL8Vector *XLALHeterodynedPulsarGetSSBDelay( PulsarParameters *pars,
   /* allocate memory for times delays */
   dts = XLALCreateREAL8Vector( length );
 
-  /* set 1/distance if parallax value is given (1/sec) */
-  if( px != 0. ) { bary.dInv = px*(LAL_C_SI/LAL_AU_SI); }
+  /* set 1/distance if distance is given */
+  if( dist != 0. ) { bary.dInv = 1. / dist; }
   else { bary.dInv = 0.; }
 
   /* make sure ra and dec are wrapped within 0--2pi and -pi.2--pi/2 respectively */
@@ -1008,7 +1016,15 @@ void XLALPulsarSourceToWaveformParams( PulsarParameters *params ){
   REAL8 lambda = PulsarGetREAL8ParamOrZero( params, "LAMBDA" );
   REAL8 costheta = PulsarGetREAL8ParamOrZero( params, "COSTHETA" );
   REAL8 q22 = PulsarGetREAL8ParamOrZero( params, "Q22" );
-  REAL8 dist = PulsarGetREAL8ParamOrZero( params, "DIST" );
+  
+  REAL8 dist = 0.;  /* distance in metres */
+  /* set distance (a DIST param takes precedence over PX) */
+  if ( PulsarCheckParam( pars, "DIST") ){
+    dist = PulsarGetREAL8Param( pars, "DIST" );
+  }
+  else if ( PulsarCheckParam( pars, "PX" ) ){
+    dist = LAL_AU_SI / PulsarGetREAL8Param( pars, "PX" );
+  }
 
   if ( ( q22 != 0. && dist != 0. ) && ( I21 == 0. && I21 == 0. && C21 == 0. && C22 == 0. ) ){
     /* convert mass quadrupole to C22 parameter */
