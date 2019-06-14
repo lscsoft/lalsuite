@@ -1,0 +1,43 @@
+# the librarian has default control of everything
+* @adam-mercer
+
+# package-level owners
+lal/                @adam-mercer @jolien-creighton
+lalframe/           @adam-mercer @jolien-creighton @ed-maros
+lalmetaio/          @adam-mercer @jolien-creighton
+lalsimulation/      @riccardo-sturani @frank-ohme
+lalburst/           @salvatore-vitale @ryan-lynch
+lalpulsar/          @karl-wette @david-keitel
+lalinspiral/        @jolien-creighton
+lalinference/       @bfarr @cjhaster @john-veitch @vivien
+
+# lalapps
+lalapps/src/findchirp/           @jolien-creighton
+lalapps/src/frametools/          @adam-mercer @jolien-creighton
+lalapps/src/hwinjection/         @karl-wette @david-keitel
+lalapps/src/inspiral/            @jolien-creighton
+lalapps/src/inspiral/posterior/  @bfarr @cjhaster @john-veitch @vivien
+lalapps/src/lalapps/             @adam-mercer @jolien-creighton
+lalapps/src/power/               @kipp.cannon @xavier.siemens
+lalapps/src/pulsar/              @karl-wette @david-keitel
+lalapps/src/string/              @kipp.cannon @florent-robinet @imene.belahcene @daichi.tsuna
+
+# build / packaging  / support files
+.gitlab/             @adam-mercer @duncanmmacleod
+conda/               @adam-mercer @duncanmmacleod
+debian/              @adam-mercer @duncanmmacleod
+docker/              @adam-mercer @duncanmmacleod
+gnuscripts/          @adam-mercer @karl-wette
+*.spec.in            @adam-mercer @duncanmmacleod
+*.pc.in              @adam-mercer @duncanmmacleod
+.gitlab-ci.yml       @adam-mercer @duncanmmacleod
+.gitlab-*.Dockerfile @adam-mercer @duncanmmacleod
+.mailmap*            @adam-mercer @karl-wette
+00boot               @adam-mercer @karl-wette
+CONTRIBUTING.md      @adam-mercer @duncanmmacleod
+COPYING              @adam-mercer @duncanmmacleod
+Makefile.am          @adam-mercer @karl-wette
+configure.ac         @adam-mercer @karl-wette
+
+# SWIG bindings
+swig/               @karl-wette
