@@ -32,10 +32,6 @@ extern "C" {
  * function prototypes
  */
 
-MultiInspiralTable* XLALMultiInspiralTableFromLIGOLw (
-    CHAR               *fileName
-    );
-
 int
 LALSnglInspiralTableFromLIGOLw (
     SnglInspiralTable **eventHead,
@@ -91,21 +87,6 @@ XLALReadInspiralTriggerFile (
 void
 XLALCleanSummValueTable (
     SummValueTable **summValueList
-    );
-
-int
-LALMultiInspiralTableFromLIGOLw (
-    MultiInspiralTable **eventHead,
-    CHAR                *fileName
-    );
-
-int
-XLALReadMultiInspiralTriggerFile (
-    MultiInspiralTable    **inspiralEventList,
-    MultiInspiralTable    **lastTrigger,
-    SearchSummaryTable   **searchSummList,
-    SearchSummvarsTable  **inputFileList,
-    CHAR                  *fileName
     );
 
 #ifdef  __cplusplus

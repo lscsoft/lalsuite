@@ -28,20 +28,20 @@
  *
  * ### Prototypes ###
  *
- * <tt>LALEOBPPWaveform()</tt>
+ * <tt>XLALEOBPPWaveform()</tt>
  * <ul>
  * <li><tt>signalvec: </tt> Output containing the inspiral waveform.
  * <li><tt> params:</tt> Input containing binary chirp parameters.
  * </ul>
  *
- * <tt> LALEOBPPWaveformTemplates() </tt>
+ * <tt> XLALEOBPPWaveformTemplates() </tt>
  * <ul>
  * <li><tt> signalvec1:</tt> Output containing the 0-phase inspiral waveform.
  * <li><tt> signalvec2:</tt> Output containing the \f$\pi/2\f$-phase inspiral waveform.
  * <li><tt> params:</tt> Input containing binary chirp parameters.
  * </ul>
  *
- * <tt> LALEOBPPWaveformForInjection() </tt>
+ * <tt> XLALEOBPPWaveformForInjection() </tt>
  * <ul>
  * <li><tt> waveform: </tt> Coherent GW structure containing output waveform
  * <li><tt> params: </tt> Input containing inspiral template parameters.
@@ -1122,26 +1122,6 @@ GetRingdownAttachCombSize( INT4 l, INT4 m )
 
 /*-------------------------------------------------------------------*/
 
-void
-LALEOBPPWaveform (
-   LALStatus        *status,
-   REAL4Vector      *signalvec,
-   InspiralTemplate *params
-   )
-{
-
-   INITSTATUS(status);
-
-   XLAL_PRINT_DEPRECATION_WARNING("XLALEOBPPWaveform");
-
-   if ( XLALEOBPPWaveform( signalvec, params ) == XLAL_FAILURE )
-   {
-     ABORTXLAL( status );
-   }
-
-   RETURN( status );
-}
-
 int
 XLALEOBPPWaveform(
     REAL4Vector      *signalvec,
@@ -1210,28 +1190,6 @@ XLALEOBPPWaveform(
    }
 
    return XLAL_SUCCESS;
-}
-
-
-void
-LALEOBPPWaveformTemplates (
-   LALStatus        *status,
-   REAL4Vector      *signalvec1,
-   REAL4Vector      *signalvec2,
-   InspiralTemplate *params
-   )
-{
-
-   INITSTATUS(status);
-
-   XLAL_PRINT_DEPRECATION_WARNING("XLALEOBPPWaveformTemplates");
-
-   if ( XLALEOBPPWaveformTemplates( signalvec1, signalvec2, params ) == XLAL_FAILURE )
-   {
-     ABORTXLAL( status );
-   }
-
-   RETURN( status );
 }
 
 
@@ -1317,26 +1275,6 @@ XLALEOBPPWaveformTemplates (
 /*=========================================================*/
 /*======INJECTION =========================================*/
 /*=========================================================*/
-
-void
-LALEOBPPWaveformForInjection (
-			    LALStatus        *status,
-			    CoherentGW       *waveform,
-			    InspiralTemplate *params,
-			    PPNParamStruc    *ppnParams
-			    )
-{
-  INITSTATUS(status);
-
-  XLAL_PRINT_DEPRECATION_WARNING("XLALEOBPPWaveformForInjection");
-
-  if ( XLALEOBPPWaveformForInjection( waveform, params, ppnParams ) == XLAL_FAILURE )
-  {
-    ABORTXLAL( status );
-  }
-
-  RETURN( status );
-}
 
 
 int

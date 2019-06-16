@@ -917,29 +917,6 @@ LALInspiralUpdateParams (
     );
 
 void
-LALMatrixTransform (
-    LALStatus *status,
-    INT4      Dim,
-    REAL8     **trans,
-    REAL8     **buff1,
-    REAL8     **mm3
-    );
-
-void
-LALDeterminant3 (
-    LALStatus *status,
-    REAL8  *determinant,
-    REAL8  **matrix
-    );
-
-void
-LALInverse3(
-        LALStatus *status,
-        REAL8     **inverse,
-        REAL8     **matrix
-);
-
-void
 LALInspiralSetParams (
     LALStatus            *status,
     InspiralTemplate     *tempPars,

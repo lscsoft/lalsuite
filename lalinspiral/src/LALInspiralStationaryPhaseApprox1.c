@@ -98,32 +98,6 @@ XLALPsiOfT (
 
 /* This is the main function to compute the stationary phase approximation */
 
-
-void
-LALInspiralStationaryPhaseApprox1 (
-   LALStatus        *status,
-   REAL4Vector      *signalvec,
-   InspiralTemplate *params
-   )
-{  
-  /* Print Deprecation Warning */
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralStationaryPhaseApprox1");
-
-  /* Initialize the status pointer */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  /* Call XLAL function and check for errors */
-  ASSERT (signalvec, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  if (XLALInspiralStationaryPhaseApprox1(signalvec, params) == XLAL_FAILURE)  
-    ABORTXLAL(status);
-
-  /* Detach the status pointer */
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-
-}
-
 int
 XLALInspiralStationaryPhaseApprox1 (
    REAL4Vector      *signalvec,

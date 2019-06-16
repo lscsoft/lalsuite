@@ -324,15 +324,6 @@ LALGetInspiralParams( LALStatus                  *,
 		      RandomParams               *params );
 
 
-
-
-void
-LALGenerateInspiralSmooth( LALStatus            *,
-		      	   CoherentGW		**output,
-			   PPNParamStruc	*params,
-			   REAL4		*qfactor);
-
-
 /*@}*/ /* end:GeneratePPNInspiral_h */
 
 

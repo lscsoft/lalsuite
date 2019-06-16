@@ -32,7 +32,7 @@
  * <li> \c params: Input containing binary chirp parameters.</li>
  * </ul>
  *
- * <tt>LALInspiralWave3Templates()</tt>
+ * <tt>XLALInspiralWave3Templates()</tt>
  * <ul>
  * <li> \c output1: Output containing the 0-phase inspiral waveform.</li>
  * <li> \c output2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
@@ -46,7 +46,7 @@
  * the phase of the waveform is given as an explicit function of time
  * as in \eqref{eq_InspiralWavePhase3}.
  *
- * LALInspiralWave3Templates() simultaneously generates
+ * XLALInspiralWave3Templates() simultaneously generates
  * two inspiral waveforms and the two differ in
  * phase by \f$\pi/2\f$.
  *
@@ -174,25 +174,6 @@ static REAL8 XLALInspiralFrequency3Wrapper(REAL8 tC, void *pars)
   return f;
 }
 
-void
-LALInspiralWave3Templates (
-   LALStatus        *status,
-   REAL4Vector      *output1,
-   REAL4Vector      *output2,
-   InspiralTemplate *params
-   )
-{
-   XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralWave3Templates");
-   INITSTATUS(status);
-   ATTATCHSTATUSPTR(status);
-
-   if( XLALInspiralWave3Templates(output1, output2, params) )
-      ABORTXLAL(status);
-
-   DETATCHSTATUSPTR(status);
-   RETURN(status);
-}
-
 int
 XLALInspiralWave3Templates (
    REAL4Vector      *output1,
@@ -244,25 +225,6 @@ XLALInspiralWave3Templates (
     XLAL_ERROR(XLAL_EFUNC);
 
   return XLAL_SUCCESS;
-}
-
-void
-LALInspiralWave3ForInjection (
-   LALStatus        *status,
-   CoherentGW       *waveform,
-   InspiralTemplate *params,
-   PPNParamStruc  *ppnParams
-   )
-{
-   XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralWave3ForInjection");
-   INITSTATUS(status);
-   ATTATCHSTATUSPTR(status);
-
-   if( XLALInspiralWave3ForInjection(waveform, params, ppnParams) )
-      ABORTXLAL(status);
-
-   DETATCHSTATUSPTR(status);
-   RETURN(status);
 }
 
 int

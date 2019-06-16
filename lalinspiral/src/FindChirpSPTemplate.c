@@ -63,7 +63,7 @@
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 
-double
+static double
 XLALFindChirpChirpTime (double m1,
 			double m2,
 			double fLower,

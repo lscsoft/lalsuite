@@ -33,7 +33,6 @@
 #include <lal/RealFFT.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpChisq.h>
 
 #if defined(__cplusplus)
 extern "C" {

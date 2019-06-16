@@ -701,10 +701,6 @@ void LALInspiralParameterCalc (
 int XLALInspiralParameterCalc (
      InspiralTemplate *params);
 
-void LALInspiralRestrictedAmplitude(
-     LALStatus *status,
-     InspiralTemplate  *params);
-
 int XLALInspiralRestrictedAmplitude(
      InspiralTemplate  *params);
 
@@ -844,22 +840,10 @@ int  XLALInspiralWave1(
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
-void LALInspiralWave1Templates (
-     LALStatus *status,
-     REAL4Vector *signalvec1,
-     REAL4Vector *signalvec2,
-     InspiralTemplate *params);
-
 int  XLALInspiralWave1Templates(
      REAL4Vector *signalvec1,
      REAL4Vector *signalvec2,
      InspiralTemplate *params);
-
-void LALInspiralWave1ForInjection (
-     LALStatus *status,
-     CoherentGW *waveform,
-     InspiralTemplate *params,
-     PPNParamStruc  *ppnParams);
 
 int  XLALInspiralWave1ForInjection(
      CoherentGW *waveform,
@@ -877,27 +861,8 @@ void LALInspiralEccentricityTemplates(
      REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
-void LALInspiralEccentricityForInjection(
-     LALStatus        *status,
-     CoherentGW *waveform,
-     InspiralTemplate *params,
-     PPNParamStruc  *ppnParams
-     );
-
-
-void LALInspiralWave2 (
-     LALStatus *status,
-     REAL4Vector *signalvec,
-     InspiralTemplate *params);
-
 int  XLALInspiralWave2(
      REAL4Vector *signalvec,
-     InspiralTemplate *params);
-
-void LALInspiralWave2Templates (
-     LALStatus *status,
-     REAL4Vector *signalvec1,
-     REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
 int  XLALInspiralWave2Templates (
@@ -905,17 +870,10 @@ int  XLALInspiralWave2Templates (
      REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
-void LALInspiralWave2ForInjection(
-     LALStatus *status,
-     CoherentGW *waveform,
-     InspiralTemplate *params,
-     PPNParamStruc  *ppnParams);
-
 int  XLALInspiralWave2ForInjection(
      CoherentGW *waveform,
      InspiralTemplate *params,
      PPNParamStruc  *ppnParams);
-
 
 void LALInspiralWave3 (
      LALStatus *status,
@@ -926,64 +884,28 @@ int  XLALInspiralWave3 (
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
-void LALInspiralWave3Templates (
-     LALStatus *status,
-     REAL4Vector *signalvec,
-     REAL4Vector *signalvec2,
-     InspiralTemplate *params);
-
 int  XLALInspiralWave3Templates (
      REAL4Vector *signalvec1,
      REAL4Vector *signalvec2,
      InspiralTemplate *params);
-
-void LALInspiralWave3ForInjection(
-     LALStatus *status,
-     CoherentGW *waveform,
-     InspiralTemplate *params,
-     PPNParamStruc  *ppnParams);
 
 int  XLALInspiralWave3ForInjection(
      CoherentGW *waveform,
      InspiralTemplate *params,
      PPNParamStruc  *ppnParams);
 
-
-
-
-void LALInspiralStationaryPhaseApprox1 (
-     LALStatus *status,
-     REAL4Vector *signalvec,
-     InspiralTemplate *params);
-
 int
 XLALInspiralStationaryPhaseApprox1 (
    REAL4Vector      *signalvec,
    InspiralTemplate *params);
-
-void LALInspiralStationaryPhaseApprox2 (
-     LALStatus *status,
-     REAL4Vector *signalvec,
-     InspiralTemplate *params);
 
 int
 XLALInspiralStationaryPhaseApprox2 (
    REAL4Vector      *signalvec,
    InspiralTemplate *params);
 
-void LALEOBWaveform(
-     LALStatus *status,
-     REAL4Vector *signalvec,
-     InspiralTemplate *params);
-
 int XLALEOBWaveform(
      REAL4Vector *signalvec,
-     InspiralTemplate *params);
-
-void LALEOBWaveformTemplates(
-     LALStatus *status,
-     REAL4Vector *signalvec1,
-     REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
 int XLALEOBWaveformTemplates(
@@ -991,42 +913,19 @@ int XLALEOBWaveformTemplates(
      REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
-void LALEOBWaveformForInjection(
-     LALStatus *status,
-     CoherentGW *waveform,
-     InspiralTemplate *params,
-     PPNParamStruc  *ppnParams);
-
 int XLALEOBWaveformForInjection(
      CoherentGW *waveform,
      InspiralTemplate *params,
      PPNParamStruc  *ppnParams);
 
-void LALEOBPPWaveform(
-     LALStatus *status,
-     REAL4Vector *signalvec,
-     InspiralTemplate *params);
-
 int XLALEOBPPWaveform(
      REAL4Vector *signalvec,
-     InspiralTemplate *params);
-
-void LALEOBPPWaveformTemplates(
-     LALStatus *status,
-     REAL4Vector *signalvec1,
-     REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
 int XLALEOBPPWaveformTemplates(
      REAL4Vector *signalvec1,
      REAL4Vector *signalvec2,
      InspiralTemplate *params);
-
-void LALEOBPPWaveformForInjection(
-     LALStatus *status,
-     CoherentGW *waveform,
-     InspiralTemplate *params,
-     PPNParamStruc  *ppnParams);
 
 int XLALEOBPPWaveformForInjection(
      CoherentGW *waveform,
@@ -1039,11 +938,6 @@ void LALBCVWaveform(
      InspiralTemplate *params);
 
 int XLALTaylorEtWaveform(
-     REAL4Vector *signalvec,
-     InspiralTemplate *params);
-
-void LALTaylorEtWaveform(
-     LALStatus *status,
      REAL4Vector *signalvec,
      InspiralTemplate *params);
 
@@ -1975,11 +1869,6 @@ void XLALSimInjectNinjaSignals(
         const char *ifo,
         REAL8 dynRange,
         SimInspiralTable* events
-);
-
-/* Determines if a given time is playground data. */
-int XLALINT8NanoSecIsPlayground (
-        INT8 ns
 );
 
 /*---------------------------------------------------------------- */

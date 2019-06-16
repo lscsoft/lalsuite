@@ -427,20 +427,6 @@ XLALTimeSlideSingleInspiral(
     const LIGOTimeGPS           slideTimes[]
     );
 
-SnglInspiralTable *
-XLALPlayTestSingleInspiral(
-    SnglInspiralTable          *eventHead,
-    LALPlaygroundDataMask      *dataType
-    );
-
-void
-LALPlayTestSingleInspiral(
-    LALStatus                  *status,
-    SnglInspiralTable         **eventHead,
-    LALPlaygroundDataMask      *dataType
-    );
-
-
 void
 LALCreateTrigBank(
     LALStatus                  *status,
@@ -664,12 +650,6 @@ XLALSimInspiralAssignIDs (
     SimInspiralTable *head,
     long process_id,
     long simulation_id
-    );
-
-void
-XLALPlayTestSimInspiral(
-    SimInspiralTable          **eventHead,
-    LALPlaygroundDataMask      *dataType
     );
 
 int

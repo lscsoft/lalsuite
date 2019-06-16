@@ -33,7 +33,6 @@
 #include <lal/RealFFT.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpChisq.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -92,12 +91,6 @@ extern "C" {
 #define FINDCHIRPSPH_MSGEUAPX "Unknown approximant"
 #define FINDCHIRPSPH_MSGEORDR "Invalid post-Newtonian order"
 /** \endcond */
-
-double
-XLALFindChirpChirpTime (double m1,
-			double m2,
-			double fLower,
-			int order);
 
 void
 LALFindChirpSPTemplate (

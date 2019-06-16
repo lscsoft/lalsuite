@@ -33,7 +33,7 @@
  * <li> \c params: Input containing binary chirp parameters.</li>
  * </ul>
  *
- * <tt>LALInspiralWave1Templates()</tt>
+ * <tt>XLALInspiralWave1Templates()</tt>
  * <ul>
  * <li> \c signalvec1: Output containing the 0-phase inspiral waveform.</li>
  * <li> \c signalvec2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
@@ -45,7 +45,7 @@
  * LALInspiralWave1() is called if the user has specified the
  * \c enum ::Approximant to be
  * either #TaylorT1 or #PadeT1.
- * LALInspiralWave1Templates() is exactly the same as LALInspiralWave1(), except that
+ * XLALInspiralWave1Templates() is exactly the same as LALInspiralWave1(), except that
  * it generates two templates one for which the starting phase is
  * <tt>params.startPhase</tt> and the other for which the phase is
  * <tt>params.startPhase + \f$\pi/2\f$</tt>.
@@ -160,25 +160,6 @@ XLALInspiralWave1(
    waveforms by solving the ODEs using a 4th order Runge-Kutta; April 5, 00.
 */
 
-void
-LALInspiralWave1Templates(
-   LALStatus        *status,
-   REAL4Vector      *output1,
-   REAL4Vector      *output2,
-   InspiralTemplate *params
-   )
-{
-   XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralWave1Templates");
-   INITSTATUS(status);
-   ATTATCHSTATUSPTR(status);
-
-   if( XLALInspiralWave1Templates(output1, output2, params) )
-      ABORTXLAL(status);
-
-   DETATCHSTATUSPTR(status);
-   RETURN(status);
-}
-
 int
 XLALInspiralWave1Templates(
    REAL4Vector      *output1,
@@ -235,25 +216,6 @@ XLALInspiralWave1Templates(
    Interface routine needed to generate time-domain T- or a P-approximant
    waveforms for injection packages T.Cokelaer sept 2003
 */
-
-void
-LALInspiralWave1ForInjection(
-  LALStatus        *status,
-  CoherentGW       *waveform,
-  InspiralTemplate *params,
-  PPNParamStruc  *ppnParams
-  )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralWave1ForInjection");
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  if( XLALInspiralWave1ForInjection(waveform, params, ppnParams) )
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
 
 int
 XLALInspiralWave1ForInjection(

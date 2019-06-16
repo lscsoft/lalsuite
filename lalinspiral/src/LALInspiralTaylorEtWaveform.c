@@ -349,23 +349,6 @@ void XLALTaylorEtDerivatives7PN(
 }
 
 
-void LALTaylorEtWaveform (
-   LALStatus        *status,
-   REAL4Vector      *signalvec,
-   InspiralTemplate *params
-   )
-{
-   XLAL_PRINT_DEPRECATION_WARNING("XLALTaylorEtWaveform");
-   INITSTATUS(status);
-   ATTATCHSTATUSPTR(status);
-
-   if( XLALTaylorEtWaveform(signalvec, params) )
-      ABORTXLAL(status);
-
-   DETATCHSTATUSPTR(status);
-   RETURN(status);
-}
-
 int XLALTaylorEtWaveform (
    REAL4Vector      *signalvec,
    InspiralTemplate *params
