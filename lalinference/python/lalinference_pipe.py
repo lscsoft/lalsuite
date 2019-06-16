@@ -88,6 +88,10 @@ def add_variations(cp, section, option, values=None, allowed_values=None):
                          )
     if len(vals) >1:
         if labels is not None:
+            if len(labels) != len(vals):
+                raise ValueError(
+                    "The number of labels does not match the "
+                    "number of {}'s given".format(option))
             return {(section,option): [[i,j] for i,j in zip(vals, labels)]}
         return {(section,option): vals}
     elif len(vals)==1:
