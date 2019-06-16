@@ -1319,11 +1319,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos,
                     evstring=evstring, coherence=True)
                 respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
+                try:
+                    gid = self.config.get('input','gid')
+                except:
+                    gid = None
+                respagenode.set_gid(gid)
                 if os.path.exists(self.basepath+'/coinc.xml'):
-                    try:
-                        gid = self.config.get('input','gid')
-                    except:
-                        gid = None
                     respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
 
         else:
@@ -1337,11 +1338,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos,
                     evstring=evstring, coherence=False)
                 respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
+                try:
+                    gid = self.config.get('input','gid')
+                except:
+                    gid = None
+                respagenode.set_gid(gid)
                 if os.path.exists(self.basepath+'/coinc.xml'):
-                    try:
-                        gid = self.config.get('input','gid')
-                    except:
-                        gid = None
                     respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
             else:
                 respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos)
@@ -2852,6 +2854,11 @@ class PESummaryResultsPageNode(pipeline.CondorDAGNode):
 
     def get_pos_file(self):
         return self.posfile
+
+    def set_gid(self, gid):
+        if gid is None:
+            return
+        self.add_var_arg('--gracedb '+gid)
 
     def set_bayes_coherent_incoherent(self,bcifile):
         self.add_file_opt('bci',bcifile)
