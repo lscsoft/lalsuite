@@ -1320,10 +1320,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     evstring=evstring, coherence=True)
                 respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
                 try:
-                    cachefiles_option = False
                     cachefiles = self.config.get('resultspage','plot-strain-data')
-                    if cachefiles == str(True):
-                        cachefiles_option = True
+                    cachefiles_option = True
                 except:
                     cachefiles_option = False
                 if cachefiles_option:
@@ -1355,10 +1353,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     evstring=evstring, coherence=False)
                 respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
                 try:
-                    cachefiles_option = False
                     cachefiles = self.config.get('resultspage','plot-strain-data')
-                    if cachefiles == str(True):
-                        cachefiles_option = True
+                    cachefiles_option = True
                 except:
                     cachefiles_option = False
                 if cachefiles_option:
@@ -1482,14 +1478,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos, evstring=evstring, coherence=self.config.getboolean('analysis','coherence-test'))
             respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
             try:
-                cachefiles_option = False
                 cachefiles = self.config.get('resultspage','plot-strain-data')
-                if cachefiles == str(True):
-                    cachefiles_option = True
+                cachefiles_option = True
             except:
                 cachefiles_option = False
             if cachefiles_option:
                 respagenode.set_cache_files(enginenodes[0].channels, enginenodes[0].cachefiles)
+
 
             try:
                 labels = self.config.get('resultspage','label')
