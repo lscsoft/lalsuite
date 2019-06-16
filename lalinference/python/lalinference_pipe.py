@@ -72,6 +72,10 @@ def add_variations(cp, section, option, values=None, allowed_values=None):
     if not cp.has_section(section) and not cp.has_option(section,option):
         return
 
+    try:
+        labels = cp.get('resultspage','label').split(',')
+    except:
+        labels = None
     if values is not None:
         vals = values
     else:
@@ -83,9 +87,13 @@ def add_variations(cp, section, option, values=None, allowed_values=None):
                                 )
                          )
     if len(vals) >1:
+        if labels is not None:
+            return {(section,option): [[i,j] for i,j in zip(vals, labels)]}
         return {(section,option): vals}
     elif len(vals)==1:
         cp.set(section, option, vals[0])
+        if labels is not None:
+            cp.set('resultspage', 'label', labels[0])
         return {}
     else:
         print(("Found no variations of [{section}] {option}".format(section=section,
@@ -176,7 +184,12 @@ def generate_variations(master_cp, variations):
         cp = configparser.ConfigParser()
         cp.optionxform = str
         cp.read(masterpath)
-        cp.set(section,opt,val)
+        if type(val) == list:
+            cp.set(section,opt,val[0])
+            cp.set('resultspage','label',val[1])
+            val = val[0]
+        else:
+            cp.set(section,opt,val)
         # Append to the paths
         cp.set('paths','basedir',os.path.join(cur_basedir, \
                                         '{val}'.format(opt=opt,val=val)))
