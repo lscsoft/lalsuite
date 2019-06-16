@@ -27,7 +27,6 @@
 #include <lal/LALConstants.h>
 #include <lal/NRWaveInject.h>
 #include <lal/Random.h>
-#include <lal/Inject.h>
 #include <lal/LALSimulation.h>
 #include <lal/LALDetectors.h>
 #include <lal/DetResponse.h>

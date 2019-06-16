@@ -49,21 +49,14 @@ extern "C" {
  */
 /*@{*/
 
-#include    <math.h>
-#include    <lal/LALStdlib.h>
-#include    <lal/LALGSL.h>
-#include    <lal/LALError.h>
+#include    <lal/LALAtomicDatatypes.h>
 #include    <lal/LIGOMetadataTables.h>
 #include    <lal/LIGOMetadataInspiralUtils.h>
 #include    <lal/EllipsoidOverlapTools.h>
 
-#include    <gsl/gsl_errno.h>
-#include    <gsl/gsl_math.h>
-#include    <gsl/gsl_min.h>
+
 #include    <gsl/gsl_vector.h>
 #include    <gsl/gsl_matrix.h>
-#include    <gsl/gsl_blas.h>
-#include    <gsl/gsl_linalg.h>
 
 /**
  * The \c TriggerErrorList is a linked list used within e-thinca. It

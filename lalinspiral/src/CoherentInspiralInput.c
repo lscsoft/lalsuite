@@ -45,8 +45,6 @@
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpSP.h>
-#include <lal/FindChirpChisq.h>
 #include <lal/DetectorSite.h>
 #include <lal/Random.h>
 #include <lal/LALInspiral.h>

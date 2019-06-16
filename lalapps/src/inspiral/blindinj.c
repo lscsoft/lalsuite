@@ -48,7 +48,6 @@
 #include <lal/LIGOLwXMLlegacy.h>
 #include <lal/Units.h>
 #include <lal/Date.h>
-#include <lal/Inject.h>
 #include <lal/InspiralInjectionParams.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/GenerateInspRing.h>

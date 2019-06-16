@@ -26,6 +26,7 @@
  *-----------------------------------------------------------------------
  */
 
+#include <math.h>
 #include <lal/TrigScanEThincaCommon.h>
 
 /**
