@@ -1330,6 +1330,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     respagenode.set_cache_files(enginenodes[0].channels, enginenodes[0].cachefiles)
 
                 try:
+                    labels = self.config.get('resultspage','label')
+                except:
+                    labels = None
+                respagenode.set_labels(labels)
+
+                try:
                     gid = self.config.get('input','gid')
                 except:
                     gid = None
@@ -1357,6 +1363,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     cachefiles_option = False
                 if cachefiles_option:
                     respagenode.set_cache_files(enginenodes[0].channels, enginenodes[0].cachefiles)
+                try:
+                    labels = self.config.get('resultspage','label')
+                except:
+                    labels = None
+                respagenode.set_labels(labels)
+
                 try:
                     gid = self.config.get('input','gid')
                 except:
@@ -1479,6 +1491,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             if cachefiles_option:
                 respagenode.set_cache_files(enginenodes[0].channels, enginenodes[0].cachefiles)
 
+            try:
+                labels = self.config.get('resultspage','label')
+            except:
+                labels = None
+            respagenode.set_labels(labels)
 
             if os.path.exists(self.basepath+'/coinc.xml'):
                 try:
@@ -2872,6 +2889,12 @@ class PESummaryResultsPageNode(pipeline.CondorDAGNode):
         for num, i in enumerate(ifos):
             calibration += " %s:%s" %(i, st[num])
         self.add_var_arg('--calibration %s' %calibration)
+
+    def set_labels(self, labels):
+        if labels is None:
+            return
+        l = labels.split(",")
+        self.add_var_arg('--labels %s'%(" ".join(l)))
 
     def set_snr_file(self,st):
         if st is None:
