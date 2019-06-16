@@ -745,6 +745,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--4PolyEOS)                Enables 4-piece polytropic EOS parmeterization, only with LALSimulation.\n\
     (--4SpectralDecomp)         Enables 4-coeff. spectral decomposition EOS parmeterization, only with LALSimulation.\n\
     (--eos   EOS)               Fix the neutron star EOS. Use \"--eos help\" for allowed names\n\
+    (--BinaryLove)              Enable the Binary Neutron Star common EoS tidal model, expressed through EOS-insensitive relations\n\
     (--spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
     (--tidalOrder PNorder)          Specify twice the PN order (e.g. 10 <==> 5PN) of tidal effects to use, only for LALSimulation (default: -1 <==> Use all tidal effects).\n\
     (--numreldata FileName)         Location of NR data file for NR waveforms (with NR_hdf5 approx).\n\
@@ -789,6 +790,8 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
      gamma1                       gamma1.\n\
      gamma2                       gamma2.\n\
      gamma3                       gamma3.\n\
+     (requires --BinaryLove)\n\
+     lambdaS                      Symmetric tidal deformability.\n\
     * \n\
     ----------------------------------------------\n\
     --- Prior Ranges -----------------------------\n\
@@ -877,6 +880,8 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   REAL8 gamma2Max=4.5;
   REAL8 gamma3Min=1.1;
   REAL8 gamma3Max=4.5;
+  REAL8 lambdaSMin=0.0;
+  REAL8 lambdaSMax=5000.0;
   gsl_rng *GSLrandom=state->GSLrandom;
   REAL8 endtime=0.0, timeParam=0.0;
   REAL8 timeMin=endtime-dt,timeMax=endtime+dt;
@@ -1363,9 +1368,9 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
 
   if((!!LALInferenceGetProcParamVal(commandLine,"--tidalT") + !!LALInferenceGetProcParamVal(commandLine,"--tidal")
     + !!LALInferenceGetProcParamVal(commandLine,"--4PolyEOS") + !!LALInferenceGetProcParamVal(commandLine,"--4SpectralDecomp")
-    + !!LALInferenceGetProcParamVal(commandLine,"--eos")) > 1 )
+    + !!LALInferenceGetProcParamVal(commandLine,"--eos") + !!LALInferenceGetProcParamVal(commandLine,"--BinaryLove")) > 1 )
   {
-      XLALPrintError("Error: cannot use more than one of --tidalT, --tidal, --4PolyEOS, --4SpectralDecomp and --eos.\n");
+      XLALPrintError("Error: cannot use more than one of --tidalT, --tidal, --4PolyEOS, --4SpectralDecomp, --eos and --BinaryLove.\n");
       XLAL_ERROR_NULL(XLAL_EINVAL);
   }
 
@@ -1382,9 +1387,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma1", zero, gamma1Min, gamma1Max, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma2", zero, gamma2Min, gamma2Max, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "gamma3", zero, gamma3Min, gamma3Max, LALINFERENCE_PARAM_LINEAR);
-  }
-  else if((ppt=LALInferenceGetProcParamVal(commandLine,"--eos")))
-  {
+  } else if((ppt=LALInferenceGetProcParamVal(commandLine,"--eos"))){
     LALSimNeutronStarEOS *eos=NULL;
     errnum=XLAL_SUCCESS;
     XLAL_TRY(eos=XLALSimNeutronStarEOSByName(ppt->value), errnum);
@@ -1395,8 +1398,12 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     if(errnum!=XLAL_SUCCESS)
         XLAL_ERROR_NULL(errnum,"%s: %s",__func__,XLALErrorString(errnum));
     if(!model->eos_fam) XLAL_ERROR_NULL(XLAL_EINVAL, "Unable to initialise EOS family");
-  }
-
+  // Pull in symmetric tidal deformability (lambdaS) and the uniform variable used to marginlise over the BinaryLove fit uncertainty
+  } else if((ppt=LALInferenceGetProcParamVal(commandLine,"--BinaryLove"))){
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambdaS", zero, lambdaSMin, lambdaSMax, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, "BLuni", 0.5, 0.0, 1.0, LALINFERENCE_PARAM_LINEAR);
+  }    
+  
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
   ppt=LALInferenceGetProcParamVal(commandLine, "--spinOrder");
   if(ppt) {

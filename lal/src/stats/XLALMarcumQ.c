@@ -728,7 +728,7 @@ double XLALMarcumQmodified(double M, double x, double y)
  * \f$\sigma\f$ is \f$Q_{1}(\nu/\sigma, x/\sigma)\f$.
  *
  * The probability that a signal that would be seen in a two-phase matched
- * filter with SNR \f$\rho_{0}\f$ is seen to have matched filter SNR
+ * filter with |SNR| \f$\rho_{0}\f$ is seen to have matched filter |SNR|
  * \f$\geq \rho\f$ in stationary Gaussian noise is \f$Q_{1}(\rho_{0},
  * \rho)\f$.
  *

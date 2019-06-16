@@ -200,10 +200,6 @@ void
 LALStringToZ(LALStatus * status, COMPLEX16 * value, const CHAR * string,
              CHAR ** endptr);
 
-void
-LALStringToGPS(LALStatus * status, LIGOTimeGPS * value,
-               const CHAR * string, CHAR ** endptr);
-
 #if 0
 {       /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)

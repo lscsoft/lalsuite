@@ -39,7 +39,6 @@ Requires: gsl
 Requires: hdf5
 Requires: less
 Obsoletes: python-pylal < 0.13.2-1
-Provides: python-pylal = 0.13.2-1
 Prefix: %{_prefix}
 
 %description

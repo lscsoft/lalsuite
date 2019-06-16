@@ -9,7 +9,6 @@ test_programs += LALMathNDPlotTest
 test_programs += PrintFTSeriesTest
 test_programs += PrintVectorTest
 test_programs += ReadFTSeriesTest
-test_programs += SegmentsIOTest
 test_programs += StreamInputTest
 test_programs += StreamSeriesInputTest
 test_programs += TranslateAnglesTest
@@ -31,14 +30,12 @@ MOSTLYCLEANFILES = \
 	ConfigFile.cfg \
 	Math3DNotebook.nb \
 	MathNDNotebook.nb \
-	SegmentsOutput1.data \
 	$(END_OF_LIST)
 
 EXTRA_DIST += \
 	ConfigFileSample.cfg \
 	ConfigFileSample2.cfg \
 	ConfigFileSample3.cfg.gz \
-	SegmentsInput1.data \
 	StreamInput.data \
 	StreamSeriesInput.data
 	$(END_OF_LIST)
