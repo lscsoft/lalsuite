@@ -89,10 +89,9 @@ static double PorbEllipticalBound(
   double Tscaled = ( Tasc - info->T0p ) / info->sigTp;
 
   // Return bounds on Porb
-  return info->P0 + info->sigP
-    * ( info->norb * info->sigP / info->sigTp
-	+ ( info->pmsigT / info->sigTp )
-	* RE_SQRT( info->ksq - SQR(Tscaled) )
+  return info->P0 + (info->sigP / info->sigTp)
+    * ( info->norb * info->sigP * Tscaled
+	+ info->pmsigT * RE_SQRT( info->ksq - SQR(Tscaled) )
 	);
 
 }
@@ -131,7 +130,7 @@ int XLALSetLatticeTilingPorbEllipticalBound(
   info_upper.pmsigT = sigT;
   info_lower.ksq = info_upper.ksq = SQR(nsigma);
 
-  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, tasc_dimension, PorbEllipticalBound, sizeof( info_lower ), &info_lower, &info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, porb_dimension, PorbEllipticalBound, sizeof( info_lower ), &info_lower, &info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
