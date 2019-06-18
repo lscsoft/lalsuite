@@ -938,7 +938,7 @@ class Posterior(object):
         ('mass2' not in pos.names or 'm2' not in pos.names):
 
             pos.append_mapping(('m1','m2'),q2ms,(mchirp_name,q_name))
-            pos.append_mapping('eta',q2eta,(mchirp_name,q_name))
+            pos.append_mapping('eta',q2eta,q_name)
 
         if ('m1' in pos.names and 'm2' in pos.names and not 'mtotal' in pos.names ):
             pos.append_mapping('mtotal', lambda m1,m2: m1+m2, ('m1','m2') )
@@ -1090,7 +1090,7 @@ class Posterior(object):
 
         #Calculate new tidal parameters
         new_tidal_params = ['lam_tilde','dlam_tilde']
-        old_tidal_params = ['lambda1','lambda2','eta']
+        old_tidal_params = ['lambda1','lambda2','q']
         if 'lambda1' in pos.names or 'lambda2' in pos.names:
             try:
                 pos.append_mapping(new_tidal_params, symm_tidal_params, old_tidal_params)
@@ -3593,14 +3593,13 @@ def q2ms(mc,q):
 #
 #
 
-def q2eta(mc,q):
+def q2eta(q):
     """
-    Utility function for converting mchirp,q to eta. The
+    Utility function for converting q to eta. The
     rvalue is eta.
     """
-    m1,m2 = q2ms(mc,q)
-    eta = m1*m2/( (m1+m2)*(m1+m2) )
-    return eta
+    eta = q/((1+q)*(1+q))
+    return np.clip(eta,0,0.25) # Explicitly cap eta at 0.25, in case it exceeds this slightly due to floating-point issues
 #
 #
 
@@ -3747,12 +3746,24 @@ def component_momentum(m, a, theta, phi):
 #
 #
 
-def symm_tidal_params(lambda1,lambda2,eta):
+def symm_tidal_params(lambda1,lambda2,q):
     """
-    Calculate best tidal parameters
+    Calculate best tidal parameters [Eqs. (5) and (6) in Wade et al. PRD 89, 103012 (2014)]
+    Requires q <= 1
     """
-    lam_tilde = (8./13.)*((1.+7.*eta-31.*eta*eta)*(lambda1+lambda2) + np.sqrt(1.-4.*eta)*(1.+9.*eta-11.*eta*eta)*(lambda1-lambda2))
-    dlam_tilde = (1./2.)*(np.sqrt(1.-4.*eta)*(1.-13272.*eta/1319.+8944.*eta*eta/1319.)*(lambda1+lambda2) + (1.-15910.*eta/1319.+32850.*eta*eta/1319.+3380.*eta*eta*eta/1319.)*(lambda1-lambda2))
+    lambdap = lambda1 + lambda2
+    lambdam = lambda1 - lambda2
+
+    # Check that q <= 1, as expected
+    if np.any(q > 1):
+        raise ValueError("q > 1, while this function requires q <= 1.")
+
+    dmbym = (1. - q)/(1. + q) # Equivalent to sqrt(1 - 4*eta) for q <= 1
+
+    eta = q2eta(q)
+
+    lam_tilde = (8./13.)*((1.+7.*eta-31.*eta*eta)*lambdap + dmbym*(1.+9.*eta-11.*eta*eta)*lambdam)
+    dlam_tilde = (1./2.)*(dmbym*(1.-13272.*eta/1319.+8944.*eta*eta/1319.)*lambdap + (1.-15910.*eta/1319.+32850.*eta*eta/1319.+3380.*eta*eta*eta/1319.)*lambdam)
     return lam_tilde, dlam_tilde
 
 def spin_angles(fref,mc,eta,incl,a1,theta1,phi1,a2=None,theta2=None,phi2=None):
