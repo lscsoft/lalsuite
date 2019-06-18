@@ -102,7 +102,7 @@ def compute_mass_parameterizations(samples):
         mc = samples['mchirp']
         if not has_eta:
             if has_q:
-                eta = bppu.q2eta(mc, samples['q'])
+                eta = bppu.q2eta(samples['q'])
             else:
                 raise ValueError("Chirp mass given with no mass ratio.")
         else:
