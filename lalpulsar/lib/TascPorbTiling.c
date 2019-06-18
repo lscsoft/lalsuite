@@ -97,7 +97,7 @@ static double PorbEllipticalBound(
   // fprintf(stdout,"pmsigT=%g\n",info->pmsigT);
   // fprintf(stdout,"Tscaled=%g\n",Tscaled);
   // fprintf(stdout,"Pscaled=%g\n",Pscaled);
-  fprintf(stdout,"Tasc = %.0f + %g\n",Tasc,(Tasc-info->T0p));
+  fprintf(stdout,"Tasc = %.0f + %g\n",info->T0p,(Tasc-info->T0p));
   // fprintf(stdout,"+/-sigT=%g\n", info->pmsigT);
   // fprintf(stdout,"n*sigP*Tscaled/sigTp=%g\n",
   //	  info->norb * info->sigP * Tscaled / info->sigTp);
