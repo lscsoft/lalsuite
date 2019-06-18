@@ -504,17 +504,24 @@ int XLALSimIMRSpinEOBWaveform(
               m1SI *= pert;
               m2SI /= pert;
           }
-          else
+          else{
             generation_OK = true;
+	  }
+      }
+      else{
+	//If we failed, don't try agin
+	break;
       }
       i++;
-
-      if (!generation_OK) {
-          XLALPrintWarning("We have called XLALSimIMRSpinEOBWaveformAll %d times with perturbed masses, now we give up.\n", n_try);
-          XLALPrintError("Houston-2/3, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, inclination = %.18e,   spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n",
-                    m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc,  INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
-          XLAL_ERROR( XLAL_ENOMEM );
-      }
+    }
+    if(ret!=XLAL_SUCCESS){
+      // Something has gone wrong, just propogate it upward
+      XLAL_ERROR(ret);
+    }
+    else if (!generation_OK && ret==XLAL_SUCCESS) {
+      // We know that waveform generator gave NULL pointers. Die in a specific way.
+      XLALPrintWarning("We have called XLALSimIMRSpinEOBWaveformAll %d times with perturbed masses, now we give up.\n", n_try);
+      XLAL_ERROR(XLAL_ENOMEM);
     }
 
     if(dynamicsHi)
