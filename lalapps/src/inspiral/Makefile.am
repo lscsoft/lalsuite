@@ -14,7 +14,6 @@ MINJSRC = minj.c
 BBHINJSRC = bbhinj.c
 BLINDINJSRC = blindinj.c
 SPLITBANKSRC = splitbank.c
-TRIGBANKSRC  = trigbank.c
 TRIGSCANSRC = trigscan.c
 INSPFRINJSRC = inspfrinj.c
 GWF2XMLSRC = gwf2xml.c
@@ -38,7 +37,6 @@ LALMETAIO_PROGS = \
 	lalapps_blindinj \
 	lalapps_inspfrinj \
 	lalapps_gwf2xml \
-	lalapps_trigbank \
 	lalapps_trigscan \
 	lalapps_spininj \
 	lalapps_randombank \
@@ -55,7 +53,6 @@ lalapps_minj_SOURCES = $(MINJSRC)
 lalapps_bbhinj_SOURCES = $(BBHINJSRC)
 lalapps_blindinj_SOURCES = $(BLINDINJSRC)
 lalapps_splitbank_SOURCES = $(SPLITBANKSRC)
-lalapps_trigbank_SOURCES = $(TRIGBANKSRC)
 lalapps_trigscan_SOURCES = $(TRIGSCANSRC)
 lalapps_spininj_SOURCES = $(SPININJSRC)
 lalapps_inspfrinj_SOURCES = $(INSPFRINJSRC)
