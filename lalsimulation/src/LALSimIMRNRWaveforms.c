@@ -835,8 +835,10 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   INT4 NRLmax;
   XLALH5FileQueryScalarAttributeValue(&NRLmax, file, "Lmax");
 
+  INT4 modearray_needs_destroying=0;
   if ( ModeArray == NULL )
   {/* Default behaviour: Generate all modes upto NRLmax */
+    modearray_needs_destroying=1;
     ModeArray = XLALSimInspiralCreateModeArray();
     for (int ell=2; ell<=NRLmax; ell++)
     {
@@ -857,7 +859,7 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
           XLAL_PRINT_INFO("SKIPPING model = %i modem = %i\n", model, modem);
           continue;
       }
-      XLAL_PRINT_INFO("generateing model = %i modem = %i\n", model, modem);
+      XLAL_PRINT_INFO("generating model = %i modem = %i\n", model, modem);
 
 
       snprintf(amp_key, sizeof(amp_key), "amp_l%d_m%d", model, modem);
@@ -924,7 +926,8 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   XLALDestroyREAL8TimeSeries(hplus_corr);
   XLALDestroyREAL8TimeSeries(hcross_corr);
   XLALH5FileClose(file);
-  XLALDestroyValue(ModeArray);
+  if (modearray_needs_destroying)
+    XLALDestroyValue(ModeArray);
 
   return XLAL_SUCCESS;
   #endif
