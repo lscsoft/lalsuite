@@ -138,10 +138,7 @@ int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 	 */
 
 	has_table = !MetaioOpenTableOnly(&env, table_name);
-	/* FIXME:  when we can rely on newer versions of libmetaio use this
-	 * function instead of what follows */
-	/*MetaioClearErrno(&env);*/
-	env.mierrno = 0;
+	MetaioClearErrno(&env);
 
 	/*
 	 * close
