@@ -19,7 +19,7 @@ URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRequires: python2-rpm-macros
 BuildRequires: pkgconfig >= 0.18.0
-BuildRequires: libmetaio-devel
+BuildRequires: libmetaio-devel >= @MIN_METAIO_VERSION@
 BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
@@ -27,7 +27,7 @@ BuildRequires: swig >= 3.0.7
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
-Requires: libmetaio
+Requires: libmetaio >= @MIN_METAIO_VERSION@
 Requires: lal >= @MIN_LAL_VERSION@
 Prefix: %{_prefix}
 
@@ -40,7 +40,7 @@ that use the LAL MetaIO library.
 Summary: Files and documentation needed for compiling programs that use LAL MetaIO
 Group: LAL
 Requires: %{name} = %{version}
-Requires: libmetaio-devel
+Requires: libmetaio-devel >= @MIN_METAIO_VERSION@
 Requires: lal-devel >= @MIN_LAL_VERSION@
 %description devel
 The LSC Algorithm MetaIO Library for gravitational wave data analysis. This
