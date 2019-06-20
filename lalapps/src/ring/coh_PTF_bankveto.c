@@ -87,10 +87,6 @@ UINT4 coh_PTF_initialize_bank_veto(
     InspiralTemplate *thisTmplt;
     thisTmplt = PTFBankvetoHead;
     PTFBankvetoHead = PTFBankvetoHead->next;
-    if (thisTmplt->event_id)
-    {
-      LALFree(thisTmplt->event_id);
-    }
     LALFree(thisTmplt);
   }
 

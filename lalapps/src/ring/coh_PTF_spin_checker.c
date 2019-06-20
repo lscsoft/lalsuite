@@ -309,9 +309,7 @@ int main( int argc, char **argv )
 
     if (! PTFtemplate->event_id)
     {
-      PTFtemplate->event_id = (EventIDColumn *)
-            LALCalloc(1, sizeof(EventIDColumn) );
-      PTFtemplate->event_id->id = i;
+      PTFtemplate->event_id = i;
     }
   }
 

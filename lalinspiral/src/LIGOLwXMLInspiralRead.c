@@ -795,12 +795,7 @@ InspiralTmpltBankFromLIGOLw (
               if ( i8colData < 0 )
                 return -1;
             }
-            if ( i8colData )
-            {
-              thisTmplt->event_id = LALCalloc( 1, sizeof(*thisTmplt->event_id) );
-              thisTmplt->event_id->id = i8colData;
-              thisTmplt->event_id->inspiralTemplate = thisTmplt;
-            }
+            thisTmplt->event_id = i8colData;
           }
         }
         else if ( tableDir[j].idx == 17 )

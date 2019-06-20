@@ -329,7 +329,7 @@ tagInspiralTemplate
   InputMasses massChoice;	/**< The pair of (mass) parameters given (see structure defining this member for more details) (input) */
   INT4Vector *segmentIdVec;	/**< %Vector of segment that have been filtered against this template needed for the LDAS implementation of the inspiral search */
   LIGOTimeGPS end_time;		/**< UNDOCUMENTED */
-  EventIDColumn *event_id;	/**< UNDOCUMENTED */
+  long event_id;		/**< UNDOCUMENTED */
   CHAR ifo[LIGOMETA_IFO_MAX];	/**< UNDOCUMENTED */
 
   REAL4  Gamma[10];		  /**< Gamma[] is a vector that stores the upper triangular part of the metric in

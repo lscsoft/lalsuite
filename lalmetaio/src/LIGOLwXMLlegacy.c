@@ -1128,11 +1128,6 @@ LALWriteLIGOLwXMLTable (
     case sngl_ringdown_table:
       while( tablePtr.snglRingdownTable )
       {
-        UINT8 id = xml->rowCount;
-        if ( tablePtr.snglRingdownTable->event_id )
-        {
-          id = tablePtr.snglRingdownTable->event_id->id;
-        }
         FIRST_TABLE_ROW
           XLALFilePrintf( xml->fp, SNGL_RINGDOWN_ROW,
               tablePtr.snglRingdownTable->ifo,
@@ -1157,7 +1152,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglRingdownTable->snr,
               tablePtr.snglRingdownTable->eff_dist,
               tablePtr.snglRingdownTable->sigma_sq,
-              id
+              tablePtr.snglRingdownTable->event_id
               );
         tablePtr.snglRingdownTable = tablePtr.snglRingdownTable->next;
         ++(xml->rowCount);
@@ -1258,7 +1253,7 @@ LALWriteLIGOLwXMLTable (
 	      tablePtr.multiInspiralTable->null_statistic,
               tablePtr.multiInspiralTable->null_stat_h1h2,
               tablePtr.multiInspiralTable->null_stat_degen,
-              tablePtr.multiInspiralTable->event_id->id,
+              tablePtr.multiInspiralTable->event_id,
               crealf(tablePtr.multiInspiralTable->h1quad),
               cimagf(tablePtr.multiInspiralTable->h1quad),
               crealf(tablePtr.multiInspiralTable->h2quad),
@@ -1279,7 +1274,7 @@ LALWriteLIGOLwXMLTable (
 	      tablePtr.multiInspiralTable->crossCorrNullSq,
 	      tablePtr.multiInspiralTable->ampMetricEigenVal1,
 	      tablePtr.multiInspiralTable->ampMetricEigenVal2,
-              tablePtr.multiInspiralTable->time_slide_id->id
+              tablePtr.multiInspiralTable->time_slide_id
               );
         tablePtr.multiInspiralTable = tablePtr.multiInspiralTable->next;
         ++(xml->rowCount);

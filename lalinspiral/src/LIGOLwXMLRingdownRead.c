@@ -253,10 +253,7 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
       }
       else if ( tableDir[j].idx == 22 )
       {
-        thisEvent->event_id = (EventIDColumn *)
-          LALCalloc( 1, sizeof(EventIDColumn) );
-        sscanf( env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data, "sngl_ringdown:event_id:%" LAL_UINT8_FORMAT, &(thisEvent->event_id->id) );
-        thisEvent->event_id->snglRingdownTable = thisEvent;
+        sscanf( env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data, "sngl_ringdown:event_id:%ld", &(thisEvent->event_id) );
       }
       else
       {
