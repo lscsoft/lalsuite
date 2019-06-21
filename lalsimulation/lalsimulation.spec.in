@@ -1,6 +1,5 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _prefix /usr
-%define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
 %define release 1
 
@@ -106,6 +105,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_datarootdir}/lalsimulation/LIGO-T1800044*
 %{_datarootdir}/lalsimulation/LIGO-T1800545*
 %{_libdir}/*.so.*
+%{_mandir}/man1/*
 %{_sysconfdir}/*
 
 %files devel
