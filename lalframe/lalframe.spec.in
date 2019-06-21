@@ -1,6 +1,5 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _prefix /usr
-%define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
 %define release 1
 
@@ -102,7 +101,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %license COPYING
 %{_bindir}/lalfr-*
 %{_bindir}/lalframe_version
-%{_datadir}/man/man1/*
+%{_mandir}/man1/*
 %{_libdir}/*.so.*
 %{_sysconfdir}/*
 
