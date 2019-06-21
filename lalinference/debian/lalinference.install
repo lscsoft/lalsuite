@@ -1,5 +1,5 @@
 etc/*
-usr/bin//lalinference_mpi_wrapper
+usr/bin/lalinference_mpi_wrapper
 usr/bin/lalinference_bench
 usr/bin/lalinference_burst
 usr/bin/lalinference_datadump
@@ -9,3 +9,10 @@ usr/bin/lalinference_version
 usr/lib/*/*.so.*
 usr/share/lalinference/*.csv
 usr/share/man/*
+usr/man/man1/lalinference_mpi_wrapper.1.gz
+usr/man/man1/lalinference_bench.1.gz
+usr/man/man1/lalinference_burst.1.gz
+usr/man/man1/lalinference_datadump.1.gz
+usr/man/man1/lalinference_injectedlike.1.gz
+usr/man/man1/lalinference_nest.1.gz
+usr/man/man1/lalinference_version.1.gz

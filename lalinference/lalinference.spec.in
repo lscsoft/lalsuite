@@ -1,6 +1,5 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _prefix /usr
-%define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
 %define release 1
 
@@ -170,6 +169,13 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_bindir}/lalinference_mpi_wrapper
 %{_datarootdir}/lalinference/*
 %{_libdir}/*.so.*
+%{_mandir}/man1/lalinference_bench.1.gz
+%{_mandir}/man1/lalinference_burst.1.gz
+%{_mandir}/man1/lalinference_datadump.1.gz
+%{_mandir}/man1/lalinference_injectedlike.1.gz
+%{_mandir}/man1/lalinference_nest.1.gz
+%{_mandir}/man1/lalinference_version.1.gz
+%{_mandir}/man1/lalinference_mpi_wrapper.1.gz
 %{_sysconfdir}/*
 
 %files devel
@@ -197,6 +203,20 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_bindir}/lalinference_review_test
 %{_bindir}/lalinference_tiger_pipe
 %{_bindir}/rapidpe_*
+%{_mandir}/man1/cbcBayes*.1.gz
+%{_mandir}/man1/imrtgr_*.1.gz
+%{_mandir}/man1/lalinference_burst_pp_pipe.1.gz
+%{_mandir}/man1/lalinference_coherence_test.1.gz
+%{_mandir}/man1/lalinference_compute_roq_weights.1.gz
+%{_mandir}/man1/lalinference_merge_posteriors.1.gz
+%{_mandir}/man1/lalinference_multi_pipe.1.gz
+%{_mandir}/man1/lalinference_nest2pos.1.gz
+%{_mandir}/man1/lalinference_cpnest.1.gz
+%{_mandir}/man1/lalinference_pipe.1.gz
+%{_mandir}/man1/lalinference_pp_pipe.1.gz
+%{_mandir}/man1/lalinference_review_test.1.gz
+%{_mandir}/man1/lalinference_tiger_pipe.1.gz
+%{_mandir}/man1/rapidpe_*.1.gz
 %{python2_sitearch}/*
 
 %files octave
