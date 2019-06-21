@@ -27,6 +27,7 @@ BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python-six
+BuildRequires: help2man
 Requires: gsl
 Requires: lal >= @MIN_LAL_VERSION@
 Prefix: %{_prefix}
