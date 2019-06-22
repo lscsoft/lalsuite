@@ -175,7 +175,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_mandir}/man1/lalinference_injectedlike.1*
 %{_mandir}/man1/lalinference_nest.1*
 %{_mandir}/man1/lalinference_version.1*
-%{_mandir}/man1/lalinference_mpi_wrapper.1*
 %{_sysconfdir}/*
 
 %files devel
