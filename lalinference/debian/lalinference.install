@@ -8,7 +8,6 @@ usr/bin/lalinference_nest
 usr/bin/lalinference_version
 usr/lib/*/*.so.*
 usr/share/lalinference/*.csv
-usr/share/man/man1/lalinference_mpi_wrapper.1*
 usr/share/man/man1/lalinference_bench.1*
 usr/share/man/man1/lalinference_burst.1*
 usr/share/man/man1/lalinference_datadump.1*
