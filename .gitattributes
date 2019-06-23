@@ -9,7 +9,6 @@ lalframe/test/F-TEST-600000000-60.gwf filter=lfs diff=lfs merge=lfs -text
 lalframe/test/H-CAL_REF_V03-734073939-64.gwf filter=lfs diff=lfs merge=lfs -text
 lalapps/src/inspiral/inspsrcs100Mpc.errors filter=lfs diff=lfs merge=lfs -text
 lalapps/src/string/S6-V1-cat2.txt filter=lfs diff=lfs merge=lfs -text
-lalburst/test/CLRindata.asc filter=lfs diff=lfs merge=lfs -text
 lalinspiral/test/SpaceCovering.par filter=lfs diff=lfs merge=lfs -text
 lalsimulation/src/lalsimburst_sinegaussianexamples.svg filter=lfs diff=lfs merge=lfs -text
 lalapps/src/calibration/S4H1Filters.txt filter=lfs diff=lfs merge=lfs -text
