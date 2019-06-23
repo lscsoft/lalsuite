@@ -44,10 +44,4 @@ SUBDIRS += inspiral
 endif
 endif
 
-if FRAME
-if LALFRAME
-SUBDIRS += online
-endif
-endif
-
 SUBDIRS += hwinjection
