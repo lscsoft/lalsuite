@@ -405,6 +405,7 @@ typedef enum tagApproximant {
    NR_hdf5,              /**< Time domain, NR waveform from HDF file. From INSERT LINKS HERE */
    NRSur4d2s,
    NRSur7dq2,           /**< Time domain, fully precessing NR surrogate model with up to ell=4 modes, arxiv: 1705.07089 */
+   NRSur7dq4,           /**< q=4 extension of NRSur7dq2, arxiv: 1905.09300 */
    SEOBNRv4HM,	/**< Spin nonprecessing EOBNR model v4 with higher modes, PhysRevD.98.084028 [arXiv:1803.10701]
                      * @remarks Implemented in lalsimulation (time domain). */
    NRHybSur3dq8,        /**< Time domain, aligned-spin, higher modes, hybridized. Paper arxiv:1812.07865 */

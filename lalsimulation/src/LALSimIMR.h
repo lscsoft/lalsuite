@@ -49,7 +49,7 @@ extern "C" {
  * @defgroup LALSimIMRSEOBNRv2ChirpTime_c        LALSimIMRSEOBNRv2ChirpTime.c
  * @defgroup LALSimIMRPSpinInspiralRD_c          LALSimIMRPSpinInspiralRD.c
  * @defgroup LALSimIMRTidal_c                    LALSimIMRLackeyTidal2013.c
- * @defgroup LALSimNRSur7dq2_c                   LALSimIMRNRSur7dq2.c
+ * @defgroup LALSimPrecessingNRSur_c             LALSimIMRPrecessingNRSur.c
  * @}
  *
  * @addtogroup LALSimIMR_h
@@ -363,23 +363,12 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
         LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
         );
 
-/* in module LALSimIMRNRSur7dq2.c */
+/* in module LALSimIMRPrecessingNRSur.c */
 
-double XLALSimInspiralNRSur7dq2StartFrequency(
-        REAL8 m1,                       /**< mass of companion 1 (kg) */
-        REAL8 m2,                       /**< mass of companion 2 (kg) */
-        REAL8 s1x,                      /**< initial value of S1x */
-        REAL8 s1y,                      /**< initial value of S1y */
-        REAL8 s1z,                      /**< initial value of S1z */
-        REAL8 s2x,                      /**< initial value of S2x */
-        REAL8 s2y,                      /**< initial value of S2y */
-        REAL8 s2z                      /**< initial value of S2z */
-);
-
-int XLALSimInspiralNRSur7dq2Polarizations(
+int XLALSimInspiralPrecessingNRSurPolarizations(
         REAL8TimeSeries **hplus,        /**< OUTPUT h_+ vector */
         REAL8TimeSeries **hcross,       /**< OUTPUT h_x vector */
-        REAL8 phiRef,                   /**< orbital phase at reference pt. */
+        REAL8 phiRef,                   /**< azimuthal angle for Ylms */
         REAL8 inclination,              /**< inclination angle */
         REAL8 deltaT,                   /**< sampling interval (s) */
         REAL8 m1,                       /**< mass of companion 1 (kg) */
@@ -393,11 +382,12 @@ int XLALSimInspiralNRSur7dq2Polarizations(
         REAL8 s2x,                      /**< reference value of S2x */
         REAL8 s2y,                      /**< reference value of S2y */
         REAL8 s2z,                      /**< reference value of S2z */
-        LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
+        LALDict* LALparams,             /**< Dict with extra parameters */
+        Approximant approximant     /**< approximant (NRSur7dq2 or NRSur7dq4) */
+
 );
 
-SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
-        REAL8 phiRef,                   /**< orbital phase at reference pt. */
+SphHarmTimeSeries *XLALSimInspiralPrecessingNRSurModes(
         REAL8 deltaT,                   /**< sampling interval (s) */
         REAL8 m1,                       /**< mass of companion 1 (kg) */
         REAL8 m2,                       /**< mass of companion 2 (kg) */
@@ -410,8 +400,38 @@ SphHarmTimeSeries *XLALSimInspiralNRSur7dq2Modes(
         REAL8 fMin,                     /**< start GW frequency (Hz) */
         REAL8 fRef,                     /**< reference GW frequency (Hz) */
         REAL8 distnace,                 /**< distance of source (m) */
-        LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
+        LALDict* LALparams,             /**< Dict with extra parameters */
+        Approximant approximant     /**< approximant (NRSur7dq2 or NRSur7dq4) */
 );
+
+int XLALPrecessingNRSurDynamics(
+        gsl_vector **orbphase,   /**< Output: Time series of orbital phase. */
+        gsl_vector **quat0,      /**< Output: Time series of 0th index of coprecessing frame quaternion. */
+        gsl_vector **quat1,      /**< Output: Time series of 1th index of coprecessing frame quaternion. */
+        gsl_vector **quat2,      /**< Output: Time series of 2nd index of coprecessing frame quaternion. */
+        gsl_vector **quat3,      /**< Output: Time series of 3rd index of coprecessing frame quaternion. */
+        gsl_vector **chi1x,      /**< Output: Time series of x-comp of spin of Bh1. */
+        gsl_vector **chi1y,      /**< Output: Time series of y-comp of spin of Bh1. */
+        gsl_vector **chi1z,      /**< Output: Time series of z-comp of spin of Bh1. */
+        gsl_vector **chi2x,      /**< Output: Time series of x-comp of spin of Bh2. */
+        gsl_vector **chi2y,      /**< Output: Time series of y-comp of spin of Bh2. */
+        gsl_vector **chi2z,      /**< Output: Time series of z-comp of spin of Bh2. */
+        REAL8 deltaT,               /**< sampling interval (s) */
+        REAL8 m1,                   /**< mass of companion 1 (kg) */
+        REAL8 m2,                   /**< mass of companion 2 (kg) */
+        REAL8 fMin,                 /**< start GW frequency (Hz) */
+        REAL8 fRef,                 /**< reference GW frequency (Hz) */
+        REAL8 s1x,                  /**< initial value of S1x */
+        REAL8 s1y,                  /**< initial value of S1y */
+        REAL8 s1z,                  /**< initial value of S1z */
+        REAL8 s2x,                  /**< initial value of S2x */
+        REAL8 s2y,                  /**< initial value of S2y */
+        REAL8 s2z,                  /**< initial value of S2z */
+        LALDict* LALparams,         /**< Dict with extra parameters */
+        Approximant approximant     /**< approximant (NRSur7dq2 or NRSur7dq4) */
+
+);
+
 
 /* in module LALSimNRTunedTides.c */
 double XLALSimNRTunedTidesComputeKappa2T(

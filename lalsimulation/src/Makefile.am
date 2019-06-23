@@ -227,7 +227,7 @@ noinst_HEADERS = \
 	LALSimNeutronStarEOSTabular.c \
         LALSimNeutronStarEOSSpectralDecomposition.c \
 	LALSimIMRSpinEOBHamiltonian.h \
-	LALSimIMRNRSur7dq2.h \
+	LALSimIMRPrecessingNRSur.h \
 	LALSimNRSurrogateUtilities.h \
 	LALSimNRTunedTides.h \
 	LALSimRingdownCW.h \
@@ -316,7 +316,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralHGimri.c \
 	LALSimFindAttachTime.c \
 	LALSimIMRNRSur4d2s.c \
-	LALSimIMRNRSur7dq2.c \
+	LALSimIMRPrecessingNRSur.c \
 	LALSimNRSurrogateUtilities.c \
 	LALSimUniversalRelations.c \
 	LALSimInspiralEOS.c \
