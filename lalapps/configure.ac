@@ -13,7 +13,6 @@ AC_CONFIG_FILES([\
   lalapps.spec \
   man/Makefile \
   src/Makefile \
-  src/calibration/Makefile \
   src/findchirp/Makefile \
   src/frametools/Makefile \
   src/hwinjection/Makefile \

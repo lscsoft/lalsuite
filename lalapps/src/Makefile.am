@@ -1,7 +1,5 @@
 SUBDIRS = lalapps
 
-SUBDIRS += calibration
-
 if LALFRAME
 SUBDIRS += frametools
 endif
