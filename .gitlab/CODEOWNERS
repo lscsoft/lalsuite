@@ -40,4 +40,4 @@ Makefile.am          @adam-mercer @karl-wette
 configure.ac         @adam-mercer @karl-wette
 
 # SWIG bindings
-swig/               @karl-wette
+swig/               @karl-wette @adam-mercer @duncanmmacleod
