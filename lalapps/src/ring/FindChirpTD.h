@@ -40,21 +40,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/**
- * \defgroup FindChirpTD_h Header FindChirpTD.h
- * \ingroup lalinspiral_findchirp
- * \author Brown, D. A., and Creighton, J. D. E.
- *
- * \brief Provides structures and functions to condition interferometer data
- * and generate binary inspiral chirps using time domain waveforms.
- *
- * ### Synopsis ###
- *
- * \code
- * #include <lal/FindChirpTD.h>
- * \endcode
- *
- */
 /*@{*/
 
 /**\name Error Codes */

@@ -27,7 +27,11 @@ COH_PTF_SOURCES = \
 	coh_PTF_template.c \
 	coh_PTF_output.c \
 	coh_PTF_bankveto.c \
-	coh_PTF_utils.c
+	coh_PTF_utils.c \
+	FindChirpTD.h \
+	FindChirpTDTemplate.c \
+	FindChirpSP.h \
+	FindChirpSPTemplate.c
 lalapps_coh_PTF_inspiral_SOURCES = \
 	coh_PTF_inspiral.c \
 	$(COH_PTF_SOURCES)

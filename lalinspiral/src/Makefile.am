@@ -14,8 +14,6 @@ pkginclude_HEADERS = \
 	FindChirp.h \
 	FindChirpDatatypes.h \
 	FindChirpPTF.h \
-	FindChirpSP.h \
-	FindChirpTD.h \
 	GenerateInspRing.h \
 	GenerateInspiral.h \
 	GeneratePPNInspiral.h \
@@ -60,9 +58,7 @@ liblalinspiral_la_SOURCES = \
 	FindChirpPTFTemplate.c \
 	FindChirpPTFWaveform.c \
 	FindChirpPhenomWaveform.c \
-	FindChirpSPTemplate.c \
 	FindChirpSimulation.c \
-	FindChirpTDTemplate.c \
 	GenerateInspRing.c \
 	GenerateInspiral.c \
 	GeneratePPNAmpCorInspiral.c \
