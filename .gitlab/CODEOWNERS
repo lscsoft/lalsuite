@@ -1,5 +1,5 @@
-# the librarian has default control of everything
-* @adam-mercer
+# overall
+* @adam-mercer @duncanmmacleod @karl-wette
 
 # package-level owners
 lal/                @adam-mercer @jolien-creighton
@@ -8,14 +8,14 @@ lalmetaio/          @adam-mercer @jolien-creighton
 lalsimulation/      @riccardo-sturani @frank-ohme
 lalburst/           @salvatore-vitale @ryan-lynch
 lalpulsar/          @karl-wette @david-keitel
-lalinspiral/        @jolien-creighton
+lalinspiral/        @jolien-creighton @adam-mercer
 lalinference/       @bfarr @cjhaster @john-veitch @vivien
 
 # lalapps
-lalapps/src/findchirp/           @jolien-creighton
+lalapps/src/findchirp/           @jolien-creighton @adam-mercer
 lalapps/src/frametools/          @adam-mercer @jolien-creighton
 lalapps/src/hwinjection/         @karl-wette @david-keitel
-lalapps/src/inspiral/            @jolien-creighton
+lalapps/src/inspiral/            @jolien-creighton @adam-mercer
 lalapps/src/inspiral/posterior/  @bfarr @cjhaster @john-veitch @vivien
 lalapps/src/lalapps/             @adam-mercer @jolien-creighton
 lalapps/src/power/               @kipp.cannon @xavier.siemens
@@ -27,17 +27,17 @@ lalapps/src/string/              @kipp.cannon @florent-robinet @imene.belahcene 
 conda/               @adam-mercer @duncanmmacleod
 debian/              @adam-mercer @duncanmmacleod
 docker/              @adam-mercer @duncanmmacleod
-gnuscripts/          @adam-mercer @karl-wette
+gnuscripts/          @adam-mercer @karl-wette @duncanmmacleod
 *.spec.in            @adam-mercer @duncanmmacleod
 *.pc.in              @adam-mercer @duncanmmacleod
 .gitlab-ci.yml       @adam-mercer @duncanmmacleod
 .gitlab-*.Dockerfile @adam-mercer @duncanmmacleod
 .mailmap*            @adam-mercer @karl-wette
-00boot               @adam-mercer @karl-wette
+00boot               @adam-mercer @karl-wette @duncanmmacleod
 CONTRIBUTING.md      @adam-mercer @duncanmmacleod
 COPYING              @adam-mercer @duncanmmacleod
-Makefile.am          @adam-mercer @karl-wette
-configure.ac         @adam-mercer @karl-wette
+Makefile.am          @adam-mercer @karl-wette @duncanmmacleod
+configure.ac         @adam-mercer @karl-wette @duncanmmacleod
 
 # SWIG bindings
-swig/               @karl-wette
+swig/               @karl-wette @adam-mercer @duncanmmacleod
