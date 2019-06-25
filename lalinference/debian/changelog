@@ -1,3 +1,9 @@
+lalinference (1.11.1-1) unstable; urgency=low
+
+  * O3 point release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 21 Jun 2019 11:06:11 -0700
+
 lalinference (1.11.0-1) unstable; urgency=low
 
   * O3 point release
