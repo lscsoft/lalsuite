@@ -35,6 +35,7 @@ BuildRequires: scipy >= 0.8
 BuildRequires: swig >= 3.0.7
 BuildRequires: python2-gwdatafind
 BuildRequires: python2-gwpy
+BuildRequires: help2man
 BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
