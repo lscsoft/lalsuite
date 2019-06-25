@@ -117,7 +117,8 @@ LALSUITE_POP_UVARS
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # metaio
-PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
+AC_SUBST([MIN_METAIO_VERSION], [8.4.0])
+PKG_CHECK_MODULES([METAIO],[libmetaio >= ${MIN_METAIO_VERSION}],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${METAIO_CFLAGS}],[${METAIO_LIBS}])
 AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
 
