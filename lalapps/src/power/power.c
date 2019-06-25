@@ -40,21 +40,14 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 
-#include <lal/AVFactories.h>
 #include <lal/LALgetopt.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/Date.h>
 #include <lal/EPSearch.h>
-#include <lal/FindChirp.h>
-#include <lal/FindChirpSP.h>
-#include <lal/FindChirpTD.h>
-#include <lal/FindChirpChisq.h>
-#include <lal/FrameCalibration.h>
 #include <lal/LALFrStream.h>
 #include <lal/FrequencySeries.h>
 #include <lal/GenerateBurst.h>
 #include <lal/Inject.h>
-#include <lal/IIRFilter.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
@@ -63,18 +56,16 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLArray.h>
 #include <lal/LIGOLwXMLBurstRead.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/Random.h>
 #include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
-#include <lal/SeqFactories.h>
-#include <lal/SimulateCoherentGW.h>
 #include <lal/SnglBurstUtils.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
-#include <lal/VectorOps.h>
 #include <lal/Window.h>
 
 #include <LALAppsVCSInfo.h>
@@ -1049,58 +1040,6 @@ static void gaussian_noise(REAL8TimeSeries *series, REAL8 rms, gsl_rng *rng)
 /*
  * ============================================================================
  *
- *                             Response function
- *
- * ============================================================================
- */
-
-
-/*
- * Note, this function can only read new-style calibration data (S5 and
- * later).  Calibration data in earlier formats will need to be converted.
- */
-
-
-static COMPLEX8FrequencySeries *generate_response(const char *cachefile, const char *channel_name, REAL8 deltaT, LIGOTimeGPS epoch, size_t length)
-{
-	/* length of time interval spanned by calibration */
-	const double duration = length * deltaT;
-	/* frequency resolution of response function */
-	const double deltaf = 1.0 / (length * deltaT);
-	/* number of frequency bins in response function */
-	const int n = length / 2 + 1;
-	COMPLEX8FrequencySeries *response;
-
-	XLALPrintInfo("generating response function spanning %g s at GPS time %u.%09u s with %g Hz resolution\n", duration, epoch.gpsSeconds, epoch.gpsNanoSeconds, deltaf);
-
-	if(!cachefile) {
-		/* generate fake unity response if working with calibrated
-		 * data or if there is no calibration information available
-		 * */
-		LALUnit strainPerCount;
-		unsigned i;
-
-		XLALUnitDivide(&strainPerCount, &lalStrainUnit, &lalADCCountUnit);
-
-		response = XLALCreateCOMPLEX8FrequencySeries(channel_name, &epoch, 0.0, deltaf, &strainPerCount, n);
-		if(!response)
-			XLAL_ERROR_NULL(XLAL_ENOMEM);
-
-		XLALPrintInfo("generate_response(): generating unit response function\n");
-
-		for(i = 0; i < response->data->length; i++)
-			response->data->data[i] = 1.0;
-
-		return response;
-	} else {
-                XLAL_ERROR_NULL(XLAL_EERR, "Calibration frames no longer supported");
-	}
-}
-
-
-/*
- * ============================================================================
- *
  *                                 Injections
  *
  * ============================================================================
@@ -1119,8 +1058,6 @@ struct injection_document {
 	TimeSlide *time_slide_table_head;
 	int has_sim_burst_table;
 	SimBurst *sim_burst_table_head;
-	int has_sim_inspiral_table;
-	SimInspiralTable *sim_inspiral_table_head;
 };
 
 
@@ -1132,11 +1069,6 @@ static void destroy_injection_document(struct injection_document *doc)
 		XLALDestroySearchSummaryTable(doc->search_summary_table_head);
 		XLALDestroyTimeSlideTable(doc->time_slide_table_head);
 		XLALDestroySimBurstTable(doc->sim_burst_table_head);
-		while(doc->sim_inspiral_table_head) {
-			SimInspiralTable *next = doc->sim_inspiral_table_head->next;
-			XLALFree(doc->sim_inspiral_table_head);
-			doc->sim_inspiral_table_head = next;
-		}
 	}
 }
 
@@ -1169,19 +1101,6 @@ static struct injection_document *load_injection_document(const char *filename)
 		new->sim_burst_table_head = NULL;
 
 	/*
-	 * load optional sim_inspiral table
-	 */
-
-	new->has_sim_inspiral_table = XLALLIGOLwHasTable(filename, "sim_inspiral");
-	if(new->has_sim_inspiral_table) {
-		/* FIXME:  find way to ask for "everything" (see
-		 * XLALSimBurstTableFromLIGOLw for example) */
-		if(SimInspiralTableFromLIGOLw(&new->sim_inspiral_table_head, filename, 0, 2147483647) < 0)
-			new->sim_inspiral_table_head = NULL;
-	} else
-		new->sim_inspiral_table_head = NULL;
-
-	/*
 	 * did we get it all?
 	 */
 
@@ -1190,8 +1109,7 @@ static struct injection_document *load_injection_document(const char *filename)
 		!new->process_params_table_head ||
 		!new->search_summary_table_head ||
 		!new->time_slide_table_head ||
-		(new->has_sim_burst_table && !new->sim_burst_table_head) ||
-		(new->has_sim_inspiral_table && !new->sim_inspiral_table_head)
+		(new->has_sim_burst_table && !new->sim_burst_table_head)
 	) {
 		destroy_injection_document(new);
 		XLAL_ERROR_NULL(XLAL_EFUNC);
@@ -1210,7 +1128,7 @@ static struct injection_document *load_injection_document(const char *filename)
  */
 
 
-static int add_xml_injections(REAL8TimeSeries *h, const struct injection_document *injection_document, COMPLEX8FrequencySeries *response)
+static int add_xml_injections(REAL8TimeSeries *h, const struct injection_document *injection_document)
 {
 	/*
 	 * sim_burst
@@ -1221,30 +1139,6 @@ static int add_xml_injections(REAL8TimeSeries *h, const struct injection_documen
 		if(XLALBurstInjectSignals(h, injection_document->sim_burst_table_head, injection_document->time_slide_table_head, NULL))
 			XLAL_ERROR(XLAL_EFUNC);
 		XLALPrintInfo("%s(): done\n", __func__);
-	}
-
-	/*
-	 * sim_inspiral
-	 */
-
-	if(injection_document->sim_inspiral_table_head) {
-		LALStatus stat;
-		REAL4TimeSeries *mdc;
-		unsigned i;
-
-		mdc = XLALCreateREAL4TimeSeries(h->name, &h->epoch, h->f0, h->deltaT, &h->sampleUnits, h->data->length);
-		if(!mdc)
-			XLAL_ERROR(XLAL_EFUNC);
-		memset(mdc->data->data, 0, mdc->data->length * sizeof(*mdc->data->data));
-		memset(&stat, 0, sizeof(stat));
-
-		XLALPrintInfo("%s(): computing sim_inspiral injections ...\n", __func__);
-		LAL_CALL(LALFindChirpInjectSignals(&stat, mdc, injection_document->sim_inspiral_table_head, response), &stat);
-		XLALPrintInfo("%s(): done\n", __func__);
-
-		for(i = 0; i < h->data->length; i++)
-			h->data->data[i] += mdc->data->data[i];
-		XLALDestroyREAL4TimeSeries(mdc);
 	}
 
 	/*
@@ -1596,20 +1490,9 @@ int main(int argc, char *argv[])
 		 */
 
 		if(injection_document) {
-			COMPLEX8FrequencySeries *response;
-
-			/* Create the response function (generates unity
-			 * response if cache file is NULL). */
-			response = generate_response(options->cal_cache_filename, options->channel_name, series->deltaT, series->epoch, series->data->length);
-			if(!response)
-				exit(1);
-
 			/* perform XML injections */
-			if(add_xml_injections(series, injection_document, response))
+			if(add_xml_injections(series, injection_document))
 				exit(1);
-
-			/* clean up */
-			XLALDestroyCOMPLEX8FrequencySeries(response);
 		}
 
 		/*
