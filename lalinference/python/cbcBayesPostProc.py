@@ -1163,7 +1163,7 @@ if __name__=='__main__':
     else:
       fixedBurnins = None
 
-    from lalinference.bayespputils import massParams,spinParams,cosmoParam,strongFieldParams,distParams,incParams,polParams,skyParams,phaseParams,timeParams,endTimeParams,statsParams,calibParams,snrParams,tidalParams,eosParams
+    from lalinference.bayespputils import massParams,spinParams,cosmoParam,strongFieldParams,distParams,incParams,polParams,skyParams,phaseParams,timeParams,endTimeParams,statsParams,calibParams,snrParams,tidalParams,fourPiecePolyParams,spectralParams
 
     oneDMenus={'Masses':None,'SourceFrame':None,'Timing':None,'Extrinsic':None,'Spins':None,'StrongField':None,'Others':None}
 
@@ -1230,12 +1230,19 @@ if __name__=='__main__':
              for tp in tidalParams:
                  if not (mp == tp):
                      twoDGreedyMenu.append([mp, tp])
+             for tp in fourPiecePolyParams:
+                 if not (mp == tp):
+                     twoDGreedyMenu.append([mp, tp])
+             for tp in spectralParams:
+                 if not (mp == tp):
+                     twoDGreedyMenu.append([mp, tp])
         for sp1,sp2 in combinations(snrParams,2):
                 twoDGreedyMenu.append([sp1,sp2])
         twoDGreedyMenu.append(['lambda1','lambda2'])
         twoDGreedyMenu.append(['lam_tilde','dlam_tilde'])
         twoDGreedyMenu.append(['lambdat','dlambdat'])
         twoDGreedyMenu.append(['logp1','gamma1','gamma2','gamma3'])
+        twoDGreedyMenu.append(['SDgamma0','SDgamma1','SDgamma2','SDgamma3'])
         for psip in polParams:
             for phip in phaseParams:
                 twoDGreedyMenu.append([psip,phip])

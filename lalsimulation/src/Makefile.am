@@ -317,10 +317,12 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRNRSur7dq2.c \
 	LALSimNRSurrogateUtilities.c \
 	LALSimUniversalRelations.c \
-        LALSimInspiralEOS.c \
+	LALSimInspiralEOS.c \
 	LALSimNRHybSurUtilities.c \
-	LALSimIMRNRHybSur3dq8.c
-
+	LALSimIMRNRHybSur3dq8.c \
+	gsl_interpolation_integ_eval.h \
+	gsl_interpolation_steffen.c
+        
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \
 	LALSimulationVCSInfo.c \
