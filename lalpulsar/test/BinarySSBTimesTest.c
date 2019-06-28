@@ -186,7 +186,7 @@ main ( int argc, char *argv[] )
 
   // ----- step 3: compare results
   REAL8 err_DeltaT, err_Tdot;
-  REAL8 tolerance = 1e-10;
+  REAL8 tolerance = 1e-9;
   int ret = XLALCompareMultiSSBtimes ( &err_DeltaT, &err_Tdot, multiBinary_ref, multiBinary_test );
   XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALCompareMultiSSBtimes() failed.\n");
 
