@@ -3,6 +3,9 @@ import sys
 from math import ceil
 from optparse import OptionParser
 import os
+from scipy.linalg import solve_triangular
+import lal
+import lalsimulation
 
 #####################################################################
 
@@ -53,6 +56,118 @@ def blockwise_dot(A, B, deltaF, max_elements=int(2**27), out=None):
             del A_block
 
     return out
+
+def ehat(j, length):
+    """Return a unit vector whose j-th component is 1"""
+    ehat = np.zeros(length)
+    ehat[j] = 1.0
+    return ehat
+
+def DEIM(basis):
+    """Calculate interpolation nodes following the Algorithm 5 in J Sci Comput
+    (2013) 57:604–637.
+
+    Parameters
+    ----------
+    basis : ndarray
+        ndarray whose i-th row is the i-th basis vector
+
+    Return
+    ------
+    nodes : array
+        interpolation nodes
+    B : ndarray
+        ndarray whose i-th row is the weight for the i-th frequency node.
+   """
+    vec_num, vec_len = basis.shape
+    # Step (1)
+    j = abs(basis[0]).argmax()
+    # Step (2)
+    UT = np.zeros(shape=(vec_num, vec_len), dtype=complex)
+    PT = np.zeros(shape=(vec_num, vec_len))
+    UT[0] = basis[0]
+    PT[0] = ehat(j, vec_len)
+    PTU = np.zeros(shape=(vec_num, vec_num), dtype=complex)
+    nodes = [j]
+    # Step (3)
+    for i in range(vec_num - 1):
+        i += 1
+        ei = basis[i]
+        # Step (4)
+        PTU[i-1][:i:] = np.array([UT[k][nodes[i-1]] for k in range(i)])
+        c = solve_triangular(
+            PTU[:i:, :i:], np.array([ei[node] for node in nodes]),
+            lower=True, check_finite=False)
+        # Step (5)
+        r = ei - c.dot(UT[:i:])
+        # Step (6)
+        j = abs(r).argmax()
+        # Step (7)
+        UT[i] = r
+        PT[i] = ehat(j, vec_len)
+        nodes.append(j)
+
+    # Calculate B
+    VT = basis
+    B = np.linalg.inv(VT.dot(PT.transpose())).dot(VT)
+
+    # ordering
+    B = np.array([B[i] for i in np.argsort(nodes)])
+    nodes.sort()
+
+    return nodes, B
+
+def construct_nodes(
+    selected_params, flow, fhigh, deltaF, approximant, quadratic
+):
+    """Construct frequency nodes and weights from parameter values selected by greedy algorithm.
+
+    Parameters
+    ----------
+    selected_params : ndarray
+	ndarray whose i-th row is the i-th parameter set selected by greedy
+        algorithm
+    flow : float
+    fhigh : float
+    deltaF : float
+    approximant : string
+    quadratic : bool
+        construct nodes for products of waveforms when this is True
+
+    Return
+    ------
+    f_nodes : ndarray
+        interpolation frequency nodes
+    B : ndarray
+        ndarray whose i-th roq is the weight for the i-th frequency node.
+    """
+    # generate waveforms at selected parameters
+    start_index = int(flow / deltaF)
+    def _waveform(param):
+        # FIXME: Need to be fixed when we take into account precession.
+        m1, m2, a1z, a2z = param
+        hp, _  = lalsimulation.SimInspiralChooseFDWaveform(
+            m1 * lal.MSUN_SI, m2 * lal.MSUN_SI,
+            0.0, 0.0, a1z, 0.0, 0.0, a2z,
+            1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+            deltaF, flow, fhigh, flow, None,
+            lalsimulation.GetApproximantFromString(approximant)
+        )
+        hp = hp.data.data[start_index::]
+        if quadratic:
+            return np.conj(hp) * hp
+        else:
+            return hp
+    basis = np.array([_waveform(param) for param in selected_params]).transpose()
+
+    # orthogonalize waveforms
+    basis, _ = np.linalg.qr(basis)
+    basis = basis.transpose()
+
+    # discrete empirical interpolation
+    nodes, B = DEIM(basis)
+    return np.array([flow + deltaF * node for node in nodes]), B
+
 ######################################################################
 
 data_dir = './'
@@ -76,6 +191,10 @@ parser.add_option("-i", "--ifo", type='string',
                       action="append",
                       dest="IFOs",
                       help="list of ifos",)
+parser.add_option("-a", "--approx", type='string',
+                      action="store",
+                      dest="approximant",
+                      help="approximant name",)
 parser.add_option("-s", "--seglen", type=float,
                       action="store",
                       dest="seglen",
@@ -104,9 +223,30 @@ parser.add_option("-o", "--out", type='string',
 
 (options, args) = parser.parse_args()
 
-B_linear = np.load(options.b_matrix_directory + "/B_linear.npy")
-B_quadratic = np.load(options.b_matrix_directory + "/B_quadratic.npy")
-basis_params = np.loadtxt(options.b_matrix_directory + "/params.dat").T
+basis_params = np.loadtxt(os.path.join(options.b_matrix_directory, "params.dat")).T
+flow_in_params, fhigh_in_params, deltaF_in_params = basis_params[0], basis_params[1], 1. / basis_params[2]
+
+B_linear_path = os.path.join(options.b_matrix_directory, "B_linear.npy")
+B_quadratic_path = os.path.join(options.b_matrix_directory, "B_quadratic.npy")
+fnodes_linear_path = os.path.join(options.b_matrix_directory, "fnodes_linear.npy")
+fnodes_quadratic_path = os.path.join(options.b_matrix_directory, "fnodes_quadratic.npy")
+params_linear_path = os.path.join(options.b_matrix_directory, "selected_params_linear.npy")
+params_quadratic_path = os.path.join(options.b_matrix_directory, "selected_params_quadratic.npy")
+if os.path.exists(B_linear_path) and os.path.exists(B_quadratic_path) and \
+    os.path.exists(fnodes_linear_path) and os.path.exists(fnodes_quadratic_path):
+    B_linear = np.load(B_linear_path)
+    B_quadratic = np.load(B_quadratic_path)
+    fnodes_linear = np.load(fnodes_linear_path)
+    fnodes_quadratic = np.load(fnodes_quadratic_path)
+elif os.path.exists(params_linear_path) and os.path.exists(params_quadratic_path):
+    selected_params_linear = np.load(params_linear_path)
+    selected_params_quadratic = np.load(params_quadratic_path)
+    fnodes_linear, B_linear = construct_nodes(selected_params_linear, flow_in_params, fhigh_in_params, deltaF_in_params, options.approximant, False)
+    fnodes_quadratic, B_quadratic = construct_nodes(selected_params_linear, flow_in_params, fhigh_in_params, deltaF_in_params, options.approximant, True)
+else:
+    print("No ROQ data found. Please make sure that you have B_(linear, quadratic).npy "
+          "and fnodes_(linear, quadratic).npy, or selected_params_(linear, quadratic).npy")
+    raise
 
 def BuildWeights(data, B, deltaF):
 
@@ -149,11 +289,11 @@ for ifo in options.IFOs:
 
     if options.fLow:
         fLow = options.fLow
-        scale_factor = basis_params[0] / fLow
+        scale_factor = flow_in_params / fLow
 
     else:
-        fLow = basis_params[0]
-        assert fHigh == basis_params[1]
+        fLow = flow_in_params
+        assert fHigh == fhigh_in_params
     fLow_index = int(fLow / deltaF)
 
     print('Desired fLow is', fLow,', actual fLow is', fseries[fLow_index])
@@ -238,10 +378,6 @@ for ifo in options.IFOs:
     i += 1
 
     #save the fnodes as a dat file if they're not already:
-
-
-fnodes_linear = np.load(options.b_matrix_directory + "/fnodes_linear.npy")
-fnodes_quadratic = np.load(options.b_matrix_directory + "/fnodes_quadratic.npy")
 
 if scale_factor:
     print("scale factor = %f"%scale_factor)
