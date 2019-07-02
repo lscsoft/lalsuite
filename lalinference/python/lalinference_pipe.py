@@ -361,13 +361,24 @@ def setup_roq(cp):
         for mc_prior in mc_priors:
             mc_priors[mc_prior] = array(mc_priors[mc_prior])
         # find mass bin containing the trigger
-        trigger_bin = None
-        for roq in roq_paths:
-            if mc_priors[roq][0]*roq_mass_freq_scale_factor <= trigger_mchirp <= mc_priors[roq][1]*roq_mass_freq_scale_factor:
-                trigger_bin = roq
-                print('Prior in Mchirp will be ['+str(mc_priors[roq][0]*roq_mass_freq_scale_factor)+','+str(mc_priors[roq][1]*roq_mass_freq_scale_factor)+'] to contain the trigger Mchirp '+str(trigger_mchirp))
-                break
-        roq_paths = [trigger_bin]
+        candidate_roq_paths = \
+            [roq for roq in roq_paths
+             if mc_priors[roq][0]*roq_mass_freq_scale_factor
+             <= trigger_mchirp <= mc_priors[roq][1]*roq_mass_freq_scale_factor]
+        if candidate_roq_paths:
+            margins = np.array(
+                [min(mc_priors[roq][1]*roq_mass_freq_scale_factor-trigger_mchirp,
+                     trigger_mchirp-mc_priors[roq][0]*roq_mass_freq_scale_factor)
+                 for roq in candidate_roq_paths])
+            best_path = candidate_roq_paths[np.argmax(margins)]
+            roq_paths = [best_path]
+            print('Prior in Mchirp will be [{}, {}] to contain the trigger Mchirp {}.'.format(
+                mc_priors[best_path][0]*roq_mass_freq_scale_factor,
+                mc_priors[best_path][1]*roq_mass_freq_scale_factor,
+                trigger_mchirp))
+        else:
+            print("No roq mass bins containing the trigger")
+            raise
     else:
         for mc_prior in mc_priors:
             mc_priors[mc_prior] = array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
