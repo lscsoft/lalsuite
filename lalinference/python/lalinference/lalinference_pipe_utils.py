@@ -2319,6 +2319,7 @@ class EngineJob(SingularityJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
                 self.add_requirement('CAN_RUN_MULTICORE')
                 self.add_condor_cmd('+RequiresMultipleCores','True')
             self.add_condor_cmd('request_cpus',self.machine_count)
+            self.add_condor_cmd('environment','OMP_NUM_THREADS='+str(int(ceil(int(self.machine_count)/int(self.mpi_task_count)))))
             self.add_condor_cmd('request_memory',str(float(self.machine_count)*float(self.machine_memory)))
         if self.engine=='lalinferencenest':
             self.add_condor_cmd('request_memory','4000') # 4GB RAM for high SNR BNS
