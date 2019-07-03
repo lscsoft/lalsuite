@@ -1756,7 +1756,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                             bayeswavepostnode[ifo].set_srate(bw_srate)
                             bayeswavepost_fakecache = 'interp:'+bwPSDpath+ifo+'_fairdraw_asd.dat'
 
-                            if event.timeslides.has_key(ifo):
+                            if ifo in event.timeslides:
                                 slide=event.timeslides[ifo]
                             else:
                                 slide=0
