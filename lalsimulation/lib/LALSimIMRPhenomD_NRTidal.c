@@ -108,7 +108,6 @@ int IMRPhenomD_NRTidal_Core(
     }
   }
 
-  
   // Call IMRPhenomD. We call either the FrequencySequence version
   // or the regular LAL version depending on how we've been called.
 
@@ -207,6 +206,7 @@ int IMRPhenomD_NRTidal_Core(
   COMPLEX16 *data=(*htilde)->data->data;
 
   // Get FD tidal phase correction and amplitude factor from arXiv:1706.02969
+  amp_tidal = XLALCreateREAL8Sequence(freqs->length);
   phi_tidal = XLALCreateREAL8Sequence(freqs->length);
   planck_taper = XLALCreateREAL8Sequence(freqs->length);
   if (NRTidal_version == NRTidalv2_V) { 
