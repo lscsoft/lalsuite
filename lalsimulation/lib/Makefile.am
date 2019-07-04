@@ -219,11 +219,14 @@ noinst_HEADERS = \
 	LALSimIMRPhenomXHM_multiband.c \
 	LALSimIMRPhenomXHM_multiband.h \
 	LALSimIMRPhenomHM.h \
+	LALSimIMRPhenomNSBH.h \
 	LALSimIMRPhenomP.c \
 	LALSimIMRPhenomP.h \
 	LALSimIMRPhenomInternalUtils.h \
 	LALSimIMRSEOBNRROMUtilities.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.h \
+        LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.h \
+        LALSimBHNSRemnantFits.h \
 	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \
 	LALSimIMRSpinAlignedEOBHcapDerivative.c \
 	LALSimIMRSpinAlignedEOBHcapDerivativeOptimized.c \
@@ -280,10 +283,14 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRSEOBNRv2ChirpTime.c \
 	LALSimIMRSEOBNRv4ROM.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.c \
+        LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.c \
+        LALSimBHNSRemnantFits.c \
 	LALSimIMRSEOBNRv4TSurrogate.c \
 	LALSimIMREOBNRv2HMROM.c \
 	LALSimIMRLackeyTidal2013.c \
 	LALSimIMRPhenom.c \
+	LALSimIMRPhenomNSBH.c \
+	LALSimNSBHProperties.c \
 	LALSimIMRPhenomC.c \
 	LALSimIMRPhenomD.c \
 	LALSimIMRPhenomD_NRTidal.c \
@@ -353,7 +360,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRNRHybSur3dq8.c \
 	gsl_interpolation_integ_eval.h \
 	gsl_interpolation_steffen.c
-        
+
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \
 	LALSimulationVCSInfo.c \

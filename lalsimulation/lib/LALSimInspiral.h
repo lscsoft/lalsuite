@@ -359,10 +359,12 @@ typedef enum tagApproximant {
                                 * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv4_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4
                                 * @remarks Implemented in lalsimulation (frequency domain). */
-   SEOBNRv4_ROM_NRTidal, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4 [Bohe et al, arXiv:1611.03703] with tidal phase corrections [Dietrich et al, arXiv:1706.02969]
+   SEOBNRv4_ROM_NRTidal, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4 [Bohe et al, arXiv:1611.03703] with tidal phase corrections [Dietrich et al, arXiv:1706.02969
                                 * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv4_ROM_NRTidalv2, /**< based on NRTidalv2; https://arxiv.org/abs/1905.06011.
                              * @remarks Implemented in lalsimulation (time domain and frequency domain). */
+   SEOBNRv4_ROM_NRTidalv2_NSBH, /**< NSBH model based on SEOBNRv4_ROM_NRTidalv2
+                                * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv4T_surrogate, /**< Double-spin frequency domain surrogate model of spin-aligned tidal EOBNR model SEOBNRv4T
                               * @remarks Implemented in lalsimulation (frequency domain). */
    HGimri,		/**< Time domain inspiral-merger-ringdown waveform for quasi-circular intermediate mass-ratio inspirals [Huerta & Gair arXiv:1009.1985]
@@ -383,6 +385,8 @@ typedef enum tagApproximant {
                          * @remarks Implemented in lalsimulation (frequency domain). */
    IMRPhenomD_NRTidalv2, /**< NRTidalv2; https://arxiv.org/abs/1905.06011 
                             * @remarks Implemented in lalsimulation (time domain and frequency domain).*/
+   IMRPhenomNSBH,   /**< NSBH Tidal model.
+                         * @remarks Implemented in lalsimulation (frequency domain). */
    IMRPhenomHM,     /**< Frequency domain with higher modes (non-precessing spins) inspiral-merger-ringdown templates, based on IMRPhenomD.
                    * @remarks Implemented in lalsimulation (frequency domain). Ref London et al, arXiv:1708.00404 */
    IMRPhenomP,		/**< Frequency domain (generic spins) inspiral-merger-ringdown templates of Hannam et al., arXiv:1308.3271 [gr-qc]. Based on IMRPhenomC.

@@ -74,6 +74,7 @@ typedef enum tagNRTidal_version_type {
  NRTidal_V, /**< version NRTidal: based on https://arxiv.org/pdf/1706.02969.pdf*/
  NRTidalv2_V, /**< version NRTidalv2: https://arxiv.org/abs/1905.06011 */
  NRTidalv2NoAmpCorr_V, /**< version NRTidalv2, without amplitude corrections */
+ NRTidalv2NSBH_V, /**< version NRTidalv2: https://arxiv.org/abs/1905.06011 with amplitude corrections for NSBH (used for SEOBNRv4ROM_NRTidalv2_NSBH) */
  NoNRT_V /**< special case for PhenomPv2 BBH baseline */
 } NRTidal_version_type;
 
@@ -98,6 +99,45 @@ int XLALSimIMRPhenomBMetricInTheta0Theta3Theta3S(REAL8 *gamma00, REAL8 *gamma01,
 double XLALSimIMRPhenomCGetFinalFreq(const REAL8 m1, const REAL8 m2, const REAL8 chi);
 int XLALSimIMRPhenomCGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 phiPeak, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, LALDict *extraParams);
 int XLALSimIMRPhenomCGenerateTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiPeak, const REAL8 deltaT, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const REAL8 inclination, LALDict *extraParams);
+
+/* in module LALSimIMRPhenomNSBH.c */
+int XLALSimIMRPhenomNSBHProperties(
+    REAL8 *f_RD,                        /**< Output: NSBH ringdown frequency [Hz] */
+    REAL8 *f_tide,                      /**< Output: NSBH tidal disruption frequency [Hz] */
+    REAL8 *torus_mass,                  /**< Output: Torus remnant mass (kg) */
+    REAL8 *compactness,                 /**< Output: Compactness of neutron star */
+    REAL8 *final_mass,                  /**< Output: final mass after merger (kg) */
+    REAL8 *chif,                        /**< Output: final dimensionless spin */
+    REAL8 mBH_SI,                       /**< Mass of BH (kg) */
+    REAL8 mNS_SI,                       /**< Mass of neutron star 2 (kg) */
+    REAL8 chi_BH,                        /**< Dimensionless aligned component spin of Black Hole */
+    REAL8 lambda_NS                     /**< Dimensionless tidal deformability of NS */
+);
+
+double XLALSimIMRPhenomNSBH_x_D(const REAL8 Mtorus, const REAL8 C, const REAL8 q, const REAL8 chi);
+double XLALSimIMRPhenomNSBH_epsilon_ins_with_torus_mass(const REAL8 Mtorus, const REAL8 C, const REAL8 q, const REAL8 chi);
+double XLALSimIMRPhenomNSBH_x_D_prime(const REAL8 Mtorus, const REAL8 C, const REAL8 q, const REAL8 chi);
+double XLALSimIMRPhenomNSBH_sigma_tide_with_torus_mass(const REAL8 Mtorus, const REAL8 C, const REAL8 q, const REAL8 chi);
+double XLALSimIMRPhenomNSBH_epsilon_tide_ND(const REAL8 x_ND);
+double XLALSimIMRPhenomNSBH_sigma_tide_ND(const REAL8 x_ND_prime);
+double XLALSimIMRPhenomNSBH_x_ND(const REAL8 f_tide, const REAL8 f_RD_tilde, const REAL8 C, const REAL8 chi);
+double XLALSimIMRPhenomNSBH_x_ND_prime(const REAL8 f_tide, const REAL8 f_RD_tilde, const REAL8 C, const REAL8 chi);
+double XLALSimIMRPhenomNSBH_delta2_prime(const REAL8 f_tide, const REAL8 f_RD_tilde);
+
+double XLALSimIMRPhenomNSBH_window_plus(const REAL8 f, const REAL8 f0, const REAL8 d);
+double XLALSimIMRPhenomNSBH_window_minus(const REAL8 f, const REAL8 f0, const REAL8 d);
+double XLALSimIMRPhenomNSBH_eta_from_q(const REAL8 q);
+
+double XLALSimIMRPhenomNSBH_baryonic_mass_from_C(const REAL8 C, const REAL8 Mg);
+
+COMPLEX16 XLALSimIMRPhenomNSBH_omega_tilde(const REAL8 a);
+
+/* in module LALSimNSBHProperties.c */
+double XLALSimNSBH_fGWinKerr(const REAL8 r, const REAL8 M, const REAL8 a);
+double XLALSimNSBH_rKerrISCO(const REAL8 a);
+double XLALSimNSBH_xi_tide(const REAL8 q, const REAL8 a, const REAL8 mu);
+double XLALSimNSBH_compactness_from_lambda(const REAL8 Lambda);
+double XLALSimNSBH_torus_mass_fit(const REAL8 q, const REAL8 a, const REAL8 C);
 
 /* in module LALSimIMRPhenomD.c */
 int XLALSimIMRPhenomDGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 phi0, const REAL8 fRef, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi1, const REAL8 chi2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, LALDict *extraParams, NRTidal_version_type NRTidal_version);
@@ -324,6 +364,22 @@ int XLALSimIMRSEOBNRv4ROMFrequencyOfTime(REAL8 *frequency, REAL8 t, REAL8 m1SI, 
 
 int XLALSimIMRSEOBNRv4ROMNRTidalFrequencySequence(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 Lambda1, REAL8 Lambda2, LALDict *LALparams, NRTidal_version_type NRTidal_version);
 int XLALSimIMRSEOBNRv4ROMNRTidal(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 Lambda1, REAL8 Lambda2, LALDict *LALparams, NRTidal_version_type NRTidal_version);
+
+/* in module LALSimBHNSRemnantFits.c */
+REAL8 XLALbbh_final_mass_non_precessing_UIB2016(const REAL8 m1, const REAL8 m2, const REAL8 chi1, const REAL8 chi2);
+REAL8 XLALbbh_final_spin_non_precessing_UIB2016(const REAL8 m1, const REAL8 m2, const REAL8 chi1, const REAL8 chi2);
+REAL8 XLALBHNS_mass_aligned(const REAL8 m1, const REAL8 m2, const REAL8 chi1, const REAL8 lam);
+REAL8 XLALBHNS_spin_aligned(const REAL8 m1, const REAL8 m2, const REAL8 chi1, const REAL8 lam);
+
+/* In module LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.c */
+int XLALSEOBNRv4ROMNSBHAmplitudeCorrectionFrequencySeries(
+    const REAL8Sequence *amp_tidal, /**< [out] tidal amplitude frequency series */
+    const REAL8Sequence *fHz, /**< list of input Gravitational wave Frequency in Hz to evaluate */
+    REAL8 m1_SI, /**< Mass of companion 1 (kg) */
+    REAL8 m2_SI, /**< Mass of companion 2 (kg) */
+    REAL8 chi1, /**< Spin of black hole */
+    REAL8 lambda2 /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+);
 
 /* in module LALSimIMRSEOBNRv4TSurrogate.c */
 
@@ -701,6 +757,35 @@ int XLALSimIMRPhenomHMGethlmModes(
     const REAL8 deltaF,
     REAL8 f_ref,
     LALDict *extraParams);
+
+/* from LALSimIMRPhenomNSBH.c */
+
+int XLALSimIMRPhenomNSBHFrequencySequence(
+    COMPLEX16FrequencySeries **htilde,
+    const REAL8Sequence *freqs,
+    REAL8 phiRef,
+    REAL8 fRef,
+    REAL8 distance,
+    REAL8 mBH_SI,
+    REAL8 mNS_SI,
+    REAL8 chi_BH,
+    REAL8 chi_NS,
+    LALDict *extraParams);
+
+int XLALSimIMRPhenomNSBH(
+    COMPLEX16FrequencySeries **htilde,
+    REAL8 phiRef,
+    REAL8 deltaF,
+    REAL8 fLow,
+    REAL8 fHigh,
+    REAL8 fRef,
+    REAL8 distance,
+    REAL8 mBH_SI,
+    REAL8 mNS_SI,
+    REAL8 chi_BH,
+    REAL8 chi_NS,
+    LALDict *extraParams
+);
 
 #if 0
 { /* so that editors will match succeeding brace */

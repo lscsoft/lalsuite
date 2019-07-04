@@ -49,18 +49,17 @@
  * See Eq. (6.24) in arXiv:0810.5336 
  * 9b,c,d in arXiv:astro-ph/0504538
  */
-
 void Self_spin_phase_contributions(
-  const REAL8 m1_SI,     /**< Mass of neutron star 1 (kg) */
-  const REAL8 m2_SI,     /**< Mass of neutron star 2 (kg) */
-  const REAL8 chi1L,     /**< Dimensionless aligned component spin of NS 1 */
-  const REAL8 chi2L,     /**< Dimensionless aligned component spin of NS 2 */
-  const REAL8 qm_def1,   /**< Quadrupole deformation parameter of body 1 (dimensionless) */
-  const REAL8 qm_def2,   /**< Quadrupole deformation parameter of body 2 (dimensionless) */
-                         /**< qm_def1,2 = 0 for BH as it is defined here*/
-  REAL8 *pfa_v4_contrib, /**< self-spin contribution to v^4 */
-  REAL8 *pfa_v6_contrib  /**< self-spin contribution to v^6 */
-) {
+				   const REAL8 m1_SI,     /**< Mass of neutron star 1 (kg) */
+				   const REAL8 m2_SI,     /**< Mass of neutron star 2 (kg) */
+				   const REAL8 chi1L,     /**< Dimensionless aligned component spin of NS 1 */
+				   const REAL8 chi2L,     /**< Dimensionless aligned component spin of NS 2 */
+				   const REAL8 qm_def1,   /**< Quadrupole deformation parameter of body 1 (dimensionless) */
+				   const REAL8 qm_def2,   /**< Quadrupole deformation parameter of body 2 (dimensionless) */
+				   /**< qm_def1,2 = 0 for BH as it is defined here*/
+				   REAL8 *pfa_v4_contrib, /**< self-spin contribution to v^4 */
+				   REAL8 *pfa_v6_contrib  /**< self-spin contribution to v^6 */
+				   ) {
   const REAL8 mtot = m1_SI + m2_SI;
   const REAL8 eta = m1_SI*m2_SI/mtot/mtot;
   const REAL8 m1M = m1_SI/mtot;
@@ -75,16 +74,16 @@ void Self_spin_phase_contributions(
   /* remove unnecessary calls and computations to speed up the final computation */
   REAL8 pn_sigma = - 50.L*(qm_def1 * chi1sq * m1Msq + qm_def2 * chi2sq * m2Msq);
   REAL8 pn_ss3   = 5.L/84.L*(9407.L+ 8218.L * m1M - 2016.L * m1Msq) * qm_def1 * m1Msq * chi1sq;
-         pn_ss3 += 5.L/84.L*(9407.L+ 8218.L * m2M - 2016.L * m2Msq) * qm_def2 * m2Msq * chi2sq;
+  pn_ss3 += 5.L/84.L*(9407.L+ 8218.L * m2M - 2016.L * m2Msq) * qm_def2 * m2Msq * chi2sq;
 
   const REAL8 pfaN = 3.L/(128.L * eta);
   // The leading order term pfa->v[0] is positive and so the 
   // self-spin corrections should be added to a postive phasing.
 
 
-//  *pfa_v4_contrib = -10.L * pn_sigma * pfaN;
-//  *pfa_v6_contrib = + pn_ss3 * pfaN;
-// no additional factor 10 needed in the new implementation
+  //  *pfa_v4_contrib = -10.L * pn_sigma * pfaN;
+  //  *pfa_v6_contrib = + pn_ss3 * pfaN;
+  // no additional factor 10 needed in the new implementation
   *pfa_v4_contrib =   pn_sigma * pfaN;
   *pfa_v6_contrib =   pn_ss3 * pfaN;
 }
@@ -146,7 +145,6 @@ int SEOBNRv4ROM_NRTidal_Core(
       quad_mon2 = quadmon1temp;
     }
   }
-
   // Call SEOBNRv4 ROM. We call either the FrequencySequence version
   // or the regular LAL version depending on how we've been called.
 
@@ -167,42 +165,41 @@ int SEOBNRv4ROM_NRTidal_Core(
     /* Prepare tapering of amplitude beyond merger frequency */
     const double fHz_mrg = XLALSimNRTunedTidesMergerFrequency( (m1_SI+m2_SI)/LAL_MSUN_SI , kappa2T, m1_SI/m2_SI);
     const double NRTIDAL_FMAX = 1.3*fHz_mrg;
-
-    if ( ( fHigh > NRTIDAL_FMAX ) || ( fHigh == 0.0 ) )
-    {
+    if ( (NRTidal_version != NRTidalv2NSBH_V) && (( fHigh > NRTIDAL_FMAX ) || ( fHigh == 0.0 )) )
+      {
         // only generate upto NRTIDAL_FMAX
         f_max_nr_tidal = NRTIDAL_FMAX;
-    }
+      }
 
     ret = XLALSimIMRSEOBNRv4ROM(
-      hptilde, hctilde,
-      phiRef, deltaF, fLow, f_max_nr_tidal, fRef, distance, inclination,
-      m1_SI, m2_SI,
-      chi1, chi2,
-      -1, LALparams, NRTidal_version);
+				hptilde, hctilde,
+				phiRef, deltaF, fLow, f_max_nr_tidal, fRef, distance, inclination,
+				m1_SI, m2_SI,
+				chi1, chi2,
+				-1, LALparams, NRTidal_version);
 
-      // if uniform sampling and fHigh > NRTIDAL_FMAX then resize htilde
-      // so that it goes up to the user fHigh but is filled with zeros
-      // beyond NRTIDAL_FMAX
-      if (fHigh > NRTIDAL_FMAX)
+    // if uniform sampling and fHigh > NRTIDAL_FMAX then resize htilde
+    // so that it goes up to the user fHigh but is filled with zeros
+    // beyond NRTIDAL_FMAX (this does not apply to NSBH)
+    if (fHigh > NRTIDAL_FMAX && NRTidal_version != NRTidalv2NSBH_V) 
       {
-          // resize
-          // n_full is the next power of 2 +1.
-          size_t n_full = (size_t) pow(2,ceil(log2(fHigh / deltaF))) + 1;
-          *hptilde = XLALResizeCOMPLEX16FrequencySeries(*hptilde, 0, n_full);
-          XLAL_CHECK ( *hptilde, XLAL_ENOMEM, "Failed to resize hptilde COMPLEX16FrequencySeries");
-          *hctilde = XLALResizeCOMPLEX16FrequencySeries(*hctilde, 0, n_full);
-          XLAL_CHECK ( *hctilde, XLAL_ENOMEM, "Failed to resize hctilde COMPLEX16FrequencySeries");
+	// resize
+	// n_full is the next power of 2 +1.
+	size_t n_full = (size_t) pow(2,ceil(log2(fHigh / deltaF))) + 1;
+	*hptilde = XLALResizeCOMPLEX16FrequencySeries(*hptilde, 0, n_full);
+	XLAL_CHECK ( *hptilde, XLAL_ENOMEM, "Failed to resize hptilde COMPLEX16FrequencySeries");
+	*hctilde = XLALResizeCOMPLEX16FrequencySeries(*hctilde, 0, n_full);
+	XLAL_CHECK ( *hctilde, XLAL_ENOMEM, "Failed to resize hctilde COMPLEX16FrequencySeries");
       }
 
   } else {
     ret = XLALSimIMRSEOBNRv4ROMFrequencySequence(
-      hptilde, hctilde,
-      freqs_in,
-      phiRef, fRef, distance, inclination,
-      m1_SI, m2_SI,
-      chi1, chi2,
-      -1, LALparams, NRTidal_version);
+						 hptilde, hctilde,
+						 freqs_in,
+						 phiRef, fRef, distance, inclination,
+						 m1_SI, m2_SI,
+						 chi1, chi2,
+						 -1, LALparams, NRTidal_version);
   }
   XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimIMRSEOBNRv4ROM() failed.");
 
@@ -258,13 +255,26 @@ int SEOBNRv4ROM_NRTidal_Core(
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
   }
 
+  // For NSBH, apply NSBH amplitude correction
+  if (NRTidal_version == NRTidalv2NSBH_V){
+       amp_tidal = XLALCreateREAL8Sequence(freqs->length);
+       ret = XLALSEOBNRv4ROMNSBHAmplitudeCorrectionFrequencySeries(
+        amp_tidal, freqs,
+        m1_SI, m2_SI, chi1, lambda2
+      );
+      XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSEOBNRv4ROMNSBHAmplitudeCorrectionFrequencySeries Failed.");
+
+  }
+
+  // // Prepare tapering of amplitude beyond merger frequency
+  // double kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
+  // double fHz_mrg = XLALSimNRTunedTidesMergerFrequency(Mtot_MSUN, kappa2T, q);
   // Tidal self-spin contributions to the phase
 
   REAL8 pfa_v4_contrib, pfa_v6_contrib;
   Self_spin_phase_contributions(m1_SI, m2_SI, chi1, chi2, quad_mon1, quad_mon2,
-    &pfa_v4_contrib, &pfa_v6_contrib);
+				&pfa_v4_contrib, &pfa_v6_contrib);
 
-  // Variables for phase spline for aligning in time below
   gsl_interp_accel *acc_phi = gsl_interp_accel_alloc();
   gsl_spline *spline_phi = gsl_spline_alloc(gsl_interp_cspline, freqs->length);
   gsl_vector *f_vec = gsl_vector_alloc(freqs->length);
@@ -283,11 +293,15 @@ int SEOBNRv4ROM_NRTidal_Core(
     gsl_vector_set(phi_vec, i, phase_corr);
 
     COMPLEX16 Corr = planck_taper->data[i] * cexp(-I*phase_corr -I*v*v*(SS_3p5PN + SSS_3p5PN)*pn_fac);
+    if (NRTidal_version==NRTidalv2NSBH_V){
+        Corr *= amp_tidal->data[i];
+    }
     pdata[j] *= Corr;
     cdata[j] *= Corr;
+
   }
 
-/* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
+  /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
   // Appendix A of 1512.02248
 
   // Get SEOBNRv4 ringdown frequency for 22 mode
@@ -316,12 +330,10 @@ int SEOBNRv4ROM_NRTidal_Core(
     pdata[j] *= t_factor;
     cdata[j] *= t_factor;
   }
- 
   gsl_vector_free(f_vec);
   gsl_vector_free(phi_vec);
   gsl_spline_free(spline_phi);
   gsl_interp_accel_free(acc_phi);
-
   XLALDestroyREAL8Sequence(freqs);
   XLALDestroyREAL8Sequence(phi_tidal);
   XLALDestroyREAL8Sequence(amp_tidal);
@@ -399,7 +411,7 @@ int XLALSimIMRSEOBNRv4ROMNRTidalFrequencySequence(
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = SEOBNRv4ROM_NRTidal_Core(hptilde, hctilde,
-            phiRef, fRef, distance, inclination, m1_SI, m2_SI, chi1, chi2, lambda1, lambda2, freqs, 0, LALparams, NRTidal_version);
+					 phiRef, fRef, distance, inclination, m1_SI, m2_SI, chi1, chi2, lambda1, lambda2, freqs, 0, LALparams, NRTidal_version);
 
   return(retcode);
 }
@@ -413,24 +425,24 @@ int XLALSimIMRSEOBNRv4ROMNRTidalFrequencySequence(
  * frequency fLow and zeros beyond the cutoff frequency in the ringdown.
  */
 int XLALSimIMRSEOBNRv4ROMNRTidal(
-  struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
-  struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
-  REAL8 phiRef,                                 /**< Phase at reference time */
-  REAL8 deltaF,                                 /**< Sampling frequency (Hz) */
-  REAL8 fLow,                                   /**< Starting GW frequency (Hz) */
-  REAL8 fHigh,                                  /**< End frequency; 0 defaults to Mf=0.14 */
-  REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
-  REAL8 distance,                               /**< Distance of source (m) */
-  REAL8 inclination,                            /**< Inclination of source (rad) */
-  REAL8 m1_SI,                                  /**< Mass of neutron star 1 (kg) */
-  REAL8 m2_SI,                                  /**< Mass of neutron star 2 (kg) */
-  REAL8 chi1,                                   /**< Dimensionless aligned component spin of NS 1 */
-  REAL8 chi2,                                   /**< Dimensionless aligned component spin of NS 2 */
-  REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
-  REAL8 lambda2,                                 /**< Dimensionless tidal deformability of NS 2 */
-  LALDict *LALparams,                            /**< linked list containing the extra testing GR parameters */
-  NRTidal_version_type NRTidal_version           /**< Version of NRTides; can be one of NRTidal or NRTidalv2NoAmpCorr */
-) {
+				 struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
+				 struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
+				 REAL8 phiRef,                                 /**< Phase at reference time */
+				 REAL8 deltaF,                                 /**< Sampling frequency (Hz) */
+				 REAL8 fLow,                                   /**< Starting GW frequency (Hz) */
+				 REAL8 fHigh,                                  /**< End frequency; 0 defaults to Mf=0.14 */
+				 REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
+				 REAL8 distance,                               /**< Distance of source (m) */
+				 REAL8 inclination,                            /**< Inclination of source (rad) */
+				 REAL8 m1_SI,                                  /**< Mass of neutron star 1 (kg) */
+				 REAL8 m2_SI,                                  /**< Mass of neutron star 2 (kg) */
+				 REAL8 chi1,                                   /**< Dimensionless aligned component spin of NS 1 */
+				 REAL8 chi2,                                   /**< Dimensionless aligned component spin of NS 2 */
+				 REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
+				 REAL8 lambda2,                                 /**< Dimensionless tidal deformability of NS 2 */
+				 LALDict *LALparams,                            /**< linked list containing the extra testing GR parameters */
+				 NRTidal_version_type NRTidal_version           /**< Version of NRTides; can be one of NRTidal or NRTidalv2NoAmpCorr */
+				 ) {
   // Use fLow, fHigh, deltaF to compute freqs sequence
   // Instead of building a full sequence we only transfer the boundaries and let
   // the internal core function do the rest (and properly take care of corner cases).
@@ -439,7 +451,7 @@ int XLALSimIMRSEOBNRv4ROMNRTidal(
   freqs->data[1] = fHigh;
 
   int retcode = SEOBNRv4ROM_NRTidal_Core(hptilde, hctilde,
-            phiRef, fRef, distance, inclination, m1_SI, m2_SI, chi1, chi2, lambda1, lambda2, freqs, deltaF, LALparams, NRTidal_version);
+					 phiRef, fRef, distance, inclination, m1_SI, m2_SI, chi1, chi2, lambda1, lambda2, freqs, deltaF, LALparams, NRTidal_version);
 
   XLALDestroyREAL8Sequence(freqs);
 

@@ -82,6 +82,10 @@ test/LALSimulationTest
 test/OpenMPTest
 test/PhenomP_Test*dat
 test/PhenomPTest
+test/PhenomNSBHTest
+test/BHNSRemnantFitsTest
+test/NSBHPropertiesTest
+test/SEOBNRv4_ROM_NRTidalv2_NSBH_Test
 test/PNCoefficients
 test/PrecessWaveformEOBNRTest
 test/PrecessWaveformIMRPhenomBTest
