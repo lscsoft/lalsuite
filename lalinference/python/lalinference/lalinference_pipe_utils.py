@@ -657,12 +657,8 @@ def get_roq_component_mass_priors(path, roq_paths, roq_params, key, coinc_xml_ob
     return m1_priors, m2_priors, trigger_mchirp
 
 def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, force_flow=None):
-    mc_priors_keys_list = list(mc_priors.keys())
-    mc_priors_keys_int = [int(seglen[:-1]) for seglen in mc_priors_keys_list]
-    roq_min = mc_priors_keys_list[np.argmin(mc_priors_keys_int)]
-    roq_max = mc_priors_keys_list[np.argmax(mc_priors_keys_int)]
-    mc_max = mc_priors[roq_min][1]
-    mc_min = mc_priors[roq_max][0]
+    mc_min = min([prange[0] for prange in mc_priors.values()])
+    mc_max = max([prange[1] for prange in mc_priors.values()])
     scale_factor = 1.
     if force_flow == None and trigger_mchirp != None:
         if trigger_mchirp >= mc_max:
