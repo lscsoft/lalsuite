@@ -1315,11 +1315,26 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos,
                     evstring=evstring, coherence=True)
                 respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
+                try:
+                    cachefiles = self.config.get('resultspage','plot-strain-data')
+                    cachefiles_option = True
+                except:
+                    cachefiles_option = False
+                if cachefiles_option:
+                    respagenode.set_cache_files(enginenodes[0].channels, enginenodes[0].cachefiles)
+
+                try:
+                    labels = self.config.get('resultspage','label')
+                except:
+                    labels = None
+                respagenode.set_labels(labels)
+
+                try:
+                    gid = self.config.get('input','gid')
+                except:
+                    gid = None
+                respagenode.set_gid(gid)
                 if os.path.exists(self.basepath+'/coinc.xml'):
-                    try:
-                        gid = self.config.get('input','gid')
-                    except:
-                        gid = None
                     respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
 
         else:
@@ -1333,11 +1348,25 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos,
                     evstring=evstring, coherence=False)
                 respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
+                try:
+                    cachefiles = self.config.get('resultspage','plot-strain-data')
+                    cachefiles_option = True
+                except:
+                    cachefiles_option = False
+                if cachefiles_option:
+                    respagenode.set_cache_files(enginenodes[0].channels, enginenodes[0].cachefiles)
+                try:
+                    labels = self.config.get('resultspage','label')
+                except:
+                    labels = None
+                respagenode.set_labels(labels)
+
+                try:
+                    gid = self.config.get('input','gid')
+                except:
+                    gid = None
+                respagenode.set_gid(gid)
                 if os.path.exists(self.basepath+'/coinc.xml'):
-                    try:
-                        gid = self.config.get('input','gid')
-                    except:
-                        gid = None
                     respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
             else:
                 respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos)
@@ -1444,6 +1473,21 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         if "summarypages" in self.config.get('condor','resultspage'):
             respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos, evstring=evstring, coherence=self.config.getboolean('analysis','coherence-test'))
             respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
+            try:
+                cachefiles = self.config.get('resultspage','plot-strain-data')
+                cachefiles_option = True
+            except:
+                cachefiles_option = False
+            if cachefiles_option:
+                respagenode.set_cache_files(enginenodes[0].channels, enginenodes[0].cachefiles)
+
+
+            try:
+                labels = self.config.get('resultspage','label')
+            except:
+                labels = None
+            respagenode.set_labels(labels)
+
             if os.path.exists(self.basepath+'/coinc.xml'):
                 try:
                     gid = self.config.get('input','gid')
@@ -2818,6 +2862,17 @@ class PESummaryResultsPageNode(pipeline.CondorDAGNode):
             psds += " %s:%s" %(i, st[num])
         self.add_var_arg('--psd%s'%psds)
 
+    def set_cache_files(self, channels, cachefiles):
+        if cachefiles == {}:
+            return
+        if channels is None:
+            return
+
+        gwdata = ""
+        for i in channels.keys():
+            gwdata += " %s:%s" % (channels[i], cachefiles[i])
+        self.add_var_arg('--gwdata%s'%gwdata)
+
     def set_calibration_files(self,ifos,st):
         if st is None:
             return
@@ -2826,6 +2881,12 @@ class PESummaryResultsPageNode(pipeline.CondorDAGNode):
         for num, i in enumerate(ifos):
             calibration += " %s:%s" %(i, st[num])
         self.add_var_arg('--calibration %s' %calibration)
+
+    def set_labels(self, labels):
+        if labels is None:
+            return
+        l = labels.split(",")
+        self.add_var_arg('--labels %s'%(" ".join(l)))
 
     def set_snr_file(self,st):
         if st is None:
@@ -2849,6 +2910,11 @@ class PESummaryResultsPageNode(pipeline.CondorDAGNode):
 
     def get_pos_file(self):
         return self.posfile
+
+    def set_gid(self, gid):
+        if gid is None:
+            return
+        self.add_var_arg('--gracedb '+gid)
 
     def set_bayes_coherent_incoherent(self,bcifile):
         self.add_file_opt('bci',bcifile)
