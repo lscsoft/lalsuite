@@ -3272,17 +3272,33 @@ class ROMJob(SingularityJob, pipeline.CondorDAGJob,pipeline.AnalysisJob):
         if cp.has_option('engine','time_step'):
             time_step=cp.get('engine','time_step')
         self.add_arg('-T '+str(time_step))
+        if cp.has_option('engine', 'approx'):
+            self.add_arg('-a ' + str(cp.get('engine', 'approx')))
         if cp.has_option('condor','computeroqweights_memory'):
             computeroqweights_memory=str(cp.get('condor','computeroqweights_memory'))
         else:
-            params = np.genfromtxt(str(cp.get('paths','roq_b_matrix_directory')+'/params.dat'), names=True)
-            computeroqweights_memory=str(int(
-            os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_linear.npy'))/(1024*1024)
-            + 3*((params['fhigh']-params['flow'])*params['seglen'])*(float(dt+0.05)*2/float(time_step))*2*8/(1024*1024)
-            + os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_quadratic.npy'))/(1024*1024)
-            ) + 4096) # add 4gb of memory due to how matrix-copying is handled in lalapps_compute_roq_weights.py/numpy
-            print('Requesting '+computeroqweights_memory+' of memory for computeroqweights.')
-        self.add_condor_cmd('request_memory',computeroqweights_memory)
+            roq_dir = cp.get('paths','roq_b_matrix_directory')
+            params = np.genfromtxt(os.path.join(roq_dir, 'params.dat'), names=True)
+            flow, fhigh, seglen = params['flow'], params['fhigh'], params['seglen']
+            if os.path.exists(os.path.join(roq_dir, 'B_linear.npy')) and os.path.exists(os.path.join(roq_dir, 'B_quadratic.npy')):
+                linear_basis_size = os.path.getsize(os.path.join(roq_dir, 'B_linear.npy'))
+                quadratic_basis_size = os.path.getsize(os.path.join(roq_dir, 'B_quadratic.npy'))
+            elif os.path.exists(os.path.join(roq_dir, 'selected_params_linear.npy')) and \
+                os.path.exists(os.path.join(roq_dir, 'selected_params_quadratic.npy')):
+                linear_basis_size = 32 * (fhigh - flow) * seglen * \
+                    len(np.load(os.path.join(roq_dir, 'selected_params_linear.npy')))
+                quadratic_basis_size = 32 * (fhigh - flow) * seglen * \
+                    len(np.load(os.path.join(roq_dir, 'selected_params_quadratic.npy')))
+            roq_weights_size = 3 * ((fhigh - flow) * seglen) * \
+                (float(dt + 0.05) * 2 / float(time_step)) * 2 * 8
+            # add 4gb of memory due to how matrix-copying is handled in
+            # lalapps_compute_roq_weights.py/numpy
+            required_memory = int(
+                (linear_basis_size + quadratic_basis_size + roq_weights_size)
+                / (1024 * 1024) + 4096)
+            print('Requesting {} of memory for '
+                  'computeroqweights.'.format(required_memory))
+        self.add_condor_cmd('request_memory', str(required_memory))
 
 class ROMNode(pipeline.CondorDAGNode):
     """
