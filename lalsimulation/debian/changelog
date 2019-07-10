@@ -1,3 +1,9 @@
+lalsimulation (1.9.1-1) unstable; urgency=low
+
+  * O3 point release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 10 Jul 2019 14:22:10 -0700
+
 lalsimulation (1.9.0-1) unstable; urgency=low
 
   * O3 release
