@@ -31,7 +31,7 @@ BuildRequires: libmetaio-devel
 BuildRequires: numpy >= 1.7
 BuildRequires: octave-devel
 BuildRequires: python-devel
-BuildRequires: scipy >= 0.8
+BuildRequires: scipy >= 0.9.0
 BuildRequires: swig >= 3.0.7
 BuildRequires: python2-gwdatafind
 BuildRequires: python2-gwpy
