@@ -34,7 +34,6 @@
 #include <lal/LALInspiralBank.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/FindChirpDatatypes.h>
-#include <lal/FindChirpChisq.h>
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -43,7 +42,6 @@
 #include <lal/AVFactories.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
-#include <lal/Inject.h>
 #include <lal/FileIO.h>
 #include <lal/Units.h>
 #include <lal/FrequencySeries.h>

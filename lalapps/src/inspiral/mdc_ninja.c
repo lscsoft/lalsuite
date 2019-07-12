@@ -39,7 +39,6 @@
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
-#include <lal/Inject.h>
 #include <lal/FileIO.h>
 #include <lal/Units.h>
 #include <lal/FrequencySeries.h>

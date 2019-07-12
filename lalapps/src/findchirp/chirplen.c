@@ -43,7 +43,6 @@
 #include <lal/SeqFactories.h>
 #include <lal/Units.h>
 #include <lal/Date.h>
-#include <lal/Inject.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/TimeFreqFFT.h>

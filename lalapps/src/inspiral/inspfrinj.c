@@ -282,14 +282,15 @@
 #include <lal/LALFrStream.h>
 #include <lal/Calibration.h>
 #include <lal/LALFrameIO.h>
+#include <lal/FindChirp.h>
 #include <lal/FrameCalibration.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
-#include <lal/FindChirpSP.h>
 #include <lal/Inject.h>
 #include <lal/LALFrameL.h>
 

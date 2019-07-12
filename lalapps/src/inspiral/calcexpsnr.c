@@ -66,9 +66,6 @@
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpSP.h>
-#include <lal/FindChirpTD.h>
-#include <lal/FindChirpChisq.h>
 #include <lal/LALTrigScanCluster.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/ReadFTSeries.h>
