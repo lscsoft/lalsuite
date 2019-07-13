@@ -3,6 +3,7 @@
 
 from lalinference import lalinference_pipe_utils as pipe_utils
 from lalapps import inspiralutils
+import numpy as np
 from six.moves import configparser
 from optparse import OptionParser,OptionValueError
 import sys
@@ -72,6 +73,10 @@ def add_variations(cp, section, option, values=None, allowed_values=None):
     if not cp.has_section(section) and not cp.has_option(section,option):
         return
 
+    try:
+        labels = cp.get('resultspage','label').split(',')
+    except:
+        labels = None
     if values is not None:
         vals = values
     else:
@@ -83,9 +88,17 @@ def add_variations(cp, section, option, values=None, allowed_values=None):
                                 )
                          )
     if len(vals) >1:
+        if labels is not None:
+            if len(labels) != len(vals):
+                raise ValueError(
+                    "The number of labels does not match the "
+                    "number of {}'s given".format(option))
+            return {(section,option): [[i,j] for i,j in zip(vals, labels)]}
         return {(section,option): vals}
     elif len(vals)==1:
         cp.set(section, option, vals[0])
+        if labels is not None:
+            cp.set('resultspage', 'label', labels[0])
         return {}
     else:
         print(("Found no variations of [{section}] {option}".format(section=section,
@@ -176,7 +189,12 @@ def generate_variations(master_cp, variations):
         cp = configparser.ConfigParser()
         cp.optionxform = str
         cp.read(masterpath)
-        cp.set(section,opt,val)
+        if type(val) == list:
+            cp.set(section,opt,val[0])
+            cp.set('resultspage','label',val[1])
+            val = val[0]
+        else:
+            cp.set(section,opt,val)
         # Append to the paths
         cp.set('paths','basedir',os.path.join(cur_basedir, \
                                         '{val}'.format(opt=opt,val=val)))
@@ -344,13 +362,24 @@ def setup_roq(cp):
         for mc_prior in mc_priors:
             mc_priors[mc_prior] = array(mc_priors[mc_prior])
         # find mass bin containing the trigger
-        trigger_bin = None
-        for roq in roq_paths:
-            if mc_priors[roq][0]*roq_mass_freq_scale_factor <= trigger_mchirp <= mc_priors[roq][1]*roq_mass_freq_scale_factor:
-                trigger_bin = roq
-                print('Prior in Mchirp will be ['+str(mc_priors[roq][0]*roq_mass_freq_scale_factor)+','+str(mc_priors[roq][1]*roq_mass_freq_scale_factor)+'] to contain the trigger Mchirp '+str(trigger_mchirp))
-                break
-        roq_paths = [trigger_bin]
+        candidate_roq_paths = \
+            [roq for roq in roq_paths
+             if mc_priors[roq][0]*roq_mass_freq_scale_factor
+             <= trigger_mchirp <= mc_priors[roq][1]*roq_mass_freq_scale_factor]
+        if candidate_roq_paths:
+            margins = np.array(
+                [min(mc_priors[roq][1]*roq_mass_freq_scale_factor-trigger_mchirp,
+                     trigger_mchirp-mc_priors[roq][0]*roq_mass_freq_scale_factor)
+                 for roq in candidate_roq_paths])
+            best_path = candidate_roq_paths[np.argmax(margins)]
+            roq_paths = [best_path]
+            print('Prior in Mchirp will be [{}, {}] to contain the trigger Mchirp {}.'.format(
+                mc_priors[best_path][0]*roq_mass_freq_scale_factor,
+                mc_priors[best_path][1]*roq_mass_freq_scale_factor,
+                trigger_mchirp))
+        else:
+            print("No roq mass bins containing the trigger")
+            raise
     else:
         for mc_prior in mc_priors:
             mc_priors[mc_prior] = array(mc_priors[mc_prior])*roq_mass_freq_scale_factor

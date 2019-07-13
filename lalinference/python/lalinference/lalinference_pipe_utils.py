@@ -657,12 +657,8 @@ def get_roq_component_mass_priors(path, roq_paths, roq_params, key, coinc_xml_ob
     return m1_priors, m2_priors, trigger_mchirp
 
 def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, force_flow=None):
-    mc_priors_keys_list = list(mc_priors.keys())
-    mc_priors_keys_int = [int(seglen[:-1]) for seglen in mc_priors_keys_list]
-    roq_min = mc_priors_keys_list[np.argmin(mc_priors_keys_int)]
-    roq_max = mc_priors_keys_list[np.argmax(mc_priors_keys_int)]
-    mc_max = mc_priors[roq_min][1]
-    mc_min = mc_priors[roq_max][0]
+    mc_min = min([prange[0] for prange in mc_priors.values()])
+    mc_max = max([prange[1] for prange in mc_priors.values()])
     scale_factor = 1.
     if force_flow == None and trigger_mchirp != None:
         if trigger_mchirp >= mc_max:
@@ -1319,11 +1315,26 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos,
                     evstring=evstring, coherence=True)
                 respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
+                try:
+                    cachefiles = self.config.get('resultspage','plot-strain-data')
+                    cachefiles_option = True
+                except:
+                    cachefiles_option = False
+                if cachefiles_option:
+                    respagenode.set_cache_files(enginenodes[0].channels, enginenodes[0].cachefiles)
+
+                try:
+                    labels = self.config.get('resultspage','label')
+                except:
+                    labels = None
+                respagenode.set_labels(labels)
+
+                try:
+                    gid = self.config.get('input','gid')
+                except:
+                    gid = None
+                respagenode.set_gid(gid)
                 if os.path.exists(self.basepath+'/coinc.xml'):
-                    try:
-                        gid = self.config.get('input','gid')
-                    except:
-                        gid = None
                     respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
 
         else:
@@ -1337,11 +1348,25 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos,
                     evstring=evstring, coherence=False)
                 respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
+                try:
+                    cachefiles = self.config.get('resultspage','plot-strain-data')
+                    cachefiles_option = True
+                except:
+                    cachefiles_option = False
+                if cachefiles_option:
+                    respagenode.set_cache_files(enginenodes[0].channels, enginenodes[0].cachefiles)
+                try:
+                    labels = self.config.get('resultspage','label')
+                except:
+                    labels = None
+                respagenode.set_labels(labels)
+
+                try:
+                    gid = self.config.get('input','gid')
+                except:
+                    gid = None
+                respagenode.set_gid(gid)
                 if os.path.exists(self.basepath+'/coinc.xml'):
-                    try:
-                        gid = self.config.get('input','gid')
-                    except:
-                        gid = None
                     respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
             else:
                 respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos)
@@ -1448,6 +1473,21 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         if "summarypages" in self.config.get('condor','resultspage'):
             respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos, evstring=evstring, coherence=self.config.getboolean('analysis','coherence-test'))
             respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
+            try:
+                cachefiles = self.config.get('resultspage','plot-strain-data')
+                cachefiles_option = True
+            except:
+                cachefiles_option = False
+            if cachefiles_option:
+                respagenode.set_cache_files(enginenodes[0].channels, enginenodes[0].cachefiles)
+
+
+            try:
+                labels = self.config.get('resultspage','label')
+            except:
+                labels = None
+            respagenode.set_labels(labels)
+
             if os.path.exists(self.basepath+'/coinc.xml'):
                 try:
                     gid = self.config.get('input','gid')
@@ -1756,7 +1796,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                             bayeswavepostnode[ifo].set_srate(bw_srate)
                             bayeswavepost_fakecache = 'interp:'+bwPSDpath+ifo+'_fairdraw_asd.dat'
 
-                            if event.timeslides.has_key(ifo):
+                            if ifo in event.timeslides:
                                 slide=event.timeslides[ifo]
                             else:
                                 slide=0
@@ -2319,6 +2359,7 @@ class EngineJob(SingularityJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
                 self.add_requirement('CAN_RUN_MULTICORE')
                 self.add_condor_cmd('+RequiresMultipleCores','True')
             self.add_condor_cmd('request_cpus',self.machine_count)
+            self.add_condor_cmd('environment','OMP_NUM_THREADS='+str(int(ceil(int(self.machine_count)/int(self.mpi_task_count)))))
             self.add_condor_cmd('request_memory',str(float(self.machine_count)*float(self.machine_memory)))
         if self.engine=='lalinferencenest':
             self.add_condor_cmd('request_memory','4000') # 4GB RAM for high SNR BNS
@@ -2821,6 +2862,17 @@ class PESummaryResultsPageNode(pipeline.CondorDAGNode):
             psds += " %s:%s" %(i, st[num])
         self.add_var_arg('--psd%s'%psds)
 
+    def set_cache_files(self, channels, cachefiles):
+        if cachefiles == {}:
+            return
+        if channels is None:
+            return
+
+        gwdata = ""
+        for i in channels.keys():
+            gwdata += " %s:%s" % (channels[i], cachefiles[i])
+        self.add_var_arg('--gwdata%s'%gwdata)
+
     def set_calibration_files(self,ifos,st):
         if st is None:
             return
@@ -2829,6 +2881,12 @@ class PESummaryResultsPageNode(pipeline.CondorDAGNode):
         for num, i in enumerate(ifos):
             calibration += " %s:%s" %(i, st[num])
         self.add_var_arg('--calibration %s' %calibration)
+
+    def set_labels(self, labels):
+        if labels is None:
+            return
+        l = labels.split(",")
+        self.add_var_arg('--labels %s'%(" ".join(l)))
 
     def set_snr_file(self,st):
         if st is None:
@@ -2852,6 +2910,11 @@ class PESummaryResultsPageNode(pipeline.CondorDAGNode):
 
     def get_pos_file(self):
         return self.posfile
+
+    def set_gid(self, gid):
+        if gid is None:
+            return
+        self.add_var_arg('--gracedb '+gid)
 
     def set_bayes_coherent_incoherent(self,bcifile):
         self.add_file_opt('bci',bcifile)
@@ -3209,17 +3272,33 @@ class ROMJob(SingularityJob, pipeline.CondorDAGJob,pipeline.AnalysisJob):
         if cp.has_option('engine','time_step'):
             time_step=cp.get('engine','time_step')
         self.add_arg('-T '+str(time_step))
+        if cp.has_option('engine', 'approx'):
+            self.add_arg('-a ' + str(cp.get('engine', 'approx')))
         if cp.has_option('condor','computeroqweights_memory'):
             computeroqweights_memory=str(cp.get('condor','computeroqweights_memory'))
         else:
-            params = np.genfromtxt(str(cp.get('paths','roq_b_matrix_directory')+'/params.dat'), names=True)
-            computeroqweights_memory=str(int(
-            os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_linear.npy'))/(1024*1024)
-            + 3*((params['fhigh']-params['flow'])*params['seglen'])*(float(dt+0.05)*2/float(time_step))*2*8/(1024*1024)
-            + os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_quadratic.npy'))/(1024*1024)
-            ) + 4096) # add 4gb of memory due to how matrix-copying is handled in lalapps_compute_roq_weights.py/numpy
-            print('Requesting '+computeroqweights_memory+' of memory for computeroqweights.')
-        self.add_condor_cmd('request_memory',computeroqweights_memory)
+            roq_dir = cp.get('paths','roq_b_matrix_directory')
+            params = np.genfromtxt(os.path.join(roq_dir, 'params.dat'), names=True)
+            flow, fhigh, seglen = params['flow'], params['fhigh'], params['seglen']
+            if os.path.exists(os.path.join(roq_dir, 'B_linear.npy')) and os.path.exists(os.path.join(roq_dir, 'B_quadratic.npy')):
+                linear_basis_size = os.path.getsize(os.path.join(roq_dir, 'B_linear.npy'))
+                quadratic_basis_size = os.path.getsize(os.path.join(roq_dir, 'B_quadratic.npy'))
+            elif os.path.exists(os.path.join(roq_dir, 'selected_params_linear.npy')) and \
+                os.path.exists(os.path.join(roq_dir, 'selected_params_quadratic.npy')):
+                linear_basis_size = 32 * (fhigh - flow) * seglen * \
+                    len(np.load(os.path.join(roq_dir, 'selected_params_linear.npy')))
+                quadratic_basis_size = 32 * (fhigh - flow) * seglen * \
+                    len(np.load(os.path.join(roq_dir, 'selected_params_quadratic.npy')))
+            roq_weights_size = 3 * ((fhigh - flow) * seglen) * \
+                (float(dt + 0.05) * 2 / float(time_step)) * 2 * 8
+            # add 4gb of memory due to how matrix-copying is handled in
+            # lalapps_compute_roq_weights.py/numpy
+            required_memory = int(
+                (linear_basis_size + quadratic_basis_size + roq_weights_size)
+                / (1024 * 1024) + 4096)
+            print('Requesting {} of memory for '
+                  'computeroqweights.'.format(required_memory))
+        self.add_condor_cmd('request_memory', str(required_memory))
 
 class ROMNode(pipeline.CondorDAGNode):
     """

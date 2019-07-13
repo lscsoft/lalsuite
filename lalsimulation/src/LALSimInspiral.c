@@ -167,6 +167,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(NRSur4d2s),
     INITIALIZE_NAME(NRSur7dq2),
     INITIALIZE_NAME(NR_hdf5),
+    INITIALIZE_NAME(NRHybSur3dq8),
 };
 #undef INITIALIZE_NAME
 
@@ -948,6 +949,23 @@ int XLALSimInspiralChooseTDWaveform(
                     phiRef, inclination, deltaT, m1, m2, distance, f_min, f_ref,
                     S1x, S1y, S1z, S2x, S2y, S2z, XLALSimInspiralWaveformParamsLookupModeArray(LALparams));
             break;
+
+        case NRHybSur3dq8:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(LALparams);
+
+            /* Call the waveform driver routine */
+            ret = XLALSimIMRNRHybSur3dq8Polarizations(hplus, hcross, phiRef,
+                    inclination, deltaT, m1, m2, distance, f_min, f_ref,
+                    S1z, S2z,
+                    XLALSimInspiralWaveformParamsLookupModeArray(LALparams)); 
+            break;
+
 
         default:
             XLALPrintError("TD version of approximant not implemented in lalsimulation\n");
@@ -2456,7 +2474,8 @@ int XLALSimInspiralChooseWaveform(
 /**
  * Interface to compute a set of -2 spin-weighted spherical harmonic modes
  * for a binary inspiral for a given waveform approximant.
- * PN Approximants (TaylorT1 - T4), EOBNRv2 (EOBNRv2HM), and NRSur7dq2 are implemented.
+ * PN Approximants (TaylorT1 - T4), EOBNRv2 (EOBNRv2HM), NRSur7dq2, and
+ * NRHybSur3dq8 are implemented.
  *
  * The EOBNRv2 model returns the (2,2), (2,1), (3,3), (4,4), and (5,5) modes.
  */
@@ -2612,6 +2631,21 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             hlm = XLALSimInspiralNRSur7dq2Modes(phiRef, deltaT, m1, m2, S1x,
                     S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r,
                     XLALSimInspiralWaveformParamsLookupModeArray(LALpars));
+            break;
+
+        case NRHybSur3dq8:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
+                ABORT_NONDEFAULT_LALDICT_FLAGS_NULL(LALpars);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS_NULL(LALpars);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES_NULL(LALpars);
+
+            /* Call the waveform driver routine */
+            hlm = XLALSimIMRNRHybSur3dq8Modes(phiRef, deltaT, m1, m2, S1z,
+                S2z, f_min, f_ref, r,
+                XLALSimInspiralWaveformParamsLookupModeArray(LALpars));
             break;
 
         default:
@@ -4763,6 +4797,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case NRSur7dq2:
         case TEOBResum_ROM:
         case SEOBNRv4HM:
+        case NRHybSur3dq8:
             return 1;
 
         default:
@@ -4772,6 +4807,7 @@ int XLALSimInspiralImplementedTDApproximants(
 
 /**
  * Checks whether the given approximant is implemented in lalsimulation's XLALSimInspiralChooseFDWaveform().
+ *
  *
  * returns 1 if the approximant is implemented, 0 otherwise.
  */
@@ -5241,6 +5277,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case TaylorR2F4:
     case IMRPhenomFB:
     case FindChirpSP:
+    case NRHybSur3dq8:
       spin_support=LAL_SIM_INSPIRAL_ALIGNEDSPIN;
       break;
     case TaylorEt:
@@ -5345,6 +5382,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case NR_hdf5:
     case NRSur4d2s:
     case NRSur7dq2:
+    case NRHybSur3dq8:
     case IMRPhenomHM:
     case NumApproximants:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;

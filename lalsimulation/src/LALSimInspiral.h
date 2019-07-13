@@ -207,6 +207,7 @@ extern "C" {
  * @defgroup LALSimInspiralTestGRParams_c          Module LALSimInspiralTestGRParams.c
  * @defgroup LALSimInspiralWaveformTaper_c         Module LALSimInspiralWaveformTaper.c
  * @defgroup LALSimInspiralNRSur4d2s_c             Module LALSimInspiralNRSur4d2s.c
+ * @defgroup LALSimIMRNRHybSur3dq8_c               Module LALSimIMRNRHybSur3dq8.c
  * @}
  *
  * @addtogroup LALSimInspiral_h
@@ -400,6 +401,7 @@ typedef enum tagApproximant {
    NRSur7dq2,           /**< Time domain, fully precessing NR surrogate model with up to ell=4 modes, arxiv: 1705.07089 */
    SEOBNRv4HM,	/**< Spin nonprecessing EOBNR model v4 with higher modes, PhysRevD.98.084028 [arXiv:1803.10701]
                      * @remarks Implemented in lalsimulation (time domain). */
+   NRHybSur3dq8,        /**< Time domain, aligned-spin, higher modes, hybridized. Paper arxiv:1812.07865 */
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
@@ -829,6 +831,45 @@ int XLALSimInspiralTEOBResumROM(REAL8TimeSeries **hPlus, REAL8TimeSeries **hCros
 
 int XLALSimInspiralSetQuadMonParamsFromLambdas(LALDict *LALpars);
 
+/**
+ * Evaluates the NRHybSur3dq8 surrogate model and combines different modes to
+ * obtain the plus and cross polarizations.
+ * In module LALSimIMRNRHybSur3dq8.c
+ */
+INT4 XLALSimIMRNRHybSur3dq8Polarizations(
+    REAL8TimeSeries **hplus,        /**<Output: \f$h_+\f$ polarization. */
+    REAL8TimeSeries **hcross,       /**<Output: \f$h_{\times}\f$ polarization.*/
+    REAL8 phiRef,                   /**< Orbital phase at reference frequency.*/
+    REAL8 inclination,              /**< Inclination angle. */
+    REAL8 deltaT,                   /**< Sampling interval (s). */
+    REAL8 m1,                       /**< Mass of Bh1 (kg). */
+    REAL8 m2,                       /**< Mass of Bh2 (kg). */
+    REAL8 distance,                 /**< Distance of source (m). */
+    REAL8 fMin,                     /**< Start GW frequency (Hz). */
+    REAL8 fRef,                     /**< Reference GW frequency (Hz). */
+    REAL8 chi1z,                    /**< Dimensionless spin of Bh1. */
+    REAL8 chi2z,                    /**< Dimensionless spin of Bh2. */
+    LALValue* ModeArray             /**< Container for the modes to generate.
+                                    To generate all available modes pass NULL.*/
+);
+
+/**
+ * Evaluates the NRHybSur3dq8 surrogate model and returns all required modes.
+ * In module LALSimIMRNRHybSur3dq8.c
+ */
+SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
+    REAL8 phiRef,                   /**< Orbital phase at reference frequency.*/
+    REAL8 deltaT,                   /**< Sampling interval (s). */
+    REAL8 m1,                       /**< Mass of Bh1 (kg). */
+    REAL8 m2,                       /**< Mass of Bh2 (kg). */
+    REAL8 chi1z,                    /**< Dimensionless spin of Bh1. */
+    REAL8 chi2z,                    /**< Dimensionless spin of Bh2. */
+    REAL8 fMin,                     /**< Start GW frequency (Hz). */
+    REAL8 fRef,                     /**< Reference GW frequency (Hz). */
+    REAL8 distance,                 /**< Distance of source (m). */
+    LALValue* ModeArray             /**< Container for the modes to generate.
+                                    To generate all available modes pass NULL.*/
+);
 
 
 #if 0

@@ -392,6 +392,25 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
     XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
   }
 
+  /* ==== SPECTRAL DECOMPOSITION PARAMETERS ==== */
+  REAL8 SDgamma0 = 0.;
+  REAL8 SDgamma1 = 0.;
+  REAL8 SDgamma2 = 0.;
+  REAL8 SDgamma3 = 0.;
+  /* Checks for 4 spectral parameters */
+  if(!LALInferenceCheckVariable(model->params, "logp1")&&LALInferenceCheckVariable(model->params, "SDgamma0")&&LALInferenceCheckVariable(model->params, "SDgamma1")&&LALInferenceCheckVariable(model->params, "SDgamma2")&&LALInferenceCheckVariable(model->params,"SDgamma3")){
+    REAL8 lambda1 = 0.;
+    REAL8 lambda2 = 0.;
+    SDgamma0 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma0");
+    SDgamma1 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma1");
+    SDgamma2 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma2");
+    SDgamma3 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma3");
+    REAL8 gamma[] = {SDgamma0,SDgamma1,SDgamma2,SDgamma3};
+    LALInferenceSDGammasMasses2Lambdas(gamma,m1,m2,&lambda1,&lambda2,4);
+    XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
+    XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+  }
+
   /* ==== BINARY_LOVE PARAMETERS ==== */
   if(LALInferenceCheckVariable(model->params, "lambdaS")){
     REAL8 lambda1=0.;
@@ -902,7 +921,25 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     LALInferenceLogp1GammasMasses2Lambdas(logp1,gamma1,gamma2,gamma3,m1,m2,&lambda1,&lambda2);
     XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
     XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+  }
 
+  /* ==== SPECTRAL DECOMPOSITION PARAMETERS ==== */
+  REAL8 SDgamma0 = 0.;
+  REAL8 SDgamma1 = 0.;
+  REAL8 SDgamma2 = 0.;
+  REAL8 SDgamma3 = 0.;
+  /* Checks for 4 spectral parameters */
+  if(!LALInferenceCheckVariable(model->params, "logp1")&&LALInferenceCheckVariable(model->params, "SDgamma0")&&LALInferenceCheckVariable(model->params, "SDgamma1")&&LALInferenceCheckVariable(model->params, "SDgamma2")&&LALInferenceCheckVariable(model->params,"SDgamma3")){
+    REAL8 lambda1 = 0.;
+    REAL8 lambda2 = 0.;
+    SDgamma0 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma0");
+    SDgamma1 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma1");
+    SDgamma2 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma2");
+    SDgamma3 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma3");
+    REAL8 gamma[] = {SDgamma0,SDgamma1,SDgamma2,SDgamma3};
+    LALInferenceSDGammasMasses2Lambdas(gamma,m1,m2,&lambda1,&lambda2,4);
+    XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
+    XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
   }
 
   /* ==== BINARY_LOVE PARAMETERS ==== */
@@ -1423,6 +1460,25 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
       XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
       XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
     }
+
+    /* ==== SPECTRAL DECOMPOSITION PARAMETERS ==== */
+    REAL8 SDgamma0 = 0.;
+    REAL8 SDgamma1 = 0.;
+    REAL8 SDgamma2 = 0.;
+    REAL8 SDgamma3 = 0.;
+    if(!LALInferenceCheckVariable(model->params, "logp1")&&LALInferenceCheckVariable(model->params, "SDgamma0")&&LALInferenceCheckVariable(model->params, "SDgamma1")&&LALInferenceCheckVariable(model->params, "SDgamma2")&&LALInferenceCheckVariable(model->params,"SDgamma3")){
+      REAL8 lambda1 = 0.;
+      REAL8 lambda2 = 0.;
+      SDgamma0 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma0");
+      SDgamma1 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma1");
+      SDgamma2 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma2");
+      SDgamma3 = *(REAL8*) LALInferenceGetVariable(model->params,"SDgamma3");
+      REAL8 gamma[] = {SDgamma0,SDgamma1,SDgamma2,SDgamma3};
+      LALInferenceSDGammasMasses2Lambdas(gamma,m1,m2,&lambda1,&lambda2,4);
+      XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, lambda1);
+      XLALSimInspiralWaveformParamsInsertTidalLambda2(model->LALpars, lambda2);
+    }
+
 
     /* Only use GR templates */
     /* Fill in the extra parameters for testing GR, if necessary */
