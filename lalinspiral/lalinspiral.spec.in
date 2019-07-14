@@ -39,7 +39,6 @@ BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: glue
 Requires: gsl
-Requires: libframe
 Requires: libmetaio
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: lalframe >= @MIN_LALFRAME_VERSION@
@@ -57,7 +56,6 @@ Summary: Files and documentation needed for compiling programs that use LAL Insp
 Group: LAL
 Requires: %{name} = %{version}
 Requires: gsl-devel
-Requires: libframe-devel
 Requires: libmetaio-devel
 Requires: lal-devel >= @MIN_LAL_VERSION@
 Requires: lalframe-devel >= @MIN_LALFRAME_VERSION@
