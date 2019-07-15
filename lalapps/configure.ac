@@ -13,7 +13,6 @@ AC_CONFIG_FILES([\
   lalapps.spec \
   man/Makefile \
   src/Makefile \
-  src/calibration/Makefile \
   src/findchirp/Makefile \
   src/frametools/Makefile \
   src/hwinjection/Makefile \
@@ -24,7 +23,6 @@ AC_CONFIG_FILES([\
   src/lalapps/LALAppsVCSInfo.h \
   src/lalapps/Makefile \
   src/lalapps/version2.c \
-  src/online/Makefile \
   src/power/Makefile \
   src/pulsar/CreateEphemeris/Makefile \
   src/pulsar/CrossCorr/Makefile \

@@ -1,7 +1,5 @@
 SUBDIRS = lalapps
 
-SUBDIRS += calibration
-
 if LALFRAME
 SUBDIRS += frametools
 endif
@@ -43,12 +41,6 @@ endif
 if LALFRAME
 if LALINSPIRAL
 SUBDIRS += inspiral
-endif
-endif
-
-if FRAME
-if LALFRAME
-SUBDIRS += online
 endif
 endif
 
