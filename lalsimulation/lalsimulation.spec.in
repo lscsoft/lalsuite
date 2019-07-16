@@ -132,7 +132,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 * Wed Jul 10 2019 Adam Mercer <adam.mercer@ligo.org> 1.9.1-1
 - O3 point release
 
-* Wed May 23 2019 Adam Mercer <adam.mercer@ligo.org> 1.9.0-1
+* Thu May 23 2019 Adam Mercer <adam.mercer@ligo.org> 1.9.0-1
 - O3 release
 
 * Mon Feb 25 2019 Adam Mercer <adam.mercer@ligo.org> 1.8.2-1
