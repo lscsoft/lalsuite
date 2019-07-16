@@ -150,6 +150,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <lal/Date.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -236,10 +237,6 @@ if ( ( (val) <= (lower) ) || ( (val) > (upper) ) )                   \
   return BASICINJECTTESTC_EVAL;                                      \
 }                                                                    \
 while (0)
-
-/* A function to convert INT8 nanoseconds to LIGOTimeGPS. */
-void
-I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input );
 
 
 int
@@ -413,7 +410,7 @@ main(int argc, char **argv)
 
     /* Read header. */
     ok &= ( fscanf( fp, "# epoch = %" LAL_INT8_FORMAT "\n", &epoch ) == 1 );
-    I8ToLIGOTimeGPS( &( detector.transfer->epoch ), epoch );
+    XLALINT8NSToGPS( &( detector.transfer->epoch ), epoch );
     ok &= ( fscanf( fp, "# f0 = %lf\n", &( detector.transfer->f0 ) )
 	    == 1 );
     ok &= ( fscanf( fp, "# deltaF = %lf\n",
@@ -451,7 +448,7 @@ main(int argc, char **argv)
 
   /* No response file, so generate a unit response. */
   else {
-    I8ToLIGOTimeGPS( &( detector.transfer->epoch ), EPOCH );
+    XLALINT8NSToGPS( &( detector.transfer->epoch ), EPOCH );
     detector.transfer->f0 = 0.0;
     detector.transfer->deltaF = 1.5*FSTOP;
     SUB( LALCCreateVector( &stat, &( detector.transfer->data ), 2 ),
@@ -472,7 +469,7 @@ main(int argc, char **argv)
 
     /* Read header. */
     ok &= ( fscanf( fp, "# epoch = %" LAL_INT8_FORMAT "\n", &epoch ) == 1 );
-    I8ToLIGOTimeGPS( &( output.epoch ), epoch );
+    XLALINT8NSToGPS( &( output.epoch ), epoch );
     ok &= ( fscanf( fp, "# deltaT = %lf\n", &( output.deltaT ) )
 	    == 1 );
     if ( !ok ) {
@@ -590,7 +587,7 @@ main(int argc, char **argv)
 	epoch -= (INT8)( 1000000000.0*time );
       else if ( timeCode == 'c' )
 	epoch -= (INT8)( 1000000000.0*ppnParams.tc );
-      I8ToLIGOTimeGPS( &( waveform.a->epoch ), epoch );
+      XLALINT8NSToGPS( &( waveform.a->epoch ), epoch );
       waveform.f->epoch = waveform.phi->epoch = waveform.a->epoch;
 
       /* Generate and inject signal. */
@@ -655,16 +652,5 @@ main(int argc, char **argv)
   LALCheckMemoryLeaks();
   INFO( BASICINJECTTESTC_MSGENORM );
   return BASICINJECTTESTC_ENORM;
-}
-
-
-/* A function to convert INT8 nanoseconds to LIGOTimeGPS. */
-void
-I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input )
-{
-  INT8 s = input / 1000000000LL;
-  output->gpsSeconds = (INT4)( s );
-  output->gpsNanoSeconds = (INT4)( input - 1000000000LL*s );
-  return;
 }
 /** \endcond */
