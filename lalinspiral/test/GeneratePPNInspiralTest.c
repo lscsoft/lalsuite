@@ -92,6 +92,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <lal/Date.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -174,10 +175,6 @@ if ( ( (val) < (lower) ) || ( (val) > (upper) ) )                    \
   return GENERATEPPNINSPIRALTESTC_EVAL;                              \
 }                                                                    \
 while (0)
-
-/* A function to convert INT8 nanoseconds to LIGOTimeGPS. */
-void
-I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input );
 
 
 int
@@ -345,7 +342,7 @@ main(int argc, char **argv)
   params.lengthIn = 0;
 
   /* Variable parameters. */
-  I8ToLIGOTimeGPS( &(params.epoch), EPOCH );
+  XLALINT8NSToGPS( &(params.epoch), EPOCH );
   params.deltaT = dt;
   params.mTot = m1 + m2;
   params.eta = m1*m2/( params.mTot*params.mTot );
@@ -474,16 +471,5 @@ main(int argc, char **argv)
   LALCheckMemoryLeaks();
   INFO( GENERATEPPNINSPIRALTESTC_MSGENORM );
   return GENERATEPPNINSPIRALTESTC_ENORM;
-}
-
-
-/* A function to convert INT8 nanoseconds to LIGOTimeGPS. */
-void
-I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input )
-{
-  INT8 s = input / 1000000000LL;
-  output->gpsSeconds = (INT4)( s );
-  output->gpsNanoSeconds = (INT4)( input - 1000000000LL*s );
-  return;
 }
 /** \endcond */
