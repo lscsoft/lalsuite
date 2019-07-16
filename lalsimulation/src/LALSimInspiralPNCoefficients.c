@@ -1963,7 +1963,7 @@ XLALSimInspiralL_2PN(
 
 /* Orbital averaged from eq.(2.9c) of
  * \cite Kidder:1995zr, see also eq.(4.7) of \cite Bohe:2012mr.
- * Explicit formula can be found in https://dcc.ligo.org/T1500554.
+ * Explicit formula can be found in https://dcc.ligo.org/T1500554/public.
  */
 static REAL8 UNUSED
 XLALSimInspiralL_3PNSiAvgcoeff(
