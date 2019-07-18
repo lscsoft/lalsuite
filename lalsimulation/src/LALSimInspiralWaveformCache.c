@@ -1066,7 +1066,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
             ret = XLALSimIMRSEOBNRv4TSurrogateFrequencySequence(hptilde, hctilde, frequencies,
                     phiRef, f_ref, distance, inclination,
                     m1, m2, S1z, S2z, lambda1, lambda2,
-                    SEOBNRv4TSurrogate_LINEAR);
+                    SEOBNRv4TSurrogate_CUBIC);
             break;
 
         case Lackey_Tidal_2013_SEOBNRv2_ROM:
