@@ -1156,30 +1156,35 @@ class CoincRates(object):
 		self.rate_factors = dict.fromkeys(self.all_instrument_combos, 1.0)
 
 		# fast-path for gstlal-inspiral pipeline:  hard-coded
-		# result for H,L,V network, 5 ms coincidence window, 1 or 2
-		# minimum instruments required.  computed using qhull's
-		# half-plane intersection code on a machine where that's
-		# available
-		if self.instruments == set(("H1", "L1", "V1")) and self.delta_t == 0.005:
-			if self.min_instruments == 1:
-				self.rate_factors = {
-					frozenset(["H1"]): 1.0,
-					frozenset(["L1"]): 1.0,
-					frozenset(["V1"]): 1.0,
-					frozenset(["H1", "L1"]): 0.030025692304447849,
-					frozenset(["H1", "V1"]): 0.064575959867688451,
-					frozenset(["L1", "V1"]): 0.062896682033452986,
-					frozenset(["H1", "L1", "V1"]): 0.0016876366183778862
-				}
-				return
-			elif self.min_instruments == 2:
-				self.rate_factors = {
-					frozenset(["H1", "L1"]): 0.030025692304447849,
-					frozenset(["H1", "V1"]): 0.064575959867688451,
-					frozenset(["L1", "V1"]): 0.062896682033452986,
-					frozenset(["H1", "L1", "V1"]): 0.0016876366183778862
-				}
-				return
+		# result for any subset of the H,K,L,V network, 5 ms
+		# coincidence window, 1 or 2 minimum instruments required.
+		# computed using qhull's half-plane intersection code on a
+		# machine where that's available.  FIXME:  remove when we
+		# can rely on scipy 0.12 being available and can switch to
+		# the qhull implementation
+		if self.instruments <= set(("H1", "K1", "L1", "V1")) and self.delta_t == 0.005 and self.min_instruments in (1, 2):
+			# full network, min instruments = 1
+			self.rate_factors = {
+				frozenset(['H1']): 1.0,
+				frozenset(['L1']): 1.0,
+				frozenset(['K1']): 1.0,
+				frozenset(['V1']): 1.0,
+				frozenset(['K1', 'H1']): 0.060316211581788876,
+				frozenset(['H1', 'L1']): 0.030025692304447849,
+				frozenset(['V1', 'H1']): 0.064575959867688451,
+				frozenset(['K1', 'L1']): 0.060316211581788876,
+				frozenset(['V1', 'K1']): 0.068403224361103951,
+				frozenset(['V1', 'L1']): 0.062896682033452986,
+				frozenset(['K1', 'H1', 'L1']): 0.001751496699356366,
+				frozenset(['V1', 'K1', 'H1']): 0.003097226972688342,
+				frozenset(['V1', 'H1', 'L1']): 0.0016876366183778862,
+				frozenset(['V1', 'K1', 'L1']): 0.0035073680570131662,
+				frozenset(['V1', 'K1', 'H1', 'L1']): 8.2083215897439879e-05
+			}
+			# remove entries that are invalid for the desired
+			# network
+			self.rate_factors = dict((key, value) for key, value in self.rate_factors.items() if len(key) >= self.min_instruments and key <= self.instruments)
+			return
 
 		for instruments in self.all_instrument_combos:
 		# choose the instrument whose TOA forms the "epoch" of the
