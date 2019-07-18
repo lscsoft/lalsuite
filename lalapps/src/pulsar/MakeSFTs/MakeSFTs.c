@@ -302,7 +302,7 @@ void mkSFTFilename(CHAR *sftFilename, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR
 
 /* 01/09/06 gam; move filename1 to filename2 */
 void mvFilenames(CHAR *filename1, CHAR *filename2) {
-     CHAR mvFilenamesCommand[512];
+     CHAR mvFilenamesCommand[512+4];
      sprintf(mvFilenamesCommand,"mv %s %s",filename1,filename2);
      if ( system(mvFilenamesCommand) ) XLALPrintError ("system() returned non-zero status\n");
 }
