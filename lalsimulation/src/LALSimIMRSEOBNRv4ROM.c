@@ -1024,11 +1024,13 @@ static int SEOBNRv4ROMCore(
   double Mf_final = SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(Mtot_sec, eta, chi1,
                                                         chi2, SEOBNRv4);
 
-  UINT4 L = freqs->length;
   // prevent gsl interpolation errors
-  if (Mf_final > freqs->data[L-1])
-    Mf_final = freqs->data[L-1];
-  if (Mf_final < freqs->data[0]) {
+  // The ringdown frequency Mf_final is only used to evaluate the spline_phi
+  // derivative below and spline_phi has domain [Mf_ROM_min, Mf_ROM_max].
+  // Mf_final should always be inside this interval, but we'll check anyway.
+  if (Mf_final > Mf_ROM_max)
+    Mf_final = Mf_ROM_max;
+  if (Mf_final < Mf_ROM_min) {
     XLALDestroyREAL8Sequence(freqs);
     gsl_spline_free(spline_amp);
     gsl_spline_free(spline_phi);
