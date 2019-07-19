@@ -1031,7 +1031,7 @@ static int PhenomPCore(
   }
     
   /* We need another loop to generate the phase values on the fixed grid; no need for OpenMP here */
-  for (UINT4 i=0; i<n_fixed; i++) { // loop over frequency points in sequence
+  for (int i=0; i<n_fixed; i++) { // loop over frequency points in sequence
     COMPLEX16 hPhenom = 0.0; // IMRPhenom waveform (before precession) at a given frequency point
     REAL8 phasing = 0;
     double f = freqs_fixed->data[i];
