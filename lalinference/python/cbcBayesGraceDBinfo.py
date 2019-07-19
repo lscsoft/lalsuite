@@ -48,7 +48,7 @@ For the moment this is maximum a posteriori and stdev for the parameters in the 
 def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference', bcifile=None,bsnfile=None,email=None,message=None,server="https://gracedb.ligo.org/api/"):
 
   if gid is None or (samples is None and skymap is None):
-    print "Must provide both a graceDB id and a posterior samples file or skymap file\n"
+    print("Must provide both a graceDB id and a posterior samples file or skymap file\n")
     sys.exit(1)
 
   import ligo.gracedb.rest 
@@ -102,7 +102,7 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
         with h5py.File(samples,'r') as h5grp:
           tmp=h5grp['lalinference']['lalinference_nest'].attrs
           bsn=tmp['log_bayes_factor']
-      except Exception,e:
+      except Exception as e:
         print("Could not obtain BNS\n")
         print(e)
 
@@ -140,7 +140,7 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
         server.sendmail(FROM,address,message)
         server.quit()
       except:
-        print "Cound not send email\n"
+        print("Cound not send email\n")
 
     g.writeLog(gid,outstr,filename=None,tagname='pe')
   elif skymap is not None:
@@ -175,9 +175,9 @@ if __name__=='__main__':
 
     (opts,args)=parser.parse_args()
     if opts.gid is None:
-      print "Must provide a graceDB id with --gid/-g "
+      print("Must provide a graceDB id with --gid/-g ")
       sys.exit(1)
     if opts.samples is None and opts.skymap is None:
-      print "Must provide lalinference posterior samples with --samples/-s or FITS skymap with --skymap "
+      print("Must provide lalinference posterior samples with --samples/-s or FITS skymap with --skymap ")
       sys.exit(1)
     cbcBayesGraceDBinfo(opts.gid, opts.samples,analysis=opts.analysis,bcifile=opts.bci,bsnfile=opts.bsn,email=opts.email,skymap=opts.skymap,message=opts.message,server=opts.server)
