@@ -30,7 +30,8 @@ AC_CONFIG_FILES([ \
   src/Makefile \
   src/version.c \
   swig/Makefile \
-  test/Makefile
+  test/Makefile \
+  test/python/Makefile
 ])
 AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE([ \

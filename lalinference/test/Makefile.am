@@ -1,4 +1,5 @@
 EXTRA_DIST =
+SUBDIRS =
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
 # Add compiled test programs to this variable
@@ -18,8 +19,7 @@ test_programs += LALInferenceHDF5Test
 # test lalinference in a higher level rather than unit tests
 
 if SWIG_BUILD_PYTHON
-test_scripts += test_CI.sh
-test_scripts += test_detframe.py
+SUBDIRS += python
 endif
 
 # Add any helper programs required by tests to this variable
