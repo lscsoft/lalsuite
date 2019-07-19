@@ -5,7 +5,7 @@ import os
 import ast
 import sys
 import getpass
-import ConfigParser
+from six.moves import configparser
 from lalapps import inspiralutils
 
 user=getpass.getuser()
@@ -103,7 +103,7 @@ def cp_ConfigParser(config):
     config.write(config_string)
     # We must reset the buffer ready for reading.
     config_string.seek(0) 
-    new_config = ConfigParser.RawConfigParser()
+    new_config = configparser.ConfigParser()
     new_config.read_file(config_string)
     return new_config
 
@@ -130,7 +130,7 @@ config_file = args.config
 if args.basedir is not None:
     basefolder = os.path.abspath(args.basedir)
 else:
-    print 'Error: No base directory provided! Exiting...'
+    print('Error: No base directory provided! Exiting...')
     sys.exit(1)
 
 if args.postproc is not None:
@@ -141,9 +141,9 @@ else:
 if args.injfile is not None:
     injfile = os.path.abspath(args.injfile)
     if os.path.exists(injfile):
-        print 'TIGER: Reading injections from file'
+        print('TIGER: Reading injections from file')
     else:
-        print 'Error: Cannot find xml file for injections: ' + injfile
+        print('Error: Cannot find xml file for injections: ' + injfile)
         sys.exit(1)
 else:
     injfile = None
@@ -164,13 +164,13 @@ else:
 #
 ################################################################################
 
-cp = ConfigParser.RawConfigParser()
+cp = configparser.ConfigParser()
 cp.optionxform = str
 # FIXME: bring all defaults here
 cp.read(config_file)
 
 if not cp.has_section('tiger'):
-  print 'Invalid configuration file! No "tiger" section found.'
+  print('Invalid configuration file! No "tiger" section found.')
   sys.exit(1)
 
 
@@ -243,12 +243,12 @@ if type_inj == 'MG':
   if cp.has_option('tiger', 'mg-distr'):
       mgdistr = cp.get('tiger', 'mg-distr')
   if len(mgpars) is not len(mgshifts):
-    print 'Error: Number of MG shift values does not match number of MG parameters'
+    print('Error: Number of MG shift values does not match number of MG parameters')
     sys.exit(1)
 
   # Currently inspinj only supports constant modGR parameters.
   if mgdistr != 'const':
-      print "Error: Only mg-distr='const' is available at the moment"
+      print("Error: Only mg-distr='const' is available at the moment")
       sys.exit(1)
 
   # Read stdevs for normal-distributed deviations. (default: 0 for all)
@@ -256,14 +256,14 @@ if type_inj == 'MG':
     if cp.has_option('tiger', 'mg-sigmas'):
       mgsigmas = ast.literal_eval(cp.get('tiger', 'mg-sigmas'))
       if len(mgpars) is not len(mgsigmas):
-          print 'Error: Number of MG stdev values does not match number of MG parameters'
+          print('Error: Number of MG stdev values does not match number of MG parameters')
           sys.exit(1)
     else:
-      print 'Error: Gaussian distribution requested but no mg-sigmas provided'
+      print('Error: Gaussian distribution requested but no mg-sigmas provided')
       sys.exit(1)
 elif type_inj == 'NO':
     if not cp.has_option('input','gps-time-file') and not args.gid:
-        print "Error: TIGER called without injections but no gps-time-file provided"
+        print("Error: TIGER called without injections but no gps-time-file provided")
         sys.exit(1)
     if cp.has_option('input','gps-time-file'):
       gpstimefile = cp.get('input','gps-time-file')
@@ -321,7 +321,7 @@ if type_inj=="MG":
     dic_inj.update({'enable-dchi':''})
     for mgp,mgs in zip(mgpars,mgshifts):
         dic_inj.update({mgp:mgs})
-        print 'modGR at ', mgp, ' by ', mgs
+        print('modGR at ', mgp, ' by ', mgs)
 
 #uname=os.uname()
 #if  any(["atlas" in i for i in uname]):
@@ -345,9 +345,9 @@ if cp.has_option('input','max-psd-length'):
 
 if injfile is None and gpstimefile is None and gid is None and not cp.has_option('lalinference', 'fake-cache'):
   from lalinference.tiger import make_injtimes
-  print 'TIGER: Generating science and veto segment files for real data'
+  print('TIGER: Generating science and veto segment files for real data')
   if not (cp.has_option('input','gps-start-time') and cp.has_option('input','gps-end-time')):
-    print "make_injtimes needs both gps start and end time"
+    print("make_injtimes needs both gps start and end time")
     sys.exit(1)
     
   segfolder = os.path.join(basefolder, 'segments')
@@ -371,7 +371,7 @@ if injfile is None and gpstimefile is None and gid is None and not cp.has_option
 
 
   # Feed science and veto segment files to make_injtimes and generate injection times and timeslides
-  print 'TIGER: Generating GPS times for unvetoed injections'
+  print('TIGER: Generating GPS times for unvetoed injections')
   ensure_dir(os.path.join(basefolder, 'injtimes'))
   IFOdict={}
   for ifo in ifos: 
@@ -381,7 +381,7 @@ if injfile is None and gpstimefile is None and gid is None and not cp.has_option
 
   # Generate injtimes file
   if timeslides:
-    print 'TIGER: Injection times will be generated with timeslides'
+    print('TIGER: Injection times will be generated with timeslides')
     timesdict = {}
     # timeslidefile = os.path.join(basefolder, 'injtimes', 'slides_%s_%s_%s.dat'%(str(sta_time), str(end_time)))
     # Generate timeslides file
@@ -396,7 +396,7 @@ if injfile is None and gpstimefile is None and gid is None and not cp.has_option
     # slidefile = os.path.join(basefolder,'injtimes','timeslides_%s.dat'%(label))
     cp.set('input', 'timeslide-file', slidefile)
   else:
-    print 'TIGER: Injection times will be generated on coincident unvetoed time (no timeslides)'
+    print('TIGER: Injection times will be generated on coincident unvetoed time (no timeslides)')
     # Combine segments from differnt IFOs to get multi-IFO unvetoed injections
     compIFO = IFOdict.values()[0]
     for ifo in IFOdict.values()[1:]:
@@ -418,8 +418,8 @@ elif gpstimefile is None and gid is None:
 
 if injfile is None and gpstimefile is None and gid is None:
 
-  print "TIGER: Creating the xml file\n"
-  print tiger_tag
+  print("TIGER: Creating the xml file\n")
+  print(tiger_tag)
       
   #inspinjname=os.path.join(basefolder,'injections_%s_%s_SNR_%s_%s.xml'%(tiger_tag,dic_inj['seed'],dic_inj['min_snr'],dic_inj['max_snr']))
   inspinjname=os.path.join(basefolder,'injections_%s_%s.xml'%(tiger_tag,dic_inj['seed']))
@@ -446,7 +446,7 @@ if injfile is None and gpstimefile is None and gid is None:
               string=string+ " --"+p +" "+repr(dic_inj[p])
       else:
           string=string.replace(p.upper()+" ", "%s "%(dic_inj[p]))
-  print string+"\n"
+  print(string+"\n")
   os.system(string)
 
 elif injfile is not None:
@@ -513,7 +513,7 @@ if logdir is not None:
 #    pipestring+= " -l %s "%scratchdir
 pipestring+=" %s "%parser_paths
 
-print pipestring
+print(pipestring)
 os.system(pipestring)
 
 # RETURN TO CURRENT WORKING DIRECTORY
