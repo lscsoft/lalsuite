@@ -73,11 +73,13 @@ documentation:
     - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
     - make dist
     - rpmbuild -tb --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${CI_JOB_NAME#level?:rpm:}-*.tar.xz
+    - rpm -qilp ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${CI_JOB_NAME#level?:rpm:}-*.rpm
   artifacts:
     expire_in: 18h
     paths:
       - rpmbuild/RPMS/x86_64/${CI_JOB_NAME#level?:rpm:}-*.rpm
       - rpmbuild/RPMS/x86_64/python2-${CI_JOB_NAME#level?:rpm:}-*.rpm
+      - rpmbuild/RPMS/x86_64/python3?-${CI_JOB_NAME#level?:rpm:}-*.rpm
   only:
     - pushes
     - schedules
