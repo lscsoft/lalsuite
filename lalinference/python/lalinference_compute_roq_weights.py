@@ -65,7 +65,7 @@ def ehat(j, length):
 
 def DEIM(basis):
     """Calculate interpolation nodes following the Algorithm 5 in J Sci Comput
-    (2013) 57:604–637.
+    (2013) 57:604-637.
 
     Parameters
     ----------
