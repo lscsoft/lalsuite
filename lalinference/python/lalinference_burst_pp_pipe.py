@@ -1,6 +1,8 @@
 # End-to-end LALInference test pipeline
 # (C) 2014 John Veitch
 
+from __future__ import print_function
+
 from lalinference import lalinference_pipe_utils as pipe_utils
 from lalinference.lalinference_pipe_utils import mkdirs
 from lalapps import inspiralutils
@@ -106,7 +108,7 @@ trig_time=1085855789
 fake_event=pipe_utils.Event(trig_time=trig_time)
 tfpath=os.path.join(rundir,'time.txt')
 tfile=open(tfpath,'w')
-print >>tfile,'%i\n'%(trig_time)
+print('%i\n'%(trig_time), file=tfile)
 tfile.close()
 prior_cp.set('input','gps-time-file',tfpath)
 
@@ -162,7 +164,7 @@ if main_cp.has_option('condor','skyarea') and main_cp.has_option('condor','proce
 
 skyoutdir=None
 if skyarea:
-  print "adding sky_area"
+  print("adding sky_area")
   if main_cp.has_option('ppanalysis','webdir'):
     outdir=main_cp.get('ppanalysis','webdir')
   else:
@@ -270,7 +272,7 @@ maindag.write_dag()
 maindag.write_script()
 
 # End of program
-print 'Successfully created DAG file.'
-print 'Now run condor_submit_dag %s\n'%(outerdag.get_dag_file())
+print('Successfully created DAG file.')
+print('Now run condor_submit_dag %s\n'%(outerdag.get_dag_file()))
 
 
