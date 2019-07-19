@@ -220,7 +220,7 @@ def output_html(outdir, ks_pvalues, injnum,skypp=False):
 
 if __name__ == '__main__':
     USAGE='''%prog [options] posfile1.dat posfile2.dat ...
-	            Generate PP analysis for a set of injections. posfiles must be in same order as injections.'''
+            Generate PP analysis for a set of injections. posfiles must be in same order as injections.'''
     parser = optparse.OptionParser(USAGE)
     parser.add_option('--injXML', action='store', type='string', dest='injxml', 
                       help='sim_burst XML file for injections')
@@ -253,29 +253,29 @@ if __name__ == '__main__':
     posfiles=args
     Ninj=0
     for index,posfile in enumerate(posfiles):
-	    try:
-	      psamples = read_posterior_samples(posfile)
-	      #index = int(element)
-	      true_params = injs[index]
-	      Ninj+=1
-	    except:
-	      # Couldn't read the posterior samples or the XML.
-              print("not found %s \n"%posfile)
-	      continue
+        try:
+            psamples = read_posterior_samples(posfile)
+            #index = int(element)
+            true_params = injs[index]
+            Ninj+=1
+        except:
+            # Couldn't read the posterior samples or the XML.
+            print("not found %s \n"%posfile)
+            continue
 
-	    for par in parameters:
-	      try:
-		samples = psamples[par]
-		true_value = posterior_name_to_sim_burst_extractor[par](true_params)
-		p = fractional_rank(true_value, samples)
+        for par in parameters:
+            try:
+                samples = psamples[par]
+                true_value = posterior_name_to_sim_burst_extractor[par](true_params)
+                p = fractional_rank(true_value, samples)
 
-		try:
-		  pvalues[par].append(p)
-		except:
-		  pvalues[par] = [p]
-	      except:
-		# Couldn't read samples for parameter or injection
-		continue
+                try:
+                    pvalues[par].append(p)
+                except:
+                    pvalues[par] = [p]
+            except:
+                # Couldn't read samples for parameter or injection
+                continue
 
     # Generate plots, K-S tests
     ks_pvalues = {}
