@@ -72,9 +72,6 @@ LALSUITE_ENABLE_NIGHTLY
 # enable cfitsio support
 LALSUITE_ENABLE_CFITSIO
 
-# boinc
-LALSUITE_ENABLE_BOINC
-
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
 
@@ -148,17 +145,11 @@ AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_ERROR([could not find the fftw3.h header])])
 # check for cfitsio
 LALSUITE_USE_CFITSIO
 
-# check for boinc, and modify compiler for lal library checks
-LALSUITE_CHECK_BOINC
-
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 
 # check for lalsupport, needed for test suite
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
-
-# finish boinc checks, and restore compiler after lal library checks
-LALSUITE_END_CHECK_BOINC
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
@@ -191,7 +182,6 @@ AC_MSG_NOTICE([
 LALPulsar has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
-* BOINC support is $BOINC_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
