@@ -221,7 +221,7 @@ def output_html(outdir, ks_pvalues, injnum,skypp=False):
 
 if __name__ == '__main__':
     USAGE='''%prog [options] posfile1.dat posfile2.dat ...
-	            Generate PP analysis for a set of injections. posfiles must be in same order as injections.'''
+            Generate PP analysis for a set of injections. posfiles must be in same order as injections.'''
     parser = optparse.OptionParser(USAGE)
     parser.add_option('--injXML', action='store', type='string', dest='injxml', 
                       help='sim_inspiral XML file for injections')
@@ -254,25 +254,25 @@ if __name__ == '__main__':
     posfiles=args
     Ninj=0
     for index,posfile in enumerate(posfiles):
-	    try:
-	      psamples = read_posterior_samples(posfile,injs[index])
-	      Ninj+=1
-	    except:
-	      # Couldn't read the posterior samples or the XML.
-	      continue
+        try:
+            psamples = read_posterior_samples(posfile,injs[index])
+            Ninj+=1
+        except:
+            # Couldn't read the posterior samples or the XML.
+            continue
 
-	    for par in parameters:
-	      try:
-		samples = psamples[par].samples
+        for par in parameters:
+            try:
+                samples = psamples[par].samples
                 true_value=psamples[par].injval
-		p = fractional_rank(true_value, samples)
-		try:
-		  pvalues[par].append(p)
-		except:
-		  pvalues[par] = [p]
-	      except:
-		# Couldn't read samples for parameter or injection
-		continue
+                p = fractional_rank(true_value, samples)
+                try:
+                    pvalues[par].append(p)
+                except:
+                    pvalues[par] = [p]
+            except:
+                # Couldn't read samples for parameter or injection
+                continue
 
     # Generate plots, K-S tests
     ks_pvalues = {}
