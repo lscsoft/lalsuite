@@ -15,8 +15,6 @@ bin_PROGRAMS = \
 	lalapps_synthesizeTransientStats \
 	$(END_OF_LIST)
 
-EXTRA_PROGRAMS = lalapps_CFSv3
-
 lalapps_SemiAnalyticF_SOURCES = SemiAnalyticF.c
 
 lalapps_compareFstats_SOURCES = compareFstats.c
@@ -40,8 +38,6 @@ lalapps_synthesizeTransientStats_SOURCES = synthesizeTransientStats.c
 lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c
 
 lalapps_ComputeFstatBenchmark_SOURCES = ComputeFstatBenchmark.c
-
-lalapps_CFSv3_SOURCES = CFSv3.c
 
 EXTRA_DIST = \
 	testCFSv2.sh \
