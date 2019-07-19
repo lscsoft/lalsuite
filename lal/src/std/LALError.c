@@ -43,15 +43,6 @@ void REPORTSTATUS(LALStatus * status);
 #undef LALInfo
 #undef LALTrace
 
-#ifdef LAL_NDEBUG
-/* sorry, but it looks like we have no other choice than a special treatment for Einstein@Home here.
-   we can neither afford to compile LAL in DEBUG mode nor losing valuable error information when
-   distributing executables to unsafe public computers.                         Bernd Machenschalk */
-#ifndef EAH_BOINC
-#define vfprintf( stream, fmt, ap ) 0
-#endif
-#endif
-
 int LALPrintError(const char *fmt, ...)
 {
     int n;
