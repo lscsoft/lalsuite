@@ -67,12 +67,20 @@ documentation:
   variables:
     RPM_BUILD_CPUS: 4
   script:
+    # install upstream packages
     - if [ -d rpmbuild ]; then yum -y install rpmbuild/RPMS/x86_64/*.rpm; fi
+    # make src tarball
     - cd ${CI_JOB_NAME#level?:rpm:}
     - ./00boot
     - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
     - make dist
-    - rpmbuild -tb --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${CI_JOB_NAME#level?:rpm:}-*.tar.xz
+    # build src.rpm
+    - rpmbuild -ts --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${CI_JOB_NAME#level?:rpm:}-*.tar.xz
+    - SRCRPM=${CI_PROJECT_DIR}/rpmbuild/SRPMS/${CI_JOB_NAME#level?:rpm:}-*.src.rpm
+    # lint src.rpm
+    - rpmlint ${SRCRPM}
+    # build binary rpms and print details of what we got
+    - rpmbuild --rebuild --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${SRCRPM}
     - rpm -qilp ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${CI_JOB_NAME#level?:rpm:}-*.rpm
   artifacts:
     expire_in: 18h
