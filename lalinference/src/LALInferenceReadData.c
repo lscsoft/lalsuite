@@ -139,7 +139,7 @@ REAL8 interpolate(struct fvec *fvec, REAL8 f){
 	int i=0;
 	REAL8 a=0.0; /* fractional distance between bins */
 	if(f<fvec[1].f) return(INFINITY); /* Frequency below minimum */
-	while(fvec[i].f<f && (fvec[i].x!=0.0 )){i++;}; //&& fvec[i].f!=0.0)){i++;};
+	while((i==0) || (fvec[i].f<f && (fvec[i].x!=0.0 ))){i++;}; //&& fvec[i].f!=0.0)){i++;};
 	if (fvec[i].f==0.0 && fvec[i].x==0.0) /* Frequency above maximum */
 	{
 		return (INFINITY);
