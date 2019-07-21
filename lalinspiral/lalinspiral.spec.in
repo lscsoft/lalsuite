@@ -15,11 +15,7 @@ Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
 Summary: LSC Algorithm Inspiral Library
 License: GPLv2+
 Group: LAL
-%if 0%{?nightly}
-Source0: %{name}-%{version}-%{nightly}.tar.xz
-%else
-Source0: http://software.ligo.org/lscsoft/source/lalsuite/%{name}-%{version}.tar.xz
-%endif
+Source0: http://software.ligo.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 Prefix: %{_prefix}
