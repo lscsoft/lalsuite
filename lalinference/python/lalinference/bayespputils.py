@@ -43,14 +43,14 @@ from xml.dom import minidom
 from operator import itemgetter
 
 #related third party imports
+import matplotlib
+matplotlib.use('agg')
 from .io import read_samples
 from . import plot as lp
 import healpy as hp
 import astropy.table
 import numpy as np
 from numpy import fmod
-import matplotlib
-matplotlib.use('agg')
 from matplotlib import pyplot as plt,cm as mpl_cm,lines as mpl_lines
 from scipy import stats
 from scipy import special
