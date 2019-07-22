@@ -50,6 +50,7 @@ BuildRequires: numpy >= 1.7
 BuildRequires: pytest
 BuildRequires: python-astropy >= 1.1.1
 BuildRequires: python-matplotlib >= 1.2.0
+BuildRequires: python-pathlib
 BuildRequires: python-shapely
 BuildRequires: python2-gwdatafind
 BuildRequires: python2-gwpy
