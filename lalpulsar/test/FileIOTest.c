@@ -42,9 +42,9 @@ main(int argc, char *argv[])
   // ----- 1. XLALCHARReadSequence() -----
   FILE *fp0;
   tic = XLALGetTimeOfDay();
-  XLAL_CHECK ( (fp0 = LALFopen ( testFilePath, "rb" )) != NULL, XLAL_EIO, "Failed to fopen('%s', 'rb')\n", testFilePath );
+  XLAL_CHECK ( (fp0 = fopen ( testFilePath, "rb" )) != NULL, XLAL_EIO, "Failed to fopen('%s', 'rb')\n", testFilePath );
   XLAL_CHECK ( XLALCHARReadSequence( &sequence, fp0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  LALFclose ( fp0 );
+  fclose ( fp0 );
   REAL8 time_CHARReadSequence = XLALGetTimeOfDay() - tic;
 
   // ----- 2. XLALFileLoad() -----

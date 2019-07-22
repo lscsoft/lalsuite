@@ -47,12 +47,7 @@ extern "C" {
 }       /* so that editors will match preceding brace */
 #endif
 
-#if LAL_BOINC_ENABLED
-    extern FILE *boinc_fopen(const char *path, const char *mode);
-#define LALFopen boinc_fopen
-#else
 #define LALFopen fopen
-#endif
 #define LALFclose fclose
 
 /**

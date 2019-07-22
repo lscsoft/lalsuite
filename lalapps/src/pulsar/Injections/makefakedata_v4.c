@@ -312,7 +312,7 @@ main(int argc, char *argv[])
       }
 
       /* open concatenated SFT file for writing */
-      if ( (fpSingleSFT = LALFopen ( uvar.outSFTbname, "wb" )) == NULL ) {
+      if ( (fpSingleSFT = fopen ( uvar.outSFTbname, "wb" )) == NULL ) {
         XLAL_ERROR ( XLAL_EIO, "Failed to open file '%s' for writing: %s\n\n", uvar.outSFTbname, strerror(errno));
       }
     } // if outSingleSFT
@@ -563,7 +563,7 @@ main(int argc, char *argv[])
   if ( uvar.outSingleSFT ) {
 
     /* close concatenated SFT */
-    LALFclose( fpSingleSFT );
+    fclose( fpSingleSFT );
 
   }
 
@@ -1604,7 +1604,7 @@ LALWriteSFTfile (LALStatus  *status,			/**< pointer to LALStatus structure */
 
 
   /* open the file for writing */
-  fp = LALFopen(outfname, "wb");
+  fp = fopen(outfname, "wb");
   if (fp == NULL) {
     LALFree (rawheader);
     LALFree (rawdata);

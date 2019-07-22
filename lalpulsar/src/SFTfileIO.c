@@ -245,7 +245,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
       REAL8   mprev_nsamples = 0;
 
       FILE *fp;
-      if ( ( fp = LALFopen( fname, "rb" ) ) == NULL )
+      if ( ( fp = fopen( fname, "rb" ) ) == NULL )
 	{
           XLALPrintError ("ERROR: Failed to open matched file '%s'\n\n", fname );
 	  XLALDestroyStringVector ( fnames );
@@ -1377,7 +1377,7 @@ XLALWriteSFT2file(
   }
 
   /* open SFT-file for writing */
-  if ( (fp = LALFopen ( fname, "wb" )) == NULL )
+  if ( (fp = fopen ( fname, "wb" )) == NULL )
     {
       XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", fname, strerror(errno));
       XLAL_ERROR ( XLAL_EIO );
@@ -1497,7 +1497,7 @@ XLALWriteSFTVector2NamedFile ( const SFTVector *sftVect,	/**< SFT vector to writ
 
   /* open SFT-file for writing */
   FILE *fp;
-  XLAL_CHECK ( (fp = LALFopen ( filename, "wb" )) != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s\n\n", filename, strerror(errno));
+  XLAL_CHECK ( (fp = fopen ( filename, "wb" )) != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s\n\n", filename, strerror(errno));
 
   for ( UINT4 k = 0; k < numSFTs; k++ )
     {
@@ -1963,7 +1963,7 @@ fopen_SFTLocator ( const struct tagSFTLocator *locator )
     return NULL;
 
   fname = locator->fname;
-  if ( (fp = LALFopen( fname, "rb" )) == NULL )
+  if ( (fp = fopen( fname, "rb" )) == NULL )
     {
       XLALPrintError ("\nFailed to open SFT '%s' for reading: %s\n\n", fname, strerror(errno) );
       return NULL;
