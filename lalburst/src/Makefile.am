@@ -25,8 +25,6 @@ liblalburst_la_SOURCES = \
 	cs_lambda_cosmo.c \
 	$(END_OF_LIST)
 
-noinst_HEADERS = six.h
-
 nodist_liblalburst_la_SOURCES = \
 	LALBurstBuildInfoHeader.h \
 	LALBurstVCSInfo.c \
