@@ -47,8 +47,12 @@ from pylab import *
 
 from scipy import stats
 from scipy import integrate
-from cPickle import dump, load
-from ConfigParser import SafeConfigParser
+try:
+    from configparser import ConfigParser
+    from pickle import dump, load
+except ImportError:  # python < 3
+    from cPickle import dump, load
+    from ConfigParser import SafeConfigParser as ConfigParser
 
 #from sklearn.neighbors import KernelDensity
 #from scipy.stats import gaussian_kde
@@ -63,18 +67,18 @@ from ConfigParser import SafeConfigParser
 ###########################################
 
 
-plot_params = {'backend': 'png',
-		'axes.labelsize': 16, 
-		'axes.titlesize': 24, 
-		'text.fontsize': 14, 
-		'title.fontsize': 18, 
-		'legend.fontsize': 12, 
-		'xtick.labelsize': 14, 
-		'ytick.labelsize': 14, 
-		'axes.grid' : True,
-		'text.usetex': True,
-		'lines.markersize' : 5}
-          
+plot_params = {
+    'axes.labelsize': 16,
+    'axes.titlesize': 24,
+    'text.fontsize': 14,
+    'title.fontsize': 18,
+    'legend.fontsize': 12,
+    'xtick.labelsize': 14,
+    'ytick.labelsize': 14,
+    'axes.grid' : True,
+    'text.usetex': True,
+    'lines.markersize' : 5,
+}
 rcParams.update(plot_params)
 
 ###########################################
@@ -650,7 +654,7 @@ def loadconfigfile(configfile):
 
 	# CONFIGURATION FILE: CHECKING FILE
 	if access(configfile, R_OK): 
-		config = SafeConfigParser()
+		config = ConfigParser()
 		config.read(configfile)
 	else:
 		exit("Configuration file: checking file - file does not exist. Abort script\n")
