@@ -1152,35 +1152,7 @@ class CoincRates(object):
 		# of these proportionality constants keyed by instrument
 		# set.
 
-		# initialize the proportionality constants
-		self.rate_factors = dict.fromkeys(self.all_instrument_combos, 1.0)
-
-		# fast-path for gstlal-inspiral pipeline:  hard-coded
-		# result for H,L,V network, 5 ms coincidence window, 1 or 2
-		# minimum instruments required.  computed using qhull's
-		# half-plane intersection code on a machine where that's
-		# available
-		if self.instruments == set(("H1", "L1", "V1")) and self.delta_t == 0.005:
-			if self.min_instruments == 1:
-				self.rate_factors = {
-					frozenset(["H1"]): 1.0,
-					frozenset(["L1"]): 1.0,
-					frozenset(["V1"]): 1.0,
-					frozenset(["H1", "L1"]): 0.030025692304447849,
-					frozenset(["H1", "V1"]): 0.064575959867688451,
-					frozenset(["L1", "V1"]): 0.062896682033452986,
-					frozenset(["H1", "L1", "V1"]): 0.0016876366183778862
-				}
-				return
-			elif self.min_instruments == 2:
-				self.rate_factors = {
-					frozenset(["H1", "L1"]): 0.030025692304447849,
-					frozenset(["H1", "V1"]): 0.064575959867688451,
-					frozenset(["L1", "V1"]): 0.062896682033452986,
-					frozenset(["H1", "L1", "V1"]): 0.0016876366183778862
-				}
-				return
-
+		self.rate_factors = {}
 		for instruments in self.all_instrument_combos:
 		# choose the instrument whose TOA forms the "epoch" of the
 		# coinc.  to improve the convergence rate this should be
@@ -1224,70 +1196,8 @@ class CoincRates(object):
 		# we seek here is the volume of the convex polyhedron
 		# defined by all of the constraints.  this can be computed
 		# using the qhull library's half-space intersection
-		# implementation, but the Python interface is not available
-		# in scipy versions below 0.19, therefore we give up in
-		# frustration and do the following:  we first compute the
-		# volume of the rectangular polyhedron defined by the
-		# anchor instrument constraints, and then use
-		# stone-throwing to estimate the ratio of the desired
-		# volume to that volume and multiply by that factor.
-			for instrument in instruments:
-				self.rate_factors[key] *= 2. * self.tau[frozenset((anchor, instrument))]
-		# compute the ratio of the desired volume to that volume by
-		# stone throwing.
-			if len(instruments) > 1:
-		# for each instrument 2...N, the interval within which an
-		# event is coincident with instrument 1
-				windows = tuple((-self.tau[frozenset((anchor, instrument))], +self.tau[frozenset((anchor, instrument))]) for instrument in instruments)
-		# pre-assemble a sequence of instrument index pairs and the
-		# maximum allowed \Delta t between them to avoid doing the
-		# work associated with assembling the sequence inside a
-		# loop
-				ijseq = tuple((i, j, self.tau[frozenset((instruments[i], instruments[j]))]) for (i, j) in itertools.combinations(range(len(instruments)), 2))
-		# compute the numerator and denominator of the fraction of
-		# events coincident with the anchor instrument that are
-		# also mutually coincident.  this is done by picking a
-		# vector of allowed \Delta ts and testing them against the
-		# coincidence windows.  the loop's exit criterion is
-		# arrived at as follows.  after d trials, the number of
-		# successful outcomes is a binomially-distributed RV with
-		# variance = d p (1 - p) <= d/4 where p is the probability
-		# of a successful outcome.  we quit when the ratio of the
-		# bound on the standard deviation of the number of
-		# successful outcomes (\sqrt{d/4}) to the actual number of
-		# successful outcomes (n) falls below rel accuracy:
-		# \sqrt{d/4} / n < rel accuracy, or
+		# implementation.
 		#
-		# \sqrt{d} < 2 * rel accuracy * n
-		#
-		# note that if the true probability is 0, so that n=0
-		# identically, then the loop will never terminate; from the
-		# nature of the problem we know 0<p<1 so the loop will,
-		# eventually, terminate.  note that if instead of using the
-		# upper bound on the variance, we replace p with the
-		# estimate of p at the current iteration (=n/d) and use
-		# that to estimate the variance the loop can be shown to
-		# require many fewer iterations to meet the desired
-		# accuracy, but that choice creates a rather strong bias
-		# that, to overcome, requires some extra hacks to force the
-		# loop to run for additional iterations.  the approach used
-		# here is much simpler.
-				math_sqrt = math.sqrt
-				random_uniform = random.uniform
-				two_epsilon = 2. * abundance_rel_accuracy
-				n, d = 0, 0
-				while math_sqrt(d) >= two_epsilon * n:
-					dt = tuple(random_uniform(*window) for window in windows)
-					if all(abs(dt[i] - dt[j]) <= maxdt for i, j, maxdt in ijseq):
-						n += 1
-					d += 1
-				self.rate_factors[key] *= float(n) / float(d)
-
-		# done computing rate_factors
-
-		# FIXME:  commented-out implementation that requires scipy
-		# >= 0.19.  saving it for later.
-
 		# the half-space instersection code assumes constraints of
 		# the form
 		#
@@ -1312,28 +1222,95 @@ class CoincRates(object):
 		#	n = (N-1)^2 + (N-1) = m * (m + 1)
 		#
 		# constraints
-		#	if len(instruments) > 1:
-		#		dimensions = len(instruments)	# anchor not included
-		#		halfspaces = numpy.zeros((dimensions * (dimensions + 1), dimensions + 1), dtype = "double")
-		#		# anchor constraints
-		#		for i, instrument in enumerate(instruments):
-		#			j = i
-		#			i *= 2
-		#			halfspaces[i, j] = +1.
-		#			halfspaces[i + 1, j] = -1.
-		#			halfspaces[i, -1] = halfspaces[i + 1, -1] = -self.tau[frozenset((anchor, instrument))]
-		#		# non-anchor constraints
-		#		for i, ((j1, a), (j2, b)) in enumerate(itertools.combinations(enumerate(instruments), 2), dimensions):
-		#			i *= 2
-		#			halfspaces[i, j1] = +1.
-		#			halfspaces[i, j2] = -1.
-		#			halfspaces[i + 1, j1] = -1.
-		#			halfspaces[i + 1, j2] = +1.
-		#			halfspaces[i, -1] = halfspaces[i + 1, -1] = -self.tau[frozenset((a, b))]
-		#		# the origin is in the interior
-		#		interior = numpy.zeros((len(instruments),), dtype = "double")
-		#		# compute volume
-		#		self.rate_factors[key] = spatial.ConvexHull(spatial.HalfspaceIntersection(halfspaces, interior).intersections).volume
+			if not instruments:
+				# one-instrument case, no-op
+				self.rate_factors[key] = 1.
+			elif len(instruments) == 1:
+				# two-instrument (1-D) case, don't use qhull
+				self.rate_factors[key] = 2. * self.tau[frozenset((anchor, instruments[0]))]
+			else:
+				# three- and more instrument (2-D and
+				# higher) case
+				dimensions = len(instruments)	# anchor not included
+				halfspaces = numpy.zeros((dimensions * (dimensions + 1), dimensions + 1), dtype = "double")
+				# anchor constraints
+				for i, instrument in enumerate(instruments):
+					j = i
+					i *= 2
+					halfspaces[i, j] = +1.
+					halfspaces[i + 1, j] = -1.
+					halfspaces[i, -1] = halfspaces[i + 1, -1] = -self.tau[frozenset((anchor, instrument))]
+				# non-anchor constraints
+				for i, ((j1, a), (j2, b)) in enumerate(itertools.combinations(enumerate(instruments), 2), dimensions):
+					i *= 2
+					halfspaces[i, j1] = +1.
+					halfspaces[i, j2] = -1.
+					halfspaces[i + 1, j1] = -1.
+					halfspaces[i + 1, j2] = +1.
+					halfspaces[i, -1] = halfspaces[i + 1, -1] = -self.tau[frozenset((a, b))]
+				# the origin is in the interior
+				interior = numpy.zeros((len(instruments),), dtype = "double")
+				# compute volume
+				try:
+					self.rate_factors[key] = spatial.ConvexHull(spatial.HalfspaceIntersection(halfspaces, interior).intersections).volume
+				except AttributeError:
+					# fall-through to old version
+					pass
+				else:
+					# it worked, continue
+					continue
+
+				# old stone-throwing version in case qhull
+				# is not available.  FIXME:  remove when we
+				# are sure it's not needed.  for each
+				# instrument 2...N, the interval within
+				# which an event is coincident with
+				# instrument 1
+				windows = tuple((-self.tau[frozenset((anchor, instrument))], +self.tau[frozenset((anchor, instrument))]) for instrument in instruments)
+				# pre-assemble a sequence of instrument
+				# index pairs and the maximum allowed
+				# \Delta t between them to avoid doing the
+				# work associated with assembling the
+				# sequence inside a loop
+				ijseq = tuple((i, j, self.tau[frozenset((instruments[i], instruments[j]))]) for (i, j) in itertools.combinations(range(len(instruments)), 2))
+				# compute the numerator and denominator of
+				# the fraction of events coincident with
+				# the anchor instrument that are also
+				# mutually coincident.  this is done by
+				# picking a vector of allowed \Delta ts and
+				# testing them against the coincidence
+				# windows.  the loop's exit criterion is
+				# arrived at as follows.  after d trials,
+				# the number of successful outcomes is a
+				# binomially-distributed RV with variance =
+				# d p (1 - p) <= d/4 where p is the
+				# probability of a successful outcome.  we
+				# quit when the ratio of the bound on the
+				# standard deviation of the number of
+				# successful outcomes (\sqrt{d/4}) to the
+				# actual number of successful outcomes (n)
+				# falls below rel accuracy: \sqrt{d/4} / n
+				# < rel accuracy, or
+				#
+				# \sqrt{d} < 2 * rel accuracy * n
+				#
+				# note that if the true probability is 0,
+				# so that n=0 identically, then the loop
+				# will never terminate; from the nature of
+				# the problem we know 0<p<1 so the loop
+				# will, eventually, terminate.
+				math_sqrt = math.sqrt
+				random_uniform = random.uniform
+				two_epsilon = 2. * abundance_rel_accuracy
+				n, d = 0, 0
+				while math_sqrt(d) >= two_epsilon * n:
+					dt = tuple(random_uniform(*window) for window in windows)
+					if all(abs(dt[i] - dt[j]) <= maxdt for i, j, maxdt in ijseq):
+						n += 1
+					d += 1
+				self.rate_factors[key] = float(n) / float(d)
+
+		# done computing rate_factors
 
 
 	@property
