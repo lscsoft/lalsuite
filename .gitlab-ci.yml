@@ -549,6 +549,7 @@ nightly:rhel:el7-cr:
   only:
     - schedules
     - web
+  allow_failure: true
 
 # macOS
 
