@@ -136,12 +136,6 @@
  * <tt>[startTime,endTime]</tt>, then the trigger is wrapped to be in
  * this time window.
  *
- * <tt>LALPlayTestSingleInspiral()</tt> and <tt>XLALPlayTestSingleInspiral()</tt>
- * test whether single inspiral events occured in playground or non-playground
- * times.  It then returns the requested subset of events which occurred in the
- * times specified by \c dataType which must be one of
- * \c playground_only, \c exclude_play or \c all_data.
- *
  * <tt>LALCreateTrigBank()</tt> takes in a list of single inspiral tables and
  * returns a template bank.  The function tests whether a given template produced
  * multiple triggers.  If it did, only one copy of the template is retained.
@@ -1503,103 +1497,6 @@ XLALTimeSlideSingleInspiral(
     XLALINT8NSToGPS( &triggerList->end, trigTimeNS);
   }
 }
-
-
-
-SnglInspiralTable *
-XLALPlayTestSingleInspiral(
-    SnglInspiralTable          *eventHead,
-    LALPlaygroundDataMask      *dataType
-    )
-
-{
-  SnglInspiralTable    *inspiralEventList = NULL;
-  SnglInspiralTable    *thisEvent = NULL;
-  SnglInspiralTable    *prevEvent = NULL;
-
-  INT8 triggerTime = 0;
-  INT4 isPlay = 0;
-  INT4 numTriggers;
-
-  /* Remove all the triggers which are not of the desired type */
-
-  numTriggers = 0;
-  thisEvent = eventHead;
-
-  if ( (*dataType == playground_only) || (*dataType == exclude_play) )
-  {
-    while ( thisEvent )
-    {
-      SnglInspiralTable *tmpEvent = thisEvent;
-      thisEvent = thisEvent->next;
-
-      triggerTime = XLALGPSToINT8NS( &(tmpEvent->end) );
-      isPlay = XLALINT8NanoSecIsPlayground( triggerTime );
-
-      if ( ( (*dataType == playground_only)  && isPlay ) ||
-          ( (*dataType == exclude_play) && ! isPlay) )
-      {
-        /* keep this trigger */
-        if ( ! inspiralEventList  )
-        {
-          inspiralEventList = tmpEvent;
-        }
-        else
-        {
-          prevEvent->next = tmpEvent;
-        }
-        tmpEvent->next = NULL;
-        prevEvent = tmpEvent;
-        ++numTriggers;
-      }
-      else
-      {
-        /* discard this template */
-        XLALFreeSnglInspiral ( &tmpEvent );
-      }
-    }
-    eventHead = inspiralEventList;
-    if ( *dataType == playground_only )
-    {
-      XLALPrintInfo( "Kept %d playground triggers \n", numTriggers );
-    }
-    else if ( *dataType == exclude_play )
-    {
-      XLALPrintInfo( "Kept %d non-playground triggers \n", numTriggers );
-    }
-  }
-  else if ( *dataType == all_data )
-  {
-    XLALPrintInfo( "Keeping all triggers since all_data specified\n" );
-  }
-  else
-  {
-    XLALPrintInfo( "Unknown data type, returning no triggers\n" );
-    eventHead = NULL;
-  }
-
-  return(eventHead);
-}
-
-
-
-void
-LALPlayTestSingleInspiral(
-    LALStatus                  *status,
-    SnglInspiralTable         **eventHead,
-    LALPlaygroundDataMask      *dataType
-    )
-
-{
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR( status );
-
-  *eventHead = XLALPlayTestSingleInspiral(*eventHead, dataType);
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-}
-
 
 
 void

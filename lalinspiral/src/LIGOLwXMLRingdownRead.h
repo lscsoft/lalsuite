@@ -40,14 +40,6 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
     INT4                stopTime
     );
 
-INT4 XLALReadRingdownTriggerFile (
-    SnglRingdownTable    **ringdownEventList,
-    SnglRingdownTable    **lastTrigger,
-    SearchSummaryTable   **searchSummList,
-    SearchSummvarsTable  **inputFileList,
-    CHAR                  *fileName
-    );
-
 #ifdef  __cplusplus
 }
 #endif

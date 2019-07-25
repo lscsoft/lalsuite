@@ -27,7 +27,7 @@
  *
  * ### Prototypes ###
  *
- * <tt>LALInspiralStationaryPhaseApprox2()</tt>
+ * <tt>XLALInspiralStationaryPhaseApprox2()</tt>
  * <ul>
  * <li> \c signalvec: Output containing the inspiral waveform.
  * </li><li> \c params: Input containing binary chirp parameters.
@@ -94,31 +94,6 @@ static REAL8 XLALInspiralTaylorF2Phasing4PN (REAL8 v, expnCoeffs *ak);
 static REAL8 XLALInspiralTaylorF2Phasing5PN (REAL8 v, expnCoeffs *ak);
 static REAL8 XLALInspiralTaylorF2Phasing6PN (REAL8 v, expnCoeffs *ak);
 static REAL8 XLALInspiralTaylorF2Phasing7PN (REAL8 v, expnCoeffs *ak);
-
-void
-LALInspiralStationaryPhaseApprox2 (
-   LALStatus        *status,
-   REAL4Vector      *signalvec,
-   InspiralTemplate *params
-   )
-{
-  /* Print Deprecation Warning */
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralStationaryPhaseApprox2");
-
-  /* Initialize the status pointer */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  /* Call XLAL function and check for errors */
-  ASSERT (signalvec, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  if (XLALInspiralStationaryPhaseApprox2(signalvec, params) == XLAL_FAILURE)  
-    ABORTXLAL(status);
-
-  /* Detach the status pointer */
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-
-}
 
 int
 XLALInspiralStationaryPhaseApprox2 (

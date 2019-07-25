@@ -53,23 +53,6 @@
 
 #include <lal/LALInspiral.h>
 
-void
-LALInspiralRestrictedAmplitude (LALStatus        *status,
-				InspiralTemplate *params )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralRestrictedAmplitude");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  if ( XLALInspiralRestrictedAmplitude(params) == XLAL_FAILURE )
-  {
-    ABORTXLAL(status);
-  }
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
-
 int
 XLALInspiralRestrictedAmplitude (InspiralTemplate *params)
 {

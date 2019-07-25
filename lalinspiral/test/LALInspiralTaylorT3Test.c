@@ -27,7 +27,7 @@
  * the current directory. This is generated using the
  * XLALSimInspiralTaylorT3PNRestricted routine. The seond output file is
  * <tt>T3wave2.dat</tt> in the current directory. This is generated using the
- * LALInspiralWave3Templates routine.
+ * XLALInspiralWave3Templates routine.
  *
  * ### Usage ###
  *

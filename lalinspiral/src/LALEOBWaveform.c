@@ -547,7 +547,7 @@ XLALlightRingRadius3PN(
 }
 /*--------------------------------------------------------------------*/
 
- void
+static void
 LALHCapDerivatives3PN(
 		  REAL8Vector *values,
 		  REAL8Vector *dvalues,
@@ -840,7 +840,7 @@ XLALlightRingRadiusP4PN(
 }
 
 /*-------------------------------------------------------------------*/
- void
+static void
 LALHCapDerivativesP4PN(
                   REAL8Vector *values,
                   REAL8Vector *dvalues,
@@ -968,26 +968,6 @@ static REAL8 XLALvrP4PN( void *params )
 /*-------------------------------------------------------------------*/
 
 
-void
-LALEOBWaveform (
-   LALStatus        *status,
-   REAL4Vector      *signalvec,
-   InspiralTemplate *params
-   )
-{
-
-   INITSTATUS(status);
-
-   XLAL_PRINT_DEPRECATION_WARNING("XLALEOBWaveform");
-
-   if ( XLALEOBWaveform( signalvec, params ) == XLAL_FAILURE )
-   {
-     ABORTXLAL( status );
-   }
-
-   RETURN( status );
-}
-
 int
 XLALEOBWaveform(
    REAL4Vector      *signalvec,
@@ -1053,27 +1033,6 @@ XLALEOBWaveform(
    }
 
    return XLAL_SUCCESS;
-}
-
-void
-LALEOBWaveformTemplates (
-   LALStatus        *status,
-   REAL4Vector      *signalvec1,
-   REAL4Vector      *signalvec2,
-   InspiralTemplate *params
-   )
-{
-
-   INITSTATUS(status);
-
-   XLAL_PRINT_DEPRECATION_WARNING("XLALEOBWaveformTemplates");
-
-   if ( XLALEOBWaveformTemplates( signalvec1, signalvec2, params ) == XLAL_FAILURE )
-   {
-     ABORTXLAL( status );
-   }
-
-   RETURN( status );
 }
 
 int
@@ -1158,25 +1117,6 @@ XLALEOBWaveformTemplates(
 /*======INJECTION =========================================*/
 /*=========================================================*/
 
-
-void
-LALEOBWaveformForInjection (
-			    LALStatus        *status,
-			    CoherentGW       *waveform,
-			    InspiralTemplate *params,
-			    PPNParamStruc    *ppnParams
-			    )
-{
-
-  INITSTATUS(status);
-
-  XLAL_PRINT_DEPRECATION_WARNING("XLALEOBWaveformForInjection");
-
-  if ( XLALEOBWaveformForInjection( waveform, params, ppnParams ) == XLAL_FAILURE )
-  {
-    ABORTXLAL( status );
-  }
-}
 
 int XLALEOBWaveformForInjection(
                             CoherentGW       *waveform,

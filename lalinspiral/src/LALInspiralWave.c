@@ -90,7 +90,7 @@
  * Depending on the user inputs one of the following functions is called:
  * \code
  * LALInspiralWave1()
- * LALInspiralWave2()
+ * XLALInspiralWave2()
  * LALInspiralWave3()
  * XLALInspiralStationaryPhaseApprox1()
  * XLALInspiralStationaryPhaseApprox2()

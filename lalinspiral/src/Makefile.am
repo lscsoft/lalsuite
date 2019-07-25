@@ -12,8 +12,6 @@ pkginclude_HEADERS = \
 	CoherentInspiral.h \
 	CoincInspiralEllipsoid.h \
 	FindChirp.h \
-	FindChirpACTD.h \
-	FindChirpChisq.h \
 	FindChirpDatatypes.h \
 	FindChirpPTF.h \
 	FindChirpSP.h \
@@ -56,13 +54,10 @@ liblalinspiral_la_SOURCES = \
 	BandPassInspiralTemplate.c \
 	CoherentInspiralFilter.c \
 	CoherentInspiralInput.c \
-	CoincInspiralEllipsoid.c \
 	CoincInspiralUtils.c \
-	CoincRingdownUtils.c \
 	CreateMetaTableDir.c \
 	FindChirpBankVeto.c \
 	FindChirpIMRSimulation.c \
-	FindChirpLinkedList.c \
 	FindChirpPTFTemplate.c \
 	FindChirpPTFWaveform.c \
 	FindChirpPhenomWaveform.c \
@@ -71,7 +66,6 @@ liblalinspiral_la_SOURCES = \
 	FindChirpTDTemplate.c \
 	GenerateInspRing.c \
 	GenerateInspiral.c \
-	GenerateInspiralSmooth.c \
 	GeneratePPNAmpCorInspiral.c \
 	GeneratePPNInspiral.c \
 	GenerateRing.c \
@@ -82,7 +76,6 @@ liblalinspiral_la_SOURCES = \
 	InspiralInjectionParams.c \
 	InspiralSpinBank.c \
 	LALBCVWaveform.c \
-	LALDeterminant3.c \
 	LALEOBGetFactorizedWaveform.c \
 	LALEOBWaveform.c \
 	LALEOBNonQCCorrection.c \
@@ -151,9 +144,7 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralWaveNormalise.c \
 	LALInspiralWaveNormaliseLSO.c \
 	LALInspiralWaveOverlap.c \
-	LALInverse3.c \
 	LALNewtonianMultipole.c \
-	LALMatrixTransform.c \
 	LALPhenomWaveform.c \
 	LALPSpinInspiralRD.c \
 	LALPSpinInspiralRingdownWave.c \
@@ -173,12 +164,9 @@ liblalinspiral_la_SOURCES = \
 	NDTemplateBank.c \
 	NRWaveIO.c \
 	NRWaveInject.c \
-	Playground.c \
 	RingUtils.c \
 	SimInspiralUtils.c \
-	SimRingdownUtils.c \
 	SnglInspiralUtils.c \
-	SnglRingdownUtils.c \
 	TrigScanEThincaCommon.c \
 	$(END_OF_LIST)
 

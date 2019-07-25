@@ -51,8 +51,6 @@ extern "C" {
 
 #include    <lal/LALAtomicDatatypes.h>
 #include    <lal/LIGOMetadataTables.h>
-#include    <lal/LIGOMetadataInspiralUtils.h>
-#include    <lal/EllipsoidOverlapTools.h>
 
 
 #include    <gsl/gsl_vector.h>
@@ -73,14 +71,6 @@ typedef struct tagTriggerErrorList
 TriggerErrorList;
 
 
-/* Functions for checking for coincidence between inspiral events */
-INT2 XLALCompareInspiralsEllipsoid(
-      TriggerErrorList              *aPtr,
-      TriggerErrorList              *bPtr,
-      fContactWorkSpace             *workSpace,
-      InspiralAccuracyList          *params
-      );
-
 /* Functions for generating the error matrix and position vectors for triggers */
 gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(
      SnglInspiralTable *event,
@@ -97,18 +87,6 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table );
 int XLALSetTimeInPositionVector( gsl_vector *position,
                                  REAL8       timeShift
                                );
-
-/* Function for calculating the e-thinca parameter between coincident events */
-REAL8 XLALCalculateEThincaParameter(
-          SnglInspiralTable *table1,
-          SnglInspiralTable *table2,
-          InspiralAccuracyList* accuracyParams
-);
-
-REAL8 XLALEThincaParameterForInjection(
-                    SimInspiralTable  *injection,
-                    SnglInspiralTable *trigger
-                    );
 
 /*@}*/ /* end:CoincInspiralEllipsoid_h */
 

@@ -29,7 +29,7 @@
  * The input parameters is an InspiralTemplate structure which provides the waveform parameters
  * such as masses, lower frequency ... . The function \c LALInspiralInit calls the
  * \c LALInspiralParameterCalc function in order to  compute all the mass parameters. Then,
- * \c LALInspiralRestrictedAmplitude function is called to get the restricted newtonian
+ * \c XLALInspiralRestrictedAmplitude function is called to get the restricted newtonian
  * amplitude. LALInspiralWavelength, LALInspiralSetup and LALInspiralChooseModel are also called
  * in order to estimate the waveform length which is stored in an output structure called
  * \c InspiralInit. We also stored Energy, flux and evolution function of flux and energy in
@@ -45,7 +45,7 @@
  *
  * \code
  * LALInspiralParameterCalc
- * LALInspiralRestrictedAmplitude
+ * XLALInspiralRestrictedAmplitude
  * LALInspiralWaveLength
  * LALInspiralChooseModel
  * LALInspiralSetup

@@ -37,7 +37,6 @@
 #include <lal/LALInspiralBank.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/FindChirpDatatypes.h>
-#include <lal/FindChirpChisq.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -318,11 +317,6 @@ tagFindChirpFilterParams
   REAL4Vector                  *chisqVec;		/**< Workspace vector of length \f$N\f$ used to compute and store \f$\chi^2(t_j)\f$; Must not be NULL if \c numChisqBins is
                                                          * greater than zero; Contains \f$\chi^2(t_j)\f$ on exit
                                                          */
-  FindChirpChisqParams         *chisqParams;		/**< Pointer to parameter structure for the \f$\chi^2\f$ veto; Must not be NULL if \c numChisqBins is greater than zero */
-  FindChirpChisqInput          *chisqInput;		/**< Pointer to input data structure for the \f$\chi^2\f$ veto;  Must not be NULL if \c numChisqBins is greater than zero */
-  FindChirpChisqInput          *chisqInputBCV;		/**< Pointer to input data structure for the BCV \f$\chi^2\f$ veto; Must not be NULL if the approximant is BCV
-                                                         * and \c numChisqBins is greater than zero
-                                                         */
   FindChirpFilterOutputVetoParams *filterOutputVetoParams; /**< Pointer to the parameter structure for the additional signal based veto function */
 }
 FindChirpFilterParams;
@@ -388,20 +382,6 @@ FindChirpBankSimParams;
 
 /*@}*/
 
-
-/* ---------- function prototypes for memory management functions ---------- */
-void
-LALFindChirpCreateTmpltNode (
-    LALStatus                  *status,
-    InspiralTemplate           *thistmplt,
-    InspiralTemplateNode      **tmpltNode
-    );
-
-void
-LALFindChirpDestroyTmpltNode (
-    LALStatus                  *status,
-    InspiralTemplateNode      **tmpltNode
-    );
 
 /*
  *

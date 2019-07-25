@@ -26,13 +26,13 @@
  *
  * ### Prototypes ###
  *
- * <tt>LALInspiralWave2()</tt>
+ * <tt>XLALInspiralWave2()</tt>
  * <ul>
  * <li> \c output: Output containing the inspiral waveform.</li>
  * <li> \c params: Input containing binary chirp parameters.</li>
  * </ul>
  *
- * <tt>LALInspiralWave2Templates()</tt>
+ * <tt>XLALInspiralWave2Templates()</tt>
  * <ul>
  * <li> \c output1: Output containing the 0-phase inspiral waveform.</li>
  * <li> \c output2: Output containing the \f$\pi/2\f$-phase inspiral waveform.</li>
@@ -41,7 +41,7 @@
  *
  * ### Description ###
  *
- * LALInspiralWave2() generates #TaylorT2 approximant wherein
+ * XLALInspiralWave2() generates #TaylorT2 approximant wherein
  * the phase of the waveform is given as an implicit function of time
  * as in \eqref{eq_InspiralWavePhase2}. A template is required
  * to be sampled at equal intervals of time. Thus, first of the equations
@@ -50,7 +50,7 @@
  * \f$t_k\f$ and the resulting value of \f$v_k\f$ is used in the second equation to
  * obtain the phase \f$\phi_k\f$.
  *
- * LALInspiralWave2Templates() is exactly the same as LALInspiralWave2()
+ * XLALInspiralWave2Templates() is exactly the same as XLALInspiralWave2()
  * except that it generates two waveforms that differ in phase by \f$\pi/2.\f$
  *
  * ### Uses ###
@@ -80,24 +80,6 @@ XLALInspiralWave2Engine(
                 InspiralTemplate *params,
 		InspiralInit     *paramsInit
                 );
-
-void
-LALInspiralWave2 (
-   LALStatus        *status,
-   REAL4Vector      *output,
-   InspiralTemplate *params
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralWave2");
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  if( XLALInspiralWave2(output, params) )
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
 
 int
 XLALInspiralWave2(
@@ -143,25 +125,6 @@ XLALInspiralWave2(
     XLAL_ERROR(XLAL_EFUNC);
 
   return XLAL_SUCCESS;
-}
-
-void
-LALInspiralWave2Templates (
-  LALStatus        *status,
-  REAL4Vector      *output1,
-  REAL4Vector      *output2,
-  InspiralTemplate *params
-  )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralWave2Templates");
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  if( XLALInspiralWave2Templates(output1, output2, params) )
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
 }
 
 int
@@ -215,25 +178,6 @@ XLALInspiralWave2Templates(
     XLAL_ERROR(XLAL_EFUNC);
 
   return XLAL_SUCCESS;
-}
-
-void
-LALInspiralWave2ForInjection (
-  LALStatus        *status,
-  CoherentGW       *waveform,
-  InspiralTemplate *params,
-  PPNParamStruc  *ppnParams
-  )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralWave2ForInjection");
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  if( XLALInspiralWave2ForInjection(waveform, params, ppnParams) )
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
 }
 
 int
