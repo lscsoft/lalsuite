@@ -632,14 +632,13 @@ nightly:ubuntu:cosmic:
 #
 
 # Build receipe for standalone wheels on Linux
-.nightly:wheel:manylinux1: &nightly-wheel-manylinux1
+.nightly:wheel:manylinux: &nightly-wheel-manylinux
   # This container is derived from the official manylinux image provided by
-  # python.org (see PEP 513), and includes all of the LALSuite
+  # python.org (see PEP 513 and PEP 571), and includes all of the LALSuite
   # build-dependencies.
-  image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
   stage: wheels
   script:
-    - PYPREFIX=/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux1/\1/')
+    - PYPREFIX=/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux.*/\1/')
     # Build wheel
     - ./00boot
     - ./configure PYTHON=${PYPREFIX}/bin/python --enable-mpi ${EXTRA_CONFIG_FLAGS}
@@ -693,6 +692,14 @@ nightly:ubuntu:cosmic:
     paths:
       - wheelhouse
 
+.nightly:wheel:manylinux1: &nightly-wheel-manylinux1
+  <<: *nightly-wheel-manylinux
+  image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
+
+.nightly:wheel:manylinux2010: &nightly-wheel-manylinux2010
+  <<: *nightly-wheel-manylinux
+  image: containers.ligo.org/lscsoft/lalsuite-manylinux:manylinux2010
+
 # Build wheels for all supported platforms
 nightly:wheel:cp27-cp27m-manylinux1:
   <<: *nightly-wheel-manylinux1
@@ -706,6 +713,18 @@ nightly:wheel:cp36-cp36m-manylinux1:
   <<: *nightly-wheel-manylinux1
 nightly:wheel:cp37-cp37m-manylinux1:
   <<: *nightly-wheel-manylinux1
+nightly:wheel:cp27-cp27m-manylinux2010:
+  <<: *nightly-wheel-manylinux2010
+nightly:wheel:cp27-cp27mu-manylinux2010:
+  <<: *nightly-wheel-manylinux2010
+nightly:wheel:cp34-cp34m-manylinux2010:
+  <<: *nightly-wheel-manylinux2010
+nightly:wheel:cp35-cp35m-manylinux2010:
+  <<: *nightly-wheel-manylinux2010
+nightly:wheel:cp36-cp36m-manylinux2010:
+  <<: *nightly-wheel-manylinux2010
+nightly:wheel:cp37-cp37m-manylinux2010:
+  <<: *nightly-wheel-manylinux2010
 nightly:wheel:cp27-cp27m-macosx:
   <<: *nightly-wheel-macos
 nightly:wheel:cp35-cp35m-macosx:
@@ -717,15 +736,15 @@ nightly:wheel:cp37-cp37m-macosx:
 
 deploy:wheel:
   stage: deploy
-  image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
+  image: python
   variables:
     GIT_STRATEGY: none
   script:
     # exit if we're not running in the main namespace
     - if [[ ${CI_PROJECT_PATH} != "lscsoft/lalsuite" ]]; then echo "Not deploying."; exit 0; fi
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
-    - /opt/python/cp36-cp36m/bin/pip install twine
-    - /opt/python/cp36-cp36m/bin/twine upload wheelhouse/*
+    - pip install twine
+    - twine upload wheelhouse/*
   dependencies:
     - nightly:wheel:cp27-cp27m-manylinux1
     - nightly:wheel:cp27-cp27mu-manylinux1
@@ -733,6 +752,12 @@ deploy:wheel:
     - nightly:wheel:cp35-cp35m-manylinux1
     - nightly:wheel:cp36-cp36m-manylinux1
     - nightly:wheel:cp37-cp37m-manylinux1
+    - nightly:wheel:cp27-cp27m-manylinux2010
+    - nightly:wheel:cp27-cp27mu-manylinux2010
+    - nightly:wheel:cp34-cp34m-manylinux2010
+    - nightly:wheel:cp35-cp35m-manylinux2010
+    - nightly:wheel:cp36-cp36m-manylinux2010
+    - nightly:wheel:cp37-cp37m-manylinux2010
     - nightly:wheel:cp27-cp27m-macosx
     - nightly:wheel:cp35-cp35m-macosx
     - nightly:wheel:cp36-cp36m-macosx
