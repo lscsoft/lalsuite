@@ -79,6 +79,9 @@ documentation:
     - SRCRPM=${CI_PROJECT_DIR}/rpmbuild/SRPMS/${CI_JOB_NAME#level?:rpm:}-*.src.rpm
     # lint src.rpm
     - rpmlint ${SRCRPM}
+    # install build dependencies
+    - yum -y install yum-utils
+    - yum-builddep -y -q ${SRCRPM}
     # build binary rpms and print details of what we got
     - rpmbuild --rebuild --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${SRCRPM}
     - rpm -qilp ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${CI_JOB_NAME#level?:rpm:}-*.rpm
@@ -245,6 +248,9 @@ docker:tags:el7:
     - tar xf ${CI_JOB_NAME#level?:deb:}/${TARBALL}
     - cd ${PACKAGE}-*
     - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
+    # install build dependencies
+    - apt-get -y -q install devscripts
+    - mk-build-deps --tool "apt-get -y" --install --remove
     # build packages
     - debuild -us -uc -r
   artifacts:
