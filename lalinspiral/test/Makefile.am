@@ -6,7 +6,6 @@ test_programs += BCVTemplates
 test_programs += BasicInjectTest
 test_programs += CoarseTest
 test_programs += CoarseTest2
-test_programs += FindChirpBankVetoTest
 test_programs += GenerateInspiralWaveform
 test_programs += GeneratePPNAmpCorInspiralTest
 test_programs += GeneratePPNInspiralTest

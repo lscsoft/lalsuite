@@ -324,45 +324,6 @@ FindChirpFilterParams;
 /* ---------- typedefs of input structures used by functions in findchirp ---------- */
 
 /**
- * This structure groups the input data required for the
- * <tt>FindChirpFilterSegment()</tt> function into a single structure.
- */
-typedef struct
-tagFindChirpFilterInput
-{
-  FindChirpTemplate            *fcTmplt;	/**< Pointer to the input template in a form that can be used by <tt>FindChirpFilterSegment()</tt> */
-  FindChirpSegment             *segment;	/**< Pointer to the input data segment in a form that can be used by <tt>FindChirpFilterSegment()</tt> */
-}
-FindChirpFilterInput;
-
-/**
- * This structure contains data needed for the bank veto.
- */
-typedef struct
-tagFindChirpBankVetoData
-{
-  UINT4                   length;
-  COMPLEX8Vector        **qtildeVecArray;
-  COMPLEX8Vector        **qVecArray;
-  FindChirpFilterInput  **fcInputArray;
-  COMPLEX8Vector         *ccMat;
-  REAL4Vector		 *normMat;
-  REAL4Vector		 *spec;
-  COMPLEX8Vector         *resp;
-  REAL4Vector		 *acorr;
-  COMPLEX8Vector	 *workspace;
-  REAL4Vector		 *acorrMat;
-  REAL4FFTPlan		 *revplan;
-  UINT4 		 acorrMatSize;
-  UINT4			 autochisqStride;
-  REAL4Vector            *timeshift;
-  UINT4			 two_sided_auto_chisq;
-  UINT4			 time_freq_bank_veto;
-}
-FindChirpBankVetoData;
-
-
-/**
  * UNDOCUMENTED
  */
 typedef struct
@@ -473,63 +434,6 @@ XLALFindChirpBankSimComputeMatch (
     SnglInspiralTable   *inputTmplt,
     REAL4                matchNorm
     );
-
-FindChirpSubBank*
-XLALFindChirpCreateSubBanks(
-    UINT4                      *maxSubBankSize,
-    UINT4                       subBankSize,
-    UINT4                       bankSize,
-    InspiralTemplate           *bankHead
-    );
-
-void
-XLALBankVetoCCMat (
-    FindChirpBankVetoData 	*bankVetoData,
-    REAL4Vector                 *ampVec,
-    UINT4                       subBankSize,
-    REAL4 			dynRange,
-    REAL4 			fLow,
-    REAL4 			deltaF,
-    REAL4                       deltaT
-    );
-
-REAL4
-XLALComputeBankVeto( FindChirpBankVetoData *bankVetoData,
-                     UINT4 i,
-                     UINT4 snrIX,
-		     REAL4 deltaT,
-                     UINT4 *dof);
-
-
-void
-XLALInitBankVetoData(
-    FindChirpBankVetoData *bvdata
-    );
-
-void
-XLALDestroyBankVetoData (
-    FindChirpBankVetoData *bvdata
-    );
-
-REAL4
-XLALComputeFullChisq(
-    FindChirpBankVetoData      *bankVetoData,
-    FindChirpFilterInput       *input,
-    FindChirpFilterParams      *params,
-    COMPLEX8                   *q,
-    UINT4                       i,
-    UINT4                       snrIX,
-    UINT4                      *dof,
-    REAL4                       norm
-);
-
-InspiralTemplate *
-XLALFindChirpSortTemplates(
-  InspiralTemplate *bankHead,
-  FindChirpBankVetoData *bvdata,
-  UINT4 num,
-  UINT4 max_subbank_size
-);
 
 #if 0
 { /* so that editors will match succeeding brace */

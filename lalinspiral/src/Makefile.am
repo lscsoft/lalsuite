@@ -56,7 +56,6 @@ liblalinspiral_la_SOURCES = \
 	CoherentInspiralInput.c \
 	CoincInspiralUtils.c \
 	CreateMetaTableDir.c \
-	FindChirpBankVeto.c \
 	FindChirpIMRSimulation.c \
 	FindChirpPTFTemplate.c \
 	FindChirpPTFWaveform.c \
