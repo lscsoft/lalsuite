@@ -756,7 +756,7 @@ XLALLoadFullGridFile ( DopplerFullScanState *scan,
     } /* for s < max_spins */
 
   /* open input data file */
-  XLAL_CHECK ( (fp = LALFopen (init->gridFile, "r")) != NULL, XLAL_ESYS, "Could not open data-file: `%s`\n\n", init->gridFile );
+  XLAL_CHECK ( (fp = fopen (init->gridFile, "r")) != NULL, XLAL_ESYS, "Could not open data-file: `%s`\n\n", init->gridFile );
 
   /* prepare grid-entry buffer */
   XLAL_CHECK ( (entry = XLALCreateREAL8Vector ( 6 ) ) != NULL, XLAL_EFUNC );

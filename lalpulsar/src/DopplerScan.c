@@ -547,8 +547,8 @@ plotSkyGrid (LALStatus *status,
   INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
-  fp = LALFopen ("mesh_debug.agr", "w");
-  fp1 = LALFopen ("mesh_debug.dat", "w");
+  fp = fopen ("mesh_debug.agr", "w");
+  fp1 = fopen ("mesh_debug.dat", "w");
 
   if( !fp ) {
     ABORT ( status, DOPPLERSCANH_ESYS, DOPPLERSCANH_MSGESYS );
@@ -1069,7 +1069,7 @@ writeSkyGridFile (LALStatus *status,
   ASSERT ( skyGrid, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( fname, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
 
-  if ( (fp = LALFopen(fname, "w")) == NULL )
+  if ( (fp = fopen(fname, "w")) == NULL )
     {
       LogPrintf (LOG_CRITICAL, "ERROR: could not open %s for writing!\n", fname);
       ABORT (status, DOPPLERSCANH_ESYS, DOPPLERSCANH_MSGESYS);
@@ -1122,7 +1122,7 @@ printFrequencyShifts ( LALStatus *status, const DopplerSkyScanState *skyScan, co
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  if ( (fp = LALFopen(fname, "w")) == NULL) {
+  if ( (fp = fopen(fname, "w")) == NULL) {
     LogPrintf (LOG_CRITICAL, "ERROR: could not open %s for writing!\n", fname);
     ABORT (status, DOPPLERSCANH_ESYS, DOPPLERSCANH_MSGESYS);
   }

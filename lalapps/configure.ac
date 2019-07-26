@@ -89,7 +89,6 @@ LALSUITE_WITH_CUDA
 LALSUITE_ENABLE_GCC_FLAGS
 LALSUITE_ENABLE_NIGHTLY
 LALAPPS_ENABLE_CONDOR
-LALSUITE_ENABLE_BOINC
 LALAPPS_ENABLE_STATIC_BINARIES
 
 LALAPPS_ENABLE_MPI
@@ -343,9 +342,6 @@ fi
 AM_CONDITIONAL([HAVE_BAMBI],[${hbf}])
 AM_CONDITIONAL([HAVE_BAMBI_MPI],[${bambimpi}])
 
-# check for boinc, and modify compiler for lal library checks
-LALSUITE_CHECK_BOINC
-
 # check for lal libararies and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
@@ -356,9 +352,6 @@ LALSUITE_CHECK_OPT_LIB([LALBurst],[${MIN_LALBURST_VERSION}],[XLALEPSearch],[lal/
 LALSUITE_CHECK_OPT_LIB([LALInspiral],[${MIN_LALINSPIRAL_VERSION}],[LALInspiralParameterCalc],[lal/LALInspiral.h])
 LALSUITE_CHECK_OPT_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat],[lal/ComputeFstat.h])
 LALSUITE_CHECK_OPT_LIB([LALInference],[${MIN_LALINFERENCE_VERSION}],[LALInferenceAddVariable],[lal/LALInference.h])
-
-# finish boinc checks, and restore compiler after lal library checks
-LALSUITE_END_CHECK_BOINC
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
@@ -429,7 +422,6 @@ LALApps has now been successfully configured:
 * PSS library support is $PSS_ENABLE_VAL
 * BAMBI library support is $BAMBI_ENABLE_VAL
 * Condor support is $CONDOR_ENABLE_VAL
-* BOINC support is $BOINC_ENABLE_VAL
 * MPI support is $MPI_ENABLE_VAL
 * GDS support is $GDS_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL

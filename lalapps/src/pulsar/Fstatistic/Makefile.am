@@ -3,49 +3,29 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 bin_PROGRAMS = \
+	lalapps_ComputeFstatBenchmark \
+	lalapps_ComputeFstatLatticeCount \
+	lalapps_ComputeFstatMCUpperLimit \
+	lalapps_ComputeFstatistic_v2 \
+	lalapps_PredictFstat \
 	lalapps_SemiAnalyticF \
 	lalapps_compareFstats\
-	lalapps_PredictFstat \
-	lalapps_ComputeFstatistic_v2 \
-	lalapps_ComputeFstatMCUpperLimit \
-	lalapps_ComputeFstatLatticeCount \
 	lalapps_synthesizeBstatMC \
-	lalapps_synthesizeTransientStats \
 	lalapps_synthesizeLVStats \
-	lalapps_ComputeFstatBenchmark \
+	lalapps_synthesizeTransientStats \
 	$(END_OF_LIST)
-
-EXTRA_PROGRAMS = \
-	lalapps_CFSv3 \
-	eah_PredictFstat \
-	eah_ComputeFstatistic_v2
 
 lalapps_SemiAnalyticF_SOURCES = SemiAnalyticF.c
 
 lalapps_compareFstats_SOURCES = compareFstats.c
 
-ComputeFstatisticV2Sources = \
+lalapps_ComputeFstatistic_v2_SOURCES = \
 	ComputeFstatistic_v2.c \
 	HeapToplist.c \
-	HeapToplist.h
-
-lalapps_ComputeFstatistic_v2_SOURCES = $(ComputeFstatisticV2Sources)
+	HeapToplist.h \
+	$(END_OF_LIST)
 
 lalapps_PredictFstat_SOURCES = PredictFstat.c
-
-# force linking in C++ mode for E@H
-eah_PredictFstat_SOURCES = \
-	$(lalapps_PredictFstat_SOURCES) \
-	win_lib.cpp
-eah_PredictFstat_CPPFLAGS = \
-	$(AM_CPPFLAGS) \
-	-I$(top_srcdir)/src/pulsar/EinsteinAtHome
-eah_ComputeFstatistic_v2_SOURCES = \
-	$(ComputeFstatisticV2Sources) \
-	win_lib.cpp
-eah_ComputeFstatistic_v2_CPPFLAGS = \
-	$(AM_CPPFLAGS) \
-	-I$(top_srcdir)/src/pulsar/EinsteinAtHome
 
 lalapps_ComputeFstatMCUpperLimit_SOURCES = ComputeFstatMCUpperLimit.c
 
@@ -59,18 +39,19 @@ lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c
 
 lalapps_ComputeFstatBenchmark_SOURCES = ComputeFstatBenchmark.c
 
-lalapps_CFSv3_SOURCES = CFSv3.c
-
 EXTRA_DIST = \
-	testPredictFstat.sh \
 	testCFSv2.sh \
+	testCFSv2_binary.sh \
 	testCFSv2_grids.sh \
 	testCFSv2_resamp.sh \
-	testCFSv2_binary.sh \
 	testCFSv2_transient.sh \
-	testSynthLV.sh
+	testPredictFstat.sh \
+	testSynthLV.sh \
+	$(END_OF_LIST)
 
 EXTRA_DIST += \
+	H1_test_timestamps.dat \
+	L1_test_timestamps.dat \
 	testCFSv2.dat.ref.gz \
 	testCFSv2_grid0.dat.ref.gz \
 	testCFSv2_grid1.dat.ref.gz \
@@ -79,17 +60,19 @@ EXTRA_DIST += \
 	testCFSv2_grid6.dat.ref.gz \
 	testCFSv2_grid8.dat.ref.gz \
 	testCFSv2_grid9.dat.ref.gz \
-	H1_test_timestamps.dat \
-	L1_test_timestamps.dat
+	$(END_OF_LIST)
 
-TESTS = testPredictFstat.sh \
-	testSynthLV.sh
+TESTS = \
+	testPredictFstat.sh \
+	testSynthLV.sh \
+	$(END_OF_LIST)
 
 if !CONDOR_ENABLED
 TESTS += \
 	testCFSv2.sh \
+	testCFSv2_binary.sh \
 	testCFSv2_grids.sh \
 	testCFSv2_resamp.sh \
-	testCFSv2_binary.sh \
-	testCFSv2_transient.sh
+	testCFSv2_transient.sh \
+	$(END_OF_LIST)
 endif

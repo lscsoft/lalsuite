@@ -535,7 +535,7 @@ static int _atomic_write_gctFstat_toplist_to_file(toplist_t *l, const char *file
   strcpy(tempname,filename);
   strcat(tempname,TEMP_EXT);
 
-  fpnew=LALFopen(tempname, "wb");
+  fpnew=fopen(tempname, "wb");
   if(!fpnew) {
     LogPrintf (LOG_CRITICAL, "Failed to open temp gctFstat file \"%s\" for writing: %d: %s\n",
 	       tempname,errno,strerror(errno));
@@ -718,7 +718,7 @@ int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, toplis
   strncat(tmpfilename,TMP_EXT,len);
 
   /* open tempfile */
-  fp=LALFopen(tmpfilename,"wb");
+  fp=fopen(tmpfilename,"wb");
   if(!fp) {
     LOGIOERROR("Couldn't open",tmpfilename);
     LALFree(tmpfilename);
@@ -938,7 +938,7 @@ int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, toplist
   }
 
   /* try to open file */
-  fp = LALFopen(filename, "rb");
+  fp = fopen(filename, "rb");
   if(!fp) {
     if(errno == ENOENT) {
       LogPrintf(LOG_NORMAL,"INFO: No checkpoint %s found - starting from scratch\n", filename);

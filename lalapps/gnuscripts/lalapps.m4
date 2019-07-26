@@ -1,6 +1,6 @@
 # lalapps.m4 - lalapps specific autoconf macros
 #
-# serial 16
+# serial 17
 
 AC_DEFUN([LALAPPS_ENABLE_CONDOR], [
   AC_ARG_ENABLE(
@@ -22,10 +22,9 @@ AC_DEFUN([LALAPPS_ENABLE_CONDOR], [
 AC_DEFUN([LALAPPS_ENABLE_STATIC_BINARIES], [
   AC_REQUIRE([PKG_PROG_PKG_CONFIG])
   AC_REQUIRE([LALAPPS_ENABLE_CONDOR])
-  AC_REQUIRE([LALSUITE_ENABLE_BOINC])
   AC_ARG_ENABLE(
     [static_binaries],
-    AS_HELP_STRING([--enable-static-binaries],[build static binaries @<:@default=no, forced on for condor and boinc builds@:>@]),
+    AS_HELP_STRING([--enable-static-binaries],[build static binaries @<:@default=no, forced on for condor builds@:>@]),
     AS_CASE(["${enableval}"],
       [yes],[static_binaries=true],
       [no],[static_binaries=false],
@@ -33,9 +32,9 @@ AC_DEFUN([LALAPPS_ENABLE_STATIC_BINARIES], [
     ),
     [static_binaries=false]
   )
-  # force on if condor or boinc build is enabled
-  AS_IF([test "x$static_binaries" != "xtrue" -a \( "x$condor" = "xtrue" -o "x$boinc" = "xtrue" \)], [
-    AC_MSG_WARN([building static binaries (forced by condor and/or boinc)])
+  # force on if condor build is enabled
+  AS_IF([test "x$static_binaries" != "xtrue" -a "x$condor" = "xtrue"], [
+    AC_MSG_WARN([building static binaries (forced by condor)])
     static_binaries=true
   ])
   # the consequences
