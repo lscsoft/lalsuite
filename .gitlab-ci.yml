@@ -618,6 +618,7 @@ nightly:ubuntu:bionic:
   only:
     - schedules
     - web
+  allow_failure: true
 
 # FIXME: allow failure due to #124
 nightly:ubuntu:cosmic:
