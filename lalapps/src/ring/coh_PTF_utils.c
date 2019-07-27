@@ -2550,12 +2550,8 @@ MultiInspiralTable* coh_PTF_create_multi_event(
   MultiInspiralTable *currEvent;
   currEvent = (MultiInspiralTable *)
       LALCalloc(1, sizeof(MultiInspiralTable));
-  currEvent->event_id = (EventIDColumn *)
-      LALCalloc(1, sizeof(EventIDColumn));
-  currEvent->event_id->id=*eventId;
-  currEvent->time_slide_id = (EventIDColumn *)
-      LALCalloc(1, sizeof(EventIDColumn));
-  currEvent->time_slide_id->id=slideId;
+  currEvent->event_id=*eventId;
+  currEvent->time_slide_id=slideId;
   (*eventId)++;
   trigTime = cohSNR->epoch;
   XLALGPSAdd(&trigTime,currPos*cohSNR->deltaT);
@@ -3240,14 +3236,6 @@ void coh_PTF_cleanup(
     MultiInspiralTable *thisEvent;
     thisEvent = events;
     events = events->next;
-    if ( thisEvent->event_id )
-    {
-      LALFree( thisEvent->event_id );
-    }
-    if ( thisEvent->time_slide_id )
-    {
-      LALFree( thisEvent->time_slide_id );
-    }
     LALFree( thisEvent );
   }
   while ( snglEvents )
@@ -3263,10 +3251,6 @@ void coh_PTF_cleanup(
     InspiralTemplate *thisTmplt;
     thisTmplt = PTFbankhead;
     PTFbankhead = PTFbankhead->next;
-    if ( thisTmplt->event_id )
-    {
-      LALFree( thisTmplt->event_id );
-    }
     LALFree( thisTmplt );
   }
   UINT4 sgmnt;

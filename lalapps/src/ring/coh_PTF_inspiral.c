@@ -1230,14 +1230,6 @@ UINT8 coh_PTF_add_triggers(
       if (coh_PTF_trig_time_check(params,currEvent->end_time,\
                                          currEvent->end_time))
       {
-        if (currEvent->event_id)
-        {
-          LALFree(currEvent->event_id);
-        }
-        if (currEvent->time_slide_id)
-        {
-          LALFree(currEvent->time_slide_id);
-        }
         LALFree(currEvent);
         continue;
       }
@@ -1261,14 +1253,6 @@ UINT8 coh_PTF_add_triggers(
         }
         else
         {
-          if (currEvent->event_id)
-          {
-            LALFree(currEvent->event_id);
-          }
-          if (currEvent->time_slide_id)
-          {
-            LALFree(currEvent->time_slide_id);
-          }
           LALFree(currEvent);
         }
       }
@@ -1343,14 +1327,6 @@ void coh_PTF_cluster_triggers(
     }
     else
     {
-      if (currEvent->event_id)
-      {
-        LALFree(currEvent->event_id);
-      }
-      if (currEvent->time_slide_id)
-      {
-        LALFree(currEvent->time_slide_id);
-      }
       currEvent2 = currEvent->next;
       LALFree(currEvent);  
       currEvent = currEvent2;
@@ -1388,7 +1364,7 @@ UINT4 coh_PTF_accept_trig_check(
   {
     time2.gpsSeconds=currEvent->end_time.gpsSeconds;
     time2.gpsNanoSeconds=currEvent->end_time.gpsNanoSeconds;
-    if (thisEvent.time_slide_id->id == currEvent->time_slide_id->id)
+    if (thisEvent.time_slide_id == currEvent->time_slide_id)
     {
       GPSDiff = XLALGPSDiff(&time1,&time2);
       if (fabs(GPSDiff) < params->clusterWindow)
@@ -1396,7 +1372,7 @@ UINT4 coh_PTF_accept_trig_check(
         if (thisEvent.snr_dof == currEvent->snr_dof)
         {
           if (thisEvent.snr < currEvent->snr\
-              && (thisEvent.event_id->id != currEvent->event_id->id))
+              && (thisEvent.event_id != currEvent->event_id))
           {
             /* If at identical time, return 0 */
             if (GPSDiff == 0)
