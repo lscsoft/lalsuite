@@ -654,7 +654,6 @@ nightly:ubuntu:cosmic:
     # Test
     - ${PYPREFIX}/bin/virtualenv test
     - source test/bin/activate
-    - pip install cryptography==2.5  # FIXME: cryptography 2.6 was released recently but doesn't have all necessary wheels uploaded to PyPI yet
     - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []
@@ -686,7 +685,6 @@ nightly:ubuntu:cosmic:
     # Test
     - virtualenv-${PYVERS} test
     - source test/bin/activate
-    - pip install cryptography==2.5  # FIXME: cryptography 2.6 was released recently but doesn't have all necessary wheels uploaded to PyPI yet
     - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio'
   dependencies: []
