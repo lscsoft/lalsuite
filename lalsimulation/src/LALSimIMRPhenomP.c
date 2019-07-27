@@ -600,15 +600,19 @@ static int PhenomPCore(
   IMRPhenomDPhaseCoefficients *pPhi = NULL;
   BBHPhenomCParams *PCparams = NULL;
   PNPhasingSeries *pn = NULL;
-  gsl_interp_accel *acc = NULL;
-  gsl_spline *phiI = NULL;
+  // Spline
+  gsl_interp_accel *acc_fixed = NULL;
+  gsl_spline *phiI_fixed = NULL;
+  REAL8Sequence *freqs_fixed = NULL;
+  REAL8Sequence *phase_fixed = NULL;
   REAL8Sequence *freqs = NULL;
-  REAL8 *phis=NULL;
   int errcode = XLAL_SUCCESS;
-  LALDict *extraParams_in=extraParams;
-
+  LALDict *extraParams_in = extraParams;
+  // Tidal corrections
   REAL8Sequence *phi_tidal = NULL;
   REAL8Sequence *amp_tidal = NULL;
+  REAL8Sequence *phi_tidal_fixed = NULL;
+  REAL8Sequence *amp_tidal_fixed = NULL;
   int ret = 0;
 
   // Enforce convention m2 >= m1
@@ -925,11 +929,11 @@ static int PhenomPCore(
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
   }
 
-  phis = XLALMalloc(L_fCut*sizeof(REAL8)); // array for waveform phase
-  if(!phis) {
-    errcode = XLAL_ENOMEM;
-    goto cleanup;
-  }
+//   phis = XLALMalloc(L_fCut*sizeof(REAL8)); // array for waveform phase
+//   if(!phis) {
+//     errcode = XLAL_ENOMEM;
+//     goto cleanup;
+//   }
 
   AmpInsPrefactors amp_prefactors;
   PhiInsPrefactors phi_prefactors;
@@ -991,51 +995,101 @@ static int PhenomPCore(
     ((*hptilde)->data->data)[j] = hp_val;
     ((*hctilde)->data->data)[j] = hc_val;
 
-    phis[i] = phasing;
+//    phis[i] = phasing;
 
     skip: /* this statement intentionally left blank */;
   }
 
-  /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
-  /* We apply the same time shift to hptilde and hctilde based on the overall phasing returned by PhenomPCoreOneFrequency */
-  /* Set up spline for phase */
-  acc = gsl_interp_accel_alloc();
-  phiI = gsl_spline_alloc(gsl_interp_cspline, L_fCut);
-  XLAL_CHECK(phiI, XLAL_ENOMEM, "Failed to allocate GSL spline with %d points for phase.", L_fCut);
+    
+  /* The next part computes and applies a time shift correction to make the waveform peak at t=0 */
 
-  gsl_spline_init(phiI, freqs->data, phis, L_fCut);
+  /* Set up spline for phase on fixed grid */
+  const int n_fixed = 10;
+  freqs_fixed = XLALCreateREAL8Sequence(n_fixed);
+  XLAL_CHECK(freqs_fixed != NULL, XLAL_EFAULT);
+  phase_fixed = XLALCreateREAL8Sequence(n_fixed);
+  XLAL_CHECK(phase_fixed != NULL, XLAL_EFAULT);
 
-  // Prevent gsl interpolation errors
-  if (f_final > freqs->data[L_fCut-1])
-    f_final = freqs->data[L_fCut-1];
-  if (f_final < freqs->data[0])
-  {
-    XLALPrintError("XLAL Error - %s: f_ringdown = %f < f_min\n", __func__, f_final);
-    errcode = XLAL_EDOM;
-    goto cleanup;
+  /* Set up fixed frequency grid around ringdown frequency */
+  REAL8 freqs_fixed_start = 0.8*f_final;
+  REAL8 freqs_fixed_stop = 1.2*f_final;
+  if (freqs_fixed_stop > fCut)
+      freqs_fixed_stop = fCut;
+  REAL8 delta_freqs_fixed = (freqs_fixed_stop - freqs_fixed_start) / (n_fixed - 1);
+  for (int i=0; i < n_fixed; i++)
+    freqs_fixed->data[i] = freqs_fixed_start + i*delta_freqs_fixed;
+
+  /* Recompute tidal corrections if needed */
+  if (IMRPhenomP_version == IMRPhenomPv2NRTidal_V) {
+    /* Generating the NR tidal amplitude and phase for the fixed grid */
+    /* Get FD tidal phase correction and amplitude factor from arXiv:1706.02969 */
+    phi_tidal_fixed = XLALCreateREAL8Sequence(n_fixed);
+    amp_tidal_fixed = XLALCreateREAL8Sequence(n_fixed);
+    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal_fixed, amp_tidal_fixed,
+                                                         freqs_fixed, m1_SI, m2_SI, lambda1, lambda2);
+    XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
+  }
+    
+  /* We need another loop to generate the phase values on the fixed grid; no need for OpenMP here */
+  for (int i=0; i<n_fixed; i++) { // loop over frequency points in sequence
+    COMPLEX16 hPhenom = 0.0; // IMRPhenom waveform (before precession) at a given frequency point
+    REAL8 phasing = 0;
+    double f = freqs_fixed->data[i];
+    int per_thread_errcode;
+
+    if (errcode != XLAL_SUCCESS)
+      goto skip_fixed;
+
+    /* Generate the waveform */
+    if (IMRPhenomP_version == IMRPhenomPv2NRTidal_V) {
+      double ampTidal = amp_tidal_fixed->data[i];
+      COMPLEX16 phaseTidal = cexp(-I*phi_tidal_fixed->data[i]);
+      per_thread_errcode = PhenomPCoreOneFrequency_withTides(f, ampTidal, phaseTidal, distance, M, phic,
+                              pAmp, pPhi, pn,
+                              &hPhenom, &phasing, &amp_prefactors, &phi_prefactors);
+      } else {
+      per_thread_errcode = PhenomPCoreOneFrequency(f, eta, distance, M, phic,
+                              pAmp, pPhi, PCparams, pn,
+                              &hPhenom, &phasing, IMRPhenomP_version, &amp_prefactors, &phi_prefactors);
+     }
+
+    if (per_thread_errcode != XLAL_SUCCESS) {
+      errcode = per_thread_errcode;
+    }
+
+    phase_fixed->data[i] = phasing;
+
+    skip_fixed: /* this statement intentionally left blank */;
   }
 
-  if (L_fCut<=5){ // prevent spline interpolation failing in phase correction below
-    XLALPrintError("XLAL Error - %s: PhenomP waveform is too short: L_fcut is too small.", __func__);
-    errcode = XLAL_EDOM;
-    goto cleanup;
-   }
+  /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
+  /* We apply the same time shift to hptilde and hctilde based on the overall phasing returned by PhenomPCoreOneFrequency */
+
+  /* Set up spline for phase */
+  acc_fixed = gsl_interp_accel_alloc();
+  phiI_fixed = gsl_spline_alloc(gsl_interp_cspline, n_fixed);
+  XLAL_CHECK(phiI_fixed, XLAL_ENOMEM, "Failed to allocate GSL spline with %d points for phase.", n_fixed);
+  gsl_spline_init(phiI_fixed, freqs_fixed->data, phase_fixed->data, n_fixed);
 
   /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
-  REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
+  REAL8 t_corr_fixed = gsl_spline_eval_deriv(phiI_fixed, f_final, acc_fixed) / (2*LAL_PI);
+  // XLAL_PRINT_INFO("t_corr (fixed grid): %g\n", t_corr_fixed);
+
   /* Now correct phase */
-  for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
+  for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in user-specified sequence
     double f = freqs->data[i];
-    COMPLEX16 phase_corr = (cos(2*LAL_PI * f * t_corr) - I*sin(2*LAL_PI * f * t_corr));//cexp(-2*LAL_PI * I * f * t_corr);
+    COMPLEX16 phase_corr = (cos(2*LAL_PI * f * t_corr_fixed) - I*sin(2*LAL_PI * f * t_corr_fixed));
     int j = i + offset; // shift index for frequency series if needed
     ((*hptilde)->data->data)[j] *= phase_corr;
     ((*hctilde)->data->data)[j] *= phase_corr;
   }
 
+
   cleanup:
-  if(phis) XLALFree(phis);
-  if(phiI) gsl_spline_free(phiI);
-  if(acc) gsl_interp_accel_free(acc);
+  if (freqs_fixed) XLALDestroyREAL8Sequence(freqs_fixed);
+  if (phase_fixed) XLALDestroyREAL8Sequence(phase_fixed);
+  if (phiI_fixed) gsl_spline_free(phiI_fixed);
+  if (acc_fixed) gsl_interp_accel_free(acc_fixed);
 
   if(PCparams) XLALFree(PCparams);
   if(pAmp) XLALFree(pAmp);
@@ -1050,6 +1104,8 @@ static int PhenomPCore(
 
   if (phi_tidal) XLALDestroyREAL8Sequence(phi_tidal);
   if (amp_tidal) XLALDestroyREAL8Sequence(amp_tidal);
+  if (amp_tidal_fixed) XLALDestroyREAL8Sequence(amp_tidal_fixed);
+  if (phi_tidal_fixed) XLALDestroyREAL8Sequence(phi_tidal_fixed);
 
   if( errcode != XLAL_SUCCESS ) {
     if(*hptilde) {
