@@ -618,19 +618,6 @@ nightly:ubuntu:bionic:
   only:
     - schedules
     - web
-
-# FIXME: allow failure due to #124
-nightly:ubuntu:cosmic:
-  image: skymoo/ligo-lalsuite-dev:cosmic
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
   allow_failure: true
 
 #
