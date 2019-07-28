@@ -591,35 +591,6 @@ nightly:macos:sierra:
     - schedules
     - web
 
-# ubuntu
-
-# FIXME: allow failure due to #123
-nightly:ubuntu:xenial:
-  image: skymoo/ligo-lalsuite-dev:xenial
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --disable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-  allow_failure: true
-
-nightly:ubuntu:bionic:
-  image: skymoo/ligo-lalsuite-dev:bionic
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-  allow_failure: true
-
 #
 # python wheels
 #
