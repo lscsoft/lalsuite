@@ -37,9 +37,6 @@ test_programs += PNTemplates
 #test_programs += LALHybridTest
 #test_programs += NRWaveIOTest
 #test_programs += SpaceCovering
-# requires lalstochastic:
-#test_programs += CoherentInspiralFilterTest
-#test_programs += CoherentInspiralInputTest
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts +=

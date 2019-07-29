@@ -64,14 +64,6 @@
  * bisections is smaller than tolerance.</li>
  * </ul>
  *
- * <tt>XLALInspiralComputePTFQDeriv()</tt>:
- * <ul>
- * <li> <tt>Qderiv,</tt> Output, the time derivative of Q at the lattice point
- * defined by \c params
- * </li><li> <tt>params,</tt> Input, the parameters where metric must be computed
- * in the computation of the metric.</li>
- * </ul>
- *
  * ### Description ###
  *
  * We calculate the components of the metric using the procedure outlined
@@ -517,18 +509,6 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
 }
 
 
-INT4 XLALInspiralComputePTFFullMetric (
-    InspiralMetric             UNUSED *metric,
-    REAL8FrequencySeries       UNUSED *psd,
-    InspiralTemplate           UNUSED *params
-    )
-
-{
-  return XLAL_SUCCESS;
-}
-
-
-
 INT4 XLALInspiralComputePTFWaveform (
     REAL8Vector				   *ptfwave,
     InspiralTemplate           *params
@@ -954,15 +934,5 @@ INT4 XLALInspiralComputePTFWDeriv (
   XLALDestroyREAL8FFTPlan( revPlan );
 
   /* normal exit */
-  return XLAL_SUCCESS;
-}
-
-
-INT4 XLALInspiralComputePTFQDeriv (
-    REAL8VectorSequence        UNUSED *Qderiv,
-    InspiralTemplate           UNUSED *params
-    )
-
-{
   return XLAL_SUCCESS;
 }

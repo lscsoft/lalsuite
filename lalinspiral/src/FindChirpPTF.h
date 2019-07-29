@@ -29,10 +29,9 @@
 #ifndef _FINDCHIRPPTFH_H
 #define _FINDCHIRPPTFH_H
 
+#include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
-#include <lal/RealFFT.h>
 #include <lal/LALInspiral.h>
-#include <lal/FindChirp.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -56,14 +55,6 @@ extern "C" {
  *
  */
 /*@{*/
-
-void
-LALFindChirpPTFTemplate (
-    LALStatus                  *status,
-    FindChirpTemplate          *fcTmplt,
-    InspiralTemplate           *InspTmplt,
-    FindChirpTmpltParams       *params
-    );
 
 REAL4Vector*
 XLALPTFOmegaPNCoeffsOrbital(
@@ -100,13 +91,6 @@ XLALFindChirpPTFWaveform(
     InspiralTemplate    *InspTmplt,
     REAL8                deltaT
     );
-
-INT4
-XLALPTFWaveformDerivatives(
-              REAL8  t,
-        const REAL8  y[14],
-              REAL8  dydt[14],
-              void  *params );
 
 /*@}*/ /* end:FindChirpPTF.h */
 

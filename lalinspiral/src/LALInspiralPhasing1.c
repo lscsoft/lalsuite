@@ -59,32 +59,10 @@
  */
 
 #include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALInspiral.h>
 #include <lal/Integrate.h>
-
-void
-LALInspiralPhasing1 (
-   LALStatus *status,
-   REAL8     *phiofv,
-   REAL8     v,
-   void      *params
-   )
-{
-   XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing1");
-
-   INITSTATUS(status);
-   ATTATCHSTATUSPTR (status);
-
-   ASSERT (phiofv, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-   *phiofv = XLALInspiralPhasing1(v, params);
-   if (XLAL_IS_REAL8_FAIL_NAN(*phiofv))
-      ABORTXLAL(status);
-
-   DETATCHSTATUSPTR (status);
-   RETURN (status);
-}
+#include <lal/LALAtomicDatatypes.h>
+#include <lal/LALInspiral.h>
+#include <lal/XLALError.h>
 
 REAL8
 XLALInspiralPhasing1 (

@@ -20,11 +20,12 @@
 #ifndef _GENERATEPPNINSPIRAL_H
 #define _GENERATEPPNINSPIRAL_H
 
-#include <lal/LALStdlib.h>
+#include <lal/GeneratePPNInspiral.h>
+#include <lal/LALAtomicDatatypes.h>
+#include <lal/LALDatatypes.h>
+#include <lal/Random.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
-#include <lal/Random.h>
-#include <lal/LALSimInspiral.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -290,11 +291,6 @@ typedef struct tagGalacticInspiralParamStruc {
   REAL4 m1, m2; 		/**< The masses of the binary components, in solar masses */
   LIGOTimeGPS geocentEndTime; 	/**< The geocentric end time of the inspiral event */
 } GalacticInspiralParamStruc;
-
-/** UNDOCUMENTED */
-typedef struct tagAmpSwitchStruc {
-	UINT4 q0, q1, q2, q3, q4, q5;
-} AmpSwitchStruc;
 
 
 

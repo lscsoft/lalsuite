@@ -40,76 +40,10 @@
  */
 
 #include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALInspiral.h>
 #include <lal/Integrate.h>
-
-void
-LALInspiralTofV (
-   LALStatus *status,
-   REAL8 *tofv,
-   REAL8 v,
-   void *params
-   )
-{
-
-   void *funcParams;
-   DIntegrateIn intinp;
-   TofVIntegrandIn in2;
-   TofVIn *in1;
-   REAL8 answer;
-   REAL8 sign;
-
-
-   INITSTATUS(status);
-   ATTATCHSTATUSPTR(status);
-
-   ASSERT (tofv, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(v > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(v <= 1., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
-   sign = 1.0;
-
-
-   in1 = (TofVIn *) params;
-
-   intinp.function = LALInspiralTofVIntegrand;
-   intinp.xmin = in1->v0;
-   intinp.xmax = v;
-   intinp.type = ClosedInterval;
-
-
-   in2.dEnergy = in1->dEnergy;
-   in2.flux = in1->flux;
-   in2.coeffs = in1->coeffs;
-
-   funcParams = (void *) &in2;
-
-   if (v==in1->v0)
-   {
-     *tofv = in1->t - in1->t0;
-     DETATCHSTATUSPTR(status);
-     RETURN (status);
-   }
-
-   if(in1->v0 > v)
-   {
-      intinp.xmin = v;
-      intinp.xmax = in1->v0;
-      sign = -1.0;
-   }
-
-   LALDRombergIntegrate (status->statusPtr, &answer, &intinp, funcParams);
-   CHECKSTATUSPTR(status);
-
-   *tofv = in1->t - in1->t0 + in1->totalmass*answer*sign;
-
-   DETATCHSTATUSPTR(status);
-   RETURN (status);
-}
-
-
+#include <lal/LALAtomicDatatypes.h>
+#include <lal/LALInspiral.h>
+#include <lal/XLALError.h>
 
 REAL8
 XLALInspiralTofV (
@@ -169,4 +103,3 @@ XLALInspiralTofV (
 
    return in1->t - in1->t0 + in1->totalmass*answer*sign;
 }
-

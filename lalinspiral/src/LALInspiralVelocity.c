@@ -51,32 +51,9 @@
  *
  */
 
-#include <math.h>
-#include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindRoot.h>
-
-void
-LALInspiralVelocity(
-   LALStatus *status,
-   REAL8     *v,
-   TofVIn    *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralVelocity");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT (v, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *v = XLALInspiralVelocity(ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*v))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
+#include <lal/XLALError.h>
 
 REAL8
 XLALInspiralVelocity(

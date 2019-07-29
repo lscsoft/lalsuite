@@ -62,7 +62,7 @@ ptf_evolution_params_t;
 
 /* function that computes the derivatives of the dynamical */
 /* variables for the GSL ODE integrator                    */
-INT4 XLALPTFWaveformDerivatives(
+static INT4 XLALPTFWaveformDerivatives(
     REAL8 UNUSED t, const REAL8 y[11], REAL8 dydt[11], void* params )
 {
   /* equation numbers in description of variables and algorithms refer to

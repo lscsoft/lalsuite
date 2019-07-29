@@ -29,14 +29,11 @@
 #ifndef _FINDCHIRPH_H
 #define _FINDCHIRPH_H
 
+#include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
-#include <lal/ComplexFFT.h>
+#include <lal/LALSimInspiral.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataInspiralUtils.h>
-#include <lal/LALInspiral.h>
-#include <lal/LALInspiralBank.h>
-#include <lal/GeneratePPNInspiral.h>
-#include <lal/FindChirpDatatypes.h>
+#include <lal/RealFFT.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -210,138 +207,9 @@ tagFindChirpTmpltParams
 }
 FindChirpTmpltParams;
 
-/**
- * This structure contains the possible methods by which
- * to maximize over a chirp in a data segment.
- */
-typedef enum
-tagFindChirpClustering
-{
-  FindChirpClustering_none,		/**< The decision to do no clustering of events */
-  FindChirpClustering_tmplt,		/**< Cluster over the length of the data segment */
-  FindChirpClustering_window,		/**< Cluster over a given number of seconds given by the argument to the flag
-                                         * <tt>--cluster-window</tt> (required to be less than the length of the data segment) */
-  FindChirpClustering_tmpltwindow	/**< UNDOCUMENTED */
-}
-FindChirpClustering;
-
-
-/**
- * This structure provides the parameters for the filter output veto.
- */
-typedef struct
-tagFindChirpFilterOutputVetoParams
-{
-  REAL4          rsqvetoWindow;		/**< Width of the \f$r^2\f$ veto window in units of seconds */
-  REAL4          rsqvetoThresh;		/**< Threshold of the \f$r^2\f$ veto test analogous to the \f$r^2\f$ threshold employed in the bns and macho inspiral searches */
-  REAL4          rsqvetoTimeThresh;	/**< UNDOCUMENTED */
-  REAL4          rsqvetoMaxSNR;		/**< UNDOCUMENTED */
-  REAL4          rsqvetoCoeff;		/**< UNDOCUMENTED */
-  REAL4          rsqvetoPow;		/**< UNDOCUMENTED */
-}
-FindChirpFilterOutputVetoParams;
-
-/**
- * This structure provides the parameters used by the <tt>FindChirpFilterSegment()</tt> function.
- *
- * \note Original laldoc contained the following documentation for a non-existent struct-member:
- * <tt>REAL4 norm</tt> On exit this contains the normalisation constant
- * that relates the quantity \f$|q_j|^2\f$ with the signal to noise squared,
- * \f$\rho^2(t_j)\f$ by
- * \f{equation}{
- * \rho^2(t_j) = \textrm{norm} \times \left|q_j\right|^2
- * \f}
- */
-typedef struct
-tagFindChirpFilterParams
-{
-  REAL8                         deltaT;			/**< The sampling interval \f$\Delta t\f$ */
-  REAL4                         clusterWindow;		/**< UNDOCUMENTED */
-  REAL4                         rhosqThresh;		/**< The signal-to-noise ratio squared threshold
-                                                         * \f$\rho^2_\ast\f$; If the matched filter output exceeds this value, that is
-                                                         * \f$\rho^2(t_j) > \rho^2_\ast\f$, the event processing algorithm is entered and
-                                                         * triggers may be generated (subject to addition vetoes such as the \f$\chi^2\f$
-                                                         * veto); The value of \f$\rho^2_\ast0\f$ must be greater than or equal to zero
-                                                         */
-  REAL4                         chisqThresh;		/**< The \f$\chi^2\f$ veto threshold on; This threshold is described in details in the documentation for the \f$\chi^2\f$ veto */
-  REAL4                         chisqDelta;		/**< UNDOCUMENTED */
-  UINT4                         maximiseOverChirp;	/**< If not zero, use the maximise over chirp length algorithm to decide which time \f$t_j\f$ should
-                                                         * have an inspiral trigger generated; Otherwise record all points that pass the
-                                                         * \f$\rho^2\f$ and \f$\chi^2\f$ threshold as triggers (this may generate may triggers)
-                                                         */
-  UINT4                         ignoreIndex;		/**< UNDOCUMENTED */
-  FindChirpClustering           clusterMethod;		/**< UNDOCUMENTED */
-  Approximant                   approximant;		/**< Filter the data using templates of type \c approximant; Valid approximants are #TaylorT1, #TaylorT2,
-                                                         * #TaylorT3, #PadeT1, #EOB, #FindChirpSP, #BCV and #BCVSpin; The value of
-                                                         * \c approximant here must match that in the findchirp data segment and
-                                                         * findchirp template used as input
-                                                         */
-  LALPNOrder                    order;			/**< UNDOCUMENTED */
-  COMPLEX8Vector               *qVec;			/**< Pointer to vector of length \f$N\f$ allocated by <tt>FindChirpFilterInit()</tt> to store the quantity \f$q_j\f$;
-                                                         * The pointer must not be NULL on entry, but the vetor may contain garbage which will be overwritten with the value
-                                                         * of \f$q_j\f$ for the segment filtered on exit */
-  COMPLEX8Vector               *qVecBCV;		/**< Pointer to the additional vector required for the BCV templates, allocated by <tt>FindChirpFilterInit()</tt> */
-  COMPLEX8Vector               *qVecBCVSpin1;		/**< Pointer to the additional vector required for filtering spinning BCV templates, allocated by <tt>FindChirpFilterInit()</tt> */
-  COMPLEX8Vector               *qVecBCVSpin2;		/**< Pointer to the additional vector required for filtering spinning BCV templates, allocated by <tt>FindChirpFilterInit()</tt> */
-  COMPLEX8Vector               *qtildeVec;		/**< Pointer to vector of length \f$N\f$ allocated by <tt>FindChirpFilterInit()</tt> to store the quantity
-                                                         * \f$\tilde{q}_k\f$, given by
-                                                         * \f{equation}{
-                                                         * \tilde{q}_k = \left\{
-                                                         * \begin{array}{ll}
-                                                         * \tilde{F}_k \tilde{T}_k^\ast & \quad 0 < k < \frac{N}{2} \\,
-                                                         * 0 & \quad \textrm{otherwise}
-                                                         * \end{array}
-                                                         * \right.
-                                                         * \f}
-                                                         * The pointer must not be NULL on entry, but the vetor may contain garbage which
-                                                         * will be overwritten with the value of \f$\tilde{q}_k\f$ for the segment filtered
-                                                         * on exit
-                                                         */
-  COMPLEX8Vector               *qtildeVecBCV;		/**< Pointer to the additional vector required for filtering BCV templates, allocated by <tt>FindChirpFilterInit()</tt> */
-  COMPLEX8Vector               *qtildeVecBCVSpin1;	/**< Pointer to the additional vector required for filtering spinning BCV templates, allocated by <tt>FindChirpFilterInit()</tt> */
-  COMPLEX8Vector               *qtildeVecBCVSpin2;	/**< Pointer to the additional vector required for filtering spinning BCV templates, allocated by <tt>FindChirpFilterInit()</tt> */
-  COMPLEX8Vector              **qVecACTD;		/**< UNDOCUMENTED */
-  COMPLEX8Vector              **qtildeVecACTD;		/**< UNDOCUMENTED */
-  COMPLEX8VectorSequence       *PTFqVec;		/**< UNDOCUMENTED */
-  COMPLEX8Vector               *PTFsnrVec;		/**< UNDOCUMENTED */
-  REAL4Array                   *PTFA;			/**< UNDOCUMENTED */
-  REAL4Array                   *PTFMatrix;		/**< UNDOCUMENTED */
-  ComplexFFTPlan               *invPlan;		/**< Pointer to FFTW plan created by <tt>FindChirpFilterInit()</tt> to transform the quantity \f$\tilde{q}_k\f$ to
-                                                         * \f${q}_j\f$ usimg the inverse DFT; Must not be NULL
-                                                         */
-  REAL4TimeSeries              *rhosqVec;		/**< Pointer to a time series which contains a vector of length \f$N\f$; If this is not NULL, the complex filter
-                                                         * output \f$\rho(t_j) = x(t_j) + iy(t_j)\f$ is stored in the vector; This quantity can be used by the coherent filtering code
-                                                         */
-  COMPLEX8TimeSeries           *cVec;			/**< UNDOCUMENTED */
-  REAL4Vector                  *chisqVec;		/**< Workspace vector of length \f$N\f$ used to compute and store \f$\chi^2(t_j)\f$; Must not be NULL if \c numChisqBins is
-                                                         * greater than zero; Contains \f$\chi^2(t_j)\f$ on exit
-                                                         */
-  FindChirpFilterOutputVetoParams *filterOutputVetoParams; /**< Pointer to the parameter structure for the additional signal based veto function */
-}
-FindChirpFilterParams;
-
 /* ---------- typedefs of input structures used by functions in findchirp ---------- */
 
-/**
- * UNDOCUMENTED
- */
-typedef struct
-tagFindChirpBankSimParams
-{
-  Approximant           approx;		/**< Waveform pproximant to use for injection */
-  LALPNOrder            order;		/**< Waveform order to use for injection */
-  REAL4                 minMass;	/**< Minimum mass of injected signals */
-  REAL4                 maxMass;	/**< Maximum mass of injected signals  */
-  RandomParams         *randParams;	/**< UNDOCUMENTED */
-  INT4                  maxMatch;	/**< UNDOCUMENTED */
-  CHAR                 *frameName;	/**< UNDOCUMENTED */
-  CHAR                 *frameChan;	/**< UNDOCUMENTED */
-  REAL4			f_lower;	/**< UNDOCUMENTED */
-}
-FindChirpBankSimParams;
-
 /*@}*/
-
 
 /*
  *
@@ -350,70 +218,11 @@ FindChirpBankSimParams;
  */
 
 void
-LALFindChirpCreateCoherentInput(
-     LALStatus                  *status,
-     COMPLEX8TimeSeries         **coherentInputData,
-     COMPLEX8TimeSeries         *input,
-     SnglInspiralTable          *templt,
-     REAL4                      coherentSegmentLength,
-     INT4                       corruptedDataLength
-     );
-
-void
 LALFindChirpInjectSignals (
     LALStatus                  *status,
     REAL4TimeSeries            *chan,
     SimInspiralTable           *events,
     COMPLEX8FrequencySeries    *resp
-    );
-
-INT4
-XLALFindChirpTagTemplateAndSegment (
-    DataSegmentVector       *dataSegVec,
-    InspiralTemplate        *tmpltHead,
-    SnglInspiralTable       **events,
-    CHAR                    *ifo,
-    REAL4                   tdFast,
-    UINT4                   *analyseThisTmplt
-    );
-
-
-INT4
-XLALFindChirpSetAnalyzeSegment (
-    DataSegmentVector          *dataSegVec,
-    SimInspiralTable           *injections
-    );
-
-INT4
-XLALFindChirpSetFollowUpSegment (
-    DataSegmentVector          *dataSegVec,
-    SnglInspiralTable          **events
-    );
-
-UINT4
-XLALCmprSgmntTmpltFlags (
-    UINT4 numInjections,
-    UINT4 TmpltFlag,
-    UINT4 SgmntFlag
-    );
-
-UINT4
-XLALFindChirpBankSimInitialize (
-    REAL4FrequencySeries       *spec,
-    COMPLEX8FrequencySeries    *resp,
-    REAL8                       fLow
-    );
-
-SimInstParamsTable *
-XLALFindChirpBankSimMaxMatch (
-    SnglInspiralTable         **bestTmplt,
-    REAL4                       matchNorm
-    );
-
-SimInstParamsTable *
-XLALFindChirpBankSimComputeMatch (
-    SnglInspiralTable   *inputTmplt,
-    REAL4                matchNorm
     );
 
 #if 0

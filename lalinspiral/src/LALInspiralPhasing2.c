@@ -55,33 +55,9 @@
  */
 
 #include <math.h>
-#include <lal/LALStdlib.h>
+#include <lal/LALAtomicDatatypes.h>
 #include <lal/LALInspiral.h>
-
-void
-LALInspiralPhasing2_0PN (
-   LALStatus  *status,
-   REAL8      *phase,
-   REAL8       v,
-   expnCoeffs *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing2_0PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *phase = XLALInspiralPhasing2_0PN(v, ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*phase))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-
-}
-
+#include <lal/XLALError.h>
 
 
 REAL8
@@ -105,32 +81,6 @@ XLALInspiralPhasing2_0PN (
 
 
 
-void
-LALInspiralPhasing2_2PN (
-   LALStatus  *status,
-   REAL8      *phase,
-   REAL8       v,
-   expnCoeffs *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing2_2PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *phase = XLALInspiralPhasing2_2PN(v, ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*phase))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-
-}
-
-
-
 REAL8
 XLALInspiralPhasing2_2PN (
    REAL8       v,
@@ -150,32 +100,6 @@ XLALInspiralPhasing2_2PN (
          + ak->pva2 * v2);
 
   return phase;
-}
-
-
-
-void
-LALInspiralPhasing2_3PN (
-   LALStatus  *status,
-   REAL8      *phase,
-   REAL8       v,
-   expnCoeffs *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing2_3PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *phase = XLALInspiralPhasing2_3PN(v, ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*phase))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-
 }
 
 
@@ -205,31 +129,6 @@ XLALInspiralPhasing2_3PN (
 
 
 
-void
-LALInspiralPhasing2_4PN (
-   LALStatus  *status,
-   REAL8      *phase,
-   REAL8       v,
-   expnCoeffs *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing2_4PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *phase = XLALInspiralPhasing2_4PN(v, ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*phase))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
-
-
-
 REAL8
 XLALInspiralPhasing2_4PN (
    REAL8       v,
@@ -253,31 +152,6 @@ XLALInspiralPhasing2_4PN (
          + ak->pva4 * v4);
 
   return phase;
-}
-
-
-
-void
-LALInspiralPhasing2_5PN (
-   LALStatus  *status,
-   REAL8      *phase,
-   REAL8       v,
-   expnCoeffs *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing2_5PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *phase = XLALInspiralPhasing2_5PN(v, ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*phase))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
 }
 
 
@@ -310,31 +184,6 @@ XLALInspiralPhasing2_5PN (
 
 
 
-void
-LALInspiralPhasing2_6PN (
-   LALStatus  *status,
-   REAL8      *phase,
-   REAL8       v,
-   expnCoeffs *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing2_6PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *phase = XLALInspiralPhasing2_6PN(v, ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*phase))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
-
-
-
 REAL8
 XLALInspiralPhasing2_6PN (
    REAL8       v,
@@ -361,31 +210,6 @@ XLALInspiralPhasing2_6PN (
          + (ak->pva6 + ak->pvl6*log(4*v)) * v6);
 
   return phase;
-}
-
-
-
-void
-LALInspiralPhasing2_7PN (
-   LALStatus  *status,
-   REAL8      *phase,
-   REAL8       v,
-   expnCoeffs *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhasing2_7PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *phase = XLALInspiralPhasing2_7PN(v, ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*phase))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
 }
 
 

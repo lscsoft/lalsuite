@@ -56,24 +56,6 @@ extern "C" {
 
 /* ---------- typedefs of structures used by the findchirp functions ---------- */
 
-/**
- * Struture used to contain a binary inspiral standard candle.
- * \c distance is the distance in Mpc at which an optimally oriented
- * binary with the mass parameters stored in \c tmplt would produce
- * the signal-to-noise ratio squared \c rhosq.
- */
-typedef struct
-tagFindChirpStandardCandle
-{
-  CHAR                          ifo[3];		/**< NULL terminated ifo name */
-  InspiralTemplate              tmplt;		/**< Binary parameters used to compute the standard candle */
-  REAL4                         rhosq;		/**< The signal-to-noise ratio squared \f$\rho^2\f$ of the candle */
-  REAL4                         sigmasq;	/**< The variance of the matched filter \f$\sigma^2\f$ for the data used to calculate the standard candle */
-  REAL4                         distance;	/**< The distance at which an optimally oriented inspiral with the masses given by \c tmplt would give the signal-to-noise ratio squared \c rhosq */
-}
-FindChirpStandardCandle;
-
-
 typedef struct
 tagDataSegment
 {
@@ -84,36 +66,6 @@ tagDataSegment
   UINT4                    analyzeSegment;
 }
 DataSegment;
-
-/**
- * Structure used to contain an array of ::DataSegment's.
- * Each \c DataSegment contains an <tt>INT4 number</tt>
- * used to identify the data segment and pointers to a data channel
- * (<tt>REAL4TimeSeries *chan</tt>), a power spectral estimate
- * (<tt>REAL4FrequencySeries *spec</tt>) and a response function
- * (<tt>COMPLEX8FrequencySeries *resp</tt>).
- */
-typedef struct
-tagDataSegmentVector
-{
-  UINT4                         length;		/**< Number of \c DataSegment structures in the vector */
-  DataSegment                  *data;		/**< Pointer to an array of \c DataSegment structures */
-}
-DataSegmentVector;
-
-
-/**
- * This structure provides contains subbanks for the template bank veto.
- */
-typedef struct
-tagFindChirpSubBank
-{
-  UINT4                         subBankSize;	/**< UNDOCUMENTED */
-  InspiralTemplate             *bankHead;	/**< A pointer to an \c InspiralTemplate structure which is the head of linked list of templates */
-  struct tagFindChirpSubBank   *next;		/**< The next structure in the linked list */
-}
-FindChirpSubBank;
-
 
 /**
  * This structure contains a frequency domain template used as input
