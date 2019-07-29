@@ -23,7 +23,7 @@
 #include <lal/LALError.h>
 #include <lal/Units.h>
 #include <lal/Random.h>
-#include <lal/Inject.h>
+#include <Inject.h>
 
 /**
  * \author Creighton, T. D.

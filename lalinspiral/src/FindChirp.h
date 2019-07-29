@@ -367,16 +367,6 @@ LALFindChirpInjectSignals (
     COMPLEX8FrequencySeries    *resp
     );
 
-void
-LALFindChirpInjectIMR (
-    LALStatus                     *status,
-    REAL4TimeSeries               *chan,
-    SimInspiralTable              *events,
-    SimRingdownTable              *ringdownevents,
-    COMPLEX8FrequencySeries       *resp,
-    INT4                           injectSignalType
-    );
-
 INT4
 XLALFindChirpTagTemplateAndSegment (
     DataSegmentVector       *dataSegVec,
@@ -412,14 +402,6 @@ XLALFindChirpBankSimInitialize (
     REAL4FrequencySeries       *spec,
     COMPLEX8FrequencySeries    *resp,
     REAL8                       fLow
-    );
-
-SimInspiralTable *
-XLALFindChirpBankSimInjectSignal (
-    DataSegmentVector          *dataSegVec,
-    COMPLEX8FrequencySeries    *resp,
-    SimInspiralTable           *injParams,
-    FindChirpBankSimParams     *simParams
     );
 
 SimInstParamsTable *
