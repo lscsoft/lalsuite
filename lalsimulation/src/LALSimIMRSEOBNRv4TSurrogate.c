@@ -592,6 +592,7 @@ static int TaylorF2Phasing(
   PNPhasingSeries *pn = NULL;
   LALDict *extraParams = XLALCreateDict();
   XLALSimInspiralWaveformParamsInsertPNSpinOrder(extraParams, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
+  XLALSimInspiralWaveformParamsInsertPNTidalOrder(extraParams, LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN);
   XLALSimInspiralWaveformParamsInsertTidalLambda1(extraParams, lambda1);
   XLALSimInspiralWaveformParamsInsertTidalLambda2(extraParams, lambda2);
 
