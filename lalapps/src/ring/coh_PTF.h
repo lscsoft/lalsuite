@@ -25,6 +25,7 @@
 #include <sys/time.h>
 #include <ctype.h>
 
+#include <lal/ComplexFFT.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALgetopt.h>
 #include <lal/LIGOMetadataTables.h>
@@ -34,6 +35,7 @@
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOMetadataRingdownUtils.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
