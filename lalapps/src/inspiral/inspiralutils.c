@@ -68,6 +68,7 @@
 #include <lal/FindChirp.h>
 #include <lal/LALFrameL.h>
 #include <lal/LALDict.h>
+#include <lal/LALNoiseModels.h>
 
 #include <lal/LALSimulation.h>
 #include <lal/LALSimNoise.h>
