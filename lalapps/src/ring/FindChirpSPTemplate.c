@@ -61,7 +61,8 @@
 #include <lal/AVFactories.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpSP.h>
+#include <lal/FindChirpDatatypes.h>
+#include "FindChirpSP.h"
 
 static double
 XLALFindChirpChirpTime (double m1,

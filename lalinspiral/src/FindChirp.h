@@ -71,8 +71,7 @@ extern "C" {
  * TaylorT2, TaylorT2, PadeT1, EOB and GeneratePPN) and matched filtering
  * for post-Newtonian frequency domain templates (FindChirpSP). The main
  * filter function <tt>FindChirpFilterSegment()</tt> is prototyped in
- * this header file. The template generation and data conditioning functions
- * are prototyped in \ref FindChirpSP.h and \ref FindChirpTD.h.
+ * this header file.
  * Full documentation of the filtering algorithm used can be found in the
  * documentation of the module \ref FindChirpFilter.c.</li>
  * </ol>

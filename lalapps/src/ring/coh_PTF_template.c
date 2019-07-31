@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "coh_PTF.h"
+#include "FindChirpSP.h"
 
 void coh_PTF_template (
     FindChirpTemplate          *fcTmplt,
