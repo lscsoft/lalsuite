@@ -56,20 +56,6 @@ extern "C" {
 #include    <gsl/gsl_vector.h>
 #include    <gsl/gsl_matrix.h>
 
-/**
- * The \c TriggerErrorList is a linked list used within e-thinca. It
- * contains pointers to the \c SnglInspiralTable for a given trigger,
- * and its associated error matrix and position vector.
- */
-typedef struct tagTriggerErrorList
-{
-  SnglInspiralTable          *trigger;
-  gsl_matrix                 *err_matrix;
-  gsl_vector                 *position;
-  struct tagTriggerErrorList *next;
-}
-TriggerErrorList;
-
 
 /* Functions for generating the error matrix and position vectors for triggers */
 gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(

@@ -27,6 +27,7 @@
  */
 
 #include <math.h>
+#include <lal/CoincInspiralEllipsoid.h>
 #include <lal/TrigScanEThincaCommon.h>
 
 /**

@@ -26,10 +26,14 @@
  *-----------------------------------------------------------------------
  */
 
-#include <lal/CoincInspiralEllipsoid.h>
-
 #ifndef _TRIGSCANETHINCACOMMON_H
 #define _TRIGSCANETHINCACOMMON_H
+
+#include <lal/LALAtomicDatatypes.h>
+#include <lal/LIGOMetadataTables.h>
+
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_matrix.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -53,6 +57,20 @@ extern "C" {
  *
  */
 /*@{*/
+
+/**
+ * The \c TriggerErrorList is a linked list used within e-thinca. It
+ * contains pointers to the \c SnglInspiralTable for a given trigger,
+ * and its associated error matrix and position vector.
+ */
+typedef struct tagTriggerErrorList
+{
+  SnglInspiralTable          *trigger;
+  gsl_matrix                 *err_matrix;
+  gsl_vector                 *position;
+  struct tagTriggerErrorList *next;
+}
+TriggerErrorList;
 
 TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
                                                REAL8             scaleFactor,

@@ -25,6 +25,7 @@
  *
  *---------------------------------------------------------------------------*/
 
+#include <lal/CoincInspiralEllipsoid.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/TrigScanEThincaCommon.h>
 #include <lal/LALTrigScanCluster.h>

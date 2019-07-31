@@ -35,7 +35,7 @@
 #include    <lal/Date.h>
 
 #include    <lal/EllipsoidOverlapTools.h>
-#include    <lal/CoincInspiralEllipsoid.h>
+#include    <lal/TrigScanEThincaCommon.h>
 
 /**
  * \defgroup LALTrigScanCluster_h Header LALTrigScanCluster.h
