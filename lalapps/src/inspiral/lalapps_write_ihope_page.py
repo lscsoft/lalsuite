@@ -1943,7 +1943,6 @@ def create_venn(data, tag):
     >>> create_venn(data, tag)
 
   @param data: an input dictionary
-  @param data: numbers
   @param tag:  (type: string)
   @return: a boolean. True is succesfule, False otherwise.
   """
