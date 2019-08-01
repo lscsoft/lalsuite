@@ -93,7 +93,7 @@ extern "C" {
  * double phiRef = 0;                 // orbital phase at reference, half of main GW phase at reference
  * double longAscNodes=0.0;           // longitude of ascending nodes, degenerate with the polarization angle, related to Omega in @image by Omega=longAscNodes+pi/2
  * double eccentricity=0.0;           // eccentricity at reference epoch
- * double meanPerAno=0.0;             // mean anomaly at reference epoch, i.e. the ratio of time passed since last periastron passage to the time interval between two periastron passages, times 2pi.  Note: This is not a geometric angle that can be visualized in @image 
+ * double meanPerAno=0.0;             // mean anomaly at reference epoch, i.e. the ratio of time passed since last periastron passage to the time interval between two periastron passages, times 2pi.  Note: This is not a geometric angle that can be visualized in @image
  * double deltaF = 1.;                // frequency sampling interval
  * double f_min = 40.0;               // start frequency of inspiral
  * double f_max = 0.0;                // end frequency of inspiral: 0 means use default
@@ -267,14 +267,14 @@ typedef enum tagApproximant {
                          * @attention Not implemented in lalsimulation. */
    SpinTaylorT1,	/**< Spinning case T1 models.
                          * @remarks Implemented in lalsimulation (time domain). */
-   SpinTaylorT2,	/**< Spinning case T2 models.
-                         * @remarks Implemented in lalsimulation (time domain). */
+   SpinTaylorT2,	/**< Spinning case T2 models
+                         * @attention Not implemented in lalsimulation. */
    SpinTaylorT3,	/**< Spinning case T3 models
                          * @attention Not implemented in lalsimulation. */
    SpinTaylorT4,	/**< Spinning case T4 models (lalsimulation's equivalent of SpinTaylorFrameless).
                          * @remarks Implemented in lalsimulation (time domain). */
-   SpinTaylorT5,       /**< Spinning case T5. Ref. Sec III of P. Ajith, Phys Rev D (2011)
-                         * @attention Not implemented in lalsimulation.  */
+   SpinTaylorT5,        /**< Spinning case T5 models, which is a variant of the spinning version of the original TaylorT2 (see \cite Buonanno:2009zt) described in sec. III of \cite Ajith:2011ec. SpinTaylorT2 is NOT implemented in LALSimulation.
+		         * @remarks Implemented in lalsimulation (time domain). */
    SpinTaylorF2,	/**< Spinning case F2 models (single spin only).
                          * @remarks Implemented in lalsimulation (frequency domain). */
    SpinTaylorFrameless,	/**< Spinning case PN models (replace SpinTaylor by removing the coordinate singularity)
@@ -392,7 +392,7 @@ typedef enum tagApproximant {
                          * @attention Not implemented in lalsimulation. */
    SpinTaylorT4Fourier, /**< Frequency domain (generic spins) inspiral only waveforms based on TaylorT4, arXiv: 1408.5158
                          * @remarks Implemented in lalsimulation (frequency domain). */
-   SpinTaylorT2Fourier, /**< Frequency domain (generic spins) inspiral only waveforms based on TaylorT2, arXiv: 1408.5158
+   SpinTaylorT5Fourier, /**< Frequency domain (generic spins) inspiral only waveforms based on TaylorT5, \cite Klein:2014bua , (the paper refers to SpinTaylorT2, but it is actually SpinTaylorT5 which is being used.)
                          * @remarks Implemented in lalsimulation (frequency domain). */
    SpinDominatedWf,     /**< Time domain, inspiral only, 1 spin, precessing waveform, Tapai et al, arXiv: 1209.1722
                          * @remarks Implemented in lalsimulation (time domain). */
@@ -757,23 +757,25 @@ typedef struct tagXLALSimInspiralSpinTaylorTxCoeffs
   LALSimInspiralSpinOrder spinO; ///< Twice PN order of included spin effects
   LALSimInspiralTidalOrder tideO;///< Twice PN order of included tidal effects
   REAL8 prev_domega; ///< Previous value of domega/dt used in stopping test
+  INT4 lscorr; ///< Flag for including spin corrections to orb. ang. mom.
 } XLALSimInspiralSpinTaylorTxCoeffs;
 
-int XLALSimInspiralSpinTaylorPNEvolveOrbit(REAL8TimeSeries **V, REAL8TimeSeries **Phi, REAL8TimeSeries **S1x, REAL8TimeSeries **S1y, REAL8TimeSeries **S1z, REAL8TimeSeries **S2x, REAL8TimeSeries **S2y, REAL8TimeSeries **S2z, REAL8TimeSeries **LNhatx, REAL8TimeSeries **LNhaty, REAL8TimeSeries **LNhatz, REAL8TimeSeries **E1x, REAL8TimeSeries **E1y, REAL8TimeSeries **E1z, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, Approximant approx);
+int XLALSimInspiralSpinTaylorPNEvolveOrbit(REAL8TimeSeries **V, REAL8TimeSeries **Phi, REAL8TimeSeries **S1x, REAL8TimeSeries **S1y, REAL8TimeSeries **S1z, REAL8TimeSeries **S2x, REAL8TimeSeries **S2y, REAL8TimeSeries **S2z, REAL8TimeSeries **LNhatx, REAL8TimeSeries **LNhaty, REAL8TimeSeries **LNhatz, REAL8TimeSeries **E1x, REAL8TimeSeries **E1y, REAL8TimeSeries **E1z, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, INT4 lscorr, Approximant approx);
 int XLALSimInspiralSpinTaylorT1(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALparams, int phaseO, int amplitudeO);
-int XLALSimInspiralSpinTaylorT2(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALparams, int phaseO, int amplitudeO);
+int XLALSimInspiralSpinTaylorT5(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALparams, int phaseO, int amplitudeO);
 int XLALSimInspiralSpinTaylorT4(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 v0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALParams, int phaseO, int amplitudeO);
-int XLALSimInspiralSpinTaylorT5(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 incAngle, int phaseO, int amplitudeO);
+int XLALSimInspiralSpinTaylorT5duplicate(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 incAngle, int phaseO, int amplitudeO);
 int XLALSimInspiralSpinTaylorT4PTFQVecs(REAL8TimeSeries **Q1, REAL8TimeSeries **Q2, REAL8TimeSeries **Q3, REAL8TimeSeries **Q4, REAL8TimeSeries **Q5, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 chi1, REAL8 kappa, REAL8 fStart, REAL8 lambda1, REAL8 lambda2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, int phaseO);
-int XLALSimInspiralSpinTaylorT2Fourier(COMPLEX16FrequencySeries **hplus, COMPLEX16FrequencySeries **hcross, REAL8 fMin, REAL8 fMax, REAL8 deltaF, INT4 kMax, REAL8 phiRef, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALparams, INT4 phaseO, INT4 amplitudeO, INT4 phiRefAtEnd);
+int XLALSimInspiralSpinTaylorT5Fourier(COMPLEX16FrequencySeries **hplus, COMPLEX16FrequencySeries **hcross, REAL8 fMin, REAL8 fMax, REAL8 deltaF, INT4 kMax, REAL8 phiRef, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALparams, INT4 phaseO, INT4 amplitudeO, INT4 phiRefAtEnd);
 int XLALSimInspiralSpinTaylorT4Fourier(COMPLEX16FrequencySeries **hplus, COMPLEX16FrequencySeries **hcross, REAL8 fMin, REAL8 fMax, REAL8 deltaF, INT4 kMax, REAL8 phiRef, REAL8 v0, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fRef, REAL8 r, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALparams, INT4 phaseO, INT4 amplitudeO, INT4 phiRefAtEnd);
 int XLALSimInspiralSpinTaylorF2(COMPLEX16FrequencySeries **hplus_out, COMPLEX16FrequencySeries **hcross_out, REAL8 phi_ref, REAL8 deltaF, REAL8 m1_SI, REAL8 m2_SI, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, LALDict *moreParams, INT4 phaseO, INT4 amplitudeO);
 int XLALSimInspiralPrecessingPTFQWaveforms(REAL8TimeSeries **Q1, REAL8TimeSeries **Q2, REAL8TimeSeries **Q3, REAL8TimeSeries **Q4, REAL8TimeSeries **Q5, REAL8TimeSeries *V, REAL8TimeSeries *Phi, REAL8TimeSeries *S1x, REAL8TimeSeries *S1y, REAL8TimeSeries *S1z, REAL8TimeSeries *S2x, REAL8TimeSeries *S2y, REAL8TimeSeries *S2z, REAL8TimeSeries *LNhatx, REAL8TimeSeries *LNhaty, REAL8TimeSeries *LNhatz, REAL8TimeSeries *E1x, REAL8TimeSeries *E1y, REAL8TimeSeries *E1z, REAL8 m1, REAL8 m2, REAL8 r);
 int XLALSimInspiralInitialConditionsPrecessingApproxs(REAL8 *inc, REAL8 *S1x, REAL8 *S1y, REAL8 *S1z, REAL8 *S2x, REAL8 *S2y, REAL8 *S2z, const REAL8 inclIn, const REAL8 S1xIn, const REAL8 S1yIn, const REAL8 S1zIn, const REAL8 S2xIn, const REAL8 S2yIn, const REAL8 S2zIn, const REAL8 m1, const REAL8 m2, const REAL8 fRef, const REAL8 phiRef, LALSimInspiralFrameAxis axisChoice);
 INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx, REAL8 *dLNhy, REAL8 *dLNhz, REAL8 *dE1x, REAL8 *dE1y, REAL8 *dE1z, REAL8 *dS1x, REAL8 *dS1y, REAL8 *dS1z, REAL8 *dS2x, REAL8 *dS2y, REAL8 *dS2z, const REAL8 v, const REAL8 LNhx, const REAL8 LNhy, const REAL8 LNhz, const REAL8 E1x, const REAL8 E1y, const REAL8 E1z, const REAL8 S1x, const REAL8 S1y, const REAL8 S1z, const REAL8 S2x, const REAL8 S2y, const REAL8 S2z, const REAL8 LNhdotS1, const REAL8 LNhdotS2, XLALSimInspiralSpinTaylorTxCoeffs *params);
 INT4 XLALSimInspiralSpinTaylorT4Derivatives(REAL8 t, const REAL8 values[], REAL8 dvalues[], void *mparams);
-INT4 XLALSimInspiralSpinTaylorT4Setup(XLALSimInspiralSpinTaylorTxCoeffs *params, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO);
-INT4 XLALSimSpinTaylorEnergySpinDerivativeSetup(XLALSimInspiralSpinTaylorTxCoeffs *params, const REAL8 lambda1, const REAL8 lambda2, const REAL8 quadparam1, const REAL8 quadparam2);
+int XLALSimInspiralSpinTaylorT5Setup(XLALSimInspiralSpinTaylorTxCoeffs **params, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, INT4 lscorr);
+INT4 XLALSimInspiralSpinTaylorT4Setup(XLALSimInspiralSpinTaylorTxCoeffs **params, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO, INT4 lscorr);
+INT4 XLALSimSpinTaylorEnergySpinDerivativeSetup(XLALSimInspiralSpinTaylorTxCoeffs **params, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 fStart, const REAL8 fEnd, const LALSimInspiralSpinOrder  spinO, const LALSimInspiralTidalOrder tideO, const INT4 phaseO, const REAL8 lambda1, const REAL8 lambda2, const REAL8 quadparam1, const REAL8 quadparam2, const INT4 lscorr);
 INT4 XLALSimInspiralSetEnergyPNTerms(REAL8 *Espin3, REAL8 *Espin4, REAL8 *Espin5, REAL8 *Espin6, REAL8 *Espin7, XLALSimInspiralSpinTaylorTxCoeffs *params, const REAL8 LNhdotS1, const REAL8 LNhdotS2, const REAL8 S1sq, const REAL8 S2sq, const REAL8 S1dotS2);
 
 /* time domain eccentric functions */

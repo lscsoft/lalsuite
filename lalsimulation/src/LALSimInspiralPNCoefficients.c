@@ -1961,14 +1961,43 @@ XLALSimInspiralL_2PN(
         return 3./2. + eta/6.;
 }
 
-/* Orbital averaged from eq. 2.9c of
- *arXiv:gr-qc/9506022
+/* Orbital averaged from eq.(2.9c) of
+ * \cite Kidder:1995zr, see also eq.(4.7) of \cite Bohe:2012mr.
+ * Explicit formula can be found in https://dcc.ligo.org/T1500554/public.
  */
 static REAL8 UNUSED
-XLALSimInspiralL_3PNScoeff(
+XLALSimInspiralL_3PNSiAvgcoeff(
         REAL8 mByM)
 {
-        return 0.5*(3.+1./mByM);
+        return -0.25*(3.+1./mByM);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralL_3PNLiSLAvgcoeff(
+        REAL8 mByM)
+{
+        return -1./12.-2.25/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralL_3PNniSncoeff(
+        REAL8 mByM)
+{
+        return -0.5+0.5/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralL_3PNviSvcoeff(
+        REAL8 mByM)
+{
+        return -1.-1./mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralL_3PNLiSLcoeff(
+        REAL8 mByM)
+{
+        return -5./6.-2.5/mByM;
 }
 
 /* eq. 4.7 of http://arxiv.org/pdf/1212.5520.pdf */

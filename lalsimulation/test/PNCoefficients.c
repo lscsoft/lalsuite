@@ -413,9 +413,8 @@ static int test_consistency(
  *
  * This doesn't handle terms involving log(v), so we'll treat them separately.
  * Be careful with the dE/dv, which causes the log and non-log terms to mix.
- * Also, because spin-spin PN terms are only known to leading order, we have
- * to be careful with spin terms. We first add in the spin-orbit terms, but
- * only keeping terms linear in spin. Then we add in the spin-spin terms at 2 PN.
+ * We first add in the spin-orbit terms, but
+ * only keeping terms linear in spin. Then we add in the spin-spin terms.
  */
 
 static void T4wdot_from_energy_flux(

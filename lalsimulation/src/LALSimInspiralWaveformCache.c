@@ -177,7 +177,7 @@ int XLALSimInspiralChooseTDWaveformFromCache(
 
     INT4 ampO=XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALpars);
     // case 1: Precessing waveforms
-    if( approximant == SpinTaylorT4 || approximant == SpinTaylorT2 ) {
+    if( approximant == SpinTaylorT4 || approximant == SpinTaylorT5 ) {
         // If polarizations are not cached we must generate a fresh waveform
         // FIXME: Will need to check hlms and/or dynamical variables as well
         if( cache->hplus == NULL || cache->hcross == NULL) {

@@ -65,7 +65,7 @@ do
 done
 
 # Test TD precessing, tidal approximants
-approx="SpinTaylorT2 SpinTaylorT4"
+approx="SpinTaylorT5 SpinTaylorT4"
 
 for i in $approx;
 do
@@ -147,7 +147,7 @@ do
 done
 
 # Test FD precessing, tidal approximants
-approx="SpinTaylorT2Fourier SpinTaylorT4Fourier"
+approx="SpinTaylorT5Fourier SpinTaylorT4Fourier"
 
 for i in $approx;
 do
