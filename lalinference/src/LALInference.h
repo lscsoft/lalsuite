@@ -64,6 +64,7 @@
 #include <lal/LALSimInspiralWaveformCache.h>
 #include <lal/LALSimNeutronStar.h>
 #include <lal/LALHashTbl.h>
+#include <lal/RealFFT.h>
 
 #include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
