@@ -24,6 +24,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <lal/Date.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -31,11 +32,12 @@
 #include <lal/Units.h>
 #include <lal/Random.h>
 #include <lal/VectorOps.h>
-#include <lal/Inject.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GeneratePPNInspiral.h>
+#include <lal/LALSimulation.h>
 #include <lal/StreamInput.h>
 #include <lal/TimeFreqFFT.h>
+#include <lal/TimeSeries.h>
 
 #define INSPAWGFILEC_ENORM  0
 #define INSPAWGFILEC_ESUB   1
@@ -167,6 +169,8 @@ main(int argc, char **argv)
   DetectorResponse detector;   /* the detector in question */
   REAL4TimeSeries output;      /* detector ADC output */
 
+  /* set XLAL error handler to traceback and abort */
+  XLALSetErrorHandler(XLALBacktraceErrorHandler);
 
   /*******************************************************************
    * PARSE ARGUMENTS (arg stores the current position)               *
@@ -458,7 +462,7 @@ main(int argc, char **argv)
     PPNParamStruc ppnParams;       /* wave generation parameters */
     REAL4 m1, m2, dist, inc, phic; /* unconverted parameters */
     CoherentGW waveform;           /* amplitude and phase structure */
-    REAL4TimeSeries signalvec;     /* GW signal */
+    REAL4TimeSeries *signalvec;    /* GW signal */
     REAL8 time;                    /* length of GW signal */
     CHAR timeCode;                 /* code for signal time alignment */
     CHAR message[MSGLEN];          /* warning/info messages */
@@ -527,18 +531,12 @@ main(int argc, char **argv)
       waveform.f->epoch = waveform.phi->epoch = waveform.a->epoch;
 
       /* Generate and inject signal. */
-      signalvec.epoch = waveform.a->epoch;
-      signalvec.epoch.gpsSeconds -= 1;
-      signalvec.deltaT = output.deltaT/4.0;
-      signalvec.f0 = 0;
-      signalvec.data = NULL;
-      time = ( time + 2.0 )/signalvec.deltaT;
-      SUB( LALSCreateVector( &stat, &( signalvec.data ), (UINT4)time ),
-	   &stat );
-      SUB( LALSimulateCoherentGW( &stat, &signalvec, &waveform,
+      signalvec = XLALCreateREAL4TimeSeries( "", &waveform.a->epoch, 0.,
+				output.deltaT, &waveform.a->sampleUnits,
+				(time + 2.0) / output.deltaT );
+      XLALGPSAdd(&signalvec->epoch, -1.0);
+      SUB( LALSimulateCoherentGW( &stat, signalvec, &waveform,
 				  &detector ), &stat );
-      SUB( LALSSInjectTimeSeries( &stat, &output, &signalvec ),
-	   &stat );
       SUB( LALSDestroyVectorSequence( &stat, &( waveform.a->data ) ),
 	   &stat );
       SUB( LALSDestroyVector( &stat, &( waveform.f->data ) ), &stat );
@@ -546,7 +544,8 @@ main(int argc, char **argv)
       LALFree( waveform.a );
       LALFree( waveform.f );
       LALFree( waveform.phi );
-      SUB( LALSDestroyVector( &stat, &( signalvec.data ) ), &stat );
+      XLALSimAddInjectionREAL4TimeSeries( &output, signalvec, NULL );
+      XLALDestroyREAL4TimeSeries( signalvec );
     }
 
     /* If there is no source file, inject only one source. */
