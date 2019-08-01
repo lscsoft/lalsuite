@@ -183,7 +183,7 @@ int XLALSimInspiralSpinTaylorT5duplicate(
 		int amplitudeO                  /**< twice PN amplitude order */
 	) {
 
-
+        XLAL_PRINT_DEPRECATION_WARNING("XLALSimInspiralSpinTaylorT5");
 	UINT4 i, intStatus, lenReturn;
 	LIGOTimeGPS tStart = LIGOTIMEGPSZERO;
 	REAL8TimeSeries *orbPhase=NULL, *V=NULL, *LNhxVec=NULL, *LNhyVec=NULL, *LNhzVec=NULL; 
