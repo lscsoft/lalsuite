@@ -3,9 +3,6 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
-noinst_HEADERS = \
-	CreateMetaTableDir.h
-
 pkginclude_HEADERS = \
 	BBHPhenomCoeffs.h \
 	LALInspiralPyCBCTemplate.h \
@@ -51,7 +48,6 @@ liblalinspiral_la_SOURCES = \
 	CoherentInspiralFilter.c \
 	CoherentInspiralInput.c \
 	CoincInspiralUtils.c \
-	CreateMetaTableDir.c \
 	FindChirpPTFTemplate.c \
 	FindChirpPTFWaveform.c \
 	FindChirpPhenomWaveform.c \

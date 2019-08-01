@@ -20,7 +20,6 @@
 #include <stdio.h>
 #include <metaio.h>
 
-#include "CreateMetaTableDir.h"
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 
@@ -30,6 +29,16 @@
  * LAL Functions
  *
  */
+
+
+typedef struct
+tagMetaTableDirectory
+{
+  const CHAR *name;
+  INT4   pos;
+  INT4   idx;
+}
+MetaTableDirectory;
 
 
 #define CLOBBER_EVENTS \
