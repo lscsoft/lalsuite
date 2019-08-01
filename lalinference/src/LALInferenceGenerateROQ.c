@@ -20,6 +20,7 @@
  */
 
 #include <lal/LALInferenceGenerateROQ.h>
+#include <lal/XLALGSL.h>
 
 #ifndef _OPENMP
 #define omp ignore
