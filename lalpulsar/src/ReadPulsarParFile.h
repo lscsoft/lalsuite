@@ -529,6 +529,9 @@ int PulsarCheckParam( const PulsarParameters *pars, const CHAR *name );
 /** \brief Function to free memory from pulsar parameters */
 void PulsarFreeParams( PulsarParameters *par );
 
+/** \brief Function to copy a \c PulsarParameters structure */
+void PulsarCopyParams( PulsarParameters *origin, PulsarParameters *target );
+
 /** Conversion functions from units used in TEMPO parameter files into SI units */
 
 /** Convert the input string into a double precision floating point number */

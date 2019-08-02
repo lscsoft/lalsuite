@@ -259,7 +259,9 @@ class PulsarParametersPy(object):
                 raise ValueError("Expected 'lalpulsar.PulsarParameters' type, string, or None")
 
     def __len__(self):
-        return length
+        _ = self.keys()  # length is counted in the keys() method
+
+        return self.length
 
     def __getitem__(self, key):
         """
@@ -805,3 +807,13 @@ class PulsarParametersPy(object):
         """
 
         return self._pulsarparameters
+
+    def __deepcopy__(self, memo):
+        """
+        Create a copy of the parameters.
+        """
+    
+        newpar = PulsarParametersPy()
+        memo[id(self)] = newpar
+        lalpulsar.PulsarCopyParams(self.PulsarParameters(), newpar.PulsarParameters())
+        return newpar
