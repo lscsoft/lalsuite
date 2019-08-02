@@ -1389,28 +1389,6 @@ XLALRungeKutta4(
 void XLALRungeKutta4Free(
      rk4GSLIntegrator *integrator);
 
-/* --- PARSING PROTOTYPE FOR INSPIRALTEMPLATE STRCUTURE --- */
-
-void
-LALInspiralITStructureParseParameters(
-	LALStatus *status,
-	UINT4 argc,
-	CHAR **argv,
-	InspiralTemplate *params);
-
-void
-LALInspiralITStructureSetDefault(
-	LALStatus *status,
-	InspiralTemplate *params);
-
-void
-LALInspiralITStructurePrint(
-	LALStatus *status,
-	InspiralTemplate  params);
-
-void
-LALInspiralITStructureHelp(void);
-
 /* --- TEST PROTOTYPES --- */
 
 INT4 XLALInspiralHybridRingdownWave (

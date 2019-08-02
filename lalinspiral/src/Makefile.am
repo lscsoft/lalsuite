@@ -88,7 +88,6 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralNextTemplate.c \
 	LALInspiralNinjaInject.c \
 	LALInspiralParameterCalc.c \
-	LALInspiralParseParameters.c \
 	LALInspiralPhasing1.c \
 	LALInspiralPhasing2.c \
 	LALInspiralPhasing3.c \
