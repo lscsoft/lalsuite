@@ -25,6 +25,7 @@
  * model. Flux function given by Phys.Rev.D79:064004,2009.
  */
 
+#include <math.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALEOBNRv2Waveform.h>
 

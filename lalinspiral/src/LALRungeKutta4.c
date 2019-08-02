@@ -56,6 +56,7 @@
  *
  */
 
+#include <lal/XLALGSL.h>
 #include <lal/LALInspiral.h>
 
 #ifdef __GNUC__

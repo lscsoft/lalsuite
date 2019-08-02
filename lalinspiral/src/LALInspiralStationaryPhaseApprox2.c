@@ -79,6 +79,7 @@
  *
  */
 
+#include <math.h>
 #include "LALInspiral.h"
 
 #ifdef __GNUC__

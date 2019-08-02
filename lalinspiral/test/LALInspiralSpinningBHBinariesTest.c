@@ -77,6 +77,7 @@
  *
  */
 
+#include <math.h>
 #include <stdio.h>
 #include <lal/LALInspiral.h>
 #include <lal/RealFFT.h>

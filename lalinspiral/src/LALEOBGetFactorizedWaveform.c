@@ -30,6 +30,7 @@
  */
 
 
+#include <math.h>
 #include <lal/LALEOBNRv2Waveform.h>
 
 int XLALCalcFacWaveformCoefficients(

@@ -24,6 +24,7 @@
  *
  */
 /*-------------------------------------------------------------------*/
+#include <math.h>
 #include <lal/LALInspiral.h>
 #include <lal/SeqFactories.h>
 #include <lal/FindRoot.h>

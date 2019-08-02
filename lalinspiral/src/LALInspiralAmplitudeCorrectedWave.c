@@ -72,6 +72,7 @@
    Interface routine needed to generate time-domain T- or a P-approximant
    waveforms by solving the ODEs using a 4th order Runge-Kutta; April 5, 00.
 */
+#include <math.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>

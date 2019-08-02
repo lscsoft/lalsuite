@@ -1,5 +1,6 @@
 #include <lal/LALInferenceGenerateROQ.h>
 #include <lal/LALConstants.h>
+#include <lal/XLALGSL.h>
 #include <gsl/gsl_randist.h>
 
 #include <time.h>
