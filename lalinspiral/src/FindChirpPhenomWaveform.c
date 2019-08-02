@@ -33,7 +33,6 @@
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/GeneratePPNInspiral.h>
-#include <lal/FindChirpDatatypes.h>
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>

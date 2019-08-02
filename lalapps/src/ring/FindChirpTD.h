@@ -33,7 +33,7 @@
 #include <lal/RealFFT.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpDatatypes.h>
+#include "FindChirpDatatypes.h"
 
 #if defined(__cplusplus)
 extern "C" {

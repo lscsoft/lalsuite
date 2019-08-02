@@ -7,7 +7,6 @@ pkginclude_HEADERS = \
 	BBHPhenomCoeffs.h \
 	CoincInspiralEllipsoid.h \
 	FindChirp.h \
-	FindChirpDatatypes.h \
 	FindChirpPTF.h \
 	GenerateInspRing.h \
 	GenerateInspiral.h \

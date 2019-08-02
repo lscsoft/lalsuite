@@ -28,6 +28,7 @@ COH_PTF_SOURCES = \
 	coh_PTF_output.c \
 	coh_PTF_bankveto.c \
 	coh_PTF_utils.c \
+	FindChirpDatatypes.h \
 	FindChirpIMRSimulation.h \
 	FindChirpIMRSimulation.c \
 	FindChirpTD.h \

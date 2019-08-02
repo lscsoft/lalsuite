@@ -62,7 +62,7 @@
 #include <lal/AVFactories.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpDatatypes.h>
+#include "FindChirpDatatypes.h"
 #include "FindChirpSP.h"
 
 static double
