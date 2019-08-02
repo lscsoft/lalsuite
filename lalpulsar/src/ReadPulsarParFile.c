@@ -668,6 +668,90 @@ void PulsarFreeParams( PulsarParameters* pars ){
 }
 
 
+/* create a copy of the parameters */
+void PulsarCopyParams( PulsarParameters *origin, PulsarParameters *target ){
+  /* Check that the source and origin differ */
+  if( origin == target ) { return; }
+
+  if( !origin ) {
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to access origin pointer.");
+  }
+
+  /* Make sure the structure is initialised */
+  if( !target ) {
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to copy to uninitialised PulsarParameters structure.");
+  }
+
+  PulsarParam *this, *next = NULL;
+
+  this = origin->head;
+
+  if( this ) { next = this->next; }
+
+  /* first clear target variables */
+  PulsarClearParams( target );
+
+  while( this ){
+    if( this->type == PULSARTYPE_REAL8Vector_t ) {
+      const REAL8Vector *old = *(REAL8Vector **)this->value;
+      REAL8Vector *new = XLALCreateREAL8Vector(old->length);
+      if( new ){
+        memcpy(new->data, old->data, new->length*sizeof(REAL8));
+      }
+      else{
+        XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to copy vector!\n");
+      }
+
+      PulsarAddREAL8VectorParam(target, this->name, (const REAL8Vector*)new);
+
+      if ( this->err ) {
+        const REAL8Vector *olderr = *(REAL8Vector **)this->err;
+        REAL8Vector *newerr = XLALCreateREAL8Vector(olderr->length);
+        if( newerr ){
+          memcpy(newerr->data, olderr->data, newerr->length*sizeof(REAL8));
+        }
+        else{
+          XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to copy vector!\n");
+        }
+
+        const UINT4 *oldfit = PulsarGetParamFitFlag( origin, this->name );
+        UINT4 *newfit = (UINT4*)XLALCalloc( newerr->length, sizeof(UINT4) );
+
+        if( newfit ){
+          memcpy(newfit, oldfit, newerr->length*sizeof(UINT4));
+        }
+        else{
+          XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to copy vector!\n");
+        }
+
+        PulsarSetREAL8VectorParamErr(target, this->name, (const REAL8Vector *)newerr, (const UINT4 *)newfit);
+      }
+    }
+    else if ( this->type == PULSARTYPE_string_t ){
+      CHAR *parstr = XLALStringDuplicate(*(CHAR **)this->value);
+      PulsarAddStringParam(target, this->name, (const CHAR*)parstr);
+    }
+    else {
+      PulsarAddParam(target, this->name, this->value, this->type);
+
+      if ( ( this->type == PULSARTYPE_REAL8_t ) && this->err ){
+        REAL8 err = *(REAL8 *)this->err;
+
+        const UINT4 *oldfit = PulsarGetParamFitFlag( origin, this->name );
+        UINT4 newfit = oldfit[0];
+
+        PulsarSetREAL8ParamErr(target, this->name, err, newfit);
+      }
+    }
+
+    this = next;
+    if( this ) { next = this->next; }
+  }
+
+  return;
+}
+
+
 /* create functions for converting par file input e.g. from strings to floats, converting times, converting units */
 enum{
   CONVFLOAT = 0,
