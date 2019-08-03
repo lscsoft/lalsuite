@@ -657,11 +657,11 @@ nightly:macos:sierra:
 
 .nightly:wheel:manylinux1: &nightly-wheel-manylinux1
   <<: *nightly-wheel-manylinux
-  image: containers.ligo.org/lscsoft/lalsuite-manylinux:master
+  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux1_x86_64
 
 .nightly:wheel:manylinux2010: &nightly-wheel-manylinux2010
   <<: *nightly-wheel-manylinux
-  image: containers.ligo.org/lscsoft/lalsuite-manylinux:manylinux2010
+  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux2010_x86_64
 
 # Build wheels for all supported platforms
 nightly:wheel:cp27-cp27m-manylinux1:
