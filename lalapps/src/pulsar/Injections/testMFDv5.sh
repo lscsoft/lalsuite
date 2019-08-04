@@ -64,6 +64,8 @@ s1_f2dot=0
 ## ----- signal 2
 s2_h0=2.5
 s2_cosi=-0.5
+s2_aPlus=`echo "scale = 6; 0.5 * ${s2_h0} * (1.0 + ${s2_cosi} * ${s2_cosi})" | bc`
+s2_aCross=`echo "scale = 6; ${s2_h0} * ${s2_cosi}" | bc`
 s2_psi=1.2
 s2_phi0=1.5
 s2_refTime=711210229
@@ -117,8 +119,8 @@ echo "refTime = ${s2_refTime}" >> ${injFile2}
 echo "Freq = ${s2_Freq}" >> ${injFile2}
 echo "f1dot = ${s2_f1dot}" >> ${injFile2}
 echo "f2dot = ${s2_f2dot}" >> ${injFile2}
-echo "h0 = ${s2_h0}" >> ${injFile2}
-echo "cosi = ${s2_cosi}" >> ${injFile2}
+echo "aPlus = ${s2_aPlus}" >> ${injFile2}
+echo "aCross = ${s2_aCross}" >> ${injFile2}
 echo "psi = ${s2_psi}" >> ${injFile2}
 echo "phi0 = ${s2_phi0}" >> ${injFile2}
 echo >> ${injFile2}
