@@ -9,6 +9,7 @@ dependencies:
   - chealpix
   - doxygen
   - fftw
+  - freezegun
   - gcc_linux-64
   - gsl
   - h5py
@@ -20,6 +21,7 @@ dependencies:
   - lscsoft-glue
   - make
   - metaio
+  - mock
   - numpy
   - pkg-config
   - pytest

@@ -10,6 +10,7 @@ dependencies:
   - clang_osx-64
   - doxygen
   - fftw
+  - freezegun
   - gsl
   - h5py
   - hdf5
@@ -20,6 +21,7 @@ dependencies:
   - lscsoft-glue
   - make
   - metaio
+  - mock
   - numpy
   - pkg-config
   - pytest
