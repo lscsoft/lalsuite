@@ -29,6 +29,7 @@
  *
  */
 
+#include <lal/XLALGSL.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALEOBNRv2Waveform.h>
 

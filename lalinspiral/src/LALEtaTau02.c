@@ -59,6 +59,7 @@
  *
  */
 
+#include <math.h>
 #include <lal/LALInspiral.h>
 
 void

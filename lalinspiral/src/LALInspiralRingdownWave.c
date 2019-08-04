@@ -80,6 +80,7 @@
  *
  */
 
+#include <math.h>
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -87,6 +88,7 @@
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/LALConstants.h>
+#include <lal/XLALGSL.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_spline.h>

@@ -28,6 +28,7 @@
 #include <lal/NRWaveInject.h>
 #include <lal/Random.h>
 #include <lal/LALSimulation.h>
+#include <lal/LALSimInspiral.h>
 #include <lal/LALDetectors.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>

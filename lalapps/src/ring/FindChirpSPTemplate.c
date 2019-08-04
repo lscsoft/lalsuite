@@ -57,6 +57,7 @@
  *
  */
 
+#include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInspiral.h>

@@ -61,8 +61,10 @@
  *
  */
 
+#include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
+#include <lal/XLALError.h>
 
 void
 LALInspiralFrequency3_0PN (
@@ -86,7 +88,6 @@ LALInspiralFrequency3_0PN (
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
-
 
 
 REAL8

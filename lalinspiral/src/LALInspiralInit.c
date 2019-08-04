@@ -60,6 +60,7 @@
  */
 
 
+#include <math.h>
 #include <lal/LALInspiral.h>
 #define  LALINSPIRALINIT_LENGTHOVERESTIMATION  0.1       /* 10 % */
 

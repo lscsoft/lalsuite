@@ -61,6 +61,7 @@
  *
  */
 
+#include <math.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
 
