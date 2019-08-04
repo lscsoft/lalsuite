@@ -844,9 +844,11 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
     {
         XLAL_CHECK ( h0 >= 0, XLAL_EDOM );
         XLAL_CHECK ( (cosi >= -1) && (cosi <= 1), XLAL_EDOM );
-        pulsarParams->Amp.aPlus = 0.5 * h0 * (1.0 + SQ(cosi));
-        pulsarParams->Amp.aCross = h0 * cosi;
+        aPlus = 0.5 * h0 * (1.0 + SQ(cosi));
+        aCross = h0 * cosi;
     } //if {h0, cosi}
+  pulsarParams->Amp.aPlus = aPlus;
+  pulsarParams->Amp.aCross = aCross;
 
   // ----- psi
   REAL8 psi = 0; BOOLEAN have_psi;
