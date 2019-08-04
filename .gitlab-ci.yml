@@ -469,7 +469,6 @@ nightly:gcc:9:
 # https://git.ligo.org/lscsoft/lalsuite/issues/161
 
 .conda-build: &conda-build
-  image: continuumio/miniconda3
   variables:
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda-pkgs"
   stage: nightly
