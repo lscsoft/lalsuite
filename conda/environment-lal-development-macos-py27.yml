@@ -21,6 +21,7 @@ dependencies:
   - lscsoft-glue
   - make
   - metaio
+  - mock
   - numpy
   - pkg-config
   - pytest
