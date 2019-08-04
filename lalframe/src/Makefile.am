@@ -58,7 +58,6 @@ lalfr_vis_SOURCES = vis.c
 lalframe_version_SOURCES = version.c
 
 pkginclude_HEADERS = \
-	Aggregation.h \
 	FrameCalibration.h \
 	LALFrStream.h \
 	LALFrameConfig.h \
@@ -78,7 +77,6 @@ liblalframe_la_SOURCES = \
 	LALFrStreamRead.c \
 	LALFrStreamLegacy.c \
 	FrameCalibration.c \
-	Aggregation.c \
 	$(END_OF_LIST)
 
 nodist_liblalframe_la_SOURCES = \

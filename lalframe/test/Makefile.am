@@ -3,7 +3,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
 # Add compiled test programs to this variable
 test_programs += LALFrSeriesTest
-#test_programs += AggregationTest
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts +=
