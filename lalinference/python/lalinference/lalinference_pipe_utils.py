@@ -1376,7 +1376,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     try:
                         gid = self.config.get('input','gid')
                     except:
-                        gid = none
+                        gid = None
                     respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
                 if self.config.has_option('input','injection-file') and event.event_id is not None:
                     respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
