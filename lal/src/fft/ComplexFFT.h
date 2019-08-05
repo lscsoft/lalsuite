@@ -20,7 +20,6 @@
 #ifndef _COMPLEXFFT_H
 #define _COMPLEXFFT_H
 
-#include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
 
 #if defined(__cplusplus)
@@ -46,35 +45,6 @@ extern "C" {
  *
  */
 /*@{*/
-
-/** \name Error Codes */
-/*@{*/
-#define COMPLEXFFTH_ENULL 1	/**< Null pointer */
-#define COMPLEXFFTH_ENNUL 2	/**< Non-null pointer */
-#define COMPLEXFFTH_ESIZE 4	/**< Invalid input size */
-#define COMPLEXFFTH_ESZMM 8	/**< Size mismatch */
-#define COMPLEXFFTH_ESLEN 16	/**< Invalid/mismatched sequence lengths */
-#define COMPLEXFFTH_ESAME 32	/**< Input/Output data vectors are the same */
-#define COMPLEXFFTH_EALOC 64	/**< Memory allocation failed */
-#define COMPLEXFFTH_EFFTW 128	/**< Error in FFTW */
-#define COMPLEXFFTH_ESNGL 256	/**< FFTW library is not single-precision */
-#define COMPLEXFFTH_EINTL 512	/**< Error in Intel FFT library */
-#define COMPLEXFFTH_ESIGN 1024	/**< Unknown sign of transform in plan */
-/*@}*/
-
-/** \cond DONT_DOXYGEN */
-#define COMPLEXFFTH_MSGENULL "Null pointer"
-#define COMPLEXFFTH_MSGENNUL "Non-null pointer"
-#define COMPLEXFFTH_MSGESIZE "Invalid input size"
-#define COMPLEXFFTH_MSGESZMM "Size mismatch"
-#define COMPLEXFFTH_MSGESLEN "Invalid/mismatched sequence lengths"
-#define COMPLEXFFTH_MSGESAME "Input/Output data vectors are the same"
-#define COMPLEXFFTH_MSGEALOC "Memory allocation failed"
-#define COMPLEXFFTH_MSGEFFTW "Error in FFTW"
-#define COMPLEXFFTH_MSGESNGL "FFTW library is not single-precision"
-#define COMPLEXFFTH_MSGEINTL "Error in Intel FFT library"
-#define COMPLEXFFTH_MSGESIGN "Unknown sign of transform in plan"
-/** \endcond */
 
 /** Plan to perform FFT of COMPLEX8 data */
 typedef struct tagCOMPLEX8FFTPlan COMPLEX8FFTPlan;
@@ -358,126 +328,6 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan );
  * .
  */
 int XLALCOMPLEX16VectorFFT( COMPLEX16Vector * _LAL_RESTRICT_ output, const COMPLEX16Vector * _LAL_RESTRICT_ input, const COMPLEX16FFTPlan *plan );
-
-/*
- *
- * LAL COMPLEX8 functions
- *
- */
-
-/**
- * \b DEPRECATED
- * @deprecated Use XLALCreateForwardCOMPLEX8FFTPlan() instead.
- */
-void
-LALCreateForwardCOMPLEX8FFTPlan(
-    LALStatus       *status,
-    COMPLEX8FFTPlan **plan,
-    UINT4            size,
-    INT4             measure
-    );
-/**
- * \b DEPRECATED
- * @deprecated Use XLALCreateForwardCOMPLEX8FFTPlan() instead.
- */
-#define LALCreateForwardComplexFFTPlan LALCreateForwardCOMPLEX8FFTPlan
-
-/**
- * \b DEPRECATED
- * @deprecated Use XLALCreateReverseCOMPLEX8FFTPlan() instead.
- */
-void
-LALCreateReverseCOMPLEX8FFTPlan(
-    LALStatus       *status,
-    COMPLEX8FFTPlan **plan,
-    UINT4            size,
-    INT4             measure
-    );
-/**
- * \b DEPRECATED
- * @deprecated Use XLALCreateReverseCOMPLEX8FFTPlan() instead.
- */
-#define LALCreateReverseComplexFFTPlan LALCreateReverseCOMPLEX8FFTPlan
-
-/**
- * \b DEPRECATED
- * @deprecated Use XLALDestroyCOMPLEX8FFTPlan() instead.
- */
-void
-LALDestroyCOMPLEX8FFTPlan (
-    LALStatus       *status,
-    COMPLEX8FFTPlan **plan
-    );
-/**
- * \b DEPRECATED
- * @deprecated Use XLALDestroyCOMPLEX8FFTPlan() instead.
- */
-#define LALDestroyComplexFFTPlan LALDestroyCOMPLEX8FFTPlan
-
-/**
- * \b DEPRECATED
- * @deprecated Use XLALCOMPLEX8VectorFFT() instead.
- */
-void
-LALCOMPLEX8VectorFFT (
-    LALStatus      *status,
-    COMPLEX8Vector *output,
-    COMPLEX8Vector *input,
-    COMPLEX8FFTPlan *plan
-    );
-
-/*
- *
- * LAL COMPLEX16 functions
- *
- */
-
-/**
- * \b DEPRECATED
- * @deprecated Use XLALCreateForwardCOMPLEX16FFTPlan() instead.
- */
-void
-LALCreateForwardCOMPLEX16FFTPlan(
-    LALStatus       *status,
-    COMPLEX16FFTPlan **plan,
-    UINT4            size,
-    INT4             measure
-    );
-
-/**
- * \b DEPRECATED
- * @deprecated Use XLALCreateReverseCOMPLEX16FFTPlan() instead.
- */
-void
-LALCreateReverseCOMPLEX16FFTPlan(
-    LALStatus       *status,
-    COMPLEX16FFTPlan **plan,
-    UINT4            size,
-    INT4             measure
-    );
-
-/**
- * \b DEPRECATED
- * @deprecated Use XLALDestroyCOMPLEX16FFTPlan() instead.
- */
-void
-LALDestroyCOMPLEX16FFTPlan (
-    LALStatus       *status,
-    COMPLEX16FFTPlan **plan
-    );
-
-/**
- * \b DEPRECATED
- * @deprecated Use XLALCOMPLEX16VectorFFT() instead.
- */
-void
-LALCOMPLEX16VectorFFT (
-    LALStatus      *status,
-    COMPLEX16Vector *output,
-    COMPLEX16Vector *input,
-    COMPLEX16FFTPlan *plan
-    );
-
 
 /*@}*/
 

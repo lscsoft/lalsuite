@@ -174,72 +174,6 @@ extern "C" {
  */
 /*@{*/
 
-/**\name Error Codes */
-/*@{*/
-#define TIMEFREQFFTH_ENULL 1	/**< Null pointer */
-#define TIMEFREQFFTH_ESIZE 2	/**< Invalid size */
-#define TIMEFREQFFTH_ERATE 4	/**< Invalid rate */
-#define TIMEFREQFFTH_ESIGN 4	/**< Incorrect plan sign */
-#define TIMEFREQFFTH_EALLOC 16	/**< Pointer has already been allocated, should be null */
-#define TIMEFREQFFTH_EPOSARG 32	/**< Argument must be positive */
-#define TIMEFREQFFTH_EMALLOC 64	/**< Malloc failure */
-#define TIMEFREQFFTH_EINCOMP 128/**< Incompatible arguments */
-#define TIMEFREQFFTH_ENNUL 256	/**< Non-null pointer */
-#define TIMEFREQFFTH_EZSEG 512	/**< Segment length is zero */
-#define TIMEFREQFFTH_EZOVR 1024	/**< Overlap length is zero */
-#define TIMEFREQFFTH_EMISM 2048	/**< Mismatch beteen segment, overlap and data length */
-#define TIMEFREQFFTH_EUAVG 4096	/**< Unknown average power spectum method */
-/*@}*/
-
-/** \cond DONT_DOXYGEN */
-#define TIMEFREQFFTH_MSGENULL "Null pointer"
-#define TIMEFREQFFTH_MSGESIZE "Invalid size"
-#define TIMEFREQFFTH_MSGERATE "Invalid rate"
-#define TIMEFREQFFTH_MSGESIGN "Incorrect plan sign"
-#define TIMEFREQFFTH_MSGEALLOC "Pointer has already been allocated, should be null"
-#define TIMEFREQFFTH_MSGEPOSARG "Argument must be positive"
-#define TIMEFREQFFTH_MSGEMALLOC "Malloc failure"
-#define TIMEFREQFFTH_MSGEINCOMP "Incompatible arguments"
-#define TIMEFREQFFTH_MSGENNUL "Non-null pointer"
-#define TIMEFREQFFTH_MSGEZSEG "Segment length is zero"
-#define TIMEFREQFFTH_MSGEZOVR "Overlap length is zero"
-#define TIMEFREQFFTH_MSGEMISM "Mismatch beteen segment, overlap and data length"
-#define TIMEFREQFFTH_MSGEUAVG "Unknown average power spectum method"
-/** \endcond */
-
-
-/**
- * This type determines the method the type of average that will be used to
- * compute the power sperum estimate by the LALREAL4AverageSpectrum()
- * function. The function computes a series of (possibly overlapping) power
- * spectra and computes the average using one of the following methods.
- */
-typedef enum
-tagAvgSpecMethod
-{
-  useUnity,	/**< A constant PSD of value unity will be returned independent of the input data given; this is used for testing purposes */
-  useMean,	/**< The arithmetic mean of the individual power spectra computed will be used to compute the output power spectrum */
-  useMedian,	/**< The median value of the individual power spectra computed will be used to compute the output power spectrum */
-  NumberAvgSpecMethods	/**< gives the number of defined methods */
-}
-AvgSpecMethod;
-
-/**
- * This structure controls the behaviour of the LALREAL4AverageSpectrum() function.
- */
-typedef struct
-tagAverageSpectrumParams
-{
-  REAL4Window          *window;	/**< The windowing function to use when computing the individual power spectra from the input time series.
-                                 * The input time series is broken into smaller time series to compute power spectra
-                                 * for the estimate. The length of these time series is determined by the \c length parameter of the window vector.
-                                 */
-  UINT4                 overlap; /**< The overlap between sucessive time series used to compute the power spectra. */
-  AvgSpecMethod         method;	/**< The method of computing the average as describe under ::AvgSpecMethod */
-  RealFFTPlan          *plan;	/**< The FFT plan to be used in the computation of the power spectrum. */
-}
-AverageSpectrumParams;
-
 /** UNDOCUMENTED */
 typedef struct
 tagLALPSDRegressor
@@ -419,53 +353,6 @@ REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
     const REAL8Window *window,
     const REAL8FFTPlan *plan
 );
-
-void
-LALTimeFreqRealFFT(
-    LALStatus               *status,
-    COMPLEX8FrequencySeries *fser,
-    REAL4TimeSeries         *tser,
-    RealFFTPlan             *plan
-    );
-
-void
-LALFreqTimeRealFFT(
-    LALStatus               *status,
-    REAL4TimeSeries         *tser,
-    COMPLEX8FrequencySeries *fser,
-    RealFFTPlan             *plan
-    );
-
-void
-LALREAL4AverageSpectrum (
-    LALStatus                   *status,
-    REAL4FrequencySeries        *fSeries,
-    REAL4TimeSeries             *tSeries,
-    AverageSpectrumParams       *params
-    );
-void
-LALCOMPLEX8AverageSpectrum (
-    LALStatus                   *status,
-    COMPLEX8FrequencySeries     *fSeries,
-    REAL4TimeSeries             *tSeries0,
-    REAL4TimeSeries             *tSeries1,
-    AverageSpectrumParams       *params
-    );
-void
-LALTimeFreqComplexFFT(
-    LALStatus               *status,
-    COMPLEX8FrequencySeries *fser,
-    COMPLEX8TimeSeries      *tser,
-    ComplexFFTPlan          *plan
-    );
-
-void
-LALFreqTimeComplexFFT(
-    LALStatus               *status,
-    COMPLEX8TimeSeries      *tser,
-    COMPLEX8FrequencySeries *fser,
-    ComplexFFTPlan          *plan
-    );
 
 LALPSDRegressor *
 XLALPSDRegressorNew(

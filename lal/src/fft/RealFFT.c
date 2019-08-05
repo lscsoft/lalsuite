@@ -21,12 +21,15 @@
 
 #include <complex.h>
 #include <fftw3.h>
+#include <string.h>
 
-#include <lal/LALStdlib.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
+#include <lal/LALDatatypes.h>
 #include <lal/FFTWMutex.h>
 #include <lal/LALConfig.h> /* Needed to know whether aligning memory */
+#include <lal/LALMalloc.h>
+#include <lal/RealFFT.h>
+#include <lal/SeqFactories.h>
+#include <lal/XLALError.h>
 
 /**
  * \addtogroup RealFFT_h

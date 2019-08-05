@@ -102,8 +102,6 @@ int main( int argc, char *argv[] )
   ComplexFFTPlan *revComplexPlan = NULL;
   RandomParams   *randpar        = NULL;
 
-  AverageSpectrumParams avgSpecParams;
-
   UINT4 srate[] = { 4096, 9000 };
   UINT4 npts[] = { 262144, 1048576 };
   REAL4 var[] = { 5, 16 };
@@ -125,13 +123,10 @@ int main( int argc, char *argv[] )
   LALCCreateVector( &status, &Z.data, n );
   TestStatus( &status, CODES( 0 ), 1 );
 
-  LALCreateForwardRealFFTPlan( &status, &fwdRealPlan, n, 0 );
-  TestStatus( &status, CODES( 0 ), 1 );
-  LALCreateReverseRealFFTPlan( &status, &revRealPlan, n, 0 );
-  TestStatus( &status, CODES( 0 ), 1 );
-  LALCreateForwardComplexFFTPlan( &status, &fwdComplexPlan, n, 0 );
-  TestStatus( &status, CODES( 0 ), 1 );
-  LALCreateReverseComplexFFTPlan( &status, &revComplexPlan, n, 0 );
+  fwdRealPlan = XLALCreateForwardREAL4FFTPlan( n, 0 );
+  revRealPlan = XLALCreateReverseREAL4FFTPlan( n, 0 );
+  fwdComplexPlan = XLALCreateForwardCOMPLEX8FFTPlan( n, 0 );
+  revComplexPlan = XLALCreateReverseCOMPLEX8FFTPlan( n, 0 );
   TestStatus( &status, CODES( 0 ), 1 );
 
   randpar = XLALCreateRandomParams( 100 );
@@ -157,12 +152,10 @@ int main( int argc, char *argv[] )
   LALSPrintTimeSeries( &x, "x.out" );
 
   snprintf( X.name, sizeof( X.name ), "X" );
-  LALTimeFreqRealFFT( &status, &X, &x, fwdRealPlan );
-  TestStatus( &status, CODES( 0 ), 1 );
+  XLALREAL4TimeFreqFFT( &X, &x, fwdRealPlan );
   LALCPrintFrequencySeries( &X, "X.out" );
 
-  LALFreqTimeRealFFT( &status, &x, &X, revRealPlan );
-  TestStatus( &status, CODES( 0 ), 1 );
+  XLALREAL4FreqTimeFFT( &x, &X, revRealPlan );
   LALSPrintTimeSeries( &x, "xx.out" );
 
 
@@ -173,22 +166,15 @@ int main( int argc, char *argv[] )
    */
 
 
-  avgSpecParams.method = useMean;
-
   for ( np = 0; np < XLAL_NUM_ELEM(npts) ; ++np )
   {
+    REAL4Window *window = XLALCreateHannREAL4Window(npts[np]);
+    RealFFTPlan *plan = XLALCreateForwardREAL4FFTPlan(npts[np], 0);
     /* length of time series for 7 segments, overlapped by 1/2 segment */
     UINT4 tsLength = npts[np] * 7 - 6 * npts[np] / 2;
     LALCreateVector( &status, &y.data, tsLength );
     TestStatus( &status, CODES( 0 ), 1 );
     LALCreateVector( &status, &Y.data, npts[np] / 2 + 1  );
-    TestStatus( &status, CODES( 0 ), 1 );
-    avgSpecParams.overlap = npts[np] / 2;
-
-    /* create the window */
-    avgSpecParams.window = XLALCreateHannREAL4Window(npts[np]);
-    avgSpecParams.plan = NULL;
-    LALCreateForwardRealFFTPlan( &status, &avgSpecParams.plan, npts[np], 0 );
     TestStatus( &status, CODES( 0 ), 1 );
 
     for ( sr = 0; sr < XLAL_NUM_ELEM(srate) ; ++sr )
@@ -220,7 +206,7 @@ int main( int argc, char *argv[] )
         tol = 5 * sig;
 
         /* compute the psd and find the average */
-        LALREAL4AverageSpectrum( &status, &Y, &y, &avgSpecParams );
+        XLALREAL4AverageSpectrumWelch(&Y, &y, npts[np], npts[np] / 2, window, plan);
         TestStatus( &status, CODES( 0 ), 1 );
         LALSMoment( &status, &sfk, Y.data, 1 );
         TestStatus( &status, CODES( 0 ), 1 );
@@ -239,9 +225,8 @@ int main( int argc, char *argv[] )
     }
 
     /* destroy structures that need to be resized */
-    LALDestroyRealFFTPlan( &status, &avgSpecParams.plan );
-    TestStatus( &status, CODES( 0 ), 1 );
-    XLALDestroyREAL4Window( avgSpecParams.window );
+    XLALDestroyREAL4FFTPlan( plan );
+    XLALDestroyREAL4Window( window );
     LALDestroyVector( &status, &y.data );
     TestStatus( &status, CODES( 0 ), 1 );
     LALDestroyVector( &status, &Y.data );
@@ -276,24 +261,19 @@ int main( int argc, char *argv[] )
   TestStatus( &status, CODES( 0 ), 1 );
 
   snprintf( Z.name, sizeof( Z.name ), "Z" );
-  LALTimeFreqComplexFFT( &status, &Z, &z, fwdComplexPlan );
-  TestStatus( &status, CODES( 0 ), 1 );
+  XLALCOMPLEX8TimeFreqFFT( &Z, &z, fwdComplexPlan );
   LALCPrintFrequencySeries( &Z, "Z.out" );
 
-  LALFreqTimeComplexFFT( &status, &z, &Z, revComplexPlan );
+  XLALCOMPLEX8FreqTimeFFT( &z, &Z, revComplexPlan );
   TestStatus( &status, CODES( 0 ), 1 );
   LALCPrintTimeSeries( &z, "zz.out" );
 
   XLALDestroyRandomParams( randpar );
 
-  LALDestroyRealFFTPlan( &status, &fwdRealPlan );
-  TestStatus( &status, CODES( 0 ), 1 );
-  LALDestroyRealFFTPlan( &status, &revRealPlan );
-  TestStatus( &status, CODES( 0 ), 1 );
-  LALDestroyComplexFFTPlan( &status, &fwdComplexPlan );
-  TestStatus( &status, CODES( 0 ), 1 );
-  LALDestroyComplexFFTPlan( &status, &revComplexPlan );
-  TestStatus( &status, CODES( 0 ), 1 );
+  XLALDestroyREAL4FFTPlan( fwdRealPlan );
+  XLALDestroyREAL4FFTPlan( revRealPlan );
+  XLALDestroyCOMPLEX8FFTPlan( fwdComplexPlan );
+  XLALDestroyCOMPLEX8FFTPlan( revComplexPlan );
 
   LALCDestroyVector( &status, &Z.data );
   TestStatus( &status, CODES( 0 ), 1 );

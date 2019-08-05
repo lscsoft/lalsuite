@@ -23,7 +23,6 @@
 #include <gsl/gsl_sf_gamma.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALAtomicDatatypes.h>
-#include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/Sequence.h>

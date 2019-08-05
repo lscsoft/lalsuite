@@ -78,9 +78,6 @@ ParseOptions( int argc, char *argv[] );
 static void
 TestStatus( LALStatus *status, const char *expectedCodes, int exitCode );
 
-static void
-CheckErrorCodes( void );
-
 int
 main( int argc, char *argv[] )
 {
@@ -115,11 +112,9 @@ main( int argc, char *argv[] )
   LALCCreateVector( &status, &cvec, n );
   TestStatus( &status, CODES( 0 ), 1 );
 
-  LALCreateForwardComplexFFTPlan( &status, &pfwd, n, 0 );
-  TestStatus( &status, CODES( 0 ), 1 );
+  pfwd = XLALCreateForwardCOMPLEX8FFTPlan( n, 0 );
 
-  LALCreateReverseComplexFFTPlan( &status, &prev, n, 0 );
-  TestStatus( &status, CODES( 0 ), 1 );
+  prev = XLALCreateReverseCOMPLEX8FFTPlan( n, 0 );
 
 
   for ( i = 0; i < n; ++i )
@@ -132,8 +127,7 @@ main( int argc, char *argv[] )
   fp ? fprintf( fp, "\n" ) : 0;
   fflush( stdout );
 
-  LALCOMPLEX8VectorFFT( &status, bvec, avec, pfwd );
-  TestStatus( &status, CODES( 0 ), 1 );
+  XLALCOMPLEX8VectorFFT( bvec, avec, pfwd );
 
   for ( i = 0; i < n; ++i )
   {
@@ -142,8 +136,7 @@ main( int argc, char *argv[] )
   fp ? fprintf( fp, "\n" ) : 0;
   fflush( stdout );
 
-  LALCOMPLEX8VectorFFT( &status, cvec, bvec, prev );
-  TestStatus( &status, CODES( 0 ), 1 );
+  XLALCOMPLEX8VectorFFT( cvec, bvec, prev );
 
   for ( i = 0; i < n; ++i )
   {
@@ -167,11 +160,9 @@ main( int argc, char *argv[] )
     }
   }
 
-  LALDestroyComplexFFTPlan( &status, &prev );
-  TestStatus( &status, CODES( 0 ), 1 );
+  XLALDestroyCOMPLEX8FFTPlan( prev );
 
-  LALDestroyComplexFFTPlan( &status, &pfwd );
-  TestStatus( &status, CODES( 0 ), 1 );
+  XLALDestroyCOMPLEX8FFTPlan( pfwd );
 
   LALCDestroyVector( &status, &cvec );
   TestStatus( &status, CODES( 0 ), 1 );
@@ -182,110 +173,8 @@ main( int argc, char *argv[] )
   LALCDestroyVector( &status, &avec );
   TestStatus( &status, CODES( 0 ), 1 );
 
-  fp ? fprintf( fp, "\nChecking error codes:\n\n" ) : 0;
-  CheckErrorCodes();
-
   LALCheckMemoryLeaks();
   return 0;
-}
-
-/* need to have definition of tagComplexFFTPlan to corrupt it */
-struct
-tagComplexFFTPlan
-{
-  INT4   sign;
-  UINT4  size;
-  void  *plan;
-};
-
-static void
-CheckErrorCodes( void )
-{
-#ifndef LAL_NDEBUG
-  enum { Size = 19 };
-  const UINT4 size = Size;
-  static LALStatus status;
-  ComplexFFTPlan *plan;
-  ComplexFFTPlan  aplan;
-  COMPLEX8Vector  avec;
-  COMPLEX8Vector  bvec;
-  COMPLEX8        adat[Size];
-  COMPLEX8        bdat[Size];
-
-  if ( ! lalNoDebug )
-  {
-    aplan.size = size;
-
-    LALCreateForwardComplexFFTPlan( &status, NULL, size, 0 );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
-    LALCreateReverseComplexFFTPlan( &status, NULL, size, 0 );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
-
-    plan = &aplan;
-    LALCreateForwardComplexFFTPlan( &status, &plan, size, 0 );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENNUL ), 1 );
-    LALCreateReverseComplexFFTPlan( &status, &plan, size, 0 );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENNUL ), 1 );
-
-    plan = NULL;
-    LALCreateForwardComplexFFTPlan( &status, &plan, 0, 0 );
-    TestStatus( &status, CODES( COMPLEXFFTH_ESIZE ), 1 );
-    LALCreateReverseComplexFFTPlan( &status, &plan, 0, 0 );
-    TestStatus( &status, CODES( COMPLEXFFTH_ESIZE ), 1 );
-
-    LALDestroyComplexFFTPlan( &status, &plan );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
-    LALDestroyComplexFFTPlan( &status, NULL );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
-
-    plan        = &aplan;
-    avec.length = size;
-    bvec.length = size;
-    avec.data   = adat;
-    bvec.data   = bdat;
-    LALCOMPLEX8VectorFFT( &status, NULL, &avec, plan );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
-    LALCOMPLEX8VectorFFT( &status, &bvec, NULL, plan );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
-    LALCOMPLEX8VectorFFT( &status, &bvec, &avec, NULL );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
-
-    avec.data = NULL;
-    bvec.data = bdat;
-    LALCOMPLEX8VectorFFT( &status, &bvec, &avec, plan );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
-
-    avec.data = adat;
-    bvec.data = NULL;
-    LALCOMPLEX8VectorFFT( &status, &bvec, &avec, plan );
-    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
-
-    avec.data = adat;
-    bvec.data = adat;
-    LALCOMPLEX8VectorFFT( &status, &bvec, &avec, plan );
-    TestStatus( &status, CODES( COMPLEXFFTH_ESAME ), 1 );
-
-    aplan.size = 0;
-    avec.data  = adat;
-    avec.data  = bdat;
-    LALCOMPLEX8VectorFFT( &status, &bvec, &avec, plan );
-    TestStatus( &status, CODES( COMPLEXFFTH_ESIZE ), 1 );
-
-    aplan.size  = size;
-    avec.length = 0;
-    bvec.length = size;
-    LALCOMPLEX8VectorFFT( &status, &bvec, &avec, plan );
-    TestStatus( &status, CODES( COMPLEXFFTH_ESZMM ), 1 );
-
-    aplan.size  = size;
-    avec.length = size;
-    bvec.length = 0;
-    LALCOMPLEX8VectorFFT( &status, &bvec, &avec, plan );
-    TestStatus( &status, CODES( COMPLEXFFTH_ESZMM ), 1 );
-  }
-#endif
-
-  return;
 }
 
 

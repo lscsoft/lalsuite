@@ -22,7 +22,6 @@
 #include <string.h>
 #include <lal/AVFactories.h>
 #include <lal/Calibration.h>
-#include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
