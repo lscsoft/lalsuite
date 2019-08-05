@@ -212,8 +212,8 @@ int main (int argc , char **argv) {
   SUB( LALSCreateVector(&status, &(signal1), n), &status);
   SUB( LALSCreateVector(&status, &(signal2), n), &status);
   SUB( LALSCreateVector(&status, &(dummy), n), &status);
-  SUB( LALCreateForwardRealFFTPlan(&status, &frwd, n, 0), &status);
-  SUB( LALCreateReverseRealFFTPlan(&status, &revp, n, 0), &status);
+  frwd = XLALCreateForwardREAL4FFTPlan(n, 0);
+  revp = XLALCreateReverseREAL4FFTPlan(n, 0);
   LALDCreateVector(&status, &psd, (nby2+1));
 
   params.ieta = 1;
@@ -245,7 +245,7 @@ int main (int argc , char **argv) {
           plusFac = ampFac * (1.0 + cosI*cosI);
           params.signalAmplitude = plusFac;
           SUB(LALInspiralWave(&status, signal2, &params), &status);
-          SUB(LALREAL4VectorFFT(&status, signal1, signal2, revp), &status);
+          XLALREAL4VectorFFT(signal1, signal2, revp);
           break;
         case 2:
           cosI = cos(params.inclination);
@@ -255,11 +255,11 @@ int main (int argc , char **argv) {
           params.signalAmplitude = crossFac;
           SUB(LALInspiralWaveTemplates(&status, dummy, signal2, &params), 
               &status);
-          SUB(LALREAL4VectorFFT(&status, signal1, signal2, revp), &status);
+          XLALREAL4VectorFFT(signal1, signal2, revp);
           break;
         case 3:
           buildhoft(&status, signal2, &params, &otherIn);
-          SUB(LALREAL4VectorFFT(&status, signal1, signal2, revp), &status);
+          XLALREAL4VectorFFT(signal1, signal2, revp);
           break;
       }
       break;
@@ -331,7 +331,7 @@ int main (int argc , char **argv) {
   {
     REAL8 df, f, hSq, sSq, hMag, sMag, sRe, sIm, rho, rhosq=0, rhoDet=8.;
 
-    SUB( LALREAL4VectorFFT(&status, signal2, signal1, frwd), &status);
+    XLALREAL4VectorFFT(signal2, signal1, frwd);
     df = 1./(n * dt);
     if (otherIn.psd_data_file)
     {
@@ -398,12 +398,12 @@ int main (int argc , char **argv) {
     }
     signal2->data[0] = 0.;
     signal2->data[nby2] = 0.;
-    SUB( LALREAL4VectorFFT(&status, signal1, signal2, revp), &status);
+    XLALREAL4VectorFFT(signal1, signal2, revp);
     if(otherIn.output) printf_timeseries (f2, n, signal1->data, dt);
   }
 
-  SUB( LALDestroyRealFFTPlan (&status, &revp), &status);
-  SUB( LALDestroyRealFFTPlan (&status, &frwd), &status);
+  XLALDestroyREAL4FFTPlan (revp);
+  XLALDestroyREAL4FFTPlan (frwd);
   SUB( LALSDestroyVector(&status, &signal1), &status);
   SUB( LALSDestroyVector(&status, &signal2), &status);
   SUB( LALDDestroyVector(&status, &psd), &status);

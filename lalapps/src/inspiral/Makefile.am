@@ -21,7 +21,6 @@ SPININJSRC = spininj.c
 RANDOMBANKSRC = randombank.c
 NINJASRC = ninja.c
 FRNINJASRC = fr_ninja.c
-MDCNINJASRC = mdc_ninja.c inspiralutils.c inspiral.h
 CALCEXPSNRSRC = calcexpsnr.c
 COINJSRC = coinj.c
 STOCHBANKSRC = stochasticbank.c
@@ -42,7 +41,6 @@ LALMETAIO_PROGS = \
 	lalapps_randombank \
 	lalapps_ninja \
 	lalapps_fr_ninja \
-	lalapps_mdc_ninja \
 	lalapps_calcexpsnr \
 	lalapps_coinj \
 	lalapps_cbc_stochasticbank
@@ -60,7 +58,6 @@ lalapps_gwf2xml_SOURCES = $(GWF2XMLSRC)
 lalapps_randombank_SOURCES = $(RANDOMBANKSRC)
 lalapps_ninja_SOURCES = $(NINJASRC)
 lalapps_fr_ninja_SOURCES = $(FRNINJASRC)
-lalapps_mdc_ninja_SOURCES = $(MDCNINJASRC)
 lalapps_calcexpsnr_SOURCES = $(CALCEXPSNRSRC)
 lalapps_coinj_SOURCES = $(COINJSRC)
 lalapps_cbc_stochasticbank_SOURCES = $(STOCHBANKSRC)

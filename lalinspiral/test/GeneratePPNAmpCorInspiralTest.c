@@ -470,14 +470,14 @@ main(int argc, char **argv)
   {
     LALSCreateVector( &stat, &ht.data, waveform.h->data->length );
     LALCCreateVector( &stat, &Hf.data, waveform.h->data->length / 2 + 1 );
-    LALCreateForwardRealFFTPlan( &stat, &fwdRealPlan, waveform.h->data->length, 0 );
+    fwdRealPlan = XLALCreateForwardREAL4FFTPlan( waveform.h->data->length, 0 );
 
     ht.f0 = 0;
     ht.deltaT = dt;
     for( i = 0; i < waveform.h->data->length ; i++)
       ht.data->data[i] = hoft->data[i];
 
-    LALTimeFreqRealFFT( &stat, &Hf, &ht, fwdRealPlan );
+    XLALREAL4TimeFreqFFT( &Hf, &ht, fwdRealPlan );
 
     if( ( fourier = fopen(fftout, "w")) == NULL)
       fourier = fopen("fftout", "w");
@@ -486,7 +486,7 @@ main(int argc, char **argv)
       fprintf(fourier," %f %1.6e %1.6e\n", f, crealf(Hf.data->data[i]), cimagf(Hf.data->data[i]));
     fclose(fourier);
 
-		LALDestroyRealFFTPlan( &stat, &fwdRealPlan );
+		XLALDestroyREAL4FFTPlan( fwdRealPlan );
     LALCDestroyVector( &stat, &Hf.data );
     LALSDestroyVector( &stat, &ht.data );
   }

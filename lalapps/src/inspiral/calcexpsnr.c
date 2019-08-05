@@ -685,8 +685,7 @@ int main( int argc, char *argv[] )
          }  
       } 
 
-      LAL_CALL( LALCreateForwardRealFFTPlan( &status, &pfwd, chan->data->length, 0), &status);
-
+      pfwd = XLALCreateForwardREAL4FFTPlan( chan->data->length, 0 );
       fftData = XLALCreateCOMPLEX8FrequencySeries( chan->name, &chan->epoch, f0, deltaF, 
                                                    &lalDimensionlessUnit, (numPoints / 2 + 1) );
       if ( !fftData ){
@@ -694,9 +693,9 @@ int main( int argc, char *argv[] )
         exit(1);
       }
    
-      LAL_CALL( LALTimeFreqRealFFT( &status, fftData, chan, pfwd ), &status);
-   
-      LAL_CALL( LALDestroyRealFFTPlan( &status, &pfwd ), &status);
+      XLALREAL4TimeFreqFFT( fftData, chan, pfwd );
+
+      XLALDestroyREAL4FFTPlan( pfwd );
       pfwd = NULL;
 
        /* compute the SNR */
