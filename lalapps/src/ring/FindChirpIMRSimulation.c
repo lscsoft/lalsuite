@@ -35,7 +35,8 @@
 #include <lal/GenerateInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/SimulateCoherentGW.h>
-#include <lal/Inject.h>
+#include <Inject.h>
+#include <FindChirpIMRSimulation.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataInspiralUtils.h>

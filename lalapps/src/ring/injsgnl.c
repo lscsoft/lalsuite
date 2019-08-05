@@ -22,7 +22,8 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/AVFactories.h>
-#include <lal/GenerateRing.h>
+#include <GenerateRing.h>
+#include <FindChirpIMRSimulation.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOLwXMLRingdownRead.h>

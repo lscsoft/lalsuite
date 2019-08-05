@@ -17,8 +17,6 @@ pkginclude_HEADERS = \
 	GenerateInspRing.h \
 	GenerateInspiral.h \
 	GeneratePPNInspiral.h \
-	GenerateRing.h \
-	Inject.h \
 	InspiralInjectionParams.h \
 	LALEOBNRv2Waveform.h \
 	LALInspiral.h \
@@ -54,7 +52,6 @@ liblalinspiral_la_SOURCES = \
 	CoherentInspiralInput.c \
 	CoincInspiralUtils.c \
 	CreateMetaTableDir.c \
-	FindChirpIMRSimulation.c \
 	FindChirpPTFTemplate.c \
 	FindChirpPTFWaveform.c \
 	FindChirpPhenomWaveform.c \
@@ -63,10 +60,8 @@ liblalinspiral_la_SOURCES = \
 	GenerateInspiral.c \
 	GeneratePPNAmpCorInspiral.c \
 	GeneratePPNInspiral.c \
-	GenerateRing.c \
 	GetErrorMatrixFromSnglInspiral.c \
 	GetInspiralParams.c \
-	InjectTimeSeries.c \
 	InspiralBankGeneration.c \
 	InspiralInjectionParams.c \
 	InspiralSpinBank.c \

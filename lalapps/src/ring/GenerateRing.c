@@ -27,9 +27,9 @@
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/VectorOps.h>
-#include <lal/Inject.h>
+#include <Inject.h>
 #include <lal/SimulateCoherentGW.h>
-#include <lal/GenerateRing.h>
+#include <GenerateRing.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/RealFFT.h>
 #include <lal/TimeFreqFFT.h>
