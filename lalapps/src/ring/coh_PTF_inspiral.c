@@ -27,6 +27,16 @@ static struct coh_PTF_params *coh_PTF_get_params(int argc, char **argv)
   return &params;
 }
 
+static int XLALCountMultiInspiralTable(MultiInspiralTable *head)
+{
+	int length;
+	/* count the number of events in the list */
+	for(length = 0; head; head = head->next)
+		length++;
+
+	return(length);
+}
+
 int main(int argc, char **argv)
 {
 
