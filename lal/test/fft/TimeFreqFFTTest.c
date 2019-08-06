@@ -65,7 +65,6 @@
 #include <lal/Random.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/TimeFreqFFT.h>
-#include <lal/LALMoment.h>
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
@@ -185,7 +184,7 @@ int main( int argc, char *argv[] )
       {
         REAL4 eps = 1e-6; /* very conservative fp precision */
         REAL4 Sfk = 2.0 * var[vr] * var[vr] * y.deltaT;
-        REAL4 sfk = 0;
+        REAL4 sfk;
         REAL4 lbn;
         REAL4 sig;
         REAL4 ssq;
@@ -208,8 +207,7 @@ int main( int argc, char *argv[] )
         /* compute the psd and find the average */
         XLALREAL4AverageSpectrumWelch(&Y, &y, npts[np], npts[np] / 2, window, plan);
         TestStatus( &status, CODES( 0 ), 1 );
-        LALSMoment( &status, &sfk, Y.data, 1 );
-        TestStatus( &status, CODES( 0 ), 1 );
+        { unsigned k; for(sfk = 0., k = 0; k < Y.data->length; sfk += Y.data->data[k++]); sfk /= Y.data->length; }
 
         /* check the result */
         if ( fabs(Sfk-sfk) > tol )
