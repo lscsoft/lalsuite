@@ -736,7 +736,7 @@ class PosteriorOneDPDF(object):
         def uniform(x):
             return np.array([1./(np.max(x)-np.min(x)) for _ in x])
 
-        posterior, dx = np.histogram(self.samples,bins=36,normed=True)
+        posterior, dx = np.histogram(self.samples,bins=36,density=True)
         from scipy.stats import entropy
         # check the kind of prior and process the string accordingly
         prior = get_prior(self.name)
@@ -3995,7 +3995,7 @@ def plot_one_param_pdf(posterior,plot1DParams,analyticPDF=None,analyticCDF=None,
         ax1_name=param+' + %i'%(int(offset))
     else: ax1_name=param
 
-    (n, bins, patches)=plt.hist(pos_samps,histbins,normed='true',facecolor='grey')
+    (n, bins, patches)=plt.hist(pos_samps,histbins,density=True,facecolor='grey')
     Nchars=max(map(lambda d:len(majorFormatterX.format_data(d)),axes.get_xticks()))
     if Nchars>8:
         Nticks=3
@@ -4636,7 +4636,7 @@ def histogram2D(posterior,greedy2Params,confidence_levels):
     par2pos_max=b.max()
     par1pos_Nbins= int(ceil((par1pos_max - par1pos_min)/par1_bin))+1
     par2pos_Nbins= int(ceil((par2pos_max - par2pos_min)/par2_bin))+1
-    H, xedges, yedges = np.histogram2d(a,b, bins=(par1pos_Nbins, par2pos_Nbins),normed=True)
+    H, xedges, yedges = np.histogram2d(a,b, bins=(par1pos_Nbins, par2pos_Nbins),density=True)
     temp=np.copy(H)
     temp=temp.ravel()
     confidence_levels.sort()
@@ -4835,7 +4835,7 @@ def plot_two_param_greedy_bins_contour(posteriors_by_name,greedy2Params,confiden
         axes.xaxis.set_major_formatter(majorFormatterX)
         axes.yaxis.set_major_formatter(majorFormatterY)
 
-        H, xedges, yedges = np.histogram2d(a,b, bins=(par1pos_Nbins, par2pos_Nbins),normed=True)
+        H, xedges, yedges = np.histogram2d(a,b, bins=(par1pos_Nbins, par2pos_Nbins),density=True)
 
         extent = [xedges[0], yedges[-1], xedges[-1], xedges[0]]
 
@@ -5047,7 +5047,7 @@ def plot_two_param_greedy_bins_hist(posterior,greedy2Params,confidence_levels):
     majorFormatterY.set_scientific(True)
     axes.xaxis.set_major_formatter(majorFormatterX)
     axes.yaxis.set_major_formatter(majorFormatterY)
-    H, xedges, yedges = np.histogram2d(a,b, bins,normed=False)
+    H, xedges, yedges = np.histogram2d(a,b, bins,density=False)
 
 
     #Replace H with greedy bin confidence levels at each pixel...

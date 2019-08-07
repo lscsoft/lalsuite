@@ -259,7 +259,7 @@ class GlobalParam(Parameter):
       #ax.plot(x, cp, color='k', label=str(i+1) + ' combined sources hist')
       ax.plot(x, ck, color='k', label=str(i+1) + ' combined sources kde')
       ax.fill_between(x, zeros(size(x)), ck, facecolor="k",alpha=0.3)
-      ax.hist(pp, linspace(self.min, self.max, 30), normed=True, color='blue', histtype='stepfilled', alpha=0.3, label='single source hist')
+      ax.hist(pp, linspace(self.min, self.max, 30), density=True, color='blue', histtype='stepfilled', alpha=0.3, label='single source hist')
       if eplot:
         ax.eventplot(pp[list(set(randint(0, len(pp), 100)))], colors=array([[1,0,0]]), linelengths = 0.01, lineoffsets=0.005)
       
