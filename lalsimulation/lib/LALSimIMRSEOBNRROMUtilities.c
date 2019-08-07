@@ -35,10 +35,14 @@
  */
 
 #include <stdio.h>
+#include <stdarg.h> 
 #include <lal/XLALError.h>
 #include <stdbool.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_multifit.h>
+#include <gsl/gsl_interp.h>
+#include <gsl/gsl_fit.h>
+#include <LALSimBlackHoleRingdown.h>
 
 #ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
@@ -46,6 +50,16 @@
 
 UNUSED static int read_vector(const char dir[], const char fname[], gsl_vector *v);
 UNUSED static int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
+/* SEOBNRv4HM_ROM functions */
+UNUSED static char* concatenate_strings(int count, ...);
+UNUSED static REAL8 sigmoid(REAL8 x);
+UNUSED static UINT4 blend(gsl_vector * freqs, gsl_vector * out_fun, REAL8 freq_1, REAL8 freq_2);
+UNUSED static UINT4 blend_functions(gsl_vector * freqs_out, gsl_vector * out_fun, gsl_vector * freq_in_1, gsl_vector * fun_in_1, gsl_vector * freq_in_2, gsl_vector * fun_in_2, REAL8 freq_1, REAL8 freq_2);
+UNUSED static UINT4 compute_i_max_LF_i_min_HF(INT8 * i_max_LF, INT8 * i_min_LF,gsl_vector * freqs_in_1,gsl_vector * freqs_in_2,REAL8 freq_1);
+UNUSED static REAL8 Get_omegaQNM_SEOBNRv4(REAL8 q, REAL8 chi1z, REAL8 chi2z, UINT4 l, UINT4 m);
+UNUSED static UINT4 unwrap_phase(gsl_vector* phaseout,gsl_vector* phasein);
+UNUSED static UINT8 compute_i_at_f(gsl_vector * freq_array, REAL8 freq);
+UNUSED static UINT4 align_wfs_window(gsl_vector* f_array_1, gsl_vector* f_array_2, gsl_vector* phase_1, gsl_vector* phase_2, REAL8 f_align_start, REAL8 f_align_end);
 
 #ifdef LAL_HDF5_ENABLED
 UNUSED static int CheckVectorFromHDF5(LALH5File *file, const char name[], const double *v, size_t n);
@@ -98,9 +112,6 @@ UNUSED static double SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(
   const double chi2,
   Approximant apx
 );
-
-
-// Definitions
 
 // Helper functions to read gsl_vector and gsl_matrix data with error checking
 static int read_vector(const char dir[], const char fname[], gsl_vector *v) {
@@ -571,4 +582,255 @@ static double SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(
 {
   double q = (1. + sqrt(1. - 4. * eta) - 2. * eta) / (2. * eta);
   return SEOBNRROM_Ringdown_Mf_From_Mtot_q(Mtot_sec, q, chi1, chi2, apx);
+}
+
+/* SEOBNRv4HM_ROM functions */
+
+
+// Helper function to concatenate strings
+char* concatenate_strings(int count, ...)
+{
+    va_list ap;
+    int i;
+
+    // Find required length to store merged string
+    int len = 1; // room for NULL
+    va_start(ap, count);
+    for(i=0 ; i<count ; i++)
+        len += strlen(va_arg(ap, char*));
+    va_end(ap);
+
+    // Allocate memory to concat strings
+    char *merged = XLALCalloc(sizeof(char),len);
+    int null_pos = 0;
+
+    // Actually concatenate strings
+    va_start(ap, count);
+    for(i=0 ; i<count ; i++)
+    {
+        char *s = va_arg(ap, char*);
+        strcpy(merged+null_pos, s);
+        null_pos += strlen(s);
+    }
+    va_end(ap);
+
+    return merged;
+}
+
+/* Sigmoid function for hybridization */
+REAL8 sigmoid(REAL8 x)
+{
+     REAL8 exp_value;
+     REAL8 return_value;
+
+     /*** Exponential calculation ***/
+     exp_value = exp(-x);
+
+     /*** Final sigmoid value ***/
+     return_value = 1 / (1 + exp_value);
+
+     return return_value;
+}
+
+// Compute activation function in a window [freq_1, freq_2]
+UINT4 blend(gsl_vector * freqs, gsl_vector * out_fun, REAL8 freq_1, REAL8 freq_2){
+  for(unsigned int i = 0; i < freqs->size; i++){
+    if(freqs->data[i] <= freq_1){
+      out_fun->data[i] = 0.;
+    }
+    else if((freqs->data[i]>freq_1) && (freqs->data[i]<freq_2)){
+      out_fun->data[i] = sigmoid(- (freq_2 - freq_1)/(freqs->data[i]-freq_1) - (freq_2 - freq_1)/(freqs->data[i]-freq_2));
+    }
+    else{
+      out_fun->data[i] = 1.;
+    }
+  }
+  return XLAL_SUCCESS;
+}
+
+// Function to compute the indices associated to [freq_1] in two arrays
+UINT4 compute_i_max_LF_i_min_HF(INT8 * i_max_LF, INT8 * i_min_HF,gsl_vector * freqs_in_1,gsl_vector * freqs_in_2, REAL8 freq_1){
+
+  for(unsigned int i = 0; i < freqs_in_1->size; i++){
+    if(freqs_in_1->data[i]<freq_1){
+      *i_max_LF = i;
+    }
+  }
+  for(unsigned int i = freqs_in_2->size -1; i > 0; i--){
+    if(freqs_in_2->data[i]>=freq_1){
+      *i_min_HF = i;
+    }
+  }
+return XLAL_SUCCESS;
+}
+
+// Function to compute the index associated to [freq_1] in an array
+UINT8 compute_i_at_f(gsl_vector * freq_array, REAL8 freq){
+  UINT8 index = 0;
+  REAL8 diff = fabs(freq-freq_array->data[index]);
+  for(unsigned int i = 1; i < freq_array->size; i++){
+    if(fabs(freq-freq_array->data[i])< diff){
+      diff = fabs(freq-freq_array->data[i]);
+      index = i;
+    }
+  }
+  return index;
+}
+
+/* Function to blend LF and HF ROM functions in a window [freq_1, freq_2] */
+UINT4 blend_functions(gsl_vector * freqs_out, gsl_vector * out_fun, gsl_vector * freq_in_1, gsl_vector * fun_in_1, gsl_vector * freq_in_2, gsl_vector * fun_in_2, REAL8 freq_1, REAL8 freq_2){
+
+  gsl_vector *bld_2 = gsl_vector_calloc(out_fun->size);
+
+  /* Generate the window function */
+  UNUSED UINT4 ret = blend(freqs_out, bld_2,freq_1,freq_2);
+
+  gsl_interp_accel *acc = gsl_interp_accel_alloc ();
+  gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, freq_in_1->size);
+  gsl_spline_init (spline, freq_in_1->data, fun_in_1->data, freq_in_1->size);
+
+  unsigned int i = 0;
+  REAL8 inter_func;
+  /* Build the contribution to out_fun from fun_in_1 in the range [f_ini, freq_2] */
+  /* where f_ini is the starting frequency of the array freq_in_1 */
+  /* for freq > freq_2 the contribution of fun_in_1 to out_fun is null since 1 - bld_2 = 0 there*/
+  /* for freq < freq_1, bld_2 = 0, so I could have another easier while in the range [freq_1,freq_2]*/
+
+  while(freqs_out->data[i]<=freq_2){
+    /* Interpolate the original function on the new grid */
+    inter_func = gsl_spline_eval (spline, freqs_out->data[i], acc);
+    /* Multiply the original function by the window function */
+    out_fun->data[i] = inter_func*(1.-bld_2->data[i]);
+    i++;
+  }
+  gsl_spline_free (spline);
+
+  /* Build the contribution to out_fun from fun_in_2 in the range [freq_2, f_end] */
+  /* where f_end is the ending frequency of the array freq_in_2 */
+  /* for freq > freq_2, bld_2 = 1*/
+  spline = gsl_spline_alloc (gsl_interp_cspline, freq_in_2->size);
+  gsl_spline_init (spline, freq_in_2->data, fun_in_2->data, freq_in_2->size);
+  i = freqs_out->size-1;
+  while(freqs_out->data[i]>freq_2){
+    inter_func = gsl_spline_eval (spline, freqs_out->data[i], acc);
+    out_fun->data[i] = inter_func;
+    i--;
+  }
+  
+  /* Build the contribution to out_fun from fun_in_2 in the range [freq_1, freq_2] */
+  /* where f_end is the ending frequency of the array freq_in_2 */
+  while((freqs_out->data[i]>=freq_1)&&(freqs_out->data[i]<=freq_2)){
+    inter_func = gsl_spline_eval (spline, freqs_out->data[i], acc);
+    out_fun->data[i] += inter_func*bld_2->data[i];
+    /* Note that the += is important here */
+    i--;
+  }
+
+  /* Cleanup */
+  gsl_vector_free(bld_2);
+  gsl_spline_free (spline);
+  gsl_interp_accel_free(acc);
+
+  return XLAL_SUCCESS;
+}
+
+// Function to align two phases in a window [f_align_start,f_align_end]
+UINT4 align_wfs_window(gsl_vector* f_array_1, gsl_vector* f_array_2, gsl_vector* phase_1, gsl_vector* phase_2, REAL8 f_align_start, REAL8 f_align_end){
+
+    // Search the indices corresponding to [f_align_start,f_align_end] in f_array_2
+    INT8 i_align_start = compute_i_at_f(f_array_2, f_align_start);
+    INT8 i_align_end = compute_i_at_f(f_array_2, f_align_end);
+    // Interpolate phase_1 phase on phase_2 frequency grid between [f_align_start,f_align_end] and compute phase difference
+    gsl_interp_accel *acc = gsl_interp_accel_alloc ();
+    gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, phase_1->size);
+    gsl_spline_init (spline, f_array_1->data, phase_1->data, phase_1->size);
+    gsl_vector* delta_phi = gsl_vector_alloc(i_align_end-i_align_start);
+    gsl_vector* freq_delta_phi = gsl_vector_alloc(i_align_end-i_align_start);
+    for(unsigned int i = 0; i <freq_delta_phi->size; i++){
+      freq_delta_phi->data[i] = f_array_2->data[i+i_align_start];
+      delta_phi->data[i] = gsl_spline_eval(spline, f_array_2->data[i+i_align_start], acc) - phase_2->data[i+i_align_start];
+    }
+    REAL8 c0, c1, cov00, cov01, cov11, chisq;
+    gsl_fit_linear (freq_delta_phi->data, 1, delta_phi->data, 1, freq_delta_phi->size, &c0, &c1, &cov00, &cov01, &cov11, &chisq);
+    
+    // Remove the linear fit from phase_1
+    for(unsigned int i = 0; i < f_array_1->size; i++){
+      phase_1->data[i] = phase_1->data[i] - (c1*f_array_1->data[i] + c0);
+    }
+    /* Cleanup */
+    gsl_vector_free(delta_phi);
+    gsl_vector_free(freq_delta_phi);
+    gsl_spline_free (spline);
+    gsl_interp_accel_free(acc);
+
+    return XLAL_SUCCESS;
+
+}
+
+// Function to compute the QNM frequency
+REAL8 Get_omegaQNM_SEOBNRv4(REAL8 q, REAL8 chi1z, REAL8 chi2z, UINT4 l, UINT4 m){
+    // Total mass M is not important here, we return the QNM frequencies in geometric units
+    REAL8 M = 100.; 
+    REAL8 Ms = M * LAL_MTSUN_SI;
+    REAL8 m1 = M * q/(1+q);
+    REAL8 m2 = M * 1/(1+q);
+    Approximant SpinAlignedEOBapproximant = SEOBNRv4;
+    COMPLEX16Vector modefreqVec;
+    COMPLEX16 modeFreq;
+    modefreqVec.length = 1;
+    modefreqVec.data = &modeFreq;
+    REAL8 spin1[3] = {0., 0., chi1z};
+    REAL8 spin2[3] = {0., 0., chi2z}; 
+    // XLALSimIMREOBGenerateQNMFreqV2 is returning QNM frequencies in SI units, we multiply by Ms to convert it in geometric units 
+    UNUSED UINT4 ret = XLALSimIMREOBGenerateQNMFreqV2(&modefreqVec, m1, m2, spin1, spin2, l, m, 1, SpinAlignedEOBapproximant);
+    return Ms * creal(modefreqVec.data[0]);
+}
+
+/* Function to unwrap phases mod 2pi  - acts on a REAL8Vector representing the phase */
+/* FIXME: for long vectors there are small differences with the numpy unwrap function - to be checked */
+static UINT4 unwrap_phase(
+  gsl_vector* phaseout,    /* Output: unwrapped phase vector, already allocated - can be the same as phasein, in which case unwrapping is done in place */
+  gsl_vector* phasein)     /* Input: phase vector */
+{
+  int N = phasein->size;
+  double* p = phasein->data;
+  double* pmod = (double*) malloc(sizeof(double) * N);
+  int* jumps = (int*) malloc(sizeof(int) * N);
+  int* cumul = (int*) malloc(sizeof(int) * N);
+
+  /* Compute phase mod 2pi (shifted to be between -pi and pi) */
+  for(int i=0; i<N; i++) {
+    pmod[i] = p[i] - floor((p[i] + LAL_PI) / (2*LAL_PI))*(2*LAL_PI);
+  }
+
+  /* Identify jumps */
+  jumps[0] = 0;
+  double d = 0.;
+  for(int i=1; i<N; i++) {
+    d = pmod[i] - pmod[i-1];
+    if(d<-LAL_PI) jumps[i] = 1;
+    else if(d>LAL_PI) jumps[i] = -1;
+    else jumps[i] = 0;
+  }
+
+  /* Cumulative of the jump sequence */
+  int c = 0;
+  cumul[0] = 0;
+  for(int i=1; i<N; i++) {
+    c += jumps[i];
+    cumul[i] = c;
+  }
+
+  /* Correct mod 2pi phase series by the number of 2pi factor given by the cumulative of the jumps */
+  double* pout = phaseout->data;
+  for(int i=0; i<N; i++) {
+    pout[i] = pmod[i] + 2*LAL_PI*cumul[i];
+  }
+
+  /* Cleanup */
+  free(pmod);
+  free(jumps);
+  free(cumul);
+
+	return XLAL_SUCCESS;
 }

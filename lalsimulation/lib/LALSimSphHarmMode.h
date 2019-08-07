@@ -47,6 +47,7 @@ extern "C" {
 
 int XLALSimAddMode(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, COMPLEX16TimeSeries *hmode, REAL8 theta, REAL8 phi, int l, int m, int sym);
 int XLALSimAddModeAngleTimeSeries(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, COMPLEX16TimeSeries *hmode, REAL8TimeSeries *theta, REAL8TimeSeries *phi, int l, int m, int sym);
+int XLALSimAddModeFD(COMPLEX16FrequencySeries *hptilde,COMPLEX16FrequencySeries *hctilde,COMPLEX16FrequencySeries *hlmtilde,REAL8 theta,REAL8 phi,INT4 l,INT4 m,INT4 sym);
 int XLALSimAddModeFromModes(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, SphHarmTimeSeries *hmode, REAL8 theta, REAL8 phi);
 int XLALSimAddModeFromModesAngleTimeSeries(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, SphHarmTimeSeries *hmode, REAL8TimeSeries *theta, REAL8TimeSeries *phi);
 int XLALSimNewTimeSeriesFromModes(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, SphHarmTimeSeries *hmode, REAL8 theta, REAL8 phi);
