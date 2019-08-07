@@ -504,7 +504,6 @@ int main ( int argc, char *argv[] )
 
   /* structures for preconditioning */
   ResampleTSParams              resampleParams;
-  AverageSpectrumParams         avgSpecParams;
 
   /* templates */
   InspiralCoarseBankIn          bankIn;
@@ -991,22 +990,20 @@ int main ( int argc, char *argv[] )
     XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->out_end_time), tsLength );
 
     /* compute the windowed power spectrum for the data channel */
-    avgSpecParams.window = NULL;
-    avgSpecParams.plan = NULL;
-    LAL_CALL( LALCreateForwardRealFFTPlan( &status,
-          &(avgSpecParams.plan), numPoints, 0 ), &status );
+    {	/* Kipp:  ported this block from LALStatus 20190806 */
+    REAL4Window *window = XLALCreateHannREAL4Window( numPoints );
+    REAL4FFTPlan *plan = XLALCreateForwardREAL4FFTPlan( numPoints, 0 );
     switch ( specType )
     {
       case specType_mean:
-        avgSpecParams.method = useMean;
-        if ( vrbflg ) fprintf( stdout, "computing mean psd" );
+        if ( vrbflg ) fprintf( stdout, "computing mean psd with overlap %d\n", numPoints / 2 );
+        XLALREAL4AverageSpectrumWelch( &spec, &chan, numPoints, numPoints / 2, window, plan );
         break;
       case specType_median:
-        avgSpecParams.method = useMedian;
-        if ( vrbflg ) fprintf( stdout, "computing median psd" );
+        if ( vrbflg ) fprintf( stdout, "computing median psd with overlap %d\n", numPoints / 2 );
+        XLALREAL4AverageSpectrumMedian( &spec, &chan, numPoints, numPoints / 2, window, plan );
         break;
       case specType_simulated:
-        avgSpecParams.method = useUnity;
         fprintf( stderr, "This should never happen! Exiting..." );
         exit( 1 );
       default:
@@ -1014,15 +1011,9 @@ int main ( int argc, char *argv[] )
         exit( 1 );
     }
 
-    avgSpecParams.overlap = numPoints / 2;
-    if ( vrbflg )
-      fprintf( stdout, " with overlap %d\n", avgSpecParams.overlap );
-
-    avgSpecParams.window = XLALCreateHannREAL4Window(numPoints);
-    LAL_CALL( LALREAL4AverageSpectrum( &status, &spec, &chan, &avgSpecParams ),
-        &status );
-    XLALDestroyREAL4Window( avgSpecParams.window );
-    LAL_CALL( LALDestroyRealFFTPlan( &status, &(avgSpecParams.plan) ), &status );
+    XLALDestroyREAL4Window( window );
+    XLALDestroyREAL4FFTPlan( plan );
+    }
     LAL_CALL( LALSDestroyVector( &status, &(chan.data) ), &status );
   }
 

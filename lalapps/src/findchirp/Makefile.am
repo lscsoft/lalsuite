@@ -3,7 +3,6 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 LALINSPIRALPROGRAMS = \
-	lalapps_InspiralOverlap \
 	lalapps_inspiralDistance \
 	lalapps_DistanceVsMass \
 	lalapps_random_bank \
@@ -21,14 +20,10 @@ lalapps_inspiralDistance_SOURCES = inspiralDistance.c
 lalapps_inspawgfile_SOURCES = inspawgfile.c
 lalapps_random_bank_SOURCES = random_bank.c
 lalapps_effdist_SOURCES = effdist.c
-lalapps_InspiralOverlap_SOURCES = InspiralOverlap.c
 if LALMETAIO
 lalapps_exc_resp_SOURCES = exc_resp.c
 lalapps_chirplen_SOURCES = chirplen.c
 endif
-
-CLEANFILES = \
-	lalapps_InspiralOverlap
 
 EXTRA_DIST = \
 	TestRandomBank.c \
