@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
 
     for (j = 0; j < h->data->length; ++j) {
         LIGOTimeGPS t = h->epoch;
-        fprintf(stdout, "%s\t%e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j * h->deltaT)), h->data->data[j]);
+        fprintf(stdout, "%s\t%.18e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j * h->deltaT)), h->data->data[j]);
     }
 
     XLALDestroyREAL8TimeSeries(h);

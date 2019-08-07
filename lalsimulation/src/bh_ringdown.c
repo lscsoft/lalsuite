@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 
 	fprintf(stdout, "# time (s)\th_plus (strain)\th_cross (strain)\n");
 	for (j = 0; j < hplus->data->length; ++j)
-		fprintf(stdout, "%.9f\t%e\t%e\n", j*dt, hplus->data->data[j], hcross->data->data[j]);
+		fprintf(stdout, "%.9f\t%.18e\t%.18e\n", j*dt, hplus->data->data[j], hcross->data->data[j]);
 
 	XLALDestroyREAL8TimeSeries(hcross);
 	XLALDestroyREAL8TimeSeries(hplus);

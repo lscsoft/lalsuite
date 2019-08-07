@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 				goto end;
 			printf("%s", XLALGPSToStr(tstr, XLALGPSAdd(&t, j * seg[0]->deltaT)));
 			for (i = 0; i < numDetectors; ++i)
-				printf("\t%e", seg[i]->data->data[j]);
+				printf("\t%.18e", seg[i]->data->data[j]);
 			printf("\n");
 		}
 		XLALSimSGWB(seg, detectors, numDetectors, stride, OmegaGW, H0, rng); // make more data

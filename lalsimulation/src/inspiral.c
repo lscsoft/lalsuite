@@ -355,14 +355,14 @@ int output_td_waveform(REAL8TimeSeries * h_plus, REAL8TimeSeries * h_cross, stru
 
         fprintf(stdout, "# time (s)\th_abs (strain)\t h_arg (rad)\n");
         for (j = 0; j < h_plus->data->length; ++j)
-            fprintf(stdout, "%.9f\t%e\t%e\n", t0 + j * h_plus->deltaT, amp->data[j], phi->data[j]);
+            fprintf(stdout, "%.9f\t%.18e\t%.18e\n", t0 + j * h_plus->deltaT, amp->data[j], phi->data[j]);
 
         XLALDestroyREAL8Sequence(phi);
         XLALDestroyREAL8Sequence(amp);
     } else {
         fprintf(stdout, "# time (s)\th_+ (strain)\th_x (strain)\n");
         for (j = 0; j < h_plus->data->length; ++j)
-            fprintf(stdout, "%.9f\t%e\t%e\n", t0 + j * h_plus->deltaT, h_plus->data->data[j], h_cross->data->data[j]);
+            fprintf(stdout, "%.9f\t%.18e\t%.18e\n", t0 + j * h_plus->deltaT, h_plus->data->data[j], h_cross->data->data[j]);
     }
     return 0;
 }
@@ -403,7 +403,7 @@ int output_fd_waveform(COMPLEX16FrequencySeries * htilde_plus, COMPLEX16Frequenc
 
         fprintf(stdout, "# freq (s^-1)\tabs_htilde_+ (strain s)\targ_htilde_+ (rad)\tabs_htilde_x (strain s)\targ_htilde_x (rad)\n");
         for (k = 0; k < htilde_plus->data->length; ++k)
-            fprintf(stdout, "%f\t%e\t%e\t%e\t%e\n", k * htilde_plus->deltaF, abs_plus->data[k], arg_plus->data[k],
+            fprintf(stdout, "%f\t%.18e\t%.18e\t%.18e\t%.18e\n", k * htilde_plus->deltaF, abs_plus->data[k], arg_plus->data[k],
                 abs_cross->data[k], arg_cross->data[k]);
 
         XLALDestroyREAL8Sequence(arg_cross);
@@ -413,7 +413,7 @@ int output_fd_waveform(COMPLEX16FrequencySeries * htilde_plus, COMPLEX16Frequenc
     } else {
         fprintf(stdout, "# freq (s^-1)\treal_htilde_+ (strain s)\timag_htilde_+ (strain s)\treal_htilde_x (strain s)\timag_htilde_x (strain s)\n");
         for (k = 0; k < htilde_plus->data->length; ++k)
-            fprintf(stdout, "%f\t%e\t%e\t%e\t%e\n", k * htilde_plus->deltaF, creal(htilde_plus->data->data[k]),
+            fprintf(stdout, "%f\t%.18e\t%.18e\t%.18e\t%.18e\n", k * htilde_plus->deltaF, creal(htilde_plus->data->data[k]),
                 cimag(htilde_plus->data->data[k]), creal(htilde_cross->data->data[k]), cimag(htilde_cross->data->data[k]));
     }
     return 0;
