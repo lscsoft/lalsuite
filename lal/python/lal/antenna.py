@@ -257,8 +257,8 @@ class AntennaResponse(object):
         array([0.05365678, 0.05573073, 0.05780282, ..., 0.05558939, 0.05766162,
                0.05973181])
         >>> resp.l  # scalar "longitudinal mode"
-        array([-0.07588213, -0.07881513, -0.08174552, ..., -0.07861525,
-               -0.08154582, -0.08447351])
+        array([-0.05365678, -0.05573073, -0.05780282, ..., -0.05558939,
+               -0.05766162, -0.05973181])
         ~~~
         """
 
@@ -1007,7 +1007,7 @@ class AntennaResponse(object):
                 qq = np.einsum(einstr1, Q, Q)
 
                 self.b = np.einsum(einstr2, mm + nn, self.laldetector)
-                self.l = np.einsum(einstr2, np.sqrt(2.)*qq, self.laldetector)
+                self.l = np.einsum(einstr2, qq, self.laldetector)
 
     def _compute_response_lal(self):
         """
