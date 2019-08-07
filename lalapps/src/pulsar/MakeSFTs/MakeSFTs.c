@@ -1034,14 +1034,14 @@ int AllocateData(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );
 
       #if TRACKMEMUSE
-         printf("Memory use after creating dataSingle and before calling LALCreateForwardRealFFTPlan.\n"); printmemuse();
+         printf("Memory use after creating dataSingle and before calling XLALCreateForwardREAL4FFTPlan.\n"); printmemuse();
       #endif
 
-      LALCreateForwardRealFFTPlan( &status, &fftPlanSingle, dataSingle.data->length, 0 );
-      TESTSTATUS( &status );
+      fftPlanSingle = XLALCreateForwardREAL4FFTPlan( dataSingle.data->length, 0 );
+      XLAL_CHECK( fftPlanSingle != NULL, XLAL_EFUNC );
 
       #if TRACKMEMUSE
-         printf("Memory use after creating dataSingle and after calling LALCreateForwardRealFFTPlan.\n"); printmemuse();
+         printf("Memory use after creating dataSingle and after calling XLALCreateForwardREAL4FFTPlan.\n"); printmemuse();
       #endif
 
   } else {  
@@ -1049,14 +1049,14 @@ int AllocateData(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );
 
       #if TRACKMEMUSE
-         printf("Memory use after creating dataDouble and before calling LALCreateForwardREAL8FFTPlan.\n"); printmemuse();
+         printf("Memory use after creating dataDouble and before calling XLALCreateForwardREAL8FFTPlan.\n"); printmemuse();
       #endif
       
-      LALCreateForwardREAL8FFTPlan( &status, &fftPlanDouble, dataDouble.data->length, 0 );
-      TESTSTATUS( &status );
+      fftPlanDouble = XLALCreateForwardREAL8FFTPlan( dataDouble.data->length, 0 );
+      XLAL_CHECK( fftPlanDouble != NULL, XLAL_EFUNC );
 
       #if TRACKMEMUSE
-            printf("Memory use after creating dataDouble and after calling LALCreateForwardREAL8FFTPlan.\n"); printmemuse();
+            printf("Memory use after creating dataDouble and after calling XLALCreateForwardREAL8FFTPlan.\n"); printmemuse();
       #endif
   }
 
@@ -1676,7 +1676,7 @@ int CreateSFT(struct CommandLineArgsTag CLA)
   /* 11/19/05 gam */
   if(CLA.useSingle) {
       #if TRACKMEMUSE
-        printf("Memory use before creating output vector fftDataSingle and calling LALForwardRealFFT:\n"); printmemuse();
+        printf("Memory use before creating output vector fftDataSingle and calling XLALREAL4ForwardFFT:\n"); printmemuse();
       #endif
 
       /* 11/02/05 gam; allocate container for SFT data */
@@ -1684,11 +1684,10 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );  
 
       /* compute sft */
-      LALForwardRealFFT(&status, fftDataSingle, dataSingle.data, fftPlanSingle );
-      TESTSTATUS( &status );      
+      XLAL_CHECK( XLALREAL4ForwardFFT( fftDataSingle, dataSingle.data, fftPlanSingle ), XLAL_EFUNC );
 
       #if TRACKMEMUSE
-        printf("Memory use after creating output vector fftDataSingle and calling LALForwardRealFFT:\n"); printmemuse();
+        printf("Memory use after creating output vector fftDataSingle and calling XLALREAL4ForwardFFT:\n"); printmemuse();
       #endif
 
       #if PRINTEXAMPLEDATA
@@ -1704,7 +1703,7 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );  
 
       /* compute sft */
-      XLALREAL8ForwardFFT( fftDataDouble, dataDouble.data, fftPlanDouble );
+      XLAL_CHECK( XLALREAL8ForwardFFT( fftDataDouble, dataDouble.data, fftPlanDouble ), XLAL_EFUNC );
 
       #if TRACKMEMUSE
         printf("Memory use after creating output vector fftDataDouble and calling XLALREAL8ForwardFFT:\n"); printmemuse();
@@ -2173,13 +2172,11 @@ int FreeMem(struct CommandLineArgsTag CLA)
   if(CLA.useSingle) {
     LALDestroyVector(&status,&dataSingle.data);
     TESTSTATUS( &status );
-    LALDestroyRealFFTPlan( &status, &fftPlanSingle );
-    TESTSTATUS( &status );
+    XLALDestroyREAL4FFTPlan( fftPlanSingle );
   } else {
     LALDDestroyVector(&status,&dataDouble.data);
     TESTSTATUS( &status );
-    LALDestroyREAL8FFTPlan( &status, &fftPlanDouble );
-    TESTSTATUS( &status );    
+    XLALDestroyREAL8FFTPlan( fftPlanDouble );
   }
 
   LALCheckMemoryLeaks();
