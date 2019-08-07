@@ -862,15 +862,6 @@ XLALInspiralMoments(
     );
 
 void
-LALInspiralMomentsIntegrand
-(
-   LALStatus *status,
-   REAL8  *integrand,
-   REAL8  f,
-   void   *pars
-   );
-
-void
 LALInspiralSetSearchLimits (
     LALStatus            *status,
     InspiralBankParams   *bankParams,
@@ -1060,12 +1051,6 @@ INT4 XLALInspiralComputePTFIntrinsicMetric (
     InspiralTemplate           *params
     );
 
-INT4 XLALInspiralComputePTFFullMetric (
-    InspiralMetric             *metric,
-    REAL8FrequencySeries       *psd,
-    InspiralTemplate           *params
-    );
-
 INT4 XLALInspiralComputePTFWaveform (
     REAL8Vector				   *ptfwave,
     InspiralTemplate           *params
@@ -1078,11 +1063,6 @@ INT4 XLALInspiralComputePTFWDeriv (
 	INT4					   paramid,
 	REAL8					   initdelta,
 	REAL8					   tolerance
-    );
-
-INT4 XLALInspiralComputePTFQDeriv (
-    REAL8VectorSequence		   *Qderiv,
-    InspiralTemplate           *params
     );
 
 /*@}*/

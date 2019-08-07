@@ -52,30 +52,9 @@
  *
  */
 
-#include <math.h>
-#include <lal/LALStdlib.h>
+#include <lal/LALAtomicDatatypes.h>
 #include <lal/LALInspiral.h>
-
-void
-LALInspiralTofVIntegrand (
-   LALStatus *status,
-   REAL8     *integrand,
-   REAL8      v,
-   void      *params
-   )
-{
-
-   INITSTATUS(status);
-
-   *integrand = XLALInspiralTofVIntegrand( v, params );
-
-   if ( XLAL_IS_REAL8_FAIL_NAN( *integrand ) ) 
-   {
-     ABORTXLAL( status );
-   }
-
-   RETURN (status);
-}
+#include <lal/XLALError.h>
 
 REAL8
 XLALInspiralTofVIntegrand(

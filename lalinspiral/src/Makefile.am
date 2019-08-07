@@ -5,8 +5,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
 pkginclude_HEADERS = \
 	BBHPhenomCoeffs.h \
-	LALInspiralPyCBCTemplate.h \
-	CoherentInspiral.h \
 	CoincInspiralEllipsoid.h \
 	FindChirp.h \
 	FindChirpDatatypes.h \
@@ -23,7 +21,6 @@ pkginclude_HEADERS = \
 	LALInspiralSBankOverlap.h \
 	LALInspiralVCSInfoHeader.h \
 	LALNoiseModelsInspiral.h \
-	LALPSpinInspiralRD.h \
 	LALTrigScanCluster.h \
 	LALSTPNWaveformErrors.h \
 	LALSTPNWaveform2.h \
@@ -45,10 +42,6 @@ lib_LTLIBRARIES = liblalinspiral.la
 
 liblalinspiral_la_SOURCES = \
 	BandPassInspiralTemplate.c \
-	CoherentInspiralFilter.c \
-	CoherentInspiralInput.c \
-	CoincInspiralUtils.c \
-	FindChirpPTFTemplate.c \
 	FindChirpPTFWaveform.c \
 	FindChirpPhenomWaveform.c \
 	FindChirpSimulation.c \
@@ -92,7 +85,6 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralInit.c \
 	LALInspiralLongestTemplateInBank.c \
 	LALInspiralMoments.c \
-	LALInspiralMomentsIntegrand.c \
 	LALInspiralNextTemplate.c \
 	LALInspiralNinjaInject.c \
 	LALInspiralParameterCalc.c \
@@ -102,7 +94,6 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralPhasing3.c \
 	LALInspiralPhiofVIntegrand.c \
 	LALInspiralPolarizations.c \
-	LALInspiralPyCBCTemplate.c \
 	LALInspiralRingdownWave.c \
 	LALInspiralSBankOverlap.c \
 	LALInspiralSetParams.c \

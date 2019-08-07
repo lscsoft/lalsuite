@@ -20,14 +20,11 @@
 #ifndef _GENERATEINSPIRAL_H
 #define _GENERATEINSPIRAL_H
 
-#include <lal/LALStdlib.h>
-#include <lal/LALInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
-
+#include <lal/LALDatatypes.h>
+#include <lal/LALInspiral.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/SeqFactories.h>
-
-#include <lal/Units.h>
+#include <lal/SimulateCoherentGW.h>
 
 #if defined(__cplusplus)
 extern "C" {

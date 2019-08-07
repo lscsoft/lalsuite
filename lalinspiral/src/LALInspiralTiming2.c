@@ -53,31 +53,10 @@
  */
 
 #include <math.h>
-#include <lal/LALStdlib.h>
+#include <lal/LALAtomicDatatypes.h>
 #include <lal/LALInspiral.h>
+#include <lal/XLALError.h>
 
-void
-LALInspiralTiming2_0PN (
-   LALStatus *status,
-   REAL8     *toff,
-   REAL8      f,
-   void      *params
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_0PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *toff = XLALInspiralTiming2_0PN(f, params);
-  if (XLAL_IS_REAL8_FAIL_NAN(*toff))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
 
 REAL8
 XLALInspiralTiming2_0PN (
@@ -107,29 +86,6 @@ XLALInspiralTiming2_0PN (
         + toffIn->tN / v8;
 
   return toff;
-}
-
-void
-LALInspiralTiming2_2PN (
-   LALStatus *status,
-   REAL8     *toff,
-   REAL8      f,
-   void      *params
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_2PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *toff = XLALInspiralTiming2_2PN(f, params);
-  if (XLAL_IS_REAL8_FAIL_NAN(*toff))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
 }
 
 REAL8
@@ -164,29 +120,6 @@ XLALInspiralTiming2_2PN (
   return toff;
 }
 
-void
-LALInspiralTiming2_3PN (
-   LALStatus *status,
-   REAL8     *toff,
-   REAL8      f,
-   void      *params
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_3PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *toff = XLALInspiralTiming2_3PN(f, params);
-  if (XLAL_IS_REAL8_FAIL_NAN(*toff))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
-
 REAL8
 XLALInspiralTiming2_3PN (
    REAL8       f,
@@ -219,29 +152,6 @@ XLALInspiralTiming2_3PN (
         + toffIn->t3 * v3);
 
   return toff;
-}
-
-void
-LALInspiralTiming2_4PN (
-   LALStatus *status,
-   REAL8     *toff,
-   REAL8      f,
-   void      *params
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_4PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *toff = XLALInspiralTiming2_4PN(f, params);
-  if (XLAL_IS_REAL8_FAIL_NAN(*toff))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
 }
 
 REAL8
@@ -280,29 +190,6 @@ XLALInspiralTiming2_4PN (
   return toff;
 }
 
-void
-LALInspiralTiming2_5PN (
-   LALStatus *status,
-   REAL8     *toff,
-   REAL8      f,
-   void      *params
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_5PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *toff = XLALInspiralTiming2_5PN(f, params);
-  if (XLAL_IS_REAL8_FAIL_NAN(*toff))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
-
 REAL8
 XLALInspiralTiming2_5PN (
    REAL8       f,
@@ -339,29 +226,6 @@ XLALInspiralTiming2_5PN (
         + toffIn->t5 * v5);
 
   return toff;
-}
-
-void
-LALInspiralTiming2_6PN (
-   LALStatus *status,
-   REAL8     *toff,
-   REAL8      f,
-   void      *params
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_6PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *toff = XLALInspiralTiming2_6PN(f, params);
-  if (XLAL_IS_REAL8_FAIL_NAN(*toff))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
 }
 
 REAL8
@@ -403,29 +267,6 @@ XLALInspiralTiming2_6PN (
         + (toffIn->t6 + toffIn->tl6 * log(4*v)) * v6);
 
   return toff;
-}
-
-void
-LALInspiralTiming2_7PN (
-   LALStatus *status,
-   REAL8     *toff,
-   REAL8      f,
-   void      *params
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralTiming2_7PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *toff = XLALInspiralTiming2_7PN(f, params);
-  if (XLAL_IS_REAL8_FAIL_NAN(*toff))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
 }
 
 REAL8

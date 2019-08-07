@@ -61,33 +61,11 @@
  *
  */
 
+
 #include <math.h>
-#include <lal/LALStdlib.h>
+#include <lal/LALAtomicDatatypes.h>
 #include <lal/LALInspiral.h>
 #include <lal/XLALError.h>
-
-void
-LALInspiralFrequency3_0PN (
-   LALStatus  *status,
-   REAL8      *frequency,
-   REAL8      td,
-   expnCoeffs *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_0PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *frequency = XLALInspiralFrequency3_0PN(td, ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*frequency))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
 
 
 REAL8
@@ -112,31 +90,6 @@ XLALInspiralFrequency3_0PN (
 
 
 
-void
-LALInspiralFrequency3_2PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_2PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *frequency = XLALInspiralFrequency3_2PN(td, ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*frequency))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
-
-
-
 REAL8
 XLALInspiralFrequency3_2PN (
    REAL8       td,
@@ -157,31 +110,6 @@ XLALInspiralFrequency3_2PN (
              + ak->fta2*theta2);
 
   return frequency;
-}
-
-
-
-void
-LALInspiralFrequency3_3PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_3PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *frequency = XLALInspiralFrequency3_3PN(td, ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*frequency))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
 }
 
 
@@ -211,31 +139,6 @@ XLALInspiralFrequency3_3PN (
 
 
 
-void
-LALInspiralFrequency3_4PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_4PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *frequency = XLALInspiralFrequency3_4PN(td, ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*frequency))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
-
-
-
 REAL8
 XLALInspiralFrequency3_4PN (
    REAL8       td,
@@ -259,31 +162,6 @@ XLALInspiralFrequency3_4PN (
              + ak->fta4*theta4);
 
   return frequency;
-}
-
-
-
-void
-LALInspiralFrequency3_5PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_5PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *frequency = XLALInspiralFrequency3_5PN(td, ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*frequency))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
 }
 
 
@@ -317,31 +195,6 @@ XLALInspiralFrequency3_5PN (
 
 
 
-void
-LALInspiralFrequency3_6PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_6PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *frequency = XLALInspiralFrequency3_6PN(td, ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*frequency))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
-
-
-
 REAL8
 XLALInspiralFrequency3_6PN (
    REAL8       td,
@@ -369,31 +222,6 @@ XLALInspiralFrequency3_6PN (
              + (ak->fta6 + ak->ftl6*log(td))*theta6);
 
   return frequency;
-}
-
-
-
-void
-LALInspiralFrequency3_7PN (
-   LALStatus *status,
-   REAL8 *frequency,
-   REAL8 td,
-   expnCoeffs *ak
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralFrequency3_7PN");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT(frequency, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *frequency = XLALInspiralFrequency3_7PN(td, ak);
-  if (XLAL_IS_REAL8_FAIL_NAN(*frequency))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
 }
 
 

@@ -34,6 +34,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
@@ -81,83 +82,6 @@ static INT8 geocent_end_time(const SimInspiralTable *x)
 {
   return(XLALGPSToINT8NS(&x->geocent_end_time));
 }
-
-
-int
-XLALSimInspiralInSearchedData(
-    SimInspiralTable         **eventHead,
-    SearchSummaryTable       **summList
-    )
-
-{
-  SearchSummaryTable   *thisSearchSumm = NULL;
-
-  SimInspiralTable *eventList = NULL;
-  SimInspiralTable *prevEvent = NULL;
-  SimInspiralTable *thisEvent = NULL;
-
-  int numInj = 0;
-
-  XLALTimeSortSearchSummary( summList, XLALCompareSearchSummaryByOutTime );
-  XLALSortSimInspiral( eventHead, XLALCompareSimInspiralByGeocentEndTime );
-
-  thisEvent = *eventHead;
-  thisSearchSumm = *summList;
-
-
-  while ( thisEvent )
-  {
-    SimInspiralTable *tmpEvent = thisEvent;
-    thisEvent = thisEvent->next;
-
-    while ( thisSearchSumm )
-    {
-      if ( geocent_end_time(tmpEvent) <
-          XLALGPSToINT8NS( &(thisSearchSumm->out_start_time) ))
-      {
-        XLALPrintInfo(
-            "XLALSimInspiralInSearchedData: Discarding injection\n" );
-        LALFree( tmpEvent );
-        break;
-      }
-      else
-      {
-        if ( geocent_end_time(tmpEvent) <
-            XLALGPSToINT8NS( &(thisSearchSumm->out_end_time) ))
-        {
-          XLALPrintInfo(
-              "XLALSimInspiralInSearchedData: Keeping injection\n" );
-          numInj++;
-          if ( ! eventList )
-          {
-            eventList = tmpEvent;
-          }
-          else
-          {
-            prevEvent->next = tmpEvent;
-          }
-          tmpEvent->next = NULL;
-          prevEvent = tmpEvent;
-          break;
-        }
-      }
-
-      thisSearchSumm = thisSearchSumm->next;
-    }
-
-    if ( !thisSearchSumm )
-    {
-      XLALPrintInfo(
-          "XLALSimInspiralInSearchedData: Discarding injection\n" );
-      LALFree( tmpEvent );
-    }
-  }
-
-  *eventHead = eventList;
-
-  return(numInj);
-}
-
 
 
 int
@@ -723,40 +647,4 @@ XLALSimInspiralAssignIDs (
     head->simulation_id = simulation_id++;
   }
   return simulation_id;
-}
-
-
-INT8
-XLALReturnSimInspiralEndTime (
-    SimInspiralTable *event,
-    CHAR             *ifo
-    )
-
-{
-  if ( ! strcmp( "L1", ifo ) )
-  {
-    return( XLALGPSToINT8NS(&(event->l_end_time) ) );
-  }
-  else if ( ! strcmp( "H1", ifo ) ||
-      ! strcmp( "H2", ifo ) )
-  {
-    return( XLALGPSToINT8NS(&(event->h_end_time) ) );
-  }
-  else if ( ! strcmp( "G1", ifo ) )
-  {
-    return(XLALGPSToINT8NS(&(event->g_end_time) ) );
-  }
-  else if ( ! strcmp( "T1", ifo ) )
-  {
-    return( XLALGPSToINT8NS(&(event->t_end_time) ) );
-  }
-  else if ( ! strcmp( "V1", ifo ) )
-  {
-    return( XLALGPSToINT8NS(&(event->v_end_time) ) );
-  }
-  else
-  {
-    XLAL_ERROR(XLAL_EIO);
-  }
-
 }

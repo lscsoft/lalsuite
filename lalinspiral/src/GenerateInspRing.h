@@ -17,18 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+#ifndef _GENERATEINSPRING_H
+#define _GENERATEINSPRING_H
+
 /* includes */
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/AVFactories.h>
-#include <lal/SeqFactories.h>
+#include <lal/SimulateCoherentGW.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/Units.h>
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
@@ -58,4 +52,4 @@ XLALGenerateInspRing(
 }                /* Close C++ protection */
 #endif
 
-
+#endif /* _GENERATEINSPRING_H */

@@ -1,17 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALDatatypes.h>
-#include <lal/AVFactories.h>
-#include <lal/LALConstants.h>
-#include <lal/LALInspiralBank.h>
-#include <lal/LIGOMetadataTables.h>
-#include <gsl/gsl_rng.h>
-
 #ifndef _IMRBANK_H
 #define _IMRBANK_H
 
+#include <lal/LALDatatypes.h>
+#include <lal/LALInspiralBank.h>
+#include <lal/LIGOMetadataTables.h>
 
 /** New structure to hold moments full arrays!! */
 typedef struct

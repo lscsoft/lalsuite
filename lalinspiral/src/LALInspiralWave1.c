@@ -92,24 +92,6 @@ XLALInspiralWave1Engine(
    InspiralInit     *paramsInit
    );
 
-void
-LALInspiralWave1(
-   LALStatus        *status,
-   REAL4Vector      *output,
-   InspiralTemplate *params
-   )
-{
-   XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralWave1");
-   INITSTATUS(status);
-   ATTATCHSTATUSPTR(status);
-
-   if( XLALInspiralWave1(output, params) )
-      ABORTXLAL(status);
-
-   DETATCHSTATUSPTR(status);
-   RETURN(status);
-}
-
 int
 XLALInspiralWave1(
    REAL4Vector      *output,

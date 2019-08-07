@@ -43,33 +43,9 @@
  */
 
 #include <math.h>
-#include <lal/LALStdlib.h>
+#include <lal/LALAtomicDatatypes.h>
 #include <lal/LALInspiral.h>
-
-void
-LALInspiralPhiofVIntegrand (
-   LALStatus  *status,
-   REAL8      *integrand,
-   REAL8       v,
-   void       *params
-   )
-{
-  XLAL_PRINT_DEPRECATION_WARNING("XLALInspiralPhiofVIntegrand");
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
-
-  ASSERT (integrand, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-
-  *integrand = XLALInspiralPhiofVIntegrand(v, params);
-  if (XLAL_IS_REAL8_FAIL_NAN(*integrand))
-    ABORTXLAL(status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-
-
-}
+#include <lal/XLALError.h>
 
 REAL8
 XLALInspiralPhiofVIntegrand (
