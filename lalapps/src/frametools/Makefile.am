@@ -5,14 +5,12 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 LALFRAMEPROGRAMS = \
 	lalapps_animate \
 	lalapps_calfacs \
-	lalapps_computespec \
 	lalapps_frinfo \
 	lalapps_frread \
 	lalapps_frextr \
 	lalapps_frjoin
 lalapps_animate_SOURCES = animate.c
 lalapps_calfacs_SOURCES = calfacs.c
-lalapps_computespec_SOURCES = computespec.c
 #lalapps_stripAdc_SOURCES = stripAdc.c lalDebugLevel.c
 lalapps_frinfo_SOURCES = info.c
 lalapps_frread_SOURCES = read.c
@@ -49,7 +47,6 @@ EXTRA_DIST = \
 	animate.png \
 	calfacs.c \
 	combinexteframes.c \
-	computespec.c \
 	extr.c \
 	framestats.c \
 	info.c \
