@@ -138,6 +138,68 @@ int XLALSimAddModeAngleTimeSeries(
 	return 0;
 }
 
+
+/**
+ * Helper function to add a mode to hplus, hcross in Fourier domain
+ * copies the function XLALSimAddMode, which was done only for TD structures 
+ *
+ * If sym is non-zero, symmetrically add the m and -m terms assuming
+ * that \f$h(l,-m)(f) = (-1)^l h(l,m)*(-f) with f > 0 *\f$.
+ * Since the output is an array with positive frequencies, in the case of 
+ * sym = 1 the modes that are passed should be the modes with negative m
+ * that have support for positive frequencies
+ */
+int XLALSimAddModeFD(
+    COMPLEX16FrequencySeries *hptilde,
+    COMPLEX16FrequencySeries *hctilde,
+    COMPLEX16FrequencySeries *hlmtilde,
+    REAL8 theta,
+    REAL8 phi,
+    INT4 l,
+    INT4 m,
+    INT4 sym)
+{
+    COMPLEX16 Y;
+    UINT4 j;
+    COMPLEX16 hlm; /* helper variable that contain a single point of hlmtilde */
+	
+
+
+    INT4 minus1l; /* (-1)^l */
+    if (l % 2)
+        minus1l = -1;
+    else
+        minus1l = 1;
+    if (sym)
+    { /* Equatorial symmetry: add in -m mode */
+        Y = XLALSpinWeightedSphericalHarmonic(theta, phi, -2, l, m);
+        COMPLEX16 Ymstar = conj(XLALSpinWeightedSphericalHarmonic(theta, phi, -2, l, -m));
+        COMPLEX16 factorp = 0.5 * (Y + minus1l * Ymstar);
+        COMPLEX16 factorc = I * 0.5 * (Y - minus1l * Ymstar);
+        for (j = 0; j < hlmtilde->data->length; ++j)
+        {
+            hlm = (hlmtilde->data->data[j]);
+            hptilde->data->data[j] += factorp * hlm;
+            hctilde->data->data[j] += factorc * hlm;
+        }
+    }
+    else
+    { /* not adding in the -m mode */
+        Y = XLALSpinWeightedSphericalHarmonic(theta, phi, -2, l, m);
+        COMPLEX16 factorp = 0.5 * Y;
+        COMPLEX16 factorc = I * factorp;
+        for (j = 0; j < hlmtilde->data->length; ++j)
+        {
+            hlm = (hlmtilde->data->data[j]);
+            hptilde->data->data[j] += factorp * hlm;
+            hctilde->data->data[j] += factorc * hlm;
+        }
+    }
+
+    return XLAL_SUCCESS;
+}
+
+
 /**
  * For all valid TimeSeries contained within hmode structure,
  * multiplies a mode h(l,m) by a spin-2 weighted spherical harmonic

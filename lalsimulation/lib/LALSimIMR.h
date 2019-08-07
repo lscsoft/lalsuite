@@ -361,6 +361,10 @@ int XLALSimIMRSEOBNRv4ROMFrequencySequence(struct tagCOMPLEX16FrequencySeries **
 int XLALSimIMRSEOBNRv4ROMTimeOfFrequency(REAL8 *t, REAL8 frequency, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2);
 int XLALSimIMRSEOBNRv4ROMFrequencyOfTime(REAL8 *frequency, REAL8 t, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2);
 
+/* in module LALSimIMRSEOBNRv4HMROM.c */
+int XLALSimIMRSEOBNRv4HMROM(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, INT4 nk_max, UINT4 nModes, LALDict *LALParams);
+int XLALSimIMRSEOBNRv4HMROM_Modes(SphHarmFrequencySeries **hlm, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, INT4 nk_max, UINT4 nModes);
+
 /* in module LALSimIMRSEOBNRv4ROM_NRTidal.c */
 
 int XLALSimIMRSEOBNRv4ROMNRTidalFrequencySequence(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 Lambda1, REAL8 Lambda2, LALDict *LALparams, NRTidal_version_type NRTidal_version);
