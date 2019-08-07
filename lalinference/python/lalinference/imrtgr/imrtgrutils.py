@@ -164,6 +164,6 @@ def calc_Mfchif_prior(comp_mass_prior_min, comp_mass_prior_max, comp_spin_min, c
   chif_pr = np.ravel(final_params[:,1])
 
   # compute the 2D prior distribution in Mf and chif 
-  P_Mfchif_pr, Mf_bins, chif_bins = np.histogram2d(Mf_pr, chif_pr, bins=(Mf_bins, chif_bins), normed=True)
+  P_Mfchif_pr, Mf_bins, chif_bins = np.histogram2d(Mf_pr, chif_pr, bins=(Mf_bins, chif_bins), density=True)
 
   return P_Mfchif_pr.T

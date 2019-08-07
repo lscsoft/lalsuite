@@ -1001,7 +1001,7 @@ def TigerCreateHistogram(list_tigerruns, axis, N=1, xlim=None,bins=50):
 					bins = bins, \
 					hatch = hatch_default[i], \
 					edgecolor = color_default[i], \
-					normed=True)
+					density=True)
 			# ADD X-AXIS LABEL
 			axis.set_xlabel(r"$\ln{O_{GR}^{modGR}}$")
 			axis.set_ylabel(r"$P(\ln{O_{GR}^{modGR}})$")
@@ -1016,7 +1016,7 @@ def TigerCreateHistogram(list_tigerruns, axis, N=1, xlim=None,bins=50):
 					bins = bins, \
 					hatch = hatch_default[i], \
 					edgecolor = color_default[i], \
-					normed=True)
+					density=True)
 			# ADD X-AXIS LABEL
 			axis.set_xlabel(r"$\ln{\mathcal{O}_{GR}^{modGR}}$")
 			axis.set_ylabel(r"$P(\ln{\mathcal{O}_{GR}^{modGR}})$")

@@ -292,9 +292,9 @@ if __name__ == '__main__':
   elif MfafKDE==0:
     print 'using default samples, NOKDE'
     # compute the 2D posterior distributions for the inspiral, ringodwn and IMR analyses
-    P_Mfchif_i, Mf_bins, chif_bins = np.histogram2d(Mf_i, chif_i, bins=(Mf_bins, chif_bins), normed=True)
-    P_Mfchif_r, Mf_bins, chif_bins = np.histogram2d(Mf_r, chif_r, bins=(Mf_bins, chif_bins), normed=True)
-    P_Mfchif_imr, Mf_bins, chif_bins = np.histogram2d(Mf_imr, chif_imr, bins=(Mf_bins, chif_bins), normed=True)
+    P_Mfchif_i, Mf_bins, chif_bins = np.histogram2d(Mf_i, chif_i, bins=(Mf_bins, chif_bins), density=True)
+    P_Mfchif_r, Mf_bins, chif_bins = np.histogram2d(Mf_r, chif_r, bins=(Mf_bins, chif_bins), density=True)
+    P_Mfchif_imr, Mf_bins, chif_bins = np.histogram2d(Mf_imr, chif_imr, bins=(Mf_bins, chif_bins), density=True)
     # transpose to go from (X,Y) indexing returned by np.histogram2d() to array (i,j) indexing for further
     # computations. From now onwards, different rows (i) correspond to different values of Mf and different
     # columns (j) correspond to different values of chif
@@ -402,8 +402,8 @@ if __name__ == '__main__':
   # plotting                  
   #########################################################################################
   #inspiral
-  P_m1m2_i, m1_bins_i, m2_bins_i = np.histogram2d(m1_i, m2_i, bins=50, normed=True)
-  P_chi1chi2_i, chi1_bins_i, chi2_bins_i = np.histogram2d(chi1_i, chi2_i, bins=50, normed=True)
+  P_m1m2_i, m1_bins_i, m2_bins_i = np.histogram2d(m1_i, m2_i, bins=50, density=True)
+  P_chi1chi2_i, chi1_bins_i, chi2_bins_i = np.histogram2d(chi1_i, chi2_i, bins=50, density=True)
 
   P_m1m2_i = P_m1m2_i.T
   P_chi1chi2_i = P_chi1chi2_i.T
@@ -490,8 +490,8 @@ if __name__ == '__main__':
 
 
   #ringdown
-  P_m1m2_r, m1_bins_r, m2_bins_r = np.histogram2d(m1_r, m2_r, bins=50, normed=True)
-  P_chi1chi2_r, chi1_bins_r, chi2_bins_r = np.histogram2d(chi1_r, chi2_r, bins=50, normed=True)
+  P_m1m2_r, m1_bins_r, m2_bins_r = np.histogram2d(m1_r, m2_r, bins=50, density=True)
+  P_chi1chi2_r, chi1_bins_r, chi2_bins_r = np.histogram2d(chi1_r, chi2_r, bins=50, density=True)
 
   P_m1m2_r = P_m1m2_r.T
   P_chi1chi2_r = P_chi1chi2_r.T
@@ -577,8 +577,8 @@ if __name__ == '__main__':
   plt.savefig('%s/img/ringdown_Mfchif_thumb.png'%(out_dir), dpi=72)
 
   #IMR
-  P_m1m2_imr, m1_bins_imr, m2_bins_imr = np.histogram2d(m1_imr, m2_imr, bins=50, normed=True)
-  P_chi1chi2_imr, chi1_bins_imr, chi2_bins_imr = np.histogram2d(chi1_imr, chi2_imr, bins=50, normed=True)
+  P_m1m2_imr, m1_bins_imr, m2_bins_imr = np.histogram2d(m1_imr, m2_imr, bins=50, density=True)
+  P_chi1chi2_imr, chi1_bins_imr, chi2_bins_imr = np.histogram2d(chi1_imr, chi2_imr, bins=50, density=True)
 
   P_m1m2_imr = P_m1m2_imr.T
   P_chi1chi2_imr = P_chi1chi2_imr.T

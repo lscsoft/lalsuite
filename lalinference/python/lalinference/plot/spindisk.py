@@ -52,7 +52,7 @@ def make_disk_plot(post,outpath=None):
       asamps=(post[a].samples).flatten()
       tsamps=(post[tilt].samples).flatten()
       
-      H, _, _ = np.histogram2d(asamps, np.cos(tsamps), range=[[0, 1], [-1, 1]], bins=(Na, Nt), normed=True)
+      H, _, _ = np.histogram2d(asamps, np.cos(tsamps), range=[[0, 1], [-1, 1]], bins=(Na, Nt), density=True)
       vmax = H.max() if H.max() > vmax else vmax
 
   # Make the plots
@@ -60,7 +60,7 @@ def make_disk_plot(post,outpath=None):
       asamps=(post[a].samples).flatten()
       tsamps=(post[tilt].samples).flatten()
       plt.sca(ax)
-      H, rs, costs = np.histogram2d(asamps, np.cos(tsamps), range=[[0, 1], [-1, 1]], bins=(Na, Nt), normed=True)
+      H, rs, costs = np.histogram2d(asamps, np.cos(tsamps), range=[[0, 1], [-1, 1]], bins=(Na, Nt), density=True)
       COSTS, RS = np.meshgrid(costs, rs)
       X = RS * np.sin(np.arccos(COSTS))
       Y = RS * COSTS
