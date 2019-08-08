@@ -12,7 +12,6 @@ pkginclude_HEADERS = \
 	LALHeap.h \
 	LALRunningMedian.h \
 	MatrixUtils.h \
-	ODE.h \
 	Random.h \
 	RngMedBias.h \
 	Sort.h \
@@ -37,7 +36,6 @@ libutilities_la_SOURCES = \
 	LALPearsonHash.c \
 	LALRunningMedian.c \
 	MatrixOps.c \
-	ODE.c \
 	Random.c \
 	RngMedBias.c \
 	SphericalHarmonics.c \

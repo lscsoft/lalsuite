@@ -22,7 +22,6 @@
 #include <complex.h>
 #include <mkl_dfti.h>
 
-#include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
 #include <lal/ComplexFFT.h>
 

@@ -73,30 +73,6 @@
  */
 
 
-static void f1 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
-{
-  REAL4  x2 = x*x;
-  REAL4  x4 = x2*x2;
-  INT4  *n;
-  INITSTATUS(s);
-  ASSERT (p, s, 1, "Null pointer");
-  ++(*(n = (INT4 *)p));
-  *y = x4*log(x + sqrt(x2 + 1));
-  RETURN (s);
-}
-
-static void ff1 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
-{
-  REAL8  x2 = x*x;
-  REAL8  x4 = x2*x2;
-  INT4  *n;
-  INITSTATUS(s);
-  ASSERT (p, s, 1, "Null pointer");
-  ++(*(n = (INT4 *)p));
-  *y = x4*log(x + sqrt(x2 + 1));
-  RETURN (s);
-}
-
 static REAL8 xff1 (REAL8 x, void *p)
 {
   REAL8  y;
@@ -110,26 +86,6 @@ static REAL8 xff1 (REAL8 x, void *p)
   return y;
 }
 
-static void f2 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
-{
-  INT4 *n;
-  INITSTATUS(s);
-  ASSERT (p, s, 1, "Null pointer");
-  ++(*(n = (INT4 *)p));
-  *y = 1/(x*x*x);
-  RETURN (s);
-}
-
-static void ff2 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
-{
-  INT4 *n;
-  INITSTATUS(s);
-  ASSERT (p, s, 1, "Null pointer");
-  ++(*(n = (INT4 *)p));
-  *y = 1/(x*x*x);
-  RETURN (s);
-}
-
 static REAL8 xff2 (REAL8 x, void *p)
 {
   REAL8  y;
@@ -139,26 +95,6 @@ static REAL8 xff2 (REAL8 x, void *p)
   ++(*(n = (INT4 *)p));
   y = 1/(x*x*x);
   return y;
-}
-
-static void f3 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
-{
-  INT4 *n;
-  INITSTATUS(s);
-  ASSERT (p, s, 1, "Null pointer");
-  ++(*(n = (INT4 *)p));
-  *y = exp(-x*x/2);
-  RETURN (s);
-}
-
-static void ff3 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
-{
-  INT4 *n;
-  INITSTATUS(s);
-  ASSERT (p, s, 1, "Null pointer");
-  ++(*(n = (INT4 *)p));
-  *y = exp(-x*x/2);
-  RETURN (s);
 }
 
 static REAL8 xff3 (REAL8 x, void *p)
@@ -172,26 +108,6 @@ static REAL8 xff3 (REAL8 x, void *p)
   return y;
 }
 
-static void f4 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
-{
-  INT4 *n;
-  INITSTATUS(s);
-  ASSERT (p, s, 1, "Null pointer");
-  ++(*(n = (INT4 *)p));
-  *y = 1/sqrt(x);
-  RETURN (s);
-}
-
-static void ff4 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
-{
-  INT4 *n;
-  INITSTATUS(s);
-  ASSERT (p, s, 1, "Null pointer");
-  ++(*(n = (INT4 *)p));
-  *y = 1/sqrt(x);
-  RETURN (s);
-}
-
 static REAL8 xff4 (REAL8 x, void *p)
 {
   REAL8  y;
@@ -201,26 +117,6 @@ static REAL8 xff4 (REAL8 x, void *p)
   ++(*(n = (INT4 *)p));
   y = 1/sqrt(x);
   return y;
-}
-
-static void f5 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
-{
-  INT4 *n;
-  INITSTATUS(s);
-  ASSERT (p, s, 1, "Null pointer");
-  ++(*(n = (INT4 *)p));
-  *y = x + 1/sqrt(5 - x);
-  RETURN (s);
-}
-
-static void ff5 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
-{
-  INT4 *n;
-  INITSTATUS(s);
-  ASSERT (p, s, 1, "Null pointer");
-  ++(*(n = (INT4 *)p));
-  *y = x + 1/sqrt(5 - x);
-  RETURN (s);
 }
 
 static REAL8 xff5 (REAL8 x, void *p)
@@ -234,63 +130,6 @@ static REAL8 xff5 (REAL8 x, void *p)
   return y;
 }
 
-static void g (LALStatus *s, REAL4 *z, REAL4 x, void *p)
-{
-  REAL4 y;
-  INITSTATUS(s);
-  ASSERT (p, s, 1, "Null pointer");
-  y  = *((REAL4 *)p);
-  *z = exp(-(x*x + y*y)/2);
-  RETURN (s);
-}
-
-static void gg (LALStatus *s, REAL8 *z, REAL8 x, void *p)
-{
-  REAL8 y;
-  INITSTATUS(s);
-  ASSERT (p, s, 1, "Null pointer");
-  y  = *((REAL8 *)p);
-  *z = exp(-(x*x + y*y)/2);
-  RETURN (s);
-}
-
-static void h (LALStatus *s, REAL4 *z, REAL4 y, void *p)
-{
-  SIntegrateIn intinp;
-  INITSTATUS(s);
-  ATTATCHSTATUSPTR (s);
-  if ( p )
-    ABORT ( s, 2, "Non-null pointer");
-  p = NULL;
-  intinp.function = g;
-  intinp.xmin     = 0;
-  intinp.xmax     = sqrt(y);
-  intinp.type     = ClosedInterval;
-  LALSRombergIntegrate (s->statusPtr, z, &intinp, &y);
-  CHECKSTATUSPTR (s);
-  DETATCHSTATUSPTR (s);
-  RETURN (s);
-}
-
-static void hh (LALStatus *s, REAL8 *z, REAL8 y, void *p)
-{
-  DIntegrateIn intinp;
-  INITSTATUS(s);
-  ATTATCHSTATUSPTR (s);
-  if ( p )
-    ABORT ( s, 2, "Non-null pointer");
-  p = NULL;
-  intinp.function = gg;
-  intinp.xmin     = 0;
-  intinp.xmax     = sqrt(y);
-  intinp.type     = ClosedInterval;
-  LALDRombergIntegrate (s->statusPtr, z, &intinp, &y);
-  CHECKSTATUSPTR (s);
-  DETATCHSTATUSPTR (s);
-  RETURN (s);
-}
-
-
 #if defined(NDEBUG) || defined(LAL_NDEBUG)
 /* debugging is turned off */
 #else
@@ -300,17 +139,6 @@ static void hh (LALStatus *s, REAL8 *z, REAL8 y, void *p)
  * not converge.  Make this routine fast... no status handling!
  *
  */
-static void bad (LALStatus UNUSED *s, REAL4 *y, REAL4 UNUSED x, void *p)
-{
-  INT4 *n = (INT4 *)p;
-  *y = *n = 1664525L*(*n) + 1013904223L;
-}
-
-static void bbad (LALStatus UNUSED *s, REAL8 *y, REAL8 UNUSED x, void *p)
-{
-  *y = (REAL8)(++(*(INT4 *)p));
-}
-
 static REAL8 xbbad (REAL8 UNUSED x, void *p)
 {
   return (REAL8)(++(*(INT4 *)p));
@@ -325,22 +153,9 @@ static void Usage (const char *program, int exitflag);
 
 static void ParseOptions (int argc, char *argv[]);
 
-static void TestStatus (LALStatus *status, const char *expectCodes, int exitCode);
-
-#if defined(NDEBUG) || defined(LAL_NDEBUG)
-/* debugging is turned off */
-#else
-static void ClearStatus (LALStatus *status);
-#endif
-
 int main (int argc, char *argv[])
 {
-  const REAL4   sepsilon = 1e-6;
   const REAL8   depsilon = 1e-13; /* not as good as expected (1e-15) */
-  static LALStatus status;
-  SIntegrateIn  sintinp;
-  DIntegrateIn  dintinp;
-  REAL4         sresult;
   REAL8         dresult;
   long double   expect;
   INT4          count;
@@ -358,51 +173,9 @@ int main (int argc, char *argv[])
   if ( verbose )
     printf ("Test 1:"
         " Integrate a regular function over a closed interval.\n");
-
-  sintinp.function = f1;
-  sintinp.xmin     = 0;
-  sintinp.xmax     = 2;
-  sintinp.type     = ClosedInterval;
-  dintinp.function = ff1;
-  dintinp.xmin     = 0;
-  dintinp.xmax     = 2;
-  dintinp.type     = ClosedInterval;
-
-  count  = 0;
+  count = 0;
   expect = 8.153364119811650205L;
-  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-  TestStatus (&status, CODES(0), 1);
-  if ( verbose )
-    printf ("number of function calls: %d\n", count);
-  if ( verbose )
-    printf ("result: %.15f\n", sresult);
-  if ( verbose )
-    printf ("expect: %.15Lf\n", expect);
-  if (fabsl(sresult - expect) > sepsilon*fabsl(expect))
-  {
-    if ( verbose )
-      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
-    return 1;
-  }
-
-  count = 0;
-  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-  TestStatus (&status, CODES(0), 1);
-  if ( verbose )
-    printf ("number of function calls: %d\n", count);
-  if ( verbose )
-    printf ("result: %.15f\n", dresult);
-  if ( verbose )
-    printf ("expect: %.15Lf\n", expect);
-  if (fabsl(dresult - expect) > depsilon*fabsl(expect))
-  {
-    if ( verbose )
-      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
-    return 1;
-  }
-
-  count = 0;
-  dresult = XLALREAL8RombergIntegrate (&xff1, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+  dresult = XLALREAL8RombergIntegrate (&xff1, &count, 0, 2, ClosedInterval);
   if (xlalErrno)
     abort();
   else if (verbose)
@@ -431,50 +204,9 @@ int main (int argc, char *argv[])
   if ( verbose )
     printf ("\nTest 2:"
         " Integrate to infinity a function with power-law fall-off.\n");
-  sintinp.function = f2;
-  sintinp.xmin     = 10;
-  sintinp.xmax     = 1e30;
-  sintinp.type     = InfiniteDomainPow;
-  dintinp.function = ff2;
-  dintinp.xmin     = 10;
-  dintinp.xmax     = 1e300;
-  dintinp.type     = InfiniteDomainPow;
-
-  count  = 0;
+  count = 0;
   expect = 1.0L/200.0L;
-  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-  TestStatus (&status, CODES(0), 1);
-  if ( verbose )
-    printf ("number of function calls: %d\n", count);
-  if ( verbose )
-    printf ("result: %.15f\n", sresult);
-  if ( verbose )
-    printf ("expect: %.15Lf\n", expect);
-  if (fabsl(sresult - expect) > sepsilon*fabsl(expect))
-  {
-    if ( verbose )
-      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
-    return 1;
-  }
-
-  count = 0;
-  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-  TestStatus (&status, CODES(0), 1);
-  if ( verbose )
-    printf ("number of function calls: %d\n", count);
-  if ( verbose )
-    printf ("result: %.15f\n", dresult);
-  if ( verbose )
-    printf ("expect: %.15Lf\n", expect);
-  if (fabsl(dresult - expect) > depsilon*fabsl(expect))
-  {
-    if ( verbose )
-      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
-    return 1;
-  }
-
-  count = 0;
-  dresult = XLALREAL8RombergIntegrate (&xff2, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+  dresult = XLALREAL8RombergIntegrate (&xff2, &count, 10, 1e300, InfiniteDomainPow);
   if (xlalErrno)
     abort();
   else if (verbose)
@@ -503,50 +235,9 @@ int main (int argc, char *argv[])
   if ( verbose )
     printf ("\nTest 3:"
         " Integrate to infinity a function that falls off exponentially.");
-  sintinp.function = f3;
-  sintinp.xmin     = 2;
-  sintinp.xmax     = 1e30;
-  sintinp.type     = InfiniteDomainExp;
-  dintinp.function = ff3;
-  dintinp.xmin     = 2;
-  dintinp.xmax     = 1e300;
-  dintinp.type     = InfiniteDomainExp;
-
   count  = 0;
   expect = 0.0570261239928920483L;
-  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-  TestStatus (&status, CODES(0), 1);
-  if ( verbose )
-    printf ("number of function calls: %d\n", count);
-  if ( verbose )
-    printf ("result: %.15f\n", sresult);
-  if ( verbose )
-    printf ("expect: %.15Lf\n", expect);
-  if (fabsl(sresult - expect) > sepsilon*fabsl(expect))
-  {
-    if ( verbose )
-      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
-    return 1;
-  }
-
-  count = 0;
-  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-  TestStatus (&status, CODES(0), 1);
-  if ( verbose )
-    printf ("number of function calls: %d\n", count);
-  if ( verbose )
-    printf ("result: %.15f\n", dresult);
-  if ( verbose )
-    printf ("expect: %.15Lf\n", expect);
-  if (fabsl(dresult - expect) > depsilon*fabsl(expect))
-  {
-    if ( verbose )
-      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
-    return 1;
-  }
-
-  count = 0;
-  dresult = XLALREAL8RombergIntegrate (&xff3, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+  dresult = XLALREAL8RombergIntegrate (&xff3, &count, 2, 1e300, InfiniteDomainExp);
   if (xlalErrno)
     abort();
   else if (verbose)
@@ -575,50 +266,9 @@ int main (int argc, char *argv[])
   if ( verbose )
     printf ("\nTest 4:"
         " Integrate an integrable singularity at the lower limit.\n");
-  sintinp.function = f4;
-  sintinp.xmin     = 0;
-  sintinp.xmax     = 1;
-  sintinp.type     = SingularLowerLimit;
-  dintinp.function = ff4;
-  dintinp.xmin     = 0;
-  dintinp.xmax     = 1;
-  dintinp.type     = SingularLowerLimit;
-
   count  = 0;
   expect = 2.0L;
-  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-  TestStatus (&status, CODES(0), 1);
-  if ( verbose )
-    printf ("number of function calls: %d\n", count);
-  if ( verbose )
-    printf ("result: %.15f\n", sresult);
-  if ( verbose )
-    printf ("expect: %.15Lf\n", expect);
-  if (fabsl(sresult - expect) > sepsilon*fabsl(expect))
-  {
-  if ( verbose )
-    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
-    return 1;
-  }
-
-  count  = 0;
-  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-  TestStatus (&status, CODES(0), 1);
-  if ( verbose )
-    printf ("number of function calls: %d\n", count);
-  if ( verbose )
-    printf ("result: %.15f\n", dresult);
-  if ( verbose )
-    printf ("expect: %.15Lf\n", expect);
-  if (fabsl(dresult - expect) > depsilon*fabsl(expect))
-  {
-    if ( verbose )
-      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
-    return 1;
-  }
-
-  count = 0;
-  dresult = XLALREAL8RombergIntegrate (&xff4, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+  dresult = XLALREAL8RombergIntegrate (&xff4, &count, 0, 1, SingularLowerLimit);
   if (xlalErrno)
     abort();
   else if (verbose)
@@ -647,52 +297,9 @@ int main (int argc, char *argv[])
   if ( verbose )
     printf ("\nTest 5:"
         " Integrate an integrable singularity at the upper limit.\n");
-  sintinp.function = f5;
-  sintinp.xmin     = 4;
-  sintinp.xmax     = 5;
-  sintinp.type     = SingularUpperLimit;
-  dintinp.function = ff5;
-  dintinp.xmin     = 4;
-  dintinp.xmax     = 5;
-  dintinp.type     = SingularUpperLimit;
-
   count  = 0;
   expect = 6.5L;
-  LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-  TestStatus (&status, CODES(0), 1);
-  if ( verbose )
-    printf ("number of function calls: %d\n", count);
-  if ( verbose )
-    printf ("result: %.15f\n", sresult);
-  if ( verbose )
-    printf ("expect: %.15Lf\n", expect);
-  /* this doesn't work so well: multiply tolerance by factor of three */
-  if (fabsl(sresult - expect) > 3*sepsilon*fabsl(expect))
-  {
-    if ( verbose )
-    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
-    return 1;
-  }
-
-  count  = 0;
-  LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-  TestStatus (&status, CODES(0), 1);
-  if ( verbose )
-    printf ("number of function calls: %d\n", count);
-  if ( verbose )
-    printf ("result: %.15f\n", dresult);
-  if ( verbose )
-    printf ("expect: %.15Lf\n", expect);
-  /* this doesn't work so well: multiply tolerance by factor of three */
-  if (fabsl(dresult - expect) > 3*depsilon*fabsl(expect))
-  {
-    if ( verbose )
-    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
-    return 1;
-  }
-
-  count = 0;
-  dresult = XLALREAL8RombergIntegrate (&xff5, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+  dresult = XLALREAL8RombergIntegrate (&xff5, &count, 4, 5, SingularUpperLimit);
   if (xlalErrno)
     abort();
   else if (verbose)
@@ -709,49 +316,6 @@ int main (int argc, char *argv[])
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
-
-
-  /*
-   *
-   * Test 6: Two-dimensional integral.
-   *
-   */
-
-
-  if ( verbose )
-  printf ("\nTest 6: Two-dimensional integral.\n");
-  sintinp.function = h;
-  sintinp.xmin     = 0;
-  sintinp.xmax     = 10;
-  sintinp.type     = OpenInterval;
-  dintinp.function = hh;
-  dintinp.xmin     = 0;
-  dintinp.xmax     = 10;
-  dintinp.type     = OpenInterval;
-
-  expect = 0.88274109326014810823L;
-  LALSRombergIntegrate (&status, &sresult, &sintinp, NULL);
-  TestStatus (&status, CODES(0), 1);
-  if ( verbose )
-    printf ("result: %.15f\n", sresult);
-  if ( verbose )
-    printf ("expect: %.15Lf\n", expect);
-  /* integral isn't very accurate because we needed to use an open interval */
-  if ( verbose )
-    printf ("error:  %.2Lf%%\n", 100*fabsl(sresult - expect)/fabsl(expect));
-  /*
-   * don't do 2d double-precision: it takes too long!
-   *
-   * LALDRombergIntegrate (&status, &dresult, &dintinp, NULL);
-   * TestStatus (&status, CODES(0), 1);
-   * if ( verbose )
-   * printf ("result: %.15f\n", dresult);
-   * if ( verbose )
-   * printf ("expect: %.15Lf\n", expect);
-   * if ( verbose )
-   * printf ("error:  %.2f%%\n", 100*fabs(dresult - expect)/fabs(expect));
-   *
-   */
 
 
   LALCheckMemoryLeaks ();
@@ -771,82 +335,8 @@ int main (int argc, char *argv[])
       printf ("\nChecking error conditions:\n");
 
     if ( verbose )
-      printf ("\nNull pointer:\r");
-    LALSRombergIntegrate (&status, NULL, &sintinp, &count);
-    TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
-    LALDRombergIntegrate (&status, NULL, &dintinp, &count);
-    TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
-    if ( verbose )
-      printf ("Null pointer check passed.\n");
-
-    if ( verbose )
-      printf ("\nNull pointer:\r");
-    LALSRombergIntegrate (&status, &sresult, NULL, &count);
-    TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
-    LALDRombergIntegrate (&status, &dresult, NULL, &count);
-    TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
-    if ( verbose )
-      printf ("Null pointer check passed.\n");
-
-    if ( verbose )
-      printf ("\nNull pointer:\r");
-    sintinp.function = NULL;
-    sintinp.xmin     = 0;
-    sintinp.xmax     = 2;
-    sintinp.type     = ClosedInterval;
-    dintinp.function = NULL;
-    dintinp.xmin     = 0;
-    dintinp.xmax     = 2;
-    dintinp.type     = ClosedInterval;
-    LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-    TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
-    LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-    TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
-    dresult = XLALREAL8RombergIntegrate (NULL, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
-    if (xlalErrno == XLAL_EFAULT)
-      xlalErrno = 0;
-    else
-      abort();
-    if ( verbose )
-      printf ("Null pointer check passed.\n");
-
-    if ( verbose )
-      printf ("\nInvalid domain:\r");
-    sintinp.function = f1;
-    sintinp.xmin     = 0;
-    sintinp.xmax     = 0;
-    sintinp.type     = ClosedInterval;
-    dintinp.function = ff1;
-    dintinp.xmin     = 0;
-    dintinp.xmax     = 0;
-    dintinp.type     = ClosedInterval;
-    LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-    TestStatus (&status, CODES(INTEGRATEH_EIDOM), 1);
-    LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-    TestStatus (&status, CODES(INTEGRATEH_EIDOM), 1);
-    dresult = XLALREAL8RombergIntegrate (&xff1, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
-    if (xlalErrno == XLAL_EDOM)
-      xlalErrno = 0;
-    else
-      abort();
-    if ( verbose )
-      printf ("Invalid domain check passed.\n");
-
-    if ( verbose )
       printf ("\nUnknown integral type:\r");
-    sintinp.function = f1;
-    sintinp.xmin     = 0;
-    sintinp.xmax     = 2;
-    sintinp.type     = 999;
-    dintinp.function = ff1;
-    dintinp.xmin     = 0;
-    dintinp.xmax     = 2;
-    dintinp.type     = 999;
-    LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-    TestStatus (&status, CODES(INTEGRATEH_ETYPE), 1);
-    LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-    TestStatus (&status, CODES(INTEGRATEH_ETYPE), 1);
-    dresult = XLALREAL8RombergIntegrate (&xff1, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+    dresult = XLALREAL8RombergIntegrate (&xff1, &count, 0, 2, 999);
     if (xlalErrno == XLAL_EINVAL)
       xlalErrno = 0;
     else
@@ -856,21 +346,7 @@ int main (int argc, char *argv[])
 
     if ( verbose )
       printf ("\nMaximum iterations exceeded:\r");
-    sintinp.function = bad;  /* bad is a quick random number generator */
-    sintinp.xmin     = 0;
-    sintinp.xmax     = 2;
-    sintinp.type     = ClosedInterval;
-    dintinp.function = bbad;  /* bbad is a quick random number generator */
-    dintinp.xmin     = 0;
-    dintinp.xmax     = 2;
-    dintinp.type     = ClosedInterval;
-    count            = 13;   /* count is now used as a random number seed */
-    LALSRombergIntegrate (&status, &sresult, &sintinp, &count);
-    TestStatus (&status, CODES(INTEGRATEH_EMXIT), 1);
-    count = 1;
-    LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
-    TestStatus (&status, CODES(INTEGRATEH_EMXIT), 1);
-    dresult = XLALREAL8RombergIntegrate (&xbbad, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+    dresult = XLALREAL8RombergIntegrate (&xbbad, &count, 0, 2, ClosedInterval);
     if (xlalErrno == XLAL_EMAXITER)
       xlalErrno = 0;
     else
@@ -880,27 +356,13 @@ int main (int argc, char *argv[])
 
     if ( verbose )
       printf ("\nRecursive error:\r");
-    sintinp.function = f1;
-    sintinp.xmin     = 0;
-    sintinp.xmax     = 2;
-    sintinp.type     = ClosedInterval;
-    dintinp.function = ff1;
-    dintinp.xmin     = 0;
-    dintinp.xmax     = 2;
-    dintinp.type     = ClosedInterval;
-    LALSRombergIntegrate (&status, &sresult, &sintinp, NULL);
-    TestStatus (&status, CODES(-1), 1);
-    ClearStatus (&status);
-    LALDRombergIntegrate (&status, &dresult, &dintinp, NULL);
-    TestStatus (&status, CODES(-1), 1);
-    dresult = XLALREAL8RombergIntegrate (&xff1, NULL, dintinp.xmin, dintinp.xmax, dintinp.type);
+    dresult = XLALREAL8RombergIntegrate (&xff1, NULL, 0, 2, ClosedInterval);
     if (xlalErrno == XLAL_EFUNC + XLAL_EFAULT)
       xlalErrno = 0;
     else
       abort();
     if ( verbose )
       printf ("Recursive error check passed.\n");
-    ClearStatus (&status);
   }
 
 #endif
@@ -908,74 +370,6 @@ int main (int argc, char *argv[])
   return 0;
 }
 
-
-/*
- * TestStatus ()
- *
- * Routine to check that the status code status->statusCode agrees with one of
- * the codes specified in the space-delimited string ignored; if not,
- * exit to the system with code exitcode.
- *
- */
-static void
-TestStatus (LALStatus *status, const char *ignored, int exitcode)
-{
-  char  str[64];
-  char *tok;
-
-  if (verbose)
-  {
-    REPORTSTATUS (status);
-  }
-
-  if (XLALStringCopy(str, ignored, sizeof(str)))
-  {
-    if ((tok = strtok (str, " ")))
-    {
-      do
-      {
-        if (status->statusCode == atoi (tok))
-        {
-          return;
-        }
-      }
-      while ((tok = strtok (NULL, " ")));
-    }
-    else
-    {
-      if (status->statusCode == atoi (tok))
-      {
-        return;
-      }
-    }
-  }
-
-  fprintf (stderr, "\nExiting to system with code %d\n", exitcode);
-  exit (exitcode);
-}
-
-
-#if defined(NDEBUG) || defined(LAL_NDEBUG)
-/* debugging is turned off */
-#else
-/*
- *
- * ClearStatus ()
- *
- * Recursively applies DETATCHSTATUSPTR() to status structure to destroy
- * linked list of statuses.
- *
- */
-static void
-ClearStatus (LALStatus *status)
-{
-  if (status->statusPtr)
-  {
-    ClearStatus      (status->statusPtr);
-    DETATCHSTATUSPTR (status);
-  }
-}
-#endif
 
 /*
  * Usage ()

@@ -77,7 +77,6 @@
 #include <lal/Random.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/TimeFreqFFT.h>
-#include <lal/LALMoment.h>
 
 #include <lal/LALInspiral.h>
 

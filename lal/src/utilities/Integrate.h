@@ -102,21 +102,6 @@ extern "C" {
  */
 /*@{*/
 
-/** \name Error Codes */
-/*@{*/
-#define INTEGRATEH_ENULL 1		/**< Null pointer */
-#define INTEGRATEH_ETYPE 2		/**< Unknown integral type */
-#define INTEGRATEH_EIDOM 4		/**< Invalid domain */
-#define INTEGRATEH_EMXIT 8		/**< Maximum iterations exceeded */
-/*@}*/
-
-/** \cond DONT_DOXYGEN */
-#define INTEGRATEH_MSGENULL "Null pointer"
-#define INTEGRATEH_MSGETYPE "Unknown integral type"
-#define INTEGRATEH_MSGEIDOM "Invalid domain"
-#define INTEGRATEH_MSGEMXIT "Maximum iterations exceeded"
-/** \endcond */
-
 /**
  * Type of integral.
  * The types of integration are the following:
@@ -158,47 +143,7 @@ tagIntegralType
 }
 IntegralType;
 
-/** These are input structures to the integration routines. */
-typedef struct
-tagSIntegrateIn
-{
-  void (*function)(LALStatus *s, REAL4 *y, REAL4 x, void *p);	/**<  The function to integrate */
-  REAL4         xmax;	/**<  The maximum value of the domain of integration */
-  REAL4         xmin;	/**< The minimum value of the domain of integration */
-  IntegralType  type;	/**<  The type of integration */
-}
-SIntegrateIn;
-
-/** These are input structures to the integration routines. */
-typedef struct
-tagDIntegrateIn
-{
-  void (*function)(LALStatus *s, REAL8 *y, REAL8 x, void *p);	/**<  The function to integrate */
-  REAL8         xmax;	/**<  The maximum value of the domain of integration */
-  REAL8         xmin;	/**< The minimum value of the domain of integration */
-  IntegralType  type;	/**<  The type of integration */
-}
-DIntegrateIn;
-
 /* ----- Integrate.c ----- */
-/** \see See \ref Integrate_h for documentation */
-void
-LALSRombergIntegrate (
-    LALStatus       *status,
-    REAL4        *result,
-    SIntegrateIn *input,
-    void         *params
-    );
-
-/** \see See \ref Integrate_h for documentation */
-void
-LALDRombergIntegrate (
-    LALStatus       *status,
-    REAL8        *result,
-    DIntegrateIn *input,
-    void         *params
-    );
-
 /** \see See \ref Integrate_h for documentation */
 REAL8
 XLALREAL8RombergIntegrate (

@@ -164,9 +164,8 @@ int main( int argc, char *argv[] )
     TestStatus( &status, CODES( 0 ), 1 );
     LALCCreateVector( &status, &fft, n / 2 + 1 );
     TestStatus( &status, CODES( 0 ), 1 );
-    LALCreateForwardRealFFTPlan( &status, &fwd, n, 0 );
-    TestStatus( &status, CODES( 0 ), 1 );
-    LALCreateReverseRealFFTPlan( &status, &rev, n, 0 );
+    fwd = XLALCreateForwardREAL4FFTPlan( n, 0 );
+    rev = XLALCreateReverseREAL4FFTPlan( n, 0 );
     TestStatus( &status, CODES( 0 ), 1 );
 
     /*
@@ -205,12 +204,9 @@ int main( int argc, char *argv[] )
        * Perform forward FFT and DFT (only if n < 100).
        *
        */
-      LALForwardRealFFT( &status, fft, dat, fwd );
-      TestStatus( &status, CODES( 0 ), 1 );
-      LALREAL4VectorFFT( &status, rfft, dat, fwd );
-      TestStatus( &status, CODES( 0 ), 1 );
-      LALREAL4VectorFFT( &status, ans, rfft, rev );
-      TestStatus( &status, CODES( 0 ), 1 );
+      XLALREAL4ForwardFFT( fft, dat, fwd );
+      XLALREAL4VectorFFT( rfft, dat, fwd );
+      XLALREAL4VectorFFT( ans, rfft, rev );
       fp ?  fprintf( fp, "rfft()\t\trfft(rfft())\trfft(rfft())\n\n"  ) : 0;
       for ( j = 0; j < n; ++j )
       {
@@ -271,7 +267,7 @@ int main( int argc, char *argv[] )
        * Perform reverse FFT and check accuracy vs original data.
        *
        */
-      LALReverseRealFFT( &status, ans, fft, rev );
+      XLALREAL4ReverseFFT( ans, fft, rev );
       TestStatus( &status, CODES( 0 ), 1 );
       fp ? fprintf( fp, "\ndat->data[j]\tans->data[j] / n\n" ) : 0;
       for ( j = 0; j < n; ++j )
@@ -303,9 +299,8 @@ int main( int argc, char *argv[] )
     TestStatus( &status, CODES( 0 ), 1 );
     LALCDestroyVector( &status, &fft );
     TestStatus( &status, CODES( 0 ), 1 );
-    LALDestroyRealFFTPlan( &status, &fwd );
-    TestStatus( &status, CODES( 0 ), 1 );
-    LALDestroyRealFFTPlan( &status, &rev );
+    XLALDestroyREAL4FFTPlan( fwd );
+    XLALDestroyREAL4FFTPlan( rev );
     TestStatus( &status, CODES( 0 ), 1 );
   }
 

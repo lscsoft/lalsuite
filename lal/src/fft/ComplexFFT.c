@@ -19,13 +19,16 @@
 
 #include <config.h>
 
+#include <complex.h>
 #include <fftw3.h>
+#include <string.h>
 
-#include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/ComplexFFT.h>
 #include <lal/FFTWMutex.h>
 #include <lal/LALConfig.h> /* Needed to know whether aligning memory */
+#include <lal/LALMalloc.h>
+#include <lal/XLALError.h>
 
 /**
  * \addtogroup ComplexFFT_h

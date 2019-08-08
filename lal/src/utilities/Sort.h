@@ -50,6 +50,8 @@ extern "C" {
  *
  * ### Description ###
  *
+ * ## Heap Sort ##
+ *
  * These routines sort a vector <tt>*data</tt> (of type \c REAL4Vector
  * or \c REAL8Vector) into ascending order using the in-place
  * heapsort algorithm, or construct an index vector <tt>*index</tt> that
@@ -95,7 +97,18 @@ extern "C" {
  * \c params of \c XLALHeapSort(), \c XLALHeapIndex(), and
  * \c XLALHeapRank().
  *
+ * ## Insertion Sort ##
+ *
+ * This is provided so the frame file cache handling code could have access
+ * to a sort algorithm that has the property that the original element
+ * order is preserved in the case of ties, a feature it relies on for
+ * proper treatment of cache files containing redundant fail-over copies.
+ * The C library's \c qsort() does not guarantee that order is preserved.
+ * This function is not fast, it just is what it is.
+ *
  * ### Algorithm ###
+ *
+ * ## Heap Sort ##
  *
  * These routines use the standard heap sort algorithm described in
  * Sec. 8.3 of Ref. \cite ptvf1992 .
@@ -111,23 +124,11 @@ extern "C" {
  * algorithms are \f$N\log_2(N)\f$ algorithms, regardless of the ordering of
  * the initial dataset.
  *
+ *
  * Note: if you can use \c qsort(), you should.
  *
  */
 /*@{*/
-
-/** \name Error Codes */
-/*@{*/
-#define SORTH_ENUL 1		/**< Null pointer */
-#define SORTH_ELEN 2		/**< Length mismatch */
-#define SORTH_EMEM 3		/**< Memory allocation error */
-/*@}*/
-
-/** \cond DONT_DOXYGEN */
-#define SORTH_MSGENUL "Null pointer"
-#define SORTH_MSGELEN "Length mismatch"
-#define SORTH_MSGEMEM "Memory allocation error"
-/** \endcond */
 
 /* Function prototypes. */
 

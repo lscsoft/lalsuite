@@ -35,11 +35,12 @@ int main( void )
 {
   const UINT4 n = 65536;
   const UINT4 m = 8;
-  static AverageSpectrumParams specpar;
   static REAL4FrequencySeries fseries;
   static REAL4TimeSeries tseries;
   static LALStatus status;
   static RandomParams *randpar;
+  REAL4FFTPlan *plan;
+  REAL4Window *window;
   REAL8 ave;
   UINT4 i;
 
@@ -62,16 +63,12 @@ int main( void )
   XLALDestroyRandomParams( randpar );
 
   /* prepare average spectrum parameters */
-  specpar.method  = useMedian;
-  specpar.overlap = n / 2;
   /* specpar.overlap = 0; */
-  LALCreateForwardRealFFTPlan( &status, &specpar.plan, n, 0 );
-  TESTSTATUS( &status );
-  specpar.window = XLALCreateWelchREAL4Window(n);
+  plan = XLALCreateForwardREAL4FFTPlan( n, 0 );
+  window = XLALCreateWelchREAL4Window(n);
 
   /* compute spectrum */
-  LALREAL4AverageSpectrum( &status, &fseries, &tseries, &specpar );
-  TESTSTATUS( &status );
+  XLALREAL4AverageSpectrumMedian( &fseries, &tseries, n, n / 2, window, plan );
 
   /* output results -- omit DC & Nyquist */
   /*
@@ -88,9 +85,7 @@ int main( void )
   fprintf( stdout, "median:\t%e\terror:\t%f%%\n", ave, fabs( ave - 2.0 ) / 0.02 );
 
   /* now do the same for mean */
-  specpar.method  = useMean;
-  LALREAL4AverageSpectrum( &status, &fseries, &tseries, &specpar );
-  TESTSTATUS( &status );
+  XLALREAL4AverageSpectrumWelch( &fseries, &tseries, n, n / 2, window, plan );
   /* average values of power spectrum (omit DC & Nyquist ) */
   ave = 0;
   for ( i = 1; i < fseries.data->length - 1; ++i )
@@ -100,8 +95,8 @@ int main( void )
 
 
   /* cleanup */
-  XLALDestroyREAL4Window( specpar.window );
-  LALDestroyRealFFTPlan( &status, &specpar.plan );
+  XLALDestroyREAL4Window( window );
+  XLALDestroyREAL4FFTPlan( plan );
   TESTSTATUS( &status );
   LALDestroyVector( &status, &fseries.data );
   TESTSTATUS( &status );
