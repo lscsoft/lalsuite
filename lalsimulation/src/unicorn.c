@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 			LIGOTimeGPS t = h->epoch;
 			XLALGPSAdd(&t, j * h->deltaT);
 			fprintgps(fp, &t);
-			fprintf(fp, "\t%e\n", h->data->data[j]);
+			fprintf(fp, "\t%.18e\n", h->data->data[j]);
 		}
 	}
 

@@ -119,22 +119,22 @@ int output(const char *fmt, double h, double p, double epsilon, double rho,
                 fputc('%', stdout);
                 break;
             case 'h':
-                fprintf(stdout, "%e", h);
+                fprintf(stdout, "%.18e", h);
                 break;
             case 'p':
-                fprintf(stdout, "%e", p);
+                fprintf(stdout, "%.18e", p);
                 break;
             case 'e':
-                fprintf(stdout, "%e", epsilon);
+                fprintf(stdout, "%.18e", epsilon);
                 break;
             case 'r':
-                fprintf(stdout, "%e", rho);
+                fprintf(stdout, "%.18e", rho);
                 break;
             case 'd':
-                fprintf(stdout, "%e", dedp);
+                fprintf(stdout, "%.18e", dedp);
                 break;
             case 'v':
-                fprintf(stdout, "%e", vsound);
+                fprintf(stdout, "%.18e", vsound);
                 break;
             default:
                 fprintf(stderr,

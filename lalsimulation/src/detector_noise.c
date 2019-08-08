@@ -192,14 +192,14 @@ int main(int argc, char *argv[])
 			size_t k;
 			fprintf(stdout, "# freq (s^-1)\tPSD (strain^2 s)\n");
 			for (k = klow; k < length/2 - 1; ++k)
-				fprintf(stdout, "%e\t%e\n", k * deltaF, 0.0);
+				fprintf(stdout, "%.18e\t%.18e\n", k * deltaF, 0.0);
 		} else {
 			size_t j;
 			fprintf(stdout, "# time (s)\tNOISE (strain)\n");
 			n = duration * srate;
 			for (j = 0; j < n; ++j) { 
 				LIGOTimeGPS t = tstart;
-				fprintf(stdout, "%s\t%e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j/srate)), 0.0);
+				fprintf(stdout, "%s\t%.18e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j/srate)), 0.0);
 			}
 		}
 		return 0;
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
 		size_t k;
 		fprintf(stdout, "# freq (s^-1)\tPSD (strain^2 s)\n");
 		for (k = klow; k < length/2 - 1; ++k)
-			fprintf(stdout, "%e\t%e\n", k * psd->deltaF, sqrt(psd->data->data[k]));
+			fprintf(stdout, "%.18e\t%.18e\n", k * psd->deltaF, sqrt(psd->data->data[k]));
 		goto end;
 	}
 
@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
 			LIGOTimeGPS t = seg->epoch;
 			if (n == 0) // check if we're done
 				goto end;
-			fprintf(stdout, "%s\t%e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j * seg->deltaT)), seg->data->data[j]);
+			fprintf(stdout, "%s\t%.18e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j * seg->deltaT)), seg->data->data[j]);
 		}
 		XLALSimNoise(seg, stride, psd, rng); // make more data
 	}

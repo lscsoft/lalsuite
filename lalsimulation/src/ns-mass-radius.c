@@ -83,19 +83,19 @@ int output(const char *fmt, double c, double m, double r, double k2)
                 fputc('%', stdout);
                 break;
             case 'c':
-                fprintf(stdout, "%e", c);
+                fprintf(stdout, "%.18e", c);
                 break;
             case 'k':
-                fprintf(stdout, "%e", k2);
+                fprintf(stdout, "%.18e", k2);
                 break;
             case 'l':
-                fprintf(stdout, "%e", (2.0 / 3.0) * k2 / pow(c, 5));
+                fprintf(stdout, "%.18e", (2.0 / 3.0) * k2 / pow(c, 5));
                 break;
             case 'm':
-                fprintf(stdout, "%e", m);
+                fprintf(stdout, "%.18e", m);
                 break;
             case 'r':
-                fprintf(stdout, "%e", r);
+                fprintf(stdout, "%.18e", r);
                 break;
             default:
                 fprintf(stderr,

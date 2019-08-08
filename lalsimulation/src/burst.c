@@ -518,7 +518,7 @@ static int output(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross)
 	fprintf(stdout, "# time (s)\tH_PLUS (strain)\tH_CROSS (strain)\n");
 	for (j = 0; j < hplus->data->length; ++j) {
 		LIGOTimeGPS t = hplus->epoch;
-		fprintf(stdout, "%s\t%e\t%e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j * hplus->deltaT)), hplus->data->data[j], hcross->data->data[j]);
+		fprintf(stdout, "%s\t%.18e\t%.18e\n", XLALGPSToStr(tstr, XLALGPSAdd(&t, j * hplus->deltaT)), hplus->data->data[j], hcross->data->data[j]);
 	}
 	return 0;
 }
