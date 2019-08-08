@@ -86,18 +86,18 @@ XLALFindChirpChirpTime (double m1,
     case 8:
     case 7:
       c7T = LAL_PI * (14809.0 * eta * eta / 378.0 - 75703.0 * eta / 756.0 - 15419335.0 / 127008.0);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
     case 6:
       c6T = LAL_GAMMA * 6848.0 / 105.0 - 10052469856691.0 / 23471078400.0 + LAL_PI * LAL_PI * 128.0 / 3.0 + eta * (3147553127.0 / 3048192.0 - LAL_PI * LAL_PI * 451.0 / 12.0) - eta * eta * 15211.0 / 1728.0 + eta * eta * eta * 25565.0 / 1296.0 + log (4.0) * 6848.0 / 105.0;
       c6LogT = 6848.0 / 105.0;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
     case 5:
       c5T = 13.0 * LAL_PI * eta / 3.0 - 7729.0 * LAL_PI / 252.0;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
     case 4:
@@ -311,13 +311,13 @@ LALFindChirpSPTemplate (
   {
     case LAL_PNORDER_PSEUDO_FOUR:
       c40P = 3923.0;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
     case LAL_PNORDER_THREE_POINT_FIVE:
       c35 = LAL_PI*(77096675.0/254016.0 + eta*378515.0/1512.0
             - eta*eta*74045.0/756.0);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
     case LAL_PNORDER_THREE:
@@ -326,13 +326,13 @@ LALFindChirpSPTemplate (
             - 15737765635.0/3048192.0) + eta*eta*76055.0/1728.0
             - eta*eta*eta*127825.0/1296.0 - 6848.0*log(4.0)/21.0;
       c30Log = -6848.0/21.0;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
     case LAL_PNORDER_TWO_POINT_FIVE:
       c25 = LAL_PI*38645.0/756.0 - LAL_PI*eta*65.0/9.0 - pn_gamma;
       c25Log = 3*c25;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
     case LAL_PNORDER_TWO:

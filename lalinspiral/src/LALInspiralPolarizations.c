@@ -87,7 +87,7 @@ REAL4 LALInspiralHPlusPolarization( REAL8 phase, REAL8 v, InspiralTemplate *para
                         *cos(7.*phase) + ( (-9./5. + cI2*14./5. + cI4*7./5.)
                         + eta*(32. + cI2*56./5. - cI4*28./5.) )*sin(2.*phase) + sI2*(1.+cI2)
                         *( (56./5. - log(2.)*32./3.) - eta*(1193./30. - 32.*log(2.)) ) *sin(4.*phase)  );
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                   __attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_TWO:
@@ -100,7 +100,7 @@ REAL4 LALInspiralHPlusPolarization( REAL8 phase, REAL8 v, InspiralTemplate *para
                         + (sI/40.)*dM* ( (11.+7.*cI2 + 10.*(5. + cI2)*log(2))*sin(phase)
                         - 5.*LAL_PI*(5. + cI2)*cos(phase) - 27.*(7. - 10.*log(3./2.))*(1 + cI2)*sin(3.*phase)
                         + 135.*LAL_PI*(1.+cI2)*cos(3.*phase) )  );
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                   __attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_ONE_POINT_FIVE:
@@ -109,18 +109,18 @@ REAL4 LALInspiralHPlusPolarization( REAL8 phase, REAL8 v, InspiralTemplate *para
                         - (27./2.)*( (73. + 40.*cI2 - 9.*cI4) - 2.*eta*(25. - 8.*cI2 - 9.*cI4) )
                         *cos(3.*phase) + (625./2.)*(1. - 2.*eta)*sI2*(1+cI2)* cos(5.*phase)  )
                         - 2.*LAL_PI* (1.+cI2)*cos(2.*phase)  );
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                   __attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_ONE:
 		hPlus = hPlus + v * v *(   (1./6.)*( (19.+9.*cI2 - 2.*cI4) - eta*(19. - 11.*cI2 - 6.*cI4) )
                         * cos( 2.*phase) - (4./3.)*sI2*(1.+cI2)*(1. - 3*eta)* cos(4.*phase)  );
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                   __attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_HALF:
 		hPlus = hPlus - v * (sI * dM / 8.) * ( (5. + cI2) * cos(phase) - 9.*(1. + cI2)*cos(3.*phase));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                   __attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_NEWTONIAN:
@@ -161,7 +161,7 @@ REAL4 LALInspiralHCrossPolarization( REAL8 phase, REAL8 v, InspiralTemplate *par
                          + eta*(66875./1152. - cI2*44375./576. + cI4*21875./1152.)
                          + eta2*(-100625./4608. + cI2*83125./2304. - cI4*21875./1536.) )*sin(5.*phase)
                          + sI2*sI2*sI*cI*dM*(117649./23040.)*(1. - 4.*eta + 3.*eta2)*sin(7.*phase)  );
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                   __attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_TWO:
@@ -173,25 +173,25 @@ REAL4 LALInspiralHCrossPolarization( REAL8 phase, REAL8 v, InspiralTemplate *par
                            - (81./20.)*(1. - 5.*eta + 5.*eta2)*cI*sI2*sI2* sin(6.*phase)
                            - (3./20.)*sI*cI*dM* ( (3.+10.*log(2))*cos(phase) + 5.*LAL_PI*sin(phase)
                            - 9.*(7. - 10.*log(3./2.))*cos(3.*phase) - 45.*LAL_PI*sin(3.*phase) )  );
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                   __attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_ONE_POINT_FIVE:
 		  hCross = hCross + v * v * v * (  (sI*cI/96.)*dM* ( ( (63. - 5.*cI2) - 2.*eta*(23. - 5.*cI2)  )
                            *sin(phase) - (27./2.)*(  (67. - 15.*cI2) - 2.*eta*(19. - 15.*cI2)  )*sin(3.*phase)
                            + (625./2.)*(1. - 2.*eta)*sI2*sin(5.*phase)  ) - 4.*LAL_PI*cI* sin(2.*phase) ) ;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                   __attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_ONE:
 		  hCross = hCross + v * v * (  (cI/3.)*( (17. - 4.*cI2) - eta* (13. - 12.*cI2) )
                            *sin(2.*phase) - (8./3.)*(1. - 3.*eta)*cI*sI2*sin(4.*phase)  );
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                   __attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_HALF:
 		hCross = hCross - v * (3./4.)*sI*cI*dM* ( sin(phase) - 3.* sin(3.*phase) );
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                   __attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_NEWTONIAN:

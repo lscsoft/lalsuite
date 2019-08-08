@@ -831,7 +831,7 @@ int idx /**< index of the time dependent variables */) {
                         )//
                 ));
     }
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
         __attribute__ ((fallthrough)); /* no break */
 #endif
     case (PN10): {
@@ -988,7 +988,7 @@ int idx /**< index of the time dependent variables */) {
                         )//
                 );
     }
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
         __attribute__ ((fallthrough)); /* no break */
 #endif
     case (PN05): {
@@ -1085,7 +1085,7 @@ int idx /**< index of the time dependent variables */) {
                         )//
                 );
     }
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
         __attribute__ ((fallthrough)); /* no break */
 #endif
     case (PN00): {
@@ -1131,7 +1131,7 @@ int idx /**< index of the time dependent variables */) {
                     * (waveampcoeffs[PN15_A + AMPCOEFF_DIM * i] + waveampcoeffs[PN15_B + AMPCOEFF_DIM * i]
                             + waveampcoeffs[PN15_C + AMPCOEFF_DIM * i]);
         }
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
         __attribute__ ((fallthrough)); /* no break */
 #endif
     case (PN10):
@@ -1143,7 +1143,7 @@ int idx /**< index of the time dependent variables */) {
                             + params->beta1 * waveampcoeffs[PN10_B + AMPCOEFF_DIM * i]
                             + params->beta1 * waveampcoeffs[PN10_D + AMPCOEFF_DIM * i]);
         }
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
         __attribute__ ((fallthrough)); /* no break */
 #endif
     case (PN05):
@@ -1158,7 +1158,7 @@ int idx /**< index of the time dependent variables */) {
                 h[i] +=epssqrt * temp;
             }
         }
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
         __attribute__ ((fallthrough)); /* no break */
 #endif
     case (PN00):
@@ -1523,13 +1523,13 @@ static INT4 XLALSpinDominatedWaveformDerivatives(UNUSED REAL8 t, const REAL8 val
                     * LAL_C_SI * LAL_C_SI * epsP3 * sqrt(params->eps)
                     * (1. - 2. * params->xi * sqrt(params->eps)) * (sinKappa1 * cosKappa1
                             + params->beta1 * cosKappa1 * cosKappa1);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough)); /* no break */
 #endif
         case (PN15):
             dvalues[PHI] += params->chi1 * LAL_C_SI * LAL_C_SI * LAL_C_SI * epsP3 / 2. / LAL_G_SI / params->totalmass
                     * ( 5. * sqrt(params->eps) * params->xi - 4.)*(1. + cosKappa1 * params->beta1 / sinKappa1 );
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough)); /* no break */
 #endif
         case (PN10):
@@ -1550,7 +1550,7 @@ static INT4 XLALSpinDominatedWaveformDerivatives(UNUSED REAL8 t, const REAL8 val
         dvalues[OMEGA] += phasecoeff * vP[PN20]
                 * (5. / 2. * params->chi1 * params->chi1 * eta / params->nu * (3. * cosKappa1 * cosKappa1 - 1.)
                         + 1. / 96. * params->chi1 * params->chi1 * eta / params->nu * (6. + sinKappa1 * sinKappa1));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
         __attribute__ ((fallthrough)); /* no break */
 #endif
     case (PN15):
@@ -1558,12 +1558,12 @@ static INT4 XLALSpinDominatedWaveformDerivatives(UNUSED REAL8 t, const REAL8 val
         // SO component
         dvalues[OMEGA] += phasecoeff * vP[PN15]
                 * (-1 / 12. * cosKappa1 * params->chi1 * (113. * eta / params->nu + 75. * eta));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
         __attribute__ ((fallthrough)); /* no break */
 #endif
     case (PN10):
         dvalues[OMEGA] += -phasecoeff * vP[PN10] * (743. / 336. + 11. / 4. * eta);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
         __attribute__ ((fallthrough)); /* no break */
 #endif
     case (PN05):
@@ -1604,17 +1604,17 @@ UNUSED void *mparams) {
         mecotest += +6. * vP[PN20]
                 * (1. / 8. * (-27. + 19. * eta - eta * eta / 3.)
                         - (3. * cosKappa1 * cosKappa1 - 1.) / 2. * params->chi1 * params->chi1 * eta / params->nu);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
         __attribute__ ((fallthrough)); /* no break */
 #endif
     case (PN15):
         mecotest += +5. * vP[PN15] * (8. / 3. * eta / params->nu + 2. * eta) * cosKappa1 * params->chi1;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
         __attribute__ ((fallthrough)); /* no break */
 #endif
     case (PN10):
         mecotest += -4. * vP[PN10] * (3. + eta / 3.) / 4.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
         __attribute__ ((fallthrough)); /* no break */
 #endif
     case (PN05):

@@ -470,7 +470,7 @@ REAL8TimeSeries *XLALFrStreamInputREAL8TimeSeries(LALFrStream * stream,
     case LAL_C_TYPE_CODE:
     case LAL_Z_TYPE_CODE:
         XLAL_PRINT_ERROR("Cannot convert complex type to float type");
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 	__attribute__ ((fallthrough));
 #endif
     default:
@@ -685,7 +685,7 @@ REAL8FrequencySeries *XLALFrStreamInputREAL8FrequencySeries(LALFrStream *
     case LAL_C_TYPE_CODE:
     case LAL_Z_TYPE_CODE:
         XLAL_PRINT_ERROR("Cannot convert complex type to float type");
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 	__attribute__ ((fallthrough));
 #endif
     default:

@@ -188,7 +188,7 @@ void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
         else
           fprintf(stderr, "Error passing option %s with argument %s\n",
             long_options[option_index].name, LALoptarg);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
         __attribute__ ((fallthrough));
 #endif
       case 'h': /* help message */
