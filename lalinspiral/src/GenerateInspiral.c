@@ -27,6 +27,32 @@
 #include <lal/Units.h>
 
 /**
+ * XLAL function to determine adaptive integration flag from a string.  Returns
+ * 1 if string contains 'fixedStep', otherwise returns 0 to signal
+ * adaptive integration should be used.
+ */
+int XLALGetAdaptiveIntFromString(const CHAR *inString)
+{
+  if (strstr(inString, "fixedStep"))
+    return 1;
+  else
+    return 0;
+}
+
+/**
+ * XLAL function to determine inspiral-only flag from a string.  Returns
+ * 1 if string contains 'inspiralOnly', otherwise returns 0 to signal
+ * full inspiral-merger-ringdown waveform should be generated.
+ */
+int XLALGetInspiralOnlyFromString(const CHAR *inString)
+{
+  if (strstr(inString, "inspiralOnly"))
+    return 1;
+  else
+    return 0;
+}
+
+/**
  * XLAL function to determine LALInspiralInteraction from a string.
  * DEPRECATED: USE LALSimInspiralSpinOrder, LALSimInspiralTidalOrder INSTEAD
 */
