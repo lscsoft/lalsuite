@@ -1725,7 +1725,7 @@ static int XLALSimComputeLWLStrainSegmentREAL8TimeSeries(
 	XLALGPSAdd(&t, 0.5 * segment->data->length * segment->deltaT);
 	gmst = XLALGreenwichMeanSiderealTime(&t);
 	XLALComputeDetAMResponse(&fplus, &fcross,
-		(const REAL4(*)[3])detector->response, ra, dec, psi, gmst);
+		(const REAL4(*)[3])(uintptr_t)detector->response, ra, dec, psi, gmst);
 	deltaT = XLALTimeDelayFromEarthCenter(detector->location, ra, dec, &t);
 
 	/* add to the geometric delay the difference in time between the
@@ -1849,7 +1849,7 @@ static int XLALSimComputeLWLStrainSegmentREAL4TimeSeries(
 	XLALGPSAdd(&t, 0.5 * segment->data->length * segment->deltaT);
 	gmst = XLALGreenwichMeanSiderealTime(&t);
 	XLALComputeDetAMResponse(&fplus, &fcross,
-		(const REAL4(*)[3])detector->response, ra, dec, psi, gmst);
+		(const REAL4(*)[3])(uintptr_t)detector->response, ra, dec, psi, gmst);
 	deltaT = XLALTimeDelayFromEarthCenter(detector->location, ra, dec, &t);
 
 	/* add to the geometric delay the difference in time between the

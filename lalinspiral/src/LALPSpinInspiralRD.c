@@ -279,7 +279,7 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
 
     case LAL_PNORDER_THREE_POINT_FIVE:
       mparams->wdotorb[7] = paramsInit->ak.ST[8];
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
 
@@ -289,7 +289,7 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->wdotorblog = paramsInit->ak.ST[7];
       mparams->wdotspin30S1LNh = -LAL_PI/3. * ( 188. - 151./2./mparams->m1m);
       mparams->wdotspin30S2LNh = -LAL_PI/3. * ( 188. + 151./2./mparams->m2m);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
 
@@ -301,7 +301,7 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->wdotspin25S2LNh = -31319. / 1008. + 1159. / 24. * mparams->eta + (-809. / 84. + 281. / 8. * mparams->eta) * mparams->m1m2;
       mparams->S1dot25 = 0.5625 + 1.25 * mparams->eta - mparams->eta * mparams->eta / 24. + mparams->dm * (-0.5625 + 0.625 * mparams->eta);
       mparams->S2dot25 = 0.5625 + 1.25 * mparams->eta - mparams->eta * mparams->eta / 24. - mparams->dm * (-0.5625 + 0.625 * mparams->eta);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
 
@@ -318,7 +318,7 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->epnspin20S2S2 = (1. + mparams->m1m2) * (1. + mparams->m1m2) / 2.;
       mparams->epnspin20S1S1dotLNh = -3. * (1. + mparams->m2m1) * (1. + mparams->m2m1) / 2.;
       mparams->epnspin20S2S2dotLNh = -3. * (1. + mparams->m1m2) * (1. + mparams->m1m2) / 2.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
 
@@ -331,20 +331,20 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->LNhdot15 = 0.5;
       mparams->S1dot15 = (4.0 + 3.0 * mparams->m2m1) / 2.0 * mparams->eta;
       mparams->S2dot15 = (4.0 + 3.0 * mparams->m1m2) / 2.0 * mparams->eta;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
 
     case LAL_PNORDER_ONE:
       mparams->epnorb[1] = paramsInit->ak.ETa1;
       mparams->wdotorb[2] = paramsInit->ak.ST[2];
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
 
     case LAL_PNORDER_HALF:
       mparams->wdotorb[1] = paramsInit->ak.ST[1];
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
 
@@ -377,7 +377,7 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->wdotspin15S2LNh   = 0.;
       mparams->S1dot15           = 0.;
       mparams->S2dot15           = 0.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
 
@@ -386,7 +386,7 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->wdotspin20S1S2      = 0.;
       mparams->epnspin20S1S2       = 0.;
       mparams->epnspin20S1S2dotLNh = 0.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
 
@@ -400,7 +400,7 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->epnspin20S2S2 = 0.;
       mparams->epnspin20S1S1dotLNh = 0.;
       mparams->epnspin20S2S2dotLNh = 0.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
 
@@ -412,7 +412,7 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
       mparams->wdotspin25S2LNh     = 0.;
       mparams->S1dot25             = 0.;
       mparams->S2dot25             = 0.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
 
@@ -421,7 +421,7 @@ static int XLALPSpinInspiralRDSetParams(LALPSpinInspiralRDparams *mparams,Inspir
     case LAL_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN:
       mparams->wdotspin30S1LNh     = 0.;
       mparams->wdotspin30S2LNh     = 0.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
 

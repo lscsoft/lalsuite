@@ -3120,7 +3120,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         - ci2*486./5.) + eta3*(-3159./40. + ci2*243./5.))
                         + sin(8.*phi)*(-2048./315.*si6*ci*(1. - 7.*eta
                         + 14.*eta2 - 7.*eta3));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                 __attribute__ ((fallthrough));
 #endif
             /* case LAL_PNORDER_TWO_POINT_FIVE: */
@@ -3169,7 +3169,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         + eta2*(-100625./4608. + ci2*83125./2304.
                         - ci4*21875./1536.)) + sin(7.*phi)*si5*ci*dm
                         * (117649./23040.*(1. - 4.*eta + 3.*eta2));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                 __attribute__ ((fallthrough));
 #endif
             /* case LAL_PNORDER_TWO: */
@@ -3200,7 +3200,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         + eta2*5.*(17. - 12.*ci2))
                         + sin(6.*phi)*ci*(-81./20.*si4
                         * (1. - 5.*eta + 5.*eta2));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                 __attribute__ ((fallthrough));
 #endif
             /* case LAL_PNORDER_ONE_POINT_FIVE: */
@@ -3218,7 +3218,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         * (-603./64. + ci2*135./64.
                         + eta*(171./32. - ci2*135./32.))
                         + sin(5.*phi)*si*ci*dm*(625./192.*si2*(1. - 2.*eta));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                 __attribute__ ((fallthrough));
 #endif
             /* case LAL_PNORDER_ONE: */
@@ -3229,7 +3229,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
                 hc1 = sin(2.*phi)*ci*(17./3. - ci2*4./3.
                         + eta*(-13./3. + 4.*ci2))
                         + sin(4.*phi)*ci*si2*(-8./3.*(1. - 3.*eta));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                 __attribute__ ((fallthrough));
 #endif
             /*case LAL_PNORDER_HALF:*/
@@ -3237,7 +3237,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
                 hp05 = - si*dm*(cos(phi)*(5./8. + ci2/8.)
                         - cos(3.*phi)*(9./8. + 9.*ci2/8.));
                 hc05 = si*ci*dm*(-sin(phi)*3./4. + sin(3.*phi)*9./4.);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                 __attribute__ ((fallthrough));
 #endif
             case 0:
@@ -3895,7 +3895,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
                         + 12*(lx*nx - ly*ny)*logfac);
                 hcrossTail15 = 4*((lx*ly - nx*ny)*LAL_PI
                         + 6*(ly*nx + lx*ny)*logfac);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                 __attribute__ ((fallthrough));
 #endif
 
@@ -3919,7 +3919,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
                         - nx*((1 + dm)*s1y + (-1 + dm)*s2y))/2.;
                 hcrossSpin1 = (nx*((1 + dm)*s1x + (-1 + dm)*s2x)
                         - ny*((1 + dm)*s1y + (-1 + dm)*s2y))/2.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                 __attribute__ ((fallthrough));
 #endif
 
@@ -3930,7 +3930,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
                         + 6*lx*nx*nz - 6*ly*ny*nz))/2.;
                 hcross05 = dm*(-2*lx*ly*lz + lz*nx*ny
 					+ 3*ly*nx*nz + 3*lx*ny*nz);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                 __attribute__ ((fallthrough));
 #endif
             /*case LAL_PNORDER_NEWTONIAN:*/
@@ -4114,7 +4114,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           *hcross += (2.*fact8)*((-e2xe2y*e2z*fact3 + e1xe2z*e1y*fact2
           - e1z*(e1xe2y + e1ye2x)*fact4) + I*((e1xe2y + e1ye2x)*e2z*fact7
           + (e1xe1y*fact6 - e2xe2y*fact5)*e1z));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
           __attribute__ ((fallthrough));
 #endif
         case 2:
@@ -4124,7 +4124,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           - a1y)*e2x - (a1x - a2x)*e2y));
           *hcross += fact1*(((a1x - a2x)*e1x - (a1y - a2y)*e1y) + I*((a1x
           - a2x)*e2x - (a1y - a2y)*e2y));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
           __attribute__ ((fallthrough));
 #endif
         case 1:
@@ -4140,7 +4140,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           + I*(e1z*(fact2 + 5.*fact3) - 6.*e2z*fact1));
           *hcross += (2.*fact7)*((3.*e1z*fact4 + e2z*(-5.*fact5 + fact6))
           + I*(e1z*(5.*fact6 - fact5) - 3.*e2z*fact4));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
           __attribute__ ((fallthrough));
 #endif
         case 0:
@@ -4185,7 +4185,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           + e1ye2z)*fact2 + 6.*(e1xe2x - e1ye2y)*fact3 + 2.*(e1xe1y
           - e2xe2y)*fact7) + I*(3.*(e1xe1z - e2xe2z)*fact1 - 3.*(e1ye1z
           - e2ye2z)*fact2 - 3.*fact8*fact3 + 2.*(e1ye2x + e1xe2y)*fact7));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
           __attribute__ ((fallthrough));
 #endif
 
@@ -4202,7 +4202,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           - e2ye2y)*fact3 + (e1ye2y - e1xe2x)*fact4));
           *hcross += fact6*((-e1xe1y*fact1 + e2xe2y*fact2) + I*(4.*(e1xe1y
           + e2xe2y)*fact3 - (e1ye2x + e1xe2y)*fact4));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
           __attribute__ ((fallthrough));
 #endif
         case 1:
@@ -4237,7 +4237,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           *hcross += fact1*((2.*(e2xe2y*e2z*fact3 - (e1xe2y + e1ye2x)*e1z*fact4
           - e1xe1y*e2z*fact5)) + I*(2.*(-e1z*e2xe2y*fact7 + e1xe1y*e1z*fact6
           - (e1xe2y + e1ye2x)*e2z*fact4)));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
           __attribute__ ((fallthrough));
 #endif
         case 2:
@@ -4251,7 +4251,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           *hplus += fact1*((e1z*fact2 + e2z*fact3) - I*(e1z*fact3 - e2z*fact2));
           *hcross += fact1*((e1z*fact4 + e2z*fact5) + I*(-e1z*fact5
           + e2z*fact4));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
           __attribute__ ((fallthrough));
 #endif
         case 0:
@@ -4279,7 +4279,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           + e1ze2z*fact3));
           *hcross = fact1*((fact4*fact5 - 2.*e1ze2z*fact6) + I*(fact4*fact6
           + 2.*e1ze2z*fact5));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
           __attribute__ ((fallthrough));
 #endif
         case 1:
@@ -4308,7 +4308,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
           + 0.5*fact4*fact3));
           *hcross += (fact1)*((fact4*fact6 - fact5*fact7) - I*(fact4*fact7
           + fact5*fact6));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
           __attribute__ ((fallthrough));
 #endif
         case 2:

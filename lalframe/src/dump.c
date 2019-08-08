@@ -406,7 +406,7 @@ int indent(int n)
     default:
     case 3:
         fputs(tab, stdout);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
         __attribute__ ((fallthrough));
 #endif
     case 2:

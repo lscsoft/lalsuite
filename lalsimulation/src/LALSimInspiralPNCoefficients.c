@@ -907,7 +907,7 @@ XLALSimInspiralPNPhasing_F2(
         case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
         case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
 	    pfa->v[7] += XLALSimInspiralTaylorF2Phasing_7PNSOCoeff(m1M)*chi1L+XLALSimInspiralTaylorF2Phasing_7PNSOCoeff(m2M)*chi2L;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
@@ -916,7 +916,7 @@ XLALSimInspiralPNPhasing_F2(
 	      + XLALSimInspiralTaylorF2Phasing_6PNS1S2OCoeff(eta)*chi1L*chi2L
 	      + (XLALSimInspiralTaylorF2Phasing_6PNQM2SCoeff(m1M)*qm_def1+XLALSimInspiralTaylorF2Phasing_6PNSelf2SCoeff(m1M))*chi1sq
 	      + (XLALSimInspiralTaylorF2Phasing_6PNQM2SCoeff(m2M)*qm_def2+XLALSimInspiralTaylorF2Phasing_6PNSelf2SCoeff(m2M))*chi2sq;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
@@ -924,7 +924,7 @@ XLALSimInspiralPNPhasing_F2(
 	      + XLALSimInspiralTaylorF2Phasing_5PNSOCoeff(m2M)*chi2L;
             pfa->vlogv[5] += 3.*(XLALSimInspiralTaylorF2Phasing_5PNSOCoeff(m1M)*chi1L
 				 + XLALSimInspiralTaylorF2Phasing_5PNSOCoeff(m2M)*chi2L);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
@@ -934,12 +934,12 @@ XLALSimInspiralPNPhasing_F2(
 	      + (XLALSimInspiralTaylorF2Phasing_4PNQM2SOCoeff(m2M)*qm_def2+XLALSimInspiralTaylorF2Phasing_4PNSelf2SOCoeff(m2M))*chi2L*chi2L
 	      + (XLALSimInspiralTaylorF2Phasing_4PNQM2SCoeff(m1M)*qm_def1+XLALSimInspiralTaylorF2Phasing_4PNSelf2SCoeff(m1M))*chi1sq
 	      + (XLALSimInspiralTaylorF2Phasing_4PNQM2SCoeff(m2M)*qm_def2+XLALSimInspiralTaylorF2Phasing_4PNSelf2SCoeff(m2M))*chi2sq;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
             pfa->v[3] += XLALSimInspiralTaylorF2Phasing_3PNSOCoeff(m1M)*chi1L+XLALSimInspiralTaylorF2Phasing_3PNSOCoeff(m2M)*chi2L;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
@@ -959,31 +959,31 @@ XLALSimInspiralPNPhasing_F2(
     {
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_75PN:
             pfa->v[15] = (lambda1*XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(m1M) + lambda2*XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(m2M));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT:
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_7PN:
             pfa->v[14] = (lambda1*XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(m1M) + lambda2*XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(m2M));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_65PN:
             pfa->v[13] = (lambda1*XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(m1M) + lambda2*XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff(m2M));
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
             pfa->v[12] = (lambda1*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m1M) + lambda2*XLALSimInspiralTaylorF2Phasing_12PNTidalCoeff(m2M) );
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
             pfa->v[10] = ( lambda1*XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m1M) + lambda2*XLALSimInspiralTaylorF2Phasing_10PNTidalCoeff(m2M) );
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:

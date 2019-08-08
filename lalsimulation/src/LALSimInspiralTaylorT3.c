@@ -569,13 +569,13 @@ static REAL8 XLALSimInspiralChirpLength(
 		case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
 			t12 = XLALSimInspiralTaylorT2Timing_12PNTidalCoeff(eta,chi1,lambda1)
 		    	+ XLALSimInspiralTaylorT2Timing_12PNTidalCoeff(eta,chi2,lambda2);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
 			t10 = XLALSimInspiralTaylorT2Timing_10PNTidalCoeff(chi1,lambda1)
 		    	+ XLALSimInspiralTaylorT2Timing_10PNTidalCoeff(chi2,lambda2);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
@@ -591,33 +591,33 @@ static REAL8 XLALSimInspiralChirpLength(
 		case 0:
 		case 1:
 			t2 = 0.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case 2:
 			t3 = 0.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case 3:
 			t4 = 0.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case 4:
 			t5 = 0.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case 5:
 			t6 = 0.;
 			t6l = 0.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case 6:
 			t7 = 0.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case 7:
@@ -714,7 +714,7 @@ static int XLALSimInspiralTaylorT3Setup(
       ak->fta12 = XLALSimInspiralTaylorT3Frequency_12PNTidalCoeff(
           eta, chi1, lambda1)
           + XLALSimInspiralTaylorT3Frequency_12PNTidalCoeff(eta,chi2,lambda2);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
     case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
@@ -722,7 +722,7 @@ static int XLALSimInspiralTaylorT3Setup(
                 + XLALSimInspiralTaylorT3Phasing_10PNTidalCoeff(chi2,lambda2);
       ak->fta10 = XLALSimInspiralTaylorT3Frequency_10PNTidalCoeff(chi1,lambda1)
                 + XLALSimInspiralTaylorT3Frequency_10PNTidalCoeff(chi2,lambda2);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
       __attribute__ ((fallthrough));
 #endif
     case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:

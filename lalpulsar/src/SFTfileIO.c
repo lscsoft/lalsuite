@@ -3276,7 +3276,7 @@ amatch(char *str, char *p)
 		case '\\':
 			if (*p)
 				c = *p++;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		default:

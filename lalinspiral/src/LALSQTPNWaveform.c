@@ -56,7 +56,7 @@ int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
 			params->coeff.domega[LAL_PNORDER_THREE_POINT_FIVE] 
 				= (-4415./ 4032. + params->eta * 358675. 
 				/ 6048. + etaPow2 * 91495. / 1512.) * LAL_PI;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_THREE:
@@ -71,14 +71,14 @@ int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
 				+ (209323. / 4032. - 205. * piPow2 / 96. 
 				+ (110. / 9.) * (1987. / 3080.)) * params->eta 
 				- 155. * etaPow2 / 96. - 35. * etaPow3 / 5184.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_TWO_POINT_FIVE:
 			params->coeff.domega[LAL_PNORDER_TWO_POINT_FIVE] 
 				= -(4159. + 15876. * params->eta) 
 				* LAL_PI / 672.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_TWO:
@@ -125,7 +125,7 @@ int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
 			}
 			params->coeff.meco[LAL_PNORDER_TWO] *= (-81. + 57. 
 				* params->eta - etaPow2) / 24.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_ONE_POINT_FIVE:
@@ -146,7 +146,7 @@ int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
 						* m_m[i]) / 9.;
 				}
 			}
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_ONE:
@@ -154,12 +154,12 @@ int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params) {
 				= -(743. + 924. * params->eta) / 336.;
 			params->coeff.meco[LAL_PNORDER_ONE] *= -(9. 
 				+ params->eta) / 12.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_HALF:
 			params->coeff.domega[LAL_PNORDER_HALF] = 0.;
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_NEWTONIAN:
@@ -216,7 +216,7 @@ int XLALSQTPNDerivator(UNUSED REAL8 t, const REAL8 values[], REAL8 dvalues[],
 			dvalues[LALSQTPN_OMEGA] += params->coeff.domegaLN
 					* log(16. * omegaPowi_3[2])
 					* omegaPowi_3[LAL_PNORDER_THREE];
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_TWO_POINT_FIVE:
@@ -286,7 +286,7 @@ int XLALSQTPNDerivator(UNUSED REAL8 t, const REAL8 values[], REAL8 dvalues[],
 			}
 			dvalues[LALSQTPN_OMEGA] += (QM_Omega + SSself_Omega 
 				+ SS_Omega) * omegaPowi_3[LAL_PNORDER_TWO];
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_ONE_POINT_FIVE:
@@ -317,7 +317,7 @@ int XLALSQTPNDerivator(UNUSED REAL8 t, const REAL8 values[], REAL8 dvalues[],
 						* omegaPowi_3[1];
 				}
 			}
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
 			__attribute__ ((fallthrough));
 #endif
 		case LAL_PNORDER_ONE:
