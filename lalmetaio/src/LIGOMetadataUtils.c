@@ -88,18 +88,6 @@ int XLALCountProcessParamsTable(ProcessParamsTable *head)
 }
 
 
-int XLALCountMultiInspiralTable(MultiInspiralTable *head)
-
-{
-	int length;
-	/* count the number of events in the list */
-	for(length = 0; head; head = head->next)
-		length++;
-
-	return(length);
-}
-
-
 
 int
 XLALIFONumber(
@@ -695,52 +683,6 @@ void XLALDestroySegmentTable(SegmentTable *head)
   {
     SegmentTable *next = head->next;
     XLALDestroySegmentTableRow(head);
-    head = next;
-  }
-}
-
-/*
- * Create a TimeSlideSegmentMap structure.
- */
-
-
-TimeSlideSegmentMapTable *XLALCreateTimeSlideSegmentMapTableRow(void)
-{
-  TimeSlideSegmentMapTable *new = XLALMalloc(sizeof(*new));
-
-  if(!new)
-    XLAL_ERROR_NULL(XLAL_EFUNC);
-
-  new->next = NULL;
-  new->time_slide_id = -1;
-  new->segment_def_id = -1;
-
-  return new;
-}
-
-
-/*
- * Destroy a TimeSlideSegmentMap structure.
- */
-
-
-void XLALDestroyTimeSlideSegmentMapTableRow(TimeSlideSegmentMapTable *row)
-{
-  XLALFree(row);
-}
-
-
-/*
- * Destroy a TimeSlideSegmentMap linked list.
- */
-
-
-void XLALDestroyTimeSlideSegmentMapTable(TimeSlideSegmentMapTable *head)
-{
-  while(head)
-  {
-    TimeSlideSegmentMapTable *next = head->next;
-    XLALDestroyTimeSlideSegmentMapTableRow(head);
     head = next;
   }
 }

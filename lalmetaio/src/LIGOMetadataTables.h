@@ -84,8 +84,6 @@ extern "C" {
 #define LIGOMETA_SOURCE_MAX 30
 #define LIGOMETA_WAVEFORM_MAX 50
 #define LIGOMETA_COORDINATES_MAX 16
-#define LIGOMETA_SIMINSTPARAMS_NAME_MAX 25
-#define LIGOMETA_SIMINSTPARAMS_COMM_MAX 65
 #define LIGOMETA_STD 100
 #define LIGOMETA_INSPIRALTAPER_MAX 35
 
@@ -102,19 +100,11 @@ tagMetadataTableType
   search_summary_table,
   search_summvars_table,
   sngl_inspiral_table,
-  sngl_inspiral_table_bns,
-  sngl_inspiral_table_bcv,
   sngl_ringdown_table,
   multi_inspiral_table,
   sim_inspiral_table,
   sim_ringdown_table,
-  summ_value_table,
-  sim_inst_params_table,
-  coinc_inspiral_table,
-  coinc_ringdown_table,
-  stochastic_table,
-  stoch_summ_table,
-  ext_triggers_table
+  summ_value_table
 }
 MetadataTableType;
 
@@ -527,46 +517,6 @@ tagSimInspiralTable
 }
 SimInspiralTable;
 
-/**
- * The \c CoincInspiralTable contains a set of pointers to SnglInspiral
- * tables.  The length of the array is set to \c LAL_NUM_IFO which is a
- * value of the enum \c InterferometerNumber described above.  This enum
- * also provides an easy way to access the \c SnglInspiral corresponding to
- * each ifo.  In addition the table, it contains a field in which to store the
- * number and names of the IFOs which have non-null SnglInspiralTables.  Finally,
- * it contains a pointer to an associated \c SimInspiral.  This table is
- * meant to provide a simple way to manipulate coincident triggers.
- */
-typedef struct
-tagCoincInspiralTable
-{
-  struct tagCoincInspiralTable *next;
-  CHAR                ifos[LIGOMETA_IFOS_MAX];
-  INT4                numIfos;
-  SnglInspiralTable  *snglInspiral[LAL_NUM_IFO];
-  SimInspiralTable   *simInspiral;
-  REAL4              stat;
-}
-CoincInspiralTable;
-
-/**
- * The \c CoincInspiralSlideTable contains a pointer to a CoincInspiral
- * table meant for a particular time slide.  In addition to the table, it
- * contains a field in which to store the time slide number, the analyzed time for
- * this time slide, and a pointer to the next \c CoincInspiralSlideTable for
- * a different time slide.
- */
-typedef struct
-tagCoincInspiralSlideTable
-{
-  struct tagCoincInspiralSlideTable *next;
-  REAL4               slideTimeAnalyzed;
-  INT4                slideNum;
-  REAL4               currentRate;
-  CoincInspiralTable  *coincInspiral;
-}
-CoincInspiralSlideTable;
-
 
 /**
  * The \c SimBurst structure describes a burst injection.
@@ -708,61 +658,6 @@ SummValueTable;
 
 
 typedef struct
-tagSimInstParamsTable
-{
-  struct tagSimInstParamsTable *next;
-  CHAR          name[LIGOMETA_SIMINSTPARAMS_NAME_MAX];
-  CHAR          comment[LIGOMETA_SIMINSTPARAMS_COMM_MAX];
-  REAL8         value;
-}
-SimInstParamsTable;
-
-/**
- * The \c StochasticTable contains output parameters relevant for the
- * stochastic search. The IFOs, channels, start time, duration, minimum and
- * maximum frequency, cross correlation statistic and theoretical variance
- * are stored.
- */
-typedef struct
-tagStochasticTable
-{
-  struct tagStochasticTable *next;
-  CHAR          ifo_one[LIGOMETA_IFO_MAX];
-  CHAR          ifo_two[LIGOMETA_IFO_MAX];
-  CHAR          channel_one[LIGOMETA_CHANNEL_MAX];
-  CHAR          channel_two[LIGOMETA_CHANNEL_MAX];
-  LIGOTimeGPS   start_time;
-  LIGOTimeGPS   duration;
-  REAL8         f_min;
-  REAL8         f_max;
-  REAL8         cc_stat;
-  REAL8         cc_sigma;
-}
-StochasticTable;
-
-/**
- * The \c StochSummTable contains a summary of a stochastic search. It
- * can be used to fully summerise the parameters used for a full search.
- */
-typedef struct
-tagStochSummTable
-{
-  struct tagStochSummTable *next;
-  CHAR          ifo_one[LIGOMETA_IFO_MAX];
-  CHAR          ifo_two[LIGOMETA_IFO_MAX];
-  CHAR          channel_one[LIGOMETA_CHANNEL_MAX];
-  CHAR          channel_two[LIGOMETA_CHANNEL_MAX];
-  LIGOTimeGPS   start_time;
-  LIGOTimeGPS   end_time;
-  REAL8         f_min;
-  REAL8         f_max;
-  REAL8         y_opt;
-  REAL8         error;
-}
-StochSummTable;
-
-
-typedef struct
 tagExtTriggerTable
 {
   struct        tagExtTriggerTable *next;
@@ -838,9 +733,6 @@ tagMetadataTable
   SimInspiralTable      *simInspiralTable;
   SimRingdownTable      *simRingdownTable;
   SummValueTable        *summValueTable;
-  SimInstParamsTable    *simInstParamsTable;
-  StochasticTable       *stochasticTable;
-  StochSummTable        *stochSummTable;
   ExtTriggerTable       *extTriggerTable;
 }
 MetadataTable;

@@ -792,50 +792,6 @@ int XLALWriteLIGOLwXMLSegmentTable(
 	return 0;
 }
 
-int XLALWriteLIGOLwXMLTimeSlideSegmentMapTable(
-	LIGOLwXMLStream *xml,
-	const TimeSlideSegmentMapTable *time_slide_seg_map
-)
-{
-	const char *row_head = "\n\t\t\t";
-
-	if(xml->table != no_table) {
-		XLALPrintError("a table is still open");
-		XLAL_ERROR(XLAL_EFAILED);
-	}
-
-	/* table header */
-
-	XLALClearErrno();
-	XLALFilePuts("\t<Table Name=\"time_slide_segment_map:table\">\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"time_slide_segment_map:segment_def_id\" Type=\"ilwd:char\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"time_slide_segment_map:time_slide_id\" Type=\"ilwd:char\"/>\n", xml->fp);
-        XLALFilePuts("\t\t<Stream Name=\"time_slide_segment_map:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
-	if(XLALGetBaseErrno())
-		XLAL_ERROR(XLAL_EFUNC);
-
-	/* rows */
-
-	for(; time_slide_seg_map; time_slide_seg_map = time_slide_seg_map->next) {
-		if(XLALFilePrintf(xml->fp, "%s\"segment_def:segment_def_id:%ld\",\"time_slide:time_slide_id:%ld\"",
-			row_head,
-			time_slide_seg_map->segment_def_id,
-			time_slide_seg_map->time_slide_id
-		) < 0)
-			XLAL_ERROR(XLAL_EFUNC);
-		row_head = ",\n\t\t\t";
-	}
-
-	/* table footer */
-
-	if(XLALFilePuts("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
-		XLAL_ERROR(XLAL_EFUNC);
-
-	/* done */
-
-	return 0;
-}
-
 
 /**
  * Creates a XML filename accordingly to document T050017

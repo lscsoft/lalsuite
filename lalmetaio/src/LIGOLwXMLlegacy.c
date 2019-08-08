@@ -294,104 +294,6 @@ XLALFilePuts( "      <Stream Name=\"summ_value:table\" Type=\"Local\" Delimiter=
 #define SUMM_VALUE_ROW \
 "         \"%s\",\"process:process_id:0\",%d,%d,%d,%d,\"%s\",\"%s\",%e,\"%s\",\"summ_value:summ_value_id:%" LAL_UINT8_FORMAT "\""
 
-#define PRINT_LIGOLW_XML_SIM_INST_PARAMS(fp) ( \
-XLALFilePuts( "   <Table Name=\"sim_inst_params:table\">\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"simulation_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"name\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"comment\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"value\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Stream Name=\"sim_inst_params:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
-
-#define SIM_INST_PARAMS_ROW \
-"         \"sim_inst:simulation_id:0\",\"%s\",\"%s\",%22.16e"
-
-#define PRINT_LIGOLW_XML_STOCHASTIC(fp) ( \
-XLALFilePuts( "   <Table Name=\"stochastic:table\">\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"ifo_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"ifo_two\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"channel_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"channel_two\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"duration\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"duration_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"f_min\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"f_max\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"cc_stat\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"cc_sigma\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Stream Name=\"stochastic:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
-
-#define STOCHASTIC_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.2f,%.2f,%22.16e,%22.16e"
-
-#define PRINT_LIGOLW_XML_STOCH_SUMM(fp) ( \
-XLALFilePuts( "   <Table Name=\"stochsumm:table\">\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"ifo_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"ifo_two\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"channel_one\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"channel_two\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"f_min\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"f_max\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"y_opt\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"error\" Type=\"real_8\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Stream Name=\"stochsumm:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
-
-#define STOCH_SUMM_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.2f,%.2f,%22.16e,%22.16e"
-
-#define PRINT_LIGOLW_XML_EXT_TRIGGERS(fp) ( \
-XLALFilePuts( " <Table Name=\"external_trigger:table\">\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"det_alts\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"det_band\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"det_fluence\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"det_fluence_int\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"det_name\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"det_peak\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"det_peak_int\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"det_snr\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"email_time\" Type=\"int_4s\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"event_dec\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"event_dec_err\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"event_epoch\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"event_err_type\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"event_ra\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"event_ra_err\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"start_time\" Type=\"int_4s\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"start_time_ns\" Type=\"int_4s\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"event_type\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"event_z\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"event_z_err\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"notice_comments\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"notice_id\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"notice_sequence\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"notice_time\" Type=\"int_4s\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"notice_type\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"notice_url\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"obs_fov_dec\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"obs_fov_dec_width\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"obs_fov_ra\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"obs_fov_ra_width\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"obs_loc_ele\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"obs_loc_lat\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"obs_loc_long\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"ligo_fave_lho\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"ligo_fave_llo\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"ligo_delay\" Type=\"real_4\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"event_number_gcn\" Type=\"int_4s\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"event_number_grb\" Type=\"lstring\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"event_status\" Type=\"int_4s\" />\n" , fp ) == EOF || \
-XLALFilePuts( "      <Stream Name=\"external_trigger:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
-
-#define EXT_TRIGGERS_ROW \
-"         \"process:process_id:0\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\",\"%s\",%d, %e, %e, \"%s\",\"%s\", %e , %e, %d, %d, \"%s\",%e, %e, \"%s\",\"%s\",\"%s\",%d, \"%s\",\"%s\",%e, %e,%e,%e, %e, %e, %e, %e, %e, %e, %d, \"%s\" , %d"
-
 #define PRINT_LIGOLW_XML_SNGL_INSPIRAL(fp) ( \
 XLALFilePuts( "   <Table Name=\"sngl_inspiral:table\">\n", fp ) == EOF || \
 XLALFilePuts( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
@@ -462,73 +364,6 @@ XLALFilePuts( "      <Stream Name=\"sngl_inspiral:table\" Type=\"Local\" Delimit
 
 #define SNGL_INSPIRAL_ROW \
 "         \"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%22.16e,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%d,%e,%d,%22.16e,%e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,%.8e,\"sngl_inspiral:event_id:%ld\""
-
-#define PRINT_LIGOLW_XML_SNGL_INSPIRAL_BNS(fp) ( \
-XLALFilePuts( "   <Table Name=\"sngl_inspiral:table\">\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"ifo\" Type=\"lstring\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"search\" Type=\"lstring\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"channel\" Type=\"lstring\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"end_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"end_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"end_time_gmst\" Type=\"real_8\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"template_duration\" Type=\"real_8\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"eff_distance\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"coa_phase\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"mass1\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"mass2\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"mchirp\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"mtotal\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"eta\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"tau0\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"tau3\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"ttotal\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"f_final\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"snr\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"bank_chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"bank_chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"cont_chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"cont_chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"sigmasq\" Type=\"real_8\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"rsqveto_duration\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Stream Name=\"sngl_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
-
-#define SNGL_INSPIRAL_ROW_BNS \
-"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%d,%e,%d,%22.16e,%e"
-
-#define PRINT_LIGOLW_XML_SNGL_INSPIRAL_BCV(fp) ( \
-XLALFilePuts( "   <Table Name=\"sngl_inspiral:table\">\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"ifo\" Type=\"lstring\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"search\" Type=\"lstring\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"channel\" Type=\"lstring\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"end_time\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"end_time_ns\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"end_time_gmst\" Type=\"real_8\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"template_duration\" Type=\"real_8\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"eff_distance\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"coa_phase\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"mchirp\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"eta\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"psi0\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"psi3\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"alpha\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"f_final\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"snr\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"bank_chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"bank_chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"cont_chisq\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"cont_chisq_dof\" Type=\"int_4s\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"sigmasq\" Type=\"real_8\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"rsqveto_duration\" Type=\"real_4\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Stream Name=\"sngl_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
-
-#define SNGL_INSPIRAL_ROW_BCV \
-"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%22.16e,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%d,%e,%d,%22.16e,%e"
 
 #define PRINT_LIGOLW_XML_MULTI_INSPIRAL(fp) ( \
 XLALFilePuts( "   <Table Name=\"multi_inspiral:table\">\n" , fp ) == EOF || \
@@ -811,12 +646,6 @@ LALBeginLIGOLwXMLTable (
     case sngl_inspiral_table:
       (void)PRINT_LIGOLW_XML_SNGL_INSPIRAL( xml->fp );
       break;
-    case sngl_inspiral_table_bns:
-      (void)PRINT_LIGOLW_XML_SNGL_INSPIRAL_BNS( xml->fp );
-      break;
-    case sngl_inspiral_table_bcv:
-      (void)PRINT_LIGOLW_XML_SNGL_INSPIRAL_BCV( xml->fp );
-      break;
     case sngl_ringdown_table:
       (void)PRINT_LIGOLW_XML_SNGL_RINGDOWN( xml->fp );
       break;
@@ -831,15 +660,6 @@ LALBeginLIGOLwXMLTable (
       break;
     case summ_value_table:
       (void)PRINT_LIGOLW_XML_SUMM_VALUE( xml->fp );
-      break;
-    case sim_inst_params_table:
-      (void)PRINT_LIGOLW_XML_SIM_INST_PARAMS( xml->fp );
-      break;
-    case stochastic_table:
-      (void)PRINT_LIGOLW_XML_STOCHASTIC( xml->fp );
-      break;
-    case ext_triggers_table:
-      (void)PRINT_LIGOLW_XML_EXT_TRIGGERS( xml->fp );
       break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
@@ -1052,75 +872,6 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->spin2y,
               tablePtr.snglInspiralTable->spin2z,
               tablePtr.snglInspiralTable->event_id );
-        tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
-        ++(xml->rowCount);
-      }
-      break;
-    case sngl_inspiral_table_bns:
-      while( tablePtr.snglInspiralTable )
-      {
-        FIRST_TABLE_ROW
-          XLALFilePrintf( xml->fp, SNGL_INSPIRAL_ROW_BNS,
-              tablePtr.snglInspiralTable->ifo,
-              tablePtr.snglInspiralTable->search,
-              tablePtr.snglInspiralTable->channel,
-              tablePtr.snglInspiralTable->end.gpsSeconds,
-              tablePtr.snglInspiralTable->end.gpsNanoSeconds,
-              tablePtr.snglInspiralTable->end_time_gmst,
-              tablePtr.snglInspiralTable->template_duration,
-              tablePtr.snglInspiralTable->eff_distance,
-              tablePtr.snglInspiralTable->coa_phase,
-              tablePtr.snglInspiralTable->mass1,
-              tablePtr.snglInspiralTable->mass2,
-              tablePtr.snglInspiralTable->mchirp,
-              tablePtr.snglInspiralTable->mtotal,
-              tablePtr.snglInspiralTable->eta,
-              tablePtr.snglInspiralTable->tau0,
-              tablePtr.snglInspiralTable->tau3,
-              tablePtr.snglInspiralTable->ttotal,
-              tablePtr.snglInspiralTable->f_final,
-              tablePtr.snglInspiralTable->snr,
-              tablePtr.snglInspiralTable->chisq,
-              tablePtr.snglInspiralTable->chisq_dof,
-              tablePtr.snglInspiralTable->bank_chisq,
-              tablePtr.snglInspiralTable->bank_chisq_dof,
-              tablePtr.snglInspiralTable->cont_chisq,
-              tablePtr.snglInspiralTable->cont_chisq_dof,
-              tablePtr.snglInspiralTable->sigmasq,
-	      tablePtr.snglInspiralTable->rsqveto_duration );
-        tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
-        ++(xml->rowCount);
-      }
-      break;
-    case sngl_inspiral_table_bcv:
-      while( tablePtr.snglInspiralTable )
-      {
-        FIRST_TABLE_ROW
-          XLALFilePrintf( xml->fp, SNGL_INSPIRAL_ROW_BCV,
-              tablePtr.snglInspiralTable->ifo,
-              tablePtr.snglInspiralTable->search,
-              tablePtr.snglInspiralTable->channel,
-              tablePtr.snglInspiralTable->end.gpsSeconds,
-              tablePtr.snglInspiralTable->end.gpsNanoSeconds,
-              tablePtr.snglInspiralTable->end_time_gmst,
-              tablePtr.snglInspiralTable->template_duration,
-              tablePtr.snglInspiralTable->eff_distance,
-              tablePtr.snglInspiralTable->coa_phase,
-              tablePtr.snglInspiralTable->mchirp,
-              tablePtr.snglInspiralTable->eta,
-              tablePtr.snglInspiralTable->psi0,
-              tablePtr.snglInspiralTable->psi3,
-              tablePtr.snglInspiralTable->alpha,
-              tablePtr.snglInspiralTable->f_final,
-              tablePtr.snglInspiralTable->snr,
-              tablePtr.snglInspiralTable->chisq,
-              tablePtr.snglInspiralTable->chisq_dof,
-              tablePtr.snglInspiralTable->bank_chisq,
-              tablePtr.snglInspiralTable->bank_chisq_dof,
-              tablePtr.snglInspiralTable->cont_chisq,
-              tablePtr.snglInspiralTable->cont_chisq_dof,
-              tablePtr.snglInspiralTable->sigmasq,
-	      tablePtr.snglInspiralTable->rsqveto_duration );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
         ++(xml->rowCount);
       }
@@ -1410,112 +1161,6 @@ LALWriteLIGOLwXMLTable (
               xml->rowCount
               );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
-        ++(xml->rowCount);
-      }
-      break;
-    case sim_inst_params_table:
-      while( tablePtr.simInstParamsTable )
-      {
-        FIRST_TABLE_ROW
-          XLALFilePrintf( xml->fp, SIM_INST_PARAMS_ROW,
-              tablePtr.simInstParamsTable->name,
-              tablePtr.simInstParamsTable->comment,
-              tablePtr.simInstParamsTable->value
-              );
-        tablePtr.simInstParamsTable = tablePtr.simInstParamsTable->next;
-        ++(xml->rowCount);
-      }
-      break;
-    case stochastic_table:
-      while( tablePtr.stochasticTable )
-      {
-        FIRST_TABLE_ROW
-          XLALFilePrintf( xml->fp, STOCHASTIC_ROW,
-              tablePtr.stochasticTable->ifo_one,
-              tablePtr.stochasticTable->ifo_two,
-              tablePtr.stochasticTable->channel_one,
-              tablePtr.stochasticTable->channel_two,
-              tablePtr.stochasticTable->start_time.gpsSeconds,
-              tablePtr.stochasticTable->start_time.gpsNanoSeconds,
-              tablePtr.stochasticTable->duration.gpsSeconds,
-              tablePtr.stochasticTable->duration.gpsNanoSeconds,
-              tablePtr.stochasticTable->f_min,
-              tablePtr.stochasticTable->f_max,
-              tablePtr.stochasticTable->cc_stat,
-              tablePtr.stochasticTable->cc_sigma
-              );
-        tablePtr.stochasticTable = tablePtr.stochasticTable->next;
-        ++(xml->rowCount);
-      }
-      break;
-    case stoch_summ_table:
-      while( tablePtr.stochSummTable )
-      {
-        FIRST_TABLE_ROW
-          XLALFilePrintf( xml->fp, STOCH_SUMM_ROW,
-              tablePtr.stochSummTable->ifo_one,
-              tablePtr.stochSummTable->ifo_two,
-              tablePtr.stochSummTable->channel_one,
-              tablePtr.stochSummTable->channel_two,
-              tablePtr.stochSummTable->start_time.gpsSeconds,
-              tablePtr.stochSummTable->start_time.gpsNanoSeconds,
-              tablePtr.stochSummTable->end_time.gpsSeconds,
-              tablePtr.stochSummTable->end_time.gpsNanoSeconds,
-              tablePtr.stochSummTable->f_min,
-              tablePtr.stochSummTable->f_max,
-              tablePtr.stochSummTable->y_opt,
-              tablePtr.stochSummTable->error
-              );
-        tablePtr.stochSummTable = tablePtr.stochSummTable->next;
-        ++(xml->rowCount);
-      }
-      break;
-    case ext_triggers_table:
-      while( tablePtr.extTriggerTable )
-      {
-        FIRST_TABLE_ROW
-          XLALFilePrintf( xml->fp, EXT_TRIGGERS_ROW,
-              tablePtr.extTriggerTable->det_alts,
-              tablePtr.extTriggerTable->det_band,
-              tablePtr.extTriggerTable->det_fluence,
-              tablePtr.extTriggerTable->det_fluence_int,
-              tablePtr.extTriggerTable->det_name,
-              tablePtr.extTriggerTable->det_peak,
-              tablePtr.extTriggerTable->det_peak_int,
-              tablePtr.extTriggerTable->det_snr,
-              tablePtr.extTriggerTable->email_time,
-              tablePtr.extTriggerTable->event_dec,
-              tablePtr.extTriggerTable->event_dec_err,
-              tablePtr.extTriggerTable->event_epoch,
-              tablePtr.extTriggerTable->event_err_type,
-              tablePtr.extTriggerTable->event_ra,
-              tablePtr.extTriggerTable->event_ra_err,
-              tablePtr.extTriggerTable->start_time,
-              tablePtr.extTriggerTable->start_time_ns,
-              tablePtr.extTriggerTable->event_type,
-              tablePtr.extTriggerTable->event_z,
-              tablePtr.extTriggerTable->event_z_err,
-              tablePtr.extTriggerTable->notice_comments,
-              tablePtr.extTriggerTable->notice_id,
-              tablePtr.extTriggerTable->notice_sequence,
-              tablePtr.extTriggerTable->notice_time,
-              tablePtr.extTriggerTable->notice_type,
-              tablePtr.extTriggerTable->notice_url,
-              tablePtr.extTriggerTable->obs_fov_dec,
-              tablePtr.extTriggerTable->obs_fov_dec_width,
-              tablePtr.extTriggerTable->obs_fov_ra,
-              tablePtr.extTriggerTable->obs_fov_ra_width,
-	      tablePtr.extTriggerTable->obs_loc_ele,
-	      tablePtr.extTriggerTable->obs_loc_lat,
-	      tablePtr.extTriggerTable->obs_loc_long,
-	      tablePtr.extTriggerTable->ligo_fave_lho,
-	      tablePtr.extTriggerTable->ligo_fave_llo,
-	      tablePtr.extTriggerTable->ligo_delay,
-	      tablePtr.extTriggerTable->event_number_gcn,
-	      tablePtr.extTriggerTable->event_number_grb,
-	      tablePtr.extTriggerTable->event_status
-	    );
-        tablePtr.extTriggerTable = tablePtr.extTriggerTable->next;
         ++(xml->rowCount);
       }
       break;

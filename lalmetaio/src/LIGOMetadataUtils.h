@@ -117,12 +117,6 @@ void XLALDestroySegmentTableRow(SegmentTable *row);
 #endif   // SWIG
 void XLALDestroySegmentTable(SegmentTable *head);
 
-TimeSlideSegmentMapTable *XLALCreateTimeSlideSegmentMapTableRow(void);
-#ifndef SWIG   // exclude from SWIG interface
-void XLALDestroyTimeSlideSegmentMapTableRow(TimeSlideSegmentMapTable *row);
-#endif   // SWIG
-void XLALDestroyTimeSlideSegmentMapTable(TimeSlideSegmentMapTable *head);
-
 int
 XLALCountProcessTable(
     ProcessTable *head
@@ -131,11 +125,6 @@ XLALCountProcessTable(
 int
 XLALCountProcessParamsTable(
     ProcessParamsTable *head
-    );
-
-int
-XLALCountMultiInspiralTable(
-    MultiInspiralTable *head
     );
 
 int
