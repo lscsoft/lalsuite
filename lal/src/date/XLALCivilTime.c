@@ -22,8 +22,9 @@
 #include <math.h>
 #include <time.h>
 #include <string.h>
-#include <lal/LALStdlib.h>
 #include <lal/Date.h>
+#include <lal/LALAtomicDatatypes.h>
+#include <lal/XLALError.h>
 
 #ifndef HAVE_GMTIME_R
 #define gmtime_r(timep, result) memcpy((result), gmtime(timep), sizeof(struct tm))

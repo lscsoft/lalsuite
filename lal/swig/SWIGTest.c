@@ -20,7 +20,9 @@
 // Code for SWIG tests of the LAL bindings.
 // Author: Karl Wette
 
+#include <string.h>
 #include "swiglal_config.h"
+#include <lal/LALMalloc.h>
 #include <lal/SWIGLALTest.h>
 #include <lal/XLALError.h>
 #include <lal/Date.h>

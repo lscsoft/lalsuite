@@ -21,7 +21,10 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <lal/Date.h>
+#include <lal/LALDebugLevel.h>
+#include <lal/LALMalloc.h>
 #include <lal/LALStdio.h>
 #include <lal/XLALError.h>
 

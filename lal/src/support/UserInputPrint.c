@@ -19,7 +19,9 @@
 //
 
 #include <stdio.h>
+#include <string.h>
 
+#include <lal/LALMalloc.h>
 #include <lal/LALStdio.h>
 #include <lal/LALString.h>
 #include <lal/XLALError.h>

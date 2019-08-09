@@ -19,9 +19,9 @@
 
 #include <math.h>
 #include <lal/LALConstants.h>
-#include <lal/LALStdlib.h>
+#include <lal/LALDatatypes.h>
+#include <lal/LALDetectors.h>
 #include <lal/Date.h>
-#include <lal/SkyCoordinates.h>
 #include <lal/TimeDelay.h>
 #include <lal/XLALError.h>
 

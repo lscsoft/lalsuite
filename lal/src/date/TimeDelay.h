@@ -20,8 +20,8 @@
 #ifndef _TIMEDELAY_H
 #define _TIMEDELAY_H
 
-#include <lal/Date.h>
-#include <lal/DetectorSite.h>
+#include <lal/LALDatatypes.h>
+#include <lal/LALDetectors.h>
 
 #ifdef __cplusplus
 extern "C"
