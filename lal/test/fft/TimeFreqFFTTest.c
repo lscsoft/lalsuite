@@ -207,7 +207,12 @@ int main( int argc, char *argv[] )
         /* compute the psd and find the average */
         XLALREAL4AverageSpectrumWelch(&Y, &y, npts[np], npts[np] / 2, window, plan);
         TestStatus( &status, CODES( 0 ), 1 );
-        { unsigned k; for(sfk = 0., k = 0; k < Y.data->length; sfk += Y.data->data[k++]); sfk /= Y.data->length; }
+        {
+          unsigned k;
+          for(sfk = 0., k = 0; k < Y.data->length; sfk += Y.data->data[k++])
+            ;
+          sfk /= Y.data->length;
+        }
 
         /* check the result */
         if ( fabs(Sfk-sfk) > tol )
