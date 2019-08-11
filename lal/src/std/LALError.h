@@ -92,10 +92,10 @@ void REPORTSTATUS(LALStatus * status);
 
 #ifdef NDEBUG
 
-#define LALError( statusptr, statement ) 0
-#define LALWarning( statusptr, warning ) 0
-#define LALInfo( statusptr, info )       0
-#define LALTrace( statusptr, exitflg )   0
+#define LALError( statusptr, statement ) (void)(0)
+#define LALWarning( statusptr, warning ) (void)(0)
+#define LALInfo( statusptr, info )       (void)(0)
+#define LALTrace( statusptr, exitflg )   (void)(0)
 
 #else
 
