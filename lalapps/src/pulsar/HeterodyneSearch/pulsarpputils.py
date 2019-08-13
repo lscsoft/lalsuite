@@ -40,7 +40,7 @@ import h5py
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 from scipy.stats import hmean
-from scipy.misc import logsumexp
+from scipy.special import logsumexp
 
 from six import string_types
 
