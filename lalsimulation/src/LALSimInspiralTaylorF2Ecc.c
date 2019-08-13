@@ -43,11 +43,12 @@
 #endif
 
 /**
- * @addtogroup LALSimInspiralTaylorXX_c
+ * @addtogroup LALSimInspiralTaylorF2Ecc_c
+ * @brief Routines for generating eccentric TaylorF2 waveforms
  * @{
  *
  * @review TaylorF2Ecc routines are reviewing by Vivien Raymond, Maria Haney, SangHoon Oh (May 2019)
- * The review concluded with git hash *** 
+ * The review concluded with git hash 70bc00a8457d25ac127fb08366f934973cc949c7.
  *
  * @name Routines for TaylorF2Ecc Waveforms
  * @sa
@@ -60,6 +61,15 @@
  * review page is https://git.ligo.org/waveforms/reviews/taylorf2ecc/wikis/Eccentric-phase-PN-coefficient-form.
  *
  * @{
+ */
+
+/**
+ * \author Jeongcho Kim, Chunglee Kim, Hyung Won Lee, Marc Favata, K.G. Arun
+ * \file
+ *
+ * \brief Module to compute the eccentric TaylorF2 inspiral waveform for small eccentricity.
+ * Code is based on Section IV of Marc, et al paper Phys. Rev. D 93, 124061 (2016), arXiv:1605.00304.
+ * Code review page is https://git.ligo.org/waveforms/reviews/taylorf2ecc/wikis/Eccentric-phase-PN-coefficient-form.
  */
 
 int XLALSimInspiralTaylorF2CoreEcc(

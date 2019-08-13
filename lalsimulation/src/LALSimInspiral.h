@@ -197,6 +197,7 @@ extern "C" {
  * @defgroup LALSimInspiral_c                      Module LALSimInspiral.c
  * @defgroup LALSimInspiralPNMode_c                Module LALSimInspiralPNMode.c
  * @defgroup LALSimInspiralTaylorXX_c              Module LALSimInspiralTaylorXX.c
+ * @defgroup LALSimInspiralTaylorF2Ecc_c           Module LALSimInspiralTaylorF2Ecc.c
  * @defgroup LALSimInspiralSpinTaylor_c            Module LALSimInspiralSpinTaylor.c
  * @defgroup LALSimInspiralEccentricTD_c           Module LALSimInspiralEccentricTD.c
  * @defgroup LALSimInspiralEccentricityFD_c        Module LALSimInspiralEccentricityFD.c
