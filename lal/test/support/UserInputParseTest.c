@@ -27,12 +27,12 @@
 #include <lal/LALStdio.h>
 #include <lal/Date.h>
 #include <lal/XLALError.h>
+#include <lal/LALDebugLevel.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
 #include <lal/StringVector.h>
 #include <lal/AVFactories.h>
 #include <lal/UserInputPrint.h>
-
 #include <lal/UserInputParse.h>
 
 // ---------- local prototypes ----------

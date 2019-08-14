@@ -22,6 +22,8 @@
 #include <string.h>
 #include <lal/Integrate.h>
 #include <lal/Interpolate.h>
+#include <lal/LALDatatypes.h>
+#include <lal/XLALError.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

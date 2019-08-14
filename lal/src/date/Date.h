@@ -27,7 +27,6 @@
 #include <lal/LALConstants.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
-#include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 
 #include <lal/DetectorSite.h>

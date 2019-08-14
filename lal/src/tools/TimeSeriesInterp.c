@@ -23,6 +23,7 @@
 
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALMalloc.h>
 #include <lal/TimeSeriesInterp.h>
 #include <lal/Window.h>
 #include <lal/XLALError.h>

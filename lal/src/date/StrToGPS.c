@@ -21,8 +21,11 @@
 #include <errno.h>
 #include <locale.h>
 #include <stdlib.h>
+#include <string.h>
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALMalloc.h>
+#include <lal/XLALError.h>
 
 
 /*

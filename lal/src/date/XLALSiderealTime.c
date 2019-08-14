@@ -18,6 +18,7 @@
 
 #include <math.h>
 #include <lal/Date.h>
+#include <lal/XLALError.h>
 
 /**
  * \defgroup XLALSideralTime_c SideralTime
