@@ -53,23 +53,29 @@
 REAL8
 XLALRngMedBias ( INT4 blkSize )
 {
-  /* check arguments are not null and block size is positive*/
+  REAL8 biasFactor = 0.;
+
+  /* check block size is positive */
   XLAL_CHECK_REAL8 ( blkSize > 0, XLAL_EINVAL, "Invalid blkSize = %d, must be >0", blkSize );
 
-  /* if blkSize is even, reduce it by one */
-  if ( (blkSize % 2) == 0)
-    blkSize -= 1;
+  /*
+   * compute sum_{i = 1}^{2 ceil(blkSize/2) - 1} (-1^(i+1))/i
+   *
+   * the sum always has an odd number of terms.  the first (i = 1) term is
+   * removed from the loop and added to the final result separately.  for
+   * the sake of numerical accuracy, because of the alternating signs the
+   * remaining (even count of) terms are computed in pairs and each pair
+   * added to the sum as a single value.  also for the sake of numerical
+   * accuracy, the pairs are computed and added to the total in reverse
+   * order, from smallest (largest i) to largest (smallest i).
+   */
 
-  /* now sum alternating harmonic series upto blkSize */
-  REAL8 biasFactor = 0.0;
-  INT4 plusminus = 1;
-  for (INT4 count = 0; count < blkSize; count++)
-    {
-      biasFactor += plusminus / (count + 1.0);
-      plusminus *= -1;
-    }
+  if ( blkSize & 1 )
+    blkSize += 1;
+  for ( blkSize -= 2; blkSize > 0; blkSize -= 2 )
+      biasFactor -= 1. / (blkSize * (REAL8) (blkSize + 1));
 
-  return biasFactor;
+  return 1. + biasFactor;
 
 } // XLALRngMedBias()
 
