@@ -42,7 +42,7 @@ from scipy.interpolate import interp1d
 from scipy.stats import hmean
 try:
     from scipy.special import logsumexp
-except ImportError:
+except ImportError:  # scipy < 0.19.0
     from scipy.misc import logsumpexp
 
 from six import string_types
