@@ -61,7 +61,7 @@
 #include <lal/SeqFactories.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpDatatypes.h>
+#include "FindChirpDatatypes.h"
 #include "FindChirpTD.h"
 
 void

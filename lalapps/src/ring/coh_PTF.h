@@ -43,7 +43,6 @@
 #include <lal/RealFFT.h>
 #include <lal/LALFrStream.h>
 #include <lal/LALInspiral.h>
-#include <lal/FindChirpDatatypes.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpPTF.h>
 #include <lal/LIGOLwXML.h>
@@ -69,6 +68,7 @@
 #include "processtable.h"
 #include "gpstime.h"
 #include "FindChirpTD.h"
+#include "FindChirpDatatypes.h"
 
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_vector.h>

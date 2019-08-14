@@ -25,9 +25,6 @@ possibility of false alarms.
 We introduce the conventions used in the package and then describe the theory
 and implementation of the code. An overview of the package is as follows:
 <ol>
-<li> The \ref FindChirpDatatypes_h provides the core data types
-definitions used by all the findchirp routines.</li>
-
 <li> The \ref FindChirp_h and modules grouped therein provide the
 core functionality of the package. This includes code to perform matched
 filtering and search for chirps with a signal to noise ratio above a given
