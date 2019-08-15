@@ -8,4 +8,3 @@ lalinference/popprior/__init__.py
 lalinference/popprior/calculations_rho_voronoi_cheb_edit.py
 lalinference/popprior/lagrangian_fit.py
 lalinference/popprior/uberbank_database.py
-lalinference/tiger/combine_posteriors.py
