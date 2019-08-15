@@ -47,8 +47,7 @@
  * @brief Routines for generating eccentric TaylorF2 waveforms
  * @{
  *
- * @review TaylorF2Ecc routines are reviewing by Vivien Raymond, Maria Haney, SangHoon Oh (May 2019)
- * The review concluded with git hash 70bc00a8457d25ac127fb08366f934973cc949c7.
+ * @review TaylorF2Ecc is reviewed, with review statement and git has details available at https://git.ligo.org/waveforms/reviews/taylorf2ecc/wikis/home.
  *
  * @name Routines for TaylorF2Ecc Waveforms
  * @sa
