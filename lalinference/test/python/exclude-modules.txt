@@ -3,7 +3,6 @@
 #     see /test/README.md for details on the syntax
 
 # none of these modules are distributed
-lalinference/plot/cylon.py
 lalinference/popprior/__init__.py
 lalinference/popprior/calculations_rho_voronoi_cheb_edit.py
 lalinference/popprior/lagrangian_fit.py
