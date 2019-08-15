@@ -2268,8 +2268,21 @@ XLALSimInspiralTaylorEtZeta_7PNCoeff(
 {
 	return (129.817/2.304 - 320.7739/4.8384 * eta + 61.3373/1.2096 * eta*eta) * LAL_PI;
 }
-// added for eccentricity corrections
-// the code is not approved, hence I will use function name as I want
+
+
+/**
+ * Computes the PN Coefficients for using in the TaylorF2Ecc equation.
+ *
+ * 3-dimensional REAL8 array eccPNCoeffs[ORDER][v_power][v0_power] are calculated,
+ * where ORDER is relative PN order, v_power is power of v, and v0_power is power of v0.
+ * Note that ORDER = v_power + v0_power.
+ *
+ * Terms given in equation 6.26 of: Blake Moore, Marc Favata,
+ * K.G.Arun, and Chandra Kant Mishra, "Gravitational-wave phasing
+ * for low-eccentricity inspiralling compact binaries to 3PN order",
+ * Phys. Rev. D 93, 124061 (2016), arXiv:1605.00304
+ */
+
 static INT4 UNUSED
 eccentricityPNCoeffs_F2(REAL8 eta, REAL8 eccPNCoeffs[LAL_MAX_ECC_PN_ORDER+1][LAL_MAX_ECC_PN_ORDER+1][LAL_MAX_ECC_PN_ORDER+1])
 {
@@ -2308,6 +2321,12 @@ eccentricityPNCoeffs_F2(REAL8 eta, REAL8 eccPNCoeffs[LAL_MAX_ECC_PN_ORDER+1][LAL
   //printPNCoeffs_F2(eccPNCoeffs);
   return ret;
 }
+
+/**
+ * Compute eccentric phase correction term using eccPNCeoffs[k][i][j]
+ *
+ */
+
 static REAL8 UNUSED
 eccentricityPhasing_F2(REAL8 v, REAL8 v0, REAL8 ecc, REAL8 eta, INT4 ecc_order)
 {

@@ -1145,9 +1145,10 @@ int XLALSimInspiralChooseFDWaveform(
                 ABORT_NONDEFAULT_MODES_CHOICE(LALparams);
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
                 ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
-            if( !LALSimInspiralEccentricityIsCorrect(eccentricity, LALparams) ){
-                /* we set f_ecc to be f_ref for wrong eccentricity specification after long discussion. */
-                REAL8 f_ecc = f_ref;
+            REAL8 f_ecc = XLALSimInspiralWaveformParamsLookupEccentricityFreq(LALparams); /** get f_ecc */
+            if( eccentricity > 0.0 && eccentricity < 1.0 && f_ecc < 0.0){
+                /* we set f_ecc to be f_ref for correct eccentricity but not specifying f_ecc. */
+                f_ecc = f_ref;
                 if( f_ecc == 0 ) f_ecc = f_min;
                 XLALSimInspiralWaveformParamsInsertEccentricityFreq(LALparams, f_ecc);
                 XLAL_PRINT_WARNING("Warning... The reference frequency for eccentricity was set as default value(%f). This might be not optimal case for you.\n", f_ecc);

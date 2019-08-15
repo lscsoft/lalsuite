@@ -1,5 +1,6 @@
 #include <lal/LALStdio.h>
 #include <lal/LALDict.h>
+#include <lal/LALSimInspiral.h>
 #include <lal/LALSimInspiralWaveformParams.h>
 
 #if 1 /* generate definitions for source */
@@ -81,7 +82,7 @@ DEFINE_INSERT_FUNC(TidalOctupolarFMode2, REAL8, "TidalOctupolarFMode2", 0)
 DEFINE_INSERT_FUNC(dQuadMon1, REAL8, "dQuadMon1", 0)
 DEFINE_INSERT_FUNC(dQuadMon2, REAL8, "dQuadMon2", 0)
 DEFINE_INSERT_FUNC(Redshift, REAL8, "redshift", 0)
-DEFINE_INSERT_FUNC(EccentricityFreq, REAL8, "f_ecc", -1.0)
+DEFINE_INSERT_FUNC(EccentricityFreq, REAL8, "f_ecc", LAL_DEFAULT_F_ECC)
 DEFINE_INSERT_FUNC(Lscorr, INT4, "lscorr", 0)
 
 DEFINE_INSERT_FUNC(NonGRPhi1, REAL8, "phi1", 0)
@@ -182,7 +183,7 @@ DEFINE_LOOKUP_FUNC(TidalOctupolarFMode2, REAL8, "TidalOctupolarFMode2", 0)
 DEFINE_LOOKUP_FUNC(dQuadMon1, REAL8, "dQuadMon1", 0)
 DEFINE_LOOKUP_FUNC(dQuadMon2, REAL8, "dQuadMon2", 0)
 DEFINE_LOOKUP_FUNC(Redshift, REAL8, "redshift", 0)
-DEFINE_LOOKUP_FUNC(EccentricityFreq, REAL8, "f_ecc", -1.0)
+DEFINE_LOOKUP_FUNC(EccentricityFreq, REAL8, "f_ecc", LAL_DEFAULT_F_ECC)
 DEFINE_LOOKUP_FUNC(Lscorr, INT4, "lscorr", 0)
 
 DEFINE_LOOKUP_FUNC(NonGRPhi1, REAL8, "phi1", 0)
@@ -276,7 +277,7 @@ DEFINE_ISDEFAULT_FUNC(TidalOctupolarFMode2, REAL8, "TidalOctupolarFMode2", 0)
 DEFINE_ISDEFAULT_FUNC(dQuadMon1, REAL8, "dQuadMon1", 0)
 DEFINE_ISDEFAULT_FUNC(dQuadMon2, REAL8, "dQuadMon2", 0)
 DEFINE_ISDEFAULT_FUNC(Redshift, REAL8, "redshift", 0)
-DEFINE_ISDEFAULT_FUNC(EccentricityFreq, REAL8, "f_ecc", -1.0)
+DEFINE_ISDEFAULT_FUNC(EccentricityFreq, REAL8, "f_ecc", LAL_DEFAULT_F_ECC)
 
 DEFINE_ISDEFAULT_FUNC(NonGRPhi1, REAL8, "phi1", 0)
 DEFINE_ISDEFAULT_FUNC(NonGRPhi2, REAL8, "phi2", 0)

@@ -1,11 +1,11 @@
 /*
- *  Copyright (C) 2007 Jolien Creighton, B.S. Sathyaprakash, Thomas Cokelaer
- *  Copyright (C) 2012 Leo Singer, Evan Ochsner, Les Wade, Alex Nitz
+ *  Copyright (C) 2019 HyunWon Lee, JeongCho Kim, Chunglee Kim, Marc Favata, K.G. Arun
  *  Assembled from code found in:
  *    - LALInspiralStationaryPhaseApproximation2.c
  *    - LALInspiralChooseModel.c
  *    - LALInspiralSetup.c
  *    - LALSimInspiralTaylorF2ReducedSpin.c
+ *    - LALSimInspiralTaylorF2.c
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,9 +30,11 @@
 #include <lal/LALConstants.h>
 #include <lal/Sequence.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALSimInspiralEOS.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/Units.h>
 #include <lal/XLALError.h>
+#include <lal/AVFactories.h>
 #include "LALSimInspiralPNCoefficients.c"
 */
 
@@ -41,12 +43,32 @@
 #endif
 
 /**
- * @addtogroup LALSimInspiralTaylorXX_c
+ * @addtogroup LALSimInspiralTaylorF2Ecc_c
+ * @brief Routines for generating eccentric TaylorF2 waveforms
  * @{
  *
- * @name Routines for TaylorF2Ecc
+ * @review TaylorF2Ecc is reviewed, with review statement and git has details available at https://git.ligo.org/waveforms/reviews/taylorf2ecc/wikis/home.
+ *
+ * @name Routines for TaylorF2Ecc Waveforms
+ * @sa
+ * Section IIIF of Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ *
+ * Section IV of Marc, et al paper Phys. Rev. D 93, 124061 (2016), arXiv:1605.00304.
+ * review page is https://git.ligo.org/waveforms/reviews/taylorf2ecc/wikis/Eccentric-phase-PN-coefficient-form.
  *
  * @{
+ */
+
+/**
+ * \author Jeongcho Kim, Chunglee Kim, Hyung Won Lee, Marc Favata, K.G. Arun
+ * \file
+ *
+ * \brief Module to compute the eccentric TaylorF2 inspiral waveform for small eccentricity.
+ * Code is based on Section IV of Marc, et al paper Phys. Rev. D 93, 124061 (2016), arXiv:1605.00304.
+ * Code review page is https://git.ligo.org/waveforms/reviews/taylorf2ecc/wikis/Eccentric-phase-PN-coefficient-form.
  */
 
 int XLALSimInspiralTaylorF2CoreEcc(
@@ -177,9 +199,27 @@ int XLALSimInspiralTaylorF2CoreEcc(
      */
     REAL8 pft10 = 0.;
     REAL8 pft12 = 0.;
+    REAL8 pft13 = 0.;
+    REAL8 pft14 = 0.;
+    REAL8 pft15 = 0.;
     switch( XLALSimInspiralWaveformParamsLookupPNTidalOrder(p) )
     {
 	case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_75PN:
+            pft15 = pfa.v[15];
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_7PN:
+            pft14 = pfa.v[14];
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_65PN:
+            pft13 = pfa.v[13];
+#if __GNUC__ >= 7
+            __attribute__ ((fallthrough));
+#endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
 	    pft12 = pfa.v[12];
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
@@ -228,7 +268,7 @@ int XLALSimInspiralTaylorF2CoreEcc(
 
     REAL8 v_ecc_ref = 0.0;
     REAL8 f_ecc = XLALSimInspiralWaveformParamsLookupEccentricityFreq(p);
-    if( eccentricity > 0 && f_ecc > 0) {
+    if( eccentricity > 0) {
         v_ecc_ref = cbrt(piM*f_ecc);
     }
 
@@ -254,6 +294,9 @@ int XLALSimInspiralTaylorF2CoreEcc(
         const REAL8 v9ref = vref * v8ref;
         const REAL8 v10ref = vref * v9ref;
         const REAL8 v12ref = v2ref * v10ref;
+        const REAL8 v13ref = vref * v12ref;
+        const REAL8 v14ref = vref * v13ref;
+        const REAL8 v15ref = vref * v14ref;
         ref_phasing += pfa7 * v7ref;
         ref_phasing += (pfa6 + pfl6 * logvref) * v6ref;
         ref_phasing += (pfa5 + pfl5 * logvref) * v5ref;
@@ -264,11 +307,14 @@ int XLALSimInspiralTaylorF2CoreEcc(
         ref_phasing += pfaN;
 
         /* Tidal terms in reference phasing */
+        ref_phasing += pft15 * v15ref;
+        ref_phasing += pft14 * v14ref;
+        ref_phasing += pft13 * v13ref;
         ref_phasing += pft12 * v12ref;
         ref_phasing += pft10 * v10ref;
 
         /* Eccentricity terms in phasing */
-        if( eccentricity > 0 && f_ecc > 0) {
+        if( eccentricity > 0 ) {
           ref_phasing += eccentricityPhasing_F2(vref, v_ecc_ref, eccentricity, eta, ecc_order);
         }
 
@@ -290,6 +336,9 @@ int XLALSimInspiralTaylorF2CoreEcc(
         const REAL8 v9 = v * v8;
         const REAL8 v10 = v * v9;
         const REAL8 v12 = v2 * v10;
+        const REAL8 v13 = v * v12;
+        const REAL8 v14 = v * v13;
+        const REAL8 v15 = v * v14;
         REAL8 phasing = 0.;
         REAL8 dEnergy = 0.;
         REAL8 flux = 0.;
@@ -305,11 +354,14 @@ int XLALSimInspiralTaylorF2CoreEcc(
         phasing += pfaN;
 
         /* Tidal terms in phasing */
+        phasing += pft15 * v15;
+        phasing += pft14 * v14;
+        phasing += pft13 * v13;
         phasing += pft12 * v12;
         phasing += pft10 * v10;
 
         /* Eccentricity terms in phasing */
-        if( eccentricity > 0 && f_ecc > 0) {
+        if( eccentricity > 0 ) {
           phasing += eccentricityPhasing_F2(v, v_ecc_ref, eccentricity, eta, ecc_order);
         }
         phasing /= v5;
@@ -426,6 +478,13 @@ int XLALSimInspiralTaylorF2Ecc(
     REAL8Sequence *freqs = NULL;
     LIGOTimeGPS tC = {0, 0};
     int ret;
+    int retcode;
+    REAL8 fCONT;
+    INT4 tideO = XLALSimInspiralWaveformParamsLookupPNTidalOrder(p);
+    REAL8 lambda1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(p);
+    REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(p);
+    retcode = XLALSimInspiralSetQuadMonParamsFromLambdas(p);
+    XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to set quadparams from Universal relation.\n");
 
     COMPLEX16FrequencySeries *htilde = NULL;
 
@@ -437,10 +496,15 @@ int XLALSimInspiralTaylorF2Ecc(
     if (fStart <= 0) XLAL_ERROR(XLAL_EDOM);
     if (f_ref < 0) XLAL_ERROR(XLAL_EDOM);
     if (r <= 0) XLAL_ERROR(XLAL_EDOM);
+    if (eccentricity < 0.0 || eccentricity >= 1.0) XLAL_ERROR(XLAL_EDOM);
 
     /* allocate htilde */
-    if ( fEnd == 0. || fEnd > fISCO) // End at ISCO
+    if ( (fEnd == 0.) && ( tideO == 0)) // End at ISCO
         f_max = fISCO;
+    else if ( (fEnd == 0.) && ( tideO != 0 )) { // End at the minimum of the contact and ISCO frequencies only when tides are enabled
+        fCONT = XLALSimInspiralContactFrequency(m1, lambda1, m2, lambda2); /* Contact frequency of two compact objects */
+        f_max = (fCONT > fISCO) ? fISCO : fCONT;
+    }
     else // End at user-specified freq.
         f_max = fEnd;
     if (f_max <= fStart) XLAL_ERROR(XLAL_EDOM);
@@ -477,23 +541,6 @@ int XLALSimInspiralTaylorF2Ecc(
     *htilde_out = htilde;
 
     return ret;
-}
-
-/**
- * Returns true if f_ecc and eccentricity were set correctly, check for the case of non-zero eccentricity without setting f_ecc
- * value; returns false otherwise.
- * Pointed out by Riccaro Sturani
- */
-int LALSimInspiralEccentricityIsCorrect(REAL8 eccentricity, LALDict *params)
-{
-  /** 
-   * returns true for the case
-   * 1) eccentricity = 0.0, no eccentricity effect is required
-   * 2) eccentricy > 0.0 and f_ecc > 0.0, f_ecc and eccentricity were set intentionally.Default value of f_ecc = -1.0
-   */
-  REAL8 f_ecc = 0;
-  f_ecc = XLALSimInspiralWaveformParamsLookupEccentricityFreq(params); /** get f_ecc */
-  return ( eccentricity == 0.0 || (eccentricity > 0.0 && f_ecc > 0.0));
 }
 
 /** @} */

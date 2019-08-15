@@ -197,6 +197,7 @@ extern "C" {
  * @defgroup LALSimInspiral_c                      Module LALSimInspiral.c
  * @defgroup LALSimInspiralPNMode_c                Module LALSimInspiralPNMode.c
  * @defgroup LALSimInspiralTaylorXX_c              Module LALSimInspiralTaylorXX.c
+ * @defgroup LALSimInspiralTaylorF2Ecc_c           Module LALSimInspiralTaylorF2Ecc.c
  * @defgroup LALSimInspiralSpinTaylor_c            Module LALSimInspiralSpinTaylor.c
  * @defgroup LALSimInspiralEccentricTD_c           Module LALSimInspiralEccentricTD.c
  * @defgroup LALSimInspiralEccentricityFD_c        Module LALSimInspiralEccentricityFD.c
@@ -218,6 +219,7 @@ extern "C" {
 /* (2x) Highest available PN order - UPDATE IF NEW ORDERS ADDED!!*/
 #define LAL_MAX_PN_ORDER 8
 #define LAL_MAX_ECC_PN_ORDER 6
+#define LAL_DEFAULT_F_ECC -1.0
 
 /**
  * Enum that specifies the PN approximant to be used in computing the waveform.
@@ -659,7 +661,6 @@ int XLALSimInspiralTaylorF2(COMPLEX16FrequencySeries **htilde, const REAL8 phi_r
 /* in module LALSimInspiralTaylorF2Ecc.c */
 int XLALSimInspiralTaylorF2CoreEcc(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi_ref, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 f_ref, const REAL8 shft, const REAL8 r, const REAL8 eccentricity, LALDict *LALparams, PNPhasingSeries *pfaP);
 int XLALSimInspiralTaylorF2Ecc(COMPLEX16FrequencySeries **htilde, const REAL8 phi_ref, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, const REAL8 eccentricity, LALDict *LALparams);
-int LALSimInspiralEccentricityIsCorrect(REAL8 eccentricity, LALDict *params);
 
 /* TaylorF2NLPhase functions */
 /* in module LALSimInspiralTaylorF2NLTides.c */
