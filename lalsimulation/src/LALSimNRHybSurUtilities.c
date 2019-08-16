@@ -160,7 +160,7 @@ static int NRHybSur_LoadDataPiece(
     // Load fit data for each empirical time node
     const size_t str_size = 20;
     char *node_name = XLALMalloc(str_size);
-    size_t nwritten;
+    UNUSED size_t nwritten;
     for (int i=0; i<n_nodes; i++) {
 
         nwritten = snprintf(node_name, str_size, "node_num_%d", i);
@@ -284,7 +284,7 @@ static int NRHybSur_LoadSingleModeData(
     const size_t str_size = 20;
     char *sub_grp_name = XLALMalloc(str_size);
 
-    size_t nwritten;
+    UNUSED size_t nwritten;
     if (ell == 2 && m ==2){
 
         // Amplitude of 22 mode
