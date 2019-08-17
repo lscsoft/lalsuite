@@ -27,6 +27,11 @@ LALStatus *lalGSLGlobalStatusPtr = NULL;
 pthread_mutex_t lalGSLPthreadMutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
+#if __GNUC__
+#define UNUSED __attribute__((unused))
+#else
+#define UNUSED
+#endif
 
 /**
  * \ingroup LALGSL_h
@@ -62,7 +67,7 @@ pthread_mutex_t lalGSLPthreadMutex = PTHREAD_MUTEX_INITIALIZER;
  * with the LAL GSL error handler in effect.
  */
 void
-LALGSLErrorHandler(const char *reason,
+LALGSLErrorHandler(UNUSED const char *reason,
                    const char *file, int line, int my_gsl_error)
 {
     if (!lalGSLGlobalStatusPtr) {

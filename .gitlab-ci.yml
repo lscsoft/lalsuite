@@ -460,10 +460,6 @@ nightly:gcc:9:
 # FIXME: currently using --disable-doxygen as documentation currently
 # fails to build under Conda
 
-# FIXME: currently using --disable-gcc-flags as there are various
-# compilation errors when using the strict GCC flags and the Conda
-# compiler
-
 # FIXME: there currently seems to be an issue with performing FFTs using
 # the MKL libraries, disable the use of MKL until this is understood
 # https://git.ligo.org/lscsoft/lalsuite/issues/161
@@ -496,7 +492,7 @@ nightly:gcc:9:
   script:
     # build lalsuite
     - ./00boot
-    - ./configure --disable-doxygen --disable-gcc-flags
+    - ./configure --disable-doxygen
     - make -j4 distcheck
   only:
     - schedules
