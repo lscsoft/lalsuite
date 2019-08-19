@@ -57,7 +57,6 @@
 #include <lal/XLALError.h>
 
 #include <lalapps.h>
-#include <processtable.h>
 
 #include <LALAppsVCSInfo.h>
 

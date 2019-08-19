@@ -76,7 +76,6 @@
 #include <lal/GenerateBurst.h>
 
 #include <lalapps.h>
-#include <processtable.h>
 #include <LALAppsVCSInfo.h>
 
 #define TESTSTATUS( pstat ) \

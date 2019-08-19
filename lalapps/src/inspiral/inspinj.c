@@ -371,6 +371,7 @@
 #include <lal/Date.h>
 #include <lal/LALgetopt.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOLwXMLlegacy.h>
@@ -379,7 +380,6 @@
 #include <lal/InspiralInjectionParams.h>
 #include <lal/LALDetectors.h>
 #include <lal/LALSimulation.h>
-#include <processtable.h>
 #include <lal/RingUtils.h>
 #include <LALAppsVCSInfo.h>
 #include <lal/LALDatatypes.h>

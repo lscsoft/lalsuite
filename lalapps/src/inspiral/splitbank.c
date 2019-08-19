@@ -136,7 +136,6 @@
 #include <time.h>
 
 #include <lalapps.h>
-#include <processtable.h>
 
 #include <lal/LALConfig.h>
 #include <lal/LALgetopt.h>
@@ -145,6 +144,7 @@
 #include <lal/LALError.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>

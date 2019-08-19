@@ -15,12 +15,6 @@ FRAMESRCS = \
 endif
 endif
 
-if LALMETAIO
-LALMETAIOSRCS = \
-	processtable.c \
-	processtable.h
-endif
-
 if FFTW
 lalapps_fftwf_wisdom_SOURCES = \
 	fftwf_wisdom.c
@@ -38,8 +32,7 @@ liblalapps_la_SOURCES = \
 	LALAppsVCSInfoHeader.h \
 	lalapps.c \
 	lalapps.h \
-	$(FRAMESRCS) \
-	$(LALMETAIOSRCS)
+	$(FRAMESRCS)
 
 nodist_liblalapps_la_SOURCES = \
 	LALAppsBuildInfoHeader.h \
@@ -91,8 +84,6 @@ EXTRA_DIST += \
 	lalapps.dox \
 	lalappsfrutils.c \
 	lalappsfrutils.h \
-	processtable.c \
-	processtable.h \
 	series.c \
 	series.h \
 	$(END_OF_LIST)

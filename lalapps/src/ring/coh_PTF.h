@@ -65,7 +65,6 @@
 #include "spectrm.h"
 #include "segment.h"
 #include "errutil.h"
-#include "processtable.h"
 #include "gpstime.h"
 #include "FindChirpTD.h"
 #include "FindChirpDatatypes.h"

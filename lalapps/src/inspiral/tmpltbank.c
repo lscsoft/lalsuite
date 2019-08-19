@@ -314,7 +314,6 @@
 
 #include <lalapps.h>
 #include <series.h>
-#include <processtable.h>
 #include <lalappsfrutils.h>
 
 #ifdef LALAPPS_CUDA_ENABLED
@@ -338,6 +337,7 @@
 #include <lal/ResampleTimeSeries.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
