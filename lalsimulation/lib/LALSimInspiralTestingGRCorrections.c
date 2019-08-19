@@ -54,15 +54,13 @@ int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       
                                         const REAL8 chi2z,
                                         const REAL8 f_low,
                                         const REAL8 f_ref,
-                                        const REAL8 lambda1,
-                                        const REAL8 lambda2,
                                         const REAL8 f_window_div_f_Peak,     /** Frequency at which to attach non-GR and GR waveforms, inputted as a fraction of f_Peak (should be between 0 and 1) */
                                         const REAL8 NCyclesStep,                /** Number of GW cycles over which to taper the non-GR phase correction */
-                                        const LALSimInspiralTestGRParam *pnCorrections    /**< input linked list of testing gr parameters */
+                                        LALDict *LALpars    /**< dictionary of additional parameters */
 					)
 {
   /* check if we have a NULL pnCorrections pointer. If yes, just return */
-  if (pnCorrections==NULL) return 0;
+  if (LALpars==NULL) return 0;
   /* external: SI; internal: solar masses */
   const REAL8 f0 = htilde->f0;
   const REAL8 deltaF = htilde->deltaF;
@@ -71,6 +69,10 @@ int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       
   const REAL8 m = m1 + m2;
   const REAL8 m_sec = m * LAL_MTSUN_SI;  /* total mass in seconds */
   const REAL8 eta = m1 * m2 / (m * m);
+  
+  REAL8 lambda1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALpars);
+  REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALpars);
+
   REAL8 fPeak;
   
   /* Compute the frequency where the amplitude of 2,2 mode peaks differently for BBH, BNS, and NSBH:
@@ -117,7 +119,7 @@ int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       
   PNPhasingSeries pfa;
   const REAL8 qm_def1 = 1.;
   const REAL8 qm_def2 = 1.;
-  XLALSimInspiralPNCorrections(&pfa, m1, m2, chi1z, chi2z, chi1z*chi1z, chi2z*chi2z, chi1z*chi2z, qm_def1, qm_def2, pnCorrections);
+  XLALSimInspiralPNCorrections(&pfa, m1, m2, chi1z, chi2z, chi1z*chi1z, chi2z*chi2z, chi1z*chi2z, qm_def1, qm_def2, LALpars);
   XLALSimInspiralPhaseCorrectionsPhasing(htilde,freqs,iStart,iRef,iEnd,iPeak,pfa,m_sec, eta, NCyclesStep);
   XLALDestroyREAL8Sequence(freqs);
   return 0;
@@ -142,7 +144,7 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
                                              const REAL8 chi1dotchi2, /**< Dot product of dimensionles spin 1 and spin 2 */
                                              const REAL8 qm_def1, /**< Quadrupole deformation parameter of body 1 (dimensionless) */
                                              const REAL8 qm_def2, /**< Quadrupole deformation parameter of body 2 (dimensionless) */
-                                             const LALSimInspiralTestGRParam *pnCorrections)
+                                             LALDict *LALpars)
 {
     const REAL8 mtot = m1 + m2;
     const REAL8 eta = m1*m2/mtot/mtot;
@@ -166,42 +168,45 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
     memset(pfa, 0, sizeof(PNPhasingSeries));
     
     /* Non-spinning corrections to phasing terms - see arXiv:0907.0700, Eq. 3.18 */
-    if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchi0")) pfa->v[0] = XLALSimInspiralGetTestGRParam(pnCorrections,"dchi0");
-    if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchi1")) pfa->v[1] = XLALSimInspiralGetTestGRParam(pnCorrections,"dchi1");
-    if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchiMinus1")) pfa->vneg[1] = XLALSimInspiralGetTestGRParam(pnCorrections,"dchiMinus1"); 
+    if (XLALDictContains(LALpars,"dchi0")) pfa->v[0] = XLALSimInspiralWaveformParamsLookupNonGRDChi0(LALpars);
+    if (XLALDictContains(LALpars,"dchi1")) pfa->v[1] = XLALSimInspiralWaveformParamsLookupNonGRDChi1(LALpars);
+
+    /* TODO
+    if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchiMinus1")) pfa->vneg[1] = XLALSimInspiralGetTestGRParam(pnCorrections,"dchiMinus1");
     if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchiMinus2")) pfa->vneg[2] = XLALSimInspiralGetTestGRParam(pnCorrections,"dchiMinus2"); 
+    */
     
-    if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchi2"))
+    if (XLALDictContains(LALpars,"dchi2"))
     {
         pfa->v[2] = 5.L*(743.L/84.L + 11.L * eta)/9.L;
-        pfa->v[2] *= XLALSimInspiralGetTestGRParam(pnCorrections,"dchi2");
+        pfa->v[2] *= XLALSimInspiralWaveformParamsLookupNonGRDChi2(LALpars);
     }
-    if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchi3"))
+    if (XLALDictContains(LALpars,"dchi3"))
     {
         pfa->v[3] = -16.L*LAL_PI;
         pfa->v[3] += 188.L*SL/3.L + 25.L*dSigmaL;
-        pfa->v[3] *= XLALSimInspiralGetTestGRParam(pnCorrections,"dchi3");
+        pfa->v[3] *= XLALSimInspiralWaveformParamsLookupNonGRDChi3(LALpars);
     }
-    if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchi4"))
+    if (XLALDictContains(LALpars,"dchi4"))
     {
         pfa->v[4] = 5.L*(3058.673L/7.056L + 5429.L/7.L * eta
                         + 617.L * eta*eta)/72.L;
         pfa->v[4] += -10.L * pn_sigma;
-        pfa->v[4] *= XLALSimInspiralGetTestGRParam(pnCorrections,"dchi4");
+        pfa->v[4] *= XLALSimInspiralWaveformParamsLookupNonGRDChi4(LALpars);
     }
-    if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchi5"))
+    if (XLALDictContains(LALpars,"dchi5"))
     {
         pfa->v[5] = 5.L/9.L * (7729.L/84.L - 13.L * eta) * LAL_PI;
         pfa->v[5] += -1.L * pn_gamma;
-        pfa->v[5] *= XLALSimInspiralGetTestGRParam(pnCorrections,"dchi5");
+        pfa->v[5] *= XLALSimInspiralWaveformParamsLookupNonGRDChi5(LALpars);
     }
-    if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchi5l"))
+    if (XLALDictContains(LALpars,"dchi5l"))
     {
         pfa->vlogv[5] = 5.L/3.L * (7729.L/84.L - 13.L * eta) * LAL_PI;
         pfa->vlogv[5] += -3.L * pn_gamma;
-        pfa->vlogv[5] *= XLALSimInspiralGetTestGRParam(pnCorrections,"dchi5l");
+        pfa->vlogv[5] *= XLALSimInspiralWaveformParamsLookupNonGRDChi5L(LALpars);
     }
-    if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchi6"))
+    if (XLALDictContains(LALpars,"dchi6"))
     {
         pfa->v[6] = (11583.231236531L/4.694215680L
                      - 640.L/3.L * LAL_PI * LAL_PI - 6848.L/21.L*LAL_GAMMA)
@@ -211,19 +216,19 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
         - eta*eta*eta * 127825.L/1296.L;
         pfa->v[6] += (-6848.L/21.L)*log(4.);
         pfa->v[6] += LAL_PI * (3760.L*SL + 1490.L*dSigmaL)/3.L + pn_ss3;
-        pfa->v[6] *= XLALSimInspiralGetTestGRParam(pnCorrections,"dchi6");
+        pfa->v[6] *= XLALSimInspiralWaveformParamsLookupNonGRDChi6(LALpars);
     }
-    if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchi6l"))
+    if (XLALDictContains(LALpars,"dchi6l"))
     {
         pfa->vlogv[6] = -6848.L/21.L;
-        pfa->vlogv[6] *= XLALSimInspiralGetTestGRParam(pnCorrections,"dchi6l");
+        pfa->vlogv[6] *= XLALSimInspiralWaveformParamsLookupNonGRDChi6L(LALpars);
     }
-    if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchi7"))
+    if (XLALDictContains(LALpars,"dchi7"))
     {
         pfa->v[7] = LAL_PI * ( 77096675.L/254016.L
                               + 378515.L/1512.L * eta - 74045.L/756.L * eta*eta);
         pfa->v[7] += (-8980424995.L/762048.L + 6586595.L*eta/756.L - 305.L*eta*eta/36.L)*SL - (170978035.L/48384.L - 2876425.L*eta/672.L - 4735.L*eta*eta/144.L) * dSigmaL;
-        pfa->v[7] *= XLALSimInspiralGetTestGRParam(pnCorrections,"dchi7");
+        pfa->v[7] *= XLALSimInspiralWaveformParamsLookupNonGRDChi7(LALpars);
     }
   
     /* At the very end, multiply everything in the series by the newtonian term */
@@ -232,7 +237,10 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
         pfa->v[ii] *= pfaN;
         pfa->vlogv[ii] *= pfaN;
         pfa->vlogvsq[ii] *= pfaN;
+      
+        /* TODO
         pfa->vneg[ii] *= pfaN;
+        */
     }
 }
 
@@ -318,254 +326,6 @@ int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,    
   return 0;
 }
 
-int XLALSimInspiralTestingGRCorrectionsWithDS(COMPLEX16FrequencySeries *htilde,       /**< input htilde, will be modified in place */
-                                        const REAL8 distance,
-                                        const REAL8 m1_SI,
-                                        const REAL8 m2_SI,
-                                        const REAL8 chi1z,
-                                        const REAL8 chi2z,
-                                        const REAL8 f_low,
-                                        const REAL8 f_ref,
-					const REAL8 f_window_div_f_Peak,     /** Frequency at which to attach non-GR to GR waveforms, inputted as a fraction of f_Peak (should be between 0 and 1) */
-					const REAL8 NCyclesStep,             /** Number of GW cycles over which to taper the non-GR phase correction to GR waveform */
-					const REAL8 f_DS,                    /** Frequency at which to attach GR to non-GR waveforms, inputted in Hz */
-					const REAL8 NCyclesDS,               /** Number of GW cycles over which to taper the GR waveform to non-GR phase corrections */                 
-                                        const LALSimInspiralTestGRParam *pnCorrections    /**< input linked list of testing gr parameters */
-)
-{
-    /* check if we have a NULL pnCorrections pointer. If yes, just return */
-    if (pnCorrections==NULL) return 0;
-    /* external: SI; internal: solar masses */
-    const REAL8 f0 = htilde->f0;
-    const REAL8 deltaF = htilde->deltaF;
-    const REAL8 m1 = m1_SI / LAL_MSUN_SI;
-    const REAL8 m2 = m2_SI / LAL_MSUN_SI;
-    const REAL8 m = m1 + m2;
-    const REAL8 m_sec = m * LAL_MTSUN_SI;  /* total mass in seconds */
-    const REAL8 eta = m1 * m2 / (m * m);
-//    const REAL8 piM = LAL_PI * m_sec;
-//    const REAL8 vISCO = 1. / sqrt(6.);
-//    const REAL8 fISCO = vISCO * vISCO * vISCO / piM;
-    //const REAL8 fPeak = Get22PeakAngFreq(2, 2, eta, 0.) / (2. * LAL_PI * m_sec);
-    const REAL8 fPeak =0.0165  /  m_sec;
-    
-    INT4 i;
-    INT4 n = (INT4) htilde->data->length;
-    
-    INT4 iStart, iEnd;
-    /* Fill with non-zero vals from f0 to fEnd */
-    iStart = (UINT4) ceil((f_low-f0) / deltaF);
-    iEnd  = (UINT4) ceil(f_window_div_f_Peak * fPeak / deltaF);
-//    printf("fPeak %.16e\n", fPeak);
-    /* Sequence of frequencies where corrections to the model need to be evaluated */
-    REAL8Sequence *freqs =NULL;
-    freqs = XLALCreateREAL8Sequence(n);
-    
-    for (i = 0; i < n; i++)
-    {
-        freqs->data[i] = f0 + i * deltaF;
-    }
-    PNPhasingSeries pfa;
-    const REAL8 qm_def1 = 1.;
-    const REAL8 qm_def2 = 1.;
-    XLALSimInspiralPNCorrections(&pfa, m1, m2, chi1z, chi2z, chi1z*chi1z, chi2z*chi2z, chi1z*chi2z, qm_def1, qm_def2, pnCorrections);
-    XLALSimInspiralPhaseCorrectionsPhasingWithDS(htilde,distance,freqs,iStart,iEnd,pfa,m_sec, eta,f_ref, NCyclesStep, f_DS, NCyclesDS);
-    XLALDestroyREAL8Sequence(freqs);
-    return 0;
-}
-
-int XLALSimInspiralPhaseCorrectionsPhasingWithDS(COMPLEX16FrequencySeries *htilde,       /**< input htilde, will be modified in place */
-                                           const REAL8 distance,
-                                           const REAL8Sequence *freqs,
-                                           const UINT4 iStart,
-                                           const UINT4 iEnd,
-                                           PNPhasingSeries pfa,
-                                           const REAL8 mtot,
-                                           const REAL8 eta,
-					   UNUSED const REAL8 f_ref, /** this must be in seconds **/
-					   const REAL8 NCyclesStep, /** Choose number of GW cycles over which to taper the non-GR phase correction */
-					   const REAL8 f_DS,  /** Frequency in which dynamical scalarization turns on */
-					   const REAL8 NCyclesDS) /** Choose number of GW cycles over which to taper the GR phase correction */
-{
-    UINT4 i;
-    REAL8Sequence *phase = NULL, *uphase = NULL, *d1phidf1 = NULL; //, *d2phidf2 = NULL;
-    phase = XLALCreateREAL8Sequence( (UINT4) freqs->length );
-    uphase = XLALCreateREAL8Sequence( (UINT4) freqs->length );
-    d1phidf1 = XLALCreateREAL8Sequence( (UINT4) freqs->length );
-    //d2phidf2 = XLALCreateREAL8Sequence( (UINT4) freqs->length );
-    memset (phase->data, 0, freqs->length * sizeof (REAL8));
-
-    COMPLEX16 tmph;
-    for ( i = 0; i < phase->length; i++ ) {
-        tmph = distance*htilde->data->data[i];
-        if ( cabs(tmph) < 1.e-16 ) {
-            phase->data[i] = 0.;
-        }
-        else {
-            phase->data[i] = carg(tmph);
-        }
-    }
-    INT4 phaseCounter = 0;
-    REAL8 diff = 0.;
-    uphase->data[0] = phase->data[0];
-    for ( i = 1; i < phase->length; i++ ) {
-        diff = phase->data[i] - phase->data[i-1];
-        if ( diff> 5. ) phaseCounter--;
-        if ( diff<-5. ) phaseCounter++;
-        uphase->data[i] = phase->data[i] + LAL_TWOPI*phaseCounter;
-    }
-    
-    gsl_spline *splineGR = NULL, *splinenonGR = NULL, *splineTot = NULL;
-    gsl_interp_accel *acc = NULL;
-    splineGR = gsl_spline_alloc (gsl_interp_cspline, freqs->length);
-    acc = gsl_interp_accel_alloc();
-    gsl_spline_init(splineGR, freqs->data, uphase->data, freqs->length);
-    for ( i = 0; i < freqs->length; i++ ) {
-        d1phidf1->data[i] = gsl_spline_eval_deriv(splineGR, freqs->data[i], acc);
-        //d2phidf2->data[i] = gsl_spline_eval_deriv2(splineGR, freqs->data[i], acc);
-    }
-//    FILE *out = fopen ("unp.dat", "w");
-//    for ( i = 0; i < phase->length; i++ ) {
-//        fprintf(out, "%.16e %.16e %.16e %.16e\n",freqs->data[i],phase->data[i],uphase->data[i], d2phidf2->data[i] );
-//    }
-//    fclose(out);
-
-    const REAL8 pfaN0 = 3.L/(128.L * eta);
-    const REAL8 piM = LAL_PI * mtot;
-    const REAL8 pfa7 = pfa.v[7];
-    const REAL8 pfa6 = pfa.v[6];
-    const REAL8 pfl6 = pfa.vlogv[6];
-    const REAL8 pfa5 = pfa.v[5];
-    const REAL8 pfl5 = pfa.vlogv[5];
-    const REAL8 pfa4 = pfa.v[4];
-    const REAL8 pfa3 = pfa.v[3];
-    const REAL8 pfa2 = pfa.v[2];
-    const REAL8 pfa1 = pfa.v[1];
-    const REAL8 pfaN = pfa.v[0];
-    const REAL8 pfaMinus1 = pfa.vneg[1];
-    const REAL8 pfaMinus2 = pfa.vneg[2];
-    
-    /* Compute the SPA phase at the reference point
-     * N.B. f_ref == 0 means we define the reference time/phase at "coalescence"
-     * when the frequency approaches infinity. In that case,
-     * the integrals Eq. 3.15 of arXiv:0907.0700 vanish when evaluated at
-     * f_ref == infinity. If f_ref is finite, we must compute the SPA phase
-     * evaluated at f_ref, store it as ref_phasing and subtract it off.
-     */
-    REAL8 ref_phasing = 0.;
-    
-
-    const REAL8 vWindow = cbrt(piM*freqs->data[iEnd]); //Center of the tapering step function in v-space
-    const REAL8 vDS = cbrt(piM * f_DS);
-
-    const REAL8 width = (NCyclesStep*LAL_PI*vWindow*vWindow*vWindow*vWindow*vWindow*vWindow)/(50.* pfaN0);
-    const REAL8 widthDS = (NCyclesDS*LAL_PI*vDS*vDS*vDS*vDS*vDS*vDS)/(50.* pfaN0); 
-    //printf("vPeak %.16e width %.16e\n",vPeak,width);
-
-    REAL8Sequence *phasenonGR = NULL, *d1phinonGRdf1 = NULL;  //, *d2phinonGRdf2 = NULL;
-    phasenonGR = XLALCreateREAL8Sequence( (UINT4) freqs->length );
-    d1phinonGRdf1 = XLALCreateREAL8Sequence( (UINT4) freqs->length );
-    //d2phinonGRdf2 = XLALCreateREAL8Sequence( (UINT4) freqs->length );
-    for ( i = 0; i < freqs->length; i++)
-    {
-        const REAL8 f = freqs->data[i];
-        if (f>0)
-        {
-            const REAL8 v = cbrt(piM*f);
-            const REAL8 logv = log(v);
-            const REAL8 v2 = v * v;
-            const REAL8 v3 = v * v2;
-            const REAL8 v4 = v * v3;
-            const REAL8 v5 = v * v4;
-            const REAL8 v6 = v * v5;
-            const REAL8 v7 = v * v6;
-            REAL8 phasing = 0.0;
-            
-            phasing += pfa7 * v7;
-            phasing += (pfa6 + pfl6 * logv) * v6;
-            phasing += (pfa5 + pfl5 * logv) * v5;
-            phasing += pfa4 * v4;
-            phasing += pfa3 * v3;
-            phasing += pfa2 * v2;
-            phasing += pfa1 * v;
-            phasing += pfaN;
-            phasing += pfaMinus1 / v;
-            phasing += pfaMinus2 /v2;
-            phasing /= v5;
-            
-            phasenonGR->data[i] = -phasing;
-        }
-    }
-    
-    splinenonGR = gsl_spline_alloc (gsl_interp_cspline, freqs->length);
-    gsl_spline_init(splinenonGR, freqs->data, phasenonGR->data, freqs->length);
-    for ( i = 0; i < freqs->length; i++ )
-        d1phinonGRdf1->data[i] = gsl_spline_eval_deriv(splinenonGR, freqs->data[i], acc);
-    //d2phinonGRdf2->data[i] = gsl_spline_eval_deriv2(splinenonGR, freqs->data[i], acc);
-
-    REAL8Sequence *d1phaseTotdf1 = NULL;  //, *d2phaseTotdf2 = NULL;
-    d1phaseTotdf1 = XLALCreateREAL8Sequence( (UINT4) freqs->length );
-    //d2phaseTotdf2 = XLALCreateREAL8Sequence( (UINT4) freqs->length );
-    for ( i = 0; i < freqs->length; i++ )
-      d1phaseTotdf1->data[i] = d1phidf1->data[i] + d1phinonGRdf1->data[i] / (1. + exp( (cbrt(piM*freqs->data[i]) - vWindow) / width) ) * ( 1. - 1. / (1. + exp( (cbrt(piM*freqs->data[i]) - vDS) / widthDS) ) );
-      //d2phaseTotdf2->data[i] = d2phidf2->data[i] + d2phinonGRdf2->data[i] / (1. + exp( (cbrt(piM*freqs->data[i]) - vWindow) / width ) );
-    
-      //REAL8 dphaseTotGRIni = gsl_spline_eval_deriv(splineGR, freqs->data[iStart], acc) + gsl_spline_eval_deriv(splinenonGR, freqs->data[iStart], acc);   //Removed by Noah
-    REAL8 phaseTotIni = uphase->data[iStart] + phasenonGR->data[iStart];
-    
-    REAL8Sequence *dphaseTotdf = NULL, *phaseTot = NULL;
-    dphaseTotdf = XLALCreateREAL8Sequence( (UINT4) freqs->length );
-    phaseTot = XLALCreateREAL8Sequence( (UINT4) freqs->length );
-  
-    splineTot = gsl_spline_alloc (gsl_interp_cspline, freqs->length);
-
-    //gsl_spline_init(splineTot, freqs->data, d2phaseTotdf2->data, freqs->length);  //Removed by Noah
-    //dphaseTotdf->data[iStart] = dphaseTotGRIni;
-    //for ( i = iStart; i-- > 0;  )
-    //    dphaseTotdf->data[i] = dphaseTotdf->data[i+1] - gsl_spline_eval_integ(splineTot, freqs->data[i], freqs->data[i+1], acc);
-    //for ( i = iStart+1; i < freqs->length; i++ )
-    //    dphaseTotdf->data[i] = dphaseTotdf->data[i-1] + gsl_spline_eval_integ(splineTot, freqs->data[i-1], freqs->data[i], acc);
-    
-    gsl_spline_init(splineTot, freqs->data, d1phaseTotdf1->data, freqs->length);
-    phaseTot->data[iStart] = phaseTotIni;
-    for ( i = iStart; i-- > 0;  )
-        phaseTot->data[i] = phaseTot->data[i+1] - gsl_spline_eval_integ(splineTot, freqs->data[i], freqs->data[i+1], acc);
-    for ( i = iStart+1; i < freqs->length; i++ )
-        phaseTot->data[i] = phaseTot->data[i-1] + gsl_spline_eval_integ(splineTot, freqs->data[i-1], freqs->data[i], acc);
-
-//    FILE *out = fopen ("pin.dat", "w");
-//    for ( i = 0; i < phase->length; i++ ) {
-//        fprintf(out, "%.16e %.16e %.16e %.16e %.16e %.16e\n",freqs->data[i],uphase->data[i],phaseTot->data[i], phasenonGR->data[i], d2phaseTotdf2->data[i], dphaseTotdf->data[i] );
-//    }
-//    fclose(out);
-
-    gsl_spline_init(splineTot, freqs->data, phaseTot->data, freqs->length);
-    ref_phasing = gsl_spline_eval(splineTot, f_ref, acc);
-    for ( i = 0; i < freqs->length; i++ ) {
-        REAL8 phasing = 0.;
-        phasing = phaseTot->data[i] - ref_phasing;
-        htilde->data->data[i] = cabs(distance*htilde->data->data[i]) * (cos(phasing)+ sin(phasing) * 1.0j);
-        htilde->data->data[i] /= distance;
-    }
-    
-    gsl_spline_free(splineGR);
-    gsl_spline_free(splinenonGR);
-    gsl_spline_free(splineTot);
-    gsl_interp_accel_free(acc);
-    XLALDestroyREAL8Sequence(uphase);
-    XLALDestroyREAL8Sequence(phase);
-    XLALDestroyREAL8Sequence(d1phidf1);
-    //XLALDestroyREAL8Sequence(d2phidf2);
-    XLALDestroyREAL8Sequence(d1phinonGRdf1);
-    //XLALDestroyREAL8Sequence(d2phinonGRdf2);
-    XLALDestroyREAL8Sequence(phasenonGR);
-    XLALDestroyREAL8Sequence(d1phaseTotdf1);
-    //XLALDestroyREAL8Sequence(d2phaseTotdf2);
-    XLALDestroyREAL8Sequence(dphaseTotdf);
-    XLALDestroyREAL8Sequence(phaseTot);
-    return 0;
-}
-
 REAL8 PNPhase(REAL8 f,    /* frequency in Hz */
               PNPhasingSeries pfa,
               const REAL8 mtot)   /* total mass in seconds */
@@ -582,8 +342,11 @@ REAL8 PNPhase(REAL8 f,    /* frequency in Hz */
     const REAL8 pfa2 = pfa.v[2];
     const REAL8 pfa1 = pfa.v[1];
     const REAL8 pfaN = pfa.v[0];
+  
+    /*TODO
     const REAL8 pfaMinus1 = pfa.vneg[1];
     const REAL8 pfaMinus2 = pfa.vneg[2];
+    */
     
     const REAL8 v = cbrt(piM*f);
     const REAL8 logv = log(v);
@@ -603,8 +366,8 @@ REAL8 PNPhase(REAL8 f,    /* frequency in Hz */
     phasing += pfa2 * v2;
     phasing += pfa1 * v;
     phasing += pfaN;
-    phasing += pfaMinus1 / v;
-    phasing += pfaMinus2 /v2;
+//    phasing += pfaMinus1 / v;
+//    phasing += pfaMinus2 /v2;
     phasing /= v5;
 
     return -phasing;
@@ -633,9 +396,12 @@ REAL8 PNPhaseDerivative(REAL8 f,    /* frequency in Hz */
     const REAL8 pfa2 = pfa.v[2];
     const REAL8 pfa1 = pfa.v[1];
     const REAL8 pfaN = pfa.v[0];
+  
+    /*TODO
     const REAL8 pfaMinus1 = pfa.vneg[1];
     const REAL8 pfaMinus2 = pfa.vneg[2];
-    
+    */
+
     const REAL8 v = cbrt(piM*f);
     const REAL8 logv = log(v);
     const REAL8 v2 = v * v;
@@ -654,8 +420,8 @@ REAL8 PNPhaseDerivative(REAL8 f,    /* frequency in Hz */
     phasing += -1. * pfa2 / v;
     phasing += -4. * pfa1 / v2;
     phasing += -5. * pfaN / v3;
-    phasing += -6. * pfaMinus1 / v4;
-    phasing += -7. * pfaMinus2 /v5;
+//    phasing += -6. * pfaMinus1 / v4;
+//    phasing += -7. * pfaMinus2 /v5;
     phasing /= v5;
     phasing *= piM/3.;
 
@@ -685,9 +451,12 @@ REAL8 PNPhaseSecondDerivative(REAL8 f,    /* frequency in Hz */
     const REAL8 pfa2 = pfa.v[2];
     const REAL8 pfa1 = pfa.v[1];
     const REAL8 pfaN = pfa.v[0];
+
+    /*TODO
     const REAL8 pfaMinus1 = pfa.vneg[1];
     const REAL8 pfaMinus2 = pfa.vneg[2];
-    
+    */
+
     const REAL8 v = cbrt(piM*f);
     const REAL8 logv = log(v);
     const REAL8 v2 = v * v;
@@ -695,8 +464,8 @@ REAL8 PNPhaseSecondDerivative(REAL8 f,    /* frequency in Hz */
     const REAL8 v4 = v * v3;
     const REAL8 v5 = v * v4;
     const REAL8 v6 = v * v5;
-    const REAL8 v7 = v * v6;
-    const REAL8 v8 = v * v7;
+//    const REAL8 v7 = v * v6;
+//    const REAL8 v8 = v * v7;
     REAL8 phasing = 0.0;
 
     phasing += -2. *  pfa7 * v;
@@ -707,8 +476,8 @@ REAL8 PNPhaseSecondDerivative(REAL8 f,    /* frequency in Hz */
     phasing += 18. * pfa2 / v4;
     phasing += 28. * pfa1 / v5;
     phasing += 40. * pfaN / v6;
-    phasing += 54. * pfaMinus1 / v7;
-    phasing += 70. * pfaMinus2 /v8;
+//    phasing += 54. * pfaMinus1 / v7;
+//    phasing += 70. * pfaMinus2 /v8;
     phasing /= v5;
     phasing *= piM*piM/9.;
     return -phasing;

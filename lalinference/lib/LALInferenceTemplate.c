@@ -41,6 +41,7 @@
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceMultibanding.h>
 #include <lal/LALSimNeutronStar.h>
+#include <lal/LALSimInspiralTestingGRCorrections.h>
 
 /* LIB imports*/
 #include <lal/LALInferenceBurstRoutines.h>
@@ -73,10 +74,13 @@ static void q2masses(double mc, double q, double *m1, double *m2);
 /* the first batch of parameters dchis through dsigmas refer to the parameterised tests for generation (TIGER) while the parameters log10lambda_eff through LIV_A_sign are testing coefficients for the parameterised tests for propagation using a deformed dispersion relation (LIV); new parameters may be added at the end for  readability although the order of parameters in this list does not matter */
 
 
-const char list_extra_parameters[42][16] = {"dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7","aPPE","alphaPPE","bPPE","betaPPE","betaStep","fStep","dxi1","dxi2","dxi3","dxi4","dxi5","dxi6","dalpha1","dalpha2","dalpha3","dalpha4","dalpha5","dbeta1","dbeta2","dbeta3","dsigma1","dsigma2","dsigma3","dsigma4","log10lambda_eff","lambda_eff","nonGR_alpha","LIV_A_sign","dQuadMon1","dQuadMon2","dQuadMonS","dQuadMonA"};
+const char list_extra_parameters[44][16] = {"dchiminus2","dchiminus1","dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7","aPPE","alphaPPE","bPPE","betaPPE","betaStep","fStep","dxi1","dxi2","dxi3","dxi4","dxi5","dxi6","dalpha1","dalpha2","dalpha3","dalpha4","dalpha5","dbeta1","dbeta2","dbeta3","dsigma1","dsigma2","dsigma3","dsigma4","log10lambda_eff","lambda_eff","nonGR_alpha","LIV_A_sign","dQuadMon1","dQuadMon2","dQuadMonS","dQuadMonA"};
 
+const UINT4 N_extra_params = 44;
 
-const UINT4 N_extra_params = 42;
+const char list_FTA_parameters[12][16] = {"dchiminus2","dchiminus1","dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7"};
+
+const UINT4 N_FTA_params = 12;
 
 
 /* Return the quadrupole moment of a neutron star given its lambda
@@ -699,10 +703,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
   Approximant approximant = (Approximant) 0;
 
+  INT4 generic_fd_correction;
+
   static int sizeWarning = 0;
   int ret=0;
   INT4 errnum=0;
-
+  
   REAL8TimeSeries *hplus=NULL;  /**< +-polarization waveform [returned] */
   REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform [returned] */
   COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
@@ -738,6 +744,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   else
     if (!XLALSimInspiralWaveformParamsPNAmplitudeOrderIsDefault(model->LALpars))
       XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(model->LALpars,-1);
+
+  /* Check if the user requested modify waveforms with FTA */
+  if (LALInferenceCheckVariable(model->params, "generic_fd_correction"))
+    generic_fd_correction = *(INT4*) LALInferenceGetVariable(model->params, "generic_fd_correction");
+  else
+    generic_fd_correction = 0;
 
   REAL8 f_ref = 100.0;
   if (LALInferenceCheckVariable(model->params, "f_ref")) f_ref = *(REAL8 *)LALInferenceGetVariable(model->params, "f_ref");
@@ -1021,11 +1033,54 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       deltaF = model->deltaF;
       /* Correct distance to account for renormalisation of data due to window RMS */
       double corrected_distance = distance * sqrt(model->window->sumofsquares/model->window->data->length);
-      XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
-            deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
-            spin2x, spin2y, spin2z, f_start, f_max, f_ref, corrected_distance, inclination, model->LALpars,
-							      approximant,model->waveformCache, NULL), errnum);
+    
+      /* check if the user requested a generic phase correction */
+      if (generic_fd_correction != 1)
+      {
+        XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
+              deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
+              spin2x, spin2y, spin2z, f_start, f_max, f_ref, corrected_distance, inclination, model->LALpars,
+                      approximant,model->waveformCache, NULL), errnum);
+      }
+      else
+      {
 
+        /* create a duplicate of LALpars */
+        LALDict *grParams = XLALCreateDict();
+        LALDictEntry *param;
+        LALDictIter iter;
+        XLALDictIterInit(&iter, model->LALpars);
+        while ((param = XLALDictIterNext(&iter)) != NULL) {
+          XLALDictInsertValue( grParams , XLALDictEntryGetKey(param), XLALDictEntryGetValue(param) );
+        }
+        
+        /* set all FTA parameters in grParams to their default GR value*/
+        REAL8 default_GR_value = 0.0;
+        for (UINT4 k=0; k<N_FTA_params; k++)
+        {
+          XLALDictInsert(grParams, list_FTA_parameters[k], (void *) (&default_GR_value), sizeof(double), LAL_D_TYPE_CODE);
+        }
+        
+        /* generate waveform with non-GR parameters set to default (zero) */
+        XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
+              deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
+              spin2x, spin2y, spin2z, f_start, f_max, f_ref, corrected_distance, inclination, grParams,
+                      approximant,model->waveformCache, NULL), errnum);
+        
+        /* apply FTA corrections */
+        REAL8 correction_window = 1.;
+        if(LALInferenceCheckVariable(model->params, "correction_window")) correction_window = *(REAL8*) LALInferenceGetVariable(model->params, "correction_window");
+        
+        REAL8 correction_ncycles_taper = 1.;
+        if(LALInferenceCheckVariable(model->params, "correction_ncycles_taper")) correction_ncycles_taper = *(REAL8*) LALInferenceGetVariable(model->params, "correction_ncycles_taper");
+        
+        
+        XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hptilde,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
+        
+        XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hctilde,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
+
+
+      }
     /* if the waveform failed to generate, fill the buffer with zeros
      * so that the previous waveform is not left there
      */

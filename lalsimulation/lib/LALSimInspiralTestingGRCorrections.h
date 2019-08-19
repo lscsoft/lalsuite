@@ -46,15 +46,13 @@ int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       
                                         const REAL8 chi2z,
                                         const REAL8 f_low,
                                         const REAL8 f_ref,
-                                        const REAL8 lambda1,
-                                        const REAL8 lambda2,
 					const REAL8 f_window_div_f_Peak,     /** Frequency at which to attach non-GR and GR waveforms, inputted as a fraction of f_Peak (should be between 0 and 1) */
 					const REAL8 NCyclesStep,                /** Number of GW cycles over which to taper the non-GR phase correction */
-                                        const LALSimInspiralTestGRParam *pnCorrections    /**< input linked list of testing gr parameters */
+                                        LALDict *LALpars    /**< input linked list of testing gr parameters */
 );
 
 /* Accepts binary parameters and testing-GR parameters, computes the PN phase corrections specified by the testing-GR parameters and stores in PNPhasingSeries pfa */
-void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa, const REAL8 m1, const REAL8 m2, const REAL8 chi1L, const REAL8 chi2L, const REAL8 chi1sq, const REAL8 chi2sq, const REAL8 chi1dotchi2, const REAL8 qm_def1, const REAL8 qm_def2, const LALSimInspiralTestGRParam *pnCorrections);
+void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa, const REAL8 m1, const REAL8 m2, const REAL8 chi1L, const REAL8 chi2L, const REAL8 chi1sq, const REAL8 chi2sq, const REAL8 chi1dotchi2, const REAL8 qm_def1, const REAL8 qm_def2, LALDict *LALpars);
 
 /* Accepts GR baseline waveform htilde, PN phase corrections pfa and parameters that determine how the correction will be tapered.
  * Tapers the phase correction by multiplying the second derivative of the correction w.r.t. frequency by a Heaviside function
@@ -75,38 +73,6 @@ int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,    
  * testing-GR parameters, and paremeters that determine how the corrections will be tapered. Calls PNCorrections to compute 
  * non-GR corrections to phase, then PhaseCorrectionsPhasing to smoothly taper the correction to the baseline GR waveform.
  */
-int XLALSimInspiralTestingGRCorrectionsWithDS(COMPLEX16FrequencySeries *htilde,       /**< input htilde, will be modified in place */
-                                        const REAL8 distance,
-                                        const REAL8 m1_SI,
-                                        const REAL8 m2_SI,
-                                        const REAL8 chi1z,
-                                        const REAL8 chi2z,
-                                        const REAL8 f_low,
-                                        const REAL8 f_ref,
-					const REAL8 f_window_div_f_Peak,     /** Frequency at which to attach non-GR to GR waveforms, inputted as a fraction of f_Peak (should be between 0 and 1) */
-					const REAL8 NCyclesStep,             /** Number of GW cycles over which to taper the non-GR phase correction to GR waveform */
-					const REAL8 f_DS,                    /** Frequency at which to attach GR to non-GR waveforms, inputted in Hz */
-					const REAL8 NCyclesDS,               /** Number of GW cycles over which to taper the GR waveform to non-GR phase corrections */                 
-                                        const LALSimInspiralTestGRParam *pnCorrections    /**< input linked list of testing gr parameters */
-);
-
-/* Accepts GR baseline waveform htilde, PN phase corrections pfa and parameters that determine how the correction (with dynamical
- * scalarization) will be tapered. Tapers the phase correction by multiplying the first derivative of the correction w.r.t.
- * frequency by a box function and then integrating back to recover the phase. Finally, adds the phaes correction
- * to the waveform and stores in htilde.
- */
-int XLALSimInspiralPhaseCorrectionsPhasingWithDS(COMPLEX16FrequencySeries *htilde,       /**< input htilde, will be modified in place */
-                                           const REAL8 distance,
-                                           const REAL8Sequence *freqs,
-                                           const UINT4 iStart,
-                                           const UINT4 iEnd,
-                                           PNPhasingSeries pfa,
-                                           const REAL8 mtot,
-                                           const REAL8 eta,
-			  		   const REAL8 f_ref, /** this must be in seconds **/
-					   const REAL8 NCyclesStep, /** Choose number of GW cycles over which to taper the non-GR phase correction */
-					   const REAL8 f_DS,  /** Frequency in which dynamical scalarization turns on */
-					   const REAL8 NCyclesDS); /** Choose number of GW cycles over which to taper the GR phase correction */
 
 REAL8 PNPhase(REAL8 f, PNPhasingSeries pfa, const REAL8 mtot); /* Returns phase computed from PN coefficients pfa at frequency f*/
 REAL8 PNPhaseDerivative(REAL8 f, PNPhasingSeries pfa, const REAL8 mtot); /* Returns derivative of phase w.r.t. frequency computed from PN coefficients pfa at frequency f*/
