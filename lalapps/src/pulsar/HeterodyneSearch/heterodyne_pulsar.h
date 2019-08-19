@@ -35,7 +35,7 @@
 #include <time.h>
 #include <sys/types.h>
 
-// definition taken from lal/src/support/LogPrintf.c
+// definition taken from lal/lib/support/LogPrintf.c
 #ifndef HAVE_LOCALTIME_R
 #define localtime_r(timep, result) memcpy((result), localtime(timep), sizeof(struct tm))
 #endif

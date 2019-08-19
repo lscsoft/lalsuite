@@ -38,11 +38,11 @@
 #define FIDUCIAL_FREQ   100.0
 
 // Maximum number of sky offsets required
-// - Must match that given in src/SuperskyMetrics.c
+// - Must match that given in lib/SuperskyMetrics.c
 #define MAX_SKY_OFFSETS PULSAR_MAX_SPINS
 
 // Internal definition of reduced supersky metric coordinate transform data
-// - MUST match the definition given in src/SuperskyMetrics.c
+// - MUST match the definition given in lib/SuperskyMetrics.c
 struct tagSuperskyTransformData {
   UINT4 ndim;                                   ///< Dimensions of the corresponding metric
   LIGOTimeGPS ref_time;                         ///< Reference time of the metric

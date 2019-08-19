@@ -1,7 +1,7 @@
 AC_PREREQ([2.63])
 AC_INIT([LALSimulation],[1.9.1.1],[lal-discuss@ligo.org])
-AC_CONFIG_HEADERS([src/config.h src/LALSimulationConfig.h])
-AC_CONFIG_SRCDIR([src/LALSimulation.c])
+AC_CONFIG_HEADERS([lib/config.h lib/LALSimulationConfig.h])
+AC_CONFIG_SRCDIR([lib/LALSimulation.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
@@ -17,12 +17,12 @@ AC_CONFIG_FILES([ \
   python/Makefile \
   python/lalsimulation/Makefile \
   python/lalsimulation/__init__.py \
-  src/LALSimulationVCSInfo.c \
-  src/LALSimulationVCSInfo.h \
-  src/Makefile \
-  src/seobnrv3_opt_exactderivs/Makefile \
-  src/mathematica_codes/Makefile \
-  src/version.c \
+  lib/LALSimulationVCSInfo.c \
+  lib/LALSimulationVCSInfo.h \
+  lib/Makefile \
+  lib/seobnrv3_opt_exactderivs/Makefile \
+  lib/mathematica_codes/Makefile \
+  lib/version.c \
   swig/Makefile \
   test/Makefile \
   test/python/Makefile \
@@ -149,7 +149,7 @@ LALSUITE_USE_DOXYGEN
 LALSUITE_ADD_GCC_FLAGS
 
 # link any executables against LALSimulation library
-AC_SUBST([LDADD], ["\$(top_builddir)/src/liblalsimulation.la"])
+AC_SUBST([LDADD], ["\$(top_builddir)/lib/liblalsimulation.la"])
 
 # add extra preprocessor flags
 AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"

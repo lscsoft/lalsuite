@@ -1,7 +1,7 @@
 AC_PREREQ([2.63])
 AC_INIT([LALBurst],[1.5.2.1],[lal-discuss@ligo.org])
-AC_CONFIG_HEADERS([src/config.h src/LALBurstConfig.h])
-AC_CONFIG_SRCDIR([src/EPSearch.c])
+AC_CONFIG_HEADERS([lib/config.h lib/LALBurstConfig.h])
+AC_CONFIG_SRCDIR([lib/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
@@ -17,10 +17,10 @@ AC_CONFIG_FILES([ \
   python/Makefile \
   python/lalburst/Makefile \
   python/lalburst/__init__.py \
-  src/LALBurstVCSInfo.c \
-  src/LALBurstVCSInfo.h \
-  src/Makefile \
-  src/version.c \
+  lib/LALBurstVCSInfo.c \
+  lib/LALBurstVCSInfo.h \
+  lib/Makefile \
+  lib/version.c \
   swig/Makefile \
   test/Makefile \
   test/python/Makefile \
@@ -150,7 +150,7 @@ LALSUITE_USE_DOXYGEN
 LALSUITE_ADD_GCC_FLAGS
 
 # link any executables against LALBurst library
-AC_SUBST([LDADD], ["\$(top_builddir)/src/liblalburst.la"])
+AC_SUBST([LDADD], ["\$(top_builddir)/lib/liblalburst.la"])
 
 # add extra preprocessor flags
 AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"

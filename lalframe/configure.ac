@@ -1,7 +1,7 @@
 AC_PREREQ([2.63])
 AC_INIT([LALFrame],[1.4.5.1],[lal-discuss@ligo.org])
-AC_CONFIG_HEADERS([src/config.h src/LALFrameConfig.h])
-AC_CONFIG_SRCDIR([src/LALFrameIO.c])
+AC_CONFIG_HEADERS([lib/config.h lib/LALFrameConfig.h])
+AC_CONFIG_SRCDIR([lib/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
@@ -18,10 +18,10 @@ AC_CONFIG_FILES([ \
   python/lalframe/Makefile \
   python/lalframe/__init__.py \
   python/lalframe/utils/Makefile \
-  src/LALFrameVCSInfo.c \
-  src/LALFrameVCSInfo.h \
-  src/Makefile \
-  src/version.c \
+  lib/LALFrameVCSInfo.c \
+  lib/LALFrameVCSInfo.h \
+  lib/Makefile \
+  lib/version.c \
   swig/Makefile \
   test/Makefile \
   test/python/Makefile \
@@ -186,7 +186,7 @@ LALSUITE_USE_DOXYGEN
 LALSUITE_ADD_GCC_FLAGS
 
 # link any executables against LALFrame library
-AC_SUBST([LDADD], ["\$(top_builddir)/src/liblalframe.la"])
+AC_SUBST([LDADD], ["\$(top_builddir)/lib/liblalframe.la"])
 
 # add extra preprocessor flags
 AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"

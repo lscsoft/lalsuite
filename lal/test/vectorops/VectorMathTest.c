@@ -31,7 +31,7 @@
 #include <lal/VectorMath.h>
 
 /* for access to internal prototypes for generic (GEN) functions, for reference results */
-#include "../../src/vectorops/VectorMath_internal.h"
+#include <vectorops/VectorMath_internal.h>
 
 // ---------- Macros ----------
 #define frand() (rand() / (REAL4)RAND_MAX)

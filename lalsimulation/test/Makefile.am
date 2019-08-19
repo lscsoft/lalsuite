@@ -1,6 +1,6 @@
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
-AM_CPPFLAGS += -I$(top_srcdir)/src
+AM_CPPFLAGS += -I$(top_srcdir)/lib
 
 SUBDIRS = \
 	$(END_OF_LIST)

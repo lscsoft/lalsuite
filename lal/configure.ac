@@ -1,7 +1,7 @@
 AC_PREREQ([2.63])
 AC_INIT([LAL],[6.20.2.1],[lal-discuss@ligo.org])
-AC_CONFIG_HEADERS([src/config.h src/LALConfig.h])
-AC_CONFIG_SRCDIR([src/std/LALStdio.h])
+AC_CONFIG_HEADERS([lib/config.h lib/LALConfig.h])
+AC_CONFIG_SRCDIR([lib/std/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
@@ -20,23 +20,23 @@ AC_CONFIG_FILES([ \
   python/lal/__init__.py \
   python/lal/spectrum/Makefile \
   python/lal/utils/Makefile \
-  src/LALVCSInfo.c \
-  src/LALVCSInfo.h \
-  src/Makefile \
-  src/date/Makefile \
-  src/factories/Makefile \
-  src/fft/Makefile \
-  src/inject/Makefile \
-  src/noisemodels/Makefile \
-  src/stats/Makefile \
-  src/std/Makefile \
-  src/support/Makefile \
-  src/tdfilter/Makefile \
-  src/tools/Makefile \
-  src/utilities/Makefile \
-  src/vectorops/Makefile \
-  src/version.c \
-  src/window/Makefile \
+  lib/LALVCSInfo.c \
+  lib/LALVCSInfo.h \
+  lib/Makefile \
+  lib/date/Makefile \
+  lib/factories/Makefile \
+  lib/fft/Makefile \
+  lib/inject/Makefile \
+  lib/noisemodels/Makefile \
+  lib/stats/Makefile \
+  lib/std/Makefile \
+  lib/support/Makefile \
+  lib/tdfilter/Makefile \
+  lib/tools/Makefile \
+  lib/utilities/Makefile \
+  lib/vectorops/Makefile \
+  lib/version.c \
+  lib/window/Makefile \
   swig/Makefile \
   test/Makefile \
   test/date/Makefile \
@@ -319,11 +319,11 @@ LALSUITE_USE_DOXYGEN
 LALSUITE_ADD_GCC_FLAGS
 
 # link any executables against LAL and LALSupport libraries
-AC_SUBST([LDADD], ["\$(top_builddir)/src/liblal.la \$(top_builddir)/src/support/liblalsupport.la"])
+AC_SUBST([LDADD], ["\$(top_builddir)/lib/liblal.la \$(top_builddir)/lib/support/liblalsupport.la"])
 
 # add extra preprocessor flags
 AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"
-AM_CPPFLAGS="-I\$(top_builddir)/include -I\$(top_srcdir)/src ${AM_CPPFLAGS}"
+AM_CPPFLAGS="-I\$(top_builddir)/include -I\$(top_srcdir)/lib ${AM_CPPFLAGS}"
 
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on

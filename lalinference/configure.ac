@@ -1,7 +1,7 @@
 AC_PREREQ([2.63])
 AC_INIT([LALInference],[1.11.3.1],[lal-discuss@ligo.org])
-AC_CONFIG_HEADERS([src/config.h src/LALInferenceConfig.h])
-AC_CONFIG_SRCDIR([src/LALInference.h])
+AC_CONFIG_HEADERS([lib/config.h lib/LALInferenceConfig.h])
+AC_CONFIG_SRCDIR([lib/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
@@ -24,11 +24,11 @@ AC_CONFIG_FILES([ \
   python/lalinference/rapid_pe/Makefile \
   python/lalinference/tiger/Makefile \
   python/lalinference/util/Makefile \
-  src/LALInferenceVCSInfo.c \
-  src/LALInferenceVCSInfo.h \
-  src/Makefile \
-  src/mpi/Makefile \
-  src/version.c \
+  lib/LALInferenceVCSInfo.c \
+  lib/LALInferenceVCSInfo.h \
+  lib/Makefile \
+  lib/mpi/Makefile \
+  lib/version.c \
   swig/Makefile \
   test/Makefile \
   test/python/Makefile
@@ -245,7 +245,7 @@ LALSUITE_USE_DOXYGEN
 LALSUITE_ADD_GCC_FLAGS
 
 # link any executables against LALInference library
-AC_SUBST([LDADD], ["\$(top_builddir)/src/liblalinference.la"])
+AC_SUBST([LDADD], ["\$(top_builddir)/lib/liblalinference.la"])
 
 # add extra preprocessor flags
 AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"

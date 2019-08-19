@@ -126,7 +126,7 @@ __version__ = git_version.id
 __date__ = git_version.date
 
 
-DOWNLOAD_URL = 'https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/src/{}'
+DOWNLOAD_URL = 'https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/{}'
 
 class HeterodynedCWSimulator(object):
     
