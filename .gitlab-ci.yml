@@ -204,6 +204,22 @@ level5:rpm:lalapps:
     - level3:rpm:lalinspiral
     - level4:rpm:lalinference
 
+lalinference_testjob:
+  stage: level5
+  script:
+    - lalapps_inspinj --f-lower 20 --disable-spin --waveform IMRPhenomPv2pseudoFourPN --amp-order 0 --gps-start-time 441417609 --gps-end-time 441417619  --t-distr uniform --l-distr random --m-distr fixMasses --fixed-mass1 30 --fixed-mass2 30 --i-distr uniform --snr-distr uniform --min-snr 20 --max-snr 20 --ifos H1,L1,V1 -\
+-ligo-fake-psd LALAdLIGO --virgo-fake-psd LALAdVirgo --ligo-start-freq 20 --virgo-start-freq 20 --time-step 10 -o injection.xml
+    - ligolw_print -c distance injection.xml
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level2:rpm:lalburst
+    - level2:rpm:lalinspiral
+    - level2:rpm:lalpulsar
+    - level3:rpm:lalinference
+    - level4:rpm:lalapps
 #
 # docker container from RPMs
 #
