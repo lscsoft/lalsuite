@@ -1,5 +1,4 @@
 EXTRA_DIST = \
-	exclude-modules.txt \
 	exclude-scripts.txt
 
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
