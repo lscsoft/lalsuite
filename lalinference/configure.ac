@@ -21,7 +21,6 @@ AC_CONFIG_FILES([ \
   python/lalinference/imrtgr/Makefile \
   python/lalinference/io/Makefile \
   python/lalinference/plot/Makefile \
-  python/lalinference/popprior/Makefile \
   python/lalinference/rapid_pe/Makefile \
   python/lalinference/tiger/Makefile \
   python/lalinference/util/Makefile \

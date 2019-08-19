@@ -9,7 +9,6 @@ SUBDIRS = \
 	imrtgr \
 	io \
 	plot \
-	popprior \
 	rapid_pe \
 	tiger \
 	util \
