@@ -8,7 +8,8 @@ variables:
   NIGHTLY: $CI_REGISTRY_IMAGE:nightly
   TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
   LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
-  CONDA_DIR: $CI_PROJECT_DIR/opt/conda
+  CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
+  CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
 
 stages:
   - dist
@@ -430,6 +431,74 @@ docker:tags:stretch:
     - /^lalsuite-v.*$/
 
 #
+# build conda packages
+#
+
+.conda-init: &conda-init |
+  # configure conda
+  source /opt/conda/etc/profile.d/conda.sh
+  conda config --set always_yes yes
+  conda config --add channels conda-forge
+  conda update -n base conda
+  conda install -n base conda-build conda-verify conda-forge-pinning
+  conda info --all
+
+.levelN:conda: &levelN-conda-package
+  image: continuumio/miniconda3
+  variables:
+    GIT_CLEAN_FLAGS: none
+    CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
+    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
+    fft_impl: "fftw"
+  before_script:
+    - *conda-init
+  script:
+    - 'PACKAGE=$(cut -d: -f3 <<<${CI_JOB_NAME})'
+    - cd ${PACKAGE}
+    # render clobber YAML file to use our tarball
+    - TARBALL=$(readlink -f ${PACKAGE}-*.tar.*)
+    - VERSION=$(basename $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '~')
+    - SHA256=$(openssl dgst -r -sha256 $TARBALL | cut -d\  -f1)
+    - sed 's|@VERSION@|'${VERSION}'|g' conda/meta.yaml.in > conda/meta.yaml
+    - sed -i 's|@TARBALL@|'${TARBALL}'|g' conda/meta.yaml
+    - sed -i 's|@SHA256@|'${SHA256}'|g' conda/meta.yaml
+    # build packages
+    #     render first to dump the final YAML (for debugging)
+    #     then build as normal
+    - for _cmd in render build; do
+          conda ${_cmd}
+              conda/
+              --error-overlinking
+              --error-overdepending
+              --no-anaconda-upload
+              --python 3.7
+              --use-local
+              --variant-config-files $(conda info --base)/conda_build_config.yaml
+              ${CONDA_BUILD_ARGS};
+      done
+  artifacts:
+    expire_in: 18h
+    paths:
+      - "conda/bld/linux-64/$(cut -d: -f3 <<<${CI_JOB_NAME})-*.conda"
+      - "conda/bld/linux-64/$(cut -d: -f3 <<<${CI_JOB_NAME})-*.tar.bz2"
+      - "conda/bld/linux-64/python-$(cut -d: -f3 <<<${CI_JOB_NAME})-*.conda"
+      - "conda/bld/linux-64/python-$(cut -d: -f3 <<<${CI_JOB_NAME})-*.tar.bz2"
+  only:
+    - pushes
+    - schedules
+    - tags
+    - web
+  cache:
+    paths:
+      - conda/pkgs
+
+level0:conda:lal:
+  <<: *levelN-conda-package
+  stage: level0
+  dependencies:
+    - make-dist
+
+#
 # nightly builds
 #
 
@@ -506,8 +575,6 @@ nightly:gcc:9:
 # https://git.ligo.org/lscsoft/lalsuite/issues/161
 
 .conda-build: &conda-build
-  variables:
-    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda-pkgs"
   stage: nightly
   dependencies: []
   before_script:
@@ -515,11 +582,7 @@ nightly:gcc:9:
     - PYVERSION=$(echo ${CI_JOB_NAME} | sed 's/conda:python//')
     - CONDA_ENV_FILE="conda/environment-lal-development-py${PYVERSION}.yml"
     # configure conda
-    - source /opt/conda/etc/profile.d/conda.sh
-    - conda config --set always_yes yes
-    - conda config --add channels conda-forge
-    - conda update conda
-    - conda info --all
+    - *conda-init
     # build lalsuite environment
     - conda env create -f ${CONDA_ENV_FILE}
     - conda activate lal-development-py${PYVERSION}
@@ -540,7 +603,7 @@ nightly:gcc:9:
     - web
   cache:
     paths:
-      - conda-pkgs
+      - conda/pkgs
   artifacts:
     paths:
       - "config.log"
