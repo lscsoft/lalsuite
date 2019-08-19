@@ -11,6 +11,7 @@ variables:
   CONDA_DIR: $CI_PROJECT_DIR/opt/conda
 
 stages:
+  - dist
   - level0
   - level1
   - level2
@@ -59,22 +60,45 @@ documentation:
     - web
 
 #
+# make dist
+#
+
+# this job makes all of the source tarballs up-front using a top-level
+# make dist call
+#
+# to use one (any) of the tarballs in another job, just add "make-dist"
+# in `dependencies:`
+
+make-dist:
+  image: ligo/lalsuite-dev:el7
+  stage: dist
+  script:
+    - ./00boot
+    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
+    - for subdir in lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalpulsar lalinference lalapps; do
+        pushd ${subdir};
+        make dist;
+        popd;
+      done
+  artifacts:
+    expire_in: 18h
+    paths:
+      - "*/*.tar.*"
+
+#
 # build rpms
 #
 
 .levelN:rpm: &levelN-rpm-package
   image: containers.ligo.org/docker/lalsuite-dev:el7
   variables:
+    GIT_STRATEGY: none
     RPM_BUILD_CPUS: 4
   script:
     # install upstream packages
     - if [ -d rpmbuild ]; then yum -y install rpmbuild/RPMS/x86_64/*.rpm; fi
-    # make src tarball
-    - cd ${CI_JOB_NAME#level?:rpm:}
-    - ./00boot
-    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
-    - make dist
     # build src.rpm
+    - cd ${CI_JOB_NAME#level?:rpm:}
     - rpmbuild -ts --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${CI_JOB_NAME#level?:rpm:}-*.tar.xz
     - SRCRPM=${CI_PROJECT_DIR}/rpmbuild/SRPMS/${CI_JOB_NAME#level?:rpm:}-*.src.rpm
     # lint src.rpm
@@ -105,24 +129,28 @@ level1:rpm:lalframe:
   <<: *levelN-rpm-package
   stage: level1
   dependencies:
+    - make-dist
     - level0:rpm:lal
 
 level1:rpm:lalmetaio:
   <<: *levelN-rpm-package
   stage: level1
   dependencies:
+    - make-dist
     - level0:rpm:lal
 
 level1:rpm:lalsimulation:
   <<: *levelN-rpm-package
   stage: level1
   dependencies:
+    - make-dist
     - level0:rpm:lal
 
 level2:rpm:lalburst:
   <<: *levelN-rpm-package
   stage: level2
   dependencies:
+    - make-dist
     - level0:rpm:lal
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
@@ -131,6 +159,7 @@ level2:rpm:lalinspiral:
   <<: *levelN-rpm-package
   stage: level2
   dependencies:
+    - make-dist
     - level0:rpm:lal
     - level1:rpm:lalframe
     - level1:rpm:lalmetaio
@@ -140,12 +169,14 @@ level2:rpm:lalpulsar:
   <<: *levelN-rpm-package
   stage: level2
   dependencies:
+    - make-dist
     - level0:rpm:lal
 
 level3:rpm:lalinference:
   <<: *levelN-rpm-package
   stage: level3
   dependencies:
+    - make-dist
     - level0:rpm:lal
     - level1:rpm:lalframe
     - level1:rpm:lalmetaio
@@ -158,6 +189,7 @@ level4:rpm:lalapps:
   <<: *levelN-rpm-package
   stage: level4
   dependencies:
+    - make-dist
     - level0:rpm:lal
     - level1:rpm:lalframe
     - level1:rpm:lalmetaio
@@ -227,15 +259,13 @@ docker:tags:el7:
 
 .levelN:deb: &levelN-deb-package
   image: containers.ligo.org/docker/lalsuite-dev:stretch
+  variables:
+    GIT_STRATEGY: none
   script:
     # install debs from artifacts
     - dpkg -i *.deb || true
-    # make dist tarball
-    - cd ${CI_JOB_NAME#level?:deb:}
-    - ./00boot
-    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
-    - make dist
     # create orig tarball
+    - cd ${CI_JOB_NAME#level?:deb:}
     - PACKAGE=$(echo ${CI_JOB_NAME} | sed 's/.*://')
     - TARBALL="${PACKAGE}-*.tar.*"
     - SUFFIX=$(echo $TARBALL | sed 's/.*\.\(tar\..*\)/\1/')
@@ -275,24 +305,28 @@ level1:deb:lalframe:
   <<: *levelN-deb-package
   stage: level1
   dependencies:
+    - make-dist
     - level0:deb:lal
 
 level1:deb:lalmetaio:
   <<: *levelN-deb-package
   stage: level1
   dependencies:
+    - make-dist
     - level0:deb:lal
 
 level1:deb:lalsimulation:
   <<: *levelN-deb-package
   stage: level1
   dependencies:
+    - make-dist
     - level0:deb:lal
 
 level2:deb:lalburst:
   <<: *levelN-deb-package
   stage: level2
   dependencies:
+    - make-dist
     - level0:deb:lal
     - level1:deb:lalmetaio
     - level1:deb:lalsimulation
@@ -301,6 +335,7 @@ level2:deb:lalinspiral:
   <<: *levelN-deb-package
   stage: level2
   dependencies:
+    - make-dist
     - level0:deb:lal
     - level1:deb:lalframe
     - level1:deb:lalmetaio
@@ -310,12 +345,14 @@ level2:deb:lalpulsar:
   <<: *levelN-deb-package
   stage: level2
   dependencies:
+    - make-dist
     - level0:deb:lal
 
 level3:deb:lalinference:
   <<: *levelN-deb-package
   stage: level3
   dependencies:
+    - make-dist
     - level0:deb:lal
     - level1:deb:lalframe
     - level1:deb:lalmetaio
@@ -328,6 +365,7 @@ level4:deb:lalapps:
   <<: *levelN-deb-package
   stage: level4
   dependencies:
+    - make-dist
     - level0:deb:lal
     - level1:deb:lalframe
     - level1:deb:lalmetaio
