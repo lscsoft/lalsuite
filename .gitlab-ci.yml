@@ -207,9 +207,10 @@ level5:rpm:lalapps:
 lalinference_testjob:
   stage: level5
   script:
-    - lalapps_inspinj --f-lower 20 --disable-spin --waveform IMRPhenomPv2pseudoFourPN --amp-order 0 --gps-start-time 441417609 --gps-end-time 441417619  --t-distr uniform --l-distr random --m-distr fixMasses --fixed-mass1 30 --fixed-mass2 30 --i-distr uniform --snr-distr uniform --min-snr 20 --max-snr 20 --ifos H1,L1,V1 -\
--ligo-fake-psd LALAdLIGO --virgo-fake-psd LALAdVirgo --ligo-start-freq 20 --virgo-start-freq 20 --time-step 10 -o injection.xml
-    - ligolw_print -c distance injection.xml
+    - cd ./lalsuite/lalinference
+    - ./00boot
+    - ./configure --prefix=${CONDA_PREFIX} --disable-doxygen --disable-gcc-flags
+    - make install
   dependencies:
     - level0:rpm:lal
     - level1:rpm:lalframe
