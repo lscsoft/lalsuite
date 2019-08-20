@@ -81,6 +81,8 @@ outputs:
         - gsl
         - lal >={{ lal_version }}
         - {{ pin_subpackage('lalburst', exact=True) }}
+        - lalmetaio
+        - lalsimulation
         - ligo-segments
         - lscsoft-glue
         - matplotlib
