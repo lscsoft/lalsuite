@@ -1,0 +1,209 @@
+# This is a copy of the upstream conda recipe for this package
+# hosted at github.com/conda-forge/lal-feedstock and licensed
+# under the terms of the BSD 3-Clause license.
+# This is only for CI purposes, and should not be considered
+# production-ready at any time.
+
+{% set name = "lalapps" %}
+{% set version = "@VERSION@" %}
+{% set url = "file://@TARBALL@" %}
+{% set sha256 = "@SHA256@" %}
+
+{% set lal_version = "6.20.0" %}
+{% set lalburst_version = "1.5.1" %}
+{% set lalframe_version = "1.4.0" %}
+{% set lalinference_version = "1.11.0" %}
+{% set lalinspiral_version = "1.9.0" %}
+{% set lalmetaio_version = "1.5.0" %}
+{% set lalpulsar_version = "1.18.0" %}
+{% set lalsimulation_version = "1.9.0" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: {{ url }}
+  sha256: {{ sha256 }}
+  patches:
+    # weave tests are fragile and hardware dependent
+    - disable-weave-tests.patch
+
+build:
+  number: 9999
+  skip: true  # [win]
+  ignore_run_exports:
+    # run_exports parsing for fftw is broken, so we ignore it
+    # manually, for now
+    - fftw
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - make
+    - pkg-config
+  host:
+    - cfitsio
+    - fftw * nompi*
+    - gsl
+    - lal >={{ lal_version }}
+    - lalburst >={{ lalburst_version }}
+    - lalframe >={{ lalframe_version }}
+    - lalinference >={{ lalinference_version }}
+    - lalinspiral >={{ lalinspiral_version }}
+    - lalmetaio >={{ lalmetaio_version }}
+    - lalpulsar >={{ lalpulsar_version }}
+    - lalsimulation >={{ lalsimulation_version }}
+    - libblas
+    - libframe
+    - llvm-openmp  # [osx]
+    - metaio
+    - openmp  # [linux]
+    - openmpi
+    - python
+    - python-lal >={{ lal_version }}
+    - python-lalburst >={{ lalburst_version }}
+    - python-lalinference >={{ lalinference_version }}
+    - python-lalinspiral >={{ lalinspiral_version }}
+    - python-lalframe >={{ lalframe_version }}
+    - python-lalmetaio >={{ lalmetaio_version }}
+    - python-lalpulsar >={{ lalpulsar_version }}
+    - python-lalsimulation >={{ lalsimulation_version }}
+  run:
+    - cfitsio
+    - fftw
+    - gsl
+    - h5py
+    - healpy
+    - lal >={{ lal_version }}
+    - lalframe >={{ lalframe_version }}
+    - lalmetaio >={{ lalmetaio_version }}
+    - lalsimulation >={{ lalsimulation_version }}
+    - lalburst >={{ lalburst_version }}
+    - lalinspiral >={{ lalinspiral_version }}
+    - lalpulsar >={{ lalpulsar_version }}
+    - lalinference >={{ lalinference_version }}
+    - libframe
+    - ligo-segments
+    - llvm-openmp  # [osx]
+    - metaio
+    - openmp  # [linux]
+    - openmpi
+    - numpy
+    - pillow
+    - python
+    - python-lal >={{ lal_version }}
+    - python-lalburst >={{ lalburst_version }}
+    - python-lalframe >={{ lalframe_version }}
+    - python-lalinference >={{ lalinference_version }}
+    - python-lalinspiral >={{ lalinspiral_version }}
+    - python-lalmetaio >={{ lalmetaio_version }}
+    - python-lalpulsar >={{ lalpulsar_version }}
+    - python-lalsimulation >={{ lalsimulation_version }}
+
+test:
+  imports:
+    - lalapps
+    - lalapps.git_version
+  commands:
+    - lalapps_version --help
+    - lalapps_binj --help
+    - lalapps_binjfind --help
+    - lalapps_binj_pic --help
+    - lalapps_blindinj --help
+    - lalapps_bucluster --help
+    - lalapps_bucut --help
+    - lalapps_burca --help
+    - lalapps_burca_tailor --help
+    - lalapps_cafe --help
+    - lalapps_calcexpsnr --help
+    - lalapps_coh_PTF_inspiral --help
+    - lalapps_coinj --help
+    - lalapps_create_pulsar_signal_frame --help
+    - lalapps_create_solar_system_ephemeris --help
+    - lalapps_create_solar_system_ephemeris_python --help
+    - lalapps_effdist --help
+    - lalapps_fftwf_wisdom --help
+    - lalapps_fftw_wisdom --help
+    - lalapps_fits_array_copy --help
+    - lalapps_fits_array_imarith --help
+    - lalapps_fits_array_list --help
+    - lalapps_fits_array_stat --help
+    - lalapps_fits_copy --help
+    - lalapps_fits_header_delval --help
+    - lalapps_fits_header_getval --help
+    - lalapps_fits_header_list --help
+    - lalapps_fits_header_setval --help
+    - lalapps_fits_overview --help
+    - lalapps_fits_table_calc --help
+    - lalapps_fits_table_list --help
+    - lalapps_fits_table_merge --help
+    - lalapps_fits_table_select --help
+    - lalapps_flag_triggers --help
+    - lalapps_frjoin --help
+    - lalapps_fr_ninja --help
+    - lalapps_frview --help
+    - lalapps_generate_upper_limits --help
+    - lalapps_gen_timeslides --help
+    - lalapps_gwf2xml --help
+    - lalapps_heterodyne_pulsar --help
+    - lalapps_inspfrinj --help
+    - lalapps_inspinj --help
+    - lalapps_inspinjfind --help
+    - lalapps_makeblindinj --help
+    - lalapps_makeblindinj_himass --help
+    - lalapps_make_nr_hdf_catalog --help
+    - lalapps_MakeSFTs --help
+    - lalapps_mdc_ninja --help
+    - lalapps_NoiseComparison --help
+    - lalapps_online_datafind --help
+    - lalapps_path2cache --help
+    - lalapps_plot_tisi --help
+    - lalapps_power --help
+    - lalapps_power_calc_likelihood --help
+    - lalapps_power_final --help
+    - lalapps_power_plot_binj --help
+    - lalapps_power_plot_binjtf --help
+    - lalapps_power_plot_burca --help
+    - lalapps_power_plot_burca2 --help
+    - lalapps_power_plot_burst --help
+    - lalapps_power_veto --help
+    - lalapps_pulsar_frequency_evolution --help
+    - lalapps_pulsar_parameter_estimation --help
+    - lalapps_pulsar_parameter_estimation_nested --help
+    - lalapps_randombank --help
+    - lalapps_run_sqlite --help
+    - lalapps_searchsum2cache --help
+    - lalapps_SFTwrite --help
+    - lalapps_siva --help
+    - lalapps_splitSFTs --help
+    - lalapps_ssbtodetector --help
+    - lalapps_string_apply_vetoes --help
+    - lalapps_string_calc_likelihood --help
+    - lalapps_string_contour_plotter --help
+    - lalapps_string_cs_gamma --help
+    - lalapps_string_meas_likelihood --help
+    - lalapps_string_plot_binj --help
+    - lalapps_string_plot_likelihood --help
+    - lalapps_StringSearch --help
+    - lalapps_tconvert --help
+    - lalapps_thinca --help
+    - lalapps_tmpltbank --help
+
+about:
+  home: https://wiki.ligo.org/Computing/DASWG/LALSuite
+  doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalapps/
+  dev_url: https://git.ligo.org/lscsoft/lalsuite/
+  license: GPLv3
+  license_family: GPL
+  license_file: COPYING
+  summary: LSC Algorithm Library Applications
+  description: |
+    The LSC Algorithm Library Applications for gravitational wave data
+    analysis.  This package contains applications that are built on tools
+    in the LSC Algorithm Library.
+
+extra:
+  recipe-maintainers:
+    - duncanmmacleod
+    - skymoo
