@@ -232,7 +232,7 @@ def compare_plots_one_param_pdf(list_of_pos_by_name,param,analyticPDF=None):
             if min(pos_samps)<injpar and max(pos_samps)>injpar:
                 plt.plot([injpar,injpar],[0,max(kdepdf)],'r-.',scalex=False,scaley=False)
     if analyticPDF is not None:
-	plt.plot(ind,map(analyticPDF,ind),'r')
+        plt.plot(ind,map(analyticPDF,ind),'r')
     #
     return myfig#,rkde
 #
@@ -360,7 +360,7 @@ def compare_plots_one_param_line_hist(list_of_pos_by_name,param,cl,color_by_name
 
     #
     if analyticPDF is not None:
-	plt.plot(posbins,map(analyticPDF,posbins),'r')
+        plt.plot(posbins,map(analyticPDF,posbins),'r')
     return myfig,top_cl_intervals_list#,rkde
 
 #
@@ -484,7 +484,7 @@ def compare_plots_one_param_line_hist_cum(list_of_pos_by_name,param,cl,color_by_
         #if min(pos_samps)<injpar and max(pos_samps)>injpar:
         plt.plot([injpar,injpar],[0,max_y],'r-.',scalex=False,scaley=False,linewidth=4,label='Injection')
     if analyticCDF is not None:
-	plt.plot(posbins,map(analyticCDF,posbins),'r')
+        plt.plot(posbins,map(analyticCDF,posbins),'r')
     return myfig,top_cl_intervals_list#,rkde
 
 
@@ -508,7 +508,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
     #Create analytic likelihood functions if covariance matrices and mean vectors were given
     analyticLikelihood = None
     if covarianceMatrices and meanVectors:
-	analyticLikelihood = bppu.AnalyticLikelihood(covarianceMatrices, meanVectors)
+        analyticLikelihood = bppu.AnalyticLikelihood(covarianceMatrices, meanVectors)
     peparser=bppu.PEOutputParser('common')
     pos_list={}
     tp_list={}
@@ -783,13 +783,12 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
             cl_table_min_max_str='<tr><td> Min | Max </td>'
             level_index=0
             for confidence_level in OneDconfidenceLevels:
-		if analyticLikelihood:
-		  pdf=analyticLikelihood.pdf(param)
-		  cdf=analyticLikelihood.cdf(param)
-		else:
-		  pdf=None
-		  cdf=None
-		  
+                if analyticLikelihood:
+                    pdf=analyticLikelihood.pdf(param)
+                    cdf=analyticLikelihood.cdf(param)
+                else:
+                    pdf=None
+                    cdf=None
                 cl_table_header+='<th colspan="2">%i%% (Lower|Upper)</th>'%(int(100*confidence_level))
                 hist_fig,cl_intervals=compare_plots_one_param_line_hist(pos_list,param,confidence_level,color_by_name,cl_lines_flag=clf,legend=ldg,analyticPDF=pdf)
                 hist_fig2,cl_intervals=compare_plots_one_param_line_hist_cum(pos_list,param,confidence_level,color_by_name,cl_lines_flag=clf,analyticCDF=cdf,legend=ldg)

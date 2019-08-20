@@ -21,7 +21,6 @@ AC_CONFIG_FILES([ \
   python/lalinference/imrtgr/Makefile \
   python/lalinference/io/Makefile \
   python/lalinference/plot/Makefile \
-  python/lalinference/popprior/Makefile \
   python/lalinference/rapid_pe/Makefile \
   python/lalinference/tiger/Makefile \
   python/lalinference/util/Makefile \
@@ -30,7 +29,8 @@ AC_CONFIG_FILES([ \
   src/Makefile \
   src/version.c \
   swig/Makefile \
-  test/Makefile
+  test/Makefile \
+  test/python/Makefile
 ])
 AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE([ \

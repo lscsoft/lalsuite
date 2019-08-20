@@ -1,0 +1,14 @@
+# Python script help test exclusion file
+#     list out files to _not_ include in the automated `xxx --help` tests
+#     see /test/README.md for details on the syntax
+
+# these require lalapps
+lalinference_burst_pp_pipe
+lalinference_pipe
+lalinference_pp_pipe
+lalinference_tiger_pipe
+# these require cpnest
+lalinference_cpnest
+# these require sklearn
+rapidpe_calculate_overlap
+rapidpe_compute_intrinsic_grid

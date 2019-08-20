@@ -2,6 +2,8 @@
 
 import numpy as np
 import os
+from matplotlib import use
+use('agg')
 from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib import rc

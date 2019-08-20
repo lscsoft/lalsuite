@@ -3,7 +3,7 @@
 # 2013 Salvatore Vitale: extended to work with several ini files
 
 from lalinference import lalinference_pipe_utils as pipe_utils
-import ConfigParser
+from six.moves import configparser
 from optparse import OptionParser,OptionValueError
 import sys
 
@@ -59,7 +59,7 @@ Supported options are: creamce and local",default=None)
 (opts,args)=parser.parse_args()
 
 if len(args)>1:
-  print 'Using %s ini files\n'%len(args)
+  print('Using %s ini files\n'%len(args))
 elif len(args)==1:
   inifile=args[0]
 
@@ -69,7 +69,7 @@ fnames=opts.fnames
 nfnames=len(fnames)
 
 if not ninits==nfnames:
-  print "You seem to be using %d parser files and %d foldernames. These two numbers must be the same. Exiting...\n"%(ninits,nfnames)
+  print("You seem to be using %d parser files and %d foldernames. These two numbers must be the same. Exiting...\n"%(ninits,nfnames))
   sys.exit(1)
 
 fnames_dic={}
@@ -82,7 +82,7 @@ hyp_str=" "
 for hy in glob_hyp:
   hyp_str+=hy+" "
 
-cp=ConfigParser.ConfigParser()
+cp=configparser.ConfigParser()
 cp.optionxform = str
 
 first_dag=True
@@ -129,8 +129,8 @@ dag2.set_dag_file(os.path.join(common_path,'common_dag'))
 dag2.write_dag()
 dag2.write_script()
 # End of program
-print 'Successfully created DAG file.'
-print 'Now run condor_submit_dag %s\n'%(dag2.get_dag_file())
+print('Successfully created DAG file.')
+print('Now run condor_submit_dag %s\n'%(dag2.get_dag_file()))
 
 if opts.condor_submit:
     import subprocess
@@ -139,6 +139,6 @@ if opts.condor_submit:
     x = subprocess.Popen(['condor_submit_dag',dag.get_dag_file()])
     x.wait()
     if x.returncode==0:
-      print 'Submitted DAG file'
+      print('Submitted DAG file')
     else:
-      print 'Unable to submit DAG file'
+      print('Unable to submit DAG file')

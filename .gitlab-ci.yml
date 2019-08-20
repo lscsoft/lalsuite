@@ -505,6 +505,7 @@ nightly:gcc:9:
       - "config.log"
       - "*/config.log"
       - "*/test/test-suite.log"
+      - "*/test/python/test-suite.log"
       - "*/*/*/*/test/test-suite.log"
     when: on_failure
   allow_failure: true

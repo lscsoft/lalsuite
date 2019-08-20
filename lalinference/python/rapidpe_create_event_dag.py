@@ -59,7 +59,7 @@ argp.add_argument("--write-eff-lambda", action="store_true", help="Use psi0 colu
 argp.add_argument("--write-deff-lambda", action="store_true", help="Use psi3 column of template bank XML as delta effective lambda point to calculate in DAG.")
 argp.add_argument("--condor-command", action="append", help="Append these condor commands to the submit files. Useful for account group information.")
 
-for cat, val in MAXJOBS.iteritems():
+for cat, val in MAXJOBS.items():
     optname = "--maxjobs-%s" % cat.lower().replace("_", "-")
     argp.add_argument(optname, type=int, default=MAXJOBS[cat], help="Set MAXJOBS in DAGs for category %s. Default is %s" % (cat, str(val)))
 
