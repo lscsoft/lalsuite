@@ -501,6 +501,13 @@ level0:conda:lal:
   dependencies:
     - make-dist
 
+level1:conda:lalframe:
+  <<: *levelN-conda-package
+  stage: level1
+  dependencies:
+    - make-dist
+    - level0:conda:lal
+
 #
 # nightly builds
 #

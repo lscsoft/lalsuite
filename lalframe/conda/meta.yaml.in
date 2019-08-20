@@ -1,0 +1,109 @@
+# This is a copy of the upstream conda recipe for this package
+# hosted at github.com/conda-forge/lal-feedstock and licensed
+# under the terms of the BSD 3-Clause license.
+# This is only for CI purposes, and should not be considered
+# production-ready at any time.
+
+{% set name = "lalframe" %}
+{% set version = "@VERSION@" %}
+{% set url = "file://@TARBALL@" %}
+{% set sha256 = "@SHA256@" %}
+
+{% set lal_version = "6.20.0" %}
+{% set framecpp_version = "2.5.5" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: {{ url }}
+  sha256: {{ sha256 }}
+
+build:
+  number: 9999
+  skip: true  # [win]
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - make
+    - pkg-config
+    - swig >=3.0.7
+  host:
+    - lal >={{ lal_version }}
+    - ldas-tools-framecpp >={{ framecpp_version }}
+    - libframe
+  run:
+    - lal >={{ lal_version }}
+    - ldas-tools-framecpp >={{ framecpp_version }}
+    - libframe
+
+test:
+  commands:
+    - lalframe_version --verbose
+    - lalfr-vis --help
+
+outputs:
+  - name: lalframe
+    build:
+      run_exports:
+        - {{ pin_subpackage("lalframe", max_pin="x.x") }}
+
+  - name: python-lalframe
+    script: install-python.sh
+    build:
+      activate_in_script: True
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - make
+        - pkg-config
+        - swig >=3.0.7
+      host:
+        - {{ pin_subpackage('lalframe', exact=True) }}
+        - numpy
+        - python
+      run:
+        - lal >={{ lal_version }}
+        - {{ pin_subpackage('lalframe', exact=True) }}
+        - ldas-tools-framecpp >={{ framecpp_version }}
+        - libframe
+        - {{ pin_compatible('numpy') }}
+        - python
+        - python-lal >={{ lal_version }}
+    test:
+      imports:
+        - lalframe
+        - lalframe.frread
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPLv3
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Frame Library
+      description: |
+        The LSC Algorithm Frame Library for gravitational wave data analysis.
+        This package contains the python bindings.
+
+about:
+  home: https://wiki.ligo.org/Computing/LALSuite
+  doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
+  dev_url: https://git.ligo.org/lscsoft/lalsuite/
+  license: GPLv3
+  license_family: GPL
+  license_file: COPYING
+  summary: LSC Algorithm Frame Library
+  description: |
+    The LSC Algorithm Frame Library for gravitational wave data analysis.
+    This package contains the shared-object libraries needed to run
+    applications that use the LAL Frame library.  If you want to install
+    the Python bindings, please install the associated python-lalframe
+    package.
+
+extra:
+  recipe-maintainers:
+    - duncanmmacleod
+    - skymoo
