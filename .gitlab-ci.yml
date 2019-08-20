@@ -531,6 +531,13 @@ level2:conda:lalburst:
     - level1:conda:lalmetaio
     - level1:conda:lalsimulation
 
+level2:conda:lalpulsar:
+  <<: *levelN-conda-package
+  stage: level2
+  dependencies:
+    - make-dist
+    - level0:conda:lal
+
 #
 # nightly builds
 #
