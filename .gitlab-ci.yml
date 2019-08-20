@@ -18,6 +18,7 @@ stages:
   - level2
   - level3
   - level4
+  - level5
   - docker
   - nightly
   - wheels
@@ -156,16 +157,6 @@ level2:rpm:lalburst:
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
 
-level2:rpm:lalinspiral:
-  <<: *levelN-rpm-package
-  stage: level2
-  dependencies:
-    - make-dist
-    - level0:rpm:lal
-    - level1:rpm:lalframe
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-
 level2:rpm:lalpulsar:
   <<: *levelN-rpm-package
   stage: level2
@@ -173,7 +164,7 @@ level2:rpm:lalpulsar:
     - make-dist
     - level0:rpm:lal
 
-level3:rpm:lalinference:
+level3:rpm:lalinspiral:
   <<: *levelN-rpm-package
   stage: level3
   dependencies:
@@ -183,10 +174,8 @@ level3:rpm:lalinference:
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
     - level2:rpm:lalburst
-    - level2:rpm:lalinspiral
-    - level2:rpm:lalpulsar
 
-level4:rpm:lalapps:
+level4:rpm:lalinference:
   <<: *levelN-rpm-package
   stage: level4
   dependencies:
@@ -196,9 +185,22 @@ level4:rpm:lalapps:
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
     - level2:rpm:lalburst
-    - level2:rpm:lalinspiral
     - level2:rpm:lalpulsar
-    - level3:rpm:lalinference
+    - level3:rpm:lalinspiral
+
+level5:rpm:lalapps:
+  <<: *levelN-rpm-package
+  stage: level5
+  dependencies:
+    - make-dist
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level2:rpm:lalburst
+    - level2:rpm:lalpulsar
+    - level3:rpm:lalinspiral
+    - level4:rpm:lalinference
 
 #
 # docker container from RPMs
@@ -222,10 +224,10 @@ docker:nightly:el7:
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
     - level2:rpm:lalburst
-    - level2:rpm:lalinspiral
     - level2:rpm:lalpulsar
-    - level3:rpm:lalinference
-    - level4:rpm:lalapps
+    - level3:rpm:lalinspiral
+    - level4:rpm:lalinference
+    - level5:rpm:lalapps
   only:
     - schedules
 
@@ -247,10 +249,10 @@ docker:tags:el7:
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
     - level2:rpm:lalburst
-    - level2:rpm:lalinspiral
     - level2:rpm:lalpulsar
-    - level3:rpm:lalinference
-    - level4:rpm:lalapps
+    - level3:rpm:lalinspiral
+    - level4:rpm:lalinference
+    - level5:rpm:lalapps
   only:
     - /^lalsuite-v.*$/
 
@@ -332,16 +334,6 @@ level2:deb:lalburst:
     - level1:deb:lalmetaio
     - level1:deb:lalsimulation
 
-level2:deb:lalinspiral:
-  <<: *levelN-deb-package
-  stage: level2
-  dependencies:
-    - make-dist
-    - level0:deb:lal
-    - level1:deb:lalframe
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-
 level2:deb:lalpulsar:
   <<: *levelN-deb-package
   stage: level2
@@ -349,7 +341,7 @@ level2:deb:lalpulsar:
     - make-dist
     - level0:deb:lal
 
-level3:deb:lalinference:
+level3:deb:lalinspiral:
   <<: *levelN-deb-package
   stage: level3
   dependencies:
@@ -359,10 +351,8 @@ level3:deb:lalinference:
     - level1:deb:lalmetaio
     - level1:deb:lalsimulation
     - level2:deb:lalburst
-    - level2:deb:lalinspiral
-    - level2:deb:lalpulsar
 
-level4:deb:lalapps:
+level4:deb:lalinference:
   <<: *levelN-deb-package
   stage: level4
   dependencies:
@@ -372,9 +362,22 @@ level4:deb:lalapps:
     - level1:deb:lalmetaio
     - level1:deb:lalsimulation
     - level2:deb:lalburst
-    - level2:deb:lalinspiral
     - level2:deb:lalpulsar
-    - level3:deb:lalinference
+    - level3:deb:lalinspiral
+
+level5:deb:lalapps:
+  <<: *levelN-deb-package
+  stage: level5
+  dependencies:
+    - make-dist
+    - level0:deb:lal
+    - level1:deb:lalframe
+    - level1:deb:lalmetaio
+    - level1:deb:lalsimulation
+    - level2:deb:lalburst
+    - level2:deb:lalpulsar
+    - level3:deb:lalinspiral
+    - level4:deb:lalinference
 
 #
 # docker container from the debs
@@ -398,10 +401,10 @@ docker:nightly:stretch:
     - level1:deb:lalmetaio
     - level1:deb:lalsimulation
     - level2:deb:lalburst
-    - level2:deb:lalinspiral
     - level2:deb:lalpulsar
-    - level3:deb:lalinference
-    - level4:deb:lalapps
+    - level3:deb:lalinspiral
+    - level4:deb:lalinference
+    - level5:deb:lalapps
   only:
     - schedules
 
@@ -423,10 +426,10 @@ docker:tags:stretch:
     - level1:deb:lalmetaio
     - level1:deb:lalsimulation
     - level2:deb:lalburst
-    - level2:deb:lalinspiral
     - level2:deb:lalpulsar
-    - level3:deb:lalinference
-    - level4:deb:lalapps
+    - level3:deb:lalinspiral
+    - level4:deb:lalinference
+    - level5:deb:lalapps
   only:
     - /^lalsuite-v.*$/
 
