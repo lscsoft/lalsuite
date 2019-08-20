@@ -1,0 +1,104 @@
+# This is a copy of the upstream conda recipe for this package
+# hosted at github.com/conda-forge/lal-feedstock and licensed
+# under the terms of the BSD 3-Clause license.
+# This is only for CI purposes, and should not be considered
+# production-ready at any time.
+
+{% set name = "lalmetaio" %}
+{% set version = "@VERSION@" %}
+{% set url = "file://@TARBALL@" %}
+{% set sha256 = "@SHA256@" %}
+
+# dependencies
+{% set lal_version = "6.20.0" %}
+{% set swig_version = "3.0.7" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: {{ url }}
+  sha256: {{ sha256 }}
+
+build:
+  number: 9999
+  skip: true  # [win]
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - make
+    - pkg-config
+    - swig >={{ swig_version }}
+  host:
+    - lal >={{ lal_version }}
+    - metaio
+  run:
+    - lal >={{ lal_version }}
+    - metaio
+test:
+  commands:
+    - lalmetaio_version --verbose
+
+outputs:
+  - name: lalmetaio
+    build:
+      run_exports:
+        - {{ pin_subpackage("lalmetaio", max_pin="x.x") }}
+
+  - name: python-lalmetaio
+    script: install-python.sh
+    build:
+      activate_in_script: True
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - make
+        - pkg-config
+        - swig >={{ swig_version }}
+      host:
+        - {{ pin_subpackage('lalmetaio', exact=True) }}
+        - numpy 1.9
+        - python
+      run:
+        - lal
+        - {{ pin_subpackage('lalmetaio', exact=True) }}
+        - metaio
+        - {{ pin_compatible('numpy') }}
+        - python
+        - python-lal >={{ lal_version }}
+    test:
+      imports:
+        - lalmetaio
+    about:
+      home: https://wiki.ligo.org/Computing/DASWG/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalmetaio/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPLv3
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm MetaIO Library
+      description: |
+        The LSC Algorithm MetaIO Library for gravitational wave data analysis.
+        This package contains the python bindings.
+
+about:
+  home: https://wiki.ligo.org/Computing/LALSuite
+  doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalmetaio/
+  dev_url: https://git.ligo.org/lscsoft/lalsuite/
+  license: GPLv3
+  license_family: GPL
+  license_file: COPYING
+  summary: LSC Algorithm MetaIO Library
+  description: |
+    The LSC Algorithm MetaIO Library for gravitational wave data analysis.
+    This package contains the shared-object libraries needed to run
+    applications that use the LAL MetaIO library.  If you want to install
+    the Python bindings, please install the associated python-lalmetaio
+    package.
+
+extra:
+  recipe-maintainers:
+    - duncanmmacleod
+    - skymoo
