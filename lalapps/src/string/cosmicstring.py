@@ -26,7 +26,7 @@ from lal import iterutils
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
 from lalburst import cafe
-from lalapps import power
+from lalburst import power
 
 
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
