@@ -43,7 +43,6 @@
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LALTrigScanCluster.h>
 #include <lalapps.h>
-#include <processtable.h>
 #include <LALAppsVCSInfo.h>
 
 #define CVS_ID_STRING "$Id$"

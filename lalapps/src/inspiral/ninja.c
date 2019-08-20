@@ -63,7 +63,6 @@
 
 #include <LALAppsVCSInfo.h>
 
-#include <processtable.h>
 #include "inspiral.h"
 
 /* program info */

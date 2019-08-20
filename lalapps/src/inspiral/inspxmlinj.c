@@ -36,7 +36,6 @@
 #include <time.h>
 #include <config.h>
 #include <lalapps.h>
-#include <processtable.h>
 #include <lal/LALStdio.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>

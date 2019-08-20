@@ -25,6 +25,7 @@ liblalmetaio_la_SOURCES = \
 	LIGOLwXMLArray.c \
 	LIGOLwXMLRead.c \
 	LIGOMetadataUtils.c \
+	processtable.c \
 	$(END_OF_LIST)
 
 nodist_liblalmetaio_la_SOURCES = \

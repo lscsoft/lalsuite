@@ -37,11 +37,8 @@
 
 #include <lal/Date.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/XLALError.h>
-
-
-#include <lalapps.h>
-#include "processtable.h"
 
 
 /**

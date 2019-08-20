@@ -31,7 +31,6 @@
 
 #include <lalapps.h>
 #include <math.h>
-#include <processtable.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -40,7 +40,6 @@
 
 #include <lalapps.h>
 #include <series.h>
-#include <processtable.h>
 
 #include <lal/LALConfig.h>
 #include <lal/LALgetopt.h>
@@ -50,6 +49,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/GenerateInspiral.h>

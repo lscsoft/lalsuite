@@ -40,7 +40,6 @@
 
 #include <lalapps.h>
 #include <series.h>
-#include <processtable.h>
 #include <lalappsfrutils.h>
 
 #include <lal/LALConfig.h>

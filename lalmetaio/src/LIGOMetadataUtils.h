@@ -90,6 +90,14 @@ void XLALDestroyProcessTableRow(ProcessTable *);
 #endif   // SWIG
 void XLALDestroyProcessTable(ProcessTable *);
 long XLALProcessTableGetNextID(ProcessTable *);
+int XLALPopulateProcessTable(
+	ProcessTable *ptable,
+	const char *program_name,
+	const char *cvs_revision,
+	const char *cvs_source,
+	const char *cvs_date,
+	long process_id
+);
 
 ProcessParamsTable *XLALCreateProcessParamsTableRow(const ProcessTable *);
 #ifndef SWIG   // exclude from SWIG interface
