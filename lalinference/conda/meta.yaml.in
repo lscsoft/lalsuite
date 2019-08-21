@@ -68,6 +68,8 @@ requirements:
     - llvm-openmp  # [osx]
     - metaio
     - openmp  # [linux]
+    # hdf5 links against zlib so we need to reference it
+    - zlib
 
 test:
   commands:
@@ -123,6 +125,8 @@ outputs:
         - python-lalpulsar >={{ lalpulsar_version }}
         - scipy >=0.8
         - shapely
+        # hdf5 links against zlib so we need to reference it
+        - zlib
     test:
       imports:
         - lalinference
