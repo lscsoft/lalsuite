@@ -73,9 +73,14 @@ outputs:
         - python
         - libblas=*=*netlib
       run:
+        - gsl
         - lal >={{ lal_version }}
+        - lalframe >={{ lalframe_version }}
+        - lalmetaio >={{ lalmetaio_version }}
+        - lalsimulation >={{ lalsimulation_version }}
         - {{ pin_subpackage('lalinspiral', exact=True) }}
         - lscsoft-glue
+        - metaio
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}
