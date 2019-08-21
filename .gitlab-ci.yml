@@ -40,7 +40,7 @@ cache:
 #
 
 documentation:
-  image: ligo/lalsuite-dev:stretch
+  image: containers.ligo.org/docker/lalsuite-dev:stretch
   stage: level0
   script:
     - ./00boot
@@ -63,7 +63,7 @@ documentation:
 #
 
 .levelN:rpm: &levelN-rpm-package
-  image: ligo/lalsuite-dev:el7
+  image: containers.ligo.org/docker/lalsuite-dev:el7
   variables:
     RPM_BUILD_CPUS: 4
   script:
@@ -226,7 +226,7 @@ docker:tags:el7:
 #
 
 .levelN:deb: &levelN-deb-package
-  image: ligo/lalsuite-dev:stretch
+  image: containers.ligo.org/docker/lalsuite-dev:stretch
   script:
     # install debs from artifacts
     - dpkg -i *.deb || true
@@ -731,7 +731,7 @@ deploy:wheel:
 #
 
 pages:
-  image: ligo/lalsuite-dev:stretch
+  image: containers.ligo.org/docker/lalsuite-dev:stretch
   stage: nightly
   script:
     - ./00boot
