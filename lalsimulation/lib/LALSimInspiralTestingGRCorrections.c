@@ -171,10 +171,10 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
     if (XLALDictContains(LALpars,"dchi0")) pfa->v[0] = XLALSimInspiralWaveformParamsLookupNonGRDChi0(LALpars);
     if (XLALDictContains(LALpars,"dchi1")) pfa->v[1] = XLALSimInspiralWaveformParamsLookupNonGRDChi1(LALpars);
 
-    /* TODO
-    if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchiMinus1")) pfa->vneg[1] = XLALSimInspiralGetTestGRParam(pnCorrections,"dchiMinus1");
-    if (XLALSimInspiralTestGRParamExists(pnCorrections,"dchiMinus2")) pfa->vneg[2] = XLALSimInspiralGetTestGRParam(pnCorrections,"dchiMinus2"); 
-    */
+  
+    if (XLALDictContains(LALpars,"dchiMinus1")) pfa->vneg[1] = XLALSimInspiralWaveformParamsLookupNonGRDChiMinus1(LALpars);
+    if (XLALDictContains(LALpars,"dchiMinus2")) pfa->vneg[2] = XLALSimInspiralWaveformParamsLookupNonGRDChiMinus2(LALpars);;
+    
     
     if (XLALDictContains(LALpars,"dchi2"))
     {
@@ -237,10 +237,8 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
         pfa->v[ii] *= pfaN;
         pfa->vlogv[ii] *= pfaN;
         pfa->vlogvsq[ii] *= pfaN;
-      
-        /* TODO
         pfa->vneg[ii] *= pfaN;
-        */
+      
     }
 }
 
@@ -342,11 +340,8 @@ REAL8 PNPhase(REAL8 f,    /* frequency in Hz */
     const REAL8 pfa2 = pfa.v[2];
     const REAL8 pfa1 = pfa.v[1];
     const REAL8 pfaN = pfa.v[0];
-  
-    /*TODO
     const REAL8 pfaMinus1 = pfa.vneg[1];
     const REAL8 pfaMinus2 = pfa.vneg[2];
-    */
     
     const REAL8 v = cbrt(piM*f);
     const REAL8 logv = log(v);
@@ -366,8 +361,8 @@ REAL8 PNPhase(REAL8 f,    /* frequency in Hz */
     phasing += pfa2 * v2;
     phasing += pfa1 * v;
     phasing += pfaN;
-//    phasing += pfaMinus1 / v;
-//    phasing += pfaMinus2 /v2;
+    phasing += pfaMinus1 / v;
+    phasing += pfaMinus2 /v2;
     phasing /= v5;
 
     return -phasing;
@@ -396,11 +391,8 @@ REAL8 PNPhaseDerivative(REAL8 f,    /* frequency in Hz */
     const REAL8 pfa2 = pfa.v[2];
     const REAL8 pfa1 = pfa.v[1];
     const REAL8 pfaN = pfa.v[0];
-  
-    /*TODO
     const REAL8 pfaMinus1 = pfa.vneg[1];
     const REAL8 pfaMinus2 = pfa.vneg[2];
-    */
 
     const REAL8 v = cbrt(piM*f);
     const REAL8 logv = log(v);
@@ -408,8 +400,8 @@ REAL8 PNPhaseDerivative(REAL8 f,    /* frequency in Hz */
     const REAL8 v3 = v * v2;
     const REAL8 v4 = v * v3;
     const REAL8 v5 = v * v4;
-    //const REAL8 v6 = v * v5;
-    //const REAL8 v7 = v * v6;
+//    const REAL8 v6 = v * v5;
+//    const REAL8 v7 = v * v6;
     REAL8 phasing = 0.0;
 
     phasing += 2. * pfa7 * v4;
@@ -420,8 +412,8 @@ REAL8 PNPhaseDerivative(REAL8 f,    /* frequency in Hz */
     phasing += -1. * pfa2 / v;
     phasing += -4. * pfa1 / v2;
     phasing += -5. * pfaN / v3;
-//    phasing += -6. * pfaMinus1 / v4;
-//    phasing += -7. * pfaMinus2 /v5;
+    phasing += -6. * pfaMinus1 / v4;
+    phasing += -7. * pfaMinus2 /v5;
     phasing /= v5;
     phasing *= piM/3.;
 
@@ -451,11 +443,8 @@ REAL8 PNPhaseSecondDerivative(REAL8 f,    /* frequency in Hz */
     const REAL8 pfa2 = pfa.v[2];
     const REAL8 pfa1 = pfa.v[1];
     const REAL8 pfaN = pfa.v[0];
-
-    /*TODO
     const REAL8 pfaMinus1 = pfa.vneg[1];
     const REAL8 pfaMinus2 = pfa.vneg[2];
-    */
 
     const REAL8 v = cbrt(piM*f);
     const REAL8 logv = log(v);
@@ -464,8 +453,8 @@ REAL8 PNPhaseSecondDerivative(REAL8 f,    /* frequency in Hz */
     const REAL8 v4 = v * v3;
     const REAL8 v5 = v * v4;
     const REAL8 v6 = v * v5;
-//    const REAL8 v7 = v * v6;
-//    const REAL8 v8 = v * v7;
+    const REAL8 v7 = v * v6;
+    const REAL8 v8 = v * v7;
     REAL8 phasing = 0.0;
 
     phasing += -2. *  pfa7 * v;
@@ -476,8 +465,8 @@ REAL8 PNPhaseSecondDerivative(REAL8 f,    /* frequency in Hz */
     phasing += 18. * pfa2 / v4;
     phasing += 28. * pfa1 / v5;
     phasing += 40. * pfaN / v6;
-//    phasing += 54. * pfaMinus1 / v7;
-//    phasing += 70. * pfaMinus2 /v8;
+    phasing += 54. * pfaMinus1 / v7;
+    phasing += 70. * pfaMinus2 /v8;
     phasing /= v5;
     phasing *= piM*piM/9.;
     return -phasing;

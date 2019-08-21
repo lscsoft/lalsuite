@@ -532,6 +532,7 @@ typedef struct tagPNPhasingSeries
     REAL8 v[PN_PHASING_SERIES_MAX_ORDER+1];
     REAL8 vlogv[PN_PHASING_SERIES_MAX_ORDER+1];
     REAL8 vlogvsq[PN_PHASING_SERIES_MAX_ORDER+1];
+    REAL8 vneg[PN_PHASING_SERIES_MAX_ORDER+1];
 }
 PNPhasingSeries;
 

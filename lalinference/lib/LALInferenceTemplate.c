@@ -74,11 +74,11 @@ static void q2masses(double mc, double q, double *m1, double *m2);
 /* the first batch of parameters dchis through dsigmas refer to the parameterised tests for generation (TIGER) while the parameters log10lambda_eff through LIV_A_sign are testing coefficients for the parameterised tests for propagation using a deformed dispersion relation (LIV); new parameters may be added at the end for  readability although the order of parameters in this list does not matter */
 
 
-const char list_extra_parameters[44][16] = {"dchiminus2","dchiminus1","dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7","aPPE","alphaPPE","bPPE","betaPPE","betaStep","fStep","dxi1","dxi2","dxi3","dxi4","dxi5","dxi6","dalpha1","dalpha2","dalpha3","dalpha4","dalpha5","dbeta1","dbeta2","dbeta3","dsigma1","dsigma2","dsigma3","dsigma4","log10lambda_eff","lambda_eff","nonGR_alpha","LIV_A_sign","dQuadMon1","dQuadMon2","dQuadMonS","dQuadMonA"};
+const char list_extra_parameters[44][16] = {"dchiMinus2","dchiMinus1","dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7","aPPE","alphaPPE","bPPE","betaPPE","betaStep","fStep","dxi1","dxi2","dxi3","dxi4","dxi5","dxi6","dalpha1","dalpha2","dalpha3","dalpha4","dalpha5","dbeta1","dbeta2","dbeta3","dsigma1","dsigma2","dsigma3","dsigma4","log10lambda_eff","lambda_eff","nonGR_alpha","LIV_A_sign","dQuadMon1","dQuadMon2","dQuadMonS","dQuadMonA"};
 
 const UINT4 N_extra_params = 44;
 
-const char list_FTA_parameters[12][16] = {"dchiminus2","dchiminus1","dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7"};
+const char list_FTA_parameters[12][16] = {"dchiMinus2","dchiMinus1","dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7"};
 
 const UINT4 N_FTA_params = 12;
 
