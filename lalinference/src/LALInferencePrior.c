@@ -612,13 +612,13 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
   {
     REAL8 z=0.0;
     /* Double-check for tilts to prevent accidental double-prior */
-    if(LALInferenceCheckVariable(params,"a_spin1") && ~LALInferenceCheckVariable(params,"tilt_spin1"))
+    if(LALInferenceCheckVariable(params,"a_spin1") && !LALInferenceCheckVariable(params,"tilt_spin1"))
     {
       REAL8 R = REAL8max(fabs(LALInferenceGetREAL8Variable(priorParams,"a_spin1_max")),fabs(LALInferenceGetREAL8Variable(priorParams,"a_spin1_min")));
       z=LALInferenceGetREAL8Variable(params,"a_spin1");
       logPrior += -log(2.0) - log(R) + log(-log(fabs(z) / R));
     }
-    if(LALInferenceCheckVariable(params,"a_spin2")&& ~LALInferenceCheckVariable(params,"tilt_spin2"))
+    if(LALInferenceCheckVariable(params,"a_spin2")&& !LALInferenceCheckVariable(params,"tilt_spin2"))
     {
       REAL8 R = REAL8max(fabs(LALInferenceGetREAL8Variable(priorParams,"a_spin2_max")),fabs(LALInferenceGetREAL8Variable(priorParams,"a_spin2_min")));
       z=LALInferenceGetREAL8Variable(params,"a_spin2");
