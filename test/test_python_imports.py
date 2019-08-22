@@ -3,8 +3,13 @@
 # Test modules import
 
 import sys
+import warnings
 from importlib import import_module
-from pathlib import Path
+try:
+    from pathlib import Path
+except ImportError as exc:
+    warnings.warn(str(exc))
+    sys.exit(77)
 try:
     from unittest import mock
 except ImportError:  # python < 3

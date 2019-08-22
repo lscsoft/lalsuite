@@ -4,7 +4,12 @@
 
 import os
 import sys
-from pathlib import Path
+import warnings
+try:
+    from pathlib import Path
+except ImportError as exc:
+    warnings.warn(str(exc))
+    sys.exit(77)
 from subprocess import check_call
 try:
     from unittest import mock
