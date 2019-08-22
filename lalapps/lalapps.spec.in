@@ -44,6 +44,7 @@ BuildRequires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
 BuildRequires: lalinference-devel >= @MIN_LALINFERENCE_VERSION@
 BuildRequires: python2-lalinference >= @MIN_LALINFERENCE_VERSION@
 BuildRequires: help2man
+BuildRequires: bc
 Requires: cfitsio
 Requires: fftw
 Requires: gsl

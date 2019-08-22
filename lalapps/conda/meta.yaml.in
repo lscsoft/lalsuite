@@ -43,6 +43,7 @@ requirements:
     - make
     - pkg-config
   host:
+    - bc
     - cfitsio
     - fftw * nompi*
     - gsl
