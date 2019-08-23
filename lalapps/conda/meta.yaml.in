@@ -158,8 +158,6 @@ test:
     - lalapps_makeblindinj_himass --help
     - lalapps_make_nr_hdf_catalog --help
     - lalapps_MakeSFTs --help
-    - lalapps_mdc_ninja --help
-    - lalapps_NoiseComparison --help
     - lalapps_online_datafind --help
     - lalapps_path2cache --help
     - lalapps_plot_tisi --help
