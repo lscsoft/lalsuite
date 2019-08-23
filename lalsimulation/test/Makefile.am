@@ -2,6 +2,9 @@ EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
 AM_CPPFLAGS += -I$(top_srcdir)/src
 
+SUBDIRS = \
+	$(END_OF_LIST)
+
 # Add compiled test programs to this variable
 test_programs += EOBNRv2Test
 test_programs += GRFlagsTest
@@ -46,3 +49,7 @@ MOSTLYCLEANFILES = \
 EXTRA_DIST += \
 	reviewed_waveforms.asc
 	$(END_OF_LIST)
+
+if HAVE_PYTHON
+SUBDIRS += python
+endif
