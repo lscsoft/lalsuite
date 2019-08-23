@@ -36,6 +36,9 @@ build:
     # run_exports parsing for fftw is broken, so we ignore it
     # manually, for now
     - fftw
+    # we don't directly link against libblas, but we specify it so
+    # that we don't end up linking against libopenblas
+    - libblas
 
 requirements:
   build:
