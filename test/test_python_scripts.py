@@ -62,16 +62,17 @@ def find_scripts(path):
     return scripts
 
 
-ALL = find_scripts(PYTHONDIR)
+SCRIPTS = find_scripts(PYTHONDIR)
 try:
     EXCLUDE = read_excludes(HERE / "exclude-scripts.txt")
 except FileNotFoundError:  # no exclusion file
     EXCLUDE = set()
-SCRIPTS = sorted(ALL-EXCLUDE)
 
 
-@pytest.mark.parametrize('script', SCRIPTS)
+@pytest.mark.parametrize('script', sorted(SCRIPTS))
 def test_help(script):
+    if script in EXCLUDE:
+        pytest.skip("excluded {}".format(str(script)))
     os.chdir(str(PYTHONDIR))
     check_call("./{} --help".format(script), shell=True)
 
@@ -80,6 +81,7 @@ def test_help(script):
 if __name__ == "__main__":
     if "-v" not in " ".join(sys.argv[1:]):  # default to verbose
         sys.argv.append("-v")
+    sys.argv.append("-rs")
     # run pytest with patch to not resolve symlinks
     with mock.patch("py._path.local.LocalPath.realpath", _ignore_symlinks):
         sys.exit(pytest.main(args=[__file__] + sys.argv[1:]))
