@@ -1,6 +1,9 @@
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
+SUBDIRS = \
+	$(END_OF_LIST)
+
 # Add compiled test programs to this variable
 test_programs += LALFrSeriesTest
 
@@ -48,3 +51,7 @@ EXTRA_DIST += \
 	L1-CAL-V03-729273600-734367600.cache \
 	mkcatalog.sh \
 	$(END_OF_LIST)
+
+if HAVE_PYTHON
+SUBDIRS += python
+endif
