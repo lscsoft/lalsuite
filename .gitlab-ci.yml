@@ -204,12 +204,15 @@ level5:rpm:lalapps:
     - level3:rpm:lalinspiral
     - level4:rpm:lalinference
 
+#integration tests
+#
 lalinference_testjob:
-  export CI_JOB_NAME=level3:rpm:lalinference
-  <<: *levelN-rpm-package
-  stage: level5
+  stage: nightly
+  image: ligo/lalsuite-dev:el7
+  before_script:
+    - yum -y install rpmbuild/RPMS/x86_64/*.rpm
   script:
-    - cd /lalinference/test/testjob.sh
+    - bash lalinference/test/testjob.sh
   dependencies:
     - level0:rpm:lal
     - level1:rpm:lalframe
@@ -218,7 +221,10 @@ lalinference_testjob:
     - level2:rpm:lalburst
     - level2:rpm:lalinspiral
     - level2:rpm:lalpulsar
-
+    - level3:rpm:lalinference
+  only:
+    - schedules
+    - web
 #
 # docker container from RPMs
 #
