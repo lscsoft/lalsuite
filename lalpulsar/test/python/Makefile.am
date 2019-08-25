@@ -6,6 +6,8 @@ test_programs +=
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts = \
+	test_python_imports.py \
+	test_python_scripts.py \
 	simulateCWTest.py \
 	heterodyned_model_test.py \
 	$(END_OF_LIST)
