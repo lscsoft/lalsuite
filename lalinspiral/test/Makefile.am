@@ -1,6 +1,9 @@
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
+SUBDIRS = \
+	$(END_OF_LIST)
+
 # Add compiled test programs to this variable
 test_programs += BCVTemplates
 test_programs += BasicInjectTest
@@ -55,3 +58,7 @@ EXTRA_DIST += \
 	NRWaveIOTest.data \
 	injection.xml \
 	$(END_OF_LIST)
+
+if HAVE_PYTHON
+SUBDIRS += python
+endif
