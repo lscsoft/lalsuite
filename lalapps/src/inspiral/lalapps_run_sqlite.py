@@ -86,6 +86,8 @@ for n, filename in enumerate(databases, 1):
 		fileformat = "sqlite"
 		working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
 		connection = sqlite3.connect(working_filename)
+		# disable sync() system calls for the database
+		connection.execute("PRAGMA synchronous = OFF;")
 	# also use the scratch space for sqlite's temp store, but don't try
 	# to do so if the working filename is the same as the original
 	# filename as that most likely indicates some problem was found
