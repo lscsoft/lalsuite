@@ -1,6 +1,8 @@
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
+SUBDIRS =
+
 # Add compiled test programs to this variable
 test_programs += BinarySSBTimesTest
 test_programs += ComputeFstatTest
@@ -41,10 +43,6 @@ test_programs += XLALMultiNoiseWeightsTest
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts += pulsar_toa_test.sh
-if SWIG_BUILD_PYTHON
-test_scripts += simulateCWTest.py
-test_scripts += heterodyned_model_test.py
-endif
 
 # Add any helper programs required by tests to this variable
 test_helpers += TEMPOcomparison
@@ -118,3 +116,7 @@ EXTRA_DIST += \
 	TOAtest.simulate \
 	pks2gps.clk \
 	$(END_OF_LIST)
+
+if HAVE_PYTHON
+SUBDIRS += python
+endif
