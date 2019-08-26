@@ -1,6 +1,6 @@
 HERE=$( cd "$(dirname $(readlink -f "${BASH_SOURCE[0]}" ) )"/.. && pwd)
 sed \
-  -e 's|/home/albert.einstein/opt/lalsuite/|/|'\
+  -e 's|/home/albert.einstein/opt/lalsuite/||'\
   -e "/ligo-skymap-from-samples=/c\ligo-skymap-from-samples=/bin/true" \
   -e "/ligo-skymap-plot=/c\ligo-skymap-plot=/bin/true" \
   -e "/email=/c\email="test" " \
