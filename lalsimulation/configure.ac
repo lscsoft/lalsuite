@@ -25,6 +25,7 @@ AC_CONFIG_FILES([ \
   src/version.c \
   swig/Makefile \
   test/Makefile \
+  test/python/Makefile \
 ])
 AM_INIT_AUTOMAKE([ \
   1.11 \
