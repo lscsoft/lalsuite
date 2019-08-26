@@ -481,12 +481,12 @@ nightly:gcc:9:
     - conda info --all
     # build lalsuite environment
     - conda env create -f ${CONDA_ENV_FILE}
-    - conda activate lal-development
+    - conda activate lal-development-py${PYVERSION}
     # hack the build to get LDFLAGS set properly
     - export PREFIX="${CONDA_PREFIX}"
     - export CONDA_BUILD="1"
     - set +o pipefail  # one of the deactivate scripts pipefails
-    - conda activate lal-development
+    - conda activate lal-development-py${PYVERSION}
     - set -o pipefail
     - conda list
   script:
