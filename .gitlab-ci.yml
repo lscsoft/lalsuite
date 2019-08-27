@@ -18,7 +18,6 @@ stages:
   - level2
   - level3
   - level4
-  - level5
   - docker
   - nightly
   - wheels
@@ -223,6 +222,7 @@ lalinference_testjob:
     - level2:rpm:lalpulsar
     - level3:rpm:lalinference
   only:
+    - push
     - schedules
     - web
 #
