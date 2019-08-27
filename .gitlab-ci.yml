@@ -221,6 +221,7 @@ lalinference_testjob:
     - level2:rpm:lalinspiral
     - level2:rpm:lalpulsar
     - level3:rpm:lalinference
+    - level4:rpm:lalapps
   only:
     - push
     - schedules
