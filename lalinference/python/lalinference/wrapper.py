@@ -95,7 +95,7 @@ class _variterator(object):
           self.varitem = var.head
       def __next__(self):
           if not self.varitem:
-              raise StopIteration
+              return
           else:
               this = self.varitem
               self.varitem=self.varitem.next
