@@ -211,6 +211,7 @@ lalinference_testjob:
   before_script:
     - yum -y install rpmbuild/RPMS/x86_64/*.rpm
   script:
+    - git clone git@git.ligo.org:lscsoft/ROQ_data.git
     - bash lalinference/test/testjob.sh
   dependencies:
     - level0:rpm:lal
