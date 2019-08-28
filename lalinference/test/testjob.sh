@@ -6,7 +6,7 @@ sed \
   -e "/ligo-skymap-from-samples=/c\ligo-skymap-from-samples=/bin/true" \
   -e "/ligo-skymap-plot=/c\ligo-skymap-plot=/bin/true" \
   -e "/email=/c\email="test" " \
-  -e 's|albert.einstein/public_html/|'$USER'/public_html/LVC/|' \
+  -e 's|albert.einstein/public_html/|$(pwd)/public_html/LVC/|' \
   -e 's|#fake-cache|fake-cache|' \
   -e 's|# dataseed|dataseed|' \
   -e 's|#0noise=|0noise=|' \
@@ -26,5 +26,5 @@ adapt-tau=3|' \
   -e "/accounting_group=/c\accounting_group=ligo.dev.o3.cbc.pe.lalinference" \
 ${HERE}/src/lalinference_pipe_example.ini > example.ini
 lalinference_pipe --run-path ./example -I lalinference/test/injection_standard.xml --daglog-path ./daglog ./example.ini
-cd example/4s
-time ./lalinference_441417463-441417627.sh
+#cd example/4s
+#time ./lalinference_441417463-441417627.sh
