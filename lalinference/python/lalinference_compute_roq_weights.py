@@ -18,7 +18,7 @@ def _block_slices(dim_size, block_size):
         yield slice(count, count + block_size, 1)
         count += block_size
         if count > dim_size:
-            raise StopIteration
+            return
 
 def blockwise_dot(A, B, deltaF, max_elements=int(2**27), out=None):
     """
