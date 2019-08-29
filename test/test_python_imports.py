@@ -67,11 +67,14 @@ try:
     EXCLUDE = read_excludes(HERE / "exclude-modules.txt")
 except FileNotFoundError:  # no exclusion file
     EXCLUDE = set()
-MODULES = [path_to_name(x) for x in sorted(FILENAMES-EXCLUDE)]
+MODULES = [path_to_name(x) for x in sorted(FILENAMES)]
+EXCLUDE = set(map(path_to_name, EXCLUDE))
 
 
 @pytest.mark.parametrize("module", MODULES)
 def test_import(module):
+    if module in EXCLUDE:
+        pytest.skip("excluded {}".format(str(module)))
     import_module(module)
 
 
@@ -79,6 +82,7 @@ def test_import(module):
 if __name__ == "__main__":
     if "-v" not in " ".join(sys.argv[1:]):  # default to verbose
         sys.argv.append("-v")
+    sys.argv.append("-rs")
     # run pytest with patch to not resolve symlinks
     with mock.patch("py._path.local.LocalPath.realpath", _ignore_symlinks):
         sys.exit(pytest.main(args=[__file__] + sys.argv[1:]))

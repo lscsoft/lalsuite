@@ -180,7 +180,7 @@ def generate_variations(master_cp, variations):
     # If no variations, done
     if not variations:
         yield master_cp
-        raise StopIteration()
+        return
 
     # Otherwise, vary over the next option
     (section, opt), vals = variations.popitem()
@@ -291,7 +291,7 @@ def setup_roq(cp):
             cp.set('analysis','roq',True)
     if not cp.getboolean('analysis','roq'):
         yield cp
-        raise StopIteration()
+        return
     from numpy import genfromtxt, array
     path=cp.get('paths','roq_b_matrix_directory')
     if not os.path.isdir(path):
@@ -440,7 +440,7 @@ def setup_roq(cp):
             this_cp.set('engine','mass2-min',str(m2_min))
             this_cp.set('engine','mass2-max',str(m2_max))
         yield this_cp
-    raise StopIteration()
+    return
 
 # Create an outer dag to wrap the sub-dags
 outerdaglog=os.path.join(daglogdir,'lalinference_multi_'+str(uuid.uuid1())+'.log')
