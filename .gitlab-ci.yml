@@ -131,6 +131,9 @@ level0:rpm:lal:
 level1:rpm:lalframe:
   <<: *levelN-rpm-package
   stage: level1
+  script:
+   - pwd
+   - echo "${USER}"
   dependencies:
     - make-dist
     - level0:rpm:lal
