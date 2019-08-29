@@ -175,12 +175,8 @@ src/power/lalapps_power_online_pipe
 src/power/lalapps_power_pipe
 src/power/lalapps_power_plot_binj
 src/power/lalapps_power_plot_binjtf
-src/power/lalapps_power_plot_burca
-src/power/lalapps_power_plot_burca2
-src/power/lalapps_power_plot_burst
 src/power/lalapps_power_plot_burstrate
 src/power/lalapps_power_plot_detresponse
-src/power/lalapps_power_veto
 src/power/lalapps_simburst_to_frame
 src/power/lalapps_xml_plotlalseries
 src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
