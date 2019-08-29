@@ -671,7 +671,7 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR **efile, CHAR **sfile, CHAR *
                                               INT4 gpsstart, INT4 gpsend ){
   /* set the times that the ephemeris files span */
   INT4 ephemstart = 630720013; /* GPS time of Jan 1, 2000, 00:00:00 UTC */
-  INT4 ephemend = 1261872015; /* GPS time of Jan 1, 2020, 00:00:00 UTC */
+  INT4 ephemend = 1893024018; /* GPS time of Jan 1, 2040, 00:00:00 UTC */
   TimeCorrectionType ttype = TIMECORRECTION_NONE;
 
   if( gpsstart < ephemstart || gpsend < ephemstart || gpsstart > ephemend || gpsend > ephemend ){
@@ -688,7 +688,8 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR **efile, CHAR **sfile, CHAR *
   }
   else{
     if( !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE405") || !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE200") ||
-        !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE414") || !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE421") ){
+        !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE414") || !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE421") ||
+        !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE430") ){
       *efile = XLALStringAppend(*efile, PulsarGetStringParam(pulsar, "EPHEM"));
       *sfile = XLALStringAppend(*sfile, PulsarGetStringParam(pulsar, "EPHEM"));
     }
