@@ -115,7 +115,7 @@ int XLALGenerateSimBurst(
 			XLAL_ERROR(XLAL_EFUNC);
 	} else {
 		/* unrecognized waveform */
-		XLALPrintError("%s(): error: unrecognized waveform\n", __func__);
+		XLALPrintError("%s(): error: unrecognized waveform \"%s\"\n", __func__, sim_burst->waveform);
 		XLAL_ERROR(XLAL_EINVAL);
 	}
 
