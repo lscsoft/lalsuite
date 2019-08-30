@@ -6,7 +6,7 @@ sed \
   -e "/ligo-skymap-from-samples=/c\ligo-skymap-from-samples=/bin/true" \
   -e "/ligo-skymap-plot=/c\ligo-skymap-plot=/bin/true" \
   -e "/email=/c\email="test" " \
-  -e 's|albert.einstein/public_html/|/builds/shrobana.ghosh/public_html/LVC/|' \
+  -e 's|albert.einstein/public_html/|'$USER'/public_html/LVC/|' \
   -e 's|#fake-cache|fake-cache|' \
   -e 's|# dataseed|dataseed|' \
   -e 's|#0noise=|0noise=|' \
