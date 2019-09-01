@@ -1,4 +1,4 @@
-name: lal-development
+name: lal-development-py27
 channels:
   - conda-forge
 dependencies:
