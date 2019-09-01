@@ -126,6 +126,8 @@ make-dist:
 level0:rpm:lal:
   <<: *levelN-rpm-package
   stage: level0
+  dependencies:
+    - make-dist
 
 level1:rpm:lalframe:
   <<: *levelN-rpm-package
