@@ -1,5 +1,5 @@
 HERE=$( cd "$(dirname $(readlink -f "${BASH_SOURCE[0]}" ) )"/.. && pwd)
-#export USER=albert.einstein
+export USER=albert.einstein
 export OMP_NUM_THREADS=1
 sed \
   -e 's|/home/albert.einstein/opt/lalsuite/| |'\
