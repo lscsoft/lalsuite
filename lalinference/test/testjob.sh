@@ -1,5 +1,5 @@
 HERE=$( cd "$(dirname $(readlink -f "${BASH_SOURCE[0]}" ) )"/.. && pwd)
-export USER=albert.einstein
+#export USER=albert.einstein
 export OMP_NUM_THREADS=1
 sed \
   -e 's|/home/albert.einstein/opt/lalsuite/| |'\
@@ -12,7 +12,7 @@ sed \
   -e 's|#0noise=|0noise=|' \
   -e "/approx=SEOBNRv2_ROM_DoubleSpinpseudoFourPN,IMRPhenomPv2pseudoFourPN/c\approx=IMRPhenomPv2pseudoFourPN" \
   -e 's|roq=False|roq=True|' \
-  -e 's|/home/cbc/||'\
+  -e 's|/home/cbc|$(pwd)|' \
   -e "/nparallel=/c\nparallel=1" \
   -e 's|tolerance=0.1|tolerance=100|' \
   -e 's|nlive=512|nlive=256\
