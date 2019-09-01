@@ -26,5 +26,5 @@ adapt-tau=3|' \
   -e "/accounting_group=/c\accounting_group=ligo.dev.o3.cbc.pe.lalinference" \
 ${HERE}/src/lalinference_pipe_example.ini > example.ini
 lalinference_pipe --run-path ./example -I lalinference/test/injection_standard.xml --daglog-path ./daglog ./example.ini
-#cd example/4s
-#time ./lalinference_441417463-441417627.sh
+cd example/4s
+time ./lalinference_441417463-441417627.sh
