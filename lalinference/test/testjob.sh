@@ -12,7 +12,7 @@ sed \
   -e 's|#0noise=|0noise=|' \
   -e "/approx=SEOBNRv2_ROM_DoubleSpinpseudoFourPN,IMRPhenomPv2pseudoFourPN/c\approx=IMRPhenomPv2pseudoFourPN" \
   -e 's|roq=False|roq=True|' \
-  -e 's|/home/cbc|$(pwd)|' \
+  -e 's|/home/cbc|'$PWD'|' \
   -e "/nparallel=/c\nparallel=1" \
   -e 's|tolerance=0.1|tolerance=100|' \
   -e 's|nlive=512|nlive=256\
