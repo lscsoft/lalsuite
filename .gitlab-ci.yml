@@ -449,7 +449,7 @@ docker:tags:stretch:
   conda info --all
 
 .levelN:conda: &levelN-conda-package
-  image: continuumio/miniconda3
+  image: containers.ligo.org/docker/base:conda
   variables:
     GIT_CLEAN_FLAGS: none
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
