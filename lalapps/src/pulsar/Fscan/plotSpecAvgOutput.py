@@ -364,7 +364,7 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
         chanName = '_'.join(chanName)
         currentComparisonDirOutputText = newReferenceDir + '/' + chanName
         currentComparisonFile = chanName + '.txt'
-	fid6 = open(currentComparisonFile,'w')
+        fid6 = open(currentComparisonFile,'w')
         fid6.write(currentComparisonDirOutputText)
         fid6.close()
 

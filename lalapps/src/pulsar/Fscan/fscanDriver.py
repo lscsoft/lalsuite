@@ -814,9 +814,9 @@ while (thisEndFreq <= endFreq):
   #print >> sys.stdout,"endfreq: ",endFreq,"\n"
   #print >> sys.stdout,"thisStartfreq: ",thisStartFreq,"\n"
   #print >> sys.stdout,"thisEndfreq: ",thisEndFreq,"\n"
-  
+
   #check that the freq resolution does not exceed that of the raw sft freq resolution, if it does replace by max resolution. Also need to check that freqres is an integer multiple of the raw sft freqres, if not replace it with one that is.
-  
+
   NumBinsAvg = math.floor(freqRes*timeBaseline);
   freqRes=(1/float(timeBaseline))*NumBinsAvg#sets the freqRes so its an multiple of the raw sft freqres.
   if (freqRes < (1/float(timeBaseline))):#makes sure that this is not less than raw sft freqres, it mght be zero.
@@ -858,20 +858,20 @@ while (thisEndFreq <= endFreq):
     outputFileName = '%s/%s' % (plotOutputPath, inputFileName)   
 
     #work out the best frequency interval to place ticks at.
-    
+
     if (fRange >= 200):
-	deltaFTicks = 20
+        deltaFTicks = 20
     elif (fRange >= 100):
-	deltaFTicks = 10
+        deltaFTicks = 10
     elif (fRange >= 50):
-	deltaFTicks = 5
+        deltaFTicks = 5
     elif (fRange >= 5):
-	deltaFTicks = 1
+        deltaFTicks = 1
     else:
-	deltaFTicks = 0.1
-    
+        deltaFTicks = 0.1
+
     taveFlag = 1
-    
+
     #Test to see if we have pulsar input
     if (psrInput != None):
         pulsar = 1
@@ -879,7 +879,7 @@ while (thisEndFreq <= endFreq):
         pulsar = 0
 
     if (htmlReferenceDir != None):
-	referenceFileName = '%s/spec_%d.00_%d.00_%s' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
+        referenceFileName = '%s/spec_%d.00_%d.00_%s' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
     else:
         referenceFileName = 'none'
     #argList = '%s %s %s %d %d %d %d %d %d %s' % (inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName); # 06/29/09 gam; matlabPath has to be first argument.
@@ -889,7 +889,7 @@ while (thisEndFreq <= endFreq):
     tagStringOut = '%s_%i' % (tagString, nodeCount)  
     dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runPythonPlotScriptJobName,argList,tagStringOut))
     dagFID.write('PARENT %s CHILD %s\n'%(specAvgJobName,runPythonPlotScriptJobName))
-  
+
   #add stuff to the html file to show the plots produced in python. 
   #-----------------------------------------------------------------
   if (htmlFilename != None):
@@ -900,11 +900,11 @@ while (thisEndFreq <= endFreq):
     htmlFID.write('    <a href="%s_2.png"><img alt="" src="%s_2.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (inputFileName,inputFileName))
     htmlFID.write('  </td>\n')#ends the current data cell.
     if (htmlReferenceDir != None):
-        referenceFileName = '%s/spec_%d.00_%d.00_%s' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
-        htmlFID.write('  <td style="vertical-align: top;">\n')
-        htmlFID.write('    <a href="%s.png"><img alt="" src="%s.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (referenceFileName,referenceFileName))
-        htmlFID.write('    <a href="%s_2.png"><img alt="" src="%s_2.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (referenceFileName,referenceFileName))
-        htmlFID.write('  </td>\n')     
+      referenceFileName = '%s/spec_%d.00_%d.00_%s' % (htmlReferenceDir,thisStartFreq,thisEndFreq,htmlRefIFOEpoch)
+      htmlFID.write('  <td style="vertical-align: top;">\n')
+      htmlFID.write('    <a href="%s.png"><img alt="" src="%s.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (referenceFileName,referenceFileName))
+      htmlFID.write('    <a href="%s_2.png"><img alt="" src="%s_2.png" style="border: 0px solid ; width: 576px; height: 432px;"></a><br>\n' % (referenceFileName,referenceFileName))
+      htmlFID.write('  </td>\n')
     htmlFID.write('  </tr>\n')
     # Topten lines code
     #htmlFID.write('  <tr>\n')
@@ -922,34 +922,34 @@ while (thisEndFreq <= endFreq):
     htmlFID.write('    List of found combs : <a href="%s_combs.txt">%s_combs.txt</a><br>\n' % (inputFileName,inputFileName))
     #htmlFID.write('    Kurtosis test output: <a href="%s_kurtosis">%s_kurtosis</a><br>\n' % (inputFileName,inputFileName))
     if (htmlReferenceDir != None) and (thresholdSNR > 0):
-        #--------------------------
-	#coincident lines
-	htmlFID.write('    Coincident Lines: <a href="%s_coincident_lines.txt">%s_coincident_lines.txt</a><br>\n' % (inputFileName,inputFileName))
-        htmlLinesFID.write('<br>\n')
-        htmlLinesFID.write('<object data="%s_coincident_lines.txt" type="text/plain" style="width: 620px; height: 450px"></object>' % inputFileName)
-        htmlLinesFID.write('<br>\n')
-	#--------------------------
-	#new lines
-	htmlFID.write('    New Lines: <a href="%s_new_lines.txt">%s_new_lines.txt</a><br>\n' % (inputFileName,inputFileName))
-        htmlLinesFID.write('<br>\n')
-        htmlLinesFID.write('<object data="%s_new_lines.txt" type="text/plain" style="width: 620px; height: 450px"></object>' % inputFileName)
-        htmlLinesFID.write('<br>\n')
-	#---------------------------
-	#old lines
-	htmlFID.write('    Old Lines: <a href="%s_old_lines.txt">%s_old_lines.txt</a><br>\n' % (inputFileName,inputFileName))
-        htmlLinesFID.write('<br>\n')
-        htmlLinesFID.write('<object data="%s_old_lines.txt" type="text/plain" style="width: 620px; height: 450px"></object>' % inputFileName)
-        htmlLinesFID.write('<br>\n')
-	#---------------------------
+      #--------------------------
+      #coincident lines
+      htmlFID.write('    Coincident Lines: <a href="%s_coincident_lines.txt">%s_coincident_lines.txt</a><br>\n' % (inputFileName,inputFileName))
+      htmlLinesFID.write('<br>\n')
+      htmlLinesFID.write('<object data="%s_coincident_lines.txt" type="text/plain" style="width: 620px; height: 450px"></object>' % inputFileName)
+      htmlLinesFID.write('<br>\n')
+      #--------------------------
+      #new lines
+      htmlFID.write('    New Lines: <a href="%s_new_lines.txt">%s_new_lines.txt</a><br>\n' % (inputFileName,inputFileName))
+      htmlLinesFID.write('<br>\n')
+      htmlLinesFID.write('<object data="%s_new_lines.txt" type="text/plain" style="width: 620px; height: 450px"></object>' % inputFileName)
+      htmlLinesFID.write('<br>\n')
+      #---------------------------
+      #old lines
+      htmlFID.write('    Old Lines: <a href="%s_old_lines.txt">%s_old_lines.txt</a><br>\n' % (inputFileName,inputFileName))
+      htmlLinesFID.write('<br>\n')
+      htmlLinesFID.write('<object data="%s_old_lines.txt" type="text/plain" style="width: 620px; height: 450px"></object>' % inputFileName)
+      htmlLinesFID.write('<br>\n')
+      #---------------------------
     htmlFID.write('  </td>\n')
     if (htmlReferenceDir != None):
-        htmlFID.write('  <td style="vertical-align: top;">\n')
-        htmlFID.write('    SFT Timestamps: <a href="%s_timestamps">%s_timestamps</a><br>\n' % (referenceFileName,referenceFileName))
-	htmlFID.write('    Spectrogram data: <a href="%s">%s</a><br>\n' % (referenceFileName,referenceFileName))
-        htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (referenceFileName,referenceFileName))
-        htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (referenceFileName,referenceFileName))
-        htmlFID.write('    List of found combs : <a href="%s_combs.txt">%s_combs.txt</a><br>\n' % (referenceFileName,referenceFileName))
-        htmlFID.write('  </td>\n')
+      htmlFID.write('  <td style="vertical-align: top;">\n')
+      htmlFID.write('    SFT Timestamps: <a href="%s_timestamps">%s_timestamps</a><br>\n' % (referenceFileName,referenceFileName))
+      htmlFID.write('    Spectrogram data: <a href="%s">%s</a><br>\n' % (referenceFileName,referenceFileName))
+      htmlFID.write('    Freq. vs Power: <a href="%s.txt">%s.txt</a><br>\n' % (referenceFileName,referenceFileName))
+      htmlFID.write('    Freq. vs Power (Sorted): <a href="%s_sorted.txt">%s_sorted.txt</a><br>\n' % (referenceFileName,referenceFileName))
+      htmlFID.write('    List of found combs : <a href="%s_combs.txt">%s_combs.txt</a><br>\n' % (referenceFileName,referenceFileName))
+      htmlFID.write('  </td>\n')
     htmlFID.write('  </tr>\n')
   thisStartFreq = thisStartFreq + freqSubBand
   thisEndFreq = thisStartFreq + freqSubBand
@@ -1088,7 +1088,7 @@ else:
 
 ###################################################
 # CLEAN UP
-#        
-# rmOut = os.system('/bin/rm -f %s 1>/dev/null 2>/dev/null' % segmentFile    
+#
+# rmOut = os.system('/bin/rm -f %s 1>/dev/null 2>/dev/null' % segmentFile
 
 sys.exit(0)
