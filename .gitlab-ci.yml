@@ -531,7 +531,7 @@ conda:python37:
 # available
 # FIXME: allow failure due to #124
 nightly:debian:buster:
-  image: skymoo/ligo-lalsuite-dev:buster
+  image: containers.ligo.org/docker/lalsuite-dev:buster
   stage: nightly
   dependencies: []
   script:
