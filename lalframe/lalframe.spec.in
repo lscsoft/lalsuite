@@ -39,11 +39,11 @@ BuildRequires: python-devel
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 
 # python3x
-BuildRequires: python-srpm-macros
-BuildRequires: python3-rpm-macros
-BuildRequires: python%{python3_pkgversion}-devel
-BuildRequires: python%{python3_pkgversion}-numpy
-BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+#BuildRequires: python-srpm-macros
+#BuildRequires: python3-rpm-macros
+#BuildRequires: python%{python3_pkgversion}-devel
+#BuildRequires: python%{python3_pkgversion}-numpy
+#BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 
 # octave
 BuildRequires: octave-devel
@@ -90,17 +90,17 @@ The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings for LALFrame.
 
 # python3x-lalframe
-%package -n python%{python3_pkgversion}-%{name}
-Summary: Python %{python3_version} Bindings for LALFrame
-Group: LAL
-Requires: %{name} = %{version}
-Requires: python%{python3_pkgversion}
-Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-Requires: python%{python3_pkgversion}-numpy
-%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
-%description -n python%{python3_pkgversion}-%{name}
-The LSC Algorithm Library for gravitational wave data analysis.
-This package provides the Python %{python3_version} bindings for LALFrame.
+#%package -n python%{python3_pkgversion}-%{name}
+#Summary: Python %{python3_version} Bindings for LALFrame
+#Group: LAL
+#Requires: %{name} = %{version}
+#Requires: python%{python3_pkgversion}
+#Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+#Requires: python%{python3_pkgversion}-numpy
+#%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
+#%description -n python%{python3_pkgversion}-%{name}
+#The LSC Algorithm Library for gravitational wave data analysis.
+#This package provides the Python %{python3_version} bindings for LALFrame.
 
 # lalframe-octave
 %package octave
@@ -124,26 +124,26 @@ This package provides the Octave bindings for LALFrame.
 %{__make} %{?_smp_mflags} V=1
 
 # build python3 library (copy things so we don't have to rebuild them)
-rm -rf %py3dir
-cp -r . %py3dir
-pushd %py3dir
-%configure %{configure_opts} --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
-%{__make} %{?_smp_mflags} V=1 -C swig
-%{__make} %{?_smp_mflags} V=1 -C python
-popd
+#rm -rf %py3dir
+#cp -r . %py3dir
+#pushd %py3dir
+#%%configure %{configure_opts} --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
+#%{__make} %{?_smp_mflags} V=1 -C swig
+#%{__make} %{?_smp_mflags} V=1 -C python
+#popd
 
 %check
 # C + python2 + octave
 %{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
 # python3
-[ -d %py3dir/test/python ] && %{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %py3dir -C test/python check
+#[ -d %py3dir/test/python ] && %{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %py3dir -C test/python check
 
 %install
 # C + python2 + octave
 %make_install
 # python3
-%{__make} -C %py3dir -C swig install-exec-am DESTDIR=%{?buildroot}
-%{__make} -C %py3dir -C python install DESTDIR=%{?buildroot}
+#%{__make} -C %py3dir -C swig install-exec-am DESTDIR=%{?buildroot}
+#%{__make} -C %py3dir -C python install DESTDIR=%{?buildroot}
 find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
@@ -180,10 +180,10 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %license COPYING
 %{python2_sitearch}/*
 
-%files -n python%{python3_pkgversion}-%{name}
-%defattr(-,root,root)
-%license COPYING
-%{python3_sitearch}/*
+#%files -n python%{python3_pkgversion}-%{name}
+#%defattr(-,root,root)
+#%license COPYING
+#%{python3_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
