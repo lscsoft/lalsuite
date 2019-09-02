@@ -414,6 +414,7 @@ nightly:clang:7:
   variables:
     CLANG: clang-7
     CLANGXX: clang++-7
+  allow_failure: true
 
 nightly:clang:8:
   <<: *clang-build
@@ -421,6 +422,7 @@ nightly:clang:8:
   variables:
     CLANG: clang-8
     CLANGXX: clang++-8
+  allow_failure: true
 
 nightly:clang:9:
   <<: *clang-build
@@ -428,6 +430,7 @@ nightly:clang:9:
   variables:
     CLANG: clang-9
     CLANGXX: clang++-9
+  allow_failure: true
 
 .gcc-build: &gcc-build
   stage: nightly
