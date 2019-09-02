@@ -543,21 +543,6 @@ nightly:debian:buster:
     - web
   allow_failure: true
 
-# el7
-
-nightly:rhel:el7-cr:
-  image: ligo/lalsuite-dev:el7-cr
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
-  only:
-    - schedules
-    - web
-  allow_failure: true
-
 # macOS
 
 nightly:macos:highsierra:
