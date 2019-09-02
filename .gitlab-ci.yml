@@ -445,17 +445,17 @@ nightly:clang:9:
 
 nightly:gcc:7:
   <<: *gcc-build
-  image: skymoo/ligo-lalsuite-gcc:7
+  image: containers.ligo.org/docker/lalsuite-dev-gcc:7
   allow_failure: true
 
 nightly:gcc:8:
   <<: *gcc-build
-  image: skymoo/ligo-lalsuite-gcc:8
+  image: containers.ligo.org/docker/lalsuite-dev-gcc:8
   allow_failure: true
 
 nightly:gcc:9:
   <<: *gcc-build
-  image: skymoo/ligo-lalsuite-gcc:9
+  image: containers.ligo.org/docker/lalsuite-dev-gcc:9
   allow_failure: true
 
 # conda
