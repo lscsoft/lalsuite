@@ -447,6 +447,7 @@ docker:tags:stretch:
   conda update -n base conda
   conda install -n base conda-build conda-verify conda-forge-pinning
   conda info --all
+  mkdir -p $(dirname ${CONDA_PKGS_DIRS})
 
 .levelN:conda: &levelN-conda-package
   image: containers.ligo.org/docker/base:conda
