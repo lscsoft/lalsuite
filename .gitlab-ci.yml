@@ -441,13 +441,13 @@ docker:tags:stretch:
 
 .conda-init: &conda-init |
   # configure conda
+  mkdir -p $(dirname ${CONDA_PKGS_DIRS})
   source /opt/conda/etc/profile.d/conda.sh
   conda config --set always_yes yes
   conda config --add channels conda-forge
   conda update -n base conda
   conda install -n base conda-build conda-verify conda-forge-pinning
   conda info --all
-  mkdir -p $(dirname ${CONDA_PKGS_DIRS})
 
 .levelN:conda: &levelN-conda-package
   image: containers.ligo.org/docker/base:conda
