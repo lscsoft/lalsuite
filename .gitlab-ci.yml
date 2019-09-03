@@ -458,6 +458,7 @@ docker:tags:stretch:
     fft_impl: "fftw"
   before_script:
     - *conda-init
+    - conda install -n base openssl
   script:
     - 'PACKAGE=$(echo ${CI_JOB_NAME} | cut -d\: -f3)'
     - cd ${PACKAGE}/
