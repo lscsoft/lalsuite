@@ -176,7 +176,6 @@ test:
     - lalapps_run_sqlite --help
     - lalapps_searchsum2cache --help
     - lalapps_SFTwrite --help
-    - lalapps_siva --help
     - lalapps_splitSFTs --help
     - lalapps_ssbtodetector --help
     - lalapps_string_apply_vetoes --help
