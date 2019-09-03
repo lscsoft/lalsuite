@@ -37,7 +37,7 @@ __all__ = ['rayleigh']
 
 
 def rayleigh(series, segment_length, segment_overlap, window=None, plan=None,
-             unit=lal.lalDimensionlessUnit):
+             unit=lal.DimensionlessUnit):
     """Compute the Rayleigh spectrum of the data time-series
 
     @param series
@@ -83,7 +83,7 @@ def rayleigh(series, segment_length, segment_overlap, window=None, plan=None,
     f0 = (1/series.deltaT) * (1/seglen)
     deltaF = (1/seglen)
     create = func_factory('create', '%sfrequencyseries' % stype)
-    spectrum = create(series.name, series.epoch, f0, deltaF, lal.lalStrainUnit,
+    spectrum = create(series.name, series.epoch, f0, deltaF, lal.StrainUnit,
                       seglen//2+1)
 
     # compute Rayleigh spectrum average

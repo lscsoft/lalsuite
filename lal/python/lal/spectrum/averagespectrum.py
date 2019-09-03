@@ -37,7 +37,7 @@ from .. import utils
 #@{
 
 def median_mean(series, segment_length, segment_overlap, window=None,
-                plan=None, unit=lal.lalStrainUnit):
+                plan=None, unit=lal.StrainUnit):
     """Computes the spectrum of the timeseries using the
     median-mean average method.
 
@@ -63,7 +63,7 @@ def median_mean(series, segment_length, segment_overlap, window=None,
 
 
 def welch(series, segment_length, segment_overlap, window=None,
-          plan=None, unit=lal.lalStrainUnit):
+          plan=None, unit=lal.StrainUnit):
     """Computes the spectrum of the timeseries using the Welch
     average method.
 
@@ -89,7 +89,7 @@ def welch(series, segment_length, segment_overlap, window=None,
 
 
 def median(series, segment_length, segment_overlap, window=None,
-                plan=None, unit=lal.lalStrainUnit):
+                plan=None, unit=lal.StrainUnit):
     """Computes the spectrum of the timeseries using the median
     average method.
 
@@ -115,7 +115,7 @@ def median(series, segment_length, segment_overlap, window=None,
 
 
 def bartlett(series, segment_length, window=None,
-             plan=None, unit=lal.lalStrainUnit):
+             plan=None, unit=lal.StrainUnit):
     """Computes the spectrum of the timeseries using the Bartlett
     average method.
 
@@ -140,7 +140,7 @@ def bartlett(series, segment_length, window=None,
 ##@}
 
 def _psd(method, series, segment_length, segment_overlap, window=None,
-         plan=None, unit=lal.lalStrainUnit):
+         plan=None, unit=lal.StrainUnit):
     """Computes the spectrum of the timeseries using the
     median average method.
     """
@@ -179,7 +179,7 @@ def _psd(method, series, segment_length, segment_overlap, window=None,
     f0 = (1/series.deltaT) * (1/segment_length)
     deltaF = (1/segment_length)
     create = utils.func_factory('create', '%sfrequencyseries' % stype)
-    spectrum = create(series.name, series.epoch, f0, deltaF, lal.lalStrainUnit,
+    spectrum = create(series.name, series.epoch, f0, deltaF, lal.StrainUnit,
                       segment_length//2+1)
 
     # calculate medianmean spectrum
