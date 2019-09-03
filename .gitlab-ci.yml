@@ -445,17 +445,17 @@ nightly:clang:9:
 
 nightly:gcc:7:
   <<: *gcc-build
-  image: skymoo/ligo-lalsuite-gcc:7
+  image: containers.ligo.org/docker/lalsuite-dev-gcc:7
   allow_failure: true
 
 nightly:gcc:8:
   <<: *gcc-build
-  image: skymoo/ligo-lalsuite-gcc:8
+  image: containers.ligo.org/docker/lalsuite-dev-gcc:8
   allow_failure: true
 
 nightly:gcc:9:
   <<: *gcc-build
-  image: skymoo/ligo-lalsuite-gcc:9
+  image: containers.ligo.org/docker/lalsuite-dev-gcc:9
   allow_failure: true
 
 # conda
@@ -531,28 +531,13 @@ conda:python37:
 # available
 # FIXME: allow failure due to #124
 nightly:debian:buster:
-  image: skymoo/ligo-lalsuite-dev:buster
+  image: containers.ligo.org/docker/lalsuite-dev:buster
   stage: nightly
   dependencies: []
   script:
     - ./00boot
     - ./configure --enable-doxygen
     - make -j4 distcheck
-  only:
-    - schedules
-    - web
-  allow_failure: true
-
-# el7
-
-nightly:rhel:el7-cr:
-  image: ligo/lalsuite-dev:el7-cr
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
-  dependencies: []
   only:
     - schedules
     - web
