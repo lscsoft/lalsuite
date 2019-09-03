@@ -459,7 +459,7 @@ docker:tags:stretch:
   before_script:
     - *conda-init
   script:
-    - 'PACKAGE=$(cut -d: -f3 <<<${CI_JOB_NAME})'
+    - 'PACKAGE=$(echo ${CI_JOB_NAME} | cut -d\: -f3)'
     - cd ${PACKAGE}/
     # render clobber YAML file to use our tarball
     - TARBALL=$(readlink -f ${PACKAGE}-*.tar.*)
