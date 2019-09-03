@@ -538,6 +538,8 @@ def plot_label(param):
         'polar_eccentricity':r'$\epsilon_{polar}$',
         'polar_angle':r'$\alpha_{polar}$',
         'alpha':r'$\alpha_{polar}$',
+        'dchiMinus2':r'$d\chi_{-2}$',
+        'dchiMinus1':r'$d\chi_{-1}$',
         'dchi0':r'$d\chi_0$',
         'dchi1':r'$d\chi_1$',
         'dchi2':r'$d\chi_2$',
