@@ -17,7 +17,6 @@ export GSL_LIBS="-L${PREFIX}/lib -lgsl"
 	--enable-swig-python \
 	--enable-python \
 	--disable-doxygen \
-	--disable-gcc-flags \
 	--enable-silent-rules || { cat config.log; exit 1; }
 
 # build
