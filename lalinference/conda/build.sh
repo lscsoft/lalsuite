@@ -12,7 +12,6 @@ set -e
 	--disable-swig-octave \
 	--disable-swig-python \
 	--disable-python \
-	--disable-gcc-flags \
 	--enable-silent-rules \
 	--enable-help2man \
 	--enable-openmp
