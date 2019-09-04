@@ -12,7 +12,6 @@ export CFITSIO_LIBS="-L${PREFIX}/lib -lcfitsio"
 	--disable-swig-octave \
 	--disable-swig-python \
 	--disable-python \
-	--disable-gcc-flags \
 	--enable-silent-rules \
 	--enable-cfitsio
 make -j ${CPU_COUNT}
