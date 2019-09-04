@@ -401,7 +401,7 @@ LALPulsarSimulateCoherentGW( LALStatus        *stat,
     } else {
       output->sampleUnits = CWsignal->a->sampleUnits;
     }
-    if (snprintf( output->name, LALNameLength, "response to %s", CWsignal->a->name ) >= LALNameLength ) {
+    if (snprintf( output->name, LALNameLength, "response to %*s", LALNameLength - 12, CWsignal->a->name ) >= LALNameLength ) {
       LALWarning( stat, "output name truncated" );
     }
   }
