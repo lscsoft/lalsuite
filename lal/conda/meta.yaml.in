@@ -1,0 +1,134 @@
+# This is a copy of the upstream conda recipe for this package
+# hosted at github.com/conda-forge/lal-feedstock and licensed
+# under the terms of the BSD 3-Clause license.
+# This is only for CI purposes, and should not be considered
+# production-ready at any time.
+
+{% set name = "lal" %}
+{% set version = "@VERSION@" %}
+{% set url = "file://@TARBALL@" %}
+{% set sha256 = "@SHA256@" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: {{ url }}
+  sha256: {{ sha256 }}
+
+build:
+  number: 9999
+  skip: true  # [win]
+  string: "{{ fft_impl }}_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
+  ignore_run_exports:
+    - blas
+    # run_exports parsing for fftw is broken, so we ignore it
+    # manually, for now
+    - fftw
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - pkg-config >=0.18.0
+    - make
+    - bc
+    - swig >=3.0.7
+  host:
+    - fftw * nompi*  # [fft_impl == "fftw"]
+    - gsl
+    - hdf5 1.10.4
+    - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
+    - zlib
+  run:
+    - fftw  # [fft_impl == "fftw"]
+    - gsl
+    - hdf5
+    - zlib
+
+test:
+  commands:
+    - lal_version --verbose
+    - lal_simd_detect
+
+outputs:
+  - name: lal
+    build:
+      run_exports:
+        - {{ pin_subpackage("lal", max_pin="x.x") }}
+
+  - name: python-lal
+    script: install-python.sh
+    build:
+      activate_in_script: True
+      string: "{{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
+      ignore_run_exports:
+        - blas
+        - mkl
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - make
+        - pkg-config >=0.18.0
+        - swig >=3.0.7
+      host:
+        - gsl
+        - {{ pin_subpackage('lal', exact=True) }}
+        - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
+        - numpy
+        - python
+      run:
+        # NOTE: on linux, python-lal links the LAL dependencies
+        #       as well so we have to list them here. why this
+        #       doesn't happen on osx, I'm not sure.
+        - fftw  # [linux and fft_impl == "fftw"]
+        - gsl
+        - hdf5  # [linux]
+        - {{ pin_subpackage('lal', exact=True) }}
+        - ligo-segments
+        - lscsoft-glue
+        - {{ pin_compatible('numpy') }}
+        - python
+        - python-dateutil
+        - scipy
+        - six
+        - zlib  # [linux]
+    test:
+      imports:
+        - lal
+        - lal.antenna
+        - lal.gpstime
+        - lal.rate
+        - lal.series
+        - lal.utils
+    about:
+      home: https://wiki.ligo.org/DASWG/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPLv3
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Library
+      description: |
+        The LSC Algorithm Library for gravitational wave data analysis.
+        This package contains the Python bindings.
+
+about:
+  home: https://wiki.ligo.org/DASWG/LALSuite
+  doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
+  dev_url: https://git.ligo.org/lscsoft/lalsuite/
+  license: GPLv3
+  license_family: GPL
+  license_file: COPYING
+  summary: LSC Algorithm Library
+  description: |
+    The LSC Algorithm Library for gravitational wave data analysis.
+    This package contains the shared-object libraries needed to run
+    applications that use the LAL library.  If you want to install
+    the Python bindings, please install the associated python-lal
+    package.
+
+extra:
+  recipe-maintainers:
+    - duncanmmacleod
+    - skymoo

@@ -1,0 +1,118 @@
+# This is a copy of the upstream conda recipe for this package
+# hosted at github.com/conda-forge/lal-feedstock and licensed
+# under the terms of the BSD 3-Clause license.
+# This is only for CI purposes, and should not be considered
+# production-ready at any time.
+
+{% set name = "lalsimulation" %}
+{% set version = "@VERSION@" %}
+{% set url = "file://@TARBALL@" %}
+{% set sha256 = "@SHA256@" %}
+
+# dependencies
+{% set lal_version = "6.20.0" %}
+{% set swig_version = "3.0.7" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: {{ url }}
+  sha256: {{ sha256 }}
+
+build:
+  number: 9999
+  skip: true  # [win]
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - make
+    - pkg-config >=0.18.0
+    - swig >={{ swig_version }}
+  host:
+    - gsl
+    - lal >={{ lal_version }}
+  run:
+    - gsl
+    - lal >={{ lal_version }}
+
+test:
+  commands:
+    - lalsimulation_version --verbose
+    - lalsim-bh-qnmode --help
+    - lalsim-bh-ringdown --help
+    - lalsim-bh-sphwf --help
+    - lalsim-burst --help
+    - lalsim-detector-noise --help
+    - lalsim-detector-strain --help
+    - lalsim-inject --help
+    - lalsim-inspiral --help
+    - lalsim-ns-eos-table --help
+    - lalsim-ns-mass-radius --help
+    - lalsim-ns-params --help
+    - lalsim-sgwb --help
+    - lalsim-unicorn --help
+
+outputs:
+  - name: lalsimulation
+    build:
+      run_exports:
+        - {{ pin_subpackage("lalsimulation", max_pin="x.x") }}
+
+  - name: python-lalsimulation
+    script: install-python.sh
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - make
+        - pkg-config >=0.18.0
+        - swig >={{ swig_version }}
+      host:
+        - {{ pin_subpackage('lalsimulation', exact=True) }}
+        - numpy 1.9
+        - python
+      run:
+        - gsl
+        - lal >={{ lal_version }}
+        - {{ pin_subpackage('lalsimulation', exact=True) }}
+        - {{ pin_compatible('numpy') }}
+        - python
+        - python-lal >={{ lal_version }}
+    test:
+      imports:
+        - lalsimulation
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPLv3
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Simulation Library
+      description: |
+        The LSC Algorithm Simulation Library for gravitational wave data
+        analysis.
+        This package contains the python bindings.
+
+about:
+  home: https://wiki.ligo.org/Computing/LALSuite
+  doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalsimulation/
+  dev_url: https://git.ligo.org/lscsoft/lalsuite/
+  license: GPLv3
+  license_family: GPL
+  license_file: COPYING
+  summary: LSC Algorithm Simulation Library
+  description: |
+    The LSC Algorithm Simulation Library for gravitational wave data
+    analysis.
+    This package contains the shared-object libraries needed to run
+    applications that use the LAL Simulation library. If you want to
+    install the Python bindings, please install the associated
+    python-lalsimulation package.
+
+extra:
+  recipe-maintainers:
+    - duncanmmacleod
+    - skymoo

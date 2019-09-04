@@ -8,14 +8,17 @@ variables:
   NIGHTLY: $CI_REGISTRY_IMAGE:nightly
   TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
   LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
-  CONDA_DIR: $CI_PROJECT_DIR/opt/conda
+  CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
+  CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
 
 stages:
+  - dist
   - level0
   - level1
   - level2
   - level3
   - level4
+  - level5
   - docker
   - nightly
   - wheels
@@ -59,22 +62,45 @@ documentation:
     - web
 
 #
+# make dist
+#
+
+# this job makes all of the source tarballs up-front using a top-level
+# make dist call
+#
+# to use one (any) of the tarballs in another job, just add "make-dist"
+# in `dependencies:`
+
+make-dist:
+  image: ligo/lalsuite-dev:el7
+  stage: dist
+  script:
+    - ./00boot
+    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
+    - for subdir in lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalpulsar lalinference lalapps; do
+        pushd ${subdir};
+        make dist;
+        popd;
+      done
+  artifacts:
+    expire_in: 18h
+    paths:
+      - "*/*.tar.*"
+
+#
 # build rpms
 #
 
 .levelN:rpm: &levelN-rpm-package
   image: containers.ligo.org/docker/lalsuite-dev:el7
   variables:
+    GIT_STRATEGY: none
     RPM_BUILD_CPUS: 4
   script:
     # install upstream packages
     - if [ -d rpmbuild ]; then yum -y install rpmbuild/RPMS/x86_64/*.rpm; fi
-    # make src tarball
-    - cd ${CI_JOB_NAME#level?:rpm:}
-    - ./00boot
-    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
-    - make dist
     # build src.rpm
+    - cd ${CI_JOB_NAME#level?:rpm:}/
     - rpmbuild -ts --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${CI_JOB_NAME#level?:rpm:}-*.tar.xz
     - SRCRPM=${CI_PROJECT_DIR}/rpmbuild/SRPMS/${CI_JOB_NAME#level?:rpm:}-*.src.rpm
     # lint src.rpm
@@ -100,39 +126,36 @@ documentation:
 level0:rpm:lal:
   <<: *levelN-rpm-package
   stage: level0
+  dependencies:
+    - make-dist
 
 level1:rpm:lalframe:
   <<: *levelN-rpm-package
   stage: level1
   dependencies:
+    - make-dist
     - level0:rpm:lal
 
 level1:rpm:lalmetaio:
   <<: *levelN-rpm-package
   stage: level1
   dependencies:
+    - make-dist
     - level0:rpm:lal
 
 level1:rpm:lalsimulation:
   <<: *levelN-rpm-package
   stage: level1
   dependencies:
+    - make-dist
     - level0:rpm:lal
 
 level2:rpm:lalburst:
   <<: *levelN-rpm-package
   stage: level2
   dependencies:
+    - make-dist
     - level0:rpm:lal
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-
-level2:rpm:lalinspiral:
-  <<: *levelN-rpm-package
-  stage: level2
-  dependencies:
-    - level0:rpm:lal
-    - level1:rpm:lalframe
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
 
@@ -140,32 +163,46 @@ level2:rpm:lalpulsar:
   <<: *levelN-rpm-package
   stage: level2
   dependencies:
+    - make-dist
     - level0:rpm:lal
 
-level3:rpm:lalinference:
+level3:rpm:lalinspiral:
   <<: *levelN-rpm-package
   stage: level3
   dependencies:
+    - make-dist
     - level0:rpm:lal
     - level1:rpm:lalframe
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
     - level2:rpm:lalburst
-    - level2:rpm:lalinspiral
-    - level2:rpm:lalpulsar
 
-level4:rpm:lalapps:
+level4:rpm:lalinference:
   <<: *levelN-rpm-package
   stage: level4
   dependencies:
+    - make-dist
     - level0:rpm:lal
     - level1:rpm:lalframe
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
     - level2:rpm:lalburst
-    - level2:rpm:lalinspiral
     - level2:rpm:lalpulsar
-    - level3:rpm:lalinference
+    - level3:rpm:lalinspiral
+
+level5:rpm:lalapps:
+  <<: *levelN-rpm-package
+  stage: level5
+  dependencies:
+    - make-dist
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level2:rpm:lalburst
+    - level2:rpm:lalpulsar
+    - level3:rpm:lalinspiral
+    - level4:rpm:lalinference
 
 #
 # docker container from RPMs
@@ -189,10 +226,10 @@ docker:nightly:el7:
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
     - level2:rpm:lalburst
-    - level2:rpm:lalinspiral
     - level2:rpm:lalpulsar
-    - level3:rpm:lalinference
-    - level4:rpm:lalapps
+    - level3:rpm:lalinspiral
+    - level4:rpm:lalinference
+    - level5:rpm:lalapps
   only:
     - schedules
 
@@ -214,10 +251,10 @@ docker:tags:el7:
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
     - level2:rpm:lalburst
-    - level2:rpm:lalinspiral
     - level2:rpm:lalpulsar
-    - level3:rpm:lalinference
-    - level4:rpm:lalapps
+    - level3:rpm:lalinspiral
+    - level4:rpm:lalinference
+    - level5:rpm:lalapps
   only:
     - /^lalsuite-v.*$/
 
@@ -227,26 +264,24 @@ docker:tags:el7:
 
 .levelN:deb: &levelN-deb-package
   image: containers.ligo.org/docker/lalsuite-dev:stretch
+  variables:
+    GIT_STRATEGY: none
   script:
     # install debs from artifacts
     - dpkg -i *.deb || true
-    # make dist tarball
-    - cd ${CI_JOB_NAME#level?:deb:}
-    - ./00boot
-    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
-    - make dist
     # create orig tarball
+    - cd ${CI_JOB_NAME#level?:deb:}/
     - PACKAGE=$(echo ${CI_JOB_NAME} | sed 's/.*://')
     - TARBALL="${PACKAGE}-*.tar.*"
     - SUFFIX=$(echo $TARBALL | sed 's/.*\.\(tar\..*\)/\1/')
     - VERSION=$(echo $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '~')
-    - cd ${CI_PROJECT_DIR}
+    - cd ${CI_PROJECT_DIR}/
     - cp ${CI_JOB_NAME#level?:deb:}/${TARBALL} ${PACKAGE}_${VERSION}.orig.${SUFFIX}
     # update changelog
     - export DEBFULLNAME="GitLab"
     - export DEBEMAIL="gitlab@git.ligo.org"
     - tar xf ${CI_JOB_NAME#level?:deb:}/${TARBALL}
-    - cd ${PACKAGE}-*
+    - cd ${PACKAGE}-*/
     - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
     # install build dependencies
     - apt-get -y -q install devscripts
@@ -275,34 +310,29 @@ level1:deb:lalframe:
   <<: *levelN-deb-package
   stage: level1
   dependencies:
+    - make-dist
     - level0:deb:lal
 
 level1:deb:lalmetaio:
   <<: *levelN-deb-package
   stage: level1
   dependencies:
+    - make-dist
     - level0:deb:lal
 
 level1:deb:lalsimulation:
   <<: *levelN-deb-package
   stage: level1
   dependencies:
+    - make-dist
     - level0:deb:lal
 
 level2:deb:lalburst:
   <<: *levelN-deb-package
   stage: level2
   dependencies:
+    - make-dist
     - level0:deb:lal
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-
-level2:deb:lalinspiral:
-  <<: *levelN-deb-package
-  stage: level2
-  dependencies:
-    - level0:deb:lal
-    - level1:deb:lalframe
     - level1:deb:lalmetaio
     - level1:deb:lalsimulation
 
@@ -310,32 +340,46 @@ level2:deb:lalpulsar:
   <<: *levelN-deb-package
   stage: level2
   dependencies:
+    - make-dist
     - level0:deb:lal
 
-level3:deb:lalinference:
+level3:deb:lalinspiral:
   <<: *levelN-deb-package
   stage: level3
   dependencies:
+    - make-dist
     - level0:deb:lal
     - level1:deb:lalframe
     - level1:deb:lalmetaio
     - level1:deb:lalsimulation
     - level2:deb:lalburst
-    - level2:deb:lalinspiral
-    - level2:deb:lalpulsar
 
-level4:deb:lalapps:
+level4:deb:lalinference:
   <<: *levelN-deb-package
   stage: level4
   dependencies:
+    - make-dist
     - level0:deb:lal
     - level1:deb:lalframe
     - level1:deb:lalmetaio
     - level1:deb:lalsimulation
     - level2:deb:lalburst
-    - level2:deb:lalinspiral
     - level2:deb:lalpulsar
-    - level3:deb:lalinference
+    - level3:deb:lalinspiral
+
+level5:deb:lalapps:
+  <<: *levelN-deb-package
+  stage: level5
+  dependencies:
+    - make-dist
+    - level0:deb:lal
+    - level1:deb:lalframe
+    - level1:deb:lalmetaio
+    - level1:deb:lalsimulation
+    - level2:deb:lalburst
+    - level2:deb:lalpulsar
+    - level3:deb:lalinspiral
+    - level4:deb:lalinference
 
 #
 # docker container from the debs
@@ -359,10 +403,10 @@ docker:nightly:stretch:
     - level1:deb:lalmetaio
     - level1:deb:lalsimulation
     - level2:deb:lalburst
-    - level2:deb:lalinspiral
     - level2:deb:lalpulsar
-    - level3:deb:lalinference
-    - level4:deb:lalapps
+    - level3:deb:lalinspiral
+    - level4:deb:lalinference
+    - level5:deb:lalapps
   only:
     - schedules
 
@@ -384,12 +428,162 @@ docker:tags:stretch:
     - level1:deb:lalmetaio
     - level1:deb:lalsimulation
     - level2:deb:lalburst
-    - level2:deb:lalinspiral
     - level2:deb:lalpulsar
-    - level3:deb:lalinference
-    - level4:deb:lalapps
+    - level3:deb:lalinspiral
+    - level4:deb:lalinference
+    - level5:deb:lalapps
   only:
     - /^lalsuite-v.*$/
+
+#
+# build conda packages
+#
+
+.conda-init: &conda-init |
+  # configure conda
+  mkdir -p $(dirname ${CONDA_PKGS_DIRS})
+  source /opt/conda/etc/profile.d/conda.sh
+  conda config --set always_yes yes
+  conda config --add channels conda-forge
+  conda update -n base conda
+  conda activate base
+  conda install -n base conda-build conda-verify conda-forge-pinning
+  conda info --all
+
+.levelN:conda: &levelN-conda-package
+  image: containers.ligo.org/docker/base:conda
+  variables:
+    GIT_CLEAN_FLAGS: none
+    CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
+    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
+    fft_impl: "fftw"
+  before_script:
+    - *conda-init
+    - conda install openssl
+  script:
+    - 'PACKAGE=$(echo ${CI_JOB_NAME} | cut -d\: -f3)'
+    - cd ${PACKAGE}/
+    # render clobber YAML file to use our tarball
+    - TARBALL=$(readlink -f ${PACKAGE}-*.tar.*)
+    - VERSION=$(basename $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '~')
+    - SHA256=$(openssl dgst -r -sha256 $TARBALL | cut -d\  -f1)
+    - sed 's|@VERSION@|'${VERSION}'|g' conda/meta.yaml.in > conda/meta.yaml
+    - sed -i 's|@TARBALL@|'${TARBALL}'|g' conda/meta.yaml
+    - sed -i 's|@SHA256@|'${SHA256}'|g' conda/meta.yaml
+    # build packages
+    #     render first to dump the final YAML (for debugging)
+    #     then build as normal
+    - for _cmd in render build; do
+          conda ${_cmd}
+              conda/
+              --error-overlinking
+              --error-overdepending
+              --no-anaconda-upload
+              --python 3.7
+              --use-local
+              --variant-config-files $(conda info --base)/conda_build_config.yaml
+              ${CONDA_BUILD_ARGS};
+      done
+  artifacts:
+    expire_in: 18h
+    paths:
+      - "conda/bld/linux-64/$(cut -d: -f3 <<<${CI_JOB_NAME})-*.conda"
+      - "conda/bld/linux-64/$(cut -d: -f3 <<<${CI_JOB_NAME})-*.tar.bz2"
+      - "conda/bld/linux-64/python-$(cut -d: -f3 <<<${CI_JOB_NAME})-*.conda"
+      - "conda/bld/linux-64/python-$(cut -d: -f3 <<<${CI_JOB_NAME})-*.tar.bz2"
+      - "conda/bld/$(cut -d: -f3 <<<${CI_JOB_NAME})_*/work/test/test-suite.log"
+      - "conda/bld/$(cut -d: -f3 <<<${CI_JOB_NAME})_*/work/test/python/test-suite.log"
+      - "conda/bld/$(cut -d: -f3 <<<${CI_JOB_NAME})_*/work/*/*/*/test-suite.log"
+    when: always
+  only:
+    - pushes
+    - schedules
+    - tags
+    - web
+  cache:
+    paths:
+      - conda/pkgs
+
+level0:conda:lal:
+  <<: *levelN-conda-package
+  stage: level0
+  dependencies:
+    - make-dist
+
+level1:conda:lalframe:
+  <<: *levelN-conda-package
+  stage: level1
+  dependencies:
+    - make-dist
+    - level0:conda:lal
+
+level1:conda:lalmetaio:
+  <<: *levelN-conda-package
+  stage: level1
+  dependencies:
+    - make-dist
+    - level0:conda:lal
+
+level1:conda:lalsimulation:
+  <<: *levelN-conda-package
+  stage: level1
+  dependencies:
+    - make-dist
+    - level0:conda:lal
+
+level2:conda:lalburst:
+  <<: *levelN-conda-package
+  stage: level2
+  dependencies:
+    - make-dist
+    - level0:conda:lal
+    - level1:conda:lalmetaio
+    - level1:conda:lalsimulation
+
+level2:conda:lalpulsar:
+  <<: *levelN-conda-package
+  stage: level2
+  dependencies:
+    - make-dist
+    - level0:conda:lal
+
+level3:conda:lalinspiral:
+  <<: *levelN-conda-package
+  stage: level3
+  dependencies:
+    - make-dist
+    - level0:conda:lal
+    - level1:conda:lalframe
+    - level1:conda:lalmetaio
+    - level1:conda:lalsimulation
+    - level2:conda:lalburst
+
+level4:conda:lalinference:
+  <<: *levelN-conda-package
+  stage: level4
+  dependencies:
+    - make-dist
+    - level0:conda:lal
+    - level1:conda:lalframe
+    - level1:conda:lalmetaio
+    - level1:conda:lalsimulation
+    - level2:conda:lalburst
+    - level2:conda:lalpulsar
+    - level3:conda:lalinspiral
+
+level5:conda:lalapps:
+  <<: *levelN-conda-package
+  stage: level5
+  dependencies:
+    - make-dist
+    - level0:conda:lal
+    - level1:conda:lalframe
+    - level1:conda:lalmetaio
+    - level1:conda:lalsimulation
+    - level2:conda:lalburst
+    - level2:conda:lalpulsar
+    - level3:conda:lalinspiral
+    - level4:conda:lalinference
 
 #
 # nightly builds
@@ -468,8 +662,6 @@ nightly:gcc:9:
 # https://git.ligo.org/lscsoft/lalsuite/issues/161
 
 .conda-build: &conda-build
-  variables:
-    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda-pkgs"
   stage: nightly
   dependencies: []
   before_script:
@@ -477,11 +669,7 @@ nightly:gcc:9:
     - PYVERSION=$(echo ${CI_JOB_NAME} | sed 's/conda:python//')
     - CONDA_ENV_FILE="conda/environment-lal-development-py${PYVERSION}.yml"
     # configure conda
-    - source /opt/conda/etc/profile.d/conda.sh
-    - conda config --set always_yes yes
-    - conda config --add channels conda-forge
-    - conda update conda
-    - conda info --all
+    - *conda-init
     # build lalsuite environment
     - conda env create -f ${CONDA_ENV_FILE}
     - conda activate lal-development-py${PYVERSION}
@@ -502,7 +690,7 @@ nightly:gcc:9:
     - web
   cache:
     paths:
-      - conda-pkgs
+      - conda/pkgs
   artifacts:
     paths:
       - "config.log"

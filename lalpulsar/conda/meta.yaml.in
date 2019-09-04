@@ -1,0 +1,121 @@
+# This is a copy of the upstream conda recipe for this package
+# hosted at github.com/conda-forge/lal-feedstock and licensed
+# under the terms of the BSD 3-Clause license.
+# This is only for CI purposes, and should not be considered
+# production-ready at any time.
+
+{% set name = "lalpulsar" %}
+{% set version = "@VERSION@" %}
+{% set url = "file://@TARBALL@" %}
+{% set sha256 = "@SHA256@" %}
+
+{% set lal_version = "6.20.0" %}
+{% set swig_version = "3.0.7" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: {{ url }}
+  sha256: {{ sha256 }}
+
+build:
+  number: 9999
+  skip: true  # [win]
+  ignore_run_exports:
+    # run_exports parsing for fftw is broken, so we ignore it
+    # manually, for now
+    - fftw
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - make
+    - pkg-config
+    - swig >={{ swig_version }}
+  host:
+    - cfitsio
+    - fftw * nompi*
+    - gsl
+    - lal >={{ lal_version }} fftw*
+  run:
+    - cfitsio
+    - fftw
+    - gsl
+    - lal >={{ lal_version }}
+
+test:
+  commands:
+    - lalpulsar_version --verbose
+
+outputs:
+  - name: lalpulsar
+    build:
+      run_exports:
+        - {{ pin_subpackage("lalpulsar", max_pin="x.x") }}
+
+  - name: python-lalpulsar
+    script: install-python.sh
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - make
+        - pkg-config
+        - swig >={{ swig_version }}
+      host:
+        - astropy
+        - gsl
+        - lal >={{ lal_version }}
+        - {{ pin_subpackage('lalpulsar', exact=True) }}
+        - numpy
+        - python
+        - python-lal >={{ lal_version }}
+      run:
+        - astropy
+        - cfitsio
+        - fftw
+        - gsl
+        - lal >={{ lal_version }}
+        - {{ pin_subpackage('lalpulsar', exact=True) }}
+        - {{ pin_compatible('numpy') }}
+        - python
+        - python-lal >={{ lal_version }}
+        - six
+    test:
+      imports:
+        - lalpulsar
+        - lalpulsar.NstarTools
+        - lalpulsar.PulsarParametersWrapper
+        - lalpulsar.simulateCW
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPLv2+
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Pulsar Library
+      description: |
+        The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+        This package contains the python bindings.
+
+about:
+  home: https://wiki.ligo.org/Computing/LALSuite
+  doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
+  dev_url: https://git.ligo.org/lscsoft/lalsuite/
+  license: GPLv2+
+  license_family: GPL
+  license_file: COPYING
+  summary: LSC Algorithm Pulsar Library
+  description: |
+    The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+    This package contains the shared-object libraries needed to run
+    applications that use the LAL Pulsar library.  If you want to install
+    the Python bindings, please install the associated python-lalpulsar
+    package.
+
+extra:
+  recipe-maintainers:
+    - duncanmmacleod
+    - skymoo
