@@ -8,7 +8,6 @@ set -e
 	--disable-swig-octave \
 	--disable-swig-python \
 	--disable-python \
-	--disable-gcc-flags \
 	--enable-silent-rules
 make -j ${CPU_COUNT}
 make -j ${CPU_COUNT} check
