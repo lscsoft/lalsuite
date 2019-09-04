@@ -465,7 +465,7 @@ docker:tags:stretch:
     - cd ${PACKAGE}/
     # render clobber YAML file to use our tarball
     - TARBALL=$(readlink -f ${PACKAGE}-*.tar.*)
-    - VERSION=$(basename $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '~')
+    - VERSION=$(basename $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '.')
     - SHA256=$(openssl dgst -r -sha256 $TARBALL | cut -d\  -f1)
     - sed 's|@VERSION@|'${VERSION}'|g' conda/meta.yaml.in > conda/meta.yaml
     - sed -i 's|@TARBALL@|'${TARBALL}'|g' conda/meta.yaml
