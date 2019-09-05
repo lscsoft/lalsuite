@@ -12,6 +12,10 @@ to send bug reports by e-mail.
 In either case, please include as much detail as possible to reproduce the error, including information about your operating system and the version of each (relevant) component of LALSuite.
 If possible, please include a brief, self-contained code example that demonstrates the problem.
 
+Note that when an issue is marked as 'confidential',
+currently this means that most internal users will also not be able to see it,
+but only a small number of people with reporter, developer or maintainer status.
+
 ## Contributing code
 
 All contributions to LALSuite code must be made using the fork and [merge request](https://git.ligo.org/help/user/project/merge_requests/index.md) [workflow](https://git.ligo.org/help/workflow/forking_workflow.md), which must then be reviewed by one of the project maintainers.
