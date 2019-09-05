@@ -458,6 +458,7 @@ docker:tags:stretch:
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
     fft_impl: "fftw"
   before_script:
+    - set -x  # print commands as they are run (helps debugging)
     - *conda-init
     - conda install openssl
   script:
