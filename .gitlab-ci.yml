@@ -453,7 +453,6 @@ docker:tags:stretch:
 .levelN:conda: &levelN-conda-package
   image: containers.ligo.org/docker/base:conda
   variables:
-    GIT_CLEAN_FLAGS: none
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
     fft_impl: "fftw"
