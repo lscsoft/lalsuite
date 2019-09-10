@@ -31,7 +31,7 @@ AM_INIT_AUTOMAKE([ \
   subdir-objects \
   color-tests \
   parallel-tests \
-  tar-ustar \
+  tar-pax \
   dist-xz \
   no-dist-gzip \
 ])
