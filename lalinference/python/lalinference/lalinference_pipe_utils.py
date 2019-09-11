@@ -26,6 +26,10 @@ import math
 from six.moves import range
 from six import next
 from functools import reduce
+try:
+    from configparser import NoOptionError, NoSectionError
+except ImportError:
+    from ConfigParser import NoOptionError, NoSectionError
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -888,7 +892,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 seglen = self.config.getint('lalinference','seglen')
             try:
                 use_gracedbpsd = (not self.config.getboolean('input','ignore-gracedb-psd'))
-            except:
+            except (NoOptionError, NoSectionError):
                 use_gracedbpsd = True
             if (use_gracedbpsd and os.path.isfile(os.path.join(self.basepath,'psd.xml.gz'))) or self.config.has_option('condor','bayesline') or self.config.has_option('condor','bayeswave'):
                 psdlength = 0
@@ -903,7 +907,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             seglen = max(e.duration for e in self.events)
             try:
                 use_gracedbpsd = (not self.config.getboolean('input','ignore-gracedb-psd'))
-            except:
+            except (NoOptionError, NoSectionError):
                 use_gracedbpsd = True
             if (use_gracedbpsd and os.path.isfile(os.path.join(self.basepath,'psd.xml.gz'))) or self.config.has_option('condor','bayesline') or self.config.has_option('condor','bayeswave'):
                 psdlength = 0
@@ -1586,7 +1590,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         # check whether lalinference psd is used or not
         try:
             use_gracedbpsd = (not self.config.getboolean('input','ignore-gracedb-psd'))
-        except:
+        except (NoOptionError, NoSectionError):
             use_gracedbpsd = True
         use_lalinference_psd = not ((use_gracedbpsd and os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')))
                                     or self.config.has_option('condor','bayesline')
@@ -1682,7 +1686,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             gotdata=1
         try:
             use_gracedbpsd = (not self.config.getboolean('input','ignore-gracedb-psd'))
-        except:
+        except (NoOptionError, NoSectionError):
             use_gracedbpsd = True
         if use_gracedbpsd:
             if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')):
