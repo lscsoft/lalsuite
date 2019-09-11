@@ -25,6 +25,7 @@ stages:
   - deploy
 
 before_script:
+  - set -x  # print commands as they are run (helps debugging)
   - ulimit -S -c 0
   - export VERBOSE="true"
   - export PATH=/usr/lib/ccache:/opt/local/libexec/ccache:$PATH
@@ -213,6 +214,7 @@ docker:nightly:el7:
   stage: docker
   before_script: []
   script:
+    - set -x  # print commands as they are run (helps debugging)
     # add RPMs to directory to pass to docker
     - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
     - rm -rf rpmbuild*
@@ -238,6 +240,7 @@ docker:tags:el7:
   stage: docker
   before_script: []
   script:
+    - set -x  # print commands as they are run (helps debugging)
     # add RPMs to directory to pass to docker
     - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
     - rm -rf rpmbuild*
@@ -390,6 +393,7 @@ docker:nightly:stretch:
   stage: docker
   before_script: []
   script:
+    - set -x  # print commands as they are run (helps debugging)
     # add deb packages to directory to pass to docker
     - mkdir debs && mv *.deb debs
     - rm *.changes *.dsc *.orig.*
@@ -415,6 +419,7 @@ docker:tags:stretch:
   stage: docker
   before_script: []
   script:
+    - set -x  # print commands as they are run (helps debugging)
     # add deb packages to directory to pass to docker
     - mkdir debs && mv *.deb debs
     - rm *.changes *.dsc *.orig.*
@@ -666,6 +671,7 @@ nightly:gcc:9:
   stage: nightly
   dependencies: []
   before_script:
+    - set -x  # print commands as they are run (helps debugging)
     # determine conda environment
     - PYVERSION=$(echo ${CI_JOB_NAME} | sed 's/conda:python//')
     - CONDA_ENV_FILE="conda/environment-lal-development-py${PYVERSION}.yml"
