@@ -224,7 +224,6 @@ lalinference_testjob:
     - level3:rpm:lalinference
     - level4:rpm:lalapps
   only:
-    - push
     - schedules
     - web
 #
