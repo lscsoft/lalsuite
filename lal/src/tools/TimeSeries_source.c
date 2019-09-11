@@ -52,12 +52,22 @@ SERIESTYPE *CSERIES (
 	if(name) {
 		strncpy(new->name, name, LALNameLength - 1);
 		new->name[LALNameLength - 1] = '\0';
-	} else
+	} else {
 		new->name[0] = '\0';
-	new->epoch = *epoch;
+	}
+	if(epoch) {
+		new->epoch = *epoch;
+	} else {
+		new->epoch.gpsSeconds = 0;
+		new->epoch.gpsNanoSeconds = 0;
+	}
 	new->f0 = f0;
 	new->deltaT = deltaT;
-	new->sampleUnits = *sampleUnits;
+	if(sampleUnits) {
+		new->sampleUnits = *sampleUnits;
+	} else {
+		new->sampleUnits = lalDimensionlessUnit;
+	}
 	new->data = sequence;
 
 	return new;
