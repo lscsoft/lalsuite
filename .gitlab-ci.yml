@@ -212,7 +212,7 @@ lalinference_testjob:
   before_script:
     - yum -y install rpmbuild/RPMS/x86_64/*.rpm
   script:
-    - git clone https://git.ligo.org/lscsoft/ROQ_data.git
+    - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
     - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
   dependencies:
     - level0:rpm:lal
