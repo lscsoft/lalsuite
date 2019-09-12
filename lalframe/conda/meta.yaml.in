@@ -40,9 +40,18 @@ requirements:
     - libframe
 
 test:
+  source_files:
+    - test/F-TEST-600000000-60.gwf
   commands:
     - lalframe_version --verbose
-    - lalfr-vis --help
+    - lalfr-cksum test/F-TEST-600000000-60.gwf
+    - lalfr-cut H1:LSC-AS_Q test/F-TEST-600000000-60.gwf > /dev/null
+    - lalfr-dump test/F-TEST-600000000-60.gwf
+    - lalfr-paste test/F-TEST-600000000-60.gwf > /dev/null
+    - lalfr-split test/F-TEST-600000000-60.gwf
+    - lalfr-stat test/F-TEST-600000000-60.gwf
+    - lalfr-stream --channel H1:LSC-AS_Q --start-time 600000000 --duration 0.01 --frame-glob test/F-TEST-*.gwf
+    - lalfr-vis --channel H1:LSC-AS_Q --start-time 600000000 --duration 0.01 --frame-glob test/F-TEST-*.gwf
 
 outputs:
   - name: lalframe
@@ -73,6 +82,10 @@ outputs:
         - python
         - python-lal >={{ lal_version }}
     test:
+      source_files:
+        - test/F-TEST-600000000-60.gwf
+      commands:
+        - python -c "from lalframe import frread; print(frread.read_timeseries('test/F-TEST-600000000-60.gwf', 'H1:LSC-AS_Q', 600000000, 1).data.data)"
       imports:
         - lalframe
         - lalframe.frread
