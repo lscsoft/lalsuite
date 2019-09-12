@@ -18,6 +18,7 @@ stages:
   - level2
   - level3
   - level4
+  - level5
   - docker
   - nightly
   - wheels
@@ -219,10 +220,10 @@ lalinference_testjob:
     - level1:rpm:lalmetaio
     - level1:rpm:lalsimulation
     - level2:rpm:lalburst
-    - level2:rpm:lalinspiral
     - level2:rpm:lalpulsar
-    - level3:rpm:lalinference
-    - level4:rpm:lalapps
+    - level3:rpm:lalinspiral
+    - level4:rpm:lalinference
+    - level5:rpm:lalapps
   only:
     - schedules
     - web
