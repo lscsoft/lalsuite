@@ -9,7 +9,6 @@ liblalinference:
 #LDADD += $(top_builddir)/src/liblalinference.la
 
 CC = $(MPICC) -std=gnu99
-AM_CPPFLAGS += -I $(srcdir)/..
 LIBS += $(MPILIBS)
 
 if MPI
@@ -24,5 +23,10 @@ lalinference_mcmc_SOURCES = \
 lalinference_kombine_SOURCES = \
 	LALInferenceKombine.c \
 	LALInferenceKombineSampler.c
+
+noinst_HEADERS = \
+	LALInferenceKombineSampler.h \
+	LALInferenceMCMCSampler.h \
+	$(END_OF_LIST)
 
 bin_PROGRAMS = $(mpi_progs)
