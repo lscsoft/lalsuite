@@ -59,7 +59,7 @@ pkginclude_HEADERS = \
 	distance_integrator.h \
 	$(BAYESTARHDR)
 
-noinst_LTLIBRARIES = liblalinference.la
+lib_LTLIBRARIES = liblalinference.la
 
 liblalinference_la_SOURCES = \
 	LALInference.c \
