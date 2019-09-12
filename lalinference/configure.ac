@@ -92,6 +92,7 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
+# enable MPI compilation
 LALSUITE_ENABLE_MPI
 
 # enable strict gcc flags
@@ -277,6 +278,7 @@ LALInference has now been successfully configured:
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * HEALPix is $HEALPIX_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL
+* MPI support is $MPI_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL
 * help2man documentation is $HELP2MAN_ENABLE_VAL
 
