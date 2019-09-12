@@ -107,7 +107,10 @@ Z_single_signal = [ get_metadata(inco,'log_evidence') for inco in incofiles]
 # sum over all posible permutations over mutually exclusive sub propositions
 
 from itertools import combinations
-from scipy.misc import logsumexp
+try:
+    from scipy.special import logsumexp
+except ImportError:  # scipy < 0.19.0
+    from scipy.misc import logsumpexp
 
 def not_seen(t, seen=set()):
     return False if t[0] in seen or t[1] in seen else seen.update(t) or True
