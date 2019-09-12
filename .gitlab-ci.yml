@@ -204,6 +204,29 @@ level5:rpm:lalapps:
     - level3:rpm:lalinspiral
     - level4:rpm:lalinference
 
+#integration tests
+#
+lalinference_testjob:
+  stage: nightly
+  image: ligo/lalsuite-dev:el7
+  before_script:
+    - yum -y install rpmbuild/RPMS/x86_64/*.rpm
+  script:
+    - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
+    - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
+  dependencies:
+    - level0:rpm:lal
+    - level1:rpm:lalframe
+    - level1:rpm:lalmetaio
+    - level1:rpm:lalsimulation
+    - level2:rpm:lalburst
+    - level2:rpm:lalpulsar
+    - level3:rpm:lalinspiral
+    - level4:rpm:lalinference
+    - level5:rpm:lalapps
+  only:
+    - schedules
+    - web
 #
 # docker container from RPMs
 #
