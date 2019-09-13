@@ -62,7 +62,6 @@ requirements:
     - llvm-openmp  # [osx]
     - metaio
     - openmp  # [linux]
-    - openmpi
     - python
     - python-lal >={{ lal_version }}
     - python-lalburst >={{ lalburst_version }}
@@ -91,7 +90,6 @@ requirements:
     - llvm-openmp  # [osx]
     - metaio
     - openmp  # [linux]
-    - openmpi
     - numpy
     - pillow
     - python
