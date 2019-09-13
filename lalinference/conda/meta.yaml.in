@@ -75,7 +75,7 @@ requirements:
 test:
   commands:
     - lalinference_bench --psdlength 1000 --psdstart 1 --seglen 8 --srate 4096 --trigtime 0 --ifo H1 --H1-channel LALSimAdLIGO --H1-cache LALSimAdLIGO --dataseed 1324 --Niter 10 --fix-chirpmass 1.21
-    - lalinference_burst --help
+    #- lalinference_burst --help
     - lalinference_datadump --help
     - lalinference_injectedlike --help
     - lalinference_mpi_wrapper --help
