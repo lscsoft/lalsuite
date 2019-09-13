@@ -78,7 +78,6 @@ test:
     #- lalinference_burst --help
     - lalinference_datadump --help
     - lalinference_injectedlike --help
-    - lalinference_mpi_wrapper --help
     - lalinference_nest --help
     - lalinference_version --verbose
 
