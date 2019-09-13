@@ -58,7 +58,7 @@ Architecture: any
 Depends: ${misc:Depends},
   ${shlibs:Depends},
   libmetaio1 (>= 8.2),
-  openmpi,
+  openmpi-bin,
   openssh-client,
   lal (>= @MIN_LAL_VERSION@~),
   lalframe (>= @MIN_LALFRAME_VERSION@~),
