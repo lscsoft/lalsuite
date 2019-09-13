@@ -74,6 +74,12 @@ requirements:
 
 test:
   commands:
+    - lalinference_bench --psdlength 1000 --psdstart 1 --seglen 8 --srate 4096 --trigtime 0 --ifo H1 --H1-channel LALSimAdLIGO --H1-cache LALSimAdLIGO --dataseed 1324 --Niter 10 --fix-chirpmass 1.21
+    - lalinference_burst --help
+    - lalinference_datadump --help
+    - lalinference_injectedlike --help
+    - lalinference_mpi_wrapper --help
+    - lalinference_nest --help
     - lalinference_version --verbose
 
 outputs:
@@ -148,6 +154,38 @@ outputs:
         - lalinference.tiger.make_injtimes
         - lalinference.tiger.omegascans_dag
         - lalinference.tiger.postproc
+      commands:
+        - cbcBayesBurstPPAnalysis --help
+        - cbcBayesBurstPostProc --help
+        - cbcBayesCombinePTMCMCh5s --help
+        - cbcBayesCombinePosteriors --help
+        - cbcBayesCompPos --help
+        - cbcBayesDIEvidence --help
+        - cbcBayesGraceDBinfo --help
+        - cbcBayesMCMC2pos --help
+        - cbcBayesPPAnalysis --help
+        - cbcBayesPlotSpinDisk --help
+        - cbcBayesPosToSimBurst --help
+        - cbcBayesPosToSimInspiral --help
+        - cbcBayesPostProc --help
+        - cbcBayesThermoInt --help
+        - imrtgr_imr_consistency_test --help
+        - lalinference_burst_pp_pipe --help
+        - lalinference_coherence_test --help
+        - lalinference_compute_roq_weights --help
+        - lalinference_cpnest --help
+        - lalinference_merge_posteriors --help
+        - lalinference_multi_pipe --help
+        - lalinference_nest2pos --help
+        - lalinference_pipe --help
+        - lalinference_pp_pipe --help
+        - lalinference_review_test --help
+        - lalinference_tiger_pipe --help
+        - rapidpe_calculate_overlap --help
+        - rapidpe_compute_intrinsic_fisher --help
+        - rapidpe_compute_intrinsic_grid --help
+        - rapidpe_create_event_dag --help
+        - rapidpe_integrate_extrinsic_likelihood --help
     about:
       home: https://wiki.ligo.org/Computing/DASWG/LALSuite
       doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinference/
