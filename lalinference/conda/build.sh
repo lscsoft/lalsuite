@@ -18,7 +18,9 @@ export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
 	--disable-python \
 	--enable-silent-rules \
 	--enable-help2man \
-	--enable-openmp
+	--enable-openmp \
+	--enable-mpi \
+	MPICC=${PREFIX}/bin/mpicc
 make -j ${CPU_COUNT}
 make -j ${CPU_COUNT} check
 make -j ${CPU_COUNT} install
