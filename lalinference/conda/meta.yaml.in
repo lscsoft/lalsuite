@@ -169,17 +169,17 @@ outputs:
         - cbcBayesPostProc --help
         - cbcBayesThermoInt --help
         - imrtgr_imr_consistency_test --help
-        - lalinference_burst_pp_pipe --help
+        #- lalinference_burst_pp_pipe --help
         - lalinference_coherence_test --help
         - lalinference_compute_roq_weights --help
         - lalinference_cpnest --help
         - lalinference_merge_posteriors --help
         - lalinference_multi_pipe --help
         - lalinference_nest2pos --help
-        - lalinference_pipe --help
-        - lalinference_pp_pipe --help
+        #- lalinference_pipe --help
+        #- lalinference_pp_pipe --help
         - lalinference_review_test --help
-        - lalinference_tiger_pipe --help
+        #- lalinference_tiger_pipe --help
         - rapidpe_calculate_overlap --help
         - rapidpe_compute_intrinsic_fisher --help
         - rapidpe_compute_intrinsic_grid --help
