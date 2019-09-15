@@ -98,11 +98,13 @@ make-dist:
     GIT_STRATEGY: none
     RPM_BUILD_CPUS: 4
   script:
+    - 'PACKAGE=$(echo ${CI_JOB_NAME} | cut -d\: -f3)'
     # install upstream packages
     - if [ -d rpmbuild ]; then yum -y install rpmbuild/RPMS/x86_64/*.rpm; fi
     # build src.rpm
-    - cd ${CI_JOB_NAME#level?:rpm:}/
-    - rpmbuild -ts --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${CI_JOB_NAME#level?:rpm:}-*.tar.xz
+    - cd ${PACKAGE}/
+    - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
+    - rpmbuild -ts --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${TARBALL}
     - SRCRPM=${CI_PROJECT_DIR}/rpmbuild/SRPMS/${CI_JOB_NAME#level?:rpm:}-*.src.rpm
     # lint src.rpm
     - rpmlint ${SRCRPM}
@@ -293,20 +295,20 @@ docker:tags:el7:
   variables:
     GIT_STRATEGY: none
   script:
+    - 'PACKAGE=$(echo ${CI_JOB_NAME} | cut -d\: -f3)'
     # install debs from artifacts
     - dpkg -i *.deb || true
     # create orig tarball
-    - cd ${CI_JOB_NAME#level?:deb:}/
-    - PACKAGE=$(echo ${CI_JOB_NAME} | sed 's/.*://')
-    - TARBALL="${PACKAGE}-*.tar.*"
-    - SUFFIX=$(echo $TARBALL | sed 's/.*\.\(tar\..*\)/\1/')
-    - VERSION=$(echo $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '~')
+    - cd ${PACKAGE}/
+    - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
+    - SUFFIX=$(basename $TARBALL | sed 's/.*\.\(tar\..*\)/\1/')
+    - VERSION=$(basename $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '~')
     - cd ${CI_PROJECT_DIR}/
-    - cp ${CI_JOB_NAME#level?:deb:}/${TARBALL} ${PACKAGE}_${VERSION}.orig.${SUFFIX}
+    - cp ${TARBALL} ${PACKAGE}_${VERSION}.orig.${SUFFIX}
     # update changelog
     - export DEBFULLNAME="GitLab"
     - export DEBEMAIL="gitlab@git.ligo.org"
-    - tar xf ${CI_JOB_NAME#level?:deb:}/${TARBALL}
+    - tar -xf ${TARBALL}
     - cd ${PACKAGE}-*/
     - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
     # install build dependencies
@@ -492,7 +494,7 @@ docker:tags:stretch:
     - 'PACKAGE=$(echo ${CI_JOB_NAME} | cut -d\: -f3)'
     - cd ${PACKAGE}/
     # render clobber YAML file to use our tarball
-    - TARBALL=$(readlink -f ${PACKAGE}-*.tar.*)
+    - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
     - VERSION=$(basename $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '.')
     - SHA256=$(openssl dgst -r -sha256 $TARBALL | cut -d\  -f1)
     - sed 's|@VERSION@|'${VERSION}'|g' conda/meta.yaml.in > conda/meta.yaml
