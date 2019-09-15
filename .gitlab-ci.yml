@@ -104,7 +104,7 @@ make-dist:
     # build src.rpm
     - cd ${PACKAGE}/
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
-    - rpmbuild -ts --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${CI_JOB_NAME#level?:rpm:}-*.tar.xz
+    - rpmbuild -ts --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${TARBALL}
     - SRCRPM=${CI_PROJECT_DIR}/rpmbuild/SRPMS/${CI_JOB_NAME#level?:rpm:}-*.src.rpm
     # lint src.rpm
     - rpmlint ${SRCRPM}
@@ -301,14 +301,14 @@ docker:tags:el7:
     # create orig tarball
     - cd ${PACKAGE}/
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
-    - SUFFIX=$(echo $TARBALL | sed 's/.*\.\(tar\..*\)/\1/')
-    - VERSION=$(echo $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '~')
+    - SUFFIX=$(basename $TARBALL | sed 's/.*\.\(tar\..*\)/\1/')
+    - VERSION=$(basename $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '~')
     - cd ${CI_PROJECT_DIR}/
-    - cp ${CI_JOB_NAME#level?:deb:}/${TARBALL} ${PACKAGE}_${VERSION}.orig.${SUFFIX}
+    - cp ${TARBALL} ${PACKAGE}_${VERSION}.orig.${SUFFIX}
     # update changelog
     - export DEBFULLNAME="GitLab"
     - export DEBEMAIL="gitlab@git.ligo.org"
-    - tar xf ${CI_JOB_NAME#level?:deb:}/${TARBALL}
+    - tar -xf ${TARBALL}
     - cd ${PACKAGE}-*/
     - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
     # install build dependencies
