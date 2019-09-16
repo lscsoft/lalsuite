@@ -630,15 +630,33 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
 
   /* get the amplitude and phase factors */
   if( freqfactor == 1. ){
-    /* the l=2, m=1 harmonic at the rotation frequency. NOTE: there is currently no
-       amplitude model defined for a non-GR signal at this harmonic */
-    expPhi = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI21" ));
-    Cplus = -0.25 * PulsarGetREAL8ParamOrZero( pars, "C21" ) * siniota * cosiota * expPhi;
-    Ccross = 0.25 * I * PulsarGetREAL8ParamOrZero( pars, "C21" ) * siniota * expPhi;
+    /* the l=2, m=1 harmonic at the rotation frequency. */
+    if ( nonGR ){ /* amplitude if nonGR is specified */
+      COMPLEX16 expPhiTensor, expPsiTensor, expPhiScalar, expPsiScalar, expPhiVector, expPsiVector;
+
+      expPhiTensor = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI0TENSOR_F" ) );
+      expPsiTensor = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PSITENSOR_F" ) );
+      expPhiScalar = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI0SCALAR_F" ) );
+      expPsiScalar = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PSISCALAR_F" ) );
+      expPhiVector = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI0VECTOR_F" ) );
+      expPsiVector = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PSIVECTOR_F" ) );
+
+      Cplus = 0.5 * expPhiTensor * PulsarGetREAL8ParamOrZero( pars, "HPLUS_F" );
+      Ccross = 0.5 * expPhiTensor * PulsarGetREAL8ParamOrZero( pars, "HCROSS_F" ) * expPsiTensor;
+      Cx = 0.5 * expPhiVector * PulsarGetREAL8ParamOrZero( pars, "HVECTORX_F" );
+      Cy = 0.5 * expPhiVector * PulsarGetREAL8ParamOrZero( pars, "HVECTORY_F" ) * expPsiVector;
+      Cb = 0.5 * expPhiScalar * PulsarGetREAL8ParamOrZero( pars, "HSCALARB_F" );
+      Cl = 0.5 * expPhiScalar * PulsarGetREAL8ParamOrZero( pars, "HSCALARL_F" ) * expPsiScalar;
+    }
+    else{
+      expPhi = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI21" ));
+      Cplus = -0.25 * PulsarGetREAL8ParamOrZero( pars, "C21" ) * siniota * cosiota * expPhi;
+      Ccross = 0.25 * I * PulsarGetREAL8ParamOrZero( pars, "C21" ) * siniota * expPhi;
+    }
   }
   else if( freqfactor == 2. ){
     /* the l=2, m=2 harmonic at twice the rotation frequency */
-    if ( nonGR ){ /* amplitude if nonGR is specifiec */
+    if ( nonGR ){ /* amplitude if nonGR is specified */
       COMPLEX16 expPhiTensor, expPsiTensor, expPhiScalar, expPsiScalar, expPhiVector, expPsiVector;
 
       expPhiTensor = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI0TENSOR" ) );

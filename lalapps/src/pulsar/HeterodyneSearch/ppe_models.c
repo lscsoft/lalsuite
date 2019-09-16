@@ -103,7 +103,7 @@ void get_pulsar_model( LALInferenceModel *model ){
     /* speed of GWs as (1 - fraction of speed of light LAL_C_SI) */
     add_pulsar_parameter( model->params, pars, "CGW" );
 
-    /* amplitudes for use with non-GR searches */
+    /* amplitudes for use with non-GR searches (with emission at twice the rotation frequency) */
     /* tensor modes */
     add_pulsar_parameter( model->params, pars, "HPLUS" );
     add_pulsar_parameter( model->params, pars, "HCROSS" );
@@ -121,8 +121,27 @@ void get_pulsar_model( LALInferenceModel *model ){
     add_pulsar_parameter( model->params, pars, "PHI0TENSOR" );
     add_pulsar_parameter( model->params, pars, "PSITENSOR" );
 
+    /* amplitudes for use in non-GR searches with emission at the rotation frequency */
+    /* tensor modes */
+    add_pulsar_parameter( model->params, pars, "HPLUS_F" );
+    add_pulsar_parameter( model->params, pars, "HCROSS_F" );
+    /* scalar modes */
+    add_pulsar_parameter( model->params, pars, "HSCALARB_F" );
+    add_pulsar_parameter( model->params, pars, "HSCALARL_F" );
+    /* vector modes */
+    add_pulsar_parameter( model->params, pars, "HVECTORX_F" );
+    add_pulsar_parameter( model->params, pars, "HVECTORY_F" );
+
+    add_pulsar_parameter( model->params, pars, "PHI0SCALAR_F" );
+    add_pulsar_parameter( model->params, pars, "PSISCALAR_F" );
+    add_pulsar_parameter( model->params, pars, "PHI0VECTOR_F" );
+    add_pulsar_parameter( model->params, pars, "PSIVECTOR_F" );
+    add_pulsar_parameter( model->params, pars, "PHI0TENSOR_F" );
+    add_pulsar_parameter( model->params, pars, "PSITENSOR_F" );
+
     /* parameters that might be needed for particular models */
     add_pulsar_parameter( model->params, pars, "H0" );
+    add_pulsar_parameter( model->params, pars, "H0_F" );
     add_pulsar_parameter( model->params, pars, "IOTA" );
     add_pulsar_parameter( model->params, pars, "COSIOTA" );
 
@@ -285,14 +304,21 @@ void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel ){
   int isG4v = strcmp(nonGRmodel, "G4v") * strcmp(nonGRmodel, "g4v") * strcmp(nonGRmodel, "G4V");
   int isEGR = strcmp(nonGRmodel, "enhanced-GR") * strcmp(nonGRmodel, "EGR") * strcmp(nonGRmodel, "egr") * strcmp(nonGRmodel, "eGR");
   REAL8 h0 = PulsarGetREAL8ParamOrZero( pars, "H0" );
+  REAL8 h0_F = PulsarGetREAL8ParamOrZero( pars, "H0_F" );
+
+  REAL8 iota = PulsarGetREAL8ParamOrZero( pars, "IOTA" );
+  REAL8 cosiota = cos(iota);
+  REAL8 siniota = sin(iota);
+  
+  /* check if COSIOTA was passed directly instead */
+  if( PulsarGetREAL8ParamOrZero( pars, "COSIOTA" ) != 0 ){
+    cosiota = PulsarGetREAL8ParamOrZero( pars, "COSIOTA" );
+    siniota = sin(acos(cosiota));
+  }
 
   if( isG4v == 0 ){
     /* \f$ h_{\rm x} = h_0 \sin \iota~,~\phi_{\rm x} = -\pi/2 \f$ */
     /* \f$ h_{\rm y} = h_0 \sin \iota \cos \iota~,~\phi_{\rm y} = 0 */
-    REAL8 iota = PulsarGetREAL8ParamOrZero( pars, "IOTA" );
-    REAL8 cosiota = cos(iota);
-    REAL8 siniota = sin(iota);
-
     REAL8 hVectorX = h0 * siniota;
     REAL8 hVectorY = h0 * siniota * cosiota;
     REAL8 psiVector = LAL_PI_2;
@@ -301,14 +327,20 @@ void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel ){
     PulsarAddREAL8Param( pars, "PSIVECTOR", psiVector );
   }
   else if( isEGR == 0 ) {
-    /** GR plus an unconstrained non-GR modes
+    /** GR plus unconstrained non-GR modes
     * With different priors, this can be used to obtain GR+scalar (i.e.
     * scalar-tensor), GR+vector, or GR+scalar+vector. Note: this mode used to
     be called just "ST".*/
-    REAL8 cosiota = PulsarGetREAL8ParamOrZero( pars, "COSIOTA" );
+    REAL8 psiTensor = -LAL_PI_2;
+    /* Set 1F components */
+    REAL8 hPlus_F = 0.25 * h0_F * siniota * cosiota;
+    REAL8 hCross_F = 0.5 * h0_F * siniota;
+    PulsarAddREAL8Param( pars, "HPLUS_F", hPlus_F );
+    PulsarAddREAL8Param( pars, "HCROSS_F", hCross_F );
+    PulsarAddREAL8Param( pars, "PSITENSOR_F", psiTensor );
+    /* Set 2F components */
     REAL8 hPlus = 0.5 * h0 * (1. + cosiota * cosiota);
     REAL8 hCross = h0 * cosiota;
-    REAL8 psiTensor = -LAL_PI_2;
     PulsarAddREAL8Param( pars, "HPLUS", hPlus );
     PulsarAddREAL8Param( pars, "HCROSS", hCross );
     PulsarAddREAL8Param( pars, "PSITENSOR", psiTensor );
@@ -332,7 +364,7 @@ void add_pulsar_parameter( LALInferenceVariables *var, PulsarParameters *params,
 
 
 /**
- * \brief Add a \c REAL8 parameter from a \c PulsarParameters variable into a \c LALInfernceVariable
+ * \brief Add a \c REAL8 parameter from a \c PulsarParameters variable into a \c LALInferenceVariable
  *
  * This function will rescale a parameter to its true value using the scale factor and minimum scale value.
  *
@@ -819,10 +851,6 @@ void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo ){
     cpsi = cos(PulsarGetREAL8ParamOrZero( pars, "PSI" ));
   }
 
-  if ( nonGR == 1 && freqFactors->length > 1 ){
-    XLAL_ERROR_VOID( XLAL_EFAILED, "Error... currently can only use non-GR parameters for l=m=2 harmonic." );
-  }
-
   /* loop over all detectors */
   while( ifo ){
     /* loop over components in data as given by the frequency factors */
@@ -837,13 +865,32 @@ void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo ){
       /* get the amplitude and phase factors */
       if( freqFactors->data[j] == 1. ){
         /* the l=2, m=1 harmonic at the rotation frequency */
-        expPhi = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI21" ));
-        Cplus = -0.25 * PulsarGetREAL8ParamOrZero( pars, "C21" ) * siniota * cosiota * expPhi;
-        Ccross = 0.25 * I * PulsarGetREAL8ParamOrZero( pars, "C21" ) * siniota * expPhi;
+        if ( nonGR ){ /* amplitude if nonGR is specified */
+          COMPLEX16 expPhiTensor, expPsiTensor, expPhiScalar, expPsiScalar, expPhiVector, expPsiVector;
+
+          expPhiTensor = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI0TENSOR_F" ) );
+          expPsiTensor = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PSITENSOR_F" ) );
+          expPhiScalar = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI0SCALAR_F" ) );
+          expPsiScalar = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PSISCALAR_F" ) );
+          expPhiVector = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI0VECTOR_F" ) );
+          expPsiVector = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PSIVECTOR_F" ) );
+
+          Cplus = 0.5 * expPhiTensor * PulsarGetREAL8ParamOrZero( pars, "HPLUS_F" );
+          Ccross = 0.5 * expPhiTensor * PulsarGetREAL8ParamOrZero( pars, "HCROSS_F" ) * expPsiTensor;
+          Cx = 0.5 * expPhiVector * PulsarGetREAL8ParamOrZero( pars, "HVECTORX_F" );
+          Cy = 0.5 * expPhiVector * PulsarGetREAL8ParamOrZero( pars, "HVECTORY_F" ) * expPsiVector;
+          Cb = 0.5 * expPhiScalar * PulsarGetREAL8ParamOrZero( pars, "HSCALARB_F" );
+          Cl = 0.5 * expPhiScalar * PulsarGetREAL8ParamOrZero( pars, "HSCALARL_F" ) * expPsiScalar;
+        }
+        else{
+          expPhi = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI21" ));
+          Cplus = -0.25 * PulsarGetREAL8ParamOrZero( pars, "C21" ) * siniota * cosiota * expPhi;
+          Ccross = 0.25 * I * PulsarGetREAL8ParamOrZero( pars, "C21" ) * siniota * expPhi;
+        }
       }
       else if( freqFactors->data[j] == 2. ){
         /* the l=2, m=2 harmonic at twice the rotation frequency */
-        if ( nonGR ){ /* amplitude if nonGR is specifiec */
+        if ( nonGR ){ /* amplitude if nonGR is specified */
           COMPLEX16 expPhiTensor, expPsiTensor, expPhiScalar, expPsiScalar, expPhiVector, expPsiVector;
 
           expPhiTensor = cexp( I * PulsarGetREAL8ParamOrZero( pars, "PHI0TENSOR" ) );

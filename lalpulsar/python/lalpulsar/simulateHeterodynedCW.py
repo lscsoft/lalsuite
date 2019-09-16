@@ -452,7 +452,13 @@ class HeterodynedCWSimulator(object):
                        'HVECTORX',
                        'HVECTORY',
                        'HSCALARB',
-                       'HSCALARL']
+                       'HSCALARL',
+                       'HPLUS_F',
+                       'HCROSS_F',
+                       'HVECTORX_F',
+                       'HVECTORY_F',
+                       'HSCALARB_F',
+                       'HSCALARL_F']
 
         for param in nonGRparams:
             if param in par.keys():

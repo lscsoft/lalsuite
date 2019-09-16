@@ -138,7 +138,7 @@ extern "C" {
  *
  * Note: These should be increased if additional model parameters are added.
  */
-#define NUMAMPPARS 28
+#define NUMAMPPARS 29
 
 /**
  * The total number of sky position parameters that can define a signal e.g.
@@ -346,7 +346,7 @@ static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "H0", "PHI0", "PSI",
 "COSIOTA", "C22", "C21", "PHI22", "PHI21", "HPLUS", "HCROSS", "HSCALARB",
 "HSCALARL", "HVECTORX", "HVECTORY", "PSIVECTOR", "PHI0VECTOR", "PSISCALAR",
 "PHI0SCALAR", "PSITENSOR", "PHI0TENSOR", "I21", "I31", "LAMBDA", "COSTHETA",
-"IOTA", "THETA", "Q22", "DIST" };
+"IOTA", "THETA", "Q22", "DIST", "H0_F" };
 
 /**
  * A list of the sky position parameters. The names given here are those that

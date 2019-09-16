@@ -49,102 +49,115 @@ except ImportError:
 
 from astropy import units as u
 # set units of parameters in the PulsarParameters structure
-PPUNITS = {'F':          u.Hz,                     # Hz
-           'P':          u.s,                      # seconds
-           'DIST':       u.m,                      # metres
-           'PX':         u.rad,                    # radians
-           'DM':         u.pc/(u.cm)**3,           # cm^-3 pc
-           'DM1':        u.pc/(u.cm**3*u.yr),      # pc cm^-3 yr^-1
-           'RA':         u.rad,                    # radians
-           'RAJ':        u.rad,                    # radians
-           'DEC':        u.rad,                    # radians
-           'DECJ':       u.rad,                    # radians
-           'PMRA':       u.rad/u.s,                # rad/s
-           'PMDEC':      u.rad/u.s,                # rad/s
-           'ELONG':      u.rad,                    # rad
-           'ELAT':       u.rad,                    # rad
-           'PEPOCH':     u.s,                      # GPS seconds
-           'POSEPOCH':   u.s,                      # GPS seconds
-           'DMEPOCH':    u.s,                      # GPS seconds
-           'GLEP':       u.s,                      # GPS seconds
-           'GLPH':       u.rad,                    # rad
-           'GLF0':       u.Hz,                     # Hz
-           'GLF1':       u.Hz/u.s,                 # Hz/s
-           'GLF2':       u.Hz/u.s**2,              # Hz s^-2
-           'GLF0D':      u.Hz,                     # Hz
-           'GLTD':       u.s,                      # sec
-           'A1':         u.s,                      # light seconds
-           'OM':         u.rad,                    # rad
-           'PB':         u.s,                      # seconds
-           'T0':         u.s,                      # GPS seconds
-           'TASC':       u.s,                      # GPS seconds
-           'EPS1':       u.dimensionless_unscaled,
-           'EPS2':       u.dimensionless_unscaled,
-           'GAMMA':      u.s,                      # seconds
-           'OMDOT':      u.rad/u.s,                # rad/s
-           'XDOT':       u.s/u.s,                  # light seconds/sec
-           'PBDOT':      u.s/u.s,                  # s/s
-           'EDOT':       1./u.s,                   # 1/sec
-           'EPSDOT1':    1./u.s,                   # 1/sec
-           'EPSDOT2':    1./u.s,                   # 1/sec
-           'XPBDOT':     u.s/u.s,                  # s/s
-           'SINI':       u.dimensionless_unscaled,
-           'MTOT':       u.kg,                     # kg
-           'M2':         u.kg,                     # kg
-           'DR':         u.dimensionless_unscaled,
-           'DTHETA':     u.dimensionless_unscaled,
-           'SHAPMAX':    u.dimensionless_unscaled,
-           'A1_2':       u.s,                      # light seconds
-           'A1_3':       u.s,                      # light seconds
-           'OM_2':       u.rad,                    # radians
-           'OM_3':       u.rad,                    # radians
-           'PB_2':       u.s,                      # seconds
-           'PB_3':       u.s,                      # seconds
-           'T0_2':       u.s,                      # GPS seconds
-           'T0_3':       u.s,                      # GPS seconds
-           'FB':         u.Hz,                     # Hz
-           'A0':         u.s,                      # seconds
-           'B0':         u.s,                      # seconds
-           'D_AOP':      1./u.rad,                 # 1/rad
-           'KIN':        u.rad,                    # radians
-           'KOM':        u.rad,                    # radians
-           'WAVE_OM':    u.Hz,                     # Hz
-           'WAVEEPOCH':  u.s,                      # GPS seconds
-           'WAVESIN':    u.s,                      # seconds
-           'WAVECOS':    u.s,                      # seconds
-           'START':      u.s,                      # GPS seconds
-           'FINISH':     u.s,                      # GPS seconds
-           'TRES':       u.s,                      # seconds
-           'H0':         u.dimensionless_unscaled,
-           'APLUS':      u.dimensionless_unscaled,
-           'ACROSS':     u.dimensionless_unscaled,
-           'PHI0':       u.rad,                    # radians
-           'PSI':        u.rad,                    # radians
-           'COSIOTA':    u.dimensionless_unscaled,
-           'IOTA':       u.rad,                    # radians
-           'C22':        u.dimensionless_unscaled,
-           'C21':        u.dimensionless_unscaled,
-           'PHI22':      u.rad,                    # radians
-           'PHI21':      u.rad,                    # radians
-           'CGW':        u.dimensionless_unscaled,
-           'LAMBDA':     u.rad,                    # radians
-           'COSTHETA':   u.dimensionless_unscaled,
-           'THETA':      u.rad,
-           'I21':        u.dimensionless_unscaled,
-           'I31':        u.dimensionless_unscaled,
-           'Q22':        u.kg*u.m**2,              # kg m^2
-           'HPLUS':      u.dimensionless_unscaled,
-           'HCROSS':     u.dimensionless_unscaled,
-           'PSITENSOR':  u.rad,                    # radians
-           'PHI0TENSOR': u.rad,                    # radians
-           'HSCALARB':   u.dimensionless_unscaled,
-           'HSCALARL':   u.dimensionless_unscaled,
-           'PSISCALAR':  u.rad,                    # radians
-           'PHI0SCALAR': u.rad,                    # radians
-           'HVECTORX':   u.dimensionless_unscaled,
-           'HVECTORY':   u.dimensionless_unscaled,
-           'PSIVECTOR':  u.rad,                    # radians
-           'PHI0VECTOR': u.rad                     # radians
+PPUNITS = {'F':            u.Hz,                     # Hz
+           'P':            u.s,                      # seconds
+           'DIST':         u.m,                      # metres
+           'PX':           u.rad,                    # radians
+           'DM':           u.pc/(u.cm)**3,           # cm^-3 pc
+           'DM1':          u.pc/(u.cm**3*u.yr),      # pc cm^-3 yr^-1
+           'RA':           u.rad,                    # radians
+           'RAJ':          u.rad,                    # radians
+           'DEC':          u.rad,                    # radians
+           'DECJ':         u.rad,                    # radians
+           'PMRA':         u.rad/u.s,                # rad/s
+           'PMDEC':        u.rad/u.s,                # rad/s
+           'ELONG':        u.rad,                    # rad
+           'ELAT':         u.rad,                    # rad
+           'PEPOCH':       u.s,                      # GPS seconds
+           'POSEPOCH':     u.s,                      # GPS seconds
+           'DMEPOCH':      u.s,                      # GPS seconds
+           'GLEP':         u.s,                      # GPS seconds
+           'GLPH':         u.rad,                    # rad
+           'GLF0':         u.Hz,                     # Hz
+           'GLF1':         u.Hz/u.s,                 # Hz/s
+           'GLF2':         u.Hz/u.s**2,              # Hz s^-2
+           'GLF0D':        u.Hz,                     # Hz
+           'GLTD':         u.s,                      # sec
+           'A1':           u.s,                      # light seconds
+           'OM':           u.rad,                    # rad
+           'PB':           u.s,                      # seconds
+           'T0':           u.s,                      # GPS seconds
+           'TASC':         u.s,                      # GPS seconds
+           'EPS1':         u.dimensionless_unscaled,
+           'EPS2':         u.dimensionless_unscaled,
+           'GAMMA':        u.s,                      # seconds
+           'OMDOT':        u.rad/u.s,                # rad/s
+           'XDOT':         u.s/u.s,                  # light seconds/sec
+           'PBDOT':        u.s/u.s,                  # s/s
+           'EDOT':         1./u.s,                   # 1/sec
+           'EPSDOT1':      1./u.s,                   # 1/sec
+           'EPSDOT2':      1./u.s,                   # 1/sec
+           'XPBDOT':       u.s/u.s,                  # s/s
+           'SINI':         u.dimensionless_unscaled,
+           'MTOT':         u.kg,                     # kg
+           'M2':           u.kg,                     # kg
+           'DR':           u.dimensionless_unscaled,
+           'DTHETA':       u.dimensionless_unscaled,
+           'SHAPMAX':      u.dimensionless_unscaled,
+           'A1_2':         u.s,                      # light seconds
+           'A1_3':         u.s,                      # light seconds
+           'OM_2':         u.rad,                    # radians
+           'OM_3':         u.rad,                    # radians
+           'PB_2':         u.s,                      # seconds
+           'PB_3':         u.s,                      # seconds
+           'T0_2':         u.s,                      # GPS seconds
+           'T0_3':         u.s,                      # GPS seconds
+           'FB':           u.Hz,                     # Hz
+           'A0':           u.s,                      # seconds
+           'B0':           u.s,                      # seconds
+           'D_AOP':        1./u.rad,                 # 1/rad
+           'KIN':          u.rad,                    # radians
+           'KOM':          u.rad,                    # radians
+           'WAVE_OM':      u.Hz,                     # Hz
+           'WAVEEPOCH':    u.s,                      # GPS seconds
+           'WAVESIN':      u.s,                      # seconds
+           'WAVECOS':      u.s,                      # seconds
+           'START':        u.s,                      # GPS seconds
+           'FINISH':       u.s,                      # GPS seconds
+           'TRES':         u.s,                      # seconds
+           'H0':           u.dimensionless_unscaled,
+           'APLUS':        u.dimensionless_unscaled,
+           'ACROSS':       u.dimensionless_unscaled,
+           'PHI0':         u.rad,                    # radians
+           'PSI':          u.rad,                    # radians
+           'COSIOTA':      u.dimensionless_unscaled,
+           'IOTA':         u.rad,                    # radians
+           'C22':          u.dimensionless_unscaled,
+           'C21':          u.dimensionless_unscaled,
+           'PHI22':        u.rad,                    # radians
+           'PHI21':        u.rad,                    # radians
+           'CGW':          u.dimensionless_unscaled,
+           'LAMBDA':       u.rad,                    # radians
+           'COSTHETA':     u.dimensionless_unscaled,
+           'THETA':        u.rad,
+           'I21':          u.dimensionless_unscaled,
+           'I31':          u.dimensionless_unscaled,
+           'Q22':          u.kg*u.m**2,              # kg m^2
+           'H0_F':         u.dimensionless_unscaled,
+           'HPLUS':        u.dimensionless_unscaled,
+           'HCROSS':       u.dimensionless_unscaled,
+           'PSITENSOR':    u.rad,                    # radians
+           'PHI0TENSOR':   u.rad,                    # radians
+           'HSCALARB':     u.dimensionless_unscaled,
+           'HSCALARL':     u.dimensionless_unscaled,
+           'PSISCALAR':    u.rad,                    # radians
+           'PHI0SCALAR':   u.rad,                    # radians
+           'HVECTORX':     u.dimensionless_unscaled,
+           'HVECTORY':     u.dimensionless_unscaled,
+           'PSIVECTOR':    u.rad,                    # radians
+           'PHI0VECTOR':   u.rad,                    # radians
+           'HPLUS_F':      u.dimensionless_unscaled,
+           'HCROSS_F':     u.dimensionless_unscaled,
+           'PSITENSOR_F':  u.rad,                    # radians
+           'PHI0TENSOR_F': u.rad,                    # radians
+           'HSCALARB_F':   u.dimensionless_unscaled,
+           'HSCALARL_F':   u.dimensionless_unscaled,
+           'PSISCALAR_F':  u.rad,                    # radians
+           'PHI0SCALAR_F': u.rad,                    # radians
+           'HVECTORX_F':   u.dimensionless_unscaled,
+           'HVECTORY_F':   u.dimensionless_unscaled,
+           'PSIVECTOR_F':  u.rad,                    # radians
+           'PHI0VECTOR_F': u.rad                     # radians
           }
 
 # set units of parameters in a TEMPO-style parameter file if different from above
