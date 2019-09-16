@@ -416,6 +416,19 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
   add_variable_parameter( pars, ini, "HVECTORY", LALINFERENCE_PARAM_FIXED );
   add_variable_parameter( pars, ini, "PSIVECTOR", LALINFERENCE_PARAM_FIXED );
   add_variable_parameter( pars, ini, "PHI0VECTOR", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "HPLUS_F", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "HCROSS_F", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "PSITENSOR_F", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "PHI0TENSOR_F", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "HSCALARB_F", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "HSCALARL_F", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "PSISCALAR_F", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "PHI0SCALAR_F", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "HVECTORX_F", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "HVECTORY_F", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "PSIVECTOR_F", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "PHI0VECTOR_F", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "H0_F", LALINFERENCE_PARAM_FIXED );
 
   /* sky position */
   REAL8 ra = 0.;
@@ -601,10 +614,6 @@ void initialise_prior( LALInferenceRunState *runState )
   REAL8Array *corMat = NULL;
 
   INT4 varyphase = 0, varyskypos = 0, varybinary = 0;
-
-  /* check if non-GR parameters are going to be used */
-  UINT4 nonGR = 0;
-  if ( LALInferenceGetProcParamVal( commandLine, "--nonGR" ) ){ nonGR = 1; }
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--prior-file" );
   if( ppt ) { propfile = XLALStringDuplicate( LALInferenceGetProcParamVal(commandLine,"--prior-file")->value ); }
@@ -813,15 +822,6 @@ void initialise_prior( LALInferenceRunState *runState )
     if( varybinary ) { LALInferenceAddVariable( ifotemp->params, "varybinary", &varybinary, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED ); }
 
     ifotemp = ifotemp->next;
-  }
-
-  if ( !LALInferenceGetProcParamVal(commandLine, "--test-gaussian-likelihood" ) ){
-    REAL8Vector *freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "freqfactors" );
-
-    if ( nonGR && freqFactors->length != 1 && freqFactors->data[0] != 2. ){
-      fprintf(stderr, "Error... currently can only run with non-GR parameters for l=m=2 harmonic!\n");
-      exit(3);
-    }
   }
 
   /* now check for a parameter correlation coefficient matrix file */
