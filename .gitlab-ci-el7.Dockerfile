@@ -1,9 +1,8 @@
-FROM ligo/base:el7
+FROM containers.ligo.org/docker/base:el7
 
 LABEL name="LALSuite Nightly - EL7" \
       maintainer="Adam Mercer <adam.mercer@ligo.org>" \
-      support="Reference Platform" \
-      date="20180506"
+      support="Reference Platform"
 
 # add RPMs to container
 COPY rpms /rpms
