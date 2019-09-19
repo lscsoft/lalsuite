@@ -1,9 +1,8 @@
-FROM ligo/base:stretch
+FROM containers.ligo.org/docker/base:stretch
 
 LABEL name="LALSuite Nightly - Debian Stretch" \
       maintainer="Adam Mercer <adam.mercer@ligo.org>" \
-      support="Reference Platform" \
-      date="20180506"
+      support="Reference Platform"
 
 # add debian packages to container
 COPY debs /debs
