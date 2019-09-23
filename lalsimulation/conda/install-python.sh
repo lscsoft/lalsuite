@@ -7,6 +7,10 @@
 set -e
 pushd ${SRC_DIR}
 
+# when running on gitlab-ci, we are not using a production
+# build, so we don't want to use NDEBUG
+export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
+
 # only link libraries we actually use
 export GSL_LIBS="-L${PREFIX}/lib -lgsl"
 

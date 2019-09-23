@@ -2,6 +2,10 @@
 
 set -e
 
+# when running on gitlab-ci, we are not using a production
+# build, so we don't want to use NDEBUG
+export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
+
 # select FFT implementation
 if [[ "${fft_impl}" == "mkl" ]]; then
     FFT_CONFIG_ARGS="--disable-static --enable-intelfft"

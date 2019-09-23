@@ -2,6 +2,10 @@
 
 set -e
 
+# when running on gitlab-ci, we are not using a production
+# build, so we don't want to use NDEBUG
+export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
+
 ./configure \
 	--prefix="${PREFIX}" \
 	--enable-swig-iface \

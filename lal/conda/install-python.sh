@@ -7,6 +7,10 @@
 set -e
 pushd ${SRC_DIR}
 
+# when running on gitlab-ci, we are not using a production
+# build, so we don't want to use NDEBUG
+export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
+
 # if we're using MKL, the C library will have been built with
 # --enable-intelfft, so we have to use that here as well
 if [[ "${fft_impl}" == "mkl" ]]; then
