@@ -28,7 +28,7 @@ try:
     from . import _distance
 except ImportError:
     raise ImportError(
-        'Could not import the lalinference.bayestar._distance Python C '
+        'Could not import the lalinference._distance Python C '
         'extension module. This probably means that LALInfernece was built '
         'without HEALPix support. Please install CHEALPix '
         '(https://sourceforge.net/projects/healpix/files/Healpix_3.30/'

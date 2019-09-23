@@ -137,11 +137,14 @@ outputs:
     test:
       imports:
         - lalinference
+        - lalinference.bayespputils
         - lalinference.imrtgr
         - lalinference.imrtgr.imrtgrutils
         - lalinference.imrtgr.nrutils
         - lalinference.imrtgr.pneqns
+        - lalinference.lalinference_pipe_utils
         - lalinference.nest2pos
+        - lalinference.plot
         - lalinference.rapid_pe
         - lalinference.rapid_pe.common_cl
         - lalinference.rapid_pe.dagutils
@@ -153,6 +156,9 @@ outputs:
         - lalinference.tiger.make_injtimes
         - lalinference.tiger.omegascans_dag
         - lalinference.tiger.postproc
+        - lalinference.util.file
+        - lalinference.util.sqlite
+        - lalinference.wrapper
       commands:
         - cbcBayesBurstPPAnalysis --help
         - cbcBayesBurstPostProc --help
