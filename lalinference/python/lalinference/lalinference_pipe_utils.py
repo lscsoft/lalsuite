@@ -2589,14 +2589,14 @@ class EngineNode(SingularityNode):
                 Instead for each event (including single IFO runs) we do:
                 a) get its trigtime
                 b) set PSDlengh=maxPSD (requested by the user or equal to 32seglen)
-                c) go define GPSstart= trigtime - PSDlength - seglen - padding -2
+                c) go define GPSstart= trigtime - (PSDlength + seglen + padding - 2)
 
                 By definition this means that GPSstart+ PSDlengh with never overlap with trigtime. Furthermore running on the same event will lead to the same PSDstart and lenght, no matter of whether that is a one-event or multi-event run.
                 We should check that the PSDstart so obtained is in science mode. This is what the while loop 9 lines below is meant for.
         """
         trig_time=self.get_trig_time()
         maxLength=self.maxlength
-        offset=(maxLength+self.seglen+2+self.padding)
+        offset=(maxLength+self.seglen-2.+self.padding)
         self.GPSstart=trig_time-offset
         self.__GPSend=0
         length=maxLength
