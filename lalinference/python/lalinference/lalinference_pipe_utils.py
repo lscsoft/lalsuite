@@ -2712,6 +2712,7 @@ class BayesWavePSDJob(SingularityJob,pipeline.CondorDAGJob,pipeline.AnalysisJob)
         self.set_stdout_file(os.path.join(logdir,'bayeswavepsd-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.join(logdir,'bayeswavepsd-$(cluster)-$(process).err'))
         self.add_condor_cmd('getenv','True')
+        self.add_condor_cmd('request_memory',cp.get('condor','bayeswave_request_memory'))
         self.ispreengine = False
         self.add_condor_cmd('stream_output', True)
         self.add_condor_cmd('stream_error', True)
@@ -2754,6 +2755,7 @@ class BayesWavePostJob(SingularityJob,pipeline.CondorDAGJob,pipeline.AnalysisJob
         self.set_stdout_file(os.path.join(logdir,'bayeswavepost-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.join(logdir,'bayeswavepost-$(cluster)-$(process).err'))
         self.add_condor_cmd('getenv','True')
+        self.add_condor_cmd('request_memory',cp.get('condor','bayeswavepost_request_memory'))
         self.ispreengine = False
         self.add_condor_cmd('stream_output', True)
         self.add_condor_cmd('stream_error', True)
