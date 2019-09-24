@@ -35,6 +35,7 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
+    - help2man
     - make
     - pkg-config
     - swig >={{ swig_version }}
@@ -88,6 +89,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - help2man
         - make
         - pkg-config
         - swig >={{ swig_version }}

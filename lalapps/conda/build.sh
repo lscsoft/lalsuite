@@ -3,6 +3,7 @@
 ./configure \
 	--prefix=${PREFIX} \
 	--disable-gcc-flags \
+	--enable-help2man \
 	--enable-cfitsio \
 	--enable-openmp \
 	--enable-mpi \

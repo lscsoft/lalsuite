@@ -14,6 +14,7 @@ set -e
 	--disable-python \
 	--disable-gcc-flags \
 	--enable-silent-rules \
+	--enable-help2man \
 	--enable-openmp
 make -j ${CPU_COUNT}
 make -j ${CPU_COUNT} check
