@@ -463,6 +463,14 @@ typedef enum tagSpinSupport {
    LAL_SIM_INSPIRAL_NUMSPINSUPPORT	/**< Number of elements in enum, useful for checking bounds */
  } SpinSupport;
 
+typedef enum tagSpinFreq {
+  LAL_SIM_INSPIRAL_SPINS_F_REF,   /** These approximants are parameterized by the spins at f_ref */
+  LAL_SIM_INSPIRAL_SPINS_FLOW,      /** These approximants are parameterized by the spins at flow */
+  LAL_SIM_INSPIRAL_SPINS_NONPRECESSING, /** These approximants have nonprecessing spins */
+  LAL_SIM_INSPIRAL_SPINS_CASEBYCASE, /** These approximants (NR waveforms) have spins parameterized at different frequencies on a case-by-case basis **/
+  LAL_SIM_INSPIRAL_NUMSPINFREQ  /**< Number of elements in enum, useful for checking bounds */
+} SpinFreq;
+
 typedef enum tagTestGRaccept {
   LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS,   /** These approximants cannot accept testGR params as input params */
   LAL_SIM_INSPIRAL_TESTGR_PARAMS,      /** These approximants accept testGR params as input params */
@@ -520,6 +528,7 @@ int XLALSimInspiralGetFrameAxisFromString(const char *waveform);
 int XLALSimInspiralGetTaperFromString(const char *string);
 int XLALSimInspiralGetHigherModesFromString(const char *string);
 int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx);
+int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx);
 int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx);
 const char * XLALSimInspiralGetStringFromApproximant(Approximant approximant);
 const char * XLALSimInspiralGetStringFromPNOrder(LALPNOrder order);

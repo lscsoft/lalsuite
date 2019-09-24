@@ -5223,6 +5223,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
   {
     case SpinTaylor:
     case SpinTaylorFrameless:
+    case SpinTaylorT1:
     case SpinTaylorT4:
     case SpinTaylorT5:
     case PhenSpinTaylor:
@@ -5245,6 +5246,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
       break;
     case SpinTaylorF2:
     case FindChirpPTF:
+    case HGimri:
       spin_support=LAL_SIM_INSPIRAL_SINGLESPIN;
       break;
     case TaylorF2:
@@ -5300,11 +5302,105 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
       spin_support=LAL_SIM_INSPIRAL_SPINLESS;
       break;
     default:
-      XLALPrintError("Approximant not supported by lalsimuation TD/FD routines \n");
+      XLALPrintError("Approximant not supported by lalsimulation TD/FD routines \n");
       XLAL_ERROR(XLAL_EINVAL);
     }
 
     return spin_support;
+
+}
+
+int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
+
+  SpinFreq spin_freq=LAL_SIM_INSPIRAL_NUMSPINFREQ;
+  switch (approx)
+  {
+    case SEOBNRv3:
+    case SEOBNRv3_pert:
+    case SEOBNRv3_opt:
+    case SEOBNRv3_opt_rk4:
+      spin_freq=LAL_SIM_INSPIRAL_SPINS_FLOW;
+      break;
+    case SpinTaylor:
+    case SpinTaylorFrameless:
+    case SpinTaylorT1:
+    case SpinTaylorT4:
+    case SpinTaylorT5:
+    case PhenSpinTaylor:
+    case PhenSpinTaylorRD:
+    case SpinTaylorT3:
+    case IMRPhenomP:
+    case IMRPhenomPv2:
+    case IMRPhenomPv2_NRTidal:
+    case SpinTaylorT5Fourier:
+    case SpinTaylorT4Fourier:
+    case SpinDominatedWf:
+    case NRSur4d2s:
+    case NRSur7dq2:
+    case SpinTaylorF2:
+      spin_freq=LAL_SIM_INSPIRAL_SPINS_F_REF;
+      break;
+    case FindChirpPTF:
+    case HGimri:
+    case TaylorF2:
+    case TaylorF2Ecc:
+    case TaylorF2NLTides:
+    case TaylorF2RedSpin:
+    case TaylorF2RedSpinTidal:
+    case IMRPhenomB:
+    case IMRPhenomC:
+    case IMRPhenomD:
+    case IMRPhenomD_NRTidal:
+    case IMRPhenomHM:
+    case SEOBNRv1:
+    case SEOBNRv2:
+    case SEOBNRv4:
+    case SEOBNRv2_opt:
+    case SEOBNRv4_opt:
+    case SEOBNRv2T:
+    case SEOBNRv4T:
+    case SEOBNRv4HM:
+    case SEOBNRv1_ROM_EffectiveSpin:
+    case SEOBNRv1_ROM_DoubleSpin:
+    case SEOBNRv2_ROM_EffectiveSpin:
+    case SEOBNRv2_ROM_DoubleSpin:
+    case SEOBNRv2_ROM_DoubleSpin_HI:
+    case Lackey_Tidal_2013_SEOBNRv2_ROM:
+    case SEOBNRv4_ROM:
+    case SEOBNRv4_ROM_NRTidal:
+    case SEOBNRv4T_surrogate:
+    case TaylorR2F4:
+    case IMRPhenomFB:
+    case FindChirpSP:
+    case NRHybSur3dq8:
+    case TaylorEt:
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case TaylorT4:
+    case EccentricTD:
+    case EccentricFD:
+    case IMRPhenomA:
+    case EOBNRv2HM:
+    case EOBNRv2HM_ROM:
+    case EOBNRv2:
+    case EOBNRv2_ROM:
+    case EOBNR:
+    case EOB:
+    case IMRPhenomFA:
+    case GeneratePPN:
+    case TEOBResum_ROM:
+      spin_freq=LAL_SIM_INSPIRAL_SPINS_NONPRECESSING;
+      break;
+    case NR_hdf5:
+      spin_freq=LAL_SIM_INSPIRAL_SPINS_CASEBYCASE;
+      break;
+    default:
+      XLALPrintError("Approximant not supported by lalsimulation TD/FD routines \n");
+      XLAL_ERROR(XLAL_EINVAL);
+    }
+
+    return spin_freq;
 
 }
 
@@ -5334,6 +5430,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SpinQuadTaylor:
     case FindChirpSP:
     case FindChirpPTF:
+    case HGimri:
     case GeneratePPN:
     case BCVC:
     case FrameFile:
@@ -5397,13 +5494,14 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case EccentricTD:
     case IMRPhenomC:
     case IMRPhenomD:
+    case IMRPhenomD_NRTidal:
     case IMRPhenomP:
     case IMRPhenomPv2:
     case IMRPhenomPv2_NRTidal:
       testGR_accept=LAL_SIM_INSPIRAL_TESTGR_PARAMS;
       break;
     default:
-      XLALPrintError("Approximant not supported by lalsimuation TD/FD routines \n");
+      XLALPrintError("Approximant not supported by lalsimulation TD/FD routines \n");
       XLAL_ERROR(XLAL_EINVAL);
     }
   return testGR_accept;
