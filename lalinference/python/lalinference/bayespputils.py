@@ -6947,7 +6947,11 @@ def plot_spline_pos(logf, ys, nf=100, level=0.9, color='k', label=None, xform=No
     plt.errorbar(np.exp(logf), mu, yerr=[lower_cl, upper_cl], fmt='.', color=color, lw=4, alpha=0.5, capsize=0)
 
     for i, samp in enumerate(ys):
-        temp = interpolate.spline(logf, samp, np.log(fs))
+        try:
+            temp = interpolate.spline(logf, samp, np.log(fs))
+        except AttributeError:   # scipy < 0.19.0
+            calSpline = interpolate.InterpolatedUnivariateSpline(logf, samp, k=3, ext=2) #cubic spline (k=3), raises ValueError in extrapolation
+            temp = calSpline(np.log(fs))
         if xform is None:
             data[i] = temp
         else:
