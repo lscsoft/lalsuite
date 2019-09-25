@@ -605,7 +605,7 @@ int XLALSimInspiralChooseFDWaveformFromCache(
 						 S1x, S1y, S1z, S2x, S2y, S2z,
 						 r, i, phiRef, 0., 0., 0.,
 						 deltaF, f_min, f_max, f_ref,
-						 NULL, approximant);
+						 LALpars, approximant);
         }
     }
 
