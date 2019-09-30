@@ -46,16 +46,16 @@ BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 
 # python3x
-#BuildRequires: python-srpm-macros
-#BuildRequires: python3-rpm-macros
-#BuildRequires: python%{python3_pkgversion}
-#BuildRequires: python%{python3_pkgversion}-devel
-#BuildRequires: python%{python3_pkgversion}-glue
-#BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-#BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
-#BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-#BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-#BuildRequires: python%{python3_pkgversion}-numpy
+BuildRequires: python-srpm-macros
+BuildRequires: python3-rpm-macros
+BuildRequires: python%{python3_pkgversion}
+BuildRequires: python%{python3_pkgversion}-devel
+BuildRequires: python%{python3_pkgversion}-glue
+BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python%{python3_pkgversion}-numpy
 
 # octave
 BuildRequires: octave-devel
@@ -116,22 +116,22 @@ Provides: %{name}-python
 This package provides the Python %{python2_version} bindings for LALInspiral.
 
 # python3x-lalinspiral
-#%package -n python%{python3_pkgversion}-%{name}
-#Summary: Python %{python3_version} bindings for LALInspiral
-#Group: LAL
-#Requires: %{name} = %{version}
-#Requires: python%{python3_pkgversion}
-#Requires: python%{python3_pkgversion}-glue
-#Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-#Requires: python%{python3_pkgversion}-lalburst
-#Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
-#Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-#Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-#Requires: python%{python3_pkgversion}-ligo-segments
-#Requires: python%{python3_pkgversion}-numpy
-#%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
-#%description -n python%{python3_pkgversion}-%{name}
-#This package provides the Python bindings for LALInspiral.
+%package -n python%{python3_pkgversion}-%{name}
+Summary: Python %{python3_version} bindings for LALInspiral
+Group: LAL
+Requires: %{name} = %{version}
+Requires: python%{python3_pkgversion}
+Requires: python%{python3_pkgversion}-glue
+Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+Requires: python%{python3_pkgversion}-lalburst
+Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
+Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python%{python3_pkgversion}-ligo-segments
+Requires: python%{python3_pkgversion}-numpy
+%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
+%description -n python%{python3_pkgversion}-%{name}
+This package provides the Python bindings for LALInspiral.
 
 # lalinspiral-octave
 %package octave
@@ -157,13 +157,13 @@ This package provides the Octave bindings for LALInspiral.
 %{__make} %{?_smp_mflags} V=1
 
 # build python3 library (copy things so we don't have to rebuild them)
-#rm -rf %py3dir
-#cp -r . %py3dir
-#pushd %py3dir
-#%%configure %{configure_opts} --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
-#%{__make} %{?_smp_mflags} V=1 -C swig
-#%{__make} %{?_smp_mflags} V=1 -C python
-#popd
+rm -rf %py3dir
+cp -r . %py3dir
+pushd %py3dir
+%configure %{configure_opts} --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
+%{__make} %{?_smp_mflags} V=1 -C swig
+%{__make} %{?_smp_mflags} V=1 -C python
+popd
 
 %check
 # C + python2 + octave
@@ -175,8 +175,8 @@ This package provides the Octave bindings for LALInspiral.
 # C + python2 + octave
 %make_install
 # python3
-#%{__make} -C %py3dir -C swig install-exec-am DESTDIR=%{?buildroot}
-#%{__make} -C %py3dir -C python install DESTDIR=%{?buildroot}
+%{__make} -C %py3dir -C swig install-exec-am DESTDIR=%{?buildroot}
+%{__make} -C %py3dir -C python install DESTDIR=%{?buildroot}
 find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
@@ -211,10 +211,10 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %license COPYING
 %{python2_sitearch}/*
 
-#%files -n python%{python3_pkgversion}-%{name}
-#%defattr(-,root,root)
-#%license COPYING
-#%{python3_sitearch}/*
+%files -n python%{python3_pkgversion}-%{name}
+%defattr(-,root,root)
+%license COPYING
+%{python3_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
