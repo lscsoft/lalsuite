@@ -1,7 +1,19 @@
 import sys
 import argparse
 from lalinference.wrapper import LALInferenceCBCWrapper
-import cpnest.model
+import os.path
+try:
+    import cpnest.model
+except ImportError as exc:
+    if not "cpnest" in str(exc):  # don't catch other errors
+        raise
+    exc.args = (
+        "failed to import cpnest, this is required to run {}, "
+        "please install it manually via `pip install cpnest`".format(
+            os.path.basename(__file__),
+        ),
+    )
+    raise
 
 class LIModel(cpnest.model.Model):
     def __init__(self, *args, **kwargs):
