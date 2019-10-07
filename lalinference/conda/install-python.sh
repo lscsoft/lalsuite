@@ -7,6 +7,10 @@
 set -e
 pushd ${SRC_DIR}
 
+# when running on gitlab-ci, we are not using a production
+# build, so we don't want to use NDEBUG
+export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
+
 # configure only python bindings and pure-python extras
 ./configure \
 	--prefix=$PREFIX \
@@ -15,7 +19,6 @@ pushd ${SRC_DIR}
 	--enable-python \
 	--disable-doxygen \
 	--enable-help2man \
-	--disable-gcc-flags \
 	--enable-silent-rules || { cat config.log; exit 1; }
 
 # build
