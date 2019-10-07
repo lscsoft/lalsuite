@@ -14,6 +14,7 @@ pushd ${SRC_DIR}
 	--enable-swig-python \
 	--enable-python \
 	--disable-doxygen \
+	--enable-help2man \
 	--disable-gcc-flags \
 	--enable-silent-rules || { cat config.log; exit 1; }
 

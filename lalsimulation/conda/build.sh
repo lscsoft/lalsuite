@@ -7,6 +7,7 @@ export GSL_LIBS="-L${PREFIX}/lib -lgsl"
 
 ./configure \
 	--prefix="${PREFIX}" \
+	--enable-help2man \
 	--enable-swig-iface \
 	--disable-swig-octave \
 	--disable-swig-python \

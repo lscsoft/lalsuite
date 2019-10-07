@@ -13,6 +13,7 @@ export GSL_LIBS="-L${PREFIX}/lib -lgsl"
 # configure only python bindings and pure-python extras
 ./configure \
 	--prefix=$PREFIX \
+	--enable-help2man \
 	--disable-swig-iface \
 	--enable-swig-python \
 	--enable-python \
