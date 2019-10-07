@@ -1059,6 +1059,10 @@ def bbh_final_spin_precessing_HBR2016(m1, m2, chi1, chi2, tilt1, tilt2, phi12, v
         phi12: angle between in-plane spin components
         """
 
+        # Vectorize the function if arrays are provided as input
+        if np.size(m1) * np.size(m2) * np.size(chi1) * np.size(chi2) * np.size(tilt1) * np.size(tilt2) * np.size(phi12) > 1:
+            return np.vectorize(bbh_final_spin_precessing_HBR2016)(m1, m2, chi1, chi2, tilt1, tilt2, phi12, version)
+
         # Calculate q and vectorize the masses and spins if arrays are provided as input
 
         m1, m2, chi1, chi2, q = _bbh_HBR2016_setup(m1, m2, chi1, chi2)
@@ -1085,8 +1089,14 @@ def bbh_final_spin_precessing_HBR2016(m1, m2, chi1, chi2, tilt1, tilt2, phi12, v
 
         ell = _bbh_HBR2016_ell(m1, m2, chi1*cos_betas, chi2*cos_gammas, version)
 
+        # Compute the final spin value [Eq. (16) in HBR], truncating the argument of the square root at zero if it becomes negative
+        sqrt_arg = chi1*chi1 + chi2*chi2*q2*q2 + 2.*chi1*chi2*q2*cos_alpha + 2.*(chi1*cos_betas + chi2*q2*cos_gammas)*ell*q + ell*ell*q2
+        if sqrt_arg < 0.:
+            print("bbh_final_spin_precessing_HBR2016(): The argument of the square root is %f; truncating it to zero."%sqrt_arg)
+            sqrt_arg = 0.
+
         # Return the final spin value [Eq. (16) in HBR]
-        return (chi1*chi1 + chi2*chi2*q2*q2 + 2.*chi1*chi2*q2*cos_alpha + 2.*(chi1*cos_betas + chi2*q2*cos_gammas)*ell*q + ell*ell*q2)**0.5/((1.+q)*(1.+q))
+        return sqrt_arg**0.5/((1.+q)*(1.+q))
 
 #######################
 # Peak luminosity fits
