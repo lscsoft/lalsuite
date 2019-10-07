@@ -9,7 +9,7 @@ lalsimulation/      @riccardo-sturani @frank-ohme @sebastian-khan @harald.pfeiff
 lalburst/           @kipp.cannon @duncanmmacleod @gabriele-vedovato @marco-drago
 lalpulsar/          @karl-wette @david-keitel
 lalinspiral/        @jolien-creighton @adam-mercer
-lalinference/       @bfarr @cjhaster @john-veitch @vivien
+lalinference/       @bfarr @cjhaster @john-veitch @vivien @salvatore-vitale
 
 # lalapps
 lalapps/src/findchirp/           @jolien-creighton @adam-mercer
