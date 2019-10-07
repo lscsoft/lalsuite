@@ -2,21 +2,19 @@ BUILT_SOURCES =
 MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
-include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
-
-SUBDIRS = \
-	nrfits \
-	$(END_OF_LIST)
-
-vcs_info_sources = git_version.py
 
 if HAVE_PYTHON
 
-pymoduledir = $(pkgpythondir)
+pymoduledir = $(pkgpythondir)/nrfits
 
 pymodule_PYTHON = \
 	__init__.py \
-	git_version.py \
+	eval_fits.py \
+	nrfits.py \
+	NRSur7dq4Remnant.py \
+	NRSur3dq8Remnant.py \
+	pn_spin_evolution_wrapper.py \
+	quaternion_utils.py \
 	$(END_OF_LIST)
 
 endif
