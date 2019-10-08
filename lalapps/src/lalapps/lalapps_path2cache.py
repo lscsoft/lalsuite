@@ -35,7 +35,11 @@ from optparse import OptionParser
 
 
 from ligo import segments
-from glue import lal
+
+
+from lal.utils import CacheEntry
+
+
 #from lalapps import git_version
 
 
@@ -116,10 +120,10 @@ for line in src:
 	path, filename = os.path.split(line.strip())
 	url = "file://localhost%s" % os.path.abspath(os.path.join(path, filename))
 	try:
-		cache_entry = lal.CacheEntry.from_T050017(url)
+		cache_entry = CacheEntry.from_T050017(url)
 	except ValueError as e:
 		if options.include_all:
-			cache_entry = lal.CacheEntry(None, None, None, url)
+			cache_entry = CacheEntry(None, None, None, url)
 		elif options.force:
 			continue
 		else:
