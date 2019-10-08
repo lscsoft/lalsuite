@@ -44,7 +44,7 @@ cache:
 #
 
 documentation:
-  image: containers.ligo.org/docker/lalsuite-dev:stretch
+  image: igwn/lalsuite-dev:stretch
   stage: level0
   script:
     - ./00boot
@@ -73,7 +73,7 @@ documentation:
 # in `dependencies:`
 
 make-dist:
-  image: ligo/lalsuite-dev:el7
+  image: igwn/lalsuite-dev:el7
   stage: dist
   script:
     - ./00boot
@@ -93,7 +93,7 @@ make-dist:
 #
 
 .levelN:rpm: &levelN-rpm-package
-  image: containers.ligo.org/docker/lalsuite-dev:el7
+  image: igwn/lalsuite-dev:el7
   variables:
     GIT_STRATEGY: none
     RPM_BUILD_CPUS: 4
@@ -211,7 +211,7 @@ level5:rpm:lalapps:
 #
 lalinference_testjob:
   stage: nightly
-  image: ligo/lalsuite-dev:el7
+  image: igwn/lalsuite-dev:el7
   before_script:
     - yum -y install rpmbuild/RPMS/x86_64/*.rpm
   script:
@@ -291,7 +291,7 @@ docker:tags:el7:
 #
 
 .levelN:deb: &levelN-deb-package
-  image: containers.ligo.org/docker/lalsuite-dev:stretch
+  image: igwn/lalsuite-dev:stretch
   variables:
     GIT_STRATEGY: none
   script:
@@ -481,7 +481,7 @@ docker:tags:stretch:
   conda info --all
 
 .levelN:conda: &levelN-conda-package
-  image: containers.ligo.org/docker/base:conda
+  image: igwn/base:conda
   variables:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
@@ -635,7 +635,7 @@ level5:conda:lalapps:
 
 nightly:clang:7:
   <<: *clang-build
-  image: containers.ligo.org/docker/lalsuite-dev-clang:7
+  image: igwn/lalsuite-dev-clang:7
   variables:
     CLANG: clang-7
     CLANGXX: clang++-7
@@ -643,7 +643,7 @@ nightly:clang:7:
 
 nightly:clang:8:
   <<: *clang-build
-  image: containers.ligo.org/docker/lalsuite-dev-clang:8
+  image: igwn/lalsuite-dev-clang:8
   variables:
     CLANG: clang-8
     CLANGXX: clang++-8
@@ -651,7 +651,7 @@ nightly:clang:8:
 
 nightly:clang:9:
   <<: *clang-build
-  image: containers.ligo.org/docker/lalsuite-dev-clang:9
+  image: igwn/lalsuite-dev-clang:9
   variables:
     CLANG: clang-9
     CLANGXX: clang++-9
@@ -670,17 +670,17 @@ nightly:clang:9:
 
 nightly:gcc:7:
   <<: *gcc-build
-  image: containers.ligo.org/docker/lalsuite-dev-gcc:7
+  image: igwn/lalsuite-dev-gcc:7
   allow_failure: true
 
 nightly:gcc:8:
   <<: *gcc-build
-  image: containers.ligo.org/docker/lalsuite-dev-gcc:8
+  image: igwn/lalsuite-dev-gcc:8
   allow_failure: true
 
 nightly:gcc:9:
   <<: *gcc-build
-  image: containers.ligo.org/docker/lalsuite-dev-gcc:9
+  image: igwn/lalsuite-dev-gcc:9
   allow_failure: true
 
 # conda
@@ -752,7 +752,7 @@ conda:python37:
 # available
 # FIXME: allow failure due to #124
 nightly:debian:buster:
-  image: containers.ligo.org/docker/lalsuite-dev:buster
+  image: igwn/lalsuite-dev:buster
   stage: nightly
   dependencies: []
   script:
@@ -940,7 +940,7 @@ deploy:wheel:
 #
 
 pages:
-  image: containers.ligo.org/docker/lalsuite-dev:stretch
+  image: igwn/lalsuite-dev:stretch
   stage: nightly
   script:
     - ./00boot

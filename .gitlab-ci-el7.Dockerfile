@@ -1,4 +1,4 @@
-FROM containers.ligo.org/docker/base:el7
+FROM igwn/base:el7
 
 LABEL name="LALSuite Nightly - EL7" \
       maintainer="Adam Mercer <adam.mercer@ligo.org>" \
