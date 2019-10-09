@@ -42,18 +42,18 @@ requirements:
 test:
   commands:
     - lalsimulation_version --verbose
-    - lalsim-bh-qnmode --help
-    - lalsim-bh-ringdown --help
-    - lalsim-bh-sphwf --help
-    - lalsim-burst --help
-    - lalsim-detector-noise --help
+    - lalsim-bh-qnmode -l 0 -m 0 -s 0
+    - lalsim-bh-ringdown -M 10 -a 0 -r 100 -e 0.001 -i 0 -l 2 -m 2
+    - lalsim-bh-sphwf -a 0 -l 2 -m 2 -s 0
+    - lalsim-burst -w SineGaussian -q 10 -f 100 -H 1e-21 1> /dev/null
+    - lalsim-detector-noise -C -t 1 -r 10
     - lalsim-detector-strain --help
     - lalsim-inject --help
-    - lalsim-inspiral --help
-    - lalsim-ns-eos-table --help
-    - lalsim-ns-mass-radius --help
-    - lalsim-ns-params --help
-    - lalsim-sgwb --help
+    - lalsim-inspiral > /dev/null
+    - lalsim-ns-eos-table -n ALF1 1> /dev/null
+    - lalsim-ns-mass-radius -n ALF1 1> /dev/null
+    - lalsim-ns-params -n ALF1
+    - lalsim-sgwb --geo -t 1 -r 100 -W 1 1> /dev/null
     - lalsim-unicorn --help
 
 outputs:
