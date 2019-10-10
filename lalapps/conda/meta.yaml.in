@@ -30,15 +30,14 @@ source:
     - disable-weave-tests.patch
 
 build:
-  number: 9999
-  skip: true  # [win]
+  error_overdepending: true
+  error_overlinking: true
   ignore_run_exports:
     # run_exports parsing for fftw is broken, so we ignore it
     # manually, for now
     - fftw
-    # we don't directly link against libblas, but we specify it so
-    # that we don't end up linking against libopenblas
-    - libblas
+  number: 9999
+  skip: true  # [win]
 
 requirements:
   build:
@@ -59,7 +58,6 @@ requirements:
     - lalmetaio >={{ lalmetaio_version }}
     - lalpulsar >={{ lalpulsar_version }}
     - lalsimulation >={{ lalsimulation_version }}
-    - libblas
     - libframe
     - llvm-openmp  # [osx]
     - metaio
