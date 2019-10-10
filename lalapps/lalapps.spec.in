@@ -119,7 +119,7 @@ Algorithm Library.
 %build
 # force linking agsinst system libmpi
 export OMPI_LIBS="-lmpi -Wl,--disable-new-dtags"
-%configure --disable-gcc-flags --enable-cfitsio --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc MPICXX=/usr/lib64/openmpi/bin/mpicxx MPIFC=/usr/lib64/openmpi/bin/mpifc
+%configure --disable-gcc-flags --enable-cfitsio --enable-openmp
 %{__make} %{?_smp_mflags} V=1
 
 %check
