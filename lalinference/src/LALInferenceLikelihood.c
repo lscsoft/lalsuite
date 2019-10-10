@@ -1373,8 +1373,24 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   //loglikelihood = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
 
   if(LALInferenceCheckVariable(model->params, "lambdaS")){
-     REAL8 lambda1 = *(REAL8 *)LALInferenceGetVariable(model->params,"lambda1");
-     REAL8 lambda2 = *(REAL8 *)LALInferenceGetVariable(model->params,"lambda2");
+
+     REAL8 lambda1 = 0.0;
+     REAL8 lambda2 = 0.0;
+     
+     /*
+     When using TimeMarginalised likelihood, the functions in LALInferenceTemplate.c appears not to be called
+     for the first likelihood evaluation.
+     This menas that the lambda1 and lambda2 parameters aren't added into model->params.
+     So, we check if they are here, and if not run model->params through LALInferenceBinaryLove to fill them in!
+     */
+
+     if (LALInferenceCheckVariable(model->params, "lambda1") && LALInferenceCheckVariable(model->params, "lambda2")){
+         lambda1 = *(REAL8 *)LALInferenceGetVariable(model->params,"lambda1");
+         lambda2 = *(REAL8 *)LALInferenceGetVariable(model->params,"lambda2");
+     } else {
+         LALInferenceBinaryLove(model->params, &lambda1, &lambda2);
+     }
+
      LALInferenceAddVariable(currentParams,"lambda1",&lambda1,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
      LALInferenceAddVariable(currentParams,"lambda2",&lambda2,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
      // The BinaryLove model is only physically valid where lambda2 > lambda1 as it assumes m1 > m2
