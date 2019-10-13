@@ -653,14 +653,6 @@ level5:conda:lalapps:
     - schedules
     - web
 
-nightly:clang:7:
-  <<: *clang-build
-  image: igwn/lalsuite-dev-clang:7
-  variables:
-    CLANG: clang-7
-    CLANGXX: clang++-7
-  allow_failure: true
-
 nightly:clang:8:
   <<: *clang-build
   image: igwn/lalsuite-dev-clang:8
