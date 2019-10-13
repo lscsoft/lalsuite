@@ -669,6 +669,14 @@ nightly:clang:9:
     CLANGXX: clang++-9
   allow_failure: true
 
+nightly:clang:dev:
+  <<: *clang-build
+  image: igwn/lalsuite-dev-clang:dev
+  variables:
+    CLANG: clang
+    CLANGXX: clang++
+  allow_failure: true
+
 .gcc-build: &gcc-build
   stage: nightly
   dependencies: []
