@@ -1,0 +1,327 @@
+diff --git a/lalinference/python/cbcBayesCompPos.py b/lalinference/python/cbcBayesCompPos.py
+index 2da89820ae..8424815d06 100644
+--- a/lalinference/python/cbcBayesCompPos.py
++++ b/lalinference/python/cbcBayesCompPos.py
+@@ -65,10 +65,10 @@ paramNameLatexMap = {'m1': 'm_1', 'm2' : 'm_2', 'mtotal' : r'M_{\rm tot}', 'mchi
+                      'cos(iota)': r'\cos \iota', 'tilt1': r't_1', 'tilt2': r't_2', 'ra': r'\alpha', 'dec': r'\delta',
+                      'lambdat' : r'\tilde{\Lambda}', 'dlambdat': r'\delta \tilde{\Lambda}',
+                      'lambda1' : r'\lambda_1', 'lambda2': r'\lambda_2',
+-                     'lam_tilde' : r'\tilde{\Lambda}', 'dlam_tilde': r'\delta \tilde{\Lambda}','dchi0':r'\delta\chi_0','dchi1':r'\delta\chi_1','dchi2':r'\delta\chi_2','dchi3':r'\delta\chi_3','dchi4':r'\delta\chi_4','dchi5':r'\delta\chi_5','dchi5l':r'\delta\chi_{5l}','dchi6':r'\delta\chi_6','dchi6l':r'\delta\chi_{6l}','dchi7':r'\delta\chi_7','dbeta2':r'\delta\beta_2','dbeta3':r'\delta\beta_3','dsigma2':r'\delta\sigma_2','dsigma3':r'\delta\sigma_3','dsigma4':r'\delta\sigma_4','dbeta2':r'\delta\beta_2','dbeta3':r'\delta\beta_3' }
++                     'lam_tilde' : r'\tilde{\Lambda}', 'dlam_tilde': r'\delta \tilde{\Lambda}','dchi0':r'\delta\chi_0','dchi1':r'\delta\chi_1','dchi2':r'\delta\chi_2','dchi3':r'\delta\chi_3','dchi4':r'\delta\chi_4','dchi5':r'\delta\chi_5','dchi5l':r'\delta\chi_{5l}','dchi6':r'\delta\chi_6','dchi6l':r'\delta\chi_{6l}','dchi7':r'\delta\chi_7','dbeta2':r'\delta\beta_2','dbeta3':r'\delta\beta_3','dsigma2':r'\delta\sigma_2','dsigma3':r'\delta\sigma_3','dsigma4':r'\delta\sigma_4','dbeta2':r'\delta\beta_2','dbeta3':r'\delta\beta_3','dquadmons':r'\delta\kappa_s' ,'dquadmona':r'\delta\kappa_a','dquadmon1':r'\delta\kappa_1','dquadmon2':r'\delta\kappa_2'}
+ 
+ # Only these parameters, in this order appear in confidence level table.
+-clTableParams = ['mchirp', 'mc', 'chirpmass', 'eta', 'q', 'm1', 'm2', 'distance', 'distMPC', 'dist', 'cos(iota)', 'iota', 'theta_jn', 'psi', 'ra', 'dec', 'time', 'phase', 'a1', 'a2', 'costilt1', 'costilt2','dchi0','dchi1','dchi2','dchi3','dchi4','dchi5','dchi5l','dchi6','dchi6l','dchi7','dbeta2','dbeta3','dsigma2','dsigma3','dsigma4','dbeta2','dbeta3']
++clTableParams = ['mchirp', 'mc', 'chirpmass', 'eta', 'q', 'm1', 'm2', 'distance', 'distMPC', 'dist', 'cos(iota)', 'iota', 'theta_jn', 'psi', 'ra', 'dec', 'time', 'phase', 'a1', 'a2', 'costilt1', 'costilt2','dchi0','dchi1','dchi2','dchi3','dchi4','dchi5','dchi5l','dchi6','dchi6l','dchi7','dbeta2','dbeta3','dsigma2','dsigma3','dsigma4','dbeta2','dbeta3','dquadmons','dquadmona','dquadmon1','dquadmon2']
+ 
+ 
+ greedyBinSizes={'mc':0.001,'m1':0.1,'m2':0.1,'mass1':0.1,'mass2':0.1,'mtotal':0.1,'eta':0.001,'q':0.001,'asym_massratio':0.001,'iota':0.05,'time':1e-4,'distance':5.0,'dist':1.0,'mchirp':0.01,'chirpmass':0.01,'a1':0.02,'a2':0.02,'phi1':0.05,'phi2':0.05,'theta1':0.05,'theta2':0.05,'ra':0.05,'dec':0.005,'psi':0.1,'cos(iota)':0.01, 'cos(tilt1)':0.01, 'cos(tilt2)':0.01, 'tilt1':0.05, 'tilt2':0.05, 'cos(thetas)':0.01, 'cos(beta)':0.01,'phi_orb':0.2,'inclination':0.05,'theta_jn':0.05,'spin1':0.02,'spin2':0.02}
+diff --git a/lalinference/python/cbcBayesPPAnalysis.py b/lalinference/python/cbcBayesPPAnalysis.py
+index 86d8196dca..0f1f358dda 100644
+--- a/lalinference/python/cbcBayesPPAnalysis.py
++++ b/lalinference/python/cbcBayesPPAnalysis.py
+@@ -84,7 +84,11 @@ posterior_name_to_latex_name = {
+     'dbeta1':r'$d\beta_1$',
+     'dbeta2':r'$d\beta_2$',
+     'dbeta3':r'$d\beta_3$',
+-    'dbeta4':r'$d\beta_4$'
++    'dbeta4':r'$d\beta_4$',
++    'dquadmons':r'$\delta\kappa_s$',
++    'dquadmona':r'$\delta\kappa_a$',
++    'dquadmon1':r'$\delta\kappa_1$',
++    'dquadmon2':r'$\delta\kappa_2$'
+ }
+ 
+ def fractional_rank(x, xs):
+diff --git a/lalinference/python/cbcBayesPostProc.py b/lalinference/python/cbcBayesPostProc.py
+index 7bfa8b1ddb..d4c3f7723c 100644
+--- a/lalinference/python/cbcBayesPostProc.py
++++ b/lalinference/python/cbcBayesPostProc.py
+@@ -1163,7 +1163,9 @@ if __name__=='__main__':
+     else:
+         fixedBurnins = None
+ 
+-    from lalinference.bayespputils import massParams,spinParams,cosmoParam,strongFieldParams,distParams,incParams,polParams,skyParams,phaseParams,timeParams,endTimeParams,statsParams,calibParams,snrParams,tidalParams,fourPiecePolyParams,spectralParams
++
++    from lalinference.bayespputils import massParams,spinParams,cosmoParam,strongFieldParams,distParams,incParams,polParams,skyParams,phaseParams,timeParams,endTimeParams,statsParams,calibParams,snrParams,tidalParams,fourPiecePolyParams,spectralParams,spininducedquadParams
++
+ 
+     oneDMenus={'Masses':None,'SourceFrame':None,'Timing':None,'Extrinsic':None,'Spins':None,'StrongField':None,'Others':None}
+ 
+diff --git a/lalinference/python/lalinference/bayespputils.py b/lalinference/python/lalinference/bayespputils.py
+index 0546a070c6..4c1cd327c8 100644
+--- a/lalinference/python/lalinference/bayespputils.py
++++ b/lalinference/python/lalinference/bayespputils.py
+@@ -142,11 +142,13 @@ ppEParams=['ppEalpha','ppElowera','ppEupperA','ppEbeta','ppElowerb','ppEupperB',
+ tigerParams=['dchi%i'%(i) for i in range(8)] + ['dchi%il'%(i) for i in [5,6] ] + ['dxi%d'%(i+1) for i in range(6)] + ['dalpha%i'%(i+1) for i in range(5)] + ['dbeta%i'%(i+1) for i in range(3)] + ['dsigma%i'%(i+1) for i in range(4)]
+ bransDickeParams=['omegaBD','ScalarCharge1','ScalarCharge2']
+ massiveGravitonParams=['lambdaG']
++
+ tidalParams=['lambda1','lambda2','lam_tilde','dlam_tilde','lambdat','dlambdat','lambdas','bluni']
+ fourPiecePolyParams=['logp1','gamma1','gamma2','gamma3']
+ spectralParams=['sdgamma0','sdgamma1','sdgamma2','sdgamma3']
+ energyParams=['e_rad', 'l_peak','e_rad_maxldist']
+-strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+fourPiecePolyParams+spectralParams+energyParams
++spininducedquadParams = ['dquadmon1','dquadmon2','dquadmons', 'dquadmona']
++strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+fourPiecePolyParams+spectralParams+energyParams+spininducedquadParams
+ 
+ #Extrinsic
+ distParams=['distance','distMPC','dist','distance_maxl']
+@@ -179,6 +181,10 @@ for param in fourPiecePolyParams:
+     greedyBinSizes[param]=2.5
+ for param in spectralParams:
+     greedyBinSizes[param]=2.5
++for param in spininducedquadParams:
++    greedyBinSizes[param]=2.5
++for param in eosParams:
++    greedyBinSizes[param]=2.5
+     #Confidence levels
+ for loglname in statsParams:
+     greedyBinSizes[loglname]=0.1
+@@ -510,6 +516,10 @@ def plot_label(param):
+         'dsigma2':r'$d\sigma_2$',
+         'dsigma3':r'$d\sigma_3$',
+         'dsigma4':r'$d\sigma_4$',
++        'dquadmon1':r'$\delta\kappa_1$',
++        'dquadmon2':r'$\delta\kappa_2$',
++        'dquadmons':r'$\delta\kappa_s$',
++        'dquadmona':r'$\delta\kappa_a$',
+         'optimal_snr':r'$\rho^{opt}$',
+         'h1_optimal_snr':r'$\rho^{opt}_{H1}$',
+         'l1_optimal_snr':r'$\rho^{opt}_{L1}$',
+diff --git a/lalinference/src/LALInference.c b/lalinference/src/LALInference.c
+index 891ca45256..115235ed0d 100644
+--- a/lalinference/src/LALInference.c
++++ b/lalinference/src/LALInference.c
+@@ -2319,6 +2319,13 @@ void LALInferenceQ2Eta(double q, double *eta)
+   *eta = q/((1+q)*(1+q));
+   return;
+ }
++/* Calculate dQuadMon1 and dQuadMon2 from dQaudMonS and dQuadMonA */
++void LALInferencedQuadMonSdQuadMonA(REAL8 dQuadMonS, REAL8 dQuadMonA, REAL8 *dQuadMon1, REAL8 *dQuadMon2){
++  *dQuadMon1=(dQuadMonS+dQuadMonA);
++  *dQuadMon2=(dQuadMonS-dQuadMonA);
++  return;
++}
++
+ 
+ void LALInferenceLambdaTsEta2Lambdas(REAL8 lambdaT, REAL8 dLambdaT, REAL8 eta, REAL8 *lambda1, REAL8 *lambda2){
+   REAL8 a=(8./13.)*(1.+7.*eta-31.*eta*eta);
+diff --git a/lalinference/src/LALInference.h b/lalinference/src/LALInference.h
+index 59676679f9..faaa7a74ad 100644
+--- a/lalinference/src/LALInference.h
++++ b/lalinference/src/LALInference.h
+@@ -882,7 +882,8 @@ void LALInferenceMcQ2Masses(double mc, double q, double *m1, double *m2);
+ 
+ /** Convert from q to eta (q = m2/m1, with m1 > m2). */
+ void LALInferenceQ2Eta(double q, double *eta);
+-
++/** Convert from dQuadMonS, dQuadMonA to dQuadMon1, dQuadMon2. */
++void LALInferencedQuadMonSdQuadMonA(REAL8 dQuadMonS, REAL8 dQuadMonA, REAL8 *dQuadMon1, REAL8 *dQuadMon2);
+ /** Convert from lambdaT, dLambdaT, and eta to lambda1 and lambda2. */
+ void LALInferenceLambdaTsEta2Lambdas(REAL8 lambdaT, REAL8 dLambdaT, REAL8 eta, REAL8 *lambda1, REAL8 *lambda2);
+ 
+diff --git a/lalinference/src/LALInferenceInitCBC.c b/lalinference/src/LALInferenceInitCBC.c
+index d8429e738c..10adee08c3 100644
+--- a/lalinference/src/LALInferenceInitCBC.c
++++ b/lalinference/src/LALInferenceInitCBC.c
+@@ -798,6 +798,14 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
+      SDgamma2                     SDgamma2.\n\
+      SDgamma3                     SDgamma3.\n\
+     * \n\
++    * Spin-induced quadrupole moment test parameters:\n\
++     (requires --dQuadMon12)\n\
++     dQuadMon1                      dQuadMon1.\n\
++     dQuadMon2                      dQuadMon2.\n\
++     (requires --dQuadMonSA) \n\
++     dQuadMonS                      dQuadMonS.\n\
++     dQuadMonA                      dQuadMonA.\n\
++    (dQuadMonS and dQuadMonA are the symmetric and antisymmetric combinations of dQuadMon1 and dQuadMon2).\n\
+     ----------------------------------------------\n\
+     --- Prior Ranges -----------------------------\n\
+     ----------------------------------------------\n\
+@@ -877,6 +885,8 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
+   REAL8 lambdaTMax=3000.0;
+   REAL8 dLambdaTMin=-500.0;
+   REAL8 dLambdaTMax=500.0;
++  REAL8 dQuadMonMin=-200.0;
++  REAL8 dQuadMonMax=200.0;
+   REAL8 logp1Min=33.6;
+   REAL8 logp1Max=35.4;
+   REAL8 gamma1Min=2.0;
+@@ -1417,12 +1427,32 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
+     if(errnum!=XLAL_SUCCESS)
+         XLAL_ERROR_NULL(errnum,"%s: %s",__func__,XLALErrorString(errnum));
+     if(!model->eos_fam) XLAL_ERROR_NULL(XLAL_EINVAL, "Unable to initialise EOS family");
++
+   // Pull in symmetric tidal deformability (lambdaS) and the uniform variable used to marginlise over the BinaryLove fit uncertainty
+-  } else if((ppt=LALInferenceGetProcParamVal(commandLine,"--BinaryLove"))){
++    else if((ppt=LALInferenceGetProcParamVal(commandLine,"--BinaryLove"))){
+     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambdaS", zero, lambdaSMin, lambdaSMax, LALINFERENCE_PARAM_LINEAR);
+     LALInferenceRegisterUniformVariableREAL8(state, model->params, "BLuni", 0.5, 0.0, 1.0, LALINFERENCE_PARAM_LINEAR);
+   }    
+   
++  }
++
++    if(LALInferenceGetProcParamVal(commandLine,"--dQuadMon12")){
++        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon1", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR); 
++        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon2", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR); 
++	}else if(LALInferenceGetProcParamVal(commandLine,"--dQuadMonSA")){
++        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonS", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR); 
++        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonA", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR); 
++		}
++
++  if((!!LALInferenceGetProcParamVal(commandLine,"--dQuadMon12") + !!LALInferenceGetProcParamVal(commandLine,"--dQuadMonSA")) > 1 )
++  {
++	fprintf(stdout,"Both options (from 12 and SA) are given . . Exiting . .\n");      
++	XLALPrintError("Error: cannot use more than one of --dQuadMon12 and --dQuadMonSA.\n");
++	XLAL_ERROR_NULL(XLAL_EINVAL);
++  }
++  else
++    fprintf(stdout,"Only one option (from 12 and SA) is given . . Working fine . .\n");
++
+   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
+   ppt=LALInferenceGetProcParamVal(commandLine, "--spinOrder");
+   if(ppt) {
+@@ -2182,6 +2212,8 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
+         fprintf(stderr,"--grtest-parameters and --ppe-parameters are not simultaneously supported. Please choose one. Aborting\n");
+         exit(-1);
+     }
++
++
+     ppt=LALInferenceGetProcParamVal(commandLine,"--grtest-parameters");
+     if (ppt)
+     {
+@@ -2229,7 +2261,9 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
+         if (checkParamInList(ppt->value,"dbeta1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dbeta1", tmpVal, dbeta_min, dbeta_max, LALINFERENCE_PARAM_LINEAR);
+         if (checkParamInList(ppt->value,"dbeta2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dbeta2", tmpVal, dbeta_min, dbeta_max, LALINFERENCE_PARAM_LINEAR);
+         if (checkParamInList(ppt->value,"dbeta3")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dbeta3", tmpVal, dbeta_min, dbeta_max, LALINFERENCE_PARAM_LINEAR);
+-    }
++
++  }
++
+     ppt=LALInferenceGetProcParamVal(commandLine,"--ppe-parameters");
+     if (ppt)
+     {
+diff --git a/lalinference/src/LALInferenceProposal.c b/lalinference/src/LALInferenceProposal.c
+index ee96f2e79f..65d9ee0fc0 100644
+--- a/lalinference/src/LALInferenceProposal.c
++++ b/lalinference/src/LALInferenceProposal.c
+@@ -96,7 +96,7 @@ const char *const splineCalibrationProposalName = "SplineCalibration";
+ const char *const distanceLikelihoodProposalName = "DistanceLikelihood";
+ 
+ static const char *intrinsicNames[] = {"chirpmass", "q", "eta", "mass1", "mass2", "a_spin1", "a_spin2",
+-  "tilt_spin1", "tilt_spin2", "phi12", "phi_jl", "frequency", "quality", "duration","polar_angle", "phase", "polar_eccentricity","dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7","aPPE","alphaPPE","bPPE","betaPPE","betaStep","fStep","dxi1","dxi2","dxi3","dxi4","dxi5","dxi6","dalpha1","dalpha2","dalpha3","dalpha4","dalpha5","dbeta1","dbeta2","dbeta3","dsigma1","dsigma2","dsigma3","dsigma4","lambda1","lambda2","lambdaT","dlambdaT","logp1", "gamma1", "gamma2", "gamma3", "SDgamma0","SDgamma1","SDgamma2","SDgamma3",NULL};
++  "tilt_spin1", "tilt_spin2", "phi12", "phi_jl", "frequency", "quality", "duration","polar_angle", "phase", "polar_eccentricity","dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7","aPPE","alphaPPE","bPPE","betaPPE","betaStep","fStep","dxi1","dxi2","dxi3","dxi4","dxi5","dxi6","dalpha1","dalpha2","dalpha3","dalpha4","dalpha5","dbeta1","dbeta2","dbeta3","dsigma1","dsigma2","dsigma3","dsigma4","lambda1","lambda2","lambdaT","dlambdaT","logp1", "gamma1", "gamma2", "gamma3", "SDgamma0","SDgamma1","SDgamma2","SDgamma3","dQuadMon1","dQuadMon2","dQuadMonA","dQuadMonS",NULL};
+ 
+ 
+ static const char *extrinsicNames[] = {"rightascension", "declination", "cosalpha", "azimuth", "polarisation", "distance",
+diff --git a/lalinference/src/LALInferenceTemplate.c b/lalinference/src/LALInferenceTemplate.c
+index bbd2c3850c..dcb383200c 100644
+--- a/lalinference/src/LALInferenceTemplate.c
++++ b/lalinference/src/LALInferenceTemplate.c
+@@ -354,6 +354,31 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
+       }
+   }
+ 
++
++/* ==== Spin induced quadrupole moment PARAMETERS ==== */
++ 
++ if(LALInferenceCheckVariable(model->params, "dQuadMonS")&&LALInferenceCheckVariable(model->params, "dQuadMonA")){
++    REAL8 dQuadMon1=0.;
++    REAL8 dQuadMon2=0.;
++    REAL8 dQuadMonS = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonS");
++    REAL8 dQuadMonA = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonA");
++    LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
++    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
++    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
++        fprintf(stdout,"Both dQuadMonS and dQaudMonA are  sampled");
++    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
++  }
++ else  if(LALInferenceCheckVariable(model->params, "dQuadMon1")&&LALInferenceCheckVariable(model->params, "dQuadMon2")){
++    REAL8 dQuadMon1 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1");
++    REAL8 dQuadMon2 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2");
++    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
++    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
++        fprintf(stdout,"Both dQuadMon1 and dQaudMon2 are  sampled");
++    fprintf(stdout,"dQM1: %e, dQM2: %e \n",dQuadMon1,dQuadMon2);
++  }
++
++
++
+   /* ==== TIDAL PARAMETERS ==== */
+   if(LALInferenceCheckVariable(model->params, "lambda1"))
+     XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda1"));
+@@ -832,7 +857,35 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
+   }
+ 
+ 
+-  /* ==== TIDAL PARAMETERS ==== */
++  
++/* ==== Spin induced quadrupole moment PARAMETERS ==== */
++
++ if(LALInferenceCheckVariable(model->params, "dQuadMonS")&&LALInferenceCheckVariable(model->params, "dQuadMonA")){
++    REAL8 dQuadMon1=0.;
++    REAL8 dQuadMon2=0.;
++    REAL8 dQuadMonS = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonS");
++    REAL8 dQuadMonA = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonA");
++    LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
++    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
++    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
++        fprintf(stdout,"Both dQuadMonS and dQaudMonA are  sampled");
++    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
++  }
++ else  if(LALInferenceCheckVariable(model->params, "dQuadMon1")&&LALInferenceCheckVariable(model->params, "dQuadMon2")){
++    REAL8 dQuadMon1 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1");
++    REAL8 dQuadMon2 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2");
++    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
++    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
++        fprintf(stdout,"Both dQuadMon1 and dQaudMon2 are  sampled");
++    fprintf(stdout,"dQM1: %e, dQM2: %e \n",dQuadMon1,dQuadMon2);
++  }
++
++
++  
++
++
++
++/* ==== TIDAL PARAMETERS ==== */
+   if(LALInferenceCheckVariable(model->params, "lambda1"))
+     XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda1"));
+   if(LALInferenceCheckVariable(model->params, "lambda2"))
+@@ -1414,6 +1467,36 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
+         }
+     }
+ 
++  
++
++
++
++/* ==== Spin induced quadrupole moment PARAMETERS ==== */
++
++ if(LALInferenceCheckVariable(model->params, "dQuadMonS")&&LALInferenceCheckVariable(model->params, "dQuadMonA")){
++    REAL8 dQuadMon1=0.;
++    REAL8 dQuadMon2=0.;
++    REAL8 dQuadMonS = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonS");
++    REAL8 dQuadMonA = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonA");
++    LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
++    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
++    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
++        fprintf(stdout,"Both dQuadMonS and dQaudMonA are  sampled");
++    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
++  }
++ else  if(LALInferenceCheckVariable(model->params, "dQuadMon1")&&LALInferenceCheckVariable(model->params, "dQuadMon2")){
++    REAL8 dQuadMon1 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1");
++    REAL8 dQuadMon2 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2");
++    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
++    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
++        fprintf(stdout,"Both dQuadMon1 and dQaudMon2 are  sampled");
++    fprintf(stdout,"dQM1: %e, dQM2: %e \n",dQuadMon1,dQuadMon2);
++  }
++
++
++
++
++
+     /* ==== TIDAL PARAMETERS ==== */
+     if(LALInferenceCheckVariable(model->params, "lambda1"))
+       XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda1"));
