@@ -1982,7 +1982,7 @@ UINT4 coh_PTF_template_time_series_cluster(
   UINT4 ui,ifoNumber2,k,i;
   UINT4 count = 0;
   UINT4 logicArray[cohSNR->data->length];
-  INT4 j,tempPoint;
+  INT4 tempPoint, tempPointStart, tempPointEnd;
   /* FIXME: Bizarrely, the mac clang compiler will "optimize away" this variable
    * if I do not use the volatile keyword, which causes seg faults as it should
    * not be "optimized away". Is this a bug in clang??? */
@@ -2015,17 +2015,18 @@ UINT4 coh_PTF_template_time_series_cluster(
       logicArray[ui] = 1;
       if (snrData[ui])
       {
-        for (j = -numPointCheck; j < numPointCheck; j++)
+        tempPointStart = ui - numPointCheck;
+        if (tempPointStart < startPointI)
         {
-          tempPoint = ui + j;
-          if (tempPoint < startPointI)
-          {
-            continue;
-          }
-          if (tempPoint >= endPointI)
-          {
-            continue;
-          }
+          tempPointStart = startPointI;
+        }
+        tempPointEnd = ui + numPointCheck;
+        if (tempPointEnd >= endPointI)
+        {
+          tempPointEnd = endPointI;
+        }
+        for (tempPoint = tempPointStart; tempPoint < tempPointEnd; tempPoint++)
+        {
           if (snrData[tempPoint] > snrData[ui])
           {
             logicArray[ui] = 0;
