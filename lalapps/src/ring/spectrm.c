@@ -96,10 +96,6 @@ REAL4FrequencySeries *compute_average_spectrum(
     }
   }
 
-  if((int)sizeof(spectrum->name) <= snprintf( spectrum->name, sizeof( spectrum->name ),
-      "%s_SPEC", series->name ))
-		  XLAL_ERROR_NULL(XLAL_FAILURE,"String truncated");
-
   XLALDestroyREAL4Window( window );
 
   return spectrum;
@@ -251,7 +247,6 @@ int invert_spectrum(
   UINT4 segmentLength;
   UINT4 UNUSED segmentStride;
   UINT4 truncateLength;
-  char name[LALNameLength];
 
   segmentDuration = 1.0/spectrum->deltaF;
   segmentLength = floor( segmentDuration * dataSampleRate + 0.5 );
@@ -266,10 +261,6 @@ int invert_spectrum(
 
   XLALREAL4SpectrumInvertTruncate( spectrum, lowCutoffFrequency,
       segmentLength, truncateLength, fwdPlan, revPlan );
-
-  strncpy( name, spectrum->name, LALNameLength * sizeof(char) );
-  XLALStringPrint( spectrum->name, sizeof( spectrum->name ),
-      "%s_INV", name );
 
   return 0;
 }
