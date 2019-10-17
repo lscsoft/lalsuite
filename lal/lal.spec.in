@@ -50,16 +50,16 @@ BuildRequires: scipy
 # python3x
 BuildRequires: python-srpm-macros
 BuildRequires: python3-rpm-macros
-BuildRequires: python%{python3_pkgversion}
-BuildRequires: python%{python3_pkgversion}-devel
-BuildRequires: python%{python3_pkgversion}-dateutil
-BuildRequires: python%{python3_pkgversion}-freezegun
-BuildRequires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
-BuildRequires: python%{python3_pkgversion}-ligo-segments
-BuildRequires: python%{python3_pkgversion}-numpy
-BuildRequires: python%{python3_pkgversion}-pytest
-BuildRequires: python%{python3_pkgversion}-six
-BuildRequires: python%{python3_pkgversion}-scipy
+BuildRequires: python%{python3_version_nodots}
+BuildRequires: python%{python3_version_nodots}-devel
+BuildRequires: python%{python3_version_nodots}-dateutil
+BuildRequires: python%{python3_version_nodots}-freezegun
+BuildRequires: python%{python3_version_nodots}-glue >= @MIN_GLUE_VERSION@
+BuildRequires: python%{python3_version_nodots}-ligo-segments
+BuildRequires: python%{python3_version_nodots}-numpy
+BuildRequires: python%{python3_version_nodots}-pytest
+BuildRequires: python%{python3_version_nodots}-six
+BuildRequires: python%{python3_version_nodots}-scipy
 
 # octave
 BuildRequires: octave-devel
@@ -111,19 +111,19 @@ The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings.
 
 # python3x-lal
-%package -n python%{python3_pkgversion}-%{name}
+%package -n python%{python3_version_nodots}-%{name}
 Summary: Python %{python3_version} bindings for LAL
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python%{python3_pkgversion}
-Requires: python%{python3_pkgversion}-dateutil
-Requires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
-Requires: python%{python3_pkgversion}-ligo-segments
-Requires: python%{python3_pkgversion}-numpy
-Requires: python%{python3_pkgversion}-scipy
-Requires: python%{python3_pkgversion}-six
+Requires: python%{python3_version_nodots}
+Requires: python%{python3_version_nodots}-dateutil
+Requires: python%{python3_version_nodots}-glue >= @MIN_GLUE_VERSION@
+Requires: python%{python3_version_nodots}-ligo-segments
+Requires: python%{python3_version_nodots}-numpy
+Requires: python%{python3_version_nodots}-scipy
+Requires: python%{python3_version_nodots}-six
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
-%description -n python%{python3_pkgversion}-%{name}
+%description -n python%{python3_version_nodots}-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python3_version} bindings.
 
@@ -203,7 +203,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %license COPYING
 %{python2_sitearch}/*
 
-%files -n python%{python3_pkgversion}-%{name}
+%files -n python%{python3_version_nodots}-%{name}
 %defattr(-,root,root)
 %license COPYING
 %{python3_sitearch}/*
