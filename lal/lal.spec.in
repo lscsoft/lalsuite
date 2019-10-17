@@ -104,7 +104,7 @@ Requires: python-six
 Requires: python2-ligo-segments
 Requires: glue >= @MIN_GLUE_VERSION@
 Obsoletes: %{name}-python
-Provides: %{name}-python
+Provides: %{name}-python = %{version}
 %{?python_provide:%python_provide python2-%{name}}
 %description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
@@ -122,7 +122,7 @@ Requires: python%{python3_version_nodots}-ligo-segments
 Requires: python%{python3_version_nodots}-numpy
 Requires: python%{python3_version_nodots}-scipy
 Requires: python%{python3_version_nodots}-six
-Provides: python%{python3_version_nodots}-%{name}
+Provides: python%{python3_version_nodots}-%{name} = %{version}
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
