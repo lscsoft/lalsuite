@@ -111,7 +111,7 @@ The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings.
 
 # python3x-lal
-%package -n python%{python3_version_nodots}-%{name}
+%package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python3_version} bindings for LAL
 Group: LAL
 Requires: %{name} = %{version}
@@ -122,8 +122,9 @@ Requires: python%{python3_version_nodots}-ligo-segments
 Requires: python%{python3_version_nodots}-numpy
 Requires: python%{python3_version_nodots}-scipy
 Requires: python%{python3_version_nodots}-six
+Provides: python%{python3_version_nodots}-%{name}
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
-%description -n python%{python3_version_nodots}-%{name}
+%description -n python%{python3_pkgversion}-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python3_version} bindings.
 
@@ -203,7 +204,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %license COPYING
 %{python2_sitearch}/*
 
-%files -n python%{python3_version_nodots}-%{name}
+%files -n python%{python3_pkgversion}-%{name}
 %defattr(-,root,root)
 %license COPYING
 %{python3_sitearch}/*
