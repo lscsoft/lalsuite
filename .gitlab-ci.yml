@@ -494,7 +494,7 @@ docker:tags:stretch:
   source /opt/conda/etc/profile.d/conda.sh
   conda config --set always_yes yes
   conda config --add channels conda-forge
-  retry conda update -n base conda
+  retry conda update -n base conda setuptools
   conda activate base
   retry conda install -n base conda-build conda-verify conda-forge-pinning
   conda info --all
