@@ -8,4 +8,5 @@ test_scripts += \
 	test_python_imports.py \
 	test_python_scripts.py \
 	date_verify.py \
-	snglcoinc_verify.py
+	snglcoinc_verify.py \
+	$(END_OF_LIST)
