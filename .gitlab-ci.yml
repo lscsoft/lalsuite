@@ -496,7 +496,7 @@ docker:tags:stretch:
   conda config --add channels conda-forge
   retry conda update -n base conda setuptools
   conda activate base
-  retry conda install -n base conda-build conda-verify conda-forge-pinning
+  retry conda install -n base "conda-build!=3.18.10" conda-verify conda-forge-pinning
   conda info --all
 
 .levelN:conda: &levelN-conda-package
