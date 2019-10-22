@@ -6,7 +6,7 @@ lal/                @adam-mercer @jolien-creighton
 lalframe/           @adam-mercer @jolien-creighton @ed-maros
 lalmetaio/          @adam-mercer @jolien-creighton
 lalsimulation/      @riccardo-sturani @frank-ohme @sebastian-khan @harald.pfeiffer @maria.haney
-lalburst/           @kipp.cannon @duncanmmacleod @gabriele-vedovato @marco-drago
+lalburst/           @kipp.cannon @duncanmmacleod @gabriele-vedovato @marco-drago @adam-mercer @duncanmmacleod
 lalpulsar/          @karl-wette @david-keitel
 lalinspiral/        @jolien-creighton @adam-mercer
 lalinference/       @bfarr @cjhaster @john-veitch @vivien @salvatore-vitale
