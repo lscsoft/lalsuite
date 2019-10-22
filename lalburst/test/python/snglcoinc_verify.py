@@ -1,3 +1,4 @@
+import warnings
 import unittest
 import sys
 
@@ -7,8 +8,9 @@ from numpy.testing import assert_allclose
 # test environment
 try:
 	from lalburst import snglcoinc
-except ImportError:
-	sys.exit(0)
+except ImportError as exc:
+	warnings.warn(str(exc))
+	sys.exit(77)
 
 
 class TestCoincRates(unittest.TestCase):

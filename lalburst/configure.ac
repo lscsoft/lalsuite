@@ -164,6 +164,25 @@ AC_SUBST([pkgincludedir], ["\${includedir}/lal"])
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
+# check whether we have the packages to pass the snglcoinc_verify.py tests
+# see https://git.ligo.org/lscsoft/lalsuite/issues/208
+AM_COND_IF(
+  [HAVE_PYTHON],[
+    AC_MSG_CHECKING(expected outcome of snglcoinc_verify.py)
+    AM_CONDITIONAL(
+      [SNGLCOINC_XPASS],
+      [${PYTHON} -c "import scipy; import ligo.lw; assert scipy.__version__ > '0.18.999'" 2> /dev/null],
+    )
+    AS_IF(
+      [test "x${SNGLCOINC_XPASS}" = xyes],
+      [AC_MSG_RESULT(pass)],
+      [AC_MSG_RESULT(fail)]
+    )
+  ],
+  [AM_CONDITIONAL([SNGLCOINC_XPASS], [false])]
+)
+
+
 # output
 AC_OUTPUT
 AC_MSG_NOTICE([
