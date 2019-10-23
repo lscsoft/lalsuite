@@ -444,7 +444,7 @@ def setup_roq(cp):
 
 # Create an outer dag to wrap the sub-dags
 outerdaglog=os.path.join(daglogdir,'lalinference_multi_'+str(uuid.uuid1())+'.log')
-outerdag=pipeline.CondorDAG(outerdaglog,dax=False)
+outerdag=pipeline.CondorDAG(outerdaglog)
 outerdag.set_dag_file(os.path.join(cp.get('paths','basedir'),'multidag'))
 
 
@@ -481,7 +481,7 @@ for cp in generate_variations(master_cp,variations):
 
     for this_cp in setup_roq(cp):
         # Create the DAG from the configparser object
-        dag=pipe_utils.LALInferencePipelineDAG(this_cp,dax=False)
+        dag=pipe_utils.LALInferencePipelineDAG(this_cp)
         dagjob=pipeline.CondorDAGManJob(os.path.join(this_cp.get('paths','basedir'),dag.get_dag_file()),
                                     this_cp.get('paths','basedir'))
         dagnode=pipeline.CondorDAGManNode(dagjob)
