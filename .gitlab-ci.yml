@@ -721,6 +721,7 @@ nightly:gcc:9:
     - PYVERSION=$(echo ${CI_JOB_NAME} | sed 's/conda:python//')
     - CONDA_ENV_FILE="conda/environment-lal-development-py${PYVERSION}.yml"
     # configure conda
+    - *define-retry
     - *conda-init
     # build lalsuite environment
     - conda env create -f ${CONDA_ENV_FILE}
