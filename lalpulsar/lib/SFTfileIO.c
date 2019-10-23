@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2019 Pep Covas
  * Copyright (C) 2010 Karl Wette
  * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
  *
@@ -140,6 +141,7 @@ static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, 
 int compareSFTdesc(const void *ptr1, const void *ptr2);
 static int compareSFTloc(const void *ptr1, const void *ptr2);
 static int compareDetNameCatalogs ( const void *ptr1, const void *ptr2 );
+static int compareSFTepoch(const void *ptr1, const void *ptr2);
 
 static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
 static BOOLEAN has_valid_v2_crc64 (FILE *fp );
@@ -1940,6 +1942,324 @@ XLALCheckValidDescriptionField ( const char *desc )
 } // XLALCheckValidDescriptionField()
 
 
+MultiSFTVector*
+XLALReadSFDB(UINT4 numifo,
+             REAL8 f_min,
+             REAL8 f_max,
+             const CHAR *file_pattern,
+             const CHAR *timeStampsStarting,
+             const CHAR *timeStampsFinishing,
+             REAL8 Tcoh,
+             INT4 useTimeStamps
+  )
+{
+
+    LALStringVector *fnames;
+    fnames = XLALFindFiles(file_pattern);
+    UINT4 numFiles = fnames->length;
+
+    REAL8 count,tbase,mjdtime,frinit,tsamplu,deltanu,vx_eq,vy_eq,vz_eq,px_eq,py_eq,pz_eq,sat_howmany,spare1,spare2,spare3;
+    REAL4 n_flag,einstein,normd,normw,spare4,spare5,spare6;
+    INT4 det, gps,gps_nsec,firstfrind,nsamples,red,typ,nfft,wink,n_zeroes,lavesp,spare8,spare9,lsps;
+    REAL4 *buffer1,*buffer2,*buffer3;
+
+    FILE  *fp = NULL, *fp2 = NULL;
+    INT4  numTimeStamps, r;
+    UINT4 j;
+    REAL8 temp1;
+    LIGOTimeGPSVector *ts1, *ts2;
+    INT4 starting=0, finishing=0;
+
+    fp = fopen(timeStampsStarting, "r");
+    fp2 = fopen(timeStampsFinishing, "r");
+
+    // count number of timestamps
+    numTimeStamps = 0;
+
+    do {
+        r = fscanf(fp,"%lf\n", &temp1);
+        // make sure the line has the right number of entries or is EOF
+        if (r==1) numTimeStamps++;
+    } while ( r != EOF);
+    rewind(fp);
+
+    ts1 = XLALCalloc(1, sizeof(*ts1));
+    ts2 = XLALCalloc(1, sizeof(*ts2));
+    ts1->length = numTimeStamps;
+    ts1->data = XLALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));
+    ts2->length = numTimeStamps;
+    ts2->data = XLALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));
+
+    for (j = 0; j < ts1->length; j++)
+    {
+        r = fscanf(fp,"%lf\n", &temp1);
+        ts1->data[j].gpsSeconds = (INT4)temp1;
+        ts1->data[j].gpsNanoSeconds = 0;
+        r = fscanf(fp2,"%lf\n", &temp1);
+        ts2->data[j].gpsSeconds = (INT4)temp1;
+        ts2->data[j].gpsNanoSeconds = 0;
+    }
+
+    fclose(fp);
+    fclose(fp2);
+
+    UINT4 index=0;
+    UINT4 numSFTsH1 = 0;
+    UINT4 numSFTsL1 = 0;
+    UINT4 numSFTs = 0;
+    UINT4 numSFTsH1b = 0;
+    UINT4 numSFTsL1b = 0;
+
+    UINT4 f_min_bin = floor(f_min*Tcoh + 0.5);
+    UINT4 f_max_bin = floor(f_max*Tcoh + 0.5);
+
+    // First pass: this is to know how many of the SFDBs are in science segments
+    for ( UINT4 i = 0; i < numFiles; i++ )
+    {
+        const CHAR *filename = fnames->data[i];
+        FILE  *fpPar = NULL;
+        fpPar = fopen(filename, "r");
+        setvbuf(fpPar, (CHAR *)NULL, _IOLBF, 0);
+
+        while( fread(&count, sizeof(REAL8), 1, fpPar)==1 ) {    // Index of this SFDBs in the file (a SFDB file can have more than one SFDB)
+            XLAL_CHECK_NULL(fread(&det, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);    // 2 for H1, 3 for L1
+            XLAL_CHECK_NULL(fread(&gps, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);    // GPS time of this SFDB
+            XLAL_CHECK_NULL(fread(&gps_nsec, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&tbase, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);     // Coherent time of the SFDB
+            XLAL_CHECK_NULL(fread(&firstfrind, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&nsamples, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);   // Number of frequency bins
+            XLAL_CHECK_NULL(fread(&red, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);    // Reductions factor
+            XLAL_CHECK_NULL(fread(&typ, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&n_flag, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&einstein, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&mjdtime, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&nfft, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&wink, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&normd, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&normw, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);     // Normalization factors
+            XLAL_CHECK_NULL(fread(&frinit, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&tsamplu, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);   // Sampling time
+            XLAL_CHECK_NULL(fread(&deltanu, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);   // Frequency resolution
+            XLAL_CHECK_NULL(fread(&vx_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&vy_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&vz_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&px_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&py_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&pz_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&n_zeroes, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&sat_howmany, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare1, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare2, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare3, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare4, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare5, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare6, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&lavesp, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare8, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare9, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+
+            if (lavesp > 0)
+            {
+                buffer1 = XLALCalloc(lavesp,sizeof(REAL4));//malloc(lavesp*sizeof(REAL4));
+                XLAL_CHECK_NULL(fread(buffer1,lavesp*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+                lsps=lavesp;
+            }
+            else
+            {
+                buffer1 = XLALCalloc(red,sizeof(REAL4));//malloc(red*sizeof(REAL4));
+                XLAL_CHECK_NULL(fread(buffer1,red*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+                lsps=nsamples/red;
+            }
+
+            buffer2 = XLALCalloc(lsps,sizeof(REAL4));//malloc(lsps*sizeof(REAL4));
+            XLAL_CHECK_NULL(fread(buffer2,lsps*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+
+            buffer3 = XLALCalloc(2*nsamples,sizeof(REAL4));//malloc(2*nsamples*sizeof(REAL4));
+            XLAL_CHECK_NULL(fread(buffer3,2*nsamples*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+
+            // If the GPS time of this SFDB is within a science segment, count it
+            UINT4 flag=1;
+            for (UINT4 xx=0; xx<ts1->length; xx++) {
+                starting = ts1->data[xx].gpsSeconds;
+                finishing = ts2->data[xx].gpsSeconds;
+                if ( gps>starting && gps+Tcoh<(REAL8)finishing ) {
+                    flag=0;
+                    break;
+                }
+            }
+
+            LALFree(buffer1);
+            LALFree(buffer2);
+            LALFree(buffer3);
+
+            if (useTimeStamps==0) flag=0;
+            if (flag==0) {
+                if (det==2) numSFTsH1b += 1;
+                if (det==3) numSFTsL1b += 1;
+            }
+
+        }
+        fclose(fpPar);
+
+    }
+
+    // Allocate memory for the SFT structure
+    MultiSFTVector *inputSFTs = NULL;
+    inputSFTs = XLALCalloc(1, sizeof(*inputSFTs));
+    inputSFTs->data = XLALCalloc ( numifo, sizeof(*inputSFTs->data));
+    inputSFTs->length=numifo;
+    UINT4 numSFTsb = 0;
+    for ( UINT4 k = 0; k < numifo; k++) {
+        if (k==0) numSFTsb=numSFTsH1b;
+        if (k==1) numSFTsb=numSFTsL1b;
+        if (numifo==1) {    // If only one IFO, use the number of SFTs from that IFO (the non-used IFO will be 0)
+            if (numSFTsH1b>numSFTsL1b) numSFTsb=numSFTsH1b;
+            if (numSFTsL1b>numSFTsH1b) numSFTsb=numSFTsL1b;
+        }
+        inputSFTs->data[k] = XLALCreateSFTVector( numSFTsb, f_max_bin-f_min_bin );
+    } // loop over ifos
+
+    for ( UINT4 i = 0; i < numFiles; i++ )
+    {
+        const CHAR *filename = fnames->data[i];
+        FILE  *fpPar = NULL;
+        fpPar = fopen(filename, "r");
+        setvbuf(fpPar, (CHAR *)NULL, _IOLBF, 0);
+
+        while( fread(&count, sizeof(REAL8), 1, fpPar)==1 ) {
+            XLAL_CHECK_NULL(fread(&det, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&gps, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&gps_nsec, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&tbase, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&firstfrind, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&nsamples, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&red, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&typ, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&n_flag, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&einstein, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&mjdtime, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&nfft, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&wink, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&normd, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&normw, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&frinit, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&tsamplu, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&deltanu, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&vx_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&vy_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&vz_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&px_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&py_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&pz_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&n_zeroes, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&sat_howmany, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare1, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare2, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare3, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare4, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare5, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare6, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&lavesp, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare8, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fread(&spare9, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+
+            if (lavesp > 0)
+            {
+                buffer1 = malloc(lavesp*sizeof(REAL4));
+                XLAL_CHECK_NULL(fread(buffer1,lavesp*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+
+                lsps=lavesp;
+            }
+            else
+            {
+                buffer1 = malloc(red*sizeof(REAL4));
+                XLAL_CHECK_NULL(fread(buffer1,red*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+                lsps=nsamples/red;
+            }
+
+            buffer2 = malloc(lsps*sizeof(REAL4));
+            XLAL_CHECK_NULL(fread(buffer2,lsps*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+
+            buffer3 = malloc(2*nsamples*sizeof(REAL4));
+            XLAL_CHECK_NULL(fread(buffer3,2*nsamples*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+
+            UINT4 first_bin_read = floor(0*Tcoh + 0.5);  // This should depend on the starting frequency bin of the SFDB: it is only 0 for the 8192 Tcoh, for the others it will be different
+            UINT4 offset = f_min_bin-first_bin_read;
+
+            UINT4 flag=1;
+            for (UINT4 xx=0; xx<ts1->length; xx++) {
+                starting = ts1->data[xx].gpsSeconds;
+                finishing = ts2->data[xx].gpsSeconds;
+                if ( gps>starting && gps+Tcoh<(REAL8)finishing ) {
+                    flag=0;
+                    break;
+                }
+            }
+
+            if (useTimeStamps==0) {
+                flag=0;
+            }
+            if (flag==0) {
+
+                if (det==2) {
+                    index=0;
+                    numSFTsH1 += 1;
+                    numSFTs = numSFTsH1-1;
+                }
+                if (det==3) {
+                    index=1;
+                    numSFTsL1 += 1;
+                    numSFTs = numSFTsL1-1;
+                }
+                if (numifo==1) index=0;
+
+                SFTtype *thisSFT = NULL;
+                thisSFT = inputSFTs->data[index]->data + numSFTs;
+
+                COMPLEX8 *in;
+                UINT4 lengthh = f_max_bin-f_min_bin;//inputSFTs->data[0]->data->data->length;
+                LIGOTimeGPS gpps;
+                XLALGPSSetREAL8( &gpps, gps);
+                thisSFT->epoch = gpps;
+
+                if (det==2) strncpy( thisSFT->name, "H1", 3);//name="H1";
+                if (det==3) strncpy( thisSFT->name, "L1", 3);//name="H1";
+
+                thisSFT->f0 = f_min;
+                thisSFT->deltaF = deltanu;
+                UINT4 jjj;
+
+                // Copy to the SFT structure the complex values in the frequency bins (multiplied by some normalization factors in order to agree with the SFT specification)
+                in = thisSFT->data->data;
+                for (jjj=offset; jjj<(lengthh+offset); jjj++) {
+                    *in = crectf(buffer3[2*jjj],buffer3[2*jjj+1])*einstein*tsamplu*normw;
+                    ++in;
+                }
+            }
+
+            LALFree(buffer1);
+            LALFree(buffer2);
+            LALFree(buffer3);
+        }
+        fclose(fpPar);
+    }
+    XLALPrintInfo("Number of H1 and L1 SFDBs: %d %d\n",numSFTsH1b,numSFTsL1b);
+
+    XLALDestroyStringVector(fnames);
+    XLALDestroyTimestampVector(ts1);
+    XLALDestroyTimestampVector(ts2);
+
+    // Sort the SFDBs from lower GPS timestamps to higher GPS timestamp
+    if (numifo==1)  qsort( (void*)inputSFTs->data[0]->data, inputSFTs->data[0]->length, sizeof( inputSFTs->data[0]->data[0] ), compareSFTepoch );
+    if (numifo==2) {
+        qsort( (void*)inputSFTs->data[0]->data, inputSFTs->data[0]->length, sizeof( inputSFTs->data[0]->data[0] ), compareSFTepoch );
+        qsort( (void*)inputSFTs->data[1]->data, inputSFTs->data[1]->length, sizeof( inputSFTs->data[1]->data[0] ), compareSFTepoch );
+    }
+
+    return inputSFTs;
+}
+
+
 /*================================================================================
  * LOW-level internal SFT-handling functions, should *NOT* be used outside this file!
  *================================================================================*/
@@ -2965,6 +3285,25 @@ compareDetNameCatalogs ( const void *ptr1, const void *ptr2 )
     return 0;
 
 } /* compareDetNameCatalogs() */
+
+
+/* compare two SFT-descriptors by their GPS-epoch, then starting frequency */
+int compareSFTepoch(const void *ptr1, const void *ptr2)
+ {
+   const SFTtype *desc1 = ptr1;
+   const SFTtype *desc2 = ptr2;
+
+   if      ( XLALGPSGetREAL8( &desc1->epoch ) < XLALGPSGetREAL8 ( &desc2->epoch ) )
+     return -1;
+   else if ( XLALGPSGetREAL8( &desc1->epoch ) > XLALGPSGetREAL8 ( &desc2->epoch ) )
+     return 1;
+   else if ( desc1->f0 < desc2->f0 )
+     return -1;
+   else if ( desc1->f0 > desc2->f0 )
+     return 1;
+   else
+     return 0;
+} /* compareSFTdesc() */
 
 
 /**
