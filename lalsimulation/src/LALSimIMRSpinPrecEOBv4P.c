@@ -3559,8 +3559,7 @@ static int SEOBAmplitudePeakFromAmp22Amp21(
   for (UINT4 i = 0; i < length; i++) {
     A22_real = hP22->camp_real->data[i];
     A22_imag = hP22->camp_imag->data[i];
-    Asquare = A22_real * A22_real + A22_imag * A22_imag + A21_real * A21_real +
-              A21_imag * A21_imag;
+    Asquare = A22_real * A22_real + A22_imag * A22_imag;
     if (found21) {
       A21_real = hP21->camp_real->data[i];
       A21_imag = hP21->camp_imag->data[i];
