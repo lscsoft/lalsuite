@@ -44,6 +44,7 @@ extern "C" {
  * @defgroup LALSimIMREOBNRv2_c                  LALSimIMREOBNRv2.c
  * @defgroup LALSimIMRSpinAlignedEOB_c           LALSimIMRSpinAlignedEOB.c
  * @defgroup LALSimIMRSpinPrecEOB_c              LALSimIMRSpinPrecEOB.c
+ * @defgroup LALSimIMRSpinPrecEOBv4P_c           LALSimIMRSpinPrecEOBv4P.c
  * @defgroup LALSimIMRSEOBNRROM_c                LALSimIMRSEOBNRvxROMXXX.c
  * @defgroup LALSimIMRSEOBNRv2ChirpTime_c        LALSimIMRSEOBNRv2ChirpTime.c
  * @defgroup LALSimIMRPSpinInspiralRD_c          LALSimIMRPSpinInspiralRD.c
@@ -123,6 +124,7 @@ int XLALSimIMRSpinAlignedEOBModes(SphHarmTimeSeries ** hlmmode,
  */
 
 /* in module LALSimIMRSpinPrecEOB.c */
+
 int XLALSimIMRSpinEOBWaveform(
                               REAL8TimeSeries **hplus,
                               REAL8TimeSeries **hcross,
@@ -137,7 +139,6 @@ int XLALSimIMRSpinEOBWaveform(
                               const REAL8     spin2[],
                               const UINT4     PrecEOBversion
                               );
-
 int XLALSimIMRSpinEOBWaveformAll(
                                  REAL8TimeSeries **hplus,
                                  REAL8TimeSeries **hcross,
@@ -147,7 +148,7 @@ int XLALSimIMRSpinEOBWaveformAll(
                                  SphHarmTimeSeries **hIMRlmJTSHi,
                                  SphHarmTimeSeries **hIMRoutput,
                                  REAL8Vector     **AttachParams,
-                                 const REAL8      phiC,
+                                 const REAL8     phiC,
                                  const REAL8     deltaT,
                                  const REAL8     m1SI,
                                  const REAL8     m2SI,
@@ -162,6 +163,95 @@ int XLALSimIMRSpinEOBWaveformAll(
                                  const REAL8     INspin2z,
                                  const UINT4     PrecEOBversion
                                  );
+typedef enum tagflagSEOBNRv4P_hamiltonian_derivative {
+  FLAG_SEOBNRv4P_HAMILTONIAN_DERIVATIVE_ANALYTICAL = 0,  /**< use analytical derivatives (opt) */
+  FLAG_SEOBNRv4P_HAMILTONIAN_DERIVATIVE_NUMERICAL  = 1  /**< use numerical derivatives (pre-opt) */
+} flagSEOBNRv4P_hamiltonian_derivative;
+
+typedef enum tagflagSEOBNRv4P_euler_extension {
+  FLAG_SEOBNRv4P_EULEREXT_QNM_SIMPLE_PRECESSION = 0, /**< QNM-based simple precession prescription post-merger */
+  FLAG_SEOBNRv4P_EULEREXT_CONSTANT = 1 /**< Euler angles set to constants post-merger */
+} flagSEOBNRv4P_euler_extension;
+
+typedef enum tagflagSEOBNRv4P_Zframe {
+  FLAG_SEOBNRv4P_ZFRAME_L = 0, /**< set Z axis of the P-frame along L */
+  FLAG_SEOBNRv4P_ZFRAME_LN = 1 /**< set Z axis of the P-frame along LN */
+} flagSEOBNRv4P_Zframe;
+
+
+/* in module LALSimIMRSpinPrecEOBv4P.c */
+
+int XLALEOBHighestInitialFreq(REAL8 *freqMinRad, REAL8 mTotal);
+int XLALEOBCheckNyquistFrequency(REAL8 m1, REAL8 m2, REAL8 spin1[3], REAL8 spin2[3],
+			      UINT4 ell_max, Approximant approx,
+			      REAL8 deltaT);
+int XLALSimIMRSpinPrecEOBWaveformAll(
+                                 REAL8TimeSeries   **hplus,
+                                 REAL8TimeSeries   **hcross,
+                                 SphHarmTimeSeries **hIlm,
+                                 SphHarmTimeSeries **hJlm,
+                                 REAL8Vector       **seobdynamicsAdaSVector,
+                                 REAL8Vector       **seobdynamicsHiSVector,
+                                 REAL8Vector       **seobdynamicsAdaSHiSVector,
+                                 REAL8Vector       **tVecPmodes,
+                                 REAL8Vector       **hP22_amp,
+                                 REAL8Vector       **hP22_phase,
+                                 REAL8Vector       **hP21_amp,
+                                 REAL8Vector       **hP21_phase,
+                                 REAL8Vector       **hP33_amp,
+                                 REAL8Vector       **hP33_phase,
+                                 REAL8Vector       **hP44_amp,
+                                 REAL8Vector       **hP44_phase,
+                                 REAL8Vector       **hP55_amp,
+                                 REAL8Vector       **hP55_phase,
+                                 REAL8Vector       **alphaJ2P,
+                                 REAL8Vector       **betaJ2P,
+                                 REAL8Vector       **gammaJ2P,
+                                 REAL8Vector       **mergerParams,
+                                 const REAL8       phiC,
+                                 const REAL8       INdeltaT,
+                                 const REAL8       m1SI,
+                                 const REAL8       m2SI,
+                                 const REAL8       fMin,
+                                 const REAL8       r,
+                                 const REAL8       inc,
+                                 const REAL8       chi1x,
+                                 const REAL8       chi1y,
+                                 const REAL8       chi1z,
+                                 const REAL8       chi2x,
+                                 const REAL8       chi2y,
+                                 const REAL8       chi2z,
+                                 LALValue         *modearray,
+                                 LALDict          *seobflags
+                                 );
+
+int XLALSimIMRSpinPrecEOBWaveform(
+                              REAL8TimeSeries **hplus,
+                              REAL8TimeSeries **hcross,
+                              const REAL8     phiC,
+                              const REAL8     deltaT,
+                              const REAL8     m1SI,
+                              const REAL8     m2SI,
+                              const REAL8     fMin,
+                              const REAL8     r,
+                              const REAL8     inc,
+                              const REAL8     INspin1[],
+                              const REAL8     INspin2[],
+                              const UINT4     PrecEOBversion,
+                              LALDict         *LALParams
+                              );
+
+SphHarmTimeSeries *XLALSimIMRSpinPrecEOBModes(
+                              const REAL8     deltaT,
+                              const REAL8     m1SI,
+                              const REAL8     m2SI,
+                              const REAL8     fMin,
+                              const REAL8     r,
+                              const REAL8     INspin1[],
+                              const REAL8     INspin2[],
+                              const UINT4     PrecEOBversion,
+                              LALDict         *LALParams
+                              );
 
 /* in module LALSimIMREOBNRv2HMROM.c */
 

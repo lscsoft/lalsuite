@@ -242,9 +242,9 @@ typedef struct tagFacWaveformCoeffs
 
   REAL8 delta44vh3;
   REAL8 delta44vh6;
-  REAL8 delta44vh9;
   REAL8 delta44vh6S;
   REAL8 delta44v5;
+  REAL8 delta44vh9;
 
   REAL8 rho44v2;
   REAL8 rho44v3;
@@ -313,6 +313,7 @@ typedef struct tagFacWaveformCoeffs
   REAL8 delta55vh3;
   REAL8 delta55vh6;
   REAL8 delta55vh9;
+
   REAL8 delta55v5;
   REAL8 rho55v2;
   REAL8 rho55v3;
@@ -530,6 +531,7 @@ typedef struct tagPr3In
 
 } pr3In;
 
+
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
@@ -540,6 +542,86 @@ UNUSED REAL8 XLALSimNSNSMergerFreq(
  TidalEOBParams *tidal1, /**< Tidal parameters of body 1 */
  TidalEOBParams *tidal2  /**< Tidal parameters of body 2 */
 );
+
+/**
+ * Structure to represent a data piece (e.g. a mode hlm), either in frequency or time
+ * with complex amplitude (enveloppe) and phase.
+ * The mode values are camp * exp(I*phase)
+ */
+typedef struct tagCAmpPhaseSequence {
+    REAL8Vector*                        xdata; /**< Sequence of times or frequencies on which data is given. */
+    REAL8Vector*                        camp_real; /**< Sequence for the real part of the complex amplitude (enveloppe). */
+    REAL8Vector*                        camp_imag; /**< Sequence for the imag part of the complex amplitude (enveloppe). */
+    REAL8Vector*                        phase; /**< Sequence for the phase. */
+} CAmpPhaseSequence;
+
+/**
+ * Structure to represent linked list of modes
+ * with complex amplitude (enveloppe) and phase.
+ */
+typedef struct tagSphHarmListCAmpPhaseSequence {
+    CAmpPhaseSequence*                        campphase; /**< Data for this mode. */
+    UINT4                                     l; /**< Mode number l. */
+    INT4                                      m; /**< Mode number m. */
+    struct tagSphHarmListCAmpPhaseSequence*   next; /**< Pointer to next element in the list. */
+} SphHarmListCAmpPhaseSequence;
+
+/**
+ * Structure to represent linked list of modes
+ * with complex amplitude (enveloppe) and phase.
+ */
+typedef struct tagSphHarmListEOBNonQCCoeffs {
+    EOBNonQCCoeffs*                        nqcCoeffs; /**< NQC coefficients for this mode. */
+    UINT4                                  l; /**< Mode number l. */
+    INT4                                   m; /**< Mode number m. */
+    struct tagSphHarmListEOBNonQCCoeffs*   next; /**< Pointer to next element in the list. */
+} SphHarmListEOBNonQCCoeffs;
+
+/**
+ * Structure the EOB dynamics for precessing waveforms.
+ */
+typedef struct tagSEOBdynamics {
+  UINT4 length;
+  REAL8Array *array;
+
+  REAL8 *tVec;
+
+  REAL8 *posVecx;
+  REAL8 *posVecy;
+  REAL8 *posVecz;
+
+  REAL8 *momVecx;
+  REAL8 *momVecy;
+  REAL8 *momVecz;
+
+  REAL8 *s1Vecx;
+  REAL8 *s1Vecy;
+  REAL8 *s1Vecz;
+
+  REAL8 *s2Vecx;
+  REAL8 *s2Vecy;
+  REAL8 *s2Vecz;
+
+  REAL8 *phiDMod;
+  REAL8 *phiMod;
+
+  REAL8 *velVecx;
+  REAL8 *velVecy;
+  REAL8 *velVecz;
+
+  REAL8 *polarrVec;
+  REAL8 *polarphiVec;
+  REAL8 *polarprVec;
+  REAL8 *polarpphiVec;
+
+  REAL8 *omegaVec;
+
+  REAL8 *s1dotZVec;
+  REAL8 *s2dotZVec;
+
+  REAL8 *hamVec;
+
+} SEOBdynamics;
 
 #if 0
 {				/* so that editors will match succeeding brace */

@@ -54,12 +54,13 @@
  *------------------------------------------------------------------------------------------
  */
 
-int XLALSpinPrecHcapExactDerivative(
+static int XLALSpinPrecHcapExactDerivative(
 				    double      UNUSED t,        /**<< UNUSED */
 				    const REAL8 values[],	/**<< Dynamical variables */
 				    REAL8       dvalues[],	/**<< Time derivatives of variables (returned) */
 				    void        *funcParams	/**<< EOB parameters */
 );
+
 
 /*------------------------------------------------------------------------------------------
  *
@@ -78,7 +79,7 @@ int XLALSpinPrecHcapExactDerivative(
  * Later on we use BB1, that is Barausse and Buonanno PRD 81, 084024 (2010)
  * This function is not used by the spin-aligned model.
  */
-int XLALSpinPrecHcapExactDerivative(
+static int XLALSpinPrecHcapExactDerivative(
 				    double      UNUSED t,        /**<< UNUSED */
 				    const REAL8	values[],	/**<< Dynamical variables */
 				    REAL8	dvalues[],	/**<< Time derivatives of variables (returned) */
@@ -616,5 +617,8 @@ int XLALSpinPrecHcapExactDerivative(
   }
   return XLAL_SUCCESS;
 }
+
+
+
 
 #endif // _LALSIMIMRSPINPRECEOBHCAPEXACTDERIVATIVEPREC_V3OPT_C

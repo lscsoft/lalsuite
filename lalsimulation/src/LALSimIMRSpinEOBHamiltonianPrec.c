@@ -29,6 +29,7 @@
 
 #include "LALSimIMRCalculateSpinPrecEOBHCoeffs.c"
 
+
 /*------------------------------------------------------------------------------------------
  *
  *          Prototypes of functions defined in this code.
@@ -72,6 +73,8 @@ static REAL8 inner_product( const REAL8 values1[],
 static REAL8* cross_product( const REAL8 values1[],
                               const REAL8 values2[],
                               REAL8 result[] );
+
+static REAL8* rotate_vector(const REAL8 v[], const REAL8 k[], const REAL8 theta,REAL8 result[] );
 
 UNUSED static REAL8 XLALSimIMRSpinPrecEOBNonKeplerCoeff(
                       const REAL8           values[],   /**<< Dynamical variables */
@@ -150,7 +153,38 @@ static REAL8 XLALSimIMRSpinPrecEOBHamiltonian(
      code may be merged, and we want to skip this step in the
      non-precessing limit. */
   int UsePrecH = 1;
+
   SpinEOBHCoeffs tmpCoeffs;
+  REAL8 L[3] = {0, 0, 0};
+  REAL8 Lhat[3] = {0, 0, 0.0};
+  cross_product(x->data, p->data, L); // Note that L = r x p is invariant under tortoise transform
+  REAL8 L_mag = sqrt(inner_product(L, L));
+  for (UINT4 jj = 0; jj < 3; jj++)
+  {
+    Lhat[jj] = L[jj] / L_mag;
+  }
+
+  REAL8 tempS1_p = inner_product(s1Vec->data, Lhat);
+  REAL8 tempS2_p = inner_product(s2Vec->data, Lhat);
+  REAL8 S1_perp[3] = {0, 0, 0};
+  REAL8 S2_perp[3] = {0, 0, 0};
+  REAL8 S_perp[3] = {0,0,0};
+  for (UINT4 jj = 0; jj < 3; jj++)
+  {
+    S1_perp[jj] = s1Vec->data[jj] - tempS1_p * Lhat[jj];
+    S2_perp[jj] = s2Vec->data[jj] - tempS2_p * Lhat[jj];
+    S_perp[jj] = S1_perp[jj]+S2_perp[jj];
+  }
+  REAL8 sKerr_norm = sqrt(inner_product(sigmaKerr->data, sigmaKerr->data));
+  REAL8 S_con = 0.0;
+  if (sKerr_norm>1e-6){
+    S_con = sigmaKerr->data[0] * Lhat[0] + sigmaKerr->data[1] * Lhat[1] + sigmaKerr->data[2] * Lhat[2];
+    S_con /= (1 - 2 * eta);
+    // Last division by 2 is to ensure the spin oebys the Kerr bound.
+    S_con += inner_product(S_perp, sigmaKerr->data) / sKerr_norm / (1 - 2 * eta) / 2.;
+  }
+
+  REAL8 chi = S_con;
   if ( UsePrecH && coeffs->updateHCoeffs )
   {
 
@@ -160,11 +194,21 @@ static REAL8 XLALSimIMRSpinPrecEOBHamiltonian(
                 + sigmaKerr->data[2]*sigmaKerr->data[2]);
 
     // Update coefficients, checking for errors
-    if ( XLALSimIMRCalculateSpinPrecEOBHCoeffs( &tmpCoeffs, eta,
-          tmpa, coeffs->SpinAlignedEOBversion ) == XLAL_FAILURE )
-    {
-      XLAL_ERROR( XLAL_EFUNC );
+    if (coeffs->SpinAlignedEOBversion ==4){
+      if ( XLALSimIMRCalculateSpinPrecEOBHCoeffs_v2( &tmpCoeffs, eta,
+          tmpa, chi, coeffs->SpinAlignedEOBversion ) == XLAL_FAILURE )
+      {
+        XLAL_ERROR( XLAL_EFUNC );
+      }
     }
+    else{
+      if ( XLALSimIMRCalculateSpinPrecEOBHCoeffs( &tmpCoeffs, eta,
+          tmpa, coeffs->SpinAlignedEOBversion ) == XLAL_FAILURE )
+      {
+        XLAL_ERROR( XLAL_EFUNC );
+      }
+    }
+
 
     // Copy over underlying model version number
     tmpCoeffs.SpinAlignedEOBversion = coeffs->SpinAlignedEOBversion;
@@ -235,16 +279,35 @@ static REAL8 XLALSimIMRSpinPrecEOBHamiltonian(
     e3_y = 1./sqrt(3.);
     e3_z = 1./sqrt(3.);
   }
+  UNUSED REAL8 result[3] = {0.0, 0.0, 0.0};
+  UNUSED REAL8 e3[3] = {e3_x, e3_y, e3_z};
+  UNUSED REAL8 nhat[3] = {nx,ny,nz};
+  UNUSED REAL8 lambda_hat[3]={0.0,0.0,0.0};
+  cross_product(Lhat,nhat,lambda_hat);
+  UNUSED REAL8 nrm = sqrt(inner_product(lambda_hat,lambda_hat));
+  for (int k=0;k<3;k++){
+    lambda_hat[k]/=nrm;
+  }
+  // Check if e_3 is aligned with n
 
-    if (1. - fabs(e3_x*nx + e3_y*ny + e3_z*nz) <= 1.e-8) {
-        e3_x = e3_x+0.1;
-        e3_y = e3_y+0.1;
-        const REAL8 invnorm = 1./sqrt(e3_x*e3_x + e3_y*e3_y + e3_z*e3_z);
-        e3_x = e3_x*invnorm;
-        e3_y = e3_y*invnorm;
-        e3_z = e3_z*invnorm;
+  if (1. - fabs(e3_x * nx + e3_y * ny + e3_z * nz) <= 1.e-8)
+  {
+    if (coeffs->SpinAlignedEOBversion == 4){
+      UNUSED REAL8 angle = 1.8e-3; // This is ~0.1 degrees
+      rotate_vector(e3, lambda_hat, angle, result);
+      e3_x = result[0];
+      e3_y = result[1];
+      e3_z = result[2];
     }
-
+    else{
+      e3_x = e3_x+0.1;
+      e3_y = e3_y+0.1;
+      const REAL8 invnorm = 1./sqrt(e3_x*e3_x + e3_y*e3_y + e3_z*e3_z);
+      e3_x = e3_x*invnorm;
+      e3_y = e3_y*invnorm;
+      e3_z = e3_z*invnorm;
+    }
+  }
   costheta = e3_x*nx + e3_y*ny + e3_z*nz;
 
   xi2=1. - costheta*costheta;
@@ -639,7 +702,20 @@ static REAL8* cross_product( const REAL8 values1[],
   return result;
 }
 
-
+/**
+ * Rotate the vector v around the axis k by an angle theta, counterclockwise
+ * Note that this assumes that the rotation axis k is normalized.
+ * */
+UNUSED static REAL8* rotate_vector(const REAL8 v[], const REAL8 k[], const REAL8 theta,REAL8 result[] ){
+  // Rodrigues rotation formula, see https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+  REAL8 kcrossv[3]={0,0,0};
+  cross_product(k,v,kcrossv);
+  REAL8 kdotv = inner_product(k,v);
+  for (UINT4 ii=0;ii<3;ii++){
+    result[ii] = v[ii]*cos(theta)+kcrossv[ii]*sin(theta)+k[ii]*kdotv*(1-cos(theta));
+  }
+  return result;
+}
 /**
  * Function to calculate the value of omega for the PRECESSING EOB waveform.
  * Needs the dynamics in Cartesian coordinates.
@@ -737,7 +813,6 @@ static REAL8 XLALSimIMRSpinPrecEOBCalcOmega(
     XLAL_ERROR( XLAL_EFUNC );
   }
   memcpy( rdotvec, dvalues, 3*sizeof(REAL8) );
-
   if (debugPK){
     for(int ii =0; ii < 12; ii++)
       if( isnan(dvalues[ii]) ) {
@@ -934,7 +1009,6 @@ XLALSimIMRSpinPrecEOBNonKeplerCoeff(
   /* We need to find the values of omega assuming pr = 0 */
   memcpy( tmpValues, values, sizeof(tmpValues) );
   omegaCirc = XLALSimIMRSpinPrecEOBCalcOmega( tmpValues, funcParams );
-
   if ( XLAL_IS_REAL8_FAIL_NAN( omegaCirc ) )
   {
     XLAL_ERROR_REAL8( XLAL_EFUNC );
@@ -990,6 +1064,7 @@ static int XLALSpinPrecHcapRvecDerivative(
   gsl_function F;
   INT4         gslStatus;
   UINT4 SpinAlignedEOBversion;
+  UINT4 SpinAlignedEOBversionForWaveformCoefficients;
 
   UINT4 i, j, k;//, l;
 
@@ -1296,14 +1371,53 @@ static int XLALSpinPrecHcapRvecDerivative(
                                          &spin1, &spin2 );
 
     REAL8 tmpa;
+    /* Calculate the orbital angular momentum */
+    Lx = values[1] * values[5] - values[2] * values[4];
+    Ly = values[2] * values[3] - values[0] * values[5];
+    Lz = values[0] * values[4] - values[1] * values[3];
+
+    magL = sqrt(Lx * Lx + Ly * Ly + Lz * Lz);
+    Lhatx = Lx / magL;
+    Lhaty = Ly / magL;
+    Lhatz = Lz / magL;
+    REAL8 Lhat[3] = {Lhatx, Lhaty, Lhatz};
+    REAL8 tempS1_p = inner_product(s1Data, Lhat);
+    REAL8 tempS2_p = inner_product(s2Data, Lhat);
+    REAL8 S1_perp[3] = {0, 0, 0};
+    REAL8 S2_perp[3] = {0, 0, 0};
+    for(UINT4 jj=0; jj<3; jj++){
+      S1_perp[jj] = 1/mT2*(s1Data[jj]-tempS1_p*Lhat[jj]);
+      S2_perp[jj] = 1/mT2*(s2Data[jj]-tempS2_p*Lhat[jj]);
+    }
+    REAL8 sKerr_norm = sqrt(inner_product(sigmaKerr.data, sigmaKerr.data));
+    REAL8 S_con = 0.0;
+    if (sKerr_norm>1e-6){
+      S_con = sigmaKerr.data[0] * Lhat[0] + sigmaKerr.data[1] * Lhat[1] + sigmaKerr.data[2] * Lhat[2];
+      S_con /= (1 - 2 * eta);
+      S_con += (inner_product(S1_perp, sigmaKerr.data) + inner_product(S2_perp, sigmaKerr.data)) / sKerr_norm / (1 - 2 * eta) / 2.;
+    }
+
+    REAL8 chi = S_con;
     tmpa = sqrt(sigmaKerr.data[0]*sigmaKerr.data[0]
                 + sigmaKerr.data[1]*sigmaKerr.data[1]
                 + sigmaKerr.data[2]*sigmaKerr.data[2]);
-    if ( XLALSimIMRCalculateSpinPrecEOBHCoeffs( &tmpCoeffs, eta,
-          tmpa, coeffs->SpinAlignedEOBversion ) == XLAL_FAILURE )
-    {
-      XLAL_ERROR( XLAL_EFUNC );
+    if (SpinAlignedEOBversion == 4){
+      if ( XLALSimIMRCalculateSpinPrecEOBHCoeffs_v2( &tmpCoeffs, eta,
+          tmpa, chi, coeffs->SpinAlignedEOBversion ) == XLAL_FAILURE )
+      {
+       XLAL_ERROR( XLAL_EFUNC );
+      }
     }
+    else
+    {
+      if ( XLALSimIMRCalculateSpinPrecEOBHCoeffs( &tmpCoeffs, eta,
+          tmpa, coeffs->SpinAlignedEOBversion ) == XLAL_FAILURE )
+      {
+       XLAL_ERROR( XLAL_EFUNC );
+      }
+    }
+
+
     tmpCoeffs.SpinAlignedEOBversion = params.params->seobCoeffs->SpinAlignedEOBversion;
     tmpCoeffs.updateHCoeffs = 0;
   }
@@ -1342,6 +1456,8 @@ static int XLALSpinPrecHcapRvecDerivative(
 	}
     else
     {
+      params.params->seobCoeffs->updateHCoeffs = 1;
+
       XLAL_CALLGSL( gslStatus = gsl_deriv_central( &F, values[i],
                       STEP_SIZE, &tmpDValues[i], &absErr ) );
     }
@@ -1405,9 +1521,37 @@ static int XLALSpinPrecHcapRvecDerivative(
   s2dotLN = (s2Data[0]*rcrossrDot[0] + s2Data[1]*rcrossrDot[1]
 			+ s2Data[2]*rcrossrDot[2]) / (mass2*mass2);
 
-  chiS = 0.5 * (s1dotLN + s2dotLN);
-  chiA = 0.5 * (s1dotLN - s2dotLN);
+  REAL8 mT2 = (mass1+mass2)*(mass1+mass2);
+  if (SpinAlignedEOBversion==4){
+    chiS = 0.5 * (s1dotL + s2dotL);
+    chiA = 0.5 * (s1dotL - s2dotL);
+  }
+  else{
+    chiS = 0.5 * (s1dotLN + s2dotLN);
+    chiA = 0.5 * (s1dotLN - s2dotLN);
+  }
+  REAL8 Lhat[3] = {Lhatx, Lhaty, Lhatz};
+  REAL8 tempS1_p = inner_product(s1Data, Lhat);
+  REAL8 tempS2_p = inner_product(s2Data, Lhat);
+  REAL8 S1_perp[3] = {0, 0, 0};
+  REAL8 S2_perp[3] = {0, 0, 0};
 
+  for (UINT4 jj = 0; jj < 3; jj++)
+  {
+    S1_perp[jj] = 1 / mT2 * (s1Data[jj] - tempS1_p * Lhat[jj]);
+    S2_perp[jj] = 1 / mT2 * (s2Data[jj] - tempS2_p * Lhat[jj]);
+  }
+
+  REAL8 sKerr_norm = sqrt(inner_product(sKerr.data, sKerr.data));
+
+  REAL8 S_con = 0.0;
+  if (sKerr_norm > 1e-6){
+    S_con = sKerr.data[0] * Lhat[0] + sKerr.data[1] * Lhat[1] + sKerr.data[2] * Lhat[2];
+    S_con /= (1 - 2 * eta);
+    S_con += (inner_product(S1_perp, sKerr.data) + inner_product(S2_perp, sKerr.data)) / sKerr_norm / (1 - 2 * eta) / 2.;
+  }
+
+  REAL8 chi = S_con;
   /* Compute the test-particle limit spin of the deformed-Kerr background */
   switch ( SpinAlignedEOBversion )
   {
@@ -1415,6 +1559,7 @@ static int XLALSpinPrecHcapRvecDerivative(
        tplspin = 0.0;
        break;
      case 2:
+     case 4:
        tplspin = (1.-2.*eta) * chiS + (mass1 - mass2)/(mass1 + mass2) * chiA;
        break;
      default:
@@ -1437,22 +1582,39 @@ static int XLALSpinPrecHcapRvecDerivative(
   //params.params->sigmaKerr = &sKerr;
   params.params->a         = a;
 
-    if (params.params->alignedSpins==1) {
-        XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(
-                                                     params.params->eobParams->hCoeffs, mass1, mass2, eta, tplspin,
-                                                     chiS, chiA, SpinAlignedEOBversion);
-    }
-    else {
-        XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(
-                                                     params.params->eobParams->hCoeffs, mass1, mass2, eta, tplspin,
-                                                     chiS, chiA, 3);
-    }
+  if (SpinAlignedEOBversion == 2) {
+    SpinAlignedEOBversionForWaveformCoefficients = 3;
+  }
+  else{
+    SpinAlignedEOBversionForWaveformCoefficients = SpinAlignedEOBversion;
+  }
 
+  if (params.params->alignedSpins==1) {
+      XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(
+                                                     params.params->eobParams->hCoeffs, mass1, mass2, eta, tplspin,
+                                                                                                      chiS, chiA, SpinAlignedEOBversion);
+                                                                                                    }
+  else {
+      XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(
+                                                     params.params->eobParams->hCoeffs, mass1, mass2, eta, tplspin,
+                                                     chiS, chiA, SpinAlignedEOBversionForWaveformCoefficients);
+                                                   }
+  if (SpinAlignedEOBversion == 4){
+
+    XLALSimIMRCalculateSpinPrecEOBHCoeffs_v2( params.params->seobCoeffs, eta, a, chi,
+      SpinAlignedEOBversion );
+
+    //H = XLALSimIMRSpinPrecEOBHamiltonian( eta, &rVec, &pVec, s1proj, s2proj,
+    //&sKerr, &sStar, params.params->tortoise, params.params->seobCoeffs );
+  }
+  else{
     XLALSimIMRCalculateSpinPrecEOBHCoeffs( params.params->seobCoeffs, eta, a,
       SpinAlignedEOBversion );
 
+
+  }
   H = XLALSimIMRSpinPrecEOBHamiltonian( eta, &rVec, &pVec, &s1norm, &s2norm,
-	&sKerr, &sStar, params.params->tortoise, params.params->seobCoeffs );
+					&sKerr, &sStar, params.params->tortoise, params.params->seobCoeffs );
   H = H * (mass1 + mass2);
 
   /* Now make the conversion */

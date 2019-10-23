@@ -132,6 +132,12 @@ tagSpinEOBParams
   int                     ignoreflux;
   REAL8 deltaT;
   int                     use_hm;
+  int termination_reason;
+  REAL8                   spin1z_omegaPeak;
+  REAL8                   spin2z_omegaPeak;
+  REAL8                   tPeakOmega;
+  REAL8                   cal21;
+  REAL8                   cal55;
 }
 SpinEOBParams;
 

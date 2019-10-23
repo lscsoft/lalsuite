@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2014 Craig Robinson, Enrico Barausse, Yi Pan, Prayush Kumar, 
+ *  Copyright (C) 2014 Craig Robinson, Enrico Barausse, Yi Pan, Prayush Kumar,
  *  Stanislav Babak, Andrea Taracchini
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -97,8 +97,8 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 )
 {
 	int		debugPK = 0;
-	static const REAL8 STEP_SIZE = 2.0e-4;
-
+	
+	
     /** lMax: l index up to which h_{lm} modes are included in the computation of the GW enegy flux: see Eq. in 13 in PRD 86,  024011 (2012) */
     static const INT4 lMax = 8;
 
@@ -116,6 +116,9 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 	gsl_function	F;
 	INT4		gslStatus;
 	UINT4		SpinAlignedEOBversion;
+	/* This is needed because SpinAlignedEOBversion is set to 2 for v3 */
+	/* while XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients requires 3 ... */
+	UINT4		SpinAlignedEOBversionForWaveformCoefficients;
 
 	UINT4		i       , j, k, l;
 
@@ -173,10 +176,20 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 
 	mass1 = params.params->eobParams->m1;
 	mass2 = params.params->eobParams->m2;
+	// SO: Rescale the masses so that the total mass is 1
+	UNUSED REAL8 m_total = mass1 + mass2;
+	mass1 /=m_total;
+	mass2 /=m_total;
 	eta = params.params->eobParams->eta;
 	SpinAlignedEOBversion = params.params->seobCoeffs->SpinAlignedEOBversion;
 	SpinEOBHCoeffs *coeffs = (SpinEOBHCoeffs *) params.params->seobCoeffs;
-
+	REAL8 STEP_SIZE; // The step size passed to GSL to compute derivatives
+	if(SpinAlignedEOBversion==4){
+	  STEP_SIZE = 2.0e-3; //Allow a different step size for v4P 
+	}
+	else{
+	  STEP_SIZE = 2.0e-4;
+	}
 	/*
 	 * For precessing binaries, the effective spin of the Kerr background
 	 * evolves with time. The coefficients used to compute the
@@ -215,12 +228,10 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 	memcpy(s2Data, values + 9, 3 * sizeof(REAL8));
 	memcpy(s1DataNorm, values + 6, 3 * sizeof(REAL8));
 	memcpy(s2DataNorm, values + 9, 3 * sizeof(REAL8));
-
 	for (i = 0; i < 3; i++) {
 		s1.data[i] *= (mass1 + mass2) * (mass1 + mass2);
 		s2.data[i] *= (mass1 + mass2) * (mass1 + mass2);
 	}
-
 	sKerr.length = 3;
 	sKerr.data = sKerrData;
 	XLALSimIMRSpinEOBCalculateSigmaKerr(&sKerr, mass1, mass2, &s1, &s2);
@@ -340,6 +351,7 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 	/* Now calculate derivatives w.r.t. each parameter */
 	for (i = 0; i < 3; i++) {
 		params.varyParam = i;
+		params.params->seobCoeffs->updateHCoeffs = 1;
         params.params->tortoise = 2;
         memcpy(tmpValues, params.values, sizeof(tmpValues));
         tmpValues[3] = tmpP[0];
@@ -432,16 +444,43 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 	 * Compute \vec{L_N} = \vec{r} \times \.{\vec{r}}, \vec{S_i} \dot
 	 * \vec{L_N} and chiS and chiA
 	 */
-    
+
     /* Eq. 16 of PRD 89, 084006 (2014): it's S_{1,2}/m_{1,2}^2.LNhat */
-	s1dotLN = (s1.data[0] * rCrossV_x + s1.data[1] * rCrossV_y + s1.data[2] * rCrossV_z) /
-		(r * r * omega * mass1 * mass1);
-	s2dotLN = (s2.data[0] * rCrossV_x + s2.data[1] * rCrossV_y + s2.data[2] * rCrossV_z) /
-		(r * r * omega * mass2 * mass2);
+	if (SpinAlignedEOBversion == 4)
+	{
+		s1dotLN = (s1.data[0] * Lhatx + s1.data[1] * Lhaty + s1.data[2] * Lhatz) /
+				  (mass1 * mass1);
+		s2dotLN = (s2.data[0] * Lhatx + s2.data[1] * Lhaty + s2.data[2] * Lhatz) /
+				  (mass2 * mass2);
+	}
+	else
+	{
+		s1dotLN = (s1.data[0] * rCrossV_x + s1.data[1] * rCrossV_y + s1.data[2] * rCrossV_z) /
+				  (r * r * omega * mass1 * mass1);
+		s2dotLN = (s2.data[0] * rCrossV_x + s2.data[1] * rCrossV_y + s2.data[2] * rCrossV_z) /
+				  (r * r * omega * mass2 * mass2);
+	}
 
 	chiS = 0.5 * (s1dotLN + s2dotLN);
 	chiA = 0.5 * (s1dotLN - s2dotLN);
-
+	REAL8 Lhat[3] = {Lhatx, Lhaty, Lhatz};
+	REAL8 tempS1_p = inner_product(s1.data, Lhat);
+	REAL8 tempS2_p = inner_product(s2.data, Lhat);
+	REAL8 S1_perp[3] = {0, 0, 0};
+	REAL8 S2_perp[3] = {0, 0, 0};
+	for (UINT4 jj = 0; jj < 3; jj++)
+	{
+		S1_perp[jj] = s1.data[jj] - tempS1_p * Lhat[jj];
+		S2_perp[jj] = s2.data[jj] - tempS2_p * Lhat[jj];
+	}
+	REAL8 sKerr_norm = sqrt(inner_product(sKerr.data, sKerr.data));
+	REAL8 S_con = 0.0;
+	if (sKerr_norm > 1e-6){
+		S_con = sKerr.data[0] * Lhat[0] + sKerr.data[1] * Lhat[1] + sKerr.data[2] * Lhat[2];
+		S_con /= (1 - 2 * eta);
+		S_con += (inner_product(S1_perp, sKerr.data) + inner_product(S2_perp, sKerr.data)) / sKerr_norm / (1 - 2 * eta) / 2.;
+	}
+	REAL8 chi = S_con;
 	if (debugPK) {
 		XLAL_PRINT_INFO("chiS = %.12e, chiA = %.12e\n", chiS, chiA);
 		fflush(NULL);
@@ -468,9 +507,11 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 		tplspin = 0.0;
 		break;
 	case 2:
+	case 3:
+  case 4:
         /* See below Eq. 4 of PRD 89, 061502(R) (2014)*/
 		tplspin = (1. - 2. * eta) * chiS + (mass1 - mass2) / (mass1 + mass2) * chiA;
-		break;
+        break;
 	default:
 		XLALPrintError("XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
 		XLAL_ERROR(XLAL_EINVAL);
@@ -491,15 +532,29 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 					 chiS, chiA, SpinAlignedEOBversion);
     }
     else {
+			/* This is needed because SpinAlignedEOBversion is set to 2 for v3 */
+			/* while XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients requires 3 ... */
+			  if ( SpinAlignedEOBversion == 2 ) SpinAlignedEOBversionForWaveformCoefficients = 3;
+				else SpinAlignedEOBversionForWaveformCoefficients = SpinAlignedEOBversion;
+
         XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(
                                                      params.params->eobParams->hCoeffs, mass1, mass2, eta, tplspin,
-                                                     chiS, chiA, 3);
+                                                     chiS, chiA, SpinAlignedEOBversionForWaveformCoefficients);
     }
-	XLALSimIMRCalculateSpinPrecEOBHCoeffs(params.params->seobCoeffs, eta, a,
-					  SpinAlignedEOBversion);
+	if (SpinAlignedEOBversion == 4)
+	{
+		XLALSimIMRCalculateSpinPrecEOBHCoeffs_v2(params.params->seobCoeffs, eta, a, chi,
+												 SpinAlignedEOBversion);
+	}
+	else
+	{
+		XLALSimIMRCalculateSpinPrecEOBHCoeffs(params.params->seobCoeffs, eta, a,
+											  SpinAlignedEOBversion);
+	}
 
 	H = XLALSimIMRSpinPrecEOBHamiltonian(eta, &rVec, &pVec, &s1norm, &s2norm,
-	&sKerr, &sStar, params.params->tortoise, params.params->seobCoeffs);
+					     &sKerr, &sStar, params.params->tortoise, params.params->seobCoeffs);
+
 	H = H * (mass1 + mass2);
 
 	/* Now we have the ingredients to compute the flux */
@@ -634,7 +689,7 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 	dLhaty = (dLy * magL - Ly * dMagL) / (magL * magL);
 
 	/*
-	 * Finn Chernoff convention is used here. 
+	 * Finn Chernoff convention is used here.
      */
     /* Eqs. 19-20 of PRD 89, 084006 (2014) */
 	if (Lhatx == 0.0 && Lhaty == 0.0) {
@@ -726,7 +781,7 @@ XLALSpinPrecHcapNumDerivWRTParam(
 
 	/* Set up pointers for GSL */
 	params.params = funcParams;
-    
+
 
 	F.function = &GSLSpinPrecHamiltonianWrapper;
 	F.params = &params;
@@ -734,7 +789,7 @@ XLALSpinPrecHcapNumDerivWRTParam(
 
 	mass1 = params.params->eobParams->m1;
 	mass2 = params.params->eobParams->m2;
-    
+
     REAL8 mT2 = (mass1 + mass2) * (mass1 + mass2);
     REAL8 tmpValues[14];
     for (UINT4 i = 0; i < 3; i++) {
@@ -746,18 +801,22 @@ XLALSpinPrecHcapNumDerivWRTParam(
     tmpValues[12] = values[12];
     tmpValues[13] = values[13];
     params.values = tmpValues;
-
-
+    REAL8 m_total = mass1 + mass2;
+    mass1 /=m_total;
+    mass2 /=m_total;
+    params.params->seobCoeffs->updateHCoeffs = 1;
 	/* Now calculate derivatives w.r.t. the required parameter */
     if (paramIdx >=0 && paramIdx < 6) {
         XLAL_CALLGSL(gslStatus = gsl_deriv_central(&F, values[paramIdx],
                                                    STEP_SIZE, &result, &absErr));
     }
     else if (paramIdx >= 6 && paramIdx < 9) {
+      params.params->seobCoeffs->updateHCoeffs = 1;
 		XLAL_CALLGSL(gslStatus = gsl_deriv_central(&F, values[paramIdx],
 			      STEP_SIZE * mass1 * mass1, &result, &absErr));
 	}
     else if (paramIdx >= 9 && paramIdx < 12) {
+      params.params->seobCoeffs->updateHCoeffs = 1;
 		XLAL_CALLGSL(gslStatus = gsl_deriv_central(&F, values[paramIdx],
 			      STEP_SIZE * mass2 * mass2, &result, &absErr));
 	}
@@ -800,6 +859,9 @@ GSLSpinPrecHamiltonianWrapper(double x, void *params)
 	REAL8		a;
 	REAL8		m1 = eobParams->m1;
 	REAL8		m2 = eobParams->m2;
+	REAL8 m_total = m1 + m2;
+	m1 /=m_total;
+	m2 /=m_total;
 	REAL8 UNUSED	mT2 = (m1 + m2) * (m1 + m2);
 	REAL8 UNUSED	eta = m1 * m2 / mT2;
 
@@ -837,10 +899,10 @@ GSLSpinPrecHamiltonianWrapper(double x, void *params)
 
 	/* Calculate various spin parameters */
     /* Note that XLALSimIMRSpinEOBCalculateSigmaKerr and XLALSimIMRSpinEOBCalculateSigmaStar return a unitless quantity */
-	XLALSimIMRSpinEOBCalculateSigmaKerr(&sigmaKerr, eobParams->m1,
-					    eobParams->m2, &spin1, &spin2);
-	XLALSimIMRSpinEOBCalculateSigmaStar(&sigmaStar, eobParams->m1,
-					    eobParams->m2, &spin1, &spin2);
+	XLALSimIMRSpinEOBCalculateSigmaKerr(&sigmaKerr, m1,
+					    m2, &spin1, &spin2);
+	XLALSimIMRSpinEOBCalculateSigmaStar(&sigmaStar, m1,
+					    m2, &spin1, &spin2);
 	a = sqrt(sigmaKerr.data[0] * sigmaKerr.data[0]
 		 + sigmaKerr.data[1] * sigmaKerr.data[1]
 		 + sigmaKerr.data[2] * sigmaKerr.data[2]);
@@ -850,8 +912,8 @@ GSLSpinPrecHamiltonianWrapper(double x, void *params)
           XLAL_ERROR( XLAL_EINVAL );
 	}
 
-	REAL8		SpinEOBH = XLALSimIMRSpinPrecEOBHamiltonian(eobParams->eta, &r, &p, &spin1norm, &spin2norm, &sigmaKerr, &sigmaStar, dParams->params->tortoise, dParams->params->seobCoeffs) / eobParams->eta;
-
+	REAL8 SpinEOBH=0.0;
+	SpinEOBH = XLALSimIMRSpinPrecEOBHamiltonian(eobParams->eta, &r, &p, &spin1norm, &spin2norm, &sigmaKerr, &sigmaStar, dParams->params->tortoise, dParams->params->seobCoeffs) / eobParams->eta;
 	if (dParams->varyParam < 3)
 		dParams->params->tortoise = oldTortoise;
 	return SpinEOBH;

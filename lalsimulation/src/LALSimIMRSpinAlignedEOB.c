@@ -634,8 +634,8 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
        if (ModeArray) XLALDestroyValue(ModeArray);
        XLAL_ERROR(XLAL_EFUNC);
      }
-      if(ModeArray) XLALDestroyValue(ModeArray); 
-          
+      if(ModeArray) XLALDestroyValue(ModeArray);
+
       if ( nqcCoeffsInput )
         XLALDestroyREAL8Vector( nqcCoeffsInput );
     }
@@ -848,7 +848,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
       XLAL_ERROR (XLAL_EINVAL);
     }
   //R.C: region where SEOBNRv4HM can be generated, see the test on the review page
-  //here  https://git.ligo.org/waveforms/reviews/SEOBNRv4HM/wikis/visual-inspection#check-if-there-are-cases-for-which-the-maximum-amplitude-of-the-22-mode-is-smaller-than-the-one-of-any-of-the-higher-order-modes 
+  //here  https://git.ligo.org/waveforms/reviews/SEOBNRv4HM/wikis/visual-inspection#check-if-there-are-cases-for-which-the-maximum-amplitude-of-the-22-mode-is-smaller-than-the-one-of-any-of-the-higher-order-modes
   if(use_hm){
     if(m1SI>m2SI){
       if((m1SI/m2SI > 57.) && (spin1z> 0.96)){
@@ -865,8 +865,8 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
         for mass ratio bigger than 57 is only available when the spin on the more massive BH in the range -1 < a/M < 0.96.\n",__func__);
         XLAL_ERROR (XLAL_EINVAL);
       }
-    }  
-  }  
+    }
+  }
 
   INT4 i;
 
@@ -1486,7 +1486,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 	XLALAdaptiveRungeKutta4NoInterpolate (integrator, &seobParams,
 					      values->data, 0.,
 					      20. / mTScaled,
-					      deltaT / mTScaled,
+					      deltaT / mTScaled, 0., /* ignore deltaT_min, set it to 0 */
 					      &dynamicstmp,2);/* Last parameter added when funcions were combined in LALAdaptiveRungeKuttaIntegrator.c*/
       if (retLen_fromOptStep2 == XLAL_FAILURE || !dynamicstmp)
         {
@@ -1584,7 +1584,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 	XLALAdaptiveRungeKutta4NoInterpolate (integrator, &seobParams,
 					      values->data, 0.,
 					      20. / mTScaled,
-					      deltaTHigh / mTScaled,
+					      deltaTHigh / mTScaled, 0., /* ignore deltaT_min, set it to 0 */
 					      &dynamicsHitmp,2);/* Last parameter added when funcions were combined in LALAdaptiveRungeKuttaIntegrator.c*/
       if (retLen_fromOptStep3 == XLAL_FAILURE || !dynamicsHitmp)
         {
@@ -2072,8 +2072,8 @@ for ( UINT4 k = 0; k<nModes; k++) {
           else{
             if (XLALSimIMRSpinEOBCalculateNQCCoefficientsV4
                 (ampNQC, phaseNQC, &rHi, &prHi, omegaHi, modeL, modeM, timePeak,
-                 deltaTHigh / mTScaled, m1, m2, a, chiA, chiS, &nqcCoeffs,
-                 SpinAlignedEOBversion) == XLAL_FAILURE)
+                 deltaTHigh / mTScaled, m1, m2, chiA, chiS, &nqcCoeffs) == XLAL_FAILURE)
+
             {
               if(tmpValues){
                 XLALDestroyREAL8Vector (tmpValues);
@@ -3254,7 +3254,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
         }
         hlms_temp = hlms_temp->next;
     }
-    
+
 
 
     /* Point the output pointers to the relevant time series and return */

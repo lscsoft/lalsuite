@@ -99,9 +99,11 @@ int XLALAdaptiveRungeKutta4( LALAdaptiveRungeKuttaIntegrator *integrator,
  * with adaptive step size control.  Intended for use in time domain
  * waveform generation routines based on SEOBNRv2,3,4 models.  This method
  * does not includes any interpolation.
+ * deltat_or_h0 is the initial step size to be tried
+ * min_deltat_or_h0 is the minimal step size to enforce -- 0 to ignore
  */
 int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKuttaIntegrator * integrator,
-         void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat_or_h0,
+         void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat_or_h0, REAL8 min_deltat_or_h0,
 					 REAL8Array ** t_and_yout,INT4 EOBversion);
 int XLALAdaptiveRungeKuttaDenseandSparseOutput(LALAdaptiveRungeKuttaIntegrator * integrator,
          void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat,

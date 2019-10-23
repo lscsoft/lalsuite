@@ -141,6 +141,7 @@ bin_PROGRAMS = \
 
 pkginclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
+	LALSimBlackHoleRingdownPrec.h \
 	LALSimBurst.h \
 	LALSimIMR.h \
 	LALSimIMRPhenomUtils.h \
@@ -244,6 +245,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMREOBNRv2.c \
 	LALSimIMRSpinAlignedEOB.c \
 	LALSimIMRSpinPrecEOB.c \
+	LALSimIMRSpinPrecEOBv4P.c \
 	LALSimIMRSEOBNRv1ROMEffectiveSpin.c \
 	LALSimIMRSEOBNRv1ROMDoubleSpin.c \
 	LALSimIMRSEOBNRv2ROMEffectiveSpin.c \
