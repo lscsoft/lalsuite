@@ -830,7 +830,7 @@ XLALSimIMREOBGetNRSpinPeakDeltaT (INT4 l,
 
   switch (l)
     {
-    case 2:
+   case 2:
       switch (m)
 	{
 	case 2:
@@ -969,9 +969,12 @@ XLALSimIMREOBGetNRSpinPeakAmplitudeV4 (INT4 modeL, INT4 modeM, REAL8 m1, REAL8 m
                   res = eta * CombineTPLEQMFits(eta, A1, fEQ, fTPL);
                   break;
 							case 1:
+
 									res = -((0.29256703361640224-0.19710255145276584*eta)*eta*chi21 + dM*eta*(-0.42817941710649793 + 0.11378918021042442*eta-0.7736772957051212*eta2
 									+chi21*chi21*(0.047004057952214004 - eta*0.09326128322462478)) +dM*eta*chi21*(-0.010195081244587765 + 0.016876911550777807*chi21*chi21));
+
                   break;
+
               default:
                   XLALPrintError("XLAL Error - %s: (%d,%d) mode. At present only fits for the (2,2), (2,1), (3,3), (4,4) and (5,5) mode are available.\n",  __func__, modeL, modeM);
                   XLAL_ERROR (XLAL_EINVAL);
@@ -985,12 +988,14 @@ XLALSimIMREOBGetNRSpinPeakAmplitudeV4 (INT4 modeL, INT4 modeM, REAL8 m1, REAL8 m
 									res = (0.10109183988848384*eta - 0.4704095462146807*eta2 + 1.0735457779890183*eta2*eta)*chi33 +
 									dM*(0.5636580081367962*eta - 0.054609013952480856*eta2 + 2.3093699480319234*eta2*eta + chi33*chi33*(0.029812986680919126*eta - 0.09688097244145283*eta2) );
                   break;
+
               default:
                   XLALPrintError("XLAL Error - %s: (%d,%d) mode. At present only fits for the (2,2), (2,1), (3,3), (4,4) and (5,5) mode are available.\n",  __func__, modeL, modeM);
                   XLAL_ERROR (XLAL_EINVAL);
                   break;
           }
           break;
+
 			case 4:
 						switch (modeM) {
 							case 4:
@@ -1006,8 +1011,11 @@ XLALSimIMREOBGetNRSpinPeakAmplitudeV4 (INT4 modeL, INT4 modeM, REAL8 m1, REAL8 m
 			case 5:
 						switch (modeM) {
 							case 5:
+
 								res = 0.128621*dM *eta -0.474201 *dM *eta*eta +1.0833 * dM *eta*eta*eta + 0.0322784 * eta * chi33 -0.134511 *chi33 *eta * eta +0.0990202 *chi33*eta*eta*eta;
+
                 break;
+
 							default:
 									XLALPrintError("XLAL Error - %s: (%d,%d) mode. At present only fits for the (2,2), (2,1), (3,3), (4,4) and (5,5) mode are available.\n",  __func__, modeL, modeM);
 									XLAL_ERROR (XLAL_EINVAL);
@@ -1060,6 +1068,7 @@ XLALSimIMREOBGetNRSpinPeakADotV4 (INT4 modeL, INT4 modeM, REAL8 UNUSED m1, REAL8
                     break;
 								case 1:
 										res = dM*eta*(0.007147528020812309-eta*0.035644027582499495) + dM*eta*chi21*(-0.0087785131749995 + eta*0.03054672006241107) + eta*0.00801714459112299*fabs(-dM*(0.7875612917853588 + eta*1.161274164728927 + eta2*11.306060006923605)+chi21);
+
 								break;
                 default:
                     XLALPrintError("XLAL Error - %s: (%d,%d) mode. At present only fits for the (2,2), (2,1), (3,3), (4,4) and (5,5) mode are available.\n",  __func__, modeL, modeM);
@@ -1071,6 +1080,7 @@ XLALSimIMREOBGetNRSpinPeakADotV4 (INT4 modeL, INT4 modeM, REAL8 UNUSED m1, REAL8
             switch (modeM) {
                 case 3:
                     res = dM*eta*(-0.00309943555972098 + eta*0.010076527264663805)*chi33*chi33 +
+
 										eta*0.0016309606446766923*sqrt(dM2*(8.811660714437027 + 104.47752236009688*eta) + dM*chi33*(-5.352043503655119 + eta*49.68621807460999) + chi33*chi33);
                     break;
                 default:
@@ -1096,6 +1106,7 @@ XLALSimIMREOBGetNRSpinPeakADotV4 (INT4 modeL, INT4 modeM, REAL8 UNUSED m1, REAL8
 						switch (modeM) {
 							case 5:
 										res = eta * (dM*(-0.008389798844109389 + 0.04678354680410954*eta) + dM*chi33*(-0.0013605616383929452 + 0.004302712487297126*eta) +dM*chi33*chi33*(-0.0011412109287400596 + 0.0018590391891716925*eta) +
+
 									  0.0002944221308683548*fabs(dM*(37.11125499129578 - 157.79906814398277*eta) + chi33));
 										break;
 							default:
@@ -1193,9 +1204,11 @@ XLALSimIMREOBGetNRSpinPeakADDotV4 (INT4 modeL, INT4 modeM, REAL8 m1, REAL8 m2,
                     res = eta * CombineTPLEQMFits(eta, A1, fEQ, fTPL);;
                     break;
 								case 1:
+
 										res = eta*dM*0.00037132201959950333 -
 										fabs(dM*eta*(-0.0003650874948532221 - eta*0.003054168419880019)
 										+dM*eta*chi21*chi21*(-0.0006306232037821514-eta*0.000868047918883389 + eta2*0.022306229435339213)+eta*chi21*chi21*chi21*0.0003402427901204342+dM*eta*chi21*0.00028398490492743);
+
 										break;
                 default:
                     XLALPrintError("XLAL Error - %s: At present only fits for the (2,2), (2,1), (3,3), (4,4) and (5,5) mode are available.\n", __func__);
@@ -1231,6 +1244,7 @@ XLALSimIMREOBGetNRSpinPeakADDotV4 (INT4 modeL, INT4 modeM, REAL8 m1, REAL8 m2,
 						switch (modeM) {
 								case 5:
 										res = eta * (dM *(0.00012727220842255978 + 0.0003211670856771251*eta) + dM*chi33*(-0.00006621677859895541 + 0.000328855327605536*eta) + chi33*chi33*(-0.00005824622885648688 + 0.00013944293760663706*eta));
+
 										break;
 								default:
 									  XLALPrintError("XLAL Error - %s: (%d,%d) mode. At present only fits for the (2,2), (2,1), (3,3), (4,4) and (5,5) mode are available.\n",  __func__, modeL, modeM);
@@ -1486,6 +1500,7 @@ XLALSimIMREOBGetNRSpinPeakOmegaDotV4 (INT4 modeL, INT4 modeM, REAL8 UNUSED eta,
 
               default:
                   XLALPrintError("XLAL Error - %s: (%d,%d) mode. At present only fits for the (2,2), (2,1), (3,3), (4,4) and (5,5) mode are available.\n",  __func__, modeL, modeM);
+
                   XLAL_ERROR (XLAL_EINVAL);
                   break;
           }
@@ -2313,11 +2328,9 @@ XLALSimIMRSpinEOBCalculateNQCCoefficientsV4 (REAL8Vector * restrict amplitude,		
 					     REAL8 deltaT,					   /**<< Sampling interval */
 					     REAL8 m1,						   /**<< Component mass 1 */
 					     REAL8 m2,						   /**<< Component mass 2 */
-					     REAL8 a,						   /**<< Normalized spin of deformed-Kerr */
 					     REAL8 chiA,					   /**<< Assymmetric dimensionless spin combination */
 					     REAL8 chiS,					   /**<< Symmetric dimensionless spin combination */
-					     EOBNonQCCoeffs * restrict coeffs,			   /**<< OUTPUT, NQC coefficients */
-					     UINT4 SpinAlignedEOBversion				     /**<< 1 for SEOBNRv1, 2 for SEOBNRv2 */
+					     EOBNonQCCoeffs * restrict coeffs			   /**<< OUTPUT, NQC coefficients */
   )
 {
   int debugAT = 0;
@@ -2467,24 +2480,8 @@ XLALSimIMRSpinEOBCalculateNQCCoefficientsV4 (REAL8Vector * restrict amplitude,		
 
   /* The time we want to take as the peak time depends on l and m */
   /* Calculate the adjustment we need to make here */
-  switch (SpinAlignedEOBversion)
-    {
-    case 1:
-      nrDeltaT = XLALSimIMREOBGetNRSpinPeakDeltaT (modeL, modeM, eta, a);
-      break;
-    case 2:
-      nrDeltaT = XLALSimIMREOBGetNRSpinPeakDeltaT (modeL, modeM, eta, a);
-      break;
-    case 4:
-      nrDeltaT = XLALSimIMREOBGetNRSpinPeakDeltaTv4 (modeL, modeM, m1, m2, chi1, chi2);
-      break;
-    default:
-      XLALPrintError
-	("XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1, v2 and v4 are available.\n",
-	 __func__);
-      XLAL_ERROR (XLAL_EINVAL);
-      break;
-    }
+
+  nrDeltaT = XLALSimIMREOBGetNRSpinPeakDeltaTv4 (modeL, modeM, m1, m2, chi1, chi2);
 
 
   if (XLAL_IS_REAL8_FAIL_NAN (nrDeltaT))
@@ -2558,7 +2555,8 @@ XLALSimIMRSpinEOBCalculateNQCCoefficientsV4 (REAL8Vector * restrict amplitude,		
   qNSLMDot = gsl_spline_eval_deriv (spline, nrTimePeak, acc);
   qNSLMDDot = gsl_spline_eval_deriv2 (spline, nrTimePeak, acc);
 
-  nra =
+
+	nra =
     fabs(XLALSimIMREOBGetNRSpinPeakAmplitudeV4 (modeL, modeM, m1,m2,chiS,chiA));
 
   nraDot =
@@ -2590,7 +2588,8 @@ XLALSimIMRSpinEOBCalculateNQCCoefficientsV4 (REAL8Vector * restrict amplitude,		
     }
 
   gsl_vector_set (amps, 0, nra - amp);
-  gsl_vector_set (amps, 1, nraDot -aDot);
+  gsl_vector_set (amps, 1,nraDot -aDot);
+
   gsl_vector_set (amps, 2, nraDDot - aDDot);
 //    printf("Amps %.16e %.16e %.16e\n", nra, amp, qNSLMPeak);
 //    printf("dAmps %.16e %.16e\n", aDot, qNSLMDot);

@@ -143,8 +143,7 @@ XLAL_ERROR(XLAL_EINVAL);\
 } while (0)
 
 /*
- * Macro procedure for aborting if non-zero tidal parameters
- * given to an approximant with no tidal corrections
+ * Same as above macro, but returns a null pointer rather than XLAL_FAILURE int
  */
 #define ABORT_NONZERO_TIDES_NULL(LALparams)\
 do {\

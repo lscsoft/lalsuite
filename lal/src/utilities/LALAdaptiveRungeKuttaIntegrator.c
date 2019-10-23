@@ -402,15 +402,16 @@ int XLALAdaptiveRungeKutta4Hermite(LALAdaptiveRungeKuttaIntegrator * integrator,
 }
 
 int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKuttaIntegrator * integrator,
-         void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat_or_h0,
+         void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat_or_h0, REAL8 min_deltat_or_h0,
 					 REAL8Array ** t_and_y_out, INT4 EOBversion)
 {
+
     int errnum = 0;
     int status; /* used throughout */
 
     /* needed for the integration */
     size_t dim, outputlength=0, bufferlength, retries;
-    REAL8 t, tnew, h0;
+    REAL8 t, tnew, h0, h0old;
     REAL8Array *buffers = NULL;
     REAL8 *temp = NULL, *y, *y0, *dydt_in, *dydt_in0, *dydt_out, *yerr; /* aliases */
 
@@ -452,6 +453,7 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKuttaIntegrator * integ
 
     t = tinit;
     h0 = deltat_or_h0;
+    h0old = h0; /* initialized so that it will not trigger the check h0<h0old at the first step */
     memcpy(y, yinit, dim * sizeof(REAL8));
 
     /* store the first data point */
@@ -522,17 +524,26 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKuttaIntegrator * integ
         /* call the GSL error-checking function */
         status = gsl_odeiv_control_hadjust(integrator->control, integrator->step, y, yerr, dydt_out, &h0);
 
+        /* Enforce a minimal allowed time step */
+        /* To ignore this type of constraint, set min_deltat_or_h0 = 0 */
+        if (h0 < min_deltat_or_h0) h0 = min_deltat_or_h0;
+
         /* did the error-checker reduce the stepsize?
-         * note: other possible return codes are GSL_ODEIV_HADJ_INC if it was increased,
-         * GSL_ODEIV_HADJ_NIL if it was unchanged */
-        if (status == GSL_ODEIV_HADJ_DEC) {
+         * note: previously, was using status == GSL_ODEIV_HADJ_DEC
+         * other possible return codes are GSL_ODEIV_HADJ_INC if it was increased,
+         * GSL_ODEIV_HADJ_NIL if it was unchanged
+         * since we introduced a minimal step size we simply compare to the saved value of h0 */
+        /* if (status == GSL_ODEIV_HADJ_DEC) { */
+        if (h0 < h0old) {
+            h0old = h0;
             memcpy(y, y0, dim * sizeof(REAL8)); /* if so, undo the step, and try again */
             memcpy(dydt_in, dydt_in0, dim * sizeof(REAL8));
             goto try_step;
         }
 
-        /* update the current time and input derivatives */
+        /* update the current time and input derivatives, save the time step */
         t = tnew;
+        h0old = h0;
         memcpy(dydt_in, dydt_out, dim * sizeof(REAL8));
         outputlength++;
 

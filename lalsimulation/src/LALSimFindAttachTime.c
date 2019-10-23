@@ -355,6 +355,73 @@ double  XLALSimLocateOmegaTime(
     }
 }
 
+double XLALSimLocateMaxAmplTime(
+    REAL8Vector *timeHi,
+    COMPLEX16Vector *hP22,
+    int *found)
+{
+  int debug = 0;
+  FILE *out = NULL;
+  unsigned int i, peakIdx;
+  unsigned int NpsSmall = 0;
+  double tAmpMax = 0.;
+  double AmpMax = 0.;
+  double Ampl = 0.;
+  double AmplN = 0.0;
+  double AmplO = 0.0;
+  *found = 0;
+
+  if(debug) {
+        out = fopen( "AmpPHi.dat", "w" );
+  }
+  int iMin = 0;
+  int iMax = timeHi->length-1;
+  NpsSmall = iMax - iMin + 1;
+  AmplO = sqrt(creal(hP22->data[iMin + 0])*creal(hP22->data[iMin + 0]) + cimag(hP22->data[iMin + 0])*cimag(hP22->data[iMin + 0]));
+  Ampl = AmplO;
+  tAmpMax = timeHi->data[iMin];
+
+  peakIdx = iMin;
+  for (i=0; i<NpsSmall-1; i++){
+      //tSeries[i] = timeHi->data[iMin + i];
+      AmplN = sqrt(creal(hP22->data[iMin + i+1])*creal(hP22->data[iMin + i+1]) + cimag(hP22->data[iMin + i+1])*cimag(hP22->data[iMin + i+1]));
+      //Ampl = sqrt(hreP22->data[i]*hreP22->data[i] + himP22->data[i]*himP22->data[i]);
+      if(debug){
+          fprintf(out, "%3.10f %3.10f\n", timeHi->data[iMin+i], Ampl);
+      }
+      if (Ampl >= AmplO && Ampl >AmplN){
+          if (*found !=1){
+              *found = 1;
+              tAmpMax = timeHi->data[iMin + i];
+              AmpMax = Ampl;
+              peakIdx = iMin + i;
+          }else{
+              if (debug){
+                    XLAL_PRINT_INFO("Stas dismissing time %3.10f outside limits %3.10f, %3.10f \n",
+                          timeHi->data[iMin + i], timeHi->data[iMin], timeHi->data[iMax]);
+              }
+          }
+      }
+      AmplO = Ampl;
+      Ampl = AmplN;
+  }
+  if (debug)
+  {
+      fclose(out);
+      if (*found ==0){
+          XLAL_PRINT_INFO("Peak of 2,2 mode in P-frame was not found. peakIdx = %d, retLenHi = %d, i at exit = %d\n", peakIdx, timeHi->length, i);
+          fflush(NULL);
+      }else{
+          XLAL_PRINT_INFO("We have found maximum of amplitude %3.10f at t = %3.10f \n", AmpMax, tAmpMax);
+      }
+  }
+
+  return (tAmpMax);
+
+
+
+}
+
 double XLALSimLocateAmplTime(
     REAL8Vector *timeHi,
     COMPLEX16Vector *hP22,
@@ -408,13 +475,13 @@ double XLALSimLocateAmplTime(
     if ( debugPK ) {
         XLAL_PRINT_INFO("tMin, tMax = %3.10f %3.10f \n", tMin, tMax);
     }
-    unsigned int iMin = ceil(tMin/dt);
-    unsigned int iMax = floor(tMax/dt);
+    unsigned int iMin = ceil((tMin-timeHi->data[0])/dt);
+    unsigned int iMax = floor((tMax-timeHi->data[0])/dt);
     unsigned int NpsSmall = iMax - iMin + 1;
 
-
     double AmplN, AmplO;
-    double tAmpMax, AmpMax, tAmp;
+    double tAmpMax,  tAmp;
+    double AmpMax = 0;
     tAmpMax = 0.;
     REAL8 tSeries[NpsSmall], Ampl[NpsSmall];
 
@@ -471,6 +538,7 @@ double XLALSimLocateAmplTime(
 //        spline = gsl_spline_alloc( gsl_interp_cspline, NpsSmall );
 //        acc    = gsl_interp_accel_alloc();
 //        gsl_spline_init( spline, tSeries, Ampl, NpsSmall );
+
 
         REAL8 AmpDot[NpsSmall];
         REAL8 AmpDDot[NpsSmall];
@@ -543,7 +611,7 @@ double XLALSimLocateAmplTime(
             for (i=0; i<NpsSmall - 1; i++){
                 fprintf(out, "%3.10f %3.10f %3.10f %3.10f %3.10f\n", tSeries[i], AmpDot[i], AmpDotSmooth[i], AmpDDot[i], AmpDDotSmooth[i]);
             }
-
+            fclose(out);
         }
         if (*found ==0){
             if (debugPK || debugRD){

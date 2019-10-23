@@ -69,6 +69,11 @@ double  XLALSimLocateOmegaTime(
     INT4 use_optimized
 );
 
+double XLALSimLocateMaxAmplTime(
+    REAL8Vector *timeHi,
+    COMPLEX16Vector *hP22,
+    int *found);
+
 
 double XLALSimLocateAmplTime(
     REAL8Vector *timeHi,

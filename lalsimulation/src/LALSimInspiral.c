@@ -131,6 +131,8 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SEOBNRv3_opt_rk4),
     INITIALIZE_NAME(SEOBNRv4),
     INITIALIZE_NAME(SEOBNRv4_opt),
+    INITIALIZE_NAME(SEOBNRv4P),
+    INITIALIZE_NAME(SEOBNRv4PHM),
     INITIALIZE_NAME(SEOBNRv2T),
     INITIALIZE_NAME(SEOBNRv4T),
     INITIALIZE_NAME(SEOBNRv4HM),
@@ -382,7 +384,7 @@ int XLALSimInspiralChooseTDWaveform(
     REAL8 spin2x,spin2y,spin2z;
     REAL8 polariz=longAscNodes;
 
-    /* SEOBNR flag for precessing model version. 3 for SEOBNRv3, 300 for SEOBNRv3_opt */
+    /* SEOBNR flag for precessing model version. 3 for SEOBNRv3, 300 for SEOBNRv3_opt, 401 for SEOBNRv4P, 402 for SEOBNRv4PHM */
     UINT4 PrecEOBversion;
     REAL8 spin1[3], spin2[3];
 
@@ -873,6 +875,47 @@ int XLALSimInspiralChooseTDWaveform(
                                               deltaT, m1, m2, f_min, distance, inclination, spin1, spin2, PrecEOBversion);
             }
             break;
+
+        case SEOBNRv4P:
+            /* Waveform-specific sanity checks */
+            if (!XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams))
+                ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+            if (!checkTidesZero(lambda1, lambda2))
+                ABORT_NONZERO_TIDES(LALparams);
+            if (f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+
+            spin1[0] = S1x;
+            spin1[1] = S1y;
+            spin1[2] = S1z;
+            spin2[0] = S2x;
+            spin2[1] = S2y;
+            spin2[2] = S2z;
+            polariz += -LAL_PI / 2.;
+            PrecEOBversion = 401;
+            ret = XLALSimIMRSpinPrecEOBWaveform(hplus, hcross, phiRef,
+                                                deltaT, m1, m2, f_min, distance, inclination, spin1, spin2, PrecEOBversion,LALparams);
+            break;
+        case SEOBNRv4PHM:
+            /* Waveform-specific sanity checks */
+            if (!XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams))
+                ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+            if (!checkTidesZero(lambda1, lambda2))
+                ABORT_NONZERO_TIDES(LALparams);
+            if (f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+
+            spin1[0] = S1x;
+            spin1[1] = S1y;
+            spin1[2] = S1z;
+            spin2[0] = S2x;
+            spin2[1] = S2y;
+            spin2[2] = S2z;
+            polariz += -LAL_PI / 2.;
+            PrecEOBversion = 402;
+            ret = XLALSimIMRSpinPrecEOBWaveform(hplus, hcross, phiRef,
+                                                deltaT, m1, m2, f_min, distance, inclination, spin1, spin2, PrecEOBversion,LALparams);
+            break;            
 
         case SEOBNRv2T:
         case SEOBNRv4T:
@@ -2501,6 +2544,10 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
     REAL8 v0 = 1.;
     SphHarmTimeSeries *hlm = NULL;
 
+    /* SEOBNR flag for precessing model version. 3 for SEOBNRv3, 300 for SEOBNRv3_opt, 401 for SEOBNRv4P, 402 for SEOBNRv4PHM */
+    UINT4 PrecEOBversion;
+    REAL8 spin1[3], spin2[3];
+
     /* General sanity checks that will abort */
     /*
      * If non-GR approximants are added, change the below to
@@ -2644,8 +2691,45 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
 
             /* Call the waveform driver routine */
             hlm = XLALSimIMRNRHybSur3dq8Modes(phiRef, deltaT, m1, m2, S1z,
-                S2z, f_min, f_ref, r,
-                XLALSimInspiralWaveformParamsLookupModeArray(LALpars));
+                S2z, f_min, f_ref, r, XLALSimInspiralWaveformParamsLookupModeArray(LALpars));
+            break;
+
+        case SEOBNRv4P:
+            /* Waveform-specific sanity checks */
+            if (!XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars))
+                ABORT_NONDEFAULT_LALDICT_FLAGS_NULL(LALpars);
+            if (!checkTidesZero(lambda1, lambda2))
+                ABORT_NONZERO_TIDES_NULL(LALpars);
+            if (f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+
+            spin1[0] = S1x;
+            spin1[1] = S1y;
+            spin1[2] = S1z;
+            spin2[0] = S2x;
+            spin2[1] = S2y;
+            spin2[2] = S2z;
+            PrecEOBversion = 401;
+            hlm = XLALSimIMRSpinPrecEOBModes(deltaT, m1, m2, f_min, r, spin1, spin2, PrecEOBversion,LALpars);
+            break;    
+
+        case SEOBNRv4PHM:
+            /* Waveform-specific sanity checks */
+            if (!XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars))
+                ABORT_NONDEFAULT_LALDICT_FLAGS_NULL(LALpars);
+            if (!checkTidesZero(lambda1, lambda2))
+                ABORT_NONZERO_TIDES_NULL(LALpars);
+            if (f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+
+            spin1[0] = S1x;
+            spin1[1] = S1y;
+            spin1[2] = S1z;
+            spin2[0] = S2x;
+            spin2[1] = S2y;
+            spin2[2] = S2z;
+            PrecEOBversion = 402;
+            hlm = XLALSimIMRSpinPrecEOBModes(deltaT, m1, m2, f_min, r, spin1, spin2, PrecEOBversion,LALpars);
             break;
 
         default:
@@ -4791,6 +4875,8 @@ int XLALSimInspiralImplementedTDApproximants(
         case SEOBNRv3_opt_rk4:
         case SEOBNRv4:
         case SEOBNRv4_opt:
+        case SEOBNRv4P:
+        case SEOBNRv4PHM:
         case SEOBNRv2T:
         case SEOBNRv4T:
         case NR_hdf5:
@@ -5239,6 +5325,8 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv3_pert:
     case SEOBNRv3_opt:
     case SEOBNRv3_opt_rk4:
+    case SEOBNRv4P:
+    case SEOBNRv4PHM:
     case NR_hdf5:
     case NRSur4d2s:
     case NRSur7dq2:
@@ -5452,6 +5540,8 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv3_opt_rk4:
     case SEOBNRv4:
     case SEOBNRv4_opt:
+    case SEOBNRv4P:
+    case SEOBNRv4PHM:
     case SEOBNRv2T:
     case SEOBNRv4T:
     case SEOBNRv4HM:

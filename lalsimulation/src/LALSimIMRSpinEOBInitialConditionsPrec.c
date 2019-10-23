@@ -24,7 +24,7 @@
  * solved to get the initial spherical orbit. By scaling we bring different
  * inputs to the same scale, and drastically increase the rate of convergence.
  * */
-REAL8 scale1 = 1, scale2 = 2, scale3 = 200;
+static REAL8 scale1 = 1, scale2 = 2, scale3 = 200;
 
 /**
  *  Calculate the dot product of two vectors
@@ -314,10 +314,17 @@ XLALFindSphericalOrbitPrec(
 
 	/* Populate the appropriate values */
 	/* In the special theta=pi/2 phi=0 case, r is x */
-	rootParams->values[0] = r =  gsl_vector_get(x, 0)/scale1;
+
+	REAL8 temp = gsl_vector_get(x, 0)/scale1;
+	REAL8 prefactor = 1.0;
+	if (temp  < 0.0){
+	  	prefactor=-1.0;
+	}
+
+	rootParams->values[0] = r =  sqrt(temp*temp+36.0);
 	rootParams->values[4] = py = gsl_vector_get(x, 1)/scale2;
 	rootParams->values[5] = pz = gsl_vector_get(x, 2)/scale3;
-
+	//printf("r is %.17f\n",r);
     if(isnan(rootParams->values[0])) {
         rootParams->values[0] = 100.;
     }
@@ -423,8 +430,10 @@ XLALFindSphericalOrbitPrec(
         gsl_vector_get(f, 0), gsl_vector_get(f, 1), gsl_vector_get(f, 2) );
 
   /* Rescale back */
-  rootParams->values[0] *= scale1;
-  rootParams->values[4] *= scale2;
+
+
+	rootParams->values[0] = prefactor*scale1*(sqrt(rootParams->values[0]*rootParams->values[0]-36.0));
+	rootParams->values[4] *= scale2;
   rootParams->values[5] *= scale3;
 
 	return XLAL_SUCCESS;
@@ -553,6 +562,46 @@ GSLSpinHamiltonianDerivWrapperPrec(double x,	/**<< Derivative at x */
 	}
 }
 
+static int XLALRobustDerivative(const gsl_function * F, double x, double h,
+				  double *result, double *absErr){
+  // Take the derivative
+  gsl_deriv_central(F, x,h, result, absErr);
+  // We check the estimate of the error
+  REAL8 frac= 0.01; // Adjust this to change how accurtate we demand the derivative to be
+  if (fabs(*absErr)>frac*fabs(*result)){
+    REAL8 temp1 = 0.0;
+    REAL8 temp2 =0.0;
+    REAL8 absErr1 = 0.0;
+    REAL8 absErr2 = 0.0;
+    UINT4 deriv_ok = 0;
+    UINT4 n = 1;
+    while (!deriv_ok && n<=10){
+      XLAL_PRINT_WARNING("Warning: second derivative computation went wrong. Trying again");
+      gsl_deriv_central(F, x,2*n*h, &temp1, &absErr1);
+      gsl_deriv_central(F, x,h/(2*n), &temp2, &absErr2);
+      if (fabs(absErr1)/fabs(temp1)<fabs(absErr2)/fabs(temp2) && fabs(absErr1)<frac*fabs(temp1)){
+	*result = temp1;
+	*absErr = absErr1;
+	deriv_ok = 1;
+	break;
+      }
+      else if (fabs(absErr1)/fabs(temp1)>fabs(absErr2)/fabs(temp2) && fabs(absErr2)<frac*fabs(temp2)){
+	*result = temp2;
+	*absErr = absErr2;
+	deriv_ok = 1;
+	break;
+      }
+      else{
+	n+=1;
+      }
+    }
+    if (!deriv_ok){
+      XLAL_PRINT_ERROR("The computation of the second derivative of H in initial data has failed!");
+      XLAL_ERROR(XLAL_EINVAL);
+    }
+  }
+  return XLAL_SUCCESS;
+}
 
 /**
  * Function to calculate the second derivative of the Hamiltonian.
@@ -567,7 +616,7 @@ XLALCalculateSphHamiltonianDeriv2Prec(
 )
 {
 
-	static const REAL8 STEP_SIZE = 1.0e-5;
+	static const REAL8 STEP_SIZE = 3.0e-3;
 
 	REAL8		result;
 	REAL8 UNUSED	absErr;
@@ -602,13 +651,16 @@ XLALCalculateSphHamiltonianDeriv2Prec(
 	 * result = result / ( 2.*STEP_SIZE );
 	 */
 
-	XLAL_CALLGSL(gslStatus = gsl_deriv_central(&F, values[idx1],
-					      STEP_SIZE, &result, &absErr));
-
+	//XLAL_CALLGSL(gslStatus = gsl_deriv_central(&F, values[idx1],
+	//				      STEP_SIZE, &result, &absErr));
+	XLALRobustDerivative(&F, values[idx1],
+			     STEP_SIZE, &result, &absErr);
+	/*
 	if (gslStatus != GSL_SUCCESS) {
 		XLALPrintError("XLAL Error %s - Failure in GSL function\n", __func__);
 		XLAL_ERROR_REAL8(XLAL_EDOM);
 	}
+	*/
 	//XLAL_PRINT_INFO("Second deriv abs err = %.16e\n", absErr);
 
 	//XLAL_PRINT_INFO("RESULT = %.16e\n", result);
@@ -744,7 +796,7 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 
 	/* Root finding stuff for finding the spherical orbit */
 	SEOBRootParams	rootParams;
-	const gsl_multiroot_fsolver_type *T = gsl_multiroot_fsolver_hybrid;
+	const gsl_multiroot_fsolver_type *T = gsl_multiroot_fsolver_hybrids;
 	gsl_multiroot_fsolver *rootSolver = NULL;
 
 	gsl_multiroot_function rootFunction;
@@ -899,7 +951,9 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 	rootParams.params = params;
 
 	/* To start with, we will just assign Newtonian-ish ICs to the system */
-	rootParams.values[0] = scale1 * 1. / (v0 * v0);	/* Initial r */
+
+
+	rootParams.values[0] = scale1 * sqrt(1. / (v0 * v0)*1/(v0*v0) - 36.0);	/* Initial r */
 	rootParams.values[4] = scale2 * v0;	            /* Initial p */
 	rootParams.values[5] = scale3 * 1e-3;
 	//PK
@@ -921,17 +975,21 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 
 	/* We are now ready to iterate to find the solution */
 	i = 0;
-
-  if(debugPK){ out = fopen("ICIterations.dat", "w"); }
+	if(debugPK){
+		 out = fopen("ICIterations.dat", "w");
+	}
   INT4 jittered=0;
+	REAL8 r_now = 0.0;
+	REAL8 temp = 0.0;
 	do {
 		XLAL_CALLGSL(gslStatus = gsl_multiroot_fsolver_iterate(rootSolver));
 		if (debugPK) {
       fprintf( out, "%d\t", i );
 
       /* Write to file */
-      fprintf( out, "%.16e\t%.16e\t%.16e\t",
-        rootParams.values[0]/scale1, rootParams.values[4]/scale2,
+			r_now = sqrt(rootParams.values[0]*rootParams.values[0]+36.0);
+			fprintf( out, "%.16e\t%.16e\t%.16e\t",
+        r_now, rootParams.values[4]/scale2,
         rootParams.values[5]/scale3 );
 
       /* Residual Function values whose roots we are trying to find */
@@ -945,10 +1003,10 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 
       /* Step sizes in each of function variables */
       finalValues = gsl_multiroot_fsolver_dx(rootSolver);
-
-      /* Write to file */
+			temp = gsl_vector_get(finalValues, 0)/scale1/r_now;
+			/* Write to file */
       fprintf( out, "%.16e\t%.16e\t%.16e\t%d\n",
-        gsl_vector_get(finalValues, 0)/scale1,
+				temp,
         gsl_vector_get(finalValues, 1)/scale2,
         gsl_vector_get(finalValues, 2)/scale3,
         gslStatus );
@@ -981,11 +1039,11 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
         if(multFacGslNoProgress < 1.){ multFacGslNoProgress *= 1.02; }
         else{ multFacGslNoProgress /= 1.01; }
 
-      } 
+      }
       /* Now that no progress is being made, we need to reset the initial guess
        * for the (r,pPhi, pTheta) and reset the integrator */
-      rootParams.values[0] = scale1 * 1. / (v0 * v0);	/* Initial r */
-      rootParams.values[4] = scale2 * v0;	            /* Initial p */
+			rootParams.values[0] = scale1 * sqrt(1. / (v0 * v0)*1./(v0*v0) -36.0);	/* Initial r */
+			rootParams.values[4] = scale2 * v0;	            /* Initial p */
       if( cntGslNoProgress % 2 )
         rootParams.values[5] = scale3 * 1e-3 / multFacGslNoProgress;
       else
@@ -1025,7 +1083,7 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 		}
 
     /* different ways to test convergence of the method */
-		XLAL_CALLGSL(gslStatus = gsl_multiroot_test_residual(rootSolver->f, 1.0e-8));
+		XLAL_CALLGSL(gslStatus = gsl_multiroot_test_residual(rootSolver->f, 1.0e-9));
     /*XLAL_CALLGSL(gslStatus= gsl_multiroot_test_delta(
           gsl_multiroot_fsolver_dx(rootSolver),
           gsl_multiroot_fsolver_root(rootSolver),
@@ -1034,8 +1092,8 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 		if (jittered==0) {
 		  finalValues = gsl_multiroot_fsolver_dx(rootSolver);
 		  if (isnan(gsl_vector_get(finalValues, 1))) {
-		    rootParams.values[0] = scale1 * 1. / (v0 * v0)*(1.+1.e-8);	/* Jitter on initial r */
-		    rootParams.values[4] = scale2 * v0*(1.-1.e-8);	            /* Jitter on initial p */
+				rootParams.values[0] = scale1 * sqrt(1. / (v0 * v0)*1/(v0*v0)*(1.+1.e-8) - 36.0);	/* Jitter on initial r */
+			  rootParams.values[4] = scale2 * v0*(1.-1.e-8);	            /* Jitter on initial p */
 		    rootParams.values[5] = scale3 * 1e-3;
 		    memcpy(rootParams.values + 6, tmpS1, sizeof(tmpS1));
 		    memcpy(rootParams.values + 9, tmpS2, sizeof(tmpS2));
@@ -1072,7 +1130,7 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 	memset(qCart, 0, sizeof(qCart));
 	memset(pCart, 0, sizeof(pCart));
 
-	qCart[0] = gsl_vector_get(finalValues, 0)/scale1;
+	qCart[0] = sqrt(gsl_vector_get(finalValues, 0)*gsl_vector_get(finalValues, 0)+36.0);
 	pCart[1] = gsl_vector_get(finalValues, 1)/scale2;
 	pCart[2] = gsl_vector_get(finalValues, 2)/scale3;
 
@@ -1369,7 +1427,7 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
         }
     }
 
-	if (debugPK) {
+    if (debugPK) {
 		XLAL_PRINT_INFO("THE FINAL INITIAL CONDITIONS:\n");
 		XLAL_PRINT_INFO(" %.16e %.16e %.16e\n%.16e %.16e %.16e\n%.16e %.16e %.16e\n%.16e %.16e %.16e\n", initConds->data[0], initConds->data[1], initConds->data[2],
 		       initConds->data[3], initConds->data[4], initConds->data[5], initConds->data[6], initConds->data[7], initConds->data[8],

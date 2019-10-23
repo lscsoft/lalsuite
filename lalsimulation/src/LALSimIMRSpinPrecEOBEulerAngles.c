@@ -1,6 +1,41 @@
 #ifndef _LALSIMIMRSPINPRECEOBEULERANGLES_C
 #define _LALSIMIMRSPINPRECEOBEULERANGLES_C
 
+
+/**
+ * Computes the Euler angles in the (z,y,z) convention corresponding to a given 3*3 active rotation matrix
+ * R has to be 3*3
+ */
+static UNUSED int EulerAnglesZYZFromRotationMatrixActive(REAL8* alpha, REAL8* beta, REAL8* gamma, REAL8Array* R)
+{
+	/* Matrix element (i,j) at location 3*i + j */
+	REAL8 a = atan2(R->data[3*1 + 2], R->data[3*0 + 2]);
+	REAL8 b = acos(R->data[3*2 + 2]);
+	REAL8 c = atan2(R->data[3*2 + 1], -R->data[3*2 + 0]);
+	*alpha = a;
+	*beta = b;
+	*gamma = c;
+	return XLAL_SUCCESS;
+}
+/**
+ * Active rotation matrix from orthonormal basis (e1, e2, e3) to (e1', e2', e3')
+ * Input are e1', e2', e3' decomposed on (e1, e2, e3)
+ * All vectors are 3-vectors, R matrix 3*3 has to be already allocated
+ */
+static UNUSED int RotationMatrixActiveFromBasisVectors(REAL8Array* R, const REAL8 e1p[], const REAL8 e2p[], const REAL8 e3p[])
+{
+	R->data[3*0 + 0] = e1p[0];
+	R->data[3*1 + 0] = e1p[1];
+	R->data[3*2 + 0] = e1p[2];
+	R->data[3*0 + 1] = e2p[0];
+	R->data[3*1 + 1] = e2p[1];
+	R->data[3*2 + 1] = e2p[2];
+	R->data[3*0 + 2] = e3p[0];
+	R->data[3*1 + 2] = e3p[1];
+	R->data[3*2 + 2] = e3p[2];
+	return XLAL_SUCCESS;
+}
+
 /**
  * Computes RHS of ODE for gamma. Eq. 10 of PRD 89, 084006 (2014)
  */
@@ -19,7 +54,7 @@ static double f_alphadotcosi( double x, void * inparams )
  * of the roation from the inertial frame to the minimal-rotation frame
  * that co-precesses with LN(t) = rvec(t) x rdotvec(t)
  */
-static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
+static UNUSED int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
                  REAL8Vector *Beta, /**<< output: beta Euler angle */
                  REAL8Vector *Gamma, /**<< output: gamma Euler angle */
                  INT4 *phaseCounterA, /**<< output: counter for unwrapping of alpha */
@@ -167,7 +202,7 @@ static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
  * go from the precessing frame to the frame of the total angular
  * momentum
  */
-static void EulerAnglesP2J(
+static UNUSED void EulerAnglesP2J(
                 REAL8 *aP2J, /**<< alpha Euler angle from precessing to final-J frame */
                 REAL8 *bP2J, /**<< beta Euler angle from precessing to final-J frame */
                 REAL8 *gP2J, /**<< gamma Euler angle from precessing to final-J frame */

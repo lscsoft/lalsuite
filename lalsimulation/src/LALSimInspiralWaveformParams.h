@@ -98,6 +98,9 @@ int XLALSimInspiralWaveformParamsInsertNLTidesA2(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertNLTidesN2(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertNLTidesF2(LALDict *params, REAL8 value);
 
+/* SEOBNRv4P */
+INT4 XLALSimInspiralWaveformParamsInsertEOBChooseNumOrAnalHamDer(LALDict *params, INT4 value);
+
 INT4 XLALSimInspiralWaveformParamsLookupModesChoice(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupFrameAxis(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupSideband(LALDict *params);
@@ -185,6 +188,9 @@ REAL8 XLALSimInspiralWaveformParamsLookupNLTidesA2(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupNLTidesN2(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupNLTidesF2(LALDict *params);
 
+/* SEOBNRv4P */
+INT4 XLALSimInspiralWaveformParamsLookupEOBChooseNumOrAnalHamDer(LALDict *params);
+
 int XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsSidebandIsDefault(LALDict *params);
@@ -261,6 +267,8 @@ int XLALSimInspiralWaveformParamsNonGRAlphaPPE6IsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsNonGRBetaPPE6IsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsNonGRAlphaPPE7IsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsNonGRBetaPPE7IsDefault(LALDict *params);
+/* SEOBNRv4P */
+INT4 XLALSimInspiralWaveformParamsEOBChooseNumOrAnalHamDerIsDefault(LALDict *params);
 
 #if 0
 { /* so that editors will match succeeding brace */

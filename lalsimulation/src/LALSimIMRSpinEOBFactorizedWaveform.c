@@ -758,6 +758,10 @@ static int XLALSimIMREOBCalcCalibCoefficientHigherModes (FacWaveformCoeffs *
                       //R.C.: safeguard to avoid the 21 mode to go to 0
                       nra = GSL_SIGN(nra)*eta*3e-2;
                     }
+                    if((fabs(nra/eta)< 1e-4) && ((modeL == 5) && (modeM == 5))){
+                      //R.C.: safeguard to avoid the 55 mode to go to 0
+                      nra = GSL_SIGN(nra)*eta*1e-4;
+                    }
                     rholmNRAttachmentPoint = nra/hLMdivrholmAttachmentPoint;
                     gsl_spline_init (spline, timeVec->data, rholmpwrlVecReal->data, rholmpwrlVecReal->length);
                     gsl_interp_accel_reset (acc);
@@ -2268,7 +2272,6 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
     {
       XLAL_ERROR (XLAL_EFUNC);
     }
-
   /* Calculate the source term, 2nd term in Eq. 17, given by Eq. A5 */
   if (((l + m) % 2) == 0)
     {

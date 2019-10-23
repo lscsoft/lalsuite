@@ -72,6 +72,18 @@ INT4 XLALSimIMREOBGenerateQNMFreqV2Prec(
   Approximant      approximant/**<< The waveform approximant being used */
   );
 
+
+INT4 XLALSimIMREOBGenerateQNMFreqV2FromFinalPrec(
+	  COMPLEX16Vector *modefreqs, /**<< OUTPUT, complex freqs of overtones in unit of Hz */
+	  const REAL8      mass1,     /**<< The mass of the 1st component (in Solar masses) */
+	  const REAL8      mass2,     /**<< The mass of the 2nd component (in Solar masses) */
+	  const REAL8 	   finalMass, /**<< The mass of a final BH (scaled by original total mass)*/
+	  const REAL8 	   finalSpin, /**<< The dimensionaless spin of the final BH */
+	  UINT4            l,         /**<< The l value of the mode in question */
+	  INT4             m,         /**<< The m value of the mode in question */
+	  UINT4            nmodes    /**<< The number of overtones that should be included (max 8) */
+);
+
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
