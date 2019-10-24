@@ -1188,14 +1188,25 @@ void LALInferenceNameOutputs(LALInferenceRunState *runState) {
 void LALInferenceResumeMCMC(LALInferenceRunState *runState) {
     //INT4 t, n_local_threads;
     //LALInferenceThreadState *thread;
-
+    LALH5File *resume_file;
+    int retcode=0;
     if (LALInferenceGetProcParamVal(runState->commandLine, "--resume") &&
             access(runState->outFileName, R_OK) == 0 &&
             access(runState->resumeOutFileName, R_OK) == 0) {
-
-        /* Then file already exists for reading, and we're going to resume
-        from it, so don't write the header. */
-        LALInferenceReadMCMCCheckpoint(runState);
+	/* Try to open the file in case it's zero size */
+	    XLAL_TRY( resume_file = XLALH5FileOpen(runState->resumeOutFileName, "r"), retcode);
+	    if(retcode!=XLAL_SUCCESS) 
+	    {
+		    printf("Found empty resume file %s, restarting\n", runState->resumeOutFileName);
+                    return;
+            }
+            else
+            {
+                    XLALH5FileClose(resume_file);
+                    /* Then file already exists for reading, and we're going to resume
+                    from it, so don't write the header. */
+                    LALInferenceReadMCMCCheckpoint(runState);
+            }
     }
 
     return;
@@ -1267,22 +1278,23 @@ void LALInferenceCheckpointMCMC(LALInferenceRunState *runState) {
 void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
     //ProcessParamsTable *ppt;
     INT4 i, t, n_local_threads;
+    int retcode;
     UINT4 n,k;
     LALH5File *resume_file = NULL;
     LALH5File *output = NULL;
     LALInferenceThreadState *thread;
-
     /* Read it the resume file, which stores info needed to restore the proposals (adaptation settings, etc.) */
-    resume_file = XLALH5FileOpen(runState->resumeOutFileName, "r");
-    if(resume_file == NULL){
-        XLALErrorHandler = XLALExitErrorHandler;
-        XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
-        XLAL_ERROR_VOID(XLAL_EIO);
-    }
+    if( access( runState->resumeOutFileName, F_OK ) == -1 ) return;
+    XLAL_TRY( resume_file = XLALH5FileOpen(runState->resumeOutFileName, "r"), retcode);
+    if(retcode!=XLAL_SUCCESS) return;
 
-    LALH5File *li_group = XLALH5GroupOpen(resume_file, "lalinference");
-    LALH5File *group = XLALH5GroupOpen(li_group, runState->runID);
-
+    LALH5File *li_group;
+    XLAL_TRY( li_group = XLALH5GroupOpen(resume_file, "lalinference"), retcode);
+    if(retcode!=XLAL_SUCCESS) return;
+    LALH5File *group;
+    XLAL_TRY( group = XLALH5GroupOpen(li_group, runState->runID), retcode);
+    if(retcode!=XLAL_SUCCESS) return;
+    /* Assume that the file has been successfully opened by now */
     n_local_threads = runState->nthreads;
     for (t = 0; t < n_local_threads; t++) {
         thread = &runState->threads[t];
