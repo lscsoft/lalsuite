@@ -300,31 +300,31 @@ class StringNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
 class RunSqliteJob(pipeline.CondorDAGJob):
 	"""
-        A lalapps_run_sqlite job used by the gstlal pipeline. The static
-        options are read from the [lalapps_run_sqlite] section in the ini
-        file.  The stdout and stderr from the job are directed to the logs
-        directory.  The job runs in the universe specified in the ini file.
-        The path to the executable is determined from the ini file.
+	A lalapps_run_sqlite job used by the gstlal pipeline. The static
+	options are read from the [lalapps_run_sqlite] section in the ini
+	file.  The stdout and stderr from the job are directed to the logs
+	directory.  The job runs in the universe specified in the ini file.
+	The path to the executable is determined from the ini file.
 	"""
-        def __init__(self, config_parser):
-                """
-                config_parser = ConfigParser object
-                """
-                pipeline.CondorDAGJob.__init__(self, "vanilla", power.get_executable(config_parser, "lalapps_run_sqlite"))
-                self.add_ini_opts(config_parser, "lalapps_run_sqlite")
-                self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_run_sqlite-$(cluster)-$(process).out"))
-                self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_run_sqlite-$(cluster)-$(process).err"))
+	def __init__(self, config_parser):
+		"""
+		config_parser = ConfigParser object
+		"""
+		pipeline.CondorDAGJob.__init__(self, "vanilla", power.get_executable(config_parser, "lalapps_run_sqlite"))
+		self.add_ini_opts(config_parser, "lalapps_run_sqlite")
+		self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_run_sqlite-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_run_sqlite-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
 		self.add_condor_cmd("accounting_group", power.get_accounting_group(config_parser))
-                self.set_sub_file("lalapps_run_sqlite.sub")
+		self.set_sub_file("lalapps_run_sqlite.sub")
 		self.files_per_run_sqlite = get_files_per_run_sqlite(config_parser)
 		if self.files_per_run_sqlite < 1:
 			raise ValueError("files_per_run_sqlite < 1")
 
 
 class RunSqliteNode(pipeline.CondorDAGNode):
-        def __init__(self, *args):
-                pipeline.CondorDAGNode.__init__(self, *args)
+	def __init__(self, *args):
+		pipeline.CondorDAGNode.__init__(self, *args)
 		self.input_cache = []
 		self.output_cache = self.input_cache
 		self._CondorDAGNode__macros["initialdir"] = os.getcwd()
