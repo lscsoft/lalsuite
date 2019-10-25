@@ -2716,9 +2716,10 @@ class LALInferenceMCMCNode(EngineNode):
     def set_output_file(self,filename):
         self.posfile=filename+'.hdf5'
         self.add_file_opt(self.outfilearg,self.posfile,file_is_output_file=True)
+        self.add_output_file(self.posfile + '.resume')
         # Should also take care of the higher temperature outpufiles with
         # self.add_output_file, getting the number of files from machine_count
-        for i in range(int(self.job().mpi_task_count)):
+        for i in range(1,int(self.job().mpi_task_count)):
             self.add_output_file(self.posfile + '.' + '{:d}'.format(i).zfill(2))
 
     def get_pos_file(self):
