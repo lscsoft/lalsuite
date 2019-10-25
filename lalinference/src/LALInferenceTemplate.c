@@ -820,7 +820,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       /* The transformation function doesn't know fLow, so f_ref==0 isn't interpretted as a request to use the starting frequency for reference. */
       if(fTemp==0.0)
         fTemp = f_start;
-
+      // If we have a *time-domain* AND *precessing*  EOB template, set fTemp to f_start.
+      // This is done since EOB only uses f_start and ignores f_ref.
+      if(model->domain == LAL_SIM_DOMAIN_TIME && (strstr(XLALSimInspiralGetStringFromApproximant(approximant),"EOB") != NULL)){
+	fTemp = f_start;
+      }
       XLAL_TRY(ret=XLALSimInspiralTransformPrecessingNewInitialConditions(
                     &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
                     thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp, phi0), errnum);
@@ -1403,7 +1407,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
         /* The transformation function doesn't know fLow, so f_ref==0 isn't interpretted as a request to use the starting frequency for reference. */
         if(fTemp==0.0)
             fTemp = f_start;
-
+	// If we have a *time-domain* AND *precessing*  EOB template, set fTemp to f_start.
+	// This is done since EOB only uses f_start and ignores f_ref.
+	if(model->domain == LAL_SIM_DOMAIN_TIME && (strstr(XLALSimInspiralGetStringFromApproximant(approximant),"EOB") != NULL)){
+	        fTemp = f_start;
+	}
         XLAL_TRY(ret=XLALSimInspiralTransformPrecessingNewInitialConditions(
                                                                             &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
                                                                             thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp, phi0), errnum);
