@@ -779,9 +779,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         if self.config.has_option('condor','bayeswave'):
             for ifo in self.ifos:
                 self.bayeswavepsd_job[ifo] = BayesWavePSDJob(self.config,os.path.join(self.basepath,'bayeswavepsd_%s.sub'%(ifo)),self.logpath)
-                self.bayeswavepsd_job[ifo].set_grid_site('local')
                 self.bayeswavepost_job[ifo] = BayesWavePostJob(self.config,os.path.join(self.basepath,'bayeswavepost_%s.sub'%(ifo)),self.logpath)
-                self.bayeswavepost_job[ifo].set_grid_site('local')
         # Need to create a job file for each IFO combination
         self.engine_jobs={}
         ifocombos=[]
@@ -1771,8 +1769,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                             bayeswavepsdnode[ifo].add_var_arg('--cleanOnly')
                             bayeswavepsdnode[ifo].add_var_arg('--checkpoint')
                             bayeswavepsdnode[ifo].add_file_opt('outputDir',bwPSDpath,file_is_output_file=True)
-                            #bayeswavepsdnode[ifo].add_var_arg('--runName BayesWave_PSD')
-                            #bayeswavepsdnode[ifo].add_output_file(os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat'))
                             bayeswavepsdnode[ifo].set_trig_time(end_time)
                             bayeswavepsdnode[ifo].set_seglen(bw_seglen)
                             bayeswavepsdnode[ifo].set_psdlength(bw_seglen)
@@ -2184,6 +2180,7 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
         # If the user has specified sharedfs=True, disable the file transfer
         if cp.has_option('condor','sharedfs'):
             self.transfer_files = not cp.getboolean('condor','sharedfs')
+        self.add_condor_cmd('getenv','True')
         # Add requirements from the configparser condor section
         if cp.has_option('condor','requirements'):
             self.add_requirement(cp.get('condor','requirements'))
@@ -2719,9 +2716,10 @@ class LALInferenceMCMCNode(EngineNode):
     def set_output_file(self,filename):
         self.posfile=filename+'.hdf5'
         self.add_file_opt(self.outfilearg,self.posfile,file_is_output_file=True)
+        self.add_output_file(self.posfile + '.resume')
         # Should also take care of the higher temperature outpufiles with
         # self.add_output_file, getting the number of files from machine_count
-        for i in range(int(self.job().mpi_task_count)):
+        for i in range(1,int(self.job().mpi_task_count)):
             self.add_output_file(self.posfile + '.' + '{:d}'.format(i).zfill(2))
 
     def get_pos_file(self):
@@ -2766,6 +2764,8 @@ class BayesWavePSDJob(LALInferenceDAGSharedFSJob,pipeline.CondorDAGJob,pipeline.
         self.add_condor_cmd('+CheckpointSig', 130)
         self.add_condor_cmd('should_transfer_files', 'YES')
         self.add_condor_cmd('when_to_transfer_output', 'ON_EXIT_OR_EVICT')
+        self.add_condor_cmd('transfer_input_files','$(macroinput)')
+        self.add_condor_cmd('transfer_output_files','$(macrooutput)')
 
 
 
@@ -2809,6 +2809,8 @@ class BayesWavePostJob(LALInferenceDAGSharedFSJob,pipeline.CondorDAGJob,pipeline
         self.add_condor_cmd('+CheckpointSig', 130)
         self.add_condor_cmd('should_transfer_files', 'YES')
         self.add_condor_cmd('when_to_transfer_output', 'ON_EXIT')
+        self.add_condor_cmd('transfer_input_files','$(macroinput)')
+        self.add_condor_cmd('transfer_output_files','$(macrooutput)')
 
 class BayesWavePostNode(EngineNode):
     def __init__(self,bayeswavepost_job):
