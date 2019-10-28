@@ -1,4 +1,6 @@
+MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
+include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 BUILT_SOURCES = liblalinference
 
