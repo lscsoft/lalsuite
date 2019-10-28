@@ -714,6 +714,11 @@ int main(int argc, char *argv[]){
     /* Draw starting positions */
     LALInferenceDrawThreads(runState);
 
+    /* If just asking for --help, stop here */
+    if (LALInferenceGetProcParamVal(procParams, "--help")) {
+        return XLAL_SUCCESS;
+    }
+
     if (runState == NULL)
         return XLAL_FAILURE;
 
