@@ -5127,13 +5127,10 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
   REAL8Vector timeVec;
   timeVec.length = retLenAdaS;
   timeVec.data = seobdynamicsAdaS->tVec;
-  REAL8Vector rVec;
-  rVec.length = retLenAdaS;
-  rVec.data = seobdynamicsAdaS->polarrVec;
+  REAL8Vector* rVec = XLALCreateREAL8Vector(retLenAdaS);
   for (UINT4 jj = 0; jj < retLenAdaS; jj++) {
-    rVec.data[jj] *= -1;
+    rVec->data[jj] = -1* seobdynamicsAdaS->polarrVec[jj];
   }
-
   /*
   // Uncomment this to restore behaviour where we used the Keplerian frequency
   corresponding
@@ -5147,7 +5144,7 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
 
   // FindClosestIndex requires an *increasing* function of time, so we use -r
   // instead of r
-  UINT4 index_10M = FindClosestIndex(&rVec, -10.0);
+  UINT4 index_10M = FindClosestIndex(rVec, -10.0);
   REAL8 time_10M = timeVec.data[index_10M];
   if (SEOBInterpolateDynamicsAtTime(&seobvalues_test, time_10M,
                                     seobdynamicsAdaS) == XLAL_FAILURE) {
@@ -5619,6 +5616,8 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
     XLALDestroyREAL8Vector(ICvalues);
   if (dynamicsAdaS != NULL)
     XLALDestroyREAL8Array(dynamicsAdaS);
+  if (rVec != NULL)
+    XLALDestroyREAL8Vector(rVec);
   if (seobdynamicsAdaS != NULL)
     SEOBdynamics_Destroy(seobdynamicsAdaS);
   if (seobvalues_tstartHiS != NULL)
