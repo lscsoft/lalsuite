@@ -2712,6 +2712,11 @@ class LALInferenceMCMCNode(EngineNode):
         self.add_var_opt('np',str(li_job.mpi_task_count))
         # The MCMC exe itself should be transferred
         self.add_file_opt('executable',li_job.binary)
+        # This is required so that when running in local mode the mpirun
+        # exe locates ./lalinference_mcmc and not /usr/bin/lalinference_mcmc
+        # or other version in the path
+        if self.job().transfer_files:
+            self.add_var_opt('path','./')
 
     def set_output_file(self,filename):
         self.posfile=filename+'.hdf5'
