@@ -1466,13 +1466,10 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
 		}
 
   if((!!LALInferenceGetProcParamVal(commandLine,"--dQuadMon12") + !!LALInferenceGetProcParamVal(commandLine,"--dQuadMonSA")) > 1 )
-  {
-	fprintf(stdout,"Both options (from 12 and SA) are given . . Exiting . .\n");      
+  {    
 	XLALPrintError("Error: cannot use more than one of --dQuadMon12 and --dQuadMonSA.\n");
 	XLAL_ERROR_NULL(XLAL_EINVAL);
   }
-  else
-    fprintf(stdout,"Only one option (from 12 and SA) is given . . Working fine . .\n");
 
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
   ppt=LALInferenceGetProcParamVal(commandLine, "--spinOrder");

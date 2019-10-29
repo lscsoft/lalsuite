@@ -369,16 +369,12 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
     LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
     XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
     XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
-        fprintf(stdout,"Both dQuadMonS and dQaudMonA are  sampled");
-    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
   }
  else  if(LALInferenceCheckVariable(model->params, "dQuadMon1")&&LALInferenceCheckVariable(model->params, "dQuadMon2")){
     REAL8 dQuadMon1 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1");
     REAL8 dQuadMon2 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2");
     XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
     XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
-        fprintf(stdout,"Both dQuadMon1 and dQaudMon2 are  sampled");
-    fprintf(stdout,"dQM1: %e, dQM2: %e \n",dQuadMon1,dQuadMon2);
   }
 
 
@@ -876,16 +872,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
     XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
     XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
-        fprintf(stdout,"Both dQuadMonS and dQaudMonA are  sampled");
-    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
   }
  else  if(LALInferenceCheckVariable(model->params, "dQuadMon1")&&LALInferenceCheckVariable(model->params, "dQuadMon2")){
     REAL8 dQuadMon1 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1");
     REAL8 dQuadMon2 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2");
     XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
     XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
-        fprintf(stdout,"Both dQuadMon1 and dQaudMon2 are  sampled");
-    fprintf(stdout,"dQM1: %e, dQM2: %e \n",dQuadMon1,dQuadMon2);
   }
 
 
@@ -1493,16 +1485,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
     LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
     XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
     XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
-        fprintf(stdout,"Both dQuadMonS and dQaudMonA are  sampled");
-    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
   }
  else  if(LALInferenceCheckVariable(model->params, "dQuadMon1")&&LALInferenceCheckVariable(model->params, "dQuadMon2")){
     REAL8 dQuadMon1 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1");
     REAL8 dQuadMon2 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2");
     XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
     XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
-        fprintf(stdout,"Both dQuadMon1 and dQaudMon2 are  sampled");
-    fprintf(stdout,"dQM1: %e, dQM2: %e \n",dQuadMon1,dQuadMon2);
   }
 
 
