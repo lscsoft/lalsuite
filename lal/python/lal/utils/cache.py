@@ -47,7 +47,7 @@ def lalcache_from_gluecache(cache):
 
     @returns a lal.Cache object representing the same data
     """
-    with tempfile.NamedTemporaryFile(delete=False) as t:
+    with tempfile.NamedTemporaryFile(delete=False, mode="w") as t:
         cache = cache
         for e in cache:
             e.segment = type(e.segment)(int(e.segment[0]), int(e.segment[1]))
