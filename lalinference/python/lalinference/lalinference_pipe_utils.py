@@ -2253,7 +2253,7 @@ class LALInferenceDAGNode(pipeline.CondorDAGNode):
         relfile=os.path.relpath(filename,start=self.job().get_config('paths','basedir'))
         # Use the basename here if working in local filesystem mode
         if self.job().transfer_files:
-            self.add_var_opt(opt,os.path.basename(relfile))
+            self.add_var_opt(opt,os.path.join('.',os.path.basename(relfile)))
         else:
             self.add_var_opt(opt, relfile)
         if file_is_output_file:
@@ -2712,11 +2712,6 @@ class LALInferenceMCMCNode(EngineNode):
         self.add_var_opt('np',str(li_job.mpi_task_count))
         # The MCMC exe itself should be transferred
         self.add_file_opt('executable',li_job.binary)
-        # This is required so that when running in local mode the mpirun
-        # exe locates ./lalinference_mcmc and not /usr/bin/lalinference_mcmc
-        # or other version in the path
-        if self.job().transfer_files:
-            self.add_var_opt('path','./')
 
     def set_output_file(self,filename):
         self.posfile=filename+'.hdf5'
