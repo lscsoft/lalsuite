@@ -109,7 +109,7 @@ make-dist:
     # lint src.rpm
     - rpmlint ${SRCRPM}
     # install build dependencies
-    - yum -y install yum-utils
+    - yum -y install yum-utils python-srpm-macros epel-rpm-macros
     - yum-builddep -y -q ${SRCRPM}
     # build binary rpms and print details of what we got
     - rpmbuild --rebuild --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${SRCRPM}
