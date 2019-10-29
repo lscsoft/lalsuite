@@ -65,25 +65,26 @@ BuildRequires: scipy >= 0.9.0
 # python3x
 #BuildRequires: python-srpm-macros
 #BuildRequires: python3-rpm-macros
-#BuildRequires: python%{python3_version_nodots}
-#BuildRequires: python%{python3_version_nodots}-devel
-#BuildRequires: python%{python3_version_nodots}-astropy >= 1.1.1
-#BuildRequires: python%{python3_version_nodots}-gwdatafind
-#BuildRequires: python%{python3_version_nodots}-gwpy
-#BuildRequires: python%{python3_version_nodots}-glue >= @MIN_GLUE_VERSION@
-#BuildRequires: python%{python3_version_nodots}-healpy >= 1.9.1
-#BuildRequires: python%{python3_version_nodots}-h5py
-#BuildRequires: python%{python3_version_nodots}-lal >= @MIN_LAL_VERSION@
-#BuildRequires: python%{python3_version_nodots}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-#BuildRequires: python%{python3_version_nodots}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-#BuildRequires: python%{python3_version_nodots}-lalburst >= @MIN_LALBURST_VERSION@
-#BuildRequires: python%{python3_version_nodots}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-#BuildRequires: python%{python3_version_nodots}-lalpulsar >= @MIN_LALPULSAR_VERSION@
-#BuildRequires: python%{python3_version_nodots}-matplotlib >= 1.2.0
-#BuildRequires: python%{python3_version_nodots}-numpy >= 1.7
-#BuildRequires: python%{python3_version_nodots}-pytest
-#BuildRequires: python%{python3_version_nodots}-scipy >= 0.9.0
-#BuildRequires: python%{python3_version_nodots}-shapely
+#BuildRequires: epel-rpm-macros
+#BuildRequires: python%{python3_pkgversion}
+#BuildRequires: python%{python3_pkgversion}-devel
+#BuildRequires: python%{python3_pkgversion}-astropy >= 1.1.1
+#BuildRequires: python%{python3_pkgversion}-gwdatafind
+#BuildRequires: python%{python3_pkgversion}-gwpy
+#BuildRequires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
+#BuildRequires: python%{python3_pkgversion}-healpy >= 1.9.1
+#BuildRequires: python%{python3_pkgversion}-h5py
+#BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+#BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
+#BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+#BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
+#BuildRequires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+#BuildRequires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
+#BuildRequires: python%{python3_pkgversion}-matplotlib >= 1.2.0
+#BuildRequires: python%{python3_pkgversion}-numpy >= 1.7
+#BuildRequires: python%{python3_pkgversion}-pytest
+#BuildRequires: python%{python3_pkgversion}-scipy >= 0.9.0
+#BuildRequires: python%{python3_pkgversion}-shapely
 
 # octave
 BuildRequires: octave-devel
@@ -156,8 +157,8 @@ Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
-Obsoletes: %{name}-python
-Provides: %{name}-python = %{version}
+Provides: %{name}-python = %{version}-%{release}
+Obsoletes: %{name}-python < %{version}-%{release}
 %description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings for LALInference.
@@ -167,26 +168,25 @@ This package provides the Python %{python2_version} bindings for LALInference.
 #Summary: Python %{python3_version_version} Bindings for LALInference
 #Group: LAL
 #Requires: %{name} = %{version}
-#Requires: python%{python3_version_nodots}
-#Requires: python%{python3_version_nodots}-astropy >= 1.1.1
-#Requires: python%{python3_version_nodots}-glue >= @MIN_GLUE_VERSION@
-#Requires: python%{python3_version_nodots}-gwdatafind
-#Requires: python%{python3_version_nodots}-gwpy
-#Requires: python%{python3_version_nodots}-healpy >= 1.9.1
-#Requires: python%{python3_version_nodots}-h5py
-#Requires: python%{python3_version_nodots}-lal >= @MIN_LAL_VERSION@
-#Requires: python%{python3_version_nodots}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-#Requires: python%{python3_version_nodots}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-#Requires: python%{python3_version_nodots}-lalburst >= @MIN_LALBURST_VERSION@
-#Requires: python%{python3_version_nodots}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-#Requires: python%{python3_version_nodots}-lalpulsar >= @MIN_LALPULSAR_VERSION@
-#Requires: python%{python3_version_nodots}-ligo-gracedb
-#Requires: python%{python3_version_nodots}-matplotlib >= 1.2.0
-#Requires: python%{python3_version_nodots}-numpy >= 1.7
-#Requires: python%{python3_version_nodots}-scipy >= 0.8
-#Requires: python%{python3_version_nodots}-shapely
-#Requires: python%{python3_version_nodots}-six
-#Provides: python%{python3_version_nodots} = %{version}
+#Requires: python%{python3_pkgversion}
+#Requires: python%{python3_pkgversion}-astropy >= 1.1.1
+#Requires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
+#Requires: python%{python3_pkgversion}-gwdatafind
+#Requires: python%{python3_pkgversion}-gwpy
+#Requires: python%{python3_pkgversion}-healpy >= 1.9.1
+#Requires: python%{python3_pkgversion}-h5py
+#Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+#Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
+#Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+#Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
+#Requires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+#Requires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
+#Requires: python%{python3_pkgversion}-ligo-gracedb
+#Requires: python%{python3_pkgversion}-matplotlib >= 1.2.0
+#Requires: python%{python3_pkgversion}-numpy >= 1.7
+#Requires: python%{python3_pkgversion}-scipy >= 0.8
+#Requires: python%{python3_pkgversion}-shapely
+#Requires: python%{python3_pkgversion}-six
 #%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 #%description -n python%{python3_pkgversion}-%{name}
 #The LSC Algorithm Library for gravitational wave data analysis.
