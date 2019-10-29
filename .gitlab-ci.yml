@@ -99,6 +99,8 @@ make-dist:
     RPM_BUILD_CPUS: 4
   script:
     - 'PACKAGE=$(echo ${CI_JOB_NAME} | cut -d\: -f3)'
+    # install srpm dependencies
+    - yum -y install yum-utils epel-rpm-macros
     # install upstream packages
     - if [ -d rpmbuild ]; then yum -y install rpmbuild/RPMS/x86_64/*.rpm; fi
     # build src.rpm
@@ -109,7 +111,6 @@ make-dist:
     # lint src.rpm
     - rpmlint ${SRCRPM}
     # install build dependencies
-    - yum -y install yum-utils
     - yum-builddep -y -q ${SRCRPM}
     # build binary rpms and print details of what we got
     - rpmbuild --rebuild --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${SRCRPM}
