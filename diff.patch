@@ -1,3 +1,6 @@
+diff --git a/diff.patch b/diff.patch
+new file mode 100644
+index 0000000000..e69de29bb2
 diff --git a/lalinference/python/cbcBayesCompPos.py b/lalinference/python/cbcBayesCompPos.py
 index 2da89820ae..8424815d06 100644
 --- a/lalinference/python/cbcBayesCompPos.py
@@ -33,10 +36,18 @@ index 86d8196dca..0f1f358dda 100644
  
  def fractional_rank(x, xs):
 diff --git a/lalinference/python/cbcBayesPostProc.py b/lalinference/python/cbcBayesPostProc.py
-index 7bfa8b1ddb..d4c3f7723c 100644
+index 7bfa8b1ddb..4f002bdbc0 100644
 --- a/lalinference/python/cbcBayesPostProc.py
 +++ b/lalinference/python/cbcBayesPostProc.py
-@@ -1163,7 +1163,9 @@ if __name__=='__main__':
+@@ -734,6 +734,7 @@ def cbcBayesPostProc(
+     polParams=['psi','polarisation','polarization']
+     skyParams=['ra','rightascension','declination','dec']
+     timeParams=['time']
++    spininducedquadParams = ['dquadmon1', 'dquadmon2','dquadmons','dquadmona']
+     spinParams=['spin1','spin2','a1','a2','a1z','a2z','phi1','theta1','phi2','theta2','chi','effectivespin','chi_eff','chi_tot','chi_p','beta','tilt1','tilt2','phi_jl','theta_jn','phi12']
+     sourceParams=['m1_source','m2_source','mtotal_source','mc_source','redshift']
+     intrinsicParams=massParams+spinParams
+@@ -1163,7 +1164,9 @@ if __name__=='__main__':
      else:
          fixedBurnins = None
  
@@ -121,7 +132,7 @@ index 59676679f9..faaa7a74ad 100644
  void LALInferenceLambdaTsEta2Lambdas(REAL8 lambdaT, REAL8 dLambdaT, REAL8 eta, REAL8 *lambda1, REAL8 *lambda2);
  
 diff --git a/lalinference/src/LALInferenceInitCBC.c b/lalinference/src/LALInferenceInitCBC.c
-index d8429e738c..10adee08c3 100644
+index d8429e738c..f1ece6b52d 100644
 --- a/lalinference/src/LALInferenceInitCBC.c
 +++ b/lalinference/src/LALInferenceInitCBC.c
 @@ -798,6 +798,14 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
@@ -148,7 +159,7 @@ index d8429e738c..10adee08c3 100644
    REAL8 logp1Min=33.6;
    REAL8 logp1Max=35.4;
    REAL8 gamma1Min=2.0;
-@@ -1417,12 +1427,32 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
+@@ -1417,12 +1427,29 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
      if(errnum!=XLAL_SUCCESS)
          XLAL_ERROR_NULL(errnum,"%s: %s",__func__,XLALErrorString(errnum));
      if(!model->eos_fam) XLAL_ERROR_NULL(XLAL_EINVAL, "Unable to initialise EOS family");
@@ -171,18 +182,15 @@ index d8429e738c..10adee08c3 100644
 +		}
 +
 +  if((!!LALInferenceGetProcParamVal(commandLine,"--dQuadMon12") + !!LALInferenceGetProcParamVal(commandLine,"--dQuadMonSA")) > 1 )
-+  {
-+	fprintf(stdout,"Both options (from 12 and SA) are given . . Exiting . .\n");      
++  {    
 +	XLALPrintError("Error: cannot use more than one of --dQuadMon12 and --dQuadMonSA.\n");
 +	XLAL_ERROR_NULL(XLAL_EINVAL);
 +  }
-+  else
-+    fprintf(stdout,"Only one option (from 12 and SA) is given . . Working fine . .\n");
 +
    LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
    ppt=LALInferenceGetProcParamVal(commandLine, "--spinOrder");
    if(ppt) {
-@@ -2182,6 +2212,8 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
+@@ -2182,6 +2209,8 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
          fprintf(stderr,"--grtest-parameters and --ppe-parameters are not simultaneously supported. Please choose one. Aborting\n");
          exit(-1);
      }
@@ -191,7 +199,7 @@ index d8429e738c..10adee08c3 100644
      ppt=LALInferenceGetProcParamVal(commandLine,"--grtest-parameters");
      if (ppt)
      {
-@@ -2229,7 +2261,9 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
+@@ -2229,7 +2258,9 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
          if (checkParamInList(ppt->value,"dbeta1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dbeta1", tmpVal, dbeta_min, dbeta_max, LALINFERENCE_PARAM_LINEAR);
          if (checkParamInList(ppt->value,"dbeta2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dbeta2", tmpVal, dbeta_min, dbeta_max, LALINFERENCE_PARAM_LINEAR);
          if (checkParamInList(ppt->value,"dbeta3")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dbeta3", tmpVal, dbeta_min, dbeta_max, LALINFERENCE_PARAM_LINEAR);
@@ -216,10 +224,10 @@ index ee96f2e79f..65d9ee0fc0 100644
  
  static const char *extrinsicNames[] = {"rightascension", "declination", "cosalpha", "azimuth", "polarisation", "distance",
 diff --git a/lalinference/src/LALInferenceTemplate.c b/lalinference/src/LALInferenceTemplate.c
-index bbd2c3850c..dcb383200c 100644
+index bbd2c3850c..7d95fa9875 100644
 --- a/lalinference/src/LALInferenceTemplate.c
 +++ b/lalinference/src/LALInferenceTemplate.c
-@@ -354,6 +354,31 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
+@@ -354,6 +354,27 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
        }
    }
  
@@ -234,16 +242,12 @@ index bbd2c3850c..dcb383200c 100644
 +    LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
 +    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
 +    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
-+        fprintf(stdout,"Both dQuadMonS and dQaudMonA are  sampled");
-+    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
 +  }
 + else  if(LALInferenceCheckVariable(model->params, "dQuadMon1")&&LALInferenceCheckVariable(model->params, "dQuadMon2")){
 +    REAL8 dQuadMon1 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1");
 +    REAL8 dQuadMon2 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2");
 +    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
 +    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
-+        fprintf(stdout,"Both dQuadMon1 and dQaudMon2 are  sampled");
-+    fprintf(stdout,"dQM1: %e, dQM2: %e \n",dQuadMon1,dQuadMon2);
 +  }
 +
 +
@@ -251,7 +255,7 @@ index bbd2c3850c..dcb383200c 100644
    /* ==== TIDAL PARAMETERS ==== */
    if(LALInferenceCheckVariable(model->params, "lambda1"))
      XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda1"));
-@@ -832,7 +857,35 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
+@@ -832,7 +853,31 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
    }
  
  
@@ -267,16 +271,12 @@ index bbd2c3850c..dcb383200c 100644
 +    LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
 +    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
 +    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
-+        fprintf(stdout,"Both dQuadMonS and dQaudMonA are  sampled");
-+    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
 +  }
 + else  if(LALInferenceCheckVariable(model->params, "dQuadMon1")&&LALInferenceCheckVariable(model->params, "dQuadMon2")){
 +    REAL8 dQuadMon1 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1");
 +    REAL8 dQuadMon2 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2");
 +    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
 +    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
-+        fprintf(stdout,"Both dQuadMon1 and dQaudMon2 are  sampled");
-+    fprintf(stdout,"dQM1: %e, dQM2: %e \n",dQuadMon1,dQuadMon2);
 +  }
 +
 +
@@ -288,7 +288,7 @@ index bbd2c3850c..dcb383200c 100644
    if(LALInferenceCheckVariable(model->params, "lambda1"))
      XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda1"));
    if(LALInferenceCheckVariable(model->params, "lambda2"))
-@@ -1414,6 +1467,36 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
+@@ -1414,6 +1459,32 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
          }
      }
  
@@ -306,16 +306,12 @@ index bbd2c3850c..dcb383200c 100644
 +    LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
 +    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
 +    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
-+        fprintf(stdout,"Both dQuadMonS and dQaudMonA are  sampled");
-+    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
 +  }
 + else  if(LALInferenceCheckVariable(model->params, "dQuadMon1")&&LALInferenceCheckVariable(model->params, "dQuadMon2")){
 +    REAL8 dQuadMon1 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1");
 +    REAL8 dQuadMon2 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2");
 +    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
 +    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
-+        fprintf(stdout,"Both dQuadMon1 and dQaudMon2 are  sampled");
-+    fprintf(stdout,"dQM1: %e, dQM2: %e \n",dQuadMon1,dQuadMon2);
 +  }
 +
 +
