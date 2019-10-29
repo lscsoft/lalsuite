@@ -39,9 +39,10 @@ BuildRequires: numpy
 # python3x
 BuildRequires: python-srpm-macros
 BuildRequires: python3-rpm-macros
-BuildRequires: python%{python3_version_nodots}-devel
-BuildRequires: python%{python3_version_nodots}-lal >= @MIN_LAL_VERSION@
-BuildRequires: python%{python3_version_nodots}-numpy
+BuildRequires: epel-rpm-macros
+BuildRequires: python%{python3_pkgversion}-devel
+BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+BuildRequires: python%{python3_pkgversion}-numpy
 
 # octave
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
@@ -78,8 +79,8 @@ Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
-Obsoletes: %{name}-python
-Provides: %{name}-python = %{version}
+Provides: %{name}-python = %{version}-%{release}
+Obsoletes: %{name}-python < %{version}-%{release}
 %description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings for LALMetaIO.
@@ -89,10 +90,9 @@ This package provides the Python %{python2_version} bindings for LALMetaIO.
 Summary: Python %{python3_version} Bindings for LALMetaIO
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python%{python3_version_nodots}
-Requires: python%{python3_version_nodots}-lal >= @MIN_LAL_VERSION@
-Requires: python%{python3_version_nodots}-numpy
-Provides: python%{python3_version_nodots} = %{version}
+Requires: python%{python3_pkgversion}
+Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+Requires: python%{python3_pkgversion}-numpy
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
