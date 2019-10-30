@@ -123,6 +123,7 @@ Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSIO
 Requires: python%{python3_pkgversion}-ligo-segments
 Requires: python%{python3_pkgversion}-numpy
 Requires: python%{python3_pkgversion}-scipy
+%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python3_version} bindings for LALBurst.
