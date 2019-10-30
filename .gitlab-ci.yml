@@ -92,6 +92,9 @@ make-dist:
 # build rpms
 #
 
+.yum-update: &yum-update
+  yum-config-manager --disable htcondor 1>/dev/null && yum -q update
+
 .levelN:rpm: &levelN-rpm-package
   image: igwn/lalsuite-dev:el7
   variables:
@@ -100,6 +103,7 @@ make-dist:
   script:
     - 'PACKAGE=$(echo ${CI_JOB_NAME} | cut -d\: -f3)'
     # install srpm dependencies
+    - *yum-update
     - yum -y install yum-utils epel-rpm-macros
     # install upstream packages
     - if [ -d rpmbuild ]; then yum -y install rpmbuild/RPMS/x86_64/*.rpm; fi
@@ -214,6 +218,7 @@ lalinference_testjob:
   stage: nightly
   image: igwn/lalsuite-dev:el7
   before_script:
+    - *yum-update
     - yum -y install rpmbuild/RPMS/x86_64/*.rpm
   script:
     - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
