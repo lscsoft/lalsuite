@@ -318,7 +318,7 @@ void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel ){
 
   if( isG4v == 0 ){
     /* \f$ h_{\rm x} = h_0 \sin \iota~,~\phi_{\rm x} = -\pi/2 \f$ */
-    /* \f$ h_{\rm y} = h_0 \sin \iota \cos \iota~,~\phi_{\rm y} = 0 */
+    /* \f$ h_{\rm y} = h_0 \sin \iota \cos \iota~,~\phi_{\rm y} = 0 \f$ */
     REAL8 hVectorX = h0 * siniota;
     REAL8 hVectorY = h0 * siniota * cosiota;
     REAL8 psiVector = LAL_PI_2;
