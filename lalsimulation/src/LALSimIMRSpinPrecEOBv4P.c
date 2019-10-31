@@ -3732,8 +3732,8 @@ static int SEOBEulerJ2PFromDynamics(
      * (n, lambda, Lhat or LNhat) frame */
     REAL8 InitialGamma = atan2(e2PiniJbasis[2], -e1PiniJbasis[2]);
 
-    /* Integrate \dot{\alpha} \cos{\beta} to get the final Euler angle
-     * Eq. 20 of PRD 89, 084006 (2014) [arXiv:1307.6232] */
+    // Integrate \dot{\alpha} \cos{\beta} to get the final Euler angle
+    // Eq. 20 of PRD 89, 084006 (2014) [arXiv:1307.6232]
 
     // Here 1000 referes to the number of subintervals that can be used when
     // performing adaptive quadrature to compute the integral.

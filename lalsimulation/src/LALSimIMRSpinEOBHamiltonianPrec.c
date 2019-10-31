@@ -1498,14 +1498,14 @@ static int XLALSpinPrecHcapRvecDerivative(
   polData[3] = magL;
 
 
-  /*Compute \vec{S_i} \dot \vec{L}	*/
+  // Compute \vec{S_i} \dot \vec{L}
   s1dotL = (s1Data[0]*Lhatx + s1Data[1]*Lhaty + s1Data[2]*Lhatz)
 			/ (mass1*mass1);
   s2dotL = (s2Data[0]*Lhatx + s2Data[1]*Lhaty + s2Data[2]*Lhatz)
 			/ (mass2*mass2);
 
-  /*Compute \vec{L_N} = \vec{r} \times \.{\vec{r}},
-   * \vec{S_i} \dot \vec{L_N} and chiS and chiA		*/
+  // Compute \vec{L_N} = \vec{r} \times \.{\vec{r}},
+  // \vec{S_i} \dot \vec{L_N} and chiS and chiA
   rcrossrDot[0] = values[1]*tmpDValues[5] - values[2]*tmpDValues[4];
   rcrossrDot[1] = values[2]*tmpDValues[3] - values[0]*tmpDValues[5];
   rcrossrDot[2] = values[0]*tmpDValues[4] - values[1]*tmpDValues[3];

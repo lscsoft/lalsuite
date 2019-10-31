@@ -336,7 +336,7 @@ static int XLALSpinPrecHcapExactDerivative(
   params.params->seobCoeffs->updateHCoeffs = updateHCoeffsOld;
   /* Now make the conversion */
   /* rVectorDot */
-  /* Eq. A4 of PRD 81, 084041 (2010).  Note that dvalues[i] = \dot{X^i} but tmpDValues[j] = dH/dvalues[j] */
+  // Eq. A4 of PRD 81, 084041 (2010).  Note that dvalues[i] = \dot{X^i} but tmpDValues[j] = dH/dvalues[j]
   for (i = 0; i < 3; i++)
     for (j = 0, dvalues[i] = 0.; j < 3; j++)
       dvalues[i] += tmpDValues[j + 3] * Tmatrix[i][j];
@@ -372,10 +372,10 @@ static int XLALSpinPrecHcapExactDerivative(
 
   omega = sqrt(rCrossV_x * rCrossV_x + rCrossV_y * rCrossV_y + rCrossV_z * rCrossV_z) / (r * r);
 
-  /*
-   * Compute \vec{L_N} = \vec{r} \times \.{\vec{r}}, \vec{S_i} \dot
-   * \vec{L_N} and chiS and chiA
-   */
+  //
+  // Compute \vec{L_N} = \vec{r} \times \.{\vec{r}}, \vec{S_i} \dot
+  // \vec{L_N} and chiS and chiA
+  //
 
   /* Eq. 16 of PRD 89, 084006 (2014): it's S_{1,2}/m_{1,2}^2.LNhat */
   s1dotLN = (s1.data[0] * rCrossV_x + s1.data[1] * rCrossV_y + s1.data[2] * rCrossV_z) /
