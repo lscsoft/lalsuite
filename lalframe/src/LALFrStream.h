@@ -324,8 +324,8 @@ typedef struct tagFrOutPar {
   UINT4 run;			/**< the number this data run */
 } FrOutPar;
 
-/* @name Legacy API
- * @{
+/** @name Legacy API
+ *  @{
  */
 void
 LALFrCacheOpen(LALStatus * status, LALFrStream ** output, LALCache * cache);
