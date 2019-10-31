@@ -19,6 +19,7 @@ lalapps/src/inspiral/            @jolien-creighton @adam-mercer
 lalapps/src/lalapps/             @adam-mercer @jolien-creighton
 lalapps/src/power/               @kipp.cannon @xavier.siemens
 lalapps/src/pulsar/              @karl-wette @david-keitel
+lalapps/src/ring/                @ian-harry @andrew-williamson
 lalapps/src/string/              @kipp.cannon @florent-robinet @imene.belahcene @daichi.tsuna
 
 # build / packaging  / support files
