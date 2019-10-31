@@ -89,7 +89,7 @@ XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *stats,
 				    const RecalcStatsParams *recalcParams
 				  );
 
-// @}
+/** @} */
 
 #ifdef  __cplusplus
 }
