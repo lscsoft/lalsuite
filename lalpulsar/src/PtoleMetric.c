@@ -849,5 +849,3 @@ int XLALSpindownMetric(
   return XLAL_SUCCESS;
 
 } // XLALSpindownMetric
-
-/** @} */

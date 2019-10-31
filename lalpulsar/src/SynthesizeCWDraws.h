@@ -132,7 +132,7 @@ XLALSynthesizeTransientAtoms ( InjParams_t *injParamsOut,
                                const MultiNoiseWeights *multiNoiseWeights
                                );
 
-// @}
+/** @} */
 
 #ifdef  __cplusplus
 }

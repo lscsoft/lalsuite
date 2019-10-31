@@ -127,7 +127,7 @@ XLALComputeBStSGLtL ( const REAL4 twoF,
 );
 
 
-// @}
+/** @} */
 
 #ifdef  __cplusplus
 }
