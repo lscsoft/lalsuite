@@ -4692,6 +4692,8 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(
  * direct function above. Spins are dimensionless.
  */
 
+/** @{ */
+
 int XLALSimInspiralTransformPrecessingWvf2PE(
 	REAL8 *thetaJN, 	/**< zenith angle between J and N (rad) [return]*/
         REAL8 *phiJL,  	/**< azimuthal angle of L_N on its cone about J (rad) [return] */
@@ -7432,7 +7434,5 @@ int XLALSimInspiralSetQuadMonParamsFromLambdas(
     }
     return XLAL_SUCCESS;
 }
-
-/** @} */
 
 /** @} */
