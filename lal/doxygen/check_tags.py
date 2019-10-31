@@ -21,13 +21,34 @@ try:
 except:
     fail("could not parse XML input from '%s'" % tagfile)
 
-# warn on duplicate documentation anchors
+# find duplicate documentation anchors
 anchors = dict()
 for elem in tree.iter('docanchor'):
-    if elem.text in anchors:
-        anchors[elem.text] = anchors[elem.text] + 1
-    else:
-        anchors[elem.text] = 1
-for anchor in anchors:
-    if anchors[anchor] > 1:
-        print('%s: warning: duplicate anchor %s' % (tagfile, anchor))
+    if not elem.text in anchors:
+        anchors[elem.text] = []
+    anchors[elem.text].append(elem)
+dup_anchors = dict((anchor, elems) for anchor, elems in anchors.items() if len(elems) > 1)
+
+# remove duplicate documentation anchors, preferring namespace and group anchors to other kinds
+parent_map = dict((elem, parent_elem) for parent_elem in tree.iter() for elem in parent_elem)
+for anchor in dup_anchors:
+    elem_rank = dict()
+    for elem in dup_anchors[anchor]:
+        parent_elem = elem
+        while parent_elem in parent_map:
+            parent_elem = parent_map[parent_elem]
+            if parent_elem.tag == "compound":
+                parent_elem_kind = parent_elem.get("kind", "")
+                if parent_elem_kind == "namespace":
+                    elem_rank[elem] = 0
+                elif parent_elem_kind == "group":
+                    elem_rank[elem] = 1
+                else:
+                    elem_rank[elem] = 10
+    dup_anchors[anchor].sort(key=lambda elem: elem_rank[elem])
+    dup_anchors[anchor].pop(0)
+    for elem in dup_anchors[anchor]:
+        parent_map[elem].remove(elem)
+
+# write tag file
+tree.write(tagfile, encoding="UTF-8", xml_declaration=True)
