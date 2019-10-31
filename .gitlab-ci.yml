@@ -650,7 +650,8 @@ level5:conda:lalapps:
 
 .clang-build: &clang-build
   stage: nightly
-  needs: []
+  needs:
+    - make-dist
   script:
     - ./00boot
     - CC=${CLANG} CXX=${CLANGXX} ./configure --enable-swig --enable-doxygen
@@ -685,7 +686,8 @@ nightly:clang:dev:
 
 .gcc-build: &gcc-build
   stage: nightly
-  needs: []
+  needs:
+    - make-dist
   script:
     - ./00boot
     - ./configure --enable-doxygen
@@ -720,7 +722,8 @@ nightly:gcc:9:
 
 .conda-build: &conda-build
   stage: nightly
-  needs: []
+  needs:
+    - make-dist
   before_script:
     - set -x  # print commands as they are run (helps debugging)
     # determine conda environment
@@ -781,7 +784,8 @@ conda:python37:
 nightly:debian:buster:
   image: igwn/lalsuite-dev:buster
   stage: nightly
-  needs: []
+  needs:
+    - make-dist
   script:
     - ./00boot
     - ./configure --enable-doxygen
@@ -804,7 +808,8 @@ nightly:macos:highsierra:
     - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
     - make -j4
     - make -j4 check
-  needs: []
+  needs:
+    - make-dist
   only:
     - schedules
     - web
@@ -820,7 +825,8 @@ nightly:macos:sierra:
     - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
     - make -j4
     - make -j4 check
-  needs: []
+  needs:
+    - make-dist
   only:
     - schedules
     - web
@@ -848,7 +854,8 @@ nightly:macos:sierra:
     - source test/bin/activate
     - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio'
-  needs: []
+  needs:
+    - make-dist
   only:
     - /^lalsuite-v.*$/
     - schedules
@@ -879,7 +886,8 @@ nightly:macos:sierra:
     - source test/bin/activate
     - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio'
-  needs: []
+  needs:
+    - make-dist
   only:
     - /^lalsuite-v.*$/
     - schedules
@@ -978,7 +986,8 @@ pages:
     - cp lalsuite/index.html index.html
     - sed -i 's/..\/lal/lal/g' index.html
     - popd
-  needs: []
+  needs:
+    - make-dist
   artifacts:
     paths:
       - public
