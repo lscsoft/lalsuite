@@ -17,8 +17,6 @@ AC_CONFIG_FILES([\
   src/frametools/Makefile \
   src/hwinjection/Makefile \
   src/inspiral/Makefile \
-  src/inspiral/posterior/Makefile \
-  src/inspiral/posterior/mpi/Makefile \
   src/lalapps/LALAppsVCSInfo.c \
   src/lalapps/LALAppsVCSInfo.h \
   src/lalapps/Makefile \
@@ -91,9 +89,6 @@ LALSUITE_ENABLE_NIGHTLY
 LALAPPS_ENABLE_CONDOR
 LALAPPS_ENABLE_STATIC_BINARIES
 
-LALAPPS_ENABLE_MPI
-LALAPPS_ENABLE_BAMBI
-
 LALAPPS_ENABLE_FFTW
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
@@ -124,31 +119,8 @@ LALSUITE_MULTILIB_LIBTOOL_HACK
 # use silent build rules
 AM_SILENT_RULES([yes])
 
-# enable Fortran and C++ compilers for BAMBI
-AS_IF([test "$bambi" = "true"], [
-  LALSUITE_REQUIRE_F77
-  LALSUITE_REQUIRE_CXX
-])
-
 # check for required compilers
 LALSUITE_PROG_COMPILERS
-
-# check for MPI compilers
-bambimpi=false
-if test "x$mpi" = "xtrue"; then
-  AX_MPI([mpi=true],[mpi=false])
-  AS_IF([test "$bambi" = "true"], [
-    MPILIBS_SAVE="${MPILIBS}"
-    AC_LANG([C++])
-    AX_MPI([bambimpi=true],[])
-    AC_LANG([Fortran])
-    AX_MPI([],[bambimpi=false])
-    AC_LANG([C])
-    MPILIBS="${MPILIBS_SAVE}"
-  ])
-  AC_LANG([C])
-fi
-LALSUITE_ENABLE_MODULE([MPI])
 
 # link tests using libtool
 if test "${static_binaries}" = "true"; then
@@ -332,16 +304,6 @@ if test "${pss}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([PSS])
 
-# check for libbambi
-# Note:  if done in AS_IF() then AC_REQUIRE'd checks are done when not wanted, causing problems
-BAMBI_ENABLE_VAL="DISABLED"
-hbf=false
-if test "$bambi" = "true"; then
-  LALAPPS_CHECK_BAMBI
-fi
-AM_CONDITIONAL([HAVE_BAMBI],[${hbf}])
-AM_CONDITIONAL([HAVE_BAMBI_MPI],[${bambimpi}])
-
 # check for lal libararies and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
@@ -420,9 +382,7 @@ LALApps has now been successfully configured:
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL
 * PSS library support is $PSS_ENABLE_VAL
-* BAMBI library support is $BAMBI_ENABLE_VAL
 * Condor support is $CONDOR_ENABLE_VAL
-* MPI support is $MPI_ENABLE_VAL
 * GDS support is $GDS_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL

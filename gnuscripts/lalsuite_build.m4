@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 153
+# serial 154
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1473,4 +1473,16 @@ AC_DEFUN([LALSUITE_ENABLE_OPENMP],[
 
   LALSUITE_ENABLE_MODULE([OPENMP])
   # end $0
+])
+
+AC_DEFUN([LALSUITE_ENABLE_MPI],
+[AC_ARG_ENABLE(
+  [mpi],
+  AC_HELP_STRING([--enable-mpi],[compile using MPI for supported codes [default=no]]),
+  [ case "${enableval}" in
+      yes) mpi=true;;
+      no)  mpi=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-mpi) ;;
+    esac
+  ], [ mpi=false ] )
 ])

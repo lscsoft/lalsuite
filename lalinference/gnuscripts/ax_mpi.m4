@@ -1,0 +1,1 @@
+../../gnuscripts/ax_mpi.m4

@@ -13,15 +13,24 @@ BAYESTARHDR = bayestar_sky_map.h bayestar_distance.h bayestar_moc.h
 BAYESTARSRC = bayestar_sky_map.c bayestar_distance.c bayestar_moc.c
 endif
 
-ANALYTICFILES = CorrelationMatrix.csv unimodalMeans.csv bimodalMeans.csv
+ANALYTICFILES = \
+	CorrelationMatrix.csv \
+	bimodalMeans.csv \
+	unimodalMeans.csv
 
-FIDUCIALINJECTIONS = fiducialBBH.xml fiducialBNS.xml
+FIDUCIALINJECTIONS = \
+	fiducialBBH.xml \
+	fiducialBNS.xml
 
-EXAMPLE_CONFIG = lalinference_pipe_example.ini \
-				 lib_pipe_example.ini \
-				 config_tiger_example.ini
+EXAMPLE_CONFIG = \
+	config_tiger_example.ini \
+	lalinference_pipe_example.ini \
+	lib_pipe_example.ini
 
-pkgdata_DATA = $(ANALYTICFILES) $(FIDUCIALINJECTIONS) $(EXAMPLE_CONFIG)
+pkgdata_DATA = \
+	$(ANALYTICFILES) \
+	$(EXAMPLE_CONFIG) \
+	$(FIDUCIALINJECTIONS)
 
 pkginclude_HEADERS = \
 	LALInference.h \
@@ -48,8 +57,7 @@ pkginclude_HEADERS = \
 	LALInferenceDistanceMarg.h \
 	cubic_interp.h \
 	distance_integrator.h \
-	$(BAYESTARHDR) \
-	$(XMLHDR)
+	$(BAYESTARHDR)
 
 lib_LTLIBRARIES = liblalinference.la
 
@@ -79,15 +87,17 @@ liblalinference_la_SOURCES = \
 	logaddexp.h \
 	cubic_interp.c \
 	distance_integrator.c \
-	$(BAYESTARSRC) \
-	$(XMLSRC)
+	$(BAYESTARSRC)
 
 nodist_liblalinference_la_SOURCES = \
 	LALInferenceBuildInfoHeader.h \
 	LALInferenceVCSInfo.c \
 	$(END_OF_LIST)
 
-noinst_HEADERS = six.h bayestar_cosmology.h omp_interruptible.h
+noinst_HEADERS = \
+	bayestar_cosmology.h \
+	omp_interruptible.h \
+	six.h
 
 liblalinference_la_CFLAGS = $(AM_CFLAGS) $(HDF5_CFLAGS)
 liblalinference_la_CPPFLAGS = $(AM_CPPFLAGS) $(HDF5_CPPFLAGS)
@@ -119,6 +129,9 @@ EXTRA_DIST = \
 	$(EXAMPLE_CONFIG) \
 	config.h.in
 
+SUBDIRS = \
+	mpi
+
 DISTCLEANFILES = config.h
 
 vcs_build_info_source = LALInferenceVCSInfo.c
@@ -127,7 +140,7 @@ build_info_source = LALInferenceBuildInfoHeader.h
 build_info_dependencies = $(liblalinference_la_DEPENDENCIES)
 
 dist_bin_SCRIPTS = \
-		lalinference_mpi_wrapper
+	lalinference_mpi_wrapper
 
 TESTS = \
 	lalinference_version \

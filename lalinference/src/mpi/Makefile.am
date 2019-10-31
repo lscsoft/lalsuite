@@ -1,16 +1,21 @@
 MOSTLYCLEANFILES =
-include $(top_srcdir)/gnuscripts/lalapps.am
+include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
+BUILT_SOURCES = liblalinference
+
+.PHONY: liblalinference
+liblalinference:
+	@cd $(top_builddir)/src && $(MAKE) liblalinference.la
+
+#LDADD += $(top_builddir)/src/liblalinference.la
+
 CC = $(MPICC) -std=gnu99
-AM_CPPFLAGS += -I $(srcdir)/..
 LIBS += $(MPILIBS)
 
-if LALINFERENCE
 if MPI
 mpi_progs = lalinference_mcmc
 mpi_progs += lalinference_kombine
-endif
 endif
 
 lalinference_mcmc_SOURCES = \
@@ -20,5 +25,10 @@ lalinference_mcmc_SOURCES = \
 lalinference_kombine_SOURCES = \
 	LALInferenceKombine.c \
 	LALInferenceKombineSampler.c
+
+noinst_HEADERS = \
+	LALInferenceKombineSampler.h \
+	LALInferenceMCMCSampler.h \
+	$(END_OF_LIST)
 
 bin_PROGRAMS = $(mpi_progs)

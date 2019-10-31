@@ -26,7 +26,6 @@ BuildRequires: gsl-devel
 BuildRequires: less
 BuildRequires: libframe-devel
 BuildRequires: libmetaio-devel
-BuildRequires: openmpi-devel
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
@@ -54,8 +53,6 @@ Requires: python2-six
 Requires: less
 Requires: libframe
 Requires: libmetaio
-Requires: openmpi
-Requires: openssh-clients
 Requires: python
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: python2-lal >= @MIN_LAL_VERSION@
@@ -122,7 +119,7 @@ Algorithm Library.
 %build
 # force linking agsinst system libmpi
 export OMPI_LIBS="-lmpi -Wl,--disable-new-dtags"
-%configure --disable-gcc-flags --enable-cfitsio --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc MPICXX=/usr/lib64/openmpi/bin/mpicxx MPIFC=/usr/lib64/openmpi/bin/mpifc
+%configure --disable-gcc-flags --enable-cfitsio --enable-openmp
 %{__make} %{?_smp_mflags} V=1
 
 %check

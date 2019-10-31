@@ -54,6 +54,7 @@ requirements:
     - llvm-openmp  # [osx]
     - metaio
     - openmp  # [linux]
+    - openmpi
   run:
     - chealpix >={{ chealpix_version }}
     - gsl
@@ -69,6 +70,7 @@ requirements:
     - llvm-openmp  # [osx]
     - metaio
     - openmp  # [linux]
+    - openmpi
     # hdf5 links against zlib so we need to reference it
     - zlib
 
@@ -78,6 +80,8 @@ test:
     #- lalinference_burst --help
     - lalinference_datadump --help
     - lalinference_injectedlike --help
+    - lalinference_kombine --help
+    - lalinference_mcmc --help
     - lalinference_nest --help
     - lalinference_version --verbose
 

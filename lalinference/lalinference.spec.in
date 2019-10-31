@@ -1,7 +1,7 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
 %define release 1
-%define configure_opts --enable-openmp
+%define configure_opts --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
 %undefine nightly
@@ -34,6 +34,7 @@ BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
 BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
 BuildRequires: libmetaio-devel
+BuildRequires: openmpi-devel
 BuildRequires: pkgconfig >= 0.18.0
 
 # swig
@@ -102,6 +103,8 @@ Requires: chealpix
 Requires: gsl >= 1.15
 Requires: hdf5
 Requires: libmetaio
+Requires: openmpi
+Requires: openssh-clients
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
@@ -261,6 +264,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_bindir}/lalinference_burst
 %{_bindir}/lalinference_datadump
 %{_bindir}/lalinference_injectedlike
+%{_bindir}/lalinference_kombine
+%{_bindir}/lalinference_mcmc
 %{_bindir}/lalinference_nest
 %{_bindir}/lalinference_version
 %{_bindir}/lalinference_mpi_wrapper
@@ -270,6 +275,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_mandir}/man1/lalinference_burst.1*
 %{_mandir}/man1/lalinference_datadump.1*
 %{_mandir}/man1/lalinference_injectedlike.1*
+%{_mandir}/man1/lalinference_kombine.1*
+%{_mandir}/man1/lalinference_mcmc.1*
 %{_mandir}/man1/lalinference_nest.1*
 %{_mandir}/man1/lalinference_version.1*
 %{_sysconfdir}/*
@@ -290,10 +297,10 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_bindir}/lalinference_burst_pp_pipe
 %{_bindir}/lalinference_coherence_test
 %{_bindir}/lalinference_compute_roq_weights
+%{_bindir}/lalinference_cpnest
 %{_bindir}/lalinference_merge_posteriors
 %{_bindir}/lalinference_multi_pipe
 %{_bindir}/lalinference_nest2pos
-%{_bindir}/lalinference_cpnest
 %{_bindir}/lalinference_pipe
 %{_bindir}/lalinference_pp_pipe
 %{_bindir}/lalinference_review_test
@@ -304,10 +311,10 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_mandir}/man1/lalinference_burst_pp_pipe.1*
 %{_mandir}/man1/lalinference_coherence_test.1*
 %{_mandir}/man1/lalinference_compute_roq_weights.1*
+%{_mandir}/man1/lalinference_cpnest.1*
 %{_mandir}/man1/lalinference_merge_posteriors.1*
 %{_mandir}/man1/lalinference_multi_pipe.1*
 %{_mandir}/man1/lalinference_nest2pos.1*
-%{_mandir}/man1/lalinference_cpnest.1*
 %{_mandir}/man1/lalinference_pipe.1*
 %{_mandir}/man1/lalinference_pp_pipe.1*
 %{_mandir}/man1/lalinference_review_test.1*

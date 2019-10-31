@@ -418,6 +418,11 @@ int main(int argc, char *argv[]){
     /* Choose the likelihood */
     LALInferenceInitLikelihood(run_state);
 
+    /* If just asking for --help, stop here */
+    if (LALInferenceGetProcParamVal(proc_params, "--help")) {
+        return XLAL_SUCCESS;
+    }
+
     if (run_state == NULL)
         return XLAL_FAILURE;
 
