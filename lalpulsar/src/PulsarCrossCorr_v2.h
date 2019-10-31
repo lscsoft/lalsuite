@@ -32,7 +32,7 @@ extern "C" {
  * \brief Header-file for XLAL routines for v2 CW cross-correlation searches
  *
  */
-/*@{*/
+/** @{ */
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -213,7 +213,7 @@ int XLALCalculateLMXBCrossCorrDiagMetric
    )
   ;
 
-/*@}*/
+/** @} */
 
 void XLALDestroySFTIndexList ( SFTIndexList *sftIndices );
 

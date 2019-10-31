@@ -30,7 +30,7 @@
 
 /* Error codes and messages */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define SFTCLEANC_ENORM 0
 #define SFTCLEANC_ESUB  1
 #define SFTCLEANC_EARG  2
@@ -42,7 +42,7 @@
 #define SFTCLEANC_MSGEARG  "Error parsing arguments"
 #define SFTCLEANC_MSGEBAD  "Bad argument values"
 #define SFTCLEANC_MSGEFILE "Could not create output file"
-/*@}*/
+/** @} */
 
 
 /* Default parameters. */

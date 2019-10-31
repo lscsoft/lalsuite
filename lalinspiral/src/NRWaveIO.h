@@ -51,17 +51,17 @@ extern "C" {
  * \brief Module for reading/writing Numrel waveforms
  *
  */
-/*@{*/
+/** @{ */
 
 /** \name Error codes */
-/*@{*/
+/** @{ */
 #define NRWAVEIO_ENULL 	  1	/**< Null pointer */
 #define NRWAVEIO_EFILE 	  2	/**< Error in file-IO */
 #define NRWAVEIO_ENONULL  3	/**< Not a Null pointer */
 #define NRWAVEIO_ENOMEM   4	/**< Memory ellocation error */
 #define NRWAVEIO_EVAL 	  5	/**< Invalid value */
 #define NRWAVEIO_EFORMAT  6	/**< Meta data file format incorrect */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define NRWAVEIO_MSGENULL 	"Null pointer"
@@ -126,7 +126,7 @@ void LALAddStrainModes( LALStatus *status, REAL4TimeVectorSeries  **outStrain,
 
 void LALDriveNRInject( LALStatus *status, REAL4TimeSeries *injData, SimInspiralTable *injections, NumRelInjectParams *params );
 
-/*@}*/ /* end:NRWaveIO_h */
+/** @} */ /* end:NRWaveIO_h */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

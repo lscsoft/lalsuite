@@ -34,7 +34,7 @@ extern "C" {
  * \brief Module for translating between MJD(TT) strings and GPS
  *
  */
-/*@{*/
+/** @{ */
 // ---------- Function prototypes ----------
 #ifdef SWIG /* SWIG interface directives */
 SWIGLAL(NEW_EMPTY_ARGUMENT(LIGOTimeGPS*, gps));
@@ -47,7 +47,7 @@ LIGOTimeGPS *XLALTranslateStringMJDTTtoGPS ( LIGOTimeGPS *gps, const char *mjdSt
 SWIGLAL_CLEAR(NEW_EMPTY_ARGUMENT(LIGOTimeGPS*, gps));
 #endif
 
-/*@}*/
+/** @} */
 
 /* C++ protection. */
 #ifdef  __cplusplus

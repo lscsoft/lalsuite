@@ -94,7 +94,7 @@ extern "C" {
  *    inclusion in the documentation.
  */
   
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
   
 #define SFTBINH_ENULL 1
 #define SFTBINH_EFILE 2
@@ -115,7 +115,7 @@ extern "C" {
 #define SFTBINH_MSGEWRITE "fwrite failed"
 
 
-/*@}*/
+/** @} */
 
 
 /* ******************************************************

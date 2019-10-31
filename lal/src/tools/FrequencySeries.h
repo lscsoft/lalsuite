@@ -47,7 +47,7 @@ extern "C" {
  * argument, its return type is \c void, etc.).
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * \name Creation Functions
@@ -71,7 +71,7 @@ extern "C" {
  * via a \c LALStatus pointer.
  *
  */
-/*@{*/
+/** @{ */
 COMPLEX8FrequencySeries *XLALCreateCOMPLEX8FrequencySeries ( const CHAR *name, const LIGOTimeGPS *epoch, REAL8 f0, REAL8 deltaF, const LALUnit *sampleUnits, size_t length );
 COMPLEX16FrequencySeries *XLALCreateCOMPLEX16FrequencySeries ( const CHAR *name, const LIGOTimeGPS *epoch, REAL8 f0, REAL8 deltaF, const LALUnit *sampleUnits, size_t length );
 REAL4FrequencySeries *XLALCreateREAL4FrequencySeries ( const CHAR *name, const LIGOTimeGPS *epoch, REAL8 f0, REAL8 deltaF, const LALUnit *sampleUnits, size_t length );
@@ -82,7 +82,7 @@ INT8FrequencySeries *XLALCreateINT8FrequencySeries ( const CHAR *name, const LIG
 UINT2FrequencySeries *XLALCreateUINT2FrequencySeries ( const CHAR *name, const LIGOTimeGPS *epoch, REAL8 f0, REAL8 deltaF, const LALUnit *sampleUnits, size_t length );
 UINT4FrequencySeries *XLALCreateUINT4FrequencySeries ( const CHAR *name, const LIGOTimeGPS *epoch, REAL8 f0, REAL8 deltaF, const LALUnit *sampleUnits, size_t length );
 UINT8FrequencySeries *XLALCreateUINT8FrequencySeries ( const CHAR *name, const LIGOTimeGPS *epoch, REAL8 f0, REAL8 deltaF, const LALUnit *sampleUnits, size_t length );
-/*@}*/
+/** @} */
 
 /**
  * \name Destruction Functions
@@ -102,7 +102,7 @@ UINT8FrequencySeries *XLALCreateUINT8FrequencySeries ( const CHAR *name, const L
  * is safe to pass \c NULL to these functions.
  *
  */
-/*@{*/
+/** @{ */
 void XLALDestroyCOMPLEX8FrequencySeries ( COMPLEX8FrequencySeries *series );
 void XLALDestroyCOMPLEX16FrequencySeries ( COMPLEX16FrequencySeries *series );
 void XLALDestroyREAL4FrequencySeries ( REAL4FrequencySeries *series );
@@ -113,7 +113,7 @@ void XLALDestroyINT8FrequencySeries ( INT8FrequencySeries *series );
 void XLALDestroyUINT2FrequencySeries ( UINT2FrequencySeries *series );
 void XLALDestroyUINT4FrequencySeries ( UINT4FrequencySeries *series );
 void XLALDestroyUINT8FrequencySeries ( UINT8FrequencySeries *series );
-/*@}*/
+/** @} */
 
 
 /**
@@ -133,7 +133,7 @@ void XLALDestroyUINT8FrequencySeries ( UINT8FrequencySeries *series );
  * existing frequency series.
  *
  */
-/*@{*/
+/** @{ */
 COMPLEX8FrequencySeries *XLALCutCOMPLEX8FrequencySeries ( const COMPLEX8FrequencySeries *series, size_t first, size_t length );
 COMPLEX16FrequencySeries *XLALCutCOMPLEX16FrequencySeries ( const COMPLEX16FrequencySeries *series, size_t first, size_t length );
 REAL4FrequencySeries *XLALCutREAL4FrequencySeries ( const REAL4FrequencySeries *series, size_t first, size_t length );
@@ -144,7 +144,7 @@ INT8FrequencySeries *XLALCutINT8FrequencySeries ( const INT8FrequencySeries *ser
 UINT2FrequencySeries *XLALCutUINT2FrequencySeries ( const UINT2FrequencySeries *series, size_t first, size_t length );
 UINT4FrequencySeries *XLALCutUINT4FrequencySeries ( const UINT4FrequencySeries *series, size_t first, size_t length );
 UINT8FrequencySeries *XLALCutUINT8FrequencySeries ( const UINT8FrequencySeries *series, size_t first, size_t length );
-/*@}*/
+/** @} */
 
 
 /**
@@ -174,7 +174,7 @@ UINT8FrequencySeries *XLALCutUINT8FrequencySeries ( const UINT8FrequencySeries *
  * should use the "Resize" variants.
  *
  */
-/*@{*/
+/** @{ */
 COMPLEX8FrequencySeries *XLALResizeCOMPLEX8FrequencySeries ( COMPLEX8FrequencySeries *series, int first, size_t length );
 COMPLEX16FrequencySeries *XLALResizeCOMPLEX16FrequencySeries ( COMPLEX16FrequencySeries *series, int first, size_t length );
 REAL4FrequencySeries *XLALResizeREAL4FrequencySeries ( REAL4FrequencySeries *series, int first, size_t length );
@@ -196,7 +196,7 @@ INT8FrequencySeries *XLALShrinkINT8FrequencySeries ( INT8FrequencySeries *series
 UINT2FrequencySeries *XLALShrinkUINT2FrequencySeries ( UINT2FrequencySeries *series, size_t first, size_t length );
 UINT4FrequencySeries *XLALShrinkUINT4FrequencySeries ( UINT4FrequencySeries *series, size_t first, size_t length );
 UINT8FrequencySeries *XLALShrinkUINT8FrequencySeries ( UINT8FrequencySeries *series, size_t first, size_t length );
-/*@}*/
+/** @} */
 
 
 /**
@@ -218,7 +218,7 @@ UINT8FrequencySeries *XLALShrinkUINT8FrequencySeries ( UINT8FrequencySeries *ser
  * that differ only by a dimensionless factor.
  *
  */
-/*@{*/
+/** @{ */
 COMPLEX8FrequencySeries *XLALAddCOMPLEX8FrequencySeries ( COMPLEX8FrequencySeries *arg1, const COMPLEX8FrequencySeries *arg2 );
 COMPLEX16FrequencySeries *XLALAddCOMPLEX16FrequencySeries ( COMPLEX16FrequencySeries *arg1, const COMPLEX16FrequencySeries *arg2 );
 REAL4FrequencySeries *XLALAddREAL4FrequencySeries ( REAL4FrequencySeries *arg1, const REAL4FrequencySeries *arg2 );
@@ -229,7 +229,7 @@ INT8FrequencySeries *XLALAddINT8FrequencySeries ( INT8FrequencySeries *arg1, con
 UINT2FrequencySeries *XLALAddUINT2FrequencySeries ( UINT2FrequencySeries *arg1, const UINT2FrequencySeries *arg2 );
 UINT4FrequencySeries *XLALAddUINT4FrequencySeries ( UINT4FrequencySeries *arg1, const UINT4FrequencySeries *arg2 );
 UINT8FrequencySeries *XLALAddUINT8FrequencySeries ( UINT8FrequencySeries *arg1, const UINT8FrequencySeries *arg2 );
-/*@}*/
+/** @} */
 
 /**
  * \name Conjugation Functions
@@ -247,10 +247,10 @@ UINT8FrequencySeries *XLALAddUINT8FrequencySeries ( UINT8FrequencySeries *arg1, 
  * These functions replace a frequency series with its complex conjugate.
  *
  */
-/*@{*/
+/** @{ */
 COMPLEX8FrequencySeries *XLALConjugateCOMPLEX8FrequencySeries ( COMPLEX8FrequencySeries *series );
 COMPLEX16FrequencySeries *XLALConjugateCOMPLEX16FrequencySeries ( COMPLEX16FrequencySeries *series );
-/*@}*/
+/** @} */
 
 /**
  * \name Multiplication Functions
@@ -271,7 +271,7 @@ COMPLEX16FrequencySeries *XLALConjugateCOMPLEX16FrequencySeries ( COMPLEX16Frequ
  * units that differ only by a dimensionless factor.
  *
  */
-/*@{*/
+/** @{ */
 COMPLEX8FrequencySeries *XLALMultiplyCOMPLEX8FrequencySeries ( COMPLEX8FrequencySeries *arg1, const COMPLEX8FrequencySeries *arg2 );
 COMPLEX16FrequencySeries *XLALMultiplyCOMPLEX16FrequencySeries ( COMPLEX16FrequencySeries *arg1, const COMPLEX16FrequencySeries *arg2 );
 REAL4FrequencySeries *XLALMultiplyREAL4FrequencySeries ( REAL4FrequencySeries *arg1, const REAL4FrequencySeries *arg2 );
@@ -282,9 +282,9 @@ INT8FrequencySeries *XLALMultiplyINT8FrequencySeries ( INT8FrequencySeries *arg1
 UINT2FrequencySeries *XLALMultiplyUINT2FrequencySeries ( UINT2FrequencySeries *arg1, const UINT2FrequencySeries *arg2 );
 UINT4FrequencySeries *XLALMultiplyUINT4FrequencySeries ( UINT4FrequencySeries *arg1, const UINT4FrequencySeries *arg2 );
 UINT8FrequencySeries *XLALMultiplyUINT8FrequencySeries ( UINT8FrequencySeries *arg1, const UINT8FrequencySeries *arg2 );
-/*@}*/
+/** @} */
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

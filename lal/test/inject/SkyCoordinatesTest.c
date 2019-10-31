@@ -79,13 +79,13 @@
  * result disagrees by more than a milliradian.
  */
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define SKYCOORDINATESTESTC_ENORM 0	/**< Normal exit */
 #define SKYCOORDINATESTESTC_ESUB  1	/**< Subroutine failed */
 #define SKYCOORDINATESTESTC_EARG  2	/**< Error parsing arguments */
 #define SKYCOORDINATESTESTC_EMEM  3	/**< Out of memory */
 #define SKYCOORDINATESTESTC_ETEST 4	/**< Test case failed */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define SKYCOORDINATESTESTC_MSGENORM "Normal exit"

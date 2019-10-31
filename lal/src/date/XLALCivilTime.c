@@ -84,7 +84,7 @@
  * The inverse conversion is not attempted.
  *
  */
-/*@{*/
+/** @{ */
 
 /* change in TAI-UTC from previous second:
  *
@@ -433,4 +433,4 @@ XLALModifiedJulianDay ( const struct tm *civil )
 } // XLALModifiedJulianDay()
 
 
-/*@}*/
+/** @} */

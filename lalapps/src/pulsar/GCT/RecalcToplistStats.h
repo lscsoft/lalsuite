@@ -24,7 +24,7 @@
  *
  * \brief Functions to recompute statistics for GCT/hough toplist entries
  */
-/*@{*/
+/** @{ */
 
 #ifndef _RECALCTOPLISTSTATS_H  /* Double-include protection. */
 #define _RECALCTOPLISTSTATS_H

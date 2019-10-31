@@ -74,7 +74,7 @@
  * \c gasdev described in Numerical Recipes \cite ptvf1992 .
  *
  */
-/*@{*/
+/** @{ */
 
 static const INT4 a = 16807;
 static const INT4 m = 2147483647;
@@ -360,4 +360,4 @@ LALNormalDeviates (
 
   RETURN (status);
 }
-/*@}*/
+/** @} */

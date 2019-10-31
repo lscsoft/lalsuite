@@ -70,7 +70,7 @@
 #include <lal/Statistics.h>
 
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define TESTSTATISTICSC_ENORM 0
 #define TESTSTATISTICSC_ESUB  1
 #define TESTSTATISTICSC_EARG  2
@@ -82,7 +82,7 @@
 #define TESTSTATISTICSC_MSGEARG  "Error parsing arguments"
 #define TESTSTATISTICSC_MSGEBAD  "Bad argument values"
 #define TESTSTATISTICSC_MSGEFILE "Could not create output file"
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 

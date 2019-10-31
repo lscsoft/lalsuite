@@ -39,7 +39,7 @@ extern "C" {
  * \endcode
  *
  */
-/*@{*/
+/** @{ */
 
 #include <gsl/gsl_matrix.h>
 
@@ -152,7 +152,7 @@ typedef struct tagPulsarSourceParams {
    REAL8Vector *spindown;/**< wave-frequency spindowns at tRef (NOT f0-normalized!) */
 } PulsarSourceParams;
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

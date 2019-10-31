@@ -34,11 +34,11 @@ extern "C" {
  * \ingroup lalpulsar_general
  * \brief Computes the next sidereal midnight and autumnal equinox.
  */
-/*@{*/
+/** @{ */
 
 int XLALGetEarthTimes( const LIGOTimeGPS *tepoch, REAL8 *tMidnight, REAL8 *tAutumn );
 
-/*@}*/
+/** @} */
 
 #ifdef __cplusplus
 }

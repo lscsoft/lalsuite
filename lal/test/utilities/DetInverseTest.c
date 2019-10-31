@@ -83,14 +83,14 @@
  */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define DETINVERSETESTC_ENORM 0		/**< Normal exit */
 #define DETINVERSETESTC_ESUB  1		/**< Subroutine failed */
 #define DETINVERSETESTC_EARG  2		/**< Error parsing arguments */
 #define DETINVERSETESTC_EMEM  3		/**< Out of memory */
 #define DETINVERSETESTC_EFILE 4		/**< Could not open file */
 #define DETINVERSETESTC_EFMT  5		/**< Bad input file format */
-/*@}*/
+/** @} */
 
 
 

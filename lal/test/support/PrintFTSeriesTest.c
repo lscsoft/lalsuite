@@ -46,10 +46,10 @@
  * for integers are not tested.
  */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define PRINTFTSERIESTESTC_ENOM 0       /**< Nominal exit */
 #define PRINTFTSERIESTESTC_EFUN 1       /**< Error from LAL function */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 

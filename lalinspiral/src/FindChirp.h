@@ -88,10 +88,10 @@ extern "C" {
  * that implement the search.
  *
  */
-/*@{*/
+/** @{ */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define FINDCHIRPH_ENULL 1	/**< Null pointer */
 #define FINDCHIRPH_ENNUL 2	/**< Non-null pointer */
 #define FINDCHIRPH_EALOC 3	/**< Memory allocation error */
@@ -119,7 +119,7 @@ extern "C" {
 #define FINDCHIRPH_EIGEN 28	/**< Error computing eigenvalues */
 #define FINDCHIRPH_EIMRW 29	/**< Error computing IMR waveform */
 #define FINDCHIRPH_EFLOX 30     /**< Error computing variable flower */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define FINDCHIRPH_MSGENULL "Null pointer"
@@ -153,7 +153,7 @@ extern "C" {
 
 /* ---------- typedefs of input structures used by functions in findchirp ---------- */
 
-/*@}*/
+/** @} */
 
 /*
  *

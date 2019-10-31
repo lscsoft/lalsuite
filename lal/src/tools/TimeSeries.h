@@ -47,7 +47,7 @@ extern "C" {
  * argument, its return type is \c void, etc.).
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * \name Creation Functions
@@ -70,7 +70,7 @@ extern "C" {
  * Additionally, the LAL wrapper provides standard LAL-style error checking
  * via a \c LALStatus pointer.
  */
-/*@{*/
+/** @{ */
 COMPLEX8TimeSeries *XLALCreateCOMPLEX8TimeSeries ( const CHAR *name, const LIGOTimeGPS *epoch, REAL8 f0, REAL8 deltaT, const LALUnit *sampleUnits, size_t length );
 COMPLEX16TimeSeries *XLALCreateCOMPLEX16TimeSeries ( const CHAR *name, const LIGOTimeGPS *epoch, REAL8 f0, REAL8 deltaT, const LALUnit *sampleUnits, size_t length );
 REAL4TimeSeries *XLALCreateREAL4TimeSeries ( const CHAR *name, const LIGOTimeGPS *epoch, REAL8 f0, REAL8 deltaT, const LALUnit *sampleUnits, size_t length );
@@ -81,7 +81,7 @@ INT8TimeSeries *XLALCreateINT8TimeSeries ( const CHAR *name, const LIGOTimeGPS *
 UINT2TimeSeries *XLALCreateUINT2TimeSeries ( const CHAR *name, const LIGOTimeGPS *epoch, REAL8 f0, REAL8 deltaT, const LALUnit *sampleUnits, size_t length );
 UINT4TimeSeries *XLALCreateUINT4TimeSeries ( const CHAR *name, const LIGOTimeGPS *epoch, REAL8 f0, REAL8 deltaT, const LALUnit *sampleUnits, size_t length );
 UINT8TimeSeries *XLALCreateUINT8TimeSeries ( const CHAR *name, const LIGOTimeGPS *epoch, REAL8 f0, REAL8 deltaT, const LALUnit *sampleUnits, size_t length );
-/*@}*/
+/** @} */
 
 /**
  * \name Destruction Functions
@@ -101,7 +101,7 @@ UINT8TimeSeries *XLALCreateUINT8TimeSeries ( const CHAR *name, const LIGOTimeGPS
  * safe to pass \c NULL to these functions.
  *
  */
-/*@{*/
+/** @{ */
 void XLALDestroyCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *series );
 void XLALDestroyCOMPLEX16TimeSeries ( COMPLEX16TimeSeries *series );
 void XLALDestroyREAL4TimeSeries ( REAL4TimeSeries *series );
@@ -112,7 +112,7 @@ void XLALDestroyINT8TimeSeries ( INT8TimeSeries *series );
 void XLALDestroyUINT2TimeSeries ( UINT2TimeSeries *series );
 void XLALDestroyUINT4TimeSeries ( UINT4TimeSeries *series );
 void XLALDestroyUINT8TimeSeries ( UINT8TimeSeries *series );
-/*@}*/
+/** @} */
 
 
 /**
@@ -133,10 +133,10 @@ void XLALDestroyUINT8TimeSeries ( UINT8TimeSeries *series );
  * from a REAL4 or REAL8 time series, respectively.  The source time series
  * is not deallocated.
  */
-/*@{*/
+/** @{ */
 REAL4TimeSeries *XLALConvertREAL8TimeSeriesToREAL4 ( const REAL8TimeSeries *series );
 REAL8TimeSeries *XLALConvertREAL4TimeSeriesToREAL8 ( const REAL4TimeSeries *series );
-/*@}*/
+/** @} */
 
 
 /**
@@ -156,7 +156,7 @@ REAL8TimeSeries *XLALConvertREAL4TimeSeriesToREAL8 ( const REAL4TimeSeries *seri
  * These functions create a new time series by extracting a section of an
  * existing time series.
  */
-/*@{*/
+/** @{ */
 COMPLEX8TimeSeries *XLALCutCOMPLEX8TimeSeries ( const COMPLEX8TimeSeries *series, size_t first, size_t length );
 COMPLEX16TimeSeries *XLALCutCOMPLEX16TimeSeries ( const COMPLEX16TimeSeries *series, size_t first, size_t length );
 REAL4TimeSeries *XLALCutREAL4TimeSeries ( const REAL4TimeSeries *series, size_t first, size_t length );
@@ -167,7 +167,7 @@ INT8TimeSeries *XLALCutINT8TimeSeries ( const INT8TimeSeries *series, size_t fir
 UINT2TimeSeries *XLALCutUINT2TimeSeries ( const UINT2TimeSeries *series, size_t first, size_t length );
 UINT4TimeSeries *XLALCutUINT4TimeSeries ( const UINT4TimeSeries *series, size_t first, size_t length );
 UINT8TimeSeries *XLALCutUINT8TimeSeries ( const UINT8TimeSeries *series, size_t first, size_t length );
-/*@}*/
+/** @} */
 
 /**
  * \name Resizing Functions
@@ -191,7 +191,7 @@ UINT8TimeSeries *XLALCutUINT8TimeSeries ( const UINT8TimeSeries *series, size_t 
  * then the new time series is padded at the start by that many samples.  The
  * time series' epoch is adjusted appropriately.
  */
-/*@{*/
+/** @{ */
 COMPLEX8TimeSeries *XLALResizeCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *series, int first, size_t length );
 COMPLEX16TimeSeries *XLALResizeCOMPLEX16TimeSeries ( COMPLEX16TimeSeries *series, int first, size_t length );
 REAL4TimeSeries *XLALResizeREAL4TimeSeries ( REAL4TimeSeries *series, int first, size_t length );
@@ -213,7 +213,7 @@ INT8TimeSeries *XLALShrinkINT8TimeSeries ( INT8TimeSeries *series, size_t first,
 UINT2TimeSeries *XLALShrinkUINT2TimeSeries ( UINT2TimeSeries *series, size_t first, size_t length );
 UINT4TimeSeries *XLALShrinkUINT4TimeSeries ( UINT4TimeSeries *series, size_t first, size_t length );
 UINT8TimeSeries *XLALShrinkUINT8TimeSeries ( UINT8TimeSeries *series, size_t first, size_t length );
-/*@}*/
+/** @} */
 
 /**
  * \name Addition Functions
@@ -234,7 +234,7 @@ UINT8TimeSeries *XLALShrinkUINT8TimeSeries ( UINT8TimeSeries *series, size_t fir
  * have units that differ only by a dimensionless factor.
  *
  */
-/*@{*/
+/** @{ */
 COMPLEX8TimeSeries *XLALAddCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *arg1, const COMPLEX8TimeSeries *arg2 );
 COMPLEX16TimeSeries *XLALAddCOMPLEX16TimeSeries ( COMPLEX16TimeSeries *arg1, const COMPLEX16TimeSeries *arg2 );
 REAL4TimeSeries *XLALAddREAL4TimeSeries ( REAL4TimeSeries *arg1, const REAL4TimeSeries *arg2 );
@@ -245,9 +245,9 @@ INT8TimeSeries *XLALAddINT8TimeSeries ( INT8TimeSeries *arg1, const INT8TimeSeri
 UINT2TimeSeries *XLALAddUINT2TimeSeries ( UINT2TimeSeries *arg1, const UINT2TimeSeries *arg2 );
 UINT4TimeSeries *XLALAddUINT4TimeSeries ( UINT4TimeSeries *arg1, const UINT4TimeSeries *arg2 );
 UINT8TimeSeries *XLALAddUINT8TimeSeries ( UINT8TimeSeries *arg1, const UINT8TimeSeries *arg2 );
-/*@}*/
+/** @} */
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -130,7 +130,7 @@
  * but care should be taken if DC is relevant when this function is used.
  *
  */
-/*@{*/
+/** @{ */
 
 /** UNDOCUMENTED */
 void
@@ -644,4 +644,4 @@ XLALResponseConvert(
   return 0;
 }
 
-/*@}*/
+/** @} */

@@ -60,14 +60,14 @@
  */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define LALRUNNINGMEDIANTESTC_ENOM 0		/**< Nominal exit */
 #define LALRUNNINGMEDIANTESTC_EARG 1		/**< Error parsing command-line arguments */
 #define LALRUNNINGMEDIANTESTC_ESUB 2		/**< Subroutine returned error */
 #define LALRUNNINGMEDIANTESTC_EALOC 3		/**< Could not allocate data space */
 #define LALRUNNINGMEDIANTESTC_EFALSE 4		/**< Medians mismatch */
 #define LALRUNNINGMEDIANTESTC_EERR 5		/**< Subroutine returned wrong or no error */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define LALRUNNINGMEDIANTESTC_MSGENOM "Nominal exit"

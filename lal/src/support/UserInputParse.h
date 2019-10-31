@@ -36,7 +36,7 @@ extern "C" {
  *
  */
 
-/*@{*/
+/** @{ */
 
 ///
 /// Convert an unsigned long index \c i into a bit, i.e. \f$b = 2^i\f$
@@ -114,7 +114,7 @@ DECL_XLALParseStringValueAsVector(INT4);
 DECL_XLALParseStringValueAsVector(UINT4);
 DECL_XLALParseStringValueAsVector(REAL8);
 
-/*@}*/
+/** @} */
 
 /* C++ protection. */
 #ifdef  __cplusplus

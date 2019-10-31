@@ -32,7 +32,7 @@ extern "C" {
  * \brief Header-file for LAL routines for CW cross-correlation searches
  *
  */
-/*@{*/
+/** @{ */
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -66,7 +66,7 @@ extern "C" {
 #include <lal/Sequence.h>
 
 /** \name Error codes */
-/*@{*/
+/** @{ */
 #define PULSARCROSSCORR_ENULL 1
 #define PULSARCROSSCORR_ENONULL 2
 #define PULSARCROSSCORR_EVAL 3
@@ -74,7 +74,7 @@ extern "C" {
 #define PULSARCROSSCORR_MSGENULL "Null pointer"
 #define PULSARCROSSCORR_MSGENONULL "Non-null pointer"
 #define PULSARCROSSCORR_MSGEVAL "Invalid value"
-/*@}*/
+/** @} */
 
 /* ******************************************************************
  *  Structure, enum, union, etc., typdefs.
@@ -221,7 +221,7 @@ void LALCalculateEstimators(LALStatus    *status,
 				COMPLEX16Vector  *gcross,
 				REAL8Vector      *sigmaAlphasq);
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

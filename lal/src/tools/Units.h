@@ -125,7 +125,7 @@ extern "C" {
  * \defgroup UnitCompare_c 	Module UnitCompare.c
  * @}
  */
-/*@{*/
+/** @{ */
 
 /*********************************************************
  *                                                       *
@@ -251,7 +251,7 @@ extern const LALUnit lalGramUnit      ;
 extern const LALUnit lalAttoStrainUnit;
 extern const LALUnit lalPicoFaradUnit ;
 
-/*@}*/
+/** @} */
 /* end: Units_h */
 
 #ifdef  __cplusplus

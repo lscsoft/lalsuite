@@ -61,10 +61,10 @@ extern "C" {
  * Efficient Algorithm for computing a Running Median
  *
  */
-/*@{*/
+/** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define LALRUNNINGMEDIANH_EMALOC1 1		/**< Could not allocate indexblock */
 #define LALRUNNINGMEDIANH_EMALOC2 2		/**< Could not allocate checks */
 #define LALRUNNINGMEDIANH_EMALOC3 3		/**< Could not allocate checks4shift */
@@ -76,7 +76,7 @@ extern "C" {
 #define LALRUNNINGMEDIANH_EZERO 9		/**< Invalid input: block length must be \>2 */
 #define LALRUNNINGMEDIANH_ELARGE 10		/**< Invalid input: block length larger than imput length */
 #define LALRUNNINGMEDIANH_EIMED 11		/**< Invalid input: wrong size of median array */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define LALRUNNINGMEDIANH_MSGEMALOC1 "Could not allocate indexblock"
@@ -137,7 +137,7 @@ LALSRunningMedian2( LALStatus *status,
 		    const REAL4Sequence *input,
 		    LALRunningMedianPar param);
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

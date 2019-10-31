@@ -35,7 +35,7 @@
  * \ingroup LALInspiralBank_h
  * \brief BCV template bank
  */
-/*@{*/
+/** @{ */
 
 /**
  * \brief Lay a flat grid of BCV templates in the user specified range
@@ -944,4 +944,4 @@ LALExcludeTemplate(
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }
-/*@}*/
+/** @} */

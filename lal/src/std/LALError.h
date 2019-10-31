@@ -39,7 +39,7 @@ extern "C" {
 extern int (*lalRaiseHook) (int, const char *, ...);
 extern void (*lalAbortHook) (const char *, ...);
 
-/** \addtogroup LALError_h */ /*@{ */
+/** \addtogroup LALError_h */ /** @{ */
 
 int LALPrintError(const char *fmt, ...);
 
@@ -55,7 +55,7 @@ int LALInfo(LALStatus * status, const char *info);
 
 int LALTrace(LALStatus * status, int exitflg);
 
-/*@}*/
+/** @} */
 
 int
 LALInitStatus(LALStatus * status, const char *function,

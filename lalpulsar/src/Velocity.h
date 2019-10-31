@@ -41,7 +41,7 @@ extern "C" {
  * velocity  of a detector in a certain time interval.
  *
  */
-/*@{*/
+/** @{ */
 
 
 /* *************
@@ -66,12 +66,12 @@ extern "C" {
  *    inclusion in the documentation.
  */
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define VELOCITYH_ENULL 1
 #define VELOCITYH_EVAL 2
 #define VELOCITYH_MSGENULL "Null Pointer"
 #define VELOCITYH_MSGEVAL "Invalid Value"
-/*@}*/
+/** @} */
 
 /* *****************************************************
  *   Structure, enum, union, etc., typdefs.
@@ -117,7 +117,7 @@ void LALDetectorPos(LALStatus   *status,
 
 /* ****************************************************** */
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

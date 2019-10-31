@@ -128,7 +128,7 @@ extern "C" {
  * Note: if you can use \c qsort(), you should.
  *
  */
-/*@{*/
+/** @{ */
 
 /* Function prototypes. */
 
@@ -152,7 +152,7 @@ int XLALHeapRank( INT4 *rank, void *base, UINT4 nobj, UINT4 size, void *params,
 int XLALInsertionSort( void *base, size_t nobj, size_t size, void *params,
     int (*compar)(void *, const void *, const void *) );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

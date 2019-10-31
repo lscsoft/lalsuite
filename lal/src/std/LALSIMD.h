@@ -39,7 +39,7 @@ extern "C" {
  * }
  * \endcode
  */
-/*@{*/
+/** @{ */
 
 /**
  * SIMD instruction sets this module can detect
@@ -70,7 +70,7 @@ int XLALHaveSIMDInstructionSet(LAL_SIMD_ISET iset);
 const char *XLALSIMDInstructionSetName(LAL_SIMD_ISET iset);
 
 /** \name Convenience macros for SIMD runtime selection */
-/*@{*/
+/** @{ */
 #define LAL_HAVE_SSE_RUNTIME()		(XLALHaveSIMDInstructionSet(LAL_SIMD_ISET_SSE))
 #define LAL_HAVE_SSE2_RUNTIME()		(XLALHaveSIMDInstructionSet(LAL_SIMD_ISET_SSE2))
 #define LAL_HAVE_SSE3_RUNTIME()		(XLALHaveSIMDInstructionSet(LAL_SIMD_ISET_SSE3))
@@ -79,9 +79,9 @@ const char *XLALSIMDInstructionSetName(LAL_SIMD_ISET iset);
 #define LAL_HAVE_SSE4_2_RUNTIME()	(XLALHaveSIMDInstructionSet(LAL_SIMD_ISET_SSE4_2))
 #define LAL_HAVE_AVX_RUNTIME()		(XLALHaveSIMDInstructionSet(LAL_SIMD_ISET_AVX))
 #define LAL_HAVE_AVX2_RUNTIME()		(XLALHaveSIMDInstructionSet(LAL_SIMD_ISET_AVX2))
-/*@}*/
+/** @} */
 
-/*@}*/
+/** @} */
 
 #if defined(__cplusplus)
 }

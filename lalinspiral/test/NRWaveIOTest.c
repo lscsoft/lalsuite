@@ -34,7 +34,7 @@
 /*---------- DEFINES ----------*/
 
 /** \name Error codes */
-/*@{*/
+/** @{ */
 #define NRWAVEIOTESTC_ENORM 	0
 #define NRWAVEIOTESTC_ESUB  	1
 #define NRWAVEIOTESTC_EARG  	2
@@ -48,7 +48,7 @@
 #define NRWAVEIOTESTC_MSGEBAD  "Bad argument values"
 #define NRWAVEIOTESTC_MSGEFILE "Could not create output file"
 #define NRWAVEIOTESTC_MSGESFTDIFF "initial and final SFTs differ"
-/*@}*/
+/** @} */
 
 
 #ifndef SRCDIR

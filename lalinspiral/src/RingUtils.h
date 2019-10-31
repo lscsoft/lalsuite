@@ -117,14 +117,14 @@ extern "C" {
  * The template placement algorithm is described above.
  *
  */
-/*@{*/
+/** @{ */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define RINGH_ENULL 01	/**< Null pointer */
 #define RINGH_ENNUL 02	/**< Non-null pointer */
 #define RINGH_EALOC 04	/**< Memory allocation error */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define RINGH_MSGENULL "Null pointer"
@@ -190,7 +190,7 @@ RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input );
 void XLALDestroyRingTemplateBank( RingTemplateBank *bank );
 
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

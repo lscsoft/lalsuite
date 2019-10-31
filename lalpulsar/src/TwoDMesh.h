@@ -96,10 +96,10 @@ extern "C" {
  * sky position, but they can be used generically for any two-dimensional
  * parameter space search where the metric is not too poorly behaved.
  */
-/*@{*/
+/** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define TWODMESHH_ENUL    1
 #define TWODMESHH_EOUT    2
 #define TWODMESHH_EMEM    3
@@ -115,7 +115,7 @@ extern "C" {
 #define TWODMESHH_MSGEWIDTH  "Column width too small"
 #define TWODMESHH_MSGEDIM    "Incorrect dimensions"
 #define TWODMESHH_MSGEINT    "Non-positive interval"
-/*@}*/
+/** @} */
 
 /**
  * This structure represents a single node in a linked list of
@@ -230,7 +230,7 @@ LALTwoDNodeCopy( LALStatus    *status,
 		 TwoDMeshNode **new_,
 		 TwoDMeshNode *old );
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -246,7 +246,7 @@ COMPLEX16FrequencySeries
 /* ---------- LEGACY CODE ---------- */
 
 /*\name Legacy Error Codes */
-/*@{*/
+/** @{ */
 #define FRAMESTREAMH_ENULL 00001
 #define FRAMESTREAMH_ENNUL 00002
 #define FRAMESTREAMH_EALOC 00004
@@ -275,7 +275,7 @@ COMPLEX16FrequencySeries
 #define FRAMESTREAMH_MSGEDONE "End of frame data"
 #define FRAMESTREAMH_MSGETREQ "No data at time requested"
 #define FRAMESTREAMH_MSGEDGAP "Gap in the data"
-/*@}*/
+/** @} */
 
 typedef enum tagFrChanType {
     LAL_ADC_CHAN, LAL_SIM_CHAN, LAL_PROC_CHAN
@@ -287,12 +287,12 @@ typedef enum tagFrChanType {
  * They are "post-processed data" (ProcDataChannel), "ADC data"
  * (ADCDataChannel), and "simulated data" (SimDataChannel).
  */
-/*@{*/
+/** @{ */
 #define ChannelType FrChanType
 #define ProcDataChannel LAL_PROC_CHAN
 #define ADCDataChannel  LAL_ADC_CHAN
 #define SimDataChannel  LAL_SIM_CHAN
-/*@}*/
+/** @} */
 
 #ifdef SWIG /* SWIG interface directives */
 SWIGLAL(IMMUTABLE_MEMBERS(tagFrChanIn, name));
@@ -446,7 +446,7 @@ void LALFrWriteCOMPLEX8FrequencySeries(LALStatus * status,
 
 void LALFrWriteCOMPLEX16FrequencySeries(LALStatus * status,
     COMPLEX16FrequencySeries * series, FrOutPar * params, INT4 subtype);
-/*@}*/
+/** @} */
 
 
 #if 0

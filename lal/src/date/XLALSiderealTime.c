@@ -33,7 +33,7 @@
  * \endcode
  */
 
-/*@{*/
+/** @{ */
 
 /**
  * Returns the Greenwich Sidereal Time IN RADIANS corresponding to a
@@ -180,4 +180,4 @@ LIGOTimeGPS *XLALGreenwichSiderealTimeToGPS(
 	return XLALGreenwichMeanSiderealTimeToGPS(gmst - equation_of_equinoxes, gps);
 }
 
-/*@}*/
+/** @} */

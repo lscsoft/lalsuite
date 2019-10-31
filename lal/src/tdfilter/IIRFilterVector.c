@@ -54,7 +54,7 @@
  * better overall algorithm for filtering \c REAL4Vectors.
  *
  */
-/*@{*/
+/** @{ */
 
 #undef COMPLEX_DATA
 #undef SINGLE_PRECISION
@@ -237,4 +237,4 @@ LALDIIRFilterREAL4Vector( LALStatus      *stat,
   /* Normal exit */
   RETURN(stat);
 }
-/*@}*/
+/** @} */

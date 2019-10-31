@@ -56,13 +56,13 @@
  */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define GENERATEPULSARSIGNALTESTC_ENORM  0	/**< Normal exit */
 #define GENERATEPULSARSIGNALTESTC_EIFO   1	/**< IFO not supported */
 #define GENERATEPULSARSIGNALTESTC_EMOD   2	/**< SFT max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs */
 #define GENERATEPULSARSIGNALTESTC_EBIN   3	/**< SFT freq with max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs by more than 1 bin */
 #define GENERATEPULSARSIGNALTESTC_EBINS  4	/**< SFTs freq with max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs too often */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define GENERATEPULSARSIGNALTESTC_MSGENORM  "Normal exit"

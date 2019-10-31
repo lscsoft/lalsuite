@@ -58,7 +58,7 @@ extern "C" {
 #endif
 
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define BINARYPULSARTIMINGH_ENULLINPUT 1
 #define BINARYPULSARTIMINGH_ENULLOUTPUT 2
 #define BINARYPULSARTIMINGH_ENULLPARAMS 3
@@ -74,7 +74,7 @@ not be in the binary timing routine"
 #define BINARYPULSARTIMINGH_MSGEFAIL "Time delay computation failed"
 #define BINARYPULSARTIMINGH_MSGENAN "Output is NaN!"
 
-/*@}*/
+/** @} */
 
 
 /** structure containing the Kopeikin terms */

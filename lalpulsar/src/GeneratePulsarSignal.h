@@ -229,10 +229,10 @@ extern "C" {
  * not in the <tt>2*Dterms</tt> band are initialized to zero.
  *
  */
-/*@{*/
+/** @{ */
 
 /** \name Error codes */
-/*@{*/
+/** @{ */
 #define GENERATEPULSARSIGNALH_ENULL 		1	/**< Arguments contained an unexpected null pointer */
 #define GENERATEPULSARSIGNALH_ENONULL		2	/**< Output pointer is not NULL */
 #define GENERATEPULSARSIGNALH_EMEM		3	/**< Out of memory */
@@ -250,7 +250,7 @@ extern "C" {
 #define GENERATEPULSARSIGNALH_EDTERMS		15	/**< Dterms must be greater than zero and less than or equal to half the number of SFT bins */
 #define GENERATEPULSARSIGNALH_EINPUT		16	/**< Invalid input-arguments to function */
 #define GENERATEPULSARSIGNALH_EDETECTOR		17	/**< Unknown detector-name */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define GENERATEPULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
@@ -363,7 +363,7 @@ void LALSignalToSFTs (LALStatus *, SFTVector **outputSFTs, const REAL4TimeSeries
 void LALComputeSkyAndZeroPsiAMResponse (LALStatus *, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);
 void LALFastGeneratePulsarSFTs (LALStatus *, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params);
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

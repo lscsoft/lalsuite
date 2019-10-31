@@ -140,7 +140,7 @@
  */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define SIMULATETAYLORCWTESTC_ENORM  0	/**< Normal exit */
 #define SIMULATETAYLORCWTESTC_ESUB   1	/**< Subroutine failed */
 #define SIMULATETAYLORCWTESTC_EARG   2	/**< Error parsing arguments */
@@ -149,7 +149,7 @@
 #define SIMULATETAYLORCWTESTC_EINPUT 5	/**< Error reading file */
 #define SIMULATETAYLORCWTESTC_EMEM   6	/**< Out of memory */
 #define SIMULATETAYLORCWTESTC_EPRINT 7	/**< Wrote past end of message string */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define SIMULATETAYLORCWTESTC_MSGENORM  "Normal exit"

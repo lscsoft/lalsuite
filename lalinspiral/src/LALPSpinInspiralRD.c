@@ -93,7 +93,7 @@
  *
  * ### Notes ###
  *
- *//*@{*/
+ *//** @{ */
 
 #include <lal/LALAdaptiveRungeKuttaIntegrator.h>
 
@@ -3249,4 +3249,4 @@ static int XLALPSpinInspiralRDEngine(
   /*End */
 }
 
-/*@}*/
+/** @} */

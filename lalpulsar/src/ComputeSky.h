@@ -113,14 +113,14 @@
 extern "C" {
 #endif
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define COMPUTESKYH_ENULL 1
 #define COMPUTESKYH_ENNUL 2
 #define COMPUTESKYH_ENEGA 4
 #define COMPUTESKYH_MSGENULL "Null Pointer"
 #define COMPUTESKYH_MSGENNUL "Non-Null Pointer"
 #define COMPUTESKYH_MSGENEGA "Bad Negative Value"
-/*@}*/
+/** @} */
 
 /**
  * This structure contains the parameters for the LALComputeSky() routine.

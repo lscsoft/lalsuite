@@ -82,7 +82,7 @@
  * \anchor LALInspiralHybridHexa1
  * \image html LALInspiralHybridHexa1.png "Example of hybrid hexagonal placement. Once the ellipses covers the upper and lower part of the parameter space (at tau0=3.6 and tau0=0.4)\, then the placement is switched from the hexagonal to a placement along the bissectric of the upper/lower boundaries as described in the text."
  */
-/*@{*/
+/** @{ */
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
@@ -673,4 +673,4 @@ LALPopulateNarrowEdge(LALStatus               *status,
   RETURN ( status );
 
 }
-/*@}*/
+/** @} */

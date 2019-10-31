@@ -49,14 +49,14 @@ extern "C" {
  * detectors and signals with random parameters in background noise.
  *
  */
-/* @{ */
-/**\name Error Codes */ /*@{*/
+/** @{ */
+/**\name Error Codes */ /** @{ */
 #define LALNOISEMODELSH_ENULL 	1	/**< Arguments contained an unexpected null pointer */
 #define LALNOISEMODELSH_EMEM 	2	/**< Memory allocation error */
 #define LALNOISEMODELSH_ECHOICE 4	/**< Invalid choice for an input parameter */
 #define LALNOISEMODELSH_EDIV0 	8	/**< Division by zero */
 #define LALNOISEMODELSH_ESIZE 	16	/**< Invalid input size */
-/*@} */
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define LALNOISEMODELSH_MSGENULL "Arguments contained an unexpected null pointer"
@@ -192,7 +192,7 @@ extern "C" {
 
     REAL8 XLALETBPsd( REAL8 f );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

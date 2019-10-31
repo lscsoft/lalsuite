@@ -53,7 +53,7 @@
  * switch to this implementation if there is any demand for it.)
  *
  */
-/*@{*/
+/** @{ */
 
 #undef COMPLEX_DATA
 #undef SINGLE_PRECISION
@@ -203,4 +203,4 @@ LALDIIRFilterREAL4VectorR( LALStatus      *stat,
   /* Normal exit */
   RETURN(stat);
 }
-/*@}*/
+/** @} */

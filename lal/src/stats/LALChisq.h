@@ -32,7 +32,7 @@ extern "C" {
  *
  * \brief UNDOCUMENTED
  */
-  /*@{*/
+  /** @{ */
 
 
 double XLALLogChisqCCDF(
@@ -41,7 +41,7 @@ double XLALLogChisqCCDF(
 );
 
 
-  /*@}*/
+  /** @} */
 
 #ifdef  __cplusplus
 }

@@ -39,7 +39,7 @@ extern "C" {
  * a bunch of GPS-timestamps.
  *
  */
-/*@{*/
+/** @{ */
 
 /*---------- INCLUDES ----------*/
 #include <stdarg.h>
@@ -171,7 +171,7 @@ int XLALFindTimesliceBounds ( UINT4 *iStart, UINT4 *iEnd, const LIGOTimeGPSVecto
 SFTVector *XLALExtractSFTVectorWithTimestamps ( const SFTVector *sfts, const LIGOTimeGPSVector *timestamps );
 MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVector *multiSFTs, const MultiLIGOTimeGPSVector *multiTimestamps );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

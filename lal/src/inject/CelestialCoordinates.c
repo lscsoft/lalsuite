@@ -142,7 +142,7 @@
  * \f]
  *
  */
-/*@{*/
+/** @{ */
 
 /** \see See documentation in  \ref CelestialCoordinates_c */
 void
@@ -329,4 +329,4 @@ LALEquatorialToEcliptic( LALStatus   *stat,
 
   RETURN( stat );
 }
-/*@}*/
+/** @} */

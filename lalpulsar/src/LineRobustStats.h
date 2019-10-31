@@ -25,7 +25,7 @@
  *
  * \brief Functions to compute line-robust CW statistics
  */
-/*@{*/
+/** @{ */
 
 #ifndef _LINEROBUSTSTATS_H  /* Double-include protection. */
 #define _LINEROBUSTSTATS_H

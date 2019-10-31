@@ -46,7 +46,7 @@ extern "C" {
  * None so far...
  *
  */
-/*@{*/
+/** @{ */
 
 typedef struct tagLALAdaptiveRungeKuttaIntegrator
 {
@@ -143,7 +143,7 @@ int XLALAdaptiveRungeKutta4IrregularIntervals( LALAdaptiveRungeKuttaIntegrator *
                                     REAL8Array **yout                   /**< array holding the unevenly sampled output */
                                     );
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

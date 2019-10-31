@@ -97,15 +97,15 @@ extern "C" {
  * TaylorT1, TaylorT2, TaylorT3, PadeT1 and EOB , SpinTaylor, PhenSpinTaylorRD.
  *
  */
-/*@{*/
+/** @{ */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define GENERATEINSPIRALH_ENORM 0	/**< Normal exit */
 #define GENERATEINSPIRALH_ENULL 1	/**< Null pointer */
 #define GENERATEINSPIRALH_EDFDT 2	/**< Waveform sampling interval is too large */
 #define GENERATEINSPIRALH_EZERO 3	/**< inclination zero for SpinTaylor waveform */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define GENERATEINSPIRALH_MSGENORM "Normal exit"
@@ -119,17 +119,17 @@ extern "C" {
  * \name Parameter for the EOB at 3PN.
  * In principle, the three following parameter should be set to zero.
  */
-/*@{*/
+/** @{ */
 #define GENERATEINSPIRAL_ZETA2       0.
 #define GENERATEINSPIRAL_OMEGAS      0.
 #define GENERATEINSPIRAL_THETA       0.
-/*@}*/
+/** @} */
 
 /** \name For the spinning case, might be changed later or include in the injection itself */
-/*@{*/
+/** @{ */
 #define GENERATEINSPIRAL_SOURCETHETA 1.
 #define GENERATEINSPIRAL_SOURCEPHI   2.
-/*@}*/
+/** @} */
 
 /** Default low freqnecy cutoff for injections */
 #define GENERATEINSPIRAL_DEFAULT_FLOWER 40
@@ -156,7 +156,7 @@ XLALGenerateInspiralPopulateInspiral(
     PPNParamStruc    * _LAL_RESTRICT_ ppnParams
     );
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

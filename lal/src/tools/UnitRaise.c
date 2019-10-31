@@ -48,7 +48,7 @@
  * standard form.
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * Raises a ::LALUnit structure to a rational power given by the ::RAT4 structure \c power.
@@ -151,4 +151,4 @@ LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input )
   return output;
 }
 
-/*@}*/
+/** @} */

@@ -32,7 +32,7 @@ extern "C" {
  * \author Karl Wette
  * \brief Implementation of a generic heap, following Chapter 10.1 of \cite open-data-structs .
  */
-/*@{*/
+/** @{ */
 
 /**
  * Generic heap with elements of type <tt>void *</tt>
@@ -193,7 +193,7 @@ const void **XLALHeapElements(
   const LALHeap *h              /**< [in] Pointer to heap */
   );
 
-/*@}*/
+/** @} */
 
 #ifdef __cplusplus
 }

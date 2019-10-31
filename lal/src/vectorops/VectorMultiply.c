@@ -63,7 +63,7 @@
  * \f]
  */
 
-/*@{*/
+/** @{ */
 
 COMPLEX8Vector * XLALCCVectorDivide(
     COMPLEX8Vector       *out,
@@ -691,4 +691,4 @@ LALDDVectorMultiply (
 
   RETURN (status);
 }
-/*@}*/
+/** @} */

@@ -58,13 +58,13 @@ extern "C" {
  * \endcode
  *
  */
-/*@{*/
+/** @{ */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define RNGMEDBIASH_ENULL 1		/**< Null pointer */
 #define RNGMEDBIASH_EVAL 5		/**< Invalid value */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define RNGMEDBIASH_MSGENULL "Null pointer"
@@ -104,7 +104,7 @@ void LALRngMedBias (LALStatus   *status,
                     INT4        blkSize
                     );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

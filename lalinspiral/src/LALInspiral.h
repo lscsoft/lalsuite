@@ -49,10 +49,10 @@ extern "C" {
  * This header file covers routines that are used in template generation.
  *
  */
-/*@{*/
+/** @{ */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define LALINSPIRALH_ENULL           1	/**< Arguments contained an unexpected null pointer */
 #define LALINSPIRALH_EMEM            2	/**< Memory allocation error */
 #define LALINSPIRALH_EDIV0           3	/**< Division by zero */
@@ -74,7 +74,7 @@ extern "C" {
 #define LALINSPIRALH_EBPERR         19	/**< Error in band passing signal */
 #define LALINSPIRALH_ESWITCH        20	/**< Unknown case in switch */
 #define LALINSPIRALH_EMASSCHOICE    21	/**< Improper choice for massChoice */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define LALINSPIRALH_MSGENULL         "Arguments contained an unexpected null pointer"
@@ -144,7 +144,7 @@ typedef enum tagLALInspiralInteraction {
  * \f$B_4 = 5429 \times 1016064 /(1008 \times 3058673),\f$ and \f$C_4 = 617 \times
  * 1016064/(144 \times 3058673).\f$
  */
-/*@{*/
+/** @{ */
 typedef struct
 tagEtaTau02In
 {
@@ -161,7 +161,7 @@ tagEtaTau04In
    REAL8 B4;
    REAL8 C4;
 } EtaTau04In;
-/*@}*/
+/** @} */
 
 
 /**
@@ -204,7 +204,7 @@ typedef struct
 tagInspiralTemplate
 {
   /** \name Parameters needed to generate Taylor/Pade waveforms */
-  /*@{*/
+  /** @{ */
   Approximant approximant;	/**< Post-Newtonain approximant to be used in generating the wave (input) */
   LALPNOrder order;		/**< Post-Newtonain order to be used in generating the wave (input) */
   LALPNOrder ampOrder;		/**< UNDOCUMENTED */
@@ -228,26 +228,26 @@ tagInspiralTemplate
                                  * If <tt>ieta=0</tt> \f$\eta\f$ will be set to zero, otherwise the appropriate
                                  * value of \f$\eta\f$ from the given parameters will be used
                                  */
-  /*@}*/
+  /** @} */
 
   /** \name Additional parameters for EOB waveforms */
-  /*@{*/
+  /** @{ */
   REAL8 Theta;			/**< The 3PN unknown flux parameter; likely to be around unity;
                                  * most waveform generation routines take theta to be zero; Robustness of the EOB waveform
                                  * has been demonstrated for \f$-2 < \f$ \c Theta \f$< 2\f$ (input)
                                  */
   REAL8 Zeta2;			/**< UNDOCUMENTED */
-  /*@}*/
+  /** @} */
 
   /** \name Parameters for BCV1 template */
-  /*@{*/
+  /** @{ */
   REAL8 alpha;			/**< BCV amplitude correction factor \f$\alpha f_\mathrm{cut}^{2/3}\f$ */
   REAL8 psi0;			/**< BCV parameter \f$\psi_0\f$ */
   REAL8 psi3;			/**< BCV parameter \f$\psi_3\f$ */
-  /*@}*/
+  /** @} */
 
   /** \name Additional parameters for BCV2 template */
-  /*@{*/
+  /** @{ */
   REAL8 beta;			/**< UNDOCUMENTED */
   REAL8 alpha1;			/**< UNDOCUMENTED */
   REAL8 alpha2;			/**< UNDOCUMENTED */
@@ -255,10 +255,10 @@ tagInspiralTemplate
   REAL8 alpha4;			/**< UNDOCUMENTED */
   REAL8 alpha5;			/**< UNDOCUMENTED */
   REAL8 alpha6;			/**< UNDOCUMENTED */
-  /*@}*/
+  /** @} */
 
   /** \name Parameters for spinning BH waveform */
-  /*@{*/
+  /** @{ */
   REAL8 inclination;		/**< Inclination of the orbit  (currently not in use) */
   REAL8 orbitTheta0;		/**< Initial co-latitute of the orbit */
   REAL8 orbitPhi0;		/**< Initial azimuth angle of the orbit */
@@ -267,18 +267,18 @@ tagInspiralTemplate
   REAL8 sourceTheta;		/**< Co-latitute in the direction to the source */
   REAL8 sourcePhi;		/**< Azimuth angle in the direction to the source */
   REAL8 polarisationAngle;
-  /*@}*/
+  /** @} */
 
   /** \name Spin parameters for the PTF template */\
-  /*@{*/
+  /** @{ */
   REAL8 chi; 			/**< dimensionless spin of black hole (ie mass1) */
   REAL8 kappa;			/**< cosine of angle between spin of mass1 and orb ang mom */
-  /*@}*/
+  /** @} */
 
   /** \name Parameters which are currently might be used */
-  /*@{*/
+  /** @{ */
   REAL8 eccentricity;		/**< initial eccentricity of the orbit  (currently not in use) */
-  /*@}*/
+  /** @} */
 
   LALSimInspiralFrameAxis axisChoice;	/**< UNDOCUMENTED */
 
@@ -286,7 +286,7 @@ tagInspiralTemplate
  * \name Paramters which are computed using LALInspiralParameterCalc
  * Note that tc and fFinal are computed during waveform generation!!!
  */
-  /*@{*/
+  /** @{ */
   REAL8 chirpMass;		/**< chirp mass of the binary \f$=\eta^{3/5} m\f$ in solar mass (output) */
   REAL8 eta;			/**< symmetric mass ratio \f$\eta=m_1m_2/m^2\f$ (input/output) */
   REAL8 totalMass;		/**< total mass of the binary \f$m=m_1+m_2\f$ in solar mass (input/output) */
@@ -342,7 +342,7 @@ tagInspiralTemplate
 
   UINT4 fixedStep;		/**< UNDOCUMENTED */
   UINT4 inspiralOnly;		/**< UNDOCUMENTED */
-  /*@}*/
+  /** @} */
 
   struct tagInspiralTemplate *next;	/**< Linked list to the next coarse bank template (currently not filled by inspiral or bank codes) */
   struct tagInspiralTemplate *fine;	/**< Linked list to the next fine bank template (currently not filled by inspiral or bank codes) */
@@ -400,101 +400,101 @@ tagexpnCoeffs {
   int ieta;
 
   /** \name Coefficients in the Taylor expansion of new energy function */
-  /*@{*/
+  /** @{ */
   REAL8 eTaN, eTa1, eTa2, eTa3;
-  /*@}*/
+  /** @} */
 
   /** \name Coefficients in the Pade expression of new energy function */
-  /*@{*/
+  /** @{ */
   REAL8 ePaN, ePa1, ePa2, ePa3;
-  /*@}*/
+  /** @} */
 
   /** \name Coefficients in the Taylor expansion of usual energy function */
-  /*@{*/
+  /** @{ */
   REAL8 ETaN, ETa1, ETa2, ETa3;
-  /*@}*/
+  /** @} */
 
   /** \name Coefficients in the Taylor expansion of the derivative of the usual energy function */
-  /*@{*/
+  /** @{ */
   REAL8 dETaN, dETa1, dETa2, dETa3;
-  /*@}*/
+  /** @} */
 
   /** \name Taylor expansion coefficients of energy flux */
-  /*@{*/
+  /** @{ */
   REAL8 FTaN, FTa1, FTa2, FTa3, FTa4, FTa5, FTa6, FTa7, FTa8, FTl6, FTl8;
-  /*@}*/
+  /** @} */
 
   /** \name Taylor expansion coefficients of factored flux */
-  /*@{*/
+  /** @{ */
   REAL8 fTaN, fTa1, fTa2, fTa3, fTa4, fTa5, fTa6, fTa7, fTa8;
-  /*@}*/
+  /** @} */
 
   /* \name Coefficients of the corresponding P-approximant */
-  /*@{*/
+  /** @{ */
   REAL8 fPaN, fPa1, fPa2, fPa3, fPa4, fPa5, fPa6, fPa7, fPa8;
-  /*@}*/
+  /** @} */
 
   /** \name Taylor expansion coefficents in t(v) */
-  /*@{*/
+  /** @{ */
   REAL8 tvaN, tva2, tva3, tva4, tva5, tva6, tva7, tvl6;
-  /*@}*/
+  /** @} */
 
   /** \name Taylor expansion coefficents in phi(v) */
-  /*@{*/
+  /** @{ */
   REAL8 pvaN, pva2, pva3, pva4, pva5, pva6, pva7, pvl6;
-  /*@}*/
+  /** @} */
 
   /** \name Taylor expansion coefficents in phi(t) */
-  /*@{*/
+  /** @{ */
   REAL8 ptaN, pta2, pta3, pta4, pta5, pta6, pta7, ptl6;
-  /*@}*/
+  /** @} */
 
   /** \name Taylor expansion coefficents in f(t) */
-  /*@{*/
+  /** @{ */
   REAL8 ftaN, fta2, fta3, fta4, fta5, fta6, fta7, ftl6;
-  /*@}*/
+  /** @} */
 
   /** \name Taylor expansion coefficents in psi(f) in the Fourier phase */
-  /*@{*/
+  /** @{ */
   REAL8 pfaN, pfa2, pfa3, pfa4, pfa5, pfa6, pfa7, pfl5, pfl6;
-  /*@}*/
+  /** @} */
 
   /** \name Taylor expansion for the spinning case */
-  /*@{*/
+  /** @{ */
   REAL8 ST[9], thetahat ;
-  /*@}*/
+  /** @} */
 
   /** \name Sampling rate and interval */
-  /*@{*/
+  /** @{ */
   REAL8 samplingrate, samplinginterval;
-  /*@}*/
+  /** @} */
 
   /** \name Symmetric mass ratio, total mass, component masses */
-  /*@{*/
+  /** @{ */
   REAL8 eta, totalmass, m1, m2;
-  /*@}*/
+  /** @} */
 
   /** \name Unknown 3PN parameters, euler constant */
-  /*@{*/
+  /** @{ */
   REAL8 lambda, theta, EulerC, omegaS, zeta2;
-  /*@}*/
+  /** @} */
 
 /**
  * \name Initial and final values of frequency, time, velocity; lso
  * values of velocity and frequency; final phase.
  */
-  /*@{*/
+  /** @{ */
   REAL8 f0, fn, t0, tn, v0, vn, vf, vlso, flso, phiC;
-  /*@}*/
+  /** @} */
 
   /** \name Last stable orbit and pole defined by various Taylor and P-approximants */
-  /*@{*/
+  /** @{ */
   REAL8 vlsoT0, vlsoT2, vlsoT4, vlsoT6;
   REAL8 vlsoP0, vlsoP2, vlsoP4, vlsoP6;
   REAL8 vlsoPP;
   REAL8 vpoleP4, vpoleP6;
   REAL8 vpolePP;
-  /*@}*/
+  /** @} */
 
 }  expnCoeffs;
 
@@ -507,7 +507,7 @@ tagexpnCoeffs {
  * functions to the appropriate specific functions depending on the
  * choices made by the user.
  */
-/*@{*/
+/** @{ */
 typedef REAL8 EnergyFunction(
    REAL8 v,
    expnCoeffs *ak);
@@ -536,7 +536,7 @@ typedef REAL8 (InspiralFrequency3)(
 typedef REAL8 (InspiralTiming2) (
    REAL8 f,
    void *params);
-/*@}*/
+/** @} */
 
 /**
  * Structure to hold the pointers to the generic functions defined above
@@ -681,7 +681,7 @@ tagInspiralInit
 
 }  InspiralInit;
 
-/*@}*/ /* end:LALInspiral_h */
+/** @} */ /* end:LALInspiral_h */
 
 
 /* ---------- Function prototypes ---------- */

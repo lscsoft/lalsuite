@@ -43,12 +43,12 @@
  * routines and checks to make sure the resulting series agree, printing the results to standard error.
  */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define READFTSERIESTESTC_ENOM 0        /**< Nominal exit */
 #define READFTSERIESTESTC_ECHK 1        /**< Error checking failed to catch bad data */
 #define READFTSERIESTESTC_EFUN 2        /**< Subroutine returned error for valid data */
 #define READFTSERIESTESTC_EFLS 3        /**< Subroutine returned unexpected results */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define READFTSERIESTESTC_MSGENOM "Nominal exit"

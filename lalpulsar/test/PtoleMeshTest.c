@@ -87,7 +87,7 @@
  *
  */
 
-/** \name Error Codes */ /*@{*/
+/** \name Error Codes */ /** @{ */
 #define PTOLEMESHTESTC_EMEM 1
 #define PTOLEMESHTESTC_ERNG 2
 #define PTOLEMESHTESTC_EFIO 3
@@ -97,7 +97,7 @@
 #define PTOLEMESHTESTC_MSGERNG "value out of range"
 #define PTOLEMESHTESTC_MSGEFIO "file I/O error"
 #define PTOLEMESHTESTC_MSGEOPT "unknown command-line option"
-/*@}*/
+/** @} */
 
 #include <config.h>
 

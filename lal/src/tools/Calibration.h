@@ -42,17 +42,17 @@ extern "C" {
  * \endcode
  *
  */
-/*@{*/
+/** @{ */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define CALIBRATIONH_ENULL 001	/**< Null pointer */
 #define CALIBRATIONH_ESIZE 002	/**< Invalid size */
 #define CALIBRATIONH_ESZMM 004	/**< Size mismatch */
 #define CALIBRATIONH_EZERO 010	/**< Zero factor */
 #define CALIBRATIONH_ETIME 020	/**< Time out of range */
 #define CALIBRATIONH_EUNIT 040	/**< Incompatible units */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define CALIBRATIONH_MSGENULL "Null pointer"
@@ -231,7 +231,7 @@ struct tagMyIIRFilter {
   REAL8 xhist[20];
 } MyIIRFilter;
 
-/*@}*/
+/** @} */
 
 /* ----- Prototypes ----- */
 

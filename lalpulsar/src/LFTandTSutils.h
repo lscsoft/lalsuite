@@ -25,7 +25,7 @@
  * \date 2009
  * \brief Utility functions for working with Long Fourier Transforms and Time Series.
  */
-/*@{*/
+/** @{ */
 
 #ifndef _LFTANDTSUTILS_H  /* Double-include protection. */
 #define _LFTANDTSUTILS_H
@@ -100,7 +100,7 @@ int XLALCompareCOMPLEX8Vectors ( VectorComparison *result, const COMPLEX8Vector 
 int XLALCompareREAL4Vectors    ( VectorComparison *result, const REAL4Vector *x, const REAL4Vector *y, const VectorComparison *tol );
 int XLALCheckVectorComparisonTolerances ( const VectorComparison *result, const VectorComparison *tol );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

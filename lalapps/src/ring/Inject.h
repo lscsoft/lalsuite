@@ -55,15 +55,15 @@ extern "C" {
  * \defgroup InjectTimeSeries_c Module InjectTimeSeries.c
  * @}
  */
-/*@{*/
+/** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define INJECTH_ENUL  1	/**< Unexpected null pointer in arguments. */
 #define INJECTH_EBAD  2 /**< A sampling interval is (effectively) zero */
 #define INJECTH_EUNIT 3	/**< Input or output is not in units of ADC counts */
-/*@}*/
-/*@}*/
+/** @} */
+/** @} */
 
 #define INJECTH_MSGENUL  "Unexpected null pointer in arguments"
 #define INJECTH_MSGEBAD  "A sampling interval is (effectively) zero"

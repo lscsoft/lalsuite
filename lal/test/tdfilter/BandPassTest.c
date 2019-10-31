@@ -71,13 +71,13 @@
  */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define BANDPASSTESTC_ENORM 0	/**< Normal exit */
 #define BANDPASSTESTC_ESUB  1	/**< Subroutine failed */
 #define BANDPASSTESTC_EARG  2	/**< Error parsing arguments */
 #define BANDPASSTESTC_EBAD  3	/**< Bad argument values */
 #define BANDPASSTESTC_EFILE 4	/**< Could not open file */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define BANDPASSTESTC_MSGENORM "Normal exit"

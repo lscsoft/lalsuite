@@ -32,7 +32,7 @@
  * \ingroup pkg_LALInference
  * \brief Utility functions for handling IFO data
  */
-/*@{*/
+/** @{ */
 
 /** \brief Read IFO data according to command line arguments.
  * This function reads command line arguments and returns a \c LALInferenceIFOData linked
@@ -43,5 +43,5 @@
  */
 void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 void LALInferenceBurstInjectionToVariables(SimBurst *theEventTable, LALInferenceVariables *vars);
-/*@}*/
+/** @} */
 #endif

@@ -83,7 +83,7 @@
  * in order to ensure that the ordering of the sub-proposals is
  * random.
  */
-/*@{*/
+/** @{ */
 
 #define MAX_STRLEN 512
 #define ADAPTSUFFIX "adapt_sigma"
@@ -349,6 +349,6 @@ REAL8 LALInferenceEnsembleWalkNames(LALInferenceThreadState *thread, LALInferenc
 
 /** Proposes jumps in the spline calibration parameters, if present. */
 REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LALInferenceVariables *cp, LALInferenceVariables *pp);
-/*@}*/
+/** @} */
 
 #endif

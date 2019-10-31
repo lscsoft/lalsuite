@@ -43,7 +43,7 @@
  * \author Sengupta, Anand. S., Gupchup, Jayant A. and Robinson, C. A. K.
  * \brief NONE
  */
-/*@{*/
+/** @{ */
 
 /** UNDOCUMENTED */
 typedef enum
@@ -93,7 +93,7 @@ void XLALTrigScanDestroyCluster( TrigScanCluster *cluster,
                                 TrigScanStatus   status
                               );
 
-/*@}*/ /* end:LALTrigScanCluster_h */
+/** @} */ /* end:LALTrigScanCluster_h */
 
 #endif /* _LALTRIGSCANCLUSTER_H */
 

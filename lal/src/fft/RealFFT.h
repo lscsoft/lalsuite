@@ -154,7 +154,7 @@ extern "C" {
  * same way but for double-precision transforms.
  *
  */
-/*@{*/
+/** @{ */
 
 /** Plan to perform FFT of REAL4 data */
 typedef struct tagREAL4FFTPlan REAL4FFTPlan;
@@ -629,7 +629,7 @@ int XLALREAL8VectorFFT( REAL8Vector *output, const REAL8Vector *input,
 int XLALREAL8PowerSpectrum( REAL8Vector *spec, const REAL8Vector *data,
     const REAL8FFTPlan *plan );
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

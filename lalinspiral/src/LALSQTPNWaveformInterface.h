@@ -21,7 +21,7 @@ extern "C" {
  * \author László Veréb
  * \date 2010.06.27.
  */
-/*@{*/
+/** @{ */
 
 #define LALSQTPN_MSGPPNPARAMS "the PPNParamsStruct structure is null"
 #define LALSQTPN_MSGINSPIRALTEMPLATE "the InspiralTemplate structure is null"
@@ -111,7 +111,7 @@ void XLALSQTPNDestroyCoherentGW(CoherentGW *wave);
  */
 void XLALSQTPNFillParams(LALSQTPNWaveformParams *wave, InspiralTemplate *params);
 
-/*@}*/ /* end:LALSQTPNWaveformInterface_h */
+/** @} */ /* end:LALSQTPNWaveformInterface_h */
 
 #ifdef __cplusplus
 }

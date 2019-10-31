@@ -96,7 +96,7 @@
  *
  */
 
-/** \name Error Codes */ /*@{*/
+/** \name Error Codes */ /** @{ */
 #define PTOLEMETRICTESTC_EMEM 1
 #define PTOLEMETRICTESTC_ESUB 2
 #define PTOLEMETRICTESTC_ESYS 3
@@ -104,7 +104,7 @@
 #define PTOLEMETRICTESTC_MSGEMEM "memory (de)allocation error"
 #define PTOLEMETRICTESTC_MSGESUB "subroutine failed"
 #define PTOLEMETRICTESTC_MSGESYS "system call failed"
-/*@}*/
+/** @} */
 
 #include <math.h>
 #include <stdio.h>

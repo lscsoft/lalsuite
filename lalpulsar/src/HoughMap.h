@@ -41,7 +41,7 @@ extern "C" {
  * \endcode
  *
  */
-/*@{*/
+/** @{ */
 
 /*
  * 5. Includes. This header may include others; if so, they go immediately
@@ -71,7 +71,7 @@ extern "C" {
  */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define HOUGHMAPH_ENULL 1
 #define HOUGHMAPH_ESIZE 2
 #define HOUGHMAPH_ESZMM 4
@@ -87,7 +87,7 @@ extern "C" {
 #define HOUGHMAPH_MSGESAME "Input/Output data vectors are the same"
 #define HOUGHMAPH_MSGEFREQ "Invalid frequency"
 #define HOUGHMAPH_MSGEVAL  "Invalid value"
-/*@}*/
+/** @} */
 
 
 /* ******************************************************
@@ -182,7 +182,7 @@ void LALStereo2SkyLocation (LALStatus  *status,
 			    HOUGHPatchGrid    *patch,
 			    HOUGHDemodPar     *parDem);
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

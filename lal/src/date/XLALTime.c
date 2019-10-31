@@ -30,7 +30,7 @@
  * \brief GPS time manipulation functions.
  */
 
-/*@{*/
+/** @{ */
 
 /** Converts GPS time to nano seconds stored as an INT8. */
 INT8 XLALGPSToINT8NS( const LIGOTimeGPS *epoch )
@@ -334,4 +334,4 @@ LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
   return gps;
 }
 
-/*@}*/
+/** @} */

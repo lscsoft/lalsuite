@@ -85,7 +85,7 @@
 
 /* Error codes and messages */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define TESTCONSTRUCTPLUTC_ENORM 0
 #define TESTCONSTRUCTPLUTC_ESUB  1
 #define TESTCONSTRUCTPLUTC_EARG  2
@@ -97,7 +97,7 @@
 #define TESTCONSTRUCTPLUTC_MSGEARG  "Error parsing arguments"
 #define TESTCONSTRUCTPLUTC_MSGEBAD  "Bad argument values"
 #define TESTCONSTRUCTPLUTC_MSGEFILE "Could not create output file"
-/*@}*/
+/** @} */
 
 
 /** \cond DONT_DOXYGEN */

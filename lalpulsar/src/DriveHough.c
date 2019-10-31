@@ -38,7 +38,7 @@
 static void LALComputeAM (LALStatus *, AMCoeffs *coe, LIGOTimeGPS *ts, AMCoeffsParams *params);
 
 /** \addtogroup LALHough_h */
-/*@{*/
+/** @{ */
 
 /**
  * constructs the space of <tt>phmd</tt> <tt>PHMDVectorSequence *phmdVS</tt>, given a
@@ -980,4 +980,4 @@ void LALComputeAM (LALStatus          *status,
 
 } /* LALComputeAM() */
 
-/*@}*/
+/** @} */

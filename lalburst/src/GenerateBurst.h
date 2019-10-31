@@ -45,7 +45,7 @@ extern "C" {
  * \addtogroup lalburst_general
  * \brief UNDOCUMENTED
  */
-/*@{*/
+/** @{ */
 
 /*
  * ============================================================================
@@ -71,7 +71,7 @@ int XLALBurstInjectSignals(
 	const COMPLEX16FrequencySeries *response
 );
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

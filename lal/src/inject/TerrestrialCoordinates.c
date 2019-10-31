@@ -338,7 +338,7 @@
  * \endcode
  *
  */
-/*@{*/
+/** @{ */
 
 /** \see See documentation in \ref TerrestrialCoordinates_c */
 void
@@ -685,4 +685,4 @@ LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location )
   /* Transformation complete. */
   RETURN( stat );
 }
-/*@}*/
+/** @} */

@@ -31,7 +31,7 @@ extern "C" {
  * \author Adam Mercer, Karl Wette
  * \brief Contains routines for dealing with VCS and build information
  */
-/*@{*/
+/** @{ */
 
 /**
  * VCS and build information structure
@@ -65,7 +65,7 @@ typedef const LALVCSInfo *const LALVCSInfoList[16];
  */
 char *XLALVCSInfoString(const LALVCSInfoList vcs_list, const int verbose, const char *prefix);
 
-/*@}*/
+/** @} */
 
 #ifdef __cplusplus
 }

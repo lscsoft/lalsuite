@@ -233,7 +233,7 @@ extern "C" {
  * a Papoulis window).
  *
  */
-/*@{*/
+/** @{ */
 
 
 /**
@@ -306,7 +306,7 @@ COMPLEX16Sequence *XLALUnitaryWindowCOMPLEX16Sequence(COMPLEX16Sequence *sequenc
 REAL8Window *XLALCreateNamedREAL8Window ( const char *windowName, REAL8 beta, UINT4 length );
 REAL4Window *XLALCreateNamedREAL4Window ( const char *windowName, REAL8 beta, UINT4 length );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

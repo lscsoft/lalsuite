@@ -24,7 +24,7 @@
  */
 
 /** \addtogroup Velocity_h */
-/*@{*/
+/** @{ */
 
 /**
  * This function outputs the
@@ -304,4 +304,4 @@ void LALDetectorPos(LALStatus    *status,
   RETURN (status);
 }
 
-/*@}*/
+/** @} */

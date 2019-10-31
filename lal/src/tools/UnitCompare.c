@@ -30,7 +30,7 @@
  *
  * \brief Function to compare two \c LALUnit structures.
  */
-/*@{*/
+/** @{ */
 
 /** Return 1 if a unit is dimensionless, 0 otherwise */
 int XLALUnitIsDimensionless(const LALUnit *unit)
@@ -117,4 +117,4 @@ int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 )
   return 0;
 }
 
-/*@}*/
+/** @} */

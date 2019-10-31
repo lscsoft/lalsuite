@@ -102,7 +102,7 @@
  * real), so that one doesn't end up with, for instance, an imaginary
  * part of \f$10^{-12}\f$ instead of 0.
  */
-/*@{*/
+/** @{ */
 
 /*
  * WARNING: NOT A PROPER COMPARE FUNCTION
@@ -629,4 +629,4 @@ LALWToZCOMPLEX16ZPGFilter( LALStatus          *stat,
 
   RETURN(stat);
 }
-/*@}*/
+/** @} */

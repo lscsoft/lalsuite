@@ -69,7 +69,7 @@ SWIGLAL(
  * 1 Mpc luminosity distance.
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * De-bugging function writing a (frequency-domain) signal template to a CSV file.
@@ -199,6 +199,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
 void LALInferenceTemplateXLALSimBurstSineGaussianF(LALInferenceModel *model);
 
 
-/*@}*/
+/** @} */
 
 #endif

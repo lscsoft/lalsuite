@@ -116,7 +116,7 @@
  * </li></ol>
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * Plan to perform an FFT of COMPLEX8 data
@@ -147,4 +147,4 @@ tagCOMPLEX16FFTPlan
 #undef SINGLE_PRECISION
 #include "ComplexFFT_source.c"
 
-/*@}*/
+/** @} */

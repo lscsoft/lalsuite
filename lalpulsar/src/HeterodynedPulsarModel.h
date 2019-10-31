@@ -50,7 +50,7 @@ extern "C" {
  *
  */
 
-/*@{*/
+/** @{ */
 
 
 typedef struct tagDetResponseTimeLookupTable{
@@ -134,7 +134,7 @@ void XLALDestroyDetResponseTimeLookupTable( DetResponseTimeLookupTable* resp );
 void XLALPulsarSourceToWaveformParams( PulsarParameters *params );
 
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

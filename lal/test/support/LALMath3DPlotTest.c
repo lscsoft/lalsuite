@@ -63,11 +63,11 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALMathematica.h>
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define LALMATH3DPLOTTESTC_ENORM        0       /**< Normal exit */
 #define LALMATH3DPLOTTESTC_EMEM         1       /**< Memory allocation error */
 #define LALMATH3DPLOTTESTC_ESUB         2       /**< Subroutine error */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define LALMATH3DPLOTTESTC_MSGENORM     "Normal exit"

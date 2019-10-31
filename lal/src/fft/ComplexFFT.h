@@ -44,7 +44,7 @@ extern "C" {
  * package FFTW \cite fj_1998 .
  *
  */
-/*@{*/
+/** @{ */
 
 /** Plan to perform FFT of COMPLEX8 data */
 typedef struct tagCOMPLEX8FFTPlan COMPLEX8FFTPlan;
@@ -329,7 +329,7 @@ void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan );
  */
 int XLALCOMPLEX16VectorFFT( COMPLEX16Vector * _LAL_RESTRICT_ output, const COMPLEX16Vector * _LAL_RESTRICT_ input, const COMPLEX16FFTPlan *plan );
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

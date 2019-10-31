@@ -33,12 +33,12 @@ extern "C" {
  * \authors John Veitch, Karl Wette
  * \brief Implementations of various hash functions
  */
-/*@{*/
+/** @{ */
 
 /**
  * \name Pearson hash function
  */
-/*@{*/
+/** @{ */
 
 /**
  * Compute a arbitrary-sized Pearson hash value for the given arbitrary data
@@ -51,12 +51,12 @@ int XLALPearsonHash(
   const size_t data_len		/**< [in] Length of arbitrary data */
 );
 
-/*@}*/
+/** @} */
 
 /**
  * \name CityHash hash functions
  */
-/*@{*/
+/** @{ */
 
 /** Hash function for a byte array. */
 UINT8 XLALCityHash64(const char *buf, size_t len);
@@ -75,9 +75,9 @@ UINT8 XLALCityHash64WithSeeds(const char *buf, size_t len,
 /** Hash function for a byte array.  Most useful in 32-bit binaries. */
 UINT4 XLALCityHash32(const char *buf, size_t len);
 
-/*@}*/
+/** @} */
 
-/*@}*/
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -33,7 +33,7 @@ extern "C" {
  *
  * \brief New pulsar signal-generation routines
  */
-/*@{*/
+/** @{ */
 
 #include <lal/GeneratePulsarSignal.h>
 
@@ -44,7 +44,7 @@ extern "C" {
 /* ---------- Function prototypes ---------- */
 REAL4TimeSeries *XLALSimulateExactPulsarSignal ( const PulsarSignalParams *params );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

@@ -48,7 +48,7 @@
  * standard form.
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * This function multiplies together the \c LALUnit structures
@@ -116,4 +116,4 @@ LALUnit * XLALUnitDivide( LALUnit *output, const LALUnit *unit1, const LALUnit *
   return output;
 }
 
-/*@}*/
+/** @} */

@@ -32,7 +32,7 @@
  * Monte-Carlos studies, ROC curves etc
  *
  */
-/*@{*/
+/** @{ */
 
 #ifndef _SYNTHESIZE_CW_DRAWS_H  /* Double-include protection. */
 #define _SYNTHESIZE_CW_DRAWS_H

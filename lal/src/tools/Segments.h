@@ -132,7 +132,7 @@ extern "C" {
  * Also all segments in a segment list can be time-shifted using \c XLALSegListShift().
  *
  */
-/*@{*/
+/** @{ */
 
 /*------------------- Compile-time parameters -------------------*/
 
@@ -243,7 +243,7 @@ int XLALSegListIsInitialized ( const LALSegList *seglist );
 int XLALSegListInitSimpleSegments ( LALSegList *seglist, LIGOTimeGPS startTime, UINT4 Nseg, REAL8 Tseg );
 char *XLALSegList2String ( const LALSegList *seglist );
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

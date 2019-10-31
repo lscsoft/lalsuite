@@ -54,7 +54,7 @@ extern "C" {
  * \endcode
  *
  */
-/*@{*/
+/** @{ */
 
 /* ---------- typedefs of structures used by the findchirp functions ---------- */
 
@@ -205,7 +205,7 @@ tagFindChirpTemplate
 }
 FindChirpTemplate;
 
-/*@}*/ /* end:FindChirpDatatypes_h */
+/** @} */ /* end:FindChirpDatatypes_h */
 
 #if 0
 { /* so that editors will match succeeding brace */

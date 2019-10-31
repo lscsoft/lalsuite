@@ -32,7 +32,7 @@
  * \ingroup lalinference_general
  * \brief Utility functions for handling IFO data
  */
-/*@{*/
+/** @{ */
 
 /**
  * \brief Read IFO data according to command line arguments.
@@ -68,6 +68,6 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
  */
 LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *runState);
 void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOData *IFOdata);
-/*@}*/
+/** @} */
 
 #endif

@@ -31,7 +31,7 @@ extern "C" {
  * \date 2005
  * \brief Functions for working with SSB times.
  */
-/*@{*/
+/** @{ */
 
 /*---------- exported INCLUDES ----------*/
 #include <lal/LALStdlib.h>
@@ -87,7 +87,7 @@ int XLALLatestMultiSSBtime ( LIGOTimeGPS *out, const MultiSSBtimes *multiSSB,  c
 void XLALDestroySSBtimes ( SSBtimes *multiSSB );
 void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

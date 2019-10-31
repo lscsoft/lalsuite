@@ -96,7 +96,7 @@
 
 /* Error codes and messages */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define TESTDRIVENDHOUGHC_ENORM 0
 #define TESTDRIVENDHOUGHC_ESUB  1
 #define TESTDRIVENDHOUGHC_EARG  2
@@ -108,7 +108,7 @@
 #define TESTDRIVENDHOUGHC_MSGEARG  "Error parsing arguments"
 #define TESTDRIVENDHOUGHC_MSGEBAD  "Bad argument values"
 #define TESTDRIVENDHOUGHC_MSGEFILE "Could not create output file"
-/*@}*/
+/** @} */
 
 
 /** \cond DONT_DOXYGEN */

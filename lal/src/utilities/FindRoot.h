@@ -92,15 +92,15 @@ extern "C" {
  * routines \c zbrac and \c rtbis in Numerical Recipes \cite ptvf1992 .
  *
  */
-/*@{*/
+/** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define FINDROOTH_ENULL 1		/**< Null pointer */
 #define FINDROOTH_EIDOM 2		/**< Invalid initial domain */
 #define FINDROOTH_EMXIT 4		/**< Maximum iterations exceeded */
 #define FINDROOTH_EBRKT 8		/**< Root not bracketed */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define FINDROOTH_MSGENULL "Null pointer"
@@ -183,7 +183,7 @@ LALDBisectionFindRoot (
     void        *params
     );
 
-/*@}*/
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -68,7 +68,7 @@ extern "C"
  * a GMST which gives us the orientation of the Earth.
  *
  */
-/*@{*/
+/** @{ */
 
 
 /*
@@ -99,7 +99,7 @@ XLALTimeDelayFromEarthCenter(
 	const LIGOTimeGPS *gpstime
 );
 
-/*@}*/
+/** @} */
 
 #ifdef __cplusplus
 }

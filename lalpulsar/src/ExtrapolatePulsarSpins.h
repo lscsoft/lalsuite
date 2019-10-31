@@ -76,7 +76,7 @@ extern "C" {
  * This function is used in XLALEstimatePulsarAmplitudeParams() to propagate the estimated initial phase
  * from the internal reference time back to the user-input reference time.
  */
-/*@{*/
+/** @{ */
 
 /*---------- exported prototypes [API] ----------*/
 int XLALInitPulsarSpinRangeFromSpins ( PulsarSpinRange *range, const LIGOTimeGPS *refTime, const PulsarSpins fkdot1, const PulsarSpins fkdot2 );
@@ -96,7 +96,7 @@ int XLALCWSignalCoveringBand( REAL8 *minCoverFreq, REAL8 *maxCoverFreq, const LI
 int XLALCWSignalBand ( REAL8 *minCoverFreq, REAL8 *maxCoverFreq, const DetectorStateSeries *detStates, const PulsarDopplerParams *doppler );
 DetectorStateSeries *XLALPrepareCWSignalBand ( SkyPosition *skypos_maxdoppler, const LIGOTimeGPS tStart, const REAL8 Tspan, const REAL8 dT, const LALDetector *detector, const EphemerisData *edat );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

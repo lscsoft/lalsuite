@@ -850,4 +850,4 @@ int XLALSpindownMetric(
 
 } // XLALSpindownMetric
 
-/*@}*/
+/** @} */

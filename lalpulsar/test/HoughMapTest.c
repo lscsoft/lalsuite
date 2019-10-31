@@ -102,7 +102,7 @@
 
 #include <lal/HoughMap.h>
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define TESTHOUGHMAPC_ENORM 0
 #define TESTHOUGHMAPC_ESUB  1
 #define TESTHOUGHMAPC_EARG  2
@@ -114,7 +114,7 @@
 #define TESTHOUGHMAPC_MSGEARG  "Error parsing arguments"
 #define TESTHOUGHMAPC_MSGEBAD  "Bad argument values"
 #define TESTHOUGHMAPC_MSGEFILE "Could not create output file"
-/*@}*/
+/** @} */
 
 
 /** \cond DONT_DOXYGEN */

@@ -100,7 +100,7 @@ extern "C" {
  * Numerical Recipes \cite ptvf1992 .
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * Type of integral.
@@ -154,7 +154,7 @@ XLALREAL8RombergIntegrate (
     IntegralType type
     );
 
-/*@}*/
+/** @} */
 
 #ifdef __cplusplus
 }

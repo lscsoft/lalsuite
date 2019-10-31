@@ -250,7 +250,7 @@ extern "C" {
  * f/\dot{f}\f$ (provided \f$\tau\gg1/f\f$, as we have assumed).
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * This structure stores a representation of a plane
@@ -308,7 +308,7 @@ LALPulsarSimulateCoherentGW( LALStatus        *status,
                        PulsarCoherentGW       *input,
                        PulsarDetectorResponse *detector );
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

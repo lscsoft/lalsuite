@@ -39,7 +39,7 @@
  *
  */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define INSPIRALBCVSPINBANKTESTC_ENORM     0
 #define INSPIRALBCVSPINBANKTESTC_EMEM      1
 #define INSPIRALBCVSPINBANKTESTC_ESUB      2
@@ -49,7 +49,7 @@
 #define INSPIRALBCVSPINBANKTESTC_MSGEMEM   "Memory allocation error"
 #define INSPIRALBCVSPINBANKTESTC_MSGESUB   "Subroutine error"
 #define INSPIRALBCVSPINBANKTESTC_MSGEFILE  "File I/O error"
-/*@}*/
+/** @} */
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>

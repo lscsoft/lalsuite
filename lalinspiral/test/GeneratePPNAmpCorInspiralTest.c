@@ -33,14 +33,14 @@
  */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define GENERATEPPNINSPIRALTESTC_ENORM  0	/**< Normal exit */
 #define GENERATEPPNINSPIRALTESTC_ESUB   1	/**< Subroutine failed */
 #define GENERATEPPNINSPIRALTESTC_EARG   2	/**< Error parsing arguments */
 #define GENERATEPPNINSPIRALTESTC_EVAL   3	/**< Input argument out of valid range */
 #define GENERATEPPNINSPIRALTESTC_EFILE  4	/**< Could not open file */
 #define GENERATEPPNINSPIRALTESTC_EPRINT 5	/**< Wrote past end of message string */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define GENERATEPPNINSPIRALTESTC_MSGENORM  "Normal exit"

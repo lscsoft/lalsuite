@@ -96,7 +96,7 @@
  */
 
 
-/** \name Error Codes */ /*@{*/
+/** \name Error Codes */ /** @{ */
 #define GENERALMESHTESTC_EMEM 1
 #define GENERALMESHTESTC_ERNG 2
 #define GENERALMESHTESTC_EFIO 3
@@ -108,7 +108,7 @@
 #define GENERALMESHTESTC_MSGEFIO "file I/O error"
 #define GENERALMESHTESTC_MSGEOPT "unknown command-line option"
 #define GENERALMESHTESTC_MSGEMET "determinant of projected metric negative"
-/*@}*/
+/** @} */
 
 #include <config.h>
 

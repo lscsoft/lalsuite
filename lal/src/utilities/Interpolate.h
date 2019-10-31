@@ -84,14 +84,14 @@ extern "C" {
  * Numerical Recipes \cite ptvf1992 .
  *
  */
-/*@{*/
+/** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define INTERPOLATEH_ENULL 1		/**< Null pointer */
 #define INTERPOLATEH_ESIZE 2		/**< Invalid size */
 #define INTERPOLATEH_EZERO 4		/**< Zero divide */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define INTERPOLATEH_MSGENULL "Null pointer"
@@ -194,7 +194,7 @@ XLALREAL8TimeSeriesInterpolation (
     const gsl_interp_type *itrp_type
     );
 
-/*@}*/
+/** @} */
 
 #ifdef __cplusplus
 }

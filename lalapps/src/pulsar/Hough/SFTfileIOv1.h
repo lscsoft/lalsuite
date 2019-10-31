@@ -38,7 +38,7 @@ extern "C" {
 /** \cond DONT_DOXYGEN */
 
 /** \name Error codes */
-/*@{*/
+/** @{ */
 #define SFTFILEIO_ENULL         1
 #define SFTFILEIO_EFILE         2
 #define SFTFILEIO_EHEADER       3
@@ -80,7 +80,7 @@ extern "C" {
 #define SFTFILEIO_MSGECONSTRAINTS "Could not satisfy the requested SFT-query constraints"
 #define SFTFILEIO_MSGEMERGEDSFT   "Inconsistent blocks in merged SFT"
 #define SFTFILEIO_MSGECRC64	"Invalid CRC64 checksum in SFT"
-/*@}*/
+/** @} */
 
 /*================================================================================
  * OBSOLETE v1-only API [DEPRECATED!]

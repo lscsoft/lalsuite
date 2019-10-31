@@ -114,7 +114,7 @@ extern "C" {
  * routines never actually use this coefficient.
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * @{
@@ -127,12 +127,12 @@ extern "C" {
  */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define IIRFILTERH_ENUL  1	/**< Unexpected null pointer in arguments */
 #define IIRFILTERH_EOUT  2	/**< Output handle points to a non-null pointer */
 #define IIRFILTERH_EMEM  3	/**< Memory allocation error */
 #define IIRFILTERH_EPAIR 4	/**< Input has unpaired nonreal poles or zeros */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define IIRFILTERH_MSGENUL  "Unexpected null pointer in arguments"
@@ -189,7 +189,7 @@ typedef struct tagCOMPLEX16IIRFilter{
   COMPLEX16Vector *history;    /**< The previous values of w. */
 } COMPLEX16IIRFilter;
 
-/*@}*/
+/** @} */
 
 /* Function prototypes. */
 REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input );

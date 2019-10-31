@@ -43,7 +43,7 @@ extern "C" {
  *
  * Only use \ref FileIO.h in test code that links to the \c lalsupport library.
  */
-/*@{*/
+/** @{ */
 
 typedef struct tagLALFILE LALFILE;
 
@@ -89,7 +89,7 @@ char *XLALFileLoad ( const char *path );
 int XLALGzipTextFile( const char *path );
 int XLALGunzipTextFile( const char *filename );
 
-/*@}*/
+/** @} */
 
 #ifdef __cplusplus
 }

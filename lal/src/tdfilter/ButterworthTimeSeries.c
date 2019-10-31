@@ -208,7 +208,7 @@
  * little frequency-dependent phase shift.
  *
  */
-/*@{*/
+/** @{ */
 
 /* Prototype for a local input parsing routine. */
 static int
@@ -576,4 +576,4 @@ XLALParsePassBandParamStruc( PassBandParamStruc *params,
     }
   }
 }
-/*@}*/
+/** @} */

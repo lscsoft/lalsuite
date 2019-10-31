@@ -69,7 +69,7 @@
 extern "C" {
 #endif
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define HETERODYNECRABPULSARH_ENULLINPUT 1
 #define HETERODYNECRABPULSARH_ENULLOUTPUT 2
 #define HETERODYNECRABPULSARH_EEPHEMERISFILENAME 3
@@ -81,7 +81,7 @@ extern "C" {
 #define HETERODYNECRABPULSARH_MSGEEPHEMERISFILENAME "No ephemeris filename given"
 #define HETERODYNECRABPULSARH_MSGENUMEPHEMERISDATA "Number of ephemeris data points must be greater than zero"
 #define HETERODYNECRABPULSARH_MSGEINVALIDF0 "F0 must be greater than 0"
-/*@}*/
+/** @} */
 
 /**
  *

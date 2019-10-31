@@ -118,7 +118,7 @@ extern "C" {
  * on the celestial sphere to circles on the projected plane.
  *
  */
-/*@{*/
+/** @{ */
 
 /*
  * 5. Includes. This header may include others; if so, they go immediately
@@ -145,7 +145,7 @@ extern "C" {
  */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define LUTH_ENULL 1
 #define LUTH_ESIZE 2
 #define LUTH_ESZMM 4
@@ -161,7 +161,7 @@ extern "C" {
 #define LUTH_MSGESAME "Input/Output data vectors are the same"
 #define LUTH_MSGEFREQ "Invalid frequency"
 #define LUTH_MSGEVAL  "Invalid value"
-/*@}*/
+/** @} */
 
 
 /* ******************************************************
@@ -175,7 +175,7 @@ extern "C" {
 #define cot(A)  (1./tan(A))
 
 /** \name Constant declarations */
-/*@{*/
+/** @{ */
 
 /* *******************************************************
  * 9. Constant Declarations. (discouraged)
@@ -208,7 +208,7 @@ extern "C" {
 /* #define VTOT 1.06e-04 */
 /* vtot = 2*pi* 1AU / (year * c) */
 
-/*@}*/
+/** @} */
 
 /* **************************************************************
  * 10. Structure, enum, union, etc., typdefs.
@@ -436,7 +436,7 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
 			   HOUGHParamPLUT  *par
 			   );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

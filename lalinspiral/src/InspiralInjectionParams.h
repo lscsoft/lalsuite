@@ -25,7 +25,7 @@ extern "C" {
  * \brief Module for generating randomly distributed inspiral parameters
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * enum containing the different ways in which the time step to
@@ -263,7 +263,7 @@ COMPLEX8FrequencySeries *generateActuation(
     REAL4                    pendF,
     REAL4                    pendQ );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

@@ -39,7 +39,7 @@
  * target time series to which samples are added are rounded to the nearest
  * integer --- no sub-sample interpolation is performed.
  */
-/*@{*/
+/** @{ */
 
 
 /** \see See documentation in \ref InjectTimeSeries_c */
@@ -136,4 +136,4 @@ LALSSInjectTimeSeries( LALStatus       *stat,
   RETURN( stat );
 }
 
-/*@}*/
+/** @} */

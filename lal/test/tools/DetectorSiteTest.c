@@ -57,11 +57,11 @@
  * \endcode
  */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define DETECTORSITETESTC_ENOM 0	/**< Nominal exit */
 #define DETECTORSITETESTC_ECHK 1	/**< Error checking failed to catch bad data */
 #define DETECTORSITETESTC_EFLS 2	/**< Incorrect answer for valid data */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 

@@ -56,7 +56,7 @@ extern "C" {
  * linked lists used in TrigScan and E-thinca.
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * The \c TriggerErrorList is a linked list used within e-thinca. It
@@ -80,7 +80,7 @@ void XLALDestroyTriggerErrorList( TriggerErrorList *errorListHead );
 
 REAL8 XLALSnglInspiralTimeError(const SnglInspiralTable *table, REAL8 eMatch);
 
-/*@}*/ /* end:TrigScanEThincaCommon.h */
+/** @} */ /* end:TrigScanEThincaCommon.h */
 
 #ifdef  __cplusplus
 }

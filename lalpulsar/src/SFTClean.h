@@ -46,7 +46,7 @@ extern "C" {
  * Test program. %%
  *
  */
-/*@{*/
+/** @{ */
 
 /* REVISIONS: */
 /* 09/09/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT. Thus only need to */
@@ -89,7 +89,7 @@ extern "C" {
  */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define SFTCLEANH_ENULL 1
 #define SFTCLEANH_EFILE 2
 #define SFTCLEANH_EHEADER 3
@@ -109,7 +109,7 @@ extern "C" {
 #define SFTCLEANH_MSGESEEK "fseek failed"
 #define SFTCLEANH_MSGEREAD "fread failed"
 #define SFTCLEANH_MSGEWRITE "fwrite failed"
-/*@}*/
+/** @} */
 
 
 /* ******************************************************
@@ -235,7 +235,7 @@ void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,
 					  RandomParams     *randPar);
 
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

@@ -218,17 +218,17 @@ extern "C" {
  * circular orbit, positive for closed elliptical orbits, zero for
  * parabolic orbits, and negative (unbounded) for hyperbolic orbits.
  */
-/*@{*/
+/** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define GENERATESPINORBITCWH_ENUL 1	/**< Unexpected null pointer in arguments */
 #define GENERATESPINORBITCWH_EOUT 2	/**< Output field a, f, phi, or shift already exists */
 #define GENERATESPINORBITCWH_EMEM 3	/**< Out of memory */
 #define GENERATESPINORBITCWH_EECC 4	/**< Eccentricity out of range */
 #define GENERATESPINORBITCWH_EFTL 5	/**< Periapsis motion is faster than light */
 #define GENERATESPINORBITCWH_ESGN 6	/**< Sign error: positive parameter expected */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define GENERATESPINORBITCWH_MSGENUL "Unexpected null pointer in arguments"
@@ -251,13 +251,13 @@ extern "C" {
  */
 typedef struct tagSpinOrbitCWParamStruc {
   /** \name Passed parameters. */
-  /*@{*/
+  /** @{ */
   SkyPosition position;   /**< The location of the source on the sky, normally in equatorial coordinates */
   REAL4 psi;              /**< The polarization angle of the source, in radians */
-  /*@}*/
+  /** @} */
 
   /** \name Input parameters. */
-  /*@{*/
+  /** @{ */
   LIGOTimeGPS epoch;      /**< The start time of the output series */
   LIGOTimeGPS spinEpoch;  /**< A reference time \f$t_\mathrm{ref}\f$ (in the barycentric frame) at which the rotational properties of the source are specified */
   LIGOTimeGPS orbitEpoch; /**< A time \f$t_\mathrm{peri}\f$ (in the barycentric frame) at which the source passes through periapsis.
@@ -274,12 +274,12 @@ typedef struct tagSpinOrbitCWParamStruc {
   REAL8 rPeriNorm;        /**< The projected, speed-of-light-normalized periapsis separation of the orbit, \f$(r_p/c)\sin i\f$, in s */
   REAL8 oneMinusEcc;      /**< The value of \f$1-e\f$ */
   REAL8 angularSpeed;     /**< The angular speed at periapsis, \f$\dot{\upsilon}_p\f$, in Hz */
-  /*@}*/
+  /** @} */
 
   /** \name Output parameters. */
-  /*@{*/
+  /** @{ */
   REAL4 dfdt;             /**< The maximum value of \f$\Delta f\Delta t\f$ encountered over any timestep \f$\Delta t\f$ used in generating the waveform */
-  /*@}*/
+  /** @} */
 } SpinOrbitCWParamStruc;
 
 
@@ -306,7 +306,7 @@ LALGenerateHyperbolicSpinOrbitCW( LALStatus             *,
 				  PulsarCoherentGW            *output,
 				  SpinOrbitCWParamStruc *params );
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

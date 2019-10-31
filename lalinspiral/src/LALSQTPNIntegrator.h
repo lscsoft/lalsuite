@@ -21,7 +21,7 @@ extern "C" {
  * \author László Veréb
  * \date 2010.05.21.
  */
-/*@{*/
+/** @{ */
 
 /**
  * The structure contains the integration method and its settings.
@@ -60,7 +60,7 @@ void XLALSQTPNIntegratorFree(LALSQTPNIntegratorSystem *integrator);
  */
 int XLALSQTPNIntegratorFunc(REAL8 values[], LALSQTPNIntegratorSystem *integrator, REAL8 step);
 
-  /*@}*//* end: LALSQTPNIntegrator_h */
+  /** @} *//* end: LALSQTPNIntegrator_h */
 
 
 #ifdef __cplusplus

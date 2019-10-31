@@ -47,16 +47,16 @@ extern "C" {
  * Computes the ringdown waveform with specified \f$h_{rss}\f$.
  *
  */
-/*@{*/
+/** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define GENERATERINGH_ENUL 1	/**< Unexpected null pointer in arguments */
 #define GENERATERINGH_EOUT 2	/**< Output field a, f, phi, or shift already exists */
 #define GENERATERINGH_EMEM 3	/**< Out of memory */
 #define GENERATERINGH_ETYP 4	/**< Waveform type not implemented */
 #define GENERATERINGH_ELEN 5	/**< Waveform length not correctly specified */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define GENERATERINGH_MSGENUL "Unexpected null pointer in arguments"
@@ -109,7 +109,7 @@ LALRingInjectSignals(
     INT4                     calType
     );
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

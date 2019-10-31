@@ -77,7 +77,7 @@
 
 /* Error codes and messages */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define TESTVELOCITYC_ENORM 0
 #define TESTVELOCITYC_ESUB  1
 #define TESTVELOCITYC_EARG  2
@@ -89,7 +89,7 @@
 #define TESTVELOCITYC_MSGEARG  "Error parsing arguments"
 #define TESTVELOCITYC_MSGEBAD  "Bad argument values"
 #define TESTVELOCITYC_MSGEFILE "Could not create output file"
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 

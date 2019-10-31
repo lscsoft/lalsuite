@@ -40,7 +40,7 @@ extern "C" {
  * sequences.  For example XLALCreateREAL4Sequence() is available for
  * creating sequences of \c REAL4 data.
  */
-/*@{*/
+/** @{ */
 
 
 /**
@@ -61,7 +61,7 @@ extern "C" {
  * specifies the length of the desired sequence.  The return value is a
  * pointer to the newly created sequence or \c NULL on failure.
  */
-/*@{*/
+/** @{ */
 COMPLEX8Sequence *XLALCreateCOMPLEX8Sequence ( 	size_t length );
 COMPLEX16Sequence *XLALCreateCOMPLEX16Sequence ( size_t length );
 REAL4Sequence *XLALCreateREAL4Sequence ( size_t length );
@@ -72,7 +72,7 @@ INT8Sequence *XLALCreateINT8Sequence ( 	size_t length );
 UINT2Sequence *XLALCreateUINT2Sequence ( size_t length );
 UINT4Sequence *XLALCreateUINT4Sequence ( size_t length );
 UINT8Sequence *XLALCreateUINT8Sequence ( size_t length );
-/*@}*/
+/** @} */
 
 /**
  * \name Destruction Functions
@@ -91,7 +91,7 @@ UINT8Sequence *XLALCreateUINT8Sequence ( size_t length );
  * to pass \c NULL to these functions.
  *
  */
-/*@{*/
+/** @{ */
 void XLALDestroyCOMPLEX8Sequence ( COMPLEX8Sequence *sequence );
 void XLALDestroyCOMPLEX16Sequence ( COMPLEX16Sequence *sequence );
 void XLALDestroyREAL4Sequence ( REAL4Sequence *sequence );
@@ -102,7 +102,7 @@ void XLALDestroyINT8Sequence ( INT8Sequence *sequence );
 void XLALDestroyUINT2Sequence ( UINT2Sequence *sequence );
 void XLALDestroyUINT4Sequence ( UINT4Sequence *sequence );
 void XLALDestroyUINT8Sequence ( UINT8Sequence *sequence );
-/*@}*/
+/** @} */
 
 /**
  * \name Cutting Functions
@@ -122,7 +122,7 @@ void XLALDestroyUINT8Sequence ( UINT8Sequence *sequence );
  * existing sequence.
  *
  */
-/*@{*/
+/** @{ */
 COMPLEX8Sequence *XLALCutCOMPLEX8Sequence ( COMPLEX8Sequence *sequence, size_t first, size_t length );
 COMPLEX16Sequence *XLALCutCOMPLEX16Sequence ( COMPLEX16Sequence *sequence, size_t first, size_t length );
 REAL4Sequence *XLALCutREAL4Sequence ( REAL4Sequence *sequence, size_t first, size_t length );
@@ -144,7 +144,7 @@ INT8Sequence *XLALCopyINT8Sequence ( INT8Sequence *sequence );
 UINT2Sequence *XLALCopyUINT2Sequence ( UINT2Sequence *sequence );
 UINT4Sequence *XLALCopyUINT4Sequence ( UINT4Sequence *sequence );
 UINT8Sequence *XLALCopyUINT8Sequence ( UINT8Sequence *sequence );
-/*@}*/
+/** @} */
 
 /**
  * \name Shifting Functions
@@ -162,7 +162,7 @@ UINT8Sequence *XLALCopyUINT8Sequence ( UINT8Sequence *sequence );
  * These functions shift the samples in a sequence, with zeros being placed in
  * the space that is freed.
  */
-/*@{*/
+/** @{ */
 void XLALShiftCOMPLEX8Sequence ( COMPLEX8Sequence *sequence, int count );
 void XLALShiftCOMPLEX16Sequence ( COMPLEX16Sequence *sequence, int count );
 void XLALShiftREAL4Sequence ( REAL4Sequence *sequence, int count );
@@ -173,7 +173,7 @@ void XLALShiftINT8Sequence ( INT8Sequence *sequence, int count );
 void XLALShiftUINT2Sequence ( UINT2Sequence *sequence, int count );
 void XLALShiftUINT4Sequence ( UINT4Sequence *sequence, int count );
 void XLALShiftUINT8Sequence ( UINT8Sequence *sequence, int count );
-/*@}*/
+/** @} */
 
 /**
  * \name Resizing Functions
@@ -202,7 +202,7 @@ void XLALShiftUINT8Sequence ( UINT8Sequence *sequence, int count );
  * retained for backwards compatibility.
  *
  */
-/*@{*/
+/** @{ */
 COMPLEX8Sequence *XLALResizeCOMPLEX8Sequence ( COMPLEX8Sequence *sequence, int first, size_t length );
 COMPLEX16Sequence *XLALResizeCOMPLEX16Sequence ( COMPLEX16Sequence *sequence, int first, size_t length );
 REAL4Sequence *XLALResizeREAL4Sequence ( REAL4Sequence *sequence, int first, size_t length );
@@ -224,7 +224,7 @@ INT8Sequence *XLALShrinkINT8Sequence ( INT8Sequence *sequence, size_t first, siz
 UINT2Sequence *XLALShrinkUINT2Sequence ( UINT2Sequence *sequence, size_t first, size_t length );
 UINT4Sequence *XLALShrinkUINT4Sequence ( UINT4Sequence *sequence, size_t first, size_t length );
 UINT8Sequence *XLALShrinkUINT8Sequence ( UINT8Sequence *sequence, size_t first, size_t length );
-/*@}*/
+/** @} */
 
 /**
  * \name Summing Functions
@@ -262,7 +262,7 @@ UINT8Sequence *XLALShrinkUINT8Sequence ( UINT8Sequence *sequence, size_t first, 
  * versions of the sum functions (not sum-of-squares functions) are commented
  * out at this time.
  */
-/*@{*/
+/** @{ */
 COMPLEX8 XLALCOMPLEX8Sum ( const COMPLEX8 *data, size_t first, size_t count );
 REAL4 XLALCOMPLEX8SumSquares ( const COMPLEX8 *data, size_t first, size_t count );
 COMPLEX8 XLALCOMPLEX8SequenceSum ( const COMPLEX8Sequence *sequence, size_t first, size_t count );
@@ -303,7 +303,7 @@ UINT8 XLALUINT8Sum ( const UINT8 *data, size_t first, size_t count );
 UINT8 XLALUINT8SumSquares ( const UINT8 *data, size_t first, size_t count );
 UINT8 XLALUINT8SequenceSum ( const UINT8Sequence *sequence, size_t first, size_t count );
 UINT8 XLALUINT8SequenceSumSquares ( const UINT8Sequence *sequence, size_t first, size_t count );
-/*@}*/
+/** @} */
 
 /**
  * \name Conjugate Functions
@@ -321,12 +321,12 @@ UINT8 XLALUINT8SequenceSumSquares ( const UINT8Sequence *sequence, size_t first,
  * These functions replace a sequence with its complex conjugate.
  *
  */
-/*@{*/
+/** @{ */
 COMPLEX8Sequence *XLALConjugateCOMPLEX8Sequence ( COMPLEX8Sequence *series );
 COMPLEX16Sequence *XLALConjugateCOMPLEX16Sequence ( COMPLEX16Sequence *series );
-/*@}*/
+/** @} */
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

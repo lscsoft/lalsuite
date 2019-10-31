@@ -114,13 +114,13 @@ extern "C" {
  * </table>
  *
  */
-/*@{*/
+/** @{ */
 
-/** \name Error Codes */ /*@{ */
+/** \name Error Codes */ /** @{ */
 #define STRINGINPUTH_ENUL 1     /**< Unexpected null pointer in arguments */
 #define STRINGINPUTH_EOUT 2     /**< Output handle points to a non-null pointer */
 #define STRINGINPUTH_EMEM 3     /**< Memory allocation error */
-/*@}*/
+/** @} */
 /** \cond DONT_DOXYGEN */
 #define STRINGINPUTH_MSGENUL "Unexpected null pointer in arguments"
 #define STRINGINPUTH_MSGEOUT "Output handle points to a non-null pointer"
@@ -142,7 +142,7 @@ typedef struct tagTokenList {
                     /**< The flattened list of tokens, separated by (and terminated with) <tt>'\0'</tt> characters */
 } TokenList;
 
-/*@}*/
+/** @} */
 
 /* Function prototypes. */
 
