@@ -4676,7 +4676,7 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
   /* When using adaptice steps in the Runge-Kutta integrator, minimal step dt/M
    * In units of mTotal, introduced because steps go to 0 in some symmetric,
    * opposite-spin configurations */
-   REAL8 deltaT_min = 1.0e-1;
+   REAL8 deltaT_min = 8.0e-5;
 
   /* Geometric output time step, in units of mTotal */
   REAL8 deltaT = INdeltaT / mTScaled;
