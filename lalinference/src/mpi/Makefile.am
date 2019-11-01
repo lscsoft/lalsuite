@@ -2,13 +2,7 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-BUILT_SOURCES = liblalinference
-
-.PHONY: liblalinference
-liblalinference:
-	@cd $(top_builddir)/src && $(MAKE) liblalinference.la
-
-#LDADD += $(top_builddir)/src/liblalinference.la
+LDADD += ../liblalinference.la
 
 CC = $(MPICC) -std=gnu99
 LIBS += $(MPILIBS)
