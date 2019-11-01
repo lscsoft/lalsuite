@@ -114,7 +114,7 @@ except ImportError:
     raise ImportError("SWIG wrappings of LALPulsar cannot be imported")
 
 try:
-    from lalpulsar.PulsarParametersWrapper import PulsarParametersPy
+    from .PulsarParametersWrapper import PulsarParametersPy
 except ImportError:
     raise ImportError("Cannot import PulsarParametersPy class")
 
