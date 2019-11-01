@@ -41,7 +41,7 @@ extern "C" {
  * number counts.
  *
  */
-/*@{*/
+/** @{ */
 
 
 /* *************
@@ -60,12 +60,12 @@ extern "C" {
 
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define STATISTICSH_ENULL 1
 #define STATISTICSH_EVAL 2
 #define STATISTICSH_MSGENULL "Null Pointer"
 #define STATISTICSH_MSGEVAL "Invalid Value"
-/*@}*/
+/** @} */
 
 
 /* *****************************************************
@@ -104,7 +104,7 @@ void LALHoughmapMeanVariance( LALStatus     *status,
 			      REAL8         *variance,
 			      HOUGHMapTotal *in);
 
-/*@}*/
+/** @} */
 
 /* ****************************************************** */
 

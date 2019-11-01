@@ -112,7 +112,7 @@
 #include <lal/LIGOMetadataTables.h>
 
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define LIGOLWXMLH_ENULL 1
 #define LIGOLWXMLH_ENNUL 2
 #define LIGOLWXMLH_EALOC 3
@@ -135,7 +135,7 @@
 #define LIGOLWXMLH_MSGEENDT "Ending a table without an beginning a table"
 #define LIGOLWXMLH_MSGETMSM "Table type mismatch"
 #define LIGOLWXMLH_MSGETNOP "Table not begun for writing"
-/*@}*/
+/** @} */
 
 #define PRINT_LIGOLW_XML_PROCESS(fp) ( \
 XLALFilePuts( "   <Table Name=\"process:table\">\n", fp ) == EOF || \

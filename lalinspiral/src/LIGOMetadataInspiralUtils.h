@@ -35,9 +35,9 @@ extern "C" {
  * \ingroup lalinspiral_UNCLASSIFIED
  * \brief unknown
  */
-/*@{*/
+/** @{ */
 
-/*@}*/ /* end:LIGOMetadataInspiralUtils_h */
+/** @} */ /* end:LIGOMetadataInspiralUtils_h */
 
 /* ---------- inspiral specific functions ---------- */
 

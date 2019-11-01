@@ -35,14 +35,14 @@ extern "C" {
  *
  */
 
-/*@{*/
+/** @{ */
 
 // ---------- Function prototypes ----------
 int XLALTranslateHMStoRAD ( REAL8 *radians, const CHAR *hms );
 int XLALTranslateDMStoRAD ( REAL8 *radians, const CHAR *dms );
 CHAR *XLALTranslateRADtoHMS ( REAL8 radians );
 CHAR *XLALTranslateRADtoDMS ( REAL8 radians );
-/*@}*/
+/** @} */
 
 
 /* C++ protection. */

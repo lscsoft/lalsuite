@@ -150,8 +150,8 @@ static UNUSED int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler a
             *phaseCounterB = *phaseCounterB - 1;
         }
     }
-    /* Integrate \dot{\alpha} \cos{\beta} to get the final Euler angle
-     Eq. 20 of PRD 89, 084006 (2014) */
+    // Integrate \dot{\alpha} \cos{\beta} to get the final Euler angle
+    // Eq. 20 of PRD 89, 084006 (2014)
     gsl_spline_init( x_spline, tVec.data, Alpha->data, retLenLow );
     gsl_spline_init( y_spline, tVec.data, Beta->data, retLenLow );
 

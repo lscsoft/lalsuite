@@ -32,12 +32,12 @@ extern "C" {
  */
 
 /** \name Error codes */
-/*@{*/
+/** @{ */
 #define SKYCOORDINATESH_ENUL  1	/**< Unexpected null pointer in arguments */
 #define SKYCOORDINATESH_ESYS  2	/**< Wrong coordinate system in input */
 #define SKYCOORDINATESH_EZERO 3	/**< Angular coordinates undefined at origin */
 #define SKYCOORDINATESH_ESING 4	/**< Point is inside singular ellipsoid */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define SKYCOORDINATESH_MSGENUL  "Unexpected null pointer in arguments"
@@ -114,7 +114,7 @@ typedef struct tagConvertSkyParams {
 				 * equatorial system). */
 } ConvertSkyParams;
 
-/*@}*/
+/** @} */
 
 /* ---------- Function prototypes ---------- */
 

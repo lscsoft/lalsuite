@@ -88,7 +88,7 @@ extern "C" {
  * variable is assumed.
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * @{
@@ -99,13 +99,13 @@ extern "C" {
  */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define ZPGFILTERH_ENUL 1	/**< Unexpected null pointer in arguments */
 #define ZPGFILTERH_EOUT 2	/**< Output handle points to a non-null pointer */
 #define ZPGFILTERH_EMEM 3	/**< Memory allocation error */
 #define ZPGFILTERH_EBAD 4	/**< Bad filter parameters */
-/*@}*/
-/*@}*/
+/** @} */
+/** @} */
 
 #define ZPGFILTERH_MSGENUL "Unexpected null pointer in arguments"
 #define ZPGFILTERH_MSGEOUT "Output handle points to a non-null pointer"

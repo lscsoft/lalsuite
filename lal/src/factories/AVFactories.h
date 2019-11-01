@@ -169,17 +169,17 @@ extern "C" {
  * \c xlalErrno to \c #XLAL_EINVAL.
  *
  */
-/*@{ */
+/** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define AVFACTORIESH_ELENGTH 1	/**< Illegal length. */
 #define AVFACTORIESH_EVPTR   2	/**< Null vector/array handle. */
 #define AVFACTORIESH_EUPTR   4	/**< Non-null vector/array pointer. */
 #define AVFACTORIESH_EDPTR   8	/**< Null vector/array data. */
 #define AVFACTORIESH_EMALLOC 16	/**< Malloc failure. */
-/*@}*/
-/*@} */
+/** @} */
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define AVFACTORIESH_MSGELENGTH  "Illegal length."
@@ -203,10 +203,10 @@ extern "C" {
  * The \c DestroyArray family of functions return the storage allocated by the \c CreateArray functions to the system.
  *
  */
-/*@{*/
+/** @{ */
 
 /** \name INT2 array prototypes */
-/*@{*/
+/** @{ */
 INT2Array * XLALCreateINT2ArrayL ( UINT4, ... );
 INT2Array * XLALCreateINT2ArrayV ( UINT4, UINT4 * );
 INT2Array * XLALCreateINT2Array ( UINT4Vector * );
@@ -217,10 +217,10 @@ void XLALDestroyINT2Array ( INT2Array * );
 void LALI2CreateArray ( LALStatus *, INT2Array **, UINT4Vector * );
 void LALI2ResizeArray ( LALStatus *, INT2Array **, UINT4Vector * );
 void LALI2DestroyArray ( LALStatus *, INT2Array ** );
-/*@}*/
+/** @} */
 
 /** \name INT4 array prototypes */
-/*@{*/
+/** @{ */
 INT4Array * XLALCreateINT4ArrayL ( UINT4, ... );
 INT4Array * XLALCreateINT4ArrayV ( UINT4, UINT4 * );
 INT4Array * XLALCreateINT4Array ( UINT4Vector * );
@@ -231,10 +231,10 @@ void XLALDestroyINT4Array ( INT4Array * );
 void LALI4CreateArray ( LALStatus *, INT4Array **, UINT4Vector * );
 void LALI4ResizeArray ( LALStatus *, INT4Array **, UINT4Vector * );
 void LALI4DestroyArray ( LALStatus *, INT4Array ** );
-/*@}*/
+/** @} */
 
 /** \name INT8 array prototypes */
-/*@{*/
+/** @{ */
 INT8Array * XLALCreateINT8ArrayL ( UINT4, ... );
 INT8Array * XLALCreateINT8ArrayV ( UINT4, UINT4 * );
 INT8Array * XLALCreateINT8Array ( UINT4Vector * );
@@ -245,10 +245,10 @@ void XLALDestroyINT8Array ( INT8Array * );
 void LALI8CreateArray ( LALStatus *, INT8Array **, UINT4Vector * );
 void LALI8ResizeArray ( LALStatus *, INT8Array **, UINT4Vector * );
 void LALI8DestroyArray ( LALStatus *, INT8Array ** );
-/*@}*/
+/** @} */
 
 /** \name UINT2 array prototypes */
-/*@{*/
+/** @{ */
 UINT2Array * XLALCreateUINT2ArrayL ( UINT4, ... );
 UINT2Array * XLALCreateUINT2ArrayV ( UINT4, UINT4 * );
 UINT2Array * XLALCreateUINT2Array ( UINT4Vector * );
@@ -259,10 +259,10 @@ void XLALDestroyUINT2Array ( UINT2Array * );
 void LALU2CreateArray ( LALStatus *, UINT2Array **, UINT4Vector * );
 void LALU2ResizeArray ( LALStatus *, UINT2Array **, UINT4Vector * );
 void LALU2DestroyArray ( LALStatus *, UINT2Array ** );
-/*@}*/
+/** @} */
 
 /** \name UINT4 array prototypes */
-/*@{*/
+/** @{ */
 UINT4Array * XLALCreateUINT4ArrayL ( UINT4, ... );
 UINT4Array * XLALCreateUINT4ArrayV ( UINT4, UINT4 * );
 UINT4Array * XLALCreateUINT4Array ( UINT4Vector * );
@@ -273,10 +273,10 @@ void XLALDestroyUINT4Array ( UINT4Array * );
 void LALU4CreateArray ( LALStatus *, UINT4Array **, UINT4Vector * );
 void LALU4ResizeArray ( LALStatus *, UINT4Array **, UINT4Vector * );
 void LALU4DestroyArray ( LALStatus *, UINT4Array ** );
-/*@}*/
+/** @} */
 
 /** \name UINT8 array prototypes */
-/*@{*/
+/** @{ */
 UINT8Array * XLALCreateUINT8ArrayL ( UINT4, ... );
 UINT8Array * XLALCreateUINT8ArrayV ( UINT4, UINT4 * );
 UINT8Array * XLALCreateUINT8Array ( UINT4Vector * );
@@ -287,11 +287,11 @@ void XLALDestroyUINT8Array ( UINT8Array * );
 void LALU8CreateArray ( LALStatus *, UINT8Array **, UINT4Vector * );
 void LALU8ResizeArray ( LALStatus *, UINT8Array **, UINT4Vector * );
 void LALU8DestroyArray ( LALStatus *, UINT8Array ** );
-/*@}*/
+/** @} */
 
 
 /** \name REAL4 array prototypes */
-/*@{*/
+/** @{ */
 REAL4Array * XLALCreateREAL4ArrayL ( UINT4, ... );
 REAL4Array * XLALCreateREAL4ArrayV ( UINT4, UINT4 * );
 REAL4Array * XLALCreateREAL4Array ( UINT4Vector * );
@@ -302,10 +302,10 @@ void XLALDestroyREAL4Array ( REAL4Array * );
 void LALSCreateArray ( LALStatus *, REAL4Array **, UINT4Vector * );
 void LALSResizeArray ( LALStatus *, REAL4Array **, UINT4Vector * );
 void LALSDestroyArray ( LALStatus *, REAL4Array ** );
-/*@}*/
+/** @} */
 
 /** \name REAL4 array prototypes (default name) */
-/*@{*/
+/** @{ */
 REAL4Array * XLALCreateArrayL ( UINT4, ... );
 REAL4Array * XLALCreateArrayV ( UINT4, UINT4 * );
 REAL4Array * XLALCreateArray ( UINT4Vector * );
@@ -318,10 +318,10 @@ void XLALDestroyArray ( REAL4Array * );
 void LALCreateArray ( LALStatus *, REAL4Array **, UINT4Vector * );
 void LALResizeArray ( LALStatus *, REAL4Array **, UINT4Vector * );
 void LALDestroyArray ( LALStatus *, REAL4Array ** );
-/*@}*/
+/** @} */
 
 /** \name REAL8 array prototypes */
-/*@{*/
+/** @{ */
 REAL8Array * XLALCreateREAL8ArrayL ( UINT4, ... );
 REAL8Array * XLALCreateREAL8ArrayV ( UINT4, UINT4 * );
 REAL8Array * XLALCreateREAL8Array ( UINT4Vector * );
@@ -332,10 +332,10 @@ void XLALDestroyREAL8Array ( REAL8Array * );
 void LALDCreateArray ( LALStatus *, REAL8Array **, UINT4Vector * );
 void LALDResizeArray ( LALStatus *, REAL8Array **, UINT4Vector * );
 void LALDDestroyArray ( LALStatus *, REAL8Array ** );
-/*@}*/
+/** @} */
 
 /** \name COMPLEX8 array prototypes */
-/*@{*/
+/** @{ */
 COMPLEX8Array * XLALCreateCOMPLEX8ArrayL ( UINT4, ... );
 COMPLEX8Array * XLALCreateCOMPLEX8ArrayV ( UINT4, UINT4 * );
 COMPLEX8Array * XLALCreateCOMPLEX8Array ( UINT4Vector * );
@@ -346,10 +346,10 @@ void XLALDestroyCOMPLEX8Array ( COMPLEX8Array * );
 void LALCCreateArray ( LALStatus *, COMPLEX8Array **, UINT4Vector * );
 void LALCResizeArray ( LALStatus *, COMPLEX8Array **, UINT4Vector * );
 void LALCDestroyArray ( LALStatus *, COMPLEX8Array ** );
-/*@}*/
+/** @} */
 
 /** \name COMPLEX16 array prototypes */
-/*@{*/
+/** @{ */
 COMPLEX16Array * XLALCreateCOMPLEX16ArrayL ( UINT4, ... );
 COMPLEX16Array * XLALCreateCOMPLEX16ArrayV ( UINT4, UINT4 * );
 COMPLEX16Array * XLALCreateCOMPLEX16Array ( UINT4Vector * );
@@ -360,10 +360,10 @@ void XLALDestroyCOMPLEX16Array ( COMPLEX16Array * );
 void LALZCreateArray ( LALStatus *, COMPLEX16Array **, UINT4Vector * );
 void LALZResizeArray ( LALStatus *, COMPLEX16Array **, UINT4Vector * );
 void LALZDestroyArray ( LALStatus *, COMPLEX16Array ** );
-/*@}*/
+/** @} */
 
 
-/*@}*/
+/** @} */
 /* ---------- end: ArrayFactories_c ---------- */
 
 
@@ -382,91 +382,91 @@ void LALZDestroyArray ( LALStatus *, COMPLEX16Array ** );
  * The \c DestroyVector family of functions return the storage allocated by the \c CreateVector functions to the system.
  *
  */
-/*@{*/
+/** @{ */
 
 /** \name CHAR vector prototypes */
-/*@{*/
+/** @{ */
 CHARVector * XLALCreateCHARVector ( UINT4 length );
 CHARVector * XLALResizeCHARVector ( CHARVector * vector, UINT4 length );
 void XLALDestroyCHARVector ( CHARVector * vector );
 void LALCHARCreateVector ( LALStatus *, CHARVector **, UINT4 );
 void LALCHARResizeVector ( LALStatus *, CHARVector **, UINT4 );
 void LALCHARDestroyVector ( LALStatus *, CHARVector ** );
-/*@}*/
+/** @} */
 
 /** \name INT2 vector prototypes */
-/*@{*/
+/** @{ */
 INT2Vector * XLALCreateINT2Vector ( UINT4 length );
 INT2Vector * XLALResizeINT2Vector ( INT2Vector * vector, UINT4 length );
 void XLALDestroyINT2Vector ( INT2Vector * vector );
 void LALI2CreateVector ( LALStatus *, INT2Vector **, UINT4 );
 void LALI2ResizeVector ( LALStatus *, INT2Vector **, UINT4 );
 void LALI2DestroyVector ( LALStatus *, INT2Vector ** );
-/*@}*/
+/** @} */
 
 /** \name INT4 vector prototypes */
-/*@{*/
+/** @{ */
 INT4Vector * XLALCreateINT4Vector ( UINT4 length );
 INT4Vector * XLALResizeINT4Vector ( INT4Vector * vector, UINT4 length );
 void XLALDestroyINT4Vector ( INT4Vector * vector );
 void LALI4CreateVector ( LALStatus *, INT4Vector **, UINT4 );
 void LALI4ResizeVector ( LALStatus *, INT4Vector **, UINT4 );
 void LALI4DestroyVector ( LALStatus *, INT4Vector ** );
-/*@}*/
+/** @} */
 
 
 /** \name INT8 vector prototypes */
-/*@{*/
+/** @{ */
 INT8Vector * XLALCreateINT8Vector ( UINT4 length );
 INT8Vector * XLALResizeINT8Vector ( INT8Vector * vector, UINT4 length );
 void XLALDestroyINT8Vector ( INT8Vector * vector );
 void LALI8CreateVector ( LALStatus *, INT8Vector **, UINT4 );
 void LALI8ResizeVector ( LALStatus *, INT8Vector **, UINT4 );
 void LALI8DestroyVector ( LALStatus *, INT8Vector ** );
-/*@}*/
+/** @} */
 
 /** \name UINT2 vector prototypes */
-/*@{*/
+/** @{ */
 UINT2Vector * XLALCreateUINT2Vector ( UINT4 length );
 UINT2Vector * XLALResizeUINT2Vector ( UINT2Vector * vector, UINT4 length );
 void XLALDestroyUINT2Vector ( UINT2Vector * vector );
 void LALU2CreateVector ( LALStatus *, UINT2Vector **, UINT4 );
 void LALU2ResizeVector ( LALStatus *, UINT2Vector **, UINT4 );
 void LALU2DestroyVector ( LALStatus *, UINT2Vector ** );
-/*@}*/
+/** @} */
 
 /** \name UINT4 vector prototypes */
-/*@{*/
+/** @{ */
 UINT4Vector * XLALCreateUINT4Vector ( UINT4 length );
 UINT4Vector * XLALResizeUINT4Vector ( UINT4Vector * vector, UINT4 length );
 void XLALDestroyUINT4Vector ( UINT4Vector * vector );
 void LALU4CreateVector ( LALStatus *, UINT4Vector **, UINT4 );
 void LALU4ResizeVector ( LALStatus *, UINT4Vector **, UINT4 );
 void LALU4DestroyVector ( LALStatus *, UINT4Vector ** );
-/*@}*/
+/** @} */
 
 /** \name UINT8 vector prototypes */
-/*@{*/
+/** @{ */
 UINT8Vector * XLALCreateUINT8Vector ( UINT4 length );
 UINT8Vector * XLALResizeUINT8Vector ( UINT8Vector * vector, UINT4 length );
 void XLALDestroyUINT8Vector ( UINT8Vector * vector );
 void LALU8CreateVector ( LALStatus *, UINT8Vector **, UINT4 );
 void LALU8ResizeVector ( LALStatus *, UINT8Vector **, UINT4 );
 void LALU8DestroyVector ( LALStatus *, UINT8Vector ** );
-/*@}*/
+/** @} */
 
 /** \name REAL4 vector prototypes */
-/*@{*/
+/** @{ */
 REAL4Vector * XLALCreateREAL4Vector ( UINT4 length );
 REAL4Vector * XLALResizeREAL4Vector ( REAL4Vector * vector, UINT4 length );
 void XLALDestroyREAL4Vector ( REAL4Vector * vector );
 void LALSCreateVector ( LALStatus *, REAL4Vector **, UINT4 );
 void LALSResizeVector ( LALStatus *, REAL4Vector **, UINT4 );
 void LALSDestroyVector ( LALStatus *, REAL4Vector ** );
-/*@}*/
+/** @} */
 
 /** \name REAL4 vector prototypes (default name) */
-/*@{*/
+/** @{ */
 REAL4Vector * XLALCreateVector ( UINT4 length );
 REAL4Vector * XLALResizeVector ( REAL4Vector * vector, UINT4 length );
 #ifndef SWIG   /* exclude from SWIG interface */
@@ -475,39 +475,39 @@ void XLALDestroyVector ( REAL4Vector * vector );
 void LALCreateVector ( LALStatus *, REAL4Vector **, UINT4 );
 void LALResizeVector ( LALStatus *, REAL4Vector **, UINT4 );
 void LALDestroyVector ( LALStatus *, REAL4Vector ** );
-/*@}*/
+/** @} */
 
 /** \name REAL8 vector prototypes */
-/*@{*/
+/** @{ */
 REAL8Vector * XLALCreateREAL8Vector ( UINT4 length );
 REAL8Vector * XLALResizeREAL8Vector ( REAL8Vector * vector, UINT4 length );
 void XLALDestroyREAL8Vector ( REAL8Vector * vector );
 void LALDCreateVector ( LALStatus *, REAL8Vector **, UINT4 );
 void LALDResizeVector ( LALStatus *, REAL8Vector **, UINT4 );
 void LALDDestroyVector ( LALStatus *, REAL8Vector ** );
-/*@}*/
+/** @} */
 
 /** \name COMPLEX8 vector prototypes */
-/*@{*/
+/** @{ */
 COMPLEX8Vector * XLALCreateCOMPLEX8Vector ( UINT4 length );
 COMPLEX8Vector * XLALResizeCOMPLEX8Vector ( COMPLEX8Vector * vector, UINT4 length );
 void XLALDestroyCOMPLEX8Vector ( COMPLEX8Vector * vector );
 void LALCCreateVector ( LALStatus *, COMPLEX8Vector **, UINT4 );
 void LALCResizeVector ( LALStatus *, COMPLEX8Vector **, UINT4 );
 void LALCDestroyVector ( LALStatus *, COMPLEX8Vector ** );
-/*@}*/
+/** @} */
 
 /** \name COMPLEX16 vector prototypes */
-/*@{*/
+/** @{ */
 COMPLEX16Vector * XLALCreateCOMPLEX16Vector ( UINT4 length );
 COMPLEX16Vector * XLALResizeCOMPLEX16Vector ( COMPLEX16Vector * vector, UINT4 length );
 void XLALDestroyCOMPLEX16Vector ( COMPLEX16Vector * vector );
 void LALZCreateVector ( LALStatus *, COMPLEX16Vector **, UINT4 );
 void LALZResizeVector ( LALStatus *, COMPLEX16Vector **, UINT4 );
 void LALZDestroyVector ( LALStatus *, COMPLEX16Vector ** );
-/*@}*/
+/** @} */
 
-/*@}*/
+/** @} */
 
 /* ---------- end: VectorFactories_c ---------- */
 

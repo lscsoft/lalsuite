@@ -95,7 +95,7 @@ extern "C" {
  * more convenient to use the \ref UserInput_h.
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * This structure is returned by XLALParseDataFile() and holds the contents of an
@@ -139,7 +139,7 @@ DECLARE_XLALREADCONFIGVARIABLE(DECJ,REAL8);
 
 
 
-/*@}*/
+/** @} */
 
 
 /* C++ protection. */

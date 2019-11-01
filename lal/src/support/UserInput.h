@@ -149,7 +149,7 @@ someEpoch = {2147483596 s, 816000000 ns}, RA = 2.727813 rad, DEC = -0.523599 rad
  * \note For a real-world example of usage, see various codes under lalapps/src/pulsar/{Injections,Fstatistic}
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * Shortcut macro for registering new user variables, which are accessed via the \e struct-pointer '*uvar'
@@ -225,41 +225,41 @@ CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
 /**
  * \name Convenience macros for checking how many of a set of user input variables were set
  */
-/*@{*/
+/** @{ */
 #define UVAR_SET(n)                             (XLALUserVarWasSet(&(uvar-> n)) ? 1 : 0)
 #define UVAR_SET2(n1,n2)                        (UVAR_SET(n1) + UVAR_SET(n2))
 #define UVAR_SET3(n1,n2,n3)                     (UVAR_SET2(n1,n2) + UVAR_SET(n3))
 #define UVAR_SET4(n1,n2,n3,n4)                  (UVAR_SET3(n1,n2,n3) + UVAR_SET(n4))
 #define UVAR_SET5(n1,n2,n3,n4,n5)               (UVAR_SET4(n1,n2,n3,n4) + UVAR_SET(n5))
 #define UVAR_SET6(n1,n2,n3,n4,n5,n6)            (UVAR_SET5(n1,n2,n3,n4,n5) + UVAR_SET(n6))
-/*@}*/
+/** @} */
 
 /**
  * \name Convenience macros for checking whether all of a set of user input variables were set
  */
-/*@{*/
+/** @{ */
 #define UVAR_ALLSET2(n1,n2)                     (UVAR_SET2(n1,n2) == 2)
 #define UVAR_ALLSET3(n1,n2,n3)                  (UVAR_SET3(n1,n2,n3) == 3)
 #define UVAR_ALLSET4(n1,n2,n3,n4)               (UVAR_SET4(n1,n2,n3,n4) == 4)
 #define UVAR_ALLSET5(n1,n2,n3,n4,n5)            (UVAR_SET5(n1,n2,n3,n4,n5) == 5)
 #define UVAR_ALLSET6(n1,n2,n3,n4,n5,n6)         (UVAR_SET6(n1,n2,n3,n4,n5,n6) == 6)
-/*@}*/
+/** @} */
 
 /**
  * \name Convenience macros for checking whether any of a set of user input variables were set
  */
-/*@{*/
+/** @{ */
 #define UVAR_ANYSET2(n1,n2)                     (UVAR_SET2(n1,n2) > 0)
 #define UVAR_ANYSET3(n1,n2,n3)                  (UVAR_SET3(n1,n2,n3) > 0)
 #define UVAR_ANYSET4(n1,n2,n3,n4)               (UVAR_SET4(n1,n2,n3,n4) > 0)
 #define UVAR_ANYSET5(n1,n2,n3,n4,n5)            (UVAR_SET5(n1,n2,n3,n4,n5) > 0)
 #define UVAR_ANYSET6(n1,n2,n3,n4,n5,n6)         (UVAR_SET6(n1,n2,n3,n4,n5,n6) > 0)
-/*@}*/
+/** @} */
 
 /**
  * \name Convenience macros for printing user input variables in error messages
  */
-/*@{*/
+/** @{ */
 #define UVAR_FMT                                "`--%s'"
 #define UVAR_STR(n)                             "`--"#n"'"
 #define UVAR_STR2AND(n1,n2)                     "`--"#n1"' and `--"#n2"'"
@@ -272,7 +272,7 @@ CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
 #define UVAR_STR5OR(n1,n2,n3,n4,n5)             "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', or `--"#n5"'"
 #define UVAR_STR6AND(n1,n2,n3,n4,n5,n6)         "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', `--"#n5"', and `--"#n6"'"
 #define UVAR_STR6OR(n1,n2,n3,n4,n5,n6)          "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', `--"#n5"', or `--"#n6"'"
-/*@}*/
+/** @} */
 
 // declare type-specific wrappers to XLALRegisterUserVar() to allow for strict C type-checking!
 #define DECL_REGISTER_UVAR(UTYPE,CTYPE)                                 \
@@ -306,7 +306,7 @@ DECL_REGISTER_UVAR(UINT4Vector,UINT4Vector*);
 DECL_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
 DECL_REGISTER_UVAR(STRINGVector,LALStringVector*);
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

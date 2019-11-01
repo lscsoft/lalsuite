@@ -54,7 +54,7 @@
  * \f}
  */
 
-/*@{*/
+/** @{ */
 
 #include <lal/LALInspiralBank.h>
 #include <lal/Integrate.h>
@@ -355,4 +355,4 @@ XLALInspiralMoments(
 
   return moment;
 }
-/*@}*/
+/** @} */

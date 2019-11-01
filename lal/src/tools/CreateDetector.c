@@ -407,7 +407,7 @@
  * </td></tr>
  * </table>
  */
-/*@{*/
+/** @{ */
 
 /*  { name,
       vertexLatitiudeRadians,
@@ -804,4 +804,4 @@ LALDetector * XLALCreateDetector( LALDetector *detector,
   detector->type = type;
   return detector;
 }
-/*@}*/
+/** @} */

@@ -54,7 +54,7 @@ extern "C" {
  * but in the Amaldi 07 proceedings: http://arxiv.org/abs/0712.0343)
  *
  */
-/*@{*/
+/** @{ */
 
 #define BBHPHENOMCOEFFSH_FMERG_A   6.6389e-01
 #define BBHPHENOMCOEFFSH_FMERG_B   -1.0321e-01
@@ -96,7 +96,7 @@ extern "C" {
 #define BBHPHENOMCOEFFSH_PSI7_Y   0.0000e+00
 #define BBHPHENOMCOEFFSH_PSI7_Z   0.0000e+00
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

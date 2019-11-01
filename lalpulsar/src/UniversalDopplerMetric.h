@@ -36,7 +36,7 @@ extern "C" {
  * antenna-pattern functions from multi-detector, derived in \cite Prix07 .
  *
  */
-/*@{*/
+/** @{ */
 
 /*---------- INCLUDES ----------*/
 #include <math.h>
@@ -304,7 +304,7 @@ XLALComputePhaseDerivative ( REAL8 t, const PulsarDopplerParams *dopplerPoint, D
 // destructor for vect3Dlist_t type
 void XLALDestroyVect3Dlist ( vect3Dlist_t *list );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

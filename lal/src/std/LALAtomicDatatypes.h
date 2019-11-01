@@ -32,7 +32,7 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/** \addtogroup LALDatatypes */ /*@{*/
+/** \addtogroup LALDatatypes */ /** @{ */
 
 typedef char CHAR;		/**< One-byte signed integer, see \ref LALDatatypes for more details */
 typedef unsigned char UCHAR;	/**< One-byte unsigned integer, see \ref LALDatatypes for more details */
@@ -171,7 +171,7 @@ static _LAL_INLINE_ COMPLEX16 cpolar(const REAL8 r, const REAL8 th) {
 
 #endif /* SWIG */
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

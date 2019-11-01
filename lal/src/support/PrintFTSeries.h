@@ -86,7 +86,7 @@ extern "C" {
  * series, the second column is the real part and the third the imaginary
  * part of the value.
  */
-/*@{*/
+/** @{ */
 void LALI2PrintTimeSeries( INT2TimeSeries *series , const CHAR *filename );
 void LALI4PrintTimeSeries( INT4TimeSeries *series , const CHAR *filename );
 void LALI8PrintTimeSeries( INT8TimeSeries *series , const CHAR *filename );
@@ -98,7 +98,7 @@ void LALSPrintTimeSeries( REAL4TimeSeries *series , const CHAR *filename );
 void LALDPrintTimeSeries( REAL8TimeSeries *series , const CHAR *filename );
 void LALCPrintTimeSeries( COMPLEX8TimeSeries *series , const CHAR *filename );
 void LALZPrintTimeSeries( COMPLEX16TimeSeries *series , const CHAR *filename );
-/*@}*/
+/** @} */
 
 
 /**
@@ -155,7 +155,7 @@ void LALZPrintTimeSeries( COMPLEX16TimeSeries *series , const CHAR *filename );
  * assumed to correspond both the maximum poitive and negative frequency
  * offset.
  */
-/*@{*/
+/** @{ */
 void LALI2PrintFrequencySeries( INT2FrequencySeries *series , const CHAR *filename );
 void LALI4PrintFrequencySeries( INT4FrequencySeries *series , const CHAR *filename );
 void LALI8PrintFrequencySeries( INT8FrequencySeries *series , const CHAR *filename );
@@ -167,7 +167,7 @@ void LALSPrintFrequencySeries( REAL4FrequencySeries *series , const CHAR *filena
 void LALDPrintFrequencySeries( REAL8FrequencySeries *series , const CHAR *filename );
 void LALCPrintFrequencySeries( COMPLEX8FrequencySeries *series , const CHAR *filename );
 void LALZPrintFrequencySeries( COMPLEX16FrequencySeries *series , const CHAR *filename );
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

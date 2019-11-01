@@ -45,7 +45,7 @@
  * returned through the function's return statement.
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * WARNING: THIS FUNCTION IS OBSOLETE.
@@ -221,4 +221,4 @@ REAL4 XLALIIRFilterREAL4( REAL4 x, REAL8IIRFilter *filter )
 {
   return (REAL4)XLALIIRFilterREAL8((REAL8)x,filter);
 }
-/*@}*/
+/** @} */

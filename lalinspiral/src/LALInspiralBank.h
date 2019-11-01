@@ -50,10 +50,10 @@ extern "C" {
  * This header file covers routines that are used in template placement.
  *
  */
-/*@{*/
+/** @{ */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define LALINSPIRALBANKH_ENULL      1	/**< Null pointer */
 #define LALINSPIRALBANKH_EMEM       2	/**< Memory allocation failure */
 #define LALINSPIRALBANKH_ECHOICE    3	/**< Invalid choice for an input parameter */
@@ -66,7 +66,7 @@ extern "C" {
 #define LALINSPIRALBANKH_EFCUT      5	/**< Inappropriate cutoff frequency [SchwarzISCO, BKLISCO, LightRing, ERD, FRD or LRD] */
 #define LALINSPIRALBANKH_EFHIGH     6	/**< Final frequency is less than the low frequency cutoff. */
 #define LALINSPIRALBANKH_ENUMFCUT   7	/**< Number of fcut must be greater or equal to 1 */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define LALINSPIRALBANKH_MSGENULL   "Null pointer"
@@ -518,9 +518,9 @@ tagInspiralMomentsEtc
  * in the stationary phase approximation. See documentation under the function \c LALInspiralComputeMetric() in this
  * Section for a description of these coefficients
  */
-  /*@{*/
+  /** @{ */
   REAL8 a01, a21, a22, a31, a41, a42, a43;
-  /*@}*/
+  /** @} */
   REAL8 j[18];	/**< The required moments are all computed once and
                  * stored in this array; The required moments are from J(1) to J(17)
                  * (except J(2), J(3) and J(16) that are not required at 2PN order,
@@ -1065,7 +1065,7 @@ INT4 XLALInspiralComputePTFWDeriv (
 	REAL8					   tolerance
     );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

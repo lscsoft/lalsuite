@@ -116,7 +116,7 @@ extern "C" {
  * for \f$0 \le J < N_T\f$ and \f$0 \le \Sigma < N_F\f$, where \f${\tilde h}_\gamma\f$ is given by
  * \eqref{standarddft}.
  */
-  /*@{*/
+  /** @{ */
 
 
 double XLALExcessPowerFilterInnerProduct(
@@ -170,7 +170,7 @@ SnglBurst *XLALEPSearch(
 	double maxTileDuration
 );
 
-  /*@}*/
+  /** @} */
 
 #ifdef  __cplusplus
 }

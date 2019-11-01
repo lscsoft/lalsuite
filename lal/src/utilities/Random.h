@@ -44,10 +44,10 @@ extern "C" {
  * This header covers the routines for generating random numbers.
  *
  */
-/*@{*/
+/** @{ */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define RANDOMH_ENULL 1		/**< Null pointer */
 #define RANDOMH_ENNUL 2		/**< Non-null pointer */
 #define RANDOMH_ESIZE 4		/**< Invalid size */
@@ -58,9 +58,9 @@ extern "C" {
 #define RANDOMH_EINIT 128		/**< Params must be initialized with CreateParams first */
 #define RANDOMH_EZERO 256		/**< Output Vector length must be greater than zero */
 #define RANDOMH_ESEED 512		/**< Improper seed value */
-/*@}*/
+/** @} */
 
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define RANDOMH_MSGENULL "Null pointer"

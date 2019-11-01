@@ -53,7 +53,7 @@ extern "C" {
  * their character and edge effects when clipping on a finite patch.
  *
  */
-/*@{*/
+/** @{ */
 
 /*
  * 5. Includes. This header may include others; if so, they go immediately
@@ -82,7 +82,7 @@ extern "C" {
  */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define PHMDH_ENULL 1
 #define PHMDH_ESIZE 2
 #define PHMDH_ESZMM 4
@@ -98,7 +98,7 @@ extern "C" {
 #define PHMDH_MSGESAME "Input/Output data vectors are the same"
 #define PHMDH_MSGEFREQ "Invalid frequency"
 #define PHMDH_MSGEVAL  "Invalid value"
-/*@}*/
+/** @} */
 
 
 /* ******************************************************
@@ -166,7 +166,7 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
 			HOUGHPeakGram *pg
 			);
 
-/*@}*/
+/** @} */
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif

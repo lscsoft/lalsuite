@@ -32,7 +32,7 @@ extern "C" {
  * \author Karl Wette
  * \brief Implementation of an arbitrary-size bitset
  */
-/*@{*/
+/** @{ */
 
 /**
  * Arbitrary-size bitset
@@ -78,7 +78,7 @@ int XLALBitsetGet(
   BOOLEAN *is_set                 /**< [out] Whether bit is set */
   );
 
-/*@}*/
+/** @} */
 
 #ifdef __cplusplus
 }

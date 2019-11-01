@@ -38,7 +38,7 @@ extern "C" {
  *
  */
 
-/*@{*/
+/** @{ */
 
 // ---------- exported defines & macros ----------
 
@@ -81,7 +81,7 @@ DECL_XLALPrintStringValueOfVector(INT4);
 DECL_XLALPrintStringValueOfVector(UINT4);
 DECL_XLALPrintStringValueOfVector(REAL8);
 
-/*@}*/
+/** @} */
 
 /* C++ protection. */
 #ifdef  __cplusplus

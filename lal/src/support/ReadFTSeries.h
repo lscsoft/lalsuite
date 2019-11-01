@@ -41,12 +41,12 @@ extern "C" {
  *
  * Provides prototype information for the routines in \ref ReadTimeSeries_c and \ref ReadFrequencySeries_c.
  */
-/*@{*/
+/** @{ */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define  READFTSERIESH_EFILENOTFOUND       1    /**< Invalid Filename or File Not Found */
 #define  READFTSERIESH_EPARSE              2    /**< Error Parsing File */
-/*@}*/
+/** @} */
 /** \cond DONT_DOXYGEN */
 #define  READFTSERIESH_MSGEFILENOTFOUND    "Invalid Filename or File Not Found"
 #define  READFTSERIESH_MSGEPARSE           "Error Parsing File"
@@ -68,7 +68,7 @@ enum enumMaxLineLength {
 /** \endcond */
 #endif /* SWIG */
 
-/*@}*/
+/** @} */
 
 
 /**
@@ -84,13 +84,13 @@ enum enumMaxLineLength {
  * proper They should only be used for debugging purposes in test
  * functions, not in any production code.
  */
-/*@{*/
+/** @{ */
 void LALReadTimeSeries(LALStatus* status,  REAL4TimeSeries *series , const CHAR *filename );
 void LALSReadTimeSeries(LALStatus* status,  REAL4TimeSeries *series , const CHAR *filename );
 void LALDReadTimeSeries(LALStatus* status,  REAL8TimeSeries *series , const CHAR *filename );
 void LALCReadTimeSeries(LALStatus* status,  COMPLEX8TimeSeries *series , const CHAR *filename );
 void LALZReadTimeSeries(LALStatus* status,  COMPLEX16TimeSeries *series , const CHAR *filename );
-/*@}*/
+/** @} */
 
 /**
  * \defgroup ReadFrequencySeries_c Module ReadFrequencySeries.c
@@ -105,13 +105,13 @@ void LALZReadTimeSeries(LALStatus* status,  COMPLEX16TimeSeries *series , const 
  * proper. They should only be used for debugging purposes in test
  * functions, not in any production code.
  */
-/*@{*/
+/** @{ */
 void LALReadFrequencySeries(LALStatus* status,  REAL4FrequencySeries *series , const CHAR *filename );
 void LALSReadFrequencySeries(LALStatus* status,  REAL4FrequencySeries *series , const CHAR *filename );
 void LALDReadFrequencySeries(LALStatus* status,  REAL8FrequencySeries *series , const CHAR *filename );
 void LALCReadFrequencySeries(LALStatus* status, COMPLEX8FrequencySeries *series , const CHAR *filename );
 void LALZReadFrequencySeries(LALStatus* status,  COMPLEX16FrequencySeries *series , const CHAR *filename );
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

@@ -95,7 +95,7 @@
  * the module is compiled with the \c NDEBUG flag set.
  *
  */
-/*@{*/
+/** @{ */
 
 /** \see See \ref CreateIIRFilter_c for documentation */
 REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
@@ -646,4 +646,4 @@ void LALCreateREAL8IIRFilter( LALStatus          *stat,
 
   RETURN(stat);
 }
-/*@}*/
+/** @} */

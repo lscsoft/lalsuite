@@ -48,11 +48,11 @@
 extern "C" {
 #endif
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define READPULSARPARFILEH_ENULLOUTPUT 1
 
 #define READPULSARPARFILEH_MSGENULLOUTPUT "Output was Null"
-/*@}*/
+/** @} */
 
 #define PULSAR_HASHTABLE_SIZE 512
 #define PULSAR_PARNAME_MAX 128
@@ -628,7 +628,7 @@ void PrintPulsarParameters( BinaryPulsarParams params );
  * seonds added between the TAI and UTC up to the point of definition of GPS
  * time at UTC 01/01/1980.
  */
-/*@{*/
+/** @{ */
 REAL8
 XLALTTMJDtoGPS(REAL8 MJD);
 
@@ -637,7 +637,7 @@ XLALTDBMJDtoGPS(REAL8 MJD);
 
 REAL8
 XLALTCBMJDtoGPS(REAL8 MJD);
-/*@}*/
+/** @} */
 
 #ifdef __cplusplus
 }

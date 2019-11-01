@@ -46,7 +46,7 @@ extern "C" {
  * \endcode
  *
  */
-/**@{*/
+/** @{ */
 struct tagLALCacheEntry;
 struct tagLALCache;
 
@@ -132,7 +132,7 @@ LALCacheEntry *XLALCacheEntrySeek(const LALCache * cache, double t);
 /** Open a file identified by an entry in a LALCache structure. */
 LALFILE *XLALCacheEntryOpen(const LALCacheEntry * entry);
 
-/**@}*/
+/** @} */
 
 #if 0
 {       /* to match succeding brace */

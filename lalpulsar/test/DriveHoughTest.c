@@ -97,7 +97,7 @@
 
 /* Error codes and messages */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define TESTDRIVEHOUGHC_ENORM 0
 #define TESTDRIVEHOUGHC_ESUB  1
 #define TESTDRIVEHOUGHC_EARG  2
@@ -109,7 +109,7 @@
 #define TESTDRIVEHOUGHC_MSGEARG  "Error parsing arguments"
 #define TESTDRIVEHOUGHC_MSGEBAD  "Bad argument values"
 #define TESTDRIVEHOUGHC_MSGEFILE "Could not create output file"
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 

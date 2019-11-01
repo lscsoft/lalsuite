@@ -66,7 +66,7 @@
  * formatted, the called function will return an error.
  *
  */
-/*@{*/
+/** @{ */
 
 /** \see See documentation in \ref SkyCoordinates_c */
 void
@@ -239,4 +239,4 @@ XLALNormalizeSkyPosition ( double *restrict longitude,   /**< [in,out] sky-posit
 
 } /* XLALNormalizeSkyPosition() */
 
-/*@}*/
+/** @} */

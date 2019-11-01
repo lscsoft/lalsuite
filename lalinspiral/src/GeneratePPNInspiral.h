@@ -162,10 +162,10 @@ extern "C" {
  * \f}
  *
  */
-/*@{*/
+/** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define GENERATEPPNINSPIRALH_ENUL  1	/**< Unexpected null pointer in arguments */
 #define GENERATEPPNINSPIRALH_EOUT  2	/**< output field a, f, phi, or shift already exists */
 #define GENERATEPPNINSPIRALH_ETBAD 3	/**< Bad sampling interval */
@@ -174,7 +174,7 @@ extern "C" {
 #define GENERATEPPNINSPIRALH_EMBAD 6	/**< Bad masses */
 #define GENERATEPPNINSPIRALH_EDBAD 7	/**< Bad distance */
 #define GENERATEPPNINSPIRALH_EMEM  8	/**< Out of memory */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define GENERATEPPNINSPIRALH_MSGENUL  "Unexpected null pointer in arguments"
@@ -199,13 +199,13 @@ extern "C" {
  * For the sake of LAL namespace conventions, these termination codes are
  * <tt>\#define</tt>d and autodocumented exactly like error codes.
  */
-/*@{*/
+/** @{ */
 #define GENERATEPPNINSPIRALH_EFSTOP     0	/**< Reached requested termination frequency */
 #define GENERATEPPNINSPIRALH_ELENGTH    1	/**< Reached maximum length, or end of provided time series vector */
 #define GENERATEPPNINSPIRALH_EFNOTMON   2	/**< Frequency no longer increasing monotonically */
 #define GENERATEPPNINSPIRALH_EPNFAIL    3	/**< Evolution dominated by higher-order PN terms */
 #define GENERATEPPNINSPIRALH_ERTOOSMALL 4	/**< Orbital radius too small for PN approximation */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define GENERATEPPNINSPIRALH_MSGEFSTOP     "Reached requested termination frequency"
@@ -230,14 +230,14 @@ extern "C" {
  */
 typedef struct tagPPNParamStruc {
   /** \name Passed parameters. */
-  /*@{*/
+  /** @{ */
   SkyPosition position; /**< location of source on sky */
   REAL4 psi;            /**< polarization angle (radians) */
   LIGOTimeGPS epoch;    /**< start time of output time series */
-  /*@}*/
+  /** @} */
 
   /**\name Input parameters. */
-  /*@{*/
+  /** @{ */
   REAL4 mTot;       	/**< The total mass \f$m_\mathrm{tot}=m_1+m_2\f$ of the binary system, in solar masses */
   REAL4 eta;        	/**< The mass ratio \f$\eta=m_1m_2/m_\mathrm{tot}^2\f$ of the binary system;  Physically this
                          * parameter must lie in the range \f$\eta\in(0,1/4]\f$; values outside of
@@ -262,10 +262,10 @@ typedef struct tagPPNParamStruc {
   UINT4 lengthIn;   	/**< The maximum number of samples in the generated waveform;  If zero, the waveforms can be arbitrarily long */
   REAL4Vector *ppn; 	/**< The parameters \f$p_n\f$ selecting the type of post-Newtonian expansion;  If \c ppn=\c NULL, a "normal" (physical) expansion is assumed */
   INT4 ampOrder;    	/**< PN amplitude selection 0-5 */
-  /*@}*/
+  /** @} */
 
   /** \name Output parameters. */
-  /*@{*/
+  /** @{ */
   REAL8 tc;         	/**< The time \f$t_c-t\f$ from the start of the waveform to coalescence (in the point-mass approximation), in s */
   REAL4 dfdt;       	/**< The maximum value of \f$\Delta f\Delta t\f$ encountered over any timestep \f$\Delta t\f$ used in generating the waveform */
   REAL4 fStart;     	/**< The actual starting frequency of the waveform, in Hz (normally close but not identical to \c fStartIn) */
@@ -273,7 +273,7 @@ typedef struct tagPPNParamStruc {
   UINT4 length;     	/**< The length of the generated waveform */
   INT4 termCode;    	/**< The termination condition (above) that stopped computation of the waveform */
   const CHAR *termDescription; /**< The termination code description (above) */
-  /*@}*/
+  /** @} */
 } PPNParamStruc;
 #else  /* SWIG */
 typedef struct tagPPNParamStruc PPNParamStruc;
@@ -320,7 +320,7 @@ LALGetInspiralParams( LALStatus                  *,
 		      RandomParams               *params );
 
 
-/*@}*/ /* end:GeneratePPNInspiral_h */
+/** @} */ /* end:GeneratePPNInspiral_h */
 
 
 #if 0

@@ -35,7 +35,7 @@
  * <tt>*input</tt> to \c NULL.
  *
  */
-/*@{*/
+/** @{ */
 
 /** \see See \ref DestroyIIRFilter_c for documentation */
 void XLALDestroyREAL4IIRFilter( REAL4IIRFilter *filter )
@@ -124,4 +124,4 @@ LALDestroyREAL8IIRFilter( LALStatus      *stat,
   RETURN(stat);
 }
 
-/*@}*/
+/** @} */

@@ -90,7 +90,7 @@
 
 #include <lal/PHMD.h>
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define TESTNDPEAK2PHMDC_ENORM 0
 #define TESTNDPEAK2PHMDC_ESUB  1
 #define TESTNDPEAK2PHMDC_EARG  2
@@ -102,7 +102,7 @@
 #define TESTNDPEAK2PHMDC_MSGEARG  "Error parsing arguments"
 #define TESTNDPEAK2PHMDC_MSGEBAD  "Bad argument values"
 #define TESTNDPEAK2PHMDC_MSGEFILE "Could not create output file"
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 

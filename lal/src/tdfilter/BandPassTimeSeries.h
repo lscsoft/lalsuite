@@ -54,13 +54,13 @@ extern "C" {
  * Further documentation is given in the individual routines' modules.
  *
  */
-/*@{*/
+/** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define BANDPASSTIMESERIESH_ENUL 1	/**< Unexpected null pointer in arguments */
 #define BANDPASSTIMESERIESH_EBAD 2	/**< Bad filter parameters */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define BANDPASSTIMESERIESH_MSGENUL "Unexpected null pointer in arguments"
@@ -83,7 +83,7 @@ typedef struct tagPassBandParamStruc{
   REAL8 a2;	/**< The minimal desired attenuation factors at the reference frequencies */
 } PassBandParamStruc;
 
-/*@}*/
+/** @} */
 
 /* Function prototypes. */
 int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc *params );

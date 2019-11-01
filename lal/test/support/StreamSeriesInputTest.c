@@ -64,12 +64,12 @@
  * data file formats.
  */
 
-/** \name Error Codes */ /*@{*/
+/** \name Error Codes */ /** @{ */
 #define STREAMSERIESINPUTTESTC_ENORM 0  /**< Normal exit */
 #define STREAMSERIESINPUTTESTC_ESUB  1  /**< Subroutine failed */
 #define STREAMSERIESINPUTTESTC_EARG  2  /**< Error parsing arguments */
 #define STREAMSERIESINPUTTESTC_EFILE 3  /**< Could not open file */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define STREAMSERIESINPUTTESTC_MSGENORM "Normal exit"

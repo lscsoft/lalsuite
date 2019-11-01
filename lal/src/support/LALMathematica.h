@@ -96,13 +96,13 @@ extern "C" {
  * </ul>
  *
  */
-/*@{*/
+/** @{ */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define LALMATHEMATICAH_ENULL 1         /**< NULL pointer to a LALMathematica.h input structure */
 #define LALMATHEMATICAH_EFILE 2         /**< Could not open file to write a Mathematica Notebook */
 #define LALMATHEMATICAH_EVAL  3         /**< Invalid parameter value */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define LALMATHEMATICAH_MSGENULL        "NULL pointer to a LALMathematica.h input structure"
@@ -141,7 +141,7 @@ extern "C" {
  * use the underscore version of the tag which preceeded the &quot;NULL&quot;
  * statement.
  */
-/*@{*/
+/** @{ */
 #define BEG_NOTEBOOK 		fprintf(nb, "Notebook[{\n")
 #define END_NOTEBOOK		fprintf(nb, "}]\n")
 #define BEG_TITLECELL		fprintf(nb, "Cell[\"")
@@ -159,7 +159,7 @@ extern "C" {
 #define BEG_TEXTCELL		fprintf(nb, "Cell[\"\\<")
 #define END_TEXTCELL		fprintf(nb, "\\>\", \"Text\"],\n")
 #define END_TEXTCELL_		fprintf(nb, "\\>\", \"Text\"]\n")
-/*@}*/
+/** @} */
 
 
 /**
@@ -202,7 +202,7 @@ LALMathNDPlot( LALStatus *status,
                INT4 *ntiles,
                REAL4 *pointSize );
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

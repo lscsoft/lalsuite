@@ -33,7 +33,7 @@ extern "C" {
  * \author Karl Wette
  * \brief Implementation of a generic hash table, following Chapter 5.2 of \cite open-data-structs .
  */
-/*@{*/
+/** @{ */
 
 /**
  * Generic hash table with elements of type <tt>void *</tt>
@@ -141,7 +141,7 @@ int XLALHashTblRemove(
   const void *x                 /**< [in] Hash element to match */
   );
 
-/*@}*/
+/** @} */
 
 #ifdef __cplusplus
 }

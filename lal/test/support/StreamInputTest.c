@@ -74,12 +74,12 @@
  * type-dependent format.
  */
 
-/** \name Error Codes */ /*@{*/
+/** \name Error Codes */ /** @{ */
 #define STREAMINPUTTESTC_ENORM 0        /**< Normal exit */
 #define STREAMINPUTTESTC_ESUB  1        /**< Subroutine failed */
 #define STREAMINPUTTESTC_EARG  2        /**< Error parsing arguments */
 #define STREAMINPUTTESTC_EFILE 3        /**< Could not open file */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 

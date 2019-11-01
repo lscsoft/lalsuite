@@ -24,7 +24,7 @@
 
 #include <lal/LALAtomicDatatypes.h>
 
-/** \addtogroup LALDatatypes */ /*@{ */
+/** \addtogroup LALDatatypes */ /** @{ */
 
 /* ---------- constants ---------- */
 
@@ -935,7 +935,7 @@ typedef struct tagCOMPLEX16ZPGFilter {
     COMPLEX16 gain;
 } COMPLEX16ZPGFilter;
 
-           /*@} */ /* end of LALDatatypes documentation group */
+           /** @} */ /* end of LALDatatypes documentation group */
 
 
 #ifndef SWIG    /* exclude from SWIG interface */

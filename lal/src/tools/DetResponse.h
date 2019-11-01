@@ -72,14 +72,14 @@ extern "C"
  * For examples of usage, please see the test programs in the \c test directory.
  *
  */
-/*@{*/
+/** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define DETRESPONSEH_ENULLINPUT  1		/**< Input is NULL */
 #define DETRESPONSEH_ENULLOUTPUT 2		/**< Output is NULL */
 #define DETRESPONSEH_ESRCNOTEQUATORIAL 3	/**< Source coordinates not in Equatorial system */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define DETRESPONSEH_MSGENULLINPUT "Input is NULL"
@@ -267,7 +267,7 @@ int XLALComputeDetAMResponseExtraModesSeries(
   const int n  
 );
 
-/*@}*/
+/** @} */
 
 #ifdef __cplusplus
 }

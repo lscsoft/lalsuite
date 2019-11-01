@@ -41,10 +41,10 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/*@{*/
+/** @{ */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define FINDCHIRPTDH_ENULL 1
 #define FINDCHIRPTDH_ENNUL 2
 #define FINDCHIRPTDH_EALOC 3
@@ -60,7 +60,7 @@ extern "C" {
 #define FINDCHIRPTDH_ELONG 13
 #define FINDCHIRPTDH_EEMTY 14
 #define FINDCHIRPTDH_ESMPL 15
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define FINDCHIRPTDH_MSGENULL "Null pointer"
@@ -89,7 +89,7 @@ LALFindChirpTDTemplate (
     );
 
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -41,7 +41,7 @@ SWIGLAL(
  * \ingroup lalinference_general
  * \brief Collection of commonly used Prior functions and utilities
  */
-/*@{*/
+/** @{ */
 
 #ifdef SWIG /* SWIG interface directives */
 SWIGLAL(INPUT_SCALARS(REAL8*, min, max));
@@ -388,6 +388,6 @@ REAL8 LALInferenceGMMPrior(LALInferenceVariables *priorArgs, const char *name, R
 /* Return the log Prior for a parameter that has a prior that is uniform in log space */
 REAL8 LALInferenceLogUniformPrior( LALInferenceVariables *priorArgs, const char *name, REAL8 value );
 
-/*@}*/
+/** @} */
 
 #endif

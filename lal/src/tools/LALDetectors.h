@@ -149,13 +149,13 @@ extern "C" {
  * differential mode is <tt>lalCachedDetectors[LAL_LHO_4K_DETECTOR]</tt>.
  *
  */
-/*@{*/
+/** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define LALDETECTORSH_ENULLP        1	/**< Null pointer */
 #define LALDETECTORSH_ETYPE         2	/**< Unsupported detector type */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define LALDETECTORSH_MSGENULLP     "Null pointer"
@@ -275,7 +275,7 @@ LALDetector;
 /** Pre-existing detectors. */
 extern const LALDetector lalCachedDetectors[LAL_NUM_DETECTORS];
 
-/*@}*/
+/** @} */
 
 
 /* Routine to create a LALDetector. */
@@ -325,14 +325,14 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
  * to conform to the conventions of the Frame format specification \cite LIGOVIRGO_2000
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * \name TAMA 300m Interferometric Detector constants
  * The following constants describe the location and geometry of the
  * TAMA 300m Interferometric Detector.
  */
-/*@{*/
+/** @{ */
 #define LAL_TAMA_300_DETECTOR_NAME               	"TAMA_300"	/**< TAMA_300 detector name string */
 #define LAL_TAMA_300_DETECTOR_PREFIX             	"T1"	/**< TAMA_300 detector prefix string */
 #define LAL_TAMA_300_DETECTOR_LONGITUDE_RAD      	2.43536359469	/**< TAMA_300 vertex longitude (rad) */
@@ -353,7 +353,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_TAMA_300_ARM_Y_DIRECTION_X           	-0.44371376921	/**< TAMA_300 x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_TAMA_300_ARM_Y_DIRECTION_Y           	0.37848471479	/**< TAMA_300 y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_TAMA_300_ARM_Y_DIRECTION_Z           	-0.81232223390	/**< TAMA_300 z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
+/** @} */
 
 /**
  * \name VIRGO_CITF Interferometric Detector constants
@@ -361,7 +361,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
  * VIRGO_CITF Interferometric Detector.  FIXME: the armlength is a stub.
  * FIXME: this IFO is called V0 rather than to avoid name clash.
  */
-/*@{*/
+/** @{ */
 #define LAL_VIRGO_CITF_DETECTOR_NAME               	"VIRGO_CITF"	/**< VIRGO_CITF detector name string */
 #define LAL_VIRGO_CITF_DETECTOR_PREFIX             	"V0"	/**< VIRGO_CITF detector prefix string */
 #define LAL_VIRGO_CITF_DETECTOR_LONGITUDE_RAD      	0.18333805213	/**< VIRGO_CITF vertex longitude (rad) */
@@ -382,14 +382,14 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_VIRGO_CITF_ARM_Y_DIRECTION_X           	-0.05379255368	/**< VIRGO_CITF x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_VIRGO_CITF_ARM_Y_DIRECTION_Y           	-0.96908180549	/**< VIRGO_CITF y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_VIRGO_CITF_ARM_Y_DIRECTION_Z           	0.24080451708	/**< VIRGO_CITF z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
+/** @} */
 
 /**
  * \name VIRGO 3km Interferometric Detector constants
  * The following constants describe the location and geometry of the
  * VIRGO 3km Interferometric Detector.
  */
-/*@{*/
+/** @{ */
 #define LAL_VIRGO_DETECTOR_NAME               	"VIRGO"	/**< VIRGO detector name string */
 #define LAL_VIRGO_DETECTOR_PREFIX             	"V1"	/**< VIRGO detector prefix string */
 #define LAL_VIRGO_DETECTOR_LONGITUDE_RAD      	0.18333805213	/**< VIRGO vertex longitude (rad) */
@@ -410,7 +410,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_VIRGO_ARM_Y_DIRECTION_X           	-0.05379255368	/**< VIRGO x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_VIRGO_ARM_Y_DIRECTION_Y           	-0.96908180549	/**< VIRGO y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_VIRGO_ARM_Y_DIRECTION_Z           	0.24080451708	/**< VIRGO z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
+/** @} */
 
 
 /**
@@ -418,7 +418,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
  * The following constants describe the location and geometry of the
  * GEO 600m Interferometric Detector.
  */
-/*@{*/
+/** @{ */
 #define LAL_GEO_600_DETECTOR_NAME               	"GEO_600"	/**< GEO_600 detector name string */
 #define LAL_GEO_600_DETECTOR_PREFIX             	"G1"	/**< GEO_600 detector prefix string */
 #define LAL_GEO_600_DETECTOR_LONGITUDE_RAD      	0.17116780435	/**< GEO_600 vertex longitude (rad) */
@@ -439,7 +439,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_GEO_600_ARM_Y_DIRECTION_X           	-0.62605756776	/**< GEO_600 x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_GEO_600_ARM_Y_DIRECTION_Y           	-0.55218609524	/**< GEO_600 y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_GEO_600_ARM_Y_DIRECTION_Z           	0.55058372486	/**< GEO_600 z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
+/** @} */
 
 
 /**
@@ -447,7 +447,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
  * The following constants describe the location and geometry of the
  * LIGO Hanford Observatory 2km Interferometric Detector.
  */
-/*@{*/
+/** @{ */
 #define LAL_LHO_2K_DETECTOR_NAME               	"LHO_2k"	/**< LHO_2k detector name string */
 #define LAL_LHO_2K_DETECTOR_PREFIX             	"H2"	/**< LHO_2k detector prefix string */
 #define LAL_LHO_2K_DETECTOR_LONGITUDE_RAD      	-2.08405676917	/**< LHO_2k vertex longitude (rad) */
@@ -468,7 +468,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_LHO_2K_ARM_Y_DIRECTION_X           	-0.91397818574	/**< LHO_2k x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_LHO_2K_ARM_Y_DIRECTION_Y           	0.02609403989	/**< LHO_2k y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_LHO_2K_ARM_Y_DIRECTION_Z           	-0.40492342125	/**< LHO_2k z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
+/** @} */
 
 
 /**
@@ -476,7 +476,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
  * The following constants describe the location and geometry of the
  * LIGO Hanford Observatory 4km Interferometric Detector.
  */
-/*@{*/
+/** @{ */
 #define LAL_LHO_4K_DETECTOR_NAME               	"LHO_4k"	/**< LHO_4k detector name string */
 #define LAL_LHO_4K_DETECTOR_PREFIX             	"H1"	/**< LHO_4k detector prefix string */
 #define LAL_LHO_4K_DETECTOR_LONGITUDE_RAD      	-2.08405676917	/**< LHO_4k vertex longitude (rad) */
@@ -497,7 +497,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_LHO_4K_ARM_Y_DIRECTION_X           	-0.91397818574	/**< LHO_4k x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_LHO_4K_ARM_Y_DIRECTION_Y           	0.02609403989	/**< LHO_4k y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_LHO_4K_ARM_Y_DIRECTION_Z           	-0.40492342125	/**< LHO_4k z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
+/** @} */
 
 
 /**
@@ -505,7 +505,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
  * The following constants describe the location and geometry of the
  * LIGO Livingston Observatory 4km Interferometric Detector.
  */
-/*@{*/
+/** @{ */
 #define LAL_LLO_4K_DETECTOR_NAME               	"LLO_4k"	/**< LLO_4k detector name string */
 #define LAL_LLO_4K_DETECTOR_PREFIX             	"L1"	/**< LLO_4k detector prefix string */
 #define LAL_LLO_4K_DETECTOR_LONGITUDE_RAD      	-1.58430937078	/**< LLO_4k vertex longitude (rad) */
@@ -526,7 +526,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_LLO_4K_ARM_Y_DIRECTION_X           	0.29774156894	/**< LLO_4k x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_LLO_4K_ARM_Y_DIRECTION_Y           	-0.48791033647	/**< LLO_4k y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_LLO_4K_ARM_Y_DIRECTION_Z           	-0.82054461286	/**< LLO_4k z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
+/** @} */
 
 
 
@@ -538,6 +538,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
  * in several studies with LALInference. Note that these data do not
  * represent an actual prospective site.
  */
+/** @{ */
 #define LAL_LIO_4K_DETECTOR_NAME                 "LIO_4k" /**< LIO_4K detector name string */
 #define LAL_LIO_4K_DETECTOR_PREFIX               "I1"    /**< LIO_4K detector prefix string */
 #define LAL_LIO_4K_DETECTOR_LONGITUDE_RAD        1.3340133249409993   /**< LIO_4K vertex longitude (rad; equal to 76°26') */
@@ -558,7 +559,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_LIO_4K_ARM_Y_DIRECTION_X             -5.76756671071052551e-02  /**< LIO_4K x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_LIO_4K_ARM_Y_DIRECTION_Y            -2.39010959863662720e-01   /**< LIO_4K y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_LIO_4K_ARM_Y_DIRECTION_Z             9.69302475452423096e-01  /**< LIO_4K z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
+/** @} */
 
 
 /**
@@ -566,7 +567,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
  * The following constants describe the location and geometry of the
  * Caltech 40m Prototype Detector.
  */
-/*@{*/
+/** @{ */
 #define LAL_CIT_40_DETECTOR_NAME               	"CIT_40"	/**< CIT_40 detector name string */
 #define LAL_CIT_40_DETECTOR_PREFIX             	"C1"	/**< CIT_40 detector prefix string */
 #define LAL_CIT_40_DETECTOR_LONGITUDE_RAD      	-2.06175744538	/**< CIT_40 vertex longitude (rad) */
@@ -587,7 +588,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_CIT_40_ARM_Y_DIRECTION_X           	0.88188012386	/**< CIT_40 x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_CIT_40_ARM_Y_DIRECTION_Y           	-0.47147369718	/**< CIT_40 y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_CIT_40_ARM_Y_DIRECTION_Z           	0.00000000000	/**< CIT_40 z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
+/** @} */
 
 
 /**
@@ -597,7 +598,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
  * Einstein Telescop detector as well as the theoretical null stream.
  * See T1400308 
  */
-/*@{*/
+/** @{ */
 #define LAL_ET1_DETECTOR_NAME                  	"ET1_T1400308"	/**< ET1 detector name string */
 #define LAL_ET1_DETECTOR_PREFIX                	"E1"	/**< ET1 detector prefix string */
 #define LAL_ET1_DETECTOR_LONGITUDE_RAD         	0.18333805213	/**< ET1 vertex longitude (rad) */
@@ -684,7 +685,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_ET0_ARM_Y_DIRECTION_X              	0.00000000000	/**< ET0 x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_ET0_ARM_Y_DIRECTION_Y              	0.00000000000	/**< ET0 y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_ET0_ARM_Y_DIRECTION_Z              	0.00000000000	/**< ET0 z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
+/** @} */
 
 /**
  * \name KAGRA Interferometric Detector constants
@@ -694,7 +695,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
  * > Yoshio Saito, "KAGRA location", KAGRA Technical Document JGW-G1503824
  * > http://gwdoc.icrr.u-tokyo.ac.jp/cgi-bin/DocDB/ShowDocument?docid=3824
  */
-/*@{*/
+/** @{ */
 #define LAL_KAGRA_DETECTOR_NAME               	"KAGRA"	/**< KAGRA detector name string */
 #define LAL_KAGRA_DETECTOR_PREFIX             	"K1"	/**< KAGRA detector prefix string */
 #define LAL_KAGRA_DETECTOR_LONGITUDE_RAD      	2.396441015	/**< KAGRA vertex longitude (rad) */
@@ -715,7 +716,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_KAGRA_ARM_Y_DIRECTION_X           	0.7164378	/**< KAGRA x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_KAGRA_ARM_Y_DIRECTION_Y           	0.01114076	/**< KAGRA y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_KAGRA_ARM_Y_DIRECTION_Z           	0.6975620	/**< KAGRA z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
+/** @} */
 
 
 /**
@@ -723,7 +724,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
  * The following constants are stubs for the location and geometry of the
  * ACIGA Interferometric Detector.
  */
-/*@{*/
+/** @{ */
 #define LAL_ACIGA_DETECTOR_NAME               	"ACIGA"	/**< ACIGA detector name string */
 #define LAL_ACIGA_DETECTOR_PREFIX             	"U1"	/**< ACIGA detector prefix string */
 #define LAL_ACIGA_DETECTOR_LONGITUDE_RAD      	0.0	/**< ACIGA vertex longitude (rad) */
@@ -744,7 +745,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_ACIGA_ARM_Y_DIRECTION_X           	0.0	/**< ACIGA x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_ACIGA_ARM_Y_DIRECTION_Y           	0.0	/**< ACIGA y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_ACIGA_ARM_Y_DIRECTION_Z           	0.0	/**< ACIGA z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
+/** @} */
 
 
 /* Resonant Mass (Bar) Detectors */
@@ -755,7 +756,7 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
  * The following constants describe the location and geometry of the
  * ALLEGRO Resonant Mass Detector with 320 degree azimuth "IGEC axis".
  */
-/*@{*/
+/** @{ */
 #define LAL_ALLEGRO_320_DETECTOR_NAME               	"ALLEGRO_320"	/**< ALLEGRO_320 detector name string */
 #define LAL_ALLEGRO_320_DETECTOR_PREFIX             	"A1"	/**< ALLEGRO_320 detector prefix string */
 #define LAL_ALLEGRO_320_DETECTOR_LONGITUDE_RAD      	-1.59137068496	/**< ALLEGRO_320 vertex longitude (rad) */
@@ -773,14 +774,14 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_ALLEGRO_320_AXIS_DIRECTION_X            	-0.63467362345	/**< ALLEGRO_320 x-component of unit vector pointing along axis in Earth-centered frame */
 #define LAL_ALLEGRO_320_AXIS_DIRECTION_Y            	0.40093077976	/**< ALLEGRO_320 y-component of unit vector pointing along axis in Earth-centered frame */
 #define LAL_ALLEGRO_320_AXIS_DIRECTION_Z            	0.66063901000	/**< ALLEGRO_320 z-component of unit vector pointing along axis in Earth-centered frame */
-/*@}*/
+/** @} */
 
 /**
  * \name AURIGA Resonant Mass Detector constants
  * The following constants describe the location and geometry of the
  * AURIGA Resonant Mass Detector.
  */
-/*@{*/
+/** @{ */
 #define LAL_AURIGA_DETECTOR_NAME               	"AURIGA"	/**< AURIGA detector name string */
 #define LAL_AURIGA_DETECTOR_PREFIX             	"O1"	/**< AURIGA detector prefix string */
 #define LAL_AURIGA_DETECTOR_LONGITUDE_RAD      	0.20853775679	/**< AURIGA vertex longitude (rad) */
@@ -798,14 +799,14 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_AURIGA_AXIS_DIRECTION_X            	-0.64450412225	/**< AURIGA x-component of unit vector pointing along axis in Earth-centered frame */
 #define LAL_AURIGA_AXIS_DIRECTION_Y            	0.57365538956	/**< AURIGA y-component of unit vector pointing along axis in Earth-centered frame */
 #define LAL_AURIGA_AXIS_DIRECTION_Z            	0.50550364038	/**< AURIGA z-component of unit vector pointing along axis in Earth-centered frame */
-/*@}*/
+/** @} */
 
 /**
  * \name EXPLORER Resonant Mass Detector constants
  * The following constants describe the location and geometry of the
  * EXPLORER Resonant Mass Detector.
  */
-/*@{*/
+/** @{ */
 #define LAL_EXPLORER_DETECTOR_NAME               	"EXPLORER"	/**< EXPLORER detector name string */
 #define LAL_EXPLORER_DETECTOR_PREFIX             	"X1"	        /**< EXPLORER detector prefix string */
 #define LAL_EXPLORER_DETECTOR_LONGITUDE_RAD      	0.10821041362	/**< EXPLORER vertex longitude (rad) */
@@ -823,14 +824,14 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_EXPLORER_AXIS_DIRECTION_X            	-0.62792641437	/**< EXPLORER x-component of unit vector pointing along axis in Earth-centered frame */
 #define LAL_EXPLORER_AXIS_DIRECTION_Y            	0.56480832712	/**< EXPLORER y-component of unit vector pointing along axis in Earth-centered frame */
 #define LAL_EXPLORER_AXIS_DIRECTION_Z            	0.53544371484	/**< EXPLORER z-component of unit vector pointing along axis in Earth-centered frame */
-/*@}*/
+/** @} */
 
 /**
  * \name Nautilus Resonant Mass Detector constants
  * The following constants describe the location and geometry of the
  * Nautilus Resonant Mass Detector.
  */
-/*@{*/
+/** @{ */
 #define LAL_NAUTILUS_DETECTOR_NAME               	"Nautilus"	/**< Nautilus detector name string */
 #define LAL_NAUTILUS_DETECTOR_PREFIX             	"N1"	/**< Nautilus detector prefix string */
 #define LAL_NAUTILUS_DETECTOR_LONGITUDE_RAD      	0.22117684946	/**< Nautilus vertex longitude (rad) */
@@ -848,14 +849,14 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_NAUTILUS_AXIS_DIRECTION_X            	-0.62039441384	/**< Nautilus x-component of unit vector pointing along axis in Earth-centered frame */
 #define LAL_NAUTILUS_AXIS_DIRECTION_Y            	0.57250373141	/**< Nautilus y-component of unit vector pointing along axis in Earth-centered frame */
 #define LAL_NAUTILUS_AXIS_DIRECTION_Z            	0.53605060283	/**< Nautilus z-component of unit vector pointing along axis in Earth-centered frame */
-/*@}*/
+/** @} */
 
 /**
  * \name NIOBE Resonant Mass Detector constants
  * The following constants describe the location and geometry of the
  * NIOBE Resonant Mass Detector.
  */
-/*@{*/
+/** @{ */
 #define LAL_NIOBE_DETECTOR_NAME               	"NIOBE"	/**< NIOBE detector name string */
 #define LAL_NIOBE_DETECTOR_PREFIX             	"B1"	/**< NIOBE detector prefix string */
 #define LAL_NIOBE_DETECTOR_LONGITUDE_RAD      	2.02138216202	/**< NIOBE vertex longitude (rad) */
@@ -873,9 +874,9 @@ LALDetector * XLALCreateDetector( LALDetector *detector, const LALFrDetector *fr
 #define LAL_NIOBE_AXIS_DIRECTION_X            	-0.23034623759	/**< NIOBE x-component of unit vector pointing along axis in Earth-centered frame */
 #define LAL_NIOBE_AXIS_DIRECTION_Y            	0.47614056486	/**< NIOBE y-component of unit vector pointing along axis in Earth-centered frame */
 #define LAL_NIOBE_AXIS_DIRECTION_Z            	0.84866411101	/**< NIOBE z-component of unit vector pointing along axis in Earth-centered frame */
-/*@}*/
+/** @} */
 
-/*@}*/ /* end: DetectorConstants */
+/** @} */ /* end: DetectorConstants */
 
 #ifdef __cplusplus
 }

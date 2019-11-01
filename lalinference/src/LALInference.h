@@ -39,7 +39,7 @@
  * data, manipulation of variables and type declarations for the standard function types.
  *
  */
-/*@{*/
+/** @{ */
 
 #include <math.h>
 #include <stdio.h>
@@ -1214,6 +1214,6 @@ void LALInferenceEquatorialToDetFrame(LALDetector *det0, LALDetector *det1,
                                  REAL8 tg, REAL8 ra, REAL8 dec,
                                  REAL8 *t0, REAL8 *alpha, REAL8 *theta);
 
-/*@}*/
+/** @} */
 
 #endif

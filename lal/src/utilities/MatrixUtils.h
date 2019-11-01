@@ -121,18 +121,18 @@ extern "C" {
  * orthogonal is equivalent to unitary.
  *
  */
-/*@{*/
+/** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define MATRIXUTILSH_ENUL  1		/**< Unexpected null pointer in arguments */
 #define MATRIXUTILSH_EDIM  2		/**< Bad matrix dimensions */
 #define MATRIXUTILSH_EITER 3		/**< Did not converge after maximum iterations */
 #define MATRIXUTILSH_ESING 4		/**< Singular matrix */
 #define MATRIXUTILSH_EMEM  5		/**< Memory allocation error */
-/*@}*/
+/** @} */
 
-/*@}*/
+/** @} */
 
 #define MATRIXUTILSH_MSGENUL  "Unexpected null pointer in arguments"
 #define MATRIXUTILSH_MSGEDIM  "Bad matrix dimensions"
@@ -143,13 +143,13 @@ extern "C" {
 
 /* ---------- Function prototypes. ---------- */
 /** \addtogroup MatrixOps_c */
-/*@{*/
+/** @{ */
 void
 LALDMatrixMultiply( LALStatus *, REAL8Array *out, REAL8Array *in1, REAL8Array *in2 );
 
 void
 LALDMatrixTranspose( LALStatus *, REAL8Array *out, REAL8Array *in1 );
-/*@}*/
+/** @} */
 
 
 void

@@ -74,9 +74,9 @@ extern "C" {
  * crippling computational overhead.
  *
  */
-/*@{*/
+/** @{ */
 
-/** \name Error Codes */ /*@{*/
+/** \name Error Codes */ /** @{ */
 #define STREAMINPUTH_ENUL  1    /**< Unexpected null pointer in arguments */
 #define STREAMINPUTH_EOUT  2    /**< Output handle points to a non-null pointer */
 #define STREAMINPUTH_EMEM  3    /**< Memory allocation error */
@@ -87,8 +87,8 @@ extern "C" {
 #define STREAMINPUTH_EDIM  8    /**< Inconsistent or non-positive arrayDim value */
 #define STREAMINPUTH_EFMT  9    /**< Badly formatted number */
 #define STREAMINPUTH_EBUF 10    /**< BUFFSIZE not a multiple of largest complex type size */
-/*@}*/
-/*@}*/
+/** @} */
+/** @} */
 
 #define STREAMINPUTH_MSGENUL  "Unexpected null pointer in arguments"
 #define STREAMINPUTH_MSGEOUT  "Output handle points to a non-null pointer"
@@ -160,7 +160,7 @@ extern "C" {
  * <tt>'e'</tt>, <tt>'E'</tt>, <tt>'.'</tt>, digits, and whitespace will work.
  *
  */
-/*@{*/
+/** @{ */
 void LALCHARReadVector( LALStatus  *status, CHARVector **vector, FILE *stream );
 void LALI2ReadVector( LALStatus  *status, INT2Vector **vector, FILE *stream, BOOLEAN strict );
 void LALI4ReadVector( LALStatus  *status, INT4Vector **vector, FILE *stream, BOOLEAN strict );
@@ -170,7 +170,7 @@ void LALU4ReadVector( LALStatus  *status, UINT4Vector **vector, FILE *stream, BO
 void LALU8ReadVector( LALStatus  *status, UINT8Vector **vector, FILE *stream, BOOLEAN strict );
 void LALSReadVector( LALStatus  *status, REAL4Vector **vector, FILE *stream, BOOLEAN strict );
 void LALDReadVector( LALStatus  *status, REAL8Vector **vector, FILE *stream, BOOLEAN strict );
-/*@}*/
+/** @} */
 
 
 /**
@@ -222,7 +222,7 @@ void LALDReadVector( LALStatus  *status, REAL8Vector **vector, FILE *stream, BOO
  * error messages when reading files containing blank or comment lines.
  *
  */
-/*@{*/
+/** @{ */
 void LALCHARReadVectorSequence( LALStatus  *status, CHARVectorSequence **sequence, FILE *stream );
 void LALI2ReadVectorSequence( LALStatus  *status, INT2VectorSequence **sequence, FILE *stream );
 void LALI4ReadVectorSequence( LALStatus  *status, INT4VectorSequence **sequence, FILE *stream );
@@ -232,7 +232,7 @@ void LALU4ReadVectorSequence( LALStatus  *status, UINT4VectorSequence **sequence
 void LALU8ReadVectorSequence( LALStatus  *status, UINT8VectorSequence **sequence, FILE *stream );
 void LALSReadVectorSequence( LALStatus  *status, REAL4VectorSequence **sequence, FILE *stream );
 void LALDReadVectorSequence( LALStatus  *status, REAL8VectorSequence **sequence, FILE *stream );
-/*@}*/
+/** @} */
 
 
 /**
@@ -292,7 +292,7 @@ void LALDReadVectorSequence( LALStatus  *status, REAL8VectorSequence **sequence,
  * numerical data efficiently.
  *
  */
-/*@{*/
+/** @{ */
 int XLALCHARReadSequence( CHARSequence **sequence, FILE *stream );
 void LALCHARReadSequence( LALStatus *status, CHARSequence **sequence, FILE *stream );
 void LALI2ReadSequence( LALStatus *status, INT2Sequence **sequence, FILE *stream );
@@ -305,7 +305,7 @@ void LALSReadSequence( LALStatus *status, REAL4Sequence **sequence, FILE *stream
 void LALDReadSequence( LALStatus *status, REAL8Sequence **sequence, FILE *stream );
 void LALCReadSequence( LALStatus *status, COMPLEX8Sequence **sequence, FILE *stream );
 void LALZReadSequence( LALStatus *status, COMPLEX16Sequence **sequence, FILE *stream );
-/*@}*/
+/** @} */
 
 
 

@@ -44,7 +44,7 @@ extern "C" {
  * \brief %Header containing most of the structures and prototypes which are
  * used in the generation of the EOBNRv2 waveform.
  */
-/*@{*/
+/** @{ */
 
 /**
  * Structure containing the coefficients for EOBNRv2 A potential function.
@@ -408,7 +408,7 @@ int XLALComputeNewtonMultipolePrefixes(
                 const REAL8             m1,
                 const REAL8             m2 );
 
-/*@}*/ /* end:LALEOBNRv2Waveform_h */
+/** @} */ /* end:LALEOBNRv2Waveform_h */
 
 #ifdef  __cplusplus
 }

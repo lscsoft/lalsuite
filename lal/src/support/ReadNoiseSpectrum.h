@@ -54,17 +54,17 @@ extern "C" {
  * #include <lal/ReadNoiseSpectrum.h>
  * \endcode
  */
-/*@{*/
+/** @{ */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define LALREADNOISESPECTRUMH_ENULL 1   /**< Null pointer */
 #define LALREADNOISESPECTRUMH_ENNUL 2   /**< Non-null pointer */
 #define LALREADNOISESPECTRUMH_EALOC 3   /**< Memory allocation error */
 #define LALREADNOISESPECTRUMH_EOPEN 4   /**< Error opening file */
 #define LALREADNOISESPECTRUMH_EFCLO 5   /**< Error closing file */
 #define LALREADNOISESPECTRUMH_EPARS 8   /**< Error parsing spectrum file */
-/*@}*/
-/*@}*/
+/** @} */
+/** @} */
 
 #define LALREADNOISESPECTRUMH_MSGENULL "Null pointer"
 #define LALREADNOISESPECTRUMH_MSGENNUL "Non-null pointer"

@@ -35,7 +35,7 @@ extern "C" {
  * History:   Moved from LALAPPS 31/7/05
  *
  */
-/*@{*/
+/** @{ */
 
 #include <stdlib.h>
 #include <math.h>
@@ -61,7 +61,7 @@ int XLALNormalizeSFTVect ( SFTVector  *sftVect,	UINT4 blockSize, const REAL8 ass
 MultiPSDVector * XLALNormalizeMultiSFTVect ( MultiSFTVector *multsft, UINT4 blockSize, const MultiNoiseFloor *assumeSqrtSX );
 int XLALSFTstoCrossPeriodogram ( REAL8FrequencySeries *periodo, const COMPLEX8FrequencySeries *sft1, const COMPLEX8FrequencySeries *sft2 );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

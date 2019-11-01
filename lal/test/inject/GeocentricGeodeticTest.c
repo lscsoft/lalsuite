@@ -101,13 +101,13 @@
  */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define GEOCENTRICGEODETICTESTC_ENORM 0	/**< Normal exit */
 #define GEOCENTRICGEODETICTESTC_ESUB  1	/**< Subroutine failed */
 #define GEOCENTRICGEODETICTESTC_EARG  2	/**< Error parsing arguments */
 #define GEOCENTRICGEODETICTESTC_EMEM  3	/**< Out of memory */
 #define GEOCENTRICGEODETICTESTC_ETEST 4	/**< Test case failed */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define GEOCENTRICGEODETICTESTC_MSGENORM "Normal exit"

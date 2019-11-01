@@ -57,11 +57,11 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALMathematica.h>
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define LALMATHNDPLOTTESTC_ENORM        0       /**< Normal exit */
 #define LALMATHNDPLOTTESTC_EMEM         1       /**< Memory allocation error */
 #define LALMATHNDPLOTTESTC_ESUB         2       /**< Subroutine error */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 

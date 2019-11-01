@@ -1513,7 +1513,7 @@ int MAIN( int argc, char *argv[]) {
 
                 B1 = ( pos[0] * nvec[0] \
                        + pos[1] * nvec[1] \
-                       + pos[2] * nvec[2] ); /* This is \vec r \dot \vec n */
+                       + pos[2] * nvec[2] ); // This is \vec r \dot \vec n
 
                 /* current unused:
                    REAL8 A2 = ( acc[0] * nvec[0]        \

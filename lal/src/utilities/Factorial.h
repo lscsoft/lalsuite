@@ -50,7 +50,7 @@
  *
  * All values were computed to 35 significant figures with Mathematica v8.0.1.0 on 64-bit Linux.
  */
-/*@{*/
+/** @{ */
 
 #ifndef SWIG /* exclude from SWIG wrappings */
 
@@ -243,6 +243,6 @@ static const REAL8 LAL_FACT2_LOG[] = { \
 
 #endif /* SWIG */
 
-/*@}*/
+/** @} */
 
 #endif /*_FACTORIAL_H*/

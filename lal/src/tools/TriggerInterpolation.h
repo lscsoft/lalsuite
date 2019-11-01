@@ -157,7 +157,7 @@ int XLALREAL4ApplyCubicSplineTriggerInterpolant(
     REAL4 *ymax,
     const REAL4 *y);
 
-/* \} */
+/** \} */
 
 
 /**
@@ -223,7 +223,7 @@ int XLALREAL4ApplyLanczosTriggerInterpolant(
     REAL4 *ymax,
     const REAL4 *y);
 
-/* \} */
+/** \} */
 
 
 /**
@@ -295,7 +295,7 @@ int XLALREAL4ApplyNearestNeighborTriggerInterpolant(
     REAL4 *ymax,
     const REAL4 *y);
 
-/* \} */
+/** \} */
 
 
 /**
@@ -363,10 +363,10 @@ int XLALREAL4ApplyQuadraticFitTriggerInterpolant(
     REAL4 *ymax,
     const REAL4 *y);
 
-/* \} */
+/** \} */
 
 
-/* \} */
+/** \} */
 
 
 #if 0

@@ -35,7 +35,7 @@
  * <tt>*output</tt> to \c NULL.
  *
  */
-/*@{*/
+/** @{ */
 
 /** \see See \ref DestroyZPGFilter_c for documentation */
 void XLALDestroyCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
@@ -98,4 +98,4 @@ LALDestroyCOMPLEX16ZPGFilter( LALStatus          *stat,
   /* Normal exit */
   RETURN(stat);
 }
-/*@}*/
+/** @} */

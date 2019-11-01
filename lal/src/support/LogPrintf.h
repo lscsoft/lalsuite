@@ -43,7 +43,7 @@ extern "C" {
  * \brief General-purpose log-message handling, mostly modelled after the MSG_LOG class in BOINC.
  *
  */
-/*@{*/
+/** @{ */
 
 /*---------- DEFINES ----------*/
 /*---------- TYPES ----------*/
@@ -86,7 +86,7 @@ int XLALdumpREAL4TimeSeries (const char *fname, const REAL4TimeSeries *series);
 int XLALdumpREAL8TimeSeries (const char *fname, const REAL8TimeSeries *series);
 int XLALdumpCOMPLEX8TimeSeries (const char *fname, const COMPLEX8TimeSeries *series );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

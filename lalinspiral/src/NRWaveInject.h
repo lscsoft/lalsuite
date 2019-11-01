@@ -48,17 +48,17 @@ extern "C" {
  * \brief Module for generating h(t) from Numrel waveforms
  *
  */
-/*@{*/
+/** @{ */
 
 /** \name Error codes */
-/*@{*/
+/** @{ */
 #define NRWAVEINJECT_ENULL    1	/**< Null pointer */
 #define NRWAVEINJECT_EFILE    2	/**< Error in file-IO */
 #define NRWAVEINJECT_ENONULL  3	/**< Not a Null pointer */
 #define NRWAVEINJECT_ENOMEM   4	/**< Memory ellocation error */
 #define NRWAVEINJECT_EVAL     5	/**< Invalid value */
 #define NRWAVEINJECT_EFORMAT  6	/**< Meta data file format incorrect */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define NRWAVEINJECT_MSGENULL   "Null pointer"
@@ -188,7 +188,7 @@ CHAR* XLALGetNinjaChannelName(const CHAR *polarisation, /**< either plus or cros
 NumRelGroup XLALParseNumRelGroupName( CHAR *name);
 
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

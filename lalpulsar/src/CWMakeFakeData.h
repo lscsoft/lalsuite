@@ -34,7 +34,7 @@ extern "C" {
  * This basically presents a high-level wrapper API to the lower-level CW signal-generation
  * functions in lalsuite.
  */
-/*@{*/
+/** @{ */
 
 // ---------- exported INCLUDES ----------
 #include <math.h>
@@ -118,7 +118,7 @@ void XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect );
 void XLALDestroyPulsarParams ( PulsarParams *params );
 
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

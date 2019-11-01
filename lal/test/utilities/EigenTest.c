@@ -89,14 +89,14 @@
  */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define EIGENTESTC_ENORM 0		/**< Normal exit */
 #define EIGENTESTC_ESUB  1		/**< Subroutine failed */
 #define EIGENTESTC_EARG  2		/**< Error parsing arguments */
 #define EIGENTESTC_EMEM  3		/**< Out of memory */
 #define EIGENTESTC_EFILE 4		/**< Could not open file */
 #define EIGENTESTC_EFMT  5		/**< Bad input file format */
-/*@}*/
+/** @} */
 
 
 /** \cond DONT_DOXYGEN */

@@ -51,10 +51,10 @@ extern "C" {
  * particular the \ref TwoDMesh_h test programs, may statically link
  * against their object files).
  */
-/*@{*/
+/** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define TWODMESHPLOTH_ENUL    1
 #define TWODMESHPLOTH_EOUT    2
 #define TWODMESHPLOTH_EMEM    3
@@ -66,18 +66,18 @@ extern "C" {
 #define TWODMESHPLOTH_MSGEMEM    "Memory allocation error"
 #define TWODMESHPLOTH_MSGEMETRIC "Non-positive metric"
 #define TWODMESHPLOTH_MSGENOPLOT "Nothing to plot"
-/*@}*/
+/** @} */
 
 /**
  * \name Constants
  * \brief The values in the table above are stored in the constants \c TWODMESHPLOTH_<tt><</tt>\e name<tt>></tt>.
  */
-/*@{*/
+/** @{ */
 #define TWODMESHPLOTH_XSIZE 540 /**< Horizontal size of plotting area (points = \f$1/72''\f$) */
 #define TWODMESHPLOTH_YSIZE 720 /**< Vertical size of plotting area (points) */
 #define TWODMESHPLOTH_XMARG  36 /**< Distance from left of page to plotting area (points) */
 #define TWODMESHPLOTH_YMARG  36 /**< Distance from bottom of page to plotting area (points) */
-/*@}*/
+/** @} */
 
 /**
  * \brief This structure stores parameters specifying how to plot a PostScript diagram of the parameter mesh.
@@ -127,7 +127,7 @@ LALPlotTwoDMesh( LALStatus         *stat,
 
 /** \endcond */
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

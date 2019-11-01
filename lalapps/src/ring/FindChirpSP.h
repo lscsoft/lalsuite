@@ -55,10 +55,10 @@ extern "C" {
  * \endcode
  *
  */
-/*@{*/
+/** @{ */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define FINDCHIRPSPH_ENULL 1	/**< Null pointer */
 #define FINDCHIRPSPH_ENNUL 2	/**< Non-null pointer */
 #define FINDCHIRPSPH_EALOC 3	/**< Memory allocation error */
@@ -73,7 +73,7 @@ extern "C" {
 #define FINDCHIRPSPH_EMAPX 12	/**< Mismatch in waveform approximant */
 #define FINDCHIRPSPH_EUAPX 13	/**< Unknown approximant */
 #define FINDCHIRPSPH_EORDR 14	/**< Invalid post-Newtonian order */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define FINDCHIRPSPH_MSGENULL "Null pointer"
@@ -100,7 +100,7 @@ LALFindChirpSPTemplate (
     FindChirpTmpltParams       *params
     );
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -47,7 +47,7 @@
  * call it explicitly.
  *
  */
-/*@{*/
+/** @{ */
 
 /* this is an implementation of the Euclidean Algorithm */
 static UINT2
@@ -88,4 +88,4 @@ int XLALUnitNormalize( LALUnit *unit )
 }
 
 
-/*@}*/
+/** @} */

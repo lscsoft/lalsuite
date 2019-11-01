@@ -172,7 +172,7 @@ extern "C" {
  * </li></ol>
  *
  */
-/*@{*/
+/** @{ */
 
 /** UNDOCUMENTED */
 typedef struct
@@ -411,7 +411,7 @@ XLALPSDRegressorSetPSD(
 );
 
 
-/*@}*/
+/** @} */
 
 #if 0
 { /* so that editors will match succeeding brace */

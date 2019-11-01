@@ -728,7 +728,7 @@ LALDTriDiagonalToDiagonal( LALStatus   *stat,
  *
  */
 
-/*@{*/
+/** @{ */
 
 /** \see See \ref Eigen_c for documentation */
 void
@@ -805,4 +805,4 @@ LALDSymmetricEigenVectors( LALStatus *stat, REAL8Vector *values, REAL8Array *mat
   RETURN( stat );
 }
 
-/*@}*/
+/** @} */

@@ -49,10 +49,10 @@ extern "C" {
  * documentation is given in the individual routines' modules.
  *
  */
-/*@{*/
+/** @{ */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define RESAMPLETIMESERIESH_ENULL 1	/**< Null pointer */
 #define RESAMPLETIMESERIESH_ENNUL 2	/**< Non-null pointer */
 #define RESAMPLETIMESERIESH_EZERO 3	/**< Length of input time series is zero */
@@ -63,7 +63,7 @@ extern "C" {
 #define RESAMPLETIMESERIESH_EFILT 8	/**< Unknown filter type */
 #define RESAMPLETIMESERIESH_EINVD 9	/**< Invalid or non-integer resample factor */
 #define RESAMPLETIMESERIESH_ELDAS 10	/**< Input resample factor with LDAS FIR */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define RESAMPLETIMESERIESH_MSGENULL "Null pointer"
@@ -129,7 +129,7 @@ tagResampleTSParams
 }
 ResampleTSParams;
 
-/*@}*/
+/** @} */
 
 /* ---------- Function prototypes ---------- */
 

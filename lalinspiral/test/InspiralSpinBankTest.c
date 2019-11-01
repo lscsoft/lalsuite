@@ -96,12 +96,12 @@
 
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define INSPIRALSPINBANKTESTC_ENORM     0	/**< Normal exit */
 #define INSPIRALSPINBANKTESTC_EMEM      1	/**< Memory allocation error */
 #define INSPIRALSPINBANKTESTC_ESUB      2	/**< Subroutine error */
 #define INSPIRALSPINBANKTESTC_EFILE     4	/**< File I/O error */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 

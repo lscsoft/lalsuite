@@ -144,7 +144,7 @@
  * </ol>
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * \brief Plan to perform FFT of REAL4 data.
@@ -177,4 +177,4 @@ tagREAL8FFTPlan
 #undef SINGLE_PRECISION
 #include "RealFFT_source.c"
 
-/*@}*/
+/** @} */

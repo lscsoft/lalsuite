@@ -49,13 +49,13 @@ extern "C" {
  * library rather than in \c lal proper.
  *
  */
-/*@{*/
+/** @{ */
 
-/** \name Error Codes */ /*@{*/
+/** \name Error Codes */ /** @{ */
 #define STREAMOUTPUTH_ENUL 1    /**< Unexpected null pointer in arguments */
 #define STREAMOUTPUTH_EPRN 2    /**< Print statement failed */
-/*@}*/
-/*@}*/
+/** @} */
+/** @} */
 
 #define STREAMOUTPUTH_MSGENUL "Unexpected null pointer in arguments"
 #define STREAMOUTPUTH_MSGEPRN "Print statement failed"

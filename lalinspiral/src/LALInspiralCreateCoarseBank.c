@@ -164,7 +164,7 @@
  * </ul>
  * </tt>
  */
-/*@{*/
+/** @{ */
 
 
 #include <stdio.h>
@@ -634,4 +634,4 @@ LALInspiralCreatePNCoarseBank(
   DETATCHSTATUSPTR( status );
   RETURN ( status );
 }
-/*@}*/
+/** @} */

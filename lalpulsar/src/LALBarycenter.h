@@ -49,7 +49,7 @@ extern "C" {
  * \endcode
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * \brief Enumerated type denoting the time system type to be produced in
@@ -97,14 +97,14 @@ typedef enum tagEphemerisType {
  * \name Constants from Irwin and Fukushima, A&A, 348, 1999 (taken from TEMPO2)
  * used for ephemeris conversions.
  */
-/*@{*/
+/** @{ */
 #define IFTE_JD0  2443144.5003725 /**< Epoch of TCB, TCG and TT in Julian Days */
 #define IFTE_MJD0 43144.0003725 /**< Epoch of TCB, TCG and TT in Modified Julian Days */
 #define IFTE_TEPH0 -65.564518e-6 /**< Equation 17 of Irwin and Fukushima. */
 #define IFTE_LC 1.48082686742e-8 /**< Equation 20 of Irwin and Fukushima. */
 #define IFTE_KM1 1.55051979176e-8 /**< Value of K-1, defined using the IAU definition of L_B = 1.55051976772e-8 and K=1/(1-L_B) (see TEMPO2). */
 #define IFTE_K (((long double)1.0) + ((long double)IFTE_KM1)) /**< Factor relating ephemeris units for time and distance to corresponding SI units, from Eq. 2 of Irwin and Fukushima. */
-/*@}*/
+/** @} */
 
 #define JPL_AU_DE405 149597870.6910000 	/**< Definition of 1 AU from the JPL DE405 ephemeris in km */
 #define JPL_AU_DE200 149597870.6600000 	/**< Definition of 1 AU from the JPL DE200 ephemeris in km */
@@ -277,7 +277,7 @@ int XLALBarycenterEarthNew ( EarthState *earth,
                              const TimeCorrectionData *tdat,
                              TimeCorrectionType ttype );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

@@ -119,7 +119,7 @@
  * </ol>
  *
  */
-/*@{*/
+/** @{ */
 
 /** \see See \ref ResampleTimeSeries_c for documentation */
 int XLALResampleREAL4TimeSeries( REAL4TimeSeries *series, REAL8 dt )
@@ -504,4 +504,4 @@ LALResampleREAL4TimeSeries(
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
-/*@}*/
+/** @} */

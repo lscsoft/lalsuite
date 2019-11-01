@@ -77,7 +77,7 @@ extern "C" {
  * imaginary part of the element.
  *
  */
-/*@{*/
+/** @{ */
 void LALCHARPrintVector( CHARVector *vector );
 void LALI2PrintVector( INT2Vector *vector );
 void LALI4PrintVector( INT4Vector *vector );
@@ -91,7 +91,7 @@ void LALDPrintVector( REAL8Vector *vector );
 void LALCPrintVector( COMPLEX8Vector *vector );
 void LALZPrintVector( COMPLEX16Vector *vector );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

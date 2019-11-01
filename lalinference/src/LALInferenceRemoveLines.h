@@ -29,7 +29,7 @@
  * \brief Utility functions for identifying lines
  * in IFO data to be removed in LALInference
  */
-/*@{*/
+/** @{ */
 
 /**
  * \brief Determine correlated frequency bands using cross correlation.
@@ -114,6 +114,6 @@ int LALInferenceRemoveLinesPowerLaw(
     REAL8                       *pvalues
     );
 
-/*@}*/
+/** @} */
 
 #endif

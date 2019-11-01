@@ -39,7 +39,7 @@ extern "C" {
  * of parameters.  The frequency evolution of the signal (spindown effects, Doppler modulation, etc.)
  * have already been accounted for; this routine filters the amplitude modulation effects.
  */
-/*@{*/
+/** @{ */
 
 /*---------- exported INCLUDES ----------*/
 #include <math.h>
@@ -160,7 +160,7 @@ REAL4 XLALComputeAntennaPatternSqrtDeterminant ( REAL4 A, REAL4 B, REAL4 C, REAL
 void XLALSetAntennaPatternMaxCond ( REAL4 max_cond );
 void XLALSetAntennaPatternIllCondDeterminant ( REAL4 illCondDeterminant );
 
-/*@}*/
+/** @} */
 
 #ifdef __cplusplus
 }

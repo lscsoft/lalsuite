@@ -36,7 +36,7 @@ extern "C" {
  * \brief Module for pasting a (realistic) ringdown on the end of an inspiral
  *
  */
-/*@{*/
+/** @{ */
 
 CoherentGW *
 XLALGenerateInspRing(
@@ -46,7 +46,7 @@ XLALGenerateInspRing(
     int                injectSignalType
     );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

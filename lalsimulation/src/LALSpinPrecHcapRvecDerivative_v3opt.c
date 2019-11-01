@@ -115,7 +115,7 @@ static int XLALSpinPrecHcapRvecDerivative_exact(
             s2Data[i] *= (mass1+mass2)*(mass1+mass2);
         }
 
-        /*Compute \vec{L_N} = \vec{r} \times \dot{\vec{r}}, \vec{S_i} \cdot \vec{L_N} and chiS and chiA */
+        // Compute \vec{L_N} = \vec{r} \times \dot{\vec{r}}, \vec{S_i} \cdot \vec{L_N} and chiS and chiA
         rcrossrDot[0] = values[1]*tmpDValues[5] - values[2]*tmpDValues[4];
         rcrossrDot[1] = values[2]*tmpDValues[3] - values[0]*tmpDValues[5];
         rcrossrDot[2] = values[0]*tmpDValues[4] - values[1]*tmpDValues[3];

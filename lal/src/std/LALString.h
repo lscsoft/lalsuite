@@ -35,7 +35,7 @@ extern "C" {
  * \ingroup lal_std
  * \author Creighton, J. D. E.
  * \brief XLAL string manipulation routines.
- *//*@{*/
+ *//** @{ */
 
 int XLALStringPrint(char *s, size_t n, const char *fmt, ...) _LAL_GCC_PRINTF_FORMAT_(3,4);
 char *XLALStringAppend(char *s, const char *append);
@@ -51,7 +51,7 @@ char *XLALStringCaseSubstring(const char *haystack, const char *needle);
 char *XLALStringToken(char **s, const char *delim, int empty);
 char *XLALStringReplaceChar(char *s, const int from, const int to);
 
-/*@}*/
+/** @} */
 
 #if 0
 {       /* so that editors will match succeeding brace */

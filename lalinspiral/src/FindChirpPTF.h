@@ -54,7 +54,7 @@ extern "C" {
  * \endcode
  *
  */
-/*@{*/
+/** @{ */
 
 REAL4Vector*
 XLALPTFOmegaPNCoeffsOrbital(
@@ -92,7 +92,7 @@ XLALFindChirpPTFWaveform(
     REAL8                deltaT
     );
 
-/*@}*/ /* end:FindChirpPTF.h */
+/** @} */ /* end:FindChirpPTF.h */
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -37,7 +37,7 @@ extern "C" {
  * \author László Veréb
  * \date 2010.05.21.
  */
-/*@{*/
+/** @{ */
 
 /**
  * The macro function returns the square of the argument.
@@ -239,7 +239,7 @@ int XLALSQTPNGenerator(LALSQTPNWave *waveform, LALSQTPNWaveformParams *params);
 void LALSQTPNGenerator(LALStatus *status, LALSQTPNWave *waveform,
 		LALSQTPNWaveformParams *params);
 
-/*@}*/ /* end:LALSQTPNWaveform_h */
+/** @} */ /* end:LALSQTPNWaveform_h */
 
 #ifdef __cplusplus
 }

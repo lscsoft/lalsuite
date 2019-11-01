@@ -609,7 +609,7 @@ LALDLUBackSub( LALStatus   *stat,
  * routine should \e not be used for large matrices!
  *
  */
-/*@{*/
+/** @{ */
 
 /** \see See \ref DetInverse_c for documentation */
 void
@@ -878,4 +878,4 @@ LALDMatrixDeterminantErr( LALStatus *stat, REAL8 det[2], REAL8Array *matrix, REA
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }
-/*@}*/
+/** @} */

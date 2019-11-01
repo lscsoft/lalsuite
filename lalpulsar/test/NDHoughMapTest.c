@@ -105,7 +105,7 @@
 
 /* Error codes and messages */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define TESTNDHOUGHMAPC_ENORM 0
 #define TESTNDHOUGHMAPC_ESUB  1
 #define TESTNDHOUGHMAPC_EARG  2
@@ -117,7 +117,7 @@
 #define TESTNDHOUGHMAPC_MSGEARG  "Error parsing arguments"
 #define TESTNDHOUGHMAPC_MSGEBAD  "Bad argument values"
 #define TESTNDHOUGHMAPC_MSGEFILE "Could not create output file"
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 

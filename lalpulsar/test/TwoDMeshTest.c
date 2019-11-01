@@ -198,7 +198,7 @@
  *
  */
 
-/** \name Error Codes */ /*@{*/
+/** \name Error Codes */ /** @{ */
 #define TWODMESHTESTC_ENORM   0
 #define TWODMESHTESTC_ESUB    1
 #define TWODMESHTESTC_EARG    2
@@ -214,7 +214,7 @@
 #define TWODMESHTESTC_MSGEMEM    "Memory allocation error"
 #define TWODMESHTESTC_MSGEFILE   "Could not open file"
 #define TWODMESHTESTC_MSGEMETRIC "Axis length is zero or negative within specified region"
-/*@}*/
+/** @} */
 
 #include <math.h>
 #include <stdlib.h>

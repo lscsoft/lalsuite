@@ -108,7 +108,7 @@
  */
 
 
-/** \name Error Codes */ /*@{*/
+/** \name Error Codes */ /** @{ */
 #define GENERALMETRICTESTC_EMEM 1
 #define GENERALMETRICTESTC_ESUB 2
 #define GENERALMETRICTESTC_ESYS 3
@@ -119,7 +119,7 @@
 #define GENERALMETRICTESTC_MSGESYS "system call failed"
 #define GENERALMETRICTESTC_MSGEMET "determinant of projected metric negative"
 
-/*@}*/
+/** @} */
 
 #include <math.h>
 #include <stdio.h>

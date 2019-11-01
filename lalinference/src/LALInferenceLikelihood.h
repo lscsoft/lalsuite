@@ -84,7 +84,7 @@ extern const REAL8 CM[15][15];
  * Note that the likelihood is reported unnormalised.
  *
  */
-/*@{*/
+/** @{ */
 
 /***********************************************************//**
  * (log-) likelihood function.                                 
@@ -209,6 +209,6 @@ REAL8 LALInferenceFastSineGaussianLogLikelihood(LALInferenceVariables *currentPa
 
 /** Calculate the SNR across the network */
 void LALInferenceNetworkSNR(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
-/*@}*/
+/** @} */
 
 #endif

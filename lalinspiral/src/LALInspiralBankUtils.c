@@ -77,7 +77,7 @@
  * HybridHexagonal placement. The \ref LALInspiralHybridHexagonalBank_c describes this algebra.
  *
  */
-/*@{*/
+/** @{ */
 
 #include <stdio.h>
 #include <lal/LALStdio.h>
@@ -169,4 +169,4 @@ XLALInspiralMFromTau0AndNonEqualMass(
 
   return result;
 }
-/*@}*/
+/** @} */

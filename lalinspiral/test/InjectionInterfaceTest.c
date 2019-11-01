@@ -52,7 +52,7 @@
  *
  */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 #define INJECTIONINTERFACETESTC_ENORM 	0
 #define INJECTIONINTERFACETESTC_ESUB  	1
 #define INJECTIONINTERFACETESTC_EARG  	2
@@ -68,7 +68,7 @@
 #define INJECTIONINTERFACETESTC_MSGEFILE 	"Could not open file"
 #define INJECTIONINTERFACETESTC_MSGEMEM  	"Out of memory"
 #define INJECTIONINTERFACETESTC_MSGEINJECT  	"No valid injection to do ... ? "
-/*@}*/
+/** @} */
 
 /* --- the names of the files to be used --- */
 #define INJECTIONINTERFACETEST_INJECTIONXMLFILE    "injection.xml"

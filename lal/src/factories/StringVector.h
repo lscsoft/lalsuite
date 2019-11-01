@@ -46,7 +46,7 @@ extern "C" {
  * \endcode
  *
  */
-/*@{*/
+/** @{ */
 
 /*---------- DEFINES ----------*/
 
@@ -73,7 +73,7 @@ INT4 XLALFindStringInVector ( const char *needle, const LALStringVector *haystac
 
 char *XLALDeblankString ( const char *start, UINT4 len );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

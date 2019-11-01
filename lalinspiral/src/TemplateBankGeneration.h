@@ -58,13 +58,13 @@
  * generate a template bank with suitable I/O.
  *
  */
-/*@{*/
+/** @{ */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define TEMPLATEBANKGENERATIONH_ENULL 1
 #define TEMPLATEBANKGENERATIONH_MSGENULL "Unexpected NULL pointer to an input type"
-/*@}*/
+/** @} */
 
 typedef enum tagTemplateBankType {
   /* Binary Inspiral Searches 100-199 */
@@ -117,7 +117,7 @@ LALNDTemplateBank(
        	NDTemplateBankOutput **);
 
 
-/*@}*/ /* end:TemplateBankGeneration_h */
+/** @} */ /* end:TemplateBankGeneration_h */
 
 #if 0
 void

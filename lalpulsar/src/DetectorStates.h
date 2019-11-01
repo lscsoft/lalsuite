@@ -32,7 +32,7 @@ extern "C" {
  * \brief API for the DetectorStates.c functions.
  *
  */
-/*@{*/
+/** @{ */
 
 /*---------- exported INCLUDES ----------*/
 #include <lal/PulsarDataTypes.h>
@@ -43,7 +43,7 @@ extern "C" {
 /*---------- exported DEFINES ----------*/
 
 /** \name Error-codes */
-/*@{*/
+/** @{ */
 #define DETECTORSTATES_ENULL 		1
 #define DETECTORSTATES_ENONULL 		2
 #define DETECTORSTATES_EINPUT  		3
@@ -57,7 +57,7 @@ extern "C" {
 #define DETECTORSTATES_MSGEMEM   	"Out of memory. Bad."
 #define DETECTORSTATES_MSGEXLAL		"XLAL function call failed"
 #define DETECTORSTATES_MSGEIEEE		"Floating point failure"
-/*@}*/
+/** @} */
 
 /*---------- exported types ----------*/
 
@@ -188,7 +188,7 @@ REAL4 XLALContractSymmTensor3s ( const SymmTensor3 *T1, const SymmTensor3 *T2 );
 void XLALDestroyDetectorStateSeries ( DetectorStateSeries *detStates );
 void XLALDestroyMultiDetectorStateSeries ( MultiDetectorStateSeries *mdetStates );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

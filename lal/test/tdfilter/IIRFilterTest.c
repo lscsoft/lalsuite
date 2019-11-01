@@ -175,13 +175,13 @@
  */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define IIRFILTERTESTC_ENORM 0	/**< Normal exit */
 #define IIRFILTERTESTC_ESUB  1	/**< Subroutine failed */
 #define IIRFILTERTESTC_EARG  2	/**< Error parsing arguments */
 #define IIRFILTERTESTC_EBAD  3	/**< Bad argument value */
 #define IIRFILTERTESTC_EFILE 4	/**< Could not create output file */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define IIRFILTERTESTC_MSGENORM "Normal exit"

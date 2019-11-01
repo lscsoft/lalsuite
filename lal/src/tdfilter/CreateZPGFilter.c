@@ -38,7 +38,7 @@
  * point to an existing object (ie <tt>*output</tt>=\c NULL).
  *
  */
-/*@{*/
+/** @{ */
 
 /** \see See \ref CreateZPGFilter_c for documentation */
 COMPLEX8ZPGFilter *XLALCreateCOMPLEX8ZPGFilter( INT4 numZeros, INT4 numPoles )
@@ -154,4 +154,4 @@ LALCreateCOMPLEX16ZPGFilter( LALStatus          *stat,
   /* Normal exit */
   RETURN(stat);
 }
-/*@}*/
+/** @} */

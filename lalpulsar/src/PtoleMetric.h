@@ -67,7 +67,7 @@ extern "C" {
  * and other details.
  *
  */
-/*@{*/
+/** @{ */
 
 #define PMETRIC_MIN(x,y) ((x) < (y) ? (x) : (y))
 #define PMETRIC_MAX(x,y) ((x) > (y) ? (x) : (y))
@@ -76,7 +76,7 @@ extern "C" {
 #define PMETRIC_INDEX(a,b) (PMETRIC_MIN((a),(b))+PMETRIC_MAX((a),(b))*(PMETRIC_MAX((a),(b)) + 1 ) / 2 )
 
 /** \name Error conditions */
-/*@{*/
+/** @{ */
 #define PTOLEMETRICH_ENULL   1
 #define PTOLEMETRICH_EPARM   2
 #define PTOLEMETRICH_EDIM    3
@@ -88,7 +88,7 @@ extern "C" {
 #define PTOLEMETRICH_MSGEDIM    "bad array length"
 #define PTOLEMETRICH_MSGENONULL "unexpected non-null pointer"
 #define PTOLEMETRICH_MSGEMETRIC "unknown metric type"
-/* @} */
+/** @} */
 
 
 /** Constants defining different types of pulsar-metrics. */
@@ -142,7 +142,7 @@ int XLALSpindownMetric(
   double Tspan
   );
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }

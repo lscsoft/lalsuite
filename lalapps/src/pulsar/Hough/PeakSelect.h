@@ -81,7 +81,7 @@ extern "C" {
  *    inclusion in the documentation.
  */
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */ /** @{ */
 
 #define PEAKSELECTH_ENULL 1
 #define PEAKSELECTH_EVAL 5
@@ -89,7 +89,7 @@ extern "C" {
 #define PEAKSELECTH_MSGENULL "Null pointer"
 #define PEAKSELECTH_MSGEVAL  "Invalid value"
 
-/*@}*/
+/** @} */
 
 
 /* ******************************************************

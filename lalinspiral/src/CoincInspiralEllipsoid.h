@@ -47,7 +47,7 @@ extern "C" {
  * \endcode
  *
  */
-/*@{*/
+/** @{ */
 
 #include    <lal/LALAtomicDatatypes.h>
 #include    <lal/LIGOMetadataTables.h>
@@ -74,7 +74,7 @@ int XLALSetTimeInPositionVector( gsl_vector *position,
                                  REAL8       timeShift
                                );
 
-/*@}*/ /* end:CoincInspiralEllipsoid_h */
+/** @} */ /* end:CoincInspiralEllipsoid_h */
 
 #ifdef  __cplusplus
 }

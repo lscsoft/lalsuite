@@ -127,7 +127,7 @@
  *
  */
 
-/** \name Error Codes */ /*@{*/
+/** \name Error Codes */ /** @{ */
 #define BASICINJECTTESTC_ENORM  0	/**< Normal exit */
 #define BASICINJECTTESTC_ESUB   1	/**< Subroutine failed */
 #define BASICINJECTTESTC_EARG   2	/**< Error parsing arguments */
@@ -135,7 +135,7 @@
 #define BASICINJECTTESTC_EFILE  4	/**< Could not open file */
 #define BASICINJECTTESTC_EINPUT 5	/**< Error reading file */
 #define BASICINJECTTESTC_EMEM   6	/**< Out of memory */
-/*@}*/
+/** @} */
 
 /** \cond DONT_DOXYGEN */
 #define BASICINJECTTESTC_MSGENORM  "Normal exit"

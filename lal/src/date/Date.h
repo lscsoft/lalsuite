@@ -56,7 +56,7 @@ extern "C"
  * information.  The various time systems are discussed in \cite esaa1992 .
  *
  */
-/*@{*/
+/** @{ */
 
 /**
  * The UNIX time of the GPS origin epoch.
@@ -115,12 +115,12 @@ LALPlaceAndGPS;
  * printf("The time is %" LAL_GPS_FORMAT "\n", LAL_GPS_PRINT(t));
  * @endcode
  */
-/*@{*/
+/** @{ */
 #define LAL_GPS_FORMAT       LAL_INT8_FORMAT ".%09" LAL_INT4_FORMAT
 #define LAL_GPS_PRINT(gps)   (INT8)(XLALGPSToINT8NS(&(gps)) / XLAL_BILLION_INT8), (INT4)labs(XLALGPSToINT8NS(&(gps)) % XLAL_BILLION_INT8)
-/*@}*/
+/** @} */
 
-/*@}*/
+/** @} */
 
 /* ---------- Function prototypes : see respective source.c files for doxygen documentation ---------- */
 

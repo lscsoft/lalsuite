@@ -55,6 +55,10 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	$(MKDIR_P) out/; \
 	$(DOXYGEN) doxygen.cfg $(doxygen_redir) 2>&1; \
 	$(PYTHON) $(abs_srcdir)/check_tags.py $(abs_builddir)/out/$(PACKAGE).tag >> warnings.log; \
+	for file in `find $(abs_builddir)/out/ -type f`; do \
+		$(SED) 's/autotoc/$(PACKAGE)_autotoc/g' $${file} > sed-output.tmp 2>> warnings.log; \
+		mv -f sed-output.tmp $${file} 2>> warnings.log; \
+	done; \
 	rm -rf in/; \
 	$(SED) -e 's|^$(abs_top_builddir)/doxygen/in|$(abs_top_srcdir)|g' warnings.log > warnings-tmp.log; \
 	mv -f warnings-tmp.log warnings.log; \
@@ -91,7 +95,7 @@ uninstall-local:
 
 clean-local:
 	-rm -rf in/ out/
-	-rm -f autogen.dox doxygen_objdb_*.tmp doxygen_sqlite3.db errors.log warnings.log warnings-tmp.log test_doxygen.sh
+	-rm -f autogen.dox doxygen_objdb_*.tmp doxygen_sqlite3.db sed-output.tmp errors.log warnings.log warnings-tmp.log test_doxygen.sh
 
 EXTRA_DIST = \
 	check_tags.py \

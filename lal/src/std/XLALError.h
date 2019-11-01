@@ -143,7 +143,7 @@ extern "C" {
  * These are implemented here as enumeration constants in the
  * <tt>::XLALErrorValue</tt> enumeration.
  */
-/*@{*/
+/** @{ */
 
 
 #ifndef SWIG    /* exclude from SWIG interface */
@@ -904,7 +904,7 @@ void XLALError(const char *func,
 #endif /* SWIG */
 
 
-/*@}*/
+/** @} */
 
 #if 0
 {       /* so that editors will match succeeding brace */

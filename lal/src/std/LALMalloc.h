@@ -29,7 +29,7 @@ extern "C" {
 }       /* so that editors will match preceding brace */
 #endif
 
-/** \addtogroup LALMalloc_h */ /*@{ */
+/** \addtogroup LALMalloc_h */ /** @{ */
 extern size_t lalMallocTotal;
 extern size_t lalMallocTotalPeak;
 void *XLALMalloc(size_t n);
@@ -44,9 +44,9 @@ void XLALFree(void *p);
 #define XLALCalloc( m, n )     XLALCallocLong( m, n, __FILE__, __LINE__ )
 #define XLALRealloc( p, n )    XLALReallocLong( p, n, __FILE__, __LINE__ )
 #endif /* SWIG */
-/*@}*/
+/** @} */
 
-/** \addtogroup LALMalloc_h */ /*@{ */
+/** \addtogroup LALMalloc_h */ /** @{ */
 /* presently these are only here if needed */
 #ifdef LAL_FFTW3_MEMALIGN_ENABLED
 #define LAL_MEM_ALIGNMENT 0x40
@@ -65,7 +65,7 @@ void XLALFreeAligned(void *ptr);
 #define XLALReallocAligned(ptr, size) XLALReallocAlignedLong(ptr, size, __FILE__, __LINE__)
 #endif /* SWIG */
 #endif /* LAL_FFTW3_MEMALIGN_ENABLED */
-/*@}*/
+/** @} */
 
 #if defined NDEBUG
 
@@ -105,7 +105,7 @@ extern int lalIsMemDbgPtr;      /* ( lalMemDbgUsrPtr == lalMemDbgPtr ) */
 #endif /* SWIG */
 
 
-/** \addtogroup LALMalloc_h */ /*@{ */
+/** \addtogroup LALMalloc_h */ /** @{ */
 void *LALMallocShort(size_t n);
 void *LALMallocLong(size_t n, const char *file, int line);
 void *LALCallocShort(size_t m, size_t n);
@@ -113,7 +113,7 @@ void LALFree(void *p);
 void *LALCallocLong(size_t m, size_t n, const char *file, int line);
 void *LALReallocShort(void *p, size_t n);
 void *LALReallocLong(void *p, size_t n, const char *file, int line);
-/*@}*/
+/** @} */
 
 #endif /* NDEBUG  */
 

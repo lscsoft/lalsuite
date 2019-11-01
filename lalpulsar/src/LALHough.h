@@ -70,7 +70,7 @@ extern "C" {
  * residual spin-down parameter. We can distinguish (at most) as
  * many lines as the number of the different periodograms used.
  */
-/*@{*/
+/** @{ */
 
 
 /*
@@ -106,7 +106,7 @@ extern "C" {
  */
 
 /**\name Error Codes */
-/*@{*/
+/** @{ */
 #define LALHOUGHH_ENULL 1
 #define LALHOUGHH_ESIZE 2
 #define LALHOUGHH_ESZMM 4
@@ -124,7 +124,7 @@ extern "C" {
 #define LALHOUGHH_MSGEFREQ "Invalid frequency"
 #define LALHOUGHH_MSGEVAL  "Invalid value"
 #define LALHOUGHH_MSGEMEM  "malloc() failed / Out of memory"
-/*@}*/
+/** @} */
 
 
 /* ******************************************************
@@ -277,7 +277,7 @@ void LALHOUGHComputeMultiIFOAMWeights  (LALStatus          *status,
 					);
 
 
-/*@}*/
+/** @} */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

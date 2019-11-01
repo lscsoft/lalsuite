@@ -32,9 +32,9 @@
  * Note that this header is not included automatically by the header
  * <tt>LALStdlib.h</tt>.  Include it explicitly if you need any of these
  * constants.
- *//*@{*/
+ *//** @{ */
 
-/*@{*/
+/** @{ */
 #ifndef _LALCONSTANTS_H
 #define _LALCONSTANTS_H
 
@@ -49,7 +49,7 @@ extern "C" {
  * standard 754 for binary arithmetic.  All numbers are dimensionless.
  * @see http://dx.doi.org/10.1109/IEEESTD.2008.4610935
  */
-/*@{*/
+/** @{ */
 #if __STDC_VERSION__ >= 199901L
 #define LAL_REAL4_MANT 24 /**< Bits of precision in the mantissa of a REAL4 */
 #define LAL_REAL4_MAX 0x1.fffffe0000000p+127 /**< Largest normalized REAL4 number (2-2^-23)*2^127 */
@@ -69,20 +69,20 @@ extern "C" {
 #define LAL_REAL8_MIN 2.225073858507201383090232717332404064e-308
 #define LAL_REAL8_EPS 2.220446049250313080847263336181640625e-16
 #endif
-/*@}*/
+/** @} */
 
 /**
  * @name Integer constants
  * Extremal integer values, all expressed as unsigned long long.
  */
-/*@{*/
+/** @{ */
 #define LAL_UINT8_MAX   LAL_UINT8_C(18446744073709551615)
 #define LAL_UINT4_MAX   LAL_UINT8_C(4294967295)
 #define LAL_UINT2_MAX   LAL_UINT8_C(65535)
 #define LAL_INT8_MAX    LAL_UINT8_C(9223372036854775807)
 #define LAL_INT4_MAX    LAL_UINT8_C(2147483647)
 #define LAL_INT2_MAX    LAL_UINT8_C(32767)
-/*@}*/
+/** @} */
 
 /**
  * @name Mathematical constants
@@ -165,7 +165,7 @@ extern "C" {
  * @brief natural log of pi, ln(pi)
  * @see http://oeis.org/A053510
  */
-/*@{*/
+/** @{ */
 #define LAL_E         2.718281828459045235360287471352662498
 #define LAL_LOG2E     1.442695040888963407359924681001892137
 #define LAL_LOG10E    0.434294481903251827651128918916605082
@@ -186,7 +186,7 @@ extern "C" {
 #define LAL_PI_180    1.745329251994329576923690768488612713e-2
 #define LAL_180_PI    57.295779513082320876798154814105170332
 #define LAL_LNPI      1.144729885849400174143427351353058712
-/*@}*/
+/** @} */
 
 /**
  * @name Exact physical constants
@@ -194,13 +194,13 @@ extern "C" {
  * The dimensions in SI units are as shown.
  * @see http://dx.doi.org/10.1103/RevModPhys.84.1527
  */
-/*@{*/
+/** @{ */
 #define LAL_C_SI 299792458e0 /**< Speed of light in vacuo, m s^-1 */
 #define LAL_EPSILON0_SI 8.854187817620389850536563031710750261e-12 /**< Permittivity of free space, C^2 N^-1 m^-2 */
 #define LAL_MU0_SI 1.256637061435917295385057353311801154e-6 /**< Permeability of free space, N A^-2 */
 #define LAL_GEARTH_SI 9.80665 /**< Standard gravity, m s^-2 */
 #define LAL_PATM_SI 101325e0 /**< Standard atmosphere, Pa */
-/*@}*/
+/** @} */
 
 /**
  * @name Primary physical constants
@@ -209,7 +209,7 @@ extern "C" {
  * derived from these are given in the next section.
  * @see http://dx.doi.org/10.1103/RevModPhys.84.1527
  */
-/*@{*/
+/** @{ */
 #define LAL_QE_SI 1.60217656535e-19 /**< Electron charge, C */
 #define LAL_ALPHA 0.007297352569824 /**< Fine structure constant, dimensionless */
 #define LAL_RYD_SI 10973731.56853955 /**< Rydberg constant, m^-1 */
@@ -217,7 +217,7 @@ extern "C" {
 #define LAL_MP_AMU 1.00727646681290 /**< Proton molar mass, kg mol^-1 */
 #define LAL_R_SI 8.314462175 /**< Molar gas constant, J mol^-1 K^-1 */
 #define LAL_G_SI 6.67384e-11 /**< Gravitational constant, N m^2 kg^-2 */
-/*@}*/
+/** @} */
 
 /**
  * @name Derived physical constants
@@ -227,7 +227,7 @@ extern "C" {
  * accuracy is retained for these constants in order
  * that equivalent combinations yield the same value.
  */
-/*@{*/
+/** @{ */
 
 /**
  * @brief Reduced Planck constant, J s
@@ -365,7 +365,7 @@ extern "C" {
  * X * exp(X) = 5 * (exp(X) - 1)
  */
 #define LAL_BWIEN_SI 2.897772113049799237638435257604006684e-3
-/*@}*/
+/** @} */
 
 /**
  * @name Exact astrophysical parameters
@@ -373,14 +373,14 @@ extern "C" {
  * The dimensions in SI units are as shown.
  * @see http://asa.usno.navy.mil/static/files/2015/Astronomical_Constants_2015.pdf
  */
-/*@{*/
+/** @{ */
 #define LAL_SOL_SID 1.002737909350795 /**< Ratio of mean solar day to sidereal day, dimensionless */
 #define LAL_DAYJUL_SI 86400e0 /**< Julian day, s */
 #define LAL_YRJUL_SI 31557600e0 /**< Julian year, s */
 #define LAL_LYR_SI 9460730472580800e0 /**< (Julian) Lightyear, m */
 #define LAL_AU_SI 149597870700e0 /**< Astronomical unit, m */
 #define LAL_PC_SI 3.085677581491367278913937957796471611e16 /**< Parsec, m */
-/*@}*/
+/** @} */
 
 /**
  * @name Primary astrophysical parameters
@@ -388,7 +388,7 @@ extern "C" {
  * to which they are known.  Other physical constants
  * derived from these are given in the next section.
  */
-/*@{*/
+/** @{ */
 
 /**
  * @brief Earth equatorial radius, m
@@ -466,7 +466,7 @@ extern "C" {
  * @see http://hpiers.obspm.fr/eop-pc/models/constants.html
  */
 #define LAL_YRSID_SI 31558149.763545600
-/*@}*/
+/** @} */
 
 /**
  * @name Derived astrophysical parameters
@@ -476,7 +476,7 @@ extern "C" {
  * accuracy is retained for these constants in order
  * that equivalent combinations yield the same value.
  */
-/*@{*/
+/** @{ */
 
 /**
  * @brief Cosine of Earth inclination (2000)
@@ -525,7 +525,7 @@ extern "C" {
  * LAL_DAYSID_SI = LAL_DAYJUL_SI / LAL_SOL_SID
  */
 #define LAL_DAYSID_SI 86164.090530832885726908802698342011678582
-/*@}*/
+/** @} */
 
 /**
  * @name Cosmological parameters
@@ -544,7 +544,7 @@ extern "C" {
  * @see http://arxiv.org/abs/1303.5062
  * @see http://dx.doi.org/10.1088/0067-0049/208/2/20
  */
-/*@{*/
+/** @{ */
 
 /**
  * @brief Hubble constant prefactor, s^-1
@@ -612,10 +612,10 @@ extern "C" {
  * LAL_SCMB_SI = 4 * LAL_PI^2 * LAL_K_SI * (LAL_K_SI * LAL_TCMB_SI / (LAL_C_SI * LAL_HBAR_SI))^3 / 45
  */
 #define LAL_SCMB_SI 2.042295723200401840880167645233175756e-14
-/*@}*/
+/** @} */
 
-/*@}*/
-/*@}*/
+/** @} */
+/** @} */
 #ifdef  __cplusplus
 }
 #endif

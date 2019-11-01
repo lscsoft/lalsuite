@@ -825,7 +825,7 @@ int XLALFrWriteCOMPLEX8FrequencySeries(const COMPLEX8FrequencySeries * series, i
  */
 int XLALFrWriteCOMPLEX16FrequencySeries(const COMPLEX16FrequencySeries * series, int fnum, int subtype);
 
-/* @} */
+/** @} */
 
 /**
  * @name Advanced Frame Writing Routines

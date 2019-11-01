@@ -86,7 +86,7 @@
  * For the LALUnwrapREAL4Angle() and LALUnwrapREAL8Angle() functions, \c a,
  * and \c b should  not point to the same memory location (<tt>a != b</tt>).
  */
-/*@{*/
+/** @{ */
 
 /** computes the magnitudes of a vector of complex numbers */
 int XLALCOMPLEX8VectorAbs( REAL4Vector *out, const COMPLEX8Vector *in )
@@ -395,4 +395,4 @@ LALUnwrapREAL8Angle (
 
   RETURN (status);
 }
-/*@}*/
+/** @} */

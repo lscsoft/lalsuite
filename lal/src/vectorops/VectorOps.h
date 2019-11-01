@@ -47,13 +47,13 @@ extern "C" {
  */
 
 /** \name Error Codes */
-/*@{*/
+/** @{ */
 #define VECTOROPSH_ENULL 1	/**< Null pointer */
 #define VECTOROPSH_ESIZE 2	/**< Invalid input size */
 #define VECTOROPSH_ESZMM 4	/**< Size mismatch */
 #define VECTOROPSH_ESAME 8	/**< Input/Output data vectors are the same */
-/*@}*/
-/*@}*/
+/** @} */
+/** @} */
 
 #define VECTOROPSH_MSGENULL "Null pointer"
 #define VECTOROPSH_MSGESIZE "Invalid input size"
