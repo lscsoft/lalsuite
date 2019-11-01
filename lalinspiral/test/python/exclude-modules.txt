@@ -1,0 +1,2 @@
+# requires pycuda
+lalinspiral/sbank/overlap_cuda.py
