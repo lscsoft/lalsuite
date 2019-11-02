@@ -1,4 +1,6 @@
-EXTRA_DIST =
+EXTRA_DIST = \
+	exclude-modules.txt \
+	$(END_OF_LIST)
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
 # Add compiled test programs to this variable
