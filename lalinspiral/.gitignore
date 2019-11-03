@@ -37,6 +37,7 @@ Makefile.in
 octave/
 python/lalinspiral/__init__.py
 python/lalinspiral/_lalinspiral*
+python/lalinspiral/_thinca.so
 python/lalinspiral/git_version.py
 python/lalinspiral/lalinspiral.py
 src/Chisq_GPU.cpp
