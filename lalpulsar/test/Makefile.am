@@ -71,7 +71,6 @@ MOSTLYCLEANFILES = \
 	TEMPOcomparison.par \
 	TEMPOcomparison.tim \
 	TS_R4.dat \
-	V-1_V1_1800SFT_simCW_simulateCWTest-*.sft \
 	outputsft*.sft \
 	$(END_OF_LIST)
 

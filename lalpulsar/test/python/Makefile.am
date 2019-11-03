@@ -14,3 +14,7 @@ test_scripts += \
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
+
+MOSTLYCLEANFILES = \
+	V-1_V1_1800SFT_simCW_simulateCWTest-*.sft \
+	$(END_OF_LIST)
