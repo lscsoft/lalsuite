@@ -699,17 +699,14 @@ nightly:clang:dev:
 nightly:gcc:7:
   <<: *gcc-build
   image: igwn/lalsuite-dev-gcc:7
-  allow_failure: true
 
 nightly:gcc:8:
   <<: *gcc-build
   image: igwn/lalsuite-dev-gcc:8
-  allow_failure: true
 
 nightly:gcc:9:
   <<: *gcc-build
   image: igwn/lalsuite-dev-gcc:9
-  allow_failure: true
 
 # conda
 
