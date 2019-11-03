@@ -130,6 +130,7 @@ EXTRA_DIST = \
 	config.h.in
 
 SUBDIRS = \
+	. \
 	mpi
 
 DISTCLEANFILES = config.h

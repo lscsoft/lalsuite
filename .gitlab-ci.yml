@@ -793,7 +793,6 @@ nightly:debian:buster:
   only:
     - schedules
     - web
-  allow_failure: true
 
 # macOS
 

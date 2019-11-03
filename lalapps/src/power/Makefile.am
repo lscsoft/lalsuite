@@ -1,7 +1,7 @@
-include $(top_srcdir)/gnuscripts/lalapps.am
-
+BUILT_SOURCES =
 MOSTLYCLEANFILES =
 EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 

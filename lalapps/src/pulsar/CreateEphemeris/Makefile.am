@@ -1,3 +1,4 @@
+BUILT_SOURCES =
 MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalapps.am

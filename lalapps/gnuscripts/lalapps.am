@@ -3,7 +3,7 @@
 AM_CPPFLAGS = @AM_CPPFLAGS@
 
 ## ensure liblalapps is (re)built before everything else
-BUILT_SOURCES = liblalapps
+all check install: liblalapps
 
 .PHONY: liblalapps
 liblalapps:
