@@ -2723,8 +2723,9 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
                 ABORT_NONZERO_TIDES_NULL(LALpars);
 
             /* Call the waveform driver routine */
-            hlm = XLALSimIMRNRHybSur3dq8Modes(phiRef, deltaT, m1, m2, S1z,
-                S2z, f_min, f_ref, r, XLALSimInspiralWaveformParamsLookupModeArray(LALpars));
+            hlm = XLALSimIMRNRHybSur3dq8Modes(deltaT, m1, m2, S1z,
+                S2z, f_min, f_ref, r,
+                XLALSimInspiralWaveformParamsLookupModeArray(LALpars));
             break;
 
         case SEOBNRv4P:

@@ -856,7 +856,7 @@ int XLALSimInspiralSetQuadMonParamsFromLambdas(LALDict *LALpars);
 INT4 XLALSimIMRNRHybSur3dq8Polarizations(
     REAL8TimeSeries **hplus,        /**<Output: \f$h_+\f$ polarization. */
     REAL8TimeSeries **hcross,       /**<Output: \f$h_{\times}\f$ polarization.*/
-    REAL8 phiRef,                   /**< Orbital phase at reference frequency.*/
+    REAL8 phiRef,                   /**< azimuthal angle for Ylms */
     REAL8 inclination,              /**< Inclination angle. */
     REAL8 deltaT,                   /**< Sampling interval (s). */
     REAL8 m1,                       /**< Mass of Bh1 (kg). */
@@ -875,7 +875,6 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
  * In module LALSimIMRNRHybSur3dq8.c
  */
 SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
-    REAL8 phiRef,                   /**< Orbital phase at reference frequency.*/
     REAL8 deltaT,                   /**< Sampling interval (s). */
     REAL8 m1,                       /**< Mass of Bh1 (kg). */
     REAL8 m2,                       /**< Mass of Bh2 (kg). */

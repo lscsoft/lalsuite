@@ -93,7 +93,6 @@ int NRHybSur3dq8_core(
     gsl_vector **phi_22,
     EvaluatedDataPieces **evaluated_mode_dps,
     LIGOTimeGPS *epoch,
-    REAL8 phiRef,
     const REAL8 deltaTOverM,
     const REAL8 fMin,
     const REAL8 fRef,
