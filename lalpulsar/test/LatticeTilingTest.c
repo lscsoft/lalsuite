@@ -39,6 +39,9 @@
 
 #define MISM_HIST_BINS 20
 
+// Safely compute absolute different between two unsigned integers
+#define ABSDIFF(x, y) (int)((x) > (y) ? ((x) - (y)) : ((y) - (x)))
+
 // The reference mismatch histograms were generated in Octave
 // using the LatticeMismatchHist() function available in OctApps.
 
@@ -102,7 +105,7 @@ static int SerialisationTest(
   // Count number of points
   const UINT8 total = XLALTotalLatticeTilingPoints( itr );
   XLAL_CHECK( total > 0, XLAL_EFUNC );
-  XLAL_CHECK( imaxabs( total - total_ref ) <= total_tol, XLAL_EFUNC, "|total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
+  XLAL_CHECK( ABSDIFF( total, total_ref ) <= total_tol, XLAL_EFUNC, "|total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
 
   // Get all points
   gsl_matrix *GAMAT( points, n, total );
@@ -246,7 +249,7 @@ static int BasicTest(
     const UINT8 total = XLALTotalLatticeTilingPoints( itr );
     XLAL_CHECK( total > 0, XLAL_EFUNC );
     printf( "Number of lattice points in %zu dimensions: %" LAL_UINT8_FORMAT " (vs %" LAL_UINT8_FORMAT ", tolerance = %i)\n", i+1, total, total_ref[i], total_tol );
-    XLAL_CHECK( imaxabs( total - total_ref[i] ) <= total_tol, XLAL_EFUNC, "|total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", i, total, total_ref[i], total_tol );
+    XLAL_CHECK( ABSDIFF( total, total_ref[i] ) <= total_tol, XLAL_EFUNC, "|total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", i, total, total_ref[i], total_tol );
     for ( UINT8 k = 0; XLALNextLatticeTilingPoint( itr, NULL ) > 0; ++k ) {
       const UINT8 itr_index = XLALCurrentLatticeTilingIndex( itr );
       XLAL_CHECK( k == itr_index, XLAL_EFUNC, "k = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = itr_index", k, itr_index );
@@ -259,7 +262,7 @@ static int BasicTest(
       const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, j );
       XLAL_CHECK( stats != NULL, XLAL_EFUNC );
       XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
-      XLAL_CHECK( imaxabs( stats->total_points - total_ref[j] ) <= total_tol, XLAL_EFAILED, "|total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", j, stats->total_points, total_ref[j], total_tol );
+      XLAL_CHECK( ABSDIFF( stats->total_points, total_ref[j] ) <= total_tol, XLAL_EFAILED, "|total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", j, stats->total_points, total_ref[j], total_tol );
       XLAL_CHECK( stats->min_points <= stats->max_points, XLAL_EFAILED, "min_points = %" LAL_INT4_FORMAT " > %" LAL_INT4_FORMAT " = max_points", stats->min_points, stats->max_points );
       XLAL_CHECK( stats->min_value <= stats->max_value, XLAL_EFAILED, "min_value = %g > %g = max_value", stats->min_value, stats->max_value );
       printf( " %s ...", stats->name );
@@ -340,7 +343,7 @@ static int BasicTest(
     while ( XLALNextLatticeTilingPoint( itr_alt, NULL ) > 0 ) {
       ++total_alt;
     }
-    XLAL_CHECK( imaxabs( total_alt - total_ref[i] ) <= total_tol, XLAL_EFUNC, "alternating |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", i, total_alt, total_ref[i], total_tol );
+    XLAL_CHECK( ABSDIFF( total_alt, total_ref[i] ) <= total_tol, XLAL_EFUNC, "alternating |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", i, total_alt, total_ref[i], total_tol );
     printf( " done\n" );
 
     // Cleanup
@@ -386,7 +389,7 @@ static int MismatchTest(
   const UINT8 total = XLALTotalLatticeTilingPoints( itr );
   XLAL_CHECK( total > 0, XLAL_EFUNC );
   printf( "Number of lattice points: %" LAL_UINT8_FORMAT " (vs %" LAL_UINT8_FORMAT ", tolerance = %i)\n", total, total_ref, total_tol );
-  XLAL_CHECK( imaxabs( total - total_ref ) <= total_tol, XLAL_EFUNC, "|total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
+  XLAL_CHECK( ABSDIFF( total, total_ref ) <= total_tol, XLAL_EFUNC, "|total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
 
   // Initialise mismatch histogram counts
   double mism_hist[MISM_HIST_BINS] = {0};
