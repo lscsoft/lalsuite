@@ -866,8 +866,7 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
     REAL8 fRef,                     /**< Reference GW frequency (Hz). */
     REAL8 chi1z,                    /**< Dimensionless spin of Bh1. */
     REAL8 chi2z,                    /**< Dimensionless spin of Bh2. */
-    LALValue* ModeArray             /**< Container for the modes to generate.
-                                    To generate all available modes pass NULL.*/
+    LALDict* LALparams             /**< Dict with extra parameters */
 );
 
 /**
@@ -883,8 +882,7 @@ SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
     REAL8 fMin,                     /**< Start GW frequency (Hz). */
     REAL8 fRef,                     /**< Reference GW frequency (Hz). */
     REAL8 distance,                 /**< Distance of source (m). */
-    LALValue* ModeArray             /**< Container for the modes to generate.
-                                    To generate all available modes pass NULL.*/
+    LALDict* LALparams             /**< Dict with extra parameters */
 );
 
 

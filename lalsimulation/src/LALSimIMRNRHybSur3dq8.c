@@ -33,9 +33,9 @@
  *
  * **Parameter ranges**:
  *
- *   q = [1, 10]
- *
- *   \f$\chi_{1z}, \chi_{2z}\f$ = [-1, 1]
+ *   q = [1, 10.1] and \f$\chi_{1z}, \chi_{2z}\f$ = [-0.81, 0.81]
+ *   or
+ *   q = [1, 9.1] and \f$\chi_{1z}, \chi_{2z}\f$ = [-0.91, 0.91]
  *
  *   modes: \f$ \ell \leq 4, m \geq 0 \f$, and (5,5), but not (4,1) or (4,0).
  *   m<0 modes are determined from the m \f$\geq0\f$ modes.
@@ -240,12 +240,13 @@ int NRHybSur3dq8_core(
     const REAL8 Mtot_sec,  /**< Total mass in geometric units (s). */
     REAL8 chi1z,           /**< Dimensionless spin of Bh1. */
     REAL8 chi2z,           /**< Dimensionless spin of Bh2. */
-    LALValue* ModeArray     /**< Container for (ell, m) modes to generate. */
+    LALValue* ModeArray,   /**< Container for (ell, m) modes to generate. */
+    LALDict* LALparams     /**< Dict with extra parameters */
 ) {
 
     const NRHybSurData *NR_hybsur_data = &__lalsim_NRHybSur3dq8_data;
 
-    REAL8 init_orbphase = 0;    // In the LAL convention the larger BH should 
+    REAL8 init_orbphase = 0;    // In the LAL convention the larger BH should
                                 // be on the +ve x-axis at fRef, this is done
                                 // by setting orbphase = 0 at fRef.
     // For the surrogate Bh1 is defined to be the one with the larger mass,
@@ -265,8 +266,17 @@ int NRHybSur3dq8_core(
     const char *param_validity = "This model is valid for q <= 9.1 & "
         "|chi1z,chi2z| <= 0.91, or q <= 10.1 & |chi1z,chi2z| <= 0.81";
 
+    // By default we do not allow unlimited_extrapolation
+    UINT4 unlim_extrap = 0;
+    if (LALparams != NULL &&
+            XLALDictContains(LALparams, "unlimited_extrapolation")) {
+        // Unless the user asks for it
+        unlim_extrap
+            = XLALDictLookupUINT4Value(LALparams, "unlimited_extrapolation");
+    }
+
     // Sanity checks and warnings
-    if (q > 10.1) {
+    if ((q > 10.1) && (unlim_extrap == 0)) {
         XLAL_ERROR(XLAL_EINVAL,
             "Too much extrapolation in mass ratio; q=%0.4f > 10.1\n%s\n", q,
             param_validity);
@@ -275,18 +285,18 @@ int NRHybSur3dq8_core(
         XLAL_PRINT_WARNING(
             "Extrapolating outside training range q=%0.4f > 8.1\n", q);
     }
-    if (fabs(chi1z) > 0.91) {
+    if ((fabs(chi1z) > 0.91) && (unlim_extrap == 0)) {
         XLAL_ERROR(XLAL_EINVAL,
             "Too much extrapolation; |chi1z|=%0.4f > 0.91\n%s\n", fabs(chi1z),
             param_validity);
     }
-    if (fabs(chi2z) > 0.91) {
+    if ((fabs(chi2z) > 0.91) && (unlim_extrap == 0)) {
         XLAL_ERROR(XLAL_EINVAL,
             "Too much extrapolation; |chi2z|=%0.4f > 0.91\n%s\n", fabs(chi2z),
             param_validity);
     }
     if (fabs(chi1z) > 0.81) {
-        if (q > 9.1) {
+        if ((q > 9.1) && (unlim_extrap == 0)) {
             XLAL_ERROR(XLAL_EINVAL,
                 "Too much extrapolation; q=%0.4f > 9.1 & |chi1z|=%.04f"
                 " >0.81\n%s\n", q, fabs(chi1z), param_validity);
@@ -296,7 +306,7 @@ int NRHybSur3dq8_core(
             fabs(chi1z));
     }
     if (fabs(chi2z) > 0.81) {
-        if (q > 9.1) {
+        if ((q > 9.1) && (unlim_extrap == 0)) {
             XLAL_ERROR(XLAL_EINVAL,
                 "Too much extrapolation; q=%0.4f > 9.1 & |chi2z|=%.04f"
                 " >0.81\n%s\n", q, fabs(chi2z), param_validity);
@@ -447,6 +457,22 @@ int NRHybSur3dq8_core(
  * If a custom ModeArray is given, only those modes are used. Note that it only
  * looks for m>=0 modes in ModeArray, and will ignore m<0 modes even if present.
  * The m<0 modes automatically get added.
+ *
+ * This surrogate model is trained on the following range.
+ *   q <= 8, |chi_1|, |chi_2| <= 0.8
+ *   If you want a guarantee of accuracy you should stick to the above ranges.
+ *
+ *   We allow extrapolation to the following ranges, but with a warning:
+ *   q = [1, 10.1] and \f$\chi_{1z}, \chi_{2z}\f$ = [-0.81, 0.81]
+ *   or
+ *   q = [1, 9.1] and \f$\chi_{1z}, \chi_{2z}\f$ = [-0.91, 0.91]
+ *   We expect the model to be reasonable when extrapolated to these ranges.
+ *
+ *   Beyond the above ranges, we raise an error. If you want to extrapolate
+ *   beyond these limits you can specify unlimited_extrapolation = 1 in your
+ *   dictParams as follows:
+ *       # USE AT YOUR OWN RISK!!
+ *       lal.DictInsertUINT4Value(dictParams, "unlimited_extrapolation", 1)
  */
 INT4 XLALSimIMRNRHybSur3dq8Polarizations(
     REAL8TimeSeries **hplus,        /**<Output: \f$h_+\f$ polarization. */
@@ -461,8 +487,7 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
     REAL8 fRef,                     /**< Reference GW frequency (Hz). */
     REAL8 chi1z,                    /**< Dimensionless spin of Bh1. */
     REAL8 chi2z,                    /**< Dimensionless spin of Bh2. */
-    LALValue* ModeArray             /**< Container for the modes to generate.
-                                    To generate all available modes pass NULL.*/
+    LALDict* LALparams              /**< Dict with extra parameters */
 )
 {
 #ifdef LAL_PTHREAD_LOCK
@@ -479,6 +504,8 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
     }
 
     // If ModeArray is not specified, use all available modes
+    LALValue* ModeArray
+        = XLALSimInspiralWaveformParamsLookupModeArray(LALparams);
     if (ModeArray == NULL) {
         ModeArray = XLALSimInspiralCreateModeArray();
         NRHybSur_set_default_modes(ModeArray, NR_hybsur_data);
@@ -523,7 +550,8 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
 
     // Evaluate the surrogate
     ret = NRHybSur3dq8_core(&phi_22, evaluated_mode_dps,
-        &epoch, deltaT, fMin, fRef, q, Mtot_sec, chi1z, chi2z, ModeArray);
+        &epoch, deltaT, fMin, fRef, q, Mtot_sec, chi1z, chi2z,
+        ModeArray, LALparams);
     if(ret != XLAL_SUCCESS) {
         XLAL_ERROR(XLAL_EFUNC, "Surrogate evaluation failed.");
     }
@@ -683,6 +711,22 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
  *
  * If a custom ModeArray is given, only those modes are used. Note that it only
  * looks for m>=0 modes in ModeArray, and will ignore m<0 modes even if present.
+ *
+ * This surrogate model is trained on the following range.
+ *   q <= 8, |chi_1|, |chi_2| <= 0.8
+ *   If you want a guarantee of accuracy you should stick to the above ranges.
+ *
+ *   We allow extrapolation to the following ranges, but with a warning:
+ *   q = [1, 10.1] and \f$\chi_{1z}, \chi_{2z}\f$ = [-0.81, 0.81]
+ *   or
+ *   q = [1, 9.1] and \f$\chi_{1z}, \chi_{2z}\f$ = [-0.91, 0.91]
+ *   We expect the model to be reasonable when extrapolated to these ranges.
+ *
+ *   Beyond the above ranges, we raise an error. If you want to extrapolate
+ *   beyond these limits you can specify unlimited_extrapolation = 1 in your
+ *   dictParams as follows:
+ *       # USE AT YOUR OWN RISK!!
+ *       lal.DictInsertUINT4Value(dictParams, "unlimited_extrapolation", 1)
  */
 SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
     REAL8 deltaT,                   /**< Sampling interval (s). */
@@ -693,8 +737,7 @@ SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
     REAL8 fMin,                     /**< Start GW frequency (Hz). */
     REAL8 fRef,                     /**< Reference GW frequency (Hz). */
     REAL8 distance,                 /**< Distance of source (m). */
-    LALValue* ModeArray             /**< Container for the modes to generate.
-                                    To generate all available modes pass NULL.*/
+    LALDict* LALparams              /**< Dict with extra parameters */
 ) {
 #ifdef LAL_PTHREAD_LOCK
   (void) pthread_once(&NRHybSur3dq8_is_initialized, NRHybSur3dq8_Init_LALDATA);
@@ -710,6 +753,8 @@ SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
     }
 
     // If ModeArray is not specified, use all available modes
+    LALValue* ModeArray
+        = XLALSimInspiralWaveformParamsLookupModeArray(LALparams);
     if (ModeArray == NULL) {
         ModeArray = XLALSimInspiralCreateModeArray();
         NRHybSur_set_default_modes(ModeArray, NR_hybsur_data);
@@ -754,7 +799,8 @@ SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
 
     // Evaluate the surrogate
     ret = NRHybSur3dq8_core(&phi_22, evaluated_mode_dps,
-        &epoch, deltaT, fMin, fRef, q, Mtot_sec, chi1z, chi2z, ModeArray);
+        &epoch, deltaT, fMin, fRef, q, Mtot_sec, chi1z, chi2z,
+        ModeArray, LALparams);
     if(ret != XLAL_SUCCESS) {
         XLAL_ERROR_NULL(XLAL_EFUNC, "Surrogate evaluation failed.");
     }

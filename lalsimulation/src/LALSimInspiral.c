@@ -1021,8 +1021,7 @@ int XLALSimInspiralChooseTDWaveform(
             /* Call the waveform driver routine */
             ret = XLALSimIMRNRHybSur3dq8Polarizations(hplus, hcross, phiRef,
                     inclination, deltaT, m1, m2, distance, f_min, f_ref,
-                    S1z, S2z,
-                    XLALSimInspiralWaveformParamsLookupModeArray(LALparams)); 
+                    S1z, S2z, LALparams); 
             break;
 
 
@@ -2724,8 +2723,7 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
 
             /* Call the waveform driver routine */
             hlm = XLALSimIMRNRHybSur3dq8Modes(deltaT, m1, m2, S1z,
-                S2z, f_min, f_ref, r,
-                XLALSimInspiralWaveformParamsLookupModeArray(LALpars));
+                S2z, f_min, f_ref, r, LALpars);
             break;
 
         case SEOBNRv4P:
