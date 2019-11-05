@@ -242,7 +242,7 @@ int XLALInspiralTDWaveformFromSimInspiral(
    REAL8 S2y = thisRow->spin2y;
    REAL8 S2z = thisRow->spin2z;
    REAL8 f_min = thisRow->f_lower;
-   REAL8 f_ref = 0.;
+   REAL8 f_ref = thisRow->f_final;
    REAL8 distance = thisRow->distance * LAL_PC_SI * 1e6;
    REAL8 inclination = thisRow->inclination;
    LALDict *params = XLALCreateDict();
