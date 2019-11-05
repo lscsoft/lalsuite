@@ -96,6 +96,12 @@
 #include <lal/LALConstants.h>
 #include <lal/TwoDMesh.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 void
 LALCreateTwoDMesh( LALStatus          *stat,
 		   TwoDMeshNode       **mesh,
@@ -191,8 +197,8 @@ LALRefineTwoDMesh( LALStatus    *stat,
 		   TwoDMeshNode *coarseMesh,
 		   TwoDMeshNode *fineMesh )
 {
-  BOOLEAN found;      /* whether a fine point is in any coarse tile */
-  UINT4 lost = 0;     /* number of fine points not found */
+  BOOLEAN UNUSED found;      /* whether a fine point is in any coarse tile */
+  UINT4 UNUSED lost = 0;     /* number of fine points not found */
   TwoDMeshNode *here; /* pointer to coarse mesh list */
 
   INITSTATUS(stat);
