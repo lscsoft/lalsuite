@@ -3513,7 +3513,8 @@ def cart2sph(x,y,z):
 
 def plot_sky_map(hpmap, outdir, inj=None, nest=True):
     """Plots a sky map from a healpix map, optionally including an
-    injected position.
+    injected position. This is a temporary map to display before
+    ligo.skymap utility is used to generated a smoother one.
 
     :param hpmap: An array representing a healpix map (in nested
       ordering if ``nest = True``).
@@ -3528,13 +3529,12 @@ def plot_sky_map(hpmap, outdir, inj=None, nest=True):
     """
 
     fig = plt.figure(frameon=False, figsize=(8,6))
-    ax = plt.subplot(111, projection='astro hours mollweide')
-    ax.cla()
-    ax.grid()
-    lp.healpix_heatmap(hpmap, nest=nest, vmin=0.0, vmax=np.max(hpmap), cmap=plt.get_cmap('cylon'))
+    hp.mollview(hpmap, nest=nest, min=0, max=np.max(hpmap), cmap='Greys', coord='E', fig=fig.number, title='Histogrammed skymap' )
+    plt.grid(True,color='g',figure=fig)
 
     if inj is not None:
-        ax.plot(inj[0], inj[1], '*', markerfacecolor='white', markeredgecolor='black', markersize=10)
+        theta = np.pi/2.0 - inj[1]
+        hp.projplot(theta, inj[0], '*', markerfacecolor='white', markeredgecolor='black', markersize=10)
 
     plt.savefig(os.path.join(outdir, 'skymap.png'))
 
