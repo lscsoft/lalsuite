@@ -177,7 +177,7 @@ level2:rpm:lalpulsar:
 level3:rpm:lalinspiral:
   <<: *levelN-rpm-package
   stage: level3
-  dependencies:
+  needs:
     - make-dist
     - level0:rpm:lal
     - level1:rpm:lalframe
@@ -188,7 +188,7 @@ level3:rpm:lalinspiral:
 level4:rpm:lalinference:
   <<: *levelN-rpm-package
   stage: level4
-  dependencies:
+  needs:
     - make-dist
     - level0:rpm:lal
     - level1:rpm:lalframe
@@ -201,7 +201,7 @@ level4:rpm:lalinference:
 level5:rpm:lalapps:
   <<: *levelN-rpm-package
   stage: level5
-  dependencies:
+  needs:
     - make-dist
     - level0:rpm:lal
     - level1:rpm:lalframe
@@ -223,7 +223,7 @@ lalinference_testjob:
   script:
     - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
     - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
-  dependencies:
+  needs:
     - level0:rpm:lal
     - level1:rpm:lalframe
     - level1:rpm:lalmetaio
@@ -253,7 +253,7 @@ docker:nightly:el7:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:el7 --file .gitlab-ci-el7.Dockerfile .
     - docker push $CI_REGISTRY_IMAGE/nightly:el7
-  dependencies:
+  needs:
     - level0:rpm:lal
     - level1:rpm:lalframe
     - level1:rpm:lalmetaio
@@ -279,7 +279,7 @@ docker:tags:el7:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7 --file .gitlab-ci-el7.Dockerfile .
     - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7
-  dependencies:
+  needs:
     - level0:rpm:lal
     - level1:rpm:lalframe
     - level1:rpm:lalmetaio
@@ -380,7 +380,7 @@ level2:deb:lalpulsar:
 level3:deb:lalinspiral:
   <<: *levelN-deb-package
   stage: level3
-  dependencies:
+  needs:
     - make-dist
     - level0:deb:lal
     - level1:deb:lalframe
@@ -391,7 +391,7 @@ level3:deb:lalinspiral:
 level4:deb:lalinference:
   <<: *levelN-deb-package
   stage: level4
-  dependencies:
+  needs:
     - make-dist
     - level0:deb:lal
     - level1:deb:lalframe
@@ -404,7 +404,7 @@ level4:deb:lalinference:
 level5:deb:lalapps:
   <<: *levelN-deb-package
   stage: level5
-  dependencies:
+  needs:
     - make-dist
     - level0:deb:lal
     - level1:deb:lalframe
@@ -432,7 +432,7 @@ docker:nightly:stretch:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:stretch --file .gitlab-ci-stretch.Dockerfile .
     - docker push $CI_REGISTRY_IMAGE/nightly:stretch
-  dependencies:
+  needs:
     - level0:deb:lal
     - level1:deb:lalframe
     - level1:deb:lalmetaio
@@ -458,7 +458,7 @@ docker:tags:stretch:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch --file .gitlab-ci-stretch.Dockerfile .
     - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch
-  dependencies:
+  needs:
     - level0:deb:lal
     - level1:deb:lalframe
     - level1:deb:lalmetaio
@@ -607,7 +607,7 @@ level2:conda:lalpulsar:
 level3:conda:lalinspiral:
   <<: *levelN-conda-package
   stage: level3
-  dependencies:
+  needs:
     - make-dist
     - level0:conda:lal
     - level1:conda:lalframe
@@ -618,7 +618,7 @@ level3:conda:lalinspiral:
 level4:conda:lalinference:
   <<: *levelN-conda-package
   stage: level4
-  dependencies:
+  needs:
     - make-dist
     - level0:conda:lal
     - level1:conda:lalframe
@@ -631,7 +631,7 @@ level4:conda:lalinference:
 level5:conda:lalapps:
   <<: *levelN-conda-package
   stage: level5
-  dependencies:
+  needs:
     - make-dist
     - level0:conda:lal
     - level1:conda:lalframe
@@ -942,7 +942,7 @@ deploy:wheel:
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
     - pip install twine
     - twine upload wheelhouse/*
-  dependencies:
+  needs:
     - nightly:wheel:cp27-cp27m-manylinux1
     - nightly:wheel:cp27-cp27mu-manylinux1
     - nightly:wheel:cp34-cp34m-manylinux1
