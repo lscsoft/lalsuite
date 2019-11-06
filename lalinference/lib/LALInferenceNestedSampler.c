@@ -64,7 +64,6 @@ static struct itimerval checkpoint_timer;
 /** Utility functions for the resume functionality */
 /** Write the current state to a checkpoint file the given filename */
 /** Read the given filename to populate a given LALInferenceRunState and NSintegralState */
-#ifdef HAVE_HDF5
 static int _saveNSintegralStateH5(LALH5File *group, NSintegralState *s);
 static int _saveNSintegralStateH5(LALH5File *group, NSintegralState *s)
 {
@@ -183,144 +182,6 @@ static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NS
   return(retcode);
   
 }
-
-#else
-static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s);
-static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s);
-
-static int _saveNSintegralState(FILE *fp, NSintegralState *s);
-static int _saveNSintegralState(FILE *fp, NSintegralState *s)
-{
-  UINT4 N=s->size;
-  if(1!=fwrite(&N,sizeof(UINT4),1,fp)) return 1;
-  if(1!=fwrite(&(s->iteration),sizeof(s->iteration),1,fp)) return 1;
-  if(N!=fwrite(s->logZarray->data,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->oldZarray->data,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->Harray->data,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->logwarray->data,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->logtarray->data,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->logt2array->data,sizeof(REAL8),N,fp)) return 1;
-  return 0;
-}
-static int _loadNSintegralState(FILE *fp, NSintegralState *s);
-static int _loadNSintegralState(FILE *fp, NSintegralState *s)
-{
-  if(1!=fread(& (s->size) , sizeof(UINT4), 1, fp)) return 1;
-  UINT4 N=s->size;
-  s->logZarray = XLALCreateREAL8Vector(N);
-  s->oldZarray = XLALCreateREAL8Vector(N);
-  s->Harray = XLALCreateREAL8Vector(N);
-  s->logwarray = XLALCreateREAL8Vector(N);
-  s->logtarray = XLALCreateREAL8Vector(N);
-  s->logt2array = XLALCreateREAL8Vector(N);
-  if(1!=fread(&(s->iteration),sizeof(UINT4),1,fp)) return 1;
-  if(N!=fread(s->logZarray->data,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->oldZarray->data,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->Harray->data,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->logwarray->data,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->logtarray->data,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->logt2array->data,sizeof(REAL8),N,fp)) return 1;
-  return 0;
-}
-
-static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s)
-{
-  FILE *progfile=fopen(filename,"w");
-  int errnum;
-  if(!progfile)
-  {
-    fprintf(stderr,"Unable to save resume file %s!\n",filename);
-    return 1;
-  }
-  else
-  {
-    if(setvbuf(progfile,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
-      fprintf(stderr,"Warning: Unable to set resume file buffer!");
-    UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
-    int retcode= _saveNSintegralState(progfile,s);
-    if(retcode) {
-      fprintf(stderr,"Unable to write nested sampling state - will not be able to resume!\n");
-      fclose(progfile);
-      return 1;
-    }
-    XLAL_TRY(LALInferenceWriteVariablesArrayBinary(progfile,runState->livePoints, Nlive),errnum);
-	if(errnum!=XLAL_SUCCESS)
-	{
-      fprintf(stderr,"Unable to write live points - will not be able to resume!\n");
-      fclose(progfile);
-      return 1;
-	}
-    INT4 N_output_array=0;
-    if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) N_output_array=LALInferenceGetINT4Variable(runState->algorithmParams,"N_outputarray");
-    fwrite(&N_output_array,sizeof(INT4),1,progfile);
-    if(N_output_array!=0 )
-    {
-      LALInferenceVariables **output_array=NULL;
-      output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
-      XLAL_TRY(LALInferenceWriteVariablesArrayBinary(progfile,output_array, N_output_array),errnum);
-	  if(errnum!=XLAL_SUCCESS)
-	  {
-		      fprintf(stderr,"Unable to write past chain - will not be able to resume!\n");
-		      fclose(progfile);
-		      return 1;	
-	  }
-      fprintf(stderr,"Resume --> wrote %d past chain samples\n\n",N_output_array);
-    }
-    fclose(progfile);
-    return 0;
-  }
-}
-
-static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s)
-{
-  int errnum;
-  FILE *progfile=fopen(filename,"r");
-  if(!progfile)
-  {
-    fprintf(stderr,"Unable to load resume file %s!\n",filename);
-    return 1;
-  }
-  else
-  {
-    UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
-    int retcode=_loadNSintegralState(progfile,s);
-    if(retcode){
-      fprintf(stderr,"Unable to read nested sampling state - unable to resume!\n");
-      fclose(progfile);
-      return 1;
-    }
-    //if(retcode) return 1;
-    XLAL_TRY(LALInferenceReadVariablesArrayBinary(progfile,runState->livePoints,Nlive),errnum);
-	if(errnum!=XLAL_SUCCESS)
-    {
-		fprintf(stderr,"Unable to read live points from resume file!\n");
-		fclose(progfile);
-		return(1);
-	}
-    INT4 N_output_array;
-    fread(&N_output_array,sizeof(INT4),1,progfile);
-    LALInferenceVariables **output_array=NULL;
-    if(N_output_array!=0){
-      output_array=XLALCalloc(N_output_array,sizeof(LALInferenceVariables *));
-      fprintf(stderr,"Resume --> read %d past chain samples\n",N_output_array);
-      XLAL_TRY(LALInferenceReadVariablesArrayBinary(progfile,output_array,N_output_array),errnum);
-	  if(errnum!=XLAL_SUCCESS)
-	  {
-		fprintf(stderr,"Unable to read past chain from resume file!\n");
-		fclose(progfile);
-		return(1);
-	  }
-      if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) LALInferenceRemoveVariable(runState->algorithmParams,"N_outputarray");
-      if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")) LALInferenceRemoveVariable(runState->algorithmParams,"outputarray");
-      LALInferenceAddVariable(runState->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
-      LALInferenceAddVariable(runState->algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
-    }
-    fclose(progfile);
-    return 0;
-  }
-}
-
-#endif
 
 /** Sync the live points to the differential evolution buffer */
 static int syncLivePointsDifferentialPoints(LALInferenceRunState *state, LALInferenceThreadState *thread);
@@ -891,14 +752,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   if(strstr(outfile,".h5") || strstr(outfile,".hdf")) HDFOUTPUT=1;
   else HDFOUTPUT=0;
   
-#ifndef HAVE_HDF5
-  if(HDFOUTPUT)
-  {
-      fprintf(stderr,"Error: LALSuite was compiled without HDF5 support. Unable to write HDF5 output files\n");
-      exit(1);
-  }
-#endif
-  
   double logvolume=0.0;
   if ( LALInferenceCheckVariable( runState->livePoints[0], "chirpmass" ) ){
     /* If a cbc run, calculate the mass-distance volume and store it to file*/ 
@@ -945,11 +798,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   snprintf(resumefilename,sizeof(resumefilename),"%s_resume",outfile);
   int retcode=1;
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume")){
-#ifdef HAVE_HDF5
       retcode=ReadNSCheckPointH5(resumefilename,runState,s);
-#else
-      retcode=ReadNSCheckPoint(resumefilename,runState,s);
-#endif
       if(retcode==0){
           for(i=0;i<Nlive;i++) logLikelihoods[i]=*(REAL8 *)LALInferenceGetVariable(runState->livePoints[i],"logL");
           iter=s->iteration;
@@ -1088,12 +937,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   if(__ns_saveStateFlag!=0)
     {
       if(__ns_exitFlag) fprintf(stdout,"Saving state to %s.\n",resumefilename);
-#ifdef HAVE_HDF5
-
       WriteNSCheckPointH5(resumefilename,runState,s);
-#else
-      WriteNSCheckPoint(resumefilename,runState,s);
-#endif
       fflush(fpout);
       __ns_saveStateFlag=0;
     }
