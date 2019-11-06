@@ -33,7 +33,6 @@ BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
 BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
-BuildRequires: libmetaio-devel
 BuildRequires: openmpi-devel
 BuildRequires: pkgconfig >= 0.18.0
 
@@ -102,7 +101,6 @@ BuildRequires: lalpulsar-octave >= @MIN_LALPULSAR_VERSION@
 Requires: chealpix
 Requires: gsl >= 1.15
 Requires: hdf5
-Requires: libmetaio
 Requires: openmpi
 Requires: openssh-clients
 Requires: lal >= @MIN_LAL_VERSION@
@@ -124,7 +122,6 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: chealpix-devel >= 3.30.0
 Requires: gsl-devel >= 1.15
-Requires: libmetaio-devel
 Requires: lal-devel >= @MIN_LAL_VERSION@
 Requires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 Requires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@

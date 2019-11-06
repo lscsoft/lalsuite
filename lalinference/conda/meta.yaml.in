@@ -52,7 +52,6 @@ requirements:
     - lalpulsar >={{ lalpulsar_version }}
     - libcblas=*=*netlib
     - llvm-openmp  # [osx]
-    - metaio
     - openmp  # [linux]
     - openmpi
   run:
@@ -68,7 +67,6 @@ requirements:
     - lalpulsar >={{ lalpulsar_version }}
     - libcblas
     - llvm-openmp  # [osx]
-    - metaio
     - openmp  # [linux]
     - openmpi
     # hdf5 links against zlib so we need to reference it
@@ -125,7 +123,6 @@ outputs:
         - libcblas
         - lscsoft-glue >=1.54.1
         - matplotlib >=1.2.0
-        - metaio
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}

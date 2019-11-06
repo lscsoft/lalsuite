@@ -187,14 +187,6 @@ LALSUITE_ENABLE_FAST_GSL
 # check for gsl headers
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
-# metaio
-PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
-LALSUITE_ADD_FLAGS([C],[${METAIO_CFLAGS}],[${METAIO_LIBS}])
-AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio library])])
-
-# check for libmetaio headers
-AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
-
 # check for hdf5 support
 HDF5_ENABLE_VAL="DISABLED"
 # Note that AX_LIB_HDF5 uses h5cc to determine compiler for configure tests.
