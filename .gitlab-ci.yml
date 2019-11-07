@@ -1,8 +1,29 @@
+
+# -- setup --------------------------------------
+
 image: docker:latest
+
+stages:
+  - LAL
+  - LALFrame
+  - LALMetaIO
+  - LALSimulation
+  - LALBurst
+  - LALInspiral
+  - LALPulsar
+  - LALInference
+  - LALApps
+  - documentation
+  - integration tests
+  - compiler tests
+  - platform tests
+  - docker
+  - wheels
+  - deploy
 
 variables:
   DOCKER_DRIVER: overlay
-#  GIT_DEPTH: 1
+  GIT_DEPTH: 1
   BRANCH: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
   COMMIT: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   NIGHTLY: $CI_REGISTRY_IMAGE:nightly
@@ -11,18 +32,6 @@ variables:
   CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
   CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
 
-stages:
-  - dist
-  - level0
-  - level1
-  - level2
-  - level3
-  - level4
-  - level5
-  - docker
-  - nightly
-  - wheels
-  - deploy
 
 before_script:
   - set -x  # print commands as they are run (helps debugging)
@@ -39,69 +48,39 @@ cache:
   paths:
     - ccache
 
-#
-# ci documentation
-#
+.retry: &define-retry |
+  retry() {
+    local n=1
+    local max=3
+    local delay=15
+    while true; do
+      "$@" && break || {
+        if [[ $n -lt $max ]]; then
+          ((n++))
+          echo "Command failed. Attempt $n/$max:"
+          sleep $delay;
+        else
+          echo "The command has failed after $n attempts." 1>&2
+          exit 1
+        fi
+      }
+    done
+  }
 
-documentation:
-  image: igwn/lalsuite-dev:stretch
-  stage: level0
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 install-html
-    - pushd ${LAL_DIR}/share/doc
-    - cp lalsuite/index.html index.html
-    - sed -i 's/..\/lal/lal/g' index.html
-    - popd
-  artifacts:
-    expire_in: 18h
-    paths:
-      - ${LAL_DIR}/share/doc
-  only:
-    - pushes
-    - web
+# -- build templates ----------------------------
 
-#
-# make dist
-#
-
-# this job makes all of the source tarballs up-front using a top-level
-# make dist call
-#
-# to use one (any) of the tarballs in another job, just add "make-dist"
-# in `dependencies:`
-
-make-dist:
-  image: igwn/lalsuite-dev:el7
-  stage: dist
-  script:
-    - ./00boot
-    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
-    - for subdir in lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalpulsar lalinference lalapps; do
-        pushd ${subdir};
-        make dist;
-        popd;
-      done
-  artifacts:
-    expire_in: 18h
-    paths:
-      - "*/*.tar.*"
-
-#
-# build rpms
-#
+# -- rpm
 
 .yum-update: &yum-update
   yum-config-manager --disable htcondor 1>/dev/null && yum -y update
 
-.levelN:rpm: &levelN-rpm-package
+.rpmbuild: &rpmbuild
   image: igwn/lalsuite-dev:el7
   variables:
     GIT_STRATEGY: none
     RPM_BUILD_CPUS: 4
   script:
-    - 'PACKAGE=$(echo ${CI_JOB_NAME} | cut -d\: -f3)'
+    - PACKAGE=${CI_JOB_NAME%:*}
     # install srpm dependencies
     - *yum-update
     - yum -y install yum-utils epel-rpm-macros
@@ -111,197 +90,35 @@ make-dist:
     - cd ${PACKAGE}/
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
     - rpmbuild -ts --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${TARBALL}
-    - SRCRPM=${CI_PROJECT_DIR}/rpmbuild/SRPMS/${CI_JOB_NAME#level?:rpm:}-*.src.rpm
+    - SRCRPM=${CI_PROJECT_DIR}/rpmbuild/SRPMS/${PACKAGE}-*.src.rpm
     # lint src.rpm
     - rpmlint ${SRCRPM}
     # install build dependencies
     - yum-builddep -y -q ${SRCRPM}
     # build binary rpms and print details of what we got
     - rpmbuild --rebuild --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${SRCRPM}
-    - rpm -qilp ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${CI_JOB_NAME#level?:rpm:}-*.rpm
-    - rpm -qp --provides ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${CI_JOB_NAME#level?:rpm:}-*.rpm
+    - rpm -qilp ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
+    - rpm -qp --provides ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
   artifacts:
     expire_in: 18h
     paths:
-      - rpmbuild/RPMS/x86_64/${CI_JOB_NAME#level?:rpm:}-*.rpm
-      - rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME#level?:rpm:}-*.rpm
+      - rpmbuild/RPMS/x86_64/${CI_JOB_NAME%:*}-*.rpm
+      - rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%:*}-*.rpm
   only:
     - pushes
     - schedules
     - tags
     - web
 
-level0:rpm:lal:
-  <<: *levelN-rpm-package
-  stage: level0
-  needs:
-    - make-dist
 
-level1:rpm:lalframe:
-  <<: *levelN-rpm-package
-  stage: level1
-  needs:
-    - make-dist
-    - level0:rpm:lal
+# -- debian
 
-level1:rpm:lalmetaio:
-  <<: *levelN-rpm-package
-  stage: level1
-  needs:
-    - make-dist
-    - level0:rpm:lal
-
-level1:rpm:lalsimulation:
-  <<: *levelN-rpm-package
-  stage: level1
-  needs:
-    - make-dist
-    - level0:rpm:lal
-
-level2:rpm:lalburst:
-  <<: *levelN-rpm-package
-  stage: level2
-  needs:
-    - make-dist
-    - level0:rpm:lal
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-
-level2:rpm:lalpulsar:
-  <<: *levelN-rpm-package
-  stage: level2
-  needs:
-    - make-dist
-    - level0:rpm:lal
-
-level3:rpm:lalinspiral:
-  <<: *levelN-rpm-package
-  stage: level3
-  needs:
-    - make-dist
-    - level0:rpm:lal
-    - level1:rpm:lalframe
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-    - level2:rpm:lalburst
-
-level4:rpm:lalinference:
-  <<: *levelN-rpm-package
-  stage: level4
-  needs:
-    - make-dist
-    - level0:rpm:lal
-    - level1:rpm:lalframe
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-    - level2:rpm:lalburst
-    - level2:rpm:lalpulsar
-    - level3:rpm:lalinspiral
-
-level5:rpm:lalapps:
-  <<: *levelN-rpm-package
-  stage: level5
-  needs:
-    - make-dist
-    - level0:rpm:lal
-    - level1:rpm:lalframe
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-    - level2:rpm:lalburst
-    - level2:rpm:lalpulsar
-    - level3:rpm:lalinspiral
-    - level4:rpm:lalinference
-
-#integration tests
-#
-lalinference_testjob:
-  stage: nightly
-  image: igwn/lalsuite-dev:el7
-  before_script:
-    - *yum-update
-    - yum -y install rpmbuild/RPMS/x86_64/*.rpm
-  script:
-    - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
-    - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
-  needs:
-    - level0:rpm:lal
-    - level1:rpm:lalframe
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-    - level2:rpm:lalburst
-    - level2:rpm:lalpulsar
-    - level3:rpm:lalinspiral
-    - level4:rpm:lalinference
-    - level5:rpm:lalapps
-  only:
-    - schedules
-    - web
-#
-# docker container from RPMs
-#
-
-# build a nightly container from the RPMs
-docker:nightly:el7:
-  stage: docker
-  before_script: []
-  script:
-    - set -x  # print commands as they are run (helps debugging)
-    # add RPMs to directory to pass to docker
-    - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
-    - rm -rf rpmbuild*
-    # build container and push to registry
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:el7 --file .gitlab-ci-el7.Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE/nightly:el7
-  needs:
-    - level0:rpm:lal
-    - level1:rpm:lalframe
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-    - level2:rpm:lalburst
-    - level2:rpm:lalpulsar
-    - level3:rpm:lalinspiral
-    - level4:rpm:lalinference
-    - level5:rpm:lalapps
-  only:
-    - schedules
-
-# build a tagged container from the rpms
-docker:tags:el7:
-  stage: docker
-  before_script: []
-  script:
-    - set -x  # print commands as they are run (helps debugging)
-    # add RPMs to directory to pass to docker
-    - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
-    - rm -rf rpmbuild*
-    # build container and push to registry
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7 --file .gitlab-ci-el7.Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7
-  needs:
-    - level0:rpm:lal
-    - level1:rpm:lalframe
-    - level1:rpm:lalmetaio
-    - level1:rpm:lalsimulation
-    - level2:rpm:lalburst
-    - level2:rpm:lalpulsar
-    - level3:rpm:lalinspiral
-    - level4:rpm:lalinference
-    - level5:rpm:lalapps
-  only:
-    - /^lalsuite-v.*$/
-
-#
-# build debs
-#
-
-.levelN:deb: &levelN-deb-package
+.debuild: &debbuild
   image: igwn/lalsuite-dev:stretch
   variables:
     GIT_STRATEGY: none
   script:
-    - 'PACKAGE=$(echo ${CI_JOB_NAME} | cut -d\: -f3)'
+    - PACKAGE=${CI_JOB_NAME%:*}
     # install debs from artifacts
     - dpkg -i *.deb || true
     # create orig tarball
@@ -325,174 +142,18 @@ docker:tags:el7:
   artifacts:
     expire_in: 18h
     paths:
-      - ${CI_JOB_NAME#level?:deb:}*.changes
-      - ${CI_JOB_NAME#level?:deb:}*.deb
-      - python*-${CI_JOB_NAME#level?:deb:}*.deb
-      - ${CI_JOB_NAME#level?:deb:}*.dsc
-      - ${CI_JOB_NAME#level?:deb:}*.orig.*
+      - ${CI_JOB_NAME%:*}*.changes
+      - ${CI_JOB_NAME%:*}*.deb
+      - python*-${CI_JOB_NAME%:*}*.deb
+      - ${CI_JOB_NAME%:*}*.dsc
+      - ${CI_JOB_NAME%:*}*.orig.*
   only:
     - pushes
     - schedules
     - tags
     - web
 
-level0:deb:lal:
-  <<: *levelN-deb-package
-  stage: level0
-
-level1:deb:lalframe:
-  <<: *levelN-deb-package
-  stage: level1
-  needs:
-    - make-dist
-    - level0:deb:lal
-
-level1:deb:lalmetaio:
-  <<: *levelN-deb-package
-  stage: level1
-  needs:
-    - make-dist
-    - level0:deb:lal
-
-level1:deb:lalsimulation:
-  <<: *levelN-deb-package
-  stage: level1
-  needs:
-    - make-dist
-    - level0:deb:lal
-
-level2:deb:lalburst:
-  <<: *levelN-deb-package
-  stage: level2
-  needs:
-    - make-dist
-    - level0:deb:lal
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-
-level2:deb:lalpulsar:
-  <<: *levelN-deb-package
-  stage: level2
-  needs:
-    - make-dist
-    - level0:deb:lal
-
-level3:deb:lalinspiral:
-  <<: *levelN-deb-package
-  stage: level3
-  needs:
-    - make-dist
-    - level0:deb:lal
-    - level1:deb:lalframe
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-    - level2:deb:lalburst
-
-level4:deb:lalinference:
-  <<: *levelN-deb-package
-  stage: level4
-  needs:
-    - make-dist
-    - level0:deb:lal
-    - level1:deb:lalframe
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-    - level2:deb:lalburst
-    - level2:deb:lalpulsar
-    - level3:deb:lalinspiral
-
-level5:deb:lalapps:
-  <<: *levelN-deb-package
-  stage: level5
-  needs:
-    - make-dist
-    - level0:deb:lal
-    - level1:deb:lalframe
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-    - level2:deb:lalburst
-    - level2:deb:lalpulsar
-    - level3:deb:lalinspiral
-    - level4:deb:lalinference
-
-#
-# docker container from the debs
-#
-
-# build a nightly container from the debian packages
-docker:nightly:stretch:
-  stage: docker
-  before_script: []
-  script:
-    - set -x  # print commands as they are run (helps debugging)
-    # add deb packages to directory to pass to docker
-    - mkdir debs && mv *.deb debs
-    - rm *.changes *.dsc *.orig.*
-    # build container and push to registry
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:stretch --file .gitlab-ci-stretch.Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE/nightly:stretch
-  needs:
-    - level0:deb:lal
-    - level1:deb:lalframe
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-    - level2:deb:lalburst
-    - level2:deb:lalpulsar
-    - level3:deb:lalinspiral
-    - level4:deb:lalinference
-    - level5:deb:lalapps
-  only:
-    - schedules
-
-# build a tagged container from the debian packages
-docker:tags:stretch:
-  stage: docker
-  before_script: []
-  script:
-    - set -x  # print commands as they are run (helps debugging)
-    # add deb packages to directory to pass to docker
-    - mkdir debs && mv *.deb debs
-    - rm *.changes *.dsc *.orig.*
-    # build container and push to registry
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch --file .gitlab-ci-stretch.Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch
-  needs:
-    - level0:deb:lal
-    - level1:deb:lalframe
-    - level1:deb:lalmetaio
-    - level1:deb:lalsimulation
-    - level2:deb:lalburst
-    - level2:deb:lalpulsar
-    - level3:deb:lalinspiral
-    - level4:deb:lalinference
-    - level5:deb:lalapps
-  only:
-    - /^lalsuite-v.*$/
-
-#
-# build conda packages
-#
-
-.retry: &define-retry |
-  retry() {
-    local n=1
-    local max=3
-    local delay=15
-    while true; do
-      "$@" && break || {
-        if [[ $n -lt $max ]]; then
-          ((n++))
-          echo "Command failed. Attempt $n/$max:"
-          sleep $delay;
-        else
-          echo "The command has failed after $n attempts." 1>&2
-          exit 1
-        fi
-      }
-    done
-  }
+# -- conda
 
 .conda-init: &conda-init |
   # configure conda
@@ -505,7 +166,7 @@ docker:tags:stretch:
   retry conda install -n base "conda-build!=3.18.10" conda-verify conda-forge-pinning
   conda info --all
 
-.levelN:conda: &levelN-conda-package
+.conda-build: &conda-build
   image: igwn/base:conda
   variables:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
@@ -517,7 +178,7 @@ docker:tags:stretch:
     - *conda-init
     - retry conda install openssl
   script:
-    - 'PACKAGE=$(echo ${CI_JOB_NAME} | cut -d\: -f3)'
+    - PACKAGE=${CI_JOB_NAME%:*}
     - cd ${PACKAGE}/
     # render clobber YAML file to use our tarball
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
@@ -543,13 +204,13 @@ docker:tags:stretch:
   artifacts:
     expire_in: 18h
     paths:
-      - "conda/bld/linux-64/$(cut -d: -f3 <<<${CI_JOB_NAME})-*.conda"
-      - "conda/bld/linux-64/$(cut -d: -f3 <<<${CI_JOB_NAME})-*.tar.bz2"
-      - "conda/bld/linux-64/python-$(cut -d: -f3 <<<${CI_JOB_NAME})-*.conda"
-      - "conda/bld/linux-64/python-$(cut -d: -f3 <<<${CI_JOB_NAME})-*.tar.bz2"
-      - "conda/bld/$(cut -d: -f3 <<<${CI_JOB_NAME})_*/work/test/test-suite.log"
-      - "conda/bld/$(cut -d: -f3 <<<${CI_JOB_NAME})_*/work/test/python/test-suite.log"
-      - "conda/bld/$(cut -d: -f3 <<<${CI_JOB_NAME})_*/work/*/*/*/test-suite.log"
+      - "conda/bld/linux-64/${CI_JOB_NAME%:*}-*.conda"
+      - "conda/bld/linux-64/${CI_JOB_NAME%:*}-*.tar.bz2"
+      - "conda/bld/linux-64/python-${CI_JOB_NAME%:*}-*.conda"
+      - "conda/bld/linux-64/python-${CI_JOB_NAME%:*}-*.tar.bz2"
+      - "conda/bld/${CI_JOB_NAME%:*}_*/work/test/test-suite.log"
+      - "conda/bld/${CI_JOB_NAME%:*}_*/work/test/python/test-suite.log"
+      - "conda/bld/${CI_JOB_NAME%:*}_*/work/*/*/*/test-suite.log"
     when: always
   only:
     - pushes
@@ -561,95 +222,474 @@ docker:tags:stretch:
     paths:
       - conda/pkgs
 
-level0:conda:lal:
-  <<: *levelN-conda-package
-  stage: level0
+# -- documentation ------------------------------
+
+documentation:
+  image: igwn/lalsuite-dev:stretch
+  stage: documentation
   needs:
     - make-dist
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen --prefix=${LAL_DIR}
+    - make -j4 install-html
+    - pushd ${LAL_DIR}/share/doc
+    - cp lalsuite/index.html index.html
+    - sed -i 's/..\/lal/lal/g' index.html
+    - popd
+  artifacts:
+    expire_in: 18h
+    paths:
+      - ${LAL_DIR}/share/doc
+  only:
+    - pushes
+    - web
 
-level1:conda:lalframe:
-  <<: *levelN-conda-package
-  stage: level1
+pages:
+  image: igwn/lalsuite-dev:stretch
+  stage: deploy
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen --prefix=${LAL_DIR}
+    - make -j4 install-html
+    - cp -r ${LAL_DIR}/share/doc public/
+    - pushd public
+    - cp lalsuite/index.html index.html
+    - sed -i 's/..\/lal/lal/g' index.html
+    - popd
   needs:
     - make-dist
-    - level0:conda:lal
+  artifacts:
+    paths:
+      - public
+  only:
+    - master@lscsoft/lalsuite
+  except:
+    - pushes
+    - web
 
-level1:conda:lalmetaio:
-  <<: *levelN-conda-package
-  stage: level1
-  needs:
-    - make-dist
-    - level0:conda:lal
+# -- tarballs -----------------------------------
 
-level1:conda:lalsimulation:
-  <<: *levelN-conda-package
-  stage: level1
-  needs:
-    - make-dist
-    - level0:conda:lal
-
-level2:conda:lalburst:
-  <<: *levelN-conda-package
-  stage: level2
-  needs:
-    - make-dist
-    - level0:conda:lal
-    - level1:conda:lalmetaio
-    - level1:conda:lalsimulation
-
-level2:conda:lalpulsar:
-  <<: *levelN-conda-package
-  stage: level2
-  needs:
-    - make-dist
-    - level0:conda:lal
-
-level3:conda:lalinspiral:
-  <<: *levelN-conda-package
-  stage: level3
-  needs:
-    - make-dist
-    - level0:conda:lal
-    - level1:conda:lalframe
-    - level1:conda:lalmetaio
-    - level1:conda:lalsimulation
-    - level2:conda:lalburst
-
-level4:conda:lalinference:
-  <<: *levelN-conda-package
-  stage: level4
-  needs:
-    - make-dist
-    - level0:conda:lal
-    - level1:conda:lalframe
-    - level1:conda:lalmetaio
-    - level1:conda:lalsimulation
-    - level2:conda:lalburst
-    - level2:conda:lalpulsar
-    - level3:conda:lalinspiral
-
-level5:conda:lalapps:
-  <<: *levelN-conda-package
-  stage: level5
-  needs:
-    - make-dist
-    - level0:conda:lal
-    - level1:conda:lalframe
-    - level1:conda:lalmetaio
-    - level1:conda:lalsimulation
-    - level2:conda:lalburst
-    - level2:conda:lalpulsar
-    - level3:conda:lalinspiral
-    - level4:conda:lalinference
-
+# this job makes all of the source tarballs up-front using a top-level
+# make dist call
 #
-# nightly builds
-#
+# to use one (any) of the tarballs in another job, just add "make-dist"
+# in `dependencies:`
 
-# compilers
+make-dist:
+  image: igwn/lalsuite-dev:el7
+  stage: .pre
+  script:
+    - ./00boot
+    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
+    - for subdir in lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalpulsar lalinference lalapps; do
+        pushd ${subdir};
+        make dist;
+        popd;
+      done
+  artifacts:
+    expire_in: 18h
+    paths:
+      - "*/*.tar.*"
+
+# -- lal ----------------------------------------
+
+lal:rpm:
+  <<: *rpmbuild
+  stage: LAL
+  needs:
+    - make-dist
+
+lal:deb:
+  <<: *debbuild
+  stage: LAL
+  needs:
+    - make-dist
+
+lal:conda:
+  <<: *conda-build
+  stage: LAL
+  needs:
+    - make-dist
+
+# -- lalframe------------------------------------
+
+lalframe:rpm:
+  <<: *rpmbuild
+  stage: LALFrame
+  needs:
+    - make-dist
+    - lal:rpm
+
+lalframe:deb:
+  <<: *debbuild
+  stage: LALFrame
+  needs:
+    - make-dist
+    - lal:deb
+
+lalframe:conda:
+  <<: *conda-build
+  stage: LALFrame
+  needs:
+    - make-dist
+    - lal:conda
+
+# -- lalmetaio ----------------------------------
+
+lalmetaio:rpm:
+  <<: *rpmbuild
+  stage: LALMetaIO
+  needs:
+    - make-dist
+    - lal:rpm
+
+lalmetaio:deb:
+  <<: *debbuild
+  stage: LALMetaIO
+  needs:
+    - make-dist
+    - lal:deb
+
+lalmetaio:conda:
+  <<: *conda-build
+  stage: LALMetaIO
+  needs:
+    - make-dist
+    - lal:conda
+
+# -- lalsimulation ------------------------------
+
+lalsimulation:rpm:
+  <<: *rpmbuild
+  stage: LALSimulation
+  needs:
+    - make-dist
+    - lal:rpm
+
+lalsimulation:deb:
+  <<: *debbuild
+  stage: LALSimulation
+  needs:
+    - make-dist
+    - lal:deb
+
+lalsimulation:conda:
+  <<: *conda-build
+  stage: LALSimulation
+  needs:
+    - make-dist
+    - lal:conda
+
+# -- lalburst -----------------------------------
+
+lalburst:rpm:
+  <<: *rpmbuild
+  stage: LALBurst
+  needs:
+    - make-dist
+    - lal:rpm
+    - lalmetaio:rpm
+    - lalsimulation:rpm
+
+lalburst:deb:
+  <<: *debbuild
+  stage: LALBurst
+  needs:
+    - make-dist
+    - lal:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+
+lalburst:conda:
+  <<: *conda-build
+  stage: LALBurst
+  needs:
+    - make-dist
+    - lal:conda
+    - lalmetaio:conda
+    - lalsimulation:conda
+
+# -- lalinspiral --------------------------------
+
+lalinspiral:rpm:
+  <<: *rpmbuild
+  stage: LALInspiral
+  needs:
+    - make-dist
+    - lal:rpm
+    - lalframe:rpm
+    - lalmetaio:rpm
+    - lalsimulation:rpm
+    - lalburst:rpm
+
+lalinspiral:deb:
+  <<: *debbuild
+  stage: LALInspiral
+  needs:
+    - make-dist
+    - lal:deb
+    - lalframe:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+    - lalburst:deb
+
+lalinspiral:conda:
+  <<: *conda-build
+  stage: LALInspiral
+  needs:
+    - make-dist
+    - lal:conda
+    - lalframe:conda
+    - lalmetaio:conda
+    - lalsimulation:conda
+    - lalburst:conda
+
+# -- lalpulsar ----------------------------------
+
+lalpulsar:rpm:
+  <<: *rpmbuild
+  stage: LALPulsar
+  needs:
+    - make-dist
+    - lal:rpm
+
+lalpulsar:deb:
+  <<: *debbuild
+  stage: LALPulsar
+  needs:
+    - make-dist
+    - lal:deb
+
+lalpulsar:conda:
+  <<: *conda-build
+  stage: LALPulsar
+  needs:
+    - make-dist
+    - lal:conda
+
+# -- lalinference -------------------------------
+
+lalinference:rpm:
+  <<: *rpmbuild
+  stage: LALInference
+  needs:
+    - make-dist
+    - lal:rpm
+    - lalframe:rpm
+    - lalmetaio:rpm
+    - lalsimulation:rpm
+    - lalburst:rpm
+    - lalpulsar:rpm
+    - lalinspiral:rpm
+
+lalinference:deb:
+  <<: *debbuild
+  stage: LALInference
+  needs:
+    - make-dist
+    - lal:deb
+    - lalframe:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+    - lalburst:deb
+    - lalpulsar:deb
+    - lalinspiral:deb
+
+lalinference:conda:
+  <<: *conda-build
+  stage: LALInference
+  needs:
+    - make-dist
+    - lal:conda
+    - lalframe:conda
+    - lalmetaio:conda
+    - lalsimulation:conda
+    - lalburst:conda
+    - lalpulsar:conda
+    - lalinspiral:conda
+
+# -- lalapps ------------------------------------
+
+lalapps:rpm:
+  <<: *rpmbuild
+  stage: LALApps
+  needs:
+    - make-dist
+    - lal:rpm
+    - lalframe:rpm
+    - lalmetaio:rpm
+    - lalsimulation:rpm
+    - lalburst:rpm
+    - lalpulsar:rpm
+    - lalinspiral:rpm
+    - lalinference:rpm
+
+lalapps:deb:
+  <<: *debbuild
+  stage: LALApps
+  needs:
+    - make-dist
+    - lal:deb
+    - lalframe:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+    - lalburst:deb
+    - lalpulsar:deb
+    - lalinspiral:deb
+    - lalinference:deb
+
+lalapps:conda:
+  <<: *conda-build
+  stage: LALApps
+  needs:
+    - make-dist
+    - lal:conda
+    - lalframe:conda
+    - lalmetaio:conda
+    - lalsimulation:conda
+    - lalburst:conda
+    - lalpulsar:conda
+    - lalinspiral:conda
+    - lalinference:conda
+
+# -- integration tests --------------------------
+
+lalinference_testjob:
+  stage: integration tests
+  image: igwn/lalsuite-dev:el7
+  before_script:
+    - *yum-update
+    - yum -y install rpmbuild/RPMS/x86_64/*.rpm
+  script:
+    - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
+    - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
+  needs:
+    - lal:rpm
+    - lalframe:rpm
+    - lalmetaio:rpm
+    - lalsimulation:rpm
+    - lalburst:rpm
+    - lalpulsar:rpm
+    - lalinspiral:rpm
+    - lalinference:rpm
+    - lalapps:rpm
+  only:
+    - schedules
+    - web
+
+# -- docker -------------------------------------
+
+# build a nightly container from the RPMs
+docker:nightly:el7:
+  stage: docker
+  before_script: []
+  script:
+    - set -x  # print commands as they are run (helps debugging)
+    # add RPMs to directory to pass to docker
+    - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
+    - rm -rf rpmbuild*
+    # build container and push to registry
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:el7 --file .gitlab-ci-el7.Dockerfile .
+    - docker push $CI_REGISTRY_IMAGE/nightly:el7
+  needs:
+    - lal:rpm
+    - lalframe:rpm
+    - lalmetaio:rpm
+    - lalsimulation:rpm
+    - lalburst:rpm
+    - lalpulsar:rpm
+    - lalinspiral:rpm
+    - lalinference:rpm
+    - lalapps:rpm
+  only:
+    - schedules
+
+# build a tagged container from the rpms
+docker:tags:el7:
+  stage: docker
+  before_script: []
+  script:
+    - set -x  # print commands as they are run (helps debugging)
+    # add RPMs to directory to pass to docker
+    - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
+    - rm -rf rpmbuild*
+    # build container and push to registry
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7 --file .gitlab-ci-el7.Dockerfile .
+    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7
+  needs:
+    - lal:rpm
+    - lalframe:rpm
+    - lalmetaio:rpm
+    - lalsimulation:rpm
+    - lalburst:rpm
+    - lalpulsar:rpm
+    - lalinspiral:rpm
+    - lalinference:rpm
+    - lalapps:rpm
+  only:
+    - /^lalsuite-v.*$/
+
+# build a nightly container from the debian packages
+docker:nightly:stretch:
+  stage: docker
+  before_script: []
+  script:
+    - set -x  # print commands as they are run (helps debugging)
+    # add deb packages to directory to pass to docker
+    - mkdir debs && mv *.deb debs
+    - rm *.changes *.dsc *.orig.*
+    # build container and push to registry
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:stretch --file .gitlab-ci-stretch.Dockerfile .
+    - docker push $CI_REGISTRY_IMAGE/nightly:stretch
+  needs:
+    - lal:deb
+    - lalframe:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+    - lalburst:deb
+    - lalpulsar:deb
+    - lalinspiral:deb
+    - lalinference:deb
+    - lalapps:deb
+  only:
+    - schedules
+
+# build a tagged container from the debian packages
+docker:tags:stretch:
+  stage: docker
+  before_script: []
+  script:
+    - set -x  # print commands as they are run (helps debugging)
+    # add deb packages to directory to pass to docker
+    - mkdir debs && mv *.deb debs
+    - rm *.changes *.dsc *.orig.*
+    # build container and push to registry
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch --file .gitlab-ci-stretch.Dockerfile .
+    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch
+  needs:
+    - lal:deb
+    - lalframe:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+    - lalburst:deb
+    - lalpulsar:deb
+    - lalinspiral:deb
+    - lalinference:deb
+    - lalapps:deb
+  only:
+    - /^lalsuite-v.*$/
+
+# -- nightly ------------------------------------
+
+# -- compilers
 
 .clang-build: &clang-build
-  stage: nightly
+  stage: compiler tests
   needs:
     - make-dist
   script:
@@ -660,21 +700,21 @@ level5:conda:lalapps:
     - schedules
     - web
 
-nightly:clang:8:
+clang:8:
   <<: *clang-build
   image: igwn/lalsuite-dev-clang:8
   variables:
     CLANG: clang-8
     CLANGXX: clang++-8
 
-nightly:clang:9:
+clang:9:
   <<: *clang-build
   image: igwn/lalsuite-dev-clang:9
   variables:
     CLANG: clang-9
     CLANGXX: clang++-9
 
-nightly:clang:dev:
+clang:dev:
   <<: *clang-build
   image: igwn/lalsuite-dev-clang:dev
   variables:
@@ -682,7 +722,7 @@ nightly:clang:dev:
     CLANGXX: clang++
 
 .gcc-build: &gcc-build
-  stage: nightly
+  stage: compiler tests
   needs:
     - make-dist
   script:
@@ -693,26 +733,26 @@ nightly:clang:dev:
     - schedules
     - web
 
-nightly:gcc:7:
+gcc:7:
   <<: *gcc-build
   image: igwn/lalsuite-dev-gcc:7
 
-nightly:gcc:8:
+gcc:8:
   <<: *gcc-build
   image: igwn/lalsuite-dev-gcc:8
 
-nightly:gcc:9:
+gcc:9:
   <<: *gcc-build
   image: igwn/lalsuite-dev-gcc:9
 
-# debian
+# -- debian
 
 # FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
 # available
 # FIXME: allow failure due to #124
-nightly:debian:buster:
+platform:debian:buster:
   image: igwn/lalsuite-dev:buster
-  stage: nightly
+  stage: platform tests
   needs:
     - make-dist
   script:
@@ -723,12 +763,12 @@ nightly:debian:buster:
     - schedules
     - web
 
-# macOS
+# -- macOS
 
-nightly:macos:highsierra:
+platform:macos:highsierra:
   tags:
     - macos_highsierra
-  stage: nightly
+  stage: platform tests
   script:
     - ./00boot
     # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
@@ -742,10 +782,10 @@ nightly:macos:highsierra:
     - schedules
     - web
 
-nightly:macos:sierra:
+platform:macos:sierra:
   tags:
     - macos_sierra
-  stage: nightly
+  stage: platform tests
   script:
     - ./00boot
     # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
@@ -759,12 +799,10 @@ nightly:macos:sierra:
     - schedules
     - web
 
-#
-# python wheels
-#
+# -- wheels -------------------------------------
 
 # Build receipe for standalone wheels on Linux
-.nightly:wheel:manylinux: &nightly-wheel-manylinux
+.wheel:manylinux: &wheel-manylinux
   # This container is derived from the official manylinux image provided by
   # python.org (see PEP 513 and PEP 571), and includes all of the LALSuite
   # build-dependencies.
@@ -793,7 +831,7 @@ nightly:macos:sierra:
       - wheelhouse
 
 # Build receipe for standalone wheels on macOS
-.nightly:wheel:macos: &nightly-wheel-macos
+.wheel:macos: &wheel-macos
   tags:
     - macos_sierra
   stage: wheels
@@ -824,47 +862,47 @@ nightly:macos:sierra:
     paths:
       - wheelhouse
 
-.nightly:wheel:manylinux1: &nightly-wheel-manylinux1
-  <<: *nightly-wheel-manylinux
+.wheel:manylinux1: &wheel-manylinux1
+  <<: *wheel-manylinux
   image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux1_x86_64
 
-.nightly:wheel:manylinux2010: &nightly-wheel-manylinux2010
-  <<: *nightly-wheel-manylinux
+.wheel:manylinux2010: &wheel-manylinux2010
+  <<: *wheel-manylinux
   image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux2010_x86_64
 
 # Build wheels for all supported platforms
-nightly:wheel:cp27-cp27m-manylinux1:
-  <<: *nightly-wheel-manylinux1
-nightly:wheel:cp27-cp27mu-manylinux1:
-  <<: *nightly-wheel-manylinux1
-nightly:wheel:cp34-cp34m-manylinux1:
-  <<: *nightly-wheel-manylinux1
-nightly:wheel:cp35-cp35m-manylinux1:
-  <<: *nightly-wheel-manylinux1
-nightly:wheel:cp36-cp36m-manylinux1:
-  <<: *nightly-wheel-manylinux1
-nightly:wheel:cp37-cp37m-manylinux1:
-  <<: *nightly-wheel-manylinux1
-nightly:wheel:cp27-cp27m-manylinux2010:
-  <<: *nightly-wheel-manylinux2010
-nightly:wheel:cp27-cp27mu-manylinux2010:
-  <<: *nightly-wheel-manylinux2010
-nightly:wheel:cp34-cp34m-manylinux2010:
-  <<: *nightly-wheel-manylinux2010
-nightly:wheel:cp35-cp35m-manylinux2010:
-  <<: *nightly-wheel-manylinux2010
-nightly:wheel:cp36-cp36m-manylinux2010:
-  <<: *nightly-wheel-manylinux2010
-nightly:wheel:cp37-cp37m-manylinux2010:
-  <<: *nightly-wheel-manylinux2010
-nightly:wheel:cp27-cp27m-macosx:
-  <<: *nightly-wheel-macos
-nightly:wheel:cp35-cp35m-macosx:
-  <<: *nightly-wheel-macos
-nightly:wheel:cp36-cp36m-macosx:
-  <<: *nightly-wheel-macos
-nightly:wheel:cp37-cp37m-macosx:
-  <<: *nightly-wheel-macos
+wheel:cp27-cp27m-manylinux1:
+  <<: *wheel-manylinux1
+wheel:cp27-cp27mu-manylinux1:
+  <<: *wheel-manylinux1
+wheel:cp34-cp34m-manylinux1:
+  <<: *wheel-manylinux1
+wheel:cp35-cp35m-manylinux1:
+  <<: *wheel-manylinux1
+wheel:cp36-cp36m-manylinux1:
+  <<: *wheel-manylinux1
+wheel:cp37-cp37m-manylinux1:
+  <<: *wheel-manylinux1
+wheel:cp27-cp27m-manylinux2010:
+  <<: *wheel-manylinux2010
+wheel:cp27-cp27mu-manylinux2010:
+  <<: *wheel-manylinux2010
+wheel:cp34-cp34m-manylinux2010:
+  <<: *wheel-manylinux2010
+wheel:cp35-cp35m-manylinux2010:
+  <<: *wheel-manylinux2010
+wheel:cp36-cp36m-manylinux2010:
+  <<: *wheel-manylinux2010
+wheel:cp37-cp37m-manylinux2010:
+  <<: *wheel-manylinux2010
+wheel:cp27-cp27m-macosx:
+  <<: *wheel-macos
+wheel:cp35-cp35m-macosx:
+  <<: *wheel-macos
+wheel:cp36-cp36m-macosx:
+  <<: *wheel-macos
+wheel:cp37-cp37m-macosx:
+  <<: *wheel-macos
 
 deploy:wheel:
   stage: deploy
@@ -878,49 +916,22 @@ deploy:wheel:
     - pip install twine
     - twine upload wheelhouse/*
   needs:
-    - nightly:wheel:cp27-cp27m-manylinux1
-    - nightly:wheel:cp27-cp27mu-manylinux1
-    - nightly:wheel:cp34-cp34m-manylinux1
-    - nightly:wheel:cp35-cp35m-manylinux1
-    - nightly:wheel:cp36-cp36m-manylinux1
-    - nightly:wheel:cp37-cp37m-manylinux1
-    - nightly:wheel:cp27-cp27m-manylinux2010
-    - nightly:wheel:cp27-cp27mu-manylinux2010
-    - nightly:wheel:cp34-cp34m-manylinux2010
-    - nightly:wheel:cp35-cp35m-manylinux2010
-    - nightly:wheel:cp36-cp36m-manylinux2010
-    - nightly:wheel:cp37-cp37m-manylinux2010
-    - nightly:wheel:cp27-cp27m-macosx
-    - nightly:wheel:cp35-cp35m-macosx
-    - nightly:wheel:cp36-cp36m-macosx
-    - nightly:wheel:cp37-cp37m-macosx
+    - wheel:cp27-cp27m-manylinux1
+    - wheel:cp27-cp27mu-manylinux1
+    - wheel:cp34-cp34m-manylinux1
+    - wheel:cp35-cp35m-manylinux1
+    - wheel:cp36-cp36m-manylinux1
+    - wheel:cp37-cp37m-manylinux1
+    - wheel:cp27-cp27m-manylinux2010
+    - wheel:cp27-cp27mu-manylinux2010
+    - wheel:cp34-cp34m-manylinux2010
+    - wheel:cp35-cp35m-manylinux2010
+    - wheel:cp36-cp36m-manylinux2010
+    - wheel:cp37-cp37m-manylinux2010
+    - wheel:cp27-cp27m-macosx
+    - wheel:cp35-cp35m-macosx
+    - wheel:cp36-cp36m-macosx
+    - wheel:cp37-cp37m-macosx
   only:
     - /^lalsuite-v.*$/
     - schedules
-
-#
-# documentation
-#
-
-pages:
-  image: igwn/lalsuite-dev:stretch
-  stage: nightly
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 install-html
-    - cp -r ${LAL_DIR}/share/doc public/
-    - pushd public
-    - cp lalsuite/index.html index.html
-    - sed -i 's/..\/lal/lal/g' index.html
-    - popd
-  needs:
-    - make-dist
-  artifacts:
-    paths:
-      - public
-  only:
-    - master@lscsoft/lalsuite
-  except:
-    - pushes
-    - web
