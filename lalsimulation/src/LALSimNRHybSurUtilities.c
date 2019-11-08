@@ -66,7 +66,7 @@
 /**
  * Reads a REAL8 value from a H5 file/group.
  */
-static int ReadHDF5DoubleDataset(
+int ReadHDF5DoubleDataset(
     REAL8 *param,      /**< Output: REAL8 value from H5 file/group. */
     LALH5File *sub,     /**< H5 file or group. */
     const char *name    /**< Name of REAL8 dataset within file/group. */
@@ -90,7 +90,7 @@ static int ReadHDF5DoubleDataset(
 /**
  * Reads an INT8 value from a H5 file/group.
  */
-static int ReadHDF5IntDataset(
+int ReadHDF5IntDataset(
     int *param,         /**< Output: int value from H5 file/group. */
     LALH5File *sub,     /**< H5 file or group. */
     const char *name    /**< Name of int dataset within file/group. */
@@ -579,7 +579,7 @@ static REAL8 gp_predict(
 /**
  * Evaluate a NRHybSur fit.
  */
-static REAL8 NRHybSur_eval_fit(
+REAL8 NRHybSur_eval_fit(
     const NRHybSurFitData *fit_data,   /**< Data for fit. */
     const gsl_vector *fit_params, /**< Parameter space point to evaluate the fit
                                 at. size=D, the dimension of the model. */

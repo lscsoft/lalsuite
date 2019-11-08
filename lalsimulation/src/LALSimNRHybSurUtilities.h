@@ -148,10 +148,29 @@ typedef struct tagEvaluatedDataPieces {
 //************************* function declarations *************************/
 //*************************************************************************/
 
+int ReadHDF5DoubleDataset(
+    REAL8 *param,
+    LALH5File *sub,
+    const char *name
+);
+
+int ReadHDF5IntDataset(
+    int *param,
+    LALH5File *sub,
+    const char *name
+);
+
 int NRHybSur_Init(
     NRHybSurData *data,
     LALH5File *file
     );
+
+REAL8 NRHybSur_eval_fit(
+    const NRHybSurFitData *fit_data,
+    const gsl_vector *fit_params,
+    const gsl_matrix *x_train,
+    gsl_vector *dummy_worker
+);
 
 int NRHybSur_eval_phase_22(
     gsl_vector **phi_22,
