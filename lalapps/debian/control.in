@@ -65,7 +65,8 @@ Depends: ${misc:Depends},
   python-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
   lalinference (>= @MIN_LALINFERENCE_VERSION@~),
   python-lalinference (>= @MIN_LALINFERENCE_VERSION@~),
-  python-ligo-segments
+  python-ligo-segments,
+  python-ligo-lw,
 Breaks: lalinference-python (<< 1.9.4.1-1~)
 Provides: python-bayestar-localization, python-bayestar
 Conflicts: python-bayestar-localization, python-bayestar, python-pylal

@@ -101,6 +101,7 @@ requirements:
     - python-lalmetaio >={{ lalmetaio_version }}
     - python-lalpulsar >={{ lalpulsar_version }}
     - python-lalsimulation >={{ lalsimulation_version }}
+    - python-ligo-lw
 
 test:
   imports:
