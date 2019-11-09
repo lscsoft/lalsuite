@@ -578,6 +578,18 @@ lalinference_testjob:
     - schedules
     - web
 
+top-level:
+  stage: integration tests
+  image: igwn/lalsuite-dev:el7
+  needs:
+    - make-dist
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen --enable-swig
+    - make -j4 distcheck
+  only:
+    - pushes
+
 # -- docker -------------------------------------
 
 # build a nightly container from the RPMs
