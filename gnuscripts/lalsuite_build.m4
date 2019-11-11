@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 155
+# serial 156
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -483,21 +483,6 @@ AC_DEFUN([LALSUITE_USE_LIBTOOL],[
   ])
   AC_LANG(_AC_LANG)
   LALSUITE_ADD_FLAGS([],[],[${lalsuite_libtool_flags}])
-  # end $0
-])
-
-AC_DEFUN([LALSUITE_MULTILIB_LIBTOOL_HACK],[
-  # $0: libtool incorrectly determine library path on SL6
-  case "${host}" in
-    x86_64-*-linux-gnu*)
-      case `cat /etc/redhat-release 2> /dev/null` in
-        "Scientific Linux"*|"CentOS"*)
-          AC_MSG_NOTICE([hacking round broken libtool multilib support on RedHat systems])
-          lt_cv_sys_lib_dlsearch_path_spec="/lib64 /usr/lib64"
-          ;;
-      esac
-      ;;
-  esac
   # end $0
 ])
 
