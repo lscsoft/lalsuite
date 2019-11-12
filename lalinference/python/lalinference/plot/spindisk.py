@@ -51,8 +51,11 @@ def make_disk_plot(post,outpath=None):
   for a, tilt in zip([a1, a2], [tilt1, tilt2]):
       asamps=(post[a].samples).flatten()
       tsamps=(post[tilt].samples).flatten()
-      
-      H, _, _ = np.histogram2d(asamps, np.cos(tsamps), range=[[0, 1], [-1, 1]], bins=(Na, Nt), density=True)
+      try:
+          H, _, _ = np.histogram2d(asamps, np.cos(tsamps), range=[[0, 1], [-1, 1]], bins=(Na, Nt), density=True)
+      except TypeError:
+          # numpy < 1.15 uses normed instead of density
+          H, _, _ = np.histogram2d(asamps, np.cos(tsamps), range=[[0, 1], [-1, 1]], bins=(Na, Nt), normed=True)
       vmax = H.max() if H.max() > vmax else vmax
 
   # Make the plots
@@ -60,7 +63,12 @@ def make_disk_plot(post,outpath=None):
       asamps=(post[a].samples).flatten()
       tsamps=(post[tilt].samples).flatten()
       plt.sca(ax)
-      H, rs, costs = np.histogram2d(asamps, np.cos(tsamps), range=[[0, 1], [-1, 1]], bins=(Na, Nt), density=True)
+      try:
+          H, rs, costs = np.histogram2d(asamps, np.cos(tsamps), range=[[0, 1], [-1, 1]], bins=(Na, Nt), density=True)
+      except TypeError:
+          # numpy < 1.15 uses normed instead of density
+          H, rs, costs = np.histogram2d(asamps, np.cos(tsamps), range=[[0, 1], [-1, 1]], bins=(Na, Nt), normed=True)
+
       COSTS, RS = np.meshgrid(costs, rs)
       X = RS * np.sin(np.arccos(COSTS))
       Y = RS * COSTS
