@@ -405,6 +405,7 @@ typedef enum tagApproximant {
    NR_hdf5,              /**< Time domain, NR waveform from HDF file. From INSERT LINKS HERE */
    NRSur4d2s,
    NRSur7dq2,           /**< Time domain, fully precessing NR surrogate model with up to ell=4 modes, arxiv: 1705.07089 */
+   NRSur7dq4,           /**< q=4 extension of NRSur7dq2, arxiv: 1905.09300 */
    SEOBNRv4HM,	/**< Spin nonprecessing EOBNR model v4 with higher modes, PhysRevD.98.084028 [arXiv:1803.10701]
                      * @remarks Implemented in lalsimulation (time domain). */
    NRHybSur3dq8,        /**< Time domain, aligned-spin, higher modes, hybridized. Paper arxiv:1812.07865 */
@@ -855,7 +856,7 @@ int XLALSimInspiralSetQuadMonParamsFromLambdas(LALDict *LALpars);
 INT4 XLALSimIMRNRHybSur3dq8Polarizations(
     REAL8TimeSeries **hplus,        /**<Output: \f$h_+\f$ polarization. */
     REAL8TimeSeries **hcross,       /**<Output: \f$h_{\times}\f$ polarization.*/
-    REAL8 phiRef,                   /**< Orbital phase at reference frequency.*/
+    REAL8 phiRef,                   /**< azimuthal angle for Ylms */
     REAL8 inclination,              /**< Inclination angle. */
     REAL8 deltaT,                   /**< Sampling interval (s). */
     REAL8 m1,                       /**< Mass of Bh1 (kg). */
@@ -865,8 +866,7 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
     REAL8 fRef,                     /**< Reference GW frequency (Hz). */
     REAL8 chi1z,                    /**< Dimensionless spin of Bh1. */
     REAL8 chi2z,                    /**< Dimensionless spin of Bh2. */
-    LALValue* ModeArray             /**< Container for the modes to generate.
-                                    To generate all available modes pass NULL.*/
+    LALDict* LALparams             /**< Dict with extra parameters */
 );
 
 /**
@@ -874,7 +874,6 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
  * In module LALSimIMRNRHybSur3dq8.c
  */
 SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
-    REAL8 phiRef,                   /**< Orbital phase at reference frequency.*/
     REAL8 deltaT,                   /**< Sampling interval (s). */
     REAL8 m1,                       /**< Mass of Bh1 (kg). */
     REAL8 m2,                       /**< Mass of Bh2 (kg). */
@@ -883,8 +882,7 @@ SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
     REAL8 fMin,                     /**< Start GW frequency (Hz). */
     REAL8 fRef,                     /**< Reference GW frequency (Hz). */
     REAL8 distance,                 /**< Distance of source (m). */
-    LALValue* ModeArray             /**< Container for the modes to generate.
-                                    To generate all available modes pass NULL.*/
+    LALDict* LALparams             /**< Dict with extra parameters */
 );
 
 

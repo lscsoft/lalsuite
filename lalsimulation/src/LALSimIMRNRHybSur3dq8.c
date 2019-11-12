@@ -33,9 +33,9 @@
  *
  * **Parameter ranges**:
  *
- *   q = [1, 10]
- *
- *   \f$\chi_{1z}, \chi_{2z}\f$ = [-1, 1]
+ *   q = [1, 10.1] and \f$\chi_{1z}, \chi_{2z}\f$ = [-0.81, 0.81]
+ *   or
+ *   q = [1, 9.1] and \f$\chi_{1z}, \chi_{2z}\f$ = [-0.91, 0.91]
  *
  *   modes: \f$ \ell \leq 4, m \geq 0 \f$, and (5,5), but not (4,1) or (4,0).
  *   m<0 modes are determined from the m \f$\geq0\f$ modes.
@@ -189,15 +189,18 @@ int NRHybSur3dq8_fitParams(
  * strain in the coorbital frame.
  *
  * The reference point is the time at which the (2,2) mode frequency equals
- * fRef. If fRef=0, sets fRef=fMin. We set the orbital phase to phiRef at the
+ * fRef. If fRef=0, sets fRef=fMin. We set the orbital phase to 0 at the
  * reference point. The orbital phase is obtained as \f$\phi_{22}/2\f$, so this
  * leaves a pi ambiguity. But the surrogate data is already aligned such that
  * the heavier BH is on the +ve x-axis at t=-1000M. See Sec.VI.A.4 of
  * arxiv:1812.07865.  This resolves the pi ambiguity. This means that after the
- * realignment, the orbital phase at reference frequency fRef is phiRef, or Bh1
- * is at azimuthal angle=phiRef from the +ve x-axis. Note that this is
- * alignment is done using only waveform quantities, so this doesn't
- * necessarily correspond to the (gauge dependent) NR Bh trajectories.
+ * realignment, the orbital phase at reference frequency fRef is 0, or Bh1 is
+ * on the +ve x-axis. Note that this is alignment is done using only waveform
+ * quantities, so this doesn't necessarily correspond to the (gauge dependent)
+ * NR Bh trajectories. The modes are returned in this frame, which agrees with
+ * the LAL convention. When combining the modes to get the polarizations, the
+ * Ylms should be evaluated at (inclination, pi/2 - phiRef), following the LAL
+ * convention.
  *
  * Only uses data at (2,2) mode frequencies >= fMin. This determines the start
  * time. The start time, along with the step size deltaT, is used to determine
@@ -230,7 +233,6 @@ int NRHybSur3dq8_core(
                             pieces. */
     LIGOTimeGPS *epoch,     /**< Output: Initial time value, where t=0 is at
                                 the peak of the total waveform amplitude. */
-    REAL8 phiRef,          /**< Orbital phase at reference pt. */
     const REAL8 deltaT,    /**< Sampling interval (s). */
     const REAL8 fMin,      /**< Start GW frequency (Hz). */
     const REAL8 fRef,      /**< Reference GW frequency (Hz). */
@@ -238,29 +240,43 @@ int NRHybSur3dq8_core(
     const REAL8 Mtot_sec,  /**< Total mass in geometric units (s). */
     REAL8 chi1z,           /**< Dimensionless spin of Bh1. */
     REAL8 chi2z,           /**< Dimensionless spin of Bh2. */
-    LALValue* ModeArray     /**< Container for (ell, m) modes to generate. */
+    LALValue* ModeArray,   /**< Container for (ell, m) modes to generate. */
+    LALDict* LALparams     /**< Dict with extra parameters */
 ) {
 
     const NRHybSurData *NR_hybsur_data = &__lalsim_NRHybSur3dq8_data;
 
+    REAL8 init_orbphase = 0;    // In the LAL convention the larger BH should
+                                // be on the +ve x-axis at fRef, this is done
+                                // by setting orbphase = 0 at fRef.
     // For the surrogate Bh1 is defined to be the one with the larger mass,
     // Bh2 with the smaller mass. Therefore, if q<1, we swap the labels of the
     // two Bhs
     if (q < 1) {
-        // Switch the physical locations of the black holes
-        phiRef += LAL_PI;
-        // Now switch the labeling
         q = 1./q;
         REAL8 tmp = chi1z;
         chi1z = chi2z;
         chi2z = tmp;
+
+        // The above swap generates the requested waveform but rotated by
+        // pi about the z-axis, we undo this by adding pi to init_orbphase.
+        init_orbphase += LAL_PI;
     }
 
     const char *param_validity = "This model is valid for q <= 9.1 & "
         "|chi1z,chi2z| <= 0.91, or q <= 10.1 & |chi1z,chi2z| <= 0.81";
 
+    // By default we do not allow unlimited_extrapolation
+    UINT4 unlim_extrap = 0;
+    if (LALparams != NULL &&
+            XLALDictContains(LALparams, "unlimited_extrapolation")) {
+        // Unless the user asks for it
+        unlim_extrap
+            = XLALDictLookupUINT4Value(LALparams, "unlimited_extrapolation");
+    }
+
     // Sanity checks and warnings
-    if (q > 10.1) {
+    if ((q > 10.1) && (unlim_extrap == 0)) {
         XLAL_ERROR(XLAL_EINVAL,
             "Too much extrapolation in mass ratio; q=%0.4f > 10.1\n%s\n", q,
             param_validity);
@@ -269,18 +285,18 @@ int NRHybSur3dq8_core(
         XLAL_PRINT_WARNING(
             "Extrapolating outside training range q=%0.4f > 8.1\n", q);
     }
-    if (fabs(chi1z) > 0.91) {
+    if ((fabs(chi1z) > 0.91) && (unlim_extrap == 0)) {
         XLAL_ERROR(XLAL_EINVAL,
             "Too much extrapolation; |chi1z|=%0.4f > 0.91\n%s\n", fabs(chi1z),
             param_validity);
     }
-    if (fabs(chi2z) > 0.91) {
+    if ((fabs(chi2z) > 0.91) && (unlim_extrap == 0)) {
         XLAL_ERROR(XLAL_EINVAL,
             "Too much extrapolation; |chi2z|=%0.4f > 0.91\n%s\n", fabs(chi2z),
             param_validity);
     }
     if (fabs(chi1z) > 0.81) {
-        if (q > 9.1) {
+        if ((q > 9.1) && (unlim_extrap == 0)) {
             XLAL_ERROR(XLAL_EINVAL,
                 "Too much extrapolation; q=%0.4f > 9.1 & |chi1z|=%.04f"
                 " >0.81\n%s\n", q, fabs(chi1z), param_validity);
@@ -290,7 +306,7 @@ int NRHybSur3dq8_core(
             fabs(chi1z));
     }
     if (fabs(chi2z) > 0.81) {
-        if (q > 9.1) {
+        if ((q > 9.1) && (unlim_extrap == 0)) {
             XLAL_ERROR(XLAL_EINVAL,
                 "Too much extrapolation; q=%0.4f > 9.1 & |chi2z|=%.04f"
                 " >0.81\n%s\n", q, fabs(chi2z), param_validity);
@@ -348,7 +364,7 @@ int NRHybSur3dq8_core(
     // needed for the transformation from coorbital to inertial frame for all
     // modes
     ret = NRHybSur_eval_phase_22(phi_22, &output_times, eta, fit_params,
-        omegaM_22_min, deltaTOverM, phiRef, omegaM_22_ref, dummy_dp,
+        omegaM_22_min, deltaTOverM, init_orbphase, omegaM_22_ref, dummy_dp,
         x_train, dummy_worker, NR_hybsur_data);
     if(ret != XLAL_SUCCESS) {
         XLAL_ERROR(XLAL_EFUNC,
@@ -417,15 +433,17 @@ int NRHybSur3dq8_core(
  * Returns the plus and cross polarizations of NRHybSur3dq8 waveform model.
  *
  * The reference point is the time at which the (2,2) mode frequency equals
- * fRef. If fRef=0, sets fRef=fMin. We set the orbital phase to phiRef at the
+ * fRef. If fRef=0, sets fRef=fMin. We set the orbital phase to 0 at the
  * reference point. The orbital phase is obtained as \f$\phi_{22}/2\f$, so this
  * leaves a pi ambiguity. But the surrogate data is already aligned such that
  * the heavier BH is on the +ve x-axis at t=-1000M. See Sec.VI.A.4 of
  * arxiv:1812.07865.  This resolves the pi ambiguity. This means that after the
- * realignment, the orbital phase at reference frequency fRef is phiRef, or Bh1
- * is at azimuthal angle=phiRef from the +ve x-axis. Note that this is
- * alignment is done using only waveform quantities, so this doesn't
- * necessarily correspond to the (gauge dependent) NR Bh trajectories.
+ * realignment, the orbital phase at reference frequency fRef is 0, or Bh1 is
+ * on the +ve x-axis. Note that this is alignment is done using only waveform
+ * quantities, so this doesn't necessarily correspond to the (gauge dependent)
+ * NR Bh trajectories. The polarizations of the waveform are returned in the sky
+ * of this frame at (inclination, pi/2 - phiRef). This agrees with the LAL
+ * convention.
  *
  * Only uses data at (2,2) mode frequencies >= fMin. This determines the start
  * time. The start time, along with the step size deltaT, is used to determine
@@ -439,11 +457,27 @@ int NRHybSur3dq8_core(
  * If a custom ModeArray is given, only those modes are used. Note that it only
  * looks for m>=0 modes in ModeArray, and will ignore m<0 modes even if present.
  * The m<0 modes automatically get added.
+ *
+ * This surrogate model is trained on the following range.
+ *   q <= 8, |chi_1|, |chi_2| <= 0.8
+ *   If you want a guarantee of accuracy you should stick to the above ranges.
+ *
+ *   We allow extrapolation to the following ranges, but with a warning:
+ *   q = [1, 10.1] and \f$\chi_{1z}, \chi_{2z}\f$ = [-0.81, 0.81]
+ *   or
+ *   q = [1, 9.1] and \f$\chi_{1z}, \chi_{2z}\f$ = [-0.91, 0.91]
+ *   We expect the model to be reasonable when extrapolated to these ranges.
+ *
+ *   Beyond the above ranges, we raise an error. If you want to extrapolate
+ *   beyond these limits you can specify unlimited_extrapolation = 1 in your
+ *   dictParams as follows:
+ *       # USE AT YOUR OWN RISK!!
+ *       lal.DictInsertUINT4Value(dictParams, "unlimited_extrapolation", 1)
  */
 INT4 XLALSimIMRNRHybSur3dq8Polarizations(
     REAL8TimeSeries **hplus,        /**<Output: \f$h_+\f$ polarization. */
     REAL8TimeSeries **hcross,       /**<Output: \f$h_{\times}\f$ polarization.*/
-    REAL8 phiRef,                   /**< Orbital phase at reference frequency.*/
+    REAL8 phiRef,                   /**< azimuthal angle for Ylms */
     REAL8 inclination,              /**< Inclination angle. */
     REAL8 deltaT,                   /**< Sampling interval (s). */
     REAL8 m1,                       /**< Mass of Bh1 (kg). */
@@ -453,8 +487,7 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
     REAL8 fRef,                     /**< Reference GW frequency (Hz). */
     REAL8 chi1z,                    /**< Dimensionless spin of Bh1. */
     REAL8 chi2z,                    /**< Dimensionless spin of Bh2. */
-    LALValue* ModeArray             /**< Container for the modes to generate.
-                                    To generate all available modes pass NULL.*/
+    LALDict* LALparams              /**< Dict with extra parameters */
 )
 {
 #ifdef LAL_PTHREAD_LOCK
@@ -471,6 +504,8 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
     }
 
     // If ModeArray is not specified, use all available modes
+    LALValue* ModeArray
+        = XLALSimInspiralWaveformParamsLookupModeArray(LALparams);
     if (ModeArray == NULL) {
         ModeArray = XLALSimInspiralCreateModeArray();
         NRHybSur_set_default_modes(ModeArray, NR_hybsur_data);
@@ -515,8 +550,8 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
 
     // Evaluate the surrogate
     ret = NRHybSur3dq8_core(&phi_22, evaluated_mode_dps,
-        &epoch, phiRef, deltaT, fMin, fRef, q, Mtot_sec, chi1z, chi2z,
-        ModeArray);
+        &epoch, deltaT, fMin, fRef, q, Mtot_sec, chi1z, chi2z,
+        ModeArray, LALparams);
     if(ret != XLAL_SUCCESS) {
         XLAL_ERROR(XLAL_EFUNC, "Surrogate evaluation failed.");
     }
@@ -554,10 +589,10 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
          * nodes (the funny omega with circles on the ends). The uppercase Z,
          * which is the direction along which we want to evaluate the waveform,
          * is always in the surrogate frame (y, z) plane. Z is rotated from z
-         * towards the +ive y surrogate axis, so we should always evaluate
-         * at (inclination, pi/2). */
+         * towards the +ive y surrogate axis, so we should always evaluate at
+         * (inclination, pi/2-phiRef). */
         swsh_coef = XLALSpinWeightedSphericalHarmonic(inclination,
-                0.5 * LAL_PI, -2, ell, m);
+                0.5 * LAL_PI - phiRef, -2, ell, m);
 
         if (m > 0) {
             // Note: Each time a new mode is added to the strain, the value of
@@ -566,7 +601,7 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
             // iteration. This is not a bug, but can be confusing, so just
             // adding this note for anyone that is debugging this code.
             swsh_coef_negM = XLALSpinWeightedSphericalHarmonic(inclination,
-                    0.5 * LAL_PI, -2, ell, -m);
+                    0.5 * LAL_PI - phiRef, -2, ell, -m);
         }
 
         for (UINT4 j=0; j < num_times; j++) {
@@ -653,15 +688,18 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
  * model.
  *
  * The reference point is the time at which the (2,2) mode frequency equals
- * fRef. If fRef=0, sets fRef=fMin. We set the orbital phase to phiRef at the
+ * fRef. If fRef=0, sets fRef=fMin. We set the orbital phase to 0 at the
  * reference point. The orbital phase is obtained as \f$\phi_{22}/2\f$, so this
  * leaves a pi ambiguity. But the surrogate data is already aligned such that
  * the heavier BH is on the +ve x-axis at t=-1000M. See Sec.VI.A.4 of
  * arxiv:1812.07865.  This resolves the pi ambiguity. This means that after the
- * realignment, the orbital phase at reference frequency fRef is phiRef, or Bh1
- * is at azimuthal angle=phiRef from the +ve x-axis. Note that this is
- * alignment is done using only waveform quantities, so this doesn't
- * necessarily correspond to the (gauge dependent) NR Bh trajectories.
+ * realignment, the orbital phase at reference frequency fRef is 0, or Bh1 is
+ * on the +ve x-axis. Note that this is alignment is done using only waveform
+ * quantities, so this doesn't necessarily correspond to the (gauge dependent)
+ * NR Bh trajectories. The modes are returned in this frame, which agrees with
+ * the LAL convention. When combining the modes to get the polarizations, the
+ * Ylms should be evaluated at (inclination, pi/2 - phiRef), following the LAL
+ * convention.
  *
  * Only uses data at (2,2) mode frequencies >= fMin. This determines the start
  * time. The start time, along with the step size deltaT, is used to determine
@@ -673,9 +711,24 @@ INT4 XLALSimIMRNRHybSur3dq8Polarizations(
  *
  * If a custom ModeArray is given, only those modes are used. Note that it only
  * looks for m>=0 modes in ModeArray, and will ignore m<0 modes even if present.
+ *
+ * This surrogate model is trained on the following range.
+ *   q <= 8, |chi_1|, |chi_2| <= 0.8
+ *   If you want a guarantee of accuracy you should stick to the above ranges.
+ *
+ *   We allow extrapolation to the following ranges, but with a warning:
+ *   q = [1, 10.1] and \f$\chi_{1z}, \chi_{2z}\f$ = [-0.81, 0.81]
+ *   or
+ *   q = [1, 9.1] and \f$\chi_{1z}, \chi_{2z}\f$ = [-0.91, 0.91]
+ *   We expect the model to be reasonable when extrapolated to these ranges.
+ *
+ *   Beyond the above ranges, we raise an error. If you want to extrapolate
+ *   beyond these limits you can specify unlimited_extrapolation = 1 in your
+ *   dictParams as follows:
+ *       # USE AT YOUR OWN RISK!!
+ *       lal.DictInsertUINT4Value(dictParams, "unlimited_extrapolation", 1)
  */
 SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
-    REAL8 phiRef,                   /**< Orbital phase at reference frequency.*/
     REAL8 deltaT,                   /**< Sampling interval (s). */
     REAL8 m1,                       /**< Mass of Bh1 (kg). */
     REAL8 m2,                       /**< Mass of Bh2 (kg). */
@@ -684,8 +737,7 @@ SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
     REAL8 fMin,                     /**< Start GW frequency (Hz). */
     REAL8 fRef,                     /**< Reference GW frequency (Hz). */
     REAL8 distance,                 /**< Distance of source (m). */
-    LALValue* ModeArray             /**< Container for the modes to generate.
-                                    To generate all available modes pass NULL.*/
+    LALDict* LALparams              /**< Dict with extra parameters */
 ) {
 #ifdef LAL_PTHREAD_LOCK
   (void) pthread_once(&NRHybSur3dq8_is_initialized, NRHybSur3dq8_Init_LALDATA);
@@ -701,6 +753,8 @@ SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
     }
 
     // If ModeArray is not specified, use all available modes
+    LALValue* ModeArray
+        = XLALSimInspiralWaveformParamsLookupModeArray(LALparams);
     if (ModeArray == NULL) {
         ModeArray = XLALSimInspiralCreateModeArray();
         NRHybSur_set_default_modes(ModeArray, NR_hybsur_data);
@@ -745,8 +799,8 @@ SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
 
     // Evaluate the surrogate
     ret = NRHybSur3dq8_core(&phi_22, evaluated_mode_dps,
-        &epoch, phiRef, deltaT, fMin, fRef, q, Mtot_sec, chi1z, chi2z,
-        ModeArray);
+        &epoch, deltaT, fMin, fRef, q, Mtot_sec, chi1z, chi2z,
+        ModeArray, LALparams);
     if(ret != XLAL_SUCCESS) {
         XLAL_ERROR_NULL(XLAL_EFUNC, "Surrogate evaluation failed.");
     }

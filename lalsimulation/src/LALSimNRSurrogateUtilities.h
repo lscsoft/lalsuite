@@ -117,3 +117,17 @@ UNUSED static void TransformModesCoorbitalToInertial(
     gsl_vector **quat,              /**< Coprecessing frame quaternions. */
     gsl_vector *orbphase            /**< Orbital phase. */
 );
+
+UNUSED static int quatInv(double *qInv, double *q);
+UNUSED static int multiplyQuats(double *prod, double *q1, double *q2);
+UNUSED static int quaternionTransformVector(
+        double *new_vec, double *quat, double *vec);
+UNUSED static int transformTimeDependentVector(gsl_vector **vec, gsl_vector **quat);
+
+UNUSED static int get_dimless_omega(
+        REAL8 *omegaMin_dimless,
+        REAL8 *omegaRef_dimless,
+        const REAL8 fMin,
+        const REAL8 fRef,
+        const REAL8 Mtot_sec
+);

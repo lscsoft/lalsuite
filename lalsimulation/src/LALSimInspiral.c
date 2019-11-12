@@ -167,6 +167,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SpinDominatedWf),
     INITIALIZE_NAME(NRSur4d2s),
     INITIALIZE_NAME(NRSur7dq2),
+    INITIALIZE_NAME(NRSur7dq4),
     INITIALIZE_NAME(NR_hdf5),
     INITIALIZE_NAME(NRHybSur3dq8),
 };
@@ -986,10 +987,26 @@ int XLALSimInspiralChooseTDWaveform(
 
         case NRSur7dq2:
             /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(LALparams);
             /* Call the waveform driver routine */
-            ret = XLALSimInspiralNRSur7dq2Polarizations(hplus, hcross,
-                    phiRef, inclination, deltaT, m1, m2, distance, f_min, f_ref,
-                    S1x, S1y, S1z, S2x, S2y, S2z, XLALSimInspiralWaveformParamsLookupModeArray(LALparams));
+            ret = XLALSimInspiralPrecessingNRSurPolarizations(hplus, hcross,
+                phiRef, inclination, deltaT, m1, m2, distance, f_min, f_ref,
+                S1x, S1y, S1z, S2x, S2y, S2z, LALparams, approximant);
+            break;
+
+        case NRSur7dq4:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(LALparams);
+            /* Call the waveform driver routine */
+            ret = XLALSimInspiralPrecessingNRSurPolarizations(hplus, hcross,
+                phiRef, inclination, deltaT, m1, m2, distance, f_min, f_ref,
+                S1x, S1y, S1z, S2x, S2y, S2z, LALparams, approximant);
             break;
 
         case NRHybSur3dq8:
@@ -1004,8 +1021,7 @@ int XLALSimInspiralChooseTDWaveform(
             /* Call the waveform driver routine */
             ret = XLALSimIMRNRHybSur3dq8Polarizations(hplus, hcross, phiRef,
                     inclination, deltaT, m1, m2, distance, f_min, f_ref,
-                    S1z, S2z,
-                    XLALSimInspiralWaveformParamsLookupModeArray(LALparams)); 
+                    S1z, S2z, LALparams); 
             break;
 
 
@@ -2517,8 +2533,8 @@ int XLALSimInspiralChooseWaveform(
 /**
  * Interface to compute a set of -2 spin-weighted spherical harmonic modes
  * for a binary inspiral for a given waveform approximant.
- * PN Approximants (TaylorT1 - T4), EOBNRv2 (EOBNRv2HM), NRSur7dq2, and
- * NRHybSur3dq8 are implemented.
+ * PN Approximants (TaylorT1 - T4), EOBNRv2 (EOBNRv2HM), NRSur7dq2, NRSur7dq4
+ * and NRHybSur3dq8 are implemented.
  *
  * The EOBNRv2 model returns the (2,2), (2,1), (3,3), (4,4), and (5,5) modes.
  */
@@ -2674,10 +2690,26 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
 
         case NRSur7dq2:
             /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
+                ABORT_NONDEFAULT_LALDICT_FLAGS_NULL(LALpars);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES_NULL(LALpars);
             /* Call the waveform driver routine */
-            hlm = XLALSimInspiralNRSur7dq2Modes(phiRef, deltaT, m1, m2, S1x,
-                    S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r,
-                    XLALSimInspiralWaveformParamsLookupModeArray(LALpars));
+            hlm = XLALSimInspiralPrecessingNRSurModes(deltaT, m1, m2,
+                    S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r,
+                    LALpars, approximant);
+            break;
+
+        case NRSur7dq4:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
+                ABORT_NONDEFAULT_LALDICT_FLAGS_NULL(LALpars);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES_NULL(LALpars);
+            /* Call the waveform driver routine */
+            hlm = XLALSimInspiralPrecessingNRSurModes(deltaT, m1, m2,
+                    S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r,
+                    LALpars, approximant);
             break;
 
         case NRHybSur3dq8:
@@ -2690,8 +2722,8 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
                 ABORT_NONZERO_TIDES_NULL(LALpars);
 
             /* Call the waveform driver routine */
-            hlm = XLALSimIMRNRHybSur3dq8Modes(phiRef, deltaT, m1, m2, S1z,
-                S2z, f_min, f_ref, r, XLALSimInspiralWaveformParamsLookupModeArray(LALpars));
+            hlm = XLALSimIMRNRHybSur3dq8Modes(deltaT, m1, m2, S1z,
+                S2z, f_min, f_ref, r, LALpars);
             break;
 
         case SEOBNRv4P:
@@ -4883,6 +4915,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case SEOBNRv4T:
         case NR_hdf5:
         case NRSur7dq2:
+        case NRSur7dq4:
         case TEOBResum_ROM:
         case SEOBNRv4HM:
         case NRHybSur3dq8:
@@ -5332,6 +5365,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case NR_hdf5:
     case NRSur4d2s:
     case NRSur7dq2:
+    case NRSur7dq4:
       spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
       break;
     case SpinTaylorF2:
@@ -5570,6 +5604,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case NR_hdf5:
     case NRSur4d2s:
     case NRSur7dq2:
+    case NRSur7dq4:
     case NRHybSur3dq8:
     case IMRPhenomHM:
     case NumApproximants:

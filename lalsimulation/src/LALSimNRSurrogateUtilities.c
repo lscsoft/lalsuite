@@ -18,6 +18,7 @@
  */
 
 #include "LALSimNRSurrogateUtilities.h"
+#include <lal/LALConstants.h>
 
 
 /****************** Init and Destroy functions ****************/
@@ -218,21 +219,21 @@ static int WignerDMatrix_Index(int ell, int m, int mp) {
     return res;
 }
 
-static double factorial(int n) {
+static REAL8 factorial(int n) {
     if (n <= 0) return 1.0;
     return factorial(n-1) * n;
 }
 
-static double factorial_ratio(int n, int k) {
+static REAL8 factorial_ratio(int n, int k) {
     if (n <= k) return 1.0;
     return factorial_ratio(n-1, k) * n;
 }
 
-static double binomial(int n, int k) {
+static REAL8 binomial(int n, int k) {
     return factorial_ratio(n, k) / factorial(n-k);
 }
 
-static double wigner_coef(int ell, int mp, int m) {
+static REAL8 wigner_coef(int ell, int mp, int m) {
     return sqrt(factorial(ell+m) * factorial(ell-m) / (factorial(ell+mp) * factorial(ell-mp)));
 }
 
@@ -274,25 +275,25 @@ static void complex_vector_mult(
  * See https://dcc.ligo.org/T1800069 for details.
  */
 static void NRSur_ab4_dy(
-    double *dy,     /**< Result */
-    double *k1,     /**< dy/dt evaluated at node 1 */
-    double *k2,     /**< dy/dt evaluated at node 2 */
-    double *k3,     /**< dy/dt evaluated at node 3 */
-    double *k4,     /**< dy/dt evaluated at node 4 */
-    double t12,     /**< t_2 - t_1 */
-    double t23,     /**< t_3 - t_2 */
-    double t34,     /**< t_4 - t_3 */
-    double t45,     /**< t_5 - t_4 */
+    REAL8 *dy,     /**< Result */
+    REAL8 *k1,     /**< dy/dt evaluated at node 1 */
+    REAL8 *k2,     /**< dy/dt evaluated at node 2 */
+    REAL8 *k3,     /**< dy/dt evaluated at node 3 */
+    REAL8 *k4,     /**< dy/dt evaluated at node 4 */
+    REAL8 t12,     /**< t_2 - t_1 */
+    REAL8 t23,     /**< t_3 - t_2 */
+    REAL8 t34,     /**< t_4 - t_3 */
+    REAL8 t45,     /**< t_5 - t_4 */
     int dim         /**< Vector dimension. Length of dy, k1, k2, k3, k4. */
 ) {
 
     // These are defined in https://dcc.ligo.org/T1800069, except we rename Dj to denomj.
-    double t13, t14, t24, denom1, denom2, denom3;
-    double A1, A2, A3, A4, B1, B2, B3, B4, C1, C2, C3, C4; // Matrix coefficients in the M matrix.
-    double dx_vec[4]; // Integral of the p vector from t4 to t5; [t45, t45^2/2, t45^3/3, t45^4/4]
+    REAL8 t13, t14, t24, denom1, denom2, denom3;
+    REAL8 A1, A2, A3, A4, B1, B2, B3, B4, C1, C2, C3, C4; // Matrix coefficients in the M matrix.
+    REAL8 dx_vec[4]; // Integral of the p vector from t4 to t5; [t45, t45^2/2, t45^3/3, t45^4/4]
 
     // Temp variable for the coefficients multiplying 1, x, x^2, and x^3 (k * M in the DCC document)
-    double tmp_coef;
+    REAL8 tmp_coef;
 
     int i;
 
@@ -577,8 +578,8 @@ static void WignerDMatrices_Compute(
 
     int n_times = quat[0]->size;
     int i, j, ell, m, mp, rho_min, rho_max, rho;
-    double tmp_re, tmp_im, tmp_abs_sqr, coef, c;
-    double eps_sqr = 1.0e-24;
+    REAL8 tmp_re, tmp_im, tmp_abs_sqr, coef, c;
+    REAL8 eps_sqr = 1.0e-24;
 
     // ra = q[0] - I*q[3], and rb = -q[2] - I*q[1]
     // It's possible that |ra| = 0 or |rb| = 0, making it unsafe to divide by them.
@@ -690,7 +691,7 @@ static void WignerDMatrices_Compute(
         }
     }
 
-    double zx, zy;
+    REAL8 zx, zy;
     int k;
     // Now fix the values at bad indices
     for (j=0; j<n_times; j++) {
@@ -754,4 +755,144 @@ static void WignerDMatrices_Compute(
     ComplexPowers_Destroy(rb_powers);
     RealPowers_Destroy(abs_ra_sqr_powers);
     RealPowers_Destroy(abs_rb_over_ra_sqr_powers);
+}
+
+
+/**
+ * Computes inverse, qInv, of a quaternion q such that q*qInv = 1.
+ */
+UNUSED static int quatInv(
+    REAL8 *qInv,   /**< Output: Inverse of q. Should be initialized with size=4 */
+    REAL8 *q       /**< Input quaternion. Should have size=4*/
+) {
+    const REAL8 normSqr =  q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3];
+    qInv[0] = q[0]/normSqr;
+    for (int i=1; i<4; i++) {
+        qInv[i] = -q[i]/normSqr;
+    }
+
+    return XLAL_SUCCESS;
+}
+
+/**
+ * Multiplies two quaternions.
+ */
+UNUSED static int multiplyQuats(
+    REAL8 *prod,   /**< Output: Product of q1 and q2. Should be initialized with size=4. */
+    REAL8 *q1,     /**< First quaternion. Should have size=4. */
+    REAL8 *q2      /**< Second quaternion. Should have size=4. */
+) {
+    prod[0] = q1[0]*q2[0] - q1[1]*q2[1] - q1[2]*q2[2] - q1[3]*q2[3];
+    prod[1] = q1[2]*q2[3] - q2[2]*q1[3] + q1[0]*q2[1] + q2[0]*q1[1];
+    prod[2] = q1[3]*q2[1] - q2[3]*q1[1] + q1[0]*q2[2] + q2[0]*q1[2];
+    prod[3] = q1[1]*q2[2] - q2[1]*q1[2] + q1[0]*q2[3] + q2[0]*q1[3];
+    return XLAL_SUCCESS;
+}
+
+
+/**
+ * Given a coprecessing frame quaternion (quat), transforms a 3-vector (vec)
+ * from the coprecessing frame to the inertial frame.
+ * Reference: Eq.(A6) of https://arxiv.org/pdf/1302.2919.pdf
+ */
+UNUSED static int quaternionTransformVector(
+    REAL8 *new_vec,  /**< Output: Transformed vector in inertial frame. Should be initialized with size=3 */
+    REAL8 *quat,     /**< Coprecessing frame quaternion. Should have size=4.*/
+    REAL8 *vec       /**< Input vector in coprecessing frame. Should have size=3.*/
+) {
+
+    // quaternion representation of vec, such that the scalar component is zero
+    REAL8 vec_quat[4] = {0, vec[0], vec[1], vec[2]};
+
+    // q_prod = vec_quat * inv(quat)
+    REAL8 q_prod[4];
+    REAL8 qInv[4];
+    quatInv(qInv, quat);
+    multiplyQuats(q_prod, vec_quat, qInv);
+
+    // quaternion representation of output vec, such that the
+    // scalar component is zero
+    REAL8 new_vec_quat[4];
+
+    // new_vec_quat = quat * vec_quat * inv(quat)
+    multiplyQuats(new_vec_quat, quat, q_prod);
+    new_vec[0] = new_vec_quat[1];
+    new_vec[1] = new_vec_quat[2];
+    new_vec[2] = new_vec_quat[3];
+
+    return XLAL_SUCCESS;
+}
+
+/**
+ * Transforms a vector from the coprecessing frame to the inertial frame
+ * using the coprecessing frame quaternions.
+ */
+UNUSED static int transformTimeDependentVector(
+    gsl_vector **vec,  /**< Input and Output: 3 time-dependent components of vec in the coprecessing frame */
+    gsl_vector **quat  /**< 4 time-dependent components of coprecessing frame quaternions. */
+) {
+
+    REAL8 tmp_vec[3];
+    REAL8 tmp_new_vec[3];
+    REAL8 tmp_quat[4];
+
+    REAL8 *x = vec[0]->data;
+    REAL8 *y = vec[1]->data;
+    REAL8 *z = vec[2]->data;
+
+    REAL8 *q0 = quat[0]->data;
+    REAL8 *q1 = quat[1]->data;
+    REAL8 *q2 = quat[2]->data;
+    REAL8 *q3 = quat[3]->data;
+
+    int n = quat[0]->size;
+    for (int i=0; i<n; i++) {
+
+        tmp_vec[0] = x[i];
+        tmp_vec[1] = y[i];
+        tmp_vec[2] = z[i];
+
+        tmp_quat[0] = q0[i];
+        tmp_quat[1] = q1[i];
+        tmp_quat[2] = q2[i];
+        tmp_quat[3] = q3[i];
+
+        // update x,y,z, which also updates vec, with the transformed vector
+        quaternionTransformVector(tmp_new_vec, tmp_quat, tmp_vec);
+        x[i] = tmp_new_vec[0];
+        y[i] = tmp_new_vec[1];
+        z[i] = tmp_new_vec[2];
+    }
+
+    return XLAL_SUCCESS;
+}
+
+
+/**
+ * Wrapper to get dimensionless omegaMin/omegaRef from fMin/fRef.
+ */
+UNUSED static int get_dimless_omega(
+        REAL8 *omegaMin_dimless,  /**< Output. omegaMin in units rad/M. */
+        REAL8 *omegaRef_dimless,  /**< Output. omegaRef in units rad/M. */
+        const REAL8 fMin,         /**< fMin in Hertz. */
+        const REAL8 fRef,         /**< fRef in Hertz. */
+        const REAL8 Mtot_sec      /**< Total mass in seconds. */
+) {
+
+    // Orbital angular frequency = 0.5*(wave angular frequency) = pi*(wave frequency)
+    *omegaMin_dimless = (Mtot_sec * fMin) * LAL_PI;
+
+    if (fRef == 0) {
+        // If fRef is 0, set it to fMin
+        *omegaRef_dimless = *omegaMin_dimless;
+    }
+    else {
+        *omegaRef_dimless = (Mtot_sec * fRef) * LAL_PI;
+    }
+
+    if (*omegaRef_dimless + 1e-13 < *omegaMin_dimless){
+        XLAL_ERROR(XLAL_EINVAL, "fRef cannot be lesser than fMin.");
+    }
+
+    return XLAL_SUCCESS;
 }

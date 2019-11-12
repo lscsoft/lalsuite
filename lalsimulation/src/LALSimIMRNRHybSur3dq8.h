@@ -33,9 +33,9 @@
  *
  * **Parameter ranges**:
  *
- *   q = [1, 10]
- *
- *   \f$\chi_{1z}, \chi_{2z}\f$ = [-1, 1]
+ *   q = [1, 10.1] and \f$\chi_{1z}, \chi_{2z}\f$ = [-0.81, 0.81]
+ *   or
+ *   q = [1, 9.1] and \f$\chi_{1z}, \chi_{2z}\f$ = [-0.91, 0.91]
  *
  *   modes: \f$ \ell \leq 4, m \geq 0 \f$, and (5,5), but not (4,1) or (4,0).
  *   m<0 modes are determined from the m \f$\geq0\f$ modes.
@@ -93,7 +93,6 @@ int NRHybSur3dq8_core(
     gsl_vector **phi_22,
     EvaluatedDataPieces **evaluated_mode_dps,
     LIGOTimeGPS *epoch,
-    REAL8 phiRef,
     const REAL8 deltaTOverM,
     const REAL8 fMin,
     const REAL8 fRef,
@@ -101,5 +100,6 @@ int NRHybSur3dq8_core(
     const REAL8 Mtot_sec,
     REAL8 chi1z,
     REAL8 chi2z,
-    LALValue* ModeArray
+    LALValue* ModeArray,
+    LALDict* LALparams
 );
