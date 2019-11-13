@@ -204,7 +204,7 @@ def ts_from_frame_file(framefile, channels, start=None, duration=None,
     """
     # open the file into a stream
     framefile = os.path.abspath(framefile)
-    stream = lalframe.FrOpen('', framefile)
+    stream = lalframe.FrStreamOpen('', framefile)
     # read the stream
     return ts_from_stream(stream, channels, start=start, duration=duration,
                           datatype=datatype, verbose=verbose)
