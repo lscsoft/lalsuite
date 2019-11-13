@@ -156,6 +156,37 @@ extern "C" {
  */
 /** @{ */
 
+/** \name Error Codes */
+/*@{*/
+#define REALFFTH_ENULL 1	/**< Null pointer */
+#define REALFFTH_ENNUL 2	/**< Non-null pointer */
+#define REALFFTH_ESIZE 4	/**< Invalid input size */
+#define REALFFTH_ESZMM 8	/**< Size mismatch */
+#define REALFFTH_ESLEN 16	/**< Invalid/mismatched sequence lengths */
+#define REALFFTH_ESAME 32	/**< Input/Output data vectors are the same */
+#define REALFFTH_ESIGN 64	/**< Incorrect plan sign */
+#define REALFFTH_EDATA 128	/**< Bad input data: DC/Nyquist should be real */
+#define REALFFTH_EALOC 256	/**< Memory allocation failed */
+#define REALFFTH_EFFTW 512	/**< Error in FFTW */
+#define REALFFTH_ESNGL 1024	/**< FFTW library is not single-precision */
+#define REALFFTH_EINTL 2048	/**< Error in Intel FFT library */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
+#define REALFFTH_MSGENULL "Null pointer"
+#define REALFFTH_MSGENNUL "Non-null pointer"
+#define REALFFTH_MSGESIZE "Invalid input size"
+#define REALFFTH_MSGESZMM "Size mismatch"
+#define REALFFTH_MSGESLEN "Invalid/mismatched sequence lengths"
+#define REALFFTH_MSGESAME "Input/Output data vectors are the same"
+#define REALFFTH_MSGESIGN "Incorrect plan sign"
+#define REALFFTH_MSGEDATA "Bad input data: DC/Nyquist should be real"
+#define REALFFTH_MSGEALOC "Memory allocation failed"
+#define REALFFTH_MSGEFFTW "Error in FFTW"
+#define REALFFTH_MSGESNGL "FFTW library is not single-precision"
+#define REALFFTH_MSGEINTL "Error in Intel FFT library"
+/** \endcond */
+
 /** Plan to perform FFT of REAL4 data */
 typedef struct tagREAL4FFTPlan REAL4FFTPlan;
 /** Plan to perform FFT of REAL8 data */

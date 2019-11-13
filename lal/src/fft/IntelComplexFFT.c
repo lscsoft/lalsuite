@@ -24,6 +24,8 @@
 
 #include <lal/SeqFactories.h>
 #include <lal/ComplexFFT.h>
+#include <lal/LALMalloc.h>
+#include <lal/XLALError.h>
 
 /** \cond DONT_DOXYGEN */
 
