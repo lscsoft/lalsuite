@@ -140,7 +140,7 @@ popd
 # C + python2 + octave
 %{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
 # python3
-[ -d %py3dir/test/python ] && %{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %py3dir -C test/python check
+%{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %py3dir -C test/python check
 
 %install
 # C + python2 + octave
