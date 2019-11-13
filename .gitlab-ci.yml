@@ -187,19 +187,15 @@ cache:
     - sed -i 's|@TARBALL@|'${TARBALL}'|g' conda/meta.yaml
     - sed -i 's|@SHA256@|'${SHA256}'|g' conda/meta.yaml
     # build packages
-    #     render first to dump the final YAML (for debugging)
-    #     then build as normal
-    - for _cmd in render build; do
-          conda ${_cmd}
-              conda/
-              --error-overlinking
-              --error-overdepending
-              --no-anaconda-upload
-              --python 3.7
-              --use-local
-              --variant-config-files $(conda info --base)/conda_build_config.yaml
-              ${CONDA_BUILD_ARGS};
-      done
+    - conda build
+          conda/
+          --error-overlinking
+          --error-overdepending
+          --no-anaconda-upload
+          --python 3.7
+          --use-local
+          --variant-config-files $(conda info --base)/conda_build_config.yaml
+          ${CONDA_BUILD_ARGS}
   artifacts:
     expire_in: 18h
     paths:
