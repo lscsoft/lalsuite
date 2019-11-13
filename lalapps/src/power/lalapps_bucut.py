@@ -129,17 +129,9 @@ def parse_command_line():
 #
 
 
+@lsctables.use_in
 class ContentHandler(ligolw.LIGOLWContentHandler):
 	pass
-lsctables.use_in(ContentHandler)
-
-
-#
-# Use interning row builder to save memory.
-#
-
-
-lsctables.table.TableStream.RowBuilder = lsctables.table.InterningRowBuilder
 
 
 #
@@ -505,7 +497,6 @@ else:
 
 for filename in filenames:
 	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ContentHandler)
-	lsctables.table.InterningRowBuilder.strings.clear()
 	xmldoc = ligolw_bucut(xmldoc, options, keep_this_sngl_burst, veto_segments = veto_segments, del_non_coincs = options.coinc_only, del_skipped_injections = options.inj_made_only, program = options.program, verbose = options.verbose)
 	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
 	xmldoc.unlink()

@@ -85,23 +85,6 @@ def parse_command_line():
 #
 # =============================================================================
 #
-#                                    Input
-#
-# =============================================================================
-#
-
-
-#
-# Use interning row builder to save memory.
-#
-
-
-binjfind.lsctables.table.TableStream.RowBuilder = binjfind.lsctables.table.InterningRowBuilder
-
-
-#
-# =============================================================================
-#
 #                                     Main
 #
 # =============================================================================
@@ -151,7 +134,6 @@ for n, filename in enumerate(filenames):
 	if options.verbose:
 		print("%d/%d:" % (n + 1, len(filenames)), end=' ', file=sys.stderr)
 	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw.LIGOLWContentHandler)
-	binjfind.lsctables.table.InterningRowBuilder.strings.clear()
 
 	#
 	# have we already procesed it?
