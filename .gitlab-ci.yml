@@ -176,7 +176,6 @@ cache:
     - set -x  # print commands as they are run (helps debugging)
     - *define-retry
     - *conda-init
-    - retry conda install openssl
   script:
     - PACKAGE=${CI_JOB_NAME%:*}
     - cd ${PACKAGE}/
