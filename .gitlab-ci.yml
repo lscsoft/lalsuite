@@ -761,7 +761,6 @@ gcc:9:
 
 # FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
 # available
-# FIXME: allow failure due to #124
 platform:debian:buster:
   image: igwn/lalsuite-dev:buster
   stage: platform tests
