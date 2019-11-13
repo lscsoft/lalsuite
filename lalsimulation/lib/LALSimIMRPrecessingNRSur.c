@@ -2554,8 +2554,6 @@ SphHarmTimeSeries *XLALSimInspiralPrecessingNRSurModes(
 }
 
 /**
- * NOT REVIEWED!
- *
  * This function evaluates the NRSur7dq2 or NRSur7dq4 surrogate model and
  * returns the precessing frame dynamics.
  * Papers:
@@ -2577,7 +2575,7 @@ SphHarmTimeSeries *XLALSimInspiralPrecessingNRSurModes(
  *      chiA0z
  *          spin of the heavier BH at the reference epoch, in the coorbital
  *          frame, as defined in the above papers. This agrees with the LAL
- *          convention.
+ *          convention, see LALSimInspiral.h for definition of the LAL frame.
  *      chiB0x
  *      chiB0y
  *      chiB0z
@@ -2604,8 +2602,8 @@ SphHarmTimeSeries *XLALSimInspiralPrecessingNRSurModes(
  *
  *          Extrapolation options:
  *          The surrogate models are trained on the following ranges:
- *          NRSur7dq2: q <= 2, |chi_1|, |chi_2| <= 0.8.
- *          NRSur7dq4: q <= 4, |chi_1|, |chi_2| <= 0.8.
+ *          NRSur7dq2: q <= 2.01, |chi_1|, |chi_2| <= 0.81.
+ *          NRSur7dq4: q <= 4.01, |chi_1|, |chi_2| <= 0.81.
  *          If you want a guarantee of accuracy you should stick to the above
  *          ranges.
  *
