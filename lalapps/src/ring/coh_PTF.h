@@ -356,19 +356,27 @@ UINT8 coh_PTF_add_triggers(
     INT8                    slideId,
     REAL4                   *timeOffsets,
     UINT4                   *acceptPointList,
-    UINT4                   numAcceptPoints
+    UINT4                   numAcceptPoints,
+    UINT4                   slideNum,
+    INT4                    timeDiff,
+    INT4                    startTime
 );
 
 void coh_PTF_cluster_triggers(
-  struct coh_PTF_params   *params,
-  MultiInspiralTable      **eventList,
-  MultiInspiralTable      **thisEvent
+    struct coh_PTF_params   *params,
+    MultiInspiralTable      **eventList,
+    MultiInspiralTable      **newEventHead,
+    UINT4                   numSlides,
+    INT4                    timeDiff
 );
 
 UINT4 coh_PTF_accept_trig_check(
     struct coh_PTF_params   *params,
     MultiInspiralTable      **eventList,
-    MultiInspiralTable      thisEvent
+    MultiInspiralTable      thisEvent,
+    INT4                    timeDiff,
+    UINT4                   currTimeDiff,
+    UINT4                   currStorageID
 );
 
 SnglInspiralTable* coh_PTF_create_sngl_event(

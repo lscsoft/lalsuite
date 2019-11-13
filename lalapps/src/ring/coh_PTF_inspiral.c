@@ -27,12 +27,17 @@ static struct coh_PTF_params *coh_PTF_get_params(int argc, char **argv)
   return &params;
 }
 
-static int XLALCountMultiInspiralTable(MultiInspiralTable *head)
+static int XLALCountMultiInspiralTable(MultiInspiralTable **head, UINT4 len)
 {
-	int length;
+	UINT4 ui;
+        int length = 0;
+        MultiInspiralTable *temp;
 	/* count the number of events in the list */
-	for(length = 0; head; head = head->next)
+        for (ui=0; ui < len; ui++)
+        {
+          for(temp = head[ui]; temp; temp = temp->next)
 		length++;
+        }
 
 	return(length);
 }
@@ -136,11 +141,13 @@ int main(int argc, char **argv)
   REAL4                   **snglOverlapCont = NULL;
 
   /* output event structures */
-  MultiInspiralTable       *eventList               = NULL;
-  MultiInspiralTable       *thisEvent               = NULL;
+  MultiInspiralTable       **eventList               = NULL;
+  MultiInspiralTable       **thisEvent               = NULL;
+  MultiInspiralTable       *finalEvents             = NULL;
   SnglInspiralTable        *snglEventList           = NULL;
   SnglInspiralTable        *snglThisEvent           = NULL;
   UINT8                    eventId                  = 0;
+  INT4                     timeDiff;
   
   /*------------------------------------------------------------------------*
    * initialise                                                             *
@@ -227,6 +234,20 @@ int main(int argc, char **argv)
   /* generate sky points array */
   skyPoints = coh_PTF_generate_sky_points(params);
   numSkyPoints = skyPoints->numPoints;
+
+  /*------------------------------------------------------------------------*
+   * Initialize the trigger storage structures                              *
+   *------------------------------------------------------------------------*/
+
+  timeDiff = params->endTime.gpsSeconds - params->startTime.gpsSeconds + 1;
+  eventList = LALCalloc(1, timeDiff*params->numShortSlides*sizeof(MultiInspiralTable*));
+  thisEvent = LALCalloc(1, timeDiff*params->numShortSlides*sizeof(MultiInspiralTable*));
+  for (i = 0; (i < (INT4) (timeDiff*params->numShortSlides)); i++)
+  {
+    eventList[i] = NULL;
+    thisEvent[i] = NULL;
+  }
+  
 
   /* loop over ifos if doing triggered search and determine the time-offset */
   /* and detector responses for the "preferred" sky location. For GRBs where */
@@ -558,7 +579,7 @@ int main(int argc, char **argv)
           /* This function construct triggers from loud events */
           if (! params->writeSnglInspiralTable)
           {
-            eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
+            eventId = coh_PTF_add_triggers(params, eventList, thisEvent,
                                          cohSNR, fcTmplt, *PTFtemplate, eventId,
                                          spinTemplate,
                                          pValues, gammaBeta, snrComps,
@@ -567,7 +588,9 @@ int main(int argc, char **argv)
                                          skyPoints->data[sp].longitude,
                                          skyPoints->data[sp].latitude,
                                          currSlideID, slidTimeOffsets,
-                                         acceptPointList,numAcceptPoints);
+                                         acceptPointList,numAcceptPoints,
+                                         slideNum, timeDiff,
+                                         params->startTime.gpsSeconds);
           }
           else
           {
@@ -601,7 +624,7 @@ int main(int argc, char **argv)
                     "sky point %d at %ld \n", j, i, sp,
                     timeval_subtract(&startTime));
 
-            eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
+            eventId = coh_PTF_add_triggers(params, eventList, thisEvent,
                                          cohSNR, fcTmplt, *PTFtemplate, eventId,
                                          spinTemplate,
                                          pValues, gammaBeta, snrComps,
@@ -610,14 +633,17 @@ int main(int argc, char **argv)
                                          skyPoints->data[sp].longitude,
                                          skyPoints->data[sp].latitude,
                                          currSlideID, slidTimeOffsets,
-                                         acceptPointList,numAcceptPoints);
+                                         acceptPointList,numAcceptPoints,
+                                         slideNum, timeDiff,
+                                         params->startTime.gpsSeconds);
           } /* End of if faceaway and faceon block */
 
           if (vrbflg)
           {
             if (! params->writeSnglInspiralTable)
             {
-              params->numEvents = XLALCountMultiInspiralTable(eventList);
+              params->numEvents = XLALCountMultiInspiralTable(eventList,
+                                              timeDiff*params->numShortSlides);
             }
             else
             {
@@ -695,7 +721,8 @@ int main(int argc, char **argv)
   /* calulate number of events and cluster if needed */
   if (! params->writeSnglInspiralTable)
   {
-    params->numEvents = XLALCountMultiInspiralTable(eventList);
+    params->numEvents = XLALCountMultiInspiralTable(eventList,
+                                              timeDiff*params->numShortSlides);
   }
   else
   {
@@ -707,8 +734,9 @@ int main(int argc, char **argv)
   {
     if (! params->writeSnglInspiralTable)
     {
-      coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
-      params->numEvents = XLALCountMultiInspiralTable(eventList);
+      coh_PTF_cluster_triggers(params,eventList,&finalEvents,
+                               params->numShortSlides, timeDiff);
+      params->numEvents = XLALCountMultiInspiralTable(&finalEvents, 1);
     }
     else
     {
@@ -719,7 +747,7 @@ int main(int argc, char **argv)
   }
 
   /* Output events to xml */
-  coh_PTF_output_events_xml(params->outputFile, eventList, snglEventList,\
+  coh_PTF_output_events_xml(params->outputFile, finalEvents, snglEventList,\
                             params->injectList, procpar, time_slide_head,\
                             time_slide_map_head, segment_table_head, params);
 
@@ -728,12 +756,13 @@ int main(int argc, char **argv)
           chiSquare,pValues,gammaBeta,snrComps);
 
   coh_PTF_cleanup(params,procpar,fwdplan,psdplan,revplan,invplan,channel,
-      invspec,segments,eventList,snglEventList,\
+      invspec,segments,finalEvents,snglEventList,\
       PTFbankhead,fcTmplt,fcTmpltParams,
       PTFM,PTFN,PTFqVec,timeOffsets,slidTimeOffsets,Fplus,Fcross,\
       Fplustrig,Fcrosstrig,skyPoints,time_slide_head,longTimeSlideList,
       shortTimeSlideList,timeSlideVectors,detectors, slideIDList,\
       time_slide_map_head,segment_table_head);
+  LALFree(eventList);
 
   coh_PTF_free_veto_memory(params,bankNormOverlaps,bankFcTmplts,bankOverlaps,\
       dataOverlaps,autoTempOverlaps);
@@ -1212,14 +1241,18 @@ UINT8 coh_PTF_add_triggers(
     INT8                    slideId,
     REAL4                   *timeOffsets,
     UINT4                   *acceptPointList,
-    UINT4                   numAcceptPoints
+    UINT4                   numAcceptPoints,
+    UINT4                   slideNum,
+    INT4                    timeDiff,
+    INT4                    startTime
 )
 {
   // This function adds a trigger to the event list
 
   UINT4 i,j;
+  UINT4 currTimeDiff, currStorageID;
   INT4   timeOffsetPoints[LAL_NUM_IFO];
-  MultiInspiralTable *lastEvent = *thisEvent;
+  MultiInspiralTable *lastEvent = NULL;
   MultiInspiralTable *currEvent = NULL;
 
   coh_PTF_convert_time_offsets_to_points(params,timeOffsets,timeOffsetPoints);
@@ -1243,23 +1276,28 @@ UINT8 coh_PTF_add_triggers(
         LALFree(currEvent);
         continue;
       }
+      currTimeDiff = (currEvent->end_time.gpsSeconds - startTime); 
+      currStorageID = timeDiff * slideNum + currTimeDiff;
       /* And add the trigger to the lists. IF it passes clustering! */
-      if (!*eventList)
+      if (!eventList[currStorageID])
       {
-        *eventList = currEvent;
-        lastEvent = currEvent;
+        eventList[currStorageID] = currEvent;
+        thisEvent[currStorageID] = currEvent;
       }
       else
       {
+        lastEvent = thisEvent[currStorageID];
         if (! params->clusterFlag)
         {
           lastEvent->next = currEvent;
-          lastEvent = currEvent;
+          thisEvent[currStorageID] = currEvent;
         }
-        else if (coh_PTF_accept_trig_check(params,eventList,*currEvent) )
+        else if (coh_PTF_accept_trig_check(params,eventList,*currEvent,
+                                           timeDiff, currTimeDiff,
+                                           currStorageID) )
         {
           lastEvent->next = currEvent;
-          lastEvent = currEvent;
+          thisEvent[currStorageID] = currEvent;
         }
         else
         {
@@ -1268,139 +1306,180 @@ UINT8 coh_PTF_add_triggers(
       }
     }
   }
-  *thisEvent = lastEvent;
   return eventId;
 }
 
 void coh_PTF_cluster_triggers(
     struct coh_PTF_params   *params,
     MultiInspiralTable      **eventList,
-    MultiInspiralTable      **thisEvent
+    MultiInspiralTable      **newEventHead,
+    UINT4                   numSlides,
+    INT4                    timeDiff
 )
 {
+  UINT4 slideNum, currTimeDiff, currStorageID;
+  UINT4 triggerNum, lenTriggers, numRemovedTriggers;
+  UINT4 **rejectTriggers;
+  rejectTriggers = LALCalloc(1, numSlides*timeDiff*sizeof(UINT4*));
 
-  MultiInspiralTable *currEvent = *eventList;
-  MultiInspiralTable *currEvent2 = NULL;
-  MultiInspiralTable *newEvent = NULL;
-  MultiInspiralTable *newEventHead = NULL;
-  UINT4 triggerNum = 0;
-  UINT4 lenTriggers = 0;
-  UINT4 numRemovedTriggers = 0;
+  MultiInspiralTable *currEvent=NULL;
+  MultiInspiralTable *currEvent2=NULL;
+  MultiInspiralTable *newEvent=NULL;
 
-  /* find number of triggers */
-  while (currEvent)
+  for (slideNum = 0; slideNum < numSlides; slideNum++)
   {
-    lenTriggers+=1;
-    currEvent = currEvent->next;
-  }
-
-  currEvent = *eventList;
-  UINT4 rejectTriggers[lenTriggers];
-
-  /* for each trigger, find out whether a louder trigger is within the
-   * clustering time */
-  while (currEvent)
-  {
-    if (coh_PTF_accept_trig_check(params,eventList,*currEvent) )
+    for (currTimeDiff = 0; currTimeDiff < (UINT4)timeDiff; currTimeDiff++)
     {
-      rejectTriggers[triggerNum] = 0;
-      triggerNum += 1;
-    }
-    else
-    {
-      rejectTriggers[triggerNum] = 1;
-      triggerNum += 1;
-      numRemovedTriggers += 1;
-    }
-    currEvent = currEvent->next;
-  }
+      currStorageID = timeDiff * slideNum + currTimeDiff;
 
-  currEvent = *eventList;
-  triggerNum = 0;
+      currEvent = eventList[currStorageID];
+      currEvent2 = NULL;
+      triggerNum = 0;
+      lenTriggers = 0;
+      numRemovedTriggers = 0;
 
-  /* construct new event table with triggers to keep */
-  while (currEvent)
-  {
-    if (! rejectTriggers[triggerNum])
-    {
-      if (! newEventHead)
+      /* find number of triggers */
+      while (currEvent)
       {
-        newEventHead = currEvent;
-        newEvent = currEvent;
+        lenTriggers+=1;
+        currEvent = currEvent->next;
       }
-      else
+
+      currEvent = eventList[currStorageID];
+      rejectTriggers[currStorageID] = LALCalloc(1, lenTriggers*sizeof(UINT4));
+
+      /* for each trigger, find out whether a louder trigger is within the
+       * clustering time */
+      while (currEvent)
       {
-        newEvent->next = currEvent;
-        newEvent = currEvent;
+        if (coh_PTF_accept_trig_check(params,eventList,*currEvent,
+                                      timeDiff, currTimeDiff,
+                                      currStorageID) )
+        {
+          rejectTriggers[currStorageID][triggerNum] = 0;
+          triggerNum += 1;
+        }
+        else
+        {
+          rejectTriggers[currStorageID][triggerNum] = 1;
+          triggerNum += 1;
+          numRemovedTriggers += 1;
+        }
+        currEvent = currEvent->next;
       }
-      currEvent = currEvent->next;
+
     }
-    else
-    {
-      currEvent2 = currEvent->next;
-      LALFree(currEvent);  
-      currEvent = currEvent2;
-    }
-    triggerNum+=1;
   }
+
+  for (slideNum = 0; slideNum < numSlides; slideNum++)
+  {
+    for (currTimeDiff = 0; currTimeDiff < (UINT4)timeDiff; currTimeDiff++)
+    {
+      triggerNum = 0;
+      currStorageID = timeDiff * slideNum + currTimeDiff;
+      currEvent = eventList[currStorageID];
+      /* construct new event table with triggers to keep */
+      while (currEvent)
+      {
+        if (! rejectTriggers[currStorageID][triggerNum])
+        {
+          if (! *newEventHead)
+          {
+            *newEventHead = currEvent;
+            newEvent = currEvent;
+          }
+          else
+          {
+            newEvent->next = currEvent;
+            newEvent = currEvent;
+          }
+          currEvent = currEvent->next;
+        }
+        else
+        {
+          currEvent2 = currEvent->next;
+          LALFree(currEvent);  
+          currEvent = currEvent2;
+        }
+        triggerNum+=1;
+      }
+      LALFree(rejectTriggers[currStorageID]);
+    }
+  }
+  LALFree(rejectTriggers);
 
   /* write new table over old one */
   if (newEvent)
   {
     newEvent->next = NULL;
-    *eventList = newEventHead;
-    *thisEvent = newEvent;
   }
 } 
 
 UINT4 coh_PTF_accept_trig_check(
     struct coh_PTF_params   *params,
     MultiInspiralTable      **eventList,
-    MultiInspiralTable      thisEvent
+    MultiInspiralTable      thisEvent,
+    INT4                    timeDiff,
+    UINT4                   currTimeDiff,
+    UINT4                   currStorageID
 )
 {
   MultiInspiralTable *currEvent = *eventList;
   LIGOTimeGPS time1,time2;
   UINT4 loudTrigBefore=0,loudTrigAfter=0;
+  INT4 checkOffset;
   REAL8 GPSDiff;
 
-  currEvent = *eventList;
-
-  /* for each trigger, find out whether a louder trigger is within the
-   * clustering time */
   time1.gpsSeconds=thisEvent.end_time.gpsSeconds;
   time1.gpsNanoSeconds = thisEvent.end_time.gpsNanoSeconds;
-  while (currEvent)
-  {
-    time2.gpsSeconds=currEvent->end_time.gpsSeconds;
-    time2.gpsNanoSeconds=currEvent->end_time.gpsNanoSeconds;
-    if (thisEvent.time_slide_id == currEvent->time_slide_id)
-    {
-      GPSDiff = XLALGPSDiff(&time1,&time2);
-      if (fabs(GPSDiff) < params->clusterWindow)
-      {
-        if (thisEvent.snr_dof == currEvent->snr_dof)
-        {
-          if (thisEvent.snr < currEvent->snr\
-              && (thisEvent.event_id != currEvent->event_id))
-          {
-            /* If at identical time, return 0 */
-            if (GPSDiff == 0)
-              return 0;
-            else if ( GPSDiff < 0 )
-              loudTrigBefore = 1;
-            else
-              loudTrigAfter = 1;
 
-            if (loudTrigBefore && loudTrigAfter)
+  for (checkOffset=-1; checkOffset < 2; checkOffset++)
+  {
+    if ((currTimeDiff + checkOffset) == 0)
+    {
+      continue;
+    }
+    if ((INT4)(currTimeDiff + checkOffset) == timeDiff)
+    {
+      continue;
+    }
+
+    currEvent = eventList[currStorageID+checkOffset];
+
+    /* for each trigger, find out whether a louder trigger is within the
+     * clustering time */
+    while (currEvent)
+    {
+      time2.gpsSeconds=currEvent->end_time.gpsSeconds;
+      time2.gpsNanoSeconds=currEvent->end_time.gpsNanoSeconds;
+      if (thisEvent.time_slide_id == currEvent->time_slide_id)
+      {
+        GPSDiff = XLALGPSDiff(&time1,&time2);
+        if (fabs(GPSDiff) < params->clusterWindow)
+        {
+          if (thisEvent.snr_dof == currEvent->snr_dof)
+          {
+            if (thisEvent.snr < currEvent->snr\
+                && (thisEvent.event_id != currEvent->event_id))
             {
-              return 0;
+              /* If at identical time, return 0 */
+              if (GPSDiff == 0)
+                return 0;
+              else if ( GPSDiff < 0 )
+                loudTrigBefore = 1;
+              else
+                loudTrigAfter = 1;
+
+              if (loudTrigBefore && loudTrigAfter)
+              {
+                return 0;
+              }
             }
           }
         }
       }
+      currEvent = currEvent->next;
     }
-    currEvent = currEvent->next;
   }
 
   return 1;
