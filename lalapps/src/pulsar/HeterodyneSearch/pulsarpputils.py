@@ -2186,7 +2186,7 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
 # detector noise curves. It takes in the detector name and the frequency at
 # which to generate the noise.
 #
-# The noise models are taken from those in lalsimulation/src/LALSimNoisePSD.c
+# The noise models are taken from those in lalsimulation/lib/LALSimNoisePSD.c
 def detector_noise( det, f ):
   import lalsimulation
 

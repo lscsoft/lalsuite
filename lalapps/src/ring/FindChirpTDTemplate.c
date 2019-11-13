@@ -252,7 +252,7 @@ LALFindChirpTDTemplate (
       XLALPrintError("**** LALFindChirpTDTemplate ERROR ****\n");
       XLALPrintError("Old IMRPhenom approximant requested!  Please switch to IMRPhenomD.\n");
       XLALPrintError("If an approximant that precedes IMRPhenomD MUST be used, then\n");
-      XLALPrintError("comment out lines 251-257 in lalinspiral/src/FindChirpTDTemplate.c,\n");
+      XLALPrintError("comment out lines 251-257 in lalinspiral/lib/FindChirpTDTemplate.c,\n");
       XLALPrintError("recompile, and rerun.\n");
       XLALPrintError("**************************************\n");
       XLAL_ERROR_VOID(XLAL_EFUNC);

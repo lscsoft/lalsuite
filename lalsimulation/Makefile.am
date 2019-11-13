@@ -13,7 +13,7 @@ EXTRA_DIST += \
 SUBDIRS = \
 	debian \
 	include \
-	src \
+	lib \
 	swig \
 	python \
 	test \

@@ -64,7 +64,7 @@ void printmemuse() {
  }
 #endif
 
-// internal function taken from lal/src/support/LogPrintf.c
+// internal function taken from lal/lib/support/LogPrintf.c
 static const char * LogTimeToString(double t);
 
 /* verbose global variable */
@@ -2393,7 +2393,7 @@ void destroy_filter_response( FilterResponse *filtresp ){
   XLALFree( filtresp );
 }
 
-/* edited version of internal function from lal/src/support/LogPrintf.c: return time-string for given unix-time */
+/* edited version of internal function from lal/lib/support/LogPrintf.c: return time-string for given unix-time */
 const char *LogTimeToString ( double t ){
   static char buf[100];
   time_t x = (time_t)t;

@@ -36,17 +36,17 @@ if HAVE_CHEALPIX
 if SWIG_BUILD_PYTHON
 pymodule_LTLIBRARIES = _distance.la _bayespputils.la _moc.la
 
-_distance_la_CPPFLAGS = $(AM_CPPFLAGS) $(SWIG_PYTHON_CPPFLAGS) -I$(top_srcdir)/src
+_distance_la_CPPFLAGS = $(AM_CPPFLAGS) $(SWIG_PYTHON_CPPFLAGS) -I$(top_srcdir)/lib
 _distance_la_CFLAGS = $(AM_CFLAGS) $(SWIG_PYTHON_CFLAGS) -Wno-error
-_distance_la_LDFLAGS = $(top_builddir)/src/liblalinference.la -shared -module -avoid-version
+_distance_la_LDFLAGS = $(top_builddir)/lib/liblalinference.la -shared -module -avoid-version
 
-_moc_la_CPPFLAGS = $(AM_CPPFLAGS) $(SWIG_PYTHON_CPPFLAGS) -I$(top_srcdir)/src
+_moc_la_CPPFLAGS = $(AM_CPPFLAGS) $(SWIG_PYTHON_CPPFLAGS) -I$(top_srcdir)/lib
 _moc_la_CFLAGS = $(AM_CFLAGS) $(SWIG_PYTHON_CFLAGS) -Wno-error
-_moc_la_LDFLAGS = $(top_builddir)/src/liblalinference.la -shared -module -avoid-version
+_moc_la_LDFLAGS = $(top_builddir)/lib/liblalinference.la -shared -module -avoid-version
 
-_bayespputils_la_CPPFLAGS = $(AM_CPPFLAGS) $(SWIG_PYTHON_CPPFLAGS) -I$(top_srcdir)/src
+_bayespputils_la_CPPFLAGS = $(AM_CPPFLAGS) $(SWIG_PYTHON_CPPFLAGS) -I$(top_srcdir)/lib
 _bayespputils_la_CFLAGS = $(AM_CFLAGS) $(SWIG_PYTHON_CFLAGS) -Wno-error
-_bayespputils_la_LDFLAGS = $(top_builddir)/src/liblalinference.la -shared -module -avoid-version
+_bayespputils_la_LDFLAGS = $(top_builddir)/lib/liblalinference.la -shared -module -avoid-version
 
 endif
 endif

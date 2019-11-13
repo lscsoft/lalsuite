@@ -1,7 +1,7 @@
 AC_PREREQ([2.63])
 AC_INIT([LALInspiral],[1.9.0.1],[lal-discuss@ligo.org])
-AC_CONFIG_HEADERS([src/config.h src/LALInspiralConfig.h])
-AC_CONFIG_SRCDIR([src/LALInspiral.h])
+AC_CONFIG_HEADERS([lib/config.h lib/LALInspiralConfig.h])
+AC_CONFIG_SRCDIR([lib/LALInspiral.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
@@ -18,10 +18,10 @@ AC_CONFIG_FILES([ \
   python/lalinspiral/Makefile \
   python/lalinspiral/__init__.py \
   python/lalinspiral/sbank/Makefile \
-  src/LALInspiralVCSInfo.c \
-  src/LALInspiralVCSInfo.h \
-  src/Makefile \
-  src/version.c \
+  lib/LALInspiralVCSInfo.c \
+  lib/LALInspiralVCSInfo.h \
+  lib/Makefile \
+  lib/version.c \
   swig/Makefile \
   test/Makefile \
   test/python/Makefile \
@@ -162,7 +162,7 @@ LALSUITE_USE_DOXYGEN
 LALSUITE_ADD_GCC_FLAGS
 
 # link any executables against LALInspiral library
-AC_SUBST([LDADD], ["\$(top_builddir)/src/liblalinspiral.la"])
+AC_SUBST([LDADD], ["\$(top_builddir)/lib/liblalinspiral.la"])
 
 # add extra preprocessor flags
 AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"

@@ -1,5 +1,6 @@
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_test.am
+AM_CPPFLAGS += -I$(top_srcdir)/lib
 
 # Add compiled test programs to this variable
 test_programs += DelayTest
