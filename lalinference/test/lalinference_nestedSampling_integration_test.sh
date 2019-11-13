@@ -18,7 +18,7 @@ sed \
   -e 's|roq=False|roq=True|' \
   -e 's|/home/cbc|'$PWD'|' \
   -e "/nparallel=/c\nparallel=1" \
-  -e "/tolerance=/c\tolerance=50" \
+  -e "/tolerance=/c\tolerance=20" \
   -e 's|nlive=512|nlive=256\
 adapt-tau=3|' \
   -e 's|# randomseed=4321|randomseed=4321|' \
