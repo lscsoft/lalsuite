@@ -8,6 +8,7 @@ test_programs +=
 test_scripts += \
 	test_python_imports.py \
 	test_python_scripts.py \
+	test_frread.py \
 	$(END_OF_LIST)
 
 # Add any helper programs required by tests to this variable
