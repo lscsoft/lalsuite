@@ -13,6 +13,7 @@
 {% set lalframe_version = "1.4.0" %}
 {% set lalmetaio_version = "1.5.0" %}
 {% set lalsimulation_version = "1.9.0" %}
+{% set lalburst_version = "1.5.1" %}
 {% set swig_version = "3.0.7" %}
 
 package:
@@ -72,6 +73,7 @@ outputs:
         - numpy
         - python
         - libblas=*=*netlib
+        - lalburst >={{ lalburst_version }}
       run:
         - gsl
         - lal >={{ lal_version }}
@@ -84,7 +86,7 @@ outputs:
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}
-        - python-lalburst >=1.5.1
+        - python-lalburst >={{ lalburst_version }}
         - python-lalframe >={{ lalframe_version }}
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}

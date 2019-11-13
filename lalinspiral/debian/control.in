@@ -31,6 +31,8 @@ Build-Depends: debhelper (>= 9),
   lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
   python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
   python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
+  python-lalburst (>= @MIN_LALBURST_VERSION@~),
+  python3-lalburst (>= @MIN_LALBURST_VERSION@~),
   python-glue,
   python3-glue
 X-Python-Version: >= 2.7
@@ -90,6 +92,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   python-lalframe (>= @MIN_LALFRAME_VERSION@~),
   python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
+  python-lalburst (>= @MIN_LALBURST_VERSION@~),
   python-ligo-segments,
   python-glue
 Description: Python bindings for LALInspiral
@@ -118,6 +121,7 @@ Depends: ${misc:Depends},
   python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
   python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
+  python3-lalburst (>= @MIN_LALBURST_VERSION@~),
   python3-ligo-segments,
   lalinspiral (= ${binary:Version}),
   python3-glue

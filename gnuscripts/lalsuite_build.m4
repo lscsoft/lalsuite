@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 154
+# serial 155
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -851,6 +851,9 @@ if test "$lalmetaio" = "false"; then
   lalinspiral=false
 fi
 if test "$lalsimulation" = "false"; then
+  lalinspiral=false
+fi
+if test "$lalburst" = "false"; then
   lalinspiral=false
 fi
 ])
