@@ -172,6 +172,7 @@ cache:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
     fft_impl: "fftw"
+    PYTHON_VERSION: "3.7"
   before_script:
     - set -x  # print commands as they are run (helps debugging)
     - *define-retry
@@ -192,7 +193,7 @@ cache:
           --error-overlinking
           --error-overdepending
           --no-anaconda-upload
-          --python 3.7
+          --python ${PYTHON_VERSION}
           --use-local
           --variant-config-files $(conda info --base)/conda_build_config.yaml
           ${CONDA_BUILD_ARGS}
