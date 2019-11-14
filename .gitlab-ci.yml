@@ -766,8 +766,6 @@ gcc:9:
 
 # -- debian
 
-# FIXME: Disable building of Octave SWIG bindings until SWIG-4.0.0 is
-# available
 platform:debian:buster:
   image: igwn/lalsuite-dev:buster
   stage: platform tests
@@ -775,7 +773,7 @@ platform:debian:buster:
     - make-dist
   script:
     - ./00boot
-    - ./configure --enable-doxygen
+    - ./configure --enable-doxygen --enable-swig
     - make -j4 distcheck
   only:
     - schedules
