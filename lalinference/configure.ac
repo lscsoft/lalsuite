@@ -117,9 +117,6 @@ LALSUITE_ENABLE_HELP2MAN
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO
 
-# workaround broken libtool multilib support on sl6
-LALSUITE_MULTILIB_LIBTOOL_HACK
-
 # use silent build rules
 AM_SILENT_RULES([yes])
 
