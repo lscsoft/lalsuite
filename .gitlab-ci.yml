@@ -80,7 +80,7 @@ cache:
     GIT_STRATEGY: none
     RPM_BUILD_CPUS: 4
   script:
-    - PACKAGE=${CI_JOB_NAME%:*}
+    - PACKAGE=${CI_JOB_NAME%%:*}
     # install srpm dependencies
     - *yum-update
     - yum -y install yum-utils epel-rpm-macros
@@ -102,8 +102,8 @@ cache:
   artifacts:
     expire_in: 18h
     paths:
-      - rpmbuild/RPMS/x86_64/${CI_JOB_NAME%:*}-*.rpm
-      - rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%:*}-*.rpm
+      - rpmbuild/RPMS/x86_64/${CI_JOB_NAME%%:*}-*.rpm
+      - rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%%:*}-*.rpm
   only:
     - pushes
     - schedules
@@ -118,7 +118,7 @@ cache:
   variables:
     GIT_STRATEGY: none
   script:
-    - PACKAGE=${CI_JOB_NAME%:*}
+    - PACKAGE=${CI_JOB_NAME%%:*}
     # install debs from artifacts
     - dpkg -i *.deb || true
     # create orig tarball
@@ -142,11 +142,11 @@ cache:
   artifacts:
     expire_in: 18h
     paths:
-      - ${CI_JOB_NAME%:*}*.changes
-      - ${CI_JOB_NAME%:*}*.deb
-      - python*-${CI_JOB_NAME%:*}*.deb
-      - ${CI_JOB_NAME%:*}*.dsc
-      - ${CI_JOB_NAME%:*}*.orig.*
+      - ${CI_JOB_NAME%%:*}*.changes
+      - ${CI_JOB_NAME%%:*}*.deb
+      - python*-${CI_JOB_NAME%%:*}*.deb
+      - ${CI_JOB_NAME%%:*}*.dsc
+      - ${CI_JOB_NAME%%:*}*.orig.*
   only:
     - pushes
     - schedules
@@ -172,13 +172,13 @@ cache:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
     fft_impl: "fftw"
+    PYTHON_VERSION: "3.7"
   before_script:
     - set -x  # print commands as they are run (helps debugging)
     - *define-retry
     - *conda-init
-    - retry conda install openssl
   script:
-    - PACKAGE=${CI_JOB_NAME%:*}
+    - PACKAGE=${CI_JOB_NAME%%:*}
     - cd ${PACKAGE}/
     # render clobber YAML file to use our tarball
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
@@ -188,29 +188,25 @@ cache:
     - sed -i 's|@TARBALL@|'${TARBALL}'|g' conda/meta.yaml
     - sed -i 's|@SHA256@|'${SHA256}'|g' conda/meta.yaml
     # build packages
-    #     render first to dump the final YAML (for debugging)
-    #     then build as normal
-    - for _cmd in render build; do
-          conda ${_cmd}
-              conda/
-              --error-overlinking
-              --error-overdepending
-              --no-anaconda-upload
-              --python 3.7
-              --use-local
-              --variant-config-files $(conda info --base)/conda_build_config.yaml
-              ${CONDA_BUILD_ARGS};
-      done
+    - conda build
+          conda/
+          --error-overlinking
+          --error-overdepending
+          --no-anaconda-upload
+          --python ${PYTHON_VERSION}
+          --use-local
+          --variant-config-files $(conda info --base)/conda_build_config.yaml
+          ${CONDA_BUILD_ARGS}
   artifacts:
     expire_in: 18h
     paths:
-      - "conda/bld/linux-64/${CI_JOB_NAME%:*}-*.conda"
-      - "conda/bld/linux-64/${CI_JOB_NAME%:*}-*.tar.bz2"
-      - "conda/bld/linux-64/python-${CI_JOB_NAME%:*}-*.conda"
-      - "conda/bld/linux-64/python-${CI_JOB_NAME%:*}-*.tar.bz2"
-      - "conda/bld/${CI_JOB_NAME%:*}_*/work/test/test-suite.log"
-      - "conda/bld/${CI_JOB_NAME%:*}_*/work/test/python/test-suite.log"
-      - "conda/bld/${CI_JOB_NAME%:*}_*/work/*/*/*/test-suite.log"
+      - "conda/bld/linux-64/${CI_JOB_NAME%%:*}-*.conda"
+      - "conda/bld/linux-64/${CI_JOB_NAME%%:*}-*.tar.bz2"
+      - "conda/bld/linux-64/python-${CI_JOB_NAME%%:*}-*.conda"
+      - "conda/bld/linux-64/python-${CI_JOB_NAME%%:*}-*.tar.bz2"
+      - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/test-suite.log"
+      - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/test-suite.log"
+      - "conda/bld/${CI_JOB_NAME%%:*}_*/work/*/*/*/test-suite.log"
     when: always
   only:
     - pushes
@@ -306,11 +302,22 @@ lal:deb:
   needs:
     - make-dist
 
-lal:conda:
+lal:conda:fftw:
   <<: *conda-build
   stage: LAL
   needs:
     - make-dist
+
+lal:conda:mkl:
+  <<: *conda-build
+  stage: LAL
+  needs:
+    - make-dist
+  variables:
+    CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
+    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
+    fft_impl: "mkl"
+    PYTHON_VERSION: "3.7"
 
 # -- lalframe------------------------------------
 
@@ -333,7 +340,7 @@ lalframe:conda:
   stage: LALFrame
   needs:
     - make-dist
-    - lal:conda
+    - lal:conda:fftw
 
 # -- lalmetaio ----------------------------------
 
@@ -356,7 +363,7 @@ lalmetaio:conda:
   stage: LALMetaIO
   needs:
     - make-dist
-    - lal:conda
+    - lal:conda:fftw
 
 # -- lalsimulation ------------------------------
 
@@ -379,7 +386,7 @@ lalsimulation:conda:
   stage: LALSimulation
   needs:
     - make-dist
-    - lal:conda
+    - lal:conda:fftw
 
 # -- lalburst -----------------------------------
 
@@ -406,7 +413,7 @@ lalburst:conda:
   stage: LALBurst
   needs:
     - make-dist
-    - lal:conda
+    - lal:conda:fftw
     - lalmetaio:conda
     - lalsimulation:conda
 
@@ -439,7 +446,7 @@ lalinspiral:conda:
   stage: LALInspiral
   needs:
     - make-dist
-    - lal:conda
+    - lal:conda:fftw
     - lalframe:conda
     - lalmetaio:conda
     - lalsimulation:conda
@@ -466,7 +473,7 @@ lalpulsar:conda:
   stage: LALPulsar
   needs:
     - make-dist
-    - lal:conda
+    - lal:conda:fftw
 
 # -- lalinference -------------------------------
 
@@ -501,7 +508,7 @@ lalinference:conda:
   stage: LALInference
   needs:
     - make-dist
-    - lal:conda
+    - lal:conda:fftw
     - lalframe:conda
     - lalmetaio:conda
     - lalsimulation:conda
@@ -544,7 +551,7 @@ lalapps:conda:
   stage: LALApps
   needs:
     - make-dist
-    - lal:conda
+    - lal:conda:fftw
     - lalframe:conda
     - lalmetaio:conda
     - lalsimulation:conda
