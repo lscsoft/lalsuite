@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 156
+# serial 157
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -765,9 +765,6 @@ AC_ARG_ENABLE(
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalframe) ;;
     esac
   ], [ lalframe=${all_lal:-true} ] )
-if test "$frame" = "false"; then
-  lalframe=false
-fi
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALMETAIO],
@@ -781,9 +778,6 @@ AC_ARG_ENABLE(
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalmetaio) ;;
     esac
   ], [ lalmetaio=${all_lal:-true} ] )
-if test "$metaio" = "false"; then
-  lalmetaio=false
-fi
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALSIMULATION],
@@ -810,12 +804,6 @@ AC_ARG_ENABLE(
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalburst) ;;
     esac
   ], [ lalburst=${all_lal:-true} ] )
-if test "$lalmetaio" = "false"; then
-  lalburst=false
-fi
-if test "$lalsimulation" = "false"; then
-  lalburst=false
-fi
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALINSPIRAL],
@@ -829,18 +817,6 @@ AC_ARG_ENABLE(
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalinspiral) ;;
     esac
   ], [ lalinspiral=${all_lal:-true} ] )
-if test "$lalframe" = "false"; then
-  lalinspiral=false
-fi
-if test "$lalmetaio" = "false"; then
-  lalinspiral=false
-fi
-if test "$lalsimulation" = "false"; then
-  lalinspiral=false
-fi
-if test "$lalburst" = "false"; then
-  lalinspiral=false
-fi
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALPULSAR],
@@ -867,18 +843,6 @@ AC_ARG_ENABLE(
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalinference) ;;
     esac
   ], [ lalinference=${all_lal:-true} ] )
-if test "$lalmetaio" = "false"; then
-  lalinference=false
-fi
-if test "$lalframe" = "false"; then
-  lalinference=false
-fi
-if test "$lalinspiral" = "false"; then
-  lalinference=false
-fi
-if test "$lalpulsar" = "false"; then
-  lalinference=false
-fi
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALAPPS],[
