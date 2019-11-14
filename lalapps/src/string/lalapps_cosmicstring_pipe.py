@@ -215,7 +215,7 @@ injection_seglists = segments.segmentlistdict()
 for filename in options.injection_time_slides:
 	cache_entry = CacheEntry(None, "INJ", None, "file://localhost" + os.path.abspath(filename))
 
-        injection_time_slides[cache_entry] = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw_segments.LIGOLWContentHandler)).as_dict().values()
+	injection_time_slides[cache_entry] = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw_segments.LIGOLWContentHandler)).as_dict().values()
 
 	for i in range(len(injection_time_slides[cache_entry])):
 		injection_time_slides[cache_entry][i] = offsetvector.offsetvector((instrument, LIGOTimeGPS(offset)) for instrument, offset in injection_time_slides[cache_entry][i].items())
