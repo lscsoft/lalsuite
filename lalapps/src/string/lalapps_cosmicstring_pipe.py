@@ -20,12 +20,15 @@ the standalone ring code on LIGO data
 from __future__ import print_function
 
 
-import ConfigParser
 import itertools
 from optparse import OptionParser
 import os
 import sys
 import tempfile
+try:
+	from configparser import ConfigParser
+except ImportError:  # python < 3
+	from ConfigParser import ConfigParser
 
 
 from glue import pipeline
@@ -115,7 +118,7 @@ print(file=log_fh)
 # create the config parser object and read in the ini file
 #
 
-config_parser = ConfigParser.ConfigParser()
+config_parser = ConfigParser()
 config_parser.read(options.config_file)
 
 #
