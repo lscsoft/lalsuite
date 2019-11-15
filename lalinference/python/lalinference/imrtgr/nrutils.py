@@ -68,7 +68,7 @@ class bbh_Kerr_trunc_opts:
 # Function to truncate final spins at Kerr limit (with various options)
 
 def _truncate_at_Kerr_limit(chif, behavior, fitname="this"):
-    if behavior not in bbh_Kerr_trunc_opts.__dict__.values():
+    if behavior not in list(bbh_Kerr_trunc_opts.__dict__.values()):
       raise ValueError("Unknown user option '%s' for Kerr truncation behavior." % behavior)
     if behavior!=bbh_Kerr_trunc_opts.ign and np.any(abs(chif)>1.0):
       if isinstance(chif,(list,np.ndarray)):
@@ -1316,19 +1316,21 @@ def bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, quantit
     chi1, chi2 : dimensionless spins of two BHs
     tilt1, tilt2 : tilts (in radians) in the new spin convention
     phi12: angle (in radians) between in-plane spin components (only used for the final spin)
-    quantity: "Mf", "af", or "Lpeak"
+    quantity: "Mf", "af", "afz", or "Lpeak"
     fits: An array of fit names to be used. The possible fit names are those known by bbh_final_mass_projected_spins, bbh_final_spin_precessing,
           and bbh_peak_luminosity_projected_spins
+
+    The shape of m1 is used to determine the shape of the output.
 
     Returns
     -------
     Average of the results for the given fits for the chosen quantity
     """
 
-    if quantity != "af" and phi12 != 0:
-        print("Note: phi12 is only used for the final spin calculation.")
+    if quantity != "af" and max(abs(phi12)) != 0:
+        print("Note: phi12 is only used for the full final spin calculation.")
 
-    if quantity not in ["Mf", "af", "Lpeak"]:
+    if quantity not in ["Mf", "af", "afz", "Lpeak"]:
         raise ValueError("Unknown quantity: %s"%quantity)
 
     # Define function to return the appropriate quantity
@@ -1338,10 +1340,12 @@ def bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, quantit
             return bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname)
         elif quantity == "af":
             return bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname)
+        elif quantity == "afz":
+            return bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname)
         elif quantity == "Lpeak":
             return bbh_peak_luminosity_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname)
 
-    # Define a function that returns the length of an array when passed one and 1 when not passed an array
+    # Define a function that returns the length of an array when passed an array and 1 when not passed an array
     def _len_smart(x):
         if hasattr(x, '__len__'):
             return len(x)
@@ -1360,12 +1364,20 @@ def bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, quantit
 
     data = np.zeros([num_fits, num_data])
 
+    # Convert the input from bayespputils into a format that is compatible with the following loop
+
+    if hasattr(m1, 'shape'):
+        data_shape = m1.shape
+    else:
+        data_shape = -1
+    
     # Loop over the fits
 
-    for k in np.arange(num_fits):
-        data[k] = _return_quantity(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fits[k])
+    for k, fit in enumerate(fits):
+        data_portion = _return_quantity(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fit)
+        data[k] = data_portion.reshape(-1)
 
     # Calculate average:
-    data_avg = np.sum(data.T,1)/num_fits
+    data_avg = np.mean(data,axis=0)
 
-    return data_avg
+    return data_avg.reshape(data_shape)

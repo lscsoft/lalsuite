@@ -11,6 +11,7 @@ usr/bin/lalinference_pp_pipe
 usr/bin/lalinference_review_test
 usr/bin/lalinference_tiger_pipe
 usr/bin/lalinference_cpnest
+usr/bin/lalinference_evolve_spins_and_append_samples
 usr/bin/rapidpe_*
 usr/lib/python2*
 usr/share/man/man1/cbcBayes*.1*
@@ -26,4 +27,5 @@ usr/share/man/man1/lalinference_pp_pipe.1*
 usr/share/man/man1/lalinference_review_test.1*
 usr/share/man/man1/lalinference_tiger_pipe.1*
 usr/share/man/man1/lalinference_cpnest.1*
+usr/share/man/man1/lalinference_evolve_spins_and_append_samples.1*
 usr/share/man/man1/rapidpe_*.1*

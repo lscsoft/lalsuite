@@ -304,6 +304,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_bindir}/lalinference_coherence_test
 %{_bindir}/lalinference_compute_roq_weights
 %{_bindir}/lalinference_cpnest
+%{_bindir}/lalinference_evolve_spins_and_append_samples
 %{_bindir}/lalinference_merge_posteriors
 %{_bindir}/lalinference_multi_pipe
 %{_bindir}/lalinference_nest2pos
@@ -318,6 +319,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_mandir}/man1/lalinference_coherence_test.1*
 %{_mandir}/man1/lalinference_compute_roq_weights.1*
 %{_mandir}/man1/lalinference_cpnest.1*
+%{_mandir}/man1/lalinference_evolve_spins_and_append_samples.1*
 %{_mandir}/man1/lalinference_merge_posteriors.1*
 %{_mandir}/man1/lalinference_multi_pipe.1*
 %{_mandir}/man1/lalinference_nest2pos.1*

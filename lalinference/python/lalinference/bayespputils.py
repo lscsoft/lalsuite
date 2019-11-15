@@ -72,9 +72,9 @@ except ImportError:
     raise
 
 try:
-    from .imrtgr.nrutils import bbh_final_mass_non_spinning_Panetal, bbh_final_spin_non_spinning_Panetal, bbh_final_spin_non_precessing_Healyetal, bbh_final_mass_non_precessing_Healyetal, bbh_final_spin_projected_spin_Healyetal, bbh_final_mass_projected_spin_Healyetal, bbh_aligned_Lpeak_6mode_SHXJDK
+    from .imrtgr.nrutils import bbh_average_fits_precessing
 except ImportError:
-    print('Cannot import lalinference.imrtgr.nrutils. Will suppress final parameter calculations.')
+    print('Cannot import lalinference.imrtgr.nrutils. Will suppress final parameter and peak luminosity calculations.')
 
 from matplotlib.ticker import FormatStrFormatter,ScalarFormatter,AutoMinorLocator
 
@@ -129,14 +129,14 @@ calAmpParams=['calamp_%s'%(ifo) for ifo in ['h1','l1','v1']]
 calPhaseParams=['calpha_%s'%(ifo) for ifo in ['h1','l1','v1']]
 calParams = calAmpParams + calPhaseParams
 # Masses
-massParams=['m1','m2','chirpmass','mchirp','mc','eta','q','massratio','asym_massratio','mtotal','mf']
+massParams=['m1','m2','chirpmass','mchirp','mc','eta','q','massratio','asym_massratio','mtotal','mf','mf_evol','mf_nonevol']
 #Spins
-spinParamsPrec=['a1','a2','phi1','theta1','phi2','theta2','costilt1','costilt2','costheta_jn','cosbeta','tilt1','tilt2','phi_jl','theta_jn','phi12','af']
+spinParamsPrec=['a1','a2','phi1','theta1','phi2','theta2','costilt1','costilt2','costheta_jn','cosbeta','tilt1','tilt1_isco','tilt2','tilt2_isco','phi_jl','theta_jn','phi12','phi12_isco','af','af_evol','af_nonevol','afz','afz_evol','afz_nonevol']
 spinParamsAli=['spin1','spin2','a1z','a2z']
 spinParamsEff=['chi','effectivespin','chi_eff','chi_tot','chi_p']
 spinParams=spinParamsPrec+spinParamsEff+spinParamsAli
 # Source frame params
-cosmoParam=['m1_source','m2_source','mtotal_source','mc_source','redshift','mf_source','m1_source_maxldist','m2_source_maxldist','mtotal_source_maxldist','mc_source_maxldist','redshift_maxldist','mf_source_maxldist']
+cosmoParam=['m1_source','m2_source','mtotal_source','mc_source','redshift','mf_source','mf_source_evol','mf_source_nonevol','m1_source_maxldist','m2_source_maxldist','mtotal_source_maxldist','mc_source_maxldist','redshift_maxldist','mf_source_maxldist','mf_source_maxldist_evol','mf_source_maxldist_nonevol']
 #Strong Field
 ppEParams=['ppEalpha','ppElowera','ppEupperA','ppEbeta','ppElowerb','ppEupperB','alphaPPE','aPPE','betaPPE','bPPE']
 tigerParams=['dchi%i'%(i) for i in range(8)] + ['dchi%il'%(i) for i in [5,6] ] + ['dxi%d'%(i+1) for i in range(6)] + ['dalpha%i'%(i+1) for i in range(5)] + ['dbeta%i'%(i+1) for i in range(3)] + ['dsigma%i'%(i+1) for i in range(4)]
@@ -145,7 +145,7 @@ massiveGravitonParams=['lambdaG']
 tidalParams=['lambda1','lambda2','lam_tilde','dlam_tilde','lambdat','dlambdat','lambdas','bluni']
 fourPiecePolyParams=['logp1','gamma1','gamma2','gamma3']
 spectralParams=['sdgamma0','sdgamma1','sdgamma2','sdgamma3']
-energyParams=['e_rad', 'l_peak','e_rad_maxldist']
+energyParams=['e_rad', 'e_rad_evol', 'e_rad_nonevol', 'l_peak', 'l_peak_evol', 'l_peak_nonevol', 'e_rad_maxldist', 'e_rad_maxldist_evol', 'e_rad_maxldist_nonevol']
 strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+fourPiecePolyParams+spectralParams+energyParams
 
 #Extrinsic
@@ -164,7 +164,7 @@ calibParams=['calpha_l1','calpha_h1','calpha_v1','calamp_l1','calamp_h1','calamp
 ## Greedy bin sizes for cbcBPP and confidence leves used for the greedy bin intervals
 confidenceLevels=[0.67,0.9,0.95,0.99]
 
-greedyBinSizes={'mc':0.025,'m1':0.1,'m2':0.1,'mass1':0.1,'mass2':0.1,'mtotal':0.1,'mc_source':0.025,'m1_source':0.1,'m2_source':0.1,'mtotal_source':0.1,'mc_source_maxldist':0.025,'m1_source_maxldist':0.1,'m2_source_maxldist':0.1,'mtotal_source_maxldist':0.1,'eta':0.001,'q':0.01,'asym_massratio':0.01,'iota':0.01,'cosiota':0.02,'time':1e-4,'time_mean':1e-4,'distance':1.0,'dist':1.0,'distance_maxl':1.0,'redshift':0.01,'redshift_maxldist':0.01,'mchirp':0.025,'chirpmass':0.025,'spin1':0.04,'spin2':0.04,'a1z':0.04,'a2z':0.04,'a1':0.02,'a2':0.02,'phi1':0.05,'phi2':0.05,'theta1':0.05,'theta2':0.05,'ra':0.05,'dec':0.05,'chi':0.05,'chi_eff':0.05,'chi_tot':0.05,'chi_p':0.05,'costilt1':0.02,'costilt2':0.02,'thatas':0.05,'costheta_jn':0.02,'beta':0.05,'omega':0.05,'cosbeta':0.02,'ppealpha':1.0,'ppebeta':1.0,'ppelowera':0.01,'ppelowerb':0.01,'ppeuppera':0.01,'ppeupperb':0.01,'polarisation':0.04,'rightascension':0.05,'declination':0.05,'massratio':0.001,'inclination':0.01,'phase':0.05,'tilt1':0.05,'tilt2':0.05,'phi_jl':0.05,'theta_jn':0.05,'phi12':0.05,'flow':1.0,'phase_maxl':0.05,'calamp_l1':0.01,'calamp_h1':0.01,'calamp_v1':0.01,'calpha_h1':0.01,'calpha_l1':0.01,'calpha_v1':0.01,'logdistance':0.1,'psi':0.1,'costheta_jn':0.1,'mf':0.1,'mf_source':0.1,'mf_source_maxldist':0.1,'af':0.02,'e_rad':0.1,'e_rad_maxldist':0.1,'l_peak':0.1}
+greedyBinSizes={'mc':0.025,'m1':0.1,'m2':0.1,'mass1':0.1,'mass2':0.1,'mtotal':0.1,'mc_source':0.025,'m1_source':0.1,'m2_source':0.1,'mtotal_source':0.1,'mc_source_maxldist':0.025,'m1_source_maxldist':0.1,'m2_source_maxldist':0.1,'mtotal_source_maxldist':0.1,'eta':0.001,'q':0.01,'asym_massratio':0.01,'iota':0.01,'cosiota':0.02,'time':1e-4,'time_mean':1e-4,'distance':1.0,'dist':1.0,'distance_maxl':1.0,'redshift':0.01,'redshift_maxldist':0.01,'mchirp':0.025,'chirpmass':0.025,'spin1':0.04,'spin2':0.04,'a1z':0.04,'a2z':0.04,'a1':0.02,'a2':0.02,'phi1':0.05,'phi2':0.05,'theta1':0.05,'theta2':0.05,'ra':0.05,'dec':0.05,'chi':0.05,'chi_eff':0.05,'chi_tot':0.05,'chi_p':0.05,'costilt1':0.02,'costilt2':0.02,'thatas':0.05,'costheta_jn':0.02,'beta':0.05,'omega':0.05,'cosbeta':0.02,'ppealpha':1.0,'ppebeta':1.0,'ppelowera':0.01,'ppelowerb':0.01,'ppeuppera':0.01,'ppeupperb':0.01,'polarisation':0.04,'rightascension':0.05,'declination':0.05,'massratio':0.001,'inclination':0.01,'phase':0.05,'tilt1':0.05,'tilt2':0.05,'phi_jl':0.05,'theta_jn':0.05,'phi12':0.05,'flow':1.0,'phase_maxl':0.05,'calamp_l1':0.01,'calamp_h1':0.01,'calamp_v1':0.01,'calpha_h1':0.01,'calpha_l1':0.01,'calpha_v1':0.01,'logdistance':0.1,'psi':0.1,'costheta_jn':0.1,'mf':0.1,'mf_evol':0.1,'mf_source':0.1,'mf_source_evol':0.1,'mf_source_nonevol':0.1,'mf_source_maxldist':0.1,'mf_source_maxldist_evol':0.1,'mf_source_maxldist_nonevol':0.1,'af':0.02,'af_evol':0.02,'af_nonevol':0.02,'afz':0.02,'afz_evol':0.01,'afz_nonevol':0.01,'e_rad':0.1,'e_rad_evol':0.1,'e_rad_nonevol':0.1,'e_rad_maxldist':0.1,'e_rad_maxldist_evol':0.1,'e_rad_maxldist_nonevol':0.1,'l_peak':0.1,'l_peak_evol':0.1,'l_peak_nonevol':0.1}
 for s in snrParams:
     greedyBinSizes[s]=0.05
 for derived_time in ['h1_end_time','l1_end_time','v1_end_time','h1l1_delay','l1v1_delay','h1v1_delay']:
@@ -302,12 +302,29 @@ def get_prior(name):
       'mc_source_maxldist':None,
       'redshift_maxldist':None,
       'mf':None,
+      'mf_evol':None,
+      'mf_nonevol':None,
       'mf_source':None,
+      'mf_source_evol':None,
+      'mf_source_nonevol':None,
       'mf_source_maxldist':None,
+      'mf_source_maxldist_evol':None,
+      'mf_source_maxldist_nonevol':None,
       'af':None,
+      'af_evol':None,
+      'af_nonevol':None,
+      'afz':None,
+      'afz_evol':None,
+      'afz_nonevol':None,
       'e_rad':None,
+      'e_rad_evol':None,
+      'e_rad_nonevol':None,
       'e_rad_maxldist':None,
+      'e_rad_maxldist_evol':None,
+      'e_rad_maxldist_nonevol':None,
       'l_peak':None,
+      'l_peak_evol':None,
+      'l_peak_nonevol':None,
       'spin1':'uniform',
       'spin2':'uniform',
       'a1':'uniform',
@@ -323,6 +340,8 @@ def get_prior(name):
       'chi_p':None,
       'tilt1':None,
       'tilt2':None,
+      'tilt1_isco':None,
+      'tilt2_isco':None,
       'costilt1':'uniform',
       'costilt2':'uniform',
       'iota':'np.cos',
@@ -341,6 +360,7 @@ def get_prior(name):
       'cosbeta':None,
       'phi_jl':None,
       'phi12':None,
+      'phi12_isco':None,
       'logl':None,
       'h1_end_time':None,
       'l1_end_time':None,
@@ -414,12 +434,29 @@ def plot_label(param):
         'mc_source_maxldist':r'$\mathcal{M}^\mathrm{source - maxLdist}\,(\mathrm{M}_\odot)$',
         'redshift_maxldist':r'$z^\mathrm{maxLdist}$',
         'mf':r'$M_\mathrm{final}\,(\mathrm{M}_\odot)$',
+        'mf_evol':r'$M_\mathrm{final}^\mathrm{evol}\,(\mathrm{M}_\odot)$',
+        'mf_nonevol':r'$M_\mathrm{final}^\mathrm{non-evol}\,(\mathrm{M}_\odot)$',
         'mf_source':r'$M_\mathrm{final}^\mathrm{source}\,(\mathrm{M}_\odot)$',
+        'mf_source_evol':r'$M_\mathrm{final}^\mathrm{source, evol}\,(\mathrm{M}_\odot)$',
+        'mf_source_nonevol':r'$M_\mathrm{final}^\mathrm{source, non-evol}\,(\mathrm{M}_\odot)$',
         'mf_source_maxldist':r'$M_\mathrm{final}^\mathrm{source - maxLdist}\,(\mathrm{M}_\odot)$',
+        'mf_source_maxldist_evol':r'$M_\mathrm{final}^\mathrm{source, evol - maxLdist}\,(\mathrm{M}_\odot)$',
+        'mf_source_maxldist_nonevol':r'$M_\mathrm{final}^\mathrm{source, non-evol - maxLdist}\,(\mathrm{M}_\odot)$',
         'af':r'$a_\mathrm{final}$',
+        'af_evol':r'$a_\mathrm{final}^\mathrm{evol}$',
+        'af_nonevol':r'$a_\mathrm{final}^\mathrm{non-evol}$',
+        'afz':r'$a_{\mathrm{final}, z}$',
+        'afz_evol':r'$a_{\mathrm{final}, z}^\mathrm{evol}$',
+        'afz_nonevol':r'$a_{\mathrm{final}, z}^\mathrm{non-evol}$',
         'e_rad':r'$E_\mathrm{rad}\,(\mathrm{M}_\odot)$',
+        'e_rad_evol':r'$E_\mathrm{rad}^\mathrm{evol}\,(\mathrm{M}_\odot)$',
+        'e_rad_nonevol':r'$E_\mathrm{rad}^\mathrm{non-evol}\,(\mathrm{M}_\odot)$',
         'e_rad_maxldist':r'$E_\mathrm{rad}^\mathrm{maxLdist}\,(\mathrm{M}_\odot)$',
+        'e_rad_maxldist_evol':r'$E_\mathrm{rad}^\mathrm{evol - maxLdist}\,(\mathrm{M}_\odot)$',
+        'e_rad_maxldist_nonevol':r'$E_\mathrm{rad}^\mathrm{non-evol - maxLdist}\,(\mathrm{M}_\odot)$',
         'l_peak':r'$L_\mathrm{peak}\,(10^{56}\,\mathrm{ergs}\,\mathrm{s}^{-1})$',
+        'l_peak_evol':r'$L_\mathrm{peak}^\mathrm{evol}\,(10^{56}\,\mathrm{ergs}\,\mathrm{s}^{-1})$',
+        'l_peak_nonevol':r'$L_\mathrm{peak}^\mathrm{non-evol}\,(10^{56}\,\mathrm{ergs}\,\mathrm{s}^{-1})$',
         'spin1':r'$S_1$',
         'spin2':r'$S_2$',
         'a1':r'$a_1$',
@@ -435,6 +472,8 @@ def plot_label(param):
         'chi_p':r'$\chi_\mathrm{P}$',
         'tilt1':r'$t_1\,(\mathrm{rad})$',
         'tilt2':r'$t_2\,(\mathrm{rad})$',
+        'tilt1_isco':r'$t_1^\mathrm{ISCO}\,(\mathrm{rad})$',
+        'tilt2_isco':r'$t_2^\mathrm{ISCO}\,(\mathrm{rad})$',
         'costilt1':r'$\mathrm{cos}(t_1)$',
         'costilt2':r'$\mathrm{cos}(t_2)$',
         'iota':r'$\iota\,(\mathrm{rad})$',
@@ -454,6 +493,7 @@ def plot_label(param):
         'cosbeta':r'$\mathrm{cos}(\beta)$',
         'phi_jl':r'$\phi_\mathrm{JL}\,(\mathrm{rad})$',
         'phi12':r'$\phi_\mathrm{12}\,(\mathrm{rad})$',
+        'phi12_isco':r'$\phi_\mathrm{12}^\mathrm{ISCO}\,(\mathrm{rad})$',
         'logl':r'$\mathrm{log}(\mathcal{L})$',
         'h1_end_time':r'$t_\mathrm{H}$',
         'l1_end_time':r'$t_\mathrm{L}$',
@@ -911,7 +951,7 @@ class Posterior(object):
 
     def extend_posterior(self):
         """
-        Add some usefule derived parameters (such as tilt angles, time delays, etc) in the Posterior object
+        Add some useful derived parameters (such as tilt angles, time delays, etc) in the Posterior object
         """
         injection=self._injection
         pos=self
@@ -1141,70 +1181,135 @@ class Posterior(object):
                 pos.append(a2_pos)
             except KeyError:
                 print("Warning: no spin2 values found.")
+  
+        # For BBHs: Calculate mass and spin of final merged system, radiated energy, and peak luminosity in GWs
 
-        # Calculate mass and spin of final merged system
-        if ('m1' in pos.names) and ('m2' in pos.names):
-            if ('tilt1' in pos.names) or ('tilt2' in pos.names):
-                print("A precessing fit formula is not available yet. Using a non-precessing fit formula on the aligned-spin components.")
-            if ('a1z' in pos.names) and ('a2z' in pos.names):
-                print("Using non-precessing fit formula [Healy at al (2014)] for final mass and spin (on masses and projected spin components).")
-                try:
-                    pos.append_mapping('af', bbh_final_spin_non_precessing_Healyetal, ['m1', 'm2', 'a1z', 'a2z'])
-                    pos.append_mapping('mf', lambda m1, m2, chi1z, chi2z, chif: bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1z, chi2z, chif=chif), ['m1', 'm2', 'a1z', 'a2z', 'af'])
-                except Exception as e:
-                    print("Could not calculate final parameters. The error was: %s"%(str(e)))
-            elif ('a1' in pos.names) and ('a2' in pos.names):
-                if ('tilt1' in pos.names) and ('tilt2' in pos.names):
-                    print("Projecting spin and using non-precessing fit formula [Healy at al (2014)] for final mass and spin.")
-                    try:
-                        pos.append_mapping('af', bbh_final_spin_projected_spin_Healyetal, ['m1', 'm2', 'a1', 'a2', 'tilt1', 'tilt2'])
-                        pos.append_mapping('mf', bbh_final_mass_projected_spin_Healyetal, ['m1', 'm2', 'a1', 'a2', 'tilt1', 'tilt2', 'af'])
-                    except Exception as e:
-                        print("Could not calculate final parameters. The error was: %s"%(str(e)))
-                else:
-                    print("Using non-precessing fit formula [Healy at al (2014)] for final mass and spin (on masses and spin magnitudes).")
-                    try:
-                        pos.append_mapping('af', bbh_final_spin_non_precessing_Healyetal, ['m1', 'm2', 'a1', 'a2'])
-                        pos.append_mapping('mf', lambda m1, m2, chi1, chi2, chif: bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=chif), ['m1', 'm2', 'a1', 'a2', 'af'])
-                    except Exception as e:
-                        print("Could not calculate final parameters. The error was: %s"%(str(e)))
-            else:
-                print("Using non-spinning fit formula [Pan at al (2010)] for final mass and spin.")
-                try:
-                    pos.append_mapping('af', bbh_final_spin_non_spinning_Panetal, ['m1', 'm2'])
-                    pos.append_mapping('mf', bbh_final_mass_non_spinning_Panetal, ['m1', 'm2'])
-                except Exception as e:
-                    print("Could not calculate final parameters. The error was: %s"%(str(e)))
-        if ('mf' in pos.names) and ('redshift' in pos.names):
-            try:
-                pos.append_mapping('mf_source', source_mass, ['mf', 'redshift'])
-            except Exception as e:
-                print("Could not calculate final source frame mass. The error was: %s"%(str(e)))
+        # Only apply fits if this is a BBH run (with no tidal parameters)
 
-        if ('mf' in pos.names) and ('redshift_maxldist' in pos.names):
-            try:
-                pos.append_mapping('mf_source_maxldist', source_mass, ['mf', 'redshift_maxldist'])
-            except Exception as e:
-                print("Could not calculate final source frame mass. The error was: %s"%(str(e)))
+        if len(np.intersect1d(pos.names,tidalParams)) == 0:
 
-        # Calculate radiated energy and peak luminosity
-        if ('mtotal_source' in pos.names) and ('mf_source' in pos.names):
-            try:
-                pos.append_mapping('e_rad', lambda mtot_s, mf_s: mtot_s-mf_s, ['mtotal_source', 'mf_source'])
-            except Exception as e:
-                print("Could not calculate radiated energy. The error was: %s"%(str(e)))
+              # Set fits to consider (and average over)
+                  
+              FinalSpinFits = ['HBR2016', 'UIB2016', 'HL2016']
+              FinalMassFits = ['UIB2016', 'HL2016']
+              LpeakFits     = ['UIB2016', 'HL2016']
 
-        if ('mtotal_source_maxldist' in pos.names) and ('mf_source_maxldist' in pos.names):
-            try:
-                pos.append_mapping('e_rad_maxldist', lambda mtot_s, mf_s: mtot_s-mf_s, ['mtotal_source_maxldist', 'mf_source_maxldist'])
-            except Exception as e:
-                print("Could not calculate radiated energy. The error was: %s"%(str(e)))
+              # If evolved spin angle samples are present, use those to compute the final mass and spin, peak luminosity, and radiated energy; also, use the _evol suffix in the aligned-spin case, since here the spin angles are trivially evolved
 
-        if ('q' in pos.names) and ('a1z' in pos.names) and ('a2z' in pos.names):
-            try:
-                pos.append_mapping('l_peak', bbh_aligned_Lpeak_6mode_SHXJDK, ['q', 'a1z', 'a2z'])
-            except Exception as e:
-                print("Could not calculate peak luminosity. The error was: %s"%(str(e)))
+              spin_angle_suffix = ''
+              evol_suffix = '_evol'
+
+              if all([x in pos.names for x in ['tilt1_isco','tilt2_isco','phi12_isco']]):
+                  spin_angle_suffix = '_isco'
+              elif all([x in pos.names for x in ['tilt1','tilt2','phi12']]):
+                  evol_suffix = '_nonevol'
+
+              zero_vec = np.array([0.])
+
+              tilt1_name = 'tilt1' + spin_angle_suffix
+              tilt2_name = 'tilt2' + spin_angle_suffix
+              phi12_name = 'phi12' + spin_angle_suffix
+              mf_name = 'mf' + evol_suffix
+              mf_source_name = 'mf_source' + evol_suffix
+              mf_source_maxldist_name = 'mf_source_maxldist' + evol_suffix
+
+              if ('m1' in pos.names) and ('m2' in pos.names):
+                  if ('a1' in pos.names) and ('a2' in pos.names):
+                      if (tilt1_name in pos.names) and (tilt2_name in pos.names) and (phi12_name in pos.names):
+                          # Precessing case
+                          print("Using averages of fit formulae for final mass, final spin, and peak luminosity (on masses and 3D spins).")
+                          if evol_suffix == '_evol':
+                              print("Applying these to *_isco evolved spin samples and outputting *_evol samples.")
+                          else:
+                              print("Applying these to unevolved spin samples and outputting *_nonevol samples.")
+                          print("Final mass fits:", FinalMassFits, "; Final spin fits:", FinalSpinFits, "; Peak luminosity fits:", LpeakFits)
+                          try:
+                              pos.append_mapping('af' + evol_suffix, lambda m1, m2, chi1, chi2, tilt1, tilt2, phi12: bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, 'af', FinalSpinFits), ['m1', 'm2', 'a1', 'a2', tilt1_name, tilt2_name, phi12_name])
+                          except Exception as e:
+                              print("Could not calculate %s. The error was: %s"%('af' + evol_suffix, str(e)))
+                          try:
+                              pos.append_mapping('afz' + evol_suffix, lambda m1, m2, chi1, chi2, tilt1, tilt2: bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, zero_vec, 'afz', FinalSpinFits), ['m1', 'm2', 'a1', 'a2', tilt1_name, tilt2_name])
+                          except Exception as e:
+                              print("Could not calculate %s. The error was: %s"%('afz' + evol_suffix, str(e)))
+                          try:
+                              pos.append_mapping(mf_name, lambda m1, m2, chi1, chi2, tilt1, tilt2: bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, zero_vec, 'Mf', FinalMassFits), ['m1', 'm2', 'a1', 'a2', tilt1_name, tilt2_name])
+                          except Exception as e:
+                              print("Could not calculate %s. The error was: %s"%(mf_name, str(e)))
+                          try:
+                              pos.append_mapping('l_peak' + evol_suffix, lambda m1, m2, chi1, chi2, tilt1, tilt2: bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, zero_vec, 'Lpeak', LpeakFits), ['m1', 'm2', 'a1', 'a2', tilt1_name, tilt2_name])
+                          except Exception as e:
+                              print("Could not calculate %s. The error was: %s"%('l_peak' + evol_suffix, str(e)))
+                      elif ('a1z' in pos.names) and ('a2z' in pos.names):
+                          # Aligned-spin case
+                          print("Using averages for final mass, final spin, and peak luminosity (on masses and projected spin components).")
+                          print("Outputting *_evol samples because spin evolution is trivial in this nonprecessing case.")
+                          print("Final mass fits:", FinalMassFits, "; Final spin fits:", FinalSpinFits, "; Peak luminosity fits:", LpeakFits)
+                          try:
+                              # Compute absolute values of spins and compute tilt angles to allow for negative spin values
+                              pos.append_mapping('afz_evol', lambda m1, m2, chi1, chi2: bbh_average_fits_precessing(m1, m2, abs(chi1), abs(chi2), 0.5*np.pi*(1. - np.sign(chi1)), 0.5*np.pi*(1. - np.sign(chi2)), zero_vec, 'afz', FinalSpinFits), ['m1', 'm2', 'a1z', 'a2z'])
+                          except Exception as e:
+                              print("Could not calculate afz_evol. The error was: %s"%(str(e)))
+                          try:
+                              pos.append_mapping('af_evol', lambda a: abs(a), 'afz_evol')
+                          except Exception as e:
+                              print("Could not calculate af_evol. The error was: %s"%(str(e)))
+                          try:
+                              pos.append_mapping('mf_evol', lambda m1, m2, chi1, chi2: bbh_average_fits_precessing(m1, m2, abs(chi1), abs(chi2), 0.5*np.pi*(1. - np.sign(chi1)), 0.5*np.pi*(1. - np.sign(chi2)), zero_vec, 'Mf', FinalMassFits), ['m1', 'm2', 'a1z', 'a2z'])
+                          except Exception as e:
+                              print("Could not calculate mf_evol. The error was: %s"%(str(e)))
+                          try:
+                              pos.append_mapping('l_peak_evol', lambda m1, m2, chi1, chi2: bbh_average_fits_precessing(m1, m2, abs(chi1), abs(chi2), 0.5*np.pi*(1. - np.sign(chi1)), 0.5*np.pi*(1. - np.sign(chi2)), zero_vec, 'Lpeak', LpeakFits), ['m1', 'm2', 'a1z', 'a2z'])
+                          except Exception as e:
+                              print("Could not calculate l_peak_evol. The error was: %s"%(str(e)))
+                      else:
+                          print("Could not calculate final parameters or Lpeak. Found samples for a1 and a2 but not for tilt angles and phi12 or spin components (a1z and a2z).")
+                  else:
+                      # Nonspinning case
+                      print("Using averages of fit formulae for final mass, final spin, and peak luminosity (on masses and zero spins).")
+                      print("Outputting *_evol samples because spin evolution is trivial in this nonspinning case.")
+                      print("Final mass fits:", FinalMassFits, "; Final spin fits:", FinalSpinFits, "; Peak luminosity fits:", LpeakFits)
+                      try:
+                          pos.append_mapping('afz_evol', lambda m1, m2: bbh_average_fits_precessing(m1, m2, zero_vec, zero_vec, zero_vec, zero_vec, zero_vec, 'afz', FinalSpinFits), ['m1', 'm2'])
+                      except Exception as e:
+                              print("Could not calculate afz_evol. The error was: %s"%(str(e)))
+                      try:
+                          pos.append_mapping('af_evol', lambda a: abs(a), 'afz_evol')
+                      except Exception as e:
+                              print("Could not calculate af_evol. The error was: %s"%(str(e)))
+                      try:
+                          pos.append_mapping('mf_evol', lambda m1, m2: bbh_average_fits_precessing(m1, m2, zero_vec, zero_vec, zero_vec, zero_vec, zero_vec, 'Mf', FinalMassFits), ['m1', 'm2'])
+                      except Exception as e:
+                              print("Could not calculate mf_evol. The error was: %s"%(str(e)))
+                      try:
+                          pos.append_mapping('l_peak_evol', lambda m1, m2: bbh_average_fits_precessing(m1, m2, zero_vec, zero_vec, zero_vec, zero_vec, zero_vec, 'Lpeak', LpeakFits), ['m1', 'm2'])
+                      except Exception as e:
+                          print("Could not calculate l_peak_evol. The error was: %s"%(str(e)))
+
+              # Convert final mass to source frame
+              if (mf_name in pos.names) and ('redshift' in pos.names):
+                  try:
+                      pos.append_mapping(mf_source_name, source_mass, [mf_name, 'redshift'])
+                  except Exception as e:
+                      print("Could not calculate final source frame mass. The error was: %s"%(str(e)))
+
+              if (mf_name in pos.names) and ('redshift_maxldist' in pos.names):
+                  try:
+                      pos.append_mapping(mf_source_maxldist_name, source_mass, [mf_name, 'redshift_maxldist'])
+                  except Exception as e:
+                      print("Could not calculate final source frame mass using maxldist redshift. The error was: %s"%(str(e)))
+
+              # Calculate radiated energy
+              if ('mtotal_source' in pos.names) and (mf_source_name in pos.names):
+                  try:
+                      pos.append_mapping('e_rad' + evol_suffix, lambda mtot_s, mf_s: mtot_s-mf_s, ['mtotal_source', mf_source_name])
+                  except Exception as e:
+                      print("Could not calculate radiated energy. The error was: %s"%(str(e)))
+
+              if ('mtotal_source_maxldist' in pos.names) and (mf_source_maxldist_name in pos.names):
+                  try:
+                      pos.append_mapping('e_rad_maxldist' + evol_suffix, lambda mtot_s, mf_s: mtot_s-mf_s, ['mtotal_source_maxldist', mf_source_maxldist_name])
+                  except Exception as e:
+                      print("Could not calculate radiated energy using maxldist redshift results. The error was: %s"%(str(e)))
 
     def bootstrap(self):
         """

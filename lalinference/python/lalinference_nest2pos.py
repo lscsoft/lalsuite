@@ -32,37 +32,7 @@ def read_nested_from_hdf5(nested_path_list, strict_versions=True):
     log_noise_evidences = []
     log_max_likelihoods = []
     nlive = []
-    from lalinference.io import read_samples
-
-    def update_metadata(level, attrs, collision='raise'):
-        """Updates the sub-dictionary 'key' of 'metadata' with the values from
-        'attrs', while enforcing that existing values are equal to those with
-        which the dict is updated.
-        """
-        if level not in metadata:
-            metadata[level] = {}
-        for key in attrs:
-            if key in metadata[level]:
-                    if collision == 'raise':
-                        if attrs[key]!=metadata[level][key]:
-                            if key == 'version' and not strict_versions:
-                                continue
-                            else:
-                                raise ValueError(
-                                    'Metadata mismtach on level %r for key %r:\n\t%r != %r'
-                                    % (level, key, attrs[key], metadata[level][key]))
-                    elif collision == 'append':
-                        if isinstance(metadata[level][key], list):
-                            metadata[level][key].append(attrs[key])
-                        else:
-                            metadata[level][key] = [metadata[level][key], attrs[key]]
-                    elif collision == 'ignore':
-                        pass
-                    else:
-                        raise ValueError('Invalid value for collision: %r' % collision)
-            else:
-                metadata[level][key] = attrs[key]
-        return
+    from lalinference.io import read_samples, extract_metadata
 
     for path in nested_path_list:
         if not os.path.isfile(path):
@@ -74,36 +44,10 @@ def read_nested_from_hdf5(nested_path_list, strict_versions=True):
         except:
                 print('Unable to read table from %s, skipping'%(path))
                 continue
+
+        # N.B.: This appends to metadata, log_noise_evidences, log_max_likelihoods, nlive, in addition to outputting run_identifier
+        run_identifier = extract_metadata(path, metadata, log_noise_evidences, log_max_likelihoods, nlive, nested_dset_name, True, strict_versions)
         
-        with h5py.File(path, 'r') as hdf:
-            # walk down the groups until the actual data is reached, storing
-            # metadata for each step.
-            current_level = '/lalinference'
-            group = hdf[current_level]
-            update_metadata(current_level, group.attrs)
-
-            if len(hdf[current_level].keys()) != 1:
-                raise KeyError('Multiple run-identifiers found: %r'
-                               % list(hdf[current_level].keys()))
-            # we ensured above that there is only one identifier in the group.
-            run_identifier = list(hdf[current_level].keys())[0]
-
-            current_level = '/lalinference/' + run_identifier
-            group = hdf[current_level]
-            update_metadata(current_level, group.attrs, collision='append')
-
-            # store the noise evidence and max likelihood seperately for later use
-            log_noise_evidences.append(group.attrs['log_noise_evidence'])
-            log_max_likelihoods.append(group.attrs['log_max_likelihood'])
-            nlive.append(group.attrs['number_live_points'])
-
-            # storing the metadata under the posterior_group name simplifies
-            # writing it into the output hdf file.
-            current_level = '/lalinference/' + run_identifier + '/' + nested_dset_name
-            current_level_posterior = '/lalinference/' + run_identifier + '/' + posterior_dset_name
-            group = hdf[current_level]
-            update_metadata(current_level_posterior, group.attrs, collision='ignore')
-
     # for metadata which is in a list, take the average.
     for level in metadata:
         for key in metadata[level]:

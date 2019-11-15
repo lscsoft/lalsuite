@@ -697,6 +697,12 @@ def Query_ROQ_Bounds_Type(path, roq_paths):
         sys.exit(1)
     return roq_bounds
 
+def extract_approx(cp):
+    approximant = cp.get("engine", "approx")
+    if "pseudo" in approximant:
+        approximant = approximant.split("pseudo")[0]
+    return approximant
+
 class LALInferencePipelineDAG(pipeline.CondorDAG):
     def __init__(self,cp,site='local'):
         self.subfiles=[]
@@ -796,6 +802,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             self.results_page_job.set_grid_site('local')
             self.cotest_results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspagecoherent.sub'),self.logpath)
             self.cotest_results_page_job.set_grid_site('local')
+        if self.config.has_section('spin_evol'):
+            self.evolve_spins_job=EvolveSamplesJob(self.config, os.path.join(self.basepath,'evolve_spins.sub'),self.logpath,dax=self.is_dax())
         if self.engine=='lalinferencemcmc':
             self.combine_job = CombineMCMCJob(self.config,os.path.join(self.basepath,'combine_files.sub'),self.logpath)
             self.combine_job.set_grid_site('local')
@@ -1188,6 +1196,32 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             events = list(filter(lambda e: not e.trig_time>gpsend, events))
         return events
 
+    # Check whether to add spin evolution job
+    def spin_evol_checks(self):
+        if self.config.has_section('spin_evol'):
+            from lalsimulation import SimInspiralGetApproximantFromString, SimInspiralGetSpinSupportFromApproximant
+
+            tidal_run_tests = self.config.has_option('engine', 'tidal') or self.config.has_option('engine', 'tidalT')
+
+            nonprecessing_run_tests = self.config.has_option('engine', 'disable-spin') or self.config.has_option('engine', 'aligned-spin')
+
+            approx_num = SimInspiralGetApproximantFromString(extract_approx(self.config))
+
+            precessing_wf_test = (SimInspiralGetSpinSupportFromApproximant(approx_num) == 3) # 3 corresponds to LAL_SIM_INSPIRAL_PRECESSINGSPIN
+
+            if tidal_run_tests:
+                print("\n****** Note: Spin evolution will not be performed because tidal parameters are turned on ******\n")
+                spin_evol_flag = 0
+            elif precessing_wf_test and not nonprecessing_run_tests:
+                spin_evol_flag = 1 
+            else:
+                print("\n****** Note: Spin evolution will not be performed because this is not a precessing run ******\n")
+                spin_evol_flag = 0
+        else:
+            spin_evol_flag = 0
+
+        return spin_evol_flag
+
     def add_full_analysis_lalinferencenest(self,event):
         """
         Generate an end-to-end analysis of a given event (Event class)
@@ -1220,6 +1254,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         mergenode=MergeNode(self.merge_job,parents=enginenodes,engine='nest')
         mergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.hdf5'%(myifos,evstring)))
         self.add_node(mergenode)
+        # Add spin evolution, if requested, setting the parent of the results page to the spin evolution if that is perfomed and to the merge if not
+        if self.spin_evol_checks():
+            evolve_spins_node = EvolveSamplesNode(self.evolve_spins_job, posfile = mergenode.get_pos_file(), parent = mergenode)
+            self.add_node(evolve_spins_node)
+
+            respage_parent = evolve_spins_node
+        else:
+            respage_parent = mergenode
+            
         # Call finalize to build final list of available data
         enginenodes[0].finalize()
         enginenodes[0].set_psd_files()
@@ -1230,7 +1273,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             else:
                 zipfilename=None
             if "summarypages" not in self.config.get('condor','resultspage'):
-                respagenode=self.add_results_page_node(resjob=self.cotest_results_page_job,outdir=pagedir,parent=mergenode,gzip_output=zipfilename,ifos=enginenodes[0].ifos)
+                respagenode=self.add_results_page_node(resjob=self.cotest_results_page_job,outdir=pagedir,parent=respage_parent,gzip_output=zipfilename,ifos=enginenodes[0].ifos)
                 respagenode.set_psd_files(enginenodes[0].get_psd_files())
                 respagenode.set_snr_file(enginenodes[0].get_snr_file())
                 if os.path.exists(self.basepath+'/coinc.xml'):
@@ -1327,7 +1370,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     else:
                         pzipfilename=None
 
-                respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos,
+                respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=respage_parent,gzip_output=None,ifos=enginenodes[0].ifos,
                     evstring=evstring, coherence=True)
                 respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
                 try:
@@ -1360,7 +1403,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             # Note: Disabled gzip_output for now. Possibly need it for future Pegasus use
 
             if "summarypages" in self.config.get('condor','resultspage'):
-                respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos,
+                respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=respage_parent,gzip_output=None,ifos=enginenodes[0].ifos,
                     evstring=evstring, coherence=False)
                 respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
                 try:
@@ -1384,7 +1427,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 if os.path.exists(self.basepath+'/coinc.xml'):
                     respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
             else:
-                respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos)
+                respagenode=self.add_results_page_node(outdir=pagedir,parent=respage_parent,gzip_output=None,ifos=enginenodes[0].ifos)
                 respagenode.set_psd_files(enginenodes[0].get_psd_files())
                 respagenode.set_snr_file(enginenodes[0].get_snr_file())
                 if os.path.exists(self.basepath+'/coinc.xml'):
@@ -1485,8 +1528,17 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             mergenode.add_var_arg('--fixedBurnin '+str(self.config.getint('resultspage','fixedBurnin')))
         self.add_node(mergenode)
 
+        # Add spin evolution, if requested, setting the parent of the results page to the spin evolution if that is perfomed and to the merge if not
+        if self.spin_evol_checks():
+            evolve_spins_node = EvolveSamplesNode(self.evolve_spins_job, posfile = mergenode.get_pos_file(), parent = mergenode)
+            self.add_node(evolve_spins_node)
+
+            respage_parent = evolve_spins_node
+        else:
+            respage_parent = mergenode
+
         if "summarypages" in self.config.get('condor','resultspage'):
-            respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos, evstring=evstring, coherence=self.config.getboolean('analysis','coherence-test'))
+            respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=respage_parent,gzip_output=None,ifos=enginenodes[0].ifos, evstring=evstring, coherence=self.config.getboolean('analysis','coherence-test'))
             respagenode.set_psd_files(enginenodes[0].ifos, enginenodes[0].get_psd_files())
             try:
                 cachefiles = self.config.get('resultspage','plot-strain-data')
@@ -1510,7 +1562,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     gid = None
                 respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
         else:
-            respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos)
+            respagenode=self.add_results_page_node(outdir=pagedir,parent=respage_parent,gzip_output=None,ifos=enginenodes[0].ifos)
             respagenode.set_psd_files(enginenodes[0].get_psd_files())
             respagenode.set_snr_file(enginenodes[0].get_snr_file())
             if os.path.exists(self.basepath+'/coinc.xml'):
@@ -1969,9 +2021,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             for f in infiles:
                 node.add_input_file(f)
             node.add_file_opt("config", " ".join(inifiles))
-            approximant = self.config.get("engine", "approx")
-            if "pseudo" in approximant:
-                approximant = approximant.split("pseudo")[0]
+            approximant = self.extract_approx(self.config)
             node.add_var_opt('approximant', " ".join([approximant]*len(infiles)))
             calibration = []
             for ifo in ifos:
@@ -3548,3 +3598,49 @@ class PostRunInfoNode(LALInferenceDAGNode):
         if server is not None:
             self.add_var_arg('--server %s'%self.server)
 
+class EvolveSamplesNode(pipeline.CondorDAGNode):
+  """
+  Node to evolve spins of posterior samples
+  """
+  def __init__(self,evolve_sample_job,parent=None,posfile=None):
+      pipeline.CondorDAGNode.__init__(self,evolve_sample_job)
+      if parent:
+          self.add_parent(parent)
+      if posfile:
+          self.posfile=posfile
+          self.set_posfile(posfile)
+
+  def set_posfile(self,posfile):
+      self.add_var_arg('--sample_file %s'%posfile)
+
+  def get_pos_file(self):
+      return self.posfile
+
+class EvolveSamplesJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
+  """
+  Class for evolving the spins of posterior samples
+  """
+  def __init__(self,cp,submitFile,logdir,dax=False):
+      exe=cp.get('condor','evolve_spins')
+      pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
+      pipeline.AnalysisJob.__init__(self,cp,dax=dax)
+      if cp.has_option('condor','accounting_group'):
+        self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+      if cp.has_option('condor','accounting_group_user'):
+        self.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
+      requirements=''
+      if cp.has_option('condor','queue'):
+        self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
+        requirements='(TARGET.'+cp.get('condor','queue')+' =?= True)'
+      if cp.has_option('condor','Requirements'):
+        if requirements!='':
+          requirements=requirements+' && '
+        requirements=requirements+cp.get('condor','Requirements')
+      if requirements!='':
+        self.add_condor_cmd('Requirements',requirements)
+      self.set_sub_file(submitFile)
+      self.set_stdout_file(os.path.join(logdir,'evolve_spins-$(cluster)-$(process).out'))
+      self.set_stderr_file(os.path.join(logdir,'evolve_spins-$(cluster)-$(process).err'))
+      self.add_condor_cmd('getenv','True')
+      if cp.has_option('spin_evol','vfinal'):
+          self.add_opt('vfinal', cp.get('spin_evol','vfinal'))
