@@ -1,4 +1,8 @@
-HERE=$( cd "$(dirname $(readlink -f "${BASH_SOURCE[0]}" ) )"/.. && pwd)
+#!/bin/bash
+
+set -ex
+
+LALINFERENCE_DIR=$(cd "$(dirname $(readlink -f "${BASH_SOURCE[0]}"))"/.. && pwd)
 export USER=albert.einstein
 export OMP_NUM_THREADS=1
 sed \
@@ -14,7 +18,7 @@ sed \
   -e 's|roq=False|roq=True|' \
   -e 's|/home/cbc|'$PWD'|' \
   -e "/nparallel=/c\nparallel=1" \
-  -e 's|tolerance=0.1|tolerance=100|' \
+  -e "/tolerance=/c\tolerance=20" \
   -e 's|nlive=512|nlive=256\
 adapt-tau=3|' \
   -e 's|# randomseed=4321|randomseed=4321|' \
@@ -24,7 +28,8 @@ adapt-tau=3|' \
   -e 's|ntemps=8|ntemps=4|' \
   -e 's|#notification=Complete|notification=Complete|' \
   -e "/accounting_group=/c\accounting_group=ligo.dev.o3.cbc.pe.lalinference" \
-  ${HERE}/lib/lalinference_pipe_example.ini > example.ini
+  -e 's|sharedfs=False|sharedfs=True|' \
+  ${LALINFERENCE_DIR}/lib/lalinference_pipe_example.ini > example.ini
 lalinference_pipe --run-path ./example -I lalinference/test/injection_standard.xml --daglog-path ./daglog ./example.ini
 cd example/4s
-time ./lalinference_441417463-441417627.sh
+time bash -ex ./lalinference_441417463-441417627.sh
