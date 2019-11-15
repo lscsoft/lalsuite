@@ -22,8 +22,6 @@
 #include <lal/H5FileIO.h>
 #include <lal/LALVCSInfoType.h>
 #include <lal/LALInferenceHDF5.h>
-#include <hdf5.h>
-#include <hdf5_hl.h>
 #include <assert.h>
 #include <stdlib.h>
 
@@ -205,7 +203,7 @@ int LALInferenceH5VariablesArrayToDataset(
 
     const char *column_names[varsArray[0]->dimension];
     UINT4 Nvary = 0;
-    hsize_t type_size = 0;
+    size_t type_size = 0;
     size_t column_offsets[varsArray[0]->dimension];
     size_t column_sizes[varsArray[0]->dimension];
     LALTYPECODE column_types[varsArray[0]->dimension];

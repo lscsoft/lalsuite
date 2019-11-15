@@ -184,20 +184,6 @@ LALSUITE_ENABLE_FAST_GSL
 # check for gsl headers
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
-# check for hdf5 support
-HDF5_ENABLE_VAL="DISABLED"
-# Note that AX_LIB_HDF5 uses h5cc to determine compiler for configure tests.
-# Make sure that it uses the same compiler as we are using.
-# Otherwise the configure tests may fail if we are using icc.
-HDF5_CC="${CC}"; export HDF5_CC
-HDF5_CLINKER="${CC}"; export HDF5_CLINKER
-AX_LIB_HDF5()
-unset HDF5_CC
-unset HDF5_CLINKER
-if test "${with_hdf5}" != "yes"; then
-  AC_MSG_ERROR([could not find the HDF5 library])
-fi
-
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
@@ -207,30 +193,6 @@ LALSUITE_CHECK_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDetect
 LALSUITE_CHECK_LIB([LALInspiral],[${MIN_LALINSPIRAL_VERSION}],[LALInspiralParameterCalc],[lal/LALInspiral.h])
 LALSUITE_CHECK_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat],[lal/ComputeFstat.h])
 LALSUITE_CHECK_LIB([LALBurst],[${MIN_LALBURST_VERSION}],[XLALEPSearch],[lal/EPSearch.h])
-
-dnl FIXME: This doesn't work in the top-level build, because it tries
-dnl to compile and link against LAL itself, which will not have been built yet.
-dnl
-dnl AC_MSG_CHECKING([if LAL was built with HDF5 support])
-dnl AC_RUN_IFELSE(
-dnl   [AC_LANG_PROGRAM(
-dnl     [
-dnl       #include <lal/H5FileIO.h>
-dnl       #include <lal/XLALError.h>
-dnl     ],
-dnl     [
-dnl       int ret;
-dnl       (void)XLALSetSilentErrorHandler();
-dnl       (void)XLALH5FileOpen(NULL, NULL);
-dnl       return xlalErrno != XLAL_EFAULT;
-dnl     ]
-dnl   )],
-dnl   [AC_MSG_RESULT([yes])],
-dnl   [
-dnl     AC_MSG_RESULT([no])
-dnl     AC_MSG_ERROR([LAL must be built with HDF5 support in order to build LALInference])
-dnl   ]
-dnl )
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG

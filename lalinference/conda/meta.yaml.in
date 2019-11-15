@@ -42,7 +42,6 @@ requirements:
   host:
     - chealpix >={{ chealpix_version }}
     - gsl
-    - hdf5 1.10.4
     - lal >={{ lal_version }} fftw*
     - lalframe >={{ lalframe_version }}
     - lalmetaio >={{ lalmetaio_version }}
@@ -57,7 +56,6 @@ requirements:
   run:
     - chealpix >={{ chealpix_version }}
     - gsl
-    - hdf5
     - lal >={{ lal_version }}
     - lalframe >={{ lalframe_version }}
     - lalmetaio >={{ lalmetaio_version }}
@@ -69,8 +67,6 @@ requirements:
     - llvm-openmp  # [osx]
     - openmp  # [linux]
     - openmpi
-    # hdf5 links against zlib so we need to reference it
-    - zlib
 
 test:
   commands:
@@ -109,7 +105,6 @@ outputs:
         - astropy >=1.1.1
         - chealpix >={{ chealpix_version }}
         - gsl
-        - hdf5
         - healpy >=1.9.1
         - h5py
         - lal >={{ lal_version }}
@@ -133,8 +128,6 @@ outputs:
         - python-lalpulsar >={{ lalpulsar_version }}
         - scipy >=0.8
         - shapely
-        # hdf5 links against zlib so we need to reference it
-        - zlib
     test:
       imports:
         - lalinference
