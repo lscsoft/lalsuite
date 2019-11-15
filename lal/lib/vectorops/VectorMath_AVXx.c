@@ -29,6 +29,10 @@
 
 #include "VectorMath_internal.h"
 
+#ifndef __AVX__
+#error "VectorMath_AVXx.c requires SIMD instruction set AVX"
+#endif
+
 #include "VectorMath_avx_mathfun.h"
 
 // ---------- local operators and operator-wrappers ----------
