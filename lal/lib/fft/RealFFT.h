@@ -157,7 +157,7 @@ extern "C" {
 /** @{ */
 
 /** \name Error Codes */
-/*@{*/
+/**@{*/
 #define REALFFTH_ENULL 1	/**< Null pointer */
 #define REALFFTH_ENNUL 2	/**< Non-null pointer */
 #define REALFFTH_ESIZE 4	/**< Invalid input size */
@@ -170,7 +170,7 @@ extern "C" {
 #define REALFFTH_EFFTW 512	/**< Error in FFTW */
 #define REALFFTH_ESNGL 1024	/**< FFTW library is not single-precision */
 #define REALFFTH_EINTL 2048	/**< Error in Intel FFT library */
-/*@}*/
+/**@}*/
 
 /** \cond DONT_DOXYGEN */
 #define REALFFTH_MSGENULL "Null pointer"
