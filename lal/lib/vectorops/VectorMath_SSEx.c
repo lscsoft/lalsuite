@@ -29,9 +29,10 @@
 
 #include "VectorMath_internal.h"
 
-#ifdef __SSE2__
-#define USE_SSE2
+#ifndef __SSE2__
+#error "VectorMath_SSEx.c requires SIMD instruction set SSE2 or higher"
 #endif
+#define USE_SSE2
 
 #include "VectorMath_sse_mathfun.h"
 
