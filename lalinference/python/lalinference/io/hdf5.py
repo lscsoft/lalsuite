@@ -28,7 +28,7 @@ from lalinference import LALINFERENCE_PARAM_CIRCULAR as CIRCULAR
 from lalinference import LALINFERENCE_PARAM_FIXED as FIXED
 from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
 
-__all__ = ('read_samples', 'write_samples')
+__all__ = ('read_samples', 'write_samples', 'extract_metadata')
 
 
 def _identity(x):
@@ -271,5 +271,92 @@ def write_samples(table, filename, metadata=None, **kwargs):
                             'Unable to set metadata {0}[{1}] = {2}'.format(
                                 internal_path, key, value))
 
-from lalinference.bayestar.deprecation import warn
-warn('ligo.skymap.io.hdf5')
+def update_metadata(metadata, level, attrs, strict_versions, collision='raise'):
+        """Updates the sub-dictionary 'key' of 'metadata' with the values from
+        'attrs', while enforcing that existing values are equal to those with
+        which the dict is updated.
+        """
+        if level not in metadata:
+            metadata[level] = {}
+        for key in attrs:
+            if key in metadata[level]:
+                    if collision == 'raise':
+                        if attrs[key]!=metadata[level][key]:
+                            if key == 'version' and not strict_versions:
+                                continue
+                            else:
+                                raise ValueError(
+                                    'Metadata mismatch on level %r for key %r:\n\t%r != %r'
+                                    % (level, key, attrs[key], metadata[level][key]))
+                    elif collision == 'append':
+                        if isinstance(metadata[level][key], list):
+                            metadata[level][key].append(attrs[key])
+                        else:
+                            metadata[level][key] = [metadata[level][key], attrs[key]]
+                    elif collision == 'ignore':
+                        pass
+                    else:
+                        raise ValueError('Invalid value for collision: %r' % collision)
+            else:
+                metadata[level][key] = attrs[key]
+        return
+
+def extract_metadata(filename, metadata, log_noise_evidences=[], log_max_likelihoods=[], nlive=[], dset_name=None, nest=False, strict_versions=True):
+        """
+        Extract metadata from HDF5 sample chain file
+
+        Parameters 
+        ----------             
+        filename : str 
+            The path of the HDF5 file on the filesystem.
+        metadata : dict 
+            Dict into which to place metadata
+        log_noise_evidences : array (optional)
+            Array into which to place log noise evidences (if nest = True)
+        log_max_likelihoods : array (optional)
+            Array into which to place log max likelihoods (if nest = True)
+        nlive : array (optional)
+            Array into which to place number of live points (if nest = True)
+        return_run_identifier : Boolean (optional : default False)
+            Whether to return the run identifier
+        nest : Boolean (optional : default False)
+            Whether to output quantities that only exist for nest runs
+ 
+        Returns
+        ------- 
+        run_identifier : str
+            The run identifier
+        """
+        with h5py.File(filename, 'r') as hdf:
+            # walk down the groups until the actual data is reached, storing
+            # metadata for each step.
+            current_level = '/lalinference'
+            group = hdf[current_level]
+            update_metadata(metadata, current_level, group.attrs, strict_versions)
+
+            if len(hdf[current_level].keys()) != 1:
+                raise KeyError('Multiple run-identifiers found: %r'
+                               % list(hdf[current_level].keys()))
+            # we ensured above that there is only one identifier in the group.
+            run_identifier = list(hdf[current_level].keys())[0]
+
+            current_level = '/lalinference/' + run_identifier
+            group = hdf[current_level]
+            update_metadata(metadata, current_level, group.attrs, strict_versions, collision='append')
+
+            if nest:
+                # store the noise evidence and max likelihood seperately for later use
+                log_noise_evidences.append(group.attrs['log_noise_evidence'])
+                log_max_likelihoods.append(group.attrs['log_max_likelihood'])
+                nlive.append(group.attrs['number_live_points'])
+
+            # storing the metadata under the posterior_group name simplifies
+            # writing it into the output hdf file.
+            if dset_name == None:
+                dset_name = POSTERIOR_SAMPLES
+            current_level = '/lalinference/' + run_identifier + '/' + dset_name
+            current_level_posterior = '/lalinference/' + run_identifier + '/' + POSTERIOR_SAMPLES
+            group = hdf[current_level]
+            update_metadata(metadata, current_level_posterior, group.attrs, strict_versions, collision='ignore')
+
+            return run_identifier

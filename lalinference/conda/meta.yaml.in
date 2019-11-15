@@ -180,6 +180,7 @@ outputs:
         - lalinference_coherence_test --help
         - lalinference_compute_roq_weights --help
         #- lalinference_cpnest --help
+        - lalinference_evolve_spins_and_append_samples --help
         - lalinference_merge_posteriors --help
         - lalinference_multi_pipe --help
         - lalinference_nest2pos --help
