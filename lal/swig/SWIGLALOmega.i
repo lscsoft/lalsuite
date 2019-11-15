@@ -125,6 +125,7 @@ typedef struct {
 
   /// Construct a new ::LIGOTimeGPS from a string
   tagLIGOTimeGPS(const char *str) {
+    XLAL_CHECK_NULL(str != NULL, XLAL_EFAULT);
     LIGOTimeGPS *gps = %swiglal_new_instance(LIGOTimeGPS);
     char *end = NULL;
     if (XLALStrToGPS(gps, str, &end) < 0 || *end != '\0') {

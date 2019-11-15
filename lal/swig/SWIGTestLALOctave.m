@@ -1085,6 +1085,11 @@ end_try_catch
 assert(!expected_exception);
 disp("*** above should be error messages from LIGOTimeGPS constructor ***");
 assert(swig_lal_test_noptrgps(LIGOTimeGPS(1234.5)) == swig_lal_test_noptrgps(1234.5))
+try
+  LIGOTimeGPS([]);
+  expected_exception = 1;
+end_try_catch
+assert(!expected_exception);
 clear t0;
 clear t1;
 clear t2;
