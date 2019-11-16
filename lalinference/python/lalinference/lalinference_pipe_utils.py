@@ -869,7 +869,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         script = """#!/usr/bin/env bash
 		    echo "Making placeholder output files"
 		    IFS=','
-		    for f in $@; do 
+		    for f in $@; do
 			touch $f;
 			echo "created $f";
 		    done;
@@ -1213,7 +1213,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 print("\n****** Note: Spin evolution will not be performed because tidal parameters are turned on ******\n")
                 spin_evol_flag = 0
             elif precessing_wf_test and not nonprecessing_run_tests:
-                spin_evol_flag = 1 
+                spin_evol_flag = 1
             else:
                 print("\n****** Note: Spin evolution will not be performed because this is not a precessing run ******\n")
                 spin_evol_flag = 0
@@ -1262,7 +1262,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             respage_parent = evolve_spins_node
         else:
             respage_parent = mergenode
-            
+
         # Call finalize to build final list of available data
         enginenodes[0].finalize()
         enginenodes[0].set_psd_files()
@@ -2021,7 +2021,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             for f in infiles:
                 node.add_input_file(f)
             node.add_file_opt("config", " ".join(inifiles))
-            approximant = self.extract_approx(self.config)
+            approximant = extract_approx(self.config)
             node.add_var_opt('approximant', " ".join([approximant]*len(infiles)))
             calibration = []
             for ifo in ifos:
@@ -2268,7 +2268,7 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
         """
         if self.requirements:
             self.add_condor_cmd('requirements','&&'.join('({0})'.format(r) for r in self.requirements))
-        
+
         # Call the parent method to do the rest
         super(LALInferenceDAGJob,self).write_sub_file()
 
