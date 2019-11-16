@@ -2735,8 +2735,6 @@ class LALInferenceNestNode(EngineNode):
         self.nsfile=filename+'.hdf5'
         self.posfile=self.nsfile
         self.add_file_opt(self.outfilearg,self.nsfile,file_is_output_file=True)
-        if self.job().resume:
-            self.add_checkpoint_file(self.nsfile+'_resume')
 
     def get_ns_file(self):
         return self.nsfile
@@ -2766,10 +2764,15 @@ class LALInferenceMCMCNode(EngineNode):
     def set_output_file(self,filename):
         self.posfile=filename+'.hdf5'
         self.add_file_opt(self.outfilearg,self.posfile,file_is_output_file=True)
+        if self.job().resume:
+            self.add_output_file(self.posfile+'.resume')
         # Should also take care of the higher temperature outpufiles with
         # self.add_output_file, getting the number of files from machine_count
         for i in range(1,int(self.job().mpi_task_count)):
-            self.add_output_file(self.posfile + '.' + '{:d}'.format(i).zfill(2))
+            tempfile = self.posfile + '.' + '{:d}'.format(i).zfill(2)
+            self.add_output_file(tempfile)
+            if self.job().resume:
+                self.add_output_file(tempfile+'.resume')
 
     def get_pos_file(self):
         return self.posfile

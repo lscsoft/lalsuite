@@ -24,7 +24,7 @@
 #include <lal/LALInferenceHDF5.h>
 #include <assert.h>
 #include <stdlib.h>
-
+#include <sys/stat.h>
 
 const char LALInferenceHDF5PosteriorSamplesDatasetName[] = "posterior_samples";
 const char LALInferenceHDF5NestedSamplesDatasetName[] = "nested_samples";
@@ -38,6 +38,16 @@ static void assert_not_reached(void)
 #endif
 }
 
+
+int LALInferenceCheckNonEmptyFile(char *filename)
+{
+    struct stat st;
+    if( !stat(filename, &st) )
+    {
+	if (st.st_size!=0) return(1);
+    }
+    return(0);
+}
 
 static void LALInferenceH5VariableToAttribute(
     LALH5Generic gdataset, LALInferenceVariables *vars, char *name);
