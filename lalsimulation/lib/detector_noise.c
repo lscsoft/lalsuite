@@ -75,7 +75,7 @@
  * <DT>`-O`, `--official`</DT>
  * <DD>use official data files</DD>
  * <DT>`-P`, `--psd-only`</DT>
- * <DD>output PSD only</DD>
+ * <DD>output PSD only (actually ASD)</DD>
  * <DT>`-a`, `--asd-file` ASDFILE</DT>
  * <DD>read amplitude spectrum density file</DD>
  * <DT>`-s`, `--start-time` GPSSTART</DT>
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 			double deltaF = srate / length;
 			size_t klow = flow / deltaF;
 			size_t k;
-			fprintf(stdout, "# freq (s^-1)\tPSD (strain^2 s)\n");
+			fprintf(stdout, "# freq (s^-1)\tASD (strain s^1/2)\n");
 			for (k = klow; k < length/2 - 1; ++k)
 				fprintf(stdout, "%.18e\t%.18e\n", k * deltaF, 0.0);
 		} else {
@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
 	if (psdonly) { // output PSD and exit
 		size_t klow = flow / psd->deltaF;
 		size_t k;
-		fprintf(stdout, "# freq (s^-1)\tPSD (strain^2 s)\n");
+		fprintf(stdout, "# freq (s^-1)\tASD (strain s^1/2)\n");
 		for (k = klow; k < length/2 - 1; ++k)
 			fprintf(stdout, "%.18e\t%.18e\n", k * psd->deltaF, sqrt(psd->data->data[k]));
 		goto end;
@@ -390,7 +390,7 @@ int parseargs( int argc, char **argv )
 			case 'O': /* official */
 				official = 1;
 				break;
-			case 'P': /* start-time */
+			case 'P': /* psd-only */
 				psdonly = 1;
 				break;
 			case 'a': /* asd-file */
@@ -462,7 +462,7 @@ int usage( const char *program )
 	fprintf(stderr, "\t-T, --tama                   \tTAMA300 noise power\n");
 	fprintf(stderr, "\t-K, --kagra                  \tKAGRA noise power\n");
 	fprintf(stderr, "\t-O, --official               \tuse official data files\n");
-	fprintf(stderr, "\t-P, --psd-only               \toutput PSD only\n");
+	fprintf(stderr, "\t-P, --psd-only               \toutput PSD only (actually ASD)\n");
 	fprintf(stderr, "\t-a, --asd-file ASDFILE       \tread an ASD file\n");
 	fprintf(stderr, "\t-s, --start-time GPSSTART    \tGPS start time (s)\n");
 	fprintf(stderr, "\t-t, --duration DURATION      \t(required) duration of data to produce (s)\n");
