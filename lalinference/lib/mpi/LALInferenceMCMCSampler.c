@@ -1188,8 +1188,7 @@ void LALInferenceResumeMCMC(LALInferenceRunState *runState) {
 
     if (LALInferenceGetProcParamVal(runState->commandLine, "--resume") &&
             access(runState->outFileName, R_OK) == 0 &&
-            access(runState->resumeOutFileName, R_OK) == 0) {
-
+            access(runState->resumeOutFileName, R_OK) ==0) {
         /* Then file already exists for reading, and we're going to resume
         from it, so don't write the header. */
         LALInferenceReadMCMCCheckpoint(runState);
@@ -1264,14 +1263,41 @@ void LALInferenceCheckpointMCMC(LALInferenceRunState *runState) {
 void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
     //ProcessParamsTable *ppt;
     INT4 i, t, n_local_threads;
+    int retcode=0;
     UINT4 n,k;
     LALH5File *resume_file = NULL;
     LALH5File *output = NULL;
     LALInferenceThreadState *thread;
-
-    /* Read it the resume file, which stores info needed to restore the proposals (adaptation settings, etc.) */
-    resume_file = XLALH5FileOpen(runState->resumeOutFileName, "r");
+    if(! (LALInferenceCheckNonEmptyFile(runState->resumeOutFileName) &&
+          LALInferenceCheckNonEmptyFile(runState->outFileName) ) )
+    {
+	/* One of the files is empty, just start a new run */
+	fprintf(stderr,"Resume file or chain file is zero size, starting fresh run\n");
+	return;
+    }
+    /* Read in the resume file, which stores info needed to restore the proposals (adaptation settings, etc.) */
+    XLAL_TRY(resume_file = XLALH5FileOpen(runState->resumeOutFileName, "r"), retcode);
+    if(retcode != XLAL_SUCCESS)
+    {
+        fprintf(stderr,"Unable to resume from %s, file is not valid HDF5\n",runState->resumeOutFileName);
+        return;
+    }
+    else
+    {
+        fprintf(stderr,"Resuming from %s\n",runState->resumeOutFileName);
+    }
     if(resume_file == NULL){
+        XLALErrorHandler = XLALExitErrorHandler;
+        XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
+        XLAL_ERROR_VOID(XLAL_EIO);
+    }
+    XLAL_TRY(output = XLALH5FileOpen(runState->outFileName, "r"), retcode);
+    if(retcode != XLAL_SUCCESS)
+    {
+        fprintf(stderr,"Unable to resume from %s, file is not valid HDF5\n",runState->outFileName);
+        return;
+    }
+    if(output == NULL){
         XLALErrorHandler = XLALExitErrorHandler;
         XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
         XLAL_ERROR_VOID(XLAL_EIO);
@@ -1287,15 +1313,6 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
         char chain_group_name[1024];
         snprintf(chain_group_name, sizeof(chain_group_name), "%s-checkpoint", thread->name);
         LALH5File *chain_group = XLALH5GroupOpen(group, chain_group_name);
-        /*
-         * FIXME: use GNUism asprintf or fall back to libiberty
-         *
-
-        char *chain_group_name = NULL;
-        asprintf(&chain_group_name, "%s-checkpoint", thread->name);
-        LALH5File *chain_group = XLALH5GroupOpen(group, chain_group_name);
-        free(chain_group_name);
-        */
 
         /* Restore differential evolution buffer */
         LALH5Dataset *de_group = XLALH5DatasetRead(chain_group, "differential_points");
@@ -1359,12 +1376,7 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
     XLALH5FileClose(resume_file);
 
     /* Read in samples collected so far */
-    output = XLALH5FileOpen(runState->outFileName, "r");
-    if(output == NULL){
-        XLALErrorHandler = XLALExitErrorHandler;
-        XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
-        XLAL_ERROR_VOID(XLAL_EIO);
-    }
+    
 
     li_group = XLALH5GroupOpen(output, "lalinference");
     group = XLALH5GroupOpen(li_group, runState->runID);

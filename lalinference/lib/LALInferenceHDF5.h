@@ -23,6 +23,11 @@
 #include <lal/LALInference.h>
 #include <lal/H5FileIO.h>
 
+/**
+ * Returns 1 if a non-empty file exists, 0 otherwise
+ */
+int LALInferenceCheckNonEmptyFile(char *filename);
+
 int LALInferenceH5VariablesArrayToDataset(
     LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N,
     const char *TableName);

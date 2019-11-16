@@ -98,15 +98,19 @@ static int WriteNSCheckPointH5(char *filename, LALInferenceRunState *runState, N
 static int WriteNSCheckPointH5(char *filename, LALInferenceRunState *runState, NSintegralState *s)
 {
   LALH5File *h5file = XLALH5FileOpen(filename,"w");
+  int retcode;
   if(!h5file)
   {
     fprintf(stderr,"Unable to save resume file %s!\n",filename);
     return(1);
   }
   UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
-  LALH5File *group = XLALH5GroupOpen(h5file, "lalinferencenest_checkpoint");
-  if(!group) XLAL_ERROR(XLAL_EFAILED,"Unable to read group lalinferencenest_checkpoint\n");
-  int retcode = _saveNSintegralStateH5(group,s);
+  LALH5File *group;
+  XLAL_TRY(group = XLALH5GroupOpen(h5file,"lalinference"),retcode);
+  if(retcode!=XLAL_SUCCESS) return(retcode);
+  XLAL_TRY(group = XLALH5GroupOpen(group,"lalinferencenest_checkpoint"),retcode);
+  if(retcode!=XLAL_SUCCESS) return(retcode);
+  retcode = _saveNSintegralStateH5(group,s);
   if(retcode) XLAL_ERROR(XLAL_EFAILED,"Unable to save integral state\n");
   LALInferenceH5VariablesArrayToDataset(group, runState->livePoints, Nlive, "live_points");
   INT4 N_output_array=0;
@@ -131,6 +135,31 @@ static int WriteNSCheckPointH5(char *filename, LALInferenceRunState *runState, N
   return(retcode);
 }
 
+static int CheckOutputFileContents(char *filename);
+/* Check what's in the output file (filename). Returns
+ * 0 : File does not exist or is not valid HDF5
+ * 1 : File contains a resume state
+ * 2 : File is valid HDF5 but not a resume file, probably complete
+ */
+static int CheckOutputFileContents(char *filename)
+{
+  int retcode = 0;
+  int result = 0;
+  LALH5File *h5file = NULL;
+  if (access(filename, F_OK)==-1) return(0);
+  if (!LALInferenceCheckNonEmptyFile(filename)) return(0);
+  XLAL_TRY(h5file = XLALH5FileOpen(filename,"r"),retcode);
+  if(retcode != XLAL_SUCCESS) return(0);
+  LALH5File *group;
+  XLAL_TRY(group = XLALH5GroupOpen(h5file,"lalinference"),retcode);
+  if(retcode == XLAL_SUCCESS) result=2;
+  /* Look for checkpoint */
+  XLAL_TRY(XLALH5GroupOpen(group,"lalinferencenest_checkpoint"),retcode);
+  if(retcode == XLAL_SUCCESS) result=1;
+  XLALH5FileClose(h5file);
+  return(result);
+}
+
 static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NSintegralState *s)
 {
   int retcode;
@@ -140,7 +169,9 @@ static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NS
   XLAL_TRY(h5file = XLALH5FileOpen(filename,"r"),retcode);
   if(retcode!=XLAL_SUCCESS) return(retcode);
   LALH5File *group;
-  XLAL_TRY(group = XLALH5GroupOpen(h5file,"lalinferencenest_checkpoint"),retcode);
+  XLAL_TRY(group = XLALH5GroupOpen(h5file,"lalinference"),retcode);
+  if(retcode!=XLAL_SUCCESS) return(retcode);
+  XLAL_TRY(group = XLALH5GroupOpen(group,"lalinferencenest_checkpoint"),retcode);
   if(retcode!=XLAL_SUCCESS) return(retcode);
   UINT4 N_outputarray;
   LALInferenceVariables **outputarray;
@@ -793,21 +824,32 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   }
   s=initNSintegralState(Nruns,Nlive);
 
-  /* Check for an interrupted run */
-  char resumefilename[FILENAME_MAX+10];
-  snprintf(resumefilename,sizeof(resumefilename),"%s_resume",outfile);
+  /* Check if output/resume file exists as a valid HDF5 file */
+  int filetest = CheckOutputFileContents(outfile);
   int retcode=1;
-  if(LALInferenceGetProcParamVal(runState->commandLine,"--resume")){
-      retcode=ReadNSCheckPointH5(resumefilename,runState,s);
-      if(retcode==0){
-          for(i=0;i<Nlive;i++) logLikelihoods[i]=*(REAL8 *)LALInferenceGetVariable(runState->livePoints[i],"logL");
-          iter=s->iteration;
-      }
+  if (filetest==2) /* Run is complete, do not overwrite */
+  {
+     printf("Output file %s contains complete run, not over-writing\n",outfile);
+     exit(1);
   }
+  else if(filetest==1) /* Run contains a resume file */
+  {
+	  /* Check for an interrupted run */
+	  if(LALInferenceGetProcParamVal(runState->commandLine,"--resume")){
+              fprintf(stderr,"Resuming from %s\n",outfile);
+	      retcode=ReadNSCheckPointH5(outfile,runState,s);
+	      if(retcode==0){
+		  for(i=0;i<Nlive;i++) logLikelihoods[i]=*(REAL8 *)LALInferenceGetVariable(runState->livePoints[i],"logL");
+		  iter=s->iteration;
+	      }
+	  }
+  }
+  /* If we did not resume, start a new run */
   if(retcode!=0)
   {
+
     if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
-        fprintf(stdout,"No resume file %s. Starting a new run.\n",resumefilename);
+        fprintf(stdout,"Starting a new run.\n");
     /* Sprinkle points */
     LALInferenceSetVariable(runState->algorithmParams,"logLmin",&neginfty);
     int sprinklewarning=0;
@@ -936,8 +978,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   /* Save progress */
   if(__ns_saveStateFlag!=0)
     {
-      if(__ns_exitFlag) fprintf(stdout,"Saving state to %s.\n",resumefilename);
-      WriteNSCheckPointH5(resumefilename,runState,s);
+      if(__ns_exitFlag) fprintf(stdout,"Saving state to %s.\n",outfile);
+      WriteNSCheckPointH5(outfile,runState,s);
       fflush(fpout);
       __ns_saveStateFlag=0;
     }
@@ -949,7 +991,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   /* Update the proposal */
   if(!(iter%(Nlive/10))) {
     /* Update the covariance matrix */
-    //WriteNSCheckPointH5(resumefilename, runState, s);
     if ( LALInferenceCheckVariable( threadState->proposalArgs,"covarianceMatrix" ) ){
       SetupEigenProposals(runState);
     }
@@ -1078,12 +1119,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       XLALFree(output_array);
     }
   
-  /* Clean up resume file */
-  if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
-  {
-    if(!access(resumefilename,W_OK)) remove(resumefilename);
-  }
-
   /* Free memory */
   XLALFree(logtarray); XLALFree(logwarray); XLALFree(logZarray);
 }
