@@ -26,8 +26,6 @@ lalapps_chirplen_SOURCES = chirplen.c
 endif
 
 EXTRA_DIST = \
-	TestRandomBank.c \
-	TestRandomBank.h \
 	chirplen.c \
 	exc_resp.c \
 	snr_versus_totalmass.png \
