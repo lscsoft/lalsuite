@@ -9,6 +9,3 @@ lalinference_pp_pipe
 lalinference_tiger_pipe
 # these require cpnest
 lalinference_cpnest
-# these require sklearn
-rapidpe_calculate_overlap
-rapidpe_compute_intrinsic_grid

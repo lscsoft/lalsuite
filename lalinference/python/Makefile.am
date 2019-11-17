@@ -9,11 +9,6 @@ SUBDIRS = lalinference
 if HAVE_PYTHON
 
 pybin_scripts = \
-	rapidpe_integrate_extrinsic_likelihood \
-	rapidpe_create_event_dag \
-	rapidpe_compute_intrinsic_fisher \
-	rapidpe_compute_intrinsic_grid \
-	rapidpe_calculate_overlap \
 	imrtgr_imr_consistency_test \
 	lalinference_burst_pp_pipe \
 	lalinference_coherence_test \

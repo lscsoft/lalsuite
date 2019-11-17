@@ -139,13 +139,6 @@ outputs:
         - lalinference.lalinference_pipe_utils
         - lalinference.nest2pos
         - lalinference.plot
-        - lalinference.rapid_pe
-        - lalinference.rapid_pe.common_cl
-        - lalinference.rapid_pe.dagutils
-        - lalinference.rapid_pe.mcsampler
-        - lalinference.rapid_pe.statutils
-        - lalinference.rapid_pe.synchlib
-        - lalinference.rapid_pe.xmlutils
         - lalinference.tiger
         - lalinference.tiger.make_injtimes
         - lalinference.tiger.omegascans_dag
@@ -181,11 +174,6 @@ outputs:
         #- lalinference_pp_pipe --help
         - lalinference_review_test --help
         #- lalinference_tiger_pipe --help
-        #- rapidpe_calculate_overlap --help
-        #- rapidpe_compute_intrinsic_fisher --help
-        #- rapidpe_compute_intrinsic_grid --help
-        #- rapidpe_create_event_dag --help
-        #- rapidpe_integrate_extrinsic_likelihood --help
     about:
       home: https://wiki.ligo.org/Computing/DASWG/LALSuite
       doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinference/
