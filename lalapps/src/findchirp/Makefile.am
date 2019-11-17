@@ -28,5 +28,4 @@ endif
 EXTRA_DIST = \
 	chirplen.c \
 	exc_resp.c \
-	snr_versus_totalmass.png \
 	$(END_OF_LIST)
