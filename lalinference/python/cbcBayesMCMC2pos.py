@@ -36,7 +36,7 @@ from optparse import OptionParser
 import h5py
 from lalinference import git_version
 from lalinference import bayespputils as bppu
-from lalinference.io import read_samples, write_samples
+from lalinference.io import read_samples, write_samples, extract_metadata
 
 from lalinference import LALINFERENCE_PARAM_LINEAR as LINEAR
 from lalinference import LALINFERENCE_PARAM_CIRCULAR as CIRCULAR
@@ -274,5 +274,8 @@ if __name__ == '__main__':
 
 	final_posterior, metadata = weight_and_combine(chain_posteriors, verbose=opts.verbose)
 
+	for path in datafiles:
+		run_identifier = extract_metadata(path, metadata)
+
 	write_samples(final_posterior, opts.pos,
-		path='/'.join(['','lalinference','lalinference_mcmc','posterior_samples']), metadata=metadata)
+		path='/'.join(['','lalinference',run_identifier,'posterior_samples']), metadata=metadata)
