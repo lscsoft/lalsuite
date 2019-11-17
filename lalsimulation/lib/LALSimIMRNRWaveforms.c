@@ -372,7 +372,7 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
   fRef = XLALSimInspiralNRWaveformCheckFRef(filepointer, fRef);
 
   /* Following section IV of DCC-T1600045
-   * Step 1: Define Phi = phiref/2 ... I'm ignoring this, I think it is wrong
+   * Step 1: Define Phi = phiref
    */
   orb_phase = phi_ref;
 
