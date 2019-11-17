@@ -1,7 +1,6 @@
 lalapps/src/calibration/S4H1Filters.txt filter=lfs diff=lfs merge=lfs -text
 lalapps/src/calibration/S5H1_NoiseCompTimes.txt filter=lfs diff=lfs merge=lfs -text
 lalapps/src/calibration/S5L1_NoiseCompTimes.txt filter=lfs diff=lfs merge=lfs -text
-lalapps/src/findchirp/L1response_psd.dat filter=lfs diff=lfs merge=lfs -text
 lalapps/src/inspiral/BNSMasses.dat filter=lfs diff=lfs merge=lfs -text
 lalapps/src/inspiral/inspsrcs100Mpc.errors filter=lfs diff=lfs merge=lfs -text
 lalapps/src/pulsar/CreateEphemeris/ephemMLDC.dat filter=lfs diff=lfs merge=lfs -text
