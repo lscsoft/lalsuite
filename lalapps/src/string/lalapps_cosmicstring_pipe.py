@@ -20,12 +20,15 @@ the standalone ring code on LIGO data
 from __future__ import print_function
 
 
-import ConfigParser
 import itertools
 from optparse import OptionParser
 import os
 import sys
 import tempfile
+try:
+	from configparser import ConfigParser
+except ImportError:  # python < 3
+	from ConfigParser import ConfigParser
 
 
 from glue import pipeline
@@ -115,7 +118,7 @@ print(file=log_fh)
 # create the config parser object and read in the ini file
 #
 
-config_parser = ConfigParser.ConfigParser()
+config_parser = ConfigParser()
 config_parser.read(options.config_file)
 
 #
@@ -215,7 +218,7 @@ injection_seglists = segments.segmentlistdict()
 for filename in options.injection_time_slides:
 	cache_entry = CacheEntry(None, "INJ", None, "file://localhost" + os.path.abspath(filename))
 
-        injection_time_slides[cache_entry] = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw_segments.LIGOLWContentHandler)).as_dict().values()
+	injection_time_slides[cache_entry] = lsctables.TimeSlideTable.get_table(ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ligolw_segments.LIGOLWContentHandler)).as_dict().values()
 
 	for i in range(len(injection_time_slides[cache_entry])):
 		injection_time_slides[cache_entry][i] = offsetvector.offsetvector((instrument, LIGOTimeGPS(offset)) for instrument, offset in injection_time_slides[cache_entry][i].items())
