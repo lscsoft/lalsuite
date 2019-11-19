@@ -29,6 +29,7 @@ adapt-tau=3|' \
   -e 's|#notification=Complete|notification=Complete|' \
   -e "/accounting_group=/c\accounting_group=ligo.dev.o3.cbc.pe.lalinference" \
   -e 's|sharedfs=False|sharedfs=True|' \
+  -e 's|^resume=|#resume=|' \
   ${LALINFERENCE_DIR}/lib/lalinference_pipe_example.ini > example.ini
 lalinference_pipe --run-path ./example -I lalinference/test/injection_standard.xml --daglog-path ./daglog ./example.ini
 cd example/4s
