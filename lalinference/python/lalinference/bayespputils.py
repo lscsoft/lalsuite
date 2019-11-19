@@ -5961,9 +5961,9 @@ class PEOutputParser(object):
         posfilename : Posterior output file name (default: 'posterior_samples.dat')
         """
         try:
-            from lalapps.nest2pos import draw_N_posterior_many,draw_posterior_many
+            from lalinference.nest2pos import draw_N_posterior_many,draw_posterior_many
         except ImportError:
-            print("Need lalapps.nest2pos to convert nested sampling output!")
+            print("Need lalinference.nest2pos to convert nested sampling output!")
             raise
 
         if Nlive is None:

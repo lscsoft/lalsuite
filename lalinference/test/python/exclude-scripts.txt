@@ -6,6 +6,5 @@
 lalinference_burst_pp_pipe
 lalinference_pipe
 lalinference_pp_pipe
-lalinference_tiger_pipe
 # these require cpnest
 lalinference_cpnest
