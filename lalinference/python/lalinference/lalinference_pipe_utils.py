@@ -759,6 +759,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             self.dataseed=cp.getint('analysis','dataseed')
         else:
             self.dataseed=None
+        if cp.has_option('analysis','randomseed'):
+            self.randomseed=cp.getint('analysis','randomseed')
+        else:
+            self.randomseed=random.randint(1,2**31)
         # Set up necessary job files.
         self.prenodes={}
         self.datafind_job = pipeline.LSCDataFindJob(self.cachepath,self.logpath,self.config)
@@ -1685,9 +1689,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             mkdirs(roqeventpath)
         node.set_trig_time(end_time)
         prenode.set_trig_time(end_time)
-        randomseed=random.randint(1,2**31)
-        node.set_seed(randomseed)
-        prenode.set_seed(randomseed)
+        node.set_seed(self.randomseed)
+        prenode.set_seed(self.randomseed)
         original_srate=0
         srate=0
         if event.srate:
@@ -1839,12 +1842,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                             if self.config.has_option('lalinference','flow'):
                                 bayeswavepsdnode[ifo].flows[ifo]=np.power(2,np.floor(np.log2(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])))
                                 print('BayesWave requires f_low being a power of 2, therefore f_low for '+ifo+' has been changed from '+str(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])+' to '+str(np.power(2,np.floor(np.log2(ast.literal_eval(self.config.get('lalinference','flow'))[ifo]))))+' Hz (for the BayesWave job only, in the main LALInference jobs f_low will still be '+str(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])+' Hz)')
-                            bayeswavepsdnode[ifo].set_seed(randomseed)
-                            bayeswavepsdnode[ifo].set_chainseed(randomseed+event.event_id)
+                            bayeswavepsdnode[ifo].set_seed(self.randomseed)
+                            bayeswavepsdnode[ifo].set_chainseed(self.randomseed+event.event_id)
                             if self.dataseed:
                                 bayeswavepsdnode[ifo].set_dataseed(self.dataseed+event.event_id)
                             else:
-                                bayeswavepsdnode[ifo].set_dataseed(randomseed+event.event_id)
+                                bayeswavepsdnode[ifo].set_dataseed(self.randomseed+event.event_id)
                         if ifo not in bayeswavepostnode:
                             bayeswavepostnode[ifo]=self.add_bayeswavepost_node(ifo,parent=bayeswavepsdnode[ifo])
                             bayeswavepostnode[ifo].add_var_arg('--0noise')
@@ -1875,12 +1878,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
                             if self.config.has_option('lalinference','flow'):
                                 bayeswavepostnode[ifo].flows[ifo]=np.power(2,np.floor(np.log2(ast.literal_eval(self.config.get('lalinference','flow'))[ifo])))
-                            bayeswavepostnode[ifo].set_seed(randomseed)
-                            bayeswavepostnode[ifo].set_chainseed(randomseed+event.event_id)
+                            bayeswavepostnode[ifo].set_seed(self.randomseed)
+                            bayeswavepostnode[ifo].set_chainseed(self.randomseed+event.event_id)
                             if self.dataseed:
                                 bayeswavepostnode[ifo].set_dataseed(self.dataseed+event.event_id)
                             else:
-                                bayeswavepostnode[ifo].set_dataseed(randomseed+event.event_id)
+                                bayeswavepostnode[ifo].set_dataseed(self.randomseed+event.event_id)
                 if self.config.has_option('condor','bayesline') or self.config.getboolean('analysis','roq'):
                     if gotdata and event.event_id not in self.prenodes.keys():
                         if prenode not in self.get_nodes():
