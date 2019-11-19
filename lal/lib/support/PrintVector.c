@@ -4,128 +4,35 @@
 #include <lal/LALDatatypes.h>
 #include <lal/PrintVector.h>
 
-#define TYPECODE Z
-#define TYPE COMPLEX16
-#define FMT "%i %g %g\n"
-#define ARG creal(vector->data[i]),cimag(vector->data[i])
-#include "PrintVector_source.c"
-#undef TYPECODE
-#undef TYPE
-#undef FMT
-#undef ARG
+#define CONCAT2x(a,b) a##b
+#define CONCAT2(a,b) CONCAT2x(a,b)
+#define CONCAT3x(a,b,c) a##b##c
+#define CONCAT3(a,b,c) CONCAT3x(a,b,c)
+#define STRINGx(a) #a
+#define STRING(a) STRINGx(a)
 
-#define TYPECODE C
-#define TYPE COMPLEX8
-#define FMT "%i %g %g\n"
-#define ARG crealf(vector->data[i]),cimagf(vector->data[i])
-#include "PrintVector_source.c"
-#undef TYPECODE
-#undef TYPE
-#undef FMT
-#undef ARG
+#define VTYPE CONCAT2(TYPE,Vector)
+#define FUNC CONCAT3(LAL,TYPECODE,PrintVector)
 
-#define TYPECODE D
-#define TYPE REAL8
-#define FMT "%i %g\n"
-#define ARG vector->data[i]
-#include "PrintVector_source.c"
-#undef TYPECODE
-#undef TYPE
-#undef FMT
-#undef ARG
 
-#define TYPECODE S
-#define TYPE REAL4
-#define FMT "%i %g\n"
-#define ARG vector->data[i]
-#include "PrintVector_source.c"
-#undef TYPECODE
-#undef TYPE
-#undef FMT
-#undef ARG
+void FUNC ( VTYPE *vector ) 
+{ 
+  int i;
+  static int filenum=0;
+  FILE *fp;
+  char fname[FILENAME_MAX];
 
-#define TYPECODE I2
-#define TYPE INT2
-#define FMT "%i %i\n"
-#define ARG vector->data[i]
-#include "PrintVector_source.c"
-#undef TYPECODE
-#undef TYPE
-#undef FMT
-#undef ARG
 
-#define TYPECODE I4
-#define TYPE INT4
-#define FMT "%i %i\n"
-#define ARG vector->data[i]
-#include "PrintVector_source.c"
-#undef TYPECODE
-#undef TYPE
-#undef FMT
-#undef ARG
+  if (vector==NULL) return;
 
-/* Note that LALI8PrintVector does a typecast to REAL8 and is thus
- * inaccurate for numbers >~ 1e15 
- */
-#define TYPECODE I8
-#define TYPE INT8
-#define FMT "%i %0.0f\n"
-#define ARG (REAL8)vector->data[i]
-#include "PrintVector_source.c"
-#undef TYPECODE
-#undef TYPE
-#undef FMT
-#undef ARG
+  /* open output file */
+  snprintf(fname, FILENAME_MAX, "%sPrintVector.%03d", STRING(TYPECODE), filenum++);
+  fp=LALFopen(fname,"w");
 
-#define TYPECODE U2
-#define TYPE UINT2
-#define FMT "%i %i\n"
-#define ARG vector->data[i]
-#include "PrintVector_source.c"
-#undef TYPECODE
-#undef TYPE
-#undef FMT
-#undef ARG
+  for (i=0;i<(int)vector->length;i++)
+    fprintf(fp,FMT,i,ARG);
 
-#define TYPECODE U4
-#define TYPE UINT4
-#define FMT "%i %i\n"
-#define ARG vector->data[i]
-#include "PrintVector_source.c"
-#undef TYPECODE
-#undef TYPE
-#undef FMT
-#undef ARG
+  LALFclose(fp);
 
-/* Note that LALU8PrintVector does a typecast to REAL8 and is thus
- * inaccurate for numbers >~ 1e15 
- */
-#define TYPECODE U8
-#define TYPE UINT8
-#define FMT "%i %0.0f\n"
-#define ARG (REAL8)vector->data[i]
-#include "PrintVector_source.c"
-#undef TYPECODE
-#undef TYPE
-#undef FMT
-#undef ARG
-
-#define TYPECODE CHAR
-#define TYPE CHAR
-#define FMT "%i %c\n"
-#define ARG vector->data[i]
-#include "PrintVector_source.c"
-#undef TYPECODE
-#undef TYPE
-#undef FMT
-#undef ARG
-
-#define TYPECODE
-#define TYPE REAL4
-#define FMT "%i %f\n"
-#define ARG vector->data[i]
-#include "PrintVector_source.c"
-#undef TYPECODE
-#undef TYPE
-#undef FMT
-#undef ARG
+  return;
+}
