@@ -135,14 +135,14 @@ def read_timeseries(source, channel, start=None, duration=None,
 
     # read from single frame
     if isinstance(source, string_types) and source.endswith('.gwf'):
-        out = ts_from_frame_file(source, channels, start=start,
-                                 duration=duration, datatype=datatype,
-                                 verbose=verbose)
+        out = _ts_from_frame_file(source, channels, start=start,
+                                  duration=duration, datatype=datatype,
+                                  verbose=verbose)
     # read from XLALCache
     elif isinstance(source, lal.Cache):
-        out = ts_from_cache(source, channels, start=start,
-                            duration=duration, datatype=datatype,
-                            verbose=verbose)
+        out = _ts_from_cache(source, channels, start=start,
+                             duration=duration, datatype=datatype,
+                             verbose=verbose)
     # otherwise barf
     else:
         raise ValueError("Cannot interpret source '%s'." % source)
@@ -154,15 +154,14 @@ def read_timeseries(source, channel, start=None, duration=None,
         return out
 
 
-def ts_from_cache(cache, channels, start=None, duration=None, datatype=None,
-                  verbose=False):
+def _ts_from_cache(cache, channels, start=None, duration=None, datatype=None,
+                   verbose=False):
     """Read a TimeSeries of channel data from a LAL Cache object
 
     @param cache
-        XLALCAche() containing list of GWF file paths
+        XLALCache() containing list of GWF file paths
     @param channels
-        string name of channel, e.g. 'L1:LDAS-STRAIN', or list of
-        channel names
+        list of channel names
     @param start
         LIGOTimeGPS start time for output TimeSeries
     @param duration
@@ -177,19 +176,18 @@ def ts_from_cache(cache, channels, start=None, duration=None, datatype=None,
     # open the cache into a stream
     stream = lalframe.FrCacheOpen(cache)
     # read the stream
-    return ts_from_stream(stream, channels, start=start, duration=duration,
-                          datatype=datatype, verbose=verbose)
+    return _ts_from_stream(stream, channels, start=start, duration=duration,
+                           datatype=datatype, verbose=verbose)
 
 
-def ts_from_frame_file(framefile, channels, start=None, duration=None,
-                       datatype=None, verbose=False):
+def _ts_from_frame_file(framefile, channels, start=None, duration=None,
+                        datatype=None, verbose=False):
     """Read a TimeSeries of channel data from a GWF-format framefile
 
     @param framefile
         path to GWF-format framefile to read
     @param channels
-        string name of channel, e.g. 'L1:LDAS-STRAIN', or list of
-        channel names
+        list of channel names
     @param start
         LIGOTimeGPS start time for output TimeSeries
     @param duration
@@ -206,19 +204,18 @@ def ts_from_frame_file(framefile, channels, start=None, duration=None,
     framefile = os.path.abspath(framefile)
     stream = lalframe.FrStreamOpen('', framefile)
     # read the stream
-    return ts_from_stream(stream, channels, start=start, duration=duration,
-                          datatype=datatype, verbose=verbose)
+    return _ts_from_stream(stream, channels, start=start, duration=duration,
+                           datatype=datatype, verbose=verbose)
 
 
-def ts_from_stream(stream, channels, start=None, duration=None, datatype=None,
-                   verbose=False):
+def _ts_from_stream(stream, channels, start=None, duration=None, datatype=None,
+                    verbose=False):
     """Read a TimeSeries of channel data from an open FrStream
 
     @param stream
         XLALFrStream() of data from which to read
     @param channels
-        string name of channel, e.g. 'L1:LDAS-STRAIN', or list of
-        channel names
+        list of channel names
     @param start
         LIGOTimeGPS start time for output TimeSeries
     @param duration
