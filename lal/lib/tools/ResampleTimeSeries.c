@@ -147,10 +147,7 @@ int XLALResampleREAL4TimeSeries( REAL4TimeSeries *series, REAL8 dt )
   }
 
   /* check that we are resampling by a power of two */
-  if ( ! ( resampleFactor == 0x1 || resampleFactor == 0x2 ||
-        resampleFactor == 0x4 || resampleFactor == 0x8 ||
-        resampleFactor == 0x10 || resampleFactor == 0x20 ||
-        resampleFactor == 0x40 || resampleFactor == 0x80 ) )
+  if ( resampleFactor & (resampleFactor - 1) )
     XLAL_ERROR( XLAL_EINVAL );
 
   if ( XLALLowPassREAL4TimeSeries( series, newNyquistFrequency,
@@ -198,10 +195,7 @@ int XLALResampleREAL8TimeSeries( REAL8TimeSeries *series, REAL8 dt )
   }
 
   /* check that we are resampling by a power of two */
-  if ( ! ( resampleFactor == 0x1 || resampleFactor == 0x2 ||
-        resampleFactor == 0x4 || resampleFactor == 0x8 ||
-        resampleFactor == 0x10 || resampleFactor == 0x20 ||
-        resampleFactor == 0x40 || resampleFactor == 0x80 ) )
+  if ( resampleFactor & (resampleFactor - 1) )
     XLAL_ERROR( XLAL_EINVAL );
 
   if ( XLALLowPassREAL8TimeSeries( series, newNyquistFrequency,
@@ -403,10 +397,7 @@ LALResampleREAL4TimeSeries(
   }
 
   /* check that we are resampling by a power of two */
-  if ( ! ( resampleFactor == 0x1 || resampleFactor == 0x2 ||
-        resampleFactor == 0x4 || resampleFactor == 0x8 ||
-        resampleFactor == 0x10 || resampleFactor == 0x20 ||
-        resampleFactor == 0x40 || resampleFactor == 0x80 ) )
+  if ( resampleFactor & (resampleFactor - 1) )
   {
     ABORT( status, RESAMPLETIMESERIESH_ELOG2, RESAMPLETIMESERIESH_MSGELOG2 );
   }
