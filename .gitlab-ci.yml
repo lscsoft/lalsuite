@@ -580,7 +580,6 @@ lalinference_testjob:
     - lalpulsar:rpm
     - lalinspiral:rpm
     - lalinference:rpm
-    - lalapps:rpm
   only:
     - schedules
     - web

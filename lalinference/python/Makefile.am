@@ -21,7 +21,6 @@ pybin_scripts = \
 	lalinference_pipe \
 	lalinference_pp_pipe \
 	lalinference_review_test \
-	lalinference_tiger_pipe \
 	cbcBayesBurstPostProc \
 	cbcBayesCombinePosteriors \
 	cbcBayesCompPos \

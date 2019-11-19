@@ -888,16 +888,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             raise Exception('Unknown engine {0}'.format(self.engine))
         return result
 
-    def create_frame_pfn_file(self):
-        """
-        Create a pegasus cache file name, uses inspiralutils
-        """
-        from lalapps import inspiralutils as iu
-        gpsstart=self.config.get('input','gps-start-time')
-        gpsend=self.config.get('input','gps-end-time')
-        pfnfile=iu.create_frame_pfn_file(self.frtypes,gpsstart,gpsend)
-        return pfnfile
-
     def get_required_data(self,times):
         """
         Calculate the data that will be needed to process all events

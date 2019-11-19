@@ -173,7 +173,7 @@ outputs:
         #- lalinference_pipe --help
         #- lalinference_pp_pipe --help
         - lalinference_review_test --help
-        #- lalinference_tiger_pipe --help
+
     about:
       home: https://wiki.ligo.org/Computing/DASWG/LALSuite
       doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinference/

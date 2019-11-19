@@ -5,7 +5,6 @@ from __future__ import print_function
 
 from lalinference import lalinference_pipe_utils as pipe_utils
 from lalinference.lalinference_pipe_utils import mkdirs
-from lalapps import inspiralutils
 from glue import pipeline
 import ConfigParser
 from optparse import OptionParser,OptionValueError
@@ -26,9 +25,6 @@ parser=OptionParser(usage)
 parser.add_option("-r","--run-path",default='./',action="store",type="string",help="Directory to run pipeline in (default: $PWD)",metavar="RUNDIR")
 parser.add_option("-p","--daglog-path",default=None,action="store",type="string",help="Path to directory to contain DAG log file. SHOULD BE LOCAL TO SUBMIT NODE",metavar="LOGDIR")
 parser.add_option("-I","--injections",default=None,action="store",type="string",help="Path to injection file, will bypass the prior-sampling stage",metavar="injections.xml")
-parser.add_option("-x", "--dax",action="store_true",default=False, help="Delete the ligo_data_find jobs and populate frame LFNs in the DAX")
-parser.add_option("-G", "--grid-site",action="store",type="string",metavar="SITE", help="Specify remote site in conjunction with --dax option. e.g. --grid-site=creamce for Bologna cluster.\
-Supported options are: creamce and local",default=None)
 parser.add_option('-N','--trials',action='store',type='int',metavar='NUM',help='Number of prior samples to analyse')
 
 
@@ -100,7 +96,7 @@ elif prior_cp.get('analysis','engine')=='lalinferencebambimpi':
 
 # Create a DAG to contain the other scripts
 outerdaglog=os.path.join(daglogdir,'lalinference_injection_test_'+str(uuid.uuid1())+'.log')
-outerdag=pipeline.CondorDAG(outerdaglog,dax=opts.dax)
+outerdag=pipeline.CondorDAG(outerdaglog)
 outerdag.set_dag_file(os.path.join(rundir,'priortest'))
 
 # Run code with prior sampling
@@ -112,7 +108,7 @@ print('%i\n'%(trig_time), file=tfile)
 tfile.close()
 prior_cp.set('input','gps-time-file',tfpath)
 
-priordag=pipe_utils.LALInferencePipelineDAG(prior_cp,dax=opts.dax,site=opts.grid_site)
+priordag=pipe_utils.LALInferencePipelineDAG(prior_cp)
 priordag.set_dag_file(os.path.join(priordir,'lalinference_priorsample'))
 priordagjob=pipeline.CondorDAGManJob(priordag.get_dag_file(),dir=priordir)
 priordagnode=pipeline.CondorDAGManNode(priordagjob)
@@ -149,7 +145,7 @@ prior2injnode.add_parent(priordagnode)
 #main_cp.set('input','injection-file',injfile)
 main_cp.set('input','gps-start-time',str(trig_time-1000))
 main_cp.set('input','gps-end-time',str(trig_time+1000))
-maindag=pipe_utils.LALInferencePipelineDAG(main_cp,dax=opts.dax,site=opts.grid_site)
+maindag=pipe_utils.LALInferencePipelineDAG(main_cp)
 maindag.set_dag_file(os.path.join(maindir,'lalinference_pipeline'))
 maindagjob=pipeline.CondorDAGManJob(maindag.get_dag_file(),dir=maindir)
 maindagnode=pipeline.CondorDAGManNode(maindagjob)
@@ -240,23 +236,7 @@ ppnode.add_parent(maindagnode)
 outerdag.add_node(ppnode)
 
 
-if(opts.dax):
-# Create a text file with the frames listed
-   pfnfile = outerdag.create_frame_pfn_file()
-   peg_frame_cache = inspiralutils.create_pegasus_cache_file(pfnfile)
-else:
-   peg_frame_cache = '/dev/null'
-
-import uuid
-execdir=os.path.join(daglogdir,'lalinference_pegasus_'+str(uuid.uuid1()))
 olddir=os.getcwd()
-if opts.grid_site is not None:
-    site='local,'+opts.grid_site
-else:
-    site=None
-# Create the DAX scripts
-if opts.dax:
-  dag.prepare_dax(tmp_exec_dir=execdir,grid_site=site,peg_frame_cache=peg_frame_cache)
 outerdag.write_sub_files()
 outerdag.write_dag()
 outerdag.write_script()
