@@ -99,4 +99,4 @@ def test_read_timeseries_error(inputs, message):
 
 
 if __name__ == '__main__':
-    pytest.main(args=[__file__] + sys.argv[1:])
+    sys.exit(pytest.main(args=[__file__] + sys.argv[1:]))
