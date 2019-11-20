@@ -2548,120 +2548,158 @@ SphHarmTimeSeries *XLALSimInspiralPrecessingNRSurModes(
 }
 
 /**
- * This function evaluates the NRSur7dq2 or NRSur7dq4 surrogate model returns
- * the precessing frame dynamics.
+ * NOT REVIEWED!
+ *
+ * This function evaluates the NRSur7dq2 or NRSur7dq4 surrogate model and
+ * returns the precessing frame dynamics.
  * Papers:
  *      NRSur7dq2: https://arxiv.org/abs/1705.07089
  *      NRSur7dq4: https://arxiv.org/abs/1905.09300
  *
- * The system is initialized at a time where the orbital frequency of the
- * waveform in the coprecessing frame (Eq.11 of
- * https://arxiv.org/abs/1705.07089) is pi * fRef. At this reference point, the
- * system is initialized in the coorbital frame, with the z-axis along the
- * principal eigenvector of the angular momentum operator acting on the
- * waveform, the x-axis along the line of separation from the lighter BH to the
- * heavier BH, and the y-axis completing the triad. The dynamics are returned
- * in this frame, which agrees with the LAL convention.
- *
  * Example usage:
- *   approxTag = 'NRSur7dq4'
- *   approxTag = lalsim.SimInspiralGetApproximantFromString(approximant)
- *   dictParams = lal.CreateDict()
- *   orbphase, quat0, quat1, quat2, quat3, chiAx, chiAy, \
- *       chiAz, chiBx, chiBy, chiBz = lalsim.PrecessingNRSurDynamics(dt,
- *       m1_kg, m2_kg, f_low, f_ref, chiA0[0], chiA0[1], chiA0[2], \
- *       chiB0[0], chiB0[1], chiB0[2], dictParams, approxTag)
+ * t_dynamics, quat0, quat1, quat2, quat3, orbphase, chiAx, chiAy, chiAz,
+ *      chiBx, chiBy, chiBz = lalsim.PrecessingNRSurDynamics(
+ *      q, chiA0x, chiA0y, chiA0z, chiB0x, chiB0y, chiB0z,
+ *      omegaRef_dimless, init_quat0, init_quat1, init_quat2, init_quat3,
+ *      init_orbphase, LALparams, approxTag)
  *
- * Extrapolation options are passed through dictParams:
- * The surrogate models are trained on the following ranges.
- *   NRSur7dq2: q <= 2, |chi_1|, |chi_2| <= 0.8.
- *   NRSur7dq4: q <= 4, |chi_1|, |chi_2| <= 0.8.
- *   If you want a guarantee of accuracy you should stick to the above ranges.
+ * INPUTS:
+ *      q
+ *          mass ratio, mA/mB >= 1.
+ *      chiA0x
+ *      chiA0y
+ *      chiA0z
+ *          spin of the heavier BH at the reference epoch, in the coorbital
+ *          frame, as defined in the above papers. This agrees with the LAL
+ *          convention.
+ *      chiB0x
+ *      chiB0y
+ *      chiB0z
+ *          spin of the lighter BH at the reference epoch, in the coorbital
+ *          frame.
+ *      omegaRef_dimless
+ *          reference dimensionless orbital frequency in the coprecessing
+ *          frame, this is used to set the reference epoch. The coprecessing
+ *          frame is defined in the above papers.
+ *      init_quat0
+ *      init_quat1
+ *      init_quat2
+ *      init_quat3
+ *          coprecessing frame quaternion at the reference epoch. To follow
+ *          the LAL convention this should be [1, 0, 0, 0], but the surrogate
+ *          allows arbitrary unit quaternions.
+ *      init_orbphase
+ *          orbital phase in the coprecessing frame at the reference epoch. To
+ *          follow the LAL convention this should be 0, but the surrogate
+ *          allows arbitrary initial orbital phase.
+ *      LALparams
+ *          LAL dictionary containing additional parameters, if required.
+ *          Initialized with: LALparams = lal.CreateDict()
  *
- *   We allow extrapolation to the following ranges, but with a warning:
- *   NRSur7dq2: q <= 3, |chi_1|, |chi_2| <= 1.
- *   NRSur7dq4: q <= 6, |chi_1|, |chi_2| <= 1.
- *   We expect the models to be reasonable when extrapolated to these ranges.
+ *          Extrapolation options:
+ *          The surrogate models are trained on the following ranges:
+ *          NRSur7dq2: q <= 2, |chi_1|, |chi_2| <= 0.8.
+ *          NRSur7dq4: q <= 4, |chi_1|, |chi_2| <= 0.8.
+ *          If you want a guarantee of accuracy you should stick to the above
+ *          ranges.
  *
- *   Beyond the above ranges, we raise an error. If you want to extrapolate
- *   beyond these limits you can specify unlimited_extrapolation = 1 in your
- *   dictParams as follows:
- *       # USE AT YOUR OWN RISK!!
- *       lal.DictInsertUINT4Value(dictParams, "unlimited_extrapolation", 1)
+ *          We allow extrapolation to the following ranges, but with a warning:
+ *          NRSur7dq2: q <= 3.01, |chi_1|, |chi_2| <= 1.
+ *          NRSur7dq4: q <= 6.01, |chi_1|, |chi_2| <= 1.
+ *          We expect the models to be reasonable when extrapolated to these
+ *          ranges.
+ *
+ *          Beyond the above ranges, we raise an error. If you want to
+ *          extrapolate beyond these limits you can specify
+ *          unlimited_extrapolation = 1 in your LALparams as follows:
+ *              USE AT YOUR OWN RISK!!
+ *              lal.DictInsertUINT4Value(LALparams,"unlimited_extrapolation",1)
+ *      approxTag
+ *          LAL object specifying the surrogate model to use. Example:
+ *          approxTag = lalsim.SimInspiralGetApproximantFromString('NRSur7dq4')
+ * OUTPUTS:
+ *      t_dynamics
+ *           time values at which the dynamics are returned. These are the
+ *           dynamics time nodes as described in the above papers and are
+ *           nonuniform and sparse.
+ *      quat0
+ *      quat1
+ *      quat2
+ *      quat3
+ *           time series of coprecessing frame quaternions. These are used to
+ *           transform between the inertial frame and the coprecessing frames.
+ *      orbphase
+ *           orbital phase time series in the coprecessing frame. This is used
+ *           to transform between the coprecessing and the coorbital frames.
+ *      chiAx
+ *      chiAy
+ *      chiAz
+ *           time series of spin of the heavier BH in the coprecessing frame.
+ *           For convenience for the main use case with surrogate remnant fits,
+ *           these are in coprecessing frame rather then the reference frame in
+ *           which the input spins are specified.
+ *      chiBx
+ *      chiBy
+ *      chiBz
+ *           time series of spin of the heavier BH in the coprecessing frame.
  */
 int XLALPrecessingNRSurDynamics(
-        gsl_vector **orbphase,   /**< Output: Time series of orbital phase. */
-        gsl_vector **copr_quat0, /**< Output: Time series of 0th index of coprecessing frame quaternion. */
-        gsl_vector **copr_quat1, /**< Output: Time series of 1th index of coprecessing frame quaternion. */
-        gsl_vector **copr_quat2, /**< Output: Time series of 2nd index of coprecessing frame quaternion. */
-        gsl_vector **copr_quat3, /**< Output: Time series of 3rd index of coprecessing frame quaternion. */
-        gsl_vector **chi1x,      /**< Output: Time series of x-comp of spin of Bh1. */
-        gsl_vector **chi1y,      /**< Output: Time series of y-comp of spin of Bh1. */
-        gsl_vector **chi1z,      /**< Output: Time series of z-comp of spin of Bh1. */
-        gsl_vector **chi2x,      /**< Output: Time series of x-comp of spin of Bh2. */
-        gsl_vector **chi2y,      /**< Output: Time series of y-comp of spin of Bh2. */
-        gsl_vector **chi2z,      /**< Output: Time series of z-comp of spin of Bh2. */
-        REAL8 deltaT,            /**< sampling interval (s) */
-        REAL8 m1,                /**< mass of companion 1 (kg) */
-        REAL8 m2,                /**< mass of companion 2 (kg) */
-        REAL8 fMin,              /**< start GW frequency (Hz) */
-        REAL8 fRef,              /**< reference GW frequency (Hz) */
-        REAL8 s1x,               /**< initial value of S1x */
-        REAL8 s1y,               /**< initial value of S1y */
-        REAL8 s1z,               /**< initial value of S1z */
-        REAL8 s2x,               /**< initial value of S2x */
-
-        REAL8 s2y,               /**< initial value of S2y */
-        REAL8 s2z,               /**< initial value of S2z */
-        LALDict* LALparams,      /**< Dict with extra parameters */
-        Approximant approximant  /**< approximant (NRSur7dq2 or NRSur7dq4) */
+        gsl_vector **t_dynamics, /**< Output: Time array at which the dynamics are returned. */
+        gsl_vector **quat0,      /**< Output: Time series of 0th index of coprecessing frame quaternion. */
+        gsl_vector **quat1,      /**< Output: Time series of 1st index of coprecessing frame quaternion. */
+        gsl_vector **quat2,      /**< Output: Time series of 2nd index of coprecessing frame quaternion. */
+        gsl_vector **quat3,      /**< Output: Time series of 3rd index of coprecessing frame quaternion. */
+        gsl_vector **orbphase,   /**< Output: Time series of orbital phase in the coprecessing frame. */
+        gsl_vector **chiAx,      /**< Output: Time series of x-comp of dimensionless spin of BhA in the coprecessing frame. */
+        gsl_vector **chiAy,      /**< Output: Time series of y-comp of dimensionless spin of BhA in the coprecessing frame. */
+        gsl_vector **chiAz,      /**< Output: Time series of z-comp of dimensionless spin of BhA in the coprecessing frame. */
+        gsl_vector **chiBx,      /**< Output: Time series of x-comp of dimensionless spin of BhB in the coprecessing frame. */
+        gsl_vector **chiBy,      /**< Output: Time series of y-comp of dimensionless spin of BhB in the coprecessing frame. */
+        gsl_vector **chiBz,      /**< Output: Time series of z-comp of dimensionless spin of BhB in the coprecessing frame. */
+        REAL8 q,                 /**< mass ratio m1/m2 >= 1. */
+        REAL8 chiA0x,            /**< x-comp of dimensionless spin of BhA in the coorbital frame at the reference epoch. */
+        REAL8 chiA0y,            /**< y-comp of dimensionless spin of BhA in the coorbital frame at the reference epoch. */
+        REAL8 chiA0z,            /**< z-comp of dimensionless spin of BhA in the coorbital frame at the reference epoch. */
+        REAL8 chiB0x,            /**< x-comp of dimensionless spin of BhB in the coorbital frame at the reference epoch. */
+        REAL8 chiB0y,            /**< y-comp of dimensionless spin of BhB in the coorbital frame at the reference epoch. */
+        REAL8 chiB0z,            /**< z-comp of dimensionless spin of BhB in the coorbital frame at the reference epoch. */
+        REAL8 omegaRef_dimless,  /**< Dimensionless orbital frequency (rad/M) in the coprecessing frame at the reference epoch.*/
+        REAL8 init_quat0,        /**< 0th comp of the coprecessing frame quaternion at the reference epoch.*/
+        REAL8 init_quat1,        /**< 1st comp of the coprecessing frame quaternion at the reference epoch.*/
+        REAL8 init_quat2,        /**< 2nd comp of the coprecessing frame quaternion at the reference epoch.*/
+        REAL8 init_quat3,        /**< 3rd comp of the coprecessing frame quaternion at the reference epoch.*/
+        REAL8 init_orbphase,     /**< orbital phase in the coprecessing frame at the reference epoch. */
+        LALDict* LALparams,      /**< Dict with extra parameters. */
+        Approximant approximant  /**< approximant (NRSur7dq2 or NRSur7dq4). */
 ) {
 
     // Load surrogate data if needed. If not, just access the loaded data.
     PrecessingNRSurData *__sur_data = PrecessingNRSur_LoadData(approximant);
 
-    // Parameters
-    REAL8 massA = m1 / LAL_MSUN_SI;
-    REAL8 massB = m2 / LAL_MSUN_SI;
-    REAL8 Mtot = massA+massB;
-    REAL8 Mtot_sec = Mtot * LAL_MTSUN_SI; /* Total mass in seconds */
-    REAL8 q = massA / massB;
+    // Input spins at reference epoch
+    // The input values are in the coorbital frame at omegaRef_dimless, but
+    // the surrogate wants them in the coprecessing frame, so we transform
+    // from the coorbital frame to the coprecessing frame here.
     REAL8 chiA0[3], chiB0[3];
-    chiA0[0] = s1x;
-    chiA0[1] = s1y;
-    chiA0[2] = s1z;
-    chiB0[0] = s2x;
-    chiB0[1] = s2y;
-    chiB0[2] = s2z;
+    chiA0[0] = chiA0x * cos(init_orbphase) - chiA0y * sin(init_orbphase);
+    chiA0[1] = chiA0y * cos(init_orbphase) + chiA0x * sin(init_orbphase);
+    chiA0[2] = chiA0z;
+    chiB0[0] = chiB0x * cos(init_orbphase) - chiB0y * sin(init_orbphase);
+    chiB0[1] = chiB0y * cos(init_orbphase) + chiB0x * sin(init_orbphase);
+    chiB0[2] = chiB0z;
 
-    REAL8 omegaMin_dimless;
-    REAL8 omegaRef_dimless;
-    int ret = get_dimless_omega(&omegaMin_dimless, &omegaRef_dimless,
-        fMin, fRef, Mtot_sec);
-    if(ret != XLAL_SUCCESS) {
-        XLAL_ERROR(XLAL_EFUNC, "Failed to process fMin/fRef");
-    }
-
-    // When generating the dynamics take the inertial frame to be aligned with
-    // the coorbital frame at the reference point. This means that the
-    // quaternion from inertial frame to coprecessing frame is identity, and
-    // the init_orbphase = 0 between the coprecessing frame and the coorbital
-    // frame at the reference point. This agrees with the LAL convention.
+    // Coprecessing frame quaternion at reference epoch
     REAL8 init_quat[4];
-    init_quat[0] = 1.0;
-    init_quat[1] = 0.0;
-    init_quat[2] = 0.0;
-    init_quat[3] = 0.0;
-    REAL8 init_orbphase = 0;
+    init_quat[0] = init_quat0;
+    init_quat[1] = init_quat1;
+    init_quat[2] = init_quat2;
+    init_quat[3] = init_quat3;
 
-    // time arrays
-    gsl_vector *t_ds = __sur_data->t_ds;
-    int n_ds = t_ds->size;
-
-    // Get dynamics
+    // Get surrogate dynamics. The spins are returned in the coprecessing
+    // frame.
+    int n_ds = (__sur_data->t_ds)->size;
     REAL8 *dynamics_data = XLALCalloc(n_ds * 11, sizeof(REAL8));
-
-    PrecessingNRSur_IntegrateDynamics(dynamics_data, q,
+    int ret = PrecessingNRSur_IntegrateDynamics(dynamics_data, q,
             chiA0, chiB0, omegaRef_dimless, init_orbphase, init_quat,
             LALparams, __sur_data->PrecessingNRSurVersion);
     if(ret != XLAL_SUCCESS) {
@@ -2680,68 +2718,29 @@ int XLALPrecessingNRSurDynamics(
         }
     }
 
+    // We want to make a copy as *t_dynamics gets destroyed after it is
+    // returned by SWIG. So, if we just pass __sur_data->t_ds, it fails
+    // upon a second call.
+    *t_dynamics = gsl_vector_alloc(n_ds);
+    gsl_vector_memcpy(*t_dynamics, __sur_data->t_ds);
+
+    *quat0 = dynamics[0];
+    *quat1 = dynamics[1];
+    *quat2 = dynamics[2];
+    *quat3 = dynamics[3];
+    *orbphase = dynamics[4];
+    *chiAx = dynamics[5];       // These are in the coprecessing frame
+    *chiAy = dynamics[6];
+    *chiAz = dynamics[7];
+    *chiBx = dynamics[8];
+    *chiBy = dynamics[9];
+    *chiBz = dynamics[10];
+
     XLALFree(dynamics_data);
-
-    // Setup output times
-    REAL8 deltaT_dimless = deltaT / Mtot_sec;
-    REAL8 t0 = gsl_vector_get(t_ds, 0);
-    REAL8 start_freq = PrecessingNRSur_StartFrequency(m1, m2,
-            s1x, s1y, s1z, s2x, s2y, s2z, __sur_data);
-    if (fMin >= start_freq) {
-        t0 = PrecessingNRSur_get_t_ref(omegaMin_dimless, q, chiA0, chiB0,
-                init_quat, init_orbphase, __sur_data);
-    } else if (fMin > 0) {
-        XLAL_ERROR_REAL8(XLAL_EDOM, "fMin should be 0 or >= %0.8f for this configuration, got %0.8f", start_freq, fMin);
-    }
-    REAL8 tf = gsl_vector_get(t_ds, t_ds->size - 1);
-    int nt = (int) ceil((tf - t0) / deltaT_dimless);
-    gsl_vector *output_times = gsl_vector_alloc(nt);
-    for (j=0; j<nt; j++) {
-        gsl_vector_set(output_times, j, t0 + deltaT_dimless*j);
-    }
-
-    // Interpolate onto the output times
-    // NOTE: The spins are currently in the coprecessing frame, but these
-    // vectors will be overwritten below with the spins in the inertial frame
-    gsl_vector *quat[4], *chiA[3], *chiB[3];
-    quat[0] = spline_array_interp(output_times, t_ds, dynamics[0]);
-    quat[1] = spline_array_interp(output_times, t_ds, dynamics[1]);
-    quat[2] = spline_array_interp(output_times, t_ds, dynamics[2]);
-    quat[3] = spline_array_interp(output_times, t_ds, dynamics[3]);
-    *orbphase = spline_array_interp(output_times, t_ds, dynamics[4]);
-    chiA[0] = spline_array_interp(output_times, t_ds, dynamics[5]);
-    chiA[1] = spline_array_interp(output_times, t_ds, dynamics[6]);
-    chiA[2] = spline_array_interp(output_times, t_ds, dynamics[7]);
-    chiB[0] = spline_array_interp(output_times, t_ds, dynamics[8]);
-    chiB[1] = spline_array_interp(output_times, t_ds, dynamics[9]);
-    chiB[2] = spline_array_interp(output_times, t_ds, dynamics[10]);
-
-    for (j=0; j<11; j++) {
-        gsl_vector_free(dynamics[j]);
-    }
-
-    // Normalize spins after interpolation
-    REAL8 normA = sqrt(chiA0[0]*chiA0[0] + chiA0[1]*chiA0[1] + chiA0[2]*chiA0[2]);
-    REAL8 normB = sqrt(chiB0[0]*chiB0[0] + chiB0[1]*chiB0[1] + chiB0[2]*chiB0[2]);
-    PrecessingNRSur_normalize_results(normA, normB, quat, chiA, chiB);
-
-    // Transform spins from coprecessing frame to inertial frame
-    transformTimeDependentVector(chiA, quat);
-    transformTimeDependentVector(chiB, quat);
-
-    *copr_quat0 = quat[0];
-    *copr_quat1 = quat[1];
-    *copr_quat2 = quat[2];
-    *copr_quat3 = quat[3];
-    *chi1x = chiA[0];
-    *chi1y = chiA[1];
-    *chi1z = chiA[2];
-    *chi2x = chiB[0];
-    *chi2y = chiB[1];
-    *chi2z = chiB[2];
 
     return XLAL_SUCCESS;
 }
 
 /** @} */
 /** @} */
+
