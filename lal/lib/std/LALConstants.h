@@ -192,14 +192,55 @@ extern "C" {
  * @name Exact physical constants
  * The following physical constants are defined to have exact values.
  * The dimensions in SI units are as shown.
- * @see http://dx.doi.org/10.1103/RevModPhys.84.1527
+ * @see 2018 CODATA adjustment: http://physics.nist.gov/constants
  */
 /** @{ */
-#define LAL_C_SI 299792458e0 /**< Speed of light in vacuo, m s^-1 */
-#define LAL_EPSILON0_SI 8.854187817620389850536563031710750261e-12 /**< Permittivity of free space, C^2 N^-1 m^-2 */
-#define LAL_MU0_SI 1.256637061435917295385057353311801154e-6 /**< Permeability of free space, N A^-2 */
+#define LAL_C_SI 299792458e0 /**< Speed of light in vacuum, m s^-1 */
+#define LAL_H_SI 6.62607015e-34 /**< Planck constant, J s */
+#define LAL_QE_SI 1.602176634e-19 /**< Electron charge, C */
+#define LAL_MOL 6.02214076e+23 /**< Avogadro constant, dimensionless */
+#define LAL_K_SI 1.380649e-23 /**< Boltzmann constant, J K^-1 */
 #define LAL_GEARTH_SI 9.80665 /**< Standard gravity, m s^-2 */
 #define LAL_PATM_SI 101325e0 /**< Standard atmosphere, Pa */
+
+/**
+ * @brief Reduced Planck constant, J s
+ * @details
+ * LAL_HBAR_SI = LAL_H_SI / (2 * LAL_PI)
+ */
+#define LAL_HBAR_SI 1.054571817646156391262428003302280745e-34
+
+/**
+ * @brief  Molar gas constant, J mol^-1 K^-1
+ * @details
+ * LAL_R_SI = LAL_MOL * LAL_K_SI
+ */
+#define LAL_R_SI 8.31446261815324
+
+/**
+ * @brief Stefan-Boltzmann constant, W m^-2 K^-4
+ * @details
+ * LAL_SIGMA_SI = ((LAL_PI * LAL_PI * LAL_K_SI * LAL_K_SI * LAL_K_SI * LAL_K_SI) / (60 * LAL_HBAR_SI * LAL_HBAR_SI * LAL_HBAR_SI * LAL_C_SI * LAL_C_SI))
+ */
+#define LAL_SIGMA_SI 5.670374419184429453970996731889230876e-8
+
+/**
+ * @brief Second radiation constant, m K
+ * @details
+ * LAL_C2RAD_SI = (LAL_H_SI * LAL_C_SI / LAL_K_SI)
+ */
+#define LAL_C2RAD_SI 1.438776877503933802146671601543911595e-2
+
+/**
+ * @brief Wien displacement law constant, m K
+ * @details
+ * LAL_BWIEN_SI = (LAL_C2RAD_SI / X)
+ *
+ * where the factor X satisfies
+ *
+ * X * exp(X) = 5 * (exp(X) - 1)
+ */
+#define LAL_BWIEN_SI 2.897771955185172661478605448092884727e-3
 /** @} */
 
 /**
@@ -207,16 +248,14 @@ extern "C" {
  * These physical constants are given to the precision
  * to which they are known.  Other physical constants
  * derived from these are given in the next section.
- * @see http://dx.doi.org/10.1103/RevModPhys.84.1527
+ * @see 2018 CODATA adjustment: http://physics.nist.gov/constants
  */
 /** @{ */
-#define LAL_QE_SI 1.60217656535e-19 /**< Electron charge, C */
-#define LAL_ALPHA 0.007297352569824 /**< Fine structure constant, dimensionless */
-#define LAL_RYD_SI 10973731.56853955 /**< Rydberg constant, m^-1 */
-#define LAL_MP_ME 1836.1526724575 /**< Proton-electron mass ratio, dimensionless */
-#define LAL_MP_AMU 1.00727646681290 /**< Proton molar mass, kg mol^-1 */
-#define LAL_R_SI 8.314462175 /**< Molar gas constant, J mol^-1 K^-1 */
-#define LAL_G_SI 6.67384e-11 /**< Gravitational constant, N m^2 kg^-2 */
+#define LAL_ALPHA 0.0072973525693 /**< Fine structure constant, dimensionless */
+#define LAL_RYD_SI 10973731.568160 /**< Rydberg constant, m^-1 */
+#define LAL_MP_ME 1836.15267343 /**< Proton-electron mass ratio, dimensionless */
+#define LAL_ME_AMU 0.000548579909065 /**< Electron mass, atomic mass units */
+#define LAL_G_SI 6.67430e-11 /**< Gravitational constant, N m^2 kg^-2 */
 /** @} */
 
 /**
@@ -230,148 +269,116 @@ extern "C" {
 /** @{ */
 
 /**
- * @brief Reduced Planck constant, J s
+ * @brief Permeability of free space, N A^-2
  * @details
- * LAL_HBAR_SI = ((LAL_QE_SI * LAL_QE_SI) / (4 * LAL_PI * LAL_EPSILON0_SI * LAL_C_SI * LAL_ALPHA))
+ * LAL_MU0_SI = 4 * LAL_PI * LAL_ALPHA * LAL_HBAR_SI / (LAL_QE_SI * LAL_QE_SI * LAL_C_SI)
  */
-#define LAL_HBAR_SI 1.054571726620627613731476059278130752e-34
+#define LAL_MU0_SI 1.256637062123837330602573817851770477e-6
 
 /**
- * @brief Planck constant, J s
+ * @brief Permittivity of free space, C^2 N^-1 m^-2
  * @details
- * LAL_H_SI = LAL_TWOPI * LAL_HBAR_SI
+ * LAL_EPSILON0_SI = 1 / (LAL_MU0_SI * LAL_C_SI * LAL_C_SI)
  */
-#define LAL_H_SI 6.626069578069735006764896984166285474e-34
+#define LAL_EPSILON0_SI 8.854187812773347391812964575762341677e-12
 
 /**
  * @brief Planck mass, kg
  * @details
  * LAL_MPL_SI =	sqrt(LAL_HBAR_SI * LAL_C_SI / LAL_G_SI)
  */
-#define LAL_MPL_SI 2.176509253770671995475098872904844844e-8
+#define LAL_MPL_SI 2.176434342717898213927914919024147041e-8
 
 /**
  * @brief Planck length, m
  * @details
  * LAL_LPL_SI =	(LAL_HBAR_SI / (LAL_MPL_SI * LAL_C_SI))
  */
-#define LAL_LPL_SI 1.616199256687500316071519963813388523e-35
+#define LAL_LPL_SI 1.616255024423705286500047697249314157e-35
 
 /**
  * @brief Planck time, s
  * @details
  * LAL_TPL_SI =	(LAL_LPL_SI / LAL_C_SI)
  */
-#define LAL_TPL_SI 5.391060427168919359777623104225619054e-44
+#define LAL_TPL_SI 5.391246448313603961644851309932934193e-44
 
 /**
  * @brief Planck luminosity, J s^-1
  * @details
  * LAL_LUMPL_SI = (LAL_C_SI * LAL_C_SI * LAL_C_SI * LAL_C_SI * LAL_C_SI) / (LAL_G_SI)
  */
-#define LAL_LUMPL_SI 3.628504984913064522721519179529402840e52
+#define LAL_LUMPL_SI 3.628254904411280064474144638555430509e52
+
+/**
+ * @brief Proton mass, atomic mass units
+ * @details
+ * LAL_MP_AMU = (LAL_ME_AMU * LAL_MP_ME)
+ */
+#define LAL_MP_AMU 1.00727646661968604164295
 
 /**
  * @brief Electron mass, kg
  * @details
  * LAL_ME_SI = ((2 * LAL_RYD_SI * LAL_H_SI) / (LAL_C_SI * LAL_ALPHA * LAL_ALPHA))
  */
-#define LAL_ME_SI 9.109382914246707433083507609082565768e-31
+#define LAL_ME_SI 9.109383701517728819842163772087735080e-31
 
 /**
  * @brief Proton mass, kg
  * @details
  * LAL_MP_SI = (LAL_ME_SI * LAL_MP_ME)
  */
-#define LAL_MP_SI 1.672621778243278140372641234618498933e-27
+#define LAL_MP_SI 1.672621923684144692109494784075478798e-27
 
 /**
  * @brief Atomic mass uint, kg
  * @details
- * LAL_AMU_SI = (LAL_MP_SI / LAL_MP_AMU)
+ * LAL_AMU_SI = (LAL_ME_SI / LAL_ME_AMU)
  */
-#define LAL_AMU_SI 1.660538921886641249862170970849963401e-27
+#define LAL_AMU_SI 1.660539066595378801332508797951914123e-27
 
 /**
  * @brief Bohr radius, m
  * @details
  * LAL_AB_SI = (LAL_ALPHA / (4 * LAL_PI * LAL_RYD_SI))
  */
-#define LAL_AB_SI 5.291772109231583273539324387807930183e-11
+#define LAL_AB_SI 5.291772109034624983506063293620795401e-11
 
 /**
  * @brief Electron Compton wavelength, m
  * @details
  * LAL_LAMBDAE_SI = (2 * LAL_PI * LAL_ALPHA * LAL_AB_SI)
  */
-#define LAL_LAMBDAE_SI 2.426310238942902554172796303895891665e-12
+#define LAL_LAMBDAE_SI 2.426310238678370231942278247906312873e-12
 
 /**
  * @brief Classical electron radius, m
  * @details
  * LAL_RE_SI = (LAL_ALPHA * LAL_ALPHA * LAL_AB_SI)
  */
-#define LAL_RE_SI 2.817940326717505398482365681324267402e-15
+#define LAL_RE_SI 2.817940326207927528347087481623789683e-15
 
 /**
  * @brief Bohr magneton, J T^-1
- * LAL_MUB_SI = (LAL_LAMBDAE_SI * LAL_C_SI * LAL_QE_SI / (4 * LAL_PI))
  * @details
+ * LAL_MUB_SI = (LAL_LAMBDAE_SI * LAL_C_SI * LAL_QE_SI / (4 * LAL_PI))
  */
-#define LAL_MUB_SI 9.274009681982817185200341325664841126e-24
+#define LAL_MUB_SI 9.274010078344114556082608495144137435e-24
 
 /**
  * @brief Nuclear magneton, J T^-1
  * @details
  * LAL_MUN_SI =	(LAL_MUB_SI / LAL_MP_ME)
  */
-#define LAL_MUN_SI 5.050783532924044193470852682533321512e-27
-
-/**
- * @brief Avogadro constant, dimensionless
- * @details
- * LAL_MOL = (0.001 * LAL_MP_AMU / LAL_MP_SI)
- */
-#define LAL_MOL 6.022141286901230737569270163033480013e23
-
-/**
- * @brief Boltzmann constant, J K^-1
- * @details
- * LAL_K_SI = (LAL_R_SI / LAL_MOL)
- */
-#define LAL_K_SI 1.380648805614175830977374450051504830e-23
-
-/**
- * @brief Stefan-Boltzmann constant, W m^-2 K^-4
- * @details
- * LAL_SIGMA_SI = ((LAL_PI * LAL_PI * LAL_K_SI * LAL_K_SI * LAL_K_SI * LAL_K_SI) / (60 * LAL_HBAR_SI * LAL_HBAR_SI * LAL_HBAR_SI * LAL_C_SI * LAL_C_SI))
- */
-#define LAL_SIGMA_SI 5.670372694104351560189523450147062255e-8
-
-/**
- * @brief Second radiation constant, m K
- * @details
- * LAL_C2RAD_SI = (LAL_H_SI * LAL_C_SI / LAL_K_SI)
- */
-#define LAL_C2RAD_SI 1.438776955885524212375359308606994213e-2
-
-/**
- * @brief Wien displacement law constant, m K
- * @details
- * LAL_BWIEN_SI = (LAL_C2RAD_SI / X)
- *
- * where the factor X satisfies
- *
- * X * exp(X) = 5 * (exp(X) - 1)
- */
-#define LAL_BWIEN_SI 2.897772113049799237638435257604006684e-3
+#define LAL_MUN_SI 5.050783746114056140501321131006282803e-27
 /** @} */
 
 /**
  * @name Exact astrophysical parameters
  * The following astrophysical constants are defined to have exact values.
  * The dimensions in SI units are as shown.
- * @see http://asa.usno.navy.mil/static/files/2015/Astronomical_Constants_2015.pdf
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */
 /** @{ */
 #define LAL_SOL_SID 1.002737909350795 /**< Ratio of mean solar day to sidereal day, dimensionless */
@@ -433,7 +440,7 @@ extern "C" {
 
 /**
  * @brief Geocentric gravitational constant, m^3 s^-2 (TCB)
- * @see http://asa.usno.navy.mil/static/files/2015/Astronomical_Constants_2015.pdf
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */
 #define LAL_GMEARTH_SI 3.986004418e+14
 
@@ -451,7 +458,7 @@ extern "C" {
 
 /**
  * @brief Solar mass parameter, m^3 s^-2 (TCB)
- * @see http://asa.usno.navy.mil/static/files/2015/Astronomical_Constants_2015.pdf
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */
 #define LAL_GMSUN_SI 1.32712442099e+20
 
@@ -496,14 +503,14 @@ extern "C" {
  * @details
  * LAL_MEARTH_SI = LAL_GMEARTH_SI / LAL_G_SI
  */
-#define LAL_MEARTH_SI 5.972580130779281493113409970871342436e24
+#define LAL_MEARTH_SI 5.972168494074284943739418365970963247e24
 
 /**
  * @brief Solar mass, kg
  * @details
  * LAL_MSUN_SI = LAL_GMSUN_SI / LAL_G_SI
  */
-#define LAL_MSUN_SI 1.988546954961461467461011951140572744e30
+#define LAL_MSUN_SI 1.988409902147041637325262574352366540e30
 
 /**
  * @brief Geometrized solar mass, m
@@ -569,7 +576,7 @@ extern "C" {
  * @details
  * LAL_RHOCFAC_SI = 3 * (LAL_H0FAC_SI * LAL_C_SI)^2 / (8 * LAL_PI * LAL_G_SI)
  */
-#define LAL_RHOCFAC_SI 1.688285614132491133606558221644153036e-9
+#define LAL_RHOCFAC_SI 1.688169255655572064052978218230767915e-9
 
 /**
  * @brief Approximate critical energy density, J m^-3
@@ -604,14 +611,14 @@ extern "C" {
  * where zeta is the Riemann zeta function and zeta(3) is Apery's constant.
  * @see http://oeis.org/A002117
  */
-#define LAL_NCMB_SI 4.107177389981626568308052789272762276e8
+#define LAL_NCMB_SI 4.107178061233267795913602167900672966e8
 
 /**
  * @brief Entropy density of cosmic microwave background radiation, J K^-1 m^-3
  * @details
  * LAL_SCMB_SI = 4 * LAL_PI^2 * LAL_K_SI * (LAL_K_SI * LAL_TCMB_SI / (LAL_C_SI * LAL_HBAR_SI))^3 / 45
  */
-#define LAL_SCMB_SI 2.042295723200401840880167645233175756e-14
+#define LAL_SCMB_SI 2.042296344521760298284258925842980552e-14
 /** @} */
 
 /** @} */
