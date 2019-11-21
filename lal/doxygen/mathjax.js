@@ -1,8 +1,1 @@
-MathJax.Hub.Config({
-    TeX: {
-        // Enable automatic equation numbering
-        equationNumbers: {
-            autoNumber: "AMS"
-        }
-    }
-});
+../../doxygen/mathjax.js
