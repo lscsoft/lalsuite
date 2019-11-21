@@ -5443,6 +5443,8 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case SEOBNRv3_pert:
     case SEOBNRv3_opt:
     case SEOBNRv3_opt_rk4:
+    case SEOBNRv4P:
+    case SEOBNRv4PHM:
       spin_freq=LAL_SIM_INSPIRAL_SPINS_FLOW;
       break;
     case SpinTaylor:
@@ -5461,6 +5463,7 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case SpinDominatedWf:
     case NRSur4d2s:
     case NRSur7dq2:
+    case NRSur7dq4:
     case SpinTaylorF2:
       spin_freq=LAL_SIM_INSPIRAL_SPINS_F_REF;
       break;
