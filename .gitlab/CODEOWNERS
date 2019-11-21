@@ -27,6 +27,7 @@ lalapps/src/string/              @kipp.cannon @florent-robinet @imene.belahcene 
 conda/               @adam-mercer @duncanmmacleod
 debian/              @adam-mercer @duncanmmacleod
 docker/              @adam-mercer @duncanmmacleod
+doxygen/             @adam-mercer @karl-wette @duncanmmacleod
 gnuscripts/          @adam-mercer @karl-wette @duncanmmacleod
 *.spec.in            @adam-mercer @duncanmmacleod
 *.pc.in              @adam-mercer @duncanmmacleod
