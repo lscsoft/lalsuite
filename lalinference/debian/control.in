@@ -113,7 +113,6 @@ Depends:
   python-gwdatafind,
   python-h5py,
   python-matplotlib (>= 1.2.0),
-  python-pkg-resources,
   python-scipy (>= 0.8),
   python-shapely,
   python-six,
