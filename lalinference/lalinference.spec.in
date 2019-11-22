@@ -51,7 +51,6 @@ BuildRequires: pytest
 BuildRequires: python-astropy >= 1.1.1
 BuildRequires: python-matplotlib >= 1.2.0
 BuildRequires: python-pathlib
-BuildRequires: python-shapely
 BuildRequires: python2-gwdatafind
 BuildRequires: python2-gwpy
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
@@ -84,7 +83,6 @@ BuildRequires: scipy >= 0.9.0
 #BuildRequires: python%{python3_pkgversion}-numpy >= 1.7
 #BuildRequires: python%{python3_pkgversion}-pytest
 #BuildRequires: python%{python3_pkgversion}-scipy >= 0.9.0
-#BuildRequires: python%{python3_pkgversion}-shapely
 
 # octave
 BuildRequires: octave-devel
@@ -142,7 +140,6 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: healpy >= 1.9.1
 Requires: h5py
-Requires: python-shapely
 Requires: numpy >= 1.7
 Requires: python
 Requires: scipy >= 0.8
@@ -188,7 +185,6 @@ This package provides the Python %{python2_version} bindings for LALInference.
 #Requires: python%{python3_pkgversion}-matplotlib >= 1.2.0
 #Requires: python%{python3_pkgversion}-numpy >= 1.7
 #Requires: python%{python3_pkgversion}-scipy >= 0.8
-#Requires: python%{python3_pkgversion}-shapely
 #Requires: python%{python3_pkgversion}-six
 #%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 #%description -n python%{python3_pkgversion}-%{name}
