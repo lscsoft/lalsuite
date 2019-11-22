@@ -127,7 +127,6 @@ outputs:
         - python-lalinspiral >={{ lalinspiral_version }}
         - python-lalpulsar >={{ lalpulsar_version }}
         - scipy >=0.8
-        - shapely
     test:
       imports:
         - lalinference
