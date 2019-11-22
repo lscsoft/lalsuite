@@ -12,6 +12,7 @@ bin_PROGRAMS = \
 	lalapps_compareSFTs \
 	lalapps_dumpSFT \
 	lalapps_splitSFTs \
+	lalapps_WriteSFTsfromSFDBs \
 	$(END_OF_LIST)
 
 lalapps_ComputePSD_SOURCES = ComputePSD.c
@@ -20,6 +21,7 @@ lalapps_SFTvalidate_SOURCES = SFTvalidate.c
 lalapps_compareSFTs_SOURCES = compareSFTs.c
 lalapps_dumpSFT_SOURCES = dumpSFT.c
 lalapps_splitSFTs_SOURCES = splitSFTs.c
+lalapps_WriteSFTsfromSFDBs_SOURCES = WriteSFTsfromSFDBs.c
 
 EXTRA_DIST += \
 	SFTSpecification.dox \

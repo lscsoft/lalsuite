@@ -243,6 +243,7 @@ src/pulsar/SFTTools/lalapps_SFTclean
 src/pulsar/SFTTools/lalapps_SFTvalidate
 src/pulsar/SFTTools/SFTwrite
 src/pulsar/SFTTools/lalapps_splitSFTs
+src/pulsar/SFTTools/lalapps_WriteSFTsfromSFDBs
 src/pulsar/SidebandSearch/lalapps_CombSearch
 src/pulsar/Tools/*.testdir
 src/pulsar/Tools/lalapps_ComputeAntennaPattern
