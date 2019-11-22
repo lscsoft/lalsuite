@@ -36,23 +36,6 @@ index 2da89820ae..a1dc229dff 100644
  
  def open_url(url,username,password):
  
-diff --git a/lalinference/python/cbcBayesPPAnalysis.py b/lalinference/python/cbcBayesPPAnalysis.py
-index 86d8196dca..0f1f358dda 100644
---- a/lalinference/python/cbcBayesPPAnalysis.py
-+++ b/lalinference/python/cbcBayesPPAnalysis.py
-@@ -84,7 +84,11 @@ posterior_name_to_latex_name = {
-     'dbeta1':r'$d\beta_1$',
-     'dbeta2':r'$d\beta_2$',
-     'dbeta3':r'$d\beta_3$',
--    'dbeta4':r'$d\beta_4$'
-+    'dbeta4':r'$d\beta_4$',
-+    'dquadmons':r'$\delta\kappa_s$',
-+    'dquadmona':r'$\delta\kappa_a$',
-+    'dquadmon1':r'$\delta\kappa_1$',
-+    'dquadmon2':r'$\delta\kappa_2$'
- }
- 
- def fractional_rank(x, xs):
 diff --git a/lalinference/python/cbcBayesPostProc.py b/lalinference/python/cbcBayesPostProc.py
 index 7bfa8b1ddb..4f002bdbc0 100644
 --- a/lalinference/python/cbcBayesPostProc.py
