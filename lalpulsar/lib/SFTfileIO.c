@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Pep Covas
+ * Copyright (C) 2019 Pep Covas, David Keitel
  * Copyright (C) 2010 Karl Wette
  * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
  *
@@ -118,10 +118,25 @@ typedef struct {
   struct tagSFTLocator *lastfrom;  /**< last bin read from this locator */
 } SFTReadSegment;
 
+/* detector numbers as defined in Rome SFDBs
+ * 0 is Nautilus but we won't support that
+ */
+typedef enum tagSFDBDetectors {
+  SFDB_DET_V1 = 1,
+  SFDB_DET_H1 = 2,
+  SFDB_DET_L1 = 3,
+  SFDB_DET_LAST
+} SFDBDetectors;
+
 /*---------- Global variables ----------*/
 static REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
 static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
 
+const char * const SFDB_detector_names[] = {
+    [SFDB_DET_V1] = "V1",
+    [SFDB_DET_H1] = "H1",
+    [SFDB_DET_L1] = "L1"
+};
 
 /*---------- internal prototypes ----------*/
 static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
@@ -1943,7 +1958,7 @@ XLALCheckValidDescriptionField ( const char *desc )
 
 
 MultiSFTVector*
-XLALReadSFDB(UINT4 numifo,
+XLALReadSFDB(
              REAL8 f_min,
              REAL8 f_max,
              const CHAR *file_pattern,
@@ -1957,6 +1972,7 @@ XLALReadSFDB(UINT4 numifo,
     LALStringVector *fnames;
     fnames = XLALFindFiles(file_pattern);
     UINT4 numFiles = fnames->length;
+    printf("numFiles=%d\n", numFiles);
 
     REAL8 count,tbase,mjdtime,frinit,tsamplu,deltanu,vx_eq,vy_eq,vz_eq,px_eq,py_eq,pz_eq,sat_howmany,spare1,spare2,spare3;
     REAL4 n_flag,einstein,normd,normw,spare4,spare5,spare6;
@@ -1982,6 +1998,7 @@ XLALReadSFDB(UINT4 numifo,
         if (r==1) numTimeStamps++;
     } while ( r != EOF);
     rewind(fp);
+    printf("numTimeStamps=%d\n", numTimeStamps);
 
     ts1 = XLALCalloc(1, sizeof(*ts1));
     ts2 = XLALCalloc(1, sizeof(*ts2));
@@ -2002,13 +2019,12 @@ XLALReadSFDB(UINT4 numifo,
 
     fclose(fp);
     fclose(fp2);
+    printf("Read timestamps.\n");
 
-    UINT4 index=0;
-    UINT4 numSFTsH1 = 0;
-    UINT4 numSFTsL1 = 0;
-    UINT4 numSFTs = 0;
-    UINT4 numSFTsH1b = 0;
-    UINT4 numSFTsL1b = 0;
+    // from here on, Y indices loop over the SFDB detector ordering convention
+    // regardless whether data is actually present for each detector
+    UINT4 numSFTsY[SFDB_DET_LAST];
+    XLAL_INIT_MEM ( numSFTsY);
 
     UINT4 f_min_bin = floor(f_min*Tcoh + 0.5);
     UINT4 f_max_bin = floor(f_max*Tcoh + 0.5);
@@ -2017,12 +2033,16 @@ XLALReadSFDB(UINT4 numifo,
     for ( UINT4 i = 0; i < numFiles; i++ )
     {
         const CHAR *filename = fnames->data[i];
+        printf("file %d/%d: %s\n", i, numFiles, filename);
         FILE  *fpPar = NULL;
         fpPar = fopen(filename, "r");
         setvbuf(fpPar, (CHAR *)NULL, _IOLBF, 0);
 
         while( fread(&count, sizeof(REAL8), 1, fpPar)==1 ) {    // Index of this SFDBs in the file (a SFDB file can have more than one SFDB)
-            XLAL_CHECK_NULL(fread(&det, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);    // 2 for H1, 3 for L1
+            XLAL_CHECK_NULL(fread(&det, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);    // see SFDBDetectors
+            XLAL_CHECK_NULL(det>0, XLAL_EIO, "Unsupported detector number %d in SFDB.", det);
+            XLAL_CHECK_NULL(det<SFDB_DET_LAST, XLAL_EIO, "Unsupported detector number %d in SFDB, highest known number is %d.", det, SFDB_DET_LAST-1);
+
             XLAL_CHECK_NULL(fread(&gps, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);    // GPS time of this SFDB
             XLAL_CHECK_NULL(fread(&gps_nsec, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
             XLAL_CHECK_NULL(fread(&tbase, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);     // Coherent time of the SFDB
@@ -2094,8 +2114,7 @@ XLALReadSFDB(UINT4 numifo,
 
             if (useTimeStamps==0) flag=0;
             if (flag==0) {
-                if (det==2) numSFTsH1b += 1;
-                if (det==3) numSFTsL1b += 1;
+                numSFTsY[det] += 1;
             }
 
         }
@@ -2103,31 +2122,74 @@ XLALReadSFDB(UINT4 numifo,
 
     }
 
+    printf("Finished first pass through SFDBs.\n");
+    UINT4 numSFTsTotal = 0;
+    for (UINT4 Y = 0; Y < SFDB_DET_LAST; Y++) {
+        numSFTsTotal += numSFTsY[Y];
+//         printf("numSFTs[Y=%d]=%d\n", Y, numSFTsY[Y]);
+    }
+    XLAL_CHECK_NULL(numSFTsTotal>0, XLAL_EINVAL, "No SFTs found for any detector.");
+
+    // identify for which detectors there is data in the SFDBs
+    // and prepare a name lookup table
+    INT4 detectorLookupYtoX[SFDB_DET_LAST];
+    CHAR detectorNames[SFDB_DET_LAST][3];
+    XLAL_INIT_MEM ( detectorNames);
+    for (UINT4 Y = 0; Y < SFDB_DET_LAST; Y++) {
+        detectorLookupYtoX[Y] = -1;
+        strncpy ( detectorNames[Y], "XX", 2 );
+    }
+
+    UINT4 numIFOs = 0;
+    UINT4 numSFTsX[SFDB_DET_LAST];
+    XLAL_INIT_MEM ( numSFTsX);
+    for (UINT4 Y = 0; Y < SFDB_DET_LAST; Y++) {
+        if (numSFTsY[Y]>0) {
+            // numIFOs is used here as an internal loop variable
+            // of actually present detectors (equivalent to X later)
+            // and will be equal to the total number at the end of the loop
+            strncpy ( detectorNames[numIFOs], SFDB_detector_names[Y], 2);
+            numSFTsX[numIFOs] = numSFTsY[Y];
+            detectorLookupYtoX[Y] = numIFOs;
+//             printf("detNames[%d]=%s, numSFTsX[%d]=%d, YtoX[%d]=%d\n", numIFOs, detectorNames[numIFOs], numIFOs, numSFTsX[numIFOs], Y, detectorLookupYtoX[Y]);
+            numIFOs += 1;
+        }
+    }
+//     printf("numIFOs=%d\n", numIFOs);
+
+    // from here on, X indices loop over the detectors which are actually present
+    printf("Number of SFTs we'll load from the SFDBs:\n");
+    for ( UINT4 X = 0; X < numIFOs; X++) {
+        printf("%s: %d\n", detectorNames[X], numSFTsX[X]);
+    }
+
     // Allocate memory for the SFT structure
     MultiSFTVector *inputSFTs = NULL;
     inputSFTs = XLALCalloc(1, sizeof(*inputSFTs));
-    inputSFTs->data = XLALCalloc ( numifo, sizeof(*inputSFTs->data));
-    inputSFTs->length=numifo;
-    UINT4 numSFTsb = 0;
-    for ( UINT4 k = 0; k < numifo; k++) {
-        if (k==0) numSFTsb=numSFTsH1b;
-        if (k==1) numSFTsb=numSFTsL1b;
-        if (numifo==1) {    // If only one IFO, use the number of SFTs from that IFO (the non-used IFO will be 0)
-            if (numSFTsH1b>numSFTsL1b) numSFTsb=numSFTsH1b;
-            if (numSFTsL1b>numSFTsH1b) numSFTsb=numSFTsL1b;
-        }
-        inputSFTs->data[k] = XLALCreateSFTVector( numSFTsb, f_max_bin-f_min_bin );
-    } // loop over ifos
+    inputSFTs->data = XLALCalloc ( numIFOs, sizeof(*inputSFTs->data));
+    inputSFTs->length = numIFOs;
+    for ( UINT4 X = 0; X < numIFOs; X++) {
+        inputSFTs->data[X] = XLALCreateSFTVector( numSFTsX[X], f_max_bin-f_min_bin );
+    }
+
+    // the actual number loaded, i.e. found in science segments
+    UINT4 numSFTsX_loaded[numIFOs];
+    XLAL_INIT_MEM ( numSFTsX_loaded);
 
     for ( UINT4 i = 0; i < numFiles; i++ )
     {
         const CHAR *filename = fnames->data[i];
+        printf("file %d/%d: %s\n", i, numFiles, filename);
         FILE  *fpPar = NULL;
         fpPar = fopen(filename, "r");
         setvbuf(fpPar, (CHAR *)NULL, _IOLBF, 0);
 
         while( fread(&count, sizeof(REAL8), 1, fpPar)==1 ) {
             XLAL_CHECK_NULL(fread(&det, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(detectorLookupYtoX[det]>=0,XLAL_EDOM,"Cannot match detector %d, as read from file, with first run.", det);
+            UINT4 X = detectorLookupYtoX[det];
+//             printf("detectorNames[X=%d]=%s\n",X,detectorNames[X]);
+
             XLAL_CHECK_NULL(fread(&gps, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
             XLAL_CHECK_NULL(fread(&gps_nsec, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
             XLAL_CHECK_NULL(fread(&tbase, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
@@ -2201,29 +2263,18 @@ XLALReadSFDB(UINT4 numifo,
             }
             if (flag==0) {
 
-                if (det==2) {
-                    index=0;
-                    numSFTsH1 += 1;
-                    numSFTs = numSFTsH1-1;
-                }
-                if (det==3) {
-                    index=1;
-                    numSFTsL1 += 1;
-                    numSFTs = numSFTsL1-1;
-                }
-                if (numifo==1) index=0;
+                numSFTsX_loaded[X] += 1;
 
                 SFTtype *thisSFT = NULL;
-                thisSFT = inputSFTs->data[index]->data + numSFTs;
+                thisSFT = inputSFTs->data[X]->data + numSFTsX_loaded[X]-1;
 
                 COMPLEX8 *in;
-                UINT4 lengthh = f_max_bin-f_min_bin;//inputSFTs->data[0]->data->data->length;
+                UINT4 length = f_max_bin-f_min_bin;//inputSFTs->data[0]->data->data->length;
                 LIGOTimeGPS gpps;
                 XLALGPSSetREAL8( &gpps, gps);
                 thisSFT->epoch = gpps;
 
-                if (det==2) strncpy( thisSFT->name, "H1", 3);//name="H1";
-                if (det==3) strncpy( thisSFT->name, "L1", 3);//name="H1";
+                strncpy( thisSFT->name, detectorNames[X], 3);
 
                 thisSFT->f0 = f_min;
                 thisSFT->deltaF = deltanu;
@@ -2231,7 +2282,7 @@ XLALReadSFDB(UINT4 numifo,
 
                 // Copy to the SFT structure the complex values in the frequency bins (multiplied by some normalization factors in order to agree with the SFT specification)
                 in = thisSFT->data->data;
-                for (jjj=offset; jjj<(lengthh+offset); jjj++) {
+                for (jjj=offset; jjj<(length+offset); jjj++) {
                     *in = crectf(buffer3[2*jjj],buffer3[2*jjj+1])*einstein*tsamplu*normw;
                     ++in;
                 }
@@ -2243,17 +2294,19 @@ XLALReadSFDB(UINT4 numifo,
         }
         fclose(fpPar);
     }
-    XLALPrintInfo("Number of H1 and L1 SFDBs: %d %d\n",numSFTsH1b,numSFTsL1b);
+    printf("Finished second pass through SFDBs.\n");
+    printf("Number of successfully loaded SFDBs:\n");
+    for ( UINT4 X = 0; X < numIFOs; X++) {
+        printf("%s: %d\n", detectorNames[X], inputSFTs->data[X]->length);
+    }
 
     XLALDestroyStringVector(fnames);
     XLALDestroyTimestampVector(ts1);
     XLALDestroyTimestampVector(ts2);
 
     // Sort the SFDBs from lower GPS timestamps to higher GPS timestamp
-    if (numifo==1)  qsort( (void*)inputSFTs->data[0]->data, inputSFTs->data[0]->length, sizeof( inputSFTs->data[0]->data[0] ), compareSFTepoch );
-    if (numifo==2) {
-        qsort( (void*)inputSFTs->data[0]->data, inputSFTs->data[0]->length, sizeof( inputSFTs->data[0]->data[0] ), compareSFTepoch );
-        qsort( (void*)inputSFTs->data[1]->data, inputSFTs->data[1]->length, sizeof( inputSFTs->data[1]->data[0] ), compareSFTepoch );
+    for ( UINT4 X = 0; X < numIFOs; X++) {
+        qsort( (void*)inputSFTs->data[X]->data, inputSFTs->data[X]->length, sizeof( inputSFTs->data[X]->data[0] ), compareSFTepoch );
     }
 
     return inputSFTs;
@@ -3303,7 +3356,7 @@ int compareSFTepoch(const void *ptr1, const void *ptr2)
      return 1;
    else
      return 0;
-} /* compareSFTdesc() */
+} /* compareSFTepoch() */
 
 
 /**
