@@ -405,31 +405,33 @@ SphHarmTimeSeries *XLALSimInspiralPrecessingNRSurModes(
 );
 
 int XLALPrecessingNRSurDynamics(
-        gsl_vector **orbphase,   /**< Output: Time series of orbital phase. */
+        gsl_vector **t_dynamics, /**< Output: Time array at which the dynamics are returned. */
         gsl_vector **quat0,      /**< Output: Time series of 0th index of coprecessing frame quaternion. */
-        gsl_vector **quat1,      /**< Output: Time series of 1th index of coprecessing frame quaternion. */
+        gsl_vector **quat1,      /**< Output: Time series of 1st index of coprecessing frame quaternion. */
         gsl_vector **quat2,      /**< Output: Time series of 2nd index of coprecessing frame quaternion. */
         gsl_vector **quat3,      /**< Output: Time series of 3rd index of coprecessing frame quaternion. */
-        gsl_vector **chi1x,      /**< Output: Time series of x-comp of spin of Bh1. */
-        gsl_vector **chi1y,      /**< Output: Time series of y-comp of spin of Bh1. */
-        gsl_vector **chi1z,      /**< Output: Time series of z-comp of spin of Bh1. */
-        gsl_vector **chi2x,      /**< Output: Time series of x-comp of spin of Bh2. */
-        gsl_vector **chi2y,      /**< Output: Time series of y-comp of spin of Bh2. */
-        gsl_vector **chi2z,      /**< Output: Time series of z-comp of spin of Bh2. */
-        REAL8 deltaT,               /**< sampling interval (s) */
-        REAL8 m1,                   /**< mass of companion 1 (kg) */
-        REAL8 m2,                   /**< mass of companion 2 (kg) */
-        REAL8 fMin,                 /**< start GW frequency (Hz) */
-        REAL8 fRef,                 /**< reference GW frequency (Hz) */
-        REAL8 s1x,                  /**< initial value of S1x */
-        REAL8 s1y,                  /**< initial value of S1y */
-        REAL8 s1z,                  /**< initial value of S1z */
-        REAL8 s2x,                  /**< initial value of S2x */
-        REAL8 s2y,                  /**< initial value of S2y */
-        REAL8 s2z,                  /**< initial value of S2z */
-        LALDict* LALparams,         /**< Dict with extra parameters */
-        Approximant approximant     /**< approximant (NRSur7dq2 or NRSur7dq4) */
-
+        gsl_vector **orbphase,   /**< Output: Time series of orbital phase in the coprecessing frame. */
+        gsl_vector **chiAx,      /**< Output: Time series of x-comp of dimensionless spin of BhA in the coprecessing frame. */
+        gsl_vector **chiAy,      /**< Output: Time series of y-comp of dimensionless spin of BhA in the coprecessing frame. */
+        gsl_vector **chiAz,      /**< Output: Time series of z-comp of dimensionless spin of BhA in the coprecessing frame. */
+        gsl_vector **chiBx,      /**< Output: Time series of x-comp of dimensionless spin of BhB in the coprecessing frame. */
+        gsl_vector **chiBy,      /**< Output: Time series of y-comp of dimensionless spin of BhB in the coprecessing frame. */
+        gsl_vector **chiBz,      /**< Output: Time series of z-comp of dimensionless spin of BhB in the coprecessing frame. */
+        REAL8 q,                 /**< mass ratio m1/m2 >= 1. */
+        REAL8 chiA0x,            /**< x-comp of dimensionless spin of BhA in the coorbital frame at the reference epoch. */
+        REAL8 chiA0y,            /**< y-comp of dimensionless spin of BhA in the coorbital frame at the reference epoch. */
+        REAL8 chiA0z,            /**< z-comp of dimensionless spin of BhA in the coorbital frame at the reference epoch. */
+        REAL8 chiB0x,            /**< x-comp of dimensionless spin of BhB in the coorbital frame at the reference epoch. */
+        REAL8 chiB0y,            /**< y-comp of dimensionless spin of BhB in the coorbital frame at the reference epoch. */
+        REAL8 chiB0z,            /**< z-comp of dimensionless spin of BhB in the coorbital frame at the reference epoch. */
+        REAL8 omegaRef_dimless,  /**< Dimensionless orbital frequency (rad/M) in the coprecessing frame at the reference epoch.*/
+        REAL8 init_quat0,        /**< 0th comp of the coprecessing frame quaternion at the reference epoch.*/
+        REAL8 init_quat1,        /**< 1st comp of the coprecessing frame quaternion at the reference epoch.*/
+        REAL8 init_quat2,        /**< 2nd comp of the coprecessing frame quaternion at the reference epoch.*/
+        REAL8 init_quat3,        /**< 3rd comp of the coprecessing frame quaternion at the reference epoch.*/
+        REAL8 init_orbphase,     /**< orbital phase in the coprecessing frame at the reference epoch. */
+        LALDict* LALparams,      /**< Dict with extra parameters. */
+        Approximant approximant  /**< approximant (NRSur7dq2 or NRSur7dq4). */
 );
 
 
