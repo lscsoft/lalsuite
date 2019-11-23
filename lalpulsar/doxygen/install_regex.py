@@ -1,1 +1,1 @@
-../../lal/doxygen/install_regex.py
+../../doxygen/install_regex.py

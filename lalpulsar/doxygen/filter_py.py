@@ -1,1 +1,1 @@
-../../lal/doxygen/filter_py.py
+../../doxygen/filter_py.py

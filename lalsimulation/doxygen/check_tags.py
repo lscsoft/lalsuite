@@ -1,1 +1,1 @@
-../../lal/doxygen/check_tags.py
+../../doxygen/check_tags.py

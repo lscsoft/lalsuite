@@ -1,0 +1,16 @@
+#!/bin/bash
+filename=`expr "X$1" : "^X.*/\([^/]*\)"`
+case "${filename}" in
+    SWIG*.i)
+        # Filter SWIG interface files
+        @SED@ -n -f @abs_srcdir@/filter_swig.sed "$1"
+        ;;
+    *.py)
+        # Filter Python source files
+        @PYTHON@ @abs_srcdir@/filter_py.py "$1"
+        ;;
+    *)
+        # Output all other files unfiltered
+        cat "$1"
+        ;;
+esac
