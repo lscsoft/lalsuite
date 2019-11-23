@@ -186,7 +186,7 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
         if key == 'CLASS' or key == 'VERSION' or key == 'TITLE' or key.startswith('FIELD_'):
             continue
         table.add_column(Column([value] * len(table), name=key,
-                         meta={'vary': FIXED}))
+                         meta={'vary': FIXED}), rename_duplicate=True)
 
     # Delete remaining table attributes.
     table.meta.clear()
