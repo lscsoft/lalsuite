@@ -128,6 +128,38 @@ typedef enum tagSFDBDetectors {
   SFDB_DET_LAST
 } SFDBDetectors;
 
+/* header contents of SFDBs, many fields unused
+ */
+typedef struct tagSFDBHeader {
+  INT4 det;
+  INT4 gps_sec;
+  INT4 gps_nsec;
+  REAL8 tbase;
+  INT4 firstfrind;
+  INT4 nsamples;
+  INT4 red;
+  INT4 typ;
+  REAL4 n_flag;
+  REAL4 einstein;
+  REAL8 mjdtime;
+  INT4 nfft;
+  INT4 wink;
+  REAL4 normd;
+  REAL4 normw;
+  REAL8 frinit;
+  REAL8 tsamplu;
+  REAL8 deltanu;
+  REAL8 vx_eq;
+  REAL8 vy_eq;
+  REAL8 vz_eq;
+  REAL8 px_eq;
+  REAL8 py_eq;
+  REAL8 pz_eq;
+  INT4 n_zeroes;
+  REAL8 sat_howmany;
+  INT4 lavesp;
+} SFDBHeader;
+
 /*---------- Global variables ----------*/
 static REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
 static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
@@ -152,6 +184,8 @@ static FILE * fopen_SFTLocator ( const struct tagSFTLocator *locator );
 static UINT4 read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp );
 static int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **SFTcomment, UINT4 *numBins );
 static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **SFTcomment, BOOLEAN swapEndian);
+
+static int read_SFDB_header_from_fp ( FILE *fp, SFDBHeader *header );
 
 int compareSFTdesc(const void *ptr1, const void *ptr2);
 static int compareSFTloc(const void *ptr1, const void *ptr2);
@@ -1974,10 +2008,6 @@ XLALReadSFDB(
     UINT4 numFiles = fnames->length;
     printf("numFiles=%d\n", numFiles);
 
-    REAL8 count,tbase,mjdtime,frinit,tsamplu,deltanu,vx_eq,vy_eq,vz_eq,px_eq,py_eq,pz_eq,sat_howmany,spare1,spare2,spare3;
-    REAL4 n_flag,einstein,normd,normw,spare4,spare5,spare6;
-    INT4 det, gps,gps_nsec,firstfrind,nsamples,red,typ,nfft,wink,n_zeroes,lavesp,spare8,spare9,lsps;
-
     FILE  *fp = NULL, *fp2 = NULL;
     INT4  numTimeStamps, r;
     UINT4 j;
@@ -2037,66 +2067,31 @@ XLALReadSFDB(
         fpPar = fopen(filename, "r");
         setvbuf(fpPar, (CHAR *)NULL, _IOLBF, 0);
 
+        REAL8 count;
         while( fread(&count, sizeof(REAL8), 1, fpPar)==1 ) {    // Index of this SFDBs in the file (a SFDB file can have more than one SFDB)
-            XLAL_CHECK_NULL(fread(&det, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);    // see SFDBDetectors
-            printf("det=%d\n",det);
-            XLAL_CHECK_NULL(det>0, XLAL_EIO, "Unsupported detector number %d in SFDB.", det);
-            XLAL_CHECK_NULL(det<SFDB_DET_LAST, XLAL_EIO, "Unsupported detector number %d in SFDB, highest known number is %d.", det, SFDB_DET_LAST-1);
-
-            XLAL_CHECK_NULL(fread(&gps, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);    // GPS time of this SFDB
-            XLAL_CHECK_NULL(fread(&gps_nsec, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&tbase, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);     // Coherent time of the SFDB
-            XLAL_CHECK_NULL(fread(&firstfrind, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&nsamples, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);   // Number of frequency bins
-            XLAL_CHECK_NULL(fread(&red, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);    // Reductions factor
-            XLAL_CHECK_NULL(fread(&typ, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&n_flag, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&einstein, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&mjdtime, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&nfft, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&wink, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&normd, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&normw, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);     // Normalization factors
-            XLAL_CHECK_NULL(fread(&frinit, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&tsamplu, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);   // Sampling time
-            XLAL_CHECK_NULL(fread(&deltanu, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);   // Frequency resolution
-            XLAL_CHECK_NULL(fread(&vx_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&vy_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&vz_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&px_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&py_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&pz_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&n_zeroes, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&sat_howmany, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare1, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare2, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare3, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare4, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare5, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare6, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&lavesp, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare8, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare9, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
+            SFDBHeader header;
+            XLAL_CHECK_NULL(read_SFDB_header_from_fp(fpPar, &header)==0,XLAL_EIO,"Failed to parse SFDB header.");
 
             // skip number of bytes corresponding to the actual data content
-            if (lavesp > 0)
+            UINT4 lsps = 0;
+            if (header.lavesp > 0)
             {
-                XLAL_CHECK_NULL(fseek(fpPar,lavesp*sizeof(REAL4),SEEK_CUR)==0, XLAL_EIO);
-                lsps=lavesp;
+                XLAL_CHECK_NULL(fseek(fpPar,header.lavesp*sizeof(REAL4),SEEK_CUR)==0, XLAL_EIO);
+                lsps=header.lavesp;
             }
             else
             {
-                XLAL_CHECK_NULL(fseek(fpPar,red*sizeof(REAL4),SEEK_CUR)==0, XLAL_EIO);
-                lsps=nsamples/red;
+                XLAL_CHECK_NULL(fseek(fpPar,header.red*sizeof(REAL4),SEEK_CUR)==0, XLAL_EIO);
+                lsps=header.nsamples/header.red;
             }
-            XLAL_CHECK_NULL(fseek(fpPar,(lsps+2*nsamples)*sizeof(REAL4),SEEK_CUR)==0, XLAL_EIO);
+            XLAL_CHECK_NULL(fseek(fpPar,(lsps+2*header.nsamples)*sizeof(REAL4),SEEK_CUR)==0, XLAL_EIO);
 
             // If the GPS time of this SFDB is within a science segment, count it
             UINT4 flag=1;
             for (UINT4 xx=0; xx<ts1->length; xx++) {
                 starting = ts1->data[xx].gpsSeconds;
                 finishing = ts2->data[xx].gpsSeconds;
-                if ( gps>starting && gps+Tcoh<(REAL8)finishing ) {
+                if ( header.gps_sec>starting && header.gps_sec+Tcoh<(REAL8)finishing ) {
                     flag=0;
                     break;
                 }
@@ -2104,7 +2099,7 @@ XLALReadSFDB(
 
             if (useTimeStamps==0) flag=0;
             if (flag==0) {
-                numSFTsY[det] += 1;
+                numSFTsY[header.det] += 1;
             }
 
         }
@@ -2174,67 +2169,33 @@ XLALReadSFDB(
         fpPar = fopen(filename, "r");
         setvbuf(fpPar, (CHAR *)NULL, _IOLBF, 0);
 
+        REAL8 count;
         while( fread(&count, sizeof(REAL8), 1, fpPar)==1 ) {
-            XLAL_CHECK_NULL(fread(&det, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(detectorLookupYtoX[det]>=0,XLAL_EDOM,"Cannot match detector %d, as read from file, with first run.", det);
-            UINT4 X = detectorLookupYtoX[det];
-//             printf("detectorNames[X=%d]=%s\n",X,detectorNames[X]);
+            SFDBHeader header;
+            XLAL_CHECK_NULL(read_SFDB_header_from_fp(fpPar, &header)==0,XLAL_EIO,"Failed to parse SFDB header.");
 
-            XLAL_CHECK_NULL(fread(&gps, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&gps_nsec, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&tbase, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&firstfrind, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&nsamples, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&red, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&typ, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&n_flag, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&einstein, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&mjdtime, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&nfft, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&wink, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&normd, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&normw, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&frinit, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&tsamplu, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&deltanu, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&vx_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&vy_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&vz_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&px_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&py_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&pz_eq, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&n_zeroes, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&sat_howmany, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare1, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare2, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare3, sizeof(REAL8), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare4, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare5, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare6, sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&lavesp, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare8, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-            XLAL_CHECK_NULL(fread(&spare9, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
-
+            // read the actual binary data
+            UINT4 lsps = 0;
             REAL4 *buffer1,*buffer2,*buffer3;
-            if (lavesp > 0)
+            if (header.lavesp > 0)
             {
-                buffer1 = malloc(lavesp*sizeof(REAL4));
-                XLAL_CHECK_NULL(fread(buffer1,lavesp*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+                buffer1 = malloc(header.lavesp*sizeof(REAL4));
+                XLAL_CHECK_NULL(fread(buffer1,header.lavesp*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
 
-                lsps=lavesp;
+                lsps=header.lavesp;
             }
             else
             {
-                buffer1 = malloc(red*sizeof(REAL4));
-                XLAL_CHECK_NULL(fread(buffer1,red*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
-                lsps=nsamples/red;
+                buffer1 = malloc(header.red*sizeof(REAL4));
+                XLAL_CHECK_NULL(fread(buffer1,header.red*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+                lsps=header.nsamples/header.red;
             }
 
             buffer2 = malloc(lsps*sizeof(REAL4));
             XLAL_CHECK_NULL(fread(buffer2,lsps*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
 
-            buffer3 = malloc(2*nsamples*sizeof(REAL4));
-            XLAL_CHECK_NULL(fread(buffer3,2*nsamples*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+            buffer3 = malloc(2*header.nsamples*sizeof(REAL4));
+            XLAL_CHECK_NULL(fread(buffer3,2*header.nsamples*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
 
             UINT4 first_bin_read = floor(0*Tcoh + 0.5);  // This should depend on the starting frequency bin of the SFDB: it is only 0 for the 8192 Tcoh, for the others it will be different
             UINT4 offset = f_min_bin-first_bin_read;
@@ -2243,7 +2204,7 @@ XLALReadSFDB(
             for (UINT4 xx=0; xx<ts1->length; xx++) {
                 starting = ts1->data[xx].gpsSeconds;
                 finishing = ts2->data[xx].gpsSeconds;
-                if ( gps>starting && gps+Tcoh<(REAL8)finishing ) {
+                if ( header.gps_sec>starting && header.gps_sec+Tcoh<(REAL8)finishing ) {
                     flag=0;
                     break;
                 }
@@ -2253,7 +2214,8 @@ XLALReadSFDB(
                 flag=0;
             }
             if (flag==0) {
-
+                XLAL_CHECK_NULL(detectorLookupYtoX[header.det]>=0,XLAL_EDOM,"Cannot match detector %d, as read from file, with first run.", header.det);
+                UINT4 X = detectorLookupYtoX[header.det];
                 numSFTsX_loaded[X] += 1;
 
                 SFTtype *thisSFT = NULL;
@@ -2262,19 +2224,19 @@ XLALReadSFDB(
                 COMPLEX8 *in;
                 UINT4 length = f_max_bin-f_min_bin;//inputSFTs->data[0]->data->data->length;
                 LIGOTimeGPS gpps;
-                XLALGPSSetREAL8( &gpps, gps);
+                XLALGPSSetREAL8( &gpps, header.gps_sec);
                 thisSFT->epoch = gpps;
 
                 strncpy( thisSFT->name, detectorNames[X], 3);
 
                 thisSFT->f0 = f_min;
-                thisSFT->deltaF = deltanu;
+                thisSFT->deltaF = header.deltanu;
                 UINT4 jjj;
 
                 // Copy to the SFT structure the complex values in the frequency bins (multiplied by some normalization factors in order to agree with the SFT specification)
                 in = thisSFT->data->data;
                 for (jjj=offset; jjj<(length+offset); jjj++) {
-                    *in = crectf(buffer3[2*jjj],buffer3[2*jjj+1])*einstein*tsamplu*normw;
+                    *in = crectf(buffer3[2*jjj],buffer3[2*jjj+1])*header.einstein*header.tsamplu*header.normw;
                     ++in;
                 }
             }
@@ -2734,6 +2696,49 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
   return -1;
 
 } /* read_v2_header_from_fp() */
+
+
+static int
+read_SFDB_header_from_fp ( FILE *fp, SFDBHeader *header)
+{
+
+    XLAL_CHECK(fread(&header->det, sizeof(INT4), 1, fp)==1, XLAL_EIO);    // see SFDBDetectors for numbering convention
+    XLAL_CHECK(header->det>0, XLAL_EIO, "Unsupported detector number %d in SFDB.", header->det);
+    XLAL_CHECK(header->det<SFDB_DET_LAST, XLAL_EIO, "Unsupported detector number %d in SFDB, highest known number is %d.", header->det, SFDB_DET_LAST-1);
+
+    XLAL_CHECK(fread(&header->gps_sec, sizeof(INT4), 1, fp)==1, XLAL_EIO);    // GPS time of this SFDB
+    XLAL_CHECK(fread(&header->gps_nsec, sizeof(INT4), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->tbase, sizeof(REAL8), 1, fp)==1, XLAL_EIO);     // Coherent time of the SFDB
+    XLAL_CHECK(fread(&header->firstfrind, sizeof(INT4), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->nsamples, sizeof(INT4), 1, fp)==1, XLAL_EIO);   // Number of frequency bins
+    XLAL_CHECK(fread(&header->red, sizeof(INT4), 1, fp)==1, XLAL_EIO);    // Reductions factor
+    XLAL_CHECK(fread(&header->typ, sizeof(INT4), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->n_flag, sizeof(REAL4), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->einstein, sizeof(REAL4), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->mjdtime, sizeof(REAL8), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->nfft, sizeof(INT4), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->wink, sizeof(INT4), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->normd, sizeof(REAL4), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->normw, sizeof(REAL4), 1, fp)==1, XLAL_EIO);     // Normalization factors
+    XLAL_CHECK(fread(&header->frinit, sizeof(REAL8), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->tsamplu, sizeof(REAL8), 1, fp)==1, XLAL_EIO);   // Sampling time
+    XLAL_CHECK(fread(&header->deltanu, sizeof(REAL8), 1, fp)==1, XLAL_EIO);   // Frequency resolution
+    XLAL_CHECK(fread(&header->vx_eq, sizeof(REAL8), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->vy_eq, sizeof(REAL8), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->vz_eq, sizeof(REAL8), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->px_eq, sizeof(REAL8), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->py_eq, sizeof(REAL8), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->pz_eq, sizeof(REAL8), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->n_zeroes, sizeof(INT4), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fread(&header->sat_howmany, sizeof(REAL8), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fseek(fp,3*sizeof(REAL8),SEEK_CUR)==0, XLAL_EIO); // spare fields
+    XLAL_CHECK(fseek(fp,3*sizeof(REAL4),SEEK_CUR)==0, XLAL_EIO); // spare fields
+    XLAL_CHECK(fread(&header->lavesp, sizeof(INT4), 1, fp)==1, XLAL_EIO);
+    XLAL_CHECK(fseek(fp,2*sizeof(INT4),SEEK_CUR)==0, XLAL_EIO); // more spare spares
+
+    return 0;
+
+} // read_SFDB_header_from_fp
 
 
 /* a little endian-swapper needed for SFT reading/writing */
