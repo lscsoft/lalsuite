@@ -1977,7 +1977,6 @@ XLALReadSFDB(
     REAL8 count,tbase,mjdtime,frinit,tsamplu,deltanu,vx_eq,vy_eq,vz_eq,px_eq,py_eq,pz_eq,sat_howmany,spare1,spare2,spare3;
     REAL4 n_flag,einstein,normd,normw,spare4,spare5,spare6;
     INT4 det, gps,gps_nsec,firstfrind,nsamples,red,typ,nfft,wink,n_zeroes,lavesp,spare8,spare9,lsps;
-    REAL4 *buffer1,*buffer2,*buffer3;
 
     FILE  *fp = NULL, *fp2 = NULL;
     INT4  numTimeStamps, r;
@@ -2040,6 +2039,7 @@ XLALReadSFDB(
 
         while( fread(&count, sizeof(REAL8), 1, fpPar)==1 ) {    // Index of this SFDBs in the file (a SFDB file can have more than one SFDB)
             XLAL_CHECK_NULL(fread(&det, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);    // see SFDBDetectors
+            printf("det=%d\n",det);
             XLAL_CHECK_NULL(det>0, XLAL_EIO, "Unsupported detector number %d in SFDB.", det);
             XLAL_CHECK_NULL(det<SFDB_DET_LAST, XLAL_EIO, "Unsupported detector number %d in SFDB, highest known number is %d.", det, SFDB_DET_LAST-1);
 
@@ -2078,24 +2078,18 @@ XLALReadSFDB(
             XLAL_CHECK_NULL(fread(&spare8, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
             XLAL_CHECK_NULL(fread(&spare9, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
 
+            // skip number of bytes corresponding to the actual data content
             if (lavesp > 0)
             {
-                buffer1 = XLALCalloc(lavesp,sizeof(REAL4));//malloc(lavesp*sizeof(REAL4));
-                XLAL_CHECK_NULL(fread(buffer1,lavesp*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+                XLAL_CHECK_NULL(fseek(fpPar,lavesp*sizeof(REAL4),SEEK_CUR)==0, XLAL_EIO);
                 lsps=lavesp;
             }
             else
             {
-                buffer1 = XLALCalloc(red,sizeof(REAL4));//malloc(red*sizeof(REAL4));
-                XLAL_CHECK_NULL(fread(buffer1,red*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+                XLAL_CHECK_NULL(fseek(fpPar,red*sizeof(REAL4),SEEK_CUR)==0, XLAL_EIO);
                 lsps=nsamples/red;
             }
-
-            buffer2 = XLALCalloc(lsps,sizeof(REAL4));//malloc(lsps*sizeof(REAL4));
-            XLAL_CHECK_NULL(fread(buffer2,lsps*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
-
-            buffer3 = XLALCalloc(2*nsamples,sizeof(REAL4));//malloc(2*nsamples*sizeof(REAL4));
-            XLAL_CHECK_NULL(fread(buffer3,2*nsamples*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL(fseek(fpPar,(lsps+2*nsamples)*sizeof(REAL4),SEEK_CUR)==0, XLAL_EIO);
 
             // If the GPS time of this SFDB is within a science segment, count it
             UINT4 flag=1;
@@ -2107,10 +2101,6 @@ XLALReadSFDB(
                     break;
                 }
             }
-
-            LALFree(buffer1);
-            LALFree(buffer2);
-            LALFree(buffer3);
 
             if (useTimeStamps==0) flag=0;
             if (flag==0) {
@@ -2225,6 +2215,7 @@ XLALReadSFDB(
             XLAL_CHECK_NULL(fread(&spare8, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
             XLAL_CHECK_NULL(fread(&spare9, sizeof(INT4), 1, fpPar)==1, XLAL_EIO);
 
+            REAL4 *buffer1,*buffer2,*buffer3;
             if (lavesp > 0)
             {
                 buffer1 = malloc(lavesp*sizeof(REAL4));
