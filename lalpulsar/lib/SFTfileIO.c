@@ -2006,7 +2006,6 @@ XLALReadSFDB(
     LALStringVector *fnames;
     fnames = XLALFindFiles(file_pattern);
     UINT4 numFiles = fnames->length;
-    printf("numFiles=%d\n", numFiles);
 
     FILE  *fp = NULL, *fp2 = NULL;
     INT4  numTimeStamps, r;
@@ -2027,7 +2026,6 @@ XLALReadSFDB(
         if (r==1) numTimeStamps++;
     } while ( r != EOF);
     rewind(fp);
-    printf("numTimeStamps=%d\n", numTimeStamps);
 
     ts1 = XLALCalloc(1, sizeof(*ts1));
     ts2 = XLALCalloc(1, sizeof(*ts2));
@@ -2048,7 +2046,6 @@ XLALReadSFDB(
 
     fclose(fp);
     fclose(fp2);
-    printf("Read timestamps.\n");
 
     // from here on, Y indices loop over the SFDB detector ordering convention
     // regardless whether data is actually present for each detector
@@ -2062,7 +2059,6 @@ XLALReadSFDB(
     for ( UINT4 i = 0; i < numFiles; i++ )
     {
         const CHAR *filename = fnames->data[i];
-        printf("file %d/%d: %s\n", i, numFiles, filename);
         FILE  *fpPar = NULL;
         XLAL_CHECK_NULL((fpPar = fopen(filename, "r"))!=NULL,XLAL_EIO,"Failed to open SFDB file '%s' for reading.", filename );
         setvbuf(fpPar, (CHAR *)NULL, _IOLBF, 0);
@@ -2107,11 +2103,9 @@ XLALReadSFDB(
 
     }
 
-    printf("Finished first pass through SFDBs.\n");
     UINT4 numSFTsTotal = 0;
     for (UINT4 Y = 0; Y < SFDB_DET_LAST; Y++) {
         numSFTsTotal += numSFTsY[Y];
-//         printf("numSFTs[Y=%d]=%d\n", Y, numSFTsY[Y]);
     }
     XLAL_CHECK_NULL(numSFTsTotal>0, XLAL_EINVAL, "No SFTs found for any detector.");
 
@@ -2136,16 +2130,14 @@ XLALReadSFDB(
             strncpy ( detectorNames[numIFOs], SFDB_detector_names[Y], 2);
             numSFTsX[numIFOs] = numSFTsY[Y];
             detectorLookupYtoX[Y] = numIFOs;
-//             printf("detNames[%d]=%s, numSFTsX[%d]=%d, YtoX[%d]=%d\n", numIFOs, detectorNames[numIFOs], numIFOs, numSFTsX[numIFOs], Y, detectorLookupYtoX[Y]);
             numIFOs += 1;
         }
     }
-//     printf("numIFOs=%d\n", numIFOs);
 
     // from here on, X indices loop over the detectors which are actually present
-    printf("Number of SFTs we'll load from the SFDBs:\n");
+    XLALPrintInfo("Number of SFTs we'll load from the SFDBs:\n");
     for ( UINT4 X = 0; X < numIFOs; X++) {
-        printf("%s: %d\n", detectorNames[X], numSFTsX[X]);
+        XLALPrintInfo("%s: %d\n", detectorNames[X], numSFTsX[X]);
     }
 
     // Allocate memory for the SFT structure
@@ -2164,7 +2156,6 @@ XLALReadSFDB(
     for ( UINT4 i = 0; i < numFiles; i++ )
     {
         const CHAR *filename = fnames->data[i];
-        printf("file %d/%d: %s\n", i, numFiles, filename);
         FILE  *fpPar = NULL;
         XLAL_CHECK_NULL((fpPar = fopen(filename, "r"))!=NULL,XLAL_EIO,"Failed to open SFDB file '%s' for reading.", filename );
         setvbuf(fpPar, (CHAR *)NULL, _IOLBF, 0);
@@ -2246,11 +2237,6 @@ XLALReadSFDB(
             LALFree(buffer3);
         }
         fclose(fpPar);
-    }
-    printf("Finished second pass through SFDBs.\n");
-    printf("Number of successfully loaded SFDBs:\n");
-    for ( UINT4 X = 0; X < numIFOs; X++) {
-        printf("%s: %d\n", detectorNames[X], inputSFTs->data[X]->length);
     }
 
     XLALDestroyStringVector(fnames);
