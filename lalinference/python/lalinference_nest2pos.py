@@ -1,7 +1,6 @@
-from numpy import loadtxt, logaddexp, log, array, mean
+from numpy import loadtxt, logaddexp, log, mean
 from optparse import OptionParser
 import gzip
-import h5py
 import os
 import os.path
 import sys
@@ -39,15 +38,19 @@ def read_nested_from_hdf5(nested_path_list, strict_versions=True):
                 print('Unable to open %s, skipping file'%(path))
                 continue
         try:
-                tab = read_samples(path,path='lalinference/lalinference_nest/nested_samples')
+                tab = read_samples(path,tablename=nested_dset_name)
                 input_arrays.append(tab)
-        except:
+        except KeyError:
                 print('Unable to read table from %s, skipping'%(path))
                 continue
 
         # N.B.: This appends to metadata, log_noise_evidences, log_max_likelihoods, nlive, in addition to outputting run_identifier
         run_identifier = extract_metadata(path, metadata, log_noise_evidences, log_max_likelihoods, nlive, nested_dset_name, True, strict_versions)
-        
+    
+    if len(input_arrays)==0:
+        print('No nested samples could be read from %s'.format(str(nested_path_list)))
+        raise IOError
+
     # for metadata which is in a list, take the average.
     for level in metadata:
         for key in metadata[level]:
@@ -104,7 +107,7 @@ def read_nested_from_ascii(nested_path_list):
 def write_posterior_to_hdf(posterior_path, headers, posterior, metadata,
                            run_identifier):
   from lalinference.io import write_samples
-  write_samples(posterior, posterior_path, path='/'.join(['','lalinference',run_identifier,'posterior_samples']), metadata=metadata, overwrite=True)
+  write_samples(posterior, posterior_path, path='/'.join(['','lalinference',run_identifier,posterior_dset_name]), metadata=metadata, overwrite=True)
 
 def write_posterior_to_ascii(posterior_path, headers, posterior,
                              log_bayes_factor, log_evidence,
