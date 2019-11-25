@@ -2064,7 +2064,7 @@ XLALReadSFDB(
         const CHAR *filename = fnames->data[i];
         printf("file %d/%d: %s\n", i, numFiles, filename);
         FILE  *fpPar = NULL;
-        fpPar = fopen(filename, "r");
+        XLAL_CHECK_NULL((fpPar = fopen(filename, "r"))!=NULL,XLAL_EIO,"Failed to open SFDB file '%s' for reading.", filename );
         setvbuf(fpPar, (CHAR *)NULL, _IOLBF, 0);
 
         REAL8 count;
@@ -2166,7 +2166,7 @@ XLALReadSFDB(
         const CHAR *filename = fnames->data[i];
         printf("file %d/%d: %s\n", i, numFiles, filename);
         FILE  *fpPar = NULL;
-        fpPar = fopen(filename, "r");
+        XLAL_CHECK_NULL((fpPar = fopen(filename, "r"))!=NULL,XLAL_EIO,"Failed to open SFDB file '%s' for reading.", filename );
         setvbuf(fpPar, (CHAR *)NULL, _IOLBF, 0);
 
         REAL8 count;
