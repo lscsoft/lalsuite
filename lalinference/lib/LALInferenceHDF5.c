@@ -38,6 +38,15 @@ static void assert_not_reached(void)
 #endif
 }
 
+int LALInferencePrintCheckpointFileInfo(char *filename)
+{
+    struct stat st;
+    if( !stat(filename, &st) )
+    {
+		printf("File %s is size %jd bytes\n",filename,(intmax_t) st.st_size);
+    }
+    return(0);
+}
 
 int LALInferenceCheckNonEmptyFile(char *filename)
 {

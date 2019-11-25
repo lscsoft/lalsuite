@@ -1235,6 +1235,7 @@ void LALInferenceCheckpointMCMC(LALInferenceRunState *runState) {
     XLALH5FileClose(group);
 
     XLALH5FileClose(resume_file);
+    LALInferencePrintCheckpointFileInfo(runState->resumeOutFileName);
 
     return;
 }
@@ -1251,10 +1252,12 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
     if(! (LALInferenceCheckNonEmptyFile(runState->resumeOutFileName) &&
           LALInferenceCheckNonEmptyFile(runState->outFileName) ) )
     {
-	/* One of the files is empty, just start a new run */
-	fprintf(stderr,"Resume file or chain file is zero size, starting fresh run\n");
-	return;
+        /* One of the files is empty, just start a new run */
+    	fprintf(stderr,"Resume file or chain file is zero size, starting fresh run\n");
+    	return;
     }
+    LALInferencePrintCheckpointFileInfo(runState->resumeOutFileName);
+    LALInferencePrintCheckpointFileInfo(runState->outFileName);
     /* Read in the resume file, which stores info needed to restore the proposals (adaptation settings, etc.) */
     XLAL_TRY(resume_file = XLALH5FileOpen(runState->resumeOutFileName, "r"), retcode);
     if(retcode != XLAL_SUCCESS)
@@ -1430,6 +1433,7 @@ void LALInferenceWriteMCMCSamples(LALInferenceRunState *runState) {
     }
     XLALH5FileClose(group);
     XLALH5FileClose(output);
+    LALInferencePrintCheckpointFileInfo(runState->outFileName);
     return;
 }
 
