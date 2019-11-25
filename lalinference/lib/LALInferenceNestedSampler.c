@@ -132,6 +132,7 @@ static int WriteNSCheckPointH5(char *filename, LALInferenceRunState *runState, N
   }
   XLALH5FileClose(group);
   XLALH5FileClose(h5file);
+  LALInferencePrintCheckpointFileInfo(filename);
   return(retcode);
 }
 
@@ -166,6 +167,7 @@ static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NS
   LALH5File *h5file;
   UINT4 Nlive;
   if( access( filename, F_OK ) == -1 ) return(1);
+  LALInferencePrintCheckpointFileInfo(filename);
   XLAL_TRY(h5file = XLALH5FileOpen(filename,"r"),retcode);
   if(retcode!=XLAL_SUCCESS) return(retcode);
   LALH5File *group;
@@ -1109,6 +1111,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
         XLALFree(injParams);
       }
       XLALH5FileClose(h5file);
+      LALInferencePrintCheckpointFileInfo(outfile);
     }
 
     if(output_array) {
