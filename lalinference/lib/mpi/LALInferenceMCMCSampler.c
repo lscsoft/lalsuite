@@ -529,6 +529,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         /* Broadcast the root's decision on run completion */
         MPI_Bcast(&runComplete, 1, MPI_INT, 0, MPI_COMM_WORLD);
     }// while (!runComplete)
+    LALInferenceWriteMCMCSamples(runState);
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void record_likelihoods(LALInferenceThreadState *thread) {
