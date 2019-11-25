@@ -361,7 +361,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
             LALInferenceDataDump(runState->data, thread->model);
 
 		/* Install the signal handler */
-		install_resume_handler(CondorExitCode);
+        if (LALInferenceGetProcParamVal(runState->commandLine, "--resume"))
+    		install_resume_handler(CondorExitCode);
     }
 
     fflush(stdout);
