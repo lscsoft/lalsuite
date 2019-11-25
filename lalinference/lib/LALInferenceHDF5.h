@@ -28,6 +28,11 @@
  */
 int LALInferenceCheckNonEmptyFile(char *filename);
 
+/**
+ * Prints the size of the file
+ */
+int LALInferencePrintCheckpointFileInfo(char *filename);
+
 int LALInferenceH5VariablesArrayToDataset(
     LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N,
     const char *TableName);
