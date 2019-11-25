@@ -2460,16 +2460,7 @@ class EngineJob(LALInferenceDAGJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
         """
         Over-load base class method to choose condor universe properly
         """
-        if self.engine=='lalinferencenest' or self.engine=='lalinferenceburst':
-            if site is not None and site!='local':
-                self.set_universe('vanilla')
-            else:
-                if self.resume:
-                    self.set_universe('vanilla')
-                else:
-                    self.set_universe('standard')
-        else:
-            self.set_universe('vanilla')
+        self.set_universe('vanilla')
         pipeline.CondorDAGJob.set_grid_site(self,site)
 
 class EngineNode(LALInferenceDAGNode):

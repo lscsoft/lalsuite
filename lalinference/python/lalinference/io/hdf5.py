@@ -185,8 +185,13 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
         # (https://www.hdfgroup.org/HDF5/doc/HL/H5TB_Spec.html).
         if key == 'CLASS' or key == 'VERSION' or key == 'TITLE' or key.startswith('FIELD_'):
             continue
-        table.add_column(Column([value] * len(table), name=key,
+        if key in table.colnames:
+            # This is handled separately as rename_duplicate can trigger a bug in astropy < 2.0.16
+            table.add_column(Column([value] * len(table), name=key,
                          meta={'vary': FIXED}), rename_duplicate=True)
+        else:
+            table.add_column(Column([value] * len(table), name=key,
+                         meta={'vary': FIXED}))
 
     # Delete remaining table attributes.
     table.meta.clear()
