@@ -43,7 +43,7 @@ int LALInferencePrintCheckpointFileInfo(char *filename)
     struct stat st;
     if( !stat(filename, &st) )
     {
-		printf("File %s is size %ju bytes\n",filename,st.st_size);
+		printf("File %s is size %jd bytes\n",filename,(intmax_t) st.st_size);
     }
     return(0);
 }
