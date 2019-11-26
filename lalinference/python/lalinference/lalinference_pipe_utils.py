@@ -2404,6 +2404,10 @@ class EngineJob(LALInferenceDAGJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
             hostname='Unknown'
         if cp.has_option('engine','resume'):
             self.resume=True
+            # These are taken from James's example
+            self.add_condor_cmd('+SuccessCheckpointExitCode','77')
+            self.add_condor_cmd('+WantFTOnCheckpoint','True')
+            self.add_opt('checkpoint-exit-code','77')
         else:
             self.resume=False
         if site:

@@ -241,20 +241,32 @@ static void catch_alarm(UNUSED int sig, UNUSED siginfo_t *siginfo,UNUSED void *c
   __ns_saveStateFlag=1;
 }
 
-static void install_resume_handler(void);
-static void install_resume_handler(void)
+/**
+ * Install the signal handlers for checkpointing.
+ * If checkpoint_exit!=0, then install the catch_alarm_condor_exit_code
+ * handler to exit after checkpointing
+ */
+static void install_resume_handler(int checkpoint_exit);
+static void install_resume_handler(int checkpoint_exit)
 {
     /* Install a periodic alarm that will trigger a checkpoint */
     int sigretcode=0;
     struct sigaction sa;
-    sa.sa_sigaction=catch_alarm;
+    if (checkpoint_exit)
+    {
+        sa.sa_sigaction=catch_interrupt;
+    }
+    else
+    {
+        sa.sa_sigaction=catch_alarm;
+    }
     sa.sa_flags=SA_SIGINFO;
     sigretcode=sigaction(SIGVTALRM,&sa,NULL);
     if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint timer!\n");
     /* Condor sends SIGUSR2 to checkpoint and continue */
     sigretcode=sigaction(SIGUSR2,&sa,NULL);
     if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGUSR2.\n");
-    checkpoint_timer.it_interval.tv_sec=30*60; /* Default timer 30 mins */
+    checkpoint_timer.it_interval.tv_sec=60*60; /* Default timer 60 mins */
     checkpoint_timer.it_interval.tv_usec=0;
     checkpoint_timer.it_value=checkpoint_timer.it_interval;
     setitimer(ITIMER_VIRTUAL,&checkpoint_timer,NULL);
@@ -581,6 +593,8 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
     (--verbose)                      Output more info. N=1: errors, N=2 (default): warnings, N=3: info\n\
     (--resume)                       Allow non-condor checkpointing every 4 hours. If given will check \n\
                                      or OUTFILE_resume and continue if possible\n\
+    (--checkpoint-exit-code N)       Exit with code N when checkpoint is complete.\n\
+                                     For use with condor's +SuccessCheckpointExitCode option\n\
     \n";
 
   ProcessParamsTable *ppt=NULL;
@@ -728,8 +742,12 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   LALInferenceVariables *currentVars=XLALCalloc(1,sizeof(LALInferenceVariables));
   UINT4 samplePrior=0; //If this flag is set to a positive integer, code will just draw this many samples from the prior
   ProcessParamsTable *ppt=NULL;
+  int CondorExitCode=0;
 
   if(!runState->logsample) runState->logsample=LALInferenceLogSampleToArray;
+
+  if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--checkpoint-exit-code")))
+    CondorExitCode=atoi(ppt->value);
 
   if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
     logZnoise=LALInferenceNullLogLikelihood(runState->data);
@@ -920,7 +938,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   /* Install interrupt handler for resuming */
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
   {
-      install_resume_handler();
+      install_resume_handler(CondorExitCode);
   }
   /* Iterate until termination condition is met */
   do {
@@ -987,7 +1005,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     }
    /* Have we been told to quit? */
   if(__ns_exitFlag) {
-    exit(0);
+    exit(CondorExitCode);
   }
 
   /* Update the proposal */

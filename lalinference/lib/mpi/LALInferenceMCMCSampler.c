@@ -25,6 +25,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <sys/times.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -58,6 +60,12 @@
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 static void
 thinDifferentialEvolutionPoints(LALInferenceThreadState *thread) {
@@ -123,6 +131,69 @@ resetDifferentialEvolutionBuffer(LALInferenceThreadState *thread) {
     thread->differentialPointsSkip = LALInferenceGetINT4Variable(thread->proposalArgs, "de_skip");
 }
 
+/* This is checked by the main loop to determine when to checkpoint */
+static volatile sig_atomic_t __master_saveStateFlag = 0;
+/* This indicates the main loop should terminate */
+static volatile sig_atomic_t __master_exitFlag = 0;
+
+/* Signal handler for SIGALRM, for periodic checkpointing-with-exit */
+static void catch_alarm(UNUSED int sig, UNUSED siginfo_t *siginfo,UNUSED void *context);
+static void catch_alarm(UNUSED int sig, UNUSED siginfo_t *siginfo,UNUSED void *context)
+{
+    __master_saveStateFlag=1;
+}
+
+/* Signal handler for SIGINT, which is produced by condor
+ * when evicting a job, or when the user presses Ctrl-C */
+static void catch_interrupt(UNUSED int sig, UNUSED siginfo_t *siginfo,UNUSED void *context);
+static void catch_interrupt(UNUSED int sig, UNUSED siginfo_t *siginfo,UNUSED void *context)
+{
+
+		__master_saveStateFlag=1;
+		__master_exitFlag=1;
+}
+
+static struct itimerval checkpoint_timer;
+
+/**
+   * Install the signal handlers for checkpointing.
+   * If checkpoint_exit!=0, then install the catch_alarm_condor_exit_code
+   * handler to exit after checkpointing
+   */
+static void install_resume_handler(int checkpoint_exit);
+static void install_resume_handler(int checkpoint_exit)
+  {
+      /* Install a periodic alarm that will trigger a checkpoint */
+      int sigretcode=0;
+      struct sigaction sa;
+      if (checkpoint_exit)
+      {
+          sa.sa_sigaction=catch_interrupt;
+      }
+      else
+      {
+          sa.sa_sigaction=catch_alarm;
+      }
+      sa.sa_flags=SA_SIGINFO;
+      sigretcode=sigaction(SIGVTALRM,&sa,NULL);
+      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint timer!\n");
+      /* Condor sends SIGUSR2 to checkpoint and continue */
+      sigretcode=sigaction(SIGUSR2,&sa,NULL);
+      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGUSR2.\n");
+      checkpoint_timer.it_interval.tv_sec=60*60; /* Default timer every hour */
+      checkpoint_timer.it_interval.tv_usec=0;
+      checkpoint_timer.it_value=checkpoint_timer.it_interval;
+      setitimer(ITIMER_VIRTUAL,&checkpoint_timer,NULL);
+      /* Install the handler for the condor interrupt signal */
+      sa.sa_sigaction=catch_interrupt;
+      sigretcode=sigaction(SIGINT,&sa,NULL);
+      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGINT.\n");
+      /* Condor sends SIGTERM to vanilla universe jobs to evict them */
+      sigretcode=sigaction(SIGTERM,&sa,NULL);
+      if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGTERM.\n");
+      /* Condor sends SIGTSTP to standard universe jobs to evict them.
+       *I think condor handles this, so didn't add a handler CHECK */
+  }
 
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     INT4 t=0; //indexes for for() loops
@@ -132,10 +203,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     LALStatus status;
     LALInferenceVariables *algorithm_params;
     LALInferenceThreadState *thread;
-    INT4 write_interval = 1;
     INT4 acl_check_interval = 1;
-    INT4 step_last_written;
     INT4 step_last_acl_check;
+    int CondorExitCode=0;
+	ProcessParamsTable *ppt=NULL;
+	int local_exitFlag=0;
+	int local_saveStateFlag=0;
 
     memset(&status, 0, sizeof(status));
 
@@ -143,6 +216,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
     algorithm_params = runState->algorithmParams;
+
+    if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--checkpoint-exit-code")))
+      CondorExitCode=atoi(ppt->value);
 
     /* Get all algorithm params */
     INT4 n_local_threads = runState->nthreads;
@@ -283,13 +359,15 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         /* Print to file the contents of model->freqhPlus. */
         if (LALInferenceGetProcParamVal(runState->commandLine, "--data-dump"))
             LALInferenceDataDump(runState->data, thread->model);
+
+        /* Install the signal handler */
+        install_resume_handler(CondorExitCode);
     }
 
     fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
 
     // iterate:
-    step_last_written = runState->threads[0].step;
     step_last_acl_check = runState->threads[0].step;
     while (!runComplete) {
         #pragma omp parallel for private(thread)
@@ -372,16 +450,26 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
             }
         }
 
-        /* Write entire output file ten times each sampling decade.  This is done because there is
-         * currently no way to append samples to an exiting HDF5 file, at least using LAL routines. */
-        write_interval = (INT4) pow(10, floor(log10(runState->threads[0].step + adaptLength)) - 1);
-        write_interval = write_interval > 1 ? write_interval : 1;
-        if ((runState->threads[0].step < step_last_written) ||
-            (runState->threads[0].step - step_last_written > write_interval)) {
-            LALInferenceCheckpointMCMC(runState);
-            LALInferenceWriteMCMCSamples(runState);
-            step_last_written = runState->threads[0].step;
-        }
+		/* Synchronise interruptions */
+		if(MPIrank==0){
+                    local_saveStateFlag=__master_saveStateFlag;
+                    local_exitFlag=__master_exitFlag;
+		}
+		MPI_Bcast(&local_saveStateFlag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Bcast(&local_exitFlag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		if(local_saveStateFlag!=0)
+		{
+				LALInferenceCheckpointMCMC(runState);
+				LALInferenceWriteMCMCSamples(runState);
+				/* Wait for all processes to save */
+				MPI_Barrier(MPI_COMM_WORLD);
+				__master_saveStateFlag=0;
+		}
+		if(local_exitFlag) {
+				/* Wait for all processes to be ready to exit */
+				MPI_Barrier(MPI_COMM_WORLD);
+				exit(CondorExitCode);
+		}
 
         /* Open swap file if going verbose */
         verbose_file = NULL;
@@ -440,6 +528,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         /* Broadcast the root's decision on run completion */
         MPI_Bcast(&runComplete, 1, MPI_INT, 0, MPI_COMM_WORLD);
     }// while (!runComplete)
+    LALInferenceWriteMCMCSamples(runState);
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void record_likelihoods(LALInferenceThreadState *thread) {

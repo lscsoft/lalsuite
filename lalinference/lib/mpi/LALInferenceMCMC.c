@@ -127,6 +127,12 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     (--prop-track)      Output proposal parameters\n\
     (--outfile file)    Write output files <file>.<chain_number> \n\
                             (PTMCMC.output.<random_seed>.<mpi_thread>)\n\
+    ----------------------------------------------\n\
+    --- Checkpointing-----------------------------\n\
+    ----------------------------------------------\n\
+	(--resume)                 Allow jobs to resume partially completed run\n\
+	(--checkpoint-exit-code N) Exit with code N when checkpoint is complete.\n\
+	                           For use with condor's +SuccessCheckpointExitCode option\n\
     \n";
     INT4 mpi_rank, mpi_size;
     INT4 ntemps_per_thread;
