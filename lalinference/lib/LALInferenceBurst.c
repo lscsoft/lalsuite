@@ -57,12 +57,13 @@ int main(int argc, char *argv[]){
   
   LALInferenceRunState *state;
   ProcessParamsTable *procParams=NULL;
-  
+  int helpflag=0;
   /* Read command line and parse */
   procParams=LALInferenceParseCommandLine(argc,argv);
   if(LALInferenceGetProcParamVal(procParams,"--help"))
   {
     fprintf(stdout,"%s",help);
+	helpflag=1;
   }
   
   /* initialise runstate based on command line */
@@ -72,15 +73,16 @@ int main(int argc, char *argv[]){
   state = LALInferenceInitRunState(procParams);
   
   ProcessParamsTable *ppt=NULL;
-  if ((ppt=LALInferenceGetProcParamVal(state->commandLine,"--binj"))){
+  if (!helpflag && (ppt=LALInferenceGetProcParamVal(state->commandLine,"--binj"))){
     /* Perform injections if data successful read or created */
     LALInferenceInjectBurstSignal(state->data, state->commandLine);
   }
   else{
     /* Perform CBC injection if required */
-    LALInferenceInjectInspiralSignal(state->data, state->commandLine);
+		  if(!helpflag)
+		    LALInferenceInjectInspiralSignal(state->data, state->commandLine);
   }
-  if (LALInferenceGetProcParamVal(state->commandLine,"--inject_from_mdc")){
+  if (!helpflag && LALInferenceGetProcParamVal(state->commandLine,"--inject_from_mdc")){
       fprintf(stdout,"WARNING: Injecting a signal from MDC has not been carefully tested yet! \n"); 
       LALInferenceInjectFromMDC(state->commandLine, state->data);
   }
@@ -88,8 +90,7 @@ int main(int argc, char *argv[]){
   /* Simulate calibration errors. 
   * NOTE: this must be called after both ReadData and (if relevant) 
   * injectInspiralTD/FD are called! */
-  LALInferenceApplyCalibrationErrors(state->data, state->commandLine);
-
+  if(!helpflag) LALInferenceApplyCalibrationErrors(state->data, state->commandLine);
   /* Set up the appropriate functions for the nested sampling algorithm */
   if (state){
     /* Set up the appropriate functions for the nested sampling algorithm */
@@ -101,7 +102,7 @@ int main(int argc, char *argv[]){
   }
 
   /* Check if recovery is LIB or CBC */
-  if ((ppt=LALInferenceGetProcParamVal(state->commandLine,"--approx"))){
+  if (!helpflag && (ppt=LALInferenceGetProcParamVal(state->commandLine,"--approx"))){
     if (XLALCheckBurstApproximantFromString(ppt->value)){
       /* Set up the threads */
       LALInferenceInitBurstThreads(state,1);

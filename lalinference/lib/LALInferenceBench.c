@@ -110,13 +110,14 @@ int main(int argc, char *argv[]){
   UINT4 Niter=1000;
   UINT4 bench_L=1;
   UINT4 bench_T=1;
-  
+  int helpflag=0;
   procParams=LALInferenceParseCommandLine(argc,argv);
 
   if(LALInferenceGetProcParamVal(procParams,"--help"))
   {
     fprintf(stdout,"%s",HELPSTR);
     bench_T=bench_L=0;
+	helpflag=1;
   }
   if((ppt=LALInferenceGetProcParamVal(procParams,"--Niter")))
      Niter=atoi(ppt->value);
@@ -132,7 +133,7 @@ int main(int argc, char *argv[]){
   
   runState = LALInferenceInitRunState(procParams);
 
-  if(runState) {
+  if(runState && !helpflag) {
     LALInferenceInjectInspiralSignal(runState->data,runState->commandLine);
 
     /* Simulate calibration errors */
@@ -144,7 +145,7 @@ int main(int argc, char *argv[]){
   LALInferenceInitLikelihood(runState);
 
   /* Disable waveform caching */
-  runState->threads[0].model->waveformCache=NULL;
+  if (!helpflag) runState->threads[0].model->waveformCache=NULL;
   
   if(bench_T)
   {
