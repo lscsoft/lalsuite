@@ -187,8 +187,6 @@ for param in spectralParams:
     greedyBinSizes[param]=2.5
 for param in spininducedquadParams:
     greedyBinSizes[param]=2.5
-for param in eosParams:
-    greedyBinSizes[param]=2.5
     #Confidence levels
 for loglname in statsParams:
     greedyBinSizes[loglname]=0.1
