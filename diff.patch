@@ -60,7 +60,7 @@ index 7bfa8b1ddb..4f002bdbc0 100644
      oneDMenus={'Masses':None,'SourceFrame':None,'Timing':None,'Extrinsic':None,'Spins':None,'StrongField':None,'Others':None}
  
 diff --git a/lalinference/python/lalinference/bayespputils.py b/lalinference/python/lalinference/bayespputils.py
-index 0546a070c6..4c1cd327c8 100644
+index 0546a070c6..9d713cf029 100644
 --- a/lalinference/python/lalinference/bayespputils.py
 +++ b/lalinference/python/lalinference/bayespputils.py
 @@ -142,11 +142,13 @@ ppEParams=['ppEalpha','ppElowera','ppEupperA','ppEbeta','ppElowerb','ppEupperB',
@@ -78,18 +78,16 @@ index 0546a070c6..4c1cd327c8 100644
  
  #Extrinsic
  distParams=['distance','distMPC','dist','distance_maxl']
-@@ -179,6 +181,10 @@ for param in fourPiecePolyParams:
+@@ -179,6 +181,8 @@ for param in fourPiecePolyParams:
      greedyBinSizes[param]=2.5
  for param in spectralParams:
      greedyBinSizes[param]=2.5
 +for param in spininducedquadParams:
 +    greedyBinSizes[param]=2.5
-+for param in eosParams:
-+    greedyBinSizes[param]=2.5
      #Confidence levels
  for loglname in statsParams:
      greedyBinSizes[loglname]=0.1
-@@ -510,6 +516,10 @@ def plot_label(param):
+@@ -510,6 +514,10 @@ def plot_label(param):
          'dsigma2':r'$d\sigma_2$',
          'dsigma3':r'$d\sigma_3$',
          'dsigma4':r'$d\sigma_4$',
