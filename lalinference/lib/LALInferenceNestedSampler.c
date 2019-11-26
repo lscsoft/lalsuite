@@ -252,11 +252,11 @@ static void install_resume_handler(int checkpoint_exit)
     /* Install a periodic alarm that will trigger a checkpoint */
     int sigretcode=0;
     struct sigaction sa;
-	if (checkpoint_exit)
+    if (checkpoint_exit)
     {
         sa.sa_sigaction=catch_interrupt;
     }
-	else
+    else
     {
         sa.sa_sigaction=catch_alarm;
     }

@@ -360,8 +360,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         if (LALInferenceGetProcParamVal(runState->commandLine, "--data-dump"))
             LALInferenceDataDump(runState->data, thread->model);
 
-		/* Install the signal handler */
-		install_resume_handler(CondorExitCode);
+        /* Install the signal handler */
+        install_resume_handler(CondorExitCode);
     }
 
     fflush(stdout);
@@ -452,8 +452,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
 		/* Synchronise interruptions */
 		if(MPIrank==0){
-            local_saveStateFlag=__master_saveStateFlag;
-            local_exitFlag=__master_exitFlag;
+                    local_saveStateFlag=__master_saveStateFlag;
+                    local_exitFlag=__master_exitFlag;
 		}
 		MPI_Bcast(&local_saveStateFlag, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Bcast(&local_exitFlag, 1, MPI_INT, 0, MPI_COMM_WORLD);
