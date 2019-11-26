@@ -67,6 +67,12 @@ cache:
     done
   }
 
+.top-level-build: &top-level-build
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen --enable-swig
+    - make -j4 distcheck
+
 # -- build templates ----------------------------
 
 # -- rpm
@@ -589,12 +595,20 @@ top-level:
   image: igwn/lalsuite-dev:el7
   needs:
     - make-dist
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen --enable-swig
-    - make -j4 distcheck
+  <<: *top-level-build
   only:
     - pushes
+
+top-level-testing:
+  stage: integration tests
+  image: igwn/lalsuite-dev:el7-testing
+  needs:
+    - make-dist
+  <<: *top-level-build
+  only:
+    - schedules
+    - web
+  allow_failure: true
 
 # -- docker -------------------------------------
 
@@ -770,10 +784,7 @@ platform:debian:buster:
   stage: platform tests
   needs:
     - make-dist
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen --enable-swig
-    - make -j4 distcheck
+  <<: *top-level-build
   only:
     - schedules
     - web
