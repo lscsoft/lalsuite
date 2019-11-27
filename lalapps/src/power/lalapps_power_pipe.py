@@ -33,12 +33,15 @@ Excess power offline pipeline construction script.
 from __future__ import print_function
 
 
-import ConfigParser
 import math
 from optparse import OptionParser
 import os
 import sys
 import tempfile
+try:
+    from configparser import (ConfigParser, NoOptionError)
+except ImportError:  # python < 3
+    from ConfigParser import (SafeConfigParser as ConfigParser, NoOptionError)
 
 
 from ligo import segments
@@ -109,7 +112,7 @@ def parse_command_line():
 def parse_config_file(options):
 	if options.verbose:
 		print("reading %s ..." % options.config_file, file=sys.stderr)
-	config = ConfigParser.SafeConfigParser()
+	config = ConfigParser()
 	config.read(options.config_file)
 
 	options.tag = config.get("pipeline", "user_tag")
@@ -121,7 +124,7 @@ def parse_config_file(options):
 		seglistdict[ifo] = segmentsUtils.fromsegwizard(file(config.get("pipeline", "seglist_%s" % ifo)), coltype = LIGOTimeGPS).coalesce()
 		try:
 			offset = config.getfloat("pipeline", "tiling_phase_%s" % ifo)
-		except ConfigParser.NoOptionError:
+		except NoOptionError:
 			offset = 0.0
 		if offset:
 			tiling_phase[ifo] = offset
