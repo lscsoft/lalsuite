@@ -3,16 +3,18 @@
 
 from __future__ import print_function
 
-from lalinference import lalinference_pipe_utils as pipe_utils
-from lalinference.lalinference_pipe_utils import mkdirs
-from glue import pipeline
-import ConfigParser
-from optparse import OptionParser,OptionValueError
-import sys
 import ast
 import os
+import sys
 import uuid
+from optparse import OptionParser,OptionValueError
 
+from six.moves.configparser import ConfigParser
+
+from glue import pipeline
+
+from lalinference import lalinference_pipe_utils as pipe_utils
+from lalinference.lalinference_pipe_utils import mkdirs
 
 usage=""" %prog [options] config.ini
 Setup a DAG to run an end-to-end lalinference test:
@@ -38,11 +40,11 @@ inifile=args[0]
 
 # Set up the configuration for the sub-dags
 
-prior_cp=ConfigParser.ConfigParser()
+prior_cp=ConfigParser()
 prior_cp.optionxform = str
 prior_cp.readfp(open(inifile))
 
-main_cp=ConfigParser.ConfigParser()
+main_cp=ConfigParser()
 main_cp.optionxform = str
 main_cp.readfp(open(inifile))
 

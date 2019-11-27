@@ -161,7 +161,7 @@ outputs:
         - cbcBayesPostProc --help
         - cbcBayesThermoInt --help
         - imrtgr_imr_consistency_test --help
-        #- lalinference_burst_pp_pipe --help
+        - lalinference_burst_pp_pipe --help
         - lalinference_coherence_test --help
         - lalinference_compute_roq_weights --help
         #- lalinference_cpnest --help
@@ -170,7 +170,7 @@ outputs:
         - lalinference_multi_pipe --help
         - lalinference_nest2pos --help
         #- lalinference_pipe --help
-        #- lalinference_pp_pipe --help
+        - lalinference_pp_pipe --help
         - lalinference_review_test --help
 
     about:
