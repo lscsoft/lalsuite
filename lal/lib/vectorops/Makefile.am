@@ -23,13 +23,6 @@ noinst_HEADERS = \
 
 libvectorops_la_LIBADD =
 
-if HAVE_SSE_COMPILER
-noinst_LTLIBRARIES += libvectormath_sse.la
-libvectorops_la_LIBADD += libvectormath_sse.la
-libvectormath_sse_la_SOURCES = VectorMath_SSEx.c
-libvectormath_sse_la_CFLAGS = $(AM_CFLAGS) $(SSE_CFLAGS)
-endif
-
 if HAVE_SSE2_COMPILER
 noinst_LTLIBRARIES += libvectormath_sse2.la
 libvectorops_la_LIBADD += libvectormath_sse2.la
