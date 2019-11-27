@@ -640,8 +640,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember( timestampsFiles,       STRINGVector, 0,  OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
 
   /* sampling and heterodyning frequencies */
-  XLALRegisterUvarMember(  fmin,                 REAL8, 0, NODEFAULT, "Lowest frequency in output SFT (heterodyning frequency), REQUIRED unless --noiseSFTs given.");
-  XLALRegisterUvarMember(  Band,                 REAL8, 0, NODEFAULT, "Bandwidth of output SFT in Hz (= 1/2 sampling frequency), REQUIRED unless --noiseSFTs given.");
+  XLALRegisterUvarMember(  fmin,                 REAL8, 0, NODEFAULT, "Lowest frequency (Hz) of output SFT, and heterodyning frequency of time series written to frames; REQUIRED unless --noiseSFTs given.\n\nNote that, since the output time series written to frames are heterodyned at this frequency, signals at frequency 'f' will be shifted to frequency 'f - fmin'.");
+  XLALRegisterUvarMember(  Band,                 REAL8, 0, NODEFAULT, "Bandwidth (Hz) of output SFT, and of time series written to frames (i.e. half the time series sampling frequency); REQUIRED unless --noiseSFTs given.");
 
   /* SFT properties */
   XLALRegisterUvarMember(  Tsft,                 REAL8, 0, OPTIONAL, "Time baseline of one SFT in seconds");
