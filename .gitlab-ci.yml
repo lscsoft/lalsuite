@@ -589,6 +589,11 @@ lalinference_testjob:
   only:
     - schedules
     - web
+  artifacts:
+    expire_in: 18h
+    paths:
+      - example/
+    when: always
 
 top-level:
   stage: integration tests
