@@ -160,6 +160,8 @@ test:
     - lalapps_power --help
     - lalapps_power_calc_likelihood --help
     - lalapps_power_final --help
+    - lalapps_power_likelihood_pipe --help
+    - lalapps_power_pipe --help
     - lalapps_power_plot_binj --help
     - lalapps_power_plot_binjtf --help
     - lalapps_power_plot_burca --help
