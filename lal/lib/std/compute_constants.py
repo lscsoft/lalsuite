@@ -963,6 +963,8 @@ print '''
 /**
  * @brief Ratio of mean solar day to sidereal day, dimensionless
  * @details
+ * This quantity is evaluated at the epoch J2000.0 (=2000-01-01T12:00:00Z) as:
+ *
  * LAL_SOL_SID = LAL_ROT_DAY + LAL_DAYJUL_SI * LAL_EPREC_SI
  */'''
 print '#define LAL_SOL_SID',
@@ -972,6 +974,8 @@ print '''
 /**
  * @brief Mean sidereal day, s
  * @details
+ * This quantity is evaluated at the epoch J2000.0 (=2000-01-01T12:00:00Z) as:
+ *
  * LAL_DAYSID_SI = LAL_DAYJUL_SI / LAL_SOL_SID
  */'''
 print '#define LAL_DAYSID_SI',
