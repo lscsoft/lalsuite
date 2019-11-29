@@ -756,7 +756,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--no-detector-frame)              model will NOT use detector-centred coordinates and instead RA,dec\n\
     (--grtest-parameters dchi0,..,dxi1,..,dalpha1,..) template will assume deformations in the corresponding phase coefficients.\n\
     (--ppe-parameters aPPE1,....     template will assume the presence of an arbitrary number of PPE parameters. They must be paired correctly.\n\
-    (--modeList l1,m1 l2,m2 ... l4,m4)           List of modes to be used by the model. The chosen modes ('l,m') should be passed as a ' ' seperated list.\n\
+    (--modeList lm,l-m...,lm,l-m)           List of modes to be used by the model. The chosen modes ('lm') should be passed as a ',' seperated list.\n\
 \n\
     ----------------------------------------------\n\
     --- Starting Parameters ----------------------\n\
@@ -1456,28 +1456,42 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--modeList"))) {
 
     char *end_str;
-    char *modes = strtok_r(ppt->value, " ", &end_str);
-    int l[5], m[5], i=0; j=0;
+    char substring[] = "-";
+    char *modes = strtok_r(ppt->value, ",", &end_str);
+    int l[5], m[5], ii=0, jj=0;
 
     while (modes != NULL) {
-      char *end_token;
-      char *token2 = strtok_r(modes, ",", &end_token);
-      int k = 0;
-      while (token2 != NULL) {
-        if ( k == 0 ) {
-          l[i++] = atoi(token2);
+        int k = 0;
+        if (strstr(modes, substring) != NULL) {
+            char *end_token;
+            char *token = strtok_r(modes, "-", &end_token);
+            while (token != NULL) {
+                if ( k == 0 ) {
+                    l[ii++] = atoi(token);
+                } else {
+                    m[jj++] = -1 * atoi(token);
+                }
+                k += 1;
+                token = strtok_r(NULL, "-", &end_token);
+            }
         } else {
-          m[j++] = atoi(token2);
+            int value = atoi(modes);
+
+            for (k=2; k>=0; k--) {
+                if (k == 2) {
+                    m[jj++] = value % 10;
+                } else if (k == 1) {
+                    l[ii++] = value % 10;
+                }
+                value /= 10;
+            }
         }
-        k += 1;
-        token2 = strtok_r(NULL, ",", &end_token);
-      }
-      modes = strtok_r(NULL, " ", &end_str);
+        modes = strtok_r(NULL, ",", &end_str);
     }
 
     LALValue *ModeArray = XLALSimInspiralCreateModeArray();
-    for (int ii=0; ii<i; ii+=1){
-       XLALSimInspiralModeArrayActivateMode(ModeArray, l[ii], m[ii]);
+    for (int iii=0; iii<ii; iii+=1){
+       XLALSimInspiralModeArrayActivateMode(ModeArray, l[iii], m[iii]);
     }
     XLALSimInspiralWaveformParamsInsertModeArray(model->LALpars, ModeArray);
     XLALDestroyValue(ModeArray);
