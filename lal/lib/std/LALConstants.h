@@ -332,7 +332,7 @@ extern "C" {
 #define LAL_MP_SI 1.672621923684144692109494784075478798e-27
 
 /**
- * @brief Atomic mass uint, kg
+ * @brief Atomic mass unit, kg
  * @details
  * LAL_AMU_SI = (LAL_ME_SI / LAL_ME_AMU)
  */
@@ -381,7 +381,7 @@ extern "C" {
  * @see http://asa.hmnao.com/SecK/Constants.html
  */
 /** @{ */
-#define LAL_SOL_SID 1.002737909350795 /**< Ratio of mean solar day to sidereal day, dimensionless */
+#define LAL_ROT_DAY 1.00273781191135448 /**< Number of Earth rotations in one UT1 day, dimensionless */
 #define LAL_DAYJUL_SI 86400e0 /**< Julian day, s */
 #define LAL_YRJUL_SI 31557600e0 /**< Julian year, s */
 #define LAL_LYR_SI 9460730472580800e0 /**< (Julian) Lightyear, m */
@@ -399,7 +399,7 @@ extern "C" {
 
 /**
  * @brief Earth equatorial radius, m
- * @see http://asa.usno.navy.mil/static/files/2015/Astronomical_Constants_2015.pdf
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */
 #define LAL_REARTH_SI 6378136.6
 
@@ -428,7 +428,7 @@ extern "C" {
  * @details
  * This is the measured value of the mean obliquity of the
  * ecliptic, 84381.406 arcseconds, converted to radians.
- * @see http://asa.usno.navy.mil/static/files/2015/Astronomical_Constants_2015.pdf
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */
 #define LAL_IEARTH 0.409092600600582871467239393761915655
 
@@ -437,6 +437,24 @@ extern "C" {
  * @see E. Myles Standish and James G. Williams, Orbital Ephemerides of the Sun, Moon, and Planets ftp://ssd.jpl.nasa.gov/pub/eph/planets/ioms/ExplSupplChap8.pdf
  */
 #define LAL_EEARTH 0.0167
+
+/**
+ * @brief Rate of Earth precession (2000), Hz
+ * @details
+ * This is the rate of precession of the Earth,
+ * 4612.156534 arcseconds per Julian century,
+ * converted to cycles per second, at the epoch J2000.0
+ * (=2000-01-01T12:00:00Z):
+ * 
+ * LAL_EPREC_SI = 4612.156534 / 36525 / 15 / 86400 / LAL_DAYJUL_SI
+ *
+ * @see Linear (in t) term in Eq. (42) of
+ * N. Capitaine, P. T. Wallace and J. Chapront
+ * "Expressions for IAU 2000 precession quantities",
+ * Astronomy & Astrophysics 412 567 (2003)
+ * https://doi.org/10.1051/0004-6361:20031539 
+ */
+#define LAL_EPREC_SI 1.127703867758020059420250393792953007e-12
 
 /**
  * @brief Geocentric gravitational constant, m^3 s^-2 (TCB)
@@ -494,6 +512,7 @@ extern "C" {
 
 /**
  * @brief Sine of Earth inclination (2000)
+ * @details
  * LAL_SINIEARTH = sin(LAL_IEARTH)
  */
 #define LAL_SINIEARTH 0.397776969112605992551264763661918798
@@ -527,11 +546,18 @@ extern "C" {
 #define LAL_MTSUN_SI 4.925491025543575903411922162094833998e-6
 
 /**
+ * @brief Ratio of mean solar day to sidereal day, dimensionless
+ * @details
+ * LAL_SOL_SID = LAL_ROT_DAY + LAL_DAYJUL_SI * LAL_EPREC_SI
+ */
+#define LAL_SOL_SID 1.002737909344968654292933133909634024
+
+/**
  * @brief Mean sidereal day, s
  * @details
  * LAL_DAYSID_SI = LAL_DAYJUL_SI / LAL_SOL_SID
  */
-#define LAL_DAYSID_SI 86164.090530832885726908802698342011678582
+#define LAL_DAYSID_SI 86164.090531333536768710524462700317733190
 /** @} */
 
 /**

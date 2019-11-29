@@ -637,7 +637,7 @@ print as_str(LAL_MP_SI)
 LAL_AMU_SI =			(LAL_ME_SI / LAL_ME_AMU)
 print '''
 /**
- * @brief Atomic mass uint, kg
+ * @brief Atomic mass unit, kg
  * @details
  * LAL_AMU_SI = (LAL_ME_SI / LAL_ME_AMU)
  */'''
@@ -706,16 +706,16 @@ print r'''
 
 print '/** @{ */'
 
-LAL_SOL_SID = D('1.002737909350795')
+LAL_ROT_DAY = D('1.00273781191135448')
 LAL_DAYJUL_SI = D('86400')
 LAL_YRJUL_SI = D('31557600')
 LAL_LYR_SI = LAL_YRJUL_SI * LAL_C_SI
 LAL_AU_SI = D('149597870700')
 LAL_PC_SI = LAL_AU_SI * D('3600') * LAL_180_PI
 
-print '#define LAL_SOL_SID',
-print LAL_SOL_SID,
-print '/**< Ratio of mean solar day to sidereal day, dimensionless */'
+print '#define LAL_ROT_DAY',
+print LAL_ROT_DAY,
+print '/**< Number of Earth rotations in one UT1 day, dimensionless */'
 
 print '#define LAL_DAYJUL_SI',
 print str(LAL_DAYJUL_SI) + 'e0',
@@ -751,6 +751,7 @@ print '/** @{ */'
 
 LAL_GMSUN_SI = D('1.32712442099E20')
 LAL_GMEARTH_SI = D('3.986004418E14')
+LAL_EPREC_SI = D('4612.156534') / D('36525') / D('15') / D('86400') / LAL_DAYJUL_SI
 LAL_REARTH_SI = D('6378136.6')
 LAL_AWGS84_SI = D('6378137')
 LAL_FWGS84 = D('1') / D('298.257223563')
@@ -765,7 +766,7 @@ LAL_YRSID_SI = D('365.256363004') * LAL_DAYJUL_SI
 print '''
 /**
  * @brief Earth equatorial radius, m
- * @see http://asa.usno.navy.mil/static/files/2015/Astronomical_Constants_2015.pdf
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */'''
 print '#define LAL_REARTH_SI',
 print LAL_REARTH_SI
@@ -800,7 +801,7 @@ print '''
  * @details
  * This is the measured value of the mean obliquity of the
  * ecliptic, 84381.406 arcseconds, converted to radians.
- * @see http://asa.usno.navy.mil/static/files/2015/Astronomical_Constants_2015.pdf
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */'''
 print '#define LAL_IEARTH',
 print str(LAL_IEARTH.quantize(quantize))
@@ -812,6 +813,26 @@ print '''
  */'''
 print '#define LAL_EEARTH',
 print LAL_EEARTH
+
+print '''
+/**
+ * @brief Rate of Earth precession (2000), Hz
+ * @details
+ * This is the rate of precession of the Earth,
+ * 4612.156534 arcseconds per Julian century,
+ * converted to cycles per second, at the epoch J2000.0
+ * (=2000-01-01T12:00:00Z):
+ * 
+ * LAL_EPREC_SI = 4612.156534 / 36525 / 15 / 86400 / LAL_DAYJUL_SI
+ *
+ * @see Linear (in t) term in Eq. (42) of
+ * N. Capitaine, P. T. Wallace and J. Chapront
+ * "Expressions for IAU 2000 precession quantities",
+ * Astronomy & Astrophysics 412 567 (2003)
+ * https://doi.org/10.1051/0004-6361:20031539 
+ */'''
+print '#define LAL_EPREC_SI',
+print as_str(LAL_EPREC_SI)
 
 print '''
 /**
@@ -881,6 +902,7 @@ LAL_MEARTH_SI = LAL_GMEARTH_SI / LAL_G_SI
 LAL_MSUN_SI = LAL_GMSUN_SI / LAL_G_SI
 LAL_MRSUN_SI = LAL_GMSUN_SI / (LAL_C_SI * LAL_C_SI)
 LAL_MTSUN_SI = LAL_GMSUN_SI / (LAL_C_SI * LAL_C_SI * LAL_C_SI)
+LAL_SOL_SID = LAL_ROT_DAY + LAL_DAYJUL_SI * LAL_EPREC_SI
 LAL_DAYSID_SI = LAL_DAYJUL_SI / LAL_SOL_SID
 
 print '''
@@ -936,6 +958,15 @@ print '''
  */'''
 print '#define LAL_MTSUN_SI',
 print as_str(LAL_MTSUN_SI)
+
+print '''
+/**
+ * @brief Ratio of mean solar day to sidereal day, dimensionless
+ * @details
+ * LAL_SOL_SID = LAL_ROT_DAY + LAL_DAYJUL_SI * LAL_EPREC_SI
+ */'''
+print '#define LAL_SOL_SID',
+print as_str(LAL_SOL_SID)
 
 print '''
 /**
