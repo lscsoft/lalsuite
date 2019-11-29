@@ -1472,7 +1472,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
         k += 1;
         token2 = strtok_r(NULL, "-", &end_token);
       }
-      modes = strtok_r(NULL, " ", &end_str);
+      modes = strtok_r(NULL, ",", &end_str);
     }
 
     LALValue *ModeArray = XLALSimInspiralCreateModeArray();
