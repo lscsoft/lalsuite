@@ -756,7 +756,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--no-detector-frame)              model will NOT use detector-centred coordinates and instead RA,dec\n\
     (--grtest-parameters dchi0,..,dxi1,..,dalpha1,..) template will assume deformations in the corresponding phase coefficients.\n\
     (--ppe-parameters aPPE1,....     template will assume the presence of an arbitrary number of PPE parameters. They must be paired correctly.\n\
-    (--modeList l1-m1,l2-m2,...,l4-m4)           List of modes to be used by the model. The chosen modes ('l-m') should be passed as a ',' seperated list.\n\
+    (--modeList l1,m1 l2,m2 ... l4,m4)           List of modes to be used by the model. The chosen modes ('l,m') should be passed as a ' ' seperated list.\n\
 \n\
     ----------------------------------------------\n\
     --- Starting Parameters ----------------------\n\
@@ -1456,12 +1456,12 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--modeList"))) {
 
     char *end_str;
-    char *modes = strtok_r(str, ",", &end_str);
+    char *modes = strtok_r(str, " ", &end_str);
     int l[5], m[5], i=0; j=0;
 
     while (modes != NULL) {
       char *end_token;
-      char *token2 = strtok_r(modes, "-", &end_token);
+      char *token2 = strtok_r(modes, ",", &end_token);
       int k = 0;
       while (token2 != NULL) {
         if ( k == 0 ) {
@@ -1470,9 +1470,9 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
           m[j++] = atoi(token2);
         }
         k += 1;
-        token2 = strtok_r(NULL, "-", &end_token);
+        token2 = strtok_r(NULL, ",", &end_token);
       }
-      modes = strtok_r(NULL, ",", &end_str);
+      modes = strtok_r(NULL, " ", &end_str);
     }
 
     LALValue *ModeArray = XLALSimInspiralCreateModeArray();
