@@ -50,6 +50,7 @@ from . import plot as lp
 import healpy as hp
 import astropy.table
 import numpy as np
+np.random.seed(42)
 from numpy import fmod
 from matplotlib import pyplot as plt,cm as mpl_cm,lines as mpl_lines
 from scipy import stats
