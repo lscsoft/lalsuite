@@ -1456,7 +1456,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--modeList"))) {
 
     char *end_str;
-    char *modes = strtok_r(str, " ", &end_str);
+    char *modes = strtok_r(ppt->value, " ", &end_str);
     int l[5], m[5], i=0; j=0;
 
     while (modes != NULL) {
@@ -1476,7 +1476,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     }
 
     LALValue *ModeArray = XLALSimInspiralCreateModeArray();
-    for (int ii=0; ii<i; ii+=2){
+    for (int ii=0; ii<i; ii+=1){
        XLALSimInspiralModeArrayActivateMode(ModeArray, l[ii], m[ii]);
     }
     XLALSimInspiralWaveformParamsInsertModeArray(model->LALpars, ModeArray);
