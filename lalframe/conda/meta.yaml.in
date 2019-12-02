@@ -31,11 +31,11 @@ requirements:
     - pkg-config
     - swig >=3.0.7
   host:
-    - lal >={{ lal_version }}
+    - lal >={{ lal_version }}a0
     - ldas-tools-framecpp >={{ framecpp_version }}
     - libframe
   run:
-    - lal >={{ lal_version }}
+    - lal >={{ lal_version }}a0
     - ldas-tools-framecpp >={{ framecpp_version }}
     - libframe
 
@@ -74,13 +74,13 @@ outputs:
         - numpy
         - python
       run:
-        - lal >={{ lal_version }}
+        - lal >={{ lal_version }}a0
         - {{ pin_subpackage('lalframe', exact=True) }}
         - ldas-tools-framecpp >={{ framecpp_version }}
         - libframe
         - {{ pin_compatible('numpy') }}
         - python
-        - python-lal >={{ lal_version }}
+        - python-lal >={{ lal_version }}a0
     test:
       source_files:
         - test/F-TEST-600000000-60.gwf

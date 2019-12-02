@@ -34,10 +34,10 @@ requirements:
     - swig >={{ swig_version }}
   host:
     - gsl
-    - lal >={{ lal_version }}
+    - lal >={{ lal_version }}a0
   run:
     - gsl
-    - lal >={{ lal_version }}
+    - lal >={{ lal_version }}a0
 
 test:
   commands:
@@ -77,11 +77,11 @@ outputs:
         - python
       run:
         - gsl
-        - lal >={{ lal_version }}
+        - lal >={{ lal_version }}a0
         - {{ pin_subpackage('lalsimulation', exact=True) }}
         - {{ pin_compatible('numpy') }}
         - python
-        - python-lal >={{ lal_version }}
+        - python-lal >={{ lal_version }}a0
     test:
       imports:
         - lalsimulation
