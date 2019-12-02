@@ -35,15 +35,15 @@ requirements:
     - swig >={{ swig_version }}
   host:
     - gsl
-    - lal >={{ lal_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalsimulation >={{ lalsimulation_version }}
+    - lal >={{ lal_version }}a0
+    - lalmetaio >={{ lalmetaio_version }}a0
+    - lalsimulation >={{ lalsimulation_version }}a0
     - metaio
   run:
     - gsl
-    - lal >={{ lal_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalsimulation >={{ lalsimulation_version }}
+    - lal >={{ lal_version }}a0
+    - lalmetaio >={{ lalmetaio_version }}a0
+    - lalsimulation >={{ lalsimulation_version }}a0
     - metaio
 
 test:
@@ -73,13 +73,13 @@ outputs:
         - lscsoft-glue
         - numpy
         - python
-        - python-lal >={{ lal_version }}
-        - python-lalmetaio >={{ lalmetaio_version }}
-        - python-lalsimulation >={{ lalsimulation_version }}
+        - python-lal >={{ lal_version }}a0
+        - python-lalmetaio >={{ lalmetaio_version }}a0
+        - python-lalsimulation >={{ lalsimulation_version }}a0
         - scipy
       run:
         - gsl
-        - lal >={{ lal_version }}
+        - lal >={{ lal_version }}a0
         - {{ pin_subpackage('lalburst', exact=True) }}
         - lalmetaio
         - lalsimulation
@@ -89,9 +89,9 @@ outputs:
         - metaio
         - {{ pin_compatible('numpy') }}
         - python
-        - python-lal >={{ lal_version }}
-        - python-lalmetaio >={{ lalmetaio_version }}
-        - python-lalsimulation >={{ lalsimulation_version }}
+        - python-lal >={{ lal_version }}a0
+        - python-lalmetaio >={{ lalmetaio_version }}a0
+        - python-lalsimulation >={{ lalsimulation_version }}a0
         - python-ligo-lw
         - scipy
     test:

@@ -38,12 +38,12 @@ requirements:
     - cfitsio
     - fftw * nompi*
     - gsl
-    - lal >={{ lal_version }} fftw*
+    - lal >={{ lal_version }}a0 fftw*
   run:
     - cfitsio
     - fftw
     - gsl
-    - lal >={{ lal_version }}
+    - lal >={{ lal_version }}a0
 
 test:
   commands:
@@ -66,21 +66,21 @@ outputs:
       host:
         - astropy
         - gsl
-        - lal >={{ lal_version }}
+        - lal >={{ lal_version }}a0
         - {{ pin_subpackage('lalpulsar', exact=True) }}
         - numpy
         - python
-        - python-lal >={{ lal_version }}
+        - python-lal >={{ lal_version }}a0
       run:
         - astropy
         - cfitsio
         - fftw
         - gsl
-        - lal >={{ lal_version }}
+        - lal >={{ lal_version }}a0
         - {{ pin_subpackage('lalpulsar', exact=True) }}
         - {{ pin_compatible('numpy') }}
         - python
-        - python-lal >={{ lal_version }}
+        - python-lal >={{ lal_version }}a0
         - six
     test:
       imports:
