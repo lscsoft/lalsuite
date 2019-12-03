@@ -2704,6 +2704,63 @@ static int SEOBJfromDynamics(
 }
 
 /**
+ * This function computes the L-hat vector.
+ */
+static int SEOBLhatfromDynamics(
+    REAL8Vector **L,         /**<< Output: pointer to vector L */
+    REAL8Vector *seobvalues, /**<< Input: vector for extended dynamics values */
+    SpinEOBParams *seobParams /**<< SEOB params */,
+    const flagSEOBNRv4P_Zframe
+        flagZframe /**<<Input: whether to compute the L_N or L frame */
+)
+{
+  if ((!L) || (!seobvalues) || (!seobParams))
+  {
+    XLALPrintError("Some pointers passed to SEOBLfromDynamics were null\n");
+    XLAL_ERROR(XLAL_ENOMEM);
+  }
+  /* Create output vector */
+  if (!((*L) = XLALCreateREAL8Vector(3)))
+  {
+    XLALPrintError("XLAL Error failed to allocate REAL8Vector L.\n");
+    XLAL_ERROR(XLAL_ENOMEM);
+  }
+  memset((*L)->data, 0, 3 * sizeof(REAL8));
+
+  /* Local variables */
+  REAL8 rvec[3] = {0, 0, 0};
+  REAL8 drvec[3] = {0, 0, 0};
+  REAL8 pvec[3] = {0, 0, 0};
+  REAL8 crossp[3] = {0, 0, 0};
+
+  /* Read from the extended dynamics values */
+  for (int j = 0; j < 3; j++)
+  {
+    rvec[j] = seobvalues->data[1 + j];
+    drvec[j] = seobvalues->data[15 + j];
+    pvec[j] = seobvalues->data[4 + j];
+  }
+  if (flagZframe == FLAG_SEOBNRv4P_ZFRAME_L)
+  {
+    // Note: pvec is missing a factor of nu, but don't care about it's magnitide
+    // anyway
+    cross_product(rvec, pvec, crossp);
+  }
+  else if (flagZframe == FLAG_SEOBNRv4P_ZFRAME_LN)
+  {
+    cross_product(rvec, drvec, crossp);
+  }
+  REAL8 Lmag = sqrt(inner_product(crossp, crossp));
+
+  for (int jj = 0; jj < 3; jj++)
+  {
+    (*L)->data[jj] = crossp[jj] / Lmag;
+  }
+
+  return XLAL_SUCCESS;
+}
+
+/**
  * This function computes the Jframe unit vectors, with e3J along Jhat.
  * Convention: if (ex, ey, ez) is the initial I-frame, e1J chosen such that ex
  * is in the plane (e1J, e3J) and ex.e1J>0.
@@ -3810,8 +3867,10 @@ static int SEOBEulerJ2PPostMergerExtension(
                          index of time of attachment) */
     SpinEOBParams *seobParams, /**<< SEOB params */
     flagSEOBNRv4P_euler_extension
-        flagEulerextension /**<< flag indicating how to extend the Euler angles
+        flagEulerextension, /**<< flag indicating how to extend the Euler angles
                               post-merger */
+    INT4 flip /** << a flag of whether to flip the sign of the precession frequency
+              */
 ) {
   UINT4 i;
   UINT4 SpinsAlmostAligned = seobParams->alignedSpins;
@@ -3829,7 +3888,10 @@ static int SEOBEulerJ2PPostMergerExtension(
       REAL8 omegaQNM220 = creal(sigmaQNM220);
       REAL8 omegaQNM210 = creal(sigmaQNM210);
       REAL8 precRate = omegaQNM220 - omegaQNM210;
-
+      // flip is either 1 or -1. This is needed because we want the sign of the precession frequency
+      // to be correct even when the projected final spin is negative, at which point the QNMs
+      // flip sign
+      precRate *= flip;
       REAL8 cosbetaAttach = cos(betaAttach);
       for (i = indexStart; i < retLen; i++) {
         alphaJ2P->data[i] =
@@ -4703,6 +4765,7 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
   REAL8Vector *seobvalues_tPeakOmega = NULL;
   REAL8Vector *seobvalues_test = NULL;
   REAL8Vector *Jfinal = NULL;
+  REAL8Vector *Lhatfinal = NULL;
   REAL8Vector *chi1L_tPeakOmega = NULL;
   REAL8Vector *chi2L_tPeakOmega = NULL;
   SphHarmListEOBNonQCCoeffs *nqcCoeffsList = NULL;
@@ -5021,8 +5084,12 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
            "(HiS)\n");
 
   /* Error tolerances */
-  EPS_ABS = 1e-8;
-  EPS_REL = 1e-8;
+  if (!SpinsAlmostAligned){
+    // For aligned spins we use the same tolerance for high-sampling
+    // rate and for low sampling rate.
+    EPS_ABS = 1e-8;
+    EPS_REL = 1e-8;
+  }
 
   /* Time step for high-sampling part */
   REAL8 deltaTHiS = 1. / 50; /* Fixed at 1/50M */
@@ -5166,7 +5233,13 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
 
   /* Compute final J from dynamics quantities */
   SEOBJfromDynamics(&Jfinal, seobvalues_tPeakOmega, &seobParams);
-
+  /*Compute the L-hat vector. Note that it has unit norm */
+  SEOBLhatfromDynamics(&Lhatfinal, seobvalues_tPeakOmega, &seobParams, flagZframe);
+  REAL8 Jmag = sqrt(inner_product(Jfinal->data, Jfinal->data));
+  /* Cosine of the angle between L-hat and J. Needed to determine
+   * the correct sign of the final spin
+   */
+  REAL8 cos_angle = inner_product(Jfinal->data, Lhatfinal->data) / Jmag;
   /* Compute final-J-frame unit vectors e1J, e2J, e3J=Jfinalhat */
   /* Convention: if (ex, ey, ez) is the initial I-frame, e1J chosen such that ex
    * is in the plane (e1J, e3J) and ex.e1J>0 */
@@ -5238,30 +5311,6 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
   if (debug)
     printf("STEP 7) Attach RD to the P-frame waveform\n");
 
-  /* Estimate leading QNM from initial spins, to determine how long the ringdown
-   * patch will be */
-  /* NOTE: XLALSimIMREOBGenerateQNMFreqV2Prec returns the complex frequency in
-   * physical units... */
-  COMPLEX16Vector sigmaQNM220estimatephysicalVec;
-  COMPLEX16 sigmaQNM220estimatephysical = 0.;
-  sigmaQNM220estimatephysicalVec.length = 1;
-  sigmaQNM220estimatephysicalVec.data = &sigmaQNM220estimatephysical;
-  if (XLALSimIMREOBGenerateQNMFreqV2Prec(
-          &sigmaQNM220estimatephysicalVec, m1, m2, INchi1.data, INchi2.data, 2,
-          2, 1, seobParams.seobApproximant) == XLAL_FAILURE) {
-    FREE_ALL
-    XLALPrintError("XLAL Error - %s: XLALSimIMREOBGenerateQNMFreqV2Prec failed "
-                   "when estimating sigmaQNM220 for length of RD patch.\n",
-                   __func__);
-    PRINT_ALL_PARAMS
-    XLAL_ERROR(XLAL_EFUNC);
-  }
-  COMPLEX16 sigmaQNM220estimate = mTScaled * sigmaQNM220estimatephysical;
-
-  /* Length of RD patch, 40 e-folds of decay of the estimated QNM220 */
-  UINT4 retLenRDPatch =
-      (UINT4)ceil(40 / (cimag(sigmaQNM220estimate) * deltaTHiS));
-
   /* Compute the final mass and spins here and pass them on */
   REAL8 finalMass = 0., finalSpin = 0.;
   if (SEOBGetFinalSpinMass(&finalMass, &finalSpin, seobvalues_test, &seobParams,
@@ -5270,6 +5319,14 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
     XLALPrintError("XLAL Error - %s: SEOBGetFinalSpinMass failed.\n", __func__);
     PRINT_ALL_PARAMS
     XLAL_ERROR(XLAL_EFUNC);
+  }
+
+  /* The function above returns only the magnitude of the spin.
+   *  We pick the direction based on whether Lhat \cdot J is positive
+   *  or negative */
+  if (cos_angle < 0)
+  {
+    finalSpin *= -1;
   }
   /* finalSpin interpolation is available only between -0.9996 and 0.9996 */
   /* Set finalSpin to +/- 0.9996 if it is out of this range */
@@ -5281,6 +5338,31 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
   if (debug) {
     XLAL_PRINT_INFO("final mass = %e, final spin = %e\n", finalMass, finalSpin);
   }
+
+  /* Estimate leading QNM , to determine how long the ringdown
+   * patch will be */
+  /* NOTE: XLALSimIMREOBGenerateQNMFreqV2Prec returns the complex frequency in
+   * physical units... */
+  COMPLEX16Vector sigmaQNM220estimatephysicalVec;
+  COMPLEX16 sigmaQNM220estimatephysical = 0.;
+  sigmaQNM220estimatephysicalVec.length = 1;
+  sigmaQNM220estimatephysicalVec.data = &sigmaQNM220estimatephysical;
+  if (XLALSimIMREOBGenerateQNMFreqV2FromFinalPrec(&sigmaQNM220estimatephysicalVec, m1,
+                                                  m2, finalMass, finalSpin, 2,
+                                                  2, 1) == XLAL_FAILURE) {
+    FREE_ALL
+    XLALPrintError(
+        "XLAL Error - %s: failure in "
+        "XLALSimIMREOBGenerateQNMFreqV2FromFinalPrec for mode (l,m) = (2,2).\n",
+        __func__);
+    XLAL_ERROR(XLAL_EFUNC);
+  }
+  COMPLEX16 sigmaQNM220estimate = mTScaled * sigmaQNM220estimatephysical;
+
+  /* Length of RD patch, 40 e-folds of decay of the estimated QNM220 */
+  UINT4 retLenRDPatch =
+      (UINT4)ceil(40 / (cimag(sigmaQNM220estimate) * deltaTHiS));
+
 
   /* Attach RD to the P-frame modes */
   /* Vector holding the values of the 0-th overtone QNM complex frequencies for
@@ -5410,10 +5492,13 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
   }
   sigmaQNM220 = mTScaled * sigmaQNM220physicalVec.data[0];
   sigmaQNM210 = mTScaled * sigmaQNM210physicalVec.data[0];
-
+  INT4 flip = 1;
+  if (cos_angle < 0){
+    flip = -1;
+  }
   SEOBEulerJ2PPostMergerExtension(
       *alphaJ2P, *betaJ2P, *gammaJ2P, sigmaQNM220, sigmaQNM210, *tVecPmodes,
-      retLenPmodes, indexJoinAttach, &seobParams, flagEulerextension);
+      retLenPmodes, indexJoinAttach, &seobParams, flagEulerextension, flip);
 
   /******************************************************************************************************************/
   /* STEP 11) Compute modes hJlm on the output time series by rotating and
@@ -5634,6 +5719,8 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
     XLALDestroyREAL8Vector(seobvalues_test);
   if (Jfinal != NULL)
     XLALDestroyREAL8Vector(Jfinal);
+  if (Lhatfinal != NULL)
+    XLALDestroyREAL8Vector(Lhatfinal);
   if (nqcCoeffsList != NULL)
     SphHarmListEOBNonQCCoeffs_Destroy(nqcCoeffsList);
   if (listhPlm_HiS != NULL)
