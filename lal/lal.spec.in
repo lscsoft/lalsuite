@@ -37,14 +37,15 @@ BuildRequires: swig >= 3.0.7
 BuildRequires: python2-rpm-macros
 BuildRequires: python
 BuildRequires: python-devel
-BuildRequires: glue >= @MIN_GLUE_VERSION@
-BuildRequires: numpy
 BuildRequires: python-dateutil
-BuildRequires: python-pytest
-BuildRequires: python-six
 BuildRequires: python2-freezegun
+BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: python2-ligo-segments
 BuildRequires: python2-mock
+BuildRequires: numpy
+BuildRequires: python-pathlib
+BuildRequires: pytest
+BuildRequires: python-six
 BuildRequires: scipy
 
 # python3x
