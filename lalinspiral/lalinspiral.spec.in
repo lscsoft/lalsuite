@@ -39,12 +39,15 @@ BuildRequires: python2-rpm-macros
 BuildRequires: python
 BuildRequires: python-devel
 BuildRequires: glue
-BuildRequires: numpy
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python2-lalburst >= @MIN_LALBURST_VERSION@
+BuildRequires: python2-mock
+BuildRequires: numpy
+BuildRequires: python-pathlib
+BuildRequires: pytest
 
 # python3x
 BuildRequires: python-srpm-macros
@@ -59,6 +62,7 @@ BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 BuildRequires: python%{python3_pkgversion}-numpy
+BuildRequires: python%{python3_pkgversion}-pytest
 
 # octave
 BuildRequires: octave-devel
