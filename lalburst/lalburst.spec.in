@@ -37,10 +37,13 @@ BuildRequires: swig >= 3.0.7
 BuildRequires: python2-rpm-macros
 BuildRequires: python-devel
 BuildRequires: glue
-BuildRequires: numpy
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python2-mock
+BuildRequires: numpy
+BuildRequires: python-pathlib
+BuildRequires: pytest
 BuildRequires: scipy
 
 # python3x
@@ -53,6 +56,7 @@ BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python%{python3_pkgversion}-numpy
+BuildRequires: python%{python3_pkgversion}-pytest
 BuildRequires: python%{python3_pkgversion}-scipy
 
 # octave
