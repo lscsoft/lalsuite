@@ -34,7 +34,10 @@ BuildRequires: swig >= 3.0.7
 BuildRequires: python2-rpm-macros
 BuildRequires: python-devel
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
+BuildRequires: python2-mock
 BuildRequires: numpy
+BuildRequires: python-pathlib
+BuildRequires: pytest
 
 # python3x
 BuildRequires: python-srpm-macros
@@ -43,6 +46,7 @@ BuildRequires: epel-rpm-macros
 BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 BuildRequires: python%{python3_pkgversion}-numpy
+BuildRequires: python%{python3_pkgversion}-pytest
 
 # octave
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
