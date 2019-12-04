@@ -34,11 +34,12 @@ BuildRequires: swig >= 3.0.7
 
 # python2
 BuildRequires: python2-rpm-macros
-BuildRequires: numpy
 BuildRequires: python-devel
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
+BuildRequires: python2-mock
+BuildRequires: numpy
 BuildRequires: python-pathlib
-BuildRequires: python-pytest
+BuildRequires: pytest
 
 # python3x
 BuildRequires: python-srpm-macros
