@@ -38,6 +38,9 @@ BuildRequires: numpy
 BuildRequires: python-devel
 BuildRequires: python2-astropy
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
+BuildRequires: python2-mock
+BuildRequires: python-pathlib
+BuildRequires: pytest
 
 # python3x
 BuildRequires: python-srpm-macros
@@ -46,8 +49,9 @@ BuildRequires: epel-rpm-macros
 BuildRequires: python%{python3_pkgversion}
 BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-astropy
-BuildRequires: python%{python3_pkgversion}-numpy
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+BuildRequires: python%{python3_pkgversion}-numpy
+BuildRequires: python%{python3_pkgversion}-pytest
 
 # octave
 BuildRequires: octave-devel
