@@ -32,11 +32,14 @@ BuildRequires: help2man
 BuildRequires: swig >= 3.0.7
 
 # python2
-BuildRequires: numpy
-BuildRequires: python-devel
-BuildRequires: python-six
-BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-rpm-macros
+BuildRequires: python-devel
+BuildRequires: python2-lal >= @MIN_LAL_VERSION@
+BuildRequires: python2-mock
+BuildRequires: numpy
+BuildRequires: python-pathlib
+BuildRequires: pytest
+BuildRequires: python-six
 
 # python3x
 BuildRequires: python-srpm-macros
@@ -45,6 +48,7 @@ BuildRequires: epel-rpm-macros
 BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 BuildRequires: python%{python3_pkgversion}-numpy
+BuildRequires: python%{python3_pkgversion}-pytest
 BuildRequires: python%{python3_pkgversion}-six
 
 # octave
