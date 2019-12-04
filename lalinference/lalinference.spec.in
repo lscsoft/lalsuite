@@ -43,22 +43,23 @@ BuildRequires: swig >= 3.0.7
 BuildRequires: python2-rpm-macros
 BuildRequires: python
 BuildRequires: python-devel
-BuildRequires: glue >= @MIN_GLUE_VERSION@
-BuildRequires: healpy >= 1.9.1
-BuildRequires: h5py
-BuildRequires: numpy >= 1.7
-BuildRequires: pytest
 BuildRequires: python-astropy >= 1.1.1
-BuildRequires: python-matplotlib >= 1.2.0
-BuildRequires: python-pathlib
+BuildRequires: glue >= @MIN_GLUE_VERSION@
 BuildRequires: python2-gwdatafind
 BuildRequires: python2-gwpy
+BuildRequires: healpy >= 1.9.1
+BuildRequires: h5py
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python2-lalburst >= @MIN_LALBURST_VERSION@
 BuildRequires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
+BuildRequires: python-matplotlib >= 1.2.0
+BuildRequires: python2-mock
+BuildRequires: numpy >= 1.7
+BuildRequires: python-pathlib
+BuildRequires: pytest
 BuildRequires: scipy >= 0.9.0
 
 # python3x
