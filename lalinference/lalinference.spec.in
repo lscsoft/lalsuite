@@ -220,26 +220,27 @@ This package provides the Octave bindings for LALInference.
 %{__make} %{?_smp_mflags} V=1
 
 # build python3 library (copy things so we don't have to rebuild them)
-#rm -rf %py3dir
-#cp -r . %py3dir
-#pushd %py3dir
-#%%configure %{configure_opts} --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
-#%{__make} %{?_smp_mflags} V=1 -C swig
-#%{__make} %{?_smp_mflags} V=1 -C python
-#popd
+rm -rf %py3dir
+cp -r . %py3dir
+pushd %py3dir
+rm -rfv python/%{name}/*.{la,lo,o} python/%{name}/.libs
+%configure %{configure_opts} --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
+%{__make} %{?_smp_mflags} V=1 -C swig
+%{__make} %{?_smp_mflags} V=1 -C python
+popd
 
 %check
 # C + python2 + octave
 %{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
 # python3
-#[ -d %py3dir/test/python ] && %{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %py3dir -C test/python check
+[ -d %py3dir/test/python ] && %{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %py3dir -C test/python check
 
 %install
 # C + python2 + octave
 %make_install
 # python3
-#%{__make} -C %py3dir -C swig install-exec-am DESTDIR=%{?buildroot}
-#%{__make} -C %py3dir -C python install DESTDIR=%{?buildroot}
+%{__make} -C %py3dir -C swig install-exec-am DESTDIR=%{?buildroot}
+%{__make} -C %py3dir -C python install DESTDIR=%{?buildroot}
 find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
