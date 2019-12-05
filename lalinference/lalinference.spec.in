@@ -63,27 +63,27 @@ BuildRequires: pytest
 BuildRequires: scipy >= 0.9.0
 
 # python3x
-#BuildRequires: python-srpm-macros
-#BuildRequires: python3-rpm-macros
-#BuildRequires: epel-rpm-macros
-#BuildRequires: python%{python3_pkgversion}
-#BuildRequires: python%{python3_pkgversion}-devel
-#BuildRequires: python%{python3_pkgversion}-astropy >= 1.1.1
-#BuildRequires: python%{python3_pkgversion}-gwdatafind
-#BuildRequires: python%{python3_pkgversion}-gwpy
-#BuildRequires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
-#BuildRequires: python%{python3_pkgversion}-healpy >= 1.9.1
-#BuildRequires: python%{python3_pkgversion}-h5py
-#BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-#BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-#BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-#BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
-#BuildRequires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-#BuildRequires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
-#BuildRequires: python%{python3_pkgversion}-matplotlib >= 1.2.0
-#BuildRequires: python%{python3_pkgversion}-numpy >= 1.7
-#BuildRequires: python%{python3_pkgversion}-pytest
-#BuildRequires: python%{python3_pkgversion}-scipy >= 0.9.0
+BuildRequires: python-srpm-macros
+BuildRequires: python3-rpm-macros
+BuildRequires: epel-rpm-macros
+BuildRequires: python%{python3_pkgversion}
+BuildRequires: python%{python3_pkgversion}-devel
+BuildRequires: python%{python3_pkgversion}-astropy >= 1.1.1
+BuildRequires: python%{python3_pkgversion}-gwdatafind
+BuildRequires: python%{python3_pkgversion}-gwpy
+BuildRequires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
+BuildRequires: python%{python3_pkgversion}-healpy >= 1.9.1
+BuildRequires: python%{python3_pkgversion}-h5py
+BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
+BuildRequires: python%{python3_pkgversion}-matplotlib >= 1.2.0
+BuildRequires: python%{python3_pkgversion}-numpy >= 1.7
+BuildRequires: python%{python3_pkgversion}-pytest
+BuildRequires: python%{python3_pkgversion}-scipy >= 0.9.0
 
 # octave
 BuildRequires: octave-devel
@@ -165,32 +165,32 @@ The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings for LALInference.
 
 # python3x-lalinference
-#%package -n python%{python3_pkgversion}-%{name}
-#Summary: Python %{python3_version_version} Bindings for LALInference
-#Group: LAL
-#Requires: %{name} = %{version}
-#Requires: python%{python3_pkgversion}
-#Requires: python%{python3_pkgversion}-astropy >= 1.1.1
-#Requires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
-#Requires: python%{python3_pkgversion}-gwdatafind
-#Requires: python%{python3_pkgversion}-gwpy
-#Requires: python%{python3_pkgversion}-healpy >= 1.9.1
-#Requires: python%{python3_pkgversion}-h5py
-#Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-#Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-#Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-#Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
-#Requires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-#Requires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
-#Requires: python%{python3_pkgversion}-ligo-gracedb
-#Requires: python%{python3_pkgversion}-matplotlib >= 1.2.0
-#Requires: python%{python3_pkgversion}-numpy >= 1.7
-#Requires: python%{python3_pkgversion}-scipy >= 0.8
-#Requires: python%{python3_pkgversion}-six
-#%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
-#%description -n python%{python3_pkgversion}-%{name}
-#The LSC Algorithm Library for gravitational wave data analysis.
-#This package provides the Python %{python3_version} bindings for LALInference.
+%package -n python%{python3_pkgversion}-%{name}
+Summary: Python %{python3_version_version} Bindings for LALInference
+Group: LAL
+Requires: %{name} = %{version}
+Requires: python%{python3_pkgversion}
+Requires: python%{python3_pkgversion}-astropy >= 1.1.1
+Requires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
+Requires: python%{python3_pkgversion}-gwdatafind
+Requires: python%{python3_pkgversion}-gwpy
+Requires: python%{python3_pkgversion}-healpy >= 1.9.1
+Requires: python%{python3_pkgversion}-h5py
+Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
+Requires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+Requires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
+Requires: python%{python3_pkgversion}-ligo-gracedb
+Requires: python%{python3_pkgversion}-matplotlib >= 1.2.0
+Requires: python%{python3_pkgversion}-numpy >= 1.7
+Requires: python%{python3_pkgversion}-scipy >= 0.8
+Requires: python%{python3_pkgversion}-six
+%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
+%description -n python%{python3_pkgversion}-%{name}
+The LSC Algorithm Library for gravitational wave data analysis.
+This package provides the Python %{python3_version} bindings for LALInference.
 
 # lalinference-octave
 %package octave
@@ -318,10 +318,10 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_mandir}/man1/lalinference_review_test.1*
 %{python2_sitearch}/*
 
-#%files -n python%{python3_pkgversion}-%{name}
-#%defattr(-,root,root)
-#%license COPYING
-#%{python3_sitearch}/*
+%files -n python%{python3_pkgversion}-%{name}
+%defattr(-,root,root)
+%license COPYING
+%{python3_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
