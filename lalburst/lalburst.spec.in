@@ -38,14 +38,15 @@ BuildRequires: glue
 BuildRequires: numpy
 BuildRequires: pytest
 BuildRequires: python-devel
+BuildRequires: python-ligo-lw
 BuildRequires: python-pathlib
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python2-matplotlib
 BuildRequires: python2-mock
 BuildRequires: python2-rpm-macros
 BuildRequires: scipy
-
 
 # python3x
 BuildRequires: epel-rpm-macros
@@ -102,6 +103,7 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
+Requires: python-ligo-lw
 Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
