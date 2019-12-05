@@ -23,33 +23,33 @@ Prefix: %{_prefix}
 # -- build requirements -----
 
 # C
-BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: gsl-devel
-BuildRequires: libmetaio-devel
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: libmetaio-devel
+BuildRequires: pkgconfig >= 0.18.0
 
 # swig
 BuildRequires: swig >= 3.0.7
 
 # python2
-BuildRequires: python2-rpm-macros
-BuildRequires: python-devel
 BuildRequires: glue
+BuildRequires: numpy
+BuildRequires: pytest
+BuildRequires: python-devel
+BuildRequires: python-pathlib
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python2-mock
-BuildRequires: numpy
-BuildRequires: python-pathlib
-BuildRequires: pytest
+BuildRequires: python2-rpm-macros
 BuildRequires: scipy
 
+
 # python3x
-BuildRequires: python-srpm-macros
-BuildRequires: python3-rpm-macros
 BuildRequires: epel-rpm-macros
+BuildRequires: python-srpm-macros
 BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-glue
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
@@ -58,12 +58,13 @@ BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_V
 BuildRequires: python%{python3_pkgversion}-numpy
 BuildRequires: python%{python3_pkgversion}-pytest
 BuildRequires: python%{python3_pkgversion}-scipy
+BuildRequires: python3-rpm-macros
 
 # octave
-BuildRequires: octave-devel
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: octave-devel
 
 # -- packages ---------------
 
