@@ -323,8 +323,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     }
 
     for (t = 0; t < n_local_threads; t++)
+	{
         record_likelihoods(&runState->threads[t]);
-
+		LALInferenceSortVariablesByName(runState->threads[t].currentParams);
+    }
     LALInferenceNameOutputs(runState);
     LALInferenceResumeMCMC(runState);
     
@@ -388,6 +390,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                     LALInferenceAdaptation(thread);
 
                 mcmc_step(runState, thread); //evolve the chain at temperature ladder[t]
+				LALInferenceSortVariablesByName(thread->currentParams);
                 record_likelihoods(thread);
 
                 if (propVerbose)
@@ -631,7 +634,7 @@ void mcmc_step(LALInferenceRunState *runState, LALInferenceThreadState *thread) 
     }
 
     LALInferenceUpdateAdaptiveJumps(thread, targetAcceptance);
-
+    LALInferenceSortVariablesByName(thread->currentParams);
     return;
 }
 
