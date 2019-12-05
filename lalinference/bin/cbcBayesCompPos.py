@@ -289,16 +289,16 @@ def compare_plots_one_param_line_hist(list_of_pos_by_name,param,cl,color_by_name
             injvals.append(posterior[param].injval)
 
         try:
-            n,bins=np.histogram(posterior[param].samples,bins=posbins,density=True,new=True)
+            n,bins=np.histogram(posterior[param].samples,bins=posbins,normed=True,new=True)
         except:
-            n,bins=np.histogram(posterior[param].samples,bins=posbins,density=True)
+            n,bins=np.histogram(posterior[param].samples,bins=posbins,normed=True)
         if min(bins)==max(bins):
             print('Skipping '+param)
             continue
         locmaxy=max(n)
         if locmaxy>max_y: max_y=locmaxy
 #(n, bins, patches)=plt.hist(posterior[param].samples,bins=bins,facecolor='white',label=name,normed=True,hold=True,color=color_by_name[name])#range=(min_pos,max_pos)
-        (n, bins, patches)=plt.hist(posterior[param].samples,bins=bins,histtype='step',label=name,density=True,hold=True,color=color_by_name[name])
+        (n, bins, patches)=plt.hist(posterior[param].samples,bins=bins,histtype='step',label=name,normed=True,hold=True,color=color_by_name[name])
         patch_list.append(patches[0])
 
     Nchars=max(map(lambda d:len(majorFormatterX.format_data(d)),axes.get_xticks()))
@@ -426,15 +426,15 @@ def compare_plots_one_param_line_hist_cum(list_of_pos_by_name,param,cl,color_by_
             injvals.append(posterior[param].injval)
 
         try:
-            n,bins=np.histogram(posterior[param].samples,bins=posbins,density=True,new=True)
+            n,bins=np.histogram(posterior[param].samples,bins=posbins,normed=True,new=True)
         except:
-            n,bins=np.histogram(posterior[param].samples,bins=posbins,density=True)
+            n,bins=np.histogram(posterior[param].samples,bins=posbins,normed=True)
 
         if min(bins)==max(bins):
             print('Skipping '+param)
             continue
 
-        (n, bins, patches)=plt.hist(posterior[param].samples,bins=bins,histtype='step',label=name,density=True,hold=True,color=color_by_name[name],cumulative='True')#range=(min_pos,max_pos)
+        (n, bins, patches)=plt.hist(posterior[param].samples,bins=bins,histtype='step',label=name,normed=True,hold=True,color=color_by_name[name],cumulative='True')#range=(min_pos,max_pos)
 
         patch_list.append(patches[0])
 
