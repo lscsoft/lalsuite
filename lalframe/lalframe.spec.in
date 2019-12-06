@@ -39,7 +39,7 @@ BuildRequires: python2-rpm-macros
 BuildRequires: python-devel
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-mock
-BuildRequires: numpy
+BuildRequires: python2-numpy
 BuildRequires: python-pathlib
 BuildRequires: pytest
 
@@ -86,9 +86,9 @@ library.
 Summary: Python %{python2_version} Bindings for LALFrame
 Group: LAL
 Requires: %{name} = %{version}
-Requires: numpy
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
+Requires: python2-numpy
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
