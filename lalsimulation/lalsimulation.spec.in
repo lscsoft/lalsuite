@@ -26,9 +26,10 @@ Prefix: %{_prefix}
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: gsl-devel
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: help2man
+BuildRequires: lal-devel >= @MIN_LAL_VERSION@
+BuildRequires: make
+BuildRequires: pkgconfig >= 0.18.0
 
 # swig
 BuildRequires: swig >= 3.0.7
