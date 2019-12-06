@@ -36,11 +36,11 @@ BuildRequires: swig >= 3.0.7
 
 # python2
 BuildRequires: python2-rpm-macros
-BuildRequires: numpy
 BuildRequires: python-devel
 BuildRequires: python2-astropy
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-mock
+BuildRequires: python2-numpy
 BuildRequires: python-pathlib
 BuildRequires: pytest
 
@@ -92,10 +92,10 @@ Pulsar library.
 Summary: Python %{python2_version} bindings for LALPulsar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: numpy
 Requires: python
-Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-astropy
+Requires: python2-lal >= @MIN_LAL_VERSION@
+Requires: python2-numpy
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
