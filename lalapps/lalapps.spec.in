@@ -19,6 +19,7 @@ Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
+BuildRequires: gcc
 BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
