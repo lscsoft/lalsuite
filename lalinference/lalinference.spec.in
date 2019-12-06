@@ -35,6 +35,7 @@ BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
 BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
+BuildRequires: make
 BuildRequires: openmpi-devel
 BuildRequires: pkgconfig >= 0.18.0
 
