@@ -45,24 +45,24 @@ BuildRequires: swig >= 3.0.7
 BuildRequires: python2-rpm-macros
 BuildRequires: python
 BuildRequires: python-devel
-BuildRequires: python-astropy >= 1.1.1
-BuildRequires: glue >= @MIN_GLUE_VERSION@
+BuildRequires: python2-astropy >= 1.1.1
+BuildRequires: python2-glue >= @MIN_GLUE_VERSION@
 BuildRequires: python2-gwdatafind
 BuildRequires: python2-gwpy
 BuildRequires: healpy >= 1.9.1
-BuildRequires: h5py
+BuildRequires: python2-h5py
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python2-lalburst >= @MIN_LALBURST_VERSION@
 BuildRequires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
-BuildRequires: python-matplotlib >= 1.2.0
+BuildRequires: python2-matplotlib >= 1.2.0
 BuildRequires: python2-mock
-BuildRequires: numpy >= 1.7
+BuildRequires: python2-numpy >= 1.7
 BuildRequires: python-pathlib
 BuildRequires: pytest
-BuildRequires: scipy >= 0.9.0
+BuildRequires: python2-scipy >= 0.9.0
 
 # python3x
 BuildRequires: python-srpm-macros
@@ -142,23 +142,23 @@ Summary: Python %{python2_version} Bindings for LALInference
 Group: LAL
 Requires: %{name} = %{version}
 Requires: healpy >= 1.9.1
-Requires: h5py
-Requires: numpy >= 1.7
 Requires: python
-Requires: scipy >= 0.8
-Requires: python-astropy >= 1.1.1
+Requires: python2-astropy >= 1.1.1
+Requires: python2-glue >= @MIN_GLUE_VERSION@
 Requires: python2-gwdatafind
-Requires: python-matplotlib >= 1.2.0
-Requires: python-six
-Requires: glue >= @MIN_GLUE_VERSION@
-Requires: ligo-gracedb
 Requires: python2-gwpy
+Requires: python2-h5py
 Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
+Requires: python2-ligo-gracedb
+Requires: python2-matplotlib >= 1.2.0
+Requires: python2-numpy >= 1.7
+Requires: python2-scipy >= 0.8
+Requires: python2-six
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
