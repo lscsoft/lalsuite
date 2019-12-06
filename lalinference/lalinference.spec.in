@@ -24,6 +24,8 @@ Prefix: %{_prefix}
 
 # C
 BuildRequires: chealpix-devel >= 3.30.0
+BuildRequires: gcc
+BuildRequires: gcc-c++
 BuildRequires: gsl-devel
 BuildRequires: help2man
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
