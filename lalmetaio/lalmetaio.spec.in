@@ -28,6 +28,7 @@ BuildRequires: gcc-c++
 BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: libmetaio-devel
+BuildRequires: make
 
 # swig
 BuildRequires: swig >= 3.0.7
