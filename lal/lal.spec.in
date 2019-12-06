@@ -39,16 +39,16 @@ BuildRequires: swig >= 3.0.7
 BuildRequires: python2-rpm-macros
 BuildRequires: python
 BuildRequires: python-devel
-BuildRequires: python-dateutil
+BuildRequires: python2-dateutil
 BuildRequires: python2-freezegun
-BuildRequires: glue >= @MIN_GLUE_VERSION@
+BuildRequires: python2-glue >= @MIN_GLUE_VERSION@
 BuildRequires: python2-ligo-segments
 BuildRequires: python2-mock
-BuildRequires: numpy
+BuildRequires: python2-numpy
 BuildRequires: python-pathlib
 BuildRequires: pytest
-BuildRequires: python-six
-BuildRequires: scipy
+BuildRequires: python2-six
+BuildRequires: python2-scipy
 
 # python3x
 BuildRequires: python-srpm-macros
@@ -101,12 +101,12 @@ Summary: Python %{python2_version} bindings for LAL
 Group: LAL
 Requires: %{name} = %{version}
 Requires: python
-Requires: python-dateutil
-Requires: numpy
-Requires: scipy
-Requires: python-six
+Requires: python2-dateutil
+Requires: python2-glue >= @MIN_GLUE_VERSION@
 Requires: python2-ligo-segments
-Requires: glue >= @MIN_GLUE_VERSION@
+Requires: python2-numpy
+Requires: python2-scipy
+Requires: python2-six
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
