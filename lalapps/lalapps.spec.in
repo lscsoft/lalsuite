@@ -45,7 +45,6 @@ BuildRequires: python2-rpm-macros
 Requires: cfitsio
 Requires: fftw
 Requires: gsl
-Requires: h5py
 Requires: healpy
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: lalburst >= @MIN_LALBURST_VERSION@
@@ -59,7 +58,7 @@ Requires: less
 Requires: libframe
 Requires: libmetaio
 Requires: python
-Requires: python-ligo-lw
+Requires: python2-h5py
 Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
@@ -68,7 +67,11 @@ Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: python2-lalinference >= @MIN_LALINFERENCE_VERSION@
+Requires: python2-ligo-lw
 Requires: python2-ligo-segments
+Requires: python2-matplotlib
+Requires: python2-numpy
+Requires: python2-scipy
 Requires: python2-six
 Obsoletes: lalxml < 1.2.5-1
 Obsoletes: lalxml-debuginfo < 1.2.5-1
