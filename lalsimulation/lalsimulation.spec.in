@@ -38,10 +38,9 @@ BuildRequires: python2-rpm-macros
 BuildRequires: python-devel
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-mock
-BuildRequires: numpy
+BuildRequires: python2-numpy
 BuildRequires: python-pathlib
 BuildRequires: pytest
-BuildRequires: python-six
 
 # python3x
 BuildRequires: python-srpm-macros
@@ -51,7 +50,6 @@ BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 BuildRequires: python%{python3_pkgversion}-numpy
 BuildRequires: python%{python3_pkgversion}-pytest
-BuildRequires: python%{python3_pkgversion}-six
 
 # octave
 BuildRequires: octave-devel
@@ -85,9 +83,9 @@ library.
 Summary: Python %{python2_version} bindings for LALSimulation
 Group: LAL
 Requires: %{name} = %{version}
-Requires: numpy
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
+Requires: python2-numpy
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}

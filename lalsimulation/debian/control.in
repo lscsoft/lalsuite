@@ -20,12 +20,10 @@ Build-Depends: debhelper (>= 9),
   python-numpy,
   python-pathlib,
   python-pytest,
-  python-six,
   python3-all-dev,
   python3-numpy,
   python3-lal (>= @MIN_LAL_VERSION@~),
   python3-pytest,
-  python3-six,
   lal-octave (>= @MIN_LAL_VERSION@~),
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
