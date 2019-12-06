@@ -32,6 +32,7 @@ BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
 BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-lalframe >= @MIN_LALFRAME_VERSION@
