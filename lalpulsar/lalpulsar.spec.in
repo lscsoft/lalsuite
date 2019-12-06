@@ -139,7 +139,7 @@ This package provides the Octave bindings for LALPulsar.
 rm -rf %py3dir
 cp -r . %py3dir
 pushd %py3dir
-%configure %{configure_opts} --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
+%configure %{configure_opts} --disable-doxygen --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
 %{__make} %{?_smp_mflags} V=1 -C swig
 %{__make} %{?_smp_mflags} V=1 -C python
 popd
