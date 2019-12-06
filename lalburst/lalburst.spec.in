@@ -103,6 +103,8 @@ library.
 Summary: Python %{python2_version} Bindings for LALBurst
 Group: LAL
 Requires: %{name} = %{version}
+Requires: glue
+Requires: gsl
 Requires: numpy
 Requires: python
 Requires: python-ligo-lw
@@ -111,7 +113,6 @@ Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python2-ligo-segments
 Requires: scipy
-Requires: glue
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
@@ -124,6 +125,7 @@ This package provides the Python %{python2_version} bindings for LALBurst.
 Summary: Python %{python2_version} Bindings for LALBurst
 Group: LAL
 Requires: %{name} = %{version}
+Requires: gsl
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-glue
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
