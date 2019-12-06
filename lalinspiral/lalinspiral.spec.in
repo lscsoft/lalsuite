@@ -32,6 +32,7 @@ BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
 BuildRequires: libmetaio-devel
+BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 
 # swig
