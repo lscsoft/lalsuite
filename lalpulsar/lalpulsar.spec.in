@@ -23,13 +23,14 @@ Prefix: %{_prefix}
 # -- build requirements -----
 
 # C
-BuildRequires: gcc
-BuildRequires: gcc-c++
-BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
+BuildRequires: gcc
+BuildRequires: gcc-c++
 BuildRequires: gsl-devel
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
+BuildRequires: make
+BuildRequires: pkgconfig >= 0.18.0
 
 # swig
 BuildRequires: swig >= 3.0.7
