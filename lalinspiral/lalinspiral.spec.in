@@ -42,6 +42,7 @@ BuildRequires: python2-rpm-macros
 BuildRequires: python
 BuildRequires: python-devel
 BuildRequires: glue
+BuildRequires: python-ligo-lw
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
@@ -64,6 +65,7 @@ BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
+BuildRequires: python%{python3_pkgversion}-ligo-lw
 BuildRequires: python%{python3_pkgversion}-numpy
 BuildRequires: python%{python3_pkgversion}-pytest
 
@@ -119,7 +121,7 @@ Requires: python2-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
-Requires: python2-ligo-segments
+Requires: python2-ligo-lw
 Requires: glue
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
@@ -140,7 +142,7 @@ Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
-Requires: python%{python3_pkgversion}-ligo-segments
+Requires: python%{python3_pkgversion}-ligo-lw
 Requires: python%{python3_pkgversion}-numpy
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
