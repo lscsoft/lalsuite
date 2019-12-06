@@ -25,11 +25,12 @@ Prefix: %{_prefix}
 # C
 BuildRequires: gcc
 BuildRequires: gcc-c++
-BuildRequires: pkgconfig >= 0.18.0
+BuildRequires: help2man
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
 BuildRequires: libframe-devel
-BuildRequires: help2man
+BuildRequires: make
+BuildRequires: pkgconfig >= 0.18.0
 
 # swig
 BuildRequires: swig >= 3.0.7
