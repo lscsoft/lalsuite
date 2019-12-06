@@ -22,6 +22,7 @@ Build-Depends: debhelper (>= 9),
   python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
   python-ligo-lw,
+  python-matplotlib,
   python-mock,
   python-numpy,
   python-pathlib,
@@ -34,6 +35,7 @@ Build-Depends: debhelper (>= 9),
   python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
   python3-ligo-lw,
+  python3-matplotlib,
   python3-pytest,
   python3-scipy,
   lal-octave (>= @MIN_LAL_VERSION@~),
@@ -91,14 +93,15 @@ Architecture: any
 Depends: ${misc:Depends},
   ${python:Depends},
   ${shlibs:Depends},
+  lalburst (= ${binary:Version}),
+  python-glue,
   python-lal (>= @MIN_LAL_VERSION@~),
   python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
   python-ligo-lw,
   python-ligo-segments,
-  lalburst (= ${binary:Version}),
+  python-matplotlib,
   python-scipy,
-  python-glue
 Description: Python bindings for LALBurst
  The LSC Algorithm Burst Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL Burst library.
@@ -120,14 +123,15 @@ Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},
   ${shlibs:Depends},
+  lalburst (= ${binary:Version}),
+  python3-glue,
   python3-lal (>= @MIN_LAL_VERSION@~),
   python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
   python3-ligo-lw,
   python3-ligo-segments,
-  lalburst (= ${binary:Version}),
+  python3-matplotlib,
   python3-scipy,
-  python3-glue
 Description: Python 3 bindings foar LALBurst
  The LSC Algorithm Burst Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Burst library.
