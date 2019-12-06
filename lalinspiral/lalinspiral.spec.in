@@ -41,15 +41,15 @@ BuildRequires: swig >= 3.0.7
 BuildRequires: python2-rpm-macros
 BuildRequires: python
 BuildRequires: python-devel
-BuildRequires: glue
-BuildRequires: python-ligo-lw
+BuildRequires: python2-glue
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python2-lalburst >= @MIN_LALBURST_VERSION@
+BuildRequires: python2-ligo-lw
 BuildRequires: python2-mock
-BuildRequires: numpy
+BuildRequires: python2-numpy
 BuildRequires: python-pathlib
 BuildRequires: pytest
 
@@ -113,8 +113,8 @@ library.
 Summary: Python %{python2_version} bindings for LALInspiral
 Group: LAL
 Requires: %{name} = %{version}
-Requires: numpy
 Requires: python
+Requires: python2-glue
 Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-lalburst
 Requires: python2-lalframe >= @MIN_LALFRAME_VERSION@
@@ -122,7 +122,7 @@ Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python2-ligo-lw
-Requires: glue
+Requires: python2-numpy
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
