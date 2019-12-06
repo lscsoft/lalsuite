@@ -2487,8 +2487,7 @@ class EngineNode(LALInferenceDAGNode):
         self.psdfiles=None
         self.calibrationfiles=None
         self.cachefiles={}
-        if li_job.ispreengine is False:
-            self.id=next(EngineNode.new_id)
+        self.id=next(EngineNode.new_id)
         self.__finaldata=False
         self.fakedata=False
         self.lfns=[] # Local file names (for frame files and pegasus)
@@ -2509,7 +2508,7 @@ class EngineNode(LALInferenceDAGNode):
         self.psdstart=psdstart
 
     def set_seed(self,seed):
-        self.add_var_opt('randomseed',str(seed))
+        self.add_var_opt('randomseed',str(int(seed)+self.id))
 
     def set_srate(self,srate):
         self.add_var_opt('srate',str(srate))
