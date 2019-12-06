@@ -23,6 +23,8 @@ Prefix: %{_prefix}
 # -- build requirements -----
 
 # C
+BuildRequires: gcc
+BuildRequires: gcc-c++
 BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
