@@ -21,7 +21,6 @@ import pytest
 
 HERE = Path(__file__).parent.absolute()
 TOPDIR = HERE.parent.parent
-SUBPACKAGE = TOPDIR.name.split("-", 1)[0]
 PYTHONDIR = TOPDIR / "python"
 
 
