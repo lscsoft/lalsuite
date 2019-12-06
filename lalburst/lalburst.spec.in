@@ -23,6 +23,8 @@ Prefix: %{_prefix}
 # -- build requirements -----
 
 # C
+BuildRequires: gcc
+BuildRequires: gcc-c++
 BuildRequires: gsl-devel
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
