@@ -24,6 +24,7 @@ AC_CONFIG_FILES([ \
   swig/Makefile \
   test/Makefile \
   test/python/Makefile \
+  test/python/test_python_imports.py \
 ])
 AM_INIT_AUTOMAKE([ \
   1.11 \
