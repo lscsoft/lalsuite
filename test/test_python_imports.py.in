@@ -2,6 +2,7 @@
 #
 # Test modules import
 
+import os
 import sys
 import warnings
 from importlib import import_module
@@ -19,9 +20,12 @@ except ImportError:  # python < 3
 import pytest
 
 HERE = Path(__file__).parent.absolute()
-TOPDIR = HERE.parent.parent
+SRCDIR = Path(os.getenv("LAL_TEST_SRCDIR", HERE.parent.parent))
+BUILDDIR = Path(os.getenv("LAL_TEST_BUILDDIR", SRCDIR))
+EXCLUDEFILE = SRCDIR / "exclude-modules.txt"
+
 SUBPACKAGE = "@PACKAGE@"
-PYTHONDIR = TOPDIR / "python"
+PYTHONDIR = BUILDDIR.parent.parent / "python" / SUBPACKAGE
 
 
 def _ignore_symlinks(self):
@@ -62,9 +66,9 @@ def path_to_name(filepath):
     return name
 
 
-FILENAMES = find_modules(PYTHONDIR / SUBPACKAGE)
+FILENAMES = find_modules(PYTHONDIR)
 try:
-    EXCLUDE = read_excludes(HERE / "exclude-modules.txt")
+    EXCLUDE = read_excludes(EXCLUDEFILE)
 except FileNotFoundError:  # no exclusion file
     EXCLUDE = set()
 MODULES = [path_to_name(x) for x in sorted(FILENAMES)]
