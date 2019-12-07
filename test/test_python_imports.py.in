@@ -4,20 +4,20 @@
 
 import os
 import sys
-import warnings
 from importlib import import_module
 try:
     from pathlib import Path
 except ImportError as exc:
+    import warnings
     warnings.warn(str(exc))
     sys.exit(77)
-try:
-    from unittest import mock
-except ImportError:  # python < 3
-    import mock
-    FileNotFoundError = IOError
 
 import pytest
+
+try:
+    FileNotFoundError
+except NameError:  # python < 3
+    FileNotFoundError = IOError
 
 HERE = Path(__file__).parent.absolute()
 SRCDIR = Path(os.getenv("LAL_TEST_SRCDIR", HERE.parent.parent))
@@ -26,17 +26,6 @@ EXCLUDEFILE = SRCDIR / "exclude-modules.txt"
 
 SUBPACKAGE = "@PACKAGE@"
 PYTHONDIR = BUILDDIR.parent.parent / "python" / SUBPACKAGE
-
-
-def _ignore_symlinks(self):
-    """Patch function for py._path.local.LocalPath.realpath
-
-    LALSuite symlinks _this_ script into multiple subpackage directories,
-    this function stops pytest from automatically resolving the symlink
-    back to the absolute path, since we need this script to sit beside
-    the relevant exclude files.
-    """
-    return self
 
 
 def read_excludes(source):
@@ -87,6 +76,4 @@ if __name__ == "__main__":
     if "-v" not in " ".join(sys.argv[1:]):  # default to verbose
         sys.argv.append("-v")
     sys.argv.append("-rs")
-    # run pytest with patch to not resolve symlinks
-    with mock.patch("py._path.local.LocalPath.realpath", _ignore_symlinks):
-        sys.exit(pytest.main(args=[__file__] + sys.argv[1:]))
+    sys.exit(pytest.main(args=[__file__] + sys.argv[1:]))
