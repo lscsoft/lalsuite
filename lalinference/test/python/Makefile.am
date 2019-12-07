@@ -8,3 +8,9 @@ test_scripts += \
 	test_detframe.py \
 	test_python_scripts.py \
 	test_python_imports.py
+
+# Clean up byte-compiled files from tests
+DISTCLEANFILES = \
+    __pycache__/ \
+    .pytest_cache/ \
+    $(END_OF_LIST)

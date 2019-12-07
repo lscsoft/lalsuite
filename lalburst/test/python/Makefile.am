@@ -19,3 +19,9 @@ test_scripts += \
 if !SNGLCOINC_XPASS
 XFAIL_TESTS += snglcoinc_verify.py
 endif
+
+# Clean up byte-compiled files from tests
+DISTCLEANFILES = \
+    __pycache__/ \
+    .pytest_cache/ \
+    $(END_OF_LIST)

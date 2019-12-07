@@ -18,3 +18,9 @@ test_scripts += \
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
+
+# Clean up byte-compiled files from tests
+DISTCLEANFILES = \
+    __pycache__/ \
+    .pytest_cache/ \
+    $(END_OF_LIST)

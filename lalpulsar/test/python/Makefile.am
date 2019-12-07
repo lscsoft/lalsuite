@@ -18,3 +18,9 @@ test_helpers +=
 MOSTLYCLEANFILES = \
 	V-1_V1_1800SFT_simCW_simulateCWTest-*.sft \
 	$(END_OF_LIST)
+
+# Clean up byte-compiled files from tests
+DISTCLEANFILES = \
+    __pycache__/ \
+    .pytest_cache/ \
+    $(END_OF_LIST)
