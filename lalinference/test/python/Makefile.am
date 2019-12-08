@@ -1,16 +1,6 @@
-EXTRA_DIST = \
-	exclude-scripts.txt
-
-include $(top_srcdir)/gnuscripts/lalsuite_test.am
+include $(top_srcdir)/gnuscripts/lalsuite_test_python.am
 
 # Add shell, Python, etc. test scripts to this variables
 test_scripts += \
 	test_detframe.py \
-	test_python_scripts.py \
-	test_python_imports.py
-
-# Clean up byte-compiled files from tests
-DISTCLEANFILES = \
-    __pycache__/ \
-    .pytest_cache/ \
-    $(END_OF_LIST)
+	$(END_OF_LIST)
