@@ -600,6 +600,9 @@ lalinference_testjob:
   image: igwn/base:el7-testing
   before_script:
     - *yum-update
+    - ${YUM} install
+          git
+          git-lfs
     - ${YUM} install rpmbuild/RPMS/x86_64/*.rpm
   script:
     - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
