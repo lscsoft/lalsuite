@@ -36,19 +36,19 @@ BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: swig >= 3.0.7
 
 # python2
-BuildRequires: glue
-BuildRequires: numpy
 BuildRequires: pytest
 BuildRequires: python-devel
-BuildRequires: python-ligo-lw
 BuildRequires: python-pathlib
+BuildRequires: python2-glue
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python2-ligo-lw
 BuildRequires: python2-matplotlib
 BuildRequires: python2-mock
+BuildRequires: python2-numpy
 BuildRequires: python2-rpm-macros
-BuildRequires: scipy
+BuildRequires: python2-scipy
 
 # python3x
 BuildRequires: epel-rpm-macros
@@ -58,6 +58,8 @@ BuildRequires: python%{python3_pkgversion}-glue
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python%{python3_pkgversion}-ligo-lw
+BuildRequires: python%{python3_pkgversion}-matplotlib
 BuildRequires: python%{python3_pkgversion}-numpy
 BuildRequires: python%{python3_pkgversion}-pytest
 BuildRequires: python%{python3_pkgversion}-scipy
@@ -103,16 +105,16 @@ library.
 Summary: Python %{python2_version} Bindings for LALBurst
 Group: LAL
 Requires: %{name} = %{version}
-Requires: glue
 Requires: gsl
-Requires: numpy
 Requires: python
-Requires: python-ligo-lw
+Requires: python2-glue
 Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python2-ligo-lw
 Requires: python2-ligo-segments
-Requires: scipy
+Requires: python2-numpy
+Requires: python2-scipy
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
@@ -131,6 +133,7 @@ Requires: python%{python3_pkgversion}-glue
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python%{python3_pkgversion}-ligo-lw
 Requires: python%{python3_pkgversion}-ligo-segments
 Requires: python%{python3_pkgversion}-numpy
 Requires: python%{python3_pkgversion}-scipy
