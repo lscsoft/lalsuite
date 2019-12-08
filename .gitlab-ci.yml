@@ -90,7 +90,7 @@ cache:
 
 .rpmbuild: &rpmbuild
   <<: *yum-cache
-  image: igwn/base:el7
+  image: igwn/base:el7-testing
   variables:
     GIT_STRATEGY: none
     RPM_BUILD_CPUS: 4
@@ -597,7 +597,7 @@ lalapps:conda:
 lalinference_testjob:
   <<: *yum-cache
   stage: integration tests
-  image: igwn/base:el7
+  image: igwn/base:el7-testing
   before_script:
     - *yum-update
     - ${YUM} install rpmbuild/RPMS/x86_64/*.rpm
@@ -624,23 +624,14 @@ lalinference_testjob:
 
 top-level:
   stage: integration tests
-  image: igwn/lalsuite-dev:el7
-  needs:
-    - make-dist
-  <<: *top-level-build
-  only:
-    - pushes
-
-top-level-testing:
-  stage: integration tests
   image: igwn/lalsuite-dev:el7-testing
   needs:
     - make-dist
   <<: *top-level-build
   only:
+    - pushes
     - schedules
     - web
-  allow_failure: true
 
 # -- docker -------------------------------------
 
