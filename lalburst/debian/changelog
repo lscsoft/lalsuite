@@ -1,3 +1,9 @@
+lalburst (1.5.3-1) unstable; urgency=low
+
+  * O3b release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 25 Nov 2019 16:09:28 -0700
+
 lalburst (1.5.2-1) unstable; urgency=low
 
   * O3 release
