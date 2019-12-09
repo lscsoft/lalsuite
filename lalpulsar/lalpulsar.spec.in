@@ -1,6 +1,6 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
-%define release 1
+%define release 2
 %define configure_opts --enable-cfitsio GSL_LIBS="-lgsl" CFITSIO_LIBS="-lcfitsio"
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
@@ -207,6 +207,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Dec 09 2019 Adam Mercer <adam.mercer@ligo.org> 1.18.2-2
+- Packaging updates
+
+* Wed Nov 27 2019 Adam Mercer <adam.mercer@ligo.org> 1.18.2-1
+- O3b release
+
 * Tue Aug 06 2019 Adam Mercer <adam.mercer@ligo.org> 1.18.1-1
 - O3 point release
 
