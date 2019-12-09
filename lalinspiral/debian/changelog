@@ -1,3 +1,9 @@
+lalinspiral (1.10.0-1) unstable; urgency=low
+
+  * O3b release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 26 Nov 2019 13:54:39 -0700
+ 
 lalinspiral (1.9.0-1) unstable; urgency=low
 
   * O3 release
