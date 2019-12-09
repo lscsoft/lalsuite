@@ -1,3 +1,9 @@
+lalapps (6.25.0-1) unstable; urgency=low
+
+  * O3b release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 27 Nov 2019 16:54:54 -0700
+
 lalapps (6.24.0-1) unstable; urgency=low
 
   * O3 release
