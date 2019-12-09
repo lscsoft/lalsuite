@@ -11,13 +11,13 @@
 
 # dependencies
 {% set chealpix_version = "3.30.0" %}
-{% set lal_version = "6.19.2" %}
-{% set lalburst_version = "1.5.1" %}
-{% set lalframe_version = "1.4.0" %}
-{% set lalinspiral_version = "1.8.1" %}
-{% set lalmetaio_version = "1.5.0" %}
-{% set lalpulsar_version = "1.17.1" %}
-{% set lalsimulation_version = "1.8.2" %}
+{% set lal_version = "6.21.0" %}
+{% set lalburst_version = "1.5.3" %}
+{% set lalframe_version = "1.5.0" %}
+{% set lalinspiral_version = "1.10.0" %}
+{% set lalmetaio_version = "1.6.0" %}
+{% set lalpulsar_version = "1.18.2" %}
+{% set lalsimulation_version = "1.10.0" %}
 {% set swig_version = "3.0.7" %}
 
 package:
