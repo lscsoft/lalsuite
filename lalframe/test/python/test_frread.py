@@ -20,6 +20,7 @@
 """
 
 import sys
+import os
 try:
     from pathlib import Path
 except ImportError as exc:  # probably macports
@@ -42,8 +43,11 @@ else:
     Cache.entry_class = CacheEntry
 
 # find test GWF file
-HERE = Path(__file__).parent.absolute()
-TEST_GWF = HERE.parent / "F-TEST-600000060-60.gwf"
+TEST_PATH = Path(os.getenv(
+    "LAL_TEST_SRCDIR",
+    Path(__file__).parent,
+)).absolute().parent
+TEST_GWF = TEST_PATH / "F-TEST-600000060-60.gwf"
 
 # parametrize sources
 SOURCES = [
