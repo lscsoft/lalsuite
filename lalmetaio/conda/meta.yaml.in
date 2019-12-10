@@ -10,7 +10,7 @@
 {% set sha256 = "@SHA256@" %}
 
 # dependencies
-{% set lal_version = "6.20.0" %}
+{% set lal_version = "6.21.0" %}
 {% set swig_version = "3.0.7" %}
 
 package:
@@ -32,10 +32,10 @@ requirements:
     - pkg-config
     - swig >={{ swig_version }}
   host:
-    - lal >={{ lal_version }}
+    - lal >={{ lal_version }}a0
     - metaio
   run:
-    - lal >={{ lal_version }}
+    - lal >={{ lal_version }}a0
     - metaio
 test:
   commands:
@@ -67,7 +67,7 @@ outputs:
         - metaio
         - {{ pin_compatible('numpy') }}
         - python
-        - python-lal >={{ lal_version }}
+        - python-lal >={{ lal_version }}a0
     test:
       imports:
         - lalmetaio

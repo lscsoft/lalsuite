@@ -1,10 +1,6 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
-%define _prefix /usr
-%define _mandir %{_prefix}/share/man
+%define release 2
 %define _sysconfdir %{_prefix}/etc
-%define _pkgpythondir %{_prefix}/lib64/python2.?/site-packages/@PACKAGE@
-%define _pkgpyexecdir %{_libdir}/python2.?/site-packages/@PACKAGE@
-%define release 1
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
 %undefine nightly
@@ -19,59 +15,65 @@ Group: LAL
 Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
-BuildRequires: pkgconfig >= 0.18.0
+BuildRequires: bc
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
+BuildRequires: gcc
 BuildRequires: gsl-devel
+BuildRequires: help2man
 BuildRequires: less
 BuildRequires: libframe-devel
 BuildRequires: libmetaio-devel
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: python2-lal >= @MIN_LAL_VERSION@
-BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
-BuildRequires: python2-lalframe >= @MIN_LALFRAME_VERSION@
-BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
-BuildRequires: python2-lalburst >= @MIN_LALBURST_VERSION@
-BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
-BuildRequires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
+BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
 BuildRequires: lalinference-devel >= @MIN_LALINFERENCE_VERSION@
+BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
+BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: make
+BuildRequires: pkgconfig >= 0.18.0
+BuildRequires: python2-lal >= @MIN_LAL_VERSION@
+BuildRequires: python2-lalframe >= @MIN_LALFRAME_VERSION@
+BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
+BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python2-lalburst >= @MIN_LALBURST_VERSION@
+BuildRequires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
 BuildRequires: python2-lalinference >= @MIN_LALINFERENCE_VERSION@
-BuildRequires: help2man
-BuildRequires: bc
+BuildRequires: python2-rpm-macros
 Requires: cfitsio
 Requires: fftw
 Requires: gsl
-Requires: h5py
 Requires: healpy
-Requires: python2-six
+Requires: lal >= @MIN_LAL_VERSION@
+Requires: lalburst >= @MIN_LALBURST_VERSION@
+Requires: lalframe >= @MIN_LALFRAME_VERSION@
+Requires: lalinference >= @MIN_LALINFERENCE_VERSION@
+Requires: lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: lalpulsar >= @MIN_LALPULSAR_VERSION@
+Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: less
 Requires: libframe
 Requires: libmetaio
 Requires: python
-Requires: lal >= @MIN_LAL_VERSION@
+Requires: python2-h5py
 Requires: python2-lal >= @MIN_LAL_VERSION@
-Requires: lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python2-lalframe >= @MIN_LALFRAME_VERSION@
-Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-Requires: lalburst >= @MIN_LALBURST_VERSION@
 Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
-Requires: lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-Requires: lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
-Requires: lalinference >= @MIN_LALINFERENCE_VERSION@
 Requires: python2-lalinference >= @MIN_LALINFERENCE_VERSION@
+Requires: python2-ligo-lw
 Requires: python2-ligo-segments
-Requires: python-ligo-lw
+Requires: python2-matplotlib
+Requires: python2-numpy
+Requires: python2-scipy
+Requires: python2-six
 Obsoletes: lalxml < 1.2.5-1
 Obsoletes: lalxml-debuginfo < 1.2.5-1
 Obsoletes: lalxml-devel < 1.2.5-1
@@ -125,6 +127,9 @@ export OMPI_LIBS="-lmpi -Wl,--disable-new-dtags"
 
 %check
 %{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
+# check python import
+env PYTHONPATH="%{buildroot}%{python2_sitearch}" \
+%{__python2} -c "import %{name}"
 
 %install
 %make_install
@@ -145,11 +150,17 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_bindir}/*
 %{_datadir}/lalapps/*
 %{_mandir}/man1/*
-%{_pkgpythondir}/*
 %{_sysconfdir}/lalapps-user-env.*
+%{python2_sitearch}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Dec 09 2019 Adam Mercer <adam.mercer@ligo.org> 6.25.0-2
+- Packaging updates
+
+* Wed Nov 27 2019 Adam Mercer <adam.mercer@ligo.org> 6.25.0-1
+- O3b release
+
 * Thu May 23 2019 Adam Mercer <adam.mercer@ligo.org> 6.24.0-1
 - O3 Release
 

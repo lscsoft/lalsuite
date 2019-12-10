@@ -9,14 +9,14 @@
 {% set url = "file://@TARBALL@" %}
 {% set sha256 = "@SHA256@" %}
 
-{% set lal_version = "6.20.0" %}
-{% set lalburst_version = "1.5.1" %}
-{% set lalframe_version = "1.4.0" %}
-{% set lalinference_version = "1.11.0" %}
-{% set lalinspiral_version = "1.9.0" %}
-{% set lalmetaio_version = "1.5.0" %}
-{% set lalpulsar_version = "1.18.0" %}
-{% set lalsimulation_version = "1.9.0" %}
+{% set lal_version = "6.21.0" %}
+{% set lalburst_version = "1.5.3" %}
+{% set lalframe_version = "1.5.0" %}
+{% set lalinference_version = "1.11.4" %}
+{% set lalinspiral_version = "1.10.0" %}
+{% set lalmetaio_version = "1.6.0" %}
+{% set lalpulsar_version = "1.18.2" %}
+{% set lalsimulation_version = "1.10.0" %}
 
 package:
   name: {{ name }}
@@ -50,41 +50,41 @@ requirements:
     - cfitsio
     - fftw * nompi*
     - gsl
-    - lal >={{ lal_version }}
-    - lalburst >={{ lalburst_version }}
-    - lalframe >={{ lalframe_version }}
-    - lalinference >={{ lalinference_version }}
-    - lalinspiral >={{ lalinspiral_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalpulsar >={{ lalpulsar_version }}
-    - lalsimulation >={{ lalsimulation_version }}
+    - lal >={{ lal_version }}a0
+    - lalburst >={{ lalburst_version }}a0
+    - lalframe >={{ lalframe_version }}a0
+    - lalinference >={{ lalinference_version }}a0
+    - lalinspiral >={{ lalinspiral_version }}a0
+    - lalmetaio >={{ lalmetaio_version }}a0
+    - lalpulsar >={{ lalpulsar_version }}a0
+    - lalsimulation >={{ lalsimulation_version }}a0
     - libframe
     - llvm-openmp  # [osx]
     - metaio
     - openmp  # [linux]
     - python
-    - python-lal >={{ lal_version }}
-    - python-lalburst >={{ lalburst_version }}
-    - python-lalinference >={{ lalinference_version }}
-    - python-lalinspiral >={{ lalinspiral_version }}
-    - python-lalframe >={{ lalframe_version }}
-    - python-lalmetaio >={{ lalmetaio_version }}
-    - python-lalpulsar >={{ lalpulsar_version }}
-    - python-lalsimulation >={{ lalsimulation_version }}
+    - python-lal >={{ lal_version }}a0
+    - python-lalburst >={{ lalburst_version }}a0
+    - python-lalinference >={{ lalinference_version }}a0
+    - python-lalinspiral >={{ lalinspiral_version }}a0
+    - python-lalframe >={{ lalframe_version }}a0
+    - python-lalmetaio >={{ lalmetaio_version }}a0
+    - python-lalpulsar >={{ lalpulsar_version }}a0
+    - python-lalsimulation >={{ lalsimulation_version }}a0
   run:
     - cfitsio
     - fftw
     - gsl
     - h5py
     - healpy
-    - lal >={{ lal_version }}
-    - lalframe >={{ lalframe_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalsimulation >={{ lalsimulation_version }}
-    - lalburst >={{ lalburst_version }}
-    - lalinspiral >={{ lalinspiral_version }}
-    - lalpulsar >={{ lalpulsar_version }}
-    - lalinference >={{ lalinference_version }}
+    - lal >={{ lal_version }}a0
+    - lalframe >={{ lalframe_version }}a0
+    - lalmetaio >={{ lalmetaio_version }}a0
+    - lalsimulation >={{ lalsimulation_version }}a0
+    - lalburst >={{ lalburst_version }}a0
+    - lalinspiral >={{ lalinspiral_version }}a0
+    - lalpulsar >={{ lalpulsar_version }}a0
+    - lalinference >={{ lalinference_version }}a0
     - libframe
     - ligo-segments
     - llvm-openmp  # [osx]
@@ -93,14 +93,14 @@ requirements:
     - numpy
     - pillow
     - python
-    - python-lal >={{ lal_version }}
-    - python-lalburst >={{ lalburst_version }}
-    - python-lalframe >={{ lalframe_version }}
-    - python-lalinference >={{ lalinference_version }}
-    - python-lalinspiral >={{ lalinspiral_version }}
-    - python-lalmetaio >={{ lalmetaio_version }}
-    - python-lalpulsar >={{ lalpulsar_version }}
-    - python-lalsimulation >={{ lalsimulation_version }}
+    - python-lal >={{ lal_version }}a0
+    - python-lalburst >={{ lalburst_version }}a0
+    - python-lalframe >={{ lalframe_version }}a0
+    - python-lalinference >={{ lalinference_version }}a0
+    - python-lalinspiral >={{ lalinspiral_version }}a0
+    - python-lalmetaio >={{ lalmetaio_version }}a0
+    - python-lalpulsar >={{ lalpulsar_version }}a0
+    - python-lalsimulation >={{ lalsimulation_version }}a0
     - python-ligo-lw <1.6.0a0
 
 test:

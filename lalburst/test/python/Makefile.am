@@ -1,13 +1,8 @@
-EXTRA_DIST =
 XFAIL_TESTS =
-
-include $(top_srcdir)/gnuscripts/lalsuite_test.am
+include $(top_srcdir)/gnuscripts/lalsuite_test_python.am
 
 # Add shell, Python, etc. test scripts to this variables
-
 test_scripts += \
-	test_python_imports.py \
-	test_python_scripts.py \
 	date_verify.py \
 	snglcoinc_verify.py \
 	$(END_OF_LIST)

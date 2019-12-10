@@ -9,7 +9,7 @@
 {% set url = "file://@TARBALL@" %}
 {% set sha256 = "@SHA256@" %}
 
-{% set lal_version = "6.20.0" %}
+{% set lal_version = "6.21.0" %}
 {% set swig_version = "3.0.7" %}
 
 package:
@@ -38,12 +38,12 @@ requirements:
     - cfitsio
     - fftw * nompi*
     - gsl
-    - lal >={{ lal_version }} fftw*
+    - lal >={{ lal_version }}a0 fftw*
   run:
     - cfitsio
     - fftw
     - gsl
-    - lal >={{ lal_version }}
+    - lal >={{ lal_version }}a0
 
 test:
   commands:
@@ -66,21 +66,21 @@ outputs:
       host:
         - astropy
         - gsl
-        - lal >={{ lal_version }}
+        - lal >={{ lal_version }}a0
         - {{ pin_subpackage('lalpulsar', exact=True) }}
         - numpy
         - python
-        - python-lal >={{ lal_version }}
+        - python-lal >={{ lal_version }}a0
       run:
         - astropy
         - cfitsio
         - fftw
         - gsl
-        - lal >={{ lal_version }}
+        - lal >={{ lal_version }}a0
         - {{ pin_subpackage('lalpulsar', exact=True) }}
         - {{ pin_compatible('numpy') }}
         - python
-        - python-lal >={{ lal_version }}
+        - python-lal >={{ lal_version }}a0
         - six
     test:
       imports:

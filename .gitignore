@@ -37,3 +37,4 @@ meta.yaml
 tags
 TAGS
 .pytest_cache
+test_python_imports.py

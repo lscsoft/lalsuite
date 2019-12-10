@@ -22,16 +22,18 @@ stages:
   - deploy
 
 variables:
-  DOCKER_DRIVER: overlay
-  GIT_DEPTH: 1
+  APT_GET: "apt-get -y -q -q -o dir::cache::archives=${CI_PROJECT_DIR}/.cache/apt"
   BRANCH: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
   COMMIT: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  NIGHTLY: $CI_REGISTRY_IMAGE:nightly
-  TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
-  LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
   CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
   CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
-
+  DOCKER_DRIVER: overlay
+  GIT_DEPTH: 1
+  LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
+  NIGHTLY: $CI_REGISTRY_IMAGE:nightly
+  TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+  YUM: "yum -y -q --setopt=cachedir=${CI_PROJECT_DIR}/.cache/yum --setopt=keepcache=1"
+  YUM_OPTS: "-y -q --setopt=cachedir=${CI_PROJECT_DIR}/.cache/yum --setopt=keepcache=1"
 
 before_script:
   - set -x  # print commands as they are run (helps debugging)
@@ -77,11 +79,18 @@ cache:
 
 # -- rpm
 
+.yum-cache: &yum-cache
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/yum
+
 .yum-update: &yum-update
-  yum-config-manager --disable htcondor 1>/dev/null && yum -y update
+  yum-config-manager --disable htcondor 1>/dev/null && ${YUM} update
 
 .rpmbuild: &rpmbuild
-  image: igwn/lalsuite-dev:el7
+  <<: *yum-cache
+  image: igwn/base:el7-testing
   variables:
     GIT_STRATEGY: none
     RPM_BUILD_CPUS: 4
@@ -89,9 +98,9 @@ cache:
     - PACKAGE=${CI_JOB_NAME%%:*}
     # install srpm dependencies
     - *yum-update
-    - yum -y install yum-utils epel-rpm-macros
+    - ${YUM} install lscsoft-packaging-tools
     # install upstream packages
-    - if [ -d rpmbuild ]; then yum -y install rpmbuild/RPMS/x86_64/*.rpm; fi
+    - if [ -d rpmbuild ]; then ${YUM} install rpmbuild/RPMS/x86_64/*.rpm; fi
     # build src.rpm
     - cd ${PACKAGE}/
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
@@ -100,7 +109,7 @@ cache:
     # lint src.rpm
     - rpmlint ${SRCRPM}
     # install build dependencies
-    - yum-builddep -y -q ${SRCRPM}
+    - yum-builddep ${YUM_OPTS} ${SRCRPM}
     # build binary rpms and print details of what we got
     - rpmbuild --rebuild --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${SRCRPM}
     - rpm -qilp ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
@@ -119,14 +128,31 @@ cache:
 
 # -- debian
 
+.apt-cache: &apt-cache
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/apt
+
+.apt-update: &apt-update
+  mkdir -p "${CI_PROJECT_DIR}/.cache/apt/partial" &&
+  ${APT_GET} autoclean &&
+  ${APT_GET} update
+
 .debuild: &debbuild
-  image: igwn/lalsuite-dev:stretch
+  <<: *apt-cache
+  image: igwn/base:stretch
   variables:
     GIT_STRATEGY: none
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
     # install debs from artifacts
-    - dpkg -i *.deb || true
+    - *apt-update
+    - ${APT_GET} install
+          devscripts
+          dpkg-dev
+          lintian
+    - "ls *.deb &>/dev/null && { dpkg -i *.deb || { ${APT_GET} -f install; dpkg -i *.deb; } }"
     # create orig tarball
     - cd ${PACKAGE}/
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
@@ -141,8 +167,8 @@ cache:
     - cd ${PACKAGE}-*/
     - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
     # install build dependencies
-    - apt-get -y -q install devscripts
-    - mk-build-deps --tool "apt-get -y" --install --remove
+    - ${APT_GET} -q install devscripts
+    - mk-build-deps --tool "${APT_GET}" --install --remove
     # build packages
     - debuild -us -uc -r
   artifacts:
@@ -569,11 +595,15 @@ lalapps:conda:
 # -- integration tests --------------------------
 
 lalinference_testjob:
+  <<: *yum-cache
   stage: integration tests
-  image: igwn/lalsuite-dev:el7
+  image: igwn/base:el7-testing
   before_script:
     - *yum-update
-    - yum -y install rpmbuild/RPMS/x86_64/*.rpm
+    - ${YUM} install
+          git
+          git-lfs
+    - ${YUM} install rpmbuild/RPMS/x86_64/*.rpm
   script:
     - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
     - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
@@ -597,23 +627,14 @@ lalinference_testjob:
 
 top-level:
   stage: integration tests
-  image: igwn/lalsuite-dev:el7
-  needs:
-    - make-dist
-  <<: *top-level-build
-  only:
-    - pushes
-
-top-level-testing:
-  stage: integration tests
   image: igwn/lalsuite-dev:el7-testing
   needs:
     - make-dist
   <<: *top-level-build
   only:
+    - pushes
     - schedules
     - web
-  allow_failure: true
 
 # -- docker -------------------------------------
 

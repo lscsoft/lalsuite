@@ -1,0 +1,3 @@
+# Add script names (excluding the `.py` extension) to this file
+# to ignore them from the `test_python_scripts.py` test script,
+# see /test/README.md in the upstream repo for more details

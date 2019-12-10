@@ -9,11 +9,11 @@
 {% set url = "file://@TARBALL@" %}
 {% set sha256 = "@SHA256@" %}
 
-{% set lal_version = "6.20.0" %}
-{% set lalframe_version = "1.4.0" %}
-{% set lalmetaio_version = "1.5.0" %}
-{% set lalsimulation_version = "1.9.0" %}
-{% set lalburst_version = "1.5.1" %}
+{% set lal_version = "6.21.0" %}
+{% set lalframe_version = "1.5.0" %}
+{% set lalmetaio_version = "1.6.0" %}
+{% set lalsimulation_version = "1.10.0" %}
+{% set lalburst_version = "1.5.3" %}
 {% set swig_version = "3.0.7" %}
 
 package:
@@ -36,18 +36,18 @@ requirements:
     - swig >={{ swig_version }}
   host:
     - gsl
-    - lal >={{ lal_version }}
-    - lalframe >={{ lalframe_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalsimulation >={{ lalsimulation_version }}
+    - lal >={{ lal_version }}a0
+    - lalframe >={{ lalframe_version }}a0
+    - lalmetaio >={{ lalmetaio_version }}a0
+    - lalsimulation >={{ lalsimulation_version }}a0
     - libblas=*=*netlib
     - metaio
   run:
     - gsl
-    - lal >={{ lal_version }}
-    - lalframe >={{ lalframe_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalsimulation >={{ lalsimulation_version }}
+    - lal >={{ lal_version }}a0
+    - lalframe >={{ lalframe_version }}a0
+    - lalmetaio >={{ lalmetaio_version }}a0
+    - lalsimulation >={{ lalsimulation_version }}a0
     - metaio
 
 test:
@@ -73,23 +73,23 @@ outputs:
         - numpy
         - python
         - libblas=*=*netlib
-        - lalburst >={{ lalburst_version }}
+        - lalburst >={{ lalburst_version }}a0
       run:
         - gsl
-        - lal >={{ lal_version }}
-        - lalframe >={{ lalframe_version }}
-        - lalmetaio >={{ lalmetaio_version }}
-        - lalsimulation >={{ lalsimulation_version }}
+        - lal >={{ lal_version }}a0
+        - lalframe >={{ lalframe_version }}a0
+        - lalmetaio >={{ lalmetaio_version }}a0
+        - lalsimulation >={{ lalsimulation_version }}a0
         - {{ pin_subpackage('lalinspiral', exact=True) }}
         - lscsoft-glue
         - metaio
         - {{ pin_compatible('numpy') }}
         - python
-        - python-lal >={{ lal_version }}
-        - python-lalburst >={{ lalburst_version }}
-        - python-lalframe >={{ lalframe_version }}
-        - python-lalmetaio >={{ lalmetaio_version }}
-        - python-lalsimulation >={{ lalsimulation_version }}
+        - python-lal >={{ lal_version }}a0
+        - python-lalburst >={{ lalburst_version }}a0
+        - python-lalframe >={{ lalframe_version }}a0
+        - python-lalmetaio >={{ lalmetaio_version }}a0
+        - python-lalsimulation >={{ lalsimulation_version }}a0
         - python-ligo-lw
     test:
       imports:

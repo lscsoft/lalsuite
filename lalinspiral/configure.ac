@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInspiral],[1.9.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALInspiral],[1.10.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALInspiralConfig.h])
 AC_CONFIG_SRCDIR([lib/LALInspiral.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -25,6 +25,7 @@ AC_CONFIG_FILES([ \
   swig/Makefile \
   test/Makefile \
   test/python/Makefile \
+  test/python/test_python_imports.py \
 ])
 AM_INIT_AUTOMAKE([ \
   1.11 \
@@ -38,11 +39,11 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.20.0"
-MIN_LALFRAME_VERSION="1.4.0"
-MIN_LALMETAIO_VERSION="1.5.0"
-MIN_LALSIMULATION_VERSION="1.9.0"
-MIN_LALBURST_VERSION="1.5.1"
+MIN_LAL_VERSION="6.21.0"
+MIN_LALFRAME_VERSION="1.5.0"
+MIN_LALMETAIO_VERSION="1.6.0"
+MIN_LALSIMULATION_VERSION="1.10.0"
+MIN_LALBURST_VERSION="1.5.3"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
@@ -70,7 +71,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[14])
+AC_SUBST([LIBCURRENT],[15])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])

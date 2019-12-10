@@ -1,10 +1,6 @@
-# Python script help test exclusion file
-#     list out files to _not_ include in the automated `xxx --help` tests
-#     see /test/README.md for details on the syntax
+# Add script names (excluding the `.py` extension) to this file
+# to ignore them from the `test_python_scripts.py` test script,
+# see /test/README.md in the upstream repo for more details
 
-# these require lalapps
-lalinference_burst_pp_pipe
-lalinference_pipe
-lalinference_pp_pipe
 # these require cpnest
 lalinference_cpnest
