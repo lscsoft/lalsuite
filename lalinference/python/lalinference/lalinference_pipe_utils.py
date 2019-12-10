@@ -64,10 +64,20 @@ def findSegmentsToAnalyze(ifo, frametype, state_vector_channel, bits, gpsstart, 
     datacache = Cache.from_urls(find_urls(ifo[0], frametype, gpsstart, gpsend))
     if not datacache:
         return gwpy.segments.SegmentList([])
-    flags = gwpy.timeseries.StateVector.read(
+    state = gwpy.timeseries.StateVector.read(
         datacache, state_vector_channel, start=gpsstart, end=gpsend,
         pad=0  # padding data so that errors are not raised even if found data are not continuous.
-    ).to_dqflags()
+    )
+    if not numpy.issubdtype(state.dtype, numpy.unsignedinteger):
+        # if data are not unsigned integers, cast to them now so that
+        # we can determine the bit content for the flags
+        state = state.astype(
+            "uint32",
+            casting="unsafe",
+            subok=True,
+            copy=False,
+        ).to_dqflags()
+    flags = state.to_dqflags()
     # extract segments all of whose bits are active
     segments = flags[bits[0]].active
     for bit in bits:
