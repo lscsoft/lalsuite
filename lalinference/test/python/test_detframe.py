@@ -16,33 +16,34 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-import lal
-import lalinference as li
-import numpy as np
 import sys
 
-Ntest=1000
+import numpy as np
+from numpy.testing import assert_allclose
 
-LHO=lal.CachedDetectors[lal.LALDetectorIndexLHODIFF]
-LLO=lal.CachedDetectors[lal.LALDetectorIndexLLODIFF]
+import pytest
 
-def test_invertable(ra,dec,time,tolerance=[1e-6,1e-5,1e-5]):
-    forward = li.EquatorialToDetFrame(LHO,LLO,time,ra,dec)
-    back = li.DetFrameToEquatorial(LHO,LLO,*forward)
-    delta=np.array([abs(time-back[0]),abs(ra-back[1]),abs(dec-back[2])])
-    if any(delta > tolerance):
-        return False
-    else:
-        return True
+import lal
+import lalinference as li
+
+NTEST = 1000
+
+LHO = lal.CachedDetectors[lal.LALDetectorIndexLHODIFF]
+LLO = lal.CachedDetectors[lal.LALDetectorIndexLLODIFF]
+
+RAS = np.random.uniform(low=0, high=lal.TWOPI, size=NTEST)
+DECS = np.random.uniform(low=-lal.PI/2.0, high=lal.PI/2.0, size=NTEST)
+TIMES = np.random.uniform(low=0, high=lal.DAYSID_SI, size=NTEST)
 
 
-ras=np.random.uniform(low=0,high=lal.TWOPI,size=Ntest)
-decs=np.random.uniform(low=-lal.PI/2.0,high=lal.PI/2.0,size=Ntest)
-times=np.random.uniform(low=0,high=lal.DAYSID_SI,size=Ntest)
+def test_invertable():
+    res = np.empty((3, NTEST))
+    for i, (ra, dec, time) in enumerate(zip(RAS, DECS, TIMES)):
+        forward = li.EquatorialToDetFrame(LHO, LLO, time, ra, dec)
+        res[:, i] = li.DetFrameToEquatorial(LHO, LLO, *forward)
+    for a, b, tol in zip((TIMES, RAS, DECS), res, (1e-6, 1e-5, 1e-5)):
+        assert_allclose(a, b, atol=tol)
 
-# Test mapping back and forward
-if all(map(lambda x: test_invertable(*x), zip(ras,decs,times) ) ):
-    sys.exit(0)
-else:
-    sys.exit(1)
 
+if __name__ == '__main__':
+    sys.exit(pytest.main(args=[__file__] + sys.argv[1:]))
