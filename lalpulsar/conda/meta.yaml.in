@@ -10,7 +10,7 @@
 {% set sha256 = "@SHA256@" %}
 
 {% set lal_version = "6.21.0" %}
-{% set swig_version = "3.0.7" %}
+{% set swig_version = "3.0.9" %}
 
 package:
   name: {{ name }}

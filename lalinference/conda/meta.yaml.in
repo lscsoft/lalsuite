@@ -18,7 +18,7 @@
 {% set lalmetaio_version = "1.6.0" %}
 {% set lalpulsar_version = "1.18.2" %}
 {% set lalsimulation_version = "1.10.0" %}
-{% set swig_version = "3.0.7" %}
+{% set swig_version = "3.0.9" %}
 
 package:
   name: {{ name }}
