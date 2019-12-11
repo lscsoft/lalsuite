@@ -27,8 +27,14 @@ from __future__ import print_function, division
 
 import os
 import sys
+
 import numpy as np
+from numpy.testing import assert_allclose
+
+import pytest
+
 import lal
+
 import lalpulsar
 from lalpulsar.PulsarParametersWrapper import PulsarParametersPy
 
@@ -109,7 +115,7 @@ t1output = {'H1': np.array([[1000000000.0, -4.365015078242e-27, -4.216860020522e
 
 """
 The second test output is to create a signal model for a source assuming that
-the heterodyne and injected signal do not precisely matches. 
+the heterodyne and injected signal do not precisely matches.
 lalapps_pulsar_parameter_estimation_nested has been run with the following
 pulsar parameter "inj.par" file:
 
@@ -357,7 +363,8 @@ edat = lalpulsar.InitBarycenter(earthephem, sunephem)
 tdat = lalpulsar.InitTimeCorrections(timefile)
 
 
-def test_one():
+@pytest.mark.parametrize('det', sorted(t1output.keys()))
+def test_one(det):
     par = PulsarParametersPy()
     par['F'] = [123.456789, -9.87654321e-12]  # set frequency
     par['DELTAF'] = [0.0, 0.0]  # frequency difference
@@ -372,53 +379,48 @@ def test_one():
 
     freqfactor = 2.  # set frequency factor
 
-    for det in t1output.keys():
-        # convert into GPS times
-        gpstimes = lalpulsar.CreateTimestampVector(len(t1output[det]))
-        for i, time in enumerate(t1output[det][:,0]): 
-            gpstimes.data[i] = lal.LIGOTimeGPS(time)
+    # convert into GPS times
+    gpstimes = lalpulsar.CreateTimestampVector(len(t1output[det]))
+    for i, time in enumerate(t1output[det][:,0]):
+        gpstimes.data[i] = lal.LIGOTimeGPS(time)
 
-        detector = lalpulsar.GetSiteInfo(det)
+    detector = lalpulsar.GetSiteInfo(det)
 
-        # set the response function look-up table
-        dt = t1output[det][1,0] - t1output[det][0,0]  # time step
-        resp = lalpulsar.DetResponseLookupTable(t1output[det][0,0],
-                                                detector,
-                                                par['RAJ'],
-                                                par['DECJ'],
-                                                2880,
-                                                dt)
+    # set the response function look-up table
+    dt = t1output[det][1,0] - t1output[det][0,0]  # time step
+    resp = lalpulsar.DetResponseLookupTable(t1output[det][0,0],
+                                            detector,
+                                            par['RAJ'],
+                                            par['DECJ'],
+                                            2880,
+                                            dt)
 
-        # get the heterodyned file SSB delay
-        hetSSBdelay = lalpulsar.HeterodynedPulsarGetSSBDelay(par.PulsarParameters(),
-                                                             gpstimes,
-                                                             detector,
-                                                             edat,
-                                                             tdat,
-                                                             lalpulsar.TIMECORRECTION_TCB)
-
-        fullsignal = lalpulsar.HeterodynedPulsarGetModel(par.PulsarParameters(),
-                                                         freqfactor,
-                                                         1,
-                                                         0,
-                                                         0,
+    # get the heterodyned file SSB delay
+    hetSSBdelay = lalpulsar.HeterodynedPulsarGetSSBDelay(par.PulsarParameters(),
                                                          gpstimes,
-                                                         hetSSBdelay,
-                                                         0,
-                                                         None,
-                                                         0,
-                                                         resp,
+                                                         detector,
                                                          edat,
                                                          tdat,
                                                          lalpulsar.TIMECORRECTION_TCB)
 
-        # check output matches that from lalapps_pulsar_parameter_estimation_nested
-        if np.any(np.abs(fullsignal.data.data.real - t1output[det][:,1]) > 1e-34):
-            return False
-        elif np.any(np.abs(fullsignal.data.data.imag - t1output[det][:,2]) > 1e-34):
-            return False
+    fullsignal = lalpulsar.HeterodynedPulsarGetModel(par.PulsarParameters(),
+                                                     freqfactor,
+                                                     1,
+                                                     0,
+                                                     0,
+                                                     gpstimes,
+                                                     hetSSBdelay,
+                                                     0,
+                                                     None,
+                                                     0,
+                                                     resp,
+                                                     edat,
+                                                     tdat,
+                                                     lalpulsar.TIMECORRECTION_TCB)
 
-    return True
+    # check output matches that from lalapps_pulsar_parameter_estimation_nested
+    assert_allclose(fullsignal.data.data.real, t1output[det][:,1])
+    assert_allclose(fullsignal.data.data.imag, t1output[det][:,2])
 
 
 def test_two():
@@ -432,7 +434,7 @@ def test_two():
     parhet['COSIOTA'] = -0.2
     parhet['PSI'] = 0.4
     parhet['PHI0'] = 2.3
-    
+
     parinj = PulsarParametersPy()
     parinj['F'] = [123.456789, -9.87654321e-12]  # set frequency
     parinj['DELTAF'] = parinj['F'] - parhet['F']  # frequency difference
@@ -450,7 +452,7 @@ def test_two():
 
     # convert into GPS times
     gpstimes = lalpulsar.CreateTimestampVector(len(t2output))
-    for i, time in enumerate(t2output[:,0]): 
+    for i, time in enumerate(t2output[:,0]):
         gpstimes.data[i] = lal.LIGOTimeGPS(time)
 
     detector = lalpulsar.GetSiteInfo(det)
@@ -488,15 +490,12 @@ def test_two():
                                                      lalpulsar.TIMECORRECTION_TCB)
 
     # check output matches that from lalapps_pulsar_parameter_estimation_nested
-    if np.any(np.abs(fullsignal.data.data.real - t2output[:,1]) > 1e-34):
-        return False
-    elif np.any(np.abs(fullsignal.data.data.imag - t2output[:,2]) > 1e-34):
-        return False
-    else:
-        return True
+    assert_allclose(fullsignal.data.data.real, t2output[:,1])
+    assert_allclose(fullsignal.data.data.imag, t2output[:,2])
 
 
-def test_three():
+@pytest.mark.parametrize('harmonic', sorted(t3output.keys()))
+def test_three(harmonic):
     parhet = PulsarParametersPy()
     parhet['F'] = [123.4567, -9.876e-12]  # set frequency
     parhet['RAJ'] = lal.TranslateHMStoRAD('01:23:34.6')  # set right ascension
@@ -527,53 +526,48 @@ def test_three():
     det = 'H1'  # the detector
     detector = lalpulsar.GetSiteInfo(det)
 
-    for harmonic in t3output.keys():
-        freqfactor = float(harmonic)  # set frequency factor
+    freqfactor = float(harmonic)  # set frequency factor
 
-        # convert into GPS times
-        gpstimes = lalpulsar.CreateTimestampVector(len(t3output[harmonic]))
-        for i, time in enumerate(t3output[harmonic][:,0]): 
-            gpstimes.data[i] = lal.LIGOTimeGPS(time)
+    # convert into GPS times
+    gpstimes = lalpulsar.CreateTimestampVector(len(t3output[harmonic]))
+    for i, time in enumerate(t3output[harmonic][:,0]):
+        gpstimes.data[i] = lal.LIGOTimeGPS(time)
 
-        # set the response function look-up table
-        dt = t3output[harmonic][1,0] - t3output[harmonic][0,0]  # time step
-        resp = lalpulsar.DetResponseLookupTable(t3output[harmonic][0,0],
-                                                detector,
-                                                parhet['RAJ'],
-                                                parhet['DECJ'],
-                                                2880,
-                                                dt)
+    # set the response function look-up table
+    dt = t3output[harmonic][1,0] - t3output[harmonic][0,0]  # time step
+    resp = lalpulsar.DetResponseLookupTable(t3output[harmonic][0,0],
+                                            detector,
+                                            parhet['RAJ'],
+                                            parhet['DECJ'],
+                                            2880,
+                                            dt)
 
-        # get the heterodyned file SSB delay
-        hetSSBdelay = lalpulsar.HeterodynedPulsarGetSSBDelay(parhet.PulsarParameters(),
-                                                             gpstimes,
-                                                             detector,
-                                                             edat,
-                                                             tdat,
-                                                             lalpulsar.TIMECORRECTION_TCB)
-
-        fullsignal = lalpulsar.HeterodynedPulsarGetModel(parinj.PulsarParameters(),
-                                                         freqfactor,
-                                                         1,
-                                                         0,
-                                                         0,
+    # get the heterodyned file SSB delay
+    hetSSBdelay = lalpulsar.HeterodynedPulsarGetSSBDelay(parhet.PulsarParameters(),
                                                          gpstimes,
-                                                         hetSSBdelay,
-                                                         1,
-                                                         None,
-                                                         0,
-                                                         resp,
+                                                         detector,
                                                          edat,
                                                          tdat,
                                                          lalpulsar.TIMECORRECTION_TCB)
 
-        # check output matches that from lalapps_pulsar_parameter_estimation_nested
-        if np.any(np.abs(fullsignal.data.data.real - t3output[harmonic][:,1]) > 1e-34):
-            return False
-        elif np.any(np.abs(fullsignal.data.data.imag - t3output[harmonic][:,2]) > 1e-34):
-            return False
+    fullsignal = lalpulsar.HeterodynedPulsarGetModel(parinj.PulsarParameters(),
+                                                     freqfactor,
+                                                     1,
+                                                     0,
+                                                     0,
+                                                     gpstimes,
+                                                     hetSSBdelay,
+                                                     1,
+                                                     None,
+                                                     0,
+                                                     resp,
+                                                     edat,
+                                                     tdat,
+                                                     lalpulsar.TIMECORRECTION_TCB)
 
-    return True
+    # check output matches that from lalapps_pulsar_parameter_estimation_nested
+    assert_allclose(fullsignal.data.data.real, t3output[harmonic][:,1])
+    assert_allclose(fullsignal.data.data.imag, t3output[harmonic][:,2])
 
 
 def test_four():
@@ -594,7 +588,7 @@ def test_four():
     parhet['A1'] = 8.9
     parhet['PB'] = 0.54*86400.
     parhet['ECC'] = 0.0001
-    
+
     parinj = PulsarParametersPy()
     parinj['F'] = [123.456789, -9.87654321e-12]  # set frequency
     parinj['DELTAF'] = parinj['F'] - parhet['F']  # frequency difference
@@ -619,7 +613,7 @@ def test_four():
 
     # convert into GPS times
     gpstimes = lalpulsar.CreateTimestampVector(len(t4output))
-    for i, time in enumerate(t4output[:,0]): 
+    for i, time in enumerate(t4output[:,0]):
         gpstimes.data[i] = lal.LIGOTimeGPS(time)
 
     detector = lalpulsar.GetSiteInfo(det)
@@ -663,12 +657,8 @@ def test_four():
                                                      lalpulsar.TIMECORRECTION_TCB)
 
     # check output matches that from lalapps_pulsar_parameter_estimation_nested
-    if np.any(np.abs(fullsignal.data.data.real - t4output[:,1]) > 1e-33):
-        return False
-    elif np.any(np.abs(fullsignal.data.data.imag - t4output[:,2]) > 1e-33):
-        return False
-    else:
-        return True
+    assert_allclose(fullsignal.data.data.real, t4output[:,1])
+    assert_allclose(fullsignal.data.data.imag, t4output[:,2])
 
 
 def test_five():
@@ -699,7 +689,7 @@ def test_five():
     detector = lalpulsar.GetSiteInfo(det)
 
     gpstimes = lalpulsar.CreateTimestampVector(len(t5output))
-    for i, time in enumerate(t5output[:,0]): 
+    for i, time in enumerate(t5output[:,0]):
         gpstimes.data[i] = lal.LIGOTimeGPS(time)
 
 
@@ -737,22 +727,9 @@ def test_five():
 
 
     # check output matches that from lalapps_pulsar_parameter_estimation_nested
-    if np.any(np.abs(fullsignal.data.data.real - t5output[:,1]) > 1e-34):
-        return False
-    elif np.any(np.abs(fullsignal.data.data.imag - t5output[:,2]) > 1e-34):
-        return False
-
-    return True
+    assert_allclose(fullsignal.data.data.real, t5output[:,1])
+    assert_allclose(fullsignal.data.data.imag, t5output[:,2])
 
 
-# run tests
-t1 = test_one()
-t2 = test_two()
-t3 = test_three()
-t4 = test_four()
-t5 = test_five()
-
-if np.any(np.invert(np.array([t1, t2, t3, t4, t5]))):
-    sys.exit(1)
-else:
-    sys.exit(0)
+if __name__ == '__main__':
+    sys.exit(pytest.main(args=[__file__] + sys.argv[1:]))
