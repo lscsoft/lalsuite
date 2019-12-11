@@ -33,7 +33,7 @@ BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 
 # swig
-BuildRequires: swig >= 3.0.7
+BuildRequires: swig >= 3.0.9
 
 # python2
 BuildRequires: python2-rpm-macros

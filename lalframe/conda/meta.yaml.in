@@ -29,7 +29,7 @@ requirements:
     - {{ compiler('c') }}
     - make
     - pkg-config
-    - swig >=3.0.7
+    - swig >=3.0.9
   host:
     - lal >={{ lal_version }}a0
     - ldas-tools-framecpp >={{ framecpp_version }}
@@ -68,7 +68,7 @@ outputs:
         - {{ compiler('c') }}
         - make
         - pkg-config
-        - swig >=3.0.7
+        - swig >=3.0.9
       host:
         - {{ pin_subpackage('lalframe', exact=True) }}
         - numpy
