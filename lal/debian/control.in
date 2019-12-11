@@ -35,7 +35,7 @@ Build-Depends: bc,
   python3-pytest,
   python3-scipy,
   python3-six,
-  swig (>= 3.0.7) | swig3.0 (>= 3.0.7),
+  swig (>= 3.0.9) | swig3.0 (>= 3.0.9),
   zlib1g-dev
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.5
