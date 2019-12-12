@@ -2,15 +2,9 @@
 
 [flake8]
 select =
-	E101,
 	E9,
 	F401,
 	W2,
-per-file-ignores =
-	lal/python/lal/rate.py:E101
-	lalapps/src/power/:E101
-	lalapps/src/string/:E101
-	lalburst/python/lalburst/snglcoinc.py:E101
 exclude =
 	__pycache__,
 	.git/,
