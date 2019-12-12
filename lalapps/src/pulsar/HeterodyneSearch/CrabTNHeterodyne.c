@@ -84,7 +84,7 @@ int main(int argc, char *argv[]){
   BarycenterInput baryinput;
   CHAR detName[5];
   LALDetector det;
-  CHAR *lalpath = NULL, *lalpulsarpath = NULL;
+  CHAR *lalpulsarpath = NULL;
   CHAR *efile=NULL, *sfile=NULL, *tfile=NULL;
 
   /* pulsar params */
@@ -181,9 +181,7 @@ TNInput.f1, TNInput.f2, TNInput.t0);
   phifp = fopen("DPhase.txt", "w");
 
   /* set SSB ephemeris files */
-  lalpath = getenv("LALPULSAR_PREFIX");
-  lalpulsarpath = XLALStringDuplicate( lalpath );
-  lalpulsarpath = XLALStringAppend(lalpulsarpath, "/share/lalpulsar/");
+  lalpulsarpath = getenv("LALPULSAR_DATADIR");
   efile = XLALStringDuplicate(lalpulsarpath);
   sfile = XLALStringDuplicate(lalpulsarpath);
   tfile = XLALStringDuplicate(lalpulsarpath);

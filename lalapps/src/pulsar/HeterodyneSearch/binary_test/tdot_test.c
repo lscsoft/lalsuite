@@ -42,18 +42,16 @@ int main (int argv, char **argc){
   baryinput.site.location[1] = 2816759.1/LAL_C_SI;
   baryinput.site.location[2] = -3454036.3/LAL_C_SI;
 
-  if((lalpath = getenv("LALPULSAR_PREFIX")) == NULL){
-    fprintf(stderr, "LALPULSAR_PREFIX environment variable not set!\n");
+  if((lalpath = getenv("LALPULSAR_DATADIR")) == NULL){
+    fprintf(stderr, "LALPULSAR_DATADIR environment variable not set!\n");
     exit(1);
   }
 
   earthFile = XLALStringDuplicate(lalpath);
   sunFile = XLALStringDuplicate(lalpath);
 
-  earthFile = XLALStringAppend( earthFile,
-                                "/share/lalpulsar/earth00-40-DE405.dat.gz");
-  sunFile = XLALStringAppend( sunFile,
-                              "/share/lalpulsar/sun00-40-DE405.dat.gz");
+  earthFile = XLALStringAppend(earthFile, "/earth00-40-DE405.dat.gz");
+  sunFile = XLALStringAppend(sunFile, "/sun00-40-DE405.dat.gz");
 
   edat = XLALInitBarycenter( earthFile, sunFile );
 
@@ -63,8 +61,7 @@ int main (int argv, char **argc){
 
   /* read in the time correction file */
   if( ttype == TYPE_TEMPO2 || ttype == TYPE_TCB ){
-    tcFile = XLALStringAppend( tcFile,
-                               "/share/lalpulsar/te405_2000-2040.dat.gz" );
+    tcFile = XLALStringAppend(tcFile, "/te405_2000-2040.dat.gz" );
   }
   else if ( ttype == TYPE_TDB ){
     tcFile = XLALStringAppend( tcFile,
