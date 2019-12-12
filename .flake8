@@ -1,0 +1,10 @@
+; vim: set ft=dosini :
+
+[flake8]
+select =
+	E101,
+	E9,
+	F401,
+	W2,
+per-file-ignores =
+	lal/python/lal/rate.py:E101
