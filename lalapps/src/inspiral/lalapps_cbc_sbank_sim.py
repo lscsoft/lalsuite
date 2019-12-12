@@ -24,12 +24,8 @@ import numpy as np
 from h5py import File as H5File
 
 from scipy.interpolate import UnivariateSpline
-from glue.ligolw import table
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils
-from glue.ligolw.utils import process as ligolw_process
-from glue.ligolw.utils import ligolw_add
+from glue.ligolw import (ligolw, lsctables, utils)
+from glue.ligolw.utils import (ligolw_add, process as ligolw_process)
 
 import lalsimulation as lalsim
 from lal import MSUN_SI

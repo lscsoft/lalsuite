@@ -10,12 +10,13 @@ __version__ = '$Revision$'
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
-import os, sys, copy, shutil, glob
-from six.moves.configparser import NoSectionError
-import optparse
-import tempfile
-import urllib
+import copy
+import glob
+import os
+import shutil
 import subprocess
+import sys
+import urllib
 
 ##############################################################################
 # import the modules we need to build the pipeline
