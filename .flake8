@@ -8,3 +8,6 @@ select =
 	W2,
 per-file-ignores =
 	lal/python/lal/rate.py:E101
+	lalapps/src/power/:E101
+	lalapps/src/string/:E101
+	lalburst/python/lalburst/snglcoinc.py:E101
