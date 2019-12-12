@@ -69,7 +69,7 @@ Build-Depends: debhelper (>= 9),
   lalinspiral-octave (>= @MIN_LALINSPIRAL_VERSION@~),
   lalpulsar-octave (>= @MIN_LALPULSAR_VERSION@~),
 X-Python-Version: >= 2.7
-X-Python3-Version: <= 3.0
+X-Python3-Version: >= 3.4
 Standards-Version: 3.9.8
 
 Package: lalinference
@@ -181,9 +181,9 @@ Depends:
   lalinference (= ${binary:Version})
 Replaces: lalapps (<< 6.21.0.1-1), lalinference-python (<< 1.9.4.1-1~), lalinference (<< 1.11.1)
 Breaks: lalapps (<< 6.21.0.1-1), lalinference-python (<< 1.9.4.1-1~), lalinference (<< 1.11.1)
-Description: Python bindings for LALInference
+Description: Python 3 bindings for LALInference
  The LSC Algorithm Inference Library for gravitational wave data analysis.
- This package contains Python bindings for the LAL Inference library.
+ This package contains Python 3 bindings for the LAL Inference library.
 
 Package: lalinference-octave
 Architecture: any
