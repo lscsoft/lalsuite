@@ -44,9 +44,7 @@ matplotlib.rcParams.update({
 	"grid.linewidth": 0.25
 })
 from matplotlib import figure
-from matplotlib import patches
 from matplotlib import cm
-from matplotlib import colorbar
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import numpy
 from optparse import OptionParser

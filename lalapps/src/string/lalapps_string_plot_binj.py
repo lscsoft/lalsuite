@@ -29,7 +29,6 @@ from __future__ import print_function
 
 
 import math
-import numpy
 from optparse import OptionParser
 import sqlite3
 import sys

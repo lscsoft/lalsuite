@@ -47,7 +47,6 @@ import random
 import select
 from scipy import interpolate
 from scipy import optimize
-import Queue as queue
 import sqlite3
 import sys
 import traceback
