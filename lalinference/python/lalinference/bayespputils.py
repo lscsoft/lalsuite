@@ -1182,7 +1182,7 @@ class Posterior(object):
                 pos.append(a2_pos)
             except KeyError:
                 print("Warning: no spin2 values found.")
-  
+
         # For BBHs: Calculate mass and spin of final merged system, radiated energy, and peak luminosity in GWs
 
         # Only apply fits if this is a BBH run (with no tidal parameters)
@@ -1190,7 +1190,7 @@ class Posterior(object):
         if len(np.intersect1d(pos.names,tidalParams)) == 0:
 
               # Set fits to consider (and average over)
-                  
+
               FinalSpinFits = ['HBR2016', 'UIB2016', 'HL2016']
               FinalMassFits = ['UIB2016', 'HL2016']
               LpeakFits     = ['UIB2016', 'HL2016']
@@ -2079,7 +2079,7 @@ class Posterior(object):
             return maplong
         else:
             return inj.longitude
-        
+
     def _inj_spins(self, inj, frame='OrbitalL'):
 
         from lalsimulation import SimInspiralTransformPrecessingWvf2PE
@@ -2130,7 +2130,7 @@ class Posterior(object):
             spins['beta'] = beta
             spins['spinchi'] = chi
             # Huge caveat: SimInspiralTransformPrecessingWvf2PE assumes that the cartesian spins in the XML table  are given in the L frame, ie. in  a frame where L||z. While this is the default in inspinj these days, other possibilities exist.
-            # Unfortunately, we don't have a function (AFIK), that transforms spins from an arbitrary  frame to an arbitrary frame, otherwise I'd have called it here to be sure we convert in the L frame. 
+            # Unfortunately, we don't have a function (AFIK), that transforms spins from an arbitrary  frame to an arbitrary frame, otherwise I'd have called it here to be sure we convert in the L frame.
             # FIXME: add that function here if it ever gets written. For the moment just check
             if not frame=='OrbitalL':
                 print("I cannot calculate the injected values of the spin angles unless frame is OrbitalL. Skipping...")
@@ -2143,7 +2143,7 @@ class Posterior(object):
             spins['tilt2']=tilt2
             spins['phi_jl']=phi_jl
 
-            """ 
+            """
             #If everything is all right, this function should give back the cartesian spins. Uncomment to check
             print("Inverting ")
             iota_back,a1x_back,a1y_back,a1z_back,a2x_back,a2y_back,a2z_back = \
@@ -2151,7 +2151,7 @@ class Posterior(object):
             print(a1x_back,a1y_back,a1z_back)
             print(a2x_back,a2y_back,a2z_back)
             print(iota_back)
-            """            
+            """
 
         return spins
 
