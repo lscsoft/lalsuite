@@ -25,14 +25,9 @@ from __future__ import print_function
 import sys, argparse
 
 import h5py
-import lal
 from lalsimulation import SimInspiralNRWaveformGetSpinsFromHDF5File
 
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import ilwd
-from glue.ligolw import utils
+from glue.ligolw import (ligolw, lsctables, ilwd, utils)
 from glue.ligolw.utils import process as ligolw_process
 
 import lalapps.git_version

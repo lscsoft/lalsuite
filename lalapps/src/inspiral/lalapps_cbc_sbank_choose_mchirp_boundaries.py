@@ -25,14 +25,14 @@ of the ligolw_cbc_sbank job that produced them unless overridden.
 from __future__ import print_function
 
 import sys
-import numpy
-from bisect import bisect_left, bisect_right
+from bisect import (bisect_left, bisect_right)
 from operator import attrgetter
 from optparse import OptionParser
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import utils
-from glue.ligolw import ligolw
+
+import numpy
+
+from glue.ligolw import (ligolw, lsctables, utils)
+
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass

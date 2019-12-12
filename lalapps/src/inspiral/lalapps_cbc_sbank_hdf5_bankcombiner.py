@@ -23,7 +23,7 @@ single template bank.
 import argparse
 import numpy
 import h5py
-import logging
+
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __program__ = "lalapps_cbc_sbank_hdf5_bankcombiner"
 
