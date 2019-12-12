@@ -7,9 +7,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 TMPLTBANKSRC = tmpltbank.c inspiralutils.c inspiral.h
 INSPINJSRC = inspinj.c inspiralutils.c inspiral.h
-INJCUTSRC = injcut.c
-MINJSRC = minj.c
-BBHINJSRC = bbhinj.c
 BLINDINJSRC = blindinj.c
 SPLITBANKSRC = splitbank.c
 TRIGSCANSRC = trigscan.c
@@ -27,10 +24,7 @@ if LALMETAIO
 LALMETAIO_PROGS = \
 	lalapps_tmpltbank \
 	lalapps_inspinj \
-	lalapps_injcut \
 	lalapps_splitbank \
-	lalapps_minj \
-	lalapps_bbhinj \
 	lalapps_blindinj \
 	lalapps_inspfrinj \
 	lalapps_gwf2xml \
@@ -45,9 +39,6 @@ LALMETAIO_PROGS = \
 	$(END_OF_LIST)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_inspinj_SOURCES = $(INSPINJSRC)
-lalapps_injcut_SOURCES = $(INJCUTSRC)
-lalapps_minj_SOURCES = $(MINJSRC)
-lalapps_bbhinj_SOURCES = $(BBHINJSRC)
 lalapps_blindinj_SOURCES = $(BLINDINJSRC)
 lalapps_splitbank_SOURCES = $(SPLITBANKSRC)
 lalapps_trigscan_SOURCES = $(TRIGSCANSRC)
@@ -108,7 +99,6 @@ MOSTLYCLEANFILES += \
 EXTRA_DIST += \
 	$(DATA) \
 	$(INSPINJSRC) \
-	$(MINJSRC) \
 	$(SPLITBANKSRC) \
 	$(TMPLTBANKSRC) \
 	effective_distance_comparison.png \
