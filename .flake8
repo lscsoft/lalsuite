@@ -11,3 +11,7 @@ per-file-ignores =
 	lalapps/src/power/:E101
 	lalapps/src/string/:E101
 	lalburst/python/lalburst/snglcoinc.py:E101
+exclude =
+	__pycache__,
+	.git/,
+	*doxygen/filter_py.py,
