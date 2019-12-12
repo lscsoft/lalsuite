@@ -35,7 +35,7 @@ def make_disk_plot(post,outpath=None):
   tilt2='tilt2'
 
   names=post.names
-  
+
   if not set([a1,a2,tilt1,tilt2]).issubset(names):
     print("Cannot plot spin disk plot. Not all required spin parameters exist in the posterior file. Skipping...\n")
     return None
