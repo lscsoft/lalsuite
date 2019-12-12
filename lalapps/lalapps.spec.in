@@ -46,7 +46,6 @@ BuildRequires: python2-rpm-macros
 Requires: cfitsio
 Requires: fftw
 Requires: gsl
-Requires: healpy
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: lalburst >= @MIN_LALBURST_VERSION@
 Requires: lalframe >= @MIN_LALFRAME_VERSION@

@@ -76,7 +76,6 @@ requirements:
     - fftw
     - gsl
     - h5py
-    - healpy
     - lal >={{ lal_version }}a0
     - lalframe >={{ lalframe_version }}a0
     - lalmetaio >={{ lalmetaio_version }}a0
