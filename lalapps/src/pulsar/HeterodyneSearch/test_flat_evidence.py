@@ -14,7 +14,6 @@ import glob
 import sys
 import numpy as np
 import subprocess as sp
-import scipy.stats as ss
 import matplotlib.pyplot as pl
 import h5py
 

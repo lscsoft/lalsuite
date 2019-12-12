@@ -1,9 +1,7 @@
 #!/usr/bin/python
-import math, os, commands, shutil, sys, re
 import matplotlib as matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 import matplotlib.backends.backend_agg
 import numpy as np
 import argparse

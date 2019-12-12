@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 
+import sys
+import os
+import math
+
 from numpy import *
+
+import scipy
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 from pylab import *
-import scipy as scipy
-import sys
-import os
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-import math as math
-import numpy as np
+
 from findCombs import findCombs
 
 def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coinDF, pulsar, referenceFile):

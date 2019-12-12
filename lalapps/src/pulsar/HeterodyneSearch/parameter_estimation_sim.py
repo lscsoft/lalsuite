@@ -12,10 +12,7 @@ from __future__ import print_function
 # import required modules
 import sys
 import os
-import getopt
 import re
-import string
-import tempfile
 import random
 import math
 

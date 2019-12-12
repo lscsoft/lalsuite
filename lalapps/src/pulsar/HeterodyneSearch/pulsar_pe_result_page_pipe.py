@@ -31,16 +31,9 @@ from __future__ import print_function
 # import required modules
 import sys
 import os
-import getopt
 import re
-import string
-import tempfile
-import random
-import math
 import ConfigParser
 from optparse import OptionParser
-
-import numpy as np
 
 # need to set Agg here for use of stuff in pulsarpputils
 import matplotlib

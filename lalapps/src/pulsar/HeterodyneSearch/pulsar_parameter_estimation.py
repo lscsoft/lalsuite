@@ -12,8 +12,6 @@ __author__ = 'Matt Pitkin <matthew@astro.gla.ac.uk>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
 
-import string
-import os
 from glue import pipeline
 
 # And begin ...

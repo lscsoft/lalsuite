@@ -1,6 +1,9 @@
 #!/usr/bin/python
 
-import argparse, sys, os, subprocess, math
+import argparse
+import math
+import os
+import subprocess
 
 def writeConfigFile(args, fmin, directorynumber):
     configFile = open('{}_{}/in/{}'.format(args.dir, args.IFO.replace(',',''), directorynumber),'w')

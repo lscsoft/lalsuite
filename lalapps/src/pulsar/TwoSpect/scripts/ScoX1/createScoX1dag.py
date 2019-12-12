@@ -1,5 +1,6 @@
 #!/usr/bin/python
-import os, commands, shutil, sys, re
+import os
+import re
 import numpy as np
 import argparse
 

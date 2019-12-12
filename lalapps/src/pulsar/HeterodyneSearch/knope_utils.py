@@ -12,7 +12,6 @@ __author__ = 'Matthew Pitkin <matthew.pitkin@ligo.org>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
 
-import string
 import os
 import re
 from glue import pipeline

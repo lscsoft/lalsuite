@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-import sys, os
-import glob 
+import glob
 import time
+import sys
 
 # Check if spec*.txt files exist under the directory given on the command line.
 # If these files exist, then the SFT jobs have finished.
