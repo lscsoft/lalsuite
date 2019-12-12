@@ -32,9 +32,7 @@ from __future__ import print_function
 
 
 import errno
-import math
 import os
-import random
 import sys
 import time
 

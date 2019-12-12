@@ -28,7 +28,6 @@
 from __future__ import print_function
 
 
-import glob
 from optparse import OptionParser
 import sys
 

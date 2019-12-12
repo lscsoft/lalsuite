@@ -90,7 +90,6 @@ from lal import rate
 from lalburst import git_version
 from lalburst import SimBurstUtils
 from lalburst import SnglBurstUtils
-from ligo import segments
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

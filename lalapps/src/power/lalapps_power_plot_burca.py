@@ -32,12 +32,10 @@ import math
 import matplotlib.cm
 import numpy
 from optparse import OptionParser
-import os
 import sqlite3
 import sys
 
 
-from ligo.lw import dbtables
 from ligo.lw import utils as ligolw_utils
 import lal
 from lal import rate
