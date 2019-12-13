@@ -3,13 +3,15 @@
 __author__ = 'Karl Wette <karl.wette@ligo.org>'
 __copyright__ = 'Copyright (C) 2015 Karl Wette'
 
-import sys, os
-from xml.etree.cElementTree import ElementTree
+import os
+import sys
+
 
 # print error message and exit
 def fail(msg):
     sys.stderr.write('%s: %s\n' % (sys.argv[0], msg))
     sys.exit(1)
+
 
 # get input arguments
 install_dir, install_dirmap = sys.argv[1:]
