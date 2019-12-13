@@ -91,7 +91,6 @@ LALAPPS_ENABLE_STATIC_BINARIES
 
 LALAPPS_ENABLE_FFTW
 LALAPPS_ENABLE_FRAME
-LALAPPS_ENABLE_METAIO
 LALSUITE_ENABLE_CFITSIO
 LALAPPS_ENABLE_PSS
 LALAPPS_ENABLE_GDS
@@ -235,30 +234,6 @@ if test "${frame}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([FRAME])
 
-# check for libmetaio
-if test "${metaio}" = "true"; then
-  PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
-  lal_pre_metaio_LIBS="$LIBS"
-  LALSUITE_ADD_FLAGS([C],[],[${METAIO_LIBS}])
-  AC_SEARCH_LIBS([MetaioOpen],[metaio],,
-                 [AC_MSG_WARN([could not find the metaio library])]
-                 [metaio="false"]
-                 [lalmetaio="false"]
-                 [LIBS="$lal_pre_metaio_LIBS"])
-fi
-
-# check for libmetaio headers
-if test "${metaio}" = "true"; then
-  lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
-  LALSUITE_ADD_FLAGS([C],[${METAIO_CFLAGS}],[])
-  AC_CHECK_HEADERS([metaio.h],,
-                   [AC_MSG_WARN([could not find the metaio.h header])]
-                   [metaio="false"]
-                   [lalmetaio="false"]
-                   [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
-fi
-LALSUITE_ENABLE_MODULE([METAIO])
-
 # check for cfitsio
 LALSUITE_USE_CFITSIO
 
@@ -363,7 +338,6 @@ LALApps has now been successfully configured:
 * Python support is $PYTHON_ENABLE_VAL
 * FFTW library support is $FFTW_ENABLE_VAL
 * Frame library support is $FRAME_ENABLE_VAL
-* MetaIO library support is $METAIO_ENABLE_VAL
 * LALFrame library support is $LALFRAME_ENABLE_VAL
 * LALMetaIO library support is $LALMETAIO_ENABLE_VAL
 * LALSimulation library support is $LALSIMULATION_ENABLE_VAL
