@@ -23,7 +23,6 @@ BuildRequires: gsl-devel
 BuildRequires: help2man
 BuildRequires: less
 BuildRequires: libframe-devel
-BuildRequires: libmetaio-devel
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
 BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
@@ -56,7 +55,6 @@ Requires: lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: less
 Requires: libframe
-Requires: libmetaio
 Requires: python
 Requires: python2-h5py
 Requires: python2-lal >= @MIN_LAL_VERSION@

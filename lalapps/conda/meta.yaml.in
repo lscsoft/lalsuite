@@ -60,7 +60,6 @@ requirements:
     - lalsimulation >={{ lalsimulation_version }}a0
     - libframe
     - llvm-openmp  # [osx]
-    - metaio
     - openmp  # [linux]
     - python
     - python-lal >={{ lal_version }}a0
@@ -87,7 +86,6 @@ requirements:
     - libframe
     - ligo-segments
     - llvm-openmp  # [osx]
-    - metaio
     - openmp  # [linux]
     - numpy
     - pillow
