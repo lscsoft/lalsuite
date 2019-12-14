@@ -16,8 +16,12 @@
 
 import os
 import sys
-import shutil
+
+
 import numpy as np
+from numpy.testing import assert_allclose
+
+import pytest
 
 import lal
 import lalpulsar
@@ -147,17 +151,25 @@ def compute_Fstat_spindown_simulateCW():
 
     return Fstat_res.twoF
 
-# compute F-statistic of reference spindown signal
-Fstat_ref = compute_Fstat_spindown_reference()
-sys.stdout.write('F-statistic of reference spindown signal:\n   %s\n\n' % (', '.join(['%0.4f'] * len(Fstat_ref)) % tuple(Fstat_ref)))
 
-# compute F-statistic of spindown signal from simulateCW
-Fstat_simCW = compute_Fstat_spindown_simulateCW()
-sys.stdout.write('F-statistic of spindown signal from simulateCW:\n   %s\n\n' % ('  '.join(['%0.4f'] * len(Fstat_simCW)) % tuple(Fstat_simCW)))
+def test_fstatistic():
+    # compute F-statistic of reference spindown signal
+    Fstat_ref = compute_Fstat_spindown_reference()
+    print('F-statistic of reference spindown signal:\n   %s\n' % (', '.join(['%0.4f'] * len(Fstat_ref)) % tuple(Fstat_ref)))
 
-# compute root-mean-square error between F-statistics
-Fstat_rmserr = np.sqrt(np.mean((1 - (Fstat_simCW / Fstat_ref))**2))
-Fstat_rmserr_OK = (Fstat_rmserr < 1e-3)
-sys.stdout.write('Root-mean-square error between F-statistics:\n   %0.2e => %s!\n\n' % (Fstat_rmserr, 'OK' if Fstat_rmserr_OK else 'ERROR'))
+    # compute F-statistic of spindown signal from simulateCW
+    Fstat_simCW = compute_Fstat_spindown_simulateCW()
+    print('F-statistic of spindown signal from simulateCW:\n   %s\n' % ('  '.join(['%0.4f'] * len(Fstat_simCW)) % tuple(Fstat_simCW)))
 
-sys.exit(0 if Fstat_rmserr_OK else 1)
+    # compute root-mean-square error between F-statistics
+    Fstat_rmserr = np.sqrt(np.mean((1 - (Fstat_simCW / Fstat_ref))**2))
+    assert_allclose(
+        Fstat_rmserr,
+        0.,
+        atol=1e-3,
+        err_msg="Root-mean-square error between F-statistics: %0.2e" % Fstat_rmserr,
+    )
+
+
+if __name__ == '__main__':
+    sys.exit(pytest.main(args=[__file__] + sys.argv[1:]))
