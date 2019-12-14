@@ -822,14 +822,14 @@ print '''
  * 4612.156534 arcseconds per Julian century,
  * converted to cycles per second, at the epoch J2000.0
  * (=2000-01-01T12:00:00Z):
- * 
+ *
  * LAL_EPREC_SI = 4612.156534 / 36525 / 15 / 86400 / LAL_DAYJUL_SI
  *
  * @see Linear (in t) term in Eq. (42) of
  * N. Capitaine, P. T. Wallace and J. Chapront
  * "Expressions for IAU 2000 precession quantities",
  * Astronomy & Astrophysics 412 567 (2003)
- * https://doi.org/10.1051/0004-6361:20031539 
+ * https://doi.org/10.1051/0004-6361:20031539
  */'''
 print '#define LAL_EPREC_SI',
 print as_str(LAL_EPREC_SI)
