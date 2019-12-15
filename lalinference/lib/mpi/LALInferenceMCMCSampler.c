@@ -1391,9 +1391,13 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
         LALH5File *chain_group = XLALH5GroupOpen(group, chain_group_name);
 
         /* Restore differential evolution buffer */
-        LALH5Dataset *de_group = XLALH5DatasetRead(chain_group, "differential_points");
-        LALInferenceH5DatasetToVariablesArray(de_group, &(thread->differentialPoints), (UINT4 *)&(thread->differentialPointsLength));
-        thread->differentialPointsSize = thread->differentialPointsLength;
+        LALH5Dataset *de_group=NULL;
+        XLAL_TRY(de_group = XLALH5DatasetRead(chain_group, "differential_points"), retcode);
+        if (retcode==XLAL_SUCCESS)
+        {
+            LALInferenceH5DatasetToVariablesArray(de_group, &(thread->differentialPoints), (UINT4 *)&(thread->differentialPointsLength));
+            thread->differentialPointsSize = thread->differentialPointsLength;
+        }
 
         /* Restore proposal arguments, most importantly adaptation settings */
         LALInferenceVariables **propArgs;
@@ -1461,19 +1465,20 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
     for (t = 0; t < n_local_threads; t++) {
         thread = &runState->threads[t];
 
-        LALH5Dataset *chain_dataset = XLALH5DatasetRead(group, thread->name);
-
-        LALInferenceVariables **input_array;
-        UINT4 j, N;
-        LALInferenceH5DatasetToVariablesArray(chain_dataset, &input_array, &N);
-        for (j=0; j<N; j++){
-            LALInferenceLogSampleToArray(thread->algorithmParams, input_array[j]);
-            LALInferenceClearVariables(input_array[j]);
+        LALH5Dataset *chain_dataset=NULL;
+        XLAL_TRY(chain_dataset = XLALH5DatasetRead(group, thread->name), retcode);
+        if(retcode==XLAL_SUCCESS)
+        {
+            LALInferenceVariables **input_array;
+            UINT4 j, N;
+            LALInferenceH5DatasetToVariablesArray(chain_dataset, &input_array, &N);
+            for (j=0; j<N; j++){
+                LALInferenceLogSampleToArray(thread->algorithmParams, input_array[j]);
+                LALInferenceClearVariables(input_array[j]);
+            }
+            XLALFree(input_array);
+            XLALH5DatasetFree(chain_dataset);
         }
-        XLALFree(input_array);
-
-        /* TODO: Write metadata */
-        XLALH5DatasetFree(chain_dataset);
     }
     XLALH5FileClose(group);
     XLALH5FileClose(li_group);
