@@ -30,7 +30,12 @@
 /* Modified November 2018 by Daichi Tsuna to include large loop scenarios */
 /* Updated to be able to test 3 models of large loop distributions */
 
+/* Ignore warnings in Python API itself */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
 #include <Python.h>
+#pragma GCC diagnostic pop
+
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
 #include <math.h>
