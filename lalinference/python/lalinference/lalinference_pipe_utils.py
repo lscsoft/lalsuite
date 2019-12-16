@@ -2222,7 +2222,8 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
             cp = ConfigParser()
         # If the user has specified sharedfs=True, disable the file transfer
         if cp.has_option('condor','sharedfs'):
-            self.transfer_files = not cp.getboolean('condor','sharedfs')
+            if cp.getboolean('condor','sharedfs'):
+                self.transfer_files = False
         self.add_condor_cmd('getenv','True')
         # Add requirements from the configparser condor section
         if cp.has_option('condor','requirements'):
