@@ -4,6 +4,11 @@
 select =
 	E9,
 	F401,
+	F821,
+	F822,
+	F823,
+	F831,
+	F841,
 	W2,
 exclude =
 	__pycache__,
