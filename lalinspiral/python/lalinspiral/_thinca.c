@@ -26,7 +26,12 @@
  */
 
 
+/* Ignore warnings in Python API itself */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-align"
 #include <Python.h>
+#pragma GCC diagnostic pop
+
 #include <stdlib.h>
 
 
