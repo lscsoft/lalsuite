@@ -49,7 +49,7 @@ if __name__=='__main__':
     if opts.plot:
         nest.plot()
 
-    
+
 #if __name__=='__main__':
 #    main()
-    
+

@@ -54,7 +54,7 @@ def tilts_and_phi12_from_Cartesian_spins_and_L(chi1_v, chi2_v, Ln_v):
         return np.arccos(cos_tilt1), np.arccos(cos_tilt2), phi12_evol_i
 
 # Settings
-dt = 0.1 # steps in time for the integration, in terms of the total mass of the binary 
+dt = 0.1 # steps in time for the integration, in terms of the total mass of the binary
 
 # Choose which approximant to use for spin evolution
 approx = lalsim.GetApproximantFromString("SpinTaylorT5")

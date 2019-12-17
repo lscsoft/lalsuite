@@ -12,7 +12,7 @@ import uuid
 from glue import pipeline
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils 
+from glue.ligolw import utils as ligolw_utils
 from math import ceil
 
 usage=""" %prog [options] config.ini

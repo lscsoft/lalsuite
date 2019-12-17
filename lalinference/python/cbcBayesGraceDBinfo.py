@@ -51,7 +51,7 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
     print("Must provide both a graceDB id and a posterior samples file or skymap file\n")
     sys.exit(1)
 
-  import ligo.gracedb.rest 
+  import ligo.gracedb.rest
   import os
   if server is not None:
     g=ligo.gracedb.rest.GraceDb(server)
@@ -86,7 +86,7 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
           outstr+='<tr><td align=left>%s %s</td>'%(i,units[i])
           outstr+='<td align=left>%.3f &plusmn; %.3f</td></tr>'%(pos[i].samples[which][0],pos[i].stdev)
     if bcifile is not None and os.path.isfile(bcifile):
-      bci=np.loadtxt(bcifile)	
+      bci=np.loadtxt(bcifile)
     else: bci=None
     if bci is not None:
       outstr+='<tr><td align=left>logBCI</td>'
