@@ -25,8 +25,6 @@
 
 
 from __future__ import print_function
-from bisect import bisect_left
-import collections
 import itertools
 import math
 import operator
@@ -35,7 +33,6 @@ import sys
 
 from ligo.lw import ligolw
 from ligo.lw import lsctables
-import lal
 from lalburst import offsetvector
 from lalburst import snglcoinc
 from . import _thinca

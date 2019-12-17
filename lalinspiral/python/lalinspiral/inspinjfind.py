@@ -55,7 +55,7 @@ from . import thinca
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from .git_version import date as __data__
+from .git_version import date as __date__
 from .git_version import version as __version__
 
 
