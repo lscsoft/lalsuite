@@ -284,6 +284,7 @@ lint:python:
     paths:
       - .cache/pip
   artifacts:
+    expire_in: 1month
     reports:
       junit: junit.xml
     when: always
