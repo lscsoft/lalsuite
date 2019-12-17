@@ -2247,6 +2247,8 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
             self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
             self.add_requirement('(TARGET.'+cp.get('condor','queue')+' =?= True)')
         if self.transfer_files:
+            # No transfer executable, so that conda package can link correctly
+            self.add_condor_cmd('transfer_executable','False')
             self.add_condor_cmd('transfer_input_files','$(macroinput)')
             self.add_condor_cmd('transfer_output_files','$(macrooutput)')
             self.add_condor_cmd('transfer_output_remaps','"$(macrooutputremaps)"')
@@ -2756,8 +2758,8 @@ class LALInferenceMCMCNode(EngineNode):
         self.outfilearg='outfile'
         self.add_var_opt('mpirun',li_job.mpirun)
         self.add_var_opt('np',str(li_job.mpi_task_count))
-        # The MCMC exe itself should be transferred
-        self.add_file_opt('executable',li_job.binary)
+        # The MCMC exe itself should not be transferred, as it will break conda linking
+        self.add_opt('executable',li_job.binary)
 
     def set_output_file(self,filename):
         self.posfile=filename+'.hdf5'
