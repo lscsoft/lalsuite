@@ -1467,7 +1467,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             if self.engine=='lalinferenceburst': prefix='LIB'
             else: prefix='LALInference'
             mapnode = SkyMapNode(self.mapjob, posfile = mergenode.get_pos_file(), parent=mergenode,
-                    prefix= prefix, outdir=pagedir, ifos=enginenodes[0].get_ifos())
+                    prefix= prefix, outdir=pagedir, ifos=self.ifos)
             plotmapnode = PlotSkyMapNode(self.plotmapjob, parent=mapnode, inputfits = mapnode.outfits, output=os.path.join(pagedir,'skymap.png'))
             self.add_node(mapnode)
             self.add_node(plotmapnode)
@@ -1813,7 +1813,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                             bayeswavepsdnode[ifo].add_var_arg('--bayesLine')
                             bayeswavepsdnode[ifo].add_var_arg('--cleanOnly')
                             bayeswavepsdnode[ifo].add_var_arg('--checkpoint')
-                            bayeswavepsdnode[ifo].add_file_opt('outputDir',bwPSDpath,file_is_output_file=True)
+                            bayeswavepsdnode[ifo].set_output_dir(bwPSDpath)
                             bayeswavepsdnode[ifo].set_trig_time(end_time)
                             bayeswavepsdnode[ifo].set_seglen(bw_seglen)
                             bayeswavepsdnode[ifo].set_psdlength(bw_seglen)
@@ -1845,9 +1845,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                             bayeswavepostnode[ifo].add_var_arg('--bayesLine')
                             bayeswavepostnode[ifo].add_var_arg('--cleanOnly')
                             #bayeswavepostnode[ifo].add_var_arg('--checkpoint')
-                            bayeswavepostnode[ifo].add_file_opt('outputDir',bwPSDpath,file_is_output_file=True)
+                            bayeswavepostnode[ifo].set_output_dir(bwPSDpath)
                             #bayeswavepostnode[ifo].add_var_arg('--runName BayesWave_PSD')
-                            bayeswavepostnode[ifo].add_output_file(os.path.join(bwPSDpath, 'post/clean/glitch_median_PSD_forLI_'+ifo+'.dat'))
+                            #bayeswavepostnode[ifo].add_output_file(os.path.join(bwPSDpath, 'post/clean/glitch_median_PSD_forLI_'+ifo+'.dat'))
                             bayeswavepostnode[ifo].set_trig_time(end_time)
                             bayeswavepostnode[ifo].set_seglen(bw_seglen)
                             bayeswavepostnode[ifo].set_psdlength(bw_seglen)
@@ -2248,6 +2248,9 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
             # Wrapper script to create files to transfer back
             self.add_condor_cmd('+PreCmd','"lalinf_touch_output"')
             self.add_condor_cmd('+PreArguments', '"$(macrooutput)"')
+            # Sync logs back to run directory
+            self.add_condor_cmd('stream_output', True)
+            self.add_condor_cmd('stream_error', True)
 
 
     def add_requirement(self,requirement):
@@ -2791,25 +2794,33 @@ class BayesWavePSDJob(LALInferenceDAGSharedFSJob,pipeline.CondorDAGJob,pipeline.
         self.set_sub_file(submitFile)
         self.set_stdout_file(os.path.join(logdir,'bayeswavepsd-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.join(logdir,'bayeswavepsd-$(cluster)-$(process).err'))
+        # Bayeswave actually runs on node filesystem via these commands
+        self.add_condor_cmd('transfer_executable','False')
         self.add_condor_cmd('getenv','True')
         self.add_condor_cmd('request_memory',cp.get('condor','bayeswave_request_memory'))
         self.ispreengine = False
         self.add_condor_cmd('stream_output', True)
         self.add_condor_cmd('stream_error', True)
-        self.add_condor_cmd('+CheckpointExitBySignal', False) #
-        self.add_condor_cmd('+CheckpointExitSignal', '"SIGTERM"')
-        self.add_condor_cmd('+CheckpointExitCode', 130)
-        self.add_condor_cmd('+SuccessCheckpointExitBySignal', False) #
-        self.add_condor_cmd('+SuccessCheckpointExitSignal', '"SIGTERM"')
-        self.add_condor_cmd('+SuccessCheckpointExitCode', 130)
+        self.add_condor_cmd('+SuccessCheckpointExitCode', 77)
         self.add_condor_cmd('+WantFTOnCheckpoint', True)
-        self.add_condor_cmd('+CheckpointSig', 130)
         self.add_condor_cmd('should_transfer_files', 'YES')
         self.add_condor_cmd('when_to_transfer_output', 'ON_EXIT_OR_EVICT')
-        self.add_condor_cmd('transfer_input_files','$(macroinput)')
+        self.add_condor_cmd('transfer_input_files','$(macroinput),/usr/bin/mkdir,caches')
         self.add_condor_cmd('transfer_output_files','$(macrooutput)')
+        self.add_condor_cmd('+PreCmd','"mkdir"')
+        self.add_condor_cmd('+PreArguments','"-p $(macrooutputDir)"')
 
-
+def topdir(path):
+    """
+    Returns the top directory in a path, e.g.
+    topdir('a/b/c') -> 'a'
+    """
+    a,b=os.path.split(path)
+    if a:
+        return topdir(a)
+    else:
+        return b
+        
 
 class BayesWavePSDNode(EngineNode):
     def __init__(self,bayeswavepsd_job):
@@ -2819,6 +2830,15 @@ class BayesWavePSDNode(EngineNode):
 
     def set_output_file(self,filename):
         pass
+
+    def set_output_dir(self, dirname):
+        path = os.path.relpath(dirname,
+                             start=self.job().get_config('paths','basedir'))
+        self.add_var_opt('outputDir',path)
+        # BWPost reads and writes to its directory
+        # the output path is a set of nested dirs, if we tell condor to
+        # transfer the top level it should copy back into place
+        self.add_output_file(topdir(path))
 
 class BayesWavePostJob(LALInferenceDAGSharedFSJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
     """
@@ -2834,25 +2854,20 @@ class BayesWavePostJob(LALInferenceDAGSharedFSJob,pipeline.CondorDAGJob,pipeline
         if cp.has_section('bayeswave'):
             self.add_ini_opts(cp,'bayeswave')
         self.set_sub_file(submitFile)
+        self.add_condor_cmd('transfer_executable','False')
         self.set_stdout_file(os.path.join(logdir,'bayeswavepost-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.join(logdir,'bayeswavepost-$(cluster)-$(process).err'))
         self.add_condor_cmd('getenv','True')
         self.add_condor_cmd('request_memory',cp.get('condor','bayeswavepost_request_memory'))
-        self.ispreengine = False
         self.add_condor_cmd('stream_output', True)
         self.add_condor_cmd('stream_error', True)
-        self.add_condor_cmd('+CheckpointExitBySignal', False) #
-        self.add_condor_cmd('+CheckpointExitSignal', '"SIGTERM"')
-        self.add_condor_cmd('+CheckpointExitCode', 130)
-        self.add_condor_cmd('+SuccessCheckpointExitBySignal', False) #
-        self.add_condor_cmd('+SuccessCheckpointExitSignal', '"SIGTERM"')
-        self.add_condor_cmd('+SuccessCheckpointExitCode', 130)
+        self.add_condor_cmd('+SuccessCheckpointExitCode', 77)
         self.add_condor_cmd('+WantFTOnCheckpoint', True)
-        self.add_condor_cmd('+CheckpointSig', 130)
         self.add_condor_cmd('should_transfer_files', 'YES')
-        self.add_condor_cmd('when_to_transfer_output', 'ON_EXIT')
-        self.add_condor_cmd('transfer_input_files','$(macroinput)')
-        self.add_condor_cmd('transfer_output_files','$(macrooutput)')
+        self.add_condor_cmd('when_to_transfer_output', 'ON_EXIT_OR_EVICT')
+        self.add_condor_cmd('transfer_input_files','$(workdir)')
+        self.add_condor_cmd('transfer_output_files','$(workdir)')
+        self.ispreengine = False
 
 class BayesWavePostNode(EngineNode):
     def __init__(self,bayeswavepost_job):
@@ -2862,6 +2877,13 @@ class BayesWavePostNode(EngineNode):
 
     def set_output_file(self,filename):
         pass
+
+    def set_output_dir(self, dirname):
+        path = os.path.relpath(dirname,
+                             start=self.job().get_config('paths','basedir'))
+        self.add_var_opt('outputDir',path)
+        # BWPost reads and writes to its directory
+        self.add_macro('workdir',topdir(path))
 
 class PESummaryResultsPageJob(LALInferenceDAGSharedFSJob,pipeline.AnalysisJob):
     """Class to handle the creation of the summary page job using `PESummary`
@@ -3465,8 +3487,7 @@ class SkyMapNode(pipeline.CondorDAGNode):
         """
         if self.finalized==True: return
         self.finalized=True
-        self.add_input_file(self.posfile)
-        self.add_file_arg(self.posfile)
+        self.add_file_opt('samples',self.posfile)
         self.add_file_opt('fitsoutname',self.outfits, file_is_output_file=True)
         self.add_file_opt('outdir',self.outdir, file_is_output_file=True)
         if self.objid:
