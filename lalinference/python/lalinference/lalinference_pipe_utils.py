@@ -68,7 +68,7 @@ def findSegmentsToAnalyze(ifo, frametype, state_vector_channel, bits, gpsstart, 
         datacache, state_vector_channel, start=gpsstart, end=gpsend,
         pad=0  # padding data so that errors are not raised even if found data are not continuous.
     )
-    if not numpy.issubdtype(state.dtype, numpy.unsignedinteger):
+    if not np.issubdtype(state.dtype, np.unsignedinteger):
         # if data are not unsigned integers, cast to them now so that
         # we can determine the bit content for the flags
         state = state.astype(
@@ -691,7 +691,6 @@ def mchirp_from_components(m1, m2):
 
 def Query_ROQ_Bounds_Type(path, roq_paths):
     # Assume that parametrization of ROQ bounds is independent of seglen; just look at first one
-    import numpy as np
     roq = roq_paths[0]
     params = os.path.join(path,roq,'params.dat')
     roq_params0 = np.genfromtxt(params,names=True)
