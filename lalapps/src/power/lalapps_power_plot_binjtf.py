@@ -32,15 +32,12 @@ import math
 from matplotlib import cm, colors, collections
 import numpy
 from optparse import OptionParser
-import os
 import sqlite3
 import sys
 
 
-from ligo.lw import dbtables
 from lalburst import git_version
 from lalburst import SnglBurstUtils
-from ligo import segments
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
