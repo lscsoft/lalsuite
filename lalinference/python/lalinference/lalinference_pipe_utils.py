@@ -2752,7 +2752,7 @@ class LALInferenceMCMCNode(EngineNode):
         self.add_var_opt('mpirun',li_job.mpirun)
         self.add_var_opt('np',str(li_job.mpi_task_count))
         # The MCMC exe itself should not be transferred, as it will break conda linking
-        self.add_opt('executable',li_job.binary)
+        self.add_var_opt('executable',li_job.binary)
 
     def set_output_file(self,filename):
         self.posfile=filename+'.hdf5'
