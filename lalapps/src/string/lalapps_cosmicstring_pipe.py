@@ -38,11 +38,9 @@ from ligo.lw.utils import segments as ligolw_segments
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
 from lalburst import offsetvector
-from lalburst import timeslides
 from lalapps import cosmicstring
 from lalapps import power
 from ligo import segments
-from ligo.segments import utils as segmentsUtils
 
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
 __date__ = '$Date$'

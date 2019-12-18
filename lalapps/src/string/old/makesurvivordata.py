@@ -1,16 +1,12 @@
 #!/usr/bin/python
 
-import sys
 import os
-import re
 import time
 from types import *
 from optparse import OptionParser
 
-from matplotlib.patches import Patch
 from pylab import *
 from pylal import readMeta
-from pylal import viz
 
 # grab command line options
 parser = OptionParser(version="%prog CVS $Id$")
