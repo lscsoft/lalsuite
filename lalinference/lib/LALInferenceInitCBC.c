@@ -406,6 +406,7 @@ struct spcal_envelope
 {
     gsl_spline  *amp_median,*amp_std,
                 *phase_median,*phase_std;
+    double      logf_min, logf_max;
 };
 
 /* Format string for the calibratino envelope file */
@@ -457,6 +458,8 @@ static struct spcal_envelope *initCalibrationEnvelope(char *filename)
     gsl_spline_init(env->amp_std, logfreq, mag_std, Nlines);
     gsl_spline_init(env->phase_median, logfreq, phase_med, Nlines);
     gsl_spline_init(env->phase_std, logfreq, phase_std, Nlines);
+    env->logf_min = logfreq[0];
+    env->logf_max = logfreq[Nlines-1];
 
     free(logfreq); free(mag_med); free(mag_std); free(phase_med); free(phase_std);
 
@@ -508,7 +511,6 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       REAL8 fMax = ifo->fHigh;
       REAL8 logFMin = log(fMin);
       REAL8 logFMax = log(fMax);
-      REAL8 dLogF = (logFMax - logFMin)/(ncal-1);
 
       char amp_uncert_op[VARNAME_MAX];
       char pha_uncert_op[VARNAME_MAX];
@@ -523,7 +525,12 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       }
 
       if( (ppt=LALInferenceGetProcParamVal(runState->commandLine, env_uncert_op)))
+      {
           env = initCalibrationEnvelope(ppt->value);
+          /* If the spline limits are within the data frequency bounds, update the bounds */
+          logFMin = env->logf_min>logFMin ? env->logf_min : logFMin;
+          logFMax = env->logf_max<logFMax ? env->logf_max : logFMax;
+      }
       else
       {
         if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, amp_uncert_op))) {
@@ -542,6 +549,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
             exit(1);
         }
       }
+      REAL8 dLogF = (logFMax - logFMin)/(ncal-1);
       /* Now add each spline node */
       for(i=0;i<ncal;i++)
 	  {
