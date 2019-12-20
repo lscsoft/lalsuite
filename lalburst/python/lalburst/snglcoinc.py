@@ -1309,6 +1309,8 @@ class CoincRates(object):
 						n += 1
 					d += 1
 				self.rate_factors[key] = float(n) / float(d)
+				for instrument in instruments:
+					self.rate_factors[key] *= 2. * self.tau[frozenset((anchor, instrument))]
 
 		# done computing rate_factors
 
