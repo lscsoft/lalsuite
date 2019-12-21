@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 
-import sys, os
-import gwpy
-import numpy as np
+import os
 import struct
-import time
+import sys
+
+import numpy as np
 import matplotlib
 matplotlib.use('Agg')
+
 from matplotlib.pyplot import *
+
 import matplotlib.pyplot as plt
+
 matplotlib.rcParams['text.usetex']=False
-from glue import lal
-from pylal import frutils
-from gwpy.timeseries import TimeSeries
 
 #Written by Kara Merfeld, 2018 (In my defense, I was a little first year grad student when I did this :) )
 

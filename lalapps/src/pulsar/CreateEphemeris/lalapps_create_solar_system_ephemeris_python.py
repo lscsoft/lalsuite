@@ -22,7 +22,6 @@ from __future__ import print_function, division
 import os
 import sys
 import argparse
-import numpy as np
 
 try:
     # function to get positions and velocities

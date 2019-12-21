@@ -30,8 +30,7 @@ __version__ = '$Revision$'
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
-import getopt, re, string
-import tempfile
+import getopt
 import math
 #import ConfigParser
 #sys.path.append('')

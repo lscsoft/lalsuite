@@ -2,7 +2,8 @@
 #from pywcsgrid2.allsky_axes import make_allsky_axes_from_header, allsky_header
 #import pywcsgrid2.healpix_helper as healpix_helper
 #from mpl_toolkits.basemap import Basemap
-import math, os, commands, shutil, sys, re
+import os
+import re
 import matplotlib as matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt

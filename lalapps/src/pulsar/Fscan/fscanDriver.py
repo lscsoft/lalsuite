@@ -30,10 +30,10 @@ __version__ = '$Revision$'
 #10/09/2018 gam; Add -K, --coherence-path option to do the coherence using SFTs by a job to run coherenceFromSFTs.py.
 
 # import standard modules and append the lalapps prefix to the python path
-import sys, os
-import getopt, re, string
-import tempfile
-import math #cg, so I can use the ceiling functionS
+import getopt
+import math  #cg, so I can use the ceiling functionS
+import os
+import sys
 #import ConfigParser
 #sys.path.append('')
 

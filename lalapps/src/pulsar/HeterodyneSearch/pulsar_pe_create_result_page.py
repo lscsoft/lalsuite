@@ -32,8 +32,6 @@ import shutil
 import math
 import datetime
 import shelve
-import struct
-import gzip
 from optparse import OptionParser
 import subprocess as sp
 

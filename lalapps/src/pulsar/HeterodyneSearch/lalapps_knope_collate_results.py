@@ -23,16 +23,14 @@
 from __future__ import print_function, division
 
 #standard library imports
-import sys
+import argparse
+import ast
+import json
+import datetime
 import os
 import re
-import shutil
-import datetime
-import json
-import argparse
+import sys
 from six.moves.configparser import ConfigParser
-import subprocess as sp
-import ast
 
 #related third party imports
 import numpy as np
