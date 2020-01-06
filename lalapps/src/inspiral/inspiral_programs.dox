@@ -42,12 +42,6 @@ series is written out as a frame file.
 
   The result is an xml file.
 
-\c lalapps_bbhinj: It generates the mass,
-  distance and time parameters of inspiral signals to be injected in the data.
-  Despite its name, it can be used for BNS and for BBH parameter generation.
-
-  The result is an xml file.
-
 ## Injection in Frames
 
 \c lalapps_inspfrinj: Given a frame file with LIGO or GEO data, it
@@ -60,7 +54,6 @@ that bank into smaller banks.
 
  - \ref tmpltbank.c
  - \ref inspinj.c
- - \ref bbhinj.c
  - \ref inspfrinj.c
  - \ref splitbank.c
 

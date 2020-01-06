@@ -65,7 +65,6 @@ src/frametools/lalapps_xtefitstoframe
 src/hwinjection/lalapps_psinject
 src/hwinjection/online_psinject
 src/inspiral/ihope_ssipe.ini
-src/inspiral/lalapps_bbhinj
 src/inspiral/lalapps_blindinj
 src/inspiral/lalapps_calcexpsnr
 src/inspiral/lalapps_cbc_pipedown
@@ -100,7 +99,6 @@ src/inspiral/lalapps_ihope
 src/inspiral/lalapps_ihope_daily_page
 src/inspiral/lalapps_ihope_status
 src/inspiral/lalapps_inca
-src/inspiral/lalapps_injcut
 src/inspiral/lalapps_inspfrinj
 src/inspiral/lalapps_inspinj
 src/inspiral/lalapps_inspinjfind
@@ -112,7 +110,6 @@ src/inspiral/lalapps_inspiral_ssipe
 src/inspiral/lalapps_link_old_ihope
 src/inspiral/lalapps_make_nr_hdf_catalog
 src/inspiral/lalapps_mdc_ninja
-src/inspiral/lalapps_minj
 src/inspiral/lalapps_multi_hipe
 src/inspiral/lalapps_ninja
 src/inspiral/lalapps_plot_hipe
