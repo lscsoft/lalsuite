@@ -76,7 +76,7 @@ def findSegmentsToAnalyze(ifo, frametype, state_vector_channel, bits, gpsstart, 
             casting="unsafe",
             subok=True,
             copy=False,
-        ).to_dqflags()
+        )
     flags = state.to_dqflags()
     # extract segments all of whose bits are active
     segments = flags[bits[0]].active
