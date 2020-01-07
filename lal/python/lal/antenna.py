@@ -409,7 +409,7 @@ class AntennaResponse(object):
                 self._dec = np.array([decrad], dtype='float64')
             except RuntimeError:
                 raise ValueError("Could not convert '{}' to a "
-                                 "declination".format(raval))
+                                 "declination".format(decval))
         else:
             raise TypeError("Declination must be an array")
 
