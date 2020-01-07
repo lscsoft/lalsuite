@@ -1,5 +1,5 @@
 import numpy as np
-from numpy import log1p, log, logaddexp, array, digitize, loadtxt, zeros, exp, hstack, vstack, reshape, diff, concatenate, all, cumsum, ones, linspace
+from numpy import log1p, log, logaddexp, digitize, zeros, exp, concatenate, all, cumsum, ones
 from numpy.random import uniform
 from functools import reduce
 

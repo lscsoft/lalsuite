@@ -22,6 +22,7 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
+import sys
 from six.moves import range
 from functools import reduce
 
@@ -33,13 +34,10 @@ import astropy.table as apt
 import scipy.integrate as si
 from optparse import OptionParser
 
-import h5py
 from lalinference import git_version
 from lalinference import bayespputils as bppu
 from lalinference.io import read_samples, write_samples, extract_metadata
 
-from lalinference import LALINFERENCE_PARAM_LINEAR as LINEAR
-from lalinference import LALINFERENCE_PARAM_CIRCULAR as CIRCULAR
 from lalinference import LALINFERENCE_PARAM_FIXED as FIXED
 from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
 

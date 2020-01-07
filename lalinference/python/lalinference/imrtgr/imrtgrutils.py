@@ -10,7 +10,6 @@ import numpy as np
 import scipy.ndimage.filters as filter
 from multiprocessing import Pool
 from functools import partial
-import time
 from . import nrutils as nr
 
 """ calculate the mass and spin of the final black hole using an NR-inspired fitting formula """

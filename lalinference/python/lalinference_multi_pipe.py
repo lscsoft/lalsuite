@@ -4,7 +4,7 @@
 
 from lalinference import lalinference_pipe_utils as pipe_utils
 from six.moves import configparser
-from optparse import OptionParser,OptionValueError
+from optparse import OptionParser
 import sys
 
 usage=""" %prog [options] config1.ini config2.ini ... configN.ini
@@ -134,7 +134,6 @@ print('Now run condor_submit_dag %s\n'%(dag2.get_dag_file()))
 
 if opts.condor_submit:
     import subprocess
-    from subprocess import Popen
 
     x = subprocess.Popen(['condor_submit_dag',dag.get_dag_file()])
     x.wait()

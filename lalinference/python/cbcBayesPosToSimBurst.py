@@ -35,7 +35,6 @@ import numpy as np
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import ilwd
-from lalinference import bayespputils as bppu
 
 # Create a datatype for all relavent fields to be filled in the sim_inspiral table
 sim_inspiral_dt = [

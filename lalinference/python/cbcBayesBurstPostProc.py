@@ -33,14 +33,12 @@
 import sys
 import os
 
-from math import ceil,floor
 from six.moves import cPickle as pickle
 
 from time import strftime
 
 #related third party imports
-from numpy import array,exp,cos,sin,arcsin,arccos,sqrt,size,mean,column_stack,cov,unique,hsplit,correlate,log,dot,power,squeeze,sort
-from scipy import stats
+from numpy import (exp, cos, sin, size, cov, unique, hsplit, log, squeeze, sort)
 
 import matplotlib
 matplotlib.use("Agg")
@@ -50,11 +48,9 @@ from matplotlib import pyplot as plt
 from lalinference import bayespputils as bppu
 
 from lalinference import git_version
-import glue
 from glue.ligolw import table
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
-from glue.ligolw import utils
 
 try:
   os.environ['PATH'] = os.environ['PATH'] + ':/usr/texbin'

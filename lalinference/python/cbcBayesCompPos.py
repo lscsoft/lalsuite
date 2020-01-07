@@ -23,7 +23,6 @@ import os
 import sys
 from time import strftime
 import copy
-import random
 import getpass
 
 #related third party imports
@@ -37,9 +36,7 @@ mpl.use("AGG")
 from matplotlib import pyplot as plt
 from matplotlib import colors as mpl_colors
 from matplotlib import cm as mpl_cm
-from matplotlib.ticker import FormatStrFormatter,ScalarFormatter,AutoMinorLocator
-
-from scipy import stats
+from matplotlib.ticker import ScalarFormatter
 
 #local application/library specific imports
 import lalinference.bayespputils as bppu
@@ -144,7 +141,6 @@ def all_pairs(L):
 
 def open_url_curl(url,args=[]):
     import subprocess
-    import urlparse
 
     kerberos_args = "--insecure -c /tmp/{0}_cookies -b /tmp/{0}_cookies --negotiate --user : --location-trusted".format(getpass.getuser()).split()
 
@@ -174,8 +170,6 @@ def compare_plots_one_param_pdf(list_of_pos_by_name,param,analyticPDF=None):
     @param analyticPDF: Optional function to over-plot
 
     """
-
-    from scipy import seterr as sp_seterr
 
     #Create common figure
     myfig=plt.figure(figsize=(6,4.5),dpi=150)
@@ -258,8 +252,6 @@ def compare_plots_one_param_line_hist(list_of_pos_by_name,param,cl,color_by_name
     @param analyticPDF: Optional analytic function to over-plot
 
     """
-
-    from scipy import seterr as sp_seterr
 
     #Create common figure
     myfig=plt.figure(figsize=(6,4.5),dpi=150)
@@ -409,8 +401,6 @@ def compare_plots_one_param_line_hist_cum(list_of_pos_by_name,param,cl,color_by_
 
     """
 
-    from scipy import seterr as sp_seterr
-
     #Create common figure
     myfig=plt.figure(figsize=(6,4.5),dpi=150)
     myfig.add_axes([0.15,0.15,0.6,0.76])
@@ -494,7 +484,6 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
 
     if injection_path is not None and os.path.exists(injection_path) and eventnum is not None:
         eventnum=int(eventnum)
-        import itertools
         from glue.ligolw import ligolw, lsctables, utils
         injections = lsctables.SimInspiralTable.get_table(
                 utils.load_filename(injection_path, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
@@ -691,7 +680,6 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
     print("Common parameters are %s"%str(common_params))
 
     if injection is None and injection_path is not None:
-        import itertools
         injections = SimInspiralUtils.ReadSimInspiralFromFiles([injection_path])
         injection=bppu.get_inj_by_time(injections,pos_temp.means['time'])
     if injection is not None:

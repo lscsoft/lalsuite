@@ -4,7 +4,6 @@
 from numpy import vstack,log
 from optparse import OptionParser
 import sys
-import os
 from lalinference import bayespputils as bppu
 
 from lalinference.nest2pos import draw_posterior, draw_N_posterior
