@@ -34,15 +34,13 @@ import sys
 import os
 import socket
 
-from math import ceil,floor
 from six.moves import cPickle as pickle
 
 from time import strftime
 
 #related third party imports
 import numpy as np
-from numpy import array,exp,cos,sin,arcsin,arccos,sqrt,size,mean,column_stack,cov,unique,hsplit,correlate,log,dot,power,squeeze,sort
-from scipy import stats
+from numpy import (exp, cos, sin, size, cov, unique, hsplit, log, squeeze)
 
 import matplotlib
 matplotlib.use("Agg")
@@ -75,7 +73,6 @@ import lalinference.plot
 from lalinference import bayespputils as bppu
 from lalinference import git_version
 
-from glue.ligolw import table
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import utils
@@ -87,7 +84,6 @@ __date__= git_version.date
 from lalinference.lalinference_pipe_utils import guess_url
 
 def email_notify(address,path):
-    import smtplib
     import subprocess
     USER = os.environ['USER']
     HOST = socket.getfqdn()

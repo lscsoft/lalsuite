@@ -25,7 +25,6 @@
 
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
-from glue.ligolw import table
 from glue.ligolw import utils
 import matplotlib
 matplotlib.use("Agg")

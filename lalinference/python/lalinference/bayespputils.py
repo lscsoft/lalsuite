@@ -38,7 +38,6 @@ of the Bayesian parameter estimation codes.
 import os
 import sys
 from math import cos,ceil,floor,sqrt,pi as pi_constant
-import xml
 from xml.dom import minidom
 from operator import itemgetter
 
@@ -46,13 +45,12 @@ from operator import itemgetter
 import matplotlib
 matplotlib.use('agg')
 from .io import read_samples
-from . import plot as lp
 import healpy as hp
 import astropy.table
 import numpy as np
 np.random.seed(42)
 from numpy import fmod
-from matplotlib import pyplot as plt,cm as mpl_cm,lines as mpl_lines
+from matplotlib import pyplot as plt,lines as mpl_lines
 from scipy import stats
 from scipy import special
 from scipy import signal
@@ -77,7 +75,7 @@ try:
 except ImportError:
     print('Cannot import lalinference.imrtgr.nrutils. Will suppress final parameter and peak luminosity calculations.')
 
-from matplotlib.ticker import FormatStrFormatter,ScalarFormatter,AutoMinorLocator
+from matplotlib.ticker import ScalarFormatter
 
 try:
     hostname_short=socket.gethostbyaddr(socket.gethostname())[0].split('.',1)[1]
@@ -89,7 +87,7 @@ if hostname_short=='ligo.caltech.edu' or hostname_short=='cluster.ldas.cit': #Th
                                'mathtext.fallback_to_cm' : True
                                })
 
-from xml.etree.cElementTree import Element, SubElement, ElementTree, Comment, tostring, XMLParser
+from xml.etree.cElementTree import Element, SubElement, tostring, XMLParser
 
 #local application/library specific imports
 import lal
@@ -1023,8 +1021,7 @@ class Posterior(object):
             if ('ra' in pos.names or 'rightascension' in pos.names) \
             and ('declination' in pos.names or 'dec' in pos.names) \
             and 'time' in pos.names:
-                from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime, LIGOTimeGPS, TimeDelayFromEarthCenter
-                import itertools
+                from lal import LIGOTimeGPS, TimeDelayFromEarthCenter
                 from numpy import array
                 detMap = {'H1': 'LHO_4k', 'H2': 'LHO_2k', 'L1': 'LLO_4k',
                         'G1': 'GEO_600', 'V1': 'VIRGO', 'T1': 'TAMA_300'}
@@ -6533,13 +6530,11 @@ def confidence_interval_uncertainty(cl, cl_bounds, posteriors):
 
 
 def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V1']):
-    import glue
     #import sim inspiral table content handler
     from glue.ligolw import lsctables,ligolw
     from lalsimulation.lalsimulation import SimInspiralChooseTDWaveform,SimInspiralChooseFDWaveform
     from lalsimulation.lalsimulation import SimInspiralImplementedTDApproximants,SimInspiralImplementedFDApproximants
-    from lal.lal import StrainUnit
-    from lal.lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT,CutREAL8TimeSeries
+    from lal.lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT
     from lal.lal import ComputeDetAMResponse, GreenwichMeanSiderealTime
     from lal.lal import LIGOTimeGPS
     from lal.lal import MSUN_SI as LAL_MSUN_SI
@@ -6550,8 +6545,6 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
     import os
     import numpy as np
     from numpy import arange
-    from matplotlib import pyplot as plt,cm as mpl_cm,lines as mpl_lines
-    import copy
     if path is None:
         path=os.getcwd()
     if event is None:
@@ -7129,15 +7122,10 @@ def plot_calibration_pos(pos, level=.9, outpath=None):
 
 
 def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1','V1']):
-    import glue
     from lalinference.lalinference import SimBurstChooseFDWaveform,SimBurstChooseTDWaveform
     from lalinference.lalinference import SimBurstImplementedFDApproximants,SimBurstImplementedTDApproximants
-    from lal.lal import StrainUnit
-    from lal.lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT,CutREAL8TimeSeries,ResampleREAL8TimeSeries,CreateReverseREAL8FFTPlan,REAL8FreqTimeFFT
+    from lal.lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT,CreateReverseREAL8FFTPlan
     from lal.lal import LIGOTimeGPS
-    from lal.lal import MSUN_SI as LAL_MSUN_SI
-    from lal.lal import PC_SI as LAL_PC_SI
-    import lalsimulation as lalsim
     import lalinference as lalinf
     from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime, LIGOTimeGPS
 
@@ -7146,9 +7134,8 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
     from glue.ligolw import utils
     import os
     import numpy as np
-    from numpy import arange,real,imag,absolute,fabs,pi
-    from matplotlib import pyplot as plt,cm as mpl_cm,lines as mpl_lines
-    import copy
+    from numpy import arange,real,absolute,fabs,pi
+    from matplotlib import pyplot as plt
     if path is None:
         path=os.getcwd()
     if event is None:

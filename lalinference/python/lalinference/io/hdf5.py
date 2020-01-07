@@ -23,8 +23,6 @@ import h5py
 from astropy.table import Column, Table
 from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName \
     as POSTERIOR_SAMPLES
-from lalinference import LALINFERENCE_PARAM_LINEAR as LINEAR
-from lalinference import LALINFERENCE_PARAM_CIRCULAR as CIRCULAR
 from lalinference import LALINFERENCE_PARAM_FIXED as FIXED
 from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
 

@@ -4,7 +4,6 @@ from __future__ import division
 
 import numpy as np
 import os
-from matplotlib.lines import Line2D
 
 __all__=('make_disk_plot',)
 
@@ -24,7 +23,7 @@ def make_disk_plot(post,outpath=None):
 
 
   try:
-    import corner
+    import corner  # noqa: F401
   except ImportError:
     print("cannot import corner. Won't plot spin disk")
     return None

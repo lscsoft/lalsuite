@@ -10,7 +10,6 @@ import numpy as np
 import argparse
 import lalsimulation as lalsim
 import h5py
-import sys
 
 from numpy.linalg import norm
 from lal import MSUN_SI, MTSUN_SI
