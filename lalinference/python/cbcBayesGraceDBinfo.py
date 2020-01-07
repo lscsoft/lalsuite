@@ -26,7 +26,6 @@
 
 #standard library imports
 import sys
-import os
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
@@ -114,7 +113,6 @@ def cbcBayesGraceDBinfo(gid=None,samples=None,skymap=None,analysis='LALInference
     if email is not None and bci is not None:
       import os
       import smtplib
-      import subprocess
       address=email.split(',')
       SERVER="localhost"
       USER=os.environ['USER']

@@ -110,7 +110,7 @@ from itertools import combinations
 try:
     from scipy.special import logsumexp
 except ImportError:  # scipy < 0.19.0
-    from scipy.misc import logsumpexp
+    from scipy.misc import logsumexp
 
 def not_seen(t, seen=set()):
     return False if t[0] in seen or t[1] in seen else seen.update(t) or True

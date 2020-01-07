@@ -42,11 +42,10 @@ from itertools import combinations
 from itertools import cycle
 from matplotlib import use, rcParams, __version__ as mpl_version
 use('Agg')
-from matplotlib.pyplot import clf, figure, savefig
+from matplotlib.pyplot import clf, figure
 from os import access, path, R_OK, makedirs
-from scipy.stats import itemfreq, ks_2samp
+from scipy.stats import ks_2samp
 from scipy.stats.mstats import mquantiles
-from string import whitespace
 from subprocess import Popen, PIPE
 from sys import exit, stdout, version_info, float_info
 from time import time

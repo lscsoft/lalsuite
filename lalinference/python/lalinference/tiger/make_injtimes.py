@@ -25,7 +25,6 @@ __status__ = "Production"
 
 import matplotlib as mpl
 import argparse
-from optparse import OptionParser
 import os
 import sys
 import random as rd
