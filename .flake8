@@ -16,3 +16,5 @@ exclude =
 	*doxygen/filter_py.py,
 per-file-ignores =
 	__init__.py:F401,
+	lalburst/*:F401,
+	lalinspiral/*:F401,
