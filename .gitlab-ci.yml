@@ -867,11 +867,11 @@ platform:macos:sierra:
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - auditwheel repair wheel/*.whl
-    # Test
+    # Test: do some simple sanity checks in a virtualenv
     - ${PYPREFIX}/bin/virtualenv test
     - source test/bin/activate
     - pip install wheelhouse/*
-    - python -c 'import lal, lalframe, lalmetaio'
+    - python -c 'import lal, lalframe, lalmetaio, lalsimulation; series = lal.CreateREAL8FrequencySeries("psd", 0, 0, 1, None, 4096); lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)'
   needs:
     - make-dist
   only:
@@ -904,11 +904,11 @@ platform:macos:sierra:
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - delocate-wheel -v -w wheelhouse wheel/*.whl
-    # Test
+    # Test: do some simple sanity checks in a virtualenv
     - virtualenv-${PYVERS} test
     - source test/bin/activate
     - python -m pip install wheelhouse/*
-    - python -c 'import lal, lalframe, lalmetaio'
+    - python -c 'import lal, lalframe, lalmetaio, lalsimulation; series = lal.CreateREAL8FrequencySeries("psd", 0, 0, 1, None, 4096); lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)'
   needs:
     - make-dist
   only:
