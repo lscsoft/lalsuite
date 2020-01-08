@@ -933,8 +933,6 @@ wheel:cp27-cp27m-manylinux1:
   <<: *wheel-manylinux1
 wheel:cp27-cp27mu-manylinux1:
   <<: *wheel-manylinux1
-wheel:cp34-cp34m-manylinux1:
-  <<: *wheel-manylinux1
 wheel:cp35-cp35m-manylinux1:
   <<: *wheel-manylinux1
 wheel:cp36-cp36m-manylinux1:
@@ -946,8 +944,6 @@ wheel:cp38-cp38-manylinux1:
 wheel:cp27-cp27m-manylinux2010:
   <<: *wheel-manylinux2010
 wheel:cp27-cp27mu-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp34-cp34m-manylinux2010:
   <<: *wheel-manylinux2010
 wheel:cp35-cp35m-manylinux2010:
   <<: *wheel-manylinux2010
@@ -982,14 +978,12 @@ deploy:wheel:
   needs:
     - wheel:cp27-cp27m-manylinux1
     - wheel:cp27-cp27mu-manylinux1
-    - wheel:cp34-cp34m-manylinux1
     - wheel:cp35-cp35m-manylinux1
     - wheel:cp36-cp36m-manylinux1
     - wheel:cp37-cp37m-manylinux1
     - wheel:cp38-cp38-manylinux1
     - wheel:cp27-cp27m-manylinux2010
     - wheel:cp27-cp27mu-manylinux2010
-    - wheel:cp34-cp34m-manylinux2010
     - wheel:cp35-cp35m-manylinux2010
     - wheel:cp36-cp36m-manylinux2010
     - wheel:cp37-cp37m-manylinux2010
