@@ -106,7 +106,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         else:
             os.system('cat ' + outdirectory + '/out_' + headJobName + '* | grep "h0 =" > '\
             + verboseSummaryFile)
-    
+
     # Now we have a single file containing all the output from all the
     # sky points around an injection. Let us read in the data
     verboseData = open(verboseSummaryFile, "r")
@@ -152,14 +152,14 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         ProbList.append(float(ProbLine.group(1) + ProbLine.group(2) + \
         '.' + ProbLine.group(3)))
     verboseData.close
- 
+
     if args.skyGrid:
         # We should now have four lists, with as many
         # entries as there are sky points. Convert to NumPy arrays!
         rightAscensionArray = np.array(rightAscensionList)
         declinationArray = np.array(declinationList)
     fArray = np.array(fList)
-   
+
 
     if (args.band or args.noiseTest) or \
     (args.templateSearch or args.multiTemplateSearch) or \
@@ -209,7 +209,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         decShaped = decShaped[::-1,:]
         raShaped = raShaped[I,:]
         raShaped = raShaped[::-1,:]
-    
+
         # All this shuffling is, of course, confirmed by plotting
         # ra and dec instead of Prob and R and checking that
         # the heat map plots make sense.
@@ -416,7 +416,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         if not args.multiTemplateSearch:
             ProbShaped = np.absolute(np.reshape(ProbArray, (fLen, dfLen)).T)
             RShaped = np.reshape(RArray, (fLen, dfLen)).T
-      
+
         if (args.band or args.noiseTest) or \
         (args.templateSearch or args.multiTemplateSearch) or \
         args.J1751 or args.ScoX1S6:

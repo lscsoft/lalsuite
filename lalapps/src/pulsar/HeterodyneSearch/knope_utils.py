@@ -162,7 +162,7 @@ class knopeDAG(pipeline.CondorDAG):
           print("Error... 'starttime' either be a single 'int', or a dictionary containing all detectors with an integer or list of integers.", file=sys.stderr)
           self.error_code = KNOPE_ERROR_GENERAL
           return
-      
+
       for stkey in dict(self.starttime):
         if isinstance(self.starttime[stkey], int):
           # convert to list
@@ -1267,7 +1267,7 @@ class knopeDAG(pipeline.CondorDAG):
 
             if self.pe_starttime is not None:
               penode.set_start_time(self.pe_starttime)  # set start time of data to use
-            
+
             if self.pe_endtime is not None:
               penode.set_end_time(self.pe_endtime)      # set end time of data to use
 
@@ -1529,7 +1529,7 @@ class knopeDAG(pipeline.CondorDAG):
           print("Error... no 'priortype' given for parameter '%s'" % prioritem, file=sys.stderr)
           self.error_code = KNOPE_ERROR_GENERAL
           return outfile
-        
+
         ptype = prior_options[prioritem]['priortype']
 
         if ptype != 'gmm':
@@ -1610,7 +1610,7 @@ class knopeDAG(pipeline.CondorDAG):
             print("Error... number of weights must be equal to the number of modes", file=sys.stderr)
             self.error_code = KNOPE_ERROR_GENERAL
             return outfile
-          
+
           if 'ranges' in prior_options[prioritem]:
             ranges = prior_options[prioritem]['ranges']
 
@@ -1838,10 +1838,10 @@ class knopeDAG(pipeline.CondorDAG):
 
       for prioritem in prior_options:
         ptype = prior_options[prioritem]['priortype']
-        
+
         if ptype != 'gmm':
           rangevals = prior_options[prioritem]['ranges']
-        
+
           if len(rangevals) != 2:
             print("Error... the ranges in the prior for '%s' are not set properly" % prioritem, file=sys.stderr)
             self.error_code = KNOPE_ERROR_GENERAL
@@ -1907,7 +1907,7 @@ class knopeDAG(pipeline.CondorDAG):
             print("Error... number of weights must be equal to the number of modes", file=sys.stderr)
             self.error_code = KNOPE_ERROR_GENERAL
             return outfile
-          
+
           if 'ranges' in prior_options[prioritems]:
             ranges = prior_options[prioritem]['ranges']
 
@@ -2419,7 +2419,7 @@ class knopeDAG(pipeline.CondorDAG):
                 finetmpfiles[-1] += '.gz'
 
               self.add_node(finenode)
-            
+
             if self.ndatasets[ifo] > 1:
               if k == self.ndatasets[ifo]-1:
                 concatnode.set_files(finetmpfiles)
@@ -3065,7 +3065,7 @@ class knopeDAG(pipeline.CondorDAG):
           else:
             if not isinstance(datafind[ifo], list):
               datafind[ifo] = [datafind[ifo]]
-            
+
             self.cache_files[ifo] = []
             for cachefile in datafind[ifo]:
               if not os.path.isfile(cachefile):
@@ -3320,7 +3320,7 @@ class knopeDAG(pipeline.CondorDAG):
           return
         else:
           segmenttype = segmenttypes[ifo]
-      
+
       # is multiple segment types are specified (comma seperated string), loop
       # over them and find the intersection
       segtypes = [sts.strip() for sts in segmenttype.split(',')]  # split and strip whitespace
@@ -3357,10 +3357,10 @@ class knopeDAG(pipeline.CondorDAG):
 
               for j in range(len(segextypes)):
                 exquery = DataQualityFlag.query_dqsegdb(segextypes[i], st, et, url=server)
-                
+
                 # exclude segments
                 query = query & ~exquery
-        
+
         if segquery is None:
           segquery = query.copy()
         else:

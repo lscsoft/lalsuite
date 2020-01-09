@@ -64,7 +64,7 @@ def parseSFT(SFTinput):
         # Read comment
         comment = struct.unpack( ( '%ds' % comment_length ),
                                  SFTfile.read(comment_length))[0]
-    
+
         # Read data
         data_stream = struct.unpack( ( '%df' % nsamples*2 ),
                                      SFTfile.read(nsamples*8))
@@ -93,7 +93,7 @@ def parseSFT(SFTinput):
         return sfts[0]
     else:
         return tuple(sfts)
-    
+
 
 def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The function that generates the coherence 
 
@@ -183,15 +183,15 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
     A = 0 * parseSFT(pathToSFTsChannA+ListA[0])['data'] #gotta come back and make sure the lengths work out if they are not equal
     B = 0 * parseSFT(pathToSFTsChannB+ListB[0])['data']
     #numerator = 0 * parseSFT(pathToSFTsChannA+ListA[0])['data']
-    
+
     #print('lengths of A and B before slice:')
     #print(len(A))
     #print(len(B))
-    
+
 
     A = A[KminA:KmaxA+1]
     B = B[KminB:KmaxB+1]
-    
+
     numerator = A
 
     #print('lengths')
@@ -211,7 +211,7 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
 
                 channelA = parseSFT(pathToSFTsChannA+ListA[Aind])['data'][KminA:KmaxA+1]
                 channelB = parseSFT(pathToSFTsChannB+ListB[Bind])['data'][KminB:KmaxB+1]
-                
+
                 A = A + channelA * np.conj(channelA)
                 B = B + channelB * np.conj(channelB)
                 numerator = numerator + channelA * np.conj(channelB)
@@ -322,7 +322,7 @@ if len(sys.argv) < 3:
 
 pathToSFTsChannA = sys.argv[1]
 pathToSFTsChannB = sys.argv[2]
-        
+
 if pathToSFTsChannA[-1] != '/':
    pathToSFTsChannA = pathToSFTsChannA + '/'  
 

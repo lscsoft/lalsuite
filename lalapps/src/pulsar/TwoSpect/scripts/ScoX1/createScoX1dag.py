@@ -82,7 +82,7 @@ def sftFileBin(finj, fstart, fjobspan, fwingsize, tcoh):
     completeStartBin = bandStartBin - wingsBelowStartBin
     return completeStartBin
     print('Frequency start bins for SFTs in real S6 search')
-    
+
 
 
 def sftNameMaker(observatory, tcoh, binname, args):
@@ -106,12 +106,12 @@ def sftNameMaker(observatory, tcoh, binname, args):
         sftFilePart2 = "SFT_SCO_X1_MDCv6_"
     # EXAMPLE: print "/home/egoetz/TwoSpect/scox1_mdc6/sfts/H1/840s_sfts/H-1_H1_840SFT_SCO_X1_MDCv6-313.5Hz_263340"
     return sftFileRoot + str(tcoh) + sftFilePart1 + str(tcoh) + sftFilePart2 + str(binname)
- 
+
 def tablereader(tableName, observatory, args):
     print('Name of the MDC table:')
     print(tableName)
     tableData = open(tableName, "r")
-        
+
     for k, tableLine in enumerate(tableData):
         if k == 0:
             if args.templateSearchClosed:
@@ -177,7 +177,7 @@ def tablereader(tableName, observatory, args):
     for binnumber in sftFileListPart1]
     [sftFileList.append(sftNameMaker(observatory, 360, binnumber, args))\
     for binnumber in sftFileListPart2]
-            
+
     if args.templateSearchClosed:
         print('Done sorting closed pulsar table.')
     else:
@@ -188,9 +188,9 @@ def tablereader(tableName, observatory, args):
         TcohList = TcohList[1:]
         PList = PList[1:]
         asiniList = asiniList[1:]
-          
+
     return [raInjList, decInjList, fInjList, pulsarNoList, TcohList, sftFileList, PList, asiniList]
-    
+
 
 
 def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobInc, Period, asini, fSteps, dfSteps, args):
@@ -266,7 +266,7 @@ def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobIn
     if (args.singleBand or args.templateSearch or \
     args.templateSearchOpen or args.templateSearchClosed) or args.noiseTest:
         sftFileListPartList = sftFileListParts()
-        
+
         def FloorBinFinder(Tcoh, fInj, sftFile, sftFileSubList):
             fInjBin = Tcoh*fInj
             fBinMatchList = []
@@ -428,7 +428,7 @@ def dagWriter(g, observatory, headJobName, jobNumber, rightAscension, declinatio
     # to supply the fspan argument
 
     #startTime is conditional on the observatory
-   
+
     if args.real:
             # For real searches, the startTime string should be
             # configured with the observation time too
@@ -454,7 +454,7 @@ def dagWriter(g, observatory, headJobName, jobNumber, rightAscension, declinatio
             print('Observatory choice (argument 1) not understood: choose H1, L1, or V1')
     else:
         print('Coherence time incorrectly assigned: must be 360 or 840 s')
-        
+
     if args.templateSearch or \
     args.templateSearchOpen or args.templateSearchClosed:
         fminString = str(np.math.floor(10*f)/10)
@@ -536,7 +536,7 @@ if args.real:
         fStartList = fStartList[0:-1]
     print('Starting frequency of bands to be searched:')
     print(fStartList)
-    
+
     for m, BandNo in enumerate(fStartList):
         jobsPerBand = int(args.jobspan/args.fspan) 
         jobInc = m * jobsPerBand

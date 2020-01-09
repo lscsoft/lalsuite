@@ -41,7 +41,7 @@ for ii in range(0, args.jobs):
             errfile.close()
             continue
         errfile.close()
-    
+
     injectionfile = open('{}/{}/injections.dat'.format(args.dir, ii),'r')
     injections = injectionfile.readlines()
     numberinjections = len(injections)
@@ -140,4 +140,4 @@ for ii in range(0, args.jobs):
 
 if args.ULoutput: uloutput.close()
 if args.candidateOutput: candidates.close()
-        
+

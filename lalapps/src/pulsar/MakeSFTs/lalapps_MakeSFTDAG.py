@@ -132,7 +132,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
   if makeTmpFile: argList = argList + ' -Z'
   dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(MakeSFTs,argList, tagStringOut))
   dagFID.write('PARENT %s CHILD %s\n'%(LSCdataFind,MakeSFTs))
-  
+
 #
 # MAIN CODE START HERE 
 #
@@ -359,7 +359,7 @@ if synchronizeStart<0 or synchronizeStart>1:
   print("Invalid use of synchronize-start.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
-  
+
 if filterKneeFreq < 0:
   print("No filter knee frequency specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
@@ -374,7 +374,7 @@ if not outputSFTPath:
   print("No output SFT path specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
-  
+
 if not cachePath:
   print("No cache path specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
@@ -455,7 +455,7 @@ if (nodeListFile != None):
     if not nodePath:
        print("Node file list given, but no node path specified.", file=sys.stderr)
        sys.exit(1)
-    
+
     if (outputJobsPerNode < 1):
        print("Node file list given, but invalid output jobs per node specified.", file=sys.stderr)
        sys.exit(1)
@@ -541,7 +541,7 @@ else:
     except:
         print("There was a problem setting up the segment to run on: [%s, %s)." % (analysisStartTime,analysisEndTime), file=sys.stderr)
         sys.exit(1)
-    
+
 # END if (segmentFile != None)
 
 # Get the IFO site, which is the first letter of the channel name.

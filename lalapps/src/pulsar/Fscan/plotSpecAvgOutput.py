@@ -121,7 +121,7 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
 #    clim(ymin,ymax)
     cbar.set_label('Channel units/root Hz')  #Colorbar label
     filename_png = filename + '.png'
-    
+
 #y-axis
     ylabel('Frequency [Hz]',fontsize=10)
     fRange = int(float(fEnd)) - int(float(fStart))
@@ -179,7 +179,7 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
 
     # Get variables for combfinder
     numSFTs = ylen2
-    
+
 
     outputTextFile = filename + '.txt'
     outputSortedTextFile = outputFileName + '_sorted.txt'
