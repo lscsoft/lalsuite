@@ -825,7 +825,7 @@ platform:macos:highsierra:
     - ./00boot
     # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
     # is available
-    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
+    - PYTHON=/opt/local/bin/python2.7 ./configure
     - make -j4
     - make -j4 check
   needs:
@@ -842,7 +842,7 @@ platform:macos:sierra:
     - ./00boot
     # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
     # is available
-    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
+    - PYTHON=/opt/local/bin/python2.7 ./configure
     - make -j4
     - make -j4 check
   needs:
