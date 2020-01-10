@@ -65,7 +65,6 @@ requirements:
     - lalpulsar >={{ lalpulsar_version }}a0
     - libcblas
     - llvm-openmp  # [osx]
-    - openmp_impl  # [linux]
     - openmpi
 
 test:
@@ -138,7 +137,6 @@ outputs:
         - lscsoft-glue >=1.54.1
         - matplotlib-base >=1.2.0
         - {{ pin_compatible('numpy') }}
-        - openmp_impl  # [linux]
         - python
         - python-lal >={{ lal_version }}a0
         - python-lalmetaio >={{ lalmetaio_version }}a0
