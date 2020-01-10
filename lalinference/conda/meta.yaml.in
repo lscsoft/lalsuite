@@ -51,6 +51,7 @@ requirements:
     - lalinspiral >={{ lalinspiral_version }}a0
     - lalpulsar >={{ lalpulsar_version }}a0
     - libcblas=*=*netlib
+    - libgomp  # [linux]
     - llvm-openmp  # [osx]
     - openmpi
   run:
@@ -65,13 +66,11 @@ requirements:
     - lalpulsar >={{ lalpulsar_version }}a0
     - libcblas
     - llvm-openmp  # [osx]
-    - openmp_impl  # [linux]
     - openmpi
 
 test:
   requires:
     - openssh
-    - pkg-config  # [unix]
   commands:
     - test -f "${LALINFERENCE_DATADIR}/lalinference_pipe_example.ini"  # [unix]
     - lalinference_bench --psdlength 1000 --psdstart 1 --seglen 8 --srate 4096 --trigtime 0 --ifo H1 --H1-channel LALSimAdLIGO --H1-cache LALSimAdLIGO --dataseed 1324 --Niter 10 --fix-chirpmass 1.21
@@ -82,7 +81,6 @@ test:
     - lalinference_mcmc --help
     - lalinference_nest --help
     - lalinference_version --verbose
-    - test "$(pkg-config --modversion ${PKG_NAME})" == "${PKG_VERSION}"  # [unix]
 
 outputs:
   - name: lalinference
@@ -105,6 +103,7 @@ outputs:
         - gsl
         - {{ pin_subpackage('lalinference', exact=True) }}
         - libcblas=*=*netlib
+        - libgomp  # [linux]
         - llvm-openmp  # [osx]
         - python
         - numpy
@@ -140,7 +139,6 @@ outputs:
         - lscsoft-glue >=1.54.1
         - matplotlib-base >=1.2.0
         - {{ pin_compatible('numpy') }}
-        - openmp_impl  # [linux]
         - python
         - python-lal >={{ lal_version }}a0
         - python-lalmetaio >={{ lalmetaio_version }}a0
