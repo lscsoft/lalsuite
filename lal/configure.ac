@@ -18,7 +18,6 @@ AC_CONFIG_FILES([ \
   python/Makefile \
   python/lal/Makefile \
   python/lal/__init__.py \
-  python/lal/spectrum/Makefile \
   python/lal/utils/Makefile \
   lib/LALVCSInfo.c \
   lib/LALVCSInfo.h \
