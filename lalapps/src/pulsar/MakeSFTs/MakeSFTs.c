@@ -1684,7 +1684,7 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );  
 
       /* compute sft */
-      XLAL_CHECK( XLALREAL4ForwardFFT( fftDataSingle, dataSingle.data, fftPlanSingle ), XLAL_EFUNC );
+      XLAL_CHECK( XLALREAL4ForwardFFT( fftDataSingle, dataSingle.data, fftPlanSingle ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       #if TRACKMEMUSE
         printf("Memory use after creating output vector fftDataSingle and calling XLALREAL4ForwardFFT:\n"); printmemuse();
@@ -1703,7 +1703,7 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );  
 
       /* compute sft */
-      XLAL_CHECK( XLALREAL8ForwardFFT( fftDataDouble, dataDouble.data, fftPlanDouble ), XLAL_EFUNC );
+      XLAL_CHECK( XLALREAL8ForwardFFT( fftDataDouble, dataDouble.data, fftPlanDouble ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       #if TRACKMEMUSE
         printf("Memory use after creating output vector fftDataDouble and calling XLALREAL8ForwardFFT:\n"); printmemuse();
