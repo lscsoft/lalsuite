@@ -63,16 +63,11 @@ EXTRA_DIST += \
 	$(END_OF_LIST)
 
 TESTS = \
-	testPredictFstat.sh \
-	testSynthLV.sh \
-	$(END_OF_LIST)
-
-if !CONDOR_ENABLED
-TESTS += \
 	testCFSv2.sh \
 	testCFSv2_binary.sh \
 	testCFSv2_grids.sh \
 	testCFSv2_resamp.sh \
 	testCFSv2_transient.sh \
+	testPredictFstat.sh \
+	testSynthLV.sh \
 	$(END_OF_LIST)
-endif
