@@ -288,9 +288,6 @@ src/pulsar/Weave/*.testdir
 src/pulsar/Weave/lalapps_Weave
 src/pulsar/Weave/lalapps_WeaveCompare
 src/pulsar/Weave/lalapps_WeaveSetup
-src/pulsar/Xray/lalapps_binary2sfts
-src/pulsar/Xray/lalapps_Intermittent
-src/pulsar/Xray/lalapps_SemiCoherentBinary_v2
 src/ring/lalapps_coh_PTF_inspiral
 src/ring/lalapps_coh_PTF_spin_checker
 src/ring/lalapps_coh_PTF_testing
