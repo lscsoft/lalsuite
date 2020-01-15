@@ -35,3 +35,13 @@ if HAVE_PYTHON
 pybin_scripts = lalapps_MakeSFTDAG
 pkgpython_PYTHON =
 endif
+
+EXTRA_DIST += \
+	testMakeSFTs.sh \
+	$(END_OF_LIST)
+
+if FRAME
+TESTS = \
+	testMakeSFTs.sh \
+	$(END_OF_LIST)
+endif
