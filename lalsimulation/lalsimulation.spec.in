@@ -1,6 +1,6 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
-%define release 2
+%define release 1
 %define configure_opts --enable-openmp GSL_LIBS="-lgsl"
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
@@ -205,6 +205,11 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Wed Jan 15 2020 Adam Mercer <adam.mercer@ligo.org> 1.10.1-1
+- Add a fix to aligned-spin limit
+- NRHybSur3dq8: Use XLAL_EDOM for extrapolation errors
+- Fix Bh1-Bh2 swap bug in NRSur7dq4 when m1 < m2
+
 * Mon Dec 09 2019 Adam Mercer <adam.mercer@ligo.org> 1.10.0-2
 - Packaging updates
 
