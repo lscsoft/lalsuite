@@ -1897,17 +1897,14 @@ class Posterior(object):
         """
         Dump the posterior table to a file in the 'common format'.
         """
-        column_list=()
-
-        posterior_table,header_string=self.samples()
-
-        fobj=open(fname,'w')
-
-        fobj.write(header_string+'\n')
-        np.savetxt(fobj,posterior_table,delimiter='\t')
-        fobj.close()
-
-        return
+        posterior_table, header_string = self.samples()
+        np.savetxt(
+            fname,
+            posterior_table,
+            comments='',
+            delimiter='\t',
+            header=header_string,
+        )
 
     def gelman_rubin(self, pname):
         """
