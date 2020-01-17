@@ -4,7 +4,12 @@ include $(top_srcdir)/gnuscripts/lalsuite_test_python.am
 test_programs +=
 
 # Add shell, Python, etc. test scripts to this variable
-test_scripts +=
+test_scripts += \
+	test_python_imports.py \
+	test_python_scripts.py \
+	test_phenomD_utils.py \
+	$(END_OF_LIST)
+
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
