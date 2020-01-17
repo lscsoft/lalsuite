@@ -1115,10 +1115,12 @@ void setup_from_par_file( LALInferenceRunState *runState )
       else{
         dts = get_ssb_delay( pulsar, ifo_model->times, ifo_model->ephem, ifo_model->tdat, ifo_model->ttype, data->detector );
         bdts = get_bsb_delay( pulsar, ifo_model->times, dts, ifo_model->ephem );
+        glitchphase = get_glitch_phase( pulsar, ifo_model->times, dts, bdts );
       }
 
       LALInferenceAddVariable( ifo_model->params, "ssb_delays", &dts, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
       if ( bdts != NULL ){ LALInferenceAddVariable( ifo_model->params, "bsb_delays", &bdts, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED ); }
+      if ( glitchphase != NULL ){ LALInferenceAddVariable( ifo_model->params, "glitch_phase", &glitchphase, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED ); }
 
       data = data->next;
       ifo_model = ifo_model->next;
