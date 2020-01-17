@@ -613,7 +613,7 @@ void initialise_prior( LALInferenceRunState *runState )
   LALStringVector *corParams = NULL;
   REAL8Array *corMat = NULL;
 
-  INT4 varyphase = 0, varyskypos = 0, varybinary = 0;
+  INT4 varyphase = 0, varyskypos = 0, varybinary = 0, varyglitch = 0;
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--prior-file" );
   if( ppt ) { propfile = XLALStringDuplicate( LALInferenceGetProcParamVal(commandLine,"--prior-file")->value ); }
@@ -802,6 +802,14 @@ void initialise_prior( LALInferenceRunState *runState )
         }
       }
 
+      /* check is there are any glitch parameters that will be searched over */
+      for ( i = 0; i < NUMGLITCHPARS; i++ ){
+        if ( !strncmp(parnames->tokens[j], glitchpars[i], strlen(glitchpars[i]) * sizeof(CHAR)) ){
+          varyglitch = 1;
+          break;
+        }
+      }
+
       /* set variable type to LINEAR (as they are initialised as FIXED) */
       varyType = LALINFERENCE_PARAM_LINEAR;
       LALInferenceSetParamVaryType( threadState->currentParams, parnames->tokens[j], varyType );
@@ -820,6 +828,7 @@ void initialise_prior( LALInferenceRunState *runState )
     if( varyphase ) { LALInferenceAddVariable( ifotemp->params, "varyphase", &varyphase, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED ); }
     if( varyskypos ) { LALInferenceAddVariable( ifotemp->params, "varyskypos", &varyskypos, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED ); }
     if( varybinary ) { LALInferenceAddVariable( ifotemp->params, "varybinary", &varybinary, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED ); }
+    if( varyglitch ) { LALInferenceAddVariable( ifotemp->params, "varyglitch", &varyglitch, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED ); }
 
     ifotemp = ifotemp->next;
   }
