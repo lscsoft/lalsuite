@@ -434,7 +434,7 @@ for seg in data:
 # don't have multiple datafinds running at the same time
 if do_datafind:
   first_df2.add_parent(df1)
-    
+
 # now find coincidences between the two inspiral jobs
 for i in range(len(data)):
   for j in range(len(data[i])):
@@ -448,7 +448,7 @@ for i in range(len(data)):
     inca.set_end(chunk.end() - overlap/2)
     inca.set_ifo_a(ifo1)
     inca.set_ifo_b(ifo2)
-    
+
     # if there is a chunk before this one, add it to the job
     try: 
       data[i][j-1]
@@ -468,7 +468,7 @@ for i in range(len(data)):
       inca.add_parent(insp_nodes[i][j][0])
     if do_triginsp:
       inca.add_parent(insp_nodes[i][j][1])
-    
+
     # if there is a chunk after this one, add it to the job
     try:
       data[i][j+1]
@@ -480,7 +480,7 @@ for i in range(len(data)):
         inca.add_parent(insp_nodes[i][j+1][1])
     except IndexError:
       pass
-      
+
     if do_coinc:
       inca.get_output_a()
       inca.get_output_b()
@@ -532,7 +532,7 @@ if usertag:
   log_fh = open(basename + '.pipeline.' + usertag + '.log', 'w')
 else:
   log_fh = open(basename + '.pipeline.log', 'w')
-  
+
 # FIXME: the following code uses obsolete CVS ID tags.
 # It should be modified to use git version information.
 log_fh.write( "$Id$" + "\n\n" )

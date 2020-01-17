@@ -428,7 +428,7 @@ class ThincaJob(InspiralAnalysisJob):
           self.add_file_opt(opt,fname)
       else:
         self.add_opt(opt,arg)
-  
+
 
 class ThincaToCoincJob(InspiralAnalysisJob):
   """
@@ -549,7 +549,7 @@ class CoireJob(InspiralAnalysisJob):
     # coire currently doesn't take GPS start/end times
     self.set_stdout_file('logs/coire-$(macroifo)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/coire-$(macroifo)-$(cluster)-$(process).err')
-    
+
 
 class FrJoinJob(InspiralAnalysisJob):
   """
@@ -879,7 +879,7 @@ class InspInjNode(InspiralAnalysisNode):
           self.get_start()) + ".xml"
       self.add_output_file(outputFile)
       return(outputFile)
-   
+
 
 class BbhInjNode(InspiralAnalysisNode):
   """
@@ -1139,7 +1139,7 @@ class PTFInspiralNode(InspiralAnalysisNode):
 
   def set_seed(self,seed):
     self.add_var_opt('random-seed',seed)
-    
+
 
 class PTFSpinCheckerNode(InspiralAnalysisNode):
   """
@@ -1331,13 +1331,13 @@ class ThincaNode(InspiralAnalysisNode):
       if pass_to_command_line:
         self.add_var_opt('v1-triggers','')
       self.__ifo_v1 = 'V1'
- 
+
   def get_ifo_g1(self):
     """
     Returns the IFO code of g1.
     """
     return self.__ifo_g1
-    
+
   def get_ifo_h1(self):
     """
     Returns the IFO code of h1.
@@ -1408,7 +1408,7 @@ class ThincaNode(InspiralAnalysisNode):
     """
     if not self.get_start() or not self.get_end() or not self.get_ifos():
       raise InspiralError("Start time, end time or ifos have not been set")
-    
+
     if self.__num_slides:
       basename = self.get_ifos() + '-' + self.job().get_exec_name().upper() \
           + '_SLIDE'
@@ -1660,7 +1660,7 @@ class SireNode(InspiralAnalysisNode):
     Gets GPS end time
     """
     return self.__end
-  
+
   def set_ifo_tag(self,ifo_tag):
     """
     Set the ifo tag that is passed to the analysis code.
@@ -1715,10 +1715,10 @@ class SireNode(InspiralAnalysisNode):
     set the output options
     """
     output = self.get_output()
-    
+
     self.add_file_opt("output", output,file_is_output_file=True)
     self.add_file_opt("summary", output.replace("xml", "txt"),file_is_output_file=True)
-    
+
     if self.get_inj_file():
       self.add_file_opt('injection-file', self.get_inj_file())
       self.add_file_opt('missed-injections', self.get_missed(), file_is_output_file=True)
@@ -1893,7 +1893,7 @@ class FrJoinNode(InspiralAnalysisNode):
     self.add_var_opt('output',outputName)
     self.add_file_opt('output',outputName,file_is_output_file=True)
     self.__outputName = outputName
-    
+
   def get_output(self):
     """
     Get the output name of the frame file
@@ -2072,14 +2072,14 @@ class ChiaNode(InspiralAnalysisNode):
     Returns the IFO tag string
     """
     return self.__ifo_tag  
-  
+
   def get_output(self):
     """
     Returns the file name of output from coherent inspiral.
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo_tag():
       raise InspiralError("Start time, end time or ifos have not been set")
-      
+
     basename = self.get_ifo_tag() + '-CHIA'
 
     if self.get_user_tag():
@@ -2318,7 +2318,7 @@ class PlotInspiralNode(InspiralPlottingNode):
     job = A CondorDAGJob that can run an instance of plotinspiral.
     """
     InspiralPlottingNode.__init__(self,job)
-   
+
 ###########################################################################################
 
 class PlotThincaJob(InspiralPlottingJob):
@@ -2338,7 +2338,7 @@ class PlotThincaJob(InspiralPlottingJob):
     extension = 'html'
     InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
     self.add_condor_cmd('request_memory', '2500')
- 
+
 class PlotThincaNode(InspiralPlottingNode):
   """
   A PlotThincaNode runs an instance of the plotthinca code in a Condor DAG.
@@ -2408,7 +2408,7 @@ class PlotNumtemplatesNode(InspiralPlottingNode):
     job = A CondorDAGJob that can run an instance of plotnumtemplates.
     """
     InspiralPlottingNode.__init__(self,job)
- 
+
 ##############################################################################
 
 class PlotEthincaJob(InspiralPlottingJob):
@@ -2702,20 +2702,20 @@ class MiniFollowupsNode(InspiralPlottingNode):
     """
     self.add_var_opt( 'input-xml-summary', input_xml_summary)
     self.__input_xml_summary = input_xml_summary
-  
+
   def get_input_xml_summary(self):
     """
     Return the input_xml_summary that's set.
     """
     return self.__input_xml_summary
-  
+
   def set_output_html_table(self, output_html_table):
     """
     Sets the input xml.
     """
     self.add_var_opt( 'output-html-table', output_html_table)
     self.__output_html_table = output_html_table
-  
+
   def get_output_html_table(self):
     """
     Return the output_html_table that's set.
@@ -3295,7 +3295,7 @@ def overlap_test(interval1, interval2, slide_sec=0):
   end1 = interval1.end()
   left = interval2.start() - slide_sec
   right = interval2.end() + slide_sec
-  
+
   return (start1 >= left and start1 <= right) or \
          (end1 >= left and end1 <= right) or \
          (start1 <= left and end1 >= right)
@@ -3437,10 +3437,10 @@ class ExtendedCoincNode(InspiralAnalysisNode):
   """
   def __init__(self, job):
     InspiralAnalysisNode.__init__(self, job)
-    
+
   def set_coinc_threshold(self, coinc_threshold):
         self.add_var_opt('coinc-threshold', coinc_threshold)
- 
+
   def set_ihope_base_dir(self, base_dir):
         self.add_var_opt('ihope-base-dir', base_dir)
 
@@ -3449,13 +3449,13 @@ class ExtendedCoincNode(InspiralAnalysisNode):
 
   def set_ethinca(self, ethinca):
         self.add_var_opt('e-thinca-parameter', ethinca)
- 
+
   def set_slide_step(self, slide_step):
         self.add_var_opt('slide-step', slide_step)
-        
+
   def set_veto_window(self, veto_window):
         self.add_var_opt('veto-window', veto_window)
- 
+
   def set_new_snr_cut(self, new_snr_cut):
         self.add_var_opt('new-snr-cut', new_snr_cut)
 

@@ -110,7 +110,7 @@ for ifoval in IFOList:
         subprocess.check_call(['/atlas/user/atlas3/egoetz/lalsuite-master/lalapps/src/pulsar/TwoSpect/skygridsetup','--fmin={} --fspan={} --IFO={} --Tcoh={} --SFToverlap={} --t0={} --Tobs={} --v2 --outfilename={}'.format(args.fmin, args.fspan, ifokey[-1], args.Tsft, args.SFToverlap, args.t0, args.Tobs, skygridfile)])
         if resetH2r==1: ifokey[-1] = 'H2r'
         skygridcreated = 1
-        
+
 Pmin = args.injPmin
 Pmax = args.injPmax
 dfmin = args.injDfmin
@@ -130,7 +130,7 @@ for ii in range(0, 10):
         if args.h0dist==0: h0 = (args.h0max-args.h0min)*random.random() + args.h0min
         elif args.h0dist==1: h0 = 10**((math.log10(args.h0max)-math.log10(args.h0min))*random.random()) * args.h0min
         else: h0 = (args.h0max + args.h0min) - 10**((math.log10(args.h0max)-math.log10(args.h0min))*random.random()) * args.h0min
-    
+
     psi = math.pi*random.random()
     phi0 = 2*math.pi*random.random()
 
@@ -171,7 +171,7 @@ for ii in range(0, 10):
         if args.periodDist==0: P = (args.injPmax - args.injPmin)*random.random() + args.injPmin
         elif args.periodDist==1: P = 10**((math.log10(args.injPmax)-math.log10(args.injPmin))*random.random()) * args.injPmin
         else: P = (args.injPmax + args.injPmin) - 10**((math.log10(args.injPmax)-math.log10(args.injPmin))*random.random()) * args.injPmin
-        
+
         df = (args.injDfmax - args.injDfmin)*random.random() + args.injDfmin
         while df-0.5/args.Tsft<1e-6 or df > args.injDfExpAllow*P/(2*args.Tsft*args.Tsft): df = (args.injDfmax - args.injDfmin)*random.random() + args.injDfmin
 
@@ -188,7 +188,7 @@ for ii in range(0, 10):
     cosi = 1
     if args.injPol==0: cosi = 0
     elif args.injPol==1: cosi = random.uniform(-1,1)
-    
+
     mfdconfig = open('/local/user/egoetz/{}/mfdconfig'.format(scriptPID),'w')
     mfdconfig.write("""\
 Alpha {}
@@ -291,7 +291,7 @@ ihsfactor {}
             twospectconfig.write(segmentFileList[jj])
             if jj<numIFOs-1: twospectconfig.write(',')
         twospectconfig.write('\n')
-    
+
     twospectconfig.close()
 
     if numIFOs>1 and not args.useCorrectNScosi:
@@ -303,4 +303,4 @@ ihsfactor {}
 
 shutil.rmtree('/local/user/egoetz/{}'.format(scriptPID))
 
-   
+

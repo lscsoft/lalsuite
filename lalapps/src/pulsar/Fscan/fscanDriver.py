@@ -346,7 +346,7 @@ if not duration:
   print("No duration specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
- 
+
 analysisEndTime = analysisStartTime + duration
 
 if not tagString:
@@ -363,7 +363,7 @@ if extraDatafindTime < 0:
   print("Invalid extra datafind time specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
-  
+
 if filterKneeFreq < 0:
   print("No filter knee frequency specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
@@ -378,7 +378,7 @@ if not pathToSFTs:
   print("No output SFT path specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
-  
+
 if not cachePath:
   print("No cache path specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
@@ -458,7 +458,7 @@ try: os.makedirs(logPath)
 except: pass
 try: os.makedirs(cachePath)
 except: pass
-  
+
 # Get site and ifo from channel name:
 site = channelName[0]
 ifo = channelName[0] + channelName[1]
@@ -470,12 +470,12 @@ else:
   makeSFTIFO = segIFO
 
 print('\nTHE FSCAN DRIVER SCRIPT HAS STARTED!\n')
-  
+
 ###################################################
 # CHECK IF SFTS NEED TO BE GENERATED
 #    
 if (createSFTs):
-  
+
   # For safety, add /tmp to the path to avoid overwriting existing SFTs.
   pathToSFTs = pathToSFTs + '/tmp'
   print('Will generate SFTs in %s \n' % pathToSFTs)
@@ -562,7 +562,7 @@ if (createSFTs):
     # set the segmentFile equal to the intersection of the segments to run on with the segments data exist
     segmentFile = intersectedSegmentFile
   # End if intersectData
-    
+
   ###################################################
   # CHECK THE SEGMENT FILE
   #
@@ -592,7 +592,7 @@ if (createSFTs):
   except:
     print("Error reading or parsing segment file: %s. \n" % segmentFile, file=sys.stderr)
     sys.exit(1)
-  
+
   ###################################################
   # MAKE THE .dag FILE; RUN MakeSFTDAG
   #
@@ -665,7 +665,7 @@ if (createSFTs):
   #argList = '-f -l . -Debug 3 -Lockfile %s.lock -Condorlog %s -Dag %s -Rescue %s.rescue -MaxJobs 40 -MaxPre 1 -MaxPost 1' % (sftDAGFile, sftDAGSUBFileLogFile, sftDAGFile, sftDAGFile)
   #tagStringOut = '%s_%i' % (tagString, sftNodeCount)
   #dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(sftDAGSUBJobName,argList,tagStringOut))
-  
+
   # 03/02/2009 gam; instead of above, add splice in SFT DAG:
   sftNodeCount = 0
   spliceSFTDAGName = 'spliceSFTDAG_%i' % sftNodeCount

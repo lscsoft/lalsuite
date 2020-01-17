@@ -39,7 +39,7 @@ for time in peak_time:
 	for seg in seg_list:
 		[crap,Tstart,Tend,duration]=seg.split(None,4)
 		if time > int(Tstart) and time < int(Tend):
-			
+
 			H1cache_filename='cache/H-H1_RDS_C01_LX-'+Tstart+'-'+Tend+'.cache'
 			os.system('~/lscsoft/lalapps/src/string/lalapps_StringSearch --bw-flow 27 --sample-rate 4096 \
 			--bank-lowest-hifreq-cutoff 75 --bank-freq-start 50 --threshold 4 --frame-cache '+H1cache_filename+ \
@@ -51,7 +51,7 @@ for time in peak_time:
 			--bank-lowest-hifreq-cutoff 75 --bank-freq-start 50 --threshold 4 --frame-cache '+H2cache_filename+ \
 			' --channel-name H2:LSC-STRAIN --gps-start-time '+str(int(time)-7)+' --gps-end-time '+str(int(time)+8) \
 			+' --settling-time 0.5 --pad 4 --short-segment-duration 2 --cusp-search --print-data > plotdata/H2data'+str(i)+'.txt')
-			
+
 			L1cache_filename='cache/L-L1_RDS_C01_LX-'+Tstart+'-'+Tend+'.cache'
 			os.system('~/lscsoft/lalapps/src/string/lalapps_StringSearch --bw-flow 27 --sample-rate 4096 \
 			--bank-lowest-hifreq-cutoff 75 --bank-freq-start 50 --threshold 4 --frame-cache '+L1cache_filename+ \
