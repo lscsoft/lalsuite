@@ -8,6 +8,7 @@ test_scripts += \
 	test_python_imports.py \
 	test_python_scripts.py \
 	test_phenomD_utils.py \
+	test_SEOBNRv4PHM_vs_4HM_ringdown.py \
 	$(END_OF_LIST)
 
 
