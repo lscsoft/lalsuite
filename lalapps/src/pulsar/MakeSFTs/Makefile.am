@@ -5,6 +5,8 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
+dist_bin_SCRIPTS = lalapps_CopySFTs
+
 if FRAME
 frameprogs = lalapps_MakeSFTs
 else

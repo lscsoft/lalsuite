@@ -1,4 +1,4 @@
-#!/usr/bin/env tclshexe
+#!/usr/bin/env tclsh
 
 # File: CopySFTs.tclsh Started: 08/24/07
 # Author: Greg Mendell
