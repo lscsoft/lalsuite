@@ -13,7 +13,7 @@ __date__ = '$Date$'
 __version__ = '$Revision$'
 
 # REVISIONS:
-# 12/02/05 gam; generate datafind.sub and MakeSFTs.sub as well as dag file in PWD, with log files based subLogPath and dag filename. 
+# 12/02/05 gam; generate datafind.sub and MakeSFTs.sub as well as dag file in PWD, with log files based subLogPath and dag filename.
 # 12/28/05 gam; Add option --make-gps-dirs, -D <num>, to make directory based on this many GPS digits.
 # 12/28/05 gam; Add option --misc-desc, -X <string> giving misc. part of the SFT description field in the filename.
 # 12/28/05 gam; Add options --start-freq -F and --band -B options to enter these.
@@ -45,10 +45,10 @@ import math
 def usage():
   msg = """\
 
-This script creates datafind.sub, MakeSFTs.sub, and a dag file that generates SFTs based on the options given. 
+This script creates datafind.sub, MakeSFTs.sub, and a dag file that generates SFTs based on the options given.
 
 The script can be used to create dag files for stand-alone use with condor_submit_dag, or as a dag generator with onasys.
-  
+
 Usage: MakeSFTDAG [options]
 
   -h, --help                 display this message
@@ -84,7 +84,7 @@ Usage: MakeSFTDAG [options]
   -L, --max-length-all-jobs  maximum total amount of data to process, in seconds (optional and unused if a segment file is given)
   -g, --segment-file         (optional) alternative file with segments to use, rather than the input times.
   -A, --accounting-group     (optional) accounting group tag to be added to the condor submit files.
-  -U, --accounting-group-user  (optional) accounting group albert.einstein username to be added to the condor submit files.  
+  -U, --accounting-group-user  (optional) accounting group albert.einstein username to be added to the condor submit files.
   -q, --list-of-nodes        (optional) file with list of nodes on which to output SFTs.
   -Q, --node-path            (optional) path to nodes to output SFTs; the node name is appended to this path, followed by path given by the -p option;
                                         for example, if -q point to file with the list node1 node2 ... and the -Q /data/ -p /frames/S5/sfts/LHO options
@@ -134,7 +134,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline, outputSFTPath, c
   dagFID.write('PARENT %s CHILD %s\n'%(LSCdataFind,MakeSFTs))
 
 #
-# MAIN CODE START HERE 
+# MAIN CODE START HERE
 #
 
 # parse the command line options
@@ -178,7 +178,7 @@ longop = [
   "node-path=",
   "output-jobs-per-node=",
   "min-seg-length=",
-  "use-single=",  
+  "use-single=",
   "use-hot",
   "make-tmp-file",
   "datafind-path=",
@@ -251,9 +251,9 @@ for o, a in opts:
   elif o in ("-a", "--analysis-start-time"):
     analysisStartTime = int(a)
   elif o in ("-b", "--analysis-end-time"):
-    analysisEndTime = int(a)    
+    analysisEndTime = int(a)
   elif o in ("-f", "--dag-file"):
-    dagFileName = a   
+    dagFileName = a
   elif o in ("-t", "--aux-path"):
     auxPath = a
   elif o in ("-G", "--tag-string"):
@@ -319,7 +319,7 @@ for o, a in opts:
   elif o in ("-l", "--min-seg-length"):
     minSegLength = int(a)
   elif o in ("-S", "--use-single"):
-    useSingle = True    
+    useSingle = True
   elif o in ("-H", "--use-hot"):
     useHoT = True
   elif o in ("-Z", "--make-tmp-file"):
@@ -492,9 +492,9 @@ if (segmentFile != None):
     adjustSegExtraTime = True
     try:
          for line in open(segmentFile):
-             try: 
+             try:
                  splitLine = line.split();
-                 try: 
+                 try:
                      oneSeg = [];
                      oneSeg.append(int(splitLine[0]));
                      oneSeg.append(int(splitLine[1]));
@@ -632,7 +632,7 @@ for seg in segList:
        if analysisEndTime < segStartTime: analysisEndTime = segStartTime
     else:
        analysisStartTime = seg[0]
-       analysisEndTime = seg[1]     
+       analysisEndTime = seg[1]
     #print analysisStartTime, analysisEndTime
     # Loop through the analysis time; make sure no more than maxNumPerNode SFTs are produced by any one node
     startTimeThisNode = analysisStartTime

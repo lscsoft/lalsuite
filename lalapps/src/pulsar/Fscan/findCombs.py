@@ -9,7 +9,7 @@ import sys
 
 # For teeth thicker than epsilon Hz, pick the tooth with the maximum snr.
 def uniqueTeeth(epsilon,f,snr):
-        indList = [] # List of indices to keep 
+        indList = [] # List of indices to keep
         thisToothIndices = np.array([0],dtype=np.int) # List of indiced belong to a tooth.
         thisToothSNRs = np.array([snr[0]],dtype=np.int) # List of snrs belong to a tooth.
         for i in range(0, len(f) - 1):
@@ -21,7 +21,7 @@ def uniqueTeeth(epsilon,f,snr):
                 else:
                        thisInd = thisToothIndices[np.argmax(thisToothSNRs)]
                        indList = np.append(indList,int(np.floor(thisInd)))
-                       # Initialize for next tooth 
+                       # Initialize for next tooth
                        thisToothIndices = np.array([j],dtype=np.int) # List of indiced belong to a tooth.
                        thisToothSNRs = np.array([snr[j]],dtype=np.int) # List of snrs belong to a tooth.
         # We are at the end of the array; add the index of the last tooth.
