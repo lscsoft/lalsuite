@@ -224,7 +224,7 @@ class knopeDAG(pipeline.CondorDAG):
         self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
-        self.ndatasets[ifo] = len(self.starttime[ifo])    
+        self.ndatasets[ifo] = len(self.starttime[ifo])
 
     # Get the pre-processing engine (heterodyne or SplInter - default to heterodyne)
     if not self.postonly:

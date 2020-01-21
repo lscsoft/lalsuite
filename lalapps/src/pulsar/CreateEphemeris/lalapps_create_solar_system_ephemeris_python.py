@@ -171,7 +171,7 @@ if __name__=='__main__':
         ctminus = curtime - dt/2.
         _, mvel = get_body_barycentric_posvel(body, ctminus)
         ctplus = curtime + dt/2.
-        _, pvel = get_body_barycentric_posvel(body, ctplus)    
+        _, pvel = get_body_barycentric_posvel(body, ctplus)
         acc.append(((pvel.xyz.to('m/s')-mvel.xyz.to('m/s'))/const.c)/dt.to('s'))
 
         curtime += dt

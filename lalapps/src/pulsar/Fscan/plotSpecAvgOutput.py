@@ -60,7 +60,7 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
     tStart = lst.pop()      # start time
     ifo = lst.pop()         # ifo
     fEnd = lst.pop()        # end frequency
-    fStart = lst.pop()      # start frequency 
+    fStart = lst.pop()      # start frequency
 
     y_temp1 = y             # Create an array of the spectrogram data without the segments taken out when a segment file is used
     yzeros=list(y.sum(axis=0))
