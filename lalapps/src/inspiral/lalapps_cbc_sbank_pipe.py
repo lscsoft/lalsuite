@@ -92,7 +92,7 @@ class SBankJob(inspiral.InspiralAnalysisJob):
         if cp.has_section("accounting"):
             self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
             if cp.has_option("accounting", "accounting-group-user"):
-		self.add_condor_cmd('accounting_group_user', cp.get("accounting", "accounting-group-user"))
+                self.add_condor_cmd('accounting_group_user', cp.get("accounting", "accounting-group-user"))
         self.add_condor_cmd('getenv','True')
         self.add_condor_cmd('request_memory', '3999')
         if "OMP_NUM_THREADS" in os.environ:
@@ -134,7 +134,7 @@ class SBankChooseMchirpBoundariesJob(inspiral.InspiralAnalysisJob):
         if cp.has_section("accounting"):
             self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
             if cp.has_option("accounting", "accounting-group-user"):
-		self.add_condor_cmd('accounting_group_user', cp.get("accounting", "accounting-group-user"))
+                self.add_condor_cmd('accounting_group_user', cp.get("accounting", "accounting-group-user"))
         self.add_condor_cmd('getenv','True')
 
 
@@ -172,7 +172,7 @@ class LWAddJob(pipeline.CondorDAGJob):
         if cp.has_section("accounting"):
             self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
             if cp.has_option("accounting", "accounting-group-user"):
-		self.add_condor_cmd('accounting_group_user', cp.get("accounting", "accounting-group-user"))
+                self.add_condor_cmd('accounting_group_user', cp.get("accounting", "accounting-group-user"))
         self.tag_base = tag_base
         self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
         self.set_sub_file(tag_base+'.sub')

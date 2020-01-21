@@ -41,8 +41,6 @@ from lalinspiral.sbank.tau0tau3 import proposals
 from lalinspiral.sbank.psds import (noise_models, read_psd)
 from lalinspiral.sbank.waveforms import waveforms, SnglInspiralTable
 
-import lal
-
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
