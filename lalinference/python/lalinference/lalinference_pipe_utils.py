@@ -2423,6 +2423,8 @@ class EngineJob(LALInferenceDAGJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
                 self.set_executable_installed(False)
         # Set the options which are always used
         self.set_sub_file(os.path.abspath(submitFile))
+        # 500 MB should be enough for anyone
+        self.add_condor_cmd('request_disk','500M')
         if self.engine=='lalinferencemcmc':
             self.binary=cp.get('condor',self.engine.replace('mpi',''))
             self.mpirun=cp.get('condor','mpirun')
@@ -2821,7 +2823,7 @@ def topdir(path):
         return topdir(a)
     else:
         return b
-        
+
 
 class BayesWavePSDNode(EngineNode):
     def __init__(self,bayeswavepsd_job):
