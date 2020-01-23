@@ -338,4 +338,50 @@ int XLALSimInspiralOrientationMatrixDirection(
 		return XLAL_SUCCESS;
 }
 
+/**
+ * Takes in the h_lm spherical harmonic decomposed modes and rotates the modes
+ * by Euler angles alpha, beta, and gamma using the Wigner D matrices, analog to
+ * int XLALSimInspiralPrecessionRotateModes but with 2 crucial differences:
+ *
+ * * leaves unaltered the input SphericalHarmonicTimeSeries
+ * * The Wigner DMatrix rotation function XLALWignerDMatrix() is called
+     with arguments (alpha, -beta, gamma), instead of (alpha, beta, gamma),
+ *   to ensure that
+ *   (h+ + i hx)(alpha,beta,gamma)=Sum_{lmm'} Y_lm(0,0) D_mm'(alpha,beta,gamma) h_lm'(0,0,0)
+ *
+ */
+int XLALSimInspiralPrecessionRotateModesOut(SphHarmTimeSeries **hlm_out,   /**< spherical harmonic decomposed modes, output */
+					    SphHarmTimeSeries *hlm_in,    /**< spherical harmonic decomposed modes, input */
+					    const REAL8TimeSeries *alpha, /**< alpha Euler angle time series */
+					    const REAL8TimeSeries *beta,  /**< beta Euler angle time series */
+					    const REAL8TimeSeries *gam    /**< gamma Euler angle time series */
+){
+
+  if (*hlm_out)
+    XLAL_ERROR(XLAL_EFAILED);
+
+  unsigned int i;
+  int l, m, mp;
+  int lmax = XLALSphHarmTimeSeriesGetMaxL( hlm_in );
+  int lmin = XLALSphHarmTimeSeriesGetMinL( hlm_in );
+  for( l=lmin; l <= lmax; l++ ) {
+    COMPLEX16TimeSeries **inmode= XLALCalloc( 2*lmax+1, sizeof(COMPLEX16TimeSeries) );
+    for( m=-l; m<=l; m++){
+      inmode[m+l] = XLALSphHarmTimeSeriesGetMode(hlm_in, l, m );
+    }
+    for( m=-l; m<=l; m++){
+      COMPLEX16TimeSeries *outmode = XLALCreateCOMPLEX16TimeSeries(inmode[m+l]->name,&inmode[m+l]->epoch,0.,inmode[m+l]->deltaT,&inmode[m+l]->sampleUnits,inmode[m+l]->data->length);
+      for(i=0; i<inmode[m+l]->data->length; i++)
+	outmode->data->data[i]=0.;
+      for(mp=-l; mp<=l; mp++){
+	for(i=0; i<inmode[m+l]->data->length; i++) {
+	  outmode->data->data[i] += inmode[mp+l]->data->data[i] * XLALWignerDMatrix( l, mp, m, alpha->data->data[i], -beta->data->data[i], gam->data->data[i] );
+	}
+      }
+      *hlm_out=XLALSphHarmTimeSeriesAddMode(*hlm_out,outmode,l,m);
+    }
+  }
+  return XLAL_SUCCESS;
+}
+
 /** @} */
