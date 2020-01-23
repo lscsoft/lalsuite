@@ -29,11 +29,6 @@
 #include "config.h"
 #include "ppe_likelihood.h"
 
-#ifndef _OPENMP
-#define omp ignore
-#endif
-
-
 /******************************************************************************/
 /*                     LIKELIHOOD AND PRIOR FUNCTIONS                         */
 /******************************************************************************/
