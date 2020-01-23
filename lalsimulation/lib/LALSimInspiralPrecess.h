@@ -41,6 +41,7 @@
 #include <gsl/gsl_eigen.h>
 
 int XLALSimInspiralPrecessionRotateModes(SphHarmTimeSeries* h_lm, REAL8TimeSeries* alpha, REAL8TimeSeries* beta, REAL8TimeSeries* gam);
+int XLALSimInspiralPrecessionRotateModesOut(SphHarmTimeSeries **hlm_out, SphHarmTimeSeries *hlm_in, const REAL8TimeSeries *alpha, const REAL8TimeSeries *beta, const REAL8TimeSeries *gam);
 int XLALSimInspiralConstantPrecessionConeWaveformModes(SphHarmTimeSeries** h_lm_tmp, double precess_freq, double a, double phi_precess, double alpha_0, double beta_0);
 int XLALSimInspiralConstantPrecessionConeWaveform(REAL8TimeSeries** hp, REAL8TimeSeries** hx, SphHarmTimeSeries* h_lm, double precess_freq, double a, double phi_precess, double alpha_0, double beta_0);
 int XLALSimInspiralOrientationMatrixForL2(REAL8 mtx[3][3], COMPLEX16 h22, COMPLEX16 h2m2, COMPLEX16 h21, COMPLEX16 h2m1, COMPLEX16 h20);

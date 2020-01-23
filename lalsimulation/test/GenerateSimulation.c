@@ -101,6 +101,7 @@ const char * usage =
 "                             SpinDominatedWf\n"
 "                             HGimri\n"
 "                             NRHybSur3dq8\n"
+"                             NR_hdf5\n"
 "                           Supported FD approximants:\n"
 "                             IMRPhenomA\n"
 "                             IMRPhenomB\n"
@@ -172,6 +173,7 @@ const char * usage =
 "--eccentricity ecc         Eccentricity (default 0)\n"
 "--mean-per-ano psi         Mean periastron anomaly in radians (default 0)\n"
 "--axis AXIS                for PhenSpin: 'View' (default), 'TotalJ', 'OrbitalL'\n"
+"--nr-file                  for NR_hdf5\n"
 "--nonGRpar NAME VALUE      add the nonGRparam with name 'NAME' and value 'VALUE'\n"
 "                           Supported names:\n"
 "                             NonGRPhi1\n"
@@ -240,7 +242,6 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(params->params, 0.);
     snprintf(params->outname, sizeof(params->outname), "simulation.dat"); /* output to this file */
     params->verbose = 0; /* No verbosity */
-
     /* consume command line */
     for (i = 1; i < argc; ++i) {
         if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
@@ -362,6 +363,8 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
 	    }
         } else if (strcmp(argv[i], "--outname") == 0) {
             snprintf(params->outname, sizeof(params->outname), "%s", argv[++i]);
+        } else if (strcmp(argv[i], "--nr-file") == 0) {
+	  XLALSimInspiralWaveformParamsInsertNumRelData(params->params, argv[++i]);
         } else {
             XLALPrintError("Error: invalid option: %s\n", argv[i]);
             goto fail;

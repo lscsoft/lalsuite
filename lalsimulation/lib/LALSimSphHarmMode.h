@@ -46,8 +46,11 @@ extern "C" {
  */
 
 int XLALSimAddMode(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, COMPLEX16TimeSeries *hmode, REAL8 theta, REAL8 phi, int l, int m, int sym);
+int XLALSimAddModeAngleTimeSeries(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, COMPLEX16TimeSeries *hmode, REAL8TimeSeries *theta, REAL8TimeSeries *phi, int l, int m, int sym);
 int XLALSimAddModeFromModes(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, SphHarmTimeSeries *hmode, REAL8 theta, REAL8 phi);
+int XLALSimAddModeFromModesAngleTimeSeries(REAL8TimeSeries *hplus, REAL8TimeSeries *hcross, SphHarmTimeSeries *hmode, REAL8TimeSeries *theta, REAL8TimeSeries *phi);
 int XLALSimNewTimeSeriesFromModes(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, SphHarmTimeSeries *hmode, REAL8 theta, REAL8 phi);
+int XLALSimNewTimeSeriesFromModesAngleTimeSeries(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, SphHarmTimeSeries *hmode, REAL8TimeSeries *theta, REAL8TimeSeries *phi);
 
 #if 0
 { /* so that editors will match succeeding brace */

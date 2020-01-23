@@ -50,6 +50,7 @@ extern "C" {
  * @defgroup LALSimIMRPSpinInspiralRD_c          LALSimIMRPSpinInspiralRD.c
  * @defgroup LALSimIMRTidal_c                    LALSimIMRLackeyTidal2013.c
  * @defgroup LALSimPrecessingNRSur_c             LALSimIMRPrecessingNRSur.c
+ * @defgroup LALSimIMRNRWaveforms_c              LALSimIMRNRWaveforms.c
  * @}
  *
  * @addtogroup LALSimIMR_h
@@ -106,7 +107,7 @@ int XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame(REAL8 *chi1_l, REAL
 
 int XLALSimIMREOBNRv2DominantMode(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, const REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fLower, const REAL8 distance, const REAL8 inclination);
 int XLALSimIMREOBNRv2AllModes(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, const REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fLower, const REAL8 distance, const REAL8 inclination);
-SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(const REAL8 phiRef, const REAL8 deltaT, const REAL8 m1, const REAL8 m2, const REAL8 fLower, const REAL8 distance);
+SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(const REAL8 deltaT, const REAL8 m1, const REAL8 m2, const REAL8 fLower, const REAL8 distance);
 
 
 /* in module LALSimIMRSpinAlignedEOB.c */
@@ -342,6 +343,9 @@ int XLALSimInspiralNRWaveformGetSpinsFromHDF5File(
   const char *NRDataFile  /**< Location of NR HDF file */
 );
 
+/* The following XLALSimInspiralNRWaveformGetHplusHcross() generates polarizations
+ * reading directly the NR files and does not return l,m modes.
+ */
 int XLALSimInspiralNRWaveformGetHplusHcross(
         REAL8TimeSeries **hplus,        /**< OUTPUT h_+ vector */
         REAL8TimeSeries **hcross,       /**< OUTPUT h_x vector */
@@ -362,6 +366,25 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
         const char *NRDataFile,         /**< Location of NR HDF file */
         LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
         );
+
+/* The following XLALSimInspiralNRWaveformGetHlms() reads NR file to output l,m modes.
+ */
+INT4 XLALSimInspiralNRWaveformGetHlms(SphHarmTimeSeries **hlms, /**< OUTPUT */
+        REAL8 deltaT,                   /**< sampling interval (s) */
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 r,                        /**< distance of source (m) */
+        REAL8 fStart,                   /**< start GW frequency (Hz) */
+        REAL8 fRef,                     /**< reference GW frequency (Hz) */
+        REAL8 s1x,                      /**< initial value of S1x */
+        REAL8 s1y,                      /**< initial value of S1y */
+        REAL8 s1z,                      /**< initial value of S1z */
+        REAL8 s2x,                      /**< initial value of S2x */
+        REAL8 s2y,                      /**< initial value of S2y */
+        REAL8 s2z,                      /**< initial value of S2z */
+        const char *NRDataFile,         /**< Location of NR HDF file */
+        LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
+	);
 
 /* in module LALSimIMRPrecessingNRSur.c */
 
@@ -399,7 +422,7 @@ SphHarmTimeSeries *XLALSimInspiralPrecessingNRSurModes(
         REAL8 S2z,                      /**< z-component of the dimensionless spin of object 2 */
         REAL8 fMin,                     /**< start GW frequency (Hz) */
         REAL8 fRef,                     /**< reference GW frequency (Hz) */
-        REAL8 distnace,                 /**< distance of source (m) */
+        REAL8 distance,                 /**< distance of source (m) */
         LALDict* LALparams,             /**< Dict with extra parameters */
         Approximant approximant     /**< approximant (NRSur7dq2 or NRSur7dq4) */
 );
@@ -433,7 +456,6 @@ int XLALPrecessingNRSurDynamics(
         LALDict* LALparams,      /**< Dict with extra parameters. */
         Approximant approximant  /**< approximant (NRSur7dq2 or NRSur7dq4). */
 );
-
 
 /* in module LALSimNRTunedTides.c */
 double XLALSimNRTunedTidesComputeKappa2T(

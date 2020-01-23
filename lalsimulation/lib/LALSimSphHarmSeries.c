@@ -173,6 +173,20 @@ UINT4 XLALSphHarmTimeSeriesGetMaxL( SphHarmTimeSeries* ts ){
 }
 
 /**
+ * Get the smallest l index of any mode in the SphHarmTimeSeries linked list
+ */
+UINT4 XLALSphHarmTimeSeriesGetMinL( SphHarmTimeSeries* ts ){
+    SphHarmTimeSeries *itr = ts;
+    UINT4 minl=INT_MAX;
+
+    while( itr ){
+      minl = itr->l < minl ? itr->l : minl;
+      itr = itr ->next;
+    }
+    return minl;
+}
+
+/**
  * For every (l,m) node in the SphHarmTimeSeries linked list,
  * call XLALResizeCOMPLEX16TimeSeries(ts->mode, first, length)
  *
