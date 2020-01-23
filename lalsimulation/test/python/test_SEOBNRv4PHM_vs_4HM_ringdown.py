@@ -77,7 +77,6 @@ def get_SEOBNRv4PHM_modes(q, M, chi1, chi2, f_start, distance, deltaT):
     m2SI = lal.MSUN_SI * M / (1.0 + q)
     approx = ls.SEOBNRv4PHM
     hlm = ls.SimInspiralChooseTDModes(
-        0.0,
         deltaT,
         m1SI,
         m2SI,
