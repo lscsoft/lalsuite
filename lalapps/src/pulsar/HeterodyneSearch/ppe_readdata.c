@@ -1081,7 +1081,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
     freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "freqfactors" );
 
     for( j = 0; j < freqFactors->length; j++ ){
-      REAL8Vector *dts = NULL, *bdts = NULL;
+      REAL8Vector *dts = NULL, *bdts = NULL, *glitchphase = NULL;
 
       /* check whether using original Jones (2010) signal source model or a biaxial model (in the amplitude/phase parameterisation) */
       if ( freqFactors->length == 2 ){

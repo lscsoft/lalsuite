@@ -552,7 +552,7 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
     }
   }
   if ( LALInferenceCheckVariable( ifo->params, "glitch_phase" ) ){
-    fixglitchphase = LALInferenceGetREAL8VectorVariables( ifo->params, "glitch_phase" );
+    fixglitchphase = LALInferenceGetREAL8VectorVariable( ifo->params, "glitch_phase" );
   }
 
   for( i=0; i<length; i++){
@@ -609,16 +609,6 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   /* free memory */
   if ( dts != NULL ){ XLALDestroyREAL8Vector( dts ); }
   if ( bdts != NULL ){ XLALDestroyREAL8Vector( bdts ); }
-
-  if ( glnum > 0 ){
-    XLALFree( glep );
-    XLALFree( glph );
-    XLALFree( glf0 );
-    XLALFree( glf1 );
-    XLALFree( glf2 );
-    XLALFree( glf0d );
-    XLALFree( gltd );
-  }
 
   return phis;
 }
@@ -780,10 +770,10 @@ REAL8Vector *get_glitch_phase( PulsarParameters *pars, LIGOTimeGPSVector *datati
   REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL;
   UINT4 glnum = 0;
 
-  INT4 i = 0, length = datatimes->length;
+  UINT4 i = 0, j = 0, length = datatimes->length;
 
-  REAL8 pepoch = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /* time of ephem info */
-  REAL8 cgw = PulsarGetREAL8ParamOrZero(params, "CGW");
+  REAL8 pepoch = PulsarGetREAL8ParamOrZero(pars, "PEPOCH"); /* time of ephem info */
+  REAL8 cgw = PulsarGetREAL8ParamOrZero(pars, "CGW");
   REAL8 T0 = pepoch;
 
   if ( PulsarCheckParam( pars, "GLEP" ) ){ /* see if pulsar has glitch parameters */
@@ -839,7 +829,7 @@ REAL8Vector *get_glitch_phase( PulsarParameters *pars, LIGOTimeGPSVector *datati
     glphase = XLALCreateREAL8Vector( length );
 
     for ( i = 0; i < length; i++ ){
-      REAL8 deltaphi = 0.;
+      REAL8 deltaphi = 0., deltat = 0., DT = 0.;
       REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] ); /* time of data */
       DT = realT - T0; /* time diff between data and start of data */
 
@@ -848,7 +838,7 @@ REAL8Vector *get_glitch_phase( PulsarParameters *pars, LIGOTimeGPSVector *datati
 
       /* include binary system barycentring time delays */
       if ( bdts != NULL ){
-        deltat += fixbdts->data[i];
+        deltat += bdts->data[i];
       }
 
       /* correct for speed of GW compared to speed of light */
