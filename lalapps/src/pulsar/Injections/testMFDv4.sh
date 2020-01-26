@@ -14,7 +14,7 @@ sftdir="${builddir}../SFTTools/"
 
 mfdCODE="${builddir}lalapps_Makefakedata_v4"
 cmpCODE="${sftdir}lalapps_compareSFTs"
-extractCODE="${sftdir}lalapps_ConvertToSFTv2"
+extractCODE="${sftdir}lalapps_splitSFTs"
 
 testDIR1="./mfdv4_TEST1"
 testDIR2="./mfdv4_TEST2"
@@ -140,7 +140,9 @@ echo "... and extracting the relevant frequency band ..."
 echo
 
 ## extract relevant frequency-band
-extractCL="--inputSFTs='$testDIR3/*.sft' --fmin=$fmin --fmax=$fmax --outputDir=$testDIR3 --descriptionMisc=Band"
+fmax2=`echo "${fmax} + 0.0006" | bc`   ## add 0.0006 to bandwidth to get same number of SFT bins as MDFv4
+Band2=`echo "${Band} + 0.0006" | bc`   ## add 0.0006 to bandwidth to get same number of SFT bins as MDFv4
+extractCL="-fs $fmin -fe $fmax2 -fb $Band2 -o ${testDIR3}/Band -i $testDIR3/*.sft"
 cmdline="$extractCODE $extractCL"
 echo $cmdline;
 if ! eval $cmdline; then
@@ -155,7 +157,7 @@ fi
 echo
 echo "comparison of resulting SFTs:"
 
-cmdline="$cmpCODE -e $tol -1 '${testDIR1}/*.sft' -2 '${testDIR3}/*_Band*'"
+cmdline="$cmpCODE -e $tol -1 '${testDIR1}/*.sft' -2 '${testDIR3}/Band*'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... SFTs differ by more than $tol. Something might be wrong..."
@@ -166,7 +168,7 @@ fi
 
 
 echo
-cmdline="$cmpCODE -e $tol -1 '${testDIR2}/*.sft' -2 '${testDIR3}/*_Band*'"
+cmdline="$cmpCODE -e $tol -1 '${testDIR2}/*.sft' -2 '${testDIR3}/Band*'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... SFTs differ by more than $tol. Something might be wrong..."
