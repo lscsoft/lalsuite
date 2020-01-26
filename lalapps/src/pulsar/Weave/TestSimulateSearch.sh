@@ -28,6 +28,7 @@ for setup in short mid long; do
     echo "=== Setup '${setup}': Create search setup with ${weave_setup_options} ==="
     set -x
     ${builddir}/lalapps_WeaveSetup --first-segment=1122332211/90000 ${weave_setup_options} --detectors=H1,L1 --output-file=WeaveSetup.fits
+    ${fitsdir}/lalapps_fits_overview WeaveSetup.fits
     set +x
     echo
 
@@ -47,6 +48,7 @@ for setup in short mid long; do
         --rand-seed=3456 --sft-timebase=1800 --sft-noise-sqrtSX=1,1 \
         --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
         ${weave_search_options}
+    ${fitsdir}/lalapps_fits_overview WeaveOutNoSim.fits
     set +x
     echo
 
@@ -68,6 +70,7 @@ for setup in short mid long; do
         --rand-seed=3456 --sft-timebase=1800 --sft-noise-sqrtSX=1,1 \
         --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
         ${weave_search_options}
+    ${fitsdir}/lalapps_fits_overview WeaveOutSimFull.fits
     set +x
     echo
 
@@ -76,6 +79,7 @@ for setup in short mid long; do
     ${builddir}/lalapps_Weave --simulate-search --output-file=WeaveOutSimMin.fits \
         --toplists=all --toplist-limit=2321 --segment-info --setup-file=WeaveSetup.fits \
         ${weave_search_options}
+    ${fitsdir}/lalapps_fits_overview WeaveOutSimMin.fits
     set +x
     echo
 
