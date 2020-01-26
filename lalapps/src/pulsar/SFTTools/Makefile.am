@@ -6,7 +6,6 @@ SFTReferenceLibrary = SFTReferenceLibrary.c SFTReferenceLibrary.h
 
 bin_PROGRAMS = \
 	lalapps_ComputePSD \
-	lalapps_ConvertToSFTv2 \
 	lalapps_GetSFTVelocities \
 	lalapps_SFTclean \
 	lalapps_SFTdumpall \
@@ -19,7 +18,6 @@ bin_PROGRAMS = \
 	$(END_OF_LIST)
 
 lalapps_ComputePSD_SOURCES = ComputePSD.c
-lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c
 lalapps_GetSFTVelocities_SOURCES = GetSFTVelocities.c
 lalapps_SFTclean_SOURCES = SFTclean.c
 lalapps_SFTdumpall_SOURCES = SFTdumpall.c $(SFTReferenceLibrary)
