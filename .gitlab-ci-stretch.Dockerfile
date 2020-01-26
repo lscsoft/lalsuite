@@ -1,8 +1,8 @@
-FROM igwn/base:stretch
+FROM igwn/base:stretch-proposed
 
 LABEL name="LALSuite Nightly - Debian Stretch" \
       maintainer="Adam Mercer <adam.mercer@ligo.org>" \
-      support="Reference Platform"
+      support="Not Supported"
 
 # add debian packages to container
 COPY debs /debs

@@ -141,7 +141,7 @@ cache:
 
 .debuild: &debbuild
   <<: *apt-cache
-  image: igwn/base:stretch
+  image: igwn/base:stretch-proposed
   variables:
     GIT_STRATEGY: none
   script:
@@ -253,7 +253,7 @@ cache:
 # -- documentation ------------------------------
 
 documentation:
-  image: igwn/lalsuite-dev:stretch
+  image: igwn/lalsuite-dev:stretch-proposed
   stage: documentation
   needs:
     - make-dist
@@ -274,7 +274,7 @@ documentation:
     - web
 
 pages:
-  image: igwn/lalsuite-dev:stretch
+  image: igwn/lalsuite-dev:stretch-proposed
   stage: deploy
   script:
     - ./00boot
