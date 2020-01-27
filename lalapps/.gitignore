@@ -251,8 +251,6 @@ src/pulsar/SFTTools/lalapps_ConvertToSFTv2
 src/pulsar/SFTTools/lalapps_dumpSFT
 src/pulsar/SFTTools/lalapps_GetSFTVelocities
 src/pulsar/SFTTools/lalapps_SFTclean
-src/pulsar/SFTTools/lalapps_SFTdumpall
-src/pulsar/SFTTools/lalapps_SFTdumpheader
 src/pulsar/SFTTools/lalapps_SFTvalidate
 src/pulsar/SFTTools/lalapps_SFTwrite
 src/pulsar/SFTTools/lalapps_splitSFTs

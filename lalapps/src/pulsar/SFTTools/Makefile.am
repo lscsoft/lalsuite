@@ -9,8 +9,6 @@ bin_PROGRAMS = \
 	lalapps_ConvertToSFTv2 \
 	lalapps_GetSFTVelocities \
 	lalapps_SFTclean \
-	lalapps_SFTdumpall \
-	lalapps_SFTdumpheader \
 	lalapps_SFTvalidate  \
 	lalapps_SFTwrite \
 	lalapps_compareSFTs \
@@ -22,8 +20,6 @@ lalapps_ComputePSD_SOURCES = ComputePSD.c
 lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c
 lalapps_GetSFTVelocities_SOURCES = GetSFTVelocities.c
 lalapps_SFTclean_SOURCES = SFTclean.c
-lalapps_SFTdumpall_SOURCES = SFTdumpall.c $(SFTReferenceLibrary)
-lalapps_SFTdumpheader_SOURCES = SFTdumpheader.c $(SFTReferenceLibrary)
 lalapps_SFTvalidate_SOURCES = SFTvalidate.c $(SFTReferenceLibrary)
 lalapps_SFTwrite_SOURCES = SFTwrite.c $(SFTReferenceLibrary)
 lalapps_compareSFTs_SOURCES = compareSFTs.c
