@@ -10,7 +10,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 if LALFRAME
 frame_progs = \
 	lalapps_heterodyne_pulsar \
-	lalapps_pulsar_parameter_estimation \
 	lalapps_create_pulsar_signal_frame \
 	lalapps_SplInter
 
@@ -36,10 +35,6 @@ lalapps_pulsar_frequency_evolution_SOURCES = \
 lalapps_heterodyne_pulsar_SOURCES = \
 	heterodyne_pulsar.c \
 	heterodyne_pulsar.h
-
-lalapps_pulsar_parameter_estimation_SOURCES = \
-	pulsar_parameter_estimation.c \
-	pulsar_parameter_estimation.h
 
 lalapps_pulsar_parameter_estimation_nested_SOURCES = \
 	ppe_models.c \
