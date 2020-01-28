@@ -166,7 +166,6 @@ test:
     - lalapps_power_plot_burst --help
     - lalapps_power_veto --help
     - lalapps_pulsar_frequency_evolution --help
-    - lalapps_pulsar_parameter_estimation --help
     - lalapps_pulsar_parameter_estimation_nested --help
     - lalapps_randombank --help
     - lalapps_run_sqlite --help
