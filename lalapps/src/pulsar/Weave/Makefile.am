@@ -5,10 +5,6 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-if !CFITSIO
-AM_SH_LOG_FLAGS = skip
-endif
-
 bin_PROGRAMS = \
 	lalapps_WeaveSetup \
 	lalapps_Weave \
@@ -72,3 +68,8 @@ test_scripts += TestPartitioning.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
+
+# All tests require CFITSIO
+if !CFITSIO
+skip_tests += $(test_scripts)
+endif

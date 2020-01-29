@@ -11,8 +11,9 @@ EXTRA_DIST += $(test_scripts)
 test_script_compiler = $(top_srcdir)/gnuscripts/lalapps-pulsar-test-compiler.sh
 EXTRA_DIST += $(test_script_compiler)
 
+skip_tests =
 TEST_EXTENSIONS = .sh
-SH_LOG_COMPILER = /bin/bash $(test_script_compiler)
+SH_LOG_COMPILER = /bin/bash $(test_script_compiler) "$(skip_tests)"
 
 clean-local: clean-local-test-dirs
 clean-local-test-dirs:

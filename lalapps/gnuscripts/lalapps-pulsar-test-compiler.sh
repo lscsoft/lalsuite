@@ -3,11 +3,15 @@ set -e
 echo "--- Test compiler is $0 ---"
 echo
 
-# Skip test if requested
-if test "x$1" = xskip; then
-    echo "--- Skipping test $2 ---"
-    echo
-    exit 77;
+# Parse command line
+skip_tests="$1"
+test="$2"
+echo "skip_tests='${skip_tests}'"
+echo "test='${test}'"
+echo
+if [ "X#2" = X ]; then
+  echo "Invalid command line"
+  exit 1
 fi
 
 # Check for required environment variables
@@ -21,7 +25,7 @@ if [ "X${LAL_TEST_BUILDDIR}" = X ]; then
 fi
 
 # Test script name and location
-scriptname=$(expr "X$1" : "X.*/\([^/]*\)\.sh$")
+scriptname=$(expr "X${test}" : "X.*/\([^/]*\)\.sh$")
 script="${LAL_TEST_SRCDIR}/${scriptname}.sh"
 if [ ! -f "${script}" ]; then
   echo "Test script '${script}' does not exist"
@@ -31,6 +35,14 @@ if [ -x "${script}" ]; then
   echo "Test script '${script}' should not be executable"
   exit 1
 fi
+
+# Skip test if requested
+case " ${skip_tests} " in
+    *" ${scriptname}.sh "*)
+        echo "Skipping test ${test}"
+        exit 77
+        ;;
+esac
 
 # Create directory for test
 testdir="${LAL_TEST_BUILDDIR}/${scriptname}.testdir"
@@ -90,7 +102,7 @@ ls -l "${testdir}"
 echo
 
 # Run test in test directory
-echo "--- Running test $1 ---"
+echo "--- Running test ${test} ---"
 echo
 cd "${testdir}"
 export TIMEFORMAT=$'\n\n\nreal %R\nuser %R\nsys  %R'
@@ -105,13 +117,13 @@ cd "${LAL_TEST_BUILDDIR}"
 echo
 case $status in
     0)
-        echo "--- Test $1 ran successfully ---"
+        echo "--- Test ${test} ran successfully ---"
         ;;
     77)
-        echo "--- Test $1 was skipped ---"
+        echo "--- Test ${test} was skipped ---"
         ;;
     *)
-        echo "--- Test $1 exited with status ${status} ---"
+        echo "--- Test ${test} exited with status ${status} ---"
         NOCLEANUP=1
         ;;
 esac
