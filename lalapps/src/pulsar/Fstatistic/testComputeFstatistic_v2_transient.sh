@@ -1,37 +1,15 @@
-#!/bin/bash
-
-## set LAL debug level
-echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
-export LAL_DEBUG_LEVEL
-
-## allow 'make test' to work from builddir != srcdir
-if [ -z "${srcdir}" ]; then
-    srcdir=`dirname $0`
-fi
-
-## make sure we work in 'C' locale here to avoid awk sillyness
-LC_ALL_old=$LC_ALL
-export LC_ALL=C
-
-builddir="./";
-injectdir="../Injections/"
-
 ## ----- allow user-control of hotloop variant to use
 if [ -n "$FSTAT_METHOD" ]; then
     FstatMethod="--FstatMethod=${FSTAT_METHOD}"
 fi
 
 ##---------- names of codes and input/output files
-mfd_code="${injectdir}lalapps_Makefakedata_v4"
-saf_code="${builddir}lalapps_SemiAnalyticF"
-## allow user to specify a different CFSv2 version to test by passing as cmdline-argument
-if test $# -eq 0 ; then
-    cfsv2_code="${builddir}lalapps_ComputeFstatistic_v2"
-else
-    cfsv2_code="$@"
-fi
+mfd_code="lalapps_Makefakedata_v4"
+saf_code="SemiAnalyticF"
+cfsv2_code="lalapps_ComputeFstatistic_v2"
 
 Dterms=8
+
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
 startTime=711595934
@@ -82,22 +60,16 @@ fi
 
 IFO=H1
 
-## ----- define output directory and files
-testDir=testCFSv2transient.d
-rm -rf $testDir
-mkdir -p $testDir
-SFTdir=${testDir}
-
-outfile_Fstat1=${testDir}/testCFSv2_run1.dat
-outfile_Loudest1=${testDir}/Fstat_loudest_run1.dat
-outfile_transient1=${testDir}/testCFSv2_tCW_run1.dat
-outfile_transientMap1=${testDir}/testCFSv2_tCW_Fstatmap_run1.dat
-outfile_Fstat2=${testDir}/testCFSv2_run2.dat
-outfile_Loudest2=${testDir}/Fstat_loudest_run2.dat
-outfile_transient2=${testDir}/testCFSv2_tCW_run2.dat
-outfile_transientMap2=${testDir}/testCFSv2_tCW_Fstatmap_run2.dat
-outfile_transientMap3=${testDir}/testCFSv2_tCW_Fstatmap_run3.dat
-outfile_atoms=${testDir}/testCFSv2_atoms
+outfile_Fstat1=./testCFSv2_run1.dat
+outfile_Loudest1=./Fstat_loudest_run1.dat
+outfile_transient1=./testCFSv2_tCW_run1.dat
+outfile_transientMap1=./testCFSv2_tCW_Fstatmap_run1.dat
+outfile_Fstat2=./testCFSv2_run2.dat
+outfile_Loudest2=./Fstat_loudest_run2.dat
+outfile_transient2=./testCFSv2_tCW_run2.dat
+outfile_transientMap2=./testCFSv2_tCW_Fstatmap_run2.dat
+outfile_transientMap3=./testCFSv2_tCW_Fstatmap_run3.dat
+outfile_atoms=./testCFSv2_atoms
 
 ## awk commands for results comparisons
 awk_iseq='{if($1==$2) {print "1"}}'
@@ -125,7 +97,7 @@ base_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --h0=$h0 --cosi=
 # concatenate this with the SAF-specific switches:
 saf_CL="${base_CL} --startTime=$t0Inj --duration=$tauInj"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${base_CL} --startTime=$startTime --duration=$Tdata --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/$IFO-sfts.sft --f1dot=$f1dot --outSingleSFT  --refTime=$startTime --transientWindowType=rect --transientStartTime=$t0Inj --transientTauDays=$tauInjDays"
+mfd_CL="${base_CL} --startTime=$startTime --duration=$Tdata --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=./$IFO-sfts.sft --f1dot=$f1dot --outSingleSFT  --refTime=$startTime --transientWindowType=rect --transientStartTime=$t0Inj --transientTauDays=$tauInjDays"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
@@ -137,14 +109,13 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 
-
 echo
 echo "----------------------------------------------------------------------"
 echo "STEP 2: Comparing CW and tCW results over a freq grid at (t0,tau)=(T0,Tdata): "
 echo "----------------------------------------------------------------------"
 echo
 
-cfs_CL_base="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --DataFiles='$SFTdir/*.sft' --Dterms=${Dterms} ${FstatMethod} --refTime=$startTime --TwoFthreshold=0" #  --NumCandidatesToKeep=${cfs_nCands}
+cfs_CL_base="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --DataFiles='./*.sft' --Dterms=${Dterms} ${FstatMethod} --refTime=$startTime --TwoFthreshold=0" #  --NumCandidatesToKeep=${cfs_nCands}
 if [ "$haveNoise" != "true" ]; then
     cfs_CL_base="$cfs_CL_base --SignalOnly"
 fi
@@ -231,7 +202,6 @@ if [ "$fail1" -o "$fail2" -o "$fail3" -o "$fail4" -o "$fail5" -o "$fail6" -o "$f
 else
     echo "==> OK"
 fi
-
 
 echo
 echo "----------------------------------------------------------------------"
@@ -348,7 +318,6 @@ echo
 
 ## check for expected 2F->max2F improvement at injection point with true (t0,tau) parameters
 
-
 echo "--------- Checking if transient max2F is:
                 consistent with SemiAnalyticF
                 and about a factor 2 higher than full 2F ---------"
@@ -380,7 +349,6 @@ if [ "$fail1" -o "$fail2" ]; then
 else
     echo "==> OK"
 fi
-
 
 echo
 echo "----------------------------------------------------------------------"
@@ -424,15 +392,3 @@ if [ "$fail1" -o "$fail2" -o "$fail3" -o "$fail4" ]; then
 else
     echo "==> OK"
 fi
-
-
-## -------------------------------------------
-## clean up files
-## -------------------------------------------
-if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDir
-fi
-echo
-
-## restore original locale, just in case someone source'd this file
-export LC_ALL=$LC_ALL_old

@@ -1,31 +1,7 @@
-#!/bin/bash
-
-## set LAL debug level
-echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
-export LAL_DEBUG_LEVEL
-
-## allow 'make test' to work from builddir != srcdir
-if [ -z "${srcdir}" ]; then
-    srcdir=`dirname $0`
-fi
-
-## make sure we work in 'C' locale here to avoid awk sillyness
-LC_ALL_old=$LC_ALL
-export LC_ALL=C
-
-builddir="./";
-injectdir="../Injections/"
-
 ##---------- names of codes and input/output files
-mfd_code="${injectdir}lalapps_Makefakedata_v5"
-cmp_code="${builddir}lalapps_compareFstats"
-
-## allow user to specify a different CFSv2 version to test by passing as cmdline-argument
-if test $# -eq 0 ; then
-    cfs_code="${builddir}lalapps_ComputeFstatistic_v2"
-else
-    cfs_code="$@"
-fi
+mfd_code="lalapps_Makefakedata_v5"
+cmp_code="lalapps_compareFstats"
+cfs_code="lalapps_ComputeFstatistic_v2"
 
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
@@ -70,32 +46,26 @@ sqrtSX="5,4"
 haveNoise=true;
 
 ## ----- define output directory and files
-testDir=testCFSv2_resamp.d
-compDir=testCFSv2_resamp.d/injSourcesComp
-rm -rf $testDir
-mkdir -p $testDir
-mkdir -p $compDir
-SFTdir=${testDir}
-SFTdir2=${compDir}
+SFTdir=.
+SFTdir2=./injSourcesComp
+mkdir -p $SFTdir2
 
-outfile_Comp=${testDir}/Fstat_Comp.dat
-loudest_Comp=${testDir}/Loudest_Comp.dat
+outfile_Comp=./Fstat_Comp.dat
+loudest_Comp=./Loudest_Comp.dat
 
-outfile_Demod=${testDir}/Fstat_Demod.dat
-loudest_Demod=${testDir}/Loudest_Demod.dat
+outfile_Demod=./Fstat_Demod.dat
+loudest_Demod=./Loudest_Demod.dat
 
-outfile_Resamp=${testDir}/Fstat_Resamp.dat
-loudest_Resamp=${testDir}/Loudest_Resamp.dat
+outfile_Resamp=./Fstat_Resamp.dat
+loudest_Resamp=./Loudest_Resamp.dat
 
-outfile_Resamp_otfn=${testDir}/Fstat_Resamp_otfn.dat
-loudest_Resamp_otfn=${testDir}/Loudest_Resamp_otfn.dat
+outfile_Resamp_otfn=./Fstat_Resamp_otfn.dat
+loudest_Resamp_otfn=./Loudest_Resamp_otfn.dat
 
-
-
-timefile_Comp=${testDir}/timing_Comp.dat
-timefile_Demod=${testDir}/timing_Demod.dat
-timefile_Resamp=${testDir}/timing_Resamp.dat
-timefile_Resamp_otfn=${testDir}/timing_Resamp_otfn.dat
+timefile_Comp=./timing_Comp.dat
+timefile_Demod=./timing_Demod.dat
+timefile_Resamp=./timing_Resamp.dat
+timefile_Resamp_otfn=./timing_Resamp_otfn.dat
 
 ##--------------------------------------------------
 ## test starts here
@@ -165,22 +135,17 @@ if ! eval "$cmdline"; then
     exit 1;
 fi
 
-
-
 echo
 echo "----------------------------------------------------------------------"
 echo " STEP 5: run directed CFS_v2 with resampling and on-the-fly noise"
 echo "----------------------------------------------------------------------"
 echo
-cmdline="$cfs_code $cfs_CL --injectionSources='${injectionSources}' --injectSqrtSX=${sqrtSX} --IFOs='H1,L1' --Tsft=${Tsft} --randSeed=1 --timestampsFiles='${srcdir}/H1_test_timestamps.dat,${srcdir}/L1_test_timestamps.dat' --FstatMethod=ResampBest  --outputFstat=$outfile_Resamp_otfn --outputTiming=$timefile_Resamp_otfn  --outputLoudest=${loudest_Resamp_otfn}"
+cmdline="$cfs_code $cfs_CL --injectionSources='${injectionSources}' --injectSqrtSX=${sqrtSX} --IFOs='H1,L1' --Tsft=${Tsft} --randSeed=1 --timestampsFiles='./H1_test_timestamps.txt,./L1_test_timestamps.txt' --FstatMethod=ResampBest  --outputFstat=$outfile_Resamp_otfn --outputTiming=$timefile_Resamp_otfn  --outputLoudest=${loudest_Resamp_otfn}"
 echo $cmdline;
 if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi
-
-
-
 
 echo "----------------------------------------"
 echo " STEP 6: Comparing results: "
@@ -212,7 +177,6 @@ else
     echo "	==> OK."
 fi
 
-
 #laxer tolerances as we have different noiuse realizations in this testcase. Incuded just for smoke test
 echo
 cmdline="$cmp_code -1 ./${outfile_Resamp} -2 ./${outfile_Resamp_otfn} --tol-L1=7e-1 --tol-L2=7e-1 --tol-angle=0.2 --tol-atMax=2e-1"
@@ -223,8 +187,6 @@ if ! eval $cmdline; then
 else
     echo "      ==> OK."
 fi
-
-
 
 echo
 echo "----------------------------------------------------------------------"
@@ -264,16 +226,3 @@ else
     echo "OK: Estimated phi0 is within 3 x sigma of injected phi0"
     echo
 fi
-
-
-
-
-## -------------------------------------------
-## clean up files
-## -------------------------------------------
-if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDir
-fi
-
-## restore original locale, just in case someone source'd this file
-export LC_ALL=$LC_ALL_old

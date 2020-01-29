@@ -195,13 +195,14 @@ src/pulsar/FITSTools/lalapps_fits_overview
 src/pulsar/FITSTools/lalapps_fits_table_list
 src/pulsar/Fscan/lalapps_spec_avg
 src/pulsar/Fscan/lalapps_spec_avg_long
+src/pulsar/Fstatistic/*.testdir
 src/pulsar/Fstatistic/lalapps_compareFstats
 src/pulsar/Fstatistic/lalapps_ComputeFstatBenchmark
 src/pulsar/Fstatistic/lalapps_ComputeFstatistic_v2
 src/pulsar/Fstatistic/lalapps_ComputeFstatLatticeCount
 src/pulsar/Fstatistic/lalapps_ComputeFstatMCUpperLimit
 src/pulsar/Fstatistic/lalapps_PredictFstat
-src/pulsar/Fstatistic/lalapps_SemiAnalyticF
+src/pulsar/Fstatistic/SemiAnalyticF
 src/pulsar/Fstatistic/lalapps_synthesizeBstatMC
 src/pulsar/Fstatistic/lalapps_synthesizeLVStats
 src/pulsar/Fstatistic/lalapps_synthesizeTransientStats

@@ -1,33 +1,8 @@
-#!/bin/sh
-
-## set LAL debug level
-echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
-export LAL_DEBUG_LEVEL
-
-## allow 'make test' to work from builddir != srcdir
-if [ -z "${srcdir}" ]; then
-    srcdir=`dirname $0`
-fi
-
-## make sure we work in 'C' locale here to avoid awk sillyness
-LC_ALL_old=$LC_ALL
-export LC_ALL=C
-
-builddir="./";
-injectdir="../Injections/"
-capdir="../Tools/"
-
 ##---------- names of codes
-synth_code="${builddir}lalapps_synthesizeLVStats"
-cap_code="${capdir}lalapps_ComputeAntennaPattern"
-mfd_code="${injectdir}lalapps_Makefakedata_v4"
-pfs_code="${builddir}lalapps_PredictFstat"
-
-testDir="./testSynthLV_dir";
-if [ -d "$testDir" ]; then
-    rm -rf $testDir
-fi
-mkdir -p "$testDir"
+synth_code="lalapps_synthesizeLVStats"
+cap_code="lalapps_ComputeAntennaPattern"
+mfd_code="lalapps_Makefakedata_v4"
+pfs_code="lalapps_PredictFstat"
 
 ## awk commands needed for testing
 awk_absdiff='{printf "%.6f", sqrt(($1-$2)*($1-$2)) }'
@@ -58,21 +33,21 @@ else
  tolerance_BSGL=1e-5
 fi
 
-outCAP1="${testDir}/antenna_pattern_test.dat"
-outCAP2="${testDir}/antenna_pattern_test_n.dat"
-stats_file_g="${testDir}/synthLV_test_stats_g.dat"
-params_file_g="${testDir}/synthLV_test_params_g.dat"
-stats_file_s="${testDir}/synthLV_test_stats_s.dat"
-params_file_s="${testDir}/synthLV_test_params_s.dat"
-stats_file_l="${testDir}/synthLV_test_stats_l.dat"
-params_file_l="${testDir}/synthLV_test_params_l.dat"
-stats_file_ns="${testDir}/synthLV_test_stats_ns.dat"
-params_file_ns="${testDir}/synthLV_test_params_ns.dat"
-stats_file_nlh="${testDir}/synthLV_test_stats_nlh.dat"
-params_file_nlh="${testDir}/synthLV_test_params_nlh.dat"
-stats_file_nll="${testDir}/synthLV_test_stats_nll.dat"
-params_file_nll="${testDir}/synthLV_test_params_nll.dat"
-timestampsfile="${testDir}/timestamps_test.dat"
+outCAP1="./antenna_pattern_test.dat"
+outCAP2="./antenna_pattern_test_n.dat"
+stats_file_g="./synthLV_test_stats_g.dat"
+params_file_g="./synthLV_test_params_g.dat"
+stats_file_s="./synthLV_test_stats_s.dat"
+params_file_s="./synthLV_test_params_s.dat"
+stats_file_l="./synthLV_test_stats_l.dat"
+params_file_l="./synthLV_test_params_l.dat"
+stats_file_ns="./synthLV_test_stats_ns.dat"
+params_file_ns="./synthLV_test_params_ns.dat"
+stats_file_nlh="./synthLV_test_stats_nlh.dat"
+params_file_nlh="./synthLV_test_params_nlh.dat"
+stats_file_nll="./synthLV_test_stats_nll.dat"
+params_file_nll="./synthLV_test_params_nll.dat"
+timestampsfile="./timestamps_test.dat"
 
 # do all-sky average by default to get expected SNR scaling, use defaults for Fstar0 and oLGX for now
 synth_cmdline_common="${synth_code} --IFOs=H1,L1 --outputMmunuX --dataStartGPS=$timestamp1 --dataDuration=$duration --numDraws=$numDraws --randSeed=1 --computeBSGL"
@@ -333,7 +308,6 @@ else
     echo "==> OK at tolerance=$tolerance_BSGL"
 fi
 
-
 echo "----------------------------------------------------------------------------------------------------"
 echo "synthesizeLVstats Test2a: F-stats for varying detector sensitivity";
 echo "----------------------------------------------------------------------------------------------------"
@@ -532,7 +506,6 @@ else
     echo "==> OK at tolerance=$tolerance_p"
 fi
 
-
 echo "----------------------------------------------------------------------------------------------------"
 echo "synthesizeLVstats Test2c: BSGLs for varying detector sensitivity";
 echo "----------------------------------------------------------------------------------------------------"
@@ -559,14 +532,5 @@ else
     echo "========== OK. All synthesizeLVstats tests PASSED. =========="
     echo
 fi
-
-## clean up files
-if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDir
-    echo "Cleaned up."
-fi
-
-## restore original locale, just in case someone source'd this file
-export LC_ALL=$LC_ALL_old
 
 exit $retstatus

@@ -56,3 +56,6 @@ lalapps/src/pulsar/Weave/testWeave_simulate_search.tar.gz filter=lfs diff=lfs me
 lalapps/src/pulsar/Injections/testMakefakedata_v5.tar.gz filter=lfs diff=lfs merge=lfs -text
 lalapps/src/pulsar/Injections/testMakefakedata_v4.tar.gz filter=lfs diff=lfs merge=lfs -text
 lalapps/src/pulsar/HeterodyneSearch/test_heterodyne_pulsar.tar.gz filter=lfs diff=lfs merge=lfs -text
+lalapps/src/pulsar/Fstatistic/testComputeFstatistic_v2_grids.tar.gz filter=lfs diff=lfs merge=lfs -text
+lalapps/src/pulsar/Fstatistic/testComputeFstatistic_v2.tar.gz filter=lfs diff=lfs merge=lfs -text
+lalapps/src/pulsar/Fstatistic/testComputeFstatistic_v2_resamp.tar.gz filter=lfs diff=lfs merge=lfs -text

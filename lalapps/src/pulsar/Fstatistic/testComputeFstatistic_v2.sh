@@ -1,38 +1,16 @@
-#!/bin/bash
-
-## set LAL debug level
-echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
-export LAL_DEBUG_LEVEL
-
-## allow 'make test' to work from builddir != srcdir
-if [ -z "${srcdir}" ]; then
-    srcdir=`dirname $0`
-fi
-
-## make sure we work in 'C' locale here to avoid awk sillyness
-LC_ALL_old=$LC_ALL
-export LC_ALL=C
-
-builddir="./";
-injectdir="../Injections/"
-
 ## ----- allow user-control of hotloop variant to use
 if [ -n "$FSTAT_METHOD" ]; then
     FstatMethod="--FstatMethod=${FSTAT_METHOD}"
 fi
 
 ##---------- names of codes and input/output files
-mfd_code="${injectdir}lalapps_Makefakedata_v4"
-saf_code="${builddir}lalapps_SemiAnalyticF"
-cmp_code="${builddir}lalapps_compareFstats"
-## allow user to specify a different CFSv2 version to test by passing as cmdline-argument
-if test $# -eq 0 ; then
-    cfsv2_code="${builddir}lalapps_ComputeFstatistic_v2"
-else
-    cfsv2_code="$@"
-fi
+mfd_code="lalapps_Makefakedata_v4"
+saf_code="SemiAnalyticF"
+cmp_code="lalapps_compareFstats"
+cfsv2_code="lalapps_ComputeFstatistic_v2"
 
 Dterms=8
+
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
 startTime=711595934
@@ -80,15 +58,9 @@ fi
 
 IFO=H1
 
-## ----- define output directory and files
-testDir=testCFSv2.d
-rm -rf $testDir
-mkdir -p $testDir
-SFTdir=${testDir}
-
-outfile_ref=${srcdir}/testCFSv2.dat.ref.gz
-outfile_Fstat=${testDir}/testCFSv2.dat
-outfile_Loudest=${testDir}/Fstat_loudest.dat
+outfile_ref=./testCFSv2.dat.ref
+outfile_Fstat=./testCFSv2.dat
+outfile_Loudest=./Fstat_loudest.dat
 
 ##--------------------------------------------------
 ## test starts here
@@ -102,7 +74,7 @@ echo
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/$IFO-sfts.sft --f1dot=$f1dot --outSingleSFT  --refTime=$startTime"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=./$IFO-sfts.sft --f1dot=$f1dot --outSingleSFT  --refTime=$startTime"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
@@ -131,7 +103,7 @@ echo "STEP 2: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
 
-cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands} --Dterms=${Dterms} --outputLoudest=${outfile_Loudest} ${FstatMethod} --refTime=$startTime"
+cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='./*.sft' --NumCandidatesToKeep=${cfs_nCands} --Dterms=${Dterms} --outputLoudest=${outfile_Loudest} ${FstatMethod} --refTime=$startTime"
 if [ "$haveNoise" != "true" ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -142,7 +114,6 @@ if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi
-
 
 echo
 echo "----------------------------------------------------------------------"
@@ -162,7 +133,6 @@ else
     echo "	==> OK."
 fi
 echo
-
 
 echo
 echo "----------------------------------------------------------------------"
@@ -202,14 +172,3 @@ else
     echo "OK: Estimated phi0 is within error of injected phi0"
     echo
 fi
-
-
-## -------------------------------------------
-## clean up files
-## -------------------------------------------
-if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDir
-fi
-
-## restore original locale, just in case someone source'd this file
-export LC_ALL=$LC_ALL_old

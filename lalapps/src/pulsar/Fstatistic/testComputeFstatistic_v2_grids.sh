@@ -1,33 +1,9 @@
-#!/bin/sh
-
-## set LAL debug level
-echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
-export LAL_DEBUG_LEVEL
-
-## allow 'make test' to work from builddir != srcdir
-if [ -z "${srcdir}" ]; then
-    srcdir=`dirname $0`
-fi
-
-## take user-arguments for CFS-v2:
-extra_args="$@"
-
-builddir="./";
-injectdir="../Injections/"
-
-## ----- user-controlled level of debug-output detail
-if [ -n "$DEBUG" ]; then
-    debug=${DEBUG}
-else
-    debug=0	## default=quiet
-fi
-
 ##---------- names of codes and input/output files
-mfdv4_code="${injectdir}lalapps_Makefakedata_v4"
-mfdv5_code="${injectdir}lalapps_Makefakedata_v5"
-cfsv2_code="${builddir}lalapps_ComputeFstatistic_v2"
-cmp_code="${builddir}lalapps_compareFstats"
-LTC_code="${builddir}lalapps_ComputeFstatLatticeCount"
+mfdv4_code="lalapps_Makefakedata_v4"
+mfdv5_code="lalapps_Makefakedata_v5"
+cfsv2_code="lalapps_ComputeFstatistic_v2"
+cmp_code="lalapps_compareFstats"
+LTC_code="lalapps_ComputeFstatLatticeCount"
 
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
@@ -86,7 +62,7 @@ echo
 ## --- for grid types 0,1,2,3,6, generate 40 hours of contiguous SFTs
 
 ## create SFT directory
-SFTdir_40h="./testCFSv2_grids_SFTs_40h"
+SFTdir_40h="./SFTs_40h"
 rm -rf $SFTdir_40h
 mkdir $SFTdir_40h
 
@@ -108,7 +84,7 @@ fi
 ## --- for grid types 8,9, generate 2 SFTs spaced 5 days apart
 
 ## create SFT directory
-SFTdir_5d="./testCFSv2_grids_SFTs_5d"
+SFTdir_5d="./SFTs_5d"
 rm -rf $SFTdir_5d
 mkdir $SFTdir_5d
 
@@ -221,7 +197,7 @@ for n in 0 1 2 3 6 8 9; do
 
     ## compare results
     echo "Comparing gridType=${n}:"
-    cmdline="$cmp_code -1 ./testCFSv2_grid${n}.dat -2 ${srcdir}/testCFSv2_grid${n}.dat.ref.gz";
+    cmdline="$cmp_code -1 ./testCFSv2_grid${n}.dat -2 ./testCFSv2_grid${n}.dat.ref";
     echo $cmdline
     if ! eval $cmdline; then
         echo "OUCH... files differ. Something might be wrong..."

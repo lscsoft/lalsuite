@@ -1,21 +1,7 @@
-#!/bin/bash
-
-## set LAL debug level
-echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
-export LAL_DEBUG_LEVEL
-
-## make sure we work in 'C' locale here to avoid awk sillyness
-LC_ALL_old=$LC_ALL
-export LC_ALL=C
-
-builddir="./";
-injectdir="../Injections/"
-
 ##---------- names of codes and input/output files
-mfd_code="${injectdir}lalapps_Makefakedata_v4"
-cfs_code="${builddir}lalapps_ComputeFstatistic_v2"
-pfs_code="${builddir}lalapps_PredictFstat"
-SFTdir="./testBinarySFTs"
+mfd_code="lalapps_Makefakedata_v4"
+cfs_code="lalapps_ComputeFstatistic_v2"
+pfs_code="lalapps_PredictFstat"
 
 # ---------- fixed parameter of our test-signal
 Tsft=20
@@ -51,12 +37,6 @@ fi
 mfd_FreqBand=20;
 mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 
-if [ ! -d "$SFTdir" ]; then
-    mkdir $SFTdir;
-else
-    rm -f $SFTdir/*;
-fi
-
 echo "--------------------------------------------------"
 echo "Injection parameters:"
 echo "Alpha=$Alpha, Delta=$Delta"
@@ -69,7 +49,7 @@ echo
 ## ---------- generate data with binary injection
 outfileCFS="CFS.dat";
 mfd_CL1="--refTime=${refTime} --Alpha=$Alpha --Delta=$Delta --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --f1dot=$f1dot --orbitasini=$orbitasini --orbitPeriod=$orbitPeriod --orbitEcc=$orbitEcc --orbitArgp=$orbitArgp --orbitTp=$orbitTp"
-mfd_CL="${mfd_CL1} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/catsft.sft --outSingleSFT --IFO=$IFO"
+mfd_CL="${mfd_CL1} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=./catsft.sft --outSingleSFT --IFO=$IFO"
 cmdline="$mfd_code $mfd_CL"
 echo $cmdline
 echo -n "Running $cmdline ... "
@@ -80,7 +60,7 @@ fi
 echo "done."
 
 ## ---------- predict F-stat value 'PFS'
-cmdline="${pfs_code} --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --DataFiles='$SFTdir/*.sft' --PureSignal --assumeSqrtSX=1"
+cmdline="${pfs_code} --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --DataFiles='./*.sft' --PureSignal --assumeSqrtSX=1"
 echo $cmdline
 echo -n "Running $cmdline ... "
 resPFS0=`$cmdline`
@@ -88,7 +68,7 @@ resPFS=`echo $resPFS0 | awk '{printf "%g", $1}'`
 echo "done:         2F_PFS = $resPFS"
 
 ## ---------- targeted CFSv2 search
-cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta  --Freq=$Freq --f1dot=$f1dot --orbitasini=$orbitasini --orbitPeriod=$orbitPeriod --orbitEcc=$orbitEcc --orbitArgp=$orbitArgp --orbitTp=$orbitTp --DataFiles='$SFTdir/*.sft' --assumeSqrtSX=1"
+cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta  --Freq=$Freq --f1dot=$f1dot --orbitasini=$orbitasini --orbitPeriod=$orbitPeriod --orbitEcc=$orbitEcc --orbitArgp=$orbitArgp --orbitTp=$orbitTp --DataFiles='./*.sft' --assumeSqrtSX=1"
 cmdline="$cfs_code $cfs_CL  --outputLoudest=$outfileCFS"
 echo $cmdline
 echo -n "Running $cmdline ... "
@@ -119,16 +99,4 @@ else
     echo " ==> OK"
     retstatus=0
 fi
-echo
-
-## -------------------------------------------
-## clean up files
-## -------------------------------------------
-if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $outfileCFS
-fi
-
-## restore original locale, just in case someone source'd this file
-export LC_ALL=$LC_ALL_old
-
 exit $retstatus

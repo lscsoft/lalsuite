@@ -1,28 +1,6 @@
-#!/bin/bash
-
-#NOCLEANUP="1"
-
-## take user-arguments
-extra_args="$@"
-
-builddir="./";
-injectdir="../Injections/"
-fdsdir="../Fstatistic/"
-
-dirsep=/
-if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then
-    builddir="./";
-    injectdir="$1 ./"
-    fdsdir="$1 ./"
-    dirsep='\'
-fi
-
 ##---------- names of codes and input/output files
-mfd_code="${injectdir}lalapps_Makefakedata_v4"
-cfs_code="${fdsdir}lalapps_ComputeFstatistic_v2"
-
-SFTdir="testCFSv2_singleF_sfts"
-SFTfiles="$SFTdir${dirsep}*"
+mfd_code="lalapps_Makefakedata_v4"
+cfs_code="lalapps_ComputeFstatistic_v2"
 
 ## ---------- fixed parameter of our test-signal -------------
 Alpha="1.42"
@@ -45,29 +23,18 @@ refTime="962999869"
 mfd_FreqBand="0.5"
 mfd_fmin=$(echo $Freq $mfd_FreqBand | LC_ALL=C awk '{printf "%g", $1 - $2 / 2.0}');
 
-edat="earth09-11.dat"
-sdat="sun09-11.dat"
-
 cfs_FreqBand="0.1";
 cfs_fmin=$(echo $Freq $cfs_FreqBand | LC_ALL=C awk '{printf "%8f", $1 - $2 / 2.0}');
 cfs_toplist_cands="1000"
-
-SFTdir="TestSFTs"
-SFTfiles="$SFTdir${dirsep}*"
 
 echo
 echo "----------------------------------------------------------------------"
 echo " STEP 1: Generate Fake Signal"
 echo "----------------------------------------------------------------------"
 echo
-if [ ! -d "$SFTdir" ]; then
-    mkdir -p $SFTdir;
-else
-    rm -f $SFTdir/*;
-fi
 
 ## construct MFD cmdline
-mfd_CL=" --Tsft=$Tsft --startTime=$startTime --duration=$duration --fmin=$mfd_fmin --Band=$mfd_FreqBand --h0=$h0 --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --cosi=$cosi --generationMode=1 --refTime=$refTime --noiseSqrtSh=$noiseSqrtSh"
+mfd_CL=" --Tsft=$Tsft --startTime=$startTime --duration=$duration --fmin=$mfd_fmin --Band=$mfd_FreqBand --h0=$h0 --Freq=$Freq --outSFTbname=. --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --cosi=$cosi --generationMode=1 --refTime=$refTime --noiseSqrtSh=$noiseSqrtSh"
 
 ## detector H1
 cmdline="$mfd_code $mfd_CL --IFO=H1 --randSeed=1000";
@@ -85,7 +52,6 @@ if ! eval $cmdline; then
     exit 1
 fi
 
-
 timing_awk='BEGIN { timingsum = 0; counter=0; } { timingsum=timingsum+$9; counter=counter+1; } END {printf "%.3g", timingsum/counter}'
 
 echo
@@ -99,7 +65,7 @@ outfile_cfs_all="fstat_all.dat"
 timingsfile="cfs_timing.dat"
 
     ## construct ComputeFstatistic command lines
-    cfs_CL=" --DataFiles='$SFTfiles' --TwoFthreshold=0.0 --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_fmin --FreqBand=$cfs_FreqBand --clusterOnScanline=2"
+    cfs_CL=" --DataFiles='*.sft' --TwoFthreshold=0.0 --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_fmin --FreqBand=$cfs_FreqBand --clusterOnScanline=2"
 
     ## multi-IFO
     cmdline="$cfs_code $cfs_CL --outputFstat='$outfile_cfs_all' --outputLoudest='$outfile_cfs_loudest' --outputTiming='$timingsfile'"
@@ -131,7 +97,6 @@ timingsfile="cfs_timing.dat"
     twoFcfs_L1=$(sed 's/\;//' $outfile_cfs_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
     twoFcfs_L1_all=$(sed -e '/%/d;'  $outfile_cfs_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
     timing_plain=$(sed '/^%.*/d' $timingsfile | LC_ALL=C awk "$timing_awk")
-
 
 echo
 echo "----------------------------------------------------------------------"
@@ -201,7 +166,6 @@ timingsfile_singleF_toplist="cfs_timing_singleF_toplist.dat"
      twoFcfs_singleF_toplist_L1_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_toplist_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$9}')
      timing_singleF_toplist=$(sed '/^%.*/d' $timingsfile_singleF_toplist | LC_ALL=C awk "$timing_awk" )
 
-
 echo
 echo "----------------------------------------------------------------------"
 echo " STEP 4: Comparing results"
@@ -268,7 +232,6 @@ else
 fi
 echo "Highest signal from list : 2F_multi = "$twoFcfs_singleF_toplist_multi_all" , 2F_H1 = "$twoFcfs_singleF_toplist_H1_all" , 2F_L1 = "$twoFcfs_singleF_toplist_L1_all
 
-
 echo
 echo "----------------------------------------------------------------------"
 echo " STEP 5: Timings"
@@ -280,11 +243,3 @@ echo "Timings for search targeted in alpha, delta, f1dot and with freqband="$cfs
     echo "total time CFS_v2 toplist         : "$timing_toplist"s"
     echo "total time CFS_v2 singleF         : "$timing_singleF"s"
     echo "total time CFS_v2 singleF toplist : "$timing_singleF_toplist"s"
-
-echo "----------------------------------------------------------------------"
-
-# clean up files
-if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $outfile_cfs_loudest $outfile_cfs_all $outfile_cfs_toplist_loudest $outfile_cfs_toplist_all $outfile_cfs_singleF_loudest $outfile_cfs_singleF_all $outfile_cfs_singleF_toplist_loudest $outfile_cfs_singleF_toplist_all $timingsfile $timingsfile_toplist $timingsfile_singleF $timingsfile_singleF_toplist checkpoint.cpt stderr.log stdout.log timing.dat
-    echo "Cleaned up."
-fi
