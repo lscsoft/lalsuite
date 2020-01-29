@@ -61,9 +61,24 @@ echo
 echo "--- Running test $1 ---"
 echo
 cd "${testdir}"
-export TIMEFORMAT=$'real %R\nuser %R\nsys  %R'
-time bash -c "set -e; source ${script}; echo '--- Successfully ran test ${script} ---'"
+export TIMEFORMAT=$'\n\n\nreal %R\nuser %R\nsys  %R'
+time bash -c "\
+set -e; \
+source '${script}'" && status=$? || status=$?
 cd "${LAL_TEST_BUILDDIR}"
+echo
+case $status in
+    0)
+        echo "--- Test $1 ran successfully ---"
+        ;;
+    77)
+        echo "--- Test $1 was skipped ---"
+        ;;
+    *)
+        echo "--- Test $1 exited with status ${status} ---"
+        NOCLEANUP=1
+        ;;
+esac
 echo
 
 # Remove test directory, unless NOCLEANUP is set
@@ -72,3 +87,6 @@ if [ "X${NOCLEANUP}" = X ]; then
     echo
     rm -rf "${testdir}"
 fi
+
+# Return test script exit status
+exit ${status}
