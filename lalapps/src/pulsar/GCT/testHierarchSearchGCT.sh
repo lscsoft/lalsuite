@@ -1,53 +1,11 @@
-#!/bin/bash
-
-## set LAL debug level
-echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
-export LAL_DEBUG_LEVEL
-
-#NOCLEANUP="1"
-#DEBUG=1
-
-## make sure we work in 'C' locale here to avoid awk sillyness
-LC_ALL_old=$LC_ALL
-export LC_ALL=C
-
-# The only thing where 'dirsep' can and should be used is in paths of the SFT files,
-# as in fact SFTfileIO is the only code that requires it to be set properly. Other
-# file references should be handled by the shell (or wine) and converted if necessary.
-dirsep="/"
-
-builddir="./";
-injectdir="../Injections/"
-fdsdir="../Fstatistic/"
-
-
-if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then
-    builddir="./";
-    injectdir="$1 ./"
-    fdsdir="$1 ./"
-    dirsep='\'
-fi
-
 ##---------- names of codes and input/output files
-mfd_code="${injectdir}lalapps_Makefakedata_v5"
-cfs_code="${fdsdir}lalapps_ComputeFstatistic_v2"
-if test $# -eq 0 ; then
-    gct_code="${builddir}lalapps_HierarchSearchGCT"
-else
-    gct_code="$@"
-fi
+mfd_code="lalapps_Makefakedata_v5"
+cfs_code="lalapps_ComputeFstatistic_v2"
+gct_code="lalapps_HierarchSearchGCT"
 
-testDirBase="testGCT.d"
-testDir="./${testDirBase}";
-if [ -d "$testDir" ]; then
-    rm -rf $testDir
-fi
-mkdir -p "$testDir"
-
-SFTdir="${testDirBase}"
-SFTfiles="$SFTdir${dirsep}*.sft"
-SFTfiles_H1="$SFTdir${dirsep}H1-*.sft"
-SFTfiles_L1="$SFTdir${dirsep}L1-*.sft"
+SFTfiles="./*.sft"
+SFTfiles_H1="./H1-*.sft"
+SFTfiles_L1="./L1-*.sft"
 
 ## Tolerance of comparison
 Tolerance=5e-2	## 5%
@@ -68,7 +26,7 @@ AlphaSearch=$Alpha
 DeltaSearch=$Delta
 
 ## Produce skygrid file for the search
-skygridfile="${testDir}/tmpskygridfile.dat"
+skygridfile="./tmpskygridfile.dat"
 echo "$AlphaSearch $DeltaSearch" > $skygridfile
 
 mfd_FreqBand=0.20;
@@ -105,12 +63,11 @@ else
     Nsegments=3
 fi
 
-
 seggap=$(echo ${Tsegment} | awk '{printf "%.0f", $1 * 1.12345}')
 
-tsFile_H1="${testDir}/timestampsH1.dat"  # for makefakedata
-tsFile_L1="${testDir}/timestampsL1.dat"  # for makefakedata
-segFile="${testDir}/segments.dat"
+tsFile_H1="./timestampsH1.dat"  # for makefakedata
+tsFile_L1="./timestampsL1.dat"  # for makefakedata
+segFile="./segments.dat"
 
 tmpTime=$startTime
 iSeg=1
@@ -166,7 +123,7 @@ iFreq=1
 while [ $iFreq -le $numFreqBands ]; do
     mfd_fi=`echo $mfd_fmin $iFreq $FreqStep | awk '{print $1 + ($2 - 1) * $3}'`
 
-    cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --outSFTdir=${SFTdir} --outLabel=freqBand$iFreq"
+    cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --outSFTdir=. --outLabel=freqBand$iFreq"
     if [ $iFreq -eq 2 ]; then
         cmdline="$cmdline --injectionSources=\"{Freq=$Freq; f1dot=$f1dot; f2dot=$f2dot; Alpha=$Alpha; Delta=$Delta; psi=$psi; phi0=$phi0; h0=$h0; cosi=$cosi; refTime=$refTime}\""
     fi
@@ -180,16 +137,15 @@ while [ $iFreq -le $numFreqBands ]; do
 
 done
 
-
 echo
 echo "----------------------------------------------------------------------"
 echo "STEP 2: run CFSv2 over segments"
 echo "----------------------------------------------------------------------"
 echo
-outfile_cfs="${testDir}/CFS.dat";
+outfile_cfs="./CFS.dat";
 
 if [ ! -r "$outfile_cfs" ]; then
-    tmpfile_cfs="${testDir}/__tmp_CFS.dat";
+    tmpfile_cfs="./__tmp_CFS.dat";
     cfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --f1dot=$f1dot --f2dot=$f2dot --outputLoudest=$tmpfile_cfs --refTime=$refTime --Dterms=$Dterms --RngMedWindow=$RngMedWindow --outputSingleFstats"
     if [ "$sqrtSh" = "0" ]; then
         # assume sqrtS=${assumeSqrtSh} in all detectors, regardless of how many detectors are in segment
@@ -263,8 +219,8 @@ echo "--------------------------------------------------------------------------
 echo
 
 rm -f checkpoint.cpt # delete checkpoint to start correctly
-outfile_GCT_RS="${testDir}/GCT_RS.dat"
-timingsfile_RS="${testDir}/timing_RS.dat"
+outfile_GCT_RS="./GCT_RS.dat"
+timingsfile_RS="./timing_RS.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' ${BSGL_flags}"
 echo "$cmdline"
@@ -288,8 +244,8 @@ echo "--------------------------------------------------------------------------
 echo
 
 rm -f checkpoint.cpt # delete checkpoint to start correctly
-outfile_GCT_DM="${testDir}/GCT_DM.dat"
-timingsfile_DM="${testDir}/timing_DM.dat"
+outfile_GCT_DM="./GCT_DM.dat"
+timingsfile_DM="./timing_DM.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=DemodBest --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' ${BSGL_flags}"
 
@@ -315,8 +271,8 @@ echo "--------------------------------------------------------------------------
 echo
 
 rm -f checkpoint.cpt # delete checkpoint to start correctly
-outfile_GCT_DM_BSGL="${testDir}/GCT_DM_BSGL.dat"
-timingsfile_DM_BSGL="${testDir}/timing_DM_BSGL.dat"
+outfile_GCT_DM_BSGL="./GCT_DM_BSGL.dat"
+timingsfile_DM_BSGL="./timing_DM_BSGL.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=DemodBest ${BSGL_flags} --SortToplist=2 --fnameout='$outfile_GCT_DM_BSGL' --outputTiming='$timingsfile_DM_BSGL'"
 
@@ -339,8 +295,8 @@ echo "--------------------------------------------------------------------------
 echo
 
 rm -f checkpoint.cpt # delete checkpoint to start correctly
-outfile_GCT_DM_DUAL="${testDir}/GCT_DM_DUAL.dat"
-timingsfile_DM_DUAL="${testDir}/timing_DM_DUAL.dat"
+outfile_GCT_DM_DUAL="./GCT_DM_DUAL.dat"
+timingsfile_DM_DUAL="./timing_DM_DUAL.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=DemodBest --SortToplist=3 ${BSGL_flags} --fnameout='$outfile_GCT_DM_DUAL' --outputTiming='$timingsfile_DM_DUAL'"
 
@@ -365,17 +321,16 @@ echo "--------------------------------------------------------------------------
 echo
 
 rm -f checkpoint.cpt # delete checkpoint to start correctly
-outfile_GCT_RS_triple="${testDir}/GCT_RS_triple.dat"
-timingsfile_RS_triple="${testDir}/timing_RS_triple.dat"
+outfile_GCT_RS_triple="./GCT_RS_triple.dat"
+timingsfile_RS_triple="./timing_RS_triple.dat"
 
-outfile_GCT_RS_triple2="${testDir}/GCT_RS_triple2.dat"
-timingsfile_RS_triple2="${testDir}/timing_RS_triple2.dat"
+outfile_GCT_RS_triple2="./GCT_RS_triple2.dat"
+timingsfile_RS_triple2="./timing_RS_triple2.dat"
 
 # set plan mode so that results should be deterministic, easier to compare results of different runs this way
 
 export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
 export LAL_FSTAT_FFT_PLAN_TIMEOUT=30
-
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' --outputTiming='$timingsfile_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=6"
 
@@ -384,7 +339,6 @@ if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$gct_code' ..."
     exit 1
 fi
-
 
 # second variant of triple toplists, with 2F sorted first toplist
 
@@ -396,12 +350,9 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 
-
-
-
 ## re-run, but now create the in total four toplists one by one, then compare results
 
-outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_0.dat"
+outfile_GCT_RS_triple="./GCT_RS_triple_0.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=0"
 
@@ -411,9 +362,7 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 
-
-
-outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_1.dat"
+outfile_GCT_RS_triple="./GCT_RS_triple_1.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=2"
 
@@ -423,7 +372,7 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 
-outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_2.dat"
+outfile_GCT_RS_triple="./GCT_RS_triple_2.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=4"
 
@@ -433,7 +382,7 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 
-outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_3.dat"
+outfile_GCT_RS_triple="./GCT_RS_triple_3.dat"
 
 cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=5"
 
@@ -443,58 +392,50 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 
-
 # filter out comments
 
-egrep -v "^%" ${testDir}/GCT_RS_triple_0.dat > ${testDir}/GCT_RS_triple_0.txt
-egrep -v "^%" ${testDir}/GCT_RS_triple_1.dat > ${testDir}/GCT_RS_triple_1.txt
-egrep -v "^%" ${testDir}/GCT_RS_triple_2.dat > ${testDir}/GCT_RS_triple_2.txt
-egrep -v "^%" ${testDir}/GCT_RS_triple_3.dat > ${testDir}/GCT_RS_triple_3.txt
+egrep -v "^%" ./GCT_RS_triple_0.dat > ./GCT_RS_triple_0.txt
+egrep -v "^%" ./GCT_RS_triple_1.dat > ./GCT_RS_triple_1.txt
+egrep -v "^%" ./GCT_RS_triple_2.dat > ./GCT_RS_triple_2.txt
+egrep -v "^%" ./GCT_RS_triple_3.dat > ./GCT_RS_triple_3.txt
 
+egrep -v "^%" ./GCT_RS_triple.dat > ./GCT_RS_triple.txt
+egrep -v "^%" ./GCT_RS_triple.dat-BSGLtL > ./GCT_RS_triple-BSGLtL.txt
+egrep -v "^%" ./GCT_RS_triple.dat-BtSGLtL > ./GCT_RS_triple-BtSGLtL.txt
 
-egrep -v "^%" ${testDir}/GCT_RS_triple.dat > ${testDir}/GCT_RS_triple.txt
-egrep -v "^%" ${testDir}/GCT_RS_triple.dat-BSGLtL > ${testDir}/GCT_RS_triple-BSGLtL.txt
-egrep -v "^%" ${testDir}/GCT_RS_triple.dat-BtSGLtL > ${testDir}/GCT_RS_triple-BtSGLtL.txt
+egrep -v "^%" ./GCT_RS_triple2.dat > ./GCT_RS_triple2.txt
+egrep -v "^%" ./GCT_RS_triple2.dat-BSGLtL > ./GCT_RS_triple2-BSGLtL.txt
+egrep -v "^%" ./GCT_RS_triple2.dat-BtSGLtL > ./GCT_RS_triple2-BtSGLtL.txt
 
-egrep -v "^%" ${testDir}/GCT_RS_triple2.dat > ${testDir}/GCT_RS_triple2.txt
-egrep -v "^%" ${testDir}/GCT_RS_triple2.dat-BSGLtL > ${testDir}/GCT_RS_triple2-BSGLtL.txt
-egrep -v "^%" ${testDir}/GCT_RS_triple2.dat-BtSGLtL > ${testDir}/GCT_RS_triple2-BtSGLtL.txt
-
-
-if ! eval "diff ${testDir}/GCT_RS_triple_1.txt ${testDir}/GCT_RS_triple.txt"; then
+if ! eval "diff ./GCT_RS_triple_1.txt ./GCT_RS_triple.txt"; then
     echo "Error: tripple toplists do not match separately generated toplists  (1) "
     exit 1
 fi
 
-if ! eval "diff ${testDir}/GCT_RS_triple_2.txt ${testDir}/GCT_RS_triple-BSGLtL.txt"; then
+if ! eval "diff ./GCT_RS_triple_2.txt ./GCT_RS_triple-BSGLtL.txt"; then
     echo "Error: tripple toplists do not match separately generated toplists  (2) "
     exit 1
 fi
 
-if ! eval "diff ${testDir}/GCT_RS_triple_3.txt ${testDir}/GCT_RS_triple-BtSGLtL.txt"; then
+if ! eval "diff ./GCT_RS_triple_3.txt ./GCT_RS_triple-BtSGLtL.txt"; then
     echo "Error: tripple toplists do not match separately generated toplists  (3) "
     exit 1
 fi
 
-if ! eval "diff ${testDir}/GCT_RS_triple_0.txt ${testDir}/GCT_RS_triple2.txt"; then
+if ! eval "diff ./GCT_RS_triple_0.txt ./GCT_RS_triple2.txt"; then
     echo "Error: tripple toplists do not match separately generated toplists  (4) "
     exit 1
 fi
 
-if ! eval "diff ${testDir}/GCT_RS_triple_2.txt ${testDir}/GCT_RS_triple2-BSGLtL.txt"; then
+if ! eval "diff ./GCT_RS_triple_2.txt ./GCT_RS_triple2-BSGLtL.txt"; then
     echo "Error: tripple toplists do not match separately generated toplists  (5) "
     exit 1
 fi
 
-if ! eval "diff ${testDir}/GCT_RS_triple_3.txt ${testDir}/GCT_RS_triple2-BtSGLtL.txt"; then
+if ! eval "diff ./GCT_RS_triple_3.txt ./GCT_RS_triple2-BtSGLtL.txt"; then
     echo "Error: tripple toplists do not match separately generated toplists  (6) "
     exit 1
 fi
-
-
-
-
-
 
 ## ---------- compute relative differences and check against tolerance --------------------
 awk_reldev='{printf "%.2e", sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }'
@@ -604,17 +545,5 @@ if [ "$fail2r" -o "$fail3r" -o "$fail4r" ]; then
 else
     echo " ==> OK"
 fi
-
-
-echo "----------------------------------------------------------------------"
-
-## clean up files
-if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDir
-    echo "Cleaned up."
-fi
-
-## restore original locale, just in case someone source'd this file
-export LC_ALL=$LC_ALL_old
 
 exit $retstatus

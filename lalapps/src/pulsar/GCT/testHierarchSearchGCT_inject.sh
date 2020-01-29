@@ -1,44 +1,6 @@
-#!/bin/bash
-
-## set LAL debug level
-echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
-export LAL_DEBUG_LEVEL
-
-## make sure we work in 'C' locale here to avoid awk sillyness
-LC_ALL_old=$LC_ALL
-export LC_ALL=C
-
-# The only thing where 'dirsep' can and should be used is in paths of the SFT files,
-# as in fact SFTfileIO is the only code that requires it to be set properly. Other
-# file references should be handled by the shell (or wine) and converted if necessary.
-dirsep="/"
-
-builddir="./";
-injectdir="../Injections/"
-
-if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then
-    builddir="./";
-    injectdir="$1 ./"
-    fdsdir="$1 ./"
-    dirsep='\'
-fi
-
 ##---------- names of codes and input/output files
-mfd_code="${injectdir}lalapps_Makefakedata_v5"
-if test $# -eq 0 ; then
-    gct_code="${builddir}lalapps_HierarchSearchGCT"
-else
-    gct_code="$@"
-fi
-
-testDirBase="testGCT_inject.d"
-testDir="./${testDirBase}";
-if [ -d "$testDir" ]; then
-    rm -rf $testDir
-fi
-mkdir -p "$testDir"
-
-SFTdir="${testDirBase}"
+mfd_code="lalapps_Makefakedata_v5"
+gct_code="lalapps_HierarchSearchGCT"
 
 ## ---------- fixed parameter of our test-signal -------------
 Alpha=3.1
@@ -54,13 +16,12 @@ refTime=862999869
 
 injectionSources="{Freq=$Freq; f1dot=$f1dot; f2dot=$f2dot; Alpha=$Alpha; Delta=$Delta; psi=$psi; phi0=$phi0; h0=$h0; cosi=$cosi; refTime=$refTime}"
 
-
 ## perfectly targeted search in sky
 AlphaSearch=$Alpha
 DeltaSearch=$Delta
 
 ## Produce skygrid file for the search
-skygridfile="${testDir}/tmpskygridfile.dat"
+skygridfile="./tmpskygridfile.dat"
 echo "$AlphaSearch $DeltaSearch" > $skygridfile
 
 mfd_FreqBand=0.20;
@@ -94,12 +55,11 @@ else
     Nsegments=3
 fi
 
-
 seggap=$(echo ${Tsegment} | awk '{printf "%.0f", $1 * 1.12345}')
 
-tsFile_H1="${testDir}/timestampsH1.dat"  # for makefakedata
-tsFile_L1="${testDir}/timestampsL1.dat"  # for makefakedata
-segFile="${testDir}/segments.dat"
+tsFile_H1="./timestampsH1.dat"  # for makefakedata
+tsFile_L1="./timestampsL1.dat"  # for makefakedata
+segFile="./segments.dat"
 
 tmpTime=$startTime
 iSeg=1
@@ -149,7 +109,7 @@ echo
 
 ## generate sfts containing noise + signal
 label="noise+signal"
-cmdline="$mfd_code $mfd_CL_common --outSFTdir=${SFTdir} --outLabel='$label' --injectionSources=\"$injectionSources\""
+cmdline="$mfd_code $mfd_CL_common --outSFTdir=. --outLabel='$label' --injectionSources=\"$injectionSources\""
 echo "$cmdline";
 if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$mfd_code' ..."
@@ -158,9 +118,9 @@ fi
 
 ## run GCT code on those sfts
 rm -f checkpoint.cpt # delete checkpoint to start correctly
-outfile_GCT1="${testDir}/GCT1.dat"
+outfile_GCT1="./GCT1.dat"
 
-cmdline="$gct_code $gct_CL_common --DataFiles=\"$SFTdir$dirsep*$label*.sft\" --fnameout='$outfile_GCT1'"
+cmdline="$gct_code $gct_CL_common --DataFiles=\"./*$label*.sft\" --fnameout='$outfile_GCT1'"
 echo $cmdline
 if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$gct_code' ..."
@@ -181,7 +141,7 @@ echo
 
 ## generate sfts containing noise + signal
 label="noiseOnly"
-cmdline="$mfd_code $mfd_CL_common --outSFTdir=${SFTdir} --outLabel='$label'"
+cmdline="$mfd_code $mfd_CL_common --outSFTdir=. --outLabel='$label'"
 echo "$cmdline";
 if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$mfd_code' ..."
@@ -190,9 +150,9 @@ fi
 
 ## run GCT code on those sfts
 rm -f checkpoint.cpt # delete checkpoint to start correctly
-outfile_GCT2="${testDir}/GCT2.dat"
+outfile_GCT2="./GCT2.dat"
 
-cmdline="$gct_code $gct_CL_common --DataFiles=\"$SFTdir$dirsep*$label*.sft\" --fnameout='$outfile_GCT2' --injectionSources=\"$injectionSources\" --loudestTwoFPerSeg"
+cmdline="$gct_code $gct_CL_common --DataFiles=\"./*$label*.sft\" --fnameout='$outfile_GCT2' --injectionSources=\"$injectionSources\" --loudestTwoFPerSeg"
 echo $cmdline
 if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$gct_code' ..."
@@ -205,7 +165,6 @@ resGCT2=$(echo $topline  | awk '{print $7}')
 resGCT2_H1=$(echo $topline  | awk '{print $9}')
 resGCT2_L1=$(echo $topline  | awk '{print $10}')
 
-
 ## ---------- compute relative differences and check against tolerance --------------------
 awk_reldev='{printf "%.2e", sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }'
 
@@ -213,7 +172,6 @@ freqreldev=$(echo $freqGCT1 $freqGCT2 | awk "$awk_reldev")
 reldev=$(echo $resGCT1 $resGCT2 | awk "$awk_reldev")
 reldev_H1=$(echo $resGCT1_H1 $resGCT2_H1 | awk "$awk_reldev")
 reldev_L1=$(echo $resGCT1_L1 $resGCT2_L1 | awk "$awk_reldev")
-
 
 # ---------- Check relative deviations against tolerance, report results ----------
 Tolerance=5e-2	## 5%
@@ -229,14 +187,3 @@ if [ "$fail1" -o "$fail2" -o "$fail3" -o "$fail4" ]; then
 else
     echo " ==> OK"
 fi
-
-echo "----------------------------------------------------------------------"
-
-## clean up files
-if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDir
-    echo "Cleaned up."
-fi
-
-## restore original locale, just in case someone source'd this file
-export LC_ALL=$LC_ALL_old
