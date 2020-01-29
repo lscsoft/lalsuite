@@ -1,13 +1,12 @@
 BUILT_SOURCES =
+EXTRA_DIST =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
+include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-TEST_EXTENSIONS = .sh
-SH_LOG_COMPILER = /bin/bash $(srcdir)/test-compiler.sh
-
 if !CFITSIO
-SH_LOG_COMPILER += skip
+AM_SH_LOG_FLAGS = skip
 endif
 
 bin_PROGRAMS = \
@@ -72,15 +71,11 @@ TESTS = \
 	TestPartitioning.sh \
 	$(END_OF_LIST)
 
-EXTRA_DIST = \
+EXTRA_DIST += \
 	$(TESTS) \
-	test-compiler.sh \
 	timestamps-1.txt \
 	timestamps-2.txt \
 	TestSingleSegment.tar.gz \
 	TestInterpolating.tar.gz \
 	TestNonInterpolating.tar.gz \
 	$(END_OF_LIST)
-
-clean-local:
-	-rm -rf Test*.testdir/

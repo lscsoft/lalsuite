@@ -1,4 +1,4 @@
-# Driver script for Weave tests
+# Driver script for tests of LALApps CW codes in lalapps/src/pulsar/
 set -e
 echo "--- Test compiler is $0 ---"
 echo

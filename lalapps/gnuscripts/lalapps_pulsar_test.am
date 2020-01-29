@@ -1,0 +1,19 @@
+.PHONY: clean-local-test-dirs
+
+test_script_compiler = $(top_srcdir)/gnuscripts/lalapps-pulsar-test-compiler.sh
+EXTRA_DIST += $(test_script_compiler)
+
+TEST_EXTENSIONS = .sh
+SH_LOG_COMPILER = /bin/bash $(test_script_compiler)
+
+clean-local: clean-local-test-dirs
+clean-local-test-dirs:
+	@for file in $(TESTS); do \
+		case $${file} in \
+			*.sh) \
+				scriptname=`expr "X$${file}" : "X\([^/]*\)\.sh$$"`; \
+				echo " rm -rf $${scriptname}.testdir/"; \
+				rm -rf $${scriptname}.testdir/ || exit 1; \
+				;; \
+		esac; \
+	done
