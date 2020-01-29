@@ -61,23 +61,14 @@ lalapps_WeaveCompare_SOURCES = \
 	WeaveCompare.c \
 	$(END_OF_LIST)
 
-TESTS = \
-	TestInterpolating.sh \
-	TestNonInterpolating.sh \
-	TestSingleSegment.sh \
-	TestSimulateSearch.sh \
-	TestCacheMaxSize.sh \
-	TestCheckpointing.sh \
-	TestPartitioning.sh \
-	$(END_OF_LIST)
+# Add shell test scripts to this variable
+test_scripts += TestInterpolating.sh
+test_scripts += TestNonInterpolating.sh
+test_scripts += TestSingleSegment.sh
+test_scripts += TestSimulateSearch.sh
+test_scripts += TestCacheMaxSize.sh
+test_scripts += TestCheckpointing.sh
+test_scripts += TestPartitioning.sh
 
-EXTRA_DIST += \
-	$(TESTS) \
-	TestInterpolating.tar.gz \
-	TestNonInterpolating.tar.gz \
-	TestSingleSegment.tar.gz \
-	TestSimulateSearch.tar.gz \
-	TestCacheMaxSize.tar.gz \
-	TestCheckpointing.tar.gz \
-	TestPartitioning.tar.gz \
-	$(END_OF_LIST)
+# Add any helper programs required by tests to this variable
+test_helpers +=
