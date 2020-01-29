@@ -7,30 +7,20 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 dist_bin_SCRIPTS = lalapps_CopySFTs
 
-if FRAME
-frameprogs = lalapps_MakeSFTs
-else
-frameprogs =
-endif
-
-## PSS requires FrameLib anyway
-if PSS
-pss_progs =
-pss_src = XLALPSSInterface.c
-else
-pss_progs =
-pssinterface =
-endif
-
-bin_PROGRAMS = $(frameprogs) $(pss_progs)
+bin_PROGRAMS =
 
 if FRAME
-lalapps_MakeSFTs_SOURCES = MakeSFTs.c $(pss_src)
+bin_PROGRAMS += lalapps_MakeSFTs
 endif
 
+lalapps_MakeSFTs_SOURCES = MakeSFTs.c
 lalapps_MakeSFTs_CPPFLAGS = $(AM_CPPFLAGS)
+
+if FRAME
 if PSS
+lalapps_MakeSFTs_SOURCES += XLALPSSInterface.c
 lalapps_MakeSFTs_CPPFLAGS += -DPSS_ENABLED
+endif
 endif
 
 if HAVE_PYTHON
