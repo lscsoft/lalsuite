@@ -232,6 +232,7 @@ src/pulsar/HoughFstat/lalapps_HierarchicalSearch
 src/pulsar/Injections/lalapps_compareTS
 src/pulsar/Injections/lalapps_Makefakedata_v4
 src/pulsar/Injections/lalapps_Makefakedata_v5
+src/pulsar/MakeSFTs/*.testdir
 src/pulsar/MakeSFTs/lalapps_LISAmakeSFTs
 src/pulsar/MakeSFTs/lalapps_MakeSFTDAG
 src/pulsar/MakeSFTs/lalapps_MakeSFTs

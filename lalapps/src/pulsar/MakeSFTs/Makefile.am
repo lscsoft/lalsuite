@@ -1,9 +1,10 @@
 BUILT_SOURCES =
-MOSTLYCLEANFILES =
 EXTRA_DIST =
+MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalsuite_python.am
+include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 dist_bin_SCRIPTS = lalapps_CopySFTs
 
@@ -28,12 +29,13 @@ pybin_scripts = lalapps_MakeSFTDAG
 pkgpython_PYTHON =
 endif
 
-EXTRA_DIST += \
-	testMakeSFTs.sh \
-	$(END_OF_LIST)
+# Add shell test scripts to this variable
+test_scripts += testMakeSFTs.sh
 
-if FRAME
-TESTS = \
-	testMakeSFTs.sh \
-	$(END_OF_LIST)
+# Add any helper programs required by tests to this variable
+test_helpers +=
+
+# These tests require FRAME
+if !FRAME
+skip_tests += testMakeSFTs.sh
 endif
