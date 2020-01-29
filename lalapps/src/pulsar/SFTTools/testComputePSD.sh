@@ -1,28 +1,6 @@
-#!/bin/sh
-
-## set LAL debug level
-echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
-export LAL_DEBUG_LEVEL
-
-LC_ALL_BAK=${LC_ALL}
-
-export LC_ALL=C
-
-## take user-arguments
-extra_args="$@"
-
-## allow 'make test' to work from builddir != srcdir
-if [ -z "${srcdir}" ]; then
-    srcdir=`dirname $0`
-fi
-
-builddir="./";
-injectdir="../Injections/"
-
 ##---------- names of codes and input/output files
-psd_code="${builddir}lalapps_ComputePSD"
-mfd_code="${injectdir}lalapps_Makefakedata_v4"
-SFTdir="$srcdir"
+psd_code="lalapps_ComputePSD"
+mfd_code="lalapps_Makefakedata_v4"
 
 tolerance=1e-5
 # ---------- fixed parameter of our test SFTs
@@ -115,15 +93,4 @@ else
     echo "========== OK. All ComputePSD tests PASSED. =========="
     echo
 fi
-
-## clean up files
-if [ -z "$NOCLEANUP" ]; then
-    rm $outSFT
-    rm $outPSD_band
-    rm $outPSD_full
-    echo "Cleaned up."
-fi
-
-LC_ALL=${LC_ALL_BAK}
-
 exit $retstatus
