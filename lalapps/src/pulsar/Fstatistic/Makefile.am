@@ -42,6 +42,7 @@ lalapps_ComputeFstatBenchmark_SOURCES = ComputeFstatBenchmark.c
 
 EXTRA_DIST = \
 	testCFSv2.sh \
+	testCFSv2_singleF.sh \
 	testCFSv2_binary.sh \
 	testCFSv2_grids.sh \
 	testCFSv2_resamp.sh \
@@ -65,6 +66,7 @@ EXTRA_DIST += \
 
 TESTS = \
 	testCFSv2.sh \
+	testCFSv2_singleF.sh \
 	testCFSv2_binary.sh \
 	testCFSv2_grids.sh \
 	testCFSv2_resamp.sh \
