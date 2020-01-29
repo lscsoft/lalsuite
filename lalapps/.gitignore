@@ -186,10 +186,9 @@ src/power/lalapps_xml_plotlalseries
 src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
 src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris_python
 src/pulsar/CreateEphemeris/lalapps_create_time_correction_ephemeris
-src/pulsar/CrossCorr/gsldata.dat
+src/pulsar/CrossCorr/*.testdir
 src/pulsar/CrossCorr/lalapps_pulsar_crosscorr
 src/pulsar/CrossCorr/lalapps_pulsar_crosscorr_v2
-src/pulsar/CrossCorr/toplist_crosscorr.dat
 src/pulsar/FITSTools/lalapps_fits_header_getval
 src/pulsar/FITSTools/lalapps_fits_header_list
 src/pulsar/FITSTools/lalapps_fits_overview

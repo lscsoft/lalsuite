@@ -1,25 +1,9 @@
-#!/bin/sh
-
-## set LAL debug level
-echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
-export LAL_DEBUG_LEVEL
-
-## test of lalapps_pulsar_crosscorr_v2; currently just makes sure it runs without errors
-extra_args="$@"
-
-builddir="./";
-injectdir="../Injections/"
-
 ##---------- names of codes and input/output files
 mfd_code="lalapps_Makefakedata_v4"
 pcc_code="lalapps_pulsar_crosscorr_v2"
 
-mfd_path="${injectdir}${mfd_code}"
-pcc_path="${builddir}${pcc_code}"
-
-SFTdir="./testPulsarCrossCorr_v2_sfts"
-
 Ftolerance=0.05
+
 # ---------- fixed parameter of our test-signal
 Tsft=180;
 startTime=827884814
@@ -54,20 +38,14 @@ pcc_orbitTimeAsc=1245967374
 pcc_orbitTimeAscBand=20
 pcc_numBins=1
 
-if [ ! -d "$SFTdir" ]; then
-    mkdir $SFTdir
-else
-    rm -f ${SFTdir}/*
-fi
-
-mfd_CL="--fmin=$mfd_fmin --Band=$mfd_Band --Freq=$mfd_Freq --outSFTbname=$SFTdir --noiseSqrtSh=$mfd_noiseSqrtSh --Alpha=$alphaRad --Delta=$deltaRad --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$mfd_h0 --cosi=$mfd_cosi --psi=$mfd_psi --phi0=$mfd_phi0"
+mfd_CL="--fmin=$mfd_fmin --Band=$mfd_Band --Freq=$mfd_Freq --outSFTbname=. --noiseSqrtSh=$mfd_noiseSqrtSh --Alpha=$alphaRad --Delta=$deltaRad --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$mfd_h0 --cosi=$mfd_cosi --psi=$mfd_psi --phi0=$mfd_phi0"
 mfd_CL1="${mfd_CL} --IFO=$mfd_ifo1 --randSeed=$mfd_seed1"
 mfd_CL2="${mfd_CL} --IFO=$mfd_ifo2 --randSeed=$mfd_seed2"
 
-pcc_CL="--startTime=$startTime --endTime=$endTime --sftLocation='$SFTdir/*.sft' --fStart=$pcc_fStart --fBand=$pcc_fBand --alphaRad=$alphaRad --deltaRad=$deltaRad --maxLag=$pcc_maxLag --orbitAsiniSec=$pcc_orbitAsiniSec --orbitAsiniSecBand=$pcc_orbitAsiniSecBand --orbitPSec=$pcc_orbitPSec --orbitTimeAsc=$pcc_orbitTimeAsc --orbitTimeAscBand=$pcc_orbitTimeAscBand --numBins=$pcc_numBins"
+pcc_CL="--startTime=$startTime --endTime=$endTime --sftLocation='./*.sft' --fStart=$pcc_fStart --fBand=$pcc_fBand --alphaRad=$alphaRad --deltaRad=$deltaRad --maxLag=$pcc_maxLag --orbitAsiniSec=$pcc_orbitAsiniSec --orbitAsiniSecBand=$pcc_orbitAsiniSecBand --orbitPSec=$pcc_orbitPSec --orbitTimeAsc=$pcc_orbitTimeAsc --orbitTimeAscBand=$pcc_orbitTimeAscBand --numBins=$pcc_numBins"
 
 ## ---------- Run MFDv4 ----------
-cmdline="$mfd_path $mfd_CL1";
+cmdline="$mfd_code $mfd_CL1";
 echo $cmdline
 echo -n "Running ${mfd_code} ... "
 if ! eval "$cmdline"; then
@@ -78,7 +56,7 @@ else
     echo "OK."
 fi
 
-cmdline="$mfd_path $mfd_CL2";
+cmdline="$mfd_code $mfd_CL2";
 echo $cmdline
 echo -n "Running ${mfd_code} ... "
 if ! eval "$cmdline"; then
@@ -90,7 +68,7 @@ else
 fi
 
 ## ---------- Run PulsarCrossCorr_v2 ----------
-cmdline="$pcc_path $pcc_CL"
+cmdline="$pcc_code $pcc_CL"
 echo $cmdline
 echo -n "Running ${pcc_code} ... "
 if ! tmp=`eval $cmdline 2> /dev/null`; then
@@ -100,10 +78,3 @@ if ! tmp=`eval $cmdline 2> /dev/null`; then
 else
     echo "OK."
 fi
-
-## clean up files
-if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir
-fi
-
-exit $res;
