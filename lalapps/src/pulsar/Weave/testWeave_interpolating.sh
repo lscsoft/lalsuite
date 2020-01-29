@@ -72,11 +72,13 @@ set +x
 echo
 
 ### Make updating reference results a little easier ###
-mkdir TestInterpolating.testdir
-cp RefSeg1Exact.txt RefSeg2Exact.txt RefSeg3Exact.txt TestInterpolating.testdir/
-cp WeaveOut.fits TestInterpolating.testdir/RefWeaveOut.fits
-tar zcf TestInterpolating.tar.gz TestInterpolating.testdir/
-rm -rf TestInterpolating.testdir/
+mkdir newtarball/
+cd newtarball/
+cp ../RefSeg1Exact.txt ../RefSeg2Exact.txt ../RefSeg3Exact.txt .
+cp ../WeaveOut.fits RefWeaveOut.fits
+tar zcf ../new_testWeave_interpolating.tar.gz *
+cd ..
+rm -rf newtarball/
 
 echo "=== Compare semicoherent F-statistics from lalapps_Weave to reference results ==="
 set -x
@@ -90,7 +92,7 @@ coh2F_exact=`paste RefSeg1Exact.txt RefSeg2Exact.txt RefSeg3Exact.txt | sed -n '
 lalapps_fits_table_list "WeaveOut.fits[mean2F_toplist][col c1=mean2F][#row == 1]" > tmp
 coh2F_loud=`cat tmp | sed "/^#/d" | xargs printf "%.16g"`
 # Value of 'mean_mu' was calculated by:
-#   octapps_run WeaveFstatMismatch --setup-file=TestInterpolating.testdir/WeaveSetup.fits --spindowns=1 --semi-max-mismatch=5.5 --coh-max-mismatch=0.3 --printarg=meanOfHist
+#   octapps_run WeaveFstatMismatch --setup-file=WeaveSetup.fits --spindowns=1 --semi-max-mismatch=5.5 --coh-max-mismatch=0.3 --printarg=meanOfHist
 mean_mu=0.47315
 awk "BEGIN { print mu = ( ${coh2F_exact} - ${coh2F_loud} ) / ${coh2F_exact}; exit ( mu < ${mean_mu} ? 0 : 1 ) }"
 set +x

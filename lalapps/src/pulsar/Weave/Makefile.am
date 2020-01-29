@@ -58,13 +58,13 @@ lalapps_WeaveCompare_SOURCES = \
 	$(END_OF_LIST)
 
 # Add shell test scripts to this variable
-test_scripts += TestInterpolating.sh
-test_scripts += TestNonInterpolating.sh
-test_scripts += TestSingleSegment.sh
-test_scripts += TestSimulateSearch.sh
-test_scripts += TestCacheMaxSize.sh
-test_scripts += TestCheckpointing.sh
-test_scripts += TestPartitioning.sh
+test_scripts += testWeave_interpolating.sh
+test_scripts += testWeave_non_interpolating.sh
+test_scripts += testWeave_single_segment.sh
+test_scripts += testWeave_simulate_search.sh
+test_scripts += testWeave_cache_max_size.sh
+test_scripts += testWeave_checkpointing.sh
+test_scripts += testWeave_partitioning.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
