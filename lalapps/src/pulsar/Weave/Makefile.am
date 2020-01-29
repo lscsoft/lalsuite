@@ -73,9 +73,11 @@ TESTS = \
 
 EXTRA_DIST += \
 	$(TESTS) \
-	timestamps-1.txt \
-	timestamps-2.txt \
-	TestSingleSegment.tar.gz \
 	TestInterpolating.tar.gz \
 	TestNonInterpolating.tar.gz \
+	TestSingleSegment.tar.gz \
+	TestSimulateSearch.tar.gz \
+	TestCacheMaxSize.tar.gz \
+	TestCheckpointing.tar.gz \
+	TestPartitioning.tar.gz \
 	$(END_OF_LIST)

@@ -13,8 +13,8 @@ echo "=== Restrict timestamps to segment list in WeaveSetup.fits ==="
 set -x
 ${fitsdir}/lalapps_fits_table_list 'WeaveSetup.fits[segments][col c1=start_s; col2=end_s]' \
     | awk 'BEGIN { print "/^#/ { print }" } /^#/ { next } { printf "%i <= $1 && $1 <= %i { print }\n", $1, $2 + 1 }' > timestamp-filter.awk
-awk -f timestamp-filter.awk ${srcdir}/timestamps-1.txt > timestamps-1.txt
-awk -f timestamp-filter.awk ${srcdir}/timestamps-2.txt > timestamps-2.txt
+awk -f timestamp-filter.awk all-timestamps-1.txt > timestamps-1.txt
+awk -f timestamp-filter.awk all-timestamps-2.txt > timestamps-2.txt
 set +x
 echo
 

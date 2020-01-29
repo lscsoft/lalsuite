@@ -10,20 +10,19 @@ if test "x$1" = xskip; then
     exit 77;
 fi
 
-# Source and build directories
-[ "X${LAL_TEST_SRCDIR}" != X ]
-[ "X${LAL_TEST_BUILDDIR}" != X ]
-export srcdir=$(cd ${LAL_TEST_SRCDIR} && pwd)
-export builddir=$(cd ${LAL_TEST_BUILDDIR} && pwd)
+# Check for required environment variables
+test "X${LAL_TEST_SRCDIR}" != X
+test "X${LAL_TEST_BUILDDIR}" != X
 
 # Build directories containing required tools
+export builddir=$(cd ${LAL_TEST_BUILDDIR} && pwd)
 export injdir=$(cd ${builddir}/../Injections && pwd)
 export sftdir=$(cd ${builddir}/../SFTTools && pwd)
 export fitsdir=$(cd ${builddir}/../FITSTools && pwd)
 
 # Test script name and location
 scriptname=$(expr "X$1" : "X.*/\([^/]*\)\.sh$")
-script="${srcdir}/${scriptname}.sh"
+script="${LAL_TEST_SRCDIR}/${scriptname}.sh"
 [ -f "${script}" ]
 
 # Create directory for test
@@ -35,13 +34,16 @@ rm -rf "${testdir}"
 mkdir -p "${testdir}"
 
 # Extract any reference results, and check validity
-reftarball="${srcdir}/${scriptname}.tar.gz"
+reftarball="${LAL_TEST_SRCDIR}/${scriptname}.tar.gz"
 if [ -f ${reftarball} ]; then
-    tar xf ${reftarball}
+    echo "Extracting reference tarball ${reftarball}"
     cd "${testdir}"
+    tar xf ${reftarball}
     ( echo *.txt | xargs -n 1 cat | grep UNCLEAN ) && exit 1
     ( echo *.fits | xargs -n 1 ${fitsdir}/lalapps_fits_header_list | grep UNCLEAN ) && exit 1
     cd "${builddir}"
+else
+    echo "No reference tarball ${reftarball}"
 fi
 ls -l "${testdir}"
 echo

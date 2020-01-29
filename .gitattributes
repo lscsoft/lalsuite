@@ -50,3 +50,7 @@ lalsimulation/lib/lalsimburst_btlwnbexamples.svg filter=lfs diff=lfs merge=lfs -
 lalsimulation/lib/lalsimburst_sinegaussianexamples.svg filter=lfs diff=lfs merge=lfs -text
 lalsimulation/test/reviewed_waveforms.asc filter=lfs diff=lfs merge=lfs -text
 lal/test/tools/resamp_10x4.eps filter=lfs diff=lfs merge=lfs -text
+lalapps/src/pulsar/Weave/TestCacheMaxSize.tar.gz filter=lfs diff=lfs merge=lfs -text
+lalapps/src/pulsar/Weave/TestCheckpointing.tar.gz filter=lfs diff=lfs merge=lfs -text
+lalapps/src/pulsar/Weave/TestPartitioning.tar.gz filter=lfs diff=lfs merge=lfs -text
+lalapps/src/pulsar/Weave/TestSimulateSearch.tar.gz filter=lfs diff=lfs merge=lfs -text
