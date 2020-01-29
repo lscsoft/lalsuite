@@ -11,18 +11,34 @@ if test "x$1" = xskip; then
 fi
 
 # Check for required environment variables
-test "X${LAL_TEST_SRCDIR}" != X
-test "X${LAL_TEST_BUILDDIR}" != X
+if [ "X${LAL_TEST_SRCDIR}" = X ]; then
+  echo "LAL_TEST_SRCDIR is not set"
+  exit 1
+fi
+if [ "X${LAL_TEST_BUILDDIR}" = X ]; then
+  echo "LAL_TEST_BUILDDIR is not set"
+  exit 1
+fi
 
 # Test script name and location
 scriptname=$(expr "X$1" : "X.*/\([^/]*\)\.sh$")
 script="${LAL_TEST_SRCDIR}/${scriptname}.sh"
-[ -f "${script}" ]
+if [ ! -f "${script}" ]; then
+  echo "Test script '${script}' does not exist"
+  exit 1
+fi
+if [ -x "${script}" ]; then
+  echo "Test script '${script}' should not be executable"
+  exit 1
+fi
 
 # Create directory for test
 testdir="${LAL_TEST_BUILDDIR}/${scriptname}.testdir"
 rm -rf "${testdir}"
-[ ! -d "${testdir}" ]
+if [ -d "${testdir}" ]; then
+  echo "Could not remove test directory '${testdir}'"
+  exit 1
+fi
 mkdir -p "${testdir}"
 
 # Extract any reference results, and check validity
@@ -31,8 +47,24 @@ if [ -f ${reftarball} ]; then
     echo "Extracting reference tarball ${reftarball}"
     cd "${testdir}"
     tar xf ${reftarball}
-    ( echo *.txt | xargs -n 1 cat | grep UNCLEAN ) && exit 1
-    ( echo *.fits | xargs -n 1 "${LAL_TEST_BUILDDIR}/../FITSTools/lalapps_fits_header_list" | grep UNCLEAN ) && exit 1
+    for file in $(find . -type f); do
+        (
+            case "${file}" in
+                *.txt)
+                    grep UNCLEAN "${file}"
+                    ;;
+                *.fits)
+                    "${LAL_TEST_BUILDDIR}/../FITSTools/lalapps_fits_header_list" "${file}" | grep UNCLEAN
+                    ;;
+                *)
+                    exit 1
+                    ;;
+            esac
+        ) && {
+            echo "File '${file}' appears to have been built from a git checkout of LALSuite with uncommitted changes, and therefore is not reproducible"
+            exit 1
+        }
+    done
     cd "${LAL_TEST_BUILDDIR}"
 else
     echo "No reference tarball ${reftarball}"
@@ -64,6 +96,10 @@ cd "${testdir}"
 export TIMEFORMAT=$'\n\n\nreal %R\nuser %R\nsys  %R'
 time bash -c "\
 set -e; \
+export LAL_TEST_SRCDIR=/dev/null/; \
+export LAL_TEST_BUILDDIR=/dev/null/; \
+export srcdir=/dev/null/; \
+export builddir=/dev/null/; \
 source '${script}'" && status=$? || status=$?
 cd "${LAL_TEST_BUILDDIR}"
 echo
