@@ -114,7 +114,7 @@ initUserVars ( UserVar *uvar )
   /* now register all our user-variable */
   XLALRegisterUvarMember(	infile1,	STRING, '1', REQUIRED, "First timeseries input file");
   XLALRegisterUvarMember( 	infile2,	STRING, '2', REQUIRED, "Second timeseries input file");
-  XLALRegisterUvarMember( 	verbose,	BOOLEAN, 'v', OPTIONAL, "Verbose output of differences");
+  XLALRegisterUvarMember( 	verbose,	BOOLEAN, 'V', OPTIONAL, "Verbose output of differences");
   XLALRegisterUvarMember( 	relErrorMax,   	REAL8, 'e', OPTIONAL, "Maximal relative error acceptable to 'pass' comparison");
 
   return XLAL_SUCCESS;
