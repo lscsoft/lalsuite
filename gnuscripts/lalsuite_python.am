@@ -9,6 +9,12 @@ SUFFIXES = .py
 .PHONY: pybin-uninstall-local
 .PHONY: pybin-dist-hook
 
+all-local: pymodule-all-local pyscripts-all-local
+mostlyclean-local: pymodule-mostlyclean-local pyscripts-mostlyclean-local py-mostlyclean-local
+install-exec-local: pybin-install-exec-local
+uninstall-local: pybin-uninstall-local
+dist-hook: pybin-dist-hook
+
 if HAVE_PYTHON
 
 BUILT_SOURCES += $(pybin_scripts)
@@ -18,7 +24,6 @@ uninstalled_runner = $(top_srcdir)/gnuscripts/lalsuite_run_uninstalled
 uninstalled_compiler = $(uninstalled_runner) '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
 EXTRA_DIST += $(uninstalled_runner)
 
-all-local: pymodule-all-local pyscripts-all-local
 pymodule-all-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
 		for file in $(pymodule_PYTHON); do \
@@ -38,7 +43,6 @@ pyscripts-all-local:
 		done; \
 	fi
 
-mostlyclean-local: pymodule-mostlyclean-local pyscripts-mostlyclean-local py-mostlyclean-local
 pymodule-mostlyclean-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
 		for file in $(pymodule_PYTHON); do \
@@ -84,7 +88,6 @@ $(pybin_scripts): Makefile pyscripts-all-local
 	chmod +x $@.tmp || exit 1; \
 	mv -f $@.tmp $@
 
-install-exec-local: pybin-install-exec-local
 pybin-install-exec-local:
 	$(AM_V_at)shebang='#!'; \
 	if test "x$(pybin_scripts)" != x; then \
@@ -115,7 +118,6 @@ pybin-install-exec-local:
 		done; \
 	fi
 
-uninstall-local: pybin-uninstall-local
 pybin-uninstall-local:
 	-for file in $(pybin_scripts); do \
 		rm -f "$(DESTDIR)$(bindir)/$${file}"; \
@@ -124,7 +126,6 @@ pybin-uninstall-local:
 		fi; \
 	done
 
-dist-hook: pybin-dist-hook
 pybin-dist-hook:
 	for file in $(pybin_scripts); do \
 		cp "$(srcdir)/$${file}.py" "$(distdir)/$${file}.py"; \
