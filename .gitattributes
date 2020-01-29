@@ -54,3 +54,5 @@ lalapps/src/pulsar/Weave/testWeave_cache_max_size.tar.gz filter=lfs diff=lfs mer
 lalapps/src/pulsar/Weave/testWeave_checkpointing.tar.gz filter=lfs diff=lfs merge=lfs -text
 lalapps/src/pulsar/Weave/testWeave_partitioning.tar.gz filter=lfs diff=lfs merge=lfs -text
 lalapps/src/pulsar/Weave/testWeave_simulate_search.tar.gz filter=lfs diff=lfs merge=lfs -text
+lalapps/src/pulsar/Injections/testMakefakedata_v5.tar.gz filter=lfs diff=lfs merge=lfs -text
+lalapps/src/pulsar/Injections/testMakefakedata_v4.tar.gz filter=lfs diff=lfs merge=lfs -text

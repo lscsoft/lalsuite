@@ -1,67 +1,28 @@
-#!/bin/bash
-
-## set LAL debug level
-echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
-export LAL_DEBUG_LEVEL
-
-## allow 'make test' to work from builddir != srcdir
-if [ -z "${srcdir}" ]; then
-    srcdir=`dirname $0`
-fi
-
-builddir="./";
-sftdir="${builddir}../SFTTools/"
-
-mfdCODE="${builddir}lalapps_Makefakedata_v4"
-cmpCODE="${sftdir}lalapps_compareSFTs"
-extractCODE="${sftdir}lalapps_splitSFTs"
+mfdCODE="lalapps_Makefakedata_v4"
+cmpCODE="lalapps_compareSFTs"
+extractCODE="lalapps_splitSFTs"
 
 testDIR1="./mfdv4_TEST1"
 testDIR2="./mfdv4_TEST2"
 testDIR3="./mfdv4_TEST3"
 
-
-## ----- user-controlled level of debug-output detail
-if [ -n "$DEBUG" ]; then
-    debug=${DEBUG}
-else
-    debug=0	## default=quiet
-fi
-
-#prepare test subdirectory
-if [ ! -d "$testDIR1" ]; then
-    mkdir $testDIR1
-else
-## cleanup: remove previous output-SFTs
-    rm -f $testDIR1/* || true
-fi
-if [ ! -d "$testDIR2" ]; then
-    mkdir $testDIR2
-else
-## cleanup: remove previous output-SFTs
-    rm -f $testDIR2/* || true
-fi
-if [ ! -d "$testDIR3" ]; then
-    mkdir $testDIR3
-else
-## cleanup: remove previous output-SFTs
-    rm -f $testDIR3/* || true
-fi
-
-
+# prepare test subdirectory
+mkdir $testDIR1
+mkdir $testDIR2
+mkdir $testDIR3
 
 tol="1e-4";	## tolerance on relative difference between SFTs in comparison
 # input parameters
 ## FIXED
 Tsft=1800
 nTsft=20
-timestamps="$srcdir/testT8_1800"
+timestamps="testT8_1800.txt"
 refTime=701210229
 
 ## excercise non-integer cycle gaps in heterodyned timeseries
 fmin=299.1001
 Band=9.9998
-fmax=$(echo $fmin $Band | LC_ALL=C awk '{printf "%.7g", $1 + $2}');
+fmax=$(echo $fmin $Band | awk '{printf "%.7g", $1 + $2}');
 fUpper=311
 
 ## VARY
@@ -76,7 +37,6 @@ delta=0.9
 
 f1dot="-1.e-9"
 f2dot="1e-14"
-
 
 echo "------------------------------------------------------------"
 echo " SIGNAL-ONLY - compare heterodyned SFTs with 'exact' ones"
@@ -102,7 +62,6 @@ if ! eval $cmdline; then
     exit 1
 fi
 
-
 echo
 echo "mfd_v4: producing SFTs via heterodyned timeseries (generationMode=1 [PER_SFT] )..."
 echo
@@ -122,7 +81,6 @@ if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfdCODE' ..."
     exit 1
 fi
-
 
 echo
 echo "mfd_v4: producing SFTs via 'exact' timeseries (non-heterodyned)..."
@@ -150,10 +108,6 @@ if ! eval $cmdline; then
     exit 1
 fi
 
-
-
-
-
 echo
 echo "comparison of resulting SFTs:"
 
@@ -166,7 +120,6 @@ else
     echo "OK."
 fi
 
-
 echo
 cmdline="$cmpCODE -e $tol -1 '${testDIR2}/*.sft' -2 '${testDIR3}/Band*'"
 echo ${cmdline}
@@ -176,7 +129,6 @@ if ! eval $cmdline; then
 else
     echo "OK."
 fi
-
 
 echo
 echo "comparison of concatenating SFTs:"
@@ -198,10 +150,4 @@ if ! eval $cmdline; then
     exit 2
 else
     echo "OK."
-fi
-
-
-## clean up files [allow turning off via 'NOCLEANUP' environment variable
-if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDIR1 ${testDIR1}.sft $testDIR2 ${testDIR2}.sft $testDIR3 ${testDIR3}.sft
 fi

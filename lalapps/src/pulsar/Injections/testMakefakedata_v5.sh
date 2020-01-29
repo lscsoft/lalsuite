@@ -1,35 +1,18 @@
-#!/bin/bash
-
-## set LAL debug level
-echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
-export LAL_DEBUG_LEVEL
-
-## allow 'make test' to work from builddir != srcdir
-if [ -z "${srcdir}" ]; then
-    srcdir=`dirname $0`
-fi
-
-builddir="./";
-sftdir="${builddir}../SFTTools/"
-
-mfdv4_CODE="${builddir}lalapps_Makefakedata_v4"
-mfdv5_CODE="${builddir}lalapps_Makefakedata_v5"
-cmp_CODE="${sftdir}lalapps_compareSFTs"
+mfdv4_CODE="lalapps_Makefakedata_v4"
+mfdv5_CODE="lalapps_Makefakedata_v5"
+cmp_CODE="lalapps_compareSFTs"
 
 testDIR="./mfdv5_TEST"
 
-## cleanup: remove any previous output-SFTs
-rm -rf ${testDIR} || true
-#prepare test subdirectory
+# prepare test subdirectory
 mkdir -p $testDIR
-
 
 tol=1e-3;	## tolerance on relative difference between SFTs in comparison
 # input parameters
 ## ---------- data parameters ----------
 Tsft=1800
 nTsft=20
-timestamps=${srcdir}/testT8_1800
+timestamps=./testT8_1800.txt
 
 ## excercise non-integer cycle gaps in heterodyned timeseries
 fmin=299.0
@@ -147,7 +130,6 @@ echo "orbitEcc = ${s3_orbitEcc}" >> ${injFile2}
 
 echo >> ${injFile2}
 
-
 ## ---------- output parameters ----------
 sftsv4_1=${testDIR}/${IFO1}-sftsv4.sft
 sftsv4_2=${testDIR}/${IFO2}-sftsv4.sft
@@ -222,7 +204,6 @@ if ! eval $cmdline; then
     exit 1
 fi
 
-
 echo
 echo "========== MFDv5 =========="
 echo
@@ -255,7 +236,6 @@ if ! eval $cmdline2; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
     exit 1
 fi
-
 
 echo
 echo "--------------------------------------------------"
@@ -299,10 +279,4 @@ if ! eval $cmdline; then
     exit 2
 else
     echo "OK."
-fi
-
-
-## clean up files [allow turning off via 'NOCLEANUP' environment variable
-if [ -z "$NOCLEANUP" ]; then
-    rm -rf ${testDIR}
 fi

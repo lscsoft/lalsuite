@@ -229,6 +229,7 @@ src/pulsar/Hough/lalapps_MultiWeights
 src/pulsar/Hough/lalapps_ValidateChi2Test
 src/pulsar/Hough/lalapps_ValidateHoughMulti
 src/pulsar/HoughFstat/lalapps_HierarchicalSearch
+src/pulsar/Injections/*.testdir
 src/pulsar/Injections/lalapps_compareTS
 src/pulsar/Injections/lalapps_Makefakedata_v4
 src/pulsar/Injections/lalapps_Makefakedata_v5
