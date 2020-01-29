@@ -266,6 +266,7 @@ src/pulsar/SFTTools/SFT-test5
 src/pulsar/SFTTools/SFT-test6
 src/pulsar/SFTTools/SFT-test7
 src/pulsar/SidebandSearch/lalapps_CombSearch
+src/pulsar/Tools/*.testdir
 src/pulsar/Tools/lalapps_ComputeAntennaPattern
 src/pulsar/Tools/lalapps_FstatMetric_v2
 src/pulsar/Tools/lalapps_PrintDetectorState
