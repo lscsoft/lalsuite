@@ -3,8 +3,6 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-SFTReferenceLibrary = SFTReferenceLibrary.c SFTReferenceLibrary.h
-
 bin_PROGRAMS = \
 	lalapps_ComputePSD \
 	lalapps_GetSFTVelocities \
@@ -14,6 +12,11 @@ bin_PROGRAMS = \
 	lalapps_compareSFTs \
 	lalapps_dumpSFT \
 	lalapps_splitSFTs \
+	$(END_OF_LIST)
+
+SFTReferenceLibrary = \
+	SFTReferenceLibrary.c \
+	SFTReferenceLibrary.h \
 	$(END_OF_LIST)
 
 lalapps_ComputePSD_SOURCES = ComputePSD.c
