@@ -1,9 +1,10 @@
 BUILT_SOURCES =
-MOSTLYCLEANFILES =
 EXTRA_DIST =
+MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalsuite_python.am
+include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 bin_PROGRAMS = lalapps_ssbtodetector
 
@@ -82,7 +83,17 @@ pkgpython_PYTHON = \
 	$(END_OF_LINE)
 endif
 
+# Add shell test scripts to this variable
+test_scripts += test_heterodyne_pulsar.sh
+
+# Add any helper programs required by tests to this variable
+test_helpers +=
+
+# These tests require FRAME
+if !FRAME
+skip_tests += test_heterodyne_pulsar.sh
+endif
+
 EXTRA_DIST += \
-	test_heterodyne_pulsar.sh \
-	make_frame_cache H1response.txt \
-	H-CW_Injection-875206560-120.gwf
+	make_frame_cache \
+	$(END_OF_LIST)

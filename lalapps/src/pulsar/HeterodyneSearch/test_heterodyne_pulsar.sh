@@ -1,20 +1,6 @@
-#!/bin/bash
+CODENAME=lalapps_heterodyne_pulsar
 
-# this script will be used as part of 'make test' to make sure that the
-# lalapps_heterodyne_pulsar code outputs the correct result. It will run
-# the code in all its 4 modes and compare the results to standard
-# archived files
-
-## allow 'make test' to work from builddir != srcdir
-if [ -z "${srcdir}" ]; then
-    srcdir=`dirname $0`
-fi
-
-builddir="./";
-
-CODENAME=${builddir}lalapps_heterodyne_pulsar
-
-FRAMEFILE=${srcdir}/H-CW_Injection-875206560-120.gwf
+FRAMEFILE=H-CW_Injection-875206560-120.gwf
 DATASTART=875206560
 DATAEND=`expr $DATASTART + 120`
 DETECTOR=H1
@@ -116,13 +102,7 @@ fi
 FILELIST=$FRAMEFILE
 cp $FILELIST ${LOCATION}/framedir
 
-# use make_frame_cache to make a frame cache file
-if [ ! -f ${srcdir}/make_frame_cache ]; then
-  echo Error! make_frame_cache does not exist!
-  exit 2
-fi
-
-${srcdir}/make_frame_cache --frame-dir ${LOCATION}/framedir --gps-start-time $DATASTART --gps-end-time $DATAEND --output-file cachefile
+make_frame_cache --frame-dir ${LOCATION}/framedir --gps-start-time $DATASTART --gps-end-time $DATAEND --output-file cachefile
 if [ $? != "0" ]; then
   echo Could not create the cache file!
   exit 2
@@ -239,7 +219,7 @@ fi
 mv $COARSEFILE $COARSEFILE.off
 
 # set calibration files
-RESPFILE=${srcdir}/H1response.txt
+RESPFILE=H1response.txt
 
 ################### FINE HETERODYNES #######################
 
@@ -417,7 +397,7 @@ do
     else
       arrvals[$val]=`echo "$tempval" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
     fi
-    ((val++))
+    val=$((val+1))
   done
 done < $f1
 
@@ -466,7 +446,7 @@ do
                 else
                         arrvals[$val]=`echo "$tempval" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
                 fi
-                ((val++))
+                val=$((val+1))
         done
 done < $f2
 
@@ -515,7 +495,7 @@ do
                 else
                         arrvals[$val]=`echo "$tempval" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
                 fi
-                ((val++))
+                val=$((val+1))
         done
 done < $f2
 
@@ -558,7 +538,7 @@ do
 
   # this file has an extra line, so skip the first one
   if [ $skip == 0 ]; then
-    ((skip++))
+    skip=$((skip+1))
     continue
   fi
 
@@ -571,7 +551,7 @@ do
                 else
                         arrvals[$val]=`echo "$tempval" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
                 fi
-                ((val++))
+                val=$((val+1))
         done
 done < $f3
 
@@ -620,7 +600,7 @@ do
                 else
                         arrvals[$val]=`echo "$tempval" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
                 fi
-                ((val++))
+                val=$((val+1))
         done
 done < $f4
 
@@ -669,7 +649,7 @@ do
                 else
                         arrvals[$val]=`echo "$tempval" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
                 fi
-                ((val++))
+                val=$((val+1))
         done
 done < $f5
 
