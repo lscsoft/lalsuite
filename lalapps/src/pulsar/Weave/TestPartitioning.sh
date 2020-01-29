@@ -38,14 +38,14 @@ for setup in onefreq short long; do
 
     echo "=== Setup '${setup}': Create search setup with ${weave_setup_options} ==="
     set -x
-    ${builddir}/lalapps_WeaveSetup --first-segment=1122332211/90000 ${weave_setup_options} --detectors=H1,L1 --output-file=WeaveSetup.fits
-    ${fitsdir}/lalapps_fits_overview WeaveSetup.fits
+    lalapps_WeaveSetup --first-segment=1122332211/90000 ${weave_setup_options} --detectors=H1,L1 --output-file=WeaveSetup.fits
+    lalapps_fits_overview WeaveSetup.fits
     set +x
     echo
 
     echo "=== Setup '${setup}': Restrict timestamps to segment list in WeaveSetup.fits ==="
     set -x
-    ${fitsdir}/lalapps_fits_table_list 'WeaveSetup.fits[segments][col c1=start_s; col2=end_s]' \
+    lalapps_fits_table_list 'WeaveSetup.fits[segments][col c1=start_s; col2=end_s]' \
         | awk 'BEGIN { print "/^#/ { print }" } /^#/ { next } { printf "%i <= $1 && $1 <= %i { print }\n", $1, $2 + 1 }' > timestamp-filter.awk
     awk -f timestamp-filter.awk all-timestamps-1.txt > timestamps-1.txt
     awk -f timestamp-filter.awk all-timestamps-2.txt > timestamps-2.txt
@@ -54,12 +54,12 @@ for setup in onefreq short long; do
 
     echo "=== Setup '${setup}': Perform interpolating search without frequency/spindown partitions ==="
     set -x
-    ${builddir}/lalapps_Weave --output-file=WeaveOutNoPart.fits \
+    lalapps_Weave --output-file=WeaveOutNoPart.fits \
         --toplists=mean2F --toplist-limit=2321 --segment-info --setup-file=WeaveSetup.fits \
         --rand-seed=3456 --sft-timebase=1800 --sft-noise-sqrtSX=1,1 \
         --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
         ${weave_search_options}
-    ${fitsdir}/lalapps_fits_overview WeaveOutNoPart.fits
+    lalapps_fits_overview WeaveOutNoPart.fits
     set +x
     echo
 
@@ -73,7 +73,7 @@ for setup in onefreq short long; do
             set -x
             semi_ntmpl_prev=1
             for dim in SSKYA SSKYB NU1DOT NU0DOT; do
-                semi_ntmpl=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" "NSEMITMPL ${dim}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+                semi_ntmpl=`lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" "NSEMITMPL ${dim}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
                 expr ${semi_ntmpl} '>' ${semi_ntmpl_prev}
                 semi_ntmpl_prev=${semi_ntmpl}
             done
@@ -84,29 +84,29 @@ for setup in onefreq short long; do
 
     echo "=== Setup '${setup}': Perform interpolating search with frequency/spindown partitions ==="
     set -x
-    ${builddir}/lalapps_Weave ${weave_part_options} --output-file=WeaveOutPart.fits \
+    lalapps_Weave ${weave_part_options} --output-file=WeaveOutPart.fits \
         --toplists=mean2F --toplist-limit=2321 --segment-info --setup-file=WeaveSetup.fits \
         --rand-seed=3456 --sft-timebase=1800 --sft-noise-sqrtSX=1,1 \
         --sft-timestamps-files=timestamps-1.txt,timestamps-2.txt \
         ${weave_search_options}
-    ${fitsdir}/lalapps_fits_overview WeaveOutPart.fits
+    lalapps_fits_overview WeaveOutPart.fits
     set +x
     echo
 
     echo "=== Setup '${setup}': Check that number of recomputed results is below tolerance ==="
     set -x
-    coh_nres_no_part=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
-    coh_ntmpl_no_part=`${fitsdir}/lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_nres_no_part=`lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_ntmpl_no_part=`lalapps_fits_header_getval "WeaveOutNoPart.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     awk "BEGIN { print recomp = ( ${coh_nres_no_part} - ${coh_ntmpl_no_part} ) / ${coh_ntmpl_no_part}; exit ( recomp <= ${weave_recomp_threshold_no_part} ? 0 : 1 ) }"
-    coh_nres_part=`${fitsdir}/lalapps_fits_header_getval "WeaveOutPart.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
-    coh_ntmpl_part=`${fitsdir}/lalapps_fits_header_getval "WeaveOutPart.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_nres_part=`lalapps_fits_header_getval "WeaveOutPart.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_ntmpl_part=`lalapps_fits_header_getval "WeaveOutPart.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     awk "BEGIN { print recomp = ( ${coh_nres_part} - ${coh_ntmpl_part} ) / ${coh_ntmpl_part}; exit ( recomp <= ${weave_recomp_threshold_part} ? 0 : 1 ) }"
     set +x
     echo
 
     echo "=== Setup '${setup}': Compare F-statistics from lalapps_Weave without/with frequency/spindown partitions ==="
     set -x
-    env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" ${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoPart.fits --result-file-2=WeaveOutPart.fits
+    env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoPart.fits --result-file-2=WeaveOutPart.fits
     set +x
     echo
 
