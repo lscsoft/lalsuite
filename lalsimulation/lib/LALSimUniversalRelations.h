@@ -29,5 +29,6 @@ REAL8 XLALSimUniversalRelationlambda3TidalVSlambda2Tidal( REAL8 lambda2Tidal );
 REAL8 XLALSimUniversalRelationomega02TidalVSlambda2Tidal( REAL8 lambda2Tidal );
 REAL8 XLALSimUniversalRelationomega03TidalVSlambda3Tidal( REAL8 lambda3Tidal );
 REAL8 XLALSimUniversalRelationQuadMonVSlambda2Tidal( REAL8 lambda2Tidal );
+REAL8 XLALSimUniversalRelationSpinInducedOctupoleVSSpinInducedQuadrupole(REAL8 qm_def);
 
 #endif /* LALSimUniversalRelations_h */

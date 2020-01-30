@@ -30,6 +30,7 @@
 #include <lal/LALSimIMR.h>
 
 #include "LALSimNRTunedTides.h"
+#include "LALSimUniversalRelations.h"
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -204,14 +205,124 @@ static double SimNRTunedTidesFDTidalPhase(
     return tidal_phase;
 }
 
+/** 
+ * Tidal amplitude corrections; only available for NRTidalv2;
+ * Eq. 24 of arxiv: 1905.06011
+ */
+static REAL8 SimNRTunedTidesFDTidalAmplitude(
+    const REAL8 fHz, /**< Gravitational wave frequency (Hz) */
+    const REAL8 mtot, /**< Total mass in solar masses */
+    const REAL8 kappa2T /**< tidal coupling constant. Eq. 2 in arXiv:1706.02969 */
+    )
+{
+    const REAL8 M_sec   = (mtot * LAL_MTSUN_SI);
+
+    REAL8 prefac = 0.0;
+    prefac = 9.0*kappa2T;
+
+    REAL8 x = pow(LAL_PI*M_sec*fHz, 2.0/3.0);
+    REAL8 ampT = 0.0;
+    REAL8 poly = 1.0;
+    const REAL8 n1   = 4.157407407407407;
+    const REAL8 n289 = 2519.111111111111;
+    const REAL8 d    = 13477.8073677; 
+
+    poly = (1.0 + n1*x + n289*pow(x, 2.89))/(1+d*pow(x,4.));
+    ampT = - prefac*pow(x,3.25)*poly;
+
+    return ampT;
+}
+
+/** 
+ * NRTunedTidesFDTidalPhase is Eq 22 of https://arxiv.org/abs/1905.06011 
+ * and is a function of x = angular_orb_freq^(2./3.)
+ */
+static double SimNRTunedTidesFDTidalPhase_v2(
+    const REAL8 fHz, /**< Gravitational wave frequency (Hz) */
+    const REAL8 Xa, /**< Mass of companion 1 divided by total mass */
+    const REAL8 Xb, /**< Mass of companion 2 divided by total mass */
+    const REAL8 mtot, /**< total mass (Msun) */
+    const REAL8 kappa2T /**< tidal coupling constant. Eq. 2 in arXiv:1706.02969 */
+    )
+{
+
+    REAL8 M_omega = LAL_PI * fHz * (mtot * LAL_MTSUN_SI); //dimensionless angular GW frequency
+    REAL8 PN_x = pow(M_omega, 2.0/3.0);
+    REAL8 PN_x_2 = PN_x * PN_x;
+    REAL8 PN_x_3 = PN_x * PN_x_2;
+    REAL8 PN_x_3over2 = pow(PN_x, 3.0/2.0);
+    REAL8 PN_x_5over2 = pow(PN_x, 5.0/2.0);
+    /* model parameters */
+    const REAL8 c_Newt   = 2.4375;
+    const REAL8 n_1      = -12.615214237993088;
+    const REAL8 n_3over2 =  19.0537346970349;
+    const REAL8 n_2      = -21.166863146081035;
+    const REAL8 n_5over2 =  90.55082156324926;
+    const REAL8 n_3      = -60.25357801943598;
+    const REAL8 d_1      = -15.111207827736678;
+    const REAL8 d_3over2 =  22.195327350624694;
+    const REAL8 d_2      =   8.064109635305156;
+    REAL8 tidal_phase = - kappa2T * c_Newt / (Xa * Xb) * PN_x_5over2;
+    REAL8 num = 1.0 + (n_1 * PN_x) + (n_3over2 * PN_x_3over2) + (n_2 * PN_x_2) + (n_5over2 * PN_x_5over2) + (n_3 * PN_x_3);
+    REAL8 den = 1.0 + (d_1 * PN_x) + (d_3over2 * PN_x_3over2) + (d_2 * PN_x_2) ;
+    REAL8 ratio = num / den;
+    tidal_phase *= ratio;
+    return tidal_phase;
+}
+
+/** Function to call amplitude tidal series only; 
+ * done for convenience to use for PhenomD_NRTidalv2 and 
+ * SEOBNRv4_ROM_NRTidalv2
+ */
+
+int XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(
+    const REAL8Sequence *amp_tidal, /**< [out] tidal amplitude frequency series */
+    const REAL8Sequence *fHz, /**< list of input Gravitational wave Frequency [Hz or dimensionless] */	
+    REAL8 m1, /**< Mass of companion 1 in solar masses */
+    REAL8 m2, /**< Mass of companion 2 in solar masses */
+    REAL8 lambda1, /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2 /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+)
+{
+    REAL8 m1_SI = m1 * LAL_MSUN_SI;
+    REAL8 m2_SI = m2 * LAL_MSUN_SI;
+    REAL8 f_dim_to_Hz;
+    int errcode = EnforcePrimaryMassIsm1(&m1_SI, &m2_SI, &lambda1, &lambda2);
+    XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "EnforcePrimaryMassIsm1 failed");
+
+
+    const REAL8 mtot = m1 + m2;
+    /** SEOBNRv4ROM_NRTidalv2 and IMRPhenomD_NRTidalv2 deal with dimensionless freqs and freq in Hz;
+     *  If the value corresponding to the last index is above 1, we are safe to assume a frequency given in Hz, 
+     *  otherwise a dimensionless frequency
+     */
+
+    if ((*fHz).data[(*fHz).length - 1] > 1.)
+      f_dim_to_Hz = 1.;
+    else 
+      f_dim_to_Hz = mtot*LAL_MTSUN_SI;
+
+    /**< tidal coupling constant.*/
+    const REAL8 kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
+
+    for(UINT4 i = 0; i < (*fHz).length; i++)
+      (*amp_tidal).data[i] = SimNRTunedTidesFDTidalAmplitude((*fHz).data[i]/f_dim_to_Hz, mtot, kappa2T);
+
+    return XLAL_SUCCESS;
+}
+
 /**
  * Function to call the frequency domain tidal correction
- * Equation (7) in arXiv:1706.02969
- * over an array of input frequencies
+ * over an array of input frequencies. This is
+ * Equation (7) in arXiv:1706.02969 when NRTidal_version is NRTidal_V, 
+ * or Equations (17)-(21) (for phasing) and Equation (24) (for amplitude) 
+ * in arXiv:1905.06011 when NRTidal_version is NRTidalv2_V, 
+ * or Equations (17)-(21) in arXiv:1905.06011 when NRTidal_version is NRTidalv2NoAmpCorr_V.
+ * NoNRT_V specifies NO tidal phasing or amplitude is being added.
  * Note internally we use m1>=m2 - this is enforced in the code.
  * So any can be supplied
  *
- * The model for the tidal phase correction was calibrated
+ * The model for the tidal phase correction in NRTidal_V/NRTidalv2_V was calibrated
  * up to mass-ratio q=1.5 and kappa2T in [40, 5000].
  * The upper kappa2T limit is reached roughly for a
  * 1.4+1.4 BNS with lambda  = 2700 on both NSs.
@@ -220,14 +331,17 @@ static double SimNRTunedTidesFDTidalPhase(
  * amplitude should be tapered away starting at this frequency.
  * Therefore, no explicit limits are enforced.
  */
+
 int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     const REAL8Sequence *phi_tidal, /**< [out] tidal phase frequency series */
     const REAL8Sequence *amp_tidal, /**< [out] tidal amplitude frequency series */
+    const REAL8Sequence *planck_taper, /**< [out] planck tapering to be applied on overall signal */
     const REAL8Sequence *fHz, /**< list of input Gravitational wave Frequency in Hz to evaluate */
     REAL8 m1_SI, /**< Mass of companion 1 (kg) */
     REAL8 m2_SI, /**< Mass of companion 2 (kg) */
     REAL8 lambda1, /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
-    REAL8 lambda2 /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    REAL8 lambda2, /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    NRTidal_version_type NRTidal_version /** < one of NRTidal_V, NRTidalv2_V or NRTidalv2NoAmpCorr_V or NoNRT_V */
     )
 {
     /* NOTE: internally m1 >= m2
@@ -253,10 +367,70 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     const REAL8 fHz_mrg = XLALSimNRTunedTidesMergerFrequency(mtot, kappa2T, q);
 
     const REAL8 fHz_end_taper = 1.2*fHz_mrg;
-    for(UINT4 i = 0; i < (*fHz).length; i++){
+    if (NRTidal_version == NRTidal_V) {
+      for(UINT4 i = 0; i < (*fHz).length; i++){
         (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase((*fHz).data[i], Xa, Xb, mtot, kappa2T);
-        (*amp_tidal).data[i] = 1.0 - PlanckTaper((*fHz).data[i], fHz_mrg, fHz_end_taper);
+        (*planck_taper).data[i] = 1.0 - PlanckTaper((*fHz).data[i], fHz_mrg, fHz_end_taper);
+      }
     }
+    else if (NRTidal_version == NRTidalv2_V) {
+      for(UINT4 i = 0; i < (*fHz).length; i++) {
+        (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v2((*fHz).data[i], Xa, Xb, mtot, kappa2T);
+        (*amp_tidal).data[i] = SimNRTunedTidesFDTidalAmplitude((*fHz).data[i], mtot, kappa2T);
+        (*planck_taper).data[i] = 1.0 - PlanckTaper((*fHz).data[i], fHz_mrg, fHz_end_taper);
+      }
+    }
+    else if (NRTidal_version == NRTidalv2NoAmpCorr_V) {
+      for(UINT4 i = 0; i < (*fHz).length; i++) {
+        (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v2((*fHz).data[i], Xa, Xb, mtot, kappa2T);
+        (*planck_taper).data[i] = 1.0 - PlanckTaper((*fHz).data[i], fHz_mrg, fHz_end_taper);
+      }
+    }
+    else if (NRTidal_version == NoNRT_V)
+      XLAL_ERROR( XLAL_EINVAL, "Trying to add NRTides to a BBH waveform!" );
+    else
+      XLAL_ERROR( XLAL_EINVAL, "Unknown version of NRTidal being used! At present, NRTidal_V, NRTidalv2_V, NRTidalv2NoAmpCorr_V and NoNRT_V are the only known ones!" );
 
     return XLAL_SUCCESS;
+}
+
+/**
+ * Function to add 3.5PN spin-squared and 3.5PN spin-cubed terms. 
+ * The spin-squared terms occur with the spin-induced quadrupole moment terms
+ * while the spin-cubed terms occur with both spin-induced quadrupole as well as 
+ * octupole moments. The terms are computed in arXiv:1806.01772 and are 
+ * explicitly written out in Eqn.27 of arXiv:1905.06011. The following terms 
+ * are specifically meant for BNS systems, and are added to the NRTidalv2
+ * extensions of the approximants IMRPhenomPv2, IMRPhenomD and SEOBNRv4_ROM. 
+ */
+
+void XLALSimInspiralGetHOSpinTerms(
+        REAL8 *SS_3p5PN, /**< 3.5PN spin-spin tail term containing spin-induced quadrupole moment */
+        REAL8 *SSS_3p5PN, /**< 3.5 PN spin cubed term containing spin-induced octupole moment */
+        REAL8 X_A, /**< Mass fraction m_1/M for first component of binary */
+        REAL8 X_B, /**< Mass fraction m_2/M for second component of binary */
+        REAL8 chi1, /**< Aligned component of spin vector of first component of binary */
+        REAL8 chi2, /**< Aligned component of spin vector of second component of binary */
+        REAL8 quadparam1, /**< Spin-induced quadrupole moment parameter for component 1 */
+        REAL8 quadparam2 /**< Spin-induced quadrupole moment parameter for component 2 */
+        )
+{
+  REAL8 chi1_sq = 0., chi2_sq = 0.;
+  REAL8 X_Asq = 0., X_Bsq = 0.;
+  REAL8 octparam1 = 0, octparam2 = 0.;
+
+  X_Asq = X_A*X_A;
+  X_Bsq = X_B*X_B;
+
+  chi1_sq = chi1*chi1;
+  chi2_sq = chi2*chi2;
+
+  /* Remove -1 to account for BBH baseline*/
+  octparam1 = XLALSimUniversalRelationSpinInducedOctupoleVSSpinInducedQuadrupole(quadparam1)-1.;
+  octparam2 = XLALSimUniversalRelationSpinInducedOctupoleVSSpinInducedQuadrupole(quadparam2)-1.;
+
+  *SS_3p5PN = - 400.*LAL_PI*(quadparam1-1.)*chi1_sq*X_Asq - 400.*LAL_PI*(quadparam2-1.)*chi2_sq*X_Bsq;
+  *SSS_3p5PN = 10.*((X_Asq+308./3.*X_A)*chi1+(X_Bsq-89./3.*X_B)*chi2)*(quadparam1-1.)*X_Asq*chi1_sq
+              + 10.*((X_Bsq+308./3.*X_B)*chi2+(X_Asq-89./3.*X_A)*chi1)*(quadparam2-1.)*X_Bsq*chi2_sq
+              - 440.*octparam1*X_A*X_Asq*chi1_sq*chi1 - 440.*octparam2*X_B*X_Bsq*chi2_sq*chi2;
 }
