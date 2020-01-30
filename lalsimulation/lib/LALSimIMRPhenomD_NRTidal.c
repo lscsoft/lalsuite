@@ -44,7 +44,8 @@ static int IMRPhenomD_NRTidal_Core(
   REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
   LALDict *extraParams, /**< linked list containing the extra testing GR parameters */
   const REAL8Sequence *freqs_in,                /**< Frequency points at which to evaluate the waveform (Hz) */
-  REAL8 deltaF                                  /**< Sampling frequency (Hz) */
+  REAL8 deltaF,                                  /**< Sampling frequency (Hz) */
+  NRTidal_version_type NRTidal_version          /**< Version of NRTides; can be any one of NRTidal_V (arXiv:1706.02969), NRTidalv2_V (arXiv:1905.06011) or NRTidalv2NoAmpCorr_V (arXiv:1905.06011, without amplitude corrections) */
 );
 
 // Implementation //////////////////////////////////////////////////////////////
@@ -62,7 +63,8 @@ int IMRPhenomD_NRTidal_Core(
   REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
   LALDict *extraParams, /**< linked list containing the extra testing GR parameters */
   const REAL8Sequence *freqs_in,                /**< Frequency points at which to evaluate the waveform (Hz) */
-  REAL8 deltaF)                                 /**< Sampling frequency (Hz) */
+  REAL8 deltaF,                                 /**< Sampling frequency (Hz) */
+  NRTidal_version_type NRTidal_version          /**< Version of NRTides; can be one of NRTidal or NRTidalv2NoAmpCorr */      )
 {
   /* Check output arrays */
   if(!htilde) XLAL_ERROR(XLAL_EFAULT);
@@ -77,20 +79,36 @@ int IMRPhenomD_NRTidal_Core(
   if(fRef == 0.0)
     fRef = fLow;
 
+  REAL8 dquadmon1 = XLALSimInspiralWaveformParamsLookupdQuadMon1(extraParams);
+  REAL8 dquadmon2 = XLALSimInspiralWaveformParamsLookupdQuadMon2(extraParams);
+
   /* Internally we need m1 > m2, so change around if this is not the case */
   if (m1_SI < m2_SI) {
     // Swap m1 and m2
     double m1temp = m1_SI;
     double chi1temp = chi1;
     double lambda1temp = lambda1;
+    double dquadmon1temp = dquadmon1;  
     m1_SI = m2_SI;
     chi1 = chi2;
-    lambda1 = lambda2;
     m2_SI = m1temp;
     chi2 = chi1temp;
-    lambda2 = lambda1temp;
+
+    if (lambda1 != lambda2){ 
+      lambda1 = lambda2;
+      XLALSimInspiralWaveformParamsInsertTidalLambda1(extraParams, lambda1);
+      lambda2 = lambda1temp;
+      XLALSimInspiralWaveformParamsInsertTidalLambda2(extraParams, lambda2);
+    }
+    if (dquadmon1 != dquadmon2) {
+      dquadmon1 = dquadmon2;
+      XLALSimInspiralWaveformParamsInsertdQuadMon1(extraParams, dquadmon1);
+      dquadmon2 = dquadmon1temp;
+      XLALSimInspiralWaveformParamsInsertdQuadMon2(extraParams, dquadmon2);
+    }
   }
 
+  
   // Call IMRPhenomD. We call either the FrequencySequence version
   // or the regular LAL version depending on how we've been called.
 
@@ -122,7 +140,7 @@ int IMRPhenomD_NRTidal_Core(
       chi1, chi2,
       fLow, f_max_nr_tidal,
       distance,
-      extraParams);
+      extraParams, NRTidal_version);
 
       // if uniform sampling and fHigh > NRTIDAL_FMAX then resize htilde
       // so that it goes up to the user fHigh but is filled with zeros
@@ -144,13 +162,30 @@ int IMRPhenomD_NRTidal_Core(
       m1_SI, m2_SI,
       chi1, chi2,
       distance,
-      extraParams);
+      extraParams, NRTidal_version);
   }
 
   XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to generate IMRPhenomD waveform.");
 
   UINT4 offset;
   REAL8Sequence *freqs = NULL;
+  REAL8Sequence *phi_tidal = NULL;
+  REAL8Sequence *amp_tidal = NULL;
+  REAL8Sequence *planck_taper = NULL;
+
+  /* Initialising terms for HO spin terms added in PhenomD_NRTidalv2 */
+  REAL8 SS_3p5PN = 0., SSS_3p5PN = 0.;
+  const REAL8 m1 = m1_SI / LAL_MSUN_SI;
+  const REAL8 m2 = m2_SI / LAL_MSUN_SI;
+  const REAL8 M = m1 + m2;
+  const REAL8 m_sec = M * LAL_MTSUN_SI;   /* Total mass in seconds */
+  REAL8 eta = m1 * m2 / (M*M);    /* Symmetric mass-ratio */
+  const REAL8 piM = LAL_PI * m_sec;
+  REAL8 X_A = m1/M;
+  REAL8 X_B = m2/M;
+  REAL8 pn_fac = 3.*pow(piM,2./3.)/(128.*eta);
+  /* End of initialising new parameters */
+
   if (deltaF > 0) { // uniform frequencies
     // Recreate freqs using only the lower and upper bounds
     UINT4 iStart = (UINT4) (fLow / deltaF);
@@ -172,25 +207,31 @@ int IMRPhenomD_NRTidal_Core(
   COMPLEX16 *data=(*htilde)->data->data;
 
   // Get FD tidal phase correction and amplitude factor from arXiv:1706.02969
-  REAL8Sequence *phi_tidal = XLALCreateREAL8Sequence(freqs->length);
-  REAL8Sequence *amp_tidal = XLALCreateREAL8Sequence(freqs->length);
-  ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
-    phi_tidal, amp_tidal, freqs,
-    m1_SI, m2_SI, lambda1, lambda2
-  );
-  XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
+  phi_tidal = XLALCreateREAL8Sequence(freqs->length);
+  planck_taper = XLALCreateREAL8Sequence(freqs->length);
+  if (NRTidal_version == NRTidalv2_V) { 
+    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, NRTidalv2NoAmpCorr_V);
+    XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
+    XLALSimInspiralGetHOSpinTerms(&SS_3p5PN, &SSS_3p5PN, X_A, X_B, chi1, chi2, dquadmon1+1., dquadmon2+1.);
+  }
+  else {
+    XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, NRTidal_version);
+    XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
+  }
 
   // Assemble waveform from amplitude and phase
   for (size_t i=0; i<freqs->length; i++) { // loop over frequency points in sequence
     int j = i + offset; // shift index for frequency series if needed
     // Apply tidal phase correction and amplitude taper
-    COMPLEX16 Corr = amp_tidal->data[i] * cexp(-I*phi_tidal->data[i]);
+    double f = freqs->data[i];
+    COMPLEX16 Corr = planck_taper->data[i] * cexp(-I*phi_tidal->data[i] - I*pn_fac*(SS_3p5PN + SSS_3p5PN)*pow(f,2./3.));
     data[j] *= Corr;
   }
 
   XLALDestroyREAL8Sequence(freqs);
   XLALDestroyREAL8Sequence(phi_tidal);
   XLALDestroyREAL8Sequence(amp_tidal);
+  XLALDestroyREAL8Sequence(planck_taper);
 
   return XLAL_SUCCESS;
 }
@@ -254,14 +295,15 @@ int XLALSimIMRPhenomDNRTidalFrequencySequence(
   REAL8 chi2,                                   /**< Dimensionless aligned component spin of NS 2 */
   REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
   REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
-  LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+  LALDict *extraParams, /**< linked list containing the extra testing GR parameters */
+  NRTidal_version_type NRTidal_version          /**< Version of NRTides; can be any one of NRTidal_V (arXiv:1706.02969), NRTidalv2_V (arXiv:1905.06011) or NRTidalv2NoAmpCorr_V (arXiv:1905.06011, without amplitude corrections) */ 
 ) {
   if (!freqs) XLAL_ERROR(XLAL_EFAULT);
 
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = IMRPhenomD_NRTidal_Core(htilde,
-            phiRef, fRef, distance, m1_SI, m2_SI, chi1, chi2, lambda1, lambda2, extraParams, freqs, 0);
+            phiRef, fRef, distance, m1_SI, m2_SI, chi1, chi2, lambda1, lambda2, extraParams, freqs, 0, NRTidal_version);
 
   return(retcode);
 }
@@ -289,7 +331,8 @@ int XLALSimIMRPhenomDNRTidal(
   REAL8 chi2,                                   /**< Dimensionless aligned component spin of NS 2 */
   REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
   REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
-  LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+  LALDict *extraParams, /**< linked list containing the extra testing GR parameters */
+  NRTidal_version_type NRTidal_version          /**< Version of NRTides; can be any one of NRTidal_V (arXiv:1706.02969), NRTidalv2_V (arXiv:1905.06011) or NRTidalv2NoAmpCorr_V (arXiv:1905.06011, without amplitude corrections) */ 
 ) {
   // Use fLow, fHigh, deltaF to compute freqs sequence
   // Instead of building a full sequence we only transfer the boundaries and let
@@ -299,7 +342,7 @@ int XLALSimIMRPhenomDNRTidal(
   freqs->data[1] = fHigh;
 
   int retcode = IMRPhenomD_NRTidal_Core(htilde,
-            phiRef, fRef, distance, m1_SI, m2_SI, chi1, chi2, lambda1, lambda2, extraParams, freqs, deltaF);
+            phiRef, fRef, distance, m1_SI, m2_SI, chi1, chi2, lambda1, lambda2, extraParams, freqs, deltaF, NRTidal_version);
 
   XLALDestroyREAL8Sequence(freqs);
 
