@@ -84,8 +84,12 @@ const double sqrt_6 = 2.44948974278317788;
  *      (outdated, not reviewed!)
  *    * version 2 ("IMRPhenomPv2"): based on IMRPhenomD
  *      (to be used, currently under review as of Dec 2015)
- *    * version NRTidal ("IMRPhenomPv2_NRTidal"): based on IMRPhenomPv2
- *      (NRTidal framework added to PhenomD aligned phasing and then twisted up)
+ *    * version NRTidal ("IMRPhenomPv2_NRTidal" and "IMRPhenomPv2_NRTidalv2"): based on IMRPhenomPv2
+ *      (framework for NR-tuned tidal effects added to PhenomD aligned phasing and then twisted up).
+ *      Two flavors of NRTidal models are available:
+ *      original ("IMRPhenomPv2_NRTidal", based on https://arxiv.org/pdf/1706.02969.pdf)
+ *      and an improved version 2 ("IMRPhenomPv2_NRTidalv2", based on https://arxiv.org/pdf/1905.06011.pdf).
+ *      The different NRTidal versions employ different internal switches (selected by NRTidal_version).
  *
  * Each IMRPhenomP version inherits its range of validity
  * over the parameter space from the respective aligned-spin waveform.
@@ -477,6 +481,7 @@ int XLALSimIMRPhenomP(
   const REAL8 f_max,                          /**< End frequency; 0 defaults to ringdown cutoff freq */
   const REAL8 f_ref,                          /**< Reference frequency */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD, IMRPhenomPv2_NRTidal uses NRTidal framework with IMRPhenomPv2 */
+  NRTidal_version_type NRTidal_version, /**< either NRTidal or NRTidalv2 for BNS waveform; NoNRT_V for BBH waveform */
   LALDict *extraParams) /**<linked list that may contain the extra testing GR parameters and/or tidal parameters */
 {
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
@@ -495,7 +500,7 @@ int XLALSimIMRPhenomP(
   freqs->data[1] = f_max;
 
   int retcode = PhenomPCore(hptilde, hctilde,
-      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, deltaF, IMRPhenomP_version, extraParams);
+      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, deltaF, IMRPhenomP_version, NRTidal_version, extraParams);
   XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
   XLALDestroyREAL8Sequence(freqs);
   return (retcode);
@@ -531,6 +536,7 @@ int XLALSimIMRPhenomPFrequencySequence(
   const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 f_ref,                          /**< Reference frequency */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD, IMRPhenomPv2_NRTidal uses NRTidal framework with IMRPhenomPv2 */
+  NRTidal_version_type NRTidal_version, /**< either NRTidal or NRTidalv2 for BNS waveform; NoNRT_V for BBH waveform */
   LALDict *extraParams) /**<linked list that may contain the extra testing GR parameters and/or tidal parameters */
 {
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
@@ -540,7 +546,7 @@ int XLALSimIMRPhenomPFrequencySequence(
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = PhenomPCore(hptilde, hctilde,
-      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, 0, IMRPhenomP_version, extraParams);
+      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, 0, IMRPhenomP_version, NRTidal_version, extraParams);
   XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
   return(retcode);
 }
@@ -575,6 +581,7 @@ static int PhenomPCore(
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD, IMRPhenomPv2_NRTidal uses NRTidal framework with IMRPhenomPv2 */
+  NRTidal_version_type NRTidal_version, /**< either NRTidal or NRTidalv2 for BNS waveform; NoNRT_V for BBH waveform */
   LALDict *extraParams /**<linked list that may contain the extra testing GR parameters and/or tidal parameters */
   )
 {
@@ -611,8 +618,10 @@ static int PhenomPCore(
   // Tidal corrections
   REAL8Sequence *phi_tidal = NULL;
   REAL8Sequence *amp_tidal = NULL;
+  REAL8Sequence *planck_taper = NULL;
   REAL8Sequence *phi_tidal_fixed = NULL;
   REAL8Sequence *amp_tidal_fixed = NULL;
+  REAL8Sequence *planck_taper_fixed = NULL;
   int ret = 0;
 
   // Enforce convention m2 >= m1
@@ -635,6 +644,9 @@ static int PhenomPCore(
 
   REAL8 lambda1, lambda2;
   REAL8 quadparam1, quadparam2;
+  /* declare HO 3.5PN spin-spin and spin-cubed terms added later to Pv2_NRTidalv2 */
+  REAL8 SS_3p5PN = 0., SSS_3p5PN = 0.;
+  REAL8 SS_3p5PN_n = 0., SSS_3p5PN_n = 0.;
 
   if (m2_SI_in >= m1_SI_in) {
     m1_SI = m1_SI_in;
@@ -675,6 +687,10 @@ static int PhenomPCore(
   REAL8 q = m2 / m1; /* q >= 1 */
   REAL8 eta = m1 * m2 / (M*M);    /* Symmetric mass-ratio */
   const REAL8 piM = LAL_PI * m_sec;
+  /* New variables needed for the NRTidalv2 model */
+  REAL8 X_A = m1/M;
+  REAL8 X_B = m2/M;
+  REAL8 pn_fac = 3.*pow(piM,2./3.)/(128.*eta);
 
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
 
@@ -703,7 +719,7 @@ static int PhenomPCore(
       else if (q > 100.0)
           XLAL_ERROR(XLAL_EDOM, "IMRPhenomPv2: Mass ratio q > 100 which is way outside the calibration range q <= 18.\n");
       if ((q < 1.5) && (lambda1 > 2000.0) && (lambda2 > 2000.0))
-        XLAL_PRINT_WARNING("IMRPhenomPv2_NRTidal: Warning: Entering region of parameter space where waveform is not reliable; q=%g,lambda1=%g, lambda2=%g\n",q, lambda1, lambda2);
+        XLAL_PRINT_WARNING("NRTidal: Warning: Entering region of parameter space where waveform might not be reliable; q=%g,lambda1=%g, lambda2=%g\n",q, lambda1, lambda2);
       CheckMaxOpeningAngle(m1, m2, chi1_l, chi2_l, chip);
       break;
     default:
@@ -923,10 +939,21 @@ static int PhenomPCore(
   if (IMRPhenomP_version == IMRPhenomPv2NRTidal_V) {
     /* Generating the NR tidal amplitude and phase */
     /* Get FD tidal phase correction and amplitude factor from arXiv:1706.02969 */
-    phi_tidal = XLALCreateREAL8Sequence(L_fCut);
-    amp_tidal = XLALCreateREAL8Sequence(L_fCut);
-    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, freqs, m1_SI, m2_SI, lambda1, lambda2);
-    XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
+    if (NRTidal_version == NRTidal_V) {
+      phi_tidal = XLALCreateREAL8Sequence(L_fCut);
+      planck_taper = XLALCreateREAL8Sequence(L_fCut);
+      ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, NRTidal_V);
+      XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
+    }
+    else if (NRTidal_version == NRTidalv2_V) {
+      phi_tidal = XLALCreateREAL8Sequence(L_fCut);
+      amp_tidal = XLALCreateREAL8Sequence(L_fCut);
+      planck_taper = XLALCreateREAL8Sequence(L_fCut);
+      ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, NRTidalv2_V);
+      XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
+      /* Get the PN SS-tail and SSS terms */
+      XLALSimInspiralGetHOSpinTerms(&SS_3p5PN, &SSS_3p5PN, X_A, X_B, chi1_l, chi2_l, quadparam1, quadparam2);
+    }
   }
 
 //   phis = XLALMalloc(L_fCut*sizeof(REAL8)); // array for waveform phase
@@ -959,7 +986,7 @@ static int PhenomPCore(
     double f = freqs->data[i];
     int j = i + offset; // shift index for frequency series if needed
 
-    int per_thread_errcode;
+    int per_thread_errcode=0;
 
     #pragma omp flush(errcode)
     if (errcode != XLAL_SUCCESS)
@@ -967,11 +994,27 @@ static int PhenomPCore(
 
     /* Generate the waveform */
     if (IMRPhenomP_version == IMRPhenomPv2NRTidal_V) {
-      double ampTidal = amp_tidal->data[i];
-      COMPLEX16 phaseTidal = cexp(-I*phi_tidal->data[i]);
-      per_thread_errcode = PhenomPCoreOneFrequency_withTides(f, ampTidal, phaseTidal, distance, M, phic,
+      if (NRTidal_version == NRTidal_V) {
+        double window = planck_taper->data[i];
+        REAL8 phaseTidal = phi_tidal->data[i];
+        per_thread_errcode = PhenomPCoreOneFrequency_withTides(f, window, phaseTidal, 0.0, distance, M, phic,
                               pAmp, pPhi, pn,
                               &hPhenom, &phasing, &amp_prefactors, &phi_prefactors);
+      }
+       else if (NRTidal_version == NRTidalv2_V) {
+         double ampTidal = amp_tidal->data[i];
+         double window = planck_taper->data[i];
+
+        /* 
+         Compute the tidal phase correction and add the 3.5PN SS and SSS contributions which 
+         are not incorporated in the TaylorF2 baseline
+        */
+         REAL8 phaseTidal =  phi_tidal->data[i] + pn_fac*(SS_3p5PN + SSS_3p5PN)*pow(f,2./3.);
+
+         per_thread_errcode = PhenomPCoreOneFrequency_withTides(f, window, phaseTidal, ampTidal, distance, M, phic,
+                              pAmp, pPhi, pn,
+                              &hPhenom, &phasing, &amp_prefactors, &phi_prefactors);
+         }
       } else {
       per_thread_errcode = PhenomPCoreOneFrequency(f, eta, distance, M, phic,
                               pAmp, pPhi, PCparams, pn,
@@ -1010,7 +1053,15 @@ static int PhenomPCore(
   phase_fixed = XLALCreateREAL8Sequence(n_fixed);
   XLAL_CHECK(phase_fixed != NULL, XLAL_EFAULT);
 
-  /* Set up fixed frequency grid around ringdown frequency */
+  /* For BNS waveforms, ending frequency is f_merger; putting f_final to f_merger for IMRPhenomPv2_NRTidal and IMRPhenomPv2_NRTidalv2  */
+  if (IMRPhenomP_version == IMRPhenomPv2NRTidal_V) {
+    REAL8 kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
+    REAL8 f_merger = XLALSimNRTunedTidesMergerFrequency(M, kappa2T, q);
+    f_final = f_merger;
+  }
+
+  /* Set up fixed frequency grid around ringdown frequency for BBH (IMRPhenomPv2) waveforms,
+     for IMRPhenomPv2_NRTidal and IMRPhenomPv2_NRTidalv2 waveforms, the grid is set up around the merger frequency */
   REAL8 freqs_fixed_start = 0.8*f_final;
   REAL8 freqs_fixed_stop = 1.2*f_final;
   if (freqs_fixed_stop > fCut)
@@ -1025,9 +1076,12 @@ static int PhenomPCore(
     /* Get FD tidal phase correction and amplitude factor from arXiv:1706.02969 */
     phi_tidal_fixed = XLALCreateREAL8Sequence(n_fixed);
     amp_tidal_fixed = XLALCreateREAL8Sequence(n_fixed);
-    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal_fixed, amp_tidal_fixed,
-                                                         freqs_fixed, m1_SI, m2_SI, lambda1, lambda2);
+    planck_taper_fixed = XLALCreateREAL8Sequence(n_fixed);
+    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal_fixed, amp_tidal_fixed, planck_taper_fixed,
+                                                         freqs_fixed, m1_SI, m2_SI, lambda1, lambda2, NRTidal_version);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
+    if (NRTidal_version == NRTidalv2_V)
+      XLALSimInspiralGetHOSpinTerms(&SS_3p5PN_n, &SSS_3p5PN_n, X_A, X_B, chi1_l, chi2_l, quadparam1, quadparam2);
   }
     
   /* We need another loop to generate the phase values on the fixed grid; no need for OpenMP here */
@@ -1035,18 +1089,30 @@ static int PhenomPCore(
     COMPLEX16 hPhenom = 0.0; // IMRPhenom waveform (before precession) at a given frequency point
     REAL8 phasing = 0;
     double f = freqs_fixed->data[i];
-    int per_thread_errcode;
+    int per_thread_errcode = 0;
 
     if (errcode != XLAL_SUCCESS)
       goto skip_fixed;
 
     /* Generate the waveform */
     if (IMRPhenomP_version == IMRPhenomPv2NRTidal_V) {
-      double ampTidal = amp_tidal_fixed->data[i];
-      COMPLEX16 phaseTidal = cexp(-I*phi_tidal_fixed->data[i]);
-      per_thread_errcode = PhenomPCoreOneFrequency_withTides(f, ampTidal, phaseTidal, distance, M, phic,
+      if (NRTidal_version == NRTidal_V) {
+        
+        double window = planck_taper_fixed->data[i];
+        REAL8 phaseTidal = phi_tidal_fixed->data[i];
+        per_thread_errcode = PhenomPCoreOneFrequency_withTides(f, window, phaseTidal, 0.0, distance, M, phic,
                               pAmp, pPhi, pn,
                               &hPhenom, &phasing, &amp_prefactors, &phi_prefactors);
+        }
+      else if (NRTidal_version == NRTidalv2_V) {
+        double ampTidal = amp_tidal_fixed->data[i];
+        double window = planck_taper_fixed->data[i];
+        REAL8 phaseTidal =  phi_tidal_fixed->data[i] + pn_fac*(SS_3p5PN_n + SSS_3p5PN_n)*pow(f,2./3.);
+        per_thread_errcode = PhenomPCoreOneFrequency_withTides(f, window, phaseTidal, ampTidal, distance, M, phic,
+                              pAmp, pPhi, pn,
+                              &hPhenom, &phasing, &amp_prefactors, &phi_prefactors); 
+                              
+        }                        
       } else {
       per_thread_errcode = PhenomPCoreOneFrequency(f, eta, distance, M, phic,
                               pAmp, pPhi, PCparams, pn,
@@ -1069,10 +1135,10 @@ static int PhenomPCore(
   acc_fixed = gsl_interp_accel_alloc();
   phiI_fixed = gsl_spline_alloc(gsl_interp_cspline, n_fixed);
   XLAL_CHECK(phiI_fixed, XLAL_ENOMEM, "Failed to allocate GSL spline with %d points for phase.", n_fixed);
+  REAL8 t_corr_fixed = 0.0;
   gsl_spline_init(phiI_fixed, freqs_fixed->data, phase_fixed->data, n_fixed);
-
   /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
-  REAL8 t_corr_fixed = gsl_spline_eval_deriv(phiI_fixed, f_final, acc_fixed) / (2*LAL_PI);
+  t_corr_fixed = gsl_spline_eval_deriv(phiI_fixed, f_final, acc_fixed) / (2*LAL_PI);
   // XLAL_PRINT_INFO("t_corr (fixed grid): %g\n", t_corr_fixed);
 
   /* Now correct phase */
@@ -1104,8 +1170,10 @@ static int PhenomPCore(
 
   if (phi_tidal) XLALDestroyREAL8Sequence(phi_tidal);
   if (amp_tidal) XLALDestroyREAL8Sequence(amp_tidal);
+  if (planck_taper) XLALDestroyREAL8Sequence(planck_taper);
   if (amp_tidal_fixed) XLALDestroyREAL8Sequence(amp_tidal_fixed);
   if (phi_tidal_fixed) XLALDestroyREAL8Sequence(phi_tidal_fixed);
+  if (planck_taper_fixed) XLALDestroyREAL8Sequence(planck_taper_fixed);
 
   if( errcode != XLAL_SUCCESS ) {
     if(*hptilde) {
@@ -1247,8 +1315,9 @@ static int PhenomPCoreOneFrequency(
 
 static int PhenomPCoreOneFrequency_withTides(
   const REAL8 fHz,                            /**< Frequency (Hz) */
-  const REAL8 ampTidal,                       /**< tidal amplitude at a frequency sample; planck window */
-  COMPLEX16 phaseTidal,                       /**< tidal phasing at a frequency sample from NRTidal infrastructure*/
+  const REAL8 window,                       /**< Planck_taper */
+  const REAL8 phaseTidal,                       /**< tidal phasing at a frequency sample from NRTidal infrastructure*/
+  const REAL8 ampTidal,                          /**< tidal amplitude added to BBH amplitude, before Planck tapering*/
   const REAL8 distance,                       /**< Distance of source (m) */
   const REAL8 M,                              /**< Total mass (Solar masses) */
   const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
@@ -1285,9 +1354,10 @@ static int PhenomPCoreOneFrequency_withTides(
 
   phPhenom -= 2.*phic; /* Note: phic is orbital phase */
   REAL8 amp0 = M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
-  *hPhenom = amp0 * aPhenom * (cos(phPhenom) - I*sin(phPhenom)) * ampTidal * phaseTidal; /* Assemble IMRPhenom waveform. */
+  *hPhenom = amp0 * (aPhenom + 2*sqrt(LAL_PI/5.) * ampTidal) * cexp(-I*(phPhenom+phaseTidal)) * window; /* Assemble IMRPhenom waveform. */
 
   // Return phasing for time-shift correction
+  phPhenom += phaseTidal;
   *phasing = -phPhenom; // ignore alpha and epsilon contributions
 
   return XLAL_SUCCESS;
