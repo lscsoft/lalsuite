@@ -22,7 +22,7 @@ ${SRC_DIR}/configure \
 make -j ${CPU_COUNT}
 
 # check
-make -j ${CPU_COUNT} check
+make -j ${CPU_COUNT} check SKIP_TESTS_THAT_FAIL_UNDER_CONDA=1
 
 # install
 make -j ${CPU_COUNT} install
