@@ -1460,6 +1460,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     char *modes = strtok_r(ppt->value, ",", &end_str);
     int l[5], m[5], ii=0, jj=0;
 
+    fprintf(stdout, "Template will use a custom mode array.\n");
     while (modes != NULL) {
         int k = 0;
         if (strstr(modes, substring) != NULL) {
@@ -1491,6 +1492,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
 
     LALValue *ModeArray = XLALSimInspiralCreateModeArray();
     for (int iii=0; iii<ii; iii+=1){
+       fprintf(stdout, "Template will use the l=%d m=%d mode\n", l[iii], m[iii]);
        XLALSimInspiralModeArrayActivateMode(ModeArray, l[iii], m[iii]);
     }
     XLALSimInspiralWaveformParamsInsertModeArray(model->LALpars, ModeArray);
