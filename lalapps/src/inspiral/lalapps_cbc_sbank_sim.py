@@ -192,14 +192,12 @@ for s in sims:
     if len(newtbl) == opts.injection_max - opts.injection_min:
         break
 
-    if 1./opts.mratio_max <= s.mass1/s.mass2 <= opts.mratio_max and opts.mtotal_min <= s.mass1 + s.mass2 <= opts.mtotal_max and (opts.duration_min == 0 or lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(opts.flow, s.mass1 * MSUN_SI, s.mass2* MSUN_SI, s.spin1z, s.spin2z) > opts.duration_min):
-        s.polarization = np.random.uniform(0, 2*np.pi)
-
         # start adding to table once we reach min injection requested
         # by user
-        if opts.injection_min <= noinjs:
+    if opts.injection_min <= noinjs:
+        if 1./opts.mratio_max <= s.mass1/s.mass2 <= opts.mratio_max and opts.mtotal_min <= s.mass1 + s.mass2 <= opts.mtotal_max and (opts.duration_min == 0 or lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(opts.flow, s.mass1 * MSUN_SI, s.mass2* MSUN_SI, s.spin1z, s.spin2z) > opts.duration_min):
             newtbl.append(s)
-        noinjs += 1
+    noinjs += 1
 
 sims = newtbl
 

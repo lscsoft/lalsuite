@@ -308,7 +308,7 @@ for inj_run in cp.options("injections"):
     # because we will prune injections, we generate 50 times more
     # than we think we need. this is fast.
     # FIXME: this is still no guarantee we have enough injections!!
-    gpsend = gpsstart + 50 * (njobs * injperjob)
+    gpsend = gpsstart +  (njobs * injperjob)
     cp.set("inspinj", "gps-start-time", str(gpsstart))
     cp.set("inspinj", "gps-end-time", str(gpsend))
     cp.set("inspinj", "time-step", str(1))
