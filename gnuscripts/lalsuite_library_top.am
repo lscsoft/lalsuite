@@ -18,3 +18,27 @@ AUTHORS: force-author-generation
 	$(AM_V_GEN)export LC_ALL=C; since=107ebb8dc9154f8f8efeb9f9683b7a2ba0996310; \
 	( cd $(srcdir) && cat .AUTHORS && git log --pretty="%aN" $${since}..HEAD -- . 2>/dev/null ) | $(SED) -e '/^UNKNOWN/d' | sort -f -u > $@
 endif # HAVE_GIT_REPO
+
+.PHONE: check-AUTHORS
+check-local: check-AUTHORS
+check-AUTHORS: AUTHORS
+	$(AM_V_at)export LC_ALL=C; notniceregex='/[\x80-\xff]/d;/^[A-Z][a-z][-A-Za-z]* /d;/^[A-Z][.] /d'; \
+	if test x`$(SED) "$${notniceregex}" AUTHORS` = x; then \
+		exit 0; \
+	fi; \
+	echo ""; \
+	echo "**************************************************"; \
+	echo "It looks like the following entries in AUTHORS are"; \
+	echo "not nicely formatted names:"; \
+	$(SED) "$${notniceregex}" AUTHORS | $(SED) 's/^/   /'; \
+	echo "(By 'nicely formatted' we mean properly capitalised"; \
+	echo "human names, e.g. Albert Einstein, as opposed to"; \
+	echo "computer user names, e.g. albert.einstein.)"; \
+	echo "You may need to set up Git for the first time, for"; \
+	echo "help see https://git-scm.com/book."; \
+	echo "You may also need to add an entry to the .mailmap "; \
+	echo "file of the form"; \
+	echo "   Your Nicely Formatted Name <my.email@address>"; \
+	echo "For help please ask the LALSuite maintainers."; \
+	echo "**************************************************"; \
+	exit 1
