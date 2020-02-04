@@ -50,7 +50,7 @@ _bayespputils_la_LDFLAGS = $(top_builddir)/lib/liblalinference.la -shared -modul
 endif
 endif
 
-all-local: _distance.so _bayespputils.so _moc.so
+pymodule-all-local: _distance.so _bayespputils.so _moc.so
 
 _distance.so:
 	rm -f $@ && $(LN_S) .libs/$@

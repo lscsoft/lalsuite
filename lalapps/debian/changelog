@@ -1,3 +1,15 @@
+lalapps (6.25.1-1) unstable; urgency=low
+
+  * MakeSFTs.c: fix incorrect XLAL error checks
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 13 Jan 2020 07:33:00 -0700
+
+lalapps (6.25.0-1) unstable; urgency=low
+
+  * O3b release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 27 Nov 2019 16:54:54 -0700
+
 lalapps (6.24.0-1) unstable; urgency=low
 
   * O3 release

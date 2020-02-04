@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 
-import sys, os
-import gwpy
-import numpy as np
+import os
 import struct
-import time
+import sys
+
+import numpy as np
 import matplotlib
 matplotlib.use('Agg')
+
 from matplotlib.pyplot import *
+
 import matplotlib.pyplot as plt
+
 matplotlib.rcParams['text.usetex']=False
-from glue import lal
-from pylal import frutils
-from gwpy.timeseries import TimeSeries
 
 #Written by Kara Merfeld, 2018 (In my defense, I was a little first year grad student when I did this :) )
 
@@ -64,7 +64,7 @@ def parseSFT(SFTinput):
         # Read comment
         comment = struct.unpack( ( '%ds' % comment_length ),
                                  SFTfile.read(comment_length))[0]
-    
+
         # Read data
         data_stream = struct.unpack( ( '%df' % nsamples*2 ),
                                      SFTfile.read(nsamples*8))
@@ -93,9 +93,9 @@ def parseSFT(SFTinput):
         return sfts[0]
     else:
         return tuple(sfts)
-    
 
-def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The function that generates the coherence 
+
+def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The function that generates the coherence
 
     done = False
     for i in range(11 , len(pathToSFTsChannA)-1):
@@ -109,7 +109,7 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
             CB = pathToSFTsChannB[-(i-1):-10]
             done = True
 
-    print('Computing the coherence between:') 
+    print('Computing the coherence between:')
     print(CA)
     print(CB)
 
@@ -160,7 +160,7 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
     else:
         Fmax = FmaxB
 
-    #We calculate the beginning and ending bins            
+    #We calculate the beginning and ending bins
     KminA = int((Fmin-FminA)*TbaseA)
     KminB = int((Fmin-FminB)*TbaseB)
 
@@ -183,15 +183,15 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
     A = 0 * parseSFT(pathToSFTsChannA+ListA[0])['data'] #gotta come back and make sure the lengths work out if they are not equal
     B = 0 * parseSFT(pathToSFTsChannB+ListB[0])['data']
     #numerator = 0 * parseSFT(pathToSFTsChannA+ListA[0])['data']
-    
+
     #print('lengths of A and B before slice:')
     #print(len(A))
     #print(len(B))
-    
+
 
     A = A[KminA:KmaxA+1]
     B = B[KminB:KmaxB+1]
-    
+
     numerator = A
 
     #print('lengths')
@@ -200,18 +200,18 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
     #print(len(numerator))
 
 
-    for sftA in ListA:  
+    for sftA in ListA:
         StartTimesA.append(float(sftA[-19:-10])) #This list might not even be necesarry
 
     nAve = 0
-    #Let A be the channel that the thing is getting compared to.  
-    for Aind in range(0,len(StartTimesA)): 
+    #Let A be the channel that the thing is getting compared to.
+    for Aind in range(0,len(StartTimesA)):
         for Bind in range(0,len(StartTimesB)):
             if StartTimesA[Aind] == StartTimesB[Bind]:
 
                 channelA = parseSFT(pathToSFTsChannA+ListA[Aind])['data'][KminA:KmaxA+1]
                 channelB = parseSFT(pathToSFTsChannB+ListB[Bind])['data'][KminB:KmaxB+1]
-                
+
                 A = A + channelA * np.conj(channelA)
                 B = B + channelB * np.conj(channelB)
                 numerator = numerator + channelA * np.conj(channelB)
@@ -220,12 +220,12 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
 
     numerator = numerator * np.conj(numerator)
 
-    coh = numerator/(A*B)    
+    coh = numerator/(A*B)
     coh = np.real_if_close(coh, tol = 10)
 
-    nAve = str(nAve)    
+    nAve = str(nAve)
 
-    print('Coherence Completed; nAve = %s' % nAve) 
+    print('Coherence Completed; nAve = %s' % nAve)
     print('Generating plots and files')
     ###
 
@@ -239,7 +239,7 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
     #print(len(Freq))
     #print(len(coh))
 
-    #Freq = np.linspace(0, N, len(coh)) 
+    #Freq = np.linspace(0, N, len(coh))
     #print('value of Freq[180000]')
     #print(Freq[180000])   #this is telling me that at each index is 1 Hz.  No good.
 
@@ -267,12 +267,12 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
 
     subBand = int(subBand) # Output plots and files for each subBand.
 
-    # All frequencies below, minFreq, maxFreq, and subBand, are coverted to integer indices in the Freq array. 
-    i = int(0)  
+    # All frequencies below, minFreq, maxFreq, and subBand, are coverted to integer indices in the Freq array.
+    i = int(0)
     subBand = subBand * TbaseA
-    maxPossibleFreq = len(Freq); 
-    minFreq = int(i * subBand) #minFreq is integer minimum frequency, this subBand 
-    maxFreq = int((i + 1) * subBand) # maxFreq is integer maximum frequency, this subBand 
+    maxPossibleFreq = len(Freq);
+    minFreq = int(i * subBand) #minFreq is integer minimum frequency, this subBand
+    maxFreq = int((i + 1) * subBand) # maxFreq is integer maximum frequency, this subBand
     while  maxFreq < maxPossibleFreq:
         plot_num = str(i)
 
@@ -295,9 +295,9 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
         clf()
         close
 
-        # Setup to back to the top of the while loop. 
+        # Setup to back to the top of the while loop.
         i += 1
-        minFreq = int(i * subBand) #minFreq is integer minimum frequency, this subBand 
+        minFreq = int(i * subBand) #minFreq is integer minimum frequency, this subBand
         maxFreq = int((i + 1) * subBand) # maxFreq is integer maximum frequency, this subBand
 
     print('Done')
@@ -315,16 +315,16 @@ if len(sys.argv) < 3:
    print(' ')
    print('The optional subBand is the band in Hz to output in each plot. (Default is 100 Hz)')
    print(' ')
-   exit(0) 
+   exit(0)
 
 #print sys.argv[1]
 #print sys.argv[2]
 
 pathToSFTsChannA = sys.argv[1]
 pathToSFTsChannB = sys.argv[2]
-        
+
 if pathToSFTsChannA[-1] != '/':
-   pathToSFTsChannA = pathToSFTsChannA + '/'  
+   pathToSFTsChannA = pathToSFTsChannA + '/'
 
 if pathToSFTsChannB[-1] != '/':
    pathToSFTsChannB = pathToSFTsChannB + '/'

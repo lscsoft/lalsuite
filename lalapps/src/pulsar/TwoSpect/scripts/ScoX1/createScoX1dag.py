@@ -1,5 +1,6 @@
 #!/usr/bin/python
-import os, commands, shutil, sys, re
+import os
+import re
 import numpy as np
 import argparse
 
@@ -39,7 +40,7 @@ parser.add_argument('--outfile', type=str, help='Filestring for output', default
 parser.add_argument('--outdir', type=str, help='Output directory', default='output_')
 parser.add_argument('--executable', type=str, help='Path to compiled binary executable', default='/home/grant.meadors/TwoSpect/dev1/bin/lalapps_TwoSpect')
 args = parser.parse_args()
-if args.singleBand or args.templateSearch: 
+if args.singleBand or args.templateSearch:
     print('Looking only in a 5 Hz band from the MDCv6 data set at the following pulsar: ' + str(args.singleBand))
 elif args.templateSearchOpen or args.templateSearchClosed:
     print('Looking in 5 Hz bands from the MDCv6 data set.')
@@ -58,7 +59,7 @@ def sftFileListParts():
     287820, 291420, 295020, 309420, 316620, 334620, 388620, 395820, 399420,\
     428220, 475020, 493020]
 
-    # Manually construct the sftFileList, because it is so idiosyncratic 
+    # Manually construct the sftFileList, because it is so idiosyncratic
     sftFileListPart1 = [66780, 83580, 91980, 100380, 108780, 117180, 133980,\
     142380, 167580, 184380, 217980, 234780, 243180, 259980, 268380, 285180,\
     293580]
@@ -77,11 +78,11 @@ def sftFileBin(finj, fstart, fjobspan, fwingsize, tcoh):
     bandCountFreq = np.floor( (finj - fstart)/fjobspan )
     bandStartFreq = fstart + fjobspan*bandCountFreq
     bandStartBin = bandStartFreq*tcoh
-    wingsBelowStartBin = (fwingsize - fjobspan)/2 * tcoh 
+    wingsBelowStartBin = (fwingsize - fjobspan)/2 * tcoh
     completeStartBin = bandStartBin - wingsBelowStartBin
     return completeStartBin
     print('Frequency start bins for SFTs in real S6 search')
-    
+
 
 
 def sftNameMaker(observatory, tcoh, binname, args):
@@ -96,25 +97,25 @@ def sftNameMaker(observatory, tcoh, binname, args):
         observatory + "/"
         sftFilePart1 = "s_sfts/" + observatory[0] + "-" + observatory[1] + \
         "_" + observatory + "_"
-        sftFilePart2 = "SFT_SCO_X1_S6_" 
+        sftFilePart2 = "SFT_SCO_X1_S6_"
     else:
         sftFileRoot = "/home/egoetz/TwoSpect/scox1_mdc6/sfts/" + \
-        observatory + "/" 
+        observatory + "/"
         sftFilePart1 = "s_sfts/" + openFlag + "/" + observatory[0] + "-" + observatory[1] + \
         "_" + observatory + "_"
         sftFilePart2 = "SFT_SCO_X1_MDCv6_"
     # EXAMPLE: print "/home/egoetz/TwoSpect/scox1_mdc6/sfts/H1/840s_sfts/H-1_H1_840SFT_SCO_X1_MDCv6-313.5Hz_263340"
     return sftFileRoot + str(tcoh) + sftFilePart1 + str(tcoh) + sftFilePart2 + str(binname)
- 
+
 def tablereader(tableName, observatory, args):
     print('Name of the MDC table:')
     print(tableName)
     tableData = open(tableName, "r")
-        
+
     for k, tableLine in enumerate(tableData):
         if k == 0:
             if args.templateSearchClosed:
-                # Note this would need to be moved outside if the 
+                # Note this would need to be moved outside if the
                 # first pulsar were not closed. In that case, just do
                 # a check to see if these lists exist
                 raInjList = np.asarray(4.275699238500, dtype=np.float64)
@@ -160,7 +161,7 @@ def tablereader(tableName, observatory, args):
                     TcohLine = 840
                 else:
                     TcohLine = 360
-                TcohList = np.vstack([TcohList, np.asarray(TcohLine)]).astype(int) 
+                TcohList = np.vstack([TcohList, np.asarray(TcohLine)]).astype(int)
                 PList.append(str(tableLine.split()[11]))
                 asiniList.append(str(tableLine.split()[9]))
 
@@ -176,7 +177,7 @@ def tablereader(tableName, observatory, args):
     for binnumber in sftFileListPart1]
     [sftFileList.append(sftNameMaker(observatory, 360, binnumber, args))\
     for binnumber in sftFileListPart2]
-            
+
     if args.templateSearchClosed:
         print('Done sorting closed pulsar table.')
     else:
@@ -187,9 +188,9 @@ def tablereader(tableName, observatory, args):
         TcohList = TcohList[1:]
         PList = PList[1:]
         asiniList = asiniList[1:]
-          
+
     return [raInjList, decInjList, fInjList, pulsarNoList, TcohList, sftFileList, PList, asiniList]
-    
+
 
 
 def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobInc, Period, asini, fSteps, dfSteps, args):
@@ -227,7 +228,7 @@ def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobIn
     #raInj = 3.38
     #decInj = 0.19
     # MDC v3
-    #raInj = 2.20 
+    #raInj = 2.20
     #decInj = -1.01
     # MDC v4
     #raInj = 3.42
@@ -236,7 +237,7 @@ def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobIn
     #raInj = 3.14
     #decInj = 0.00
     # MDC v6
-    #raInj = 4.275699238500	
+    #raInj = 4.275699238500
     #decInj = -0.27
     # MDC v6 should take alpha and dec from input arguments
     # Using the argument parser for the all-sky test
@@ -265,7 +266,7 @@ def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobIn
     if (args.singleBand or args.templateSearch or \
     args.templateSearchOpen or args.templateSearchClosed) or args.noiseTest:
         sftFileListPartList = sftFileListParts()
-        
+
         def FloorBinFinder(Tcoh, fInj, sftFile, sftFileSubList):
             fInjBin = Tcoh*fInj
             fBinMatchList = []
@@ -283,7 +284,7 @@ def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobIn
         if args.templateSearchClosed:
             floorFlag = floorFlag + 2
         fFloor = FloorBinFinder(Tcoh, fInj, sftFile, \
-        sftFileListPartList[floorFlag])    
+        sftFileListPartList[floorFlag])
         if args.noiseTest:
             fInterval =  args.noiseTest
         elif args.singleBand or args.templateSearch or \
@@ -345,7 +346,7 @@ def categorizer(Tcoh, raInj, decInj, fInj, observatory, pulsarNo, sftFile, jobIn
         # Specify the range of frequency modulation to search
         dfHypothesis = 2 * np.pi * fInj  * float(asini) / float(Period)
         dfInterval = 1 / (4 * float (Tcoh))
-        dfBound = (dfSteps - 1) * dfInterval 
+        dfBound = (dfSteps - 1) * dfInterval
         dfRange = [dfHypothesis -0.5*dfBound + dfInterval*y for y in range(0, dfSteps)]
 
     # Choose a TwoSpect version
@@ -427,7 +428,7 @@ def dagWriter(g, observatory, headJobName, jobNumber, rightAscension, declinatio
     # to supply the fspan argument
 
     #startTime is conditional on the observatory
-   
+
     if args.real:
             # For real searches, the startTime string should be
             # configured with the observation time too
@@ -453,14 +454,14 @@ def dagWriter(g, observatory, headJobName, jobNumber, rightAscension, declinatio
             print('Observatory choice (argument 1) not understood: choose H1, L1, or V1')
     else:
         print('Coherence time incorrectly assigned: must be 360 or 840 s')
-        
+
     if args.templateSearch or \
     args.templateSearchOpen or args.templateSearchClosed:
         fminString = str(np.math.floor(10*f)/10)
     elif args.real:
         fminString = str(np.math.floor(f*np.math.floor(1/args.fspan))/np.math.floor(1/args.fspan))
     else:
-        fminString = str(np.math.floor(8*(f-0.125))/8)     
+        fminString = str(np.math.floor(8*(f-0.125))/8)
     if args.templateSearch or \
     args.templateSearchOpen or args.templateSearchClosed:
         #templateStringSet = ' --templateSearch' + \
@@ -483,7 +484,7 @@ def dagWriter(g, observatory, headJobName, jobNumber, rightAscension, declinatio
     if args.real:
         configFileName = 'Atlas_config_file.txt'
     else:
-        configFileName = 'config_file_mdcv6.txt' 
+        configFileName = 'config_file_mdcv6.txt'
     argumentList = \
     '"' + \
     ' --config=' + configFileName + \
@@ -498,7 +499,7 @@ def dagWriter(g, observatory, headJobName, jobNumber, rightAscension, declinatio
     " --outfilename=out_" + headJobName + '_' + \
     str(f) + '_' + \
     str(df) + \
-    ".dat"  + " --outdirectory=output_" + headJobName + '"' 
+    ".dat"  + " --outdirectory=output_" + headJobName + '"'
     tagStringLine = "TwoSpect_" + str(jobNumber)
     g("JOB " + tagStringLine + " ScoX1_" + headJobName + ".sub")
     g("VARS " + tagStringLine + " argList=" + argumentList + " tagString=" + '"' + tagStringLine + '"')
@@ -535,9 +536,9 @@ if args.real:
         fStartList = fStartList[0:-1]
     print('Starting frequency of bands to be searched:')
     print(fStartList)
-    
+
     for m, BandNo in enumerate(fStartList):
-        jobsPerBand = int(args.jobspan/args.fspan) 
+        jobsPerBand = int(args.jobspan/args.fspan)
         jobInc = m * jobsPerBand
         categorizer(args.Tcoh, args.ra, args.dec, fStartList[m], observatoryChoice, "band-" + str(int(BandNo)).zfill(4), args.sftDir, jobInc, args.P, args.Asini, fSteps, dfSteps, args)
 

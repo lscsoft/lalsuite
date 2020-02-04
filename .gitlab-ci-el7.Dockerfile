@@ -1,4 +1,4 @@
-FROM igwn/base:el7
+FROM igwn/base:el7-testing
 
 LABEL name="LALSuite Nightly - EL7" \
       maintainer="Adam Mercer <adam.mercer@ligo.org>" \

@@ -1,12 +1,8 @@
 # Ben Farr 2016
 
-import numpy as np
 import os
-from matplotlib import use
+from matplotlib import (use, rc)
 use('agg')
-from matplotlib import pyplot as plt
-from matplotlib.lines import Line2D
-from matplotlib import rc
 
 rc('text', usetex=True)
 rc('font', family='lmodern')

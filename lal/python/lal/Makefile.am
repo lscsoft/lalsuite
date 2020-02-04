@@ -5,7 +5,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
 SUBDIRS = \
-	spectrum \
 	utils \
 	$(END_OF_LIST)
 

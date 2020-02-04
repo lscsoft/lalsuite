@@ -1,10 +1,13 @@
 # Perform an interpolating search, and compare F-statistics to reference results
 
+test "X${SKIP_TESTS_THAT_FAIL_UNDER_CONDA}" = X || exit 77
+
 export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
 
 echo "=== Create search setup with 3 segments spanning ~260 days ==="
 set -x
 ${builddir}/lalapps_WeaveSetup --ephem-earth=earth00-19-DE405.dat.gz --ephem-sun=sun00-19-DE405.dat.gz --first-segment=1122332211/90000 --segment-count=3 --segment-gap=11130000 --detectors=H1,L1 --output-file=WeaveSetup.fits
+${fitsdir}/lalapps_fits_overview WeaveSetup.fits
 set +x
 echo
 
@@ -43,6 +46,7 @@ ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
     --Fstat-run-med-window=50 \
     --alpha=2.3/0.05 --delta=-1.2/0.1 --freq=50.5~0.005 --f1dot=-3e-10,0 \
     --semi-max-mismatch=6.5 --coh-max-mismatch=0.4
+${fitsdir}/lalapps_fits_overview WeaveOut.fits
 set +x
 echo
 
@@ -106,6 +110,7 @@ ${builddir}/lalapps_Weave --output-file=WeaveOutSingle.fits \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --alpha=${alpha_loud}~0 --delta=${delta_loud}~0 --freq=${freq_loud}~0 --f1dot=${f1dot_loud}~0 \
     --semi-max-mismatch=6.5 --coh-max-mismatch=0.4
+${fitsdir}/lalapps_fits_overview WeaveOutSingle.fits
 ${fitsdir}/lalapps_fits_table_list "WeaveOutSingle.fits[mean2F_toplist][col c1=mean2F][#row == 1]" > tmp
 coh2F_loud_single=`cat tmp | sed "/^#/d" | xargs printf "%.16g"`
 mean_mu=0.15

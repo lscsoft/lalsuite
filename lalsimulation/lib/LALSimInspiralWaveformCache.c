@@ -1042,7 +1042,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
                 ABORT_NONZERO_TIDES(LALpars);
 
             ret = XLALSimIMRSEOBNRv4ROMFrequencySequence(hptilde, hctilde, frequencies,
-                    phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z, -1);
+                    phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z, -1, LALpars, NoNRT_V);
             break;
 
         case SEOBNRv4_ROM_NRTidal:
@@ -1052,8 +1052,25 @@ int XLALSimInspiralChooseFDWaveformSequence(
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
                 ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
 
+            ret = XLALSimInspiralSetQuadMonParamsFromLambdas(LALpars);
+            XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set QuadMon from Lambdas for SEOBNRv4_ROM_NRTidal");
+
             ret = XLALSimIMRSEOBNRv4ROMNRTidalFrequencySequence(hptilde, hctilde, frequencies,
-                    phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z, lambda1, lambda2);
+                    phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z, lambda1, lambda2, LALpars, NRTidal_V);
+            break;
+
+        case SEOBNRv4_ROM_NRTidalv2:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
+                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+
+            ret = XLALSimInspiralSetQuadMonParamsFromLambdas(LALpars);
+            XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set QuadMon from Lambdas for SEOBNRv4_ROM_NRTidalv2");
+
+            ret = XLALSimIMRSEOBNRv4ROMNRTidalFrequencySequence(hptilde, hctilde, frequencies,
+                    phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z, lambda1, lambda2, LALpars, NRTidalv2_V);
             break;
 
         case SEOBNRv4T_surrogate:
@@ -1100,7 +1117,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomPFrequencySequence(hptilde, hctilde, frequencies,
               chi1_l, chi2_l, chip, thetaJN,
-              m1, m2, distance, alpha0, phi_aligned, f_ref, IMRPhenomPv1_V, NULL);
+              m1, m2, distance, alpha0, phi_aligned, f_ref, IMRPhenomPv1_V, NoNRT_V, NULL);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
 	    cos_2zeta = cos(2.0*zeta_polariz);
 	    sin_2zeta = sin(2.0*zeta_polariz);
@@ -1132,7 +1149,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomPFrequencySequence(hptilde, hctilde, frequencies,
               chi1_l, chi2_l, chip, thetaJN,
-              m1, m2, distance, alpha0, phi_aligned, f_ref, IMRPhenomPv2_V, NULL);
+              m1, m2, distance, alpha0, phi_aligned, f_ref, IMRPhenomPv2_V, NoNRT_V, NULL);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
 	    cos_2zeta = cos(2.0*zeta_polariz);
 	    sin_2zeta = sin(2.0*zeta_polariz);
@@ -1154,7 +1171,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
 	        ABORT_NONZERO_TIDES(LALpars);
 
             ret = XLALSimIMRPhenomDFrequencySequence(hptilde, frequencies,
-                phiRef, f_ref, m1, m2, S1z, S2z, distance, LALpars);
+                phiRef, f_ref, m1, m2, S1z, S2z, distance, LALpars, NoNRT_V);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
@@ -1174,7 +1191,30 @@ int XLALSimInspiralChooseFDWaveformSequence(
                 ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
 
             ret = XLALSimIMRPhenomDNRTidalFrequencySequence(hptilde, frequencies,
-                phiRef, f_ref, distance, m1, m2, S1z, S2z, lambda1, lambda2, LALpars);
+                phiRef, f_ref, distance, m1, m2, S1z, S2z, lambda1, lambda2, LALpars, NRTidal_V);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            /* Produce both polarizations */
+            *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+                    &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
+                    &((*hptilde)->sampleUnits), (*hptilde)->data->length);
+            for(j = 0; j < (*hptilde)->data->length; j++) {
+                (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j];
+                (*hptilde)->data->data[j] *= pfac;
+            }
+            break;
+
+        case IMRPhenomD_NRTidalv2:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
+                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+
+            ret = XLALSimInspiralSetQuadMonParamsFromLambdas(LALpars);
+            XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set QuadMon from Lambdas for IMRPhenomD_NRTidalv2");
+
+            ret = XLALSimIMRPhenomDNRTidalFrequencySequence(hptilde, frequencies,
+                phiRef, f_ref, distance, m1, m2, S1z, S2z, lambda1, lambda2, LALpars, NRTidalv2_V);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
@@ -1203,7 +1243,34 @@ int XLALSimInspiralChooseFDWaveformSequence(
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomPFrequencySequence(hptilde, hctilde, frequencies,
               chi1_l, chi2_l, chip, thetaJN,
-              m1, m2, distance, alpha0, phi_aligned, f_ref, IMRPhenomPv2NRTidal_V, LALpars);
+              m1, m2, distance, alpha0, phi_aligned, f_ref, IMRPhenomPv2NRTidal_V, NRTidal_V, LALpars);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            for (UINT4 idx=0;idx<(*hptilde)->data->length;idx++) {
+                PhPpolp=(*hptilde)->data->data[idx];
+                PhPpolc=(*hctilde)->data->data[idx];
+                (*hptilde)->data->data[idx] =cos(2.*zeta_polariz)*PhPpolp+sin(2.*zeta_polariz)*PhPpolc;
+                (*hctilde)->data->data[idx]=cos(2.*zeta_polariz)*PhPpolc-sin(2.*zeta_polariz)*PhPpolp;
+            }
+            break;
+
+        case IMRPhenomPv2_NRTidalv2:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
+                ABORT_NONDEFAULT_FRAME_AXIS(LALpars);/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
+            if( !XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars) )
+                ABORT_NONDEFAULT_MODES_CHOICE(LALpars);
+            /* Tranform to model parameters */
+            if(f_ref==0.0)
+              f_ref = f_min; /* Default reference frequency is minimum frequency */
+            XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame(
+                &chi1_l, &chi2_l, &chip, &thetaJN, &alpha0, &phi_aligned, &zeta_polariz,
+                m1, m2, f_ref, phiRef, inclination,
+                S1x, S1y, S1z,
+                S2x, S2y, S2z, IMRPhenomPv2NRTidal_V);
+            /* Call the waveform driver routine */
+            ret = XLALSimIMRPhenomPFrequencySequence(hptilde, hctilde, frequencies,
+              chi1_l, chi2_l, chip, thetaJN,
+              m1, m2, distance, alpha0, phi_aligned, f_ref, IMRPhenomPv2NRTidal_V, NRTidalv2_V, LALpars);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             for (UINT4 idx=0;idx<(*hptilde)->data->length;idx++) {
                 PhPpolp=(*hptilde)->data->data[idx];

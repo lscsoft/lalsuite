@@ -1,15 +1,12 @@
-EXTRA_DIST =
-include $(top_srcdir)/gnuscripts/lalsuite_test.am
+include $(top_srcdir)/gnuscripts/lalsuite_test_python.am
 
 # Add compiled test programs to this variable
 test_programs +=
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts += \
-	test_python_imports.py \
-	test_python_scripts.py \
-	simulateCWTest.py \
-	heterodyned_model_test.py \
+	test_simulateCW.py \
+	test_heterodyned_model.py \
 	$(END_OF_LIST)
 
 # Add any helper programs required by tests to this variable

@@ -1,5 +1,4 @@
 import numpy as np
-import sys
 from math import ceil
 from optparse import OptionParser
 import os

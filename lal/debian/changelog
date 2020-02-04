@@ -1,3 +1,9 @@
+lal (6.21.0-1) unstable; urgency=low
+
+  * O3b release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 22 Nov 2019 15:56:31 -0700
+
 lal (6.20.2-1) unstable; urgency=low
 
   * MKL FFT fixes

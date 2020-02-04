@@ -296,18 +296,8 @@ INT4 XLALSimIMREOBFinalMassSpinPrec(
     // Guard against NANs inside the fit
     if (inside_sqrt < 0)
     {
-      // If the final spin was going to be small, just multiply the argument of the sqrt by -1.
-      if (sqrt(fabs(inside_sqrt)) * prefactor < 3.0e-2)
-      {
-        inside_sqrt *= -1;
-      }
-      else
-      {
-        // Final spin would have been huge and the argument of the sqrt is negative. Fail.
-        XLAL_PRINT_ERROR("Final spin fit had a large negative argument of sqrt! Aborting");
-        XLAL_ERROR(XLAL_EDOM);
-      }
-      printf("Warning: in the final spin fit, argument of sqrt was negative!\n");
+      XLAL_PRINT_WARNING("Warning: in the final spin fit, argument of sqrt was negative. Truncating the spin to 0.\n");
+      inside_sqrt = 0.0;
     }
     *finalSpin = prefactor * sqrt(inside_sqrt);
     // If somehow we have gone above the Kerr limit, don't.

@@ -1,3 +1,17 @@
+lalsimulation (1.10.1-1) unstable; urgency=low
+
+  * Add a fix to aligned-spin limit
+  * NRHybSur3dq8: Use XLAL_EDOM for extrapolation errors
+  * Fix Bh1-Bh2 swap bug in NRSur7dq4 when m1 < m2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 15 Jan 2020 13:17:36 -0700
+
+lalsimulation (1.10.0-1) unstable; urgency=low
+
+  * O3b release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 22 Nov 2019 17:03:41 -0700
+
 lalsimulation (1.9.1-1) unstable; urgency=low
 
   * O3 point release

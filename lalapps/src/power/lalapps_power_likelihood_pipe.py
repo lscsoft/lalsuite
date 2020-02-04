@@ -33,7 +33,6 @@ Excess power offline pipeline's likelihood stage construction script.
 from __future__ import print_function
 
 
-import glob
 import itertools
 from optparse import OptionParser
 import sys

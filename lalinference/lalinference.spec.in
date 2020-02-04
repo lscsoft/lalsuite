@@ -1,6 +1,6 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
-%define release 1
+%define release 2
 %define configure_opts --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
@@ -24,6 +24,8 @@ Prefix: %{_prefix}
 
 # C
 BuildRequires: chealpix-devel >= 3.30.0
+BuildRequires: gcc
+BuildRequires: gcc-c++
 BuildRequires: gsl-devel
 BuildRequires: help2man
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
@@ -33,56 +35,58 @@ BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
 BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
+BuildRequires: make
 BuildRequires: openmpi-devel
 BuildRequires: pkgconfig >= 0.18.0
 
 # swig
-BuildRequires: swig >= 3.0.7
+BuildRequires: swig >= 3.0.9
 
 # python2
 BuildRequires: python2-rpm-macros
 BuildRequires: python
 BuildRequires: python-devel
-BuildRequires: glue >= @MIN_GLUE_VERSION@
-BuildRequires: healpy >= 1.9.1
-BuildRequires: h5py
-BuildRequires: numpy >= 1.7
-BuildRequires: pytest
-BuildRequires: python-astropy >= 1.1.1
-BuildRequires: python-matplotlib >= 1.2.0
-BuildRequires: python-pathlib
+BuildRequires: python2-astropy >= 1.1.1
+BuildRequires: python2-glue >= @MIN_GLUE_VERSION@
 BuildRequires: python2-gwdatafind
 BuildRequires: python2-gwpy
+BuildRequires: healpy >= 1.9.1
+BuildRequires: python2-h5py
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python2-lalburst >= @MIN_LALBURST_VERSION@
 BuildRequires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
-BuildRequires: scipy >= 0.9.0
+BuildRequires: python2-matplotlib >= 1.2.0
+BuildRequires: python2-mock
+BuildRequires: python2-numpy >= 1.7
+BuildRequires: python-pathlib
+BuildRequires: pytest
+BuildRequires: python2-scipy >= 0.9.0
 
 # python3x
-#BuildRequires: python-srpm-macros
-#BuildRequires: python3-rpm-macros
-#BuildRequires: epel-rpm-macros
-#BuildRequires: python%{python3_pkgversion}
-#BuildRequires: python%{python3_pkgversion}-devel
-#BuildRequires: python%{python3_pkgversion}-astropy >= 1.1.1
-#BuildRequires: python%{python3_pkgversion}-gwdatafind
-#BuildRequires: python%{python3_pkgversion}-gwpy
-#BuildRequires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
-#BuildRequires: python%{python3_pkgversion}-healpy >= 1.9.1
-#BuildRequires: python%{python3_pkgversion}-h5py
-#BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-#BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-#BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-#BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
-#BuildRequires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-#BuildRequires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
-#BuildRequires: python%{python3_pkgversion}-matplotlib >= 1.2.0
-#BuildRequires: python%{python3_pkgversion}-numpy >= 1.7
-#BuildRequires: python%{python3_pkgversion}-pytest
-#BuildRequires: python%{python3_pkgversion}-scipy >= 0.9.0
+BuildRequires: python-srpm-macros
+BuildRequires: python3-rpm-macros
+BuildRequires: epel-rpm-macros
+BuildRequires: python%{python3_pkgversion}
+BuildRequires: python%{python3_pkgversion}-devel
+BuildRequires: python%{python3_pkgversion}-astropy >= 1.1.1
+BuildRequires: python%{python3_pkgversion}-gwdatafind
+BuildRequires: python%{python3_pkgversion}-gwpy
+BuildRequires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
+BuildRequires: python%{python3_pkgversion}-healpy >= 1.9.1
+BuildRequires: python%{python3_pkgversion}-h5py
+BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
+BuildRequires: python%{python3_pkgversion}-matplotlib >= 1.2.0
+BuildRequires: python%{python3_pkgversion}-numpy >= 1.7
+BuildRequires: python%{python3_pkgversion}-pytest
+BuildRequires: python%{python3_pkgversion}-scipy >= 0.9.0
 
 # octave
 BuildRequires: octave-devel
@@ -139,23 +143,23 @@ Summary: Python %{python2_version} Bindings for LALInference
 Group: LAL
 Requires: %{name} = %{version}
 Requires: healpy >= 1.9.1
-Requires: h5py
-Requires: numpy >= 1.7
 Requires: python
-Requires: scipy >= 0.8
-Requires: python-astropy >= 1.1.1
+Requires: python2-astropy >= 1.1.1
+Requires: python2-glue >= @MIN_GLUE_VERSION@
 Requires: python2-gwdatafind
-Requires: python-matplotlib >= 1.2.0
-Requires: python-six
-Requires: glue >= @MIN_GLUE_VERSION@
-Requires: ligo-gracedb
 Requires: python2-gwpy
+Requires: python2-h5py
 Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
+Requires: python2-ligo-gracedb
+Requires: python2-matplotlib >= 1.2.0
+Requires: python2-numpy >= 1.7
+Requires: python2-scipy >= 0.8
+Requires: python2-six
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
@@ -164,32 +168,32 @@ The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings for LALInference.
 
 # python3x-lalinference
-#%package -n python%{python3_pkgversion}-%{name}
-#Summary: Python %{python3_version_version} Bindings for LALInference
-#Group: LAL
-#Requires: %{name} = %{version}
-#Requires: python%{python3_pkgversion}
-#Requires: python%{python3_pkgversion}-astropy >= 1.1.1
-#Requires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
-#Requires: python%{python3_pkgversion}-gwdatafind
-#Requires: python%{python3_pkgversion}-gwpy
-#Requires: python%{python3_pkgversion}-healpy >= 1.9.1
-#Requires: python%{python3_pkgversion}-h5py
-#Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-#Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
-#Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-#Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
-#Requires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-#Requires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
-#Requires: python%{python3_pkgversion}-ligo-gracedb
-#Requires: python%{python3_pkgversion}-matplotlib >= 1.2.0
-#Requires: python%{python3_pkgversion}-numpy >= 1.7
-#Requires: python%{python3_pkgversion}-scipy >= 0.8
-#Requires: python%{python3_pkgversion}-six
-#%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
-#%description -n python%{python3_pkgversion}-%{name}
-#The LSC Algorithm Library for gravitational wave data analysis.
-#This package provides the Python %{python3_version} bindings for LALInference.
+%package -n python%{python3_pkgversion}-%{name}
+Summary: Python %{python3_version_version} Bindings for LALInference
+Group: LAL
+Requires: %{name} = %{version}
+Requires: python%{python3_pkgversion}
+Requires: python%{python3_pkgversion}-astropy >= 1.1.1
+Requires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
+Requires: python%{python3_pkgversion}-gwdatafind
+Requires: python%{python3_pkgversion}-gwpy
+Requires: python%{python3_pkgversion}-healpy >= 1.9.1
+Requires: python%{python3_pkgversion}-h5py
+Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
+Requires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+Requires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
+Requires: python%{python3_pkgversion}-ligo-gracedb
+Requires: python%{python3_pkgversion}-matplotlib >= 1.2.0
+Requires: python%{python3_pkgversion}-numpy >= 1.7
+Requires: python%{python3_pkgversion}-scipy >= 0.8
+Requires: python%{python3_pkgversion}-six
+%{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
+%description -n python%{python3_pkgversion}-%{name}
+The LSC Algorithm Library for gravitational wave data analysis.
+This package provides the Python %{python3_version} bindings for LALInference.
 
 # lalinference-octave
 %package octave
@@ -219,26 +223,27 @@ This package provides the Octave bindings for LALInference.
 %{__make} %{?_smp_mflags} V=1
 
 # build python3 library (copy things so we don't have to rebuild them)
-#rm -rf %py3dir
-#cp -r . %py3dir
-#pushd %py3dir
-#%%configure %{configure_opts} --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
-#%{__make} %{?_smp_mflags} V=1 -C swig
-#%{__make} %{?_smp_mflags} V=1 -C python
-#popd
+rm -rf %py3dir
+cp -r . %py3dir
+pushd %py3dir
+rm -rfv python/%{name}/*.{la,lo,o} python/%{name}/.libs
+%configure %{configure_opts} --disable-doxygen --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
+%{__make} %{?_smp_mflags} V=1 -C swig
+%{__make} %{?_smp_mflags} V=1 -C python/%{name}
+popd
 
 %check
 # C + python2 + octave
 %{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
 # python3
-#[ -d %py3dir/test/python ] && %{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %py3dir -C test/python check
+[ -d %py3dir/test/python ] && %{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %py3dir -C test/python check
 
 %install
 # C + python2 + octave
 %make_install
 # python3
-#%{__make} -C %py3dir -C swig install-exec-am DESTDIR=%{?buildroot}
-#%{__make} -C %py3dir -C python install DESTDIR=%{?buildroot}
+%{__make} -C %py3dir -C swig install-exec-am DESTDIR=%{?buildroot}
+%{__make} -C %py3dir -C python/%{name} install DESTDIR=%{?buildroot}
 find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
@@ -316,10 +321,10 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_mandir}/man1/lalinference_review_test.1*
 %{python2_sitearch}/*
 
-#%files -n python%{python3_pkgversion}-%{name}
-#%defattr(-,root,root)
-#%license COPYING
-#%{python3_sitearch}/*
+%files -n python%{python3_pkgversion}-%{name}
+%defattr(-,root,root)
+%license COPYING
+%{python3_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
@@ -330,6 +335,15 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Tue Dec 17 2019 Adam Mercer <adam.mercer@ligo.org> 1.11.5-1
+- O3b point release
+
+* Mon Dec 09 2019 Adam Mercer <adam.mercer@ligo.org> 1.11.4-2
+- Packaging updates
+
+* Wed Nov 27 2019 Adam Mercer <adam.mercer@ligo.org> 1.11.4-1
+- O3b release
+
 * Thu Jul 18 2019 Adam Mercer <adam.mercer@ligo.org> 1.11.3-1
 - O3 point release
 

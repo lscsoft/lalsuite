@@ -25,11 +25,11 @@ of the ligolw_cbc_sbank job that produced them unless overridden.
 from __future__ import print_function
 
 import sys
-import numpy
-from bisect import bisect_left, bisect_right
-from operator import attrgetter
+from bisect import (bisect_left, bisect_right)
 from optparse import OptionParser
+import numpy
 import h5py
+
 
 def parse_command_line():
     parser = OptionParser(usage=__doc__)

@@ -1,10 +1,13 @@
 # Perform a fully-coherent search of a single segment, and compare F-statistics to reference results
 
+test "X${SKIP_TESTS_THAT_FAIL_UNDER_CONDA}" = X || exit 77
+
 export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
 
 echo "=== Create single-segment search setup ==="
 set -x
 ${builddir}/lalapps_WeaveSetup --ephem-earth=earth00-19-DE405.dat.gz --ephem-sun=sun00-19-DE405.dat.gz --first-segment=1122332211/90000 --detectors=H1,L1 --output-file=WeaveSetup.fits
+${fitsdir}/lalapps_fits_overview WeaveSetup.fits
 set +x
 echo
 
@@ -42,6 +45,7 @@ ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
     --Fstat-run-med-window=50 \
     --freq=55.5~0.005 --f1dot=-2e-9,0 \
     --semi-max-mismatch=9
+${fitsdir}/lalapps_fits_overview WeaveOut.fits
 set +x
 echo
 
@@ -110,6 +114,7 @@ ${builddir}/lalapps_Weave --output-file=WeaveOutSingle.fits \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --alpha=${alpha_loud}~0 --delta=${delta_loud}~0 --freq=${freq_loud}~0 --f1dot=${f1dot_loud}~0 \
     --semi-max-mismatch=9
+${fitsdir}/lalapps_fits_overview WeaveOutSingle.fits
 ${fitsdir}/lalapps_fits_table_list "WeaveOutSingle.fits[mean2F_toplist][col c1=mean2F][#row == 1]" > tmp
 coh2F_loud_single=`cat tmp | sed "/^#/d" | xargs printf "%.16g"`
 mean_mu=0.05

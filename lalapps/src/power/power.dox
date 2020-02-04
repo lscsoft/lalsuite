@@ -249,7 +249,7 @@ searched or 150 Hz, which ever was lower.</dd>
 Read lists of injections from the LIGO_LW XML file <i>file name</i>, and
 adds the software injections described therein to the input time series
 prior to analysis.  \c sim_burst and \c sim_inspiral injection
-tables are supported.  See <tt>lalapps_bin</tt> and <tt>lalapps_bbhinj</tt>
+tables are supported.  See <tt>lalapps_bin</tt>
 for information on constructing injection lists.</dd>
 
 <dt><tt>--low-freq-cutoff</tt> <i>Hz</i></dt><dd>

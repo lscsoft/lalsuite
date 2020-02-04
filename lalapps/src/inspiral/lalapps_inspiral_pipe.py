@@ -196,7 +196,7 @@ for o, a in opts:
     config_file = a
   elif o in ("-l", "--log-path"):
     log_path = a
-  elif o in ("-x", "--dax"): 	 
+  elif o in ("-x", "--dax"):
     dax = True
   else:
     print("Unknown option:", o, file=sys.stderr)
@@ -336,7 +336,7 @@ for seg in data:
   df1.set_start(seg.start() - pad)
   df1.set_end(seg.end() + pad)
   df1.set_observatory(ifo1[0])
-  if prev_df1: 
+  if prev_df1:
     df1.add_parent(prev_df1)
 
   df2 = pipeline.LSCDataFindNode(df_job)
@@ -345,7 +345,7 @@ for seg in data:
   df2.set_start(seg.start() - pad)
   df2.set_end(seg.end() + pad)
   df2.set_observatory(ifo2[0])
-  if prev_df2: 
+  if prev_df2:
     df2.add_parent(prev_df2)
 
   if do_datafind:
@@ -367,9 +367,9 @@ for seg in data:
     if not calibrated: bank.calibration()
     bank.set_vds_group(group)
 
-    if do_datafind: 
+    if do_datafind:
       bank.add_parent(df1)
-    if do_tmpltbank: 
+    if do_tmpltbank:
       dag.add_node(bank)
 
     insp1 = inspiral.InspiralNode(insp_job)
@@ -430,11 +430,11 @@ for seg in data:
   # add the inspiral jobs for this segment to the list
   insp_nodes.append(seg_insp_nodes)
 
-# now add the last df1 as a parent to the first df2 so we 
+# now add the last df1 as a parent to the first df2 so we
 # don't have multiple datafinds running at the same time
 if do_datafind:
   first_df2.add_parent(df1)
-    
+
 # now find coincidences between the two inspiral jobs
 for i in range(len(data)):
   for j in range(len(data[i])):
@@ -448,9 +448,9 @@ for i in range(len(data)):
     inca.set_end(chunk.end() - overlap/2)
     inca.set_ifo_a(ifo1)
     inca.set_ifo_b(ifo2)
-    
+
     # if there is a chunk before this one, add it to the job
-    try: 
+    try:
       data[i][j-1]
       inca.add_file_arg(insp_nodes[i][j-1][0].get_output())
       inca.add_file_arg(insp_nodes[i][j-1][1].get_output())
@@ -468,7 +468,7 @@ for i in range(len(data)):
       inca.add_parent(insp_nodes[i][j][0])
     if do_triginsp:
       inca.add_parent(insp_nodes[i][j][1])
-    
+
     # if there is a chunk after this one, add it to the job
     try:
       data[i][j+1]
@@ -480,7 +480,7 @@ for i in range(len(data)):
         inca.add_parent(insp_nodes[i][j+1][1])
     except IndexError:
       pass
-      
+
     if do_coinc:
       inca.get_output_a()
       inca.get_output_b()
@@ -491,27 +491,27 @@ dag.write_sub_files()
 dag.write_dag()
 
 # write a message telling the user that the DAG has been written
-if dax: 	 
-  print("""\nCreated a DAX file which can be submitted to the Grid using 	 
-Pegasus. See the page: 	 
-  	 
-  http://www.lsc-group.phys.uwm.edu/lscdatagrid/griphynligo/vds_howto.html 	 
-  	 
+if dax:
+  print("""\nCreated a DAX file which can be submitted to the Grid using
+Pegasus. See the page:
+
+  http://www.lsc-group.phys.uwm.edu/lscdatagrid/griphynligo/vds_howto.html
+
 for instructions.
 """)
 else:
   print("\nCreated a DAG file which can be submitted by executing")
   print("\n   condor_submit_dag", dag.get_dag_file())
   print("""\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
-If you are running LSCdataFind jobs, do not forget to initialize your grid 
+If you are running LSCdataFind jobs, do not forget to initialize your grid
 proxy certificate on the condor submit machine by running the commands
 
   unset X509_USER_PROXY
   grid-proxy-init -hours 72
 
-Enter your pass phrase when promted. The proxy will be valid for 72 hours. 
+Enter your pass phrase when promted. The proxy will be valid for 72 hours.
 If you expect the LSCdataFind jobs to take longer to complete, increase the
-time specified in the -hours option to grid-proxy-init. You can check that 
+time specified in the -hours option to grid-proxy-init. You can check that
 the grid proxy has been sucessfully created by executing the command:
 
   grid-cert-info -all -file /tmp/x509up_u`id -u`
@@ -532,7 +532,7 @@ if usertag:
   log_fh = open(basename + '.pipeline.' + usertag + '.log', 'w')
 else:
   log_fh = open(basename + '.pipeline.log', 'w')
-  
+
 # FIXME: the following code uses obsolete CVS ID tags.
 # It should be modified to use git version information.
 log_fh.write( "$Id$" + "\n\n" )

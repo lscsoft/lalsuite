@@ -50,6 +50,7 @@ extern "C" {
  * @defgroup LALSimIMRPSpinInspiralRD_c          LALSimIMRPSpinInspiralRD.c
  * @defgroup LALSimIMRTidal_c                    LALSimIMRLackeyTidal2013.c
  * @defgroup LALSimPrecessingNRSur_c             LALSimIMRPrecessingNRSur.c
+ * @defgroup LALSimIMRNRWaveforms_c              LALSimIMRNRWaveforms.c
  * @}
  *
  * @addtogroup LALSimIMR_h
@@ -65,8 +66,15 @@ extern "C" {
 typedef enum tagIMRPhenomP_version_type {
  IMRPhenomPv1_V, /**< version 1: based on IMRPhenomC */
  IMRPhenomPv2_V,  /**< version 2: based on IMRPhenomD */
- IMRPhenomPv2NRTidal_V /**< version Pv2_NRTidal: based on IMRPhenomPv2; NRTides (https://arxiv.org/pdf/1706.02969.pdf) added before precession */
+ IMRPhenomPv2NRTidal_V /**< version Pv2_NRTidal: based on IMRPhenomPv2; NRTides added before precession; can be used with both NRTidal versions defined below */ 
 } IMRPhenomP_version_type;
+
+typedef enum tagNRTidal_version_type {
+ NRTidal_V, /**< version NRTidal: based on https://arxiv.org/pdf/1706.02969.pdf*/
+ NRTidalv2_V, /**< version NRTidalv2: https://arxiv.org/abs/1905.06011 */
+ NRTidalv2NoAmpCorr_V, /**< version NRTidalv2, without amplitude corrections */
+ NoNRT_V /**< special case for PhenomPv2 BBH baseline */
+} NRTidal_version_type;
 
 typedef enum tagSEOBNRv4TSurrogate_spline_order {
   SEOBNRv4TSurrogate_CUBIC, /**< use cubic splines in frequency */
@@ -91,14 +99,14 @@ int XLALSimIMRPhenomCGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 p
 int XLALSimIMRPhenomCGenerateTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiPeak, const REAL8 deltaT, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const REAL8 inclination, LALDict *extraParams);
 
 /* in module LALSimIMRPhenomD.c */
-int XLALSimIMRPhenomDGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 phi0, const REAL8 fRef, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi1, const REAL8 chi2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, LALDict *extraParams);
-int XLALSimIMRPhenomDFrequencySequence(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi0, const REAL8 fRef_in, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi1, const REAL8 chi2, const REAL8 distance, LALDict *extraParams);
+int XLALSimIMRPhenomDGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 phi0, const REAL8 fRef, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi1, const REAL8 chi2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, LALDict *extraParams, NRTidal_version_type NRTidal_version);
+int XLALSimIMRPhenomDFrequencySequence(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi0, const REAL8 fRef_in, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi1, const REAL8 chi2, const REAL8 distance, LALDict *extraParams, NRTidal_version_type NRTidal_version);
 double XLALIMRPhenomDGetPeakFreq(const REAL8 m1_in, const REAL8 m2_in, const REAL8 chi1_in, const REAL8 chi2_in);
 double XLALSimIMRPhenomDChirpTime(const REAL8 m1_in, const REAL8 m2_in, const REAL8 chi1_in, const REAL8 chi2_in, const REAL8 fHz);
 double XLALSimIMRPhenomDFinalSpin(const REAL8 m1_in, const REAL8 m2_in, const REAL8 chi1_in, const REAL8 chi2_in);
 
-int XLALSimIMRPhenomP(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8 chi1_l, const REAL8 chi2_l, const REAL8 chip, const REAL8 thetaJ, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 distance, const REAL8 alpha0, const REAL8 phic, const REAL8 deltaF, const REAL8 f_min, const REAL8 f_max, const REAL8 f_ref, IMRPhenomP_version_type IMRPhenomP_version, LALDict *extraParams);
-int XLALSimIMRPhenomPFrequencySequence(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, const REAL8 chi1_l, const REAL8 chi2_l, const REAL8 chip, const REAL8 thetaJ, REAL8 m1_SI, const REAL8 m2_SI, const REAL8 distance, const REAL8 alpha0, const REAL8 phic, const REAL8 f_ref, IMRPhenomP_version_type IMRPhenomP_version, LALDict *extraParams);
+int XLALSimIMRPhenomP(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8 chi1_l, const REAL8 chi2_l, const REAL8 chip, const REAL8 thetaJ, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 distance, const REAL8 alpha0, const REAL8 phic, const REAL8 deltaF, const REAL8 f_min, const REAL8 f_max, const REAL8 f_ref, IMRPhenomP_version_type IMRPhenomP_version, NRTidal_version_type NRTidal_version, LALDict *extraParams);
+int XLALSimIMRPhenomPFrequencySequence(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, const REAL8 chi1_l, const REAL8 chi2_l, const REAL8 chip, const REAL8 thetaJ, REAL8 m1_SI, const REAL8 m2_SI, const REAL8 distance, const REAL8 alpha0, const REAL8 phic, const REAL8 f_ref, IMRPhenomP_version_type IMRPhenomP_version, NRTidal_version_type NRTidal_version, LALDict *extraParams);
 int XLALSimIMRPhenomPCalculateModelParametersOld(REAL8 *chi1_l, REAL8 *chi2_l, REAL8 *chip, REAL8 *thetaJ, REAL8 *alpha0, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 f_ref, const REAL8 lnhatx, const REAL8 lnhaty, const REAL8 lnhatz, const REAL8 s1x, const REAL8 s1y, const REAL8 s1z, const REAL8 s2x, const REAL8 s2y, const REAL8 s2z, IMRPhenomP_version_type IMRPhenomP_version);
 int XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame(REAL8 *chi1_l, REAL8 *chi2_l, REAL8 *chip, REAL8 *thetaJN, REAL8 *alpha0, REAL8 *phi_aligned, REAL8 *zeta_polariz, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 f_ref, const REAL8 phiRef, const REAL8 incl, const REAL8 s1x, const REAL8 s1y, const REAL8 s1z, const REAL8 s2x, const REAL8 s2y, const REAL8 s2z, IMRPhenomP_version_type IMRPhenomP_version);
 
@@ -106,7 +114,7 @@ int XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame(REAL8 *chi1_l, REAL
 
 int XLALSimIMREOBNRv2DominantMode(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, const REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fLower, const REAL8 distance, const REAL8 inclination);
 int XLALSimIMREOBNRv2AllModes(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, const REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fLower, const REAL8 distance, const REAL8 inclination);
-SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(const REAL8 phiRef, const REAL8 deltaT, const REAL8 m1, const REAL8 m2, const REAL8 fLower, const REAL8 distance);
+SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(const REAL8 deltaT, const REAL8 m1, const REAL8 m2, const REAL8 fLower, const REAL8 distance);
 
 
 /* in module LALSimIMRSpinAlignedEOB.c */
@@ -306,15 +314,15 @@ int XLALSimIMRLackeyTidal2013FrequencySequence(struct tagCOMPLEX16FrequencySerie
 
 /* in module LALSimIMRSEOBNRv4ROM.c */
 
-int XLALSimIMRSEOBNRv4ROM(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, INT4 nk_max);
-int XLALSimIMRSEOBNRv4ROMFrequencySequence(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, INT4 nk_max);
+int XLALSimIMRSEOBNRv4ROM(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, INT4 nk_max, LALDict *LALparams, NRTidal_version_type NRTidal_version);
+int XLALSimIMRSEOBNRv4ROMFrequencySequence(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, INT4 nk_max, LALDict *LALparams, NRTidal_version_type NRTidal_version);
 int XLALSimIMRSEOBNRv4ROMTimeOfFrequency(REAL8 *t, REAL8 frequency, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2);
 int XLALSimIMRSEOBNRv4ROMFrequencyOfTime(REAL8 *frequency, REAL8 t, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2);
 
 /* in module LALSimIMRSEOBNRv4ROM_NRTidal.c */
 
-int XLALSimIMRSEOBNRv4ROMNRTidalFrequencySequence(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 Lambda1, REAL8 Lambda2);
-int XLALSimIMRSEOBNRv4ROMNRTidal(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 Lambda1, REAL8 Lambda2);
+int XLALSimIMRSEOBNRv4ROMNRTidalFrequencySequence(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 Lambda1, REAL8 Lambda2, LALDict *LALparams, NRTidal_version_type NRTidal_version);
+int XLALSimIMRSEOBNRv4ROMNRTidal(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 Lambda1, REAL8 Lambda2, LALDict *LALparams, NRTidal_version_type NRTidal_version);
 
 /* in module LALSimIMRSEOBNRv4TSurrogate.c */
 
@@ -342,6 +350,9 @@ int XLALSimInspiralNRWaveformGetSpinsFromHDF5File(
   const char *NRDataFile  /**< Location of NR HDF file */
 );
 
+/* The following XLALSimInspiralNRWaveformGetHplusHcross() generates polarizations
+ * reading directly the NR files and does not return l,m modes.
+ */
 int XLALSimInspiralNRWaveformGetHplusHcross(
         REAL8TimeSeries **hplus,        /**< OUTPUT h_+ vector */
         REAL8TimeSeries **hcross,       /**< OUTPUT h_x vector */
@@ -362,6 +373,25 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
         const char *NRDataFile,         /**< Location of NR HDF file */
         LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
         );
+
+/* The following XLALSimInspiralNRWaveformGetHlms() reads NR file to output l,m modes.
+ */
+INT4 XLALSimInspiralNRWaveformGetHlms(SphHarmTimeSeries **hlms, /**< OUTPUT */
+        REAL8 deltaT,                   /**< sampling interval (s) */
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 r,                        /**< distance of source (m) */
+        REAL8 fStart,                   /**< start GW frequency (Hz) */
+        REAL8 fRef,                     /**< reference GW frequency (Hz) */
+        REAL8 s1x,                      /**< initial value of S1x */
+        REAL8 s1y,                      /**< initial value of S1y */
+        REAL8 s1z,                      /**< initial value of S1z */
+        REAL8 s2x,                      /**< initial value of S2x */
+        REAL8 s2y,                      /**< initial value of S2y */
+        REAL8 s2z,                      /**< initial value of S2z */
+        const char *NRDataFile,         /**< Location of NR HDF file */
+        LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
+	);
 
 /* in module LALSimIMRPrecessingNRSur.c */
 
@@ -399,7 +429,7 @@ SphHarmTimeSeries *XLALSimInspiralPrecessingNRSurModes(
         REAL8 S2z,                      /**< z-component of the dimensionless spin of object 2 */
         REAL8 fMin,                     /**< start GW frequency (Hz) */
         REAL8 fRef,                     /**< reference GW frequency (Hz) */
-        REAL8 distnace,                 /**< distance of source (m) */
+        REAL8 distance,                 /**< distance of source (m) */
         LALDict* LALparams,             /**< Dict with extra parameters */
         Approximant approximant     /**< approximant (NRSur7dq2 or NRSur7dq4) */
 );
@@ -434,7 +464,6 @@ int XLALPrecessingNRSurDynamics(
         Approximant approximant  /**< approximant (NRSur7dq2 or NRSur7dq4). */
 );
 
-
 /* in module LALSimNRTunedTides.c */
 double XLALSimNRTunedTidesComputeKappa2T(
     REAL8 m1_SI, /**< Mass of companion 1 (kg) */
@@ -449,19 +478,32 @@ double XLALSimNRTunedTidesMergerFrequency(
     const REAL8 q          /**< mass-ratio q >= 1 */
 );
 
-int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
-    const REAL8Sequence *phi_tidal, /**< [out] tidal phase frequency series */
+int XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(
     const REAL8Sequence *amp_tidal, /**< [out] tidal amplitude frequency series */
     const REAL8Sequence *fHz, /**< list of input Gravitational wave Frequency in Hz to evaluate */
     REAL8 m1_SI, /**< Mass of companion 1 (kg) */
     REAL8 m2_SI, /**< Mass of companion 2 (kg) */
     REAL8 lambda1, /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
     REAL8 lambda2 /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+);
+
+int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
+    const REAL8Sequence *phi_tidal, /**< [out] tidal phase frequency series */
+    const REAL8Sequence *amp_tidal, /**< [out] tidal amplitude frequency series */
+    const REAL8Sequence *planck_taper, /**< [out] planck taper */
+    const REAL8Sequence *fHz, /**< list of input Gravitational wave Frequency in Hz to evaluate */
+    REAL8 m1_SI, /**< Mass of companion 1 (kg) */
+    REAL8 m2_SI, /**< Mass of companion 2 (kg) */
+    REAL8 lambda1, /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2, /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    NRTidal_version_type NRTidal_version /**< NRTidal version */
     );
 
+void XLALSimInspiralGetHOSpinTerms(REAL8 *SS_3p5PN, REAL8 *SSS_3p5PN, REAL8 X_A, REAL8 X_B, REAL8 chi1, REAL8 chi2, REAL8 quadparam1, REAL8 quadparam2);
+
 /* In module LALSimIMRPhenomD_NRTidal.c */
-int XLALSimIMRPhenomDNRTidal(COMPLEX16FrequencySeries **htilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 lambda1, REAL8 lambda2, LALDict *extraParams);
-int XLALSimIMRPhenomDNRTidalFrequencySequence(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 lambda1, REAL8 lambda2, LALDict *extraParams);
+int XLALSimIMRPhenomDNRTidal(COMPLEX16FrequencySeries **htilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 lambda1, REAL8 lambda2, LALDict *extraParams, NRTidal_version_type NRTidal_version);
+int XLALSimIMRPhenomDNRTidalFrequencySequence(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 m1_SI, REAL8 m2_SI, REAL8 chi1, REAL8 chi2, REAL8 lambda1, REAL8 lambda2, LALDict *extraParams, NRTidal_version_type NRTidal_version);
 
 /* in module LALSimIMRPhenomHM.c */
 int XLALSimIMRPhenomHM(

@@ -33,20 +33,14 @@ package
 #@{
 
 import datetime as _datetime
-import re as _re
-from numbers import Real
 from dateutil.parser import parse as str_to_utc
 
-# import SWIG-wrapped LAL
-try:
-    from lal import (LIGOTimeGPS,
-                     GPSTimeNow as _gps_time_now,
-                     GPSToUTC as _gps_to_utc,
-                     UTCToGPS as _utc_to_gps)
-except ImportError:
-    raise ImportError("LAL SWIG-wrappings are not available, you must install "
-                      "these to use the gpstime module")
-
+from .lal import (
+    LIGOTimeGPS,
+    GPSTimeNow as _gps_time_now,
+    GPSToUTC as _gps_to_utc,
+    UTCToGPS as _utc_to_gps,
+)
 from . import git_version
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"

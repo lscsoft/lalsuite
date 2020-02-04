@@ -33,14 +33,12 @@
 import sys
 import os
 
-from math import ceil,floor
 from six.moves import cPickle as pickle
 
 from time import strftime
 
 #related third party imports
-from numpy import array,exp,cos,sin,arcsin,arccos,sqrt,size,mean,column_stack,cov,unique,hsplit,correlate,log,dot,power,squeeze,sort
-from scipy import stats
+from numpy import (exp, cos, sin, size, cov, unique, hsplit, log, squeeze, sort)
 
 import matplotlib
 matplotlib.use("Agg")
@@ -50,11 +48,9 @@ from matplotlib import pyplot as plt
 from lalinference import bayespputils as bppu
 
 from lalinference import git_version
-import glue
 from glue.ligolw import table
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
-from glue.ligolw import utils
 
 try:
   os.environ['PATH'] = os.environ['PATH'] + ':/usr/texbin'
@@ -313,7 +309,7 @@ def cbcBayesBurstPostProc(
     else:
         peparser=bppu.PEOutputParser('common')
         commonResultsObj=peparser.parse(open(data[0],'r'),info=[header,None])
-    
+
     #Extract f_ref from CRO if present.  This is needed to calculate orbital angular momentum
     #  when converting spin parameters.  Ideally this info will be provided in the
     #  SimInspiralTable in the near future.
@@ -348,7 +344,7 @@ def cbcBayesBurstPostProc(
             simtable=lsctables.SimInspiralTable.get_table(xmldoc)
             got_inspiral_table=1
             got_burst_table=0
-        
+
         injection=simtable[eventnum]
 	#injections = SimInspiralUtils.ReadSimInspiralFromFiles([injfile])
 	#if(len(injections)!=1): raise RuntimeError('Error: something unexpected happened while loading the injection file!\n')
@@ -539,7 +535,7 @@ def cbcBayesBurstPostProc(
             extract_hdf5_metadata(h5grp,parent=html_hdf)
 
     #Create a section for model selection results (if they exist)
-    
+
     if bayesfactornoise is not None:
         html_model=html.add_section('Model selection',legend=legend)
         html_model.p('log Bayes factor ( coherent vs gaussian noise) = %s, Bayes factor=%f'%(BSN,exp(float(BSN))))
@@ -584,15 +580,15 @@ def cbcBayesBurstPostProc(
     if snrfactor is not None:
         html_snr=html.add_section('Signal to noise ratio(s)',legend=legend)
         html_snr.p('%s'%snrstring)
-        
+
     #Create a section for summary statistics
     tabid='statstable'
-    html_stats=html.add_collapse_section('Summary statistics',legend=legend,innertable_id=tabid)    
+    html_stats=html.add_collapse_section('Summary statistics',legend=legend,innertable_id=tabid)
     html_stats.write(str(pos))
     statfilename=os.path.join(outdir,"summary_statistics.dat")
     statout=open(statfilename,"w")
     statout.write("\tmaxP\tmaxL\tstdev\tmean\tmedian\tstacc\tinjection\tvalue\n")
-    
+
     for statname,statoned_pos in pos:
 
       statmax_pos,max_i=pos._posMaxL()
@@ -604,23 +600,23 @@ def cbcBayesBurstPostProc(
       statmedian=str(squeeze(statoned_pos.median))
       statstacc=str(statoned_pos.stacc)
       statinjval=str(statoned_pos.injval)
-      
+
       statarray=[str(i) for i in [statname,statmaxP,statmaxL,statstdev,statmean,statmedian,statstacc,statinjval]]
       statout.write("\t".join(statarray))
       statout.write("\n")
-      
+
     statout.close()
 
     #==================================================================#
     #Generate sky map, WF, and PSDs
     #==================================================================#
-   
+
     skyreses=None
     sky_injection_cl=None
     inj_position=None
     tabid='skywftable'
     html_wf=html.add_collapse_section('Sky Localization and Waveform',innertable_id=tabid)
-    
+
     table=html_wf.tab(idtable=tabid)
     row=html_wf.insert_row(table,label='SkyandWF')
     skytd=html_wf.insert_td(row,'',label='SkyMap',legend=legend)
@@ -636,10 +632,10 @@ def cbcBayesBurstPostProc(
 
         hpmap = pos.healpix_map(float(skyres), nest=True)
         bppu.plot_sky_map(hpmap, outdir, inj=inj_position, nest=True)
-        
+
         if inj_position is not None:
             html_sky.p('Injection found at p = %g'%bppu.skymap_inj_pvalue(hpmap, inj_position, nest=True))
-            
+
         html_sky.write('<a href="skymap.png" target="_blank"><img src="skymap.png"/></a>')
 
         html_sky_write='<table border="1" id="statstable"><tr><th>Confidence region</th><th>size (sq. deg)</th></tr>'
@@ -666,7 +662,7 @@ def cbcBayesBurstPostProc(
       wfsection.write('<a href="Waveform/WF_DetFrame.png" target="_blank"><img src="Waveform/WF_DetFrame.png"/></a>')
     else:
       wfsection.write("<b>No Waveform generated!</b>")
-      
+
     wftd=html_wf.insert_td(row,'',label='PSDs',legend=legend)
     wfsection=html.add_section_to_element('PSDs',wftd)
     psd_pointer=None
@@ -676,7 +672,7 @@ def cbcBayesBurstPostProc(
       if not os.path.isdir(psddir):
         os.makedirs(psddir)
       try:
-        psd_pointer=bppu.plot_psd(psd_files,outpath=psddir)    
+        psd_pointer=bppu.plot_psd(psd_files,outpath=psddir)
       except:
         psd_pointer=None
     if psd_pointer:
@@ -920,7 +916,7 @@ def cbcBayesBurstPostProc(
     #Add a section to the webpage for a table of the confidence interval
     #results.
     tabid='2dconftable'
-    html_tcig=html.add_collapse_section('2D confidence intervals (greedy binning)',legend=legend,innertable_id=tabid)   
+    html_tcig=html.add_collapse_section('2D confidence intervals (greedy binning)',legend=legend,innertable_id=tabid)
     #Generate the top part of the table
     html_tcig_write='<table id="%s" border="1"><tr><th/>'%tabid
     confidence_levels.sort()
@@ -1018,7 +1014,7 @@ def cbcBayesBurstPostProc(
           greedy2ContourPlot.savefig(greedy2contourpath)
           if(savepdfs): greedy2ContourPlot.savefig(greedy2contourpath.replace('.png','.pdf'))
           plt.close(greedy2ContourPlot)
-        
+
           greedy2HistFig=bppu.plot_two_param_greedy_bins_hist(pos,greedy2Params,confidence_levels)
           greedy2histpath=os.path.join(greedytwobinsdir,'%s-%s_greedy2.png'%(par1_name,par2_name))
           greedy2HistFig.savefig(greedy2histpath)
@@ -1112,30 +1108,30 @@ def cbcBayesBurstPostProc(
 
     if RconvergenceTests is True:
         convergenceResults=bppu.convergenceTests(pos,gelman=False)
-        
+
         if convergenceResults is not None:
             tabid='convtable'
             html_conv_test=html.add_collapse_section('Convergence tests',legend=legend,innertable_id=tabid)
             data_found=False
             for test,test_data in convergenceResults.items():
-                
+
                 if test_data:
                     data_found=True
                     html_conv_test.h3(test)
-                                       
+
                     html_conv_table_rows={}
                     html_conv_table_header=''
                     for chain,chain_data in test_data.items():
                         html_conv_table_header+='<th>%s</th>'%chain
-                        
-                        
+
+
                         for data in chain_data:
                             if len(data)==2:
                                 try:
                                     html_conv_table_rows[data[0]]+='<td>'+data[1]+'</td>'
                                 except KeyError:
                                     html_conv_table_rows[data[0]]='<td>'+data[1]+'</td>'
-                                
+
                     html_conv_table='<table id="%s"><tr><th>Chain</th>'%tabid+html_conv_table_header+'</tr>'
                     for row_name,row in html_conv_table_rows.items():
                         html_conv_table+='<tr><td>%s</td>%s</tr>'%(row_name,row)
@@ -1145,7 +1141,7 @@ def cbcBayesBurstPostProc(
                 html_conv_test.p('No convergence diagnostics generated!')
     #Create a section for the covariance matrix
     tabid='covtable'
-    html_stats_cov=html.add_collapse_section('Covariance matrix',legend=legend,innertable_id=tabid)    
+    html_stats_cov=html.add_collapse_section('Covariance matrix',legend=legend,innertable_id=tabid)
     pos_samples,table_header_string=pos.samples()
     #calculate cov matrix
     cov_matrix=cov(pos_samples,rowvar=0,bias=1)
@@ -1167,14 +1163,14 @@ def cbcBayesBurstPostProc(
         cov_table_string+='</tr>'
     cov_table_string+='</table>'
     html_stats_cov.write(cov_table_string)
-                
+
     html_footer=html.add_section('')
     html_footer.p('Produced using cbcBayesPostProc.py at '+strftime("%Y-%m-%d %H:%M:%S")+' .')
 
     cc_args=''
     for arg in sys.argv:
         cc_args+=arg+' '
-        
+
     html_footer.p('Command line: %s'%cc_args)
     html_footer.p(git_version.verbose_msg)
 
@@ -1213,7 +1209,7 @@ if __name__=='__main__':
     parser.add_option("--dievidence",action="store_true",default=False,help="Calculate the direct integration evidence for the posterior samples")
     parser.add_option("--boxing",action="store",default=64,help="Boxing parameter for the direct integration evidence calculation",type="int",dest="boxing")
     parser.add_option("--evidenceFactor",action="store",default=1.0,help="Overall factor (normalization) to apply to evidence",type="float",dest="difactor",metavar="FACTOR")
-    
+
     parser.add_option('--ellipticEvidence', action='store_true', default=False,help='Estimate the evidence by fitting ellipse to highest-posterior points.', dest='ellevidence')
 
     parser.add_option("--no2D",action="store_true",default=False,help="Skip 2-D plotting.")
@@ -1253,7 +1249,7 @@ if __name__=='__main__':
       datafiles=datafiles+args
     if opts.data:
       datafiles=datafiles + opts.data
-    
+
     if opts.fixedBurnin:
       fixedBurnins = [int(fixedBurnin) for fixedBurnin in opts.fixedBurnin]
     else:
@@ -1261,7 +1257,7 @@ if __name__=='__main__':
     if opts.archive=='None':
       opts.archive=None
     #List of parameters to plot/bin . Need to match (converted) column names.
-    
+
     polParams=['psi','polarisation','polarization']
     skyParams=['ra','rightascension','declination','dec']
     timeParams=['time']
@@ -1274,12 +1270,12 @@ if __name__=='__main__':
     statsParams=['logl']
     calibParams=['calpha_l1','calpha_h1','calamp_l1','calamp_h1']
     oneDMenu=polParams + skyParams + timeParams + statsParams+burstParams+ellParams+phaseParams+calibParams
-   
+
     ifos_menu=['h1','l1','v1']
     from itertools import combinations
     for ifo1,ifo2 in combinations(ifos_menu,2):
       oneDMenu.append(ifo1+ifo2+'_delay')
-    
+
     #oneDMenu=[]
     twoDGreedyMenu=[]
     if not opts.no2D:
@@ -1312,7 +1308,7 @@ if __name__=='__main__':
     #      twoDGreedyMenu.append([dt1,dt2])
     #    for dt1,dt2 in combinations( ['h1l1_delay','l1v1_delay','h1v1_delay'],2):
     #      twoDGreedyMenu.append([dt1,dt2])
-  
+
     #Confidence levels
     for loglname in ['logl','deltalogl','deltaloglh1','deltaloglv1','deltalogll1','logll1','loglh1','loglv1']:
         greedyBinSizes[loglname]=0.1

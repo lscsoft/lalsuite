@@ -323,8 +323,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     }
 
     for (t = 0; t < n_local_threads; t++)
+	{
         record_likelihoods(&runState->threads[t]);
-
+		LALInferenceSortVariablesByName(runState->threads[t].currentParams);
+    }
     LALInferenceNameOutputs(runState);
     LALInferenceResumeMCMC(runState);
     
@@ -388,6 +390,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                     LALInferenceAdaptation(thread);
 
                 mcmc_step(runState, thread); //evolve the chain at temperature ladder[t]
+				LALInferenceSortVariablesByName(thread->currentParams);
                 record_likelihoods(thread);
 
                 if (propVerbose)
@@ -457,13 +460,43 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 		}
 		MPI_Bcast(&local_saveStateFlag, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Bcast(&local_exitFlag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        INT4 saveattempts=0;
+        INT4 retrydelay=5; /* 5 seconds before initial retry */
+        INT4 retcode=XLAL_SUCCESS;
+        /* The following checkpoint code is wrapped in do {} while loops
+         * to allow 10 retries, in case of filesystem congestion
+         */
 		if(local_saveStateFlag!=0)
 		{
-				LALInferenceCheckpointMCMC(runState);
-				LALInferenceWriteMCMCSamples(runState);
-				/* Wait for all processes to save */
-				MPI_Barrier(MPI_COMM_WORLD);
-				__master_saveStateFlag=0;
+            do
+            {
+                XLAL_TRY(LALInferenceCheckpointMCMC(runState), retcode);
+                if(retcode!=XLAL_SUCCESS) 
+                {
+                    saveattempts+=1;
+                    fprintf(stderr,"Process %i failed to write checkpoint file %s \
+                    at attempt %i, waiting to retry\n",MPIrank, runState->resumeOutFileName, saveattempts);
+                    sleep(retrydelay*saveattempts); /* In case of IO failure wait progressively longer */
+                }
+            } while (retcode!=XLAL_SUCCESS && saveattempts<10);
+            if(retcode!=XLAL_SUCCESS) {fprintf(stderr,"Process %i failed to checkpoint\n", MPIrank);}
+            saveattempts=0;
+            do
+            {
+                XLAL_TRY(LALInferenceWriteMCMCSamples(runState), retcode);
+                if(retcode!=XLAL_SUCCESS) 
+                {
+                    saveattempts+=1;
+                    fprintf(stderr,"Process %i failed to write samples file %s \
+                    at attempt %i, waiting to retry\n",MPIrank, runState->outFileName, saveattempts);
+                    sleep(retrydelay*saveattempts); /* In case of IO failure wait progressively longer */
+                }
+            } while (retcode!=XLAL_SUCCESS && saveattempts<10);
+            if(retcode!=XLAL_SUCCESS) {fprintf(stderr,"Process %i failed to checkpoint\n", MPIrank);}
+            /* Wait for all processes to save */
+			MPI_Barrier(MPI_COMM_WORLD);
+			__master_saveStateFlag=0;
+            local_saveStateFlag=0;
 		}
 		if(local_exitFlag) {
 				/* Wait for all processes to be ready to exit */
@@ -631,7 +664,7 @@ void mcmc_step(LALInferenceRunState *runState, LALInferenceThreadState *thread) 
     }
 
     LALInferenceUpdateAdaptiveJumps(thread, targetAcceptance);
-
+    LALInferenceSortVariablesByName(thread->currentParams);
     return;
 }
 
@@ -1388,9 +1421,13 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
         LALH5File *chain_group = XLALH5GroupOpen(group, chain_group_name);
 
         /* Restore differential evolution buffer */
-        LALH5Dataset *de_group = XLALH5DatasetRead(chain_group, "differential_points");
-        LALInferenceH5DatasetToVariablesArray(de_group, &(thread->differentialPoints), (UINT4 *)&(thread->differentialPointsLength));
-        thread->differentialPointsSize = thread->differentialPointsLength;
+        LALH5Dataset *de_group=NULL;
+        XLAL_TRY(de_group = XLALH5DatasetRead(chain_group, "differential_points"), retcode);
+        if (retcode==XLAL_SUCCESS)
+        {
+            LALInferenceH5DatasetToVariablesArray(de_group, &(thread->differentialPoints), (UINT4 *)&(thread->differentialPointsLength));
+            thread->differentialPointsSize = thread->differentialPointsLength;
+        }
 
         /* Restore proposal arguments, most importantly adaptation settings */
         LALInferenceVariables **propArgs;
@@ -1458,19 +1495,20 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
     for (t = 0; t < n_local_threads; t++) {
         thread = &runState->threads[t];
 
-        LALH5Dataset *chain_dataset = XLALH5DatasetRead(group, thread->name);
-
-        LALInferenceVariables **input_array;
-        UINT4 j, N;
-        LALInferenceH5DatasetToVariablesArray(chain_dataset, &input_array, &N);
-        for (j=0; j<N; j++){
-            LALInferenceLogSampleToArray(thread->algorithmParams, input_array[j]);
-            LALInferenceClearVariables(input_array[j]);
+        LALH5Dataset *chain_dataset=NULL;
+        XLAL_TRY(chain_dataset = XLALH5DatasetRead(group, thread->name), retcode);
+        if(retcode==XLAL_SUCCESS)
+        {
+            LALInferenceVariables **input_array;
+            UINT4 j, N;
+            LALInferenceH5DatasetToVariablesArray(chain_dataset, &input_array, &N);
+            for (j=0; j<N; j++){
+                LALInferenceLogSampleToArray(thread->algorithmParams, input_array[j]);
+                LALInferenceClearVariables(input_array[j]);
+            }
+            XLALFree(input_array);
+            XLALH5DatasetFree(chain_dataset);
         }
-        XLALFree(input_array);
-
-        /* TODO: Write metadata */
-        XLALH5DatasetFree(chain_dataset);
     }
     XLALH5FileClose(group);
     XLALH5FileClose(li_group);

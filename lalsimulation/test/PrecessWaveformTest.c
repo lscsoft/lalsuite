@@ -40,7 +40,7 @@ int main(void){
   // Waveform parameters
   REAL8 m1 = 2.0*LAL_MSUN_SI, m2 = 5.0*LAL_MSUN_SI;
   REAL8 f_min = 40.0, f_ref = 0., dist = 1e6*LAL_PC_SI;
-  REAL8 phi = 0.0, dt = 1/16384.0;
+  REAL8 dt = 1/16384.0;
   REAL8 inclination = LAL_PI_4, psi = 0.;
   int Lmax = 5;
   LALDict *LALpars=XLALCreateDict();
@@ -55,7 +55,7 @@ int main(void){
 
   // Generate all available waveform modes
   SphHarmTimeSeries *ts = XLALSimInspiralChooseTDModes(
-    phi, dt,
+    dt,
     m1, m2,
     0., 0., 0., 0., 0., 0.,
     f_min, f_ref,

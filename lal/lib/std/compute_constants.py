@@ -118,10 +118,10 @@ print r'''/*
  * Note that this header is not included automatically by the header
  * <tt>LALStdlib.h</tt>.  Include it explicitly if you need any of these
  * constants.
- *//*@{*/'''
+ *//** @{ */'''
 
 print r'''
-/*@{*/
+/** @{ */
 #ifndef _LALCONSTANTS_H
 #define _LALCONSTANTS_H
 
@@ -136,7 +136,7 @@ extern "C" {
  * standard 754 for binary arithmetic.  All numbers are dimensionless.
  * @see http://dx.doi.org/10.1109/IEEESTD.2008.4610935
  */'''
-print '/*@{*/'
+print '/** @{ */'
 
 LAL_REAL4_BITS = 32 # bits in REAL4
 LAL_REAL4_MANT = 24 # bits in REAL4 mantissa
@@ -197,21 +197,21 @@ print '#define LAL_REAL8_MIN', as_str(D(LAL_REAL8_MIN))
 print '#define LAL_REAL8_EPS', as_str(D(LAL_REAL8_EPS))
 print '#endif'
 
-print '/*@}*/'
+print '/** @} */'
 
 print r'''
 /**
  * @name Integer constants
  * Extremal integer values, all expressed as unsigned long long.
  */'''
-print '/*@{*/'
+print '/** @{ */'
 print '#define LAL_UINT8_MAX   LAL_UINT8_C(%u)' % (2**(8*8)-1)
 print '#define LAL_UINT4_MAX   LAL_UINT8_C(%u)' % (2**(8*4)-1)
 print '#define LAL_UINT2_MAX   LAL_UINT8_C(%u)' % (2**(8*2)-1)
 print '#define LAL_INT8_MAX    LAL_UINT8_C(%u)' % (2**(8*8-1)-1)
 print '#define LAL_INT4_MAX    LAL_UINT8_C(%u)' % (2**(8*4-1)-1)
 print '#define LAL_INT2_MAX    LAL_UINT8_C(%u)' % (2**(8*2-1)-1)
-print '/*@}*/'
+print '/** @} */'
 
 
 
@@ -309,7 +309,7 @@ LAL_SQRT2 = D('2').sqrt()
 LAL_SQRT1_2 = D('1') / LAL_SQRT2
 LAL_GAMMA = LAL_EXPGAMMA.ln()
 
-print '/*@{*/'
+print '/** @{ */'
 
 print '#define LAL_E        ',
 print str(LAL_E.quantize(quantize))
@@ -381,34 +381,44 @@ print str(LAL_180_PI.quantize(quantize))
 print '#define LAL_LNPI     ',
 print str(LAL_LNPI.quantize(quantize))
 
-print '/*@}*/'
+print '/** @} */'
 
 print r'''
 /**
  * @name Exact physical constants
  * The following physical constants are defined to have exact values.
  * The dimensions in SI units are as shown.
- * @see http://dx.doi.org/10.1103/RevModPhys.84.1527
+ * @see 2018 CODATA adjustment: http://physics.nist.gov/constants
  */'''
 
-print '/*@{*/'
+print '/** @{ */'
 LAL_C_SI = D('299792458')
-LAL_MU0_SI = D('4') * LAL_PI * D('1E-7')
-LAL_EPSILON0_SI = D('1') / (LAL_MU0_SI * LAL_C_SI * LAL_C_SI)
+LAL_H_SI = D('6.62607015e-34')
+LAL_QE_SI = D('1.602176634e-19')
+LAL_MOL = D('6.02214076e23')
+LAL_K_SI = D('1.380649e-23')
 LAL_GEARTH_SI = D('9.80665')
 LAL_PATM_SI = D('101325')
 
 print '#define LAL_C_SI',
 print str(LAL_C_SI) + 'e0',
-print '/**< Speed of light in vacuo, m s^-1 */'
+print '/**< Speed of light in vacuum, m s^-1 */'
 
-print '#define LAL_EPSILON0_SI',
-print as_str(LAL_EPSILON0_SI),
-print '/**< Permittivity of free space, C^2 N^-1 m^-2 */'
+print '#define LAL_H_SI',
+print str(LAL_H_SI),
+print '/**< Planck constant, J s */'
 
-print '#define LAL_MU0_SI',
-print as_str(LAL_MU0_SI),
-print '/**< Permeability of free space, N A^-2 */'
+print '#define LAL_QE_SI',
+print str(LAL_QE_SI),
+print '/**< Electron charge, C */'
+
+print '#define LAL_MOL',
+print str(LAL_MOL),
+print '/**< Avogadro constant, dimensionless */'
+
+print '#define LAL_K_SI',
+print str(LAL_K_SI),
+print '/**< Boltzmann constant, J K^-1 */'
 
 print '#define LAL_GEARTH_SI',
 print LAL_GEARTH_SI,
@@ -418,217 +428,27 @@ print '#define LAL_PATM_SI',
 print str(LAL_PATM_SI) + 'e0',
 print '/**< Standard atmosphere, Pa */'
 
-print '/*@}*/'
+# exact physical constants derived from above
 
-print r'''
-/**
- * @name Primary physical constants
- * These physical constants are given to the precision
- * to which they are known.  Other physical constants
- * derived from these are given in the next section.
- * @see http://dx.doi.org/10.1103/RevModPhys.84.1527
- */'''
-
-print '/*@{*/'
-
-LAL_QE_SI = 			D('1.60217656535E-19')
-print '#define LAL_QE_SI',
-print str(LAL_QE_SI),
-print '/**< Electron charge, C */'
-
-LAL_ALPHA = 			D('7.297352569824E-3')
-print '#define LAL_ALPHA',
-print str(LAL_ALPHA),
-print '/**< Fine structure constant, dimensionless */'
-
-LAL_RYD_SI = 			D('10973731.56853955')
-print '#define LAL_RYD_SI',
-print str(LAL_RYD_SI),
-print '/**< Rydberg constant, m^-1 */'
-
-LAL_MP_ME = 			D('1836.1526724575')
-print '#define LAL_MP_ME',
-print str(LAL_MP_ME),
-print '/**< Proton-electron mass ratio, dimensionless */'
-
-LAL_MP_AMU = 			D('1.00727646681290')
-print '#define LAL_MP_AMU',
-print str(LAL_MP_AMU),
-print '/**< Proton molar mass, kg mol^-1 */'
-
-LAL_R_SI = 			D('8.314462175')
-print '#define LAL_R_SI',
-print str(LAL_R_SI),
-print '/**< Molar gas constant, J mol^-1 K^-1 */'
-
-LAL_G_SI = 			D('6.67384e-11')
-print '#define LAL_G_SI',
-print str(LAL_G_SI),
-print '/**< Gravitational constant, N m^2 kg^-2 */'
-
-print '/*@}*/'
-
-print r'''
-/**
- * @name Derived physical constants
- * The following constants are derived from the primary
- * physical constants.  When not dimensionless, they are
- * given in the SI units shown.  Precision beyond the
- * accuracy is retained for these constants in order
- * that equivalent combinations yield the same value.
- */'''
-
-print '/*@{*/'
-
-LAL_HBAR_SI = ((LAL_QE_SI * LAL_QE_SI) / (D('4') * LAL_PI * LAL_EPSILON0_SI * LAL_C_SI * LAL_ALPHA))
+LAL_HBAR_SI =			LAL_H_SI / (D('2') * LAL_PI)
 print '''
 /**
  * @brief Reduced Planck constant, J s
  * @details
- * LAL_HBAR_SI = ((LAL_QE_SI * LAL_QE_SI) / (4 * LAL_PI * LAL_EPSILON0_SI * LAL_C_SI * LAL_ALPHA))
+ * LAL_HBAR_SI = LAL_H_SI / (2 * LAL_PI)
  */'''
 print '#define LAL_HBAR_SI',
 print as_str(LAL_HBAR_SI)
 
-LAL_H_SI = LAL_TWOPI * LAL_HBAR_SI
+LAL_R_SI =			LAL_MOL * LAL_K_SI
 print '''
 /**
- * @brief Planck constant, J s
+ * @brief  Molar gas constant, J mol^-1 K^-1
  * @details
- * LAL_H_SI = LAL_TWOPI * LAL_HBAR_SI
+ * LAL_R_SI = LAL_MOL * LAL_K_SI
  */'''
-print '#define LAL_H_SI',
-print as_str(LAL_H_SI)
-
-LAL_MPL_SI =			(LAL_HBAR_SI * LAL_C_SI / LAL_G_SI).sqrt()
-print '''
-/**
- * @brief Planck mass, kg
- * @details
- * LAL_MPL_SI =	sqrt(LAL_HBAR_SI * LAL_C_SI / LAL_G_SI)
- */'''
-print '#define LAL_MPL_SI',
-print as_str(LAL_MPL_SI)
-
-LAL_LPL_SI =			(LAL_HBAR_SI / (LAL_MPL_SI * LAL_C_SI))
-print '''
-/**
- * @brief Planck length, m
- * @details
- * LAL_LPL_SI =	(LAL_HBAR_SI / (LAL_MPL_SI * LAL_C_SI))
- */'''
-print '#define LAL_LPL_SI',
-print as_str(LAL_LPL_SI)
-
-LAL_TPL_SI =			(LAL_LPL_SI / LAL_C_SI)
-print '''
-/**
- * @brief Planck time, s
- * @details
- * LAL_TPL_SI =	(LAL_LPL_SI / LAL_C_SI)
- */'''
-print '#define LAL_TPL_SI',
-print as_str(LAL_TPL_SI)
-
-LAL_ME_SI = 			((D('2') * LAL_RYD_SI * LAL_H_SI) / (LAL_C_SI * LAL_ALPHA * LAL_ALPHA))
-print '''
-/**
- * @brief Electron mass, kg
- * @details
- * LAL_ME_SI = ((2 * LAL_RYD_SI * LAL_H_SI) / (LAL_C_SI * LAL_ALPHA * LAL_ALPHA))
- */'''
-print '#define LAL_ME_SI',
-print as_str(LAL_ME_SI)
-
-LAL_MP_SI =			(LAL_ME_SI * LAL_MP_ME)
-print '''
-/**
- * @brief Proton mass, kg
- * @details
- * LAL_MP_SI = (LAL_ME_SI * LAL_MP_ME)
- */'''
-print '#define LAL_MP_SI',
-print as_str(LAL_MP_SI)
-
-LAL_AMU_SI =			(LAL_MP_SI / LAL_MP_AMU)
-print '''
-/**
- * @brief Atomic mass uint, kg
- * @details
- * LAL_AMU_SI = (LAL_MP_SI / LAL_MP_AMU)
- */'''
-print '#define LAL_AMU_SI',
-print as_str(LAL_AMU_SI)
-
-LAL_AB_SI =			(LAL_ALPHA / (D('4') * LAL_PI * LAL_RYD_SI))
-print '''
-/**
- * @brief Bohr radius, m
- * @details
- * LAL_AB_SI = (LAL_ALPHA / (4 * LAL_PI * LAL_RYD_SI))
- */'''
-print '#define LAL_AB_SI',
-print as_str(LAL_AB_SI)
-
-LAL_LAMBDAE_SI =		(D('2') * LAL_PI * LAL_ALPHA * LAL_AB_SI)
-print '''
-/**
- * @brief Electron Compton wavelength, m
- * @details
- * LAL_LAMBDAE_SI = (2 * LAL_PI * LAL_ALPHA * LAL_AB_SI)
- */'''
-print '#define LAL_LAMBDAE_SI',
-print as_str(LAL_LAMBDAE_SI)
-
-LAL_RE_SI = 			(LAL_ALPHA * LAL_ALPHA * LAL_AB_SI)
-print '''
-/**
- * @brief Classical electron radius, m
- * @details
- * LAL_RE_SI = (LAL_ALPHA * LAL_ALPHA * LAL_AB_SI)
- */'''
-print '#define LAL_RE_SI',
-print as_str(LAL_RE_SI)
-
-LAL_MUB_SI = 			(LAL_LAMBDAE_SI * LAL_C_SI * LAL_QE_SI / (D('4') * LAL_PI))
-print '''
-/**
- * @brief Bohr magneton, J T^-1
- * LAL_MUB_SI = (LAL_LAMBDAE_SI * LAL_C_SI * LAL_QE_SI / (4 * LAL_PI))
- * @details
- */'''
-print '#define LAL_MUB_SI',
-print as_str(LAL_MUB_SI)
-
-LAL_MUN_SI =			(LAL_MUB_SI / LAL_MP_ME)
-print '''
-/**
- * @brief Nuclear magneton, J T^-1
- * @details
- * LAL_MUN_SI =	(LAL_MUB_SI / LAL_MP_ME)
- */'''
-print '#define LAL_MUN_SI',
-print as_str(LAL_MUN_SI)
-
-LAL_MOL =			(D('0.001') * LAL_MP_AMU / LAL_MP_SI)
-print '''
-/**
- * @brief Avogadro constant, dimensionless
- * @details
- * LAL_MOL = (0.001 * LAL_MP_AMU / LAL_MP_SI)
- */'''
-print '#define LAL_MOL',
-print as_str(LAL_MOL)
-
-LAL_K_SI =			(LAL_R_SI / LAL_MOL)
-print '''
-/**
- * @brief Boltzmann constant, J K^-1
- * @details
- * LAL_K_SI = (LAL_R_SI / LAL_MOL)
- */'''
-print '#define LAL_K_SI',
-print as_str(LAL_K_SI)
+print '#define LAL_R_SI',
+print str(LAL_R_SI)
 
 LAL_SIGMA_SI =			((LAL_PI * LAL_PI * LAL_K_SI * LAL_K_SI * LAL_K_SI * LAL_K_SI) / (D('60') * LAL_HBAR_SI * LAL_HBAR_SI * LAL_HBAR_SI * LAL_C_SI * LAL_C_SI))
 print '''
@@ -671,28 +491,231 @@ print '''
 print '#define LAL_BWIEN_SI',
 print as_str(LAL_BWIEN_SI)
 
-print '/*@}*/'
+print '/** @} */'
+
+print r'''
+/**
+ * @name Primary physical constants
+ * These physical constants are given to the precision
+ * to which they are known.  Other physical constants
+ * derived from these are given in the next section.
+ * @see 2018 CODATA adjustment: http://physics.nist.gov/constants
+ */'''
+
+print '/** @{ */'
+
+LAL_ALPHA = 			D('7.2973525693E-3')
+print '#define LAL_ALPHA',
+print str(LAL_ALPHA),
+print '/**< Fine structure constant, dimensionless */'
+
+LAL_RYD_SI = 			D('10973731.568160')
+print '#define LAL_RYD_SI',
+print str(LAL_RYD_SI),
+print '/**< Rydberg constant, m^-1 */'
+
+LAL_MP_ME = 			D('1836.15267343')
+print '#define LAL_MP_ME',
+print str(LAL_MP_ME),
+print '/**< Proton-electron mass ratio, dimensionless */'
+
+LAL_ME_AMU = 			D('5.48579909065E-4')
+print '#define LAL_ME_AMU',
+print str(LAL_ME_AMU),
+print '/**< Electron mass, atomic mass units */'
+
+
+LAL_G_SI = 			D('6.67430E-11')
+print '#define LAL_G_SI',
+print str(LAL_G_SI),
+print '/**< Gravitational constant, N m^2 kg^-2 */'
+
+print '/** @} */'
+
+print r'''
+/**
+ * @name Derived physical constants
+ * The following constants are derived from the primary
+ * physical constants.  When not dimensionless, they are
+ * given in the SI units shown.  Precision beyond the
+ * accuracy is retained for these constants in order
+ * that equivalent combinations yield the same value.
+ */'''
+
+print '/** @{ */'
+
+LAL_MU0_SI = D('4') * LAL_PI * LAL_ALPHA * LAL_HBAR_SI / (LAL_QE_SI * LAL_QE_SI * LAL_C_SI)
+print '''
+/**
+ * @brief Permeability of free space, N A^-2
+ * @details
+ * LAL_MU0_SI = 4 * LAL_PI * LAL_ALPHA * LAL_HBAR_SI / (LAL_QE_SI * LAL_QE_SI * LAL_C_SI)
+ */'''
+print '#define LAL_MU0_SI',
+print as_str(LAL_MU0_SI)
+
+LAL_EPSILON0_SI = D('1') / (LAL_MU0_SI * LAL_C_SI * LAL_C_SI)
+print '''
+/**
+ * @brief Permittivity of free space, C^2 N^-1 m^-2
+ * @details
+ * LAL_EPSILON0_SI = 1 / (LAL_MU0_SI * LAL_C_SI * LAL_C_SI)
+ */'''
+print '#define LAL_EPSILON0_SI',
+print as_str(LAL_EPSILON0_SI)
+
+LAL_MPL_SI =			(LAL_HBAR_SI * LAL_C_SI / LAL_G_SI).sqrt()
+print '''
+/**
+ * @brief Planck mass, kg
+ * @details
+ * LAL_MPL_SI =	sqrt(LAL_HBAR_SI * LAL_C_SI / LAL_G_SI)
+ */'''
+print '#define LAL_MPL_SI',
+print as_str(LAL_MPL_SI)
+
+LAL_LPL_SI =			(LAL_HBAR_SI / (LAL_MPL_SI * LAL_C_SI))
+print '''
+/**
+ * @brief Planck length, m
+ * @details
+ * LAL_LPL_SI =	(LAL_HBAR_SI / (LAL_MPL_SI * LAL_C_SI))
+ */'''
+print '#define LAL_LPL_SI',
+print as_str(LAL_LPL_SI)
+
+LAL_TPL_SI =			(LAL_LPL_SI / LAL_C_SI)
+print '''
+/**
+ * @brief Planck time, s
+ * @details
+ * LAL_TPL_SI =	(LAL_LPL_SI / LAL_C_SI)
+ */'''
+print '#define LAL_TPL_SI',
+print as_str(LAL_TPL_SI)
+
+LAL_LUMPL_SI =			(LAL_C_SI * LAL_C_SI * LAL_C_SI * LAL_C_SI * LAL_C_SI) / (LAL_G_SI)
+print '''
+/**
+ * @brief Planck luminosity, J s^-1
+ * @details
+ * LAL_LUMPL_SI = (LAL_C_SI * LAL_C_SI * LAL_C_SI * LAL_C_SI * LAL_C_SI) / (LAL_G_SI)
+ */'''
+print '#define LAL_LUMPL_SI',
+print as_str(LAL_LUMPL_SI)
+
+LAL_MP_AMU = 			(LAL_ME_AMU * LAL_MP_ME)
+print '''
+/**
+ * @brief Proton mass, atomic mass units
+ * @details
+ * LAL_MP_AMU = (LAL_ME_AMU * LAL_MP_ME)
+ */'''
+print '#define LAL_MP_AMU',
+print str(LAL_MP_AMU)
+
+LAL_ME_SI = 			((D('2') * LAL_RYD_SI * LAL_H_SI) / (LAL_C_SI * LAL_ALPHA * LAL_ALPHA))
+print '''
+/**
+ * @brief Electron mass, kg
+ * @details
+ * LAL_ME_SI = ((2 * LAL_RYD_SI * LAL_H_SI) / (LAL_C_SI * LAL_ALPHA * LAL_ALPHA))
+ */'''
+print '#define LAL_ME_SI',
+print as_str(LAL_ME_SI)
+
+LAL_MP_SI =			(LAL_ME_SI * LAL_MP_ME)
+print '''
+/**
+ * @brief Proton mass, kg
+ * @details
+ * LAL_MP_SI = (LAL_ME_SI * LAL_MP_ME)
+ */'''
+print '#define LAL_MP_SI',
+print as_str(LAL_MP_SI)
+
+LAL_AMU_SI =			(LAL_ME_SI / LAL_ME_AMU)
+print '''
+/**
+ * @brief Atomic mass unit, kg
+ * @details
+ * LAL_AMU_SI = (LAL_ME_SI / LAL_ME_AMU)
+ */'''
+print '#define LAL_AMU_SI',
+print as_str(LAL_AMU_SI)
+
+LAL_AB_SI =			(LAL_ALPHA / (D('4') * LAL_PI * LAL_RYD_SI))
+print '''
+/**
+ * @brief Bohr radius, m
+ * @details
+ * LAL_AB_SI = (LAL_ALPHA / (4 * LAL_PI * LAL_RYD_SI))
+ */'''
+print '#define LAL_AB_SI',
+print as_str(LAL_AB_SI)
+
+LAL_LAMBDAE_SI =		(D('2') * LAL_PI * LAL_ALPHA * LAL_AB_SI)
+print '''
+/**
+ * @brief Electron Compton wavelength, m
+ * @details
+ * LAL_LAMBDAE_SI = (2 * LAL_PI * LAL_ALPHA * LAL_AB_SI)
+ */'''
+print '#define LAL_LAMBDAE_SI',
+print as_str(LAL_LAMBDAE_SI)
+
+LAL_RE_SI = 			(LAL_ALPHA * LAL_ALPHA * LAL_AB_SI)
+print '''
+/**
+ * @brief Classical electron radius, m
+ * @details
+ * LAL_RE_SI = (LAL_ALPHA * LAL_ALPHA * LAL_AB_SI)
+ */'''
+print '#define LAL_RE_SI',
+print as_str(LAL_RE_SI)
+
+LAL_MUB_SI = 			(LAL_LAMBDAE_SI * LAL_C_SI * LAL_QE_SI / (D('4') * LAL_PI))
+print '''
+/**
+ * @brief Bohr magneton, J T^-1
+ * @details
+ * LAL_MUB_SI = (LAL_LAMBDAE_SI * LAL_C_SI * LAL_QE_SI / (4 * LAL_PI))
+ */'''
+print '#define LAL_MUB_SI',
+print as_str(LAL_MUB_SI)
+
+LAL_MUN_SI =			(LAL_MUB_SI / LAL_MP_ME)
+print '''
+/**
+ * @brief Nuclear magneton, J T^-1
+ * @details
+ * LAL_MUN_SI =	(LAL_MUB_SI / LAL_MP_ME)
+ */'''
+print '#define LAL_MUN_SI',
+print as_str(LAL_MUN_SI)
+
+print '/** @} */'
 
 print r'''
 /**
  * @name Exact astrophysical parameters
  * The following astrophysical constants are defined to have exact values.
  * The dimensions in SI units are as shown.
- * @see http://asa.usno.navy.mil/static/files/2015/Astronomical_Constants_2015.pdf
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */'''
 
-print '/*@{*/'
+print '/** @{ */'
 
-LAL_SOL_SID = D('1.002737909350795')
+LAL_ROT_DAY = D('1.00273781191135448')
 LAL_DAYJUL_SI = D('86400')
 LAL_YRJUL_SI = D('31557600')
 LAL_LYR_SI = LAL_YRJUL_SI * LAL_C_SI
 LAL_AU_SI = D('149597870700')
 LAL_PC_SI = LAL_AU_SI * D('3600') * LAL_180_PI
 
-print '#define LAL_SOL_SID',
-print LAL_SOL_SID,
-print '/**< Ratio of mean solar day to sidereal day, dimensionless */'
+print '#define LAL_ROT_DAY',
+print LAL_ROT_DAY,
+print '/**< Number of Earth rotations in one UT1 day, dimensionless */'
 
 print '#define LAL_DAYJUL_SI',
 print str(LAL_DAYJUL_SI) + 'e0',
@@ -703,7 +726,7 @@ print str(LAL_YRJUL_SI) + 'e0',
 print '/**< Julian year, s */'
 
 print '#define LAL_LYR_SI',
-print LAL_LYR_SI,
+print str(LAL_LYR_SI) + 'e0',
 print '/**< (Julian) Lightyear, m */'
 
 print '#define LAL_AU_SI',
@@ -714,7 +737,7 @@ print '#define LAL_PC_SI',
 print as_str(LAL_PC_SI),
 print '/**< Parsec, m */'
 
-print '/*@}*/'
+print '/** @} */'
 
 print r'''
 /**
@@ -724,10 +747,11 @@ print r'''
  * derived from these are given in the next section.
  */'''
 
-print '/*@{*/'
+print '/** @{ */'
 
 LAL_GMSUN_SI = D('1.32712442099E20')
 LAL_GMEARTH_SI = D('3.986004418E14')
+LAL_EPREC_SI = D('4612.156534') / D('36525') / D('15') / D('86400') / LAL_DAYJUL_SI
 LAL_REARTH_SI = D('6378136.6')
 LAL_AWGS84_SI = D('6378137')
 LAL_FWGS84 = D('1') / D('298.257223563')
@@ -742,7 +766,7 @@ LAL_YRSID_SI = D('365.256363004') * LAL_DAYJUL_SI
 print '''
 /**
  * @brief Earth equatorial radius, m
- * @see http://asa.usno.navy.mil/static/files/2015/Astronomical_Constants_2015.pdf
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */'''
 print '#define LAL_REARTH_SI',
 print LAL_REARTH_SI
@@ -777,7 +801,7 @@ print '''
  * @details
  * This is the measured value of the mean obliquity of the
  * ecliptic, 84381.406 arcseconds, converted to radians.
- * @see http://asa.usno.navy.mil/static/files/2015/Astronomical_Constants_2015.pdf
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */'''
 print '#define LAL_IEARTH',
 print str(LAL_IEARTH.quantize(quantize))
@@ -792,8 +816,28 @@ print LAL_EEARTH
 
 print '''
 /**
+ * @brief Rate of Earth precession (2000), Hz
+ * @details
+ * This is the rate of precession of the Earth,
+ * 4612.156534 arcseconds per Julian century,
+ * converted to cycles per second, at the epoch J2000.0
+ * (=2000-01-01T12:00:00Z):
+ *
+ * LAL_EPREC_SI = 4612.156534 / 36525 / 15 / 86400 / LAL_DAYJUL_SI
+ *
+ * @see Linear (in t) term in Eq. (42) of
+ * N. Capitaine, P. T. Wallace and J. Chapront
+ * "Expressions for IAU 2000 precession quantities",
+ * Astronomy & Astrophysics 412 567 (2003)
+ * https://doi.org/10.1051/0004-6361:20031539
+ */'''
+print '#define LAL_EPREC_SI',
+print as_str(LAL_EPREC_SI)
+
+print '''
+/**
  * @brief Geocentric gravitational constant, m^3 s^-2 (TCB)
- * @see http://asa.usno.navy.mil/static/files/2015/Astronomical_Constants_2015.pdf
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */'''
 print '#define LAL_GMEARTH_SI',
 print LAL_GMEARTH_SI
@@ -817,7 +861,7 @@ print LAL_LSUN_SI
 print '''
 /**
  * @brief Solar mass parameter, m^3 s^-2 (TCB)
- * @see http://asa.usno.navy.mil/static/files/2015/Astronomical_Constants_2015.pdf
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */'''
 print '#define LAL_GMSUN_SI',
 print LAL_GMSUN_SI
@@ -838,7 +882,7 @@ print '''
 print '#define LAL_YRSID_SI',
 print LAL_YRSID_SI
 
-print '/*@}*/'
+print '/** @} */'
 
 print r'''
 /**
@@ -850,7 +894,7 @@ print r'''
  * that equivalent combinations yield the same value.
  */'''
 
-print '/*@{*/'
+print '/** @{ */'
 
 LAL_COSIEARTH = cos(LAL_IEARTH)
 LAL_SINIEARTH = sin(LAL_IEARTH)
@@ -858,6 +902,7 @@ LAL_MEARTH_SI = LAL_GMEARTH_SI / LAL_G_SI
 LAL_MSUN_SI = LAL_GMSUN_SI / LAL_G_SI
 LAL_MRSUN_SI = LAL_GMSUN_SI / (LAL_C_SI * LAL_C_SI)
 LAL_MTSUN_SI = LAL_GMSUN_SI / (LAL_C_SI * LAL_C_SI * LAL_C_SI)
+LAL_SOL_SID = LAL_ROT_DAY + LAL_DAYJUL_SI * LAL_EPREC_SI
 LAL_DAYSID_SI = LAL_DAYJUL_SI / LAL_SOL_SID
 
 print '''
@@ -872,6 +917,7 @@ print str(LAL_COSIEARTH.quantize(quantize))
 print '''
 /**
  * @brief Sine of Earth inclination (2000)
+ * @details
  * LAL_SINIEARTH = sin(LAL_IEARTH)
  */'''
 print '#define LAL_SINIEARTH',
@@ -915,14 +961,27 @@ print as_str(LAL_MTSUN_SI)
 
 print '''
 /**
+ * @brief Ratio of mean solar day to sidereal day, dimensionless
+ * @details
+ * This quantity is evaluated at the epoch J2000.0 (=2000-01-01T12:00:00Z) as:
+ *
+ * LAL_SOL_SID = LAL_ROT_DAY + LAL_DAYJUL_SI * LAL_EPREC_SI
+ */'''
+print '#define LAL_SOL_SID',
+print as_str(LAL_SOL_SID)
+
+print '''
+/**
  * @brief Mean sidereal day, s
  * @details
+ * This quantity is evaluated at the epoch J2000.0 (=2000-01-01T12:00:00Z) as:
+ *
  * LAL_DAYSID_SI = LAL_DAYJUL_SI / LAL_SOL_SID
  */'''
 print '#define LAL_DAYSID_SI',
 print LAL_DAYSID_SI.quantize(quantize)
 
-print '/*@}*/'
+print '/** @} */'
 
 h0 = 0.69 # current reasonable guess for the normalized Hubble constant
 print r'''
@@ -945,7 +1004,7 @@ print r'''
  * @see http://arxiv.org/abs/1303.5062
  * @see http://dx.doi.org/10.1088/0067-0049/208/2/20
  */'''
-print '/*@{*/'
+print '/** @{ */'
 
 
 print '''
@@ -1037,11 +1096,11 @@ LAL_SCMB_SI = D('4') * LAL_PI**D('2') * LAL_K_SI * (LAL_K_SI * LAL_TCMB_SI / (LA
 print '#define LAL_SCMB_SI',
 print as_str(LAL_SCMB_SI)
 
-print '/*@}*/'
+print '/** @} */'
 
 print r'''
-/*@}*/
-/*@}*/
+/** @} */
+/** @} */
 #ifdef  __cplusplus
 }
 #endif

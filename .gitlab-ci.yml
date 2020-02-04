@@ -22,16 +22,18 @@ stages:
   - deploy
 
 variables:
-  DOCKER_DRIVER: overlay
-  GIT_DEPTH: 1
+  APT_GET: "apt-get -y -q -q -o dir::cache::archives=${CI_PROJECT_DIR}/.cache/apt"
   BRANCH: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
   COMMIT: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  NIGHTLY: $CI_REGISTRY_IMAGE:nightly
-  TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
-  LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
   CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
   CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
-
+  DOCKER_DRIVER: overlay
+  GIT_DEPTH: 1
+  LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
+  NIGHTLY: $CI_REGISTRY_IMAGE:nightly
+  TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+  YUM: "yum -y -q --setopt=cachedir=${CI_PROJECT_DIR}/.cache/yum --setopt=keepcache=1"
+  YUM_OPTS: "-y -q --setopt=cachedir=${CI_PROJECT_DIR}/.cache/yum --setopt=keepcache=1"
 
 before_script:
   - set -x  # print commands as they are run (helps debugging)
@@ -77,11 +79,18 @@ cache:
 
 # -- rpm
 
+.yum-cache: &yum-cache
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/yum
+
 .yum-update: &yum-update
-  yum-config-manager --disable htcondor 1>/dev/null && yum -y update
+  yum-config-manager --disable htcondor 1>/dev/null && ${YUM} update
 
 .rpmbuild: &rpmbuild
-  image: igwn/lalsuite-dev:el7
+  <<: *yum-cache
+  image: igwn/base:el7-testing
   variables:
     GIT_STRATEGY: none
     RPM_BUILD_CPUS: 4
@@ -89,9 +98,9 @@ cache:
     - PACKAGE=${CI_JOB_NAME%%:*}
     # install srpm dependencies
     - *yum-update
-    - yum -y install yum-utils epel-rpm-macros
+    - ${YUM} install lscsoft-packaging-tools
     # install upstream packages
-    - if [ -d rpmbuild ]; then yum -y install rpmbuild/RPMS/x86_64/*.rpm; fi
+    - if [ -d rpmbuild ]; then ${YUM} install rpmbuild/RPMS/x86_64/*.rpm; fi
     # build src.rpm
     - cd ${PACKAGE}/
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
@@ -100,7 +109,7 @@ cache:
     # lint src.rpm
     - rpmlint ${SRCRPM}
     # install build dependencies
-    - yum-builddep -y -q ${SRCRPM}
+    - yum-builddep ${YUM_OPTS} ${SRCRPM}
     # build binary rpms and print details of what we got
     - rpmbuild --rebuild --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${SRCRPM}
     - rpm -qilp ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
@@ -119,14 +128,31 @@ cache:
 
 # -- debian
 
+.apt-cache: &apt-cache
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/apt
+
+.apt-update: &apt-update
+  mkdir -p "${CI_PROJECT_DIR}/.cache/apt/partial" &&
+  ${APT_GET} autoclean &&
+  ${APT_GET} update
+
 .debuild: &debbuild
-  image: igwn/lalsuite-dev:stretch
+  <<: *apt-cache
+  image: igwn/base:stretch-proposed
   variables:
     GIT_STRATEGY: none
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
     # install debs from artifacts
-    - dpkg -i *.deb || true
+    - *apt-update
+    - ${APT_GET} install
+          devscripts
+          dpkg-dev
+          lintian
+    - "ls *.deb &>/dev/null && { dpkg -i *.deb || { ${APT_GET} -f install; dpkg -i *.deb; } }"
     # create orig tarball
     - cd ${PACKAGE}/
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
@@ -141,8 +167,8 @@ cache:
     - cd ${PACKAGE}-*/
     - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
     # install build dependencies
-    - apt-get -y -q install devscripts
-    - mk-build-deps --tool "apt-get -y" --install --remove
+    - ${APT_GET} -q install devscripts
+    - mk-build-deps --tool "${APT_GET}" --install --remove
     # build packages
     - debuild -us -uc -r
   artifacts:
@@ -227,7 +253,7 @@ cache:
 # -- documentation ------------------------------
 
 documentation:
-  image: igwn/lalsuite-dev:stretch
+  image: igwn/lalsuite-dev:stretch-proposed
   stage: documentation
   needs:
     - make-dist
@@ -248,7 +274,7 @@ documentation:
     - web
 
 pages:
-  image: igwn/lalsuite-dev:stretch
+  image: igwn/lalsuite-dev:stretch-proposed
   stage: deploy
   script:
     - ./00boot
@@ -569,11 +595,15 @@ lalapps:conda:
 # -- integration tests --------------------------
 
 lalinference_testjob:
+  <<: *yum-cache
   stage: integration tests
-  image: igwn/lalsuite-dev:el7
+  image: igwn/base:el7-testing
   before_script:
     - *yum-update
-    - yum -y install rpmbuild/RPMS/x86_64/*.rpm
+    - ${YUM} install
+          git
+          git-lfs
+    - ${YUM} install rpmbuild/RPMS/x86_64/*.rpm
   script:
     - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
     - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
@@ -589,26 +619,22 @@ lalinference_testjob:
   only:
     - schedules
     - web
+  artifacts:
+    expire_in: 18h
+    paths:
+      - example/
+    when: always
 
 top-level:
-  stage: integration tests
-  image: igwn/lalsuite-dev:el7
-  needs:
-    - make-dist
-  <<: *top-level-build
-  only:
-    - pushes
-
-top-level-testing:
   stage: integration tests
   image: igwn/lalsuite-dev:el7-testing
   needs:
     - make-dist
   <<: *top-level-build
   only:
+    - pushes
     - schedules
     - web
-  allow_failure: true
 
 # -- docker -------------------------------------
 
@@ -799,7 +825,7 @@ platform:macos:highsierra:
     - ./00boot
     # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
     # is available
-    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
+    - PYTHON=/opt/local/bin/python2.7 ./configure
     - make -j4
     - make -j4 check
   needs:
@@ -816,7 +842,7 @@ platform:macos:sierra:
     - ./00boot
     # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
     # is available
-    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
+    - PYTHON=/opt/local/bin/python2.7 ./configure
     - make -j4
     - make -j4 check
   needs:
@@ -841,11 +867,11 @@ platform:macos:sierra:
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - auditwheel repair wheel/*.whl
-    # Test
+    # Test: do some simple sanity checks in a virtualenv
     - ${PYPREFIX}/bin/virtualenv test
     - source test/bin/activate
     - pip install wheelhouse/*
-    - python -c 'import lal, lalframe, lalmetaio'
+    - python -c 'import lal, lalframe, lalmetaio, lalsimulation; series = lal.CreateREAL8FrequencySeries("psd", 0, 0, 1, None, 4096); lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)'
   needs:
     - make-dist
   only:
@@ -866,18 +892,23 @@ platform:macos:sierra:
     # Enter virtualenv so that we have a controlled version of Numpy
     - virtualenv-${PYVERS} env
     - source env/bin/activate
-    - pip install git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 'numpy==1.14.5;python_version>="3.7"' 'numpy==1.7.0;python_version<"3.7"'
+    - python -m pip install
+          git+https://github.com/lpsinger/delocate@fix-duplicate-libs
+          glob2
+          'numpy==1.7.0;python_version<"3.7"'
+          'numpy==1.14.5;python_version=="3.7"'
+          'numpy==1.17.3;python_version=="3.8"'
     # Build wheel
     - ./00boot
     - ./configure PYTHON=$(which python${PYVERS}) --enable-mpi --enable-swig-python ${EXTRA_CONFIG_FLAGS} LDFLAGS=-Wl,-headerpad_max_install_names
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - delocate-wheel -v -w wheelhouse wheel/*.whl
-    # Test
+    # Test: do some simple sanity checks in a virtualenv
     - virtualenv-${PYVERS} test
     - source test/bin/activate
-    - pip install wheelhouse/*
-    - python -c 'import lal, lalframe, lalmetaio'
+    - python -m pip install wheelhouse/*
+    - python -c 'import lal, lalframe, lalmetaio, lalsimulation; series = lal.CreateREAL8FrequencySeries("psd", 0, 0, 1, None, 4096); lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)'
   needs:
     - make-dist
   only:
@@ -892,16 +923,14 @@ platform:macos:sierra:
   <<: *wheel-manylinux
   image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux1_x86_64
 
-.wheel:manylinux2010: &wheel-manylinux2010
+.wheel:manylinux2014: &wheel-manylinux2014
   <<: *wheel-manylinux
-  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux2010_x86_64
+  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux2014_x86_64
 
 # Build wheels for all supported platforms
 wheel:cp27-cp27m-manylinux1:
   <<: *wheel-manylinux1
 wheel:cp27-cp27mu-manylinux1:
-  <<: *wheel-manylinux1
-wheel:cp34-cp34m-manylinux1:
   <<: *wheel-manylinux1
 wheel:cp35-cp35m-manylinux1:
   <<: *wheel-manylinux1
@@ -909,18 +938,16 @@ wheel:cp36-cp36m-manylinux1:
   <<: *wheel-manylinux1
 wheel:cp37-cp37m-manylinux1:
   <<: *wheel-manylinux1
-wheel:cp27-cp27m-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp27-cp27mu-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp34-cp34m-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp35-cp35m-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp36-cp36m-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp37-cp37m-manylinux2010:
-  <<: *wheel-manylinux2010
+wheel:cp38-cp38-manylinux1:
+  <<: *wheel-manylinux1
+wheel:cp35-cp35m-manylinux2014:
+  <<: *wheel-manylinux2014
+wheel:cp36-cp36m-manylinux2014:
+  <<: *wheel-manylinux2014
+wheel:cp37-cp37m-manylinux2014:
+  <<: *wheel-manylinux2014
+wheel:cp38-cp38-manylinux2014:
+  <<: *wheel-manylinux2014
 wheel:cp27-cp27m-macosx:
   <<: *wheel-macos
 wheel:cp35-cp35m-macosx:
@@ -928,6 +955,8 @@ wheel:cp35-cp35m-macosx:
 wheel:cp36-cp36m-macosx:
   <<: *wheel-macos
 wheel:cp37-cp37m-macosx:
+  <<: *wheel-macos
+wheel:cp38-cp38-macosx:
   <<: *wheel-macos
 
 deploy:wheel:
@@ -944,20 +973,19 @@ deploy:wheel:
   needs:
     - wheel:cp27-cp27m-manylinux1
     - wheel:cp27-cp27mu-manylinux1
-    - wheel:cp34-cp34m-manylinux1
     - wheel:cp35-cp35m-manylinux1
     - wheel:cp36-cp36m-manylinux1
     - wheel:cp37-cp37m-manylinux1
-    - wheel:cp27-cp27m-manylinux2010
-    - wheel:cp27-cp27mu-manylinux2010
-    - wheel:cp34-cp34m-manylinux2010
-    - wheel:cp35-cp35m-manylinux2010
-    - wheel:cp36-cp36m-manylinux2010
-    - wheel:cp37-cp37m-manylinux2010
+    - wheel:cp38-cp38-manylinux1
+    - wheel:cp35-cp35m-manylinux2014
+    - wheel:cp36-cp36m-manylinux2014
+    - wheel:cp37-cp37m-manylinux2014
+    - wheel:cp38-cp38-manylinux2014
     - wheel:cp27-cp27m-macosx
     - wheel:cp35-cp35m-macosx
     - wheel:cp36-cp36m-macosx
     - wheel:cp37-cp37m-macosx
+    - wheel:cp38-cp38-macosx
   only:
     - /^lalsuite-v.*$/
     - schedules

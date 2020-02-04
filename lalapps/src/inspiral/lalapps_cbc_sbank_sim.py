@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from __future__ import division
+from __future__ import (division, print_function)
 
 from operator import attrgetter
 from optparse import OptionParser
@@ -24,12 +24,8 @@ import numpy as np
 from h5py import File as H5File
 
 from scipy.interpolate import UnivariateSpline
-from glue.ligolw import table
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils
-from glue.ligolw.utils import process as ligolw_process
-from glue.ligolw.utils import ligolw_add
+from glue.ligolw import (ligolw, lsctables, utils)
+from glue.ligolw.utils import (ligolw_add, process as ligolw_process)
 
 import lalsimulation as lalsim
 from lal import MSUN_SI
@@ -196,14 +192,12 @@ for s in sims:
     if len(newtbl) == opts.injection_max - opts.injection_min:
         break
 
-    if 1./opts.mratio_max <= s.mass1/s.mass2 <= opts.mratio_max and opts.mtotal_min <= s.mass1 + s.mass2 <= opts.mtotal_max and (opts.duration_min == 0 or lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(opts.flow, s.mass1 * MSUN_SI, s.mass2* MSUN_SI, s.spin1z, s.spin2z) > opts.duration_min):
-        s.polarization = np.random.uniform(0, 2*np.pi)
-
         # start adding to table once we reach min injection requested
         # by user
-        if opts.injection_min <= noinjs:
+    if opts.injection_min <= noinjs:
+        if 1./opts.mratio_max <= s.mass1/s.mass2 <= opts.mratio_max and opts.mtotal_min <= s.mass1 + s.mass2 <= opts.mtotal_max and (opts.duration_min == 0 or lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(opts.flow, s.mass1 * MSUN_SI, s.mass2* MSUN_SI, s.spin1z, s.spin2z) > opts.duration_min):
             newtbl.append(s)
-        noinjs += 1
+    noinjs += 1
 
 sims = newtbl
 

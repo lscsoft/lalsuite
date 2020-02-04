@@ -320,7 +320,7 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
 
     # debian buster has patched swig-3.0.12-2 to support octave 4.4,
     # so we ignore this requirement on that platform
-    cat /etc/issue | grep -Eiq "debian .*(10|buster)"
+    cat /etc/issue | grep -Eiq "debian .*(10|buster|11|bullseye)"
     AS_IF([test $? -ne 0],[
       LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.4.0],[
         LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[4.0.0],[

@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALPulsar],[1.18.1.1],[lal-discuss@ligo.org])
+AC_INIT([LALPulsar],[1.18.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([lib/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -24,6 +24,7 @@ AC_CONFIG_FILES([ \
   swig/Makefile \
   test/Makefile \
   test/python/Makefile \
+  test/python/test_python_imports.py \
 ])
 AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE([ \
@@ -38,7 +39,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.20.0"
+MIN_LAL_VERSION="6.21.0"
 AC_SUBST([MIN_LAL_VERSION])
 
 AC_CANONICAL_HOST
@@ -62,9 +63,9 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[19])
-AC_SUBST([LIBREVISION],[1])
-AC_SUBST([LIBAGE],[0])
+AC_SUBST([LIBCURRENT],[20])
+AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBAGE],[1])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build

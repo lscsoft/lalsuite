@@ -1,3 +1,15 @@
+lalburst (1.5.4-1) unstable; urgency=low
+
+  * snglcoinc: fix rate_factors for more than two detector cases
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 20 Dec 2019 11:11:08 -0700
+
+lalburst (1.5.3-1) unstable; urgency=low
+
+  * O3b release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 25 Nov 2019 16:09:28 -0700
+
 lalburst (1.5.2-1) unstable; urgency=low
 
   * O3 release

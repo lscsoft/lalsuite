@@ -39,11 +39,10 @@ import h5py
 
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
-from scipy.stats import hmean
 try:
     from scipy.special import logsumexp
 except ImportError:  # scipy < 0.19.0
-    from scipy.misc import logsumpexp
+    from scipy.misc import logsumexp
 
 from six import string_types
 
@@ -2528,7 +2527,7 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
       pos.pop('i')
 
   # convert C22 back into h0, and phi22 back into phi0 if required
-  posC21 = None  
+  posC21 = None
   if 'c21' in pos.names:
     posC21 = pos['c21'].samples
 
@@ -3085,7 +3084,6 @@ def get_atnf_info(psr):
   (ASSOC e.g. GC) from the ATNF catalogue.
   """
 
-  from six.moves.urllib.request import urlopen
   import requests
 
   psrname = re.sub('\+', '%2B', psr) # switch '+' for unicode character

@@ -470,8 +470,7 @@ int XLALSimInspiralTaylorT1PNGenerator(
 }
 
 SphHarmTimeSeries *XLALSimInspiralTaylorT1PNModes(
-		REAL8 phiRef,                   /**< reference orbital phase (rad) */
-		REAL8 v0,                       /**< tail-term gauge choice (default = 1) */
+		UNUSED REAL8 v0,                /**< tail-term gauge choice (default = 1) */
 		REAL8 deltaT,                   /**< sampling interval (s) */
 		REAL8 m1,                       /**< mass of companion 1 (kg) */
 		REAL8 m2,                       /**< mass of companion 2 (kg) */
@@ -513,7 +512,7 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT1PNModes(
 	REAL8TimeSeries *V;
 	REAL8TimeSeries *phi;
 	int n;
-	n = XLALSimInspiralTaylorT1PNEvolveOrbit(&V, &phi, phiRef, deltaT,
+	n = XLALSimInspiralTaylorT1PNEvolveOrbit(&V, &phi, 0., deltaT,
 			m1, m2, f_min, fRef, lambda1, lambda2, tideO, phaseO);
 	if ( n < 0 )
 		XLAL_ERROR_NULL(XLAL_EFUNC);
@@ -521,8 +520,8 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT1PNModes(
 	COMPLEX16TimeSeries *hxx;
 	for(l=2; l<=lmax; l++){
 		for(m=-l; m<=l; m++){
-			hxx = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(V, phi,
-				v0, m1, m2, r, amplitudeO, l, m);
+			hxx = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeriesLALConvention(V, phi,
+				m1, m2, r, amplitudeO, l, m);
 			if ( !hxx ){
 				XLAL_ERROR_NULL(XLAL_EFUNC);
 			}
@@ -540,8 +539,7 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT1PNModes(
  * using TaylorT1 phasing.
  */
 COMPLEX16TimeSeries *XLALSimInspiralTaylorT1PNMode(
-		REAL8 phiRef,                   /**< reference orbital phase (rad) */
-		REAL8 v0,                       /**< tail-term gauge choice (default = 1) */
+		UNUSED REAL8 v0,                /**< tail-term gauge choice (default = 1) */
 		REAL8 deltaT,                   /**< sampling interval (s) */
 		REAL8 m1,                       /**< mass of companion 1 (kg) */
 		REAL8 m2,                       /**< mass of companion 2 (kg) */
@@ -584,12 +582,12 @@ COMPLEX16TimeSeries *XLALSimInspiralTaylorT1PNMode(
 	REAL8TimeSeries *V;
 	REAL8TimeSeries *phi;
 	int n;
-	n = XLALSimInspiralTaylorT1PNEvolveOrbit(&V, &phi, phiRef, deltaT,
+	n = XLALSimInspiralTaylorT1PNEvolveOrbit(&V, &phi, 0., deltaT,
 			m1, m2, f_min, fRef, lambda1, lambda2, tideO, phaseO);
 	if ( n < 0 )
 		XLAL_ERROR_NULL(XLAL_EFUNC);
-	hlm = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(V, phi,
-			v0, m1, m2, r, amplitudeO, l, m);
+	hlm = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeriesLALConvention(V, phi,
+			m1, m2, r, amplitudeO, l, m);
 	if ( !hlm )
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	XLALDestroyREAL8TimeSeries(phi);

@@ -5,6 +5,8 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
+dist_bin_SCRIPTS = lalapps_CopySFTs
+
 if FRAME
 frameprogs = lalapps_MakeSFTs
 else
@@ -34,4 +36,14 @@ endif
 if HAVE_PYTHON
 pybin_scripts = lalapps_MakeSFTDAG
 pkgpython_PYTHON =
+endif
+
+EXTRA_DIST += \
+	testMakeSFTs.sh \
+	$(END_OF_LIST)
+
+if FRAME
+TESTS = \
+	testMakeSFTs.sh \
+	$(END_OF_LIST)
 endif

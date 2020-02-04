@@ -20,7 +20,6 @@ SUBDIRS += \
 	SidebandSearch \
 	TwoSpect \
 	Weave \
-	Xray \
 	$(END_OF_LINE)
 
 # Because many tests in src/pulsar call executables from other subdirectories in

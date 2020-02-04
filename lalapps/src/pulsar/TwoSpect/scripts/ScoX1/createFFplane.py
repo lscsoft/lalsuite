@@ -1,9 +1,7 @@
 #!/usr/bin/python
-import math, os, commands, shutil, sys, re
 import matplotlib as matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 import matplotlib.backends.backend_agg
 import numpy as np
 import argparse
@@ -21,7 +19,7 @@ parser.add_argument('Tcoh', type=int, help='Coherence time, that is, one integra
 parser.add_argument('--fftf', action='store_true',help='Use to analyze frequency-frequency plane (default: time-frequency)')
 args = parser.parse_args()
 
-def tfplane(path, Tobs, Tcoh, fftf): 
+def tfplane(path, Tobs, Tcoh, fftf):
         if fftf:
             print('Printing data for frequency-frequency plane')
         else:
@@ -36,7 +34,7 @@ def tfplane(path, Tobs, Tcoh, fftf):
         tfArray = np.array(tfList)
 
         # Calculate expected number of SFTs
-        nsft = int(np.floor(2 * Tobs / Tcoh)) - 1 
+        nsft = int(np.floor(2 * Tobs / Tcoh)) - 1
         print('nsft = ' + str(nsft))
         # Calculate expected number of second Fourier transforms
         ntft = int(np.floor(nsft/2) + 1)
@@ -67,14 +65,14 @@ def tfplane(path, Tobs, Tcoh, fftf):
             ax.set_title(\
             'Power in f-f plane ' + '\n' + 'Number of bins in data arrays (n f-prime, n f): ' +\
             str(tfShaped.T.shape) + ' \n '\
-            ) 
+            )
         else:
             ax.set_xlabel('Time: SFT number (n)')
             ax.set_ylabel('Frequency bin: f (Hz) * Tcoh (s)')
             ax.set_title(\
             'Power in t-f plane ' + '\n' + 'Number of bins in data arrays (n t, n f): ' +\
             str(tfShaped.T.shape) + ' \n '\
-            ) 
+            )
         if fftf:
             plt.savefig('ffplane.png')
             plt.savefig('ffplane.pdf')

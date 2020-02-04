@@ -73,11 +73,6 @@
 
 #include <lal/LALSimNoise.h>
 
-/* check whether openmp is enabled and if so include omp.h */
-#ifdef HAVE_OPENMP
-#include <omp.h>
-#endif
-
 #include <gsl/gsl_sort_double.h>
 #include <gsl/gsl_statistics_double.h>
 #include <gsl/gsl_blas.h>

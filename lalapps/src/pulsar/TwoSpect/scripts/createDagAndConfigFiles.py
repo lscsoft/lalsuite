@@ -1,6 +1,9 @@
 #!/usr/bin/python
 
-import argparse, sys, os, subprocess, math
+import argparse
+import math
+import os
+import subprocess
 
 def writeConfigFile(args, fmin, directorynumber):
     configFile = open('{}_{}/in/{}'.format(args.dir, args.IFO.replace(',',''), directorynumber),'w')
@@ -46,7 +49,7 @@ def writeJobToDagFile(args, directorynumber):
     dagfile.write('JOB A{} {}_{}/condor\n'.format(directorynumber, args.dir, args.IFO.replace(',','')))
     dagfile.write('VARS A{} PID=\"{}\"\n'.format(directorynumber, directorynumber))
     dagfile.close()
-    
+
 
 parser = argparse.ArgumentParser(description='Script that sets up the condor/dag file for TwoSpect analysis',fromfile_prefix_chars='@')
 parser.add_argument('--dir', required=True, type=str, help='Output directory path. Detector name will be appended')
@@ -142,7 +145,7 @@ for ii in range(0, args.numberBands):
         numberSkyLocations = 0
         firstPointSet = 0
         startbin = int(float(fmin)*args.Tsft + 0.5)
-        
+
         for line in skygridfile:
             if not firstPointSet and line!='':
                 skyRegionFileName = '{}_{}/in/skygrid.{}'.format(args.dir, args.IFO.replace(',',''), directorynumber)
@@ -169,5 +172,5 @@ for ii in range(0, args.numberBands):
             directorynumber += 1
             numberSkyLocations = 0
             firstPointSet = 0
-                
-    
+
+

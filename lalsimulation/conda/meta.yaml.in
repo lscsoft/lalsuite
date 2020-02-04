@@ -10,8 +10,8 @@
 {% set sha256 = "@SHA256@" %}
 
 # dependencies
-{% set lal_version = "6.20.0" %}
-{% set swig_version = "3.0.7" %}
+{% set lal_version = "6.21.0" %}
+{% set swig_version = "3.0.9" %}
 
 package:
   name: {{ name }}
@@ -34,10 +34,10 @@ requirements:
     - swig >={{ swig_version }}
   host:
     - gsl
-    - lal >={{ lal_version }}
+    - lal >={{ lal_version }}a0
   run:
     - gsl
-    - lal >={{ lal_version }}
+    - lal >={{ lal_version }}a0
 
 test:
   commands:
@@ -77,11 +77,11 @@ outputs:
         - python
       run:
         - gsl
-        - lal >={{ lal_version }}
+        - lal >={{ lal_version }}a0
         - {{ pin_subpackage('lalsimulation', exact=True) }}
         - {{ pin_compatible('numpy') }}
         - python
-        - python-lal >={{ lal_version }}
+        - python-lal >={{ lal_version }}a0
     test:
       imports:
         - lalsimulation

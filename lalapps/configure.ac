@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALApps],[6.24.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALApps],[6.25.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -39,7 +39,6 @@ AC_CONFIG_FILES([\
   src/pulsar/Tools/Makefile \
   src/pulsar/TwoSpect/Makefile \
   src/pulsar/Weave/Makefile \
-  src/pulsar/Xray/Makefile \
   src/ring/Makefile \
   src/string/Makefile \
 ])
@@ -56,14 +55,14 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.20.0"
-MIN_LALFRAME_VERSION="1.4.0"
-MIN_LALMETAIO_VERSION="1.5.0"
-MIN_LALSIMULATION_VERSION="1.9.0"
-MIN_LALBURST_VERSION="1.5.1"
-MIN_LALINSPIRAL_VERSION="1.9.0"
-MIN_LALPULSAR_VERSION="1.18.0"
-MIN_LALINFERENCE_VERSION="1.11.0"
+MIN_LAL_VERSION="6.21.0"
+MIN_LALFRAME_VERSION="1.5.0"
+MIN_LALMETAIO_VERSION="1.6.0"
+MIN_LALSIMULATION_VERSION="1.10.0"
+MIN_LALBURST_VERSION="1.5.3"
+MIN_LALINSPIRAL_VERSION="1.10.0"
+MIN_LALPULSAR_VERSION="1.18.2"
+MIN_LALINFERENCE_VERSION="1.11.4"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
@@ -91,7 +90,6 @@ LALAPPS_ENABLE_STATIC_BINARIES
 
 LALAPPS_ENABLE_FFTW
 LALAPPS_ENABLE_FRAME
-LALAPPS_ENABLE_METAIO
 LALSUITE_ENABLE_CFITSIO
 LALAPPS_ENABLE_PSS
 LALAPPS_ENABLE_GDS
@@ -235,30 +233,6 @@ if test "${frame}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([FRAME])
 
-# check for libmetaio
-if test "${metaio}" = "true"; then
-  PKG_CHECK_MODULES([METAIO],[libmetaio],[true],[false])
-  lal_pre_metaio_LIBS="$LIBS"
-  LALSUITE_ADD_FLAGS([C],[],[${METAIO_LIBS}])
-  AC_SEARCH_LIBS([MetaioOpen],[metaio],,
-                 [AC_MSG_WARN([could not find the metaio library])]
-                 [metaio="false"]
-                 [lalmetaio="false"]
-                 [LIBS="$lal_pre_metaio_LIBS"])
-fi
-
-# check for libmetaio headers
-if test "${metaio}" = "true"; then
-  lal_pre_metaio_CPPFLAGS="$CPPFLAGS"
-  LALSUITE_ADD_FLAGS([C],[${METAIO_CFLAGS}],[])
-  AC_CHECK_HEADERS([metaio.h],,
-                   [AC_MSG_WARN([could not find the metaio.h header])]
-                   [metaio="false"]
-                   [lalmetaio="false"]
-                   [CPPFLAGS="$lal_pre_metaio_CPPFLAGS"])
-fi
-LALSUITE_ENABLE_MODULE([METAIO])
-
 # check for cfitsio
 LALSUITE_USE_CFITSIO
 
@@ -335,9 +309,6 @@ if test "${cuda}" = "true"; then
   AC_DEFINE([LALAPPS_CUDA_ENABLED],[1],[Define if using cuda library])
 fi
 
-# check for OpenMP
-LALSUITE_ENABLE_OPENMP
-
 LALSUITE_ADD_GCC_FLAGS
 
 # link any executables against LALApps library
@@ -363,7 +334,6 @@ LALApps has now been successfully configured:
 * Python support is $PYTHON_ENABLE_VAL
 * FFTW library support is $FFTW_ENABLE_VAL
 * Frame library support is $FRAME_ENABLE_VAL
-* MetaIO library support is $METAIO_ENABLE_VAL
 * LALFrame library support is $LALFRAME_ENABLE_VAL
 * LALMetaIO library support is $LALMETAIO_ENABLE_VAL
 * LALSimulation library support is $LALSIMULATION_ENABLE_VAL
@@ -376,7 +346,6 @@ LALApps has now been successfully configured:
 * Condor support is $CONDOR_ENABLE_VAL
 * GDS support is $GDS_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
-* OpenMP acceleration is $OPENMP_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL
 * help2man documentation is $HELP2MAN_ENABLE_VAL
 

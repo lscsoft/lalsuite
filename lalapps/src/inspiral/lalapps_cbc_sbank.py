@@ -17,31 +17,30 @@
 
 from __future__ import (division, print_function)
 
-from time import strftime
+import os
+import sys
 from collections import deque
+from optparse import OptionParser
+from time import strftime
+
 import numpy as np
-import sys, os
+
 import h5py
 
 from scipy.interpolate import UnivariateSpline
+
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
-from glue.ligolw import table
 from glue.ligolw import utils
 from glue.ligolw import ilwd
 from glue.ligolw.utils import process as ligolw_process
-from lal import REAL8FrequencySeries
-
-from optparse import OptionParser
 
 #from sbank import git_version FIXME
 from lalinspiral.sbank.bank import Bank
 from lalinspiral.sbank.tau0tau3 import proposals
-from lalinspiral.sbank.psds import noise_models, read_psd, get_PSD
+from lalinspiral.sbank.psds import (noise_models, read_psd)
 from lalinspiral.sbank.waveforms import waveforms, SnglInspiralTable
 
-import lal
-import lalsimulation as lalsim
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass

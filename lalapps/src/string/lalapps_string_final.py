@@ -34,7 +34,12 @@ from __future__ import print_function
 
 
 import bisect
-import copy_reg
+try:
+    import copyreg
+    import pickle
+except ImportError:  # python < 3
+    import copy_reg as copyreg
+    import cPickle as pickle
 import heapq
 import itertools
 from optparse import OptionParser
@@ -42,12 +47,10 @@ import math
 from matplotlib import patches
 import numpy
 import os
-import cPickle as pickle
 import random
 import select
 from scipy import interpolate
 from scipy import optimize
-import Queue as queue
 import sqlite3
 import sys
 import traceback
@@ -84,7 +87,7 @@ __version__ = "git id %s" % git_version.id
 __date__ = git_version.date
 
 
-copy_reg.pickle(lal.LIGOTimeGPS, lambda gps: (lal.LIGOTimeGPS, (gps.gpsSeconds, gps.gpsNanoSeconds)))
+copyreg.pickle(lal.LIGOTimeGPS, lambda gps: (lal.LIGOTimeGPS, (gps.gpsSeconds, gps.gpsNanoSeconds)))
 
 
 #

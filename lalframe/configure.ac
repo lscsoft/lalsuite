@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALFrame],[1.4.5.1],[lal-discuss@ligo.org])
+AC_INIT([LALFrame],[1.5.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([lib/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -25,6 +25,7 @@ AC_CONFIG_FILES([ \
   swig/Makefile \
   test/Makefile \
   test/python/Makefile \
+  test/python/test_python_imports.py \
 ])
 AM_INIT_AUTOMAKE([ \
   1.11 \
@@ -38,7 +39,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.20.0"
+MIN_LAL_VERSION="6.21.0"
 MIN_FRAMECPPC_VERSION="2.5.5"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_FRAMECPPC_VERSION])
@@ -64,8 +65,8 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[10])
-AC_SUBST([LIBREVISION],[3])
+AC_SUBST([LIBCURRENT],[11])
+AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
