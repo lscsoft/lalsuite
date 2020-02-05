@@ -237,7 +237,6 @@ src/pulsar/MakeSFTs/lalapps_MakeSFTDAG
 src/pulsar/MakeSFTs/lalapps_MakeSFTs
 src/pulsar/SFTTools/lalapps_compareSFTs
 src/pulsar/SFTTools/lalapps_ComputePSD
-src/pulsar/SFTTools/lalapps_ConvertToSFTv2
 src/pulsar/SFTTools/lalapps_dumpSFT
 src/pulsar/SFTTools/lalapps_GetSFTVelocities
 src/pulsar/SFTTools/lalapps_SFTclean
