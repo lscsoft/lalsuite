@@ -810,6 +810,13 @@ clang:9:
     CLANG: clang-9
     CLANGXX: clang++-9
 
+clang:10:
+  <<: *clang-build
+  image: igwn/lalsuite-dev-clang:10
+  variables:
+    CLANG: clang-10
+    CLANGXX: clang++-10
+
 clang:dev:
   <<: *clang-build
   image: igwn/lalsuite-dev-clang:dev
