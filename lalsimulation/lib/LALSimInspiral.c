@@ -2627,7 +2627,10 @@ static int XLALSimInspiralTDFromFD(
  * the very end of the waveform are also tapered.  The resulting waveform is high-pass
  * filtered at frequency f_min so that it should have little content at lower frequencies.
 
- * If calling the NR_hdf5 approximant then the starting frequency is not altered.
+ * If calling with precessing time-domain approximants for which the reference frequency
+ * is the starting frequency, or if calling with NR_hdf5 approximant, the starting
+ * frequency is not altered. Uses XLALSimInspiralGetSpinFreqFromApproximant to determine
+ * appropriate behaviour.
  *
  * This routine used to have one additional parameter relative to XLALSimInspiralChooseTDWaveform:
  * the redshift, z, of the waveform, which is now stuffed into the LALDict structure.
@@ -2666,17 +2669,22 @@ int XLALSimInspiralTD(
 {
     /* call the appropriate helper routine */
     if (XLALSimInspiralImplementedTDApproximants(approximant)) {
-        /* If using NR_hdf5 generate using XLALSimInspiralChooseTDWaveform and apply the
+        /* If using approximants for which reference frequency is the starting frequency
+	* generate using XLALSimInspiralChooseTDWaveform and apply the
         * LAL Taper 'LAL_SIM_INSPIRAL_TAPER_START' instead of
         * XLALSimInspiralTDConditionStage1 and XLALSimInspiralTDConditionStage2
         * as is done in XLALSimInspiralTDFromTD.
         * This is because XLALSimInspiralTDFromTD modifies the start frequency
         * which is not always possible with NR_hdf5 waveforms.
         */
-        if (approximant == NR_hdf5)
-        {
+
+      // Check whether for the given approximant reference frequency is the starting frequency
+      SpinFreq spin_freq_flag = XLALSimInspiralGetSpinFreqFromApproximant(approximant);
+      if (spin_freq_flag == LAL_SIM_INSPIRAL_SPINS_CASEBYCASE || spin_freq_flag == LAL_SIM_INSPIRAL_SPINS_FLOW)
+       {
             if (XLALSimInspiralChooseTDWaveform(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant) <0)
                 XLAL_ERROR(XLAL_EFUNC);
+
             /* taper the waveforms */
             LALSimInspiralApplyTaper taper = LAL_SIM_INSPIRAL_TAPER_START;
             if (XLALSimInspiralREAL8WaveTaper((*hplus)->data, taper) == XLAL_FAILURE)
