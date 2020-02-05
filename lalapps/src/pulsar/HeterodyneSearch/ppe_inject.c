@@ -667,6 +667,12 @@ void get_loudest_snr( LALInferenceRunState *runState ){
         LALInferenceAddVariable( ifo_model->params, "bsb_delays", &bsbdelays, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
       }
 
+      if ( LALInferenceCheckVariable( ifo_model->params, "glitch_phase" ) ){
+        REAL8Vector *glitchphase = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "glitch_phase_full" );
+        LALInferenceRemoveVariable( ifo_model->params, "glitch_phase" );
+        LALInferenceAddVariable( ifo_model->params, "glitch_phase", &glitchphase, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+      }
+
       /* make sure varyphase is set (this is required if having used ROQ for a non-varyphase model) */
       if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
         UINT4 varyphasetmp = 1;
