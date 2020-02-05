@@ -756,6 +756,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--no-detector-frame)              model will NOT use detector-centred coordinates and instead RA,dec\n\
     (--grtest-parameters dchi0,..,dxi1,..,dalpha1,..) template will assume deformations in the corresponding phase coefficients.\n\
     (--ppe-parameters aPPE1,....     template will assume the presence of an arbitrary number of PPE parameters. They must be paired correctly.\n\
+    (--modeList lm,l-m...,lm,l-m)           List of modes to be used by the model. The chosen modes ('lm') should be passed as a ',' seperated list.\n\
 \n\
     ----------------------------------------------\n\
     --- Starting Parameters ----------------------\n\
@@ -1449,6 +1450,53 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--numreldata"))) {
     XLALSimInspiralWaveformParamsInsertNumRelData(model->LALpars, ppt->value);
     fprintf(stdout,"Template will use %s.\n",ppt->value);
+  }
+
+  /* Pass custom mode array list to waveform generator */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--modeList"))) {
+
+    char *end_str;
+    char substring[] = "-";
+    char *modes = strtok_r(ppt->value, ",", &end_str);
+    int l[5], m[5], ii=0, jj=0;
+
+    fprintf(stdout, "Template will use a custom mode array.\n");
+    while (modes != NULL) {
+        int k = 0;
+        if (strstr(modes, substring) != NULL) {
+            char *end_token;
+            char *token = strtok_r(modes, "-", &end_token);
+            while (token != NULL) {
+                if ( k == 0 ) {
+                    l[ii++] = atoi(token);
+                } else {
+                    m[jj++] = -1 * atoi(token);
+                }
+                k += 1;
+                token = strtok_r(NULL, "-", &end_token);
+            }
+        } else {
+            int value = atoi(modes);
+
+            for (k=2; k>=0; k--) {
+                if (k == 2) {
+                    m[jj++] = value % 10;
+                } else if (k == 1) {
+                    l[ii++] = value % 10;
+                }
+                value /= 10;
+            }
+        }
+        modes = strtok_r(NULL, ",", &end_str);
+    }
+
+    LALValue *ModeArray = XLALSimInspiralCreateModeArray();
+    for (int iii=0; iii<ii; iii+=1){
+       fprintf(stdout, "Template will use the l=%d m=%d mode\n", l[iii], m[iii]);
+       XLALSimInspiralModeArrayActivateMode(ModeArray, l[iii], m[iii]);
+    }
+    XLALSimInspiralWaveformParamsInsertModeArray(model->LALpars, ModeArray);
+    XLALDestroyValue(ModeArray);
   }
 
   fprintf(stdout,"\n\n---\t\t ---\n");
