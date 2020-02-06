@@ -41,6 +41,7 @@ extern "C" {
  *
  * @{
  * @defgroup LALSimIMRPhenom_c                   LALSimIMRPhenom.c
+ * @defgroup LALSimIMRPhenomX_c                  LALSimIMRPhenomX.c
  * @defgroup LALSimIMREOBNRv2_c                  LALSimIMREOBNRv2.c
  * @defgroup LALSimIMRSpinAlignedEOB_c           LALSimIMRSpinAlignedEOB.c
  * @defgroup LALSimIMRSpinPrecEOB_c              LALSimIMRSpinPrecEOB.c
@@ -335,6 +336,174 @@ int XLALSimIMRSEOBNRv4TSurrogateFrequencySequence(struct tagCOMPLEX16FrequencySe
 int XLALSimIMRPhenSpinFinalMassSpin(REAL8 *finalMass, REAL8 *finalSpin, REAL8 m1, REAL8 m2, REAL8 s1s1, REAL8 s2s2, REAL8 s1L, REAL8 s2L, REAL8 s1s2, REAL8 energy);
 int XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus, REAL8TimeSeries **hCross, REAL8 phi_start, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_ref, REAL8 r, REAL8 iota, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, int phaseO, int ampO, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALparams);
 int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phi0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_ref, REAL8 r, REAL8 iota, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, int phaseO, int ampO, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALDict *LALparams);
+
+/* IMRPhenomX/HM Routines */
+/* in module LALSimIMRPhenomX.c */
+int XLALSimIMRPhenomXASGenerateFD(COMPLEX16FrequencySeries **htilde22,
+  REAL8 m1_SI,
+  REAL8 m2_SI,
+  REAL8 chi1L,
+  REAL8 chi2L,
+  REAL8 distance,
+  REAL8 f_min,
+  REAL8 f_max,
+  REAL8 deltaF,
+  REAL8 phiRef,
+  REAL8 fRef_In,
+  LALDict *lalParams
+);
+
+int XLALSimIMRPhenomXASFrequencySequence(
+  COMPLEX16FrequencySeries **htilde22,
+  const REAL8Sequence *freqs,
+  REAL8 m1_SI,
+  REAL8 m2_SI,
+  REAL8 chi1L,
+  REAL8 chi2L,
+  REAL8 distance,
+  REAL8 phiRef,
+  REAL8 fRef_In,
+  LALDict *lalParams
+);
+
+/* in module LALSimIMRPhenomXHM.c */
+int XLALSimIMRPhenomXHMGenerateFDOneMode(
+ COMPLEX16FrequencySeries **htildelm, /**< [out] FD waveform */
+ REAL8 m1_SI,                         /**< Mass of companion 1 (kg) */
+ REAL8 m2_SI,                         /**< Mass of companion 2 (kg) */
+ REAL8 chi1L,                         /**< Dimensionless aligned spin of companion 1 */
+ REAL8 chi2L,                         /**< Dimensionless aligned spin of companion 2 */
+ UINT4 ell,                           /**< l index of the mode */
+ INT4 emm,                            /**< m index of the mode */
+ REAL8 distance,                      /**< Luminosity distance (m) */
+ REAL8 f_min,                         /**< Starting GW frequency (Hz) */
+ REAL8 f_max,                         /**< End frequency; 0 defaults to Mf = 0.3 */
+ REAL8 deltaF,                        /**< Sampling frequency (Hz) */
+ REAL8 phiRef,                        /**< Orbital phase at fRef (rad) */
+ REAL8 fRef_In,                       /**< Reference frequency (Hz) */
+ LALDict *lalParams                   /**< lal dictionary parameters */
+);
+
+int XLALSimIMRPhenomXHMFrequencySequenceOneMode(
+    COMPLEX16FrequencySeries **htildelm, /**< [out] FD waveform */
+    REAL8Sequence *freqs,                /**< frequency array to evaluate model */
+    REAL8 m1_SI,                         /**< Mass of companion 1 (kg) */
+    REAL8 m2_SI,                         /**< Mass of companion 2 (kg) */
+    REAL8 chi1L,                         /**< Dimensionless aligned spin of companion 1 */
+    REAL8 chi2L,                         /**< Dimensionless aligned spin of companion 2 */
+    UINT4 ell,                           /**< l index of the mode */
+    INT4 emm,                            /**< m index of the mode */
+    REAL8 distance,                      /**< Luminosity distance (m) */
+    REAL8 phiRef,                        /**< Orbital phase at fRef (rad) */
+    REAL8 fRef_In,                       /**< Reference frequency (Hz) */
+    LALDict *lalParams                   /**< lal dictionary parameters */
+);
+
+int XLALSimIMRPhenomXHM(
+   COMPLEX16FrequencySeries **hptilde, /**< [out] Frequency-domain waveform h+ */
+   COMPLEX16FrequencySeries **hctilde, /**< [out] Frequency-domain waveform hx */
+   REAL8 m1_SI,                        /**< mass of companion 1 (kg) */
+   REAL8 m2_SI,                        /**< mass of companion 2 (kg) */
+   REAL8 chi1z,                        /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+   REAL8 chi2z,                        /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+   REAL8 f_min,                        /**< Starting GW frequency (Hz) */
+   REAL8 f_max,                        /**< End frequency; 0 defaults to Mf = 0.3 */
+   REAL8 deltaF,                       /**< Sampling frequency (Hz) */
+   REAL8 distance,                     /**< distance of source (m) */
+   REAL8 inclination,                  /**< inclination of source (rad) */
+   REAL8 phiRef,                       /**< reference orbital phase (rad) */
+   REAL8 fRef_In,                      /**< Reference frequency */
+   LALDict *lalParams                  /**<linked list containing the extra testing GR parameters */
+);
+
+
+int XLALSimIMRPhenomXHM2(
+  COMPLEX16FrequencySeries **hptilde, /**< [out] Frequency domain h+ GW strain */
+  COMPLEX16FrequencySeries **hctilde, /**< [out] Frequency domain hx GW strain */
+  REAL8 m1_SI,                         /**< Mass of companion 1 (kg) */
+  REAL8 m2_SI,                         /**< Mass of companion 2 (kg) */
+  REAL8 chi1L,                         /**< Dimensionless aligned spin of companion 1 */
+  REAL8 chi2L,                         /**< Dimensionless aligned spin of companion 2 */
+  REAL8 distance,                      /**< Luminosity distance (m) */
+  REAL8 f_min,                         /**< Starting GW frequency (Hz) */
+  REAL8 f_max,                         /**< End frequency; 0 defaults to Mf = 0.3 */
+  REAL8 deltaF,                        /**< Sampling frequency (Hz) */
+  REAL8 inclination,                   /**  Inclination of the source */
+  REAL8 phiRef,                        /**< Orbital phase at fRef (rad) */
+  REAL8 fRef_In,                       /**< Reference frequency (Hz) */
+  LALDict *lalParams                   /**< LAL Dictionary */
+);
+
+
+int XLALSimIMRPhenomXHMMultiBandOneMode(
+  COMPLEX16FrequencySeries **htildelm, /**< [out] FD waveform */
+  REAL8 m1_SI,                         /**< Mass of companion 1 (kg) */
+  REAL8 m2_SI,                         /**< Mass of companion 2 (kg) */
+  REAL8 chi1L,                         /**< Dimensionless aligned spin of companion 1 */
+  REAL8 chi2L,                         /**< Dimensionless aligned spin of companion 2 */
+  UINT4 ell,                           /**< l index of the mode */
+  INT4 emm,                            /**< m index of the mode */
+  REAL8 distance,                      /**< Luminosity distance (m) */
+  REAL8 f_min,                         /**< Starting GW frequency (Hz) */
+  REAL8 f_max,                         /**< End frequency; 0 defaults to Mf = 0.3 */
+  REAL8 deltaF,                        /**< Sampling frequency (Hz) */
+  REAL8 phiRef,                        /**< Orbital phase at fRef (rad) */
+  REAL8 fRef_In,                       /**< Reference frequency (Hz) */
+  LALDict *lalParams                   /**< Extra params */
+);
+
+int XLALSimIMRPhenomXHMMultiBandOneModeMixing(
+  COMPLEX16FrequencySeries **htildelm, /**< [out] FD waveform */
+  COMPLEX16FrequencySeries *htilde22,  /**< [out] FD waveform */
+  REAL8 m1_SI,                         /**< Mass of companion 1 (kg) */
+  REAL8 m2_SI,                         /**< Mass of companion 2 (kg) */
+  REAL8 chi1L,                         /**< Dimensionless aligned spin of companion 1 */
+  REAL8 chi2L,                         /**< Dimensionless aligned spin of companion 2 */
+  UINT4 ell,                           /**< l index of the mode */
+  INT4 emm,                            /**< m index of the mode */
+  REAL8 distance,                      /**< Luminosity distance (m) */
+  REAL8 f_min,                         /**< Starting GW frequency (Hz) */
+  REAL8 f_max,                         /**< End frequency; 0 defaults to Mf = 0.3 */
+  REAL8 deltaF,                        /**< Sampling frequency (Hz) */
+  REAL8 phiRef,                        /**< Orbital phase at fRef (rad) */
+  REAL8 fRef_In,                       /**< Reference frequency (Hz) */
+  LALDict *lalParams                   /**< Extra params */
+);
+
+int XLALSimIMRPhenomXHMAmplitude(
+    REAL8FrequencySeries **amplitude, /**< [out] FD amp */
+    REAL8 m1_SI,                         /**< Mass of companion 1 (kg) */
+    REAL8 m2_SI,                         /**< Mass of companion 2 (kg) */
+    REAL8 chi1L,                         /**< Dimensionless aligned spin of companion 1 */
+    REAL8 chi2L,                         /**< Dimensionless aligned spin of companion 2 */
+    UINT4 ell,                           /**< l index of the mode */
+    INT4 emm,                            /**< m index of the mode */
+    REAL8 distance,                      /**< Luminosity distance (m) */
+    REAL8 f_min,                         /**< Starting GW frequency (Hz) */
+    REAL8 f_max,                         /**< End frequency; 0 defaults to Mf = 0.3 */
+    REAL8 deltaF,                        /**< Sampling frequency (Hz) */
+    REAL8 phiRef,                        /**< Orbital amp at fRef (rad) */
+    REAL8 fRef_In,                       /**< Reference frequency (Hz) */
+    LALDict *lalParams                   /**< Extra params */
+  );
+
+int XLALSimIMRPhenomXHMPhase(
+    REAL8FrequencySeries **phase,        /**< [out] FD amp */
+    REAL8 m1_SI,                         /**< Mass of companion 1 (kg) */
+    REAL8 m2_SI,                         /**< Mass of companion 2 (kg) */
+    REAL8 chi1L,                         /**< Dimensionless aligned spin of companion 1 */
+    REAL8 chi2L,                         /**< Dimensionless aligned spin of companion 2 */
+    UINT4 ell,                           /**< l index of the mode */
+    INT4 emm,                            /**< m index of the mode */
+    REAL8 distance,                      /**< Luminosity distance (m) */
+    REAL8 f_min,                         /**< Starting GW frequency (Hz) */
+    REAL8 f_max,                         /**< End frequency; 0 defaults to Mf = 0.3 */
+    REAL8 deltaF,                        /**< Sampling frequency (Hz) */
+    REAL8 phiRef,                        /**< Orbital amp at fRef (rad) */
+    REAL8 fRef_In,                       /**< Reference frequency (Hz) */
+    LALDict *lalParams                   /**< Extra params */
+  );
+
 
 /* in module LALSimInspiralNRWaveforms.c */
 

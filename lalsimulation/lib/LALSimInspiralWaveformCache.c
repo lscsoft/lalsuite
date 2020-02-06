@@ -1292,6 +1292,81 @@ int XLALSimInspiralChooseFDWaveformSequence(
                 XLAL_ERROR(XLAL_EFUNC);
             break;
 
+	      case IMRPhenomXAS:
+              /* Waveform-specific sanity checks */
+              if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
+              ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+              if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+              ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+              if( !checkTidesZero(lambda1, lambda2) )
+              ABORT_NONZERO_TIDES(LALpars);
+
+              /*
+              This is the factor that comes from Y_22star + (-1)^l * Y_2-2 without the dependence in inclination, that is included in pfac and cfac
+              We add the azimuthal part exp^{i*m*beta} of the spherical harmonics Ylm(inclination, beta),
+              with beta = PI/2 - phiRef, phiRef is included in the individual mode
+              */
+              COMPLEX16 Ylmfactor = 2.0*sqrt(5.0 / (64.0 * LAL_PI)) * cexp(-I*2*(LAL_PI/2 ));
+              /* The factor for hc is the same but opposite sign */
+
+              ret = XLALSimIMRPhenomXASFrequencySequence(hptilde, frequencies,
+                m1, m2, S1z, S2z, distance, phiRef, f_ref, LALpars);
+                if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+
+                /* Produce both polarizations */
+                *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+                &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
+                &((*hptilde)->sampleUnits), (*hptilde)->data->length
+              );
+              for(j = 0; j < (*hptilde)->data->length; j++)
+              {
+                (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j] * Ylmfactor;
+                (*hptilde)->data->data[j] *= pfac * Ylmfactor;
+              }
+              break;
+
+          case IMRPhenomXHM:
+    					/* Waveform-specific sanity checks */
+    					if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
+    							ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+    					if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+    							ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+    					if( !checkTidesZero(lambda1, lambda2) )
+    							ABORT_NONZERO_TIDES(LALpars);
+
+    					/* Activate or not the debug info. */
+    					#ifndef PHENOMXHMDEBUG  // Defined at compilation time. ./configure --prefix=... CFLAGS='-g -D PHENOMXHMDEBUG'
+    					  #define DEBUG 0
+    					#else
+    						#define DEBUG 1 //print debugging info
+    					#endif
+
+              REAL8 f_max = frequencies->data[frequencies->length-1];
+              REAL8 deltaF = frequencies->data[1]-frequencies->data[0];
+
+    					/* Return hp and hc for positive frequencies. Only negatives modes contribute to positive frequencies.  */
+    					/* The negative frquencies contribution is the complex conjugate of the positive one. */
+
+    			    /* Take input/default value for the threshold of the Multibanding. If = 0 then do not use Multibanding. */
+    			    REAL8 resTest  = XLALSimInspiralWaveformParamsLookupPhenomXHMThresholdMband(LALpars);
+
+    					/* If total mass is very high (>500 solar masses), we only have a few points in the ringdown, interpolation is not efficient, do not use Multibanding */
+    					REAL8 Mtot = (m1 + m2)/LAL_MSUN_SI;
+    					if(resTest!=0 && Mtot > 500){
+    						resTest = 0.;
+    					}
+
+    					if(resTest == 0.){ //Do not use multibanding
+    						ret = XLALSimIMRPhenomXHM2(hptilde, hctilde, m1, m2, S1z, S2z, f_min, f_max, deltaF, distance, inclination, phiRef, f_ref, LALpars);
+    					}
+    					else{ // Use multibanding
+    						ret = XLALSimIMRPhenomXHM(hptilde, hctilde, m1, m2, S1z, S2z, f_min, f_max, deltaF, distance, inclination, phiRef, f_ref, LALpars);
+    					}
+
+    					if (ret == XLAL_FAILURE)
+                 XLAL_ERROR(XLAL_EFUNC);
+    				 	break;
+
         default:
             XLALPrintError("FD version of approximant not implemented in lalsimulation\n");
             XLAL_ERROR(XLAL_EINVAL);

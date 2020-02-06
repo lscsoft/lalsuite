@@ -145,6 +145,7 @@ pkginclude_HEADERS = \
 	LALSimBurst.h \
 	LALSimIMR.h \
 	LALSimIMRPhenomUtils.h \
+	LALSimIMRPhenomXUtilities.h \
 	LALSimInspiral.h \
 	LALSimInspiralPrecess.h \
 	LALSimInspiralTestGRParams.h \
@@ -192,6 +193,31 @@ noinst_HEADERS = \
 	LALSimIMRPhenomD.h \
 	LALSimIMRPhenomD_internals.c \
 	LALSimIMRPhenomD_internals.h \
+	LALSimIMRPhenomX.h \
+	LALSimIMRPhenomX_internals.c \
+	LALSimIMRPhenomX_internals.h \
+	LALSimIMRPhenomX_qnm.c \
+	LALSimIMRPhenomX_qnm.h \
+	LALSimIMRPhenomX_inspiral.c \
+	LALSimIMRPhenomX_inspiral.h \
+	LALSimIMRPhenomX_intermediate.c \
+	LALSimIMRPhenomX_intermediate.h \
+	LALSimIMRPhenomX_ringdown.c \
+	LALSimIMRPhenomX_ringdown.h \
+	LALSimIMRPhenomXHM.h \
+	LALSimIMRPhenomXHM_internals.c \
+	LALSimIMRPhenomXHM_internals.h \
+	LALSimIMRPhenomXHM_qnm.c \
+	LALSimIMRPhenomXHM_qnm.h \
+	LALSimIMRPhenomXHM_inspiral.c \
+	LALSimIMRPhenomXHM_inspiral.h \
+	LALSimIMRPhenomXHM_intermediate.c \
+	LALSimIMRPhenomXHM_intermediate.h \
+	LALSimIMRPhenomXHM_ringdown.c \
+	LALSimIMRPhenomXHM_ringdown.h \
+	LALSimIMRPhenomXHM_structs.h \
+	LALSimIMRPhenomXHM_multiband.c \
+	LALSimIMRPhenomXHM_multiband.h \
 	LALSimIMRPhenomHM.h \
 	LALSimIMRPhenomP.c \
 	LALSimIMRPhenomP.h \
@@ -265,6 +291,9 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRPhenomP.c \
 	LALSimIMRPhenomInternalUtils.c \
 	LALSimIMRPhenomUtils.c \
+	LALSimIMRPhenomX.c \
+	LALSimIMRPhenomXUtilities.c \
+	LALSimIMRPhenomXHM.c \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimPhenSpinRingDown.c \
 	LALSimInspiralWaveformFlags.c \
