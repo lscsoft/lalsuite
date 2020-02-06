@@ -193,6 +193,10 @@ const char * usage =
 "--higher-modes VALUE       specify l modes with value 'VALUE' (L2 or RESTRICTED is default)\n"
 "--outname FNAME            Output to file FNAME (default 'simulation.dat')\n"
 "--verbose                  If included, add verbose output\n"
+"--phenomXHMMband float     Threshold parameter for the Multibanding of IMRPhenomXHM. By default set to 10^-3. If set to 0 then do not use multibanding.\n"
+"--modesList string         List of modes to be used by the model, e.g. --modesList '2,2, 2,-2, 2,1, 2,-1'. \n"
+"                           To use all the modes available in the mode do not add --modesList. Do not use if you do not know which modes the model returns!\n"
+
 ;
 
 /* Parse command line, sanity check arguments, and return a newly
@@ -365,7 +369,23 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             snprintf(params->outname, sizeof(params->outname), "%s", argv[++i]);
         } else if (strcmp(argv[i], "--nr-file") == 0) {
 	  XLALSimInspiralWaveformParamsInsertNumRelData(params->params, argv[++i]);
-        } else {
+        } else if (strcmp(argv[i], "--modesList") == 0) {
+            char numbers_str[50], *currnum;
+            strncpy(numbers_str, argv[++i], 50);
+            int numbers[25], iii = 0;
+            while ((currnum = strtok(iii ? NULL : numbers_str, ",")) != NULL){
+              numbers[iii++] = atoi(currnum);
+            }
+            LALValue *ModeArray = XLALSimInspiralCreateModeArray();
+            for (int ii=0; ii<iii; ii+=2){
+               XLALSimInspiralModeArrayActivateMode(ModeArray, numbers[ii], numbers[ii+1]);
+               XLALSimInspiralWaveformParamsInsertModeArray(params->params, ModeArray);
+             }
+             XLALDestroyValue(ModeArray);
+
+        }else if(strcmp(argv[i], "--phenomXHMMband") == 0){
+            XLALSimInspiralWaveformParamsInsertPhenomXHMThresholdMband(params->params, atof(argv[++i]));
+        }else {
             XLALPrintError("Error: invalid option: %s\n", argv[i]);
             goto fail;
         }
@@ -465,7 +485,7 @@ static int dump_TD(FILE *f, REAL8TimeSeries *hplus, REAL8TimeSeries *hcross) {
 
     fprintf(f, "# t hplus hcross\n");
     for (i=0; i < hplus->data->length; i++)
-        fprintf(f, "%25.16e %25.16e %25.16e\n", t0 + i * hplus->deltaT, 
+        fprintf(f, "%25.16e %25.16e %25.16e\n", t0 + i * hplus->deltaT,
                 hplus->data->data[i], hcross->data->data[i]);
     return 0;
 }

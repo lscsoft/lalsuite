@@ -757,6 +757,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--grtest-parameters dchi0,..,dxi1,..,dalpha1,..) template will assume deformations in the corresponding phase coefficients.\n\
     (--ppe-parameters aPPE1,....     template will assume the presence of an arbitrary number of PPE parameters. They must be paired correctly.\n\
     (--modeList lm,l-m...,lm,l-m)           List of modes to be used by the model. The chosen modes ('lm') should be passed as a ',' seperated list.\n\
+    (--phenomXHMMband float)     Threshold parameter for the Multibanding of IMRPhenomXHM. By default set to 10^-3. If set to 0 then do not use multibanding.\n\
 \n\
     ----------------------------------------------\n\
     --- Starting Parameters ----------------------\n\
@@ -1498,6 +1499,15 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     XLALSimInspiralWaveformParamsInsertModeArray(model->LALpars, ModeArray);
     XLALDestroyValue(ModeArray);
   }
+
+
+  /* Pass threshold for PhenomXHM Multibanding */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--phenomXHMMband"))) {
+      REAL8 threshold = atof(ppt->value);
+      XLALSimInspiralWaveformParamsInsertPhenomXHMThresholdMband(model->LALpars, threshold);
+      fprintf(stdout,"Template will use phenomXHMMband %s.\n",ppt->value);
+  }
+
 
   fprintf(stdout,"\n\n---\t\t ---\n");
   LALInferenceInitSpinVariables(state, model);
