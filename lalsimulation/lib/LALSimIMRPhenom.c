@@ -1212,6 +1212,9 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  *    Two flavors of NRTidal models are available: original (_NRTidal, based on https://arxiv.org/pdf/1706.02969.pdf) and an improved version 2 (_NRTidalv2, based on https://arxiv.org/pdf/1905.06011.pdf). 
  *  * IMRPhenomHM models spinning, non-precessing binaries,
  *    based on IMRPhenomD that also includes higher order modes.
+ *  * IMRPhenomNSBH models single-spin, non-precessing neutron-star-black-hole
+ *    binaries, based on the amplitude of IMRPhenomC and the phase of
+ *    IMRPhenomD_NRTidalv2
  *
  * @review IMRPhenomB routines reviewed by Frank Ohme, P. Ajith, Alex Nitz
  * and Riccardo Sturani. The review concluded with git hash
@@ -1237,6 +1240,11 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  *
  * @review IMRPhenomHM review wiki page can be found here
  * https://git.ligo.org/waveforms/reviews/phenomhm/wikis/home
+ *
+ * @review IMRPhenomNSBH review by Frank Ohme, Tim Dietrich, Shrobana Ghosh,
+ * Andrew Matas, Jonathan Thompson, Edward Fauchon-Jones. The review concluded
+ * on 3 February 2020. The review documentation, resources, and final git hash 
+ * can be found at https://git.ligo.org/waveforms/reviews/nsbh-models/wikis/home.
  * @{
  */
 

@@ -147,6 +147,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SEOBNRv4_ROM),
     INITIALIZE_NAME(SEOBNRv4_ROM_NRTidal),
     INITIALIZE_NAME(SEOBNRv4_ROM_NRTidalv2),
+    INITIALIZE_NAME(SEOBNRv4_ROM_NRTidalv2_NSBH),
     INITIALIZE_NAME(SEOBNRv4T_surrogate),
     INITIALIZE_NAME(HGimri),
     INITIALIZE_NAME(IMRPhenomA),
@@ -157,6 +158,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(IMRPhenomD),
     INITIALIZE_NAME(IMRPhenomD_NRTidal),
     INITIALIZE_NAME(IMRPhenomD_NRTidalv2),
+    INITIALIZE_NAME(IMRPhenomNSBH),
     INITIALIZE_NAME(IMRPhenomHM),
     INITIALIZE_NAME(IMRPhenomP),
     INITIALIZE_NAME(IMRPhenomPv2),
@@ -805,6 +807,14 @@ int XLALSimInspiralChooseTDWaveform(
        case SEOBNRv4_ROM_NRTidalv2:
           ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
            break;
+
+        case IMRPhenomNSBH:
+            ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
+           break;
+
+        case SEOBNRv4_ROM_NRTidalv2_NSBH:
+            ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
+         break;
 
         case PhenSpinTaylorRD:
             /* Waveform-specific sanity checks */
@@ -1483,6 +1493,7 @@ int XLALSimInspiralChooseFDWaveform(
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(LALparams);
             /* Call the waveform driver routine */
+
             ret = XLALSimIMRPhenomDGenerateFD(hptilde, phiRef, f_ref, deltaF, m1, m2,
                   S1z, S2z, f_min, f_max, distance, LALparams, NoNRT_V);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
@@ -1536,6 +1547,27 @@ int XLALSimInspiralChooseFDWaveform(
                     &((*hptilde)->sampleUnits), (*hptilde)->data->length);
             for(j = 0; j < (*hptilde)->data->length; j++) {
                 (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j];
+                (*hptilde)->data->data[j] *= pfac;
+            }
+            break;
+
+        case IMRPhenomNSBH:
+            /* Waveform-specific sanity checks */
+            if (!checkTransverseSpinsZero(S1x, S1y, S2x, S2y))
+                ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+            if (lambda1 != 0 || lambda2 < 0)
+                XLAL_ERROR(XLAL_EDOM, "lambda1 = %f, lambda2 = %f. lambda1 should be equal to zero and lambda2 should be greater than or equal to zero for IMRPhenomNSBH", lambda1, lambda2);
+            /* Call the waveform driver routine */
+            ret = XLALSimIMRPhenomNSBH(hptilde, phiRef, deltaF, f_min, f_max, f_ref, distance, m1, m2, S1z, S2z, LALparams);
+            if (ret == XLAL_FAILURE)
+                XLAL_ERROR(XLAL_EFUNC);
+            /* Produce both polarizations */
+            *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+                                                          &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
+                                                          &((*hptilde)->sampleUnits), (*hptilde)->data->length);
+            for (j = 0; j < (*hptilde)->data->length; j++)
+            {
+                (*hctilde)->data->data[j] = -I * cfac * (*hptilde)->data->data[j];
                 (*hptilde)->data->data[j] *= pfac;
             }
             break;
@@ -1673,7 +1705,7 @@ int XLALSimInspiralChooseFDWaveform(
                     phiRef, deltaF, f_min, f_max, f_ref, distance, inclination, m1, m2, S1z, S2z, -1, LALparams, NoNRT_V);
             break;
 
-                case SEOBNRv4_ROM_NRTidal:
+         case SEOBNRv4_ROM_NRTidal:
             /* Waveform-specific sanity checks */
                         if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
                 ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
@@ -1699,6 +1731,33 @@ int XLALSimInspiralChooseFDWaveform(
             XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set QuadMon from Lambdas for SEOBNRv4_ROM_NRTidalv2");
             ret = XLALSimIMRSEOBNRv4ROMNRTidal(hptilde, hctilde,
                     phiRef, deltaF, f_min, f_max, f_ref, distance, inclination, m1, m2, S1z, S2z, lambda1, lambda2, LALparams, NRTidalv2_V);
+            break;
+
+        case SEOBNRv4_ROM_NRTidalv2_NSBH:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+            if (m1 < m2)
+                XLAL_ERROR(XLAL_EDOM, "m1 = %e, m2=%e. m1 should be greater than or equal to m2 for SEOBNRv4_ROM_NRTidalv2_NSBH", m1,m2);
+            if( lambda1 != 0 )
+                 XLAL_ERROR(XLAL_EDOM, "lambda1 = %f. lambda1 should be zero for SEOBNRv4_ROM_NRTidalv2_NSBH", lambda1);
+            if( lambda2 < 0 )
+                 XLAL_ERROR(XLAL_EDOM, "lambda2 = %f. lambda2 should be nonnegative for SEOBNRv4_ROM_NRTidalv2_NSBH", lambda2);
+            if( lambda2 > 5000 )
+                 XLAL_ERROR(XLAL_EDOM, "lambda2 = %f. lambda2 should be < 5000", lambda2);
+            if( S2z !=0 )
+                XLAL_PRINT_WARNING("WARNING: S2z = %f. SEOBNRv4_ROM_NRTidalv2_NSBH is calibrated to NR data for which the NS spin is zero.",S2z);
+            if( m2 < 1 * LAL_MSUN_SI )
+                XLAL_PRINT_WARNING("WARNING: m2=%e MSun. SEOBNRv4_ROM_NRTidalv2_NSBH is calibrated to NR data for which the NS mass is >=1 solar mass.",m2/LAL_MSUN_SI);
+            if( m2 > 3 * LAL_MSUN_SI )
+                XLAL_ERROR(XLAL_EDOM, "m2=%e Msun. NS Mass should be <=3 solar masses",m2/LAL_MSUN_SI);
+            if (m1/m2 > 100)
+                XLAL_ERROR(XLAL_EDOM, "m1/m2=%e mass ratio should be < 100",m1/m2);
+
+            ret = XLALSimIMRSEOBNRv4ROMNRTidal(hptilde, hctilde,
+                    phiRef, deltaF, f_min, f_max, f_ref, distance, inclination, m1, m2, S1z, S2z, lambda1, lambda2,LALparams,NRTidalv2NSBH_V);
             break;
 
         case SEOBNRv4T_surrogate:
@@ -5169,7 +5228,8 @@ int XLALSimInspiralImplementedTDApproximants(
     case IMRPhenomHM:
 	case IMRPhenomPv2:
         case IMRPhenomPv2_NRTidal:
-		    case IMRPhenomPv2_NRTidalv2:
+        case IMRPhenomPv2_NRTidalv2:
+        case IMRPhenomNSBH:
         case IMRPhenomD_NRTidalv2:
 				case IMRPhenomXAS:
 				case IMRPhenomXHM:
@@ -5188,6 +5248,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case SEOBNRv4PHM:
         case SEOBNRv2T:
         case SEOBNRv4T:
+        case SEOBNRv4_ROM_NRTidalv2_NSBH:
         case SEOBNRv4_ROM_NRTidalv2:
         case NR_hdf5:
         case NRSur7dq2:
@@ -5220,6 +5281,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomD:
         case IMRPhenomD_NRTidal:
         case IMRPhenomD_NRTidalv2:
+        case IMRPhenomNSBH:
         case IMRPhenomHM:
         case IMRPhenomP:
         case IMRPhenomPv2:
@@ -5236,8 +5298,9 @@ int XLALSimInspiralImplementedFDApproximants(
         case SEOBNRv2_ROM_DoubleSpin_HI:
         case Lackey_Tidal_2013_SEOBNRv2_ROM:
         case SEOBNRv4_ROM:
-		case SEOBNRv4_ROM_NRTidal:
+        case SEOBNRv4_ROM_NRTidal:
         case SEOBNRv4_ROM_NRTidalv2:
+        case SEOBNRv4_ROM_NRTidalv2_NSBH:
         case SEOBNRv4T_surrogate:
         //case TaylorR2F4:
         case TaylorF2:
@@ -5665,6 +5728,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case IMRPhenomD:
     case IMRPhenomD_NRTidal:
     case IMRPhenomD_NRTidalv2:
+    case IMRPhenomNSBH:
     case IMRPhenomHM:
     case IMRPhenomXAS:
     case IMRPhenomXHM:
@@ -5683,8 +5747,9 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv2_ROM_DoubleSpin_HI:
     case Lackey_Tidal_2013_SEOBNRv2_ROM:
     case SEOBNRv4_ROM:
-	case SEOBNRv4_ROM_NRTidal:
+    case SEOBNRv4_ROM_NRTidal:
     case SEOBNRv4_ROM_NRTidalv2:
+    case SEOBNRv4_ROM_NRTidalv2_NSBH:
     case SEOBNRv4T_surrogate:
     case TaylorR2F4:
     case IMRPhenomFB:
@@ -5880,8 +5945,9 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv2_ROM_DoubleSpin_HI:
     case Lackey_Tidal_2013_SEOBNRv2_ROM:
     case SEOBNRv4_ROM:
-	case SEOBNRv4_ROM_NRTidal:
+    case SEOBNRv4_ROM_NRTidal:
     case SEOBNRv4_ROM_NRTidalv2:
+    case SEOBNRv4_ROM_NRTidalv2_NSBH:
     case SEOBNRv4T_surrogate:
     case IMRPhenomA:
     case IMRPhenomB:
@@ -5916,11 +5982,12 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case EccentricTD:
     case IMRPhenomC:
     case IMRPhenomD:
-    case IMRPhenomD_NRTidal:
-    case IMRPhenomD_NRTidalv2:
     case IMRPhenomP:
     case IMRPhenomPv2:
     case IMRPhenomPv2_NRTidal:
+    case IMRPhenomPv2_NRTidalv2:
+    case IMRPhenomD_NRTidal:
+    case IMRPhenomD_NRTidalv2:
       testGR_accept=LAL_SIM_INSPIRAL_TESTGR_PARAMS;
       break;
     default:
@@ -7462,6 +7529,7 @@ int XLALSimInspiralChooseFDWaveformOLD(
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES_OLD(waveFlags);
             /* Call the waveform driver routine */
+
             ret = XLALSimIMRPhenomDGenerateFD(hptilde, phiRef, f_ref, deltaF, m1, m2,
                   S1z, S2z, f_min, f_max, distance, NULL, NoNRT_V);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);

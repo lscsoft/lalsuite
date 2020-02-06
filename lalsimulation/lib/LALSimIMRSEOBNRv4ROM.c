@@ -1034,8 +1034,7 @@ static int SEOBNRv4ROMCore(
       int j = i + offset; // shift index for frequency series if needed
       double A = gsl_spline_eval(spline_amp, f, acc_amp);
       double phase = gsl_spline_eval(spline_phi, f, acc_phi) - phase_change;
-	      COMPLEX16 htilde = s*amp0*(A+ampT) * (cos(phase) + I*sin(phase)); //cexp(I*phase);
-
+      COMPLEX16 htilde = s*amp0*(A+ampT) * (cos(phase) + I*sin(phase)); //cexp(I*phase);
       pdata[j] =      pcoef * htilde;
       cdata[j] = -I * ccoef * htilde;
     }
