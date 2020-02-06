@@ -415,6 +415,8 @@ typedef enum tagApproximant {
    SEOBNRv4HM,	/**< Spin nonprecessing EOBNR model v4 with higher modes, PhysRevD.98.084028 [arXiv:1803.10701]
                      * @remarks Implemented in lalsimulation (time domain). */
    NRHybSur3dq8,        /**< Time domain, aligned-spin, higher modes, hybridized. Paper arxiv:1812.07865 */
+    IMRPhenomXAS, 		/**< Frequency domain, non-precessing phenomenological IMR waveform model ([arXiv: 20XY.ZZZZZ]). */
+    IMRPhenomXHM, 		/**< Frequency domain, non-precessing phenomenological IMR waveform model with subdominant modes ([arXiv:2001.10914 [gr-qc]]) and accelerated evaluation through adapted grids (arXiv:2001.10897 [gr-qc]) */
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
