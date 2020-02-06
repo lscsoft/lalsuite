@@ -35,6 +35,7 @@ EXTRA_DIST += \
 # Add shell test scripts to this variable
 test_scripts += testComputePSD.sh
 test_scripts += testSFTvalidate.sh
+test_scripts += testdumpSFT.sh
 test_scripts += testcompareSFTs.sh
 test_scripts += testsplitSFTs.sh
 
