@@ -67,6 +67,7 @@
  * zero).
  *
  * \param params [in] A set of pulsar parameters
+ * \param origparams [in] The original parameters used to heterodyne the data
  * \param datatimes [in] A vector of GPS times at which to calculate the phase difference
  * \param freqfactor [in] The multiplicative factor on the pulsar frequency for a particular model
  * \param ssbdts [in] The vector of SSB time delays used for the original heterodyne. If this is
@@ -88,6 +89,7 @@
  * \sa XLALHeterodynedPulsarGetBSBDelay
  */
 REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
+                                                   PulsarParameters *origparams,
                                                    const LIGOTimeGPSVector *datatimes,
                                                    REAL8 freqfactor,
                                                    REAL8Vector *ssbdts,
@@ -105,7 +107,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   XLAL_CHECK_NULL( detector != NULL, XLAL_EFUNC, "LALDetector must not be NULL" );
   XLAL_CHECK_NULL( ephem != NULL, XLAL_EFUNC, "EphemerisData must not be NULL" );
 
-  UINT4 i = 0, j = 0, k = 0, length = 0, isbinary = 0;
+  UINT4 i = 0, j = 0, k = 0, length = 0, isbinary = 0, nfreqs = 0;
 
   REAL8 DT = 0., deltat = 0., deltatpow = 0., deltatpowinner = 1., taylorcoeff = 1., Ddelay = 0., Ddelaypow = 0.;
 
@@ -114,10 +116,12 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   REAL8 pepoch = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /* time of ephem info */
   REAL8 cgw = PulsarGetREAL8ParamOrZero(params, "CGW");
   REAL8 T0 = pepoch;
+  REAL8 *deltafs = NULL, *frequpdate = NULL;
 
   /* glitch parameters */
-  REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL, *deltafs = NULL;
-  UINT4 glnum = 0;
+  REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL;
+  REAL8 *gleporig = NULL, *glphorig = NULL, *glf0orig = NULL, *glf1orig = NULL, *glf2orig = NULL, *glf0dorig = NULL, *gltdorig = NULL;
+  UINT4 glnum = 0, glnumorig = 0;
 
   length = datatimes->length;
 
@@ -127,7 +131,12 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   /* get solar system barycentring time delays */
   if ( ssbdts == NULL ){
     /* calculate SSB delay at the given parameters */
-    fixdts = XLALHeterodynedPulsarGetSSBDelay( params, datatimes, detector, ephem, tdat, ttype );
+    if ( origparams == NULL ){  /* use "updated" parameters */
+      fixdts = XLALHeterodynedPulsarGetSSBDelay( params, datatimes, detector, ephem, tdat, ttype );
+    }
+    else{  /* use "original" heterodyne parameters */
+      fixdts = XLALHeterodynedPulsarGetSSBDelay( origparams, datatimes, detector, ephem, tdat, ttype );
+    }
   }
   else{
     fixdts = ssbdts; /* use SSB delays passed to function as calculated from the heterodyne parameters */
@@ -142,8 +151,14 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
 
     if ( bsbdts == NULL ){
       /* calculate BSB delay at the given parameters */
-      if ( dts != NULL ){ fixbdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, dts, ephem ); }
-      else { fixbdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, fixdts, ephem ); }
+      if ( origparams == NULL ){
+        if ( dts != NULL ){ fixbdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, dts, ephem ); }
+        else { fixbdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, fixdts, ephem ); }
+      }
+      else{
+        if ( dts != NULL ){ fixbdts = XLALHeterodynedPulsarGetBSBDelay( origparams, datatimes, dts, ephem ); }
+        else { fixbdts = XLALHeterodynedPulsarGetBSBDelay( origparams, datatimes, fixdts, ephem ); }
+      }
     }
     else{
       fixbdts = bsbdts; /* use BSB delays passed to function as calculated from the heterodyne parameters */
@@ -156,19 +171,42 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   }
 
   /* get vector of frequencies and frequency differences */
-  const REAL8Vector *freqs = PulsarGetREAL8VectorParam( params, "F" );
-  deltafs = XLALCalloc( freqs->length, sizeof(REAL8) );  // initialise deltafs to zero
-  if ( PulsarCheckParam( params, "DELTAF" ) ){
-    const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "DELTAF" );
-
-    XLAL_CHECK_NULL( tmpvec->length == freqs->length, XLAL_EFUNC, "Number of frequencies is different from number of delta fs" );
-
-    for ( i=0; i<tmpvec->length; i++ ){ deltafs[i] = tmpvec->data[i]; }
+  if ( origparams == NULL ){
+    const REAL8Vector *freqs = PulsarGetREAL8VectorParam( params, "F" );
+    if ( PulsarCheckParam( origparams, "F" ) ){
+      const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( origparams, "F" );
+      nfreqs = tmpvec->length ? tmpvec->length >= freqs->length : freqs->length;
+      deltafs = XLALCalloc( nfreqs, sizeof(REAL8) );  /* initialise deltafs to zero */
+      for ( i=0; i<nfreqs; i++ ){
+        if ( i >= freqs->length ){
+          deltafs[i] = -tmpvec->data[i];
+        }
+        else if ( i >= tmpvec->length ){
+          deltafs[i] = freqs->data[i];
+        }
+        else{
+          deltafs[i] = freqs->data[i] - tmpvec->data[i];
+        }
+      }
+    }
+    else{
+      deltafs = XLALCalloc( freqs->length, sizeof(REAL8) );  /* initialise deltafs to zero */
+      nfreqs = freqs->length;
+      for ( i=0; i<freqs->length; i++ ){ deltafs[i] = -freqs->data[i]; }
+    }
   }
   else{
+    const REAL8Vector *freqs = PulsarGetREAL8VectorParam( origparams, "F" );
+    deltafs = XLALCalloc( freqs->length, sizeof(REAL8) );  /* initialise deltafs to zero */
+    nfreqs = freqs->length;
     /* set deltafs to (negative) frequencies */
     for ( i=0; i<freqs->length; i++ ){ deltafs[i] = -freqs->data[i]; }
   }
+
+  /* set the "new" frequencies, with zeros where required */ 
+  frequpdate = XLALCalloc( nfreqs, sizeof(REAL8) );
+  const REAL8Vector *freqsu = PulsarGetREAL8VectorParam( params, "F" );
+  for ( i=0; i<freqsu->length; i++ ){ frequpdate[i] = freqsu->data[i]; }
 
   if ( PulsarCheckParam( params, "GLEP" ) ){ /* see if pulsar has glitch parameters */
     const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLEP" );
@@ -221,6 +259,59 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
     }
   }
 
+  if ( origparams != NULL ){
+    if ( PulsarCheckParam( origparams, "GLEP" ) ){ /* see if pulsar has glitch parameters */
+      const REAL8Vector *glparsorig = PulsarGetREAL8VectorParam( origparams, "GLEP" );
+      glnumorig = glparsorig->length;
+
+      /* get epochs */
+      gleporig = XLALCalloc(glnumorig, sizeof(REAL8)); /* initialise to zeros */
+      for ( i=0; i<glparsorig->length; i++ ){ gleporig[i] = glparsorig->data[i]; }
+
+      /* get phase offsets */
+      glphorig = XLALCalloc(glnumorig, sizeof(REAL8)); /* initialise to zeros */
+      if ( PulsarCheckParam( origparams, "GLPH" ) ){
+        const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( origparams, "GLPH" );
+        for ( i=0; i<tmpvec->length; i++ ){ glphorig[i] = tmpvec->data[i]; }
+      }
+
+      /* get frequencies offsets */
+      glf0orig = XLALCalloc(glnumorig, sizeof(REAL8)); /* initialise to zeros */
+      if ( PulsarCheckParam( origparams, "GLF0" ) ){
+        const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( origparams, "GLF0" );
+        for ( i=0; i<tmpvec->length; i++ ){ glf0orig[i] = tmpvec->data[i]; }
+      }
+
+      /* get frequency derivative offsets */
+      glf1orig = XLALCalloc(glnumorig, sizeof(REAL8)); /* initialise to zeros */
+      if ( PulsarCheckParam( origparams, "GLF1" ) ){
+        const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( origparams, "GLF1" );
+        for ( i=0; i<tmpvec->length; i++ ){ glf1orig[i] = tmpvec->data[i]; }
+      }
+
+      /* get second frequency derivative offsets */
+      glf2orig = XLALCalloc(glnumorig, sizeof(REAL8)); /* initialise to zeros */
+      if ( PulsarCheckParam( origparams, "GLF2" ) ){
+        const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( origparams, "GLF2" );
+        for ( i=0; i<tmpvec->length; i++ ){ glf2orig[i] = tmpvec->data[i]; }
+      }
+
+      /* get decaying frequency component offset derivative */
+      glf0dorig = XLALCalloc(glnumorig, sizeof(REAL8)); /* initialise to zeros */
+      if ( PulsarCheckParam( origparams, "GLF0D" ) ){
+        const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( origparams, "GLF0D" );
+        for ( i=0; i<tmpvec->length; i++ ){ glf0dorig[i] = tmpvec->data[i]; }
+      }
+
+      /* get decaying frequency component decay time constant */
+      gltdorig = XLALCalloc(glnumorig, sizeof(REAL8)); /* initialise to zeros */
+      if ( PulsarCheckParam( origparams, "GLTD" ) ){
+        const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( origparams, "GLTD" );
+        for ( i=0; i<tmpvec->length; i++ ){ gltdorig[i] = tmpvec->data[i]; }
+      }
+    }
+  }
+
   for( i=0; i<length; i++){
     REAL8 deltaphi = 0., innerphi = 0.; /* change in phase */
     Ddelay = 0.;                        /* change in SSB/BSB delay */
@@ -246,7 +337,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
 
     /* get the change in phase (compared to the heterodyned phase) */
     deltatpow = deltat;
-    for ( j=0; j<freqs->length; j++ ){
+    for ( j=0; j<nfreqs; j++ ){
       taylorcoeff = gsl_sf_fact(j+1);
       deltaphi += deltafs[j]*deltatpow/taylorcoeff;
       if ( Ddelay != 0. ){
@@ -258,21 +349,53 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
           deltatpowinner *= deltat; /* raise power */
           Ddelaypow /= Ddelay;      /* reduce power */
         }
-        deltaphi += innerphi*freqs->data[j]/taylorcoeff;
+        deltaphi += innerphi*frequpdate[j]/taylorcoeff;
       }
       deltatpow *= deltat;
     }
 
     /* check for glitches */
-    if ( glnum > 0 ){
+    UINT4 maxglnum = glnum ? glnum >= glnumorig : glnumorig;
+    if ( maxglnum > 0 ){
       /* get glitch phase - based on equations in formResiduals.C of TEMPO2 from Eqn. 1 of Yu et al (2013) http://ukads.nottingham.ac.uk/abs/2013MNRAS.429..688Y */
-      for ( j=0; j<glnum; j++ ){
-        if ( deltat >= (glep[j]-T0) ){
-          REAL8 dtg = 0, expd = 1.;
-          dtg = deltat - (glep[j]-T0); /* time since glitch */
-          if ( gltd[j] != 0. ) { expd = exp(-dtg/gltd[j]); } /* decaying part of glitch */
-          deltaphi += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
+      REAL8 glphase = 0.;
+      REAL8 dtg = 0, expd = 1.;
+      for ( j=0; j<maxglnum; j++ ){
+        glphase = 0.;
+        dtg = 0.;
+        expd = 1.;
+        if ( j >= glnum ){
+          if ( deltat >= (gleporig[j]-T0) ){
+            dtg = deltat - (gleporig[j]-T0); /* time since glitch */
+            if ( gltdorig[j] != 0. ) { expd = exp(-dtg/gltdorig[j]); } /* decaying part of glitch */
+            glphase -= glphorig[j] + glf0orig[j]*dtg + 0.5*glf1orig[j]*dtg*dtg + (1./6.)*glf2orig[j]*dtg*dtg*dtg + glf0dorig[j]*gltdorig[j]*(1.-expd);
+          }
         }
+        else if( j >= glnumorig ){
+          if ( deltat >= (glep[j]-T0) ){
+            dtg = deltat - (glep[j]-T0); /* time since glitch */
+            if ( gltd[j] != 0. ) { expd = exp(-dtg/gltd[j]); } /* decaying part of glitch */
+            glphase += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
+          }
+        }
+        else{
+          /* get the glitch phase difference */
+          /* get the updated glitch phase */
+          if ( deltat >= (glep[j]-T0) ){
+            dtg = deltat - (glep[j]-T0); /* time since glitch */
+            if ( gltd[j] != 0. ) { expd = exp(-dtg/gltd[j]); } /* decaying part of glitch */
+            glphase += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
+          }
+
+          /* get the orignal glitch phase */
+          if ( deltat >= (gleporig[j]-T0) ){
+            dtg = deltat - (gleporig[j]-T0); /* time since glitch */
+            if ( gltdorig[j] != 0. ) { expd = exp(-dtg/gltdorig[j]); } /* decaying part of glitch */
+            glphase -= glphorig[j] + glf0orig[j]*dtg + 0.5*glf1orig[j]*dtg*dtg + (1./6.)*glf2orig[j]*dtg*dtg*dtg + glf0dorig[j]*gltdorig[j]*(1.-expd);
+          }
+        }
+
+        deltaphi += glphase;
       }
     }
 
@@ -286,6 +409,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   if ( ssbdts == NULL ){ XLALDestroyREAL8Vector( fixdts ); }
   if ( bsbdts == NULL ){ XLALDestroyREAL8Vector( fixbdts ); }
   XLALFree(deltafs);
+  XLALFree(frequpdate);
 
   if ( glnum > 0 ){
     XLALFree( glep );
@@ -295,6 +419,16 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
     XLALFree( glf2 );
     XLALFree( glf0d );
     XLALFree( gltd );
+  }
+
+  if ( glnumorig > 0 ){
+    XLALFree( gleporig );
+    XLALFree( glphorig );
+    XLALFree( glf0orig );
+    XLALFree( glf1orig );
+    XLALFree( glf2orig );
+    XLALFree( glf0dorig );
+    XLALFree( gltdorig );
   }
 
   return phis;
@@ -793,6 +927,7 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
  * The model is described in Equations 7 and 8 of \cite Pitkin2017 .
  *
  * \param pars [in] A \c PulsarParameters structure containing the model parameters
+ * \param origpars [in] A \c PulsarParameters structure containing the original heterodyne parameters
  * \param freqfactor [in] The harmonic frequency of the signal in units of the
  * pulsar rotation frequency
  * \param usephase [in] Set to a non-zero value is the signal phase is
@@ -820,6 +955,7 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
  * \sa XLALHeterodynedPulsarGetPhaseModel
  */
 COMPLEX16TimeSeries* XLALHeterodynedPulsarGetModel( PulsarParameters *pars,
+                                                    PulsarParameters *origpars,
                                                     REAL8 freqfactor,
                                                     UINT4 usephase,
                                                     UINT4 useroq,
@@ -849,6 +985,7 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetModel( PulsarParameters *pars,
   if ( usephase ){
     REAL8Vector *dphi = NULL;
     dphi = XLALHeterodynedPulsarPhaseDifference( pars,
+                                                 origpars,
                                                  timestamps,
                                                  freqfactor,
                                                  hetssbdelays,

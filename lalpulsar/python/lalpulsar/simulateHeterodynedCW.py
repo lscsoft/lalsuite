@@ -172,7 +172,7 @@ class HeterodynedCWSimulator(object):
         """
 
         self.__hetpar = self._read_par(par)
-        self._set_detector(det)
+        self.detector = det
         self.times = times
 
         # set default ephemeris strings
@@ -248,7 +248,12 @@ class HeterodynedCWSimulator(object):
     def hetpar(self):
         return self.__hetpar
 
-    def _set_detector(self, det):
+    @property
+    def detector(self):
+        return self.__detector
+
+    @detector.setter
+    def detector(self, det):
         if isinstance(det, lal.Detector):
             # value is already a lal.Detector
             self.__detector = det
@@ -263,10 +268,6 @@ class HeterodynedCWSimulator(object):
                                      "name.".format(det))
 
         self.__detector_name = self.__detector.frDetector.name
-
-    @property
-    def detector(self):
-        return self.__detector
 
     @property
     def resp(self):
@@ -394,20 +395,14 @@ class HeterodynedCWSimulator(object):
 
         if newpar is not None:
             parupdate = self._read_par(newpar)
+            origpar = self.hetpar.PulsarParameters()
         else:
             parupdate = self.hetpar
-
-        # get frequency differences
-        if usephase:
-            if parupdate['DELTAF'] is None:
-                try:
-                    parupdate['DELTAF'] = parupdate['F'] - self.hetpar['F']
-                except Exception as e:
-                    raise ValueError("Frequencies are not set in parameter "
-                                     "objects: {}".format(e))
+            origpar = None
 
         self.__nonGR = self._check_nonGR(parupdate)
         compstrain = lalpulsar.HeterodynedPulsarGetModel(parupdate.PulsarParameters(),
+                                                         origpar,
                                                          freqfactor,
                                                          int(usephase),  # phase is varying between par files
                                                          int(roq),       # using ROQ?
