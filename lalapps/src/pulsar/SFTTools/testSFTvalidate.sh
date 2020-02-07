@@ -1,5 +1,5 @@
 ## create good and bad SFTs
-SFTwrite >/dev/null
+SFTwrite
 
 goodSFTs="SFT-good SFT-test*"
 badSFTs="SFT-bad*"

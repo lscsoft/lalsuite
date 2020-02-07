@@ -187,39 +187,8 @@ int main(void) {
   modify_bytes("SFT-bad14", 16, (char *)&dtmp, 8);
   modify_checksum("SFT-bad14", 9944972421627148413ULL, 15720824585133081082ULL);
 
-  printf("To test SFTs, do for example:\n"
-	 "lalapps_SFTvalidate SFT-good SFT-test[1234567]\n"
-	 "lalapps_SFTvalidate SFT-bad1\n"
-	 "lalapps_SFTvalidate SFT-bad2\n"
-	 "lalapps_SFTvalidate SFT-bad3\n"
-	 "lalapps_SFTvalidate SFT-bad4\n"
-	 "lalapps_SFTvalidate SFT-bad5\n"
-	 "lalapps_SFTvalidate SFT-bad6\n"
-	 "lalapps_SFTvalidate SFT-bad7\n"
-	 "lalapps_SFTvalidate SFT-bad8\n"
-	 "lalapps_SFTvalidate SFT-bad9\n"
-	 "lalapps_SFTvalidate SFT-bad10\n"
-	 "lalapps_SFTvalidate SFT-bad11\n"
-	 "lalapps_SFTvalidate SFT-bad12\n"
-	 "lalapps_SFTvalidate SFT-bad13\n"
-	 "lalapps_SFTvalidate SFT-bad14\n"
-	 "(checking exit status after each command) or you can also try\n"
-	 "lalapps_dumpSFT -H -i SFT-good SFT-test[1234567]\n"
-	 "lalapps_dumpSFT -H -i SFT-bad1\n"
-	 "lalapps_dumpSFT -H -i SFT-bad2\n"
-	 "lalapps_dumpSFT -H -i SFT-bad3\n"
-	 "lalapps_dumpSFT -H -i SFT-bad4\n"
-	 "lalapps_dumpSFT -H -i SFT-bad5\n"
-	 "lalapps_dumpSFT -H -i SFT-bad6\n"
-	 "lalapps_dumpSFT -H -i SFT-bad7\n"
-	 "lalapps_dumpSFT -H -i SFT-bad8\n"
-	 "lalapps_dumpSFT -H -i SFT-bad9\n"
-	 "lalapps_dumpSFT -H -i SFT-bad10\n"
-	 "lalapps_dumpSFT -H -i SFT-bad11\n"
-	 "lalapps_dumpSFT -H -i SFT-bad12\n"
-	 "lalapps_dumpSFT -H -i SFT-bad13\n"
-	 "lalapps_dumpSFT -H -i SFT-bad14\n"
-	 "");
+  printf("Wrote good SFTs: SFT-test[1234567] SFT-good\n");
+  printf("Wrote bad SFTs: SFT-bad[123456789] SFT-bad1[0-4]\n");
 
   return 0;
 }
