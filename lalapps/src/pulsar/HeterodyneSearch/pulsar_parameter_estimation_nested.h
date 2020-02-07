@@ -154,7 +154,7 @@ extern "C" {
 #define NUMGLITCHPARS 7
 
 /** The maximum number of different detectors allowable. */
-#define MAXDETS 6
+#define MAXDETS 10
 
 /** The usage format for the code.  */
 #define USAGE \
