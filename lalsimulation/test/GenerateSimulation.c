@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/types.h>
+#include <string.h>
 
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
@@ -371,7 +372,7 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
 	  XLALSimInspiralWaveformParamsInsertNumRelData(params->params, argv[++i]);
         } else if (strcmp(argv[i], "--modesList") == 0) {
             char numbers_str[50], *currnum;
-            strncpy(numbers_str, argv[++i], len(numbers_str)-1);
+            strncpy(numbers_str, argv[++i], strlen(numbers_str)-1);
             int numbers[25], iii = 0;
             while ((currnum = strtok(iii ? NULL : numbers_str, ",")) != NULL){
               numbers[iii++] = atoi(currnum);
