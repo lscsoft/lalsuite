@@ -72,6 +72,7 @@ typedef struct tagDetResponseTimeLookupTable{
 /* ---------- Function prototypes ---------- */
 
 REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
+                                                   PulsarParameters *origparams,
                                                    const LIGOTimeGPSVector *datatimes,
                                                    REAL8 freqfactor,
                                                    REAL8Vector *ssbdts,
@@ -108,6 +109,7 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
                                                              const DetResponseTimeLookupTable *resp );
 
 COMPLEX16TimeSeries* XLALHeterodynedPulsarGetModel( PulsarParameters *pars,
+                                                    PulsarParameters *origpars,
                                                     REAL8 freqfactor,
                                                     UINT4 varyphase,
                                                     UINT4 useroq,
