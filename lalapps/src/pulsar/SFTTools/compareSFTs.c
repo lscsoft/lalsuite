@@ -131,7 +131,7 @@ main(int argc, char *argv[])
 	  REAL4 d2 = 1.0 - scalar / (norm1*norm2);
 	  REAL4 d3 = normdiff / (norm1*norm1 + norm2*norm2 );
 	  REAL4 d4 = getMaxErrSFT (sft1, sft2);
-	  XLALPrintInfo ("(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2))=%10.3e, maxErr=%10.3e\n", d1, d2, d3, d4);
+	  XLALPrintInfo ("SFT #%d: (|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2))=%10.3e, maxErrSFT=%10.3e\n", i, d1, d2, d3, d4);
 	} /* for i < SFTs->length */
     } /* if verbose */
 
@@ -160,12 +160,9 @@ main(int argc, char *argv[])
     maxd = fmax ( maxd, d4 );
 
     if ( uvar.verbose ) {
-      printf ("\nTOTAL:(|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2)=%10.3e, maxErr=%10.3e\n", d1, d2, d3, d4);
+      printf ("TOTAL: (|x|-|y|)/|x|=%10.3e, 1-x.y/(|x||y|)=%10.3e, |x-y|^2/(|x|^2+|y|^2)=%10.3e, maxErrSFT=%10.3e\n", d1, d2, d3, d4);
+      printf ("COMPARE: maxd=%10.3e, relErrMax=%10.3e\n", maxd, uvar.relErrorMax);
     }
-    else
-      {
-        printf ("%10.3e  %10.3e\n", d3, d4);
-      }
 
   } /* combined total measures */
 

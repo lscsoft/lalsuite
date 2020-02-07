@@ -111,7 +111,7 @@ fi
 echo
 echo "comparison of resulting SFTs:"
 
-cmdline="$cmpCODE -e $tol -1 '${testDIR1}/*.sft' -2 '${testDIR3}/*SFT_NB*.sft'"
+cmdline="$cmpCODE -V -e $tol -1 '${testDIR1}/*.sft' -2 '${testDIR3}/*SFT_NB*.sft'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... SFTs differ by more than $tol. Something might be wrong..."
@@ -121,7 +121,7 @@ else
 fi
 
 echo
-cmdline="$cmpCODE -e $tol -1 '${testDIR2}/*.sft' -2 '${testDIR3}/*SFT_NB*.sft'"
+cmdline="$cmpCODE -V -e $tol -1 '${testDIR2}/*.sft' -2 '${testDIR3}/*SFT_NB*.sft'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... SFTs differ by more than $tol. Something might be wrong..."
@@ -133,7 +133,7 @@ fi
 echo
 echo "comparison of concatenating SFTs:"
 
-cmdline="$cmpCODE -e 1e-10 -1 '${testDIR1}/*.sft' -2 '${testDIR1}.sft'"
+cmdline="$cmpCODE -V -e 1e-10 -1 '${testDIR1}/*.sft' -2 '${testDIR1}.sft'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... concatenated SFTs differ! Something might be wrong..."
@@ -143,7 +143,7 @@ else
 fi
 
 echo
-cmdline="$cmpCODE -e 1e-10 -1 '${testDIR2}/*.sft' -2 '${testDIR2}.sft'"
+cmdline="$cmpCODE -V -e 1e-10 -1 '${testDIR2}/*.sft' -2 '${testDIR2}.sft'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... concatenated SFTs differ! Something might be wrong..."
