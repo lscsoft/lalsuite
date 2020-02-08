@@ -311,9 +311,6 @@ fi
 
 LALSUITE_ADD_GCC_FLAGS
 
-# link any executables against LALApps library
-AC_SUBST([LDADD], ["\$(top_builddir)/src/lalapps/liblalapps.la"])
-
 # add extra preprocessor flags
 AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"
 AM_CPPFLAGS="-I\$(top_builddir)/src/lalapps ${AM_CPPFLAGS}"
