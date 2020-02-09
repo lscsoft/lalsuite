@@ -115,7 +115,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
 
   REAL8 pepoch = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /* time of ephem info */
   REAL8 cgw = PulsarGetREAL8ParamOrZero(params, "CGW");
-  REAL8 T0 = pepoch;
+  REAL8 T0 = pepoch, pepochorig = pepoch;
   REAL8 *deltafs = NULL, *frequpdate = NULL;
 
   /* glitch parameters */
@@ -170,43 +170,61 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
     XLAL_CHECK_NULL( length == fixbdts->length, XLAL_EFUNC, "Lengths of time stamp vector and BSB delay vector are not the same" );
   }
 
-  /* get vector of frequencies and frequency differences */
-  if ( origparams == NULL ){
+  /* set the "new" frequencies, with zeros where required */
+  if ( origparams != NULL ){
+    const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( origparams, "F" );
     const REAL8Vector *freqs = PulsarGetREAL8VectorParam( params, "F" );
+    nfreqs = tmpvec->length ? tmpvec->length >= freqs->length : freqs->length;
+    pepochorig = PulsarGetREAL8ParamOrZero(origparams, "PEPOCH");
+  }
+  else{
+    const REAL8Vector *freqs = PulsarGetREAL8VectorParam( params, "F" );
+    nfreqs = freqs->length;
+  }
+
+  frequpdate = XLALCalloc( nfreqs, sizeof(REAL8) );
+  const REAL8Vector *freqsu = PulsarGetREAL8VectorParam( params, "F" );
+  /* initialise deltafs to zero */
+  deltafs = XLALCalloc( nfreqs, sizeof(REAL8) );
+  deltat = (pepochorig - pepoch);
+  deltatpow = deltat;
+  for ( i=0; i<freqsu->length; i++ ){
+    REAL8 deltatpowu = deltatpow;
+    frequpdate[i] = freqsu->data[i];
+
+    /* if epochs are different update "new" frequency to heterodyne epoch */
+    if ( pepoch != pepochorig ){
+      for ( j = i+1; i<freqsu->length; j++ ){
+        frequpdate[i] += (freqsu->data[j] * deltapowu) / gsl_sf_fact(j - i);
+        deltapowu *= deltat;
+      }
+      deltatpow *= deltat;
+    }
+  }
+
+  /* get vector of frequencies and frequency differences */
+  if ( origparams != NULL ){
     if ( PulsarCheckParam( origparams, "F" ) ){
       const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( origparams, "F" );
-      nfreqs = tmpvec->length ? tmpvec->length >= freqs->length : freqs->length;
-      deltafs = XLALCalloc( nfreqs, sizeof(REAL8) );  /* initialise deltafs to zero */
+
       for ( i=0; i<nfreqs; i++ ){
-        if ( i >= freqs->length ){
-          deltafs[i] = -tmpvec->data[i];
-        }
-        else if ( i >= tmpvec->length ){
-          deltafs[i] = freqs->data[i];
+        /* deal with cases where there are fewer frequency derivatives in the original heterodyne file */
+        if ( i >= tmpvec->length ){
+          deltafs[i] = frequpdate[i];
         }
         else{
-          deltafs[i] = freqs->data[i] - tmpvec->data[i];
+          deltafs[i] = frequpdate[i] - tmpvec->data[i];
         }
       }
     }
     else{
-      deltafs = XLALCalloc( freqs->length, sizeof(REAL8) );  /* initialise deltafs to zero */
-      nfreqs = freqs->length;
-      for ( i=0; i<freqs->length; i++ ){ deltafs[i] = -freqs->data[i]; }
+      XLAL_ERROR_NULL( XLAL_EINVAL, "No frequencies given in heterodyned parameter file!" );
     }
   }
   else{
-    const REAL8Vector *freqs = PulsarGetREAL8VectorParam( origparams, "F" );
-    deltafs = XLALCalloc( freqs->length, sizeof(REAL8) );  /* initialise deltafs to zero */
-    nfreqs = freqs->length;
     /* set deltafs to (negative) frequencies */
-    for ( i=0; i<freqs->length; i++ ){ deltafs[i] = -freqs->data[i]; }
+    for ( i=0; i<nfreqs; i++ ){ deltafs[i] = -frequpdate[i]; }
   }
-
-  /* set the "new" frequencies, with zeros where required */ 
-  frequpdate = XLALCalloc( nfreqs, sizeof(REAL8) );
-  const REAL8Vector *freqsu = PulsarGetREAL8VectorParam( params, "F" );
-  for ( i=0; i<freqsu->length; i++ ){ frequpdate[i] = freqsu->data[i]; }
 
   if ( PulsarCheckParam( params, "GLEP" ) ){ /* see if pulsar has glitch parameters */
     const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLEP" );
