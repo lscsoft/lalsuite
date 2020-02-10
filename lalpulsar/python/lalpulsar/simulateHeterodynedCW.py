@@ -212,6 +212,15 @@ class HeterodynedCWSimulator(object):
         else:
             self.__hetBSBdelay = None
 
+        # set the "heterodyne" glitch phase
+        if self.times is not None and self.hetpar['GLEP'] is not None:
+            self.__hetglitchphase = lalpulsar.HeterodynedPulsarGetGlitchPhase(self.hetpar.PulsarParameters(),
+                                                                              self.gpstimes,
+                                                                              self.__hetSSBdelay,
+                                                                              self.__hetBSBDelay)
+        else:
+            self.__hetglitchphase = None
+
         # set the response function
         if self.times is None and t0 is None:
             raise ValueError("Must supply either 'times' or 't0' to calculate "
@@ -366,7 +375,7 @@ class HeterodynedCWSimulator(object):
             self.__units_type = lalpulsar.lalpulsar.TIMECORRECTION_TDB
 
     def model(self, newpar=None, updateSSB=False, updateBSB=False,
-              freqfactor=2., usephase=False, roq=False):
+              updateglphase=False, freqfactor=2., usephase=False, roq=False):
         """
         Compute the heterodyned strain model using
         XLALHeterodynedPulsarGetModel().
@@ -380,6 +389,9 @@ class HeterodynedCWSimulator(object):
         @param updateBSB: set to @c True to update the binary system barycentring
             time delays compared to those used in heterodying, i.e., if the
             @b newpar contains updated binary system parameters
+        @param updateglphase: set to @c True to update the pulsar glitch
+            evolution compared to that usedin heterodyning, i.e., if the @b newpar
+            contains updated glitch parameters.
         @param freqfactor: the factor by which the frequency evolution is
             multiplied for the source model. This defaults to 2 for emission
             from the \f$l=m=2\f$ quadrupole mode.
@@ -394,14 +406,14 @@ class HeterodynedCWSimulator(object):
         """
 
         if newpar is not None:
-            parupdate = self._read_par(newpar)
-            origpar = self.hetpar.PulsarParameters()
+            parupdate = self._read_par(newpar).PulsarParameters()
         else:
-            parupdate = self.hetpar
-            origpar = None
+            parupdate = self.hetpar.PulsarParameters()
+
+        origpar = self.hetpar.PulsarParameters()
 
         self.__nonGR = self._check_nonGR(parupdate)
-        compstrain = lalpulsar.HeterodynedPulsarGetModel(parupdate.PulsarParameters(),
+        compstrain = lalpulsar.HeterodynedPulsarGetModel(parupdate,
                                                          origpar,
                                                          freqfactor,
                                                          int(usephase),  # phase is varying between par files
@@ -412,6 +424,8 @@ class HeterodynedCWSimulator(object):
                                                          int(updateSSB),  # the SSB delay should be updated compared to hetSSBdelay
                                                          self.__hetBSBdelay,
                                                          int(updateBSB),  # the BSB delay should be updated compared to hetBSBdelay
+                                                         self.__hetglitchphase,
+                                                         int(updateglphase),
                                                          self.resp,
                                                          self.__edat,
                                                          self.__tdat,
