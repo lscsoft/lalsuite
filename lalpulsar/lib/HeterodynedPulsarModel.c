@@ -330,6 +330,16 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
     }
   }
 
+  /* get FITWAVES parameters */
+  REAL8 waveepoch = 0., waveepochorig = 0.;
+  waveepoch = PulsarGetREAL8ParamOrZero( params, "WAVEEPOCH" );
+  if ( PulsarCheckParam( params, "WAVESIN" ) && waveepoch == 0. ){ waveepoch = pepoch; }
+
+  if ( origparams != NULL ){
+    waveepochorig = PulsarGetREAL8ParamOrZero( origparams, "WAVEEPOCH" );
+    if ( PulsarCheckParam( origparams, "WAVESIN" ) && waveepochorig == 0. ){ waveepoch = pepoch; }
+  }
+
   for( i=0; i<length; i++){
     REAL8 deltaphi = 0., innerphi = 0.; /* change in phase */
     Ddelay = 0.;                        /* change in SSB/BSB delay */
