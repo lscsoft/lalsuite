@@ -80,10 +80,8 @@ UNIT_SOURCE read_open_rate={0, 0, 0};
 UNIT_SOURCE write_bandwidth={0, 0, 0};
 UNIT_SOURCE write_open_rate={0, 0, 0};
 
-void request_resource(UNIT_SOURCE *, int);
-
 /** request a resurce. Function returns after waiting for throttle time */
-void request_resource(UNIT_SOURCE *us, int units) {
+static void request_resource(UNIT_SOURCE *us, int units) {
   time_t now;
   int seconds;
 
