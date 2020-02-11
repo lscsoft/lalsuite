@@ -206,18 +206,18 @@ int main(int argc, char**argv) {
   }
 
   /* record VCS ID and command-line for the comment */
-  XLAL_CHECK_MAIN( (cmdline = (char*)malloc(strlen(lalAppsVCSIdentInfo.vcsId)+strlen(lalAppsVCSIdentInfo.vcsStatus)+2)) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
+  XLAL_CHECK_MAIN( (cmdline = (char*)XLALMalloc(strlen(lalAppsVCSIdentInfo.vcsId)+strlen(lalAppsVCSIdentInfo.vcsStatus)+2)) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
   strcpy(cmdline,lalAppsVCSIdentInfo.vcsId);
   strcat(cmdline,lalAppsVCSIdentInfo.vcsStatus);
   strcat(cmdline, "\n");
   for(arg = 0; arg < argc; arg++) {
     if (strcmp(argv[arg], "-m") == 0) {
       /* obscure the mystery factor */
-      XLAL_CHECK_MAIN( (cmdline = (char*)realloc((void*)cmdline, strlen(cmdline) + 8)) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
+      XLAL_CHECK_MAIN( (cmdline = (char*)XLALRealloc((void*)cmdline, strlen(cmdline) + 8)) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
       strcat(cmdline, "-m xxx ");
       arg++;
     } else {
-      XLAL_CHECK_MAIN( (cmdline = (char*)realloc((void*)cmdline, strlen(cmdline) + strlen(argv[arg]) + 2)) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
+      XLAL_CHECK_MAIN( (cmdline = (char*)XLALRealloc((void*)cmdline, strlen(cmdline) + strlen(argv[arg]) + 2)) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
       strcat(cmdline, argv[arg]);
       if(arg == argc - 1)
 	strcat(cmdline, "\n");
@@ -296,7 +296,7 @@ int main(int argc, char**argv) {
   XLAL_CHECK_MAIN( (strcmp(argv[arg], "-i") == 0) || (strcmp(argv[arg], "--input-files") == 0), XLAL_EINVAL, "no input files specified" );
 
   /* allocate space for output filename */
-  XLAL_CHECK_MAIN( (outname = (char*)malloc(strlen(prefix) + 20)) != NULL, XLAL_ENOMEM, "out of memory allocating outname" );
+  XLAL_CHECK_MAIN( (outname = (char*)XLALMalloc(strlen(prefix) + 20)) != NULL, XLAL_ENOMEM, "out of memory allocating outname" );
 
   /* loop over all input SFT files */
   /* first skip the "-i" option */
@@ -323,7 +323,7 @@ int main(int argc, char**argv) {
       overlap = MYROUND(fOverlap * hd.tbase);
  
     /* allocate space for SFT data */
-    XLAL_CHECK_MAIN( (data = (float*)calloc(hd.nsamples, 2*sizeof(float))) != NULL, XLAL_ENOMEM, "out of memory allocating data" );
+    XLAL_CHECK_MAIN( (data = (float*)XLALCalloc(hd.nsamples, 2*sizeof(float))) != NULL, XLAL_ENOMEM, "out of memory allocating data" );
 
     /* error if desired start bin < hd.firstfreqindex */
     if((int)start < hd.firstfreqindex) {
@@ -353,7 +353,7 @@ int main(int argc, char**argv) {
     if (add_comment > CMT_OLD) {
 
       /* allocate space for new comment */
-      XLAL_CHECK_MAIN( (comment = (char*)malloc(hd.comment_length + strlen(cmdline) + 1)) != NULL, XLAL_ENOMEM, "out of memory allocating comment" );
+      XLAL_CHECK_MAIN( (comment = (char*)XLALMalloc(hd.comment_length + strlen(cmdline) + 1)) != NULL, XLAL_ENOMEM, "out of memory allocating comment" );
       
       /* append the commandline of this program to the old comment */
       if (oldcomment)
@@ -437,8 +437,8 @@ int main(int argc, char**argv) {
 
     /* cleanup */
     if (add_comment > CMT_OLD)
-      free(comment);
-    free(data);
+      XLALFree(comment);
+    XLALFree(data);
 
     /* next file is not the first file anymore */
     firstfile = FALSE;
@@ -446,9 +446,10 @@ int main(int argc, char**argv) {
   } /* loop over input SFTs */
 
   /* cleanup */
-  free(outname);
+  XLALFree(outname);
   if (add_comment > CMT_OLD)
-    free(cmdline);
+    XLALFree(cmdline);
+  LALCheckMemoryLeaks();
 
   return(0);
 }
