@@ -5831,7 +5831,10 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case IMRPhenomD:
     case IMRPhenomD_NRTidal:
     case IMRPhenomD_NRTidalv2:
+    case IMRPhenomNSBH:
     case IMRPhenomHM:
+    case IMRPhenomXAS:
+    case IMRPhenomXHM:
     case SEOBNRv1:
     case SEOBNRv2:
     case SEOBNRv4:
@@ -5849,6 +5852,7 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case SEOBNRv4_ROM:
     case SEOBNRv4_ROM_NRTidal:
     case SEOBNRv4_ROM_NRTidalv2:
+    case SEOBNRv4_ROM_NRTidalv2_NSBH:
     case SEOBNRv4T_surrogate:
     case TaylorR2F4:
     case IMRPhenomFB:
@@ -5954,6 +5958,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case IMRPhenomFA:
     case IMRPhenomFB:
     case IMRPhenomFC:
+    case IMRPhenomNSBH:
     case SpinTaylorT5Fourier:
     case SpinTaylorT4Fourier:
     case TaylorEt:
