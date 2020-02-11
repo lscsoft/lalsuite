@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2020 Karl Wette
  *  Copyright (C) 2008, 2010 Bernd Machenschalk, Bruce Allen
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -50,6 +51,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <lal/LALStdlib.h>
 #include <LALAppsVCSInfo.h>
 #include "SFTReferenceLibrary.h"
 
@@ -65,12 +67,6 @@
 #define CMT_NONE 0
 #define CMT_OLD  1
 #define CMT_FULL 2
-
-/* macros for error handling */
-/** error if value is nonzero */
-#define TRY(v,c,errex) { int r; if((r=(v))) { fprintf(stderr,c " (%d @ %d)\n", r, __LINE__); exit(errex); } }
-/** for SFT library calls write out the corresponding SFTErrorMessage, too */
-#define TRYSFT(v,c) { int r; if((r=(v))) { fprintf(stderr,c " (%s @ %d)\n", SFTErrorMessage(r), __LINE__); exit(r); } }
 
 typedef struct {
   int resource_units;  /**< number of resource units available for consumption */
@@ -137,6 +133,7 @@ int main(int argc, char**argv) {
   double fWidth = -1.0, fOverlap = -1; /* width and overlap in Hz */
   unsigned int nactivesamples;         /* number of bins to actually read in */
   int validate = TRUE;                 /* validate the checksum of each input SFT before using it? */
+  int sfterrno = 0;                    /* SFT error number return from reference library */
 
   /* initialize throtteling */
   time(&read_bandwidth.last_checked);
@@ -211,21 +208,18 @@ int main(int argc, char**argv) {
   }
 
   /* record VCS ID and command-line for the comment */
-  TRY((cmdline = (char*)malloc(strlen(lalAppsVCSIdentInfo.vcsId)+strlen(lalAppsVCSIdentInfo.vcsStatus)+2)) == NULL,
-      "out of memory allocating cmdline",1);
+  XLAL_CHECK_MAIN( (cmdline = (char*)malloc(strlen(lalAppsVCSIdentInfo.vcsId)+strlen(lalAppsVCSIdentInfo.vcsStatus)+2)) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
   strcpy(cmdline,lalAppsVCSIdentInfo.vcsId);
   strcat(cmdline,lalAppsVCSIdentInfo.vcsStatus);
   strcat(cmdline, "\n");
   for(arg = 0; arg < argc; arg++) {
     if (strcmp(argv[arg], "-m") == 0) {
       /* obscure the mystery factor */
-      TRY((cmdline = (char*)realloc((void*)cmdline, strlen(cmdline) + 8)) == NULL,
-	  "out of memory allocating cmdline",2);
+      XLAL_CHECK_MAIN( (cmdline = (char*)realloc((void*)cmdline, strlen(cmdline) + 8)) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
       strcat(cmdline, "-m xxx ");
       arg++;
     } else {
-      TRY((cmdline = (char*)realloc((void*)cmdline, strlen(cmdline) + strlen(argv[arg]) + 2)) == NULL,
-	  "out of memory allocating cmdline",3);
+      XLAL_CHECK_MAIN( (cmdline = (char*)realloc((void*)cmdline, strlen(cmdline) + strlen(argv[arg]) + 2)) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
       strcat(cmdline, argv[arg]);
       if(arg == argc - 1)
 	strcat(cmdline, "\n");
@@ -300,14 +294,11 @@ int main(int argc, char**argv) {
   }
 
   /* check if there was an input-file option given at all */
-  TRY(argv[arg] == NULL, "no input files specified",4);
-  TRY((strcmp(argv[arg], "-i") != 0) &&
-      (strcmp(argv[arg], "--input-files") != 0),
-      "no input files specified",5);
+  XLAL_CHECK_MAIN( argv[arg] != NULL, XLAL_EINVAL, "no input files specified" );
+  XLAL_CHECK_MAIN( (strcmp(argv[arg], "-i") == 0) || (strcmp(argv[arg], "--input-files") == 0), XLAL_EINVAL, "no input files specified" );
 
   /* allocate space for output filename */
-  TRY((outname = (char*)malloc(strlen(prefix) + 20)) == NULL,
-      "out of memory allocating outname",6);
+  XLAL_CHECK_MAIN( (outname = (char*)malloc(strlen(prefix) + 20)) != NULL, XLAL_ENOMEM, "out of memory allocating outname" );
 
   /* loop over all input SFT files */
   /* first skip the "-i" option */
@@ -315,13 +306,12 @@ int main(int argc, char**argv) {
 
     /* open input SFT */
     request_resource(&read_open_rate, 1);
-    TRY((fp = fopen(argv[arg], "r")) == NULL,
-	"could not open SFT file for reading",7);
+    XLAL_CHECK_MAIN( (fp = fopen(argv[arg], "r")) != NULL, XLAL_EIO, "could not open SFT file for reading" );
     
     /* read header */
     request_resource(&read_bandwidth, 40);
-    TRYSFT(ReadSFTHeader(fp, &hd, &oldcomment, &swap, validate),
-	   "could not read SFT header");
+    sfterrno = ReadSFTHeader(fp, &hd, &oldcomment, &swap, validate);
+    XLAL_CHECK_MAIN( sfterrno == 0, XLAL_EIO, "could not read SFT header: %s", SFTErrorMessage(sfterrno) );
 
     /* calculate bins from frequency parameters if they were given */
     /* deltaF = 1.0 / tbase; bins = freq / deltaF => bins = freq * tbase */
@@ -335,8 +325,7 @@ int main(int argc, char**argv) {
       overlap = MYROUND(fOverlap * hd.tbase);
  
     /* allocate space for SFT data */
-    TRY((data = (float*)calloc(hd.nsamples, 2*sizeof(float))) == NULL,
-	"out of memory allocating data",8);
+    XLAL_CHECK_MAIN( (data = (float*)calloc(hd.nsamples, 2*sizeof(float))) != NULL, XLAL_ENOMEM, "out of memory allocating data" );
 
     /* error if desired start bin < hd.firstfreqindex */
     if((int)start < hd.firstfreqindex) {
@@ -366,8 +355,7 @@ int main(int argc, char**argv) {
     if (add_comment > CMT_OLD) {
 
       /* allocate space for new comment */
-      TRY((comment = (char*)malloc(hd.comment_length + strlen(cmdline) + 1)) == NULL,
-	  "out of memory allocating comment",11);
+      XLAL_CHECK_MAIN( (comment = (char*)malloc(hd.comment_length + strlen(cmdline) + 1)) != NULL, XLAL_ENOMEM, "out of memory allocating comment" );
       
       /* append the commandline of this program to the old comment */
       if (oldcomment)
@@ -389,7 +377,7 @@ int main(int argc, char**argv) {
       detector = hd.detector;
 
     /* if no detector has been specified, issue an error */
-    TRY(!detector || !*detector, "When reading v1 SFTs a detector needs to be specified with -d",12);
+    XLAL_CHECK_MAIN( detector != NULL && *detector != 0, XLAL_EINVAL, "When reading v1 SFTs a detector needs to be specified with -d" );
 
     /* calculate number of bins to actually read (from width + overlap) */
     /* add width-overlap samples as lon as they are < the total number og bins to write */
@@ -402,8 +390,8 @@ int main(int argc, char**argv) {
 
     /* read in SFT bins */
     request_resource(&read_bandwidth, nactivesamples*8);
-    TRYSFT(ReadSFTData(fp, data, start, nactivesamples, NULL, NULL),
-	   "could not read SFT data");
+    sfterrno = ReadSFTData(fp, data, start, nactivesamples, NULL, NULL);
+    XLAL_CHECK_MAIN( sfterrno == 0, XLAL_EIO, "could not read SFT data: %s", SFTErrorMessage(sfterrno) );
 
     /* if reading v1 SFTs set up a factor to be applied for normalization conversion */
     if(hd.version == 1.0) {
@@ -436,17 +424,13 @@ int main(int argc, char**argv) {
 
       /* append this SFT to a possible "merged" SFT with the same name */
       request_resource(&write_open_rate, 1);
-      TRY((fp = fopen(outname,"a")) == NULL,
-	  "could not open SFT for writing",13);
+      XLAL_CHECK_MAIN( (fp = fopen(outname,"a")) != NULL, XLAL_EIO, "could not open SFT for writing" );
 
       /* write the data */
       /* write the comment only to the first SFT of a "block", i.e. of a call of this program */
       request_resource(&write_bandwidth, 40 + this_width * 8);
-      TRYSFT(WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, 
-		      bin, this_width, detector,
-		      (firstfile || allcomments) ? comment : NULL,
-		      data + 2 * (bin - start)),
-	     "could not write SFT data");
+      sfterrno = WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, bin, this_width, detector, (firstfile || allcomments) ? comment : NULL, data + 2 * (bin - start));
+      XLAL_CHECK_MAIN( sfterrno == 0, XLAL_EIO, "could not write SFT data: %s", SFTErrorMessage(sfterrno) );
 
       /* close output SFT file */
       fclose(fp);
