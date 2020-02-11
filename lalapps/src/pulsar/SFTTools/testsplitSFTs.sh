@@ -2,7 +2,9 @@
 mkdir -p broadband/ narrowband/
 
 ## run lalapps_Makefakedata_v5 to create fake broadband SFTs
-cmdline="lalapps_Makefakedata_v5 --IFOs H1 --sqrtSX 1e-24 --startTime 1257800000 --duration 9000 --fmin 10 --Band 85 --injectionSources '{Alpha=0.1; Delta=0.4; Freq=30; f1dot=1e-10; h0=1e-24; cosi=0.7; refTime=1257800000}' --outSingleSFT=no --outSFTdir broadband/"
+start=1257800000
+span=9000
+cmdline="lalapps_Makefakedata_v5 --IFOs H1 --sqrtSX 1e-24 --startTime ${start} --duration ${span} --fmin 10 --Band 85 --injectionSources '{Alpha=0.1; Delta=0.4; Freq=30; f1dot=1e-10; h0=1e-24; cosi=0.7; refTime=1257800000}' --outSingleSFT=no --outSFTdir broadband/"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -10,7 +12,7 @@ fi
 
 ## run lalapps_splitSFTs to create narrowband SFTs
 for sft in broadband/*.sft; do
-    cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -o narrowband/ -i $sft"
+    cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband/ -i $sft"
     if ! eval "$cmdline"; then
         echo "ERROR: something failed when running '$cmdline'"
         exit 1
@@ -18,8 +20,13 @@ for sft in broadband/*.sft; do
 done
 
 ## check narrowband SFT names
-for bin in 18000 32400 46800 61200 75600 90000 104400 118800 133200 147600 162000; do
-    sft="narrowband/${bin}"
+for freq in 10 18 26 34 42 50 58 66 74 82 90; do
+    if [ $freq = 90 ]; then
+        binwidth="0005Hz1"
+    else
+        binwidth="0008Hz0"
+    fi
+    sft="narrowband/H-5_H1_1800SFT_NB_F00${freq}Hz0_W${binwidth}-${start}-${span}.sft"
     if ! test -f $sft; then
         echo "ERROR: could not find file '$sft'"
         exit 1

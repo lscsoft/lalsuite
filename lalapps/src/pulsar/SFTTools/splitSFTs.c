@@ -51,7 +51,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <glob.h>
+#include <sys/stat.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALHashTbl.h>
 #include <LALAppsVCSInfo.h>
 #include "SFTReferenceLibrary.h"
 
@@ -67,6 +70,21 @@
 #define CMT_NONE 0
 #define CMT_OLD  1
 #define CMT_FULL 2
+
+// Compare two quantities, and return a sort order value if they are unequal
+#define COMPARE_BY( x, y ) do { if ( (x) < (y) ) return -1; if ( (x) > (y) ) return +1; } while(0)
+
+typedef struct {
+  /* hashed fields */
+  char det[2];         /**< detector name */
+  long timebase;       /**< SFT timebase */
+  long firstbin;       /**< first bin */
+  long binwidth;       /**< bin width */
+  /* value fields */
+  long int nSFT;       /**< number of SFTs */
+  long start;          /**< GPS start time */
+  char *filename;      /**< SFT filename */
+} SFT_RECORD;
 
 typedef struct {
   int resource_units;  /**< number of resource units available for consumption */
@@ -105,6 +123,53 @@ static void request_resource(UNIT_SOURCE *us, int units) {
   }
 }
 
+/* determine if the given filepath is an existing directory or not */
+static int is_directory ( const char *fname )
+{
+  struct stat stat_buf;
+
+  if ( stat (fname, &stat_buf) )
+    return 0;
+
+  if ( ! S_ISDIR (stat_buf.st_mode) )
+    return 0;
+  else
+    return 1;
+
+}
+
+/* hash an SFT_RECORD */
+static UINT8 hash_SFT_RECORD( const void *x ) {
+  const SFT_RECORD *rec = (const SFT_RECORD *) x;
+  UINT4 hval = 0;
+  XLALPearsonHash(&hval, sizeof(hval), &rec->det, sizeof(rec->det));
+  XLALPearsonHash(&hval, sizeof(hval), &rec->timebase, sizeof(rec->timebase));
+  XLALPearsonHash(&hval, sizeof(hval), &rec->firstbin, sizeof(rec->firstbin));
+  XLALPearsonHash(&hval, sizeof(hval), &rec->binwidth, sizeof(rec->binwidth));
+  return hval;
+}
+
+/* compare an SFT_RECORD */
+static int compare_SFT_RECORD( const void *x, const void *y) {
+  const SFT_RECORD *recx = (const SFT_RECORD *) x;
+  const SFT_RECORD *recy = (const SFT_RECORD *) y;
+  COMPARE_BY(recx->det[0], recy->det[0]);
+  COMPARE_BY(recx->det[1], recy->det[1]);
+  COMPARE_BY(recx->timebase, recy->timebase);
+  COMPARE_BY(recx->firstbin, recy->firstbin);
+  COMPARE_BY(recx->binwidth, recy->binwidth);
+  return 0;
+}
+
+/* destroy an SFT_RECORD */
+static void destroy_SFT_RECORD( void *x ) {
+  SFT_RECORD *rec = (SFT_RECORD *) x;
+  if (rec != NULL) {
+    XLALFree(rec->filename);
+    XLALFree(rec);
+  }
+}
+
 /** main program */
 int main(int argc, char**argv) {
   int arg;                        /* current command-line argument */
@@ -117,8 +182,8 @@ int main(int argc, char**argv) {
   int swap;                       /* do we need to swap bytes? */
   float *data;                    /* SFT data */
   char *outname;                  /* name of output SFT file */
-  char empty = '\0';
-  char *prefix = &empty;          /* output filename prefix */
+  char outdir0[] = ".";
+  char *outdir = (char*)outdir0;  /* output filename prefix */
   char *detector = NULL;          /* detector name */
   double factor = 1.0;            /* "mystery" factor */
   double conversion_factor = 1.0; /* extra factor needed when converting from v1 SFTs */
@@ -132,6 +197,7 @@ int main(int argc, char**argv) {
   unsigned int nactivesamples;         /* number of bins to actually read in */
   int validate = TRUE;                 /* validate the checksum of each input SFT before using it? */
   int sfterrno = 0;                    /* SFT error number return from reference library */
+  LALHashTbl *nbsfts = NULL;           /* hash table of existing narrow-band SFTs */
 
   /* initialize throtteling */
   time(&read_bandwidth.last_checked);
@@ -162,7 +228,7 @@ int main(int argc, char**argv) {
 	    "  [-fx|--frequency-overlap <frequencyoverlap>]\n"
 	    "  [-m|--factor <factor>]\n"
 	    "  [-d|--detector <detector>]\n"
-	    "  [-o|--output-prefix <outputprefix>]\n"
+	    "  [-n|--output-directory <outputdirectory>]\n"
 	    "  -i|--input-files <inputfile> ...\n"
 	    "\n"
 	    "  This program reads in binary SFTs (v1 and v2) and writes out narrow-banded\n"
@@ -181,13 +247,30 @@ int main(int argc, char**argv) {
 	    "  In case of reading v1 SFTs (which don't support detector information in the header)\n"
 	    "  the detector needs to be specified on the command-line using '-d' option.\n"
 	    "\n"
-	    "  The name of the output SFTs is created by appending the start bin of the narrow-band\n"
-	    "  SFT to the 'output prefix' that can be given to the program with '-o'. If an output\n"
-	    "  file already exists, the program will append the new SFTs to them, making it possible\n"
-	    "  to construct the final narrow-band SFTs by running the program multiple times with\n"
-	    "  different input SFTs. The GPS timestamps of the input SFTs need to be in ascending\n"
-	    "  order to get valid merged SFT files.\n"
-	    "\n"
+            "  The name of the output SFT follows the standard SFT filename convention, with\n"
+            "  information specific to narrow-band SFTs included in the description:\n"
+            "    <outdir>/<obs>-<nSFT>_<det>_<timebase>SFT_NB_F<firstbin>_W<binwidth>-<start>-<span>.sft\n"
+            "  where\n"
+            "    <outdir> = output directory given by the '-o' option, default is '.'\n"
+            "    <nSFT> = number of SFTs in the file\n"
+            "    <obs> = 1-character observatory prefix, e.g. 'H', 'L', 'V'\n"
+            "    <det> = 2-character detector prefix, e.g. 'H1', 'L1', 'V1'\n"
+            "    <timebase> = time base of the SFTs, rounded to the nearest second\n"
+            "    <firstbin> = first bin of the SFTs, expressed in the form\n"
+            "      <firstbin> = <freq>Hz<remainder>, where\n"
+            "        <freq> = <firstbin> / <timebase>, rounded down to nearest Hz\n"
+            "        <remainder> = <firstbin> - <freq> * <timebase>, number of remaining bins\n"
+            "    <binwidth> = bin width of the SFTs, expressed in the form\n"
+            "      <binwidth> = <freq>Hz<remainder>, where\n"
+            "        <freq> = <binwidth> / <timebase>, rounded down to nearest Hz\n"
+            "        <remainder> = <binwidth> - <freq> * <timebase>, number of remaining bins\n"
+            "    <start> = start time of the first SFT as a GPS timestamp\n"
+            "    <span> = time spanned by the SFT in seconds\n"
+            "  If an output file already exists, the program will append the new SFTs to them, making\n"
+	    "  it possible to construct the final narrow-band SFTs by running the program multiple\n"
+	    "  times with different input SFTs. The GPS timestamps of the input SFTs need to be in\n"
+	    "  ascending order to get valid merged SFT files.\n"
+            "\n"
 	    "  The '-c' options specifies how to deal with comments - 0 means no comment is written\n"
 	    "  at all, 1 means that the comment is taken unmodified from the input SFTs, 2 (default)\n"
 	    "  means that the program appends its RCS id and command-line to the comment.\n"
@@ -267,9 +350,9 @@ int main(int argc, char**argv) {
     } else if((strcmp(argv[arg], "-v") == 0) ||
 	      (strcmp(argv[arg], "--no-validation") == 0)) {
       validate = FALSE;
-    } else if((strcmp(argv[arg], "-o") == 0) ||
-	      (strcmp(argv[arg], "--output-prefix") == 0)) {
-      prefix = argv[++arg];
+    } else if((strcmp(argv[arg], "-n") == 0) ||
+	      (strcmp(argv[arg], "--output-directory") == 0)) {
+      outdir = argv[++arg];
     } else if((strcmp(argv[arg], "-rb") == 0) ||
 	      (strcmp(argv[arg], "--read-bandwidth") == 0)) {
       read_bandwidth.resource_rate=atoi(argv[++arg]);
@@ -295,8 +378,60 @@ int main(int argc, char**argv) {
   XLAL_CHECK_MAIN( argv[arg] != NULL, XLAL_EINVAL, "no input files specified" );
   XLAL_CHECK_MAIN( (strcmp(argv[arg], "-i") == 0) || (strcmp(argv[arg], "--input-files") == 0), XLAL_EINVAL, "no input files specified" );
 
+  /* check output directory exists */
+  XLAL_CHECK_MAIN( is_directory(outdir), XLAL_ESYS, "output directory does not exist" );
+
   /* allocate space for output filename */
-  XLAL_CHECK_MAIN( (outname = (char*)XLALMalloc(strlen(prefix) + 20)) != NULL, XLAL_ENOMEM, "out of memory allocating outname" );
+  const size_t outnamelen = strlen(outdir) + 256;
+  XLAL_CHECK_MAIN( (outname = (char*)XLALMalloc(outnamelen)) != NULL, XLAL_ENOMEM, "out of memory allocating outname" );
+
+  /* find existing narrow-band SFTs */
+  nbsfts = XLALHashTblCreate( destroy_SFT_RECORD, hash_SFT_RECORD, compare_SFT_RECORD );
+  XLAL_CHECK_MAIN( nbsfts != NULL, XLAL_EFUNC, "XLALHashTblCreate() failed" );
+  {
+    XLAL_CHECK_MAIN( snprintf(outname, outnamelen, "%s/*SFT_NB*.sft", outdir) < (int)outnamelen,
+                     XLAL_ESYS, "output of snprintf() was truncated" );
+    glob_t globbuf;
+    glob(outname, GLOB_MARK | GLOB_NOSORT, NULL, &globbuf);
+    for (size_t i = 0; i < globbuf.gl_pathc; ++i) {
+
+      /* find the filename component */
+      char *filename = strrchr(globbuf.gl_pathv[i], '/');
+      XLAL_CHECK_MAIN( filename != NULL, XLAL_ESYS, "could not extract filename from '%s'", globbuf.gl_pathv[i] );
+      ++filename;
+      XLAL_CHECK_MAIN( *filename != '\0', XLAL_ESYS, "'%s' is a directory", globbuf.gl_pathv[i] );
+
+      /* create new SFT record */
+      SFT_RECORD *rec = NULL;
+      XLAL_CHECK_MAIN( (rec = XLALCalloc(1, sizeof(*rec))) != NULL, XLAL_ENOMEM, "out of memory allocating SFT_RECORD" );
+
+      /* parse SFT filename */
+      char obs = 0;
+      long int firstbinfreq = 0, firstbinrem = 0, binwidthfreq = 0, binwidthrem = 0, span = 0;
+      int sscanf_matched = sscanf(filename, "%c-%ld_%c%c_%ldSFT_NB_F%ldHz%ld_W%ldHz%ld-%ld-%ld.sft",
+                                  &obs, &rec->nSFT, &rec->det[0], &rec->det[1], &rec->timebase, &firstbinfreq,
+                                  &firstbinrem, &binwidthfreq, &binwidthrem, &rec->start, &span);
+      XLAL_CHECK_MAIN( sscanf_matched == 11, XLAL_ESYS,
+                       "sscanf() matched only %i fields in SFT filename '%s'; partial match = '%c-%ld_%c%c_%ldSFT_NB_F%ldHz%ld_W%ldHz%ld-%ld-%ld.sft'",
+                       sscanf_matched, filename,
+                       obs, rec->nSFT, rec->det[0], rec->det[1], rec->timebase, firstbinfreq,
+                       firstbinrem, binwidthfreq, binwidthrem, rec->start, span);
+      XLAL_CHECK_MAIN( obs == rec->det[0], XLAL_EINVAL, "inconsistent observatory (%c) vs detector (%c%c) in SFT filename '%s'", obs, rec->det[0], rec->det[1], filename );
+      XLAL_CHECK_MAIN( span > 0, XLAL_EINVAL, "nonpositive timespan (%ld) in SFT filename '%s'", span, filename );
+
+      /* complete SFT record */
+      rec->firstbin = firstbinfreq * rec->timebase + firstbinrem;
+      rec->binwidth = binwidthfreq * rec->timebase + binwidthrem;
+      XLAL_CHECK_MAIN( (rec->filename = XLALStringDuplicate(globbuf.gl_pathv[i])) != NULL, XLAL_ENOMEM, "out of memory allocating filename" );
+
+      /* add SFT record */
+      XLALPrintInfo( "Existing SFT: det=%c%c timebase=%ld firstbin=%ld binwidth=%ld filename=%s\n",
+                     rec->det[0], rec->det[1], rec->timebase, rec->firstbin, rec->binwidth, rec->filename );
+      XLAL_CHECK_MAIN( XLALHashTblAdd( nbsfts, rec ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALHashTblAdd() failed" );
+
+    }
+    globfree(&globbuf);
+  }
 
   /* loop over all input SFT files */
   /* first skip the "-i" option */
@@ -417,12 +552,65 @@ int main(int argc, char**argv) {
       int max_output_width = end - bin + 1;
       int this_width       = max_input_width < max_output_width ? max_input_width : max_output_width;
 
-      /* construct filename for this output SFT */
-      sprintf(outname, "%s%d", prefix, bin);
+      /* check if this narrow-band SFT exists */
+      SFT_RECORD key = {
+        .det = { detector[0], detector[1] },
+        .timebase = (int)MYROUND(hd.tbase),
+        .firstbin = bin,
+        .binwidth = this_width
+      };
+      XLALPrintInfo( "Looking for SFT: det=%c%c timebase=%ld firstbin=%ld binwidth=%ld\n",
+                     key.det[0], key.det[1], key.timebase, key.firstbin, key.binwidth );
+      SFT_RECORD *rec = NULL;
+      XLAL_CHECK_MAIN( XLALHashTblExtract( nbsfts, &key, (void **) &rec ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALHashTblExtract() failed" );
+      if (rec == NULL) {
 
-      /* append this SFT to a possible "merged" SFT with the same name */
+        /* create new SFT record */
+        XLAL_CHECK_MAIN( (rec = XLALCalloc(1, sizeof(*rec))) != NULL, XLAL_ENOMEM, "out of memory allocating SFT_RECORD" );
+        *rec = key;
+        rec->nSFT = 0;
+        rec->start = hd.gps_sec;
+
+      }
+
+      /* update number of SFTs */
+      rec->nSFT += 1;
+
+      /* construct filename for this output SFT */
+      int outfreq = (int)floor(bin / rec->timebase);
+      int outfreqbin = bin - outfreq * rec->timebase;
+      int outwidth = (int)floor(this_width / rec->timebase);
+      int outwidthbin = this_width - outwidth * rec->timebase;
+      long int span = hd.gps_sec - rec->start + rec->timebase;
+      if (hd.gps_nsec > 0) {
+        span += 1;
+      }
+      XLAL_CHECK_MAIN( snprintf(outname, outnamelen, "%s/%c-%ld_%c%c_%ldSFT_NB_F%04dHz%d_W%04dHz%d-%ld-%ld.sft",
+                                outdir, detector[0], rec->nSFT, detector[0], detector[1],
+                                rec->timebase, outfreq, outfreqbin, outwidth, outwidthbin,
+                                rec->start, span) < (int)outnamelen,
+                       XLAL_ESYS, "output of snprintf() was truncated" );
+
+      /* update SFT filename */
+      if (rec->filename == NULL) {
+        rec->filename = outname;
+        XLAL_CHECK_MAIN( (outname = (char*)XLALMalloc(outnamelen)) != NULL, XLAL_ENOMEM, "out of memory allocating outname" );
+      } else if (strcmp(rec->filename, outname) != 0) {
+        XLALPrintInfo( "Renaming SFT '%s' to '%s'\n", rec->filename, outname );
+        rename(rec->filename, outname);
+        char *const tmp = rec->filename;
+        rec->filename = outname;
+        outname = tmp;
+      }
+
+      /* store new SFT record */
+      XLALPrintInfo( "New/updated SFT: det=%c%c timebase=%ld firstbin=%ld binwidth=%ld filename=%s\n",
+                     rec->det[0], rec->det[1], rec->timebase, rec->firstbin, rec->binwidth, rec->filename );
+      XLAL_CHECK_MAIN( XLALHashTblAdd( nbsfts, rec ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALHashTblAdd() failed" );
+
+      /* append this SFT */
       request_resource(&write_open_rate, 1);
-      XLAL_CHECK_MAIN( (fp = fopen(outname,"a")) != NULL, XLAL_EIO, "could not open SFT for writing" );
+      XLAL_CHECK_MAIN( (fp = fopen(rec->filename,"a")) != NULL, XLAL_EIO, "could not open SFT for writing" );
 
       /* write the data */
       /* write the comment only to the first SFT of a "block", i.e. of a call of this program */
@@ -449,6 +637,7 @@ int main(int argc, char**argv) {
   XLALFree(outname);
   if (add_comment > CMT_OLD)
     XLALFree(cmdline);
+  XLALHashTblDestroy(nbsfts);
   LALCheckMemoryLeaks();
 
   return(0);

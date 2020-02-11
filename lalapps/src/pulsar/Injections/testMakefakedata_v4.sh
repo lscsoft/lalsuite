@@ -100,7 +100,7 @@ echo
 ## extract relevant frequency-band
 fmax2=`echo "${fmax} + 0.0006" | bc`   ## add 0.0006 to bandwidth to get same number of SFT bins as MDFv4
 Band2=`echo "${Band} + 0.0006" | bc`   ## add 0.0006 to bandwidth to get same number of SFT bins as MDFv4
-extractCL="-fs $fmin -fe $fmax2 -fb $Band2 -o ${testDIR3}/Band -i $testDIR3/*.sft"
+extractCL="-fs $fmin -fe $fmax2 -fb $Band2 -n ${testDIR3} -i $testDIR3/*.sft"
 cmdline="$extractCODE $extractCL"
 echo $cmdline;
 if ! eval $cmdline; then
@@ -111,7 +111,7 @@ fi
 echo
 echo "comparison of resulting SFTs:"
 
-cmdline="$cmpCODE -e $tol -1 '${testDIR1}/*.sft' -2 '${testDIR3}/Band*'"
+cmdline="$cmpCODE -e $tol -1 '${testDIR1}/*.sft' -2 '${testDIR3}/*SFT_NB*.sft'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... SFTs differ by more than $tol. Something might be wrong..."
@@ -121,7 +121,7 @@ else
 fi
 
 echo
-cmdline="$cmpCODE -e $tol -1 '${testDIR2}/*.sft' -2 '${testDIR3}/Band*'"
+cmdline="$cmpCODE -e $tol -1 '${testDIR2}/*.sft' -2 '${testDIR3}/*SFT_NB*.sft'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... SFTs differ by more than $tol. Something might be wrong..."
