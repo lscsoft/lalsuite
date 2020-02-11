@@ -1,0 +1,40 @@
+.PHONY: clean-local-test-dirs
+.PHONY: test-ref-tarball-dist-hook
+
+test_programs =
+test_scripts =
+test_helpers =
+check_PROGRAMS = $(test_programs) $(test_helpers)
+TESTS = $(test_programs) $(test_scripts)
+EXTRA_DIST += $(test_scripts)
+
+test_script_compiler = $(top_srcdir)/gnuscripts/lalapps-pulsar-test-compiler.sh
+EXTRA_DIST += $(test_script_compiler)
+
+skip_tests =
+TEST_EXTENSIONS = .sh
+SH_LOG_COMPILER = /bin/bash $(test_script_compiler) "$(skip_tests)"
+
+clean-local: clean-local-test-dirs
+clean-local-test-dirs:
+	@for file in $(test_scripts); do \
+		case $${file} in \
+			*.sh) \
+				scriptname=`expr "X$${file}" : "X\([^/]*\)\.sh$$"`; \
+				echo " rm -rf $${scriptname}.testdir/"; \
+				rm -rf $${scriptname}.testdir/ || exit 1; \
+				;; \
+		esac; \
+	done
+
+dist-hook: test-ref-tarball-dist-hook
+	@for file in $(test_scripts); do \
+		case $${file} in \
+			*.sh) \
+				scriptname=`expr "X$${file}" : "X\([^/]*\)\.sh$$"`; \
+				if test -r "$(srcdir)/$${scriptname}.tar.gz"; then \
+					cp "$(srcdir)/$${scriptname}.tar.gz" "$(distdir)/$${scriptname}.tar.gz"; \
+				fi; \
+				;; \
+		esac; \
+	done
