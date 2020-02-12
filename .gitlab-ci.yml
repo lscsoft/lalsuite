@@ -219,7 +219,8 @@ cache:
     - sed 's|@VERSION@|'${VERSION}'|g' conda/meta.yaml.in > conda/meta.yaml
     - sed -i 's|@TARBALL@|'${TARBALL}'|g' conda/meta.yaml
     - sed -i 's|@SHA256@|'${SHA256}'|g' conda/meta.yaml
-    # build packages
+    # build packages (preferring local packages over everything)
+    - conda config --set channel_priority strict
     - conda build
           conda/
           --error-overlinking
