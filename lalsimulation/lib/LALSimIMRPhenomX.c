@@ -498,8 +498,10 @@ int IMRPhenomXASGenerateFD(
   XLALUnitMultiply(&((*htilde22)->sampleUnits), &((*htilde22)->sampleUnits), &lalSecondUnit);
 
   /* Check if LAL dictionary exists. If not, create a LAL dictionary. */
+  INT4 lalParams_In = 0;
   if(lalParams == NULL)
   {
+    lalParams_In = 1;
     lalParams = XLALCreateDict();
   }
 
@@ -648,9 +650,11 @@ int IMRPhenomXASGenerateFD(
   // Free allocated memory
   LALFree(pAmp22);
   LALFree(pPhase22);
-  //LALFree(pWF);
-
   XLALDestroyREAL8Sequence(freqs);
+  if(lalParams_In == 1)
+  {
+    XLALDestroyDict(lalParams);
+  }
 
   return status;
 }

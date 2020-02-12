@@ -132,8 +132,10 @@ static int IMRPhenomXHM_MultiMode2(
 static LALDict *IMRPhenomXHM_setup_mode_array(LALDict *lalParams)
 {
   /* setup ModeArray */
+  INT4 lalParams_In = 0;
   if (lalParams == NULL)
   {
+    lalParams_In = 1;
     lalParams = XLALCreateDict();
   }
   LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams);
@@ -163,6 +165,10 @@ static LALDict *IMRPhenomXHM_setup_mode_array(LALDict *lalParams)
   else {XLAL_PRINT_INFO("Using custom modes for PhenomXHM.\n"); }
 
   XLALDestroyValue(ModeArray);
+  if(lalParams_In == 1)
+  {
+    XLALDestroyDict(lalParams);
+  }
 
   return lalParams;
 }
@@ -401,8 +407,10 @@ This is a wrapper function that uses XLALSimIMRPhenomXASGenerateFD for the 22 mo
 
 
      /* setup ModeArray */
+     INT4 lalParams_In = 0;
      if (lalParams == NULL)
      {
+       lalParams_In = 1;
        lalParams = XLALCreateDict();
      }
      lalParams = IMRPhenomXHM_setup_mode_array(lalParams);
@@ -505,6 +513,10 @@ This is a wrapper function that uses XLALSimIMRPhenomXASGenerateFD for the 22 mo
      LALFree(pWF);
      XLALDestroyREAL8Sequence(freqs);
      XLALDestroyValue(ModeArray);
+     if(lalParams_In == 1)
+     {
+       XLALDestroyDict(lalParams);
+     }
 
      #if DEBUG == 1
      printf("\n Leaving XLALSimIMRPhenomXHMGenerateFDOneMode \n");
@@ -545,8 +557,10 @@ int IMRPhenomXHMGenerateFDOneMode(
   #endif
 
   /* Check if LAL dictionary exists. If not, create a LAL dictionary. */
+  INT4 lalParams_In = 0;
   if(lalParams == NULL)
   {
+    lalParams_In = 1;
     lalParams = XLALCreateDict();
   }
 
@@ -670,6 +684,10 @@ int IMRPhenomXHMGenerateFDOneMode(
   // Free allocated memory
   LALFree(pWFHM);
   XLALDestroyREAL8Sequence(freqs);
+  if(lalParams_In == 1)
+  {
+    XLALDestroyDict(lalParams);
+  }
 
   #if DEBUG == 1
   printf("\nIMRPhenomXHMGenerateFDOneMode: Leaving... \n");
@@ -780,8 +798,10 @@ int XLALSimIMRPhenomXHMFrequencySequenceOneMode(
     */
 
     /* Check if LAL dictionary exists. If not, create a LAL dictionary. */
+    INT4 lalParams_In = 0;
     if(lalParams == NULL)
     {
+      lalParams_In = 1;
       lalParams = XLALCreateDict();
     }
 
@@ -816,6 +836,10 @@ int XLALSimIMRPhenomXHMFrequencySequenceOneMode(
 
     LALFree(pWF);
     LALFree(pWFHM);
+    if(lalParams_In == 1)
+    {
+      XLALDestroyDict(lalParams);
+    }
 
     #if DEBUG == 1
     printf("\n\nlength of htildelm = %i \n\n", (*htildelm)->data->length);
@@ -1109,8 +1133,10 @@ static int IMRPhenomXHM_MultiMode(
   INT4 sym; /* sym will decide whether to add the -m mode (when equatorial symmetry is present) */
 
   /* Setup ModeArray reading from lalParams. */
+  INT4 lalParams_In = 0;
   if (lalParams == NULL)
   {
+    lalParams_In = 1;
     lalParams = XLALCreateDict();
   }
   lalParams = IMRPhenomXHM_setup_mode_array(lalParams);
@@ -1262,6 +1288,10 @@ XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHM_Multimode failed to
 /* Free memory */
 XLALDestroyCOMPLEX16FrequencySeries(htilde22);
 XLALDestroyValue(ModeArray);
+if(lalParams_In == 1)
+{
+  XLALDestroyDict(lalParams);
+}
 
 #if DEBUG == 1
 printf("\n******Leaving IMRPhenomXHM_MultiMode*****\n");
@@ -1332,8 +1362,10 @@ static int IMRPhenomXHM_MultiMode2(
   INT4 sym = 1; /* sym will decide whether to add the m mode (when equatorial symmetry is present) */
 
   /* setup ModeArray */
+  INT4 lalParams_In = 0;
   if (lalParams == NULL)
   {
+    lalParams_In = 1;
     lalParams = XLALCreateDict();
   }
   lalParams = IMRPhenomXHM_setup_mode_array(lalParams);
@@ -1610,6 +1642,10 @@ static int IMRPhenomXHM_MultiMode2(
   LALFree(pPhase22);
   LALFree(qnms);
   LALFree(Mf);
+  if(lalParams_In == 1)
+  {
+    XLALDestroyDict(lalParams);
+  }
 
 
   return status;
@@ -1759,8 +1795,10 @@ int XLALSimIMRPhenomXHMAmplitude(
       LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0,0}
 
       /* setup ModeArray */
+      INT4 lalParams_In = 0;
       if (lalParams == NULL)
       {
+          lalParams_In = 1;
           lalParams = XLALCreateDict();
       }
       lalParams = IMRPhenomXHM_setup_mode_array(lalParams);
@@ -1905,6 +1943,10 @@ int XLALSimIMRPhenomXHMAmplitude(
       LALFree(pAmp);
       LALFree(pPhase22);
       LALFree(pPhase);
+      if(lalParams_In == 1)
+      {
+        XLALDestroyDict(lalParams);
+      }
 
       return XLAL_SUCCESS;
   }
@@ -1974,8 +2016,10 @@ int XLALSimIMRPhenomXHMAmplitude(
         LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0,0}
 
         /* setup ModeArray */
+        INT4 lalParams_In = 0;
         if (lalParams == NULL)
         {
+            lalParams_In = 1;
             lalParams = XLALCreateDict();
         }
         lalParams = IMRPhenomXHM_setup_mode_array(lalParams);
@@ -2134,6 +2178,10 @@ int XLALSimIMRPhenomXHMAmplitude(
         LALFree(pAmp);
         LALFree(pPhase22);
         LALFree(pPhase);
+        if(lalParams_In == 1)
+        {
+          XLALDestroyDict(lalParams);
+        }
 
         return XLAL_SUCCESS;
     }
