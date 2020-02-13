@@ -127,7 +127,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   XLAL_CHECK_NULL( detector != NULL, XLAL_EFUNC, "LALDetector must not be NULL" );
   XLAL_CHECK_NULL( ephem != NULL, XLAL_EFUNC, "EphemerisData must not be NULL" );
 
-  UINT4 i = 0, j = 0, k = 0, length = 0, isbinary = 0, nfreqs = 0;
+  UINT4 i = 0, j = 0, k = 0, length = 0, nfreqs = 0;
 
   REAL8 DT = 0., deltat = 0., deltatpow = 0., deltatpowinner = 1., taylorcoeff = 1., Ddelay = 0., Ddelaypow = 0.;
 
@@ -146,9 +146,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   fixdts = ssbdts;
   if ( calcSSBDelay ){
     if ( origparams != NULL ){
-      if ( ssbdts == NULL ){
-        fixdts = XLALHeterodynedPulsarGetSSBDelay( origparams, datatimes, detector, ephem, tdat, ttype );
-      }
+      XLAL_CHECK_NULL( ssbdts != NULL, "SSB delays based on the original parameters must be supplied" );
       dts = XLALHeterodynedPulsarGetSSBDelay( params, datatimes, detector, ephem, tdat, ttype );
     }
     else{
@@ -159,41 +157,30 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
 
   /* get the binary system barycentring time delays */
   fixbdts = bsbdts;
-  if ( PulsarCheckParam( params, "BINARY" ) ){ 
-    isbinary = 1; /* set if pulsar is in binary */
-
-    if ( calcBSBDelay ){
-      if ( origparams != NULL ){
-        if ( bsbdts == NULL ){
-          if ( calcSSBDelay ){
-            fixbdts = XLALHeterodynedPulsarGetBSBDelay( origparams, datatimes, fixdts, ephem );
-          }
-        }
-        bdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, dts, ephem );
-      }
-      else{
-        fixbdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, fixdts, ephem );
-      }
-    
-      XLAL_CHECK_NULL( length == fixbdts->length, XLAL_EFUNC, "Lengths of time stamp vector and BSB delay vector are not the same" );
-    }
-  }
-
-  if ( glphase == NULL ){
+  if ( calcBSBDelay ){
+    const REAL8Vector *whichssb = dts ? dts != NULL : fixdts;
     if ( origparams != NULL ){
-      if ( PulsarCheckParams( origparams, "GLEP" ) ){
-        fixglph = XLALHeterodynedPulsarGetGlitchPhase( origparams, datatimes, fixdts, fixbdts );
-      }
+      XLAL_CHECK_NULL( bsbdts != NULL, "Binary system barycentring delays based on the original parameters must be supplied" );
+      bdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, whichssb, ephem );
     }
     else{
-
+      fixbdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, whichssb, ephem );
     }
+    XLAL_CHECK_NULL( length == fixbdts->length, XLAL_EFUNC, "Lengths of time stamp vector and BSB delay vector are not the same" );
   }
-  else{
-    fixglph = glphase;
-  }
-  if ( updateglphase && PulsarCheckParam( params, "GLEP" ) ){
-    glph = XLALHeterodynedPulsarGetGlitchPhase( params, datatimes, dts, bdts );
+
+  /* get the glitch parameter phase evolution */
+  fixglph = glphase;
+  if ( calcglphase ){
+    const REAL8Vector *whichssb = dts ? dts != NULL : fixdts;
+    const REAL8Vector *whichbsb = bdts ? bdts != NULL : fixbdts;
+    if ( origparams != NULL ){
+      XLAL_CHECK_NULL( glphase != NULL, "Glitch phase based on the original parameters must be supplied" );
+      glph = XLALHeterodynedPulsarGetGlitchPhase( params, datatimes, whichssb, whichbsb );
+    }
+    else{
+      fixglph = XLALHeterodynedPulsarGetGlitchPhase( params, datatimes, whichssb, whichbsb );
+    }
   }
 
   /* set the "new" frequencies, with zeros where required */
@@ -316,11 +303,9 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
     if ( dts != NULL ){ Ddelay += ( dts->data[i] - fixdts->data[i] ); }
     else if ( fixdts != NULL ) { deltat += fixdts->data[i]; }
 
-    if ( isbinary ){
-      /* get difference in binary system barycentring time delays */
-      if ( bdts != NULL && fixbdts != NULL ) { Ddelay += ( bdts->data[i] - fixbdts->data[i] ); }
-      deltat += fixbdts->data[i];
-    }
+    /* get difference in binary system barycentring time delays */
+    if ( bdts != NULL && fixbdts != NULL ) { Ddelay += ( bdts->data[i] - fixbdts->data[i] ); }
+    else if ( fixbdts != NULL ){ deltat += fixbdts->data[i]; }
 
     UINT4 maxnwaves = nwaves ? nwaves >= nwavesorig : nwavesorig;
     if ( nwavesmax > 0 ){
@@ -367,52 +352,9 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
       deltatpow *= deltat;
     }
 
-    /* check for glitches */
-    UINT4 maxglnum = glnum ? glnum >= glnumorig : glnumorig;
-    if ( maxglnum > 0 ){
-      /* get glitch phase - based on equations in formResiduals.C of TEMPO2 from Eqn. 1 of Yu et al (2013) http://ukads.nottingham.ac.uk/abs/2013MNRAS.429..688Y */
-      REAL8 glphase = 0.;
-      REAL8 dtg = 0, expd = 1.;
-      for ( j=0; j<maxglnum; j++ ){
-        glphase = 0.;
-        dtg = 0.;
-        expd = 1.;
-        if ( j >= glnum ){
-          if ( deltat >= (gleporig[j]-T0) ){
-            dtg = deltat - (gleporig[j]-T0); /* time since glitch */
-            if ( gltdorig[j] != 0. ) { expd = exp(-dtg/gltdorig[j]); } /* decaying part of glitch */
-            glphase -= glphorig[j] + glf0orig[j]*dtg + 0.5*glf1orig[j]*dtg*dtg + (1./6.)*glf2orig[j]*dtg*dtg*dtg + glf0dorig[j]*gltdorig[j]*(1.-expd);
-          }
-        }
-        else if( j >= glnumorig ){
-          if ( deltat >= (glep[j]-T0) ){
-            dtg = deltat - (glep[j]-T0); /* time since glitch */
-            if ( gltd[j] != 0. ) { expd = exp(-dtg/gltd[j]); } /* decaying part of glitch */
-            glphase += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
-          }
-        }
-        else{
-          /* get the glitch phase difference */
-          /* get the updated glitch phase */
-          if ( deltat >= (glep[j]-T0) ){
-            dtg = deltat - (glep[j]-T0); /* time since glitch */
-            if ( gltd[j] != 0. ) { expd = exp(-dtg/gltd[j]); } /* decaying part of glitch */
-            glphase += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
-          }
-
-          /* get the orignal glitch phase */
-          if ( deltat >= (gleporig[j]-T0) ){
-            dtg = deltat - (gleporig[j]-T0); /* time since glitch */
-            if ( gltdorig[j] != 0. ) { expd = exp(-dtg/gltdorig[j]); } /* decaying part of glitch */
-            glphase -= glphorig[j] + glf0orig[j]*dtg + 0.5*glf1orig[j]*dtg*dtg + (1./6.)*glf2orig[j]*dtg*dtg*dtg + glf0dorig[j]*gltdorig[j]*(1.-expd);
-          }
-        }
-
-        deltaphi += glphase;
-      }
-    }
-
-    if ( glphase != NULL )
+    /* get change in phase from glitches */
+    if ( glphase != NULL && fixglph != NULL ){ deltaphi += (glph->data[i] - fixglph->data[i]); }
+    else if ( fixglph != NULL ){ deltaphi += fixglph->data[i]; }
 
     deltaphi *= freqfactor; /* multiply by frequency factor */
     phis->data[i] = deltaphi - floor(deltaphi); /* only need to keep the fractional part of the phase */
@@ -423,6 +365,8 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   if ( bdts != NULL ){ XLALDestroyREAL8Vector( bdts ); }
   if ( ssbdts == NULL ){ XLALDestroyREAL8Vector( fixdts ); }
   if ( bsbdts == NULL ){ XLALDestroyREAL8Vector( fixbdts ); }
+  if ( glph != NULL ){ XLALDestroyREAL8Vector( glph ); }
+  if ( glphase == NULL ){ XLALDestroyREAL8Vector( fixglph ); }
   XLALFree(deltafs);
   XLALFree(frequpdate);
 
