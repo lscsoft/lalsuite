@@ -25,7 +25,11 @@ if [ "X${LAL_TEST_BUILDDIR}" = X ]; then
 fi
 
 # Test script name and location
-scriptname=$(expr "X${test}" : "X.*/\([^/]*\)\.sh$")
+scriptname=$(expr "X${test}" : "X.*/\(test[^/]*\)\.sh$")
+if [ "X${scriptname}" = X ]; then
+  echo "Could not parse name of test script from '${test}'"
+  exit 1
+fi
 script="${LAL_TEST_SRCDIR}/${scriptname}.sh"
 if [ ! -f "${script}" ]; then
   echo "Test script '${script}' does not exist"
