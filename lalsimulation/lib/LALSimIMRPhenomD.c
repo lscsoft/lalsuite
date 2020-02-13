@@ -24,6 +24,7 @@
 #include <lal/Sequence.h>
 
 #include "LALSimIMRPhenomInternalUtils.h"
+#include "LALSimIMRPhenomUtils.h"
 
 UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
 
@@ -742,37 +743,6 @@ double XLALSimIMRPhenomDFinalSpin(
     return finspin;
 }
 
-/**
- * Helper function used in PhenomHM and PhenomPv3HM
- * Returns the final mass from the fit used in PhenomD
- */
-double IMRPhenomDFinalMass(
-    REAL8 m1,    /**< mass of primary in solar masses */
-    REAL8 m2,    /**< mass of secondary in solar masses */
-    REAL8 chi1z, /**< aligned-spin component on primary */
-    REAL8 chi2z  /**< aligned-spin component on secondary */
-)
-{
-  int retcode = 0;
-  retcode = PhenomInternal_AlignedSpinEnforcePrimaryIsm1(
-      &m1,
-      &m2,
-      &chi1z,
-      &chi2z);
-  XLAL_CHECK(
-      XLAL_SUCCESS == retcode,
-      XLAL_EFUNC,
-      "PhenomInternal_AlignedSpinEnforcePrimaryIsm1 failed");
-  REAL8 Mtot = m1 + m2;
-  REAL8 eta = m1 * m2 / (Mtot * Mtot);
-
-  if (eta > 0.25)
-    PhenomInternal_nudge(&eta, 0.25, 1e-6);
-  if (eta > 0.25 || eta < 0.0)
-    XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
-
-  return (1.0 - EradRational0815(eta, chi1z, chi2z));
-}
 
 /* IMRPhenomDSetupPhase */
 /* IMRPhenomDEvaluatePhaseFrequencySequence */
@@ -792,18 +762,22 @@ int IMRPhenomDPhaseFrequencySequence(
     size_t ind_max,        /**< end index for frequency loop */
     REAL8 m1,              /**< mass of primary in solar masses */
     REAL8 m2,              /**< mass of secondary in solar masses */
-    REAL8 chi1z,           /**< dimensionless aligned-spin of primary */
-    REAL8 chi2z,           /**< dimensionless aligned-spin of secondary */
-    REAL8 Rholm,           /**< ratio of ringdown frequencies f_RD_22/f_RD_lm */
-    REAL8 Taulm,           /**< ratio of ringdown damping times f_RM_22/f_RM_lm */
-    LALDict *extraParams   /**< linked list containing the extra testing GR parameters */
+    REAL8 chi1x,           /**< x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi1y,           /**< y-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi1z,           /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2x,           /**< x-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2y,           /**< y-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2z,           /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 Rholm,         /**< ratio of ringdown frequencies f_RD_22/f_RD_lm */
+    REAL8 Taulm,         /**< ratio of ringdown damping times f_RM_22/f_RM_lm */
+    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
 )
 {
   int retcode = 0;
   PhenDAmpAndPhasePreComp pD;
   retcode = IMRPhenomDSetupAmpAndPhaseCoefficients(
-    &pD, m1, m2, chi1z,
-    chi2z, Rholm, Taulm, extraParams);
+    &pD, m1, m2, chi1x, chi1y, chi1z,
+    chi2x, chi2y, chi2z, Rholm, Taulm, extraParams);
   if (retcode != XLAL_SUCCESS)
   {
     XLALPrintError("XLAL Error - IMRPhenomDSetupAmpAndPhaseCoefficients failed\n");
@@ -851,8 +825,12 @@ int IMRPhenomDAmpFrequencySequence(
     size_t ind_max,       /**< end index for frequency loop */
     REAL8 m1,             /**< mass of primary in solar masses */
     REAL8 m2,             /**< mass of secondary in solar masses */
-    REAL8 chi1z,          /**< dimensionless aligned-spin of primary */
-    REAL8 chi2z           /**< dimensionless aligned-spin of secondary */
+    REAL8 chi1x,          /**< x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi1y,          /**< y-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi1z,          /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2x,          /**< x-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2y,          /**< y-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2z           /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
 )
 {
   int retcode;
@@ -864,12 +842,15 @@ int IMRPhenomDAmpFrequencySequence(
   retcode = init_useful_powers(&powers_of_pi, LAL_PI);
   XLAL_CHECK(XLAL_SUCCESS == retcode, retcode, "Failed to initiate useful powers of pi.");
 
-  PhenomInternal_AlignedSpinEnforcePrimaryIsm1(&m1, &m2, &chi1z, &chi2z);
+  PhenomInternal_PrecessingSpinEnforcePrimaryIsm1(&m1, &m2, &chi1x, &chi1y, &chi1z, &chi2x, &chi2y, &chi2z);
   const REAL8 Mtot = m1 + m2;
   const REAL8 eta = m1 * m2 / (Mtot * Mtot);
 
   // Calculate phenomenological parameters
-  const REAL8 finspin = FinalSpin0815(eta, chi1z, chi2z); //FinalSpin0815 - 0815 is like a version number
+  // const REAL8 finspin = FinalSpin0815(eta, chi1z, chi2z); //FinalSpin0815 - 0815 is like a version number
+  const REAL8 chip = XLALSimPhenomUtilsChiP(m1, m2, chi1x, chi1y, chi2x, chi2y);
+  const REAL8 finspin = XLALSimPhenomUtilsPhenomPv2FinalSpin(m1, m2, chi1z, chi2z, chip);
+  // const REAL8 finspin = XLALSimPhenomUtilsPhenomPv3HMFinalSpin(m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z);
 
   if (finspin < MIN_FINAL_SPIN)
     XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
@@ -959,14 +940,19 @@ REAL8 IMRPhenomDComputet0(
  * Used to optimise the calls to IMRPhenDPhase and IMRPhenDAmplitude
  */
 int IMRPhenomDSetupAmpAndPhaseCoefficients(
-    PhenDAmpAndPhasePreComp *pDPreComp,
-    REAL8 m1,
-    REAL8 m2,
-    REAL8 chi1z,
-    REAL8 chi2z,
-    const REAL8 Rholm,
-    const REAL8 Taulm,
-    LALDict *extraParams)
+    PhenDAmpAndPhasePreComp *pDPreComp, /**< [out] PhenDAmpAndPhasePreComp struct */
+    REAL8 m1,                           /**< mass of companion 1 (Msun) */
+    REAL8 m2,                           /**< mass of companion 2 (Msun) */
+    REAL8 chi1x,                        /**< x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi1y,                        /**< y-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi1z,                        /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2x,                        /**< x-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2y,                        /**< y-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2z,                        /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    const REAL8 Rholm,                  /**< ratio of (2,2) mode to (l,m) mode ringdown frequency */
+    const REAL8 Taulm,                  /**< ratio of (l,m) mode to (2,2) mode damping time */
+    LALDict *extraParams                /**<linked list containing the extra parameters */
+)
 {
 
   // Make a pointer to LALDict to circumvent a memory leak
@@ -981,12 +967,15 @@ int IMRPhenomDSetupAmpAndPhaseCoefficients(
   retcode = init_useful_powers(&powers_of_pi, LAL_PI);
   XLAL_CHECK(XLAL_SUCCESS == retcode, retcode, "Failed to initiate useful powers of pi.");
 
-  PhenomInternal_AlignedSpinEnforcePrimaryIsm1(&m1, &m2, &chi1z, &chi2z);
+  PhenomInternal_PrecessingSpinEnforcePrimaryIsm1(&m1, &m2, &chi1x, &chi1y, &chi1z, &chi2x, &chi2y, &chi2z);
   const REAL8 Mtot = m1 + m2;
   const REAL8 eta = m1 * m2 / (Mtot * Mtot);
 
   // Calculate phenomenological parameters
-  const REAL8 finspin = FinalSpin0815(eta, chi1z, chi2z); //FinalSpin0815 - 0815 is like a version number
+  // const REAL8 finspin = FinalSpin0815(eta, chi1z, chi2z); //FinalSpin0815 - 0815 is like a version number
+  const REAL8 chip = XLALSimPhenomUtilsChiP(m1, m2, chi1x, chi1y, chi2x, chi2y);
+  const REAL8 finspin = XLALSimPhenomUtilsPhenomPv2FinalSpin(m1, m2, chi1z, chi2z, chip);
+  // const REAL8 finspin = XLALSimPhenomUtilsPhenomPv3HMFinalSpin(m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z);
 
   if (finspin < MIN_FINAL_SPIN)
     XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
