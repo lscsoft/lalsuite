@@ -131,7 +131,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
 
   REAL8 DT = 0., deltat = 0., deltatpow = 0., deltatpowinner = 1., taylorcoeff = 1., Ddelay = 0., Ddelaypow = 0.;
 
-  REAL8Vector *phis = NULL, *dts = NULL, *fixdts = NULL, *bdts = NULL, *fixbdts = NULL, *fixglph = NULL, *glph = NULL;
+  REAL8Vector *phis = NULL, *dts = NULL, *fixdts = NULL, *bdts = NULL, *fixbdts = NULL, *fixglph = NULL, *glph = NULL, *fixfitwavesph = NULL, *fitwavesph = NULL;
 
   REAL8 pepoch = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /* time of ephem info */
   REAL8 T0 = pepoch, pepochorig = pepoch;
@@ -146,7 +146,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   fixdts = ssbdts;
   if ( calcSSBDelay ){
     if ( origparams != NULL ){
-      XLAL_CHECK_NULL( ssbdts != NULL, "SSB delays based on the original parameters must be supplied" );
+      XLAL_CHECK_NULL( ssbdts != NULL, XLAL_EFUNC, "SSB delays based on the original parameters must be supplied" );
       dts = XLALHeterodynedPulsarGetSSBDelay( params, datatimes, detector, ephem, tdat, ttype );
     }
     else{
@@ -158,9 +158,9 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   /* get the binary system barycentring time delays */
   fixbdts = bsbdts;
   if ( calcBSBDelay ){
-    const REAL8Vector *whichssb = dts ? dts != NULL : fixdts;
+    REAL8Vector *whichssb = dts != NULL ? dts : fixdts;
     if ( origparams != NULL ){
-      XLAL_CHECK_NULL( bsbdts != NULL, "Binary system barycentring delays based on the original parameters must be supplied" );
+      XLAL_CHECK_NULL( bsbdts != NULL, XLAL_EFUNC, "Binary system barycentring delays based on the original parameters must be supplied" );
       bdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, whichssb, ephem );
     }
     else{
@@ -172,10 +172,10 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   /* get the glitch parameter phase evolution */
   fixglph = glphase;
   if ( calcglphase ){
-    const REAL8Vector *whichssb = dts ? dts != NULL : fixdts;
-    const REAL8Vector *whichbsb = bdts ? bdts != NULL : fixbdts;
+    const REAL8Vector *whichssb = dts != NULL ? dts : fixdts;
+    const REAL8Vector *whichbsb = bdts != NULL ? bdts : fixbdts;
     if ( origparams != NULL ){
-      XLAL_CHECK_NULL( glphase != NULL, "Glitch phase based on the original parameters must be supplied" );
+      XLAL_CHECK_NULL( glphase != NULL, XLAL_EFUNC, "Glitch phase based on the original parameters must be supplied" );
       glph = XLALHeterodynedPulsarGetGlitchPhase( params, datatimes, whichssb, whichbsb );
     }
     else{
@@ -239,55 +239,16 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
     for ( i=0; i<nfreqs; i++ ){ deltafs[i] = -frequpdate[i]; }
   }
 
-  
-  /* get FITWAVES parameters */
-  if ( origparams != NULL && PulsarCheckParam( origparams, "WAVESIN" ) && PulsarCheckParam( origparams, "WAVECOS" ) ){
-    const REAL8Vector *wsin = PulsarGetREAL8VectorParam( origparams, "WAVESIN" );
-    const REAL8Vector *wcos = PulsarGetREAL8VectorParam( origparams, "WAVECOS" );
-
-    XLAL_CHECK_NULL( wsin->length == wcos->length, XLAL_EFUNC, "Lengths of FITWAVES sin and cos parameters are not the same" );
-    nwavesorig = wsin->length;
-  }
-
-  if ( PulsarCheckParam( params, "WAVESIN" ) && PulsarCheckParam( params, "WAVECOS" ) ){
-    const REAL8Vector *wsin = PulsarGetREAL8VectorParam( origparams, "WAVESIN" );
-    const REAL8Vector *wcos = PulsarGetREAL8VectorParam( origparams, "WAVECOS" );
-
-    XLAL_CHECK_NULL( wsin->length == wcos->length, XLAL_EFUNC, "Lengths of FITWAVES sin and cos parameters are not the same" );
-    nwaves = wsin->length;
-  }
-
-  /* get total number of FITWAVES parameters */
-  UINT4 maxnwaves = nwaves ? nwaves >= nwavesorig : nwavesorig;
-
-  REAL8 waveepoch = 0., waveepochorig = 0., waveom = 0., waveomorig = 0.;
-  waveepoch = PulsarGetREAL8ParamOrZero( params, "WAVEEPOCH" );
-  waveom = PulsarGetREAL8ParamOrZero( params, "WAVE_OM" ),
-  if ( PulsarCheckParam( params, "WAVESIN" ) && waveepoch == 0. ){ waveepoch = pepoch; }
-  if ( PulsarCheckParam( params, "WAVESIN" ) && PulsarCheckParam( params, "WAVECOS" ) ){
-    const REAL8Vector *wsin = PulsarGetREAL8VectorParam( params, "WAVESIN" );
-    const REAL8Vector *wcos = PulsarGetREAL8VectorParam( params, "WAVECOS" );
-
-    wavesin = XLALCalloc(maxnwaves, sizeof(REAL8));
-    wavecos = XLALCalloc(maxnwaves, sizeof(REAL8));
-
-    memcpy(&wavesin, wsin->data, nwaves * sizeof(REAL8));
-    memcpy(&wavecos, wcos->data, nwaves * sizeof(REAL8));
-  }
-
-  if ( origparams != NULL ){
-    waveepochorig = PulsarGetREAL8ParamOrZero( origparams, "WAVEEPOCH" );
-    waveomorig = PulsarGetREAL8ParamOrZero( origparams, "WAVE_OM" );
-    if ( PulsarCheckParam( origparams, "WAVESIN" ) && waveepochorig == 0. ){ waveepochorig = pepochorig; }
-    if ( PulsarCheckParam( origparams, "WAVESIN" ) && PulsarCheckParam( origparams, "WAVECOS" ) ){
-      const REAL8Vector *wsin = PulsarGetREAL8VectorParam( origparams, "WAVESIN" );
-      const REAL8Vector *wcos = PulsarGetREAL8VectorParam( origparams, "WAVECOS" );
-
-      wavesinorig = XLALCalloc(maxnwaves, sizeof(REAL8));
-      wavecosorig = XLALCalloc(maxnwaves, sizeof(REAL8));
-
-      memcpy(&wavesinorig, wsin->data, nwavesorig * sizeof(REAL8));
-      memcpy(&wavecosorig, wcos->data, nwavesorig * sizeof(REAL8));
+  /* get FITWAVES phase */
+  fixfitwavesph = fitwavesphase;
+  if ( calcfitwaves ){
+    const REAL8Vector *whichssb = dts != NULL ? dts : fixdts;
+    if ( origparams != NULL ){
+      XLAL_CHECK_NULL( fitwavesphase != NULL, XLAL_EFUNC, "FITWAVES phase based on the original parameters must be supplied" );
+      fitwavesph = XLALHeterodynedPulsarGetFITWAVESPhase( params, datatimes, whichssb, frequpdate[0] );
+    }
+    else{
+      fixfitwavesph = XLALHeterodynedPulsarGetFITWAVESPhase( params, datatimes, whichssb, frequpdate[0] );
     }
   }
 
@@ -306,32 +267,6 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
     /* get difference in binary system barycentring time delays */
     if ( bdts != NULL && fixbdts != NULL ) { Ddelay += ( bdts->data[i] - fixbdts->data[i] ); }
     else if ( fixbdts != NULL ){ deltat += fixbdts->data[i]; }
-
-    UINT4 maxnwaves = nwaves ? nwaves >= nwavesorig : nwavesorig;
-    if ( nwavesmax > 0 ){
-      REAL8 twave = 0., dtwave = 0., dtwaveorig = 0.;
-      for ( j=0; j < maxnwaves; j++ ){
-        if ( wavesin[j] != wavesinorig[j] || wavecos[j] != wavecosorig[j] || waveepoch != waveepochorig || waveom != waveomorig ){
-          if ( j > nwaves ){
-
-          }
-          else if ( j > nwavessorig ) {
-
-          }
-          else{
-            if ( dts != NULL ) { dtwave = realT + dts->data[i]; }
-            else { dtwave = realT + fixdts->data[i] }
-            dtwave -= waveepoch;
-            dtwave /= 86400.;  /* in days */
-
-            twave += wavesin[j] * sin(waveom * (REAL8)(j + 1.) * dtwave);
-            twave += wavecos[j] * cos(waveom * (REAL8)(j + 1.) * dtwave);
-
-            deltaphi += frequpdate[0] * twave;
-          }
-        }
-      }
-    }
 
     /* get the change in phase (compared to the heterodyned phase) */
     deltatpow = deltat;
@@ -356,6 +291,10 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
     if ( glphase != NULL && fixglph != NULL ){ deltaphi += (glph->data[i] - fixglph->data[i]); }
     else if ( fixglph != NULL ){ deltaphi += fixglph->data[i]; }
 
+    /* get change in phase from FITWAVES parameters */
+    if ( fitwavesph != NULL && fixfitwavesph != NULL ){ deltaphi += (fitwavesph->data[i] - fixfitwavesph->data[i]); }
+    else if (fixfitwavesph != NULL ){ deltaphi += fixfitwavesph->data[i]; }
+
     deltaphi *= freqfactor; /* multiply by frequency factor */
     phis->data[i] = deltaphi - floor(deltaphi); /* only need to keep the fractional part of the phase */
   }
@@ -367,18 +306,10 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   if ( bsbdts == NULL ){ XLALDestroyREAL8Vector( fixbdts ); }
   if ( glph != NULL ){ XLALDestroyREAL8Vector( glph ); }
   if ( glphase == NULL ){ XLALDestroyREAL8Vector( fixglph ); }
+  if ( fitwavesph != NULL ){ XLALDestroyREAL8Vector( fitwavesph ); }
+  if ( fitwavesphase == NULL ){ XLALDestroyREAL8Vector( fixfitwavesph ); }
   XLALFree(deltafs);
   XLALFree(frequpdate);
-
-  if ( nwaves > 0 ){
-    XLALFree( wavesin );
-    XLALFree( wavecos );
-  }
-
-  if ( nwavesorig > 0 ){
-    XLALFree( wavesinorig );
-    XLALFree( wavecosorig );
-  }
 
   return phis;
 }
@@ -651,7 +582,7 @@ REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
                                                   const REAL8Vector *ssbdts,
                                                   const REAL8Vector *bsbdts ){
   /* check inputs */
-  XLAL_CHECK_NULL( pars != NULL, XLAL_EFUNC, "PulsarParameters must not be NULL" );
+  XLAL_CHECK_NULL( params != NULL, XLAL_EFUNC, "PulsarParameters must not be NULL" );
   XLAL_CHECK_NULL( datatimes != NULL, XLAL_EFUNC, "datatimes must not be NULL" );
   XLAL_CHECK_NULL( ssbdts != NULL, XLAL_EFUNC, "ssbdts must not be NULL" );
   XLAL_CHECK_NULL( ssbdts->length == datatimes->length, XLAL_EFUNC, "datatimes and ssbdts must be the same length" );
@@ -661,7 +592,7 @@ REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
 
   UINT4 i = 0, length = 0;
   REAL8Vector *glphase = NULL;
-  REAL8 realT = 0., tdt = 0.;
+  REAL8 tdt = 0.;
 
   length = datatimes->length;
 
@@ -672,9 +603,9 @@ REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
   /* see if pulsar has glitch parameters */
   if ( PulsarCheckParam( params, "GLEP" ) ){
     /* in case not all parameters are set and they are not all the same length, copy into arrays
-    /* of the same length that are initialised to zero - all glitches must have an epoch */
+      of the same length that are initialised to zero - all glitches must have an epoch */
     const REAL8Vector *glep = PulsarGetREAL8VectorParam( params, "GLEP" );
-    glnum = glep->length;
+    UINT4 glnum = glep->length;
 
     /* get phase offsets */
     REAL8 *glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
@@ -684,35 +615,35 @@ REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
     }
 
     /* get frequencies offsets */
-    glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    REAL8 *glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF0" ) ){
       const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF0" );
       memcpy(&glf0, tmpvec->data, tmpvec->length * sizeof(REAL8));
     }
 
     /* get frequency derivative offsets */
-    glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    REAL8 *glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF1" ) ){
       const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF1" );
       memcpy(&glf1, tmpvec->data, tmpvec->length * sizeof(REAL8));
     }
 
     /* get second frequency derivative offsets */
-    glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    REAL8 *glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF2" ) ){
       const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF2" );
       memcpy(&glf2, tmpvec->data, tmpvec->length * sizeof(REAL8));
     }
 
     /* get decaying frequency component offset derivative */
-    glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    REAL8 *glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF0D" ) ){
       const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF0D" );
       memcpy(&glf0d, tmpvec->data, tmpvec->length * sizeof(REAL8));
     }
 
     /* get decaying frequency component decay time constant */
-    gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    REAL8 *gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLTD" ) ){
       const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLTD" );
       memcpy(&gltd, tmpvec->data, tmpvec->length * sizeof(REAL8));
@@ -720,15 +651,14 @@ REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
 
     for( i=0; i<length; i++){
       glphase->data[i] = 0.;
-      realT = XLALGPSGetREAL8( &datatimes->data[i] );
-      tdt = XLALGPSGetREAL8( &datatimes->data[i] ) + ssddst->data[i];
+      tdt = XLALGPSGetREAL8( &datatimes->data[i] ) + ssbdts->data[i];
       if ( bsbdts != NULL ){ tdt += bsbdts->data[i]; }
       for ( UINT4 k = 0; k < glnum; k++ ){
         if ( tdt >= glep->data[k] ){
           REAL8 dtg = 0, expd = 1.;
           dtg = tdt - glep->data[k];  /* time since glitch */
           if ( gltd[k] != 0. ) { expd = exp(-dtg/gltd[k]); } /* decaying part of glitch */
-          glphase->data += glph[k] + glf0[k]*dtg + 0.5*glf1[k]*dtg*dtg + (1./6.)*glf2[k]*dtg*dtg*dtg + glf0d[k]*gltd[k]*(1.-expd);
+          glphase->data[i] += glph[k] + glf0[k]*dtg + 0.5*glf1[k]*dtg*dtg + (1./6.)*glf2[k]*dtg*dtg*dtg + glf0d[k]*gltd[k]*(1.-expd);
         }
       }
     }
@@ -742,6 +672,70 @@ REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
   }
 
   return glphase;
+}
+
+
+/**
+ * \brief Computes the phase evolution due to the presence of FITWAVES parameters
+ *
+ * This function calculates the phase due to the presence on FITWAVES parameters in
+ * the pulsar timing model. These are used to fit multiple sinusoids to account for
+ * strong red noise effects (e.g., timing noise) in the pulsar model.
+ *
+ * \param params [in] A set of pulsar parameters
+ * \param datatimes [in] A vector of GPS times at Earth
+ * \param ssbdts [in] A vector of solar system barycentre time delays
+ * \param freq [in] The EM frequency.
+ *
+ * \return A vector of (EM) phases in cycles
+ */
+REAL8Vector *XLALHeterodynedPulsarGetFITWAVESPhase( PulsarParameters *params,
+                                                    const LIGOTimeGPSVector *datatimes,
+                                                    const REAL8Vector *ssbdts,
+                                                    REAL8 freq ){
+  /* check inputs */
+  XLAL_CHECK_NULL( params != NULL, XLAL_EFUNC, "PulsarParameters must not be NULL" );
+  XLAL_CHECK_NULL( datatimes != NULL, XLAL_EFUNC, "datatimes must not be NULL" );
+  XLAL_CHECK_NULL( ssbdts != NULL, XLAL_EFUNC, "ssbdts must not be NULL" );
+  XLAL_CHECK_NULL( ssbdts->length == datatimes->length, XLAL_EFUNC, "datatimes and ssbdts must be the same length" );
+  XLAL_CHECK_NULL( freq > 0.0, XLAL_EFUNC, "Frequency must be positive" );
+
+  UINT4 i = 0, length = 0, j = 0;
+  REAL8Vector *phasewave = NULL;
+
+  length = datatimes->length;
+
+  /* allocate memory for phases */
+  phasewave = XLALCreateREAL8Vector( length );
+  memset(&phasewave->data, 0, phasewave->length*sizeof(REAL8));  // set to zeros
+
+  /* get FITWAVES parameters */
+  if ( PulsarCheckParam( params, "WAVESIN" ) && PulsarCheckParam( params, "WAVECOS" ) ){
+    const REAL8Vector *wsin = PulsarGetREAL8VectorParam( params, "WAVESIN" );
+    const REAL8Vector *wcos = PulsarGetREAL8VectorParam( params, "WAVECOS" );
+
+    XLAL_CHECK_NULL( wsin->length == wcos->length, XLAL_EFUNC, "Lengths of FITWAVES sin and cos parameters are not the same" );
+    UINT4 nwaves = wsin->length;
+
+    REAL8 waveepoch = PulsarGetREAL8ParamOrZero( params, "WAVEEPOCH" );
+    REAL8 waveom = PulsarGetREAL8ParamOrZero( params, "WAVE_OM" );
+
+    REAL8 twave = 0., dtwave = 0.;
+    for ( i=0; i < length; i++ ){
+      twave = 0.0;
+      /* note: this does not include the binary times delays */
+      dtwave = (XLALGPSGetREAL8( &datatimes->data[i] ) + ssbdts->data[i] - waveepoch) / 86400.;  /* in days */
+      
+      for ( j=0; j < nwaves; j++ ){
+        twave += wsin->data[j] * sin(waveom * (REAL8)(j + 1.) * dtwave);
+        twave += wcos->data[j] * cos(waveom * (REAL8)(j + 1.) * dtwave);
+      }
+
+      phasewave->data[i] = freq * twave;
+    }
+  }
+
+  return phasewave;
 }
 
 

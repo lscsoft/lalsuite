@@ -109,6 +109,11 @@ REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
                                                   const REAL8Vector *ssbdts,
                                                   const REAL8Vector *bsbdts );
 
+REAL8Vector *XLALHeterodynedPulsarGetFITWAVESPhase( PulsarParameters *params,
+                                                    const LIGOTimeGPSVector *datatimes,
+                                                    const REAL8Vector *ssbdts,
+                                                    REAL8 freq );
+
 COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *pars,
                                                              REAL8 freqfactor,
                                                              UINT4 varyphase,
