@@ -1022,6 +1022,14 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
  * \c NULL then the BSB delay for the given binary parameters will be calculated.
  * \param calcBSBDelay [in] Set to a non-zero value if the BSB delay needs to be calulated at
  * a set of updated binary system parameters.
+ * \param glphase [in] The vector containing the glitch phase evolution used for the original heterodyne.
+ * If this is \c NULL then the glitch phase for the given glitch parameters will be calculated.
+ * \param calcglphase [in] Set to a non-zero value if the glitch phase needs to be calulated at
+ * a set of updated glitch parameters.
+ * \param fitwavesphase [in] The vector of FITWAVES phases used for the original heterodyne. If this is
+ * \c NULL then the FITWAVES phase for the given FITWAVES parameters will be calculated.
+ * \param calcfitwaves [in] Set to a non-zero value if the FITWAVES phase needs to be calulated at
+ * a set of updated FITWAVES parameters.
  * \param resp [in] A loop-up table for the detector response function.
  * \param ephem [in] A pointer to an \c EphemerisData structure containing solar system ephemeris information
  * \param tdat [in] A pointer to a \c TimeCorrectionData structure containing time system correction information
