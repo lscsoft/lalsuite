@@ -330,6 +330,8 @@ int XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame(
   const REAL8 piM = LAL_PI * m_sec;
   const REAL8 v_ref = cbrt(piM * f_ref);
 
+  const int ExpansionOrder = 5; // Used in PhenomPv3 only
+
   REAL8 L0 = 0.0;
   switch (IMRPhenomP_version) {
     case IMRPhenomPv1_V:
@@ -338,6 +340,14 @@ int XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame(
     case IMRPhenomPv2_V:
     case IMRPhenomPv2NRTidal_V:
       L0 = M*M * L2PNR(v_ref, eta);   /* Use 2PN approximation for L. */
+      break;
+    case IMRPhenomPv3_V: /*Pv3 uses 3PN spinning for L but in non-precessing limit uses the simpler L2PNR function */
+      if ((s1x == 0. && s1y == 0. && s2x == 0. && s2y == 0.))
+      { // non-precessing case
+        L0 = M * M * L2PNR(v_ref, eta); /* Use 2PN approximation for L. */
+      } else { // precessing case
+        L0 = M * M * PhenomInternal_OrbAngMom3PN(f_ref / 2., m1_SI, m2_SI, s1x, s1y, s1z, s2x, s2y, s2z, f_ref, ExpansionOrder); /* Use 3PN spinning approximation for L. */
+      }
       break;
     default:
       XLAL_ERROR( XLAL_EINVAL, "Unknown IMRPhenomP version!\nAt present only v1 and v2 are available." );
@@ -1043,7 +1053,7 @@ static int PhenomPCore(
     skip: /* this statement intentionally left blank */;
   }
 
-    
+
   /* The next part computes and applies a time shift correction to make the waveform peak at t=0 */
 
   /* Set up spline for phase on fixed grid */
@@ -1083,7 +1093,7 @@ static int PhenomPCore(
     if (NRTidal_version == NRTidalv2_V)
       XLALSimInspiralGetHOSpinTerms(&SS_3p5PN_n, &SSS_3p5PN_n, X_A, X_B, chi1_l, chi2_l, quadparam1, quadparam2);
   }
-    
+
   /* We need another loop to generate the phase values on the fixed grid; no need for OpenMP here */
   for (int i=0; i<n_fixed; i++) { // loop over frequency points in sequence
     COMPLEX16 hPhenom = 0.0; // IMRPhenom waveform (before precession) at a given frequency point
@@ -1911,3 +1921,4 @@ static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
       *x = X;
   }
 }
+

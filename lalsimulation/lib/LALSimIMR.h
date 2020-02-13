@@ -67,7 +67,8 @@ extern "C" {
 typedef enum tagIMRPhenomP_version_type {
  IMRPhenomPv1_V, /**< version 1: based on IMRPhenomC */
  IMRPhenomPv2_V,  /**< version 2: based on IMRPhenomD */
- IMRPhenomPv2NRTidal_V /**< version Pv2_NRTidal: based on IMRPhenomPv2; NRTides added before precession; can be used with both NRTidal versions defined below */ 
+ IMRPhenomPv2NRTidal_V, /**< version Pv2_NRTidal: based on IMRPhenomPv2; NRTides added before precession; can be used with both NRTidal versions defined below */ 
+ IMRPhenomPv3_V  /**< version 3: based on IMRPhenomD and the precession angles from Katerina Chatziioannou PhysRevD.95.104004 (arxiv:1703.03967) */
 } IMRPhenomP_version_type;
 
 typedef enum tagNRTidal_version_type {
@@ -751,7 +752,11 @@ int XLALSimIMRPhenomHMGethlmModes(
     REAL8Sequence *freqs,
     REAL8 m1_SI,
     REAL8 m2_SI,
+    REAL8 chi1x,
+    REAL8 chi1y,
     REAL8 chi1z,
+    REAL8 chi2x,
+    REAL8 chi2y,
     REAL8 chi2z,
     const REAL8 phiRef,
     const REAL8 deltaF,
@@ -786,6 +791,133 @@ int XLALSimIMRPhenomNSBH(
     REAL8 chi_NS,
     LALDict *extraParams
 );
+
+/* LALSimInspiralFDPrecAngles functions */
+int XLALComputeAngles2PNNonSpinning(
+    REAL8Sequence *phiz_of_f,
+    REAL8Sequence *zeta_of_f,
+    REAL8Sequence *costhetaL_of_f,
+    const REAL8Sequence *f,
+    const double m1,
+    const double m2,
+    const double mul,
+    const double phl,
+    const double mu1,
+    const double ph1,
+    const double ch1,
+    const double mu2,
+    const double ph2,
+    double ch2,
+    const double f_0,
+    const int ExpansionOrder);
+
+int XLALComputeAngles3PN(
+    REAL8Sequence *phiz_of_f,
+    REAL8Sequence *zeta_of_f,
+    REAL8Sequence *costhetaL_of_f,
+    const REAL8Sequence *f,
+    const double m1,
+    const double m2,
+    const double mul,
+    const double phl,
+    const double mu1,
+    const double ph1,
+    const double ch1,
+    const double mu2,
+    const double ph2,
+    double ch2,
+    const double f_0,
+    const int ExpansionOrder);
+
+int XLALComputeAngles(
+    REAL8Sequence *phiz_of_f,
+    REAL8Sequence *zeta_of_f,
+    REAL8Sequence *costhetaL_of_f,
+    const REAL8Sequence *f,
+    const double m1,
+    const double m2,
+    const double mul,
+    const double phl,
+    const double mu1,
+    const double ph1,
+    const double ch1,
+    const double mu2,
+    const double ph2,
+    double ch2,
+    const double f_0,
+    const int ExpansionOrder);
+
+int XLALOrbitalAngMom3PNSpinning(
+    REAL8Sequence *L_norm_3PN,
+    REAL8Sequence *f_orb_hz,
+    const double m1,
+    const double m2,
+    const double mul,
+    const double phl,
+    double mu1,
+    double ph1,
+    double ch1,
+    double mu2,
+    double ph2,
+    double ch2,
+    const double f_0,
+    const int ExpansionOrder);
+
+/* IMRPhenomPv3 XLAL functions */
+int XLALSimIMRPhenomPv3(
+    COMPLEX16FrequencySeries **hptilde,
+    COMPLEX16FrequencySeries **hctilde,
+    REAL8Sequence *freqs,
+    REAL8 m1_SI,
+    REAL8 m2_SI,
+    REAL8 S1x,
+    REAL8 S1y,
+    REAL8 S1z,
+    REAL8 S2x,
+    REAL8 S2y,
+    REAL8 S2z,
+    const REAL8 distance,
+    const REAL8 inclination,
+    const REAL8 phiRef,
+    const REAL8 deltaF,
+    const REAL8 f_ref,
+    LALDict *extraParams);
+
+/* IMRPhenomPv3HM XLAL functions */
+int XLALSimIMRPhenomPv3HMGetHplusHcross(
+    COMPLEX16FrequencySeries **hptilde,
+    COMPLEX16FrequencySeries **hctilde,
+    REAL8Sequence *freqs,
+    REAL8 m1_SI,
+    REAL8 m2_SI,
+    REAL8 chi1x,
+    REAL8 chi1y,
+    REAL8 chi1z,
+    REAL8 chi2x,
+    REAL8 chi2y,
+    REAL8 chi2z,
+    const REAL8 distance,
+    const REAL8 inclination,
+    const REAL8 phiRef,
+    const REAL8 deltaF,
+    REAL8 f_ref,
+    LALDict *extraParams);
+
+int XLALSimIMRPhenomPv3HMModes(
+    SphHarmFrequencySeries **hlms,
+    REAL8Sequence *freqs,
+    REAL8 m1_SI,
+    REAL8 m2_SI,
+    REAL8 chi1x,
+    REAL8 chi1y,
+    REAL8 chi1z,
+    REAL8 chi2x,
+    REAL8 chi2y,
+    REAL8 chi2z,
+    const REAL8 phiRef,
+    const REAL8 deltaF,
+    const REAL8 f_ref,
+    LALDict *extraParams);
 
 #if 0
 { /* so that editors will match succeeding brace */
