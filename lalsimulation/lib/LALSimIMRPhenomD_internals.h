@@ -354,8 +354,6 @@ static inline double pow_4_of(double number)
 
 static double FinalSpin0815_s(double eta, double s);
 UNUSED static double FinalSpin0815(double eta, double chi1, double chi2);
-static double EradRational0815_s(double eta, double s);
-static double EradRational0815(double eta, double chi1, double chi2);
 static double fring(double eta, double chi1, double chi2, double finalspin);
 static double fdamp(double eta, double chi1, double chi2, double finalspin);
 
@@ -455,7 +453,11 @@ UNUSED int IMRPhenomDSetupAmpAndPhaseCoefficients(
     PhenDAmpAndPhasePreComp *pDPreComp,
     REAL8 m1,
     REAL8 m2,
+    REAL8 chi1x,
+    REAL8 chi1y,
     REAL8 chi1z,
+    REAL8 chi2x,
+    REAL8 chi2y,
     REAL8 chi2z,
     const REAL8 Rholm,
     const REAL8 Taulm,
