@@ -7,7 +7,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 bin_PROGRAMS = \
 	lalapps_ComputePSD \
-	lalapps_GetSFTVelocities \
 	lalapps_SFTclean \
 	lalapps_SFTvalidate  \
 	lalapps_compareSFTs \
@@ -21,7 +20,6 @@ SFTReferenceLibrary = \
 	$(END_OF_LIST)
 
 lalapps_ComputePSD_SOURCES = ComputePSD.c
-lalapps_GetSFTVelocities_SOURCES = GetSFTVelocities.c
 lalapps_SFTclean_SOURCES = SFTclean.c
 lalapps_SFTvalidate_SOURCES = SFTvalidate.c $(SFTReferenceLibrary)
 lalapps_compareSFTs_SOURCES = compareSFTs.c
