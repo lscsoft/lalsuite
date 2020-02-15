@@ -1459,8 +1459,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     char *end_str;
     char substring[] = "-";
     char *modes = strtok_r(ppt->value, ",", &end_str);
-    int l[5], m[5], ii=0, jj=0;
-
+    int  ii=0, jj=0;
+    int *new_l=NULL;
+    int *new_m=NULL;
+    int m_size=1;
+    int l_size=1;
     fprintf(stdout, "Template will use a custom mode array.\n");
     while (modes != NULL) {
         int k = 0;
@@ -1469,21 +1472,28 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
             char *token = strtok_r(modes, "-", &end_token);
             while (token != NULL) {
                 if ( k == 0 ) {
-                    l[ii++] = atoi(token);
+	            new_l=realloc(new_l,sizeof(*new_l)*l_size);
+		    l_size+=1;
+		    new_l[ii++]= atoi(token);
                 } else {
-                    m[jj++] = -1 * atoi(token);
+		    new_m=realloc(new_m,sizeof(*new_m)*m_size);
+                    m_size+=1;
+		    new_m[jj++]= -1 * atoi(token);
                 }
                 k += 1;
                 token = strtok_r(NULL, "-", &end_token);
             }
         } else {
             int value = atoi(modes);
-
             for (k=2; k>=0; k--) {
                 if (k == 2) {
-                    m[jj++] = value % 10;
+		    new_m=realloc(new_m,sizeof(*new_m)*m_size);
+                    m_size+=1;
+		    new_m[jj++] = value % 10;
                 } else if (k == 1) {
-                    l[ii++] = value % 10;
+		    new_l=realloc(new_l,sizeof(*new_l)*l_size);
+                    l_size+=1;
+		    new_l[ii++]= value % 10;
                 }
                 value /= 10;
             }
@@ -1491,10 +1501,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
         modes = strtok_r(NULL, ",", &end_str);
     }
 
+
     LALValue *ModeArray = XLALSimInspiralCreateModeArray();
     for (int iii=0; iii<ii; iii+=1){
-       fprintf(stdout, "Template will use the l=%d m=%d mode\n", l[iii], m[iii]);
-       XLALSimInspiralModeArrayActivateMode(ModeArray, l[iii], m[iii]);
+       fprintf(stdout, "Template will use the l=%d m=%d mode\n", new_l[iii], new_m[iii]);
+       XLALSimInspiralModeArrayActivateMode(ModeArray, new_l[iii], new_m[iii]);
     }
     XLALSimInspiralWaveformParamsInsertModeArray(model->LALpars, ModeArray);
     XLALDestroyValue(ModeArray);
