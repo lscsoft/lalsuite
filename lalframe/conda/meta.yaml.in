@@ -93,7 +93,7 @@ outputs:
       source_files:
         - python/Makefile
         - test/python
-        - test/F-TEST-600000000-60.gwf
+        - test/F-TEST-*.gwf
       commands:
         - python -m pytest -rs -v --junit-xml=junit.xml test/python
       imports:
