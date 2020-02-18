@@ -21,12 +21,12 @@
 {% set swig_version = "3.0.7" %}
 
 package:
-  name: {{ name }}
-  version: {{ version }}
+  name: "{{ name }}"
+  version: "{{ version }}"
 
 source:
-  url: {{ url }}
-  sha256: {{ sha256 }}
+  url: "{{ url }}"
+  sha256: "{{ sha256 }}"
 
 build:
   number: 9999
