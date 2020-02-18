@@ -101,6 +101,15 @@ outputs:
         - six
         - zlib  # [linux]
     test:
+      requires:
+        - freezegun
+        - mock  # [py<33]
+        - pathlib  # [py<34]
+        - pytest >=4.0.0a0
+      source_files:
+        - test/python
+      commands:
+        - python -m pytest -rs -v test/python
       imports:
         - lal
         - lal.antenna
@@ -112,7 +121,7 @@ outputs:
       home: "https://wiki.ligo.org/Computing/LALSuite"
       doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lal/"
       dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-      license: "GPL-3.0-or-later"
+      license: "GPL-2.0-or-later"
       license_family: "GPL"
       license_file: "COPYING"
       summary: "LSC Algorithm Library"
@@ -124,7 +133,7 @@ about:
   home: "https://wiki.ligo.org/DASWG/LALSuite"
   doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lal/"
   dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-  license: "GPL-3.0-or-later"
+  license: "GPL-2.0-or-later"
   license_family: "GPL"
   license_file: "COPYING"
   summary: "LSC Algorithm Library"
