@@ -14,12 +14,12 @@
 {% set swig_version = "3.0.9" %}
 
 package:
-  name: {{ name }}
-  version: {{ version }}
+  name: "{{ name }}"
+  version: "{{ version }}"
 
 source:
-  url: {{ url }}
-  sha256: {{ sha256 }}
+  url: "{{ url }}"
+  sha256: "{{ sha256 }}"
 
 build:
   number: 9999
@@ -94,26 +94,26 @@ outputs:
       imports:
         - lalsimulation
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
-      dev_url: https://git.ligo.org/lscsoft/lalsuite/
-      license: GPLv3
-      license_family: GPL
-      license_file: COPYING
-      summary: LSC Algorithm Simulation Library
+      home: "https://wiki.ligo.org/Computing/LALSuite"
+      doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/"
+      dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
+      license: "GPL-3.0-or-later"
+      license_family: "GPL"
+      license_file: "COPYING"
+      summary: "LSC Algorithm Simulation Library"
       description: |
         The LSC Algorithm Simulation Library for gravitational wave data
         analysis.
         This package contains the python bindings.
 
 about:
-  home: https://wiki.ligo.org/Computing/LALSuite
-  doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalsimulation/
-  dev_url: https://git.ligo.org/lscsoft/lalsuite/
-  license: GPLv3
-  license_family: GPL
-  license_file: COPYING
-  summary: LSC Algorithm Simulation Library
+  home: "https://wiki.ligo.org/Computing/LALSuite"
+  doc_url: "https://docs.ligo.org/lscsoft/lalsuite/lalsimulation/"
+  dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
+  license: "GPL-3.0-or-later"
+  license_family: "GPL"
+  license_file: "COPYING"
+  summary: "LSC Algorithm Simulation Library"
   description: |
     The LSC Algorithm Simulation Library for gravitational wave data
     analysis.

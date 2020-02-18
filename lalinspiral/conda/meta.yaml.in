@@ -106,25 +106,25 @@ outputs:
         - lalinspiral.sbank
         - lalinspiral.thinca
     about:
-      home: https://wiki.ligo.org/Computing/DASWG/LALSuite
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/
-      dev_url: https://git.ligo.org/lscsoft/lalsuite/
-      license: GPLv3
-      license_family: GPL
-      license_file: COPYING
-      summary: LSC Algorithm Inspiral Library
+      home: "https://wiki.ligo.org/Computing/LALSuite"
+      doc_url: "https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/"
+      dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
+      license: "GPL-3.0-or-later"
+      license_family: "GPL"
+      license_file: "COPYING"
+      summary: "LSC Algorithm Inspiral Library"
       description: |
         The LSC Algorithm Inspiral Library for gravitational wave data analysis.
         This package contains the python bindings.
 
 about:
-  home: https://wiki.ligo.org/Computing/DASWG/LALSuite
-  doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/
-  dev_url: https://git.ligo.org/lscsoft/lalsuite/
-  license: GPLv3
-  license_family: GPL
-  license_file: COPYING
-  summary: LSC Algorithm Inspiral Library
+  home: "https://wiki.ligo.org/Computing/LALSuite"
+  doc_url: "https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/"
+  dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
+  license: "GPL-3.0-or-later"
+  license_family: "GPL"
+  license_file: "COPYING"
+  summary: "LSC Algorithm Inspiral Library"
   description: |
     The LSC Algorithm Inspiral Library for gravitational wave data analysis.
     This package contains the shared-object libraries needed to run

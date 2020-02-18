@@ -13,12 +13,12 @@
 {% set framecpp_version = "2.5.5" %}
 
 package:
-  name: {{ name }}
-  version: {{ version }}
+  name: "{{ name }}"
+  version: "{{ version }}"
 
 source:
-  url: {{ url }}
-  sha256: {{ sha256 }}
+  url: "{{ url }}"
+  sha256: "{{ sha256 }}"
 
 build:
   number: 9999
@@ -95,25 +95,25 @@ outputs:
         - lalframe
         - lalframe.frread
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
-      dev_url: https://git.ligo.org/lscsoft/lalsuite/
-      license: GPLv3
-      license_family: GPL
-      license_file: COPYING
-      summary: LSC Algorithm Frame Library
+      home: "https://wiki.ligo.org/Computing/LALSuite"
+      doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lalframe/"
+      dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
+      license: "GPL-3.0-or-later"
+      license_family: "GPL"
+      license_file: "COPYING"
+      summary: "LSC Algorithm Frame Library"
       description: |
         The LSC Algorithm Frame Library for gravitational wave data analysis.
         This package contains the python bindings.
 
 about:
-  home: https://wiki.ligo.org/Computing/LALSuite
-  doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
-  dev_url: https://git.ligo.org/lscsoft/lalsuite/
-  license: GPLv3
-  license_family: GPL
-  license_file: COPYING
-  summary: LSC Algorithm Frame Library
+  home: "https://wiki.ligo.org/Computing/LALSuite"
+  doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lalframe/"
+  dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
+  license: "GPL-3.0-or-later"
+  license_family: "GPL"
+  license_file: "COPYING"
+  summary: "LSC Algorithm Frame Library"
   description: |
     The LSC Algorithm Frame Library for gravitational wave data analysis.
     This package contains the shared-object libraries needed to run
