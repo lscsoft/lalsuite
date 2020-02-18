@@ -104,6 +104,15 @@ outputs:
         - six
         - zlib  # [linux]
     test:
+      requires:
+        - freezegun
+        - mock  # [py<33]
+        - pathlib  # [py<34]
+        - pytest >=4.0.0a0
+      source_files:
+        - test/python
+      commands:
+        - python -m pytest -rs -v test/python
       imports:
         - lal
         - lal.antenna

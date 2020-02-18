@@ -89,6 +89,14 @@ outputs:
         - python-lal >={{ lal_version }}a0
         - six
     test:
+      requires:
+        - mock  # [py<33]
+        - pathlib  # [py<34]
+        - pytest >=4.0.0a0
+      source_files:
+        - test/python
+      commands:
+        - LAL_TEST_PKGDATADIR="${LALPULSAR_DATADIR}" python -m pytest -rs -v test/python
       imports:
         - lalpulsar
         - lalpulsar.NstarTools

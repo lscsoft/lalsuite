@@ -154,23 +154,6 @@ outputs:
         - python-lalpulsar >={{ lalpulsar_version }}a0
         - scipy >=0.9.0
     test:
-      imports:
-        - lalinference
-        - lalinference.bayespputils
-        - lalinference.imrtgr
-        - lalinference.imrtgr.imrtgrutils
-        - lalinference.imrtgr.nrutils
-        - lalinference.imrtgr.pneqns
-        - lalinference.lalinference_pipe_utils
-        - lalinference.nest2pos
-        - lalinference.plot
-        - lalinference.tiger
-        - lalinference.tiger.make_injtimes
-        - lalinference.tiger.omegascans_dag
-        - lalinference.tiger.postproc
-        - lalinference.util.file
-        - lalinference.util.sqlite
-        - lalinference.wrapper
       requires:
         - cpnest
         - mock  # [py<33]
@@ -204,7 +187,24 @@ outputs:
         - lalinference_pipe --help
         - lalinference_pp_pipe --help
         - lalinference_review_test --help
-        - pushd test/python; python -m pytest -v; popd
+        - python -m pytest -v test/python/
+      imports:
+        - lalinference
+        - lalinference.bayespputils
+        - lalinference.imrtgr
+        - lalinference.imrtgr.imrtgrutils
+        - lalinference.imrtgr.nrutils
+        - lalinference.imrtgr.pneqns
+        - lalinference.lalinference_pipe_utils
+        - lalinference.nest2pos
+        - lalinference.plot
+        - lalinference.tiger
+        - lalinference.tiger.make_injtimes
+        - lalinference.tiger.omegascans_dag
+        - lalinference.tiger.postproc
+        - lalinference.util.file
+        - lalinference.util.sqlite
+        - lalinference.wrapper
     about:
       home: "https://wiki.ligo.org/Computing/LALSuite"
       doc_url: "https://docs.ligo.org/lscsoft/lalsuite/lalinference/"
