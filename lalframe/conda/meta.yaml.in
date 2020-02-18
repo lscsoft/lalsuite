@@ -88,7 +88,7 @@ outputs:
         - pytest >=4.0.0a0
       source_files:
         - test/python
-        - test/F-TEST-600000000-60.gwf
+        - test/F-TEST-*.gwf
       commands:
         - python -m pytest -rs -v test/python
       imports:
