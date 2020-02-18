@@ -5,6 +5,7 @@ test_programs +=
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts += \
+	test_nrfits.py \
 	test_python_imports.py \
 	test_python_scripts.py \
 	test_phenomD_utils.py \
