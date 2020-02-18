@@ -92,6 +92,14 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}a0
         - python-ligo-lw
     test:
+      requires:
+        - mock  # [py<33]
+        - pathlib  # [py<34]
+        - pytest >=4.0.0a0
+      source_files:
+        - test/python
+      commands:
+        - python -m pytest -rs -v test/python
       imports:
         - lalinspiral
         - lalinspiral.inspinjfind

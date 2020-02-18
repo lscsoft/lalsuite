@@ -95,6 +95,14 @@ outputs:
         - python-ligo-lw
         - scipy
     test:
+      requires:
+        - mock  # [py<33]
+        - pathlib  # [py<34]
+        - pytest >=4.0.0a0
+      source_files:
+        - test/python
+      commands:
+        - python -m pytest -rs -v test/python
       imports:
         - lalburst
         - lalburst.SimBurstUtils
@@ -111,9 +119,6 @@ outputs:
         - lalburst.snglcluster
         - lalburst.snglcoinc
         - lalburst.timeslides
-      commands:
-        - conda inspect linkages -p ${PREFIX} ${PKG_NAME}  # [not win]
-        - conda inspect objects -p ${PREFIX} ${PKG_NAME}  # [osx]
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalburst/

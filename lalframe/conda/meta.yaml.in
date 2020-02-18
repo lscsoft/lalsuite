@@ -82,10 +82,15 @@ outputs:
         - python
         - python-lal >={{ lal_version }}a0
     test:
+      requires:
+        - mock  # [py<33]
+        - pathlib  # [py<34]
+        - pytest >=4.0.0a0
       source_files:
+        - test/python
         - test/F-TEST-600000000-60.gwf
       commands:
-        - python -c "from lalframe import frread; print(frread.read_timeseries('test/F-TEST-600000000-60.gwf', 'H1:LSC-AS_Q', 600000000, 1).data.data)"
+        - python -m pytest -rs -v test/python
       imports:
         - lalframe
         - lalframe.frread
