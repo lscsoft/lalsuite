@@ -277,5 +277,11 @@ if __name__ == '__main__':
 	for path in datafiles:
 		run_identifier = extract_metadata(path, metadata)
 
+	# Remove duplicate metadata
+	path_to_samples = '/'.join(['','lalinference',run_identifier,'posterior_samples'])
+	if path_to_samples in metadata:
+		for colname in final_posterior.columns:
+			metadata[path_to_samples].pop(colname, None)
+
 	write_samples(final_posterior, opts.pos,
-		path='/'.join(['','lalinference',run_identifier,'posterior_samples']), metadata=metadata)
+		path=path_to_samples, metadata=metadata)
