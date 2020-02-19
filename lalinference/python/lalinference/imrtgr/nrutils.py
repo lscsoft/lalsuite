@@ -1327,7 +1327,7 @@ def bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, quantit
     Average of the results for the given fits for the chosen quantity
     """
 
-    if quantity != "af" and max(abs(phi12)) != 0:
+    if quantity != "af" and max(abs(np.atleast_1d(phi12))) != 0:
         print("Note: phi12 is only used for the full final spin calculation.")
 
     if quantity not in ["Mf", "af", "afz", "Lpeak"]:
