@@ -56,6 +56,7 @@ extern "C" {
 #include <lal/Segments.h>
 #include <lal/SFTfileIO.h>
 #include <lal/StringVector.h>
+#include <lal/UserInputParse.h>
 
 /*---------- DEFINES ----------*/
 
@@ -93,6 +94,22 @@ typedef struct tagMultiNoiseWeights {
   REAL8 Sinv_Tsft;	/**< normalization factor used: \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ (using single-sided PSD!) */
   BOOLEAN isNotNormalized;  /**< if true: weights are saved unnormalized (divide by Sinv_Tsft to get normalized version). */
 } MultiNoiseWeights;
+
+/** common types of mathematical operations over an array */
+typedef enum tagMathOpType {
+  MATH_OP_ARITHMETIC_SUM = 0,   /**< \f$\sum_k x_k\f$      */
+  MATH_OP_ARITHMETIC_MEAN,      /**< \f$\sum_k x_k / N\f$ */
+  MATH_OP_ARITHMETIC_MEDIAN,    /**< \f$x_1 \leq \dots \leq  x_{N/2} \leq \dots \leq x_n\f$ */
+  MATH_OP_HARMONIC_SUM,         /**< \f$1 / \sum_k (1/x_k)\f$ */
+  MATH_OP_HARMONIC_MEAN,        /**< \f$N / \sum_k (1/x_k)\f$ */
+  MATH_OP_POWERMINUS2_SUM,      /**< \f$1 / \sqrt{ \sum_k (1/x_k^2) }\f$ */
+  MATH_OP_POWERMINUS2_MEAN,     /**< \f$1 / \sqrt{ \sum_k (1/x_k^2) / N }\f$ */
+  MATH_OP_MINIMUM,              /**< \f$\min_k(x_k)\f$ */
+  MATH_OP_MAXIMUM,              /**< \f$\max_k(x_k)\f$ */
+  MATH_OP_LAST
+} MathOpType;
+
+extern const UserChoices MathOpTypeChoices;
 
 /*---------- Global variables ----------*/
 
@@ -178,6 +195,7 @@ MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVec
 int XLALDumpMultiPSDVector ( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
 int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector *multiSFTVect, UINT4 firstBin, UINT4 lastBin );
 REAL8FrequencySeries *XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, LALSeg segment );
+REAL8 XLALMathOpOverArray(REAL8* data, size_t length, MathOpType optype);
 
 /** @} */
 

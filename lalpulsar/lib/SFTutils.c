@@ -53,6 +53,31 @@ static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
 // the deprecated 4-column format should set this variable to non-zero
 int XLALReadSegmentsFromFile_support_4column_format = 0;
 
+// for backwards compatibility, we currently allow calling the same internal
+// enum entries by either human-friendly names or by the old-style numerical
+// arguments. The latter may get deprecated at some point in the future.
+const UserChoices MathOpTypeChoices = {
+  { MATH_OP_ARITHMETIC_SUM,    "arithsum" },
+  { MATH_OP_ARITHMETIC_MEAN,   "arithmean" },
+  { MATH_OP_ARITHMETIC_MEDIAN, "arithmedian" },
+  { MATH_OP_HARMONIC_SUM,      "harmsum" },
+  { MATH_OP_HARMONIC_MEAN,     "harmmean" },
+  { MATH_OP_POWERMINUS2_SUM,   "powerminus2sum" },
+  { MATH_OP_POWERMINUS2_MEAN,  "powerminus2mean" },
+  { MATH_OP_MINIMUM,           "min" },
+  { MATH_OP_MAXIMUM,           "max" },
+  { MATH_OP_ARITHMETIC_SUM,    "0" },
+  { MATH_OP_ARITHMETIC_MEAN,   "1" },
+  { MATH_OP_ARITHMETIC_MEDIAN, "2" },
+  { MATH_OP_HARMONIC_SUM,      "3" },
+  { MATH_OP_HARMONIC_MEAN,     "4" },
+  { MATH_OP_POWERMINUS2_SUM,   "5" },
+  { MATH_OP_POWERMINUS2_MEAN,  "6" },
+  { MATH_OP_MINIMUM,           "7" },
+  { MATH_OP_MAXIMUM,           "8" },
+};
+
+
 /*---------- internal prototypes ----------*/
 REAL8 TSFTfromDFreq ( REAL8 dFreq );
 int compareSFTdesc(const void *ptr1, const void *ptr2);     // defined in SFTfileIO.c
@@ -2433,3 +2458,97 @@ XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, 	/**< input PSD ma
   return Q;
 
 } /* XLALComputeSegmentDataQ() */
+
+/**
+ * Compute various types of "math operations" over the entries of an array.
+ *
+ * The supported optypes (e.g. sums and averages) are defined in #MathOpType.
+ *
+ * This can be used e.g. for the different established conventions of combining
+ * SFTs for a PSD estimate.
+ *
+ */
+REAL8 XLALMathOpOverArray ( REAL8* data,      /**< input data array */
+                            size_t length,    /**< length of the input data array */
+                            MathOpType optype /**< type of operation */
+                          ) {
+
+  UINT4 i;
+  REAL8 res = 0.0;
+
+  switch (optype) {
+
+  case MATH_OP_ARITHMETIC_SUM: /* sum(data) */
+
+    for (i = 0; i < length; ++i) res += *(data++);
+
+    break;
+
+  case MATH_OP_ARITHMETIC_MEAN: /* sum(data)/length  */
+
+    for (i = 0; i < length; ++i) res += *(data++);
+    res /= (REAL8)length;
+
+    break;
+
+  case MATH_OP_ARITHMETIC_MEDIAN: /* middle element of sort(data) */
+
+    gsl_sort(data, 1, length);
+    if (length/2 == (length+1)/2) /* length is even */ {
+      res = (data[sortidx[length/2-1]] + data[sortidx[length/2]])/2;
+    }
+    else /* length is odd */ {
+      res = data[length/2];
+    }
+
+    break;
+
+  case MATH_OP_HARMONIC_SUM: /* 1 / sum(1 / data) */
+
+    for (i = 0; i < length; ++i) res += 1.0 / *(data++);
+    res = 1.0 / res;
+
+    break;
+
+  case MATH_OP_HARMONIC_MEAN: /* length / sum(1 / data) */
+
+    for (i = 0; i < length; ++i) res += 1.0 / *(data++);
+    res = (REAL8)length / res;
+
+    break;
+
+  case MATH_OP_POWERMINUS2_SUM: /*   1 / sqrt ( sum(1 / data/data) )*/
+
+    for (i = 0; i < length; ++i) res += 1.0 / (data[i]*data[i]);
+    res = 1.0 / sqrt(res);
+
+    break;
+
+   case MATH_OP_POWERMINUS2_MEAN: /*   1 / sqrt ( sum(1/data/data) / length )*/
+
+    for (i = 0; i < length; ++i) res += 1.0 / (data[i]*data[i]);
+    res = 1.0 / sqrt(res / (REAL8)length);
+
+    break;
+
+  case MATH_OP_MINIMUM: /* first element of sort(data) */
+
+    gsl_sort(data, 1, length);
+    res = data[0];
+    break;
+
+  case MATH_OP_MAXIMUM: /* first element of sort(data) */
+
+    gsl_sort(data, 1, length);
+    res = data[length-1];
+    break;
+
+  default:
+
+    XLAL_ERROR_REAL8(XLAL_EINVAL, "'%i' is not an implemented math. operation", optype);
+
+  }
+
+  return res;
+
+} /* XLALMathOpOverArray() */

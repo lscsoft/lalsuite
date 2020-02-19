@@ -79,20 +79,6 @@
 
 /* ---------- local types ---------- */
 
-/** types of mathematical operations */
-enum tagMATH_OP_TYPE {
-  MATH_OP_ARITHMETIC_SUM = 0,   /**< sum(x)     */
-  MATH_OP_ARITHMETIC_MEAN,      /**< sum(x) / n */
-  MATH_OP_ARITHMETIC_MEDIAN,    /**< x_1 <= ... x_{n/2} <= .. <= x_n */
-  MATH_OP_HARMONIC_SUM,         /**< 1 / sum(1/x) */
-  MATH_OP_HARMONIC_MEAN,        /**< n / sum(1/x) */
-  MATH_OP_POWERMINUS2_SUM,      /**< 1 / sqrt( sum(1/x/x) )*/
-  MATH_OP_POWERMINUS2_MEAN,     /**< 1 / sqrt( sum(1/x/x) /n )*/
-  MATH_OP_MINIMUM,              /**< x_1 <= ... */
-  MATH_OP_MAXIMUM,              /**< ... <= x_n */
-  MATH_OP_LAST
-};
-
 /** user input variables */
 typedef struct
 {
@@ -149,7 +135,6 @@ extern int vrbflg;
 /* ---------- local prototypes ---------- */
 int initUserVars (int argc, char *argv[], UserVariables_t *uvar);
 void LALfwriteSpectrograms ( LALStatus *status, const CHAR *bname, const MultiPSDVector *multiPSD );
-static REAL8 math_op(REAL8*, size_t, INT4);
 MultiSFTVector *XLALReadSFTs ( ConfigVariables_t *cfg, const UserVariables_t *uvar );
 
 int XLALWriteREAL8FrequencySeries_to_file ( const REAL8FrequencySeries *series, const char *fname );
@@ -271,16 +256,14 @@ main(int argc, char *argv[])
       }
 
       /* compute math. operation over SFTs for this IFO */
-      overIFOs->data[X] = math_op(overSFTs->data, numSFTs, uvar.PSDmthopSFTs);
-      if ( isnan( overIFOs->data[X] ) )
-        XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in overIFOs->data[X=%d] = NAN ... exiting\n", X );
+      overIFOs->data[X] = XLALMathOpOverArray(overSFTs->data, numSFTs, uvar.PSDmthopSFTs);
+      XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(overIFOs->data[X]), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for overIFOs->data[X=%d]", X );
 
     } /* for IFOs X */
 
     /* compute math. operation over IFOs for this frequency */
-    finalPSD->data[k] = math_op(overIFOs->data, numIFOs, uvar.PSDmthopIFOs);
-    if ( isnan ( finalPSD->data[k] ) )
-      XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in finalPSD->data[k=%d] = NAN ... exiting\n", k );
+    finalPSD->data[k] = XLALMathOpOverArray(overIFOs->data, numIFOs, uvar.PSDmthopIFOs);
+    XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(finalPSD->data[k]), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for finalPSD->data[k=%d]", k );
 
   } /* for freq bins k */
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
@@ -310,16 +293,14 @@ main(int argc, char *argv[])
         }
 
         /* compute math. operation over SFTs for this IFO */
-        overIFOs->data[X] = math_op(overSFTs->data, numSFTs, uvar.nSFTmthopSFTs);
-        if ( isnan ( overIFOs->data[X] ))
-          XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in overIFOs->data[X=%d] = NAN ... exiting\n", X );
+        overIFOs->data[X] = XLALMathOpOverArray(overSFTs->data, numSFTs, uvar.nSFTmthopSFTs);
+        XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(overIFOs->data[X]), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for overIFOs->data[X=%d]", X );
 
       } /* over IFOs */
 
       /* compute math. operation over IFOs for this frequency */
-      finalNormSFT->data[k] = math_op(overIFOs->data, numIFOs, uvar.nSFTmthopIFOs);
-      if ( isnan( finalNormSFT->data[k] ) )
-        XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in bin finalNormSFT->data[k=%d] = NAN ... exiting\n", k );
+      finalNormSFT->data[k] = XLALMathOpOverArray(overIFOs->data, numIFOs, uvar.nSFTmthopIFOs);
+      XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(finalNormSFT->data[k]), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for finalNormSFT->data[k=%d]", k );
 
     } /* over freq bins */
     LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
@@ -415,16 +396,14 @@ main(int argc, char *argv[])
       if (uvar.outFreqBinEnd)
         fprintf(fpOut, "   %f", f1);
 
-      REAL8 psd = math_op(&(finalPSD->data[b]), finalBinSize, uvar.PSDmthopBins);
-      if ( isnan ( psd ))
-        XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in psd[k=%d] = NAN ... exiting\n", k );
+      REAL8 psd = XLALMathOpOverArray(&(finalPSD->data[b]), finalBinSize, uvar.PSDmthopBins);
+      XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(psd), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for psd[k=%d]", k );
 
       fprintf(fpOut, "   %e", psd);
 
       if (uvar.outputNormSFT) {
-        REAL8 nsft = math_op(&(finalNormSFT->data[b]), finalBinSize, uvar.nSFTmthopBins);
-        if ( isnan ( nsft ))
-          XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in nsft[k=%d] = NAN ... exiting\n", k );
+        REAL8 nsft = XLALMathOpOverArray(&(finalNormSFT->data[b]), finalBinSize, uvar.nSFTmthopBins);
+        XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(nsft), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for nsft[k=%d]", k );
 
         fprintf(fpOut, "   %f", nsft);
       }
@@ -453,90 +432,6 @@ main(int argc, char *argv[])
   return EXIT_SUCCESS;
 
 } /* main() */
-
-/** compute the various kinds of math. operation */
-REAL8 math_op(REAL8* data, size_t length, INT4 type) {
-
-  UINT4 i;
-  REAL8 res = 0.0;
-
-  switch (type) {
-
-  case MATH_OP_ARITHMETIC_SUM: /* sum(data) */
-
-    for (i = 0; i < length; ++i) res += *(data++);
-
-    break;
-
-  case MATH_OP_ARITHMETIC_MEAN: /* sum(data)/length  */
-
-    for (i = 0; i < length; ++i) res += *(data++);
-    res /= (REAL8)length;
-
-    break;
-
-  case MATH_OP_ARITHMETIC_MEDIAN: /* middle element of sort(data) */
-
-    gsl_sort(data, 1, length);
-    if (length/2 == (length+1)/2) /* length is even */ {
-      res = (data[length/2-1] + data[length/2])/2;
-    }
-    else /* length is odd */ {
-      res = data[length/2];
-    }
-
-    break;
-
-  case MATH_OP_HARMONIC_SUM: /* 1 / sum(1 / data) */
-
-    for (i = 0; i < length; ++i) res += 1.0 / *(data++);
-    res = 1.0 / res;
-
-    break;
-
-  case MATH_OP_HARMONIC_MEAN: /* length / sum(1 / data) */
-
-    for (i = 0; i < length; ++i) res += 1.0 / *(data++);
-    res = (REAL8)length / res;
-
-    break;
-
-  case MATH_OP_POWERMINUS2_SUM: /*   1 / sqrt ( sum(1 / data/data) )*/
-
-    for (i = 0; i < length; ++i) res += 1.0 / (data[i]*data[i]);
-    res = 1.0 / sqrt(res);
-
-    break;
-
-   case MATH_OP_POWERMINUS2_MEAN: /*   1 / sqrt ( sum(1/data/data) / length )*/
-
-    for (i = 0; i < length; ++i) res += 1.0 / (data[i]*data[i]);
-    res = 1.0 / sqrt(res / (REAL8)length);
-
-    break;
-
-  case MATH_OP_MINIMUM: /* first element of sort(data) */
-
-    gsl_sort(data, 1, length);
-    res = data[0];
-    break;
-
-  case MATH_OP_MAXIMUM: /* first element of sort(data) */
-
-    gsl_sort(data, 1, length);
-    res = data[length-1];
-    break;
-
-  default:
-
-    XLALPrintError("'%i' is not a valid math. operation", type);
-    XLAL_ERROR_REAL8(XLAL_EINVAL);
-
-  }
-
-  return res;
-
-}
 
 
 /** register all "user-variables" */
@@ -593,24 +488,24 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
 
   XLALRegisterUvarMember(blocksRngMed,     INT4, 'w', OPTIONAL, "Running Median window size");
 
-  XLALRegisterUvarMember(PSDmthopSFTs,     INT4, 'S', OPTIONAL, "For PSD, type of math. operation over SFTs: "
-                                                                "0=arith-sum, 1=arith-mean, 2=arith-median, "
-                                                                "3=harm-sum, 4=harm-mean, "
-                                                                "5=power-2-sum, 6=power-2-mean, "
-                                                                "7=min, 8=max");
-  XLALRegisterUvarMember(PSDmthopIFOs,     INT4, 'I', OPTIONAL, "For PSD, type of math. op. over IFOs: "
+  XLALRegisterUvarAuxDataMember(PSDmthopSFTs,     UserEnum, &MathOpTypeChoices, 'S', OPTIONAL, "For PSD, type of math. operation over SFTs, can be given by string names (preferred) or legacy numbers: \n"
+                                                                "arithsum (0), arithmean (1), arithmedian (2), "
+                                                                "harmsum (3), harmmean (4), "
+                                                                "powerminus2sum (5), powerminus2mean (6), "
+                                                                "min (7), max (8)");
+  XLALRegisterUvarAuxDataMember(PSDmthopIFOs,     UserEnum, &MathOpTypeChoices, 'I', OPTIONAL, "For PSD, type of math. op. over IFOs: "
                                                                 "see --PSDmthopSFTs");
   XLALRegisterUvarMember(outputNormSFT,    BOOLEAN, 'n', OPTIONAL, "Output normalised SFT power to PSD file");
-  XLALRegisterUvarMember(nSFTmthopSFTs,    INT4, 'N', OPTIONAL, "For norm. SFT, type of math. op. over SFTs: "
+  XLALRegisterUvarAuxDataMember(nSFTmthopSFTs,    UserEnum, &MathOpTypeChoices, 'N', OPTIONAL, "For norm. SFT, type of math. op. over SFTs: "
                                                                 "see --PSDmthopSFTs");
-  XLALRegisterUvarMember(nSFTmthopIFOs,    INT4, 'J', OPTIONAL, "For norm. SFT, type of math. op. over IFOs: "
+  XLALRegisterUvarAuxDataMember(nSFTmthopIFOs,    UserEnum, &MathOpTypeChoices, 'J', OPTIONAL, "For norm. SFT, type of math. op. over IFOs: "
                                                                 "see --PSDmthopSFTs");
 
   XLALRegisterUvarMember(binSize,          INT4, 'z', OPTIONAL, "Bin the output into bins of size (in number of bins)");
   XLALRegisterUvarMember(binSizeHz,        REAL8, 'Z', OPTIONAL, "Bin the output into bins of size (in Hz)");
-  XLALRegisterUvarMember(PSDmthopBins,     INT4, 'A', OPTIONAL, "If binning, for PSD type of math. op. over bins: "
+  XLALRegisterUvarAuxDataMember(PSDmthopBins,     UserEnum, &MathOpTypeChoices, 'A', OPTIONAL, "If binning, for PSD type of math. op. over bins: "
                                                                 "see --PSDmthopSFTs");
-  XLALRegisterUvarMember(nSFTmthopBins,    INT4, 'B', OPTIONAL, "If binning, for norm. SFT type of math. op. over bins: "
+  XLALRegisterUvarAuxDataMember(nSFTmthopBins,    UserEnum, &MathOpTypeChoices, 'B', OPTIONAL, "If binning, for norm. SFT type of math. op. over bins: "
                                                                 "see --PSDmthopSFTs");
   XLALRegisterUvarMember(binStep,          INT4, 'p', OPTIONAL, "If binning, step size to move bin along "
                                                                 "(in number of bins, default is bin size)");
