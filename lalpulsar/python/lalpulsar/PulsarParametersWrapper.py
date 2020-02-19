@@ -24,30 +24,16 @@ from __future__ import division, absolute_import, print_function
 
 import os
 import re
+
+from six import string_types
+
 import numpy as np
 
-try:
-    import lal
-except ImportError:
-    raise ImportError("SWIG wrappings of LAL cannot be imported")
-
-try:
-    import lalpulsar
-except ImportError:
-    raise ImportError("SWIG wrappings of LALPulsar cannot be imported")
-
-try:
-    from six import string_types
-except ImportError:
-    raise ImportError("Could not import six")
-
-try:
-    import astropy
-except ImportError:
-    raise ImportError("Could not import astropy")
-
-
 from astropy import units as u
+
+import lal
+import lalpulsar
+
 # set units of parameters in the PulsarParameters structure
 PPUNITS = {'F':            u.Hz,                     # Hz
            'P':            u.s,                      # seconds
@@ -825,7 +811,7 @@ class PulsarParametersPy(object):
         """
         Create a copy of the parameters.
         """
-    
+
         newpar = PulsarParametersPy()
         memo[id(self)] = newpar
         lalpulsar.PulsarCopyParams(self.PulsarParameters(), newpar.PulsarParameters())
