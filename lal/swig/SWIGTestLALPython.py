@@ -1,7 +1,6 @@
 # Check SWIG Python bindings for LAL
 # Author: Karl Wette, 2011--2014
 
-import sys
 import warnings
 import datetime
 import pickle
