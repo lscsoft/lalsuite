@@ -296,9 +296,12 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
         signalStartGPS = firstGPS;
       } else if ( t0 >= lastGPS_REAL8 ) {
         signalStartGPS = lastGPS;
-      }
-      else {
-        signalStartGPS.gpsSeconds = t0;
+      } else { // firstGPS < t0 < lastGPS:
+        // make sure signal start-time is an integer multiple of deltaT from timeseries start
+        // to allow safe adding of resulting signal timeseries
+        REAL8 offs0_aligned = round ( (t0 - firstGPS_REAL8) * fSamp ) / fSamp;
+        signalStartGPS = firstGPS;
+        XLALGPSAdd( &signalStartGPS, offs0_aligned );
       }
 
       // use earliest possible end-time: min(t1,lastGPS), but not earlier than firstGPS
