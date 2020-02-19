@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http: //www.gnu.org/licenses/>.
 
-"""Test that the aligned-spin limit of SEOBNRv4PHM is the same as SEOBNRv4HM                                                                                                                                                                                                                                                                             
-In particular we consider cases where the final spin is *negative* with respect to the inital                                                                                                                                                                                                                                                                        
+"""Test that the aligned-spin limit of SEOBNRv4PHM is the same as SEOBNRv4HM
+In particular we consider cases where the final spin is *negative* with respect to the inital
  orbital angular momentum. """
 
 import sys
@@ -104,7 +104,7 @@ def get_SEOBNRv4PHM_modes(q, M, chi1, chi2, f_start, distance, deltaT):
 @pytest.mark.parametrize("q", [5.0, 10.0, 15.0, 20.0])
 def test_aligned_spin_limit_ringdown(q):
     """ Test that the (2,2) mode frequency in the ringdown is within in 1Hz between v4HM and v4PHM.
-    In particular, consider cases where the final spin is negative with respect to the initial 
+    In particular, consider cases where the final spin is negative with respect to the initial
     orbital angular momentum. Of course considers only aligned-spin cases"""
     # Step 0: set parameters
 
