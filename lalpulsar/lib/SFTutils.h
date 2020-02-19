@@ -29,14 +29,17 @@ extern "C" {
 /**
  * \defgroup SFTutils_h Header SFTutils.h
  * \ingroup lalpulsar_sft
- * \author Reinhard Prix, Badri Krishnan
- * \date 2005
- * \brief Utility functions for handling of SFTtype and SFTVectors
+ * \author Reinhard Prix, Badri Krishnan, Badri Krishnan, Iraj Gholami,
+ * Reinhard Prix, Alicia Sintes, Karl Wette, David Keitel
+ * \date 2005-2020
+ * \brief Utility functions for handling of SFTs and associated structures
  *
- * The helper functions XLALCreateSFT(), XLALDestroySFT(), XLALCreateSFTVector()
- * and XLALDestroySFTVector() respectively allocate and free SFT-structs and SFT-vectors.
- * Similarly, XLALCreateTimestampVector() and XLALDestroyTimestampVector() allocate and free
- * a bunch of GPS-timestamps.
+ * This module contains various helper functions to create, handle, combine,
+ * and destroy SFTs (Short Fourier Transforms) and related data structures,
+ * including SFTtype, SFTVector, SFTCatalog
+ * (and their multi-detector generalizations)
+ * as well as tools for dealing with timestamps, segments
+ * and ASD/PSD (Amplitude/Power Spectral Density) estimates.
  *
  */
 /** @{ */
@@ -170,6 +173,11 @@ int XLALFindTimesliceBounds ( UINT4 *iStart, UINT4 *iEnd, const LIGOTimeGPSVecto
 
 SFTVector *XLALExtractSFTVectorWithTimestamps ( const SFTVector *sfts, const LIGOTimeGPSVector *timestamps );
 MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVector *multiSFTs, const MultiLIGOTimeGPSVector *multiTimestamps );
+
+// compute and work with PSDs
+int XLALDumpMultiPSDVector ( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
+int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector *multiSFTVect, UINT4 firstBin, UINT4 lastBin );
+REAL8FrequencySeries *XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, LALSeg segment );
 
 /** @} */
 
