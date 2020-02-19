@@ -27,7 +27,7 @@
  * You can do this on little-endian and big-endian machines to generate
  * both flavors.  This produces a set of good and a set of bad SFTs.  The
  * good SFTs are:
- * SFT-test[1234567] and SFT-good
+ * SFT-test[12345678] and SFT-good
  * and the bad SFTs are
  * SFT-bad[123456789] and SFT-bad1[0-4]
  */
@@ -187,39 +187,12 @@ int main(void) {
   modify_bytes("SFT-bad14", 16, (char *)&dtmp, 8);
   modify_checksum("SFT-bad14", 9944972421627148413ULL, 15720824585133081082ULL);
 
-  printf("To test SFTs, do for example:\n"
-	 "lalapps_SFTvalidate SFT-good SFT-test[1234567]\n"
-	 "lalapps_SFTvalidate SFT-bad1\n"
-	 "lalapps_SFTvalidate SFT-bad2\n"
-	 "lalapps_SFTvalidate SFT-bad3\n"
-	 "lalapps_SFTvalidate SFT-bad4\n"
-	 "lalapps_SFTvalidate SFT-bad5\n"
-	 "lalapps_SFTvalidate SFT-bad6\n"
-	 "lalapps_SFTvalidate SFT-bad7\n"
-	 "lalapps_SFTvalidate SFT-bad8\n"
-	 "lalapps_SFTvalidate SFT-bad9\n"
-	 "lalapps_SFTvalidate SFT-bad10\n"
-	 "lalapps_SFTvalidate SFT-bad11\n"
-	 "lalapps_SFTvalidate SFT-bad12\n"
-	 "lalapps_SFTvalidate SFT-bad13\n"
-	 "lalapps_SFTvalidate SFT-bad14\n"
-	 "(checking exit status after each command) or you can also try\n"
-	 "lalapps_dumpSFT -H -i SFT-good SFT-test[1234567]\n"
-	 "lalapps_dumpSFT -H -i SFT-bad1\n"
-	 "lalapps_dumpSFT -H -i SFT-bad2\n"
-	 "lalapps_dumpSFT -H -i SFT-bad3\n"
-	 "lalapps_dumpSFT -H -i SFT-bad4\n"
-	 "lalapps_dumpSFT -H -i SFT-bad5\n"
-	 "lalapps_dumpSFT -H -i SFT-bad6\n"
-	 "lalapps_dumpSFT -H -i SFT-bad7\n"
-	 "lalapps_dumpSFT -H -i SFT-bad8\n"
-	 "lalapps_dumpSFT -H -i SFT-bad9\n"
-	 "lalapps_dumpSFT -H -i SFT-bad10\n"
-	 "lalapps_dumpSFT -H -i SFT-bad11\n"
-	 "lalapps_dumpSFT -H -i SFT-bad12\n"
-	 "lalapps_dumpSFT -H -i SFT-bad13\n"
-	 "lalapps_dumpSFT -H -i SFT-bad14\n"
-	 "");
+  for (size_t i = 0; i < 8; i += 2) data[i] += 1e-5;
+  for (size_t i = 1; i < 8; i += 2) data[i] -= 1e-5;
+  printerror(WriteSFT(fp=openfile("SFT-test8"), 12345,          6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test8", data)); fclose(fp);
+
+  printf("Wrote good SFTs: SFT-test[12345678] SFT-good\n");
+  printf("Wrote bad SFTs: SFT-bad[123456789] SFT-bad1[0-4]\n");
 
   return 0;
 }

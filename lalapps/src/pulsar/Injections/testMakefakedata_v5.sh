@@ -243,7 +243,7 @@ echo "Comparison of resulting (concatenated) SFTs:"
 echo "--------------------------------------------------"
 
 echo "---------- compare mfdv5 Method 1 SFTs ----------"
-cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_1} -2 '${sftsv5_1_meth1}'"
+cmdline="$cmp_CODE -V -e ${tol} -1 ${sftsv4_1} -2 '${sftsv5_1_meth1}'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "Failed. SFTs produced by makefakedata_v4 and makefakedata_v5 differ by more than ${tol}!"
@@ -252,7 +252,7 @@ else
     echo "OK."
 fi
 
-cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_2} -2 '${sftsv5_2_meth1}'"
+cmdline="$cmp_CODE -V -e ${tol} -1 ${sftsv4_2} -2 '${sftsv5_2_meth1}'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "Failed. SFTs produced by makefakedata_v4 and makefakedata_v5 differ by more than ${tol}!"
@@ -263,7 +263,7 @@ fi
 
 echo
 echo "---------- compare mfdv5 Method 2  SFTs ----------"
-cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_1} -2 '${sftsv5_1_meth2}'"
+cmdline="$cmp_CODE -V -e ${tol} -1 ${sftsv4_1} -2 '${sftsv5_1_meth2}'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "Failed. SFTs produced by makefakedata_v4 and makefakedata_v5 differ by more than ${tol}!"
@@ -272,7 +272,7 @@ else
     echo "OK."
 fi
 
-cmdline="$cmp_CODE -e ${tol} -1 ${sftsv4_2} -2 '${sftsv5_2_meth2}'"
+cmdline="$cmp_CODE -V -e ${tol} -1 ${sftsv4_2} -2 '${sftsv5_2_meth2}'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "Failed. SFTs produced by makefakedata_v4 and makefakedata_v5 differ by more than ${tol}!"

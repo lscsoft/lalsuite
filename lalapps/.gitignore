@@ -243,7 +243,6 @@ src/pulsar/SFTTools/*.testdir
 src/pulsar/SFTTools/lalapps_compareSFTs
 src/pulsar/SFTTools/lalapps_ComputePSD
 src/pulsar/SFTTools/lalapps_dumpSFT
-src/pulsar/SFTTools/lalapps_GetSFTVelocities
 src/pulsar/SFTTools/lalapps_SFTclean
 src/pulsar/SFTTools/lalapps_SFTvalidate
 src/pulsar/SFTTools/SFTwrite
