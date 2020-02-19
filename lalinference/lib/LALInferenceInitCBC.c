@@ -1455,35 +1455,54 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
 
   /* Pass custom mode array list to waveform generator */
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--modeList"))) {
-
     char *end_str;
     char substring[] = "-";
-    char *modes = strtok_r(ppt->value, ",", &end_str);
-    int l[5], m[5], ii=0, jj=0;
-
+    // strtok_r will modify argument in place, since MCMC calls this again later we need to copy  to tmp string to avoid chaing command line
+    char* tempstr = calloc(strlen(ppt->value)+1, sizeof(char));
+    strcpy(tempstr, ppt->value);
+    char *modes = strtok_r(tempstr, ",", &end_str);
+    int  ii=0, jj=0;
+    // These two will be lists containing integers with the pairs of (l,m) to use
+    // e.g. modes_l[0]=2 and modes_m[0]=-1 means the (l,m)=(2,-1) will be passed on to LALSim
+    // Eventually the code below loops over the lenght of these array and pass all modes to LALSim
+    int *modes_l=NULL;
+    int *modes_m=NULL;
+    // Counters used to realloc
+    int m_size=1;
+    int l_size=1;
     fprintf(stdout, "Template will use a custom mode array.\n");
     while (modes != NULL) {
         int k = 0;
+	// reads in modes with negative m's first
         if (strstr(modes, substring) != NULL) {
             char *end_token;
             char *token = strtok_r(modes, "-", &end_token);
             while (token != NULL) {
                 if ( k == 0 ) {
-                    l[ii++] = atoi(token);
+	            modes_l=realloc(modes_l,sizeof(*modes_l)*l_size);
+		    l_size+=1;
+		    modes_l[ii++]= atoi(token);
                 } else {
-                    m[jj++] = -1 * atoi(token);
+		    modes_m=realloc(modes_m,sizeof(*modes_m)*m_size);
+                    m_size+=1;
+		    modes_m[jj++]= -1 * atoi(token);
                 }
                 k += 1;
                 token = strtok_r(NULL, "-", &end_token);
             }
         } else {
+	    // now read modes with positive m. These are read in as integer, then module 10 is used to extract the m and l
+	    // FIXME this will break if l or m ever get >10.
             int value = atoi(modes);
-
             for (k=2; k>=0; k--) {
                 if (k == 2) {
-                    m[jj++] = value % 10;
+		    modes_m=realloc(modes_m,sizeof(*modes_m)*m_size);
+                    m_size+=1;
+		    modes_m[jj++] = value % 10;
                 } else if (k == 1) {
-                    l[ii++] = value % 10;
+		    modes_l=realloc(modes_l,sizeof(*modes_l)*l_size);
+                    l_size+=1;
+		    modes_l[ii++]= value % 10;
                 }
                 value /= 10;
             }
@@ -1491,15 +1510,15 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
         modes = strtok_r(NULL, ",", &end_str);
     }
 
+    // Create empty modearray and fills it with the modes
     LALValue *ModeArray = XLALSimInspiralCreateModeArray();
-    for (int iii=0; iii<ii; iii+=1){
-       fprintf(stdout, "Template will use the l=%d m=%d mode\n", l[iii], m[iii]);
-       XLALSimInspiralModeArrayActivateMode(ModeArray, l[iii], m[iii]);
+    for (int idx_i=0; idx_i<ii; idx_i+=1){
+       fprintf(stdout, "Template will use the l=%d m=%d mode \n", modes_l[idx_i], modes_m[idx_i]);
+       XLALSimInspiralModeArrayActivateMode(ModeArray, modes_l[idx_i], modes_m[idx_i]);
     }
     XLALSimInspiralWaveformParamsInsertModeArray(model->LALpars, ModeArray);
     XLALDestroyValue(ModeArray);
   }
-
 
   /* Pass threshold for PhenomXHM Multibanding */
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--phenomXHMMband"))) {
