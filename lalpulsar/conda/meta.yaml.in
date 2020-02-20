@@ -96,7 +96,7 @@ outputs:
       source_files:
         - test/python
       commands:
-        - LAL_TEST_PKGDATADIR="${LALPULSAR_DATADIR}" python -m pytest -rs -v test/python
+        - LAL_TEST_PKGDATADIR="${LALPULSAR_DATADIR}" python -m pytest -rs -v --junit-xml=junit.xml test/python
       imports:
         - lalpulsar
         - lalpulsar.NstarTools

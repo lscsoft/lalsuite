@@ -187,7 +187,7 @@ outputs:
         - lalinference_pipe --help
         - lalinference_pp_pipe --help
         - lalinference_review_test --help
-        - python -m pytest -v test/python/
+        - python -m pytest -rs -v --junit-xml=junit.xml test/python/
       imports:
         - lalinference
         - lalinference.bayespputils
