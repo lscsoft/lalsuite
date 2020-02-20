@@ -20,7 +20,6 @@ import lal
 import lalsimulation as lalsim
 import numpy as np
 import copy
-import unittest
 from optparse import OptionParser, OptionGroup
 from lalsimulation import git_version
 import io
