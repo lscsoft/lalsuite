@@ -76,7 +76,7 @@ cache:
     - make -j4 distcheck
   artifacts:
     reports:
-      junit: "**/junit*.xml"
+      junit: "*/test/python/junit*.xml"
 
 # -- build templates ----------------------------
 
@@ -230,9 +230,9 @@ cache:
     - conda config --set channel_priority strict
     - conda build
           conda/
+          --dirty
           --error-overlinking
           --error-overdepending
-          --keep-old-work
           --no-anaconda-upload
           --python ${PYTHON_VERSION}
           --use-local
@@ -249,7 +249,9 @@ cache:
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/test-suite.log"
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/*/*/*/test-suite.log"
     reports:
-      junit: "conda/bld/${CI_JOB_NAME%%:*}_*/**/junit*.xml"
+      junit:
+        - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/junit*.xml"
+        - "conda/bld/${CI_JOB_NAME%%:*}_*/test_tmp/junit*.xml"
     when: always
   only:
     - pushes
@@ -770,7 +772,7 @@ docker:tags:stretch:
     - web
   artifacts:
     reports:
-      junit: "**/junit*.xml"
+      junit: "*/test/python/junit*.xml"
 
 clang:8:
   <<: *clang-build
@@ -806,7 +808,7 @@ clang:dev:
     - web
   artifacts:
     reports:
-      junit: "**/junit*.xml"
+      junit: "*/test/python/junit*.xml"
 
 gcc:7:
   <<: *gcc-build
@@ -852,7 +854,7 @@ platform:macos:highsierra:
     - web
   artifacts:
     reports:
-      junit: "**/junit*.xml"
+      junit: "*/test/python/junit*.xml"
 
 platform:macos:sierra:
   tags:
@@ -872,7 +874,7 @@ platform:macos:sierra:
     - web
   artifacts:
     reports:
-      junit: "**/junit*.xml"
+      junit: "*/test/python/junit*.xml"
 
 # -- wheels -------------------------------------
 
