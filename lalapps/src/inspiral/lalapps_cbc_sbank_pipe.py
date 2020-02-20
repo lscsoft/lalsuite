@@ -18,9 +18,11 @@ from __future__ import print_function
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
-import sys, os, shutil
-from itertools import cycle, izip
-import subprocess, socket, tempfile
+import os
+import socket
+import subprocess
+import sys
+import tempfile
 
 ##############################################################################
 # import the modules we need to build the pipeline
