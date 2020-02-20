@@ -232,6 +232,7 @@ cache:
           conda/
           --error-overlinking
           --error-overdepending
+          --keep-old-work
           --no-anaconda-upload
           --python ${PYTHON_VERSION}
           --use-local
