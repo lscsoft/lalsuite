@@ -73,7 +73,9 @@ def test_import(module):
 
 # run from command-line
 if __name__ == "__main__":
-    if "-v" not in " ".join(sys.argv[1:]):  # default to verbose
-        sys.argv.append("-v")
-    sys.argv.append("-rs")
-    sys.exit(pytest.main(args=[__file__] + sys.argv[1:]))
+    args = sys.argv[1:] or [
+        "-v",
+        "-rs",
+        "--junit-xml=junit-imports.xml",
+    ]
+    sys.exit(pytest.main(args=[__file__] + args))

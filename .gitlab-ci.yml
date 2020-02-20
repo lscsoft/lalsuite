@@ -74,6 +74,9 @@ cache:
     - ./00boot
     - ./configure --enable-doxygen --enable-swig
     - make -j4 distcheck
+  artifacts:
+    reports:
+      junit: "**/junit*.xml"
 
 # -- build templates ----------------------------
 
@@ -119,6 +122,8 @@ cache:
     paths:
       - rpmbuild/RPMS/x86_64/${CI_JOB_NAME%%:*}-*.rpm
       - rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%%:*}-*.rpm
+    reports:
+      junit: "**/junit*.xml"
   only:
     - pushes
     - schedules
@@ -179,6 +184,8 @@ cache:
       - python*-${CI_JOB_NAME%%:*}*.deb
       - ${CI_JOB_NAME%%:*}*.dsc
       - ${CI_JOB_NAME%%:*}*.orig.*
+    reports:
+      junit: "**/junit*.xml"
   only:
     - pushes
     - schedules
@@ -240,6 +247,8 @@ cache:
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/test-suite.log"
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/test-suite.log"
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/*/*/*/test-suite.log"
+    reports:
+      junit: "**/junit*.xml"
     when: always
   only:
     - pushes
@@ -758,6 +767,9 @@ docker:tags:stretch:
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "**/junit*.xml"
 
 clang:8:
   <<: *clang-build
@@ -791,6 +803,9 @@ clang:dev:
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "**/junit*.xml"
 
 gcc:7:
   <<: *gcc-build
@@ -834,6 +849,9 @@ platform:macos:highsierra:
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "**/junit*.xml"
 
 platform:macos:sierra:
   tags:
@@ -851,6 +869,9 @@ platform:macos:sierra:
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "**/junit*.xml"
 
 # -- wheels -------------------------------------
 
