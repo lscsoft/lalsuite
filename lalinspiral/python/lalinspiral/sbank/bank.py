@@ -26,9 +26,8 @@ from six.moves import range
 import numpy as np
 
 from glue.iterutils import inorder, uniq
-from lal import PI, MTSUN_SI
 from lalinspiral import CreateSBankWorkspaceCache
-from lalinspiral.sbank.psds import get_neighborhood_ASD, get_neighborhood_PSD, get_PSD, get_neighborhood_df_fmax
+from .psds import get_neighborhood_ASD, get_PSD, get_neighborhood_df_fmax
 from . import waveforms
 
 class lazy_nhoods(object):
@@ -101,7 +100,7 @@ class Bank(object):
         if len(cls_args) > 1:
             return ValueError("bank parameters do not match")
         merged = cls(*cls_args)
-        merged._templates[:] = list(inorder(banks, key=attrgetter(bank.nhood_param)))
+        merged._templates[:] = list(inorder(banks, key=attrgetter(merged.nhood_param)))
         merged._nmatch = sum(b._nmatch for b in banks)
         return merged
 
