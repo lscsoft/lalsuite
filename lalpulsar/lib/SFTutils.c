@@ -2468,9 +2468,9 @@ XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, 	/**< input PSD ma
  * SFTs for a PSD estimate.
  *
  */
-REAL8 XLALMathOpOverArray ( REAL8* data,      /**< input data array */
-                            size_t length,    /**< length of the input data array */
-                            MathOpType optype /**< type of operation */
+REAL8 XLALMathOpOverArray ( const REAL8* data,      /**< input data array */
+                            const size_t length,    /**< length of the input data array */
+                            const MathOpType optype /**< type of operation */
                           ) {
 
   UINT4 i;
@@ -2488,18 +2488,6 @@ REAL8 XLALMathOpOverArray ( REAL8* data,      /**< input data array */
 
     for (i = 0; i < length; ++i) res += *(data++);
     res /= (REAL8)length;
-
-    break;
-
-  case MATH_OP_ARITHMETIC_MEDIAN: /* middle element of sort(data) */
-
-    gsl_sort(data, 1, length);
-    if (length/2 == (length+1)/2) /* length is even */ {
-      res = (data[sortidx[length/2-1]] + data[sortidx[length/2]])/2;
-    }
-    else /* length is odd */ {
-      res = data[length/2];
-    }
 
     break;
 
@@ -2531,23 +2519,58 @@ REAL8 XLALMathOpOverArray ( REAL8* data,      /**< input data array */
 
     break;
 
-  case MATH_OP_MINIMUM: /* first element of sort(data) */
+   /* these cases require sorted data;
+    * we use gsl_sort_index() to avoid in-place modification of the input data
+    * by gsl_sort()
+    */
+   case MATH_OP_ARITHMETIC_MEDIAN:
+   case MATH_OP_MINIMUM:
+   case MATH_OP_MAXIMUM:
+    ; /* empty statement because declaration cannot be first line in a switch case */
+    size_t * sortidx;
+    if ( ( sortidx = XLALMalloc ( length * sizeof(size_t) )) == NULL ) {
+        XLALPrintError ("XLALMalloc(%ld) failed.\n", length );
+        XLAL_ERROR ( XLAL_ENOMEM);
+    }
+    gsl_sort_index(sortidx, data, 1, length);
 
-    gsl_sort(data, 1, length);
-    res = data[0];
-    break;
+    switch (optype) {
 
-  case MATH_OP_MAXIMUM: /* first element of sort(data) */
+    case MATH_OP_ARITHMETIC_MEDIAN: /* middle element of sorted data */
 
-    gsl_sort(data, 1, length);
-    res = data[length-1];
+      if (length/2 == (length+1)/2) /* length is even */ {
+        res = (data[sortidx[length/2-1]] + data[sortidx[length/2]])/2;
+      }
+      else /* length is odd */ {
+        res = data[sortidx[length/2]];
+      }
+
+      break;
+
+    case MATH_OP_MINIMUM: /* first element of sorted data */
+
+      res = data[sortidx[0]];
+      break;
+
+    case MATH_OP_MAXIMUM: /* last element of sorted data */
+
+      res = data[sortidx[length-1]];
+      break;
+
+    default:
+
+      XLAL_ERROR_REAL8(XLAL_EINVAL, "For optype=%i this block should not have been reached.", optype);
+
+    }
+
+    XLALFree ( sortidx );
     break;
 
   default:
 
     XLAL_ERROR_REAL8(XLAL_EINVAL, "'%i' is not an implemented math. operation", optype);
 
-  }
+  } /* switch (optype) */
 
   return res;
 

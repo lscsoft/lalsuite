@@ -195,7 +195,7 @@ MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVec
 int XLALDumpMultiPSDVector ( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
 int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector *multiSFTVect, UINT4 firstBin, UINT4 lastBin );
 REAL8FrequencySeries *XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, LALSeg segment );
-REAL8 XLALMathOpOverArray(REAL8* data, size_t length, MathOpType optype);
+REAL8 XLALMathOpOverArray(const REAL8* data, const size_t length, const MathOpType optype);
 
 /** @} */
 
