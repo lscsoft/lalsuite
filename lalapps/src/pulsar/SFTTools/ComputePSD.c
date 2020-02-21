@@ -199,13 +199,13 @@ main(int argc, char *argv[])
       INT4 seed, ranCount;
 
       if ( (fpRand = fopen("/dev/urandom", "r")) == NULL ) {
-	fprintf(stderr,"Error in opening /dev/urandom" );
-	return EXIT_FAILURE;
+        fprintf(stderr,"Error in opening /dev/urandom" );
+        return EXIT_FAILURE;
       }
 
       if ( (ranCount = fread(&seed, sizeof(seed), 1, fpRand)) != 1 ) {
-	fprintf(stderr,"Error in getting random seed" );
-	return EXIT_FAILURE;
+        fprintf(stderr,"Error in getting random seed" );
+        return EXIT_FAILURE;
       }
 
       LAL_CALL ( LALCreateRandomParams (&status, &randPar, seed), &status );
@@ -268,8 +268,8 @@ main(int argc, char *argv[])
 
       /* copy PSD frequency bins and normalise multiPSD for later use */
       for (alpha = 0; alpha < numSFTs; ++alpha) {
-	multiPSD->data[X]->data[alpha].data->data[k] *= normPSD;
-	overSFTs->data[alpha] = multiPSD->data[X]->data[alpha].data->data[k];
+        multiPSD->data[X]->data[alpha].data->data[k] *= normPSD;
+        overSFTs->data[alpha] = multiPSD->data[X]->data[alpha].data->data[k];
       }
 
       /* compute math. operation over SFTs for this IFO */
@@ -302,18 +302,18 @@ main(int argc, char *argv[])
       /* loop over IFOs */
       for (X = 0; X < numIFOs; ++X) {
 
-	/* number of SFTs for this IFO */
-	UINT4 numSFTs = inputSFTs->data[X]->length;
+        /* number of SFTs for this IFO */
+        UINT4 numSFTs = inputSFTs->data[X]->length;
 
-	/* compute SFT power */
-	for (alpha = 0; alpha < numSFTs; ++alpha) {
-	  COMPLEX8 bin = inputSFTs->data[X]->data[alpha].data->data[k];
-	  overSFTs->data[alpha] = crealf(bin)*crealf(bin) + cimagf(bin)*cimagf(bin);
-	}
+        /* compute SFT power */
+        for (alpha = 0; alpha < numSFTs; ++alpha) {
+          COMPLEX8 bin = inputSFTs->data[X]->data[alpha].data->data[k];
+          overSFTs->data[alpha] = crealf(bin)*crealf(bin) + cimagf(bin)*cimagf(bin);
+        }
 
-	/* compute math. operation over SFTs for this IFO */
-	overIFOs->data[X] = math_op(overSFTs->data, numSFTs, uvar.nSFTmthopSFTs);
-	if ( isnan ( overIFOs->data[X] ))
+        /* compute math. operation over SFTs for this IFO */
+        overIFOs->data[X] = math_op(overSFTs->data, numSFTs, uvar.nSFTmthopSFTs);
+        if ( isnan ( overIFOs->data[X] ))
           XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in overIFOs->data[X=%d] = NAN ... exiting\n", X );
 
       } /* over IFOs */
@@ -415,7 +415,7 @@ main(int argc, char *argv[])
       REAL8 f1 = f0 + finalBinStep * dFreq;
       fprintf(fpOut, "%f", f0);
       if (uvar.outFreqBinEnd)
-	fprintf(fpOut, "   %f", f1);
+        fprintf(fpOut, "   %f", f1);
 
       REAL8 psd = math_op(&(finalPSD->data[b]), finalBinSize, uvar.PSDmthopBins);
       if ( isnan ( psd ))
@@ -424,11 +424,11 @@ main(int argc, char *argv[])
       fprintf(fpOut, "   %e", psd);
 
       if (uvar.outputNormSFT) {
-	REAL8 nsft = math_op(&(finalNormSFT->data[b]), finalBinSize, uvar.nSFTmthopBins);
-	if ( isnan ( nsft ))
+        REAL8 nsft = math_op(&(finalNormSFT->data[b]), finalBinSize, uvar.nSFTmthopBins);
+        if ( isnan ( nsft ))
           XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in nsft[k=%d] = NAN ... exiting\n", k );
 
-	fprintf(fpOut, "   %f", nsft);
+        fprintf(fpOut, "   %f", nsft);
       }
 
       fprintf(fpOut, "\n");
@@ -727,53 +727,51 @@ LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVect
 
       /* allocate memory for data row-vector */
       if ( ( row_data = LALMalloc ( numBins * sizeof(float) )) == NULL ) {
-	ABORT ( status, COMPUTEPSDC_EMEM, COMPUTEPSDC_MSGEMEM );
+        ABORT ( status, COMPUTEPSDC_EMEM, COMPUTEPSDC_MSGEMEM );
       }
 
       if ( ( fname = LALMalloc ( len * sizeof(CHAR) )) == NULL ) {
-	LALFree ( row_data );
-	ABORT ( status, COMPUTEPSDC_EMEM, COMPUTEPSDC_MSGEMEM );
+        LALFree ( row_data );
+        ABORT ( status, COMPUTEPSDC_EMEM, COMPUTEPSDC_MSGEMEM );
       }
       tmp = multiPSD->data[X]->data[0].name;
       sprintf ( fname, "%s-%c%c", bname, tmp[0], tmp[1] );
 
       if ( ( fp = fopen( fname, "wb" ))  == NULL ) {
-	LogPrintf (LOG_CRITICAL, "Failed to open spectrogram file '%s' for writing!\n", fname );
-	goto failed;
-
+        LogPrintf (LOG_CRITICAL, "Failed to open spectrogram file '%s' for writing!\n", fname );
+        goto failed;
       }
 
       /* write number of columns: i.e. frequency-bins */
       num = (float)numBins;
       if ((fwrite((char *) &num, sizeof(float), 1, fp)) != 1) {
-	LogPrintf (LOG_CRITICAL, "Failed to fwrite() to spectrogram file '%s'\n", fname );
-	goto failed;
+        LogPrintf (LOG_CRITICAL, "Failed to fwrite() to spectrogram file '%s'\n", fname );
+        goto failed;
       }
 
       /* write frequencies as column-titles */
       f0 = multiPSD->data[X]->data[0].f0;
       df = multiPSD->data[X]->data[0].deltaF;
       for ( k=0; k < numBins; k ++ )
-	row_data[k] = (float) ( f0 + 1.0 * k * df );
+        row_data[k] = (float) ( f0 + 1.0 * k * df );
       if ( fwrite((char *) row_data, sizeof(float), numBins, fp) != numBins ) {
-	LogPrintf (LOG_CRITICAL, "Failed to fwrite() to spectrogram file '%s'\n", fname );
-	goto failed;
+        LogPrintf (LOG_CRITICAL, "Failed to fwrite() to spectrogram file '%s'\n", fname );
+        goto failed;
       }
 
       /* write PSDs of successive SFTs in rows, first column is GPS-time in seconds */
-      for ( j = 0; j < numSFTs ; j ++ )
-	{
-	  num = (float) multiPSD->data[X]->data[j].epoch.gpsSeconds;
-	  for ( k = 0; k < numBins; k ++ )
-	    row_data[k] = (float) sqrt ( multiPSD->data[X]->data[j].data->data[k] );
+      for ( j = 0; j < numSFTs ; j ++ ) {
+        num = (float) multiPSD->data[X]->data[j].epoch.gpsSeconds;
+        for ( k = 0; k < numBins; k ++ )
+          row_data[k] = (float) sqrt ( multiPSD->data[X]->data[j].data->data[k] );
 
-	  if ( ( fwrite((char *) &num, sizeof(float), 1, fp) != 1 ) ||
-	       ( fwrite((char *) row_data, sizeof(float), numBins, fp) != numBins ) ) {
-	    LogPrintf (LOG_CRITICAL, "Failed to fwrite() to spectrogram file '%s'\n", fname );
-	    goto failed;
-	  }
+        if ( ( fwrite((char *) &num, sizeof(float), 1, fp) != 1 ) ||
+             ( fwrite((char *) row_data, sizeof(float), numBins, fp) != numBins ) ) {
+          LogPrintf (LOG_CRITICAL, "Failed to fwrite() to spectrogram file '%s'\n", fname );
+          goto failed;
+        }
 
-	} /* for j < numSFTs */
+      } /* for j < numSFTs */
 
       fclose ( fp );
       LALFree ( fname );
