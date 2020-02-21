@@ -90,7 +90,7 @@ outputs:
       source_files:
         - test/python
       commands:
-        - python -m pytest -rs -v test/python
+        - python -m pytest -rs -v --junit-xml=junit.xml test/python
       imports:
         - lalsimulation
     about:

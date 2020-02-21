@@ -74,6 +74,9 @@ cache:
     - ./00boot
     - ./configure --enable-doxygen --enable-swig
     - make -j4 distcheck
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
 
 # -- build templates ----------------------------
 
@@ -117,8 +120,10 @@ cache:
   artifacts:
     expire_in: 18h
     paths:
-      - rpmbuild/RPMS/x86_64/${CI_JOB_NAME%%:*}-*.rpm
-      - rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%%:*}-*.rpm
+      - "rpmbuild/RPMS/x86_64/${CI_JOB_NAME%%:*}-*.rpm"
+      - "rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%%:*}-*.rpm"
+    reports:
+      junit: "rpmbuild/BUILD/*/test/python/junit*.xml"
   only:
     - pushes
     - schedules
@@ -179,6 +184,8 @@ cache:
       - python*-${CI_JOB_NAME%%:*}*.deb
       - ${CI_JOB_NAME%%:*}*.dsc
       - ${CI_JOB_NAME%%:*}*.orig.*
+    reports:
+      junit: "${CI_JOB_NAME%%:*}*/.pybuild/python*/build/test/python/junit*.xml"
   only:
     - pushes
     - schedules
@@ -223,6 +230,7 @@ cache:
     - conda config --set channel_priority strict
     - conda build
           conda/
+          --dirty
           --error-overlinking
           --error-overdepending
           --no-anaconda-upload
@@ -240,6 +248,10 @@ cache:
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/test-suite.log"
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/test-suite.log"
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/*/*/*/test-suite.log"
+    reports:
+      junit:
+        - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/junit*.xml"
+        - "conda/bld/${CI_JOB_NAME%%:*}_*/test_tmp/junit*.xml"
     when: always
   only:
     - pushes
@@ -758,6 +770,9 @@ docker:tags:stretch:
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
 
 clang:8:
   <<: *clang-build
@@ -791,6 +806,9 @@ clang:dev:
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
 
 gcc:7:
   <<: *gcc-build
@@ -834,6 +852,9 @@ platform:macos:highsierra:
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
 
 platform:macos:sierra:
   tags:
@@ -851,6 +872,9 @@ platform:macos:sierra:
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
 
 # -- wheels -------------------------------------
 

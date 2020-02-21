@@ -19,4 +19,4 @@ EXTRA_DIST += \
 	$(END_OF_LIST)
 
 clean-local:
-	-rm -rf __pycache__ .pytest_cache
+	-rm -rf __pycache__ .pytest_cache junit*.xml
