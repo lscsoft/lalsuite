@@ -1,6 +1,6 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
-%define release 2
+%define release 1
 %define configure_opts --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
@@ -335,7 +335,10 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
-* Thu Feb 13 2020 Adam Mercer <adam.mercer@ligo.org> 1.11.6-1
+* Fri Feb 21 2020 Adam Mercer <adam.mercer@ligo.org> 1.11.7-1
+- O3b point release
+
+* Thu Feb 13 2020 Adam Mercer <adam.mercer@ligo.org> 1.11.6-2
 - O3b point release
 
 * Tue Dec 17 2019 Adam Mercer <adam.mercer@ligo.org> 1.11.5-1
