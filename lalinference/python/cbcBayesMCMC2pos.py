@@ -215,7 +215,6 @@ def weight_and_combine(pos_chains, verbose=False):
 	metadata[run_level]['log_evidence'] = final_log_evidence
 	metadata[run_level]['log_noise_evidence'] = final_log_noise_evidence
 	metadata[run_level]['log_max_likelihood'] = final_posterior['logl'].max()
-
 	# This has already been burned-in and downsampled,
 	# remove the cycle column to stop cbcBayesPosProc
 	# from doing it again.
@@ -282,6 +281,15 @@ if __name__ == '__main__':
 	if path_to_samples in metadata:
 		for colname in final_posterior.columns:
 			metadata[path_to_samples].pop(colname, None)
+
+	# for metadata which is in a list, take the average.
+	for level in metadata:
+		for key in metadata[level]:
+			#if isinstance(metadata[level][key], list) and all(isinstance(x, (int,float)) for x in metadata[level][key]):
+			#    metadata[level][key] = mean(metadata[level][key])
+			if isinstance(metadata[level][key], list) and all(isinstance(x, (str)) for x in metadata[level][key]):
+				print("Warning: only printing the first of the %d entries found for metadata %s/%s. You can find the whole list in the headers of individual hdf5 output files\n"%(len(metadata[level][key]),level,key))
+				metadata[level][key] = metadata[level][key][0]
 
 	write_samples(final_posterior, opts.pos,
 		path=path_to_samples, metadata=metadata)

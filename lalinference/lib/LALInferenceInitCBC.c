@@ -1092,7 +1092,6 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   } else {
     LALInferenceAddVariable(model->params, "flow", &fLow,  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   }
-
   /* Set up the variable parameters */
 
   /********************* TBL: Adding noise-fitting parameters  *********************/
