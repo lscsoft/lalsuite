@@ -1559,6 +1559,9 @@ void LALInferenceWriteMCMCSamples(LALInferenceRunState *runState) {
             LALInferenceH5VariablesArrayToDataset(group, output_array, N_output_array, thread->name);
         }
     }
+    char *cl=NULL;
+    cl=LALInferencePrintCommandLine(runState->commandLine);
+    XLALH5FileAddStringAttribute(group,"CommandLine",cl);
     XLALH5FileClose(group);
     XLALH5FileClose(output);
     LALInferencePrintCheckpointFileInfo(runState->outFileName);
