@@ -189,131 +189,34 @@ main(int argc, char *argv[])
       fclose(fpRand);
     } /* end cleaning */
 
-  LogPrintf (LOG_DEBUG, "Computing spectrogram and PSD ... ");
-
-  /* get power running-median rngmed[ |data|^2 ] from SFTs */
-  MultiPSDVector *multiPSD = NULL;
-  /* as the output of XLALNormalizeMultiSFTVect(),
-   * multiPSD will be a rng-median smoothed periodogram over the normalized SFTs.
-   * The inputSFTs themselves will also be normalized in this call.
-  */
-  XLAL_CHECK_MAIN( ( multiPSD = XLALNormalizeMultiSFTVect ( inputSFTs, uvar.blocksRngMed, NULL ) ) != NULL, XLAL_EFUNC);
-  /* restrict this PSD to just the "physical" band if requested using {--Freq, --FreqBand} */
-  if ( ( XLALCropMultiPSDandSFTVectors ( multiPSD, inputSFTs, cfg.firstBin, cfg.lastBin )) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALCropMultiPSDandSFTVectors (inputPSD, inputSFTs, %d, %d) failed with xlalErrno = %d\n", __func__, cfg.firstBin, cfg.lastBin, xlalErrno );
-    return EXIT_FAILURE;
-  }
-
-  /* start frequency and frequency spacing */
-  REAL8 Freq0 = multiPSD->data[0]->data[0].f0;
-  REAL8 dFreq = multiPSD->data[0]->data[0].deltaF;
-
-  /* number of raw bins in final PSD */
-  UINT4 numBins = multiPSD->data[0]->data[0].data->length;
-  REAL8Vector *finalPSD = NULL; /* math. operation PSD over SFTs and IFOs */
-  if ( (finalPSD = XLALCreateREAL8Vector ( numBins )) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "Out of memory!\n");
-    return EXIT_FAILURE;
-  }
-
-  /* number of IFOs */
-  UINT4 numIFOs = multiPSD->length;
-  REAL8Vector *overIFOs = NULL; /* one frequency bin over IFOs */
-  if ( (overIFOs = XLALCreateREAL8Vector ( numIFOs )) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "Out of memory!\n");
-    return EXIT_FAILURE;
-  }
-
-  /* maximum number of SFTs */
-  UINT4 maxNumSFTs = 0;
-  for (UINT4 X = 0; X < numIFOs; ++X) {
-    maxNumSFTs = GSL_MAX(maxNumSFTs, multiPSD->data[X]->length);
-  }
-
-  REAL8Vector *overSFTs = NULL; /* one frequency bin over SFTs */
-  if ( (overSFTs = XLALCreateREAL8Vector ( maxNumSFTs )) == NULL ) {
-    LogPrintf (LOG_CRITICAL, "Out of memory!\n");
-    return EXIT_FAILURE;
-  }
-
-  /* normalize rngmd(power) to get proper *single-sided* PSD: Sn = (2/Tsft) rngmed[|data|^2]] */
-  REAL8 normPSD = 2.0 * dFreq;
-
-  /* loop over frequency bins in final PSD */
-  for (UINT4 k = 0; k < numBins; ++k) {
-
-    /* loop over IFOs */
-    for (UINT4 X = 0; X < numIFOs; ++X) {
-
-      /* number of SFTs for this IFO */
-      UINT4 numSFTs = multiPSD->data[X]->length;
-
-      /* copy PSD frequency bins and normalise multiPSD for later use */
-      for (UINT4 alpha = 0; alpha < numSFTs; ++alpha) {
-        multiPSD->data[X]->data[alpha].data->data[k] *= normPSD;
-        overSFTs->data[alpha] = multiPSD->data[X]->data[alpha].data->data[k];
-      }
-
-      /* compute math. operation over SFTs for this IFO */
-      overIFOs->data[X] = XLALMathOpOverArray(overSFTs->data, numSFTs, uvar.PSDmthopSFTs);
-      XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(overIFOs->data[X]), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for overIFOs->data[X=%d]", X );
-
-    } /* for IFOs X */
-
-    /* compute math. operation over IFOs for this frequency */
-    finalPSD->data[k] = XLALMathOpOverArray(overIFOs->data, numIFOs, uvar.PSDmthopIFOs);
-    XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(finalPSD->data[k]), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for finalPSD->data[k=%d]", k );
-
-  } /* for freq bins k */
-  LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
-
-  /* compute normalised SFT power */
-  REAL8Vector *finalNormSFT = NULL; /* normalised SFT power */
-  if (uvar.outputNormSFT) {
-    LogPrintf (LOG_DEBUG, "Computing normalised SFT power ... ");
-
-    if ( (finalNormSFT = XLALCreateREAL8Vector ( numBins )) == NULL ) {
-      LogPrintf (LOG_CRITICAL, "Out of memory!\n");
-      return EXIT_FAILURE;
-    }
-
-    /* loop over frequency bins in SFTs */
-    for (UINT4 k = 0; k < numBins; ++k) {
-
-      /* loop over IFOs */
-      for (UINT4 X = 0; X < numIFOs; ++X) {
-
-        /* number of SFTs for this IFO */
-        UINT4 numSFTs = inputSFTs->data[X]->length;
-
-        /* compute SFT power */
-        for (UINT4 alpha = 0; alpha < numSFTs; ++alpha) {
-          COMPLEX8 bin = inputSFTs->data[X]->data[alpha].data->data[k];
-          overSFTs->data[alpha] = crealf(bin)*crealf(bin) + cimagf(bin)*cimagf(bin);
-        }
-
-        /* compute math. operation over SFTs for this IFO */
-        overIFOs->data[X] = XLALMathOpOverArray(overSFTs->data, numSFTs, uvar.nSFTmthopSFTs);
-        XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(overIFOs->data[X]), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for overIFOs->data[X=%d]", X );
-
-      } /* over IFOs */
-
-      /* compute math. operation over IFOs for this frequency */
-      finalNormSFT->data[k] = XLALMathOpOverArray(overIFOs->data, numIFOs, uvar.nSFTmthopIFOs);
-      XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(finalNormSFT->data[k]), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for finalNormSFT->data[k=%d]", k );
-
-    } /* over freq bins */
-    LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
-  }
+  /* call the main loop function; output vectors will be allocated inside */
+  REAL8Vector *finalPSD = NULL;
+  MultiPSDVector *multiPSDVector = NULL;
+  REAL8Vector *normSFT = NULL;
+  BOOLEAN returnMultiPSDVector = ( uvar.outputSpectBname || uvar.dumpMultiPSDVector || uvar.outputQ );
+  XLAL_CHECK_MAIN ( XLALComputePSDandNormSFTPower ( &finalPSD,
+                      &multiPSDVector,
+                      &normSFT,
+                      inputSFTs,
+                      returnMultiPSDVector,
+                      uvar.outputNormSFT,
+                      uvar.blocksRngMed,
+                      uvar.PSDmthopSFTs,
+                      uvar.PSDmthopIFOs,
+                      uvar.nSFTmthopSFTs,
+                      uvar.nSFTmthopIFOs,
+                      cfg.firstBin,
+                      cfg.lastBin
+                  ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* output spectrograms */
   if ( uvar.outputSpectBname ) {
-    LAL_CALL ( LALfwriteSpectrograms ( &status, uvar.outputSpectBname, multiPSD ), &status );
+    LAL_CALL ( LALfwriteSpectrograms ( &status, uvar.outputSpectBname, multiPSDVector ), &status );
   }
 
   /* ---------- if user requested it, output complete MultiPSDVector over IFOs X, timestamps and freq-bins into ASCI file(s) */
   if ( uvar.dumpMultiPSDVector ) {
-    if ( XLALDumpMultiPSDVector ( uvar.outputPSD, multiPSD ) != XLAL_SUCCESS ) {
+    if ( XLALDumpMultiPSDVector ( uvar.outputPSD, multiPSDVector ) != XLAL_SUCCESS ) {
       XLALPrintError ("%s: XLALDumpMultiPSDVector() failed, xlalErrnor = %d\n", __func__, xlalErrno );
       return EXIT_FAILURE;
     }
@@ -323,7 +226,7 @@ main(int argc, char *argv[])
   if ( uvar.outputQ )
     {
       REAL8FrequencySeries *Q;
-      if ( (Q = XLALComputeSegmentDataQ ( multiPSD, cfg.dataSegment )) == NULL ) {
+      if ( (Q = XLALComputeSegmentDataQ ( multiPSDVector, cfg.dataSegment )) == NULL ) {
         XLALPrintError ("%s: XLALComputeSegmentDataQ() failed with xlalErrno = %d\n", __func__, xlalErrno );
         return EXIT_FAILURE;
       }
@@ -334,6 +237,9 @@ main(int argc, char *argv[])
     } /* if outputQ */
 
   /* ---------- BINNING if requested ---------- */
+  /* start frequency and frequency spacing */
+  REAL8 Freq0 = inputSFTs->data[0]->data[0].f0;
+  REAL8 dFreq = inputSFTs->data[0]->data[0].deltaF;
   /* work out bin size */
   UINT4 finalBinSize;
   if (XLALUserVarWasSet(&uvar.binSize)) {
@@ -359,11 +265,13 @@ main(int argc, char *argv[])
   }
 
   /* work out total number of bins */
+  UINT4 numBins = finalPSD->length;
   UINT4 finalNumBins = (UINT4)floor((numBins - finalBinSize) / finalBinStep) + 1;
 
   /* write final PSD to file */
   if (XLALUserVarWasSet(&uvar.outputPSD)) {
 
+    LogPrintf(LOG_DEBUG, "Printing PSD to file ...\n");
     FILE *fpOut = NULL;
 
     if ((fpOut = fopen(uvar.outputPSD, "wb")) == NULL) {
@@ -388,7 +296,6 @@ main(int argc, char *argv[])
       fprintf(fpOut," normSFTpower");
     fprintf(fpOut,"\n");
 
-    LogPrintf(LOG_DEBUG, "Printing PSD to file ... ");
     for (UINT4 k = 0; k < finalNumBins; ++k) {
       UINT4 b = k * finalBinStep;
 
@@ -404,7 +311,7 @@ main(int argc, char *argv[])
       fprintf(fpOut, "   %e", psd);
 
       if (uvar.outputNormSFT) {
-        REAL8 nsft = XLALMathOpOverArray(&(finalNormSFT->data[b]), finalBinSize, uvar.nSFTmthopBins);
+        REAL8 nsft = XLALMathOpOverArray(&(normSFT->data[b]), finalBinSize, uvar.nSFTmthopBins);
         XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(nsft), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for nsft[k=%d]", k );
 
         fprintf(fpOut, "   %f", nsft);
@@ -419,15 +326,14 @@ main(int argc, char *argv[])
   }
 
   /* we are now done with the psd */
-  XLALDestroyMultiPSDVector  ( multiPSD);
-  XLALDestroyMultiSFTVector  ( inputSFTs);
+  if ( returnMultiPSDVector ) {
+    XLALDestroyMultiPSDVector ( multiPSDVector);
+  }
+  XLALDestroyMultiSFTVector ( inputSFTs);
+  XLALDestroyREAL8Vector ( finalPSD );
+  XLALDestroyREAL8Vector ( normSFT );
 
   XLALDestroyUserVars();
-
-  XLALDestroyREAL8Vector ( overSFTs );
-  XLALDestroyREAL8Vector ( overIFOs );
-  XLALDestroyREAL8Vector ( finalPSD );
-  XLALDestroyREAL8Vector ( finalNormSFT );
 
   LALCheckMemoryLeaks();
 

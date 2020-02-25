@@ -192,6 +192,20 @@ SFTVector *XLALExtractSFTVectorWithTimestamps ( const SFTVector *sfts, const LIG
 MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVector *multiSFTs, const MultiLIGOTimeGPSVector *multiTimestamps );
 
 // compute and work with PSDs
+int XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD,
+                                    MultiPSDVector **multiPSDVector,
+                                    REAL8Vector **normSFT,
+                                    MultiSFTVector *inputSFTs,
+                                    const BOOLEAN returnMultiPSDVector,
+                                    const BOOLEAN returnNormSFT,
+                                    const UINT4 blocksRngMed,
+                                    const MathOpType PSDmthopSFTs,
+                                    const MathOpType PSDmthopIFOs,
+                                    const MathOpType nSFTmthopSFTs,
+                                    const MathOpType nSFTmthopIFOs,
+                                    const UINT4 firstBin,
+                                    const UINT4 lastBin
+                              );
 int XLALDumpMultiPSDVector ( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
 int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector *multiSFTVect, UINT4 firstBin, UINT4 lastBin );
 REAL8FrequencySeries *XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, LALSeg segment );

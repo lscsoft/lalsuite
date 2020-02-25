@@ -2136,6 +2136,145 @@ TSFTfromDFreq ( REAL8 dFreq )
 
 
 /**
+ * Compute the PSD (power spectral density) and the "normalized power" \f$P_\mathrm{SFT}\f$ over a MultiSFTVector.
+ *
+ * \return: a REAL8Vector of the final normalized and averaged/summed PSD;
+ * plus the full multiPSDVector array,
+ * and optionally a REAL8Vector of normalized SFT power (only if not passed as NULL)
+ *
+ */
+int
+XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD averaged over all IFOs and timestamps */
+                                MultiPSDVector **multiPSDVector, /* [out] complete MultiPSDVector over IFOs, timestamps and freq-bins */
+                                REAL8Vector **normSFT, /* [out] normalised SFT power (optional) */
+                                MultiSFTVector *inputSFTs, /* [in] the multi-IFO SFT data */
+                                const BOOLEAN returnMultiPSDVector, /* [in] whether to return multiPSDVector */
+                                const BOOLEAN returnNormSFT, /* [in] whether to return normSFT vector */
+                                const UINT4 blocksRngMed, /* [in] running Median window size */
+                                const MathOpType PSDmthopSFTs, /* [in] math operation over SFTs for each IFO (PSD) */
+                                const MathOpType PSDmthopIFOs, /* [in] math operation over IFOs (PSD) */
+                                const MathOpType nSFTmthopSFTs, /* [in] math operation over SFTs for each IFO (normSFT) */
+                                const MathOpType nSFTmthopIFOs, /* [in] math operation over IFOs (normSFT) */
+                                const UINT4 firstBin, /* [in] first PSD bin for output */
+                                const UINT4 lastBin /* [in] last PSD bin for output */
+                              )
+{
+
+  /* sanity checks */
+  XLAL_CHECK ( finalPSD, XLAL_EINVAL );
+  XLAL_CHECK ( multiPSDVector, XLAL_EINVAL );
+  XLAL_CHECK ( normSFT, XLAL_EINVAL );
+  XLAL_CHECK ( inputSFTs && inputSFTs->data && inputSFTs->length>0, XLAL_EINVAL, "inputSFTs must be pre-allocated." );
+
+  /* get power running-median rngmed[ |data|^2 ] from SFTs */
+  /* as the output of XLALNormalizeMultiSFTVect(),
+   * multiPSD will be a rng-median smoothed periodogram over the normalized SFTs.
+   * The inputSFTs themselves will also be normalized in this call.
+  */
+  XLAL_CHECK ( (*multiPSDVector = XLALNormalizeMultiSFTVect ( inputSFTs, blocksRngMed, NULL )) != NULL, XLAL_EFUNC);
+  /* restrict to just the "physical" band if requested */
+  XLAL_CHECK ( XLALCropMultiPSDandSFTVectors ( *multiPSDVector, inputSFTs, firstBin, lastBin ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALCropMultiPSDandSFTVectors (multiPSDVector, inputSFTs, firstBin=%d, lastBin=%d)", firstBin, lastBin );
+
+  /* number of raw bins in final PSD */
+  UINT4 numBins = (*multiPSDVector)->data[0]->data[0].data->length;
+
+  /* allocate main output struct, using cropped length */
+  XLAL_CHECK ( (*finalPSD = XLALCreateREAL8Vector ( numBins )) != NULL, XLAL_ENOMEM, "Failed to create REAL8Vector for finalPSD.");
+
+  /* number of IFOs */
+  UINT4 numIFOs = (*multiPSDVector)->length;
+  REAL8Vector *overIFOs = NULL; /* one frequency bin over IFOs */
+  XLAL_CHECK ( (overIFOs = XLALCreateREAL8Vector ( numIFOs )) != NULL, XLAL_ENOMEM, "Failed to create REAL8Vector for overIFOs array.");
+
+  /* maximum number of SFTs */
+  UINT4 maxNumSFTs = 0;
+  for (UINT4 X = 0; X < numIFOs; ++X) {
+    maxNumSFTs = GSL_MAX(maxNumSFTs, (*multiPSDVector)->data[X]->length);
+  }
+
+  REAL8Vector *overSFTs = NULL; /* one frequency bin over SFTs */
+  XLAL_CHECK ( (overSFTs = XLALCreateREAL8Vector ( maxNumSFTs )) != NULL, XLAL_ENOMEM, "Failed to create REAL8Vector for overSFTs array.");
+
+  /* normalize rngmd(power) to get proper *single-sided* PSD: Sn = (2/Tsft) rngmed[|data|^2]] */
+  REAL8 dFreq = (*multiPSDVector)->data[0]->data[0].deltaF;
+  REAL8 normPSD = 2.0 * dFreq;
+
+  XLAL_PRINT_INFO("Computing spectrogram and PSD ...");
+  /* loop over frequency bins in final PSD */
+  for (UINT4 k = 0; k < numBins; ++k) {
+
+    /* loop over IFOs */
+    for (UINT4 X = 0; X < numIFOs; ++X) {
+
+      /* number of SFTs for this IFO */
+      UINT4 numSFTs = (*multiPSDVector)->data[X]->length;
+
+      /* copy PSD frequency bins and normalise multiPSDVector for later use */
+      for (UINT4 alpha = 0; alpha < numSFTs; ++alpha) {
+        (*multiPSDVector)->data[X]->data[alpha].data->data[k] *= normPSD;
+        overSFTs->data[alpha] = (*multiPSDVector)->data[X]->data[alpha].data->data[k];
+      }
+
+      /* compute math. operation over SFTs for this IFO */
+      overIFOs->data[X] = XLALMathOpOverArray(overSFTs->data, numSFTs, PSDmthopSFTs);
+      XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(overIFOs->data[X]), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for overIFOs->data[X=%d]", X );
+
+    } /* for IFOs X */
+
+    /* compute math. operation over IFOs for this frequency */
+    (*finalPSD)->data[k] = XLALMathOpOverArray(overIFOs->data, numIFOs, PSDmthopIFOs);
+    XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN((*finalPSD)->data[k]), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for finalPSD->data[k=%d]", k );
+
+  } /* for freq bins k */
+  XLAL_PRINT_INFO("done.");
+
+  /* compute normalised SFT power */
+  if ( returnNormSFT ) {
+    XLAL_PRINT_INFO("Computing normalised SFT power ...");
+    XLAL_CHECK ( (*normSFT = XLALCreateREAL8Vector ( numBins )) != NULL, XLAL_ENOMEM, "Failed to create REAL8Vector for normSFT.");
+
+    /* loop over frequency bins in SFTs */
+    for (UINT4 k = 0; k < numBins; ++k) {
+
+      /* loop over IFOs */
+      for (UINT4 X = 0; X < numIFOs; ++X) {
+
+        /* number of SFTs for this IFO */
+        UINT4 numSFTs = inputSFTs->data[X]->length;
+
+        /* compute SFT power */
+        for (UINT4 alpha = 0; alpha < numSFTs; ++alpha) {
+          COMPLEX8 bin = inputSFTs->data[X]->data[alpha].data->data[k];
+          overSFTs->data[alpha] = crealf(bin)*crealf(bin) + cimagf(bin)*cimagf(bin);
+        }
+
+        /* compute math. operation over SFTs for this IFO */
+        overIFOs->data[X] = XLALMathOpOverArray(overSFTs->data, numSFTs, nSFTmthopSFTs);
+        XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(overIFOs->data[X]), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for overIFOs->data[X=%d]", X );
+
+      } /* over IFOs */
+
+      /* compute math. operation over IFOs for this frequency */
+      (*normSFT)->data[k] = XLALMathOpOverArray(overIFOs->data, numIFOs, nSFTmthopIFOs);
+      XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN((*normSFT)->data[k]), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for normSFT->data[k=%d]", k );
+
+    } /* over freq bins */
+    XLAL_PRINT_INFO("done.");
+  } /* if returnNormSFT */
+
+  XLALDestroyREAL8Vector ( overSFTs );
+  XLALDestroyREAL8Vector ( overIFOs );
+
+  if ( !returnMultiPSDVector ) {
+    XLALDestroyMultiPSDVector ( *multiPSDVector);
+  }
+
+  return XLAL_SUCCESS;
+
+} /* XLALComputePSDandNormSFTPower() */
+
+
+/**
  * Dump complete multi-PSDVector over IFOs, timestamps and frequency-bins into
  * per-IFO ASCII output-files 'outbname-IFO'
  *
