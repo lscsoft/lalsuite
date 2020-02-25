@@ -143,8 +143,8 @@ XLALOutputVersionString ( FILE *fp, int level )
     XLALPrintError ("%s: invalid NULL input 'fp'\n", __func__ );
     XLAL_ERROR ( XLAL_EINVAL );
   }
-  if ( (VCSInfoString = XLALGetVersionString(level)) == NULL ) {
-    XLALPrintError("%s: XLALGetVersionString() failed.\n", __func__);
+  if ( (VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, level, "%% ")) == NULL ) {
+    XLALPrintError("%s: XLALVCSInfoString() failed.\n", __func__);
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
