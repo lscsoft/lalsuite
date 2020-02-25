@@ -149,15 +149,6 @@ main(int argc, char *argv[])
   UserVariables_t XLAL_INIT_DECL(uvar);
   ConfigVariables_t XLAL_INIT_DECL(cfg);
 
-  UINT4 k, numBins, numIFOs, maxNumSFTs, X, alpha;
-  REAL8 Freq0, dFreq, normPSD;
-  UINT4 finalBinSize, finalBinStep, finalNumBins;
-
-  REAL8Vector *overSFTs = NULL; /* one frequency bin over SFTs */
-  REAL8Vector *overIFOs = NULL; /* one frequency bin over IFOs */
-  REAL8Vector *finalPSD = NULL; /* math. operation PSD over SFTs and IFOs */
-  REAL8Vector *finalNormSFT = NULL; /* normalised SFT power */
-
   vrbflg = 1;	/* verbose error-messages */
 
   /* set LAL error-handler */
@@ -202,6 +193,10 @@ main(int argc, char *argv[])
 
   /* get power running-median rngmed[ |data|^2 ] from SFTs */
   MultiPSDVector *multiPSD = NULL;
+  /* as the output of XLALNormalizeMultiSFTVect(),
+   * multiPSD will be a rng-median smoothed periodogram over the normalized SFTs.
+   * The inputSFTs themselves will also be normalized in this call.
+  */
   XLAL_CHECK_MAIN( ( multiPSD = XLALNormalizeMultiSFTVect ( inputSFTs, uvar.blocksRngMed, NULL ) ) != NULL, XLAL_EFUNC);
   /* restrict this PSD to just the "physical" band if requested using {--Freq, --FreqBand} */
   if ( ( XLALCropMultiPSDandSFTVectors ( multiPSD, inputSFTs, cfg.firstBin, cfg.lastBin )) != XLAL_SUCCESS ) {
@@ -210,47 +205,51 @@ main(int argc, char *argv[])
   }
 
   /* start frequency and frequency spacing */
-  Freq0 = multiPSD->data[0]->data[0].f0;
-  dFreq = multiPSD->data[0]->data[0].deltaF;
+  REAL8 Freq0 = multiPSD->data[0]->data[0].f0;
+  REAL8 dFreq = multiPSD->data[0]->data[0].deltaF;
 
   /* number of raw bins in final PSD */
-  numBins = multiPSD->data[0]->data[0].data->length;
+  UINT4 numBins = multiPSD->data[0]->data[0].data->length;
+  REAL8Vector *finalPSD = NULL; /* math. operation PSD over SFTs and IFOs */
   if ( (finalPSD = XLALCreateREAL8Vector ( numBins )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Out of memory!\n");
     return EXIT_FAILURE;
   }
 
   /* number of IFOs */
-  numIFOs = multiPSD->length;
+  UINT4 numIFOs = multiPSD->length;
+  REAL8Vector *overIFOs = NULL; /* one frequency bin over IFOs */
   if ( (overIFOs = XLALCreateREAL8Vector ( numIFOs )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Out of memory!\n");
     return EXIT_FAILURE;
   }
 
   /* maximum number of SFTs */
-  maxNumSFTs = 0;
-  for (X = 0; X < numIFOs; ++X) {
+  UINT4 maxNumSFTs = 0;
+  for (UINT4 X = 0; X < numIFOs; ++X) {
     maxNumSFTs = GSL_MAX(maxNumSFTs, multiPSD->data[X]->length);
   }
+
+  REAL8Vector *overSFTs = NULL; /* one frequency bin over SFTs */
   if ( (overSFTs = XLALCreateREAL8Vector ( maxNumSFTs )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Out of memory!\n");
     return EXIT_FAILURE;
   }
 
   /* normalize rngmd(power) to get proper *single-sided* PSD: Sn = (2/Tsft) rngmed[|data|^2]] */
-  normPSD = 2.0 * dFreq;
+  REAL8 normPSD = 2.0 * dFreq;
 
   /* loop over frequency bins in final PSD */
-  for (k = 0; k < numBins; ++k) {
+  for (UINT4 k = 0; k < numBins; ++k) {
 
     /* loop over IFOs */
-    for (X = 0; X < numIFOs; ++X) {
+    for (UINT4 X = 0; X < numIFOs; ++X) {
 
       /* number of SFTs for this IFO */
       UINT4 numSFTs = multiPSD->data[X]->length;
 
       /* copy PSD frequency bins and normalise multiPSD for later use */
-      for (alpha = 0; alpha < numSFTs; ++alpha) {
+      for (UINT4 alpha = 0; alpha < numSFTs; ++alpha) {
         multiPSD->data[X]->data[alpha].data->data[k] *= normPSD;
         overSFTs->data[alpha] = multiPSD->data[X]->data[alpha].data->data[k];
       }
@@ -269,6 +268,7 @@ main(int argc, char *argv[])
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   /* compute normalised SFT power */
+  REAL8Vector *finalNormSFT = NULL; /* normalised SFT power */
   if (uvar.outputNormSFT) {
     LogPrintf (LOG_DEBUG, "Computing normalised SFT power ... ");
 
@@ -278,16 +278,16 @@ main(int argc, char *argv[])
     }
 
     /* loop over frequency bins in SFTs */
-    for (k = 0; k < numBins; ++k) {
+    for (UINT4 k = 0; k < numBins; ++k) {
 
       /* loop over IFOs */
-      for (X = 0; X < numIFOs; ++X) {
+      for (UINT4 X = 0; X < numIFOs; ++X) {
 
         /* number of SFTs for this IFO */
         UINT4 numSFTs = inputSFTs->data[X]->length;
 
         /* compute SFT power */
-        for (alpha = 0; alpha < numSFTs; ++alpha) {
+        for (UINT4 alpha = 0; alpha < numSFTs; ++alpha) {
           COMPLEX8 bin = inputSFTs->data[X]->data[alpha].data->data[k];
           overSFTs->data[alpha] = crealf(bin)*crealf(bin) + cimagf(bin)*cimagf(bin);
         }
@@ -335,6 +335,7 @@ main(int argc, char *argv[])
 
   /* ---------- BINNING if requested ---------- */
   /* work out bin size */
+  UINT4 finalBinSize;
   if (XLALUserVarWasSet(&uvar.binSize)) {
     finalBinSize = uvar.binSize;
   }
@@ -346,6 +347,7 @@ main(int argc, char *argv[])
   }
 
   /* work out bin step */
+  UINT4 finalBinStep;
   if (XLALUserVarWasSet(&uvar.binStep)) {
     finalBinStep = uvar.binStep;
   }
@@ -357,7 +359,7 @@ main(int argc, char *argv[])
   }
 
   /* work out total number of bins */
-  finalNumBins = (UINT4)floor((numBins - finalBinSize) / finalBinStep) + 1;
+  UINT4 finalNumBins = (UINT4)floor((numBins - finalBinSize) / finalBinStep) + 1;
 
   /* write final PSD to file */
   if (XLALUserVarWasSet(&uvar.outputPSD)) {
@@ -387,7 +389,7 @@ main(int argc, char *argv[])
     fprintf(fpOut,"\n");
 
     LogPrintf(LOG_DEBUG, "Printing PSD to file ... ");
-    for (k = 0; k < finalNumBins; ++k) {
+    for (UINT4 k = 0; k < finalNumBins; ++k) {
       UINT4 b = k * finalBinStep;
 
       REAL8 f0 = Freq0 + b * dFreq;
@@ -594,7 +596,6 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
 void
 LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVector *multiPSD )
 {
-  UINT4 X;
   CHAR *fname;
   float num, *row_data;		/* cast to float for writing (gnuplot binary format) */
   FILE *fp;
@@ -607,16 +608,14 @@ LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVect
   }
 
   /* loop over IFOs */
-  for ( X = 0; X < multiPSD->length ; X ++ )
+  for ( UINT4 X = 0; X < multiPSD->length ; X ++ )
     {
       UINT4 len = strlen ( bname ) + 4;	/* append '-XN' to get IFO-specific filename */
-      UINT4 numSFTs, numBins;
-      UINT4 j, k;
       const CHAR *tmp;
       REAL8 f0, df;
 
-      numSFTs = multiPSD->data[X]->length;
-      numBins = multiPSD->data[X]->data[0].data->length;
+      UINT4 numSFTs = multiPSD->data[X]->length;
+      UINT4 numBins = multiPSD->data[X]->data[0].data->length;
 
       /* allocate memory for data row-vector */
       if ( ( row_data = LALMalloc ( numBins * sizeof(float) )) == NULL ) {
@@ -645,7 +644,7 @@ LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVect
       /* write frequencies as column-titles */
       f0 = multiPSD->data[X]->data[0].f0;
       df = multiPSD->data[X]->data[0].deltaF;
-      for ( k=0; k < numBins; k ++ )
+      for ( UINT4 k=0; k < numBins; k ++ )
         row_data[k] = (float) ( f0 + 1.0 * k * df );
       if ( fwrite((char *) row_data, sizeof(float), numBins, fp) != numBins ) {
         LogPrintf (LOG_CRITICAL, "Failed to fwrite() to spectrogram file '%s'\n", fname );
@@ -653,9 +652,9 @@ LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVect
       }
 
       /* write PSDs of successive SFTs in rows, first column is GPS-time in seconds */
-      for ( j = 0; j < numSFTs ; j ++ ) {
+      for ( UINT4 j = 0; j < numSFTs ; j ++ ) {
         num = (float) multiPSD->data[X]->data[j].epoch.gpsSeconds;
-        for ( k = 0; k < numBins; k ++ )
+        for ( UINT4 k = 0; k < numBins; k ++ )
           row_data[k] = (float) sqrt ( multiPSD->data[X]->data[j].data->data[k] );
 
         if ( ( fwrite((char *) &num, sizeof(float), 1, fp) != 1 ) ||
@@ -879,8 +878,7 @@ CHAR unitStr[1024];
 
  fprintf ( fp, "%%%% Freq [Hz]           Data(Freq)\n");
  UINT4 numBins = series->data->length;
- UINT4 iFreq;
- for ( iFreq = 0; iFreq < numBins; iFreq ++ )
+ for ( UINT4 iFreq = 0; iFreq < numBins; iFreq ++ )
    {
      REAL8 thisFreq = series->f0 + iFreq * series->deltaF;
      fprintf (fp, "%20.16f  %20.16g\n", thisFreq, series->data->data[iFreq] );
