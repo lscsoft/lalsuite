@@ -268,8 +268,7 @@ cache:
 documentation:
   image: igwn/lalsuite-dev:stretch-proposed
   stage: documentation
-  needs:
-    - make-dist
+  needs: []
   script:
     - ./00boot
     - ./configure --enable-doxygen --prefix=${LAL_DIR}
@@ -298,8 +297,7 @@ pages:
     - cp lalsuite/index.html index.html
     - sed -i 's/..\/lal/lal/g' index.html
     - popd
-  needs:
-    - make-dist
+  needs: []
   artifacts:
     paths:
       - public
@@ -641,8 +639,7 @@ lalinference_testjob:
 top-level:
   stage: integration tests
   image: igwn/lalsuite-dev:el7-testing
-  needs:
-    - make-dist
+  needs: []
   <<: *top-level-build
   only:
     - pushes
@@ -761,8 +758,7 @@ docker:tags:stretch:
 
 .clang-build: &clang-build
   stage: compiler tests
-  needs:
-    - make-dist
+  needs: []
   script:
     - ./00boot
     - CC=${CLANG} CXX=${CLANGXX} ./configure --enable-swig --enable-doxygen
@@ -797,8 +793,7 @@ clang:dev:
 
 .gcc-build: &gcc-build
   stage: compiler tests
-  needs:
-    - make-dist
+  needs: []
   script:
     - ./00boot
     - ./configure --enable-doxygen
@@ -827,8 +822,7 @@ gcc:9:
 platform:debian:buster:
   image: igwn/lalsuite-dev:buster
   stage: platform tests
-  needs:
-    - make-dist
+  needs: []
   <<: *top-level-build
   only:
     - schedules
@@ -847,8 +841,7 @@ platform:macos:highsierra:
     - PYTHON=/opt/local/bin/python2.7 ./configure
     - make -j4
     - make -j4 check
-  needs:
-    - make-dist
+  needs: []
   only:
     - schedules
     - web
@@ -867,8 +860,7 @@ platform:macos:sierra:
     - PYTHON=/opt/local/bin/python2.7 ./configure
     - make -j4
     - make -j4 check
-  needs:
-    - make-dist
+  needs: []
   only:
     - schedules
     - web
@@ -897,8 +889,7 @@ platform:macos:sierra:
     - source test/bin/activate
     - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio, lalsimulation; series = lal.CreateREAL8FrequencySeries("psd", 0, 0, 1, None, 4096); lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)'
-  needs:
-    - make-dist
+  needs: []
   only:
     - /^lalsuite-v.*$/
     - schedules
@@ -934,8 +925,7 @@ platform:macos:sierra:
     - source test/bin/activate
     - python -m pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio, lalsimulation; series = lal.CreateREAL8FrequencySeries("psd", 0, 0, 1, None, 4096); lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)'
-  needs:
-    - make-dist
+  needs: []
   only:
     - /^lalsuite-v.*$/
     - schedules
