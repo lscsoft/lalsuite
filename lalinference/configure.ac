@@ -167,13 +167,6 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 # check for OpenMP
 LALSUITE_ENABLE_OPENMP
 
-# check for HEALPix
-PKG_CHECK_MODULES([CHEALPIX],[chealpix >= 3.30.0],[true],[false])
-LALSUITE_ADD_FLAGS([C],[${CHEALPIX_CFLAGS}],[${CHEALPIX_LIBS}])
-HEALPIX_ENABLE_VAL=ENABLED
-AC_CHECK_LIB([chealpix],[nside2npix],,[HEALPIX_ENABLE_VAL=DISABLED])
-AM_CONDITIONAL([HAVE_CHEALPIX],[test "x$HEALPIX_ENABLE_VAL" = "xENABLED"])
-
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
@@ -227,7 +220,6 @@ LALInference has now been successfully configured:
 * Python support is $PYTHON_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
-* HEALPix is $HEALPIX_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL
 * MPI support is $MPI_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL
