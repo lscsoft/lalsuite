@@ -146,31 +146,34 @@ def ExcessPowerPostFunc(sngl_burst_table, offset):
 		row.peak = offset + row.peak_time
 
 
-def ExcessPowerSortFunc(a, b):
+def ExcessPowerSortKeyFunc(a, b):
 	"""
-	Orders a and b by ifo, then by channel, then by search, then by
-	start time.
+	Sort key to grouping excess power triggers near triggers with which
+	they might cluster.
 	"""
-	return cmp(a.ifo, b.ifo) or cmp(a.channel, b.channel) or cmp(a.search, b.search) or cmp(a.start, b.start)
+	return (a.ifo, a.channel, a.search, a.start)
 
 
 def ExcessPowerBailoutFunc(a, b):
 	"""
-	Orders a and b by ifo, then by channel, then by search, then by
-	time interval.  Returns 0 if a and b are from the same channel of
-	the same instrument and their time intervals are not disjoint.
+	Returns True if a's and b's (ifo, channel, seach) are different or
+	if the periods they span are disjoint.  Knowing excess power
+	triggers have been ordered according to ExcessPowerSortKeyFunc(),
+	then if for a pair of events this function returns False, we know
+	the result will also be False for all other events farther apart in
+	the list.  This is used to terminate the scan for events to
+	cluster.
 	"""
-	return cmp(a.ifo, b.ifo) or cmp(a.channel, b.channel) or cmp(a.search, b.search) or a.period.disjoint(b.period)
+	return (a.ifo, a.channel, a.search) != (b.ifo, b.channel, b.search) or a.period.disjoint(b.period)
 
 
 def ExcessPowerTestFunc(a, b):
 	"""
-	Orders a and b by ifo, then by channel, then by search, then time
-	interval, then by frequency band.  Returns 0 if a and b are from
-	the same channel of the same instrument, and their time-frequency
-	tiles are not disjoint.
+	Return False if a and b cluster.  To cluster, two events must be
+	from the same channel of the same instrument, and their
+	time-frequency tiles must be non-disjoint.
 	"""
-	return cmp(a.ifo, b.ifo) or cmp(a.channel, b.channel) or cmp(a.search, b.search) or a.period.disjoint(b.period) or a.band.disjoint(b.band)
+	return (a.ifo, a.channel, a.search) != (b.ifo, b.channel, b.search) or a.period.disjoint(b.period) or a.band.disjoint(b.band)
 
 
 def ExcessPowerClusterFunc(a, b):
@@ -343,7 +346,7 @@ def bucluster(
 	postfunc,
 	testfunc,
 	clusterfunc,
-	sortfunc = None,
+	sortkeyfunc = None,
 	bailoutfunc = None,
 	verbose = False
 ):
@@ -384,7 +387,7 @@ def bucluster(
 	# Cluster
 	#
 
-	table_changed = snglcluster.cluster_events(sngl_burst_table, testfunc, clusterfunc, sortfunc = sortfunc, bailoutfunc = bailoutfunc, verbose = verbose)
+	table_changed = snglcluster.cluster_events(sngl_burst_table, testfunc, clusterfunc, sortkeyfunc = sortkeyfunc, bailoutfunc = bailoutfunc, verbose = verbose)
 
 	#
 	# Postprocess candidates

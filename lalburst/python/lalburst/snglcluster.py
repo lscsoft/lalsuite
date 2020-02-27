@@ -75,7 +75,7 @@ def weighted_average_seg(seg1, weight1, seg2, weight2):
 #
 
 
-def cluster_events(events, testfunc, clusterfunc, sortfunc = None, bailoutfunc = None, verbose = False):
+def cluster_events(events, testfunc, clusterfunc, sortkeyfunc = None, bailoutfunc = None, verbose = False):
 	"""
 	Cluster the events in an event list.  testfunc will be passed a
 	pair of events in random order, and must return 0 (or False) if
@@ -85,9 +85,9 @@ def cluster_events(events, testfunc, clusterfunc, sortfunc = None, bailoutfunc =
 	or modify one or the other of its parameters in place and return
 	it.
 
-	If sortfunc and bailoutfunc are both not None (if one is provided
-	the other must be as well), the events will be sorted into
-	"increasing" order using sortfunc as a comparison operator, and
+	If sortkeyfunc and bailoutfunc are both not None (if one is
+	provided the other must be as well), the events will be sorted into
+	"increasing" order using sortkeyfunc as a sort key operator, and
 	then only pairs of events for which bailoutfunc returns 0 (or
 	False) will be considered for clustering.
 
@@ -104,8 +104,8 @@ def cluster_events(events, testfunc, clusterfunc, sortfunc = None, bailoutfunc =
 		else:
 			progress = None
 
-		if sortfunc is not None:
-			events.sort(sortfunc)
+		if sortkeyfunc is not None:
+			events.sort(key = sortkeyfunc)
 
 		# outer_did_cluster indicates if the event list changes on
 		# this pass
