@@ -2155,8 +2155,8 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
                                 const MathOpType PSDmthopIFOs, /* [in] math operation over IFOs (PSD) */
                                 const MathOpType nSFTmthopSFTs, /* [in] math operation over SFTs for each IFO (normSFT) */
                                 const MathOpType nSFTmthopIFOs, /* [in] math operation over IFOs (normSFT) */
-                                const UINT4 firstBin, /* [in] first PSD bin for output */
-                                const UINT4 lastBin /* [in] last PSD bin for output */
+                                const REAL8 FreqMin, /* [in] starting frequency -> first output bin (if -1: use full SFT data including rngmed bins, else must be >=0) */
+                                const REAL8 FreqBand /* [in] frequency band to cover with output bins (must be >=0) */
                               )
 {
 
@@ -2165,6 +2165,7 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
   XLAL_CHECK ( multiPSDVector, XLAL_EINVAL );
   XLAL_CHECK ( normSFT, XLAL_EINVAL );
   XLAL_CHECK ( inputSFTs && inputSFTs->data && inputSFTs->length>0, XLAL_EINVAL, "inputSFTs must be pre-allocated." );
+  XLAL_CHECK ( ( FreqMin>=0 && FreqBand>=0 ) || ( FreqMin==-1 && FreqBand==0 ), XLAL_EINVAL, "Need either both Freqmin>=0 && FreqBand>=0 (truncate PSD band to this range) or FreqMin=-1 && FreqBand=0 (use full band as loaded from SFTs, including rngmed-sidebands.");
 
   /* get power running-median rngmed[ |data|^2 ] from SFTs */
   /* as the output of XLALNormalizeMultiSFTVect(),
@@ -2172,7 +2173,36 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
    * The inputSFTs themselves will also be normalized in this call.
   */
   XLAL_CHECK ( (*multiPSDVector = XLALNormalizeMultiSFTVect ( inputSFTs, blocksRngMed, NULL )) != NULL, XLAL_EFUNC);
+  UINT4 numBinsSFTs = inputSFTs->data[0]->data[0].data->length;
+  REAL8 dFreq = (*multiPSDVector)->data[0]->data[0].deltaF;
+
   /* restrict to just the "physical" band if requested */
+  /* first, figure out the effective PSD bin-boundaries for user */
+  UINT4 firstBin, lastBin;
+  if ( FreqMin>0 ) { /* user requested a constrained band */
+    REAL8 fminSFTs = inputSFTs->data[0]->data[0].f0;
+    REAL8 fmaxSFTs = fminSFTs + numBinsSFTs*dFreq;
+    XLAL_CHECK ( ( FreqMin >= fminSFTs ) && ( FreqMin+FreqBand <= fmaxSFTs ), XLAL_EDOM, "Requested frequency range [%f,%f]Hz not covered by available SFT band [%f,%f]Hz", FreqMin, FreqMin+FreqBand, fminSFTs, fmaxSFTs );
+    /* check band wide enough for wings */
+    UINT4 rngmedSideBandBins = blocksRngMed / 2 + 1; /* truncates down plus add one bin extra safety! */
+    REAL8 rngmedSideBand = rngmedSideBandBins * dFreq;
+    if ( ( FreqMin-rngmedSideBand < fminSFTs ) || ( FreqMin+FreqBand+rngmedSideBand > fmaxSFTs ) ) {
+        /* FIXME: should this be an error instead? */
+        XLAL_PRINT_WARNING ( "Requested frequency range [%f,%f]Hz means rngmedSideBand=%fHz (%d bins) would spill over available SFT band [%f,%f]Hz", FreqMin, FreqMin+FreqBand, rngmedSideBand, rngmedSideBandBins, fminSFTs, fmaxSFTs );
+    }
+    /* set the actual output range in bins */
+    UINT4 minBinPSD = XLALRoundFrequencyDownToSFTBin(FreqMin, dFreq);
+    UINT4 minBinSFTs = XLALRoundFrequencyDownToSFTBin(fminSFTs, dFreq);
+    UINT4 binsBand = XLALRoundFrequencyUpToSFTBin(FreqBand, dFreq) + 1; /* +1 inherited from old local rounding convention: ceil ( (FreqBand - 1e-9) / dFreq ) + 1 */
+    firstBin = minBinPSD - minBinSFTs;
+    lastBin = firstBin + binsBand - 1;
+  }
+  else { /* output all bins loaded from SFTs (includes rngmed-sidebands) */
+    firstBin = 0;
+    lastBin = numBinsSFTs - 1;
+  }
+  XLAL_PRINT_INFO("loaded SFTs have %d bins, effective PSD output band is [%d, %d]", numBinsSFTs, firstBin, lastBin);
+  /* now truncate */
   XLAL_CHECK ( XLALCropMultiPSDandSFTVectors ( *multiPSDVector, inputSFTs, firstBin, lastBin ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALCropMultiPSDandSFTVectors (multiPSDVector, inputSFTs, firstBin=%d, lastBin=%d)", firstBin, lastBin );
 
   /* number of raw bins in final PSD */
@@ -2196,7 +2226,6 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
   XLAL_CHECK ( (overSFTs = XLALCreateREAL8Vector ( maxNumSFTs )) != NULL, XLAL_ENOMEM, "Failed to create REAL8Vector for overSFTs array.");
 
   /* normalize rngmd(power) to get proper *single-sided* PSD: Sn = (2/Tsft) rngmed[|data|^2]] */
-  REAL8 dFreq = (*multiPSDVector)->data[0]->data[0].deltaF;
   REAL8 normPSD = 2.0 * dFreq;
 
   XLAL_PRINT_INFO("Computing spectrogram and PSD ...");

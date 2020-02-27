@@ -203,8 +203,8 @@ int XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD,
                                     const MathOpType PSDmthopIFOs,
                                     const MathOpType nSFTmthopSFTs,
                                     const MathOpType nSFTmthopIFOs,
-                                    const UINT4 firstBin,
-                                    const UINT4 lastBin
+                                    const REAL8 FreqMin,
+                                    const REAL8 FreqBand
                               );
 int XLALDumpMultiPSDVector ( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
 int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector *multiSFTVect, UINT4 firstBin, UINT4 lastBin );

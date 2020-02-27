@@ -124,8 +124,8 @@ typedef struct
  */
 typedef struct
 {
-  UINT4 firstBin;		/**< first PSD bin for output */
-  UINT4 lastBin;		/**< last PSD bin for output */
+  REAL8 FreqMin;		/**< frequency of first PSD bin for output */
+  REAL8 FreqBand;		/**< width of frequency band for output */
   LALSeg dataSegment;		/**< the data-segment for which PSD was computed */
 } ConfigVariables_t;
 
@@ -205,8 +205,8 @@ main(int argc, char *argv[])
                       uvar.PSDmthopIFOs,
                       uvar.nSFTmthopSFTs,
                       uvar.nSFTmthopIFOs,
-                      cfg.firstBin,
-                      cfg.lastBin
+                      cfg.FreqMin,
+                      cfg.FreqBand
                   ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* output spectrograms */
@@ -488,6 +488,13 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
     XLALPrintError("ERROR: --binStepHz(-P) must be strictly positive");
     return XLAL_FAILURE;
   }
+  BOOLEAN have_fStart   = XLALUserVarWasSet ( &uvar->fStart );
+  BOOLEAN have_Freq     = XLALUserVarWasSet ( &uvar->Freq );
+  BOOLEAN have_fBand    = XLALUserVarWasSet ( &uvar->fBand );
+  BOOLEAN have_FreqBand = XLALUserVarWasSet ( &uvar->FreqBand );
+  XLAL_CHECK ( !(have_fStart && have_Freq), XLAL_EINVAL, "use only one of --fStart OR --Freq (see --help)" );
+  XLAL_CHECK ( !(have_fBand && have_FreqBand), XLAL_EINVAL, "use only one of --fBand OR --FreqBand (see --help)" );
+  XLAL_CHECK ( ! (( have_fStart && have_FreqBand ) || ( have_Freq && have_fBand )), XLAL_EINVAL, "don't mix {--fStart,--fBand} with {--Freq,--FreqBand} inputs (see --help)");
 
   return XLAL_SUCCESS;
 
@@ -659,43 +666,27 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
   if ( inputTimeStampsVector )
     XLALDestroyTimestampVector ( inputTimeStampsVector );
 
-  /* ----- some user-input consistency checks */
-  BOOLEAN have_fStart   = XLALUserVarWasSet ( &uvar->fStart );
-  BOOLEAN have_Freq     = XLALUserVarWasSet ( &uvar->Freq );
-  BOOLEAN have_fBand    = XLALUserVarWasSet ( &uvar->fBand );
-  BOOLEAN have_FreqBand = XLALUserVarWasSet ( &uvar->FreqBand );
-  if ( have_fStart && have_Freq ) {
-    XLALPrintError ("%s: use only one of --fStart OR --Freq (see --help)\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
-  if ( have_fBand && have_FreqBand ) {
-    XLALPrintError ("%s: use only one of --fBand OR --FreqBand (see --help)\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
-  if ( ( have_fStart && have_FreqBand ) || ( have_Freq && have_fBand ) ) {
-    XLALPrintError ("%s: don't mix {--fStart,--fBand} with {--Freq,--FreqBand} inputs (see --help)\n", __func__ );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
-  }
   /* ---------- figure out the right frequency-band to read from the SFTs, depending on user-input ----- */
   REAL8 fMin, fMax;
-  UINT4 binsOffset; /* rngmed bin offset from start and end */
-  UINT4 binsBand=0; /* width of physical FreqBand in bins */
-  if ( have_Freq )
+  if ( XLALUserVarWasSet ( &uvar->Freq ) )
     {
       REAL8 dFreq = catalog->data[0].header.deltaF;
-      binsOffset = uvar->blocksRngMed / 2 + 1;	/* truncates down plus add one bin extra safety! */
-      binsBand   = ceil ( (uvar->FreqBand - 1e-9) / dFreq ) + 1; /* round up ! */
-
-      REAL8 rngmedSideBand = binsOffset * dFreq;
-
+      /* rngmed bin offset from start and end */
+      UINT4 rngmedSideBandBins = uvar->blocksRngMed / 2 + 1; /* truncates down plus add one bin extra safety! */
+      REAL8 rngmedSideBand = rngmedSideBandBins * dFreq;
       fMin = uvar->Freq - rngmedSideBand;
       fMax = uvar->Freq + uvar->FreqBand + rngmedSideBand;
+      cfg->FreqMin  = uvar->Freq;
+      cfg->FreqBand = uvar->FreqBand;
     }
-  else	/* NOTE: if no user-input on freq-band, we fall back to defaults on {fStart, fBand} */
+  else
     {
+      /* if no user-input on freq-band, we fall back to defaults on {fStart, fBand} */
+      /* (no truncation of rngmed sidebands) */
       fMin = uvar->fStart;
       fMax = uvar->fStart + uvar->fBand;
-      binsOffset = 0;	/* no truncation of rngmed sidebands */
+      cfg->FreqMin  = uvar->fStart;
+      cfg->FreqBand = uvar->fBand;
     }
 
   /* ----- figure out the data-segment span from the user-input and SFT-catalog ----- */
@@ -705,11 +696,12 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
   if ( endTimeGPS.gpsSeconds == 0 )
     endTimeGPS = catalog->data[catalog->length-1].header.epoch;
   /* SFT 'constraints' only refer to SFT *start-times*, for segment we need the end-time */
-  REAL8 Tsft = 1.0 / catalog->data[0].header.deltaF;
+  REAL8 deltaF = catalog->data[0].header.deltaF;
+  REAL8 Tsft = 1.0 / deltaF;
   XLALGPSAdd ( &endTimeGPS, Tsft );
 
   /* ---------- read the sfts ---------- */
-  LogPrintf (LOG_DEBUG, "Loading all SFTs ... ");
+  LogPrintf (LOG_DEBUG, "Loading all SFTs over frequency band [%f,%f]...\n", fMin, fMax);
   MultiSFTVector *multi_sfts;
   if ( ( multi_sfts = XLALLoadMultiSFTs ( catalog, fMin, fMax ) ) == NULL ) {
     XLALPrintError ("%s: XLALLoadMultiSFTs( %f, %f ) failed with xlalErrno = %d\n", __func__, fMin, fMax, xlalErrno );
@@ -719,27 +711,13 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
   /* ---------- end loading SFTs ---------- */
 
-  /* figure out effective PSD bin-boundaries for user */
-  UINT4 numBins = multi_sfts->data[0]->data[0].data->length;
-  INT4 bin0, bin1;
-  if ( have_Freq )
-    {
-      bin0 = 0 + binsOffset;
-      bin1 = bin0 + binsBand - 1;
-    }
-  else	/* output all bins loaded from SFTs (includes rngmed-sidebands) */
-    {
-      bin0 = 0;
-      bin1 = numBins - 1;
-    }
-
   /* return results */
-  cfg->firstBin = (UINT4) bin0;
-  cfg->lastBin = (UINT4) bin1;
   cfg->dataSegment.start = startTimeGPS;
   cfg->dataSegment.end   = endTimeGPS;
 
-  XLALPrintInfo ("%s: loaded SFTs have %d bins, effective PSD output band is [%d, %d]\n", __func__, numBins, bin0, bin1 );
+  UINT4 numBins = multi_sfts->data[0]->data[0].data->length;
+  REAL8 f0sfts = multi_sfts->data[0]->data[0].f0;
+  LogPrintf (LOG_DEBUG, "Loaded SFTs have %d bins, sampled at %fHz, covering frequency band [%f, %f]\n", numBins, deltaF, f0sfts, f0sfts+numBins*deltaF );
 
   return multi_sfts;
 
