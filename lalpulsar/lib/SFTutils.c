@@ -2155,6 +2155,7 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
                                 const MathOpType PSDmthopIFOs, /* [in] math operation over IFOs (PSD) */
                                 const MathOpType nSFTmthopSFTs, /* [in] math operation over SFTs for each IFO (normSFT) */
                                 const MathOpType nSFTmthopIFOs, /* [in] math operation over IFOs (normSFT) */
+                                const BOOLEAN normalizeByTotalNumSFTs, /* [in] whether to include a final normalization factor derived from the total number of SFTs (over all IFOs); only useful for some mthops */
                                 const REAL8 FreqMin, /* [in] starting frequency -> first output bin (if -1: use full SFT data including rngmed bins, else must be >=0) */
                                 const REAL8 FreqBand /* [in] frequency band to cover with output bins (must be >=0) */
                               )
@@ -2228,6 +2229,21 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
   /* normalize rngmd(power) to get proper *single-sided* PSD: Sn = (2/Tsft) rngmed[|data|^2]] */
   REAL8 normPSD = 2.0 * dFreq;
 
+  /* optionally include a normalizing factor for when we want to compute e.g. the harmonic or power2 mean over all SFTs from all detectors together:
+   * call with PSDmthopSFTs=PSDmthopIFOs=MATH_OP_[HARMONIC/POWERMINUS2]_SUM
+   * and then this factor is applied at the end,
+   * which gives equivalent results to if we had rewritten the loop order
+   * to allow for calling MATH_OP_[HARMONIC/POWERMINUS2]_MEAN over the combined array.
+   */
+  REAL8 totalNumSFTsNormalizingFactor;
+  if ( normalizeByTotalNumSFTs ) {
+    UINT4 totalNumSFTs = 0;
+    for (UINT4 X = 0; X < numIFOs; ++X) {
+      totalNumSFTs += (*multiPSDVector)->data[X]->length;
+    }
+    totalNumSFTsNormalizingFactor = XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs ( totalNumSFTs, PSDmthopSFTs );
+  }
+
   XLAL_PRINT_INFO("Computing spectrogram and PSD ...");
   /* loop over frequency bins in final PSD */
   for (UINT4 k = 0; k < numBins; ++k) {
@@ -2253,6 +2269,10 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
     /* compute math. operation over IFOs for this frequency */
     (*finalPSD)->data[k] = XLALMathOpOverArray(overIFOs->data, numIFOs, PSDmthopIFOs);
     XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN((*finalPSD)->data[k]), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for finalPSD->data[k=%d]", k );
+
+    if ( normalizeByTotalNumSFTs ) {
+       (*finalPSD)->data[k] *= totalNumSFTsNormalizingFactor;
+    }
 
   } /* for freq bins k */
   XLAL_PRINT_INFO("done.");
@@ -2743,3 +2763,58 @@ REAL8 XLALMathOpOverArray ( const REAL8* data,      /**< input data array */
   return res;
 
 } /* XLALMathOpOverArray() */
+
+
+
+
+/**
+ * Compute an additional normalization factor from the total number of SFTs to be applied after a loop of mathops over SFTs and IFOs.
+ *
+ * Currently only implemented for:
+ * MATH_OP_HARMONIC_SUM (to emulate MATH_OP_HARMONIC_MEAN over the combined array)
+ * MATH_OP_POWERMINUS2_SUM (to emulate MATH_OP_POWERMINUS2_MEAN over the combined array)
+ *
+ * This function exists only as a simple workaround for when we want to compute
+ * some types of mathops, e.g. the harmonic or power2 mean,
+ * over all SFTs from all detectors together:
+ * then call XLALComputePSDandNormSFTPower with PSDmthopSFTs=PSDmthopIFOs=MATH_OP_[HARMONIC/POWERMINUS2]_SUM
+ * and then this factor is applied at the end,
+ * which gives equivalent results to if we had rewritten the loop order in XLALComputePSDandNormSFTPower
+ * to allow for calling MATH_OP_[HARMONIC/POWERMINUS2]_MEAN over the combined array.
+ */
+REAL8 XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs (
+                            const UINT4 totalNumSFTs, /**< total number of SFTs from all IFOs */
+                            const MathOpType optypeSFTs /**< type of operations that was done over SFTs */
+                          ) {
+
+  REAL8 factor;
+
+  switch (optypeSFTs) {
+
+  case MATH_OP_ARITHMETIC_SUM: /* sum(data) */
+  case MATH_OP_ARITHMETIC_MEAN: /* sum(data)/length  */
+  case MATH_OP_HARMONIC_MEAN:
+  case MATH_OP_ARITHMETIC_MEDIAN:
+  case MATH_OP_MINIMUM:
+  case MATH_OP_MAXIMUM:
+  case MATH_OP_POWERMINUS2_MEAN:
+    XLAL_ERROR_REAL8(XLAL_EINVAL, "For math operation '%i' it makes no sense to call this function!", optypeSFTs);
+    break;
+
+  case MATH_OP_HARMONIC_SUM: /* length / sum(1 / data) */
+    factor = totalNumSFTs;
+    break;
+
+  case MATH_OP_POWERMINUS2_SUM: /*   1 / sqrt ( sum(1 / data/data) )*/
+    factor = sqrt(totalNumSFTs);
+    break;
+
+  default:
+
+    XLAL_ERROR_REAL8(XLAL_EINVAL, "'%i' is not an implemented math. operation", optypeSFTs);
+
+  } /* switch (optypeSFTs) */
+
+  return factor;
+
+} /* XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs() */
