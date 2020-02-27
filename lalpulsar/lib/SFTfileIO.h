@@ -286,6 +286,9 @@ typedef struct tagMultiSFTCatalogView
 
 int XLALCWGPSinRange( const LIGOTimeGPS gps, const LIGOTimeGPS* minGPS, const LIGOTimeGPS* maxGPS );
 
+UINT4 XLALRoundFrequencyDownToSFTBin( const REAL8 freq, const REAL8 df );
+UINT4 XLALRoundFrequencyUpToSFTBin( const REAL8 freq, const REAL8 df );
+
 LALStringVector *XLALFindFiles (const CHAR *globstring);
 
 SFTCatalog *XLALSFTdataFind ( const CHAR *file_pattern, const SFTConstraints *constraints );
