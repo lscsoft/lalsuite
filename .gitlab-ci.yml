@@ -13,6 +13,7 @@ stages:
   - LALPulsar
   - LALInference
   - LALApps
+  - lint
   - documentation
   - integration tests
   - compiler tests
@@ -262,6 +263,31 @@ cache:
     key: $CI_JOB_NAME
     paths:
       - conda/pkgs
+
+# -- linting ------------------------------------
+
+lint:python:
+  stage: lint
+  image: python
+  needs: []
+  before_script:
+    - python -m pip install
+          "flake8>=3.7.0"
+          "flake8-junit-report"
+  script:
+    - python -m flake8 --output-file flake8.out
+  after_script:
+    - cat flake8.out
+    - python -m junit_conversor flake8.out junit.xml
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/pip
+  artifacts:
+    expire_in: 1month
+    reports:
+      junit: junit.xml
+    when: always
 
 # -- documentation ------------------------------
 
