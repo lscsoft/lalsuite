@@ -389,8 +389,8 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   XLALRegisterUvarMember(Freq,              REAL8, 0,  OPTIONAL, "physical start frequency to compute PSD for (excluding rngmed wings)");
   XLALRegisterUvarMember(FreqBand,          REAL8, 0,  OPTIONAL, "physical frequency band to compute PSD for (excluding rngmed wings)");
 
-  XLALRegisterUvarMember(startTime,        REAL8, 's', OPTIONAL, "GPS timestamp of earliest SFT to include");
-  XLALRegisterUvarMember(endTime,          REAL8, 'e', OPTIONAL, "GPS timestamp of last SFT to include (NOTE: this refers to the SFT start-time!)");
+  XLALRegisterUvarMember(startTime,        REAL8, 's', OPTIONAL, "SFT timestamps must be >= this GPS timestamp");
+  XLALRegisterUvarMember(endTime,          REAL8, 'e', OPTIONAL, "SFT timestamps must be < this GPS timestamp");
   XLALRegisterUvarMember(timeStampsFile,   STRING, 't', OPTIONAL, "Time-stamps file");
   XLALRegisterUvarMember(IFO,               STRING, 0 , OPTIONAL, "Detector filter");
 
