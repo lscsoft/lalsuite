@@ -269,7 +269,7 @@ cache:
 lint:python:
   stage: lint
   image: python
-  needs: ["make-dist"]
+  needs: []
   before_script:
     - python -m pip install
           "flake8>=3.7.0"
