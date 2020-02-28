@@ -67,6 +67,9 @@ outputs:
     build:
       error_overdepending: true
       error_overlinking: true
+      ignore_run_exports:
+        # ignore run_exports from python's recipe
+        - python
       script_env:
         # this is only needed in gitlab-ci
         - fft_impl
