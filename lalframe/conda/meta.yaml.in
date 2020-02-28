@@ -62,7 +62,11 @@ outputs:
   - name: python-lalframe
     script: install-python.sh
     build:
-      activate_in_script: True
+      error_overdepending: true
+      error_overlinking: true
+      ignore_run_exports:
+        # ignore run_exports from python's recipe
+        - python
     requirements:
       build:
         - {{ compiler('c') }}

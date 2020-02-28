@@ -90,6 +90,12 @@ outputs:
 
   - name: python-lalinference
     script: install-python.sh
+    build:
+      error_overdepending: true
+      error_overlinking: true
+      ignore_run_exports:
+        # ignore run_exports from python's recipe
+        - python
     requirements:
       build:
         - {{ compiler('c') }}

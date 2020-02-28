@@ -36,6 +36,8 @@ build:
     # run_exports parsing for fftw is broken, so we ignore it
     # manually, for now
     - fftw
+    # ignore run_exports from python's recipe
+    - python
   number: 9999
   skip: true  # [win]
 
