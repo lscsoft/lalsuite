@@ -1,1 +1,0 @@
-../../../test/test_python_scripts.py
