@@ -120,10 +120,14 @@ cache:
   artifacts:
     expire_in: 18h
     paths:
+      - "rpmbuild/BUILD/*/test-suite.log"
+      - "rpmbuild/BUILD/*/test/test-suite.log"
+      - "rpmbuild/BUILD/*/test/python/test-suite.log"
       - "rpmbuild/RPMS/x86_64/${CI_JOB_NAME%%:*}-*.rpm"
       - "rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%%:*}-*.rpm"
     reports:
       junit: "rpmbuild/BUILD/*/test/python/junit*.xml"
+    when: always
   only:
     - pushes
     - schedules
@@ -179,6 +183,8 @@ cache:
   artifacts:
     expire_in: 18h
     paths:
+      - ${CI_JOB_NAME%%:*}*/.pybuild/python*/build/test/test-suite.log
+      - ${CI_JOB_NAME%%:*}*/.pybuild/python*/build/test/python/test-suite.log
       - ${CI_JOB_NAME%%:*}*.changes
       - ${CI_JOB_NAME%%:*}*.deb
       - python*-${CI_JOB_NAME%%:*}*.deb
@@ -186,6 +192,7 @@ cache:
       - ${CI_JOB_NAME%%:*}*.orig.*
     reports:
       junit: "${CI_JOB_NAME%%:*}*/.pybuild/python*/build/test/python/junit*.xml"
+    when: always
   only:
     - pushes
     - schedules
