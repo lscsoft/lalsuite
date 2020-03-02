@@ -91,6 +91,7 @@ outputs:
         - pathlib  # [py<34]
         - pytest >=4.0.0a0
       source_files:
+        - python/Makefile
         - test/python
         - test/F-TEST-*.gwf
       commands:
