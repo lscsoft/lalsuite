@@ -25,7 +25,15 @@ BUILDDIR = Path(os.getenv("LAL_TEST_BUILDDIR", SRCDIR))
 EXCLUDEFILE = SRCDIR / "exclude-modules.txt"
 
 SUBPACKAGE = "@PACKAGE@"
-PYTHONDIR = BUILDDIR.parent.parent / "python" / SUBPACKAGE
+
+# find directory in which to search for module files
+if os.getenv("CONDA_BUILD_STATE") == "TEST":
+    # if in a conda-build test, just use the current site-packages dir
+    mod = import_module(SUBPACKAGE)
+    PYTHONDIR = Path(mod.__path__[0])
+else:
+    # otherwise search in the src tree
+    PYTHONDIR = BUILDDIR.parent.parent / "python" / SUBPACKAGE
 
 
 def read_excludes(source):
@@ -64,11 +72,15 @@ MODULES = [path_to_name(x) for x in sorted(FILENAMES)]
 EXCLUDE = set(map(path_to_name, EXCLUDE))
 
 
-@pytest.mark.parametrize("module", MODULES)
-def test_import(module):
-    if module in EXCLUDE:
-        pytest.skip("excluded {}".format(str(module)))
-    import_module(module)
+# only parametrize if we have something to loop over, this allows pytest
+# to exit with the 'no tests collected' code (5) which should be considered
+# as an error for LALSuite subpackages
+if MODULES:
+    @pytest.mark.parametrize("module", MODULES)
+    def test_import(module):
+        if module in EXCLUDE:
+            pytest.skip("excluded {}".format(str(module)))
+        import_module(module)
 
 
 # run from command-line
