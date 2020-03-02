@@ -45,6 +45,7 @@ AC_CONFIG_FILES([ \
   test/noisemodels/Makefile \
   test/python/Makefile \
   test/python/test_python_imports.py \
+  test/python/test_python_scripts.py \
   test/stats/Makefile \
   test/std/Makefile \
   test/support/Makefile \
