@@ -77,7 +77,8 @@ cache:
     - make -j4 distcheck
   artifacts:
     reports:
-      junit: "*/test/python/junit*.xml"
+      junit:
+        - "*/_build/*/test/python/junit*.xml"
 
 # -- build templates ----------------------------
 
