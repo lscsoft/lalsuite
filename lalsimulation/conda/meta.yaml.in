@@ -99,7 +99,6 @@ outputs:
         - python -m pytest -rs -v --junit-xml=junit.xml test/python
       imports:
         - lalsimulation
-        - lalsimulation.nrfits
     about:
       home: "https://wiki.ligo.org/Computing/LALSuite"
       doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/"

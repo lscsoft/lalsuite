@@ -17,7 +17,6 @@ AC_CONFIG_FILES([ \
   python/Makefile \
   python/lalsimulation/Makefile \
   python/lalsimulation/__init__.py \
-  python/lalsimulation/nrfits/Makefile \
   lib/LALSimulationVCSInfo.c \
   lib/LALSimulationVCSInfo.h \
   lib/Makefile \
