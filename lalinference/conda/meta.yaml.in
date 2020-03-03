@@ -195,7 +195,6 @@ outputs:
         - lalinference.tiger.omegascans_dag
         - lalinference.tiger.postproc
         - lalinference.util.file
-        - lalinference.util.sqlite
         - lalinference.wrapper
     about:
       home: "https://wiki.ligo.org/Computing/LALSuite"
