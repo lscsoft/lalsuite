@@ -266,6 +266,9 @@ noinst_HEADERS = \
 	LALSimIMRNRHybSur3dq8.h \
         LALSimInspiralFDPrecAngles_internals.c \
         LALSimInspiralFDPrecAngles_internals.h \
+	LALSimNRSurRemnantUtils.h \
+	LALSimNRSur7dq4Remnant.h \
+	LALSimNRSur3dq8Remnant.h
         $(END_OF_LIST)
 
 
@@ -366,7 +369,10 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRNRHybSur3dq8.c \
 	gsl_interpolation_integ_eval.h \
 	gsl_interpolation_steffen.c \
-	LALSimInspiralFDPrecAngles.c
+	LALSimInspiralFDPrecAngles.c \
+	LALSimNRSurRemnantUtils.c \
+	LALSimNRSur7dq4Remnant.c \
+	LALSimNRSur3dq8Remnant.c
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \
