@@ -690,6 +690,30 @@ int XLALPrecessingNRSurDynamics(
         Approximant approximant  /**< approximant (NRSur7dq2 or NRSur7dq4). */
 );
 
+/* in module LALSimNRSur7dq4Remnant.c */
+int XLALNRSur7dq4Remnant(
+    gsl_vector **result,        /**<Output: The requested remnant property. */
+    REAL8 q,                    /**< Mass ratio of Bh1/Bh2. q>=1. */
+    REAL8 s1x,                  /**< S1x in coorbital frame at t=-100M */
+    REAL8 s1y,                  /**< S1y in coorbital frame at t=-100M */
+    REAL8 s1z,                  /**< S1z in coorbital frame at t=-100M */
+    REAL8 s2x,                  /**< S2x in coorbital frame at t=-100M */
+    REAL8 s2y,                  /**< S2y in coorbital frame at t=-100M */
+    REAL8 s2z,                  /**< S2z in coorbital frame at t=-100M */
+    char *remnant_property,     /**< One of "mf", "chif" or "vf" */
+    LALDict* LALparams          /**< Dict with extra parameters */
+);
+
+/* in module LALSimNRSur3dq8Remnant.c */
+int XLALNRSur3dq8Remnant(
+    REAL8 *result,              /**<Output: The requested remnant property. */
+    REAL8 q,                    /**< Mass ratio of Bh1/Bh2. q>=1. */
+    REAL8 s1z,                  /**< S1z z-spin of Bh1 */
+    REAL8 s2z,                  /**< S2z z-spin of Bh2 */
+    char *remnant_property,     /**< One of "mf", "chifz", "vfx" or "vfy" */
+    LALDict* LALparams          /**< Dict with extra parameters */
+);
+
 /* in module LALSimNRTunedTides.c */
 double XLALSimNRTunedTidesComputeKappa2T(
     REAL8 m1_SI, /**< Mass of companion 1 (kg) */
