@@ -93,7 +93,7 @@ SET
 	likelihood = ln_likelihood_ratio(coinc_event_id, time_slide_id)
 WHERE
 	coinc_def_id == ?
-	""", (unicode(coinc_def_id),))
+	""", (coinc_def_id,))
 
 	#
 	# Done

@@ -198,7 +198,7 @@ def match_nodes_to_caches(nodes, caches):
 			node_group.add(index[cache_entry])
 
 	# how many nodes didn't get used?
-	unused = len(nodes) - len(reduce(lambda a, b: a | b, node_groups))
+	unused = len(nodes) - len(set.union(*node_groups))
 
 	# done
 	return node_groups, unused

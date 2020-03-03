@@ -717,7 +717,7 @@ class TimeSlideGraphNode(object):
 		# component nodes in the graph
 		component_coincs_and_partial_coincs_and_flushed = tuple(component.pull(t, verbose = verbose) for component in self.components)
 		component_coincs = tuple(elem[0] for elem in component_coincs_and_partial_coincs_and_flushed)
-		flushed = reduce((lambda a, b: a | b), (elem[2] for elem in component_coincs_and_partial_coincs_and_flushed), set())
+		flushed = set.union(*(elem[2] for elem in component_coincs_and_partial_coincs_and_flushed))
 
 		if self.keep_partial:
 			# any coinc with n-1 instruments from the component

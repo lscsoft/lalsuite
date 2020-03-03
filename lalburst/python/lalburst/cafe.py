@@ -211,8 +211,23 @@ class LALCacheBin(packing.Bin):
 		self.extent = self.size.extent_all()
 		return self
 
-	def __cmp__(self, other):
-		return cmp(self.extent, other.extent)
+	def __lt__(self, other):
+		return self.extent < other.extent
+
+	def __le__(self, other):
+		return self.extent <= other.extent
+
+	def __eq__(self, other):
+		return self.extent == other.extent
+
+	def __ne__(self, other):
+		return self.extent != other.extent
+
+	def __ge__(self, other):
+		return self.extent >= other.extent
+
+	def __gt__(self, other):
+		return self.extent > other.extent
 
 	def __str__(self):
 		return "\n".join(map(str, self.objects))
