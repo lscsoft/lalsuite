@@ -6,8 +6,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
 vcs_info_sources = git_version.py
 
-noinst_HEADERS = six.h
-
 if HAVE_PYTHON
 
 pymoduledir = $(pkgpythondir)
