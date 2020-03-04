@@ -34,7 +34,7 @@ gnuscripts/          @adam-mercer @karl-wette @duncanmmacleod
 .gitlab-ci.yml       @adam-mercer @duncanmmacleod
 .gitlab-*.Dockerfile @adam-mercer @duncanmmacleod
 .gitignore           @adam-mercer @karl-wette @duncanmmacleod
-.mailmap*            @adam-mercer @karl-wette
+.mailmap             @adam-mercer @karl-wette
 .AUTHORS             @adam-mercer @karl-wette
 00boot               @adam-mercer @karl-wette @duncanmmacleod
 CONTRIBUTING.md      @adam-mercer @duncanmmacleod
