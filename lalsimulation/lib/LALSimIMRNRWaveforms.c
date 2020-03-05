@@ -1064,7 +1064,7 @@ INT4 XLALSimInspiralNRWaveformGetHlms(UNUSED SphHarmTimeSeries **Hlms, /**< OUTP
 
   psi = calpha = salpha = 0.;
   XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(&theta, &psi, &calpha,
-                       &salpha, file, 0., 0., fRef*(m1+m2));
+                       &salpha, file, 0., 0., fRef_pass*(m1+m2));
   XLALH5FileClose(file);
 
   NRLmax= XLALSphHarmTimeSeriesGetMaxL(tmp_Hlms);
