@@ -961,6 +961,11 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     npy_intp objdims[ndims];
     npy_intp objstrides[ndims];
 
+    // Check that C array pointer is valid.
+    if (ptr == NULL) {
+      goto fail;
+    }
+
     // Copy C array dimensions and strides.
     for (size_t i = 0; i < ndims; ++i) {
       objdims[i] = dims[i];
