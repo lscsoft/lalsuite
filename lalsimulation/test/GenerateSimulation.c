@@ -120,6 +120,8 @@ const char * usage =
 "                             SEOBNRv1_ROM_DoubleSpin\n"
 "                             SEOBNRv2_ROM_EffectiveSpin\n"
 "                             SEOBNRv2_ROM_DoubleSpin\n"
+"                             SEOBNRv4_ROM\n"
+"                             SEOBNRv4HM_ROM\n"
 "                             TaylorF2\n"
 "                             TaylorF2Ecc\n"
 "                             SpinTaylorF2\n"
