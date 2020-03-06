@@ -139,4 +139,7 @@ def test_SEOBNRv4HM_ROM():
 # -- run the tests ------------------------------
 
 if __name__ == '__main__':
+    if "LAL_DATA_PATH" not in os.environ.keys():
+        warnings.warn("LAL_DATA_PATH not found, cannot execute tests")
+        sys.exit(77)
     sys.exit(pytest.main(args=[__file__] + sys.argv[1:] + ['-v']))
