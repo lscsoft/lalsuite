@@ -1185,7 +1185,9 @@ UNUSED static int SEOBNRv4HMROMCoreModes(
   /* Compute the orbital phase, this is the same for every mode */
   /* for this reason it's outside the for */
 
-  UNUSED UINT8 retcode = SEOBNRv4HMROM_freq_phase_sparse_grid_hybrid(&freq_carrier_hyb, &phase_carrier_hyb, q, chi1,chi2,flag_patch,nk_max);
+  UNUSED int retcode = SEOBNRv4HMROM_freq_phase_sparse_grid_hybrid(&freq_carrier_hyb, &phase_carrier_hyb, q, chi1,chi2,flag_patch,nk_max);
+  if(retcode != XLAL_SUCCESS) XLAL_ERROR(retcode);
+
   /* Put the phase in the right convention */
 
   for(unsigned int i = 0; i < phase_carrier_hyb->size; i++){
@@ -1558,6 +1560,7 @@ int XLALSimIMRSEOBNRv4HMROM(
   UNUSED UINT8 retcode = SEOBNRv4HMROMCoreModes(&hlm, phiRef, fRef, distance,
                            Mtot_sec, q, chi1, chi2, freqs,
                                 deltaF, nk_max,nModes,sign_odd_modes);
+  if(retcode != XLAL_SUCCESS) XLAL_ERROR(retcode);
 
   /* GPS time for output frequency series and modes */
 
@@ -1573,6 +1576,7 @@ int XLALSimIMRSEOBNRv4HMROM(
   XLALUnitDivide(&hPlustilde->sampleUnits, &hPlustilde->sampleUnits, &lalSecondUnit);
   XLALUnitDivide(&hCrosstilde->sampleUnits, &hCrosstilde->sampleUnits, &lalSecondUnit);
   retcode = SEOBROMComputehplushcrossFromhlm(hPlustilde,hCrosstilde,ModeArray,hlm,inclination,phiRef);
+  if(retcode != XLAL_SUCCESS) XLAL_ERROR(retcode);
 
   /* Point the output pointers to the relevant time series and return */
   (*hptilde) = hPlustilde;
