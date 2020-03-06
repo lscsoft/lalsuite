@@ -366,8 +366,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   XLAL_CHECK ( cfg != NULL, XLAL_EINVAL, "Invalid NULL input 'cfg'\n" );
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
 
-  cfg->VCSInfoString = XLALGetVersionString(0);
-  XLAL_CHECK ( cfg->VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
+  cfg->VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ");
+  XLAL_CHECK ( cfg->VCSInfoString != NULL, XLAL_EFUNC, "XLALVCSInfoString failed.\n" );
 
   /* if requested, log all user-input and code-versions */
   if ( uvar->logfile ) {

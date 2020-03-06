@@ -78,7 +78,7 @@ main ( int argc, char *argv[] )
 {
 
   CHAR *VCSInfoString;
-  XLAL_CHECK_MAIN ( (VCSInfoString = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
 
   // ---------- handle user input ----------
   UserInput_t XLAL_INIT_DECL(uvar_s);

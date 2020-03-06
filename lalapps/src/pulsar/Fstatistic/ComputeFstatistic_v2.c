@@ -397,7 +397,7 @@ int main(int argc,char *argv[])
   /* register all user-variable */
   XLAL_CHECK_MAIN ( initUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK_MAIN ( (GV.VCSInfoString = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (GV.VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;

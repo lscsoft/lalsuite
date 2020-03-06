@@ -552,8 +552,8 @@ static int _atomic_write_gctFstat_toplist_to_file(toplist_t *l, const char *file
     CHAR *VCSInfoString;
 
     /* write the version string */
-    if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
-      LogPrintf (LOG_CRITICAL, "XLALGetVersionString(0) failed.\n");
+    if ( (VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) == NULL ) {
+      LogPrintf (LOG_CRITICAL, "XLALVCSInfoString failed.\n");
       length = -1;
     } else {
       ret = fprintf(fpnew,"%s", VCSInfoString);
