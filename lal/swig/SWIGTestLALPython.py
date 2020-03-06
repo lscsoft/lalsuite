@@ -247,7 +247,7 @@ del rv
 del cm
 rv0 = lal.CreateREAL8Vector(0)
 assert(rv0.length == 0)
-assert(len(rv0.data) == 0)
+assert(rv0.data is None)
 del rv0
 rv1 = lal.CreateREAL8Vector(1)
 rv1.data[0] = 1

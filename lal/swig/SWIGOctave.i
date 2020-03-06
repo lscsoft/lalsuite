@@ -428,6 +428,11 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       // Copy the C array to the returned Octave array.
       octave_value sloav_array_out() const {
 
+        // Check that C array pointer is valid.
+        if (!sloav_ptr) {
+          return octave_value();
+        }
+
         // Create a new Octave array.
         dim_vector objdims = sloav_dims;
         typename HELPER::OVType objval(objdims);
