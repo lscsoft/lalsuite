@@ -196,7 +196,7 @@ XLALprintTimestamps ( const SFTCatalog *catalog )
 
   // print fully descriptive commented header-log for reproducibility:
   char *version;
-  XLAL_CHECK_MAIN ( (version = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (version = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
   char *cmdline;
   XLAL_CHECK ( (cmdline = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );
 

@@ -170,7 +170,7 @@ int main(int argc, char *argv[]){
   if (should_exit)
     return EXIT_FAILURE;
 
-  CHAR *VCSInfoString = XLALGetVersionString(0);     /**<LAL + LALapps Vsersion string*/
+  CHAR *VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ");     /**<LAL + LALapps Vsersion string*/
 
   /* configure useful variables based on user input */
   if ( XLALInitializeConfigVars ( &config, &uvar) != XLAL_SUCCESS ) {

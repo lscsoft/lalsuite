@@ -149,7 +149,7 @@ int main(int argc,char *argv[])
     exit (1);
   }
 
-  XLAL_CHECK_MAIN ( (VCSInfoString = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
 
   /* Initialize code-setup */
   XLAL_CHECK_MAIN ( InitPFS ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
