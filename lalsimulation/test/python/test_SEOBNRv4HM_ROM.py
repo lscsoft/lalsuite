@@ -98,6 +98,10 @@ def gen_test_data():
 
 # -- test functions ---------------------
 
+@pytest.mark.skipif(
+    "LAL_DATA_PATH" not in os.environ,
+    reason="LAL_DATA_PATH not found",
+)
 def test_SEOBNRv4HM_ROM():
     """
     This test checks that SEOBNRv4HM_ROM hasn't changed.
@@ -108,27 +112,17 @@ def test_SEOBNRv4HM_ROM():
     these pre-computed values were computed using the following line:
 
     `expected_result  =  np.array(gen_test_data())`
-
     """
-
-    # First we check whether LAL_DATA_PATH is defined 
-    # and whether we can find the ROM data file in LAL_DATA_PATH.
-    if 'LAL_DATA_PATH' not in os.environ.keys():
-        warnings.warn("LAL_DATA_PATH not found, skipping test_SEOBNRv4HM_ROM!")
-        sys.exit(77)
-
-    have_ROM_data_file = False
     LAL_DATA_PATH = os.environ['LAL_DATA_PATH']
     for D in LAL_DATA_PATH.split(':'):
-        print(D)
-        path = Path(D+"/SEOBNRv4HMROM.hdf5")
+        path = Path(D) / "SEOBNRv4HMROM.hdf5"
         if path.is_file():
             have_ROM_data_file = True
-    if not have_ROM_data_file:
-        warnings.warn("SEOBNRv4HMROM.hdf5 not found in $LAL_DATA_PATH:%s!\n"
-        "Skipping test_SEOBNRv4HM_ROM!"%LAL_DATA_PATH)
-        sys.exit(77)
-
+            break
+    else:
+        pytest.skip(
+            "SEOBNRv4HMROM.hdf5 not found in $LAL_DATA_PATH:{}".format(LAL_DATA_PATH),
+        )
 
     expected_result = np.array([1443.7534373,   59.1517554, 1443.7534373,  231.6504801])
     new_result  =  np.array(gen_test_data())
