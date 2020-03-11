@@ -359,6 +359,8 @@ typedef enum tagApproximant {
                                 * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv4_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4
                                 * @remarks Implemented in lalsimulation (frequency domain). */
+   SEOBNRv4HM_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4hm                                                     
+		    * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv4_ROM_NRTidal, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4 [Bohe et al, arXiv:1611.03703] with tidal phase corrections [Dietrich et al, arXiv:1706.02969
                                 * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv4_ROM_NRTidalv2, /**< based on NRTidalv2; https://arxiv.org/abs/1905.06011.
