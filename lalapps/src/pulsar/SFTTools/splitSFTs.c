@@ -229,7 +229,7 @@ int main(int argc, char**argv) {
 	    "  [-m|--factor <factor>]\n"
 	    "  [-d|--detector <detector>]\n"
 	    "  [-n|--output-directory <outputdirectory>]\n"
-	    "  -i|--input-files <inputfile> ...\n"
+	    "  [--] <inputfile> ...\n"
 	    "\n"
 	    "  This program reads in binary SFTs (v1 and v2) and writes out narrow-banded\n"
 	    "  merged SFTs (v2).\n"
@@ -278,7 +278,7 @@ int main(int argc, char**argv) {
 	    "  (i.e. call to this program). Adding the option '-a' to the command line specifies that\n"
 	    "  instead the comment is written into every SFT in the resulting file.\n"
 	    "\n"
-	    "  The last option on the command-line needs to be '-i', followed by as many input files\n"
+	    "  After all options (and an optional '--' separator), the input files are given, as many\n"
 	    "  as you wish (or the OS supports - using xargs should be simple with this command-line\n"
 	    "  syntax).\n"
 	    "\n"
@@ -365,18 +365,19 @@ int main(int argc, char**argv) {
     } else if((strcmp(argv[arg], "-wor") == 0) ||
 	      (strcmp(argv[arg], "--write-open-rate") == 0)) {
       write_open_rate.resource_rate=atoi(argv[++arg]);
-    } else if((strcmp(argv[arg], "-i") == 0) ||
-	      (strcmp(argv[arg], "--input-files") == 0)) {
+    } else if(strcmp(argv[arg], "--") == 0) {
+      ++arg;
       break;
-    } else {
+    } else if(strncmp(argv[arg], "-", 1) == 0) {
       fprintf(stderr, "unknown option '%s', try '-h' for help\n", argv[arg]);
       exit (-1);
+    } else {
+      break;
     }
   }
 
   /* check if there was an input-file option given at all */
   XLAL_CHECK_MAIN( argv[arg] != NULL, XLAL_EINVAL, "no input files specified" );
-  XLAL_CHECK_MAIN( (strcmp(argv[arg], "-i") == 0) || (strcmp(argv[arg], "--input-files") == 0), XLAL_EINVAL, "no input files specified" );
 
   /* check output directory exists */
   XLAL_CHECK_MAIN( is_directory(outdir), XLAL_ESYS, "output directory does not exist" );
@@ -434,8 +435,7 @@ int main(int argc, char**argv) {
   }
 
   /* loop over all input SFT files */
-  /* first skip the "-i" option */
-  for(arg++; arg < argc; arg++) {
+  for(; arg < argc; arg++) {
 
     /* open input SFT */
     request_resource(&read_open_rate, 1);

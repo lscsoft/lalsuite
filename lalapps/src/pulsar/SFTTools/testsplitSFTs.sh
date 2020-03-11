@@ -11,13 +11,14 @@ if ! eval "$cmdline"; then
 fi
 
 ## run lalapps_splitSFTs to create narrowband SFTs
+cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband/"
 for sft in broadband/*.sft; do
-    cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband/ -i $sft"
-    if ! eval "$cmdline"; then
-        echo "ERROR: something failed when running '$cmdline'"
-        exit 1
-    fi
+    cmdline="${cmdline} $sft"
 done
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
 
 ## check narrowband SFT names
 for freq in 10 18 26 34 42 50 58 66 74 82 90; do
