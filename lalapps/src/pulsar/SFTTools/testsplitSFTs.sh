@@ -33,33 +33,33 @@ fi
 
 for i in 1 2; do
 
-## check narrowband SFT names
-for freq in 10 18 26 34 42 50 58 66 74 82 90; do
-    if [ $freq = 90 ]; then
-        binwidth="0005Hz1"
-    else
-        binwidth="0008Hz0"
-    fi
-    sft="narrowband${i}/H-5_H1_1800SFT_NB_F00${freq}Hz0_W${binwidth}-${start}-${span}.sft"
-    if ! test -f $sft; then
-        echo "ERROR: could not find file '$sft'"
+    ## check narrowband SFT names
+    for freq in 10 18 26 34 42 50 58 66 74 82 90; do
+        if [ $freq = 90 ]; then
+            binwidth="0005Hz1"
+        else
+            binwidth="0008Hz0"
+        fi
+        sft="narrowband${i}/H-5_H1_1800SFT_NB_F00${freq}Hz0_W${binwidth}-${start}-${span}.sft"
+        if ! test -f $sft; then
+            echo "ERROR: could not find file '$sft'"
+            exit 1
+        fi
+    done
+
+    ## dump broadband and narrowband SFT bins, sorted by frequency
+    for sftband in broadband narrowband; do
+        cmdline="lalapps_dumpSFT -d -i '${sftband}${i}/*' | sed '/^$/d;/^%/d' | sort -n -k1,3 > ${sftband}${i}_bins.txt"
+        if ! eval "$cmdline"; then
+            echo "ERROR: something failed when running '$cmdline'"
+            exit 1
+        fi
+    done
+
+    ## broadband and narrowband SFT bins should be equal
+    if ! diff -s broadband${i}_bins.txt narrowband${i}_bins.txt; then
+        echo "ERROR: broadband${i}_bins.txt and narrowband${i}_bins.txt should be equal"
         exit 1
     fi
-done
-
-## dump broadband and narrowband SFT bins, sorted by frequency
-for sftband in broadband narrowband; do
-    cmdline="lalapps_dumpSFT -d -i '${sftband}${i}/*' | sed '/^$/d;/^%/d' | sort -n -k1,3 > ${sftband}${i}_bins.txt"
-    if ! eval "$cmdline"; then
-        echo "ERROR: something failed when running '$cmdline'"
-        exit 1
-    fi
-done
-
-## broadband and narrowband SFT bins should be equal
-if ! diff -s broadband${i}_bins.txt narrowband${i}_bins.txt; then
-    echo "ERROR: broadband${i}_bins.txt and narrowband${i}_bins.txt should be equal"
-    exit 1
-fi
 
 done
