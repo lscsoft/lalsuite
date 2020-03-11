@@ -175,12 +175,14 @@ int main(int argc, char**argv) {
   int arg;                        /* current command-line argument */
   unsigned int bin;               /* current bin */
   struct headertag2 hd;           /* header of input SFT */
-  FILE *fp;                       /* currently open filepointer */
+  FILE *fpin;                     /* currently open input filepointer */
+  FILE *fpout;                    /* currently open output filepointer */
   char *oldcomment;               /* comment of input SFT */
   char *cmdline = NULL;           /* records command-line to add it to comment */
   char *comment = NULL;           /* comment to be written into output SFT file */
   int swap;                       /* do we need to swap bytes? */
   float *data;                    /* SFT data */
+  int move;                       /* for working out size of SFT */
   char *outname;                  /* name of output SFT file */
   char outdir0[] = ".";
   char *outdir = (char*)outdir0;  /* output filename prefix */
@@ -437,14 +439,25 @@ int main(int argc, char**argv) {
   /* loop over all input SFT files */
   for(; arg < argc; arg++) {
 
-    /* open input SFT */
+    /* open input SFT file */
     request_resource(&read_open_rate, 1);
-    XLAL_CHECK_MAIN( (fp = fopen(argv[arg], "r")) != NULL, XLAL_EIO, "could not open SFT file for reading" );
-    
-    /* read header */
+    XLAL_CHECK_MAIN( (fpin = fopen(argv[arg], "r")) != NULL, XLAL_EIO, "could not open SFT file for reading" );
+
+    /* loop until end of input SFT file, when ReadSFTHeader() will return SFTENONE */
+    int firstread = TRUE;
+    while (1) {
+
+    /* read header, break if ReadSFTHeader() returns SFTENONE
+       (unless this is the first read, i.e. fail is SFT file is completely empty) */
     request_resource(&read_bandwidth, 40);
-    sfterrno = ReadSFTHeader(fp, &hd, &oldcomment, &swap, validate);
+    sfterrno = ReadSFTHeader(fpin, &hd, &oldcomment, &swap, validate);
+    if( !firstread ) {
+      if( sfterrno == SFTENONE ) {
+        break;
+      }
+    }
     XLAL_CHECK_MAIN( sfterrno == 0, XLAL_EIO, "could not read SFT header: %s", SFTErrorMessage(sfterrno) );
+    firstread = FALSE;
 
     /* calculate bins from frequency parameters if they were given */
     /* deltaF = 1.0 / tbase; bins = freq / deltaF => bins = freq * tbase */
@@ -523,7 +536,7 @@ int main(int argc, char**argv) {
 
     /* read in SFT bins */
     request_resource(&read_bandwidth, nactivesamples*8);
-    sfterrno = ReadSFTData(fp, data, start, nactivesamples, NULL, NULL);
+    sfterrno = ReadSFTData(fpin, data, start, nactivesamples, NULL, NULL);
     XLAL_CHECK_MAIN( sfterrno == 0, XLAL_EIO, "could not read SFT data: %s", SFTErrorMessage(sfterrno) );
 
     /* if reading v1 SFTs set up a factor to be applied for normalization conversion */
@@ -536,9 +549,6 @@ int main(int argc, char**argv) {
     /* apply mystery factor and possibly normalization factor */
     for(bin = 0; bin < 2 * nactivesamples; bin++)
       data[bin] *= factor * conversion_factor;
-
-    /* close the input sfts */
-    fclose(fp);
 
     /* loop over start bins for output SFTs */
     for(bin = start; bin < end; bin += width - overlap) {
@@ -610,16 +620,16 @@ int main(int argc, char**argv) {
 
       /* append this SFT */
       request_resource(&write_open_rate, 1);
-      XLAL_CHECK_MAIN( (fp = fopen(rec->filename,"a")) != NULL, XLAL_EIO, "could not open SFT for writing" );
+      XLAL_CHECK_MAIN( (fpout = fopen(rec->filename,"a")) != NULL, XLAL_EIO, "could not open SFT for writing" );
 
       /* write the data */
       /* write the comment only to the first SFT of a "block", i.e. of a call of this program */
       request_resource(&write_bandwidth, 40 + this_width * 8);
-      sfterrno = WriteSFT(fp, hd.gps_sec, hd.gps_nsec, hd.tbase, bin, this_width, detector, (firstfile || allcomments) ? comment : NULL, data + 2 * (bin - start));
+      sfterrno = WriteSFT(fpout, hd.gps_sec, hd.gps_nsec, hd.tbase, bin, this_width, detector, (firstfile || allcomments) ? comment : NULL, data + 2 * (bin - start));
       XLAL_CHECK_MAIN( sfterrno == 0, XLAL_EIO, "could not write SFT data: %s", SFTErrorMessage(sfterrno) );
 
       /* close output SFT file */
-      fclose(fp);
+      fclose(fpout);
 
     } /* loop over output SFTs */
 
@@ -631,7 +641,19 @@ int main(int argc, char**argv) {
     /* next file is not the first file anymore */
     firstfile = FALSE;
 
-  } /* loop over input SFTs */
+    /* Move forward to next SFT in merged file */
+    if (hd.version==1)
+      move=sizeof(struct headertag1)+hd.nsamples*2*sizeof(float);
+    else
+      move=sizeof(struct headertag2)+hd.nsamples*2*sizeof(float)+hd.comment_length;
+    fseek(fpin, move, SEEK_CUR);
+
+    } /* end loop over SFTs in this file */
+
+    /* close the input SFT file */
+    fclose(fpin);
+
+  } /* loop over input SFT files */
 
   /* cleanup */
   XLALFree(outname);
