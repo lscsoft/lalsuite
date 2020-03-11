@@ -110,6 +110,7 @@ outputs:
         - pathlib  # [py<34]
         - pytest >=4.0.0a0
       source_files:
+        - python/Makefile
         - test/python
       commands:
         - python -m pytest -rs -v --junit-xml=junit.xml test/python

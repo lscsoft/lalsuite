@@ -25,6 +25,7 @@ AC_CONFIG_FILES([ \
   test/Makefile \
   test/python/Makefile \
   test/python/test_python_imports.py \
+  test/python/test_python_scripts.py \
 ])
 AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE([ \

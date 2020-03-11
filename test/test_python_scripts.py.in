@@ -1,0 +1,167 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2019-2020  Cardiff University
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""Test that the `--help` option works for all scripts in this package
+"""
+
+import os
+import sys
+import warnings
+try:
+    from pathlib import Path
+except ImportError as exc:
+    warnings.warn(str(exc))
+    sys.exit(77)
+from subprocess import check_call
+try:
+    from unittest import mock
+except ImportError:  # python < 3
+    import mock
+    FileNotFoundError = IOError
+
+import pytest
+
+# name of this package
+PACKAGE = "@PACKAGE@"
+
+# are we currently in the TEST phase of a conda build?
+CONDA_BUILD_TEST = os.getenv("CONDA_BUILD_STATE") == "TEST"
+
+# default run arguments
+DEFAULT_PYTEST_ARGUMENTS = [
+    "-v",
+    "-rs",
+    "--junit-xml=junit-scripts.xml",
+]
+
+# paths
+HERE = Path(__file__).parent.absolute()
+BUILDDIR = (HERE / Path("@builddir@")).resolve()
+SRCDIR = (HERE / Path("@srcdir@")).resolve()
+TOPBUILDDIR = (HERE / Path("@top_builddir@")).resolve()
+if PACKAGE == "lalapps":  # lalapps is different
+    PYTHONDIR = BUILDDIR
+else:
+    PYTHONDIR = TOPBUILDDIR / "python"
+
+# path to exclusion file
+EXCLUDEFILE = SRCDIR / "exclude-scripts.txt"
+
+
+# -- utilities ----------------------------------
+
+def read_exclude_file(source):
+    """Read all excluded file paths from the given source file
+    """
+    excludes = set()
+    try:
+        with open(str(source), "r") as fobj:
+            for line in fobj:
+                if isinstance(line, bytes):
+                    line = line.decode("utf-8")
+                content = line.strip().split("#", 1)[0].strip()
+                if content:
+                    excludes.add(content)
+    except FileNotFoundError as exc:
+        warnings.warn(str(exc))
+    return excludes
+
+
+def parse_pybin_scripts(path, var="pybin_scripts"):
+    """Yield script names from the relevant Makefile list variable.
+    """
+    with path.open("r") as makefile:
+        inscriptslist = False
+        for line in makefile:
+            line = line.rstrip()
+            # starting the pybin_scripts list
+            if line.startswith(var):
+                inscriptslist = True
+                # if given a value immediately, use it
+                value = line.split("=", 1)[1].rstrip(" \\")
+                if value:
+                    yield value
+            # ending the pybin_scripts list (or not in it)
+            elif not line or line.endswith("$(END_OF_LIST)"):
+                inscriptslist = False
+            # otherwise we must be inside the list definition,
+            # so yield its contents
+            elif inscriptslist:
+                yield line.rstrip("\\").strip()
+
+
+def find_scripts(path):
+    """Yields the script names of python files in the given directory.
+
+    This is just the file name with the trailing ``.py`` extension removed.
+    """
+    for pyf in path.glob("*.py"):
+        # build system creates a shell wrapper around each .py script
+        # so we want to actually execute that, this also allows us to
+        # only pick up scripts that are to be installed
+        shf = Path(str(pyf)[:-3])
+        if shf.is_file():
+            yield str(shf.name)
+
+
+# -- tests --------------------------------------
+
+EXCLUDE = read_exclude_file(SRCDIR / "exclude-scripts.txt")
+try:
+    SCRIPTS = sorted(parse_pybin_scripts(PYTHONDIR / "Makefile"))
+except (FileNotFoundError, ValueError, TypeError):
+    # failed to find/parse the makefile, use the brute force method
+    SCRIPTS = sorted(find_scripts(PYTHONDIR))
+
+
+# only parametrize if we have something to loop over,
+# this allows pytest to exit with the 'no tests collected' code
+# which we can then pass up the stack to automake
+if SCRIPTS:
+    @pytest.mark.parametrize('script', SCRIPTS)
+    def test_help(script):
+        """Test that `<script> --help` can be executed for the named script.
+        """
+        if script in EXCLUDE:  # skip
+            pytest.skip("excluded {}".format(str(script)))
+        if CONDA_BUILD_TEST:  # script should be on the path
+            check_call([script, "--help"], shell=False)
+        else:  # use local path
+            startdir = os.getcwd()
+            os.chdir(str(PYTHONDIR))
+            try:
+                check_call("./{} --help".format(script), shell=True)
+            finally:
+                os.chdir(startdir)
+
+
+# -- command-line -------------------------------
+
+# run from command line
+if __name__ == "__main__":
+    args = sys.argv[1:] or DEFAULT_PYTEST_ARGUMENTS
+
+    # run pytest with patch to not resolve symlinks
+    with mock.patch("py._path.local.LocalPath.realpath", lambda x: x):
+        code = pytest.main(args=[__file__] + args)
+
+    # handle exit code
+    if code == 5:  # (pytest.ExitCode.NO_TESTS_COLLECTED)
+        sys.exit(77)  # for automake check
+    sys.exit(code)
