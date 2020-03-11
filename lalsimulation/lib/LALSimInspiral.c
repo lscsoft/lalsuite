@@ -5382,14 +5382,10 @@ int XLALSimInspiralImplementedFDApproximants(
         case SEOBNRv2_ROM_DoubleSpin_HI:
         case Lackey_Tidal_2013_SEOBNRv2_ROM:
         case SEOBNRv4_ROM:
-<<<<<<< HEAD
+        case SEOBNRv4HM_ROM:
         case SEOBNRv4_ROM_NRTidal:
         case SEOBNRv4_ROM_NRTidalv2:
         case SEOBNRv4_ROM_NRTidalv2_NSBH:
-=======
-        case SEOBNRv4HM_ROM:
-		case SEOBNRv4_ROM_NRTidal:
->>>>>>> Add SEOBNRv4HM_ROM
         case SEOBNRv4T_surrogate:
         //case TaylorR2F4:
         case TaylorF2:
@@ -5840,14 +5836,10 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv2_ROM_DoubleSpin_HI:
     case Lackey_Tidal_2013_SEOBNRv2_ROM:
     case SEOBNRv4_ROM:
-<<<<<<< HEAD
+    case SEOBNRv4HM_ROM:  
     case SEOBNRv4_ROM_NRTidal:
     case SEOBNRv4_ROM_NRTidalv2:
     case SEOBNRv4_ROM_NRTidalv2_NSBH:
-=======
-    case SEOBNRv4HM_ROM:
-	case SEOBNRv4_ROM_NRTidal:
->>>>>>> Add SEOBNRv4HM_ROM
     case SEOBNRv4T_surrogate:
     case TaylorR2F4:
     case IMRPhenomFB:
@@ -6050,14 +6042,10 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv2_ROM_DoubleSpin_HI:
     case Lackey_Tidal_2013_SEOBNRv2_ROM:
     case SEOBNRv4_ROM:
-<<<<<<< HEAD
+    case SEOBNRv4HM_ROM:  
     case SEOBNRv4_ROM_NRTidal:
     case SEOBNRv4_ROM_NRTidalv2:
     case SEOBNRv4_ROM_NRTidalv2_NSBH:
-=======
-    case SEOBNRv4HM_ROM:
-	case SEOBNRv4_ROM_NRTidal:
->>>>>>> Add SEOBNRv4HM_ROM
     case SEOBNRv4T_surrogate:
     case IMRPhenomA:
     case IMRPhenomB:
