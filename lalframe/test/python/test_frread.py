@@ -103,4 +103,5 @@ def test_read_timeseries_error(inputs, message):
 
 
 if __name__ == '__main__':
-    sys.exit(pytest.main(args=[__file__] + sys.argv[1:]))
+    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-frread.xml"]
+    sys.exit(pytest.main(args=[__file__] + args))
