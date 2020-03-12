@@ -118,4 +118,5 @@ def test_IMRPhenomPv3HM():
 # -- run the tests ------------------------------
 
 if __name__ == '__main__':
-    sys.exit(pytest.main(args=[__file__] + sys.argv[1:] + ['-v']))
+    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-phenomPv3HM.xml"]
+    sys.exit(pytest.main(args=[__file__] + args))
