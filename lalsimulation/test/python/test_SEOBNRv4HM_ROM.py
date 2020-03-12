@@ -26,7 +26,13 @@ Some functions copied from test_phenomPv3HM.py.
 
 import sys, os
 import warnings
-from pathlib import Path
+try:
+    from pathlib import Path
+except ImportError as exc:
+    import warnings
+    warnings.warn(str(exc))
+    sys.exit(77)
+
 import pytest
 import lal
 import lalsimulation
