@@ -104,4 +104,5 @@ def test_nrfits(model_name, q, M, chiA_vec, chiB_vec, f_ref, \
 
 # -- run the tests ------------------------------
 if __name__ == '__main__':
-    sys.exit(pytest.main(args=[__file__] + sys.argv[1:] + ['-v']))
+    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-nrfits.xml"]
+    sys.exit(pytest.main(args=[__file__] + args))
