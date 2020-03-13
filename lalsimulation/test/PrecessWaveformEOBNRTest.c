@@ -55,7 +55,7 @@ int main(void){
 
   // Generate all available EOBNRv2 waveform modes
   // These are the (2,2), (2,1), (3,3), (4,4), (5,5)
-  SphHarmTimeSeries *ts = XLALSimInspiralChooseTDModes(
+  SphHarmTimeSeries *ts = XLALSimInspiralChooseTDModes(0.,
     dt,
     m1, m2,
     0., 0., 0., 0., 0., 0.,
