@@ -50,6 +50,5 @@ def test_get_channels():
 
 
 if __name__ == '__main__':
-    if "-v" not in " ".join(sys.argv[1:]):  # default to verbose
-        sys.argv.append("-v")
-    sys.exit(pytest.main(args=[__file__] + sys.argv[1:]))
+    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-utils.xml"]
+    sys.exit(pytest.main(args=[__file__] + args))

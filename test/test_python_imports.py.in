@@ -47,7 +47,7 @@ CONDA_BUILD_TEST = os.getenv("CONDA_BUILD_STATE") == "TEST"
 DEFAULT_PYTEST_ARGUMENTS = [
     "-v",
     "-rs",
-    "--junit-xml=junit-scripts.xml",
+    "--junit-xml=junit-imports.xml",
 ]
 
 # paths

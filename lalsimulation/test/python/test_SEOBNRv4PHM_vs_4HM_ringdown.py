@@ -163,4 +163,5 @@ def test_aligned_spin_limit_ringdown(q):
 # -- run the tests ------------------------------
 
 if __name__ == "__main__":
-    sys.exit(pytest.main(args=[__file__] + sys.argv[1:] + ["-v"]))
+    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-SEOBNRv4PHM_vs_4HM_ringdown.xml"]
+    sys.exit(pytest.main(args=[__file__] + args))
