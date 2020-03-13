@@ -2912,6 +2912,7 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     )
 {
+    XLALPrintWarning( "WARNING: The phiRef argument in XLALSimInspiralChooseTDModes will be removed in the future and is currently not used. \n" );
     REAL8 v0 = 1.;
     SphHarmTimeSeries *hlm = NULL;
     INT4 errCode=0;
