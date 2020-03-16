@@ -6,7 +6,6 @@ dependencies:
   - automake = 1.15
   - bc
   - cfitsio
-  - chealpix
   - clang_osx-64
   - doxygen
   - fftw
