@@ -54,7 +54,7 @@ int main(void){
   REAL8 J_zenith = inclination; // zenith angle btwn J and line of sight
 
   // Generate all available waveform modes
-  SphHarmTimeSeries *ts = XLALSimInspiralChooseTDModes(
+  SphHarmTimeSeries *ts = XLALSimInspiralChooseTDModes(0.,
     dt,
     m1, m2,
     0., 0., 0., 0., 0., 0.,

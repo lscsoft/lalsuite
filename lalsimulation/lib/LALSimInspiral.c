@@ -2894,6 +2894,7 @@ int XLALSimInspiralChooseWaveform(
  * (h+ + I hx) = Sum_{l,m} Y_lm(0,0) h'_lm,
  */
 SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
+    UNUSED REAL8 phiRef,                        /**< reference orbital phase (rad). This variable is not used and only kept here for backwards compatibility */		
     REAL8 deltaT,                               /**< sampling interval (s) */
     REAL8 m1,                                   /**< mass of companion 1 (kg) */
     REAL8 m2,                                   /**< mass of companion 2 (kg) */
@@ -2911,6 +2912,7 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     )
 {
+    XLALPrintWarning( "WARNING: The phiRef argument in XLALSimInspiralChooseTDModes will be removed in the future and is currently not used. \n" );
     REAL8 v0 = 1.;
     SphHarmTimeSeries *hlm = NULL;
     INT4 errCode=0;
@@ -3250,7 +3252,7 @@ SphHarmTimeSeries *XLALSimInspiralModesTD(REAL8 deltaT, REAL8 m1, REAL8 m2, REAL
     // fstart = XLALSimInspiralChirpStartFrequencyBound((1.0 + extra_time_fraction) * tchirp + tmerge + textra, m1, m2);
 
     XLALPrintWarning("XLAL Warning - XLALSimInspiralModesTD does not yet implement spins - passing zeros\n");
-    modes = XLALSimInspiralChooseTDModes(deltaT, m1, m2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, f_min, f_ref, r, LALpars, lmax, approximant);
+    modes = XLALSimInspiralChooseTDModes(0.,deltaT, m1, m2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, f_min, f_ref, r, LALpars, lmax, approximant);
     if (!modes)
         XLAL_ERROR_NULL(XLAL_EFUNC);
 
