@@ -60,6 +60,7 @@ const LALValue * XLALDictEntryGetValue(const LALDictEntry *entry);
 
 void XLALDestroyDict(LALDict *dict);
 LALDict * XLALCreateDict(void);
+LALDict * XLALDictDuplicate(LALDict *old);
 
 void XLALDictForeach(LALDict *dict, void (*func)(char *, LALValue *, void *), void *thunk);
 LALDictEntry * XLALDictFind(LALDict *dict, int (*func)(const char *, const LALValue *, void *), void *thunk);

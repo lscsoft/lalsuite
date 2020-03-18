@@ -634,7 +634,7 @@ void XLALDestroySimInspiralWaveformCache(LALSimInspiralWaveformCache *cache)
         XLALDestroyREAL8TimeSeries(cache->hcross);
         XLALDestroyCOMPLEX16FrequencySeries(cache->hptilde);
         XLALDestroyCOMPLEX16FrequencySeries(cache->hctilde);
-
+        if(cache->LALpars) XLALDestroyDict(cache->LALpars);
         XLALFree(cache);
     }
 }
@@ -757,7 +757,8 @@ static int StoreTDHCache(LALSimInspiralWaveformCache *cache,
     cache->f_ref = f_ref;
     cache->r = r;
     cache->i = i;
-    cache->LALpars = LALpars;
+    if(cache->LALpars) XLALDestroyDict(cache->LALpars);
+    cache->LALpars = XLALDictDuplicate(LALpars);
     cache->approximant = approximant;
     cache->frequencies = NULL;
 
@@ -827,7 +828,8 @@ static int StoreFDHCache(LALSimInspiralWaveformCache *cache,
     cache->f_max = f_max;
     cache->r = r;
     cache->i = i;
-    cache->LALpars = LALpars;
+    if(cache->LALpars) XLALDestroyDict(cache->LALpars);
+    cache->LALpars = XLALDictDuplicate(LALpars);
     cache->approximant = approximant;
 
     XLALDestroyREAL8Sequence(cache->frequencies);
