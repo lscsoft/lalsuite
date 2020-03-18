@@ -82,7 +82,7 @@ typedef struct {
   long binwidth;       /**< bin width */
   /* value fields */
   long int nSFT;       /**< number of SFTs */
-  long start;          /**< GPS start time */
+  long startTime;      /**< GPS start time */
   char *filename;      /**< SFT filename */
 } SFT_RECORD;
 
@@ -203,7 +203,7 @@ int main( int argc, char **argv )
   int firstfile = TRUE;           /* are we processing the first input SFT file? */
   int allcomments = FALSE;        /* write comment into _every_ SFT in the file */
   int add_comment = CMT_FULL;     /* add VCS ID and full command-line to every SFT file */
-  unsigned int start = 0, end = 0;     /* start and end in bins */
+  unsigned int startBin = 0, endBin = 0;     /* start and end in bins */
   unsigned int width = 0, overlap = 0; /* width and overlap in bins */
   double fMin = -1.0, fMax = -1.0;     /* start and end in Hz */
   double fWidth = -1.0, fOverlap = -1; /* width and overlap in Hz */
@@ -336,10 +336,10 @@ int main( int argc, char **argv )
       allcomments = TRUE;
     } else if ( ( strcmp( argv[arg], "-s" ) == 0 ) ||
                 ( strcmp( argv[arg], "--start-bin" ) == 0 ) ) {
-      start = atoi( argv[++arg] );
+      startBin = atoi( argv[++arg] );
     } else if ( ( strcmp( argv[arg], "-e" ) == 0 ) ||
                 ( strcmp( argv[arg], "--end-bin" ) == 0 ) ) {
-      end = atoi( argv[++arg] );
+      endBin = atoi( argv[++arg] );
     } else if ( ( strcmp( argv[arg], "-b" ) == 0 ) ||
                 ( strcmp( argv[arg], "--width" ) == 0 ) ) {
       width = atoi( argv[++arg] );
@@ -425,12 +425,12 @@ int main( int argc, char **argv )
       long int firstbinfreq = 0, firstbinrem = 0, binwidthfreq = 0, binwidthrem = 0, span = 0;
       int sscanf_matched = sscanf( filename, "%c-%ld_%c%c_%ldSFT_NB_F%ldHz%ld_W%ldHz%ld-%ld-%ld.sft",
                                    &obs, &rec->nSFT, &rec->det[0], &rec->det[1], &rec->timebase, &firstbinfreq,
-                                   &firstbinrem, &binwidthfreq, &binwidthrem, &rec->start, &span );
+                                   &firstbinrem, &binwidthfreq, &binwidthrem, &rec->startTime, &span );
       XLAL_CHECK_MAIN( sscanf_matched == 11, XLAL_ESYS,
                        "sscanf() matched only %i fields in SFT filename '%s'; partial match = '%c-%ld_%c%c_%ldSFT_NB_F%ldHz%ld_W%ldHz%ld-%ld-%ld.sft'",
                        sscanf_matched, filename,
                        obs, rec->nSFT, rec->det[0], rec->det[1], rec->timebase, firstbinfreq,
-                       firstbinrem, binwidthfreq, binwidthrem, rec->start, span );
+                       firstbinrem, binwidthfreq, binwidthrem, rec->startTime, span );
       XLAL_CHECK_MAIN( obs == rec->det[0], XLAL_EINVAL, "inconsistent observatory (%c) vs detector (%c%c) in SFT filename '%s'", obs, rec->det[0], rec->det[1], filename );
       XLAL_CHECK_MAIN( span > 0, XLAL_EINVAL, "nonpositive timespan (%ld) in SFT filename '%s'", span, filename );
 
@@ -474,10 +474,10 @@ int main( int argc, char **argv )
       /* calculate bins from frequency parameters if they were given */
       /* deltaF = 1.0 / tbase; bins = freq / deltaF => bins = freq * tbase */
       if ( fMin >= 0.0 ) {
-        start = MYROUND( fMin * hd.tbase );
+        startBin = MYROUND( fMin * hd.tbase );
       }
       if ( fMax >= 0.0 ) {
-        end   = MYROUND( fMax * hd.tbase );
+        endBin   = MYROUND( fMax * hd.tbase );
       }
       if ( fWidth >= 0.0 ) {
         width = MYROUND( fWidth * hd.tbase );
@@ -490,18 +490,18 @@ int main( int argc, char **argv )
       XLAL_CHECK_MAIN( ( data = ( float * )XLALCalloc( hd.nsamples, 2 * sizeof( float ) ) ) != NULL, XLAL_ENOMEM, "out of memory allocating data" );
 
       /* error if desired start bin < hd.firstfreqindex */
-      if ( ( int )start < hd.firstfreqindex ) {
+      if ( ( int )startBin < hd.firstfreqindex ) {
         fprintf( stderr,
                  "ERROR: start bin (%d) is smaller than first bin in input SFT (%d)\n",
-                 start, hd.firstfreqindex );
+                 startBin, hd.firstfreqindex );
         exit( 9 );
       }
 
       /* error if desired end bin > hd.firstfreqindex + hd.nsamples - 1 */
-      if ( start + width > end + 1 ) {
+      if ( startBin + width > endBin + 1 ) {
         fprintf( stderr,
                  "ERROR: end bin (%d) is larger than last bin in input SFT (%d)\n",
-                 end, hd.firstfreqindex + hd.nsamples - 1 );
+                 endBin, hd.firstfreqindex + hd.nsamples - 1 );
         exit( 10 );
       }
 
@@ -545,17 +545,17 @@ int main( int argc, char **argv )
 
       /* calculate number of bins to actually read (from width + overlap) */
       /* add width-overlap samples as lon as they are < the total number og bins to write */
-      for ( nactivesamples = 0; nactivesamples < end - start; nactivesamples += width - overlap );
+      for ( nactivesamples = 0; nactivesamples < endBin - startBin; nactivesamples += width - overlap );
       /* add the last overlap */
       nactivesamples += overlap + 1;
       /* if this number is larger than the bins in the input sft, just use the latter */
-      if ( nactivesamples > hd.nsamples + hd.firstfreqindex - start ) {
-        nactivesamples = hd.nsamples + hd.firstfreqindex - start;
+      if ( nactivesamples > hd.nsamples + hd.firstfreqindex - startBin ) {
+        nactivesamples = hd.nsamples + hd.firstfreqindex - startBin;
       }
 
       /* read in SFT bins */
       request_resource( &read_bandwidth, nactivesamples * 8 );
-      sfterrno = ReadSFTData( fpin, data, start, nactivesamples, NULL, NULL );
+      sfterrno = ReadSFTData( fpin, data, startBin, nactivesamples, NULL, NULL );
       XLAL_CHECK_MAIN( sfterrno == 0, XLAL_EIO, "could not read SFT data: %s", SFTErrorMessage( sfterrno ) );
 
       /* if reading v1 SFTs set up a factor to be applied for normalization conversion */
@@ -571,7 +571,7 @@ int main( int argc, char **argv )
       }
 
       /* loop over start bins for output SFTs */
-      for ( bin = start; bin < end; bin += width - overlap ) {
+      for ( bin = startBin; bin < endBin; bin += width - overlap ) {
         /* determine the number of bins actually to write from the desired 'width',
            given that the remaining number of bin may be odd (especially from overlapping)
            and the bins to write need to be present in the input sft
@@ -579,7 +579,7 @@ int main( int argc, char **argv )
         int last_input_bin   = hd.firstfreqindex + hd.nsamples - 1;
         int last_output_bin  = bin + width - 1;
         int max_input_width  = last_output_bin <= last_input_bin ? width : width - ( last_output_bin - last_input_bin );
-        int max_output_width = end - bin + 1;
+        int max_output_width = endBin - bin + 1;
         int this_width       = max_input_width < max_output_width ? max_input_width : max_output_width;
 
         /* check if this narrow-band SFT exists */
@@ -599,7 +599,7 @@ int main( int argc, char **argv )
           XLAL_CHECK_MAIN( ( rec = XLALCalloc( 1, sizeof( *rec ) ) ) != NULL, XLAL_ENOMEM, "out of memory allocating SFT_RECORD" );
           *rec = key;
           rec->nSFT = 0;
-          rec->start = hd.gps_sec;
+          rec->startTime = hd.gps_sec;
 
         }
 
@@ -611,14 +611,14 @@ int main( int argc, char **argv )
         int outfreqbin = bin - outfreq * rec->timebase;
         int outwidth = ( int )floor( this_width / rec->timebase );
         int outwidthbin = this_width - outwidth * rec->timebase;
-        long int span = hd.gps_sec - rec->start + rec->timebase;
+        long int span = hd.gps_sec - rec->startTime + rec->timebase;
         if ( hd.gps_nsec > 0 ) {
           span += 1;
         }
         XLAL_CHECK_MAIN( snprintf( outname, outnamelen, "%s/%c-%ld_%c%c_%ldSFT_NB_F%04dHz%d_W%04dHz%d-%ld-%ld.sft",
                                    outdir, detector[0], rec->nSFT, detector[0], detector[1],
                                    rec->timebase, outfreq, outfreqbin, outwidth, outwidthbin,
-                                   rec->start, span ) < ( int )outnamelen,
+                                   rec->startTime, span ) < ( int )outnamelen,
                          XLAL_ESYS, "output of snprintf() was truncated" );
 
         /* update SFT filename */
@@ -645,7 +645,7 @@ int main( int argc, char **argv )
         /* write the data */
         /* write the comment only to the first SFT of a "block", i.e. of a call of this program */
         request_resource( &write_bandwidth, 40 + this_width * 8 );
-        sfterrno = WriteSFT( fpout, hd.gps_sec, hd.gps_nsec, hd.tbase, bin, this_width, detector, ( firstfile || allcomments ) ? comment : NULL, data + 2 * ( bin - start ) );
+        sfterrno = WriteSFT( fpout, hd.gps_sec, hd.gps_nsec, hd.tbase, bin, this_width, detector, ( firstfile || allcomments ) ? comment : NULL, data + 2 * ( bin - startBin ) );
         XLAL_CHECK_MAIN( sfterrno == 0, XLAL_EIO, "could not write SFT data: %s", SFTErrorMessage( sfterrno ) );
 
         /* close output SFT file */
