@@ -66,15 +66,15 @@ def test_nrfits(model_name, q, M, chiA_vec, chiB_vec, f_ref, \
     Regression test for models implemented in the lalsimulation.nrfits package.
     Add new models to test_data following the above examples.
 
-    model_name: One of the models implemented in lalsimulation.nrfits.
-    q: Mass ratio, mA/mB >= 1.
-    M: Total mass in Solar masses.
-    chiA_vec: Dimensionless spin vector of heavier BH.
-    chiB_vec: Dimensionless spin vector of lighter BH.
-    f_ref = Reference frequency used to define the frame.
-    mf: Final mass, as a fraction of the total mass.
-    chif_vec: Dimensionless final spin vector.
-    vf_vec: Recoil kick vector in units of c.
+    - model_name: One of the models implemented in lalsimulation.nrfits.
+    - q: Mass ratio, mA/mB >= 1.
+    - M: Total mass in Solar masses.
+    - chiA_vec: Dimensionless spin vector of heavier BH.
+    - chiB_vec: Dimensionless spin vector of lighter BH.
+    - f_ref = Reference frequency used to define the frame.
+    - mf: Final mass, as a fraction of the total mass.
+    - chif_vec: Dimensionless final spin vector.
+    - vf_vec: Recoil kick vector in units of c.
     """
 
     # component masses of the binary
