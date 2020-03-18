@@ -7,27 +7,27 @@ def spin_evolution(q, chiA0, chiB0, omega0, approximant='SpinTaylorT4',
     """
     Wrapper for PN spin and dynamics evolution in LAL.
     Inputs:
-        q:              Mass ratio (q>=1)
-        chiA0:          Dimensionless spin of BhA at initial freq.
-        chiB0:          Dimensionless spin of BhB at initial freq.
-        omega0:         Initial orbital frequency in dimensionless units.
-        approximant:    'SpinTaylorT1/T4/T5'. Default: SpinTaylorT4.
-        dt:             Dimensionless step time for evolution. Default: 0.1
-        spinO:          Twice PN order of spin effects. Default: 7.
-        phaseO:         Twice PN order in phase. Default: 7.
+        - q:              Mass ratio (q>=1)
+        - chiA0:          Dimensionless spin of BhA at initial freq.
+        - chiB0:          Dimensionless spin of BhB at initial freq.
+        - omega0:         Initial orbital frequency in dimensionless units.
+        - approximant:    'SpinTaylorT1/T4/T5'. Default: SpinTaylorT4.
+        - dt:             Dimensionless step time for evolution. Default: 0.1
+        - spinO:          Twice PN order of spin effects. Default: 7.
+        - phaseO:         Twice PN order in phase. Default: 7.
 
     Outputs (all are time series):
-        Omega:          Dimensionless orbital frequency.
-        Phi:            Orbital phase (radians)
-        ChiA:           Dimensionless spin of BhA
-        ChiB:           Dimensionless spin of BhB
-        LNhat:          Orbital angular momentum direction
-        E1:             Orbital plane basis vector
+        - Omega:          Dimensionless orbital frequency.
+        - Phi:            Orbital phase (radians)
+        - ChiA:           Dimensionless spin of BhA
+        - ChiB:           Dimensionless spin of BhB
+        - LNhat:          Orbital angular momentum direction
+        - E1:             Orbital plane basis vector
 
-    The frame is defined at the initial frequency omega0, as follows:
-        z-axis is set by the orbital angular momentum direction.
-        x-axis is the separation vector from the lighter BH to the heavier BH.
-        y-axis completes the triad by right-hand rule.
+    The frame is defined at the initial frequency omega0, as follows: \n
+        - z-axis is set by the orbital angular momentum direction.
+        - x-axis is the separation vector from the lighter BH to the heavier BH.
+        - y-axis completes the triad by right-hand rule. \n
         All quantities are defined in this fixed frame, including initial spins,
         returned spins, other vectors like LNhat, etc.
     """

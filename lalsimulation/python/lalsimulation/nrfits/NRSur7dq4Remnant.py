@@ -20,12 +20,12 @@ class NRSur7dq4Remnant(NRFits):
 
     Paper: arxiv:1905.09300
 
-    Parameter ranges for usage:
-        q = [1, 6.01]
+    Parameter ranges for usage: \n
+        q = [1, 6.01] \n
         \f$\chi_{A}, \chi_{B}\f$ = [-1, 1]
 
-    Training parameter ranges:
-        q = [1, 4.01]
+    Training parameter ranges: \n
+        q = [1, 4.01] \n
         \f$\chi_{A}, \chi_{B}\f$ = [-0.81, 0.81]
 
     But extrapolates reasonably to the above mass ratios and spins. However,
