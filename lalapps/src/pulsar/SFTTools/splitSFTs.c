@@ -55,6 +55,8 @@
 #include <sys/stat.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALHashTbl.h>
+#include <lal/Date.h>
+#include <lal/SFTfileIO.h>
 #include <LALAppsVCSInfo.h>
 #include "SFTReferenceLibrary.h"
 
@@ -180,6 +182,18 @@ static void destroy_SFT_RECORD( void *x )
   }
 }
 
+static int move_to_next_SFT ( FILE *fpin, int nsamples, int comment_length, double version )
+{
+  int move;
+  if ( version == 1 ) {
+    move = sizeof( struct headertag1 ) + nsamples * 2 * sizeof( float );
+  } else {
+    move = sizeof( struct headertag2 ) + nsamples * 2 * sizeof( float ) + comment_length;
+  }
+  fseek( fpin, move, SEEK_CUR );
+  return XLAL_SUCCESS;
+}
+
 /** main program */
 int main( int argc, char **argv )
 {
@@ -193,7 +207,6 @@ int main( int argc, char **argv )
   char *comment = NULL;           /* comment to be written into output SFT file */
   int swap;                       /* do we need to swap bytes? */
   float *data;                    /* SFT data */
-  int move;                       /* for working out size of SFT */
   char *outname;                  /* name of output SFT file */
   char outdir0[] = ".";
   char *outdir = ( char * )outdir0; /* output filename prefix */
@@ -209,6 +222,8 @@ int main( int argc, char **argv )
   double fWidth = -1.0, fOverlap = -1; /* width and overlap in Hz */
   unsigned int nactivesamples;         /* number of bins to actually read in */
   int validate = TRUE;                 /* validate the checksum of each input SFT before using it? */
+  LIGOTimeGPS *minStartTime = NULL;    /* earliest SFT timestamp to start using */
+  LIGOTimeGPS *maxStartTime = NULL;    /* earliest SFT timestamp to no longer use */
   int sfterrno = 0;                    /* SFT error number return from reference library */
   LALHashTbl *nbsfts = NULL;           /* hash table of existing narrow-band SFTs */
 
@@ -239,6 +254,8 @@ int main( int argc, char **argv )
              "  [-fe|--end-frequency <endfrequency (exclusively)>]\n"
              "  [-fb|--frequency-bandwidth <frequencywidth>]\n"
              "  [-fx|--frequency-overlap <frequencyoverlap>]\n"
+             "  [-ts]--minStartTime <minStartTime>]\n"
+             "  [-te]--maxStartTime <maxStartTime (exclusively)>]\n"
              "  [-m|--factor <factor>]\n"
              "  [-d|--detector <detector>]\n"
              "  [-n|--output-directory <outputdirectory>]\n"
@@ -358,6 +375,16 @@ int main( int argc, char **argv )
     } else if ( ( strcmp( argv[arg], "-fx" ) == 0 ) ||
                 ( strcmp( argv[arg], "--frequency-overlap" ) == 0 ) ) {
       fOverlap = atof( argv[++arg] );
+    } else if ( ( strcmp( argv[arg], "-ts" ) == 0 ) ||
+                ( strcmp( argv[arg], "--minStartTime" ) == 0 ) ) {
+      LIGOTimeGPS XLAL_INIT_DECL(userMinStartTime);
+      minStartTime = &userMinStartTime;
+      XLALGPSSetREAL8 ( minStartTime, (REAL8)atof( argv[++arg] ));
+    } else if ( ( strcmp( argv[arg], "-te" ) == 0 ) ||
+                ( strcmp( argv[arg], "--maxStartTime" ) == 0 ) ) {
+      LIGOTimeGPS XLAL_INIT_DECL(userMaxStartTime);
+      maxStartTime = &userMaxStartTime;
+      XLALGPSSetREAL8 ( maxStartTime, (REAL8)atof( argv[++arg] ));
     } else if ( ( strcmp( argv[arg], "-m" ) == 0 ) ||
                 ( strcmp( argv[arg], "--factor" ) == 0 ) ) {
       factor = atof( argv[++arg] );
@@ -457,6 +484,7 @@ int main( int argc, char **argv )
 
     /* loop until end of input SFT file, when ReadSFTHeader() will return SFTENONE */
     int firstread = TRUE;
+    int nSFT_this_file = 0;
     while ( 1 ) {
 
       /* read header, break if ReadSFTHeader() returns SFTENONE
@@ -469,7 +497,23 @@ int main( int argc, char **argv )
         }
       }
       XLAL_CHECK_MAIN( sfterrno == 0, XLAL_EIO, "could not read SFT header: %s", SFTErrorMessage( sfterrno ) );
+
+      /* only use SFTs within specified ranges
+       * here we should be able to safely assume that concatenated input SFTs
+       * have monotonous timestamps; otherwise they wouldn't be valid
+       */
+      LIGOTimeGPS startTimeGPS = {hd.gps_sec,0};
+      int inRange = XLALCWGPSinRange(startTimeGPS, minStartTime, maxStartTime);
+      XLAL_CHECK_MAIN ( !( firstread && ( inRange == 1 ) ), XLAL_EIO, "First timestamp %d in file was after user constraint [%d,%d)!", hd.gps_sec, minStartTime->gpsSeconds, maxStartTime->gpsSeconds );
       firstread = FALSE;
+      if ( inRange == -1 ) { /* input timestamp too early, skip */
+        XLAL_CHECK_MAIN ( move_to_next_SFT ( fpin, hd.nsamples, hd.comment_length, hd.version ) == XLAL_SUCCESS, XLAL_EIO );
+        continue;
+      }
+      if ( inRange == 1 ) { /* input timestamp too late, stop with this file */
+        break;
+      }
+      nSFT_this_file += 1;
 
       /* calculate bins from frequency parameters if they were given */
       /* deltaF = 1.0 / tbase; bins = freq / deltaF => bins = freq * tbase */
@@ -663,14 +707,11 @@ int main( int argc, char **argv )
       firstfile = FALSE;
 
       /* Move forward to next SFT in merged file */
-      if ( hd.version == 1 ) {
-        move = sizeof( struct headertag1 ) + hd.nsamples * 2 * sizeof( float );
-      } else {
-        move = sizeof( struct headertag2 ) + hd.nsamples * 2 * sizeof( float ) + hd.comment_length;
-      }
-      fseek( fpin, move, SEEK_CUR );
+      XLAL_CHECK_MAIN ( move_to_next_SFT ( fpin, hd.nsamples, hd.comment_length, hd.version ) == XLAL_SUCCESS, XLAL_EIO );
 
     } /* end loop over SFTs in this file */
+
+    XLAL_CHECK_MAIN ( nSFT_this_file > 0, XLAL_EIO, "Found no matching SFTs in file." );
 
     /* close the input SFT file */
     fclose( fpin );
