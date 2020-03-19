@@ -217,7 +217,7 @@ class HeterodynedCWSimulator(object):
             self.__hetglitchphase = lalpulsar.HeterodynedPulsarGetGlitchPhase(self.hetpar.PulsarParameters(),
                                                                               self.gpstimes,
                                                                               self.__hetSSBdelay,
-                                                                              self.__hetBSBDelay)
+                                                                              self.__hetBSBdelay)
         else:
             self.__hetglitchphase = None
 
