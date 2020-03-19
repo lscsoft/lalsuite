@@ -278,11 +278,14 @@ class PulsarParametersPy(object):
             tkey = key[:-4] # get the actual parameter key name
 
         # check if the key is asking for an individual parameter from a vector parameter
-        # (e.g. 'F0' gets the first value from the 'F' vector)
+        # (e.g. 'F0' gets the first value from the 'F' vector.
+        # NOTE: this is problematic for glitch parameters, e.g., GLF0, which could provide
+        # values to multiple glitches, so this cannot be used to get individual glitch
+        # parameters).  
         sname = re.sub(r'_\d', '', tkey) if '_' in tkey else re.sub(r'\d', '', tkey)
         sidx = None
         indkey = None
-        if sname != tkey:
+        if sname != tkey and tkey[0:2] != "GL":
             # check additional index is an integer
             try:
                 sidx = int(tkey.split('_')[-1]) if '_' in tkey else int(tkey[len(sname):])
