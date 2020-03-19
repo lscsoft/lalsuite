@@ -20,15 +20,15 @@ class NRSur3dq8Remnant(NRFits):
     Paper: arxiv:1809.09125. The model is referred to as surfinBH3dq8 in the
     paper.
 
-    Parameter ranges for usage:
-        q = [1, 9.1]
-        \f$\chi_{1z}, \chi_{2z}\f$ = [-0.91, 0.91]
-        OR
-        q = [1, 10.1]
+    Parameter ranges for usage: \n
+        q = [1, 9.1] \n
+        \f$\chi_{1z}, \chi_{2z}\f$ = [-0.91, 0.91] \n
+        OR \n
+        q = [1, 10.1] \n
         \f$\chi_{1z}, \chi_{2z}\f$ = [-0.81, 0.81]
 
-    Training parameter ranges**:
-        q = [1, 8]
+    Training parameter ranges:  \n
+        q = [1, 8] \n
         \f$\chi_{1z}, \chi_{2z}\f$ = [-0.81, 0.81]
 
     But extrapolates reasonably to the above mass ratios and spins. However,

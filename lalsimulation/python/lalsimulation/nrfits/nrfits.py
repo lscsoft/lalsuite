@@ -7,15 +7,15 @@ Vijay Varma, 2019.
 #=============================================================================
 class NRFits(object):
     """
-Base class to evaluate NR fits.
+    Base class to evaluate NR fits.
 
-For each new fit, you need to do the following:
-    1. Add a new derived class for this class in a separate file and add the
-        new class to fits_collection in eval_fits.py.
-    2. override _get_fit_params() and _eval_fit() in the new derived class.
-    3. Add the new filename to Makefile.am
+    For each new fit, you need to do the following:
+        1. Add a new derived class for this class in a separate file and add the
+            new class to fits_collection in eval_fits.py.
+        2. override _get_fit_params() and _eval_fit() in the new derived class.
+        3. Add the new filename to Makefile.am
 
-See NRSur7dq4Remnant.py for an example.
+    See NRSur7dq4Remnant.py for an example.
     """
 
     # ------------------------------------------------------------------------

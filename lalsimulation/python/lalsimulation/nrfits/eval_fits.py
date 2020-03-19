@@ -20,11 +20,11 @@ class FitAttributes(object):
     def __init__(self, fit_class, desc, refs, model_keywords):
         """ Initializes a FitAttributes object. See usage examples below.
 
-            fit_class: Class to load for a given model. type: should be a
+            - fit_class: Class to load for a given model. type: should be a
                 daughter class of nrfits.NRFits.
-            desc: A brief description of the model, type: str.
-            refs: Paper reference, type: str.
-            model_keywords: List of strings, with one or more of
+            - desc: A brief description of the model, type: str.
+            - refs: Paper reference, type: str.
+            - model_keywords: List of strings, with one or more of
                 allowed_model_keywords.
         """
 
@@ -71,23 +71,24 @@ def truncate_output_to_physical_limits(val_dict, behavior):
     """
     Function to truncate fit values when they go beyond the following physical
     limits:
-        FinalMass: 1, FinalMass is expected as a fraction of total mass here.
-        FinalSpin: magnitude = 1, the Kerr limit for dimensionless spins.
-        RecoilKick: magnitude = 1, as this is in units of c.
+        - FinalMass: 1, FinalMass is expected as a fraction of total mass here.
+        - FinalSpin: magnitude = 1, the Kerr limit for dimensionless spins.
+        - RecoilKick: magnitude = 1, as this is in units of c.
 
-    val_dict: A dictionary of fits with one or more of the above keys. See
+    Inputs: \n
+    - val_dict: A dictionary of fits with one or more of the above keys. See
         eval_nrfit.
 
-    behavior (str) can be one of the following:
-        "TRUNCATE":         Rescale output magnitude to maximum limit, with an
+    - behavior (str) can be one of the following:
+        * "TRUNCATE":         Rescale output magnitude to maximum limit, with an
                             info message.
-        "TRUNCATESILENT":   Rescale output magnitude to maximum limit, without
+        * "TRUNCATESILENT":   Rescale output magnitude to maximum limit, without
                             info message
-        "KEEP":             Keep output magnitude, even if unphysical, but still
-                            give the info message
-        "IGNORE":           Keep output magnitude, even if unphysical, without
+        * "KEEP":             Keep output magnitude, even if unphysical, but
+                            still give the info message
+        * "IGNORE":           Keep output magnitude, even if unphysical, without
                             info message
-        "ERROR":            Abort with an error if output magnitude is
+        * "ERROR":            Abort with an error if output magnitude is
                             unphysical.
     """
 
@@ -175,27 +176,26 @@ def eval_nrfit(m1, m2, chiA_vec, chiB_vec, model_name, fit_types_list, f_ref=-1,
     """
     Evaluates Numerical Relativity fits for a given model.
 
-    m1:
-        mass of object 1 in kg. This needs to be in kg for models that allow
-        f_ref != -1. When f_ref = -1, if other units are used for m1/m2, the
-        remnant mass will be returned in the same units.
-    m2:
-        mass of the object 2 in kg.
-    chiA_vec:
-        dimensionless spin (3-vector) of object 1 at the reference epoch.
-    chiB_vec:
-        dimensionless spin (3-vector) of object 2 at the reference epoch.
-
+    - m1:
+        mass of object 1 in kg. \n
+        This needs to be in kg for models that allow f_ref != -1. When
+        f_ref = -1, if other units are used for m1/m2, the remnant mass will be
+        returned in the same units. \n
+    - m2:
+        mass of the object 2 in kg. \n
+    - chiA_vec:
+        dimensionless spin (3-vector) of object 1 at the reference epoch. \n
+    - chiB_vec:
+        dimensionless spin (3-vector) of object 2 at the reference epoch. \n
         This follows the same convention as the waveform interface (see
         https://dcc.ligo.org/T1800226/public), where the spin components are
         defined as:
-            \f$\chi_z = \chi \cdot \hat{L}\f$, where L is the orbital angular
-                momentum vector at the reference epoch.
-            \f$\chi_x = \chi \cdot \hat{n}\f$, where n = body2 -> body1 is the
-                separation vector pointing from body2 to body1 at the reference
-                epoch.
-            \f$\chi_y = \chi \cdot \hat{L \cross n}\f$.
-
+        * \f$\chi_z = \chi \cdot \hat{L}\f$, where \f$L\f$ is the orbital
+            angular momentum vector at the reference epoch.
+        * \f$\chi_x = \chi \cdot \hat{n}\f$, where \f$n =\f$ body2 -> body1
+            is the separation vector pointing from body2 to body1 at the
+            reference epoch.
+        * \f$\chi_y = \chi \cdot (\hat{L} \times \hat{n})\f$. \n
         These spin components are frame-independent as they are defined using
         vector inner products. One can also think of the above spins as being
         defined in the following reference frame: The positive z-axis is along
@@ -204,58 +204,61 @@ def eval_nrfit(m1, m2, chiA_vec, chiB_vec, model_name, fit_types_list, f_ref=-1,
         the positive x-axis. The y-axis completes the right-handed triad. The
         returned vectors such as final spin and kick velocity are also defined
         in the same frame.
-    model_name:
-        model used for fit, see
-        lalsimulation.nrfits.eval_fits.fits_collection.keys() for all available
-        fits. Details about a particular model, including its validity, can be
-        found by doing the following:
-            from lalsimulation.nrfits.eval_fits import fits_collection
-            help(fits_collection[model_name].fit_class)
-    fit_types_list:
-        List of fits to evaluate. Allowed values for elements are
-        "FinalMass", "FinalSpin", "RecoilKick", and "PeakLuminosity".
+    - model_name:
+        model used for fit. \n
+        See lalsimulation.nrfits.eval_fits.fits_collection.keys() for all
+        available fits. Details about a particular model, including its
+        validity, can be found by doing the following: \n
+            >> from lalsimulation.nrfits.eval_fits import fits_collection \n
+            >> help(fits_collection[model_name].fit_class)
+    - fit_types_list:
+        List of fits to evaluate. \n
+        Allowed values for elements are
+        "FinalMass", "FinalSpin", "RecoilKick", and "PeakLuminosity". \n
         Example: fit_types_list = ["FinalMass", "FinalSpin"]
-    f_ref:
-        reference frequency (in Hz) used to set the reference epoch. The
-        reference epoch is set such that the orbital frequency is equal to
+    - f_ref:
+        reference frequency (in Hz) used to set the reference epoch. \n
+        The reference epoch is set such that the orbital frequency is equal to
         f_ref/2. If f_ref = -1, the reference epoch is taken to be the
         time/frequency at which the fits were constructed. This can be
         different for different models, see the documentation for the specific
         model. Default: f_ref = -1.
-    extra_params_dict:
-        Any additional parameters required for a specific model. Default: None.
+    - extra_params_dict:
+        Any additional parameters required for a specific model.
+        Default: None. \n
         Allowed keys for extra_params_dict are:
-            Lambda1:
-                Tidal deformability of object 1. Default: None.
-            Lambda2:
-                Tidal deformability of object 2. Default: None.
-            eccentricity:
-                Eccentricity at the reference epoch. Default: None.
-            mean_anomaly:
-                Mean anomaly at the reference epoch. Default: None.
-            unlimited_extrapolation:
-                Some models will raise an error if evaluated well outside their
-                calibration range. If unlimited_extrapolation = True, then
-                these errors are not raised and the model will still produce an
-                output. USE AT YOUR OWN RISK!! Default: False.
-            physical_limit_violation_behavior:
-                What to do if the fit values violate physical limits
-                FinalMass > total mass, |FinalSpin| > 1, or |RecoilKick| > 1.
-                Allowed options are (Default: "ERROR"):
-                "ERROR":
-                    Abort with an error message.
-                "TRUNCATE":
-                    Rescale output magnitude to maximum limit, with a warning.
-                "TRUNCATESILENT":
-                    Rescale output magnitude to maximum limit, without warning.
-                "KEEP":
-                    Keep output magnitude, but with a warning.
-                "IGNORE":
-                    Keep output magnitude, without warning.
+        * Lambda1:
+            Tidal deformability of object 1. Default: None.
+        * Lambda2:
+            Tidal deformability of object 2. Default: None.
+        * eccentricity:
+            Eccentricity at the reference epoch. Default: None.
+        * mean_anomaly:
+            Mean anomaly at the reference epoch. Default: None.
+        * unlimited_extrapolation:
+            Some models will raise an error if evaluated well outside
+            their calibration range. If unlimited_extrapolation = True,
+            then these errors are not raised and the model will still
+            produce an output. USE AT YOUR OWN RISK!! Default: False.
+        * physical_limit_violation_behavior:
+            What to do if the fit values violate physical limits
+            FinalMass > total mass, |FinalSpin| > 1, or |RecoilKick| > 1. \n
+            Allowed options are (Default: "ERROR"):
+            - "ERROR":
+                Abort with an error message.
+            - "TRUNCATE":
+                Rescale output magnitude to maximum limit, with a warning.
+            - "TRUNCATESILENT":
+                Rescale output magnitude to maximum limit, without
+                warning.
+            - "KEEP":
+                Keep output magnitude, but with a warning.
+            - "IGNORE":
+                Keep output magnitude, without warning.
 
 
-    Returns: return_dict
-        Dictionary of values corresponding to the keys in fit_types_list.
+    - Returns: return_dict. \n
+        Dictionary of values corresponding to the keys in fit_types_list. \n
         Example: mf = return_dict["FinalMass"]
     """
 
