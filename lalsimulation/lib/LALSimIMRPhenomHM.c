@@ -371,6 +371,9 @@ static int init_PhenomHM_Storage(
         XLAL_EFUNC,
         "PhenomInternal_AlignedSpinEnforcePrimaryIsm1 failed");
 
+
+    p->chip = XLALSimPhenomUtilsChiP(p->m1, p->m2, p->chi1x, p->chi1y, p->chi2x, p->chi2y);
+
     /* sanity checks on frequencies */
     PhenomHMFrequencyBoundsStorage pHMFS;
     retcode = 0;
@@ -397,9 +400,7 @@ static int init_PhenomHM_Storage(
     p->Mf_ref = XLALSimPhenomUtilsHztoMf(p->f_ref, p->Mtot);
 
     p->finmass = XLALSimPhenomUtilsIMRPhenomDFinalMass(p->m1, p->m2, p->chi1z, p->chi2z);
-    // p->finspin = XLALSimIMRPhenomDFinalSpin(p->m1, p->m2, p->chi1z, p->chi2z); /* dimensionless final spin */
-    p->finspin = XLALSimPhenomUtilsPhenomPv2FinalSpin(p->m1, p->m2, p->chi1z, p->chi2z, p->chi1x);
-    // p->finspin = XLALSimPhenomUtilsPhenomPv3HMFinalSpin(p->m1, p->m2, p->chi1x, p->chi1y, p->chi1z, p->chi2x, p->chi2y, p->chi2z);
+    p->finspin = XLALSimPhenomUtilsPhenomPv2FinalSpin(p->m1, p->m2, p->chi1z, p->chi2z, p->chip);
 
     if (p->finspin > 1.0)
         XLAL_ERROR(XLAL_EDOM, "PhenomD fring function: final spin > 1.0 not supported\n");
