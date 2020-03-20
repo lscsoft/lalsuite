@@ -342,6 +342,8 @@ int XLALSimIMRPhenomPv3HMGetHplusHcross(
         {
             freqs_seq->data[j] = j * deltaF;
         }
+        /* shift zero frequency to avoid evaluating angles at f=0.*/
+        freqs_seq->data[0] = 1e-13;
         /* coalesce at t=0 */
         /* Shift by overall length in time */
         XLAL_CHECK(
@@ -1072,4 +1074,3 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
 
     return XLAL_SUCCESS;
 }
-
