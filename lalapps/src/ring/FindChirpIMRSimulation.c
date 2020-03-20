@@ -25,6 +25,7 @@
  *
  *-----------------------------------------------------------------------
  */
+/** \cond LALINSPIRAL */
 
 #include <lal/Units.h>
 #include <lal/Date.h>
@@ -395,3 +396,5 @@ LALFindChirpInjectIMR (
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
+
+/** \endcond */

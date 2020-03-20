@@ -1,5 +1,5 @@
 /**
-\if LALPULSAR
+\cond LALPULSAR
 
 \defgroup lalapps_pulsar_SFTSpecification SFT Data Format Version 2 Specification (T040164-01)
 \ingroup lalapps_pulsar
@@ -440,5 +440,5 @@ and
   </li>
 </ol>
 
-\endif
+\endcond
 */

@@ -1,5 +1,5 @@
 /**
-\if LALBURST
+\cond LALBURST
 
 \defgroup lalapps_power Excess Power
 \ingroup lalapps_burst
@@ -2130,5 +2130,5 @@ These thresholds were so chosen so that the false rate after
 coincidence between H1 and L1 triggers is \f$\approx 2 \f$ mHz while
 the \f$ h_{rss}\f$ is \f$\approx 1.12 \times 10^{-21}\f$.
 
-\endif
+\endcond
 */
