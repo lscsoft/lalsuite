@@ -173,6 +173,7 @@ typedef struct tagPhenomHMStorage
     REAL8 chi2x; /**< x-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
     REAL8 chi2y; /**< y-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
     REAL8 chi2z; /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chip;  /**< precession parameter */
     REAL8Sequence *freqs;
     REAL8 deltaF;
     REAL8 f_min;
