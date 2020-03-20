@@ -199,7 +199,7 @@ int main( int argc, char **argv )
 {
   int arg;                        /* current command-line argument */
   unsigned int bin;               /* current bin */
-  struct headertag2 hd;           /* header of input SFT */
+  struct headertag2 hd, lasthd;   /* header of input SFT */
   FILE *fpin;                     /* currently open input filepointer */
   FILE *fpout;                    /* currently open output filepointer */
   char *oldcomment;               /* comment of input SFT */
@@ -498,10 +498,13 @@ int main( int argc, char **argv )
       }
       XLAL_CHECK_MAIN( sfterrno == 0, XLAL_EIO, "could not read SFT header: %s", SFTErrorMessage( sfterrno ) );
 
-      /* only use SFTs within specified ranges
-       * here we should be able to safely assume that concatenated input SFTs
-       * have monotonous timestamps; otherwise they wouldn't be valid
+      /* Check that various bits of header information are consistent.
+       * This includes a check for monotonic increasing timestamps.
        */
+      XLAL_CHECK_MAIN( firstread || !(sfterrno=CheckSFTHeaderConsistency(&lasthd, &hd)), XLAL_EIO, "Inconsistent SFT headers: %s", SFTErrorMessage(sfterrno));
+      lasthd = hd; /* keep copy of header for comparison the next time */
+
+      /* only use SFTs within specified ranges */
       LIGOTimeGPS startTimeGPS = {hd.gps_sec,0};
       int inRange = XLALCWGPSinRange(startTimeGPS, minStartTime, maxStartTime);
       XLAL_CHECK_MAIN ( !( firstread && ( inRange == 1 ) ), XLAL_EIO, "First timestamp %d in file was after user constraint [%d,%d)!", hd.gps_sec, minStartTime->gpsSeconds, maxStartTime->gpsSeconds );
