@@ -224,6 +224,7 @@ int main( int argc, char **argv )
   int validate = TRUE;                 /* validate the checksum of each input SFT before using it? */
   LIGOTimeGPS *minStartTime = NULL;    /* earliest SFT timestamp to start using */
   LIGOTimeGPS *maxStartTime = NULL;    /* earliest SFT timestamp to no longer use */
+  int assumeSorted = 0;                /* Are SFT input files chronologically sorted? */
   int sfterrno = 0;                    /* SFT error number return from reference library */
   LALHashTbl *nbsfts = NULL;           /* hash table of existing narrow-band SFTs */
 
@@ -254,8 +255,9 @@ int main( int argc, char **argv )
              "  [-fe|--end-frequency <endfrequency (exclusively)>]\n"
              "  [-fb|--frequency-bandwidth <frequencywidth>]\n"
              "  [-fx|--frequency-overlap <frequencyoverlap>]\n"
-             "  [-ts]--minStartTime <minStartTime>]\n"
-             "  [-te]--maxStartTime <maxStartTime (exclusively)>]\n"
+             "  [-ts|--minStartTime <minStartTime>]\n"
+             "  [-te|--maxStartTime <maxStartTime (exclusively)>]\n"
+	     "  [-as|--assumeSorted 1|0]\n"
              "  [-m|--factor <factor>]\n"
              "  [-d|--detector <detector>]\n"
              "  [-n|--output-directory <outputdirectory>]\n"
@@ -316,6 +318,10 @@ int main( int argc, char **argv )
              "  the next input file as specified in the input argument; i.e. time stamp constraints\n"
              "  are imposed file-wise. For a multi-SFT file, headers are checked to ensure proper\n" 
              "  sorting. Mind that all timestamps refer to SFT **start** times.\n" 
+             "\n"
+             "  If 'assumeSorted' is set to 1, SFT input files will be assumed to be chronologically\n"
+             "  sorted, which means the program will stop as soon as an SFT located after the\n" 
+             "  specified range is encountered.\n"
              "\n"
              "  After all options (and an optional '--' separator), the input files are given, as many\n"
              "  as you wish (or the OS supports - using xargs should be simple with this command-line\n"
@@ -394,6 +400,9 @@ int main( int argc, char **argv )
       LIGOTimeGPS XLAL_INIT_DECL(userMaxStartTime);
       maxStartTime = &userMaxStartTime;
       XLALGPSSetREAL8 ( maxStartTime, (REAL8)atof( argv[++arg] ));
+    } else if ( ( strcmp( argv[arg], "-as" ) == 0 ) ||
+                ( strcmp( argv[arg], "--assumeSorted" ) == 0 ) ) {
+      assumeSorted = atoi( argv[++arg] );
     } else if ( ( strcmp( argv[arg], "-m" ) == 0 ) ||
                 ( strcmp( argv[arg], "--factor" ) == 0 ) ) {
       factor = atof( argv[++arg] );
@@ -484,8 +493,9 @@ int main( int argc, char **argv )
     globfree( &globbuf );
   }
 
+  int stopInputCauseSorted=0;
   /* loop over all input SFT files */
-  for ( ; arg < argc; arg++ ) {
+  for ( ; (arg < argc) && !stopInputCauseSorted; arg++ ) {
 
     /* open input SFT file */
     request_resource( &read_open_rate, 1 );
@@ -523,6 +533,7 @@ int main( int argc, char **argv )
         continue;
       }
       if ( inRange == 1 ) { /* input timestamp too late, stop with this file */
+        stopInputCauseSorted = assumeSorted;
         break;
       }
       nSFT_this_file += 1;
