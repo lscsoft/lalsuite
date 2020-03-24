@@ -98,6 +98,7 @@ static int PhenomPCore(
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD, IMRPhenomPv2_NRTidal is a tidal version of IMRPhenomPv2 */
+  NRTidal_version_type NRTidal_version, /**< either NRTidal or NRTidalv2 for BNS waveform; NoNRT_V for BBH waveform */
   LALDict *extraParams /**< linked list containing the extra testing GR parameters */
 );
 
@@ -201,8 +202,9 @@ static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
 
 static int PhenomPCoreOneFrequency_withTides(
   const REAL8 fHz,                            /**< Frequency (Hz) */
-  const REAL8 ampTidal,                      /**< tidal amplitude at a frequency sample; planck window */
-  COMPLEX16 phaseTidal,                      /**< tidal phasing at a frequency sample from NRTidal infrastructure*/
+  const REAL8 window,                      /**< planck window */
+  const REAL8 ampTidal,                      /**< tidal amplitude at a frequency sample */
+  const REAL8 phaseTidal,                      /**< tidal phasing at a frequency sample from NRTidal infrastructure*/
   const REAL8 distance,                       /**< Distance of source (m) */
   const REAL8 M,                              /**< Total mass (Solar masses) */
   const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */

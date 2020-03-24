@@ -84,6 +84,54 @@ LALDict *IMRPhenomHM_setup_mode_array(
 }
 
 /**
+ * Reads in a ModeArray and checks that it is valid.
+ * may only contain the modes in the model
+ * i.e., 22, 21, 33, 32, 44, 43
+ * Only checks upto ell=8 though.
+ */
+static int IMRPhenomHM_check_mode_array(LALValue *ModeArray)
+{
+    // if no 22,21,33,32,44,43 mode and active  -> error
+    // these modes are not in the model
+    for (INT4 ell = 2; ell <= 8; ell++)
+    {
+        for (INT4 mm = -ell; mm < ell + 1; mm++)
+        {
+            if (ell == 2 && mm == 2)
+            {
+                continue;
+            }
+            else if (ell == 2 && mm == 1)
+            {
+                continue;
+            }
+            else if (ell == 3 && mm == 3)
+            {
+                continue;
+            }
+            else if (ell == 3 && mm == 2)
+            {
+                continue;
+            }
+            else if (ell == 4 && mm == 4)
+            {
+                continue;
+            }
+            else if (ell == 4 && mm == 3)
+            {
+                continue;
+            }
+
+            if (XLALSimInspiralModeArrayIsModeActive(ModeArray, ell, mm) == 1)
+            {
+                XLAL_ERROR(XLAL_EFUNC, "(%i,%i) mode in ModeArray but model does not include this!\n", ell, mm);
+            }
+        }
+    }
+    return XLAL_SUCCESS;
+}
+
+/**
  *
  */
 int PhenomHM_init_useful_mf_powers(PhenomHMUsefulMfPowers *p, REAL8 number)
@@ -130,58 +178,6 @@ int PhenomHM_init_useful_powers(PhenomHMUsefulPowers *p, REAL8 number)
     p->m_third = m_sixth * m_sixth;
     p->m_two_thirds = p->m_third * p->m_third;
     p->m_five_thirds = p->inv * p->m_two_thirds;
-
-    return XLAL_SUCCESS;
-}
-
-/**
- * helper function to multiple hlm with Ylm.
- * Adapted from LALSimIMREOBNRv2HMROMUtilities.c
- */
-int IMRPhenomHMFDAddMode(
-    COMPLEX16FrequencySeries *hptilde,
-    COMPLEX16FrequencySeries *hctilde,
-    COMPLEX16FrequencySeries *hlmtilde,
-    REAL8 theta,
-    REAL8 phi,
-    INT4 l,
-    INT4 m,
-    INT4 sym)
-{
-    COMPLEX16 Y;
-    UINT4 j;
-    COMPLEX16 hlm; /* helper variable that contain a single point of hlmtilde */
-
-    INT4 minus1l; /* (-1)^l */
-    if (l % 2)
-        minus1l = -1;
-    else
-        minus1l = 1;
-    if (sym)
-    { /* Equatorial symmetry: add in -m mode */
-        Y = XLALSpinWeightedSphericalHarmonic(theta, phi, -2, l, m);
-        COMPLEX16 Ymstar = conj(XLALSpinWeightedSphericalHarmonic(theta, phi, -2, l, -m));
-        COMPLEX16 factorp = 0.5 * (Y + minus1l * Ymstar);
-        COMPLEX16 factorc = I * 0.5 * (Y - minus1l * Ymstar);
-        for (j = 0; j < hlmtilde->data->length; ++j)
-        {
-            hlm = (hlmtilde->data->data[j]);
-            hptilde->data->data[j] += factorp * hlm;
-            hctilde->data->data[j] += factorc * hlm;
-        }
-    }
-    else
-    { /* not adding in the -m mode */
-        Y = XLALSpinWeightedSphericalHarmonic(theta, phi, -2, l, m);
-        COMPLEX16 factorp = 0.5 * Y;
-        COMPLEX16 factorc = I * factorp;
-        for (j = 0; j < hlmtilde->data->length; ++j)
-        {
-            hlm = (hlmtilde->data->data[j]);
-            hptilde->data->data[j] += factorp * hlm;
-            hctilde->data->data[j] += factorc * hlm;
-        }
-    }
 
     return XLAL_SUCCESS;
 }
@@ -323,7 +319,11 @@ static int init_PhenomHM_Storage(
     PhenomHMStorage *p,
     const REAL8 m1_SI,
     const REAL8 m2_SI,
+    const REAL8 chi1x,
+    const REAL8 chi1y,
     const REAL8 chi1z,
+    const REAL8 chi2x,
+    const REAL8 chi2y,
     const REAL8 chi2z,
     REAL8Sequence *freqs,
     const REAL8 deltaF,
@@ -339,7 +339,11 @@ static int init_PhenomHM_Storage(
     p->m2_SI = m2_SI;
     p->Mtot = p->m1 + p->m2;
     p->eta = p->m1 * p->m2 / (p->Mtot * p->Mtot);
+    p->chi1x = chi1x;
+    p->chi1y = chi1y;
     p->chi1z = chi1z;
+    p->chi2x = chi2x;
+    p->chi2y = chi2y;
     p->chi2z = chi2z;
     p->phiRef = phiRef;
     p->deltaF = deltaF;
@@ -353,15 +357,22 @@ static int init_PhenomHM_Storage(
         XLAL_PRINT_WARNING("Warning: The model is not calibrated for mass-ratios above 20\n");
 
     retcode = 0;
-    retcode = PhenomInternal_AlignedSpinEnforcePrimaryIsm1(
+    retcode = PhenomInternal_PrecessingSpinEnforcePrimaryIsm1(
         &(p->m1),
         &(p->m2),
+        &(p->chi1x),
+        &(p->chi1y),
         &(p->chi1z),
+        &(p->chi2x),
+        &(p->chi2y),
         &(p->chi2z));
     XLAL_CHECK(
         XLAL_SUCCESS == retcode,
         XLAL_EFUNC,
         "PhenomInternal_AlignedSpinEnforcePrimaryIsm1 failed");
+
+
+    p->chip = XLALSimPhenomUtilsChiP(p->m1, p->m2, p->chi1x, p->chi1y, p->chi2x, p->chi2y);
 
     /* sanity checks on frequencies */
     PhenomHMFrequencyBoundsStorage pHMFS;
@@ -388,8 +399,9 @@ static int init_PhenomHM_Storage(
 
     p->Mf_ref = XLALSimPhenomUtilsHztoMf(p->f_ref, p->Mtot);
 
-    p->finmass = IMRPhenomDFinalMass(p->m1, p->m2, p->chi1z, p->chi2z);
-    p->finspin = XLALSimIMRPhenomDFinalSpin(p->m1, p->m2, p->chi1z, p->chi2z); /* dimensionless final spin */
+    p->finmass = XLALSimPhenomUtilsIMRPhenomDFinalMass(p->m1, p->m2, p->chi1z, p->chi2z);
+    p->finspin = XLALSimPhenomUtilsPhenomPv2FinalSpin(p->m1, p->m2, p->chi1z, p->chi2z, p->chip);
+
     if (p->finspin > 1.0)
         XLAL_ERROR(XLAL_EDOM, "PhenomD fring function: final spin > 1.0 not supported\n");
 
@@ -753,7 +765,11 @@ int IMRPhenomHMPhasePreComp(
         &pDPreComp,
         pHM->m1,
         pHM->m2,
+        pHM->chi1x,
+        pHM->chi1y,
         pHM->chi1z,
+        pHM->chi2x,
+        pHM->chi2y,
         pHM->chi2z,
         Rholm,
         Taulm,
@@ -1010,7 +1026,11 @@ int IMRPhenomHMCore(
         freqs,
         m1_SI,
         m2_SI,
+        0.,
+        0.,
         chi1z,
+        0.,
+        0.,
         chi2z,
         phiRef,
         deltaF,
@@ -1108,7 +1128,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
             {
                 sym = 1;
             }
-            IMRPhenomHMFDAddMode(*hptilde, *hctilde, hlm, inclination, 0., ell, mm, sym); /* The phase \Phi is set to 0 - assumes phiRef is defined as half the phase of the 22 mode h22 */
+            PhenomInternal_IMRPhenomHMFDAddMode(*hptilde, *hctilde, hlm, inclination, 0., ell, mm, sym); /* The phase \Phi is set to 0 - assumes phiRef is defined as half the phase of the 22 mode h22 */
         }
     }
 
@@ -1121,7 +1141,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
     for (size_t i = pHMFS->ind_min; i < pHMFS->ind_max; i++)
     {
         ((*hptilde)->data->data)[i] = ((*hptilde)->data->data)[i] * amp0;
-        ((*hctilde)->data->data)[i] = -1 * ((*hctilde)->data->data)[i] * amp0;
+        ((*hctilde)->data->data)[i] = ((*hctilde)->data->data)[i] * amp0;
     }
 
     /* cleanup */
@@ -1151,12 +1171,16 @@ int XLALSimIMRPhenomHMGethlmModes(
     UNUSED REAL8Sequence *freqs,          /**< frequency sequency in Hz */
     UNUSED REAL8 m1_SI,                   /**< primary mass [kg] */
     UNUSED REAL8 m2_SI,                   /**< secondary mass [kg] */
-    UNUSED REAL8 chi1z,                   /**< aligned spin of primary */
-    UNUSED REAL8 chi2z,                   /**< aligned spin of secondary */
-    UNUSED const REAL8 phiRef,            /**< orbital phase at f_ref */
-    UNUSED const REAL8 deltaF,            /**< frequency spacing */
-    UNUSED REAL8 f_ref,                   /**< reference GW frequency */
-    UNUSED LALDict *extraParams           /**< LALDict struct */
+    UNUSED REAL8 chi1x,                   /**< x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    UNUSED REAL8 chi1y,                   /**< y-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    UNUSED REAL8 chi1z,                   /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    UNUSED REAL8 chi2x,                   /**< x-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    UNUSED REAL8 chi2y,                   /**< y-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    UNUSED REAL8 chi2z,                   /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    UNUSED const REAL8 phiRef,  /**< orbital phase at f_ref */
+    UNUSED const REAL8 deltaF,  /**< frequency spacing */
+    UNUSED REAL8 f_ref,         /**< reference GW frequency */
+    UNUSED LALDict *extraParams /**< LALDict struct */
 )
 {
     UNUSED int retcode;
@@ -1183,6 +1207,8 @@ positive.\n");
         extraParams = XLALCreateDict();
     extraParams = IMRPhenomHM_setup_mode_array(extraParams);
     LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(extraParams);
+    int rcode = IMRPhenomHM_check_mode_array(ModeArray);
+    XLAL_CHECK(XLAL_SUCCESS == rcode, rcode, "IMRPhenomHM_check_mode_array failed");
 
     /* setup frequency sequency */
     REAL8Sequence *amps = NULL;
@@ -1200,7 +1226,11 @@ positive.\n");
         pHM,
         m1_SI,
         m2_SI,
+        chi1x,
+        chi1y,
         chi1z,
+        chi2x,
+        chi2y,
         chi2z,
         freqs,
         deltaF,
@@ -1262,7 +1292,11 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
         &pDPreComp22,
         pHM->m1,
         pHM->m2,
+        pHM->chi1x,
+        pHM->chi1y,
         pHM->chi1z,
+        pHM->chi2x,
+        pHM->chi2y,
         pHM->chi2z,
         pHM->Rholm[2][2],
         pHM->Taulm[2][2],
@@ -1450,7 +1484,12 @@ int IMRPhenomHMAmplitude(
         freqs_amp,
         pHM->ind_min, pHM->ind_max,
         pHM->m1, pHM->m2,
-        pHM->chi1z, pHM->chi2z);
+        pHM->chi1x,
+        pHM->chi1y,
+        pHM->chi1z,
+        pHM->chi2x,
+        pHM->chi2y,
+        pHM->chi2z);
     XLAL_CHECK(XLAL_SUCCESS == retcode,
                XLAL_EFUNC, "IMRPhenomDAmpFrequencySequence failed");
 
@@ -1559,7 +1598,11 @@ int IMRPhenomHMPhase(
         &pDPreComp,
         pHM->m1,
         pHM->m2,
+        pHM->chi1x,
+        pHM->chi1y,
         pHM->chi1z,
+        pHM->chi2x,
+        pHM->chi2y,
         pHM->chi2z,
         Rholm,
         Taulm,

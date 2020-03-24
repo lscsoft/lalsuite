@@ -188,6 +188,29 @@ LALDictEntry * XLALDictIterNext(LALDictIter *iter)
 	return NULL;
 }
 
+LALDict * XLALDictDuplicate(LALDict *old)
+{
+    UINT4 i;
+    int retcode;
+    if(old==NULL) return NULL;
+    LALDict *new = XLALCreateDict();
+    if (!new)
+        XLAL_ERROR_NULL(XLAL_ENOMEM);
+    for (i = 0; i < old->size; ++i) {
+        const LALDictEntry *entry;
+        for (entry = old->hashes[i]; entry != NULL; entry = entry->next) {
+            const char *key = XLALDictEntryGetKey(entry);
+            XLAL_TRY(XLALDictInsertValue(new, key, XLALDictEntryGetValue(entry)), retcode);
+            if(retcode!=XLAL_SUCCESS)
+            {
+                XLALDestroyDict(new);
+                XLAL_ERROR_NULL(retcode & XLAL_EFUNC);
+            }
+        }
+    }
+    return(new);
+}
+
 LALList * XLALDictKeys(const LALDict *dict)
 {
 	LALList *list;

@@ -97,7 +97,7 @@ def fractional_rank(x, xs):
     return float(nbelow)/float(xs.shape[0])
 
 def pp_plot(ps, title=None, outfile=None):
-    """Generates a p-p plot for the given ps.  
+    """Generates a p-p plot for the given ps.
 
     :param ps: The p-values whose cumulative distribution is to be
       plotted.
@@ -108,7 +108,7 @@ def pp_plot(ps, title=None, outfile=None):
       basename.png and basename.pdf will be created.
 
     """
-    
+
     ps = np.atleast_1d(ps)
     ps = np.sort(ps)
     ys = np.zeros(ps.shape[0]+2)
@@ -170,7 +170,7 @@ def output_html(outdir, ks_pvalues, injnum,skypp=False):
 
     """)
 
-    html_template = string.Template("""<!DOCTYPE html> 
+    html_template = string.Template("""<!DOCTYPE html>
     <html>
     <head>
     <title> LALInference P-P Plots </title>
@@ -181,7 +181,7 @@ def output_html(outdir, ks_pvalues, injnum,skypp=False):
 	<p>This page was generated with the output of ${injnum} simulations.</p>
 	${linkstr}
 	<br>
-    <table border="1"> 
+    <table border="1">
     <tr>
     <th> Parameter </th> <th> K-S p-value </th> <th> p-p Plot </th> <th> Links </th>
     </tr>
@@ -222,16 +222,16 @@ if __name__ == '__main__':
     USAGE='''%prog [options] posfile1.dat posfile2.dat ...
             Generate PP analysis for a set of injections. posfiles must be in same order as injections.'''
     parser = optparse.OptionParser(USAGE)
-    parser.add_option('--injXML', action='store', type='string', dest='injxml', 
+    parser.add_option('--injXML', action='store', type='string', dest='injxml',
                       help='sim_burst XML file for injections')
     parser.add_option('--outdir', action='store', type='string',
                       help='output directory')
 
-    parser.add_option('--postsamples', action='store', type='string', 
-                      default='posterior_samples.dat', 
+    parser.add_option('--postsamples', action='store', type='string',
+                      default='posterior_samples.dat',
                       help='filename for posterior samples files')
 
-    parser.add_option('--par', action='append', default=[], type='string', 
+    parser.add_option('--par', action='append', default=[], type='string',
                       help='parameter names for the p-p plot')
     parser.add_option('--skyPPfolder', action='store',dest='skypp',type='string',default=None,help='Path to folder containing png/pdf with 2D skyarea PP plots')
 
@@ -302,6 +302,6 @@ if __name__ == '__main__':
 
       if found>0:
         skypp=True
-        
+
     output_html(options.outdir, ks_pvalues, Ninj,skypp= skypp )
 

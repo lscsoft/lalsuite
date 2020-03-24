@@ -53,6 +53,8 @@ extern "C" {
 LALDict *IMRPhenomHM_setup_mode_array(
     LALDict *extraParams);
 
+static int IMRPhenomHM_check_mode_array(LALValue *ModeArray);
+
 /**
  * useful powers in GW waveforms: 1/6, 1/3, 2/3, 4/3, 5/3, 2, 7/3, 8/3, -1, -1/6, -7/6, -1/3, -2/3, -5/3
  * calculated using only one invocation of 'pow', the rest are just multiplications and divisions
@@ -165,8 +167,13 @@ typedef struct tagPhenomHMStorage
     REAL8 m2_SI; /**< mass of lighter body in kg */
     REAL8 Mtot;  /**< total mass in solar masses */
     REAL8 eta;   /**< symmetric mass-ratio */
-    REAL8 chi1z; /**< dimensionless aligned component spin of larger body */
-    REAL8 chi2z; /**< dimensionless aligned component spin of lighter body */
+    REAL8 chi1x; /**< x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi1y; /**< y-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi1z; /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2x; /**< x-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2y; /**< y-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2z; /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chip;  /**< precession parameter */
     REAL8Sequence *freqs;
     REAL8 deltaF;
     REAL8 f_min;
@@ -189,26 +196,20 @@ typedef struct tagPhenomHMStorage
 } PhenomHMStorage;
 
 static int init_PhenomHM_Storage(
-    PhenomHMStorage *p,   /**< [out] PhenomHMStorage struct */
-    const REAL8 m1_SI,    /**< mass of companion 1 (kg) */
-    const REAL8 m2_SI,    /**< mass of companion 2 (kg) */
-    const REAL8 chi1z,    /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
-    const REAL8 chi2z,    /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    PhenomHMStorage *p, /**< [out] PhenomHMStorage struct */
+    const REAL8 m1_SI,  /**< mass of companion 1 (kg) */
+    const REAL8 m2_SI,  /**< mass of companion 2 (kg) */
+    const REAL8 chi1x,  /**< x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    const REAL8 chi1y,  /**< y-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    const REAL8 chi1z,  /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    const REAL8 chi2x,  /**< x-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    const REAL8 chi2y,  /**< y-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    const REAL8 chi2z,  /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
     REAL8Sequence *freqs, /**< Input frequency sequence (Hz) */
     const REAL8 deltaF,   /**< frequency spacing (Hz) */
     const REAL8 f_ref,    /**< reference GW frequency (hz) */
     const REAL8 phiRef    /**< orbital phase at f_ref */
 );
-
-int IMRPhenomHMFDAddMode(
-    COMPLEX16FrequencySeries *hptilde,
-    COMPLEX16FrequencySeries *hctilde,
-    COMPLEX16FrequencySeries *hlmtilde,
-    REAL8 theta,
-    REAL8 phi,
-    INT4 l,
-    INT4 m,
-    INT4 sym);
 
 double IMRPhenomHMTrd(
     REAL8 Mf,

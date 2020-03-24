@@ -17,6 +17,7 @@ AC_CONFIG_FILES([ \
   python/Makefile \
   python/lalsimulation/Makefile \
   python/lalsimulation/__init__.py \
+  python/lalsimulation/nrfits/Makefile \
   lib/LALSimulationVCSInfo.c \
   lib/LALSimulationVCSInfo.h \
   lib/Makefile \
@@ -27,6 +28,7 @@ AC_CONFIG_FILES([ \
   test/Makefile \
   test/python/Makefile \
   test/python/test_python_imports.py \
+  test/python/test_python_scripts.py \
 ])
 AM_INIT_AUTOMAKE([ \
   1.11 \

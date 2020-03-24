@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 
 # -*- coding: utf-8 -*-
-""" 
+"""
 Michalis Agathos (2014)
 
 This script provides a set of good gps times for injecting a GW signal
 into real multiple detector data.
-The input consists of a set of science segment and veto segment ASCII files 
+The input consists of a set of science segment and veto segment ASCII files
 having the 4-column format:
 
 segid   gpsstart   gpsend   duration
 
 The output consists of an ASCII file containing a list of gps injection times.
 If the timeslides functionality is activated, an additional ASCII file is
-output, containing timeslide information (in seconds) for each IFO, with 
+output, containing timeslide information (in seconds) for each IFO, with
 respect to the nominal times provided in the first file.
 """
 
@@ -25,7 +25,6 @@ __status__ = "Production"
 
 import matplotlib as mpl
 import argparse
-from optparse import OptionParser
 import os
 import sys
 import random as rd
@@ -115,7 +114,7 @@ class IFO:
           t += self._minlen
       else:
         print("Invalid whereInj argument. Output times will be empty.")
-    
+
     if n is not None:
       trigtimes = trigtimes[:n]
     if outfile is None:
@@ -174,7 +173,7 @@ class IFO:
       plot_params = {'figure.figsize': [fig_width,fig_height]}
       rcParams.update(plot_params)
 
-    
+
 #  def distToVeto(self, time):
 #    '''Returns the distance to the closest veto segment in seconds'''
 #    dist = self._unvetoed
@@ -242,8 +241,8 @@ class segment:
   def toArray(self):
     a = array([self._id, self._start, self._end, self._len])
     return a
-    
-class segmentData:   
+
+class segmentData:
   '''Data that holds segments for one or more IFOs.'''
 
   def __init__(self, seglist, gpsstart=None, gpsend=None):
@@ -258,7 +257,7 @@ class segmentData:
 
   def length(self):
     return len(self._seglist)
-  
+
   def fits(self, minlen):
     '''Returns the list of segments that fit a minimum required length.'''
     data = array(self._seglist)
@@ -326,7 +325,7 @@ class segmentData:
     return dist
 
   def timeIn(self, time):
-    '''If t is in a segment returns the distance to the edges, otherwise returns False''' 
+    '''If t is in a segment returns the distance to the edges, otherwise returns False'''
     sl = array(self._seglist)
     ds = time - sl[:,1]
     de = time - sl[:,2]
@@ -343,7 +342,7 @@ class segmentData:
   def printToFile(self, outfile):
     print("Printing segment list to file " + outfile)
     savetxt(outfile, array(self._seglist), fmt='%i')
-    
+
   def plotSegments(self, outfile=None, lenperline=200000, segcolor='b', title=None):
     '''Plot segments in rows of lenperline seconds'''
     s = array(self._seglist)
@@ -369,8 +368,8 @@ class segmentData:
     else:
       print('Plotting segments to ', outfile)
       fig.savefig(outfile)
-    
-    
+
+
   def plotCumulativeDurations(self, outfile, maxdur=None):
     print("Plotting segment lengths distribution to file " + outfile)
     fig = figure()
@@ -382,8 +381,8 @@ class segmentData:
       dur = dur[where(dur <= maxdur)[0]]
     ax.hist(dur, bins=sort(dur), cumulative=True, histtype='stepfilled', alpha=0.3)
     fig.savefig(outfile)
-    
-    
+
+
 
 ###########################
 #
@@ -391,7 +390,7 @@ class segmentData:
 #
 ###########################
 
-    
+
 def ensure_dir(f):
     """
     CREATE FOLDER IF IT DOES NOT EXIST
@@ -416,7 +415,7 @@ def getDoubles(ifo1, ifo2, unvetoed=False):
   unv2 = ifo2._unvetoed
   minl1 = ifo1._minlen
   minl2 = ifo2._minlen
-  
+
   name12 = name1 + name2
   print('Combining ' + name1 + ' and ' + name2 + ' into ' + name12)
   if unvetoed:
@@ -428,18 +427,18 @@ def getDoubles(ifo1, ifo2, unvetoed=False):
   ifo12 = IFO(name12, seg12, vet12, minl12)
 #  if ifo12
   return ifo12
-  
+
 
 def getTriples(ifo1, ifo2, ifo3, unvetoed=False):
   '''Combines 3 IFO objects into one'''
   ifo12 = getDoubles(ifo1, ifo2, unvetoed)
   ifo123 = getDoubles(ifo12, ifo3, unvetoed)
   return ifo123
-  
-  
+
+
 def generateTimeslides(tdict, n, ref=None, outfolder=None, verbose=False):
   '''
-     Generate a list of injection times and timeslides, 
+     Generate a list of injection times and timeslides,
      given a dictionary of (single) injection times
   '''
   ifos = tdict.keys()
@@ -454,12 +453,12 @@ def generateTimeslides(tdict, n, ref=None, outfolder=None, verbose=False):
     slidedict[k] = []
   for i in arange(n):
     for ifo in ifos:
-      injdict[ifo].append(rd.sample(tdict[ifo], 1)[0]) 
-  
+      injdict[ifo].append(rd.sample(tdict[ifo], 1)[0])
+
   injtimes = injdict[ref]
   for ifo in ifos:
     slidedict[ifo] = array(injdict[ifo]) - array(injdict[ref])
-  
+
   if outfolder is None:
     return injtimes, slidedict
   else:
@@ -496,8 +495,8 @@ if __name__ == "__main__":
 
   #parser = OptionParser()
   parser = argparse.ArgumentParser(description="Reads segment files and outputs injection times in veto-free segments.")
-  
-  
+
+
   parser.add_argument('-i', '--ifos', nargs=3, type=str, metavar='IFO', dest='ifos', help='List of IFOs to be considered (currently takes 3)') # FIXME: Variable length???
   parser.add_argument('-s', '--segfiles', nargs=3, type=str, metavar='FILE', dest='segf', help='path to the segment files for IFOS in the order entered above')
   parser.add_argument('-v', '--vetofiles', nargs=3, type=str, metavar='FILE', dest='vetof', help='path to the veto files for IFOS in the order entered above')
@@ -514,12 +513,12 @@ if __name__ == "__main__":
   parser.add_argument('-c', '--checkslides', action="store_true", dest="check", help="verbose check that all timeslid times are in unvetoed segments", default=False)
   parser.add_argument('-u', '--dumpunvetoed', action="store_true", dest="dumpunvetoed", help="dump list of unvetoed segments to file and plot segments", default=False)
 
-  #TODO: 
+  #TODO:
   # * add option to dump to pickle (IFOlist, doubleIFOs, tripleIFO)
   # * add option to read IFOs from pickle
 
   args = parser.parse_args()
-  
+
   outfolder = str(args.outf)
   segfiles = args.segf
   vetofiles = args.vetof
@@ -537,22 +536,22 @@ if __name__ == "__main__":
   timeslides = args.timeslides
   check = args.check
   maxplot = 40000
-  
+
   # Ensure that directories exist
   ensure_dir(outfolder)
   if dumpunvetoed:
     ensure_dir(os.path.join(outfolder, 'segments'))
-  
+
   # Choose where to inject (currently middle of segment or every interval)
   if interval is None:
     whereInj = 'middle'
   else:
     whereInj = 'often'
-  
+
   # Read segments data in rawlist and only keep long enough segments in fitlist for each of the IFOs
   timesdict = {}
   minlen = max(psdlen, seglen)
-  
+
   # Read in segment files and veto files and create IFO list
   IFOlist = []
   for i in arange(nifos):
@@ -562,7 +561,7 @@ if __name__ == "__main__":
       if plotsegdist:
         IFOlist[-1].plotCumulativeDurations(os.path.join(outfolder,'singleseg_' + IFOlist[-1]._name +'.png'), maxplot)
       timesdict[ifos[i]] = IFOlist[-1].getTrigTimes(whereInj=whereInj, interval=interval, lmargin=seglen)
-  
+
   # Generate timeslide output
   if timeslides:
     ensure_dir(os.path.join(outfolder, 'timeslides'))
@@ -588,14 +587,14 @@ if __name__ == "__main__":
         single._unvetoed.printToFile(os.path.join(outfolder, 'segments', single._name + '_unvetoed_segs.dat'))
         figseg = single._unvetoed.plotSegments(os.path.join(outfolder, 'segments', single._name + '_unvetoed_segs.pdf'), title=single._name + ' unvetoed segments', segcolor=colordict[single._name])
 
-    
+
   # Combine IFOs into doubles
   if doubles:
     doubleIFOs = []
     doubleIFOs.append( getDoubles(IFOlist[0], IFOlist[1]) ) #, unvetoed=not plotsegdist) )  #FIXME: test it with plots!
     doubleIFOs.append( getDoubles(IFOlist[1], IFOlist[2]) ) #, unvetoed=not plotsegdist) )  # speedup is ~3s for full triples set
     doubleIFOs.append( getDoubles(IFOlist[0], IFOlist[2]) ) #, unvetoed=not plotsegdist) )  # not worth overall?
-      
+
     # Generate output for doubles
     for double in doubleIFOs:
       double.getTrigTimes(whereInj=whereInj, n=Ninj, interval=interval, lmargin=seglen, outfile=os.path.join(outfolder, 'injtimes_' + double._name + '_' + str(double._minlen) +'.dat'))
@@ -612,15 +611,15 @@ if __name__ == "__main__":
         double._unvetoed.printToFile(os.path.join(outfolder, 'segments', double._name + '_unvetoed_segs.dat'))
         figseg = double._unvetoed.plotSegments(os.path.join(outfolder, 'segments', double._name + '_unvetoed_segs.pdf'), title=double._name + ' unvetoed segments')
 
-        
+
   # Combine IFOs into triples
   if triples:
     # If doubles are combined half of the work is already done
     if doubles:
-      tripleIFO = getDoubles(doubleIFOs[0], IFOlist[2]) #, unvetoed=not plotsegdist) 
+      tripleIFO = getDoubles(doubleIFOs[0], IFOlist[2]) #, unvetoed=not plotsegdist)
     else:
       tripleIFO = getTriples(IFOlist[0], IFOlist[1], IFOlist[2]) #, unvetoed=not plotsegdist)
-      
+
     # Generate output for doubles
     tripleIFO.getTrigTimes(whereInj=whereInj, n=Ninj, interval=interval, lmargin=seglen, outfile=os.path.join(outfolder,'injtimes_' + tripleIFO._name + '_' + str(tripleIFO._minlen) +'.dat'))
     if plotsegdist:

@@ -23,8 +23,6 @@ import h5py
 from astropy.table import Column, Table
 from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName \
     as POSTERIOR_SAMPLES
-from lalinference import LALINFERENCE_PARAM_LINEAR as LINEAR
-from lalinference import LALINFERENCE_PARAM_CIRCULAR as CIRCULAR
 from lalinference import LALINFERENCE_PARAM_FIXED as FIXED
 from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
 
@@ -225,7 +223,7 @@ def write_samples(table, filename, metadata=None, **kwargs):
     >>> write_samples(table, 'bar.hdf5', 'bat/baz') # doctest: +ELLIPSIS
     Traceback (most recent call last):
         ...
-    AssertionError: 
+    AssertionError:
     Arrays are not equal
     Column foo is a fixed column, but its values are not identical
     ...
@@ -310,11 +308,11 @@ def extract_metadata(filename, metadata, log_noise_evidences=[], log_max_likelih
         """
         Extract metadata from HDF5 sample chain file
 
-        Parameters 
-        ----------             
-        filename : str 
+        Parameters
+        ----------
+        filename : str
             The path of the HDF5 file on the filesystem.
-        metadata : dict 
+        metadata : dict
             Dict into which to place metadata
         log_noise_evidences : array (optional)
             Array into which to place log noise evidences (if nest = True)
@@ -326,9 +324,9 @@ def extract_metadata(filename, metadata, log_noise_evidences=[], log_max_likelih
             Whether to return the run identifier
         nest : Boolean (optional : default False)
             Whether to output quantities that only exist for nest runs
- 
+
         Returns
-        ------- 
+        -------
         run_identifier : str
             The run identifier
         """

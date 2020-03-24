@@ -3,23 +3,18 @@
 # (C) 2012 John Veitch, Vivien Raymond, Kiersten Ruisard, Kan Wang
 
 import itertools
-import glue
 from glue import pipeline
 from ligo import segments
-from ligo.segments import utils as segmentsUtils
 from glue.ligolw import ligolw, lsctables
 from glue.ligolw import utils as ligolw_utils
 import os
 import socket
 import uuid
 import ast
-import pdb
-import string
 from math import floor,ceil,log,pow
 import sys
 import random
 from itertools import permutations
-import shutil
 import numpy as np
 from glob import glob
 import math
@@ -30,6 +25,7 @@ try:
     from configparser import NoOptionError, NoSectionError
 except ImportError:
     from ConfigParser import NoOptionError, NoSectionError
+import numpy
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -56,7 +52,6 @@ def findSegmentsToAnalyze(ifo, frametype, state_vector_channel, bits, gpsstart, 
         from glue.lal import Cache
         from gwdatafind import find_urls
         import gwpy
-        from gwpy.timeseries import StateVector
     except ImportError:
         print('Unable to import necessary modules. Querying science segments not possible. Please try installing gwdatafind and gwpy')
         raise
@@ -76,7 +71,7 @@ def findSegmentsToAnalyze(ifo, frametype, state_vector_channel, bits, gpsstart, 
             casting="unsafe",
             subok=True,
             copy=False,
-        ).to_dqflags()
+        )
     flags = state.to_dqflags()
     # extract segments all of whose bits are active
     segments = flags[bits[0]].active
@@ -213,10 +208,8 @@ def create_events_from_coinc_and_psd(
         Whether the run uses ROQ or not
     """
     output=[]
-    from lal import series as lalseries
     import lal
-    from lalsimulation import SimInspiralChirpTimeBound, GetApproximantFromString, IMRPhenomDGetPeakFreq
-    from ligo.gracedb.rest import GraceDb, HTTPError
+    from lalsimulation import SimInspiralChirpTimeBound, IMRPhenomDGetPeakFreq
     try:
         from gstlal import reference_psd
     except ImportError:
@@ -448,7 +441,6 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
         get_coincs=get_coincs+joinstr+' coinc_inspiral.combined_far < %f'%(max_cfar)
     db_out=database_connection.cursor().execute(get_coincs)
     # Timeslide functionality requires obsolete pylal - will be removed
-    import pylal
     from pylal import SnglInspiralUtils
     extra={}
     for (sngl_time, slide, ifo, coinc_id, snr, chisq, cfar) in db_out:
@@ -1086,7 +1078,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         # SimBurst Table
         if self.config.has_option('input','burst-injection-file'):
             injfile=self.config.get('input','burst-injection-file')
-            injTable=lsctables.SimBurstTable.get_table(ligolw_utils.load_filename(injfile,contenthandler = lsctables.use_in(LIGOLWContentHandler)))
+            injTable=lsctables.SimBurstTable.get_table(ligolw_utils.load_filename(injfile,contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
             events=[Event(SimBurst=inj) for inj in injTable]
             self.add_pfn_cache([create_pfn_tuple(self.config.get('input','burst-injection-file'))])
         # LVAlert CoincInspiral Table
@@ -1452,7 +1444,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
             if self.config.getboolean('analysis','upload-to-gracedb') and event.GID is not None:
                 self.add_gracedb_start_node(event.GID,'LALInference',[sciseg.get_df_node() for sciseg in enginenodes[0].scisegs.values()],server=gdb_srv)
-                self.add_gracedb_log_node(respagenode,event.GID,server=grb_srv)
+                self.add_gracedb_log_node(respagenode,event.GID,server=gdb_srv)
             elif self.config.has_option('analysis','ugid'):
                 # LIB will want to upload info to gracedb but if we pass the gid in the usual way the pipeline
                 # will try to pull inspiral-only XML tables from the gdb page, failing.
@@ -2933,7 +2925,7 @@ class PESummaryResultsPageNode(LALInferenceDAGNode):
     def __init__(self, results_page_job, outpath=None):
         super(PESummaryResultsPageNode,self).__init__(results_page_job)
         if outpath is not None:
-            self.set_output_path(path)
+            self.set_output_path(outpath)
 
     @staticmethod
     def determine_webdir_or_existing_webdir(path):
@@ -3054,7 +3046,7 @@ class ResultsPageNode(LALInferenceDAGNode):
     def __init__(self,results_page_job,outpath=None):
         super(ResultsPageNode,self).__init__(results_page_job)
         if outpath is not None:
-            self.set_output_path(path)
+            self.set_output_path(outpath)
         self.__event=0
         self.ifos=None
         self.injfile=None
@@ -3582,7 +3574,7 @@ class PostRunInfoJob(LALInferenceDAGSharedFSJob, pipeline.CondorDAGJob,pipeline.
         exe=cp.get('condor','gdbinfo')
         pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
         pipeline.AnalysisJob.__init__(self,cp) # Job always runs locally
-        LALInferenceSharedFSJob.__init__(self, cp)
+        LALInferenceDAGSharedFSJob.__init__(self, cp)
         self.set_sub_file(os.path.abspath(submitFile))
         self.set_stdout_file(os.path.join(logdir,'gdbinfo-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.join(logdir,'gdbinfo-$(cluster)-$(process).err'))

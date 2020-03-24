@@ -4,16 +4,14 @@
 from lalinference import lalinference_pipe_utils as pipe_utils
 import numpy as np
 from six.moves import configparser
-from optparse import OptionParser,OptionValueError
+from optparse import OptionParser
 import sys
-import ast
 import os
 import uuid
 from glue import pipeline
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils 
-from math import ceil
+from glue.ligolw import utils as ligolw_utils
 
 usage=""" %prog [options] config.ini
 Setup a Condor DAG file to run the LALInference pipeline based on
@@ -80,10 +78,11 @@ def add_variations(cp, section, option, values=None, allowed_values=None):
         vals = values
     else:
         vals = cp.get(section,option).split(',')
-    if allowed_values is not None and any(not vals in allowed_values):
+    badvals = [v for v in vals if v not in (allowed_values or [])]
+    if allowed_values is not None and badvals:
         raise ValueError("Unknown value for {section} . {option} {value}"
                          .format(section, option, \
-                             ' '.join([v for v in vals if v not in allowed_options])
+                             ' '.join(badvals)
                                 )
                          )
     if len(vals) >1:
@@ -291,7 +290,6 @@ def setup_roq(cp):
     if not cp.getboolean('analysis','roq'):
         yield cp
         return
-    from numpy import genfromtxt, array
     path=cp.get('paths','roq_b_matrix_directory')
     if not os.path.isdir(path):
         print("The ROQ directory %s does not seem to exist\n"%path)
@@ -359,7 +357,7 @@ def setup_roq(cp):
     if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')) or cp.has_option('lalinference','trigger_mchirp') or cp.has_option('input', 'coinc-xml'):
 
         for mc_prior in mc_priors:
-            mc_priors[mc_prior] = array(mc_priors[mc_prior])
+            mc_priors[mc_prior] = np.array(mc_priors[mc_prior])
         # find mass bin containing the trigger
         candidate_roq_paths = \
             [roq for roq in roq_paths
@@ -381,7 +379,7 @@ def setup_roq(cp):
             raise
     else:
         for mc_prior in mc_priors:
-            mc_priors[mc_prior] = array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
+            mc_priors[mc_prior] = np.array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
 
     # write the master configparser
     cur_basedir = cp.get('paths','basedir')
@@ -498,7 +496,6 @@ print('Successfully created DAG file.')
 
 if opts.condor_submit:
     import subprocess
-    from subprocess import Popen
     if cp.has_option('condor','notification'):
         x = subprocess.Popen(['condor_submit_dag','-dont_suppress_notification',outerdag.get_dag_file()])
     else:

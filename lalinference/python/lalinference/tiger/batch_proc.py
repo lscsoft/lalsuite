@@ -27,7 +27,7 @@ exclude = []
 
 
 # PLOTTING STYLES
-typemarkers = {} 
+typemarkers = {}
 typecolors = {}
 
 ###########################################
@@ -129,11 +129,11 @@ class Parameter(object):
       exit(-1)
       self.posterior = histogram(self.postpoints, self.nbins, (self.min, self.max), weights=weight)[0]
       self.kde = stats.gaussian_kde(mirrorEdges(self.postpoints, self.min, self.max)) ###FIXME EEE
-            
+
   def plotPriorPDF(self):
     return
 
-class GlobalParam(Parameter): 
+class GlobalParam(Parameter):
   '''A class for parameters that are common across sources. It inherits from Parameter'''
   def __init__(self, name, min, max, prior_shape='flat', sourcelist=None, latex_name="", latex_unit="", injected=None, color='k', nbins=1000, xfm=None):
     super(GlobalParam, self).__init__(name, prior_shape, min, max, latex_name, latex_unit, injected=injected, nbins=nbins, xfm=xfm)
@@ -149,7 +149,7 @@ class GlobalParam(Parameter):
     self.comb_post = []
     self.comb_kde = []
     self.color = color
-    
+
   def addSource(self, source):
     if self.name in source.recparams.keys():
       self.sourcelist.append(source)
@@ -175,7 +175,7 @@ class GlobalParam(Parameter):
   def combinePosteriors(self):
     '''Combine posteriors from all the sources in the list'''
     print("Combining posteriors for " + self.name + " from " + str(len(self.sourcelist)) + " sources...")
-    if len(self.posteriors) == 0:    
+    if len(self.posteriors) == 0:
       self.setPosterior()
     #print len(self.posteriors)
     self.comb_post = [self.prior]
@@ -195,14 +195,14 @@ class GlobalParam(Parameter):
       ck = ck/integrate.simps(ck, self.domain)
       self.comb_kde.append(ck)
       self.comb_kconfs.append(getConfidenceIntervals(ck, self.domain, [0,68,95,99]))
-  
+
   def replotSummary(self, sax):
     '''Plots the median and confidence interval for combined posteriors over sources'''
     sax.set_ylabel(self.latex_name + '$[$' + self.latex_unit + '$]$') #FIXME: transfer to parent
     sax.set_ylim(self.min, self.max)
     medians = []
     err95 = []
-        
+
     '''Loop through sources'''
     for i in arange(len(self.sourcelist)):
       #s = self.sourcelist[i]
@@ -214,8 +214,8 @@ class GlobalParam(Parameter):
       #ax_sum.annotate(str(s.snr)+"\n"+str("{0:0.1f}".format(s.bfac)), xy=(i+1,float(median)), xytext=(i+0.9,float(median)+0.4*((-1)**i)), size=5)
 
     err95 = array(err95).transpose()
-    sax.errorbar(arange(len(medians))+1, medians, yerr=err95, fmt='o', mfc=self.color, ecolor=self.color, mec='k', label='95\% CI '+ self.sourcelist[0].batch.label)        
-  
+    sax.errorbar(arange(len(medians))+1, medians, yerr=err95, fmt='o', mfc=self.color, ecolor=self.color, mec='k', label='95\% CI '+ self.sourcelist[0].batch.label)
+
   def plotCombinedPDFs(self, outdir=None, sourceidx=None):
     '''Plots individual PDFs together with combined PDFs'''
     self.figs = {}
@@ -225,11 +225,11 @@ class GlobalParam(Parameter):
       slist = self.sourcelist
     else:
       slist = list(sourceidx)
-    
+
     '''Loop through sources'''
     for i in arange(len(slist)):
 
-      '''Set up posterior plot for each source'''      
+      '''Set up posterior plot for each source'''
       #p = self.posteriors[i]
       k = self.kdes[i].evaluate(self.domain)
       k /= integrate.simps(k, self.domain)
@@ -240,7 +240,7 @@ class GlobalParam(Parameter):
       pp = s.posteriors[s.recparams[self.name]]
       fig = plt.figure()
       ax = fig.add_subplot(111)
-  
+
       '''Setup plot axes'''
       ax.set_title("Event "+str(s.id)+" of batch " + str(s.seed))
       ax.text(0.1,0.9,r" $\rho_{\rm net}="+str(s.SNR)+"$",fontsize=24, transform = ax.transAxes)
@@ -249,13 +249,13 @@ class GlobalParam(Parameter):
       ax.set_ylim(bottom=0.0)
       ax.set_xlabel(self.latex_name + '$[$' + self.latex_unit + '$]$')
       ax.set_ylabel("$p($" + self.latex_name + "$|d, I)$")
-        
+
       '''Plot injected values as vertical lines'''
       if self.inj is not None:
         ax.axvline(x=self.inj, color="r", linestyle="--")
       elif self.name in s.injparams.keys():
         ax.axvline(x=s.injparams[self.name], color="r", linestyle="..")
-        
+
       '''Plot things'''
       #ax.plot(x, p, color='g', label='single source hist')
       ax.plot(x, k, color='g', label='single source kde')
@@ -266,7 +266,7 @@ class GlobalParam(Parameter):
       ax.hist(pp, linspace(self.min, self.max, 30), density=True, color='blue', histtype='stepfilled', alpha=0.3, label='single source hist')
       if eplot:
         ax.eventplot(pp[list(set(randint(0, len(pp), 100)))], colors=array([[1,0,0]]), linelengths = 0.01, lineoffsets=0.005)
-      
+
       ax.legend()
 
       '''Save figure to file'''
@@ -288,9 +288,9 @@ class Parameter2D(object):
 class GlobalParam2D(Parameter2D):
 ALMOST READY
 '''
- 
 
-class Batch: 
+
+class Batch:
   '''Generates a batch given at least a cluster name, a location, a seed, nlive and a label.'''
   def __init__(self, cluster, basedir, seed, nlive, label, xmlfile=None, description="", rundir=None, logdir=None, snrdir=None, postdir=None):
       self.cluster = cluster
@@ -317,7 +317,7 @@ class Batch:
       self.sources = []
       paramfiles = matchFiles(self.rundir, ['lalinferencenest-', '_params.txt'])
       for f in paramfiles:
-          chainfile = f.rpartition('_')[0] 
+          chainfile = f.rpartition('_')[0]
           (n, gps, ifos) = decChainFile(chainfile)
           self.sources.append(Source(self, n, gps, self.nlive, xmlfile=self.xml, chainfile=os.path.join(self.rundir, chainfile), IFOs=ifos))
       print("Added " + str(len(paramfiles)) + " sources for seed " + str(self.seed) + " from " + self.rundir + " .")
@@ -363,7 +363,7 @@ class Source:
       '''Check if run is finished for this source'''
       self.isdone = os.path.isfile(self.Bfile)
       return self.isdone
-    
+
     def setBfac(self):
       if self.isDone():
         d = genfromtxt(self.Bfile)
@@ -378,7 +378,7 @@ class Source:
         return False
       else:
         return (self.Bfac > threshold)
-      
+
     def SNRpass(self, threshold = 8.0):
       '''Check if run makes the SNR threshold'''
       if os.path.isfile(self.snrfile):
@@ -423,7 +423,7 @@ class Source:
           self.postweights[name] = weight
       else:
         print("Could not add params. Variables are not in the recovered params!")
-      
+
 
     def setPosteriors(self, seed=1234):
       '''Generate posteriors or read from file'''
@@ -464,7 +464,7 @@ class Source:
     def getOutName(self): #FIXME: get rid of this
       name = 'lalinference-' + str(self.eventno+1) + '-' + ''.join(self.IFOs) + '-' + str(self.gpstime) + '-' + str(self.eventno) + '.dat'
       return name
-      
+
 class Xfm:
   def __init__(self, names, varnames, xfmFunc):
     self.names = names
@@ -482,7 +482,7 @@ class Label:
     self.batches = []
     self.globalpars = {}
     self.globalpars2d = {}
-          
+
   def addGlobalParam(self, gp):
     self.globalpars[gp.name] = GlobalParam(gp.name, gp.min, gp.max, gp.prior_shape, latex_name=gp.latex_name, latex_unit=gp.latex_unit, color=self.color, injected=injValues[l][gp.name], xfm=gp.xfm)
 
@@ -544,7 +544,7 @@ def getConfidenceIntervals(post, x, pclist):
   for pc in pclist:
     left = (1.0 - pc*0.01)*0.5
     right = 1.0 - left
-    lowidx = where(cumpost/cumpost[-1] < left)[0] 
+    lowidx = where(cumpost/cumpost[-1] < left)[0]
     if len(lowidx) < 2:
       lowidx = 0
     else:
@@ -574,10 +574,10 @@ def nest2pos(datafile, Nlive, sd, loglidx):
     pos = zeros(size(samps,1))
     posidx = find(weight>maxwt+log(randoms))
     pos=samps[posidx,:]
-    
+
     Nchains = len(samps)
-    Nsamples = len(posidx) 
-    
+    Nsamples = len(posidx)
+
     return pos, Nsamples, Nchains
 
 def ensure_dir(f):
@@ -588,7 +588,7 @@ def ensure_dir(f):
         os.makedirs(f)
 
 
-''' FILE RELATED FUNCTIONS '''  
+''' FILE RELATED FUNCTIONS '''
 
 def decChainFile(fname):
   '''Decomposes a chainfile name into its components'''
@@ -598,13 +598,13 @@ def decChainFile(fname):
   (pref, np1, ifos, gps, n) = base.split('-')
   gps = gps.partition('.')[0]
   return (int(n), int(gps), ifos)
-  
+
 
 def matchFiles(location, substrings):
     '''Returns list of filenames containing a list of substrings'''
     rawList=os.listdir(location)
     matchList=[]
-    for f in rawList: 
+    for f in rawList:
         match = True
         for s in list(substrings):
             match = match and (s in f)
@@ -628,7 +628,7 @@ def readBatches(fname):
         batches.append(Batch(cluster, location, int(seed), int(nlive), injtype, xmlfile))
         labels.append(injtype)
     return batches, list(set(labels))
-    
+
 
 def loadfrompickle(filename):
 	"""
@@ -653,7 +653,7 @@ def loadconfigfile(configfile):
 	"""
 
 	# CONFIGURATION FILE: CHECKING FILE
-	if access(configfile, R_OK): 
+	if access(configfile, R_OK):
 		config = ConfigParser()
 		config.read(configfile)
 	else:
@@ -661,7 +661,7 @@ def loadconfigfile(configfile):
 
 	return config
 
-''' TIGER RELATED FUNCTIONS''' 
+''' TIGER RELATED FUNCTIONS'''
 
 
 
@@ -701,11 +701,11 @@ if __name__ == "__main__":
   parser.add_argument("-S", "--SNRCut", type=float, dest="SNRcut", default=0.0, help="SNR cutoff (0.0)")
   parser.add_argument("-e", "--eventplot", action="store_true", dest="eventplot", help="plot sample of posterior points (mpl v1.3)", default=False)
   parser.add_argument("-a", "--animate", action="store_true", dest="animate", help="compile posterior PDFs into an animated plot", default=False)
-  
+
   args = parser.parse_args()
   '''
-  
-  #infolder = os.path.normpath(args.inputlist) 
+
+  #infolder = os.path.normpath(args.inputlist)
   batchfile = args.batchfile
   outputfolder = os.path.normpath(args.outputfolder)
   myseed = args.seed
@@ -716,9 +716,9 @@ if __name__ == "__main__":
   eplot = args.eventplot
   animate = args.animate
   configfile = args.configfile
-  
+
   batches, labels = readBatches(batchfile)
-  
+
   '''Create output folders'''
   ensure_dir(outputfolder)
   if plotIndividual:
@@ -752,7 +752,7 @@ if __name__ == "__main__":
       thisLabel.addGlobalParam2D(par)
 
     print("Processing ", l)
-      
+
     LocationFile = open(os.path.join(outputfolder,'locations_'+l+'.txt'),'w')
 
     '''CREATE LISTS CONTAINING DATA TO BE PLOTTED'''
@@ -764,13 +764,13 @@ if __name__ == "__main__":
       thisLabel.batches.append(b)
       print("Processing batch with seed ", b.seed)
       b.populateSources()
-      
-# HERE IS A GOOD PLACE TO LOOK FOR RESULTS FROM ALL HYPOTHESES AND POPULATE "COMBINED SOURCES"   
+
+# HERE IS A GOOD PLACE TO LOOK FOR RESULTS FROM ALL HYPOTHESES AND POPULATE "COMBINED SOURCES"
 # A COMBINED SOURCE CAN BE A CLASS WITH A SOURCE DICTIONARY (WITH HYPOTHESES NAMES AS KEYS AND SOURCE OBJECTS AS VALUES),
 # A COMBINED ODDS RATIO, AND POSSIBLY SNR, SEED, GPSTIME ETC
-      
+
       # THIS PART NEEDS TO BE ADJUSTED FOR TIGER
-      
+
       print("Populated " + str(len(b.sources)) + " sources")
 
       for s in b.sources:
@@ -784,42 +784,42 @@ if __name__ == "__main__":
         '''Apply SNR cutoff'''
         if not s.SNRpass(NetSNRcut):
           continue
-                                
-                                
+
+
         '''Derive the posterior points'''
         s.setPosteriors()
-        
+
         '''Check for xfm'd parameters'''
         for par in params+gparams:
           #print par.name
           if par.xfm is not None and par.name not in s.recparams.keys():
             #print "Adding transformed parameters to source: " + str(par.xfm.names)
             s.getXfmParams(par.xfm)
-            
+
         '''Add to list of sources to process'''
         for gp in thisLabel.globalpars.values():
           gp.addSource(s)
-          
+
 
         iEventCount+=1
         LocationFile.write(str(iEventCount)+'\t'+b.basedir+'\t'+s.chainfile+'\t'+s.Bfile+'\t'+s.snrfile+'\t'+ s.postfile +'\n')
-		
+
         '''Output progress'''
         print(str(iEventCount)+": "+ os.path.split(s.chainfile)[1] + " event " + str(s.id) +" --> " + str(len(s.posteriors[0]))+" pts, SNR: "+str(s.SNR)+", Bfactor: "+str(s.Bfac))
-               
+
     # CLOSE LOCATIONS FILE
     LocationFile.close()
-    
+
     '''Combine posteriors accross sources for each parameter'''
     for par in gparams:
       thisLabel.globalpars[par.name].combinePosteriors()
-    
+
     labeldict[l] = thisLabel
-   
-   
-   
-   
-'''   
+
+
+
+
+'''
    # PLOT SUMMARY PLOTS
   for par in gparams:
     #Plot summary plot
@@ -837,9 +837,9 @@ if __name__ == "__main__":
 
     ax_sum.legend()
     fig_sum.savefig(os.path.join(outputfolder, par.name + '_summary.png'))
-    
-    
-#    for l in labels:  
+
+
+#    for l in labels:
 #      fig_comb = plt.figure()
 #      ax_comb = fig_sum.add_subplot(2,2,j+1)
 

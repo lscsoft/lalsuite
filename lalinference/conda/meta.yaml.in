@@ -10,7 +10,6 @@
 {% set sha256 = "@SHA256@" %}
 
 # dependencies
-{% set chealpix_version = "3.30.0" %}
 {% set lal_version = "6.21.0" %}
 {% set lalburst_version = "1.5.3" %}
 {% set lalframe_version = "1.5.0" %}
@@ -18,15 +17,15 @@
 {% set lalmetaio_version = "1.6.0" %}
 {% set lalpulsar_version = "1.18.2" %}
 {% set lalsimulation_version = "1.10.0" %}
-{% set swig_version = "3.0.7" %}
+{% set swig_version = "3.0.9" %}
 
 package:
-  name: {{ name }}
-  version: {{ version }}
+  name: "{{ name }}"
+  version: "{{ version }}"
 
 source:
-  url: {{ url }}
-  sha256: {{ sha256 }}
+  url: "{{ url }}"
+  sha256: "{{ sha256 }}"
 
 build:
   number: 9999
@@ -41,7 +40,6 @@ requirements:
     - pkg-config
     - swig >={{ swig_version }}
   host:
-    - chealpix >={{ chealpix_version }}a0
     - gsl
     - lal >={{ lal_version }}a0 fftw*
     - lalframe >={{ lalframe_version }}a0
@@ -55,7 +53,6 @@ requirements:
     - llvm-openmp  # [osx]
     - openmpi
   run:
-    - chealpix >={{ chealpix_version }}
     - gsl
     - lal >={{ lal_version }}a0
     - lalframe >={{ lalframe_version }}a0
@@ -100,17 +97,13 @@ outputs:
       build:
         - {{ compiler('c') }}
         - help2man
-        - llvm-openmp  # [osx]
         - make
         - pkg-config
         - swig >={{ swig_version }}
       host:
-        - chealpix >={{ chealpix_version }}
         - gsl
         - {{ pin_subpackage('lalinference', exact=True) }}
         - libcblas=*=*netlib
-        - libgomp  # [linux]
-        - llvm-openmp  # [osx]
         - python
         - numpy
         # run requirements needed for help2man
@@ -128,7 +121,6 @@ outputs:
         - scipy >=0.9.0
       run:
         - astropy >=1.1.1
-        - chealpix >={{ chealpix_version }}
         - gsl
         - healpy >=1.9.1
         - h5py
@@ -141,7 +133,6 @@ outputs:
         - lalpulsar >={{ lalpulsar_version }}a0  # [linux]
         - {{ pin_subpackage('lalinference', exact=True) }}
         - libcblas  # [linux]
-        - llvm-openmp  # [osx]
         - lscsoft-glue >=1.54.1
         - matplotlib-base >=1.2.0
         - {{ pin_compatible('numpy') }}
@@ -154,29 +145,13 @@ outputs:
         - python-lalpulsar >={{ lalpulsar_version }}a0
         - scipy >=0.9.0
     test:
-      imports:
-        - lalinference
-        - lalinference.bayespputils
-        - lalinference.imrtgr
-        - lalinference.imrtgr.imrtgrutils
-        - lalinference.imrtgr.nrutils
-        - lalinference.imrtgr.pneqns
-        - lalinference.lalinference_pipe_utils
-        - lalinference.nest2pos
-        - lalinference.plot
-        - lalinference.tiger
-        - lalinference.tiger.make_injtimes
-        - lalinference.tiger.omegascans_dag
-        - lalinference.tiger.postproc
-        - lalinference.util.file
-        - lalinference.util.sqlite
-        - lalinference.wrapper
       requires:
         - cpnest
         - mock  # [py<33]
         - pathlib  # [py<34]
         - pytest >=4.0.0a0
       source_files:
+        - python/Makefile
         - test/python
       commands:
         - cbcBayesBurstPPAnalysis --help
@@ -204,12 +179,28 @@ outputs:
         - lalinference_pipe --help
         - lalinference_pp_pipe --help
         - lalinference_review_test --help
-        - pushd test/python; python -m pytest -v; popd
+        - python -m pytest -rs -v --junit-xml=junit.xml test/python/
+      imports:
+        - lalinference
+        - lalinference.bayespputils
+        - lalinference.imrtgr
+        - lalinference.imrtgr.imrtgrutils
+        - lalinference.imrtgr.nrutils
+        - lalinference.imrtgr.pneqns
+        - lalinference.lalinference_pipe_utils
+        - lalinference.nest2pos
+        - lalinference.plot
+        - lalinference.tiger
+        - lalinference.tiger.make_injtimes
+        - lalinference.tiger.omegascans_dag
+        - lalinference.tiger.postproc
+        - lalinference.util.file
+        - lalinference.wrapper
     about:
       home: "https://wiki.ligo.org/Computing/LALSuite"
       doc_url: "https://docs.ligo.org/lscsoft/lalsuite/lalinference/"
       dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-      license: "GPL-3.0-or-later"
+      license: "GPL-2.0-or-later"
       license_family: "GPL"
       license_file: "COPYING"
       summary: "LSC Algorithm Inference Library"
@@ -221,7 +212,7 @@ about:
   home: "https://wiki.ligo.org/Computing/LALSuite"
   doc_url: "https://docs.ligo.org/lscsoft/lalsuite/lalinference/"
   dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-  license: "GPL-3.0-or-later"
+  license: "GPL-2.0-or-later"
   license_family: "GPL"
   license_file: "COPYING"
   summary: "LSC Algorithm Inference Library"

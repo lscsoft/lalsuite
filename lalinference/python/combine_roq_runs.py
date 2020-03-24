@@ -19,14 +19,14 @@ def add_h5_link(file_name, group_name, comb_file):
 	nest_meta_data = comb_file[group_name+'/posterior']['lalinference']['lalinference_nest'].attrs
 	log_evidence = nest_meta_data['log_evidence']
 	log_prior_volume = nest_meta_data['log_prior_volume']
-	
+
 	comb_file[group_name].create_dataset("evidence_scale_factor", (1,))
 	comb_file[group_name].attrs['evidence_scale_factor'] = np.exp(log_prior_volume)/np.exp(comb_file.attrs["total_log_prior_volume"])
 
 	comb_file[group_name].attrs['evidence_volume_prior'] = log_prior_volume + log_evidence - comb_file.attrs["total_log_prior_volume"]
 
 	comb_file[group_name].attrs['PDF_weight'] = np.exp(comb_file[group_name].attrs['evidence_volume_prior'] - comb_file.attrs["evidence_volume_prior_max"])
-	print(comb_file[group_name].attrs['PDF_weight'])	
+	print(comb_file[group_name].attrs['PDF_weight'])
 
 def combine_posterior_files(posterior_files):
 
@@ -37,10 +37,10 @@ def combine_posterior_files(posterior_files):
 	for (i,post_file) in enumerate(posterior_files):
 
 		group_name = str(i)
-		
+
 		add_h5_link(post_file, group_name, comb_file) # this is where the combination actually gets done
-	
-	comb_file.close()	
+
+	comb_file.close()
 
 def compute_total_prior_vol(posterior_files, comb_file):
 
@@ -57,7 +57,7 @@ def compute_total_prior_vol(posterior_files, comb_file):
 		evp = log_prior_volume + log_evidence
 		if evp > evp_max:
 			evp_max = evp
-		 
+
 		file.close()
 
 	comb_file.attrs["total_log_prior_volume"] = np.log(total_prior_volume)

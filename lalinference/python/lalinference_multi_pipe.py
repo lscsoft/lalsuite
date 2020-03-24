@@ -4,7 +4,7 @@
 
 from lalinference import lalinference_pipe_utils as pipe_utils
 from six.moves import configparser
-from optparse import OptionParser,OptionValueError
+from optparse import OptionParser
 import sys
 
 usage=""" %prog [options] config1.ini config2.ini ... configN.ini
@@ -121,7 +121,7 @@ for inifile in inits:
     dag2=dag
   else:
     dag2=pipe_utils.LALInferencePipelineDAG(cp,first_dag=False,previous_dag=dag,site=opts.grid_site)
-    dag2.write_sub_files()    
+    dag2.write_sub_files()
     dag=dag2
 
 # Create the DAG from the configparser object
@@ -134,8 +134,7 @@ print('Now run condor_submit_dag %s\n'%(dag2.get_dag_file()))
 
 if opts.condor_submit:
     import subprocess
-    from subprocess import Popen
-           
+
     x = subprocess.Popen(['condor_submit_dag',dag.get_dag_file()])
     x.wait()
     if x.returncode==0:

@@ -23,7 +23,6 @@ Prefix: %{_prefix}
 # -- build requirements -----
 
 # C
-BuildRequires: chealpix-devel >= 3.30.0
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: gsl-devel
@@ -40,7 +39,7 @@ BuildRequires: openmpi-devel
 BuildRequires: pkgconfig >= 0.18.0
 
 # swig
-BuildRequires: swig >= 3.0.7
+BuildRequires: swig >= 3.0.9
 
 # python2
 BuildRequires: python2-rpm-macros
@@ -101,7 +100,6 @@ BuildRequires: lalpulsar-octave >= @MIN_LALPULSAR_VERSION@
 # -- packages ---------------
 
 # lalinference
-Requires: chealpix
 Requires: gsl >= 1.15
 Requires: openmpi
 Requires: openssh-clients
@@ -123,7 +121,6 @@ that use the LAL Inference library.
 Summary: Files and documentation needed for compiling programs that use LAL Inference
 Group: LAL
 Requires: %{name} = %{version}
-Requires: chealpix-devel >= 3.30.0
 Requires: gsl-devel >= 1.15
 Requires: lal-devel >= @MIN_LAL_VERSION@
 Requires: lalframe-devel >= @MIN_LALFRAME_VERSION@

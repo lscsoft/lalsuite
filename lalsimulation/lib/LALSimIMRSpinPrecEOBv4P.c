@@ -2899,10 +2899,8 @@ static int SEOBCalculateSphHarmListNQCCoefficientsV4(
     SpinEOBParams *seobParams,   /**<< Input: SEOB params */
     REAL8Vector *chi1_omegaPeak, /**<< Input: dimensionless spin 1 at peak of
                                     omega in L_N frame */
-    REAL8Vector *chi2_omegaPeak, /**<< Input: dimensionless spin 2 at peak of
+    REAL8Vector *chi2_omegaPeak /**<< Input: dimensionless spin 2 at peak of
                                     omega in L_N frame */
-    UINT4 flag0NQCForOddmModes   /**<< Input: flag to put all NQC coeffs to 0 in
-                                    the case of a symmetric binary */
 ) {
   /* Masses */
   REAL8 m1 = seobParams->eobParams->m1;
@@ -2958,7 +2956,8 @@ static int SEOBCalculateSphHarmListNQCCoefficientsV4(
   REAL8 chi2dotZfinal = chi2_omegaPeak->data[2];
   REAL8 chiSfinal = SEOBCalculateChiS(chi1dotZfinal, chi2dotZfinal);
   REAL8 chiAfinal = SEOBCalculateChiA(chi1dotZfinal, chi2dotZfinal);
-
+  REAL8 q = m1/m2;
+  //printf("chiA = %.16f\n",chiAfinal);
   /* Time elapsed from the start of the dynamics to tPeakOmega */
   REAL8 tPeakOmegaFromStartDyn = tPeakOmega - seobdynamics->tVec[0];
 
@@ -2977,9 +2976,8 @@ static int SEOBCalculateSphHarmListNQCCoefficientsV4(
 
     EOBNonQCCoeffs *nqcCoeffs = XLALMalloc(sizeof(EOBNonQCCoeffs));
     memset(nqcCoeffs, 0, sizeof(EOBNonQCCoeffs));
-
-    if (flag0NQCForOddmModes &&
-        (m % 2 != 0)) { /* In this case, set NQC coeffs to 0 for odd m */
+    /* In the equal mass equal spins case the odd-m modes are 0, so we set the NQCs to 0 */
+    if (q<1.005 && (m % 2 != 0) && (fabs(chiAfinal) < 0.15)) { /* In this case, set NQC coeffs to 0 for odd m */
       nqcCoeffs->a1 = 0.;
       nqcCoeffs->a2 = 0.;
       nqcCoeffs->a3 = 0.;
@@ -5271,16 +5269,9 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
     printf("STEP 5) Compute P-frame of modes amp/phase on HiS and compute NQC "
            "coefficients\n");
 
-  /* Flag setting the NQCs to 0 for odd-m modes in the case of a symmetric
-   * binary (these modes are then 0 identically) */
-  INT4 flag0NQCForOddmModes = 0;
-  if ((eta == 0.25) && (chi1z == chi2z))
-    flag0NQCForOddmModes = 1;
-
   if (SEOBCalculateSphHarmListNQCCoefficientsV4(
           &nqcCoeffsList, modes, nmodes, tPeakOmega, seobdynamicsHiS,
-          &seobParams, chi1L_tPeakOmega, chi2L_tPeakOmega,
-          flag0NQCForOddmModes) == XLAL_FAILURE) {
+          &seobParams, chi1L_tPeakOmega, chi2L_tPeakOmega) == XLAL_FAILURE) {
     FREE_ALL
     XLALPrintError("XLAL Error - %s: NQC computation failed.\n", __func__);
     PRINT_ALL_PARAMS

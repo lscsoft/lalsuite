@@ -20,6 +20,8 @@
 #ifndef _LALSIMSPHHARMSERIES_H
 #define _LALSIMSPHHARMSERIES_H
 
+#include <limits.h>
+
 #include <lal/LALDatatypes.h>
 #include <lal/TimeSeries.h>
 
@@ -69,6 +71,7 @@ void XLALSphHarmTimeSeriesSetTData(SphHarmTimeSeries *ts, REAL8Sequence* fdata);
 REAL8Sequence* XLALSphHarmTimeSeriesGetTData(SphHarmTimeSeries *ts);
 void XLALDestroySphHarmTimeSeries(SphHarmTimeSeries* ts);
 UINT4 XLALSphHarmTimeSeriesGetMaxL(SphHarmTimeSeries* ts);
+UINT4 XLALSphHarmTimeSeriesGetMinL(SphHarmTimeSeries* ts);
 
 #ifdef SWIG
 SWIGLAL(RETURN_OWNED_BY_1ST_ARG(COMPLEX16TimeSeries*, XLALSphHarmTimeSeriesGetMode));

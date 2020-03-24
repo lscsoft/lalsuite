@@ -28,6 +28,7 @@ config.log
 config.status
 configure
 cscope.*
+junit*.xml
 lalsuite-*.tar.xz
 lalsuite-user-env.csh
 lalsuite-user-env.fish
@@ -38,3 +39,4 @@ tags
 TAGS
 .pytest_cache
 test_python_imports.py
+test_python_scripts.py

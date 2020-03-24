@@ -3,11 +3,10 @@
 
 from __future__ import print_function
 
-import ast
 import os
 import sys
 import uuid
-from optparse import OptionParser,OptionValueError
+from optparse import OptionParser
 
 from six.moves.configparser import ConfigParser
 

@@ -60,7 +60,7 @@ class LIVariablesWrap(collections.MutableMapping):
     def varyType(self, key):
         """
         Return the lalinference variable's varyType
-        
+
         Parameters
         ----------
         key : str
@@ -76,7 +76,7 @@ class LIVariablesWrap(collections.MutableMapping):
     def type(self, key):
         """
         Return the lalinference variable's varyType
-        
+
         Parameters
         ----------
         key : str
@@ -135,7 +135,7 @@ class LALInferenceCBCWrapper(object):
         li.InitLikelihood(self.state)
         li.InitCBCThreads(self.state,1)
 
-    
+
     def log_likelihood(self,params):
         """
         Log-likelihood function from LALInference
@@ -157,7 +157,7 @@ class LALInferenceCBCWrapper(object):
         liv.update(params)
         self.state.threads.model.currentParams=liv.v
         return li.MarginalisedPhaseLogLikelihood(liv.v, self.state.data, self.state.threads.model)
-    
+
     def log_prior(self,params):
         """
         Log-prior function from LALInference
@@ -190,7 +190,7 @@ class LALInferenceCBCWrapper(object):
         """
         LIV=LIVariablesWrap(self.state.threads.currentParams)
         return LIV.keys()
-    
+
     def sampling_params(self):
         """
         Parameter names from the LALInference model. Includes
@@ -204,7 +204,7 @@ class LALInferenceCBCWrapper(object):
         return [p for p in pars if pars.varyType(p)==li.LALINFERENCE_PARAM_LINEAR
                   or pars.varyType(p)==li.LALINFERENCE_PARAM_CIRCULAR
                   ]
-    
+
     def prior_bounds(self):
         """
         Bounds of the sampling parameters.
