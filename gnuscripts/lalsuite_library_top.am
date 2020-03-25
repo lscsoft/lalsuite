@@ -19,26 +19,35 @@ AUTHORS: force-author-generation
 	( cd $(srcdir) && cat .AUTHORS && git log --pretty="%aN" $${since}..HEAD -- . 2>/dev/null ) | $(SED) -e '/^UNKNOWN/d' | sort -f -u > $@
 endif # HAVE_GIT_REPO
 
-.PHONE: check-AUTHORS
+.PHONY: check-AUTHORS
 check-local: check-AUTHORS
 check-AUTHORS: AUTHORS
-	$(AM_V_at)export LC_ALL=C; notniceregex='/[\x80-\xff]/d;/^[A-Z][a-z][-A-Za-z]* /d;/^[A-Z][.] /d'; \
-	if test x`$(SED) "$${notniceregex}" AUTHORS` = x; then \
+	$(AM_V_at)export LC_ALL=C; \
+	if test -r "$(builddir)/AUTHORS"; then \
+		authorsfile="$(builddir)/AUTHORS"; \
+	elif test -r "$(srcdir)/AUTHORS"; then \
+		authorsfile="$(srcdir)/AUTHORS"; \
+	else \
+		echo "ERROR: AUTHORS file is missing" >&2; \
+		exit 1; \
+	fi; \
+	notniceregex='/[\x80-\xff]/d;/^[A-Z][a-z][-A-Za-z]* /d;/^[A-Z][.] /d'; \
+	if test x`$(SED) "$${notniceregex}" "$${authorsfile}"` = x; then \
 		exit 0; \
 	fi; \
-	echo ""; \
-	echo "**************************************************"; \
-	echo "It looks like the following entries in AUTHORS are"; \
-	echo "not nicely formatted names:"; \
-	$(SED) "$${notniceregex}" AUTHORS | $(SED) 's/^/   /'; \
-	echo "(By 'nicely formatted' we mean properly capitalised"; \
-	echo "human names, e.g. Albert Einstein, as opposed to"; \
-	echo "computer user names, e.g. albert.einstein.)"; \
-	echo "You may need to set up Git for the first time, for"; \
-	echo "help see https://git-scm.com/book."; \
-	echo "You may also need to add an entry to the .mailmap "; \
-	echo "file of the form"; \
-	echo "   Your Nicely Formatted Name <my.email@address>"; \
-	echo "For help please ask the LALSuite maintainers."; \
-	echo "**************************************************"; \
+	echo "" >&2; \
+	echo "**************************************************" >&2; \
+	echo "It looks like the following entries in AUTHORS are" >&2; \
+	echo "not nicely formatted names:" >&2; \
+	$(SED) "$${notniceregex}" AUTHORS | $(SED) 's/^/   /' >&2; \
+	echo "(By 'nicely formatted' we mean properly capitalised" >&2; \
+	echo "human names, e.g. Albert Einstein, as opposed to" >&2; \
+	echo "computer user names, e.g. albert.einstein.)" >&2; \
+	echo "You may need to set up Git for the first time, for" >&2; \
+	echo "help see https://git-scm.com/book." >&2; \
+	echo "You may also need to add an entry to the .mailmap " >&2; \
+	echo "file of the form" >&2; \
+	echo "   Your Nicely Formatted Name <my.email@address>" >&2; \
+	echo "For help please ask the LALSuite maintainers." >&2; \
+	echo "**************************************************" >&2; \
 	exit 1
