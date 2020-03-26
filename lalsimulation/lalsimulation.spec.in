@@ -205,6 +205,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Wed Mar 25 2020 Duncan Macleod <duncan.macleod@ligo.org> 2.0.0-1
+- Update for 2.0.0
+
 * Wed Jan 15 2020 Adam Mercer <adam.mercer@ligo.org> 1.10.1-1
 - Add a fix to aligned-spin limit
 - NRHybSur3dq8: Use XLAL_EDOM for extrapolation errors

@@ -1,6 +1,6 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
-%define release 3
+%define release 1
 %define configure_opts GSL_LIBS="-lgsl"
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
@@ -223,6 +223,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Wed Mar 25 2020 Duncan Macleod <duncan.macleod@ligo.org> 6.22.0-1
+- Update for 6.22.0
+
 * Mon Dec 09 2019 Adam Mercer <adam.mercer@ligo.org> 6.21.0-3
 - Packaging updates
 

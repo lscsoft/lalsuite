@@ -1,3 +1,9 @@
+lal (6.22.0-1) unstable; urgency=low
+
+  * Update for 6.22.0
+
+ -- Duncan Macleod <duncan.macleod@ligo.org>  Thu, 19 Mar 2020 11:05:00 -0000
+
 lal (6.21.0-1) unstable; urgency=low
 
   * O3b release
