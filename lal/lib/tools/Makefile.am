@@ -20,6 +20,7 @@ pkginclude_HEADERS = \
 	Skymap.h \
 	TimeSeries.h \
 	TimeSeriesInterp.h \
+	TriggerInterpolate.h \
 	TriggerInterpolation.h \
 	Units.h \
 	$(END_OF_LIST)
@@ -48,6 +49,7 @@ libtools_la_SOURCES = \
 	Skymap.c \
 	TimeSeries.c \
 	TimeSeriesInterp.c \
+	TriggerInterpolate.c \
 	TriggerInterpolation.c \
 	UnitCompare.c \
 	UnitDefs.c \
