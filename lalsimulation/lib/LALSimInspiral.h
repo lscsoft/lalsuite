@@ -430,6 +430,8 @@ typedef enum tagApproximant {
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
+extern const char *lalSimulationApproximantNames[NumApproximants];
+
 /** Enum of various frequency functions */
 typedef enum tagFrequencyFunction {
     fSchwarzISCO, /**< Schwarzschild ISCO */

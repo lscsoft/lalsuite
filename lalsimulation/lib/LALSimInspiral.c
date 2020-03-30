@@ -82,7 +82,7 @@
 
 #define INITIALIZE_NAME(a) [a] = #a
 /* TODO: UPDATE ME WHENEVER A NEW APPROXIMANT IS ADDED */
-static const char *lalSimulationApproximantNames[] = {
+const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(TaylorT1),
     INITIALIZE_NAME(TaylorT2),
     INITIALIZE_NAME(TaylorT3),
