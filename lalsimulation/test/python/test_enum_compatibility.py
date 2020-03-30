@@ -18,7 +18,8 @@ def test_approximant(name, i):
     assert a == i, (
         "The Approximant enum is modified in an non-backward-compatible way, "
         "Approximant {name} is {a} but it should be {i}; "
-        "please append {a} to the Approximants enum, rather than reordering the list".format(
+        "please append new approximants to the Approximants enum in LALSimInspiral.h, "
+        "rather than reordering the list".format(
             i=i,
             a=a,
             name=name,
