@@ -5,7 +5,7 @@ This script checks that the list of approximants
 has not been changed in a backward-incompatible way
 by reordering the Approximant enum.
 """
-
+import sys
 import pytest
 import lalsimulation as lalsim
 
