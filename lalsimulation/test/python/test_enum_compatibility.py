@@ -113,6 +113,22 @@ def test_approximant(i, name):
         )
     )
 
+
+def regenerate_known_approximants():
+    """
+    Function here for convenience if you need to regenerate the list
+    Not used in test
+    """
+    appx = {}
+    for i in range(lalsim.NumApproximants):
+        try:
+            appx[i]=lalsim.GetStringFromApproximant(i)
+        except RuntimeError:
+            # Integer which is not used in enum?
+            print('No approximant numbered {}'.format(i))
+    print(appx)
+    return appx
+
 if __name__ == '__main__':
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-approx-enum.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
