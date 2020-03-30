@@ -6,6 +6,7 @@ has not been changed in a backward-incompatible way
 by reordering the Approximant enum.
 """
 
+import pytest
 import lalsimulation as lalsim
 
 # This list was last updated 2020-03-30 by john.veitch
@@ -99,10 +100,20 @@ known_approximants={
 86: 'NRHybSur3dq8'
 }
 
-for i in range(lalsim.NumApproximants):
-    a=lalsim.GetStringFromApproximant(i)
-    if a!=known_approximants[i]:
-        print('Error: The Approximant enum is modified in an non-backward-compatible way')
-        print(f'Approximant {i} is {a} but it should be {known_approximants[i]}')
-        print(f'Please append {i} to the Approximants enum, rather than reordering the list')
-        sys.exit(1)
+@pytest.mark.parametrize("i, name", known_approximants.items())
+def test_approximant(i, name):
+    a = lalsim.GetStringFromApproximant(i)
+    assert a == name, (
+        "The Approximant enum is modified in an non-backward-compatible way, "
+        "Approximant {i} is {a} but it should be {name}; "
+        "please append {i} to the Approximants enum, rather than reordering the list".format(
+            i=i,
+            a=a,
+            name=name,
+        )
+    )
+
+if __name__ == '__main__':
+    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-approx-enum.xml"]
+    sys.exit(pytest.main(args=[__file__] + args))
+
