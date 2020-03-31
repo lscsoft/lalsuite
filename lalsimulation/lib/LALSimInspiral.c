@@ -5505,8 +5505,11 @@ int XLALSimInspiralDecomposeWaveformString(int *approximant, int *order, int *ax
 int XLALSimInspiralGetApproximantFromString(const char *waveform)
 {
     int approximant = -1;
-    if (XLALSimInspiralDecomposeWaveformString(&approximant, NULL, NULL, waveform) < 0)
+    if (XLALSimInspiralDecomposeWaveformString(&approximant, NULL, NULL, waveform)!=XLAL_SUCCESS)
+    {
+        approximant = -1;
         XLAL_ERROR(XLAL_EFUNC);
+    }
     return approximant;
 }
 
