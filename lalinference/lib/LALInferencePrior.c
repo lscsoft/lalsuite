@@ -2812,7 +2812,7 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
     /* set mode to use and multivariate deviates for it  */
     CHAR gmmmvd[VARNAME_MAX], gmmmode[VARNAME_MAX];
     UINT4 thismode = 0;
-    sprintf(gmmmvd, "%s_gmm_multivariate_deviates", fullname);
+    sprintf(gmmmvd, "%s_gmm_mvd", fullname);
     sprintf(gmmmode, "%s_gmm_mode", fullname);
     if ( LALInferenceCheckVariable( priorArgs, gmmmvd ) ){ /* get values if already set */
       tmps = *(REAL4Vector **)LALInferenceGetVariable(priorArgs, gmmmvd);
