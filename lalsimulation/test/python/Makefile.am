@@ -12,6 +12,7 @@ test_scripts += \
 	test_SEOBNRv4PHM_vs_4HM_ringdown.py \
 	test_phenomPv3HM.py \
 	test_SEOBNRv4HM_ROM.py \
+	test_enum_compatibility.py \
 	$(END_OF_LIST)
 
 
