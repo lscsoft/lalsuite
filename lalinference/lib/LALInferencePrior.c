@@ -2854,8 +2854,9 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
       UINT4 nparsdone = LALInferenceGetUINT4Variable( priorArgs, nparsdonename );
       npars = nparsdone;
       npars++;
+      LALInferenceRemoveVariable( priorArgs, nparsdonename );
     }
-
+  
     LALInferenceAddVariable( priorArgs, nparsdonename, &npars, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
 
     /* remove GMM multivariate deviates if all parameter in the GMM have been set */
