@@ -117,6 +117,7 @@ int main(int argc, char *argv[])
   REAL8                injLength=100.0; /* Ten seconds at end */
   REAL8                LeadupTime=95.0;
   REAL8                dynRange=1.0/3.0e-23;
+  int                  result;
 
   UINT4                Nsamples,det_idx,i,inj_num=0;
   ActuationParametersType actuationParams[LAL_NUM_IFO];
@@ -377,7 +378,12 @@ int main(int argc, char *argv[])
       else sprintf(massBin,"BBH");
       
       if (!(skipASCIIoutput)){
-        sprintf(outfilename,"%s%s%i_CBC_%s_%i_%s_%s.txt",outputpath,"/",inj_epoch.gpsSeconds,massBin,inj_num,injtype,det_name);
+        result = snprintf(outfilename,sizeof(outfilename),"%s%s%i_CBC_%s_%i_%s_%s.txt",outputpath,"/",inj_epoch.gpsSeconds,massBin,inj_num,injtype,det_name);
+        if (result < 0 || (size_t)result > sizeof(outfilename) - 1)
+        {
+          fprintf(stderr, "ERROR: file name too long: '%s'\n", outfilename);
+          exit(1);
+        }
         outfile=fopen(outfilename,"w");
         fprintf(stdout,"Injected signal %i for %s into file %s\n",inj_num,det_name,outfilename);
         for(i=0;i<actuationTimeSeries->data->length;i++) fprintf(outfile,"%10.10e\n",actuationTimeSeries->data->data[i]);
@@ -431,7 +437,12 @@ int main(int argc, char *argv[])
         /* add time series as a channel to the frame */
         XLALFrameAddREAL4TimeSeriesSimData( frame, TimeSeries );
         /* write frame */
-        sprintf(fname,"%s%s%s-INSP%i_HWINJ_STRAIN-%i-%i.gwf",outputpath,"/",det_name, inj_num, inj_epoch.gpsSeconds, (UINT4)injLength);
+        result = snprintf(fname,sizeof(fname),"%s%s%s-INSP%i_HWINJ_STRAIN-%i-%i.gwf",outputpath,"/",det_name, inj_num, inj_epoch.gpsSeconds, (UINT4)injLength);
+        if (result < 0 || (size_t)result > sizeof(fname) - 1)
+        {
+          fprintf( stderr, "ERROR: file name too long: '%s'\n", fname );
+          exit( 1 );
+        }
         /*sprintf(fname, "%s%s%s",outputpath, "/", fname);*/
         if (XLALFrameWrite( frame, fname) != 0)
         {
