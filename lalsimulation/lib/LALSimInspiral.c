@@ -99,7 +99,6 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(BCV),
     INITIALIZE_NAME(BCVSpin),
     INITIALIZE_NAME(SpinTaylorT1),
-    INITIALIZE_NAME(SpinTaylorT2),
     INITIALIZE_NAME(SpinTaylorT5),
     INITIALIZE_NAME(SpinTaylorT3),
     INITIALIZE_NAME(SpinTaylorT4),
