@@ -2812,8 +2812,8 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
     /* set mode to use and multivariate deviates for it  */
     CHAR gmmmvd[VARNAME_MAX], gmmmode[VARNAME_MAX];
     UINT4 thismode = 0;
-    sprintf(gmmmvd, "%s_gmm_multivariate_deviates", fullname);
-    sprintf(gmmmvd, "%s_gmm_mode", fullname);
+    sprintf(gmmmvd, "%s_gmm_mvd", fullname);
+    sprintf(gmmmode, "%s_gmm_mode", fullname);
     if ( LALInferenceCheckVariable( priorArgs, gmmmvd ) ){ /* get values if already set */
       tmps = *(REAL4Vector **)LALInferenceGetVariable(priorArgs, gmmmvd);
       thismode = LALInferenceGetUINT4Variable( priorArgs, gmmmode);
@@ -2854,8 +2854,9 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
       UINT4 nparsdone = LALInferenceGetUINT4Variable( priorArgs, nparsdonename );
       npars = nparsdone;
       npars++;
+      LALInferenceRemoveVariable( priorArgs, nparsdonename );
     }
-
+  
     LALInferenceAddVariable( priorArgs, nparsdonename, &npars, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
 
     /* remove GMM multivariate deviates if all parameter in the GMM have been set */
@@ -3373,6 +3374,8 @@ REAL8 LALInferenceFermiDiracPrior( LALInferenceVariables *priorArgs, const char 
  * unless all required parameter values for a given GMM prior have already been passed to the
  * function */
 REAL8 LALInferenceGMMPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 value){
+  REAL8 logPrior = 0.0;
+
   if( !LALInferenceCheckGMMPrior( priorArgs, name ) ){
     XLAL_ERROR_REAL8( XLAL_EINVAL, "No Gaussian Mixture Model prior given for parameter '%s'", name);
   }
@@ -3427,34 +3430,40 @@ REAL8 LALInferenceGMMPrior(LALInferenceVariables *priorArgs, const char *name, R
 
   /* check values are within limits */
   for ( j = 0; j < npars; j++ ){
-    if ( allvalues->data[j] < gmmlow->data[j] || allvalues->data[j] > gmmhigh->data[j] ){ return -INFINITY; }
+    if ( allvalues->data[j] < gmmlow->data[j] || allvalues->data[j] > gmmhigh->data[j] ){
+      logPrior = -INFINITY;
+      break;
+    }
   }
 
-  REAL8 logPrior = -INFINITY, thisGauss = 0.;
-  for ( i = 0; i < gmmweights->length; i++ ){
-    thisGauss = 0.;
-    gsl_vector *vmu = gsl_vector_calloc( npars ); /* vector to contain value-mu */
-    gsl_matrix *invcov = gsl_matrix_calloc( npars, npars ); /* inverse covariance matrix */
-    gsl_matrix *tmpMat = gsl_matrix_calloc( npars, npars );
-    for ( j = 0; j < npars; j++ ){
-      // normalise values to be from zero mean unit variance Gaussian
-      gsl_vector_set(vmu, j, (allvalues->data[j]-gmmmus[i]->data[j])/gmmsigmas[i]->data[j]);
+  if ( isfinite( logPrior ) ){
+    REAL8 thisGauss = 0.;
+    logPrior = -INFINITY;
+    for ( i = 0; i < gmmweights->length; i++ ){
+      thisGauss = 0.;
+      gsl_vector *vmu = gsl_vector_calloc( npars ); /* vector to contain value-mu */
+      gsl_matrix *invcov = gsl_matrix_calloc( npars, npars ); /* inverse covariance matrix */
+      gsl_matrix *tmpMat = gsl_matrix_calloc( npars, npars );
+      for ( j = 0; j < npars; j++ ){
+        // normalise values to be from zero mean unit variance Gaussian
+        gsl_vector_set(vmu, j, (allvalues->data[j]-gmmmus[i]->data[j])/gmmsigmas[i]->data[j]);
+      }
+
+      /* calculate log probability */
+      gsl_vector *tmpVec = gsl_vector_calloc( npars );
+      gsl_blas_dgemv (CblasNoTrans, 1.0, invcor[i], vmu, 0.0, tmpVec);
+      gsl_blas_ddot( vmu, tmpVec, &thisGauss );
+      thisGauss *= -0.5;
+
+      thisGauss += log(gmmweights->data[i]);
+      thisGauss -= (0.5*(REAL8)npars*(LAL_LNPI + LAL_LN2) + log(gmmdets->data[i])); /* normalisation */
+      logPrior = logaddexp(logPrior, thisGauss); /* sum Gaussianians */
+
+      gsl_matrix_free( invcov );
+      gsl_matrix_free( tmpMat );
+      gsl_vector_free( vmu );
+      gsl_vector_free( tmpVec );
     }
-
-    /* calculate log probability */
-    gsl_vector *tmpVec = gsl_vector_calloc( npars );
-    gsl_blas_dgemv (CblasNoTrans, 1.0, invcor[i], vmu, 0.0, tmpVec);
-    gsl_blas_ddot( vmu, tmpVec, &thisGauss );
-    thisGauss *= -0.5;
-
-    thisGauss += log(gmmweights->data[i]);
-    thisGauss -= (0.5*(REAL8)npars*(LAL_LNPI + LAL_LN2) + log(gmmdets->data[i])); /* normalisation */
-    logPrior = logaddexp(logPrior, thisGauss); /* sum Gaussianians */
-
-    gsl_matrix_free( invcov );
-    gsl_matrix_free( tmpMat );
-    gsl_vector_free( vmu );
-    gsl_vector_free( tmpVec );
   }
 
   /* remove all values that have been set */

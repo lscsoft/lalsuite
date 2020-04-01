@@ -759,10 +759,12 @@ void initialise_prior( LALInferenceRunState *runState )
           TokenList *minmaxvals = NULL;
           XLALCreateTokenList( &minmaxvals, strpart, "," );
           if ( minmaxvals->nTokens == 2 ){
-            if ( isfinite(atof(minmaxvals->tokens[0])) && isfinite(atof(minmaxvals->tokens[1])) ){
+            if ( isfinite(atof(minmaxvals->tokens[0])) ){
               thismin = atof(minmaxvals->tokens[0]);
-              thismax = atof(minmaxvals->tokens[1]);
             }
+            if ( isfinite(atof(minmaxvals->tokens[1])) ){
+	      thismax = atof(minmaxvals->tokens[1]);
+	    }
           }
           XLALDestroyTokenList( minmaxvals );
         }
