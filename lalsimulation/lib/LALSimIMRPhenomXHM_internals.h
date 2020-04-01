@@ -42,8 +42,6 @@ extern "C" {
   #include <stdio.h>
   #include <math.h>
   #include <complex.h>
-  #include <gsl/gsl_errno.h>
-  #include <gsl/gsl_spline.h>
 
   #include <lal/LALStdlib.h>
   #include <lal/LALConstants.h>
@@ -55,12 +53,6 @@ extern "C" {
   #include "LALSimIMRPhenomX_internals.h"
 
   #include <lal/LALSimIMR.h>
-
-  /* GSL Header Files */
-  #include <gsl/gsl_vector.h>
-  #include <gsl/gsl_matrix.h>
-  #include <gsl/gsl_linalg.h>
-
 
   #define NMAX_INSPIRAL_COEFFICIENTS 13
 

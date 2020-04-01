@@ -22,6 +22,8 @@
 //  Created by Marta on 06/02/2019.
 //
 
+#include <gsl/gsl_linalg.h>
+
 #include "LALSimIMRPhenomXHM_structs.h"
 
 #include "LALSimIMRPhenomXHM_qnm.h"

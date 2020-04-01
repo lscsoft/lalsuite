@@ -46,10 +46,7 @@
 #include <lal/Units.h>
 
 /* GSL Header Files */
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_matrix.h>
 #include <gsl/gsl_linalg.h>
-
 
 /* This struct is used to pre-cache useful powers of frequency, avoiding numerous expensive operations */
 int IMRPhenomX_Initialize_Powers(IMRPhenomX_UsefulPowers *p, REAL8 number)
@@ -349,17 +346,18 @@ int IMRPhenomXSetWaveformVariables(
 	// Symmetric mass ratio
 	REAL8 delta = fabs((m1 - m2) / (m1+m2));
 	REAL8 eta   = fabs(0.25 * (1.0 - delta*delta) ); // use fabs to prevent negative sign due to roundoff
+	REAL8 q   = ((m1 > m2) ? (m1 / m2) : (m2 / m1));
 
-	/* Perform some sanity checks on eta - FIXME_SH this should not be necessary anymore */
+	/* If eta > 0.25, e.g. roundoff, then set to 0.25 */
 	if(eta > 0.25)
 	{
-		IMRPhenomX_InternalNudge(eta,0.25,1e-6);
+		eta = 0.25;
 	}
 	if(eta > 0.25 || eta < 0.0)
 	{
-		//XLALPrintError("Unphyiscal eta: must be between 0 and 0.25\n");
 		XLAL_ERROR(XLAL_EDOM,"Unphysical eta: must be between 0 and 0.25\n");
 	}
+	if(eta == 0.25) q = 1.;
 	//if(eta < MAX_ALLOWED_ETA)
 	//{
 	//	XLAL_PRINT_WARNING("Warning: The model is not calibrated against numerical-relativity mass-ratios greater than 18.\n");
@@ -370,7 +368,7 @@ int IMRPhenomXSetWaveformVariables(
 	XLAL_CHECK(XLAL_SUCCESS == return_code, XLAL_EFUNC, "Failure: IMRPhenomX_CheckMassOrdering");
 	*/
 
-	REAL8 q   = ((m1 > m2) ? (m1 / m2) : (m2 / m1));
+
 
 	/* Masses definitions. Note that m1 and m2 are the component masses in solar masses. */
 	wf->m1_SI     = m1 * LAL_MSUN_SI;																						// Mass 1 (larger) in SI units
@@ -397,9 +395,9 @@ int IMRPhenomXSetWaveformVariables(
 		printf("m2        = %.6f\n",wf->m2);
 	}
 
-	if(wf->q > MAX_ALLOWED_MASS_RATIO)
+	if(wf->q > 1000.0)
 	{
-		XLAL_PRINT_WARNING("Warning: The model is not supported at such high mass ratios, see MAX_ALLOWED_MASS_RATIO.\n");
+		XLAL_PRINT_WARNING("Warning: The model is not supported for mass ratios > 1000.\n");
 	}
 
 	/* Spins */
@@ -426,13 +424,13 @@ int IMRPhenomXSetWaveformVariables(
 
 	if(wf->debug)
 	{
-		printf("eta     : %.6f\n",wf->eta);
-		printf("q       : %.6f\n",wf->q);
-		printf("chi1L   : %.6f\n",wf->chi1L);
-		printf("chi2L   : %.6f\n",wf->chi2L);
-		printf("chi_eff : %.6f\n",wf->chiEff);
-		printf("chi_hat : %.6f\n",wf->chiPNHat);
-		printf("STotR   : %.6f\n",wf->STotR);
+		printf("eta     : %.16e\n",wf->eta);
+		printf("q       : %.16e\n",wf->q);
+		printf("chi1L   : %.16e\n",wf->chi1L);
+		printf("chi2L   : %.16e\n",wf->chi2L);
+		printf("chi_eff : %.16e\n",wf->chiEff);
+		printf("chi_hat : %.16e\n",wf->chiPNHat);
+		printf("STotR   : %.16e\n",wf->STotR);
 	}
 
 	/* If no reference frequency is passed, set it to the starting GW frequency */
@@ -605,7 +603,7 @@ int IMRPhenomXGetAmplitudeCoefficients(
 		printf("eta3   = %.6f\n",eta3);
 	}
 
-	// Phenomenological ringdown coefficients: note that \gamma2 = \lambda in arXiv:2001.11412 and \gamma3 = \sigma in arXiv:2001.11412 
+	// Phenomenological ringdown coefficients: note that \gamma2 = \lambda in arXiv:2001.11412 and \gamma3 = \sigma in arXiv:2001.11412
 	pAmp->gamma2        = IMRPhenomX_Ringdown_Amp_22_gamma2(pWF->eta,pWF->STotR,pWF->dchi,pWF->delta,pWF->IMRPhenomXRingdownAmpVersion);
 	pAmp->gamma3        = IMRPhenomX_Ringdown_Amp_22_gamma3(pWF->eta,pWF->STotR,pWF->dchi,pWF->delta,pWF->IMRPhenomXRingdownAmpVersion);
 
@@ -762,13 +760,13 @@ int IMRPhenomXGetAmplitudeCoefficients(
 	double inspF1 = IMRPhenomX_Inspiral_Amp_22_Ansatz(F1,&powers_of_F1,pWF,pAmp);
 	double rdF4   = IMRPhenomX_Ringdown_Amp_22_Ansatz(F4,pWF,pAmp);
 
-	/* 
+	/*
 		Use d1 and d4 calculated above to get the derivative of the amplitude on the boundaries:
-	
+
 		D[ f^{7/6} Ah^{-1}[f] , f] = ( (7/6) * f^{1/6} / Ah[f] ) - ( f^{7/6} Ah'[f] ) / (Ah[f]^2)
-	
+
 		where d1 = Ah'[F1], inspF1 = Ah[F1] etc.
-	
+
 	*/
 	d1     = ((7.0/6.0) * powers_of_F1.one_sixth / inspF1) - ( powers_of_F1.seven_sixths * d1 / (inspF1*inspF1) );
 	d4     = ((7.0/6.0) * powers_of_F4.one_sixth / rdF4)   - ( powers_of_F4.seven_sixths * d4 / (rdF4*rdF4) );
@@ -910,31 +908,31 @@ int IMRPhenomXGetPhaseCoefficients(
 	//pPhase->fPhaseMatchIM = 0.6 * (0.5 * pWF->fRING + pWF->fISCO);
 
 	// Matching regions
-	
+
 	/* This is Eq. 5.11 in the paper */
 	double fIMmatch = 0.6 * (0.5 * pWF->fRING + pWF->fISCO);
-	
+
 	/* This is the MECO frequency */
 	double fINmatch = pWF->fMECO;
-	
+
 	/* This is Eq. 5.10 in the paper */
 	double deltaf   = (fIMmatch - fINmatch) * 0.03;
 
 	// Transition frequency is just below the MECO frequency and just above the RD fitting region
-	
+
 	/* These are defined in Eq. 7.7 and the text just below, f_H = fPhaseMatchIM and f_L = fPhaseMatchIN */
 	pPhase->fPhaseMatchIN  = fINmatch - 1.0*deltaf;
 	pPhase->fPhaseMatchIM  = fIMmatch + 0.5*deltaf;
 
 	/* Defined in Eq. 7.4, this is f_L */
 	pPhase->fPhaseInsMin  = 0.0026;
-	
+
 	/* Defined in Eq. 7.4, this is f_H */
 	pPhase->fPhaseInsMax  = 1.020 * pWF->fMECO;
 
 	/* Defined in Eq. 7.12, this is f_L */
 	pPhase->fPhaseRDMin   = fIMmatch;
-	
+
 	/* Defined in Eq. 7.12, this is f_L */
 	pPhase->fPhaseRDMax   = pWF->fRING + 1.25*pWF->fDAMP;
 
@@ -984,17 +982,17 @@ int IMRPhenomXGetPhaseCoefficients(
 	pPhase->sigma3 = 0.0;
 	pPhase->sigma4 = 0.0;
 	pPhase->sigma5 = 0.0;
-	
+
 	/*
 		The general strategy is to initialize a linear system of equations:
-	
+
 		A.x = b
 
-		- A is a matrix with the coefficients of the ansatz evaluated at the collocation nodes. 
+		- A is a matrix with the coefficients of the ansatz evaluated at the collocation nodes.
 		- b is a vector of the value of the collocation points
-		- x is the solution vector (i.e. the coefficients) that we must solve for. 
+		- x is the solution vector (i.e. the coefficients) that we must solve for.
 
-		We choose to do this using a standard LU decomposition. 
+		We choose to do this using a standard LU decomposition.
 	*/
 
 	/* Generate list of collocation points */
@@ -1011,7 +1009,7 @@ int IMRPhenomXGetPhaseCoefficients(
 
 	gpoints4 = [1.0, 3.0/4, 1.0/4, 0.0];
 	gpoints5 = [1.0, 1.0/2 + 1.0/(2.0*sqrt(2.0)), 1.0/2, 1.0/2 - 1.0/(2*sqrt(2.0)), 0.]
-	
+
 	*/
 
 	/*
@@ -1118,7 +1116,7 @@ int IMRPhenomXGetPhaseCoefficients(
 
 	/*
 			Eq. 7.12 in arXiv:2001.11412
-	
+
 			ansatzRD(f) = a_0 + a_1 f^(-1/3) + a_2 f^(-2) + a_3 f^(-3) + a_4 f^(-4) + ( aRD ) / ( (f_damp^2 + (f - f_ring)^2 ) )
 
 			Canonical ansatz sets a_3 to 0.
@@ -1245,7 +1243,7 @@ int IMRPhenomXGetPhaseCoefficients(
 	The size of the array is controlled by: N_MAX_COLLOCATION_POINTS_PHASE_INS
 
 	Default is to use 4 pseudo-PN coefficients and hence 4 collocation points.
-	
+
 	GC points as per Eq. 7.4 and 7.5, where f_L = pPhase->fPhaseInsMin and f_H = pPhase->fPhaseInsMax
 	*/
 	deltax      = pPhase->fPhaseInsMax - pPhase->fPhaseInsMin;
@@ -1621,7 +1619,7 @@ int IMRPhenomXGetPhaseCoefficients(
 			- We add in powers of (M f)^{N/3} later but add powers of pi^{N/3} here
 			- The log terms are *always* in terms of log(v), so we multiply by log(v) when summing PN phasing series.
 			- We *do not* overwrite the PN phasing series with pseudo-PN terms. These are added separately.
-	
+
 			PN terms can be found in:
 				- Marsat et al, CQG, 32, 085008, (2015)
 				- Bohe et al, CQG, 32, 195010, (2015)
@@ -1633,7 +1631,7 @@ int IMRPhenomXGetPhaseCoefficients(
 				- Marchand et al, PRD, 97, 044023, (2018)
 				- Marchand et al, CQG, 33, 244003, (2016)
 				- Nagar et al, PRD, 99, 044007, (2019)
-				- Messina et al, PRD, 97, 084016, (2018)	
+				- Messina et al, PRD, 97, 084016, (2018)
 	*/
 
 	/* Analytically known PN coefficients */
@@ -1873,7 +1871,7 @@ int IMRPhenomXGetPhaseCoefficients(
 	The size of the array is controlled by: N_MAX_COLLOCATION_POINTS_PHASE_INT
 
 	Default is to use 5 collocation points.
-	
+
 	See. Eq. 7.7 and 7.8 where f_H = pPhase->fPhaseMatchIM and f_L = pPhase->fPhaseMatchIN
 	*/
 	deltax      = pPhase->fPhaseMatchIM - pPhase->fPhaseMatchIN;
@@ -1934,7 +1932,7 @@ int IMRPhenomXGetPhaseCoefficients(
 
 		// Take a weighted average for these points? Can help condition the fit.
 		pPhase->CollocationValuesPhaseInt[1] = 0.75*(v2IMmRDv4 + RDv4) + 0.25*v2IM;
-		
+
 		// Use just v2 - v4RD to reconstruct the fit?
 		//pPhase->CollocationValuesPhaseInt[1] = v2IMmRDv4 + RDv4);
 

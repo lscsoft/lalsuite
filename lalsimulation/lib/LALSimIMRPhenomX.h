@@ -35,18 +35,19 @@ extern "C" {
 /* Dimensionless frequency (Mf) at which define the end of the waveform */
 #define f_CUT 0.3
 
-#define MAX_ALLOWED_MASS_RATIO 5000
-#define MAX_ALLOWED_ETA 0.0002
-
 #include "LALSimIMRPhenomX_internals.h"
 #include "LALSimIMRPhenomXUtilities.h"
 
+#include "LALSimIMRPhenomX_precession.h"
+
+/* Decleration for internal function to generate aligned-spin, 22 only IMRPhenomXAS waveform */
 int IMRPhenomXASGenerateFD(
   COMPLEX16FrequencySeries **htilde22,
   const REAL8Sequence *freqs,
   IMRPhenomXWaveformStruct *pWF,
   LALDict *lalParams
 );
+
 
 int IMRPhenomXCheckForUniformFrequencies(REAL8Sequence *frequencies,REAL8 df);
 

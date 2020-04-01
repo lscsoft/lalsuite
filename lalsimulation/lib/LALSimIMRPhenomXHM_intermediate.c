@@ -21,10 +21,6 @@
 //  LALSimIMRPhenomXHM_Intermediate.c
 //
 
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_roots.h>
 #include <gsl/gsl_poly.h>
 
 #include "LALSimIMRPhenomXHM_intermediate.h"

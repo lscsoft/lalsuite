@@ -182,6 +182,8 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(NRHybSur3dq8),
     INITIALIZE_NAME(IMRPhenomXAS),
     INITIALIZE_NAME(IMRPhenomXHM),
+	INITIALIZE_NAME(IMRPhenomXP),
+    INITIALIZE_NAME(IMRPhenomXPHM),
 };
 #undef INITIALIZE_NAME
 
@@ -295,7 +297,9 @@ static double fixReferenceFrequency(const double f_ref, const double f_min, cons
         case IMRPhenomPv3HM:
         case IMRPhenomPv2_NRTidal:
         case IMRPhenomPv2_NRTidalv2:
-            return f_min;
+			return f_min;
+		case IMRPhenomXP:
+		case IMRPhenomXPHM:
         case NRSur4d2s:
             return f_min;
         default:
@@ -1049,69 +1053,80 @@ int XLALSimInspiralChooseTDWaveform(
                     S1z, S2z, LALparams);
             break;
 
-			case IMRPhenomXAS:
-			    if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
-				    ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
-			    if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-				    ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
-			    if( !checkTidesZero(lambda1, lambda2) )
-				    ABORT_NONZERO_TIDES(LALparams);
-			    // generate TD waveforms with zero inclincation so that amplitude can be
-			    // calculated from hplus and hcross, apply inclination-dependent factors
-			    // in loop below
+		case IMRPhenomXAS:
+		    if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+			    ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+		    if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+			    ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+		    if( !checkTidesZero(lambda1, lambda2) )
+			    ABORT_NONZERO_TIDES(LALparams);
+		    // generate TD waveforms with zero inclincation so that amplitude can be
+		    // calculated from hplus and hcross, apply inclination-dependent factors
+		    // in loop below
+				polariz = 0;
+				
+		    ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef,
+					longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
 
-
-			    ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef,
-						longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
-
-					// The Fourier domain model is built such that the TD transformation peakds approximately at zero.
-					// Here we force an exact alignment at zero by computing the maximum of hp^2 + hc^2.
-				 	maxamp = 0;
-					maxind = (*hplus)->data->length - 1;
-					for (loopi = (*hplus)->data->length - 1; loopi > -1; loopi--)
-					{
-							REAL8 ampsqr = ((*hplus)->data->data[loopi]) * ((*hplus)->data->data[loopi]) +
-														 ((*hcross)->data->data[loopi]) * ((*hcross)->data->data[loopi]);
-							if (ampsqr > maxamp)
-							{
-									maxind = loopi;
-									maxamp = ampsqr;
-							}
-					}
-					// Shift peak to t=0.
-					XLALGPSSetREAL8(&((*hplus)->epoch), (-1.) * deltaT * maxind);
-					XLALGPSSetREAL8(&((*hcross)->epoch), (-1.) * deltaT * maxind);
-					break;
+				// The Fourier domain model is built such that the TD transformation peakds approximately at zero.
+				// Here we force an exact alignment at zero by computing the maximum of hp^2 + hc^2.
+			 	maxamp = 0;
+				maxind = (*hplus)->data->length - 1;
+				for (loopi = (*hplus)->data->length - 1; loopi > -1; loopi--)
+				{
+						REAL8 ampsqr = ((*hplus)->data->data[loopi]) * ((*hplus)->data->data[loopi]) +
+													 ((*hcross)->data->data[loopi]) * ((*hcross)->data->data[loopi]);
+						if (ampsqr > maxamp)
+						{
+								maxind = loopi;
+								maxamp = ampsqr;
+						}
+				}
+				// Shift peak to t=0.
+				XLALGPSSetREAL8(&((*hplus)->epoch), (-1.) * deltaT * maxind);
+				XLALGPSSetREAL8(&((*hcross)->epoch), (-1.) * deltaT * maxind);
+				break;
 
 	    case IMRPhenomXHM:
-					if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams))
-						ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
-					if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-						ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
-					if( !checkTidesZero(lambda1, lambda2) )
-						ABORT_NONZERO_TIDES(LALparams);
+			if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams))
+				ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+			if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+				ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+			if( !checkTidesZero(lambda1, lambda2) )
+				ABORT_NONZERO_TIDES(LALparams);
+			polariz = 0;
+			
+			ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef,
+				longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
 
-					ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef,
-						longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
-
-					// The Fourier domain model is built such that the TD transformation peakds approximately at zero.
-					// Here we force an exact alignment at zero by computing the maximum of hp^2 + hc^2.
-					maxamp = 0;
-					maxind = (*hplus)->data->length - 1;
-					for (loopi = (*hplus)->data->length - 1; loopi > -1; loopi--)
+			// The Fourier domain model is built such that the TD transformation peakds approximately at zero.
+			// Here we force an exact alignment at zero by computing the maximum of hp^2 + hc^2.
+			maxamp = 0;
+			maxind = (*hplus)->data->length - 1;
+			for (loopi = (*hplus)->data->length - 1; loopi > -1; loopi--)
+			{
+					REAL8 ampsqr = ((*hplus)->data->data[loopi]) * ((*hplus)->data->data[loopi]) +
+												 ((*hcross)->data->data[loopi]) * ((*hcross)->data->data[loopi]);
+					if (ampsqr > maxamp)
 					{
-							REAL8 ampsqr = ((*hplus)->data->data[loopi]) * ((*hplus)->data->data[loopi]) +
-														 ((*hcross)->data->data[loopi]) * ((*hcross)->data->data[loopi]);
-							if (ampsqr > maxamp)
-							{
-									maxind = loopi;
-									maxamp = ampsqr;
-							}
+							maxind = loopi;
+							maxamp = ampsqr;
 					}
-					// Shift peak to t=0.
-					XLALGPSSetREAL8(&((*hplus)->epoch), (-1.) * deltaT * maxind);
-					XLALGPSSetREAL8(&((*hcross)->epoch), (-1.) * deltaT * maxind);
-					break;
+			}
+			// Shift peak to t=0.
+			XLALGPSSetREAL8(&((*hplus)->epoch), (-1.) * deltaT * maxind);
+			XLALGPSSetREAL8(&((*hcross)->epoch), (-1.) * deltaT * maxind);
+			break;
+
+		 case IMRPhenomXP:
+	 		polariz = 0;
+			ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
+			break;
+
+		case IMRPhenomXPHM:
+			polariz = 0;
+			ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
+			break;
 
         default:
             XLALPrintError("TD version of approximant not implemented in lalsimulation\n");
@@ -2065,81 +2080,179 @@ int XLALSimInspiralChooseFDWaveform(
                 if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
-	        case IMRPhenomXAS:
-	            /* Waveform-specific sanity checks */
-	            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
-	                ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
-	            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-	                ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
-	            if( !checkTidesZero(lambda1, lambda2) )
-	                ABORT_NONZERO_TIDES(LALparams);
+        case IMRPhenomXAS:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(LALparams);
 
-							/* This is the factor that comes from Y_22star + (-1)^l * Y_2-2 without the dependence in inclination, that is included in pfac and cfac */
-							/* Ylm(inclination, beta), with beta = PI/2 - phiRef. phiRef is included in the individual mode */
-							COMPLEX16 Ylmfactor = 2.0*sqrt(5.0 / (64.0 * LAL_PI)) * cexp(-I*2*(LAL_PI_2));
-							/* The factor for hc is the same but opposite sign */
+						/* This is the factor that comes from Y_22star + (-1)^l * Y_2-2 without the dependence in inclination, that is included in pfac and cfac */
+						/* Ylm(inclination, beta), with beta = PI/2 - phiRef. phiRef is included in the individual mode */
+						COMPLEX16 Ylmfactor = 2.0*sqrt(5.0 / (64.0 * LAL_PI)) * cexp(-I*2*(LAL_PI_2));
+						/* The factor for hc is the same but opposite sign */
 
-	            /* Call the waveform driver routine. */
-							/* It returns h_2-2(f) for positive frequencies. h_2-2 is zero for negative frequencies. */
-							/* h_22(f) is zero for positive frequencies. For negatives frequencies h_22(f) = Conjugate[h_2-2(-f)] */
-							/* We returns h2_-2 because it is the mode with the positive frequencies,
-							 and we need this mode because XLALSimInspiralTDFromFD assumes that the input array is in the positive frequencies regime. */
-	            ret = XLALSimIMRPhenomXASGenerateFD(hptilde, m1, m2,
-	                  S1z, S2z, distance, f_min, f_max, deltaF, phiRef, f_ref, LALparams);
-	            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            /* Call the waveform driver routine. */
+						/* It returns h_2-2(f) for positive frequencies. h_2-2 is zero for negative frequencies. */
+						/* h_22(f) is zero for positive frequencies. For negatives frequencies h_22(f) = Conjugate[h_2-2(-f)] */
+						/* We returns h2_-2 because it is the mode with the positive frequencies,
+						 and we need this mode because XLALSimInspiralTDFromFD assumes that the input array is in the positive frequencies regime. */
+            ret = XLALSimIMRPhenomXASGenerateFD(hptilde, m1, m2,
+                  S1z, S2z, distance, f_min, f_max, deltaF, phiRef, f_ref, LALparams);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
 
-	            /* Produce both polarizations for positive frequencies */
-						  *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
-	                    &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
-	                    &((*hptilde)->sampleUnits), (*hptilde)->data->length);
-	            for(j = 0; j < (*hptilde)->data->length; j++) {
-	                (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j] * Ylmfactor;
-									(*hptilde)->data->data[j] *= pfac * Ylmfactor;
-	            }
-	            break;
+            /* Produce both polarizations for positive frequencies */
+					  *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+                    &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
+                    &((*hptilde)->sampleUnits), (*hptilde)->data->length);
+            for(j = 0; j < (*hptilde)->data->length; j++) {
+                (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j] * Ylmfactor;
+								(*hptilde)->data->data[j] *= pfac * Ylmfactor;
+            }
+            break;
 
-			case IMRPhenomXHM:
-					/* Waveform-specific sanity checks */
-					if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
-							ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
-					if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-							ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
-					if( !checkTidesZero(lambda1, lambda2) )
-							ABORT_NONZERO_TIDES(LALparams);
+		case IMRPhenomXHM:
+			/* Waveform-specific sanity checks */
+			if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+					ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+			if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+					ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+			if( !checkTidesZero(lambda1, lambda2) )
+					ABORT_NONZERO_TIDES(LALparams);
 
-					/* Activate or not the debug info. */
-					#ifndef PHENOMXHMDEBUG  // Defined at compilation time. ./configure --prefix=... CFLAGS='-g -D PHENOMXHMDEBUG'
-					  #define DEBUG 0
-					#else
-						#define DEBUG 1 //print debugging info
-					#endif
+			/* Activate or not the debug info. */
+			#ifndef PHENOMXHMDEBUG  // Defined at compilation time. ./configure --prefix=... CFLAGS='-g -D PHENOMXHMDEBUG'
+			  #define DEBUG 0
+			#else
+				#define DEBUG 1 //print debugging info
+			#endif
 
-					/* Return hp and hc for positive frequencies. Only negatives modes contribute to positive frequencies.  */
-					/* The negative frquencies contribution is the complex conjugate of the positive one. */
+			/* Return hp and hc for positive frequencies. Only negatives modes contribute to positive frequencies.  */
+			/* The negative frquencies contribution is the complex conjugate of the positive one. */
 
-			    /* Take input/default value for the threshold of the Multibanding. If = 0 then do not use Multibanding. */
-			    REAL8 resTest  = XLALSimInspiralWaveformParamsLookupPhenomXHMThresholdMband(LALparams);
+		    /* Take input/default value for the threshold of the Multibanding. If = 0 then do not use Multibanding. */
+		    REAL8 resTest  = XLALSimInspiralWaveformParamsLookupPhenomXHMThresholdMband(LALparams);
 
-					/* If total mass is very high (>500 solar masses), we only have a few points in the ringdown, interpolation is not efficient, do not use Multibanding */
-					REAL8 Mtot = (m1 + m2)/LAL_MSUN_SI;
-					if(resTest!=0 && Mtot > 500){
-						resTest = 0.;
-					}
+			/* If total mass is very high (>500 solar masses), we only have a few points in the ringdown, interpolation is not efficient, do not use Multibanding */
+			REAL8 Mtot = (m1 + m2)/LAL_MSUN_SI;
+			if(resTest!=0 && Mtot > 500){
+				resTest = 0.;
+			}
 
-					if(resTest == 0.){ //Do not use multibanding
-						ret = XLALSimIMRPhenomXHM2(hptilde, hctilde, m1, m2, S1z, S2z, f_min, f_max, deltaF, distance, inclination, phiRef, f_ref, LALparams);
-					}
-					else{ // Use multibanding
-						ret = XLALSimIMRPhenomXHM(hptilde, hctilde, m1, m2, S1z, S2z, f_min, f_max, deltaF, distance, inclination, phiRef, f_ref, LALparams);
-					}
+			if(resTest == 0.){ //Do not use multibanding
+				ret = XLALSimIMRPhenomXHM2(hptilde, hctilde, m1, m2, S1z, S2z, f_min, f_max, deltaF, distance, inclination, phiRef, f_ref, LALparams);
+			}
+			else{ // Use multibanding
+				ret = XLALSimIMRPhenomXHM(hptilde, hctilde, m1, m2, S1z, S2z, f_min, f_max, deltaF, distance, inclination, phiRef, f_ref, LALparams);
+			}
 
-					if (ret == XLAL_FAILURE)
-             XLAL_ERROR(XLAL_EFUNC);
+			if (ret == XLAL_FAILURE)
+                XLAL_ERROR(XLAL_EFUNC);
 
-				  #if DEBUG == 1
-					printf("\n\n**********Leaving ChooseFDWaveform *********************\n\n");
-				  #endif
-					break;
+		    #if DEBUG == 1
+			printf("\n\n**********Leaving ChooseFDWaveform *********************\n\n");
+		    #endif
+		    
+			break;
+
+		case IMRPhenomXP:
+			/* Waveform-specific sanity checks */
+			if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALparams) )
+			{
+				/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
+				ABORT_NONDEFAULT_FRAME_AXIS(LALparams);
+			}
+			if(!XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALparams))
+			{
+				/* Default is (2,2) or l=2 modes. */
+				ABORT_NONDEFAULT_MODES_CHOICE(LALparams);
+			}
+			if( !checkTidesZero(lambda1, lambda2) )
+			{
+				ABORT_NONZERO_TIDES(LALparams);
+			}
+			if(f_ref==0.0)
+			{
+				/* Default reference frequency is minimum frequency */
+				f_ref = f_min;
+			}
+
+			/* Call the main waveform driver. Note that we pass the full spin vectors
+				 with XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame being
+				 effectively called in the initialization of the pPrec struct
+			*/
+			ret = XLALSimIMRPhenomXPGenerateFD(
+				hptilde, hctilde,
+				m1, m2,
+				S1x, S1y, S1z,
+				S2x, S2y, S2z,
+				distance, inclination,
+				phiRef, f_min, f_max, deltaF, f_ref, LALparams
+			);
+			if (ret == XLAL_FAILURE)
+			{
+				XLAL_ERROR(XLAL_EFUNC);
+			}
+
+			break;
+
+		case IMRPhenomXPHM:
+			/* Waveform-specific sanity checks */
+			if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALparams) )
+			{
+				/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
+				ABORT_NONDEFAULT_FRAME_AXIS(LALparams);
+			}
+			if(!XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALparams))
+			{
+				/* Default is (2,2) or l=2 modes. */
+				ABORT_NONDEFAULT_MODES_CHOICE(LALparams);
+			}
+			if( !checkTidesZero(lambda1, lambda2) )
+			{
+				ABORT_NONZERO_TIDES(LALparams);
+			}
+			if(f_ref==0.0)
+			{
+				/* Default reference frequency is minimum frequency */
+				f_ref = f_min;
+			}
+
+			/* Call the main waveform driver. Note that we pass the full spin vectors
+				 with XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame being
+				 effectively called in the initialization of the pPrec struct
+			*/
+			INT4 usemodes = XLALSimInspiralWaveformParamsLookupPhenomXPHMUseModes(LALparams);
+
+			if(usemodes == 0){
+				ret = XLALSimIMRPhenomXPHM(
+					hptilde, hctilde,
+					m1, m2,
+					S1x, S1y, S1z,
+					S2x, S2y, S2z,
+					distance, inclination,
+					phiRef, f_min, f_max, deltaF, f_ref, LALparams
+				);
+			}
+			else{
+				ret = XLALSimIMRPhenomXPHMFromModes(
+					hptilde, hctilde,
+					m1, m2,
+					S1x, S1y, S1z,
+					S2x, S2y, S2z,
+					distance, inclination,
+					phiRef, f_min, f_max, deltaF, f_ref, LALparams
+				);
+			}
+
+			if (ret == XLAL_FAILURE)
+			{
+				XLAL_ERROR(XLAL_EFUNC);
+			}
+
+			break;
 
         default:
             XLALPrintError("FD version of approximant not implemented in lalsimulation\n");
@@ -5308,17 +5421,19 @@ int XLALSimInspiralImplementedTDApproximants(
         case IMRPhenomB:
         case PhenSpinTaylor:
         case IMRPhenomC:
-	case IMRPhenomD:
-    case IMRPhenomHM:
-	case IMRPhenomPv2:
-    case IMRPhenomPv3:
-    case IMRPhenomPv3HM:
+    	case IMRPhenomD:
+        case IMRPhenomHM:
+    	case IMRPhenomPv2:
+        case IMRPhenomPv3:
+        case IMRPhenomPv3HM:
         case IMRPhenomPv2_NRTidal:
         case IMRPhenomPv2_NRTidalv2:
         case IMRPhenomNSBH:
         case IMRPhenomD_NRTidalv2:
-				case IMRPhenomXAS:
-				case IMRPhenomXHM:
+		case IMRPhenomXAS:
+		case IMRPhenomXHM:
+		case IMRPhenomXP:
+		case IMRPhenomXPHM:
         case PhenSpinTaylorRD:
         case SEOBNRv1:
         case SpinDominatedWf:
@@ -5372,9 +5487,11 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomP:
         case IMRPhenomPv2:
         case IMRPhenomPv2_NRTidal:
-        case IMRPhenomPv2_NRTidalv2:
-        case IMRPhenomXAS:
-        case IMRPhenomXHM:
+		case IMRPhenomPv2_NRTidalv2:
+		case IMRPhenomXAS:
+	    case IMRPhenomXHM:
+		case IMRPhenomXP:
+		case IMRPhenomXPHM:
         case EOBNRv2_ROM:
         case EOBNRv2HM_ROM:
         case SEOBNRv1_ROM_EffectiveSpin:
@@ -5789,6 +5906,8 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case IMRPhenomPv2_NRTidalv2:
     case IMRPhenomPv3:
     case IMRPhenomPv3HM:
+	case IMRPhenomXP:
+	case IMRPhenomXPHM:
     case SpinTaylorT5Fourier:
     case SpinTaylorT4Fourier:
     case SpinDominatedWf:
@@ -5904,6 +6023,8 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case IMRPhenomPv3HM:
     case IMRPhenomPv2_NRTidal:
     case IMRPhenomPv2_NRTidalv2:
+	case IMRPhenomXP:
+	case IMRPhenomXPHM:
     case SpinTaylorT5Fourier:
     case SpinTaylorT4Fourier:
     case SpinDominatedWf:
@@ -6068,6 +6189,8 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case NRHybSur3dq8:
     case IMRPhenomXAS:
     case IMRPhenomXHM:
+	case IMRPhenomXP:
+	case IMRPhenomXPHM:
     case NumApproximants:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;
