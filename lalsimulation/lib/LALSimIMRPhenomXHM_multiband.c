@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <gsl/gsl_spline.h>
+
 #include "LALSimIMRPhenomXHM_multiband.h"
 
 
@@ -500,7 +502,10 @@ int XLALSimIMRPhenomXHMMultiBandOneMode(
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
 
-  int offset = IMRPhenomXHMMultiBandOneMode(htildelm, pWF, ell, emm, lalParams);
+  status = IMRPhenomXHMMultiBandOneMode(htildelm, pWF, ell, emm, lalParams);
+  XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHMMultiBandOneMode failed to generate IMRPhenomXHM waveform.");
+
+  INT4 offset = (size_t) (pWF->fMin / deltaF);
 
   if(emmIn>0){
     /* (-1)^l */
@@ -511,7 +516,7 @@ int XLALSimIMRPhenomXHMMultiBandOneMode(
    #if DEBUG == 1
     printf("\nTransforming to positive m by doing (-1)^l*Conjugate, frequencies must be negatives.\n");
     #endif
-    for(UINT4 idx=0; idx<(*htildelm)->data->length; idx++){
+    for(UINT4 idx=offset; idx<(*htildelm)->data->length; idx++){
       (*htildelm)->data->data[idx] = minus1l*conj((*htildelm)->data->data[idx]);
     }
   }
@@ -539,6 +544,9 @@ int XLALSimIMRPhenomXHMMultiBandOneMode(
   return offset;
 
 }
+/** @}
+ @} **/
+
 
 int IMRPhenomXHMMultiBandOneMode(
     COMPLEX16FrequencySeries **htildelm, /**< [out] FD waveform **/
@@ -563,18 +571,24 @@ int IMRPhenomXHMMultiBandOneMode(
   XLAL_CHECK ( (iStop <= npts) && (iStart <= iStop), XLAL_EDOM,
   "minimum freq index %zu and maximum freq index %zu do not fulfill 0<=ind_min<=ind_max<=htilde->data>length=%zu.", iStart, iStop, npts);
 
+  #if DEBUG == 1
+  printf("\n***********************\n");
+  printf("pWF->fMin, deltaF, iStart = %.16e %.16e %zu", pWF->fMin, deltaF, iStart);
+  printf("\n***********************\n");
+  #endif
+
+
   size_t offset = iStart;
 
 
   /* If it is odd mode with equal black holes then return array of zeros 0 */
-  if(pWF->m1_SI == pWF->m2_SI && pWF->chi1L == pWF->chi2L && emm%2!=0){  // Mode zero
-
+  if(pWF->q == 1 && pWF->chi1L == pWF->chi2L && emm%2!=0){  // Mode zero
     *htildelm = XLALCreateCOMPLEX16FrequencySeries("htildelm: FD waveform", &(ligotimegps_zero), 0.0, deltaF, &lalStrainUnit, iStop);
     for(unsigned int idx = 0; idx < iStop; idx++){
       ((*htildelm)->data->data)[idx] = 0.;
     }
 
-    return offset;
+    return XLAL_SUCCESS;
   }
 
   /** Mode non-zero **/
@@ -994,7 +1008,8 @@ int IMRPhenomXHMMultiBandOneMode(
   #endif
 
   /* Intialize FrequencySeries for htildelm */
-  size_t n = count + offset;
+  while(count+offset > iStop){ count--; }
+  size_t n = iStop;
   XLAL_CHECK(XLALGPSAdd(&ligotimegps_zero, -1. / deltaF), XLAL_EFUNC, "Failed to shift the coalescence time to t=0. Tried to apply a shift of -1/df with df = %g.", deltaF);
   *htildelm = XLALCreateCOMPLEX16FrequencySeries("htildelm: FD waveform", &(ligotimegps_zero), 0.0, deltaF, &lalStrainUnit, n);
 
@@ -1014,6 +1029,13 @@ int IMRPhenomXHMMultiBandOneMode(
   for(UINT4 idx = 0; idx < count; idx++){
     /* Reconstruct waveform: h(f) = A(f) * Exp[I phi(f)] */
     ((*htildelm)->data->data)[idx + offset] = minus1l * fineAmp[idx] * expphi[idx];
+  }
+
+  /* Sometimes rounding error can make that count+offset < iStop, meaning that we have computed less points than those we are gonna output,
+    here we make sure that all the elements of htildelm are initialized and we put the extra point(s) to 0. */
+  for(UINT4 idx = count-1; idx < iStop-offset; idx++){
+    /* Reconstruct waveform: h(f) = A(f) * Exp[I phi(f)] */
+    ((*htildelm)->data->data)[idx + offset] = 0.;
   }
 
   /* Free allocated memory */
@@ -1036,7 +1058,7 @@ int IMRPhenomXHMMultiBandOneMode(
   for(UINT4 idx = 0; idx < count; idx++)
   {
     data = expphi[idx];
-    fprintf(file, "%.16f  %.16e %.16e\n",  idx*deltaF, creal(data), cimag(data));
+    fprintf(file, "%.16f  %.16e %.16e\n",  (idx+offset)*deltaF, creal(data), cimag(data));
   }
   fclose(file);
   #endif
@@ -1067,10 +1089,33 @@ int IMRPhenomXHMMultiBandOneMode(
   LALFree(ILphaselm);
   LALFree(IntLawpoints);
 
-  return offset;
+  return XLAL_SUCCESS;
 }
 
 
+/** @addtogroup LALSimIMRPhenomX_c
+* @{
+* @name Routines for IMRPhenomXHM Multibanding
+* @{
+* @author Cecilio García Quirós, Sascha Husa
+*
+* @brief C code for applying Multibanding to IMRPhenomXHM_Multimode
+*
+* This is a technique to make the evaluation of waveform models faster by evaluating the model
+* in a coarser non-uniform grid and interpolate this to the final fine uniform grid.
+* We apply this technique to the fourier domain model IMRPhenomXHM as describe in this paper: https://arxiv.org/abs/2001.10897
+*
+* Multibanding flags:
+*   ThresholdMband: Determines the strength of the Multibanding algorithm.
+*   The lower this value is, the slower is the evaluation but more accurate is the final waveform compared to the one without multibanding.
+*         - 0.001: DEFAULT value
+*         - 0: switch off the multibanding
+*
+*   AmpInterpol: Determines the gsl interpolation order for the amplitude.
+*         - 1: linear interpolation (DEFAULT)
+*         - 3: cubic interpolation
+*
+*/
 
 /** Returns htildelm the waveform of one mode that present mode-mixing.
 The multibanding is applied to the spherical part (inspiral and intermediate) and to the spheroidal part (ringdown).
@@ -1083,7 +1128,7 @@ int XLALSimIMRPhenomXHMMultiBandOneModeMixing(
   REAL8 chi1L,                         /**< Dimensionless aligned spin of companion 1 */
   REAL8 chi2L,                         /**< Dimensionless aligned spin of companion 2 */
   UINT4 ell,                           /**< l index of the mode */
-  INT4 emmIn,                           /**< m index of the mode */
+  INT4 emmIn,                          /**< m index of the mode */
   REAL8 distance,                      /**< Luminosity distance (m) */
   REAL8 f_min,                         /**< Starting GW frequency (Hz) */
   REAL8 f_max,                         /**< End frequency; 0 defaults to Mf = \ref f_CUT */
@@ -1159,7 +1204,11 @@ int XLALSimIMRPhenomXHMMultiBandOneModeMixing(
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
 
-  int offset = IMRPhenomXHMMultiBandOneModeMixing(htildelm, htilde22, pWF, ell, emm, lalParams);
+  //int offset = IMRPhenomXHMMultiBandOneModeMixing(htildelm, htilde22, pWF, ell, emm, lalParams);
+  status = IMRPhenomXHMMultiBandOneModeMixing(htildelm, htilde22, pWF, ell, emm, lalParams);
+  XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHMMultiBandOneModeMixing failed to generate IMRPhenomXHM waveform.");
+
+  INT4 offset = (size_t) (pWF->fMin / deltaF);
 
   if(emmIn>0){
     /* (-1)^l */
@@ -1170,7 +1219,7 @@ int XLALSimIMRPhenomXHMMultiBandOneModeMixing(
     #if DEBUG == 1
     printf("\nTransforming to positive m by doing (-1)^l*Conjugate, frequencies must be negatives.\n");
     #endif
-    for(UINT4 idx=0; idx<(*htildelm)->data->length; idx++){
+    for(UINT4 idx=offset; idx<(*htildelm)->data->length; idx++){
       (*htildelm)->data->data[idx] = minus1l*conj((*htildelm)->data->data[idx]);
     }
   }
@@ -1198,6 +1247,11 @@ int XLALSimIMRPhenomXHMMultiBandOneModeMixing(
   return offset;
 
 }
+
+/** @}
+* @}
+*/
+
 
 int IMRPhenomXHMMultiBandOneModeMixing(
     COMPLEX16FrequencySeries **htildelm, /**< [out] FD waveform */
@@ -1781,12 +1835,20 @@ int IMRPhenomXHMMultiBandOneModeMixing(
   }
 
   /* Intialize FrequencySeries for htildelm */
-  size_t n = count + offset;
+  while(count + offset > iStop){ count--;}
+  size_t n = iStop;
   XLAL_CHECK(XLALGPSAdd(&ligotimegps_zero, -1. / deltaF ), XLAL_EFUNC, "Failed to shift the coalescence time to t=0. Tried to apply a shift of -1/df with df = %g.", deltaF);
   //XLAL_CHECK(XLALGPSAdd(&ligotimegps_zero, -1. / deltaF + 500*pWF->Mtot*LAL_MTSUN_SI), XLAL_EFUNC, "Failed to shift the coalescence time to t=0. Tried to apply a shift of -1/df + 500M with df = %g.", deltaF);
   *htildelm = XLALCreateCOMPLEX16FrequencySeries("htildelm: FD waveform", &(ligotimegps_zero), 0.0, deltaF, &lalStrainUnit, n);
   for(int idx = 0; idx < (int) offset; idx++){
     ((*htildelm)->data->data)[idx] = 0.;
+  }
+
+  /* Sometimes rounding error can make that count+offset < iStop, meaning that we have computed less points than those we are gonna output,
+    here we make sure that all the elements of htildelm are initialized and we put the extra point(s) to 0. */
+  for(UINT4 idx = count-1; idx < iStop-offset; idx++){
+    /* Reconstruct waveform: h(f) = A(f) * Exp[I phi(f)] */
+    ((*htildelm)->data->data)[idx + offset] = 0.;
   }
 
   #if DEBUG == 1
@@ -1836,7 +1898,7 @@ int IMRPhenomXHMMultiBandOneModeMixing(
 
   /********** Rotate Spheroidal part ******************/
   // Compute htilde22 for the ringdown part if the 22 mode was not computed  before.
-  COMPLEX16FrequencySeries *htilde22tmp;
+  COMPLEX16FrequencySeries *htilde22tmp = NULL;
 
   if(htilde22 == NULL && count>RDcutMin){
     REAL8Sequence *freqs = XLALCreateREAL8Sequence(count - RDcutMin);
@@ -1969,10 +2031,9 @@ int IMRPhenomXHMMultiBandOneModeMixing(
   LALFree(IntLawpointsS);
   LALFree(IntLawpointsSS);
 
-  return offset;
+  return XLAL_SUCCESS;
 }
-/** @}
-* @} **/
+
 
 /**************************************/
 /*      INTERPOLATING FUNCTIONS       */

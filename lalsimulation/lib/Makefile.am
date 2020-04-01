@@ -205,6 +205,8 @@ noinst_HEADERS = \
 	LALSimIMRPhenomX_intermediate.h \
 	LALSimIMRPhenomX_ringdown.c \
 	LALSimIMRPhenomX_ringdown.h \
+	LALSimIMRPhenomX_precession.c \
+	LALSimIMRPhenomX_precession.h \
 	LALSimIMRPhenomXHM.h \
 	LALSimIMRPhenomXHM_internals.c \
 	LALSimIMRPhenomXHM_internals.h \
@@ -219,6 +221,8 @@ noinst_HEADERS = \
 	LALSimIMRPhenomXHM_structs.h \
 	LALSimIMRPhenomXHM_multiband.c \
 	LALSimIMRPhenomXHM_multiband.h \
+	LALSimIMRPhenomXPHM.h \
+	LALSimIMRPhenomXPHM.c \
 	LALSimIMRPhenomHM.h \
 	LALSimIMRPhenomNSBH.h \
 	LALSimIMRPhenomP.c \

@@ -30,12 +30,9 @@
  *
  */
 
-#include "LALSimIMRPhenomXUtilities.h"
-
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_linalg.h>
 #include <gsl/gsl_math.h>
+
+#include "LALSimIMRPhenomXUtilities.h"
 
 /* ******************** MECO, ISCO, etc ******************** */
 
@@ -222,6 +219,37 @@ REAL8 XLALSimIMRPhenomXFinalSpin2017(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
 	return (noSpin + eqSpin + uneqSpin);
 }
 
+/**
+ * Wrapper for the final spin in generically precessing binary black holes
+ */
+REAL8 XLALSimIMRPhenomXPrecessingFinalSpin2017(
+  const REAL8 eta,           /**< Symmetric mass ratio                    */
+  const REAL8 chi1L,         /**< Aligned spin of BH 1                    */
+  const REAL8 chi2L,         /**< Aligned spin of BH 2                    */
+  const REAL8 chi_inplane    /**< Effective precessions spin parameter, see Section IV D of arXiv:XXXX.YYYY    */
+)
+{
+  REAL8 m1 = 0.5 * (1.0 + sqrt(1 - 4.0*eta));
+  REAL8 m2 = 0.5 * (1.0 - sqrt(1 - 4.0*eta));
+  REAL8 M  = m1 + m2;
+
+  if (eta > 0.25) IMRPhenomX_InternalNudge(eta, 0.25, 1e-6);
+
+  REAL8 af_parallel, q_factor;
+  if (m1 >= m2) {
+    q_factor    = m1 / M;
+    af_parallel = XLALSimIMRPhenomXFinalSpin2017(eta, chi1L, chi2L);
+  }
+  else {
+    q_factor    = m2 / M;
+    af_parallel = XLALSimIMRPhenomXFinalSpin2017(eta, chi2L, chi1L);
+  }
+
+  REAL8 Sperp   = chi_inplane * q_factor * q_factor;
+  REAL8 af      = copysign(1.0, af_parallel) * sqrt(Sperp*Sperp + af_parallel*af_parallel);
+  return af;
+}
+
 /* ******************** SPIN PARAMETERIZATIONS ******************** */
 /*
  * PN reduced spin parameter
@@ -359,7 +387,7 @@ REAL8 XLALSimIMRPhenomXPsi4ToStrain(double eta, double S, double dchi) {
     double eqSpin = (4.7895602776763 - 163.04871764530466*eta + 609.5575850476959*eta2)*S + (1.3934428041390161 - 97.51812681228478*eta + 376.9200932531847*eta2)*S2 + (15.649521097877374 + 137.33317057388916*eta - 755.9566456906406*eta2)*S3 + (13.097315867845788 + 149.30405703643288*eta - 764.5242164872267*eta2)*S4;
     double uneqSpin = 105.37711654943146*dchi*sqrt(1. - 4.*eta)*eta2;
     return( noSpin + eqSpin + uneqSpin);
-    
+
 
 }
 
@@ -379,8 +407,8 @@ REAL8 XLALSimIMRPhenomXLinb(
     double noSpin = 3155.1635543201924 + 1257.9949740608242*eta - 32243.28428870599*eta2 + 347213.65466875216*eta3 - 1.9223851649491738e6*eta4 + 5.3035911346921865e6*eta5 - 5.789128656876938e6*eta6;
     double eqSpin = (-24.181508118588667 + 115.49264174560281*eta - 380.19778216022763*eta2)*S + (24.72585609641552 - 328.3762360751952*eta + 725.6024119989094*eta2)*S2 + (23.404604124552 - 646.3410199799737*eta + 1941.8836639529036*eta2)*S3 + (-12.814828278938885 - 325.92980012408367*eta + 1320.102640190539*eta2)*S4;
     double uneqSpin = -148.17317525117338*dchi*delta*eta2;
-    
-    
+
+
     return (noSpin + eqSpin + uneqSpin);
 
 }
@@ -435,31 +463,6 @@ REAL8 XLALSimIMRPhenomXsign(REAL8 x)
   return (x > 0.) ? 1.0 : ((x < 0.0) ? -1.0 : 0.0);
 }
 
-/*
-VOID XLALSimIMRPhenomXRotateZ(REAL8 angle, REAL8 *vx, REAL8 *vy, REAL8 *vz)
-{
-  REAL8 tmp1, tmp2;
-
-  tmp1 = vx*cos(angle) - vy*sin(angle);
-  tmp2 = vx*sin(angle) + vy*cos(angle);
-
-  *vx = tmp1;
-  *vz = tmp2;
-  *vy = vy;
-}
-
-// Rotate Components of Vector About Y Axis
-VOID XLALSimIMRPhenomXRotateY(REAL8 angle, REAL8 *vx, REAL8 *vy, REAL8 *vz)
-{
-  REAL8 tmp1, tmp2;
-
-  tmp1 = vx*cos(angle) - vy*sin(angle);
-  tmp2 = vx*sin(angle) + vy*cos(angle);
-
-  *vx = tmp1;
-  *vz = tmp2;
-}
-*/
 
 /* Useful powers to avoid pow(.,.) function */
 /*
@@ -533,6 +536,76 @@ double pow_9_of(double number)
  double pow4 = pow2*pow2;
  return pow4 * pow4 * number;
 }
+
+/*
+ * Check if m1 > m2. If not, swap the masses and spin vectors such that body is the heavier compact object.
+ */
+INT4 XLALIMRPhenomXPCheckMassesAndSpins(
+    REAL8 *m1,    /**< [out] mass of body 1 */
+    REAL8 *m2,    /**< [out] mass of body 2 */
+    REAL8 *chi1x, /**< [out] x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 *chi1y, /**< [out] y-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 *chi1z, /**< [out] z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 *chi2x, /**< [out] x-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 *chi2y, /**< [out] y-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 *chi2z  /**< [out] z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+)
+{
+    REAL8 m1_tmp, m2_tmp;
+    REAL8 chi1x_tmp, chi1y_tmp, chi1z_tmp;
+    REAL8 chi2x_tmp, chi2y_tmp, chi2z_tmp;
+
+    if (*m1 > *m2)
+    {
+      chi1x_tmp = *chi1x;
+      chi1y_tmp = *chi1y;
+      chi1z_tmp = *chi1z;
+
+      chi2x_tmp = *chi2x;
+      chi2y_tmp = *chi2y;
+      chi2z_tmp = *chi2z;
+
+      m1_tmp = *m1;
+      m2_tmp = *m2;
+    }
+    else
+    {
+      //printf("Swapping spins!\n");
+
+      /* swap spins and masses */
+      chi1x_tmp = *chi2x;
+      chi1y_tmp = *chi2y;
+      chi1z_tmp = *chi2z;
+
+      chi2x_tmp = *chi1x;
+      chi2y_tmp = *chi1y;
+      chi2z_tmp = *chi1z;
+
+      m1_tmp = *m2;
+      m2_tmp = *m1;
+    }
+
+    /* Update the masses and spins */
+    *m1    = m1_tmp;
+    *m2    = m2_tmp;
+    *chi1x = chi1x_tmp;
+    *chi1y = chi1y_tmp;
+    *chi1z = chi1z_tmp;
+
+    *chi2x = chi2x_tmp;
+    *chi2y = chi2y_tmp;
+    *chi2z = chi2z_tmp;
+
+    if(*m1 < *m2)
+    {
+      XLAL_ERROR(XLAL_EDOM,"An error occured in XLALIMRPhenomXPCheckMassesAndSpins when trying to enfore that m1 should be the larger mass.\
+      After trying to enforce this m1 = %f and m2 = %f\n", *m1, *m2);
+
+    }
+
+    return XLAL_SUCCESS;
+}
+
 
 /* ******************** ANALYTICAL MODEL WRAPPERS ******************** */
 /*
@@ -641,4 +714,76 @@ REAL8 XLALSimIMRPhenomXAmp22Prefactor(REAL8 eta)
 	REAL8 ampOut;
 	ampOut = sqrt(2.0/3.0) * sqrt(eta)  / pow(LAL_PI,1.0/6.0);
 	return ampOut;
+}
+
+
+
+/*
+  The functions below are XLAL exposed of the QNM ringdown and damping frequency used for the
+  IMRPhenomX model: https://arxiv.org/abs/2001.11412.
+*/
+
+/*
+   Ringdown frequency for 22 mode, given final dimensionless spin
+
+   https://arxiv.org/src/2001.10914v1/anc/QNMs/CoefficientStatsfring22.m
+*/
+REAL8 XLALSimIMRPhenomXfring22(
+  const REAL8 af /* Dimensionless final spin */
+)
+{
+  REAL8 return_val;
+
+  if (fabs(af) > 1.0) {
+         XLAL_ERROR(XLAL_EDOM, "PhenomX evaluate_QNMfit_fring22 \
+  function: |finalDimlessSpin| > 1.0 not supported");
+  }
+
+  REAL8 x2= af*af;
+  REAL8 x3= x2*af;
+  REAL8 x4= x2*x2;
+  REAL8 x5= x3*x2;
+  REAL8 x6= x3*x3;
+  REAL8 x7= x4*x3;
+
+  return_val = (0.05947169566573468 - \
+  0.14989771215394762*af + 0.09535606290986028*x2 + \
+  0.02260924869042963*x3 - 0.02501704155363241*x4 - \
+  0.005852438240997211*x5 + 0.0027489038393367993*x6 + \
+  0.0005821983163192694*x7)/(1 - 2.8570126619966296*af + \
+  2.373335413978394*x2 - 0.6036964688511505*x4 + \
+  0.0873798215084077*x6);
+  return return_val;
+}
+
+
+/*
+   Damping frequency for 22 mode, given final dimensionless spin.
+
+   https://arxiv.org/src/2001.10914v1/anc/QNMs/CoefficientStatsfdamp22.m
+*/
+REAL8 XLALSimIMRPhenomXfdamp22(
+  const REAL8 af /* Dimensionless final spin */
+)
+{
+  REAL8 return_val;
+
+  if (fabs(af) > 1.0) {
+         XLAL_ERROR(XLAL_EDOM, "PhenomX evaluate_QNMfit_fdamp22 \
+  function: |finalDimlessSpin| > 1.0 not supported");
+  }
+
+  REAL8 x2= af*af;
+  REAL8 x3= x2*af;
+  REAL8 x4= x2*x2;
+  REAL8 x5= x3*x2;
+  REAL8 x6= x3*x3;
+
+  return_val = (0.014158792290965177 - \
+  0.036989395871554566*af + 0.026822526296575368*x2 + \
+  0.0008490933750566702*x3 - 0.004843996907020524*x4 - \
+  0.00014745235759327472*x5 + 0.0001504546201236794*x6)/(1 - \
+  2.5900842798681376*af + 1.8952576220623967*x2 - \
+  0.31416610693042507*x4 + 0.009002719412204133*x6);
+  return return_val;
 }

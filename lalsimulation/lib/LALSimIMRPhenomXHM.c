@@ -35,10 +35,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_linalg.h>
-
 #ifndef _OPENMP
 #define omp ignore
 #endif
@@ -64,8 +60,9 @@
 #include "LALSimIMRPhenomXHM_qnm.h"
 #include "LALSimIMRPhenomXHM_multiband.c"
 
-#include "LALSimIMRPhenomXHM.h"
-//#include "LALSimIMRPhenomXPHM.c"
+//#include "LALSimIMRPhenomXHM.h" (non-precessing review version )
+
+#include "LALSimIMRPhenomXPHM.c"  
 
 /* Note: This is declared in LALSimIMRPhenomX_internals.c and avoids namespace clash */
 IMRPhenomX_UsefulPowers powers_of_lalpiHM;
@@ -88,16 +85,6 @@ static int IMRPhenomXHMFDAddMode(
   INT4 m,                             /**< m index of the lm mode */
   INT4 sym                            /**< Equatorial symmetry */
 );
-
-/* Compute the frequency array and initialize htildelm to the corresponding length. */
-static int SetupWFArrays(
-  REAL8Sequence **freqs,                /**< [out] frequency grid [Hz] */
-  COMPLEX16FrequencySeries **htildelm,  /**< [out] Frequency domain hlm GW strain */
-  REAL8Sequence *freqs_In,              /**< fmin, fmax [Hz] */
-  IMRPhenomXWaveformStruct *pWF,        /**< Waveform structure with parameters */
-  LIGOTimeGPS ligotimegps_zero          /**< = {0,0} */
-);
-
 
 
 /* Return hptilde and hctilde from a sum of modes */
@@ -175,13 +162,14 @@ static LALDict *IMRPhenomXHM_setup_mode_array(LALDict *lalParams)
 
 
 /* Compute the frequency array and initialize htildelm to the corresponding length. */
-static int SetupWFArrays(
+int SetupWFArrays(
   REAL8Sequence **freqs,                 /**< [out] frequency grid [Hz */
   COMPLEX16FrequencySeries **htildelm,  /**< [out] Frequency domain hlm GW strain */
   REAL8Sequence *freqs_In,              /**< fmin, fmax [Hz] */
   IMRPhenomXWaveformStruct *pWF,        /**< Waveform structure with parameters */
   LIGOTimeGPS ligotimegps_zero          /**< = {0,0} */
-){
+)
+{
 
   /* Inherit minimum and maximum frequencies to generate wavefom from input frequency grid */
   double f_min = freqs_In->data[0];
@@ -191,13 +179,13 @@ static int SetupWFArrays(
   size_t npts = 0;
 
   /* Index shift between freqs and the frequency series */
-  UNUSED UINT4 offset = 0;
+  UINT4 offset = 0;
 
   /* If deltaF is non-zero then we need to generate a uniformly sampled frequency grid of spacing deltaF. Start at f = 0. */
   if(pWF->deltaF > 0)
   {
     /* Return the closest power of 2 */
-    npts = NextPow2(f_max / pWF->deltaF) + 1;
+    npts  = (size_t) (f_max / pWF->deltaF) + 1;
 
     /* Debug information */
     #if DEBUG == 1
@@ -209,7 +197,7 @@ static int SetupWFArrays(
     #endif
 
     /* Coalescence time is fixed to t=0, shift by overall length in time. Model is calibrated such that it peaks approx 500M before the end of the waveform, add this time to the epoch. */
-     XLAL_CHECK(XLALGPSAdd(&ligotimegps_zero, -1. / pWF->deltaF), XLAL_EFUNC, "Failed to shift the coalescence time to t=0. Tried to apply a shift of -1/df with df = %g.",pWF->deltaF);
+    XLAL_CHECK(XLALGPSAdd(&ligotimegps_zero, -1. / pWF->deltaF), XLAL_EFUNC, "Failed to shift the coalescence time to t=0. Tried to apply a shift of -1/df with df = %g.",pWF->deltaF);
     /* Initialize the htilde frequency series */
     *htildelm = XLALCreateCOMPLEX16FrequencySeries("htildelm: FD waveform",&ligotimegps_zero,0.0,pWF->deltaF,&lalStrainUnit,npts);
     /* Check that frequency series generated okay */
@@ -275,25 +263,6 @@ static int SetupWFArrays(
  *
  * @name Routines for IMRPhenomXHM
  * @{
- *
- * @author Cecilio García Quirós, Marta Colleoni, Sascha Husa
- *
- * @brief C code for IMRPhenomXHM phenomenological waveform model.
- *
- * This is an aligned-spin frequency domain model for the 22 mode.
- * See C.García-Quirós et al for details. Any studies that use this waveform model should include
- * a reference to this paper.
- *
- * @note The model was calibrated to mass-ratios from 1 to 1000.
- * The calibration points will be given in forthcoming papers.
- *
- * @attention The model is usable outside this parameter range,
- * and in tests to date gives sensible physical results,
- * but conclusive statements on the physical fidelity of
- * the model for these parameters await comparisons against further
- * numerical-relativity simulations. For more information, see the review wiki
- * under https://git.ligo.org/waveforms/reviews/imrphenomx/wikis/home.
- * DCC link to the paper and supplementary material: https://dcc.ligo.org/P2000011-v2
  */
 
 
@@ -478,20 +447,6 @@ This is a wrapper function that uses XLALSimIMRPhenomXASGenerateFD for the 22 mo
      printf("\n f_max_prime = %.16f, fMax = %.16f \n",pWF->f_max_prime, pWF->fMax);
      #endif
 
-     /* Resize htildelm if needed */
-     if (pWF->f_max_prime < pWF->fMax)
-     {
-       /* The user has requested a higher f_max than Mf = fCut.
-       Resize the frequency series to fill with zeros beyond the cutoff frequency. */
-       size_t n = (*htildelm)->data->length;
-
-       // We want to have the length be a power of 2 + 1
-       size_t n_full = NextPow2(pWF->fMax / pWF->deltaF) + 1;
-
-       /* Resize the COMPLEX16 frequency series */
-       *htildelm = XLALResizeCOMPLEX16FrequencySeries(*htildelm, 0, n_full);
-       XLAL_CHECK (*htildelm, XLAL_ENOMEM, "Failed to resize waveform COMPLEX16FrequencySeries of length %zu (for internal fCut=%f) to new length %zu (for user-requested f_max=%f).", n, pWF->f_max_prime, n_full, pWF->fMax );
-     }
 
      if(emm>0){
        #if DEBUG == 1
@@ -508,6 +463,27 @@ This is a wrapper function that uses XLALSimIMRPhenomXASGenerateFD for the 22 mo
          (*htildelm)->data->data[idx] = minus1l*conj((*htildelm)->data->data[idx]);
        }
      }
+
+     /* Resize htildelm if needed */
+     REAL8 lastfreq;
+     if (pWF->f_max_prime < pWF->fMax)
+     {
+       /* The user has requested a higher f_max than Mf = fCut.
+       Resize the frequency series to fill with zeros beyond the cutoff frequency. */
+       lastfreq = pWF->fMax;
+     }
+     else
+     {
+       lastfreq = pWF->f_max_prime;
+     }
+     size_t n = (*htildelm)->data->length;
+     // We want to have the length be a power of 2 + 1
+     size_t n_full = NextPow2(lastfreq / pWF->deltaF) + 1;
+
+     /* Resize the COMPLEX16 frequency series */
+     *htildelm = XLALResizeCOMPLEX16FrequencySeries(*htildelm, 0, n_full);
+     XLAL_CHECK (*htildelm, XLAL_ENOMEM, "Failed to resize waveform COMPLEX16FrequencySeries of length %zu (for internal fCut=%f) to new length %zu (for user-requested f_max=%f).", n, pWF->f_max_prime, n_full, pWF->fMax );
+
 
      /* Free allocated memory */
      LALFree(pWF);
@@ -700,11 +676,13 @@ int IMRPhenomXHMGenerateFDOneMode(
 
 
 /** @addtogroup LALSimIMRPhenomX_c
-* @name Routines for IMRPhenomXHM
 * @{
+* @name Routines for IMRPhenomXHM
 * @{ **/
 
-/** Get the model evaluated in a prebuilt frequency array */
+/** Get the model evaluated in a prebuilt frequency array.
+    It does not use Multibanding.
+ */
 int XLALSimIMRPhenomXHMFrequencySequenceOneMode(
   COMPLEX16FrequencySeries **htildelm, /**< [out] FD waveform */
   REAL8Sequence *freqs,                /**< frequency array to evaluate model (positives) */
@@ -721,30 +699,8 @@ int XLALSimIMRPhenomXHMFrequencySequenceOneMode(
 )
 {
 
-  UINT4 debug = 0;
-  /*
-  	Perform a basic sanity check on the region of the parameter space in which model is evaluated. Behaviour is as follows:
-  		- For mass ratios <= 20.0 and spins <= 0.99: no warning messages.
-  		- For 1000 > mass ratio > 20 and spins <= 0.99: print a warning message that we are extrapolating outside of *NR* calibration domain.
-  		- For mass ratios > 1000: throw a hard error that model is not valid.
-  		- For spins > 0.99: throw a warning that we are extrapolating the model to extremal
-
-  */
-  REAL8 mass_ratio;
-  if(m1_SI > m2_SI)
-  {
-	  mass_ratio = m1_SI / m2_SI;
-  }
-  else
-  {
-	  mass_ratio = m2_SI / m1_SI;
-  }
-  if(mass_ratio > 20.0  ) { XLAL_PRINT_INFO("Warning: Extrapolating outside of Numerical Relativity calibration domain."); }
-  if(mass_ratio > 1000. && fabs(mass_ratio - 1000) > 1e-12) { XLAL_ERROR(XLAL_EDOM, "ERROR: Model not valid at mass ratios beyond 1000."); } // The 1e-12 is to avoid rounding errors
-  if(fabs(chi1L) > 0.99 || fabs(chi2L) > 0.99) { XLAL_PRINT_INFO("Warning: Extrapolating to extremal spins, model is not trusted."); }
-
   if(ell == 2 && abs(emm) == 2){
-    UINT4 status = XLALSimIMRPhenomXASFrequencySequence(
+    INT4 status = XLALSimIMRPhenomXASFrequencySequence(
       htildelm,
       freqs,
       m1_SI,
@@ -756,10 +712,9 @@ int XLALSimIMRPhenomXHMFrequencySequenceOneMode(
       fRef_In,
       lalParams
     );
+    XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "XLALSimIMRPhenomXHMFrequencySequenceOneMode failed to generate IMRPhenomXHM waveform.");
+    /* Transfor to positive m mode if needed. Do (-1)^l*Conjugate[htildelm]. The frequencies must be negative. */
     if(emm>0){
-      #if DEBUG == 1
-      printf("\nTransforming to positive m by doing (-1)^l*Conjugate, frequencies must be negatives.\n");
-      #endif
       for(UINT4 idx=0; idx<(*htildelm)->data->length; idx++){
         (*htildelm)->data->data[idx] = conj((*htildelm)->data->data[idx]);
       }
@@ -768,7 +723,8 @@ int XLALSimIMRPhenomXHMFrequencySequenceOneMode(
   }
   else{ //Higher modes
 
-    INT4 return_code = 0;
+    /* Variable to check correct calls to functions. */
+    INT4 status = 0;
 
     /* Sanity checks */
     if(*htildelm)       { XLAL_CHECK(NULL != htildelm, XLAL_EFAULT);                                   }
@@ -777,89 +733,76 @@ int XLALSimIMRPhenomXHMFrequencySequenceOneMode(
     if(m2_SI    <= 0.0) { XLAL_ERROR(XLAL_EDOM, "m2 must be positive.\n");                             }
     if(distance <  0.0) { XLAL_ERROR(XLAL_EDOM, "Distance must be positive and greater than 0.\n");    }
 
-    // If fRef is not provided (i.e. set to 0), then take fRef to be the starting GW Frequency
+    /*
+      Perform a basic sanity check on the region of the parameter space in which model is evaluated. Behaviour is as follows:
+        - For mass ratios <= 20.0 and spins <= 0.99: no warning messages.
+        - For 1000 > mass ratio > 20 and spins <= 0.99: print a warning message that we are extrapolating outside of *NR* calibration domain.
+        - For mass ratios > 1000: throw a hard error that model is not valid.
+        - For spins > 0.99: throw a warning that we are extrapolating the model to extremal
+
+    */
+    REAL8 mass_ratio;
+    if(m1_SI > m2_SI)
+    {
+      mass_ratio = m1_SI / m2_SI;
+    }
+    else
+    {
+      mass_ratio = m2_SI / m1_SI;
+    }
+    if(mass_ratio > 20.0  ) { XLAL_PRINT_INFO("Warning: Extrapolating outside of Numerical Relativity calibration domain."); }
+    if(mass_ratio > 1000. && fabs(mass_ratio - 1000) > 1e-12) { XLAL_ERROR(XLAL_EDOM, "ERROR: Model not valid at mass ratios beyond 1000."); } // The 1e-12 is to avoid rounding errors
+    if(fabs(chi1L) > 0.99 || fabs(chi2L) > 0.99) { XLAL_PRINT_INFO("Warning: Extrapolating to extremal spins, model is not trusted."); }
+
+
+    /* If fRef is not provided (i.e. set to 0), then take fRef to be the starting GW Frequency. */
     REAL8 fRef = (fRef_In == 0.0) ? freqs->data[0] : fRef_In;
 
-    /* Initialize the useful powers of LAL_PI */
-    UINT4 status = IMRPhenomX_Initialize_Powers(&powers_of_lalpiHM, LAL_PI);
-    XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initialize useful powers of LAL_PI.");
-    status = IMRPhenomX_Initialize_Powers(&powers_of_lalpi, LAL_PI);
-    XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initialize useful powers of LAL_PI.");
 
-    /*
-    This routine automatically performs sanity checks on the masses, spins, etc.
-    */
+    /* Initialize the useful powers of LAL_PI */
+    status = IMRPhenomX_Initialize_Powers(&powers_of_lalpiHM, LAL_PI);
+    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Failed to initialize useful powers of LAL_PI.");
+    status = IMRPhenomX_Initialize_Powers(&powers_of_lalpi, LAL_PI);
+    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Failed to initialize useful powers of LAL_PI.");
+
+    /* Get minimum and maximum frequencies. */
     REAL8 f_min_In  = freqs->data[0];
     REAL8 f_max_In  = freqs->data[freqs->length - 1];
 
     /*
-    Passing deltaF = 0 tells us that freqs contains a frequency grid with non-uniform spacing.
-    The function waveform start at lowest given frequency.
+      Initialize IMRPhenomX waveform struct and perform sanity check.
+      Passing deltaF = 0 tells us that freqs contains a frequency grid with non-uniform spacing.
+      The function waveform start at lowest given frequency.
     */
-
-    /* Check if LAL dictionary exists. If not, create a LAL dictionary. */
-    INT4 lalParams_In = 0;
-    if(lalParams == NULL)
-    {
-      lalParams_In = 1;
-      lalParams = XLALCreateDict();
-    }
-
-    /* Initialize IMRPhenomX waveform struct and perform sanity check. */
     IMRPhenomXWaveformStruct *pWF;
     pWF = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-    return_code = IMRPhenomXSetWaveformVariables(pWF,m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, phiRef, f_min_In, f_max_In, distance, 0.0, lalParams, debug);
-    XLAL_CHECK(XLAL_SUCCESS == return_code, XLAL_EFUNC, "Error:  failed.\n");
+    status = IMRPhenomXSetWaveformVariables(pWF,m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, phiRef, f_min_In, f_max_In, distance, 0.0, lalParams, PHENOMXDEBUG);
+    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error:  failed.\n");
 
-    // allocate qnm struct
-    QNMFits *qnms = (QNMFits *) XLALMalloc(sizeof(QNMFits));
-    IMRPhenomXHM_Initialize_QNMs(qnms);
-
-    // Populate pWFHM
-    IMRPhenomXHMWaveformStruct *pWFHM = (IMRPhenomXHMWaveformStruct *) XLALMalloc(sizeof(IMRPhenomXHMWaveformStruct));
-    IMRPhenomXHM_SetHMWaveformVariables(ell, emm, pWFHM, pWF, qnms, lalParams);
-    LALFree(qnms);
-
-    /* Now call the IMRPhenomXHM waveform generator */
-    return_code = IMRPhenomXHMGenerateFDOneMode(
+    /* Now call the IMRPhenomXHM one mode waveform generator */
+    status = IMRPhenomXHMGenerateFDOneMode(
       htildelm,
       freqs,
       pWF,
       ell,
-      emm,
+      abs(emm),
       lalParams
     );
-    #if DEBUG == 1
-      printf("\nOut of GenerateFDOneMode\n");
-    #endif
-    XLAL_CHECK(return_code == XLAL_SUCCESS, XLAL_EFUNC, "XLALSimIMRPhenomXHMFrequencySequenceOneMode failed to generate IMRPhenomXHM waveform.");
+    XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "XLALSimIMRPhenomXHMFrequencySequenceOneMode failed to generate IMRPhenomXHM waveform.");
 
-    LALFree(pWF);
-    LALFree(pWFHM);
-    if(lalParams_In == 1)
-    {
-      XLALDestroyDict(lalParams);
-    }
-
-    #if DEBUG == 1
-    printf("\n\nlength of htildelm = %i \n\n", (*htildelm)->data->length);
-    #endif
-
+    /* Transfor to positive m mode if needed. Do (-1)^l*Conjugate[htildelm]. The frequencies must be negative. */
     if(emm>0){
-      #if DEBUG == 1
-      printf("\nTransforming to positive m by doing (-1)^l*Conjugate, frequencies must be negatives.\n");
-      #endif
       INT4 minus1l = 1;
       if(ell%2!=0){
-        #if DEBUG == 1
-        printf("\nl odd\n");
-        #endif
         minus1l = -1;
       }
       for(UINT4 idx=0; idx<(*htildelm)->data->length; idx++){
         (*htildelm)->data->data[idx] = minus1l*conj((*htildelm)->data->data[idx]);
       }
     }
+
+    /* Free memory */
+    LALFree(pWF);
 
     return XLAL_SUCCESS;
 
@@ -991,12 +934,11 @@ int XLALSimIMRPhenomXHM2(
   #if DEBUG == 1
   printf("\n*** IMRPhenomXHM2 ***\n");
   printf("fRef_In : %e\n",fRef_In);
-  printf("m1_SI   : %e\n",m1_SI);
-  printf("m2_SI   : %e\n",m2_SI);
-  printf("chi1L   : %e\n",chi1L);
-  printf("chi2L   : %e\n",chi2L);
-  printf("f_min   : %.e  \n", f_min);
-  printf("f_min   : %.6f  \n", f_min);
+  printf("m1_SI   : %.16e\n",m1_SI);
+  printf("m2_SI   : %.16e\n",m2_SI);
+  printf("chi1L   : %.16e\n",chi1L);
+  printf("chi2L   : %.16e\n",chi2L);
+  printf("f_min   : %.16e  \n", f_min);
   printf("Performing sanity checks...\n");
   #endif
 
@@ -1075,28 +1017,29 @@ int XLALSimIMRPhenomXHM2(
   #endif
 
 
-  /* Resize hptilde and hctilde if needed */
-  size_t n = (*hptilde)->data->length;
-  REAL8 lastfreq = n * deltaF;
-  #if DEBUG == 1
-      printf("\nlastfreq = %.16e\n", lastfreq);
-  #endif
-  if (lastfreq < f_max)
+  /* Resize hptilde, hctilde */
+  REAL8 lastfreq;
+  if (pWF->f_max_prime < pWF->fMax)
   {
-
     /* The user has requested a higher f_max than Mf = fCut.
     Resize the frequency series to fill with zeros beyond the cutoff frequency. */
-
-    // We want to have the length be a power of 2 + 1
-    size_t n_full = NextPow2(f_max / deltaF) + 1;
-    #if DEBUG == 1
-        printf("\nlastfreq after resize = %.16e\n", n_full*deltaF);
-    #endif
-    /* Resize the COMPLEX16 frequency series */
-    *hptilde = XLALResizeCOMPLEX16FrequencySeries(*hptilde, 0, n_full);
-    *hctilde = XLALResizeCOMPLEX16FrequencySeries(*hctilde, 0, n_full);
-    XLAL_CHECK (*hptilde, XLAL_ENOMEM, "Failed to resize waveform COMPLEX16FrequencySeries of length %zu (for internal fCut=%f) to new length %zu (for user-requested f_max=%f).", n, lastfreq, n_full, f_max );
+    lastfreq = pWF->fMax;
   }
+  else{  // We have to look for a power of 2 anyway.
+    lastfreq = pWF->f_max_prime;
+  }
+  // We want to have the length be a power of 2 + 1
+  size_t n_full = NextPow2(lastfreq / deltaF) + 1;
+  size_t n = (*hptilde)->data->length;
+
+  /* Resize the COMPLEX16 frequency series */
+  *hptilde = XLALResizeCOMPLEX16FrequencySeries(*hptilde, 0, n_full);
+  XLAL_CHECK (*hptilde, XLAL_ENOMEM, "Failed to resize h_+ COMPLEX16FrequencySeries of length %zu (for internal fCut=%f) to new length %zu (for user-requested f_max=%f).", n, pWF->fCut, n_full, pWF->fMax );
+
+  /* Resize the COMPLEX16 frequency series */
+  *hctilde = XLALResizeCOMPLEX16FrequencySeries(*hctilde, 0, n_full);
+  XLAL_CHECK (*hctilde, XLAL_ENOMEM, "Failed to resize h_x COMPLEX16FrequencySeries of length %zu (for internal fCut=%f) to new length %zu (for user-requested f_max=%f).", n, pWF->fCut, n_full, pWF->fMax );
+
 
   /* Free memory */
   LALFree(pWF);
@@ -1104,6 +1047,96 @@ int XLALSimIMRPhenomXHM2(
 
   return XLAL_SUCCESS;
 }
+
+
+/**
+ * Returns hptilde and hctilde as a complex frequency series with entries exactly at the frequencies specified in
+ * the REAL8Sequence *freqs (which can be unequally spaced). No zeros are added. Assumes positive frequencies.
+ */
+
+ int XLALSimIMRPhenomXHMFrequencySequence(
+    COMPLEX16FrequencySeries **hptilde, /**< [out] Frequency-domain waveform h+  */
+    COMPLEX16FrequencySeries **hctilde, /**< [out] Frequency-domain waveform hx  */
+    REAL8Sequence *freqs,               /**< Input Frequency series [Hz]         */
+    REAL8 m1_SI,                        /**< mass of companion 1 (kg) */
+    REAL8 m2_SI,                        /**< mass of companion 2 (kg) */
+    REAL8 chi1z,                        /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2z,                        /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 distance,                     /**< Distance of source (m) */
+    REAL8 inclination,                  /**< inclination of source (rad) */
+    REAL8 phiRef,                       /**< Orbital phase (rad) at reference frequency */
+    REAL8 fRef_In,                         /**< Reference frequency (Hz) */
+    LALDict *lalParams                  /**< LAL Dictionary struct */
+ )
+ {
+   /* Variable to check correct calls to functions. */
+   INT4 status;
+
+   /* Perform initial sanity checks */
+   XLAL_CHECK(NULL != hptilde, XLAL_EFAULT, "Error: hptilde already defined.                        \n");
+   XLAL_CHECK(NULL != hctilde, XLAL_EFAULT, "Error: hctilde already defined.                        \n");
+   XLAL_CHECK(NULL != freqs,   XLAL_EFAULT, "Error: Input freq array must be defined.               \n");
+   XLAL_CHECK(fRef_In  >= 0, XLAL_EFUNC,    "Error: fRef must be positive and greater than 0.       \n");
+   XLAL_CHECK(m1_SI    >  0, XLAL_EFUNC,    "Error: m1 must be positive and greater than 0.         \n");
+   XLAL_CHECK(m2_SI    >  0, XLAL_EFUNC,    "Error: m2 must be positive and greater than 0.         \n");
+   XLAL_CHECK(distance >  0, XLAL_EFUNC,    "Error: Distance must be positive and greater than 0.   \n");
+
+   /*
+   Perform a basic sanity check on the region of the parameter space in which model is evaluated.
+   Behaviour is as follows, consistent with the choices for IMRPhenomXAS/IMRPhenomXHM
+     - For mass ratios <= 20.0 and spins <= 0.99: no warning messages.
+     - For 1000 > mass ratio > 20 and spins <= 0.99: print a warning message that we are extrapolating outside of *NR* calibration domain.
+     - For mass ratios > 1000: throw a hard error that model is not valid.
+     - For spins > 0.99: throw a warning that we are extrapolating the model to extremal
+
+   */
+   REAL8 mass_ratio;
+   if(m1_SI > m2_SI)
+   {
+     mass_ratio = m1_SI / m2_SI;
+   }
+   else
+   {
+     mass_ratio = m2_SI / m1_SI;
+   }
+   if(mass_ratio > 20.0  ) { XLAL_PRINT_INFO("Warning: Extrapolating outside of Numerical Relativity calibration domain."); }
+   if(mass_ratio > 1000. && fabs(mass_ratio - 1000) > 1e-12) { XLAL_ERROR(XLAL_EDOM, "ERROR: Model not valid at mass ratios beyond 1000."); } // The 1e-12 is to avoid rounding errors
+   if(fabs(chi1z) > 0.99 || fabs(chi2z) > 0.99) { XLAL_PRINT_INFO("Warning: Extrapolating to extremal spins, model is not trusted."); }
+
+   /* If no reference frequency is given, set it to the starting gravitational wave frequency */
+   REAL8 fRef = (fRef_In == 0.0) ? freqs->data[0] : fRef_In; //It is giving valgrind error, but it is not needed. f_ref = f_min in WaveformCache.c and SimInspiral.c.
+
+   /* Get minimum and maximum frequencies. */
+   REAL8 f_min_In  = freqs->data[0];
+   REAL8 f_max_In  = freqs->data[freqs->length - 1];
+
+   /*
+     Passing deltaF = 0 implies that freqs is a frequency grid with non-uniform spacing.
+     The function waveform then start at lowest given frequency.
+     The Multibanding has to be switched off since it is built only for equally spaced frequency grid.
+   */
+   if(XLALSimInspiralWaveformParamsLookupPhenomXHMThresholdMband(lalParams)!=0)
+   {
+     XLAL_PRINT_WARNING("Warning: Function is aimed for non-uniform frequency grid, switching off Multibanding.");
+     XLALSimInspiralWaveformParamsInsertPhenomXHMThresholdMband(lalParams, 0);
+   }
+
+   /* Initialize IMRPhenomX waveform struct and perform sanity check. */
+   IMRPhenomXWaveformStruct *pWF;
+   pWF = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
+   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, 0.0, fRef, phiRef, f_min_In, f_max_In, distance, inclination, lalParams, DEBUG);
+   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
+
+   /* Call the core IMRPhenomXHM waveform generator without multibanding. */
+   status = IMRPhenomXHM_MultiMode2(hptilde, hctilde, freqs, pWF, lalParams);
+   XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXPHM_hplushcross failed to generate IMRPhenomXPHM waveform.");
+
+   /* Free memory */
+   LALFree(pWF);
+
+   return XLAL_SUCCESS;
+ }
+
 /** @}
 * @} **/
 
@@ -1379,9 +1412,8 @@ static int IMRPhenomXHM_MultiMode2(
   }
 
   /* Allocate hptilde and hctilde */
-  /* Coalescence time is fixed to t=0, shift by overall length in time. Model is calibrated such that it peaks approx 500M before the end of the waveform, add this time to the epoch. */
-    XLAL_CHECK(XLALGPSAdd(&ligotimegps_zero, -1. / pWF->deltaF), XLAL_EFUNC, "Failed to shift the coalescence time to t=0. Tried to apply a shift of -1/df with df = %g.", pWF->deltaF);
-  //XLAL_CHECK(XLALGPSAdd(&ligotimegps_zero, -1. / pWF->deltaF + 500*pWF->Mtot*LAL_MTSUN_SI), XLAL_EFUNC, "Failed to shift the coalescence time to t=0. Tried to apply a shift of -1/df + 500M with df = %g.", pWF->deltaF);
+  /* Coalescence time is fixed to t=0, shift by overall length in time. */
+  //XLAL_CHECK(XLALGPSAdd(&ligotimegps_zero, -1. / pWF->deltaF), XLAL_EFUNC, "Failed to shift the coalescence time to t=0. Tried to apply a shift of -1/df with df = %g.", pWF->deltaF);
   size_t n = (htildelm)->data->length;
   *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &(ligotimegps_zero), 0.0, pWF->deltaF, &lalStrainUnit, n);
   if (!(hptilde)){   XLAL_ERROR(XLAL_EFUNC);}
@@ -1510,6 +1542,7 @@ static int IMRPhenomXHM_MultiMode2(
       // Populate pWFHM with useful parameters of each mode
       IMRPhenomXHMWaveformStruct *pWFHM = (IMRPhenomXHMWaveformStruct *) XLALMalloc(sizeof(IMRPhenomXHMWaveformStruct));
       IMRPhenomXHM_SetHMWaveformVariables(ell, emm, pWFHM, pWF, qnms, lalParams);
+
 
       // If mode is even and black holes are equal we skip this part and return an array of zeros.
       if(pWFHM->Ampzero==0){
@@ -1726,11 +1759,33 @@ static int IMRPhenomXHMFDAddMode(
 }
 
 /** @addtogroup LALSimIMRPhenomX_c
+* @{
+*
 * @name Routines for IMRPhenomXHM
 * @{
-* @{ **/
+*
+* @author Cecilio García Quirós, Marta Colleoni, Sascha Husa
+*
+* @brief C code for IMRPhenomXHM phenomenological waveform model.
+*
+* This is an aligned-spin frequency domain model wit subdomimant modes: 2|2|, 2|1|, 3|3|, 3|2|, 4|4| .
+* See C.García-Quirós et al for details. Any studies that use this waveform model should include
+* a reference to this paper.
+*
+* @note The model was calibrated to mass-ratios from 1 to 1000.
+* The calibration points will be given in forthcoming papers.
+*
+* @attention The model is usable outside this parameter range,
+* and in tests to date gives sensible physical results,
+* but conclusive statements on the physical fidelity of
+* the model for these parameters await comparisons against further
+* numerical-relativity simulations. For more information, see the review wiki
+* under https://git.ligo.org/waveforms/reviews/imrphenomx/wikis/home.
+* DCC link to the paper and supplementary material: https://dcc.ligo.org/P2000011-v2
+*
+**/
 
-/** Returns amplitude of one single mode */
+/** Returns amplitude of one single mode. It does not support the 22 mode. */
 int XLALSimIMRPhenomXHMAmplitude(
     REAL8FrequencySeries **amplitude, /**< [out] FD amp */
     REAL8 m1_SI,                         /**< Mass of companion 1 (kg) */
@@ -1951,7 +2006,7 @@ int XLALSimIMRPhenomXHMAmplitude(
       return XLAL_SUCCESS;
   }
 
-/** Returns phase of one single mode */
+/** Returns phase of one single mode. It does not support the 22 mode. */
   int XLALSimIMRPhenomXHMPhase(
       REAL8FrequencySeries **phase,        /**< [out] FD amp */
       REAL8 m1_SI,                         /**< Mass of companion 1 (kg) */

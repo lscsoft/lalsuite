@@ -95,8 +95,10 @@ REAL8 XLALSimIMRPhenomXSTotR(REAL8 eta, REAL8 chi1l, REAL8 chi2l);
 REAL8 XLALSimIMRPhenomXFinalSpin2017(REAL8 eta, REAL8 chi1L, REAL8 chi2L);
 REAL8 XLALSimIMRPhenomXFinalMass2017(REAL8 eta, REAL8 chi1L, REAL8 chi2L);
 REAL8 XLALSimIMRPhenomXErad2017(REAL8 eta, REAL8 chi1L, REAL8 chi2L);
+REAL8 XLALSimIMRPhenomXPrecessingFinalSpin2017(REAL8 eta, REAL8 chi1L, REAL8 chi2L, REAL8 chi_inplane);
 
-//int  ComputeIMRPhenomXWaveformVariables(double eta, double chi1L, double chi2L, IMRPhenomXWaveformVariables *pWF);
+/* Check masses and spins */
+INT4 XLALIMRPhenomXPCheckMassesAndSpins(REAL8 *m1, REAL8 *m2, REAL8 *chi1x, REAL8 *chi1y, REAL8 *chi1z, REAL8 *chi2x, REAL8 *chi2y, REAL8 *chi2z);
 
 /* ********************** ANALYTICAL MODEL WRAPPERS *********************  */
 REAL8 XLALSimIMRPhenomXIntermediatePhase22AnsatzAnalytical(REAL8 ff, REAL8 fRD, REAL8 fDA, REAL8 a0, REAL8 a1, REAL8 a2, REAL8 a3, REAL8 a4, REAL8 aL);
@@ -106,6 +108,22 @@ REAL8 XLALSimIMRPhenomXRingdownPhaseDeriv22AnsatzAnalytical(REAL8 ff, REAL8 fRD,
 REAL8 XLALSimIMRPhenomXRingdownAmplitude22AnsatzAnalytical(REAL8 ff, REAL8 fRD, REAL8 fDA, REAL8 gamma1, REAL8 gamma2, REAL8 gamma3);
 
 REAL8 XLALSimIMRPhenomXAmp22Prefactor(REAL8 eta);
+
+
+
+
+/*
+  The functions below are XLAL exposed of the QNM ringdown and damping frequency used for the
+  IMRPhenomX model: https://arxiv.org/abs/2001.11412.
+
+  See:
+  https://arxiv.org/src/2001.10914v1/anc/QNMs/CoefficientStatsfring22.m
+  https://arxiv.org/src/2001.10914v1/anc/QNMs/CoefficientStatsfdamp22.m
+*/
+REAL8 XLALSimIMRPhenomXfring22(const REAL8 af);
+REAL8 XLALSimIMRPhenomXfdamp22(const REAL8 af);
+
+
 
 
 #ifdef __cplusplus
