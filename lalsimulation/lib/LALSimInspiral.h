@@ -223,6 +223,8 @@ extern "C" {
 
 /**
  * Enum that specifies the PN approximant to be used in computing the waveform.
+ * Please add new approximants at the end of the list, so as to prevent the
+ * values changing for existing approximants and breaking ABI compatibility.
  */
 typedef enum tagApproximant {
    TaylorT1, 		/**< Time domain Taylor approximant in which the energy and flux are both kept
