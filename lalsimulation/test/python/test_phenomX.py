@@ -183,7 +183,7 @@ def test_IMRPhenomXPHM():
 
     new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPHM, [[2,2],[2,1],[3,3],[4,4]]))
 
-    np.testing.assert_almost_equal(new_result, expected_result, 7, "IMRPhenomXPHM no 32 mode test failed")
+    np.testing.assert_almost_equal(new_result, expected_result, 6, "IMRPhenomXPHM no 32 mode test failed")
 
 
     expected_result = np.array([68.09797391055203, 235.35545843385682, 24.39359538033152, 229.92386957103975])
