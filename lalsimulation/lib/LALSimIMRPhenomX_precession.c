@@ -689,8 +689,10 @@ int IMRPhenomXGetAndSetPrecessionVariables(
     case 6:
     case 7:
     {
-        REAL8 J0dotN = (pPrec->J0x_Sf * pPrec->Nx_Sf) + (pPrec->J0y_Sf * pPrec->Ny_Sf) + (pPrec->J0z_Sf * pPrec->Nz_Sf);
-        pPrec->thetaJN = acos( J0dotN / pPrec->J0 );
+        REAL8 J0dotN     = (pPrec->J0x_Sf * pPrec->Nx_Sf) + (pPrec->J0y_Sf * pPrec->Ny_Sf) + (pPrec->J0z_Sf * pPrec->Nz_Sf);
+        pPrec->thetaJN   = acos( J0dotN / pPrec->J0 );
+        pPrec->Nz_Jf     = cos(pPrec->thetaJN);
+        pPrec->Nx_Jf     = sin(pPrec->thetaJN);
         break;
     }
   }
@@ -752,8 +754,6 @@ int IMRPhenomXGetAndSetPrecessionVariables(
     case 7:
     {
       /* Get polar angle of X vector in J frame in the P,Q basis of Arun et al */
-      pPrec->Nz_Jf     = cos(pPrec->thetaJN);
-      pPrec->Nx_Jf     = sin(pPrec->thetaJN);
       pPrec->PArunx_Jf = pPrec->Nz_Jf;
       pPrec->PAruny_Jf = 0;
       pPrec->PArunz_Jf = -pPrec->Nx_Jf;
@@ -939,21 +939,21 @@ int IMRPhenomXGetAndSetPrecessionVariables(
     /* User switched off multibanding */
     pPrec->MBandPrecVersion = 0;
   }
-  else 
+  else
   {
     /* User requested multibanding */
     pPrec->MBandPrecVersion = 1;
-    
+
     /* Switch off multiband for very high mass as in IMRPhenomXHM. */
     if(pWF->Mtot > 500)
     {
       XLAL_PRINT_WARNING("Very high mass, only merger in frequency band, multibanding not efficient, switching off for non-precessing modes and Euler angles.");
       pPrec->MBandPrecVersion = 0;
       XLALSimInspiralWaveformParamsInsertPhenomXHMThresholdMband(lalParams, 0.);
-    }    
-    
+    }
+
     if(pPrec->IMRPhenomXPrecVersion < 200)
-    { 
+    {
       /* The NNLO angles can have a worse, even pathological, behaviour for high mass ratio and double spin cases.
        The waveform will look noisy, we switch off the multibanding for mass ratio above 8 to avoid worsen even more the waveform. */
       if(pWF->q > 8)
@@ -961,15 +961,15 @@ int IMRPhenomXGetAndSetPrecessionVariables(
         XLAL_PRINT_WARNING("Very high mass ratio, NNLO angles may become pathological, switching off multibanding for angles.\n");
         XLALSimInspiralWaveformParamsInsertPhenomXPHMThresholdMband(lalParams, 0.);
         pPrec->MBandPrecVersion = 0;
-      } 
-    } 
+      }
+    }
     /* The MSA angles give quite 'noisy' waveforms in this corner of parameter space so we switch off multibanding to avoid worsen the waveform. */
     else if ( pWF->q > 50 && pWF->Mtot > 100 )
     {
       XLALSimInspiralWaveformParamsInsertPhenomXPHMThresholdMband(lalParams, 0.);
       pPrec->MBandPrecVersion = 0;
     }
-    
+
   }
 
 

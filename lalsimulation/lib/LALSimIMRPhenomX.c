@@ -1408,7 +1408,8 @@ int XLALSimIMRPhenomXPGenerateFD(
        }
      }
 
-     REAL8 Nx_Jf, Nz_Jf;
+     REAL8 Nx_Jf = 0.0;
+     REAL8 Nz_Jf = 0.0;
      switch(convention)
      {
        case 0:
@@ -1433,7 +1434,9 @@ int XLALSimIMRPhenomXPGenerateFD(
        case 7:
        {
           REAL8 J0dotN = (J0x_Sf * Nx_Sf) + (J0y_Sf * Ny_Sf) + (J0z_Sf * Nz_Sf);
-          *thetaJN = acos( J0dotN / J0 );
+          *thetaJN     = acos( J0dotN / J0 );
+          Nz_Jf        = cos(*thetaJN);
+          Nx_Jf        = sin(*thetaJN);
           break;
        }
        default:
@@ -1499,8 +1502,6 @@ int XLALSimIMRPhenomXPGenerateFD(
        case 6:
        case 7:
        {
-         Nz_Jf = cos(*thetaJN);
-         Nx_Jf = sin(*thetaJN);
          PArunx_Jf = +Nz_Jf;
          PAruny_Jf = 0.0;
          PArunz_Jf = -Nx_Jf;
