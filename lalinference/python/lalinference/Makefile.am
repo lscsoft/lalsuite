@@ -10,7 +10,6 @@ SUBDIRS = \
 	io \
 	plot \
 	tiger \
-	util \
 	$(END_OF_LIST)
 
 vcs_info_sources = git_version.py
