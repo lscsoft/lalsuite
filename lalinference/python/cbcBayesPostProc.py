@@ -1192,6 +1192,21 @@ if __name__=='__main__':
         for mp in massParams:
             for dchi in bppu.tigerParams:
                 twoDGreedyMenu.append([mp,dchi])
+        for mp in massParams:
+            for lvp in bppu.lorentzInvarianceViolationParams:
+                twoDGreedyMenu.append([mp,lvp])
+        for sp in spinParams:
+            for lvp in bppu.lorentzInvarianceViolationParams:
+                twoDGreedyMenu.append([sp,lvp])
+        for dchi in bppu.tigerParams:
+             for lvp in bppu.lorentzInvarianceViolationParams:
+                 twoDGreedyMenu.append([dchi, lvp])
+        for eg in bppu.energyParams:
+             for lvp in bppu.lorentzInvarianceViolationParams:
+                 twoDGreedyMenu.append([eg, lvp])
+        for dp in distParams:
+             for lvp in bppu.lorentzInvarianceViolationParams:
+                 twoDGreedyMenu.append([dp, lvp])
         for dp in distParams:
             for sp in snrParams:
                 twoDGreedyMenu.append([dp,sp])
