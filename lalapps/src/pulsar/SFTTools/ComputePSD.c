@@ -266,65 +266,18 @@ main(int argc, char *argv[])
     finalBinStep = finalBinSize;
   }
 
-  /* work out total number of bins */
-  UINT4 numBins = finalPSD->length;
-  UINT4 finalNumBins = (UINT4)floor((numBins - finalBinSize) / finalBinStep) + 1;
-
   /* write final PSD to file */
   if (XLALUserVarWasSet(&uvar.outputPSD)) {
-
     LogPrintf(LOG_DEBUG, "Printing PSD to file ...\n");
     FILE *fpOut = NULL;
-
-    if ((fpOut = fopen(uvar.outputPSD, "wb")) == NULL) {
-      LogPrintf ( LOG_CRITICAL, "Unable to open output file %s for writing...exiting \n", uvar.outputPSD );
-      return EXIT_FAILURE;
-    }
-
-    /* write header info in comments */
-    if ( XLAL_SUCCESS != XLALOutputVersionString ( fpOut, 0 ) )
-      XLAL_ERROR ( XLAL_EFUNC );
-
-    /* write the command-line */
-    for (int a = 0; a < argc; a++)
+    XLAL_CHECK_MAIN ( (fpOut = fopen(uvar.outputPSD, "wb")) != NULL, XLAL_EIO, "Unable to open output file %s for writing", uvar.outputPSD );
+    XLAL_CHECK_MAIN ( XLALOutputVersionString ( fpOut, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    for (int a = 0; a < argc; a++) { /* write the command-line */
       fprintf(fpOut,"%%%% argv[%d]: '%s'\n", a, argv[a]);
-
-    /* write column headings */
-    fprintf(fpOut,"%%%% columns:\n%%%% FreqBinStart");
-    if (uvar.outFreqBinEnd)
-      fprintf(fpOut," FreqBinEnd");
-    fprintf(fpOut," PSD");
-    if (uvar.outputNormSFT)
-      fprintf(fpOut," normSFTpower");
-    fprintf(fpOut,"\n");
-
-    for (UINT4 k = 0; k < finalNumBins; ++k) {
-      UINT4 b = k * finalBinStep;
-
-      REAL8 f0 = Freq0 + b * dFreq;
-      REAL8 f1 = f0 + finalBinStep * dFreq;
-      fprintf(fpOut, "%f", f0);
-      if (uvar.outFreqBinEnd)
-        fprintf(fpOut, "   %f", f1);
-
-      REAL8 psd = XLALMathOpOverArray(&(finalPSD->data[b]), finalBinSize, uvar.PSDmthopBins);
-      XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(psd), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for psd[k=%d]", k );
-
-      fprintf(fpOut, "   %e", psd);
-
-      if (uvar.outputNormSFT) {
-        REAL8 nsft = XLALMathOpOverArray(&(normSFT->data[b]), finalBinSize, uvar.nSFTmthopBins);
-        XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(nsft), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for nsft[k=%d]", k );
-
-        fprintf(fpOut, "   %f", nsft);
-      }
-
-      fprintf(fpOut, "\n");
-    } // k < finalNumBins
+    }
+    XLAL_CHECK_MAIN ( XLALWritePSDtoFilePointer ( fpOut, finalPSD, normSFT, uvar.outputNormSFT, uvar.outFreqBinEnd, uvar.PSDmthopBins, uvar.nSFTmthopBins, finalBinSize, finalBinStep, Freq0, dFreq ) == XLAL_SUCCESS, XLAL_EFUNC );
     LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
-
     fclose(fpOut);
-
   }
 
   /* we are now done with the psd */

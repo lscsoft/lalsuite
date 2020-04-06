@@ -2818,3 +2818,77 @@ REAL8 XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs (
   return factor;
 
 } /* XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs() */
+
+
+/**
+ * Write a PSD vector as an ASCII table to an open output file pointer.
+ *
+ * Adds a column header string, but version or commandline info
+ * needs to be printed by the caller.
+ *
+ * Standard and (optional) columns: FreqBinStart (FreqBinEnd) PSD (normSFTpower)
+ */
+int
+XLALWritePSDtoFilePointer ( FILE *fpOut,              /**< output file pointer */
+                            REAL8Vector *PSDVect,     /**< required: PSD vector */
+                            REAL8Vector *normSFTVect, /**< optional: normSFT vector (can be NULL if outputNormSFT==False) */
+                            BOOLEAN outputNormSFT,    /**< output a column for normSFTVect? */
+                            BOOLEAN outFreqBinEnd,    /**< output a column for the end frequency of each bin? */
+                            INT4 PSDmthopBins,        /**< math operation for binning of the PSD */
+                            INT4 nSFTmthopBins,       /**< math operation for binning of the normSFT */
+                            INT4 binSize,             /**< output bin size (in number of input bins, 1 to keep input binning) */
+                            INT4 binStep,             /**< output bin step (in number of input bins, 1 to keep input binning) */
+                            REAL8 Freq0,              /**< starting frequency of inputs */
+                            REAL8 dFreq               /**< frequency step of inputs */
+                          ) {
+
+    /* input sanity checks */
+    XLAL_CHECK ( ( PSDVect != NULL ) && ( PSDVect->data != NULL ) && ( PSDVect->length > 0 ), XLAL_EINVAL, "PSDVect must be allocated and not zero length." );
+    if (outputNormSFT) {
+      XLAL_CHECK ( ( normSFTVect != NULL ) && ( normSFTVect->data != NULL ), XLAL_EINVAL, "If requesting outputNormSFT, normSFTVect must be allocated" );
+      XLAL_CHECK ( normSFTVect->length == PSDVect->length, XLAL_EINVAL, "Lengths of PSDVect and normSFTVect do not match (%d!=%d)", PSDVect->length, normSFTVect->length );
+    }
+    XLAL_CHECK ( binSize > 0, XLAL_EDOM, "output bin size must be >0");
+    XLAL_CHECK ( binStep > 0, XLAL_EDOM, "output bin step must be >0");
+    XLAL_CHECK ( Freq0 >= 0., XLAL_EDOM, "starting frequency must be nonnegative");
+    XLAL_CHECK ( dFreq >= 0., XLAL_EDOM, "frequency step must be nonnegative");
+
+    /* work out total number of bins */
+    UINT4 numBins = (UINT4)floor((PSDVect->length - binSize) / binStep) + 1;
+
+    /* write column headings */
+    fprintf(fpOut,"%%%% columns:\n%%%% FreqBinStart");
+    if (outFreqBinEnd)
+      fprintf(fpOut," FreqBinEnd");
+    fprintf(fpOut," PSD");
+    if (outputNormSFT)
+      fprintf(fpOut," normSFTpower");
+    fprintf(fpOut,"\n");
+
+    for (UINT4 k = 0; k < numBins; ++k) {
+      UINT4 b = k * binStep;
+
+      REAL8 f0 = Freq0 + b * dFreq;
+      REAL8 f1 = f0 + binStep * dFreq;
+      fprintf(fpOut, "%f", f0);
+      if (outFreqBinEnd)
+        fprintf(fpOut, "   %f", f1);
+
+      REAL8 psd = XLALMathOpOverArray(&(PSDVect->data[b]), binSize, PSDmthopBins);
+      XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(psd), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for psd[k=%d]", k );
+
+      fprintf(fpOut, "   %e", psd);
+
+      if (outputNormSFT) {
+        REAL8 nsft = XLALMathOpOverArray(&(normSFTVect->data[b]), binSize, nSFTmthopBins);
+        XLAL_CHECK ( !XLAL_IS_REAL8_FAIL_NAN(nsft), XLAL_EFUNC, "XLALMathOpOverArray() returned NAN for nsft[k=%d]", k );
+
+        fprintf(fpOut, "   %f", nsft);
+      }
+
+      fprintf(fpOut, "\n");
+    } // k < numBins
+
+    return XLAL_SUCCESS;
+
+} /* XLALWritePSDtoFile() */

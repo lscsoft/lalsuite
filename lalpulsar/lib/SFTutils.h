@@ -212,6 +212,18 @@ int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector
 REAL8FrequencySeries *XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, LALSeg segment );
 REAL8 XLALMathOpOverArray(const REAL8* data, const size_t length, const MathOpType optype);
 REAL8 XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs (  const UINT4 totalNumSFTs, const MathOpType optypeSFTs );
+int XLALWritePSDtoFilePointer ( FILE *fpOut,
+                                REAL8Vector *PSDVect,
+                                REAL8Vector *normSFTVect,
+                                BOOLEAN outputNormSFT,
+                                BOOLEAN outFreqBinEnd,
+                                INT4 PSDmthopBins,
+                                INT4 nSFTmthopBins,
+                                INT4 binSize,
+                                INT4 binStep,
+                                REAL8 Freq0,
+                                REAL8 dFreq
+                              );
 
 /** @} */
 
