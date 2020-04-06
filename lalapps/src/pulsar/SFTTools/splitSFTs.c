@@ -222,8 +222,10 @@ int main( int argc, char **argv )
   double fWidth = -1.0, fOverlap = -1; /* width and overlap in Hz */
   unsigned int nactivesamples;         /* number of bins to actually read in */
   int validate = TRUE;                 /* validate the checksum of each input SFT before using it? */
-  LIGOTimeGPS *minStartTime = NULL;    /* earliest SFT timestamp to start using */
-  LIGOTimeGPS *maxStartTime = NULL;    /* earliest SFT timestamp to no longer use */
+  LIGOTimeGPS *minStartTime = NULL;    /* pointer for optional constraint */
+  LIGOTimeGPS *maxStartTime = NULL;    /* pointer for optional constraint */
+  LIGOTimeGPS XLAL_INIT_DECL(userMinStartTime); /* user-given constraint: earliest SFT timestamp to start using */
+  LIGOTimeGPS XLAL_INIT_DECL(userMaxStartTime); /* user-given constraint: earliest SFT timestamp to no longer use */
   int assumeSorted = 0;                /* Are SFT input files chronologically sorted? */
   int sfterrno = 0;                    /* SFT error number return from reference library */
   LALHashTbl *nbsfts = NULL;           /* hash table of existing narrow-band SFTs */
@@ -392,14 +394,12 @@ int main( int argc, char **argv )
       fOverlap = atof( argv[++arg] );
     } else if ( ( strcmp( argv[arg], "-ts" ) == 0 ) ||
                 ( strcmp( argv[arg], "--minStartTime" ) == 0 ) ) {
-      LIGOTimeGPS XLAL_INIT_DECL(userMinStartTime);
+      XLAL_CHECK_MAIN ( XLALGPSSetREAL8 ( &userMinStartTime, (REAL8)atof( argv[++arg] )) != NULL, XLAL_EDOM );
       minStartTime = &userMinStartTime;
-      XLALGPSSetREAL8 ( minStartTime, (REAL8)atof( argv[++arg] ));
     } else if ( ( strcmp( argv[arg], "-te" ) == 0 ) ||
                 ( strcmp( argv[arg], "--maxStartTime" ) == 0 ) ) {
-      LIGOTimeGPS XLAL_INIT_DECL(userMaxStartTime);
+      XLAL_CHECK_MAIN ( XLALGPSSetREAL8 ( &userMaxStartTime, (REAL8)atof( argv[++arg] )) != NULL, XLAL_EDOM );
       maxStartTime = &userMaxStartTime;
-      XLALGPSSetREAL8 ( maxStartTime, (REAL8)atof( argv[++arg] ));
     } else if ( ( strcmp( argv[arg], "-as" ) == 0 ) ||
                 ( strcmp( argv[arg], "--assumeSorted" ) == 0 ) ) {
       assumeSorted = atoi( argv[++arg] );
@@ -433,6 +433,24 @@ int main( int argc, char **argv )
     } else {
       break;
     }
+  }
+
+  /* build an output string for the user timestamps constraint */
+  char *constraint_str;
+  const size_t constraint_str_len = 32; /* just needs to be big enough for two INT4 and a comma */
+  XLAL_CHECK_MAIN( ( constraint_str = ( char * )XLALMalloc( constraint_str_len ) ) != NULL,
+                   XLAL_ENOMEM, "out of memory allocating constraint_str" );
+  if ( minStartTime ) {
+    XLAL_CHECK_MAIN ( snprintf( constraint_str, constraint_str_len, "%d,", minStartTime->gpsSeconds ) < ( int )constraint_str_len,
+                      XLAL_ESYS, "output of snprintf() was truncated" );
+  }
+  else {
+    XLAL_CHECK_MAIN ( snprintf( constraint_str, constraint_str_len, ",") < ( int )constraint_str_len,
+                      XLAL_ESYS, "output of snprintf() was truncated" );
+  }
+  if ( maxStartTime ) {
+    XLAL_CHECK_MAIN ( snprintf( constraint_str + strlen(constraint_str), constraint_str_len - strlen(constraint_str), "%d", maxStartTime->gpsSeconds ) < ( int )(constraint_str_len - strlen(constraint_str)),
+                      XLAL_ESYS, "output of snprintf() was truncated" );
   }
 
   /* check if there was an input-file option given at all */
@@ -526,7 +544,7 @@ int main( int argc, char **argv )
       /* only use SFTs within specified ranges */
       LIGOTimeGPS startTimeGPS = {hd.gps_sec,0};
       int inRange = XLALCWGPSinRange(startTimeGPS, minStartTime, maxStartTime);
-      XLAL_CHECK_MAIN ( !( firstread && ( inRange == 1 ) ), XLAL_EIO, "First timestamp %d in file was after user constraint [%d,%d)!", hd.gps_sec, minStartTime->gpsSeconds, maxStartTime->gpsSeconds );
+      XLAL_CHECK_MAIN ( !( firstread && ( inRange == 1 ) ), XLAL_EIO, "First timestamp %d in file was after user constraint [%s)!", hd.gps_sec, constraint_str );
       firstread = FALSE;
       if ( inRange == -1 ) { /* input timestamp too early, skip */
         XLAL_CHECK_MAIN ( move_to_next_SFT ( fpin, hd.nsamples, hd.comment_length, hd.version ) == XLAL_SUCCESS, XLAL_EIO );
@@ -743,6 +761,7 @@ int main( int argc, char **argv )
 
   /* cleanup */
   XLALFree( outname );
+  XLALFree( constraint_str );
   if ( add_comment > CMT_OLD ) {
     XLALFree( cmdline );
   }
