@@ -918,6 +918,8 @@ SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
     LALDict* LALparams             /**< Dict with extra parameters */
 );
 
+/* routine for checking Lorentz violation */
+int XLALSimLorentzInvarianceViolationTerm(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, REAL8 m1, REAL8 m2, REAL8 r, LALDict *LALparams);
 
 #if 0
 { /* so that editors will match succeeding brace */

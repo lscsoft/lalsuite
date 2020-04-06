@@ -2271,6 +2271,9 @@ int XLALSimInspiralChooseFDWaveform(
     }
 
     if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+    if (XLALSimInspiralWaveformParamsLookupEnableLIV(LALparams))
+      ret = XLALSimLorentzInvarianceViolationTerm(hptilde, hctilde, m1/LAL_MSUN_SI, m2/LAL_MSUN_SI, distance, LALparams);
+    if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
 
     return ret;
 }
@@ -6167,7 +6170,6 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv2_ROM_DoubleSpin:
     case SEOBNRv2_ROM_DoubleSpin_HI:
     case Lackey_Tidal_2013_SEOBNRv2_ROM:
-    case SEOBNRv4_ROM:
     case SEOBNRv4HM_ROM:  
     case SEOBNRv4_ROM_NRTidal:
     case SEOBNRv4_ROM_NRTidalv2:
@@ -6206,6 +6208,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case PhenSpinTaylor:
     case PhenSpinTaylorRD:
     case EccentricTD:
+    case SEOBNRv4_ROM:
     case IMRPhenomC:
     case IMRPhenomD:
     case IMRPhenomP:
@@ -6225,6 +6228,79 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     }
   return testGR_accept;
 };
+
+/* Function for introducing Lorentz violating changes in FD phase; calculates eqns. 30 & 32 of arxiv 1110.2720 for the LV phase term in FD and multiplies to h+ and hx */
+int XLALSimLorentzInvarianceViolationTerm(
+                                          COMPLEX16FrequencySeries **hptilde, /**< Frequency-domain waveform h+ */
+                                          COMPLEX16FrequencySeries **hctilde, /**< Frequency-domain waveform hx */
+                                          REAL8 m1,                           /**< Mass 1 in solar masses */
+                                          REAL8 m2,                           /**< Mass 2 in solar masses */
+                                          REAL8 r,                            /**< distance in metres*/
+                                          LALDict *LALparams                     /**< LAL dictionary containing accessory parameters */
+                                          )
+{
+  REAL8 f0, f, df;
+  COMPLEX16 hplus, hcross, tmpExp;
+  REAL8 M, eta, zeta, dPhiPref, Mc, tmpVal;
+  UINT4 len, i;
+  M = m1+m2;
+  eta = m1*m2/(M*M);
+  Mc = M*pow(eta, 0.6);
+  len = (*hptilde)->data->length;
+
+  REAL8 lambda_eff = pow(10,XLALSimInspiralWaveformParamsLookupNonGRLIVLogLambdaEff(LALparams)); /* Effective wavelength-like parameter in phase in metres */
+  REAL8 nonGR_alpha = XLALSimInspiralWaveformParamsLookupNonGRLIVAlpha(LALparams);   /* Exponent defined in terms of PN order characterising LIV*/
+  REAL8 LIV_A_sign = XLALSimInspiralWaveformParamsLookupNonGRLIVASign(LALparams);   /* Sign of A determining the sign of LV phase */
+
+  if ((*hctilde)->data->length != len) {
+    XLALPrintError("Lengths of plus and cross polarization series do not agree \n");
+    XLAL_ERROR(XLAL_EBADLEN);
+  }
+
+  f0 = (*hptilde)->f0;
+  if ((*hctilde)->f0 != f0) {
+    XLALPrintError("Starting frequencies of plus and cross polarization series do not agree \n");
+    XLAL_ERROR(XLAL_EINVAL);
+  }
+
+  df = (*hptilde)->deltaF;
+  if ((*hctilde)->deltaF != df) {
+    XLALPrintError("Frequency steps of plus and cross polarization series do not agree \n");
+    XLAL_ERROR(XLAL_EINVAL);
+  }
+
+  UINT4 k = 0;
+  if (f0 == 0.0)
+      k=1;
+
+  if (nonGR_alpha == 1) {
+    zeta = LIV_A_sign*LAL_PI*r/lambda_eff; /*Eqn. (32) of arxiv:1110.2720*/
+    dPhiPref = zeta*log(LAL_PI*Mc*LAL_MTSUN_SI); /*Eqn. (31) of arxiv:1110.2720;the frequency dependence is treated below*/
+    for (i=k; i<len; i++) {
+      f = f0 + i*df;
+      tmpExp = cexp(I*(dPhiPref + zeta*log(f)));
+      hplus = (*hptilde)->data->data[i] * tmpExp;
+      (*hptilde)->data->data[i] = hplus;
+      hcross = (*hctilde)->data->data[i] * tmpExp;
+      (*hctilde)->data->data[i] = hcross;
+    }
+  }
+  else {
+    zeta = LIV_A_sign*pow(LAL_PI, (2. - nonGR_alpha))*r*pow(Mc*LAL_MRSUN_SI, (1. - nonGR_alpha))/((1. - nonGR_alpha)*pow(lambda_eff, (2. - nonGR_alpha))); /*Eqn. (30) of arxiv:1110.2720*/
+    dPhiPref = zeta*pow(LAL_PI*Mc*LAL_MTSUN_SI, (nonGR_alpha - 1.)); /*Eqn. (28) of arxiv:1110.2720;the frequency dependence is treated below*/
+    for (i=k; i<len; i++) {
+      f = f0 + i*df;
+      tmpVal = pow(f, (nonGR_alpha - 1.));
+      tmpExp=cexp(-I*dPhiPref*tmpVal);
+      hplus = (*hptilde)->data->data[i] * tmpExp;
+      (*hptilde)->data->data[i] = hplus;
+      hcross = (*hctilde)->data->data[i] * tmpExp;
+      (*hctilde)->data->data[i] = hcross;
+    }
+
+  }
+  return XLAL_SUCCESS;
+}
 
 /** @} */
 
