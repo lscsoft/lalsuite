@@ -1145,7 +1145,7 @@ class Posterior(object):
         if ('mc' in pos.names) and ('redshift_maxldist' in pos.names):
             pos.append_mapping('mc_source_maxldist', source_mass, ['mc', 'redshift_maxldist'])
 
-        # Calling functions testing Lorentz invariance violation
+        # Calling functions testing Lorentz invariance violation 
         if ('log10lambda_eff' in pos.names) and ('redshift' in pos.names):
             pos.append_mapping('log10lambda_a', lambda z,nonGR_alpha,wl,dist:np.log10(lambda_a(z, nonGR_alpha, 10**wl, dist)), ['redshift', 'nonGR_alpha', 'log10lambda_eff', 'dist'])
         if ('log10lambda_eff' in pos.names) and ('redshift' in pos.names):
@@ -3960,7 +3960,7 @@ def source_mass(mass, redshift):
     """
     return mass / (1.0 + redshift)
 
-## Following functions added for testing Lorentz violations
+## Following functions added for testing Lorentz violations 
 def integrand_distance(redshift,nonGR_alpha):
     """
     Calculate D_alpha integral; multiplicative factor put later
@@ -6144,7 +6144,7 @@ class PEOutputParser(object):
             llines.append(np.array(list(map(lambda a:float(a.text),row))))
         flines=np.array(llines)
         for i in range(0,len(header)):
-            if header[i].lower().find('log')!=-1 and header[i].lower() not in logParams and re.sub('log', '', header[i].lower()) not in [h.lower() for h in header] and header[i].lower() not in lorentzInvarianceViolationParams:
+            if header[i].lower().find('log')!=-1 and header[i].lower() not in logParams and re.sub('log', '', header[i].lower()) not in [h.lower() for h in header] and header[i].lower() not in lorentzInvarianceViolationParams: 
                 print('exponentiating %s'%(header[i]))
 
                 flines[:,i]=np.exp(flines[:,i])
@@ -6216,7 +6216,7 @@ class PEOutputParser(object):
 
         for param in params:
             param_low = param.lower()
-            if param_low.find('log') != -1 and param_low not in logParams and re.sub('log', '', param_low) not in [p.lower() for p in params] and param_low not in lorentzInvarianceViolationParams:
+            if param_low.find('log') != -1 and param_low not in logParams and re.sub('log', '', param_low) not in [p.lower() for p in params] and param_low not in lorentzInvarianceViolationParams: 
                 print('exponentiating %s' % param)
                 new_param = re.sub('log', '', param, flags=re.IGNORECASE)
                 samples[new_param] = np.exp(samples[param])
@@ -6344,7 +6344,7 @@ class PEOutputParser(object):
 
 
         for i in range(0,len(header)):
-            if header[i].lower().find('log')!=-1 and header[i].lower() not in logParams and re.sub('log', '', header[i].lower()) not in [h.lower() for h in header] and header[i].lower() not in lorentzInvarianceViolationParams:
+            if header[i].lower().find('log')!=-1 and header[i].lower() not in logParams and re.sub('log', '', header[i].lower()) not in [h.lower() for h in header] and header[i].lower() not in lorentzInvarianceViolationParams: 
                 print('exponentiating %s'%(header[i]))
 
                 flines[:,i]=np.exp(flines[:,i])
