@@ -3977,7 +3977,7 @@ def DistanceMeasure(redshift,nonGR_alpha):
     D_alpha = ((1+z)^(1-alpha))/H_0 * D_alpha # from eq.15 of arxiv 1110.2720
     D_alpha calculated from integrand in above function
     """
-    omega = lal.CreateCosmologicalParameters(0.6790,0.3065,0.6935,-1.0,0.0,0.0) ## Planck 2015 values
+    omega = lal.CreateCosmologicalParameters(0.6790,0.3065,0.6935,-1.0,0.0,0.0) ## Planck 2015 values 
     H0 = omega.h*lal.H0FAC_SI ## Hubble constant in SI units
     dist = integrate.quad(integrand_distance, 0, redshift ,args=(nonGR_alpha))[0]
     dist *= (1.0 + redshift)**(1.0 - nonGR_alpha)
