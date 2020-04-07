@@ -164,7 +164,7 @@ pkginclude_HEADERS = \
 	LALSimulationVCSInfo.h \
 	LALSimulationVCSInfoHeader.h \
 	LALSimUniversalRelations.h \
-        LALSimInspiralEOS.h \
+	LALSimInspiralEOS.h \
 	LALSimInspiralFDPrecAngles.h
 
 noinst_HEADERS = \
@@ -231,8 +231,8 @@ noinst_HEADERS = \
 	LALSimIMRPhenomInternalUtils.h \
 	LALSimIMRSEOBNRROMUtilities.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.h \
-        LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.h \
-        LALSimBHNSRemnantFits.h \
+	LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.h \
+	LALSimBHNSRemnantFits.h \
 	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \
 	LALSimIMRSpinAlignedEOBHcapDerivative.c \
 	LALSimIMRSpinAlignedEOBHcapDerivativeOptimized.c \
@@ -260,7 +260,7 @@ noinst_HEADERS = \
 	LALSimInspiraldEnergyFlux.c \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
-        LALSimNeutronStarEOSSpectralDecomposition.c \
+	LALSimNeutronStarEOSSpectralDecomposition.c \
 	LALSimIMRSpinEOBHamiltonian.h \
 	LALSimIMRPrecessingNRSur.h \
 	LALSimNRSurrogateUtilities.h \
@@ -268,12 +268,12 @@ noinst_HEADERS = \
 	LALSimRingdownCW.h \
 	LALSimNRHybSurUtilities.h \
 	LALSimIMRNRHybSur3dq8.h \
-        LALSimInspiralFDPrecAngles_internals.c \
-        LALSimInspiralFDPrecAngles_internals.h \
+	LALSimInspiralFDPrecAngles_internals.c \
+	LALSimInspiralFDPrecAngles_internals.h \
 	LALSimNRSurRemnantUtils.h \
 	LALSimNRSur7dq4Remnant.h \
 	LALSimNRSur3dq8Remnant.h
-        $(END_OF_LIST)
+	$(END_OF_LIST)
 
 
 lib_LTLIBRARIES = liblalsimulation.la
@@ -296,8 +296,8 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRSEOBNRv4ROM.c \
 	LALSimIMRSEOBNRv4HMROM.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.c \
-        LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.c \
-        LALSimBHNSRemnantFits.c \
+	LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.c \
+	LALSimBHNSRemnantFits.c \
 	LALSimIMRSEOBNRv4TSurrogate.c \
 	LALSimIMREOBNRv2HMROM.c \
 	LALSimIMRLackeyTidal2013.c \
@@ -343,7 +343,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralTaylorLength.c \
 	LALSimInspiralWaveformCache.c \
 	LALSimInspiralWaveformTaper.c \
-  LALSimInspiralTEOBResumROM.c \
+	LALSimInspiralTEOBResumROM.c \
 	LALSimIMRNRWaveforms.c \
 	LALSimulation.c \
 	LALSimNeutronStarEOS.c \
