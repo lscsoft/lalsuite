@@ -1,6 +1,6 @@
 include $(top_srcdir)/gnuscripts/lalsuite_test_python.am
 
-EXTRA_DIST  += \
+EXTRA_DIST += \
 	874000000-20000.cache \
 	$(END_OF_LIST)
 
