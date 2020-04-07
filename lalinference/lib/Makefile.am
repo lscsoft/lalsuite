@@ -6,7 +6,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 # bayestar_cosmology.h: bayestar_cosmology.py
-# 	$(AM_V_GEN)$(PYTHON) $< > $@
+#	$(AM_V_GEN)$(PYTHON) $< > $@
 
 ANALYTICFILES = \
 	CorrelationMatrix.csv \

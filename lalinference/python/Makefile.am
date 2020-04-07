@@ -31,7 +31,7 @@ pybin_scripts = \
 	cbcBayesBurstPPAnalysis \
 	cbcBayesCombinePTMCMCh5s \
 	cbcBayesMCMC2pos \
-        cbcBayesGraceDBinfo \
+	cbcBayesGraceDBinfo \
 	cbcBayesPosToSimBurst \
 	cbcBayesPostProc \
 	cbcBayesThermoInt \
