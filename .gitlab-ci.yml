@@ -301,9 +301,21 @@ lint:coala:
   stage: lint
   image: coala/base
   needs: []
-  before_script: []
+  before_script:
+    - pip install coala-json
   script:
-  - coala --ci Makefile
+    - coala --ci Makefile --json -o output.json
+  after_script:
+    - coala-json --junit -f output.json -o junit.xml
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/pip
+  artifacts:
+    expire_in: 1month
+    reports:
+      junit: junit.xml
+    when: always
 
 # -- documentation ------------------------------
 
