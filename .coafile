@@ -1,0 +1,4 @@
+[Makefile]
+bears = SpaceConsistencyBear
+files = **Makefile.am
+use_spaces = False

@@ -14,7 +14,7 @@ bin_PROGRAMS = \
 	lalapps_fits_header_list \
 	lalapps_fits_overview \
 	lalapps_fits_table_list \
-        $(END_OF_LIST)
+	$(END_OF_LIST)
 
 lalapps_fits_header_getval_SOURCES = fits_header_getval.c
 lalapps_fits_header_list_SOURCES = fits_header_list.c
