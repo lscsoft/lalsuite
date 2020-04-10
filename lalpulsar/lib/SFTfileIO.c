@@ -1199,6 +1199,32 @@ XLALCheckCRCSFTCatalog(
 
 } /* XLALCheckCRCSFTCatalog() */
 
+
+/**
+ * Simple creator function for MultiLIGOTimeGPSVector with numDetectors entries
+ */
+MultiLIGOTimeGPSVector *
+XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors )
+{
+  MultiLIGOTimeGPSVector *ret;
+
+  if ( (ret = XLALMalloc ( sizeof(*ret) )) == NULL ) {
+    XLALPrintError ("%s: XLALMalloc(%zu) failed.\n", __func__, sizeof(*ret) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
+  }
+
+  ret->length = numDetectors;
+  if ( (ret->data = XLALCalloc ( numDetectors, sizeof(*ret->data) )) == NULL ) {
+    XLALPrintError ("%s: XLALCalloc(%d, %zu) failed.\n", __func__, numDetectors, sizeof(*ret->data) );
+    XLALFree ( ret );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
+  }
+
+  return ret;
+
+} /* XLALCreateMultiLIGOTimeGPSVector() */
+
+
 /// backwards compatible wrapper to XLALReadMultiTimestampsFilesConstrained() without GPS-time constraints
 MultiLIGOTimeGPSVector *
 XLALReadMultiTimestampsFiles ( const LALStringVector *fnames )
