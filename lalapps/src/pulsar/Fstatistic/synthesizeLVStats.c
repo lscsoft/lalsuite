@@ -167,7 +167,6 @@ int main(int argc,char *argv[]);
 int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar );
 int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar );
-MultiLIGOTimeGPSVector * XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors );
 int write_BSGL_candidate_to_fp ( FILE *fp, const BSGLComponents *stats, const LALStringVector *IFOs, const InjParams_t *injParams, const BOOLEAN haveBSGL );
 MultiNoiseWeights * XLALComputeConstantMultiNoiseWeightsFromNoiseFloor (const MultiNoiseFloor *multiNoiseFloor, const MultiLIGOTimeGPSVector *multiTS, const UINT4 Tsft );
 
@@ -748,31 +747,6 @@ XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar )
   return XLAL_SUCCESS;
 
 } /* XLALInitAmplitudePrior() */
-
-
-/**
- * Simple creator function for MultiLIGOTimeGPSVector with numDetectors entries
- */
-MultiLIGOTimeGPSVector *
-XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors )
-{
-  MultiLIGOTimeGPSVector *ret;
-
-  if ( (ret = XLALMalloc ( sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: XLALMalloc(%zu) failed.\n", __func__, sizeof(*ret) );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  ret->length = numDetectors;
-  if ( (ret->data = XLALCalloc ( numDetectors, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc(%d, %zu) failed.\n", __func__, numDetectors, sizeof(*ret->data) );
-    XLALFree ( ret );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  return ret;
-
-} /* XLALCreateMultiLIGOTimeGPSVector() */
 
 
 /**

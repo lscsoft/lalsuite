@@ -297,7 +297,9 @@ int XLALWriteSFT2fp   ( const SFTtype *sft, FILE *fp, const CHAR *SFTcomment );
 int XLALWriteSFT2file ( const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
 
 LIGOTimeGPSVector *XLALReadTimestampsFile ( const CHAR *fname );
-  LIGOTimeGPSVector *XLALReadTimestampsFileConstrained ( const CHAR *fname, const LIGOTimeGPS *minGPS, const LIGOTimeGPS *maxGPS );
+LIGOTimeGPSVector *XLALReadTimestampsFileConstrained ( const CHAR *fname, const LIGOTimeGPS *minGPS, const LIGOTimeGPS *maxGPS );
+
+MultiLIGOTimeGPSVector *XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors );
 MultiLIGOTimeGPSVector *XLALReadMultiTimestampsFiles ( const LALStringVector *fnames );
 MultiLIGOTimeGPSVector *XLALReadMultiTimestampsFilesConstrained ( const LALStringVector *fnames, const LIGOTimeGPS *minGPS, const LIGOTimeGPS *maxGPS );
 

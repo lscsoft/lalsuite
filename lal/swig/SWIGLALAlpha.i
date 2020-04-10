@@ -29,19 +29,11 @@
 ///
 
 ///
-/// Custom GSL/LAL error handlers which raise XLAL errors, so that they will be caught by the SWIG
+/// Custom LAL/GSL error handlers which raise XLAL errors, so that they will be caught by the SWIG
 /// \c %exception handler (instead of aborting, which will crash the user's scripting language
 /// session).
 %header %{
 /// <ul><li>
-
-/// Print the supplied error message, then raise an XLAL error.
-static void swig_lal_gsl_error_handler(const char *reason, const char *file, int line, int errnum) {
-  XLALPrintError("GSL function failed: %s (errnum=%i)\n", reason, errnum);
-  XLALError("<GSL function>", file, line, XLAL_EFAILED);
-}
-
-/// </li><li>
 
 /// Print the supplied error message, then raise an XLAL error.
 static int swig_lal_raise_hook(int sig, const char *fmt, ...) {
@@ -65,16 +57,38 @@ static void swig_lal_abort_hook(const char *fmt, ...) {
   XLALSetErrno(XLAL_EFAILED);
 }
 
+/// </li><li>
+
+/// Print the supplied error message, then raise an XLAL error.
+static void swig_lal_gsl_error_handler(const char *reason, const char *file, int line, int errnum) {
+  XLALPrintError("GSL function failed: %s (errnum=%i)\n", reason, errnum);
+  XLALError("<GSL function>", file, line, XLAL_EFAILED);
+}
+
 /// </li></ul>
 %}
 ///
 
 ///
-/// Replace default GSL/LAL error handler with nice custom handlers, and ensure default XLAL error
-/// handler is used.
+/// Use nice custom error handlers by default.
+///
+%header %{
+static int swig_set_error_handler_messages = 0;
+%}
+%init %{
+swig_set_nice_error_handlers();
+swig_set_error_handler_messages = 1;
+%}
+
+///
+/// Set nice custom error handlers: replace default XLAL/LAL/GSL error handler with nice custom
+/// handlers, and ensure default XLAL error handler is used.
 ///
 %inline %{
 void swig_set_nice_error_handlers(void) {
+  if (swig_set_error_handler_messages) {
+    fprintf(stderr, "*** WARNING: XLAL/LAL/GSL functions will now raise XLAL errors ***\n");
+  }
   gsl_set_error_handler(swig_lal_gsl_error_handler);
   lalRaiseHook = swig_lal_raise_hook;
   lalAbortHook = swig_lal_abort_hook;
@@ -83,24 +97,19 @@ void swig_set_nice_error_handlers(void) {
 %}
 
 ///
-/// Use \c abort() error handlers in GSL/LAL/XLAL, which can be useful when running scripting
-/// language interpreter under a debugger.
+/// Set nasty custom error handlers: use \c abort() error handlers in XLAL/LAL/GSL, which can be
+/// useful when running scripting language interpreter under a debugger.
 ///
 %inline %{
 void swig_set_nasty_error_handlers(void) {
-  fprintf(stderr, "*** WARNING: GSL/LAL/XLAL functions will now abort() on error ***\n");
+  if (swig_set_error_handler_messages) {
+    fprintf(stderr, "*** WARNING: XLAL/LAL/GSL functions will now abort() on error ***\n");
+  }
   gsl_set_error_handler(NULL);
   lalRaiseHook = LALRaise;
   lalAbortHook = LALAbort;
   XLALSetErrorHandler(XLALAbortErrorHandler);
 }
-%}
-
-///
-/// Use nice custom handlers by default.
-///
-%init %{
-swig_set_nice_error_handlers();
 %}
 
 ///

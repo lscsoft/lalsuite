@@ -27,5 +27,16 @@ clear ans;
 LALCheckMemoryLeaks();
 disp("PASSED object parent tracking");
 
+# check multi-vector element assignment
+disp("checking multi-vector element assignment ...");
+mts = XLALCreateMultiLIGOTimeGPSVector(2);
+ts0 = XLALCreateTimestampVector(3);
+mts.data(1) = ts0;
+lal.swig_set_nasty_error_handlers();
+clear mts;
+clear ts0;
+lal.swig_set_nice_error_handlers();
+disp("PASSED multi-vector element assignment");
+
 ## passed all tests!
 disp("PASSED all tests");
