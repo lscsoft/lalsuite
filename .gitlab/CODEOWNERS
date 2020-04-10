@@ -23,6 +23,7 @@ lalapps/src/ring/                @ian-harry @andrew-williamson
 lalapps/src/string/              @kipp.cannon @florent-robinet @imene.belahcene @daichi.tsuna
 
 # build / packaging  / support files
+.coafile             @adam-mercer @duncanmmacleod
 .gitlab/             @adam-mercer @duncanmmacleod
 conda/               @adam-mercer @duncanmmacleod
 debian/              @adam-mercer @duncanmmacleod
