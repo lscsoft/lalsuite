@@ -381,7 +381,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       { }
 
       // Copy the Octave array obj to the C array.
-      int sloav_array_in(octave_value& obj, int *pelemalloc) {
+      int sloav_array_in(octave_value& obj, int *pelemalloc, const int tflags) {
 
         // Check that C array pointer is valid.
         if (!sloav_ptr) {
@@ -411,7 +411,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
           octave_value objelem = obj.subsref(obj.is_cell() ? "{" : "(", objidx);
 
           // Copy the Octave array element to the C array.
-          int res = HELPER::incall(sloav_parent, objelem, sloav_get_element_ptr(idx), pelemalloc, sloav_esize, sloav_isptr, sloav_tinfo, sloav_tflags);
+          int res = HELPER::incall(sloav_parent, objelem, sloav_get_element_ptr(idx), pelemalloc, sloav_esize, sloav_isptr, sloav_tinfo, sloav_tflags | tflags);
           if (!SWIG_IsOK(res)) {
             return res;
           }
@@ -501,7 +501,10 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       octave_value subsasgn(const std::string& type, const std::list<octave_value_list>& idx, const octave_value& rhs) {
         octave_value obj = sloav_array_out().subsasgn(type, idx, rhs);
         int elemalloc = 0;
-        int res = sloav_array_in(obj, &elemalloc);
+        // When assigning Octave objects to a C array, assume the struct who owns the C array takes
+        // ownership of the memory of the C array element. The Octave object wrapping the C array
+        // element should therefore disown the underlying memory.
+        int res = sloav_array_in(obj, &elemalloc, SWIG_POINTER_DISOWN);
         if (!SWIG_IsOK(res)) {
           std::string n = type_name();
           std::string e = SWIG_ErrorType(res).string_value();
@@ -519,7 +522,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       bool load_ascii(std::istream& is) {
         octave_value obj = sloav_array_out();
         int elemalloc = 0;
-        return obj.load_ascii(is) && SWIG_IsOK(sloav_array_in(obj, &elemalloc));
+        return obj.load_ascii(is) && SWIG_IsOK(sloav_array_in(obj, &elemalloc, 0));
       }
 
       // Save and load from binary.
@@ -529,7 +532,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       bool load_binary(std::istream& is, bool swap, oct_mach_info::float_format fmt) {
         octave_value obj = sloav_array_out();
         int elemalloc = 0;
-        return obj.load_binary(is, swap, fmt) && SWIG_IsOK(sloav_array_in(obj, &elemalloc));
+        return obj.load_binary(is, swap, fmt) && SWIG_IsOK(sloav_array_in(obj, &elemalloc, 0));
       }
 
       // Save and load from HDF5.
@@ -547,19 +550,19 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       bool load_hdf5(octave_hdf5_id loc_id, const char *name) {
         octave_value obj = sloav_array_out();
         int elemalloc = 0;
-        return obj.load_hdf5(loc_id, name) && SWIG_IsOK(sloav_array_in(obj, &elemalloc));
+        return obj.load_hdf5(loc_id, name) && SWIG_IsOK(sloav_array_in(obj, &elemalloc, 0));
       }
 %#elif SWIG_OCTAVE_PREREQ(3,3,52)
       bool load_hdf5(hid_t loc_id, const char *name) {
         octave_value obj = sloav_array_out();
         int elemalloc = 0;
-        return obj.load_hdf5(loc_id, name) && SWIG_IsOK(sloav_array_in(obj, &elemalloc));
+        return obj.load_hdf5(loc_id, name) && SWIG_IsOK(sloav_array_in(obj, &elemalloc, 0));
       }
 %#else
       bool load_hdf5(hid_t loc_id, const char *name, bool have_h5giterate_bug) {
         octave_value obj = sloav_array_out();
         int elemalloc = 0;
-        return obj.load_hdf5(loc_id, name, have_h5giterate_bug) && SWIG_IsOK(sloav_array_in(obj, &elemalloc));
+        return obj.load_hdf5(loc_id, name, have_h5giterate_bug) && SWIG_IsOK(sloav_array_in(obj, &elemalloc, 0));
       }
 %#endif
 %#endif
@@ -908,7 +911,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     // Create a local array view, then use its sloav_array_in() member to copy the input Octave
     // array to the viewed C array.
     %swiglal_oct_array_view_class(ACFTYPE) arrview(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags);
-    return arrview.sloav_array_in(obj, pelemalloc);
+    return arrview.sloav_array_in(obj, pelemalloc, 0);
   }
 %}
 
