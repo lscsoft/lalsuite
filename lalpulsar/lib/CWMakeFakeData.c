@@ -752,13 +752,8 @@ XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect )
     return;
   }
 
-  UINT4 numPulsars = ppvect->length;
   if ( ppvect->data != NULL )
     {
-      for ( UINT4 i = 0 ; i < numPulsars; i ++ )
-        {
-          XLALFree ( ppvect->data[i].name );
-        } // for i < numPulsars
       XLALFree ( ppvect->data );
     }
 
@@ -766,22 +761,6 @@ XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect )
 
   return;
 } // XLALDestroyPulsarParamsVector()
-
-/**
- * Destructor for PulsarParams types
- */
-void
-XLALDestroyPulsarParams ( PulsarParams *params )
-{
-  if ( params == NULL ) {
-    return;
-  }
-  XLALFree ( params->name );
-  XLALFree ( params );
-
-  return;
-
-} // XLALDestroyPulsarParams()
 
 
 /**
@@ -1027,11 +1006,8 @@ XLALPulsarParamsFromFile ( const char *fname, 			///< [in] 'CWsources' config fi
       XLAL_CHECK_NULL ( XLALReadPulsarParams ( &sources->data[i], cfgdata, sec_i, refTimeDef ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // ----- source naming convention: 'filename:section'
-      char *name;
-      size_t len = strlen(fname) + strlen(sections->data[i]) + 2;
-      XLAL_CHECK_NULL ( (name = XLALCalloc(1, len)) != NULL, XLAL_ENOMEM );
-      sprintf ( name, "%s:%s", fname, sections->data[i] );
-      sources->data[i].name = name;
+      snprintf ( sources->data[i].name, sizeof(sources->data[i].name), "%s:%s", fname, sections->data[i] );
+      sources->data[i].name[sizeof(sources->data[i].name)-1] = '\0';
 
     } // for i < numPulsars
 
@@ -1126,7 +1102,7 @@ XLALPulsarParamsFromUserInput ( const LALStringVector *UserInput,	///< [in] user
           XLAL_CHECK_NULL ( (addSource = XLALCreatePulsarParamsVector ( 1 )) != NULL, XLAL_EFUNC );
 
           XLAL_CHECK_NULL ( XLALReadPulsarParams ( &addSource->data[0], cfgdata, NULL, refTimeDef ) == XLAL_SUCCESS, XLAL_EFUNC );
-          XLAL_CHECK_NULL ( (addSource->data[0].name = XLALStringDuplicate ( "direct-string-input" )) != NULL, XLAL_EFUNC );
+          strncpy ( addSource->data[0].name, "direct-string-input", sizeof(addSource->data[0].name) );
 
           XLAL_CHECK_NULL ( XLALCheckConfigFileWasFullyParsed( "{command-line}", cfgdata ) == XLAL_SUCCESS, XLAL_EINVAL );
           XLALDestroyParsedDataFile ( cfgdata );
@@ -1170,7 +1146,7 @@ XLALPulsarParamsVectorAppend ( PulsarParamsVector *list, const PulsarParamsVecto
   // we have to properly copy the 'name' string fields
   for ( UINT4 i = 0; i < addlen; i ++ )
     {
-      XLAL_CHECK_NULL ( (ret->data[oldlen + i].name = XLALStringDuplicate ( add->data[i].name )) != NULL, XLAL_EFUNC );
+      strncpy ( ret->data[oldlen + i].name, add->data[i].name, sizeof(ret->data[oldlen + i].name) );
     }
 
   return ret;
