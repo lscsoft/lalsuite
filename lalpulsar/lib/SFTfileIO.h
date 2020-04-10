@@ -192,7 +192,7 @@ typedef struct tagLIGOTimeGPSVector {
   REAL8		deltaT;		/**< 'length' of each timestamp (e.g. typically Tsft) */
 } LIGOTimeGPSVector;
 
-/** A vector of 'timestamps' of type LIGOTimeGPS */
+/** A collection of (multi-IFO) LIGOTimeGPSVector time-stamps vectors */
 typedef struct tagMultiLIGOTimeGPSVector {
 #ifdef SWIG /* SWIG interface directives */
   SWIGLAL(ARRAY_1D(MultiLIGOTimeGPSVector, LIGOTimeGPSVector*, data, UINT4, length));
