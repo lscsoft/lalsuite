@@ -304,6 +304,9 @@ lint:coala:
   before_script:
     - pip install coala-json
   script:
+    # run once to show output to console
+    - coala --ci || true
+    # run again to prepare JSON report for upload
     - coala --ci --json -o output.json
   after_script:
     - coala-json --junit -f output.json -o junit.xml
