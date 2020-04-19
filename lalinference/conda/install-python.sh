@@ -15,7 +15,6 @@ export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
 ./configure \
 	--prefix=$PREFIX \
 	--disable-doxygen \
-	--disable-gcc-flags \
 	--disable-swig-iface \
 	--enable-help2man \
 	--enable-mpi \
