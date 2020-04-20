@@ -22,7 +22,6 @@ AC_CONFIG_FILES([ \
   python/lalinference/io/Makefile \
   python/lalinference/plot/Makefile \
   python/lalinference/tiger/Makefile \
-  python/lalinference/util/Makefile \
   lib/LALInferenceVCSInfo.c \
   lib/LALInferenceVCSInfo.h \
   lib/Makefile \
