@@ -182,7 +182,32 @@ int XLALCWGPSinRange( const LIGOTimeGPS gps, const LIGOTimeGPS* minGPS, const LI
     return 1;
   }
   return 0;
-}
+} /* XLALCWGPSinRange() */
+
+
+/**
+ * Round a REAL8 frequency down to the nearest integer SFT bin number.
+ *
+ * This function provides an official rounding convention,
+ * including a "fudge" factor.
+ */
+UINT4 XLALRoundFrequencyDownToSFTBin( const REAL8 freq, const REAL8 df )
+{
+  return (UINT4) floor (freq / df * fudge_up);
+} /* XLALRoundFrequencyDownToSFTBin() */
+
+
+/**
+ * Round a REAL8 frequency up to the nearest integer SFT bin number.
+ *
+ * This function provides an official rounding convention,
+ * including a "fudge" factor.
+ */
+UINT4 XLALRoundFrequencyUpToSFTBin( const REAL8 freq, const REAL8 df )
+{
+  return (UINT4) ceil (freq / df * fudge_down);
+} /* XLALRoundFrequencyUpToSFTBin() */
+
 
 /**
  * Find the list of SFTs matching the \a file_pattern and satisfying the given \a constraints,
@@ -740,11 +765,11 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   if (fMin < 0)
     firstbin = minbin;
   else
-    firstbin = (UINT4) floor (fMin / deltaF * fudge_up);	// round *down*, but allow for 10*eps 'fudge'
+    firstbin = XLALRoundFrequencyDownToSFTBin ( fMin, deltaF );
   if (fMax < 0)
     lastbin = maxbin;
   else {
-    lastbin = (UINT4) ceil (fMax / deltaF * fudge_down);	// round *up*, but allow for 10*eps fudge
+    lastbin = XLALRoundFrequencyUpToSFTBin ( fMax, deltaF );
     if((lastbin == 0) && (fMax != 0)) {
       XLALPrintError("ERROR: last bin to read is 0 (fMax: %f, deltaF: %f)\n", fMax, deltaF);
       XLALLOADSFTSERROR(XLAL_EINVAL);
