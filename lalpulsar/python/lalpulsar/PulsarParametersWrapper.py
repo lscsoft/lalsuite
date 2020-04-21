@@ -678,7 +678,7 @@ class PulsarParametersPy(object):
 
         fitflag = lalpulsar.PulsarGetParamFitFlagAsVector(self._pulsarparameters, name)
 
-        if len(fitflag.data) > 1:
+        if len(fitflag.data) > 1 or isinstance(self[name.upper()], (list, np.ndarray)):
             return fitflag.data
         else:
             return fitflag.data[0]
