@@ -54,6 +54,9 @@ static int XLALSelectBestFstatMethod ( FstatMethodType *method );
 
 int XLALSetupFstatDemod  ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
 int XLALSetupFstatResampGeneric ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+#ifdef LALPULSAR_CUDA_ENABLED
+int XLALSetupFstatResampCUDA ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+#endif
 
 // ---------- Constant variable definitions ---------- //
 
@@ -65,6 +68,7 @@ static const char *const FstatMethodNames[FMETHOD_END] = {
   [FMETHOD_DEMOD_BEST]		= "DemodBest",
 
   [FMETHOD_RESAMP_GENERIC]	= "ResampGeneric",
+  [FMETHOD_RESAMP_CUDA]		= "ResampCUDA",
   [FMETHOD_RESAMP_BEST]		= "ResampBest",
 };
 
@@ -409,6 +413,15 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
     XLAL_CHECK_NULL ( optArgs.Dterms == 8, XLAL_EINVAL, "Selected Hotloop variant 'SSE' only works for Dterms == 8, got %d\n", optArgs.Dterms );
     extraBinsMethod = optArgs.Dterms;
     setupFuncMethod = XLALSetupFstatDemod;
+    break;
+
+  case FMETHOD_RESAMP_CUDA:		// Resamp: CUDA implementation
+#ifdef LALPULSAR_CUDA_ENABLED
+    extraBinsMethod = 8;   // use 8 extra bins to give better agreement with Demod(w Dterms=8) near the boundaries
+    setupFuncMethod = XLALSetupFstatResampCUDA;
+#else
+    XLAL_ERROR_NULL ( XLAL_EFAILED, "Unexpected selection of unavailable optArgs.FstatMethod='%d'\n", optArgs.FstatMethod );
+#endif
     break;
 
   case FMETHOD_RESAMP_GENERIC:		// Resamp: generic implementation
@@ -1120,6 +1133,14 @@ XLALFstatMethodIsAvailable ( FstatMethodType method )
     // and SSE is available on the current execution machine
 #ifdef HAVE_SSE_COMPILER
     return LAL_HAVE_SSE_RUNTIME();
+#else
+    return 0;
+#endif
+
+  case FMETHOD_RESAMP_CUDA:
+    // This medthod is available only if compiled with CUDA support
+#ifdef LALPULSAR_CUDA_ENABLED
+    return 1;
 #else
     return 0;
 #endif

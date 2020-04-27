@@ -87,6 +87,12 @@ LALSUITE_ENABLE_SWIG
 # enable Doxygen documentation
 LALSUITE_ENABLE_DOXYGEN
 
+# enable CUDA
+LALSUITE_WITH_CUDA
+if test "${cuda}" = "true"; then
+  AC_DEFINE([LALPULSAR_CUDA_ENABLED],[1],[Define if using cuda library])
+fi
+
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO
 
@@ -186,6 +192,7 @@ LALPulsar has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL
+* CUDA support is $CUDA_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL

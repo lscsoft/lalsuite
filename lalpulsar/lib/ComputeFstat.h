@@ -119,6 +119,7 @@ typedef enum tagFstatMethodType {
   FMETHOD_DEMOD_BEST,		///< \a Demod: best guess of the fastest available hotloop
 
   FMETHOD_RESAMP_GENERIC,	///< \a Resamp: generic implementation
+  FMETHOD_RESAMP_CUDA,		///< \a Resamp: CUDA resampling
   FMETHOD_RESAMP_BEST,		///< \a Resamp: best guess of the fastest available implementation
 
   /// \cond DONT_DOXYGEN

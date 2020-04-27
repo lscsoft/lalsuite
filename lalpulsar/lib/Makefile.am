@@ -2,6 +2,7 @@ BUILT_SOURCES =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
+include $(top_srcdir)/gnuscripts/lalsuite_cuda.am
 
 pkginclude_HEADERS = \
 	BinaryPulsarTiming.h \
@@ -143,6 +144,14 @@ noinst_LTLIBRARIES += libcomputefstat_demodhl_sse.la
 liblalpulsar_la_LIBADD += libcomputefstat_demodhl_sse.la
 libcomputefstat_demodhl_sse_la_SOURCES = ComputeFstat_DemodHL_SSE.c
 libcomputefstat_demodhl_sse_la_CFLAGS = $(AM_CFLAGS) $(SSE_CFLAGS)
+endif
+
+if CUDA
+noinst_LTLIBRARIES += libcomputefstat_resamp_cuda.la
+liblalpulsar_la_LIBADD += libcomputefstat_resamp_cuda.la
+libcomputefstat_resamp_cuda_la_SOURCES = ComputeFstat_Resamp_CUDA.cu
+libcomputefstat_resamp_cuda_la_LDFLAGS = -no-undefined
+MOSTLYCLEANFILES += ComputeFstat_Resamp_CUDA.cpp
 endif
 
 EXTRA_liblalpulsar_la_SOURCES = \

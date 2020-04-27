@@ -16,4 +16,7 @@
 /* LALPulsar Version Devel Number  */
 #undef LALPULSAR_VERSION_DEVEL
 
+/* Define if using CUDA library */
+/* #undef LALPULSAR_CUDA_ENABLED */
+
 #endif /* LALPULSAR_VERSION */
