@@ -161,6 +161,7 @@ TEMPOUNITS = {'DIST':      u.kpc,                  # kpc
               'POSEPOCH':  u.d,                    # MJD(TT) (day)
               'DMEPOCH':   u.d,                    # MJD(TT) (day)
               'GLEP':      u.d,                    # MJD(TT) (day)
+              'GLTD':      u.d,                    # days
               'OM':        u.deg,                  # degs
               'PB':        u.d,                    # day
               'T0':        u.d,                    # MJD(TT) (day)
@@ -262,6 +263,9 @@ class PulsarParametersPy(object):
 
         return self.length
 
+    def __str__(self):
+        return self.pp_to_str()
+
     def __getitem__(self, key):
         """
         Get value from pulsar parameters
@@ -278,11 +282,14 @@ class PulsarParametersPy(object):
             tkey = key[:-4] # get the actual parameter key name
 
         # check if the key is asking for an individual parameter from a vector parameter
-        # (e.g. 'F0' gets the first value from the 'F' vector)
+        # (e.g. 'F0' gets the first value from the 'F' vector.
+        # NOTE: this is problematic for glitch parameters, e.g., GLF0, which could provide
+        # values to multiple glitches, so this cannot be used to get individual glitch
+        # parameters).
         sname = re.sub(r'_\d', '', tkey) if '_' in tkey else re.sub(r'\d', '', tkey)
         sidx = None
         indkey = None
-        if sname != tkey:
+        if sname != tkey and tkey[0:2] != "GL":
             # check additional index is an integer
             try:
                 sidx = int(tkey.split('_')[-1]) if '_' in tkey else int(tkey[len(sname):])
@@ -394,7 +401,7 @@ class PulsarParametersPy(object):
         if isinstance(value, np.ndarray) or isinstance(value, list):
             cvalue = []
             bunit = ppunit
-            for i, v in enumerate(value):
+            for v in value:
                 cvalue.append(v*ppunit)
                 if uname in ['F', 'FB', 'P']: # frequency/period values
                     ppunit *= bunit # increment unit (e.g. Hz -> Hz/s, Hz/s -> Hz/s^2)
@@ -671,34 +678,40 @@ class PulsarParametersPy(object):
 
         fitflag = lalpulsar.PulsarGetParamFitFlagAsVector(self._pulsarparameters, name)
 
-        if len(fitflag.data) > 1:
+        if len(fitflag.data) > 1 or isinstance(self[name.upper()], (list, np.ndarray)):
             return fitflag.data
         else:
             return fitflag.data[0]
 
-    def pp_to_par(self, filename, precision=19):
+    def pp_to_str(self, precision=19):
         """
-        Output the PulsarParameter structure to a `.par` file.
+        Convert the PulsarParameter structure to a string in the format of a
+        TEMPO-style `.par` file.
 
         Args:
-            filename (str): the path to the output file
             precision (int): the number of decimal places for an output value
+
+        Returns:
+            str: the contents in TEMPO-format
         """
 
-        try:
-            fp = open(filename, 'w')
-        except IOError:
-            raise IOError("Could not open file '{}' for writing".format(filename))
-
         # output string format (set so that values should line up)
-        mkl = max([len(kn) for kn in self.keys()])+2 # max key length for output alignment
-        vlb = precision+10 # allow extra space for minus sign/exponents
-        outputstr = '{{name: <{0}}}{{value: <{1}}}{{fitflag}}\t{{error}}'.format(mkl, vlb)
+        mkl = max([len(kn) for kn in self.keys()]) + 2  # max key length for output alignment
+        vlb = precision + 10  # allow extra space for minus sign/exponents
+        outputstr = "{{name: <{0}}}{{value: <{1}}}{{fitflag}}\t{{error}}".format(mkl, vlb)
+
+        parstr = ""
+
+        parsedwaves = False
 
         # get names of parameters in file
         for item in self.items():
             key = item[0]
             value = item[1]
+
+            if key in ["WAVESIN", "WAVECOS"] and parsedwaves:
+                # already added the FITWAVES values
+                continue
 
             # get error
             evalue = self.get_error(key)
@@ -730,38 +743,72 @@ class PulsarParametersPy(object):
             if evalue is not None:
                 fitflag = self.get_fitflag(key)
 
-            oevalue = ''  # default output error value
-            ofitflag = ' ' # default output fit flag value (a single space for alignment purposes)
+            oevalue = ""  # default output error value
+            ofitflag = " "  # default output fit flag value (a single space for alignment purposes)
             if isinstance(tvalue, list) or isinstance(tvalue, np.ndarray):
                 idxoffset = 0
-                idxsep = ''
-                if key in ['WAVESIN', 'WAVECOS', 'GLEP', 'GLPH', 'GLF0', 'GLF0D', 'GLTD']:
+                idxsep = ""
+                if key in ['WAVESIN', 'WAVECOS', 'GLEP', 'GLPH', 'GLF0', 'GLF1', 'GLF0D', 'GLTD']:
                     # the TEMPO variable name for these parameter start with an index a 1
                     idxoffset = 1
 
-                    if key[:2] == 'GL':
-                        # glitch parameters have an '_' seperating the name from the index
-                        idxsep = '_'
+                    if key[:2] == "GL":
+                        # glitch parameters have an "_" seperating the name from the index
+                        idxsep = "_"
 
-                for tv, te, tf in zip(tvalue, tevalue, fitflag):
-                    precstr = '{{0:.{}f}}'.format(precision) # print out float
-                    if tv < 1e-6 or tv > 1e6:
-                        # print out float in scientific notation
-                        precstr = '{{0:.{}e}}'.format(precision)
+                if key in ["WAVESIN", "WAVECOS"]:
+                    # do things differently for FITWAVES parameters
+                    parsedwaves = True
 
-                    precstre = '{{0:.{}f}}'.format(precision) # print out float
-                    if te < 1e-6 or te > 1e6:
-                        # print out float in scientific notation
-                        precstre = '{{0:.{}e}}'.format(precision)
+                    if key == "WAVESIN":
+                        wavesin = tvalue
+                        wavecos = self["WAVECOS"]
+                    else:
+                        wavesin = self["WAVESIN"]
+                        wavecos = tvalue
 
-                    outputdic = {}
-                    outputdic['name'] = '{}{}{}'.format(key, idxsep, idxoffset)
-                    idxoffset += 1
-                    outputdic['value'] = precstr.format(tv)
-                    outputdic['fitflag'] = '1' if tf == 1 else ''
-                    outputdic['error'] = precstre.format(te) if te != 0. else ''
+                    for ws, wc in zip(wavesin, wavecos):
+                        precstrs = '{{0:.{}f}}'.format(precision)  # print out float
+                        if ws < 1e-6 or ws > 1e6:
+                            # print out float in scientific notation
+                            precstrs = '{{0:.{}e}}'.format(precision)
 
-                    fp.write(outputstr.format(**outputdic).strip()+'\n')
+                        precstrc = '{{0:.{}f}}'.format(precision)  # print out float
+                        if wc < 1e-6 or wc > 1e6:
+                            # print out float in scientific notation
+                            precstrc = '{{0:.{}e}}'.format(precision)
+
+                        outputdic = {}
+                        outputdic["name"] = "WAVE{}{}".format(idxsep, idxoffset)
+                        idxoffset += 1
+                        outputdic["value"] = "{}\t{}".format(
+                            precstrs.format(ws),
+                            precstrc.format(wc)
+                        )
+                        outputdic["fitflag"] = ""
+                        outputdic["error"] = ""
+
+                        parstr += outputstr.format(**outputdic).strip() + "\n"
+                else:
+                    for tv, te, tf in zip(tvalue, tevalue, fitflag):
+                        precstr = '{{0:.{}f}}'.format(precision) # print out float
+                        if tv < 1e-6 or tv > 1e6:
+                            # print out float in scientific notation
+                            precstr = '{{0:.{}e}}'.format(precision)
+
+                        precstre = '{{0:.{}f}}'.format(precision) # print out float
+                        if te < 1e-6 or te > 1e6:
+                            # print out float in scientific notation
+                            precstre = '{{0:.{}e}}'.format(precision)
+
+                        outputdic = {}
+                        outputdic['name'] = '{}{}{}'.format(key, idxsep, idxoffset)
+                        idxoffset += 1
+                        outputdic['value'] = precstr.format(tv)
+                        outputdic['fitflag'] = '1' if tf == 1 else ''
+                        outputdic['error'] = precstre.format(te) if te != 0. else ''
+
+                        parstr += outputstr.format(**outputdic).strip() + "\n"
             else:
                 if isinstance(tvalue, float) or key in ['RA', 'RAJ', 'DEC', 'DECJ']:
                     if isinstance(tvalue, float):
@@ -796,8 +843,25 @@ class PulsarParametersPy(object):
                 outputdic['fitflag'] = ofitflag
                 outputdic['error'] = oevalue
 
-                fp.write(outputstr.format(**outputdic).strip()+'\n')
+                parstr += outputstr.format(**outputdic).strip() + "\n"
 
+        return parstr
+
+    def pp_to_par(self, filename, precision=19):
+        """
+        Output the PulsarParameter structure to a `.par` file.
+
+        Args:
+            filename (str): the path to the output file
+            precision (int): the number of decimal places for an output value
+        """
+
+        try:
+            fp = open(filename, 'w')
+        except IOError:
+            raise IOError("Could not open file '{}' for writing".format(filename))
+
+        fp.write(self.pp_to_str(precision=precision))
         fp.close()
 
     def PulsarParameters(self):
