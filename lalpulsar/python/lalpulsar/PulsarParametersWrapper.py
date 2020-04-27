@@ -766,7 +766,7 @@ class PulsarParametersPy(object):
                     else:
                         wavesin = self["WAVESIN"]
                         wavecos = tvalue
-                    
+
                     for ws, wc in zip(wavesin, wavecos):
                         precstrs = '{{0:.{}f}}'.format(precision)  # print out float
                         if ws < 1e-6 or ws > 1e6:
