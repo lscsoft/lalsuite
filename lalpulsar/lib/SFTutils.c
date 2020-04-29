@@ -841,28 +841,30 @@ XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS )
 
 } /* XLALDestroyMultiTimestamps() */
 
-///
-/// Parses valid CW detector names and prefixes: 'name' input can be either a valid detector name or prefix
-/// \return allocated prefix string (2 characters+0) for valid detectors, NULL otherwise
-///
-/// If passed a non-NULL pointers 'lalCachedIndex', will set to index >= 0 into the
-/// lalCachedDetectors[] array if found there, or -1 if it's one of the "CW special" detectors
-///
-/// \note this should be the *only* function defining valid CW detector names and prefixes
-///
-/// \note if first two characters of 'name' match a valid detector prefix, that is accepted, which
-/// allows passing longer strings beginning with a detector prefix ('H1:blabla') without extra hassle
-///
-/// \note the returned string is allocated here and needs to be free'ed by caller!
-///
-char *
-XLALGetCWDetectorPrefix ( INT4 *lalCachedIndex, const char *name )
+
+/**
+ * Parses valid CW detector names and prefixes. 'name' input can be either a valid detector name or prefix
+ *
+ * \return Allocated prefix string (2 characters+0) for valid detectors, NULL otherwise
+ *
+ * If passed a non-NULL pointer 'lalCachedIndex', will set to index >= 0 into the
+ * lalCachedDetectors[] array if found there, or -1 if it's one of the "CW special" detectors
+ *
+ * \note This should be the *only* function defining valid CW detector names and prefixes
+ *
+ * \note If first two characters of 'name' match a valid detector prefix, that is accepted, which
+ * allows passing longer strings beginning with a detector prefix ('H1:blabla') without extra hassle
+ *
+ * \note The returned string is allocated here and needs to be free'ed by caller!
+ */
+CHAR *
+XLALGetCWDetectorPrefix ( INT4 *lalCachedIndex, const CHAR *name )
 {
   XLAL_CHECK_NULL ( name != NULL, XLAL_EINVAL );
   XLAL_CHECK_NULL ( strlen ( name ) >= 2, XLAL_EINVAL );	// need at least a full prefix 'letter+number'
 
   // ----- first check if 'name' corresponds to one of our 'CW special' detectors (LISA and X-ray satellites)
-  const char *specialDetectors[] =
+  const CHAR *specialDetectors[] =
     {
       "Z1",	  /* LISA effective IFO 1 */
       "Z2",	  /* LISA effective IFO 2 */
@@ -893,8 +895,8 @@ XLALGetCWDetectorPrefix ( INT4 *lalCachedIndex, const char *name )
   UINT4 numLALDetectors = sizeof(lalCachedDetectors) / sizeof(lalCachedDetectors[0]);
   for ( UINT4 i = 0; i < numLALDetectors; i ++)
     {
-      const char *prefix_i = lalCachedDetectors[i].frDetector.prefix;
-      const char *name_i   = lalCachedDetectors[i].frDetector.name;
+      const CHAR *prefix_i = lalCachedDetectors[i].frDetector.prefix;
+      const CHAR *name_i   = lalCachedDetectors[i].frDetector.name;
       if ( ((prefix_i[0] == name[0]) && (prefix_i[1] == name[1]))
            || strncmp ( name, name_i, strlen ( name_i ) ) == 0
            )
@@ -913,10 +915,9 @@ XLALGetCWDetectorPrefix ( INT4 *lalCachedIndex, const char *name )
 
 /**
  * Extract/construct the unique 2-character "channel prefix" from the given "detector-name".
- * This is only a convenience wrapper around XLALGetCWDetectorPrefix() for backwards compatibility.
+ * This is a convenience wrapper around XLALGetCWDetectorPrefix().
  *
- * NOTE: the returned string is allocated here!
- *
+ * \note The returned string is allocated here!
  */
 CHAR *
 XLALGetChannelPrefix ( const CHAR *name )
@@ -925,11 +926,11 @@ XLALGetChannelPrefix ( const CHAR *name )
 } // XLALGetChannelPrefix()
 
 
-///
-/// Find the site geometry-information 'LALDetector' for given a detector name (or prefix).
-///
-/// \note The LALDetector struct is allocated here and needs to be free'ed by caller!
-///
+/**
+ * Find the site geometry-information 'LALDetector' for given a detector name (or prefix).
+ *
+ * \note The LALDetector struct is allocated here and needs to be free'ed by caller!
+ */
 LALDetector *
 XLALGetSiteInfo ( const CHAR *name )
 {
