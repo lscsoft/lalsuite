@@ -75,7 +75,6 @@ def multipleFileCB(opt, opt_str, value, parser):
 mcmc_group_id = '/lalinference/lalinference_mcmc'
 
 def reassign_metadata(new_posterior, original_hdf5):
-
 	# Make sure output file has same metadata as original
 	# input hdf5 file
 
@@ -174,10 +173,13 @@ def downsample_and_evidence(data_hdf5, deltaLogP=None, fixedBurnin=None, nDownsa
 	return posterior_samples
 
 
-def weight_and_combine(pos_chains, verbose=False):
+def weight_and_combine(pos_chains, verbose=False, evidence_weighting=True, combine_only=False):
 
 	# Combine several posterior chains into one
+        # If evidence_weighting == True, they are
 	# weighted by their relative evidence
+
+        # Otherwise they are just combined
 
 	log_evs = np.zeros(len(pos_chains))
 	log_noise_evs = np.zeros_like(log_evs)
@@ -189,12 +191,17 @@ def weight_and_combine(pos_chains, verbose=False):
 
 	max_log_ev = log_evs.max()
 
-	fracs=[np.exp(log_ev-max_log_ev) for log_ev in log_evs]
+	if evidence_weighting:
+	    fracs=[np.exp(log_ev-max_log_ev) for log_ev in log_evs]
+	else:
+	    fracs = [1.0 for _ in log_evs]
 	if verbose: print('Relative weights of input files: %s'%(str(fracs)))
 
 	Ns=[fracs[i]/len(pos_chains[i]) for i in range(len(fracs))]
 	Ntot=max(Ns)
 	fracs=[n/Ntot for n in Ns]
+	if combine_only:
+	    fracs = [1.0 for _ in fracs]
 	if verbose: print('Relative weights of input files taking into account their length: %s'%(str(fracs)))
 
 	final_posterior = pos_chains[0][np.random.uniform(size=len(pos_chains[0]))<fracs[0]]
@@ -246,6 +253,14 @@ if __name__ == '__main__':
 	parser.add_option(
 		'-b','--fixedBurnin',dest='fixedBurnin',action="callback",
 		callback=multipleFileCB,help='Fixed number of iteration for burnin.')
+	parser.add_option(
+		'--equal-weighting',action='store_true',default=False,
+		help = 'Disable evidence weighting and just combine chains so they have equal\
+                        contribution to the final result')
+	parser.add_option(
+                '--combine-only', action='store_true',default=False,
+                help = "Don't weight the chains at all, just concatenate them (different length\
+                        inputs will have different representation in the output)")
 	opts, args = parser.parse_args()
 
 	datafiles=[]
@@ -269,7 +284,9 @@ if __name__ == '__main__':
 		chain_posteriors.append(downsample_and_evidence(datafiles[i],
 			deltaLogP=opts.deltaLogP, fixedBurnin=fixedBurnins[i], nDownsample=opts.downsample, verbose=opts.verbose))
 
-	final_posterior, metadata = weight_and_combine(chain_posteriors, verbose=opts.verbose)
+	final_posterior, metadata = weight_and_combine(chain_posteriors, verbose=opts.verbose,
+                evidence_weighting = not opts.equal_weighting,
+                combine_only = opts.combine_only)
 
 	for path in datafiles:
 		run_identifier = extract_metadata(path, metadata)
