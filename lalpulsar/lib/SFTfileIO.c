@@ -137,7 +137,6 @@ static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 static int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
 static BOOLEAN is_pattern(const char*c); /* filename string is a glob-style pattern */
 
-static BOOLEAN is_valid_detector (const char *channel);
 static BOOLEAN consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, SFTtype header2, UINT4 version2, UINT4 nsamples2 );
 static BOOLEAN timestamp_in_list( LIGOTimeGPS timestamp, LIGOTimeGPSVector *list );
 static long get_file_len ( FILE *fp );
@@ -242,7 +241,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 
   if ( constraints && constraints->detector )
     {
-      if ( (strncmp(constraints->detector, "??", 2) != 0) && !is_valid_detector ( constraints->detector ) )
+      if ( (strncmp(constraints->detector, "??", 2) != 0) && !XLALIsValidCWDetector ( constraints->detector ) )
         {
           XLAL_ERROR_NULL ( XLAL_EDOM, "Invalid detector-constraint '%s'\n\n", constraints->detector );
         }
@@ -1320,7 +1319,7 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
     XLAL_ERROR ( XLAL_EINVAL );
   if (!( sft->epoch.gpsNanoSeconds < 1000000000 ))
     XLAL_ERROR ( XLAL_EINVAL );
-  if ( !is_valid_detector(sft->name) ) {
+  if ( !XLALIsValidCWDetector(sft->name) ) {
     XLALPrintError ("\nInvalid detector prefix '%c%c'\n\n", sft->name[0], sft->name[1] );
     XLAL_ERROR ( XLAL_EINVAL );
   }
@@ -1422,7 +1421,7 @@ XLALWriteSFT2file(
   if (!( fname ))
     XLAL_ERROR ( XLAL_EINVAL );
  
-  if ( !is_valid_detector(sft->name) ) {
+  if ( !XLALIsValidCWDetector(sft->name) ) {
     XLALPrintError ("\nInvalid detector prefix '%c%c'\n\n", sft->name[0], sft->name[1] );
     XLAL_ERROR ( XLAL_EINVAL );
   }
@@ -2338,7 +2337,7 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
       goto failed;
     }
 
-  if ( ! is_valid_detector ( rawheader.detector ) )
+  if ( ! XLALIsValidCWDetector ( rawheader.detector ) )
     {
       XLALPrintError ("\nIllegal detector-name in SFT: '%c%c'\n\n",
 					  rawheader.detector[0], rawheader.detector[1] );
@@ -2511,24 +2510,6 @@ read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swa
   return -1;
 
 } /* read_v1_header_from_fp() */
-
-
-/* check that channel-prefix defines a valid 'known' detector.
- * This is just a convenience wrapper to XLALGetCWDetectorPrefix(), which defines all valid 'CW detectors'
- *
- * returns TRUE if valid, FALSE otherwise */
-static BOOLEAN
-is_valid_detector (const char *channel)
-{
-
-  char *prefix = XLALGetCWDetectorPrefix ( NULL, channel );
-  if ( prefix == NULL ) {
-    return FALSE;
-  }
-  XLALFree ( prefix );
-  return TRUE;
-
-} /* is_valid_detector() */
 
 
 /* a little endian-swapper needed for SFT reading/writing */

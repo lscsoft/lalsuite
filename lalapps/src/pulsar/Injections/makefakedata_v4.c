@@ -221,7 +221,6 @@ int XLALFreeMem ( ConfigVars_t *cfg );
 BOOLEAN is_directory ( const CHAR *fname );
 int XLALIsValidDescriptionField ( const char *desc );
 
-static BOOLEAN is_valid_detector (const char *channel);
 void LALWriteSFTfile (LALStatus *, const SFTtype *sft, const CHAR *outfname);
 void LALWrite_v2SFT_to_v1file (LALStatus *, const SFTtype *sft, const CHAR *fname);
 
@@ -1500,23 +1499,6 @@ is_directory ( const CHAR *fname )
 #define SFTFILEIO_MSGEVAL       "Invalid value"
 #define SFTFILEIO_MSGEMEM       "Out of memory"
 
-/* check that channel-prefix defines a valid 'known' detector.
- * This is just a convenience wrapper to XLALGetCWDetectorPrefix(), which defines all valid 'CW detectors'
- *
- * returns TRUE if valid, FALSE otherwise */
-static BOOLEAN
-is_valid_detector (const char *channel)
-{
-
-  char *prefix = XLALGetCWDetectorPrefix ( NULL, channel );
-  if ( prefix == NULL ) {
-    return FALSE;
-  }
-  XLALFree ( prefix );
-  return TRUE;
-
-} /* is_valid_detector() */
-
 /**
  * [OBSOLETE] Write a *v1-normalized* (i.e. raw DFT) SFTtype to a SFT-v1 file.
  *
@@ -1670,7 +1652,7 @@ LALWrite_v2SFT_to_v1file (LALStatus *status,			/**< pointer to LALStatus structu
 
   ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
 
-  if ( !is_valid_detector(sft->name) ) {
+  if ( !XLALIsValidCWDetector(sft->name) ) {
     ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
   }
 

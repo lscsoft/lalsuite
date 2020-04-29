@@ -133,7 +133,7 @@ class CWSimulator(object):
 
         # parse detector name
         try:
-            _, self.__site_index = lalpulsar.GetCWDetectorPrefix(det_name)
+            _, self.__site_index = lalpulsar.FindCWDetector(det_name, True)
             assert(self.__site_index >= 0)
         except:
             raise ValueError("Invalid detector name det_name='%s'" % det_name)
