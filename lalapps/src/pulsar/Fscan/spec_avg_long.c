@@ -125,7 +125,6 @@ typedef struct {
 
 ///////////EXTRA FXN DEFS//////////////
 
-static BOOLEAN is_valid_detector(const char *channel);
 static int compareSFTloc(const void *ptr1, const void *ptr2);
 static UINT4 read_sft_bins_from_fp(SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, UINT4 lastBin2read, FILE *fp);
 static int read_sft_header_from_fp(FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **SFTcomment, UINT4 *numBins);
@@ -1334,7 +1333,7 @@ read_v2_header_from_fp(FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header
 	  goto failed;
   }
 
-  if (!is_valid_detector(rawheader.detector))
+  if (!XLALIsValidCWDetector(rawheader.detector))
   {
 	  XLALPrintError("\nIllegal detector-name in SFT: '%c%c'\n\n",
 		  rawheader.detector[0], rawheader.detector[1]);
@@ -1463,58 +1462,3 @@ calc_crc64(const CHAR *data, UINT4 length, UINT8 crc)
 	return crc;
 
 } /* calc_crc64() */
-
-/* check that channel-prefix defines a 'known' detector.  The list of
-* known detectors implemented here for now follows the list in
-* Appendix D of LIGO-T970130-F-E:
-*
-* returns TRUE if valid, FALSE otherwise */
-static BOOLEAN
-is_valid_detector(const char *channel)
-{
-	int i;
-	const char *knownDetectors[] =
-	{
-		"A1",       /* ALLEGRO */
-		"B1",       /* NIOBE */
-		"E1",       /* EXPLORER */
-		"G1",       /* GEO_600 */
-		"H1",       /* LHO_4k */
-		"H2",       /* LHO_2k */
-		"K1",       /* ACIGA */
-		"L1",       /* LLO_4k */
-		"N1",       /* Nautilus */
-		"O1",       /* AURIGA */
-		"P1",       /* CIT_40 */
-		"T1",       /* TAMA_300 */
-		"V1",       /* Virgo_CITF */
-		"V2",       /* Virgo (3km) */
-		"Z1",	  /* LISA effective IFO 1 */
-		"Z2",	  /* LISA effective IFO 2 */
-		"Z3",	  /* LISA effective IFO 3 */
-		"Z4",	  /* LISA effective IFO 2 minus 3 */
-		"Z5",	  /* LISA effective IFO 3 minus 1 */
-		"Z6",	  /* LISA effective IFO 1 minus 2 */
-		"Z7",	  /* LISA pseudo TDI A */
-		"Z8",	  /* LISA pseudo TDI E */
-		"Z9",	  /* LISA pseudo TDI T */
-		"X1",       /* RXTE PCA */
-		"X2",       /* RXTE ASM */
-		NULL
-	};
-
-	if (!channel)
-		return FALSE;
-
-	if (strlen(channel) < 2)
-		return FALSE;
-
-	for (i = 0; knownDetectors[i]; i++)
-	{
-		if ((knownDetectors[i][0] == channel[0]) && (knownDetectors[i][1] == channel[1]))
-			return TRUE;
-	}
-
-	return FALSE;
-
-} /* is_valid_detector() */
