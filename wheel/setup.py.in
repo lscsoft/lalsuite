@@ -62,8 +62,13 @@ lal_data_path_fixup = '''
 # This section was added automatically to support using LALSuite as a wheel.
 #
 import os
-import pkg_resources
-new_path = pkg_resources.resource_filename('lalapps', 'data')
+try:
+    from importlib import resources
+except ImportError:
+    # FIXME: remove after dropping support for Python < 3.7
+    import importlib_resources as resources
+with resources.path('lalapps', '') as new_path:
+    new_path = str(new_path / 'data')
 path = os.environ.get('LAL_DATA_PATH')
 path = path.split(':') if path else []
 if new_path not in path:
@@ -90,8 +95,15 @@ class build_py(_build_py):
 
 stub = '''\
 #!python
-import os, pkg_resources, sys
-os.execv(pkg_resources.resource_filename('lalapps', 'bin/{}'), sys.argv)
+import os
+try:
+    from importlib import resources
+except ImportError:
+    # FIXME: remove after dropping support for Python < 3.7
+    import importlib_resources as resources
+with resources.path('lalapps', 'bin') as new_path:
+    new_path = str(new_path / '{}')
+os.execv(new_path, sys.argv)
 '''
 
 
@@ -172,5 +184,6 @@ setup(
         'lalinference': ['gwpy', 'gwdatafind']
     },
     install_requires=['lscsoft-glue', 'ligo-segments', 'matplotlib',
-                      'numpy>=1.7', 'python-dateutil', 'scipy']
+                      'numpy>=1.7', 'python-dateutil', 'scipy',
+                     'importlib_resources;python_version<"3.7"']
 )
