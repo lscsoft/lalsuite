@@ -875,9 +875,6 @@ XLALGetCWDetectorPrefix ( INT4 *lalCachedIndex, const CHAR *name )
       "Z7",	  /* LISA pseudo TDI A */
       "Z8",	  /* LISA pseudo TDI E */
       "Z9",	  /* LISA pseudo TDI T */
-
-      "X1",       /* RXTE PCA */
-      "X2",       /* RXTE ASM */
       NULL
     };
   for ( UINT4 i = 0; specialDetectors[i] != NULL; i ++ )
@@ -948,10 +945,6 @@ XLALGetSiteInfo ( const CHAR *name )
 
   switch ( prefix[0] )
     {
-    case 'X':	    // X-ray satellite data
-      XLAL_ERROR_NULL ( XLAL_EINVAL, "Sorry, detector site not implemented for special 'X'-ray detector 'name=%s, prefix=%s'\n", name, prefix );
-      break;
-
     case 'Z':       // create dummy-sites for LISA
       XLAL_CHECK_NULL ( XLALcreateLISA ( site, prefix[1] ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to created LISA detector 'name=%s, prefix=%s'\n", name, prefix );
       break;
