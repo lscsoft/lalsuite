@@ -142,7 +142,7 @@ get_psd () { # expected argument order: mthop IFO startTime endTime extrArgs
         echo "Error.. something failed when running '$psd_code' ..."
         exit 1
     fi
-    firstline_psd=$(grep -o '^[^%]*' $psdfile | head -1)
+    firstline_psd=$(grep -v '^%' $psdfile | head -1)
     freq=$(echo $firstline_psd | awk '{print $1}')
     psd=$(echo $firstline_psd | awk '{print $2}')
     power=$(echo $firstline_psd | awk '{print $3}')
