@@ -1143,3 +1143,6 @@ disp("PASSED LALUnit operations");
 
 ## passed all tests!
 disp("PASSED all tests");
+if exist("swig_exit")
+   swig_exit;
+endif

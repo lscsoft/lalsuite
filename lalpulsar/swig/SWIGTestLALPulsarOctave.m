@@ -40,3 +40,6 @@ disp("PASSED multi-vector element assignment");
 
 ## passed all tests!
 disp("PASSED all tests");
+if exist("swig_exit")
+   swig_exit;
+endif

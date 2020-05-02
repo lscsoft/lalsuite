@@ -29,3 +29,6 @@ disp("PASSED object parent tracking");
 
 ## passed all tests!
 disp("PASSED all tests");
+if exist("swig_exit")
+   swig_exit;
+endif
