@@ -647,7 +647,7 @@ struct TAGNAME {
   }
 }
 %typemap(freearg, match="in", noblock=1) SWIGTYPE[ANY], SWIGTYPE INOUT[ANY] {
-  swiglal_array_elemfree(%as_voidptr(&temp$argnum[0]), &elemalloc$argnum, sizeof(temp$argnum[0]), 1, dims$argnum);
+  swiglal_array_elemfree(arg$argnum, &elemalloc$argnum, sizeof($typemap(swiglal_fixarr_ltype, $1_type)), 1, dims$argnum);
 }
 %typemap(in, noblock=1) SWIGTYPE[ANY][ANY] (size_t dims[2] = {0, 0}, int elemalloc = 0), SWIGTYPE INOUT[ANY][ANY] (size_t dims[2] = {0, 0}, int elemalloc = 0) {
   $typemap(swiglal_fixarr_ltype, $1_type) temp$argnum[$1_dim0][$1_dim1];
@@ -666,7 +666,7 @@ struct TAGNAME {
   }
 }
 %typemap(freearg, match="in", noblock=1) SWIGTYPE[ANY][ANY], SWIGTYPE INOUT[ANY][ANY] {
-  swiglal_array_elemfree(%as_voidptr(&temp$argnum[0][0]), &elemalloc$argnum, sizeof(temp$argnum[0][0]), 2, dims$argnum);
+  swiglal_array_elemfree(arg$argnum, &elemalloc$argnum, sizeof($typemap(swiglal_fixarr_ltype, $1_type)), 2, dims$argnum);
 }
 
 ///
