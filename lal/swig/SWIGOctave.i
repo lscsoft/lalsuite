@@ -815,9 +815,26 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 %define %swiglal_oct_array_frags(ACFTYPE, INFRAG, OUTFRAG, INCALL, OUTCALL, OVCLASS, OVTYPE, OVVALUE, ISOVTYPEEXPR)
 
 // Register the ACFTYPE-specific array view class as an Octave type.
-%fragment(%swiglal_oct_array_view_init_frag(ACFTYPE), "init") {
+%fragment(%swiglal_oct_array_view_init_frag(ACFTYPE), "init") %{
+#if SWIG_OCTAVE_PREREQ(4,4,0)
+  {
+    octave::type_info& typeinfo = octave::interpreter::the_interpreter()->get_type_info();
+    string_vector types = typeinfo.installed_type_names();
+    bool register_octave_array_view_class = true;
+    bool register_octave_swig_packed = true;
+    for (int i = 0; i < types.numel(); ++i) {
+      if (types(i) == %swiglal_oct_array_view_class(ACFTYPE)::static_type_name()) {
+        register_octave_array_view_class = false;
+      }
+    }
+    if (register_octave_array_view_class) {
+      %swiglal_oct_array_view_class(ACFTYPE)::register_type();
+    }
+  }
+#else
   %swiglal_oct_array_view_class(ACFTYPE)::register_type();
-}
+#endif
+%}
 
 // ACFTYPE-specific array view class fragment.
 %fragment(%swiglal_oct_array_view_frag(ACFTYPE), "header",
