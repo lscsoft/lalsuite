@@ -7,9 +7,9 @@ crash_dumps_octave_core(0);
 ## check module load
 disp("checking module load ...");
 lalframe;
-assert(exist("lalframe", "var"));
+assert(exist("lalframe"));
 lal;
-assert(exist("lal", "var"));
+assert(exist("lal"));
 disp("PASSED module load");
 
 ## check object parent tracking
