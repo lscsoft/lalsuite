@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 106
+# serial 107
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -173,6 +173,11 @@ SWIG support can be disabled by using the --disable-swig configure option]])
       ])
       SWIG="${ac_cv_path_SWIG}"
     ])
+    AS_IF([test "x${swig_min_recommend_version}" != x],[
+      LALSUITE_VERSION_COMPARE([${swig_version}],[<],[${swig_min_recommend_version}],[
+        AC_MSG_WARN([SWIG version ${swig_min_recommend_version} or later is recommended ${swig_min_version_info}])
+      ])
+    ])
 
     # check if SWIG works with ccache
     ccache_swig_env="CCACHE_CPP2=1"
@@ -314,6 +319,8 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     LALSUITE_VERSION_COMPARE([${octave_version}],[<],[${octave_min_version}],[
       AC_MSG_ERROR([Octave version ${octave_min_version} or later is required])
     ])
+
+    # set minimum SWIG version requirements based on Octave version
     LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.0.0],[
       LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[3.0.7],[
         swig_min_version=3.0.7
@@ -326,16 +333,11 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
         swig_min_version_info="for Octave version ${octave_version}"
       ])
     ])
-
-    # debian buster has patched swig-3.0.12-2 to support octave 4.4,
-    # so we ignore this requirement on that platform
-    cat /etc/issue | grep -Eiq "debian .*(10|buster|11|bullseye)"
-    AS_IF([test $? -ne 0],[
-      LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.4.0],[
-        LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[4.0.0],[
-          swig_min_version=4.0.0
-          swig_min_version_info="for Octave version ${octave_version}"
-        ])
+    LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.4.0],[
+      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[4.0.2],[
+        # TODO: once SWIG 4.0.2 is released and widely available, replace 'swig_min_recommend_version' with 'swig_min_version'
+        swig_min_recommend_version=4.0.2
+        swig_min_version_info="for Octave version ${octave_version}"
       ])
     ])
 
