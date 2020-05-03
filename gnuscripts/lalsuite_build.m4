@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 157
+# serial 158
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -87,10 +87,11 @@ AC_DEFUN([LALSUITE_CHECK_COMPILE_FLAGS],[
   LALSUITE_CLEAR_UVARS
   lalsuite_save_werror_flag=${ac_[]_AC_LANG_ABBREV[]_werror_flag}
   ac_[]_AC_LANG_ABBREV[]_werror_flag=yes
+  lalsuite_passed_flags=""
   for flag in m4_normalize($1); do
     AS_VAR_PUSHDEF([CACHEVAR],[lalsuite_cv_check_compile_[]_AC_LANG_ABBREV[]_${flag}])
     AC_CACHE_CHECK([whether ]_AC_LANG[ compiler accepts ${flag}],CACHEVAR,[
-      _AC_LANG_PREFIX[]FLAGS="${uvar_orig_prefix[]_AC_LANG_PREFIX[]FLAGS} ${flag}"
+      _AC_LANG_PREFIX[]FLAGS="${uvar_orig_prefix[]_AC_LANG_PREFIX[]FLAGS} ${lalsuite_passed_flags} ${flag}"
       AC_COMPILE_IFELSE([AC_LANG_SOURCE([])],[
         AS_VAR_SET(CACHEVAR,[yes])
       ],[
@@ -99,6 +100,7 @@ AC_DEFUN([LALSUITE_CHECK_COMPILE_FLAGS],[
     ])
     AS_IF([test x"AS_VAR_GET(CACHEVAR)" = xyes],[
       m4_default([$2], :)
+      lalsuite_passed_flags="${lalsuite_passed_flags} ${flag}"
     ],[
       m4_default([$3], :)
     ])
@@ -115,10 +117,11 @@ AC_DEFUN([LALSUITE_CHECK_LINK_FLAGS],[
   LALSUITE_CLEAR_UVARS
   lalsuite_save_werror_flag=${ac_[]_AC_LANG_ABBREV[]_werror_flag}
   ac_[]_AC_LANG_ABBREV[]_werror_flag=yes
+  lalsuite_passed_flags=""
   for flag in m4_normalize($1); do
     AS_VAR_PUSHDEF([CACHEVAR],[lalsuite_cv_check_link_[]_AC_LANG_ABBREV[]_${flag}])
     AC_CACHE_CHECK([whether ]_AC_LANG[ linker accepts ${flag}],CACHEVAR,[
-      LDFLAGS="${uvar_orig_prefix[]LDFLAGS} ${flag}"
+      LDFLAGS="${uvar_orig_prefix[]LDFLAGS} ${lalsuite_passed_flags} ${flag}"
       AC_LINK_IFELSE([AC_LANG_PROGRAM([])],[
         AS_VAR_SET(CACHEVAR,[yes])
       ],[
@@ -127,6 +130,7 @@ AC_DEFUN([LALSUITE_CHECK_LINK_FLAGS],[
     ])
     AS_IF([test x"AS_VAR_GET(CACHEVAR)" = xyes],[
       m4_default([$2],[:])
+      lalsuite_passed_flags="${lalsuite_passed_flags} ${flag}"
     ],[
       m4_default([$3],[:])
     ])
