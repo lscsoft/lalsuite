@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 104
+# serial 105
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -145,7 +145,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
 
     # check for SWIG binary with version ${swig_min_version} or later;
     # use ${SWIG} if set, otherwise check common SWIG binary names
-    AC_SUBST([SWIG])
+    AC_ARG_VAR([SWIG],[the SWIG tool])
     AS_IF([test "x${SWIG}" != x],[
       AC_MSG_CHECKING([if ${SWIG} version is at least ${swig_min_version}])
       _LALSUITE_CHECK_SWIG_VERSION([${SWIG}])
@@ -268,9 +268,20 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     AC_CHECK_HEADERS([gsl/gsl_complex.h],,[AC_MSG_ERROR([could not find the gsl/gsl_complex.h header])])
 
     # check for Octave
-    AC_PATH_PROGS(OCTAVE,[octave-cli octave],[],[])
-    AS_IF([test "x${OCTAVE}" = x],[
-      AC_MSG_ERROR([could not find octave in PATH])
+    AC_ARG_VAR([OCTAVE],[the Octave interpreter])
+    AS_IF([test "x${OCTAVE}" != x],[
+      AC_MSG_CHECKING([${OCTAVE} is executable])
+      AS_IF([test -x "${OCTAVE}"],[
+        AC_MSG_RESULT([yes])
+      ],[
+        AC_MSG_RESULT([no])
+        AC_MSG_ERROR([${OCTAVE} is not executable])
+      ])
+    ],[
+      AC_PATH_PROGS([OCTAVE],[octave-cli octave],[],[])
+      AS_IF([test "x${OCTAVE}" = x],[
+        AC_MSG_ERROR([could not find octave in PATH])
+      ])
     ])
 
     # check for Octave utilities octave-config and mkoctfile
