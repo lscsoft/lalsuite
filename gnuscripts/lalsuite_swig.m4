@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 105
+# serial 106
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -294,7 +294,6 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
       AC_MSG_RESULT([not found])
       AC_MSG_ERROR([could not find octave-config in ${octave_dir}])
     ])
-    octave_cfg="env - ${octave_cfg}"
     AC_MSG_CHECKING([for mkoctfile])
     mkoctfile="${octave_dir}/mkoctfile"
     AS_IF([test -x "${mkoctfile}"],[
@@ -303,12 +302,11 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
       AC_MSG_RESULT([not found])
       AC_MSG_ERROR([could not find mkoctfile in ${octave_dir}])
     ])
-    mkoctfile="env - ${mkoctfile}"
 
     # check Octave version
     octave_min_version=3.2.0
     AC_MSG_CHECKING([${OCTAVE} version])
-    octave_version=[`${octave_cfg} -p VERSION 2>/dev/null`]
+    octave_version=[`env -u VERSION ${octave_cfg} -p VERSION 2>/dev/null`]
     AS_IF([test "x${octave_version}" = x],[
       AC_MSG_ERROR([could not determine ${OCTAVE} version])
     ])
@@ -346,13 +344,16 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     # is installed in the same directory as Octave, .oct files will be found by
     # Octave without having to add to OCTAVE_PATH
     AC_MSG_CHECKING([${OCTAVE} .oct installation directory])
-    # at least in Debian Buster, "HOME" has been dropped in favour of "OCTAVE_HOME"
-    octave_prefix=[`${octave_cfg} -p OCTAVE_HOME 2>/dev/null | ${SED} -e 's|/*$||'`]
-    # fallback if OCTAVE_HOME is yet unknown
+    for octave_prefix_variable in OCTAVE_HOME PREFIX; do
+      octave_prefix=[`env -u ${octave_prefix_variable} ${octave_cfg} -p ${octave_prefix_variable} 2>/dev/null | ${SED} -e 's|/*$||'`]
+      AS_IF([test "x${octave_prefix}" != x],[
+        break
+      ])
+    done
     AS_IF([test "x${octave_prefix}" = x],[
-      octave_prefix=[`${octave_cfg} -p PREFIX 2>/dev/null | ${SED} -e 's|/*$||'`]
-    ])                                                                                                                                                                                                                                                            
-    octexecdir=[`${octave_cfg} -p LOCALVEROCTFILEDIR 2>/dev/null | ${SED} -e 's|/*$||'`]
+      AC_MSG_ERROR([could not determine ${OCTAVE} installation prefix])
+    ])
+    octexecdir=[`env -u LOCALVEROCTFILEDIR ${octave_cfg} -p LOCALVEROCTFILEDIR 2>/dev/null | ${SED} -e 's|/*$||'`]
     octexecdir=[`echo ${octexecdir} | ${SED} -e "s|^${octave_prefix}/||"`]
     AS_IF([test "x`echo ${octexecdir} | ${SED} -n -e '\|^/|p'`" != x],[
       AC_MSG_ERROR([could not build relative path from "${octexecdir}"])
@@ -363,7 +364,10 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
 
     # determine C++ compiler used to compile Octave itself
     AC_MSG_CHECKING([C++ compiler used for building ${OCTAVE}])
-    octave_CXX=`${mkoctfile} -p CXX 2>/dev/null`
+    octave_CXX=`env -u CXX ${mkoctfile} -p CXX 2>/dev/null`
+    AS_IF([test "x${octave_CXX}" = x],[
+      AC_MSG_ERROR([could not determine C++ compiler used for building ${OCTAVE}])
+    ])
     AC_MSG_RESULT([${octave_CXX}])
 
     # check that configured C++ compiler is compatible with C++ compiler used to
@@ -409,7 +413,7 @@ int main() { std::string s = "a"; return 0; }
     AC_SUBST([SWIG_OCTAVE_CPPFLAGS],[])
     AC_SUBST([SWIG_OCTAVE_CPPFLAGS_IOCTAVE],[])
     for arg in CPPFLAGS INCFLAGS; do
-      for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
+      for flag in `env -u ${arg} ${mkoctfile} -p ${arg} 2>/dev/null`; do
         AS_CASE([${flag}],
           [-I*/octave],[SWIG_OCTAVE_CPPFLAGS_IOCTAVE="${flag}"],
           [SWIG_OCTAVE_CPPFLAGS="${SWIG_OCTAVE_CPPFLAGS} ${flag}"]
@@ -421,7 +425,7 @@ int main() { std::string s = "a"; return 0; }
     AC_SUBST([SWIG_OCTAVE_CXXFLAGS],[])
     swig_octave_cxxflags=
     for arg in CXX CXXPICFLAG ALL_CXXFLAGS; do
-      for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
+      for flag in `env -u ${arg} ${mkoctfile} -p ${arg} 2>/dev/null`; do
         AS_CASE([${flag}],
           [-*],[swig_octave_cxxflags="${swig_octave_cxxflags} ${flag}"]
         )
@@ -444,8 +448,16 @@ int main() { std::string s = "a"; return 0; }
     # determine Octave linker flags
     AC_SUBST([SWIG_OCTAVE_LDFLAGS],[])
     swig_octave_ldflags=
-    for arg in LFLAGS LIBOCTINTERP LIBOCTAVE LIBCRUFT OCT_LINK_OPTS OCT_LINK_DEPS; do
-      for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
+    for arg in OCTLIBDIR; do
+      for flag in `env -u ${arg} ${mkoctfile} -p ${arg} 2>/dev/null`; do
+        AS_CASE([${flag}],
+          [/*],[swig_octave_ldflags="${swig_octave_ldflags}-L${flag} "],
+          [:]
+        )
+      done
+    done
+    for arg in LDFLAGS LFLAGS LIBOCTINTERP LIBOCTAVE LIBCRUFT OCT_LINK_OPTS OCT_LINK_DEPS; do
+      for flag in `env -u ${arg} ${mkoctfile} -p ${arg} 2>/dev/null`; do
         AS_CASE([${flag}],
           [-L/usr/lib|-L/usr/lib64],[:],
           [-Xlinker],[swig_octave_ldflags="${swig_octave_ldflags}-Wl,"],
