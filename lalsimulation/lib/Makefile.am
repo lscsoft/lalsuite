@@ -145,8 +145,9 @@ pkginclude_HEADERS = \
 	LALSimulationVCSInfo.h \
 	LALSimulationVCSInfoHeader.h \
 	LALSimUniversalRelations.h \
-	LALSimInspiralEOS.h \
-	LALSimInspiralFDPrecAngles.h
+    LALSimInspiralEOS.h \
+	LALSimInspiralFDPrecAngles.h \
+	LALSimInspiralEOBPostAdiabatic.h
 
 noinst_HEADERS = \
 	LALSimIMRSpinEOBHcapExactDerivativePrec_v3opt.c \
@@ -265,7 +266,7 @@ noinst_HEADERS = \
 	LALSimNRSurRemnantUtils.h \
 	LALSimNRSur7dq4Remnant.h \
 	LALSimNRSur3dq8Remnant.h \
-	LALSimInspiralEOBPostAdiabatic.c
+	LALSimInspiralEOBPostAdiabatic.c 
         $(END_OF_LIST)
 
 lib_LTLIBRARIES = liblalsimulation.la
