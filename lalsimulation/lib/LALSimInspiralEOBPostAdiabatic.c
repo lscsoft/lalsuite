@@ -150,16 +150,39 @@ XLALSimInspiralEOBPostAdiabaticDynr0Kepler(
 }
 
 REAL8
-XLALSimInspiralEOBPostAdiabaticFinalRadius(
-	REAL8 a
-	/**< Measure of the total spin */)
+XLALSimInspiralEOBPostAdiabaticTotalSpin(
+	REAL8 q,
+	REAL8 a1,
+	REAL8 a2)
 {
+	REAL8 invQ;
+	REAL8 onePlusInvQ;
+	REAL8 aTotal;
+
+	invQ = 1. / q;
+	onePlusInvQ = 1. + invQ;
+
+	aTotal = (a1 + a2*invQ*invQ) / (onePlusInvQ * onePlusInvQ);
+
+	return aTotal;
+}
+
+REAL8
+XLALSimInspiralEOBPostAdiabaticFinalRadius(
+	REAL8 q,
+	REAL8 a1,
+	REAL8 a2)
+{
+	REAL8 aTotal;
+
 	REAL8 rISCO;
 	REAL8 finalRadiusPrefactor;
 	REAL8 rFinal;
 
-	rISCO = XLALSimRadiusKerrISCO(a);
-	finalRadiusPrefactor = 1.;
+	aTotal = XLALSimInspiralEOBPostAdiabaticTotalSpin(q, a1, a2);
+
+	rISCO = XLALSimRadiusKerrISCO(aTotal);
+	finalRadiusPrefactor = 1.35;
 
 	rFinal = finalRadiusPrefactor * rISCO;
 
@@ -1766,7 +1789,7 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	f0 = fInit / time_units_factor;
 	r0 = XLALSimInspiralEOBPostAdiabaticDynr0Kepler(fInit); // should be (f0)
-	rMin = XLALSimInspiralEOBPostAdiabaticFinalRadius(aK);
+	rMin = XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
 
 	z3 = XLALSimInspiralEOBPostAdiabaticz3(nu);
 

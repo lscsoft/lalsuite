@@ -1497,8 +1497,16 @@ XLALSimInspiralEOBPostAdiabaticDynr0Kepler(
     REAL8 f0);
 
 REAL8
+XLALSimInspiralEOBPostAdiabaticTotalSpin(
+    REAL8 q,
+    REAL8 a1,
+    REAL8 a2);
+
+REAL8
 XLALSimInspiralEOBPostAdiabaticFinalRadius(
-  REAL8 a);
+    REAL8 q,
+    REAL8 a1,
+    REAL8 a2);
 
 double
 XLALSimInspiralEOBPostAdiabaticFitGlobalc3(
@@ -1696,26 +1704,6 @@ REAL8Vector
 XLALPostAdiabaticSplineDerivative(
     REAL8Vector *VecX,
     REAL8Vector *VecY);
-
-// /* THIS IS BAD */
-
-// static REAL8 XLALSimIMRSpinEOBHamiltonian (const REAL8 eta,
-//              REAL8Vector * restrict x,
-//              REAL8Vector * restrict p,
-//              REAL8Vector * restrict s1Vec,
-//              REAL8Vector * restrict s2Vec,
-//              REAL8Vector * restrict sigmaKerr,
-//              REAL8Vector * restrict sigmaStar,
-//              int tortoise,
-//              SpinEOBHCoeffs * coeffs);
-
-// static int XLALSimIMRCalculateSpinEOBHCoeffs (SpinEOBHCoeffs * coeffs,
-//                 const REAL8 eta,
-//                 const REAL8 a,
-//                 const UINT4
-//                 SpinAlignedEOBversion);
-
-// /* AND NEEDS TO BE FIXED */
 
 #if 0
 { /* so that editors will match succeeding brace */
