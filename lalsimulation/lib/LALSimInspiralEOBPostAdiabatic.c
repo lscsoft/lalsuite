@@ -18,6 +18,7 @@
 #include <gsl/gsl_roots.h>
 // #include <gsl/gsl_deriv.h>
 
+#include "LALSimInspiralEOBPostAdiabatic.h"
 #include "LALSimIMREOBNRv2.h"
 #include "LALSimInspiralPrecess.h"
 #include "LALSimBlackHoleRingdown.h"
@@ -1495,7 +1496,7 @@ XLALSimInspiralEOBPostAdiabaticdpphiFunc(
 	REAL8 flux;
 
 	REAL8 prefactor;
-	REAL8 main;
+	REAL8 main_sol;
 
 	REAL8 total;
 
@@ -1523,9 +1524,9 @@ XLALSimInspiralEOBPostAdiabaticdpphiFunc(
     XLALSimInspiralEOBPostAdiabaticFluxS(&flux, x, Omg, r_omg2, E, Heff, jhat, r, prstar_sol, 0.0, LALParams);
 
     prefactor = sqrt(A/B) * 1. / (nu*H*Heff_orb);
-    main = prstar_sol*(1+2*z3*A/(rc*rc)*prstar_sol*prstar_sol) + Heff_orb*pphi*dG_dprstar;
+    main_sol = prstar_sol*(1+2*z3*A/(rc*rc)*prstar_sol*prstar_sol) + Heff_orb*pphi*dG_dprstar;
 
-    total = prefactor * main;
+    total = prefactor * main_sol;
 
 	return dpphi_dr*total - flux;
 }
