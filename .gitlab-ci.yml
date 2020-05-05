@@ -993,10 +993,7 @@ platform:macos:sierra:
     - source env/bin/activate
     - python -m pip install
           git+https://github.com/lpsinger/delocate@fix-duplicate-libs
-          glob2
-          'numpy==1.7.0;python_version<"3.7"'
-          'numpy==1.14.5;python_version=="3.7"'
-          'numpy==1.17.3;python_version=="3.8"'
+          oldest-supported-numpy
     # Build wheel
     - ./00boot
     - ./configure PYTHON=$(which python${PYVERS}) --enable-mpi --enable-swig-python ${EXTRA_CONFIG_FLAGS} LDFLAGS=-Wl,-headerpad_max_install_names
@@ -1026,10 +1023,6 @@ platform:macos:sierra:
   image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux2014_x86_64
 
 # Build wheels for all supported platforms
-wheel:cp27-cp27m-manylinux1:
-  <<: *wheel-manylinux1
-wheel:cp27-cp27mu-manylinux1:
-  <<: *wheel-manylinux1
 wheel:cp35-cp35m-manylinux1:
   <<: *wheel-manylinux1
 wheel:cp36-cp36m-manylinux1:
@@ -1046,8 +1039,6 @@ wheel:cp37-cp37m-manylinux2014:
   <<: *wheel-manylinux2014
 wheel:cp38-cp38-manylinux2014:
   <<: *wheel-manylinux2014
-wheel:cp27-cp27m-macosx:
-  <<: *wheel-macos
 wheel:cp35-cp35m-macosx:
   <<: *wheel-macos
 wheel:cp36-cp36m-macosx:
@@ -1069,8 +1060,6 @@ deploy:wheel:
     - pip install twine
     - twine upload wheelhouse/*
   needs:
-    - wheel:cp27-cp27m-manylinux1
-    - wheel:cp27-cp27mu-manylinux1
     - wheel:cp35-cp35m-manylinux1
     - wheel:cp36-cp36m-manylinux1
     - wheel:cp37-cp37m-manylinux1
@@ -1079,7 +1068,6 @@ deploy:wheel:
     - wheel:cp36-cp36m-manylinux2014
     - wheel:cp37-cp37m-manylinux2014
     - wheel:cp38-cp38-manylinux2014
-    - wheel:cp27-cp27m-macosx
     - wheel:cp35-cp35m-macosx
     - wheel:cp36-cp36m-macosx
     - wheel:cp37-cp37m-macosx
