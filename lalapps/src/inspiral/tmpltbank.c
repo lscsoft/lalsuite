@@ -1532,7 +1532,7 @@ cleanExit:
   LALCheckMemoryLeaks();
 
 #ifdef LALAPPS_CUDA_ENABLED
-  cudaThreadExit();
+  cudaDeviceReset();
 #endif
 
   exit( 0 );
