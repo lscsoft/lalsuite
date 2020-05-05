@@ -881,6 +881,25 @@ gcc:9:
   <<: *gcc-build
   image: igwn/lalsuite-dev-gcc:9
 
+cuda:
+  image: igwn/lalsuite-dev-cuda:el7
+  stage: compiler tests
+  needs: []
+  script:
+    - ./00boot
+    - ./configure --with-cuda=/usr/local/cuda
+    - make -j4 dist
+    - make -j4
+    # just compile test suite; some tests require a CUDA device to run
+    - make -j4 check TESTS=
+    - make -j4 install
+  only:
+    - schedules
+    - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
+
 # -- debian
 
 platform:debian:buster:
