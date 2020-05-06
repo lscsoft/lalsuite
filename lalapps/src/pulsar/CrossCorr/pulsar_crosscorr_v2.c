@@ -147,7 +147,7 @@ int main(int argc, char *argv[]){
 
   BOOLEAN dopplerShiftFlag = TRUE;
   toplist_t *ccToplist=NULL;
-  CrossCorrBinaryOutputEntry thisCandidate;
+  CrossCorrBinaryOutputEntry XLAL_INIT_DECL(thisCandidate);
   UINT4 checksum;
   CHARVector *dimName = NULL;
 
