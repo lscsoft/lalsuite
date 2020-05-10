@@ -8,7 +8,7 @@ expected_exception = 0;
 ## check module load
 disp("checking module load ...");
 lal;
-assert(exist("lal", "var"));
+assert(exist("lal"));
 lal_c_si = LAL_C_SI;
 lal_180_pi = LAL_180_PI;
 disp("PASSED module load");
@@ -1143,3 +1143,6 @@ disp("PASSED LALUnit operations");
 
 ## passed all tests!
 disp("PASSED all tests");
+if exist("swig_exit")
+   swig_exit;
+endif

@@ -7,9 +7,9 @@ crash_dumps_octave_core(0);
 ## check module load
 disp("checking module load ...");
 lalpulsar;
-assert(exist("lalpulsar", "var"));
+assert(exist("lalpulsar"));
 lal;
-assert(exist("lal", "var"));
+assert(exist("lal"));
 disp("PASSED module load");
 
 ## check object parent tracking
@@ -40,3 +40,6 @@ disp("PASSED multi-vector element assignment");
 
 ## passed all tests!
 disp("PASSED all tests");
+if exist("swig_exit")
+   swig_exit;
+endif
