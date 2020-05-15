@@ -166,16 +166,6 @@ build_info_dependencies = $(liblalpulsar_la_DEPENDENCIES)
 
 LDADD = liblalpulsar.la
 
-bin_PROGRAMS = \
-	lalpulsar_version \
-	$(END_OF_LIST)
-
-lalpulsar_version_SOURCES = version.c
-
-TESTS = \
-	lalpulsar_version \
-	$(END_OF_LIST)
-
 pkgdata_DATA = \
 	earth00-19-DE200.dat.gz \
 	earth00-19-DE405.dat.gz \
