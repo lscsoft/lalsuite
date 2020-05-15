@@ -47,8 +47,6 @@ lib/config.h
 lib/config.h.in
 lib/fft/CudaFFT.cpp
 lib/git_version
-lib/lal_simd_detect
-lib/lal_version
 lib/LALBuildInfoHeader.h
 lib/LALConfig.h
 lib/LALVCSInfo.c
@@ -56,7 +54,9 @@ lib/LALVCSInfo.h
 lib/LALVCSInfoHeader.h
 lib/stamp-h1
 lib/stamp-h2
-lib/version.c
+bin/lal_simd_detect
+bin/lal_version
+bin/version.c
 swig/.swigdeps
 swig/swiglal_*
 swig/swiglal.i*

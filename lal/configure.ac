@@ -34,9 +34,10 @@ AC_CONFIG_FILES([ \
   lib/tools/Makefile \
   lib/utilities/Makefile \
   lib/vectorops/Makefile \
-  lib/version.c \
   lib/window/Makefile \
   swig/Makefile \
+  bin/Makefile \
+  bin/version.c \
   test/Makefile \
   test/date/Makefile \
   test/factories/Makefile \
