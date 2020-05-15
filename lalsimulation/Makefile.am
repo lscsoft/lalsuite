@@ -16,6 +16,7 @@ SUBDIRS = \
 	lib \
 	swig \
 	python \
+	bin \
 	test \
 	doxygen \
 	$(END_OF_LIST)
