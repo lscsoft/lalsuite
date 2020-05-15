@@ -21,7 +21,8 @@ AC_CONFIG_FILES([ \
   lib/LALInspiralVCSInfo.c \
   lib/LALInspiralVCSInfo.h \
   lib/Makefile \
-  lib/version.c \
+  bin/Makefile \
+  bin/version.c \
   swig/Makefile \
   test/Makefile \
   test/python/Makefile \

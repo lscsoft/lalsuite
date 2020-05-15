@@ -44,7 +44,6 @@ lib/Chisq_GPU.cpp
 lib/config.h
 lib/config.h.in
 lib/git_version
-lib/lalinspiral_version
 lib/LALInspiralBuildInfoHeader.h
 lib/LALInspiralConfig.h
 lib/LALInspiralVCSInfo.c
@@ -52,7 +51,8 @@ lib/LALInspiralVCSInfo.h
 lib/LALInspiralVCSInfoHeader.h
 lib/stamp-h1
 lib/stamp-h2
-lib/version.c
+bin/lalinspiral_version
+bin/version.c
 swig/.swigdeps
 swig/swiglal_*
 swig/swiglalinspiral.i*
