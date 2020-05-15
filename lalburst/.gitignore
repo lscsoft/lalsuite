@@ -42,7 +42,6 @@ python/lalburst/lalburst.py
 lib/config.h
 lib/config.h.in
 lib/git_version
-lib/lalburst_version
 lib/LALBurstBuildInfoHeader.h
 lib/LALBurstConfig.h
 lib/LALBurstVCSInfo.c
@@ -50,7 +49,8 @@ lib/LALBurstVCSInfo.h
 lib/LALBurstVCSInfoHeader.h
 lib/stamp-h1
 lib/stamp-h2
-lib/version.c
+bin/lalburst_version
+bin/version.c
 swig/.swigdeps
 swig/swiglal_*
 swig/swiglalburst.i*
