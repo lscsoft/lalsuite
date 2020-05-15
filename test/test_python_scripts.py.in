@@ -56,9 +56,9 @@ BUILDDIR = (HERE / Path("@builddir@")).resolve()
 SRCDIR = (HERE / Path("@srcdir@")).resolve()
 TOPBUILDDIR = (HERE / Path("@top_builddir@")).resolve()
 if PACKAGE == "lalapps":  # lalapps is different
-    PYTHONDIR = BUILDDIR
+    BINDIR = BUILDDIR
 else:
-    PYTHONDIR = TOPBUILDDIR / "python"
+    BINDIR = TOPBUILDDIR / "bin"
 
 # path to exclusion file
 EXCLUDEFILE = SRCDIR / "exclude-scripts.txt"
@@ -124,10 +124,10 @@ def find_scripts(path):
 
 EXCLUDE = read_exclude_file(SRCDIR / "exclude-scripts.txt")
 try:
-    SCRIPTS = sorted(parse_pybin_scripts(PYTHONDIR / "Makefile"))
+    SCRIPTS = sorted(parse_pybin_scripts(BINDIR / "Makefile"))
 except (FileNotFoundError, ValueError, TypeError):
     # failed to find/parse the makefile, use the brute force method
-    SCRIPTS = sorted(find_scripts(PYTHONDIR))
+    SCRIPTS = sorted(find_scripts(BINDIR))
 
 
 # only parametrize if we have something to loop over,
@@ -144,7 +144,7 @@ if SCRIPTS:
             check_call([script, "--help"], shell=False)
         else:  # use local path
             startdir = os.getcwd()
-            os.chdir(str(PYTHONDIR))
+            os.chdir(str(BINDIR))
             try:
                 check_call("./{} --help".format(script), shell=True)
             finally:
