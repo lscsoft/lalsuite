@@ -30,6 +30,7 @@ debian/              @adam-mercer @duncanmmacleod
 docker/              @adam-mercer @duncanmmacleod
 doxygen/             @adam-mercer @karl-wette @duncanmmacleod
 gnuscripts/          @adam-mercer @karl-wette @duncanmmacleod
+include/             @adam-mercer @karl-wette @duncanmmacleod
 *.spec.in            @adam-mercer @duncanmmacleod
 *.pc.in              @adam-mercer @duncanmmacleod
 .gitlab-ci.yml       @adam-mercer @duncanmmacleod
