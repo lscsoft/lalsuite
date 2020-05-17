@@ -241,4 +241,19 @@ XLALPostAdiabaticSplineDerivative(
     REAL8Vector *VecX,
     REAL8Vector *VecY);
 
+REAL8Vector
+XLALFourthOrderFiniteDifferenceDerivative(
+    REAL8Vector *XVec,
+    REAL8Vector *YVec);
+
+REAL8Vector
+XLALSecondOrderFiniteDifferenceDerivative(
+    REAL8Vector *XVec,
+    REAL8Vector *YVec);
+
+REAL8Vector
+XLALCumulativeIntegral3(
+    REAL8Vector *XVec,
+    REAL8Vector *YVec);
+
 #endif
