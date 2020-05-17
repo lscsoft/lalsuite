@@ -323,8 +323,12 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 /// struct-copies the pointer to the supplied output pointer.
 ///
 %fragment("swiglal_from_SWIGTYPE", "header") {
-  SWIGINTERNINLINE SWIG_Object swiglal_from_SWIGTYPE(SWIG_Object self, void *ptr, bool isptr, swig_type_info *tinfo, int tflags) {
-    return SWIG_NewPointerObj(isptr ? *((void**)ptr) : ptr, tinfo, tflags);
+  SWIGINTERNINLINE SWIG_Object swiglal_from_SWIGTYPE(SWIG_Object self, bool copyobj, void *ptr, size_t len, bool isptr, swig_type_info *tinfo, int tflags) {
+    void *vptr = isptr ? *((void**)ptr) : ptr;
+    if (copyobj) {
+      vptr = memcpy(XLALCalloc(1, len), vptr, len);
+    }
+    return SWIG_NewPointerObj(vptr, tinfo, copyobj ? tflags | SWIG_POINTER_OWN : tflags);
   }
 }
 %fragment("swiglal_as_SWIGTYPE", "header") {

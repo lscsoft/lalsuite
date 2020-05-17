@@ -426,7 +426,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       }
 
       // Copy the C array to the returned Octave array.
-      octave_value sloav_array_out() const {
+      octave_value sloav_array_out(const bool copyobj = false) const {
 
         // Check that C array pointer is valid.
         if (!sloav_ptr) {
@@ -447,7 +447,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
           objidx.front()(0) = get_scalar_idx(idx, objdims) + 1;
 
           // Copy the C array element to the Octave array.
-          octave_value objelem = HELPER::outcall(sloav_parent, sloav_get_element_ptr(idx), sloav_isptr, sloav_tinfo, sloav_tflags);
+          octave_value objelem = HELPER::outcall(sloav_parent, copyobj, sloav_get_element_ptr(idx), sloav_esize, sloav_isptr, sloav_tinfo, sloav_tflags);
           obj = obj.subsasgn(obj.is_cell() ? "{" : "(", objidx, objelem);
 
           // Increment the Octave array index.
@@ -866,7 +866,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       }
 
       // Convert the array element stored at elemptr to an octave_value.
-      static octave_value outcall(const octave_value& parent, void *elemptr, const bool isptr, swig_type_info *const tinfo, const int tflags) {
+      static octave_value outcall(const octave_value& parent, const bool copyobj, void *elemptr, const size_t esize, const bool isptr, swig_type_info *const tinfo, const int tflags) {
         return OUTCALL;
       }
 
@@ -960,7 +960,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     // Create a local array view, then use its sloav_array_out() member to copy the viewed C array
     // to the output Octave array.
     %swiglal_oct_array_view_class(ACFTYPE) arrview(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags);
-    return arrview.sloav_array_out();
+    return arrview.sloav_array_out(true);
   }
 %}
 
@@ -1099,7 +1099,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 // are not supported, and so ISOVTYPEEXPR is 'false'.
 %swiglal_oct_array_frags(SWIGTYPE, "swiglal_as_SWIGTYPE", "swiglal_from_SWIGTYPE",
                          %arg(swiglal_as_SWIGTYPE(parent, objelem, elemptr, esize, isptr, tinfo, tflags)),
-                         %arg(swiglal_from_SWIGTYPE(parent, elemptr, isptr, tinfo, tflags)),
+                         %arg(swiglal_from_SWIGTYPE(parent, copyobj, elemptr, esize, isptr, tinfo, tflags)),
                          octave_cell, Cell, cell_value, false);
 
 // Array conversion fragments for arrays of LAL strings.  Note that input views are not supported,

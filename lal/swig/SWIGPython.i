@@ -571,6 +571,8 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     assert(tinfo != NULL);
 
     // Get the Python object wrapping the C array element.
+    const bool copyobj = false;
+    const size_t esize = PyArray_DESCR(nparr)->elsize;
     const int tflags = 0;
     PyObject* parent = PyArray_BASE(nparr);
     return OUTCALL;
@@ -839,6 +841,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       void* elemptr = swiglal_py_get_element_ptr(ptr, esize, ndims, strides, idx);
 
       // Copy the C array element to the NumPy array.
+      const bool copyobj = true;
       PyObject* objelem = OUTCALL;
       PyArray_SETITEM(nparr, PyArray_GetPtr((PyArrayObject*)nparr, idx), objelem);
       Py_CLEAR(objelem);
@@ -1017,7 +1020,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 // Array conversion fragments for generic arrays, e.g. SWIG-wrapped types.
 %swiglal_py_array_objview_frags(SWIGTYPE, "swiglal_as_SWIGTYPE", "swiglal_from_SWIGTYPE",
                                 %arg(swiglal_as_SWIGTYPE(parent, objelem, elemptr, esize, isptr, tinfo, tflags)),
-                                %arg(swiglal_from_SWIGTYPE(parent, elemptr, isptr, tinfo, tflags)));
+                                %arg(swiglal_from_SWIGTYPE(parent, copyobj, elemptr, esize, isptr, tinfo, tflags)));
 
 // Array conversion fragments for arrays of LAL strings.
 %swiglal_py_array_objview_frags(LALchar, "SWIG_AsLALcharPtrAndSize", "SWIG_FromLALcharPtr",

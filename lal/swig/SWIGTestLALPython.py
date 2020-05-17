@@ -276,6 +276,9 @@ assert((lal.swig_lal_test_copyin_array1(a1in, 2.5) == a1out).all())
 a2in = numpy.array([[3,2], [7,6], [12,10]], dtype=numpy.int32)
 a2out = a2in * 15
 assert((lal.swig_lal_test_copyin_array2(a2in, 15) == a2out).all())
+a3in = numpy.array([lal.LIGOTimeGPS(1234.5), lal.LIGOTimeGPS(678.9)])
+a3out = a3in * 3
+assert((lal.swig_lal_test_copyin_array3(a3in, 3) == a3out).all())
 try:
     lal.swig_lal_test_copyin_array1(numpy.array([0,0,0,0], dtype=numpy.double), 0)
     expected_exception = True
@@ -288,6 +291,9 @@ try:
 except:
     pass
 assert(not expected_exception)
+del a3in
+del a3out
+lal.CheckMemoryLeaks()
 print("PASSED fixed and dynamic arrays typemaps")
 
 ## check input views of string array structs
