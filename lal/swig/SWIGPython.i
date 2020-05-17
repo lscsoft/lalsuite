@@ -841,6 +841,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       // Copy the C array element to the NumPy array.
       PyObject* objelem = OUTCALL;
       PyArray_SETITEM(nparr, PyArray_GetPtr((PyArrayObject*)nparr, idx), objelem);
+      Py_CLEAR(objelem);
 
       // Increment the NumPy array index.
       swiglal_py_increment_idx(ndims, dims, idx);
