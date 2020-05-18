@@ -5,7 +5,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-if FRAME
+if FRAMEL
 if LALFRAME
 FRAMESRCS = \
 	series.c \

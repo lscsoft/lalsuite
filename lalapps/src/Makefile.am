@@ -8,7 +8,7 @@ if LALINSPIRAL
 SUBDIRS += findchirp
 endif
 
-if FRAME
+if FRAMEL
 if LALFRAME
 if LALMETAIO
 if LALINSPIRAL

@@ -18,11 +18,11 @@ Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRequires: bc
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
+BuildRequires: libframel-devel >= @MIN_FRAMEL_VERSION@
 BuildRequires: gcc
 BuildRequires: gsl-devel
 BuildRequires: help2man
 BuildRequires: less
-BuildRequires: libframe-devel
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
 BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
@@ -54,7 +54,7 @@ Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: less
-Requires: libframe
+Requires: libframel >= @MIN_FRAMEL_VERSION@
 Requires: python
 Requires: python2-h5py
 Requires: python2-lal >= @MIN_LAL_VERSION@

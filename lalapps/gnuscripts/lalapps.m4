@@ -61,16 +61,16 @@ AC_DEFUN([LALAPPS_ENABLE_FFTW],
   ], [ fftw=true ] )
 ])
 
-AC_DEFUN([LALAPPS_ENABLE_FRAME],
+AC_DEFUN([LALAPPS_ENABLE_FRAMEL],
 [AC_ARG_ENABLE(
-  [frame],
-  AC_HELP_STRING([--enable-frame],[compile code that requires Frame library [default=yes]]),
+  [framel],
+  AC_HELP_STRING([--enable-framel],[compile code that requires FrameL library [default=yes]]),
   [ case "${enableval}" in
-      yes) frame=true;;
-      no)  frame=false ;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-frame) ;;
+      yes) framel=true;;
+      no)  framel=false ;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-framel) ;;
     esac
-  ], [ frame=true ] )
+  ], [ framel=true ] )
 ])
 
 AC_DEFUN([LALAPPS_ENABLE_PSS],

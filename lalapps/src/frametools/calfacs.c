@@ -131,10 +131,6 @@ int main( int argc, char *argv[] )
     BOOLEAN           highpass = FALSE;
     PassBandParamStruc highpassParam;
 
-    /* test files are version 4 frames */
-    if ( FRAMELIB_VERSION < 4 )
-        return 77;
-
     /* set default values for input */
     dirname = getenv( "LAL_FRAME_PATH" );
 
