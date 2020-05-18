@@ -33,11 +33,11 @@ requirements:
   host:
     - lal >={{ lal_version }}a0
     - ldas-tools-framecpp >={{ framecpp_version }}
-    - libframe
+    - libframel
   run:
     - lal >={{ lal_version }}a0
     - ldas-tools-framecpp >={{ framecpp_version }}
-    - libframe
+    - libframel
 
 test:
   source_files:
@@ -81,7 +81,7 @@ outputs:
         - lal >={{ lal_version }}a0
         - {{ pin_subpackage('lalframe', exact=True) }}
         - ldas-tools-framecpp >={{ framecpp_version }}
-        - libframe
+        - libframel
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}a0
