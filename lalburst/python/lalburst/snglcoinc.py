@@ -308,7 +308,10 @@ class multidict(UserDict):
 		return itertools.chain(*(iter(d) for d in self.dicts))
 
 	def iteritems(self):
-		return itertools.chain(*(d.iteritems() for d in self.dicts))
+		return self.items()
+
+	def items(self):
+		return itertools.chain(*(d.items() for d in self.dicts))
 
 	def keys(self):
 		return list(self)
