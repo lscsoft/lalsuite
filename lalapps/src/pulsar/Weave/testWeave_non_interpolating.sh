@@ -1,7 +1,5 @@
 # Perform a non-interpolating search, and compare F-statistics to reference results
 
-test "X${SKIP_TESTS_THAT_FAIL_UNDER_CONDA}" = X || exit 77
-
 export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
 
 echo "=== Create search setup with 3 segments spanning ~3.6 days ==="
