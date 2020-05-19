@@ -329,6 +329,13 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
           REAL4TimeSeries *Tseries_i = NULL;
           XLAL_CHECK ( (Tseries_i = XLALGenerateCWSignalTS ( pulsarParams, site, signalStartGPS, signalDuration, fSamp, fMin, edat, dataParams->sourceDeltaT )) != NULL, XLAL_EFUNC );
 
+          // since XLALAddREAL4TimeSeries() does not enforce strict sample alignment,
+          // we do our own safety check here
+          REAL8 Delta_epoch = XLALGPSDiff(&Tseries_sum->epoch, &Tseries_i->epoch);
+          REAL8 bin_mismatch = fabs(Delta_epoch / Tseries_sum->deltaT);
+          REAL8 mismatch = fabs(bin_mismatch - round(bin_mismatch))*Tseries_sum->deltaT;
+          XLAL_CHECK ( mismatch <= 1e-9, XLAL_EDATA, "Incompatible start-times when adding signal time series %d of %d, bins misaligned by %g seconds (%g bins).\n", iInj, numPulsars, mismatch, bin_mismatch );
+
           XLAL_CHECK ( (Tseries_sum = XLALAddREAL4TimeSeries ( Tseries_sum, Tseries_i )) != NULL, XLAL_EFUNC );
           XLALDestroyREAL4TimeSeries ( Tseries_i );
         }
@@ -350,6 +357,12 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
 
   // add input noise time-series here if given
   if ( dataParams->inputMultiTS != NULL ) {
+    // since XLALAddREAL8TimeSeries() does not enforce strict sample alignment,
+    // we do our own safety check here
+    REAL8 Delta_epoch = XLALGPSDiff(&outTS->epoch, &dataParams->inputMultiTS->data[detectorIndex]->epoch);;
+    REAL8 bin_mismatch = fabs(Delta_epoch / outTS->deltaT);
+    REAL8 mismatch = fabs(bin_mismatch - round(bin_mismatch))*outTS->deltaT;
+    XLAL_CHECK ( mismatch <= 1e-9, XLAL_EDATA, "Incompatible start-times when adding input noise time-series, bins misaligned by %g seconds (%g bins).\n", mismatch, bin_mismatch );
     XLAL_CHECK ( (outTS = XLALAddREAL8TimeSeries ( outTS, dataParams->inputMultiTS->data[detectorIndex] )) != NULL, XLAL_EFUNC );
   }
 
