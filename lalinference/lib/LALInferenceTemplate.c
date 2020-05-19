@@ -1068,9 +1068,10 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
         
         /* for the time being I'm inserting a flag that has to be used when waveform with HM are used such that the
         modifications are applied to the modes and not to the waveform */
-        INT4 flag_HM = 1;
+        INT4 flag_HM = 0;
         
         if(flag_HM == 0){
+          printf("You should not be here\n");
           /* generate waveform with non-GR parameters set to default (zero) */
           XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
               deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
