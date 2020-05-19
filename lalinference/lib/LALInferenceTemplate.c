@@ -43,6 +43,11 @@
 #include <lal/LALSimNeutronStar.h>
 #include <lal/LALSimInspiralTestingGRCorrections.h>
 
+/*TEMPORARY!!!!!!! This has to be changed when ChooseFDModes will be available */
+#include <lal/LALSimIMR.h>
+
+#include <lal/LALSimSphHarmMode.h>
+
 /* LIB imports*/
 #include <lal/LALInferenceBurstRoutines.h>
 
@@ -1061,24 +1066,61 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           XLALDictInsert(grParams, list_FTA_parameters[k], (void *) (&default_GR_value), sizeof(double), LAL_D_TYPE_CODE);
         }
         
-        /* generate waveform with non-GR parameters set to default (zero) */
-        XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
+        /* for the time being I'm inserting a flag that has to be used when waveform with HM are used such that the
+        modifications are applied to the modes and not to the waveform */
+        INT4 flag_HM = 1;
+        
+        if(flag_HM == 0){
+          /* generate waveform with non-GR parameters set to default (zero) */
+          XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
               deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
               spin2x, spin2y, spin2z, f_start, f_max, f_ref, corrected_distance, inclination, grParams,
                       approximant,model->waveformCache, NULL), errnum);
-        
-        /* apply FTA corrections */
-        REAL8 correction_window = 1.;
-        if(LALInferenceCheckVariable(model->params, "correction_window")) correction_window = *(REAL8*) LALInferenceGetVariable(model->params, "correction_window");
-        
-        REAL8 correction_ncycles_taper = 1.;
-        if(LALInferenceCheckVariable(model->params, "correction_ncycles_taper")) correction_ncycles_taper = *(REAL8*) LALInferenceGetVariable(model->params, "correction_ncycles_taper");
-        
-        
-        XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hptilde,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
-        
-        XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hctilde,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
 
+          /* apply FTA corrections */
+          REAL8 correction_window = 1.;
+          if(LALInferenceCheckVariable(model->params, "correction_window")) correction_window = *(REAL8*) LALInferenceGetVariable(model->params, "correction_window");
+        
+          REAL8 correction_ncycles_taper = 1.;
+          if(LALInferenceCheckVariable(model->params, "correction_ncycles_taper")) correction_ncycles_taper = *(REAL8*) LALInferenceGetVariable(model->params, "correction_ncycles_taper");
+        
+        
+          XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hptilde,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
+        
+          XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hctilde,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);            
+        }
+        else{
+          /* generate modes with non-GR parameters set to default (zero)
+          at the moment I'm using the custom SEOBNRv4HM_ROM function to get the modes. This will be substituted with ChooseFDModes */
+          //allocate hlms
+          // SphHarmFrequencySeries **hlms = XLALMalloc(sizeof(SphHarmFrequencySeries));
+          // *hlms = NULL;
+          SphHarmFrequencySeries *hlms = NULL;
+          XLAL_TRY(ret=XLALSimIMRSEOBNRv4HMROM_Modes(&hlms, phi0,
+              deltaF,f_start,f_max,f_ref,corrected_distance, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1z,
+              spin2z,-1,1), errnum);
+          //the last 1 means that we are only generating the 22 mode. Remember to modify that later
+          /* apply FTA corrections */
+          REAL8 correction_window = 1.;
+          if(LALInferenceCheckVariable(model->params, "correction_window")) correction_window = *(REAL8*) LALInferenceGetVariable(model->params, "correction_window");
+        
+          REAL8 correction_ncycles_taper = 1.;
+          if(LALInferenceCheckVariable(model->params, "correction_ncycles_taper")) correction_ncycles_taper = *(REAL8*) LALInferenceGetVariable(model->params, "correction_ncycles_taper");    
+
+          /* Extract the mode from the SphericalHarmFrequencySeries */
+          COMPLEX16FrequencySeries *hlm_mode = XLALSphHarmFrequencySeriesGetMode(hlms, 2,-2); 
+
+          /* Apply FTA correction */
+          XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hlm_mode,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
+
+          /* Reconstruct the new hlms with the modified modes */
+          hlms = XLALSphHarmFrequencySeriesAddMode(hlms, hlm_mode, 2, -2);
+
+          /* Construct hp and hc from hlms */
+
+          XLAL_TRY(ret=XLALSimAddModeFD(hptilde, hctilde, hlms->mode, inclination, LAL_PI/2. - phi0, 2, -2, 1), errnum);
+        }
+        
 
       }
     /* if the waveform failed to generate, fill the buffer with zeros
