@@ -106,6 +106,7 @@ typedef struct
 // ----- local prototypes ----------
 
 int XLALSetupFstatResampGeneric ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+int XLALExtractResampledTimeseries_ResampGeneric ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const void* method_data );
 int XLALGetFstatTiming_ResampGeneric ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
 
 static int XLALComputeFstatResampGeneric ( FstatResults* Fstats, const FstatCommon *common, void *method_data );
@@ -1060,7 +1061,7 @@ XLALGetFFTPlanHints ( int * planMode,
 } // XLALGetFFTPlanHints
 
 int
-XLALExtractResampledTimeseries_intern ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const void* method_data )
+XLALExtractResampledTimeseries_ResampGeneric ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const void* method_data )
 {
   XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ( multiTimeSeries_SRC_a != NULL ) && ( multiTimeSeries_SRC_b != NULL ) , XLAL_EINVAL );

@@ -56,10 +56,12 @@ void *XLALFstatInputTimeslice_Demod ( const void *method_data, const UINT4 iStar
 void XLALDestroyFstatInputTimeslice_Demod ( void *method_data );
 
 int XLALSetupFstatResampGeneric ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+int XLALExtractResampledTimeseries_ResampGeneric ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const void* method_data );
 int XLALGetFstatTiming_ResampGeneric ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
 
 #ifdef LALPULSAR_CUDA_ENABLED
 int XLALSetupFstatResampCUDA ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+int XLALExtractResampledTimeseries_ResampCUDA ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const void* method_data );
 int XLALGetFstatTiming_ResampCUDA ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
 #endif
 
@@ -1308,10 +1310,21 @@ XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a
 {
   XLAL_CHECK ( input != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ( multiTimeSeries_SRC_a != NULL ) && ( multiTimeSeries_SRC_b != NULL ) , XLAL_EINVAL );
-  XLAL_CHECK ( (input->method >= FMETHOD_RESAMP_GENERIC) && (input->method <= FMETHOD_RESAMP_BEST), XLAL_EINVAL,
-               "%s() only works for resampling-Fstat methods, not with '%s'\n", __func__, XLALGetFstatInputMethodName ( input ) );
 
-  XLAL_CHECK ( XLALExtractResampledTimeseries_intern ( multiTimeSeries_SRC_a, multiTimeSeries_SRC_b, input->method_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+  switch ( input->method ) {
+  case FMETHOD_RESAMP_GENERIC:
+    XLAL_CHECK ( XLALExtractResampledTimeseries_ResampGeneric ( multiTimeSeries_SRC_a, multiTimeSeries_SRC_b, input->method_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+    break;
+
+#ifdef LALPULSAR_CUDA_ENABLED
+  case FMETHOD_RESAMP_CUDA:
+    XLAL_CHECK ( XLALExtractResampledTimeseries_ResampCUDA ( multiTimeSeries_SRC_a, multiTimeSeries_SRC_b, input->method_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+    break;
+#endif
+
+  default:
+    XLAL_ERROR ( XLAL_EINVAL, "%s() only works for resampling-Fstat methods, not with '%s'\n", __func__, FstatMethodNames [ input->method ] );
+  }
 
   return XLAL_SUCCESS;
 } // XLALExtractResampledTimeseries()

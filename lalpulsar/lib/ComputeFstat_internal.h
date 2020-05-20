@@ -74,7 +74,6 @@ typedef struct {
 } FstatMethodFuncs;
 
 // ---------- Shared internal functions ---------- //
-int XLALExtractResampledTimeseries_intern ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const void* method_data );
 
 static inline REAL4
 compute_fstat_from_fa_fb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv )
