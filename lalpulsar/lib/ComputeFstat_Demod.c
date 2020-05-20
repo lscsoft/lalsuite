@@ -52,7 +52,7 @@ typedef struct tagFstatTimingDemod
   REAL4 tau0_bufferLD;		   // 'fundamental' timing coefficient: time to re-compute buffered quantities for one SFT
 } FstatTimingDemod;
 
-static char FstatTimingDemodHelp[] =
+static const char FstatTimingDemodHelp[] =
   "%%%% ----- Demod-specific F-statistic timing model -----\n"
   "%%%% Nsft:          (average) number of SFTs per detector\n"
   "%%%% tau0_coreLD:    timing coefficient for core Demod F-stat time\n"
