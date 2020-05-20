@@ -161,6 +161,7 @@ EXTRA_liblalpulsar_la_SOURCES = \
 	ComputeFstat_DemodHL_SSE.i \
 	ComputeFstat_Demod_ComputeFaFb.c \
 	ComputeFstat_internal.h \
+	ComputeFstat_Resamp_internal.h \
 	SinCosLUT.i \
 	$(END_OF_LIST)
 
