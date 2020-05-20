@@ -66,7 +66,7 @@ __device__ __constant__ REAL8 lal_fact_inv[LAL_FACT_MAX];
 // ----- local types ----------
 
 // ----- workspace ----------
-typedef struct tagResampWorkspace
+typedef struct tagResampCUDAWorkspace
 {
   // intermediate quantities to interpolate and operate on SRC-frame timeseries
   COMPLEX8Vector *TStmp1_SRC;	// can hold a single-detector SRC-frame spindown-corrected timeseries [without zero-padding]
@@ -85,7 +85,7 @@ typedef struct tagResampWorkspace
   cuComplex *Fb_k;		// properly normalized F_b(f_k) over output bins
   UINT4 numFreqBinsAlloc;	// internal: keep track of allocated length of frequency-arrays
 
-} ResampWorkspace;
+} ResampCUDAWorkspace;
 
 typedef struct
 {
@@ -112,7 +112,7 @@ typedef struct
   FstatTimingGeneric timingGeneric;                     // measured (generic) F-statistic timing values
   FstatTimingResamp  timingResamp;                      // measured Resamp-specific timing model data
 
-} ResampMethodData;
+} ResampCUDAMethodData;
 
 
 // ----- local prototypes ----------
@@ -121,8 +121,8 @@ extern "C" int XLALSetupFstatResampCUDA ( void **method_data, FstatCommon *commo
 
 static int XLALComputeFstatResampCUDA ( FstatResults* Fstats, const FstatCommon *common, void *method_data );
 static int XLALApplySpindownAndFreqShiftCUDA ( cuComplex *xOut, const COMPLEX8TimeSeries *xIn, const PulsarDopplerParams *doppler, REAL8 freqShift );
-static int XLALBarycentricResampleMultiCOMPLEX8TimeSeriesCUDA ( ResampMethodData *resamp, const PulsarDopplerParams *thisPoint, const FstatCommon *common );
-static int XLALComputeFaFb_ResampCUDA ( ResampMethodData *resamp, ResampWorkspace *ws, const PulsarDopplerParams thisPoint, REAL8 dFreq, UINT4 numFreqBins, const COMPLEX8TimeSeries *TimeSeries_SRC_a, const COMPLEX8TimeSeries *TimeSeries_SRC_b );
+static int XLALBarycentricResampleMultiCOMPLEX8TimeSeriesCUDA ( ResampCUDAMethodData *resamp, const PulsarDopplerParams *thisPoint, const FstatCommon *common );
+static int XLALComputeFaFb_ResampCUDA ( ResampCUDAMethodData *resamp, ResampCUDAWorkspace *ws, const PulsarDopplerParams thisPoint, REAL8 dFreq, UINT4 numFreqBins, const COMPLEX8TimeSeries *TimeSeries_SRC_a, const COMPLEX8TimeSeries *TimeSeries_SRC_b );
 static COMPLEX8Vector *CreateCOMPLEX8VectorCUDA(UINT4 length);
 static REAL8Vector *CreateREAL8VectorCUDA(UINT4 length);
 static void DestroyCOMPLEX8VectorCUDA(COMPLEX8Vector *vec);
@@ -131,6 +131,8 @@ static void DestroyCOMPLEX8TimeSeriesCUDA(COMPLEX8TimeSeries *series);
 static void MoveCOMPLEX8TimeSeriesHtoD(COMPLEX8TimeSeries *series);
 static void MoveMultiCOMPLEX8TimeSeriesHtoD(MultiCOMPLEX8TimeSeries *multi);
 static void DestroyMultiCOMPLEX8TimeSeriesCUDA(MultiCOMPLEX8TimeSeries *multi);
+static void XLALDestroyResampCUDAWorkspace ( void *workspace );
+static void XLALDestroyResampCUDAMethodData ( void* method_data );
 
 // ==================== function definitions ====================
 
@@ -230,10 +232,9 @@ static void DestroyMultiCOMPLEX8TimeSeriesCUDA(MultiCOMPLEX8TimeSeries *multi)
     XLALFree(multi);
 }
 
-static void
-XLALDestroyResampWorkspace ( void *workspace )
+static void XLALDestroyResampCUDAWorkspace ( void *workspace )
 {
-  ResampWorkspace *ws = (ResampWorkspace*) workspace;
+  ResampCUDAWorkspace *ws = (ResampCUDAWorkspace*) workspace;
 
   DestroyCOMPLEX8VectorCUDA ( ws->TStmp1_SRC );
   DestroyCOMPLEX8VectorCUDA ( ws->TStmp2_SRC );
@@ -245,15 +246,12 @@ XLALDestroyResampWorkspace ( void *workspace )
   XLALFree ( ws );
   return;
 
-} // XLALDestroyResampWorkspace()
+} // XLALDestroyResampCUDAWorkspace()
 
-// ---------- internal functions ----------
-
-static void
-XLALDestroyResampMethodData ( void* method_data )
+static void XLALDestroyResampCUDAMethodData ( void* method_data )
 {
 
-  ResampMethodData *resamp = (ResampMethodData*) method_data;
+  ResampCUDAMethodData *resamp = (ResampCUDAMethodData*) method_data;
 
   DestroyMultiCOMPLEX8TimeSeriesCUDA (resamp->multiTimeSeries_DET );
 
@@ -266,7 +264,7 @@ XLALDestroyResampMethodData ( void* method_data )
 
   XLALFree ( resamp );
 
-} // XLALDestroyResampMethodData()
+} // XLALDestroyResampCUDAMethodData()
 
 
 extern "C" int
@@ -285,16 +283,16 @@ XLALSetupFstatResampCUDA ( void **method_data,
   XLAL_CHECK ( optArgs != NULL, XLAL_EFAULT );
 
   // Allocate method data
-  *method_data = XLALCalloc(1, sizeof(ResampMethodData));
-  ResampMethodData *resamp = (ResampMethodData *)*method_data;
+  *method_data = XLALCalloc(1, sizeof(ResampCUDAMethodData));
+  ResampCUDAMethodData *resamp = (ResampCUDAMethodData *)*method_data;
   XLAL_CHECK( resamp != NULL, XLAL_ENOMEM );
 
   resamp->Dterms = optArgs->Dterms;
 
   // Set method function pointers
   funcs->compute_func = XLALComputeFstatResampCUDA;
-  funcs->method_data_destroy_func = XLALDestroyResampMethodData;
-  funcs->workspace_destroy_func = XLALDestroyResampWorkspace;
+  funcs->method_data_destroy_func = XLALDestroyResampCUDAMethodData;
+  funcs->workspace_destroy_func = XLALDestroyResampCUDAWorkspace;
 
   // Copy the inverse factorial lookup table to GPU memory
   cudaMemcpyToSymbol(lal_fact_inv, (void*)&LAL_FACT_INV, sizeof(REAL8)*LAL_FACT_MAX, 0, cudaMemcpyHostToDevice);
@@ -393,7 +391,7 @@ XLALSetupFstatResampCUDA ( void **method_data,
   XLAL_CHECK ( numSamplesFFT >= numSamplesMax_SRC, XLAL_EFAILED, "[numSamplesFFT = %d] < [numSamplesMax_SRC = %d]\n", numSamplesFFT, numSamplesMax_SRC );
 
   // ---- re-use shared workspace, or allocate here ----------
-  ResampWorkspace *ws = (ResampWorkspace*) common->workspace;
+  ResampCUDAWorkspace *ws = (ResampCUDAWorkspace*) common->workspace;
   if ( ws != NULL )
     {
       if ( numSamplesFFT > ws->numSamplesFFTAlloc )
@@ -421,7 +419,7 @@ XLALSetupFstatResampCUDA ( void **method_data,
     } // end: if shared workspace given
   else
     {
-      XLAL_CHECK ( (ws = (ResampWorkspace *)XLALCalloc ( 1, sizeof(*ws))) != NULL, XLAL_ENOMEM );
+      XLAL_CHECK ( (ws = (ResampCUDAWorkspace *)XLALCalloc ( 1, sizeof(*ws))) != NULL, XLAL_ENOMEM );
       XLAL_CHECK ( (ws->TStmp1_SRC   = CreateCOMPLEX8VectorCUDA ( numSamplesMax_SRC )) != NULL, XLAL_EFUNC );
       XLAL_CHECK ( (ws->TStmp2_SRC   = CreateCOMPLEX8VectorCUDA ( numSamplesMax_SRC )) != NULL, XLAL_EFUNC );
       XLAL_CHECK ( (ws->SRCtimes_DET = CreateREAL8VectorCUDA ( numSamplesMax_SRC )) != NULL, XLAL_EFUNC );
@@ -496,12 +494,12 @@ XLALComputeFstatResampCUDA ( FstatResults* Fstats,
   XLAL_CHECK(common != NULL, XLAL_EFAULT);
   XLAL_CHECK(method_data != NULL, XLAL_EFAULT);
 
-  ResampMethodData *resamp = (ResampMethodData*) method_data;
+  ResampCUDAMethodData *resamp = (ResampCUDAMethodData*) method_data;
 
   const FstatQuantities whatToCompute = Fstats->whatWasComputed;
   XLAL_CHECK ( !(whatToCompute & FSTATQ_ATOMS_PER_DET), XLAL_EINVAL, "Resampling does not currently support atoms per detector" );
 
-  ResampWorkspace *ws = (ResampWorkspace*) common->workspace;
+  ResampCUDAWorkspace *ws = (ResampCUDAWorkspace*) common->workspace;
 
   // ----- handy shortcuts ----------
   PulsarDopplerParams thisPoint = Fstats->doppler;
@@ -797,8 +795,8 @@ __global__ void CUDAPopulateFaFbFromRaw(cuComplex *out, cuComplex *in, UINT4 num
 }
 
 static int
-XLALComputeFaFb_ResampCUDA ( ResampMethodData *resamp,					//!< [in,out] buffered resampling data and workspace
-                             ResampWorkspace *ws,					//!< [in,out] resampling workspace (memory-sharing across segments)
+XLALComputeFaFb_ResampCUDA ( ResampCUDAMethodData *resamp,					//!< [in,out] buffered resampling data and workspace
+                             ResampCUDAWorkspace *ws,					//!< [in,out] resampling workspace (memory-sharing across segments)
                              const PulsarDopplerParams thisPoint,			//!< [in] Doppler point to compute {FaX,FbX} for
                              REAL8 dFreq,						//!< [in] output frequency resolution
                              UINT4 numFreqBins,						//!< [in] number of output frequency bins
@@ -1135,7 +1133,7 @@ SincInterp (COMPLEX8Vector *y_out,		///< [out] output series of interpolated y-v
 /// 2) if at least sky-dependent quantities can be re-used (antenna-patterns + timings) in case only binary parameters changed
 ///
 static int
-XLALBarycentricResampleMultiCOMPLEX8TimeSeriesCUDA ( ResampMethodData *resamp,		// [in/out] resampling input and buffer (to store resampling TS)
+XLALBarycentricResampleMultiCOMPLEX8TimeSeriesCUDA ( ResampCUDAMethodData *resamp,		// [in/out] resampling input and buffer (to store resampling TS)
                                                      const PulsarDopplerParams *thisPoint,	// [in] current skypoint and reftime
                                                      const FstatCommon *common		// [in] various input quantities and parameters used here
                                                    )
@@ -1148,7 +1146,7 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeriesCUDA ( ResampMethodData *resamp,		
   XLAL_CHECK ( resamp->multiTimeSeries_SRC_a != NULL, XLAL_EINVAL );
   XLAL_CHECK ( resamp->multiTimeSeries_SRC_b != NULL, XLAL_EINVAL );
 
-  ResampWorkspace *ws = (ResampWorkspace*) common->workspace;
+  ResampCUDAWorkspace *ws = (ResampCUDAWorkspace*) common->workspace;
 
   UINT4 numDetectors = resamp->multiTimeSeries_DET->length;
   XLAL_CHECK ( resamp->multiTimeSeries_SRC_a->length == numDetectors, XLAL_EINVAL, "Inconsistent number of detectors tsDET(%d) != tsSRC(%d)\n", numDetectors, resamp->multiTimeSeries_SRC_a->length );
@@ -1349,7 +1347,7 @@ XLALExtractResampledTimeseries_intern ( MultiCOMPLEX8TimeSeries **multiTimeSerie
   XLAL_CHECK ( ( multiTimeSeries_SRC_a != NULL ) && ( multiTimeSeries_SRC_b != NULL ) , XLAL_EINVAL );
   XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
 
-  const ResampMethodData *resamp = (const ResampMethodData *) method_data;
+  const ResampCUDAMethodData *resamp = (const ResampCUDAMethodData *) method_data;
   *multiTimeSeries_SRC_a = resamp->multiTimeSeries_SRC_a;
   *multiTimeSeries_SRC_b = resamp->multiTimeSeries_SRC_b;
 
@@ -1364,7 +1362,7 @@ XLALGetFstatTiming_Resamp ( const void *method_data, FstatTimingGeneric *timingG
   XLAL_CHECK ( timingGeneric != NULL, XLAL_EINVAL );
   XLAL_CHECK ( timingModel != NULL, XLAL_EINVAL );
 
-  const ResampMethodData *resamp = (const ResampMethodData*) method_data;
+  const ResampCUDAMethodData *resamp = (const ResampCUDAMethodData*) method_data;
   XLAL_CHECK ( resamp != NULL, XLAL_EINVAL );
 
   (*timingGeneric) = resamp->timingGeneric; // struct-copy generic timing measurements
