@@ -25,5 +25,5 @@ export GSL_LIBS="-L${PREFIX}/lib -lgsl"
 	--enable-silent-rules \
 	${FFT_CONFIG_ARGS}
 make -j ${CPU_COUNT}
-make -j ${CPU_COUNT} check
+make -j ${CPU_COUNT} VERBOSE=1 check
 make install

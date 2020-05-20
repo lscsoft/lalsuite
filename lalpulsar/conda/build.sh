@@ -19,5 +19,5 @@ export CFITSIO_LIBS="-L${PREFIX}/lib -lcfitsio"
 	--enable-silent-rules \
 	--enable-cfitsio
 make -j ${CPU_COUNT}
-make -j ${CPU_COUNT} check
+make -j ${CPU_COUNT} VERBOSE=1 check
 make install

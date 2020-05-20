@@ -29,7 +29,7 @@ make -j ${CPU_COUNT} -C python
 
 # test | DMM: exclude checks when only building python,
 #             there's some sort of problem
-#make -j ${CPU_COUNT} -C test check
+#make -j ${CPU_COUNT} VERBOSE=1 -C test check
 
 # install
 make -j ${CPU_COUNT} -C swig install-exec-am  # swig bindings
