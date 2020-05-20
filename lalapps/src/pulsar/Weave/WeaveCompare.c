@@ -73,7 +73,7 @@ int main( int argc, char *argv[] )
   lalUserVarHelpOptionSubsection = "Tolerances";
   XLALRegisterUvarMember(
     param_tol_mism, REAL8, 'm', OPTIONAL,
-    "Allowed tolerance on mismatch between parameter-space points (must be >=0). "
+    "Allowed tolerance on mismatch between parameter-space points (must be >0, or zero to disable comparison). "
     );
   XLALRegisterUvarMember(
     result_tol_L1, REAL8, 'r', OPTIONAL,
