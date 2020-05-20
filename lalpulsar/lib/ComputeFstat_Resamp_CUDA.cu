@@ -130,8 +130,8 @@ static REAL8Vector *CreateREAL8VectorCUDA(UINT4 length);
 static void DestroyCOMPLEX8VectorCUDA(COMPLEX8Vector *vec);
 static void DestroyREAL8VectorCUDA(REAL8Vector *vec);
 static void DestroyCOMPLEX8TimeSeriesCUDA(COMPLEX8TimeSeries *series);
-static void MoveCOMPLEX8TimeSeriesHtoD(COMPLEX8TimeSeries *series);
-static void MoveMultiCOMPLEX8TimeSeriesHtoD(MultiCOMPLEX8TimeSeries *multi);
+static int MoveCOMPLEX8TimeSeriesHtoD(COMPLEX8TimeSeries *series);
+static int MoveMultiCOMPLEX8TimeSeriesHtoD(MultiCOMPLEX8TimeSeries *multi);
 static void DestroyMultiCOMPLEX8TimeSeriesCUDA(MultiCOMPLEX8TimeSeries *multi);
 static void XLALDestroyResampCUDAWorkspace ( void *workspace );
 static void XLALDestroyResampCUDAMethodData ( void* method_data );
@@ -200,22 +200,26 @@ static void DestroyCOMPLEX8TimeSeriesCUDA(COMPLEX8TimeSeries *series)
     return;
 }
 
-static void MoveCOMPLEX8TimeSeriesHtoD(COMPLEX8TimeSeries *series)
+static int MoveCOMPLEX8TimeSeriesHtoD(COMPLEX8TimeSeries *series)
 {
+    XLAL_CHECK( series != NULL, XLAL_EFAULT );
     COMPLEX8 *cpu_data = series->data->data;
     cudaError_t err = cudaMalloc((void **)&series->data->data, sizeof(COMPLEX8)*series->data->length);
     if(cudaSuccess != err)
-        XLAL_ERROR_VOID(XLAL_ENOMEM);
+        XLAL_ERROR(XLAL_ENOMEM);
     err = cudaMemcpy((void *)series->data->data, cpu_data, sizeof(COMPLEX8)*series->data->length, cudaMemcpyHostToDevice);
     if(cudaSuccess != err)
-        XLAL_ERROR_VOID(XLAL_ENOMEM);
+        XLAL_ERROR(XLAL_ENOMEM);
     XLALFree(cpu_data);
+    return XLAL_SUCCESS;
 }
 
-static void MoveMultiCOMPLEX8TimeSeriesHtoD(MultiCOMPLEX8TimeSeries *multi)
+static int MoveMultiCOMPLEX8TimeSeriesHtoD(MultiCOMPLEX8TimeSeries *multi)
 {
+    XLAL_CHECK( multi != NULL, XLAL_EFAULT );
     for(UINT4 X = 0; X < multi->length; X++)
-        MoveCOMPLEX8TimeSeriesHtoD(multi->data[X]);
+        XLAL_CHECK( MoveCOMPLEX8TimeSeriesHtoD(multi->data[X]) == XLAL_SUCCESS, XLAL_EFUNC );
+    return XLAL_SUCCESS;
 }
 
 static void DestroyMultiCOMPLEX8TimeSeriesCUDA(MultiCOMPLEX8TimeSeries *multi)
@@ -352,7 +356,7 @@ XLALSetupFstatResampCUDA ( void **method_data,
   // ----- allocate buffer Memory ----------
 
   // Move detector time series over to GPU
-  MoveMultiCOMPLEX8TimeSeriesHtoD(resamp->multiTimeSeries_DET);
+  XLAL_CHECK ( MoveMultiCOMPLEX8TimeSeriesHtoD(resamp->multiTimeSeries_DET) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // header for SRC-frame resampled timeseries buffer
   XLAL_CHECK ( (resamp->multiTimeSeries_SRC_a = (MultiCOMPLEX8TimeSeries *)XLALCalloc ( 1, sizeof(MultiCOMPLEX8TimeSeries)) ) != NULL, XLAL_ENOMEM );
@@ -388,8 +392,8 @@ XLALSetupFstatResampCUDA ( void **method_data,
       numSamplesMax_SRC = MYMAX ( numSamplesMax_SRC, numSamples_SRCX );
     } // for X < numDetectors
 
-  MoveMultiCOMPLEX8TimeSeriesHtoD(resamp->multiTimeSeries_SRC_b);
-  MoveMultiCOMPLEX8TimeSeriesHtoD(resamp->multiTimeSeries_SRC_a);
+  XLAL_CHECK ( MoveMultiCOMPLEX8TimeSeriesHtoD(resamp->multiTimeSeries_SRC_b) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( MoveMultiCOMPLEX8TimeSeriesHtoD(resamp->multiTimeSeries_SRC_a) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( numSamplesFFT >= numSamplesMax_SRC, XLAL_EFAILED, "[numSamplesFFT = %d] < [numSamplesMax_SRC = %d]\n", numSamplesFFT, numSamplesMax_SRC );
 
   // ---- re-use shared workspace, or allocate here ----------
