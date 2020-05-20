@@ -178,8 +178,10 @@ cache:
     - cd ${PACKAGE}-*/
     - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
     # install build dependencies
-    - ${APT_GET} -q install devscripts
-    - mk-build-deps --tool "${APT_GET}" --install --remove
+    - mk-build-deps
+          --tool "${APT_GET} -o Debug::pkgProblemResolver=yes --no-install-recommends"
+          --install
+          --remove
     # build packages
     - debuild -us -uc -r
   artifacts:
