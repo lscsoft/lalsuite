@@ -103,6 +103,9 @@ typedef struct
   MultiCOMPLEX8TimeSeries *multiTimeSeries_SRC_a;       // multi-detector SRC-frame timeseries, multiplied by AM function a(t)
   MultiCOMPLEX8TimeSeries *multiTimeSeries_SRC_b;       // multi-detector SRC-frame timeseries, multiplied by AM function b(t)
 
+  MultiCOMPLEX8TimeSeries *hostCopy4ExtractTS_SRC_a;    // host copy of multi-detector SRC-frame timeseries, multiplied by AM function a(t), for time series extraction
+  MultiCOMPLEX8TimeSeries *hostCopy4ExtractTS_SRC_b;    // host copy of multi-detector SRC-frame timeseries, multiplied by AM function b(t), for time series extraction
+
   UINT4 numSamplesFFT;                                  // length of zero-padded SRC-frame timeseries (related to dFreq)
   UINT4 decimateFFT;                                    // output every n-th frequency bin, with n>1 iff (dFreq > 1/Tspan), and was internally decreased by n
   void *fftplan;                                        // FFT plan
@@ -132,6 +135,8 @@ static void DestroyREAL8VectorCUDA(REAL8Vector *vec);
 static void DestroyCOMPLEX8TimeSeriesCUDA(COMPLEX8TimeSeries *series);
 static int MoveCOMPLEX8TimeSeriesHtoD(COMPLEX8TimeSeries *series);
 static int MoveMultiCOMPLEX8TimeSeriesHtoD(MultiCOMPLEX8TimeSeries *multi);
+static int CopyCOMPLEX8TimeSeriesDtoH(COMPLEX8TimeSeries **dst, COMPLEX8TimeSeries *src);
+static int CopyMultiCOMPLEX8TimeSeriesDtoH(MultiCOMPLEX8TimeSeries **dst, MultiCOMPLEX8TimeSeries *src);
 static void DestroyMultiCOMPLEX8TimeSeriesCUDA(MultiCOMPLEX8TimeSeries *multi);
 static void XLALDestroyResampCUDAWorkspace ( void *workspace );
 static void XLALDestroyResampCUDAMethodData ( void* method_data );
@@ -222,6 +227,43 @@ static int MoveMultiCOMPLEX8TimeSeriesHtoD(MultiCOMPLEX8TimeSeries *multi)
     return XLAL_SUCCESS;
 }
 
+static int CopyCOMPLEX8TimeSeriesDtoH(COMPLEX8TimeSeries **dst, COMPLEX8TimeSeries *src) {
+    XLAL_CHECK( dst != NULL, XLAL_EFAULT );
+    XLAL_CHECK( src != NULL, XLAL_EFAULT );
+    if (*dst == NULL) {
+        XLAL_CHECK ( ((*dst) = (COMPLEX8TimeSeries *)XLALCalloc ( 1, sizeof(COMPLEX8TimeSeries)) ) != NULL, XLAL_ENOMEM );
+        XLAL_CHECK ( ((*dst)->data = (COMPLEX8Sequence *)XLALCalloc ( 1, sizeof(COMPLEX8Sequence) )) != NULL, XLAL_ENOMEM );
+        (*dst)->data->length = 0;
+    }
+    {
+        COMPLEX8Sequence *dst_data = (*dst)->data;
+        *(*dst) = *src;
+        (*dst)->data = dst_data;
+    }
+    if ( ( (*dst)->data->data == NULL ) || ( (*dst)->data->length < src->data->length ) ) {
+        XLAL_CHECK ( ((*dst)->data->data = (COMPLEX8 *)XLALRealloc ( (*dst)->data->data, src->data->length * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
+        (*dst)->data->length = src->data->length;
+    }
+    cudaError_t err = cudaMemcpy((void *)(*dst)->data->data, src->data->data, sizeof(COMPLEX8)*src->data->length, cudaMemcpyDeviceToHost);
+    if(cudaSuccess != err)
+        XLAL_ERROR(XLAL_ENOMEM);
+    return XLAL_SUCCESS;
+}
+
+static int CopyMultiCOMPLEX8TimeSeriesDtoH(MultiCOMPLEX8TimeSeries **dst, MultiCOMPLEX8TimeSeries *src)
+{
+    XLAL_CHECK( dst != NULL, XLAL_EFAULT );
+    XLAL_CHECK( src != NULL, XLAL_EFAULT );
+    if (*dst == NULL) {
+        XLAL_CHECK ( ((*dst) = (MultiCOMPLEX8TimeSeries *)XLALCalloc ( 1, sizeof(MultiCOMPLEX8TimeSeries)) ) != NULL, XLAL_ENOMEM );
+        XLAL_CHECK ( ((*dst)->data = (COMPLEX8TimeSeries **)XLALCalloc ( src->length, sizeof(COMPLEX8TimeSeries) )) != NULL, XLAL_ENOMEM );
+        (*dst)->length = src->length;
+    }
+    for(UINT4 X = 0; X < src->length; X++)
+        XLAL_CHECK( CopyCOMPLEX8TimeSeriesDtoH(&(*dst)->data[X], src->data[X]) == XLAL_SUCCESS, XLAL_EFUNC );
+    return XLAL_SUCCESS;
+}
+
 static void DestroyMultiCOMPLEX8TimeSeriesCUDA(MultiCOMPLEX8TimeSeries *multi)
 {
     if(!multi)
@@ -264,6 +306,8 @@ static void XLALDestroyResampCUDAMethodData ( void* method_data )
   // ----- free buffer
   DestroyMultiCOMPLEX8TimeSeriesCUDA ( resamp->multiTimeSeries_SRC_a );
   DestroyMultiCOMPLEX8TimeSeriesCUDA ( resamp->multiTimeSeries_SRC_b );
+  XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->hostCopy4ExtractTS_SRC_a );
+  XLALDestroyMultiCOMPLEX8TimeSeries ( resamp->hostCopy4ExtractTS_SRC_b );
   XLALDestroyMultiAMCoeffs ( resamp->multiAMcoef );
   XLALDestroyMultiSSBtimes ( resamp->multiSSBtimes );
   XLALDestroyMultiSSBtimes ( resamp->multiBinaryTimes );
@@ -1354,8 +1398,12 @@ XLALExtractResampledTimeseries_ResampCUDA ( MultiCOMPLEX8TimeSeries **multiTimeS
   XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
 
   ResampCUDAMethodData *resamp = (ResampCUDAMethodData *) method_data;
-  *multiTimeSeries_SRC_a = resamp->multiTimeSeries_SRC_a;
-  *multiTimeSeries_SRC_b = resamp->multiTimeSeries_SRC_b;
+
+  XLAL_CHECK ( CopyMultiCOMPLEX8TimeSeriesDtoH ( &resamp->hostCopy4ExtractTS_SRC_a, resamp->multiTimeSeries_SRC_a ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( CopyMultiCOMPLEX8TimeSeriesDtoH ( &resamp->hostCopy4ExtractTS_SRC_b, resamp->multiTimeSeries_SRC_b ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  *multiTimeSeries_SRC_a = resamp->hostCopy4ExtractTS_SRC_a;
+  *multiTimeSeries_SRC_b = resamp->hostCopy4ExtractTS_SRC_b;
 
   return XLAL_SUCCESS;
 
