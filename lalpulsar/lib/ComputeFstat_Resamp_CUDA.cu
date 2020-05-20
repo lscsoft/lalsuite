@@ -61,6 +61,15 @@ __device__ __constant__ REAL8 lal_fact_inv[LAL_FACT_MAX];
 
 // ----- local macros ----------
 
+#define XLAL_CHECK_CUDA_CALL(...) do { \
+  cudaError_t retn; \
+  XLAL_CHECK ( ( retn = (__VA_ARGS__) ) == cudaSuccess, XLAL_EERR, "%s failed with return code %i", #__VA_ARGS__, retn ); \
+  } while(0)
+#define XLAL_CHECK_CUFFT_CALL(...) do { \
+  cufftResult retn; \
+  XLAL_CHECK ( ( retn = (__VA_ARGS__) ) == CUFFT_SUCCESS, XLAL_EERR, "%s failed with return code %i", #__VA_ARGS__, retn ); \
+  } while(0)
+
 #define CPLX_MULT(x, y) (crectf(crealf(x)*crealf(y) - cimagf(x)*cimagf(y), cimagf(x)*crealf(y) + crealf(x)*cimagf(y)))
 
 // ----- local types ----------
@@ -146,75 +155,57 @@ static void XLALDestroyResampCUDAMethodData ( void* method_data );
 static COMPLEX8Vector *CreateCOMPLEX8VectorCUDA(UINT4 length)
 {
   COMPLEX8Vector *vec;
-  vec = (COMPLEX8Vector *)XLALMalloc(sizeof(COMPLEX8Vector));
-  if(!vec)
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
+  XLAL_CHECK_NULL ( ( vec = (COMPLEX8Vector *)XLALMalloc(sizeof(COMPLEX8Vector)) ) != NULL, XLAL_ENOMEM );
   vec->length = length;
-  cudaError_t err = cudaMalloc((void **)&vec->data, sizeof(COMPLEX8)*length);
-  if(cudaSuccess != err)
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
+  XLAL_CHECK_NULL ( cudaMalloc((void **)&vec->data, sizeof(COMPLEX8)*length) == cudaSuccess, XLAL_ENOMEM );
   return vec;
 }
 
 static REAL8Vector *CreateREAL8VectorCUDA(UINT4 length)
 {
   REAL8Vector *vec;
-  vec = (REAL8Vector *)XLALMalloc(sizeof(REAL8Vector));
-  if(!vec)
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
+  XLAL_CHECK_NULL ( ( vec = (REAL8Vector *)XLALMalloc(sizeof(REAL8Vector)) ) != NULL, XLAL_ENOMEM );
   vec->length = length;
-  cudaError_t err = cudaMalloc((void **)&vec->data, sizeof(REAL8)*length);
-  if(cudaSuccess != err)
-    XLAL_ERROR_NULL(XLAL_ENOMEM);
+  XLAL_CHECK_NULL ( cudaMalloc((void **)&vec->data, sizeof(REAL8)*length) == cudaSuccess, XLAL_ENOMEM );
   return vec;
 }
 
 static void DestroyCOMPLEX8VectorCUDA(COMPLEX8Vector *vec)
 {
-  if(!vec)
-    return;
-  if((!vec->length || !vec->data) && (vec->length || vec->data))
-    XLAL_ERROR_VOID(XLAL_EINVAL);
-
-  if(vec->data)
-    cudaFree(vec->data);
-  vec->data = NULL;
-  XLALFree(vec);
+    if (vec != NULL) {
+        if (vec->data != NULL) {
+            cudaFree(vec->data);
+        }
+        vec->data = NULL;
+        XLALFree(vec);
+    }
 }
 
 static void DestroyREAL8VectorCUDA(REAL8Vector *vec)
 {
-  if(!vec)
-    return;
-  if((!vec->length || !vec->data) && (vec->length || vec->data))
-    XLAL_ERROR_VOID(XLAL_EINVAL);
-
-  if(vec->data)
-    cudaFree(vec->data);
-  vec->data = NULL;
-  XLALFree(vec);
+    if (vec != NULL) {
+        if (vec->data != NULL) {
+            cudaFree(vec->data);
+        }
+        vec->data = NULL;
+        XLALFree(vec);
+    }
 }
 
 static void DestroyCOMPLEX8TimeSeriesCUDA(COMPLEX8TimeSeries *series)
 {
-    if(!series)
-        return;
-
-    DestroyCOMPLEX8VectorCUDA(series->data);
-    XLALFree(series);
-    return;
+    if (series != NULL) {
+        DestroyCOMPLEX8VectorCUDA(series->data);
+        XLALFree(series);
+    }
 }
 
 static int MoveCOMPLEX8TimeSeriesHtoD(COMPLEX8TimeSeries *series)
 {
     XLAL_CHECK( series != NULL, XLAL_EFAULT );
     COMPLEX8 *cpu_data = series->data->data;
-    cudaError_t err = cudaMalloc((void **)&series->data->data, sizeof(COMPLEX8)*series->data->length);
-    if(cudaSuccess != err)
-        XLAL_ERROR(XLAL_ENOMEM);
-    err = cudaMemcpy((void *)series->data->data, cpu_data, sizeof(COMPLEX8)*series->data->length, cudaMemcpyHostToDevice);
-    if(cudaSuccess != err)
-        XLAL_ERROR(XLAL_ENOMEM);
+    XLAL_CHECK ( cudaMalloc((void **)&series->data->data, sizeof(COMPLEX8)*series->data->length) == cudaSuccess, XLAL_ENOMEM );
+    XLAL_CHECK_CUDA_CALL ( cudaMemcpy((void *)series->data->data, cpu_data, sizeof(COMPLEX8)*series->data->length, cudaMemcpyHostToDevice) );
     XLALFree(cpu_data);
     return XLAL_SUCCESS;
 }
@@ -222,8 +213,9 @@ static int MoveCOMPLEX8TimeSeriesHtoD(COMPLEX8TimeSeries *series)
 static int MoveMultiCOMPLEX8TimeSeriesHtoD(MultiCOMPLEX8TimeSeries *multi)
 {
     XLAL_CHECK( multi != NULL, XLAL_EFAULT );
-    for(UINT4 X = 0; X < multi->length; X++)
+    for (UINT4 X = 0; X < multi->length; X++) {
         XLAL_CHECK( MoveCOMPLEX8TimeSeriesHtoD(multi->data[X]) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
     return XLAL_SUCCESS;
 }
 
@@ -244,9 +236,7 @@ static int CopyCOMPLEX8TimeSeriesDtoH(COMPLEX8TimeSeries **dst, COMPLEX8TimeSeri
         XLAL_CHECK ( ((*dst)->data->data = (COMPLEX8 *)XLALRealloc ( (*dst)->data->data, src->data->length * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
         (*dst)->data->length = src->data->length;
     }
-    cudaError_t err = cudaMemcpy((void *)(*dst)->data->data, src->data->data, sizeof(COMPLEX8)*src->data->length, cudaMemcpyDeviceToHost);
-    if(cudaSuccess != err)
-        XLAL_ERROR(XLAL_ENOMEM);
+    XLAL_CHECK_CUDA_CALL ( cudaMemcpy((void *)(*dst)->data->data, src->data->data, sizeof(COMPLEX8)*src->data->length, cudaMemcpyDeviceToHost) );
     return XLAL_SUCCESS;
 }
 
@@ -259,25 +249,24 @@ static int CopyMultiCOMPLEX8TimeSeriesDtoH(MultiCOMPLEX8TimeSeries **dst, MultiC
         XLAL_CHECK ( ((*dst)->data = (COMPLEX8TimeSeries **)XLALCalloc ( src->length, sizeof(COMPLEX8TimeSeries) )) != NULL, XLAL_ENOMEM );
         (*dst)->length = src->length;
     }
-    for(UINT4 X = 0; X < src->length; X++)
+    for (UINT4 X = 0; X < src->length; X++) {
         XLAL_CHECK( CopyCOMPLEX8TimeSeriesDtoH(&(*dst)->data[X], src->data[X]) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
     return XLAL_SUCCESS;
 }
 
 static void DestroyMultiCOMPLEX8TimeSeriesCUDA(MultiCOMPLEX8TimeSeries *multi)
 {
-    if(!multi)
-        return;
-    if(multi->data != NULL)
-    {
-        UINT4 numDetectors = multi->length;
-        for(UINT4 X = 0; X < numDetectors; X++)
-        {
-            DestroyCOMPLEX8TimeSeriesCUDA(multi->data[X]);
+    if (multi != NULL) {
+        if (multi->data != NULL) {
+            UINT4 numDetectors = multi->length;
+            for(UINT4 X = 0; X < numDetectors; X++) {
+                DestroyCOMPLEX8TimeSeriesCUDA(multi->data[X]);
+            }
+            XLALFree(multi->data);
         }
-        XLALFree(multi->data);
+        XLALFree(multi);
     }
-    XLALFree(multi);
 }
 
 static void XLALDestroyResampCUDAWorkspace ( void *workspace )
@@ -292,13 +281,10 @@ static void XLALDestroyResampCUDAWorkspace ( void *workspace )
   cudaFree ( ws->TS_FFT );
 
   XLALFree ( ws );
-  return;
-
 } // XLALDestroyResampCUDAWorkspace()
 
 static void XLALDestroyResampCUDAMethodData ( void* method_data )
 {
-
   ResampCUDAMethodData *resamp = (ResampCUDAMethodData*) method_data;
 
   DestroyMultiCOMPLEX8TimeSeriesCUDA (resamp->multiTimeSeries_DET );
@@ -315,7 +301,6 @@ static void XLALDestroyResampCUDAMethodData ( void* method_data )
   cufftDestroy ( resamp->fftplan );
 
   XLALFree ( resamp );
-
 } // XLALDestroyResampCUDAMethodData()
 
 
@@ -347,7 +332,7 @@ XLALSetupFstatResampCUDA ( void **method_data,
   funcs->workspace_destroy_func = XLALDestroyResampCUDAWorkspace;
 
   // Copy the inverse factorial lookup table to GPU memory
-  cudaMemcpyToSymbol(lal_fact_inv, (void*)&LAL_FACT_INV, sizeof(REAL8)*LAL_FACT_MAX, 0, cudaMemcpyHostToDevice);
+  XLAL_CHECK_CUDA_CALL ( cudaMemcpyToSymbol(lal_fact_inv, (void*)&LAL_FACT_INV, sizeof(REAL8)*LAL_FACT_MAX, 0, cudaMemcpyHostToDevice) );
 
   // Extra band needed for resampling: Hamming-windowed sinc used for interpolation has a transition bandwith of
   // TB=(4/L)*fSamp, where L=2*Dterms+1 is the window-length, and here fSamp=Band (i.e. the full SFT frequency band)
@@ -449,9 +434,9 @@ XLALSetupFstatResampCUDA ( void **method_data,
       if ( numSamplesFFT > ws->numSamplesFFTAlloc )
         {
           cudaFree ( ws->FabX_Raw );
-          XLAL_CHECK ( (cudaMalloc((void **)&ws->FabX_Raw, numSamplesFFT*sizeof(COMPLEX8)) == cudaSuccess), XLAL_ENOMEM);
+          XLAL_CHECK ( cudaMalloc((void **)&ws->FabX_Raw, numSamplesFFT*sizeof(COMPLEX8)) == cudaSuccess, XLAL_ENOMEM );
           cudaFree ( ws->TS_FFT );
-          XLAL_CHECK ( (cudaMalloc((void **)&ws->TS_FFT, numSamplesFFT*sizeof(COMPLEX8)) == cudaSuccess), XLAL_ENOMEM);
+          XLAL_CHECK ( cudaMalloc((void **)&ws->TS_FFT, numSamplesFFT*sizeof(COMPLEX8)) == cudaSuccess, XLAL_ENOMEM );
 
           ws->numSamplesFFTAlloc = numSamplesFFT;
         }
@@ -475,8 +460,8 @@ XLALSetupFstatResampCUDA ( void **method_data,
       XLAL_CHECK ( (ws->TStmp1_SRC   = CreateCOMPLEX8VectorCUDA ( numSamplesMax_SRC )) != NULL, XLAL_EFUNC );
       XLAL_CHECK ( (ws->TStmp2_SRC   = CreateCOMPLEX8VectorCUDA ( numSamplesMax_SRC )) != NULL, XLAL_EFUNC );
       XLAL_CHECK ( (ws->SRCtimes_DET = CreateREAL8VectorCUDA ( numSamplesMax_SRC )) != NULL, XLAL_EFUNC );
-      XLAL_CHECK ( (cudaMalloc((void **)&ws->FabX_Raw, numSamplesFFT*sizeof(COMPLEX8)) == cudaSuccess), XLAL_ENOMEM);
-      XLAL_CHECK ( (cudaMalloc((void **)&ws->TS_FFT, numSamplesFFT*sizeof(COMPLEX8)) == cudaSuccess), XLAL_ENOMEM);
+      XLAL_CHECK ( cudaMalloc((void **)&ws->FabX_Raw, numSamplesFFT*sizeof(COMPLEX8)) == cudaSuccess, XLAL_ENOMEM );
+      XLAL_CHECK ( cudaMalloc((void **)&ws->TS_FFT, numSamplesFFT*sizeof(COMPLEX8)) == cudaSuccess, XLAL_ENOMEM );
       ws->numSamplesFFTAlloc = numSamplesFFT;
 
       common->workspace = ws;
@@ -484,7 +469,7 @@ XLALSetupFstatResampCUDA ( void **method_data,
 
   // ----- compute and buffer FFT plan ----------
   XLAL_CHECK ( cufftPlan1d ( &resamp->fftplan, resamp->numSamplesFFT, CUFFT_C2C, 1 ) == CUFFT_SUCCESS, XLAL_ESYS );
-  cudaDeviceSynchronize();
+  XLAL_CHECK_CUDA_CALL ( cudaDeviceSynchronize() );
 
   // turn on timing collection if requested
   resamp->collectTiming = optArgs->collectTiming;
@@ -596,7 +581,7 @@ XLALComputeFstatResampCUDA ( FstatResults* Fstats,
   // NOTE: we try to use as much existing memory as possible in FstatResults, so we only
   // allocate local 'workspace' storage in case there's not already a vector allocated in FstatResults for it
   // this also avoid having to copy these results in case the user asked for them to be returned
-  //TODO: Reallocating existing memory has not been implemented in the CUDA version.
+  // TODO: Reallocating existing memory has not been implemented in the CUDA version.
  /*
   if ( whatToCompute & FSTATQ_FAFB )
     {
@@ -614,10 +599,10 @@ XLALComputeFstatResampCUDA ( FstatResults* Fstats,
         } // only increase workspace arrays
     }
   */
-  XLAL_CHECK((cudaMalloc((void **)&ws->FaX_k, numFreqBins*sizeof(COMPLEX8))) == cudaSuccess, XLAL_ENOMEM);
-  XLAL_CHECK((cudaMalloc((void **)&ws->FbX_k, numFreqBins*sizeof(COMPLEX8))) == cudaSuccess, XLAL_ENOMEM);
-  XLAL_CHECK((cudaMalloc((void **)&ws->Fa_k, numFreqBins*sizeof(COMPLEX8))) == cudaSuccess, XLAL_ENOMEM);
-  XLAL_CHECK((cudaMalloc((void **)&ws->Fb_k, numFreqBins*sizeof(COMPLEX8))) == cudaSuccess, XLAL_ENOMEM);
+  XLAL_CHECK ( cudaMalloc((void **)&ws->FaX_k, numFreqBins*sizeof(COMPLEX8)) == cudaSuccess, XLAL_ENOMEM );
+  XLAL_CHECK ( cudaMalloc((void **)&ws->FbX_k, numFreqBins*sizeof(COMPLEX8)) == cudaSuccess, XLAL_ENOMEM );
+  XLAL_CHECK ( cudaMalloc((void **)&ws->Fa_k, numFreqBins*sizeof(COMPLEX8)) == cudaSuccess, XLAL_ENOMEM );
+  XLAL_CHECK ( cudaMalloc((void **)&ws->Fb_k, numFreqBins*sizeof(COMPLEX8)) == cudaSuccess, XLAL_ENOMEM );
   /*if ( whatToCompute & FSTATQ_FAFB_PER_DET )
     {
       XLALFree ( ws->FaX_k ); // avoid memory leak if allocated in previous call
@@ -658,18 +643,19 @@ XLALComputeFstatResampCUDA ( FstatResults* Fstats,
 
       if ( X == 0 )
         { // avoid having to memset this array: for the first detector we *copy* results
-          cudaMemcpy(ws->Fa_k, ws->FaX_k, sizeof(cuComplex)*numFreqBins, cudaMemcpyDeviceToDevice);
-          cudaMemcpy(ws->Fb_k, ws->FbX_k, sizeof(cuComplex)*numFreqBins, cudaMemcpyDeviceToDevice);
+          XLAL_CHECK_CUDA_CALL ( cudaMemcpy(ws->Fa_k, ws->FaX_k, sizeof(cuComplex)*numFreqBins, cudaMemcpyDeviceToDevice) );
+          XLAL_CHECK_CUDA_CALL ( cudaMemcpy(ws->Fb_k, ws->FbX_k, sizeof(cuComplex)*numFreqBins, cudaMemcpyDeviceToDevice) );
         } // end: if X==0
       else
         { // for subsequent detectors we *add to* them
           CUDAAddToFaFb<<<(numFreqBins + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>(ws->Fa_k, ws->Fb_k, ws->FaX_k, ws->FbX_k, numFreqBins);
+          XLAL_CHECK_CUDA_CALL ( cudaGetLastError() );
         } // end:if X>0
 
       if ( whatToCompute & FSTATQ_FAFB_PER_DET )
         {
-          cudaMemcpy(Fstats->FaPerDet[X], ws->FaX_k, sizeof(cuComplex)*numFreqBins, cudaMemcpyDeviceToHost);
-          cudaMemcpy(Fstats->FbPerDet[X], ws->FbX_k, sizeof(cuComplex)*numFreqBins, cudaMemcpyDeviceToHost);
+          XLAL_CHECK_CUDA_CALL ( cudaMemcpy(Fstats->FaPerDet[X], ws->FaX_k, sizeof(cuComplex)*numFreqBins, cudaMemcpyDeviceToHost) );
+          XLAL_CHECK_CUDA_CALL ( cudaMemcpy(Fstats->FbPerDet[X], ws->FbX_k, sizeof(cuComplex)*numFreqBins, cudaMemcpyDeviceToHost) );
         }
 
       if ( collectTiming ) {
@@ -687,9 +673,10 @@ XLALComputeFstatResampCUDA ( FstatResults* Fstats,
             const REAL4 Ed = resamp->MmunuX[X].Ed;
             const REAL4 Dd_inv = 1.0f / resamp->MmunuX[X].Dd;
             REAL4 *twoF_gpu;
-            cudaMalloc((void **)&twoF_gpu, sizeof(REAL4)*numFreqBins);
+            XLAL_CHECK ( cudaMalloc((void **)&twoF_gpu, sizeof(REAL4)*numFreqBins) == cudaSuccess, XLAL_ENOMEM );
             CUDAComputeTwoF<<<(numFreqBins + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>(twoF_gpu, ws->FaX_k, ws->FbX_k, Ad, Bd, Cd, Ed, Dd_inv, numFreqBins);
-            cudaMemcpy(Fstats->twoFPerDet[X], twoF_gpu, sizeof(REAL4)*numFreqBins, cudaMemcpyDeviceToHost);
+            XLAL_CHECK_CUDA_CALL ( cudaGetLastError() );
+            XLAL_CHECK_CUDA_CALL ( cudaMemcpy(Fstats->twoFPerDet[X], twoF_gpu, sizeof(REAL4)*numFreqBins, cudaMemcpyDeviceToHost) );
             cudaFree(twoF_gpu);
 
         } // end: if compute F_X
@@ -703,8 +690,8 @@ XLALComputeFstatResampCUDA ( FstatResults* Fstats,
 
   if ( whatToCompute & FSTATQ_FAFB )
   {
-    cudaMemcpy(Fstats->Fa, ws->Fa_k, sizeof(cuComplex)*numFreqBins, cudaMemcpyDeviceToHost);
-    cudaMemcpy(Fstats->Fb, ws->Fb_k, sizeof(cuComplex)*numFreqBins, cudaMemcpyDeviceToHost);
+    XLAL_CHECK_CUDA_CALL ( cudaMemcpy(Fstats->Fa, ws->Fa_k, sizeof(cuComplex)*numFreqBins, cudaMemcpyDeviceToHost) );
+    XLAL_CHECK_CUDA_CALL ( cudaMemcpy(Fstats->Fb, ws->Fb_k, sizeof(cuComplex)*numFreqBins, cudaMemcpyDeviceToHost) );
   }
 
   if ( collectTiming ) {
@@ -720,12 +707,12 @@ XLALComputeFstatResampCUDA ( FstatResults* Fstats,
       const REAL4 Cd = resamp->Mmunu.Cd;
       const REAL4 Ed = resamp->Mmunu.Ed;
       const REAL4 Dd_inv = 1.0f / resamp->Mmunu.Dd;
-      REAL4 *twoF_gpu;
-      cudaMalloc((void **)&twoF_gpu, sizeof(REAL4)*numFreqBins);
-      CUDAComputeTwoF<<<(numFreqBins + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>(twoF_gpu, ws->Fa_k, ws->Fb_k, Ad, Bd, Cd, Ed, Dd_inv, numFreqBins);
-      //Fstats->twoF = twoF_gpu;
-      cudaMemcpy(Fstats->twoF, twoF_gpu, sizeof(REAL4)*numFreqBins, cudaMemcpyDeviceToHost);
-      cudaFree(twoF_gpu);
+      REAL4 *twoF_CUDA;
+      XLAL_CHECK ( cudaMalloc((void **)&twoF_CUDA, sizeof(REAL4)*numFreqBins) == cudaSuccess, XLAL_ENOMEM );
+      CUDAComputeTwoF<<<(numFreqBins + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>(twoF_CUDA, ws->Fa_k, ws->Fb_k, Ad, Bd, Cd, Ed, Dd_inv, numFreqBins);
+      XLAL_CHECK_CUDA_CALL ( cudaMemcpy(Fstats->twoF, twoF_CUDA, sizeof(REAL4)*numFreqBins, cudaMemcpyDeviceToHost) );
+      XLAL_CHECK_CUDA_CALL ( cudaGetLastError() );
+      cudaFree(twoF_CUDA);
     } // if FSTATQ_2F
 
   if ( collectTiming ) {
@@ -851,7 +838,7 @@ __global__ void CUDAPopulateFaFbFromRaw(cuComplex *out, cuComplex *in, UINT4 num
 }
 
 static int
-XLALComputeFaFb_ResampCUDA ( ResampCUDAMethodData *resamp,					//!< [in,out] buffered resampling data and workspace
+XLALComputeFaFb_ResampCUDA ( ResampCUDAMethodData *resamp,				//!< [in,out] buffered resampling data and workspace
                              ResampCUDAWorkspace *ws,					//!< [in,out] resampling workspace (memory-sharing across segments)
                              const PulsarDopplerParams thisPoint,			//!< [in] Doppler point to compute {FaX,FbX} for
                              REAL8 dFreq,						//!< [in] output frequency resolution
@@ -888,7 +875,8 @@ XLALComputeFaFb_ResampCUDA ( ResampCUDAMethodData *resamp,					//!< [in,out] buf
   if ( collectTiming ) {
     tic = XLALGetCPUTime();
   }
-  cudaMemset ( ws->TS_FFT, 0, resamp->numSamplesFFT * sizeof(ws->TS_FFT[0]) );
+  XLAL_CHECK_CUDA_CALL ( cudaMemset ( ws->TS_FFT, 0, resamp->numSamplesFFT * sizeof(ws->TS_FFT[0]) ) );
+
   // ----- compute FaX_k
   // apply spindown phase-factors, store result in zero-padded timeseries for 'FFT'ing
   XLAL_CHECK ( XLALApplySpindownAndFreqShiftCUDA ( ws->TS_FFT, TimeSeries_SRC_a, &thisPoint, freqShift ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -900,9 +888,9 @@ XLALComputeFaFb_ResampCUDA ( ResampCUDAMethodData *resamp,					//!< [in,out] buf
   }
 
   // Fourier transform the resampled Fa(t)
-  cudaDeviceSynchronize();
-  cufftExecC2C(resamp->fftplan, ws->TS_FFT, ws->FabX_Raw, CUFFT_FORWARD);
-  cudaDeviceSynchronize();
+  XLAL_CHECK_CUDA_CALL ( cudaDeviceSynchronize() );
+  XLAL_CHECK_CUFFT_CALL ( cufftExecC2C(resamp->fftplan, ws->TS_FFT, ws->FabX_Raw, CUFFT_FORWARD) );
+  XLAL_CHECK_CUDA_CALL ( cudaDeviceSynchronize() );
   if ( collectTiming ) {
     toc = XLALGetCPUTime();
     tiRS->Tau.FFT += ( toc - tic);
@@ -910,6 +898,7 @@ XLALComputeFaFb_ResampCUDA ( ResampCUDAMethodData *resamp,					//!< [in,out] buf
   }
 
   CUDAPopulateFaFbFromRaw<<<(numFreqBins + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>(ws->FaX_k, ws->FabX_Raw, numFreqBins, offset_bins, resamp->decimateFFT);
+  XLAL_CHECK_CUDA_CALL ( cudaGetLastError() );
   if ( collectTiming ) {
     toc = XLALGetCPUTime();
     tiRS->Tau.Copy += ( toc - tic);
@@ -927,7 +916,7 @@ XLALComputeFaFb_ResampCUDA ( ResampCUDAMethodData *resamp,					//!< [in,out] buf
   }
 
   // Fourier transform the resampled Fb(t)
-  cufftExecC2C(resamp->fftplan, ws->TS_FFT, ws->FabX_Raw, CUFFT_FORWARD);
+  XLAL_CHECK_CUFFT_CALL ( cufftExecC2C(resamp->fftplan, ws->TS_FFT, ws->FabX_Raw, CUFFT_FORWARD) );
 
   if ( collectTiming ) {
     toc = XLALGetCPUTime();
@@ -935,6 +924,7 @@ XLALComputeFaFb_ResampCUDA ( ResampCUDAMethodData *resamp,					//!< [in,out] buf
     tic = toc;
   }
   CUDAPopulateFaFbFromRaw<<<(numFreqBins + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>(ws->FbX_k, ws->FabX_Raw, numFreqBins, offset_bins, resamp->decimateFFT);
+  XLAL_CHECK_CUDA_CALL ( cudaGetLastError() );
 
   if ( collectTiming ) {
     toc = XLALGetCPUTime();
@@ -944,15 +934,15 @@ XLALComputeFaFb_ResampCUDA ( ResampCUDAMethodData *resamp,					//!< [in,out] buf
 
   // ----- normalization factors to be applied to Fa and Fb:
   const REAL8 dtauX = GPSDIFF ( TimeSeries_SRC_a->epoch, thisPoint.refTime );
-  CUDANormFaFb<<<(numFreqBins + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>> \
-              (ws->FaX_k, ws->FbX_k, FreqOut0, dFreq, dtauX, dt_SRC, numFreqBins);
+  CUDANormFaFb<<<(numFreqBins + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>(ws->FaX_k, ws->FbX_k, FreqOut0, dFreq, dtauX, dt_SRC, numFreqBins);
+  XLAL_CHECK_CUDA_CALL ( cudaGetLastError() );
   if ( collectTiming ) {
     toc = XLALGetCPUTime();
     tiRS->Tau.Norm += ( toc - tic);
     tic = toc;
   }
-  return XLAL_SUCCESS;
 
+  return XLAL_SUCCESS;
 } // XLALComputeFaFb_ResampCUDA()
 
 
@@ -985,7 +975,7 @@ __global__ void CUDAApplySpindownAndFreqShift(cuComplex *out,
 }
 
 static int
-XLALApplySpindownAndFreqShiftCUDA ( cuComplex *__restrict__ xOut,                           ///< [out] the spindown-corrected SRC-frame timeseries
+XLALApplySpindownAndFreqShiftCUDA ( cuComplex *__restrict__ xOut,                       ///< [out] the spindown-corrected SRC-frame timeseries
                                     const COMPLEX8TimeSeries *__restrict__ xIn,		///< [in] the input SRC-frame timeseries
                                     const PulsarDopplerParams *__restrict__ doppler,	///< [in] containing spindown parameters
                                     REAL8 freqShift					///< [in] frequency-shift to apply, sign is "new - old"
@@ -1006,12 +996,12 @@ XLALApplySpindownAndFreqShiftCUDA ( cuComplex *__restrict__ xOut,               
   LIGOTimeGPS epoch = xIn->epoch;
   REAL8 Dtau0 = GPSDIFF ( epoch, doppler->refTime );
 
-  cudaDeviceSynchronize();
-  CUDAApplySpindownAndFreqShift<<<(numSamplesIn + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>> \
-                              (xOut, reinterpret_cast<cuComplex *>(xIn->data->data), *doppler, freqShift, dt, Dtau0, s_max, numSamplesIn);
-  cudaDeviceSynchronize();
-  return XLAL_SUCCESS;
+  XLAL_CHECK_CUDA_CALL ( cudaDeviceSynchronize() );
+  CUDAApplySpindownAndFreqShift<<<(numSamplesIn + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>(xOut, reinterpret_cast<cuComplex *>(xIn->data->data), *doppler, freqShift, dt, Dtau0, s_max, numSamplesIn);
+  XLAL_CHECK_CUDA_CALL ( cudaGetLastError() );
+  XLAL_CHECK_CUDA_CALL ( cudaDeviceSynchronize() );
 
+  return XLAL_SUCCESS;
 } // XLALApplySpindownAndFreqShiftCUDA()
 
 __global__ void CUDAApplyHetAMInterp(cuComplex *TS_a, cuComplex *TS_b, cuComplex *TStmp1, cuComplex *TStmp2, UINT4 numSamples)
@@ -1060,7 +1050,7 @@ __global__ void CUDAApplyHetAMSrc(cuComplex *TStmp1_SRC_data,
   cuComplex ei2piphase = {(float) cosphase, (float) sinphase};
 
   // apply AM coefficients a(t), b(t) to SRC frame timeseries [alternate sign to get final FFT return DC in the middle]
-  //REAL4 signum = signumLUT [ (iSRC_al_j % 2) ];
+  // equivalent to: REAL4 signum = signumLUT [ (iSRC_al_j % 2) ];
   cuComplex signum = {1.0f - 2*(iSRC_al_j % 2), 0}; // alternating sign, avoid branching
   ei2piphase = cuCmulf(ei2piphase, signum);
 
@@ -1160,21 +1150,13 @@ SincInterp (COMPLEX8Vector *y_out,		///< [out] output series of interpolated y-v
 
   const REAL8 oodt = 1.0 / dt;
   REAL8 *win_gpu;
-  cudaMalloc((void **)&win_gpu, sizeof(REAL8)*winLen);
+  XLAL_CHECK ( cudaMalloc((void **)&win_gpu, sizeof(REAL8)*winLen) == cudaSuccess, XLAL_ENOMEM );
   CUDACreateHammingWindow<<<(winLen + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>(win_gpu, winLen);
-  //cudaMemcpy(win_gpu, win->data->data, sizeof(REAL8)*win->data->length, cudaMemcpyHostToDevice);
-  CUDASincInterp<<<(numSamplesOut + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>> \
-                (reinterpret_cast<cuComplex *>(y_out->data),
-                t_out->data,
-                reinterpret_cast<cuComplex *>(ts_in->data->data),
-                win_gpu,
-                Dterms,
-                numSamplesIn,
-                numSamplesOut,
-                tmin,
-                dt,
-                oodt);
+  XLAL_CHECK_CUDA_CALL ( cudaGetLastError() );
+  CUDASincInterp<<<(numSamplesOut + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>( (cuComplex *)(y_out->data), t_out->data, (cuComplex *)(ts_in->data->data), win_gpu, Dterms, numSamplesIn, numSamplesOut, tmin, dt, oodt);
+  XLAL_CHECK_CUDA_CALL ( cudaGetLastError() );
   cudaFree(win_gpu);
+
   return XLAL_SUCCESS;
 }
 
@@ -1314,13 +1296,13 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeriesCUDA ( ResampCUDAMethodData *resam
       TimeSeries_SRCX_b->epoch = epoch;
 
       // make sure all output samples are initialized to zero first, in case of gaps
-      cudaMemset ( TimeSeries_SRCX_a->data->data, 0, TimeSeries_SRCX_a->data->length * sizeof(TimeSeries_SRCX_a->data->data[0]) );
-      cudaMemset ( TimeSeries_SRCX_b->data->data, 0, TimeSeries_SRCX_b->data->length * sizeof(TimeSeries_SRCX_b->data->data[0]) );
+      XLAL_CHECK_CUDA_CALL ( cudaMemset ( TimeSeries_SRCX_a->data->data, 0, TimeSeries_SRCX_a->data->length * sizeof(TimeSeries_SRCX_a->data->data[0]) ) );
+      XLAL_CHECK_CUDA_CALL ( cudaMemset ( TimeSeries_SRCX_b->data->data, 0, TimeSeries_SRCX_b->data->length * sizeof(TimeSeries_SRCX_b->data->data[0]) ) );
       // make sure detector-frame timesteps to interpolate to are initialized to 0, in case of gaps
-      cudaMemset ( ws->SRCtimes_DET->data, 0, ws->SRCtimes_DET->length * sizeof(ws->SRCtimes_DET->data[0]) );
+      XLAL_CHECK_CUDA_CALL ( cudaMemset ( ws->SRCtimes_DET->data, 0, ws->SRCtimes_DET->length * sizeof(ws->SRCtimes_DET->data[0]) ) );
 
-      cudaMemset ( ws->TStmp1_SRC->data, 0, ws->TStmp1_SRC->length * sizeof(ws->TStmp1_SRC->data[0]) );
-      cudaMemset ( ws->TStmp2_SRC->data, 0, ws->TStmp2_SRC->length * sizeof(ws->TStmp2_SRC->data[0]) );
+      XLAL_CHECK_CUDA_CALL ( cudaMemset ( ws->TStmp1_SRC->data, 0, ws->TStmp1_SRC->length * sizeof(ws->TStmp1_SRC->data[0]) ) );
+      XLAL_CHECK_CUDA_CALL ( cudaMemset ( ws->TStmp2_SRC->data, 0, ws->TStmp2_SRC->length * sizeof(ws->TStmp2_SRC->data[0]) ) );
 
       REAL8 tStart_DET_0 = GPSGETREAL8 ( &(Timestamps_DETX->data[0]) );// START time of the SFT at the detector
       // loop over SFT timestamps and compute the detector frame time samples corresponding to uniformly sampled SRC time samples
@@ -1346,42 +1328,22 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeriesCUDA ( ResampCUDAMethodData *resam
 
           REAL4 a_al = AMcoefX->a->data[alpha];
           REAL4 b_al = AMcoefX->b->data[alpha];
-          CUDAApplyHetAMSrc<<<(numSamplesSFT_SRC_al + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>> \
-                            (
-                              reinterpret_cast<cuComplex *>(ws->TStmp1_SRC->data),
-                              reinterpret_cast<cuComplex *>(ws->TStmp2_SRC->data),
-                              ti_DET->data,
-                              iStart_SRC_al,
-                              tStart_SRC_0,
-                              tStart_DET_0,
-                              dt_SRC,
-                              tMid_DET_al,
-                              tMid_SRC_al,
-                              Tdot_al,
-                              fHet,
-                              a_al,
-                              b_al,
-                              numSamplesSFT_SRC_al
-                            );
+          CUDAApplyHetAMSrc<<<(numSamplesSFT_SRC_al + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>( (cuComplex *)(ws->TStmp1_SRC->data), (cuComplex *)(ws->TStmp2_SRC->data), ti_DET->data, iStart_SRC_al, tStart_SRC_0, tStart_DET_0, dt_SRC, tMid_DET_al, tMid_SRC_al, Tdot_al, fHet, a_al, b_al, numSamplesSFT_SRC_al );
+          XLAL_CHECK_CUDA_CALL ( cudaGetLastError() );
         } // for  alpha < numSFTsX
 
       XLAL_CHECK ( ti_DET->length >= TimeSeries_SRCX_a->data->length, XLAL_EINVAL );
       UINT4 bak_length = ti_DET->length;
       ti_DET->length = TimeSeries_SRCX_a->data->length;
 
-      //XLAL_CHECK ( XLALSincInterpolateCOMPLEX8TimeSeries ( TimeSeries_SRCX_a->data, ti_DET, TimeSeries_DETX, resamp->Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK ( SincInterp ( TimeSeries_SRCX_a->data, ti_DET, TimeSeries_DETX, resamp->Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       ti_DET->length = bak_length;
 
       // apply heterodyne correction and AM-functions a(t) and b(t) to interpolated timeseries
+      CUDAApplyHetAMInterp<<<(numSamples_SRCX + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>( (cuComplex *)(TimeSeries_SRCX_a->data->data), (cuComplex *)(TimeSeries_SRCX_b->data->data), (cuComplex *)(ws->TStmp1_SRC->data), (cuComplex *)(ws->TStmp2_SRC->data), numSamples_SRCX );
+      XLAL_CHECK_CUDA_CALL ( cudaGetLastError() );
 
-      CUDAApplyHetAMInterp<<<(numSamples_SRCX + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>> \
-                    (reinterpret_cast<cuComplex *>(TimeSeries_SRCX_a->data->data),
-                    reinterpret_cast<cuComplex *>(TimeSeries_SRCX_b->data->data),
-                    reinterpret_cast<cuComplex *>(ws->TStmp1_SRC->data),
-                    reinterpret_cast<cuComplex *>(ws->TStmp2_SRC->data),
-                    numSamples_SRCX);
     } // for X < numDetectors
 
   if ( collectTiming ) {
