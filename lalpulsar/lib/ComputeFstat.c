@@ -53,7 +53,7 @@ struct tagFstatInput {
 static int XLALSelectBestFstatMethod ( FstatMethodType *method );
 
 int XLALSetupFstatDemod  ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
-int XLALSetupFstatResamp ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+int XLALSetupFstatResampGeneric ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
 
 // ---------- Constant variable definitions ---------- //
 
@@ -413,7 +413,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
 
   case FMETHOD_RESAMP_GENERIC:		// Resamp: generic implementation
     extraBinsMethod = 8;   // use 8 extra bins to give better agreement with Demod(w Dterms=8) near the boundaries
-    setupFuncMethod = XLALSetupFstatResamp;
+    setupFuncMethod = XLALSetupFstatResampGeneric;
     break;
 
   default:

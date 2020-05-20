@@ -36,9 +36,9 @@
 #include <lal/Units.h>
 
 ///
-/// \defgroup ComputeFstat_Resamp_c Module ComputeFstat_Resamp.c
+/// \defgroup ComputeFstat_Resamp_Generic_c Module ComputeFstat_Resamp_Generic.c
 /// \ingroup ComputeFstat_h
-/// \brief Implements the \a Resamp: FFT-based resampling algorithm for
+/// \brief Implements a generic version of the \a Resamp FFT-based resampling algorithm for
 /// computing the \f$\mathcal{F}\f$-statistic \cite JKS98 .
 ///
 
@@ -125,7 +125,7 @@ typedef struct tagResampWorkspace
   COMPLEX8Vector *TStmp2_SRC;	// can hold a single-detector SRC-frame spindown-corrected timeseries [without zero-padding]
   REAL8Vector *SRCtimes_DET;	// holds uniformly-spaced SRC-frame timesteps translated into detector frame [for interpolation]
 
-  // input padded timeseries ts(t) and output Fab(f) of length 'numSamplesFFT' and corresponding fftw plan
+  // input padded timeseries ts(t) and output Fab(f) of length 'numSamplesFFT'
   UINT4 numSamplesFFTAlloc;	// allocated number of zero-padded SRC-frame time samples (related to dFreq)
   COMPLEX8 *TS_FFT;		// zero-padded, spindown-corr SRC-frame TS
   COMPLEX8 *FabX_Raw;		// raw full-band FFT result Fa,Fb
@@ -169,41 +169,13 @@ typedef struct
 
 // ----- local prototypes ----------
 
-int XLALSetupFstatResamp ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+int XLALSetupFstatResampGeneric ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
 
-static int
-XLALComputeFstatResamp ( FstatResults* Fstats,
-                         const FstatCommon *common,
-                         void *method_data
-                       );
-
-static int
-XLALApplySpindownAndFreqShift ( COMPLEX8 *xOut,
-                                const COMPLEX8TimeSeries *xIn,
-                                const PulsarDopplerParams *doppler,
-                                REAL8 freqShift
-                                );
-
-static int
-XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( ResampMethodData *resamp,
-                                                 const PulsarDopplerParams *thisPoint,
-                                                 const FstatCommon *common
-                                                 );
-
-static int
-XLALComputeFaFb_Resamp ( ResampMethodData *resamp,
-                         ResampWorkspace *ws,
-                         const PulsarDopplerParams thisPoint,
-                         REAL8 dFreq,
-                         UINT4 numFreqBins,
-                         const COMPLEX8TimeSeries *TimeSeries_SRC_a,
-                         const COMPLEX8TimeSeries *TimeSeries_SRC_b
-                         );
-
-static void
-XLALGetFFTPlanHints ( int * planMode,
-                      double * planGenTimeoutSeconds
-                      );
+static int XLALComputeFstatResampGeneric ( FstatResults* Fstats, const FstatCommon *common, void *method_data );
+static int XLALApplySpindownAndFreqShiftGeneric ( COMPLEX8 *xOut, const COMPLEX8TimeSeries *xIn, const PulsarDopplerParams *doppler, REAL8 freqShift );
+static int XLALBarycentricResampleMultiCOMPLEX8TimeSeriesGeneric ( ResampMethodData *resamp, const PulsarDopplerParams *thisPoint, const FstatCommon *common );
+static int XLALComputeFaFb_ResampGeneric ( ResampMethodData *resamp, ResampWorkspace *ws, const PulsarDopplerParams thisPoint, REAL8 dFreq, UINT4 numFreqBins, const COMPLEX8TimeSeries *TimeSeries_SRC_a, const COMPLEX8TimeSeries *TimeSeries_SRC_b );
+static void XLALGetFFTPlanHints ( int * planMode, double * planGenTimeoutSeconds );
 
 // ==================== function definitions ====================
 
@@ -254,12 +226,12 @@ XLALDestroyResampMethodData ( void* method_data )
 } // XLALDestroyResampMethodData()
 
 int
-XLALSetupFstatResamp ( void **method_data,
-                       FstatCommon *common,
-                       FstatMethodFuncs* funcs,
-                       MultiSFTVector *multiSFTs,
-                       const FstatOptionalArgs *optArgs
-                     )
+XLALSetupFstatResampGeneric ( void **method_data,
+                              FstatCommon *common,
+                              FstatMethodFuncs* funcs,
+                              MultiSFTVector *multiSFTs,
+                              const FstatOptionalArgs *optArgs
+                            )
 {
   // Check input
   XLAL_CHECK ( method_data != NULL, XLAL_EFAULT );
@@ -275,7 +247,7 @@ XLALSetupFstatResamp ( void **method_data,
   resamp->Dterms = optArgs->Dterms;
 
   // Set method function pointers
-  funcs->compute_func = XLALComputeFstatResamp;
+  funcs->compute_func = XLALComputeFstatResampGeneric;
   funcs->method_data_destroy_func = XLALDestroyResampMethodData;
   funcs->workspace_destroy_func = XLALDestroyResampWorkspace;
 
@@ -450,14 +422,14 @@ XLALSetupFstatResamp ( void **method_data,
 
   return XLAL_SUCCESS;
 
-} // XLALSetupFstatResamp()
+} // XLALSetupFstatResampGeneric()
 
 
 static int
-XLALComputeFstatResamp ( FstatResults* Fstats,
-                         const FstatCommon *common,
-                         void *method_data
-                       )
+XLALComputeFstatResampGeneric ( FstatResults* Fstats,
+                                const FstatCommon *common,
+                                void *method_data
+                              )
 {
   // Check input
   XLAL_CHECK(Fstats != NULL, XLAL_EFAULT);
@@ -488,7 +460,7 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
     ticStart = XLALGetCPUTime();
   }
   // Note: all buffering is done within that function
-  XLAL_CHECK ( XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( resamp, &thisPoint, common ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALBarycentricResampleMultiCOMPLEX8TimeSeriesGeneric ( resamp, &thisPoint, common ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   if ( whatToCompute == FSTATQ_NONE ) {
     return XLAL_SUCCESS;
@@ -563,7 +535,7 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
       const COMPLEX8TimeSeries *TimeSeriesX_SRC_b = multiTimeSeries_SRC_b->data[X];
 
       // compute {Fa^X(f_k), Fb^X(f_k)}: results returned via workspace ws
-      XLAL_CHECK ( XLALComputeFaFb_Resamp ( resamp, ws, thisPoint, common->dFreq, numFreqBins, TimeSeriesX_SRC_a, TimeSeriesX_SRC_b ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALComputeFaFb_ResampGeneric ( resamp, ws, thisPoint, common->dFreq, numFreqBins, TimeSeriesX_SRC_a, TimeSeriesX_SRC_b ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       if ( collectTiming ) {
         tic = XLALGetCPUTime();
@@ -719,18 +691,18 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
 
   return XLAL_SUCCESS;
 
-} // XLALComputeFstatResamp()
+} // XLALComputeFstatResampGeneric()
 
 
 static int
-XLALComputeFaFb_Resamp ( ResampMethodData *resamp,				//!< [in,out] buffered resampling data and workspace
-                         ResampWorkspace *ws,					//!< [in,out] resampling workspace (memory-sharing across segments)
-                         const PulsarDopplerParams thisPoint,			//!< [in] Doppler point to compute {FaX,FbX} for
-                         REAL8 dFreq,						//!< [in] output frequency resolution
-                         UINT4 numFreqBins,					//!< [in] number of output frequency bins
-                         const COMPLEX8TimeSeries * restrict TimeSeries_SRC_a,	//!< [in] SRC-frame single-IFO timeseries * a(t)
-                         const COMPLEX8TimeSeries * restrict TimeSeries_SRC_b	//!< [in] SRC-frame single-IFO timeseries * b(t)
-                         )
+XLALComputeFaFb_ResampGeneric ( ResampMethodData *resamp,				//!< [in,out] buffered resampling data and workspace
+                                ResampWorkspace *ws,					//!< [in,out] resampling workspace (memory-sharing across segments)
+                                const PulsarDopplerParams thisPoint,			//!< [in] Doppler point to compute {FaX,FbX} for
+                                REAL8 dFreq,						//!< [in] output frequency resolution
+                                UINT4 numFreqBins,					//!< [in] number of output frequency bins
+                                const COMPLEX8TimeSeries * restrict TimeSeries_SRC_a,	//!< [in] SRC-frame single-IFO timeseries * a(t)
+                                const COMPLEX8TimeSeries * restrict TimeSeries_SRC_b	//!< [in] SRC-frame single-IFO timeseries * b(t)
+                                )
 {
   XLAL_CHECK ( (resamp != NULL) && (ws != NULL) && (TimeSeries_SRC_a != NULL) && (TimeSeries_SRC_b != NULL), XLAL_EINVAL );
   XLAL_CHECK ( dFreq > 0, XLAL_EINVAL );
@@ -763,7 +735,7 @@ XLALComputeFaFb_Resamp ( ResampMethodData *resamp,				//!< [in,out] buffered res
   memset ( ws->TS_FFT, 0, resamp->numSamplesFFT * sizeof(ws->TS_FFT[0]) );
   // ----- compute FaX_k
   // apply spindown phase-factors, store result in zero-padded timeseries for 'FFT'ing
-  XLAL_CHECK ( XLALApplySpindownAndFreqShift ( ws->TS_FFT, TimeSeries_SRC_a, &thisPoint, freqShift ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALApplySpindownAndFreqShiftGeneric ( ws->TS_FFT, TimeSeries_SRC_a, &thisPoint, freqShift ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   if ( collectTiming ) {
     toc = XLALGetCPUTime();
@@ -792,7 +764,7 @@ XLALComputeFaFb_Resamp ( ResampMethodData *resamp,				//!< [in,out] buffered res
 
   // ----- compute FbX_k
   // apply spindown phase-factors, store result in zero-padded timeseries for 'FFT'ing
-  XLAL_CHECK ( XLALApplySpindownAndFreqShift ( ws->TS_FFT, TimeSeries_SRC_b, &thisPoint, freqShift ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALApplySpindownAndFreqShiftGeneric ( ws->TS_FFT, TimeSeries_SRC_b, &thisPoint, freqShift ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   if ( collectTiming ) {
     toc = XLALGetCPUTime();
@@ -840,14 +812,14 @@ XLALComputeFaFb_Resamp ( ResampMethodData *resamp,				//!< [in,out] buffered res
 
   return XLAL_SUCCESS;
 
-} // XLALComputeFaFb_Resamp()
+} // XLALComputeFaFb_ResampGeneric()
 
 static int
-XLALApplySpindownAndFreqShift ( COMPLEX8 *restrict xOut,      			///< [out] the spindown-corrected SRC-frame timeseries
-                                const COMPLEX8TimeSeries *restrict xIn,		///< [in] the input SRC-frame timeseries
-                                const PulsarDopplerParams *restrict doppler,	///< [in] containing spindown parameters
-                                REAL8 freqShift					///< [in] frequency-shift to apply, sign is "new - old"
-                                )
+XLALApplySpindownAndFreqShiftGeneric ( COMPLEX8 *restrict xOut,      			///< [out] the spindown-corrected SRC-frame timeseries
+                                       const COMPLEX8TimeSeries *restrict xIn,		///< [in] the input SRC-frame timeseries
+                                       const PulsarDopplerParams *restrict doppler,	///< [in] containing spindown parameters
+                                       REAL8 freqShift					///< [in] frequency-shift to apply, sign is "new - old"
+                                       )
 {
   // input sanity checks
   XLAL_CHECK ( xOut != NULL, XLAL_EINVAL );
@@ -892,7 +864,7 @@ XLALApplySpindownAndFreqShift ( COMPLEX8 *restrict xOut,      			///< [out] the 
 
   return XLAL_SUCCESS;
 
-} // XLALApplySpindownAndFreqShift()
+} // XLALApplySpindownAndFreqShiftGeneric()
 
 ///
 /// Performs barycentric resampling on a multi-detector timeseries, updates resampling buffer with results
@@ -902,10 +874,10 @@ XLALApplySpindownAndFreqShift ( COMPLEX8 *restrict xOut,      			///< [out] the 
 /// 2) if at least sky-dependent quantities can be re-used (antenna-patterns + timings) in case only binary parameters changed
 ///
 static int
-XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( ResampMethodData *resamp,		// [in/out] resampling input and buffer (to store resampling TS)
-                                                 const PulsarDopplerParams *thisPoint,	// [in] current skypoint and reftime
-                                                 const FstatCommon *common		// [in] various input quantities and parameters used here
-                                                 )
+XLALBarycentricResampleMultiCOMPLEX8TimeSeriesGeneric ( ResampMethodData *resamp,		// [in/out] resampling input and buffer (to store resampling TS)
+                                                        const PulsarDopplerParams *thisPoint,	// [in] current skypoint and reftime
+                                                        const FstatCommon *common		// [in] various input quantities and parameters used here
+                                                        )
 {
   // check input sanity
   XLAL_CHECK ( thisPoint != NULL, XLAL_EINVAL );
@@ -1114,7 +1086,7 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( ResampMethodData *resamp,		// [
 
   return XLAL_SUCCESS;
 
-} // XLALBarycentricResampleMultiCOMPLEX8TimeSeries()
+} // XLALBarycentricResampleMultiCOMPLEX8TimeSeriesGeneric()
 
 static void
 XLALGetFFTPlanHints ( int * planMode,
