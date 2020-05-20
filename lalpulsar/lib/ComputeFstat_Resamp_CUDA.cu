@@ -108,7 +108,7 @@ typedef struct
 
   UINT4 numSamplesFFT;                                  // length of zero-padded SRC-frame timeseries (related to dFreq)
   UINT4 decimateFFT;                                    // output every n-th frequency bin, with n>1 iff (dFreq > 1/Tspan), and was internally decreased by n
-  void *fftplan;                                        // FFT plan
+  cufftHandle fftplan;                                  // FFT plan
 
   // ----- timing -----
   BOOLEAN collectTiming;                                // flag whether or not to collect timing information
@@ -312,6 +312,8 @@ static void XLALDestroyResampCUDAMethodData ( void* method_data )
   XLALDestroyMultiSSBtimes ( resamp->multiSSBtimes );
   XLALDestroyMultiSSBtimes ( resamp->multiBinaryTimes );
 
+  cufftDestroy ( resamp->fftplan );
+
   XLALFree ( resamp );
 
 } // XLALDestroyResampCUDAMethodData()
@@ -479,6 +481,10 @@ XLALSetupFstatResampCUDA ( void **method_data,
 
       common->workspace = ws;
     } // end: if we create our own workspace
+
+  // ----- compute and buffer FFT plan ----------
+  XLAL_CHECK ( cufftPlan1d ( &resamp->fftplan, resamp->numSamplesFFT, CUFFT_C2C, 1 ) == CUFFT_SUCCESS, XLAL_ESYS );
+  cudaDeviceSynchronize();
 
   // turn on timing collection if requested
   resamp->collectTiming = optArgs->collectTiming;
@@ -894,10 +900,8 @@ XLALComputeFaFb_ResampCUDA ( ResampCUDAMethodData *resamp,					//!< [in,out] buf
   }
 
   // Fourier transform the resampled Fa(t)
-  cufftHandle fft_plan;
-  cufftPlan1d(&fft_plan, resamp->numSamplesFFT, CUFFT_C2C, 1);
   cudaDeviceSynchronize();
-  cufftExecC2C(fft_plan, ws->TS_FFT, ws->FabX_Raw, CUFFT_FORWARD);
+  cufftExecC2C(resamp->fftplan, ws->TS_FFT, ws->FabX_Raw, CUFFT_FORWARD);
   cudaDeviceSynchronize();
   if ( collectTiming ) {
     toc = XLALGetCPUTime();
@@ -923,8 +927,7 @@ XLALComputeFaFb_ResampCUDA ( ResampCUDAMethodData *resamp,					//!< [in,out] buf
   }
 
   // Fourier transform the resampled Fb(t)
-  cufftExecC2C(fft_plan, ws->TS_FFT, ws->FabX_Raw, CUFFT_FORWARD);
-  cufftDestroy(fft_plan);
+  cufftExecC2C(resamp->fftplan, ws->TS_FFT, ws->FabX_Raw, CUFFT_FORWARD);
 
   if ( collectTiming ) {
     toc = XLALGetCPUTime();
