@@ -96,3 +96,48 @@ static const char FstatTimingResampHelp[] =
   "%%%%"
   "";
 // ---------- END: Resamp-specific timing model data ----------
+
+// ---------- Shared internal functions ---------- //
+
+static int
+XLALGetFstatTiming_Resamp_intern ( const FstatTimingResamp *tiRS, FstatTimingModel *timingModel )
+{
+  XLAL_CHECK ( tiRS != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( timingModel != NULL, XLAL_EINVAL );
+
+  // return method-specific timing model values
+  XLAL_INIT_MEM( (*timingModel) );
+
+  UINT4 i = 0;
+  timingModel->names[i]  = "NsampFFT0";
+  timingModel->values[i] = tiRS->NsampFFT0;
+
+  i++;
+  timingModel->names[i]  = "NsampFFT";
+  timingModel->values[i] = tiRS->NsampFFT;
+
+  i++;
+  timingModel->names[i]  = "Resolution";
+  timingModel->values[i] = tiRS->Resolution;
+
+  i++;
+  timingModel->names[i]  = "tau0_Fbin";
+  timingModel->values[i] = tiRS->tau0_Fbin;
+
+  i++;
+  timingModel->names[i]  = "tau0_spin";
+  timingModel->values[i] = tiRS->tau0_spin;
+
+  i++;
+  timingModel->names[i]  = "tau0_FFT";
+  timingModel->values[i] = tiRS->tau0_FFT;
+
+  i++;
+  timingModel->names[i]  = "tau0_bary";
+  timingModel->values[i] = tiRS->tau0_bary;
+
+  timingModel->numVariables = i+1;
+  timingModel->help      = FstatTimingResampHelp;
+
+  return XLAL_SUCCESS;
+} // XLALGetFstatTiming_Resamp_intern()

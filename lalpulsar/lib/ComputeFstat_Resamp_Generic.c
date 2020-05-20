@@ -106,6 +106,7 @@ typedef struct
 // ----- local prototypes ----------
 
 int XLALSetupFstatResampGeneric ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+int XLALGetFstatTiming_ResampGeneric ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
 
 static int XLALComputeFstatResampGeneric ( FstatResults* Fstats, const FstatCommon *common, void *method_data );
 static int XLALApplySpindownAndFreqShiftGeneric ( COMPLEX8 *xOut, const COMPLEX8TimeSeries *xIn, const PulsarDopplerParams *doppler, REAL8 freqShift );
@@ -1074,7 +1075,7 @@ XLALExtractResampledTimeseries_intern ( MultiCOMPLEX8TimeSeries **multiTimeSerie
 } // XLALExtractResampledTimeseries_intern()
 
 int
-XLALGetFstatTiming_Resamp ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel )
+XLALGetFstatTiming_ResampGeneric ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel )
 {
   XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
   XLAL_CHECK ( timingGeneric != NULL, XLAL_EINVAL );
@@ -1085,43 +1086,9 @@ XLALGetFstatTiming_Resamp ( const void *method_data, FstatTimingGeneric *timingG
 
   (*timingGeneric) = resamp->timingGeneric; // struct-copy generic timing measurements
 
-  const FstatTimingResamp *tiRS = &(resamp->timingResamp);
-
-  // return method-specific timing model values
-  XLAL_INIT_MEM( (*timingModel) );
-
-  UINT4 i = 0;
-  timingModel->names[i]  = "NsampFFT0";
-  timingModel->values[i] = tiRS->NsampFFT0;
-
-  i++;
-  timingModel->names[i]  = "NsampFFT";
-  timingModel->values[i] = tiRS->NsampFFT;
-
-  i++;
-  timingModel->names[i]  = "Resolution";
-  timingModel->values[i] = tiRS->Resolution;
-
-  i++;
-  timingModel->names[i]  = "tau0_Fbin";
-  timingModel->values[i] = tiRS->tau0_Fbin;
-
-  i++;
-  timingModel->names[i]  = "tau0_spin";
-  timingModel->values[i] = tiRS->tau0_spin;
-
-  i++;
-  timingModel->names[i]  = "tau0_FFT";
-  timingModel->values[i] = tiRS->tau0_FFT;
-
-  i++;
-  timingModel->names[i]  = "tau0_bary";
-  timingModel->values[i] = tiRS->tau0_bary;
-
-  timingModel->numVariables = i+1;
-  timingModel->help      = FstatTimingResampHelp;
+  XLAL_CHECK ( XLALGetFstatTiming_Resamp_intern ( &(resamp->timingResamp), timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
-} // XLALGetFstatTiming_Resamp()
+} // XLALGetFstatTiming_ResampGeneric()
 
 // @}

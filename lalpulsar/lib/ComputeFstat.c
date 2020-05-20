@@ -56,9 +56,11 @@ void *XLALFstatInputTimeslice_Demod ( const void *method_data, const UINT4 iStar
 void XLALDestroyFstatInputTimeslice_Demod ( void *method_data );
 
 int XLALSetupFstatResampGeneric ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+int XLALGetFstatTiming_ResampGeneric ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
 
 #ifdef LALPULSAR_CUDA_ENABLED
 int XLALSetupFstatResampCUDA ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+int XLALGetFstatTiming_ResampCUDA ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
 #endif
 
 static int XLALSelectBestFstatMethod ( FstatMethodType *method );
@@ -1224,18 +1226,27 @@ XLALGetFstatTiming ( const FstatInput* input, FstatTimingGeneric *timingGeneric,
   XLAL_CHECK ( timingGeneric != NULL, XLAL_EINVAL );
   XLAL_CHECK ( timingModel != NULL, XLAL_EINVAL );
 
-  if ( input->method >= FMETHOD_DEMOD_GENERIC && input->method <= FMETHOD_DEMOD_BEST)
-    {
-      XLAL_CHECK ( XLALGetFstatTiming_Demod ( input->method_data, timingGeneric, timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  else if ( input->method >= FMETHOD_RESAMP_GENERIC && input->method <= FMETHOD_RESAMP_BEST)
-    {
-      XLAL_CHECK ( XLALGetFstatTiming_Resamp ( input->method_data, timingGeneric, timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  else
-    {
-      XLAL_ERROR ( XLAL_EINVAL, "Unsupported F-stat method '%s'\n", FstatMethodNames [ input->method ] );
-    }
+  switch ( input->method ) {
+  case FMETHOD_DEMOD_GENERIC:
+  case FMETHOD_DEMOD_OPTC:
+  case FMETHOD_DEMOD_ALTIVEC:
+  case FMETHOD_DEMOD_SSE:
+    XLAL_CHECK ( XLALGetFstatTiming_Demod ( input->method_data, timingGeneric, timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
+    break;
+
+  case FMETHOD_RESAMP_GENERIC:
+    XLAL_CHECK ( XLALGetFstatTiming_ResampGeneric ( input->method_data, timingGeneric, timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
+    break;
+
+#ifdef LALPULSAR_CUDA_ENABLED
+  case FMETHOD_RESAMP_CUDA:
+    XLAL_CHECK ( XLALGetFstatTiming_ResampCUDA ( input->method_data, timingGeneric, timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
+    break;
+#endif
+
+  default:
+    XLAL_ERROR ( XLAL_EINVAL, "Unsupported F-stat method '%s'\n", FstatMethodNames [ input->method ] );
+  }
 
   timingGeneric->help = FstatTimingGenericHelp;	// set static help-string pointer (not used or set otherwise)
 
