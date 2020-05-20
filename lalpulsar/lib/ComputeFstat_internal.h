@@ -46,7 +46,6 @@
 
 // ---------- Shared struct definitions ---------- //
 
-
 // Common input data for F-statistic methods
 typedef struct {
   LIGOTimeGPS midTime;                                  // Mid-time of SFT data
@@ -61,7 +60,6 @@ typedef struct {
   BOOLEAN isTimeslice;                                  //Flag if this is a timeslice of another FstatInput struct
   REAL8 allowedMismatchFromSFTLength; // optional override for XLALFstatCheckSFTLengthMismatch()
 } FstatCommon;
-
 
 // Pointers to function pointers which perform method-specific operations
 typedef struct {
@@ -100,4 +98,4 @@ compute_fstat_from_fa_fb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, 
 
   return twoF;
 
-} // ComputeFstatFromFaFb()
+} // compute_fstat_from_fa_fb()
