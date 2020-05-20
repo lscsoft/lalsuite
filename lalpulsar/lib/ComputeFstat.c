@@ -50,13 +50,19 @@ struct tagFstatInput {
 
 // ---------- Internal prototypes ---------- //
 
-static int XLALSelectBestFstatMethod ( FstatMethodType *method );
+int XLALSetupFstatDemod ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+int XLALGetFstatTiming_Demod ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
+void *XLALFstatInputTimeslice_Demod ( const void *method_data, const UINT4 iStart[PULSAR_MAX_DETECTORS], const UINT4 iEnd[PULSAR_MAX_DETECTORS] );
+void XLALDestroyFstatInputTimeslice_Demod ( void *method_data );
 
-int XLALSetupFstatDemod  ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
 int XLALSetupFstatResampGeneric ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+
 #ifdef LALPULSAR_CUDA_ENABLED
 int XLALSetupFstatResampCUDA ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
 #endif
+
+static int XLALSelectBestFstatMethod ( FstatMethodType *method );
+static void XLALDestroyFstatInputTimeslice_common ( FstatCommon *common );
 
 // ---------- Constant variable definitions ---------- //
 
@@ -1442,7 +1448,7 @@ XLALFstatInputTimeslice ( FstatInput ** slice,                ///< [out] Address
 } // XLALFstatInputTimeslice()
 
 
-void
+static void
 XLALDestroyFstatInputTimeslice_common ( FstatCommon *common )
 {
   if ( !common ) {
