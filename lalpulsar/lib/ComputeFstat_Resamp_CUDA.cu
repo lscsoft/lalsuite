@@ -51,8 +51,6 @@
 // ========== Resamp internals ==========
 
 // ----- local macros ----------
-#define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
-#define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 #define CPLX_MULT(x, y) (crectf(crealf(x)*crealf(y) - cimagf(x)*cimagf(y), cimagf(x)*crealf(y) + crealf(x)*cimagf(y)))
 
 // local macro versions of library functions to avoid calling external functions in GPU-ready code

@@ -47,8 +47,6 @@
 // ========== Resamp internals ==========
 
 // ----- local macros ----------
-#define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
-#define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
 // local macro versions of library functions to avoid calling external functions in GPU-ready code
 #define GPSDIFF(x,y) (1.0*((x).gpsSeconds - (y).gpsSeconds) + ((x).gpsNanoSeconds - (y).gpsNanoSeconds)*1e-9)
