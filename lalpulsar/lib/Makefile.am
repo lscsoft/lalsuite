@@ -68,7 +68,7 @@ liblalpulsar_la_SOURCES = \
 	ComputeFstat_Demod.c \
 	ComputeFstat_DemodHL_Generic.c \
 	ComputeFstat_DemodHL_OptC.c \
-	ComputeFstat_Resamp.c \
+	ComputeFstat_Resamp_Generic.c \
 	ComputeSky.c \
 	ConstructPLUT.c \
 	DetectorStates.c \
