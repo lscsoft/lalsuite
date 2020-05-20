@@ -349,7 +349,7 @@ const MultiLALDetector* XLALGetFstatInputDetectors ( const FstatInput* input );
 const MultiLIGOTimeGPSVector* XLALGetFstatInputTimestamps ( const FstatInput* input );
 MultiNoiseWeights* XLALGetFstatInputNoiseWeights ( const FstatInput* input );
 const MultiDetectorStateSeries* XLALGetFstatInputDetectorStates ( const FstatInput* input );
-int  XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const FstatInput *input );
+int  XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, FstatInput *input );
 int XLALGetFstatTiming ( const FstatInput* input, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
 int XLALAppendFstatTiming2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader );
 int XLALFstatInputTimeslice ( FstatInput** slice, const FstatInput* input, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS);

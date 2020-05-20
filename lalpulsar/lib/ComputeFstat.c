@@ -56,12 +56,12 @@ void *XLALFstatInputTimeslice_Demod ( const void *method_data, const UINT4 iStar
 void XLALDestroyFstatInputTimeslice_Demod ( void *method_data );
 
 int XLALSetupFstatResampGeneric ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
-int XLALExtractResampledTimeseries_ResampGeneric ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const void* method_data );
+int XLALExtractResampledTimeseries_ResampGeneric ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, void* method_data );
 int XLALGetFstatTiming_ResampGeneric ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
 
 #ifdef LALPULSAR_CUDA_ENABLED
 int XLALSetupFstatResampCUDA ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
-int XLALExtractResampledTimeseries_ResampCUDA ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const void* method_data );
+int XLALExtractResampledTimeseries_ResampCUDA ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, void* method_data );
 int XLALGetFstatTiming_ResampCUDA ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
 #endif
 
@@ -1305,7 +1305,7 @@ XLALAppendFstatTiming2File ( const FstatInput* input, FILE *fp, BOOLEAN printHea
 int
 XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, ///< [out] \c multi-detector SRC-frame timeseries, multiplied by AM function a(t).
                                  MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, ///< [out] \c multi-detector SRC-frame timeseries, multiplied by AM function b(t).
-                                 const FstatInput *input ///< [in] \c FstatInput structure.
+                                 FstatInput *input ///< [in] \c FstatInput structure.
                                  )
 {
   XLAL_CHECK ( input != NULL, XLAL_EINVAL );

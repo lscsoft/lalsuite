@@ -118,7 +118,7 @@ typedef struct
 // ----- local prototypes ----------
 
 extern "C" int XLALSetupFstatResampCUDA ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
-extern "C" int XLALExtractResampledTimeseries_ResampCUDA ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const void* method_data );
+extern "C" int XLALExtractResampledTimeseries_ResampCUDA ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, void* method_data );
 extern "C" int XLALGetFstatTiming_ResampCUDA ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
 
 static int XLALComputeFstatResampCUDA ( FstatResults* Fstats, const FstatCommon *common, void *method_data );
@@ -1347,13 +1347,13 @@ XLALBarycentricResampleMultiCOMPLEX8TimeSeriesCUDA ( ResampCUDAMethodData *resam
 } // XLALBarycentricResampleMultiCOMPLEX8TimeSeriesCUDA()
 
 extern "C" int
-XLALExtractResampledTimeseries_ResampCUDA ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const void* method_data )
+XLALExtractResampledTimeseries_ResampCUDA ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, void* method_data )
 {
   XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ( multiTimeSeries_SRC_a != NULL ) && ( multiTimeSeries_SRC_b != NULL ) , XLAL_EINVAL );
   XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
 
-  const ResampCUDAMethodData *resamp = (const ResampCUDAMethodData *) method_data;
+  ResampCUDAMethodData *resamp = (ResampCUDAMethodData *) method_data;
   *multiTimeSeries_SRC_a = resamp->multiTimeSeries_SRC_a;
   *multiTimeSeries_SRC_b = resamp->multiTimeSeries_SRC_b;
 
