@@ -26,9 +26,6 @@ build:
     # manually, for now
     - fftw
   number: 9999
-  script_env:
-    # this is only needed in gitlab-ci
-    - fft_impl
   skip: true  # [win]
   string: "{{ fft_impl }}_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
 
@@ -42,7 +39,7 @@ requirements:
   host:
     - fftw * nompi*  # [fft_impl == "fftw"]
     - gsl
-    - hdf5 1.10.4
+    - hdf5
     - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
     - zlib
   run:
@@ -70,9 +67,6 @@ outputs:
       ignore_run_exports:
         # ignore run_exports from python's recipe
         - python
-      script_env:
-        # this is only needed in gitlab-ci
-        - fft_impl
       string: "{{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
     requirements:
       build:
@@ -134,7 +128,7 @@ outputs:
         This package contains the Python bindings.
 
 about:
-  home: "https://wiki.ligo.org/DASWG/LALSuite"
+  home: "https://wiki.ligo.org/Computing/LALSuite"
   doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lal/"
   dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
   license: "GPL-2.0-or-later"
