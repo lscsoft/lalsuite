@@ -222,7 +222,6 @@ cache:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
     CONDA_CONFIG: "linux_"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
-    PYTHON_VERSION: "3.7"
   before_script:
     - *define-retry
     - *conda-init
@@ -251,7 +250,6 @@ cache:
           --error-overlinking
           --error-overdepending
           --no-anaconda-upload
-          --python ${PYTHON_VERSION}
           --use-local
           --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
           ${CONDA_BUILD_ARGS}
@@ -421,7 +419,6 @@ lal:conda:fftw:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
     CONDA_CONFIG: "linux_fft_implfftw"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
-    PYTHON_VERSION: "3.7"
 
 lal:conda:mkl:
   <<: *conda-build
@@ -432,7 +429,6 @@ lal:conda:mkl:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
     CONDA_CONFIG: "linux_fft_implmkl"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
-    PYTHON_VERSION: "3.7"
 
 # -- lalframe------------------------------------
 
@@ -678,7 +674,6 @@ lalapps:conda:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
     CONDA_CONFIG: "linux_python3.7.____cpython"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
-    PYTHON_VERSION: "3.7"
 
 # -- integration tests --------------------------
 
