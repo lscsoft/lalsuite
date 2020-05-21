@@ -205,7 +205,7 @@ class singlesqueue(object):
 
 			# construct queue entries from the new events and
 			# insort with current "incomplete" queue
-			self.incomplete += list(map(self.queueentry_from_event, events))
+			self.incomplete.extend(map(self.queueentry_from_event, events))
 			self.incomplete.sort()
 			if self.incomplete[0] < self.t_complete:
 				raise ValueError("t_complete violation: earliest event is %s, previous t_complete was %s" % (self.incomplete[0], self.t_complete))
