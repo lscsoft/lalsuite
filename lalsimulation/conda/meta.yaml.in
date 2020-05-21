@@ -29,15 +29,19 @@ requirements:
   build:
     - {{ compiler('c') }}
     - help2man
+    - llvm-openmp  # [osx]
     - make
     - pkg-config >=0.18.0
     - swig >={{ swig_version }}
   host:
     - gsl
     - lal >={{ lal_version }}a0
+    - libgomp  # [linux]
+    - llvm-openmp  # [osx]
   run:
     - gsl
     - lal >={{ lal_version }}a0
+    - llvm-openmp  # [osx]
 
 test:
   commands:
