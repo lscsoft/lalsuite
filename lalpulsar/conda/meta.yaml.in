@@ -31,14 +31,18 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
+    - libgomp  # [linux]
+    - llvm-openmp  # [osx]
     - make
-    - pkg-config
+    - pkg-config >=0.18.0
     - swig >={{ swig_version }}
   host:
     - cfitsio
     - fftw * nompi*
     - gsl
     - lal >={{ lal_version }}a0 fftw*
+    - libgomp  # [linux]
+    - llvm-openmp  # [osx]
   run:
     - cfitsio
     - fftw
