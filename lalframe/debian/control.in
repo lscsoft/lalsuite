@@ -12,7 +12,7 @@ Build-Depends: debhelper (>= 9),
   pkg-config (>= 0.18.0),
   lal-dev (>= @MIN_LAL_VERSION@~),
   ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@),
-  libframe-dev (>= 8.0),
+  libframel-dev (>= @MIN_FRAMEL_VERSION@),
   liboctave-dev,
   zlib1g-dev,
   swig (>= 3.0.9) | swig3.0 (>= 3.0.9),
@@ -36,7 +36,7 @@ Architecture: any
 Depends: ${misc:Depends},
   ${shlibs:Depends},
   ldas-tools-framecpp-c (>= @MIN_FRAMECPPC_VERSION@),
-  libframe1 (>= 8.0),
+  libframel8 (>= @MIN_FRAMEL_VERSION@),
   lal (>= @MIN_LAL_VERSION@~)
 Description: LSC Algorithm Library Frame
  The LSC Algorithm Frame Library for gravitational wave data analysis.
@@ -49,7 +49,7 @@ Architecture: any
 Depends: ${misc:Depends},
   ${shlibs:Depends},
   ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@),
-  libframe-dev (>= 8.0),
+  libframel-dev (>= @MIN_FRAMEL_VERSION@),
   zlib1g-dev,
   lal-dev (>= @MIN_LAL_VERSION@~),
   lalframe (= ${binary:Version})
