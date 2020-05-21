@@ -12,7 +12,6 @@ export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
 
 # configure
 ./configure \
-	--prefix="${PREFIX}" \
 	--disable-doxygen \
 	--disable-python \
 	--disable-swig-octave \
@@ -20,18 +19,18 @@ export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
 	--enable-help2man \
 	--enable-mpi \
 	--enable-openmp \
-	--enable-silent-rules \
 	--enable-swig-iface \
+	--prefix="${PREFIX}" \
 ;
 
 # build
-make -j ${CPU_COUNT}
+make -j ${CPU_COUNT} V=1 VERBOSE=1
 
-# check
-make -j ${CPU_COUNT} VERBOSE=1 check
+# test
+make -j ${CPU_COUNT} V=1 VERBOSE=1 check
 
 # install
-make -j ${CPU_COUNT} install
+make -j ${CPU_COUNT} V=1 VERBOSE=1 install
 
 # -- create activate/deactivate scripts
 PKG_NAME_UPPER=$(echo ${PKG_NAME} | awk '{ print toupper($0) }')
