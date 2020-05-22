@@ -1759,21 +1759,207 @@ XLALSecondOrderFiniteDifferenceDerivative(
 		{
 			for (j = 0; j <= 2; j++)
 			{
-				derivativeVec->data[i] += secondOrderCoeffs[0][j]*YVec->data[j];
+				derivativeVec->data[i] += secondOrderCoeffs[0][j] * YVec->data[j];
 			}
 		}
 		else if (i == vecLength-1)
 		{
 			for (j = 0; j <= 2; j++)
 			{
-				derivativeVec->data[i] += secondOrderCoeffs[2][j]*YVec->data[i+j-2];
+				derivativeVec->data[i] += secondOrderCoeffs[2][j] * YVec->data[i+j-2];
 			}
 		}
 		else
 		{
 			for (j = 0; j <= 2; j++)
 			{
-				derivativeVec->data[i] += secondOrderCoeffs[1][j]*YVec->data[i+j-1];
+				derivativeVec->data[i] += secondOrderCoeffs[1][j] * YVec->data[i+j-1];
+			}
+		}
+
+		derivativeVec->data[i] /= h;
+	}
+	
+    return *derivativeVec;
+}
+
+REAL8Vector
+XLALSixthOrderFiniteDifferenceDerivative(
+	REAL8Vector *XVec,
+	REAL8Vector *YVec)
+{
+	REAL8 sixthOrderCoeffs[7][7] = {
+		{-49./20., 6., -15./2., 20./3., -15./4., 6./5., -1./6.},
+		{-1./6., -77./60., 5./2., -5./3., 5./6., -1./4., 1./30.},
+		{1./30., -2./5., -7./12., 4./3., -1./2., 2./15., -1./60.},
+		{-1./60., 3./20., -3./4., 0, 3./4., -3./20., 1./60.},
+		{1./60., -2./15., 1./2., -4./3., 7./12., 2./5., -1./30.},
+		{-1./30., 1./4., -5./6., 5./3., -5./2., 77./60., 1./6.},
+		{1./6., -6./5., 15./4., -20./3., 15./2., -6., 49./20.}
+	};
+
+	UINT4 vecLength;
+	vecLength = XVec->length;
+
+	REAL8Vector *derivativeVec = XLALCreateREAL8Vector(vecLength);
+	memset(derivativeVec->data, 0, derivativeVec->length * sizeof(REAL8));
+
+	REAL8 h;
+	h = fabs(XVec->data[0] - XVec->data[1]);
+
+	UINT4 i;
+	UINT4 j;
+
+	for (i = 0; i <= vecLength-1; i++)
+	{
+		if (i == 0)
+		{
+			for (j = 0; j <= 6; j++)
+			{
+				derivativeVec->data[i] += sixthOrderCoeffs[0][j] * YVec->data[j];
+			}
+		}
+		else if (i == 1)
+		{
+			for (j = 0; j <= 6; j++)
+			{
+				derivativeVec->data[i] += sixthOrderCoeffs[1][j] * YVec->data[j];
+			}
+		}
+		else if (i == 2)
+		{
+			for (j = 0; j <= 6; j++)
+			{
+				derivativeVec->data[i] += sixthOrderCoeffs[2][j] * YVec->data[j];
+			}
+		}
+		else if (i == vecLength-3)
+		{
+			for (j = 0; j <= 6; j++)
+			{
+				derivativeVec->data[i] += sixthOrderCoeffs[4][j] * YVec->data[i+j-4];
+			}
+		}
+		else if (i == vecLength-2)
+		{
+			for (j = 0; j <= 6; j++)
+			{
+				derivativeVec->data[i] += sixthOrderCoeffs[5][j] * YVec->data[i+j-5];
+			}
+		}
+		else if (i == vecLength-1)
+		{
+			for (j = 0; j <= 6; j++)
+			{
+				derivativeVec->data[i] += sixthOrderCoeffs[6][j] * YVec->data[i+j-6];
+			}
+		}
+		else
+		{
+			for (j = 0; j <= 6; j++)
+			{
+				derivativeVec->data[i] += sixthOrderCoeffs[3][j] * YVec->data[i+j-3];
+			}
+		}
+
+		derivativeVec->data[i] /= h;
+	}
+	
+    return *derivativeVec;
+}
+
+REAL8Vector
+XLALEightOrderFiniteDifferenceDerivative(
+	REAL8Vector *XVec,
+	REAL8Vector *YVec)
+{
+	REAL8 eightOrderCoeffs[9][9] = {
+		{-761./280., 8., -14., 56./3., -35./2., 56./5., -14./3., 8./7., -1./8.},
+		{-1./8., -223./140., 7./2., -7./2., 35./12., -7./4., 7./10., -1./6., 1./56.},
+		{1./56., -2./7., -19./20., 2., -5./4., 2./3., -1./4., 2./35., -1./168.},
+		{-1./168., 1./14., -1./2., -9./20., 5./4., -1./2., 1./6., -1./28., 1./280.},
+		{1./280., -4./105., 1./5., -4./5., 0, 4./5., -1./5., 4./105., -1./280.},
+		{-1./280., 1./28., -1./6., 1./2., -5./4., 9./20., 1./2., -1./14., 1./168.},
+		{1./168., -2./35., 1./4., -2./3., 5./4., -2., 19./20., 2./7., -1./56.},
+		{-1./56., 1./6., -7./10., 7./4., -35./12., 7./2., -7./2., 223./140., 1./8.},
+		{1./8., -8./7., 14./3., -56./5., 35./2., -56./3., 14., -8., 761./280.}
+	};
+
+	UINT4 vecLength;
+	vecLength = XVec->length;
+
+	REAL8Vector *derivativeVec = XLALCreateREAL8Vector(vecLength);
+	memset(derivativeVec->data, 0, derivativeVec->length * sizeof(REAL8));
+
+	REAL8 h;
+	h = fabs(XVec->data[0] - XVec->data[1]);
+
+	UINT4 i;
+	UINT4 j;
+
+	for (i = 0; i <= vecLength-1; i++)
+	{
+		if (i == 0)
+		{
+			for (j = 0; j <= 8; j++)
+			{
+				derivativeVec->data[i] += eightOrderCoeffs[0][j] * YVec->data[j];
+			}
+		}
+		else if (i == 1)
+		{
+			for (j = 0; j <= 8; j++)
+			{
+				derivativeVec->data[i] += eightOrderCoeffs[1][j] * YVec->data[j];
+			}
+		}
+		else if (i == 2)
+		{
+			for (j = 0; j <= 8; j++)
+			{
+				derivativeVec->data[i] += eightOrderCoeffs[2][j] * YVec->data[j];
+			}
+		}
+		else if (i == 3)
+		{
+			for (j = 0; j <= 8; j++)
+			{
+				derivativeVec->data[i] += eightOrderCoeffs[3][j] * YVec->data[j];
+			}
+		}
+		else if (i == vecLength-4)
+		{
+			for (j = 0; j <= 8; j++)
+			{
+				derivativeVec->data[i] += eightOrderCoeffs[5][j] * YVec->data[i+j-5];
+			}
+		}
+		else if (i == vecLength-3)
+		{
+			for (j = 0; j <= 8; j++)
+			{
+				derivativeVec->data[i] += eightOrderCoeffs[6][j] * YVec->data[i+j-6];
+			}
+		}
+		else if (i == vecLength-2)
+		{
+			for (j = 0; j <= 8; j++)
+			{
+				derivativeVec->data[i] += eightOrderCoeffs[7][j] * YVec->data[i+j-7];
+			}
+		}
+		else if (i == vecLength-1)
+		{
+			for (j = 0; j <= 8; j++)
+			{
+				derivativeVec->data[i] += eightOrderCoeffs[8][j] * YVec->data[i+j-8];
+			}
+		}
+		else
+		{
+			for (j = 0; j <= 8; j++)
+			{
+				derivativeVec->data[i] += eightOrderCoeffs[4][j] * YVec->data[i+j-4];
 			}
 		}
 
@@ -1889,43 +2075,41 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	fInit = 0.00059105892307;
 
-	rSize = 1000;
-
-	UNUSED const char centrifugalRadius[] = "LO";
-	UNUSED const char useFlm[] = "SSLO";
+	const char centrifugalRadius[] = "LO";
+	const char useFlm[] = "SSLO";
 
 	// dr = 1.9774396742060579e-01;
 
 	PA_order = 8;
-
+ 
 	// set by the code
-	UNUSED REAL8 m1;
-	UNUSED REAL8 m2;
-	UNUSED REAL8 nu;
-	UNUSED REAL8 X1;
-	UNUSED REAL8 X2;
+	// REAL8 m1; // unused
+	// REAL8 m2; // unused
+	REAL8 nu;
+	REAL8 X1;
+	REAL8 X2;
 
-	UNUSED REAL8 a1;
-	UNUSED REAL8 a2;
-	UNUSED REAL8 aK;
-	UNUSED REAL8 aK2;
+	REAL8 a1;
+	REAL8 a2;
+	REAL8 aK;
+	REAL8 aK2;
 
-	UNUSED REAL8 S1;
-	UNUSED REAL8 S2;
-	UNUSED REAL8 S;
-	UNUSED REAL8 Sstar;
+	REAL8 S1;
+	REAL8 S2;
+	REAL8 S;
+	REAL8 Sstar;
 
-	UNUSED REAL8 c3;
+	REAL8 c3;
 
-	UNUSED REAL8 C_Q1;
-	UNUSED REAL8 C_Q2;
+	REAL8 C_Q1;
+	REAL8 C_Q2;
 
-	UNUSED REAL8 time_units_factor;
+	// REAL8 time_units_factor; // unused
 
-	UNUSED REAL8 f0;
-	UNUSED REAL8 r0;
-	UNUSED REAL8 rMin;
-	UNUSED REAL8 z3;
+	// REAL8 f0; // unused
+	REAL8 r0;
+	REAL8 rMin;
+	REAL8 z3;
 
 	// set the above variables
 
@@ -1949,13 +2133,15 @@ XLALSimInspiralEOBPostAdiabatic(
 	C_Q1 = 1.;
 	C_Q2 = 1.;
 
-	time_units_factor = XLALSimInspiralEOBPostAdiabaticTimeUnitsFactor(M);
+	// time_units_factor = XLALSimInspiralEOBPostAdiabaticTimeUnitsFactor(M);
 
-	f0 = fInit / time_units_factor;
+	// f0 = fInit / time_units_factor; // unused
 	r0 = XLALSimInspiralEOBPostAdiabaticDynr0Kepler(fInit); // should be (f0)
 	rMin = XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
 
 	z3 = XLALSimInspiralEOBPostAdiabaticz3(nu);
+
+	rSize = 200;
 
 	dr = (r0-rMin) / (rSize-1);
 
@@ -2157,12 +2343,12 @@ XLALSimInspiralEOBPostAdiabatic(
     REAL8Vector *dpphiBydrVec1 = XLALCreateREAL8Vector(rSize);
     memset(dpphiBydrVec1->data, 0, dpphiBydrVec1->length * sizeof(REAL8));
 
-    *dpphiBydrVec1 = XLALFourthOrderFiniteDifferenceDerivative(rVec, pphiVec);
+    *dpphiBydrVec1 = XLALEightOrderFiniteDifferenceDerivative(rVec, pphiVec);
 
     REAL8Vector *dpphiBydrVec2 = XLALCreateREAL8Vector(rSize);
     memset(dpphiBydrVec2->data, 0, dpphiBydrVec2->length * sizeof(REAL8));
 
-    *dpphiBydrVec2 = XLALSecondOrderFiniteDifferenceDerivative(rVec, pphiVec);
+    *dpphiBydrVec2 = XLALSixthOrderFiniteDifferenceDerivative(rVec, pphiVec);
 
     *rReverseVec = XLALReverseREAL8Vector(rVec);
     *pphiReverseVec = XLALReverseREAL8Vector(pphiVec);
@@ -2174,38 +2360,8 @@ XLALSimInspiralEOBPostAdiabatic(
 
     for (i = 0; i < rSize; i++)
 	{
-		printf("%.18e\n", fabs(dpphiBydrVec1->data[i] - dpphiBydrVec2->data[i]));
+		printf("%d %.18e\n", rSize, fabs((dpphiBydrVec1->data[i] - dpphiBydrVec2->data[i])/dpphiBydrVec1->data[i]));
 	}
-
-    // test begins here
- //    REAL8Vector *testxVec = XLALCreateREAL8Vector(1000);
- //    REAL8Vector *testx2Vec = XLALCreateREAL8Vector(1000);
- //    REAL8Vector *test2xVec = XLALCreateREAL8Vector(1000);
- //    REAL8Vector *testxSecondVec = XLALCreateREAL8Vector(1000);
- //    REAL8Vector *testxFourthVec = XLALCreateREAL8Vector(1000);
-
- //    memset(testxVec->data, 0, testxVec->length * sizeof(REAL8));
- //    memset(testx2Vec->data, 0, testx2Vec->length * sizeof(REAL8));
- //    memset(test2xVec->data, 0, test2xVec->length * sizeof(REAL8));
- //    memset(testxSecondVec->data, 0, testxSecondVec->length * sizeof(REAL8));
- //    memset(testxFourthVec->data, 0, testxFourthVec->length * sizeof(REAL8));
-
- //    for (i = 0; i < 1000; i++)
-	// {
-	// 	testxVec->data[i] = -20 + i * 0.10000000000000000000;
-	// 	testx2Vec->data[i] = gsl_pow_int(testxVec->data[i], 4);
-	// 	test2xVec->data[i] = 4 * gsl_pow_int(testxVec->data[i], 3);
-	// }
-
-	// *testxSecondVec = XLALSecondOrderFiniteDifferenceDerivative(testxVec, testx2Vec);
-	// *testxFourthVec = XLALFourthOrderFiniteDifferenceDerivative(testxVec, testx2Vec);
-
-	// for (i = 0; i < rSize; i++)
-	// {
-	// 	printf("%.18e %.18e %.18e %.18e %.18e\n", testxVec->data[i], testx2Vec->data[i], test2xVec->data[i], testxSecondVec->data[i], testxFourthVec->data[i]);
-	// }
-
-    exit(0);
 
 	REAL8Vector *prstarReverseVec = XLALCreateREAL8Vector(rSize);
     REAL8Vector *dprstarBydrReverseVec = XLALCreateREAL8Vector(rSize);
@@ -2247,6 +2403,8 @@ XLALSimInspiralEOBPostAdiabatic(
  	Hcoeffs.tidal2 = &tidal2;
 
     SpinAlignedH = XLALSimIMRSpinEOBHamiltonian(nu, rVec, prstarVec, a1Vec, a2Vec, aKVec, SstarVec, 0, &Hcoeffs);
+
+	exit(0);
 
  //   	printf("%.18f\n", SpinAlignedH);
 	// exit(0);
