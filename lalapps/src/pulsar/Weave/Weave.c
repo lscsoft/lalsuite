@@ -22,6 +22,8 @@
 /// \ingroup lalapps_pulsar_Weave
 ///
 
+#include "config.h"
+
 #include "Weave.h"
 #include "SetupData.h"
 #include "SearchIteration.h"
@@ -29,6 +31,11 @@
 #include "CacheResults.h"
 #include "OutputResults.h"
 #include "SearchTiming.h"
+
+#ifdef LALAPPS_CUDA_ENABLED
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+#endif
 
 #include <lal/LogPrintf.h>
 #include <lal/UserInput.h>
@@ -1016,6 +1023,18 @@ int main( int argc, char *argv[] )
 
       // Print memory usage
       LogPrintfVerbatim( LOG_NORMAL, ", peak memory %.1fMB", XLALGetPeakHeapUsageMB() );
+#ifdef LALAPPS_CUDA_ENABLED
+      if ( Fstat_opt_args.FstatMethod == FMETHOD_RESAMP_CUDA ) {
+        size_t CUDA_free_mem_B = 0;
+        size_t CUDA_tot_mem_B = 0;
+        XLAL_CHECK_MAIN( cudaMemGetInfo( &CUDA_free_mem_B, &CUDA_tot_mem_B ) == cudaSuccess, XLAL_EERR );
+        XLAL_CHECK_MAIN( CUDA_free_mem_B <= CUDA_tot_mem_B, XLAL_EERR );
+        const size_t CUDA_used_mem_B = CUDA_tot_mem_B - CUDA_free_mem_B;
+        const REAL4 CUDA_used_mem_MB = CUDA_used_mem_B / (1024.0 * 1024.0);
+        const REAL4 CUDA_tot_mem_MB = CUDA_tot_mem_B / (1024.0 * 1024.0);
+        LogPrintfVerbatim( LOG_NORMAL, ", CUDA memory %.1f/%.1fMB", CUDA_used_mem_MB, CUDA_tot_mem_MB );
+      }
+#endif
 
       // Print mean maximum size obtained by caches
       {
