@@ -749,9 +749,7 @@ int XLALWeaveResultsToplistAdd(
     WeaveStatisticType stats_to_keep = params->mainloop_statistics_to_keep;
 
     if ( stats_to_keep & WEAVE_STATISTIC_COH2F ) {
-      for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
-        item->stage[0].coh2F[j] = ( semi_res->coh2F[j] != NULL ) ? semi_res->coh2F[j][freq_idx] : NAN;
-      }
+      XLAL_CHECK( XLALWeaveSemiCoh2FExtract( item->stage[0].coh2F, semi_res, freq_idx ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
     if ( stats_to_keep & WEAVE_STATISTIC_COH2F_DET ) {
       for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {

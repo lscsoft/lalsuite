@@ -59,6 +59,8 @@ struct tagWeaveSemiResults {
   PulsarDopplerParams *coh_phys;
   /// Per-segment multi-detector F-statistics per frequency (optional)
   const REAL4 **coh2F;
+  /// Per-segment multi-detector F-statistics per frequency (optional), stored in CUDA device memory
+  const REAL4 **coh2F_CUDA;
   /// Per-segment per-detector F-statistics per frequency (optional)
   const REAL4 **coh2F_det[PULSAR_MAX_DETECTORS];
   /// Number of coherent results processed thus far
@@ -157,6 +159,11 @@ int XLALWeaveCohResultsExtract(
   BOOLEAN *have_coh2F_det,
   WeaveCohResults *coh_res,
   const WeaveCohInput *coh_input
+  );
+int XLALWeaveSemiCoh2FExtract(
+  REAL4 *coh2F,
+  const WeaveSemiResults *semi_res,
+  const UINT4 freq_idx
   );
 
 #ifdef __cplusplus

@@ -4,6 +4,7 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+include $(top_srcdir)/gnuscripts/lalsuite_cuda.am
 
 bin_PROGRAMS = \
 	lalapps_WeaveSetup \
@@ -56,6 +57,16 @@ lalapps_WeaveCompare_SOURCES = \
 	Weave.h \
 	WeaveCompare.c \
 	$(END_OF_LIST)
+
+noinst_LTLIBRARIES =
+
+if CUDA
+noinst_LTLIBRARIES += libweave_computeresults_cuda.la
+LDADD += libweave_computeresults_cuda.la
+libweave_computeresults_cuda_la_SOURCES = ComputeResults_CUDA.cu
+libweave_computeresults_cuda_la_LDFLAGS = -no-undefined
+MOSTLYCLEANFILES += ComputeResults_CUDA.cpp
+endif
 
 # Add shell test scripts to this variable
 test_scripts += testWeave_interpolating.sh
