@@ -143,11 +143,12 @@ int XLALWeaveSemiResultsInit(
   const UINT4 semi_nfreqs,
   const WeaveStatisticsParams *statistics_params
   );
-int XLALWeaveSemiResultsAdd(
+int XLALWeaveSemiResultsComputeSegs(
   WeaveSemiResults *semi_res,
-  const WeaveCohResults *coh_res,
-  const UINT8 coh_index,
-  const UINT4 coh_offset,
+  const UINT4 nsegments,
+  const WeaveCohResults **coh_res,
+  const UINT8 *coh_index,
+  const UINT4 *coh_offset,
   WeaveSearchTiming *tim
   );
 int XLALWeaveSemiResultsComputeMain(

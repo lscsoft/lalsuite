@@ -95,9 +95,6 @@ struct tagWeaveCohResults {
 ///
 /// @{
 
-static int semi_res_sum_2F( UINT4 *nsum, REAL4 *sum2F, const REAL4 *coh2F, const UINT4 nfreqs );
-static int semi_res_max_2F( UINT4 *nmax, REAL4 *max2F, const REAL4 *coh2F, const UINT4 nfreqs );
-
 /// @}
 
 ///
@@ -684,49 +681,14 @@ int XLALWeaveSemiResultsInit(
 }
 
 ///
-/// Add F-statistic array 'coh2F' to summed array 'sum2F', and keep track of the number of summations 'nsum'
-///
-static int semi_res_sum_2F(
-  UINT4 *nsum,
-  REAL4 *sum2F,
-  const REAL4 *coh2F,
-  const UINT4 nfreqs
-  )
-{
-  if ( ( *nsum )++ == 0 ) {
-    // If this is the first summation, just use memcpy()
-    memcpy( sum2F, coh2F, sizeof( *sum2F ) * nfreqs );
-    return XLAL_SUCCESS;
-  }
-  return XLALVectorAddREAL4( sum2F, sum2F, coh2F, nfreqs );
-}
-
-///
-/// Track maximum between F-statistic array 'coh2F' and 'max2F', and keep track of the number of maximum-comparisons 'nmax'
-///
-static int semi_res_max_2F(
-  UINT4 *nmax,
-  REAL4 *max2F,
-  const REAL4 *coh2F,
-  const UINT4 nfreqs
-  )
-{
-  if ( ( *nmax )++ == 0 ) {
-    // If this is the first max-comparison, just use memcpy()
-    memcpy( max2F, coh2F, sizeof( *max2F ) * nfreqs );
-    return XLAL_SUCCESS;
-  }
-  return XLALVectorMaxREAL4( max2F, max2F, coh2F, nfreqs );
-}
-
-///
 /// Add a new set of coherent results to the semicoherent results
 ///
-int XLALWeaveSemiResultsAdd(
+int XLALWeaveSemiResultsComputeSegs(
   WeaveSemiResults *semi_res,
-  const WeaveCohResults *coh_res,
-  const UINT8 coh_index,
-  const UINT4 coh_offset,
+  const UINT4 nsegments,
+  const WeaveCohResults **coh_res,
+  const UINT8 *coh_index,
+  const UINT4 *coh_offset,
   WeaveSearchTiming *tim
   )
 {
@@ -734,25 +696,34 @@ int XLALWeaveSemiResultsAdd(
   // Check input
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res->ncoh_res < semi_res->nsegments, XLAL_EINVAL );
-  XLAL_CHECK( coh_res != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res->statistics_params != NULL, XLAL_EFAULT );
+  XLAL_CHECK( nsegments > 0, XLAL_EINVAL );
+  XLAL_CHECK( coh_res != NULL, XLAL_EFAULT );
+  for ( size_t j = 0; j < nsegments; ++j ) {
+    XLAL_CHECK( coh_res[j] != NULL, XLAL_EFAULT );
+  }
+  XLAL_CHECK( coh_index != NULL, XLAL_EFAULT );
+  XLAL_CHECK( coh_offset != NULL, XLAL_EFAULT );
   XLAL_CHECK( tim != NULL, XLAL_EFAULT );
-
-  // Check that offset does not overrun coherent results arrays
-  XLAL_CHECK( coh_offset + semi_res->nfreqs <= coh_res->nfreqs, XLAL_EFAILED, "Coherent offset (%u) + number of semicoherent frequency bins (%u) > number of coherent frequency bins (%u)", coh_offset, semi_res->nfreqs, coh_res->nfreqs );
 
   WeaveStatisticType mainloop_stats = semi_res->statistics_params->mainloop_statistics;
 
-  // Increment number of processed coherent results
-  const size_t j = semi_res->ncoh_res;
-  ++semi_res->ncoh_res;
+  // Set number of processed coherent results
+  semi_res->ncoh_res = nsegments;
 
-  // Store per-segment coherent template index
-  semi_res->coh_index[j] = coh_index;
+  for ( size_t j = 0; j < nsegments; ++j ) {
 
-  // Store per-segment coherent template parameters
-  semi_res->coh_phys[j] = coh_res->coh_phys;
-  semi_res->coh_phys[j].fkdot[0] += semi_res->dfreq * coh_offset;
+    // Check that offset does not overrun coherent results arrays
+    XLAL_CHECK( coh_offset[j] + semi_res->nfreqs <= coh_res[j]->nfreqs, XLAL_EFAILED, "Coherent offset (%u) + number of semicoherent frequency bins (%u) > number of coherent frequency bins (%u)", coh_offset[j], semi_res->nfreqs, coh_res[j]->nfreqs );
+
+    // Store per-segment coherent template index
+    semi_res->coh_index[j] = coh_index[j];
+
+    // Store per-segment coherent template parameters
+    semi_res->coh_phys[j] = coh_res[j]->coh_phys;
+    semi_res->coh_phys[j].fkdot[0] += semi_res->dfreq * coh_offset[j];
+
+  }
 
   // Return now if simulating search
   if ( semi_res->simulation_level & WEAVE_SIMULATE ) {
@@ -761,13 +732,17 @@ int XLALWeaveSemiResultsAdd(
 
   // Store per-segment F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_COH2F ) {
-    semi_res->coh2F[j] = coh_res->coh2F->data + coh_offset;
+    for ( size_t j = 0; j < nsegments; ++j ) {
+      semi_res->coh2F[j] = coh_res[j]->coh2F->data + coh_offset[j];
+    }
   }
 
   // Store per-segment per-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_COH2F_DET ) {
     for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-      semi_res->coh2F_det[i][j] = ( coh_res->coh2F_det[i] != NULL ) ? coh_res->coh2F_det[i]->data + coh_offset : NULL;
+      for ( size_t j = 0; j < nsegments; ++j ) {
+        semi_res->coh2F_det[i][j] = ( coh_res[j]->coh2F_det[i] != NULL ) ? coh_res[j]->coh2F_det[i]->data + coh_offset[j] : NULL;
+      }
     }
   }
 
@@ -776,7 +751,11 @@ int XLALWeaveSemiResultsAdd(
 
   // Add to max-over-segments multi-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_MAX2F ) {
-    XLAL_CHECK( semi_res_max_2F( &semi_res->nmax2F, semi_res->max2F->data, coh_res->coh2F->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    memcpy( semi_res->max2F->data, semi_res->coh2F[0], sizeof( semi_res->max2F->data[0] ) * semi_res->nfreqs );
+    for ( size_t j = 1; j < nsegments; ++j ) {
+      XLAL_CHECK( XLALVectorMaxREAL4( semi_res->max2F->data, semi_res->max2F->data, semi_res->coh2F[j], semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+    semi_res->nmax2F = nsegments;
   }
 
   // Switch timed statistic
@@ -785,8 +764,12 @@ int XLALWeaveSemiResultsAdd(
   // Add to max-over-segments per-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_MAX2F_DET ) {
     for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-      if ( coh_res->coh2F_det[i] != NULL ) {
-        XLAL_CHECK( semi_res_max_2F( &semi_res->nmax2F_det[i], semi_res->max2F_det[i]->data, coh_res->coh2F_det[i]->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      memset( semi_res->max2F_det[i]->data, 0, sizeof( semi_res->max2F_det[i]->data[0] ) * semi_res->nfreqs );
+      for ( size_t j = 0; j < nsegments; ++j ) {
+        if ( coh_res[j]->coh2F_det[i] != NULL ) {
+          XLAL_CHECK( XLALVectorMaxREAL4( semi_res->max2F_det[i]->data, semi_res->max2F_det[i]->data, coh_res[j]->coh2F_det[i]->data + coh_offset[j], semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+          semi_res->nmax2F_det[i]++;
+        }
       }
     }
   }
@@ -796,9 +779,11 @@ int XLALWeaveSemiResultsAdd(
 
   // Add to summed multi-detector F-statistics per frequency, and increment number of additions thus far
   if ( mainloop_stats & WEAVE_STATISTIC_SUM2F ) {
-    XLAL_CHECK( semi_res_sum_2F( &semi_res->nsum2F, semi_res->sum2F->data, coh_res->coh2F->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
-  } else {
-    semi_res->nsum2F ++;             // Even if not summing here: count number of 2F summands for (potential) completion-loop usage
+    memcpy( semi_res->sum2F->data, semi_res->coh2F[0], sizeof( semi_res->sum2F->data[0] ) * semi_res->nfreqs );
+    for ( size_t j = 1; j < nsegments; ++j ) {
+      XLAL_CHECK( XLALVectorAddREAL4( semi_res->sum2F->data, semi_res->sum2F->data, semi_res->coh2F[j], semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+    semi_res->nsum2F = nsegments;
   }
 
   // Switch timed statistic
@@ -806,11 +791,15 @@ int XLALWeaveSemiResultsAdd(
 
   // Add to summed per-detector F-statistics per frequency, and increment number of additions thus far
   for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-    if ( coh_res->coh2F_det[i] != NULL ) {
-      if ( mainloop_stats & WEAVE_STATISTIC_SUM2F_DET ) {
-        XLAL_CHECK( semi_res_sum_2F( &semi_res->nsum2F_det[i], semi_res->sum2F_det[i]->data, coh_res->coh2F_det[i]->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
-      } else {
-        semi_res->nsum2F_det[i] ++;  // Even if not summing here: count number of per-detector 2F summands for (potential) completion-loop usage
+    if ( mainloop_stats & WEAVE_STATISTIC_SUM2F_DET ) {
+      memset( semi_res->sum2F_det[i]->data, 0, sizeof( semi_res->sum2F_det[i]->data[0] ) * semi_res->nfreqs );
+    }
+    for ( size_t j = 0; j < nsegments; ++j ) {
+      if ( coh_res[j]->coh2F_det[i] != NULL ) {
+        if ( mainloop_stats & WEAVE_STATISTIC_SUM2F_DET ) {
+          XLAL_CHECK( XLALVectorAddREAL4( semi_res->sum2F_det[i]->data, semi_res->sum2F_det[i]->data, coh_res[j]->coh2F_det[i]->data + coh_offset[j], semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
+        semi_res->nsum2F_det[i]++;
       }
     }
   }

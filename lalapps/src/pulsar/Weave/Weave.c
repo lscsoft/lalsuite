@@ -973,9 +973,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALWeaveSemiResultsInit( &semi_res, simulation_level, ndetectors, nsegments, semi_index, &semi_phys, dfreq, semi_nfreqs, statistics_params ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Add coherent results to semicoherent results
-    for ( size_t i = 0; i < nsegments; ++i ) {
-      XLAL_CHECK_MAIN( XLALWeaveSemiResultsAdd( semi_res, coh_res[i], coh_index[i], coh_offset[i], tim ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
+    XLAL_CHECK_MAIN( XLALWeaveSemiResultsComputeSegs( semi_res, nsegments, coh_res, coh_index, coh_offset, tim ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Switch timing section
     XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_SEMISEG, WEAVE_SEARCH_TIMING_SEMI ) == XLAL_SUCCESS, XLAL_EFUNC );
