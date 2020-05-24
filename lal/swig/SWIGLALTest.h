@@ -68,6 +68,7 @@ extern COMPLEX8 swig_lal_test_COMPLEX8_matrix[2][3];
 // Test fixed and dynamic arrays typemaps.
 void swig_lal_test_copyin_array1(REAL8 INPUT[3], REAL8 scale, REAL8 OUTPUT[3]);
 void swig_lal_test_copyin_array2(INT4 INPUT[3][2], INT4 scale, INT4 OUTPUT[3][2]);
+void swig_lal_test_copyin_array3(LIGOTimeGPS INPUT[2], REAL8 scale, LIGOTimeGPS OUTPUT[2]);
 
 // Test input views of string array structs.
 BOOLEAN swig_lal_test_viewin_LALStringVector(LALStringVector* copyout, const LALStringVector* viewin);
