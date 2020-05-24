@@ -28,7 +28,7 @@ export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
 make -j ${CPU_COUNT}
 
 # check
-make -j ${CPU_COUNT} check
+make -j ${CPU_COUNT} VERBOSE=1 check
 
 # install
 make -j ${CPU_COUNT} install

@@ -18,5 +18,5 @@ export GSL_LIBS="-L${PREFIX}/lib -lgsl"
 	--disable-python \
 	--enable-silent-rules
 make -j ${CPU_COUNT}
-make -j ${CPU_COUNT} check
+make -j ${CPU_COUNT} VERBOSE=1 check
 make install

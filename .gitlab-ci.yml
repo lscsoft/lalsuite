@@ -74,7 +74,7 @@ cache:
   script:
     - ./00boot
     - ./configure --enable-doxygen --enable-swig
-    - make -j4 distcheck
+    - make -j4 VERBOSE=1 distcheck
   artifacts:
     reports:
       junit:
@@ -822,7 +822,7 @@ docker:tags:stretch:
   script:
     - ./00boot
     - CC=${CLANG} CXX=${CLANGXX} ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
+    - make -j4 VERBOSE=1 distcheck
   only:
     - schedules
     - web
@@ -864,7 +864,7 @@ clang:dev:
   script:
     - ./00boot
     - ./configure --enable-doxygen
-    - make -j4 distcheck
+    - make -j4 VERBOSE=1 distcheck
   only:
     - schedules
     - web
@@ -894,7 +894,7 @@ cuda:
     - make -j4 dist
     - make -j4
     # just compile test suite; some tests require a CUDA device to run
-    - make -j4 check TESTS=
+    - make -j4 VERBOSE=1 check TESTS=
     - make -j4 install
   only:
     - schedules
@@ -926,7 +926,7 @@ platform:macos:highsierra:
     # is available
     - PYTHON=/opt/local/bin/python2.7 ./configure
     - make -j4
-    - make -j4 check
+    - make -j4 VERBOSE=1 check
   needs: []
   only:
     - schedules
@@ -945,7 +945,7 @@ platform:macos:sierra:
     # is available
     - PYTHON=/opt/local/bin/python2.7 ./configure
     - make -j4
-    - make -j4 check
+    - make -j4 VERBOSE=1 check
   needs: []
   only:
     - schedules
