@@ -2137,11 +2137,13 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	// f0 = fInit / time_units_factor; // unused
 	r0 = XLALSimInspiralEOBPostAdiabaticDynr0Kepler(fInit); // should be (f0)
-	rMin = XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
+	
+	// rMin = XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
+	rMin = 9.;
 
 	z3 = XLALSimInspiralEOBPostAdiabaticz3(nu);
 
-	rSize = 200;
+	rSize = 300;
 
 	dr = (r0-rMin) / (rSize-1);
 
@@ -2340,28 +2342,30 @@ XLALSimInspiralEOBPostAdiabatic(
     memset(dpphiBydrVec->data, 0, dpphiBydrVec->length * sizeof(REAL8));
     memset(dpphiBydr0Vec->data, 0, dpphiBydr0Vec->length * sizeof(REAL8));
 
-    REAL8Vector *dpphiBydrVec1 = XLALCreateREAL8Vector(rSize);
-    memset(dpphiBydrVec1->data, 0, dpphiBydrVec1->length * sizeof(REAL8));
+    // REAL8Vector *dpphiBydrVec1 = XLALCreateREAL8Vector(rSize);
+    // memset(dpphiBydrVec1->data, 0, dpphiBydrVec1->length * sizeof(REAL8));
 
-    *dpphiBydrVec1 = XLALEightOrderFiniteDifferenceDerivative(rVec, pphiVec);
+    // *dpphiBydrVec1 = XLALEightOrderFiniteDifferenceDerivative(rVec, pphiVec);
 
-    REAL8Vector *dpphiBydrVec2 = XLALCreateREAL8Vector(rSize);
-    memset(dpphiBydrVec2->data, 0, dpphiBydrVec2->length * sizeof(REAL8));
+    // REAL8Vector *dpphiBydrVec2 = XLALCreateREAL8Vector(rSize);
+    // memset(dpphiBydrVec2->data, 0, dpphiBydrVec2->length * sizeof(REAL8));
 
-    *dpphiBydrVec2 = XLALSixthOrderFiniteDifferenceDerivative(rVec, pphiVec);
+    // *dpphiBydrVec2 = XLALSixthOrderFiniteDifferenceDerivative(rVec, pphiVec);
 
     *rReverseVec = XLALReverseREAL8Vector(rVec);
     *pphiReverseVec = XLALReverseREAL8Vector(pphiVec);
 
-    *dpphiBydrReverseVec = XLALPostAdiabaticSplineDerivative(rReverseVec, pphiReverseVec);
+    *dpphiBydrReverseVec = XLALEightOrderFiniteDifferenceDerivative(rReverseVec, pphiReverseVec);
 
     *dpphiBydrVec = XLALReverseREAL8Vector(dpphiBydrReverseVec);
     *dpphiBydr0Vec = XLALReverseREAL8Vector(dpphiBydrReverseVec); // Figure out how to copy REAL8Vecotr here instead of reversing it again
 
     for (i = 0; i < rSize; i++)
 	{
-		printf("%d %.18e\n", rSize, fabs((dpphiBydrVec1->data[i] - dpphiBydrVec2->data[i])/dpphiBydrVec1->data[i]));
+		printf("%.18e\n", dpphiBydrVec->data[i]);
 	}
+
+	exit(0);
 
 	REAL8Vector *prstarReverseVec = XLALCreateREAL8Vector(rSize);
     REAL8Vector *dprstarBydrReverseVec = XLALCreateREAL8Vector(rSize);
@@ -2369,17 +2373,32 @@ XLALSimInspiralEOBPostAdiabatic(
     memset(prstarReverseVec->data, 0, prstarReverseVec->length * sizeof(REAL8));
     memset(dprstarBydrReverseVec->data, 0, dprstarBydrReverseVec->length * sizeof(REAL8));
 
-    REAL8Vector *a1Vec = XLALCreateREAL8Vector(rSize);
-    REAL8Vector *a2Vec = XLALCreateREAL8Vector(rSize);
-    REAL8Vector *aKVec = XLALCreateREAL8Vector(rSize);
-    REAL8Vector *SstarVec = XLALCreateREAL8Vector(rSize);
+    UNUSED REAL8 SpinAlignedH;
+
+    REAL8Vector *x0Vec = XLALCreateREAL8Vector(3);
+    memset(x0Vec->data, 0, x0Vec->length * sizeof(REAL8));
+    x0Vec->data[0] = r0;
+
+    REAL8Vector *p0Vec = XLALCreateREAL8Vector(3);
+    memset(p0Vec->data, 0, p0Vec->length * sizeof(REAL8));
+    p0Vec->data[0] = prstarVec->data[0];
+    p0Vec->data[1] = pphiVec->data[0] / rVec->data[0];
+
+    REAL8Vector *a1Vec = XLALCreateREAL8Vector(3);
+    REAL8Vector *a2Vec = XLALCreateREAL8Vector(3);
+    REAL8Vector *aKVec = XLALCreateREAL8Vector(3);
+    REAL8Vector *SstarVec = XLALCreateREAL8Vector(3);
 
     memset(a1Vec->data, a1, a1Vec->length * sizeof(REAL8));
     memset(a2Vec->data, a2, a2Vec->length * sizeof(REAL8));
     memset(aKVec->data, aK, aKVec->length * sizeof(REAL8));
     memset(SstarVec->data, Sstar, SstarVec->length * sizeof(REAL8));
 
-    UNUSED REAL8 SpinAlignedH;
+    a1Vec->data[2] = a1;
+    a2Vec->data[2] = a2;
+    aKVec->data[2] = aK;
+    SstarVec->data[2] = Sstar;
+
     SpinEOBHCoeffs Hcoeffs;
     XLALSimIMRCalculateSpinEOBHCoeffs(&Hcoeffs, nu, aK, 4);
 
@@ -2402,9 +2421,7 @@ XLALSimInspiralEOBPostAdiabatic(
 	Hcoeffs.tidal1 = &tidal1;
  	Hcoeffs.tidal2 = &tidal2;
 
-    SpinAlignedH = XLALSimIMRSpinEOBHamiltonian(nu, rVec, prstarVec, a1Vec, a2Vec, aKVec, SstarVec, 0, &Hcoeffs);
-
-	exit(0);
+    SpinAlignedH = XLALSimIMRSpinEOBHamiltonian(nu, x0Vec, p0Vec, a1Vec, a2Vec, aKVec, SstarVec, 0, &Hcoeffs);
 
  //   	printf("%.18f\n", SpinAlignedH);
 	// exit(0);
