@@ -27,6 +27,11 @@
 
 #include "ComputeFstat_internal.h"
 
+#ifdef LALPULSAR_CUDA_ENABLED
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+#endif
+
 #include <lal/LALString.h>
 #include <lal/LALSIMD.h>
 #include <lal/NormalizeSFTRngMed.h>
@@ -791,6 +796,9 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
           (*Fstats)->twoF = XLALRealloc ( (*Fstats)->twoF, numFreqBins*sizeof((*Fstats)->twoF[0]) );
           XLAL_CHECK ( (*Fstats)->twoF != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->twoF to length %u", numFreqBins );
         }
+#ifndef LALPULSAR_CUDA_ENABLED
+      XLAL_CHECK ( (*Fstats)->twoF_CUDA == NULL, XLAL_EINVAL, "CUDA not enabled" );
+#endif
 
       // Enlarge multi-detector Fa & Fb array
       if ( (whatToCompute & FSTATQ_FAFB) && moreFreqBins )
@@ -937,6 +945,11 @@ XLALDestroyFstatResults ( FstatResults* Fstats  ///< [in] #FstatResults structur
   }
 
   XLALFree ( Fstats->twoF );
+#ifdef LALPULSAR_CUDA_ENABLED
+  if ( Fstats->twoF_CUDA != NULL ) {
+    cudaFree(Fstats->twoF_CUDA);
+  }
+#endif
   XLALFree ( Fstats->Fa );
   XLALFree ( Fstats->Fb );
   for ( UINT4 X = 0; X < PULSAR_MAX_DETECTORS; ++X )
@@ -977,6 +990,10 @@ XLALAdd4ToFstatResults ( FstatResults* Fstats    ///< [in/out] #FstatResults str
       for ( UINT4 k = 0; k < Fstats->numFreqBins; ++k ) {
         Fstats->twoF[k] += 4;
       }
+    }
+  if ( Fstats->whatWasComputed & FSTATQ_2F_CUDA )
+    {
+      XLAL_ERROR ( XLAL_EINVAL, "Not implemented for FSTATQ_2F_CUDA" );
     }
 
   // Add +4 to 2F per detector arrays

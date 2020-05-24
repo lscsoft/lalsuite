@@ -274,6 +274,10 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
         {
           Fstats->twoF[k] = compute_fstat_from_fa_fb ( Fa, Fb, Ad, Bd, Cd, Ed, Dd_inv );
         }
+      if ( Fstats->whatWasComputed & FSTATQ_2F_CUDA )
+        {
+          XLAL_ERROR ( XLAL_EINVAL, "Not implemented for FSTATQ_2F_CUDA" );
+        }
 
       // Return multi-detector Fa & Fb
       if ( whatToCompute & FSTATQ_FAFB )

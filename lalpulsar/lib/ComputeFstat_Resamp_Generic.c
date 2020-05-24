@@ -539,6 +539,10 @@ XLALComputeFstatResampGeneric ( FstatResults* Fstats,
           Fstats->twoF[k] = compute_fstat_from_fa_fb ( ws->Fa_k[k], ws->Fb_k[k], Ad, Bd, Cd, Ed, Dd_inv );
         }
     } // if FSTATQ_2F
+  if ( whatToCompute & FSTATQ_2F_CUDA )
+    {
+      XLAL_ERROR ( XLAL_EINVAL, "Not implemented for FSTATQ_2F_CUDA" );
+    }
 
   if ( collectTiming ) {
       toc = XLALGetCPUTime();

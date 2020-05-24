@@ -98,7 +98,8 @@ typedef enum tagFstatQuantities {
   FSTATQ_2F_PER_DET     = 0x04,         ///< Compute \f$2\mathcal{F}\f$ for each detector.
   FSTATQ_FAFB_PER_DET   = 0x08,         ///< Compute \f$F_a\f$ and \f$F_b\f$ for each detector.
   FSTATQ_ATOMS_PER_DET  = 0x10,         ///< Compute per-SFT \f$\mathcal{F}\f$-statistic atoms for each detector (\a Demod only).
-  FSTATQ_LAST           = 0x20
+  FSTATQ_2F_CUDA        = 0x20,         ///< Compute multi-detector \f$2\mathcal{F}\f$, store results on CUDA GPU (CUDA implementation of \a Resamp only).
+  FSTATQ_LAST           = 0x80
 } FstatQuantities;
 
 ///
@@ -237,6 +238,13 @@ typedef struct tagFstatResults {
   SWIGLAL(ARRAY_1D(FstatResults, REAL4, twoF, UINT4, numFreqBins));
 #endif // SWIG
   REAL4 *twoF;
+
+#ifndef SWIG // exclude from SWIG interface
+  /// If #whatWasComputed & FSTATQ_2F_CUDA is true, the multi-detector \f$2\mathcal{F}\f$ values
+  /// as for #twoF, but stored in CUDA device memory.  This array should not be accessed if
+  /// #whatWasComputed & FSTATQ_2F_CUDA is false.
+  REAL4 *twoF_CUDA;
+#endif
 
   /// If #whatWasComputed & FSTATQ_PARTS is true, the multi-detector \f$F_a\f$ and \f$F_b\f$
   /// computed at #numFreqBins frequencies spaced #dFreq apart.  This array should not be accessed

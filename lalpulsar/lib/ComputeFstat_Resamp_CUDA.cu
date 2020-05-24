@@ -700,19 +700,25 @@ XLALComputeFstatResampCUDA ( FstatResults* Fstats,
     tic = XLALGetCPUTime();
   }
 
-  if ( whatToCompute & FSTATQ_2F )
+  if ( ( whatToCompute & FSTATQ_2F ) || ( whatToCompute & FSTATQ_2F_CUDA ) )
     {
       const REAL4 Ad = resamp->Mmunu.Ad;
       const REAL4 Bd = resamp->Mmunu.Bd;
       const REAL4 Cd = resamp->Mmunu.Cd;
       const REAL4 Ed = resamp->Mmunu.Ed;
       const REAL4 Dd_inv = 1.0f / resamp->Mmunu.Dd;
-      REAL4 *twoF_CUDA;
-      XLAL_CHECK ( cudaMalloc((void **)&twoF_CUDA, sizeof(REAL4)*numFreqBins) == cudaSuccess, XLAL_ENOMEM );
-      CUDAComputeTwoF<<<(numFreqBins + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>(twoF_CUDA, ws->Fa_k, ws->Fb_k, Ad, Bd, Cd, Ed, Dd_inv, numFreqBins);
-      XLAL_CHECK_CUDA_CALL ( cudaMemcpy(Fstats->twoF, twoF_CUDA, sizeof(REAL4)*numFreqBins, cudaMemcpyDeviceToHost) );
+      if ( Fstats->twoF_CUDA == NULL ) {
+        XLAL_CHECK ( cudaMalloc((void **)&Fstats->twoF_CUDA, sizeof(REAL4)*numFreqBins) == cudaSuccess, XLAL_ENOMEM );
+      }
+      CUDAComputeTwoF<<<(numFreqBins + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>(Fstats->twoF_CUDA, ws->Fa_k, ws->Fb_k, Ad, Bd, Cd, Ed, Dd_inv, numFreqBins);
       XLAL_CHECK_CUDA_CALL ( cudaGetLastError() );
-      cudaFree(twoF_CUDA);
+      if ( whatToCompute & FSTATQ_2F ) {
+        XLAL_CHECK_CUDA_CALL ( cudaMemcpy(Fstats->twoF, Fstats->twoF_CUDA, sizeof(REAL4)*numFreqBins, cudaMemcpyDeviceToHost) );
+      }
+      if ( !( whatToCompute & FSTATQ_2F_CUDA ) ) {
+        cudaFree(Fstats->twoF_CUDA);
+        Fstats->twoF_CUDA = NULL;
+      }
     } // if FSTATQ_2F
 
   if ( collectTiming ) {
