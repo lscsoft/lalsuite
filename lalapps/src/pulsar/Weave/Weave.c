@@ -1017,6 +1017,13 @@ int main( int argc, char *argv[] )
       // Print memory usage
       LogPrintfVerbatim( LOG_NORMAL, ", peak memory %.1fMB", XLALGetPeakHeapUsageMB() );
 
+      // Print mean maximum size obtained by caches
+      {
+        REAL4 cache_mean_max_size = 0;
+        XLAL_CHECK_MAIN( XLALWeaveGetCacheMeanMaxSize( &cache_mean_max_size, nsegments, coh_cache ) == XLAL_SUCCESS, XLAL_EFUNC );
+        LogPrintfVerbatim( LOG_NORMAL, ", cache max ~%0.1f", cache_mean_max_size );
+      }
+
       // Finish progress printing
       LogPrintfVerbatim( LOG_NORMAL, "\n" );
 
