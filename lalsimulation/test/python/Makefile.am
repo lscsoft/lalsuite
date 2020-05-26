@@ -14,7 +14,7 @@ test_scripts += \
 	test_phenomX.py \
 	test_SEOBNRv4HM_ROM.py \
 	test_enum_compatibility.py \
-        test_liv.py \
+	test_liv.py \
 	$(END_OF_LIST)
 
 
