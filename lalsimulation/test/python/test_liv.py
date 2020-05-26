@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2020 Anuradha Samajdar 
+# Copyright (C) 2020 Anuradha Samajdar
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 # define required parameters for time domain and frequency domain
 # as well as their default values
 
-"""Simple test to see if the LIV parameters can be read and inserted correctly 
+"""Simple test to see if the LIV parameters can be read and inserted correctly
 """
 
 import sys
@@ -35,7 +35,7 @@ def read_liv_params(LALparams):
     Reads LIV parameters
     """
 
-    logLeff = lalsimulation.SimInspiralWaveformParamsLookupNonGRLIVLogLambdaEff(LALparams) 
+    logLeff = lalsimulation.SimInspiralWaveformParamsLookupNonGRLIVLogLambdaEff(LALparams)
     signOfA = lalsimulation.SimInspiralWaveformParamsLookupNonGRLIVASign(LALparams)
     alpha = lalsimulation.SimInspiralWaveformParamsLookupNonGRLIVAlpha(LALparams)
     return logLeff, signOfA, alpha
@@ -52,7 +52,7 @@ def set_liv_pars(LALparams, logLeff, Asign, alpha):
     lalsimulation.SimInspiralWaveformParamsInsertNonGRLIVLogLambdaEff(LALparams, logLeff)
     lalsimulation.SimInspiralWaveformParamsInsertNonGRLIVASign(LALparams, Asign)
     lalsimulation.SimInspiralWaveformParamsInsertNonGRLIVAlpha(LALparams, alpha)
-    return None 
+    return None
 
 def is_liv_enabled_by_default(LALparams):
     """
@@ -63,7 +63,7 @@ def is_liv_enabled_by_default(LALparams):
 
 def enable_liv(LALparams):
     """
-    This enables the LIV flag, by enabling it, 
+    This enables the LIV flag, by enabling it,
     the LIV parameters will be sampled upon.
     """
 
@@ -77,7 +77,7 @@ def test_correct_liv_pars():
     This tests if the default LIV parameters are correct.
     Additionally it tests LIV parameters are being inserted correctly.
 
-    `expected_result = np.array([100.0,1.0,0.0])` are the default values of log10lambda_eff, 
+    `expected_result = np.array([100.0,1.0,0.0])` are the default values of log10lambda_eff,
      A_sign and alpha respectively
     """
 
