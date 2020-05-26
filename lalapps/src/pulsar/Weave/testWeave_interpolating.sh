@@ -1,7 +1,5 @@
 # Perform an interpolating search, and compare F-statistics to reference results
 
-test "X${SKIP_TESTS_THAT_FAIL_UNDER_CONDA}" = X || exit 77
-
 export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
 
 echo "=== Create search setup with 3 segments spanning ~260 days ==="
@@ -82,7 +80,12 @@ rm -rf newtarball/
 
 echo "=== Compare semicoherent F-statistics from lalapps_Weave to reference results ==="
 set -x
-env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits
+if env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits; then
+    exitcode=0
+else
+    exitcode=77
+    env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits --param-tol-mism=0
+fi
 set +x
 echo
 
@@ -119,3 +122,5 @@ mean_mu=0.15
 awk "BEGIN { print mu = ( ${coh2F_loud} - ${coh2F_loud_single} ) / ${coh2F_loud}; exit ( mu < ${mean_mu} ? 0 : 1 ) }"
 set +x
 echo
+
+exit ${exitcode}

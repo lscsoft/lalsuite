@@ -513,7 +513,7 @@ int compare_templates(
   XLAL_CHECK( equal != NULL, XLAL_EINVAL );
   XLAL_CHECK( loc_str != NULL, XLAL_EINVAL );
   XLAL_CHECK( tmpl_str != NULL, XLAL_EINVAL );
-  XLAL_CHECK( param_tol_mism >= 0, XLAL_EINVAL );
+  XLAL_CHECK( param_tol_mism > 0, XLAL_EINVAL );
   XLAL_CHECK( metric != NULL, XLAL_EFAULT );
   XLAL_CHECK( rssky_transf != NULL, XLAL_EFAULT );
   XLAL_CHECK( phys_1 != NULL, XLAL_EFAULT );
@@ -990,7 +990,7 @@ int XLALWeaveResultsToplistCompare(
         }
 
         // Compare semicoherent template parameters
-        {
+        if ( param_tol_mism > 0 ) {
           snprintf( loc_str, sizeof( loc_str ), "toplist item %zu", i );
           const UINT8 semi_index_1 = toplist_1->toplist_tmpl_idx ? items_1[i_1]->semi_index : 0;
           const UINT8 semi_index_2 = toplist_2->toplist_tmpl_idx ? items_2[i_2]->semi_index : 0;
@@ -1070,7 +1070,7 @@ int XLALWeaveResultsToplistCompare(
         }
 
         // Compare coherent template parameters
-        if ( ( *equal ) && ( params->statistics_to_output[0] & ( WEAVE_STATISTIC_COH2F|WEAVE_STATISTIC_COH2F_DET ) ) ) {
+        if ( ( *equal ) && ( param_tol_mism > 0 ) && ( params->statistics_to_output[0] & ( WEAVE_STATISTIC_COH2F|WEAVE_STATISTIC_COH2F_DET ) ) ) {
           for ( size_t j = 0; j < params->nsegments; ++j ) {
             snprintf( loc_str, sizeof( loc_str ), "toplist item %zu, segment %zu", i, j );
             const UINT8 coh_index_1 = toplist_1->toplist_tmpl_idx ? items_1[i_1]->coh_index[j] : 0;
