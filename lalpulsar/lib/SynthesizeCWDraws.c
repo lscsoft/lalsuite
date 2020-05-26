@@ -769,11 +769,23 @@ write_InjParams_to_fp ( FILE * fp,			/**< [in] file-pointer to output file */
     }
   }
 
+  /* since the user inputs for codes using this module are typically in (h0,cosi),
+   * write out parameters in the same variables
+   */
+  REAL8 h0, cosi;
+  h0 = par->ampParams.aPlus + sqrt( SQ(par->ampParams.aPlus) - SQ(par->ampParams.aCross) );
+  if (h0 > 0) {
+    cosi = par->ampParams.aCross/h0;
+  }
+  else {
+    cosi = 0;
+  }
+
   /* if injParams given, output them to the file */
   ret = fprintf ( fp, " %5.3f %6.3f   %6.3f  %7.3g %6.3f %6.3f %6.3f % 9.3g % 9.3g % 9.3g % 9.3g %10.5g %10.5g %10.5g %10.5g    %9.3f  %9.3f    %1d %9.3g%s\n",
                   par->skypos.longitude, par->skypos.latitude,						/* skypos */
                   par->SNR,										/* SNR */
-                  par->ampParams.aPlus, par->ampParams.aCross, par->ampParams.psi, par->ampParams.phi0,	/* amplitude params {aPlus,aCross,psi,phi0}*/
+                  h0, cosi, par->ampParams.psi, par->ampParams.phi0,	/* amplitude params {h0,cosi,psi,phi0} */
                   par->ampVect[0], par->ampVect[1], par->ampVect[2], par->ampVect[3],			/* ampltiude vector A^mu */
                   par->multiAM.Mmunu.Ad, par->multiAM.Mmunu.Bd, par->multiAM.Mmunu.Cd, par->multiAM.Mmunu.Dd,	/* antenna-pattern matrix components */
                   t0_d, tau_d, par->transientWindow.type,		/* transient-window params */
