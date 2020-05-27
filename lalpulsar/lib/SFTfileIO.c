@@ -1998,7 +1998,6 @@ XLALReadSFDB(
              const CHAR *file_pattern,
              const CHAR *timeStampsStarting,
              const CHAR *timeStampsFinishing,
-             REAL8 Tcoh,
              INT4 useTimeStamps
   )
 {
@@ -2011,6 +2010,7 @@ XLALReadSFDB(
     INT4  numTimeStamps, r;
     UINT4 j;
     REAL8 temp1;
+    REAL8 Tcoh;
     LIGOTimeGPSVector *ts1, *ts2;
     INT4 starting=0, finishing=0;
 
@@ -2052,9 +2052,6 @@ XLALReadSFDB(
     UINT4 numSFTsY[SFDB_DET_LAST];
     XLAL_INIT_MEM ( numSFTsY);
 
-    UINT4 f_min_bin = floor(f_min*Tcoh + 0.5);
-    UINT4 f_max_bin = floor(f_max*Tcoh + 0.5);
-
     // First pass: this is to know how many of the SFDBs are in science segments
     for ( UINT4 i = 0; i < numFiles; i++ )
     {
@@ -2067,7 +2064,7 @@ XLALReadSFDB(
         while( fread(&count, sizeof(REAL8), 1, fpPar)==1 ) {    // Index of this SFDBs in the file (a SFDB file can have more than one SFDB)
             SFDBHeader header;
             XLAL_CHECK_NULL(read_SFDB_header_from_fp(fpPar, &header)==0,XLAL_EIO,"Failed to parse SFDB header.");
-
+            Tcoh = header.tbase;
             // skip number of bytes corresponding to the actual data content
             UINT4 lsps = 0;
             if (header.lavesp > 0)
@@ -2102,6 +2099,9 @@ XLALReadSFDB(
         fclose(fpPar);
 
     }
+
+    UINT4 f_min_bin = floor(f_min*Tcoh + 0.5);
+    UINT4 f_max_bin = floor(f_max*Tcoh + 0.5);
 
     UINT4 numSFTsTotal = 0;
     for (UINT4 Y = 0; Y < SFDB_DET_LAST; Y++) {

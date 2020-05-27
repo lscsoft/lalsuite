@@ -16,7 +16,6 @@ typedef struct
     CHAR *timeStampsStarting;
     CHAR *timeStampsFinishing;
     CHAR *outputSingleSFT;
-    REAL8 Tcoh;
     INT4 useTimeStamps;
 } UserInput_t;
 
@@ -37,7 +36,7 @@ int main(int argc, char *argv[]) {
     }
 
     MultiSFTVector *inputSFTs = NULL;
-    inputSFTs =  XLALReadSFDB(uvar.numifo, uvar.fmin, uvar.fmax, uvar.file_pattern, uvar.timeStampsStarting, uvar.timeStampsFinishing, uvar.Tcoh, uvar.useTimeStamps);
+    inputSFTs =  XLALReadSFDB(uvar.numifo, uvar.fmin, uvar.fmax, uvar.file_pattern, uvar.timeStampsStarting, uvar.timeStampsFinishing, uvar.useTimeStamps);
 
 
     for ( UINT4 k = 0; k < uvar.numifo; k++) {
@@ -101,7 +100,6 @@ int initUserVars ( UserInput_t *uvar ) {
    uvar->timeStampsStarting = NULL;
    uvar->timeStampsFinishing = NULL;
    uvar->outputSingleSFT = NULL;
-   uvar->Tcoh = 0;
    uvar->useTimeStamps = 0;
 
    /* now register all our user-variable */
@@ -111,7 +109,6 @@ int initUserVars ( UserInput_t *uvar ) {
    XLALRegisterUvarMember( outputSingleSFT,         STRING, 'd', REQUIRED, "File-pattern for output file");
    XLALRegisterUvarMember(   fmin,               REAL8, 0, REQUIRED, "Lowest frequency to extract from SFTs");
    XLALRegisterUvarMember(   fmax,               REAL8, 0, REQUIRED, "Highest frequency to extract from SFTs");
-   XLALRegisterUvarMember(   Tcoh,               REAL8, 0, REQUIRED, "Coherence time");
    XLALRegisterUvarMember(   useTimeStamps,      INT4, 0,  REQUIRED, "If 0, use all SFDBs, even those in non-science segments");
    XLALRegisterUvarMember(   numifo,             UINT4, 0,  REQUIRED, "Number of detectors");
  
