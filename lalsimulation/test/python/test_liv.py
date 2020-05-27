@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2020 Anuradha Samajdar
-#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -82,20 +80,13 @@ def test_correct_liv_pars():
     """
 
     LALpars = lal.CreateDict()
-
     expected_result = np.array([100.0, 1.0, 0.0])
-
     actual_result = np.array(read_liv_params(LALpars))
-
     np.testing.assert_almost_equal(actual_result, expected_result, 7, "Default LIV values are not set correctly")
-
     ## Checking if parameters can be inserted properly
     set_liv_pars(LALpars, 44.,-1.,1.5)
-
     expected_result = np.array([44., -1., 1.5])
-
     actual_result = np.array(read_liv_params(LALpars))
-
     np.testing.assert_almost_equal(actual_result, expected_result, 7, "LIV values are not inserted correctly")
 
 def test_liv_flag_disabled_by_default():
@@ -107,18 +98,12 @@ def test_liv_flag_disabled_by_default():
     """
 
     LALpars = lal.CreateDict()
-
     expected_result = 0
-
     actual_result = is_liv_enabled_by_default(LALpars)
-
     np.testing.assert_approx_equal(actual_result, expected_result, 7, "Incorrect setting of LIV flag by default")
-
     ## Now check if it can be inserted correctly
     expected_result = 1
-
     actual_result = enable_liv(LALpars)
-
     np.testing.assert_approx_equal(actual_result, expected_result, 7, "LIV flag not inserted correctly")
 
 # -- run the tests ------------------------------
