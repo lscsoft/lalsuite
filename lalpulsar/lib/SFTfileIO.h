@@ -322,7 +322,7 @@ char *XLALGetOfficialName4MergedSFTs ( const SFTVector *sfts, const char *Misc )
 char *XLALOfficialSFTFilename ( char site, char channel, UINT4 numSFTs, UINT4 Tsft, UINT4 GPS_start, UINT4 Tspan, const char *Misc );
 int XLALCheckValidDescriptionField ( const char *desc );
 
-MultiSFTVector* XLALReadSFDB(REAL8 f_min, REAL8 f_max, const CHAR *file_pattern, const CHAR *timeStampsStarting, const CHAR *timeStampsFinishing, INT4 useTimeStamps);
+MultiSFTVector* XLALReadSFDB(REAL8 f_min, REAL8 f_max, const CHAR *file_pattern, const CHAR *timeStampsStarting, const CHAR *timeStampsFinishing);
 
 /** @} */
 

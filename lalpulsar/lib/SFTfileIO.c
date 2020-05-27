@@ -131,28 +131,28 @@ typedef enum tagSFDBDetectors {
 /* header contents of SFDBs, many fields unused
  */
 typedef struct tagSFDBHeader {
-  INT4 det;
-  INT4 gps_sec;
+  INT4 det;  // Index of the detector (0=V1, 1=H1, 2=L1)
+  INT4 gps_sec;  // GPS time of this SFDB
   INT4 gps_nsec;
-  REAL8 tbase;
+  REAL8 tbase;  // Coherent time of the SFDB
   INT4 firstfrind;
-  INT4 nsamples;
-  INT4 red;
+  INT4 nsamples;  // Number of frequency bins
+  INT4 red;  // Reduction factor
   INT4 typ;
   REAL4 n_flag;
-  REAL4 einstein;
+  REAL4 einstein;  // Normalization factor to get back to 10^{-20} units
   REAL8 mjdtime;
-  INT4 nfft;
+  INT4 nfft;  // Number of FFTs in a SFDB
   INT4 wink;
-  REAL4 normd;
-  REAL4 normw;
-  REAL8 frinit;
-  REAL8 tsamplu;
-  REAL8 deltanu;
-  REAL8 vx_eq;
+  REAL4 normd;  // Normalization factor
+  REAL4 normw;  // Window normalization factor
+  REAL8 frinit;  // Initial frequency
+  REAL8 tsamplu;  // Sampling time
+  REAL8 deltanu;  // Frequency resolution
+  REAL8 vx_eq;  // Velocity vector of the detector at this GPS time
   REAL8 vy_eq;
   REAL8 vz_eq;
-  REAL8 px_eq;
+  REAL8 px_eq;  // Position vector of the detector at this GPS time
   REAL8 py_eq;
   REAL8 pz_eq;
   INT4 n_zeroes;
@@ -1993,59 +1993,102 @@ XLALCheckValidDescriptionField ( const char *desc )
 
 MultiSFTVector*
 XLALReadSFDB(
-             REAL8 f_min,
-             REAL8 f_max,
-             const CHAR *file_pattern,
-             const CHAR *timeStampsStarting,
-             const CHAR *timeStampsFinishing,
-             INT4 useTimeStamps
+             REAL8 f_min,                       // Minimum frequency to be read
+             REAL8 f_max,                       // Maximum frequency to be read
+             const CHAR *file_pattern,          // String of SFDB files (possibly from more than one detector, separated by a ;)
+             const CHAR *timeStampsStarting,    // File(s) containing the starting timestamps of science segments (possibly from more than one detector, separated by a ;)
+             const CHAR *timeStampsFinishing    // File(s) containing the finishing timestamps of science segments (possibly from more than one detector, separated by a ;)
   )
 {
 
     LALStringVector *fnames;
-    fnames = XLALFindFiles(file_pattern);
+    XLAL_CHECK_NULL ( (fnames = XLALFindFiles (file_pattern)) != NULL, XLAL_EFUNC, "Failed to find filelist matching pattern '%s'.\n\n", file_pattern );
     UINT4 numFiles = fnames->length;
+
+    LALStringVector *fnames_timestampsSt = NULL;
+    LALStringVector *fnames_timestampsFi = NULL;
 
     FILE  *fp = NULL, *fp2 = NULL;
     INT4  numTimeStamps, r;
     UINT4 j;
-    REAL8 temp1;
-    REAL8 Tcoh;
-    LIGOTimeGPSVector *ts1, *ts2;
-    INT4 starting=0, finishing=0;
+    REAL8 Tcoh = 1800;  // Initialization
+    MultiLIGOTimeGPSVector *ts1 = NULL, *ts2 = NULL;
 
-    fp = fopen(timeStampsStarting, "r");
-    fp2 = fopen(timeStampsFinishing, "r");
+    BOOLEAN flag_timestamps;  // This flag is FALSE if no timestamps are used, and TRUE if timestamps to only load SFDBs within science segments are used
+    if ( timeStampsStarting && timeStampsFinishing ) flag_timestamps = TRUE;
+    else if ( timeStampsStarting && timeStampsFinishing == NULL ) XLAL_ERROR_NULL (XLAL_EFUNC, "Must give two files with initial and finsihing timestamps, missing finishing timestamps\n");
+    else if ( timeStampsStarting == NULL && timeStampsFinishing ) XLAL_ERROR_NULL (XLAL_EFUNC, "Must give two files with initial and finsihing timestamps, missing starting timestamps\n");
+    else flag_timestamps = FALSE;
 
-    // count number of timestamps
-    numTimeStamps = 0;
+    LALStringVector *detectors = NULL;
+    if ( flag_timestamps ) {  // Only read the timestamps files if the input files are not null
 
-    do {
-        r = fscanf(fp,"%lf\n", &temp1);
-        // make sure the line has the right number of entries or is EOF
-        if (r==1) numTimeStamps++;
-    } while ( r != EOF);
-    rewind(fp);
+      REAL8 temp1;
+      INT4  numTimeStamps2 = 0;
 
-    ts1 = XLALCalloc(1, sizeof(*ts1));
-    ts2 = XLALCalloc(1, sizeof(*ts2));
-    ts1->length = numTimeStamps;
-    ts1->data = XLALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));
-    ts2->length = numTimeStamps;
-    ts2->data = XLALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));
+      XLAL_CHECK_NULL ( (fnames_timestampsSt = XLALFindFiles (timeStampsStarting)) != NULL, XLAL_EFUNC, "Failed to find filelist matching pattern '%s'.\n\n", timeStampsStarting );
+      XLAL_CHECK_NULL ( (fnames_timestampsFi = XLALFindFiles (timeStampsFinishing)) != NULL, XLAL_EFUNC, "Failed to find filelist matching pattern '%s'.\n\n", timeStampsFinishing );
+      UINT4 numFiles_timestampsSt = fnames_timestampsSt->length;
 
-    for (j = 0; j < ts1->length; j++)
-    {
-        r = fscanf(fp,"%lf\n", &temp1);
-        ts1->data[j].gpsSeconds = (INT4)temp1;
-        ts1->data[j].gpsNanoSeconds = 0;
-        r = fscanf(fp2,"%lf\n", &temp1);
-        ts2->data[j].gpsSeconds = (INT4)temp1;
-        ts2->data[j].gpsNanoSeconds = 0;
+      ts1 = XLALCalloc(1, sizeof(*ts1));
+      ts2 = XLALCalloc(1, sizeof(*ts2));
+      ts1->length = numFiles_timestampsSt;
+      ts1->data = XLALCalloc (1, numFiles_timestampsSt * sizeof(*ts1->data));
+      ts2->length = numFiles_timestampsSt;
+      ts2->data = XLALCalloc (1, numFiles_timestampsSt * sizeof(*ts2->data));
+      XLAL_CHECK_NULL ( numFiles_timestampsSt == fnames_timestampsFi->length, XLAL_EINVAL );
+
+      for ( UINT4 X = 0; X < numFiles_timestampsSt; X++ )   // Loop over the number of detectors, each having a different timestamps file
+      {
+        const CHAR *filenameSt = fnames_timestampsSt->data[X];
+        const CHAR *filenameFi = fnames_timestampsFi->data[X];
+        XLAL_CHECK_NULL((fp = fopen(filenameSt, "r"))!=NULL,XLAL_EIO,"Failed to open file '%s' with starting timestamps.", timeStampsStarting );
+        XLAL_CHECK_NULL((fp2 = fopen(filenameFi, "r"))!=NULL,XLAL_EIO,"Failed to open file '%s' with finishing timestamps.", timeStampsStarting );
+
+        for ( UINT4 Y = 0; Y < SFDB_DET_LAST; Y++ ) {
+          if ( strcmp(SFDB_detector_names[Y], filenameSt) ) {
+            XLAL_CHECK_NULL ( (detectors = XLALAppendString2Vector ( detectors, SFDB_detector_names[Y] )) != NULL, XLAL_EFUNC );  // This will add the detectors with timestamps in alphabetical order
+          }
+        }
+
+        // count number of timestamps
+        numTimeStamps = 0;
+
+        do {
+          r = fscanf(fp,"%lf\n", &temp1);
+          // make sure the line has the right number of entries or is EOF
+          if (r==1) numTimeStamps++;
+        } while ( r != EOF);
+        rewind(fp);
+        do {
+          r = fscanf(fp2,"%lf\n", &temp1);
+          // make sure the line has the right number of entries or is EOF
+          if (r==1) numTimeStamps2++;
+        } while ( r != EOF);
+        rewind(fp2);
+
+        XLAL_CHECK_NULL ( numTimeStamps == numTimeStamps2, XLAL_EINVAL );
+
+
+        ts1->data[X]->length = numTimeStamps;
+        ts1->data[X]->data = XLALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));
+        ts2->data[X]->length = numTimeStamps;
+        ts2->data[X]->data = XLALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));
+
+        for (j = 0; j < ts1->length; j++)
+        {
+          r = fscanf(fp,"%lf\n", &temp1);
+          ts1->data[X]->data[j].gpsSeconds = (INT4)temp1;
+          ts1->data[X]->data[j].gpsNanoSeconds = 0;
+          r = fscanf(fp2,"%lf\n", &temp1);
+          ts2->data[X]->data[j].gpsSeconds = (INT4)temp1;
+          ts2->data[X]->data[j].gpsNanoSeconds = 0;
+        }
+
+        fclose(fp);
+        fclose(fp2);
+      }
     }
-
-    fclose(fp);
-    fclose(fp2);
 
     // from here on, Y indices loop over the SFDB detector ordering convention
     // regardless whether data is actually present for each detector
@@ -2079,22 +2122,29 @@ XLALReadSFDB(
             }
             XLAL_CHECK_NULL(fseek(fpPar,(lsps+2*header.nsamples)*sizeof(REAL4),SEEK_CUR)==0, XLAL_EIO);
 
-            // If the GPS time of this SFDB is within a science segment, count it
-            UINT4 flag=1;
-            for (UINT4 xx=0; xx<ts1->length; xx++) {
-                starting = ts1->data[xx].gpsSeconds;
-                finishing = ts2->data[xx].gpsSeconds;
+            if (flag_timestamps) {
+              INT4 starting=0, finishing=0;
+              // Find detector index 
+              UINT4 ind_Det = 0;
+              for ( UINT4 Y = 0; Y < ts1->length; Y++ ) {
+                if ( strcmp(SFDB_detector_names[header.det], detectors->data[Y] ) ) {
+                  ind_Det = Y;
+                }
+              }
+             
+              // If the GPS time of this SFDB is within a science segment, count it
+              for (UINT4 xx=0; xx<ts1->length; xx++) {
+                starting = ts1->data[ind_Det]->data[xx].gpsSeconds;
+                finishing = ts2->data[ind_Det]->data[xx].gpsSeconds;
                 if ( header.gps_sec>starting && header.gps_sec+Tcoh<(REAL8)finishing ) {
-                    flag=0;
+                    numSFTsY[header.det] += 1;
                     break;
                 }
+              }
             }
-
-            if (useTimeStamps==0) flag=0;
-            if (flag==0) {
-                numSFTsY[header.det] += 1;
+            else {
+              numSFTsY[header.det] += 1;
             }
-
         }
         fclose(fpPar);
 
@@ -2188,22 +2238,29 @@ XLALReadSFDB(
             buffer3 = malloc(2*header.nsamples*sizeof(REAL4));
             XLAL_CHECK_NULL(fread(buffer3,2*header.nsamples*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
 
-            UINT4 first_bin_read = floor(0*Tcoh + 0.5);  // This should depend on the starting frequency bin of the SFDB: it is only 0 for the 8192 Tcoh, for the others it will be different
-            UINT4 offset = f_min_bin-first_bin_read;
-
             UINT4 flag=1;
-            for (UINT4 xx=0; xx<ts1->length; xx++) {
-                starting = ts1->data[xx].gpsSeconds;
-                finishing = ts2->data[xx].gpsSeconds;
+
+            if (flag_timestamps) {
+              INT4 starting=0, finishing=0;
+              UINT4 ind_Det = 0;
+              for ( UINT4 Y = 0; Y < ts1->length; Y++ ) {
+                if ( strstr(SFDB_detector_names[header.det], detectors->data[Y] ) ) {
+                  ind_Det = Y;
+                }
+              }
+              for (UINT4 xx=0; xx<ts1->length; xx++) {
+                starting = ts1->data[ind_Det]->data[xx].gpsSeconds;
+                finishing = ts2->data[ind_Det]->data[xx].gpsSeconds;
                 if ( header.gps_sec>starting && header.gps_sec+Tcoh<(REAL8)finishing ) {
                     flag=0;
                     break;
                 }
+              }
             }
-
-            if (useTimeStamps==0) {
+            else {
                 flag=0;
             }
+
             if (flag==0) {
                 XLAL_CHECK_NULL(detectorLookupYtoX[header.det]>=0,XLAL_EDOM,"Cannot match detector %d, as read from file, with first run.", header.det);
                 UINT4 X = detectorLookupYtoX[header.det];
@@ -2226,7 +2283,7 @@ XLALReadSFDB(
 
                 // Copy to the SFT structure the complex values in the frequency bins (multiplied by some normalization factors in order to agree with the SFT specification)
                 in = thisSFT->data->data;
-                for (jjj=offset; jjj<(length+offset); jjj++) {
+                for (jjj=f_min_bin; jjj<(length+f_min_bin); jjj++) {
                     *in = crectf(buffer3[2*jjj],buffer3[2*jjj+1])*header.einstein*header.tsamplu*header.normw;
                     ++in;
                 }
@@ -2240,8 +2297,11 @@ XLALReadSFDB(
     }
 
     XLALDestroyStringVector(fnames);
-    XLALDestroyTimestampVector(ts1);
-    XLALDestroyTimestampVector(ts2);
+    XLALDestroyStringVector(fnames_timestampsSt);
+    XLALDestroyStringVector(fnames_timestampsFi);
+    XLALDestroyStringVector(detectors);
+    XLALDestroyMultiTimestamps(ts1);
+    XLALDestroyMultiTimestamps(ts2);
 
     // Sort the SFDBs from lower GPS timestamps to higher GPS timestamp
     for ( UINT4 X = 0; X < numIFOs; X++) {
