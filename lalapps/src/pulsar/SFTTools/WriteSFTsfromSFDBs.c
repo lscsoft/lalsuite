@@ -16,7 +16,6 @@ typedef struct
     CHAR *timeStampsStarting;
     CHAR *timeStampsFinishing;
     CHAR *outputSingleSFT;
-    INT4 useTimeStamps;
 } UserInput_t;
 
 int initUserVars ( UserInput_t *uvar );
@@ -36,7 +35,7 @@ int main(int argc, char *argv[]) {
     }
 
     MultiSFTVector *inputSFTs = NULL;
-    inputSFTs =  XLALReadSFDB(uvar.numifo, uvar.fmin, uvar.fmax, uvar.file_pattern, uvar.timeStampsStarting, uvar.timeStampsFinishing, uvar.useTimeStamps);
+    inputSFTs =  XLALReadSFDB(uvar.fmin, uvar.fmax, uvar.file_pattern, uvar.timeStampsStarting, uvar.timeStampsFinishing);
 
 
     for ( UINT4 k = 0; k < uvar.numifo; k++) {
@@ -45,8 +44,9 @@ int main(int argc, char *argv[]) {
         CHAR   fileSigma[ 500 ];
         strcpy ( fileSigma, uvar.outputSingleSFT);
         if (uvar.numifo>1) {
-            if (k==0) strcat ( fileSigma, "_H1");
+            if (k==0) strcat ( fileSigma, "_H1");  // Assuming that the returned SFTs are alphabetically sorted in the first index
             if (k==1) strcat ( fileSigma, "_L1");
+            if (k==2) strcat ( fileSigma, "_V1");
         }
         XLAL_CHECK ( ( fpSingleSFT = fopen ( fileSigma, "wb" )) != NULL, XLAL_EIO, "Failed to open singleSFT file '%s' for writing\n", uvar.outputSingleSFT );
 
@@ -100,18 +100,16 @@ int initUserVars ( UserInput_t *uvar ) {
    uvar->timeStampsStarting = NULL;
    uvar->timeStampsFinishing = NULL;
    uvar->outputSingleSFT = NULL;
-   uvar->useTimeStamps = 0;
 
    /* now register all our user-variable */
    XLALRegisterUvarMember( file_pattern,            STRING, 'i', REQUIRED, "File-pattern for input SFDBs");
-   XLALRegisterUvarMember( timeStampsStarting,      STRING, 's', REQUIRED, "File-pattern for timestamp file with starting times of SCIENCE segments");
-   XLALRegisterUvarMember( timeStampsFinishing,     STRING, 'f', REQUIRED, "File-pattern for timestamp file with ending times of SCIENCE segments");
+   XLALRegisterUvarMember( timeStampsStarting,      STRING, 's', OPTIONAL, "File-pattern for timestamp file with starting times of SCIENCE segments");
+   XLALRegisterUvarMember( timeStampsFinishing,     STRING, 'f', OPTIONAL, "File-pattern for timestamp file with ending times of SCIENCE segments");
    XLALRegisterUvarMember( outputSingleSFT,         STRING, 'd', REQUIRED, "File-pattern for output file");
    XLALRegisterUvarMember(   fmin,               REAL8, 0, REQUIRED, "Lowest frequency to extract from SFTs");
    XLALRegisterUvarMember(   fmax,               REAL8, 0, REQUIRED, "Highest frequency to extract from SFTs");
-   XLALRegisterUvarMember(   useTimeStamps,      INT4, 0,  REQUIRED, "If 0, use all SFDBs, even those in non-science segments");
    XLALRegisterUvarMember(   numifo,             UINT4, 0,  REQUIRED, "Number of detectors");
- 
+
    return XLAL_SUCCESS;
  
 } /* initUserVars() */
