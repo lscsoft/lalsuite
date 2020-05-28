@@ -78,7 +78,6 @@ def test_correct_liv_pars():
     `expected_result = np.array([100.0,1.0,0.0])` are the default values of log10lambda_eff,
      A_sign and alpha respectively
     """
-
     LALpars = lal.CreateDict()
     expected_result = np.array([100.0, 1.0, 0.0])
     actual_result = np.array(read_liv_params(LALpars))
@@ -96,7 +95,6 @@ def test_liv_flag_disabled_by_default():
 
     `expected_result = 0` is the default value of the LIV flag
     """
-
     LALpars = lal.CreateDict()
     expected_result = 0
     actual_result = is_liv_enabled_by_default(LALpars)
