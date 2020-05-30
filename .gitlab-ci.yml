@@ -1018,23 +1018,11 @@ platform:macos:sierra:
     paths:
       - wheelhouse
 
-.wheel:manylinux1: &wheel-manylinux1
-  <<: *wheel-manylinux
-  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux1_x86_64
-
 .wheel:manylinux2014: &wheel-manylinux2014
   <<: *wheel-manylinux
   image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux2014_x86_64
 
 # Build wheels for all supported platforms
-wheel:cp35-cp35m-manylinux1:
-  <<: *wheel-manylinux1
-wheel:cp36-cp36m-manylinux1:
-  <<: *wheel-manylinux1
-wheel:cp37-cp37m-manylinux1:
-  <<: *wheel-manylinux1
-wheel:cp38-cp38-manylinux1:
-  <<: *wheel-manylinux1
 wheel:cp35-cp35m-manylinux2014:
   <<: *wheel-manylinux2014
 wheel:cp36-cp36m-manylinux2014:
@@ -1064,10 +1052,6 @@ deploy:wheel:
     - pip install twine
     - twine upload wheelhouse/*
   needs:
-    - wheel:cp35-cp35m-manylinux1
-    - wheel:cp36-cp36m-manylinux1
-    - wheel:cp37-cp37m-manylinux1
-    - wheel:cp38-cp38-manylinux1
     - wheel:cp35-cp35m-manylinux2014
     - wheel:cp36-cp36m-manylinux2014
     - wheel:cp37-cp37m-manylinux2014
