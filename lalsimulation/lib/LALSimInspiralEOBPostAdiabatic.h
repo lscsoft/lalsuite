@@ -187,12 +187,20 @@ XLALSimInspiralEOBPostAdiabaticHorizonFlux(
 double
 XLALSimInspiralEOBPostAdiabaticdpphiFunc(
     REAL8 prstar_sol,
-    void *params);
+    void *params
+);
 
 double
 XLALSimInspiralEOBPostAdiabaticdprstarFunc(
     REAL8 pphi_sol,
-    void *params);
+    void *params
+);
+
+double
+XLALSimInspiralEOBPostAdiabaticj0Func(
+    REAL8 j0_sol,
+    void *params
+);
 
 struct PostAdiabaticRootSolveParams
 {
@@ -206,8 +214,8 @@ struct PostAdiabaticRootSolveParams
     REAL8 pphi;
     REAL8 dpphiBydr;
     REAL8 A;
-    REAL8 B;
     REAL8 dA;
+    REAL8 B;
     REAL8 dAuc2Bydr;
     REAL8 HeffOrb;
     REAL8 dGBydr;
@@ -230,40 +238,76 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
     REAL8 x_lower,
     REAL8 x_upper,
     REAL8 absTol,
-    REAL8 relTol);
+    REAL8 relTol
+);
 
 REAL8Vector
 XLALReverseREAL8Vector(
-    REAL8Vector *Vec);
+    REAL8Vector *Vec
+);
+
+REAL8Vector
+XLALOffsetREAL8Vector(
+    REAL8Vector *Vec,
+    REAL8 offset
+);
 
 REAL8Vector
 XLALPostAdiabaticSplineDerivative(
     REAL8Vector *VecX,
-    REAL8Vector *VecY);
+    REAL8Vector *VecY
+);
 
 REAL8Vector
-XLALEightOrderFiniteDifferenceDerivative(
+XLALFDDerivative1Order2(
     REAL8Vector *XVec,
-    REAL8Vector *YVec);
+    REAL8Vector *YVec
+);
 
 REAL8Vector
-XLALSixthOrderFiniteDifferenceDerivative(
+XLALFDDerivative1Order4(
     REAL8Vector *XVec,
-    REAL8Vector *YVec);
+    REAL8Vector *YVec
+);
 
 REAL8Vector
-XLALFourthOrderFiniteDifferenceDerivative(
+XLALFDDerivative1Order6(
     REAL8Vector *XVec,
-    REAL8Vector *YVec);
+    REAL8Vector *YVec
+);
 
 REAL8Vector
-XLALSecondOrderFiniteDifferenceDerivative(
+XLALFDDerivative1Order8(
     REAL8Vector *XVec,
-    REAL8Vector *YVec);
+    REAL8Vector *YVec
+);
 
 REAL8Vector
 XLALCumulativeIntegral3(
     REAL8Vector *XVec,
-    REAL8Vector *YVec);
+    REAL8Vector *YVec
+);
+
+REAL8
+XLALSimInspiralEOBPAHamiltonianWrapper(
+    REAL8 r,
+    REAL8 prstar,
+    REAL8 pphi,
+    LALDict *LALParams
+);
+
+REAL8
+XLALSimInspiralEOBPAHamiltonianDerivative(
+    REAL8 h,
+    REAL8 r,
+    REAL8 prstar,
+    REAL8 pphi,
+    LALDict *LALParams
+);
+
+REAL8
+XLALSimInspiralEOBPANewtonianj0(
+    REAL8 r
+);
 
 #endif
