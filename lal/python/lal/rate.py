@@ -1276,9 +1276,9 @@ class NDBins(tuple):
 			ns = (1.,) * len(self)
 		if domain is None:
 			domain = (slice(None, None),) * len(self)
-		coordgens = tuple(iter(binning.randcoord(n, domain = d)).next for binning, n, d in zip(self, ns, domain))
+		coordgens = tuple(iter(binning.randcoord(n, domain = d)) for binning, n, d in zip(self, ns, domain))
 		while 1:
-			seq = sum((coordgen() for coordgen in coordgens), ())
+			seq = sum((next(coordgen) for coordgen in coordgens), ())
 			yield seq[0::2], sum(seq[1::2])
 
 	#
