@@ -334,10 +334,6 @@ class HeterodynedCWSimulator(object):
         else:
             self.__ephem = 'DE405' if ephem is None else ephem
 
-        if self.__ephem not in ['DE200', 'DE405', 'DE421', 'DE430']:
-            raise ValueError("Unknown ephemeris version '{}' has been "
-                             "given".format(self.__ephem))
-
     @property
     def units(self):
         return self.__units
