@@ -1119,8 +1119,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
           /* Construct hp and hc from hlms */
           size_t npts_wave = hlm_mode->data->length;
-          memset(hptilde->data->data, 0, npts_wave * sizeof(COMPLEX16));
-          memset(hctilde->data->data, 0, npts_wave * sizeof(COMPLEX16));
+          hptilde = XLALCreateCOMPLEX16FrequencySeries("FD hplus",
+                    &hlm_mode->epoch, hlm_mode->f0, hlm_mode->deltaF,
+                    &hlm_mode->sampleUnits, npts_wave);
+          hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+                    &hlm_mode->epoch, hlm_mode->f0, hlm_mode->deltaF,
+                    &hlm_mode->sampleUnits, npts_wave);
 
           XLAL_TRY(ret=XLALSimAddModeFD(hptilde, hctilde, hlms->mode, inclination, LAL_PI/2. - phi0, 2, -2, 1), errnum);
         }
