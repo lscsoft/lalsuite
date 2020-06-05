@@ -56,6 +56,7 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
     --- Prior Arguments --------------------------\n\
     ----------------------------------------------\n\
     (--distance-prior-uniform)       Impose uniform prior on distance and not volume (False)\n\
+    (--distance-prior-comoving-volume) Impose uniform prior on source-frame comoving volume (False)\n\
     (--malmquistprior)               Impose selection effects on the prior (False)\n\
     (--malmquist-loudest-snr)        Threshold SNR in the loudest detector (0.0)\n\
     (--malmquist-second-loudest-snr) Threshold SNR in the second loudest detector (5.0)\n\
@@ -92,13 +93,22 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
 
     /* Optional uniform prior on distance */
     INT4 uniform_distance = 0;
-    if (LALInferenceGetProcParamVal(commandLine, "--distance-prior-uniform"))
+    INT4 src_comove_volume_distance = 0;
+    if (LALInferenceGetProcParamVal(commandLine, "--distance-prior-uniform")) {
       uniform_distance = 1;
+    }
+    if (LALInferenceGetProcParamVal(commandLine, "--distance-prior-comoving-volume")) {
+      src_comove_volume_distance = 1;
+    }
     LALInferenceAddVariable(runState->priorArgs,
                                 "uniform_distance", &uniform_distance,
                                 LALINFERENCE_INT4_t,
                                 LALINFERENCE_PARAM_OUTPUT);
-
+	
+    LALInferenceAddVariable(runState->priorArgs,
+                                "src_comove_volume_distance", &src_comove_volume_distance,
+                                LALINFERENCE_INT4_t,
+                                LALINFERENCE_PARAM_OUTPUT);
 
     /* Set up malmquist prior */
     INT4 malmquist = 0;
@@ -155,6 +165,11 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
     if(LALInferenceGetProcParamVal(commandLine,"--alignedspin-zprior")&&LALInferenceGetProcParamVal(commandLine,"--spin-volumetricprior"))
     {
         fprintf(stderr,"Error: You cannot use both --alignedspin-zprior and --spin-volumetricprior\n");
+        exit(1);
+    }
+    if(LALInferenceGetProcParamVal(commandLine,"--distance-prior-comoving-volume")&&LALInferenceGetProcParamVal(commandLine,"--distance-prior-uniform"))
+    {
+        fprintf(stderr,"Error: You cannot use both --distance-prior-comoving-volume and --distance-prior-uniform\n");
         exit(1);
     }
 }
@@ -436,6 +451,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
   REAL8 min=-INFINITY, max=INFINITY;
   REAL8 mc=0.0;
   REAL8 m1=0.0,m2=0.0,q=0.0,eta=0.0;
+  REAL8 c0=1.012306, c1=1.136740, c2=0.262462, c3=0.016732, c4=0.000387; /* fitting coefficients for Will's cosmological distance prior, see https://git.ligo.org/RatesAndPopulations/lalinfsamplereweighting/blob/master/ApproxPrior.ipynb */
 
   /* check if signal model is being used */
   UINT4 signalFlag=1;
@@ -471,14 +487,42 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
     logPrior+=log(*(REAL8 *)LALInferenceGetVariable(params,"flow"));
   }
 
+
   if(LALInferenceCheckVariable(params,"logdistance"))
-    if (!(LALInferenceCheckVariable(priorParams,"uniform_distance") && LALInferenceGetINT4Variable(priorParams,"uniform_distance")))
-      logPrior+=3.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
-    else
-      logPrior+=1.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
+  {
+    REAL8 log_dist = *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
+    if ((LALInferenceCheckVariable(priorParams,"uniform_distance") && LALInferenceGetINT4Variable(priorParams,"uniform_distance"))) {
+      logPrior+=log_dist;
+    }
+    else if ((LALInferenceCheckVariable(priorParams,"src_comove_volume_distance") && LALInferenceGetINT4Variable(priorParams,"src_comove_volume_distance"))) {
+	  REAL8 dist_Gpc = exp(log_dist)/1000.0;
+      REAL8 dist_Gpc2= dist_Gpc*dist_Gpc;
+      REAL8 dist_Gpc3= dist_Gpc2*dist_Gpc;
+      REAL8 dist_Gpc4= dist_Gpc3*dist_Gpc;
+      REAL8 denominator = c0+c1*dist_Gpc+c2*dist_Gpc2+c3*dist_Gpc3+c4*dist_Gpc4;
+	  logPrior+=3.0* log_dist-log(denominator);
+	}
+	else {
+      logPrior+=3.0* log_dist;
+    }
+  }
   else if(LALInferenceCheckVariable(params,"distance"))
-    if (!(LALInferenceCheckVariable(priorParams,"uniform_distance")&&LALInferenceGetINT4Variable(priorParams,"uniform_distance")))
-      logPrior+=2.0*log(*(REAL8 *)LALInferenceGetVariable(params,"distance"));
+  {
+    if (!(LALInferenceCheckVariable(priorParams,"uniform_distance")&&LALInferenceGetINT4Variable(priorParams,"uniform_distance"))) {
+      REAL8 dist = *(REAL8 *)LALInferenceGetVariable(params,"distance");
+      if ((LALInferenceCheckVariable(priorParams,"src_comove_volume_distance") && LALInferenceGetINT4Variable(priorParams,"src_comove_volume_distance"))) {
+        REAL8 dist_Gpc = dist/1000.0;
+        REAL8 dist_Gpc2= dist_Gpc*dist_Gpc;
+        REAL8 dist_Gpc3= dist_Gpc2*dist_Gpc;
+        REAL8 dist_Gpc4= dist_Gpc3*dist_Gpc;
+        REAL8 denominator = c0+c1*dist_Gpc+c2*dist_Gpc2+c3*dist_Gpc3+c4*dist_Gpc4;
+        logPrior+=2.0*log(dist)-log(denominator);
+      }
+	  else {
+        logPrior+=2.0*log(dist);
+      }
+    }
+  }
   if(LALInferenceCheckVariable(params,"declination"))
   {
     /* Check that this is not an output variable */
