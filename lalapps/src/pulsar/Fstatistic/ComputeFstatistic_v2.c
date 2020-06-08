@@ -948,8 +948,7 @@ initUserVars ( UserInput_t *uvar )
   uvar->AlphaBand = 0;
   uvar->DeltaBand = 0;
   uvar->skyRegion = NULL;
-  // Dterms-default used to be 16, but has to be 8 for SSE version
-  uvar->Dterms 	= 8;
+  uvar->Dterms = FstatOptionalArgsDefaults.Dterms;
 
   uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
@@ -993,9 +992,9 @@ initUserVars ( UserInput_t *uvar )
   uvar->gridFile = NULL;
 
   uvar->dopplermax =  0;        /* option is deprecated */
-  uvar->RngMedWindow = 50;	/* for running-median */
+  uvar->RngMedWindow = FstatOptionalArgsDefaults.runningMedianWindow;
 
-  uvar->SSBprecision = SSBPREC_RELATIVISTIC;
+  uvar->SSBprecision = FstatOptionalArgsDefaults.SSBprec;
 
   uvar->minStartTime.gpsSeconds = 0;
   uvar->maxStartTime.gpsSeconds = LAL_INT4_MAX;
@@ -1008,7 +1007,7 @@ initUserVars ( UserInput_t *uvar )
   uvar->minBraking = 0.0;
   uvar->maxBraking = 0.0;
 
-  uvar->FstatMethod = FMETHOD_DEMOD_BEST;	// default to guessed 'best' demod hotloop variant
+  uvar->FstatMethod = FstatOptionalArgsDefaults.FstatMethod;
 
   uvar->outputSingleFstats = FALSE;
   uvar->RankingStatistic = XLALStringDuplicate ( "F" );
@@ -1021,7 +1020,7 @@ initUserVars ( UserInput_t *uvar )
 
   uvar->transient_WindowType = XLALStringDuplicate ( "none" );
   uvar->transient_useFReg = 0;
-  uvar->resampFFTPowerOf2 = TRUE;
+  uvar->resampFFTPowerOf2 = FstatOptionalArgsDefaults.resampFFTPowerOf2;
   uvar->allowedMismatchFromSFTLength = 0;
   uvar->injectionSources = NULL;
   uvar->injectSqrtSX = NULL;
