@@ -213,18 +213,16 @@ cache:
   conda config --add channels conda-forge
   retry conda update -n base conda setuptools
   conda activate base
-  retry conda install -n base "conda-build!=3.18.10" conda-verify conda-forge-pinning
+  retry conda install -n base "conda-build!=3.18.10" conda-forge-pinning conda-smithy conda-verify
   conda info --all
 
 .conda-build: &conda-build
   image: igwn/base:conda
   variables:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
+    CONDA_CONFIG: "linux_"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
-    fft_impl: "fftw"
-    PYTHON_VERSION: "3.7"
   before_script:
-    - set -x  # print commands as they are run (helps debugging)
     - *define-retry
     - *conda-init
   script:
@@ -237,17 +235,23 @@ cache:
     - sed 's|@VERSION@|'${VERSION}'|g' conda/meta.yaml.in > conda/meta.yaml
     - sed -i 's|@TARBALL@|'${TARBALL}'|g' conda/meta.yaml
     - sed -i 's|@SHA256@|'${SHA256}'|g' conda/meta.yaml
+    # create a feedstock from the conda recipe
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - conda smithy init conda/ --feedstock-directory ${PACKAGE}-feedstock
+    - cd ${PACKAGE}-feedstock
+    - conda smithy regenerate --no-check-uptodate
+    - git ls-files
     # build packages (preferring local packages over everything)
     - conda config --set channel_priority strict
     - conda build
-          conda/
+          recipe/
           --dirty
           --error-overlinking
           --error-overdepending
           --no-anaconda-upload
-          --python ${PYTHON_VERSION}
           --use-local
-          --variant-config-files $(conda info --base)/conda_build_config.yaml
+          --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
           ${CONDA_BUILD_ARGS}
   artifacts:
     expire_in: 18h
@@ -260,6 +264,7 @@ cache:
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/test-suite.log"
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/test-suite.log"
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/*/*/*/test-suite.log"
+      - "${CI_JOB_NAME%%:*}/${CI_JOB_NAME%%:*}-feedstock/"
     reports:
       junit:
         - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/junit*.xml"
@@ -410,6 +415,10 @@ lal:conda:fftw:
   stage: LAL
   needs:
     - make-dist
+  variables:
+    CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
+    CONDA_CONFIG: "linux_fft_implfftw"
+    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
 
 lal:conda:mkl:
   <<: *conda-build
@@ -418,9 +427,8 @@ lal:conda:mkl:
     - make-dist
   variables:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
+    CONDA_CONFIG: "linux_fft_implmkl"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
-    fft_impl: "mkl"
-    PYTHON_VERSION: "3.7"
 
 # -- lalframe------------------------------------
 
@@ -662,6 +670,10 @@ lalapps:conda:
     - lalpulsar:conda
     - lalinspiral:conda
     - lalinference:conda
+  variables:
+    CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
+    CONDA_CONFIG: "linux_python3.7.____cpython"
+    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
 
 # -- integration tests --------------------------
 
