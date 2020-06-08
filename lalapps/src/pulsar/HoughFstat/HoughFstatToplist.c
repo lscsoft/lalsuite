@@ -32,20 +32,6 @@
 #include <lal/LALStdio.h>
 #include <lal/LogPrintf.h>
 
-#if defined(USE_BOINC) || defined(EAH_BOINC)
-#include "boinc/filesys.h"
-#define fopen boinc_fopen
-#ifdef _WIN32
-/* On MS Windows boinc_rename() is not as atomic as rename()
-   on POSIX systems. We therefore use our own implementation
-   eah_rename (in win_lib.h) */
-extern int eah_rename(const char* oldf, const char* newf);
-#define rename eah_rename
-#else  // _WIN32
-#define rename boinc_rename
-#endif // _WIN32
-#endif // _BOINC
-
 #include <lal/LogPrintf.h>
 
 /* Windows specifics */

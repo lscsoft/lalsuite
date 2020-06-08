@@ -125,24 +125,15 @@
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-/* Hooks for Einstein\@Home / BOINC
-   These are defined to do nothing special in the standalone case
-   and will be set in boinc_extras.h if EAH_BOINC is set
- */
-#ifdef EAH_BOINC
-#include "EinsteinAtHome/hs_boinc_extras.h"
-#else /* EAH_BOINC */
-/* checkpointing */
+/* checkpointing (non-functional placeholders for non-BOINC case) */
 #define HS_CHECKPOINTING 0 /* no checkpointing in the non-BOINC case (yet) */
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
 #define INSERT_INTO_HOUGHFSTAT_TOPLIST insert_into_houghFstat_toplist
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total,freq,fband)
 #define SET_CHECKPOINT
-/* BOINC */
 #define MAIN main
-#endif /* EAH_BOINC */
 
-/* These might have been set differently in hs_boinc_extras.h or ComputeFstatREAL4.h */
+/* These might have been set differently in ComputeFstatREAL4.h */
 #ifndef COMPUTEFSTATHOUGHMAP
 #define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
 #endif
@@ -445,11 +436,7 @@ int MAIN( int argc, char *argv[]) {
   strcpy(uvar_fnameout, FNAMEOUT);
 
   /* set LAL error-handler */
-#ifdef EAH_BOINC
-  lal_errhandler = BOINC_LAL_ErrHand;
-#else
   lal_errhandler = LAL_ERR_EXIT;
-#endif
 
   /* register user input variables */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_log,              "log",              BOOLEAN, 0,   OPTIONAL,  "Write log file") == XLAL_SUCCESS, XLAL_EFUNC);
