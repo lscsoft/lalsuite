@@ -42,7 +42,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.22.0"
+MIN_LAL_VERSION="7.0.0"
 AC_SUBST([MIN_LAL_VERSION])
 
 AC_CANONICAL_HOST
@@ -66,9 +66,9 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[23])
+AC_SUBST([LIBCURRENT],[24])
 AC_SUBST([LIBREVISION],[0])
-AC_SUBST([LIBAGE],[0])
+AC_SUBST([LIBAGE],[1])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build
