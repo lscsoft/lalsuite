@@ -252,7 +252,6 @@ void GetXiInSingleStack (LALStatus         *status,
 			 HOUGHDemodPar     *par);
 
 /* default values for input variables */
-#define BLOCKSRNGMED 		101 	/**< Default running median window size */
 #define FSTART 			310.0	/**< Default Start search frequency */
 
 #define FBAND 			0.01	/**< Default search band */
@@ -260,7 +259,6 @@ void GetXiInSingleStack (LALStatus         *status,
 #define DFDOT 			0.0	/**< Default range of first spindown parameter */
 #define SKYREGION 		"allsky" /**< default sky region to search over -- just a single point*/
 #define NFDOT  			10    	/**< Default size of hough cylinder of look up tables */
-#define DTERMS 			8     	/**< Default number of dirichlet kernel terms for calculating Fstat */
 #define MISMATCH 		0.2 	/**< Default for metric grid maximal mismatch value */
 #define DALPHA 			0.001 	/**< Default resolution for isotropic or flat grids */
 #define DDELTA 			0.001 	/**< Default resolution for isotropic or flat grids */
@@ -407,10 +405,10 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_method = -1; 	/* hough = 0, stackslide = 1, -1 = pure fstat*/
   INT4 uvar_nCand1 = NCAND1; /* number of candidates to be followed up from first stage */
 
-  INT4 uvar_blocksRngMed = BLOCKSRNGMED;
+  INT4 uvar_blocksRngMed = FstatOptionalArgsDefaults.runningMedianWindow;
   INT4 uvar_nStacksMax = 1;
-  INT4 uvar_Dterms = 8;
-  INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
+  INT4 uvar_Dterms = FstatOptionalArgsDefaults.Dterms;
+  INT4 uvar_SSBprecision = FstatOptionalArgsDefaults.SSBprec;
   INT4 uvar_nf1dotRes = 1;
   INT4 uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
   INT4 uvar_gridType1 = GRID_METRIC;
