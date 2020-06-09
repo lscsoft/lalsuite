@@ -65,24 +65,10 @@
 #define UNUSED
 #endif
 
-/* Hooks for Einstein@Home / BOINC
-   These are defined to do nothing special in the standalone case
-   and will be set in boinc_extras.h if EAH_BOINC is set
-*/
-#ifdef EAH_BOINC
-#include "hs_boinc_extras.h"
-// reserves 1% of progress for the last (toplist recaclculation) step
-#define SHOW_PROGRESS_RESERVE(rac,dec,count,total,freq,fband)\
-        SHOW_PROGRESS(rac, dec, (count) - 0.01 * (total), total, freq, fband)
-#else
 #define GET_GCT_CHECKPOINT read_gct_checkpoint // (cptname, semiCohToplist, NULL, &count)
 #define SET_GCT_CHECKPOINT write_gct_checkpoint
-#define SHOW_PROGRESS(rac,dec,skyGridCounter,tpl_total,freq,fband)
-#define SHOW_PROGRESS_RESERVE(rac,dec,count,total,freq,fband)
-#define MAIN  main
 char**global_argv;
 int global_argc;
-#endif /* EAH_BOINC */
 
 #define FSTART          100.0	/**< Default Start search frequency */
 #define FBAND           0.0  /**< Default search band */
@@ -243,7 +229,7 @@ static int write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti );
 static inline REAL4 findLoudestTwoF ( const FstatResults *in );
 
 /* ---------- Global variables -------------------- */
-LALStatus *global_status; /* a global pointer to MAIN()s head of the LALStatus structure */
+LALStatus *global_status; /* a global pointer to main()s head of the LALStatus structure */
 char *global_column_headings_stringp;
 
 // XLALReadSegmentsFromFile(): applications which still must support
@@ -252,7 +238,7 @@ extern int XLALReadSegmentsFromFile_support_4column_format;
 
 /* ###################################  MAIN  ################################### */
 
-int MAIN( int argc, char *argv[]) {
+int main( int argc, char *argv[]) {
   LALStatus status = blank_status;
 
   /* temp loop variables: generally k loops over segments and j over SFTs in a stack */
@@ -465,13 +451,8 @@ int MAIN( int argc, char *argv[]) {
 
   global_status = &status;
 
-#ifndef EAH_BOINC
   global_argv = argv;
   global_argc = argc;
-#endif
-
-#ifdef EAH_LALDEBUGLEVEL
-#endif
 
   // XLALReadSegmentsFromFile(): continue to support deprecated 4-column format (startGPS endGPS duration NumSFTs, duration is ignored)
   XLALReadSegmentsFromFile_support_4column_format = 1;
@@ -486,11 +467,7 @@ int MAIN( int argc, char *argv[]) {
   strcpy(uvar_fnameout, FNAMEOUT);
 
   /* set LAL error-handler */
-#ifdef EAH_BOINC
-  lal_errhandler = BOINC_LAL_ErrHand;
-#else
   lal_errhandler = LAL_ERR_EXIT;
-#endif
 
   /* register user input variables */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_log,                 "log",                 BOOLEAN,      0,   OPTIONAL,   "Write log file") == XLAL_SUCCESS, XLAL_EFUNC);
@@ -678,19 +655,6 @@ int MAIN( int argc, char *argv[]) {
       XLAL_CHECK ( 0 == create_gctFstat_toplist ( &semiCohToplist, uvar_nCand1, uvar_SortToplist),
                    XLAL_EFUNC, "create_gctFstat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, uvar_SortToplist );
     }
-
-#ifdef EAH_BOINC
-  // BOINC Apps always checkpoint, so set a default filename here
-  if (uvar_fnameChkPoint == NULL) {
-    CHAR*fname = "checkpoint.cpt";
-    uvar_fnameChkPoint = XLALMalloc(strlen(fname)+1);
-    if (uvar_fnameChkPoint == NULL) {
-      fprintf(stderr, "error allocating memory [HierarchSearchGCT.c %d]\n" , __LINE__);
-      return(HIERARCHICALSEARCH_EMEM);
-    }
-    strcpy(uvar_fnameChkPoint, fname);
-  }
-#endif
 
   /* write the log file */
   if ( uvar_log )
@@ -1255,13 +1219,6 @@ int MAIN( int argc, char *argv[]) {
   /* ################## loop over SKY coarse-grid points ################## */
   while(thisScan.state != STATE_FINISHED)
     {
-#ifdef EAH_BOINC
-      SHOW_PROGRESS_RESERVE(dopplerpos.Alpha, dopplerpos.Delta,
-                    skyGridCounter * usefulParams.nf1dot + f1dotGridCounter,
-                    thisScan.numSkyGridPoints * usefulParams.nf1dot, uvar_Freq, uvar_FreqBand);
-
-      fprintf(stderr, "\n%d", skyGridCounter);
-#endif
       /*------------- calculate F-Statistic for each segment --------------*/
 
       /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
@@ -1303,12 +1260,9 @@ int MAIN( int argc, char *argv[]) {
         while ( if3dot < usefulParams.nf3dot ) {
 
           /* show progress */
-#ifndef EAH_BOINC
           LogPrintf( LOG_NORMAL, "Coarse grid sky:%d/%d f1dot:%d/%d f2dot:%d/%d f3dot:%d/%d\n",
                      skyGridCounter+1, thisScan.numSkyGridPoints, ifdot+1, usefulParams.nf1dot, if2dot+1, usefulParams.nf2dot, if3dot+1, usefulParams.nf3dot );
-#else
-	  fprintf(stderr, ".");
-#endif
+
 
           /* ------------- Set up coarse grid --------------------------------------*/
           coarsegrid.freqlength = (UINT4) (binsFstat1);
@@ -1318,7 +1272,7 @@ int MAIN( int argc, char *argv[]) {
 
           /* allocate memory for coarsegrid */
           coarsegrid.TwoF = (REAL4 *)LALRealloc( coarsegrid.TwoF, coarsegrid.length * sizeof(REAL4));
-	  if ( uvar_computeBSGL ) {
+          if ( uvar_computeBSGL ) {
             coarsegrid.TwoFX = (REAL4 *)LALRealloc( coarsegrid.TwoFX, coarsegrid.numDetectors * coarsegrid.length * sizeof(REAL4));
           }
           coarsegrid.Uindex = (UINT4 *)LALRealloc( coarsegrid.Uindex, coarsegrid.length * sizeof(UINT4));
@@ -1790,12 +1744,6 @@ int MAIN( int argc, char *argv[]) {
         } /* ########## End of loop over coarse-grid f2dot values (if2dot) ########## */
         ifdot++;  /* Increment ifdot counter BEFORE SET_GCT_CHECKPOINT */
 
-#ifdef EAH_BOINC
-        SHOW_PROGRESS_RESERVE(dopplerpos.Alpha, dopplerpos.Delta,
-                      skyGridCounter * usefulParams.nf1dot + ifdot,
-                      thisScan.numSkyGridPoints * usefulParams.nf1dot, uvar_Freq, uvar_FreqBand);
-#endif
-
         if ( !uvar_outputTiming ) {
           SET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, semiCohToplist3,skyGridCounter*usefulParams.nf1dot+ifdot, TRUE);
         }
@@ -1817,9 +1765,6 @@ int MAIN( int argc, char *argv[]) {
       }
 
     } /* ######## End of while loop over 1st stage SKY coarse-grid points ############ */
-#ifdef EAH_BOINC
-  fprintf(stderr, "\n");
-#endif
   /*---------------------------------------------------------------------------------*/
 
   /* now that we have the final toplist, translate all pulsar parameters to correct reftime */
@@ -2000,13 +1945,6 @@ int MAIN( int argc, char *argv[]) {
       }
   }
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
-
-#ifdef EAH_BOINC
-  SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
-                skyGridCounter * usefulParams.nf1dot,
-                skyGridCounter * usefulParams.nf1dot,
-                uvar_Freq, uvar_FreqBand);
-#endif
 
   clear_gct_checkpoint (uvar_fnameChkPoint);
 
