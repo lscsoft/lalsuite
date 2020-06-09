@@ -230,7 +230,7 @@ static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS 
 	 * it waits for a period and tries again, up to 5 times. This is an attempt to get around overloading
 	 * of file servers when many jobs are run at the time same */
 	LALStatus status;
-	UINT4 max_tries=5,tries=0,delay=5;
+	UINT4 max_tries=7,tries=0,delay=5;
 	memset(&status,0,sizeof(status));
 	LALFrStream *stream = NULL;
 	REAL8TimeSeries *out = NULL;
