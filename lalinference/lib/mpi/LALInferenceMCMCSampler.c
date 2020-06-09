@@ -166,9 +166,11 @@ static void install_resume_handler(int checkpoint_exit)
       /* Install a periodic alarm that will trigger a checkpoint */
       int sigretcode=0;
       struct sigaction sa;
+      int checkpoint_time=3600; /* default 1 hour */
       if (checkpoint_exit)
       {
           sa.sa_sigaction=catch_interrupt;
+          checkpoint_time=3*3600;
       }
       else
       {
@@ -180,7 +182,7 @@ static void install_resume_handler(int checkpoint_exit)
       /* Condor sends SIGUSR2 to checkpoint and continue */
       sigretcode=sigaction(SIGUSR2,&sa,NULL);
       if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGUSR2.\n");
-      checkpoint_timer.it_interval.tv_sec=60*60; /* Default timer every hour */
+      checkpoint_timer.it_interval.tv_sec=checkpoint_time;
       checkpoint_timer.it_interval.tv_usec=0;
       checkpoint_timer.it_value=checkpoint_timer.it_interval;
       setitimer(ITIMER_VIRTUAL,&checkpoint_timer,NULL);
