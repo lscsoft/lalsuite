@@ -1,6 +1,6 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
-%define release 3
+%define release 1
 %define configure_opts %{nil}
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
@@ -236,6 +236,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Jun 08 2020 Adam Mercer <adam.mercer@ligo.org> 1.5.5-1
+- Update for 1.5.5
+
 * Fri Dec 20 2019 Adam Mercer <adam.mercer@ligo.org> 1.5.4-1
 - snglcoinc: fix rate_factors for more than two detector cases
 
