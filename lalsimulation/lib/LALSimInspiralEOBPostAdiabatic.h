@@ -305,6 +305,16 @@ XLALSimInspiralEOBPAHamiltonianDerivative(
     LALDict *LALParams
 );
 
+// REAL8
+// XLALSimInspiralEOBPAFluxWrapper(
+//     REAL8 r,
+//     REAL8 prstar,
+//     REAL8 pphi,
+//     REAL8 omega,
+//     REAL8 H,
+//     LALDict *LALParams
+// );
+
 REAL8
 XLALSimInspiralEOBPANewtonianj0(
     REAL8 r
