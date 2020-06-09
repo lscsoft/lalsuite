@@ -9,7 +9,8 @@
 {% set url = "file://@TARBALL@" %}
 {% set sha256 = "@SHA256@" %}
 
-{% set lal_version = "6.21.0" %}
+{% set lal_version = "7.0.0" %}
+{% set framel_version = "8.39.2" %}
 {% set framecpp_version = "2.5.5" %}
 
 package:
@@ -33,11 +34,11 @@ requirements:
   host:
     - lal >={{ lal_version }}a0
     - ldas-tools-framecpp >={{ framecpp_version }}
-    - libframel
+    - libframel >={{ framel_version }}
   run:
     - lal >={{ lal_version }}a0
     - ldas-tools-framecpp >={{ framecpp_version }}
-    - libframel
+    - libframel >={{ framel_version }}
 
 test:
   source_files:
@@ -81,7 +82,7 @@ outputs:
         - lal >={{ lal_version }}a0
         - {{ pin_subpackage('lalframe', exact=True) }}
         - ldas-tools-framecpp >={{ framecpp_version }}
-        - libframel
+        - libframel >={{ framel_version }}
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}a0
