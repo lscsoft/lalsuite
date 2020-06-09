@@ -84,7 +84,6 @@ char**global_argv;
 int global_argc;
 #endif /* EAH_BOINC */
 
-#define BLOCKSRNGMED    101     /**< Default running median window size */
 #define FSTART          100.0	/**< Default Start search frequency */
 #define FBAND           0.0  /**< Default search band */
 #define FDOT            0.0       /**< Default value of first spindown */
@@ -94,9 +93,6 @@ int global_argc;
 #define DF2DOT          0.0       /**< Default range of second spindown parameter */
 #define DF3DOT          0.0       /**< Default range of third spindown parameter */
 #define SKYREGION       "allsky" /**< default sky region to search over -- just a single point*/
-#define DTERMS          8    /**< Default number of dirichlet kernel terms for calculating Fstat */
-
-/**< Default number of dirichlet kernel terms for calculating Fstat */
 #define MISMATCH        0.3       /**< Default for metric grid maximal mismatch value */
 #define DALPHA          0.001   /**< Default resolution for isotropic or flat grids */
 #define DDELTA          0.001   /**< Default resolution for isotropic or flat grids */
@@ -424,15 +420,15 @@ int MAIN( int argc, char *argv[]) {
   REAL8 uvar_refTime = 0;
   INT4 uvar_nCand1 = NCAND1; /* number of candidates to be followed up from first stage */
 
-  INT4 uvar_blocksRngMed = BLOCKSRNGMED;
+  INT4 uvar_blocksRngMed = FstatOptionalArgsDefaults.runningMedianWindow;
 
   REAL8 uvar_tStack = 0;
   INT4  uvar_nStacksMax = 1;
   CHAR *uvar_segmentList = NULL;	/**< ALTERNATIVE: file containing a pre-computed segment list of tuples (startGPS endGPS duration[h] NumSFTs) */
 
-  INT4 uvar_Dterms = DTERMS;
-  INT4 uvar_DtermsRecalc = DTERMS;
-  INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
+  INT4 uvar_Dterms = FstatOptionalArgsDefaults.Dterms;
+  INT4 uvar_DtermsRecalc = FstatOptionalArgsDefaults.Dterms;
+  INT4 uvar_SSBprecision = FstatOptionalArgsDefaults.SSBprec;
   INT4 uvar_gammaRefine = 1;
   INT4 uvar_gamma2Refine = 1;
   INT4 uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
@@ -453,8 +449,8 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_outputTiming = NULL;
   CHAR *uvar_outputTimingDetails = NULL;
 
-  int uvar_FstatMethod = FMETHOD_DEMOD_BEST;
-  int uvar_FstatMethodRecalc = FMETHOD_DEMOD_BEST;
+  int uvar_FstatMethod = FstatOptionalArgsDefaults.FstatMethod;
+  int uvar_FstatMethodRecalc = FstatOptionalArgsDefaults.FstatMethod;
 
   timingInfo_t XLAL_INIT_DECL(timing);
 
