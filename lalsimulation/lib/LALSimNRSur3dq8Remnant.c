@@ -276,6 +276,9 @@ int XLALNRSur3dq8Remnant(
 
     // Loaded surrogate data
     const AlignedSpinRemnantFitData *sur_data = &__lalsim_NRSur3dq8Remnant_data;
+    if (!sur_data->setup) {
+        XLAL_ERROR(XLAL_EFAILED, "Error loading surrogate data.\n");
+    }
 
     // assign size to dummy_worker
     gsl_vector *dummy_worker = gsl_vector_alloc(sur_data->params_dim);

@@ -274,6 +274,9 @@ int XLALNRSur7dq4Remnant(
 
     // Loaded surrogate data
     const PrecessingRemnantFitData *sur_data = &__lalsim_NRSur7dq4Remnant_data;
+    if (!sur_data->setup) {
+        XLAL_ERROR(XLAL_EFAILED, "Error loading surrogate data.\n");
+    }
 
     // assign size to dummy_worker
     gsl_vector *dummy_worker = gsl_vector_alloc(sur_data->params_dim);
