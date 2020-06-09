@@ -675,8 +675,6 @@ def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, force_flow=None):
         scale_factor = 20./force_flow
     return scale_factor
 
-def create_pfn_tuple(filename,protocol='file://',site='local'):
-    return( (os.path.basename(filename),protocol+os.path.abspath(filename),site) )
 
 def mchirp_from_components(m1, m2):
     return (m1*m2)**(3.0/5.0) / (m1+m2)**(1.0/5.0)
@@ -705,12 +703,11 @@ def extract_approx(cp):
     return approximant
 
 class LALInferencePipelineDAG(pipeline.CondorDAG):
-    def __init__(self,cp,site='local'):
+    def __init__(self,cp):
         self.subfiles=[]
         self.config=cp
         self.engine=get_engine_name(cp)
         self.EngineNode=chooseEngineNode(self.engine)
-        self.site=site
         if cp.has_option('paths','basedir'):
             self.basepath=cp.get('paths','basedir')
         else:
@@ -770,21 +767,18 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         self.datafind_job.add_opt('url-type','file')
         # If running on OSG use its datafind server
         if cp.has_option('analysis','osg') and cp.getboolean('analysis','osg'):
-            self.datafind_job.add_opt('server','datafind.ligo.org')
+            self.datafind_job.add_opt('server','datafind.ligo.org:443')
         if cp.has_option('condor','accounting_group'):
             self.datafind_job.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
         if cp.has_option('condor','accounting_group_user'):
             self.datafind_job.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
         self.datafind_job.set_sub_file(os.path.abspath(os.path.join(self.basepath,'datafind.sub')))
         self.preengine_job = EngineJob(self.config, os.path.join(self.basepath,'prelalinference.sub'),self.logpath,engine='lalinferencedatadump',ispreengine=True,sharedfs=True)
-        self.preengine_job.set_grid_site('local')
         self.preengine_job.set_universe('vanilla')
         if self.config.getboolean('analysis','roq'):
             self.computeroqweights_job = ROMJob(self.config,os.path.join(self.basepath,'computeroqweights.sub'),self.logpath)
-            self.computeroqweights_job.set_grid_site('local')
         if self.config.has_option('condor','bayesline'):
             self.bayesline_job = BayesLineJob(self.config,os.path.join(self.basepath,'bayesline.sub'),self.logpath)
-            self.bayesline_job.set_grid_site('local')
         self.bayeswavepsd_job={}
         self.bayeswavepost_job={}
         if self.config.has_option('condor','bayeswave'):
@@ -798,29 +792,21 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             for a in permutations(self.ifos,N):
                 ifocombos.append(a)
         for ifos in ifocombos:
-            self.engine_jobs[ifos] = EngineJob(self.config, os.path.join(self.basepath,'engine_%s.sub'%(reduce(lambda x,y:x+y, map(str,ifos)))),self.logpath,engine=self.engine, site=site)
+            self.engine_jobs[ifos] = EngineJob(self.config, os.path.join(self.basepath,'engine_%s.sub'%(reduce(lambda x,y:x+y, map(str,ifos)))),self.logpath,engine=self.engine)
         if "summarypages" in self.config.get('condor','resultspage'):
             self.results_page_job = PESummaryResultsPageJob(self.config, os.path.join(self.basepath,'resultspage.sub'),self.logpath)
-            self.results_page_job.set_grid_site('local')
         else:
             self.results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspage.sub'),self.logpath)
-            self.results_page_job.set_grid_site('local')
             self.cotest_results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspagecoherent.sub'),self.logpath)
-            self.cotest_results_page_job.set_grid_site('local')
         if self.config.has_section('spin_evol'):
             self.evolve_spins_job=EvolveSamplesJob(self.config, os.path.join(self.basepath,'evolve_spins.sub'),self.logpath,dax=self.is_dax())
         if self.engine=='lalinferencemcmc':
             self.combine_job = CombineMCMCJob(self.config,os.path.join(self.basepath,'combine_files.sub'),self.logpath)
-            self.combine_job.set_grid_site('local')
             self.merge_job = MergeJob(self.config,os.path.join(self.basepath,'merge_runs.sub'),self.logpath,engine='mcmc')
-            self.merge_job.set_grid_site('local')
         else:
             self.merge_job = MergeJob(self.config,os.path.join(self.basepath,'merge_runs.sub'),self.logpath,engine='nest')
-            self.merge_job.set_grid_site('local')
         self.coherence_test_job = CoherenceTestJob(self.config,os.path.join(self.basepath,'coherence_test.sub'),self.logpath)
-        self.coherence_test_job.set_grid_site('local')
         self.gracedbjob = GraceDBJob(self.config,os.path.join(self.basepath,'gracedb.sub'),self.logpath)
-        self.gracedbjob.set_grid_site('local')
         self.mapjob = SkyMapJob(cp, os.path.join(self.basepath,'skymap.sub'), self.logpath)
         self.plotmapjob = PlotSkyMapJob(cp, os.path.join(self.basepath,'plotskymap.sub'),self.logpath)
         self.postruninfojob=PostRunInfoJob(self.config,os.path.join(self.basepath,'postrungdbinfo.sub'),self.logpath)
@@ -1074,13 +1060,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                               ligolw_utils.load_filename(self.config.get('input','injection-file'),
                                                   contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler)) )
             events=[Event(SimInspiral=inj) for inj in injTable]
-            self.add_pfn_cache([create_pfn_tuple(self.config.get('input','injection-file'))])
         # SimBurst Table
         if self.config.has_option('input','burst-injection-file'):
             injfile=self.config.get('input','burst-injection-file')
             injTable=lsctables.SimBurstTable.get_table(ligolw_utils.load_filename(injfile,contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
             events=[Event(SimBurst=inj) for inj in injTable]
-            self.add_pfn_cache([create_pfn_tuple(self.config.get('input','burst-injection-file'))])
         # LVAlert CoincInspiral Table
         gid = None
         if self.config.has_option('input','gid') or self.config.has_option('input', 'coinc-xml'):
@@ -1263,12 +1247,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         enginenodes[0].set_psd_files()
         enginenodes[0].set_snr_file()
         if self.config.getboolean('analysis','coherence-test') and len(enginenodes[0].ifos)>1:
-            if self.site!='local':
-                zipfilename='postproc_'+evstring+'.tar.gz'
-            else:
-                zipfilename=None
             if "summarypages" not in self.config.get('condor','resultspage'):
-                respagenode=self.add_results_page_node(resjob=self.cotest_results_page_job,outdir=pagedir,parent=respage_parent,gzip_output=zipfilename,ifos=enginenodes[0].ifos)
+                respagenode=self.add_results_page_node(resjob=self.cotest_results_page_job,outdir=pagedir,parent=respage_parent,ifos=enginenodes[0].ifos)
                 respagenode.set_psd_files(enginenodes[0].get_psd_files())
                 respagenode.set_snr_file(enginenodes[0].get_snr_file())
                 if os.path.exists(self.basepath+'/coinc.xml'):
@@ -1281,7 +1261,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 par_mergenodes=[]
                 for ifo in enginenodes[0].ifos:
                     co_merge_job = MergeJob(self.config,os.path.join(self.basepath,'merge_runs_%s.sub'%(ifo)),self.logpath,engine='nest')
-                    co_merge_job.set_grid_site('local')
                     cotest_nodes=[]
                     for i in range(Npar):
                         cot_node,bwpsdnodes,bwpostnodes=self.add_engine_node(event,bwpsd=bwpsdnodes,bwpost=bwpostnodes,ifos=[ifo],co_test=True)
@@ -1305,13 +1284,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     par_mergenodes.append(pmergenode)
                     presultsdir=os.path.join(pagedir,ifo)
                     mkdirs(presultsdir)
-                    if self.site!='local':
-                        pzipfilename='postproc_'+evstring+'_'+ifo+'.tar.gz'
-                    else:
-                        pzipfilename=None
 
                     mkdirs(os.path.join(self.basepath,'coherence_test'))
-                    subresnode=self.add_results_page_node(outdir=presultsdir,parent=pmergenode, gzip_output=pzipfilename,ifos=ifo)
+                    subresnode=self.add_results_page_node(outdir=presultsdir,parent=pmergenode,ifos=ifo)
                     subresnode.set_psd_files(cotest_nodes[0].get_psd_files())
                     subresnode.set_snr_file(cotest_nodes[0].get_snr_file())
                     if os.path.exists(self.basepath+'/coinc.xml'):
@@ -1336,7 +1311,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 par_mergenodes=[]
                 for ifo in enginenodes[0].ifos:
                     co_merge_job = MergeJob(self.config,os.path.join(self.basepath,'merge_runs_%s.sub'%(ifo)),self.logpath,engine='nest')
-                    co_merge_job.set_grid_site('local')
                     cotest_nodes=[]
                     for i in range(Npar):
                         cot_node,bwpsdnodes,bwpostnodes=self.add_engine_node(event,bwpsd=bwpsdnodes,bwpost=bwpostnodes,ifos=[ifo],co_test=True)
@@ -1360,10 +1334,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     par_mergenodes.append(pmergenode)
                     presultsdir=os.path.join(pagedir,ifo)
                     mkdirs(presultsdir)
-                    if self.site!='local':
-                        pzipfilename='postproc_'+evstring+'_'+ifo+'.tar.gz'
-                    else:
-                        pzipfilename=None
+
 
                 respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=respage_parent,gzip_output=None,ifos=enginenodes[0].ifos,
                     evstring=evstring, coherence=True)
@@ -1391,11 +1362,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     respagenode.set_coinc_file(os.path.join(self.basepath, 'coinc.xml'), gid)
 
         else:
-            if self.site!='local':
-                zipfilename='postproc_'+evstring+'.tar.gz'
-            else:
-                zipfilename=None
-            # Note: Disabled gzip_output for now. Possibly need it for future Pegasus use
 
             if "summarypages" in self.config.get('condor','resultspage'):
                 respagenode=self.add_results_page_node_pesummary(outdir=pagedir,parent=respage_parent,gzip_output=None,ifos=enginenodes[0].ifos,
@@ -2212,9 +2178,8 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
 
     cp : configparser object
     sharedfs: If False, will map files to local paths on execute node
-
     """
-    def __init__(self, cp=None, sharedfs=False):
+    def __init__(self, cp=None, sharedfs=False, requires_frames=True):
         self.transfer_files=not sharedfs
         self.requirements=[]
         if not cp:
@@ -2225,7 +2190,19 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
         if cp.has_option('condor','sharedfs'):
             if cp.getboolean('condor','sharedfs'):
                 self.transfer_files = False
+        if cp.has_option('analysis','osg'):
+            # We must allow file transfer for OSG running
+            if self.transfer_files:
+                self.osg=cp.getboolean('analysis','osg')
+            else:
+                self.osg=False
+        else:
+            self.osg=False
         self.add_condor_cmd('getenv','True')
+        # Only remove the job from the queue if it completed successfully
+        # self.add_condor_cmd('on_exit_remove','(ExitBySignal == False) && (ExitCode == 0)')
+        # Unless max_retries is exceeded
+        self.add_condor_cmd('max_retries','5')
         # Add requirements from the configparser condor section
         if cp.has_option('condor','requirements'):
             self.add_requirement(cp.get('condor','requirements'))
@@ -2238,7 +2215,6 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
             self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
             self.add_requirement('(TARGET.'+cp.get('condor','queue')+' =?= True)')
         if self.transfer_files:
-            # No transfer executable, so that conda package can link correctly
             self.add_condor_cmd('transfer_executable','False')
             self.add_condor_cmd('transfer_input_files','$(macroinput)')
             self.add_condor_cmd('transfer_output_files','$(macrooutput)')
@@ -2252,6 +2228,24 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
             # Sync logs back to run directory
             self.add_condor_cmd('stream_output', True)
             self.add_condor_cmd('stream_error', True)
+        else:
+            self.add_condor_cmd('should_transfer_files','NO')
+
+        if self.osg: # Job will run on OSG nodes
+            # Remote site must have LIGO frames
+            if requires_frames:
+                self.add_requirement('HAS_LIGO_FRAMES =?= True')
+            # This line forces the job to run on OSG (remove after finished testing to allow local running
+            # self.add_requirement('IS_GLIDEIN=?=True')
+        else: # Job will run on local cluster
+            # DESIRED_Sites="nogrid" forces to not run on OSG
+            self.add_condor_cmd('+DESIRED_Sites','"nogrid"')
+        # FlockLocal allows running on local cluster if submitted from an ldas-osg node
+        self.add_condor_cmd('+flock_local',True)
+
+        #    self.add_requirement('TARGET.FileSystemDomain=="ligo"')
+
+        self.add_condor_cmd('use_x509userproxy','True')
 
 
     def add_requirement(self,requirement):
@@ -2299,7 +2293,7 @@ class LALInferenceDAGNode(pipeline.CondorDAGNode):
         self.add_checkpoint_macro(filename)
         super(LALInferenceDAGNode,self).add_checkpoint_file(filename)
     def add_file_opt(self, opt, filename, file_is_output_file=False):
-        # The code option needs the path as seen inside singularity, i.e. relative to basedir
+        # The code option needs the path relative to basedir
         relfile=os.path.relpath(filename,start=self.job().get_config('paths','basedir'))
         # Use the basename here if working in local filesystem mode
         if self.job().transfer_files:
@@ -2319,70 +2313,13 @@ class LALInferenceDAGNode(pipeline.CondorDAGNode):
         if self.job().transfer_files:
             self.add_macro('macrooutputremaps', outputremaps)
             self.add_input_file(os.path.join(self.job().get_config('paths','basedir'),'lalinf_touch_output'))
+            for f in self.job().get_input_files():
+                self.add_input_file(f)
         super(LALInferenceDAGNode, self).finalize()
 
 
-class SingularityJob(LALInferenceDAGJob):
-    """
-    Wrapper class for running jobs via a singularity image
-    """
-    # Hard-coded frame location in cvmfs
-    CVMFS_FRAMES="/cvmfs/oasis.opensciencegrid.org/ligo/frames/"
-    image=None
-    def __init__(self, cp, *args, **kwargs):
-        super(SingularityJob, self).__init__(cp)
-        # Dir in which the DAG will run
-        # Execute from the basedir so all paths can be resolved
-        if cp.has_option('analysis','singularity'):
-            self.singularity = cp.getboolean('analysis','singularity')
-        else:
-            self.singularity = False
-        if cp.has_option('analysis','osg'):
-            self.osg=cp.getboolean('analysis','osg')
-        else:
-            self.osg=False
-        if self.osg and not self.singularity:
-            raise Exception("Running on the OSG requires singularity=True in [analysis] section of ini file")
-        self.basedir = cp.get('paths','basedir')
-        #self.add_condor_cmd('initialdir',self.basedir)
-        if not self.singularity:
-            self.add_condor_cmd('getenv','true')
-            return
-        if cp.has_option('condor','singularity'):
-            self.singularity_path = cp.get('condor','singularity')
-        else:
-            self.singularity_path = 'singularity' # must be in $PATH
-        if cp.has_option('singularity','image'):
-            self.image = cp.get('singularity','image')
-        else:
-            print("ERROR: You requested a singularity run but did not specify \
-                an image file in the [singularity] section of the config file")
-            sys.exit(-1)
-        # If running on the OSG with real data, use frames from CVMFS
-        if cp.has_option('lalinference','fake-cache') or not self.osg:
-            extra_paths=""
-        else:
-            extra_paths="--bind {cvmfs_frames}".format(cvmfs_frames = self.CVMFS_FRAMES)
-            self.add_condor_cmd('+SingularityBindCVMFS','True')
-            self.add_condor_cmd('use_x509userproxy','True')
-            self.add_requirement('HAS_LIGO_FRAMES =?= TRUE')
-        if cp.has_option('analysis','roq') and cp.getboolean('analysis','roq'):
-            extra_paths+=" --bind {roqpath}".format(roqpath=cp.get('paths','roq_b_matrix_directory'))
-
-        if self.osg:
-            self.add_condor_cmd('+OpenScienceGrid','True')
-            self.add_requirement('IS_GLIDEIN=?=True')
-            # Add requested sites if specified
-            if cp.has_option('condor','desired-sites'):
-                self.add_condor_cmd('+DESIRED_Sites',cp.get('condor','desired-sites'))
-        if self.singularity:
-            self.add_requirement('HAS_SINGULARITY =?= TRUE')
-            self.add_condor_cmd('+SingularityImage','"{0}"'.format(self.image))
-            self.add_condor_cmd('transfer_executable','False')
-
-
 class EngineJob(LALInferenceDAGJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
-    def __init__(self,cp,submitFile,logdir,engine,ispreengine=False,sharedfs=False,site=None, *args, **kwargs):
+    def __init__(self,cp,submitFile,logdir,engine,ispreengine=False,sharedfs=False, *args, **kwargs):
         self.ispreengine=ispreengine
         self.engine=engine
         basepath=cp.get('paths','basedir')
@@ -2405,10 +2342,6 @@ class EngineJob(LALInferenceDAGJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
         pipeline.AnalysisJob.__init__(self,cp)
         LALInferenceDAGJob.__init__(self, cp, sharedfs=sharedfs)
 
-        try:
-            hostname=socket.gethostbyaddr(socket.gethostname())[0]
-        except:
-            hostname='Unknown'
         if cp.has_option('engine','resume'):
             self.resume=True
             # These are taken from James's example
@@ -2417,10 +2350,7 @@ class EngineJob(LALInferenceDAGJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
             self.add_opt('checkpoint-exit-code','77')
         else:
             self.resume=False
-        if site:
-            self.set_grid_site(site)
-            if site!='local':
-                self.set_executable_installed(False)
+
         # Set the options which are always used
         self.set_sub_file(os.path.abspath(submitFile))
         # 500 MB should be enough for anyone
@@ -2444,21 +2374,29 @@ class EngineJob(LALInferenceDAGJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
                 self.machine_count=str(1)
                 self.machine_memory=str(1024) # default value if the user did not specify something
                 self.mpi_task_count=self.machine_count
-            #self.add_condor_cmd('machine_count',machine_count)
-            #self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
-            if hostname=='pcdev1.phys.uwm.edu':
-                self.add_requirement('CAN_RUN_MULTICORE')
-                self.add_condor_cmd('+RequiresMultipleCores','True')
+
             self.add_condor_cmd('request_cpus',self.machine_count)
             self.add_condor_cmd('environment','OMP_NUM_THREADS='+str(int(ceil(int(self.machine_count)/int(self.mpi_task_count)))))
             self.add_condor_cmd('request_memory',str(float(self.machine_count)*float(self.machine_memory)))
         if self.engine=='lalinferencenest':
             self.add_condor_cmd('request_memory','4000') # 4GB RAM for high SNR BNS
+
+        self.add_condor_cmd('stream_output', True)
+        self.add_condor_cmd('stream_error', True)
+
         if cp.has_section(self.engine):
             if not ispreengine:
                 self.add_ini_opts(cp,self.engine)
-        if  cp.has_section('engine'):
-            self.add_ini_opts(cp,'engine')
+
+        # Add [engine] options, convering file-related ones to local paths
+        for k in cp.options('engine'):
+            arg=cp.get('engine',k)
+            if os.path.exists(arg) and self.transfer_files:
+                self.add_input_file(arg)
+                self.add_opt(k, os.path.join('.', os.path.basename(arg)))
+            else:
+                self.add_opt(k,arg)
+
         self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
         self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).err'))
         # For LALInferenceNest demand only 1 thread (to be tuned later)
@@ -2469,12 +2407,6 @@ class EngineJob(LALInferenceDAGJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
             if cp.has_option('resultspage','email'):
                 self.add_condor_cmd('notify_user',cp.get('resultspage','email'))
 
-    def set_grid_site(self,site=None):
-        """
-        Over-load base class method to choose condor universe properly
-        """
-        self.set_universe('vanilla')
-        pipeline.CondorDAGJob.set_grid_site(self,site)
 
 class EngineNode(LALInferenceDAGNode):
     new_id = itertools.count()
@@ -2538,15 +2470,9 @@ class EngineNode(LALInferenceDAGNode):
         return ''.join(map(str,self.ifos))
 
     def set_psd_files(self):
-        #if node.psdspath is not None:
-        try:
-            #bambi store the outfile in fileroot
-            pathroot=self.fileroot
-        except:
-            #mcmc and nest in postfile
-            pathroot=self.posfile
-            if pathroot[-3:]=='.00':
-                pathroot=pathroot[:-3]
+        pathroot=self.posfile
+        if pathroot[-3:]=='.00':
+            pathroot=pathroot[:-3]
         st=""
         for i in self.ifos:
             tmpst="%s%s-PSD.dat,"%(pathroot,i)
@@ -2619,8 +2545,6 @@ class EngineNode(LALInferenceDAGNode):
             self.add_parent(parent)
             df_output=parent.get_output()
             self.set_cache(df_output,ifo)
-            #self.cachefiles[ifo]=parent.get_output_files()[0]
-            #self.add_input_file(self.cachefiles[ifo])
             self.timeslides[ifo]=timeslide
             self.channels[ifo]=channelname
             return 1
@@ -2630,21 +2554,13 @@ class EngineNode(LALInferenceDAGNode):
         """
         Add a cache file from LIGODataFind. Based on same method from pipeline.AnalysisNode
         """
-        #print 'Adding cache files %s'%(str(filename))
-        if isinstance(filename,str): # A normal lal cache file
-            self.cachefiles[ifo]=filename
-            self.add_input_file(filename)
-        elif isinstance(filename,list): # A list of LFNs (for DAX mode)
-            self.add_var_opt('glob-frame-data',' ')
-            if len(filename) == 0:
-                raise pipeline.CondorDAGNodeError(
-                    "LDR did not return any LFNs for query: check ifo and frame type")
-            for lfn in filename:
-                self.lfns.append(lfn)
+        self.cachefiles[ifo]=filename
+        self.add_input_file(filename)
 
     def finalize(self):
         if not self.__finaldata:
             self._finalize_ifo_data()
+
         super(EngineNode, self).finalize()
 
     def _finalize_ifo_data(self):
@@ -2665,7 +2581,6 @@ class EngineNode(LALInferenceDAGNode):
                     self.add_file_opt('%s-psd'%(ifo),self.psds[ifo])
                 else:
                     self.add_var_opt('%s-psd'%(ifo),self.psds[ifo])
-                #self.add_input_file(self.psds[ifo])
             if any(self.timeslides): self.add_var_opt('%s-timeslide'%(ifo),self.timeslides[ifo])
 
         """ The logic here is the following:
@@ -2710,15 +2625,7 @@ class EngineNode(LALInferenceDAGNode):
                 self.psdlength=self.maxlength
         self.add_var_opt('psdlength',self.psdlength)
         self.add_var_opt('seglen',self.seglen)
-        for lfn in self.lfns:
-            a, b, c, d = lfn.split('.')[0].split('-')
-            t_start = int(c)
-            t_end = int(c) + int(d)
-            data_end=max(self.GPSstart+self.psdlength,trig_time+2)
-            if( t_start <= data_end and t_end>self.GPSstart):
-            #if (t_start <= (self.GPSstart+self.psdlength or t_start <=trig_time+2 or t_end >=) \
-            #    and ( (t_end <= (self.GPSstart+self.psdlength )) or (t_end <= trig_time+2) ))  :
-                self.add_input_file(lfn)
+
         self.__finaldata=True
 
 class LALInferenceNestNode(EngineNode):
@@ -3561,7 +3468,9 @@ class PlotSkyMapNode(LALInferenceDAGNode):
         self.finalized=True
         self.add_input_file(self.fitsfile)
         self.add_file_arg(self.fitsfile)
-        self.add_file_opt('output',self.outfile, file_is_output_file=True)
+        # This is a var opt because the option name "output" results in the file
+        # being added to macrooutput twice if add_file_opt is used.
+        self.add_var_opt('output',self.outfile)
         super(PlotSkyMapNode,self).finalize()
 
 class PostRunInfoJob(LALInferenceDAGSharedFSJob, pipeline.CondorDAGJob,pipeline.AnalysisJob):
