@@ -75,7 +75,7 @@ def weighted_average_seg(seg1, weight1, seg2, weight2):
 #
 
 
-def cluster_events(events, testfunc, clusterfunc, sortfunc = None, bailoutfunc = None, verbose = False):
+def cluster_events(events, testfunc, clusterfunc, sortkeyfunc = None, bailoutfunc = None, verbose = False):
 	"""
 	Cluster the events in an event list.  testfunc will be passed a
 	pair of events in random order, and must return 0 (or False) if
@@ -85,9 +85,9 @@ def cluster_events(events, testfunc, clusterfunc, sortfunc = None, bailoutfunc =
 	or modify one or the other of its parameters in place and return
 	it.
 
-	If sortfunc and bailoutfunc are both not None (if one is provided
-	the other must be as well), the events will be sorted into
-	"increasing" order using sortfunc as a comparison operator, and
+	If sortkeyfunc and bailoutfunc are both not None (if one is
+	provided the other must be as well), the events will be sorted into
+	"increasing" order using sortkeyfunc as a sort key operator, and
 	then only pairs of events for which bailoutfunc returns 0 (or
 	False) will be considered for clustering.
 
@@ -104,8 +104,8 @@ def cluster_events(events, testfunc, clusterfunc, sortfunc = None, bailoutfunc =
 		else:
 			progress = None
 
-		if sortfunc is not None:
-			events.sort(sortfunc)
+		if sortkeyfunc is not None:
+			events.sort(key = sortkeyfunc)
 
 		# outer_did_cluster indicates if the event list changes on
 		# this pass
@@ -114,25 +114,27 @@ def cluster_events(events, testfunc, clusterfunc, sortfunc = None, bailoutfunc =
 		while i < len(events):
 			if progress is not None:
 				progress.update(i)
-			if events[i] is not None:
-				# inner_did_cluster indicates if events[i]
-				# has changed
-				inner_did_cluster = False
-				for j, event_j in enumerate(events[i + 1:], 1):
-					if event_j is not None:
-						if not testfunc(events[i], event_j):
-							events[i] = clusterfunc(events[i], event_j)
-							events[i + j] = None
-							inner_did_cluster = True
-						elif (sortfunc is not None) and bailoutfunc(events[i], event_j):
-							break
-				if inner_did_cluster:
-					outer_did_cluster = True
-					# don't advance until events[i]
-					# stops changing
-					continue
-			# events[i] has not changed
-			i += 1
+			if events[i] is None:
+				# this event has been clustered away
+				i += 1
+				continue
+			# inner_did_cluster indicates if events[i] has
+			# changed
+			inner_did_cluster = False
+			for j, event_j in enumerate(events[i + 1:], 1):
+				if event_j is not None:
+					if not testfunc(events[i], event_j):
+						events[i] = clusterfunc(events[i], event_j)
+						events[i + j] = None
+						inner_did_cluster = True
+					elif (sortkeyfunc is not None) and bailoutfunc(events[i], event_j):
+						break
+			if inner_did_cluster:
+				outer_did_cluster = True
+				# don't advance until events[i] stops
+				# changing
+			else:
+				i += 1
 		del progress
 		# repeat until we do a pass without the listing changing
 		if not outer_did_cluster:

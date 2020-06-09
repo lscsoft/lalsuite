@@ -8,7 +8,7 @@ expected_exception = 0;
 ## check module load
 disp("checking module load ...");
 lal;
-assert(exist("lal", "var"));
+assert(exist("lal"));
 lal_c_si = LAL_C_SI;
 lal_180_pi = LAL_180_PI;
 disp("PASSED module load");
@@ -275,6 +275,9 @@ assert(all(swig_lal_test_copyin_array1(a1in, 2.5) == a1out));
 a2in = int32([3,2; 7,6; 12,10]);
 a2out = a2in * 15;
 assert(all(swig_lal_test_copyin_array2(a2in, 15) == a2out));
+a3in = {lal.LIGOTimeGPS(1234.5); lal.LIGOTimeGPS(678.9)};
+a3out = {a3in{1} * 3; a3in{2} * 3};
+assert(all(cellfun(@(x, y) x == y, lal.swig_lal_test_copyin_array3(a3in, 3), a3out)));
 try
   swig_lal_test_viewin_array1([0,0,0,0], 0);
   expected_exception = 1;
@@ -285,6 +288,9 @@ try
   expected_exception = 1;
 end_try_catch
 assert(!expected_exception);
+clear a3in;
+clear a3out;
+LALCheckMemoryLeaks();
 disp("PASSED fixed and dynamic arrays typemaps")
 
 ## check input views of string array structs
@@ -1143,3 +1149,6 @@ disp("PASSED LALUnit operations");
 
 ## passed all tests!
 disp("PASSED all tests");
+if exist("swig_exit")
+   swig_exit;
+endif

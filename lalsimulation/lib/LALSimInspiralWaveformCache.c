@@ -634,7 +634,7 @@ void XLALDestroySimInspiralWaveformCache(LALSimInspiralWaveformCache *cache)
         XLALDestroyREAL8TimeSeries(cache->hcross);
         XLALDestroyCOMPLEX16FrequencySeries(cache->hptilde);
         XLALDestroyCOMPLEX16FrequencySeries(cache->hctilde);
-
+        if(cache->LALpars) XLALDestroyDict(cache->LALpars);
         XLALFree(cache);
     }
 }
@@ -757,7 +757,8 @@ static int StoreTDHCache(LALSimInspiralWaveformCache *cache,
     cache->f_ref = f_ref;
     cache->r = r;
     cache->i = i;
-    cache->LALpars = LALpars;
+    if(cache->LALpars) XLALDestroyDict(cache->LALpars);
+    cache->LALpars = XLALDictDuplicate(LALpars);
     cache->approximant = approximant;
     cache->frequencies = NULL;
 
@@ -827,7 +828,8 @@ static int StoreFDHCache(LALSimInspiralWaveformCache *cache,
     cache->f_max = f_max;
     cache->r = r;
     cache->i = i;
-    cache->LALpars = LALpars;
+    if(cache->LALpars) XLALDestroyDict(cache->LALpars);
+    cache->LALpars = XLALDictDuplicate(LALpars);
     cache->approximant = approximant;
 
     XLALDestroyREAL8Sequence(cache->frequencies);
@@ -1363,38 +1365,93 @@ int XLALSimInspiralChooseFDWaveformSequence(
     					if( !checkTidesZero(lambda1, lambda2) )
     							ABORT_NONZERO_TIDES(LALpars);
 
-    					/* Activate or not the debug info. */
-    					#ifndef PHENOMXHMDEBUG  // Defined at compilation time. ./configure --prefix=... CFLAGS='-g -D PHENOMXHMDEBUG'
-    					  #define DEBUG 0
-    					#else
-    						#define DEBUG 1 //print debugging info
-    					#endif
 
-              REAL8 f_max = frequencies->data[frequencies->length-1];
-              REAL8 deltaF = frequencies->data[1]-frequencies->data[0];
-
-    					/* Return hp and hc for positive frequencies. Only negatives modes contribute to positive frequencies.  */
-    					/* The negative frquencies contribution is the complex conjugate of the positive one. */
-
-    			    /* Take input/default value for the threshold of the Multibanding. If = 0 then do not use Multibanding. */
-    			    REAL8 resTest  = XLALSimInspiralWaveformParamsLookupPhenomXHMThresholdMband(LALpars);
-
-    					/* If total mass is very high (>500 solar masses), we only have a few points in the ringdown, interpolation is not efficient, do not use Multibanding */
-    					REAL8 Mtot = (m1 + m2)/LAL_MSUN_SI;
-    					if(resTest!=0 && Mtot > 500){
-    						resTest = 0.;
-    					}
-
-    					if(resTest == 0.){ //Do not use multibanding
-    						ret = XLALSimIMRPhenomXHM2(hptilde, hctilde, m1, m2, S1z, S2z, f_min, f_max, deltaF, distance, inclination, phiRef, f_ref, LALpars);
-    					}
-    					else{ // Use multibanding
-    						ret = XLALSimIMRPhenomXHM(hptilde, hctilde, m1, m2, S1z, S2z, f_min, f_max, deltaF, distance, inclination, phiRef, f_ref, LALpars);
-    					}
+            	ret = XLALSimIMRPhenomXHMFrequencySequence(hptilde, hctilde, frequencies,
+                m1, m2, S1z, S2z, distance, inclination, phiRef, f_ref, LALpars);
 
     					if (ret == XLAL_FAILURE)
                  XLAL_ERROR(XLAL_EFUNC);
     				 	break;
+
+        case IMRPhenomXP:
+						/* Waveform-specific sanity checks */
+						if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
+						{
+							/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
+							ABORT_NONDEFAULT_FRAME_AXIS(LALpars);
+						}
+						if(!XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars))
+						{
+							/* Default is (2,2) or l=2 modes. */
+							ABORT_NONDEFAULT_MODES_CHOICE(LALpars);
+						}
+						if( !checkTidesZero(lambda1, lambda2) )
+						{
+							ABORT_NONZERO_TIDES(LALpars);
+						}
+						if(f_ref==0.0)
+						{
+							/* Default reference frequency is minimum frequency */
+							f_ref = f_min;
+						}
+
+						/* Call the main waveform driver. Note that we pass the full spin vectors
+							 with XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame being
+							 effectively called in the initialization of the pPrec struct
+						*/
+						ret = XLALSimIMRPhenomXPFrequencySequence(
+							hptilde, hctilde,
+              frequencies,
+							m1, m2,
+							S1x, S1y, S1z,
+							S2x, S2y, S2z,
+							distance, inclination,
+							phiRef, f_ref, LALpars
+						);
+						if (ret == XLAL_FAILURE)
+						{
+							XLAL_ERROR(XLAL_EFUNC);
+						}
+						break;
+
+      case IMRPhenomXPHM:
+					/* Waveform-specific sanity checks */
+					if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
+					{
+						/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
+						ABORT_NONDEFAULT_FRAME_AXIS(LALpars);
+					}
+					if(!XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars))
+					{
+						/* Default is (2,2) or l=2 modes. */
+						ABORT_NONDEFAULT_MODES_CHOICE(LALpars);
+					}
+					if( !checkTidesZero(lambda1, lambda2) )
+					{
+						ABORT_NONZERO_TIDES(LALpars);
+					}
+					// if(f_ref==0.0)
+					// {
+					// 	/* Default reference frequency is minimum frequency */
+					// 	f_ref = f_min;
+					// }
+
+				ret = XLALSimIMRPhenomXPHMFrequencySequence(
+						hptilde, hctilde,
+            frequencies,
+						m1, m2,
+						S1x, S1y, S1z,
+						S2x, S2y, S2z,
+						distance, inclination,
+						phiRef, f_ref, LALpars
+					);
+
+					if (ret == XLAL_FAILURE)
+					{
+						XLAL_ERROR(XLAL_EFUNC);
+					}
+					break;
+
         case IMRPhenomNSBH:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )

@@ -164,7 +164,7 @@ pkginclude_HEADERS = \
 	LALSimulationVCSInfo.h \
 	LALSimulationVCSInfoHeader.h \
 	LALSimUniversalRelations.h \
-        LALSimInspiralEOS.h \
+	LALSimInspiralEOS.h \
 	LALSimInspiralFDPrecAngles.h
 
 noinst_HEADERS = \
@@ -205,6 +205,8 @@ noinst_HEADERS = \
 	LALSimIMRPhenomX_intermediate.h \
 	LALSimIMRPhenomX_ringdown.c \
 	LALSimIMRPhenomX_ringdown.h \
+	LALSimIMRPhenomX_precession.c \
+	LALSimIMRPhenomX_precession.h \
 	LALSimIMRPhenomXHM.h \
 	LALSimIMRPhenomXHM_internals.c \
 	LALSimIMRPhenomXHM_internals.h \
@@ -219,6 +221,8 @@ noinst_HEADERS = \
 	LALSimIMRPhenomXHM_structs.h \
 	LALSimIMRPhenomXHM_multiband.c \
 	LALSimIMRPhenomXHM_multiband.h \
+	LALSimIMRPhenomXPHM.h \
+	LALSimIMRPhenomXPHM.c \
 	LALSimIMRPhenomHM.h \
 	LALSimIMRPhenomNSBH.h \
 	LALSimIMRPhenomP.c \
@@ -227,8 +231,8 @@ noinst_HEADERS = \
 	LALSimIMRPhenomInternalUtils.h \
 	LALSimIMRSEOBNRROMUtilities.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.h \
-        LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.h \
-        LALSimBHNSRemnantFits.h \
+	LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.h \
+	LALSimBHNSRemnantFits.h \
 	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \
 	LALSimIMRSpinAlignedEOBHcapDerivative.c \
 	LALSimIMRSpinAlignedEOBHcapDerivativeOptimized.c \
@@ -256,7 +260,7 @@ noinst_HEADERS = \
 	LALSimInspiraldEnergyFlux.c \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
-        LALSimNeutronStarEOSSpectralDecomposition.c \
+	LALSimNeutronStarEOSSpectralDecomposition.c \
 	LALSimIMRSpinEOBHamiltonian.h \
 	LALSimIMRPrecessingNRSur.h \
 	LALSimNRSurrogateUtilities.h \
@@ -264,9 +268,12 @@ noinst_HEADERS = \
 	LALSimRingdownCW.h \
 	LALSimNRHybSurUtilities.h \
 	LALSimIMRNRHybSur3dq8.h \
-        LALSimInspiralFDPrecAngles_internals.c \
-        LALSimInspiralFDPrecAngles_internals.h \
-        $(END_OF_LIST)
+	LALSimInspiralFDPrecAngles_internals.c \
+	LALSimInspiralFDPrecAngles_internals.h \
+	LALSimNRSurRemnantUtils.h \
+	LALSimNRSur7dq4Remnant.h \
+	LALSimNRSur3dq8Remnant.h
+	$(END_OF_LIST)
 
 
 lib_LTLIBRARIES = liblalsimulation.la
@@ -287,9 +294,10 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRSEOBNRv2ROMDoubleSpinHI.c \
 	LALSimIMRSEOBNRv2ChirpTime.c \
 	LALSimIMRSEOBNRv4ROM.c \
+	LALSimIMRSEOBNRv4HMROM.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.c \
-        LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.c \
-        LALSimBHNSRemnantFits.c \
+	LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.c \
+	LALSimBHNSRemnantFits.c \
 	LALSimIMRSEOBNRv4TSurrogate.c \
 	LALSimIMREOBNRv2HMROM.c \
 	LALSimIMRLackeyTidal2013.c \
@@ -335,7 +343,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralTaylorLength.c \
 	LALSimInspiralWaveformCache.c \
 	LALSimInspiralWaveformTaper.c \
-  LALSimInspiralTEOBResumROM.c \
+	LALSimInspiralTEOBResumROM.c \
 	LALSimIMRNRWaveforms.c \
 	LALSimulation.c \
 	LALSimNeutronStarEOS.c \
@@ -366,7 +374,10 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRNRHybSur3dq8.c \
 	gsl_interpolation_integ_eval.h \
 	gsl_interpolation_steffen.c \
-	LALSimInspiralFDPrecAngles.c
+	LALSimInspiralFDPrecAngles.c \
+	LALSimNRSurRemnantUtils.c \
+	LALSimNRSur7dq4Remnant.c \
+	LALSimNRSur3dq8Remnant.c
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \

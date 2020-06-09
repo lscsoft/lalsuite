@@ -1,3 +1,9 @@
+lalsimulation (2.0.0-1) unstable; urgency=low
+
+  * Update for 2.0.0
+
+ -- Duncan Macleod <duncan.macleod@ligo.org>  Thu, 19 Mar 2020 11:07:00 -0000
+
 lalsimulation (1.10.1-1) unstable; urgency=low
 
   * Add a fix to aligned-spin limit

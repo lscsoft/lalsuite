@@ -25,7 +25,6 @@
 
 
 import itertools
-import warnings
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -54,15 +53,6 @@ class offsetvector(dict):
 	0
 	>>> not any(x.values())	# check for "zero-lag"
 	False
-
-	The motivation for introducing this class, instead of using
-	dictionaries, is that it provides a number of tools for comparing
-	offset vectors besides strict value-for-value equality.  For
-	example the Python cmp() operation compares two offset vectors by
-	the relative offsets between instruments rather than their absolute
-	offsets, whereas the == operation compares two offset vectors by
-	demanding strict equality.  There is also the ability to check if
-	one offset vector is a subset of another one.
 	"""
 	@property
 	def refkey(self):
@@ -169,40 +159,6 @@ class offsetvector(dict):
 		20.0
 		"""
 		return max(self.values()) - min(self.values())
-
-	def __cmp__(self, other):
-		"""
-		Compare two offset vectors by their relative offsets.  The
-		return value is 0 if the relative offsets are all equal,
-		nonzero otherwise.
-
-		This method is deprecated and will be removed in a future
-		release because the cmp() method has been removed from
-		Python 3.
-
-		Instead of cmp(a, b), use (a.deltas != b.deltas).
-
-		Example:
-
-		>>> a = offsetvector({"H1": 0.0, "H2": 0.0, "L1": 0.0})
-		>>> b = offsetvector({"H1": 10.0, "H2": 10.0, "L1": 10.0})
-		>>> # the cmp() method is only present on Python 2:
-		>>> import sys
-		>>> if sys.version_info.major <= 2:
-		...     assert cmp(a, b) == 0
-		>>> a == b
-		False
-		>>> # cmp() is deprecated, use this instead
-		>>> a.deltas == b.deltas
-		True
-
-		Note that cmp() and testing for equality are different
-		tests!  The equality test returns False because the offset
-		vectors are not identical, however the cmp() function
-		returns 0 because the relative offsets are all equal.
-		"""
-		warnings.warn("Support for calling cmp(a, b) where a and b are instances of offesetvector is deprecated. Use a.deltas != b.deltas instead.")
-		return cmp(self.deltas, other.deltas)
 
 	def contains(self, other):
 		"""

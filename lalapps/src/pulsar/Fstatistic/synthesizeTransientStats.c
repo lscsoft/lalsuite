@@ -610,8 +610,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 {
   /* generate log-string for file-output, containing cmdline-options + code VCS version info */
   char *vcs;
-  if ( (vcs = XLALGetVersionString(0)) == NULL ) {	  /* short VCS version string */
-    XLALPrintError ( "%s: XLALGetVersionString(0) failed with errno=%d.\n", __func__, xlalErrno );
+  if ( (vcs = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) == NULL ) {	  /* short VCS version string */
+    XLALPrintError ( "%s: XLALVCSInfoString failed with errno=%d.\n", __func__, xlalErrno );
     XLAL_ERROR ( XLAL_EFUNC );
   }
   char *cmdline;

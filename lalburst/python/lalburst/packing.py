@@ -87,11 +87,27 @@ class Bin(object):
 		self.size += other.size
 		return self
 
-	def __cmp__(self, other):
-		"""
-		Compare two Bin objects by their sizes.
-		"""
-		return cmp(self.size, other.size)
+	#
+	# Compare two Bin objects by their sizes.
+	#
+
+	def __lt__(self, other):
+		return self.size < other.size
+
+	def __le__(self, other):
+		return self.size <= other.size
+
+	def __eq__(self, other):
+		return self.size == other.size
+
+	def __ne__(self, other):
+		return self.size != other.size
+
+	def __ge__(self, other):
+		return self.size >= other.size
+
+	def __gt__(self, other):
+		return self.size > other.size
 
 	def __repr__(self):
 		"""

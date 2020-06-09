@@ -223,6 +223,8 @@ extern "C" {
 
 /**
  * Enum that specifies the PN approximant to be used in computing the waveform.
+ * Please add new approximants at the end of the list, so as to prevent the
+ * values changing for existing approximants and breaking ABI compatibility.
  */
 typedef enum tagApproximant {
    TaylorT1, 		/**< Time domain Taylor approximant in which the energy and flux are both kept
@@ -359,6 +361,8 @@ typedef enum tagApproximant {
                                 * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv4_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4
                                 * @remarks Implemented in lalsimulation (frequency domain). */
+   SEOBNRv4HM_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4hm                                                     
+		    * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv4_ROM_NRTidal, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4 [Bohe et al, arXiv:1611.03703] with tidal phase corrections [Dietrich et al, arXiv:1706.02969
                                 * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv4_ROM_NRTidalv2, /**< based on NRTidalv2; https://arxiv.org/abs/1905.06011.
@@ -383,7 +387,7 @@ typedef enum tagApproximant {
                          * @remarks Implemented in lalsimulation (frequency domain). */
    IMRPhenomD_NRTidal,   /**< Uses arxiv:1706.02969 to upgrad IMRPhenomD to a tidal approximant
                          * @remarks Implemented in lalsimulation (frequency domain). */
-   IMRPhenomD_NRTidalv2, /**< NRTidalv2; https://arxiv.org/abs/1905.06011 
+   IMRPhenomD_NRTidalv2, /**< NRTidalv2; https://arxiv.org/abs/1905.06011
                             * @remarks Implemented in lalsimulation (time domain and frequency domain).*/
    IMRPhenomNSBH,   /**< NSBH Tidal model.
                          * @remarks Implemented in lalsimulation (frequency domain). */
@@ -419,12 +423,14 @@ typedef enum tagApproximant {
    SEOBNRv4HM,	/**< Spin nonprecessing EOBNR model v4 with higher modes, PhysRevD.98.084028 [arXiv:1803.10701]
                      * @remarks Implemented in lalsimulation (time domain). */
    NRHybSur3dq8,        /**< Time domain, aligned-spin, higher modes, hybridized. Paper arxiv:1812.07865 */
-    IMRPhenomXAS, 		/**< Frequency domain, non-precessing phenomenological IMR waveform model ([arXiv: 20XY.ZZZZZ]). */
-    IMRPhenomXHM, 		/**< Frequency domain, non-precessing phenomenological IMR waveform model with subdominant modes ([arXiv:2001.10914 [gr-qc]]) and accelerated evaluation through adapted grids (arXiv:2001.10897 [gr-qc]) */
+   IMRPhenomXAS, 		/**< Frequency domain, non-precessing phenomenological IMR waveform model ([arXiv: 20XY.ZZZZZ]). */
+   IMRPhenomXHM, 		/**< Frequency domain, non-precessing phenomenological IMR waveform model with subdominant modes ([arXiv:2001.10914 [gr-qc]]) and accelerated evaluation through adapted grids (arXiv:2001.10897 [gr-qc]) */
    IMRPhenomPv3,    /**< Frequency domain (generic spins) inspiral-merger-ringdown templates of Hannam et al., arXiv:1308.3271 [gr-qc]. Based on IMRPhenomD, arXiv:1508.07250 and arXiv:1508.07253. But updated the precession angles to use the ones in arXiv 1703.03967.
                          * @remarks Implemented in lalsimulation (frequency domain).  */
    IMRPhenomPv3HM,    /**< Frequency domain (generic spins) inspiral-merger-ringdown templates of Khan et al. PhysRevD.101.024056. Based on IMRPhenomHM arXiv:1708.00404. And the precession angles of IMRPhenomPv3 1809.10113 and arXiv 1703.03967.
                        * @remarks Implemented in lalsimulation (frequency domain).  */
+   IMRPhenomXP, 		/**< Frequency domain, precessing phenomenological IMR waveform model. */
+   IMRPhenomXPHM, 	/**< Frequency domain, precessing with subdominant modes phenomenological IMR waveform model. */
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
@@ -527,7 +533,7 @@ int XLALSimInspiralChooseWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcr
 /* DEPRECATED */
 
 /* general waveform switching mode generation routines */
-SphHarmTimeSeries *XLALSimInspiralChooseTDModes(REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 f_min, REAL8 f_ref, REAL8 r, LALDict* LALpars, int lmax, Approximant approximant);
+SphHarmTimeSeries *XLALSimInspiralChooseTDModes(REAL8 phiRef, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 f_min, REAL8 f_ref, REAL8 r, LALDict* LALpars, int lmax, Approximant approximant);
 SphHarmTimeSeries *XLALSimInspiralModesTD(REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_ref, REAL8 r, LALDict *LALpars, int lmax, Approximant approximant);
 COMPLEX16TimeSeries *XLALSimInspiralChooseTDMode(REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_ref, REAL8 r, REAL8 lambda1, REAL8 lambda2, LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralTestGRParam *nonGRparams, int amplitudeO, int phaseO, int l, int m, Approximant approximant);
 

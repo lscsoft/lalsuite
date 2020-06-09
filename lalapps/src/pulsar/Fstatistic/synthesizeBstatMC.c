@@ -206,7 +206,7 @@ int main(int argc,char *argv[])
     return EXIT_FAILURE;
   }
 
-  XLAL_CHECK_MAIN ( (version_string = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (version_string = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
 
   /* ---------- Initialize code-setup ---------- */
   XLAL_CHECK_MAIN ( InitCode ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );

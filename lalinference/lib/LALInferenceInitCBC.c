@@ -757,7 +757,14 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--grtest-parameters dchi0,..,dxi1,..,dalpha1,..) template will assume deformations in the corresponding phase coefficients.\n\
     (--ppe-parameters aPPE1,....     template will assume the presence of an arbitrary number of PPE parameters. They must be paired correctly.\n\
     (--modeList lm,l-m...,lm,l-m)           List of modes to be used by the model. The chosen modes ('lm') should be passed as a ',' seperated list.\n\
-    (--phenomXHMMband float)     Threshold parameter for the Multibanding of IMRPhenomXHM. By default set to 10^-3. If set to 0 then do not use multibanding.\n\
+    (--phenomXHMMband float)     Threshold parameter for the Multibanding of the non-precessing hlm modes in IMRPhenomXHM and IMRPhenomXPHM. If set to 0 then do not use multibanding.\n\
+                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
+    (--phenomXPHMMband float)    Threshold parameter for the Multibanding of the Euler angles in IMRPhenomXPHM. If set to 0 then do not use multibanding.\n\
+                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
+    (--phenomXPFinalSpinMod int) Change version for the final spin model used in IMRPhenomXP/IMRPhenomXPHM.\n\
+                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
+    (--phenomXPrecVersion int)   Change version of the Euler angles for the twisting-up of IMRPhenomXP/IMRPhenomXPHM.\n\
+                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
 \n\
     ----------------------------------------------\n\
     --- Starting Parameters ----------------------\n\
@@ -1525,6 +1532,29 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
       XLALSimInspiralWaveformParamsInsertPhenomXHMThresholdMband(model->LALpars, threshold);
       fprintf(stdout,"Template will use phenomXHMMband %s.\n",ppt->value);
   }
+
+  /* Pass threshold for PhenomXPHM Multibanding of the Euler angles. */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--phenomXPHMMband"))) {
+      REAL8 threshold = atof(ppt->value);
+      XLALSimInspiralWaveformParamsInsertPhenomXPHMThresholdMband(model->LALpars, threshold);
+      fprintf(stdout,"Template will use phenomXPHMMband %s.\n",ppt->value);
+  }
+
+  /* Version for the final spin model to use in IMRPhenomXP/IMRPhenomXPHM. */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--phenomXPFinalSpinMod"))) {
+      REAL8 afversion = atoi(ppt->value);
+      XLALSimInspiralWaveformParamsInsertPhenomXPFinalSpinMod(model->LALpars, afversion);
+      fprintf(stdout,"Template will use PhenomXPFinalSpinMod %s.\n",ppt->value);
+  }
+
+  /* Version of the Euler angles in the twisting-up of IMRPhenomXP/IMRPhenomXPHM. */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--phenomXPrecVersion"))) {
+      REAL8 eulerangleversion = atoi(ppt->value);
+      XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(model->LALpars, eulerangleversion);
+      fprintf(stdout,"Template will use PhenomXPrecVersion %s.\n",ppt->value);
+  }
+
+
 
 
   fprintf(stdout,"\n\n---\t\t ---\n");

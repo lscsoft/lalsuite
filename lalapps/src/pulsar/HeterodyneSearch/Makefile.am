@@ -90,7 +90,7 @@ test_scripts += test_heterodyne_pulsar.sh
 test_helpers +=
 
 # These tests require FRAME
-if !FRAME
+if !FRAMEL
 skip_tests += test_heterodyne_pulsar.sh
 endif
 

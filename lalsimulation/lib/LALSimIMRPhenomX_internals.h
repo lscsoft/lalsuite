@@ -49,11 +49,6 @@ extern "C" {
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-  //#include <complex.h>
-
-/* GSL */
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_spline.h>
 
 /* LAL */
 #include <lal/LALStdlib.h>

@@ -1,3 +1,21 @@
+lalinference (2.0.0-1) unstable; urgency=low
+
+  * Update for 2.0.0
+
+ -- Duncan Macleod <duncan.macleod@ligo.org>  Thu, 19 Mar 2020 11:08:00 -0000
+
+lalinference (1.11.7-1) unstable; urgency=low
+
+  * O3b point release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 21 Feb 2020 18:28:14 -0700
+
+lalinference (1.11.6-1) unstable; urgency=low
+
+  * O3b point release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 13 Feb 2020 08:24:22 -0700
+
 lalinference (1.11.5-1) unstable; urgency=low
 
   * O3b point release

@@ -124,7 +124,7 @@ int main(void){
   XLALDestroyREAL8TimeSeries(E1y);
   XLALDestroyREAL8TimeSeries(E1z);
 
-  SphHarmTimeSeries *Hlms_modes=XLALSimInspiralChooseTDModes(dT, m1_SI, m2_SI, s1x, s1y, s1z, s2x, s2y, s2z, f_low, f_ref, dist_SI, params, LMAX, apprx);
+  SphHarmTimeSeries *Hlms_modes=XLALSimInspiralChooseTDModes(0.,dT, m1_SI, m2_SI, s1x, s1y, s1z, s2x, s2y, s2z, f_low, f_ref, dist_SI, params, LMAX, apprx);
 
   UINT4 lmax=XLALSphHarmTimeSeriesGetMaxL(Hlms_orb);
   COMPLEX16TimeSeries *hlm_tmp=XLALSphHarmTimeSeriesGetMode(Hlms_orb,2,2);

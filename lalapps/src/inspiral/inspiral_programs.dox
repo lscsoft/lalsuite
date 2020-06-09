@@ -1,5 +1,5 @@
 /**
-\if LALINSPIRAL
+\cond LALINSPIRAL
 
 \defgroup lalapps_inspiral_programs Inspiral Search Programs
 \ingroup lalapps_inspiral
@@ -57,5 +57,5 @@ that bank into smaller banks.
  - \ref inspfrinj.c
  - \ref splitbank.c
 
-\endif
+\endcond
 */

@@ -27,10 +27,6 @@
  *
  */
 
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_linalg.h>
-
 #include "LALSimIMRPhenomX_intermediate.h"
 
 

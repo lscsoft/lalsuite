@@ -67,9 +67,7 @@ python/lalinference_review_test
 python/lalinference_tiger_pipe
 python/lalinference/__init__.py
 python/lalinference/_bayespputils.so
-python/lalinference/_distance.so
 python/lalinference/_lalinference*
-python/lalinference/_moc.so
 python/lalinference/git_version.py
 python/lalinference/lalinference.py
 lib/config.h
@@ -104,12 +102,6 @@ test/LALInferencePriorTest
 test/LALInferenceProposalTest
 test/LALInferenceTest
 test/LALInferenceXMLTest
-test/test_bayestar_lattice_tmpltbank.xml
-test/test_bayestar_littlehope.xml
-test/test_bayestar_prune_neighborhood_tmpltbank.xml
-test/test_bayestar_realize_coincs.xml
-test/test_bayestar_sample_model_psd.xml
-test/test_bayestar_sim_to_tmpltbank.xml
 test/test_cubic_interp
 test/test_vot.xml
 test/test.hdf5

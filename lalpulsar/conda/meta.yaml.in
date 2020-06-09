@@ -31,14 +31,18 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
+    - libgomp  # [linux]
+    - llvm-openmp  # [osx]
     - make
-    - pkg-config
+    - pkg-config >=0.18.0
     - swig >={{ swig_version }}
   host:
     - cfitsio
     - fftw * nompi*
     - gsl
     - lal >={{ lal_version }}a0 fftw*
+    - libgomp  # [linux]
+    - llvm-openmp  # [osx]
   run:
     - cfitsio
     - fftw
@@ -94,6 +98,7 @@ outputs:
         - pathlib  # [py<34]
         - pytest >=4.0.0a0
       source_files:
+        - python/Makefile
         - test/python
       commands:
         - LAL_TEST_PKGDATADIR="${LALPULSAR_DATADIR}" python -m pytest -rs -v --junit-xml=junit.xml test/python

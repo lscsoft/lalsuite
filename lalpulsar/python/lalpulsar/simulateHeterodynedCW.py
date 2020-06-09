@@ -217,11 +217,7 @@ class HeterodynedCWSimulator(object):
             self.__hetglitchphase = lalpulsar.HeterodynedPulsarGetGlitchPhase(self.hetpar.PulsarParameters(),
                                                                               self.gpstimes,
                                                                               self.__hetSSBdelay,
-<<<<<<< HEAD
-                                                                              self.__hetBSBDelay)
-=======
                                                                               self.__hetBSBdelay)
->>>>>>> 74741fd6eabc7c498e71ff015264645cd329f39d
         else:
             self.__hetglitchphase = None
 
@@ -356,10 +352,6 @@ class HeterodynedCWSimulator(object):
             self.__ephem = self.hetpar['EPHEM']
         else:
             self.__ephem = 'DE405' if ephem is None else ephem
-
-        if self.__ephem not in ['DE200', 'DE405', 'DE421', 'DE430']:
-            raise ValueError("Unknown ephemeris version '{}' has been "
-                             "given".format(self.__ephem))
 
     @property
     def units(self):

@@ -10,14 +10,23 @@ export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
 export GSL_LIBS="-L${PREFIX}/lib -lgsl"
 export CFITSIO_LIBS="-L${PREFIX}/lib -lcfitsio"
 
+# configure
 ./configure \
-	--prefix="${PREFIX}" \
-	--enable-swig-iface \
+	--disable-doxygen \
+	--disable-python \
 	--disable-swig-octave \
 	--disable-swig-python \
-	--disable-python \
-	--enable-silent-rules \
-	--enable-cfitsio
-make -j ${CPU_COUNT}
-make -j ${CPU_COUNT} check
-make install
+	--enable-cfitsio \
+	--enable-openmp \
+	--enable-swig-iface \
+	--prefix="${PREFIX}" \
+;
+
+# build
+make -j ${CPU_COUNT} V=1 VERBOSE=1
+
+# test
+make -j ${CPU_COUNT} V=1 VERBOSE=1 check
+
+# install
+make -j ${CPU_COUNT} V=1 VERBOSE=1 install

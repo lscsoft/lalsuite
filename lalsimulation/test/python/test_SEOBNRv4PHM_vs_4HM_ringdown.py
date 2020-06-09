@@ -76,7 +76,7 @@ def get_SEOBNRv4PHM_modes(q, M, chi1, chi2, f_start, distance, deltaT):
     m1SI = lal.MSUN_SI * q * M / (1.0 + q)
     m2SI = lal.MSUN_SI * M / (1.0 + q)
     approx = ls.SEOBNRv4PHM
-    hlm = ls.SimInspiralChooseTDModes(
+    hlm = ls.SimInspiralChooseTDModes(0.,
         deltaT,
         m1SI,
         m2SI,
@@ -163,4 +163,5 @@ def test_aligned_spin_limit_ringdown(q):
 # -- run the tests ------------------------------
 
 if __name__ == "__main__":
-    sys.exit(pytest.main(args=[__file__] + sys.argv[1:] + ["-v"]))
+    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-SEOBNRv4PHM_vs_4HM_ringdown.xml"]
+    sys.exit(pytest.main(args=[__file__] + args))

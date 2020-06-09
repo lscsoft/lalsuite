@@ -6,13 +6,21 @@ set -e
 # build, so we don't want to use NDEBUG
 export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
 
+# configure
 ./configure \
-	--prefix="${PREFIX}" \
-	--enable-swig-iface \
+	--disable-doxygen \
+	--disable-python \
 	--disable-swig-octave \
 	--disable-swig-python \
-	--disable-python \
-	--enable-silent-rules
-make -j ${CPU_COUNT}
-make -j ${CPU_COUNT} check
-make install
+	--enable-swig-iface \
+	--prefix="${PREFIX}" \
+;
+
+# build
+make -j ${CPU_COUNT} V=1 VERBOSE=1
+
+# test
+make -j ${CPU_COUNT} V=1 VERBOSE=1 check
+
+# install
+make -j ${CPU_COUNT} V=1 VERBOSE=1 install

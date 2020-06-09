@@ -8,21 +8,20 @@ export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
 export CFITSIO_LIBS="-L${PREFIX}/lib -lcfitsio"
 export GSL_LIBS="-L${PREFIX}/lib -lgsl"
 
-mkdir -p _build
-pushd _build
-
 # configure
-${SRC_DIR}/configure \
-	--prefix=${PREFIX} \
+./configure \
+	--disable-doxygen \
 	--enable-cfitsio \
 	--enable-help2man \
-	--enable-openmp
+	--enable-openmp \
+	--prefix=${PREFIX} \
+;
 
 # build
-make -j ${CPU_COUNT}
+make -j ${CPU_COUNT} V=1 VERBOSE=1
 
-# check
-make -j ${CPU_COUNT} check SKIP_TESTS_THAT_FAIL_UNDER_CONDA=1
+# test
+make -j ${CPU_COUNT} V=1 VERBOSE=1 check
 
 # install
-make -j ${CPU_COUNT} install
+make -j ${CPU_COUNT} V=1 VERBOSE=1 install

@@ -579,8 +579,8 @@ int MAIN( int argc, char *argv[]) {
 
   /* assemble version string */
   CHAR *VCSInfoString;
-  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
-    XLALPrintError("XLALGetVersionString(0) failed.\n");
+  if ( (VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) == NULL ) {
+    XLALPrintError("XLALVCSInfoString failed.\n");
     return HIERARCHICALSEARCH_ESUB;
   }
 

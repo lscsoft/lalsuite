@@ -18,12 +18,12 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 .PHONY: swig-octave-clean-local
 .PHONY: swig-octave-install-hook
 .PHONY: swig-octave-uninstall-hook
-.PHONY: check-octave-manual
+.PHONY: run-octave
 .PHONY: swig-python-all-local
 .PHONY: swig-python-clean-local
 .PHONY: swig-python-install-hook
 .PHONY: swig-python-uninstall-hook
-.PHONY: check-python-manual
+.PHONY: run-python
 
 header-links: header-links-local
 
@@ -64,7 +64,7 @@ swig_iface = swig$(PACKAGE).i
 swig_preproc_flags = -Werror -Wextra -w201,302 -I$(top_builddir)/include -includeall -ignoremissing -xml -xmllite -MP -MD -MT $@
 swig_flags = -Werror -Wextra -w314,506,511 -I$(top_builddir)/include $(SWIG_CPPFLAGS) $(LAL_SYSTEM_INCLUDES) -MP -MD -MT $@
 swig_cppflags = -shared -I. -I$(top_builddir)/include $(SWIG_CPPFLAGS)
-swig_ldflags = -module -avoid-version -version-info 0:0:0 $(SWIG_LDFLAGS)
+swig_ldflags = -module -avoid-version -version-info 0:0:0 $(SWIG_LDFLAGS) $(AM_LDFLAGS)
 swig_libtoolflags = --tag=disable-static
 
 swig_ifacedir = $(pkgincludedir)
@@ -193,8 +193,8 @@ swig-octave-uninstall-hook:
 
 test_scripts += SWIGTest$(PACKAGE_NAME)Octave.m
 
-check-octave-manual: $(octexec_LTLIBRARIES)
-	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) $(OCTAVE) $(srcdir)/SWIGTest$(PACKAGE_NAME)Octave.m
+run-octave: $(octexec_LTLIBRARIES)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) $(OCTAVE) $(RUNARGS)
 
 endif # SWIG_BUILD_OCTAVE
 
@@ -259,8 +259,8 @@ swig-python-uninstall-hook:
 
 test_scripts += SWIGTest$(PACKAGE_NAME)Python.py
 
-check-python-manual: $(pkgpyexec_LTLIBRARIES)
-	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) $(PYTHON) $(srcdir)/SWIGTest$(PACKAGE_NAME)Python.py
+run-python: $(pkgpyexec_LTLIBRARIES)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) $(PYTHON) $(RUNARGS)
 
 endif # SWIG_BUILD_PYTHON
 

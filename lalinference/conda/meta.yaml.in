@@ -10,14 +10,13 @@
 {% set sha256 = "@SHA256@" %}
 
 # dependencies
-{% set chealpix_version = "3.30.0" %}
 {% set lal_version = "6.21.0" %}
 {% set lalburst_version = "1.5.3" %}
 {% set lalframe_version = "1.5.0" %}
 {% set lalinspiral_version = "1.10.0" %}
 {% set lalmetaio_version = "1.6.0" %}
 {% set lalpulsar_version = "1.18.2" %}
-{% set lalsimulation_version = "1.10.0" %}
+{% set lalsimulation_version = "2.0.0" %}
 {% set swig_version = "3.0.9" %}
 
 package:
@@ -41,7 +40,6 @@ requirements:
     - pkg-config
     - swig >={{ swig_version }}
   host:
-    - chealpix >={{ chealpix_version }}a0
     - gsl
     - lal >={{ lal_version }}a0 fftw*
     - lalframe >={{ lalframe_version }}a0
@@ -55,7 +53,6 @@ requirements:
     - llvm-openmp  # [osx]
     - openmpi
   run:
-    - chealpix >={{ chealpix_version }}
     - gsl
     - lal >={{ lal_version }}a0
     - lalframe >={{ lalframe_version }}a0
@@ -100,17 +97,13 @@ outputs:
       build:
         - {{ compiler('c') }}
         - help2man
-        - llvm-openmp  # [osx]
         - make
         - pkg-config
         - swig >={{ swig_version }}
       host:
-        - chealpix >={{ chealpix_version }}
         - gsl
         - {{ pin_subpackage('lalinference', exact=True) }}
         - libcblas=*=*netlib
-        - libgomp  # [linux]
-        - llvm-openmp  # [osx]
         - python
         - numpy
         # run requirements needed for help2man
@@ -119,16 +112,15 @@ outputs:
         - h5py
         - lscsoft-glue >=1.54.1
         - matplotlib-base >=1.2.0
-        - python-lal >={{ lal_version }}
-        - python-lalmetaio >={{ lalmetaio_version }}
-        - python-lalsimulation >={{ lalsimulation_version }}
-        - python-lalburst >={{ lalburst_version }}
-        - python-lalinspiral >={{ lalinspiral_version }}
-        - python-lalpulsar >={{ lalpulsar_version }}
+        - python-lal >={{ lal_version }}a0
+        - python-lalmetaio >={{ lalmetaio_version }}a0
+        - python-lalsimulation >={{ lalsimulation_version }}a0
+        - python-lalburst >={{ lalburst_version }}a0
+        - python-lalinspiral >={{ lalinspiral_version }}a0
+        - python-lalpulsar >={{ lalpulsar_version }}a0
         - scipy >=0.9.0
       run:
         - astropy >=1.1.1
-        - chealpix >={{ chealpix_version }}
         - gsl
         - healpy >=1.9.1
         - h5py
@@ -141,7 +133,6 @@ outputs:
         - lalpulsar >={{ lalpulsar_version }}a0  # [linux]
         - {{ pin_subpackage('lalinference', exact=True) }}
         - libcblas  # [linux]
-        - llvm-openmp  # [osx]
         - lscsoft-glue >=1.54.1
         - matplotlib-base >=1.2.0
         - {{ pin_compatible('numpy') }}
@@ -160,6 +151,7 @@ outputs:
         - pathlib  # [py<34]
         - pytest >=4.0.0a0
       source_files:
+        - python/Makefile
         - test/python
       commands:
         - cbcBayesBurstPPAnalysis --help
@@ -202,8 +194,6 @@ outputs:
         - lalinference.tiger.make_injtimes
         - lalinference.tiger.omegascans_dag
         - lalinference.tiger.postproc
-        - lalinference.util.file
-        - lalinference.util.sqlite
         - lalinference.wrapper
     about:
       home: "https://wiki.ligo.org/Computing/LALSuite"

@@ -120,6 +120,8 @@ const char * usage =
 "                             SEOBNRv1_ROM_DoubleSpin\n"
 "                             SEOBNRv2_ROM_EffectiveSpin\n"
 "                             SEOBNRv2_ROM_DoubleSpin\n"
+"                             SEOBNRv4_ROM\n"
+"                             SEOBNRv4HM_ROM\n"
 "                             TaylorF2\n"
 "                             TaylorF2Ecc\n"
 "                             SpinTaylorF2\n"
@@ -201,7 +203,12 @@ const char * usage =
 "--phenomXHMMband float     Threshold parameter for the Multibanding of IMRPhenomXHM. By default set to 10^-3. If set to 0 then do not use multibanding.\n"
 "--modesList string         List of modes to be used by the model, e.g. --modesList '2,2, 2,-2, 2,1, 2,-1'. \n"
 "                           To use all the modes available in the mode do not add --modesList. Do not use if you do not know which modes the model returns!\n"
-
+"--phenomXPHMMband float    Threshold parameter for the Multibanding of the Euler angles in IMRPhenomXPHM. \n"
+"                           Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html.\n"
+"--phenomXPHMUseModes int   Switch between the two polarization functions IMRPhenomXPHM and IMRPhenomXPHMFromModes.\n"
+"                           Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html.\n"
+"--phenomXPrecVersion int   Choose precessing version for the Euler angles.\n"
+"                           Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html.\n"
 ;
 
 /* Parse command line, sanity check arguments, and return a newly
@@ -390,6 +397,12 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
 
         }else if(strcmp(argv[i], "--phenomXHMMband") == 0){
             XLALSimInspiralWaveformParamsInsertPhenomXHMThresholdMband(params->params, atof(argv[++i]));
+        }else if(strcmp(argv[i], "--phenomXPHMMband") == 0){
+            XLALSimInspiralWaveformParamsInsertPhenomXPHMThresholdMband(params->params, atof(argv[++i]));
+        }else if(strcmp(argv[i], "--phenomXPHMUseModes") == 0){
+            XLALSimInspiralWaveformParamsInsertPhenomXPHMThresholdMband(params->params, atoi(argv[++i]));
+        }else if(strcmp(argv[i], "--phenomXPrecVersion") == 0){
+            XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(params->params, atoi(argv[++i]));
         }else {
             XLALPrintError("Error: invalid option: %s\n", argv[i]);
             goto fail;

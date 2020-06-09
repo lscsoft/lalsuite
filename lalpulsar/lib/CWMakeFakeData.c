@@ -296,9 +296,12 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
         signalStartGPS = firstGPS;
       } else if ( t0 >= lastGPS_REAL8 ) {
         signalStartGPS = lastGPS;
-      }
-      else {
-        signalStartGPS.gpsSeconds = t0;
+      } else { // firstGPS < t0 < lastGPS:
+        // make sure signal start-time is an integer multiple of deltaT from timeseries start
+        // to allow safe adding of resulting signal timeseries
+        REAL8 offs0_aligned = round ( (t0 - firstGPS_REAL8) * fSamp ) / fSamp;
+        signalStartGPS = firstGPS;
+        XLALGPSAdd( &signalStartGPS, offs0_aligned );
       }
 
       // use earliest possible end-time: min(t1,lastGPS), but not earlier than firstGPS
@@ -329,6 +332,13 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
           REAL4TimeSeries *Tseries_i = NULL;
           XLAL_CHECK ( (Tseries_i = XLALGenerateCWSignalTS ( pulsarParams, site, signalStartGPS, signalDuration, fSamp, fMin, edat, dataParams->sourceDeltaT )) != NULL, XLAL_EFUNC );
 
+          // since XLALAddREAL4TimeSeries() does not enforce strict sample alignment,
+          // we do our own safety check here
+          REAL8 Delta_epoch = XLALGPSDiff(&Tseries_sum->epoch, &Tseries_i->epoch);
+          REAL8 bin_mismatch = fabs(Delta_epoch / Tseries_sum->deltaT);
+          REAL8 mismatch = fabs(bin_mismatch - round(bin_mismatch))*Tseries_sum->deltaT;
+          XLAL_CHECK ( mismatch <= 1e-9, XLAL_EDATA, "Incompatible start-times when adding signal time series %d of %d, bins misaligned by %g seconds (%g bins).\n", iInj, numPulsars, mismatch, bin_mismatch );
+
           XLAL_CHECK ( (Tseries_sum = XLALAddREAL4TimeSeries ( Tseries_sum, Tseries_i )) != NULL, XLAL_EFUNC );
           XLALDestroyREAL4TimeSeries ( Tseries_i );
         }
@@ -350,6 +360,12 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
 
   // add input noise time-series here if given
   if ( dataParams->inputMultiTS != NULL ) {
+    // since XLALAddREAL8TimeSeries() does not enforce strict sample alignment,
+    // we do our own safety check here
+    REAL8 Delta_epoch = XLALGPSDiff(&outTS->epoch, &dataParams->inputMultiTS->data[detectorIndex]->epoch);;
+    REAL8 bin_mismatch = fabs(Delta_epoch / outTS->deltaT);
+    REAL8 mismatch = fabs(bin_mismatch - round(bin_mismatch))*outTS->deltaT;
+    XLAL_CHECK ( mismatch <= 1e-9, XLAL_EDATA, "Incompatible start-times when adding input noise time-series, bins misaligned by %g seconds (%g bins).\n", mismatch, bin_mismatch );
     XLAL_CHECK ( (outTS = XLALAddREAL8TimeSeries ( outTS, dataParams->inputMultiTS->data[detectorIndex] )) != NULL, XLAL_EFUNC );
   }
 
@@ -752,13 +768,8 @@ XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect )
     return;
   }
 
-  UINT4 numPulsars = ppvect->length;
   if ( ppvect->data != NULL )
     {
-      for ( UINT4 i = 0 ; i < numPulsars; i ++ )
-        {
-          XLALFree ( ppvect->data[i].name );
-        } // for i < numPulsars
       XLALFree ( ppvect->data );
     }
 
@@ -766,22 +777,6 @@ XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect )
 
   return;
 } // XLALDestroyPulsarParamsVector()
-
-/**
- * Destructor for PulsarParams types
- */
-void
-XLALDestroyPulsarParams ( PulsarParams *params )
-{
-  if ( params == NULL ) {
-    return;
-  }
-  XLALFree ( params->name );
-  XLALFree ( params );
-
-  return;
-
-} // XLALDestroyPulsarParams()
 
 
 /**
@@ -1027,11 +1022,8 @@ XLALPulsarParamsFromFile ( const char *fname, 			///< [in] 'CWsources' config fi
       XLAL_CHECK_NULL ( XLALReadPulsarParams ( &sources->data[i], cfgdata, sec_i, refTimeDef ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // ----- source naming convention: 'filename:section'
-      char *name;
-      size_t len = strlen(fname) + strlen(sections->data[i]) + 2;
-      XLAL_CHECK_NULL ( (name = XLALCalloc(1, len)) != NULL, XLAL_ENOMEM );
-      sprintf ( name, "%s:%s", fname, sections->data[i] );
-      sources->data[i].name = name;
+      snprintf ( sources->data[i].name, sizeof(sources->data[i].name), "%s:%s", fname, sections->data[i] );
+      sources->data[i].name[sizeof(sources->data[i].name)-1] = '\0';
 
     } // for i < numPulsars
 
@@ -1126,7 +1118,7 @@ XLALPulsarParamsFromUserInput ( const LALStringVector *UserInput,	///< [in] user
           XLAL_CHECK_NULL ( (addSource = XLALCreatePulsarParamsVector ( 1 )) != NULL, XLAL_EFUNC );
 
           XLAL_CHECK_NULL ( XLALReadPulsarParams ( &addSource->data[0], cfgdata, NULL, refTimeDef ) == XLAL_SUCCESS, XLAL_EFUNC );
-          XLAL_CHECK_NULL ( (addSource->data[0].name = XLALStringDuplicate ( "direct-string-input" )) != NULL, XLAL_EFUNC );
+          strncpy ( addSource->data[0].name, "direct-string-input", sizeof(addSource->data[0].name) );
 
           XLAL_CHECK_NULL ( XLALCheckConfigFileWasFullyParsed( "{command-line}", cfgdata ) == XLAL_SUCCESS, XLAL_EINVAL );
           XLALDestroyParsedDataFile ( cfgdata );
@@ -1170,7 +1162,7 @@ XLALPulsarParamsVectorAppend ( PulsarParamsVector *list, const PulsarParamsVecto
   // we have to properly copy the 'name' string fields
   for ( UINT4 i = 0; i < addlen; i ++ )
     {
-      XLAL_CHECK_NULL ( (ret->data[oldlen + i].name = XLALStringDuplicate ( add->data[i].name )) != NULL, XLAL_EFUNC );
+      strncpy ( ret->data[oldlen + i].name, add->data[i].name, sizeof(ret->data[oldlen + i].name) );
     }
 
   return ret;

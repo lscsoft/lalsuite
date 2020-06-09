@@ -56,6 +56,7 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
     --- Prior Arguments --------------------------\n\
     ----------------------------------------------\n\
     (--distance-prior-uniform)       Impose uniform prior on distance and not volume (False)\n\
+    (--distance-prior-comoving-volume) Impose uniform prior on source-frame comoving volume (False)\n\
     (--malmquistprior)               Impose selection effects on the prior (False)\n\
     (--malmquist-loudest-snr)        Threshold SNR in the loudest detector (0.0)\n\
     (--malmquist-second-loudest-snr) Threshold SNR in the second loudest detector (5.0)\n\
@@ -92,13 +93,22 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
 
     /* Optional uniform prior on distance */
     INT4 uniform_distance = 0;
-    if (LALInferenceGetProcParamVal(commandLine, "--distance-prior-uniform"))
+    INT4 src_comove_volume_distance = 0;
+    if (LALInferenceGetProcParamVal(commandLine, "--distance-prior-uniform")) {
       uniform_distance = 1;
+    }
+    if (LALInferenceGetProcParamVal(commandLine, "--distance-prior-comoving-volume")) {
+      src_comove_volume_distance = 1;
+    }
     LALInferenceAddVariable(runState->priorArgs,
                                 "uniform_distance", &uniform_distance,
                                 LALINFERENCE_INT4_t,
                                 LALINFERENCE_PARAM_OUTPUT);
-
+	
+    LALInferenceAddVariable(runState->priorArgs,
+                                "src_comove_volume_distance", &src_comove_volume_distance,
+                                LALINFERENCE_INT4_t,
+                                LALINFERENCE_PARAM_OUTPUT);
 
     /* Set up malmquist prior */
     INT4 malmquist = 0;
@@ -155,6 +165,11 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
     if(LALInferenceGetProcParamVal(commandLine,"--alignedspin-zprior")&&LALInferenceGetProcParamVal(commandLine,"--spin-volumetricprior"))
     {
         fprintf(stderr,"Error: You cannot use both --alignedspin-zprior and --spin-volumetricprior\n");
+        exit(1);
+    }
+    if(LALInferenceGetProcParamVal(commandLine,"--distance-prior-comoving-volume")&&LALInferenceGetProcParamVal(commandLine,"--distance-prior-uniform"))
+    {
+        fprintf(stderr,"Error: You cannot use both --distance-prior-comoving-volume and --distance-prior-uniform\n");
         exit(1);
     }
 }
@@ -436,6 +451,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
   REAL8 min=-INFINITY, max=INFINITY;
   REAL8 mc=0.0;
   REAL8 m1=0.0,m2=0.0,q=0.0,eta=0.0;
+  REAL8 c0=1.012306, c1=1.136740, c2=0.262462, c3=0.016732, c4=0.000387; /* fitting coefficients for Will's cosmological distance prior, see https://git.ligo.org/RatesAndPopulations/lalinfsamplereweighting/blob/master/ApproxPrior.ipynb */
 
   /* check if signal model is being used */
   UINT4 signalFlag=1;
@@ -471,14 +487,42 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
     logPrior+=log(*(REAL8 *)LALInferenceGetVariable(params,"flow"));
   }
 
+
   if(LALInferenceCheckVariable(params,"logdistance"))
-    if (!(LALInferenceCheckVariable(priorParams,"uniform_distance") && LALInferenceGetINT4Variable(priorParams,"uniform_distance")))
-      logPrior+=3.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
-    else
-      logPrior+=1.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
+  {
+    REAL8 log_dist = *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
+    if ((LALInferenceCheckVariable(priorParams,"uniform_distance") && LALInferenceGetINT4Variable(priorParams,"uniform_distance"))) {
+      logPrior+=log_dist;
+    }
+    else if ((LALInferenceCheckVariable(priorParams,"src_comove_volume_distance") && LALInferenceGetINT4Variable(priorParams,"src_comove_volume_distance"))) {
+	  REAL8 dist_Gpc = exp(log_dist)/1000.0;
+      REAL8 dist_Gpc2= dist_Gpc*dist_Gpc;
+      REAL8 dist_Gpc3= dist_Gpc2*dist_Gpc;
+      REAL8 dist_Gpc4= dist_Gpc3*dist_Gpc;
+      REAL8 denominator = c0+c1*dist_Gpc+c2*dist_Gpc2+c3*dist_Gpc3+c4*dist_Gpc4;
+	  logPrior+=3.0* log_dist-log(denominator);
+	}
+	else {
+      logPrior+=3.0* log_dist;
+    }
+  }
   else if(LALInferenceCheckVariable(params,"distance"))
-    if (!(LALInferenceCheckVariable(priorParams,"uniform_distance")&&LALInferenceGetINT4Variable(priorParams,"uniform_distance")))
-      logPrior+=2.0*log(*(REAL8 *)LALInferenceGetVariable(params,"distance"));
+  {
+    if (!(LALInferenceCheckVariable(priorParams,"uniform_distance")&&LALInferenceGetINT4Variable(priorParams,"uniform_distance"))) {
+      REAL8 dist = *(REAL8 *)LALInferenceGetVariable(params,"distance");
+      if ((LALInferenceCheckVariable(priorParams,"src_comove_volume_distance") && LALInferenceGetINT4Variable(priorParams,"src_comove_volume_distance"))) {
+        REAL8 dist_Gpc = dist/1000.0;
+        REAL8 dist_Gpc2= dist_Gpc*dist_Gpc;
+        REAL8 dist_Gpc3= dist_Gpc2*dist_Gpc;
+        REAL8 dist_Gpc4= dist_Gpc3*dist_Gpc;
+        REAL8 denominator = c0+c1*dist_Gpc+c2*dist_Gpc2+c3*dist_Gpc3+c4*dist_Gpc4;
+        logPrior+=2.0*log(dist)-log(denominator);
+      }
+	  else {
+        logPrior+=2.0*log(dist);
+      }
+    }
+  }
   if(LALInferenceCheckVariable(params,"declination"))
   {
     /* Check that this is not an output variable */
@@ -2812,8 +2856,8 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
     /* set mode to use and multivariate deviates for it  */
     CHAR gmmmvd[VARNAME_MAX], gmmmode[VARNAME_MAX];
     UINT4 thismode = 0;
-    sprintf(gmmmvd, "%s_gmm_multivariate_deviates", fullname);
-    sprintf(gmmmvd, "%s_gmm_mode", fullname);
+    sprintf(gmmmvd, "%s_gmm_mvd", fullname);
+    sprintf(gmmmode, "%s_gmm_mode", fullname);
     if ( LALInferenceCheckVariable( priorArgs, gmmmvd ) ){ /* get values if already set */
       tmps = *(REAL4Vector **)LALInferenceGetVariable(priorArgs, gmmmvd);
       thismode = LALInferenceGetUINT4Variable( priorArgs, gmmmode);
@@ -2854,8 +2898,9 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
       UINT4 nparsdone = LALInferenceGetUINT4Variable( priorArgs, nparsdonename );
       npars = nparsdone;
       npars++;
+      LALInferenceRemoveVariable( priorArgs, nparsdonename );
     }
-
+  
     LALInferenceAddVariable( priorArgs, nparsdonename, &npars, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
 
     /* remove GMM multivariate deviates if all parameter in the GMM have been set */
@@ -3373,6 +3418,8 @@ REAL8 LALInferenceFermiDiracPrior( LALInferenceVariables *priorArgs, const char 
  * unless all required parameter values for a given GMM prior have already been passed to the
  * function */
 REAL8 LALInferenceGMMPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 value){
+  REAL8 logPrior = 0.0;
+
   if( !LALInferenceCheckGMMPrior( priorArgs, name ) ){
     XLAL_ERROR_REAL8( XLAL_EINVAL, "No Gaussian Mixture Model prior given for parameter '%s'", name);
   }
@@ -3427,34 +3474,40 @@ REAL8 LALInferenceGMMPrior(LALInferenceVariables *priorArgs, const char *name, R
 
   /* check values are within limits */
   for ( j = 0; j < npars; j++ ){
-    if ( allvalues->data[j] < gmmlow->data[j] || allvalues->data[j] > gmmhigh->data[j] ){ return -INFINITY; }
+    if ( allvalues->data[j] < gmmlow->data[j] || allvalues->data[j] > gmmhigh->data[j] ){
+      logPrior = -INFINITY;
+      break;
+    }
   }
 
-  REAL8 logPrior = -INFINITY, thisGauss = 0.;
-  for ( i = 0; i < gmmweights->length; i++ ){
-    thisGauss = 0.;
-    gsl_vector *vmu = gsl_vector_calloc( npars ); /* vector to contain value-mu */
-    gsl_matrix *invcov = gsl_matrix_calloc( npars, npars ); /* inverse covariance matrix */
-    gsl_matrix *tmpMat = gsl_matrix_calloc( npars, npars );
-    for ( j = 0; j < npars; j++ ){
-      // normalise values to be from zero mean unit variance Gaussian
-      gsl_vector_set(vmu, j, (allvalues->data[j]-gmmmus[i]->data[j])/gmmsigmas[i]->data[j]);
+  if ( isfinite( logPrior ) ){
+    REAL8 thisGauss = 0.;
+    logPrior = -INFINITY;
+    for ( i = 0; i < gmmweights->length; i++ ){
+      thisGauss = 0.;
+      gsl_vector *vmu = gsl_vector_calloc( npars ); /* vector to contain value-mu */
+      gsl_matrix *invcov = gsl_matrix_calloc( npars, npars ); /* inverse covariance matrix */
+      gsl_matrix *tmpMat = gsl_matrix_calloc( npars, npars );
+      for ( j = 0; j < npars; j++ ){
+        // normalise values to be from zero mean unit variance Gaussian
+        gsl_vector_set(vmu, j, (allvalues->data[j]-gmmmus[i]->data[j])/gmmsigmas[i]->data[j]);
+      }
+
+      /* calculate log probability */
+      gsl_vector *tmpVec = gsl_vector_calloc( npars );
+      gsl_blas_dgemv (CblasNoTrans, 1.0, invcor[i], vmu, 0.0, tmpVec);
+      gsl_blas_ddot( vmu, tmpVec, &thisGauss );
+      thisGauss *= -0.5;
+
+      thisGauss += log(gmmweights->data[i]);
+      thisGauss -= (0.5*(REAL8)npars*(LAL_LNPI + LAL_LN2) + log(gmmdets->data[i])); /* normalisation */
+      logPrior = logaddexp(logPrior, thisGauss); /* sum Gaussianians */
+
+      gsl_matrix_free( invcov );
+      gsl_matrix_free( tmpMat );
+      gsl_vector_free( vmu );
+      gsl_vector_free( tmpVec );
     }
-
-    /* calculate log probability */
-    gsl_vector *tmpVec = gsl_vector_calloc( npars );
-    gsl_blas_dgemv (CblasNoTrans, 1.0, invcor[i], vmu, 0.0, tmpVec);
-    gsl_blas_ddot( vmu, tmpVec, &thisGauss );
-    thisGauss *= -0.5;
-
-    thisGauss += log(gmmweights->data[i]);
-    thisGauss -= (0.5*(REAL8)npars*(LAL_LNPI + LAL_LN2) + log(gmmdets->data[i])); /* normalisation */
-    logPrior = logaddexp(logPrior, thisGauss); /* sum Gaussianians */
-
-    gsl_matrix_free( invcov );
-    gsl_matrix_free( tmpMat );
-    gsl_vector_free( vmu );
-    gsl_vector_free( tmpVec );
   }
 
   /* remove all values that have been set */

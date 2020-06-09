@@ -67,10 +67,11 @@ except ImportError:  # python < 3
 ###########################################
 
 
+fontsize = 'font.size' if mpl.__version__ >= '1.5.0' else 'text.fontsize'
 plot_params = {
     'axes.labelsize': 16,
     'axes.titlesize': 24,
-    'text.fontsize': 14,
+    fontsize: 14,
     'title.fontsize': 18,
     'legend.fontsize': 12,
     'xtick.labelsize': 14,

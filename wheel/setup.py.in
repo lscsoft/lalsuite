@@ -17,6 +17,7 @@ To install, simply run::
     $ pip install lalsuite
 """
 
+from glob import glob
 import os
 import re
 from string import Template
@@ -28,9 +29,6 @@ from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools.command.build_py import build_py as _build_py
 from distutils.command.build_scripts import build_scripts as _build_scripts
 from distutils import log
-
-# Recursive globbing like in Python 3.5
-from glob2 import glob
 
 # These variables come from automake.
 subst = dict(prefix=os.path.abspath('build/inst'))
@@ -64,8 +62,13 @@ lal_data_path_fixup = '''
 # This section was added automatically to support using LALSuite as a wheel.
 #
 import os
-import pkg_resources
-new_path = pkg_resources.resource_filename('lalapps', 'data')
+try:
+    from importlib import resources
+except ImportError:
+    # FIXME: remove after dropping support for Python < 3.7
+    import importlib_resources as resources
+with resources.path('lalapps', '') as new_path:
+    new_path = str(new_path / 'data')
 path = os.environ.get('LAL_DATA_PATH')
 path = path.split(':') if path else []
 if new_path not in path:
@@ -92,8 +95,15 @@ class build_py(_build_py):
 
 stub = '''\
 #!python
-import os, pkg_resources, sys
-os.execv(pkg_resources.resource_filename('lalapps', 'bin/{}'), sys.argv)
+import os
+try:
+    from importlib import resources
+except ImportError:
+    # FIXME: remove after dropping support for Python < 3.7
+    import importlib_resources as resources
+with resources.path('lalapps', 'bin') as new_path:
+    new_path = str(new_path / '{}')
+os.execv(new_path, sys.argv)
 '''
 
 
@@ -145,8 +155,6 @@ setup(
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
         'Operating System :: POSIX',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
@@ -166,14 +174,16 @@ setup(
     exclude_package_data={'lalapps.data': ['earth*.dat.gz', 'sun*.dat.gz',
                                            'tdb*.dat.gz', 'te*.dat.gz']},
     packages=find_packages(PYTHONDIR) + ['lalapps.bin', 'lalapps.data'],
-    scripts=glob(BINDIR + '/*') + glob(LIBEXECDIR + '/**/*.py'),
+    scripts=(glob(BINDIR + '/*', recursive=True) +
+			 glob(LIBEXECDIR + '/**/*.py', recursive=True)),
     ext_modules=[Extension(os.path.relpath(filename, PYTHONDIR)
                            .replace('.so', '')
                            .replace('/', '.'), [])
-                 for filename in glob(PYTHONDIR + '/**/*.so')],
+                 for filename in glob(PYTHONDIR + '/**/*.so', recursive=True)],
     extras_require={
         'lalinference': ['gwpy', 'gwdatafind']
     },
     install_requires=['lscsoft-glue', 'ligo-segments', 'matplotlib',
-                      'numpy>=1.7', 'python-dateutil', 'scipy']
+                      'numpy>=1.7', 'python-dateutil', 'scipy',
+                     'importlib_resources;python_version<"3.7"']
 )

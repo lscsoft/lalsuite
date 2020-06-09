@@ -137,6 +137,9 @@ int main( int argc, char *argv[]) {
   REAL4 sumTwoF = 0.0;
   REAL4Vector *sumTwoFX = NULL;
   XLAL_CHECK ( (sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) != NULL, XLAL_EFUNC );
+  for ( UINT4 X = 0; X < numDetectors; X++ ) {
+      sumTwoFX->data[X] = 0;
+  }
   for ( UINT4 l = 0; l < numSegs; l++ ) {
     sumTwoF += TwoFl->data[l];
     for ( UINT4 X = 0; X < numDetectors; X++ ) {
@@ -150,6 +153,9 @@ int main( int argc, char *argv[]) {
   REAL4 maxTwoF = 0.0;
   REAL4Vector *maxTwoFX = NULL;
   XLAL_CHECK ( (maxTwoFX = XLALCreateREAL4Vector ( numDetectors )) != NULL, XLAL_EFUNC );
+  for ( UINT4 X = 0; X < numDetectors; X++ ) {
+      maxTwoFX->data[X] = 0;
+  }
   for ( UINT4 l = 0; l < numSegs; l++ ) {
     maxTwoF = fmax(maxTwoF,TwoFl->data[l]);
     for ( UINT4 X = 0; X < numDetectors; X++ ) {

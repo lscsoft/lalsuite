@@ -10,7 +10,7 @@
 {% set sha256 = "@SHA256@" %}
 
 # dependencies
-{% set lal_version = "6.21.0" %}
+{% set lal_version = "6.22.0" %}
 {% set swig_version = "3.0.9" %}
 
 package:
@@ -29,15 +29,19 @@ requirements:
   build:
     - {{ compiler('c') }}
     - help2man
+    - llvm-openmp  # [osx]
     - make
     - pkg-config >=0.18.0
     - swig >={{ swig_version }}
   host:
     - gsl
     - lal >={{ lal_version }}a0
+    - libgomp  # [linux]
+    - llvm-openmp  # [osx]
   run:
     - gsl
     - lal >={{ lal_version }}a0
+    - llvm-openmp  # [osx]
 
 test:
   commands:
@@ -94,11 +98,13 @@ outputs:
         - pathlib  # [py<34]
         - pytest >=4.0.0a0
       source_files:
+        - python/Makefile
         - test/python
       commands:
         - python -m pytest -rs -v --junit-xml=junit.xml test/python
       imports:
         - lalsimulation
+        - lalsimulation.nrfits
     about:
       home: "https://wiki.ligo.org/Computing/LALSuite"
       doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/"

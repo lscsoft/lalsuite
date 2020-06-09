@@ -1,6 +1,6 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
-%define release 2
+%define release 1
 %define configure_opts --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
@@ -23,7 +23,6 @@ Prefix: %{_prefix}
 # -- build requirements -----
 
 # C
-BuildRequires: chealpix-devel >= 3.30.0
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: gsl-devel
@@ -101,7 +100,6 @@ BuildRequires: lalpulsar-octave >= @MIN_LALPULSAR_VERSION@
 # -- packages ---------------
 
 # lalinference
-Requires: chealpix
 Requires: gsl >= 1.15
 Requires: openmpi
 Requires: openssh-clients
@@ -123,7 +121,6 @@ that use the LAL Inference library.
 Summary: Files and documentation needed for compiling programs that use LAL Inference
 Group: LAL
 Requires: %{name} = %{version}
-Requires: chealpix-devel >= 3.30.0
 Requires: gsl-devel >= 1.15
 Requires: lal-devel >= @MIN_LAL_VERSION@
 Requires: lalframe-devel >= @MIN_LALFRAME_VERSION@
@@ -228,8 +225,8 @@ cp -r . %py3dir
 pushd %py3dir
 rm -rfv python/%{name}/*.{la,lo,o} python/%{name}/.libs
 %configure %{configure_opts} --disable-doxygen --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
-%{__make} %{?_smp_mflags} V=1 -C swig
-%{__make} %{?_smp_mflags} V=1 -C python/%{name}
+%{__make} V=1 -C swig
+%{__make} V=1 -C python/%{name}
 popd
 
 %check
@@ -335,6 +332,15 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Wed Mar 25 2020 Duncan Macleod <duncan.macleod@ligo.org> 2.0.0-1
+- Update for 2.0.0
+
+* Fri Feb 21 2020 Adam Mercer <adam.mercer@ligo.org> 1.11.7-1
+- O3b point release
+
+* Thu Feb 13 2020 Adam Mercer <adam.mercer@ligo.org> 1.11.6-2
+- O3b point release
+
 * Tue Dec 17 2019 Adam Mercer <adam.mercer@ligo.org> 1.11.5-1
 - O3b point release
 

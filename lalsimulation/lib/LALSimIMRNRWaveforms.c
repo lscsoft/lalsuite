@@ -684,12 +684,6 @@ UNUSED static INT4 XLALSimIMRNRWaveformGetModes(
    * recorded in the metadata of the HDF5 file.
    * PS: This assumes that the input spins are in the LAL frame!
    */
-  XLALH5FileQueryScalarAttributeValue(&nr_file_format, file, "Format");
-  if (nr_file_format < 2)
-  {
-    XLALPrintInfo("This NR file is format %d. Only formats 2 and above support the use of reference frequency. For formats < 2 the reference frequency always corresponds to the start of the waveform.", nr_file_format);
-    fRef = -1;
-  }
   XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(&S1x, &S1y, &S1z,
                                                        &S2x, &S2y, &S2z,
                                                        fRef, m1+m2, file);
@@ -901,10 +895,11 @@ INT4 XLALSimInspiralNRWaveformGetHplusHcross(
   XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
 #else
   /* Declarations */
-  UINT4 curr_idx, array_length;
+  UINT4 curr_idx, array_length, nr_file_format;
   INT4 model, modem, NRLmax;
   REAL8 m1,m2;
   REAL8 theta, psi, calpha, salpha;
+  REAL8 fRef_pass=fRef;
   COMPLEX16 curr_ylm, tmp;
   COMPLEX16TimeSeries *curr_hlm=NULL;
   REAL8TimeSeries *hplus_corr;
@@ -928,8 +923,14 @@ INT4 XLALSimInspiralNRWaveformGetHplusHcross(
      XLAL_ERROR(XLAL_EIO, "NR SIMULATION DATA FILE %s NOT FOUND.\n", NRDataFile);
   }
 
+  XLALH5FileQueryScalarAttributeValue(&nr_file_format, file, "Format");
+  if (nr_file_format < 2)
+  {
+    XLALPrintInfo("This NR file is format %d. Only formats 2 and above support the use of reference frequency. For formats < 2 the reference frequency always corresponds to the start of the waveform.", nr_file_format);
+    fRef_pass = -1;
+  }
   INT4 err_code = XLALSimIMRNRWaveformGetModes(&tmp_Hlms,&tmpEpoch,&array_length, \
-                                               deltaT, m1, m2, r, fStart, fRef, \
+                                               deltaT, m1, m2, r, fStart, fRef_pass, \
                                                s1x,s1y,s1z,s2x,s2y,s2z, \
                                                file, ModeArray);
   if (err_code!=XLAL_SUCCESS)
@@ -939,7 +940,7 @@ INT4 XLALSimInspiralNRWaveformGetHplusHcross(
 
   theta = psi = calpha = salpha = 0.;
   XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(&theta, &psi, &calpha,
-                       &salpha, file, inclination, phiRef, fRef*(m1+m2));
+                       &salpha, file, inclination, phiRef, fRef_pass*(m1+m2));
   XLALH5FileClose(file);
 
   *hplus  = XLALCreateREAL8TimeSeries("H_PLUS", &tmpEpoch, 0.0, deltaT,
@@ -1023,10 +1024,11 @@ INT4 XLALSimInspiralNRWaveformGetHlms(UNUSED SphHarmTimeSeries **Hlms, /**< OUTP
   XLAL_ERROR_NULL(XLAL_FAILURE, "HDF5 support not enabled");
 #else
   /* Declarations */
-  UINT4 curr_idx, array_length;
+  UINT4 curr_idx, array_length, nr_file_format;
   INT4 model, modem, NRLmax;
   REAL8 m1,m2;
   REAL8 theta, psi, calpha, salpha;
+  REAL8 fRef_pass=fRef;
   COMPLEX16TimeSeries *tmp_hlm=NULL;
   SphHarmTimeSeries *tmp_Hlms=NULL;
   LALH5File *file;
@@ -1044,8 +1046,15 @@ INT4 XLALSimInspiralNRWaveformGetHlms(UNUSED SphHarmTimeSeries **Hlms, /**< OUTP
      XLAL_ERROR(XLAL_EIO, "NR SIMULATION DATA FILE %s NOT FOUND.\n", NRDataFile);
   }
 
+  XLALH5FileQueryScalarAttributeValue(&nr_file_format, file, "Format");
+  if (nr_file_format < 2)
+  {
+    XLALPrintInfo("This NR file is format %d. Only formats 2 and above support the use of reference frequency. For formats < 2 the reference frequency always corresponds to the start of the waveform.", nr_file_format);
+    fRef_pass = -1;
+  }
+
   INT4 err_code = XLALSimIMRNRWaveformGetModes(&tmp_Hlms,&tmpEpoch,&array_length, \
-                                               deltaT, m1, m2, r, fStart, fRef, \
+                                               deltaT, m1, m2, r, fStart, fRef_pass, \
                                                s1x,s1y,s1z,s2x,s2y,s2z, \
                                                file, ModeArray);
   if (err_code!=XLAL_SUCCESS)
@@ -1055,7 +1064,7 @@ INT4 XLALSimInspiralNRWaveformGetHlms(UNUSED SphHarmTimeSeries **Hlms, /**< OUTP
 
   psi = calpha = salpha = 0.;
   XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(&theta, &psi, &calpha,
-                       &salpha, file, 0., 0., fRef*(m1+m2));
+                       &salpha, file, 0., 0., fRef_pass*(m1+m2));
   XLALH5FileClose(file);
 
   NRLmax= XLALSphHarmTimeSeriesGetMaxL(tmp_Hlms);

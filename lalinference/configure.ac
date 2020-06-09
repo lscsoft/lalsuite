@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInference],[1.11.5.1],[lal-discuss@ligo.org])
+AC_INIT([LALInference],[2.0.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([lib/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -22,7 +22,6 @@ AC_CONFIG_FILES([ \
   python/lalinference/io/Makefile \
   python/lalinference/plot/Makefile \
   python/lalinference/tiger/Makefile \
-  python/lalinference/util/Makefile \
   lib/LALInferenceVCSInfo.c \
   lib/LALInferenceVCSInfo.h \
   lib/Makefile \
@@ -32,6 +31,7 @@ AC_CONFIG_FILES([ \
   test/Makefile \
   test/python/Makefile \
   test/python/test_python_imports.py \
+  test/python/test_python_scripts.py \
 ])
 AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE([ \
@@ -50,7 +50,7 @@ MIN_GLUE_VERSION="1.54.1"
 MIN_LAL_VERSION="6.21.0"
 MIN_LALMETAIO_VERSION="1.6.0"
 MIN_LALFRAME_VERSION="1.5.0"
-MIN_LALSIMULATION_VERSION="1.10.0"
+MIN_LALSIMULATION_VERSION="2.0.0"
 MIN_LALBURST_VERSION="1.5.3"
 MIN_LALINSPIRAL_VERSION="1.10.0"
 MIN_LALPULSAR_VERSION="1.18.2"
@@ -84,9 +84,9 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[20])
-AC_SUBST([LIBREVISION],[1])
-AC_SUBST([LIBAGE],[3])
+AC_SUBST([LIBCURRENT],[21])
+AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build
@@ -167,13 +167,6 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 # check for OpenMP
 LALSUITE_ENABLE_OPENMP
 
-# check for HEALPix
-PKG_CHECK_MODULES([CHEALPIX],[chealpix >= 3.30.0],[true],[false])
-LALSUITE_ADD_FLAGS([C],[${CHEALPIX_CFLAGS}],[${CHEALPIX_LIBS}])
-HEALPIX_ENABLE_VAL=ENABLED
-AC_CHECK_LIB([chealpix],[nside2npix],,[HEALPIX_ENABLE_VAL=DISABLED])
-AM_CONDITIONAL([HAVE_CHEALPIX],[test "x$HEALPIX_ENABLE_VAL" = "xENABLED"])
-
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
@@ -227,7 +220,6 @@ LALInference has now been successfully configured:
 * Python support is $PYTHON_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
-* HEALPix is $HEALPIX_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL
 * MPI support is $MPI_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL

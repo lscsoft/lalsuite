@@ -38,10 +38,6 @@ extern "C" {
 #include <lal/LALSimInspiral.h>
 
 
-/* CONSTANTS */
-#define MAX_ALLOWED_MASS_RATIO 5000
-#define MAX_ALLOWED_ETA 0.0002
-
 // /* Returns the Fourier domain strain of just one negative mode: h_l-m. This quantity is zero for negative frequencies.
 // However the positive mode h_lm is zero for positive frequencies and for the negative frequencies is equal to (-1)^l h*_l-m(-f).
 // This is a wrapper function that use XLALSimIMRPhenomXASGenerateFD for the 22 mode and XLALSimIMRPhenomXHMOneMode for the higher modes. */
@@ -56,6 +52,15 @@ int IMRPhenomXHMGenerateFDOneMode(
    UINT4 ell,                            /**< first index of the mode **/
    UINT4 emm,                            /**< second index of the mode **/
    LALDict *lalParams                    /**< extra params **/
+);
+
+/* Compute the frequency array and initialize htildelm to the corresponding length. */
+int SetupWFArrays(
+  REAL8Sequence **freqs,                /**< [out] frequency grid [Hz] */
+  COMPLEX16FrequencySeries **htildelm,  /**< [out] Frequency domain hlm GW strain */
+  REAL8Sequence *freqs_In,              /**< fmin, fmax [Hz] */
+  IMRPhenomXWaveformStruct *pWF,        /**< Waveform structure with parameters */
+  LIGOTimeGPS ligotimegps_zero          /**< = {0,0} */
 );
 
 #ifdef __cplusplus
