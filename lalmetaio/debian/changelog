@@ -1,3 +1,9 @@
+lalmetaio (1.6.1-1) unstable; urgency=low
+
+ * Update for 1.6.1
+
+  -- Adam Mercer <adam.mercer@ligo.org>  Mon, 08 Jun 2020 15:20:01 -0700
+
 lalmetaio (1.6.0-1) unstable; urgency=low
 
   * O3b release
