@@ -1748,7 +1748,6 @@ XLALSimIMREOBNRv2AllModes(
  * SWSH modes in a SphHarmTimeSeries struct.
  */
 SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(
-        const REAL8 phiRef,  /**< Orbital phase at coalescence (radians) */
         const REAL8 deltaT,  /**< Sampling interval (s) */
         const REAL8 m1,      /**< First component mass (kg) */
         const REAL8 m2,      /**< Second component mass (kg) */
@@ -1757,7 +1756,7 @@ SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(
         )
 {
   SphHarmTimeSeries *hlms = NULL;
-  if ( XLALSimIMREOBNRv2Generator(NULL, NULL, &hlms, phiRef, deltaT, m1, m2,
+  if ( XLALSimIMREOBNRv2Generator(NULL, NULL, &hlms, 0., deltaT, m1, m2,
               fLower, distance, 0., 1) == XLAL_FAILURE )
   {
     XLAL_ERROR_NULL( XLAL_EFUNC );

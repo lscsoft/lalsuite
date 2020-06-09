@@ -1,34 +1,27 @@
 BUILT_SOURCES =
-MOSTLYCLEANFILES =
 EXTRA_DIST =
+MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalsuite_python.am
+include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
+
+dist_bin_SCRIPTS = lalapps_CopySFTs
+
+bin_PROGRAMS =
 
 if FRAME
-frameprogs = lalapps_MakeSFTs
-else
-frameprogs =
+bin_PROGRAMS += lalapps_MakeSFTs
 endif
 
-## PSS requires FrameLib anyway
-if PSS
-pss_progs =
-pss_src = XLALPSSInterface.c
-else
-pss_progs =
-pssinterface =
-endif
-
-bin_PROGRAMS = $(frameprogs) $(pss_progs)
-
-if FRAME
-lalapps_MakeSFTs_SOURCES = MakeSFTs.c $(pss_src)
-endif
-
+lalapps_MakeSFTs_SOURCES = MakeSFTs.c
 lalapps_MakeSFTs_CPPFLAGS = $(AM_CPPFLAGS)
+
+if FRAME
 if PSS
+lalapps_MakeSFTs_SOURCES += XLALPSSInterface.c
 lalapps_MakeSFTs_CPPFLAGS += -DPSS_ENABLED
+endif
 endif
 
 if HAVE_PYTHON
@@ -36,12 +29,13 @@ pybin_scripts = lalapps_MakeSFTDAG
 pkgpython_PYTHON =
 endif
 
-EXTRA_DIST += \
-	testMakeSFTs.sh \
-	$(END_OF_LIST)
+# Add shell test scripts to this variable
+test_scripts += testMakeSFTs.sh
 
-if FRAME
-TESTS = \
-	testMakeSFTs.sh \
-	$(END_OF_LIST)
+# Add any helper programs required by tests to this variable
+test_helpers +=
+
+# These tests require FRAME
+if !FRAME
+skip_tests += testMakeSFTs.sh
 endif

@@ -13,6 +13,7 @@ stages:
   - LALPulsar
   - LALInference
   - LALApps
+  - lint
   - documentation
   - integration tests
   - compiler tests
@@ -74,6 +75,9 @@ cache:
     - ./00boot
     - ./configure --enable-doxygen --enable-swig
     - make -j4 distcheck
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
 
 # -- build templates ----------------------------
 
@@ -117,8 +121,10 @@ cache:
   artifacts:
     expire_in: 18h
     paths:
-      - rpmbuild/RPMS/x86_64/${CI_JOB_NAME%%:*}-*.rpm
-      - rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%%:*}-*.rpm
+      - "rpmbuild/RPMS/x86_64/${CI_JOB_NAME%%:*}-*.rpm"
+      - "rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%%:*}-*.rpm"
+    reports:
+      junit: "rpmbuild/BUILD/*/test/python/junit*.xml"
   only:
     - pushes
     - schedules
@@ -141,7 +147,7 @@ cache:
 
 .debuild: &debbuild
   <<: *apt-cache
-  image: igwn/base:stretch
+  image: igwn/base:stretch-proposed
   variables:
     GIT_STRATEGY: none
   script:
@@ -179,6 +185,8 @@ cache:
       - python*-${CI_JOB_NAME%%:*}*.deb
       - ${CI_JOB_NAME%%:*}*.dsc
       - ${CI_JOB_NAME%%:*}*.orig.*
+    reports:
+      junit: "${CI_JOB_NAME%%:*}*/.pybuild/python*/build/test/python/junit*.xml"
   only:
     - pushes
     - schedules
@@ -219,9 +227,11 @@ cache:
     - sed 's|@VERSION@|'${VERSION}'|g' conda/meta.yaml.in > conda/meta.yaml
     - sed -i 's|@TARBALL@|'${TARBALL}'|g' conda/meta.yaml
     - sed -i 's|@SHA256@|'${SHA256}'|g' conda/meta.yaml
-    # build packages
+    # build packages (preferring local packages over everything)
+    - conda config --set channel_priority strict
     - conda build
           conda/
+          --dirty
           --error-overlinking
           --error-overdepending
           --no-anaconda-upload
@@ -239,6 +249,10 @@ cache:
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/test-suite.log"
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/test-suite.log"
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/*/*/*/test-suite.log"
+    reports:
+      junit:
+        - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/junit*.xml"
+        - "conda/bld/${CI_JOB_NAME%%:*}_*/test_tmp/junit*.xml"
     when: always
   only:
     - pushes
@@ -250,13 +264,37 @@ cache:
     paths:
       - conda/pkgs
 
+# -- linting ------------------------------------
+
+lint:python:
+  stage: lint
+  image: python
+  needs: []
+  before_script:
+    - python -m pip install
+          "flake8>=3.7.0"
+          "flake8-junit-report"
+  script:
+    - python -m flake8 --output-file flake8.out
+  after_script:
+    - cat flake8.out
+    - python -m junit_conversor flake8.out junit.xml
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/pip
+  artifacts:
+    expire_in: 1month
+    reports:
+      junit: junit.xml
+    when: always
+
 # -- documentation ------------------------------
 
 documentation:
-  image: igwn/lalsuite-dev:stretch
+  image: igwn/lalsuite-dev:stretch-proposed
   stage: documentation
-  needs:
-    - make-dist
+  needs: []
   script:
     - ./00boot
     - ./configure --enable-doxygen --prefix=${LAL_DIR}
@@ -274,7 +312,7 @@ documentation:
     - web
 
 pages:
-  image: igwn/lalsuite-dev:stretch
+  image: igwn/lalsuite-dev:stretch-proposed
   stage: deploy
   script:
     - ./00boot
@@ -285,8 +323,7 @@ pages:
     - cp lalsuite/index.html index.html
     - sed -i 's/..\/lal/lal/g' index.html
     - popd
-  needs:
-    - make-dist
+  needs: []
   artifacts:
     paths:
       - public
@@ -628,8 +665,7 @@ lalinference_testjob:
 top-level:
   stage: integration tests
   image: igwn/lalsuite-dev:el7-testing
-  needs:
-    - make-dist
+  needs: []
   <<: *top-level-build
   only:
     - pushes
@@ -748,8 +784,7 @@ docker:tags:stretch:
 
 .clang-build: &clang-build
   stage: compiler tests
-  needs:
-    - make-dist
+  needs: []
   script:
     - ./00boot
     - CC=${CLANG} CXX=${CLANGXX} ./configure --enable-swig --enable-doxygen
@@ -757,6 +792,9 @@ docker:tags:stretch:
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
 
 clang:8:
   <<: *clang-build
@@ -781,8 +819,7 @@ clang:dev:
 
 .gcc-build: &gcc-build
   stage: compiler tests
-  needs:
-    - make-dist
+  needs: []
   script:
     - ./00boot
     - ./configure --enable-doxygen
@@ -790,6 +827,9 @@ clang:dev:
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
 
 gcc:7:
   <<: *gcc-build
@@ -808,8 +848,7 @@ gcc:9:
 platform:debian:buster:
   image: igwn/lalsuite-dev:buster
   stage: platform tests
-  needs:
-    - make-dist
+  needs: []
   <<: *top-level-build
   only:
     - schedules
@@ -828,11 +867,13 @@ platform:macos:highsierra:
     - PYTHON=/opt/local/bin/python2.7 ./configure
     - make -j4
     - make -j4 check
-  needs:
-    - make-dist
+  needs: []
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
 
 platform:macos:sierra:
   tags:
@@ -845,11 +886,13 @@ platform:macos:sierra:
     - PYTHON=/opt/local/bin/python2.7 ./configure
     - make -j4
     - make -j4 check
-  needs:
-    - make-dist
+  needs: []
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
 
 # -- wheels -------------------------------------
 
@@ -872,8 +915,7 @@ platform:macos:sierra:
     - source test/bin/activate
     - pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio, lalsimulation; series = lal.CreateREAL8FrequencySeries("psd", 0, 0, 1, None, 4096); lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)'
-  needs:
-    - make-dist
+  needs: []
   only:
     - /^lalsuite-v.*$/
     - schedules
@@ -909,8 +951,7 @@ platform:macos:sierra:
     - source test/bin/activate
     - python -m pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio, lalsimulation; series = lal.CreateREAL8FrequencySeries("psd", 0, 0, 1, None, 4096); lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)'
-  needs:
-    - make-dist
+  needs: []
   only:
     - /^lalsuite-v.*$/
     - schedules
@@ -923,9 +964,9 @@ platform:macos:sierra:
   <<: *wheel-manylinux
   image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux1_x86_64
 
-.wheel:manylinux2010: &wheel-manylinux2010
+.wheel:manylinux2014: &wheel-manylinux2014
   <<: *wheel-manylinux
-  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux2010_x86_64
+  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux2014_x86_64
 
 # Build wheels for all supported platforms
 wheel:cp27-cp27m-manylinux1:
@@ -940,18 +981,14 @@ wheel:cp37-cp37m-manylinux1:
   <<: *wheel-manylinux1
 wheel:cp38-cp38-manylinux1:
   <<: *wheel-manylinux1
-wheel:cp27-cp27m-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp27-cp27mu-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp35-cp35m-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp36-cp36m-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp37-cp37m-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp38-cp38-manylinux2010:
-  <<: *wheel-manylinux2010
+wheel:cp35-cp35m-manylinux2014:
+  <<: *wheel-manylinux2014
+wheel:cp36-cp36m-manylinux2014:
+  <<: *wheel-manylinux2014
+wheel:cp37-cp37m-manylinux2014:
+  <<: *wheel-manylinux2014
+wheel:cp38-cp38-manylinux2014:
+  <<: *wheel-manylinux2014
 wheel:cp27-cp27m-macosx:
   <<: *wheel-macos
 wheel:cp35-cp35m-macosx:
@@ -981,12 +1018,10 @@ deploy:wheel:
     - wheel:cp36-cp36m-manylinux1
     - wheel:cp37-cp37m-manylinux1
     - wheel:cp38-cp38-manylinux1
-    - wheel:cp27-cp27m-manylinux2010
-    - wheel:cp27-cp27mu-manylinux2010
-    - wheel:cp35-cp35m-manylinux2010
-    - wheel:cp36-cp36m-manylinux2010
-    - wheel:cp37-cp37m-manylinux2010
-    - wheel:cp38-cp38-manylinux2010
+    - wheel:cp35-cp35m-manylinux2014
+    - wheel:cp36-cp36m-manylinux2014
+    - wheel:cp37-cp37m-manylinux2014
+    - wheel:cp38-cp38-manylinux2014
     - wheel:cp27-cp27m-macosx
     - wheel:cp35-cp35m-macosx
     - wheel:cp36-cp36m-macosx

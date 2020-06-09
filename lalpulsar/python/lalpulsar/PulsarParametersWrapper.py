@@ -24,30 +24,16 @@ from __future__ import division, absolute_import, print_function
 
 import os
 import re
+
+from six import string_types
+
 import numpy as np
 
-try:
-    import lal
-except ImportError:
-    raise ImportError("SWIG wrappings of LAL cannot be imported")
-
-try:
-    import lalpulsar
-except ImportError:
-    raise ImportError("SWIG wrappings of LALPulsar cannot be imported")
-
-try:
-    from six import string_types
-except ImportError:
-    raise ImportError("Could not import six")
-
-try:
-    import astropy
-except ImportError:
-    raise ImportError("Could not import astropy")
-
-
 from astropy import units as u
+
+import lal
+import lalpulsar
+
 # set units of parameters in the PulsarParameters structure
 PPUNITS = {'F':            u.Hz,                     # Hz
            'P':            u.s,                      # seconds
@@ -292,11 +278,14 @@ class PulsarParametersPy(object):
             tkey = key[:-4] # get the actual parameter key name
 
         # check if the key is asking for an individual parameter from a vector parameter
-        # (e.g. 'F0' gets the first value from the 'F' vector)
+        # (e.g. 'F0' gets the first value from the 'F' vector.
+        # NOTE: this is problematic for glitch parameters, e.g., GLF0, which could provide
+        # values to multiple glitches, so this cannot be used to get individual glitch
+        # parameters).  
         sname = re.sub(r'_\d', '', tkey) if '_' in tkey else re.sub(r'\d', '', tkey)
         sidx = None
         indkey = None
-        if sname != tkey:
+        if sname != tkey and tkey[0:2] != "GL":
             # check additional index is an integer
             try:
                 sidx = int(tkey.split('_')[-1]) if '_' in tkey else int(tkey[len(sname):])
@@ -825,7 +814,7 @@ class PulsarParametersPy(object):
         """
         Create a copy of the parameters.
         """
-    
+
         newpar = PulsarParametersPy()
         memo[id(self)] = newpar
         lalpulsar.PulsarCopyParams(self.PulsarParameters(), newpar.PulsarParameters())

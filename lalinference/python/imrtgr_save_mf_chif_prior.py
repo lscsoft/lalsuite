@@ -17,7 +17,7 @@ import pickle, gzip
 from optparse import OptionParser
 from matplotlib import rc
 import matplotlib
-matplotlib.rc('text.latex', preamble = '\usepackage{txfonts}')
+matplotlib.rc('text.latex', preamble=r'\usepackage{txfonts}')
 
 rc('text', usetex=True)
 rc('font', family='serif')

@@ -169,22 +169,24 @@ UNUSED static void SEOBNRROMdataDS_Cleanup_submodel(SEOBNRROMdataDS_submodel *su
  * Compute strain waveform from amplitude and phase.
 */
 UNUSED static int SEOBNRv4ROMCore(
-  COMPLEX16FrequencySeries **hptilde,
-  COMPLEX16FrequencySeries **hctilde,
-  double phiRef,
-  double fRef,
-  double distance,
-  double inclination,
-  double Mtot_sec,
-  double eta,
-  double chi1,
-  double chi2,
+  COMPLEX16FrequencySeries **hptilde,	/**< Output: Frequency-domain waveform h+ */
+  COMPLEX16FrequencySeries **hctilde,	/**< Output: Frequency-domain waveform hx */
+  double phiRef,			/**< Orbital phase (rad) */
+  double fRef,				/**< Reference frequency */
+  double distance,			/**< Distance of source (m) */
+  double inclination,			/**< Inclination angle of source (rad) */
+  double Mtot_sec,			/**< Total source mass in seconds */
+  double eta,				/**< Symmetric mass ratio */
+  double chi1,				/**< Dimensionless aligned spin on companion 1 */
+  double chi2,				/**< Dimensionless aligned spin on companion 2 */
   const REAL8Sequence *freqs, /* Frequency points at which to evaluate the waveform (Hz) */
-  double deltaF,
-  /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+  double deltaF,			/**< Sampling frequency (Hz).
+   * If deltaF > 0, the frequency points given in freqs are uniformly spaced with
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
-  int nk_max // truncate interpolants at SVD mode nk_max; don't truncate if nk_max == -1
+  int nk_max, // truncate interpolants at SVD mode nk_max; don't truncate if nk_max == -1
+  LALDict *LALparams,                          /**< LAL dictionary containing accessory parameters */
+  NRTidal_version_type NRTidal_version /**< NRTidal version; either NRTidal_V or NRTidalv2_V or NoNRT_V in case of BBH baseline */
 );
 
 UNUSED static void SEOBNRROMdataDS_coeff_Init(SEOBNRROMdataDS_coeff **romdatacoeff, int nk_amp, int nk_phi);
@@ -740,22 +742,24 @@ static void GluePhasing(
  * Compute strain waveform from amplitude and phase.
 */
 static int SEOBNRv4ROMCore(
-  COMPLEX16FrequencySeries **hptilde,
-  COMPLEX16FrequencySeries **hctilde,
-  double phiRef, // orbital reference phase
-  double fRef,
-  double distance,
-  double inclination,
-  double Mtot_sec,
-  double eta,
-  double chi1,
-  double chi2,
-  const REAL8Sequence *freqs_in, /* Frequency points at which to evaluate the waveform (Hz) */
-  double deltaF,
-  /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+  COMPLEX16FrequencySeries **hptilde,	/**< [out] Frequency-domain waveform h+ */
+  COMPLEX16FrequencySeries **hctilde,	/**< [out] Frequency-domain waveform hx */
+  double phiRef, 			/**< orbital reference phase */
+  double fRef,				/**< Reference frequency */
+  double distance,			/**< Distance of source (m) */
+  double inclination,			/**< Inclination of source */
+  double Mtot_sec,			/**< Total mass of source in seconds */
+  double eta,				/**< Symmetric mass ratio */
+  double chi1,				/**< Dimensionless spin aligned spin on companion 1 */
+  double chi2,				/**< Dimensionless aligned spin on companion 2 */
+  const REAL8Sequence *freqs_in, 	/**< Frequency points at which to evaluate the waveform (Hz) */
+  double deltaF,			/**< Sampling frequency (Hz).
+   * If deltaF > 0, the frequency points given in freqs are uniformly spaced with
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
-  int nk_max // truncate interpolants at SVD mode nk_max; don't truncate if nk_max == -1
+  int nk_max, 				/**< truncate interpolants at SVD mode nk_max; don't truncate if nk_max == -1 */
+  LALDict *LALparams,                          /**< LAL dictionary containing accessory parameters */
+  NRTidal_version_type NRTidal_version /**< NRTidal version; either NRTidal_V or NRTidalv2_V or NoNRT_V in case of BBH baseline */
   )
 {
 
@@ -939,6 +943,7 @@ static int SEOBNRv4ROMCore(
   LIGOTimeGPS tC = {0, 0};
   UINT4 offset = 0; // Index shift between freqs and the frequency series
   REAL8Sequence *freqs = NULL;
+  REAL8Sequence *amp_tidal = NULL; /* Tidal amplitude series; required only for SEOBNRv4_ROM_NRTidalv2 */
   if (deltaF > 0)  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
     /* Set up output array with size closest power of 2 */
     npts = NextPow2(fHigh_geom / deltaF_geom) + 1;
@@ -1005,18 +1010,47 @@ static int SEOBNRv4ROMCore(
 
   // Evaluate reference phase for setting phiRef correctly
   double phase_change = gsl_spline_eval(spline_phi, fRef_geom, acc_phi) - 2*phiRef;
-
+  
+  int ret = XLAL_SUCCESS;
   // Assemble waveform from aplitude and phase
-  for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
-    double f = freqs->data[i];
-    if (f > Mf_ROM_max) continue; // We're beyond the highest allowed frequency; since freqs may not be ordered, we'll just skip the current frequency and leave zero in the buffer
-    int j = i + offset; // shift index for frequency series if needed
-    double A = gsl_spline_eval(spline_amp, f, acc_amp);
-    double phase = gsl_spline_eval(spline_phi, f, acc_phi) - phase_change;
-    COMPLEX16 htilde = s*amp0*A * (cos(phase) + I*sin(phase));//cexp(I*phase);
-    pdata[j] =      pcoef * htilde;
-    cdata[j] = -I * ccoef * htilde;
-  }
+  if (NRTidal_version == NRTidalv2_V) {
+    /* get component masses (in solar masses) from mtotal and eta! */
+    const REAL8 factor = sqrt(1. - 4.*eta);
+    const REAL8 m1 = 0.5*Mtot*(1.+ factor);
+    const REAL8 m2 = 0.5*Mtot*(1.- factor);
+    /* Generate the tidal amplitude (Eq. 24 of arxiv: 1905.06011) to add to BBH baseline; only for NRTidalv2 */
+    amp_tidal = XLALCreateREAL8Sequence(freqs->length);
+    const REAL8 l1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALparams);
+    const REAL8 l2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALparams);
+
+    ret = XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(amp_tidal, freqs, m1, m2, l1, l2);
+    XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to generate tidal amplitude series to construct SEOBNRv4_ROM_NRTidalv2 waveform.");
+    /* Generated tidal amplitude corrections */
+    for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+      double f = freqs->data[i];
+      double ampT = amp_tidal->data[i];
+
+      if (f > Mf_ROM_max) continue; // We're beyond the highest allowed frequency; since freqs may not be ordered, we'll just skip the current frequency and leave zero in the buffer
+      int j = i + offset; // shift index for frequency series if needed
+      double A = gsl_spline_eval(spline_amp, f, acc_amp);
+      double phase = gsl_spline_eval(spline_phi, f, acc_phi) - phase_change;
+      COMPLEX16 htilde = s*amp0*(A+ampT) * (cos(phase) + I*sin(phase)); //cexp(I*phase);
+      pdata[j] =      pcoef * htilde;
+      cdata[j] = -I * ccoef * htilde;
+    }
+  } else {
+      for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+        double f = freqs->data[i];
+        if (f > Mf_ROM_max) continue; // We're beyond the highest allowed frequency; since freqs may not be ordered, we'll just skip the current frequency and leave zero in the buffer
+        int j = i + offset; // shift index for frequency series if needed
+        double A = gsl_spline_eval(spline_amp, f, acc_amp);
+        double phase = gsl_spline_eval(spline_phi, f, acc_phi) - phase_change;
+        COMPLEX16 htilde = s*amp0*A * (cos(phase) + I*sin(phase));//cexp(I*phase);
+
+        pdata[j] =      pcoef * htilde;
+        cdata[j] = -I * ccoef * htilde;
+      }
+   }
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
 
@@ -1056,6 +1090,7 @@ static int SEOBNRv4ROMCore(
   }
 
   XLALDestroyREAL8Sequence(freqs);
+  XLALDestroyREAL8Sequence(amp_tidal);
 
   gsl_spline_free(spline_amp);
   gsl_spline_free(spline_phi);
@@ -1130,7 +1165,10 @@ int XLALSimIMRSEOBNRv4ROMFrequencySequence(
   REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
   REAL8 chi1,                                   /**< Dimensionless aligned component spin 1 */
   REAL8 chi2,                                   /**< Dimensionless aligned component spin 2 */
-  INT4 nk_max)                                  /**< Truncate interpolants at SVD mode nk_max; don't truncate if nk_max == -1 */
+  INT4 nk_max,                                  /**< Truncate interpolants at SVD mode nk_max; don't truncate if nk_max == -1 */
+  LALDict *LALparams,                          /**< LAL dictionary containing accessory parameters */
+  NRTidal_version_type NRTidal_version 		/**< NRTidal version; either NRTidal_V or NRTidalv2_V or NoNRT_V in case of BBH baseline */
+)
 {
   /* Internally we need m1 > m2, so change around if this is not the case */
   if (m1SI < m2SI) {
@@ -1168,7 +1206,7 @@ int XLALSimIMRSEOBNRv4ROMFrequencySequence(
   // spaced and we want the strain only at these frequencies
   int retcode = SEOBNRv4ROMCore(hptilde, hctilde, phiRef, fRef, distance,
                                 inclination, Mtot_sec, eta, chi1, chi2, freqs,
-                                0, nk_max);
+                                0, nk_max, LALparams, NRTidal_version);
 
   return(retcode);
 }
@@ -1194,7 +1232,10 @@ int XLALSimIMRSEOBNRv4ROM(
   REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
   REAL8 chi1,                                   /**< Dimensionless aligned component spin 1 */
   REAL8 chi2,                                   /**< Dimensionless aligned component spin 2 */
-  INT4 nk_max)                                  /**< Truncate interpolants at SVD mode nk_max; don't truncate if nk_max == -1 */
+  INT4 nk_max,                                  /**< Truncate interpolants at SVD mode nk_max; don't truncate if nk_max == -1 */
+  LALDict *LALparams,                          /**< LAL dictionary containing accessory parameters */
+  NRTidal_version_type NRTidal_version 		/**< NRTidal version; either NRTidal_V or NRTidalv2_V or NoNRT_V in case of BBH baseline */
+)
 {
   /* Internally we need m1 > m2, so change around if this is not the case */
   if (m1SI < m2SI) {
@@ -1233,7 +1274,7 @@ int XLALSimIMRSEOBNRv4ROM(
 
   int retcode = SEOBNRv4ROMCore(hptilde, hctilde, phiRef, fRef, distance,
                                 inclination, Mtot_sec, eta, chi1, chi2, freqs,
-                                deltaF, nk_max);
+                                deltaF, nk_max, LALparams, NRTidal_version);
 
   XLALDestroyREAL8Sequence(freqs);
 

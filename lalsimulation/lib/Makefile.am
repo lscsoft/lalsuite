@@ -145,6 +145,7 @@ pkginclude_HEADERS = \
 	LALSimBurst.h \
 	LALSimIMR.h \
 	LALSimIMRPhenomUtils.h \
+	LALSimIMRPhenomXUtilities.h \
 	LALSimInspiral.h \
 	LALSimInspiralPrecess.h \
 	LALSimInspiralTestGRParams.h \
@@ -163,7 +164,8 @@ pkginclude_HEADERS = \
 	LALSimulationVCSInfo.h \
 	LALSimulationVCSInfoHeader.h \
 	LALSimUniversalRelations.h \
-        LALSimInspiralEOS.h
+        LALSimInspiralEOS.h \
+	LALSimInspiralFDPrecAngles.h
 
 noinst_HEADERS = \
 	LALSimIMRSpinEOBHcapExactDerivativePrec_v3opt.c \
@@ -192,12 +194,41 @@ noinst_HEADERS = \
 	LALSimIMRPhenomD.h \
 	LALSimIMRPhenomD_internals.c \
 	LALSimIMRPhenomD_internals.h \
+	LALSimIMRPhenomX.h \
+	LALSimIMRPhenomX_internals.c \
+	LALSimIMRPhenomX_internals.h \
+	LALSimIMRPhenomX_qnm.c \
+	LALSimIMRPhenomX_qnm.h \
+	LALSimIMRPhenomX_inspiral.c \
+	LALSimIMRPhenomX_inspiral.h \
+	LALSimIMRPhenomX_intermediate.c \
+	LALSimIMRPhenomX_intermediate.h \
+	LALSimIMRPhenomX_ringdown.c \
+	LALSimIMRPhenomX_ringdown.h \
+	LALSimIMRPhenomXHM.h \
+	LALSimIMRPhenomXHM_internals.c \
+	LALSimIMRPhenomXHM_internals.h \
+	LALSimIMRPhenomXHM_qnm.c \
+	LALSimIMRPhenomXHM_qnm.h \
+	LALSimIMRPhenomXHM_inspiral.c \
+	LALSimIMRPhenomXHM_inspiral.h \
+	LALSimIMRPhenomXHM_intermediate.c \
+	LALSimIMRPhenomXHM_intermediate.h \
+	LALSimIMRPhenomXHM_ringdown.c \
+	LALSimIMRPhenomXHM_ringdown.h \
+	LALSimIMRPhenomXHM_structs.h \
+	LALSimIMRPhenomXHM_multiband.c \
+	LALSimIMRPhenomXHM_multiband.h \
 	LALSimIMRPhenomHM.h \
+	LALSimIMRPhenomNSBH.h \
 	LALSimIMRPhenomP.c \
 	LALSimIMRPhenomP.h \
+	LALSimIMRPhenomPv3HM.h \
 	LALSimIMRPhenomInternalUtils.h \
 	LALSimIMRSEOBNRROMUtilities.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.h \
+        LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.h \
+        LALSimBHNSRemnantFits.h \
 	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \
 	LALSimIMRSpinAlignedEOBHcapDerivative.c \
 	LALSimIMRSpinAlignedEOBHcapDerivativeOptimized.c \
@@ -232,7 +263,10 @@ noinst_HEADERS = \
 	LALSimNRTunedTides.h \
 	LALSimRingdownCW.h \
 	LALSimNRHybSurUtilities.h \
-	LALSimIMRNRHybSur3dq8.h
+	LALSimIMRNRHybSur3dq8.h \
+        LALSimInspiralFDPrecAngles_internals.c \
+        LALSimInspiralFDPrecAngles_internals.h \
+        $(END_OF_LIST)
 
 
 lib_LTLIBRARIES = liblalsimulation.la
@@ -254,17 +288,25 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRSEOBNRv2ChirpTime.c \
 	LALSimIMRSEOBNRv4ROM.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.c \
+        LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.c \
+        LALSimBHNSRemnantFits.c \
 	LALSimIMRSEOBNRv4TSurrogate.c \
 	LALSimIMREOBNRv2HMROM.c \
 	LALSimIMRLackeyTidal2013.c \
 	LALSimIMRPhenom.c \
+	LALSimIMRPhenomNSBH.c \
+	LALSimNSBHProperties.c \
 	LALSimIMRPhenomC.c \
 	LALSimIMRPhenomD.c \
 	LALSimIMRPhenomD_NRTidal.c \
 	LALSimIMRPhenomHM.c \
 	LALSimIMRPhenomP.c \
+	LALSimIMRPhenomPv3HM.c \
 	LALSimIMRPhenomInternalUtils.c \
 	LALSimIMRPhenomUtils.c \
+	LALSimIMRPhenomX.c \
+	LALSimIMRPhenomXUtilities.c \
+	LALSimIMRPhenomXHM.c \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimPhenSpinRingDown.c \
 	LALSimInspiralWaveformFlags.c \
@@ -323,8 +365,9 @@ liblalsimulation_la_SOURCES = \
 	LALSimNRHybSurUtilities.c \
 	LALSimIMRNRHybSur3dq8.c \
 	gsl_interpolation_integ_eval.h \
-	gsl_interpolation_steffen.c
-        
+	gsl_interpolation_steffen.c \
+	LALSimInspiralFDPrecAngles.c
+
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \
 	LALSimulationVCSInfo.c \

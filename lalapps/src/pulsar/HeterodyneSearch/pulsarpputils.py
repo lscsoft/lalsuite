@@ -2527,7 +2527,7 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
       pos.pop('i')
 
   # convert C22 back into h0, and phi22 back into phi0 if required
-  posC21 = None  
+  posC21 = None
   if 'c21' in pos.names:
     posC21 = pos['c21'].samples
 

@@ -73,11 +73,6 @@
 
 #include <lal/LALSimNoise.h>
 
-/* check whether openmp is enabled and if so include omp.h */
-#ifdef HAVE_OPENMP
-#include <omp.h>
-#endif
-
 #include <gsl/gsl_sort_double.h>
 #include <gsl/gsl_statistics_double.h>
 #include <gsl/gsl_blas.h>
@@ -159,7 +154,7 @@ extern "C" {
 #define NUMGLITCHPARS 7
 
 /** The maximum number of different detectors allowable. */
-#define MAXDETS 6
+#define MAXDETS 10
 
 /** The usage format for the code.  */
 #define USAGE \

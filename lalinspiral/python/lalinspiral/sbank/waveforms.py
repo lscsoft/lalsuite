@@ -17,6 +17,7 @@
 
 from __future__ import (division, print_function)
 
+import sys
 from math import isnan
 import numpy as np
 from numpy import float32
@@ -346,6 +347,7 @@ class AlignedSpinTemplate(object):
 
     def _compute_waveform(self, df, f_final):
 
+        phi0 = 0  # This is a reference phase, and not an intrinsic parameter
         approx = lalsim.GetApproximantFromString( self.approximant )
 
         if lalsim.SimInspiralImplementedFDApproximants(approx):

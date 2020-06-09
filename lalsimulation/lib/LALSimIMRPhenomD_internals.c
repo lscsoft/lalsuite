@@ -171,34 +171,6 @@ static double FinalSpin0815(double eta, double chi1, double chi2) {
 }
 
 /**
- * Formula to predict the total radiated energy. Equation 3.7 and 3.8 arXiv:1508.07250
- * Input parameter s defined around Equation 3.7 and 3.8.
- */
-static double EradRational0815_s(double eta, double s) {
-  double eta2 = eta*eta;
-  double eta3 = eta2*eta;
-
-  return (eta*(0.055974469826360077 + 0.5809510763115132*eta - 0.9606726679372312*eta2 + 3.352411249771192*eta3)*
-    (1. + (-0.0030302335878845507 - 2.0066110851351073*eta + 7.7050567802399215*eta2)*s))/(1. + (-0.6714403054720589 - 1.4756929437702908*eta + 7.304676214885011*eta2)*s);
-}
-
-/**
- * Wrapper function for EradRational0815_s.
- */
-static double EradRational0815(double eta, double chi1, double chi2) {
-  // Convention m1 >= m2
-  double Seta = sqrt(1.0 - 4.0*eta);
-  double m1 = 0.5 * (1.0 + Seta);
-  double m2 = 0.5 * (1.0 - Seta);
-  double m1s = m1*m1;
-  double m2s = m2*m2;
-  // arXiv:1508.07250
-  double s = (m1s * chi1 + m2s * chi2) / (m1s + m2s);
-
-  return EradRational0815_s(eta, s);
-}
-
-/**
  * fring is the real part of the ringdown frequency
  * 1508.07250 figure 9
  */
@@ -211,7 +183,7 @@ static double fring(double eta, double chi1, double chi2, double finspin) {
   gsl_spline *iFring = gsl_spline_alloc(gsl_interp_cspline, QNMData_length);
   gsl_spline_init(iFring, QNMData_a, QNMData_fring, QNMData_length);
 
-  return_val = gsl_spline_eval(iFring, finspin, acc) / (1.0 - EradRational0815(eta, chi1, chi2));
+  return_val = gsl_spline_eval(iFring, finspin, acc) / (1.0 - PhenomInternal_EradRational0815(eta, chi1, chi2));
 
   gsl_spline_free(iFring);
   gsl_interp_accel_free(acc);
@@ -231,7 +203,7 @@ static double fdamp(double eta, double chi1, double chi2, double finspin) {
   gsl_spline *iFdamp = gsl_spline_alloc(gsl_interp_cspline, QNMData_length);
   gsl_spline_init(iFdamp, QNMData_a, QNMData_fdamp, QNMData_length);
 
-  return_val = gsl_spline_eval(iFdamp, finspin, acc) / (1.0 - EradRational0815(eta, chi1, chi2));
+  return_val = gsl_spline_eval(iFdamp, finspin, acc) / (1.0 - PhenomInternal_EradRational0815(eta, chi1, chi2));
 
   gsl_spline_free(iFdamp);
   gsl_interp_accel_free(acc);

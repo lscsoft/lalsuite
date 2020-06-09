@@ -460,13 +460,43 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 		}
 		MPI_Bcast(&local_saveStateFlag, 1, MPI_INT, 0, MPI_COMM_WORLD);
 		MPI_Bcast(&local_exitFlag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        INT4 saveattempts=0;
+        INT4 retrydelay=5; /* 5 seconds before initial retry */
+        INT4 retcode=XLAL_SUCCESS;
+        /* The following checkpoint code is wrapped in do {} while loops
+         * to allow 10 retries, in case of filesystem congestion
+         */
 		if(local_saveStateFlag!=0)
 		{
-				LALInferenceCheckpointMCMC(runState);
-				LALInferenceWriteMCMCSamples(runState);
-				/* Wait for all processes to save */
-				MPI_Barrier(MPI_COMM_WORLD);
-				__master_saveStateFlag=0;
+            do
+            {
+                XLAL_TRY(LALInferenceCheckpointMCMC(runState), retcode);
+                if(retcode!=XLAL_SUCCESS) 
+                {
+                    saveattempts+=1;
+                    fprintf(stderr,"Process %i failed to write checkpoint file %s \
+                    at attempt %i, waiting to retry\n",MPIrank, runState->resumeOutFileName, saveattempts);
+                    sleep(retrydelay*saveattempts); /* In case of IO failure wait progressively longer */
+                }
+            } while (retcode!=XLAL_SUCCESS && saveattempts<10);
+            if(retcode!=XLAL_SUCCESS) {fprintf(stderr,"Process %i failed to checkpoint\n", MPIrank);}
+            saveattempts=0;
+            do
+            {
+                XLAL_TRY(LALInferenceWriteMCMCSamples(runState), retcode);
+                if(retcode!=XLAL_SUCCESS) 
+                {
+                    saveattempts+=1;
+                    fprintf(stderr,"Process %i failed to write samples file %s \
+                    at attempt %i, waiting to retry\n",MPIrank, runState->outFileName, saveattempts);
+                    sleep(retrydelay*saveattempts); /* In case of IO failure wait progressively longer */
+                }
+            } while (retcode!=XLAL_SUCCESS && saveattempts<10);
+            if(retcode!=XLAL_SUCCESS) {fprintf(stderr,"Process %i failed to checkpoint\n", MPIrank);}
+            /* Wait for all processes to save */
+			MPI_Barrier(MPI_COMM_WORLD);
+			__master_saveStateFlag=0;
+            local_saveStateFlag=0;
 		}
 		if(local_exitFlag) {
 				/* Wait for all processes to be ready to exit */
@@ -1529,6 +1559,9 @@ void LALInferenceWriteMCMCSamples(LALInferenceRunState *runState) {
             LALInferenceH5VariablesArrayToDataset(group, output_array, N_output_array, thread->name);
         }
     }
+    char *cl=NULL;
+    cl=LALInferencePrintCommandLine(runState->commandLine);
+    XLALH5FileAddStringAttribute(group,"CommandLine",cl);
     XLALH5FileClose(group);
     XLALH5FileClose(output);
     LALInferencePrintCheckpointFileInfo(runState->outFileName);

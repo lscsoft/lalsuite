@@ -560,7 +560,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     /* set detector */
     ifodata->detector = XLALGetSiteInfo( dets[FACTOR(i,ml)] );
     ifomodel->detector = XLALGetSiteInfo( dets[FACTOR(i,ml)] );
-    snprintf(ifodata->name, sizeof(char)*DETNAMELEN, "%s", dets[FACTOR(i,ml)]);
+    strncpy(ifodata->name, dets[FACTOR(i,ml)], DETNAMELEN-1);
 
     /* set dummy initial time */
     gpstime.gpsSeconds = 0;

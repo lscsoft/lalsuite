@@ -1,35 +1,8 @@
-#!/bin/sh
-
-## set LAL debug level
-echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
-export LAL_DEBUG_LEVEL
-
-LC_ALL_old=$LC_ALL
-export LC_ALL=C
-
-## take user-arguments
-extra_args="$@"
-
-## allow 'make test' to work from builddir != srcdir
-if [ -z "${srcdir}" ]; then
-    srcdir=`dirname $0`
-fi
-
-builddir="./";
-injectdir="../Injections/"
-fdsdir="../Fstatistic/"
-
 ##---------- names of codes
-cap_code="${builddir}lalapps_ComputeAntennaPattern"
-pds_code="${builddir}lalapps_PrintDetectorState"
-mfd_code="${injectdir}lalapps_Makefakedata_v4"
-pfs_code="${fdsdir}lalapps_PredictFstat"
-
-testDir="./testCAP.d";
-if [ -d "$testDir" ]; then
-    rm -rf $testDir
-fi
-mkdir -p "$testDir"
+cap_code="lalapps_ComputeAntennaPattern"
+pds_code="lalapps_PrintDetectorState"
+mfd_code="lalapps_Makefakedata_v4"
+pfs_code="lalapps_PredictFstat"
 
 tolerance=1e-3
 tolerance_pfs=1 ## more lenient because PFS has noise fluctuations from MFD
@@ -54,16 +27,15 @@ alpha=4.649850989853494
 delta=-0.506281802989210
 
 # ---------- temporary files
-outCAP="${testDir}/antenna_pattern_test.dat"
-outPDS="${testDir}/detector_state_test.dat"
-skygridfile="${testDir}/skygrid_test.dat"
-timestampsfile_H1="${testDir}/timestamps_test_H1.dat"
-timestampsfile_L1="${testDir}/timestamps_test_L1.dat"
-sftfile_base="${testDir}/sft_test_"
+outCAP="antenna_pattern_test.dat"
+outPDS="detector_state_test.dat"
+skygridfile="skygrid_test.dat"
+timestampsfile_H1="timestamps_test_H1.dat"
+timestampsfile_L1="timestamps_test_L1.dat"
+sftfile_base="sft_test_"
 sftfile_H1="${sftfile_base}H1"
 sftfile_L1="${sftfile_base}L1"
-outPFS="${testDir}/pfs_test.dat"
-
+outPFS="pfs_test.dat"
 
 ## if a previous run failed, have to delete some files to avoid appending
 ## (the others are forcefully recreated by their respective lalapps)
@@ -119,7 +91,6 @@ if [ "$fail_a_cap" -o "$fail_b_cap" ]; then
 else
     echo "==> OK at tolerance=$tolerance"
 fi
-
 
 echo "----------------------------------------------------------------------------------------------------"
 echo "ComputeAntennaPattern Test2: a(t), b(t) over sky grid";
@@ -211,7 +182,6 @@ if [ "$fail_a1" -o "$fail_b1" -o "$fail_a2" -o "$fail_b2" -o "$fail_a3" -o "$fai
 else
     echo "==> OK at tolerance=$tolerance"
 fi
-
 
 echo "----------------------------------------------------------------------------------------------------"
 echo "ComputeAntennaPattern Test3: matrix-element averaging over timestamps from file";
@@ -532,22 +502,11 @@ echo "    H1L1 PFS: A=$A_H1L1_pfs,   B=$B_H1L1_pfs,   C=$C_H1L1_pfs,   D=$D_H1L1
 
 if [ "$fail_A_H1" -o "$fail_B_H1" -o "$fail_C_H1" -o "$fail_D_H1" -o "$fail_A_L1" -o "$fail_B_L1" -o "$fail_C_L1" -o "$fail_D_L1" -o "$fail_A_H1L1" -o "$fail_B_H1L1" -o "$fail_C_H1L1" -o "$fail_D_H1L1" ]; then
     echo "==> FAILED at tolerance=$tolerance_pfs"
-    exit 1
-#     retstatus=1
+    retstatus=1
 else
     echo "==> OK at tolerance=$tolerance_pfs"
     echo
     echo "========== OK. All ComputeAntennaPattern tests PASSED. =========="
     echo
 fi
-
-## clean up files
-if [ -z "$NOCLEANUP" ]; then
-    rm -rf $testDir
-    echo "Cleaned up."
-fi
-
-## restore original locale, just in case someone source'd this file
-export LC_ALL=$LC_ALL_old
-
 exit $retstatus

@@ -24,6 +24,7 @@
 #include <lal/Sequence.h>
 
 #include "LALSimIMRPhenomInternalUtils.h"
+#include "LALSimIMRPhenomUtils.h"
 
 UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
 
@@ -49,7 +50,8 @@ static int IMRPhenomDGenerateFD(
     const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
     const REAL8 chi2_in,               /**< aligned-spin of companion 2 */
     const REAL8 distance,              /**< distance to source (m) */
-    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+    LALDict *extraParams, /**< linked list containing the extra testing GR parameters */
+    NRTidal_version_type NRTidal_version /**< NRTidal version; either NRTidal_V or NRTidalv2_V or NoNRT_V in case of BBH baseline */
 );
 
 /**
@@ -112,7 +114,8 @@ int XLALSimIMRPhenomDGenerateFD(
     const REAL8 f_min,                 /**< Starting GW frequency (Hz) */
     const REAL8 f_max,                 /**< End frequency; 0 defaults to Mf = \ref f_CUT */
     const REAL8 distance,               /**< Distance of source (m) */
-    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+    LALDict *extraParams, /**< linked list containing the extra testing GR parameters */
+    NRTidal_version_type NRTidal_version /**< Version of NRTides; can be one of NRTidal versions or NoNRT_V for the BBH baseline */
 ) {
   /* external: SI; internal: solar masses */
   const REAL8 m1 = m1_SI / LAL_MSUN_SI;
@@ -162,7 +165,7 @@ int XLALSimIMRPhenomDGenerateFD(
   freqs->data[1] = f_max_prime;
   int status = IMRPhenomDGenerateFD(htilde, freqs, deltaF, phi0, fRef,
                                     m1, m2, chi1, chi2,
-                                    distance, extraParams);
+                                    distance, extraParams, NRTidal_version);
   XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to generate IMRPhenomD waveform.");
   XLALDestroyREAL8Sequence(freqs);
 
@@ -204,7 +207,8 @@ int XLALSimIMRPhenomDFrequencySequence(
     const REAL8 chi1,                            /**< Aligned-spin parameter of companion 1 */
     const REAL8 chi2,                            /**< Aligned-spin parameter of companion 2 */
     const REAL8 distance,                        /**< Distance of source (m) */
-    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+    LALDict *extraParams, /**< linked list containing the extra testing GR parameters */
+    NRTidal_version_type NRTidal_version /**< NRTidal version; either NRTidal_V or NRTidalv2_V or NoNRT_V in case of BBH baseline */
 ) {
   /* external: SI; internal: solar masses */
   const REAL8 m1 = m1_SI / LAL_MSUN_SI;
@@ -232,7 +236,7 @@ int XLALSimIMRPhenomDFrequencySequence(
 
   int status = IMRPhenomDGenerateFD(htilde, freqs, 0, phi0, fRef,
                                     m1, m2, chi1, chi2,
-                                    distance, extraParams);
+                                    distance, extraParams, NRTidal_version);
   XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to generate IMRPhenomD waveform.");
 
   return XLAL_SUCCESS;
@@ -261,7 +265,8 @@ static int IMRPhenomDGenerateFD(
     const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
     const REAL8 chi2_in,               /**< aligned-spin of companion 2 */
     const REAL8 distance,              /**< distance to source (m) */
-    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+    LALDict *extraParams, /**< linked list containing the extra testing GR parameters */
+    NRTidal_version_type NRTidal_version /**< NRTidal version; either NRTidal_V or NRTidalv2_V or NoNRT_V in case of BBH baseline */
 ) {
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
 
@@ -269,18 +274,38 @@ static int IMRPhenomDGenerateFD(
   // At the end we will check if we created a LALDict in extraParams
   // and destroy it if we did.
   LALDict *extraParams_in = extraParams;
+  REAL8Sequence *amp_tidal = NULL; /* Tidal amplitude series; required only for IMRPhenomD_NRTidalv2 */
+  REAL8 dquadmon1_in = 0., dquadmon2_in = 0., lambda1_in = 0, lambda2_in = 0.;
+  if (NRTidal_version == NRTidalv2_V) {
+    dquadmon1_in = XLALSimInspiralWaveformParamsLookupdQuadMon1(extraParams);
+    dquadmon2_in = XLALSimInspiralWaveformParamsLookupdQuadMon2(extraParams);
+    lambda1_in = XLALSimInspiralWaveformParamsLookupTidalLambda1(extraParams);
+    lambda2_in = XLALSimInspiralWaveformParamsLookupTidalLambda2(extraParams);
+  }
 
-  REAL8 chi1, chi2, m1, m2;
-  if (m1_in>m2_in) {
+  REAL8 chi1, chi2, m1, m2, dquadmon1, dquadmon2, lambda1, lambda2;
+  if (m1_in>=m2_in) {
      chi1 = chi1_in;
      chi2 = chi2_in;
      m1   = m1_in;
      m2   = m2_in;
+     dquadmon1 = dquadmon1_in;
+     dquadmon2 = dquadmon2_in;
+     lambda1 = lambda1_in;
+     lambda2 = lambda2_in;
   } else { // swap spins and masses
      chi1 = chi2_in;
      chi2 = chi1_in;
      m1   = m2_in;
      m2   = m1_in;
+     dquadmon1 = dquadmon2_in;
+     dquadmon2 = dquadmon1_in;
+     lambda1 = lambda2_in;
+     lambda2 = lambda1_in;
+     if (NRTidal_version == NRTidalv2_V) {
+       XLALSimInspiralWaveformParamsInsertdQuadMon1(extraParams, dquadmon1);
+       XLALSimInspiralWaveformParamsInsertdQuadMon2(extraParams, dquadmon2);
+     }
   }
 
   int status = init_useful_powers(&powers_of_pi, LAL_PI);
@@ -398,25 +423,55 @@ static int IMRPhenomDGenerateFD(
   const REAL8 phi_precalc = 2.*phi0 + phifRef;
 
   int status_in_for = XLAL_SUCCESS;
+  int ret = XLAL_SUCCESS;
   /* Now generate the waveform */
-  #pragma omp parallel for
-  for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
-    double Mf = M_sec * freqs->data[i];
-    int j = i + offset; // shift index for frequency series if needed
+  if (NRTidal_version == NRTidalv2_V) {
+    /* Generate the tidal amplitude (Eq. 24 of arxiv: 1905.06011) to add to BBH baseline; only for IMRPhenomD_NRTidalv2 */
+    amp_tidal = XLALCreateREAL8Sequence(freqs->length);
+    ret = XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(amp_tidal, freqs, m1, m2, lambda1, lambda2);
+    XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to generate tidal amplitude series to construct IMRPhenomD_NRTidalv2 waveform.");
+    /* Generated tidal amplitude corrections */
+    #pragma omp parallel for
+    for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+      double Mf = M_sec * freqs->data[i];
+      double ampT = amp_tidal->data[i];
+      int j = i + offset; // shift index for frequency series if needed
 
-    UsefulPowers powers_of_f;
-    status_in_for = init_useful_powers(&powers_of_f, Mf);
-    if (XLAL_SUCCESS != status_in_for)
-    {
-      XLALPrintError("init_useful_powers failed for Mf, status_in_for=%d", status_in_for);
-      status = status_in_for;
+      UsefulPowers powers_of_f;
+      status_in_for = init_useful_powers(&powers_of_f, Mf);
+      if (XLAL_SUCCESS != status_in_for)
+      {
+        XLALPrintError("init_useful_powers failed for Mf, status_in_for=%d", status_in_for);
+        status = status_in_for;
+      }
+      else {
+        REAL8 amp = IMRPhenDAmplitude(Mf, pAmp, &powers_of_f, &amp_prefactors);
+        REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn, &powers_of_f, &phi_prefactors, 1.0, 1.0);
+
+        phi -= t0*(Mf-MfRef) + phi_precalc;
+        ((*htilde)->data->data)[j] = amp0 * (amp+2*sqrt(LAL_PI/5.)*ampT) * cexp(-I * phi);
+      }
     }
-    else {
-      REAL8 amp = IMRPhenDAmplitude(Mf, pAmp, &powers_of_f, &amp_prefactors);
-      REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn, &powers_of_f, &phi_prefactors, 1.0, 1.0);
+  } else {
+      #pragma omp parallel for
+      for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
+      double Mf = M_sec * freqs->data[i];
+      int j = i + offset; // shift index for frequency series if needed
 
-      phi -= t0*(Mf-MfRef) + phi_precalc;
-      ((*htilde)->data->data)[j] = amp0 * amp * cexp(-I * phi);
+      UsefulPowers powers_of_f;
+      status_in_for = init_useful_powers(&powers_of_f, Mf);
+      if (XLAL_SUCCESS != status_in_for)
+      {
+        XLALPrintError("init_useful_powers failed for Mf, status_in_for=%d", status_in_for);
+        status = status_in_for;
+      }
+      else {
+        REAL8 amp = IMRPhenDAmplitude(Mf, pAmp, &powers_of_f, &amp_prefactors);
+        REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn, &powers_of_f, &phi_prefactors, 1.0, 1.0);
+
+        phi -= t0*(Mf-MfRef) + phi_precalc;
+        ((*htilde)->data->data)[j] = amp0 * amp * cexp(-I * phi);
+      }
     }
   }
 
@@ -424,6 +479,7 @@ static int IMRPhenomDGenerateFD(
   LALFree(pPhi);
   LALFree(pn);
   XLALDestroyREAL8Sequence(freqs);
+  XLALDestroyREAL8Sequence(amp_tidal);
 
 
   /* If extraParams was allocated in this function and not passed in
@@ -687,37 +743,6 @@ double XLALSimIMRPhenomDFinalSpin(
     return finspin;
 }
 
-/**
- * Helper function used in PhenomHM and PhenomPv3HM
- * Returns the final mass from the fit used in PhenomD
- */
-double IMRPhenomDFinalMass(
-    REAL8 m1,    /**< mass of primary in solar masses */
-    REAL8 m2,    /**< mass of secondary in solar masses */
-    REAL8 chi1z, /**< aligned-spin component on primary */
-    REAL8 chi2z  /**< aligned-spin component on secondary */
-)
-{
-  int retcode = 0;
-  retcode = PhenomInternal_AlignedSpinEnforcePrimaryIsm1(
-      &m1,
-      &m2,
-      &chi1z,
-      &chi2z);
-  XLAL_CHECK(
-      XLAL_SUCCESS == retcode,
-      XLAL_EFUNC,
-      "PhenomInternal_AlignedSpinEnforcePrimaryIsm1 failed");
-  REAL8 Mtot = m1 + m2;
-  REAL8 eta = m1 * m2 / (Mtot * Mtot);
-
-  if (eta > 0.25)
-    PhenomInternal_nudge(&eta, 0.25, 1e-6);
-  if (eta > 0.25 || eta < 0.0)
-    XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
-
-  return (1.0 - EradRational0815(eta, chi1z, chi2z));
-}
 
 /* IMRPhenomDSetupPhase */
 /* IMRPhenomDEvaluatePhaseFrequencySequence */
@@ -737,18 +762,22 @@ int IMRPhenomDPhaseFrequencySequence(
     size_t ind_max,        /**< end index for frequency loop */
     REAL8 m1,              /**< mass of primary in solar masses */
     REAL8 m2,              /**< mass of secondary in solar masses */
-    REAL8 chi1z,           /**< dimensionless aligned-spin of primary */
-    REAL8 chi2z,           /**< dimensionless aligned-spin of secondary */
-    REAL8 Rholm,           /**< ratio of ringdown frequencies f_RD_22/f_RD_lm */
-    REAL8 Taulm,           /**< ratio of ringdown damping times f_RM_22/f_RM_lm */
-    LALDict *extraParams   /**< linked list containing the extra testing GR parameters */
+    REAL8 chi1x,           /**< x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi1y,           /**< y-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi1z,           /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2x,           /**< x-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2y,           /**< y-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2z,           /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 Rholm,         /**< ratio of ringdown frequencies f_RD_22/f_RD_lm */
+    REAL8 Taulm,         /**< ratio of ringdown damping times f_RM_22/f_RM_lm */
+    LALDict *extraParams /**< linked list containing the extra testing GR parameters */
 )
 {
   int retcode = 0;
   PhenDAmpAndPhasePreComp pD;
   retcode = IMRPhenomDSetupAmpAndPhaseCoefficients(
-    &pD, m1, m2, chi1z,
-    chi2z, Rholm, Taulm, extraParams);
+    &pD, m1, m2, chi1x, chi1y, chi1z,
+    chi2x, chi2y, chi2z, Rholm, Taulm, extraParams);
   if (retcode != XLAL_SUCCESS)
   {
     XLALPrintError("XLAL Error - IMRPhenomDSetupAmpAndPhaseCoefficients failed\n");
@@ -796,8 +825,12 @@ int IMRPhenomDAmpFrequencySequence(
     size_t ind_max,       /**< end index for frequency loop */
     REAL8 m1,             /**< mass of primary in solar masses */
     REAL8 m2,             /**< mass of secondary in solar masses */
-    REAL8 chi1z,          /**< dimensionless aligned-spin of primary */
-    REAL8 chi2z           /**< dimensionless aligned-spin of secondary */
+    REAL8 chi1x,          /**< x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi1y,          /**< y-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi1z,          /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2x,          /**< x-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2y,          /**< y-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2z           /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
 )
 {
   int retcode;
@@ -809,12 +842,15 @@ int IMRPhenomDAmpFrequencySequence(
   retcode = init_useful_powers(&powers_of_pi, LAL_PI);
   XLAL_CHECK(XLAL_SUCCESS == retcode, retcode, "Failed to initiate useful powers of pi.");
 
-  PhenomInternal_AlignedSpinEnforcePrimaryIsm1(&m1, &m2, &chi1z, &chi2z);
+  PhenomInternal_PrecessingSpinEnforcePrimaryIsm1(&m1, &m2, &chi1x, &chi1y, &chi1z, &chi2x, &chi2y, &chi2z);
   const REAL8 Mtot = m1 + m2;
   const REAL8 eta = m1 * m2 / (Mtot * Mtot);
 
   // Calculate phenomenological parameters
-  const REAL8 finspin = FinalSpin0815(eta, chi1z, chi2z); //FinalSpin0815 - 0815 is like a version number
+  // const REAL8 finspin = FinalSpin0815(eta, chi1z, chi2z); //FinalSpin0815 - 0815 is like a version number
+  const REAL8 chip = XLALSimPhenomUtilsChiP(m1, m2, chi1x, chi1y, chi2x, chi2y);
+  const REAL8 finspin = XLALSimPhenomUtilsPhenomPv2FinalSpin(m1, m2, chi1z, chi2z, chip);
+  // const REAL8 finspin = XLALSimPhenomUtilsPhenomPv3HMFinalSpin(m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z);
 
   if (finspin < MIN_FINAL_SPIN)
     XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
@@ -904,14 +940,19 @@ REAL8 IMRPhenomDComputet0(
  * Used to optimise the calls to IMRPhenDPhase and IMRPhenDAmplitude
  */
 int IMRPhenomDSetupAmpAndPhaseCoefficients(
-    PhenDAmpAndPhasePreComp *pDPreComp,
-    REAL8 m1,
-    REAL8 m2,
-    REAL8 chi1z,
-    REAL8 chi2z,
-    const REAL8 Rholm,
-    const REAL8 Taulm,
-    LALDict *extraParams)
+    PhenDAmpAndPhasePreComp *pDPreComp, /**< [out] PhenDAmpAndPhasePreComp struct */
+    REAL8 m1,                           /**< mass of companion 1 (Msun) */
+    REAL8 m2,                           /**< mass of companion 2 (Msun) */
+    REAL8 chi1x,                        /**< x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi1y,                        /**< y-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi1z,                        /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2x,                        /**< x-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2y,                        /**< y-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    REAL8 chi2z,                        /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+    const REAL8 Rholm,                  /**< ratio of (2,2) mode to (l,m) mode ringdown frequency */
+    const REAL8 Taulm,                  /**< ratio of (l,m) mode to (2,2) mode damping time */
+    LALDict *extraParams                /**<linked list containing the extra parameters */
+)
 {
 
   // Make a pointer to LALDict to circumvent a memory leak
@@ -926,12 +967,15 @@ int IMRPhenomDSetupAmpAndPhaseCoefficients(
   retcode = init_useful_powers(&powers_of_pi, LAL_PI);
   XLAL_CHECK(XLAL_SUCCESS == retcode, retcode, "Failed to initiate useful powers of pi.");
 
-  PhenomInternal_AlignedSpinEnforcePrimaryIsm1(&m1, &m2, &chi1z, &chi2z);
+  PhenomInternal_PrecessingSpinEnforcePrimaryIsm1(&m1, &m2, &chi1x, &chi1y, &chi1z, &chi2x, &chi2y, &chi2z);
   const REAL8 Mtot = m1 + m2;
   const REAL8 eta = m1 * m2 / (Mtot * Mtot);
 
   // Calculate phenomenological parameters
-  const REAL8 finspin = FinalSpin0815(eta, chi1z, chi2z); //FinalSpin0815 - 0815 is like a version number
+  // const REAL8 finspin = FinalSpin0815(eta, chi1z, chi2z); //FinalSpin0815 - 0815 is like a version number
+  const REAL8 chip = XLALSimPhenomUtilsChiP(m1, m2, chi1x, chi1y, chi2x, chi2y);
+  const REAL8 finspin = XLALSimPhenomUtilsPhenomPv2FinalSpin(m1, m2, chi1z, chi2z, chip);
+  // const REAL8 finspin = XLALSimPhenomUtilsPhenomPv3HMFinalSpin(m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z);
 
   if (finspin < MIN_FINAL_SPIN)
     XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \

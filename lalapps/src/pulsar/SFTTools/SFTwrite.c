@@ -27,7 +27,7 @@
  * You can do this on little-endian and big-endian machines to generate
  * both flavors.  This produces a set of good and a set of bad SFTs.  The
  * good SFTs are:
- * SFT-test[1234567] and SFT-good
+ * SFT-test[12345678] and SFT-good
  * and the bad SFTs are
  * SFT-bad[123456789] and SFT-bad1[0-4]
  */
@@ -187,39 +187,12 @@ int main(void) {
   modify_bytes("SFT-bad14", 16, (char *)&dtmp, 8);
   modify_checksum("SFT-bad14", 9944972421627148413ULL, 15720824585133081082ULL);
 
-  printf("To test SFTs, do for example:\n"
-	 "./SFTvalidate SFT-good SFT-test[1234567]\n"
-	 "./SFTvalidate SFT-bad1\n"
-	 "./SFTvalidate SFT-bad2\n"
-	 "./SFTvalidate SFT-bad3\n"
-	 "./SFTvalidate SFT-bad4\n"
-	 "./SFTvalidate SFT-bad5\n"
-	 "./SFTvalidate SFT-bad6\n"
-	 "./SFTvalidate SFT-bad7\n"
-	 "./SFTvalidate SFT-bad8\n"
-	 "./SFTvalidate SFT-bad9\n"
-	 "./SFTvalidate SFT-bad10\n"
-	 "./SFTvalidate SFT-bad11\n"
-	 "./SFTvalidate SFT-bad12\n"
-	 "./SFTvalidate SFT-bad13\n"
-	 "./SFTvalidate SFT-bad14\n"
-	 "(checking exit status after each command) or you can also try\n"
-	 "./SFTdumpheader SFT-good SFT-test[1234567]\n"
-	 "./SFTdumpheader SFT-bad1\n"
-	 "./SFTdumpheader SFT-bad2\n"
-	 "./SFTdumpheader SFT-bad3\n"
-	 "./SFTdumpheader SFT-bad4\n"
-	 "./SFTdumpheader SFT-bad5\n"
-	 "./SFTdumpheader SFT-bad6\n"
-	 "./SFTdumpheader SFT-bad7\n"
-	 "./SFTdumpheader SFT-bad8\n"
-	 "./SFTdumpheader SFT-bad9\n"
-	 "./SFTdumpheader SFT-bad10\n"
-	 "./SFTdumpheader SFT-bad11\n"
-	 "./SFTdumpheader SFT-bad12\n"
-	 "./SFTdumpheader SFT-bad13\n"
-	 "./SFTdumpheader SFT-bad14\n"
-	 "or you can also replace SFTdumpheader with SFTdumpall.\n");
+  for (size_t i = 0; i < 8; i += 2) data[i] += 1e-5;
+  for (size_t i = 1; i < 8; i += 2) data[i] -= 1e-5;
+  printerror(WriteSFT(fp=openfile("SFT-test8"), 12345,          6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test8", data)); fclose(fp);
+
+  printf("Wrote good SFTs: SFT-test[12345678] SFT-good\n");
+  printf("Wrote bad SFTs: SFT-bad[123456789] SFT-bad1[0-4]\n");
 
   return 0;
 }

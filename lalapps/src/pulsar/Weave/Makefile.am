@@ -1,13 +1,9 @@
+BUILT_SOURCES =
+EXTRA_DIST =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
+include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
-
-TEST_EXTENSIONS = .sh
-SH_LOG_COMPILER = /bin/bash $(srcdir)/test-compiler.sh
-
-if !CFITSIO
-SH_LOG_COMPILER += skip
-endif
 
 bin_PROGRAMS = \
 	lalapps_WeaveSetup \
@@ -61,25 +57,19 @@ lalapps_WeaveCompare_SOURCES = \
 	WeaveCompare.c \
 	$(END_OF_LIST)
 
-TESTS = \
-	TestInterpolating.sh \
-	TestNonInterpolating.sh \
-	TestSingleSegment.sh \
-	TestSimulateSearch.sh \
-	TestCacheMaxSize.sh \
-	TestCheckpointing.sh \
-	TestPartitioning.sh \
-	$(END_OF_LIST)
+# Add shell test scripts to this variable
+test_scripts += testWeave_interpolating.sh
+test_scripts += testWeave_non_interpolating.sh
+test_scripts += testWeave_single_segment.sh
+test_scripts += testWeave_simulate_search.sh
+test_scripts += testWeave_cache_max_size.sh
+test_scripts += testWeave_checkpointing.sh
+test_scripts += testWeave_partitioning.sh
 
-EXTRA_DIST = \
-	$(TESTS) \
-	test-compiler.sh \
-	timestamps-1.txt \
-	timestamps-2.txt \
-	TestSingleSegment.tar.gz \
-	TestInterpolating.tar.gz \
-	TestNonInterpolating.tar.gz \
-	$(END_OF_LIST)
+# Add any helper programs required by tests to this variable
+test_helpers +=
 
-clean-local:
-	-rm -rf Test*.testdir/
+# All tests require CFITSIO
+if !CFITSIO
+skip_tests += $(test_scripts)
+endif

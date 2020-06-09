@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/types.h>
+#include <string.h>
 
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
@@ -84,6 +85,8 @@ const char * usage =
 "                             IMRPhenomD\n"
 "                             IMRPhenomHM\n"
 "                             IMRPhenomPv2\n"
+"                             IMRPhenomPv3\n"
+"                             IMRPhenomPv3HM\n"
 "                             EOBNRv2\n"
 "                             EOBNRv2HM\n"
 "                             SEOBNRv1\n"
@@ -101,6 +104,7 @@ const char * usage =
 "                             SpinDominatedWf\n"
 "                             HGimri\n"
 "                             NRHybSur3dq8\n"
+"                             NR_hdf5\n"
 "                           Supported FD approximants:\n"
 "                             IMRPhenomA\n"
 "                             IMRPhenomB\n"
@@ -108,6 +112,8 @@ const char * usage =
 "                             IMRPhenomD\n"
 "                             IMRPhenomP\n"
 "                             IMRPhenomPv2\n"
+"                             IMRPhenomPv3\n"
+"                             IMRPhenomPv3HM\n"
 "                             EOBNRv2_ROM\n"
 "                             EOBNRv2HM_ROM\n"
 "                             SEOBNRv1_ROM_EffectiveSpin\n"
@@ -172,6 +178,7 @@ const char * usage =
 "--eccentricity ecc         Eccentricity (default 0)\n"
 "--mean-per-ano psi         Mean periastron anomaly in radians (default 0)\n"
 "--axis AXIS                for PhenSpin: 'View' (default), 'TotalJ', 'OrbitalL'\n"
+"--nr-file                  for NR_hdf5\n"
 "--nonGRpar NAME VALUE      add the nonGRparam with name 'NAME' and value 'VALUE'\n"
 "                           Supported names:\n"
 "                             NonGRPhi1\n"
@@ -191,6 +198,10 @@ const char * usage =
 "--higher-modes VALUE       specify l modes with value 'VALUE' (L2 or RESTRICTED is default)\n"
 "--outname FNAME            Output to file FNAME (default 'simulation.dat')\n"
 "--verbose                  If included, add verbose output\n"
+"--phenomXHMMband float     Threshold parameter for the Multibanding of IMRPhenomXHM. By default set to 10^-3. If set to 0 then do not use multibanding.\n"
+"--modesList string         List of modes to be used by the model, e.g. --modesList '2,2, 2,-2, 2,1, 2,-1'. \n"
+"                           To use all the modes available in the mode do not add --modesList. Do not use if you do not know which modes the model returns!\n"
+
 ;
 
 /* Parse command line, sanity check arguments, and return a newly
@@ -240,7 +251,6 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(params->params, 0.);
     snprintf(params->outname, sizeof(params->outname), "simulation.dat"); /* output to this file */
     params->verbose = 0; /* No verbosity */
-
     /* consume command line */
     for (i = 1; i < argc; ++i) {
         if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--help") == 0)) {
@@ -362,7 +372,25 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
 	    }
         } else if (strcmp(argv[i], "--outname") == 0) {
             snprintf(params->outname, sizeof(params->outname), "%s", argv[++i]);
-        } else {
+        } else if (strcmp(argv[i], "--nr-file") == 0) {
+	  XLALSimInspiralWaveformParamsInsertNumRelData(params->params, argv[++i]);
+        } else if (strcmp(argv[i], "--modesList") == 0) {
+            char numbers_str[50], *currnum;
+            strncpy(numbers_str, argv[++i], strlen(numbers_str)-1);
+            int numbers[25], iii = 0;
+            while ((currnum = strtok(iii ? NULL : numbers_str, ",")) != NULL){
+              numbers[iii++] = atoi(currnum);
+            }
+            LALValue *ModeArray = XLALSimInspiralCreateModeArray();
+            for (int ii=0; ii<iii; ii+=2){
+               XLALSimInspiralModeArrayActivateMode(ModeArray, numbers[ii], numbers[ii+1]);
+               XLALSimInspiralWaveformParamsInsertModeArray(params->params, ModeArray);
+             }
+             XLALDestroyValue(ModeArray);
+
+        }else if(strcmp(argv[i], "--phenomXHMMband") == 0){
+            XLALSimInspiralWaveformParamsInsertPhenomXHMThresholdMband(params->params, atof(argv[++i]));
+        }else {
             XLALPrintError("Error: invalid option: %s\n", argv[i]);
             goto fail;
         }
@@ -462,7 +490,7 @@ static int dump_TD(FILE *f, REAL8TimeSeries *hplus, REAL8TimeSeries *hcross) {
 
     fprintf(f, "# t hplus hcross\n");
     for (i=0; i < hplus->data->length; i++)
-        fprintf(f, "%25.16e %25.16e %25.16e\n", t0 + i * hplus->deltaT, 
+        fprintf(f, "%25.16e %25.16e %25.16e\n", t0 + i * hplus->deltaT,
                 hplus->data->data[i], hcross->data->data[i]);
     return 0;
 }

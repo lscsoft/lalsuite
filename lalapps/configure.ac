@@ -309,13 +309,7 @@ if test "${cuda}" = "true"; then
   AC_DEFINE([LALAPPS_CUDA_ENABLED],[1],[Define if using cuda library])
 fi
 
-# check for OpenMP
-LALSUITE_ENABLE_OPENMP
-
 LALSUITE_ADD_GCC_FLAGS
-
-# link any executables against LALApps library
-AC_SUBST([LDADD], ["\$(top_builddir)/src/lalapps/liblalapps.la"])
 
 # add extra preprocessor flags
 AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"
@@ -349,7 +343,6 @@ LALApps has now been successfully configured:
 * Condor support is $CONDOR_ENABLE_VAL
 * GDS support is $GDS_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
-* OpenMP acceleration is $OPENMP_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL
 * help2man documentation is $HELP2MAN_ENABLE_VAL
 

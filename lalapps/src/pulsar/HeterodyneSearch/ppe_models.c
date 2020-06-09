@@ -609,6 +609,7 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   /* free memory */
   if ( dts != NULL ){ XLALDestroyREAL8Vector( dts ); }
   if ( bdts != NULL ){ XLALDestroyREAL8Vector( bdts ); }
+  if ( glitchphase != NULL ){ XLALDestroyREAL8Vector( glitchphase ); }
 
   return phis;
 }

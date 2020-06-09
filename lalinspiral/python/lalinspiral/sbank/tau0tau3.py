@@ -21,9 +21,7 @@ from math import sqrt
 
 import numpy
 from numpy.random.mtrand import uniform
-from scipy.optimize import fsolve
 
-from glue.iterutils import choices
 from lal import PI, MTSUN_SI
 
 #

@@ -1,20 +1,22 @@
-#!/bin/sh
+## create good and bad SFTs
+SFTwrite
 
-prog=./lalapps_SFTvalidate
-
-./lalapps_SFTwrite >/dev/null
-
-goodSFTs="SFT-good SFT-test*"
-badSFTs="SFT-bad*"
-
-for i in $goodSFTs; do
-    $prog $i
+## these SFTs have to pass
+for sft in SFT-good SFT-test*; do
+    echo "lalapps_SFTvalidate ./$sft"
+    if ! lalapps_SFTvalidate ./$sft; then
+        echo "lalapps_SFTvalidate failed SFT $sft; should have passed"
+        exit 1
+    fi
+    echo
 done
 
-## this SFTs have to yield error-results
-for i in $badSFTs; do
-    res=`$prog $i`
-    if [ ! -n $res ]; then
-	exit 1;
+## these SFTs have to fail
+for sft in SFT-bad*; do
+    echo "lalapps_SFTvalidate ./$sft"
+    if lalapps_SFTvalidate ./$sft; then
+        echo "lalapps_SFTvalidate passed SFT $sft; should have failed"
+        exit 1
     fi
+    echo
 done

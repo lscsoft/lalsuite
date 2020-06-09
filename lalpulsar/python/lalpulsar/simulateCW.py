@@ -77,18 +77,9 @@ from __future__ import (division, print_function)
 import os
 import re
 import math
-import numpy as np
-from six import string_types
 
-try:
-    import lal
-except ImportError:
-    raise ImportError("SWIG wrappings of LAL cannot be imported")
-
-try:
-    import lalpulsar
-except ImportError:
-    raise ImportError("SWIG wrappings of LALPulsar cannot be imported")
+import lal
+import lalpulsar
 
 from . import git_version
 

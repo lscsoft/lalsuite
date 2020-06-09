@@ -418,6 +418,7 @@ static void Test_XLALSimIMRPhenomP(void) {
   REAL8 f_min = 20;
   REAL8 f_ref = f_min;
   IMRPhenomP_version_type version = IMRPhenomPv2_V;
+  NRTidal_version_type NRTv = NoNRT_V;
 
   XLALSimIMRPhenomPCalculateModelParametersOld(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
@@ -463,6 +464,7 @@ static void Test_XLALSimIMRPhenomP(void) {
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
     f_ref,                    /**< Reference frequency */
     version,
+    NRTv,
     NULL);                   /**<linked list containing the extra testing GR parameters */
 
   dump_file("PhenomP_Test1.dat", hptilde, hctilde, m1+m2);
@@ -641,6 +643,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   REAL8 f_min = 20;
   REAL8 f_ref = f_min;
   IMRPhenomP_version_type version = IMRPhenomPv2_V;
+  NRTidal_version_type NRTv = NoNRT_V;
 
   XLALSimIMRPhenomPCalculateModelParametersOld(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
@@ -686,6 +689,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
     f_ref,                    /**< Reference frequency */
     version,
+    NRTv,
     NULL);
 
   dump_file("PhenomP_Test_f_ref1.dat", hptilde, hctilde, m1+m2);
@@ -739,6 +743,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
     f_ref,                    /**< Reference frequency */
     version,
+    NRTv,
     NULL);
 
 
