@@ -1832,6 +1832,9 @@ static PrecessingNRSurData* PrecessingNRSur_core(
 
     // Load surrogate data if needed. If not, just access the loaded data.
     PrecessingNRSurData *__sur_data = PrecessingNRSur_LoadData(approximant);
+    if (!__sur_data->setup) {
+        XLAL_ERROR_NULL(XLAL_EFAILED, "Error loading surrogate data.\n");
+    }
 
     // Make sure we didn't request any unavailable modes
     int ell, m;
@@ -2679,6 +2682,9 @@ int XLALPrecessingNRSurDynamics(
 
     // Load surrogate data if needed. If not, just access the loaded data.
     PrecessingNRSurData *__sur_data = PrecessingNRSur_LoadData(approximant);
+    if (!__sur_data->setup) {
+        XLAL_ERROR(XLAL_EFAILED, "Error loading surrogate data.\n");
+    }
 
     // Input spins at reference epoch
     // The input values are in the coorbital frame at omegaRef_dimless, but
