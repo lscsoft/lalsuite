@@ -2579,7 +2579,7 @@ class EngineNode(LALInferenceDAGNode):
         Set the end time of the signal for the centre of the prior in time
         """
         self.__trigtime=float(time)
-        self.add_var_opt('trigtime',str(time))
+        self.add_var_opt('trigtime','{:.9f}'.format(time))
 
     def set_event_number(self,event):
         """
@@ -2703,7 +2703,7 @@ class EngineNode(LALInferenceDAGNode):
             #if self.GPSstart<starttime or self.GPSstart>endtime:
             #  print 'ERROR: Over-ridden time lies outside of science segment!'
             #  raise Exception('Bad psdstart specified')
-        self.add_var_opt('psdstart',str(self.GPSstart))
+        self.add_var_opt('psdstart','{:.9f}'.format(self.GPSstart))
         if self.psdlength is None:
             self.psdlength=length
             if(self.psdlength>self.maxlength):
