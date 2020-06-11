@@ -80,12 +80,18 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
  *
  * These are frequency-domain models for compact binaries at comparable and extreme mass ratios,
  * tuned to numerical-relativity simulations.
- *  * IMRPhenomXAS model for 22 mode non-precessing binaries. https://arxiv.org/abs/2001.11412 ; DCC link: https://dcc.ligo.org/LIGO-P2000018
- *  * IMRPhenomXHM model with subdominant modes non-precessing binaries. https://arxiv.org/abs/2001.10914 ; DCC link: https://dcc.ligo.org/P1900393-v1
- *  * Multibanding for IMRPhenomXHM. https://arxiv.org/abs/2001.10897 ; DCC link: https://dcc.ligo.org/LIGO-P1900391
+ *  * IMRPhenomXAS model for the 22 mode of non-precessing binaries. https://arxiv.org/abs/2001.11412 ; DCC link: https://dcc.ligo.org/P2000018
+ *  * IMRPhenomXHM model with subdominant modes non-precessing binaries. https://arxiv.org/abs/2001.10914 ; DCC link: https://dcc.ligo.org/P1900393
+ *  * Multibanding for IMRPhenomXHM. https://arxiv.org/abs/2001.10897 ; DCC link: https://dcc.ligo.org/P1900391
+ *  * IMRPhenomXP model for the 22 mode of non-precessing binaries. https://arxiv.org/abs/2004.06503 ; DCC link: https://dcc.ligo.org/P2000039
+ *  * IMRPhenomXPHM model with subdominant modes for precessing binaries. https://arxiv.org/abs/2004.06503 ; DCC link: https://dcc.ligo.org/P2000039
  *
- * @review IMRPhenomXAS & IMRPhenomXHM reviewed by maria.haney, patricia-schmidt, roberto.cotesta, anuradha.samajdar, jonathan.thompson, nv.krishnendu
- * Review wiki: https://git.ligo.org/waveforms/reviews/imrphenomx/wikis/home
+ * @review IMRPhenomXAS & IMRPhenomXHM reviewed by Maria Haney, Patricia Schmidt,
+ * Roberto Cotesta, Anuradha Samajdar, Jonathan Thompson, N.V. Krishnendu.
+ * IMRPhenomXP & IMRPhenomXPHM reviewed by Maria Haney, Jonathan Thompson,
+ * Marta Colleoni, David Keitel.
+ * Combined review wiki:
+ * https://git.ligo.org/waveforms/reviews/imrphenomx/-/wikis/home
  *
  *
  */

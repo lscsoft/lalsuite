@@ -1196,22 +1196,32 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  * tuned to numerical-relativity simulations.
  *  * IMRPhenomA models non-spinning binaries.
  *  * IMRPhenomB/C/D model spinning, but non-precessing binaries.
- *    IMRPhenomD is the most up-to-date model and should be used
- *    unless there are specific reasons to use an older version.
+ *  * Versions A/B/C should not be used anymore
+ *    unless there are very specific reasons.
  *  * IMRPhenomP models precessing binaries,
- *    IMRPhenomP based on IMRPhenomC
- *    (outdated)
+ *    based on IMRPhenomC
+ *    (outdated, should not be used unless for very specific reasons).
  *  * IMRPhenomPv2 models precessing binaries,
- *    based on IMRPhenomD
- *    (should be used instead of IMRPhenomP,
- *    unless there are good reasons not to).
+ *    based on IMRPhenomD.
+ *  * IMRPhenomHM models spinning, non-precessing binaries,
+ *    based on IMRPhenomD that also includes higher order modes.
+ *  * IMRPhenomPv3 models precessing binaries,
+ *    based on IMRPhenomD but with a different precession prescription
+ *    than IMRPhenomPv2.
+ *  * IMRPhenomPv3HM models precessing binaries with higher-order modes,
+ *    based on IMRPhenomHM.
+ *  * The IMRPhenomX family includes updated models for
+ *    aligned-spin binaries with/without higher modes
+ *    (IMRPhenomXAS and IMRPhenomXHM),
+ *    and for precessing binaries with/without higher modes
+ *    (IMRPhenomXP and IMRPhenomXPHM).
+ *    See @ref LALSimIMRPhenomX_c
+ *    for details.
  *  * IMRPhenomPv2_NRTidal models precessing binaries,
  *    adds NR-tuned tidal effects
  *    to IMRPhenomD phasing and twists the waveform
  *    to generate the corresponding precessing waveform.
  *    Two flavors of NRTidal models are available: original (_NRTidal, based on https://arxiv.org/pdf/1706.02969.pdf) and an improved version 2 (_NRTidalv2, based on https://arxiv.org/pdf/1905.06011.pdf). 
- *  * IMRPhenomHM models spinning, non-precessing binaries,
- *    based on IMRPhenomD that also includes higher order modes.
  *  * IMRPhenomNSBH models single-spin, non-precessing neutron-star-black-hole
  *    binaries, based on the amplitude of IMRPhenomC and the phase of
  *    IMRPhenomD_NRTidalv2
@@ -1245,6 +1255,15 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  * Andrew Matas, Jonathan Thompson, Edward Fauchon-Jones. The review concluded
  * on 3 February 2020. The review documentation, resources, and final git hash 
  * can be found at https://git.ligo.org/waveforms/reviews/nsbh-models/wikis/home.
+ *
+ * @review IMRPhenomPv3 review:
+ * https://git.ligo.org/waveforms/reviews/phenompv3hm/-/wikis/home
+ *
+ * @review IMRPhenomPv3HM review:
+ * https://git.ligo.org/waveforms/reviews/phenompv3hm/-/wikis/home
+ *
+ * @review IMRPhenomX family review:
+ * https://git.ligo.org/waveforms/reviews/imrphenomx/-/wikis/home
  * @{
  */
 
