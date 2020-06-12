@@ -262,11 +262,11 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
     /* get difference in solar system barycentring time delays */
     deltat = DT;
     if ( dts != NULL ){ Ddelay += ( dts->data[i] - fixdts->data[i] ); }
-    else if ( fixdts != NULL ) { deltat += fixdts->data[i]; }
+    if ( fixdts != NULL ) { deltat += fixdts->data[i]; }
 
     /* get difference in binary system barycentring time delays */
     if ( bdts != NULL && fixbdts != NULL ) { Ddelay += ( bdts->data[i] - fixbdts->data[i] ); }
-    else if ( fixbdts != NULL ){ deltat += fixbdts->data[i]; }
+    if ( fixbdts != NULL ){ deltat += fixbdts->data[i]; }
 
     /* get the change in phase (compared to the heterodyned phase) */
     deltatpow = deltat;
@@ -293,7 +293,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
 
     /* get change in phase from FITWAVES parameters */
     if ( fitwavesph != NULL && fixfitwavesph != NULL ){ deltaphi += (fitwavesph->data[i] - fixfitwavesph->data[i]); }
-    else if (fixfitwavesph != NULL ){ deltaphi += fixfitwavesph->data[i]; }
+    else if ( fixfitwavesph != NULL ){ deltaphi += fixfitwavesph->data[i]; }
 
     deltaphi *= freqfactor; /* multiply by frequency factor */
     phis->data[i] = deltaphi - floor(deltaphi); /* only need to keep the fractional part of the phase */
