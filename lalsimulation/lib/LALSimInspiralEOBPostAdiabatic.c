@@ -23,7 +23,7 @@
 #include "LALSimIMRSpinEOB.h"
 
 #include "LALSimIMRSpinEOBHamiltonian.c"
-// #include "LALSimIMRSpinEOBFactorizedFlux.c"
+#include "LALSimIMRSpinEOBFactorizedFlux.c"
 // #include "LALSimIMREOBNQCTables.c"
 
 #define KMAX 35 /** Multipolar linear index, max value */
@@ -67,23 +67,6 @@ static const REAL8 f14[] = {
 						     362880.,    3628800.,    39916800.,
 						     479001600., 6227020800., 87178291200.
 };
-
-/* Include all the static function files we need */
-// #include "LALSimIMREOBFactorizedWaveform.c"
-// #include "LALSimIMREOBNewtonianMultipole.c"
-// #include "LALSimIMREOBNQCCorrection.c"
-// #include "LALSimIMRSpinEOBInitialConditions.c"
-// #include "LALSimIMRSpinEOBAuxFuncs.c"
-// #include "LALSimIMRSpinAlignedEOBHcapDerivative.c"
-// #include "LALSimIMRSpinEOBHamiltonian.c"
-// #include "LALSimIMRSpinEOBFactorizedWaveform.c"
-// #include "LALSimIMRSpinEOBFactorizedFlux.c"
-/* OPTIMIZED */
-// #include "LALSimIMRSpinEOBHamiltonianOptimized.c"
-// #include "LALSimIMRSpinEOBComputeAmpPhasefromEOMSoln.c"
-// #include "LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c"
-// #include "LALSimIMRSpinAlignedEOBHcapDerivativeOptimized.c"
-/* END OPTIMIZED */
 
 double
 XLALSimInspiralEOBPostAdiabaticSymmetricMassRatio(
@@ -2137,6 +2120,32 @@ XLALSimInspiralEOBPAHamiltonianDerivative(
 }
 
 REAL8
+XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
+	REAL8 h,
+	REAL8 r,
+	REAL8 prstar,
+	REAL8 pphi,
+	LALDict *LALParams
+)
+{
+	REAL8 coeffs[9] = {1./280., -4./105., 1./5., -4./5., 0, 4./5., -1./5., 4./105., -1./280.};
+
+	REAL8 Hderivative;
+	Hderivative = 0.;
+
+	INT4 i;
+
+	for (i = -4; i <= 4; i++)
+	{
+		Hderivative += coeffs[i+4] * XLALSimInspiralEOBPAHamiltonianWrapper(r, prstar + i*h, pphi, LALParams);
+	}
+
+	Hderivative /= h;
+
+	return Hderivative;
+}
+
+REAL8
 XLALSimInspiralEOBPAHamiltonianWrapper(
 	REAL8 r,
 	REAL8 prstar,
@@ -2218,40 +2227,115 @@ XLALSimInspiralEOBPAHamiltonianWrapper(
     return H;
 }
 
-// REAL8
-// XLALSimInspiralEOBPAFluxWrapper(
-// 	REAL8 r,
-// 	REAL8 prstar,
-// 	REAL8 pphi,
-// 	REAL8 omega,
-// 	REAL8 H,
-// 	LALDict *LALParams
-// )
-// {
-// 	const REAL8 nu = XLALDictLookupREAL8Value(LALParams, "nu");
-// 	const REAL8 aK = XLALDictLookupREAL8Value(LALParams, "aK");
+REAL8
+XLALSimInspiralEOBPAFluxWrapper(
+	REAL8 r,
+	REAL8 prstar,
+	REAL8 pphi,
+	REAL8 omega,
+	REAL8 H,
+	LALDict *LALParams
+)
+{
+	UNUSED const REAL8 nu = XLALDictLookupREAL8Value(LALParams, "nu");
+	const REAL8 a1 = XLALDictLookupREAL8Value(LALParams, "a1");
+	const REAL8 a2 = XLALDictLookupREAL8Value(LALParams, "a2");
+	const REAL8 aK = XLALDictLookupREAL8Value(LALParams, "aK");
+	const REAL8 Sstar = XLALDictLookupREAL8Value(LALParams, "Sstar");
+	const REAL8 X1 = XLALDictLookupREAL8Value(LALParams, "X1");
+	const REAL8 X2 = XLALDictLookupREAL8Value(LALParams, "X2");
 
-// 	REAL8Vector *values = XLALCreateREAL8Vector(3);
-// 	memset(values->data, 0, values->length * sizeof(REAL8));
+	REAL8Vector *values = XLALCreateREAL8Vector(3);
+	memset(values->data, 0, values->length * sizeof(REAL8));
 
-// 	values->data[0] = r;
-// 	values->data[1] = prstar;
-// 	values->data[2] = pphi;
+	values->data[0] = r;
+	values->data[1] = prstar;
+	values->data[2] = pphi;
 
-// 	EOBNonQCCoeffs nqcCoeffs;
-// 	XLALSimIMRGetEOBCalibratedSpinNQC(&nqcCoeffs, 2, 2, nu, aK);
+	EOBNonQCCoeffs nqcCoeffs;
+	nqcCoeffs.a1 = 0.;
+	nqcCoeffs.a2 = 0.;
+	nqcCoeffs.a3 = 0.;
+	nqcCoeffs.a3S = 0.;
+	nqcCoeffs.a4 = 0.;
+	nqcCoeffs.a5 = 0.;
+	nqcCoeffs.b1 = 0.;
+	nqcCoeffs.b2 = 0.;
+	nqcCoeffs.b3 = 0.;
+	nqcCoeffs.b4 = 0.;
 
-// 	SpinEOBParams params;
+	REAL8Vector *a1CartVec = XLALCreateREAL8Vector(3);
+	memset(a1CartVec->data, 0, a1CartVec->length * sizeof(REAL8));
 
-// 	const UINT4 lMax = 2;
-// 	const UINT4 SpinAlignedEOBversion = 4;
+    REAL8Vector *a2CartVec = XLALCreateREAL8Vector(3);
+    memset(a2CartVec->data, 0, a2CartVec->length * sizeof(REAL8));
 
-//  	REAL8 Flux;
+    REAL8Vector *aKCartVec = XLALCreateREAL8Vector(3);
+    memset(aKCartVec->data, 0, aKCartVec->length * sizeof(REAL8));
 
-//     Flux = XLALInspiralSpinFactorizedFlux(&polarDynamics, nqcCoeffs, omega, params, H, lMax, SpinAlignedEOBversion);
+    REAL8Vector *SstarCartVec = XLALCreateREAL8Vector(3);
+    memset(SstarCartVec->data, 0, SstarCartVec->length * sizeof(REAL8));
 
-//     return 0.;
-// }
+    a1CartVec->data[2] = a1;
+
+    a2CartVec->data[2] = a2;
+
+    aKCartVec->data[2] = aK;
+
+    SstarCartVec->data[2] = Sstar;
+
+    // SpinEOBHCoeffs
+    SpinEOBHCoeffs Hcoeffs;
+    XLALSimIMRCalculateSpinEOBHCoeffs(&Hcoeffs, nu, aK, 4);
+
+    TidalEOBParams tidal1, tidal2;
+
+    tidal1.mByM = X1 / (X1+X2);
+	tidal1.lambda2Tidal = 0.0;
+	tidal1.omega02Tidal = 0.0;
+	tidal1.lambda3Tidal = 0.0;
+	tidal1.omega03Tidal = 0.0;
+	tidal1.quadparam = 1.0;
+
+	tidal2.mByM = X2 / (X1+X2);
+	tidal2.lambda2Tidal = 0.0;
+	tidal2.omega02Tidal = 0.0;
+	tidal2.lambda3Tidal = 0.0;
+	tidal2.omega03Tidal = 0.0;
+	tidal2.quadparam = 1.0;
+
+	Hcoeffs.tidal1 = &tidal1;
+ 	Hcoeffs.tidal2 = &tidal2;
+
+ 	// EOBParams
+ 	EOBParams eobParams;
+
+ 	// SpinEOBParams
+	SpinEOBParams seobParams;
+	seobParams.deltaT = 1.e-2;
+	seobParams.alignedSpins = 1;
+	seobParams.tortoise = 1;
+	seobParams.sigmaStar = SstarCartVec;
+	seobParams.sigmaKerr = aKCartVec;
+	seobParams.seobCoeffs = &Hcoeffs;
+	seobParams.eobParams = &eobParams;
+	seobParams.nqcCoeffs = &nqcCoeffs;
+	seobParams.use_hm = 0;
+	seobParams.a = aK;
+	seobParams.chi1 = a1;
+	seobParams.chi2 = a2;
+	seobParams.s1Vec = a1CartVec;
+	seobParams.s2Vec = a2CartVec;
+
+	const UINT4 lMax = 5;
+	const UINT4 SpinAlignedEOBversion = 4;
+
+ 	REAL8 Flux;
+
+    Flux = XLALInspiralSpinFactorizedFlux(values, &nqcCoeffs, omega, &seobParams, H, lMax, SpinAlignedEOBversion);
+
+    return Flux;
+}
 
 int
 XLALSimInspiralEOBPostAdiabatic(
@@ -2418,6 +2502,9 @@ XLALSimInspiralEOBPostAdiabatic(
 	REAL8Vector *omegaVec = XLALCreateREAL8Vector(rSize);
 	memset(omegaVec->data, 0, omegaVec->length * sizeof(REAL8));
 
+	REAL8Vector *fluxVec = XLALCreateREAL8Vector(rSize);
+	memset(fluxVec->data, 0, fluxVec->length * sizeof(REAL8));
+
 	REAL8Vector *AVec = XLALCreateREAL8Vector(rSize);
     REAL8Vector *BVec = XLALCreateREAL8Vector(rSize);
     REAL8Vector *dAVec = XLALCreateREAL8Vector(rSize);
@@ -2447,7 +2534,7 @@ XLALSimInspiralEOBPostAdiabatic(
     REAL8Vector *OmgOrbVec = XLALCreateREAL8Vector(rSize);
     REAL8Vector *dtBydrVec = XLALCreateREAL8Vector(rSize);
     REAL8Vector *dphiBydrVec = XLALCreateREAL8Vector(rSize);
-    REAL8Vector *fluxesVec = XLALCreateREAL8Vector(rSize);
+    
 
     REAL8Vector *rReverseVec = XLALCreateREAL8Vector(rSize);
     REAL8Vector *pphiReverseVec = XLALCreateREAL8Vector(rSize);
@@ -2490,7 +2577,7 @@ XLALSimInspiralEOBPostAdiabatic(
     memset(OmgOrbVec->data, 0, OmgOrbVec->length * sizeof(REAL8));
     memset(dtBydrVec->data, 0, dtBydrVec->length * sizeof(REAL8));
     memset(dphiBydrVec->data, 0, dphiBydrVec->length * sizeof(REAL8));
-    memset(fluxesVec->data, 0, fluxesVec->length * sizeof(REAL8));
+    
 
     memset(rReverseVec->data, 0, rReverseVec->length * sizeof(REAL8));
     memset(pphiReverseVec->data, 0, pphiReverseVec->length * sizeof(REAL8));
@@ -2609,6 +2696,8 @@ XLALSimInspiralEOBPostAdiabatic(
     UINT4 n;
     UINT4 parity;
 
+    REAL8 dHBydprstar;
+
     // UINT4 count = 1;
 
     for (n = 1; n <= PA_order; n++)
@@ -2630,7 +2719,23 @@ XLALSimInspiralEOBPostAdiabatic(
     		if (parity)
     		{
     			// Odd PA orders: corrections to prstar only
+    			// fluxVec->data[i] = XLALSimInspiralEOBPAFluxWrapper(
+							// 				rVec->data[i],
+							// 				prstarVec->data[i],
+							// 				pphiVec->data[i],
+							// 				omegaVec->data[i],
+							// 				HVec->data[i],
+							// 				LALparams
+							// 			);
 
+    			dHBydprstar = XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
+																					1.e-1,
+																					rVec->data[i],
+																					prstarVec->data[i],
+																					pphiVec->data[i],
+																					LALparams
+																				);
+    			printf("%.18e\n", dHBydprstar);
     			
     		}
     		else
@@ -2798,7 +2903,7 @@ XLALSimInspiralEOBPostAdiabatic(
                 	ddotr_fake,
                 	LALparams);
 
-                fluxesVec->data[i] = Fphi;
+                fluxVec->data[i] = Fphi;
 
                 struct PostAdiabaticRoot prstarRoot;
 

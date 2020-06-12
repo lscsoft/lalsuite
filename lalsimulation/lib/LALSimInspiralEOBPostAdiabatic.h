@@ -10,49 +10,59 @@ XLALSimInspiralEOBPostAdiabatic(
     REAL8TimeSeries ** dynamics,
     REAL8 deltaT,
     const REAL8 m1SI,
-    const REAL8 m2SI);
+    const REAL8 m2SI
+);
 
 double
 XLALSimInspiralEOBPostAdiabaticSymmetricMassRatio(
-    const REAL8 q);
+    const REAL8 q
+);
 
 double
 XLALSimInspiralEOBPostAdiabaticX1(
-    const REAL8 nu);
+    const REAL8 nu
+);
 
 double
 XLALSimInspiralEOBPostAdiabaticX2(
-    const REAL8 nu);
+    const REAL8 nu
+);
 
 double
 XLALSimInspiralEOBPostAdiabaticTimeUnitsFactor(
-    REAL8 M);
+    REAL8 M
+);
 
 double
 XLALSimInspiralEOBPostAdiabaticDynr0Kepler(
-    REAL8 f0);
+    REAL8 f0
+);
 
 REAL8
 XLALSimInspiralEOBPostAdiabaticTotalSpin(
     REAL8 q,
     REAL8 a1,
-    REAL8 a2);
+    REAL8 a2
+);
 
 REAL8
 XLALSimInspiralEOBPostAdiabaticFinalRadius(
     REAL8 q,
     REAL8 a1,
-    REAL8 a2);
+    REAL8 a2
+);
 
 double
 XLALSimInspiralEOBPostAdiabaticFitGlobalc3(
     REAL8 nu,
     REAL8 a1,
-    REAL8 a2);
+    REAL8 a2
+);
 
 double
 XLALSimInspiralEOBPostAdiabaticz3(
-    const REAL8 nu);
+    const REAL8 nu
+);
 
 int
 XLALSimInspiralEOBPostAdiabaticMetricS(
@@ -62,7 +72,8 @@ XLALSimInspiralEOBPostAdiabaticMetricS(
     REAL8 *d2A,
     REAL8 *dB,
     REAL8 r,
-    LALDict *LALParams);
+    LALDict *LALParams
+);
 
 int
 XLALSimInspiralEOBPostAdiabaticGetCentrifugalRadius(
@@ -70,7 +81,8 @@ XLALSimInspiralEOBPostAdiabaticGetCentrifugalRadius(
     REAL8 *drcBydr,
     REAL8 *d2rcBydr2,
     REAL8 r,
-    LALDict *LALParams);
+    LALDict *LALParams
+);
 
 int
 XLALSimInspiralEOBPostAdiabaticGetCentrifugalRadiusLO(
@@ -78,7 +90,8 @@ XLALSimInspiralEOBPostAdiabaticGetCentrifugalRadiusLO(
     REAL8 *drcBydr,
     REAL8 *d2rcBydr2,
     REAL8 r,
-    LALDict *LALParams);
+    LALDict *LALParams
+);
 
 int
 XLALSimInspiralEOBPostAdiabaticMetricA5PNlog(
@@ -86,7 +99,8 @@ XLALSimInspiralEOBPostAdiabaticMetricA5PNlog(
     REAL8 *dAorbBydu,
     REAL8 *d2AorbBydu2,
     REAL8 r,
-    LALDict *LALParams);
+    LALDict *LALParams
+);
 
 int
 XLALSimInspiralEOBPostAdiabaticsGSDynamics(
@@ -95,7 +109,8 @@ XLALSimInspiralEOBPostAdiabaticsGSDynamics(
     REAL8 rc,
     REAL8 drcBydr,
     REAL8 prstar,
-    LALDict *LALParams);
+    LALDict *LALParams
+);
 
 int
 XLALSimInspiralEOBPostAdiabaticHamiltonianS(
@@ -115,7 +130,8 @@ XLALSimInspiralEOBPostAdiabaticHamiltonianS(
     REAL8 Sstar,
     REAL8 A,
     REAL8 dA,
-    LALDict *LALParams);
+    LALDict *LALParams
+);
 
 int
 XLALSimInspiralEOBPostAdiabaticFluxS(
@@ -129,44 +145,51 @@ XLALSimInspiralEOBPostAdiabaticFluxS(
     REAL8 r,
     REAL8 pr_star,
     REAL8 ddotr,
-    LALDict *LALParams);
+    LALDict *LALParams
+);
 
 int
 XLALSimInspiralEOBPostAdiabaticFlmNewtonian(
     REAL8 *Nlm,
     REAL8 x,
-    LALDict *LALParams);
+    LALDict *LALParams
+);
 
 int
 XLALSimInspiralEOBPostAdiabaticTlmFlux(
     REAL8 *MTlm,
-    REAL8 w);
+    REAL8 w
+);
 
 int
 XLALSimInspiralEOBPostAdiabaticGetWavFlmS(
     REAL8 *rholm,
     REAL8 *flm,
     REAL8 x,
-    LALDict *LALParams);
+    LALDict *LALParams
+);
 
 int
 XLALSimInspiralEOBPostAdiabaticGetWavFlmSSLO(
     REAL8 *rholm,
     REAL8 *flm,
     REAL8 x,
-    LALDict *LALParams);
+    LALDict *LALParams
+);
 
 int
 XLALSimInspiralEOBPostAdiabaticWavFlm(
     REAL8 *rholm,
     REAL8 *flm,
     REAL8 x,
-    LALDict *LALParams);
+    LALDict *LALParams
+);
 
 double
 XLALSimInspiralEOBPostAdiabaticEulerLog(
     REAL8 x,
-    INT4 m);
+    INT4 m
+);
 
 int
 XLALSimInspiralEOBPostAdiabaticHorizonFluxS(
@@ -174,7 +197,8 @@ XLALSimInspiralEOBPostAdiabaticHorizonFluxS(
     REAL8 x,
     REAL8 Heff,
     REAL8 jhat,
-    LALDict *LALParams);
+    LALDict *LALParams
+);
 
 int
 XLALSimInspiralEOBPostAdiabaticHorizonFlux(
@@ -182,7 +206,8 @@ XLALSimInspiralEOBPostAdiabaticHorizonFlux(
     REAL8 x,
     REAL8 Heff,
     REAL8 jhat,
-    LALDict *LALParams);
+    LALDict *LALParams
+);
 
 double
 XLALSimInspiralEOBPostAdiabaticdpphiFunc(
@@ -305,15 +330,24 @@ XLALSimInspiralEOBPAHamiltonianDerivative(
     LALDict *LALParams
 );
 
-// REAL8
-// XLALSimInspiralEOBPAFluxWrapper(
-//     REAL8 r,
-//     REAL8 prstar,
-//     REAL8 pphi,
-//     REAL8 omega,
-//     REAL8 H,
-//     LALDict *LALParams
-// );
+REAL8
+XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
+    REAL8 h,
+    REAL8 r,
+    REAL8 prstar,
+    REAL8 pphi,
+    LALDict *LALParams
+);
+
+REAL8
+XLALSimInspiralEOBPAFluxWrapper(
+    REAL8 r,
+    REAL8 prstar,
+    REAL8 pphi,
+    REAL8 omega,
+    REAL8 H,
+    LALDict *LALParams
+);
 
 REAL8
 XLALSimInspiralEOBPANewtonianj0(
