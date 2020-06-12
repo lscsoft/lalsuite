@@ -187,7 +187,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   if ( origparams != NULL ){
     const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( origparams, "F" );
     const REAL8Vector *freqs = PulsarGetREAL8VectorParam( params, "F" );
-    nfreqs = tmpvec->length ? tmpvec->length >= freqs->length : freqs->length;
+    nfreqs = tmpvec->length >= freqs->length ? tmpvec->length : freqs->length;
     pepochorig = PulsarGetREAL8ParamOrZero(origparams, "PEPOCH");
   }
   else{
