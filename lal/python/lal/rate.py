@@ -211,24 +211,23 @@ class Bins(object):
 		>>> print("%.15g" % math.log(1./10))
 		-2.30258509299405
 		>>> # linear bins spanning [0, 10]
-		>>> x = LinearBins(0, 10, 5).randcoord().next
+		>>> bins = LinearBins(0, 10, 5)
 		>>> # draw a random value, ln P(value) = ln 1/10
-		>>> x()	# doctest: +ELLIPSIS
+		>>> next(bins.randcoord())      # doctest: +ELLIPSIS
 		(..., -2.3025850929940455)
 		>>> # binning with infinite boundaries
-		>>> x = ATanBins(-1, +1, 4)
+		>>> bins = ATanBins(-1, +1, 4)
 		>>> # will ask for values in [0.5, +inf], i.e. the last two
 		>>> # bins, but values from final bin will be disallowed, so
 		>>> # return values will be uniform in part of the second
 		>>> # last bin, [0.5, 0.6366]
-		>>> print("%.15g" % math.log(1. / (x.upper()[-2] - 0.5)))
+		>>> print("%.15g" % math.log(1. / (bins.upper()[-2] - 0.5)))
 		1.99055359585182
-		>>> x = x.randcoord(domain = slice(0.5, None)).next
-		>>> x() # doctest: +ELLIPSIS
+		>>> next(bins.randcoord(domain = slice(0.5, None)))  # doctest: +ELLIPSIS
 		(..., 1.9905535958518226)
 		>>> # things that aren't supported:
 		>>> # domain slice with a step
-		>>> LinearBins(0, 10, 1).randcoord(domain = slice(None, None, 2)).next()
+		>>> next(LinearBins(0, 10, 1).randcoord(domain = slice(None, None, 2)))
 		Traceback (most recent call last):
 			...
 		NotImplementedError: step not supported: slice(None, None, 2)
@@ -1269,17 +1268,17 @@ class NDBins(tuple):
 		Example:
 
 		>>> binning = NDBins((LinearBins(0, 10, 5), LinearBins(0, 10, 5)))
-		>>> coord = binning.randcoord().next
-		>>> coord()	# doctest: +ELLIPSIS
+		>>> coord = binning.randcoord()
+		>>> next(coord)	# doctest: +ELLIPSIS
 		((..., ...), -4.6051701859880909)
 		"""
 		if ns is None:
 			ns = (1.,) * len(self)
 		if domain is None:
 			domain = (slice(None, None),) * len(self)
-		coordgens = tuple(iter(binning.randcoord(n, domain = d)).next for binning, n, d in zip(self, ns, domain))
+		coordgens = tuple(iter(binning.randcoord(n, domain = d)) for binning, n, d in zip(self, ns, domain))
 		while 1:
-			seq = sum((coordgen() for coordgen in coordgens), ())
+			seq = sum((next(coordgen) for coordgen in coordgens), ())
 			yield seq[0::2], sum(seq[1::2])
 
 	#
