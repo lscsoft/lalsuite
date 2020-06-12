@@ -115,7 +115,7 @@ t1output = {'H1': np.array([[1000000000.0, -4.365015078242e-27, -4.216860020522e
 
 """
 The second test output is to create a signal model for a source assuming that
-the heterodyne and injected signal do not precisely matches.
+the heterodyne and injected signal do not precisely match.
 lalapps_pulsar_parameter_estimation_nested has been run with the following
 pulsar parameter "inj.par" file:
 
@@ -367,7 +367,6 @@ tdat = lalpulsar.InitTimeCorrections(timefile)
 def test_one(det):
     par = PulsarParametersPy()
     par['F'] = [123.456789, -9.87654321e-12]  # set frequency
-    par['DELTAF'] = [0.0, 0.0]  # frequency difference
     par['RAJ'] = lal.TranslateHMStoRAD('01:23:34.5')  # set right ascension
     par['DECJ'] = lal.TranslateDMStoRAD('-45:01:23.4')  # set declination
     pepoch = lal.TranslateStringMJDTTtoGPS('58000')
@@ -404,12 +403,17 @@ def test_one(det):
                                                          lalpulsar.TIMECORRECTION_TCB)
 
     fullsignal = lalpulsar.HeterodynedPulsarGetModel(par.PulsarParameters(),
+                                                     par.PulsarParameters(),
                                                      freqfactor,
                                                      1,
                                                      0,
                                                      0,
                                                      gpstimes,
                                                      hetSSBdelay,
+                                                     0,
+                                                     None,
+                                                     0,
+                                                     None,
                                                      0,
                                                      None,
                                                      0,
@@ -437,7 +441,6 @@ def test_two():
 
     parinj = PulsarParametersPy()
     parinj['F'] = [123.456789, -9.87654321e-12]  # set frequency
-    parinj['DELTAF'] = parinj['F'] - parhet['F']  # frequency difference
     parinj['RAJ'] = lal.TranslateHMStoRAD('01:23:34.5')  # set right ascension
     parinj['DECJ'] = lal.TranslateDMStoRAD('-45:01:23.4')  # set declination
     pepoch = lal.TranslateStringMJDTTtoGPS('58000')
@@ -475,6 +478,7 @@ def test_two():
                                                          lalpulsar.TIMECORRECTION_TCB)
 
     fullsignal = lalpulsar.HeterodynedPulsarGetModel(parinj.PulsarParameters(),
+                                                     parhet.PulsarParameters(),
                                                      freqfactor,
                                                      1,
                                                      0,
@@ -482,6 +486,10 @@ def test_two():
                                                      gpstimes,
                                                      hetSSBdelay,
                                                      1,
+                                                     None,
+                                                     0,
+                                                     None,
+                                                     0,
                                                      None,
                                                      0,
                                                      resp,
@@ -511,7 +519,6 @@ def test_three(harmonic):
 
     parinj = PulsarParametersPy()
     parinj['F'] = [123.456789, -9.87654321e-12]  # set frequency
-    parinj['DELTAF'] = parinj['F'] - parhet['F']  # frequency difference
     parinj['RAJ'] = lal.TranslateHMStoRAD('01:23:34.5')  # set right ascension
     parinj['DECJ'] = lal.TranslateDMStoRAD('-45:01:23.4')  # set declination
     pepoch = lal.TranslateStringMJDTTtoGPS('58000')
@@ -551,6 +558,7 @@ def test_three(harmonic):
                                                          lalpulsar.TIMECORRECTION_TCB)
 
     fullsignal = lalpulsar.HeterodynedPulsarGetModel(parinj.PulsarParameters(),
+                                                     parhet.PulsarParameters(),
                                                      freqfactor,
                                                      1,
                                                      0,
@@ -558,6 +566,10 @@ def test_three(harmonic):
                                                      gpstimes,
                                                      hetSSBdelay,
                                                      1,
+                                                     None,
+                                                     0,
+                                                     None,
+                                                     0,
                                                      None,
                                                      0,
                                                      resp,
@@ -591,7 +603,6 @@ def test_four():
 
     parinj = PulsarParametersPy()
     parinj['F'] = [123.456789, -9.87654321e-12]  # set frequency
-    parinj['DELTAF'] = parinj['F'] - parhet['F']  # frequency difference
     parinj['RAJ'] = lal.TranslateHMStoRAD('01:23:34.5')  # set right ascension
     parinj['DECJ'] = lal.TranslateDMStoRAD('-45:01:23.4')  # set declination
     pepoch = lal.TranslateStringMJDTTtoGPS('58000')
@@ -642,6 +653,7 @@ def test_four():
                                                          edat)
 
     fullsignal = lalpulsar.HeterodynedPulsarGetModel(parinj.PulsarParameters(),
+                                                     parhet.PulsarParameters(),
                                                      freqfactor,
                                                      1,  # phase is varying between par files
                                                      0,  # not using ROQ
@@ -651,6 +663,10 @@ def test_four():
                                                      1,  # the SSB delay should be updated compared to hetSSBdelay
                                                      hetBSBdelay,
                                                      1,  # the BSB delay should be updated compared to hetBSBdelay
+                                                     None,
+                                                     0,
+                                                     None,
+                                                     0,
                                                      resp,
                                                      edat,
                                                      tdat,
@@ -711,12 +727,17 @@ def test_five():
                                                          lalpulsar.TIMECORRECTION_TCB)
 
     fullsignal = lalpulsar.HeterodynedPulsarGetModel(par.PulsarParameters(),
+                                                     par.PulsarParameters(),
                                                      freqfactor,
                                                      1,
                                                      0,
                                                      1,  # use non-GR modes
                                                      gpstimes,
                                                      hetSSBdelay,
+                                                     0,
+                                                     None,
+                                                     0,
+                                                     None,
                                                      0,
                                                      None,
                                                      0,
