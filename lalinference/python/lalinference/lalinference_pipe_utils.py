@@ -2579,7 +2579,7 @@ class EngineNode(LALInferenceDAGNode):
         Set the end time of the signal for the centre of the prior in time
         """
         self.__trigtime=float(time)
-        self.add_var_opt('trigtime','{:.9f}'.format(time))
+        self.add_var_opt('trigtime','{:.9f}'.format(float(time)))
 
     def set_event_number(self,event):
         """
