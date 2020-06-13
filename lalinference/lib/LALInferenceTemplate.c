@@ -1127,6 +1127,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
                     &hlm_mode->sampleUnits, npts_wave);
 
           XLAL_TRY(ret=XLALSimAddModeFD(hptilde, hctilde, hlms->mode, inclination, LAL_PI/2. - phi0, 2, -2, 1), errnum);
+          XLALDestroySphHarmFrequencySeries(hlms);
+          XLALDestroyFrequencySeries(hlm_mode);
         }
         
 
