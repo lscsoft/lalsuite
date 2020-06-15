@@ -107,6 +107,7 @@ int main(int argc, char *argv[]){
   /* read in pulsar data */
   hetParams.het = XLALReadTEMPOParFile( inputParams.paramfile );
   hetParams.hetUpdate = NULL;
+  hetParams.outputPhase = inputParams.outputPhase;
 
   /* set pulsar name - take from par file if available, or if not get from command line args */
   if( PulsarCheckParam( hetParams.het, "PSRJ" ) )
@@ -826,10 +827,11 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "gzip-output",              no_argument,     NULL, 'Z' },
     { "legacy-input",             no_argument,     NULL, 'L' },
     { "verbose",                  no_argument,     NULL, 'v' },
+    { "output-phase",             no_argument,     NULL, 'P' },
     { 0, 0, 0, 0 }
   };
 
-  char args[] = "hi:p:z:f:g:k:s:r:d:D:c:o:e:S:t:l:R:C:F:O:T:m:G:H:M:ABbZLv";
+  char args[] = "hi:p:z:f:g:k:s:r:d:D:c:o:e:S:t:l:R:C:F:O:T:m:G:H:M:ABbZLvP";
   char *program = argv[0];
 
   /* set defaults */
@@ -841,6 +843,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   inputParams->verbose = 0; /* default is not to do verbose */
   inputParams->binaryinput = 0; /* default to NOT read in data from a binary file */
   inputParams->legacyinput = 0; /* default is that input files are not legacy files without the header information */
+  inputParams->outputPhase = 0; /* default to not output the phase evolution */
   inputParams->binaryoutput = 0; /* default is to output data as ASCII text */
   inputParams->gzipoutput = 0; /* default is to not gzip the output */
   inputParams->stddevthresh = 0.; /* default is not to threshold */
@@ -1049,6 +1052,9 @@ the pulsar parameter file */
       case 'L':
         inputParams->legacyinput = 1;
         break;
+      case 'P':
+        inputParams->outputPhase = 1;
+        break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );
 		break;
@@ -1124,6 +1130,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   UINT4 position=0, middle=0;
 
   REAL8 om = PulsarGetREAL8ParamOrZero( hetParams.het, "WAVE_OM" ), omu = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "WAVE_OM" );
+
+  FILE *fpphase = NULL;
 
   /* set the position, frequency and whitening epochs if not already set */
   REAL8 pepoch = 0., pepochu = 0., posepoch = 0., posepochu = 0.;
@@ -1258,6 +1266,10 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
     }
   }
 
+  if ( hetParams.outputPhase ){
+    fpphase = fopen("phase.txt", "w");
+  }
+
   for(i=0;i<hetParams.length;i++){
 
 /******************************************************************************/
@@ -1280,7 +1292,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       baryinput.delta = dec + dtpos*pmdec;
       baryinput.alpha = ra + dtpos*pmra/cos(baryinput.delta);
 
-      if( hetParams.heterodyneflag == 3 ) /*get data time */
+      if( hetParams.heterodyneflag == 3 ) /* get data time */
         t = hetParams.timestamp + (REAL8)i/hetParams.samplerate;
       else
         t = times->data[i];
@@ -1526,6 +1538,10 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       }
     }
 
+    if ( fpphase != NULL ){
+      fprintf(fpphase, "%.9lf\n", deltaphase);
+    }
+
     data->data->data[i] = (creal(dataTemp)*cos(-deltaphase) - cimag(dataTemp)*sin(-deltaphase)) +
       I * (creal(dataTemp)*sin(-deltaphase) + cimag(dataTemp)*cos(-deltaphase));
   }
@@ -1535,6 +1551,10 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
     if ( hetParams.ttype != TIMECORRECTION_ORIGINAL )
       XLALDestroyTimeCorrectionData( tdat );
+  }
+
+  if ( fpphase != NULL ){
+    fclose(fpphase);
   }
 }
 

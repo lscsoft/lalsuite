@@ -134,6 +134,8 @@ extern "C" {
                           output file. This will be done by default if the\n\
                           --output-file specified has the \".gz\" suffix, but\n\
                           if not this suffix will be appended\n"\
+" --output-phase (-P)      if set, output the phase evolution to a text file\n\
+                          (for debugging purposes)\n"\
 "\n"
 
 #define MAXDATALENGTH 256   /* maximum length of data to be read from frames */
@@ -204,6 +206,7 @@ typedef struct tagInputParams{
   INT4 binaryoutput;
   INT4 gzipoutput;
   INT4 legacyinput;
+  INT4 outputPhase;
 }InputParams;
 
 typedef struct tagHeterodyneParams{
@@ -222,6 +225,7 @@ typedef struct tagHeterodyneParams{
   CHAR sunfile[256];
   CHAR *timeCorrFile;
   TimeCorrectionType ttype;
+  INT4 outputPhase;
 }HeterodyneParams;
 
 typedef struct tagFilters{
