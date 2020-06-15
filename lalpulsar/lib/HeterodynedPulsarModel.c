@@ -598,7 +598,7 @@ REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
 
   /* allocate memory for phases */
   glphase = XLALCreateREAL8Vector( length );
-  memset(&glphase->data, 0, glphase->length*sizeof(REAL8));  // set to zeros
+  memset(glphase->data, 0, glphase->length*sizeof(REAL8));  // set to zeros
 
   /* see if pulsar has glitch parameters */
   if ( PulsarCheckParam( params, "GLEP" ) ){
@@ -611,42 +611,42 @@ REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
     REAL8 *glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLPH" ) ){
       const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLPH" );
-      memcpy(&glph, tmpvec->data, tmpvec->length * sizeof(REAL8));
+      memcpy(glph, tmpvec->data, tmpvec->length * sizeof(REAL8));
     }
 
     /* get frequencies offsets */
     REAL8 *glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF0" ) ){
       const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF0" );
-      memcpy(&glf0, tmpvec->data, tmpvec->length * sizeof(REAL8));
+      memcpy(glf0, tmpvec->data, tmpvec->length * sizeof(REAL8));
     }
 
     /* get frequency derivative offsets */
     REAL8 *glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF1" ) ){
       const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF1" );
-      memcpy(&glf1, tmpvec->data, tmpvec->length * sizeof(REAL8));
+      memcpy(glf1, tmpvec->data, tmpvec->length * sizeof(REAL8));
     }
 
     /* get second frequency derivative offsets */
     REAL8 *glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF2" ) ){
       const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF2" );
-      memcpy(&glf2, tmpvec->data, tmpvec->length * sizeof(REAL8));
+      memcpy(glf2, tmpvec->data, tmpvec->length * sizeof(REAL8));
     }
 
     /* get decaying frequency component offset derivative */
     REAL8 *glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLF0D" ) ){
       const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF0D" );
-      memcpy(&glf0d, tmpvec->data, tmpvec->length * sizeof(REAL8));
+      memcpy(glf0d, tmpvec->data, tmpvec->length * sizeof(REAL8));
     }
 
     /* get decaying frequency component decay time constant */
     REAL8 *gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
     if ( PulsarCheckParam( params, "GLTD" ) ){
       const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLTD" );
-      memcpy(&gltd, tmpvec->data, tmpvec->length * sizeof(REAL8));
+      memcpy(gltd, tmpvec->data, tmpvec->length * sizeof(REAL8));
     }
 
     for( i=0; i<length; i++){
@@ -707,7 +707,7 @@ REAL8Vector *XLALHeterodynedPulsarGetFITWAVESPhase( PulsarParameters *params,
 
   /* allocate memory for phases */
   phasewave = XLALCreateREAL8Vector( length );
-  memset(&phasewave->data, 0, phasewave->length*sizeof(REAL8));  // set to zeros
+  memset(phasewave->data, 0, phasewave->length*sizeof(REAL8));  // set to zeros
 
   /* get FITWAVES parameters */
   if ( PulsarCheckParam( params, "WAVESIN" ) && PulsarCheckParam( params, "WAVECOS" ) ){
