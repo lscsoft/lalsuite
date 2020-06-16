@@ -210,13 +210,13 @@ XLALSimInspiralEOBPostAdiabaticHorizonFlux(
 );
 
 double
-XLALSimInspiralEOBPostAdiabaticdpphiFunc(
+XLALSimInspiralEOBPostAdiabaticdprstarFunc(
     REAL8 prstar_sol,
     void *params
 );
 
 double
-XLALSimInspiralEOBPostAdiabaticdprstarFunc(
+XLALSimInspiralEOBPostAdiabaticdpphiFunc(
     REAL8 pphi_sol,
     void *params
 );
@@ -236,6 +236,7 @@ struct PostAdiabaticRootSolveParams
     REAL8 ducBydr;
     REAL8 prstar;
     REAL8 dprstarBydr;
+    REAL8 phi;
     REAL8 pphi;
     REAL8 dpphiBydr;
     REAL8 A;
@@ -245,6 +246,9 @@ struct PostAdiabaticRootSolveParams
     REAL8 HeffOrb;
     REAL8 dGBydr;
     REAL8 dGBydprstar;
+    REAL8 dr;
+    REAL8 omega;
+    REAL8 csi;
     LALDict *LALParams;
 };
 

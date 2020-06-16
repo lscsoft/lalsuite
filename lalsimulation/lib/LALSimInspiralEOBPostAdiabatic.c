@@ -1405,150 +1405,89 @@ XLALSimInspiralEOBPostAdiabaticHorizonFlux(
 }
 
 double
-XLALSimInspiralEOBPostAdiabaticdpphiFunc(
+XLALSimInspiralEOBPostAdiabaticdprstarFunc(
 	REAL8 prstar_sol,
 	void *params)
 {
 	struct PostAdiabaticRootSolveParams *prstarParams = (struct PostAdiabaticRootSolveParams *)params;
 
-	const REAL8 nu = XLALDictLookupREAL8Value(prstarParams->LALParams, "nu");
-	const REAL8 z3 = XLALDictLookupREAL8Value(prstarParams->LALParams, "z3");
-	const REAL8 S = XLALDictLookupREAL8Value(prstarParams->LALParams, "S");
-	const REAL8 Sstar = XLALDictLookupREAL8Value(prstarParams->LALParams, "Sstar");
+	REAL8 dpphiBydr;
+	dpphiBydr = prstarParams->dpphiBydr;
 
-	REAL8 r = prstarParams->r;
-	REAL8 rc = prstarParams->rc;
-    REAL8 drc_dr = prstarParams->drcBydr;
-    REAL8 uc2 = prstarParams->uc2;
-    REAL8 duc_dr = prstarParams->ducBydr;
-    REAL8 pphi = prstarParams->pphi;
-    REAL8 dpphi_dr = prstarParams->dpphiBydr;
-    REAL8 A = prstarParams->A;
-    REAL8 B = prstarParams->B;
-    REAL8 dA = prstarParams->dA;
-    LALDict *LALParams = prstarParams->LALParams;
+	LALDict *LALParams = prstarParams->LALParams;
 
-	REAL8 ggm[14];
-
-	UNUSED REAL8 G;
-	UNUSED REAL8 dG_dr;
-	UNUSED REAL8 dG_dprstar;
-	UNUSED REAL8 dG_dprstarbyprstar;
-
+	REAL8 partialHBypartialprstar;
+	partialHBypartialprstar = XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
+																					1.,
+																					prstarParams->r,
+																					prstar_sol,
+																					prstarParams->pphi,
+																					LALParams
+																				);
 	REAL8 H;
-	REAL8 Heff;
-	REAL8 Heff_orb;
-	REAL8 dHeff_dr;
-	REAL8 dHeff_dprstar;
-	REAL8 dHeff_dpphi;
-	REAL8 d2Heff_dprstar20;
+	H = XLALSimInspiralEOBPAHamiltonianWrapper(
+							prstarParams->r,
+							prstar_sol,
+							prstarParams->pphi,
+							LALParams
+						);
 
-	REAL8 E;
-	REAL8 Omg;
-
-	REAL8 Heff_orb_f;
-	REAL8 Heff_f;
-	REAL8 E_f;
-
-	REAL8 psi;
-	REAL8 r_omg2;
-	REAL8 v_phi;
-	REAL8 x;
-	REAL8 jhat;
 	REAL8 flux;
+    flux = XLALSimInspiralEOBPAFluxWrapper(
+				prstarParams->r,
+				prstar_sol,
+				prstarParams->pphi,
+				prstarParams->omega,
+				H,
+				LALParams
+			);
 
-	REAL8 prefactor;
-	REAL8 main_sol;
+	REAL8 result;
 
-	REAL8 total;
+	result = dpphiBydr*partialHBypartialprstar*prstarParams->csi - flux;
 
-	XLALSimInspiralEOBPostAdiabaticsGSDynamics(ggm, r, rc, drc_dr, prstar_sol, LALParams);
-
-	G = ggm[2]*S + ggm[3]*Sstar;
-    dG_dr = ggm[6]*S + ggm[7]*Sstar;
-    dG_dprstar = ggm[4]*S + ggm[5]*Sstar;
-    dG_dprstarbyprstar = ggm[10]*S + ggm[11]*Sstar;
-
-    XLALSimInspiralEOBPostAdiabaticHamiltonianS(&H, &Heff, &Heff_orb, &dHeff_dr, &dHeff_dprstar, &dHeff_dpphi, &d2Heff_dprstar20, r, rc, drc_dr, pphi, prstar_sol, S, Sstar, A, dA, LALParams);
-
-    E = nu * H;
-    Omg = dHeff_dpphi / E;
-
-    Heff_orb_f = sqrt(A * (1.+pphi*pphi*uc2));
-    Heff_f = G*pphi + Heff_orb_f;
-    E_f = sqrt(1 + 2*nu*(Heff_f-1));
-
-    psi = (duc_dr + dG_dr*rc*sqrt(A/(pphi*pphi) + A*uc2)/A)/(-0.5*dA);
-    r_omg2 = pow(((1./sqrt(rc*rc*rc*psi))+G)/(E_f), -2./3.);
-    v_phi = r_omg2 * Omg;
-    x = v_phi * v_phi;
-    jhat = pphi / (r_omg2*v_phi);
-    XLALSimInspiralEOBPostAdiabaticFluxS(&flux, x, Omg, r_omg2, E, Heff, jhat, r, prstar_sol, 0.0, LALParams);
-
-    prefactor = sqrt(A/B) * 1. / (nu*H*Heff_orb);
-    main_sol = prstar_sol*(1+2*z3*A/(rc*rc)*prstar_sol*prstar_sol) + Heff_orb*pphi*dG_dprstar;
-
-    total = prefactor * main_sol;
-
-	return dpphi_dr*total - flux;
+	return result;
 }
 
-double
-XLALSimInspiralEOBPostAdiabaticdprstarFunc(
+double 
+XLALSimInspiralEOBPostAdiabaticdpphiFunc(
 	REAL8 pphi_sol,
 	void *params)
 {
 	struct PostAdiabaticRootSolveParams *pphiParams = (struct PostAdiabaticRootSolveParams *)params;
 
-	const REAL8 z3 = XLALDictLookupREAL8Value(pphiParams->LALParams, "z3");
-	const REAL8 S = XLALDictLookupREAL8Value(pphiParams->LALParams, "S");
-	const REAL8 Sstar = XLALDictLookupREAL8Value(pphiParams->LALParams, "Sstar");
-
 	REAL8 r = pphiParams->r;
-	REAL8 rc = pphiParams->rc;
-	REAL8 drcBydr = pphiParams->drcBydr;
-    REAL8 dAuc2Bydr = pphiParams->dAuc2Bydr;
-    REAL8 dprstarBydr = pphiParams->dprstarBydr;
-    REAL8 dA = pphiParams->dA;
-   	REAL8 prstar = pphiParams->prstar;
-   	REAL8 A = pphiParams->A;
-    REAL8 uc2 = pphiParams->uc2;
-    LALDict *LALParams = pphiParams->LALParams;
+	REAL8 prstar = pphiParams->prstar;
+	REAL8 pphi = pphi_sol;
+	const REAL8 dr = XLALDictLookupREAL8Value(pphiParams->LALParams, "dr");
+	LALDict *LALParams = pphiParams->LALParams;
 
-    REAL8 ggm[14];
+	REAL8 partialHBypartialprstar;
+	partialHBypartialprstar = XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
+									1.,
+									r,
+									prstar,
+									pphi,
+									LALParams
+								);
 
-	UNUSED REAL8 G;
-	UNUSED REAL8 dGBydr;
-	UNUSED REAL8 dGBydprstar;
-	UNUSED REAL8 dG_dprstarbyprstar;
+	REAL8 dprstarBydpr;
+	dprstarBydpr = pphiParams->csi;
 
-	XLALSimInspiralEOBPostAdiabaticsGSDynamics(ggm, r, rc, drcBydr, prstar, LALParams);
+	REAL8 partialHBypartialr;
+	partialHBypartialr = XLALSimInspiralEOBPAHamiltonianDerivative(
+								dr,
+								r,
+								prstar,
+								pphi,
+								LALParams
+							);
 
-	G = ggm[2]*S + ggm[3]*Sstar;
-    dGBydr = ggm[6]*S + ggm[7]*Sstar;
-    dGBydprstar = ggm[4]*S + ggm[5]*Sstar;
-
-    REAL8 H;
-	REAL8 Heff;
-	REAL8 HeffOrb;
-	REAL8 dHeff_dr;
-	REAL8 dHeff_dprstar;
-	REAL8 dHeff_dpphi;
-	REAL8 d2Heff_dprstar20;
-
-	XLALSimInspiralEOBPostAdiabaticHamiltonianS(&H, &Heff, &HeffOrb, &dHeff_dr, &dHeff_dprstar, &dHeff_dpphi, &d2Heff_dprstar20, r, rc, drcBydr, pphi_sol, prstar, S, Sstar, A, dA, LALParams);
-
-    REAL8 aCoeff;
-    REAL8 bCoeff;
-    REAL8 cCoeff;
-
-    REAL8 result;
-
-    aCoeff = dAuc2Bydr;
-    bCoeff = 2 * HeffOrb * (dGBydr+dGBydprstar*dprstarBydr);
-    cCoeff = dA + 2*prstar*dprstarBydr*(1+2*z3*A*uc2*prstar*prstar) + z3*dAuc2Bydr*gsl_pow_int(prstar, 4);
-
-    result = aCoeff*pphi_sol*pphi_sol + bCoeff*pphi_sol + cCoeff;
+	REAL8 dprstarBydr;
+	dprstarBydr = pphiParams->dprstarBydr;
+	
+	REAL8 result;
+    result = partialHBypartialprstar*dprstarBydpr - partialHBypartialr/dprstarBydr;
 
 	return result;
 }
@@ -1617,8 +1556,8 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
 
 	if (F_lower*F_upper >= 0.0)
 	{
-		x_lower = -5.e-2;
-		x_upper = 5.e-2;
+		x_lower = -5.e-1;
+		x_upper = 5.e-1;
 	}
 
 	gsl_root_fsolver_set(solver, &F, x_lower, x_upper);
@@ -2367,15 +2306,13 @@ XLALSimInspiralEOBPAFluxWrapper(
 
 	physParams.cal21 = 0.;
 	physParams.cal55 = 0.;
-	
- //    printf("%.18e %.18e\n", physParams.eobParams->m1, physParams.eobParams->m2);
-	// exit(0);
 
 	const UINT4 lMax = 8;
 	
  	REAL8 Flux;
 
     Flux = XLALInspiralSpinFactorizedFlux(polarDynamics, &nqcCoeffs, omega, &physParams, H, lMax, SpinAlignedEOBversion);
+    Flux = Flux * 1.e-10;
 
     return Flux;
 }
@@ -2762,33 +2699,86 @@ XLALSimInspiralEOBPostAdiabatic(
     		if (parity)
     		{
     			// Odd PA orders: corrections to prstar only
-    			fluxVec->data[i] = XLALSimInspiralEOBPAFluxWrapper(
-											rVec->data[i],
-											prstarVec->data[i],
-											pphiVec->data[i],
-											omegaVec->data[i],
-											HVec->data[i],
-											LALparams
-										);
 
-    			dHBydprstar = XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
-																					1.e-1,
-																					rVec->data[i],
-																					prstarVec->data[i],
-																					pphiVec->data[i],
-																					LALparams
-																				);
-    			printf("%.18e\n", fluxVec->data[i]);
-    			
+    			struct PostAdiabaticRoot prstarRoot;
+
+                struct PostAdiabaticRootSolveParams prstarParams;
+                prstarParams.r = rVec->data[i];
+                prstarParams.phi = 0.;
+			    prstarParams.pphi = pphiVec->data[i];
+			    prstarParams.dpphiBydr = dpphiBydrVec->data[i];
+			    prstarParams.omega = omegaVec->data[i];
+			    prstarParams.csi = csiVec->data[i];
+			    prstarParams.LALParams = LALparams;
+
+    			REAL8 x_lower;
+			    REAL8 x_upper;
+
+			    if (prstarVec->data[i] > 0.)
+			    {
+					x_lower = 0.9 * prstarVec->data[i];
+					x_upper = 1.1 * prstarVec->data[i];
+				}
+				else
+				{
+					x_upper = 0.9 * prstarVec->data[i];
+					x_lower = 1.1 * prstarVec->data[i];
+				}
+
+			    XLALSimInspiralEOBPostAdiabaticRootFinder(
+			    	&prstarRoot,
+					XLALSimInspiralEOBPostAdiabaticdprstarFunc,
+					&prstarParams,
+					x_lower,
+					x_upper,
+					1.e-8,
+					1.e-8
+				);
+
+    			prstarVec->data[i] = prstarRoot.root;
     		}
     		else
     		{
     			// Even PA orders: corrections to pphi only
 
+    			struct PostAdiabaticRoot pphiRoot;
 
+    			struct PostAdiabaticRootSolveParams pphiParams;
+    			pphiParams.r = rVec->data[i];
+			    pphiParams.csi = csiVec->data[i];
+			    pphiParams.prstar = prstarVec->data[i];
+			    pphiParams.dr = prstarVec->data[i];
+			    pphiParams.dprstarBydr = dprstarBydrVec->data[i];
 
+			    REAL8 x_lower = 0.9 * pphiVec->data[i];
+				REAL8 x_upper = 1.1 * pphiVec->data[i];
+
+			    XLALSimInspiralEOBPostAdiabaticRootFinder(
+			    	&pphiRoot,
+					XLALSimInspiralEOBPostAdiabaticdpphiFunc,
+					&pphiParams,
+					x_lower,
+					x_upper,
+					1.e-17,
+					1.e-20
+				);
+
+				pphiVec->data[i] = pphiRoot.root;
     		}
     	}
+
+    	if (parity)
+		{
+		    *prstarReverseVec = XLALReverseREAL8Vector(prstarVec);
+		    *dprstarBydrReverseVec = XLALFDDerivative1Order2(rReverseVec, prstarReverseVec);
+		    *dprstarBydrVec = XLALReverseREAL8Vector(dprstarBydrReverseVec);
+		}
+		else
+		{
+			*pphiReverseVec = XLALReverseREAL8Vector(pphiVec);
+			*dpphiBydrReverseVec = XLALFDDerivative1Order2(rReverseVec, pphiReverseVec);
+			*dpphiBydrVec = XLALReverseREAL8Vector(dpphiBydrReverseVec);
+		}
     }
 
 	exit(0);
