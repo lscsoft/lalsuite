@@ -1327,7 +1327,7 @@ XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
  * Concerning SEOBNRv4 see also https://dcc.ligo.org/T1600383
  */
 
-static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * const coeffs,
+UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * const coeffs,
               /**< OUTPUT, pre-computed waveform coefficients */
               SpinEOBParams * restrict params,
               /**< Others parameters like use_hm */

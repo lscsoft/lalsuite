@@ -1575,7 +1575,7 @@ XLALSimIMRSpinAlignedEOBCalcOmega (const REAL8 values[],/**<< Dynamical variable
  * radius \f$r\f$ times the cuberoot of the returned number is \f$r_\Omega\f$ defined in Eq. A2.
  * i.e. the function returns \f$(r_{\Omega} / r)^3\f$.
  */
-static REAL8
+UNUSED static REAL8
 XLALSimIMRSpinAlignedEOBNonKeplerCoeff (const REAL8 values[],
 							/**<< Dynamical variables */
 					SpinEOBParams * funcParams

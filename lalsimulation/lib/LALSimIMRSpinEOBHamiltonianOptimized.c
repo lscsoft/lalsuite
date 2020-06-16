@@ -98,7 +98,7 @@ static REAL8 XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized(
  * The function returns a REAL8, which will be the value of the Hamiltonian if all goes well;
  * otherwise, it will return the XLAL REAL8 failure NaN.
  */
-REAL8 XLALSimIMRSpinEOBHamiltonianOptimized(
+UNUSED REAL8 XLALSimIMRSpinEOBHamiltonianOptimized(
 				   const REAL8    eta,                  /**<< Symmetric mass ratio */
 				   REAL8Vector    * restrict x,         /**<< Position vector */
 				   REAL8Vector    * restrict p,	    /**<< Momentum vector (tortoise radial component pr*) */

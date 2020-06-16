@@ -722,6 +722,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
                      /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
   )
 {
+  printf("D\n");
   REAL8 STEP_SIZE = STEP_SIZE_CALCOMEGA;
   INT4 use_tidal = 0;
   if ( (lambda3Tidal1 != 0. && lambda2Tidal1 == 0.) || (lambda3Tidal2 != 0. && lambda2Tidal2 == 0.) ) {

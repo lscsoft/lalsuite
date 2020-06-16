@@ -43,7 +43,7 @@
 #include "LALSimIMRSpinEOBFactorizedWaveform.c"
 
 
-static int UsePrec = 0;
+UNUSED static int UsePrec = 0;
 
 /*------------------------------------------------------------------------------------------
  *
@@ -84,6 +84,7 @@ XLALInspiralSpinFactorizedFlux (REAL8Vector * values,	/**< dynamical variables *
 				UNUSED const UINT4 SpinAlignedEOBversion  /**< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4 */
   )
 {
+    printf("%.18e %.18e\n", ak->cal21, ak->cal55);
 
   if ( nqcCoeffs==NULL ) {
       XLAL_ERROR_REAL8 (XLAL_EINVAL);
@@ -158,6 +159,7 @@ XLALInspiralSpinFactorizedFlux (REAL8Vector * values,	/**< dynamical variables *
 					 cimag (hLM) * cimag (hLM));
 	}
     }
+  printf("%.18e\n", flux);
   return flux * LAL_1_PI / 8.0;
 }
 

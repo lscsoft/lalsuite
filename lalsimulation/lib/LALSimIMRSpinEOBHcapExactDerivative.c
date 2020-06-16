@@ -96,7 +96,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian_derivs_allatonce(
  *------------------------------------------------------------------------------------------
  */
 
-static REAL8 XLALSpinHcapHybDerivWRTParam(
+UNUSED static REAL8 XLALSpinHcapHybDerivWRTParam(
                                           const INT4 paramIdx,      /**<< Index of the parameters */
                                           const REAL8 values[],     /**<< Dynamical variables */
                                           SpinEOBParams *funcParams /**<< EOB Parameters */
@@ -191,7 +191,7 @@ static REAL8 GSLSpinAlignedHamiltonianWrapper_derivs_allatonce( REAL8 output[6],
  * Calculate the derivative of the Hamiltonian w.r.t. a specific parameter
  * Used by generic spin EOB model, including initial conditions solver.
  */
-static REAL8 XLALSpinHcapExactDerivWRTParam(
+UNUSED static REAL8 XLALSpinHcapExactDerivWRTParam(
                                             const INT4 paramIdx,      /**<< Index of the parameters */
                                             const REAL8 values[],     /**<< Dynamical variables */
                                             SpinEOBParams *funcParams /**<< SEOB Parameters */

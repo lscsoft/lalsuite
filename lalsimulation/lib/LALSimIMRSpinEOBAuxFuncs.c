@@ -64,7 +64,7 @@ static int XLALSimIMRSpinEOBCalculateSigmaStar(
  * Function to calculate normalized spin of the deformed-Kerr background in SEOBNRv1.
  * Eq. 5.2 of Barausse and Buonanno PRD 81, 084024 (2010).
  */
-static int XLALSimIMRSpinEOBCalculateSigmaKerr( 
+UNUSED static int XLALSimIMRSpinEOBCalculateSigmaKerr( 
                   REAL8Vector *sigmaKerr, /**<< OUTPUT, normalized (to total mass) spin of deformed-Kerr */
                   REAL8        mass1,     /**<< mass 1 */
                   REAL8        mass2,     /**<< mass 2 */
@@ -87,7 +87,7 @@ static int XLALSimIMRSpinEOBCalculateSigmaKerr(
  * Function to calculate normalized spin of the test particle in SEOBNRv1.
  * Eq. 5.3 of Barausse and Buonanno PRD 81, 084024 (2010).
  */
-static int XLALSimIMRSpinEOBCalculateSigmaStar( 
+UNUSED static int XLALSimIMRSpinEOBCalculateSigmaStar( 
                   REAL8Vector *sigmaStar, /**<< OUTPUT, normalized (to total mass) spin of test particle */
                   REAL8        mass1,     /**<< mass 1 */
                   REAL8        mass2,     /**<< mass 2 */
