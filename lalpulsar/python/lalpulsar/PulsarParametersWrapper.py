@@ -748,7 +748,7 @@ class PulsarParametersPy(object):
             if isinstance(tvalue, list) or isinstance(tvalue, np.ndarray):
                 idxoffset = 0
                 idxsep = ""
-                if key in ['WAVESIN', 'WAVECOS', 'GLEP', 'GLPH', 'GLF0', 'GLF1', 'GLF0D', 'GLTD']:
+                if key in ['WAVESIN', 'WAVECOS', 'GLEP', 'GLPH', 'GLF0', 'GLF1', 'GLF2', 'GLF0D', 'GLTD']:
                     # the TEMPO variable name for these parameter start with an index a 1
                     idxoffset = 1
 
