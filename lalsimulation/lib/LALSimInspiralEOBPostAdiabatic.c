@@ -2249,14 +2249,14 @@ XLALSimInspiralEOBPAFluxWrapper(
 	const REAL8 X2 = XLALDictLookupREAL8Value(LALParams, "X2");
 
 	/* polarDynamics contains r, phi, pr, pphi */
-	REAL8Vector polarDynamics;
-	polarDynamics.length = 4;
+	REAL8Vector *polarDynamics = XLALCreateREAL8Vector(4);
+	memset(polarDynamics->data, 0, polarDynamics->length * sizeof(REAL8));
 	// memset(polarDynamics.data, 0, polarDynamics.length * sizeof(REAL8));
 
-	polarDynamics.data[0] = r;
-	polarDynamics.data[1] = 0.0;
-	polarDynamics.data[2] = prstar;
-	polarDynamics.data[3] = pphi;
+	polarDynamics->data[0] = r;
+	polarDynamics->data[1] = 0.0;
+	polarDynamics->data[2] = prstar;
+	polarDynamics->data[3] = pphi;
 
 	/* NQC coefficients container */
 	EOBNonQCCoeffs nqcCoeffs;
@@ -2355,12 +2355,12 @@ XLALSimInspiralEOBPAFluxWrapper(
  //    printf("%.18e %.18e\n", physParams.eobParams->m1, physParams.eobParams->m2);
 	// exit(0);
 
-	const UINT4 lMax = 5;
+	const UINT4 lMax = 8;
 	const UINT4 SpinAlignedEOBversion = 4;
 
  	REAL8 Flux;
 
-    Flux = XLALInspiralSpinFactorizedFlux(&polarDynamics, &nqcCoeffs, omega, &physParams, H, lMax, SpinAlignedEOBversion);
+    Flux = XLALInspiralSpinFactorizedFlux(polarDynamics, &nqcCoeffs, omega, &physParams, H, lMax, SpinAlignedEOBversion);
 
     return Flux;
 }
