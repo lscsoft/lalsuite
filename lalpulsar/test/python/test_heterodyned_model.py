@@ -29,7 +29,7 @@ import os
 import sys
 
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
 import pytest
 
@@ -115,7 +115,7 @@ t1output = {'H1': np.array([[1000000000.0, -4.365015078242e-27, -4.216860020522e
 
 """
 The second test output is to create a signal model for a source assuming that
-the heterodyne and injected signal do not precisely matches.
+the heterodyne and injected signal do not precisely match.
 lalapps_pulsar_parameter_estimation_nested has been run with the following
 pulsar parameter "inj.par" file:
 
@@ -353,6 +353,149 @@ t5output = np.array([[1000000000.0, 2.413832756525e-26, 1.185008925479e-26],
                      [1000079200.0, 1.367058676109e-26, 1.644309606653e-27],
                      [1000082800.0, 2.116179045441e-26, 7.734541471774e-27]])
 
+
+"""
+The sixth test output is to create a signal model phase evolution for a source
+assuming that heterodyne and an updated signal do not precisely match, adding
+in some binary system parameters, and glitch parameters for the updated signal.
+The first glitch is at GPS 1000000600 (in TDB, which puts it into the data set
+time, or MJD 55818.08161090822), second glitch is at GPS 1000000700 (or MJD
+55818.08276831563)
+lalapps_heterodyne_pulsar has been run with the following pulsar parameter
+"inj.par" file:
+
+PSRJ     TEST
+RAJ      01:23:34.5
+DECJ     -45:01:23.4
+F0       123.456789
+F1       -9.87654321e-12
+PEPOCH   58000
+BINARY   BT
+T0       58121.3
+ECC      0.0001
+OM       1.2
+A1       8.9
+PB       0.54
+EPHEM    DE405
+UNITS    TCB
+GLPH_1   0.3
+GLEP_1   55818.08161090822
+GLF0_1   5.4e-6
+GLF1_1   -3.2e-13
+GLF0D_1  1.2e-5
+GLTD_1   0.31
+GLPH_2   0.7
+GLEP_2   55818.08276831563
+GLF0_2   3.4e-7
+GLF1_2   -1.2e-14
+GLF0D_2  -0.4e-6
+GLTD_2   0.45
+
+and "heterodyne" "het.par" file:
+
+PSRJ     TEST
+RAJ      01:23:34.6
+DECJ     -45:01:23.5
+F0       123.4567
+F1       -9.876e-12
+PEPOCH   58000
+EPHEM    DE405
+UNITS    TCB
+
+lalapps_heterodyne_pulsar -i H1 --pulsar J0000+0000 -z 2 -f het.par -g inj.par -s 1/60 -r 1/60 -P -o testing.txt -l segments.txt -d inj.txt -L -e earth00-40-DE405.dat.gz -S sun00-40-DE405.dat.gz -t te405_2000-2040.dat.gz
+
+where inj.txt contains 10 rows with times between 1000000000 and 1000000540,
+and segments.txt contains one row with:
+1000000000 1000000600
+
+The output of "phase.txt" is given below.
+"""
+
+t6output = np.array([0.962333260,
+                     6.103230186,
+                     4.076170449,
+                     1.165825399,
+                     3.656722577,
+                     2.766150856,
+                     6.024421923,
+                     5.892164017,
+                     4.884626261,
+                     3.003294698])
+
+
+"""
+The seventh test output is to create a signal model phase evolution for a source
+assuming that heterodyne and an updated signal do not precisely match, adding
+in some binary system parameters, glitch parameters and timing noise (FITWAVES)
+parameters for the updated signal.
+lalapps_heterodyne_pulsar has been run with the following pulsar parameter
+"inj.par" file:
+
+PSRJ     TEST
+RAJ      04:23:34.5
+DECJ     -05:01:23.4
+F0       153.456789
+F1       -2.87654321e-11
+PEPOCH   55810
+BINARY   BT
+T0       58121.3
+ECC      0.0002
+OM       7.2
+A1       14.9
+PB       1.03
+EPHEM    DE405
+UNITS    TCB
+GLPH_1   0.3
+GLEP_1   55818.08161090822
+GLF0_1   7.4e-6
+GLF1_1   -3.2e-12
+GLF0D_1  1.2e-5
+GLTD_1   0.41
+GLPH_2   0.91
+GLEP_2   55818.08276831563
+GLF0_2   3.4e-7
+GLF1_2   -1.2e-14
+GLF0D_2  -0.4e-6
+GLTD_2   1.45
+WAVEEPOCH 55818.0
+WAVE_OM 0.005
+WAVE1 0.098 0.056
+WAVE2 0.078 -0.071
+WAVE3 -0.03 -0.12
+
+
+and "heterodyne" "het.par" file:
+
+PSRJ     TEST
+RAJ      04:23:34.6
+DECJ     -05:01:23.5
+F0       153.4567
+F1       -2.876e-11
+PEPOCH   55810
+EPHEM    DE405
+UNITS    TCB
+
+lalapps_heterodyne_pulsar -i H1 --pulsar J0000+0000 -z 2 -f het.par -g inj.par -s 1/60 -r 1/60 -P -o testing.txt -l segments.txt -d inj.txt -L -e earth00-40-DE405.dat.gz -S sun00-40-DE405.dat.gz -t te405_2000-2040.dat.gz
+
+where inj.txt contains 10 rows with times between 1000000000 and 1000000540,
+and segments.txt contains one row with:
+1000000000 1000000600
+
+The output of "phase.txt" is given below.
+"""
+
+t7output = np.array([2.420723736,
+                     4.682767534,
+                     0.313020652,
+                     1.879459964,
+                     3.100512978,
+                     3.977798875,
+                     4.512941892,
+                     4.707573756,
+                     2.060503777,
+                     0.462653250])
+
+
 # set ephemeris files
 earthephem = os.path.join(os.environ['LAL_TEST_PKGDATADIR'], 'earth00-19-DE405.dat.gz')
 sunephem = os.path.join(os.environ['LAL_TEST_PKGDATADIR'], 'sun00-40-DE405.dat.gz')
@@ -367,7 +510,6 @@ tdat = lalpulsar.InitTimeCorrections(timefile)
 def test_one(det):
     par = PulsarParametersPy()
     par['F'] = [123.456789, -9.87654321e-12]  # set frequency
-    par['DELTAF'] = [0.0, 0.0]  # frequency difference
     par['RAJ'] = lal.TranslateHMStoRAD('01:23:34.5')  # set right ascension
     par['DECJ'] = lal.TranslateDMStoRAD('-45:01:23.4')  # set declination
     pepoch = lal.TranslateStringMJDTTtoGPS('58000')
@@ -404,12 +546,17 @@ def test_one(det):
                                                          lalpulsar.TIMECORRECTION_TCB)
 
     fullsignal = lalpulsar.HeterodynedPulsarGetModel(par.PulsarParameters(),
+                                                     par.PulsarParameters(),
                                                      freqfactor,
                                                      1,
                                                      0,
                                                      0,
                                                      gpstimes,
                                                      hetSSBdelay,
+                                                     0,
+                                                     None,
+                                                     0,
+                                                     None,
                                                      0,
                                                      None,
                                                      0,
@@ -437,7 +584,6 @@ def test_two():
 
     parinj = PulsarParametersPy()
     parinj['F'] = [123.456789, -9.87654321e-12]  # set frequency
-    parinj['DELTAF'] = parinj['F'] - parhet['F']  # frequency difference
     parinj['RAJ'] = lal.TranslateHMStoRAD('01:23:34.5')  # set right ascension
     parinj['DECJ'] = lal.TranslateDMStoRAD('-45:01:23.4')  # set declination
     pepoch = lal.TranslateStringMJDTTtoGPS('58000')
@@ -475,6 +621,7 @@ def test_two():
                                                          lalpulsar.TIMECORRECTION_TCB)
 
     fullsignal = lalpulsar.HeterodynedPulsarGetModel(parinj.PulsarParameters(),
+                                                     parhet.PulsarParameters(),
                                                      freqfactor,
                                                      1,
                                                      0,
@@ -482,6 +629,10 @@ def test_two():
                                                      gpstimes,
                                                      hetSSBdelay,
                                                      1,
+                                                     None,
+                                                     0,
+                                                     None,
+                                                     0,
                                                      None,
                                                      0,
                                                      resp,
@@ -511,7 +662,6 @@ def test_three(harmonic):
 
     parinj = PulsarParametersPy()
     parinj['F'] = [123.456789, -9.87654321e-12]  # set frequency
-    parinj['DELTAF'] = parinj['F'] - parhet['F']  # frequency difference
     parinj['RAJ'] = lal.TranslateHMStoRAD('01:23:34.5')  # set right ascension
     parinj['DECJ'] = lal.TranslateDMStoRAD('-45:01:23.4')  # set declination
     pepoch = lal.TranslateStringMJDTTtoGPS('58000')
@@ -551,6 +701,7 @@ def test_three(harmonic):
                                                          lalpulsar.TIMECORRECTION_TCB)
 
     fullsignal = lalpulsar.HeterodynedPulsarGetModel(parinj.PulsarParameters(),
+                                                     parhet.PulsarParameters(),
                                                      freqfactor,
                                                      1,
                                                      0,
@@ -558,6 +709,10 @@ def test_three(harmonic):
                                                      gpstimes,
                                                      hetSSBdelay,
                                                      1,
+                                                     None,
+                                                     0,
+                                                     None,
+                                                     0,
                                                      None,
                                                      0,
                                                      resp,
@@ -591,7 +746,6 @@ def test_four():
 
     parinj = PulsarParametersPy()
     parinj['F'] = [123.456789, -9.87654321e-12]  # set frequency
-    parinj['DELTAF'] = parinj['F'] - parhet['F']  # frequency difference
     parinj['RAJ'] = lal.TranslateHMStoRAD('01:23:34.5')  # set right ascension
     parinj['DECJ'] = lal.TranslateDMStoRAD('-45:01:23.4')  # set declination
     pepoch = lal.TranslateStringMJDTTtoGPS('58000')
@@ -642,6 +796,7 @@ def test_four():
                                                          edat)
 
     fullsignal = lalpulsar.HeterodynedPulsarGetModel(parinj.PulsarParameters(),
+                                                     parhet.PulsarParameters(),
                                                      freqfactor,
                                                      1,  # phase is varying between par files
                                                      0,  # not using ROQ
@@ -651,6 +806,10 @@ def test_four():
                                                      1,  # the SSB delay should be updated compared to hetSSBdelay
                                                      hetBSBdelay,
                                                      1,  # the BSB delay should be updated compared to hetBSBdelay
+                                                     None,
+                                                     0,
+                                                     None,
+                                                     0,
                                                      resp,
                                                      edat,
                                                      tdat,
@@ -711,12 +870,17 @@ def test_five():
                                                          lalpulsar.TIMECORRECTION_TCB)
 
     fullsignal = lalpulsar.HeterodynedPulsarGetModel(par.PulsarParameters(),
+                                                     par.PulsarParameters(),
                                                      freqfactor,
                                                      1,
                                                      0,
                                                      1,  # use non-GR modes
                                                      gpstimes,
                                                      hetSSBdelay,
+                                                     0,
+                                                     None,
+                                                     0,
+                                                     None,
                                                      0,
                                                      None,
                                                      0,
@@ -729,6 +893,171 @@ def test_five():
     # check output matches that from lalapps_pulsar_parameter_estimation_nested
     assert_allclose(fullsignal.data.data.real, t5output[:,1])
     assert_allclose(fullsignal.data.data.imag, t5output[:,2])
+
+
+def test_six():
+    parhet = PulsarParametersPy()
+    parhet['F'] = [123.4567, -9.876e-12]  # set frequency
+    parhet['RAJ'] = lal.TranslateHMStoRAD('01:23:34.6')  # set right ascension
+    parhet['DECJ'] = lal.TranslateDMStoRAD('-45:01:23.5')  # set declination
+    pepoch = lal.TranslateStringMJDTTtoGPS('58000')
+    parhet['PEPOCH'] = pepoch.gpsSeconds + 1e-9*pepoch.gpsNanoSeconds
+
+    parinj = PulsarParametersPy()
+    parinj['F'] = [123.456789, -9.87654321e-12]  # set frequency
+    parinj['RAJ'] = lal.TranslateHMStoRAD('01:23:34.5')  # set right ascension
+    parinj['DECJ'] = lal.TranslateDMStoRAD('-45:01:23.4')  # set declination
+    pepoch = lal.TranslateStringMJDTTtoGPS('58000')
+    parinj['PEPOCH'] = pepoch.gpsSeconds + 1e-9*pepoch.gpsNanoSeconds
+    parinj['BINARY'] = 'BT'
+    T0 = lal.TranslateStringMJDTTtoGPS('58121.3')
+    parinj['T0'] = T0.gpsSeconds + 1e-9*T0.gpsNanoSeconds
+    parinj['OM'] = np.deg2rad(1.2)
+    parinj['A1'] = 8.9
+    parinj['PB'] = 0.54*86400.0
+    parinj['ECC'] = 0.0001
+    parinj['GLF0'] = [5.4e-6, 3.4e-7]
+    parinj['GLF1'] = [-3.2e-13, -1.2e-14]
+    parinj['GLF0D'] = [1.2e-5, -0.4e-6]
+    parinj['GLTD'] = [0.31 * 86400, 0.45 * 86400]
+    parinj['GLPH'] = [0.3, 0.7]
+    glph1 = lal.TranslateStringMJDTTtoGPS('55818.08161090822')
+    glph2 = lal.TranslateStringMJDTTtoGPS('55818.08276831563')
+    parinj['GLEP'] = [glph1.gpsSeconds + 1e-9*glph1.gpsNanoSeconds,
+                      glph2.gpsSeconds + 1e-9*glph2.gpsNanoSeconds]
+
+    freqfactor = 2.  # set frequency factor
+    det = 'H1'  # the detector
+
+    # convert into GPS times
+    gpstimes = lalpulsar.CreateTimestampVector(len(t6output))
+    for i, time in enumerate(np.linspace(1000000000.0, 1000000540.0, 10)):
+        gpstimes.data[i] = lal.LIGOTimeGPS(time)
+
+    detector = lalpulsar.GetSiteInfo(det)
+
+    # replicate coarse heterodyne in which no SSB/BSB delay is applied
+    hetSSBdelay = lal.CreateREAL8Vector(len(t6output))
+    hetBSBdelay = lal.CreateREAL8Vector(len(t6output))
+    for i in range(len(t6output)):
+        hetSSBdelay.data[i] = 0.0
+        hetBSBdelay.data[i] = 0.0
+
+    # get the heterodyne glitch phase (which should be zero)
+    glphase = lalpulsar.HeterodynedPulsarGetGlitchPhase(parhet.PulsarParameters(),
+                                                        gpstimes,
+                                                        hetSSBdelay,
+                                                        hetBSBdelay)
+
+    fullphase = lalpulsar.HeterodynedPulsarPhaseDifference(parinj.PulsarParameters(),
+                                                           parhet.PulsarParameters(),
+                                                           gpstimes,
+                                                           freqfactor,
+                                                           hetSSBdelay,
+                                                           1,  # the SSB delay should be updated compared to hetSSBdelay
+                                                           hetBSBdelay,
+                                                           1,  # the BSB delay should be updated compared to hetBSBdelay
+                                                           glphase,
+                                                           1,  # the glitch phase should be updated compared to glphase
+                                                           None,
+                                                           0,
+                                                           detector,
+                                                           edat,
+                                                           tdat,
+                                                           lalpulsar.TIMECORRECTION_TCB)
+
+    # check output matches that from lalapps_heterodyne_pulsar
+    assert_allclose(2.0 * np.pi * np.fmod(fullphase.data, 1.), t6output, rtol=1e-4)
+
+
+def test_seven():
+    parhet = PulsarParametersPy()
+    parhet['F'] = [153.4567, -2.876e-11]  # set frequency
+    parhet['RAJ'] = lal.TranslateHMStoRAD('04:23:34.6')  # set right ascension
+    parhet['DECJ'] = lal.TranslateDMStoRAD('-05:01:23.5')  # set declination
+    pepoch = lal.TranslateStringMJDTTtoGPS('55810')
+    parhet['PEPOCH'] = pepoch.gpsSeconds + 1e-9*pepoch.gpsNanoSeconds
+
+    parinj = PulsarParametersPy()
+    parinj['F'] = [153.456789, -2.87654321e-11]  # set frequency
+    parinj['RAJ'] = lal.TranslateHMStoRAD('04:23:34.5')  # set right ascension
+    parinj['DECJ'] = lal.TranslateDMStoRAD('-05:01:23.4')  # set declination
+    pepoch = lal.TranslateStringMJDTTtoGPS('55810')
+    parinj['PEPOCH'] = pepoch.gpsSeconds + 1e-9*pepoch.gpsNanoSeconds
+    parinj['BINARY'] = 'BT'
+    T0 = lal.TranslateStringMJDTTtoGPS('58121.3')
+    parinj['T0'] = T0.gpsSeconds + 1e-9*T0.gpsNanoSeconds
+    parinj['OM'] = np.deg2rad(7.2)
+    parinj['A1'] = 14.9
+    parinj['PB'] = 1.03*86400.0
+    parinj['ECC'] = 0.0002
+    parinj['GLF0'] = [7.4e-6, 3.4e-7]
+    parinj['GLF1'] = [-3.2e-12, -1.2e-14]
+    parinj['GLF0D'] = [1.2e-5, -0.4e-6]
+    parinj['GLTD'] = [0.41 * 86400, 1.45 * 86400]
+    parinj['GLPH'] = [0.3, 0.91]
+    glep1 = lal.TranslateStringMJDTTtoGPS('55818.08161090822')
+    glep2 = lal.TranslateStringMJDTTtoGPS('55818.08276831563')
+    parinj['GLEP'] = [glep1.gpsSeconds + 1e-9*glep1.gpsNanoSeconds,
+                      glep2.gpsSeconds + 1e-9*glep2.gpsNanoSeconds]
+    waveep = lal.TranslateStringMJDTTtoGPS('55818.0')
+    parinj['WAVEEPOCH'] = waveep.gpsSeconds + 1e-9*waveep.gpsNanoSeconds
+    parinj['WAVE_OM'] = 0.005
+    parinj['WAVESIN'] = [0.098, 0.078, -0.03]
+    parinj['WAVECOS'] = [0.056, -0.071, -0.12]
+
+    freqfactor = 2.  # set frequency factor
+    det = 'H1'  # the detector
+
+    # convert into GPS times
+    gpstimes = lalpulsar.CreateTimestampVector(len(t7output))
+    for i, time in enumerate(np.linspace(1000000000.0, 1000000540.0, 10)):
+        gpstimes.data[i] = lal.LIGOTimeGPS(time)
+
+    detector = lalpulsar.GetSiteInfo(det)
+
+    # replicate coarse heterodyne in which no SSB/BSB delay is applied
+    hetSSBdelay = lal.CreateREAL8Vector(len(t6output))
+    hetBSBdelay = lal.CreateREAL8Vector(len(t6output))
+    for i in range(len(t6output)):
+        hetSSBdelay.data[i] = 0.0
+        hetBSBdelay.data[i] = 0.0
+
+    # get the heterodyne glitch phase (which should be zero)
+    glphase = lalpulsar.HeterodynedPulsarGetGlitchPhase(parhet.PulsarParameters(),
+                                                        gpstimes,
+                                                        hetSSBdelay,
+                                                        hetBSBdelay)
+
+    assert_equal(glphase.data, np.zeros(len(t7output)))
+
+    # get the FITWAVES phase (which should be zero)
+    fwphase = lalpulsar.HeterodynedPulsarGetFITWAVESPhase(parhet.PulsarParameters(),
+                                                          gpstimes,
+                                                          hetSSBdelay,
+                                                          parhet["F0"])
+
+    assert_equal(fwphase.data, np.zeros(len(t7output)))
+
+    fullphase = lalpulsar.HeterodynedPulsarPhaseDifference(parinj.PulsarParameters(),
+                                                           parhet.PulsarParameters(),
+                                                           gpstimes,
+                                                           freqfactor,
+                                                           hetSSBdelay,
+                                                           1,  # the SSB delay should be updated compared to hetSSBdelay
+                                                           hetBSBdelay,
+                                                           1,  # the BSB delay should be updated compared to hetBSBdelay
+                                                           glphase,
+                                                           1,  # the glitch phase should be updated compared to glphase
+                                                           fwphase,
+                                                           1,  # the FITWAVES phase should be updated compare to fwphase
+                                                           detector,
+                                                           edat,
+                                                           tdat,
+                                                           lalpulsar.TIMECORRECTION_TCB)
+
+    # check output matches that from lalapps_heterodyne_pulsar
+    assert_allclose(2.0 * np.pi * np.fmod(fullphase.data, 1.), t7output, rtol=1e-3)
 
 
 if __name__ == '__main__':
