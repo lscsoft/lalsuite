@@ -2248,6 +2248,17 @@ XLALSimInspiralEOBPAFluxWrapper(
 	const REAL8 X1 = XLALDictLookupREAL8Value(LALParams, "X1");
 	const REAL8 X2 = XLALDictLookupREAL8Value(LALParams, "X2");
 
+	const UINT4 SpinAlignedEOBversion = 4;
+
+	REAL8 chiS;
+	REAL8 chiA;
+
+	chiS = 0.5 * (chi1+chi2);
+	chiA = 0.5 * (chi1-chi2);
+
+	REAL8 tplspin;
+	tplspin = (1.-2.*nu)*chiS + (X1-X2)/(X1+X2)*chiA;
+
 	/* polarDynamics contains r, phi, pr, pphi */
 	REAL8Vector *polarDynamics = XLALCreateREAL8Vector(4);
 	memset(polarDynamics->data, 0, polarDynamics->length * sizeof(REAL8));
@@ -2337,11 +2348,16 @@ XLALSimInspiralEOBPAFluxWrapper(
 		eobParams.m2 = X2;
 
 	 		/* FacWaveformCoeffs */
-		 	FacWaveformCoeffs hCoeffsTidal;
+		 	FacWaveformCoeffs hCoeffs;
 
-		 	hCoeffsTidal.tidal1 = &tidal1;
-		  	hCoeffsTidal.tidal2 = &tidal2;
- 		eobParams.hCoeffs = &hCoeffsTidal;
+		 	hCoeffs.tidal1 = &tidal1;
+		  	hCoeffs.tidal2 = &tidal2;
+
+		  	physParams.use_hm = 0;
+		  	XLALSimIMREOBCalcSpinFacWaveformCoefficients(&hCoeffs, &physParams, X1, X2, nu, tplspin, chiS, chiA, SpinAlignedEOBversion);
+		  	physParams.use_hm = 1;
+
+ 		eobParams.hCoeffs = &hCoeffs;
 
  			/* NewtonMultipolePrefixes */
  			NewtonMultipolePrefixes prefixes;
@@ -2356,8 +2372,7 @@ XLALSimInspiralEOBPAFluxWrapper(
 	// exit(0);
 
 	const UINT4 lMax = 8;
-	const UINT4 SpinAlignedEOBversion = 4;
-
+	
  	REAL8 Flux;
 
     Flux = XLALInspiralSpinFactorizedFlux(polarDynamics, &nqcCoeffs, omega, &physParams, H, lMax, SpinAlignedEOBversion);
