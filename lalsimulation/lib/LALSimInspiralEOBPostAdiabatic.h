@@ -77,6 +77,22 @@ XLALSimInspiralEOBPACalculateRadialGrid(
     LALDict *LALParams
 );
 
+int
+XLALSimInspiralEOBPACalculateAdiabaticDynamics(
+    REAL8Vector *rVec,
+    REAL8Vector *phiVec,
+    REAL8Vector *prstarVec,
+    REAL8Vector *pphiVec,
+    REAL8Vector *pphi0Vec,
+    REAL8Vector *dpphiBydrVec,
+    REAL8Vector *dpphiBydr0Vec,
+    REAL8Vector *HVec,
+    REAL8Vector *csiVec,
+    REAL8Vector *omegaVec,
+    SpinEOBParams *seobParams,
+    LALDict *LALParams
+);
+
 double
 XLALSimInspiralEOBPostAdiabaticdprstarFunc(
     REAL8 prstar_sol,
@@ -229,7 +245,7 @@ XLALSimInspiralEOBPAFluxWrapper(
 );
 
 REAL8
-XLALSimInspiralEOBPANewtonianj0(
+XLALSimInspiralEOBPACalculateNewtonianj0(
     REAL8 r
 );
 

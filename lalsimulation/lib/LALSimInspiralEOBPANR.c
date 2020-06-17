@@ -1363,3 +1363,91 @@ XLALSimInspiralEOBPostAdiabaticHorizonFlux(
 
 //     return result;
 // }
+
+    // for (i = 0; i < rSize; i++)
+    // {
+    //  r = r0 - i*dr;
+
+    //  rVec->data[i] = r;
+
+    //  XLALSimInspiralEOBPostAdiabaticMetricS(&AVec->data[i], &BVec->data[i], &dAVec->data[i], &d2AVec->data[i], &dBVec->data[i], r, LALparams);
+
+    //  XLALSimInspiralEOBPostAdiabaticGetCentrifugalRadiusLO(&rcVec->data[i], &drcBydrVec->data[i], &d2rBydr2Vec->data[i], r, LALparams);
+
+    //  REAL8 ggm[14];
+    //  XLALSimInspiralEOBPostAdiabaticsGSDynamics(ggm, r, rcVec->data[i], drcBydrVec->data[i], 0.0, LALparams);
+
+    //     REAL8 G;
+    //     G = ggm[2]*S + ggm[3]*Sstar;
+
+ //        dGBydrVec->data[i] = ggm[6]*S + ggm[7]*Sstar;
+ //        dGBydprstarVec->data[i] = ggm[4]*S + ggm[5]*Sstar;
+ //        dGBydprstarbyprstarVec->data[i] = ggm[10]*S + ggm[11]*Sstar;
+        
+ //        /* Circular values for flux */
+ //        G0Vec->data[i] = G;
+ //        dGBydr0Vec->data[i] = dGBydrVec->data[i];
+
+ //        /* Auxiliary variables */
+ //        REAL8 uc;
+
+ //        sqrtAByBVec->data[i] = sqrt(AVec->data[i]/BVec->data[i]);
+ //        uc = 1. / rcVec->data[i];
+ //        uc2Vec->data[i] = uc * uc;
+ //        ducBydrVec->data[i] = -uc2Vec->data[i] * drcBydrVec->data[i];
+ //        dAuc2BydrVec->data[i] = uc2Vec->data[i] * (dAVec->data[i]-2*AVec->data[i]*uc*drcBydrVec->data[i]);
+
+ //        REAL8 aCoeff;
+ //        REAL8 bCoeff;
+ //        REAL8 cCoeff;
+
+ //        aCoeff = dAuc2BydrVec->data[i]*dAuc2BydrVec->data[i] - 4*AVec->data[i]*uc2Vec->data[i]*dGBydrVec->data[i]*dGBydrVec->data[i];
+ //        bCoeff = 2*dAVec->data[i]*dAuc2BydrVec->data[i] - 4*AVec->data[i]*dGBydrVec->data[i]*dGBydrVec->data[i];
+ //        cCoeff = dAVec->data[i] * dAVec->data[i];
+
+ //        REAL8 root1;
+ //        REAL8 root2;
+
+ //        gsl_poly_solve_quadratic(aCoeff, bCoeff, cCoeff, &root1, &root2);
+
+ //        REAL8 j02;
+
+ //        // dGdr sign determines choice of solution
+ //        if (((dGBydr0Vec->data[i] > 0.) && (aCoeff > 0.)) || ((dGBydr0Vec->data[i] < 0.) && (aCoeff < 0.)))
+ //        {
+ //            j02 = root2;
+ //        }
+ //        else
+ //        {
+ //            j02 = root1;
+ //        }
+
+ //        // circular orbital angular momentum
+ //        pphiVec->data[i] = sqrt(j02);
+ //        pphi0Vec->data[i] = sqrt(j02);
+
+ //        REAL8 H;
+ //        REAL8 dHeff_dr;
+ //        REAL8 dHeff_dprstar;
+ //        REAL8 d2Heff_dprstar20;
+
+ //        XLALSimInspiralEOBPostAdiabaticHamiltonianS(&H, &HeffVec->data[i], &HeffOrbVec->data[i], &dHeff_dr, &dHeff_dprstar, &dHeffBydpphiVec->data[i], &d2Heff_dprstar20, r, rcVec->data[i], drcBydrVec->data[i], pphiVec->data[i], prstarVec->data[i], S, Sstar, AVec->data[i], dAVec->data[i], LALparams);
+
+ //        // printf("%.18e %.18e %.18e\n", rVec->data[i], H, SpinAlignedH);
+
+ //        EVec->data[i] = nu * H;
+
+ //        // Circular orbital frequency 
+ //        OmgVec->data[i] = dHeffBydpphiVec->data[i] / EVec->data[i];
+
+ //        /* Circular real orbital frequency */
+ //        OmgOrbVec->data[i] = (pphiVec->data[i]*AVec->data[i]*uc2Vec->data[i]) / (EVec->data[i]*HeffOrbVec->data[i]);
+ //    }
+
+    // *rReverseVec = XLALReverseREAL8Vector(rVec);
+    // *pphiReverseVec = XLALReverseREAL8Vector(pphiVec);
+
+    // *dpphiBydrReverseVec = XLALFDDerivative1Order2(rReverseVec, pphiReverseVec);
+
+    // *dpphiBydrVec = XLALReverseREAL8Vector(dpphiBydrReverseVec);
+    // *dpphiBydr0Vec = XLALReverseREAL8Vector(dpphiBydrReverseVec); // Figure out how to copy REAL8Vector here instead of reversing it again
