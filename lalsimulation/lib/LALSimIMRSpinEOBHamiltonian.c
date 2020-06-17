@@ -1257,7 +1257,7 @@ XLALSimIMRSpinEOBHamiltonian (const REAL8 eta,	    /**<< Symmetric mass ratio */
  *
  * If all goes well, the function will return XLAL_SUCCESS. Otherwise, XLAL_FAILURE is returned.
  */
-static int XLALSimIMRCalculateSpinEOBHCoeffs (SpinEOBHCoeffs * coeffs,
+UNUSED static int XLALSimIMRCalculateSpinEOBHCoeffs (SpinEOBHCoeffs * coeffs,
 				/**<< OUTPUT, EOB parameters including pre-computed coefficients */
 					      const REAL8 eta,
 				/**<< symmetric mass ratio */

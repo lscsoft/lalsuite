@@ -38,6 +38,7 @@
 #include "LALSimIMREOBNRv2.h"
 #include "LALSimIMRSpinEOB.h"
 #include "LALSimInspiralPrecess.h"
+#include "LALSimInspiralEOBPostAdiabatic.h"
 
 /* Include all the static function files we need */
 #include "LALSimIMREOBHybridRingdown.c"
@@ -722,7 +723,6 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
                      /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
   )
 {
-  printf("D\n");
   REAL8 STEP_SIZE = STEP_SIZE_CALCOMEGA;
   INT4 use_tidal = 0;
   if ( (lambda3Tidal1 != 0. && lambda2Tidal1 == 0.) || (lambda3Tidal2 != 0. && lambda2Tidal2 == 0.) ) {
@@ -1371,6 +1371,36 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
       XLAL_ERROR (XLAL_EINVAL);
       break;
     }
+
+  printf("Post adiabatic goes here\n");
+  // Available stuff to pass to my function:
+  // nqcCoeffs
+  // seobParams
+  // sigmaKerr
+  // sigmaStar
+  // m1SI
+  // m2SI
+
+  UINT2 postAdiabaticFlag = 1;
+
+  REAL8Vector *dynamicsPA = NULL;
+
+  if (postAdiabaticFlag)
+  {
+    XLALSimInspiralEOBPostAdiabatic(
+      &dynamicsPA,
+      deltaT,
+      m1SI,
+      m2SI,
+      spin1z,
+      spin2z,
+      SpinAlignedEOBversion,
+      &seobParams,
+      &nqcCoeffs
+    );
+    exit(0);
+    // return XLAL_SUCCESS;
+  }
 
   /*
    * STEP 1) Solve for initial conditions
