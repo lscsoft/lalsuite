@@ -415,15 +415,15 @@ class HeterodynedCWSimulator(object):
         """
 
         if newpar is not None:
-            parupdate = self._read_par(newpar).PulsarParameters()
+            parupdate = self._read_par(newpar)
         else:
-            parupdate = self.hetpar.PulsarParameters()
+            parupdate = self.hetpar
 
-        origpar = self.hetpar.PulsarParameters()
+        origpar = self.hetpar
 
         self.__nonGR = self._check_nonGR(parupdate)
-        compstrain = lalpulsar.HeterodynedPulsarGetModel(parupdate,
-                                                         origpar,
+        compstrain = lalpulsar.HeterodynedPulsarGetModel(parupdate.PulsarParameters(),
+                                                         origpar.PulsarParameters(),
                                                          freqfactor,
                                                          int(usephase),  # phase is varying between par files
                                                          int(roq),       # using ROQ?
