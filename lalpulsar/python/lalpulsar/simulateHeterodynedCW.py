@@ -429,13 +429,13 @@ class HeterodynedCWSimulator(object):
                                                          int(roq),       # using ROQ?
                                                          self.__nonGR,   # using non-tensorial modes?
                                                          self.gpstimes,
-                                                         self.__hetSSBdelay,
+                                                         self.ssbdelay,
                                                          int(updateSSB),  # the SSB delay should be updated compared to hetSSBdelay
-                                                         self.__hetBSBdelay,
+                                                         self.bsbdelay,
                                                          int(updateBSB),  # the BSB delay should be updated compared to hetBSBdelay
-                                                         self.__hetglitchphase,
+                                                         self.glitchphase,
                                                          int(updateglphase),
-                                                         self.__hetfitwavesphase,
+                                                         self.fitwavesphase,
                                                          int(updatefitwaves),
                                                          self.resp,
                                                          self.__edat,
@@ -459,6 +459,22 @@ class HeterodynedCWSimulator(object):
                 raise IOError("Could not read in parameter file: '{}'".format(par))
         else:
             raise TypeError("The parameter file must be a string")
+
+    @property
+    def ssbdelay(self):
+        return self.__hetSSBdelay
+
+    @property
+    def bsbdelay(self):
+        return self.__hetBSBdelay
+
+    @property
+    def glitchphase(self):
+        return self.__hetglitchphase
+
+    @property
+    def fitwavesphase(self):
+        return self.__hetfitwavesphase
 
     def _check_nonGR(self, par):
         """

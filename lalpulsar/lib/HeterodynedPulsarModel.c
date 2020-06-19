@@ -145,8 +145,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   /* get solar system barycentring time delays */
   fixdts = ssbdts;
   if ( calcSSBDelay ){
-    if ( origparams != NULL ){
-      XLAL_CHECK_NULL( ssbdts != NULL, XLAL_EFUNC, "SSB delays based on the original parameters must be supplied" );
+    if ( origparams != NULL && ssbdts != NULL ){
       dts = XLALHeterodynedPulsarGetSSBDelay( params, datatimes, detector, ephem, tdat, ttype );
     }
     else{
@@ -159,8 +158,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   fixbdts = bsbdts;
   if ( calcBSBDelay ){
     REAL8Vector *whichssb = dts != NULL ? dts : fixdts;
-    if ( origparams != NULL ){
-      XLAL_CHECK_NULL( bsbdts != NULL, XLAL_EFUNC, "Binary system barycentring delays based on the original parameters must be supplied" );
+    if ( origparams != NULL && bsbdts != NULL ){
       bdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, whichssb, ephem );
     }
     else{
@@ -174,8 +172,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   if ( calcglphase ){
     const REAL8Vector *whichssb = dts != NULL ? dts : fixdts;
     const REAL8Vector *whichbsb = bdts != NULL ? bdts : fixbdts;
-    if ( origparams != NULL ){
-      XLAL_CHECK_NULL( glphase != NULL, XLAL_EFUNC, "Glitch phase based on the original parameters must be supplied" );
+    if ( origparams != NULL && glphase != NULL ){
       glph = XLALHeterodynedPulsarGetGlitchPhase( params, datatimes, whichssb, whichbsb );
     }
     else{
@@ -243,8 +240,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   fixfitwavesph = fitwavesphase;
   if ( calcfitwaves ){
     const REAL8Vector *whichssb = dts != NULL ? dts : fixdts;
-    if ( origparams != NULL ){
-      XLAL_CHECK_NULL( fitwavesphase != NULL, XLAL_EFUNC, "FITWAVES phase based on the original parameters must be supplied" );
+    if ( origparams != NULL && fitwavesphase != NULL ){
       fitwavesph = XLALHeterodynedPulsarGetFITWAVESPhase( params, datatimes, whichssb, frequpdate[0] );
     }
     else{
@@ -475,10 +471,11 @@ REAL8Vector *XLALHeterodynedPulsarGetBSBDelay( PulsarParameters *pars,
 
   INT4 i = 0, length = datatimes->length;
 
+  bdts = XLALCreateREAL8Vector( length );
+  memset(bdts->data, 0, bdts->length*sizeof(REAL8));  // set to zeros
+
   /* check whether there's a binary model */
   if ( PulsarCheckParam( pars, "BINARY" ) ){
-    bdts = XLALCreateREAL8Vector( length );
-
     for ( i = 0; i < length; i++ ){
       binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
 
