@@ -230,7 +230,7 @@ if ! eval $cmdline1; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
     exit 1
 fi
-cmdline2="$mfdv5_CL ${sig23} --noiseSFTs='${sftsv5_meth2}' --outLabel='mfdv5_meth2'"
+cmdline2="$mfdv5_CL ${sig23} --noiseSFTs='${sftsv5_meth2}' --SFTWindowType=rectangular --outLabel='mfdv5_meth2'"
 echo $cmdline2;
 if ! eval $cmdline2; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."

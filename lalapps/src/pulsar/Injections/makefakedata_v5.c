@@ -399,6 +399,11 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     XLAL_CHECK ( XLALParseMultiLALDetector ( &(cfg->multiIFO), uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
+  if ( have_noiseSFTs ) {
+    /* user must specify the window function used for the noiseSFTs */
+    XLAL_CHECK ( XLALUserVarWasSet ( &uvar->SFTWindowType ), XLAL_EINVAL, "Option --noiseSFTs requires to also set --SFTWindowType. Please try to ensure this matches how the input SFTs were generated." );
+  }
+
   // ----- TIMESTAMPS: either from --timestampsFiles, --startTime+duration, or --noiseSFTs
   BOOLEAN have_startTime = XLALUserVarWasSet ( &uvar->startTime );
   BOOLEAN have_duration = XLALUserVarWasSet ( &uvar->duration );
