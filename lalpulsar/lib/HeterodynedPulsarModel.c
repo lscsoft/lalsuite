@@ -59,24 +59,41 @@
  * barycenter is only calculated if required, i.e., if an update is required
  * due to a change in the sky position. The same is true for the binary system
  * time delay, which is only calculated if it needs updating due to a change in
- * the binary system parameters.
+ * the binary system parameters. The function will also calculate any phase
+ * evolution due to pulsar glitch parameters and/or \c FITWAVES parameters
+ * (parameters that define sinusoidal terms used to represent strong red noise
+ * in the signal) if required.
  *
  * This function can just return the phase evolution (and not phase evolution
- * difference) if \c ssbdts and \c bsbdts are NULL, and no \c DELTAF values are
- * set in the \c params structure (or if the \c DELTAF values are all set to
- * zero).
+ * difference) if \c ssbdts, \c bsbdts, and \c origparams are NULL, which will
+ * be based on the parameters set in the \c params structure.
  *
  * \param params [in] A set of pulsar parameters
+ * \param origparams [in] The original parameters used to heterodyne the data
  * \param datatimes [in] A vector of GPS times at which to calculate the phase difference
  * \param freqfactor [in] The multiplicative factor on the pulsar frequency for a particular model
  * \param ssbdts [in] The vector of SSB time delays used for the original heterodyne. If this is
  * \c NULL then the SSB delay for the given position will be calculated.
- * \param updateSSBDelay [in] Set to a non-zero value if the SSB delay needs to be recalculated at
- * an updated sky position compared to that used for the heterodyne.
+ * \param calcSSBDelay [in] Set to a non-zero value if the SSB delay needs to be calculated. This
+ * would be required if using an updated sky position compared to that used for the heterodyne, or
+ * if calculating the full phase evolution rather than a phase difference.
  * \param bsbdts [in] The vector of BSB time delays used for the original heterodyne. If this is
  * \c NULL then the BSB delay for the given binary parameters will be calculated.
- * \param updateBSBDelay [in] Set to a non-zero value if the BSB delay needs to be recalulated at
- * a set of updated binary system parameters.
+ * \param calcBSBDelay [in] Set to a non-zero value if the BSB delay needs to be calculated. This
+ * would be required if using updated binary parameters compared to that used for the heterodyne, or
+ * if calculating the full phase evolution rather than a phase difference.
+ * \param glphase [in] The vector of the glitch phase evolution (in EM cycles) used in the original
+ * heterodyne. If this is \c NULL then the glitch phase for the given glitch parameters will be
+ * calculated.
+ * \param calcglphase [in] Set to a non-zero value if the glitch phase needs to be calculated. This
+ * would be required if using a set of updated glitch parameters compared to that used for the
+ * heterodyne, or if calculating the full phase evolution rather than a phase difference.
+ * \param fitwavesphase [in] The vector of the phase evolution (in EM cycles) for any FITWAVES
+ * (sinusoids used to fit red noise) parameters used in the original heterodyne. If this is \c NULL
+ * then the FITWAVES phase for the given parameters will be calculated.
+ * \param calcfitwaves [in] Set to a non-zero value if the FITWAVES phase needs to be calculated.
+ * This would be required if using an updated set of FITWAVES parameters, or if calculating the
+ * full phase evolution rather than a phase difference.
  * \param detector [in] A pointer to a \c LALDetector structure for a particular detector
  * \param ephem [in] A pointer to an \c EphemerisData structure containing solar system ephemeris information
  * \param tdat [in] A pointer to a \c TimeCorrectionData structure containing time system correction information
@@ -88,12 +105,17 @@
  * \sa XLALHeterodynedPulsarGetBSBDelay
  */
 REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
+                                                   PulsarParameters *origparams,
                                                    const LIGOTimeGPSVector *datatimes,
                                                    REAL8 freqfactor,
                                                    REAL8Vector *ssbdts,
-                                                   UINT4 updateSSBDelay,
+                                                   UINT4 calcSSBDelay,
                                                    REAL8Vector *bsbdts,
-                                                   UINT4 updateBSBDelay,
+                                                   UINT4 calcBSBDelay,
+                                                   REAL8Vector *glphase,
+                                                   UINT4 calcglphase,
+                                                   REAL8Vector *fitwavesphase,
+                                                   UINT4 calcfitwaves,
                                                    const LALDetector *detector,
                                                    const EphemerisData *ephem,
                                                    const TimeCorrectionData *tdat,
@@ -105,19 +127,15 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   XLAL_CHECK_NULL( detector != NULL, XLAL_EFUNC, "LALDetector must not be NULL" );
   XLAL_CHECK_NULL( ephem != NULL, XLAL_EFUNC, "EphemerisData must not be NULL" );
 
-  UINT4 i = 0, j = 0, k = 0, length = 0, isbinary = 0;
+  UINT4 i = 0, j = 0, k = 0, length = 0, nfreqs = 0;
 
   REAL8 DT = 0., deltat = 0., deltatpow = 0., deltatpowinner = 1., taylorcoeff = 1., Ddelay = 0., Ddelaypow = 0.;
 
-  REAL8Vector *phis = NULL, *dts = NULL, *fixdts = NULL, *bdts = NULL, *fixbdts = NULL;
+  REAL8Vector *phis = NULL, *dts = NULL, *fixdts = NULL, *bdts = NULL, *fixbdts = NULL, *fixglph = NULL, *glph = NULL, *fixfitwavesph = NULL, *fitwavesph = NULL;
 
   REAL8 pepoch = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /* time of ephem info */
-  REAL8 cgw = PulsarGetREAL8ParamOrZero(params, "CGW");
-  REAL8 T0 = pepoch;
-
-  /* glitch parameters */
-  REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL, *deltafs = NULL;
-  UINT4 glnum = 0;
+  REAL8 T0 = pepoch, pepochorig = pepoch;
+  REAL8 *deltafs = NULL, *frequpdate = NULL;
 
   length = datatimes->length;
 
@@ -125,99 +143,108 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   phis = XLALCreateREAL8Vector( length );
 
   /* get solar system barycentring time delays */
-  if ( ssbdts == NULL ){
-    /* calculate SSB delay at the given parameters */
-    fixdts = XLALHeterodynedPulsarGetSSBDelay( params, datatimes, detector, ephem, tdat, ttype );
-  }
-  else{
-    fixdts = ssbdts; /* use SSB delays passed to function as calculated from the heterodyne parameters */
-    if( updateSSBDelay ){ /* get SSB delay for updated sky position parameters */
+  fixdts = ssbdts;
+  if ( calcSSBDelay ){
+    if ( origparams != NULL && ssbdts != NULL ){
       dts = XLALHeterodynedPulsarGetSSBDelay( params, datatimes, detector, ephem, tdat, ttype );
     }
+    else{
+      fixdts = XLALHeterodynedPulsarGetSSBDelay( params, datatimes, detector, ephem, tdat, ttype );
+    }
+    XLAL_CHECK_NULL( length == fixdts->length, XLAL_EFUNC, "Lengths of time stamp vector and SSB delay vector are not the same" );
   }
-  XLAL_CHECK_NULL( length == fixdts->length, XLAL_EFUNC, "Lengths of time stamp vector and SSB delay vector are not the same" );
 
-  if ( PulsarCheckParam( params, "BINARY" ) ){ 
-    isbinary = 1; /* see if pulsar is in binary */
-
-    if ( bsbdts == NULL ){
-      /* calculate BSB delay at the given parameters */
-      if ( dts != NULL ){ fixbdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, dts, ephem ); }
-      else { fixbdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, fixdts, ephem ); }
+  /* get the binary system barycentring time delays */
+  fixbdts = bsbdts;
+  if ( calcBSBDelay ){
+    REAL8Vector *whichssb = dts != NULL ? dts : fixdts;
+    if ( origparams != NULL && bsbdts != NULL ){
+      bdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, whichssb, ephem );
     }
     else{
-      fixbdts = bsbdts; /* use BSB delays passed to function as calculated from the heterodyne parameters */
-      if ( updateBSBDelay || updateSSBDelay ){
-        if ( dts != NULL ){ bdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, dts, ephem ); }
-        else { bdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, fixdts, ephem ); }
-      }
+      fixbdts = XLALHeterodynedPulsarGetBSBDelay( params, datatimes, whichssb, ephem );
     }
     XLAL_CHECK_NULL( length == fixbdts->length, XLAL_EFUNC, "Lengths of time stamp vector and BSB delay vector are not the same" );
   }
 
+  /* get the glitch parameter phase evolution */
+  fixglph = glphase;
+  if ( calcglphase ){
+    const REAL8Vector *whichssb = dts != NULL ? dts : fixdts;
+    const REAL8Vector *whichbsb = bdts != NULL ? bdts : fixbdts;
+    if ( origparams != NULL && glphase != NULL ){
+      glph = XLALHeterodynedPulsarGetGlitchPhase( params, datatimes, whichssb, whichbsb );
+    }
+    else{
+      fixglph = XLALHeterodynedPulsarGetGlitchPhase( params, datatimes, whichssb, whichbsb );
+    }
+  }
+
+  /* set the "new" frequencies, with zeros where required */
+  if ( origparams != NULL ){
+    const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( origparams, "F" );
+    const REAL8Vector *freqs = PulsarGetREAL8VectorParam( params, "F" );
+    nfreqs = tmpvec->length >= freqs->length ? tmpvec->length : freqs->length;
+    pepochorig = PulsarGetREAL8ParamOrZero(origparams, "PEPOCH");
+  }
+  else{
+    const REAL8Vector *freqs = PulsarGetREAL8VectorParam( params, "F" );
+    nfreqs = freqs->length;
+  }
+
+  frequpdate = XLALCalloc( nfreqs, sizeof(REAL8) );
+  const REAL8Vector *freqsu = PulsarGetREAL8VectorParam( params, "F" );
+  /* initialise deltafs to zero */
+  deltafs = XLALCalloc( nfreqs, sizeof(REAL8) );
+  deltat = (pepochorig - pepoch);
+  deltatpow = deltat;
+  for ( i=0; i<freqsu->length; i++ ){
+    frequpdate[i] = freqsu->data[i];
+
+    /* if epochs are different update "new" frequency to heterodyne epoch */
+    if ( pepoch != pepochorig ){
+      REAL8 deltatpowu = deltatpow;
+      for ( j = i+1; i<freqsu->length; j++ ){
+        frequpdate[i] += (freqsu->data[j] * deltatpowu) / gsl_sf_fact(j - i);
+        deltatpowu *= deltat;
+      }
+      deltatpow *= deltat;
+    }
+  }
+
   /* get vector of frequencies and frequency differences */
-  const REAL8Vector *freqs = PulsarGetREAL8VectorParam( params, "F" );
-  deltafs = XLALCalloc( freqs->length, sizeof(REAL8) );  // initialise deltafs to zero
-  if ( PulsarCheckParam( params, "DELTAF" ) ){
-    const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "DELTAF" );
+  if ( origparams != NULL ){
+    if ( PulsarCheckParam( origparams, "F" ) ){
+      const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( origparams, "F" );
 
-    XLAL_CHECK_NULL( tmpvec->length == freqs->length, XLAL_EFUNC, "Number of frequencies is different from number of delta fs" );
-
-    for ( i=0; i<tmpvec->length; i++ ){ deltafs[i] = tmpvec->data[i]; }
+      for ( i=0; i<nfreqs; i++ ){
+        /* deal with cases where there are fewer frequency derivatives in the original heterodyne file */
+        if ( i >= tmpvec->length ){
+          deltafs[i] = frequpdate[i];
+        }
+        else{
+          deltafs[i] = frequpdate[i] - tmpvec->data[i];
+        }
+      }
+    }
+    else{
+      XLAL_ERROR_NULL( XLAL_EINVAL, "No frequencies given in heterodyned parameter file!" );
+    }
   }
   else{
     /* set deltafs to (negative) frequencies */
-    for ( i=0; i<freqs->length; i++ ){ deltafs[i] = -freqs->data[i]; }
+    for ( i=0; i<nfreqs; i++ ){ deltafs[i] = -frequpdate[i]; }
   }
 
-  if ( PulsarCheckParam( params, "GLEP" ) ){ /* see if pulsar has glitch parameters */
-    const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLEP" );
-    glnum = glpars->length;
-
-    /* get epochs */
-    glep = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<glpars->length; i++ ){ glep[i] = glpars->data[i]; }
-
-    /* get phase offsets */
-    glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLPH" ) ){
-      const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLPH" );
-      for ( i=0; i<tmpvec->length; i++ ){ glph[i] = tmpvec->data[i]; }
+  /* get FITWAVES phase */
+  fixfitwavesph = fitwavesphase;
+  if ( calcfitwaves ){
+    const REAL8Vector *whichssb = dts != NULL ? dts : fixdts;
+    if ( origparams != NULL && fitwavesphase != NULL ){
+      fitwavesph = XLALHeterodynedPulsarGetFITWAVESPhase( params, datatimes, whichssb, frequpdate[0] );
     }
-
-    /* get frequencies offsets */
-    glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLF0" ) ){
-      const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF0" );
-      for ( i=0; i<tmpvec->length; i++ ){ glf0[i] = tmpvec->data[i]; }
-    }
-
-    /* get frequency derivative offsets */
-    glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLF1" ) ){
-      const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF1" );
-      for ( i=0; i<tmpvec->length; i++ ){ glf1[i] = tmpvec->data[i]; }
-    }
-
-    /* get second frequency derivative offsets */
-    glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLF2" ) ){
-      const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF2" );
-      for ( i=0; i<tmpvec->length; i++ ){ glf2[i] = tmpvec->data[i]; }
-    }
-
-    /* get decaying frequency component offset derivative */
-    glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLF0D" ) ){
-      const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF0D" );
-      for ( i=0; i<tmpvec->length; i++ ){ glf0d[i] = tmpvec->data[i]; }
-    }
-
-    /* get decaying frequency component decay time constant */
-    gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLTD" ) ){
-      const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLTD" );
-      for ( i=0; i<tmpvec->length; i++ ){ gltd[i] = tmpvec->data[i]; }
+    else{
+      fixfitwavesph = XLALHeterodynedPulsarGetFITWAVESPhase( params, datatimes, whichssb, frequpdate[0] );
     }
   }
 
@@ -229,24 +256,17 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
     DT = realT - T0; /* time diff between data and start of data */
 
     /* get difference in solar system barycentring time delays */
+    deltat = DT;
     if ( dts != NULL ){ Ddelay += ( dts->data[i] - fixdts->data[i] ); }
-    deltat = DT + fixdts->data[i];
+    if ( fixdts != NULL ) { deltat += fixdts->data[i]; }
 
-    if ( isbinary ){
-      /* get difference in binary system barycentring time delays */
-      if ( bdts != NULL && fixbdts != NULL ) { Ddelay += ( bdts->data[i] - fixbdts->data[i] ); }
-      deltat += fixbdts->data[i];
-    }
-
-    /* correct for speed of GW compared to speed of light */
-    if ( cgw > 0.0 && cgw < 1. ) {
-      deltat /= cgw;
-      Ddelay /= cgw;
-    }
+    /* get difference in binary system barycentring time delays */
+    if ( bdts != NULL && fixbdts != NULL ) { Ddelay += ( bdts->data[i] - fixbdts->data[i] ); }
+    if ( fixbdts != NULL ){ deltat += fixbdts->data[i]; }
 
     /* get the change in phase (compared to the heterodyned phase) */
     deltatpow = deltat;
-    for ( j=0; j<freqs->length; j++ ){
+    for ( j=0; j<nfreqs; j++ ){
       taylorcoeff = gsl_sf_fact(j+1);
       deltaphi += deltafs[j]*deltatpow/taylorcoeff;
       if ( Ddelay != 0. ){
@@ -258,23 +278,18 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
           deltatpowinner *= deltat; /* raise power */
           Ddelaypow /= Ddelay;      /* reduce power */
         }
-        deltaphi += innerphi*freqs->data[j]/taylorcoeff;
+        deltaphi += innerphi*frequpdate[j]/taylorcoeff;
       }
       deltatpow *= deltat;
     }
 
-    /* check for glitches */
-    if ( glnum > 0 ){
-      /* get glitch phase - based on equations in formResiduals.C of TEMPO2 from Eqn. 1 of Yu et al (2013) http://ukads.nottingham.ac.uk/abs/2013MNRAS.429..688Y */
-      for ( j=0; j<glnum; j++ ){
-        if ( deltat >= (glep[j]-T0) ){
-          REAL8 dtg = 0, expd = 1.;
-          dtg = deltat - (glep[j]-T0); /* time since glitch */
-          if ( gltd[j] != 0. ) { expd = exp(-dtg/gltd[j]); } /* decaying part of glitch */
-          deltaphi += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
-        }
-      }
-    }
+    /* get change in phase from glitches */
+    if ( glphase != NULL && fixglph != NULL ){ deltaphi += (glph->data[i] - fixglph->data[i]); }
+    else if ( fixglph != NULL ){ deltaphi += fixglph->data[i]; }
+
+    /* get change in phase from FITWAVES parameters */
+    if ( fitwavesph != NULL && fixfitwavesph != NULL ){ deltaphi += (fitwavesph->data[i] - fixfitwavesph->data[i]); }
+    else if ( fixfitwavesph != NULL ){ deltaphi += fixfitwavesph->data[i]; }
 
     deltaphi *= freqfactor; /* multiply by frequency factor */
     phis->data[i] = deltaphi - floor(deltaphi); /* only need to keep the fractional part of the phase */
@@ -285,17 +300,12 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
   if ( bdts != NULL ){ XLALDestroyREAL8Vector( bdts ); }
   if ( ssbdts == NULL ){ XLALDestroyREAL8Vector( fixdts ); }
   if ( bsbdts == NULL ){ XLALDestroyREAL8Vector( fixbdts ); }
+  if ( glph != NULL ){ XLALDestroyREAL8Vector( glph ); }
+  if ( glphase == NULL ){ XLALDestroyREAL8Vector( fixglph ); }
+  if ( fitwavesph != NULL ){ XLALDestroyREAL8Vector( fitwavesph ); }
+  if ( fitwavesphase == NULL ){ XLALDestroyREAL8Vector( fixfitwavesph ); }
   XLALFree(deltafs);
-
-  if ( glnum > 0 ){
-    XLALFree( glep );
-    XLALFree( glph );
-    XLALFree( glf0 );
-    XLALFree( glf1 );
-    XLALFree( glf2 );
-    XLALFree( glf0d );
-    XLALFree( gltd );
-  }
+  XLALFree(frequpdate);
 
   return phis;
 }
@@ -363,7 +373,9 @@ REAL8Vector *XLALHeterodynedPulsarGetSSBDelay( PulsarParameters *pars,
   REAL8 pmdec = PulsarGetREAL8ParamOrZero( pars, "PMDEC" );
   REAL8 pepoch = PulsarGetREAL8ParamOrZero( pars, "PEPOCH" );
   REAL8 posepoch = PulsarGetREAL8ParamOrZero( pars, "POSEPOCH" );
-  
+
+  REAL8 cgw = PulsarGetREAL8ParamOrZero(pars, "CGW");
+
   REAL8 dist = 0.;  /* distance in light seconds */
   /* set distance (a DIST param takes precedence over PX) */
   if ( PulsarCheckParam( pars, "DIST") ){
@@ -408,7 +420,14 @@ REAL8Vector *XLALHeterodynedPulsarGetSSBDelay( PulsarParameters *pars,
     XLAL_CHECK_NULL( XLALBarycenterEarthNew( &earth, &bary.tgps, ephem, tdat, ttype ) == XLAL_SUCCESS, XLAL_EFUNC, "Barycentring routine failed" );
     XLAL_CHECK_NULL( XLALBarycenter( &emit, &bary, &earth ) == XLAL_SUCCESS, XLAL_EFUNC, "Barycentring routine failed" );
 
-    dts->data[i] = emit.deltaT;
+    if ( cgw > 0.0 ){
+      /* account for the speed of GWs not being the same a the speed of light
+         NOTE: we are only accounting for this in the Roemer delay */
+      dts->data[i] = (emit.deltaT - emit.roemer) + (emit.roemer / cgw); 
+    }
+    else{
+      dts->data[i] = emit.deltaT;
+    }
   }
 
   return dts;
@@ -443,6 +462,8 @@ REAL8Vector *XLALHeterodynedPulsarGetBSBDelay( PulsarParameters *pars,
   XLAL_CHECK_NULL( dts != NULL, XLAL_EFUNC, "SSB delay times must not be NULL" );
   XLAL_CHECK_NULL( edat != NULL, XLAL_EFUNC, "EphemerisData must not be NULL" );
 
+  REAL8 cgw = PulsarGetREAL8ParamOrZero(pars, "CGW");
+
   REAL8Vector *bdts = NULL;
   BinaryPulsarInput binput;
   BinaryPulsarOutput boutput;
@@ -450,10 +471,11 @@ REAL8Vector *XLALHeterodynedPulsarGetBSBDelay( PulsarParameters *pars,
 
   INT4 i = 0, length = datatimes->length;
 
+  bdts = XLALCreateREAL8Vector( length );
+  memset(bdts->data, 0, bdts->length*sizeof(REAL8));  // set to zeros
+
   /* check whether there's a binary model */
   if ( PulsarCheckParam( pars, "BINARY" ) ){
-    bdts = XLALCreateREAL8Vector( length );
-
     for ( i = 0; i < length; i++ ){
       binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
 
@@ -461,7 +483,16 @@ REAL8Vector *XLALHeterodynedPulsarGetBSBDelay( PulsarParameters *pars,
 
       binput.earth = earth; /* current Earth state */
       XLALBinaryPulsarDeltaTNew( &boutput, &binput, pars );
-      bdts->data[i] = boutput.deltaT;
+      
+      if ( cgw > 0. ){
+        /* account for the speed of GWs not being the same as the speed of light
+         * NOTE: here we have to assume that the Roemer delay, which is effected
+         * by the speed difference is dominating the delay term. */
+        bdts->data[i] = boutput.deltaT / cgw;
+      }
+      else{
+        bdts->data[i] = boutput.deltaT;
+      }
     }
   }
   return bdts;
@@ -526,6 +557,182 @@ edat->nentriesE * edat->dtEtable );
     earth->posNow[j]=pos[j] + vel[j]*tdiffE + 0.5*acc[j]*tdiff2E;
     earth->velNow[j]=vel[j] + acc[j]*tdiffE;
   }
+}
+
+
+/**
+ * \brief Computes the phase evolution due to the presence of glitches
+ *
+ * This function calculates the phase offset due to the presence on pulsar
+ * glitches. This is based on the equations in the \c formResiduals.C file of
+ * TEMPO2 from Eqn. 1 of \cite Yu2013 .
+ *
+ * \param params [in] A set of pulsar parameters
+ * \param datatimes [in] A vector of GPS times at Earth
+ * \param ssbdts [in] A vector of solar system barycentre time delays
+ * \param bsbdts [in] A vector of binary system barycentre time delays
+ *
+ * \return A vector of (EM) phases in cycles
+ */
+REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
+                                                  const LIGOTimeGPSVector *datatimes,
+                                                  const REAL8Vector *ssbdts,
+                                                  const REAL8Vector *bsbdts ){
+  /* check inputs */
+  XLAL_CHECK_NULL( params != NULL, XLAL_EFUNC, "PulsarParameters must not be NULL" );
+  XLAL_CHECK_NULL( datatimes != NULL, XLAL_EFUNC, "datatimes must not be NULL" );
+  XLAL_CHECK_NULL( ssbdts != NULL, XLAL_EFUNC, "ssbdts must not be NULL" );
+  XLAL_CHECK_NULL( ssbdts->length == datatimes->length, XLAL_EFUNC, "datatimes and ssbdts must be the same length" );
+  if ( bsbdts != NULL ){
+    XLAL_CHECK_NULL( ssbdts->length == bsbdts->length, XLAL_EFUNC, "bsbdts and ssbdts must be the same length" );
+  }
+
+  UINT4 i = 0, length = 0;
+  REAL8Vector *glphase = NULL;
+  REAL8 tdt = 0.;
+
+  length = datatimes->length;
+
+  /* allocate memory for phases */
+  glphase = XLALCreateREAL8Vector( length );
+  memset(glphase->data, 0, glphase->length*sizeof(REAL8));  // set to zeros
+
+  /* see if pulsar has glitch parameters */
+  if ( PulsarCheckParam( params, "GLEP" ) ){
+    /* in case not all parameters are set and they are not all the same length, copy into arrays
+      of the same length that are initialised to zero - all glitches must have an epoch */
+    const REAL8Vector *glep = PulsarGetREAL8VectorParam( params, "GLEP" );
+    UINT4 glnum = glep->length;
+
+    /* get phase offsets */
+    REAL8 *glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLPH" ) ){
+      const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLPH" );
+      memcpy(glph, tmpvec->data, tmpvec->length * sizeof(REAL8));
+    }
+
+    /* get frequencies offsets */
+    REAL8 *glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLF0" ) ){
+      const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF0" );
+      memcpy(glf0, tmpvec->data, tmpvec->length * sizeof(REAL8));
+    }
+
+    /* get frequency derivative offsets */
+    REAL8 *glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLF1" ) ){
+      const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF1" );
+      memcpy(glf1, tmpvec->data, tmpvec->length * sizeof(REAL8));
+    }
+
+    /* get second frequency derivative offsets */
+    REAL8 *glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLF2" ) ){
+      const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF2" );
+      memcpy(glf2, tmpvec->data, tmpvec->length * sizeof(REAL8));
+    }
+
+    /* get decaying frequency component offset derivative */
+    REAL8 *glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLF0D" ) ){
+      const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLF0D" );
+      memcpy(glf0d, tmpvec->data, tmpvec->length * sizeof(REAL8));
+    }
+
+    /* get decaying frequency component decay time constant */
+    REAL8 *gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLTD" ) ){
+      const REAL8Vector *tmpvec = PulsarGetREAL8VectorParam( params, "GLTD" );
+      memcpy(gltd, tmpvec->data, tmpvec->length * sizeof(REAL8));
+    }
+
+    for( i=0; i<length; i++){
+      glphase->data[i] = 0.;
+      tdt = XLALGPSGetREAL8( &datatimes->data[i] ) + ssbdts->data[i];
+      if ( bsbdts != NULL ){ tdt += bsbdts->data[i]; }
+      for ( UINT4 k = 0; k < glnum; k++ ){
+        if ( tdt >= glep->data[k] ){
+          REAL8 dtg = 0, expd = 1.;
+          dtg = tdt - glep->data[k];  /* time since glitch */
+          if ( gltd[k] != 0. ) { expd = exp(-dtg/gltd[k]); } /* decaying part of glitch */
+          glphase->data[i] += glph[k] + glf0[k]*dtg + 0.5*glf1[k]*dtg*dtg + (1./6.)*glf2[k]*dtg*dtg*dtg + glf0d[k]*gltd[k]*(1.-expd);
+        }
+      }
+    }
+
+    XLALFree( glph );
+    XLALFree( glf0 );
+    XLALFree( glf1 );
+    XLALFree( glf2 );
+    XLALFree( glf0d );
+    XLALFree( gltd );
+  }
+
+  return glphase;
+}
+
+
+/**
+ * \brief Computes the phase evolution due to the presence of FITWAVES parameters
+ *
+ * This function calculates the phase due to the presence on FITWAVES parameters in
+ * the pulsar timing model. These are used to fit multiple sinusoids to account for
+ * strong red noise effects (e.g., timing noise) in the pulsar model.
+ *
+ * \param params [in] A set of pulsar parameters
+ * \param datatimes [in] A vector of GPS times at Earth
+ * \param ssbdts [in] A vector of solar system barycentre time delays
+ * \param freq [in] The EM frequency.
+ *
+ * \return A vector of (EM) phases in cycles
+ */
+REAL8Vector *XLALHeterodynedPulsarGetFITWAVESPhase( PulsarParameters *params,
+                                                    const LIGOTimeGPSVector *datatimes,
+                                                    const REAL8Vector *ssbdts,
+                                                    REAL8 freq ){
+  /* check inputs */
+  XLAL_CHECK_NULL( params != NULL, XLAL_EFUNC, "PulsarParameters must not be NULL" );
+  XLAL_CHECK_NULL( datatimes != NULL, XLAL_EFUNC, "datatimes must not be NULL" );
+  XLAL_CHECK_NULL( ssbdts != NULL, XLAL_EFUNC, "ssbdts must not be NULL" );
+  XLAL_CHECK_NULL( ssbdts->length == datatimes->length, XLAL_EFUNC, "datatimes and ssbdts must be the same length" );
+  XLAL_CHECK_NULL( freq > 0.0, XLAL_EFUNC, "Frequency must be positive" );
+
+  UINT4 i = 0, length = 0, j = 0;
+  REAL8Vector *phasewave = NULL;
+
+  length = datatimes->length;
+
+  /* allocate memory for phases */
+  phasewave = XLALCreateREAL8Vector( length );
+  memset(phasewave->data, 0, phasewave->length*sizeof(REAL8));  // set to zeros
+
+  /* get FITWAVES parameters */
+  if ( PulsarCheckParam( params, "WAVESIN" ) && PulsarCheckParam( params, "WAVECOS" ) ){
+    const REAL8Vector *wsin = PulsarGetREAL8VectorParam( params, "WAVESIN" );
+    const REAL8Vector *wcos = PulsarGetREAL8VectorParam( params, "WAVECOS" );
+
+    XLAL_CHECK_NULL( wsin->length == wcos->length, XLAL_EFUNC, "Lengths of FITWAVES sin and cos parameters are not the same" );
+    UINT4 nwaves = wsin->length;
+
+    REAL8 waveepoch = PulsarGetREAL8ParamOrZero( params, "WAVEEPOCH" );
+    REAL8 waveom = PulsarGetREAL8ParamOrZero( params, "WAVE_OM" );
+
+    REAL8 twave = 0., dtwave = 0.;
+    for ( i=0; i < length; i++ ){
+      twave = 0.0;
+      /* note: this does not include the binary times delays */
+      dtwave = (XLALGPSGetREAL8( &datatimes->data[i] ) + ssbdts->data[i] - waveepoch) / 86400.;  /* in days */
+      
+      for ( j=0; j < nwaves; j++ ){
+        twave += wsin->data[j] * sin(waveom * (REAL8)(j + 1.) * dtwave);
+        twave += wcos->data[j] * cos(waveom * (REAL8)(j + 1.) * dtwave);
+      }
+
+      phasewave->data[i] = freq * twave;
+    }
+  }
+
+  return phasewave;
 }
 
 
@@ -793,6 +1000,7 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
  * The model is described in Equations 7 and 8 of \cite Pitkin2017 .
  *
  * \param pars [in] A \c PulsarParameters structure containing the model parameters
+ * \param origpars [in] A \c PulsarParameters structure containing the original heterodyne parameters
  * \param freqfactor [in] The harmonic frequency of the signal in units of the
  * pulsar rotation frequency
  * \param usephase [in] Set to a non-zero value is the signal phase is
@@ -805,12 +1013,20 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
  * \param timestamps [in] A vector of GPS times at which to calculate the signal
  * \param hetssbdelays [in] The vector of SSB time delays used for the original heterodyne. If this is
  * \c NULL then the SSB delay for the given position will be calculated.
- * \param updateSSBDelay [in] Set to a non-zero value if the SSB delay needs to be recalculated at
+ * \param calcSSBDelay [in] Set to a non-zero value if the SSB delay needs to be recalculated at
  * an updated sky position compared to that used for the heterodyne.
  * \param hetbsbdelays [in] The vector of BSB time delays used for the original heterodyne. If this is
  * \c NULL then the BSB delay for the given binary parameters will be calculated.
- * \param updateBSBDelay [in] Set to a non-zero value if the BSB delay needs to be recalulated at
+ * \param calcBSBDelay [in] Set to a non-zero value if the BSB delay needs to be calulated at
  * a set of updated binary system parameters.
+ * \param glphase [in] The vector containing the glitch phase evolution used for the original heterodyne.
+ * If this is \c NULL then the glitch phase for the given glitch parameters will be calculated.
+ * \param calcglphase [in] Set to a non-zero value if the glitch phase needs to be calulated at
+ * a set of updated glitch parameters.
+ * \param fitwavesphase [in] The vector of FITWAVES phases used for the original heterodyne. If this is
+ * \c NULL then the FITWAVES phase for the given FITWAVES parameters will be calculated.
+ * \param calcfitwaves [in] Set to a non-zero value if the FITWAVES phase needs to be calulated at
+ * a set of updated FITWAVES parameters.
  * \param resp [in] A loop-up table for the detector response function.
  * \param ephem [in] A pointer to an \c EphemerisData structure containing solar system ephemeris information
  * \param tdat [in] A pointer to a \c TimeCorrectionData structure containing time system correction information
@@ -820,15 +1036,20 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
  * \sa XLALHeterodynedPulsarGetPhaseModel
  */
 COMPLEX16TimeSeries* XLALHeterodynedPulsarGetModel( PulsarParameters *pars,
+                                                    PulsarParameters *origpars,
                                                     REAL8 freqfactor,
                                                     UINT4 usephase,
                                                     UINT4 useroq,
                                                     UINT4 nonGR,
                                                     const LIGOTimeGPSVector *timestamps,
                                                     REAL8Vector *hetssbdelays,
-                                                    UINT4 updateSSBDelay,
+                                                    UINT4 calcSSBDelay,
                                                     REAL8Vector *hetbsbdelays,
-                                                    UINT4 updateBSBDelay,
+                                                    UINT4 calcBSBDelay,
+                                                    REAL8Vector *glphase,
+                                                    UINT4 calcglphase,
+                                                    REAL8Vector *fitwavesphase,
+                                                    UINT4 calcfitwaves,
                                                     const DetResponseTimeLookupTable *resp,
                                                     const EphemerisData *ephem,
                                                     const TimeCorrectionData *tdat,
@@ -849,12 +1070,17 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetModel( PulsarParameters *pars,
   if ( usephase ){
     REAL8Vector *dphi = NULL;
     dphi = XLALHeterodynedPulsarPhaseDifference( pars,
+                                                 origpars,
                                                  timestamps,
                                                  freqfactor,
                                                  hetssbdelays,
-                                                 updateSSBDelay,
+                                                 calcSSBDelay,
                                                  hetbsbdelays,
-                                                 updateBSBDelay,
+                                                 calcBSBDelay,
+                                                 glphase,
+                                                 calcglphase,
+                                                 fitwavesphase,
+                                                 calcfitwaves,
                                                  resp->det,
                                                  ephem,
                                                  tdat,

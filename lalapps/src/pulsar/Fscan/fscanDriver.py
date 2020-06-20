@@ -30,10 +30,10 @@ __version__ = '$Revision$'
 #10/09/2018 gam; Add -K, --coherence-path option to do the coherence using SFTs by a job to run coherenceFromSFTs.py.
 
 # import standard modules and append the lalapps prefix to the python path
-import sys, os
-import getopt, re, string
-import tempfile
-import math #cg, so I can use the ceiling functionS
+import getopt
+import math  #cg, so I can use the ceiling functionS
+import os
+import sys
 #import ConfigParser
 #sys.path.append('')
 
@@ -48,11 +48,11 @@ def usage():
   msg = """\
 
 Driver script for calling other code to generates SFTs and turns these into plots showing spectra.
-  
+
 Usage: [options]
 
   -h, --help                 display this message
-  
+
   -R, --run                  For a trial run do NOT give this option!
                              When given this code will run condor_submit_dag!
                              Otherwise this script generates the .dag file and then stops!
@@ -97,18 +97,18 @@ Usage: [options]
   -j  --psrEphemeris         (optional) Input the name and path of ephemeris file used to overplot a source's freq onto specgrams
   -E  --earthFile            (optional) Input the name and path of the .dat file for the earh.  Only used if source details are given.
   -z  --sunFile              (optional) Input the name and path of the .dat file for the Sun.  Only used if source details are given.
-  
+
 """
   print(msg)
 
 #letters left for short options, a f, n, A, K, Q, U, V, Y.
 
 ################################
-# MAIN CODE START HERE 
+# MAIN CODE START HERE
 #
 
 ####################################
-# PARSE COMMAND LINE OPTIONS 
+# PARSE COMMAND LINE OPTIONS
 #
 shortop = "s:L:G:d:x:M:k:T:p:f:o:N:i:P:u:v:c:F:B:b:O:m:A:U:n:w:W:r:e:q:y:K:D:X:g:t:l:J:j:E:z:hSHZCRI" #cg; shortop is a string.
 longop = [  #cg; longopt is a list
@@ -141,7 +141,7 @@ longop = [  #cg; longopt is a list
   "matlab-path=",
   "accounting-group=",
   "accounting-group-user=",
-  "max-jobs=",  
+  "max-jobs=",
   "window-type=",
   "html-filename=",
   "html-reference-path=",
@@ -155,7 +155,7 @@ longop = [  #cg; longopt is a list
   "segment-file=",
   "segment-type=",
   "min-seg-length=",
-  "use-single=",  
+  "use-single=",
   "use-hot",
   "make-tmp-file",
   "run",
@@ -298,7 +298,7 @@ for o, a in opts:
   elif o in ("-y", "--coincidence-deltaf"):
     coincidenceDeltaF = int(a)
   elif o in ("-K", "--coherence-path"):
-    coherencePath = a  
+    coherencePath = a
   elif o in ("-D", "--make-gps-dirs"):
     makeGPSDirs = int(a)
   elif o in ("-X", "--misc-desc"):
@@ -314,7 +314,7 @@ for o, a in opts:
   elif o in ("-l", "--min-seg-length"):
     minSegLength = int(a)
   elif o in ("-S", "--use-single"):
-    useSingle = True    
+    useSingle = True
   elif o in ("-H", "--use-hot"):
     useHoT = True
   elif o in ("-R", "--run"):
@@ -336,7 +336,7 @@ for o, a in opts:
 
 #############################################
 # VET OPTIONS
-#    
+#
 if not analysisStartTime:
   print("No analysisStartTime specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
@@ -346,7 +346,7 @@ if not duration:
   print("No duration specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
- 
+
 analysisEndTime = analysisStartTime + duration
 
 if not tagString:
@@ -363,7 +363,7 @@ if extraDatafindTime < 0:
   print("Invalid extra datafind time specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
-  
+
 if filterKneeFreq < 0:
   print("No filter knee frequency specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
@@ -378,7 +378,7 @@ if not pathToSFTs:
   print("No output SFT path specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
   sys.exit(1)
-  
+
 if not cachePath:
   print("No cache path specified.", file=sys.stderr)
   print("Use --help for usage details.", file=sys.stderr)
@@ -458,7 +458,7 @@ try: os.makedirs(logPath)
 except: pass
 try: os.makedirs(cachePath)
 except: pass
-  
+
 # Get site and ifo from channel name:
 site = channelName[0]
 ifo = channelName[0] + channelName[1]
@@ -470,12 +470,12 @@ else:
   makeSFTIFO = segIFO
 
 print('\nTHE FSCAN DRIVER SCRIPT HAS STARTED!\n')
-  
+
 ###################################################
 # CHECK IF SFTS NEED TO BE GENERATED
-#    
+#
 if (createSFTs):
-  
+
   # For safety, add /tmp to the path to avoid overwriting existing SFTs.
   pathToSFTs = pathToSFTs + '/tmp'
   print('Will generate SFTs in %s \n' % pathToSFTs)
@@ -518,7 +518,7 @@ if (createSFTs):
          print('Succeeded! \n', file=sys.stderr)
     except:
       print('Failed: %s \n' % segFindExit, file=sys.stderr)
-      sys.exit(1)  
+      sys.exit(1)
   else:
     # Just continue with the name given on the command line.
     print('Using segmentFile == %s \n' % segmentFile, file=sys.stderr)
@@ -529,7 +529,7 @@ if (createSFTs):
 
   if intersectData:
     # Get the segments the data exist from gw_data_find
-    dataFindSegmentFile = 'tmpDataFindSegs%stmp.txt' % tagString 
+    dataFindSegmentFile = 'tmpDataFindSegs%stmp.txt' % tagString
     #dataFindCommand = "gw_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
     dataFindCommand = "gw_data_find -s %d -e %d -o %s -t %s -u file --lal-cache --show-times | /bin/grep -v seg | /bin/awk '{print $2 \" \" $3}' > %s" % (analysisStartTime,analysisEndTime,site,inputDataType,dataFindSegmentFile)
     print("Trying: ",dataFindCommand,"\n")
@@ -562,7 +562,7 @@ if (createSFTs):
     # set the segmentFile equal to the intersection of the segments to run on with the segments data exist
     segmentFile = intersectedSegmentFile
   # End if intersectData
-    
+
   ###################################################
   # CHECK THE SEGMENT FILE
   #
@@ -571,9 +571,9 @@ if (createSFTs):
   adjustSegExtraTime = True
   try:
     for line in open(segmentFile):
-        try: 
+        try:
             splitLine = line.split();
-            try: 
+            try:
                 oneSeg = [];
                 oneSeg.append(int(splitLine[0]));
                 oneSeg.append(int(splitLine[1]));
@@ -592,12 +592,12 @@ if (createSFTs):
   except:
     print("Error reading or parsing segment file: %s. \n" % segmentFile, file=sys.stderr)
     sys.exit(1)
-  
+
   ###################################################
   # MAKE THE .dag FILE; RUN MakeSFTDAG
   #
   sftDAGFile = 'tmpSFTDAG%stmp.dag' % tagString
-  # Make sure there are some extra bins in the SFTs to avoid problems at endFreq, since lalapps_spec_avg works on [startFreq,endFreq], not [startFreq,endFreq). 
+  # Make sure there are some extra bins in the SFTs to avoid problems at endFreq, since lalapps_spec_avg works on [startFreq,endFreq], not [startFreq,endFreq).
   if (freqBand < 2):
      sft_freqBand = 2
   else:
@@ -612,7 +612,7 @@ if (createSFTs):
   if (accountingGroup != None):
      makeDAGCommand = makeDAGCommand + ' -A %s' % accountingGroup
   if (accountingGroupUser != None):
-     makeDAGCommand = makeDAGCommand + ' -U %s' % accountingGroupUser   
+     makeDAGCommand = makeDAGCommand + ' -U %s' % accountingGroupUser
   print("Trying: ",makeDAGCommand,"\n")
   try:
     makeDAGExit = os.system(makeDAGCommand)
@@ -665,7 +665,7 @@ if (createSFTs):
   #argList = '-f -l . -Debug 3 -Lockfile %s.lock -Condorlog %s -Dag %s -Rescue %s.rescue -MaxJobs 40 -MaxPre 1 -MaxPost 1' % (sftDAGFile, sftDAGSUBFileLogFile, sftDAGFile, sftDAGFile)
   #tagStringOut = '%s_%i' % (tagString, sftNodeCount)
   #dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(sftDAGSUBJobName,argList,tagStringOut))
-  
+
   # 03/02/2009 gam; instead of above, add splice in SFT DAG:
   sftNodeCount = 0
   spliceSFTDAGName = 'spliceSFTDAG_%i' % sftNodeCount
@@ -694,7 +694,7 @@ if (makePythonPlots):
   runPythonScriptLogFile = subLogPath + '/' + 'runPythonPlotScript_' + dagFileName + '.log'
   runPythonScriptFID.write('universe = vanilla\n')
   # Run compiled version plotSpecAvgOutput.m:
-  # runPythonScriptFID.write('executable = $ENV(PLOTSPECAVGOUTPUT_PATH)/plotSpecAvgOutput\n'); # 06/29/09 gam; changed to run_plotSpecAvgOutput.sh. 
+  # runPythonScriptFID.write('executable = $ENV(PLOTSPECAVGOUTPUT_PATH)/plotSpecAvgOutput\n'); # 06/29/09 gam; changed to run_plotSpecAvgOutput.sh.
   runPythonScriptFID.write('executable = $ENV(PLOTSPECAVGOUTPUT_PATH)/plotSpecAvgOutput.py\n')
   runPythonScriptFID.write('getenv = True\n')
   runPythonScriptFID.write('arguments = $(argList)\n')
@@ -726,7 +726,7 @@ if (coherencePath != None):
   checkCoherenceFID.write('output = %s/checkCoherence_$(tagstring).out\n' % logPath)
   checkCoherenceFID.write('notification = never\n')
   checkCoherenceFID.write('queue 1\n')
-  checkCoherenceFID.close()  
+  checkCoherenceFID.close()
   # MAKE A SUBMIT FILE FOR RUNNING THE COHERENCE SCRIPT
   runCoherenceFID = file('runCoherence.sub','w')
   runCoherenceLogFile = subLogPath + '/' + 'runCoherence_' + dagFileName + '.log'
@@ -772,16 +772,16 @@ if (htmlFilename != None):
     htmlLinesFID.write('<div style="text-align: center;">\n')
     htmlLinesFID.write('<h1>FSCAN COINCIDENT LINES WITH SNR >= %d</h1>\n' % thresholdSNR)
     htmlLinesFID.write('</div>\n')
-    htmlLinesFID.write('<br>\n')  
+    htmlLinesFID.write('<br>\n')
     # Add a link from the main page to this file:
-    htmlFID.write('<div style="text-align: center;">\n')    
+    htmlFID.write('<div style="text-align: center;">\n')
     htmlFID.write('Click <a href="%s">here</a> to get a list of coincident lines (or click on the link to "Coincident Lines" below each plot on the left).<br>\n' % htmlLinesFilenameShort)
     htmlFID.write('</div>\n')
     htmlFID.write('<br>\n')
   htmlFID.write('<div style="text-align: center;">\n')
   htmlFID.write('<h3>Click on a plot to see the .png source file. Click on a link below a plot to get the SFT timestamps, the spectrogram data file, frequency vs power  and SNR data file.</h3>\n')
   htmlFID.write('</div>\n')
-  htmlFID.write('<br>\n')  
+  htmlFID.write('<br>\n')
   htmlFID.write('<form>\n')
   htmlFID.write('Fscan Plots: <input type = "radio" name = "rad1" onclick = "showDiv()" checked>\n')
   htmlFID.write('Fscans Plots (Reverse Order): <input type = "radio" name = "rad1" onclick = "showDiv()">\n')
@@ -842,7 +842,7 @@ while (thisEndFreq <= endFreq):
      argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --freqRes %f --timeBaseline %d --SFTs %s/SFT*   --psrInput %s --psrEphemeris %s --earthFile %s --sunFile %s' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,freqRes,timeBaseline,pathToSFTs,psrInput, psrEphemeris, earthFile, sunFile)
   else:
      argList = '--startGPS %d --endGPS %d --IFO %s --fMin %d --fMax %d --freqRes %f --timeBaseline %d --SFTs %s/SFT*' % (analysisStartTime,analysisEndTime,ifo,thisStartFreq,thisEndFreq,freqRes,timeBaseline,pathToSFTs)
-  tagStringOut = '%s_%i' % (tagString, nodeCount)  
+  tagStringOut = '%s_%i' % (tagString, nodeCount)
   dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(specAvgJobName,argList,tagStringOut))
   if (createSFTs):
     # 03/02/2009 gam; use SPLICE to insert SFT DAG
@@ -855,7 +855,7 @@ while (thisEndFreq <= endFreq):
     dagFID.write('JOB %s runPythonPlotScript.sub\n' % runPythonPlotScriptJobName)
     dagFID.write('RETRY %s 0\n' % runPythonPlotScriptJobName)
     inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
-    outputFileName = '%s/%s' % (plotOutputPath, inputFileName)   
+    outputFileName = '%s/%s' % (plotOutputPath, inputFileName)
 
     #work out the best frequency interval to place ticks at.
 
@@ -886,11 +886,11 @@ while (thisEndFreq <= endFreq):
     #argList = '%s %s %s %s %d %d %d %d %d %d %s' % (matlabPath,inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,referenceFileName)
     argList =  '%s %s %s %d %g %d %d %d %d %d %s' % (inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,pulsar,referenceFileName)
    # argList = '%s %s %s %s %d %g %d %d %d %d %d %s' % (matlabPath,inputFileName,outputFileName,channelName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coincidenceDeltaF,pulsar,referenceFileName)
-    tagStringOut = '%s_%i' % (tagString, nodeCount)  
+    tagStringOut = '%s_%i' % (tagString, nodeCount)
     dagFID.write('VARS %s argList="%s" tagstring="%s"\n'%(runPythonPlotScriptJobName,argList,tagStringOut))
     dagFID.write('PARENT %s CHILD %s\n'%(specAvgJobName,runPythonPlotScriptJobName))
 
-  #add stuff to the html file to show the plots produced in python. 
+  #add stuff to the html file to show the plots produced in python.
   #-----------------------------------------------------------------
   if (htmlFilename != None):
     inputFileName = 'spec_%d.00_%d.00_%s_%d_%d' % (thisStartFreq,thisEndFreq,ifo,analysisStartTime,analysisEndTime)
@@ -957,7 +957,7 @@ while (thisEndFreq <= endFreq):
 
 # A job that checks that the SFT jobs are done under the coherence path
 # run after the last python plotting script finishes, which means the
-# SFTs for this channel exist.Then the coherence job runs. 
+# SFTs for this channel exist.Then the coherence job runs.
 if (coherencePath != None):
     # Job that checks the coherence path
     checkCoherenceJobName = 'checkCoherenceJob'
@@ -1048,7 +1048,7 @@ if (htmlFilename != None):
   htmlFID.write('if (document.forms[0].rad1[1].checked) {\n')
   htmlFID.write('document.getElementById("div2").style.display="block";\n')
   htmlFID.write('}\n')
-  if (coherencePath != None):  
+  if (coherencePath != None):
     htmlFID.write('if (document.forms[0].rad1[2].checked) {\n')
     htmlFID.write('document.getElementById("div3").style.display="block";\n')
     htmlFID.write('}\n')

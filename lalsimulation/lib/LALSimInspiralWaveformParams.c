@@ -148,6 +148,40 @@ DEFINE_INSERT_FUNC(NLTidesF2, REAL8, "nlTidesF2", 0)
 /* SEOBNRv4P */
 DEFINE_INSERT_FUNC(EOBChooseNumOrAnalHamDer, INT4, "EOBChooseNumOrAnalHamDer", 1)
 
+/* IMRPhenomX Parameters */
+DEFINE_INSERT_FUNC(PhenomXInspiralPhaseVersion, INT4, "InsPhaseVersion", 104)
+DEFINE_INSERT_FUNC(PhenomXInspiralAmpVersion, INT4, "InsAmpVersion", 103)
+DEFINE_INSERT_FUNC(PhenomXIntermediatePhaseVersion, INT4, "IntPhaseVersion", 105)
+DEFINE_INSERT_FUNC(PhenomXIntermediateAmpVersion, INT4, "IntAmpVersion", 104)
+DEFINE_INSERT_FUNC(PhenomXRingdownPhaseVersion, INT4, "RDPhaseVersion", 105)
+DEFINE_INSERT_FUNC(PhenomXRingdownAmpVersion, INT4, "RDAmpVersion", 103)
+DEFINE_INSERT_FUNC(PhenomXPrecVersion, INT4, "PrecVersion", 223)
+DEFINE_INSERT_FUNC(PhenomXPExpansionOrder, INT4, "ExpansionOrder", 5)
+DEFINE_INSERT_FUNC(PhenomXPConvention, INT4, "Convention", 1)
+DEFINE_INSERT_FUNC(PhenomXPFinalSpinMod, INT4, "FinalSpinMod", 3)
+
+/* IMRPhenomXHM Parameters */
+DEFINE_INSERT_FUNC(PhenomXHMInspiralPhaseVersion, INT4, "InsPhaseHMVersion", 122019)
+DEFINE_INSERT_FUNC(PhenomXHMIntermediatePhaseVersion, INT4, "IntPhaseHMVersion", 122019)
+DEFINE_INSERT_FUNC(PhenomXHMRingdownPhaseVersion, INT4, "RDPhaseHMVersion", 122019)
+DEFINE_INSERT_FUNC(PhenomXHMInspiralAmpVersion, INT4, "InsAmpHMVersion", 3)
+DEFINE_INSERT_FUNC(PhenomXHMIntermediateAmpVersion, INT4, "IntAmpHMVersion", 2)
+DEFINE_INSERT_FUNC(PhenomXHMRingdownAmpVersion, INT4, "RDAmpHMVersion", 0)
+DEFINE_INSERT_FUNC(PhenomXHMInspiralAmpFitsVersion, INT4, "InsAmpFitsVersion", 122018)
+DEFINE_INSERT_FUNC(PhenomXHMIntermediateAmpFitsVersion, INT4, "IntAmpFitsVersion", 122018)
+DEFINE_INSERT_FUNC(PhenomXHMRingdownAmpFitsVersion, INT4, "RDAmpFitsVersion", 122018)
+DEFINE_INSERT_FUNC(PhenomXHMPhaseRef21, REAL8, "PhaseRef21", 0.)
+DEFINE_INSERT_FUNC(PhenomXHMThresholdMband, REAL8, "ThresholdMband", 0.001)
+DEFINE_INSERT_FUNC(PhenomXHMAmpInterpolMB, INT4, "AmpInterpol", 1)
+
+/* IMRPhenomXPHM Parameters */
+DEFINE_INSERT_FUNC(PhenomXPHMMBandVersion, INT4, "MBandPrecVersion", 0)
+DEFINE_INSERT_FUNC(PhenomXPHMThresholdMband, REAL8, "PrecThresholdMband", 0.001)
+DEFINE_INSERT_FUNC(PhenomXPHMUseModes, INT4, "UseModes", 0)
+DEFINE_INSERT_FUNC(PhenomXPHMModesL0Frame, INT4, "ModesL0Frame", 0)
+DEFINE_INSERT_FUNC(PhenomXPHMPrecModes, INT4, "PrecModes", 0)
+DEFINE_INSERT_FUNC(PhenomXPHMTwistPhenomHM, INT4, "TwistPhenomHM", 0)
+
 /* LOOKUP FUNCTIONS */
 
 DEFINE_LOOKUP_FUNC(ModesChoice, INT4, "modes", LAL_SIM_INSPIRAL_MODES_CHOICE_ALL)
@@ -251,6 +285,40 @@ DEFINE_LOOKUP_FUNC(NLTidesF2, REAL8, "nlTidesF2", 0)
 /* SEOBNRv4P */
 DEFINE_LOOKUP_FUNC(EOBChooseNumOrAnalHamDer, INT4, "EOBChooseNumOrAnalHamDer", 1)
 
+/* IMRPhenomX Parameters */
+DEFINE_LOOKUP_FUNC(PhenomXInspiralPhaseVersion, INT4, "InsPhaseVersion", 104)
+DEFINE_LOOKUP_FUNC(PhenomXInspiralAmpVersion, INT4, "InsAmpVersion", 103)
+DEFINE_LOOKUP_FUNC(PhenomXIntermediatePhaseVersion, INT4, "IntPhaseVersion", 105)
+DEFINE_LOOKUP_FUNC(PhenomXIntermediateAmpVersion, INT4, "IntAmpVersion", 104)
+DEFINE_LOOKUP_FUNC(PhenomXRingdownPhaseVersion, INT4, "RDPhaseVersion", 105)
+DEFINE_LOOKUP_FUNC(PhenomXRingdownAmpVersion, INT4, "RDAmpVersion", 103)
+DEFINE_LOOKUP_FUNC(PhenomXPrecVersion, INT4, "PrecVersion", 223)
+DEFINE_LOOKUP_FUNC(PhenomXPExpansionOrder, INT4, "ExpansionOrder", 5)
+DEFINE_LOOKUP_FUNC(PhenomXPConvention, INT4, "Convention", 1)
+DEFINE_LOOKUP_FUNC(PhenomXPFinalSpinMod, INT4, "FinalSpinMod", 3)
+
+/* IMRPhenomXHM Parameters */
+DEFINE_LOOKUP_FUNC(PhenomXHMInspiralPhaseVersion, INT4, "InsPhaseHMVersion", 122019)
+DEFINE_LOOKUP_FUNC(PhenomXHMIntermediatePhaseVersion, INT4, "IntPhaseHMVersion", 122019)
+DEFINE_LOOKUP_FUNC(PhenomXHMRingdownPhaseVersion, INT4, "RDPhaseHMVersion", 122019)
+DEFINE_LOOKUP_FUNC(PhenomXHMInspiralAmpVersion, INT4, "InsAmpHMVersion", 3)
+DEFINE_LOOKUP_FUNC(PhenomXHMIntermediateAmpVersion, INT4, "IntAmpHMVersion", 2)
+DEFINE_LOOKUP_FUNC(PhenomXHMRingdownAmpVersion, INT4, "RDAmpHMVersion", 0)
+DEFINE_LOOKUP_FUNC(PhenomXHMInspiralAmpFitsVersion, INT4, "InsAmpFitsVersion", 122018)
+DEFINE_LOOKUP_FUNC(PhenomXHMIntermediateAmpFitsVersion, INT4, "IntAmpFitsVersion", 122018)
+DEFINE_LOOKUP_FUNC(PhenomXHMRingdownAmpFitsVersion, INT4, "RDAmpFitsVersion", 122018)
+DEFINE_LOOKUP_FUNC(PhenomXHMPhaseRef21, REAL8, "PhaseRef21", 0.)
+DEFINE_LOOKUP_FUNC(PhenomXHMThresholdMband, REAL8, "ThresholdMband", 0.001)
+DEFINE_LOOKUP_FUNC(PhenomXHMAmpInterpolMB, INT4, "AmpInterpol", 1)
+
+/* IMRPhenomXPHM */
+DEFINE_LOOKUP_FUNC(PhenomXPHMMBandVersion, INT4, "MBandPrecVersion", 0)
+DEFINE_LOOKUP_FUNC(PhenomXPHMThresholdMband, REAL8, "PrecThresholdMband", 0.001)
+DEFINE_LOOKUP_FUNC(PhenomXPHMUseModes, INT4, "UseModes", 0)
+DEFINE_LOOKUP_FUNC(PhenomXPHMModesL0Frame, INT4, "ModesL0Frame", 0)
+DEFINE_LOOKUP_FUNC(PhenomXPHMPrecModes, INT4, "PrecModes", 0)
+DEFINE_LOOKUP_FUNC(PhenomXPHMTwistPhenomHM, INT4, "TwistPhenomHM", 0)
+
 /* ISDEFAULT FUNCTIONS */
 
 DEFINE_ISDEFAULT_FUNC(ModesChoice, INT4, "modes", LAL_SIM_INSPIRAL_MODES_CHOICE_ALL)
@@ -336,5 +404,39 @@ DEFINE_ISDEFAULT_FUNC(NonGRAlphaPPE7, REAL8, "alphaPPE7", 0)
 DEFINE_ISDEFAULT_FUNC(NonGRBetaPPE7, REAL8, "betaPPE7", 0)
 /* SEOBNRv4P */
 DEFINE_ISDEFAULT_FUNC(EOBChooseNumOrAnalHamDer, INT4, "EOBChooseNumOrAnalHamDer", 1)
+
+/* IMRPhenomX Parameters */
+DEFINE_ISDEFAULT_FUNC(PhenomXInspiralPhaseVersion, INT4, "InsPhaseVersion", 104)
+DEFINE_ISDEFAULT_FUNC(PhenomXInspiralAmpVersion, INT4, "InsAmpVersion", 103)
+DEFINE_ISDEFAULT_FUNC(PhenomXIntermediatePhaseVersion, INT4, "IntPhaseVersion", 105)
+DEFINE_ISDEFAULT_FUNC(PhenomXIntermediateAmpVersion, INT4, "IntAmpVersion", 104)
+DEFINE_ISDEFAULT_FUNC(PhenomXRingdownPhaseVersion, INT4, "RDPhaseVersion", 105)
+DEFINE_ISDEFAULT_FUNC(PhenomXRingdownAmpVersion, INT4, "RDAmpVersion", 103)
+DEFINE_ISDEFAULT_FUNC(PhenomXPrecVersion, INT4, "PrecVersion", 223)
+DEFINE_ISDEFAULT_FUNC(PhenomXPExpansionOrder, INT4, "ExpansionOrder", 5)
+DEFINE_ISDEFAULT_FUNC(PhenomXPConvention, INT4, "Convention", 1)
+DEFINE_ISDEFAULT_FUNC(PhenomXPFinalSpinMod, INT4, "FinalSpinMod", 3)
+
+/* IMRPhenomXHM Parameters */
+DEFINE_ISDEFAULT_FUNC(PhenomXHMInspiralPhaseVersion, INT4, "InsPhaseHMVersion", 122019)
+DEFINE_ISDEFAULT_FUNC(PhenomXHMIntermediatePhaseVersion, INT4, "IntPhaseHMVersion", 122019)
+DEFINE_ISDEFAULT_FUNC(PhenomXHMRingdownPhaseVersion, INT4, "RDPhaseHMVersion", 122019)
+DEFINE_ISDEFAULT_FUNC(PhenomXHMInspiralAmpVersion, INT4, "InsAmpHMVersion", 3)
+DEFINE_ISDEFAULT_FUNC(PhenomXHMIntermediateAmpVersion, INT4, "IntAmpHMVersion", 2)
+DEFINE_ISDEFAULT_FUNC(PhenomXHMRingdownAmpVersion, INT4, "RDAmpHMVersion", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXHMInspiralAmpFitsVersion, INT4, "InsAmpFitsVersion", 122018)
+DEFINE_ISDEFAULT_FUNC(PhenomXHMIntermediateAmpFitsVersion, INT4, "IntAmpFitsVersion", 122018)
+DEFINE_ISDEFAULT_FUNC(PhenomXHMRingdownAmpFitsVersion, INT4, "RDAmpFitsVersion", 122018)
+DEFINE_ISDEFAULT_FUNC(PhenomXHMPhaseRef21, REAL8, "PhaseRef21", 0.)
+DEFINE_ISDEFAULT_FUNC(PhenomXHMThresholdMband, REAL8, "ThresholdMband", 0.001)
+DEFINE_ISDEFAULT_FUNC(PhenomXHMAmpInterpolMB, INT4, "AmpInterpol", 1)
+
+/* IMRPhenomXPHM */
+DEFINE_ISDEFAULT_FUNC(PhenomXPHMMBandVersion, INT4, "MBandPrecVersion", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXPHMThresholdMband, REAL8, "PrecThresholdMband", 0.001)
+DEFINE_ISDEFAULT_FUNC(PhenomXPHMUseModes, INT4, "UseModes", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXPHMModesL0Frame, INT4, "ModesL0Frame", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXPHMPrecModes, INT4, "PrecModes", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXPHMTwistPhenomHM, INT4, "TwistPhenomHM", 0)
 
 #undef String

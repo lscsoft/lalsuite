@@ -29,7 +29,7 @@ class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
   """
   An inspiral analysis job captures some of the common features of the specific
   inspiral jobs that appear below.  Specifically, the universe and exec_name
-  are set, the stdout and stderr from the job are directed to the logs 
+  are set, the stdout and stderr from the job are directed to the logs
   directory. The path to the executable is determined from the ini file.
   """
   def __init__(self,cp,sections,exec_name,extension='xml',dax=False):
@@ -71,7 +71,7 @@ class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
 
   def set_exec_name(self,exec_name):
     """
-    Set the exec_name name 
+    Set the exec_name name
     """
     self.__exec_name = exec_name
 
@@ -85,7 +85,7 @@ class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     """
     Set the file extension
     """
-    self.__extension = extension 
+    self.__extension = extension
 
   def get_extension(self):
     """
@@ -114,7 +114,7 @@ class InspiralPlottingJob(InspiralAnalysisJob):
     exec_name = exec_name name in ConfigParser
     """
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('getenv','True')    
+    self.add_condor_cmd('getenv','True')
     if cp.has_option('pipeline','matplotlibdir'):
       MPLConfigPath = cp.get('pipeline','matplotlibdir')
       self.add_condor_cmd('environment','MPLCONFIGDIR=' + MPLConfigPath)
@@ -178,7 +178,7 @@ class InspInjJob(InspiralAnalysisJob):
     if self.__listDone.count(number):
       index=self.__listDone.index(number)
       return self.__listNodes[index]
-    return None    
+    return None
 
 
 class BbhInjJob(InspiralAnalysisJob):
@@ -186,7 +186,7 @@ class BbhInjJob(InspiralAnalysisJob):
   A lalapps_bbhinj job used by the online inspiral pipeline. The static options
   are read from the section [bbhinj] in the ini file. The
   stdout and stderr from the job are directed to the logs directory. The
-  job runs in the universe specified in the ini file. The path to the 
+  job runs in the universe specified in the ini file. The path to the
   executable is determined from the ini file.
   """
   def __init__(self,cp,dax=False):
@@ -372,7 +372,7 @@ class IncaJob(InspiralAnalysisJob):
   """
   A lalapps_inca job used by the inspiral pipeline. The static options are
   read from the section [inca] in the ini file.  The stdout and stderr from
-  the job are directed to the logs directory.  The path to the executable is 
+  the job are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
   def __init__(self,cp,dax=False):
@@ -389,7 +389,7 @@ class ThincaJob(InspiralAnalysisJob):
   """
   A lalapps_thinca job used by the inspiral pipeline. The static options are
   read from the section [thinca] in the ini file.  The stdout and stderr from
-  the job are directed to the logs directory.  The path to the executable is 
+  the job are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
   def __init__(self,cp,dax=False):
@@ -428,7 +428,7 @@ class ThincaJob(InspiralAnalysisJob):
           self.add_file_opt(opt,fname)
       else:
         self.add_opt(opt,arg)
-  
+
 
 class ThincaToCoincJob(InspiralAnalysisJob):
   """
@@ -512,7 +512,7 @@ class HWinjPageJob(InspiralAnalysisJob):
 class SireJob(InspiralAnalysisJob):
   """
   A lalapps_sire job used by the inspiral pipeline. The stdout and stderr from
-  the job are directed to the logs directory. The path to the executable is 
+  the job are directed to the logs directory. The path to the executable is
   determined from the ini file.
   """
   def __init__(self,cp,dax=False):
@@ -549,7 +549,7 @@ class CoireJob(InspiralAnalysisJob):
     # coire currently doesn't take GPS start/end times
     self.set_stdout_file('logs/coire-$(macroifo)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/coire-$(macroifo)-$(cluster)-$(process).err')
-    
+
 
 class FrJoinJob(InspiralAnalysisJob):
   """
@@ -721,7 +721,7 @@ class InspiralAnalysisNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
 
   def get_output_base(self):
     """
-    Returns the base file name of output from the inspiral code. This is 
+    Returns the base file name of output from the inspiral code. This is
     assumed to follow the standard naming convention:
 
     IFO-EXECUTABLE_IFOTAG_USERTAG-GPS_START-DURATION
@@ -737,7 +737,7 @@ class InspiralAnalysisNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
       filebase += '_' + self.get_user_tag()
 
     filebase +=  '-' + str(self.get_start()) + '-' + \
-      str(self.get_end() - self.get_start()) 
+      str(self.get_end() - self.get_start())
 
     return(filebase)
 
@@ -785,7 +785,7 @@ class InspiralAnalysisNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
   def get_output_cache(self):
     """
     Returns the name of the cache file output from the inspiral analysis codes.
-    This is obtained from the get_output_base() method, with the correct 
+    This is obtained from the get_output_base() method, with the correct
     extension added.
     """
     filename = self.get_output_base()
@@ -793,14 +793,14 @@ class InspiralAnalysisNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
 
   def get_froutput(self):
     """
-    Returns the file name of output frame from the inspiral code. 
+    Returns the file name of output frame from the inspiral code.
     """
     gwffile = self.get_output_base()
     gwffile += '.gwf'
 
     self.add_output_file(gwffile)
 
-    return gwffile 
+    return gwffile
 
   def finalize(self):
     """
@@ -825,7 +825,7 @@ class InspiralPlottingNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
 
-############################################################################# 
+#############################################################################
 
 class InspInjNode(InspiralAnalysisNode):
   """
@@ -843,7 +843,7 @@ class InspInjNode(InspiralAnalysisNode):
   def set_seed(self,seed):
     """
     Set the seed of the injection file by setting a --seed option to the
-    node when it is executed. 
+    node when it is executed.
     @param seed: seed of the job
     """
     self.add_var_opt('seed',seed)
@@ -868,7 +868,7 @@ class InspInjNode(InspiralAnalysisNode):
     Return the manually-set output name if it exists, otherwise, derive the
     name like other InspiralAnalysisNodes.
     """
-    if self.__outputName: 
+    if self.__outputName:
       self.add_output_file(self.__outputName)
       return self.__outputName
     else:
@@ -879,11 +879,11 @@ class InspInjNode(InspiralAnalysisNode):
           self.get_start()) + ".xml"
       self.add_output_file(outputFile)
       return(outputFile)
-   
+
 
 class BbhInjNode(InspiralAnalysisNode):
   """
-  A BbhInjNode runs an instance of the bbhinj generation job in a 
+  A BbhInjNode runs an instance of the bbhinj generation job in a
   Condor DAG.
   """
   def __init__(self,job):
@@ -903,7 +903,7 @@ class BbhInjNode(InspiralAnalysisNode):
 
   def get_output(self):
     """
-    Returns the file name of output from the injection generation code. This 
+    Returns the file name of output from the injection generation code. This
     must be kept synchronized with the name of the output file in bbhinj.c.
     """
     if not self.get_start() or not self.get_end():
@@ -956,7 +956,7 @@ class RandomBankNode(InspiralAnalysisNode):
     if not self.get_start() or not self.get_end():
       raise InspiralError("Start time or end time has not been set")
     if self.get_user_tag():
-      bank = 'P-TMPLTBANK_' + self.get_user_tag() + '-' 
+      bank = 'P-TMPLTBANK_' + self.get_user_tag() + '-'
       bank = bank + str(self.get_start())
     else:
       bank = 'P-TMPLTBANK-' + str(self.get_start())
@@ -1071,7 +1071,7 @@ class InspiralCkptNode(InspiralAnalysisNode):
   def get_output(self):
     """
     Returns the filename from set_output().
-    """ 
+    """
     if self.__outfile:
       self.add_output_file(self.__outfile)
     return self.__outfile
@@ -1139,7 +1139,7 @@ class PTFInspiralNode(InspiralAnalysisNode):
 
   def set_seed(self,seed):
     self.add_var_opt('random-seed',seed)
-    
+
 
 class PTFSpinCheckerNode(InspiralAnalysisNode):
   """
@@ -1242,7 +1242,7 @@ class IncaNode(InspiralAnalysisNode):
     if self.get_ifo_tag():
       basename += '_' + self.get_ifo_tag()
     if self.get_user_tag():
-      basename += '_' + self.get_user_tag() 
+      basename += '_' + self.get_user_tag()
 
     filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
@@ -1331,13 +1331,13 @@ class ThincaNode(InspiralAnalysisNode):
       if pass_to_command_line:
         self.add_var_opt('v1-triggers','')
       self.__ifo_v1 = 'V1'
- 
+
   def get_ifo_g1(self):
     """
     Returns the IFO code of g1.
     """
     return self.__ifo_g1
-    
+
   def get_ifo_h1(self):
     """
     Returns the IFO code of h1.
@@ -1408,7 +1408,7 @@ class ThincaNode(InspiralAnalysisNode):
     """
     if not self.get_start() or not self.get_end() or not self.get_ifos():
       raise InspiralError("Start time, end time or ifos have not been set")
-    
+
     if self.__num_slides:
       basename = self.get_ifos() + '-' + self.job().get_exec_name().upper() \
           + '_SLIDE'
@@ -1416,7 +1416,7 @@ class ThincaNode(InspiralAnalysisNode):
       basename = self.get_ifos() + '-' + self.job().get_exec_name().upper()
 
     if self.get_ifo_tag():
-      basename += '_' + self.get_ifo_tag() 
+      basename += '_' + self.get_ifo_tag()
 
     if self.get_user_tag():
       basename += '_' + self.get_user_tag()
@@ -1432,7 +1432,7 @@ class ThincaNode(InspiralAnalysisNode):
 
 class ThincaToCoincNode(InspiralAnalysisNode):
   """
-  A ThincaToCoincNode runs an instance of a ThincaToCoincJob 
+  A ThincaToCoincNode runs an instance of a ThincaToCoincJob
   in a DAG.
   """
   def __init__(self, job):
@@ -1464,7 +1464,7 @@ class ThincaToCoincNode(InspiralAnalysisNode):
   def get_output_from_cache(self, coinc_file_tag ):
     """
     Returns a list of files that this node will generate using the input_cache.
-    The output file names are the same as the input urls, but with the 
+    The output file names are the same as the input urls, but with the
     zero_lag 'THINCA' file replaced with 'THINCA_TO_COINC', and with the
     filepaths  pointing to the current directory in which the
     thinca_to_coinc node is being run.
@@ -1475,7 +1475,7 @@ class ThincaToCoincNode(InspiralAnalysisNode):
     fp = open(self.__input_cache, 'r')
     input_cache = lal.Cache().fromfile(fp).sieve( description = coinc_file_tag )
     output_files = [ \
-      '/'.join([ os.getcwd(), 
+      '/'.join([ os.getcwd(),
       re.sub('INCA', 'INCA_TO_COINC', os.path.basename(entry.url)) ]) for entry in input_cache \
       ]
     return output_files
@@ -1549,7 +1549,7 @@ class ThincaToCoincNode(InspiralAnalysisNode):
 
 class HWinjPageNode(InspiralAnalysisNode):
   """
-  A HWinjPageNode runs an instance of a HWinjPageJob 
+  A HWinjPageNode runs an instance of a HWinjPageJob
   in a DAG.
   """
   def __init__(self, job):
@@ -1613,7 +1613,7 @@ class SireNode(InspiralAnalysisNode):
 
   def set_ifo(self, ifo):
     """
-    Add the list of interferometers 
+    Add the list of interferometers
     """
     self.__ifo = ifo
     self.add_var_opt('ifo-cut',ifo)
@@ -1660,7 +1660,7 @@ class SireNode(InspiralAnalysisNode):
     Gets GPS end time
     """
     return self.__end
-  
+
   def set_ifo_tag(self,ifo_tag):
     """
     Set the ifo tag that is passed to the analysis code.
@@ -1715,10 +1715,10 @@ class SireNode(InspiralAnalysisNode):
     set the output options
     """
     output = self.get_output()
-    
+
     self.add_file_opt("output", output,file_is_output_file=True)
     self.add_file_opt("summary", output.replace("xml", "txt"),file_is_output_file=True)
-    
+
     if self.get_inj_file():
       self.add_file_opt('injection-file', self.get_inj_file())
       self.add_file_opt('missed-injections', self.get_missed(), file_is_output_file=True)
@@ -1741,7 +1741,7 @@ class CoireNode(InspiralAnalysisNode):
 
   def set_ifos(self, ifos):
     """
-    Add the list of interferometers 
+    Add the list of interferometers
     """
     self.__ifos = ifos
 
@@ -1755,7 +1755,7 @@ class CoireNode(InspiralAnalysisNode):
     """
     Add the number of time slides
     """
-    self.__num_slides = slides 
+    self.__num_slides = slides
     self.add_var_opt('num-slides',slides)
 
   def get_slides(self):
@@ -1816,7 +1816,7 @@ class CoireNode(InspiralAnalysisNode):
     return self.__ifo_tag
 
   def set_output_tag(self):
-    fname = self.job().get_exec_name().upper() 
+    fname = self.job().get_exec_name().upper()
     if self.get_slides(): fname += "_SLIDE"
     if self.get_inj_file():
       fname += "_" + \
@@ -1893,7 +1893,7 @@ class FrJoinNode(InspiralAnalysisNode):
     self.add_var_opt('output',outputName)
     self.add_file_opt('output',outputName,file_is_output_file=True)
     self.__outputName = outputName
-    
+
   def get_output(self):
     """
     Get the output name of the frame file
@@ -1961,7 +1961,7 @@ class CohBankNode(InspiralAnalysisNode):
 
   def get_output(self):
     """
-    Returns the file name of output from the coherent bank. 
+    Returns the file name of output from the coherent bank.
     """
 
     if not self.get_ifos():
@@ -2019,7 +2019,7 @@ class CohInspBankNode(InspiralAnalysisNode):
 
   def get_output(self):
     """
-    Returns the file name of output from the coherent bank. 
+    Returns the file name of output from the coherent bank.
     """
 
     if not self.get_ifos():
@@ -2071,15 +2071,15 @@ class ChiaNode(InspiralAnalysisNode):
     """
     Returns the IFO tag string
     """
-    return self.__ifo_tag  
-  
+    return self.__ifo_tag
+
   def get_output(self):
     """
     Returns the file name of output from coherent inspiral.
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo_tag():
       raise InspiralError("Start time, end time or ifos have not been set")
-      
+
     basename = self.get_ifo_tag() + '-CHIA'
 
     if self.get_user_tag():
@@ -2114,7 +2114,7 @@ class CohireNode(InspiralAnalysisNode):
 
   def set_ifos(self, ifos):
     """
-    Add the list of interferometers 
+    Add the list of interferometers
     """
     self.__ifos = ifos
 
@@ -2281,7 +2281,7 @@ class PlotInspiralrangeJob(InspiralPlottingJob):
 
 class PlotInspiralrangeNode(InspiralPlottingNode):
   """
-  A PlotInspiralrangeNode runs an instance of the plotinspiral code in a 
+  A PlotInspiralrangeNode runs an instance of the plotinspiral code in a
   Condor DAG.
   """
   def __init__(self,job):
@@ -2318,7 +2318,7 @@ class PlotInspiralNode(InspiralPlottingNode):
     job = A CondorDAGJob that can run an instance of plotinspiral.
     """
     InspiralPlottingNode.__init__(self,job)
-   
+
 ###########################################################################################
 
 class PlotThincaJob(InspiralPlottingJob):
@@ -2338,7 +2338,7 @@ class PlotThincaJob(InspiralPlottingJob):
     extension = 'html'
     InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
     self.add_condor_cmd('request_memory', '2500')
- 
+
 class PlotThincaNode(InspiralPlottingNode):
   """
   A PlotThincaNode runs an instance of the plotthinca code in a Condor DAG.
@@ -2408,7 +2408,7 @@ class PlotNumtemplatesNode(InspiralPlottingNode):
     job = A CondorDAGJob that can run an instance of plotnumtemplates.
     """
     InspiralPlottingNode.__init__(self,job)
- 
+
 ##############################################################################
 
 class PlotEthincaJob(InspiralPlottingJob):
@@ -2489,7 +2489,7 @@ class PlotEffdistcutJob(InspiralPlottingJob):
 
 class PlotEffdistcutNode(InspiralPlottingNode):
   """
-  A PlotEffdistcutNode runs an instance of the 
+  A PlotEffdistcutNode runs an instance of the
   ploteffdistcut code in a Condor DAG.
   """
   def __init__(self,job):
@@ -2702,20 +2702,20 @@ class MiniFollowupsNode(InspiralPlottingNode):
     """
     self.add_var_opt( 'input-xml-summary', input_xml_summary)
     self.__input_xml_summary = input_xml_summary
-  
+
   def get_input_xml_summary(self):
     """
     Return the input_xml_summary that's set.
     """
     return self.__input_xml_summary
-  
+
   def set_output_html_table(self, output_html_table):
     """
     Sets the input xml.
     """
     self.add_var_opt( 'output-html-table', output_html_table)
     self.__output_html_table = output_html_table
-  
+
   def get_output_html_table(self):
     """
     Return the output_html_table that's set.
@@ -2854,7 +2854,7 @@ class RepopCoincJob(pipeline.SqliteJob):
     """
     @param cp: ConfigParser object from which options are read.
     @param dax UNDOCUMENTED
-    """  
+    """
     exec_name = 'repop_coinc'
     sections = ['repop_coinc']
     pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
@@ -2880,7 +2880,7 @@ class DBInjFindJob(pipeline.SqliteJob):
     """
     @param cp: ConfigParser object from which options are read.
     @param dax UNDOCUMENTED
-    """  
+    """
     exec_name = 'dbinjfind'
     sections = ['dbinjfind']
     pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
@@ -3282,12 +3282,12 @@ def overlap_test(interval1, interval2, slide_sec=0):
   """
   Test whether the two intervals could possibly overlap with one of them being
   slid by a maximum time of slide_sec.  Perform three tests:
-  1)  Does the start of interval 1 lie within interval 2's range (with the 
+  1)  Does the start of interval 1 lie within interval 2's range (with the
     start decremented by slide_sec and the end incremented by slide_sec)
-  2)  Does the end of interval 1 lie within interval 2's range (with the start 
+  2)  Does the end of interval 1 lie within interval 2's range (with the start
     decremented by slide_sec and the end incremented by slide_sec)
-  3)  Does interval 1 completely cover (the extended) interval 2, 
-    ie is interval_1 start before (interval 2 start - slide_sec) AND 
+  3)  Does interval 1 completely cover (the extended) interval 2,
+    ie is interval_1 start before (interval 2 start - slide_sec) AND
     interval 1 end after (interval 2 end + slide_sec)
   If any of the above conditions are satisfied then return True, else False.
   """
@@ -3295,7 +3295,7 @@ def overlap_test(interval1, interval2, slide_sec=0):
   end1 = interval1.end()
   left = interval2.start() - slide_sec
   right = interval2.end() + slide_sec
-  
+
   return (start1 >= left and start1 <= right) or \
          (end1 >= left and end1 <= right) or \
          (start1 <= left and end1 >= right)
@@ -3305,7 +3305,7 @@ class SearchVolumeJob(pipeline.SqliteJob):
   """
   A search volume job. Computes the observed physical volume
   above a specified FAR; if FAR is not specified, computes the
-  volume above the loudest event (open box) or FAR=1/livetime 
+  volume above the loudest event (open box) or FAR=1/livetime
   (closed box).
   """
   def __init__(self, cp, dax = False):
@@ -3422,13 +3422,13 @@ class ExtendedCoincJob(InspiralAnalysisJob):
     cp = ConfigParser object from which options are read.
     sections = sections of the ConfigParser that get added to the opts
     exec_name = exec_name name in ConfigParser
-    """    
+    """
 
     exec_name = 'extended_background'
     sections = []
     extension = 'html'
     InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension, dax=False)
-    self.add_condor_cmd('getenv','True') 
+    self.add_condor_cmd('getenv','True')
 
 
 class ExtendedCoincNode(InspiralAnalysisNode):
@@ -3437,10 +3437,10 @@ class ExtendedCoincNode(InspiralAnalysisNode):
   """
   def __init__(self, job):
     InspiralAnalysisNode.__init__(self, job)
-    
+
   def set_coinc_threshold(self, coinc_threshold):
         self.add_var_opt('coinc-threshold', coinc_threshold)
- 
+
   def set_ihope_base_dir(self, base_dir):
         self.add_var_opt('ihope-base-dir', base_dir)
 
@@ -3449,13 +3449,13 @@ class ExtendedCoincNode(InspiralAnalysisNode):
 
   def set_ethinca(self, ethinca):
         self.add_var_opt('e-thinca-parameter', ethinca)
- 
+
   def set_slide_step(self, slide_step):
         self.add_var_opt('slide-step', slide_step)
-        
+
   def set_veto_window(self, veto_window):
         self.add_var_opt('veto-window', veto_window)
- 
+
   def set_new_snr_cut(self, new_snr_cut):
         self.add_var_opt('new-snr-cut', new_snr_cut)
 

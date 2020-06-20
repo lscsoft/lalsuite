@@ -1,6 +1,6 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
-%define release 1
+%define release 2
 %define configure_opts GSL_LIBS="-lgsl"
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
@@ -23,28 +23,36 @@ Prefix: %{_prefix}
 # -- build requirements -----
 
 # C
+BuildRequires: gcc
+BuildRequires: gcc-c++
 BuildRequires: gsl-devel
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
 BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
 BuildRequires: libmetaio-devel
+BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 
 # swig
-BuildRequires: swig >= 3.0.7
+BuildRequires: swig >= 3.0.9
 
 # python2
 BuildRequires: python2-rpm-macros
 BuildRequires: python
 BuildRequires: python-devel
-BuildRequires: glue
-BuildRequires: numpy
+BuildRequires: python2-glue
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python2-lalburst >= @MIN_LALBURST_VERSION@
+BuildRequires: python2-ligo-lw
+BuildRequires: python2-mock
+BuildRequires: python2-numpy
+BuildRequires: python-pathlib
+BuildRequires: pytest
 
 # python3x
 BuildRequires: python-srpm-macros
@@ -58,7 +66,9 @@ BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
+BuildRequires: python%{python3_pkgversion}-ligo-lw
 BuildRequires: python%{python3_pkgversion}-numpy
+BuildRequires: python%{python3_pkgversion}-pytest
 
 # octave
 BuildRequires: octave-devel
@@ -66,6 +76,7 @@ BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 BuildRequires: lalframe-octave >= @MIN_LALFRAME_VERSION@
 BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: lalburst-octave >= @MIN_LALBURST_VERSION@
 
 # -- packages ---------------
 
@@ -103,16 +114,16 @@ library.
 Summary: Python %{python2_version} bindings for LALInspiral
 Group: LAL
 Requires: %{name} = %{version}
-Requires: numpy
 Requires: python
+Requires: python2-glue
 Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-lalburst
 Requires: python2-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
-Requires: python2-ligo-segments
-Requires: glue
+Requires: python2-ligo-lw
+Requires: python2-numpy
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
@@ -132,7 +143,7 @@ Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
-Requires: python%{python3_pkgversion}-ligo-segments
+Requires: python%{python3_pkgversion}-ligo-lw
 Requires: python%{python3_pkgversion}-numpy
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
@@ -165,9 +176,10 @@ This package provides the Octave bindings for LALInspiral.
 rm -rf %py3dir
 cp -r . %py3dir
 pushd %py3dir
-%configure %{configure_opts} --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
-%{__make} %{?_smp_mflags} V=1 -C swig
-%{__make} %{?_smp_mflags} V=1 -C python
+rm -rfv python/%{name}/*.{la,lo,o} python/%{name}/.libs
+%configure %{configure_opts} --disable-doxygen --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
+%{__make} V=1 -C swig
+%{__make} V=1 -C python/%{name}
 popd
 
 %check
@@ -181,7 +193,7 @@ popd
 %make_install
 # python3
 %{__make} -C %py3dir -C swig install-exec-am DESTDIR=%{?buildroot}
-%{__make} -C %py3dir -C python install DESTDIR=%{?buildroot}
+%{__make} -C %py3dir -C python/%{name} install DESTDIR=%{?buildroot}
 find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
@@ -230,6 +242,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Dec 09 2019 Adam Mercer <adam.mercer@ligo.org> 1.10.0-2
+- Packaging updates
+
+* Tue Nov 26 2019 Adam Mercer <adam.mercer@ligo.org> 1.10.0-1
+- O3b release
+
 * Thu May 23 2019 Adam Mercer <adam.mercer@ligo.org> 1.9.0-1
 - O3 release
 

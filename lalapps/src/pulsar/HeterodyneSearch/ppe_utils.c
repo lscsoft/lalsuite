@@ -689,7 +689,7 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR **efile, CHAR **sfile, CHAR *
   else{
     if( !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE405") || !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE200") ||
         !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE414") || !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE421") ||
-        !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE430") ){
+        !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE430") || !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE436") ){
       *efile = XLALStringAppend(*efile, PulsarGetStringParam(pulsar, "EPHEM"));
       *sfile = XLALStringAppend(*sfile, PulsarGetStringParam(pulsar, "EPHEM"));
     }

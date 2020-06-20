@@ -29,12 +29,6 @@
 #include <lal/LALStdio.h>
 #include <lal/LogPrintf.h>
 
-#if defined(USE_BOINC) || defined(EAH_BOINC)
-#include "filesys.h"
-#define fopen boinc_fopen
-#define rename boinc_rename
-#endif
-
 #include <lal/LogPrintf.h>
 
 /* MSC specifics */

@@ -302,7 +302,7 @@ void mkSFTFilename(CHAR *sftFilename, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR
 
 /* 01/09/06 gam; move filename1 to filename2 */
 void mvFilenames(CHAR *filename1, CHAR *filename2) {
-     CHAR mvFilenamesCommand[512];
+     CHAR mvFilenamesCommand[512+4];
      sprintf(mvFilenamesCommand,"mv %s %s",filename1,filename2);
      if ( system(mvFilenamesCommand) ) XLALPrintError ("system() returned non-zero status\n");
 }
@@ -1684,7 +1684,7 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );  
 
       /* compute sft */
-      XLAL_CHECK( XLALREAL4ForwardFFT( fftDataSingle, dataSingle.data, fftPlanSingle ), XLAL_EFUNC );
+      XLAL_CHECK( XLALREAL4ForwardFFT( fftDataSingle, dataSingle.data, fftPlanSingle ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       #if TRACKMEMUSE
         printf("Memory use after creating output vector fftDataSingle and calling XLALREAL4ForwardFFT:\n"); printmemuse();
@@ -1703,7 +1703,7 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       TESTSTATUS( &status );  
 
       /* compute sft */
-      XLAL_CHECK( XLALREAL8ForwardFFT( fftDataDouble, dataDouble.data, fftPlanDouble ), XLAL_EFUNC );
+      XLAL_CHECK( XLALREAL8ForwardFFT( fftDataDouble, dataDouble.data, fftPlanDouble ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       #if TRACKMEMUSE
         printf("Memory use after creating output vector fftDataDouble and calling XLALREAL8ForwardFFT:\n"); printmemuse();

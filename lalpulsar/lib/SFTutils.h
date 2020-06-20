@@ -29,14 +29,17 @@ extern "C" {
 /**
  * \defgroup SFTutils_h Header SFTutils.h
  * \ingroup lalpulsar_sft
- * \author Reinhard Prix, Badri Krishnan
- * \date 2005
- * \brief Utility functions for handling of SFTtype and SFTVectors
+ * \author Reinhard Prix, Badri Krishnan, Badri Krishnan, Iraj Gholami,
+ * Reinhard Prix, Alicia Sintes, Karl Wette, David Keitel
+ * \date 2005-2020
+ * \brief Utility functions for handling of SFTs and associated structures
  *
- * The helper functions XLALCreateSFT(), XLALDestroySFT(), XLALCreateSFTVector()
- * and XLALDestroySFTVector() respectively allocate and free SFT-structs and SFT-vectors.
- * Similarly, XLALCreateTimestampVector() and XLALDestroyTimestampVector() allocate and free
- * a bunch of GPS-timestamps.
+ * This module contains various helper functions to create, handle, combine,
+ * and destroy SFTs (Short Fourier Transforms) and related data structures,
+ * including SFTtype, SFTVector, SFTCatalog
+ * (and their multi-detector generalizations)
+ * as well as tools for dealing with timestamps, segments
+ * and ASD/PSD (Amplitude/Power Spectral Density) estimates.
  *
  */
 /** @{ */
@@ -53,6 +56,7 @@ extern "C" {
 #include <lal/Segments.h>
 #include <lal/SFTfileIO.h>
 #include <lal/StringVector.h>
+#include <lal/UserInputParse.h>
 
 /*---------- DEFINES ----------*/
 
@@ -90,6 +94,22 @@ typedef struct tagMultiNoiseWeights {
   REAL8 Sinv_Tsft;	/**< normalization factor used: \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ (using single-sided PSD!) */
   BOOLEAN isNotNormalized;  /**< if true: weights are saved unnormalized (divide by Sinv_Tsft to get normalized version). */
 } MultiNoiseWeights;
+
+/** common types of mathematical operations over an array */
+typedef enum tagMathOpType {
+  MATH_OP_ARITHMETIC_SUM = 0,   /**< \f$\sum_k x_k\f$      */
+  MATH_OP_ARITHMETIC_MEAN,      /**< \f$\sum_k x_k / N\f$ */
+  MATH_OP_ARITHMETIC_MEDIAN,    /**< \f$x_1 \leq \dots \leq  x_{N/2} \leq \dots \leq x_n\f$ */
+  MATH_OP_HARMONIC_SUM,         /**< \f$1 / \sum_k (1/x_k)\f$ */
+  MATH_OP_HARMONIC_MEAN,        /**< \f$N / \sum_k (1/x_k)\f$ */
+  MATH_OP_POWERMINUS2_SUM,      /**< \f$1 / \sqrt{ \sum_k (1/x_k^2) }\f$ */
+  MATH_OP_POWERMINUS2_MEAN,     /**< \f$1 / \sqrt{ \sum_k (1/x_k^2) / N }\f$ */
+  MATH_OP_MINIMUM,              /**< \f$\min_k(x_k)\f$ */
+  MATH_OP_MAXIMUM,              /**< \f$\max_k(x_k)\f$ */
+  MATH_OP_LAST
+} MathOpType;
+
+extern const UserChoices MathOpTypeChoices;
 
 /*---------- Global variables ----------*/
 
@@ -170,6 +190,40 @@ int XLALFindTimesliceBounds ( UINT4 *iStart, UINT4 *iEnd, const LIGOTimeGPSVecto
 
 SFTVector *XLALExtractSFTVectorWithTimestamps ( const SFTVector *sfts, const LIGOTimeGPSVector *timestamps );
 MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVector *multiSFTs, const MultiLIGOTimeGPSVector *multiTimestamps );
+
+// compute and work with PSDs
+int XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD,
+                                    MultiPSDVector **multiPSDVector,
+                                    REAL8Vector **normSFT,
+                                    MultiSFTVector *inputSFTs,
+                                    const BOOLEAN returnMultiPSDVector,
+                                    const BOOLEAN returnNormSFT,
+                                    const UINT4 blocksRngMed,
+                                    const MathOpType PSDmthopSFTs,
+                                    const MathOpType PSDmthopIFOs,
+                                    const MathOpType nSFTmthopSFTs,
+                                    const MathOpType nSFTmthopIFOs,
+                                    const BOOLEAN normalizeByTotalNumSFTs,
+                                    const REAL8 FreqMin,
+                                    const REAL8 FreqBand
+                              );
+int XLALDumpMultiPSDVector ( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
+int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector *multiSFTVect, UINT4 firstBin, UINT4 lastBin );
+REAL8FrequencySeries *XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, LALSeg segment );
+REAL8 XLALMathOpOverArray(const REAL8* data, const size_t length, const MathOpType optype);
+REAL8 XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs (  const UINT4 totalNumSFTs, const MathOpType optypeSFTs );
+int XLALWritePSDtoFilePointer ( FILE *fpOut,
+                                REAL8Vector *PSDVect,
+                                REAL8Vector *normSFTVect,
+                                BOOLEAN outputNormSFT,
+                                BOOLEAN outFreqBinEnd,
+                                INT4 PSDmthopBins,
+                                INT4 nSFTmthopBins,
+                                INT4 binSize,
+                                INT4 binStep,
+                                REAL8 Freq0,
+                                REAL8 dFreq
+                              );
 
 /** @} */
 

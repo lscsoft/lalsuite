@@ -1,10 +1,10 @@
-""" 
-Various fitting formulas provided by numerical relativity 
+"""
+Various fitting formulas provided by numerical relativity
 
-Archisman Ghosh, Nathan K. Johnson-McDaniel, P. Ajith, 2015-04-09 
+Archisman Ghosh, Nathan K. Johnson-McDaniel, P. Ajith, 2015-04-09
 """
 
-import numpy as np 
+import numpy as np
 import scipy.optimize as so
 try:
     import lal
@@ -99,18 +99,18 @@ def _truncate_at_Kerr_limit(chif, behavior, fitname="this"):
 def bbh_final_mass_non_spinning_Panetal(m1, m2):
     """
     Calculate the mass of the final BH resulting from the merger of two non-spinning black holes using eqn. 29a of from Pan et al, Phys Rev D 84, 124052 (2011).
-    
+
     Parameters
     ----------
     m1, m2 : component masses
-    
+
     Returns
     ------
     final mass, mf
     """
     m1 = np.vectorize(float)(np.array(m1))
     m2 = np.vectorize(float)(np.array(m2))
-    
+
     m = m1 + m2
     eta = m1*m2/(m1+m2)**2.
     return m*(1. + (np.sqrt(8./9.)-1.)*eta - 0.4333*(eta**2.) - (0.4392*(eta**3)))
@@ -118,34 +118,34 @@ def bbh_final_mass_non_spinning_Panetal(m1, m2):
 def bbh_final_spin_non_spinning_Panetal(m1, m2):
     """
     Calculate the spin of the final BH resulting from the merger of two non-spinning black holes using eqn. 29b of Pan et al, Phys Rev D 84, 124052 (2011).
-    
+
     Parameters
     ----------
     m1, m2 : component masses
-    
+
     Returns
     ------
     final dimensionless spin, chif
     """
     m1 = np.vectorize(float)(np.array(m1))
     m2 = np.vectorize(float)(np.array(m2))
-    
+
     eta = m1*m2/(m1+m2)**2.
     return np.sqrt(12.)*eta - 3.871*(eta**2.) + 4.028*(eta**3)
 
 def calc_isco_radius(a):
     """
     Calculate the ISCO radius of a Kerr BH as a function of the Kerr parameter using eqns. 2.5 and 2.8 from Ori and Thorne, Phys Rev D 62, 24022 (2000)
-    
+
     Parameters
     ----------
     a : Kerr parameter
-    
+
     Returns
     -------
     ISCO radius
     """
-     
+
     a = np.minimum(np.array(a),1.) # Only consider a <=1, to avoid numerical problems
 
     # Ref. Eq. (2.5) of Ori, Thorne Phys Rev D 62 124022 (2000)
@@ -192,13 +192,13 @@ def _RIT_symm_express(eta, delta_m, S, Delta, coeffs):
 
 def _final_spin_diff_Healyetal(a_f, eta, delta_m, S, Delta, version):
     """ Internal function: the final spin with the Healy et al. fits is determined by minimizing this function """
-    
+
     # calculate ISCO radius
     r_isco = calc_isco_radius(a_f)
-    
+
     # angular momentum at ISCO -- Eq.(2.8) of Ori, Thorne Phys Rev D 62 124022 (2000)
     J_isco = (3*np.sqrt(r_isco)-2*a_f)*2./np.sqrt(3*r_isco)
-    
+
     # fitting coefficients
     if version == "2014": # From Table XI of Healy et al Phys Rev D 90, 104004 (2014) [fourth order fits]
         L0  = 0.686710
@@ -249,18 +249,18 @@ def _final_spin_diff_Healyetal(a_f, eta, delta_m, S, Delta, version):
 
     a_f_new = _RIT_symm_express(eta, delta_m, S, Delta, [L0, L1, L2a, L2b, L2c, L2d, L3a, L3b, L3c, L3d, L4a, L4b, L4c, L4d, L4e, L4f, L4g, L4h, L4i]) \
         + S*(1. + 8.*eta)*dm4 + eta*J_isco*dm6
-    
+
     return abs(a_f-a_f_new)
 
 def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014"):
     """
     Calculate the spin of the final BH resulting from the merger of two black holes with non-precessing spins using fit from Healy et al Phys Rev D 90, 104004 (2014) (version == "2014") or the small update from Healy and Lousto arXiv:1610.09713 (version == "2016")
-    
+
     Parameters
     ----------
     m1, m2 : component masses
     chi1, chi2 : dimensionless spins of two BHs
-    
+
     Returns
     -------
     dimensionless final spin, chif
@@ -269,37 +269,37 @@ def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014"):
     m2 = np.vectorize(float)(np.array(m2))
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
-    
+
     # Vectorize the function if arrays are provided as input
     if np.size(m1) * np.size(m2) * np.size(chi1) * np.size(chi2) > 1:
         return np.vectorize(bbh_final_spin_non_precessing_Healyetal)(m1, m2, chi1, chi2, version)
-    
+
     eta, delta_m, S, Delta = _RIT_setup(m1, m2, chi1, chi2)
-    
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # compute the final spin
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    
+
     x, cov_x = so.leastsq(_final_spin_diff_Healyetal, 0., args=(eta, delta_m, S, Delta, version))
-    
+
     # The first element returned by so.leastsq() is a scalar in early versions of scipy (like 0.7.2) while it is a tuple of length 1 in later versions of scipy (like 0.10.1). The following bit ensures that a scalar is returned for a set of scalar inputs in a version-independent way.
     if hasattr(x, '__len__'):
       chif = x[0]
     else:
       chif = x
-    
+
     return chif
 
 def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014", chif=None):
     """
     Calculate the mass of the final BH resulting from the merger of two black holes with non-precessing spins using fit from Healy et al Phys Rev D 90, 104004 (2014) (version == "2014") or the small update from Healy and Lousto arXiv:1610.09713 (version == "2016")
-    
+
     Parameters
     ----------
     m1, m2 : component masses
     chi1, chi2 : dimensionless spins of two BHs
     chif: final spin (optional), if already calculated
-    
+
     Returns
     -------
     final mass, mf
@@ -308,19 +308,19 @@ def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014", 
     m2 = np.vectorize(float)(np.array(m2))
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
-    
+
     eta, delta_m, S, Delta = _RIT_setup(m1, m2, chi1, chi2)
-    
+
     if chif is None:
         chif = bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2, version)
     else:
         chif = np.array(chif)
-    
+
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # now compute the final mass
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     r_isco = calc_isco_radius(chif)
-    
+
     # fitting coefficients
     if version == "2014": # From Table XI of Healy et al Phys Rev D 90, 104004 (2014) [fourth order fits]
         M0  = 0.951507
@@ -364,10 +364,10 @@ def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014", 
         K4i = 0.0844776942
     else:
         raise ValueError('Unknown version--should be either "2014" or "2016".')
-    
+
     # binding energy at ISCO -- Eq.(2.7) of Ori, Thorne Phys Rev D 62 124022 (2000)
     E_isco = (1. - 2./r_isco + chif/r_isco**1.5)/np.sqrt(1. - 3./r_isco + 2.*chif/r_isco**1.5)
-    
+
     dm2 = delta_m*delta_m
     dm6 = dm2*dm2*dm2
 
@@ -376,7 +376,7 @@ def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014", 
     # final mass -- Eq. (14) of Healy et al Phys Rev D 90, 104004 (2014)
     mf = _RIT_symm_express(eta, delta_m, S, Delta, [M0, K1, K2a, K2b, K2c, K2d, K3a, K3b, K3c, K3d, K4a, K4b, K4c, K4d, K4e, K4f, K4g, K4h, K4i]) \
         + (1+eta*(E_isco+11.))*dm6
-    
+
     return mf*m
 
 def bbh_final_spin_projected_spin_Healyetal(m1, m2, chi1, chi2, tilt1, tilt2):
@@ -568,7 +568,7 @@ def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname, 
     return chif
 
 def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2):
-    """ 
+    """
     Calculate the mass of the final BH resulting from the
     merger of two black holes with non-precessing spins using the fits
     used by IMRPhenomD, given in Eqs. (3.6) and (3.8) of Husa et al.
@@ -582,14 +582,14 @@ def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2):
     m2 = np.vectorize(float)(np.array(m2))
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
-    
+
     if np.any(abs(chi1)>1):
       raise ValueError("chi1 has to be in [-1, 1]")
     if np.any(abs(chi2)>1):
       raise ValueError("chi2 has to be in [-1, 1]")
-    
-    # binary parameters 
-    m = m1+m2  
+
+    # binary parameters
+    m = m1+m2
     msq = m*m
 
     eta = m1*m2/msq
@@ -597,7 +597,7 @@ def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2):
     eta3 = eta2*eta
     eta4 = eta3*eta
 
-    S1 = chi1*m1**2/msq                   # spin angular momentum 1 (in m = 1 units) 
+    S1 = chi1*m1**2/msq                   # spin angular momentum 1 (in m = 1 units)
     S2 = chi2*m2**2/msq                   # spin angular momentum 2 (in m = 1 units)
     S = S1+S2                        # total spin
     Sh = S/(1. - 2.*eta)                    # rescaled total spin
@@ -610,7 +610,7 @@ def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2):
     return Mf
 
 def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2):
-    """ 
+    """
     Calculate the spin of the final BH resulting from the
     merger of two black holes with non-precessing spins using the fits
     used by IMRPhenomD, given in Eqs. (3.6) and (3.8) of Husa et al.
@@ -625,14 +625,14 @@ def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2):
     m2 = np.vectorize(float)(np.array(m2))
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
-    
+
     if np.any(abs(chi1)>1):
       raise ValueError("chi1 has to be in [-1, 1]")
     if np.any(abs(chi2)>1):
       raise ValueError("chi2 has to be in [-1, 1]")
-    
-    # binary parameters 
-    m = m1+m2  
+
+    # binary parameters
+    m = m1+m2
     msq = m*m
 
     eta = m1*m2/msq
@@ -640,7 +640,7 @@ def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2):
     eta3 = eta2*eta
     eta4 = eta3*eta
 
-    S1 = chi1*m1**2/msq                   # spin angular momentum 1 (in m = 1 units) 
+    S1 = chi1*m1**2/msq                   # spin angular momentum 1 (in m = 1 units)
     S2 = chi2*m2**2/msq                   # spin angular momentum 2 (in m = 1 units)
     S = S1+S2                        # total spin
     Sh = S/(1. - 2.*eta)                    # rescaled total spin
@@ -651,7 +651,7 @@ def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2):
 
     # Expressions copied from LALSimIMRPhenomD_internals.c (except with two notation differences: S is capitalized in chif and s -> Sh in Mf, in addition to the "m*(1. - ...)" to obtain the final mass from the radiated mass in m = 1 units which is calculated in the LAL code)
 
-    chif = 3.4641016151377544*eta - 4.399247300629289*eta2 + 9.397292189321194*eta3 - 13.180949901606242*eta4 + (1 - 0.0850917821418767*eta - 5.837029316602263*eta2)*S + (0.1014665242971878*eta - 2.0967746996832157*eta2)*Ssq + (-1.3546806617824356*eta + 4.108962025369336*eta2)*Scu + (-0.8676969352555539*eta + 2.064046835273906*eta2)*Squ 
+    chif = 3.4641016151377544*eta - 4.399247300629289*eta2 + 9.397292189321194*eta3 - 13.180949901606242*eta4 + (1 - 0.0850917821418767*eta - 5.837029316602263*eta2)*S + (0.1014665242971878*eta - 2.0967746996832157*eta2)*Ssq + (-1.3546806617824356*eta + 4.108962025369336*eta2)*Scu + (-0.8676969352555539*eta + 2.064046835273906*eta2)*Squ
 
     return chif
 
@@ -1327,7 +1327,7 @@ def bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, quantit
     Average of the results for the given fits for the chosen quantity
     """
 
-    if quantity != "af" and max(abs(phi12)) != 0:
+    if quantity != "af" and max(abs(np.atleast_1d(phi12))) != 0:
         print("Note: phi12 is only used for the full final spin calculation.")
 
     if quantity not in ["Mf", "af", "afz", "Lpeak"]:
@@ -1370,7 +1370,7 @@ def bbh_average_fits_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, quantit
         data_shape = m1.shape
     else:
         data_shape = -1
-    
+
     # Loop over the fits
 
     for k, fit in enumerate(fits):

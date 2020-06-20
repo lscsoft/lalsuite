@@ -3,23 +3,18 @@
 # (C) 2012 John Veitch, Vivien Raymond, Kiersten Ruisard, Kan Wang
 
 import itertools
-import glue
 from glue import pipeline
 from ligo import segments
-from ligo.segments import utils as segmentsUtils
 from glue.ligolw import ligolw, lsctables
 from glue.ligolw import utils as ligolw_utils
 import os
 import socket
 import uuid
 import ast
-import pdb
-import string
 from math import floor,ceil,log,pow
 import sys
 import random
 from itertools import permutations
-import shutil
 import numpy as np
 from glob import glob
 import math
@@ -30,6 +25,7 @@ try:
     from configparser import NoOptionError, NoSectionError
 except ImportError:
     from ConfigParser import NoOptionError, NoSectionError
+import numpy
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -56,7 +52,6 @@ def findSegmentsToAnalyze(ifo, frametype, state_vector_channel, bits, gpsstart, 
         from glue.lal import Cache
         from gwdatafind import find_urls
         import gwpy
-        from gwpy.timeseries import StateVector
     except ImportError:
         print('Unable to import necessary modules. Querying science segments not possible. Please try installing gwdatafind and gwpy')
         raise
@@ -64,10 +59,20 @@ def findSegmentsToAnalyze(ifo, frametype, state_vector_channel, bits, gpsstart, 
     datacache = Cache.from_urls(find_urls(ifo[0], frametype, gpsstart, gpsend))
     if not datacache:
         return gwpy.segments.SegmentList([])
-    flags = gwpy.timeseries.StateVector.read(
+    state = gwpy.timeseries.StateVector.read(
         datacache, state_vector_channel, start=gpsstart, end=gpsend,
         pad=0  # padding data so that errors are not raised even if found data are not continuous.
-    ).to_dqflags()
+    )
+    if not np.issubdtype(state.dtype, np.unsignedinteger):
+        # if data are not unsigned integers, cast to them now so that
+        # we can determine the bit content for the flags
+        state = state.astype(
+            "uint32",
+            casting="unsafe",
+            subok=True,
+            copy=False,
+        )
+    flags = state.to_dqflags()
     # extract segments all of whose bits are active
     segments = flags[bits[0]].active
     for bit in bits:
@@ -203,10 +208,8 @@ def create_events_from_coinc_and_psd(
         Whether the run uses ROQ or not
     """
     output=[]
-    from lal import series as lalseries
     import lal
-    from lalsimulation import SimInspiralChirpTimeBound, GetApproximantFromString, IMRPhenomDGetPeakFreq
-    from ligo.gracedb.rest import GraceDb, HTTPError
+    from lalsimulation import SimInspiralChirpTimeBound, IMRPhenomDGetPeakFreq
     try:
         from gstlal import reference_psd
     except ImportError:
@@ -438,7 +441,6 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
         get_coincs=get_coincs+joinstr+' coinc_inspiral.combined_far < %f'%(max_cfar)
     db_out=database_connection.cursor().execute(get_coincs)
     # Timeslide functionality requires obsolete pylal - will be removed
-    import pylal
     from pylal import SnglInspiralUtils
     extra={}
     for (sngl_time, slide, ifo, coinc_id, snr, chisq, cfar) in db_out:
@@ -681,7 +683,6 @@ def mchirp_from_components(m1, m2):
 
 def Query_ROQ_Bounds_Type(path, roq_paths):
     # Assume that parametrization of ROQ bounds is independent of seglen; just look at first one
-    import numpy as np
     roq = roq_paths[0]
     params = os.path.join(path,roq,'params.dat')
     roq_params0 = np.genfromtxt(params,names=True)
@@ -1077,7 +1078,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         # SimBurst Table
         if self.config.has_option('input','burst-injection-file'):
             injfile=self.config.get('input','burst-injection-file')
-            injTable=lsctables.SimBurstTable.get_table(ligolw_utils.load_filename(injfile,contenthandler = lsctables.use_in(LIGOLWContentHandler)))
+            injTable=lsctables.SimBurstTable.get_table(ligolw_utils.load_filename(injfile,contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
             events=[Event(SimBurst=inj) for inj in injTable]
             self.add_pfn_cache([create_pfn_tuple(self.config.get('input','burst-injection-file'))])
         # LVAlert CoincInspiral Table
@@ -1443,7 +1444,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
             if self.config.getboolean('analysis','upload-to-gracedb') and event.GID is not None:
                 self.add_gracedb_start_node(event.GID,'LALInference',[sciseg.get_df_node() for sciseg in enginenodes[0].scisegs.values()],server=gdb_srv)
-                self.add_gracedb_log_node(respagenode,event.GID,server=grb_srv)
+                self.add_gracedb_log_node(respagenode,event.GID,server=gdb_srv)
             elif self.config.has_option('analysis','ugid'):
                 # LIB will want to upload info to gracedb but if we pass the gid in the usual way the pipeline
                 # will try to pull inspiral-only XML tables from the gdb page, failing.
@@ -1467,7 +1468,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             if self.engine=='lalinferenceburst': prefix='LIB'
             else: prefix='LALInference'
             mapnode = SkyMapNode(self.mapjob, posfile = mergenode.get_pos_file(), parent=mergenode,
-                    prefix= prefix, outdir=pagedir, ifos=enginenodes[0].get_ifos())
+                    prefix= prefix, outdir=pagedir, ifos=self.ifos)
             plotmapnode = PlotSkyMapNode(self.plotmapjob, parent=mapnode, inputfits = mapnode.outfits, output=os.path.join(pagedir,'skymap.png'))
             self.add_node(mapnode)
             self.add_node(plotmapnode)
@@ -1813,7 +1814,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                             bayeswavepsdnode[ifo].add_var_arg('--bayesLine')
                             bayeswavepsdnode[ifo].add_var_arg('--cleanOnly')
                             bayeswavepsdnode[ifo].add_var_arg('--checkpoint')
-                            bayeswavepsdnode[ifo].add_file_opt('outputDir',bwPSDpath,file_is_output_file=True)
+                            bayeswavepsdnode[ifo].set_output_dir(bwPSDpath)
                             bayeswavepsdnode[ifo].set_trig_time(end_time)
                             bayeswavepsdnode[ifo].set_seglen(bw_seglen)
                             bayeswavepsdnode[ifo].set_psdlength(bw_seglen)
@@ -1845,9 +1846,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                             bayeswavepostnode[ifo].add_var_arg('--bayesLine')
                             bayeswavepostnode[ifo].add_var_arg('--cleanOnly')
                             #bayeswavepostnode[ifo].add_var_arg('--checkpoint')
-                            bayeswavepostnode[ifo].add_file_opt('outputDir',bwPSDpath,file_is_output_file=True)
+                            bayeswavepostnode[ifo].set_output_dir(bwPSDpath)
                             #bayeswavepostnode[ifo].add_var_arg('--runName BayesWave_PSD')
-                            bayeswavepostnode[ifo].add_output_file(os.path.join(bwPSDpath, 'post/clean/glitch_median_PSD_forLI_'+ifo+'.dat'))
+                            #bayeswavepostnode[ifo].add_output_file(os.path.join(bwPSDpath, 'post/clean/glitch_median_PSD_forLI_'+ifo+'.dat'))
                             bayeswavepostnode[ifo].set_trig_time(end_time)
                             bayeswavepostnode[ifo].set_seglen(bw_seglen)
                             bayeswavepostnode[ifo].set_psdlength(bw_seglen)
@@ -2222,7 +2223,8 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
             cp = ConfigParser()
         # If the user has specified sharedfs=True, disable the file transfer
         if cp.has_option('condor','sharedfs'):
-            self.transfer_files = not cp.getboolean('condor','sharedfs')
+            if cp.getboolean('condor','sharedfs'):
+                self.transfer_files = False
         self.add_condor_cmd('getenv','True')
         # Add requirements from the configparser condor section
         if cp.has_option('condor','requirements'):
@@ -2236,6 +2238,8 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
             self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
             self.add_requirement('(TARGET.'+cp.get('condor','queue')+' =?= True)')
         if self.transfer_files:
+            # No transfer executable, so that conda package can link correctly
+            self.add_condor_cmd('transfer_executable','False')
             self.add_condor_cmd('transfer_input_files','$(macroinput)')
             self.add_condor_cmd('transfer_output_files','$(macrooutput)')
             self.add_condor_cmd('transfer_output_remaps','"$(macrooutputremaps)"')
@@ -2245,6 +2249,9 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
             # Wrapper script to create files to transfer back
             self.add_condor_cmd('+PreCmd','"lalinf_touch_output"')
             self.add_condor_cmd('+PreArguments', '"$(macrooutput)"')
+            # Sync logs back to run directory
+            self.add_condor_cmd('stream_output', True)
+            self.add_condor_cmd('stream_error', True)
 
 
     def add_requirement(self,requirement):
@@ -2416,6 +2423,8 @@ class EngineJob(LALInferenceDAGJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
                 self.set_executable_installed(False)
         # Set the options which are always used
         self.set_sub_file(os.path.abspath(submitFile))
+        # 500 MB should be enough for anyone
+        self.add_condor_cmd('request_disk','500M')
         if self.engine=='lalinferencemcmc':
             self.binary=cp.get('condor',self.engine.replace('mpi',''))
             self.mpirun=cp.get('condor','mpirun')
@@ -2487,8 +2496,7 @@ class EngineNode(LALInferenceDAGNode):
         self.psdfiles=None
         self.calibrationfiles=None
         self.cachefiles={}
-        if li_job.ispreengine is False:
-            self.id=next(EngineNode.new_id)
+        self.id=next(EngineNode.new_id)
         self.__finaldata=False
         self.fakedata=False
         self.lfns=[] # Local file names (for frame files and pegasus)
@@ -2509,7 +2517,7 @@ class EngineNode(LALInferenceDAGNode):
         self.psdstart=psdstart
 
     def set_seed(self,seed):
-        self.add_var_opt('randomseed',str(seed))
+        self.add_var_opt('randomseed',str(int(seed)+self.id))
 
     def set_srate(self,srate):
         self.add_var_opt('srate',str(srate))
@@ -2571,7 +2579,7 @@ class EngineNode(LALInferenceDAGNode):
         Set the end time of the signal for the centre of the prior in time
         """
         self.__trigtime=float(time)
-        self.add_var_opt('trigtime',str(time))
+        self.add_var_opt('trigtime','{:.9f}'.format(float(time)))
 
     def set_event_number(self,event):
         """
@@ -2695,7 +2703,7 @@ class EngineNode(LALInferenceDAGNode):
             #if self.GPSstart<starttime or self.GPSstart>endtime:
             #  print 'ERROR: Over-ridden time lies outside of science segment!'
             #  raise Exception('Bad psdstart specified')
-        self.add_var_opt('psdstart',str(self.GPSstart))
+        self.add_var_opt('psdstart','{:.9f}'.format(self.GPSstart))
         if self.psdlength is None:
             self.psdlength=length
             if(self.psdlength>self.maxlength):
@@ -2746,8 +2754,8 @@ class LALInferenceMCMCNode(EngineNode):
         self.outfilearg='outfile'
         self.add_var_opt('mpirun',li_job.mpirun)
         self.add_var_opt('np',str(li_job.mpi_task_count))
-        # The MCMC exe itself should be transferred
-        self.add_file_opt('executable',li_job.binary)
+        # The MCMC exe itself should not be transferred, as it will break conda linking
+        self.add_var_opt('executable',li_job.binary)
 
     def set_output_file(self,filename):
         self.posfile=filename+'.hdf5'
@@ -2789,24 +2797,32 @@ class BayesWavePSDJob(LALInferenceDAGSharedFSJob,pipeline.CondorDAGJob,pipeline.
         self.set_sub_file(submitFile)
         self.set_stdout_file(os.path.join(logdir,'bayeswavepsd-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.join(logdir,'bayeswavepsd-$(cluster)-$(process).err'))
+        # Bayeswave actually runs on node filesystem via these commands
+        self.add_condor_cmd('transfer_executable','False')
         self.add_condor_cmd('getenv','True')
         self.add_condor_cmd('request_memory',cp.get('condor','bayeswave_request_memory'))
         self.ispreengine = False
         self.add_condor_cmd('stream_output', True)
         self.add_condor_cmd('stream_error', True)
-        self.add_condor_cmd('+CheckpointExitBySignal', False) #
-        self.add_condor_cmd('+CheckpointExitSignal', '"SIGTERM"')
-        self.add_condor_cmd('+CheckpointExitCode', 130)
-        self.add_condor_cmd('+SuccessCheckpointExitBySignal', False) #
-        self.add_condor_cmd('+SuccessCheckpointExitSignal', '"SIGTERM"')
-        self.add_condor_cmd('+SuccessCheckpointExitCode', 130)
+        self.add_condor_cmd('+SuccessCheckpointExitCode', 77)
         self.add_condor_cmd('+WantFTOnCheckpoint', True)
-        self.add_condor_cmd('+CheckpointSig', 130)
         self.add_condor_cmd('should_transfer_files', 'YES')
         self.add_condor_cmd('when_to_transfer_output', 'ON_EXIT_OR_EVICT')
-        self.add_condor_cmd('transfer_input_files','$(macroinput)')
+        self.add_condor_cmd('transfer_input_files','$(macroinput),/usr/bin/mkdir,caches')
         self.add_condor_cmd('transfer_output_files','$(macrooutput)')
+        self.add_condor_cmd('+PreCmd','"mkdir"')
+        self.add_condor_cmd('+PreArguments','"-p $(macrooutputDir)"')
 
+def topdir(path):
+    """
+    Returns the top directory in a path, e.g.
+    topdir('a/b/c') -> 'a'
+    """
+    a,b=os.path.split(path)
+    if a:
+        return topdir(a)
+    else:
+        return b
 
 
 class BayesWavePSDNode(EngineNode):
@@ -2817,6 +2833,15 @@ class BayesWavePSDNode(EngineNode):
 
     def set_output_file(self,filename):
         pass
+
+    def set_output_dir(self, dirname):
+        path = os.path.relpath(dirname,
+                             start=self.job().get_config('paths','basedir'))
+        self.add_var_opt('outputDir',path)
+        # BWPost reads and writes to its directory
+        # the output path is a set of nested dirs, if we tell condor to
+        # transfer the top level it should copy back into place
+        self.add_output_file(topdir(path))
 
 class BayesWavePostJob(LALInferenceDAGSharedFSJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
     """
@@ -2832,25 +2857,20 @@ class BayesWavePostJob(LALInferenceDAGSharedFSJob,pipeline.CondorDAGJob,pipeline
         if cp.has_section('bayeswave'):
             self.add_ini_opts(cp,'bayeswave')
         self.set_sub_file(submitFile)
+        self.add_condor_cmd('transfer_executable','False')
         self.set_stdout_file(os.path.join(logdir,'bayeswavepost-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.join(logdir,'bayeswavepost-$(cluster)-$(process).err'))
         self.add_condor_cmd('getenv','True')
         self.add_condor_cmd('request_memory',cp.get('condor','bayeswavepost_request_memory'))
-        self.ispreengine = False
         self.add_condor_cmd('stream_output', True)
         self.add_condor_cmd('stream_error', True)
-        self.add_condor_cmd('+CheckpointExitBySignal', False) #
-        self.add_condor_cmd('+CheckpointExitSignal', '"SIGTERM"')
-        self.add_condor_cmd('+CheckpointExitCode', 130)
-        self.add_condor_cmd('+SuccessCheckpointExitBySignal', False) #
-        self.add_condor_cmd('+SuccessCheckpointExitSignal', '"SIGTERM"')
-        self.add_condor_cmd('+SuccessCheckpointExitCode', 130)
+        self.add_condor_cmd('+SuccessCheckpointExitCode', 77)
         self.add_condor_cmd('+WantFTOnCheckpoint', True)
-        self.add_condor_cmd('+CheckpointSig', 130)
         self.add_condor_cmd('should_transfer_files', 'YES')
-        self.add_condor_cmd('when_to_transfer_output', 'ON_EXIT')
-        self.add_condor_cmd('transfer_input_files','$(macroinput)')
-        self.add_condor_cmd('transfer_output_files','$(macrooutput)')
+        self.add_condor_cmd('when_to_transfer_output', 'ON_EXIT_OR_EVICT')
+        self.add_condor_cmd('transfer_input_files','$(workdir)')
+        self.add_condor_cmd('transfer_output_files','$(workdir)')
+        self.ispreengine = False
 
 class BayesWavePostNode(EngineNode):
     def __init__(self,bayeswavepost_job):
@@ -2860,6 +2880,13 @@ class BayesWavePostNode(EngineNode):
 
     def set_output_file(self,filename):
         pass
+
+    def set_output_dir(self, dirname):
+        path = os.path.relpath(dirname,
+                             start=self.job().get_config('paths','basedir'))
+        self.add_var_opt('outputDir',path)
+        # BWPost reads and writes to its directory
+        self.add_macro('workdir',topdir(path))
 
 class PESummaryResultsPageJob(LALInferenceDAGSharedFSJob,pipeline.AnalysisJob):
     """Class to handle the creation of the summary page job using `PESummary`
@@ -2898,7 +2925,7 @@ class PESummaryResultsPageNode(LALInferenceDAGNode):
     def __init__(self, results_page_job, outpath=None):
         super(PESummaryResultsPageNode,self).__init__(results_page_job)
         if outpath is not None:
-            self.set_output_path(path)
+            self.set_output_path(outpath)
 
     @staticmethod
     def determine_webdir_or_existing_webdir(path):
@@ -3019,7 +3046,7 @@ class ResultsPageNode(LALInferenceDAGNode):
     def __init__(self,results_page_job,outpath=None):
         super(ResultsPageNode,self).__init__(results_page_job)
         if outpath is not None:
-            self.set_output_path(path)
+            self.set_output_path(outpath)
         self.__event=0
         self.ifos=None
         self.injfile=None
@@ -3463,8 +3490,7 @@ class SkyMapNode(pipeline.CondorDAGNode):
         """
         if self.finalized==True: return
         self.finalized=True
-        self.add_input_file(self.posfile)
-        self.add_file_arg(self.posfile)
+        self.add_file_opt('samples',self.posfile)
         self.add_file_opt('fitsoutname',self.outfits, file_is_output_file=True)
         self.add_file_opt('outdir',self.outdir, file_is_output_file=True)
         if self.objid:
@@ -3548,7 +3574,7 @@ class PostRunInfoJob(LALInferenceDAGSharedFSJob, pipeline.CondorDAGJob,pipeline.
         exe=cp.get('condor','gdbinfo')
         pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
         pipeline.AnalysisJob.__init__(self,cp) # Job always runs locally
-        LALInferenceSharedFSJob.__init__(self, cp)
+        LALInferenceDAGSharedFSJob.__init__(self, cp)
         self.set_sub_file(os.path.abspath(submitFile))
         self.set_stdout_file(os.path.join(logdir,'gdbinfo-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.join(logdir,'gdbinfo-$(cluster)-$(process).err'))

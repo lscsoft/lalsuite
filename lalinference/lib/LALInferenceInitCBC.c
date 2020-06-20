@@ -756,6 +756,15 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--no-detector-frame)              model will NOT use detector-centred coordinates and instead RA,dec\n\
     (--grtest-parameters dchi0,..,dxi1,..,dalpha1,..) template will assume deformations in the corresponding phase coefficients.\n\
     (--ppe-parameters aPPE1,....     template will assume the presence of an arbitrary number of PPE parameters. They must be paired correctly.\n\
+    (--modeList lm,l-m...,lm,l-m)           List of modes to be used by the model. The chosen modes ('lm') should be passed as a ',' seperated list.\n\
+    (--phenomXHMMband float)     Threshold parameter for the Multibanding of the non-precessing hlm modes in IMRPhenomXHM and IMRPhenomXPHM. If set to 0 then do not use multibanding.\n\
+                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
+    (--phenomXPHMMband float)    Threshold parameter for the Multibanding of the Euler angles in IMRPhenomXPHM. If set to 0 then do not use multibanding.\n\
+                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
+    (--phenomXPFinalSpinMod int) Change version for the final spin model used in IMRPhenomXP/IMRPhenomXPHM.\n\
+                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
+    (--phenomXPrecVersion int)   Change version of the Euler angles for the twisting-up of IMRPhenomXP/IMRPhenomXPHM.\n\
+                                 Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html\n\
 \n\
     ----------------------------------------------\n\
     --- Starting Parameters ----------------------\n\
@@ -1091,7 +1100,6 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   } else {
     LALInferenceAddVariable(model->params, "flow", &fLow,  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   }
-
   /* Set up the variable parameters */
 
   /********************* TBL: Adding noise-fitting parameters  *********************/
@@ -1450,6 +1458,104 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     XLALSimInspiralWaveformParamsInsertNumRelData(model->LALpars, ppt->value);
     fprintf(stdout,"Template will use %s.\n",ppt->value);
   }
+
+  /* Pass custom mode array list to waveform generator */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--modeList"))) {
+    char *end_str;
+    char substring[] = "-";
+    // strtok_r will modify argument in place, since MCMC calls this again later we need to copy  to tmp string to avoid chaing command line
+    char* tempstr = calloc(strlen(ppt->value)+1, sizeof(char));
+    strcpy(tempstr, ppt->value);
+    char *modes = strtok_r(tempstr, ",", &end_str);
+    int  ii=0, jj=0;
+    // These two will be lists containing integers with the pairs of (l,m) to use
+    // e.g. modes_l[0]=2 and modes_m[0]=-1 means the (l,m)=(2,-1) will be passed on to LALSim
+    // Eventually the code below loops over the lenght of these array and pass all modes to LALSim
+    int *modes_l=NULL;
+    int *modes_m=NULL;
+    // Counters used to realloc
+    int m_size=1;
+    int l_size=1;
+    fprintf(stdout, "Template will use a custom mode array.\n");
+    while (modes != NULL) {
+        int k = 0;
+	// reads in modes with negative m's first
+        if (strstr(modes, substring) != NULL) {
+            char *end_token;
+            char *token = strtok_r(modes, "-", &end_token);
+            while (token != NULL) {
+                if ( k == 0 ) {
+	            modes_l=realloc(modes_l,sizeof(*modes_l)*l_size);
+		    l_size+=1;
+		    modes_l[ii++]= atoi(token);
+                } else {
+		    modes_m=realloc(modes_m,sizeof(*modes_m)*m_size);
+                    m_size+=1;
+		    modes_m[jj++]= -1 * atoi(token);
+                }
+                k += 1;
+                token = strtok_r(NULL, "-", &end_token);
+            }
+        } else {
+	    // now read modes with positive m. These are read in as integer, then module 10 is used to extract the m and l
+	    // FIXME this will break if l or m ever get >10.
+            int value = atoi(modes);
+            for (k=2; k>=0; k--) {
+                if (k == 2) {
+		    modes_m=realloc(modes_m,sizeof(*modes_m)*m_size);
+                    m_size+=1;
+		    modes_m[jj++] = value % 10;
+                } else if (k == 1) {
+		    modes_l=realloc(modes_l,sizeof(*modes_l)*l_size);
+                    l_size+=1;
+		    modes_l[ii++]= value % 10;
+                }
+                value /= 10;
+            }
+        }
+        modes = strtok_r(NULL, ",", &end_str);
+    }
+
+    // Create empty modearray and fills it with the modes
+    LALValue *ModeArray = XLALSimInspiralCreateModeArray();
+    for (int idx_i=0; idx_i<ii; idx_i+=1){
+       fprintf(stdout, "Template will use the l=%d m=%d mode \n", modes_l[idx_i], modes_m[idx_i]);
+       XLALSimInspiralModeArrayActivateMode(ModeArray, modes_l[idx_i], modes_m[idx_i]);
+    }
+    XLALSimInspiralWaveformParamsInsertModeArray(model->LALpars, ModeArray);
+    XLALDestroyValue(ModeArray);
+  }
+
+  /* Pass threshold for PhenomXHM Multibanding */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--phenomXHMMband"))) {
+      REAL8 threshold = atof(ppt->value);
+      XLALSimInspiralWaveformParamsInsertPhenomXHMThresholdMband(model->LALpars, threshold);
+      fprintf(stdout,"Template will use phenomXHMMband %s.\n",ppt->value);
+  }
+
+  /* Pass threshold for PhenomXPHM Multibanding of the Euler angles. */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--phenomXPHMMband"))) {
+      REAL8 threshold = atof(ppt->value);
+      XLALSimInspiralWaveformParamsInsertPhenomXPHMThresholdMband(model->LALpars, threshold);
+      fprintf(stdout,"Template will use phenomXPHMMband %s.\n",ppt->value);
+  }
+
+  /* Version for the final spin model to use in IMRPhenomXP/IMRPhenomXPHM. */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--phenomXPFinalSpinMod"))) {
+      REAL8 afversion = atoi(ppt->value);
+      XLALSimInspiralWaveformParamsInsertPhenomXPFinalSpinMod(model->LALpars, afversion);
+      fprintf(stdout,"Template will use PhenomXPFinalSpinMod %s.\n",ppt->value);
+  }
+
+  /* Version of the Euler angles in the twisting-up of IMRPhenomXP/IMRPhenomXPHM. */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--phenomXPrecVersion"))) {
+      REAL8 eulerangleversion = atoi(ppt->value);
+      XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(model->LALpars, eulerangleversion);
+      fprintf(stdout,"Template will use PhenomXPrecVersion %s.\n",ppt->value);
+  }
+
+
+
 
   fprintf(stdout,"\n\n---\t\t ---\n");
   LALInferenceInitSpinVariables(state, model);

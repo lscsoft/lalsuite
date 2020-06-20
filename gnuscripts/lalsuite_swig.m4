@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 104
+# serial 108
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -145,7 +145,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
 
     # check for SWIG binary with version ${swig_min_version} or later;
     # use ${SWIG} if set, otherwise check common SWIG binary names
-    AC_SUBST([SWIG])
+    AC_ARG_VAR([SWIG],[the SWIG tool])
     AS_IF([test "x${SWIG}" != x],[
       AC_MSG_CHECKING([if ${SWIG} version is at least ${swig_min_version}])
       _LALSUITE_CHECK_SWIG_VERSION([${SWIG}])
@@ -172,6 +172,11 @@ SWIG support can be disabled by using the --disable-swig configure option]])
 SWIG support can be disabled by using the --disable-swig configure option]])
       ])
       SWIG="${ac_cv_path_SWIG}"
+    ])
+    AS_IF([test "x${swig_min_recommend_version}" != x],[
+      LALSUITE_VERSION_COMPARE([${swig_version}],[<],[${swig_min_recommend_version}],[
+        AC_MSG_WARN([SWIG version ${swig_min_recommend_version} or later is recommended ${swig_min_version_info}])
+      ])
     ])
 
     # check if SWIG works with ccache
@@ -268,9 +273,20 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     AC_CHECK_HEADERS([gsl/gsl_complex.h],,[AC_MSG_ERROR([could not find the gsl/gsl_complex.h header])])
 
     # check for Octave
-    AC_PATH_PROGS(OCTAVE,[octave-cli octave],[],[])
-    AS_IF([test "x${OCTAVE}" = x],[
-      AC_MSG_ERROR([could not find octave in PATH])
+    AC_ARG_VAR([OCTAVE],[the Octave interpreter])
+    AS_IF([test "x${OCTAVE}" != x],[
+      AC_MSG_CHECKING([${OCTAVE} is executable])
+      AS_IF([test -x "${OCTAVE}"],[
+        AC_MSG_RESULT([yes])
+      ],[
+        AC_MSG_RESULT([no])
+        AC_MSG_ERROR([${OCTAVE} is not executable])
+      ])
+    ],[
+      AC_PATH_PROGS([OCTAVE],[octave-cli octave],[],[])
+      AS_IF([test "x${OCTAVE}" = x],[
+        AC_MSG_ERROR([could not find octave in PATH])
+      ])
     ])
 
     # check for Octave utilities octave-config and mkoctfile
@@ -283,7 +299,14 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
       AC_MSG_RESULT([not found])
       AC_MSG_ERROR([could not find octave-config in ${octave_dir}])
     ])
-    octave_cfg="env - ${octave_cfg}"
+    AC_MSG_CHECKING([if ${octave_cfg} works])
+    octave_cfg="env - PATH=$PATH LD_LIBRARY_PATH=$LD_LIBRARY_PATH ${octave_cfg}"
+    AS_IF([${octave_cfg} --version >/dev/null 2>&1],[
+      AC_MSG_RESULT([yes])
+    ],[
+      AC_MSG_RESULT([no])
+      AC_MSG_ERROR([could not find working octave-config in ${octave_dir}])
+    ])
     AC_MSG_CHECKING([for mkoctfile])
     mkoctfile="${octave_dir}/mkoctfile"
     AS_IF([test -x "${mkoctfile}"],[
@@ -292,7 +315,14 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
       AC_MSG_RESULT([not found])
       AC_MSG_ERROR([could not find mkoctfile in ${octave_dir}])
     ])
-    mkoctfile="env - ${mkoctfile}"
+    AC_MSG_CHECKING([if ${mkoctfile} works])
+    mkoctfile="env - PATH=$PATH LD_LIBRARY_PATH=$LD_LIBRARY_PATH ${mkoctfile}"
+    AS_IF([${mkoctfile} --version >/dev/null 2>&1],[
+      AC_MSG_RESULT([yes])
+    ],[
+      AC_MSG_RESULT([no])
+      AC_MSG_ERROR([could not find working mkoctfile in ${octave_dir}])
+    ])
 
     # check Octave version
     octave_min_version=3.2.0
@@ -305,6 +335,8 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     LALSUITE_VERSION_COMPARE([${octave_version}],[<],[${octave_min_version}],[
       AC_MSG_ERROR([Octave version ${octave_min_version} or later is required])
     ])
+
+    # set minimum SWIG version requirements based on Octave version
     LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.0.0],[
       LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[3.0.7],[
         swig_min_version=3.0.7
@@ -317,16 +349,11 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
         swig_min_version_info="for Octave version ${octave_version}"
       ])
     ])
-
-    # debian buster has patched swig-3.0.12-2 to support octave 4.4,
-    # so we ignore this requirement on that platform
-    cat /etc/issue | grep -Eiq "debian .*(10|buster)"
-    AS_IF([test $? -ne 0],[
-      LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.4.0],[
-        LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[4.0.0],[
-          swig_min_version=4.0.0
-          swig_min_version_info="for Octave version ${octave_version}"
-        ])
+    LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.4.0],[
+      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[4.0.2],[
+        # TODO: once SWIG 4.0.2 is released and widely available, replace 'swig_min_recommend_version' with 'swig_min_version'
+        swig_min_recommend_version=4.0.2
+        swig_min_version_info="for Octave version ${octave_version}"
       ])
     ])
 
@@ -335,12 +362,15 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     # is installed in the same directory as Octave, .oct files will be found by
     # Octave without having to add to OCTAVE_PATH
     AC_MSG_CHECKING([${OCTAVE} .oct installation directory])
-    # at least in Debian Buster, "HOME" has been dropped in favour of "OCTAVE_HOME"
-    octave_prefix=[`${octave_cfg} -p OCTAVE_HOME 2>/dev/null | ${SED} -e 's|/*$||'`]
-    # fallback if OCTAVE_HOME is yet unknown
+    for octave_prefix_variable in OCTAVE_HOME PREFIX; do
+      octave_prefix=[`${octave_cfg} -p ${octave_prefix_variable} 2>/dev/null | ${SED} -e 's|/*$||'`]
+      AS_IF([test "x${octave_prefix}" != x],[
+        break
+      ])
+    done
     AS_IF([test "x${octave_prefix}" = x],[
-      octave_prefix=[`${octave_cfg} -p PREFIX 2>/dev/null | ${SED} -e 's|/*$||'`]
-    ])                                                                                                                                                                                                                                                            
+      AC_MSG_ERROR([could not determine ${OCTAVE} installation prefix])
+    ])
     octexecdir=[`${octave_cfg} -p LOCALVEROCTFILEDIR 2>/dev/null | ${SED} -e 's|/*$||'`]
     octexecdir=[`echo ${octexecdir} | ${SED} -e "s|^${octave_prefix}/||"`]
     AS_IF([test "x`echo ${octexecdir} | ${SED} -n -e '\|^/|p'`" != x],[
@@ -353,6 +383,9 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     # determine C++ compiler used to compile Octave itself
     AC_MSG_CHECKING([C++ compiler used for building ${OCTAVE}])
     octave_CXX=`${mkoctfile} -p CXX 2>/dev/null`
+    AS_IF([test "x${octave_CXX}" = x],[
+      AC_MSG_ERROR([could not determine C++ compiler used for building ${OCTAVE}])
+    ])
     AC_MSG_RESULT([${octave_CXX}])
 
     # check that configured C++ compiler is compatible with C++ compiler used to
@@ -433,7 +466,15 @@ int main() { std::string s = "a"; return 0; }
     # determine Octave linker flags
     AC_SUBST([SWIG_OCTAVE_LDFLAGS],[])
     swig_octave_ldflags=
-    for arg in LFLAGS LIBOCTINTERP LIBOCTAVE LIBCRUFT OCT_LINK_OPTS OCT_LINK_DEPS; do
+    for arg in OCTLIBDIR; do
+      for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
+        AS_CASE([${flag}],
+          [/*],[swig_octave_ldflags="${swig_octave_ldflags}-L${flag} "],
+          [:]
+        )
+      done
+    done
+    for arg in LDFLAGS LFLAGS LIBOCTINTERP LIBOCTAVE LIBCRUFT OCT_LINK_OPTS OCT_LINK_DEPS; do
       for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
         AS_CASE([${flag}],
           [-L/usr/lib|-L/usr/lib64],[:],

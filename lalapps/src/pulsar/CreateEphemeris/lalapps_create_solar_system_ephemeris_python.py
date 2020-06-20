@@ -22,7 +22,6 @@ from __future__ import print_function, division
 import os
 import sys
 import argparse
-import numpy as np
 
 try:
     # function to get positions and velocities
@@ -67,7 +66,8 @@ HEADER = """\
 """
 
 # set locations of JPL ephemeris files for downloading
-EPH_URLS = {'DE432S': 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp',
+EPH_URLS = {'DE436': 'ftp://ssd.jpl.nasa.gov/pub/eph/planets/bsp/de436.bsp',
+            'DE432S': 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp',
             'DE430': 'http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de430.bsp',
             'DE421': 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/a_old_versions/de421.bsp',
             'DE414': 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/a_old_versions/de414.bsp',
@@ -172,7 +172,7 @@ if __name__=='__main__':
         ctminus = curtime - dt/2.
         _, mvel = get_body_barycentric_posvel(body, ctminus)
         ctplus = curtime + dt/2.
-        _, pvel = get_body_barycentric_posvel(body, ctplus)    
+        _, pvel = get_body_barycentric_posvel(body, ctplus)
         acc.append(((pvel.xyz.to('m/s')-mvel.xyz.to('m/s'))/const.c)/dt.to('s'))
 
         curtime += dt

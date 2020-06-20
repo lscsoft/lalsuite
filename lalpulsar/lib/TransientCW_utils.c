@@ -1126,23 +1126,25 @@ write_MultiFstatAtoms_to_fp ( LALFILE *fp, const MultiFstatAtomVector *multiAtom
     XLAL_ERROR ( XLAL_EINVAL );
   }
 
-  XLALFilePrintf ( fp, "%%%% GPS[s]     a^2(t_i)   b^2(t_i)  ab(t_i)            Fa(t_i)                  Fb(t_i)\n");
+  XLALFilePrintf ( fp, "%%%% tGPS    a2       b2        ab        Fa_re     Fa_im     Fb_re     Fb_im\n");
 
   for ( X=0; X < multiAtoms->length; X++ )
     {
       FstatAtomVector *thisAtomVector = multiAtoms->data[X];
       for ( alpha=0; alpha < thisAtomVector->length; alpha ++ )
-	{
+        {
           FstatAtom *thisAtom = &thisAtomVector->data[alpha];
-	  XLALFilePrintf ( fp, "%d   % f  % f  %f    % f  % f     % f  % f\n",
-		    thisAtom->timestamp,
-		    thisAtom->a2_alpha,
-		    thisAtom->b2_alpha,
-		    thisAtom->ab_alpha,
-		    crealf(thisAtom->Fa_alpha), cimagf(thisAtom->Fa_alpha),
-		    crealf(thisAtom->Fb_alpha), cimagf(thisAtom->Fb_alpha)
-		    );
-	} /* for alpha < numSFTs */
+          XLALFilePrintf ( fp, "%10d %8.6f %8.6f %9.6f %9.6f %9.6f %9.6f %9.6f\n",
+            thisAtom->timestamp,
+            thisAtom->a2_alpha,
+            thisAtom->b2_alpha,
+            thisAtom->ab_alpha,
+            crealf(thisAtom->Fa_alpha),
+            cimagf(thisAtom->Fa_alpha),
+            crealf(thisAtom->Fb_alpha),
+            cimagf(thisAtom->Fb_alpha)
+          );
+        } /* for alpha < numSFTs */
     } /* for X < numDet */
 
   return XLAL_SUCCESS;

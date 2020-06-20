@@ -15,7 +15,6 @@ import lalpulsar
 from optparse import OptionParser
 
 import sys
-import math
 import os
 import numpy as np
 

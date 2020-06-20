@@ -1,6 +1,6 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
-%define release 1
+%define release 2
 %define configure_opts --enable-cfitsio GSL_LIBS="-lgsl" CFITSIO_LIBS="-lcfitsio"
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
@@ -23,21 +23,27 @@ Prefix: %{_prefix}
 # -- build requirements -----
 
 # C
-BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
+BuildRequires: gcc
+BuildRequires: gcc-c++
 BuildRequires: gsl-devel
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
+BuildRequires: make
+BuildRequires: pkgconfig >= 0.18.0
 
 # swig
-BuildRequires: swig >= 3.0.7
+BuildRequires: swig >= 3.0.9
 
 # python2
 BuildRequires: python2-rpm-macros
-BuildRequires: numpy
 BuildRequires: python-devel
 BuildRequires: python2-astropy
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
+BuildRequires: python2-mock
+BuildRequires: python2-numpy
+BuildRequires: python-pathlib
+BuildRequires: pytest
 
 # python3x
 BuildRequires: python-srpm-macros
@@ -46,8 +52,9 @@ BuildRequires: epel-rpm-macros
 BuildRequires: python%{python3_pkgversion}
 BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-astropy
-BuildRequires: python%{python3_pkgversion}-numpy
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+BuildRequires: python%{python3_pkgversion}-numpy
+BuildRequires: python%{python3_pkgversion}-pytest
 
 # octave
 BuildRequires: octave-devel
@@ -86,10 +93,10 @@ Pulsar library.
 Summary: Python %{python2_version} bindings for LALPulsar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: numpy
 Requires: python
-Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-astropy
+Requires: python2-lal >= @MIN_LAL_VERSION@
+Requires: python2-numpy
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
@@ -133,9 +140,10 @@ This package provides the Octave bindings for LALPulsar.
 rm -rf %py3dir
 cp -r . %py3dir
 pushd %py3dir
-%configure %{configure_opts} --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
-%{__make} %{?_smp_mflags} V=1 -C swig
-%{__make} %{?_smp_mflags} V=1 -C python
+rm -rfv python/%{name}/*.{la,lo,o} python/%{name}/.libs
+%configure %{configure_opts} --disable-doxygen --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
+%{__make} V=1 -C swig
+%{__make} V=1 -C python/%{name}
 popd
 
 %check
@@ -149,7 +157,7 @@ popd
 %make_install
 # python3
 %{__make} -C %py3dir -C swig install-exec-am DESTDIR=%{?buildroot}
-%{__make} -C %py3dir -C python install DESTDIR=%{?buildroot}
+%{__make} -C %py3dir -C python/%{name} install DESTDIR=%{?buildroot}
 find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
@@ -199,6 +207,15 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Dec 09 2019 Adam Mercer <adam.mercer@ligo.org> 1.18.2-2
+- Packaging updates
+
+* Wed Nov 27 2019 Adam Mercer <adam.mercer@ligo.org> 1.18.2-1
+- O3b release
+
+* Tue Aug 06 2019 Adam Mercer <adam.mercer@ligo.org> 1.18.1-1
+- O3 point release
+
 * Thu May 23 2019 Adam Mercer <adam.mercer@ligo.org> 1.18.0-1
 * O3 release
 

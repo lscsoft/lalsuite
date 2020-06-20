@@ -351,7 +351,7 @@ void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel ){
 
 
 /**
- * \brief Add a \c REAL8 parameter from a \c LALInfernceVariable into a \c PulsarParameters variable
+ * \brief Add a \c REAL8 parameter from a \c LALInferenceVariable into a \c PulsarParameters variable
  *
  * \param var [in] \c LALInferenceVariable structure
  * \param params [in] \c PulsarParameters structure
@@ -475,7 +475,7 @@ void pulsar_model( PulsarParameters *params, LALInferenceIFOModel *ifo ){
  * binary system barycenter, so \f$T = t + \delta{}t_{\rm SSB} + \delta{}t_{\rm BSB}\f$.
  *
  * In this function the time delay needed to correct to the solar system barycenter is only calculated if
- * required i.e. if an update is required due to a change in the sky position.
+ * required, i.e., if an update is required due to a change in the sky position.
  * The same is true for the binary system time delay, which is only calculated if it
  * needs updating due to a change in the binary system parameters.
  *
@@ -493,16 +493,12 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
 
   REAL8 DT = 0., deltat = 0., deltatpow = 0., deltatpowinner = 1., taylorcoeff = 1., Ddelay = 0., Ddelaypow = 0.;
 
-  REAL8Vector *phis = NULL, *dts = NULL, *fixdts = NULL, *bdts = NULL, *fixbdts = NULL;
+  REAL8Vector *phis = NULL, *dts = NULL, *fixdts = NULL, *bdts = NULL, *fixbdts = NULL, *glitchphase = NULL, *fixglitchphase = NULL;
   LIGOTimeGPSVector *datatimes = NULL;
 
   REAL8 pepoch = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /* time of ephem info */
   REAL8 cgw = PulsarGetREAL8ParamOrZero(params, "CGW");
   REAL8 T0 = pepoch;
-
-  /* glitch parameters */
-  REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL;
-  UINT4 glnum = 0;
 
   /* check if we want to calculate the phase at a the downsampled rate */
   datatimes = ifo->times;
@@ -535,55 +531,28 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   const REAL8Vector *deltafs = PulsarGetREAL8VectorParam( params, "DELTAF" );
 
   if ( PulsarCheckParam( params, "BINARY" ) ){ isbinary = 1; } /* see if pulsar is in binary */
-  if ( PulsarCheckParam( params, "GLEP" ) ){ /* see if pulsar has glitch parameters */
-    const REAL8Vector *gleppars = PulsarGetREAL8VectorParam( params, "GLEP" );
-    glnum = gleppars->length;
 
-    /* get epochs */
-    glep = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<gleppars->length; i++ ){ glep[i] = gleppars->data[i]; }
-
-    /* get phase offsets */
-    glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLPH" ) ){
-      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLPH" );
-      for ( i=0; i<glpars->length; i++ ){ glph[i] = glpars->data[i]; }
+  if ( LALInferenceCheckVariable( ifo->params, "varyglitch" ) ){
+    /* get the phase (in cycles due to glitch parameters */
+    if ( dts != NULL ){
+      if ( LALInferenceCheckVariable( ifo->params, "varybinary" ) ){
+        glitchphase = get_glitch_phase( params, datatimes, dts, bdts );
+      }
+      else{
+        glitchphase = get_glitch_phase( params, datatimes, dts, fixbdts );
+      }
     }
-
-    /* get frequencies offsets */
-    glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLF0" ) ){
-      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLF0" );
-      for ( i=0; i<glpars->length; i++ ){ glf0[i] = glpars->data[i]; }
+    else{
+      if ( LALInferenceCheckVariable( ifo->params, "varybinary" ) ){
+        glitchphase = get_glitch_phase( params, datatimes, fixdts, bdts );
+      }
+      else{
+        glitchphase = get_glitch_phase( params, datatimes, fixdts, fixbdts );
+      }
     }
-
-    /* get frequency derivative offsets */
-    glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLF1" ) ){
-      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLF1" );
-      for ( i=0; i<glpars->length; i++ ){ glf1[i] = glpars->data[i]; }
-    }
-
-    /* get second frequency derivative offsets */
-    glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLF2" ) ){
-      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLF2" );
-      for ( i=0; i<glpars->length; i++ ){ glf2[i] = glpars->data[i]; }
-    }
-
-    /* get decaying frequency component offset derivative */
-    glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLF0D" ) ){
-      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLF0D" );
-      for ( i=0; i<glpars->length; i++ ){ glf0d[i] = glpars->data[i]; }
-    }
-
-    /* get decaying frequency component decay time constant */
-    gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    if ( PulsarCheckParam( params, "GLTD" ) ){
-      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( params, "GLTD" );
-      for ( i=0; i<glpars->length; i++ ){ gltd[i] = glpars->data[i]; }
-    }
+  }
+  if ( LALInferenceCheckVariable( ifo->params, "glitch_phase" ) ){
+    fixglitchphase = LALInferenceGetREAL8VectorVariable( ifo->params, "glitch_phase" );
   }
 
   for( i=0; i<length; i++){
@@ -628,17 +597,9 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
       deltatpow *= deltat;
     }
 
-    /* check for glitches */
-    if ( glnum > 0 ){
-      /* get glitch phase - based on equations in formResiduals.C of TEMPO2 from Eqn 1 of Yu et al (2013) http://ukads.nottingham.ac.uk/abs/2013MNRAS.429..688Y */
-      for ( j=0; j<glnum; j++ ){
-        if ( deltat >= (glep[j]-T0) ){
-          REAL8 dtg = 0, expd = 1.;
-          dtg = deltat - (glep[j]-T0); /* time since glitch */
-          if ( gltd[j] != 0. ) { expd = exp(-dtg/gltd[j]); } /* decaying part of glitch */
-          deltaphi += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
-        }
-      }
+    /* get the differences for glitch phases */
+    if ( glitchphase !=  NULL ){
+      deltaphi += ( glitchphase->data[i] - fixglitchphase->data[i] );
     }
 
     deltaphi *= freqFactor; /* multiply by frequency factor */
@@ -648,16 +609,7 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   /* free memory */
   if ( dts != NULL ){ XLALDestroyREAL8Vector( dts ); }
   if ( bdts != NULL ){ XLALDestroyREAL8Vector( bdts ); }
-
-  if ( glnum > 0 ){
-    XLALFree( glep );
-    XLALFree( glph );
-    XLALFree( glf0 );
-    XLALFree( glf1 );
-    XLALFree( glf2 );
-    XLALFree( glf0d );
-    XLALFree( gltd );
-  }
+  if ( glitchphase != NULL ){ XLALDestroyREAL8Vector( glitchphase ); }
 
   return phis;
 }
@@ -800,6 +752,116 @@ REAL8Vector *get_bsb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes
     }
   }
   return bdts;
+}
+
+
+/**
+ * \brief Computes the phase from the glitch model.
+ *
+ * \param pars [in] A set of pulsar parameters
+ * \param datatimes [in] A vector of GPS times
+ * \param dts [in] A vector of solar system barycentre time delays
+ * \param bdts [in] A vector of binary system barycentre time delays
+ * \return A vector of phases in cycles
+ */
+REAL8Vector *get_glitch_phase( PulsarParameters *pars, LIGOTimeGPSVector *datatimes, REAL8Vector *dts, REAL8Vector *bdts ){
+  REAL8Vector *glphase = NULL;
+
+  /* glitch parameters */
+  REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL;
+  UINT4 glnum = 0;
+
+  UINT4 i = 0, j = 0, length = datatimes->length;
+
+  REAL8 pepoch = PulsarGetREAL8ParamOrZero(pars, "PEPOCH"); /* time of ephem info */
+  REAL8 cgw = PulsarGetREAL8ParamOrZero(pars, "CGW");
+  REAL8 T0 = pepoch;
+
+  if ( PulsarCheckParam( pars, "GLEP" ) ){ /* see if pulsar has glitch parameters */
+    const REAL8Vector *gleppars = PulsarGetREAL8VectorParam( pars, "GLEP" );
+    glnum = gleppars->length;
+
+    /* get epochs */
+    glep = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    for ( i=0; i<gleppars->length; i++ ){ glep[i] = gleppars->data[i]; }
+
+    /* get phase offsets */
+    glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( pars, "GLPH" ) ){
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( pars, "GLPH" );
+      for ( i=0; i<glpars->length; i++ ){ glph[i] = glpars->data[i]; }
+    }
+
+    /* get frequencies offsets */
+    glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( pars, "GLF0" ) ){
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( pars, "GLF0" );
+      for ( i=0; i<glpars->length; i++ ){ glf0[i] = glpars->data[i]; }
+    }
+
+    /* get frequency derivative offsets */
+    glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( pars, "GLF1" ) ){
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( pars, "GLF1" );
+      for ( i=0; i<glpars->length; i++ ){ glf1[i] = glpars->data[i]; }
+    }
+
+    /* get second frequency derivative offsets */
+    glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( pars, "GLF2" ) ){
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( pars, "GLF2" );
+      for ( i=0; i<glpars->length; i++ ){ glf2[i] = glpars->data[i]; }
+    }
+
+    /* get decaying frequency component offset derivative */
+    glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( pars, "GLF0D" ) ){
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( pars, "GLF0D" );
+      for ( i=0; i<glpars->length; i++ ){ glf0d[i] = glpars->data[i]; }
+    }
+
+    /* get decaying frequency component decay time constant */
+    gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( pars, "GLTD" ) ){
+      const REAL8Vector *glpars = PulsarGetREAL8VectorParam( pars, "GLTD" );
+      for ( i=0; i<glpars->length; i++ ){ gltd[i] = glpars->data[i]; }
+    }
+
+    glphase = XLALCreateREAL8Vector( length );
+
+    for ( i = 0; i < length; i++ ){
+      REAL8 deltaphi = 0., deltat = 0., DT = 0.;
+      REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] ); /* time of data */
+      DT = realT - T0; /* time diff between data and start of data */
+
+      /* include solar system barycentring time delays */
+      deltat = DT + dts->data[i];
+
+      /* include binary system barycentring time delays */
+      if ( bdts != NULL ){
+        deltat += bdts->data[i];
+      }
+
+      /* correct for speed of GW compared to speed of light */
+      if ( cgw > 0.0 && cgw < 1. ) {
+        deltat /= cgw;
+      }
+
+      /* get glitch phase - based on equations in formResiduals.C of TEMPO2 from Eqn 1 of Yu et al (2013) http://ukads.nottingham.ac.uk/abs/2013MNRAS.429..688Y */
+      for ( j=0; j<glnum; j++ ){
+        if ( deltat >= (glep[j]-T0) ){
+          REAL8 dtg = 0, expd = 1.;
+          dtg = deltat - (glep[j]-T0); /* time since glitch */
+          if ( gltd[j] != 0. ) { expd = exp(-dtg/gltd[j]); } /* decaying part of glitch */
+          deltaphi += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
+        }
+      }
+
+      glphase->data[i] = deltaphi;
+    }
+  }
+
+  return glphase;
 }
 
 

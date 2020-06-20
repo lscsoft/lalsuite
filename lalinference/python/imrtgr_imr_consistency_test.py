@@ -1,6 +1,6 @@
 """
-Perform the consistency check between the inspiral and ringdown estimates of the mass and spin of the final 
-black hole in a binary black hole merger. 
+Perform the consistency check between the inspiral and ringdown estimates of the mass and spin of the final
+black hole in a binary black hole merger.
 
 P. Ajith, Abhirup Ghosh, Archisman Ghosh, 2015-09-18
 
@@ -12,13 +12,12 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-import scipy.signal as ss
 from scipy import interpolate
 from optparse import OptionParser
-import time, os 
+import time, os
 import lalinference.imrtgr.imrtgrutils as tgr
 import pickle, gzip
-import sys 
+import sys
 from lalinference import git_version
 
 from scipy.stats import gaussian_kde   #rahul: for KDE implementation
@@ -84,7 +83,7 @@ if __name__ == '__main__':
 
   start_time = time.time()
 
-  # read inputs from command line 
+  # read inputs from command line
   parser = OptionParser()
   parser.add_option("-i", "--insp-post", dest="insp_post", help="file containing the posterior samples from the lalinference inspiral run")
   parser.add_option("-r", "--ring-post", dest="ring_post", help="file containing the posterior samples from the lalinference ringdown run")
@@ -105,9 +104,9 @@ if __name__ == '__main__':
   parser.add_option("-d", "--debug-plots", dest="debug_plots", help="debug plots")
   parser.add_option("--N_bins", type="int", dest="N_bins", default=201, help="number of bins (default=201)")
   parser.add_option("--dMfbyMf_lim", type="float", dest="dMfbyMf_lim", default=1., help="absolute value of limit for range of dMfbyMf_vec, defined as [-dMfbyMf_lim, +dMfbyMf_lim]")
-  parser.add_option("--dchifbychif_lim", type="float", dest="dchifbychif_lim", default=1., help="absolute value of limit for range of dchifbychif_vec, defined as [-dchifbychif_lim, +dchifbychif_lim]")  
-  parser.add_option("--use_KDE", type="int", dest="MfafKDE", help="use KDE or not after getting samples of Mf, af")  
-  
+  parser.add_option("--dchifbychif_lim", type="float", dest="dchifbychif_lim", default=1., help="absolute value of limit for range of dchifbychif_vec, defined as [-dchifbychif_lim, +dchifbychif_lim]")
+  parser.add_option("--use_KDE", type="int", dest="MfafKDE", help="use KDE or not after getting samples of Mf, af")
+
   (options, args) = parser.parse_args()
   MfafKDE = options.MfafKDE
   insp_post = options.insp_post
@@ -130,13 +129,13 @@ if __name__ == '__main__':
   waveform = options.waveform
   if waveform is None:
     print('Recovery approximant not provided. To have it displayed on the results page, please pass command line option --waveform.')
-  
+
   N_bins = int(options.N_bins) # Number of grid points along either axis (dMfbyMf, dchifbychif) for computation of the posteriors
   dMfbyMf_lim = float(options.dMfbyMf_lim)
   dchifbychif_lim = float(options.dchifbychif_lim)
   lalinference_datadir = os.getenv('LALINFERENCE_DATADIR')
 
-  # create output directory and copy the script 
+  # create output directory and copy the script
   os.system('mkdir -p %s' %out_dir)
   os.system('mkdir -p %s/data' %out_dir)
   os.system('mkdir -p %s/img' %out_dir)
@@ -156,11 +155,11 @@ if __name__ == '__main__':
   insp_posplots = os.path.realpath(os.path.dirname(insp_post))
   ring_posplots = os.path.realpath(os.path.dirname(ring_post))
   imr_posplots = os.path.realpath(os.path.dirname(imr_post))
-  
+
   insp_target = os.path.join(out_dir, 'lalinf_insp')
   ring_target = os.path.join(out_dir, 'lalinf_ring')
   imr_target = os.path.join(out_dir, 'lalinf_imr')
-  
+
   if insp_posplots != insp_target:
     if os.path.islink(insp_target):
       print('... removing existing link %s'%(insp_target))
@@ -179,7 +178,7 @@ if __name__ == '__main__':
       os.system('rm %s'%(imr_target))
     print('... linking %s to %s' %(imr_posplots, imr_target))
     os.system('ln -s %s %s' %(imr_posplots, imr_target))
-  
+
   # read the injection mass parameters if this is an injection
   m1_inj = options.m1_inj
   m2_inj = options.m2_inj
@@ -205,13 +204,13 @@ if __name__ == '__main__':
     Mf_inj, chif_inj = tgr.calc_final_mass_spin(m1_inj, m2_inj, chi1_inj, chi2_inj, chi1z_inj, chi2z_inj, phi12_inj, fit_formula)
 
   ###############################################################################################
-  # Read the posteriors from the inspiral, ringdown and imr lalinference runs (after post-processing) 
+  # Read the posteriors from the inspiral, ringdown and imr lalinference runs (after post-processing)
   ###############################################################################################
 
-  # read data from the inspiral posterior file 
+  # read data from the inspiral posterior file
   insp_data = np.genfromtxt(insp_post, dtype=None, names=True)
   m1_i, m2_i, chi1_i, chi2_i, chi1z_i, chi2z_i = insp_data['m1'], insp_data['m2'], insp_data['a1'], insp_data['a2'], insp_data['a1z'], insp_data['a2z']
-  # if there is phi12 in the posterior, read the values. 
+  # if there is phi12 in the posterior, read the values.
   if 'phi12' in insp_data.dtype.names:
     phi12_i = insp_data['phi12']
   else:
@@ -219,10 +218,10 @@ if __name__ == '__main__':
   # compute the final mass and spin
   Mf_i, chif_i = tgr.calc_final_mass_spin(m1_i, m2_i, chi1_i, chi2_i, chi1z_i, chi2z_i, phi12_i, fit_formula)
 
-  # read data from the ringdown posterior file 
+  # read data from the ringdown posterior file
   ring_data = np.genfromtxt(ring_post, dtype=None, names=True)
   m1_r, m2_r, chi1_r, chi2_r, chi1z_r, chi2z_r = ring_data['m1'], ring_data['m2'], ring_data['a1'], ring_data['a2'], ring_data['a1z'], ring_data['a2z']
-  # if there is phi12 in the posterior, read the values. 
+  # if there is phi12 in the posterior, read the values.
   if 'phi12' in ring_data.dtype.names:
     phi12_r = ring_data['phi12']
   else:
@@ -230,10 +229,10 @@ if __name__ == '__main__':
   # compute the final mass and spin
   Mf_r, chif_r = tgr.calc_final_mass_spin(m1_r, m2_r, chi1_r, chi2_r, chi1z_r, chi2z_r, phi12_r, fit_formula)
 
-  # read data from the IMR posterior file 
+  # read data from the IMR posterior file
   imr_data = np.genfromtxt(imr_post, dtype=None, names=True)
   m1_imr, m2_imr, chi1_imr, chi2_imr, chi1z_imr, chi2z_imr = imr_data['m1'], imr_data['m2'], imr_data['a1'], imr_data['a2'], imr_data['a1z'], imr_data['a2z']
-  # if there is phi12 in the posterior, read the values. 
+  # if there is phi12 in the posterior, read the values.
   if 'phi12' in imr_data.dtype.names:
     phi12_imr = imr_data['phi12']
   else:
@@ -246,15 +245,15 @@ if __name__ == '__main__':
   ###############################################################################################
 
   ###############################################################################################
-  # compute the limits of integration for computing delta_Mf and delta_chif 
+  # compute the limits of integration for computing delta_Mf and delta_chif
   ###############################################################################################
   Mf_lim = max(abs(np.append(np.append(Mf_i, Mf_r), Mf_imr)))
   chif_lim = max(abs(np.append(np.append(chif_i, chif_r), chif_imr)))
-	
-  # the integral used to compute (Delta Mf, Delta af) has limits from -infinity to +infinity. We 
+
+  # the integral used to compute (Delta Mf, Delta af) has limits from -infinity to +infinity. We
   # are approximating this by setting the limits to (-Mf_lim to Mf_lim) and (-chif_lim to chif_lim)
-  # where Mf_lim and chif_lim are the max values of Mf and chif where the posteriors have nonzero 
-  # support. The scipy.signal.correlate2d function requires arguments x_bins and y_bins that need 
+  # where Mf_lim and chif_lim are the max values of Mf and chif where the posteriors have nonzero
+  # support. The scipy.signal.correlate2d function requires arguments x_bins and y_bins that need
   # to be symmetric around zero
   Mf_bins = np.linspace(-Mf_lim, Mf_lim, N_bins)
   chif_bins = np.linspace(-chif_lim, chif_lim, N_bins)
@@ -270,7 +269,7 @@ if __name__ == '__main__':
   if MfafKDE==1:
     print('replacing lal P(Mfaf) with its KDE pdf')
     M_i,C_i=np.meshgrid(Mf_intp,chif_intp)
-    
+
     joint_data=np.vstack([Mf_i,chif_i]);kernel=gaussian_kde(joint_data)
     f_i = lambda x,y:kernel.evaluate([x,y])
     print("for inspiral kernel",kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim]))
@@ -285,10 +284,10 @@ if __name__ == '__main__':
     f_imr = lambda x,y:kernel.evaluate([x,y])
     print("for imr kernel",kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim]))
     P_Mfchif_imr = np.vectorize(f_imr)(M_i,C_i)/kernel.integrate_box([-Mf_lim,-chif_lim],[Mf_lim,chif_lim])
-    
-    
+
+
     #rahul: end KDE of Mf,af
-    
+
   elif MfafKDE==0:
     print('using default samples, NOKDE')
     # compute the 2D posterior distributions for the inspiral, ringodwn and IMR analyses
@@ -312,17 +311,17 @@ if __name__ == '__main__':
   # Undo the effect of the prior from the lalinference posterior. Lalinference assumes a        #
   # uniform prior in component masses. We need to assume a uniform prior in Mf, chif              #
   ###############################################################################################
-  
+
   if prior_Mfchif_file is not None:
-    
+
     os.system('cp %s %s/data'%(prior_Mfchif_file, out_dir))
-  
-    # read the interpolation object, reconstruct the data from the interpolation object 
+
+    # read the interpolation object, reconstruct the data from the interpolation object
     f = gzip.open(prior_Mfchif_file,'rb')
     P_Mfchif_pr_interp_obj = pickle.load(f)
     P_Mfchif_pr = P_Mfchif_pr_interp_obj(Mf_intp, chif_intp)
-    
-    # compute the corrected 2D posteriors in Mf and chif by dividing by the prior distribution 
+
+    # compute the corrected 2D posteriors in Mf and chif by dividing by the prior distribution
     P_Mfchif_i = P_Mfchif_i/P_Mfchif_pr
     P_Mfchif_r = P_Mfchif_r/P_Mfchif_pr
     P_Mfchif_imr = P_Mfchif_imr/P_Mfchif_pr
@@ -338,12 +337,12 @@ if __name__ == '__main__':
     P_Mfchif_imr[np.isinf(P_Mfchif_imr)] = 0.
 
     print('... computed (prior) corrected posteriors')
-    
+
   ################################################################################################
   # compute the posterior of (delta_Mf/Mf, delta_chif/chif)
   ################################################################################################
 
-  # compute interpolation objects for the Mf,chif posterior and delta_Mf and delta_chif posterior 
+  # compute interpolation objects for the Mf,chif posterior and delta_Mf and delta_chif posterior
   P_Mfchif_i_interp_object = scipy.interpolate.interp2d(Mf_intp, chif_intp, P_Mfchif_i, fill_value=0., bounds_error=False)
   P_Mfchif_r_interp_object = scipy.interpolate.interp2d(Mf_intp, chif_intp, P_Mfchif_r, fill_value=0., bounds_error=False)
 
@@ -351,13 +350,13 @@ if __name__ == '__main__':
   dMfbyMf_vec = np.linspace(-dMfbyMf_lim, dMfbyMf_lim, N_bins)
   dchifbychif_vec = np.linspace(-dchifbychif_lim, dchifbychif_lim, N_bins)
 
-  # compute the P(dMf/Mf, dchif/chif) by evaluating the integral 
+  # compute the P(dMf/Mf, dchif/chif) by evaluating the integral
   diff_dMfbyMf = np.mean(np.diff(dMfbyMf_vec))
   diff_dchifbychif = np.mean(np.diff(dchifbychif_vec))
   P_dMfbyMf_dchifbychif = np.zeros(shape=(N_bins,N_bins))
 
-  # compute the posterior on the fractional deviation parameters (delta_Mf/Mf, delta_chif/chif). 
-  # Approximate the integral in Eq.(6) of the document LIGO-P1500185-v5 by a discrete sum 
+  # compute the posterior on the fractional deviation parameters (delta_Mf/Mf, delta_chif/chif).
+  # Approximate the integral in Eq.(6) of the document LIGO-P1500185-v5 by a discrete sum
   for i, v2 in enumerate(dchifbychif_vec):
     for j, v1 in enumerate(dMfbyMf_vec):
       P_dMfbyMf_dchifbychif[i,j] = tgr.calc_sum(Mf_intp, chif_intp, v1, v2, P_Mfchif_i_interp_object, P_Mfchif_r_interp_object)
@@ -368,9 +367,9 @@ if __name__ == '__main__':
   # Marginalization to one-dimensional joint_posteriors
   P_dMfbyMf = np.sum(P_dMfbyMf_dchifbychif, axis=0) * diff_dchifbychif
   P_dchifbychif = np.sum(P_dMfbyMf_dchifbychif, axis=1) * diff_dMfbyMf
-  
-  # compute the confidence region corresponding to the GR value (delta_Mf/Mf = 0, delta_chif/chif = 0). 
-  # the 'confidence' class is defined on top of this script 
+
+  # compute the confidence region corresponding to the GR value (delta_Mf/Mf = 0, delta_chif/chif = 0).
+  # the 'confidence' class is defined on top of this script
   conf_v1v2 = confidence(P_dMfbyMf_dchifbychif)
   gr_height = P_dMfbyMf_dchifbychif[np.argmin(abs(dMfbyMf_vec)), np.argmin(abs(dchifbychif_vec))] # taking value closest to (0,0)
   gr_conf_level = conf_v1v2.level_from_height(gr_height)
@@ -384,7 +383,7 @@ if __name__ == '__main__':
                 ['No deviation from GR above %.1f%% confidence level'%(100.*gr_conf_level)]]
   np.savetxt('%s/summary_table.txt'%(out_dir), np.array(param_table), delimiter='\t', fmt='%s')
 
-  # save results 
+  # save results
   np.savetxt(out_dir+'/data/Mfchif.dat.gz', (Mf_bins,chif_bins))
   np.savetxt(out_dir+'/data/P_Mfchif_i.dat.gz', P_Mfchif_i)
   np.savetxt(out_dir+'/data/P_Mfchif_r.dat.gz', P_Mfchif_r)
@@ -399,7 +398,7 @@ if __name__ == '__main__':
   #########################################################################################
 
   #########################################################################################
-  # plotting                  
+  # plotting
   #########################################################################################
   #inspiral
   P_m1m2_i, m1_bins_i, m2_bins_i = np.histogram2d(m1_i, m2_i, bins=50, density=True)
@@ -407,15 +406,15 @@ if __name__ == '__main__':
 
   P_m1m2_i = P_m1m2_i.T
   P_chi1chi2_i = P_chi1chi2_i.T
-  
+
   conf_m1m2_i = confidence(P_m1m2_i)
-  s1_m1m2_i = conf_m1m2_i.height_from_level(0.68) 
+  s1_m1m2_i = conf_m1m2_i.height_from_level(0.68)
   s2_m1m2_i = conf_m1m2_i.height_from_level(0.95)
-  
+
   conf_chi1chi2_i = confidence(P_chi1chi2_i)
   s1_chi1chi2_i = conf_chi1chi2_i.height_from_level(0.68)
   s2_chi1chi2_i = conf_chi1chi2_i.height_from_level(0.95)
-  
+
   conf_Mfchif_i = confidence(P_Mfchif_i)
   s1_Mfchif_i = conf_Mfchif_i.height_from_level(0.68)
   s2_Mfchif_i = conf_Mfchif_i.height_from_level(0.95)
@@ -495,15 +494,15 @@ if __name__ == '__main__':
 
   P_m1m2_r = P_m1m2_r.T
   P_chi1chi2_r = P_chi1chi2_r.T
-  
+
   conf_m1m2_r = confidence(P_m1m2_r)
-  s1_m1m2_r = conf_m1m2_r.height_from_level(0.68) 
+  s1_m1m2_r = conf_m1m2_r.height_from_level(0.68)
   s2_m1m2_r = conf_m1m2_r.height_from_level(0.95)
-  
+
   conf_chi1chi2_r = confidence(P_chi1chi2_r)
   s1_chi1chi2_r = conf_chi1chi2_r.height_from_level(0.68)
   s2_chi1chi2_r = conf_chi1chi2_r.height_from_level(0.95)
-  
+
   conf_Mfchif_r = confidence(P_Mfchif_r)
   s1_Mfchif_r = conf_Mfchif_r.height_from_level(0.68)
   s2_Mfchif_r = conf_Mfchif_r.height_from_level(0.95)
@@ -582,15 +581,15 @@ if __name__ == '__main__':
 
   P_m1m2_imr = P_m1m2_imr.T
   P_chi1chi2_imr = P_chi1chi2_imr.T
-  
+
   conf_m1m2_imr = confidence(P_m1m2_imr)
-  s1_m1m2_imr = conf_m1m2_imr.height_from_level(0.68) 
+  s1_m1m2_imr = conf_m1m2_imr.height_from_level(0.68)
   s2_m1m2_imr = conf_m1m2_imr.height_from_level(0.95)
-  
+
   conf_chi1chi2_imr = confidence(P_chi1chi2_imr)
   s1_chi1chi2_imr = conf_chi1chi2_imr.height_from_level(0.68)
   s2_chi1chi2_imr = conf_chi1chi2_imr.height_from_level(0.95)
-  
+
   conf_Mfchif_imr = confidence(P_Mfchif_imr)
   s1_Mfchif_imr = conf_Mfchif_imr.height_from_level(0.68)
   s2_Mfchif_imr = conf_Mfchif_imr.height_from_level(0.95)
@@ -706,7 +705,7 @@ if __name__ == '__main__':
   conf_v1v2 = confidence(P_dMfbyMf_dchifbychif)
   s1_v1v2 = conf_v1v2.height_from_level(0.68)
   s2_v1v2 = conf_v1v2.height_from_level(0.95)
-  
+
   conf_v1 = confidence(P_dMfbyMf)
   s1_v1 = conf_v1.height_from_level(0.68)
   s2_v1 = conf_v1.height_from_level(0.95)

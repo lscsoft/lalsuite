@@ -58,7 +58,7 @@ functions within LAL.
 # import matplotlib.pyplot as pl
 #
 # # set a LALFrDetector object for the North Pole
-# frdt = lal.FrDetector()                                                 
+# frdt = lal.FrDetector()
 #
 # frdt.name = 'NORTHPOLE'
 # frdt.prefix = 'N1'
@@ -73,8 +73,8 @@ functions within LAL.
 # frdt.yArmMidpoint = 2000.
 #
 # # create lal.Detector object
-# det = lal.Detector()                                                
-# lal.CreateDetector(det, frdt, lal.LALDETECTORTYPE_IFODIFF)             
+# det = lal.Detector()
+# lal.CreateDetector(det, frdt, lal.LALDETECTORTYPE_IFODIFF)
 #
 # # create RA/dec grids uniform on sphere
 # ras = np.linspace(0, 2.*np.pi, 150)
@@ -409,7 +409,7 @@ class AntennaResponse(object):
                 self._dec = np.array([decrad], dtype='float64')
             except RuntimeError:
                 raise ValueError("Could not convert '{}' to a "
-                                 "declination".format(raval))
+                                 "declination".format(decval))
         else:
             raise TypeError("Declination must be an array")
 

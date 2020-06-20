@@ -9,16 +9,16 @@
 {% set url = "file://@TARBALL@" %}
 {% set sha256 = "@SHA256@" %}
 
-{% set lal_version = "6.20.0" %}
-{% set swig_version = "3.0.7" %}
+{% set lal_version = "6.21.0" %}
+{% set swig_version = "3.0.9" %}
 
 package:
-  name: {{ name }}
-  version: {{ version }}
+  name: "{{ name }}"
+  version: "{{ version }}"
 
 source:
-  url: {{ url }}
-  sha256: {{ sha256 }}
+  url: "{{ url }}"
+  sha256: "{{ sha256 }}"
 
 build:
   number: 9999
@@ -31,19 +31,23 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
+    - libgomp  # [linux]
+    - llvm-openmp  # [osx]
     - make
-    - pkg-config
+    - pkg-config >=0.18.0
     - swig >={{ swig_version }}
   host:
     - cfitsio
     - fftw * nompi*
     - gsl
-    - lal >={{ lal_version }} fftw*
+    - lal >={{ lal_version }}a0 fftw*
+    - libgomp  # [linux]
+    - llvm-openmp  # [osx]
   run:
     - cfitsio
     - fftw
     - gsl
-    - lal >={{ lal_version }}
+    - lal >={{ lal_version }}a0
 
 test:
   commands:
@@ -57,6 +61,12 @@ outputs:
 
   - name: python-lalpulsar
     script: install-python.sh
+    build:
+      error_overdepending: true
+      error_overlinking: true
+      ignore_run_exports:
+        # ignore run_exports from python's recipe
+        - python
     requirements:
       build:
         - {{ compiler('c') }}
@@ -66,48 +76,57 @@ outputs:
       host:
         - astropy
         - gsl
-        - lal >={{ lal_version }}
+        - lal >={{ lal_version }}a0
         - {{ pin_subpackage('lalpulsar', exact=True) }}
         - numpy
         - python
-        - python-lal >={{ lal_version }}
+        - python-lal >={{ lal_version }}a0
       run:
         - astropy
         - cfitsio
         - fftw
         - gsl
-        - lal >={{ lal_version }}
+        - lal >={{ lal_version }}a0
         - {{ pin_subpackage('lalpulsar', exact=True) }}
         - {{ pin_compatible('numpy') }}
         - python
-        - python-lal >={{ lal_version }}
+        - python-lal >={{ lal_version }}a0
         - six
     test:
+      requires:
+        - mock  # [py<33]
+        - pathlib  # [py<34]
+        - pytest >=4.0.0a0
+      source_files:
+        - python/Makefile
+        - test/python
+      commands:
+        - LAL_TEST_PKGDATADIR="${LALPULSAR_DATADIR}" python -m pytest -rs -v --junit-xml=junit.xml test/python
       imports:
         - lalpulsar
         - lalpulsar.NstarTools
         - lalpulsar.PulsarParametersWrapper
         - lalpulsar.simulateCW
     about:
-      home: https://wiki.ligo.org/Computing/LALSuite
-      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
-      dev_url: https://git.ligo.org/lscsoft/lalsuite/
-      license: GPLv2+
-      license_family: GPL
-      license_file: COPYING
-      summary: LSC Algorithm Pulsar Library
+      home: "https://wiki.ligo.org/Computing/LALSuite"
+      doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/"
+      dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
+      license: "GPL-2.0-or-later"
+      license_family: "GPL"
+      license_file: "COPYING"
+      summary: "LSC Algorithm Pulsar Library"
       description: |
         The LSC Algorithm Pulsar Library for gravitational wave data analysis.
         This package contains the python bindings.
 
 about:
-  home: https://wiki.ligo.org/Computing/LALSuite
-  doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
-  dev_url: https://git.ligo.org/lscsoft/lalsuite/
-  license: GPLv2+
-  license_family: GPL
-  license_file: COPYING
-  summary: LSC Algorithm Pulsar Library
+  home: "https://wiki.ligo.org/Computing/LALSuite"
+  doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/"
+  dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
+  license: "GPL-2.0-or-later"
+  license_family: "GPL"
+  license_file: "COPYING"
+  summary: "LSC Algorithm Pulsar Library"
   description: |
     The LSC Algorithm Pulsar Library for gravitational wave data analysis.
     This package contains the shared-object libraries needed to run

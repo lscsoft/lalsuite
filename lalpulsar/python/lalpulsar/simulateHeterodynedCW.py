@@ -129,7 +129,7 @@ __date__ = git_version.date
 DOWNLOAD_URL = 'https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/{}'
 
 class HeterodynedCWSimulator(object):
-    
+
     def __init__(self, par, det, times=None, earth_ephem=None,
                  sun_ephem=None, time_corr=None, ephem='DE405', units='TCB',
                  t0=None, dt=None):
@@ -152,7 +152,7 @@ class HeterodynedCWSimulator(object):
         @param dt: the time steps (in seconds) in the data over which to
             average the detector response. If not given and @b times is set,
             the the time difference between the first two values in @b times
-            will be used. 
+            will be used.
         @param earth_ephem: a file containing the Earth ephemeris information.
             If not set then a default file will be used.
         @param sun_ephem: a file containing the Earth ephemeris information.
@@ -172,17 +172,17 @@ class HeterodynedCWSimulator(object):
         """
 
         self.__hetpar = self._read_par(par)
-        self._set_detector(det)
+        self.detector = det
         self.times = times
 
         # set default ephemeris strings
-        self.__earthstr = 'earth00-40-{}.dat.gz'
-        self.__sunstr = 'sun00-40-{}.dat.gz'
-        self.__timecorrstr = '{}_2000-2040.dat.gz'
+        self.__earthstr = "earth00-40-{}.dat.gz"
+        self.__sunstr = "sun00-40-{}.dat.gz"
+        self.__timecorrstr = "{}_2000-2040.dat.gz"
 
         # mapping between time units and time correction file prefix
-        self.__units_map = {'TCB': 'te405',
-                            'TDB': 'tdb'}
+        self.__units_map = {"TCB": "te405",
+                            "TDB": "tdb"}
 
         self.ephem = ephem
         self.units = units
@@ -204,13 +204,31 @@ class HeterodynedCWSimulator(object):
             self.__hetSSBdelay = None
 
         # set the "heterodyne" BSB time delay
-        if self.times is not None and self.hetpar['BINARY'] is not None:
+        if self.times is not None and self.hetpar["BINARY"] is not None:
             self.__hetBSBdelay = lalpulsar.HeterodynedPulsarGetBSBDelay(self.hetpar.PulsarParameters(),
                                                                         self.gpstimes,
                                                                         self.__hetSSBdelay,
                                                                         self.__edat)
         else:
             self.__hetBSBdelay = None
+
+        # set the "heterodyne" glitch phase
+        if self.times is not None and self.hetpar["GLEP"] is not None:
+            self.__hetglitchphase = lalpulsar.HeterodynedPulsarGetGlitchPhase(self.hetpar.PulsarParameters(),
+                                                                              self.gpstimes,
+                                                                              self.__hetSSBdelay,
+                                                                              self.__hetBSBdelay)
+        else:
+            self.__hetglitchphase = None
+
+        # set the "heterodyne" FITWAVES phase
+        if self.times is not None and self.hetpar["WAVESIN"] is not None and self.hetpar["WAVECOS"] is not None:
+            self.__hetfitwavesphase = lalpulsar.HeterodynedPulsarGetGlitchPhase(self.hetpar.PulsarParameters(),
+                                                                                self.gpstimes,
+                                                                                self.__hetSSBdelay,
+                                                                                self.hetpar["F0"])
+        else:
+            self.__hetfitwavesphase = None
 
         # set the response function
         if self.times is None and t0 is None:
@@ -231,8 +249,8 @@ class HeterodynedCWSimulator(object):
             else:
                 self.__dt = dt
 
-        ra = self.hetpar['RA'] if self.hetpar['RAJ'] is None else self.hetpar['RAJ']
-        dec = self.hetpar['DEC'] if self.hetpar['DECJ'] is None else self.hetpar['DECJ']
+        ra = self.hetpar["RA"] if self.hetpar["RAJ"] is None else self.hetpar["RAJ"]
+        dec = self.hetpar["DEC"] if self.hetpar["DECJ"] is None else self.hetpar["DECJ"]
         if ra is None or dec is None:
             raise ValueError("Right ascension and/or declination have not "
                              "been set!")
@@ -248,7 +266,12 @@ class HeterodynedCWSimulator(object):
     def hetpar(self):
         return self.__hetpar
 
-    def _set_detector(self, det):
+    @property
+    def detector(self):
+        return self.__detector
+
+    @detector.setter
+    def detector(self, det):
         if isinstance(det, lal.Detector):
             # value is already a lal.Detector
             self.__detector = det
@@ -263,10 +286,6 @@ class HeterodynedCWSimulator(object):
                                      "name.".format(det))
 
         self.__detector_name = self.__detector.frDetector.name
-
-    @property
-    def detector(self):
-        return self.__detector
 
     @property
     def resp(self):
@@ -314,7 +333,7 @@ class HeterodynedCWSimulator(object):
             raise TypeError("Unknown data type for times")
 
         self.__gpstimes = lalpulsar.CreateTimestampVector(len(self.__times))
-        for i, time in enumerate(self.__times): 
+        for i, time in enumerate(self.__times):
             self.__gpstimes.data[i] = lal.LIGOTimeGPS(time)
 
     @property
@@ -333,10 +352,6 @@ class HeterodynedCWSimulator(object):
             self.__ephem = self.hetpar['EPHEM']
         else:
             self.__ephem = 'DE405' if ephem is None else ephem
-
-        if self.__ephem not in ['DE200', 'DE405', 'DE421', 'DE430']:
-            raise ValueError("Unknown ephemeris version '{}' has been "
-                             "given".format(self.__ephem))
 
     @property
     def units(self):
@@ -365,7 +380,8 @@ class HeterodynedCWSimulator(object):
             self.__units_type = lalpulsar.lalpulsar.TIMECORRECTION_TDB
 
     def model(self, newpar=None, updateSSB=False, updateBSB=False,
-              freqfactor=2., usephase=False, roq=False):
+              updateglphase=False, updatefitwaves=False, freqfactor=2.,
+              usephase=False, roq=False):
         """
         Compute the heterodyned strain model using
         XLALHeterodynedPulsarGetModel().
@@ -379,6 +395,12 @@ class HeterodynedCWSimulator(object):
         @param updateBSB: set to @c True to update the binary system barycentring
             time delays compared to those used in heterodying, i.e., if the
             @b newpar contains updated binary system parameters
+        @param updateglphase: set to @c True to update the pulsar glitch
+            evolution compared to that used in heterodyning, i.e., if the @b newpar
+            contains updated glitch parameters.
+        @param updatefitwaves: set to @c True to update the pulsar FITWAVES phase
+            evolution (used to model strong red timing noise) compared to that
+            used in heterodyning.
         @param freqfactor: the factor by which the frequency evolution is
             multiplied for the source model. This defaults to 2 for emission
             from the \f$l=m=2\f$ quadrupole mode.
@@ -397,26 +419,24 @@ class HeterodynedCWSimulator(object):
         else:
             parupdate = self.hetpar
 
-        # get frequency differences
-        if usephase:
-            if parupdate['DELTAF'] is None:
-                try:
-                    parupdate['DELTAF'] = parupdate['F'] - self.hetpar['F']
-                except Exception as e:
-                    raise ValueError("Frequencies are not set in parameter "
-                                     "objects: {}".format(e))
+        origpar = self.hetpar
 
         self.__nonGR = self._check_nonGR(parupdate)
         compstrain = lalpulsar.HeterodynedPulsarGetModel(parupdate.PulsarParameters(),
+                                                         origpar.PulsarParameters(),
                                                          freqfactor,
                                                          int(usephase),  # phase is varying between par files
                                                          int(roq),       # using ROQ?
                                                          self.__nonGR,   # using non-tensorial modes?
                                                          self.gpstimes,
-                                                         self.__hetSSBdelay,
+                                                         self.ssbdelay,
                                                          int(updateSSB),  # the SSB delay should be updated compared to hetSSBdelay
-                                                         self.__hetBSBdelay,
+                                                         self.bsbdelay,
                                                          int(updateBSB),  # the BSB delay should be updated compared to hetBSBdelay
+                                                         self.glitchphase,
+                                                         int(updateglphase),
+                                                         self.fitwavesphase,
+                                                         int(updatefitwaves),
                                                          self.resp,
                                                          self.__edat,
                                                          self.__tdat,
@@ -439,6 +459,22 @@ class HeterodynedCWSimulator(object):
                 raise IOError("Could not read in parameter file: '{}'".format(par))
         else:
             raise TypeError("The parameter file must be a string")
+
+    @property
+    def ssbdelay(self):
+        return self.__hetSSBdelay
+
+    @property
+    def bsbdelay(self):
+        return self.__hetBSBdelay
+
+    @property
+    def glitchphase(self):
+        return self.__hetglitchphase
+
+    @property
+    def fitwavesphase(self):
+        return self.__hetfitwavesphase
 
     def _check_nonGR(self, par):
         """

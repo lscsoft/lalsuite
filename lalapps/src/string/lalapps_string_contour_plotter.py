@@ -42,13 +42,11 @@ matplotlib.rcParams.update({
 	"savefig.dpi": 300,
 	"text.usetex": True
 })
-from matplotlib import figure, cm
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 import numpy
 from optparse import OptionParser
-import sys
 
 from lalburst import git_version
 
@@ -64,7 +62,7 @@ def parse_command_line():
     parser.add_option("-v", "--verbose", action = "store_true",
                       help = "Be verbose.")
     parser.add_option("-t", "--live-time", dest="livetime",
-                      type = "float", 
+                      type = "float",
                       help = "The total amount of live time in the run")
 
     options, filenames = parser.parse_args()

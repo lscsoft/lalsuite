@@ -7,9 +7,9 @@ crash_dumps_octave_core(0);
 ## check module load
 disp("checking module load ...");
 lalpulsar;
-assert(exist("lalpulsar", "var"));
+assert(exist("lalpulsar"));
 lal;
-assert(exist("lal", "var"));
+assert(exist("lal"));
 disp("PASSED module load");
 
 ## check object parent tracking
@@ -27,5 +27,19 @@ clear ans;
 LALCheckMemoryLeaks();
 disp("PASSED object parent tracking");
 
+# check multi-vector element assignment
+disp("checking multi-vector element assignment ...");
+mts = XLALCreateMultiLIGOTimeGPSVector(2);
+ts0 = XLALCreateTimestampVector(3);
+mts.data(1) = ts0;
+lal.swig_set_nasty_error_handlers();
+clear mts;
+clear ts0;
+lal.swig_set_nice_error_handlers();
+disp("PASSED multi-vector element assignment");
+
 ## passed all tests!
 disp("PASSED all tests");
+if exist("swig_exit")
+   swig_exit;
+endif

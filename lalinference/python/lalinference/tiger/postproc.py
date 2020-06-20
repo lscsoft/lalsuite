@@ -42,11 +42,10 @@ from itertools import combinations
 from itertools import cycle
 from matplotlib import use, rcParams, __version__ as mpl_version
 use('Agg')
-from matplotlib.pyplot import clf, figure, savefig
+from matplotlib.pyplot import clf, figure
 from os import access, path, R_OK, makedirs
-from scipy.stats import itemfreq, ks_2samp
+from scipy.stats import ks_2samp
 from scipy.stats.mstats import mquantiles
-from string import whitespace
 from subprocess import Popen, PIPE
 from sys import exit, stdout, version_info, float_info
 from time import time
@@ -148,7 +147,7 @@ def TigerPostProcess(configfile):
 
 	# CONFIGURATION FILE: CHECKING FILE
 	stdout.write("Configuration file: checking file\n")
-	if access(configfile, R_OK): 
+	if access(configfile, R_OK):
 		config = ConfigParser()
 		config.read(configfile)
 	else:
@@ -163,7 +162,7 @@ def TigerPostProcess(configfile):
 	engine=config.get('run','engine').split(',')
 	runid = config.get('run','runid')
 	labels=config.get('fetch','labels').split(',')
-	
+
 	latexlabels_str = config.get('fetch','latexlabels')
 	matches=findall(r'\$(.+?)\$',latexlabels_str)
 	latexlabels=["$%s$"%s for s in matches]
@@ -217,11 +216,11 @@ def TigerPostProcess(configfile):
 		html_files_sources.append(path.join(localdest,tigerruns[i].label+'.dat'))
 		tigerruns[i].savetoascii(html_files_sources[-1])
 		stdout.write('... Saving data: %s\n' % html_files_sources[-1])
-	
+
 	# APPLY CUTS
 	stdout.write("Applying cuts\n")
 	for tg in tigerruns:
-		tg.applycut(st=fetch_snrthres, bt=fetch_bayesgrthres) 
+		tg.applycut(st=fetch_snrthres, bt=fetch_bayesgrthres)
 
 	# SHUFFLE REALISATIONS
 	#if fetch_seed != 0:
@@ -308,7 +307,7 @@ def TigerPostProcess(configfile):
 			fig.savefig(html_files_snrvsodds[-1], bbox_inches='tight')
 
 	# CUMULATIVE FREQUENCY PLOTS
-	html_files_cumfreq = [[]]*len(tigerruns) 
+	html_files_cumfreq = [[]]*len(tigerruns)
 	if plot_cumfreq == True:
 		stdout.write("... Cumulative frequency\n")
 		for i in range(len(tigerruns)):
@@ -322,7 +321,7 @@ def TigerPostProcess(configfile):
 				fig.savefig(html_files_cumfreq[i][-1],bbox_inches='tight')
 
 	# CUMULATIVE BAYES PLOTS
-	html_files_cumbayes = [[]]*len(tigerruns) 
+	html_files_cumbayes = [[]]*len(tigerruns)
 	N_sources = array(N_sources)
 	stdout.write("... Cumulative Bayes\n")
 	if plot_cumbayes == True:
@@ -392,7 +391,7 @@ def TigerPostProcess(configfile):
 		<tr>
 		<td>catsize</td>
 		"""
-		for ns in N_sources: 
+		for ns in N_sources:
 			htmltxt+='<td>'+str(ns)+'</td>'
 		htmltxt+='</tr>'
 
@@ -451,7 +450,7 @@ def TigerPostProcess(configfile):
 		if ".png" in item:
 			itembase = path.basename(item)
 			htmltxt+="<a href='"+itembase+"'>"+"<img src='"+itembase+"' width=512></a>"
-	
+
 	# PREPARE INDIVIDUAL PAGES
 	htmltxt+=\
 	"""
@@ -493,7 +492,7 @@ def TigerPostProcess(configfile):
 			if ".png" in item:
 				itembase = path.basename(item)
 				indhtmltxt+="<a href='"+itembase+"'>"+"<img src='"+itembase+"' width=512></a>"
-		
+
 		# CUMBAYES
 		indhtmltxt+=\
 		"""
@@ -518,7 +517,7 @@ def TigerPostProcess(configfile):
 	#
 	#############################################################################
 
-	
+
 	#############################################################################
 	#
 	# EXIT MAIN
@@ -663,7 +662,7 @@ class TigerRun:
 		if self.nsources == 0:
 			stdout.write("... pulling SNRs: %s\t%s - nothing to fetch\n" % (self.cluster,self.directory))
 		else:
-			command = "" 
+			command = ""
 			if self.cluster != 'local':
 				command+="gsissh -C "+clusters[self.cluster]+" '"
 			command+="cat"
@@ -684,7 +683,7 @@ class TigerRun:
 				if ndet == 1:
 					self.snr.append(float(snrrawdata[count+ndet-1].strip('%s:'%(self.detectors[k])).strip()))
 					count+=1
-				else: 
+				else:
 					self.snr.append(float(snrrawdata[count+ndet].strip('Network:').strip()))
 					count+=ndet+1
 			self.snr = array(self.snr)
@@ -693,14 +692,14 @@ class TigerRun:
 	def pullposteriors(self):
 		"""
 		Download posterior pdfs from remote location. Only works after sources are
-		found by the searchsources function. 
+		found by the searchsources function.
 		NB: NOT READY FOR USE YET!
 		"""
 		if self.nsources == 0:
 			print("Nothing to fetch")
 		else:
 			# FIND THE NUMBER OF LINE FIRST SO THAT ONE CAN DIFFERENTIATE FILES
-			command = "" 
+			command = ""
 			if self.cluster != 'local':
 				command+="gsissh -C "+clusters[self.cluster]+" '"
 			command+="wc -l"
@@ -713,7 +712,7 @@ class TigerRun:
 			print(shape(posteriorfilesizes))
 
 			# PULLING THE POSTERIOR SAMPLES
-			command = "" 
+			command = ""
 			if self.cluster != 'local':
 				command+="gsissh -C "+clusters[self.cluster]+" '"
 			command+="cat"
@@ -725,7 +724,7 @@ class TigerRun:
 			self.posteriorsamples = loadtxt(p.stdout)
 			print(shape(self.posteriorsamples))
 
-	
+
 	def applycut(self, st=8.0, bt=32.0):
 		"""
 		Apply a Bayes factor and SNR cut on the data
@@ -769,7 +768,7 @@ class TigerSet:
 
 		# SET ENGINE
 		if engine in ['lalinference','lalnest']: # engine: either lalnest or lalinference
-			self.engine = engine 
+			self.engine = engine
 		else:
 			exit('Engine not recognised')
 
@@ -859,7 +858,7 @@ class TigerSet:
 		"""
 		APPLY DETECTION CUTS (SNR AND BAYESGR)
 		"""
-		
+
 		print("... Shuufling with seed", str(seed))
 
 		# CREATE NEW ORDER OF SOURCES
@@ -880,10 +879,10 @@ class TigerSet:
 		# SAVING TO PICKLE
 		f = open(dest,'wb')
 		dump(self,f,2)
-	
+
 	def savetoascii(self,filename):
 		"""
-		SAVE DATA TO ASCII FILE FOR QUICK FUTURE LOADING. 
+		SAVE DATA TO ASCII FILE FOR QUICK FUTURE LOADING.
 		NB: BROKEN - DO NOT USE!
 		"""
 		# PRINT DATA FOR FUTURE USE
@@ -896,10 +895,10 @@ class TigerSet:
 		header = array(concatenate((["#cluster",'folder','gps'],self.subhyp,['netsnr'])))
 		savedata = vstack((header,savedata))
 		savetxt(filename,savedata,delimiter='\t',fmt='%s')
-	
+
 	def preprocess(self):
 		"""
-		PREPROCESS DATA ON THE CLUSTERS BEFORE SENDING DATA TO MASTER. 
+		PREPROCESS DATA ON THE CLUSTERS BEFORE SENDING DATA TO MASTER.
 		NB: UNDER DEVELOPMENT
 		"""
 		for loc in self.locations:
@@ -1098,8 +1097,8 @@ def TigerCreateCumFreq(tigerrun, axis):
 	"""
 	xlim = [5.0,100.0]
 	snrrange = arange(xlim[0], xlim[1], 5.)
-	nsnrsteps = len(snrrange) 
-	freqs = zeros((nsnrsteps,tigerrun.nsubhyp)) 
+	nsnrsteps = len(snrrange)
+	freqs = zeros((nsnrsteps,tigerrun.nsubhyp))
 
 	for i in range(nsnrsteps):
 		if snrrange[i] > min(tigerrun.snr):
@@ -1223,7 +1222,7 @@ engine=engine1,engine2
 # Subhypotheses: Notation depends on engine.
 #		lalnest: dphi1,dphi2,...
 #		lalinference: dchi1,dchi2,...
-hypotheses=dphi1,dphi2,dphi3 
+hypotheses=dphi1,dphi2,dphi3
 
 # Run identifier (used in filenames for plots)
 runid=name_for_run
@@ -1299,7 +1298,7 @@ bins=50
 # Number of sources per catalog for the histograms
 nsources=1,15
 
-# Limits on the x-axis. Use xlim=0,0 for automatic determination (range will be 
+# Limits on the x-axis. Use xlim=0,0 for automatic determination (range will be
 # the same for ALL sizes of the catalog).
 xlim=0,0
 
@@ -1321,7 +1320,7 @@ def TigerPreProcess(preprocessfile):
 	TIGER PREPROCESSOR FUNCTION
 	NB: UNDER DEVELOPMENT
 	"""
-	if access(preprocessfile, R_OK): 
+	if access(preprocessfile, R_OK):
 		preprocessfp = open(preprocessfile,'r')
 		args = preprocessfp.read().split('\t')
 		subhyp= args[3][1:-1].replace("'","").replace(" ","").split(',')

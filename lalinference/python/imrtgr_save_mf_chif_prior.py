@@ -1,8 +1,8 @@
-""" 
-Compute the prior distribution in the mass and spin (Mf, af) of the final black hole 
-corresponding to a uniform prior in component masses and spins. 
+"""
+Compute the prior distribution in the mass and spin (Mf, af) of the final black hole
+corresponding to a uniform prior in component masses and spins.
 
-P. Ajith, 2015-09-20 
+P. Ajith, 2015-09-20
 
 $Id:$
 """
@@ -10,14 +10,14 @@ $Id:$
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
-import numpy as np 
+import numpy as np
 import lalinference.imrtgr.imrtgrutils as tgr
 from scipy import interpolate as interp
 import pickle, gzip
 from optparse import OptionParser
 from matplotlib import rc
 import matplotlib
-matplotlib.rc('text.latex', preamble = '\usepackage{txfonts}')
+matplotlib.rc('text.latex', preamble=r'\usepackage{txfonts}')
 
 rc('text', usetex=True)
 rc('font', family='serif')
@@ -44,7 +44,7 @@ def set_tick_sizes(ax, major, minor):
   ax.xaxis.LABELPAD=10.
   ax.xaxis.OFFSETTEXTPAD=10.
 
-# read inputs from command line 
+# read inputs from command line
 parser = OptionParser()
 parser.add_option("--fit-formula", dest="fit_formula",
                   help="fitting formula for the mass/spin of the final BH [options: 'nospin_Pan2011', 'nonprecspin_Healy2014']")
@@ -80,32 +80,32 @@ N_bins = int(options.N_bins)
 Mf_lim = float(options.Mf_lim)
 af_lim = float(options.af_lim)
 num_threads = int(options.num_threads)
-if options.spin_angle_dist == None: 
+if options.spin_angle_dist == None:
   spin_angle_dist = 'aligned'
-else: 
+else:
   spin_angle_dist = options.spin_angle_dist
 
-# create the bins over which the histograms will be comptued 
+# create the bins over which the histograms will be comptued
 Mf_bins = np.linspace(-Mf_lim, Mf_lim, N_bins)
 af_bins = np.linspace(-af_lim, af_lim, N_bins)
 P_Mfaf_pr = tgr.calc_Mfchif_prior(comp_mass_min, comp_mass_max, comp_spin_min, comp_spin_max, Mf_bins, af_bins, fit_formula, spin_angle_dist, N_sampl, num_threads)
-print('... calculated the prior') 
+print('... calculated the prior')
 
-# create an interpolation object and save it 
+# create an interpolation object and save it
 Mf_bins = (Mf_bins[:-1] + Mf_bins[1:])/2.
 af_bins = (af_bins[:-1] + af_bins[1:])/2.
 outfile = 'Prior_Mfaf_%s_comp_mass_min%2.1f_comp_mass_max%2.1f_comp_spin_min%2.1f_comp_spin_max%2.1f_%s'%(fit_formula, comp_mass_min, comp_mass_max, comp_spin_min, comp_spin_max, spin_angle_dist)
 P_Mfaf_pr_interp_obj = interp.interp2d(Mf_bins, af_bins, P_Mfaf_pr, fill_value=0., bounds_error=False)
 f = gzip.open(outfile+".pklz",'wb')
 pickle.dump(P_Mfaf_pr_interp_obj, f)
-print('... saved the interpolation object.') 
+print('... saved the interpolation object.')
 
-# read the interpolation object, reconstruct the data from the interpolation object. This is only used for estimating the error due to the interpolation 
+# read the interpolation object, reconstruct the data from the interpolation object. This is only used for estimating the error due to the interpolation
 f = gzip.open(outfile+".pklz",'rb')
 P_Mfaf_pr_interp_obj = pickle.load(f)
 P_Mfaf_pr_interp = P_Mfaf_pr_interp_obj(Mf_bins, af_bins)
 
-# difference between the original and interpolated data 
+# difference between the original and interpolated data
 interp_err = abs(P_Mfaf_pr-P_Mfaf_pr_interp)
 print('... maximum difference between the original and interpolated data is %e' %np.max(interp_err))
 
@@ -142,7 +142,7 @@ plt.colorbar()
 plt.title('Difference')
 plt.savefig(outfile+'.png', dpi=300)
 
-# save a zoomed version of the figure 
+# save a zoomed version of the figure
 plt.subplot(131)
 plt.xlim(50,150)
 plt.ylim(0,1)

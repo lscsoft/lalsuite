@@ -27,7 +27,6 @@
 
 
 import random
-import sys
 import lal
 
 

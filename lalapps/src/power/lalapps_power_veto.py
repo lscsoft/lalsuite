@@ -162,7 +162,7 @@ WHERE
 			AND event_id NOT IN (
 				SELECT
 					coinc_event_id
-				FROM 
+				FROM
 					coinc_event
 			)
 	)
@@ -232,7 +232,7 @@ WHERE
 	coinc_event_map.coinc_event_id NOT IN (
 		SELECT
 			coinc_event_id
-		FROM 
+		FROM
 			coinc_event
 	)
 	""")
@@ -246,7 +246,7 @@ WHERE
 	multi_burst.coinc_event_id NOT IN (
 		SELECT
 			coinc_event_id
-		FROM 
+		FROM
 			coinc_event
 	)
 	""")

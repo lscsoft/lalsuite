@@ -82,7 +82,12 @@ test/LALSimulationTest
 test/OpenMPTest
 test/PhenomP_Test*dat
 test/PhenomPTest
+test/PhenomNSBHTest
+test/BHNSRemnantFitsTest
+test/NSBHPropertiesTest
+test/SEOBNRv4_ROM_NRTidalv2_NSBH_Test
 test/PNCoefficients
+test/PrecessingHlmsTest
 test/PrecessWaveformEOBNRTest
 test/PrecessWaveformIMRPhenomBTest
 test/PrecessWaveformTest
@@ -93,6 +98,7 @@ test/simulation-FD-*.dat
 test/simulation-TD-*.dat
 test/simulation.dat
 test/SphHarmTSTest
+test/SpinTaylorHlmsTest
 test/SpinTaylorT4DynamicsTest
 test/ST2-dynamics.dat
 test/ST4-dynamics.dat

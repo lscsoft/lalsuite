@@ -12,7 +12,6 @@ __author__ = 'Matthew Pitkin <matthew.pitkin@ligo.org>'
 __date__ = '$Date$'
 __version__ = '$Revision$'
 
-import string
 import os
 import re
 from glue import pipeline
@@ -163,7 +162,7 @@ class knopeDAG(pipeline.CondorDAG):
           print("Error... 'starttime' either be a single 'int', or a dictionary containing all detectors with an integer or list of integers.", file=sys.stderr)
           self.error_code = KNOPE_ERROR_GENERAL
           return
-      
+
       for stkey in dict(self.starttime):
         if isinstance(self.starttime[stkey], int):
           # convert to list
@@ -225,7 +224,7 @@ class knopeDAG(pipeline.CondorDAG):
         self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
-        self.ndatasets[ifo] = len(self.starttime[ifo])    
+        self.ndatasets[ifo] = len(self.starttime[ifo])
 
     # Get the pre-processing engine (heterodyne or SplInter - default to heterodyne)
     if not self.postonly:
@@ -373,7 +372,7 @@ class knopeDAG(pipeline.CondorDAG):
 
         # check that .par file contains ephemeris information and units (if not present defaults will be used - see get_ephemeris)
         if psr['EPHEM'] != None:
-          if psr['EPHEM'] not in ['DE200', 'DE405', 'DE414', 'DE421', 'DE430']:
+          if psr['EPHEM'] not in ['DE200', 'DE405', 'DE414', 'DE421', 'DE430', 'DE436']:
             print("Unregconised ephemeris '%s' in '%s'. Skipping this source" % (psr['EPHEM'], par))
             self.skipped_pulsars[par] = "Unregconised ephemeris '%s'" % psr['EPHEM']
             continue
@@ -1268,7 +1267,7 @@ class knopeDAG(pipeline.CondorDAG):
 
             if self.pe_starttime is not None:
               penode.set_start_time(self.pe_starttime)  # set start time of data to use
-            
+
             if self.pe_endtime is not None:
               penode.set_end_time(self.pe_endtime)      # set end time of data to use
 
@@ -1530,7 +1529,7 @@ class knopeDAG(pipeline.CondorDAG):
           print("Error... no 'priortype' given for parameter '%s'" % prioritem, file=sys.stderr)
           self.error_code = KNOPE_ERROR_GENERAL
           return outfile
-        
+
         ptype = prior_options[prioritem]['priortype']
 
         if ptype != 'gmm':
@@ -1611,7 +1610,7 @@ class knopeDAG(pipeline.CondorDAG):
             print("Error... number of weights must be equal to the number of modes", file=sys.stderr)
             self.error_code = KNOPE_ERROR_GENERAL
             return outfile
-          
+
           if 'ranges' in prior_options[prioritem]:
             ranges = prior_options[prioritem]['ranges']
 
@@ -1839,10 +1838,10 @@ class knopeDAG(pipeline.CondorDAG):
 
       for prioritem in prior_options:
         ptype = prior_options[prioritem]['priortype']
-        
+
         if ptype != 'gmm':
           rangevals = prior_options[prioritem]['ranges']
-        
+
           if len(rangevals) != 2:
             print("Error... the ranges in the prior for '%s' are not set properly" % prioritem, file=sys.stderr)
             self.error_code = KNOPE_ERROR_GENERAL
@@ -1908,7 +1907,7 @@ class knopeDAG(pipeline.CondorDAG):
             print("Error... number of weights must be equal to the number of modes", file=sys.stderr)
             self.error_code = KNOPE_ERROR_GENERAL
             return outfile
-          
+
           if 'ranges' in prior_options[prioritems]:
             ranges = prior_options[prioritem]['ranges']
 
@@ -2420,7 +2419,7 @@ class knopeDAG(pipeline.CondorDAG):
                 finetmpfiles[-1] += '.gz'
 
               self.add_node(finenode)
-            
+
             if self.ndatasets[ifo] > 1:
               if k == self.ndatasets[ifo]-1:
                 concatnode.set_files(finetmpfiles)
@@ -3066,7 +3065,7 @@ class knopeDAG(pipeline.CondorDAG):
           else:
             if not isinstance(datafind[ifo], list):
               datafind[ifo] = [datafind[ifo]]
-            
+
             self.cache_files[ifo] = []
             for cachefile in datafind[ifo]:
               if not os.path.isfile(cachefile):
@@ -3321,7 +3320,7 @@ class knopeDAG(pipeline.CondorDAG):
           return
         else:
           segmenttype = segmenttypes[ifo]
-      
+
       # is multiple segment types are specified (comma seperated string), loop
       # over them and find the intersection
       segtypes = [sts.strip() for sts in segmenttype.split(',')]  # split and strip whitespace
@@ -3358,10 +3357,10 @@ class knopeDAG(pipeline.CondorDAG):
 
               for j in range(len(segextypes)):
                 exquery = DataQualityFlag.query_dqsegdb(segextypes[i], st, et, url=server)
-                
+
                 # exclude segments
                 query = query & ~exquery
-        
+
         if segquery is None:
           segquery = query.copy()
         else:

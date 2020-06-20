@@ -176,17 +176,20 @@ void generate_interpolant( LALInferenceRunState *runState ){
     /* create a copy of the model vector */
     LIGOTimeGPS gpstime = {0, 0};
     REAL8Vector *sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "siderealDay" );
-    REAL8Vector *ssbdelays = NULL, *bsbdelays = NULL;
+    REAL8Vector *ssbdelays = NULL, *bsbdelays = NULL, *glitchphase = NULL;
 
     LIGOTimeGPSVector *timenodes = NULL;
     REAL8Vector *sidtimenodes = NULL;
-    REAL8Vector *ssbnodes = NULL, *bsbnodes = NULL;
+    REAL8Vector *ssbnodes = NULL, *bsbnodes = NULL, *gpnodes = NULL;
 
     data->roq = XLALMalloc(sizeof(LALInferenceROQData));
 
     ssbdelays = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "ssb_delays" );
     if ( LALInferenceCheckVariable( ifo->params, "bsb_delays") ){
       bsbdelays = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "bsb_delays" );
+    }
+    if ( LALInferenceCheckVariable( ifo->params, "glitch_phase" ) ){
+      glitchphase = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "glitch_phase" );
     }
 
     if ( inputroq ) {
@@ -258,17 +261,25 @@ void generate_interpolant( LALInferenceRunState *runState ){
           LALInferenceRemoveVariable( ifotmp->params, "bsb_delays" );
         }
 
+        REAL8Vector *thisglitchphase = NULL;
+        if ( glitchphase != NULL ){
+          thisglitchphase = XLALCreateREAL8Vector( tlen );
+          LALInferenceRemoveVariable( ifotmp->params, "glitch_phase" );
+        }
+
         /* get chunk times */
         for ( j=0; j<tlen; j++ ){
           ifotmp->times->data[j] = ifo->times->data[startidx+j];
           thissiddayfrac->data[j] = sidDayFrac->data[startidx+j];
           thisssbdelay->data[j] = ssbdelays->data[startidx+j];
           if ( bsbdelays != NULL ){ thisbsbdelay->data[j] = bsbdelays->data[startidx+j]; }
+          if ( glitchphase != NULL ){ thisglitchphase->data[j] = glitchphase->data[startidx+j]; }
         }
 
         LALInferenceAddVariable( ifotmp->params, "siderealDay", &thissiddayfrac, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
         LALInferenceAddVariable( ifotmp->params, "ssb_delays", &thisssbdelay, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
         if ( bsbdelays != NULL ){ LALInferenceAddVariable( ifotmp->params, "bsb_delays", &thisbsbdelay, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED ); }
+        if ( glitchphase != NULL ){ LALInferenceAddVariable( ifotmp->params, "glitch_phase", &thisglitchphase, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED ); }
 
         REAL8Vector *deltas = XLALCreateREAL8Vector( 1 );
         deltas->data[0] = dt;
@@ -572,12 +583,14 @@ void generate_interpolant( LALInferenceRunState *runState ){
       sidtimenodes = XLALResizeREAL8Vector( sidtimenodes, tnlength );
       ssbnodes = XLALResizeREAL8Vector( ssbnodes, tnlength );
       if ( bsbdelays != NULL ){ bsbnodes = XLALResizeREAL8Vector( bsbnodes, tnlength ); }
+      if ( glitchphase != NULL ){ gpnodes = XLALResizeREAL8Vector( gpnodes, tnlength ); }
 
       for ( j=0; j<nbases0; j++ ){
         timenodes->data[dlen+j] = ifo->times->data[startidx+interp->nodes[j]];
         sidtimenodes->data[dlen+j] = sidDayFrac->data[startidx+interp->nodes[j]];
         ssbnodes->data[dlen+j] = ssbdelays->data[startidx+interp->nodes[j]];
         if ( bsbdelays != NULL ){ bsbnodes->data[dlen+j] = bsbdelays->data[startidx+interp->nodes[j]]; }
+        if ( glitchphase != NULL ){ gpnodes->data[dlen+j] = glitchphase->data[startidx+interp->nodes[j]]; }
       }
 
       dlen += nbases0;
@@ -589,12 +602,14 @@ void generate_interpolant( LALInferenceRunState *runState ){
 
       ssbnodes = XLALResizeREAL8Vector( ssbnodes, tnlength );
       if ( bsbdelays != NULL ){ bsbnodes = XLALResizeREAL8Vector( bsbnodes, tnlength ); }
+      if ( glitchphase != NULL ){ gpnodes = XLALResizeREAL8Vector( gpnodes, tnlength ); }
 
       for ( j=0; j<nbases0quad; j++ ){
         timenodes->data[dlen+j] = ifo->times->data[startidx+interpquad->nodes[j]];
         sidtimenodes->data[dlen+j] = sidDayFrac->data[startidx+interpquad->nodes[j]];
         ssbnodes->data[dlen+j] = ssbdelays->data[startidx+interpquad->nodes[j]];
         if ( bsbdelays != NULL ){ bsbnodes->data[dlen+j] = bsbdelays->data[startidx+interpquad->nodes[j]]; }
+        if ( glitchphase != NULL ){ gpnodes->data[dlen+j] = glitchphase->data[startidx+interpquad->nodes[j]]; }
       }
 
       LALInferenceRemoveCOMPLEXROQInterpolant( interp );
@@ -632,6 +647,14 @@ void generate_interpolant( LALInferenceRunState *runState ){
       LALInferenceRemoveVariable( ifo->params, "bsb_delays" );
       LALInferenceAddVariable( ifo->params, "bsb_delays", &bsbnodes, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
       LALInferenceAddVariable( ifo->params, "bsb_delays_full", &bsbcopy, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+    }
+
+    if ( glitchphase != NULL ){
+      REAL8Vector *glitchphasecopy = XLALCreateREAL8Vector( glitchphase->length );
+      memcpy(glitchphasecopy->data, glitchphase->data, sizeof(REAL8)*glitchphase->length);
+      LALInferenceRemoveVariable( ifo->params, "glitch_phase" );
+      LALInferenceAddVariable( ifo->params, "glitch_phase", &gpnodes, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+      LALInferenceAddVariable( ifo->params, "glitch_phase_full", &glitchphasecopy, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
     }
 
     ifo->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo->compTimeSignal, 0, dmlength+mmlength );

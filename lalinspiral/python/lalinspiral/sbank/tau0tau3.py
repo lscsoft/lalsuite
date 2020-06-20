@@ -21,9 +21,7 @@ from math import sqrt
 
 import numpy
 from numpy.random.mtrand import uniform
-from scipy.optimize import fsolve
 
-from glue.iterutils import choices
 from lal import PI, MTSUN_SI
 
 #
@@ -564,7 +562,7 @@ def double_spin_precessing_param_generator(flow, tmplt_class, bank, **kwargs):
         spin2ang2 = uniform(0, 2*numpy.pi)
         spin1z = spin1mag * numpy.cos(spin1ang1)
         spin1x = spin1mag * numpy.sin(spin1ang1) * numpy.cos(spin1ang2)
-        spin1y = spin1mag * numpy.sin(spin1ang1) * numpy.sin(spin1ang2)    
+        spin1y = spin1mag * numpy.sin(spin1ang1) * numpy.sin(spin1ang2)
         spin2z = spin2mag * numpy.cos(spin2ang1)
         spin2x = spin2mag * numpy.sin(spin2ang1) * numpy.cos(spin2ang2)
         spin2y = spin2mag * numpy.sin(spin2ang1) * numpy.sin(spin2ang2)

@@ -149,7 +149,7 @@ int main(int argc,char *argv[])
     exit (1);
   }
 
-  XLAL_CHECK_MAIN ( (VCSInfoString = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
 
   /* Initialize code-setup */
   XLAL_CHECK_MAIN ( InitPFS ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -225,7 +225,7 @@ initUserVars ( UserInput_t *uvar )
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
   /* set a few defaults */
-  uvar->RngMedWindow = 50;	/* for running-median */
+  uvar->RngMedWindow = FstatOptionalArgsDefaults.runningMedianWindow;
 
   uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");

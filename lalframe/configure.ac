@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALFrame],[1.4.5.1],[lal-discuss@ligo.org])
+AC_INIT([LALFrame],[1.5.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([lib/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -25,6 +25,8 @@ AC_CONFIG_FILES([ \
   swig/Makefile \
   test/Makefile \
   test/python/Makefile \
+  test/python/test_python_imports.py \
+  test/python/test_python_scripts.py \
 ])
 AM_INIT_AUTOMAKE([ \
   1.11 \
@@ -38,10 +40,12 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.20.0"
+MIN_LAL_VERSION="6.21.0"
 MIN_FRAMECPPC_VERSION="2.5.5"
+MIN_FRAMEL_VERSION="8.39.2"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_FRAMECPPC_VERSION])
+AC_SUBST([MIN_FRAMEL_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -64,8 +68,8 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[10])
-AC_SUBST([LIBREVISION],[3])
+AC_SUBST([LIBCURRENT],[11])
+AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
@@ -145,9 +149,9 @@ AS_IF([test "${framec}" = "true"], [
 
 AS_IF([test "${framel}" = "true"], [
        FRAMEL_AVAILABLE="yes"
-       PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
-       LALSUITE_ADD_FLAGS([C],[${LIBFRAME_CFLAGS}],[${LIBFRAME_LIBS}])
-       AC_CHECK_LIB([Frame],[FrLibIni],,[FRAMEL_AVAILABLE="no"])
+       PKG_CHECK_MODULES([FRAMEL],[framel],[true],[false])
+       LALSUITE_ADD_FLAGS([C],[${FRAMEL_CFLAGS}],[${FRAMEL_LIBS}])
+       AC_CHECK_LIB([framel],[FrLibIni],,[FRAMEL_AVAILABLE="no"])
        AC_CHECK_HEADERS([FrameL.h],,[FRAMEL_AVAILABLE="no"])
 ])
 
@@ -162,7 +166,7 @@ AS_IF([test "${FRAMEC_AVAILABLE}" = "yes"],
 )
 
 AS_IF([test "${FRAMEL_AVAILABLE}" = "yes"],
-      [AC_SUBST([PC_REQUIRES_FRAMEL], [", libframe"])],
+      [AC_SUBST([PC_REQUIRES_FRAMEL], [", framel"])],
       [AC_SUBST([PC_REQUIRES_FRAMEL], [""])]
 )
 

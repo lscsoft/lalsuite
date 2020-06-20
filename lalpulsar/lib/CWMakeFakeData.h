@@ -115,8 +115,6 @@ PulsarParamsVector * XLALPulsarParamsVectorAppend ( PulsarParamsVector *list, co
 
 void XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect );
 
-void XLALDestroyPulsarParams ( PulsarParams *params );
-
 
 /** @} */
 

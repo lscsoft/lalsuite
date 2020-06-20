@@ -9,14 +9,14 @@
 {% set url = "file://@TARBALL@" %}
 {% set sha256 = "@SHA256@" %}
 
-{% set lal_version = "6.20.0" %}
-{% set lalburst_version = "1.5.1" %}
-{% set lalframe_version = "1.4.0" %}
-{% set lalinference_version = "1.11.0" %}
-{% set lalinspiral_version = "1.9.0" %}
-{% set lalmetaio_version = "1.5.0" %}
-{% set lalpulsar_version = "1.18.0" %}
-{% set lalsimulation_version = "1.9.0" %}
+{% set lal_version = "6.21.0" %}
+{% set lalburst_version = "1.5.3" %}
+{% set lalframe_version = "1.5.0" %}
+{% set lalinference_version = "1.11.4" %}
+{% set lalinspiral_version = "1.10.0" %}
+{% set lalmetaio_version = "1.6.0" %}
+{% set lalpulsar_version = "1.18.2" %}
+{% set lalsimulation_version = "1.10.0" %}
 
 package:
   name: {{ name }}
@@ -25,9 +25,6 @@ package:
 source:
   url: {{ url }}
   sha256: {{ sha256 }}
-  patches:
-    # weave tests are fragile and hardware dependent
-    - disable-weave-tests.patch
 
 build:
   error_overdepending: true
@@ -36,6 +33,8 @@ build:
     # run_exports parsing for fftw is broken, so we ignore it
     # manually, for now
     - fftw
+    # ignore run_exports from python's recipe
+    - python
   number: 9999
   skip: true  # [win]
 
@@ -50,57 +49,54 @@ requirements:
     - cfitsio
     - fftw * nompi*
     - gsl
-    - lal >={{ lal_version }}
-    - lalburst >={{ lalburst_version }}
-    - lalframe >={{ lalframe_version }}
-    - lalinference >={{ lalinference_version }}
-    - lalinspiral >={{ lalinspiral_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalpulsar >={{ lalpulsar_version }}
-    - lalsimulation >={{ lalsimulation_version }}
-    - libframe
+    - lal >={{ lal_version }}a0
+    - lalburst >={{ lalburst_version }}a0
+    - lalframe >={{ lalframe_version }}a0
+    - lalinference >={{ lalinference_version }}a0
+    - lalinspiral >={{ lalinspiral_version }}a0
+    - lalmetaio >={{ lalmetaio_version }}a0
+    - lalpulsar >={{ lalpulsar_version }}a0
+    - lalsimulation >={{ lalsimulation_version }}a0
+    - libframel
     - llvm-openmp  # [osx]
-    - metaio
     - openmp  # [linux]
     - python
-    - python-lal >={{ lal_version }}
-    - python-lalburst >={{ lalburst_version }}
-    - python-lalinference >={{ lalinference_version }}
-    - python-lalinspiral >={{ lalinspiral_version }}
-    - python-lalframe >={{ lalframe_version }}
-    - python-lalmetaio >={{ lalmetaio_version }}
-    - python-lalpulsar >={{ lalpulsar_version }}
-    - python-lalsimulation >={{ lalsimulation_version }}
+    - python-lal >={{ lal_version }}a0
+    - python-lalburst >={{ lalburst_version }}a0
+    - python-lalinference >={{ lalinference_version }}a0
+    - python-lalinspiral >={{ lalinspiral_version }}a0
+    - python-lalframe >={{ lalframe_version }}a0
+    - python-lalmetaio >={{ lalmetaio_version }}a0
+    - python-lalpulsar >={{ lalpulsar_version }}a0
+    - python-lalsimulation >={{ lalsimulation_version }}a0
   run:
     - cfitsio
     - fftw
     - gsl
     - h5py
-    - healpy
-    - lal >={{ lal_version }}
-    - lalframe >={{ lalframe_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalsimulation >={{ lalsimulation_version }}
-    - lalburst >={{ lalburst_version }}
-    - lalinspiral >={{ lalinspiral_version }}
-    - lalpulsar >={{ lalpulsar_version }}
-    - lalinference >={{ lalinference_version }}
-    - libframe
+    - lal >={{ lal_version }}a0
+    - lalframe >={{ lalframe_version }}a0
+    - lalmetaio >={{ lalmetaio_version }}a0
+    - lalsimulation >={{ lalsimulation_version }}a0
+    - lalburst >={{ lalburst_version }}a0
+    - lalinspiral >={{ lalinspiral_version }}a0
+    - lalpulsar >={{ lalpulsar_version }}a0
+    - lalinference >={{ lalinference_version }}a0
+    - libframel
     - ligo-segments
     - llvm-openmp  # [osx]
-    - metaio
     - openmp  # [linux]
     - numpy
     - pillow
     - python
-    - python-lal >={{ lal_version }}
-    - python-lalburst >={{ lalburst_version }}
-    - python-lalframe >={{ lalframe_version }}
-    - python-lalinference >={{ lalinference_version }}
-    - python-lalinspiral >={{ lalinspiral_version }}
-    - python-lalmetaio >={{ lalmetaio_version }}
-    - python-lalpulsar >={{ lalpulsar_version }}
-    - python-lalsimulation >={{ lalsimulation_version }}
+    - python-lal >={{ lal_version }}a0
+    - python-lalburst >={{ lalburst_version }}a0
+    - python-lalframe >={{ lalframe_version }}a0
+    - python-lalinference >={{ lalinference_version }}a0
+    - python-lalinspiral >={{ lalinspiral_version }}a0
+    - python-lalmetaio >={{ lalmetaio_version }}a0
+    - python-lalpulsar >={{ lalpulsar_version }}a0
+    - python-lalsimulation >={{ lalsimulation_version }}a0
     - python-ligo-lw <1.6.0a0
 
 test:
@@ -128,20 +124,10 @@ test:
     - lalapps_effdist --help
     - lalapps_fftwf_wisdom --help
     - lalapps_fftw_wisdom --help
-    - lalapps_fits_array_copy --help
-    - lalapps_fits_array_imarith --help
-    - lalapps_fits_array_list --help
-    - lalapps_fits_array_stat --help
-    - lalapps_fits_copy --help
-    - lalapps_fits_header_delval --help
     - lalapps_fits_header_getval --help
     - lalapps_fits_header_list --help
-    - lalapps_fits_header_setval --help
     - lalapps_fits_overview --help
-    - lalapps_fits_table_calc --help
     - lalapps_fits_table_list --help
-    - lalapps_fits_table_merge --help
-    - lalapps_fits_table_select --help
     - lalapps_frjoin --help
     - lalapps_fr_ninja --help
     - lalapps_frview --help
@@ -160,6 +146,8 @@ test:
     - lalapps_power --help
     - lalapps_power_calc_likelihood --help
     - lalapps_power_final --help
+    - lalapps_power_likelihood_pipe --help
+    - lalapps_power_pipe --help
     - lalapps_power_plot_binj --help
     - lalapps_power_plot_binjtf --help
     - lalapps_power_plot_burca --help
@@ -167,12 +155,10 @@ test:
     - lalapps_power_plot_burst --help
     - lalapps_power_veto --help
     - lalapps_pulsar_frequency_evolution --help
-    - lalapps_pulsar_parameter_estimation --help
     - lalapps_pulsar_parameter_estimation_nested --help
     - lalapps_randombank --help
     - lalapps_run_sqlite --help
     - lalapps_searchsum2cache --help
-    - lalapps_SFTwrite --help
     - lalapps_splitSFTs --help
     - lalapps_ssbtodetector --help
     - lalapps_string_apply_vetoes --help
@@ -188,13 +174,13 @@ test:
     - lalapps_tmpltbank --help
 
 about:
-  home: https://wiki.ligo.org/Computing/DASWG/LALSuite
-  doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalapps/
-  dev_url: https://git.ligo.org/lscsoft/lalsuite/
-  license: GPLv3
-  license_family: GPL
-  license_file: COPYING
-  summary: LSC Algorithm Library Applications
+  home: "https://wiki.ligo.org/Computing/LALSuite"
+  doc_url: "https://docs.ligo.org/lscsoft/lalsuite/lalapps/"
+  dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
+  license: "GPL-2.0-or-later"
+  license_family: "GPL"
+  license_file: "COPYING"
+  summary: "LSC Algorithm Library Applications"
   description: |
     The LSC Algorithm Library Applications for gravitational wave data
     analysis.  This package contains applications that are built on tools

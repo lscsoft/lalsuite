@@ -16,14 +16,22 @@ fi
 # only link libraries we actually use
 export GSL_LIBS="-L${PREFIX}/lib -lgsl"
 
+# configure
 ./configure \
-	--prefix="${PREFIX}" \
-	--enable-swig-iface \
+	--disable-doxygen \
+	--disable-python \
 	--disable-swig-octave \
 	--disable-swig-python \
-	--disable-python \
-	--enable-silent-rules \
-	${FFT_CONFIG_ARGS}
-make -j ${CPU_COUNT}
-make -j ${CPU_COUNT} check
-make install
+	--enable-swig-iface \
+	--prefix="${PREFIX}" \
+	${FFT_CONFIG_ARGS} \
+;
+
+# build
+make -j ${CPU_COUNT} V=1 VERBOSE=1
+
+# test
+make -j ${CPU_COUNT} V=1 VERBOSE=1 check
+
+# install
+make -j ${CPU_COUNT} V=1 VERBOSE=1 install

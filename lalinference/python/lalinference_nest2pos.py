@@ -46,7 +46,7 @@ def read_nested_from_hdf5(nested_path_list, strict_versions=True):
 
         # N.B.: This appends to metadata, log_noise_evidences, log_max_likelihoods, nlive, in addition to outputting run_identifier
         run_identifier = extract_metadata(path, metadata, log_noise_evidences, log_max_likelihoods, nlive, nested_dset_name, True, strict_versions)
-    
+
     if len(input_arrays)==0:
         print('No nested samples could be read from %s'.format(str(nested_path_list)))
         raise IOError
@@ -56,7 +56,9 @@ def read_nested_from_hdf5(nested_path_list, strict_versions=True):
         for key in metadata[level]:
             if isinstance(metadata[level][key], list) and all(isinstance(x, (int,float)) for x in metadata[level][key]):
                 metadata[level][key] = mean(metadata[level][key])
-
+            elif isinstance(metadata[level][key], list) and all(isinstance(x, (str)) for x in metadata[level][key]):
+                print("Warning: only printing the first of the %d entries found for metadata %s/%s. You can find the whole list in the headers of individual hdf5 output files\n"%(len(metadata[level][key]),level,key))
+                metadata[level][key] = metadata[level][key][0]
     log_noise_evidence = reduce(logaddexp, log_noise_evidences) - log(len(log_noise_evidences))
     log_max_likelihood = max(log_max_likelihoods)
 

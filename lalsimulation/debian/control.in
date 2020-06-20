@@ -5,24 +5,29 @@ Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
 Build-Depends: debhelper (>= 9),
   dh-python,
+  gcc,
+  g++,
   help2man,
+  make,
+  pkg-config (>= 0.18.0),
+  lal-dev (>= @MIN_LAL_VERSION@~),
   libgsl-dev | libgsl0-dev (>= 1.9),
   liboctave-dev,
-  pkg-config (>= 0.18.0),
+  zlib1g-dev,
+  swig (>= 3.0.9) | swig3.0 (>= 3.0.9),
   python-all-dev,
+  python-lal (>= @MIN_LAL_VERSION@~),
+  python-mock,
   python-numpy,
+  python-pathlib,
+  python-pytest,
   python3-all-dev,
   python3-numpy,
-  swig (>= 3.0.7) | swig3.0 (>= 3.0.7),
-  zlib1g-dev,
-  lal-dev (>= @MIN_LAL_VERSION@~),
-  lal-octave (>= @MIN_LAL_VERSION@~),
-  python-lal (>= @MIN_LAL_VERSION@~),
   python3-lal (>= @MIN_LAL_VERSION@~),
-  python-six,
-  python3-six
+  python3-pytest,
+  lal-octave (>= @MIN_LAL_VERSION@~),
 X-Python-Version: >= 2.7
-X-Python3-Version: >= 3.4
+X-Python3-Version: >= 3.5
 Standards-Version: 3.9.8
 
 Package: lalsimulation

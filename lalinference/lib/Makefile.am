@@ -6,12 +6,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 # bayestar_cosmology.h: bayestar_cosmology.py
-# 	$(AM_V_GEN)$(PYTHON) $< > $@
-
-if HAVE_CHEALPIX
-BAYESTARHDR = bayestar_sky_map.h bayestar_distance.h bayestar_moc.h
-BAYESTARSRC = bayestar_sky_map.c bayestar_distance.c bayestar_moc.c
-endif
+#	$(AM_V_GEN)$(PYTHON) $< > $@
 
 ANALYTICFILES = \
 	CorrelationMatrix.csv \
@@ -56,8 +51,7 @@ pkginclude_HEADERS = \
 	LALInferencePriorVolumes.h \
 	LALInferenceDistanceMarg.h \
 	cubic_interp.h \
-	distance_integrator.h \
-	$(BAYESTARHDR)
+	distance_integrator.h
 
 lib_LTLIBRARIES = liblalinference.la
 
@@ -86,8 +80,7 @@ liblalinference_la_SOURCES = \
 	LALInferenceDistanceMarg.c \
 	logaddexp.h \
 	cubic_interp.c \
-	distance_integrator.c \
-	$(BAYESTARSRC)
+	distance_integrator.c
 
 nodist_liblalinference_la_SOURCES = \
 	LALInferenceBuildInfoHeader.h \

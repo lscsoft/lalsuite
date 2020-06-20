@@ -72,12 +72,17 @@ typedef struct tagDetResponseTimeLookupTable{
 /* ---------- Function prototypes ---------- */
 
 REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
+                                                   PulsarParameters *origparams,
                                                    const LIGOTimeGPSVector *datatimes,
                                                    REAL8 freqfactor,
                                                    REAL8Vector *ssbdts,
-                                                   UINT4 updateSSBDelay,
+                                                   UINT4 calcSSBDelay,
                                                    REAL8Vector *bsbdts,
-                                                   UINT4 updateBSBDelay,
+                                                   UINT4 calcBSBDelay,
+                                                   REAL8Vector *glphase,
+                                                   UINT4 calcglphase,
+                                                   REAL8Vector *fitwavesphase,
+                                                   UINT4 calcfitwaves,
                                                    const LALDetector *detector,
                                                    const EphemerisData *ephem,
                                                    const TimeCorrectionData *tdat,
@@ -99,6 +104,16 @@ void XLALGetEarthPosVel( EarthState *earth,
                          const EphemerisData *edat,
                          const LIGOTimeGPS *tGPS );
 
+REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
+                                                  const LIGOTimeGPSVector *datatimes,
+                                                  const REAL8Vector *ssbdts,
+                                                  const REAL8Vector *bsbdts );
+
+REAL8Vector *XLALHeterodynedPulsarGetFITWAVESPhase( PulsarParameters *params,
+                                                    const LIGOTimeGPSVector *datatimes,
+                                                    const REAL8Vector *ssbdts,
+                                                    REAL8 freq );
+
 COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *pars,
                                                              REAL8 freqfactor,
                                                              UINT4 varyphase,
@@ -108,15 +123,20 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
                                                              const DetResponseTimeLookupTable *resp );
 
 COMPLEX16TimeSeries* XLALHeterodynedPulsarGetModel( PulsarParameters *pars,
+                                                    PulsarParameters *origpars,
                                                     REAL8 freqfactor,
                                                     UINT4 varyphase,
                                                     UINT4 useroq,
                                                     UINT4 nonGR,
                                                     const LIGOTimeGPSVector *timestamps,
                                                     REAL8Vector *hetssbdelays,
-                                                    UINT4 updateSSBDelay,
+                                                    UINT4 calcSSBDelay,
                                                     REAL8Vector *hetbsbdelays,
-                                                    UINT4 updateBSBDelay,
+                                                    UINT4 calcBSBDelay,
+                                                    REAL8Vector *glphase,
+                                                    UINT4 calcglphase,
+                                                    REAL8Vector *fitwavesphase,
+                                                    UINT4 calcfitwaves,
                                                     const DetResponseTimeLookupTable *resp,
                                                     const EphemerisData *ephem,
                                                     const TimeCorrectionData *tdat,

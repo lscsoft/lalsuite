@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 
    //print VCS info
    CHAR *VCSInfoString;
-   XLAL_CHECK( (VCSInfoString = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
    fprintf(LOG, "%s\n", VCSInfoString);
    fprintf(stderr, "%s\n", VCSInfoString);
    XLALFree(VCSInfoString);

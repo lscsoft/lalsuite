@@ -10,7 +10,6 @@ pymoduledir = $(pkgpythondir)/bayestar
 pymodule_PYTHON = \
 	__init__.py \
 	deprecation.py \
-	sky_map.py \
 	$(END_OF_LIST)
 
 endif

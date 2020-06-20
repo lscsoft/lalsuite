@@ -101,8 +101,8 @@ postfunc = {
 testfunc = {
 	"excesspower": bucluster.ExcessPowerTestFunc
 }[options.cluster_algorithm]
-sortfunc = {
-	"excesspower": bucluster.ExcessPowerSortFunc
+sortkeyfunc = {
+	"excesspower": bucluster.ExcessPowerSortKeyFunc
 }[options.cluster_algorithm]
 bailoutfunc = {
 	"excesspower": bucluster.ExcessPowerBailoutFunc
@@ -141,7 +141,7 @@ for filename in filenames:
 		postfunc = postfunc,
 		testfunc = testfunc,
 		clusterfunc = clusterfunc,
-		sortfunc = sortfunc,
+		sortkeyfunc = sortkeyfunc,
 		bailoutfunc = bailoutfunc,
 		verbose = options.verbose
 	)

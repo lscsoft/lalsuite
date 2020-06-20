@@ -101,7 +101,7 @@ if args.mix:
 
 print("Combined ID:", combineID)
 
-#Initiate lists to hold data 
+#Initiate lists to hold data
 samples = []
 paramsList = []
 sizeList = []
@@ -176,14 +176,14 @@ if (args.all):
     samplesOut = np.empty(sizeOut, dtype=datatypes)
 
     indexSize = sizeList
-    
+
 else:
     #Weight different posteriors
     fracWeight = np.asarray(args.weightings) / float(sum(args.weightings))
 
     testNum = fracWeight * float(sum(sizeList))
     minIndex = np.argmin(np.asarray(sizeList) / np.asarray(testNum))
-    
+
     testSize = sizeList[minIndex] / fracWeight[minIndex]
 
     weightNum = np.around(fracWeight * testSize).astype(int)
@@ -201,7 +201,7 @@ for posIndex in range(0,nPos):
     stopIndex = startIndex + indexSize[posIndex]
 
     for paramIndex, paramItem in enumerate(paramsOut):
-        samplesOut[paramItem][startIndex:stopIndex] = samples[posIndex][paramItem][0:indexSize[posIndex]]  
+        samplesOut[paramItem][startIndex:stopIndex] = samples[posIndex][paramItem][0:indexSize[posIndex]]
 
     startIndex = stopIndex
 

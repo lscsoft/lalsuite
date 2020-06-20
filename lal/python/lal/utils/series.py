@@ -20,15 +20,11 @@
 import numpy
 import re
 
-try:
-    from .. import lal
-except ImportError:
-    raise ImportError("The SWIG-wrappings of LAL cannot be imported.")
+from six import string_types
 
-from .. import git_version
+from .. import lal
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
-__version__ = git_version.id
-__date__ = git_version.date
 
 # -----------------------------------------------------------------------------
 # utility constants
@@ -72,12 +68,12 @@ SERIES_TYPES = ['Time', 'Frequency']
 STRUCT_TYPES = ['Sequence', 'Vector']
 
 SERIES_REGEX = re.compile(
-    '%s(?P<stype>(%s))Series\Z'
+    r'%s(?P<stype>(%s))Series\Z'
     % (LAL_TYPE_STR_REGEX.pattern, '|'.join(SERIES_TYPES)), re.I)
 ARRAY_REGEX = re.compile(
-    '%sArray(?:(?P<dir>(L|V))?)' % LAL_TYPE_STR_REGEX.pattern, re.I)
+    r'%sArray(?:(?P<dir>(L|V))?)' % LAL_TYPE_STR_REGEX.pattern, re.I)
 STRUCT_REGEX = re.compile(
-    '%s(?P<struct>(%s))\Z'
+    r'%s(?P<struct>(%s))\Z'
     % (LAL_TYPE_STR_REGEX.pattern, '|'.join(STRUCT_TYPES)), re.I)
 
 
@@ -119,7 +115,7 @@ def get_struct_name(series):
         'REAL8TimeSeries'
     """
     # get name of object
-    if isinstance(series, basestring):
+    if isinstance(series, string_types):
         typestr = series
     else:
         typestr = type(series).__name__
@@ -160,7 +156,7 @@ def get_series_type(series):
     @returns the LAL type enum (integer) for the series
     """
     try:
-        match = TYPE_REGEX.match(type(series).__name__).groupdict()
+        match = STRUCT_REGEX.match(type(series).__name__).groupdict()
     except AttributeError:
         raise ValueError("Data type for series type %r unknown."
                          % type(series).__name__)
@@ -217,7 +213,7 @@ def get_lal_type(datatype):
         pass
     # test again for 'real4' or 'real8' (lower-case)
     #     can't do this with others because they match numpy names
-    if re.match('real(4|8)\Z', str(datatype), re.I):
+    if re.match(r'real(4|8)\Z', str(datatype), re.I):
         return LAL_TYPE_FROM_STR[datatype.upper()]
     # format as a numpy data type and parse
     try:

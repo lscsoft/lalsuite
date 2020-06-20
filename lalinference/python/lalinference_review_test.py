@@ -1,10 +1,8 @@
 import argparse
 import shutil
-import distutils.spawn
 import os
 import sys
 import subprocess
-import socket
 import glob
 import lalinference
 
@@ -341,7 +339,7 @@ if args.pptest:
 
             pptest_ini_file=os.path.join(args.output, 'pptest', engine, approximant, 'pptest.ini')
 
-            cppptest=set_pptest(init_ini_file(), engine=engine, 
+            cppptest=set_pptest(init_ini_file(), engine=engine,
                                 approximant=approximant)
             with open(pptest_ini_file,'w') as cpfile:
                 cppptest.write(cpfile)

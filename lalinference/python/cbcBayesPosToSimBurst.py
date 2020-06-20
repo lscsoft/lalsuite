@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #       cbcBayesPosToSimBurst.py
-#       C2014 Salvatore Vitale <salvatore.vitale@ligo.org> 
-#       
+#       C2014 Salvatore Vitale <salvatore.vitale@ligo.org>
+#
 #       based on
 #
 #       cbcBayesPosToSimInspiral.py
@@ -10,7 +10,7 @@
 #       Benjamin Farr <bfarr@u.northwestern.edu>,
 #       Will M. Farr <will.farr@ligo.org>,
 #       John Veitch <john.veitch@ligo.org>
-#     
+#
 #
 #       This program is free software; you can redistribute it and/or modify
 #       it under the terms of the GNU General Public License as published by
@@ -35,7 +35,6 @@ import numpy as np
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import ilwd
-from lalinference import bayespputils as bppu
 
 # Create a datatype for all relavent fields to be filled in the sim_inspiral table
 sim_inspiral_dt = [
@@ -81,7 +80,7 @@ def standardize_param_names(params):
     standardize_param_name(params, ['alpha','polar_angle','pol_ellipse_angle'], 'pol_ellipse_angle')
     standardize_param_name(params, ['polar_eccentricity','eccentricity','pol_ellipse_e'], 'pol_ellipse_e')
     standardize_param_name(params, ['psi', 'polarisation','polarization'],'psi')
-    
+
 
 def compute_duration_parameterizations(samples):
     from math import sqrt
@@ -101,7 +100,7 @@ def compute_duration_parameterizations(samples):
           q=[sqrt(2)*np.pi*i*j for (i,j) in zip(duration,samples['frequency'])]
         else:
           q=np.nan
-    return q,duration 
+    return q,duration
 
 
 if __name__ == "__main__":
@@ -175,7 +174,7 @@ if __name__ == "__main__":
       est_time=samples['time_min']+0.5*(samples['time_max']-samples['time_min'])
       injections['time_geocent_gps'] = np.modf(est_time)[1]
       injections['time_geocent_gps_ns'] = np.modf(est_time)[0] * 10**9
-      
+
     # Populate structured array
     injections['waveform'] = [opts.approx for i in range(N)]
     try:

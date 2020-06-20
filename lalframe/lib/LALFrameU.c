@@ -31,7 +31,7 @@ enum {
 };
 
 /* enable FrameL support if available */
-#if defined HAVE_FRAMEL_H && defined HAVE_LIBFRAME
+#if defined HAVE_FRAMEL_H && defined HAVE_LIBFRAMEL
 #   include "LALFrameUFrameL.h"
 #   define CASE_FRAMEL(errval, function, ...) case LAL_FRAMEU_FRAME_LIBRARY_FRAMEL: return function ## _FrameL_ (__VA_ARGS__)
 #   ifndef LAL_FRAMEU_FRAME_LIBRARY_DEFAULT
@@ -88,7 +88,7 @@ static int XLALFrameLibrary(void)
         const char *env = getenv("LAL_FRAME_LIBRARY");
         if (env) {
             if (strcmp(env, "FrameL") == 0) {
-#if defined HAVE_FRAMEL_H && defined HAVE_LIBFRAME
+#if defined HAVE_FRAMEL_H && defined HAVE_LIBFRAMEL
                 lalFrameLibrary = LAL_FRAMEU_FRAME_LIBRARY_FRAMEL;
 #else
                 XLAL_ERROR_VAL(LAL_FRAMEU_FRAME_LIBRARY_UNAVAILABLE, XLAL_ESYS,

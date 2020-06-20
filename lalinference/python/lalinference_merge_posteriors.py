@@ -4,7 +4,6 @@
 from numpy import vstack,log
 from optparse import OptionParser
 import sys
-import os
 from lalinference import bayespputils as bppu
 
 from lalinference.nest2pos import draw_posterior, draw_N_posterior
@@ -43,7 +42,7 @@ if __name__=='__main__':
         theseweights = (log(w) + logl + logp for logl,logp in zip(d['logl'].samples,d['logprior'].samples))
         weights.extend(theseweights)
     bigdata=vstack([d.samples()[0] for d in datas])
-    
+
     # Call reweighting function
     if opts.npos is not None:
         merged=draw_N_posterior(bigdata,weights,opts.npos,verbose=opts.verbose)

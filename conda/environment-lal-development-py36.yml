@@ -6,7 +6,6 @@ dependencies:
   - automake = 1.15
   - bc
   - cfitsio
-  - chealpix
   - doxygen
   - fftw
   - freezegun

@@ -66,6 +66,12 @@ void swig_lal_test_copyin_array2(INT4 INPUT[3][2], INT4 scale, INT4 OUTPUT[3][2]
     }
   }
 }
+void swig_lal_test_copyin_array3(LIGOTimeGPS INPUT[2], REAL8 scale, LIGOTimeGPS OUTPUT[2]) {
+  for (int i = 0; i < 2; ++i) {
+    OUTPUT[i] = INPUT[i];
+    XLALGPSMultiply(&OUTPUT[i], scale);
+  }
+}
 
 // Test input views of string array structs.
 BOOLEAN swig_lal_test_viewin_LALStringVector(LALStringVector* copyout, const LALStringVector* viewin) {

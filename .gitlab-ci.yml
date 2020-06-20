@@ -13,6 +13,7 @@ stages:
   - LALPulsar
   - LALInference
   - LALApps
+  - lint
   - documentation
   - integration tests
   - compiler tests
@@ -22,16 +23,18 @@ stages:
   - deploy
 
 variables:
-  DOCKER_DRIVER: overlay
-  GIT_DEPTH: 1
+  APT_GET: "apt-get -y -q -q -o dir::cache::archives=${CI_PROJECT_DIR}/.cache/apt"
   BRANCH: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
   COMMIT: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  NIGHTLY: $CI_REGISTRY_IMAGE:nightly
-  TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
-  LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
   CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
   CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
-
+  DOCKER_DRIVER: overlay
+  GIT_DEPTH: 1
+  LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
+  NIGHTLY: $CI_REGISTRY_IMAGE:nightly
+  TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+  YUM: "yum -y -q --setopt=cachedir=${CI_PROJECT_DIR}/.cache/yum --setopt=keepcache=1"
+  YUM_OPTS: "-y -q --setopt=cachedir=${CI_PROJECT_DIR}/.cache/yum --setopt=keepcache=1"
 
 before_script:
   - set -x  # print commands as they are run (helps debugging)
@@ -71,17 +74,28 @@ cache:
   script:
     - ./00boot
     - ./configure --enable-doxygen --enable-swig
-    - make -j4 distcheck
+    - make -j4 VERBOSE=1 distcheck
+  artifacts:
+    reports:
+      junit:
+        - "*/_build/*/test/python/junit*.xml"
 
 # -- build templates ----------------------------
 
 # -- rpm
 
+.yum-cache: &yum-cache
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/yum
+
 .yum-update: &yum-update
-  yum-config-manager --disable htcondor 1>/dev/null && yum -y update
+  yum-config-manager --disable htcondor 1>/dev/null && ${YUM} update
 
 .rpmbuild: &rpmbuild
-  image: igwn/lalsuite-dev:el7
+  <<: *yum-cache
+  image: igwn/base:el7-testing
   variables:
     GIT_STRATEGY: none
     RPM_BUILD_CPUS: 4
@@ -89,9 +103,9 @@ cache:
     - PACKAGE=${CI_JOB_NAME%%:*}
     # install srpm dependencies
     - *yum-update
-    - yum -y install yum-utils epel-rpm-macros
+    - ${YUM} install lscsoft-packaging-tools
     # install upstream packages
-    - if [ -d rpmbuild ]; then yum -y install rpmbuild/RPMS/x86_64/*.rpm; fi
+    - if [ -d rpmbuild ]; then ${YUM} install rpmbuild/RPMS/x86_64/*.rpm; fi
     # build src.rpm
     - cd ${PACKAGE}/
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
@@ -100,7 +114,7 @@ cache:
     # lint src.rpm
     - rpmlint ${SRCRPM}
     # install build dependencies
-    - yum-builddep -y -q ${SRCRPM}
+    - yum-builddep ${YUM_OPTS} ${SRCRPM}
     # build binary rpms and print details of what we got
     - rpmbuild --rebuild --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${SRCRPM}
     - rpm -qilp ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
@@ -108,8 +122,15 @@ cache:
   artifacts:
     expire_in: 18h
     paths:
-      - rpmbuild/RPMS/x86_64/${CI_JOB_NAME%%:*}-*.rpm
-      - rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%%:*}-*.rpm
+      - "rpmbuild/BUILD/*/config.log"
+      - "rpmbuild/BUILD/*/test-suite.log"
+      - "rpmbuild/BUILD/*/test/test-suite.log"
+      - "rpmbuild/BUILD/*/test/python/test-suite.log"
+      - "rpmbuild/RPMS/x86_64/${CI_JOB_NAME%%:*}-*.rpm"
+      - "rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%%:*}-*.rpm"
+    reports:
+      junit: "rpmbuild/BUILD/*/test/python/junit*.xml"
+    when: always
   only:
     - pushes
     - schedules
@@ -119,14 +140,31 @@ cache:
 
 # -- debian
 
+.apt-cache: &apt-cache
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/apt
+
+.apt-update: &apt-update
+  mkdir -p "${CI_PROJECT_DIR}/.cache/apt/partial" &&
+  ${APT_GET} autoclean &&
+  ${APT_GET} update
+
 .debuild: &debbuild
-  image: igwn/lalsuite-dev:stretch
+  <<: *apt-cache
+  image: igwn/base:stretch-proposed
   variables:
     GIT_STRATEGY: none
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
     # install debs from artifacts
-    - dpkg -i *.deb || true
+    - *apt-update
+    - ${APT_GET} install
+          devscripts
+          dpkg-dev
+          lintian
+    - "ls *.deb &>/dev/null && { dpkg -i *.deb || { ${APT_GET} -f install; dpkg -i *.deb; } }"
     # create orig tarball
     - cd ${PACKAGE}/
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
@@ -141,18 +179,26 @@ cache:
     - cd ${PACKAGE}-*/
     - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
     # install build dependencies
-    - apt-get -y -q install devscripts
-    - mk-build-deps --tool "apt-get -y" --install --remove
+    - mk-build-deps
+          --tool "${APT_GET} -o Debug::pkgProblemResolver=yes --no-install-recommends"
+          --install
+          --remove
     # build packages
     - debuild -us -uc -r
   artifacts:
     expire_in: 18h
     paths:
+      - ${CI_JOB_NAME%%:*}*/.pybuild/python*/build/config.log
+      - ${CI_JOB_NAME%%:*}*/.pybuild/python*/build/test/test-suite.log
+      - ${CI_JOB_NAME%%:*}*/.pybuild/python*/build/test/python/test-suite.log
       - ${CI_JOB_NAME%%:*}*.changes
       - ${CI_JOB_NAME%%:*}*.deb
       - python*-${CI_JOB_NAME%%:*}*.deb
       - ${CI_JOB_NAME%%:*}*.dsc
       - ${CI_JOB_NAME%%:*}*.orig.*
+    reports:
+      junit: "${CI_JOB_NAME%%:*}*/.pybuild/python*/build/test/python/junit*.xml"
+    when: always
   only:
     - pushes
     - schedules
@@ -169,18 +215,16 @@ cache:
   conda config --add channels conda-forge
   retry conda update -n base conda setuptools
   conda activate base
-  retry conda install -n base "conda-build!=3.18.10" conda-verify conda-forge-pinning
+  retry conda install -n base "conda-build!=3.18.10" conda-forge-pinning conda-smithy conda-verify
   conda info --all
 
 .conda-build: &conda-build
   image: igwn/base:conda
   variables:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
+    CONDA_CONFIG: "linux_"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
-    fft_impl: "fftw"
-    PYTHON_VERSION: "3.7"
   before_script:
-    - set -x  # print commands as they are run (helps debugging)
     - *define-retry
     - *conda-init
   script:
@@ -193,15 +237,23 @@ cache:
     - sed 's|@VERSION@|'${VERSION}'|g' conda/meta.yaml.in > conda/meta.yaml
     - sed -i 's|@TARBALL@|'${TARBALL}'|g' conda/meta.yaml
     - sed -i 's|@SHA256@|'${SHA256}'|g' conda/meta.yaml
-    # build packages
+    # create a feedstock from the conda recipe
+    - git config --global user.name "${GITLAB_USER_NAME}"
+    - git config --global user.email "${GITLAB_USER_EMAIL}"
+    - conda smithy init conda/ --feedstock-directory ${PACKAGE}-feedstock
+    - cd ${PACKAGE}-feedstock
+    - conda smithy regenerate --no-check-uptodate
+    - git ls-files
+    # build packages (preferring local packages over everything)
+    - conda config --set channel_priority strict
     - conda build
-          conda/
+          recipe/
+          --dirty
           --error-overlinking
           --error-overdepending
           --no-anaconda-upload
-          --python ${PYTHON_VERSION}
           --use-local
-          --variant-config-files $(conda info --base)/conda_build_config.yaml
+          --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
           ${CONDA_BUILD_ARGS}
   artifacts:
     expire_in: 18h
@@ -210,9 +262,15 @@ cache:
       - "conda/bld/linux-64/${CI_JOB_NAME%%:*}-*.tar.bz2"
       - "conda/bld/linux-64/python-${CI_JOB_NAME%%:*}-*.conda"
       - "conda/bld/linux-64/python-${CI_JOB_NAME%%:*}-*.tar.bz2"
+      - "conda/bld/${CI_JOB_NAME%%:*}_*/work/config.log"
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/test-suite.log"
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/test-suite.log"
       - "conda/bld/${CI_JOB_NAME%%:*}_*/work/*/*/*/test-suite.log"
+      - "${CI_JOB_NAME%%:*}/${CI_JOB_NAME%%:*}-feedstock/"
+    reports:
+      junit:
+        - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/junit*.xml"
+        - "conda/bld/${CI_JOB_NAME%%:*}_*/test_tmp/junit*.xml"
     when: always
   only:
     - pushes
@@ -224,13 +282,60 @@ cache:
     paths:
       - conda/pkgs
 
+# -- linting ------------------------------------
+
+lint:python:
+  stage: lint
+  image: python
+  needs: []
+  before_script:
+    - python -m pip install
+          "flake8>=3.7.0"
+          "flake8-junit-report"
+  script:
+    - python -m flake8 --output-file flake8.out
+  after_script:
+    - cat flake8.out
+    - python -m junit_conversor flake8.out junit.xml
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/pip
+  artifacts:
+    expire_in: 1month
+    reports:
+      junit: junit.xml
+    when: always
+
+lint:coala:
+  stage: lint
+  image: coala/base
+  needs: []
+  before_script:
+    - pip install coala-json
+  script:
+    # run once to show output to console
+    - coala --ci || true
+    # run again to prepare JSON report for upload
+    - coala --ci --json -o output.json
+  after_script:
+    - coala-json --junit -f output.json -o junit.xml
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .cache/pip
+  artifacts:
+    expire_in: 1month
+    reports:
+      junit: junit.xml
+    when: always
+
 # -- documentation ------------------------------
 
 documentation:
-  image: igwn/lalsuite-dev:stretch
+  image: igwn/lalsuite-dev:stretch-proposed
   stage: documentation
-  needs:
-    - make-dist
+  needs: []
   script:
     - ./00boot
     - ./configure --enable-doxygen --prefix=${LAL_DIR}
@@ -248,7 +353,7 @@ documentation:
     - web
 
 pages:
-  image: igwn/lalsuite-dev:stretch
+  image: igwn/lalsuite-dev:stretch-proposed
   stage: deploy
   script:
     - ./00boot
@@ -259,8 +364,7 @@ pages:
     - cp lalsuite/index.html index.html
     - sed -i 's/..\/lal/lal/g' index.html
     - popd
-  needs:
-    - make-dist
+  needs: []
   artifacts:
     paths:
       - public
@@ -313,6 +417,10 @@ lal:conda:fftw:
   stage: LAL
   needs:
     - make-dist
+  variables:
+    CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
+    CONDA_CONFIG: "linux_fft_implfftw"
+    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
 
 lal:conda:mkl:
   <<: *conda-build
@@ -321,9 +429,8 @@ lal:conda:mkl:
     - make-dist
   variables:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
+    CONDA_CONFIG: "linux_fft_implmkl"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
-    fft_impl: "mkl"
-    PYTHON_VERSION: "3.7"
 
 # -- lalframe------------------------------------
 
@@ -565,15 +672,23 @@ lalapps:conda:
     - lalpulsar:conda
     - lalinspiral:conda
     - lalinference:conda
+  variables:
+    CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
+    CONDA_CONFIG: "linux_python3.7.____cpython"
+    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
 
 # -- integration tests --------------------------
 
 lalinference_testjob:
+  <<: *yum-cache
   stage: integration tests
-  image: igwn/lalsuite-dev:el7
+  image: igwn/base:el7-testing
   before_script:
     - *yum-update
-    - yum -y install rpmbuild/RPMS/x86_64/*.rpm
+    - ${YUM} install
+          git
+          git-lfs
+    - ${YUM} install rpmbuild/RPMS/x86_64/*.rpm
   script:
     - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
     - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
@@ -589,26 +704,21 @@ lalinference_testjob:
   only:
     - schedules
     - web
+  artifacts:
+    expire_in: 18h
+    paths:
+      - example/
+    when: always
 
 top-level:
   stage: integration tests
-  image: igwn/lalsuite-dev:el7
-  needs:
-    - make-dist
+  image: igwn/lalsuite-dev:el7-testing
+  needs: []
   <<: *top-level-build
   only:
     - pushes
-
-top-level-testing:
-  stage: integration tests
-  image: igwn/lalsuite-dev:el7-testing
-  needs:
-    - make-dist
-  <<: *top-level-build
-  only:
     - schedules
     - web
-  allow_failure: true
 
 # -- docker -------------------------------------
 
@@ -722,15 +832,17 @@ docker:tags:stretch:
 
 .clang-build: &clang-build
   stage: compiler tests
-  needs:
-    - make-dist
+  needs: []
   script:
     - ./00boot
     - CC=${CLANG} CXX=${CLANGXX} ./configure --enable-swig --enable-doxygen
-    - make -j4 distcheck
+    - make -j4 VERBOSE=1 distcheck
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
 
 clang:8:
   <<: *clang-build
@@ -746,6 +858,13 @@ clang:9:
     CLANG: clang-9
     CLANGXX: clang++-9
 
+clang:10:
+  <<: *clang-build
+  image: igwn/lalsuite-dev-clang:10
+  variables:
+    CLANG: clang-10
+    CLANGXX: clang++-10
+
 clang:dev:
   <<: *clang-build
   image: igwn/lalsuite-dev-clang:dev
@@ -755,15 +874,17 @@ clang:dev:
 
 .gcc-build: &gcc-build
   stage: compiler tests
-  needs:
-    - make-dist
+  needs: []
   script:
     - ./00boot
     - ./configure --enable-doxygen
-    - make -j4 distcheck
+    - make -j4 VERBOSE=1 distcheck
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
 
 gcc:7:
   <<: *gcc-build
@@ -777,13 +898,31 @@ gcc:9:
   <<: *gcc-build
   image: igwn/lalsuite-dev-gcc:9
 
+cuda:
+  image: igwn/lalsuite-dev-cuda:el7
+  stage: compiler tests
+  needs: []
+  script:
+    - ./00boot
+    - ./configure --with-cuda=/usr/local/cuda
+    - make -j4 dist
+    - make -j4
+    # just compile test suite; some tests require a CUDA device to run
+    - make -j4 VERBOSE=1 check TESTS=
+    - make -j4 install
+  only:
+    - schedules
+    - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
+
 # -- debian
 
 platform:debian:buster:
   image: igwn/lalsuite-dev:buster
   stage: platform tests
-  needs:
-    - make-dist
+  needs: []
   <<: *top-level-build
   only:
     - schedules
@@ -799,14 +938,16 @@ platform:macos:highsierra:
     - ./00boot
     # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
     # is available
-    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
+    - PYTHON=/opt/local/bin/python2.7 ./configure
     - make -j4
-    - make -j4 check
-  needs:
-    - make-dist
+    - make -j4 VERBOSE=1 check
+  needs: []
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
 
 platform:macos:sierra:
   tags:
@@ -816,14 +957,16 @@ platform:macos:sierra:
     - ./00boot
     # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
     # is available
-    - PYTHON=/opt/local/bin/python2.7 ./configure --enable-doxygen
+    - PYTHON=/opt/local/bin/python2.7 ./configure
     - make -j4
-    - make -j4 check
-  needs:
-    - make-dist
+    - make -j4 VERBOSE=1 check
+  needs: []
   only:
     - schedules
     - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
 
 # -- wheels -------------------------------------
 
@@ -841,13 +984,13 @@ platform:macos:sierra:
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - auditwheel repair wheel/*.whl
-    # Test
-    - ${PYPREFIX}/bin/virtualenv test
+    # Test: do some simple sanity checks in a virtualenv
+    - ${PYPREFIX}/bin/python -m venv test
     - source test/bin/activate
+    - pip install --upgrade pip
     - pip install wheelhouse/*
-    - python -c 'import lal, lalframe, lalmetaio'
-  needs:
-    - make-dist
+    - python -c 'import lal, lalframe, lalmetaio, lalsimulation; series = lal.CreateREAL8FrequencySeries("psd", 0, 0, 1, None, 4096); lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)'
+  needs: []
   only:
     - /^lalsuite-v.*$/
     - schedules
@@ -864,22 +1007,23 @@ platform:macos:sierra:
   script:
     - PYVERS=$(echo ${CI_JOB_NAME} | sed 's/.*:cp\(.\)\(.\).*/\1.\2/')
     # Enter virtualenv so that we have a controlled version of Numpy
-    - virtualenv-${PYVERS} env
+    - python${PYVERS} -m venv env
     - source env/bin/activate
-    - pip install git+https://github.com/lpsinger/delocate@fix-duplicate-libs glob2 'numpy==1.14.5;python_version>="3.7"' 'numpy==1.7.0;python_version<"3.7"'
+    - python -m pip install
+          git+https://github.com/lpsinger/delocate@fix-duplicate-libs
+          oldest-supported-numpy
     # Build wheel
     - ./00boot
     - ./configure PYTHON=$(which python${PYVERS}) --enable-mpi --enable-swig-python ${EXTRA_CONFIG_FLAGS} LDFLAGS=-Wl,-headerpad_max_install_names
     - make -j4 wheel
     # Bundle and fix up dependent shared libraries
     - delocate-wheel -v -w wheelhouse wheel/*.whl
-    # Test
-    - virtualenv-${PYVERS} test
+    # Test: do some simple sanity checks in a virtualenv
+    - python${PYVERS} -m venv test
     - source test/bin/activate
-    - pip install wheelhouse/*
-    - python -c 'import lal, lalframe, lalmetaio'
-  needs:
-    - make-dist
+    - python -m pip install wheelhouse/*
+    - python -c 'import lal, lalframe, lalmetaio, lalsimulation; series = lal.CreateREAL8FrequencySeries("psd", 0, 0, 1, None, 4096); lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)'
+  needs: []
   only:
     - /^lalsuite-v.*$/
     - schedules
@@ -888,46 +1032,26 @@ platform:macos:sierra:
     paths:
       - wheelhouse
 
-.wheel:manylinux1: &wheel-manylinux1
+.wheel:manylinux2014: &wheel-manylinux2014
   <<: *wheel-manylinux
-  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux1_x86_64
-
-.wheel:manylinux2010: &wheel-manylinux2010
-  <<: *wheel-manylinux
-  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux2010_x86_64
+  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux2014_x86_64
 
 # Build wheels for all supported platforms
-wheel:cp27-cp27m-manylinux1:
-  <<: *wheel-manylinux1
-wheel:cp27-cp27mu-manylinux1:
-  <<: *wheel-manylinux1
-wheel:cp34-cp34m-manylinux1:
-  <<: *wheel-manylinux1
-wheel:cp35-cp35m-manylinux1:
-  <<: *wheel-manylinux1
-wheel:cp36-cp36m-manylinux1:
-  <<: *wheel-manylinux1
-wheel:cp37-cp37m-manylinux1:
-  <<: *wheel-manylinux1
-wheel:cp27-cp27m-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp27-cp27mu-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp34-cp34m-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp35-cp35m-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp36-cp36m-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp37-cp37m-manylinux2010:
-  <<: *wheel-manylinux2010
-wheel:cp27-cp27m-macosx:
-  <<: *wheel-macos
+wheel:cp35-cp35m-manylinux2014:
+  <<: *wheel-manylinux2014
+wheel:cp36-cp36m-manylinux2014:
+  <<: *wheel-manylinux2014
+wheel:cp37-cp37m-manylinux2014:
+  <<: *wheel-manylinux2014
+wheel:cp38-cp38-manylinux2014:
+  <<: *wheel-manylinux2014
 wheel:cp35-cp35m-macosx:
   <<: *wheel-macos
 wheel:cp36-cp36m-macosx:
   <<: *wheel-macos
 wheel:cp37-cp37m-macosx:
+  <<: *wheel-macos
+wheel:cp38-cp38-macosx:
   <<: *wheel-macos
 
 deploy:wheel:
@@ -942,22 +1066,14 @@ deploy:wheel:
     - pip install twine
     - twine upload wheelhouse/*
   needs:
-    - wheel:cp27-cp27m-manylinux1
-    - wheel:cp27-cp27mu-manylinux1
-    - wheel:cp34-cp34m-manylinux1
-    - wheel:cp35-cp35m-manylinux1
-    - wheel:cp36-cp36m-manylinux1
-    - wheel:cp37-cp37m-manylinux1
-    - wheel:cp27-cp27m-manylinux2010
-    - wheel:cp27-cp27mu-manylinux2010
-    - wheel:cp34-cp34m-manylinux2010
-    - wheel:cp35-cp35m-manylinux2010
-    - wheel:cp36-cp36m-manylinux2010
-    - wheel:cp37-cp37m-manylinux2010
-    - wheel:cp27-cp27m-macosx
+    - wheel:cp35-cp35m-manylinux2014
+    - wheel:cp36-cp36m-manylinux2014
+    - wheel:cp37-cp37m-manylinux2014
+    - wheel:cp38-cp38-manylinux2014
     - wheel:cp35-cp35m-macosx
     - wheel:cp36-cp36m-macosx
     - wheel:cp37-cp37m-macosx
+    - wheel:cp38-cp38-macosx
   only:
     - /^lalsuite-v.*$/
     - schedules

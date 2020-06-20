@@ -1,0 +1,134 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2020  Cardiff University
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""Test suite to validate that all modules inside a package can be imported
+"""
+
+import os
+import sys
+from importlib import import_module
+try:
+    from pathlib import Path
+except ImportError as exc:
+    import warnings
+    warnings.warn(str(exc))
+    sys.exit(77)
+try:
+    from unittest import mock
+except ImportError:  # python < 3
+    import mock
+    FileNotFoundError = IOError
+
+import pytest
+
+# name of this package
+PACKAGE = "@PACKAGE@"
+
+# are we currently in the TEST phase of a conda build?
+CONDA_BUILD_TEST = os.getenv("CONDA_BUILD_STATE") == "TEST"
+
+# default run arguments
+DEFAULT_PYTEST_ARGUMENTS = [
+    "-v",
+    "-rs",
+    "--junit-xml=junit-imports.xml",
+]
+
+# paths
+HERE = Path(__file__).parent.absolute()
+BUILDDIR = (HERE / Path("@builddir@")).resolve()
+SRCDIR = (HERE / Path("@srcdir@")).resolve()
+TOPBUILDDIR = (HERE / Path("@top_builddir@")).resolve()
+
+# path to exclusion file
+EXCLUDEFILE = SRCDIR / "exclude-modules.txt"
+
+# find directory in which to search for module files
+try:
+    # first, just try to import the package, and use that path
+    PYTHONMODDIR = Path(import_module(PACKAGE).__path__[0])
+except ImportError:  # failed to import, which is bad
+    # fall back to searching the src tree
+    PYTHONMODDIR = TOPBUILDDIR / "python" / PACKAGE
+
+
+# -- utilities ----------------------------------
+
+def read_exclude_file(source):
+    """Read all excluded file paths from the given source file
+    """
+    excludes = set()
+    try:
+        with open(str(source), "r") as fobj:
+            for line in fobj:
+                if isinstance(line, bytes):
+                    line = line.decode("utf-8")
+                content = line.strip().split("#", 1)[0].strip()
+                if content:
+                    excludes.add(content)
+    except FileNotFoundError as exc:
+        warnings.warn(str(exc))
+    return excludes
+
+
+def find_modules(path):
+    """Returns the paths to all python module files
+    """
+    return {str(x.relative_to(path.parent)) for x in path.rglob("*.py")}
+
+
+def path_to_name(filepath):
+    """Returns the module name for a given file path
+
+    >>> path_to_name("lal/__init__.py")
+    "lal"
+    >>> path_to_name("lal/module.py")
+    "lal.module"
+    """
+    name = filepath.replace(".py", "").replace(r"/", ".")
+    if name.endswith(".__init__"):
+        return name[:-9]
+    return name
+
+
+# -- test ---------------------------------------
+
+EXCLUDE = set(map(path_to_name, read_exclude_file(EXCLUDEFILE)))
+MODULES = [path_to_name(x) for x in sorted(find_modules(PYTHONMODDIR))]
+
+# only parametrize if we have something to loop over, this allows pytest
+# to exit with the 'no tests collected' code (5) which should be considered
+# as an error for LALSuite subpackages
+if MODULES:
+    @pytest.mark.parametrize("module", MODULES)
+    def test_import(module):
+        """Test that the named module can be imported
+        """
+        if module in EXCLUDE:
+            pytest.skip("excluded {}".format(str(module)))
+        import_module(module)
+
+
+# -- command-line -------------------------------
+
+if __name__ == "__main__":
+    args = sys.argv[1:] or DEFAULT_PYTEST_ARGUMENTS
+    # patch pytest to not resolve symlinks
+    with mock.patch("py._path.local.LocalPath.realpath", lambda x: x):
+        sys.exit(pytest.main(args=[__file__] + args))

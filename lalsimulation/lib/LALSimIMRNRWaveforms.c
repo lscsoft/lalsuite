@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2015 Ian Harry, Patricia Schmidt
+* Copyright (C) 2015 Ian Harry, Patricia Schmidt, Riccardo Sturani
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -52,6 +52,7 @@
 #include <lal/LALSimIMR.h>
 #include <lal/LALConfig.h>
 #include <lal/SphericalHarmonics.h>
+#include <lal/LALSimInspiralPrecess.h>
 
 #include <lal/H5FileIO.h>
 
@@ -624,14 +625,14 @@ int XLALSimInspiralNRWaveformGetSpinsFromHDF5File(
 
 
 /* Everything needs to be declared as unused in case HDF is not enabled. */
-int XLALSimInspiralNRWaveformGetHplusHcross(
-        UNUSED REAL8TimeSeries **hplus,        /**< Output h_+ vector */
-        UNUSED REAL8TimeSeries **hcross,       /**< Output h_x vector */
-        UNUSED REAL8 phiRef,                   /**< orbital phase at reference pt. */
-        UNUSED REAL8 inclination,              /**< inclination angle */
+
+UNUSED static INT4 XLALSimIMRNRWaveformGetModes(
+        UNUSED SphHarmTimeSeries **Hlms,       /**< OUTPUT */
+	UNUSED LIGOTimeGPS *epoch,             /**< OUTPUT */
+	UNUSED UINT4 *length,                  /**< OUTPUT */
         UNUSED REAL8 deltaT,                   /**< sampling interval (s) */
-        UNUSED REAL8 m1,                       /**< mass of companion 1 (kg) */
-        UNUSED REAL8 m2,                       /**< mass of companion 2 (kg) */
+        UNUSED REAL8 m1,                       /**< mass of companion 1 (solar units) */
+        UNUSED REAL8 m2,                       /**< mass of companion 2 (solar units) */
         UNUSED REAL8 r,                        /**< distance of source (m) */
         UNUSED REAL8 fStart,                   /**< start GW frequency (Hz) */
         UNUSED REAL8 fRef,                     /**< reference GW frequency (Hz) */
@@ -641,13 +642,13 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
         UNUSED REAL8 s2x,                      /**< initial value of S2x */
         UNUSED REAL8 s2y,                      /**< initial value of S2y */
         UNUSED REAL8 s2z,                      /**< initial value of S2z */
-        UNUSED const char *NRDataFile,         /**< Location of NR HDF file */
+        UNUSED LALH5File* file,                /**< pointer to location of NR HDF file */
         UNUSED LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
         )
 {
-  #ifndef LAL_HDF5_ENABLED
-  XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
-  #else
+#ifndef LAL_HDF5_ENABLED
+  XLAL_ERROR_NULL(XLAL_FAILURE, "HDF5 support not enabled");
+#else
   /* Declarations */
   UINT4 curr_idx, nr_file_format;
   INT4 model, modem;
@@ -655,33 +656,19 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   REAL8 nrEta;
   REAL8 S1x, S1y, S1z, S2x, S2y, S2z;
   REAL8 Mflower, time_start_M, time_start_s, time_end_M, time_end_s;
-  REAL8 est_start_time, curr_h_real, curr_h_imag;
-  REAL8 theta, psi, calpha, salpha;
+  REAL8 est_start_time;
   REAL8 distance_scale_fac;
-  COMPLEX16 curr_ylm;
-  REAL8TimeSeries *hplus_corr;
-  REAL8TimeSeries *hcross_corr;
+  COMPLEX16TimeSeries *hlm;
+  SphHarmTimeSeries *hlms_tmp=NULL;
 
   /* These keys follow a strict formulation and cannot be longer than 11
    * characters */
   char amp_key[30];
   char phase_key[30];
   gsl_vector *tmpVector=NULL;
-  LALH5File *file, *group;
+  LALH5File *group;
   LIGOTimeGPS tmpEpoch = LIGOTIMEGPSZERO;
   REAL8Vector *curr_amp, *curr_phase;
-
-  /* Use solar masses for units. NR files will use
-   * solar masses as well, so easier for that conversion
-   */
-  m1 = m1 / LAL_MSUN_SI;
-  m2 = m2 / LAL_MSUN_SI;
-
-  file = XLALH5FileOpen(NRDataFile, "r");
-  if (file == NULL)
-  {
-     XLAL_ERROR(XLAL_EIO, "NR SIMULATION DATA FILE %s NOT FOUND.\n", NRDataFile);
-  }
 
   /* Sanity checks on physical parameters passed to waveform
    * generator to guarantee consistency with NR data file.
@@ -697,12 +684,6 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
    * recorded in the metadata of the HDF5 file.
    * PS: This assumes that the input spins are in the LAL frame!
    */
-  XLALH5FileQueryScalarAttributeValue(&nr_file_format, file, "Format");
-  if (nr_file_format < 2)
-  {
-    XLALPrintInfo("This NR file is format %d. Only formats 2 and above support the use of reference frequency. For formats < 2 the reference frequency always corresponds to the start of the waveform.", nr_file_format);
-    fRef = -1;
-  }
   XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(&S1x, &S1y, &S1z,
                                                        &S2x, &S2y, &S2z,
                                                        fRef, m1+m2, file);
@@ -801,31 +782,12 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   }
 
   array_length = (UINT4)(ceil( (time_end_s - time_start_s) / deltaT));
-
-  /* Compute correct angles for hplus and hcross following LAL convention. */
-
-  theta = psi = calpha = salpha = 0.;
-  XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(&theta, &psi, &calpha,
-                       &salpha, file, inclination, phiRef, fRef*(m1+m2));
+  *length=array_length;
 
   /* Create the return time series, use arbitrary epoch here. We set this
    * properly later. */
   XLALGPSAdd(&tmpEpoch, time_start_s);
-
-  *hplus  = XLALCreateREAL8TimeSeries("H_PLUS", &tmpEpoch, 0.0, deltaT,
-                                      &lalStrainUnit, array_length );
-  *hcross = XLALCreateREAL8TimeSeries("H_CROSS", &tmpEpoch, 0.0, deltaT,
-                                      &lalStrainUnit, array_length );
-
-  hplus_corr = XLALCreateREAL8TimeSeries("H_PLUS", &tmpEpoch, 0.0, deltaT,
-                                      &lalStrainUnit, array_length );
-  hcross_corr = XLALCreateREAL8TimeSeries("H_CROSS", &tmpEpoch, 0.0, deltaT,
-                                      &lalStrainUnit, array_length );
-  for (curr_idx = 0; curr_idx < array_length; curr_idx++)
-  {
-    hplus_corr->data->data[curr_idx] = 0.0;
-    hcross_corr->data->data[curr_idx] = 0.0;
-  }
+  *epoch=tmpEpoch;
 
   /* Create the distance scale factor */
   distance_scale_fac = (m1 + m2) * LAL_MRSUN_SI / r;
@@ -833,6 +795,7 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   /* Generate the waveform */
   /* NOTE: We assume that for a given ell mode, all m modes are present */
   INT4 NRLmax;
+
   XLALH5FileQueryScalarAttributeValue(&NRLmax, file, "Lmax");
 
   INT4 modearray_needs_destroying=0;
@@ -846,6 +809,8 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
     }
   }
   /* else Use the ModeArray given */
+  hlm=XLALCreateCOMPLEX16TimeSeries("hlm",&tmpEpoch,0.0,deltaT,&lalStrainUnit,array_length);
+  memset(hlm->data->data, 0, array_length * sizeof(COMPLEX16));
 
   for (model=2; model < (NRLmax + 1) ; model++)
   {
@@ -860,7 +825,6 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
           continue;
       }
       XLAL_PRINT_INFO("generating model = %i modem = %i\n", model, modem);
-
 
       snprintf(amp_key, sizeof(amp_key), "amp_l%d_m%d", model, modem);
       snprintf(phase_key, sizeof(phase_key), "phase_l%d_m%d", model, modem);
@@ -881,30 +845,138 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
       XLALSimInspiralNRWaveformGetDataFromHDF5File(&curr_phase, file, (m1 + m2),
                                 time_start_s, array_length, deltaT, phase_key);
 
-      curr_ylm = XLALSpinWeightedSphericalHarmonic(theta, psi, -2,
-                                                   model, modem);
-
       for (curr_idx = 0; curr_idx < array_length; curr_idx++)
       {
-        curr_h_real = curr_amp->data[curr_idx]
-                    * cos(curr_phase->data[curr_idx]) * distance_scale_fac;
-        curr_h_imag = curr_amp->data[curr_idx]
-                    * sin(curr_phase->data[curr_idx]) * distance_scale_fac;
-
-        hplus_corr->data->data[curr_idx] = hplus_corr->data->data[curr_idx]
-               + curr_h_real * creal(curr_ylm) - curr_h_imag * cimag(curr_ylm);
-
-        hcross_corr->data->data[curr_idx] = hcross_corr->data->data[curr_idx]
-               - curr_h_real * cimag(curr_ylm) - curr_h_imag * creal(curr_ylm);
-
+	hlm->data->data[curr_idx]= (curr_amp->data[curr_idx]*cos(curr_phase->data[curr_idx]) + I*curr_amp->data[curr_idx]*sin(curr_phase->data[curr_idx]) ) * distance_scale_fac;
       }
-
+      /* Note that the hlm built here do not respect the LAL convention
+       * the function XLALSimIMRNRWaveformGetHlm will perform the pi/2 rotation
+       * necessary to bring the in the right frame.
+       * See https://dcc.ligo.org/LIGO-T1900080 for details.
+       */
+      hlms_tmp=XLALSphHarmTimeSeriesAddMode(hlms_tmp,hlm,model,modem);
       XLALDestroyREAL8Vector(curr_amp);
       XLALDestroyREAL8Vector(curr_phase);
-
     }
-
   }
+  XLALDestroyCOMPLEX16TimeSeries(hlm);
+  if (modearray_needs_destroying)
+    XLALDestroyValue(ModeArray);
+
+  *Hlms=hlms_tmp;
+
+  return XLAL_SUCCESS;
+#endif
+}
+
+/* Everything needs to be declared as unused in case HDF is not enabled. */
+INT4 XLALSimInspiralNRWaveformGetHplusHcross(
+        UNUSED REAL8TimeSeries **hplus,        /**< Output h_+ vector */
+        UNUSED REAL8TimeSeries **hcross,       /**< Output h_x vector */
+        UNUSED REAL8 phiRef,                   /**< orbital phase at reference pt. */
+        UNUSED REAL8 inclination,              /**< inclination angle */
+        UNUSED REAL8 deltaT,                   /**< sampling interval (s) */
+        UNUSED REAL8 m1_SI,                    /**< mass of companion 1 (kg) */
+        UNUSED REAL8 m2_SI,                    /**< mass of companion 2 (kg) */
+        UNUSED REAL8 r,                        /**< distance of source (m) */
+        UNUSED REAL8 fStart,                   /**< start GW frequency (Hz) */
+        UNUSED REAL8 fRef,                     /**< reference GW frequency (Hz) */
+        UNUSED REAL8 s1x,                      /**< initial value of S1x */
+        UNUSED REAL8 s1y,                      /**< initial value of S1y */
+        UNUSED REAL8 s1z,                      /**< initial value of S1z */
+        UNUSED REAL8 s2x,                      /**< initial value of S2x */
+        UNUSED REAL8 s2y,                      /**< initial value of S2y */
+        UNUSED REAL8 s2z,                      /**< initial value of S2z */
+        UNUSED const char *NRDataFile,         /**< Location of NR HDF file */
+        UNUSED LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
+        )
+{
+#ifndef LAL_HDF5_ENABLED
+  XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+#else
+  /* Declarations */
+  UINT4 curr_idx, array_length, nr_file_format;
+  INT4 model, modem, NRLmax;
+  REAL8 m1,m2;
+  REAL8 theta, psi, calpha, salpha;
+  REAL8 fRef_pass=fRef;
+  COMPLEX16 curr_ylm, tmp;
+  COMPLEX16TimeSeries *curr_hlm=NULL;
+  REAL8TimeSeries *hplus_corr;
+  REAL8TimeSeries *hcross_corr;
+
+  /* These keys follow a strict formulation and cannot be longer than 11
+   * characters */
+  LALH5File *file=NULL;
+  LIGOTimeGPS tmpEpoch = LIGOTIMEGPSZERO;
+  SphHarmTimeSeries *tmp_Hlms=NULL;
+
+  /* Use solar masses for units. NR files will use
+   * solar masses as well, so easier for that conversion
+   */
+  m1 = m1_SI / LAL_MSUN_SI;
+  m2 = m2_SI / LAL_MSUN_SI;
+
+  file = XLALH5FileOpen(NRDataFile, "r");
+  if (file == NULL)
+  {
+     XLAL_ERROR(XLAL_EIO, "NR SIMULATION DATA FILE %s NOT FOUND.\n", NRDataFile);
+  }
+
+  XLALH5FileQueryScalarAttributeValue(&nr_file_format, file, "Format");
+  if (nr_file_format < 2)
+  {
+    XLALPrintInfo("This NR file is format %d. Only formats 2 and above support the use of reference frequency. For formats < 2 the reference frequency always corresponds to the start of the waveform.", nr_file_format);
+    fRef_pass = -1;
+  }
+  INT4 err_code = XLALSimIMRNRWaveformGetModes(&tmp_Hlms,&tmpEpoch,&array_length, \
+                                               deltaT, m1, m2, r, fStart, fRef_pass, \
+                                               s1x,s1y,s1z,s2x,s2y,s2z, \
+                                               file, ModeArray);
+  if (err_code!=XLAL_SUCCESS)
+    XLAL_ERROR(XLAL_FAILURE);
+
+  /* Compute correct angles for hplus and hcross following LAL convention. */
+
+  theta = psi = calpha = salpha = 0.;
+  XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(&theta, &psi, &calpha,
+                       &salpha, file, inclination, phiRef, fRef_pass*(m1+m2));
+  XLALH5FileClose(file);
+
+  *hplus  = XLALCreateREAL8TimeSeries("H_PLUS", &tmpEpoch, 0.0, deltaT,
+                                      &lalStrainUnit, array_length );
+  *hcross = XLALCreateREAL8TimeSeries("H_CROSS", &tmpEpoch, 0.0, deltaT,
+                                      &lalStrainUnit, array_length );
+
+  hplus_corr = XLALCreateREAL8TimeSeries("H_PLUS", &tmpEpoch, 0.0, deltaT,
+                                      &lalStrainUnit, array_length );
+  hcross_corr = XLALCreateREAL8TimeSeries("H_CROSS", &tmpEpoch, 0.0, deltaT,
+                                      &lalStrainUnit, array_length );
+  for (curr_idx = 0; curr_idx < array_length; curr_idx++)
+  {
+    hplus_corr->data->data[curr_idx] = 0.0;
+    hcross_corr->data->data[curr_idx] = 0.0;
+  }
+
+  NRLmax=XLALSphHarmTimeSeriesGetMaxL(tmp_Hlms);
+
+  for (model=2; model < (NRLmax + 1) ; model++)
+    {
+    for (modem=-model; modem < (model+1); modem++)
+      {
+	curr_ylm = XLALSpinWeightedSphericalHarmonic(theta, psi, -2, model, modem);
+	curr_hlm = XLALSphHarmTimeSeriesGetMode(tmp_Hlms, model, modem);
+	if (curr_hlm) {
+	  for (curr_idx = 0; curr_idx < array_length; curr_idx++)
+	    {
+	      tmp=curr_hlm->data->data[curr_idx]*curr_ylm;
+	      hplus_corr->data->data[curr_idx]  += creal(tmp);
+	      hcross_corr->data->data[curr_idx] -= cimag(tmp);
+	    }
+	}
+      }
+    }
+  XLALDestroySphHarmTimeSeries(tmp_Hlms);
 
  /* Correct for the "alpha" angle as given in T1500606 or arxiv:1703.01076
   * to translate from the NR wave frame to LAL wave-frame.
@@ -925,10 +997,116 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
 
   XLALDestroyREAL8TimeSeries(hplus_corr);
   XLALDestroyREAL8TimeSeries(hcross_corr);
-  XLALH5FileClose(file);
-  if (modearray_needs_destroying)
-    XLALDestroyValue(ModeArray);
 
   return XLAL_SUCCESS;
-  #endif
+#endif
+}
+
+/* Everything needs to be declared as unused in case HDF is not enabled. */
+INT4 XLALSimInspiralNRWaveformGetHlms(UNUSED SphHarmTimeSeries **Hlms, /**< OUTPUT */
+        UNUSED REAL8 deltaT,                   /**< sampling interval (s) */
+        UNUSED REAL8 m1_SI,                    /**< mass of companion 1 (kg) */
+        UNUSED REAL8 m2_SI,                    /**< mass of companion 2 (kg) */
+        UNUSED REAL8 r,                        /**< distance of source (m) */
+        UNUSED REAL8 fStart,                   /**< start GW frequency (Hz) */
+        UNUSED REAL8 fRef,                     /**< reference GW frequency (Hz) */
+        UNUSED REAL8 s1x,                      /**< initial value of S1x */
+        UNUSED REAL8 s1y,                      /**< initial value of S1y */
+        UNUSED REAL8 s1z,                      /**< initial value of S1z */
+        UNUSED REAL8 s2x,                      /**< initial value of S2x */
+        UNUSED REAL8 s2y,                      /**< initial value of S2y */
+        UNUSED REAL8 s2z,                      /**< initial value of S2z */
+        UNUSED const char *NRDataFile,         /**< Location of NR HDF file */
+        UNUSED LALValue* ModeArray             /**< Container for the ell and m modes to generate. To generate all available modes pass NULL */
+        )
+{
+#ifndef LAL_HDF5_ENABLED
+  XLAL_ERROR_NULL(XLAL_FAILURE, "HDF5 support not enabled");
+#else
+  /* Declarations */
+  UINT4 curr_idx, array_length, nr_file_format;
+  INT4 model, modem, NRLmax;
+  REAL8 m1,m2;
+  REAL8 theta, psi, calpha, salpha;
+  REAL8 fRef_pass=fRef;
+  COMPLEX16TimeSeries *tmp_hlm=NULL;
+  SphHarmTimeSeries *tmp_Hlms=NULL;
+  LALH5File *file;
+  LIGOTimeGPS tmpEpoch = LIGOTIMEGPSZERO;
+
+  /* Use solar masses for units. NR files will use
+   * solar masses as well, so easier for that conversion
+   */
+  m1 = m1_SI / LAL_MSUN_SI;
+  m2 = m2_SI / LAL_MSUN_SI;
+
+  file = XLALH5FileOpen(NRDataFile, "r");
+  if (file == NULL)
+  {
+     XLAL_ERROR(XLAL_EIO, "NR SIMULATION DATA FILE %s NOT FOUND.\n", NRDataFile);
+  }
+
+  XLALH5FileQueryScalarAttributeValue(&nr_file_format, file, "Format");
+  if (nr_file_format < 2)
+  {
+    XLALPrintInfo("This NR file is format %d. Only formats 2 and above support the use of reference frequency. For formats < 2 the reference frequency always corresponds to the start of the waveform.", nr_file_format);
+    fRef_pass = -1;
+  }
+
+  INT4 err_code = XLALSimIMRNRWaveformGetModes(&tmp_Hlms,&tmpEpoch,&array_length, \
+                                               deltaT, m1, m2, r, fStart, fRef_pass, \
+                                               s1x,s1y,s1z,s2x,s2y,s2z, \
+                                               file, ModeArray);
+  if (err_code!=XLAL_SUCCESS)
+    XLAL_ERROR(XLAL_FAILURE);
+
+  /* Compute correct angles for hplus and hcross following LAL convention. */
+
+  psi = calpha = salpha = 0.;
+  XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(&theta, &psi, &calpha,
+                       &salpha, file, 0., 0., fRef_pass*(m1+m2));
+  XLALH5FileClose(file);
+
+  NRLmax= XLALSphHarmTimeSeriesGetMaxL(tmp_Hlms);
+  COMPLEX16 facm=-1;
+  for (model=2; model < (NRLmax + 1) ; model++)
+  {
+    for (modem=-model; modem < (model+1); modem++)
+    {
+      tmp_hlm=XLALSphHarmTimeSeriesGetMode(tmp_Hlms,model,modem);
+      if (tmp_hlm) {
+	for (curr_idx = 0; curr_idx < array_length; curr_idx++)
+	  tmp_hlm->data->data[curr_idx]*=facm;
+	*Hlms=XLALSphHarmTimeSeriesAddMode(*Hlms,tmp_hlm,model,modem);
+      }
+      facm*=I;
+    }
+    facm=1./facm;
+  }
+  XLALDestroySphHarmTimeSeries(tmp_Hlms);
+
+ /* Correct for the "alpha" angle as given in T1500606 or arxiv:1703.01076
+  * to translate from the NR wave frame to LAL wave-frame.
+  */
+
+  REAL8TimeSeries *alphats = XLALCreateREAL8TimeSeries("alpha", &tmpEpoch, 0.0, deltaT, &lalDimensionlessUnit, array_length );
+  REAL8TimeSeries *thetats = XLALCreateREAL8TimeSeries("theta", &tmpEpoch, 0.0, deltaT, &lalDimensionlessUnit, array_length );
+  REAL8TimeSeries *psits   = XLALCreateREAL8TimeSeries("tpsi", &tmpEpoch, 0.0, deltaT, &lalDimensionlessUnit, array_length );
+  REAL8 alpha=atan2(salpha,calpha);
+
+  for (curr_idx = 0; curr_idx < array_length; curr_idx++) {
+    alphats->data->data[curr_idx] = alpha;
+    thetats->data->data[curr_idx] =-theta;
+    psits->data->data[curr_idx]   =-psi;
+  }
+
+  err_code=XLALSimInspiralPrecessionRotateModes(*Hlms,alphats,thetats,psits);
+  if (err_code!=XLAL_SUCCESS)
+    XLAL_ERROR(XLAL_EINVAL);
+  XLALDestroyREAL8TimeSeries(alphats);
+  XLALDestroyREAL8TimeSeries(thetats);
+  XLALDestroyREAL8TimeSeries(psits);
+
+  return XLAL_SUCCESS;
+#endif
 }

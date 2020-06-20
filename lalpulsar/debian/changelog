@@ -1,3 +1,15 @@
+lalpulsar (1.18.2-1) unstable; urgency=low
+
+  * O3b release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 27 Nov 2019 16:06:20 -0700
+
+lalpulsar (1.18.1-1) unstable; urgency=low
+
+  * O3 point release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 05 Aug 2019 09:11:43 -0700
+
 lalpulsar (1.18.0-1) unstable; urgency=low
 
   * O3 release

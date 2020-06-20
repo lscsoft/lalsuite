@@ -366,8 +366,8 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   XLAL_CHECK ( cfg != NULL, XLAL_EINVAL, "Invalid NULL input 'cfg'\n" );
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
 
-  cfg->VCSInfoString = XLALGetVersionString(0);
-  XLAL_CHECK ( cfg->VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
+  cfg->VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ");
+  XLAL_CHECK ( cfg->VCSInfoString != NULL, XLAL_EFUNC, "XLALVCSInfoString failed.\n" );
 
   /* if requested, log all user-input and code-versions */
   if ( uvar->logfile ) {
@@ -397,6 +397,11 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   }
   if ( have_IFOs ) {
     XLAL_CHECK ( XLALParseMultiLALDetector ( &(cfg->multiIFO), uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  if ( have_noiseSFTs ) {
+    /* user must specify the window function used for the noiseSFTs */
+    XLAL_CHECK ( XLALUserVarWasSet ( &uvar->SFTWindowType ), XLAL_EINVAL, "Option --noiseSFTs requires to also set --SFTWindowType. Please try to ensure this matches how the input SFTs were generated." );
   }
 
   // ----- TIMESTAMPS: either from --timestampsFiles, --startTime+duration, or --noiseSFTs
@@ -640,8 +645,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember( timestampsFiles,       STRINGVector, 0,  OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
 
   /* sampling and heterodyning frequencies */
-  XLALRegisterUvarMember(  fmin,                 REAL8, 0, NODEFAULT, "Lowest frequency in output SFT (heterodyning frequency), REQUIRED unless --noiseSFTs given.");
-  XLALRegisterUvarMember(  Band,                 REAL8, 0, NODEFAULT, "Bandwidth of output SFT in Hz (= 1/2 sampling frequency), REQUIRED unless --noiseSFTs given.");
+  XLALRegisterUvarMember(  fmin,                 REAL8, 0, NODEFAULT, "Lowest frequency (Hz) of output SFT, and heterodyning frequency of time series written to frames; REQUIRED unless --noiseSFTs given.\n\nNote that, since the output time series written to frames are heterodyned at this frequency, signals at frequency 'f' will be shifted to frequency 'f - fmin'.");
+  XLALRegisterUvarMember(  Band,                 REAL8, 0, NODEFAULT, "Bandwidth (Hz) of output SFT, and of time series written to frames (i.e. half the time series sampling frequency); REQUIRED unless --noiseSFTs given.");
 
   /* SFT properties */
   XLALRegisterUvarMember(  Tsft,                 REAL8, 0, OPTIONAL, "Time baseline of one SFT in seconds");

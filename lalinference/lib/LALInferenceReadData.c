@@ -230,7 +230,7 @@ static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS 
 	 * it waits for a period and tries again, up to 5 times. This is an attempt to get around overloading
 	 * of file servers when many jobs are run at the time same */
 	LALStatus status;
-	UINT4 max_tries=5,tries=0,delay=5;
+	UINT4 max_tries=7,tries=0,delay=5;
 	memset(&status,0,sizeof(status));
 	LALFrStream *stream = NULL;
 	REAL8TimeSeries *out = NULL;
@@ -849,7 +849,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             if(!strcmp(caches[i],"LALAdLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 1E-49;}
             if(!strcmp(caches[i],"LALSimLIGO")) {XLALSimNoisePSD(IFOdata[i].oneSidedNoisePowerSpectrum,IFOdata[i].fLow,XLALSimNoisePSDiLIGOSRD ) ; LALSimPsd=1;}
             if(!strcmp(caches[i],"LALSimVirgo")) {XLALSimNoisePSD(IFOdata[i].oneSidedNoisePowerSpectrum,IFOdata[i].fLow,XLALSimNoisePSDVirgo ); LALSimPsd=1;}
-            if(!strcmp(caches[i],"LALSimAdLIGO")) {XLALSimNoisePSD(IFOdata[i].oneSidedNoisePowerSpectrum,IFOdata[i].fLow,XLALSimNoisePSDaLIGOZeroDetHighPower ) ;LALSimPsd=1;}
+            if(!strcmp(caches[i],"LALSimAdLIGO")) {XLALSimNoisePSDaLIGOaLIGODesignSensitivityT1800044(IFOdata[i].oneSidedNoisePowerSpectrum,IFOdata[i].fLow) ;LALSimPsd=1;}
             if(!strcmp(caches[i],"LALSimAdVirgo")) {XLALSimNoisePSD(IFOdata[i].oneSidedNoisePowerSpectrum,IFOdata[i].fLow,XLALSimNoisePSDAdvVirgo) ;LALSimPsd=1;}
             if(interpFlag) {PSD=NULL; scalefactor=1.0;}
             if(PSD==NULL && !(interpFlag|| LALSimPsd)) {fprintf(stderr,"Error: unknown simulated PSD: %s\n",caches[i]); exit(-1);}

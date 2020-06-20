@@ -2628,7 +2628,7 @@ BOOLEAN passed_special_locations_tests_p(LALStatus UNUSED *status)
 
 char *laldr_strlcpy(char *dst, const char *src, size_t len)
 {
-  char *retval = strncpy(dst, src, len);
+  char *retval = strncpy(dst, src, len-1);
   if (verbose_level & 8)
     {
       printf("sizeof(dst) = %zu\n", sizeof(dst));

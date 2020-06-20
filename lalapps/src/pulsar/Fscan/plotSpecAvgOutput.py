@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 
+import sys
+import os
+import math
+
 from numpy import *
+
+import scipy
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 from pylab import *
-import scipy as scipy
-import sys
-import os
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
-import math as math
-import numpy as np
+
 from findCombs import findCombs
 
 def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coinDF, pulsar, referenceFile):
@@ -58,7 +60,7 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
     tStart = lst.pop()      # start time
     ifo = lst.pop()         # ifo
     fEnd = lst.pop()        # end frequency
-    fStart = lst.pop()      # start frequency 
+    fStart = lst.pop()      # start frequency
 
     y_temp1 = y             # Create an array of the spectrogram data without the segments taken out when a segment file is used
     yzeros=list(y.sum(axis=0))
@@ -119,7 +121,7 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
 #    clim(ymin,ymax)
     cbar.set_label('Channel units/root Hz')  #Colorbar label
     filename_png = filename + '.png'
-    
+
 #y-axis
     ylabel('Frequency [Hz]',fontsize=10)
     fRange = int(float(fEnd)) - int(float(fStart))
@@ -177,7 +179,7 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
 
     # Get variables for combfinder
     numSFTs = ylen2
-    
+
 
     outputTextFile = filename + '.txt'
     outputSortedTextFile = outputFileName + '_sorted.txt'

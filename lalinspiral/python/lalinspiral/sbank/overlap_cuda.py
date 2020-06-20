@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from numpy import float32, complex64
-import pycuda.autoinit  # initializes upon import
+import pycuda.autoinit  # noqa: F401, initializes upon import
 import pycuda.driver as cuda
 from pycuda.reduction import ReductionKernel
 from pycuda.elementwise import ElementwiseKernel

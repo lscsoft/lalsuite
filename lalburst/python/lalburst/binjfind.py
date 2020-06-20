@@ -69,16 +69,40 @@ from .git_version import version as __version__
 
 
 #
-# allow burst event lists to be searched using the bisect module
+# Construct a subclass of the sngl_burst row class with the methods that
+# are needed
 #
 
 
-def sngl_burst___cmp__(self, other):
-	# compare self's peak time to the LIGOTimeGPS instance other
-	return cmp(self.peak, other)
+class SnglBurst(lsctables.SnglBurst):
+	__slots__ = ()
+
+	#
+	# compare self's end time to the LIGOTimeGPS instance other.
+	# allows bisection searches by GPS time to find ranges of triggers
+	# quickly
+	#
+
+	def __lt__(self, other):
+		return self.end < other
+
+	def __le__(self, other):
+		return self.end <= other
+
+	def __eq__(self, other):
+		return self.end == other
+
+	def __ne__(self, other):
+		return self.end != other
+
+	def __ge__(self, other):
+		return self.end >= other
+
+	def __gt__(self, other):
+		return self.end > other
 
 
-lsctables.SnglBurst.__cmp__ = sngl_burst___cmp__
+lsctables.SnglBurstTable.RowType = lsctables.SnglBurst = SnglBurst
 
 
 #

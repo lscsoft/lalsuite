@@ -125,24 +125,15 @@
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-/* Hooks for Einstein\@Home / BOINC
-   These are defined to do nothing special in the standalone case
-   and will be set in boinc_extras.h if EAH_BOINC is set
- */
-#ifdef EAH_BOINC
-#include "EinsteinAtHome/hs_boinc_extras.h"
-#else /* EAH_BOINC */
-/* checkpointing */
+/* checkpointing (non-functional placeholders for non-BOINC case) */
 #define HS_CHECKPOINTING 0 /* no checkpointing in the non-BOINC case (yet) */
 #define GET_CHECKPOINT(toplist,total,count,outputname,cptname) *total=0;
 #define INSERT_INTO_HOUGHFSTAT_TOPLIST insert_into_houghFstat_toplist
 #define SHOW_PROGRESS(rac,dec,tpl_count,tpl_total,freq,fband)
 #define SET_CHECKPOINT
-/* BOINC */
 #define MAIN main
-#endif /* EAH_BOINC */
 
-/* These might have been set differently in hs_boinc_extras.h or ComputeFstatREAL4.h */
+/* These might have been set differently in ComputeFstatREAL4.h */
 #ifndef COMPUTEFSTATHOUGHMAP
 #define COMPUTEFSTATHOUGHMAP ComputeFstatHoughMap
 #endif
@@ -252,7 +243,6 @@ void GetXiInSingleStack (LALStatus         *status,
 			 HOUGHDemodPar     *par);
 
 /* default values for input variables */
-#define BLOCKSRNGMED 		101 	/**< Default running median window size */
 #define FSTART 			310.0	/**< Default Start search frequency */
 
 #define FBAND 			0.01	/**< Default search band */
@@ -260,7 +250,6 @@ void GetXiInSingleStack (LALStatus         *status,
 #define DFDOT 			0.0	/**< Default range of first spindown parameter */
 #define SKYREGION 		"allsky" /**< default sky region to search over -- just a single point*/
 #define NFDOT  			10    	/**< Default size of hough cylinder of look up tables */
-#define DTERMS 			8     	/**< Default number of dirichlet kernel terms for calculating Fstat */
 #define MISMATCH 		0.2 	/**< Default for metric grid maximal mismatch value */
 #define DALPHA 			0.001 	/**< Default resolution for isotropic or flat grids */
 #define DDELTA 			0.001 	/**< Default resolution for isotropic or flat grids */
@@ -407,10 +396,10 @@ int MAIN( int argc, char *argv[]) {
   INT4 uvar_method = -1; 	/* hough = 0, stackslide = 1, -1 = pure fstat*/
   INT4 uvar_nCand1 = NCAND1; /* number of candidates to be followed up from first stage */
 
-  INT4 uvar_blocksRngMed = BLOCKSRNGMED;
+  INT4 uvar_blocksRngMed = FstatOptionalArgsDefaults.runningMedianWindow;
   INT4 uvar_nStacksMax = 1;
-  INT4 uvar_Dterms = 8;
-  INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
+  INT4 uvar_Dterms = FstatOptionalArgsDefaults.Dterms;
+  INT4 uvar_SSBprecision = FstatOptionalArgsDefaults.SSBprec;
   INT4 uvar_nf1dotRes = 1;
   INT4 uvar_metricType1 = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
   INT4 uvar_gridType1 = GRID_METRIC;
@@ -445,11 +434,7 @@ int MAIN( int argc, char *argv[]) {
   strcpy(uvar_fnameout, FNAMEOUT);
 
   /* set LAL error-handler */
-#ifdef EAH_BOINC
-  lal_errhandler = BOINC_LAL_ErrHand;
-#else
   lal_errhandler = LAL_ERR_EXIT;
-#endif
 
   /* register user input variables */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_log,              "log",              BOOLEAN, 0,   OPTIONAL,  "Write log file") == XLAL_SUCCESS, XLAL_EFUNC);
@@ -516,8 +501,8 @@ int MAIN( int argc, char *argv[]) {
 
   /* assemble version string */
   CHAR *VCSInfoString;
-  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
-    XLALPrintError("XLALGetVersionString(0) failed.\n");
+  if ( (VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) == NULL ) {
+    XLALPrintError("XLALVCSInfoString failed.\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
   LogPrintfVerbatim( LOG_DEBUG, "Code-version: %s", VCSInfoString );

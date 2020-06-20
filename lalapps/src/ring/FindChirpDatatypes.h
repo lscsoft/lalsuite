@@ -55,6 +55,7 @@ extern "C" {
  *
  */
 /** @{ */
+/** \cond LALINSPIRAL */
 
 /* ---------- typedefs of structures used by the findchirp functions ---------- */
 
@@ -205,6 +206,7 @@ tagFindChirpTemplate
 }
 FindChirpTemplate;
 
+/** \endcond */
 /** @} */ /* end:FindChirpDatatypes_h */
 
 #if 0

@@ -292,7 +292,7 @@ static void PrecessingNRSur_LoadFitData(
 
     const size_t str_size = 30;
     char *tmp_name = XLALMalloc(str_size);
-    size_t nwritten;
+    UNUSED size_t nwritten;
 
     nwritten = snprintf(tmp_name, str_size, "%s_coefs", name);
     assert(nwritten < str_size);
@@ -321,7 +321,7 @@ static void NRSur7dq4_LoadVectorFitData(
 ) {
     const size_t str_size = 20;
     char *tmp_name = XLALMalloc(str_size);
-    size_t nwritten;
+    UNUSED size_t nwritten;
 
     *vector_fit_data = XLALMalloc(sizeof(VectorFitData));
     (*vector_fit_data)->vec_dim = size;
@@ -1832,6 +1832,9 @@ static PrecessingNRSurData* PrecessingNRSur_core(
 
     // Load surrogate data if needed. If not, just access the loaded data.
     PrecessingNRSurData *__sur_data = PrecessingNRSur_LoadData(approximant);
+    if (!__sur_data->setup) {
+        XLAL_ERROR_NULL(XLAL_EFAILED, "Error loading surrogate data.\n");
+    }
 
     // Make sure we didn't request any unavailable modes
     int ell, m;
@@ -2018,6 +2021,9 @@ REAL8 PrecessingNRSur_StartFrequency(
 
 /**
  * If m1<m2, swaps the labels for the two BHs such that Bh1 is always heavier.
+ * Then rotates the in-plane spins by pi. These two together are the same
+ * as a rigid rotation of the system by pi. This rotation will be undone by
+ * multiplying the odd-m modes by a minus sign after the modes are generated.
  */
 static bool PrecessingNRSur_switch_labels_if_needed(
         REAL8 *m1,      /**< Input and Output. mass of companion 1 (kg) */
@@ -2037,12 +2043,15 @@ static bool PrecessingNRSur_switch_labels_if_needed(
         REAL8 tmp = *m1;
         *m1 = *m2;
         *m2 = tmp;
+        // For the in-plane spins, also change the signs after swapping. This
+        // is the same as roting the spins about the z-axis by pi.
         tmp = *s1x;
-        *s1x = *s2x;
-        *s2x = tmp;
+        *s1x = -*s2x;
+        *s2x = -tmp;
         tmp = *s1y;
-        *s1y = *s2y;
-        *s2y = tmp;
+        *s1y = -*s2y;
+        *s2y = -tmp;
+        // No sign change for z-spins
         tmp = *s1z;
         *s1z = *s2z;
         *s2z = tmp;
@@ -2548,8 +2557,6 @@ SphHarmTimeSeries *XLALSimInspiralPrecessingNRSurModes(
 }
 
 /**
- * NOT REVIEWED!
- *
  * This function evaluates the NRSur7dq2 or NRSur7dq4 surrogate model and
  * returns the precessing frame dynamics.
  * Papers:
@@ -2571,7 +2578,7 @@ SphHarmTimeSeries *XLALSimInspiralPrecessingNRSurModes(
  *      chiA0z
  *          spin of the heavier BH at the reference epoch, in the coorbital
  *          frame, as defined in the above papers. This agrees with the LAL
- *          convention.
+ *          convention, see LALSimInspiral.h for definition of the LAL frame.
  *      chiB0x
  *      chiB0y
  *      chiB0z
@@ -2598,8 +2605,8 @@ SphHarmTimeSeries *XLALSimInspiralPrecessingNRSurModes(
  *
  *          Extrapolation options:
  *          The surrogate models are trained on the following ranges:
- *          NRSur7dq2: q <= 2, |chi_1|, |chi_2| <= 0.8.
- *          NRSur7dq4: q <= 4, |chi_1|, |chi_2| <= 0.8.
+ *          NRSur7dq2: q <= 2.01, |chi_1|, |chi_2| <= 0.81.
+ *          NRSur7dq4: q <= 4.01, |chi_1|, |chi_2| <= 0.81.
  *          If you want a guarantee of accuracy you should stick to the above
  *          ranges.
  *
@@ -2675,6 +2682,9 @@ int XLALPrecessingNRSurDynamics(
 
     // Load surrogate data if needed. If not, just access the loaded data.
     PrecessingNRSurData *__sur_data = PrecessingNRSur_LoadData(approximant);
+    if (!__sur_data->setup) {
+        XLAL_ERROR(XLAL_EFAILED, "Error loading surrogate data.\n");
+    }
 
     // Input spins at reference epoch
     // The input values are in the coorbital frame at omegaRef_dimless, but

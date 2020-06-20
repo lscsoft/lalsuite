@@ -26,9 +26,6 @@ build:
     # manually, for now
     - fftw
   number: 9999
-  script_env:
-    # this is only needed in gitlab-ci
-    - fft_impl
   skip: true  # [win]
   string: "{{ fft_impl }}_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
 
@@ -38,11 +35,11 @@ requirements:
     - pkg-config >=0.18.0
     - make
     - bc
-    - swig >=3.0.7
+    - swig >=3.0.9
   host:
     - fftw * nompi*  # [fft_impl == "fftw"]
     - gsl
-    - hdf5 1.10.4
+    - hdf5
     - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
     - zlib
   run:
@@ -67,16 +64,16 @@ outputs:
     build:
       error_overdepending: true
       error_overlinking: true
-      script_env:
-        # this is only needed in gitlab-ci
-        - fft_impl
+      ignore_run_exports:
+        # ignore run_exports from python's recipe
+        - python
       string: "{{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
     requirements:
       build:
         - {{ compiler('c') }}
         - make
         - pkg-config >=0.18.0
-        - swig >=3.0.7
+        - swig >=3.0.9
       host:
         - gsl
         - {{ pin_subpackage('lal', exact=True) }}
@@ -101,6 +98,16 @@ outputs:
         - six
         - zlib  # [linux]
     test:
+      requires:
+        - freezegun
+        - mock  # [py<33]
+        - pathlib  # [py<34]
+        - pytest >=4.0.0a0
+      source_files:
+        - python/Makefile
+        - test/python
+      commands:
+        - python -m pytest -rs -v --junit-xml=junit.xml test/python
       imports:
         - lal
         - lal.antenna
@@ -112,7 +119,7 @@ outputs:
       home: "https://wiki.ligo.org/Computing/LALSuite"
       doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lal/"
       dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-      license: "GPL-3.0-or-later"
+      license: "GPL-2.0-or-later"
       license_family: "GPL"
       license_file: "COPYING"
       summary: "LSC Algorithm Library"
@@ -121,10 +128,10 @@ outputs:
         This package contains the Python bindings.
 
 about:
-  home: "https://wiki.ligo.org/DASWG/LALSuite"
+  home: "https://wiki.ligo.org/Computing/LALSuite"
   doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lal/"
   dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-  license: "GPL-3.0-or-later"
+  license: "GPL-2.0-or-later"
   license_family: "GPL"
   license_file: "COPYING"
   summary: "LSC Algorithm Library"

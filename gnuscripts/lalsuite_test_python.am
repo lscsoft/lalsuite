@@ -1,0 +1,22 @@
+# Common lalsuite python testing rules
+#
+# This file adds the test_python_scripts.py and test_python_imports.py
+# scripts to the test suites, and adds the necessary clean rules to
+# tidy up
+
+EXTRA_DIST =
+
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
+
+test_scripts += \
+	test_python_imports.py \
+	test_python_scripts.py \
+	$(END_OF_LIST)
+
+EXTRA_DIST += \
+	exclude-modules.txt \
+	exclude-scripts.txt \
+	$(END_OF_LIST)
+
+clean-local:
+	-rm -rf __pycache__ .pytest_cache junit*.xml

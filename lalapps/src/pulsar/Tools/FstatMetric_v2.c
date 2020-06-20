@@ -216,8 +216,8 @@ main(int argc, char *argv[])
     return EXIT_FAILURE;
 
   CHAR *VCSInfoString;
-  if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
-    XLALPrintError("XLALGetVersionString(0) failed.\n");
+  if ( (VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) == NULL ) {
+    XLALPrintError("XLALVCSInfoString failed.\n");
     exit(1);
   }
 

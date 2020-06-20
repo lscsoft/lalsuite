@@ -33,12 +33,14 @@ Excess power offline pipeline's likelihood stage construction script.
 from __future__ import print_function
 
 
-import ConfigParser
-import glob
 import itertools
 from optparse import OptionParser
 import sys
 import tempfile
+try:
+    from configparser import ConfigParser
+except ImportError:  # python < 3
+    from ConfigParser import SafeConfigParser as ConfigParser
 
 
 from ligo.segments import utils as segmentsUtils
@@ -98,7 +100,7 @@ def parse_command_line():
 def parse_config_file(options):
 	if options.verbose:
 		print("reading %s ..." % options.config_file, file=sys.stderr)
-	config = ConfigParser.SafeConfigParser()
+	config = ConfigParser()
 	config.read(options.config_file)
 
 	options.tag = config.get("pipeline", "user_tag")

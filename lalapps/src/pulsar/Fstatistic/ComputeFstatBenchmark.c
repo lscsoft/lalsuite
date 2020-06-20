@@ -78,7 +78,7 @@ main ( int argc, char *argv[] )
 {
 
   CHAR *VCSInfoString;
-  XLAL_CHECK_MAIN ( (VCSInfoString = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
 
   // ---------- handle user input ----------
   UserInput_t XLAL_INIT_DECL(uvar_s);
@@ -117,10 +117,10 @@ main ( int argc, char *argv[] )
   uvar->startTime.gpsSeconds = 711595934;
   uvar->Tsft = 1800;
   uvar->sharedWorkspace = 1;
-  uvar->resampFFTPowerOf2 = 1;
+  uvar->resampFFTPowerOf2 = FstatOptionalArgsDefaults.resampFFTPowerOf2;
   uvar->perSegmentSFTs = 1;
 
-  uvar->Dterms = 8;
+  uvar->Dterms = FstatOptionalArgsDefaults.Dterms;
 
   uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");

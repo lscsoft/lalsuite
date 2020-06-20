@@ -69,7 +69,7 @@ for section in commonsections:
 
   # Print a list of options missing from the config file
   for opt in missingopts:
-    print("MISSING option in " + opts.config_file + " in [" + section + "]: " + opt + " = " + refdict[opt])  
+    print("MISSING option in " + opts.config_file + " in [" + section + "]: " + opt + " = " + refdict[opt])
 
   # Print a list of extra options in the config file that aren't in the reference
   for opt in extraopts:

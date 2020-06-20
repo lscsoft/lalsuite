@@ -39,11 +39,11 @@ parser.add_option('-a', '--approximant', action = 'store', type = 'string',
         dest = 'approx', default = 'all',
         help = 'waveform approximant [default: %default]')
 parser.add_option('-p', '--plot', action = 'store_true', dest = 'plot',
-                  default = False, help = 'save debugging plots if tests ' + 
+                  default = False, help = 'save debugging plots if tests ' +
                   'fail [default: %default] WORKS FOR TIME-DOMAIN APPROXIMANTS ONLY!')
 parser.add_option('-s', '--separate', action = 'store_true', dest = 'sep',
                   default = False, help = 'seperate all data sets into ' +
-                  'individual test, even if they belong to the same ' + 
+                  'individual test, even if they belong to the same ' +
                   'approximant [default: %default]')
 
 (options, args) = parser.parse_args()
@@ -62,7 +62,7 @@ def waveformgenerator(domain, arg):
     func = {'TD': lalsim.SimInspiralChooseTDWaveform,
             'FD': lalsim.SimInspiralChooseFDWaveform}[domain]
     return func(*arg)
-    
+
 def recalculate_waveform(conf):
     '''Reads single data set and returns both the reference waveform and the newly calculated
     waveform with the same parameters.
@@ -80,7 +80,7 @@ def recalculate_waveform(conf):
                 for l in ['hp_real', 'hp_imag', 'hc_real', 'hc_imag']]
         hpref = hpRref + 1j * hpIref
         hcref = hcRref + 1j * hcIref
-                                                                                                               
+
     names = CheckReferenceWaveforms.paramnames[domain]
     parDict = dict([ (p, CheckReferenceWaveforms.paramtype[p](conf.get('parameters', p)) ) for p in conf.options('parameters') ])
     parDict['m1'] *= lal.MSUN_SI
@@ -131,7 +131,7 @@ def generateAttributes(datasets, counter = ''):
     '''Generates test and plot methods to be added to the CheckReferenceWaveforms class.
     The input is a list of datasets extracted from the reference file.'''
     waveforms = [recalculate_waveform(conf) for conf in datasets]
-        
+
     def test_approx(self):
         '''check for consistent waveform polarisations'''
         for conf, wfs in zip(datasets, waveforms):
@@ -165,7 +165,7 @@ def generateAttributes(datasets, counter = ''):
                                 self.errmsg('hplus', approxstr, parstring))
                 self.assertTrue(np.allclose(hc.data.data / hcmean, hcref / hcmean),
                                 self.errmsg('hcross', approxstr, parstring))
-    if options.plot:                        
+    if options.plot:
         def plot_approx(self):
             '''plot the amplitude and phase'''
             i = 1
@@ -185,10 +185,10 @@ def generateAttributes(datasets, counter = ''):
                 dX = conf.getfloat('parameters', steppar[domain])
                 xvals, xvals_ref = [np.linspace(0., dX * (x.size - 1), x.size) \
                                    for x in [h, href]]
-                
+
                 if counter is not '':
                     num = counter
-                else: 
+                else:
                     num = i
 
                 if domain=='TD':
@@ -218,9 +218,9 @@ def generateAttributes(datasets, counter = ''):
                     waveformplots([approx, m1, m2, s1z, s2z], xvals[[sel]], \
                       np.abs(h[[sel]]) / np.abs(href[[sel]]), name = 'amp_quot', \
                       counter = num, plot_func = plotfunc[domain])
-                
+
                 i += 1
-                
+
         return test_approx, plot_approx
 
     else:
@@ -235,7 +235,7 @@ def addApproxTestToClass(approx, dataset, counter=''):
         setattr(CheckReferenceWaveforms, plot_method.__name__, plot_method)
     else:
         test_method = generateAttributes(dataset, counter)
-        
+
     test_method.__name__ = 'test_' + approx + counter
     test_method.__doc__ = test_method.__doc__ + ' for ' + approx
     setattr(CheckReferenceWaveforms, test_method.__name__, test_method)
@@ -299,7 +299,7 @@ if __name__ == '__main__':
     reffile = ReferenceFile(absfilename)
     allapprox = list(set([conf.get('approximant', 'approximant')
             for conf in reffile.dataset]))
-    
+
     if options.approx == 'all' and not options.sep:
         datasets = [[conf for conf in reffile.dataset
                 if conf.get('approximant', 'approximant') == approx]
@@ -322,7 +322,7 @@ if __name__ == '__main__':
                 i += 1
         else:
             addApproxTestToClass(options.approx, dataset)
-        
+
 
 
     suite = unittest.TestLoader().loadTestsFromTestCase(CheckReferenceWaveforms)

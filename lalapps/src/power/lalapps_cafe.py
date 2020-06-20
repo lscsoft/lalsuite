@@ -31,7 +31,6 @@ LIGO Light-Weight XML Coincidence Analysis Front End.
 
 
 from optparse import OptionParser
-import sys
 
 
 from ligo.lw import lsctables

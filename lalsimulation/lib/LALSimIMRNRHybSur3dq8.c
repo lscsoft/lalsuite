@@ -277,7 +277,7 @@ int NRHybSur3dq8_core(
 
     // Sanity checks and warnings
     if ((q > 10.1) && (unlim_extrap == 0)) {
-        XLAL_ERROR(XLAL_EINVAL,
+        XLAL_ERROR(XLAL_EDOM,
             "Too much extrapolation in mass ratio; q=%0.4f > 10.1\n%s\n", q,
             param_validity);
     }
@@ -286,18 +286,18 @@ int NRHybSur3dq8_core(
             "Extrapolating outside training range q=%0.4f > 8.1\n", q);
     }
     if ((fabs(chi1z) > 0.91) && (unlim_extrap == 0)) {
-        XLAL_ERROR(XLAL_EINVAL,
+        XLAL_ERROR(XLAL_EDOM,
             "Too much extrapolation; |chi1z|=%0.4f > 0.91\n%s\n", fabs(chi1z),
             param_validity);
     }
     if ((fabs(chi2z) > 0.91) && (unlim_extrap == 0)) {
-        XLAL_ERROR(XLAL_EINVAL,
+        XLAL_ERROR(XLAL_EDOM,
             "Too much extrapolation; |chi2z|=%0.4f > 0.91\n%s\n", fabs(chi2z),
             param_validity);
     }
     if (fabs(chi1z) > 0.81) {
         if ((q > 9.1) && (unlim_extrap == 0)) {
-            XLAL_ERROR(XLAL_EINVAL,
+            XLAL_ERROR(XLAL_EDOM,
                 "Too much extrapolation; q=%0.4f > 9.1 & |chi1z|=%.04f"
                 " >0.81\n%s\n", q, fabs(chi1z), param_validity);
         }
@@ -307,7 +307,7 @@ int NRHybSur3dq8_core(
     }
     if (fabs(chi2z) > 0.81) {
         if ((q > 9.1) && (unlim_extrap == 0)) {
-            XLAL_ERROR(XLAL_EINVAL,
+            XLAL_ERROR(XLAL_EDOM,
                 "Too much extrapolation; q=%0.4f > 9.1 & |chi2z|=%.04f"
                 " >0.81\n%s\n", q, fabs(chi2z), param_validity);
         }

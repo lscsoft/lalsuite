@@ -23,7 +23,6 @@ import os
 import sys
 from time import strftime
 import copy
-import random
 import getpass
 
 #related third party imports
@@ -37,9 +36,7 @@ mpl.use("AGG")
 from matplotlib import pyplot as plt
 from matplotlib import colors as mpl_colors
 from matplotlib import cm as mpl_cm
-from matplotlib.ticker import FormatStrFormatter,ScalarFormatter,AutoMinorLocator
-
-from scipy import stats
+from matplotlib.ticker import ScalarFormatter
 
 #local application/library specific imports
 import lalinference.bayespputils as bppu
@@ -144,7 +141,6 @@ def all_pairs(L):
 
 def open_url_curl(url,args=[]):
     import subprocess
-    import urlparse
 
     kerberos_args = "--insecure -c /tmp/{0}_cookies -b /tmp/{0}_cookies --negotiate --user : --location-trusted".format(getpass.getuser()).split()
 
@@ -174,8 +170,6 @@ def compare_plots_one_param_pdf(list_of_pos_by_name,param,analyticPDF=None):
     @param analyticPDF: Optional function to over-plot
 
     """
-
-    from scipy import seterr as sp_seterr
 
     #Create common figure
     myfig=plt.figure(figsize=(6,4.5),dpi=150)
@@ -258,8 +252,6 @@ def compare_plots_one_param_line_hist(list_of_pos_by_name,param,cl,color_by_name
     @param analyticPDF: Optional analytic function to over-plot
 
     """
-
-    from scipy import seterr as sp_seterr
 
     #Create common figure
     myfig=plt.figure(figsize=(6,4.5),dpi=150)
@@ -386,7 +378,7 @@ def compute_ks_pvalue_matrix(list_of_pos_by_name, param):
             matrix[j,i]=pvalue
 
     return matrix
-        
+
 def compare_plots_one_param_line_hist_cum(list_of_pos_by_name,param,cl,color_by_name,cl_lines_flag=True,analyticCDF=None,legend='auto'):
 
     """
@@ -409,8 +401,6 @@ def compare_plots_one_param_line_hist_cum(list_of_pos_by_name,param,cl,color_by_
 
     """
 
-    from scipy import seterr as sp_seterr
-
     #Create common figure
     myfig=plt.figure(figsize=(6,4.5),dpi=150)
     myfig.add_axes([0.15,0.15,0.6,0.76])
@@ -422,7 +412,7 @@ def compare_plots_one_param_line_hist_cum(list_of_pos_by_name,param,cl,color_by_
     allmaxes=map(lambda a: np.max(a[param].samples), list_of_pos)
     min_pos=np.min(allmins)
     max_pos=np.max(allmaxes)
- 
+
     patch_list=[]
     max_y=1.
 
@@ -494,7 +484,6 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
 
     if injection_path is not None and os.path.exists(injection_path) and eventnum is not None:
         eventnum=int(eventnum)
-        import itertools
         from glue.ligolw import ligolw, lsctables, utils
         injections = lsctables.SimInspiralTable.get_table(
                 utils.load_filename(injection_path, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler)))
@@ -504,7 +493,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
                 sys.exit(1)
             else:
                 injection=injections[eventnum]
-    
+
     #Create analytic likelihood functions if covariance matrices and mean vectors were given
     analyticLikelihood = None
     if covarianceMatrices and meanVectors:
@@ -691,7 +680,6 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
     print("Common parameters are %s"%str(common_params))
 
     if injection is None and injection_path is not None:
-        import itertools
         injections = SimInspiralUtils.ReadSimInspiralFromFiles([injection_path])
         injection=bppu.get_inj_by_time(injections,pos_temp.means['time'])
     if injection is not None:
@@ -796,13 +784,13 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
                 # Save confidence levels and uncertainty
                 #confidence_levels[param]=[]
                 confidence_levels[level_index][param]=[]
-                
+
                 for name,pos in pos_list.items():
                     median=pos[param].median
                     low,high=cl_intervals[name]
                     #confidence_levels[param].append((name,low,median,high))
                     confidence_levels[level_index][param].append((name,low,median,high))
-                    
+
                 level_index=level_index+1
                 cl_bounds=[]
                 poses=[]
@@ -881,7 +869,7 @@ def compare_bayes(outdir,names_and_pos_folders,injection_path,eventnum,username,
             ks_table_str+='</table>'
 
             oned_data[param]=(save_paths,cl_table_str,ks_table_str,cl_uncer_str)
-            
+
     # Watch out---using private variable _logL
     max_logls = [[name,max(pos._logL)] for name,pos in pos_list.items()]
     dics = [pos.DIC for name, pos in pos_list.items()]
@@ -951,7 +939,7 @@ def output_confidence_levels_dat(clevels,outpath):
                 if param in params:
                     tparam=paramNameLatexMap.get(param,param)
                     outfile.write('%s\t'%param)
-            outfile.write('\n') 
+            outfile.write('\n')
 
             for name,levels in clevels_by_name.items():
                 outfile.write(name)
@@ -987,7 +975,7 @@ def output_confidence_uncertainty(cluncertainty, outpath):
         np.savetxt(outfile, np.reshape(quants, (1,-1)))
     finally:
         outfile.close()
-            
+
 if __name__ == '__main__':
     from optparse import OptionParser
     parser=OptionParser()
@@ -1011,7 +999,7 @@ if __name__ == '__main__':
     parser.add_option("-m","--meanVectors",dest="meanVectors",action="append",default=None,help="Comma separated list of locations of the multivariate gaussian described by the correlation matrix.  First line must be list of params in the order used for the covariance matrix.  Provide one list per covariance matrix.")
     parser.add_option("--no2D",dest="no2d",action="store_true",default=False,help="Disable 2D plots")
     parser.add_option("--npixels-2d",dest="npixels_2d",action="store",type="int",default=50,help="Number of pixels on a side of the 2D plots (default 50)",metavar="N")
-    
+
     (opts,args)=parser.parse_args()
 
     if opts.outpath is None:
@@ -1037,7 +1025,7 @@ if __name__ == '__main__':
 
     # Sort inputs alphabetically
     names,pos_list = zip(*sorted(zip(names,opts.pos_list)))
-    
+
     if opts.no2d:
         twoDplots=[]
 
@@ -1045,9 +1033,9 @@ if __name__ == '__main__':
     greedy2savepaths,oned_data,confidence_uncertainty,confidence_levels,max_logls,dics=compare_bayes(outpath,zip(names,pos_list),opts.inj,opts.eventnum,opts.username,opts.password,opts.reload_flag,opts.clf,opts.ldg_flag,contour_figsize=(float(opts.cw),float(opts.ch)),contour_dpi=int(opts.cdpi),contour_figposition=[0.15,0.15,float(opts.cpw),float(opts.cph)],fail_on_file_err=not opts.readFileErr,covarianceMatrices=opts.covarianceMatrices,meanVectors=opts.meanVectors,Npixels2D=int(opts.npixels_2d))
 
     ####Print Confidence Levels######
-    output_confidence_levels_tex(confidence_levels,outpath)    
+    output_confidence_levels_tex(confidence_levels,outpath)
     output_confidence_levels_dat(confidence_levels,outpath)
-    
+
     ####Save confidence uncertainty#####
     output_confidence_uncertainty(confidence_uncertainty,outpath)
 

@@ -192,7 +192,7 @@ typedef struct tagLIGOTimeGPSVector {
   REAL8		deltaT;		/**< 'length' of each timestamp (e.g. typically Tsft) */
 } LIGOTimeGPSVector;
 
-/** A vector of 'timestamps' of type LIGOTimeGPS */
+/** A collection of (multi-IFO) LIGOTimeGPSVector time-stamps vectors */
 typedef struct tagMultiLIGOTimeGPSVector {
 #ifdef SWIG /* SWIG interface directives */
   SWIGLAL(ARRAY_1D(MultiLIGOTimeGPSVector, LIGOTimeGPSVector*, data, UINT4, length));
@@ -286,6 +286,9 @@ typedef struct tagMultiSFTCatalogView
 
 int XLALCWGPSinRange( const LIGOTimeGPS gps, const LIGOTimeGPS* minGPS, const LIGOTimeGPS* maxGPS );
 
+UINT4 XLALRoundFrequencyDownToSFTBin( const REAL8 freq, const REAL8 df );
+UINT4 XLALRoundFrequencyUpToSFTBin( const REAL8 freq, const REAL8 df );
+
 LALStringVector *XLALFindFiles (const CHAR *globstring);
 
 SFTCatalog *XLALSFTdataFind ( const CHAR *file_pattern, const SFTConstraints *constraints );
@@ -297,7 +300,9 @@ int XLALWriteSFT2fp   ( const SFTtype *sft, FILE *fp, const CHAR *SFTcomment );
 int XLALWriteSFT2file ( const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
 
 LIGOTimeGPSVector *XLALReadTimestampsFile ( const CHAR *fname );
-  LIGOTimeGPSVector *XLALReadTimestampsFileConstrained ( const CHAR *fname, const LIGOTimeGPS *minGPS, const LIGOTimeGPS *maxGPS );
+LIGOTimeGPSVector *XLALReadTimestampsFileConstrained ( const CHAR *fname, const LIGOTimeGPS *minGPS, const LIGOTimeGPS *maxGPS );
+
+MultiLIGOTimeGPSVector *XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors );
 MultiLIGOTimeGPSVector *XLALReadMultiTimestampsFiles ( const LALStringVector *fnames );
 MultiLIGOTimeGPSVector *XLALReadMultiTimestampsFilesConstrained ( const LALStringVector *fnames, const LIGOTimeGPS *minGPS, const LIGOTimeGPS *maxGPS );
 

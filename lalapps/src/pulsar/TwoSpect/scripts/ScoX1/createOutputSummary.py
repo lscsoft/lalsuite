@@ -2,11 +2,11 @@
 #from pywcsgrid2.allsky_axes import make_allsky_axes_from_header, allsky_header
 #import pywcsgrid2.healpix_helper as healpix_helper
 #from mpl_toolkits.basemap import Basemap
-import math, os, commands, shutil, sys, re
+import os
+import re
 import matplotlib as matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 import matplotlib.backends.backend_agg
 import numpy as np
 import argparse
@@ -45,15 +45,15 @@ def summarizer(mdcVersion, observatory, pulsar, args):
     if args.bypassSummary:
         print('Bypassing summary file creation')
     elif args.massiveSummary:
-        print('Taking alternate approach to a large output directory') 
+        print('Taking alternate approach to a large output directory')
         dagFileCore = headJobName
         if args.closed:
             dagFileCore = dagFileCore + '_closed'
         if args.elsewhere:
-            jobDagFile = open(args.elsewhere + 'ScoX1_' + dagFileCore + '.dag', "r") 
+            jobDagFile = open(args.elsewhere + 'ScoX1_' + dagFileCore + '.dag', "r")
         else:
-            jobDagFile = open('ScoX1_' + dagFileCore + '.dag', "r") 
-        outfilenameList = [] 
+            jobDagFile = open('ScoX1_' + dagFileCore + '.dag', "r")
+        outfilenameList = []
         for jobDagLine in jobDagFile:
             outfileLine = re.search("--outfilename=out_" + mdcVersion + \
             "_" + observatory + "_pulsar-" + pulsar + "_" + \
@@ -64,13 +64,13 @@ def summarizer(mdcVersion, observatory, pulsar, args):
                 "_" + observatory + "_pulsar-" + pulsar + "_" + \
                 str(outfileLine.group(1) + '.' + outfileLine.group(2)) + '_' + \
                 str(outfileLine.group(3) + '.' + outfileLine.group(4)) + '.dat'
-                outfilenameList.append(wholeOutfile) 
+                outfilenameList.append(wholeOutfile)
         jobDagFile.close
         for ll, outfileEntry in enumerate(outfilenameList):
-            if ll < 1e6: 
+            if ll < 1e6:
                 if ll % 1e3 == 0:
                     print(ll)
-                fileLocation = outdirectory + '/' + outfileEntry 
+                fileLocation = outdirectory + '/' + outfileEntry
                 grepCommand = 'grep -i ' + fileLocation + ' -e h0'
                 os.system(grepCommand + ' >> ' + verboseSummaryFile)
         print('Done')
@@ -105,7 +105,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         else:
             os.system('cat ' + outdirectory + '/out_' + headJobName + '* | grep "h0 =" > '\
             + verboseSummaryFile)
-    
+
     # Now we have a single file containing all the output from all the
     # sky points around an injection. Let us read in the data
     verboseData = open(verboseSummaryFile, "r")
@@ -129,7 +129,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
             + "(?P<DELTAINT>\d+)\.(?P<DELTAFP>\d+)", \
             verboseString)
             declinationList.append(float(deltaLine.group(1) + deltaLine.group(2) + \
-            '.' + deltaLine.group(3))) 
+            '.' + deltaLine.group(3)))
         fLine = re.search("fsig = (?P<FSIGN>\-?)" \
         + "(?P<FINT>\d+)\.(?P<FFP>\d+)", \
         verboseString)
@@ -151,14 +151,14 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         ProbList.append(float(ProbLine.group(1) + ProbLine.group(2) + \
         '.' + ProbLine.group(3)))
     verboseData.close
- 
+
     if args.skyGrid:
         # We should now have four lists, with as many
         # entries as there are sky points. Convert to NumPy arrays!
         rightAscensionArray = np.array(rightAscensionList)
         declinationArray = np.array(declinationList)
     fArray = np.array(fList)
-   
+
 
     if (args.band or args.noiseTest) or \
     (args.templateSearch or args.multiTemplateSearch) or \
@@ -181,17 +181,17 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         # (0, 0), (0, 1), (0, 2), (0, 3),... (1, 0), (1, 1), (1, 2), (1, 3)...
         # For convenience, we can reshape these arrays so we can use image plotters
         # We want a map where RA increases left to right and dec from bottom to top
-        # i.e., where 
+        # i.e., where
         # (0, 3), (1, 3), (2, 3), (3,3)
         # ...
         # (0, 0), (1, 0), (2, 0), (3,0)
-        # To do this we first reshape by the length of right ascension, 
+        # To do this we first reshape by the length of right ascension,
         # to break up the arrays in a matrix,
-        # then transpose, to ensure RA increases the right way, 
+        # then transpose, to ensure RA increases the right way,
         raLen = len(np.unique(rightAscensionArray))
         decLen = len(np.unique(declinationArray))
         raShaped = np.reshape(rightAscensionArray, (raLen, decLen)).T
-        decShaped = np.reshape(declinationArray, (raLen, decLen)).T 
+        decShaped = np.reshape(declinationArray, (raLen, decLen)).T
         # Having checked that this plots correctly (verified by substituting
         # raShaped or decShaped into the final plot), we then define the extents
         # of the plot so we have plot axis labels
@@ -208,7 +208,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         decShaped = decShaped[::-1,:]
         raShaped = raShaped[I,:]
         raShaped = raShaped[::-1,:]
-    
+
         # All this shuffling is, of course, confirmed by plotting
         # ra and dec instead of Prob and R and checking that
         # the heat map plots make sense.
@@ -408,14 +408,14 @@ def summarizer(mdcVersion, observatory, pulsar, args):
             dfShaped = np.reshape(dfArray, (fLen, dfLen)).T
         if (args.band or args.noiseTest) or \
         (args.templateSearch or args.multiTemplateSearch) or \
-        args.J1751 or args.ScoX1S6: 
+        args.J1751 or args.ScoX1S6:
             print('Number of bins in data arrays: ' + str(fShaped.shape))
         x, y = np.meshgrid(fShaped[0, :], dfShaped[:, 0])
         extensions = [x[0, 0], x[-1, -1], y[0, 0], y[-1, -1]]
         if not args.multiTemplateSearch:
             ProbShaped = np.absolute(np.reshape(ProbArray, (fLen, dfLen)).T)
             RShaped = np.reshape(RArray, (fLen, dfLen)).T
-      
+
         if (args.band or args.noiseTest) or \
         (args.templateSearch or args.multiTemplateSearch) or \
         args.J1751 or args.ScoX1S6:
@@ -499,7 +499,7 @@ def summarizer(mdcVersion, observatory, pulsar, args):
         R vs parameters for pulsar ' + pulsar + ' at ' + observatory + ' \n \
         ' + centerString + str(RCenter) + ' at (df, f) = (' + centerRSpotDF +', ' + centerRSpotF + ') Hz \n \
         Number of bins in data arrays (df, f): ' + str(fShaped.shape) + ' \n \
-        ') 
+        ')
         plt.savefig('DFvsFresultsR-' + observatory + '_pulsar-' + pulsar + '.png')
         plt.savefig('DFvsFresultsR-' + observatory + '_pulsar-' + pulsar + '.pdf')
         plt.close()

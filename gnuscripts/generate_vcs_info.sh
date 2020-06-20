@@ -66,10 +66,11 @@ source="${3?"input_file not set"}"
 srcdir="`dirname "$source"`"
 
 # use git log to get the important fields
-git_id="`cd "$srcdir" && $git_path log -1 --pretty=format:%H`"
-git_date="`cd "$srcdir" && env LC_TIME=C TZ=GMT0 $git_path log -1 --date=local --pretty=format:%cd`"
-git_author="`cd "$srcdir" && $git_path log -1 --pretty=format:"%an <%ae>"`"
-git_committer="`cd "$srcdir" && $git_path log -1 --pretty=format:"%cn <%ce>"`"
+git_log_cmd="${git_path} log -1 --no-show-signature"
+git_id="`cd "$srcdir" && ${git_log_cmd} --pretty=format:%H`"
+git_date="`cd "$srcdir" && env LC_TIME=C TZ=GMT0 ${git_log_cmd} --date=local --pretty=format:%cd`"
+git_author="`cd "$srcdir" && ${git_log_cmd} --pretty=format:"%an <%ae>"`"
+git_committer="`cd "$srcdir" && ${git_log_cmd} --pretty=format:"%cn <%ce>"`"
 
 # extract relevant fields of %c date format
 git_date_mon=`echo "$git_date" | cut -d " " -f2`

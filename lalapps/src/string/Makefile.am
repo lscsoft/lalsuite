@@ -5,7 +5,7 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-bin_PROGRAMS = lalapps_StringSearch lalapps_StringAddFrame 
+bin_PROGRAMS = lalapps_StringSearch lalapps_StringAddFrame
 lalapps_StringSearch_SOURCES = StringSearch.c
 lalapps_StringAddFrame_SOURCES = AddFrame.c
 

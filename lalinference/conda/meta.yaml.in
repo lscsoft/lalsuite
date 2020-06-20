@@ -10,23 +10,22 @@
 {% set sha256 = "@SHA256@" %}
 
 # dependencies
-{% set chealpix_version = "3.30.0" %}
-{% set lal_version = "6.19.2" %}
-{% set lalburst_version = "1.5.1" %}
-{% set lalframe_version = "1.4.0" %}
-{% set lalinspiral_version = "1.8.1" %}
-{% set lalmetaio_version = "1.5.0" %}
-{% set lalpulsar_version = "1.17.1" %}
-{% set lalsimulation_version = "1.8.2" %}
-{% set swig_version = "3.0.7" %}
+{% set lal_version = "6.21.0" %}
+{% set lalburst_version = "1.5.3" %}
+{% set lalframe_version = "1.5.0" %}
+{% set lalinspiral_version = "1.10.0" %}
+{% set lalmetaio_version = "1.6.0" %}
+{% set lalpulsar_version = "1.18.2" %}
+{% set lalsimulation_version = "2.0.0" %}
+{% set swig_version = "3.0.9" %}
 
 package:
-  name: {{ name }}
-  version: {{ version }}
+  name: "{{ name }}"
+  version: "{{ version }}"
 
 source:
-  url: {{ url }}
-  sha256: {{ sha256 }}
+  url: "{{ url }}"
+  sha256: "{{ sha256 }}"
 
 build:
   number: 9999
@@ -36,40 +35,41 @@ requirements:
   build:
     - {{ compiler('c') }}
     - help2man
+    - llvm-openmp  # [osx]
     - make
     - pkg-config
     - swig >={{ swig_version }}
   host:
-    - chealpix >={{ chealpix_version }}
     - gsl
-    - lal >={{ lal_version }} fftw*
-    - lalframe >={{ lalframe_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalsimulation >={{ lalsimulation_version }}
-    - lalburst >={{ lalburst_version }}
-    - lalinspiral >={{ lalinspiral_version }}
-    - lalpulsar >={{ lalpulsar_version }}
+    - lal >={{ lal_version }}a0 fftw*
+    - lalframe >={{ lalframe_version }}a0
+    - lalmetaio >={{ lalmetaio_version }}a0
+    - lalsimulation >={{ lalsimulation_version }}a0
+    - lalburst >={{ lalburst_version }}a0
+    - lalinspiral >={{ lalinspiral_version }}a0
+    - lalpulsar >={{ lalpulsar_version }}a0
     - libcblas=*=*netlib
+    - libgomp  # [linux]
     - llvm-openmp  # [osx]
-    - openmp  # [linux]
     - openmpi
   run:
-    - chealpix >={{ chealpix_version }}
     - gsl
-    - lal >={{ lal_version }}
-    - lalframe >={{ lalframe_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalsimulation >={{ lalsimulation_version }}
-    - lalburst >={{ lalburst_version }}
-    - lalinspiral >={{ lalinspiral_version }}
-    - lalpulsar >={{ lalpulsar_version }}
+    - lal >={{ lal_version }}a0
+    - lalframe >={{ lalframe_version }}a0
+    - lalmetaio >={{ lalmetaio_version }}a0
+    - lalsimulation >={{ lalsimulation_version }}a0
+    - lalburst >={{ lalburst_version }}a0
+    - lalinspiral >={{ lalinspiral_version }}a0
+    - lalpulsar >={{ lalpulsar_version }}a0
     - libcblas
     - llvm-openmp  # [osx]
-    - openmp  # [linux]
     - openmpi
 
 test:
+  requires:
+    - openssh
   commands:
+    - test -f "${LALINFERENCE_DATADIR}/lalinference_pipe_example.ini"  # [unix]
     - lalinference_bench --psdlength 1000 --psdstart 1 --seglen 8 --srate 4096 --trigtime 0 --ifo H1 --H1-channel LALSimAdLIGO --H1-cache LALSimAdLIGO --dataseed 1324 --Niter 10 --fix-chirpmass 1.21
     #- lalinference_burst --help
     - lalinference_datadump --help
@@ -88,7 +88,11 @@ outputs:
   - name: python-lalinference
     script: install-python.sh
     build:
-      activate_in_script: True
+      error_overdepending: true
+      error_overlinking: true
+      ignore_run_exports:
+        # ignore run_exports from python's recipe
+        - python
     requirements:
       build:
         - {{ compiler('c') }}
@@ -97,54 +101,58 @@ outputs:
         - pkg-config
         - swig >={{ swig_version }}
       host:
+        - gsl
         - {{ pin_subpackage('lalinference', exact=True) }}
         - libcblas=*=*netlib
         - python
-        - numpy 1.9
+        - numpy
+        # run requirements needed for help2man
+        - astropy >=1.1.1
+        - healpy >=1.9.1
+        - h5py
+        - lscsoft-glue >=1.54.1
+        - matplotlib-base >=1.2.0
+        - python-lal >={{ lal_version }}a0
+        - python-lalmetaio >={{ lalmetaio_version }}a0
+        - python-lalsimulation >={{ lalsimulation_version }}a0
+        - python-lalburst >={{ lalburst_version }}a0
+        - python-lalinspiral >={{ lalinspiral_version }}a0
+        - python-lalpulsar >={{ lalpulsar_version }}a0
+        - scipy >=0.9.0
       run:
         - astropy >=1.1.1
-        - chealpix >={{ chealpix_version }}
         - gsl
         - healpy >=1.9.1
         - h5py
-        - lal >={{ lal_version }}
-        - lalframe >={{ lalframe_version }}
-        - lalmetaio >={{ lalmetaio_version }}
-        - lalsimulation >={{ lalsimulation_version }}
-        - lalburst >={{ lalburst_version }}
-        - lalinspiral >={{ lalinspiral_version }}
-        - lalpulsar >={{ lalpulsar_version }}
+        - lal >={{ lal_version }}a0
+        - lalframe >={{ lalframe_version }}a0  # [linux]
+        - lalmetaio >={{ lalmetaio_version }}a0  # [linux]
+        - lalsimulation >={{ lalsimulation_version }}a0  # [linux]
+        - lalburst >={{ lalburst_version }}a0  # [linux]
+        - lalinspiral >={{ lalinspiral_version }}a0  # [linux]
+        - lalpulsar >={{ lalpulsar_version }}a0  # [linux]
         - {{ pin_subpackage('lalinference', exact=True) }}
-        - libcblas
+        - libcblas  # [linux]
         - lscsoft-glue >=1.54.1
-        - matplotlib >=1.2.0
+        - matplotlib-base >=1.2.0
         - {{ pin_compatible('numpy') }}
         - python
-        - python-lal >={{ lal_version }}
-        - python-lalmetaio >={{ lalmetaio_version }}
-        - python-lalsimulation >={{ lalsimulation_version }}
-        - python-lalburst >={{ lalburst_version }}
-        - python-lalinspiral >={{ lalinspiral_version }}
-        - python-lalpulsar >={{ lalpulsar_version }}
-        - scipy >=0.8
+        - python-lal >={{ lal_version }}a0
+        - python-lalmetaio >={{ lalmetaio_version }}a0
+        - python-lalsimulation >={{ lalsimulation_version }}a0
+        - python-lalburst >={{ lalburst_version }}a0
+        - python-lalinspiral >={{ lalinspiral_version }}a0
+        - python-lalpulsar >={{ lalpulsar_version }}a0
+        - scipy >=0.9.0
     test:
-      imports:
-        - lalinference
-        - lalinference.bayespputils
-        - lalinference.imrtgr
-        - lalinference.imrtgr.imrtgrutils
-        - lalinference.imrtgr.nrutils
-        - lalinference.imrtgr.pneqns
-        - lalinference.lalinference_pipe_utils
-        - lalinference.nest2pos
-        - lalinference.plot
-        - lalinference.tiger
-        - lalinference.tiger.make_injtimes
-        - lalinference.tiger.omegascans_dag
-        - lalinference.tiger.postproc
-        - lalinference.util.file
-        - lalinference.util.sqlite
-        - lalinference.wrapper
+      requires:
+        - cpnest
+        - mock  # [py<33]
+        - pathlib  # [py<34]
+        - pytest >=4.0.0a0
+      source_files:
+        - python/Makefile
+        - test/python
       commands:
         - cbcBayesBurstPPAnalysis --help
         - cbcBayesBurstPostProc --help
@@ -161,38 +169,52 @@ outputs:
         - cbcBayesPostProc --help
         - cbcBayesThermoInt --help
         - imrtgr_imr_consistency_test --help
-        #- lalinference_burst_pp_pipe --help
+        - lalinference_burst_pp_pipe --help
         - lalinference_coherence_test --help
         - lalinference_compute_roq_weights --help
-        #- lalinference_cpnest --help
-        - lalinference_evolve_spins_and_append_samples --help
+        - lalinference_cpnest --help
         - lalinference_merge_posteriors --help
         - lalinference_multi_pipe --help
         - lalinference_nest2pos --help
-        #- lalinference_pipe --help
-        #- lalinference_pp_pipe --help
+        - lalinference_pipe --help
+        - lalinference_pp_pipe --help
         - lalinference_review_test --help
-
+        - python -m pytest -rs -v --junit-xml=junit.xml test/python/
+      imports:
+        - lalinference
+        - lalinference.bayespputils
+        - lalinference.imrtgr
+        - lalinference.imrtgr.imrtgrutils
+        - lalinference.imrtgr.nrutils
+        - lalinference.imrtgr.pneqns
+        - lalinference.lalinference_pipe_utils
+        - lalinference.nest2pos
+        - lalinference.plot
+        - lalinference.tiger
+        - lalinference.tiger.make_injtimes
+        - lalinference.tiger.omegascans_dag
+        - lalinference.tiger.postproc
+        - lalinference.wrapper
     about:
-      home: https://wiki.ligo.org/Computing/DASWG/LALSuite
-      doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinference/
-      dev_url: https://git.ligo.org/lscsoft/lalsuite/
-      license: GPLv3
-      license_family: GPL
-      license_file: COPYING
-      summary: LSC Algorithm Inference Library
+      home: "https://wiki.ligo.org/Computing/LALSuite"
+      doc_url: "https://docs.ligo.org/lscsoft/lalsuite/lalinference/"
+      dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
+      license: "GPL-2.0-or-later"
+      license_family: "GPL"
+      license_file: "COPYING"
+      summary: "LSC Algorithm Inference Library"
       description: |
         The LSC Algorithm Inference Library for gravitational wave data
         analysis.  This package contains the python bindings.
 
 about:
-  home: https://wiki.ligo.org/Computing/DASWG/LALSuite
-  doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinference/
-  dev_url: https://git.ligo.org/lscsoft/lalsuite/
-  license: GPLv3
-  license_family: GPL
-  license_file: COPYING
-  summary: LSC Algorithm Inference Library
+  home: "https://wiki.ligo.org/Computing/LALSuite"
+  doc_url: "https://docs.ligo.org/lscsoft/lalsuite/lalinference/"
+  dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
+  license: "GPL-2.0-or-later"
+  license_family: "GPL"
+  license_file: "COPYING"
+  summary: "LSC Algorithm Inference Library"
   description: |
     The LSC Algorithm Inference Library for gravitational wave data analysis.
     This package contains the shared-object libraries needed to run
