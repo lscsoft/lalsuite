@@ -42,6 +42,52 @@ static const REAL8 f14[] = {
                              479001600., 6227020800., 87178291200.
 };
 
+/* 
+ * Fit of c3, TEOBResumS paper Nagar et al. (2018) 
+ * c3 = 0 with tides
+ */
+double
+XLALSimInspiralEOBPostAdiabaticFitGlobalc3(
+    REAL8 nu,
+    REAL8 a1,
+    REAL8 a2)
+{  
+    const REAL8 nu2 = nu * nu;
+    const REAL8 nu3 = nu2 * nu;
+    const REAL8 X12 = sqrt(1. - 4.*nu);
+    const REAL8 a12 = a1 + a2;
+    
+    /* Equal-mass, equal-spin coefficients */
+    const REAL8 c0 = 43.371638;
+    const REAL8 n1 = -1.174839;
+    const REAL8 n2 =  0.354064;
+    const REAL8 d1 = -0.151961;
+    
+    const REAL8 c3_eq = c0 * (1.+n1*a12+n2*a12*a12) / (1.+d1*a12);
+  
+    /* --- */
+    const REAL8 cnu = 929.579;
+    const REAL8 cnu2 = -9178.87;
+    const REAL8 cnu3 = 23632.3;
+    const REAL8 ca1_a2 = -104.891;
+  
+    const REAL8 c3_uneq = cnu*a12*nu*X12 + cnu2*a12*nu2*X12 + cnu3*a12*nu3*X12 + ca1_a2*(a1-a2)*nu2;
+  
+    const REAL8 c3 = c3_eq + c3_uneq;
+
+    return c3;
+}
+
+double
+XLALSimInspiralEOBPostAdiabaticz3(
+    const REAL8 nu
+    /**< symmetric mass ratio */)
+{
+    REAL8 z3 = 2. * nu * (4.-3.*nu);
+
+    return z3;
+}
+
 /*
  * EOB Metric potentials A(r), B(r), and their derivatives, spin version
  */

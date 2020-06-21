@@ -11,28 +11,55 @@ int
 XLALSimInspiralEOBPostAdiabatic(
     REAL8Vector ** dynamics,
     REAL8 deltaT,
-    const REAL8 m1SI,
-    const REAL8 m2SI,
+    const REAL8 m1,
+    const REAL8 m2,
     const REAL8 spin1z,
     const REAL8 spin2z,
+    const REAL8Vector initVals,
     UINT4 SpinAlignedEOBversion,
     SpinEOBParams *seobParams,
     EOBNonQCCoeffs *nqcCoeffs
 );
 
-double
+REAL8
+XLALSimInspiralEOBPACalculateMassRatio(
+    const REAL8 m1,
+    const REAL8 m2
+);
+
+REAL8
 XLALSimInspiralEOBPACalculateSymmetricMassRatio(
     const REAL8 q
 );
 
-double
-XLALSimInspiralEOBPostAdiabaticX1(
+REAL8
+XLALSimInspiralEOBPACalculateX1(
     const REAL8 nu
 );
 
-double
-XLALSimInspiralEOBPostAdiabaticX2(
+REAL8
+XLALSimInspiralEOBPACalculateX2(
     const REAL8 nu
+);
+
+REAL8
+XLALSimInspiralEOBPACalculatea(
+    REAL8 X,
+    REAL8 chi
+);
+
+REAL8
+XLALSimInspiralEOBPACalculateS(
+    REAL8 X,
+    REAL8 chi
+);
+
+REAL8
+XLALSimInspiralEOBPACalculateSstar(
+    REAL8 X1,
+    REAL8 X2,
+    REAL8 chi1,
+    REAL8 chi2
 );
 
 double
@@ -57,6 +84,13 @@ XLALSimInspiralEOBPostAdiabaticFinalRadius(
     REAL8 q,
     REAL8 a1,
     REAL8 a2
+);
+
+REAL8
+XLALSimInspiralEOBPACalculatedr(
+    REAL8 rStart,
+    REAL8 rFinal,
+    UINT4 rSize
 );
 
 double
@@ -165,6 +199,12 @@ REAL8Vector
 XLALOffsetREAL8Vector(
     REAL8Vector *Vec,
     REAL8 offset
+);
+
+REAL8Vector
+XLALRescaleREAL8Vector(
+    REAL8Vector *Vec,
+    REAL8 factor
 );
 
 REAL8Vector

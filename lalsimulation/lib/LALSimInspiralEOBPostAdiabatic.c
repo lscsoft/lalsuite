@@ -70,21 +70,22 @@ XLALSimInspiralEOBPostAdiabaticdprstarFunc(
 
 	REAL8 partialHBypartialprstar;
 	partialHBypartialprstar = XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
-																					1.e-5,
-																					r,
-																					prstar,
-																					pphi,
-																					seobCoeffs,
-																					LALParams
-																				);
+									1.e-5,
+									r,
+									prstar,
+									pphi,
+									seobCoeffs,
+									LALParams
+								);
+
 	REAL8 H;
 	H = XLALSimInspiralEOBPAHamiltonianWrapper(
-							r,
-							prstar,
-							pphi,
-							seobCoeffs,
-							LALParams
-						);
+			r,
+			prstar,
+			pphi,
+			seobCoeffs,
+			LALParams
+		);
 
 	REAL8 flux;
     flux = XLALSimInspiralEOBPAFluxWrapper(
@@ -245,7 +246,8 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
 
 REAL8Vector
 XLALReverseREAL8Vector(
-	REAL8Vector *Vec)
+	REAL8Vector *Vec
+)
 {
 	UINT4 vecLength;
 	vecLength = Vec->length;
@@ -266,7 +268,8 @@ XLALReverseREAL8Vector(
 REAL8Vector
 XLALOffsetREAL8Vector(
 	REAL8Vector *Vec,
-	REAL8 offset)
+	REAL8 offset
+)
 {
 	UINT4 vecLength;
 	vecLength = Vec->length;
@@ -282,6 +285,28 @@ XLALOffsetREAL8Vector(
 	}
 
 	return *offsetVec;
+}
+
+REAL8Vector
+XLALRescaleREAL8Vector(
+	REAL8Vector *Vec,
+	REAL8 factor
+)
+{
+	UINT4 vecLength;
+	vecLength = Vec->length;
+
+	REAL8Vector *rescaledVec = XLALCreateREAL8Vector(vecLength);
+	memset(rescaledVec->data, 0, rescaledVec->length * sizeof(REAL8));
+
+	UINT4 i;
+
+	for (i = 0; i < vecLength; i++)
+	{
+		rescaledVec->data[i] = factor * Vec->data[i];
+	}
+
+	return *rescaledVec;
 }
 
 int
@@ -545,14 +570,15 @@ XLALSimInspiralEOBPostAdiabatic(
 	/**<< OUTPUT, real part of the modes */
 	UNUSED REAL8 deltaT,
 	/**<< sampling time step */
-	UNUSED const REAL8 m1SI,
-	/**<< mass-1 in SI unit */
-	UNUSED const REAL8 m2SI,
-	/**<< mass-2 in SI unit */
+	UNUSED const REAL8 m1,
+	/**<< mass-1 */
+	UNUSED const REAL8 m2,
+	/**<< mass-2 */
 	const REAL8 spin1z,
 	/**<< z-component of spin-1, dimensionless */
 	const REAL8 spin2z,
 	/**<< z-component of spin-2, dimensionless */
+	UNUSED const REAL8Vector initVals,
 	UINT4 SpinAlignedEOBversion,
 	/**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM */
 	SpinEOBParams *seobParams,
@@ -565,128 +591,73 @@ XLALSimInspiralEOBPostAdiabatic(
 		return XLAL_FAILURE;
 	}
 
-	// input variables
-	UNUSED REAL8 M;
-	UNUSED REAL8 q;
+	REAL8 M;
+	M = m1 + m2;
 
-	UNUSED REAL8 chi1;
-	UNUSED REAL8 chi2;
+	REAL8 q;
+	q = XLALSimInspiralEOBPACalculateMassRatio(m1, m2);
 
-	UNUSED INT4 useSpins;
-	UNUSED INT4 useTidal;
+	REAL8 nu;
+	nu = XLALSimInspiralEOBPACalculateSymmetricMassRatio(q);
 
-	UNUSED REAL8 fInit;
-
-	UNUSED UINT4 rSize;
-
-	UNUSED REAL8 dr;
-
-	UNUSED UINT4 PA_order;
-
-	// swap these for readings
-	M = 1.;
-	q = 1.;
-
+	REAL8 chi1;
 	chi1 = spin1z;
+
+	REAL8 chi2;
 	chi2 = spin2z;
 
-	useSpins = 1;
-	useTidal = 0;
+	UINT4 PAOrder;
+	PAOrder = 8;
 
-	fInit = 0.00059105892307;
-
-	const char centrifugalRadius[] = "LO";
-	const char useFlm[] = "SSLO";
-
-	// dr = 1.9774396742060579e-01;
-
-	PA_order = 8;
- 
-	// set by the code
-	// REAL8 m1; // unused
-	// REAL8 m2; // unused
-	REAL8 nu;
 	REAL8 X1;
+	X1 = XLALSimInspiralEOBPACalculateX1(nu);
+
 	REAL8 X2;
+	X2 = XLALSimInspiralEOBPACalculateX2(nu);
 
 	REAL8 a1;
+	a1 = XLALSimInspiralEOBPACalculatea(X1, chi1);
+
 	REAL8 a2;
+	a2 = XLALSimInspiralEOBPACalculatea(X2, chi2);
+
 	REAL8 aK;
-	REAL8 aK2;
+	aK = a1 + a2;
 
 	REAL8 S1;
+	S1 = XLALSimInspiralEOBPACalculateS(X1, chi1);
+
 	REAL8 S2;
+	S2 = XLALSimInspiralEOBPACalculateS(X2, chi2);
+
 	REAL8 S;
-	REAL8 Sstar;
-
-	REAL8 c3;
-
-	REAL8 C_Q1;
-	REAL8 C_Q2;
-
-	// REAL8 time_units_factor; // unused
-
-	// REAL8 f0; // unused
-	REAL8 r0;
-	REAL8 rMin;
-	REAL8 z3;
-
-	// set the above variables
-
-	nu = XLALSimInspiralEOBPACalculateSymmetricMassRatio(q);
-	X1 = XLALSimInspiralEOBPostAdiabaticX1(nu);
-	X2 = XLALSimInspiralEOBPostAdiabaticX2(nu);
-
-	a1 = X1 * chi1;
-	a2 = X2 * chi2;
-	aK = a1 + a2;
-	aK2 = aK * aK;
-
-	S1 = X1 * X1 * chi1;
-	S2 = X2 * X2 * chi2;
 	S = S1 + S2;
-	Sstar = X2 * a1 + X1 * a2;
 
-	c3 = XLALSimInspiralEOBPostAdiabaticFitGlobalc3(nu, a1, a2);
+	REAL8 Sstar;
+	Sstar = XLALSimInspiralEOBPACalculateSstar(X1, X2, chi1, chi2);
 
-	// Self-spin coefficients
-	C_Q1 = 1.;
-	C_Q2 = 1.;
+	REAL8 rInitial;
+	rInitial = initVals.data[0];
 
-	// time_units_factor = XLALSimInspiralEOBPostAdiabaticTimeUnitsFactor(M);
+	REAL8 rFinal;
+	rFinal = XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
 
-	// f0 = fInit / time_units_factor; // unused
-	r0 = XLALSimInspiralEOBPostAdiabaticDynr0Kepler(fInit); // should be (f0)
-	
-	// rMin = XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
-	rMin = 9.;
-
-	z3 = XLALSimInspiralEOBPostAdiabaticz3(nu);
-
+	UINT4 rSize;
 	rSize = 300;
 
-	dr = (r0-rMin) / (rSize-1);
+	REAL8 dr;
+	dr = XLALSimInspiralEOBPACalculatedr(rInitial, rFinal, rSize);
 
 	LALDict *LALparams = XLALCreateDict();
 
 	XLALDictInsertREAL8Value(LALparams, "M", M);
 	XLALDictInsertREAL8Value(LALparams, "q", q);
-
-	XLALDictInsertINT4Value(LALparams, "useSpins", useSpins);
-	XLALDictInsertINT4Value(LALparams, "useTidal", useTidal);
+	XLALDictInsertREAL8Value(LALparams, "nu", nu);
 
 	XLALDictInsertREAL8Value(LALparams, "chi1", chi1);
 	XLALDictInsertREAL8Value(LALparams, "chi2", chi2);
 
-	XLALDictInsertREAL8Value(LALparams, "rInitial", r0);
-	XLALDictInsertREAL8Value(LALparams, "rFinal", rMin);
-	XLALDictInsertUINT4Value(LALparams, "rSize", rSize);
-	XLALDictInsertREAL8Value(LALparams, "dr", dr);
-
-	XLALDictInsertStringValue(LALparams, "centrifugalRadius", centrifugalRadius);
-	XLALDictInsertStringValue(LALparams, "useFlm", useFlm);
-
-	XLALDictInsertREAL8Value(LALparams, "nu", nu);
+	XLALDictInsertUINT4Value(LALparams, "PAorder", PAOrder);
 
 	XLALDictInsertREAL8Value(LALparams, "X1", X1);
 	XLALDictInsertREAL8Value(LALparams, "X2", X2);
@@ -694,18 +665,16 @@ XLALSimInspiralEOBPostAdiabatic(
 	XLALDictInsertREAL8Value(LALparams, "a1", a1);
 	XLALDictInsertREAL8Value(LALparams, "a2", a2);
 	XLALDictInsertREAL8Value(LALparams, "aK", aK);
-	XLALDictInsertREAL8Value(LALparams, "aK2", aK2);
 
 	XLALDictInsertREAL8Value(LALparams, "S1", S1);
 	XLALDictInsertREAL8Value(LALparams, "S2", S2);
 	XLALDictInsertREAL8Value(LALparams, "S", S);
 	XLALDictInsertREAL8Value(LALparams, "Sstar", Sstar);
 
-	XLALDictInsertREAL8Value(LALparams, "c3", c3);
-	XLALDictInsertREAL8Value(LALparams, "z3", z3);
-
-	XLALDictInsertREAL8Value(LALparams, "C_Q1", C_Q1);
-	XLALDictInsertREAL8Value(LALparams, "C_Q2", C_Q2);
+	XLALDictInsertREAL8Value(LALparams, "rInitial", rInitial);
+	XLALDictInsertREAL8Value(LALparams, "rFinal", rFinal);
+	XLALDictInsertUINT4Value(LALparams, "rSize", rSize);
+	XLALDictInsertREAL8Value(LALparams, "dr", dr);
 
 	REAL8Vector *rVec = XLALCreateREAL8Vector(rSize);
 	memset(rVec->data, 0, rVec->length * sizeof(REAL8));
@@ -779,10 +748,6 @@ XLALSimInspiralEOBPostAdiabatic(
     REAL8Vector *dprstarBydrReverseVec = XLALCreateREAL8Vector(rSize);
     memset(dprstarBydrReverseVec->data, 0, dprstarBydrReverseVec->length * sizeof(REAL8));
 
-	// REAL8 r;
-
-	UINT4 i;
-
  	// compute r grid
  	XLALSimInspiralEOBPACalculateRadialGrid(
  		rVec,
@@ -804,17 +769,34 @@ XLALSimInspiralEOBPostAdiabatic(
 		LALparams
 	);
 
-	*rReverseVec = XLALReverseREAL8Vector(rVec);
+ 	*rReverseVec = XLALReverseREAL8Vector(rVec);
+
+	// *dphiBydrReverseVec = XLALReverseREAL8Vector(dphiBydrVec);
+ //    *phiReverseVec = XLALCumulativeIntegral3(rReverseVec, dphiBydrReverseVec);
+ //    *phiVec = XLALReverseREAL8Vector(phiReverseVec);
+    *dpphiBydrReverseVec = XLALReverseREAL8Vector(dpphiBydrVec);
+    *pphiReverseVec = XLALCumulativeIntegral3(rReverseVec, dpphiBydrReverseVec);
+    *pphiVec = XLALReverseREAL8Vector(pphiReverseVec);
+
+    *pphiVec = XLALRescaleREAL8Vector(pphiVec, 1/nu);
+
+    UINT4 i;
+
+	for (i = 0; i < rSize; i++)
+    {
+        printf("%.18e %.18e\n", rVec->data[i], pphiVec->data[i]);
+    }
+    exit(0);
+	
 
     UINT4 n;
     UINT4 parity;
 
-    UNUSED REAL8 dHBydprstar;
     REAL8 partialHBypartialprstar;
 
-    // UINT4 count = 1;
+    
 
-    for (n = 1; n <= PA_order; n++)
+    for (n = 1; n <= PAOrder; n++)
     {
     	// Separating even and odd orders
     	if (n%2 == 0)
@@ -931,13 +913,19 @@ XLALSimInspiralEOBPostAdiabatic(
     	if (parity)
 		{
 		    *prstarReverseVec = XLALReverseREAL8Vector(prstarVec);
-		    *dprstarBydrReverseVec = XLALFDDerivative1Order8(rReverseVec, prstarReverseVec);
+		    *dprstarBydrReverseVec = XLALFDDerivative1Order2(rReverseVec, prstarReverseVec);
 		    *dprstarBydrVec = XLALReverseREAL8Vector(dprstarBydrReverseVec);
+
+		    for (i = 0; i < rSize; i++)
+		    {
+		        printf("%.18e\n", prstarVec->data[i]);
+		    }
+		    exit(0);
 		}
 		else
 		{
 			*pphiReverseVec = XLALReverseREAL8Vector(pphiVec);
-			*dpphiBydrReverseVec = XLALFDDerivative1Order8(rReverseVec, pphiReverseVec);
+			*dpphiBydrReverseVec = XLALFDDerivative1Order2(rReverseVec, pphiReverseVec);
 			*dpphiBydrVec = XLALReverseREAL8Vector(dpphiBydrReverseVec);
 		}
     }
@@ -945,6 +933,7 @@ XLALSimInspiralEOBPostAdiabatic(
     *dtBydrReverseVec = XLALReverseREAL8Vector(dtBydrVec);
     *tReverseVec = XLALCumulativeIntegral3(rReverseVec, dtBydrReverseVec);
     *tVec = XLALReverseREAL8Vector(tReverseVec);
+    // *tVec = XLALCumulativeIntegral3(rVec, dtBydrVec);
 
     // *tVec = XLALOffsetREAL8Vector(tVec, -tVec->data[0]);
 

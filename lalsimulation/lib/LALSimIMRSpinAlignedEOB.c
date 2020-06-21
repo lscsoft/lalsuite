@@ -1372,36 +1372,6 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
       break;
     }
 
-  printf("Post adiabatic goes here\n");
-  // Available stuff to pass to my function:
-  // nqcCoeffs
-  // seobParams
-  // sigmaKerr
-  // sigmaStar
-  // m1SI
-  // m2SI
-
-  UINT2 postAdiabaticFlag = 1;
-
-  REAL8Vector *dynamicsPA = NULL;
-
-  if (postAdiabaticFlag)
-  {
-    XLALSimInspiralEOBPostAdiabatic(
-      &dynamicsPA,
-      deltaT,
-      m1SI,
-      m2SI,
-      spin1z,
-      spin2z,
-      SpinAlignedEOBversion,
-      &seobParams,
-      &nqcCoeffs
-    );
-    exit(0);
-    // return XLAL_SUCCESS;
-  }
-
   /*
    * STEP 1) Solve for initial conditions
    */
@@ -1463,6 +1433,29 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
   eobParams.NyquistStop = 0;
 
   //fprintf( stderr, "Spherical initial conditions: %e %e %e %e\n", values->data[0], values->data[1], values->data[2], values->data[3] );
+
+  UINT2 postAdiabaticFlag = 1;
+
+  REAL8Vector *dynamicsPA = NULL;
+
+  if (postAdiabaticFlag)
+  {
+    printf("Post adiabatic goes here\n");
+    XLALSimInspiralEOBPostAdiabatic(
+      &dynamicsPA,
+      deltaT,
+      m1,
+      m2,
+      spin1z,
+      spin2z,
+      *values,
+      SpinAlignedEOBversion,
+      &seobParams,
+      &nqcCoeffs
+    );
+    exit(0);
+    // return XLAL_SUCCESS;
+  }
 
   /*
    * STEP 2) Evolve EOB trajectory until reaching the peak of orbital frequency
