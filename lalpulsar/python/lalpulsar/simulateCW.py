@@ -133,7 +133,7 @@ class CWSimulator(object):
 
         # parse detector name
         try:
-            _, self.__site_index = lalpulsar.GetCWDetectorPrefix(det_name)
+            _, self.__site_index = lalpulsar.FindCWDetector(det_name, True)
             assert(self.__site_index >= 0)
         except:
             raise ValueError("Invalid detector name det_name='%s'" % det_name)
@@ -364,6 +364,57 @@ class CWSimulator(object):
             # yield current file name for e.g. printing progress
             yield frame_path, i, N
 
+    def get_sfts(self, fmax, Tsft, noise_sqrt_Sh=0, noise_seed=0, window=None, window_param=0):
+        """
+        Generate SFTs [2] containing strain time series of a continuous-wave signal.
+
+        @param fmax: maximum SFT frequency, in Hz
+        @param Tsft: length of each SFT, in seconds; should divide evenly into @b Tdata
+        @param noise_sqrt_Sh: if >0, add Gaussian noise with square-root single-sided power
+            spectral density given by this value, in Hz^(-1/2)
+        @param noise_seed: use this need for the random number generator used to create noise
+        @param window: if not None, window the time series before performing the FFT, using
+            the named window function; see XLALCreateNamedREAL8Window()
+        @param window_param: parameter for the window function given by @b window, if needed
+
+        @return (@b sft, @b i, @b N), where:
+            @b sft = SFT;
+            @b i = SFT file index, starting from zero;
+            @b N = number of SFTs
+
+        This is a Python generator function and so should be called as follows:
+        ~~~
+        S = CWSimulator(...)
+        for sft, i, N in S.get_sfts(...):
+            ...
+        ~~~
+
+        [2] https://dcc.ligo.org/LIGO-T040164/public
+        """
+
+        # create timestamps for generating one SFT per time series
+        sft_ts = lalpulsar.CreateTimestampVector(1)
+        sft_ts.deltaT = Tsft
+
+        # generate strain time series in blocks of length 'Tsft'
+        sft_h = None
+        sft_fs = 2 * fmax
+        for t, h, i, N in self.get_strain_blocks(sft_fs, Tsft, noise_sqrt_Sh=noise_sqrt_Sh, noise_seed=noise_seed):
+
+            # create and initialise REAL8TimeSeries to write to SFT files
+            if sft_h is None:
+                sft_name = self.__site.frDetector.prefix
+                sft_h = lal.CreateREAL8TimeSeries(sft_name, t, 0, 1.0 / sft_fs, lal.DimensionlessUnit, len(h))
+            sft_h.epoch = t
+            sft_h.data.data = h
+
+            # create SFT, possibly with windowing
+            sft_ts.data[0] = t
+            sft_vect = lalpulsar.MakeSFTsFromREAL8TimeSeries(sft_h, sft_ts, window, window_param)
+
+            # yield current SFT
+            yield sft_vect.data[0], i, N
+
     def write_sft_files(self, fmax, Tsft, comment, out_dir=".", noise_sqrt_Sh=0, noise_seed=0, window=None, window_param=0):
         """
         Write SFT files [2] containing strain time series of a continuous-wave signal.
@@ -399,33 +450,16 @@ class CWSimulator(object):
         if not valid_comment.match(comment):
             raise ValueError("SFT file comment='%s' may only contain A-Z, a-z, 0-9, _, +, # characters" % comment)
 
-        # create timestamps for generating one SFT per time series
-        sft_ts = lalpulsar.CreateTimestampVector(1)
-        sft_ts.deltaT = Tsft
-
-        # generate strain time series in blocks of length 'Tsft'
-        sft_h = None
-        sft_fs = 2 * fmax
-        for t, h, i, N in self.get_strain_blocks(sft_fs, Tsft, noise_sqrt_Sh=noise_sqrt_Sh, noise_seed=noise_seed):
-
-            # create and initialise REAL8TimeSeries to write to SFT files
-            if sft_h is None:
-                sft_name = self.__site.frDetector.prefix
-                sft_h = lal.CreateREAL8TimeSeries(sft_name, t, 0, 1.0 / sft_fs, lal.DimensionlessUnit, len(h))
-            sft_h.epoch = t
-            sft_h.data.data = h
-
-            # create SFT, possibly with windowing
-            sft_ts.data[0] = t
-            sft_vect = lalpulsar.MakeSFTsFromREAL8TimeSeries(sft_h, sft_ts, window, window_param)
+        # generate SFTs
+        for sft, i, N in self.get_sfts(fmax, Tsft, noise_sqrt_Sh=noise_sqrt_Sh, noise_seed=noise_seed, window=window, window_param=window_param):
 
             # create standard SFT file name (see LIGO-T040164)
             sft_desc = 'simCW_%s' % comment
-            sft_name = lalpulsar.GetOfficialName4MergedSFTs(sft_vect, sft_desc)
+            sft_name = lalpulsar.GetOfficialName4SFT(sft, sft_desc)
             sft_path = os.path.join(out_dir, sft_name)
 
             # write SFT
-            lalpulsar.WriteSFTVector2NamedFile(sft_vect, sft_path, self.__origin_str)
+            lalpulsar.WriteSFT2file(sft, sft_path, self.__origin_str)
 
             # yield current file name for e.g. printing progress
             yield sft_path, i, N

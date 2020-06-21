@@ -471,7 +471,7 @@ static int SplitStringIntoRange(const char *str, char part[2][256], int T[2][2])
 /// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
 ///
 int XLALParseStringValueAsREAL8Range(
-  REAL8Range *real8Range,		///< [out] output range of REAL8 values
+  REAL8Range real8Range,		///< [out] output range of REAL8 values
   const char *valString			///< [in] input string
   )
 {
@@ -488,14 +488,14 @@ int XLALParseStringValueAsREAL8Range(
   REAL8 val[2];
   XLAL_CHECK( XLALParseStringValueAsREAL8(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALParseStringValueAsREAL8(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
-  (*real8Range)[0] = T[0][0] * val[0] + T[0][1] * val[1];
-  (*real8Range)[1] = T[1][0] * val[0] + T[1][1] * val[1];
+  real8Range[0] = T[0][0] * val[0] + T[0][1] * val[1];
+  real8Range[1] = T[1][0] * val[0] + T[1][1] * val[1];
 
   // Check range ordering
-  if ((*real8Range)[0] > (*real8Range)[1]) {
-    const REAL8 tmp = (*real8Range)[0];
-    (*real8Range)[0] = (*real8Range)[1];
-    (*real8Range)[1] = tmp;
+  if (real8Range[0] > real8Range[1]) {
+    const REAL8 tmp = real8Range[0];
+    real8Range[0] = real8Range[1];
+    real8Range[1] = tmp;
   }
 
   return XLAL_SUCCESS;
@@ -508,7 +508,7 @@ int XLALParseStringValueAsREAL8Range(
 /// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
 ///
 int XLALParseStringValueAsINT4Range(
-  INT4Range *int4Range,		///< [out] output range of INT4 values
+  INT4Range int4Range,			///< [out] output range of INT4 values
   const char *valString			///< [in] input string
   )
 {
@@ -525,14 +525,14 @@ int XLALParseStringValueAsINT4Range(
   INT4 val[2];
   XLAL_CHECK( XLALParseStringValueAsINT4(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALParseStringValueAsINT4(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
-  (*int4Range)[0] = T[0][0] * val[0] + T[0][1] * val[1];
-  (*int4Range)[1] = T[1][0] * val[0] + T[1][1] * val[1];
+  int4Range[0] = T[0][0] * val[0] + T[0][1] * val[1];
+  int4Range[1] = T[1][0] * val[0] + T[1][1] * val[1];
 
   // Check range ordering
-  if ((*int4Range)[0] > (*int4Range)[1]) {
-    const INT4 tmp = (*int4Range)[0];
-    (*int4Range)[0] = (*int4Range)[1];
-    (*int4Range)[1] = tmp;
+  if (int4Range[0] > int4Range[1]) {
+    const INT4 tmp = int4Range[0];
+    int4Range[0] = int4Range[1];
+    int4Range[1] = tmp;
   }
 
   return XLAL_SUCCESS;
@@ -546,7 +546,7 @@ int XLALParseStringValueAsINT4Range(
 /// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
 ///
 int XLALParseStringValueAsEPOCHRange(
-  LIGOTimeGPSRange *gpsRange,		///< [out] output range of LIGOTimeGPS values
+  LIGOTimeGPSRange gpsRange,		///< [out] output range of LIGOTimeGPS values
   const char *valString			///< [in] input string
   )
 {
@@ -563,14 +563,14 @@ int XLALParseStringValueAsEPOCHRange(
   LIGOTimeGPS val[2];
   XLAL_CHECK( XLALParseStringValueAsEPOCH(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALParseStringValueAsEPOCH(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLALINT8NSToGPS( &(*gpsRange)[0], T[0][0] * XLALGPSToINT8NS(&val[0]) + T[0][1] * XLALGPSToINT8NS(&val[1]) );
-  XLALINT8NSToGPS( &(*gpsRange)[1], T[1][0] * XLALGPSToINT8NS(&val[0]) + T[1][1] * XLALGPSToINT8NS(&val[1]) );
+  XLALINT8NSToGPS( &gpsRange[0], T[0][0] * XLALGPSToINT8NS(&val[0]) + T[0][1] * XLALGPSToINT8NS(&val[1]) );
+  XLALINT8NSToGPS( &gpsRange[1], T[1][0] * XLALGPSToINT8NS(&val[0]) + T[1][1] * XLALGPSToINT8NS(&val[1]) );
 
   // Check range ordering
-  if (XLALGPSCmp(&(*gpsRange)[0], &(*gpsRange)[1]) > 0) {
-    const LIGOTimeGPS tmp = (*gpsRange)[0];
-    (*gpsRange)[0] = (*gpsRange)[1];
-    (*gpsRange)[1] = tmp;
+  if (XLALGPSCmp(&gpsRange[0], &gpsRange[1]) > 0) {
+    const LIGOTimeGPS tmp = gpsRange[0];
+    gpsRange[0] = gpsRange[1];
+    gpsRange[1] = tmp;
   }
 
   return XLAL_SUCCESS;
@@ -584,7 +584,7 @@ int XLALParseStringValueAsEPOCHRange(
 /// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
 ///
 int XLALParseStringValueAsRAJRange(
-  REAL8Range *rajRange,			///< [out] output range of RAJ values
+  REAL8Range rajRange,			///< [out] output range of RAJ values
   const char *valString			///< [in] input string
   )
 {
@@ -601,14 +601,14 @@ int XLALParseStringValueAsRAJRange(
   REAL8 val[2];
   XLAL_CHECK( XLALParseStringValueAsRAJ(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALParseStringValueAsRAJ(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
-  (*rajRange)[0] = T[0][0] * val[0] + T[0][1] * val[1];
-  (*rajRange)[1] = T[1][0] * val[0] + T[1][1] * val[1];
+  rajRange[0] = T[0][0] * val[0] + T[0][1] * val[1];
+  rajRange[1] = T[1][0] * val[0] + T[1][1] * val[1];
 
   // Check range ordering
-  if ((*rajRange)[0] > (*rajRange)[1]) {
-    const REAL8 tmp = (*rajRange)[0];
-    (*rajRange)[0] = (*rajRange)[1];
-    (*rajRange)[1] = tmp;
+  if (rajRange[0] > rajRange[1]) {
+    const REAL8 tmp = rajRange[0];
+    rajRange[0] = rajRange[1];
+    rajRange[1] = tmp;
   }
 
   return XLAL_SUCCESS;
@@ -622,7 +622,7 @@ int XLALParseStringValueAsRAJRange(
 /// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
 ///
 int XLALParseStringValueAsDECJRange(
-  REAL8Range *decjRange,		///< [out] output range of DECJ values
+  REAL8Range decjRange,			///< [out] output range of DECJ values
   const char *valString			///< [in] input string
   )
 {
@@ -639,14 +639,14 @@ int XLALParseStringValueAsDECJRange(
   REAL8 val[2];
   XLAL_CHECK( XLALParseStringValueAsDECJ(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLALParseStringValueAsDECJ(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
-  (*decjRange)[0] = T[0][0] * val[0] + T[0][1] * val[1];
-  (*decjRange)[1] = T[1][0] * val[0] + T[1][1] * val[1];
+  decjRange[0] = T[0][0] * val[0] + T[0][1] * val[1];
+  decjRange[1] = T[1][0] * val[0] + T[1][1] * val[1];
 
   // Check range ordering
-  if ((*decjRange)[0] > (*decjRange)[1]) {
-    const REAL8 tmp = (*decjRange)[0];
-    (*decjRange)[0] = (*decjRange)[1];
-    (*decjRange)[1] = tmp;
+  if (decjRange[0] > decjRange[1]) {
+    const REAL8 tmp = decjRange[0];
+    decjRange[0] = decjRange[1];
+    decjRange[1] = tmp;
   }
 
   return XLAL_SUCCESS;

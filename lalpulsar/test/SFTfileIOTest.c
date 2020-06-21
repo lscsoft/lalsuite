@@ -110,7 +110,7 @@ int main( void )
   SFTVector *sft_vect2 = NULL;
   MultiSFTVector *multsft_vect = NULL;
   MultiSFTVector *multsft_vect2 = NULL;
-  CHAR detector[2] = "H1";
+  CHAR detector[] = "H1";
   BOOLEAN crc_check;
 
   /* band to read from infile.* SFTs */

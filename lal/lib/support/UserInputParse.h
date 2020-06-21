@@ -94,11 +94,19 @@ int XLALParseStringValueAsEPOCH ( LIGOTimeGPS *gps, const char *valString );
 int XLALParseStringValueAsRAJ ( REAL8 *valRAJ, const char *valString );
 int XLALParseStringValueAsDECJ ( REAL8 *valDECJ, const char *valString );
 
-int XLALParseStringValueAsINT4Range ( INT4Range *int4Range, const char *valString );
-int XLALParseStringValueAsREAL8Range ( REAL8Range *real8Range, const char *valString );
-int XLALParseStringValueAsEPOCHRange ( LIGOTimeGPSRange *gpsRange, const char *valString );
-int XLALParseStringValueAsRAJRange ( REAL8Range *rajRange, const char *valString );
-int XLALParseStringValueAsDECJRange ( REAL8Range *decjRange, const char *valString );
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(OUTPUT_ARRAY_1D(INT4, int4Range[2]));
+SWIGLAL(OUTPUT_ARRAY_1D(REAL8, real8Range[2]));
+SWIGLAL(OUTPUT_ARRAY_1D(LIGOTimeGPS, gpsRange[2]));
+SWIGLAL(OUTPUT_ARRAY_1D(REAL8, rajRange[2]));
+SWIGLAL(OUTPUT_ARRAY_1D(REAL8, decjRange[2]));
+#endif /* SWIG */
+
+int XLALParseStringValueAsINT4Range ( INT4Range int4Range, const char *valString );
+int XLALParseStringValueAsREAL8Range ( REAL8Range real8Range, const char *valString );
+int XLALParseStringValueAsEPOCHRange ( LIGOTimeGPSRange gpsRange, const char *valString );
+int XLALParseStringValueAsRAJRange ( REAL8Range rajRange, const char *valString );
+int XLALParseStringValueAsDECJRange ( REAL8Range decjRange, const char *valString );
 
 int XLALParseStringValueAsUserEnum ( int *valEnum, const UserChoices *enumData, const char *valString );
 int XLALParseStringValueAsUserFlag ( int *valFlag, const UserChoices *flagData, const char *valString );
