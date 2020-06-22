@@ -400,8 +400,8 @@ int main(int argc, char *argv[]){
     /* register user input variables */
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_f0,                 "f0",                 REAL8,        'f', OPTIONAL,  "Start search frequency") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_freqBand,           "freqBand",           REAL8,        'b', OPTIONAL,  "Search frequency band") == XLAL_SUCCESS, XLAL_EFUNC);
-    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_startTime,          "startTime",          REAL8,        0,   OPTIONAL,  "GPS start time of observation") == XLAL_SUCCESS, XLAL_EFUNC);
-    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_endTime,            "endTime",            REAL8,        0,   OPTIONAL,  "GPS end time of observation") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_startTime,          "startTime",          REAL8,        0,   OPTIONAL,  "GPS start time of observation (SFT timestamps must be >= this)") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_endTime,            "endTime",            REAL8,        0,   OPTIONAL,  "GPS end time of observation (SFT timestamps must be < this)") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_timeStampsFile,     "timeStampsFile",     STRING,       0,   OPTIONAL,  "Input time-stamps file") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_skyRegion,          "skyRegion",          STRING,       0,   OPTIONAL,  "sky-region polygon (or 'allsky')") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_dAlpha,             "dAlpha",             REAL8,        0,   OPTIONAL,  "Resolution for flat or isotropic coarse grid (rad)") == XLAL_SUCCESS, XLAL_EFUNC);

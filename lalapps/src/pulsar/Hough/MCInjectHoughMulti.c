@@ -265,8 +265,8 @@ int main(int argc, char *argv[]){
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_weighNoise,     "weighNoise",     BOOLEAN,      0,   OPTIONAL, "Use SFT noise weights") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printLog,       "printLog",       BOOLEAN,      0,   OPTIONAL, "Print Log file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fast,           "fast",           BOOLEAN,      0,   OPTIONAL, "Use fast frequency domain SFT injections") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_startTime,      "startTime",      REAL8,        0,   OPTIONAL, "GPS start time of observation") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_endTime,        "endTime",        REAL8,        0,   OPTIONAL, "GPS end time of observation") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_startTime,      "startTime",      REAL8,        0,   OPTIONAL, "GPS start time of observation (SFT timestamps must be >= this)") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_endTime,        "endTime",        REAL8,        0,   OPTIONAL, "GPS end time of observation (SFT timestamps must be < this)") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_timeStampsFile, "timeStampsFile", STRING,       0,   OPTIONAL, "Input time-stamps file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_nfSizeCylinder, "nfSizeCylinder", INT4,         0,   OPTIONAL, "Size of cylinder of PHMDs") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_maxBinsClean,   "maxBinsClean",   INT4,         0,   OPTIONAL, "Maximum number of bins in cleaning") == XLAL_SUCCESS, XLAL_EFUNC);
