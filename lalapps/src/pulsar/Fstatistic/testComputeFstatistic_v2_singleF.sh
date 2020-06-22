@@ -65,10 +65,10 @@ outfile_cfs_all="fstat_all.dat"
 timingsfile="cfs_timing.dat"
 
 ## construct ComputeFstatistic command lines
-cfs_CL=" --DataFiles='*.sft' --TwoFthreshold=0.0 --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_fmin --FreqBand=$cfs_FreqBand --clusterOnScanline=2"
+cfs_CL=" --TwoFthreshold=0.0 --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_fmin --FreqBand=$cfs_FreqBand --clusterOnScanline=2"
 
 ## multi-IFO
-cmdline="$cfs_code $cfs_CL --outputFstat='$outfile_cfs_all' --outputLoudest='$outfile_cfs_loudest' --outputTiming='$timingsfile'"
+cmdline="$cfs_code $cfs_CL --DataFiles='*.sft' --outputFstat='$outfile_cfs_all' --outputLoudest='$outfile_cfs_loudest' --outputTiming='$timingsfile'"
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -78,7 +78,7 @@ twoFcfs_multi=$(sed 's/\;//' $outfile_cfs_loudest | LC_ALL=C awk '{if($1=="twoF"
 twoFcfs_multi_all=$(sed -e '/%/d;'  $outfile_cfs_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
 
 ## detector H1
-cmdline="$cfs_code  $cfs_CL --outputFstat='$outfile_cfs_all' --outputLoudest='$outfile_cfs_loudest' --IFO='H1'"
+cmdline="$cfs_code  $cfs_CL --DataFiles='*H1*.sft' --outputFstat='$outfile_cfs_all' --outputLoudest='$outfile_cfs_loudest'"
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -88,7 +88,7 @@ twoFcfs_H1=$(sed 's/\;//' $outfile_cfs_loudest | LC_ALL=C awk '{if($1=="twoF"){p
 twoFcfs_H1_all=$(sed -e '/%/d;'  $outfile_cfs_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
 
 ## detector L1
-cmdline="$cfs_code $cfs_CL --outputFstat='$outfile_cfs_all' --outputLoudest='$outfile_cfs_loudest' --IFO='L1'"
+cmdline="$cfs_code $cfs_CL --DataFiles='*L1*.sft' --outputFstat='$outfile_cfs_all' --outputLoudest='$outfile_cfs_loudest'"
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -108,7 +108,7 @@ outfile_cfs_toplist_loudest="fstat_toplist_loudest.dat"
 outfile_cfs_toplist_all="fstat_toplist_all.dat"
 timingsfile_toplist="cfs_timing_toplist.dat"
 
-cmdline="$cfs_code $cfs_CL --outputFstat='$outfile_cfs_toplist_all' --outputLoudest='$outfile_cfs_toplist_loudest'  --outputTiming='$timingsfile_toplist' --NumCandidatesToKeep=$cfs_toplist_cands"
+cmdline="$cfs_code $cfs_CL --DataFiles='*.sft' --outputFstat='$outfile_cfs_toplist_all' --outputLoudest='$outfile_cfs_toplist_loudest'  --outputTiming='$timingsfile_toplist' --NumCandidatesToKeep=$cfs_toplist_cands"
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -128,7 +128,7 @@ outfile_cfs_singleF_loudest="fstat_singleF_loudest.dat"
 outfile_cfs_singleF_all="fstat_singleF_all.dat"
 timingsfile_singleF="cfs_timing_singleF.dat"
 
-cmdline="$cfs_code $cfs_CL --outputSingleF --outputFstat='$outfile_cfs_singleF_all' --outputLoudest='$outfile_cfs_singleF_loudest' --outputTiming='$timingsfile_singleF'"
+cmdline="$cfs_code $cfs_CL --DataFiles='*.sft' --outputSingleF --outputFstat='$outfile_cfs_singleF_all' --outputLoudest='$outfile_cfs_singleF_loudest' --outputTiming='$timingsfile_singleF'"
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -152,7 +152,7 @@ outfile_cfs_singleF_toplist_loudest="fstat_singleF_toplist_loudest.dat"
 outfile_cfs_singleF_toplist_all="fstat_singleF_toplist_all.dat"
 timingsfile_singleF_toplist="cfs_timing_singleF_toplist.dat"
 
-cmdline="$cfs_code  $cfs_CL --outputSingleF --outputFstat='$outfile_cfs_singleF_toplist_all' --outputLoudest='$outfile_cfs_singleF_toplist_loudest'  --outputTiming='$timingsfile_singleF_toplist' --NumCandidatesToKeep=$cfs_toplist_cands"
+cmdline="$cfs_code  $cfs_CL --DataFiles='*.sft' --outputSingleF --outputFstat='$outfile_cfs_singleF_toplist_all' --outputLoudest='$outfile_cfs_singleF_toplist_loudest'  --outputTiming='$timingsfile_singleF_toplist' --NumCandidatesToKeep=$cfs_toplist_cands"
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$cfs_code' ..."
