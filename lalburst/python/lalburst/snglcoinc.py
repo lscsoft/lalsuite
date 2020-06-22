@@ -308,6 +308,11 @@ class multidict(UserDict):
 		return itertools.chain(*(iter(d) for d in self.dicts))
 
 	def iteritems(self):
+		warnings.warn(
+			"this method is deprecated, and will be removed in a "
+			"future release. please use .items() instead.",
+			DeprecationWarning,
+		)
 		return self.items()
 
 	def items(self):
@@ -942,7 +947,7 @@ class TimeSlideGraph(object):
 		# internal index, leaving it incomplete for our needs.  we
 		# do it outside the loop over nodes because we'll need it
 		# when the loop terminates
-		index = dict(self.index.iteritems())
+		index = dict(self.index.items())
 
 		# default coinc sieve
 		if coinc_sieve is None:
