@@ -115,7 +115,7 @@ echo "STEP 2: Comparing CW and tCW results over a freq grid at (t0,tau)=(T0,Tdat
 echo "----------------------------------------------------------------------"
 echo
 
-cfs_CL_base="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --DataFiles='./*.sft' --Dterms=${Dterms} ${FstatMethod} --refTime=$startTime --TwoFthreshold=0" #  --NumCandidatesToKeep=${cfs_nCands}
+cfs_CL_base="--Alpha=$Alpha --Delta=$Delta --DataFiles='./*.sft' --Dterms=${Dterms} ${FstatMethod} --refTime=$startTime --TwoFthreshold=0" #  --NumCandidatesToKeep=${cfs_nCands}
 if [ "$haveNoise" != "true" ]; then
     cfs_CL_base="$cfs_CL_base --SignalOnly"
 fi

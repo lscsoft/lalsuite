@@ -64,39 +64,39 @@ outfile_cfs_loudest="fstat_loudest.dat"
 outfile_cfs_all="fstat_all.dat"
 timingsfile="cfs_timing.dat"
 
-    ## construct ComputeFstatistic command lines
-    cfs_CL=" --DataFiles='*.sft' --TwoFthreshold=0.0 --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_fmin --FreqBand=$cfs_FreqBand --clusterOnScanline=2"
+## construct ComputeFstatistic command lines
+cfs_CL=" --TwoFthreshold=0.0 --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_fmin --FreqBand=$cfs_FreqBand --clusterOnScanline=2"
 
-    ## multi-IFO
-    cmdline="$cfs_code $cfs_CL --outputFstat='$outfile_cfs_all' --outputLoudest='$outfile_cfs_loudest' --outputTiming='$timingsfile'"
-    echo $cmdline
-    if ! eval $cmdline; then
-      echo "Error.. something failed when running '$cfs_code' ..."
-      exit 1
-    fi
-    twoFcfs_multi=$(sed 's/\;//' $outfile_cfs_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
-    twoFcfs_multi_all=$(sed -e '/%/d;'  $outfile_cfs_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
+## multi-IFO
+cmdline="$cfs_code $cfs_CL --DataFiles='*.sft' --outputFstat='$outfile_cfs_all' --outputLoudest='$outfile_cfs_loudest' --outputTiming='$timingsfile'"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1
+fi
+twoFcfs_multi=$(sed 's/\;//' $outfile_cfs_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
+twoFcfs_multi_all=$(sed -e '/%/d;'  $outfile_cfs_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
 
-    ## detector H1
-    cmdline="$cfs_code  $cfs_CL --outputFstat='$outfile_cfs_all' --outputLoudest='$outfile_cfs_loudest' --IFO='H1'"
-    echo $cmdline
-    if ! eval $cmdline; then
-      echo "Error.. something failed when running '$cfs_code' ..."
-      exit 1
-    fi
-    twoFcfs_H1=$(sed 's/\;//' $outfile_cfs_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
-    twoFcfs_H1_all=$(sed -e '/%/d;'  $outfile_cfs_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
+## detector H1
+cmdline="$cfs_code  $cfs_CL --DataFiles='*H1*.sft' --outputFstat='$outfile_cfs_all' --outputLoudest='$outfile_cfs_loudest'"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1
+fi
+twoFcfs_H1=$(sed 's/\;//' $outfile_cfs_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
+twoFcfs_H1_all=$(sed -e '/%/d;'  $outfile_cfs_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
 
-    ## detector L1
-    cmdline="$cfs_code $cfs_CL --outputFstat='$outfile_cfs_all' --outputLoudest='$outfile_cfs_loudest' --IFO='L1'"
-    echo $cmdline
-    if ! eval $cmdline; then
-      echo "Error.. something failed when running '$cfs_code' ..."
-      exit 1
-    fi
-    twoFcfs_L1=$(sed 's/\;//' $outfile_cfs_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
-    twoFcfs_L1_all=$(sed -e '/%/d;'  $outfile_cfs_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
-    timing_plain=$(sed '/^%.*/d' $timingsfile | LC_ALL=C awk "$timing_awk")
+## detector L1
+cmdline="$cfs_code $cfs_CL --DataFiles='*L1*.sft' --outputFstat='$outfile_cfs_all' --outputLoudest='$outfile_cfs_loudest'"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1
+fi
+twoFcfs_L1=$(sed 's/\;//' $outfile_cfs_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
+twoFcfs_L1_all=$(sed -e '/%/d;'  $outfile_cfs_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
+timing_plain=$(sed '/^%.*/d' $timingsfile | LC_ALL=C awk "$timing_awk")
 
 echo
 echo "----------------------------------------------------------------------"
@@ -108,15 +108,15 @@ outfile_cfs_toplist_loudest="fstat_toplist_loudest.dat"
 outfile_cfs_toplist_all="fstat_toplist_all.dat"
 timingsfile_toplist="cfs_timing_toplist.dat"
 
-     cmdline="$cfs_code $cfs_CL --outputFstat='$outfile_cfs_toplist_all' --outputLoudest='$outfile_cfs_toplist_loudest'  --outputTiming='$timingsfile_toplist' --NumCandidatesToKeep=$cfs_toplist_cands"
-     echo $cmdline
-     if ! eval $cmdline; then
-       echo "Error.. something failed when running '$cfs_code' ..."
-       exit 1
-     fi
-     twoFcfs_toplist_multi=$(sed 's/\;//' $outfile_cfs_toplist_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
-     twoFcfs_toplist_multi_all=$(sed -e '/%/d;'  $outfile_cfs_toplist_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
-     timing_toplist=$(sed '/^%.*/d' $timingsfile_toplist | LC_ALL=C awk "$timing_awk" )
+cmdline="$cfs_code $cfs_CL --DataFiles='*.sft' --outputFstat='$outfile_cfs_toplist_all' --outputLoudest='$outfile_cfs_toplist_loudest'  --outputTiming='$timingsfile_toplist' --NumCandidatesToKeep=$cfs_toplist_cands"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1
+fi
+twoFcfs_toplist_multi=$(sed 's/\;//' $outfile_cfs_toplist_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
+twoFcfs_toplist_multi_all=$(sed -e '/%/d;'  $outfile_cfs_toplist_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
+timing_toplist=$(sed '/^%.*/d' $timingsfile_toplist | LC_ALL=C awk "$timing_awk" )
 
 echo
 echo "----------------------------------------------------------------------"
@@ -128,19 +128,19 @@ outfile_cfs_singleF_loudest="fstat_singleF_loudest.dat"
 outfile_cfs_singleF_all="fstat_singleF_all.dat"
 timingsfile_singleF="cfs_timing_singleF.dat"
 
-     cmdline="$cfs_code $cfs_CL --outputSingleF --outputFstat='$outfile_cfs_singleF_all' --outputLoudest='$outfile_cfs_singleF_loudest' --outputTiming='$timingsfile_singleF'"
-     echo $cmdline
-     if ! eval $cmdline; then
-       echo "Error.. something failed when running '$cfs_code' ..."
-       exit 1
-     fi
-     twoFcfs_singleF_multi=$(sed 's/\;//' $outfile_cfs_singleF_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
-     twoFcfs_singleF_H1=$(sed 's/\;//' $outfile_cfs_singleF_loudest | LC_ALL=C awk '{if($1=="twoF0"){printf "%.6f",$3}}')
-     twoFcfs_singleF_L1=$(sed 's/\;//' $outfile_cfs_singleF_loudest | LC_ALL=C awk '{if($1=="twoF1"){printf "%.6f",$3}}')
-     twoFcfs_singleF_multi_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
-     twoFcfs_singleF_H1_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$8}')
-     twoFcfs_singleF_L1_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$9}')
-     timing_singleF=$(sed '/^%.*/d' $timingsfile_singleF | LC_ALL=C awk "$timing_awk" )
+cmdline="$cfs_code $cfs_CL --DataFiles='*.sft' --outputSingleF --outputFstat='$outfile_cfs_singleF_all' --outputLoudest='$outfile_cfs_singleF_loudest' --outputTiming='$timingsfile_singleF'"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1
+fi
+twoFcfs_singleF_multi=$(sed 's/\;//' $outfile_cfs_singleF_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
+twoFcfs_singleF_H1=$(sed 's/\;//' $outfile_cfs_singleF_loudest | LC_ALL=C awk '{if($1=="twoF0"){printf "%.6f",$3}}')
+twoFcfs_singleF_L1=$(sed 's/\;//' $outfile_cfs_singleF_loudest | LC_ALL=C awk '{if($1=="twoF1"){printf "%.6f",$3}}')
+twoFcfs_singleF_multi_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
+twoFcfs_singleF_H1_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$8}')
+twoFcfs_singleF_L1_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$9}')
+timing_singleF=$(sed '/^%.*/d' $timingsfile_singleF | LC_ALL=C awk "$timing_awk" )
 
 echo
 echo "----------------------------------------------------------------------"
@@ -152,19 +152,19 @@ outfile_cfs_singleF_toplist_loudest="fstat_singleF_toplist_loudest.dat"
 outfile_cfs_singleF_toplist_all="fstat_singleF_toplist_all.dat"
 timingsfile_singleF_toplist="cfs_timing_singleF_toplist.dat"
 
-     cmdline="$cfs_code  $cfs_CL --outputSingleF --outputFstat='$outfile_cfs_singleF_toplist_all' --outputLoudest='$outfile_cfs_singleF_toplist_loudest'  --outputTiming='$timingsfile_singleF_toplist' --NumCandidatesToKeep=$cfs_toplist_cands"
-     echo $cmdline
-     if ! eval $cmdline; then
-       echo "Error.. something failed when running '$cfs_code' ..."
-       exit 1
-     fi
-     twoFcfs_singleF_toplist_multi=$(sed 's/\;//' $outfile_cfs_singleF_toplist_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
-     twoFcfs_singleF_toplist_H1=$(sed 's/\;//' $outfile_cfs_singleF_toplist_loudest | LC_ALL=C awk '{if($1=="twoF0"){printf "%.6f",$3}}')
-     twoFcfs_singleF_toplist_L1=$(sed 's/\;//' $outfile_cfs_singleF_toplist_loudest | LC_ALL=C awk '{if($1=="twoF1"){printf "%.6f",$3}}')
-     twoFcfs_singleF_toplist_multi_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_toplist_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
-     twoFcfs_singleF_toplist_H1_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_toplist_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$8}')
-     twoFcfs_singleF_toplist_L1_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_toplist_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$9}')
-     timing_singleF_toplist=$(sed '/^%.*/d' $timingsfile_singleF_toplist | LC_ALL=C awk "$timing_awk" )
+cmdline="$cfs_code  $cfs_CL --DataFiles='*.sft' --outputSingleF --outputFstat='$outfile_cfs_singleF_toplist_all' --outputLoudest='$outfile_cfs_singleF_toplist_loudest'  --outputTiming='$timingsfile_singleF_toplist' --NumCandidatesToKeep=$cfs_toplist_cands"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1
+fi
+twoFcfs_singleF_toplist_multi=$(sed 's/\;//' $outfile_cfs_singleF_toplist_loudest | LC_ALL=C awk '{if($1=="twoF"){printf "%.6f",$3}}')
+twoFcfs_singleF_toplist_H1=$(sed 's/\;//' $outfile_cfs_singleF_toplist_loudest | LC_ALL=C awk '{if($1=="twoF0"){printf "%.6f",$3}}')
+twoFcfs_singleF_toplist_L1=$(sed 's/\;//' $outfile_cfs_singleF_toplist_loudest | LC_ALL=C awk '{if($1=="twoF1"){printf "%.6f",$3}}')
+twoFcfs_singleF_toplist_multi_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_toplist_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$7}')
+twoFcfs_singleF_toplist_H1_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_toplist_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$8}')
+twoFcfs_singleF_toplist_L1_all=$(sed -e '/%/d;'  $outfile_cfs_singleF_toplist_all | sort -nr -k7,7 | head -1 | LC_ALL=C awk '{printf "%6f",$9}')
+timing_singleF_toplist=$(sed '/^%.*/d' $timingsfile_singleF_toplist | LC_ALL=C awk "$timing_awk" )
 
 echo
 echo "----------------------------------------------------------------------"

@@ -103,7 +103,7 @@ echo "STEP 2: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
 
-cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='./*.sft' --NumCandidatesToKeep=${cfs_nCands} --Dterms=${Dterms} --outputLoudest=${outfile_Loudest} ${FstatMethod} --refTime=$startTime"
+cfs_CL="--Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='./*.sft' --NumCandidatesToKeep=${cfs_nCands} --Dterms=${Dterms} --outputLoudest=${outfile_Loudest} ${FstatMethod} --refTime=$startTime"
 if [ "$haveNoise" != "true" ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi

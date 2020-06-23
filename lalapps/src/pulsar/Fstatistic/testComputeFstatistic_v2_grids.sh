@@ -72,7 +72,7 @@ mkdir $SFTdir_40h
 
 # build MFD_v4 command line
 mfd_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
-mfd_CL="${mfd_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir_40h/testSFT --f1dot=$f1dot --outSFTv1"
+mfd_CL="${mfd_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir_40h --f1dot=$f1dot"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
@@ -118,7 +118,7 @@ echo
 ## common arguments for grid types 0,1,2,3,6
 sky_CL="--Alpha=$Alpha --AlphaBand=$AlphaBand --dAlpha=$dAlpha --Delta=$Delta --DeltaBand=$DeltaBand --dDelta=$dDelta"
 spin_CL="--Freq=$Freq --FreqBand=$FreqBand --dFreq=$dFreq --f1dot=$f1dot --f1dotBand=$f1dotBand --df1dot=$df1dot"
-cfs_CL="--IFO=$IFO --DataFiles='${SFTdir_40h}/testSFT*' --TwoFthreshold=0 --Dterms=16 --FstatMethod=DemodOptC --RngMedWindow=$RngMedWindow $extra_args"
+cfs_CL="--DataFiles='${SFTdir_40h}/*.sft' --TwoFthreshold=0 --Dterms=16 --FstatMethod=DemodOptC --RngMedWindow=$RngMedWindow $extra_args"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
