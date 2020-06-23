@@ -205,7 +205,7 @@ class singlesqueue(object):
 
 			# construct queue entries from the new events and
 			# insort with current "incomplete" queue
-			self.incomplete += map(self.queueentry_from_event, events)
+			self.incomplete.extend(map(self.queueentry_from_event, events))
 			self.incomplete.sort()
 			if self.incomplete[0] < self.t_complete:
 				raise ValueError("t_complete violation: earliest event is %s, previous t_complete was %s" % (self.incomplete[0], self.t_complete))
@@ -308,7 +308,15 @@ class multidict(UserDict):
 		return itertools.chain(*(iter(d) for d in self.dicts))
 
 	def iteritems(self):
-		return itertools.chain(*(d.iteritems() for d in self.dicts))
+		warnings.warn(
+			"this method is deprecated, and will be removed in a "
+			"future release. please use .items() instead.",
+			DeprecationWarning,
+		)
+		return self.items()
+
+	def items(self):
+		return itertools.chain(*(d.items() for d in self.dicts))
 
 	def keys(self):
 		return list(self)
@@ -939,7 +947,7 @@ class TimeSlideGraph(object):
 		# internal index, leaving it incomplete for our needs.  we
 		# do it outside the loop over nodes because we'll need it
 		# when the loop terminates
-		index = dict(self.index.iteritems())
+		index = dict(self.index.items())
 
 		# default coinc sieve
 		if coinc_sieve is None:
