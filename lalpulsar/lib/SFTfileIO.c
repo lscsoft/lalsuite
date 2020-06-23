@@ -122,6 +122,7 @@ typedef struct {
  * 0 is Nautilus but we won't support that
  */
 typedef enum tagSFDBDetectors {
+  SFDB_DET_FIRST = 1,
   SFDB_DET_V1 = 1,
   SFDB_DET_H1 = 2,
   SFDB_DET_L1 = 3,
@@ -2009,26 +2010,23 @@ XLALReadSFDB(
     LALStringVector *fnames_timestampsFi = NULL;
 
     FILE  *fp = NULL, *fp2 = NULL;
-    INT4  numTimeStamps, r;
-    UINT4 j;
     REAL8 Tcoh = 1800;  // Initialization
     MultiLIGOTimeGPSVector *ts1 = NULL, *ts2 = NULL;
 
     BOOLEAN flag_timestamps;  // This flag is FALSE if no timestamps are used, and TRUE if timestamps to only load SFDBs within science segments are used
     if ( timeStampsStarting && timeStampsFinishing ) flag_timestamps = TRUE;
-    else if ( timeStampsStarting && timeStampsFinishing == NULL ) XLAL_ERROR_NULL (XLAL_EFUNC, "Must give two files with initial and finsihing timestamps, missing finishing timestamps\n");
-    else if ( timeStampsStarting == NULL && timeStampsFinishing ) XLAL_ERROR_NULL (XLAL_EFUNC, "Must give two files with initial and finsihing timestamps, missing starting timestamps\n");
+    else if ( timeStampsStarting && timeStampsFinishing == NULL ) XLAL_ERROR_NULL (XLAL_EFUNC, "Must give two files with initial and finishing timestamps, missing finishing timestamps\n");
+    else if ( timeStampsStarting == NULL && timeStampsFinishing ) XLAL_ERROR_NULL (XLAL_EFUNC, "Must give two files with initial and finishing timestamps, missing starting timestamps\n");
     else flag_timestamps = FALSE;
 
     LALStringVector *detectors = NULL;
     if ( flag_timestamps ) {  // Only read the timestamps files if the input files are not null
 
-      REAL8 temp1;
-      INT4  numTimeStamps2 = 0;
-
       XLAL_CHECK_NULL ( (fnames_timestampsSt = XLALFindFiles (timeStampsStarting)) != NULL, XLAL_EFUNC, "Failed to find filelist matching pattern '%s'.\n\n", timeStampsStarting );
       XLAL_CHECK_NULL ( (fnames_timestampsFi = XLALFindFiles (timeStampsFinishing)) != NULL, XLAL_EFUNC, "Failed to find filelist matching pattern '%s'.\n\n", timeStampsFinishing );
       UINT4 numFiles_timestampsSt = fnames_timestampsSt->length;
+      XLAL_CHECK_NULL ( numFiles_timestampsSt == fnames_timestampsFi->length, XLAL_EINVAL );
+      XLAL_CHECK_NULL ( numFiles_timestampsSt > 0, XLAL_EINVAL );
 
       ts1 = XLALCalloc(1, sizeof(*ts1));
       ts2 = XLALCalloc(1, sizeof(*ts2));
@@ -2036,23 +2034,24 @@ XLALReadSFDB(
       ts1->data = XLALCalloc (1, numFiles_timestampsSt * sizeof(*ts1->data));
       ts2->length = numFiles_timestampsSt;
       ts2->data = XLALCalloc (1, numFiles_timestampsSt * sizeof(*ts2->data));
-      XLAL_CHECK_NULL ( numFiles_timestampsSt == fnames_timestampsFi->length, XLAL_EINVAL );
 
       for ( UINT4 X = 0; X < numFiles_timestampsSt; X++ )   // Loop over the number of detectors, each having a different timestamps file
       {
         const CHAR *filenameSt = fnames_timestampsSt->data[X];
         const CHAR *filenameFi = fnames_timestampsFi->data[X];
-        XLAL_CHECK_NULL((fp = fopen(filenameSt, "r"))!=NULL,XLAL_EIO,"Failed to open file '%s' with starting timestamps.", timeStampsStarting );
-        XLAL_CHECK_NULL((fp2 = fopen(filenameFi, "r"))!=NULL,XLAL_EIO,"Failed to open file '%s' with finishing timestamps.", timeStampsStarting );
-
-        for ( UINT4 Y = 0; Y < SFDB_DET_LAST; Y++ ) {
-          if ( strcmp(SFDB_detector_names[Y], filenameSt) ) {
+        XLAL_CHECK_NULL((fp = fopen(filenameSt, "r"))!=NULL,XLAL_EIO,"Failed to open file '%s' with starting timestamps.", filenameSt );
+        XLAL_CHECK_NULL((fp2 = fopen(filenameFi, "r"))!=NULL,XLAL_EIO,"Failed to open file '%s' with finishing timestamps.", filenameFi );
+        for ( UINT4 Y = SFDB_DET_FIRST; Y < SFDB_DET_LAST; Y++ ) {
+          if ( strstr(filenameSt, SFDB_detector_names[Y]) ) {
             XLAL_CHECK_NULL ( (detectors = XLALAppendString2Vector ( detectors, SFDB_detector_names[Y] )) != NULL, XLAL_EFUNC );  // This will add the detectors with timestamps in alphabetical order
           }
         }
 
         // count number of timestamps
-        numTimeStamps = 0;
+        UINT4 numTimeStamps = 0;
+        UINT4 numTimeStamps2 = 0;
+        INT4 r = 0;
+        REAL8 temp1;
 
         do {
           r = fscanf(fp,"%lf\n", &temp1);
@@ -2067,15 +2066,16 @@ XLALReadSFDB(
         } while ( r != EOF);
         rewind(fp2);
 
-        XLAL_CHECK_NULL ( numTimeStamps == numTimeStamps2, XLAL_EINVAL );
+        XLAL_CHECK_NULL ( numTimeStamps == numTimeStamps2, XLAL_EINVAL, "Got %d starting and %d finishing timestamps, lengths must be equal.", numTimeStamps, numTimeStamps2 );
 
-
+        ts1->data[X] = XLALCalloc(1, sizeof(*ts1->data[X]));
+        ts2->data[X] = XLALCalloc(1, sizeof(*ts2->data[X]));
         ts1->data[X]->length = numTimeStamps;
         ts1->data[X]->data = XLALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));
         ts2->data[X]->length = numTimeStamps;
         ts2->data[X]->data = XLALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));
 
-        for (j = 0; j < ts1->length; j++)
+        for (UINT4 j = 0; j < ts1->length; j++)
         {
           r = fscanf(fp,"%lf\n", &temp1);
           ts1->data[X]->data[j].gpsSeconds = (INT4)temp1;
@@ -2127,7 +2127,7 @@ XLALReadSFDB(
               // Find detector index 
               UINT4 ind_Det = 0;
               for ( UINT4 Y = 0; Y < ts1->length; Y++ ) {
-                if ( strcmp(SFDB_detector_names[header.det], detectors->data[Y] ) ) {
+                if ( !strcmp(SFDB_detector_names[header.det], detectors->data[Y] ) ) {
                   ind_Det = Y;
                 }
               }
@@ -2154,7 +2154,7 @@ XLALReadSFDB(
     UINT4 f_max_bin = floor(f_max*Tcoh + 0.5);
 
     UINT4 numSFTsTotal = 0;
-    for (UINT4 Y = 0; Y < SFDB_DET_LAST; Y++) {
+    for (UINT4 Y = SFDB_DET_FIRST; Y < SFDB_DET_LAST; Y++) {
         numSFTsTotal += numSFTsY[Y];
     }
     XLAL_CHECK_NULL(numSFTsTotal>0, XLAL_EINVAL, "No SFTs found for any detector.");
@@ -2166,18 +2166,18 @@ XLALReadSFDB(
     XLAL_INIT_MEM ( detectorNames);
     for (UINT4 Y = 0; Y < SFDB_DET_LAST; Y++) {
         detectorLookupYtoX[Y] = -1;
-        strncpy ( detectorNames[Y], "XX", 2 );
+        strncpy ( detectorNames[Y], "XX", 3 );
     }
 
     UINT4 numIFOs = 0;
     UINT4 numSFTsX[SFDB_DET_LAST];
     XLAL_INIT_MEM ( numSFTsX);
-    for (UINT4 Y = 0; Y < SFDB_DET_LAST; Y++) {
+    for (UINT4 Y = SFDB_DET_FIRST; Y < SFDB_DET_LAST; Y++) {
         if (numSFTsY[Y]>0) {
             // numIFOs is used here as an internal loop variable
             // of actually present detectors (equivalent to X later)
             // and will be equal to the total number at the end of the loop
-            strncpy ( detectorNames[numIFOs], SFDB_detector_names[Y], 2);
+            strncpy ( detectorNames[numIFOs], SFDB_detector_names[Y], 3);
             numSFTsX[numIFOs] = numSFTsY[Y];
             detectorLookupYtoX[Y] = numIFOs;
             numIFOs += 1;
@@ -2244,7 +2244,7 @@ XLALReadSFDB(
               INT4 starting=0, finishing=0;
               UINT4 ind_Det = 0;
               for ( UINT4 Y = 0; Y < ts1->length; Y++ ) {
-                if ( strstr(SFDB_detector_names[header.det], detectors->data[Y] ) ) {
+                if ( !strcmp(SFDB_detector_names[header.det], detectors->data[Y] ) ) {
                   ind_Det = Y;
                 }
               }
