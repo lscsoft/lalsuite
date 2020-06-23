@@ -24,4 +24,5 @@ TESTS_ENVIRONMENT = \
 	export LAL_TEST_SRCDIR; LAL_TEST_SRCDIR="$(abs_srcdir)"; \
 	export LAL_TEST_BUILDDIR; LAL_TEST_BUILDDIR="$(abs_builddir)"; \
 	export LAL_DATA_PATH; LAL_DATA_PATH="$(LAL_DATA_PATH)"; \
+	export PYTHON; PYTHON="$(PYTHON)"; \
 	$(END_OF_LIST)
