@@ -994,8 +994,8 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->toplistFilename = XLALStringDuplicate("toplist_crosscorr.dat");
 
   /* register  user-variables */
-  XLALRegisterUvarMember( startTime,       INT4, 0,  REQUIRED, "Desired start time of analysis in GPS seconds");
-  XLALRegisterUvarMember( endTime,         INT4, 0,  REQUIRED, "Desired end time of analysis in GPS seconds");
+  XLALRegisterUvarMember( startTime,       INT4, 0,  REQUIRED, "Desired start time of analysis in GPS seconds (SFT timestamps must be >= this)");
+  XLALRegisterUvarMember( endTime,         INT4, 0,  REQUIRED, "Desired end time of analysis in GPS seconds (SFT timestamps must be < this)");
   XLALRegisterUvarMember( maxLag,          REAL8, 0,  OPTIONAL, "Maximum lag time in seconds between SFTs in correlation");
   XLALRegisterUvarMember( inclAutoCorr,    BOOLEAN, 0,  OPTIONAL, "Include auto-correlation terms (an SFT with itself)");
   XLALRegisterUvarMember( fStart,          REAL8, 0,  OPTIONAL, "Start frequency in Hz");

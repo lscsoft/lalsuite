@@ -678,11 +678,11 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   BOOLEAN have_startTime = XLALUserVarWasSet ( &uvar->dataStartGPS );
   BOOLEAN have_duration = XLALUserVarWasSet ( &uvar->dataDuration );
   BOOLEAN have_timestampsFiles = XLALUserVarWasSet ( &uvar->timestampsFiles );
-  XLAL_CHECK ( ( have_duration && have_startTime) || !( have_duration || have_startTime ), XLAL_EINVAL, "Need BOTH {--startTime,--duration} or NONE\n");
+  XLAL_CHECK ( ( have_duration && have_startTime) || !( have_duration || have_startTime ), XLAL_EINVAL, "Need BOTH {--dataStartGPS,--dataDuration} or NONE\n");
   // at least one of {startTime,timestamps} required
-  XLAL_CHECK ( have_timestampsFiles || have_startTime, XLAL_EINVAL, "Need either --startTime and --duration, OR --timestampsFiles}\n" );
+  XLAL_CHECK ( have_timestampsFiles || have_startTime, XLAL_EINVAL, "Need either --dataStartGPS and --dataDuration, OR --timestampsFiles}\n" );
   // don't allow timestamps + {startTime+duration}
-  XLAL_CHECK ( !have_timestampsFiles || !have_startTime, XLAL_EINVAL, "--timestampsFiles incompatible with --startTime and --duration}\n");
+  XLAL_CHECK ( !have_timestampsFiles || !have_startTime, XLAL_EINVAL, "--timestampsFiles incompatible with --dataStartGPS and --dataDuration}\n");
   MultiLIGOTimeGPSVector * multiTS;
   UINT4 numSteps = 0;
   INT4 dataStartGPS = 0;

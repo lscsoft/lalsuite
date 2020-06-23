@@ -156,8 +156,8 @@ int main(int argc, char *argv[]){
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printLog,       "printLog",            BOOLEAN,      0,   OPTIONAL,  "Print Log file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,         "sftDir",              STRING,       'D', REQUIRED,  "SFT filename pattern") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_linefiles,      "linefiles",           STRINGVector, 0,   OPTIONAL,  "Comma separated List of linefiles (filenames must contain IFO name)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_startTime,      "startTime",           REAL8,        0,   OPTIONAL,  "GPS start time of observation") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_endTime,        "endTime",             REAL8,        0,   OPTIONAL,  "GPS end time of observation") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_startTime,      "startTime",           REAL8,        0,   OPTIONAL,  "GPS start time of observation (SFT timestamps must be >= this)") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_endTime,        "endTime",             REAL8,        0,   OPTIONAL,  "GPS end time of observation (SFT timestamps must be < this)") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_timeStampsFile, "timeStampsFile",      STRING,       0,   OPTIONAL,  "Input time-stamps file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_weighAM,        "weightAM",            BOOLEAN,      0,   OPTIONAL,  "Use amplitude modulation weights") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_weighNoise,     "weightNoise",         BOOLEAN,      0,   OPTIONAL,  "Use SFT noise weights") == XLAL_SUCCESS, XLAL_EFUNC);

@@ -1763,8 +1763,8 @@ void initUserVars (LALStatus *status)
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_fddot,                  "fddot",         REAL8,   0,   OPTIONAL, "Start frequency double derivative") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_fddotBand,              "fddotBand",     REAL8,   0,   OPTIONAL, "Search frequency double derivative band") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_fddotResolution,        "fddotRes",      REAL8,   0,   OPTIONAL, "Search frequency double derivative resolution. Default: 1/T^3") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_startTime,              "startTime",     REAL8,   0,   OPTIONAL, "GPS start time of observation") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_endTime,                "endTime",       REAL8,   0,   OPTIONAL, "GPS end time of observation") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_startTime,              "startTime",     REAL8,   0,   OPTIONAL, "GPS start time of observation (SFT timestamps must be >= this)") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_endTime,                "endTime",       REAL8,   0,   OPTIONAL, "GPS end time of observation (SFT timestamps must be < this)") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_skyRegion,              "skyRegion",     STRING,  0,   OPTIONAL, "sky-region polygon (or 'allsky')") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_dAlpha,                 "dAlpha",        REAL8,   0,   OPTIONAL, "Sky resolution (flat/isotropic) (rad)") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_dDelta,                 "dDelta",        REAL8,   0,   OPTIONAL, "Sky resolution (flat/isotropic) (rad)") == XLAL_SUCCESS, XLAL_EFUNC );
