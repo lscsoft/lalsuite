@@ -64,3 +64,6 @@ testVectorMath_SOURCES = helperprograms/testVectorMath.c \
 computeSignalDetector_SOURCES = helperprograms/computeSignalDetector.c \
 	TwoSpectSpecFunc.c \
 	TwoSpectSpecFunc.h
+
+# Add shell test scripts to this variable
+test_scripts += testTwoSpect.py
