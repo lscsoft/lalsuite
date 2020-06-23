@@ -719,8 +719,9 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
                      /**<< parameter kappa_2 of the spin-induced quadrupole for body 2, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
                      REAL8Vector *nqcCoeffsInput,
                      /**<< Input NQC coeffs */
-                     const INT4 nqcFlag
+                     const INT4 nqcFlag,
                      /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
+                     LALDict *PAParams
   )
 {
   REAL8 STEP_SIZE = STEP_SIZE_CALCOMEGA;
@@ -1434,7 +1435,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 
   //fprintf( stderr, "Spherical initial conditions: %e %e %e %e\n", values->data[0], values->data[1], values->data[2], values->data[3] );
 
-  UINT2 postAdiabaticFlag = 1;
+  const UINT4 postAdiabaticFlag = XLALDictLookupUINT4Value(PAParams, "PAFlag");
 
   REAL8Vector *dynamicsPA = NULL;
 
@@ -1451,7 +1452,8 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
       *values,
       SpinAlignedEOBversion,
       &seobParams,
-      &nqcCoeffs
+      &nqcCoeffs,
+      PAParams
     );
     exit(0);
     // return XLAL_SUCCESS;
@@ -3227,6 +3229,8 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
     REAL8Vector *dynamicsHi = NULL;
     //SM
 
+    LALDict *PAParams = XLALCreateDict();
+
     //RC: XLALSimIMRSpinAlignedEOBModes computes the modes and put them into hlm
 
     if(XLALSimIMRSpinAlignedEOBModes (&hlms,
@@ -3239,7 +3243,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
                                                lambda3Tidal1, lambda3Tidal2,
                                                omega03Tidal1, omega03Tidal2,
                                                quadparam1, quadparam2,
-                                               nqcCoeffsInput, nqcFlag) == XLAL_FAILURE){
+                                               nqcCoeffsInput, nqcFlag, PAParams) == XLAL_FAILURE){
                                                  if(dynamics) XLALDestroyREAL8Vector(dynamics);
                                                  if(dynamicsHi) XLALDestroyREAL8Vector(dynamicsHi);
                                                  XLAL_ERROR (XLAL_EFUNC);

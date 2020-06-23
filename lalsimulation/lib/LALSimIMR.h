@@ -175,7 +175,7 @@ int XLALSimIMRSpinAlignedEOBModes(SphHarmTimeSeries ** hlmmode,
   REAL8Vector ** dynamics_out, /**<< OUTPUT, low-sampling dynamics */
   REAL8Vector ** dynamicsHi_out, /**<< OUTPUT, high-sampling dynamics */
   //SM
- REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion, const REAL8 lambda2Tidal1, const REAL8 lambda2Tidal2, const REAL8 omega02Tidal1, const REAL8 omega02Tidal2, const REAL8 lambda3Tidal1, const REAL8 lambda3Tidal2, const REAL8 omega03Tidal1, const REAL8 omega03Tidal2, const REAL8 quadparam1, const REAL8 quadparam2, REAL8Vector *nqcCoeffsInput, const INT4 nqcFlag);
+ REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion, const REAL8 lambda2Tidal1, const REAL8 lambda2Tidal2, const REAL8 omega02Tidal1, const REAL8 omega02Tidal2, const REAL8 lambda3Tidal1, const REAL8 lambda3Tidal2, const REAL8 omega03Tidal1, const REAL8 omega03Tidal2, const REAL8 quadparam1, const REAL8 quadparam2, REAL8Vector *nqcCoeffsInput, const INT4 nqcFlag, LALDict *PAparams);
 /*int XLALSimIMRSpinEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, const REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1[], const REAL8 spin2[]);
  */
 
