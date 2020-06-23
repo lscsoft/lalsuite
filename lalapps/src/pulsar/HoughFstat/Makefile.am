@@ -1,6 +1,8 @@
 BUILT_SOURCES =
+EXTRA_DIST =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
+include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 AM_CPPFLAGS += -I$(top_srcdir)/src/pulsar/Fstatistic
