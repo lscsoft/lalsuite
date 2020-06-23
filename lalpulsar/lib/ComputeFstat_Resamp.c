@@ -98,7 +98,7 @@ typedef struct tagFstatTimingResamp
 
 } FstatTimingResamp;
 
-static char FstatTimingResampHelp[] =
+static const char FstatTimingResampHelp[] =
   "%%%% ----- Resampling-specific timing model -----\n"
   "%%%% NsampFFT0:      original number of FFT samples (not yet rounded up to power-of-two)\n"
   "%%%% NsampFFT:       actual number of FFT samples (rounded to power-of-two if optArgs->resampFFTPowerOf2 == true)\n"

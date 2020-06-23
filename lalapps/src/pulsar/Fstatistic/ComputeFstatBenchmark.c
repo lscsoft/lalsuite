@@ -349,7 +349,6 @@ main ( int argc, char *argv[] )
                     );
         }
 
-      fprintf (stderr, "%-15s: memoryUsage = %6.1f MB\n", FmethodName, memEnd - memBase );
       XLALDestroyFstatInputVector ( inputs );
     } // for i < numTrials
 
