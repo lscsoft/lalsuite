@@ -101,7 +101,7 @@ XLALSimInspiralEOBPostAdiabaticdprstarFunc(
 
 	REAL8 result;
 
-	result = dpphiBydr*partialHBypartialprstar*dprstarBydpr - flux;
+	result = dpphiBydr*partialHBypartialprstar*dprstarBydpr + flux;
 
 	return result;
 }
@@ -123,7 +123,7 @@ XLALSimInspiralEOBPostAdiabaticdpphiFunc(
 
 	REAL8 partialHBypartialprstar;
 	partialHBypartialprstar = XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
-									1.e-5,
+									1.e-3,
 									r,
 									prstar,
 									pphi,
@@ -439,6 +439,7 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
     XLALDestroyREAL8Vector(rReverseVec);
     XLALDestroyREAL8Vector(pphiReverseVec);
     XLALDestroyREAL8Vector(dpphiBydrReverseVec);
+    XLALDestroyREAL8Vector(fluxVec);
 
 	return XLAL_SUCCESS;
 }
@@ -449,6 +450,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 	UNUSED REAL8Vector *phiVec,
 	UNUSED REAL8Vector *dphiBydrVec,
 	UNUSED REAL8Vector *prstarVec,
+	UNUSED REAL8Vector *dprstarBydrVec,
 	UNUSED REAL8Vector *pphiVec,
 	UNUSED REAL8Vector *pphi0Vec,
 	UNUSED REAL8Vector *dpphiBydrVec,
@@ -462,9 +464,30 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 )
 {
 	const UINT4 PAOrder = XLALDictLookupUINT4Value(LALParams, "PAOrder");
+	const UINT4 rSize = XLALDictLookupUINT4Value(LALParams, "rSize");
+	const REAL8 dr = XLALDictLookupREAL8Value(LALParams, "dr");
 
 	UINT4 n;
 	UINT4 parity;
+	UINT4 i;
+
+	REAL8Vector *fluxVec = XLALCreateREAL8Vector(rSize);
+	memset(fluxVec->data, 0, fluxVec->length * sizeof(REAL8));
+
+	REAL8Vector *rReverseVec = XLALCreateREAL8Vector(rSize);
+	memset(rReverseVec->data, 0, rReverseVec->length * sizeof(REAL8));
+
+	REAL8Vector *pphiReverseVec = XLALCreateREAL8Vector(rSize);
+	memset(pphiReverseVec->data, 0, pphiReverseVec->length * sizeof(REAL8));
+
+	REAL8Vector *dpphiBydrReverseVec = XLALCreateREAL8Vector(rSize);
+	memset(dpphiBydrReverseVec->data, 0, dpphiBydrReverseVec->length * sizeof(REAL8));
+
+	REAL8Vector *prstarReverseVec = XLALCreateREAL8Vector(rSize);
+	memset(prstarReverseVec->data, 0, prstarReverseVec->length * sizeof(REAL8));
+
+	REAL8Vector *dprstarBydrReverseVec = XLALCreateREAL8Vector(rSize);
+	memset(dprstarBydrReverseVec->data, 0, dprstarBydrReverseVec->length * sizeof(REAL8));
 
 	for (n = 1; n <= PAOrder; n++)
 	{
@@ -472,13 +495,127 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 
 		if (parity)
 		{
-			printf("odd\n");
+			for (i = 0; i < rSize; i++)
+	    	{
+                struct PostAdiabaticRootSolveParams prstarParams;
+                prstarParams.r = rVec->data[i];
+                prstarParams.phi = 0.;
+			    prstarParams.pphi = pphiVec->data[i];
+			    prstarParams.dpphiBydr = dpphiBydrVec->data[i];
+			    prstarParams.omega = omegaVec->data[i];
+			    prstarParams.csi = csiVec->data[i];
+			    prstarParams.LALParams = LALParams;
+			    prstarParams.seobParams = seobParams;
+			    prstarParams.nqcCoeffs = nqcCoeffs;
+
+    			REAL8 x_lower;
+			    REAL8 x_upper;
+
+			    if (prstarVec->data[i] > 0.)
+			    {
+					x_lower = 0.9 * prstarVec->data[i];
+					x_upper = 1.1 * prstarVec->data[i];
+				}
+				else
+				{
+					x_upper = 0.9 * prstarVec->data[i];
+					x_lower = 1.1 * prstarVec->data[i];
+				}
+
+				struct PostAdiabaticRoot prstarRoot;
+
+			    XLALSimInspiralEOBPostAdiabaticRootFinder(
+			    	&prstarRoot,
+					XLALSimInspiralEOBPostAdiabaticdprstarFunc,
+					&prstarParams,
+					x_lower,
+					x_upper,
+					1.e-8,
+					1.e-8
+				);
+
+    			prstarVec->data[i] = prstarRoot.root;
+    			printf("%.18e\n", prstarVec->data[i]);
+
+    			REAL8 polarDynamics[4];
+		
+				polarDynamics[0] = rVec->data[i];
+				polarDynamics[1] = phiVec->data[i];
+				polarDynamics[2] = prstarVec->data[i];
+				polarDynamics[3] = pphiVec->data[i];
+
+				omegaVec->data[i] = XLALSimIMRSpinAlignedEOBCalcOmega(
+										polarDynamics,
+										seobParams,
+										dr
+									);
+
+				dtBydrVec->data[i] = (-1./fluxVec->data[i]) * dpphiBydrVec->data[i];
+	        	dphiBydrVec->data[i] = omegaVec->data[i] * dtBydrVec->data[i];
+	    	}
+
+	    	*prstarReverseVec = XLALReverseREAL8Vector(prstarVec);
+		    *dprstarBydrReverseVec = XLALFDDerivative1Order8(rReverseVec, prstarReverseVec);
+		    *dprstarBydrVec = XLALReverseREAL8Vector(dprstarBydrReverseVec);
 		}
 		else
 		{
-			printf("even\n");
+			for (i = 0; i < rSize; i++)
+	    	{
+                struct PostAdiabaticRoot pphiRoot;
+
+    			struct PostAdiabaticRootSolveParams pphiParams;
+    			pphiParams.r = rVec->data[i];
+			    pphiParams.csi = csiVec->data[i];
+			    pphiParams.prstar = prstarVec->data[i];
+			    pphiParams.dr = prstarVec->data[i];
+			    pphiParams.dprstarBydr = dprstarBydrVec->data[i];
+
+			    REAL8 x_lower = 0.1 * pphiVec->data[i];
+				REAL8 x_upper = 1.9 * pphiVec->data[i];
+
+			    XLALSimInspiralEOBPostAdiabaticRootFinder(
+			    	&pphiRoot,
+					XLALSimInspiralEOBPostAdiabaticdpphiFunc,
+					&pphiParams,
+					x_lower,
+					x_upper,
+					1.e-17,
+					1.e-20
+				);
+
+				pphiVec->data[i] = pphiRoot.root;
+    			printf("%.18e\n", pphiVec->data[i]);
+
+    			REAL8 polarDynamics[4];
+		
+				polarDynamics[0] = rVec->data[i];
+				polarDynamics[1] = phiVec->data[i];
+				polarDynamics[2] = prstarVec->data[i];
+				polarDynamics[3] = pphiVec->data[i];
+
+				omegaVec->data[i] = XLALSimIMRSpinAlignedEOBCalcOmega(
+										polarDynamics,
+										seobParams,
+										dr
+									);
+
+				dtBydrVec->data[i] = (-1./fluxVec->data[i]) * dpphiBydrVec->data[i];
+	        	dphiBydrVec->data[i] = omegaVec->data[i] * dtBydrVec->data[i];
+	    	}
+
+	    	*pphiReverseVec = XLALReverseREAL8Vector(pphiVec);
+			*dpphiBydrReverseVec = XLALFDDerivative1Order2(rReverseVec, pphiReverseVec);
+			*dpphiBydrVec = XLALReverseREAL8Vector(dpphiBydrReverseVec);
 		}
 	}
+
+	XLALDestroyREAL8Vector(fluxVec);
+	XLALDestroyREAL8Vector(rReverseVec);
+    XLALDestroyREAL8Vector(pphiReverseVec);
+    XLALDestroyREAL8Vector(dpphiBydrReverseVec);
+    XLALDestroyREAL8Vector(prstarReverseVec);
+    XLALDestroyREAL8Vector(dprstarBydrReverseVec);
 
 	exit(0);
 
@@ -844,35 +981,6 @@ XLALSimInspiralEOBPostAdiabatic(
 
  	UINT4 i;
 
- 	// for (i = 0; i < rSize; i++)
-  //   {
- 		// partialHBypartialprstar = XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
-			// 							h,
-			// 							rVec->data[i],
-			// 							prstarVec->data[i],
-			// 							pphiVec->data[i],
-			// 							seobParams->seobCoeffs,
-			// 							LALparams
-			// 						);
-  //   	printf("\n\n%.18e %.18e\n\n", rVec->data[i], prstarVec->data[i]);
-  //   	for (j = 0; j < 11; j++)
-  //   	{
-		// 	Htry = XLALSimInspiralEOBPAHamiltonianWrapper(
-		// 				rVec->data[i],
-		// 				prstarVec->data[i] + (j-5)*h,
-		// 				pphiVec->data[i],
-		// 				seobParams->seobCoeffs,
-		// 				LALparams
-		// 			);
-
-	 // 		printf("%.18e %.18e %.18e\n", (j-5)*h, prstarVec->data[i] + (j-5)*h, Htry);
- 	// 	}
- 	// }
-
-	// *dphiBydrReverseVec = XLALReverseREAL8Vector(dphiBydrVec);
- //    *phiReverseVec = XLALCumulativeIntegral3(rReverseVec, dphiBydrReverseVec);
- //    *phiVec = XLALReverseREAL8Vector(phiReverseVec);
-
  	// integrate pphi(r)
     *dpphiBydrReverseVec = XLALReverseREAL8Vector(dpphiBydrVec);
     *pphiReverseVec = XLALCumulativeIntegral3(rReverseVec, dpphiBydrReverseVec);
@@ -901,6 +1009,7 @@ XLALSimInspiralEOBPostAdiabatic(
 			phiVec,
 			dphiBydrVec,
 			prstarVec,
+			dprstarBydrVec,
 			pphiVec,
 			pphi0Vec,
 			dpphiBydrVec,
@@ -912,143 +1021,6 @@ XLALSimInspiralEOBPostAdiabatic(
 			nqcCoeffs,
 			LALparams
 		);
-
-	  //   UINT4 n;
-	  //   UINT4 parity;
-
-	  //   for (n = 1; n <= PAOrder; n++)
-	  //   {
-	  //   	// Separating even and odd orders
-	  //   	if (n%2 == 0)
-	  //   	{
-	  //   		parity = 0;
-	  //   	}
-	  //   	else
-	  //   	{
-	  //   		parity = 1;
-	  //   	}
-
-	  //   	for (i = 0; i < rSize; i++)
-	  //   	{
-	  //   		if (parity)
-	  //   		{
-	  //   			// Odd PA orders: corrections to prstar only
-
-	  //               struct PostAdiabaticRootSolveParams prstarParams;
-	  //               prstarParams.r = rVec->data[i];
-	  //               prstarParams.phi = 0.;
-			// 	    prstarParams.pphi = pphiVec->data[i];
-			// 	    prstarParams.dpphiBydr = dpphiBydrVec->data[i];
-			// 	    prstarParams.omega = omegaVec->data[i];
-			// 	    prstarParams.csi = csiVec->data[i];
-			// 	    prstarParams.LALParams = LALparams;
-			// 	    prstarParams.seobParams = seobParams;
-			// 	    prstarParams.nqcCoeffs = nqcCoeffs;
-
-	  //   			REAL8 x_lower;
-			// 	    REAL8 x_upper;
-
-			// 	    if (prstarVec->data[i] > 0.)
-			// 	    {
-			// 			x_lower = 0.9 * prstarVec->data[i];
-			// 			x_upper = 1.1 * prstarVec->data[i];
-			// 		}
-			// 		else
-			// 		{
-			// 			x_upper = 0.9 * prstarVec->data[i];
-			// 			x_lower = 1.1 * prstarVec->data[i];
-			// 		}
-
-			// 		struct PostAdiabaticRoot prstarRoot;
-
-			// 	    XLALSimInspiralEOBPostAdiabaticRootFinder(
-			// 	    	&prstarRoot,
-			// 			XLALSimInspiralEOBPostAdiabaticdprstarFunc,
-			// 			&prstarParams,
-			// 			x_lower,
-			// 			x_upper,
-			// 			1.e-8,
-			// 			1.e-8
-			// 		);
-
-	  //   			prstarVec->data[i] = prstarRoot.root;
-
-	  //   			// compute Omega again
-	  //   		}
-	  //   		else
-	  //   		{
-	  //   			// Even PA orders: corrections to pphi only
-
-	  //   			struct PostAdiabaticRoot pphiRoot;
-
-	  //   			struct PostAdiabaticRootSolveParams pphiParams;
-	  //   			pphiParams.r = rVec->data[i];
-			// 	    pphiParams.csi = csiVec->data[i];
-			// 	    pphiParams.prstar = prstarVec->data[i];
-			// 	    pphiParams.dr = prstarVec->data[i];
-			// 	    pphiParams.dprstarBydr = dprstarBydrVec->data[i];
-
-			// 	    REAL8 x_lower = 0.9 * pphiVec->data[i];
-			// 		REAL8 x_upper = 1.1 * pphiVec->data[i];
-
-			// 	    XLALSimInspiralEOBPostAdiabaticRootFinder(
-			// 	    	&pphiRoot,
-			// 			XLALSimInspiralEOBPostAdiabaticdpphiFunc,
-			// 			&pphiParams,
-			// 			x_lower,
-			// 			x_upper,
-			// 			1.e-17,
-			// 			1.e-20
-			// 		);
-
-			// 		pphiVec->data[i] = pphiRoot.root;
-	  //   		}
-
-	  //   		REAL8 polarDynamics[4];
-			
-			// 	polarDynamics[0] = rVec->data[i];
-			// 	polarDynamics[1] = phiVec->data[i];
-			// 	polarDynamics[2] = prstarVec->data[i];
-			// 	polarDynamics[3] = pphiVec->data[i];
-
-			// 	omegaVec->data[i] = XLALSimIMRSpinAlignedEOBCalcOmega(
-			// 							polarDynamics,
-			// 							seobParams,
-			// 							dr
-			// 						);
-
-			// 	partialHBypartialprstar = XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
-			// 																			1.e-5,
-			// 																			rVec->data[i],
-			// 																			prstarVec->data[i],
-			// 																			pphiVec->data[i],
-			// 																			seobParams->seobCoeffs,
-			// 																			LALparams
-			// 																		);
-		 //        dtBydrVec->data[i] = 1. / partialHBypartialprstar;
-
-		 //        dphiBydrVec->data[i] = omegaVec->data[i] * dtBydrVec->data[i];
-	  //   	}
-
-	  //   	if (parity)
-			// {
-			//     *prstarReverseVec = XLALReverseREAL8Vector(prstarVec);
-			//     *dprstarBydrReverseVec = XLALFDDerivative1Order2(rReverseVec, prstarReverseVec);
-			//     *dprstarBydrVec = XLALReverseREAL8Vector(dprstarBydrReverseVec);
-
-			//     for (i = 0; i < rSize; i++)
-			//     {
-			//         printf("%.18e\n", prstarVec->data[i]);
-			//     }
-			//     exit(0);
-			// }
-			// else
-			// {
-			// 	*pphiReverseVec = XLALReverseREAL8Vector(pphiVec);
-			// 	*dpphiBydrReverseVec = XLALFDDerivative1Order2(rReverseVec, pphiReverseVec);
-			// 	*dpphiBydrVec = XLALReverseREAL8Vector(dpphiBydrReverseVec);
-			// }
-	  //   }
 	}
 
     *dtBydrReverseVec = XLALReverseREAL8Vector(dtBydrVec);

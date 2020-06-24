@@ -136,6 +136,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
     REAL8Vector *phiVec,
     REAL8Vector *dphiBydrVec,
     REAL8Vector *prstarVec,
+    REAL8Vector *dprstarBydrVec,
     REAL8Vector *pphiVec,
     REAL8Vector *pphi0Vec,
     REAL8Vector *dpphiBydrVec,
