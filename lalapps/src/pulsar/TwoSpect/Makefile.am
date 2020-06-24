@@ -1,6 +1,8 @@
 BUILT_SOURCES =
+EXTRA_DIST =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
+include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 bin_PROGRAMS = lalapps_TwoSpect \
@@ -62,3 +64,6 @@ testVectorMath_SOURCES = helperprograms/testVectorMath.c \
 computeSignalDetector_SOURCES = helperprograms/computeSignalDetector.c \
 	TwoSpectSpecFunc.c \
 	TwoSpectSpecFunc.h
+
+# Add shell test scripts to this variable
+test_scripts += testTwoSpect.py
