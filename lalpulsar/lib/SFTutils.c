@@ -2363,7 +2363,8 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
   XLALDestroyREAL8Vector ( overIFOs );
 
   if ( !returnMultiPSDVector ) {
-    XLALDestroyMultiPSDVector ( *multiPSDVector);
+    XLALDestroyMultiPSDVector ( *multiPSDVector );
+    *multiPSDVector = NULL;
   }
 
   return XLAL_SUCCESS;
