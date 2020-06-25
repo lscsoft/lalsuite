@@ -1995,7 +1995,7 @@ XLALCheckValidDescriptionField ( const char *desc )
 /**
  * Return a MultiSFTVector struct from an input set of SFDBs, possibly from more than one detector.
  *
- * An SFDB (Short Fourier DataBase) is the frequency-domain data format created by the Rome group. It has a time-domain cleaning, which is described in 10.1103/PhysRevD.90.042002.
+ * An SFDB (Short Fourier DataBase) is the frequency-domain data format created by the Rome group. It has a time-domain cleaning, which is described in \cite Astone2014.
  *
  * In order to only use SFDBs within science segments, it is possible to input files for each detector which have the science segments. Two files for each detector are needed, one with the starting timestamps and the other with the ending timestamps. The format for these files is one timestamp per line. If not needed, the timestamp inputs can be NULL.
  * 
