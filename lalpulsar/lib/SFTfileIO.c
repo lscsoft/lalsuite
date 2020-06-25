@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 Pep Covas, David Keitel
+ * Copyright (C) 2020 Pep Covas, David Keitel
  * Copyright (C) 2010 Karl Wette
  * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
  *
@@ -1992,6 +1992,15 @@ XLALCheckValidDescriptionField ( const char *desc )
 } // XLALCheckValidDescriptionField()
 
 
+/**
+ * Return a MultiSFTVector struct from an input set of SFDBs, possibly from more than one detector.
+ *
+ * An SFDB (Short Fourier DataBase) is the frequency-domain data format created by the Rome group. It has a time-domain cleaning, which is described in 10.1103/PhysRevD.90.042002.
+ *
+ * In order to only use SFDBs within science segments, it is possible to input files for each detector which have the science segments. Two files for each detector are needed, one with the starting timestamps and the other with the ending timestamps. The format for these files is one timestamp per line. If not needed, the timestamp inputs can be NULL.
+ * 
+ * The returned SFTs in the standard LALSuite format are sorted by increasing GPS-epochs!
+ */
 MultiSFTVector*
 XLALReadSFDB(
              REAL8 f_min,                       // Minimum frequency to be read
@@ -2303,7 +2312,7 @@ XLALReadSFDB(
     XLALDestroyMultiTimestamps(ts1);
     XLALDestroyMultiTimestamps(ts2);
 
-    // Sort the SFDBs from lower GPS timestamps to higher GPS timestamp
+    // Sort the SFDBs from lower GPS timestamp to higher GPS timestamp
     for ( UINT4 X = 0; X < numIFOs; X++) {
         qsort( (void*)inputSFTs->data[X]->data, inputSFTs->data[X]->length, sizeof( inputSFTs->data[X]->data[0] ), compareSFTepoch );
     }
