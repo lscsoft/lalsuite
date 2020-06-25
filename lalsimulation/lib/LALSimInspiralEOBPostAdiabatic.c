@@ -25,7 +25,6 @@
 #include "LALSimIMRSpinEOBHamiltonian.c"
 #include "LALSimIMRSpinEOBFactorizedFlux.c"
 #include "LALSimIMREOBNewtonianMultipole.c"
-// #include "LALSimIMREOBNQCTables.c"
 
 int
 XLALSimInspiralEOBPACalculateRadialGrid(
@@ -101,7 +100,7 @@ XLALSimInspiralEOBPostAdiabaticdprstarFunc(
 
 	REAL8 result;
 
-	result = dpphiBydr*partialHBypartialprstar*dprstarBydpr + flux;
+	result = dpphiBydr*partialHBypartialprstar*dprstarBydpr - flux/omega;
 
 	return result;
 }
@@ -116,6 +115,7 @@ XLALSimInspiralEOBPostAdiabaticdpphiFunc(
 	REAL8 r = pphiParams->r;
 	REAL8 prstar = pphiParams->prstar;
 	REAL8 pphi = pphi_sol;
+	REAL8 omega = pphiParams->omega;
 	SpinEOBHCoeffs *seobCoeffs = pphiParams->seobParams->seobCoeffs;
 	LALDict *LALParams = pphiParams->LALParams;
 
@@ -123,7 +123,7 @@ XLALSimInspiralEOBPostAdiabaticdpphiFunc(
 
 	REAL8 partialHBypartialprstar;
 	partialHBypartialprstar = XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
-									1.e-3,
+									1.e-5,
 									r,
 									prstar,
 									pphi,
@@ -146,9 +146,32 @@ XLALSimInspiralEOBPostAdiabaticdpphiFunc(
 
 	REAL8 dprstarBydr;
 	dprstarBydr = pphiParams->dprstarBydr;
+
+	REAL8 H;
+	H = XLALSimInspiralEOBPAHamiltonianWrapper(
+			r,
+			prstar,
+			pphi,
+			seobCoeffs,
+			LALParams
+		);
+
+	REAL8 flux;
+    flux = XLALSimInspiralEOBPAFluxWrapper(
+				r,
+				prstar,
+				pphi,
+				omega,
+				H,
+				pphiParams->seobParams,
+				pphiParams->nqcCoeffs,
+				LALParams
+			);
 	
 	REAL8 result;
-    result = partialHBypartialprstar*dprstarBydpr - partialHBypartialr/dprstarBydr;
+    result = partialHBypartialprstar*dprstarBydr + partialHBypartialr - (prstar/pphi)*flux/(omega*dprstarBydpr);
+    printf("%.18e\n", result);
+    exit(0);
 
 	return result;
 }
@@ -168,8 +191,11 @@ XLALSimInspiralEOBPostAdiabaticj0Func(
    	REAL8 prstar = j0Params->prstar;
     LALDict *LALParams = j0Params->LALParams;
 
+    REAL8 partialHBypartialr;
+    partialHBypartialr = XLALSimInspiralEOBPAHamiltonianDerivative(dr, r, prstar, j0_sol, seobCoeffs, LALParams);
+
     REAL8 result;
-    result = XLALSimInspiralEOBPAHamiltonianDerivative(dr, r, prstar, j0_sol, seobCoeffs, LALParams);
+    result = partialHBypartialr;
 
 	return result;
 }
@@ -240,6 +266,11 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
     result->root = x;
     result->status = status;
     result->nIter = iters;
+
+    if (status != GSL_SUCCESS)
+    {
+		printf("Root finding status: %d\n", status);
+	}
 
     return XLAL_SUCCESS;
 }
@@ -368,8 +399,8 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 			&pphiParams,
 			pphi0_lower,
 			pphi0_upper,
-			1.e-17,
-			1.e-20
+			1.e-14,
+			1.e-16
 		);
 
 		pphiVec->data[i] = pphiRoot.root;
@@ -432,7 +463,7 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 
     for (i = 0; i < rSize; i++)
 	{
-		dtBydrVec->data[i] = (-1./fluxVec->data[i]) * dpphiBydrVec->data[i];
+		dtBydrVec->data[i] = (1./fluxVec->data[i]) * dpphiBydrVec->data[i];
 		dphiBydrVec->data[i] = omegaVec->data[i] * dtBydrVec->data[i];
 	}
 
@@ -463,6 +494,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 	LALDict *LALParams
 )
 {
+	const REAL8 nu = XLALDictLookupREAL8Value(LALParams, "nu");
 	const UINT4 PAOrder = XLALDictLookupUINT4Value(LALParams, "PAOrder");
 	const UINT4 rSize = XLALDictLookupUINT4Value(LALParams, "rSize");
 	const REAL8 dr = XLALDictLookupREAL8Value(LALParams, "dr");
@@ -476,6 +508,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 
 	REAL8Vector *rReverseVec = XLALCreateREAL8Vector(rSize);
 	memset(rReverseVec->data, 0, rReverseVec->length * sizeof(REAL8));
+	*rReverseVec = XLALReverseREAL8Vector(rVec);
 
 	REAL8Vector *pphiReverseVec = XLALCreateREAL8Vector(rSize);
 	memset(pphiReverseVec->data, 0, pphiReverseVec->length * sizeof(REAL8));
@@ -491,6 +524,8 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 
 	for (n = 1; n <= PAOrder; n++)
 	{
+		printf("Calculating %d PA order\n", n);
+
 		parity = n%2;
 
 		if (parity)
@@ -534,8 +569,8 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 					1.e-8
 				);
 
-    			prstarVec->data[i] = prstarRoot.root;
-    			printf("%.18e\n", prstarVec->data[i]);
+    			prstarVec->data[i] = prstarRoot.root * nu;
+    			// printf("%.18e\n", prstarVec->data[i]);
 
     			REAL8 polarDynamics[4];
 		
@@ -550,7 +585,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 										dr
 									);
 
-				dtBydrVec->data[i] = (-1./fluxVec->data[i]) * dpphiBydrVec->data[i];
+				dtBydrVec->data[i] = (1./(fluxVec->data[i]*csiVec->data[i])) * dpphiBydrVec->data[i];
 	        	dphiBydrVec->data[i] = omegaVec->data[i] * dtBydrVec->data[i];
 	    	}
 
@@ -571,8 +606,8 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 			    pphiParams.dr = prstarVec->data[i];
 			    pphiParams.dprstarBydr = dprstarBydrVec->data[i];
 
-			    REAL8 x_lower = 0.1 * pphiVec->data[i];
-				REAL8 x_upper = 1.9 * pphiVec->data[i];
+			    REAL8 x_lower = 0.8 * pphiVec->data[i];
+				REAL8 x_upper = 1.2 * pphiVec->data[i];
 
 			    XLALSimInspiralEOBPostAdiabaticRootFinder(
 			    	&pphiRoot,
@@ -580,8 +615,8 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 					&pphiParams,
 					x_lower,
 					x_upper,
-					1.e-17,
-					1.e-20
+					1.e-8,
+					1.e-8
 				);
 
 				pphiVec->data[i] = pphiRoot.root;
@@ -600,7 +635,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 										dr
 									);
 
-				dtBydrVec->data[i] = (-1./fluxVec->data[i]) * dpphiBydrVec->data[i];
+				dtBydrVec->data[i] = (1./(fluxVec->data[i]*csiVec->data[i])) * dpphiBydrVec->data[i];
 	        	dphiBydrVec->data[i] = omegaVec->data[i] * dtBydrVec->data[i];
 	    	}
 
@@ -620,6 +655,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 	exit(0);
 
 	return XLAL_SUCCESS;
+
 }
 
 REAL8
@@ -766,6 +802,7 @@ XLALSimInspiralEOBPAFluxWrapper(
 
     Flux = XLALInspiralSpinFactorizedFlux(polarDynamics, nqcCoeffs, omega, seobParams, H, lMax, SpinAlignedEOBversion);
     Flux /= nu;
+    Flux *= -1.;
 
     return Flux;
 }
@@ -849,7 +886,7 @@ XLALSimInspiralEOBPostAdiabatic(
 	rFinal = XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
 
 	UINT4 rSize;
-	rSize = 300;
+	rSize = 200;
 
 	REAL8 dr;
 	dr = XLALSimInspiralEOBPACalculatedr(rInitial, rFinal, rSize);
