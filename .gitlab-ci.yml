@@ -1023,6 +1023,7 @@ platform:macos:sierra:
     - source test/bin/activate
     - python -m pip install wheelhouse/*
     - python -c 'import lal, lalframe, lalmetaio, lalsimulation; series = lal.CreateREAL8FrequencySeries("psd", 0, 0, 1, None, 4096); lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)'
+    - lalapps_version
   needs: []
   only:
     - /^lalsuite-v.*$/

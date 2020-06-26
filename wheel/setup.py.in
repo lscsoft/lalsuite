@@ -96,6 +96,7 @@ class build_py(_build_py):
 stub = '''\
 #!python
 import os
+import sys
 try:
     from importlib import resources
 except ImportError:
