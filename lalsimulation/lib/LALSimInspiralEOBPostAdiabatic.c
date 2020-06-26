@@ -170,8 +170,6 @@ XLALSimInspiralEOBPostAdiabaticdpphiFunc(
 	
 	REAL8 result;
     result = partialHBypartialprstar*dprstarBydr + partialHBypartialr - (prstar/pphi)*flux/(omega*dprstarBydpr);
-    printf("%.18e\n", result);
-    exit(0);
 
 	return result;
 }
@@ -603,7 +601,8 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
     			pphiParams.r = rVec->data[i];
 			    pphiParams.csi = csiVec->data[i];
 			    pphiParams.prstar = prstarVec->data[i];
-			    pphiParams.dr = prstarVec->data[i];
+			    // pphiParams.dr = prstarVec->data[i];
+			    pphiParams.omega = omegaVec->data[i];
 			    pphiParams.dprstarBydr = dprstarBydrVec->data[i];
 
 			    REAL8 x_lower = 0.8 * pphiVec->data[i];
