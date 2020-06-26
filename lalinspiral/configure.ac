@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInspiral],[1.10.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALInspiral],[1.10.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALInspiralConfig.h])
 AC_CONFIG_SRCDIR([lib/LALInspiral.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -40,10 +40,10 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="6.21.0"
+MIN_LAL_VERSION="7.0.0"
 MIN_LALFRAME_VERSION="1.5.0"
 MIN_LALMETAIO_VERSION="1.6.0"
-MIN_LALSIMULATION_VERSION="1.10.0"
+MIN_LALSIMULATION_VERSION="2.1.0"
 MIN_LALBURST_VERSION="1.5.3"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])

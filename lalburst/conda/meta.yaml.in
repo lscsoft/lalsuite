@@ -10,9 +10,9 @@
 {% set sha256 = "@SHA256@" %}
 
 # dependencies
-{% set lal_version = "6.21.0" %}
+{% set lal_version = "7.0.0" %}
 {% set lalmetaio_version = "1.6.0" %}
-{% set lalsimulation_version = "1.10.0" %}
+{% set lalsimulation_version = "2.1.0" %}
 {% set swig_version = "3.0.9" %}
 
 package:
