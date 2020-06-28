@@ -294,6 +294,20 @@ XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
     LALDict *LALParams
 );
 
+REAL8Vector
+XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstarBetter(
+    REAL8Vector *rVec,
+    REAL8Vector *prstarVec,
+    REAL8Vector *pphiVec,
+    SpinEOBHCoeffs *seobCoeffs,
+    LALDict *LALParams
+);
+
+REAL8Vector
+XLALSimInspiralEOBPAMeanValueOrder8(
+    REAL8Vector *inputVec
+);
+
 REAL8
 XLALSimInspiralEOBPAFluxWrapper(
     REAL8 r,

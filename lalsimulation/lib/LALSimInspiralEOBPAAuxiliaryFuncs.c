@@ -90,7 +90,7 @@ XLALSimInspiralEOBPACalculatea(
 )
 {
 	REAL8 a;
-	a = X * chi;
+	a = X * X * chi;
 
 	return a;
 }
