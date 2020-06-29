@@ -11,6 +11,7 @@ EXTRA_DIST += \
 	$(DATA)
 
 SUBDIRS = \
+	conda \
 	debian \
 	src \
 	man \
