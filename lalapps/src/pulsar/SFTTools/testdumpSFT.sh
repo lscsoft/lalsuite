@@ -32,3 +32,30 @@ for file in stdout-*.txt; do
         exit 1
     fi
 done
+
+## run again with each flag to test --Nmax option
+for flag in H d t; do
+    basecl1="lalapps_dumpSFT -$flag --Nmax 1 -i ./SFT-good"
+    out1="stdout-$flag-SFT-good-first.txt"
+    cl1="$basecl1 | grep -v '^%' > $out1"
+    echo $cl1
+    eval $cl1
+    if [ -s stderr.txt ]; then
+        echo "ERROR: '$basecl1' should not write to standard error"
+        exit 1
+    fi
+    Nlines=$(wc -l < $out1)
+    basecl2="lalapps_dumpSFT -$flag -i ./SFT-good"
+    out2="stdout-$flag-SFT-good-all.txt"
+    cl2="$basecl2 | grep -v '^%' | head -n $Nlines > $out2"
+    echo $cl2
+    eval $cl2
+    if [ -s stderr.txt ]; then
+        echo "ERROR: '$basecl2' should not write to standard error"
+        exit 1
+    fi
+    if ! diff -s $out1 $out2; then
+        echo "ERROR: $out1 and $out2 should be equal"
+        exit 1
+    fi
+done

@@ -36,6 +36,7 @@
 #include <lal/LALString.h>
 
 /*---------- DEFINES ----------*/
+#define MIN(x,y) ((x) < (y) ? (x) : (y))
 
 /*----- Macros ----- */
 
@@ -50,13 +51,14 @@ typedef struct
   BOOLEAN headerOnly;
   BOOLEAN dataOnly;
   BOOLEAN timestampsOnly;
+  UINT4 Nmax;
 } UserVariables_t;
 
 /*---------- internal prototypes ----------*/
 int XLALprintDescriptor ( const SFTDescriptor *ptr );
 int XLALprintHeader ( const SFTtype *header );
 int XLALprintData ( const SFTtype *sft );
-int XLALprintTimestamps ( const SFTCatalog *catalog );
+int XLALprintTimestamps ( const SFTCatalog *catalog, const UINT4 Nmax );
 
 int XLALReadUserInput ( int argc, char *argv[], UserVariables_t *uvar );
 
@@ -77,10 +79,13 @@ main(int argc, char *argv[])
   constraints.detector = detector;
   SFTCatalog *catalog;
   XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar.SFTfiles, &constraints )) != NULL, XLAL_EFUNC, "No SFTs matched your --SFTfiles query\n" );
+  if ( XLALUserVarWasSet(&uvar.Nmax) && ( uvar.Nmax > catalog->length ) ) {
+    XLALPrintWarning("Nmax=%u requested but SFT catalog has only %u entries. Returning them all.", uvar.Nmax, catalog->length);
+  }
 
   if ( uvar.headerOnly  )
     {
-      for ( UINT4 i=0; i < catalog->length; i ++ )
+      for ( UINT4 i=0; i < MIN(uvar.Nmax,catalog->length); i ++ )
         {
           SFTDescriptor *ptr = &(catalog->data[i]);
 
@@ -91,7 +96,7 @@ main(int argc, char *argv[])
     } // if --headerOnly
   else if ( uvar.timestampsOnly )
     {
-      XLAL_CHECK ( XLALprintTimestamps ( catalog ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALprintTimestamps ( catalog, uvar.Nmax ) == XLAL_SUCCESS, XLAL_EFUNC );
     } // if --timestampsOnly
   else // if --dataOnly or data+headers [default]
     {
@@ -108,7 +113,7 @@ main(int argc, char *argv[])
         }
       } // if we're dealing with 'segmented SFTs': currently can't map them to catalog-descriptors
 
-      for ( UINT4 i=0; i < sfts->length; i ++ )
+      for ( UINT4 i=0; i < MIN(uvar.Nmax,sfts->length); i ++ )
         {
           SFTtype *sft_i = &(sfts->data[i]);;
 
@@ -188,7 +193,7 @@ XLALprintData ( const SFTtype *sft )
 // "The timestamps file is of the format: <repeated lines of the form "seconds nano-seconds">
 // allowing for '%#' as comments, which are ignored."
 int
-XLALprintTimestamps ( const SFTCatalog *catalog )
+XLALprintTimestamps ( const SFTCatalog *catalog, const UINT4 Nmax )
 {
   XLAL_CHECK ( (catalog != NULL) && (catalog->data != NULL), XLAL_EINVAL );
 
@@ -210,7 +215,7 @@ XLALprintTimestamps ( const SFTCatalog *catalog )
 
   // print timestamps
   printf ( "%%%% Timestamps: seconds nano-seconds\n" );
-  for ( UINT4 i=0; i < catalog->length; i ++ )
+  for ( UINT4 i=0; i < MIN(Nmax,catalog->length); i ++ )
     {
       const SFTtype *header = &(catalog->data[i].header);
       printf ( "%10d %09d\n", header->epoch.gpsSeconds, header->epoch.gpsNanoSeconds );
@@ -223,10 +228,14 @@ XLALprintTimestamps ( const SFTCatalog *catalog )
 int
 XLALReadUserInput ( int argc, char *argv[], UserVariables_t *uvar )
 {
+  /* set a few defaults */
+  uvar->Nmax = LAL_UINT4_MAX;
+
   XLALRegisterUvarMember(	SFTfiles,	STRING,  'i', REQUIRED, "File-pattern for input SFTs");
   XLALRegisterUvarMember(	headerOnly,	BOOLEAN, 'H', OPTIONAL, "Output only SFT headers");
   XLALRegisterUvarMember(	dataOnly,	BOOLEAN, 'd', OPTIONAL, "Output only SFT data, no header info");
   XLALRegisterUvarMember(	timestampsOnly,	BOOLEAN, 't', OPTIONAL, "Output only timestamps, in timestamps-file format");
+  XLALRegisterUvarMember(	Nmax,	UINT4, 'N', OPTIONAL, "When run on multiple SFTs, exit after this many");
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
@@ -237,6 +246,7 @@ XLALReadUserInput ( int argc, char *argv[], UserVariables_t *uvar )
 
   // ---------- sanity input checks ----------
   XLAL_CHECK ( UVAR_SET3( headerOnly, dataOnly, timestampsOnly ) <= 1, XLAL_EINVAL, "Contradictory input: at most *one* of --headerOnly, --dataOnly or --timestampsOnly allowed\n" );
+  XLAL_CHECK ( uvar->Nmax > 0, XLAL_EINVAL );
 
   return XLAL_SUCCESS;
 
