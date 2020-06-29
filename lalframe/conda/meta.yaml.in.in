@@ -9,9 +9,9 @@
 {% set url = "file://@TARBALL@" %}
 {% set sha256 = "@SHA256@" %}
 
-{% set lal_version = "7.0.0" %}
-{% set framel_version = "8.39.2" %}
-{% set framecpp_version = "2.5.5" %}
+{% set lal_version = "@MIN_LAL_VERSION@a0" %}
+{% set framel_version = "@MIN_FRAMEL_VERSION@" %}
+{% set framecpp_version = "@MIN_FRAMECPPC_VERSION@" %}
 
 package:
   name: "{{ name }}"
@@ -32,11 +32,11 @@ requirements:
     - pkg-config
     - swig >=3.0.9
   host:
-    - lal >={{ lal_version }}a0
+    - lal >={{ lal_version }}
     - ldas-tools-framecpp >={{ framecpp_version }}
     - libframel >={{ framel_version }}
   run:
-    - lal >={{ lal_version }}a0
+    - lal >={{ lal_version }}
     - ldas-tools-framecpp >={{ framecpp_version }}
     - libframel >={{ framel_version }}
 
@@ -79,13 +79,13 @@ outputs:
         - numpy
         - python
       run:
-        - lal >={{ lal_version }}a0
+        - lal >={{ lal_version }}
         - {{ pin_subpackage('lalframe', exact=True) }}
         - ldas-tools-framecpp >={{ framecpp_version }}
         - libframel >={{ framel_version }}
         - {{ pin_compatible('numpy') }}
         - python
-        - python-lal >={{ lal_version }}a0
+        - python-lal >={{ lal_version }}
     test:
       requires:
         - mock  # [py<33]
