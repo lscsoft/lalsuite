@@ -224,6 +224,7 @@ cache:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
     CONDA_CONFIG: "linux_"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
+    GIT_STRATEGY: none
   before_script:
     - *define-retry
     - *conda-init
@@ -232,10 +233,9 @@ cache:
     - cd ${PACKAGE}/
     # render clobber YAML file to use our tarball
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
-    - VERSION=$(basename $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '.')
     - SHA256=$(openssl dgst -r -sha256 $TARBALL | cut -d\  -f1)
-    - sed 's|@VERSION@|'${VERSION}'|g' conda/meta.yaml.in > conda/meta.yaml
-    - sed -i 's|@TARBALL@|'${TARBALL}'|g' conda/meta.yaml
+    - tar -xf ${TARBALL} --wildcards ${PACKAGE}-*/conda/ --strip-components=1
+    - sed 's|@TARBALL@|'${TARBALL}'|g' conda/meta.yaml.in > conda/meta.yaml
     - sed -i 's|@SHA256@|'${SHA256}'|g' conda/meta.yaml
     # create a feedstock from the conda recipe
     - git config --global user.name "${GITLAB_USER_NAME}"

@@ -35,6 +35,7 @@ lalsuite-user-env.fish
 lalsuite-user-env.sh
 lalsuite-user-env.shell
 meta.yaml
+meta.yaml.in
 output.json
 tags
 TAGS
