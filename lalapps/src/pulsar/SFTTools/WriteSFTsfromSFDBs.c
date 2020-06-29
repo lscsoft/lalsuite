@@ -60,25 +60,24 @@ int main(int argc, char *argv[]) {
     }
 
     MultiSFTVector *inputSFTs = NULL;
-    inputSFTs =  XLALReadSFDB(uvar.fmin, uvar.fmax, uvar.file_pattern, uvar.timeStampsStarting, uvar.timeStampsFinishing);
-    XLAL_CHECK_MAIN(inputSFTs != NULL, XLAL_EFUNC);
+    XLAL_CHECK_MAIN ( (inputSFTs = XLALReadSFDB(uvar.fmin, uvar.fmax, uvar.file_pattern, uvar.timeStampsStarting, uvar.timeStampsFinishing)) != NULL, XLAL_EFUNC );
 
     LALStringVector *fnames;
-    XLAL_CHECK_NULL ( (fnames = XLALFindFiles (uvar.outSFTnames)) != NULL, XLAL_EFUNC, "Failed to find filelist matching pattern '%s'.\n\n", uvar.outSFTnames );
+    XLAL_CHECK_MAIN ( (fnames = XLALFindFiles (uvar.outSFTnames)) != NULL, XLAL_EFUNC, "Failed to find filelist matching pattern '%s'.\n\n", uvar.outSFTnames );
 
 
     for ( UINT4 k = 0; k < inputSFTs->length; k++) {
 
         FILE *fpSingleSFT = NULL;
         const CHAR *filenameOut = fnames->data[k];
-        XLAL_CHECK ( ( fpSingleSFT = fopen ( filenameOut, "wb" )) != NULL, XLAL_EIO, "Failed to open singleSFT file '%s' for writing\n", filenameOut );
+        XLAL_CHECK_MAIN ( ( fpSingleSFT = fopen ( filenameOut, "wb" )) != NULL, XLAL_EIO, "Failed to open singleSFT file '%s' for writing\n", filenameOut );
 
         UINT4 numSFTs = inputSFTs->data[k]->length;
         for ( UINT4 i=0; i < numSFTs; i++ )
         {   
             const SFTtype *thisSFT = inputSFTs->data[k]->data + i;
 
-            XLAL_CHECK ( XLAL_SUCCESS == XLALWriteSFT2fp( thisSFT, fpSingleSFT, NULL ), XLAL_EFUNC,  "XLALWriteSFT2fp() failed to write SFT to '%s'!\n", filenameOut );
+            XLAL_CHECK_MAIN ( XLALWriteSFT2fp( thisSFT, fpSingleSFT, NULL ) == XLAL_SUCCESS, XLAL_EFUNC,  "XLALWriteSFT2fp() failed to write SFT to '%s'!\n", filenameOut );
                  
         } /* for i < numSFTs */
 
