@@ -10,7 +10,7 @@
 {% set sha256 = "@SHA256@" %}
 
 # dependencies
-{% set lal_version = "7.0.0" %}
+{% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set swig_version = "3.0.9" %}
 
 package:
@@ -35,12 +35,12 @@ requirements:
     - swig >={{ swig_version }}
   host:
     - gsl
-    - lal >={{ lal_version }}a0
+    - lal >={{ lal_version }}
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
   run:
     - gsl
-    - lal >={{ lal_version }}a0
+    - lal >={{ lal_version }}
     - llvm-openmp  # [osx]
 
 test:
@@ -87,11 +87,11 @@ outputs:
         - python
       run:
         - gsl
-        - lal >={{ lal_version }}a0
+        - lal >={{ lal_version }}
         - {{ pin_subpackage('lalsimulation', exact=True) }}
         - {{ pin_compatible('numpy') }}
         - python
-        - python-lal >={{ lal_version }}a0
+        - python-lal >={{ lal_version }}
     test:
       requires:
         - mock  # [py<33]
