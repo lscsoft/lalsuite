@@ -1085,9 +1085,9 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           if(LALInferenceCheckVariable(model->params, "correction_ncycles_taper")) correction_ncycles_taper = *(REAL8*) LALInferenceGetVariable(model->params, "correction_ncycles_taper");
         
         
-          XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hptilde,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
+          XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hptilde,2,2,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
         
-          XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hctilde,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);            
+          XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hctilde,2,2,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);            
         }
         else{
           /* generate modes with non-GR parameters set to default (zero)
@@ -1098,7 +1098,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           //SphHarmFrequencySeries *hlms = NULL;
           XLAL_TRY(ret=XLALSimIMRSEOBNRv4HMROM_Modes(hlms, phi0,
               deltaF,f_start,f_max,f_ref,corrected_distance, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1z,
-              spin2z,-1,1), errnum);
+              spin2z,-1,5), errnum);
           //the last 1 means that we are only generating the 22 mode. Remember to modify that later
 
           /* apply FTA corrections */
@@ -1108,11 +1108,16 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           REAL8 correction_ncycles_taper = 1.;
           if(LALInferenceCheckVariable(model->params, "correction_ncycles_taper")) correction_ncycles_taper = *(REAL8*) LALInferenceGetVariable(model->params, "correction_ncycles_taper");    
 
-          /* Extract the mode from the SphericalHarmFrequencySeries */
-          COMPLEX16FrequencySeries *hlm_mode = XLALSphHarmFrequencySeriesGetMode(*hlms, 2,-2);
+          COMPLEX16FrequencySeries *hlm_mode = NULL;
+          SphHarmFrequencySeries *hlms_temp = *hlms;
+          while(hlms_temp){
+            /* Extract the mode from the SphericalHarmFrequencySeries */
+            hlm_mode = XLALSphHarmFrequencySeriesGetMode(hlms_temp, hlms_temp->l,hlms_temp->m);
 
-          /* Apply FTA correction */
-          XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hlm_mode,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
+            /* Apply FTA correction */
+            XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hlm_mode,hlms_temp->l,abs(hlms_temp->m),m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
+            hlms_temp = hlms_temp->next;
+          }
   
           /* Construct hp and hc from hlms */
           size_t npts_wave = hlm_mode->data->length;
@@ -1126,7 +1131,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           memset(hptilde->data->data, 0, npts_wave * sizeof(COMPLEX16));
           memset(hctilde->data->data, 0, npts_wave * sizeof(COMPLEX16));  
 
-          XLAL_TRY(ret=XLALSimAddModeFD(hptilde, hctilde, (*hlms)->mode, inclination, LAL_PI/2. - phi0, (*hlms)->l, (*hlms)->m, 1), errnum);
+          hlms_temp = *hlms;
+          while(hlms_temp){
+            /* Add the modes to hptilde and hctilde */
+            XLAL_TRY(ret=XLALSimAddModeFD(hptilde, hctilde, hlms_temp->mode, inclination, LAL_PI/2. - phi0, hlms_temp->l, hlms_temp->m, 1), errnum);
+            hlms_temp = hlms_temp->next;
+          }
 
           XLALDestroySphHarmFrequencySeries(*hlms);
         }
