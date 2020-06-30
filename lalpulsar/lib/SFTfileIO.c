@@ -2229,22 +2229,22 @@ XLALReadSFDB(
             REAL4 *buffer1,*buffer2,*buffer3;
             if (header.lavesp > 0)
             {
-                buffer1 = malloc(header.lavesp*sizeof(REAL4));
+                XLAL_CHECK_NULL( (buffer1 = XLALCalloc(header.lavesp*sizeof(REAL4),sizeof(REAL4))) != NULL, XLAL_ENOMEM);
                 XLAL_CHECK_NULL(fread(buffer1,header.lavesp*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
 
                 lsps=header.lavesp;
             }
             else
             {
-                buffer1 = malloc(header.red*sizeof(REAL4));
+                XLAL_CHECK_NULL( (buffer1 = XLALCalloc(header.red*sizeof(REAL4),sizeof(REAL4))) != NULL, XLAL_ENOMEM);
                 XLAL_CHECK_NULL(fread(buffer1,header.red*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
                 lsps=header.nsamples/header.red;
             }
 
-            buffer2 = malloc(lsps*sizeof(REAL4));
+            XLAL_CHECK_NULL( (buffer2 = XLALCalloc(lsps*sizeof(REAL4),sizeof(REAL4))) != NULL, XLAL_ENOMEM);
             XLAL_CHECK_NULL(fread(buffer2,lsps*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
 
-            buffer3 = malloc(2*header.nsamples*sizeof(REAL4));
+            XLAL_CHECK_NULL( (buffer3 = XLALCalloc(2*header.nsamples*sizeof(REAL4),sizeof(REAL4))) != NULL, XLAL_ENOMEM);
             XLAL_CHECK_NULL(fread(buffer3,2*header.nsamples*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
 
             UINT4 flag=1;
@@ -2298,9 +2298,9 @@ XLALReadSFDB(
                 }
             }
 
-            LALFree(buffer1);
-            LALFree(buffer2);
-            LALFree(buffer3);
+            XLALFree(buffer1);
+            XLALFree(buffer2);
+            XLALFree(buffer3);
         }
         fclose(fpPar);
     }
