@@ -1076,13 +1076,13 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
     if (!(hptilde))
         XLAL_ERROR(XLAL_EFUNC);
     memset((*hptilde)->data->data, 0, pHMFS->npts * sizeof(COMPLEX16));
-    XLALUnitDivide(&(*hptilde)->sampleUnits, &(*hptilde)->sampleUnits, &lalSecondUnit);
+    XLALUnitMultiply(&(*hptilde)->sampleUnits, &(*hptilde)->sampleUnits, &lalSecondUnit);
 
     *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, pHMFS->npts);
     if (!(hctilde))
         XLAL_ERROR(XLAL_EFUNC);
     memset((*hctilde)->data->data, 0, pHMFS->npts * sizeof(COMPLEX16));
-    XLALUnitDivide(&(*hctilde)->sampleUnits, &(*hctilde)->sampleUnits, &lalSecondUnit);
+    XLALUnitMultiply(&(*hctilde)->sampleUnits, &(*hctilde)->sampleUnits, &lalSecondUnit);
 
     /* Adding the modes to form hplus, hcross
      * - use of a function that copies XLALSimAddMode but for Fourier domain structures */
