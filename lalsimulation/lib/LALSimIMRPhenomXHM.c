@@ -1415,6 +1415,7 @@ static int IMRPhenomXHM_MultiMode2(
   /* Coalescence time is fixed to t=0, shift by overall length in time. */
   //XLAL_CHECK(XLALGPSAdd(&ligotimegps_zero, -1. / pWF->deltaF), XLAL_EFUNC, "Failed to shift the coalescence time to t=0. Tried to apply a shift of -1/df with df = %g.", pWF->deltaF);
   size_t n = (htildelm)->data->length;
+  XLAL_CHECK(XLALGPSAdd(&ligotimegps_zero, -1. / pWF->deltaF), XLAL_EFUNC, "Failed to shift the coalescence time to t=0. Tried to apply a shift of -1/df with df = %g.", pWF->deltaF);
   *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &(ligotimegps_zero), 0.0, pWF->deltaF, &lalStrainUnit, n);
   if (!(hptilde)){   XLAL_ERROR(XLAL_EFUNC);}
   memset((*hptilde)->data->data, 0, n * sizeof(COMPLEX16));  // what is this for??

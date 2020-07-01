@@ -686,7 +686,7 @@ int XLALSimIMRPhenomXPHMFromModes(
 
    /* Initialize hctilde according to hptilde. */
    size_t npts = (*hptilde)->data->length;
-   *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, (*hptilde)->f0, pWF->deltaF, &lalStrainUnit, npts);
+   *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &(*hptilde)->epoch, (*hptilde)->f0, pWF->deltaF, &lalStrainUnit, npts);
    XLAL_CHECK (*hctilde, XLAL_ENOMEM, "Failed to allocated waveform COMPLEX16FrequencySeries of length %zu.", npts);
    memset((*hctilde)->data->data, 0, npts * sizeof(COMPLEX16));
    XLALUnitMultiply(&((*hctilde)->sampleUnits), &((*hctilde)->sampleUnits), &lalSecondUnit);
