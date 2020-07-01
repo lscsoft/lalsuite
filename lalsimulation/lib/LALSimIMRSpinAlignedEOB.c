@@ -1437,7 +1437,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 
   const UINT4 postAdiabaticFlag = XLALDictLookupUINT4Value(PAParams, "PAFlag");
 
-  REAL8Vector *dynamicsPA = NULL;
+  REAL8Array *dynamicsPA = NULL;
 
   if (postAdiabaticFlag)
   {

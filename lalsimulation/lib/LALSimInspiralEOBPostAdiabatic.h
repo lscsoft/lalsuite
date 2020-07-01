@@ -9,7 +9,7 @@
 
 int
 XLALSimInspiralEOBPostAdiabatic(
-    REAL8Vector ** dynamics,
+    REAL8Array ** dynamics,
     REAL8 deltaT,
     const REAL8 m1,
     const REAL8 m2,
@@ -138,9 +138,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
     REAL8Vector *prstarVec,
     REAL8Vector *dprstarBydrVec,
     REAL8Vector *pphiVec,
-    REAL8Vector *pphi0Vec,
     REAL8Vector *dpphiBydrVec,
-    REAL8Vector *dpphiBydr0Vec,
     REAL8Vector *dtBydrVec,
     REAL8Vector *csiVec,
     REAL8Vector *omegaVec,
@@ -314,7 +312,6 @@ XLALSimInspiralEOBPAFluxWrapper(
     REAL8 prstar,
     REAL8 pphi,
     REAL8 omega,
-    REAL8 H,
     SpinEOBParams *seobParams,
     EOBNonQCCoeffs *nqcCoeffs,
     LALDict *LALParams
