@@ -1455,8 +1455,16 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
       &nqcCoeffs,
       PAParams
     );
+
+    UINT4 rSize;
+    rSize = dynamicsPA->dimLength->data[1];
+    
+    values->data[0] = dynamicsPA->data[2*rSize-1];
+    values->data[1] = 0.;
+    values->data[2] = dynamicsPA->data[4*rSize-1];
+    values->data[3] = dynamicsPA->data[5*rSize-1];
+
     exit(0);
-    // return XLAL_SUCCESS;
   }
 
   /*

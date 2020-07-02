@@ -1282,21 +1282,6 @@ XLALSimInspiralEOBPostAdiabatic(
 
  	*rReverseVec = XLALReverseREAL8Vector(rVec);
 
- 	UINT4 i;
-
- 	// integrate pphi(r)
-    // *dpphiBydrReverseVec = XLALReverseREAL8Vector(dpphiBydrVec);
-    // *pphiReverseVec = XLALCumulativeIntegral3(rReverseVec, dpphiBydrReverseVec);
-    // *pphiVec = XLALReverseREAL8Vector(pphiReverseVec);
-
-    // *pphiVec = XLALOffsetREAL8Vector(pphiVec, initVals.data[3]-pphiVec->data[0]);
-
-    // integrate t(r)
-    // *tVec = XLALCumulativeIntegral3(rVec, dtBydrVec);
-
-    // integrate phi(r)
-    // *phiVec = XLALCumulativeIntegral3(rVec, dphiBydrVec);
-
 	if (PAOrder > 0)
 	{
 		XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
@@ -1320,6 +1305,8 @@ XLALSimInspiralEOBPostAdiabatic(
 
     *phiVec = XLALCumulativeIntegral3(rVec, dphiBydrVec);
 
+    UINT4 i;
+    
     for (i = 0; i < rSize; i++)
     {
         printf("%.18e %.18e %.18e %.18e %.18e\n", tVec->data[i], rVec->data[i], phiVec->data[i], prstarVec->data[i], pphiVec->data[i]);
@@ -1328,11 +1315,16 @@ XLALSimInspiralEOBPostAdiabatic(
 	REAL8Array *outputDynamics = NULL;
 	outputDynamics = XLALCreateREAL8ArrayL(2, 5, rSize);
 
-	*dynamics = outputDynamics;
-    exit(0);
+	for (i = 0; i < rSize; i++)
+    {
+    	outputDynamics->data[i] = tVec->data[i];
+    	outputDynamics->data[rSize + i] = rVec->data[i];
+    	outputDynamics->data[2*rSize + i] = phiVec->data[i];
+    	outputDynamics->data[3*rSize + i] = prstarVec->data[i];
+    	outputDynamics->data[4*rSize + i] = pphiVec->data[i];
+    } 
 
-    // Output ready
-    // tVec, rVec, phiVec, pphiVec, prstarVec, pphi0Vec, rcVec, AVec, dpphiBydrVec
+	*dynamics = outputDynamics;
 
     return XLAL_SUCCESS;
 }
