@@ -538,7 +538,8 @@ int XLALSimIMRPhenomXHMMultiBandOneMode(
   /* Resize the COMPLEX16 frequency series */
   *htildelm = XLALResizeCOMPLEX16FrequencySeries(*htildelm, 0, n_full);
   XLAL_CHECK (*htildelm, XLAL_ENOMEM, "Failed to resize waveform COMPLEX16FrequencySeries of length %zu (for internal fCut=%f) to new length %zu (for user-requested f_max=%f).", n, pWF->fCut, n_full, pWF->fMax );
-
+  XLALUnitMultiply(&((*htildelm)->sampleUnits), &((*htildelm)->sampleUnits), &lalSecondUnit);
+  
   LALFree(pWF);
 
   return offset;
@@ -1241,7 +1242,8 @@ int XLALSimIMRPhenomXHMMultiBandOneModeMixing(
   /* Resize the COMPLEX16 frequency series */
   *htildelm = XLALResizeCOMPLEX16FrequencySeries(*htildelm, 0, n_full);
   XLAL_CHECK (*htildelm, XLAL_ENOMEM, "Failed to resize waveform COMPLEX16FrequencySeries of length %zu (for internal fCut=%f) to new length %zu (for user-requested f_max=%f).", n, pWF->fCut, n_full, pWF->fMax );
-
+  XLALUnitMultiply(&((*htildelm)->sampleUnits), &((*htildelm)->sampleUnits), &lalSecondUnit);
+  
   LALFree(pWF);
 
   return offset;
