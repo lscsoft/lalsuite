@@ -124,7 +124,6 @@ typedef struct {
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
   UINT4 DtermsRecalc;              /**< Recalc: size of Dirichlet kernel for Fstat calculation */
   LALStringVector* assumeSqrtSX;   /**< Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
-  BOOLEAN SignalOnly;              /**< DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
   /* parameters describing the coherent data-segments */
   REAL8 tStack;                    /**< duration of stacks */
   UINT4 nStacks;                   /**< number of stacks */
@@ -368,7 +367,6 @@ int main( int argc, char *argv[]) {
   BOOLEAN uvar_semiCohToplist = TRUE; /* if overall first stage candidates are to be output */
 
   LALStringVector* uvar_assumeSqrtSX = NULL;    /* Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
-  BOOLEAN uvar_SignalOnly = FALSE;              /* DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
 
   BOOLEAN uvar_recalcToplistStats = FALSE; 	/* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
   BOOLEAN uvar_loudestSegOutput = FALSE; 	/* output extra info about loudest segment; requires recalcToplistStats */
@@ -509,7 +507,6 @@ int main( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printFstat1,         "printFstat1",         BOOLEAN,      0,   OPTIONAL,   "Print 1st stage Fstat vectors") == XLAL_SUCCESS, XLAL_EFUNC);
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_assumeSqrtSX,        "assumeSqrtSX",        STRINGVector, 0,   OPTIONAL,   "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SignalOnly,          "SignalOnly",          BOOLEAN,      'S', DEPRECATED, "DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead") == XLAL_SUCCESS, XLAL_EFUNC);
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_nStacksMax,          "nStacksMax",          INT4,         0,   OPTIONAL,   "Maximum No. of segments" ) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_tStack,              "tStack",              REAL8,        'T', OPTIONAL,   "Duration of segments (sec)" ) == XLAL_SUCCESS, XLAL_EFUNC);
@@ -596,9 +593,6 @@ int main( int argc, char *argv[]) {
 	fprintf(stderr, "Search over 3rd spindown is available only with gammaRefine AND gamma2Refine manually set to 1!\n");
 	return( HIERARCHICALSEARCH_EVAL );
   }
-
-  /* check SignalOnly and assumeSqrtSX */
-  XLAL_CHECK_MAIN ( !uvar_SignalOnly || (uvar_assumeSqrtSX == NULL), XLAL_EINVAL, "Cannot pass --SignalOnly AND --assumeSqrtSX at the same time!\n");
 
   /* 2F threshold for semicoherent stage */
 #ifndef EXP_NO_NUM_COUNT
@@ -788,7 +782,6 @@ int main( int argc, char *argv[]) {
   usefulParams.Dterms = uvar_Dterms;
   usefulParams.DtermsRecalc = uvar_DtermsRecalc;
   usefulParams.assumeSqrtSX = uvar_assumeSqrtSX;
-  usefulParams.SignalOnly = uvar_SignalOnly;
   usefulParams.SSBprec = uvar_SSBprecision;
   usefulParams.Fmethod = uvar_FstatMethod;
   usefulParams.FmethodRecalc = uvar_FstatMethodRecalc;
@@ -1524,13 +1517,6 @@ int main( int argc, char *argv[]) {
                   if ( retn != XLAL_SUCCESS ) {
                     XLALPrintError ("%s: XLALComputeFstat() failed with errno=%d\n", __func__, xlalErrno );
                     return xlalErrno;
-                  }
-                  /* if single-only flag is given, add +4 to F-statistic */
-                  if ( uvar_SignalOnly ) {
-                    if (XLALAdd4ToFstatResults(Fstat_res) != XLAL_SUCCESS) {
-                      XLALPrintError ("%s: XLALAdd4ToFstatResults() failed with errno=%d\n", __func__, xlalErrno );
-                      return xlalErrno;
-                    }
                   }
 
                   /* Loop over coarse-grid frequency bins */
@@ -2287,16 +2273,9 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   /* loop over segments and read sfts */
   for (k = 0; k < in->nStacks; k++) {
 
-    /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
+    /* if flag is given, assume a PSD with sqrt(S) = 1.0 */
     MultiNoiseFloor s_assumeSqrtSX;
-    if ( in->SignalOnly ) {
-      const SFTCatalog *catalog_k = &(catalogSeq.data[k]);
-      s_assumeSqrtSX.length = XLALCountIFOsInCatalog ( catalog_k );
-      for (UINT4 X = 0; X < s_assumeSqrtSX.length; ++X) {
-        s_assumeSqrtSX.sqrtSn[X] = 1.0;
-      }
-      optionalArgs.assumeSqrtSX = &s_assumeSqrtSX;
-    } else if ( in->assumeSqrtSX != NULL ) {
+    if ( in->assumeSqrtSX != NULL ) {
       const SFTCatalog *catalog_k = &(catalogSeq.data[k]);
       LALStringVector *detectorIDs_k = NULL;
       if ( ( detectorIDs_k = XLALListIFOsInCatalog( catalog_k ) ) == NULL ) {
