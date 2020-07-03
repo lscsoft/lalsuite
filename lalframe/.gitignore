@@ -41,8 +41,8 @@ python/lalframe/git_version.py
 python/lalframe/lalframe.py
 lib/config.h
 lib/config.h.in
-lib/lalfr-*[!1]
-lib/lalframe_version
+bin/lalfr-*[!1]
+bin/lalframe_version
 lib/LALFrameBuildInfoHeader.h
 lib/LALFrameConfig.h
 lib/LALFrameVCSInfo.c
@@ -50,7 +50,7 @@ lib/LALFrameVCSInfo.h
 lib/LALFrameVCSInfoHeader.h
 lib/stamp-h1
 lib/stamp-h2
-lib/version.c
+bin/version.c
 swig/.swigdeps
 swig/swiglal_*
 swig/swiglalframe.i*

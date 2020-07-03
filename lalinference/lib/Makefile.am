@@ -98,22 +98,6 @@ liblalinference_la_LDFLAGS = $(AM_LDFLAGS) $(HDF5_LDFLAGS) $(HDF5_LIBS) -version
 
 LDADD = liblalinference.la
 
-bin_PROGRAMS = \
-	lalinference_nest \
-	lalinference_injectedlike \
-	lalinference_burst \
-	lalinference_datadump \
-	lalinference_bench \
-	lalinference_version \
-	$(END_OF_LIST)
-
-lalinference_nest_SOURCES = LALInferenceNest.c
-lalinference_injectedlike_SOURCES = LALInferenceInjectedLike.c
-lalinference_burst_SOURCES = LALInferenceBurst.c
-lalinference_datadump_SOURCES = LALInferenceDataDump.c
-lalinference_bench_SOURCES = LALInferenceBench.c
-lalinference_version_SOURCES = version.c
-
 EXTRA_DIST = \
 	LALInferenceConfig.h.in \
 	bayestar_cosmology.py \
@@ -122,20 +106,9 @@ EXTRA_DIST = \
 	$(EXAMPLE_CONFIG) \
 	config.h.in
 
-SUBDIRS = \
-	. \
-	mpi
-
 DISTCLEANFILES = config.h
 
 vcs_build_info_source = LALInferenceVCSInfo.c
 vcs_info_sources = LALInferenceVCSInfoHeader.h
 build_info_source = LALInferenceBuildInfoHeader.h
 build_info_dependencies = $(liblalinference_la_DEPENDENCIES)
-
-dist_bin_SCRIPTS = \
-	lalinference_mpi_wrapper
-
-TESTS = \
-	lalinference_version \
-	$(END_OF_LIST)

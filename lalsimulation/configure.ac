@@ -25,7 +25,8 @@ AC_CONFIG_FILES([ \
   lib/Makefile \
   lib/seobnrv3_opt_exactderivs/Makefile \
   lib/mathematica_codes/Makefile \
-  lib/version.c \
+  bin/Makefile \
+  bin/version.c \
   swig/Makefile \
   test/Makefile \
   test/python/Makefile \

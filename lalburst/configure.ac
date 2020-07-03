@@ -22,8 +22,9 @@ AC_CONFIG_FILES([ \
   lib/LALBurstVCSInfo.c \
   lib/LALBurstVCSInfo.h \
   lib/Makefile \
-  lib/version.c \
   swig/Makefile \
+  bin/Makefile \
+  bin/version.c \
   test/Makefile \
   test/python/Makefile \
   test/python/test_python_imports.py \

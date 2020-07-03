@@ -180,6 +180,7 @@ rm -rfv python/%{name}/*.{la,lo,o} python/%{name}/.libs
 %configure %{configure_opts} --disable-doxygen --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
 %{__make} V=1 -C swig
 %{__make} V=1 -C python/%{name}
+%{__make} V=1 -C bin bin_PROGRAMS="" dist_bin_SCRIPTS=""
 popd
 
 %check

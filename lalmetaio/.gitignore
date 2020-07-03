@@ -42,7 +42,6 @@ python/lalmetaio/lalmetaio.py
 lib/config.h
 lib/config.h.in
 lib/git_version
-lib/lalmetaio_version
 lib/LALMetaIOBuildInfoHeader.h
 lib/LALMetaIOConfig.h
 lib/LALMetaIOVCSInfo.c
@@ -50,7 +49,8 @@ lib/LALMetaIOVCSInfo.h
 lib/LALMetaIOVCSInfoHeader.h
 lib/stamp-h1
 lib/stamp-h2
-lib/version.c
+bin/lalmetaio_version
+bin/version.c
 swig/.swigdeps
 swig/swiglal_*
 swig/swiglalmetaio.i*

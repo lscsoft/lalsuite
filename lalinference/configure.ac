@@ -27,8 +27,9 @@ AC_CONFIG_FILES([ \
   lib/LALInferenceVCSInfo.c \
   lib/LALInferenceVCSInfo.h \
   lib/Makefile \
-  lib/mpi/Makefile \
-  lib/version.c \
+  bin/Makefile \
+  bin/mpi/Makefile \
+  bin/version.c \
   swig/Makefile \
   test/Makefile \
   test/python/Makefile \

@@ -67,16 +67,3 @@ build_info_source = LALBuildInfoHeader.h
 build_info_dependencies = $(EXTRA_liblal_la_DEPENDENCIES)
 
 LDADD = liblal.la
-
-bin_PROGRAMS = \
-	lal_simd_detect \
-	lal_version \
-	$(END_OF_LIST)
-
-lal_simd_detect_SOURCES = simd_detect.c
-lal_version_SOURCES = version.c
-
-TESTS = \
-	lal_simd_detect \
-	lal_version \
-	$(END_OF_LIST)
