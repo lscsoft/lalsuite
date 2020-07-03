@@ -127,6 +127,7 @@ cache:
       - "rpmbuild/BUILD/*/test/test-suite.log"
       - "rpmbuild/BUILD/*/test/python/test-suite.log"
       - "rpmbuild/RPMS/x86_64/${CI_JOB_NAME%%:*}-*.rpm"
+      - "rpmbuild/RPMS/x86_64/lib${CI_JOB_NAME%%:*}-*.rpm"
       - "rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%%:*}-*.rpm"
     reports:
       junit: "rpmbuild/BUILD/*/test/python/junit*.xml"
@@ -193,6 +194,7 @@ cache:
       - ${CI_JOB_NAME%%:*}*/.pybuild/python*/build/test/python/test-suite.log
       - ${CI_JOB_NAME%%:*}*.changes
       - ${CI_JOB_NAME%%:*}*.deb
+      - lib${CI_JOB_NAME%%:*}*.deb
       - python*-${CI_JOB_NAME%%:*}*.deb
       - ${CI_JOB_NAME%%:*}*.dsc
       - ${CI_JOB_NAME%%:*}*.orig.*
@@ -260,17 +262,19 @@ cache:
     paths:
       - "conda/bld/linux-64/${CI_JOB_NAME%%:*}-*.conda"
       - "conda/bld/linux-64/${CI_JOB_NAME%%:*}-*.tar.bz2"
+      - "conda/bld/linux-64/lib${CI_JOB_NAME%%:*}-*.conda"
+      - "conda/bld/linux-64/lib${CI_JOB_NAME%%:*}-*.tar.bz2"
       - "conda/bld/linux-64/python-${CI_JOB_NAME%%:*}-*.conda"
       - "conda/bld/linux-64/python-${CI_JOB_NAME%%:*}-*.tar.bz2"
-      - "conda/bld/${CI_JOB_NAME%%:*}_*/work/config.log"
-      - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/test-suite.log"
-      - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/test-suite.log"
-      - "conda/bld/${CI_JOB_NAME%%:*}_*/work/*/*/*/test-suite.log"
+      - "conda/bld/${CI_JOB_NAME%%:*}-*/work/_build*/config.log"
+      - "conda/bld/${CI_JOB_NAME%%:*}-*/work/_build*/test/test-suite.log"
+      - "conda/bld/${CI_JOB_NAME%%:*}-*/work/_build*/test/python/test-suite.log"
+      - "conda/bld/${CI_JOB_NAME%%:*}-*/work/*/*/*/*/test-suite.log"
       - "${CI_JOB_NAME%%:*}/${CI_JOB_NAME%%:*}-feedstock/"
     reports:
       junit:
-        - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/junit*.xml"
-        - "conda/bld/${CI_JOB_NAME%%:*}_*/test_tmp/junit*.xml"
+        - "conda/bld/${CI_JOB_NAME%%:*}[-_]*/work/_build*/test/python/junit*.xml"
+        - "conda/bld/${CI_JOB_NAME%%:*}[-_]*/test_tmp/junit*.xml"
     when: always
   only:
     - pushes
