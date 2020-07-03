@@ -10,9 +10,9 @@
 {% set sha256 = "@SHA256@" %}
 
 # dependencies
-{% set lal_version = "7.0.0" %}
-{% set lalmetaio_version = "1.6.0" %}
-{% set lalsimulation_version = "2.1.0" %}
+{% set lal_version = "@MIN_LAL_VERSION@a0" %}
+{% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
+{% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set swig_version = "3.0.9" %}
 
 package:
@@ -35,15 +35,15 @@ requirements:
     - swig >={{ swig_version }}
   host:
     - gsl
-    - lal >={{ lal_version }}a0
-    - lalmetaio >={{ lalmetaio_version }}a0
-    - lalsimulation >={{ lalsimulation_version }}a0
+    - lal >={{ lal_version }}
+    - lalmetaio >={{ lalmetaio_version }}
+    - lalsimulation >={{ lalsimulation_version }}
     - metaio
   run:
     - gsl
-    - lal >={{ lal_version }}a0
-    - lalmetaio >={{ lalmetaio_version }}a0
-    - lalsimulation >={{ lalsimulation_version }}a0
+    - lal >={{ lal_version }}
+    - lalmetaio >={{ lalmetaio_version }}
+    - lalsimulation >={{ lalsimulation_version }}
     - metaio
 
 test:
@@ -77,13 +77,13 @@ outputs:
         - lscsoft-glue
         - numpy
         - python
-        - python-lal >={{ lal_version }}a0
-        - python-lalmetaio >={{ lalmetaio_version }}a0
-        - python-lalsimulation >={{ lalsimulation_version }}a0
+        - python-lal >={{ lal_version }}
+        - python-lalmetaio >={{ lalmetaio_version }}
+        - python-lalsimulation >={{ lalsimulation_version }}
         - scipy
       run:
         - gsl
-        - lal >={{ lal_version }}a0
+        - lal >={{ lal_version }}
         - {{ pin_subpackage('lalburst', exact=True) }}
         - lalmetaio
         - lalsimulation
@@ -93,9 +93,9 @@ outputs:
         - metaio
         - {{ pin_compatible('numpy') }}
         - python
-        - python-lal >={{ lal_version }}a0
-        - python-lalmetaio >={{ lalmetaio_version }}a0
-        - python-lalsimulation >={{ lalsimulation_version }}a0
+        - python-lal >={{ lal_version }}
+        - python-lalmetaio >={{ lalmetaio_version }}
+        - python-lalsimulation >={{ lalsimulation_version }}
         - python-ligo-lw
         - scipy
     test:

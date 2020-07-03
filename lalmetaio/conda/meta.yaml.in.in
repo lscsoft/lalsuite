@@ -4,13 +4,14 @@
 # This is only for CI purposes, and should not be considered
 # production-ready at any time.
 
-{% set name = "lalsimulation" %}
+{% set name = "lalmetaio" %}
 {% set version = "@VERSION@" %}
 {% set url = "file://@TARBALL@" %}
 {% set sha256 = "@SHA256@" %}
 
 # dependencies
-{% set lal_version = "7.0.0" %}
+{% set lal_version = "@MIN_LAL_VERSION@a0" %}
+{% set metaio_version = "@MIN_METAIO_VERSION@" %}
 {% set swig_version = "3.0.9" %}
 
 package:
@@ -28,45 +29,26 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
-    - help2man
-    - llvm-openmp  # [osx]
     - make
-    - pkg-config >=0.18.0
+    - pkg-config
     - swig >={{ swig_version }}
   host:
-    - gsl
-    - lal >={{ lal_version }}a0
-    - libgomp  # [linux]
-    - llvm-openmp  # [osx]
+    - lal >={{ lal_version }}
+    - metaio >={{ metaio_version }}
   run:
-    - gsl
-    - lal >={{ lal_version }}a0
-    - llvm-openmp  # [osx]
-
+    - lal >={{ lal_version }}
+    - metaio >={{ metaio_version }}
 test:
   commands:
-    - lalsimulation_version --verbose
-    - lalsim-bh-qnmode -l 0 -m 0 -s 0
-    - lalsim-bh-ringdown -M 10 -a 0 -r 100 -e 0.001 -i 0 -l 2 -m 2
-    - lalsim-bh-sphwf -a 0 -l 2 -m 2 -s 0
-    - lalsim-burst -w SineGaussian -q 10 -f 100 -H 1e-21 1> /dev/null
-    - lalsim-detector-noise -C -t 1 -r 10
-    - lalsim-detector-strain --help
-    - lalsim-inject --help
-    - lalsim-inspiral > /dev/null
-    - lalsim-ns-eos-table -n ALF1 1> /dev/null
-    - lalsim-ns-mass-radius -n ALF1 1> /dev/null
-    - lalsim-ns-params -n ALF1
-    - lalsim-sgwb --geo -t 1 -r 100 -W 1 1> /dev/null
-    - lalsim-unicorn --help
+    - lalmetaio_version --verbose
 
 outputs:
-  - name: lalsimulation
+  - name: lalmetaio
     build:
       run_exports:
-        - {{ pin_subpackage("lalsimulation", max_pin="x.x") }}
+        - {{ pin_subpackage("lalmetaio", max_pin="x.x") }}
 
-  - name: python-lalsimulation
+  - name: python-lalmetaio
     script: install-python.sh
     build:
       error_overdepending: true
@@ -77,21 +59,20 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man
         - make
-        - pkg-config >=0.18.0
+        - pkg-config
         - swig >={{ swig_version }}
       host:
-        - {{ pin_subpackage('lalsimulation', exact=True) }}
+        - {{ pin_subpackage('lalmetaio', exact=True) }}
         - numpy 1.9
         - python
       run:
-        - gsl
-        - lal >={{ lal_version }}a0
-        - {{ pin_subpackage('lalsimulation', exact=True) }}
+        - lal
+        - {{ pin_subpackage('lalmetaio', exact=True) }}
+        - metaio >={{ metaio_version }}
         - {{ pin_compatible('numpy') }}
         - python
-        - python-lal >={{ lal_version }}a0
+        - python-lal >={{ lal_version }}
     test:
       requires:
         - mock  # [py<33]
@@ -103,36 +84,33 @@ outputs:
       commands:
         - python -m pytest -rs -v --junit-xml=junit.xml test/python
       imports:
-        - lalsimulation
-        - lalsimulation.nrfits
+        - lalmetaio
     about:
       home: "https://wiki.ligo.org/Computing/LALSuite"
-      doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/"
+      doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lalmetaio/"
       dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
       license: "GPL-2.0-or-later"
       license_family: "GPL"
       license_file: "COPYING"
-      summary: "LSC Algorithm Simulation Library"
+      summary: "LSC Algorithm MetaIO Library"
       description: |
-        The LSC Algorithm Simulation Library for gravitational wave data
-        analysis.
+        The LSC Algorithm MetaIO Library for gravitational wave data analysis.
         This package contains the python bindings.
 
 about:
   home: "https://wiki.ligo.org/Computing/LALSuite"
-  doc_url: "https://docs.ligo.org/lscsoft/lalsuite/lalsimulation/"
+  doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lalmetaio/"
   dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
   license: "GPL-2.0-or-later"
   license_family: "GPL"
   license_file: "COPYING"
-  summary: "LSC Algorithm Simulation Library"
+  summary: "LSC Algorithm MetaIO Library"
   description: |
-    The LSC Algorithm Simulation Library for gravitational wave data
-    analysis.
+    The LSC Algorithm MetaIO Library for gravitational wave data analysis.
     This package contains the shared-object libraries needed to run
-    applications that use the LAL Simulation library. If you want to
-    install the Python bindings, please install the associated
-    python-lalsimulation package.
+    applications that use the LAL MetaIO library.  If you want to install
+    the Python bindings, please install the associated python-lalmetaio
+    package.
 
 extra:
   recipe-maintainers:
