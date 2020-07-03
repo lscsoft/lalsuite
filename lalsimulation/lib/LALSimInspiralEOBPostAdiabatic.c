@@ -25,7 +25,6 @@
 #include "LALSimIMRSpinEOBHamiltonian.c"
 // #include "LALSimIMRSpinEOBFactorizedFlux.c"
 #include "LALSimIMREOBNewtonianMultipole.c"
-
 #include "LALSimIMRSpinEOBFactorizedFlux_PA.c"
 
 int
@@ -324,17 +323,17 @@ int
 XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 	REAL8Vector *rVec,
 	REAL8Vector *phiVec,
-	REAL8Vector *dphiBydrVec,
+	UNUSED REAL8Vector *dphiBydrVec,
 	REAL8Vector *prstarVec,
 	REAL8Vector *pphiVec,
 	REAL8Vector *pphi0Vec,
 	REAL8Vector *dpphiBydrVec,
 	REAL8Vector *dpphiBydr0Vec,
-	REAL8Vector *dtBydrVec,
+	UNUSED REAL8Vector *dtBydrVec,
 	REAL8Vector *csiVec,
 	REAL8Vector *omegaVec,
 	SpinEOBParams *seobParams,
-	EOBNonQCCoeffs *nqcCoeffs,
+	UNUSED EOBNonQCCoeffs *nqcCoeffs,
 	LALDict *LALParams
 )
 {
@@ -350,13 +349,13 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 
 	REAL8Vector *fluxVec = XLALCreateREAL8Vector(rSize);
 	memset(fluxVec->data, 0, fluxVec->length * sizeof(REAL8));
-
+	struct PostAdiabaticRootSolveParams pphiParams;
 	for (i = 0; i < rSize; i++)
 	{
 		REAL8 Newtonianj0;
 		Newtonianj0 = XLALSimInspiralEOBPACalculateNewtonianj0(rVec->data[i]);
 
-		struct PostAdiabaticRootSolveParams pphiParams;
+		
 
         pphiParams.r = rVec->data[i];
         pphiParams.prstar = prstarVec->data[i];
@@ -401,7 +400,7 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 								seobParams,
 								dr
 							);
-
+		/*
 		fluxVec->data[i] = XLALSimInspiralEOBPAFluxWrapper(
 								rVec->data[i],
 								prstarVec->data[i],
@@ -410,7 +409,7 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 								seobParams,
 								nqcCoeffs,
 								LALParams
-							);
+							);*/
 	}
 
 	REAL8Vector *rReverseVec = XLALCreateREAL8Vector(rSize);
@@ -429,13 +428,13 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 
     *dpphiBydrVec = XLALReverseREAL8Vector(dpphiBydrReverseVec);
     *dpphiBydr0Vec = XLALReverseREAL8Vector(dpphiBydrReverseVec);
-
+	/*
     for (i = 0; i < rSize; i++)
 	{
 		dtBydrVec->data[i] = (1./fluxVec->data[i]) * dpphiBydrVec->data[i];
 		dphiBydrVec->data[i] = omegaVec->data[i] * dtBydrVec->data[i];
 	}
-
+	*/
     XLALDestroyREAL8Vector(rReverseVec);
     XLALDestroyREAL8Vector(pphiReverseVec);
     XLALDestroyREAL8Vector(dpphiBydrReverseVec);
@@ -487,7 +486,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 
 	REAL8Vector *dprstarBydrReverseVec = XLALCreateREAL8Vector(rSize);
 	memset(dprstarBydrReverseVec->data, 0, dprstarBydrReverseVec->length * sizeof(REAL8));
-
+	REAL8 polarDynamics[4];
 	for (n = 1; n <= PAOrder; n++)
 	{
 		printf("Calculating %d PA order\n", n);
@@ -537,7 +536,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 
     			prstarVec->data[i] = prstarRoot.root;
 
-    			REAL8 polarDynamics[4];
+    			
 		
 				polarDynamics[0] = rVec->data[i];
 				polarDynamics[1] = phiVec->data[i];
@@ -549,19 +548,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 										seobParams,
 										dr
 									);
-
-				REAL8 partialHBypartialprstar = XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
-												 1.e-4,
-												 rVec->data[i],
-												 prstarVec->data[i],
-												 pphiVec->data[i],
-												 seobParams->seobCoeffs,
-												 LALParams
-												 );
-
-				dtBydrVec->data[i] = 1. / (partialHBypartialprstar*csiVec->data[i]);
-				// printf("%.18e %.18e %.18e %.18e\n", nu, partialHBypartialprstar, csiVec->data[i], dtBydrVec->data[i]);
-	        	dphiBydrVec->data[i] = omegaVec->data[i] * dtBydrVec->data[i];
+				
 	    	}
 
 	  //   	REAL8Vector *partialHByPartialprstarVec = XLALCreateREAL8Vector(rSize);
@@ -607,9 +594,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 				);
 
 				pphiVec->data[i] = pphiRoot.root;
-    			// printf("%.18e\n", pphiVec->data[i]);
 
-    			REAL8 polarDynamics[4];
 		
 				polarDynamics[0] = rVec->data[i];
 				polarDynamics[1] = phiVec->data[i];
@@ -622,17 +607,6 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 										dr
 									);
 
-				REAL8 partialHBypartialprstar = XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
-													1.e-4,
-													rVec->data[i],
-													prstarVec->data[i],
-													pphiVec->data[i],
-													seobParams->seobCoeffs,
-													LALParams
-												);
-
-				dtBydrVec->data[i] = 1. / (partialHBypartialprstar*csiVec->data[i]);
-	        	dphiBydrVec->data[i] = omegaVec->data[i] * dtBydrVec->data[i];
 	    	}
 
 	    	*pphiReverseVec = XLALReverseREAL8Vector(pphiVec);
@@ -640,7 +614,21 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 			*dpphiBydrVec = XLALReverseREAL8Vector(dpphiBydrReverseVec);
 		}
 	}
+	// Loop over and compute the derivatives we need to do quadratures later
+	REAL8 partialHBypartialprstar;
 
+	for(i = 0; i < rSize; i++){
+		partialHBypartialprstar = XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
+													1.e-4,
+													rVec->data[i],
+													prstarVec->data[i],
+													pphiVec->data[i],
+													seobParams->seobCoeffs,
+													LALParams
+												);
+		dtBydrVec->data[i] = 1. / (partialHBypartialprstar*csiVec->data[i]);
+	    dphiBydrVec->data[i] = omegaVec->data[i] * dtBydrVec->data[i];
+	}
 	XLALDestroyREAL8Vector(fluxVec);
 	XLALDestroyREAL8Vector(rReverseVec);
     XLALDestroyREAL8Vector(pphiReverseVec);
@@ -671,7 +659,9 @@ XLALSimInspiralEOBPAHamiltonianDerivative(
 
 	for (i = -4; i <= 4; i++)
 	{
-		Hderivative += coeffs[i+4] * XLALSimInspiralEOBPAHamiltonianWrapper(r + i*h, prstar, pphi, seobCoeffs, LALParams);
+		if(i!=0){
+			Hderivative += coeffs[i+4] * XLALSimInspiralEOBPAHamiltonianWrapper(r + i*h, prstar, pphi, seobCoeffs, LALParams);
+		}
 	}
 
 	Hderivative /= h;
@@ -698,7 +688,10 @@ XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
 
 	for (i = -4; i <= 4; i++)
 	{
-		Hderivative += coeffs[i+4] * XLALSimInspiralEOBPAHamiltonianWrapper(r, prstar + i*h, pphi, seobCoeffs, LALParams);
+		if(i!=0)
+		  {
+			Hderivative += coeffs[i+4] * XLALSimInspiralEOBPAHamiltonianWrapper(r, prstar + i*h, pphi, seobCoeffs, LALParams);
+		  }
 	}
 
 	Hderivative /= h;
@@ -984,57 +977,48 @@ XLALSimInspiralEOBPAHamiltonianWrapper(
 	const REAL8 a2 = XLALDictLookupREAL8Value(LALParams, "a2");
 	const REAL8 aK = XLALDictLookupREAL8Value(LALParams, "aK");
 	const REAL8 Sstar = XLALDictLookupREAL8Value(LALParams, "Sstar");
-
 	REAL8 H;
 
-	REAL8Vector *xCartVec = XLALCreateREAL8Vector(3);
-	memset(xCartVec->data, 0, xCartVec->length * sizeof(REAL8));
 
-	REAL8Vector *pCartVec = XLALCreateREAL8Vector(3);
-	memset(pCartVec->data, 0, pCartVec->length * sizeof(REAL8));
+	REAL8Vector xCartVec,pCartVec;
+	xCartVec.length = pCartVec.length = 3;
+	REAL8 xCart[3] = {r,0.,0.};
+	REAL8 pCart[3] = {prstar,pphi/r,0.};
+	xCartVec.data = xCart;
+	pCartVec.data = pCart;
 
-	REAL8Vector *a1CartVec = XLALCreateREAL8Vector(3);
-	memset(a1CartVec->data, 0, a1CartVec->length * sizeof(REAL8));
-
-    REAL8Vector *a2CartVec = XLALCreateREAL8Vector(3);
-    memset(a2CartVec->data, 0, a2CartVec->length * sizeof(REAL8));
-
-    REAL8Vector *aKCartVec = XLALCreateREAL8Vector(3);
-    memset(aKCartVec->data, 0, aKCartVec->length * sizeof(REAL8));
-
-    REAL8Vector *SstarCartVec = XLALCreateREAL8Vector(3);
-    memset(SstarCartVec->data, 0, SstarCartVec->length * sizeof(REAL8));
-
-    xCartVec->data[0] = r;
-
-    pCartVec->data[0] = prstar;
-    pCartVec->data[1] = pphi / r;
-
-    a1CartVec->data[2] = a1;
-
-    a2CartVec->data[2] = a2;
-
-    aKCartVec->data[2] = aK;
-
-    SstarCartVec->data[2] = Sstar;
-
+	REAL8Vector a1CartVec, a2CartVec, aKCartVec, SstarCartVec;
+	a1CartVec.length = a2CartVec.length = aKCartVec.length = SstarCartVec.length =  3;
+	REAL8 spin1[3] = { 0., 0., a1 };
+	REAL8 spin2[3] = { 0., 0., a2 };
+	REAL8 aKV[3] = {0., 0., aK};
+	REAL8 SstarV[3] = {0., 0., Sstar};
+	a1CartVec.data = spin1;
+	a2CartVec.data = spin2;
+	aKCartVec.data = aKV;
+	SstarCartVec.data = SstarV;
+    
     // tortoise flag:
     // 0 - unstarred coordinates pr, pphi
     // 1 - starred coordinates prstar, pphistar = pphi
     UINT4 tortoiseFlag;
     tortoiseFlag = 1;
 
+
     H = XLALSimIMRSpinEOBHamiltonian(
     		nu,
-    		xCartVec,
-    		pCartVec,
-    		a1CartVec,
-    		a2CartVec,
-    		aKCartVec,
-    		SstarCartVec,
+    		&xCartVec,
+    		&pCartVec,
+    		&a1CartVec,
+    		&a2CartVec,
+    		&aKCartVec,
+    		&SstarCartVec,
     		tortoiseFlag,
     		seobCoeffs
     	);
+
+    //H = XLALSimIMRSpinEOBHamiltonian(nu, &xCartVec, &pCartVec, &a1CartVec, &a2CartVec, &aKCartVec, &SstarCartVec, tortoiseFlag, seobCoeffs);
+
     H /= nu;
 
     return H;
@@ -1053,15 +1037,8 @@ XLALSimInspiralEOBPAFluxWrapper(
 {
 	const REAL8 nu = XLALDictLookupREAL8Value(LALParams, "nu");
 
-	/* polarDynamics contains r, phi, pr, pphi */
-	REAL8Vector *polarDynamics = XLALCreateREAL8Vector(4);
-	memset(polarDynamics->data, 0, polarDynamics->length * sizeof(REAL8));
-
-	polarDynamics->data[0] = r;
-	polarDynamics->data[1] = 0.0;
-	polarDynamics->data[2] = prstar;
-	polarDynamics->data[3] = pphi;
-
+	
+	
 	REAL8 H;
 	H = XLALSimInspiralEOBPAHamiltonianWrapper(
 			r,
@@ -1072,13 +1049,20 @@ XLALSimInspiralEOBPAFluxWrapper(
 		);
 	H *= nu;
 
+	/* polarDynamics contains r, phi, pr, pphi */
+	REAL8Vector polarDynamics;
+	polarDynamics.length = 4;
+	REAL8 pol[4] = {r,0.,prstar,pphi};
+	polarDynamics.data = pol;
+	
 	const UINT4 lMax = 8;
 
 	const UINT4 SpinAlignedEOBversion = 4;
 	
  	REAL8 Flux;
+
     Flux = XLALInspiralSpinFactorizedFlux_PA(
-    			polarDynamics,
+    			&polarDynamics,
     			nqcCoeffs,
     			omega,
     			seobParams,
@@ -1086,6 +1070,10 @@ XLALSimInspiralEOBPAFluxWrapper(
     			lMax,
     			SpinAlignedEOBversion
     		);
+
+
+    //Flux = XLALInspiralSpinFactorizedFlux_PA(&polarDynamics, nqcCoeffs, omega, seobParams, H, lMax, SpinAlignedEOBversion);
+
     Flux /= nu;
     Flux *= -1.;
 
@@ -1204,6 +1192,7 @@ XLALSimInspiralEOBPostAdiabatic(
 	XLALDictInsertUINT4Value(LALparams, "rSize", rSize);
 	XLALDictInsertREAL8Value(LALparams, "dr", dr);
 
+
 	REAL8Vector *rVec = XLALCreateREAL8Vector(rSize);
 	memset(rVec->data, 0, rVec->length * sizeof(REAL8));
 
@@ -1234,8 +1223,8 @@ XLALSimInspiralEOBPostAdiabatic(
     REAL8Vector *dphiBydrReverseVec = XLALCreateREAL8Vector(rSize);
     memset(dphiBydrReverseVec->data, 0, dphiBydrReverseVec->length * sizeof(REAL8));
 
-	REAL8Vector *HVec = XLALCreateREAL8Vector(rSize);
-	memset(HVec->data, 0, HVec->length * sizeof(REAL8));
+	//REAL8Vector *HVec = XLALCreateREAL8Vector(rSize);
+	//memset(HVec->data, 0, HVec->length * sizeof(REAL8));
 
 	REAL8Vector *csiVec = XLALCreateREAL8Vector(rSize);
 	memset(csiVec->data, 0, csiVec->length * sizeof(REAL8));
@@ -1324,12 +1313,21 @@ XLALSimInspiralEOBPostAdiabatic(
 
     *phiVec = XLALCumulativeIntegral3(rVec, dphiBydrVec);
 
+
     UINT4 i;
+    
+
+
+    FILE *out = fopen ("saDynamicsHi.dat", "w");
+
 
     for (i = 0; i < rSize; i++)
-    {
-        printf("%.18e %.18e %.18e %.18e %.18e\n", tVec->data[i], rVec->data[i], phiVec->data[i], prstarVec->data[i], pphiVec->data[i]);
-    }
+      {
+
+        fprintf(out,"%.18e %.18e %.18e %.18e %.18e %.18e\n", tVec->data[i], rVec->data[i],
+                phiVec->data[i], prstarVec->data[i], pphiVec->data[i],dtBydrVec->data[i]);
+      }
+    fclose (out);
    
 	REAL8Array *outputDynamics = NULL;
 	outputDynamics = XLALCreateREAL8ArrayL(2, 5, rSize);
