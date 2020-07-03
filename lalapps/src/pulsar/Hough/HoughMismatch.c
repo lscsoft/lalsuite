@@ -27,8 +27,6 @@
 
 #include "MCInjectHoughS2.h"
 
-#include "SFTfileIOv1.h"
-
 /* defaults */
 #define EARTHEPHEMERIS "earth00-40-DE405.dat"
 #define SUNEPHEMERIS "sun00-40-DE405.dat"

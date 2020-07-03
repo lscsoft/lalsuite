@@ -90,8 +90,6 @@ test/NewGetAMCoeffsTest
 test/NormalizeSFTRngMedTest
 test/OutHistogram.asc
 test/OutHough.asc
-test/outputsft_v1.sft
-test/outputsft_v2.sft
 test/outputsftv2_r1.sft
 test/outputsftv2_r2.sft
 test/outputsftv2_v1.sft

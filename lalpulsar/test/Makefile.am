@@ -106,8 +106,6 @@ EXTRA_DIST += \
 	SFT-test7 \
 	circularEphem.dat \
 	earth98.dat \
-	inputsft.0 \
-	inputsft.1 \
 	sun98.dat \
 	testTimestamps.dat \
 	testTimestampsNew.dat \

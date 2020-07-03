@@ -55,8 +55,6 @@ SFTVector *subtractSFTVectors ( const SFTVector *sftvect1, const SFTVector *sftv
 int
 main(int argc, char *argv[])
 {
-  SFTConstraints XLAL_INIT_DECL(constraints);
-  CHAR detector[2] = "??";	/* allow reading v1-SFTs without detector-info */
   SFTVector *diffs = NULL;
   REAL8 maxd = 0;
 
@@ -71,16 +69,13 @@ main(int argc, char *argv[])
     exit (1);
   }
 
-  /* now read in the two complete sft-vectors */
-  constraints.detector = detector;
-
   SFTCatalog *catalog;
-  XLAL_CHECK_MAIN ( (catalog = XLALSFTdataFind ( uvar.sftBname1, &constraints )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (catalog = XLALSFTdataFind ( uvar.sftBname1, NULL )) != NULL, XLAL_EFUNC );
   SFTVector *SFTs1;
   XLAL_CHECK_MAIN ( (SFTs1 = XLALLoadSFTs( catalog, -1, -1 )) != NULL, XLAL_EFUNC );
   XLALDestroySFTCatalog ( catalog );
 
-  XLAL_CHECK_MAIN ( (catalog = XLALSFTdataFind ( uvar.sftBname2, &constraints )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (catalog = XLALSFTdataFind ( uvar.sftBname2, NULL )) != NULL, XLAL_EFUNC );
   SFTVector *SFTs2;
   XLAL_CHECK_MAIN ( (SFTs2 = XLALLoadSFTs( catalog, -1, -1 )) != NULL, XLAL_EFUNC );
   XLALDestroySFTCatalog ( catalog );
@@ -93,11 +88,7 @@ main(int argc, char *argv[])
       SFTtype *sft1 = &(SFTs1->data[i]);
       SFTtype *sft2 = &(SFTs2->data[i]);
 
-      if( strcmp( sft1->name, sft2->name ) )
-	{
-	  if ( lalDebugLevel ) { XLALPrintError("WARNING SFT %d: detector-prefix differ! '%s' != '%s'\n", i, sft1->name, sft2->name ); }
-	  /* exit (1); */  /* can't be too strict here, as we also allow v1-SFTs, which don't have detector-name */
-	}
+      XLAL_CHECK_MAIN( strcmp( sft1->name, sft2->name ) == 0, XLAL_EINVAL, "\nERROR SFT %d: detector-prefix differ! '%s' != '%s'\n", i, sft1->name, sft2->name );
 
       XLAL_CHECK_MAIN ( sft1->data->length == sft2->data->length, XLAL_EINVAL, "\nERROR SFT %d: lengths differ! %d != %d\n", i, sft1->data->length, sft2->data->length );
 

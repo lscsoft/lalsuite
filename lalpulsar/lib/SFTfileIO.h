@@ -65,7 +65,7 @@ extern "C" {
  * -# XLALLoadSFTs(): load a frequency-band into a single-IFO SFTVector defined by the catalogue, OR <br>
  * XLALLoadMultiSFTs(): load a frequency-band into a multi-IFO vector of SFTVectors defined by the catalogue
  *
- * <b>Note 1:</b> currently supported SFT file-formats are (merged or single) SFT-v1 and SFT-v2 files.
+ * <b>Note 1:</b> currently supported SFT file-formats are (merged or single) SFT-v2 files.
  * This might be extended in the future to support further file-formats (frames?).
  * None of the following API depends on the details of the underlying file-format. This will ensure that
  * codes using the following functions will NOT have to be changed irrespective of SFT file-format used.
@@ -84,7 +84,7 @@ extern "C" {
  * (e.g. "SFT.*", "SFT.000", "/some/path/some_files_[0-9]?.sft", etc ) and additional, optional SFTConstraints.
  *
  * The optional constraints are:
- * - detector-prefix (e.g. "H1", "H2", "L1", "G1", "V1", etc..)  [\em required for v1-SFTs!]
+ * - detector-prefix (e.g. "H1", "H2", "L1", "G1", "V1", etc..)
  * - GPS start-time + end-time
  * - a list of GPS-timestamps
  *
@@ -95,12 +95,7 @@ extern "C" {
  * <tt>[minStartTime, maxStartTime)</tt> MUST be found!]
  *
  * <b>Note 3:</b> XLALSFTdataFind() will refuse to return any SFTs without their detector-name
- * properly set. This applies only to v1-SFTs, for which you have to use constraints->detector,
- * so that the detector-name gets properly set.
- *
- * <b>Note 4:</b> One special constraint->detector is "??", which acts as if
- * constraints->detector==NULL, except that it allows v1-SFTs to be returned with
- * detector-name set to "??"'.
+ * properly set.
  *
  * The returned SFTCatalog is a vector of 'SFTDescriptor's describing one SFT, with the fields
  * - \c locator:  an opaque data-type describing where to read this SFT from.
@@ -118,7 +113,7 @@ extern "C" {
  *
  * <b>NOTE:</b> The SFTs in the returned catalogue are \em guaranteed to
  * - be sorted in order of increasing GPS-epoch
- * - contain a valid detector-name, except if constraints->detector=="??"
+ * - contain a valid detector-name
  *
  * <h4>Details to 2: load frequency-band from SFTs described in an SFTCatalog</h4>
  *

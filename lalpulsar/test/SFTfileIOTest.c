@@ -113,11 +113,6 @@ int main( void )
   CHAR detector[] = "H1";
   BOOLEAN crc_check;
 
-  /* band to read from infile.* SFTs */
-  REAL8 fMin = 1008.5;
-  REAL8 fMax = 1009.1;
-
-
   /* check that mal-formated SFTs are properly detected */
   XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad1", NULL ) ) == NULL, XLAL_EFUNC); XLALClearErrno();
   XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad2", NULL ) ) == NULL, XLAL_EFUNC); XLALClearErrno();
@@ -337,41 +332,6 @@ int main( void )
   /* compare the SFT vectors just read */
   if(CompareSFTVectors(sft_vect, sft_vect2))
     return EXIT_FAILURE;
-
-  XLALDestroySFTVector ( sft_vect2 );
-  sft_vect2 = NULL;
-  XLALDestroySFTVector ( sft_vect );
-  sft_vect = NULL;
-  XLALDestroySFTCatalog(catalog);
-
-  /* read v1-SFTs: 'inputsft.0' and 'inputsft.1' (one is big-endian, the other little-endian!) */
-  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "inputsft.?", &constraints ) ) != NULL, XLAL_EFUNC );
-  XLAL_CHECK_MAIN ( ( sft_vect = XLALLoadSFTs ( catalog, fMin, fMax ) ) != NULL, XLAL_EFUNC );
-  if ( sft_vect->length != 2 )
-    {
-      if ( lalDebugLevel ) XLALPrintError ("\nFailed to read in v1-SFTs 'inputsft.0' and 'inputsft.1'\n\n");
-      return EXIT_FAILURE;
-    }
-
-  /* read with XLALLoadSFTs() */
-  sft_vect2 = XLALLoadSFTs ( catalog, fMin, fMax );
-  if (!sft_vect2)
-    {
-      XLALPrintError ( "\nXLALLoadSFTs() call failed (where it should have succeeded)!\n\n");
-      return EXIT_FAILURE;
-    }
-
-  /* compare the SFT vectors just read */
-  if(CompareSFTVectors(sft_vect, sft_vect2))
-    return EXIT_FAILURE;
-
-  /* try to write this v1-SFTs as v2: should fail without detector-info ! */
-  strncpy( sft_vect->data[0].name, "??", 3 );
-  XLAL_CHECK_MAIN ( XLALWriteSFT2file(&(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!") != XLAL_SUCCESS, XLAL_EFUNC ); XLALClearErrno();
-
-  /* put detector there */
-  strcpy ( sft_vect->data[0].name, "H1" );
-  XLAL_CHECK_MAIN ( XLALWriteSFT2file(&(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroySFTVector ( sft_vect2 );
   sft_vect2 = NULL;

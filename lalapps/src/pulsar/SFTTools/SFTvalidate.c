@@ -114,10 +114,7 @@ int main(int argc, char** argv) {
       lastinfo=info;
       
       /* Move forward to next SFT in merged file */
-      if (info.version==1)
-	move=sizeof(struct headertag1)+info.nsamples*2*sizeof(float);
-      else
-	move=sizeof(struct headertag2)+info.nsamples*2*sizeof(float)+info.comment_length;
+      move=sizeof(struct headertag2)+info.nsamples*2*sizeof(float)+info.comment_length;
       fseek(fp, move, SEEK_CUR);
     }
     fclose(fp);

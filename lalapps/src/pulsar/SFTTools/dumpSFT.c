@@ -74,11 +74,8 @@ main(int argc, char *argv[])
   UserVariables_t XLAL_INIT_DECL(uvar);
   XLAL_CHECK ( XLALReadUserInput ( argc, argv, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  SFTConstraints XLAL_INIT_DECL(constraints);
-  CHAR detector[2] = "??";	/* allow reading v1-SFTs without detector-info */
-  constraints.detector = detector;
   SFTCatalog *catalog;
-  XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar.SFTfiles, &constraints )) != NULL, XLAL_EFUNC, "No SFTs matched your --SFTfiles query\n" );
+  XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar.SFTfiles, NULL )) != NULL, XLAL_EFUNC, "No SFTs matched your --SFTfiles query\n" );
   if ( XLALUserVarWasSet(&uvar.Nmax) && ( uvar.Nmax > catalog->length ) ) {
     XLALPrintWarning("Nmax=%u requested but SFT catalog has only %u entries. Returning them all.", uvar.Nmax, catalog->length);
   }

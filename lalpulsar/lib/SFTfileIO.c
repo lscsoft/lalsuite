@@ -61,7 +61,7 @@
 
 /*---------- DEFINES ----------*/
 
-#define MIN_SFT_VERSION 1
+#define MIN_SFT_VERSION 2
 #define MAX_SFT_VERSION 2
 
 #define TRUE    1
@@ -94,16 +94,6 @@ struct tagSFTLocator
   long offset;		/* SFT-offset with respect to a merged-SFT */
   UINT4 isft;           /* index of SFT this locator belongs to, used only in XLALLoadSFTs() */
 };
-
-typedef struct
-{
-  REAL8 version;
-  INT4 gps_sec;
-  INT4 gps_nsec;
-  REAL8 tbase;
-  INT4 first_frequency_index;
-  INT4 nsamples;
-} _SFT_header_v1_t;
 
 typedef struct
 {
@@ -146,7 +136,6 @@ static FILE * fopen_SFTLocator ( const struct tagSFTLocator *locator );
 static UINT4 read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp );
 static int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **SFTcomment, UINT4 *numBins );
 static int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **SFTcomment, BOOLEAN swapEndian);
-static int read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swapEndian);
 
 int compareSFTdesc(const void *ptr1, const void *ptr2);
 static int compareSFTloc(const void *ptr1, const void *ptr2);
@@ -241,7 +230,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 
   if ( constraints && constraints->detector )
     {
-      if ( (strncmp(constraints->detector, "??", 2) != 0) && !XLALIsValidCWDetector ( constraints->detector ) )
+      if ( !XLALIsValidCWDetector ( constraints->detector ) )
         {
           XLAL_ERROR_NULL ( XLAL_EDOM, "Invalid detector-constraint '%s'\n\n", constraints->detector );
         }
@@ -340,13 +329,9 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 	  /* but does this SFT-block satisfy the user-constraints ? */
 	  if ( constraints )
 	    {
-	      if ( constraints->detector && strncmp(constraints->detector, "??", 2) )
+	      if ( constraints->detector )
 		{
-		  /* v1-SFTs have '??' as detector-name */
-		  if ( ! strncmp (this_header.name, "??", 2 ) ) {
-		    strncpy ( this_header.name, constraints->detector, 2 );	/* SET to constraint! */
-                  }
-		  else if ( strncmp( constraints->detector, this_header.name, 2) ) {
+                  if ( strncmp( constraints->detector, this_header.name, 2) ) {
 		    want_this_block = FALSE;
                   }
 		}
@@ -491,16 +476,6 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 	first_header = this_header;
       }
 
-      /* dont give out v1-SFTs without detector-entry, except if constraint->detector="??" ! */
-      if ( !constraints || !constraints->detector || strncmp(constraints->detector, "??", 2) )
-	{
-	  if ( !strncmp ( this_header.name, "??", 2 ) )
-	    {
-	      XLALDestroySFTCatalog ( ret );
-	      XLAL_ERROR_NULL ( XLAL_EINVAL, "Pattern '%s' matched v1-SFTs but no detector-constraint given!\n\n", file_pattern);
-	    }
-	} /* if detector-constraint was not '??' */
-
       if ( this_header.deltaF != first_header.deltaF )
 	{
 	  XLALDestroySFTCatalog ( ret );
@@ -636,12 +611,9 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
   ret->f0 = 1.0 * firstBin2read * ret->deltaF;
 
   /* take care of normalization and endian-swapping */
-  if ( version == 1 || swapEndian )
+  if ( swapEndian )
     {
       UINT4 i;
-      REAL8 band = 1.0 * numSFTbins * ret->deltaF;/* need the TOTAL frequency-band in the SFT-file! */
-      REAL8 fsamp = 2.0 * band;
-      REAL8 dt = 1.0 / fsamp;
 
       for ( i=0; i < numBins2read; i ++ )
 	{
@@ -654,19 +626,9 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
 	      endian_swap( (CHAR *) &im, sizeof ( im ), 1 );
 	    }
 
-	  /* if the SFT-file was in v1-Format: need to renormalize the data now by 'Delta t'
-	   * in order to follow the correct SFT-normalization
-	   * (see LIGO-T040164-01-Z, and LIGO-T010095-00)
-	   */
-	  if ( version == 1 )
-	    {
-	      re *= dt;
-	      im *= dt;
-	    }
-
           ret->data->data[i] = crectf( re, im );
 	} /* for i < numBins2read */
-    } /* if SFT-v1 */
+    } /* swapEndian */
 
   /* return last bin read */
   return(lastBin2read);
@@ -1294,10 +1256,7 @@ XLALReadMultiTimestampsFilesConstrained ( const LALStringVector *fnames, const L
  * Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a FILE pointer.
  * Add the comment to SFT if SFTcomment != NULL.
  *
- * NOTE: Currently this only supports writing v2-SFTs.
- * If you need to write a v1-SFT, you should use LALWrite_v2SFT_to_v1file()
- *
- * NOTE2: the comment written into the SFT-file contains the 'sft->name' field concatenated with
+ * NOTE: the comment written into the SFT-file contains the 'sft->name' field concatenated with
  * the user-specified 'SFTcomment'
  *
  */
@@ -1398,10 +1357,7 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
  * Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a v2-SFT file.
  * Add the comment to SFT if SFTcomment != NULL.
  *
- * NOTE: Currently this only supports writing v2-SFTs.
- * If you need to write a v1-SFT, you should use LALWrite_v2SFT_to_v1file()
- *
- * NOTE2: the comment written into the SFT-file contains the 'sft->name' field concatenated with
+ * NOTE: the comment written into the SFT-file contains the 'sft->name' field concatenated with
  * the user-specified 'SFTcomment'
  *
  */
@@ -1448,9 +1404,6 @@ XLALWriteSFT2file(
 /**
  * Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a directory.
  * Add the comment to SFT if SFTcomment != NULL.
- *
- * NOTE: Currently this only supports writing v2-SFTs.
- * If you need to write a v1-SFT, you should use LALWriteSFTfile()
  *
  * Output SFTs have naming convention following LIGO-T040164-01
  */
@@ -2160,26 +2113,18 @@ read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64
   if ( read_SFTversion_from_fp ( &ver, &need_swap, fp ) != 0 )
     return -1;
 
-
   /* read this SFT-header with version-specific code */
   XLAL_INIT_MEM(head);
 
-  switch( ver )
+  if ( ver == 2 )
     {
-    case 1:
-      if ( read_v1_header_from_fp ( fp, &head, &nsamples, need_swap ) != 0 )
-	goto failed;
-      break;
-
-    case 2:
       if ( read_v2_header_from_fp ( fp, &head, &nsamples, &header_crc, &ref_crc, &comm, need_swap ) != 0 )
-	goto failed;
-      break;
-
-    default:
+        goto failed;
+    }
+  else
+    {
       XLALPrintError ("\nUnsupported SFT-version %d.\n\n", ver);
       goto failed;
-      break;
     } /* switch(ver) */
 
 
@@ -2425,91 +2370,6 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
   return -1;
 
 } /* read_v2_header_from_fp() */
-
-
-/* ----- SFT v1 -specific header-reading function:
- *
- * return general SFTtype header, place filepointer at the end of the header if it succeeds,
- * set fp to initial position if it fails.
- * RETURN: 0 = OK, -1 = ERROR
- *
- * NOTE: fatal errors will produce a XLALPrintError() error-message, but
- * non-fatal 'SFT-format'-errors will only output error-messages if lalDebugLevel > 0.
- *
- */
-static int
-read_v1_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, BOOLEAN swapEndian)
-{
-  _SFT_header_v1_t rawheader;
-  long save_filepos;
-
-  if ( !fp || !header || !nsamples)
-    {
-      XLALPrintError ( "\nERROR read_v1_header_from_fp(): called with NULL input!\n\n");
-      return -1;
-    }
-
-  /* store fileposition for restoring in case of failure */
-  if ( ( save_filepos = ftell(fp) ) == -1 )
-    {
-      XLALPrintError ("\nftell() failed: %s\n\n", strerror(errno) );
-      return -1;
-    }
-
-  /* read the whole header */
-  if (fread( &rawheader, sizeof(rawheader), 1, fp) != 1)
-    {
-      if (lalDebugLevel) XLALPrintError ("\nCould not read v1-header. %s\n\n", strerror(errno) );
-      goto failed;
-    }
-
-  if (swapEndian)
-    {
-      endian_swap((CHAR*)(&rawheader.version), 			sizeof(rawheader.version) 		, 1);
-      endian_swap((CHAR*)(&rawheader.gps_sec), 			sizeof(rawheader.gps_sec) 		, 1);
-      endian_swap((CHAR*)(&rawheader.gps_nsec), 		sizeof(rawheader.gps_nsec) 		, 1);
-      endian_swap((CHAR*)(&rawheader.tbase), 			sizeof(rawheader.tbase) 		, 1);
-      endian_swap((CHAR*)(&rawheader.first_frequency_index), 	sizeof(rawheader.first_frequency_index) , 1);
-      endian_swap((CHAR*)(&rawheader.nsamples), 		sizeof(rawheader.nsamples) 		, 1);
-    }
-
-  /* double-check version-number */
-  if ( rawheader.version != 1 )
-    {
-      XLALPrintError ("\nWrong SFT-version %g in read_v1_header_from_fp()\n\n", rawheader.version );
-      goto failed;
-    }
-
-  if ( rawheader.nsamples <= 0 )
-    {
-      XLALPrintError ("\nNon-positive number of samples in SFT!\n\n");
-      goto failed;
-    }
-
-
-  /* ok: */
-  memset ( header, 0, sizeof( *header ) );
-
-  /* NOTE: v1-SFTs don't contain a detector-name, in which case we set it to '??' */
-  strcpy ( header->name, "??" );
-
-  header->epoch.gpsSeconds 	= rawheader.gps_sec;
-  header->epoch.gpsNanoSeconds 	= rawheader.gps_nsec;
-  header->deltaF 		= 1.0 / rawheader.tbase;
-  header->f0 			= rawheader.first_frequency_index / rawheader.tbase;
-
-  (*nsamples) = rawheader.nsamples;
-
-  return 0;
-
- failed:
-  /* restore filepointer initial position  */
-  if ( fseek ( fp, save_filepos, SEEK_SET ) == -1 )
-    XLALPrintError ("\nfseek() failed to return to intial fileposition: %s\n\n", strerror(errno) );
-
-  return -1;
-
-} /* read_v1_header_from_fp() */
 
 
 /* a little endian-swapper needed for SFT reading/writing */
