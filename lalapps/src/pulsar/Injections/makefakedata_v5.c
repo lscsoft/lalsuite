@@ -144,8 +144,6 @@ typedef struct
 
   INT4 randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
 
-  // ---------- DEPRECATED and DEFUNCT options ----------
-  CHAR *TDDframedir;		/**< DEPRECATED: use outFrameDir instead */
 } UserVariables_t;
 
 
@@ -589,11 +587,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
         } // for X < numDetectors
     } // if inFrames
 
-  // if user requested timeseries *output* to frame files, handle deprecated options
-  XLAL_CHECK ( !(uvar->TDDframedir && uvar->outFrameDir), XLAL_EINVAL, "Specify only ONE of {--TDDframedir or --outFrameDir} or NONE\n");
-  if ( uvar->TDDframedir ) {
-    cfg->outFrameDir = uvar->TDDframedir;
-  } else if ( uvar->outFrameDir ) {
+  if ( uvar->outFrameDir ) {
     cfg->outFrameDir = uvar->outFrameDir;
   }
 #endif
@@ -676,15 +670,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   // ----- 'expert-user/developer' options ----- (only shown in help at lalDebugLevel >= warning)
   XLALRegisterUvarMember(   randSeed,             INT4, 0, DEVELOPER, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
   XLALRegisterUvarMember(  sourceDeltaT,        REAL8,  0, DEVELOPER, "Source-frame sampling period. '0' implies previous internal defaults" );
-
-  // ----- deprecated but still supported options [throw warning if used] (only shown in help at lalDebugLevel >= info) ----------
-#ifdef HAVE_LIBLALFRAME
-  XLALRegisterUvarMember ( TDDframedir,	STRING,  0,  DEPRECATED, "Use --outFrameDir instead");
-#else
-  XLALRegisterUvarMember ( TDDframedir,	 STRING, 0,  DEFUNCT,   "Need to compile with lalframe support. BUT this option is deprecated and --outFrameDir should be used instead");
-#endif
-  // ----- obsolete and unsupported options [throw error if used] (never shown in help) ----------
-
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
