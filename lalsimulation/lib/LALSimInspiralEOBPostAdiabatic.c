@@ -23,8 +23,10 @@
 #include "LALSimIMRSpinEOB.h"
 
 #include "LALSimIMRSpinEOBHamiltonian.c"
-#include "LALSimIMRSpinEOBFactorizedFlux.c"
+// #include "LALSimIMRSpinEOBFactorizedFlux.c"
 #include "LALSimIMREOBNewtonianMultipole.c"
+
+#include "LALSimIMRSpinEOBFactorizedFlux_PA.c"
 
 int
 XLALSimInspiralEOBPACalculateRadialGrid(
@@ -798,7 +800,7 @@ XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstarBetter(
     LALDict *LALParams
 )
 {
-	UNUSED REAL8 eightOrderCoeffs[9][9] = {
+	REAL8 eightOrderCoeffs[9][9] = {
 		{-761./280., 8., -14., 56./3., -35./2., 56./5., -14./3., 8./7., -1./8.},
 		{-1./8., -223./140., 7./2., -7./2., 35./12., -7./4., 7./10., -1./6., 1./56.},
 		{1./56., -2./7., -19./20., 2., -5./4., 2./3., -1./4., 2./35., -1./168.},
@@ -1022,7 +1024,17 @@ XLALSimInspiralEOBPAHamiltonianWrapper(
     UINT4 tortoiseFlag;
     tortoiseFlag = 1;
 
-    H = XLALSimIMRSpinEOBHamiltonian(nu, xCartVec, pCartVec, a1CartVec, a2CartVec, aKCartVec, SstarCartVec, tortoiseFlag, seobCoeffs);
+    H = XLALSimIMRSpinEOBHamiltonian(
+    		nu,
+    		xCartVec,
+    		pCartVec,
+    		a1CartVec,
+    		a2CartVec,
+    		aKCartVec,
+    		SstarCartVec,
+    		tortoiseFlag,
+    		seobCoeffs
+    	);
     H /= nu;
 
     return H;
@@ -1065,8 +1077,15 @@ XLALSimInspiralEOBPAFluxWrapper(
 	const UINT4 SpinAlignedEOBversion = 4;
 	
  	REAL8 Flux;
-
-    Flux = XLALInspiralSpinFactorizedFlux(polarDynamics, nqcCoeffs, omega, seobParams, H, lMax, SpinAlignedEOBversion);
+    Flux = XLALInspiralSpinFactorizedFlux_PA(
+    			polarDynamics,
+    			nqcCoeffs,
+    			omega,
+    			seobParams,
+    			H,
+    			lMax,
+    			SpinAlignedEOBversion
+    		);
     Flux /= nu;
     Flux *= -1.;
 
@@ -1306,7 +1325,7 @@ XLALSimInspiralEOBPostAdiabatic(
     *phiVec = XLALCumulativeIntegral3(rVec, dphiBydrVec);
 
     UINT4 i;
-    
+
     for (i = 0; i < rSize; i++)
     {
         printf("%.18e %.18e %.18e %.18e %.18e\n", tVec->data[i], rVec->data[i], phiVec->data[i], prstarVec->data[i], pphiVec->data[i]);

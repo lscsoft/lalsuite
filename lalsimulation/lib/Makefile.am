@@ -268,6 +268,7 @@ noinst_HEADERS = \
 	LALSimInspiralEOBPostAdiabatic.c \
 	LALSimInspiralEOBPANumericalFuncs.c \
 	LALSimInspiralEOBPAAuxiliaryFuncs.c \
+	LALSimIMRSpinEOBFactorizedFlux_PA.c \
 	LALSimInspiralEOBPostAdiabatic.h
         $(END_OF_LIST)
 
