@@ -116,13 +116,11 @@ int
 XLALSimInspiralEOBPACalculateAdiabaticDynamics(
     REAL8Vector *rVec,
     REAL8Vector *phiVec,
-    REAL8Vector *dphiBydrVec,
     REAL8Vector *prstarVec,
     REAL8Vector *pphiVec,
     REAL8Vector *pphi0Vec,
     REAL8Vector *dpphiBydrVec,
     REAL8Vector *dpphiBydr0Vec,
-    REAL8Vector *dtBydrVec,
     REAL8Vector *csiVec,
     REAL8Vector *omegaVec,
     SpinEOBParams *seobParams,

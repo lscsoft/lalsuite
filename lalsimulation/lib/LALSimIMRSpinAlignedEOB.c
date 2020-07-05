@@ -1464,7 +1464,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     values->data[2] = dynamicsPA->data[4*rSize-1];
     values->data[3] = dynamicsPA->data[5*rSize-1];
 
-    exit(0);
+    eobParams.rad = values->data[0];
   }
 
   /*
