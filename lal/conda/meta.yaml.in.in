@@ -5,7 +5,7 @@
 # production-ready at any time.
 
 {% set name = "lal" %}
-{% set version = "@VERSION@" %}
+{% set version = "@VERSION@".replace('-', '.') %}
 {% set url = "file://@TARBALL@" %}
 {% set sha256 = "@SHA256@" %}
 
