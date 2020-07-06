@@ -250,6 +250,7 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
 		printf("Root finding status: %d\n", status);
 	}
 
+	gsl_root_fsolver_free (solver);
     return XLAL_SUCCESS;
 }
 
