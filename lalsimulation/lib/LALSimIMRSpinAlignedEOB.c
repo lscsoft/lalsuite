@@ -695,8 +695,8 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 				     /**<< z-component of spin-1, dimensionless */
 				     const REAL8 spin2z,
 				      /**<< z-component of spin-2, dimensionless */
-                     UINT4 SpinAlignedEOBversion,
-                     /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM */
+             UINT4 SpinAlignedEOBversion,
+             /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM */
 				     const REAL8 lambda2Tidal1,
                      /**<< dimensionless adiabatic quadrupole tidal deformability for body 1 (2/3 k2/C^5) */
 				     const REAL8 lambda2Tidal2,
@@ -1549,6 +1549,91 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
       XLAL_ERROR (XLAL_EFUNC);
     }
 
+  if (postAdiabaticFlag)
+  {
+    const INT4 PALen = dynamicsPA->dimLength->data[1];
+
+    REAL8 tStepInterp = dynamics->data[1]-dynamics->data[0];
+    const INT4 nInterp = (int) (dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp;
+
+    printf("%d\n", nInterp);
+
+    UNUSED double tVecInterp[200];
+    UNUSED double rVecInterp[200];
+    UNUSED double phiVecInterp[200];
+    UNUSED double prVecInterp[200];
+    UNUSED double pphiVecInterp[200];
+
+    for (i = 0; i < PALen; i++)
+    {
+      tVecInterp[i] = dynamicsPA->data[i];
+      rVecInterp[i] = dynamicsPA->data[PALen + i];
+      phiVecInterp[i] = dynamicsPA->data[2*PALen + i];
+      prVecInterp[i] = dynamicsPA->data[3*PALen + i];
+      pphiVecInterp[i] = dynamicsPA->data[4*PALen + i];
+    }
+
+    gsl_interp_accel *acc1 = gsl_interp_accel_alloc();
+    gsl_spline *spline1 = gsl_spline_alloc(gsl_interp_cspline, 200);
+    gsl_spline_init(spline1, tVecInterp, rVecInterp, 200);
+
+    gsl_interp_accel *acc2 = gsl_interp_accel_alloc();
+    gsl_spline *spline2 = gsl_spline_alloc(gsl_interp_cspline, 200);
+    gsl_spline_init(spline2, tVecInterp, phiVecInterp, 200);
+
+    gsl_interp_accel *acc3 = gsl_interp_accel_alloc();
+    gsl_spline *spline3 = gsl_spline_alloc(gsl_interp_cspline, 200);
+    gsl_spline_init(spline3, tVecInterp, prVecInterp, 200);
+
+    gsl_interp_accel *acc4 = gsl_interp_accel_alloc();
+    gsl_spline *spline4 = gsl_spline_alloc(gsl_interp_cspline, 200);
+    gsl_spline_init(spline4, tVecInterp, pphiVecInterp, 200);
+
+
+    REAL8Array *interpDynamicsPA = NULL;
+    interpDynamicsPA = XLALCreateREAL8ArrayL(2, 5, nInterp);
+
+    for (i = 0; i < nInterp; i++)
+    {
+      interpDynamicsPA->data[i] = i * tStepInterp;
+      interpDynamicsPA->data[nInterp + i] = gsl_spline_eval(spline1, interpDynamicsPA->data[i], acc1);
+      interpDynamicsPA->data[2*nInterp + i] = gsl_spline_eval(spline2, interpDynamicsPA->data[i], acc2);
+      interpDynamicsPA->data[3*nInterp + i] = gsl_spline_eval(spline3, interpDynamicsPA->data[i], acc3);
+      interpDynamicsPA->data[4*nInterp + i] = gsl_spline_eval(spline4, interpDynamicsPA->data[i], acc4);
+    }
+
+    REAL8 tOffset = interpDynamicsPA->data[nInterp - 1];
+    REAL8 phiOffset = interpDynamicsPA->data[3*nInterp - 1];
+
+    const INT4 combinedLen = nInterp + retLen - 1;
+
+    REAL8Array *combinedDynamics = NULL;
+    combinedDynamics = XLALCreateREAL8ArrayL(2, 5, combinedLen);
+
+    for (i = 0; i < nInterp; i++)
+    {
+      combinedDynamics->data[i] = interpDynamicsPA->data[i];
+      combinedDynamics->data[combinedLen + i] = interpDynamicsPA->data[nInterp + i];
+      combinedDynamics->data[2*combinedLen + i] = interpDynamicsPA->data[2*nInterp + i];
+      combinedDynamics->data[3*combinedLen + i] = interpDynamicsPA->data[3*nInterp + i];
+      combinedDynamics->data[4*combinedLen + i] = interpDynamicsPA->data[4*nInterp + i];
+    }
+
+    for (i = 1; i < retLen; i++)
+    {
+      combinedDynamics->data[PALen + i - 1] = dynamics->data[i] + tOffset;
+      combinedDynamics->data[combinedLen + PALen + i - 1] = dynamics->data[retLen + i];
+      combinedDynamics->data[2*combinedLen + PALen + i - 1] = dynamics->data[2*retLen + i] + phiOffset;
+      combinedDynamics->data[3*combinedLen + PALen + i - 1] = dynamics->data[3*retLen + i];
+      combinedDynamics->data[4*combinedLen + PALen + i - 1] = dynamics->data[4*retLen + i];
+    } 
+
+    dynamics->dimLength->data[1] = combinedLen;
+    *dynamics = *combinedDynamics;
+
+    retLen = combinedLen;
+  }
+  
   /* Set up pointers to the dynamics */
   // REAL8Vector tVec;
   // tVec.data = dynamics->data;

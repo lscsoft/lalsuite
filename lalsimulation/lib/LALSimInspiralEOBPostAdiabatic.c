@@ -946,7 +946,7 @@ XLALSimInspiralEOBPAHamiltonianWrapper(
 	pCartVec.data = pCart;
 
 	REAL8Vector a1CartVec, a2CartVec, aKCartVec, SstarCartVec;
-	a1CartVec.length = a2CartVec.length = aKCartVec.length = SstarCartVec.length =  3;
+	a1CartVec.length = a2CartVec.length = aKCartVec.length = SstarCartVec.length = 3;
 	REAL8 spin1[3] = { 0., 0., a1 };
 	REAL8 spin2[3] = { 0., 0., a2 };
 	REAL8 aKV[3] = {0., 0., aK};
