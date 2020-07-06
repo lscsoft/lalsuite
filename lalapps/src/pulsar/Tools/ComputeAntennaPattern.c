@@ -77,7 +77,6 @@ typedef struct
   CHAR *ephemSun;	/**< Sun ephemeris file to use */
 
   LALStringVector* timeGPS;	/**< GPS timestamps to compute detector state for (REAL8 format) */
-  CHAR *timeStampsFile;		/**< alternative: read in timestamps from a single file (deprecated) */
   LALStringVector *timeStampsFiles;		/**< alternative: read in timestamps from file(s) */
   INT4 Tsft;			/**< assumed length of SFTs, needed for offset to timestamps when comparing to CFS_v2, PFS etc */
 
@@ -286,7 +285,6 @@ XLALInitUserVars ( UserVariables_t *uvar )
   uvar->skyGridFile = NULL;
 
   uvar->timeGPS = NULL;
-  uvar->timeStampsFile = NULL;
   uvar->outab = 0;
   uvar->outABCD = 0;
   uvar->singleIFOweighting = 0;
@@ -315,9 +313,6 @@ XLALInitUserVars ( UserVariables_t *uvar )
   XLALRegisterUvarMember(	outab,		STRING, 'o', OPTIONAL,	"output file for antenna pattern functions a(t), b(t) at each timestamp");
   XLALRegisterUvarMember(	outABCD,	STRING, 'O', OPTIONAL,	"output file for antenna pattern matrix elements A, B, C, D averaged over timestamps");
 
-  /* developer user variables */
-  XLALRegisterUvarMember(	timeStampsFile,	  STRING, 0, OPTIONAL,	"Alternative: single time-stamps file (deprecated, use --timeStampsFiles instead");
-
   return XLAL_SUCCESS;
 
 } /* XLALInitUserVars() */
@@ -340,13 +335,10 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
   XLAL_CHECK ( (cfg->numTimeStampsX = XLALCreateUINT4Vector ( cfg->numDetectors )) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector(%d) failed.", cfg->numDetectors );
 
   BOOLEAN haveTimeGPS = XLALUserVarWasSet( &uvar->timeGPS );
-  BOOLEAN haveTimeStampsFile = XLALUserVarWasSet( &uvar->timeStampsFile );
   BOOLEAN haveTimeStampsFiles = XLALUserVarWasSet( &uvar->timeStampsFiles );
 
-  XLAL_CHECK ( !(haveTimeStampsFiles && haveTimeStampsFile), XLAL_EINVAL, "Can't handle both timeStampsFiles and (deprecated) haveTimeStampsFiles input options." );
-  XLAL_CHECK ( !(haveTimeGPS && haveTimeStampsFile), XLAL_EINVAL, "Can't handle both (deprecated) timeStampsFile and timeGPS input options." );
   XLAL_CHECK ( !(haveTimeGPS && haveTimeStampsFiles), XLAL_EINVAL, "Can't handle both timeStampsFiles and timeGPS input options." );
-  XLAL_CHECK ( haveTimeGPS || haveTimeStampsFiles || haveTimeStampsFile, XLAL_EINVAL, "Need either timeStampsFiles or timeGPS input option." );
+  XLAL_CHECK ( haveTimeGPS || haveTimeStampsFiles, XLAL_EINVAL, "Need either timeStampsFiles or timeGPS input option." );
   if ( haveTimeStampsFiles ) {
     XLAL_CHECK ( (uvar->timeStampsFiles->length == 1 ) || ( uvar->timeStampsFiles->length == cfg->numDetectors ), XLAL_EINVAL, "Length of timeStampsFiles list is neither 1 (one file for all detectors) nor does it match the number of detectors. (%d != %d)", uvar->timeStampsFiles->length, cfg->numDetectors );
     XLAL_CHECK ( (uvar->timeStampsFiles->length == 1 ) || !uvar->outab, XLAL_EINVAL, "At the moment, can't produce a(t), b(t) output (--outab) when given per-IFO --timeStampsFiles.");
@@ -387,9 +379,6 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
      CHAR *singleTimeStampsFile = NULL;
      if ( haveTimeStampsFiles ) {
       singleTimeStampsFile = uvar->timeStampsFiles->data[0];
-     }
-     else if ( haveTimeStampsFile ) {
-      singleTimeStampsFile = uvar->timeStampsFile;
      }
 
      XLAL_CHECK ( ( cfg->multiTimestamps->data[0] = XLALReadTimestampsFile ( singleTimeStampsFile ) ) != NULL, XLAL_EFUNC );
