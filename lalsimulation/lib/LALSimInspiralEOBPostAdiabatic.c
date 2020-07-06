@@ -253,16 +253,14 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
     return XLAL_SUCCESS;
 }
 
-REAL8Vector
+int
 XLALReverseREAL8Vector(
-	REAL8Vector *Vec
+		       REAL8Vector *Vec,
+		       REAL8Vector *reverseVec
 )
 {
 	UINT4 vecLength;
 	vecLength = Vec->length;
-
-	REAL8Vector *reverseVec = XLALCreateREAL8Vector(vecLength);
-	memset(reverseVec->data, 0, reverseVec->length * sizeof(REAL8));
 
 	UINT4 i;
 
@@ -271,20 +269,18 @@ XLALReverseREAL8Vector(
 		reverseVec->data[i] = Vec->data[vecLength-i-1];
 	}
 
-	return *reverseVec;
+	return XLAL_SUCCESS;
 }
 
-REAL8Vector
+int
 XLALOffsetREAL8Vector(
 	REAL8Vector *Vec,
-	REAL8 offset
+	REAL8 offset,
+	REAL8Vector *offsetVec
 )
 {
 	UINT4 vecLength;
 	vecLength = Vec->length;
-
-	REAL8Vector *offsetVec = XLALCreateREAL8Vector(vecLength);
-	memset(offsetVec->data, 0, offsetVec->length * sizeof(REAL8));
 
 	UINT4 i;
 
@@ -293,20 +289,18 @@ XLALOffsetREAL8Vector(
 		offsetVec->data[i] = Vec->data[i] + offset;
 	}
 
-	return *offsetVec;
+	return XLAL_SUCCESS;
 }
 
-REAL8Vector
+int
 XLALRescaleREAL8Vector(
 	REAL8Vector *Vec,
-	REAL8 factor
+	REAL8 factor,
+	REAL8Vector *rescaledVec
 )
 {
 	UINT4 vecLength;
 	vecLength = Vec->length;
-
-	REAL8Vector *rescaledVec = XLALCreateREAL8Vector(vecLength);
-	memset(rescaledVec->data, 0, rescaledVec->length * sizeof(REAL8));
 
 	UINT4 i;
 
@@ -315,7 +309,7 @@ XLALRescaleREAL8Vector(
 		rescaledVec->data[i] = factor * Vec->data[i];
 	}
 
-	return *rescaledVec;
+	return XLAL_SUCCESS;
 }
 
 int
@@ -326,7 +320,7 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 	REAL8Vector *pphiVec,
 	REAL8Vector *pphi0Vec,
 	REAL8Vector *dpphiBydrVec,
-	REAL8Vector *dpphiBydr0Vec,
+	UNUSED REAL8Vector *dpphiBydr0Vec,
 	REAL8Vector *csiVec,
 	REAL8Vector *omegaVec,
 	SpinEOBParams *seobParams,
@@ -343,9 +337,6 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 
 	REAL8 DeltaT;
 	REAL8 DeltaR;
-
-	REAL8Vector *fluxVec = XLALCreateREAL8Vector(rSize);
-	memset(fluxVec->data, 0, fluxVec->length * sizeof(REAL8));
 	struct PostAdiabaticRootSolveParams pphiParams;
 	for (i = 0; i < rSize; i++)
 	{
@@ -408,18 +399,13 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 	REAL8Vector *dpphiBydrReverseVec = XLALCreateREAL8Vector(rSize);
 	memset(dpphiBydrReverseVec->data, 0, dpphiBydrReverseVec->length * sizeof(REAL8));
 
-	*rReverseVec = XLALReverseREAL8Vector(rVec);
-    *pphiReverseVec = XLALReverseREAL8Vector(pphiVec);
-
-    *dpphiBydrReverseVec = XLALFDDerivative1Order8(rReverseVec, pphiReverseVec);
-
-    *dpphiBydrVec = XLALReverseREAL8Vector(dpphiBydrReverseVec);
-    *dpphiBydr0Vec = XLALReverseREAL8Vector(dpphiBydrReverseVec);
-
+	XLALReverseREAL8Vector(rVec,rReverseVec);
+	XLALReverseREAL8Vector(pphiVec,pphiReverseVec);
+	XLALFDDerivative1Order8(rReverseVec, pphiReverseVec,dpphiBydrReverseVec);
+	XLALReverseREAL8Vector(dpphiBydrReverseVec,dpphiBydrVec);
     XLALDestroyREAL8Vector(rReverseVec);
     XLALDestroyREAL8Vector(pphiReverseVec);
     XLALDestroyREAL8Vector(dpphiBydrReverseVec);
-    XLALDestroyREAL8Vector(fluxVec);
 
 	return XLAL_SUCCESS;
 }
@@ -454,7 +440,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 
 	REAL8Vector *rReverseVec = XLALCreateREAL8Vector(rSize);
 	memset(rReverseVec->data, 0, rReverseVec->length * sizeof(REAL8));
-	*rReverseVec = XLALReverseREAL8Vector(rVec);
+	XLALReverseREAL8Vector(rVec,rReverseVec);
 
 	REAL8Vector *pphiReverseVec = XLALCreateREAL8Vector(rSize);
 	memset(pphiReverseVec->data, 0, pphiReverseVec->length * sizeof(REAL8));
@@ -488,7 +474,6 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 			    prstarParams.LALParams = LALParams;
 			    prstarParams.seobParams = seobParams;
 			    prstarParams.nqcCoeffs = nqcCoeffs;
-
     			REAL8 x_lower;
 			    REAL8 x_upper;
 
@@ -532,9 +517,10 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 				
 	    	}
 
-	    	*prstarReverseVec = XLALReverseREAL8Vector(prstarVec);
-		    *dprstarBydrReverseVec = XLALFDDerivative1Order8(rReverseVec, prstarReverseVec);
-		    *dprstarBydrVec = XLALReverseREAL8Vector(dprstarBydrReverseVec);
+			XLALReverseREAL8Vector(prstarVec,prstarReverseVec);
+			memset(dprstarBydrReverseVec->data, 0, dprstarBydrReverseVec->length * sizeof(REAL8)); // Otherwise we are in trouble
+			XLALFDDerivative1Order8(rReverseVec, prstarReverseVec,dprstarBydrReverseVec);
+			XLALReverseREAL8Vector(dprstarBydrReverseVec,dprstarBydrVec);
 		}
 		else
 		{
@@ -577,9 +563,10 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 
 	    	}
 
-	    	*pphiReverseVec = XLALReverseREAL8Vector(pphiVec);
-			*dpphiBydrReverseVec = XLALFDDerivative1Order8(rReverseVec, pphiReverseVec);
-			*dpphiBydrVec = XLALReverseREAL8Vector(dpphiBydrReverseVec);
+			XLALReverseREAL8Vector(pphiVec,pphiReverseVec);
+			memset(dpphiBydrReverseVec->data, 0, dpphiBydrReverseVec->length * sizeof(REAL8)); // Otherwise we are in trouble
+			XLALFDDerivative1Order8(rReverseVec, pphiReverseVec,dpphiBydrReverseVec);
+			XLALReverseREAL8Vector(dpphiBydrReverseVec,dpphiBydrVec);
 		}
 	}
 
@@ -1249,7 +1236,7 @@ XLALSimInspiralEOBPostAdiabatic(
 		LALparams
 	);
 
- 	*rReverseVec = XLALReverseREAL8Vector(rVec);
+ 	XLALReverseREAL8Vector(rVec,rReverseVec);
 
 	if (PAOrder > 0)
 	{
@@ -1270,9 +1257,9 @@ XLALSimInspiralEOBPostAdiabatic(
 		);
 	}
 
-    *tVec = XLALCumulativeIntegral3(rVec, dtBydrVec);
+	XLALCumulativeIntegral3(rVec, dtBydrVec, tVec);
 
-    *phiVec = XLALCumulativeIntegral3(rVec, dphiBydrVec);
+	XLALCumulativeIntegral3(rVec, dphiBydrVec, phiVec);
 
     UINT4 i;
     
@@ -1301,5 +1288,32 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	*dynamics = outputDynamics;
 
+
+
+	XLALDestroyREAL8Vector(tVec);
+	XLALDestroyREAL8Vector(tReverseVec);
+	XLALDestroyREAL8Vector(rVec);
+	XLALDestroyREAL8Vector(rReverseVec);
+	XLALDestroyREAL8Vector(phiVec);
+	XLALDestroyREAL8Vector(phiReverseVec);
+	XLALDestroyREAL8Vector(prstarVec);
+	XLALDestroyREAL8Vector(pphiVec);
+	XLALDestroyREAL8Vector(pphiReverseVec);
+	XLALDestroyREAL8Vector(pphi0Vec);
+	XLALDestroyREAL8Vector(omegaVec);
+	XLALDestroyREAL8Vector(fluxVec);
+	XLALDestroyREAL8Vector(csiVec);
+	XLALDestroyREAL8Vector(prstarReverseVec);
+	XLALDestroyREAL8Vector(dprstarBydrVec );
+	XLALDestroyREAL8Vector(dpphiBydrVec);
+	XLALDestroyREAL8Vector(dpphiBydr0Vec);
+	XLALDestroyREAL8Vector(dpphiBydrReverseVec);
+	XLALDestroyREAL8Vector(dprstarBydrReverseVec);
+	XLALDestroyREAL8Vector(dphiBydrVec);
+	XLALDestroyREAL8Vector(dphiBydrReverseVec);
+	XLALDestroyREAL8Vector(dtBydrVec);
+	XLALDestroyREAL8Vector(dtBydrReverseVec);
+
+	XLALDestroyDict(LALparams);
     return XLAL_SUCCESS;
 }

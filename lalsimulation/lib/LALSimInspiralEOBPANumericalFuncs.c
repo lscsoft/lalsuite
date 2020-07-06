@@ -47,10 +47,11 @@ XLALPostAdiabaticSplineDerivative(
     return *splineDerivative;
 }
 
-REAL8Vector
+int
 XLALFDDerivative1Order4(
 	REAL8Vector *XVec,
-	REAL8Vector *YVec)
+	REAL8Vector *YVec,
+	REAL8Vector *derivativeVec)
 {
 	REAL8 fourthOrderCoeffs[5][5] = {
 		{-25./12., 4., -3., 4./3., -1./4.},
@@ -63,9 +64,6 @@ XLALFDDerivative1Order4(
 
 	UINT4 vecLength;
 	vecLength = XVec->length;
-
-	REAL8Vector *derivativeVec = XLALCreateREAL8Vector(vecLength);
-	memset(derivativeVec->data, 0, derivativeVec->length * sizeof(REAL8));
 
 	REAL8 h;
 	h = fabs(XVec->data[0] - XVec->data[1]);
@@ -114,13 +112,14 @@ XLALFDDerivative1Order4(
 		derivativeVec->data[i] /= h;
 	}
 	
-    return *derivativeVec;
+    return XLAL_SUCCESS;
 }
 
-REAL8Vector
+int
 XLALFDDerivative1Order2(
 	REAL8Vector *XVec,
-	REAL8Vector *YVec)
+	REAL8Vector *YVec,
+	REAL8Vector *derivativeVec)
 {
 	REAL8 secondOrderCoeffs[3][3] = {
 		{-3./2., 2, -1./2.},
@@ -131,8 +130,6 @@ XLALFDDerivative1Order2(
 	UINT4 vecLength;
 	vecLength = XVec->length;
 
-	REAL8Vector *derivativeVec = XLALCreateREAL8Vector(vecLength);
-	memset(derivativeVec->data, 0, derivativeVec->length * sizeof(REAL8));
 
 	REAL8 h;
 	h = fabs(XVec->data[0] - XVec->data[1]);
@@ -167,13 +164,14 @@ XLALFDDerivative1Order2(
 		derivativeVec->data[i] /= h;
 	}
 	
-    return *derivativeVec;
+    return XLAL_SUCCESS;
 }
 
-REAL8Vector
+int
 XLALFDDerivative1Order6(
 	REAL8Vector *XVec,
-	REAL8Vector *YVec)
+	REAL8Vector *YVec,
+	REAL8Vector *derivativeVec)
 {
 	REAL8 sixthOrderCoeffs[7][7] = {
 		{-49./20., 6., -15./2., 20./3., -15./4., 6./5., -1./6.},
@@ -188,8 +186,6 @@ XLALFDDerivative1Order6(
 	UINT4 vecLength;
 	vecLength = XVec->length;
 
-	REAL8Vector *derivativeVec = XLALCreateREAL8Vector(vecLength);
-	memset(derivativeVec->data, 0, derivativeVec->length * sizeof(REAL8));
 
 	REAL8 h;
 	h = fabs(XVec->data[0] - XVec->data[1]);
@@ -252,13 +248,15 @@ XLALFDDerivative1Order6(
 		derivativeVec->data[i] /= h;
 	}
 	
-    return *derivativeVec;
+    return XLAL_SUCCESS;
 }
 
-REAL8Vector
+
+int
 XLALFDDerivative1Order8(
 	REAL8Vector *XVec,
-	REAL8Vector *YVec)
+	REAL8Vector *YVec,
+	REAL8Vector *derivativeVec)
 {
 	REAL8 eightOrderCoeffs[9][9] = {
 		{-761./280., 8., -14., 56./3., -35./2., 56./5., -14./3., 8./7., -1./8.},
@@ -275,8 +273,6 @@ XLALFDDerivative1Order8(
 	UINT4 vecLength;
 	vecLength = XVec->length;
 
-	REAL8Vector *derivativeVec = XLALCreateREAL8Vector(vecLength);
-	memset(derivativeVec->data, 0, derivativeVec->length * sizeof(REAL8));
 
 	REAL8 h;
 	h = fabs(XVec->data[0] - XVec->data[1]);
@@ -352,14 +348,15 @@ XLALFDDerivative1Order8(
 
 		derivativeVec->data[i] /= h;
 	}
-	
-    return *derivativeVec;
+
+	return XLAL_SUCCESS;
 }
 
-REAL8Vector
+int
 XLALCumulativeIntegral3(
 	REAL8Vector *XVec,
-	REAL8Vector *YVec)
+	REAL8Vector *YVec,
+	REAL8Vector *integralVec)
 {
 	UINT4 vecLength;
 	vecLength = XVec->length;
@@ -400,8 +397,8 @@ XLALCumulativeIntegral3(
 	Y2 = &YVecExt->data[2];
 	Y3 = &YVecExt->data[3];
 
-	REAL8Vector *integralVec = XLALCreateREAL8Vector(vecLength);
-	memset(integralVec->data, 0, integralVec->length * sizeof(REAL8));
+	//REAL8Vector *integralVec = XLALCreateREAL8Vector(vecLength);
+	//memset(integralVec->data, 0, integralVec->length * sizeof(REAL8));
 
 	for (i=0; i < vecLength-1; i++)
 	{
@@ -414,7 +411,9 @@ XLALCumulativeIntegral3(
 		g = 0.5 * (Y1[i]+Y2[i]);
 		z = b*g + oo12*b*b*(c*b*(2*c+b)*(c+b)*d-a*c*(c-a)*(2*c+2*a+3*b)*e-a*b*(2*a+b)*(a+b)*h)/(a*c*(a+b)*(c+b)*(c+a+b));
 		integralVec->data[i+1] = integralVec->data[i] + z;
-	}
+	}	
+	XLALDestroyREAL8Vector(XVecExt);
+	XLALDestroyREAL8Vector(YVecExt);
 
-	return *integralVec;
+	return XLAL_SUCCESS;
 }

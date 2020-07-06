@@ -208,21 +208,24 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
     REAL8 relTol
 );
 
-REAL8Vector
+int
 XLALReverseREAL8Vector(
-    REAL8Vector *Vec
+		       REAL8Vector *Vec,
+		       REAL8Vector *reverseVec
 );
 
-REAL8Vector
+int
 XLALOffsetREAL8Vector(
     REAL8Vector *Vec,
-    REAL8 offset
+    REAL8 offset,
+    REAL8Vector *offsetVec
 );
 
-REAL8Vector
+int
 XLALRescaleREAL8Vector(
     REAL8Vector *Vec,
-    REAL8 factor
+    REAL8 factor,
+    REAL8Vector *offsetVec
 );
 
 REAL8Vector
@@ -231,34 +234,39 @@ XLALPostAdiabaticSplineDerivative(
     REAL8Vector *VecY
 );
 
-REAL8Vector
+int
 XLALFDDerivative1Order2(
     REAL8Vector *XVec,
-    REAL8Vector *YVec
+    REAL8Vector *YVec,
+    REAL8Vector *derivativeVec
 );
 
-REAL8Vector
+int
 XLALFDDerivative1Order4(
     REAL8Vector *XVec,
-    REAL8Vector *YVec
+    REAL8Vector *YVec,
+    REAL8Vector *derivativeVec
 );
 
-REAL8Vector
+int
 XLALFDDerivative1Order6(
     REAL8Vector *XVec,
-    REAL8Vector *YVec
+    REAL8Vector *YVec,
+    REAL8Vector *derivativeVec
 );
 
-REAL8Vector
+int
 XLALFDDerivative1Order8(
     REAL8Vector *XVec,
-    REAL8Vector *YVec
+    REAL8Vector *YVec,
+    REAL8Vector *derivativeVec
 );
 
-REAL8Vector
+int
 XLALCumulativeIntegral3(
     REAL8Vector *XVec,
-    REAL8Vector *YVec
+    REAL8Vector *YVec,
+    REAL8Vector *integralVec
 );
 
 REAL8
