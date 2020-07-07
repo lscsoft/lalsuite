@@ -54,7 +54,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, toplist_tmpl_idx, segment_info, simulate_search, time_search, cache_all_gc;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, toplist_tmpl_idx, mean2F_hgrm, segment_info, simulate_search, time_search, cache_all_gc;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_sqrtSX, *injections, *Fstat_assume_sqrtSX, *lrs_oLGX;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
@@ -272,6 +272,10 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     toplist_tmpl_idx, BOOLEAN, 0, DEVELOPER,
     "Output for each toplist item a unique (up to frequency) index identifying its semicoherent and coherent templates. "
+    );
+  XLALRegisterUvarMember(
+    mean2F_hgrm, BOOLEAN, 0, DEVELOPER,
+    "Output a histogram of all mean multi-Fstatistics computed by the search. "
     );
   XLALRegisterUvarAuxDataMember(
     extra_statistics, UserFlag, &WeaveStatisticChoices, 'E', OPTIONAL,
@@ -516,6 +520,11 @@ int main( int argc, char *argv[] )
   }
   // set number-count threshold
   statistics_params->nc_2Fth = uvar->nc_2Fth;
+
+  // If asked to return a histogram of mean multi-Fstatistics, ensure they're computed
+  if ( uvar->mean2F_hgrm ) {
+    statistics_params->mainloop_statistics |= WEAVE_STATISTIC_MEAN2F;
+  }
 
   ////////// Set up lattice tilings //////////
 
@@ -855,7 +864,7 @@ int main( int argc, char *argv[] )
   WeaveSemiResults *semi_res = NULL;
 
   // Create output results structure
-  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, statistics_params, uvar->toplist_limit, uvar->toplist_tmpl_idx );
+  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, statistics_params, uvar->toplist_limit, uvar->toplist_tmpl_idx, uvar->mean2F_hgrm );
   XLAL_CHECK_MAIN( out != NULL, XLAL_EFUNC );
 
   // Create search timing structure

@@ -77,6 +77,7 @@ test_scripts += testWeave_simulate_search.sh
 test_scripts += testWeave_cache_max_size.sh
 test_scripts += testWeave_checkpointing.sh
 test_scripts += testWeave_partitioning.sh
+test_scripts += testWeave_histograms.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
