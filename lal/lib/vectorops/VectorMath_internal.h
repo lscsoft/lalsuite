@@ -49,6 +49,12 @@
   int XLALVector##NAME##_##ISET4 ARG_DEF; \
   int XLALVector##NAME##_GEN     ARG_DEF;
 
+/* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 vector input to 1 INT4 vector output (S2I) */
+#define DECLARE_VECTORMATH_S2I(NAME, ...)                                    \
+  DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( INT4 *out, const REAL4 *in, const UINT4 len ), __VA_ARGS__ )
+
+DECLARE_VECTORMATH_S2I(INT4From, SSE2, NONE, NONE, NONE)
+
 /* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) */
 #define DECLARE_VECTORMATH_S2S(NAME, ...)                                    \
   DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ), __VA_ARGS__ )
