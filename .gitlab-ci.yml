@@ -734,7 +734,7 @@ coverage:
     # Configure for C code coverage measurement with gcc
     - ./configure --enable-swig-python CFLAGS="--coverage -fprofile-abs-path" PYTHON=python3
     # Run unit tests with Python scripts instrumented by coverage.py
-    - make -j4 check COVERAGE_FILE="$(pwd)/.coverage" PY_LOG_COMPILER="python3 -m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
+    - make -j4 check COVERAGE_FILE="$(pwd)/.coverage" PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
     # Output C coverage data in Cobertura format
     - gcovr -j4 --exclude-directories test --xml c-coverage.xml
     # Combine and output Python coverage data in Cobertura format
