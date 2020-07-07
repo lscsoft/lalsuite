@@ -135,6 +135,9 @@ void XLALDestroyCOMPLEX16VectorAligned ( COMPLEX16VectorAligned *in );
 /** \name Vector Math Functions */
 /** @{ */
 
+/** Cast (i.e. truncate) REAL4 vector \c in to INT4 vector \c out, with \c len elements. */
+int XLALVectorINT4FromREAL4 ( INT4 *out, const REAL4 *in, const UINT4 len );
+
 /** Compute \f$\text{out} = \sin(\text{in})\f$ over REAL4 vectors \c out, \c in with \c len elements */
 int XLALVectorSinREAL4 ( REAL4 *out, const REAL4 *in, const UINT4 len );
 

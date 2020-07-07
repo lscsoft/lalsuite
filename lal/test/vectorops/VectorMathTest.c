@@ -39,6 +39,22 @@
 #define Relerrd(dx,x) (fabs(x)>0 ? fabs((dx)/(x)) : fabs(dx) )
 #define cRelerr(dx,x) (cabsf(x)>0 ? cabsf((dx)/(x)) : fabsf(dx) )
 
+// ----- test and benchmark operators with 1 REAL4 vector input and 1 INT4 vector output (S2I) ----------
+#define TESTBENCH_VECTORMATH_S2I(name,in)                               \
+  {                                                                     \
+    XLAL_CHECK ( XLALVector##name##REAL4_GEN( xOutRefI4->data, in, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    tic = XLALGetCPUTime();                                             \
+    for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
+      XLAL_CHECK ( XLALVector##name##REAL4( xOutI4->data, in, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    }                                                                   \
+    toc = XLALGetCPUTime();                                             \
+    for ( UINT4 i = 0; i < Ntrials; i ++ )                              \
+    {                                                                   \
+      XLAL_CHECK ( xOutI4->data[i] == xOutRefI4->data[i], XLAL_ETOL, "%s: found element #%u (%i) differs from reference (%i)", #name, i, xOutI4->data[i], xOutRefI4->data[i] ); \
+    }                                                                   \
+    XLALPrintInfo ( "%-32s: %4.0f Mops/sec\n", XLALVector##name##REAL4_name, (REAL8)Ntrials * Nruns / (toc - tic)/1e6 ); \
+  }
+
 // ----- test and benchmark operators with 1 REAL4 vector input and 1 REAL4 vector output (S2S) ----------
 #define TESTBENCH_VECTORMATH_S2S(name,in)                               \
   {                                                                     \
@@ -232,6 +248,17 @@ main ( int argc, char *argv[] )
   UINT4 Nruns = (UINT4)uvar->Nruns;
 
   UINT4 Ntrials = 1000000 + 7;
+
+  INT4Vector *xOutI4;
+  INT4Vector *xOutRefI4;
+  XLAL_CHECK ( ( xOutI4 = XLALCreateINT4Vector ( Ntrials )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( ( xOutRefI4 = XLALCreateINT4Vector ( Ntrials )) != NULL, XLAL_EFUNC );
+
+  UINT4Vector *xOutU4;
+  UINT4Vector *xOutRefU4;
+  XLAL_CHECK ( ( xOutU4 = XLALCreateUINT4Vector ( Ntrials )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( ( xOutRefU4 = XLALCreateUINT4Vector ( Ntrials )) != NULL, XLAL_EFUNC );
+
   REAL4VectorAligned *xIn_a, *xIn2_a, *xOut_a, *xOut2_a;
   XLAL_CHECK ( ( xIn_a   = XLALCreateREAL4VectorAligned ( Ntrials, uvar->inAlign )) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( ( xIn2_a  = XLALCreateREAL4VectorAligned ( Ntrials, uvar->inAlign )) != NULL, XLAL_EFUNC );
@@ -248,11 +275,6 @@ main ( int argc, char *argv[] )
   REAL4 *xOut2    = xOut2_a->data;
   REAL4 *xOutRef  = xOutRef_a->data;
   REAL4 *xOutRef2 = xOutRef2_a->data;
-
-  UINT4Vector *xOutU4;
-  UINT4Vector *xOutRefU4;
-  XLAL_CHECK ( ( xOutU4 = XLALCreateUINT4Vector ( Ntrials )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK ( ( xOutRefU4 = XLALCreateUINT4Vector ( Ntrials )) != NULL, XLAL_EFUNC );
 
   REAL8VectorAligned *xInD_a, *xIn2D_a, *xOutD_a, *xOutRefD_a;
   XLAL_CHECK ( ( xInD_a   = XLALCreateREAL8VectorAligned ( Ntrials, uvar->inAlign )) != NULL, XLAL_EFUNC );
@@ -278,16 +300,21 @@ main ( int argc, char *argv[] )
   COMPLEX8 *xOutC     = xOutC_a->data;
   COMPLEX8 *xOutRefC  = xOutRefC_a->data;
 
-
   REAL8 tic, toc;
   REAL4 maxErr = 0, maxRelerr = 0;
   REAL4 abstol, reltol;
 
-  XLALPrintInfo ("Testing sin(x), cos(x) for x in [-1000, 1000]\n");
   for ( UINT4 i = 0; i < Ntrials; i ++ ) {
     xIn[i] = 2000 * ( frand() - 0.5 );
   }
   abstol = 2e-7, reltol = 1e-5;
+
+  XLALPrintInfo ("Testing (INT4) for x in [-1000, 1000]\n");
+  // ==================== (INT4) ====================
+  TESTBENCH_VECTORMATH_S2I(INT4From,xIn);
+
+
+  XLALPrintInfo ("Testing sin(x), cos(x) for x in [-1000, 1000]\n");
   // ==================== SIN() ====================
   TESTBENCH_VECTORMATH_S2S(Sin,xIn);
 
@@ -370,6 +397,12 @@ main ( int argc, char *argv[] )
   XLALPrintInfo ("\n");
 
   // ---------- clean up memory ----------
+  XLALDestroyINT4Vector ( xOutI4 );
+  XLALDestroyINT4Vector ( xOutRefI4 );
+
+  XLALDestroyUINT4Vector ( xOutU4 );
+  XLALDestroyUINT4Vector ( xOutRefU4 );
+
   XLALDestroyREAL4VectorAligned ( xIn_a );
   XLALDestroyREAL4VectorAligned ( xIn2_a );
   XLALDestroyREAL4VectorAligned ( xOut_a );
@@ -377,9 +410,6 @@ main ( int argc, char *argv[] )
 
   XLALDestroyREAL4VectorAligned ( xOutRef_a );
   XLALDestroyREAL4VectorAligned ( xOutRef2_a );
-
-  XLALDestroyUINT4Vector ( xOutU4 );
-  XLALDestroyUINT4Vector ( xOutRefU4 );
 
   XLALDestroyREAL8VectorAligned ( xInD_a );
   XLALDestroyREAL8VectorAligned ( xIn2D_a );

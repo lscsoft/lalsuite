@@ -121,6 +121,12 @@ DEFINE_ALIGNED_VECT_API(COMPLEX16);
     \
   }
 
+// ---------- define exported vector math functions with 1 REAL4 vector input to 1 INT4 vector output (S2I) ----------
+#define EXPORT_VECTORMATH_S2I(NAME, ...)                                     \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL4, (INT4 *out, const REAL4 *in, const UINT4 len), (out, in, len), __VA_ARGS__ )
+
+EXPORT_VECTORMATH_S2I(INT4From, SSE2, NONE, NONE, NONE)
+
 // ---------- define exported vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
 #define EXPORT_VECTORMATH_S2S(NAME, ...)                                     \
   EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out, const REAL4 *in, const UINT4 len), (out, in, len), __VA_ARGS__ )

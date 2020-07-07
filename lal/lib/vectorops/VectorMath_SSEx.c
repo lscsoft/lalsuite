@@ -37,6 +37,12 @@
 #include "VectorMath_sse_mathfun.h"
 
 // ---------- local operators and operator-wrappers ----------
+UNUSED static inline __m128i
+local_cast_to_INT4 ( __m128 in1 )
+{
+  return _mm_cvttps_epi32 ( in1 );
+}
+
 UNUSED static inline __m128
 local_add_ps ( __m128 in1, __m128 in2 )
 {
@@ -113,6 +119,34 @@ local_cmul_ps ( __m128 in1, __m128 in2 )
 }
 
 // ========== internal generic SSEx functions ==========
+
+// ---------- generic SSEx operator with 1 REAL4 vector input to 1 INT4 vector output (S2I) ----------
+static inline int
+XLALVectorMath_S2I_SSEx ( INT4 *out, const REAL4 *in, const UINT4 len, __m128i (*f)(__m128) )
+{
+
+  // walk through vector in blocks of 4
+  UINT4 i4Max = len - ( len % 4 );
+  for ( UINT4 i4 = 0; i4 < i4Max; i4 += 4 )
+    {
+      __m128 in4p = _mm_loadu_ps(&in[i4]);
+      __m128i out4p = (*f)( in4p );
+      _mm_storeu_si128( (__m128i *) &out[i4], out4p);
+    }
+
+  // deal with the remaining (<=3) terms separately
+  V4SF in4 = {.f = {0,0,0,0}}, out4;
+  for ( UINT4 i = i4Max, j=0; i < len; i ++, j++ ) {
+    in4.f[j] = in[i];
+  }
+  out4.vi = (*f)( in4.v );
+  for ( UINT4 i = i4Max,j=0; i < len; i ++, j++ ) {
+    out[i] = out4.i[j];
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALVectorMath_S2S_SSEx()
 
 // ---------- generic SSEx operator with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
 static inline int
@@ -368,6 +402,12 @@ XLALVectorMath_cC2C_SSEx ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, c
 } // XLALVectorMath_cC2C_SSEx()
 
 // ========== internal SSEx vector math functions ==========
+
+// ---------- define vector math functions with 1 REAL4 vector input to 1 INT4 vector output (S2I) ----------
+#define DEFINE_VECTORMATH_S2I(NAME, SSE_OP)                             \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2I_SSEx, NAME ## REAL4, ( INT4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, SSE_OP ) )
+
+DEFINE_VECTORMATH_S2I(INT4From, local_cast_to_INT4)
 
 // ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
 #define DEFINE_VECTORMATH_S2S(NAME, SSE_OP)                             \

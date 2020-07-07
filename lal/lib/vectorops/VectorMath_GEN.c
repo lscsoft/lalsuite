@@ -32,6 +32,10 @@
 
 // ---------- local math functions ----------
 
+static inline INT4 local_cast_to_INT4 ( REAL4 in ) {
+  return (INT4) in;
+}
+
 static inline void local_sincosf(REAL4 in, REAL4 *out1, REAL4 *out2) {
   *out1 = sinf ( in );
   *out2 = cosf ( in );
@@ -81,6 +85,17 @@ static inline REAL4 local_fmaxf ( REAL4 x, REAL4 y ) {
 }
 
 // ========== internal generic functions ==========
+
+// ---------- generic operator with 1 REAL4 vector input to 1 INT4 vector output (S2I) ----------
+static inline int
+XLALVectorMath_S2I_GEN ( INT4 *out, const REAL4 *in, const UINT4 len, INT4 (*op)(REAL4) )
+{
+  for ( UINT4 i = 0; i < len; i ++ )
+    {
+      out[i] = (*op) ( in[i] );
+    }
+  return XLAL_SUCCESS;
+}
 
 // ---------- generic operator with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
 static inline int
@@ -182,6 +197,12 @@ XLALVectorMath_D2D_GEN ( REAL8 *out, const REAL8 *in, const UINT4 len, REAL8 (*o
 }
 
 // ========== internal vector math functions ==========
+
+// ---------- define vector math functions with 1 REAL4 vector input to 1 INT4 vector output (S2I) ----------
+#define DEFINE_VECTORMATH_S2I(NAME, SSE_OP)                             \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2I_GEN, NAME ## REAL4, ( INT4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, SSE_OP ) )
+
+DEFINE_VECTORMATH_S2I(INT4From, local_cast_to_INT4)
 
 // ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
 #define DEFINE_VECTORMATH_S2S(NAME, GEN_OP)                             \
