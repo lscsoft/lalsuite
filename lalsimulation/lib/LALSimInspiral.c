@@ -138,6 +138,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SEOBNRv2T),
     INITIALIZE_NAME(SEOBNRv4T),
     INITIALIZE_NAME(SEOBNRv4HM),
+    INITIALIZE_NAME(SEOBNRv4HM_PA),
     INITIALIZE_NAME(SEOBNRv1_ROM_EffectiveSpin),
     INITIALIZE_NAME(SEOBNRv1_ROM_DoubleSpin),
     INITIALIZE_NAME(SEOBNRv2_ROM_EffectiveSpin),
@@ -912,7 +913,23 @@ int XLALSimInspiralChooseTDWaveform(
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
                     deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
             break;
+    case SEOBNRv4HM_PA:
+      if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+	ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+      if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+	ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+      if( !checkTidesZero(lambda1, lambda2) )
+	ABORT_NONZERO_TIDES(LALparams);
+      if( f_ref != 0.)
+	XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+      /* Call the waveform driver routine */
+      polariz+=-LAL_PI/2.;
+      //R.C. this rotation of -pi/2 is needed to go from the EOB wave frame to the LAL wave frame, see slide 9 of https://git.ligo.org/waveforms/reviews/SEOBNRv4HM/blob/master/tests/conventions/con \ventions.pdf                                                                                                                                                                                                
+      SpinAlignedEOBversion = 4111;
 
+      ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
+					 deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
+      break;
 
         case SEOBNRv3_opt_rk4:
         case SEOBNRv3_opt:
@@ -6451,6 +6468,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case TEOBResum_ROM:
         case TEOBResumS:
         case SEOBNRv4HM:
+    case SEOBNRv4HM_PA:
         case NRHybSur3dq8:
         case IMRPhenomT:
         case IMRPhenomTHM:
@@ -6955,6 +6973,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv2T:
     case SEOBNRv4T:
     case SEOBNRv4HM:
+  case SEOBNRv4HM_PA:
     case SEOBNRv1_ROM_EffectiveSpin:
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
@@ -7069,6 +7088,7 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case SEOBNRv2T:
     case SEOBNRv4T:
     case SEOBNRv4HM:
+  case SEOBNRv4HM_PA:
     case SEOBNRv1_ROM_EffectiveSpin:
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
@@ -7197,6 +7217,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv2T:
     case SEOBNRv4T:
     case SEOBNRv4HM:
+    case SEOBNRv4HM_PA:
     case SEOBNRv1_ROM_EffectiveSpin:
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:

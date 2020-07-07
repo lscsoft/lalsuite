@@ -784,8 +784,17 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     REAL8Vector *hLMAllHi = NULL;
     REAL8Vector *hLMAll = NULL;
     UINT4 nModes = 1;
+    UINT4 postAdiabaticFlag = 0;
+    if (SpinAlignedEOBversion == 4111)
+      {
+
+	postAdiabaticFlag = 1;
+	XLALDictInsertUINT4Value(PAParams, "PAFlag",postAdiabaticFlag);
+	XLALDictInsertUINT4Value(PAParams, "PAOrder",6);
+	
+      }
     /* If we want SEOBNRv4HM, then reset SpinAlignedEOBversion=4 and set use_hm=1 */
-    if (SpinAlignedEOBversion == 41)
+    if (SpinAlignedEOBversion == 41 || SpinAlignedEOBversion == 4111)
     {
         SpinAlignedEOBversion = 4;
         use_hm = 1;
@@ -1434,14 +1443,14 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
   eobParams.NyquistStop = 0;
 
   //fprintf( stderr, "Spherical initial conditions: %e %e %e %e\n", values->data[0], values->data[1], values->data[2], values->data[3] );
+  
 
-  const UINT4 postAdiabaticFlag = XLALDictLookupUINT4Value(PAParams, "PAFlag");
 
   REAL8Array *dynamicsPA = NULL;
 
   if (postAdiabaticFlag)
   {
-    printf("Post adiabatic goes here\n");
+
     XLALSimInspiralEOBPostAdiabatic(
       &dynamicsPA,
       deltaT,
