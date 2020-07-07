@@ -1289,8 +1289,6 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	*dynamics = outputDynamics;
 
-
-
 	XLALDestroyREAL8Vector(tVec);
 	XLALDestroyREAL8Vector(tReverseVec);
 	XLALDestroyREAL8Vector(rVec);

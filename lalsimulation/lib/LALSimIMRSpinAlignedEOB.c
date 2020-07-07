@@ -1553,16 +1553,14 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
   {
     const INT4 PALen = dynamicsPA->dimLength->data[1];
 
-    REAL8 tStepInterp = dynamics->data[1]-dynamics->data[0];
-    const INT4 nInterp = (int) (dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp;
+    REAL8 tStepInterp = deltaT / mTScaled;
+    const INT4 nInterp = ceil((dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp);
 
-    printf("%d\n", nInterp);
-
-    UNUSED double tVecInterp[200];
-    UNUSED double rVecInterp[200];
-    UNUSED double phiVecInterp[200];
-    UNUSED double prVecInterp[200];
-    UNUSED double pphiVecInterp[200];
+    double tVecInterp[200];
+    double rVecInterp[200];
+    double phiVecInterp[200];
+    double prVecInterp[200];
+    double pphiVecInterp[200];
 
     for (i = 0; i < PALen; i++)
     {
@@ -1621,19 +1619,26 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 
     for (i = 1; i < retLen; i++)
     {
-      combinedDynamics->data[PALen + i - 1] = dynamics->data[i] + tOffset;
-      combinedDynamics->data[combinedLen + PALen + i - 1] = dynamics->data[retLen + i];
-      combinedDynamics->data[2*combinedLen + PALen + i - 1] = dynamics->data[2*retLen + i] + phiOffset;
-      combinedDynamics->data[3*combinedLen + PALen + i - 1] = dynamics->data[3*retLen + i];
-      combinedDynamics->data[4*combinedLen + PALen + i - 1] = dynamics->data[4*retLen + i];
-    } 
+      combinedDynamics->data[nInterp + i - 1] = dynamics->data[i] + tOffset;
+      combinedDynamics->data[combinedLen + nInterp + i - 1] = dynamics->data[retLen + i];
+      combinedDynamics->data[2*combinedLen + nInterp + i - 1] = dynamics->data[2*retLen + i] + phiOffset;
+      combinedDynamics->data[3*combinedLen + nInterp + i - 1] = dynamics->data[3*retLen + i];
+      combinedDynamics->data[4*combinedLen + nInterp + i - 1] = dynamics->data[4*retLen + i];
+    }
 
     dynamics->dimLength->data[1] = combinedLen;
     *dynamics = *combinedDynamics;
 
     retLen = combinedLen;
+
+    values->data[0] = dynamics->data[retLen];
+    values->data[1] = dynamics->data[2*retLen];
+    values->data[2] = dynamics->data[3*retLen];
+    values->data[3] = dynamics->data[4*retLen];
+
+    eobParams.rad = values->data[0];
   }
-  
+
   /* Set up pointers to the dynamics */
   // REAL8Vector tVec;
   // tVec.data = dynamics->data;
@@ -1644,10 +1649,9 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
   prVec.data = dynamics->data + 3 * retLen;
   pPhiVec.data = dynamics->data + 4 * retLen;
 
-  //printf( "We think we hit the peak at time %e\n", dynamics->data[retLen-1] );
+  // printf( "We think we hit the peak at time %e\n", dynamics->data[retLen-1] );
 
   /* TODO : Insert high sampling rate / ringdown here */
-
 
   if (tStepBack > retLen * deltaT)
     {
@@ -1687,8 +1691,6 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
   eobParams.omegaPeaked = 0;
   eobParams.NyquistStop = 0;
 
-
-
   /* For HiSR evolution, we stop at a radius 0.3M from the deformed Kerr singularity,
    * or when any derivative of Hamiltonian becomes nan */
   integrator->stop = XLALSpinAlignedHiSRStopCondition;
@@ -1727,6 +1729,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 				 20. / mTScaled, deltaTHigh / mTScaled,
 				 &dynamicsHi);
     }
+
   if (retLen == XLAL_FAILURE || dynamicsHi == NULL)
     {
       if(tmpValues){
