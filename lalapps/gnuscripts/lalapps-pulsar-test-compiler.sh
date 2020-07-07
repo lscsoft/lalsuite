@@ -118,7 +118,7 @@ set +e
     export builddir=/dev/null/
     case "${script_extn}" in
         sh)
-            time bash "${script}"
+            time bash -c "set -e; source ${script}"
             ;;
         py)
             time ${PYTHON} "${script}"
