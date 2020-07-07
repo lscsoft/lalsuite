@@ -364,7 +364,9 @@ pages:
     - cp lalsuite/index.html index.html
     - sed -i 's/..\/lal/lal/g' index.html
     - popd
-  needs: []
+    - cp coverage.html public/
+  needs:
+    - coverage
   artifacts:
     paths:
       - public
@@ -715,6 +717,76 @@ top-level:
   image: igwn/lalsuite-dev:el7-testing
   needs: []
   <<: *top-level-build
+  only:
+    - pushes
+    - schedules
+    - web
+
+# Note: adapted from https://git.ligo.org/lscsoft/ligo.skymap.
+coverage:
+  stage: integration tests
+  image: igwn/lalsuite-dev-gcc:8
+  needs: []
+  script:
+    - apt-get -y install --no-install-recommends python3-pip
+    - python3 -m pip install coverage gcovr pycobertura
+    - ./00boot
+    # Configure for C code coverage measurement with gcc
+    - ./configure --enable-swig-python CFLAGS="--coverage -fprofile-abs-path" PYTHON=python3
+    # Run unit tests with Python scripts instrumented by coverage.py
+    - make -j4 check COVERAGE_FILE="$(pwd)/.coverage" PY_LOG_COMPILER="python3 -m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
+    # Output C coverage data in Cobertura format
+    - gcovr -j4 --exclude-directories test --xml c-coverage.xml
+    # Combine and output Python coverage data in Cobertura format
+    - coverage combine
+    - coverage xml -o py-coverage.xml
+    # Merge coverage reports. They're just XML, after all.
+    - |
+      python3 - <<EOF
+      import lxml.etree
+      import copy
+
+      doc1 = lxml.etree.parse('py-coverage.xml')
+      doc2 = lxml.etree.parse('c-coverage.xml')
+      root1 = doc1.getroot()
+      root2 = doc2.getroot()
+      root1.attrib['lines-covered'] = str(
+          int(root1.attrib['lines-covered']) +
+          int(root2.attrib['lines-covered']))
+      root1.attrib['lines-valid'] = str(
+          int(root1.attrib['lines-valid']) +
+          int(root2.attrib['lines-valid']))
+      try:
+          root1.attrib['line-rate'] = str(
+              int(root1.attrib['lines-covered']) /
+              int(root1.attrib['lines-valid']))
+      except ZeroDivisionError:
+          root1.attrib['line-rate'] = '0'
+      root1.attrib['branches-covered'] = str(
+          int(root1.attrib['branches-covered']) +
+          int(root2.attrib['branches-covered']))
+      root1.attrib['branches-valid'] = str(
+          int(root1.attrib['branches-valid']) +
+          int(root2.attrib['branches-valid']))
+      try:
+          root1.attrib['branch-rate'] = str(
+              int(root1.attrib['branches-covered']) /
+              int(root1.attrib['branches-valid']))
+      except ZeroDivisionError:
+          root1.attrib['branch-rate'] = '0'
+      packages = root1.find('./packages')
+      packages.extend(root2.iterfind('./packages/package'))
+      doc1.write('coverage.xml')
+      EOF
+    # Write HTML coverage report and show coverage summary.
+    - pycobertura show coverage.xml -f html -o coverage.html
+    - pycobertura show coverage.xml | tail -n 1
+  coverage: '/TOTAL\s+.*\s+([\d\.]+)%/'
+  artifacts:
+    paths:
+      - coverage.html
+    reports:
+      cobertura: coverage.xml
   only:
     - pushes
     - schedules
