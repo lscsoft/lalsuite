@@ -5,15 +5,20 @@ echo
 
 # Parse command line
 script_extn="$1"
-skip_tests="$2"
-test="$3"
-echo "skip_tests='${skip_tests}'"
-echo "test='${test}'"
+echo "script_extn=${script_extn}"
+shift
+skip_tests="$1"
+echo "skip_tests=${skip_tests}"
+shift
+flags=""
+while [ "X$2" != X ]; do
+    flags="${flags} '$1'"
+    shift
+done
+test="$1"
+echo "flags=${flags}"
+echo "test=${test}"
 echo
-if [ "X$3" = X ]; then
-  echo "Invalid command line"
-  exit 1
-fi
 
 # Check for required environment variables
 if [ "X${LAL_TEST_SRCDIR}" = X ]; then
@@ -25,7 +30,7 @@ if [ "X${LAL_TEST_BUILDDIR}" = X ]; then
   exit 1
 fi
 
-# Test script name and location
+# Test script name, location, and extension
 script_name=$(expr "X${test}" : "X.*/\(test[^/]*\)\.${script_extn}$")
 if [ "X${script_name}" = X ]; then
   echo "Could not parse name of test script from '${test}'"
@@ -40,6 +45,18 @@ if [ -x "${script}" ]; then
   echo "Test script '${script}' should not be executable"
   exit 1
 fi
+case "${script_extn}" in
+    sh)
+        cmdline="time bash ${flags} -c 'set -e; source ${script}'"
+        ;;
+    py)
+        cmdline="time ${PYTHON} ${flags} '${script}'"
+        ;;
+    *)
+        echo "Test script '${script}' does not have a recognised extension"
+        exit 1
+        ;;
+esac
 
 # Skip test if requested
 case " ${skip_tests} " in
@@ -107,7 +124,7 @@ ls -l "${testdir}"
 echo
 
 # Run test in test directory
-echo "--- Running test ${test} ---"
+echo "--- Running test ${test}: ${cmdline} ---"
 echo
 cd "${testdir}"
 set +e
@@ -116,18 +133,7 @@ set +e
     export LAL_TEST_BUILDDIR=/dev/null/
     export srcdir=/dev/null/
     export builddir=/dev/null/
-    case "${script_extn}" in
-        sh)
-            time bash -c "set -e; source ${script}"
-            ;;
-        py)
-            time ${PYTHON} "${script}"
-            ;;
-        *)
-            echo "Test script '${script}' does not have a recognised extension"
-            exit 1
-            ;;
-    esac
+    eval ${cmdline}
 )
 status=$?
 set -e
