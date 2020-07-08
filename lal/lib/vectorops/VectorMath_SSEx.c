@@ -131,7 +131,7 @@ XLALVectorMath_S2I_SSEx ( INT4 *out, const REAL4 *in, const UINT4 len, __m128i (
     {
       __m128 in4p = _mm_loadu_ps(&in[i4]);
       __m128i out4p = (*f)( in4p );
-      _mm_storeu_si128( (__m128i *) &out[i4], out4p);
+      _mm_storeu_ps((float*) &out[i4], *((__m128*) &out4p));
     }
 
   // deal with the remaining (<=3) terms separately
