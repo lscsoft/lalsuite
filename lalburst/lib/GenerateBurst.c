@@ -101,6 +101,14 @@ int XLALGenerateSimBurst(
 		XLALPrintInfo("%s(): string cusp @ %9d.%09u s (GPS): A = %.16g, fhigh = %.16g Hz\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->amplitude, sim_burst->frequency);
 		if(XLALGenerateStringCusp(hplus, hcross, sim_burst->amplitude, sim_burst->frequency, delta_t))
 			XLAL_ERROR(XLAL_EFUNC);
+	} else if(!strcmp(sim_burst->waveform, "StringKink")) {
+		XLALPrintInfo("%s(): string kink @ %9d.%09u s (GPS): A = %.16g, fhigh = %.16g Hz\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->amplitude, sim_burst->frequency);
+		if(XLALGenerateStringKink(hplus, hcross, sim_burst->amplitude, sim_burst->frequency, delta_t))
+			XLAL_ERROR(XLAL_EFUNC);
+	} else if(!strcmp(sim_burst->waveform, "StringKinkKink")) {
+		XLALPrintInfo("%s(): string kinkkink @ %9d.%09u s (GPS): A = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->amplitude);
+		if(XLALGenerateStringKinkKink(hplus, hcross, sim_burst->amplitude, delta_t))
+			XLAL_ERROR(XLAL_EFUNC);
 	} else if(!strcmp(sim_burst->waveform, "SineGaussian")) {
 		XLALPrintInfo("%s(): sine-Gaussian @ %9d.%09u s (GPS): f = %.16g Hz, Q = %.16g, hrss = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->q, sim_burst->hrss);
 		if(XLALSimBurstSineGaussian(hplus, hcross, sim_burst->q, sim_burst->frequency, sim_burst->hrss, sim_burst->pol_ellipse_e, sim_burst->pol_ellipse_angle, delta_t))

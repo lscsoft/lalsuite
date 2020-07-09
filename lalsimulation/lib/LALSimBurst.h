@@ -27,7 +27,7 @@
  * @details
  * These routines generate several burst waveforms used in searches for
  * gravitational waves, including sine-Gaussian waveforms, cosmic string
- * cusp waveforms, and band- and time-limited white-noise burst waveforms.
+ * cusp, kink and kinkkink waveforms, and band- and time-limited white-noise burst waveforms.
  * Also included are several general-purpose routines to measure the
  * properties of gravitational wave waveforms like the "hrss" and peak
  * strain.  These are useful for imposing normalizations and other
@@ -106,6 +106,23 @@ int XLALGenerateStringCusp(
 	REAL8TimeSeries **hcross,
 	REAL8 amplitude,
 	REAL8 f_high,
+	REAL8 delta_t
+);
+
+
+int XLALGenerateStringKink(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	REAL8 amplitude,
+	REAL8 f_high,
+	REAL8 delta_t
+);
+
+
+int XLALGenerateStringKinkKink(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	REAL8 amplitude,
 	REAL8 delta_t
 );
 

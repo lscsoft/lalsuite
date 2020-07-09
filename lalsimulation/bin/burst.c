@@ -79,6 +79,14 @@
  * <DD>cosmic string cusp<BR>
  * required parameters: amplitude, frequency
  * </DD>
+ * <DT>StringKink</DT>
+ * <DD>cosmic string kink<BR>
+ * required parameters: amplitude, frequency
+ * </DD>
+ * <DT>StringKinkKink</DT>
+ * <DD>cosmic string kink<BR>
+ * required parameters: amplitude
+ * </DD>
  * <DT>SineGaussian</DT>
  * <DD>cosine- or sine-Gaussian<BR>
  * required parameters: quality-factor, frequency, hrss, eccentricity, phase
@@ -167,6 +175,8 @@ static struct params parseargs(int argc, char **argv);
 typedef enum {
 	BLTWNB,
 	StringCusp,
+	StringKink,
+	StringKinkKink,
 	SineGaussian,
 	Gaussian,
 	Impulse,
@@ -177,6 +187,8 @@ typedef enum {
 static const char *waveform_names[NumWaveforms] = {
 	INIT_NAME(BLTWNB),
 	INIT_NAME(StringCusp),
+	INIT_NAME(StringKink),
+	INIT_NAME(StringKinkKink),
 	INIT_NAME(SineGaussian),
 	INIT_NAME(Gaussian),
 	INIT_NAME(Impulse)
@@ -186,6 +198,8 @@ static const char *waveform_names[NumWaveforms] = {
 static const char *waveform_long_names[NumWaveforms] = {
 	[BLTWNB] = "band-limited white-noise burst",
 	[StringCusp] = "cosmic string cusp",
+	[StringKink] = "cosmic string kink",
+	[StringKinkKink] = "cosmic string kinkkink",
 	[SineGaussian] = "cosine- or sine-Gaussian",
 	[Gaussian] = "Gaussian",
 	[Impulse] = "delta-function impulse"
@@ -194,6 +208,8 @@ static const char *waveform_long_names[NumWaveforms] = {
 static const char *waveform_parameters[NumWaveforms] = {
 	[BLTWNB] = "duration, frequency, bandwidth, eccentricity, phase, fluence",
 	[StringCusp] = "amplitude, frequency",
+	[StringKink] = "amplitude, frequency",
+	[StringKinkKink] = "amplitude",
 	[SineGaussian] = "quality-factor, frequency, hrss, eccentricity, phase",
 	[Gaussian] = "duration, hrss",
 	[Impulse] = "amplitude"
@@ -359,6 +375,73 @@ int main(int argc, char **argv)
 			verbose_output("%-31s %g (s^-1/3)\n", "amplitude:", p.amplitude);
 			verbose_output("%-31s %g (Hz)\n", "frequency:", p.frequency);
 			status = XLALGenerateStringCusp(&hplus, &hcross, p.amplitude, p.frequency, 1.0/p.srate);
+		}
+		break;
+
+	case StringKink:
+
+		/* sanity check relevant parameters */
+		if (IS_INVALID_DOUBLE(p.amplitude) || p.amplitude < 0.0) {
+			fprintf(stderr, "error: must specify valid amplitude for waveform `%s'\n", waveform_names[p.waveform]);
+			status = 1;
+		}
+		if (IS_INVALID_DOUBLE(p.frequency) || p.frequency < 0.0) {
+			fprintf(stderr, "error: must specify valid frequency for waveform `%s'\n", waveform_names[p.waveform]);
+			status = 1;
+		}
+
+		/* detect set but ignored parameters */
+		if (!IS_INVALID_DOUBLE(p.duration))
+			fprintf(stderr, "warning: duration parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+		if (!IS_INVALID_DOUBLE(p.bandwidth))
+			fprintf(stderr, "warning: bandwidth parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+		if (!IS_INVALID_DOUBLE(p.q))
+			fprintf(stderr, "warning: quality-factor parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+		if (p.eccentricity != DEFAULT_ECCENTRICITY)
+			fprintf(stderr, "warning: eccentricity parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+		if (p.phase != DEFAULT_PHASE)
+			fprintf(stderr, "warning: phase parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+		if (!IS_INVALID_DOUBLE(p.hrss))
+			fprintf(stderr, "warning: hrss parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+		if (!IS_INVALID_DOUBLE(p.fluence))
+			fprintf(stderr, "warning: fluence parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+
+		if (!status) {
+			verbose_output("%-31s %g (s^-2/3)\n", "amplitude:", p.amplitude);
+			verbose_output("%-31s %g (Hz)\n", "frequency:", p.frequency);
+			status = XLALGenerateStringKink(&hplus, &hcross, p.amplitude, p.frequency, 1.0/p.srate);
+		}
+		break;
+
+	case StringKinkKink:
+
+		/* sanity check relevant parameters */
+		if (IS_INVALID_DOUBLE(p.amplitude) || p.amplitude < 0.0) {
+			fprintf(stderr, "error: must specify valid amplitude for waveform `%s'\n", waveform_names[p.waveform]);
+			status = 1;
+		}
+
+		/* detect set but ignored parameters */
+		if (!IS_INVALID_DOUBLE(p.frequency))
+			fprintf(stderr, "warning: frequency parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+		if (!IS_INVALID_DOUBLE(p.duration))
+			fprintf(stderr, "warning: duration parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+		if (!IS_INVALID_DOUBLE(p.bandwidth))
+			fprintf(stderr, "warning: bandwidth parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+		if (!IS_INVALID_DOUBLE(p.q))
+			fprintf(stderr, "warning: quality-factor parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+		if (p.eccentricity != DEFAULT_ECCENTRICITY)
+			fprintf(stderr, "warning: eccentricity parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+		if (p.phase != DEFAULT_PHASE)
+			fprintf(stderr, "warning: phase parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+		if (!IS_INVALID_DOUBLE(p.hrss))
+			fprintf(stderr, "warning: hrss parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+		if (!IS_INVALID_DOUBLE(p.fluence))
+			fprintf(stderr, "warning: fluence parameter is set but ignored for waveform `%s'\n", waveform_names[p.waveform]);
+
+		if (!status) {
+			verbose_output("%-31s %g (s^-1)\n", "amplitude:", p.amplitude);
+			status = XLALGenerateStringKinkKink(&hplus, &hcross, p.amplitude, 1.0/p.srate);
 		}
 		break;
 
