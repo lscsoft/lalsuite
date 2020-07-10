@@ -70,10 +70,11 @@
 static void q2masses(double mc, double q, double *m1, double *m2);
 
 /* list of testing GR parameters to be passed to the waveform */
+/* the first batch of parameters dchis through dsigmas refer to the parameterised tests for generation (TIGER) while the parameters log10lambda_eff through LIV_A_sign are testing coefficients for the parameterised tests for propagation using a deformed dispersion relation (LIV); new parameters may be added at the end for  readability although the order of parameters in this list does not matter */
 
-const char list_extra_parameters[34][16] = {"dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7","aPPE","alphaPPE","bPPE","betaPPE","betaStep","fStep","dxi1","dxi2","dxi3","dxi4","dxi5","dxi6","dalpha1","dalpha2","dalpha3","dalpha4","dalpha5","dbeta1","dbeta2","dbeta3","dsigma1","dsigma2","dsigma3","dsigma4"};
+const char list_extra_parameters[38][16] = {"dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7","aPPE","alphaPPE","bPPE","betaPPE","betaStep","fStep","dxi1","dxi2","dxi3","dxi4","dxi5","dxi6","dalpha1","dalpha2","dalpha3","dalpha4","dalpha5","dbeta1","dbeta2","dbeta3","dsigma1","dsigma2","dsigma3","dsigma4","log10lambda_eff","lambda_eff","nonGR_alpha","LIV_A_sign"};
 
-const UINT4 N_extra_params = 34;
+const UINT4 N_extra_params = 38;
 
 /* Return the quadrupole moment of a neutron star given its lambda
  * We use the relations defined here. https://arxiv.org/pdf/1302.4499.pdf.
