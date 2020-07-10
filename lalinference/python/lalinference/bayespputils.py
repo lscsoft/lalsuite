@@ -56,6 +56,7 @@ from scipy import special
 from scipy import signal
 from scipy.optimize import newton
 from scipy import interpolate
+from scipy import integrate
 from numpy import linspace
 import random
 import socket
@@ -141,11 +142,12 @@ ppEParams=['ppEalpha','ppElowera','ppEupperA','ppEbeta','ppElowerb','ppEupperB',
 tigerParams=['dchi%i'%(i) for i in range(8)] + ['dchi%il'%(i) for i in [5,6] ] + ['dxi%d'%(i+1) for i in range(6)] + ['dalpha%i'%(i+1) for i in range(5)] + ['dbeta%i'%(i+1) for i in range(3)] + ['dsigma%i'%(i+1) for i in range(4)]
 bransDickeParams=['omegaBD','ScalarCharge1','ScalarCharge2']
 massiveGravitonParams=['lambdaG']
+lorentzInvarianceViolationParams=['log10lambda_a','lambda_a','log10lambda_eff','lambda_eff','log10livamp','liv_amp']
 tidalParams=['lambda1','lambda2','lam_tilde','dlam_tilde','lambdat','dlambdat','lambdas','bluni']
 fourPiecePolyParams=['logp1','gamma1','gamma2','gamma3']
 spectralParams=['sdgamma0','sdgamma1','sdgamma2','sdgamma3']
 energyParams=['e_rad', 'e_rad_evol', 'e_rad_nonevol', 'l_peak', 'l_peak_evol', 'l_peak_nonevol', 'e_rad_maxldist', 'e_rad_maxldist_evol', 'e_rad_maxldist_nonevol']
-strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+fourPiecePolyParams+spectralParams+energyParams
+strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+fourPiecePolyParams+spectralParams+energyParams+lorentzInvarianceViolationParams
 
 #Extrinsic
 distParams=['distance','distMPC','dist','distance_maxl']
@@ -170,7 +172,7 @@ for derived_time in ['h1_end_time','l1_end_time','v1_end_time','h1l1_delay','l1v
     greedyBinSizes[derived_time]=greedyBinSizes['time']
 for derived_phase in relativePhaseParams:
     greedyBinSizes[derived_phase]=0.05
-for param in tigerParams + bransDickeParams + massiveGravitonParams:
+for param in tigerParams + bransDickeParams + massiveGravitonParams + lorentzInvarianceViolationParams:
     greedyBinSizes[param]=0.01
 for param in tidalParams:
     greedyBinSizes[param]=2.5
@@ -555,7 +557,13 @@ def plot_label(param):
         'v1_optimal_snr':r'$\rho^{opt}_{V1}$',
         'matched_filter_snr':r'$\rho^{MF}$',
         'lambdas':r'$\Lambda_S$',
-        'bluni' : r'$BL_{uniform}$'
+        'bluni' : r'$BL_{uniform}$',
+        'log10lambda_a':r'$\log\lambda_{\mathbb{A}} [\mathrm{m}]$',
+        'log10lambda_eff':r'$\log\lambda_{eff} [\mathrm{m}]$',
+        'lambda_eff':r'$\lambda_{eff} [\mathrm{m}]$',
+        'lambda_a':r'$\lambda_{\mathbb{A}} [\mathrm{m}]$',
+        'liv_amp':r'$\mathbb{A} [\mathrm{{eV}^{2-\alpha}}]$' ,
+        'log10livamp':r'$\log \mathbb{A}[\mathrm{{eV}^{2-\alpha}}]$'
       }
 
     # Handle cases where multiple names have been used
@@ -1136,6 +1144,16 @@ class Posterior(object):
 
         if ('mc' in pos.names) and ('redshift_maxldist' in pos.names):
             pos.append_mapping('mc_source_maxldist', source_mass, ['mc', 'redshift_maxldist'])
+
+        # Calling functions testing Lorentz invariance violation
+        if ('log10lambda_eff' in pos.names) and ('redshift' in pos.names):
+            pos.append_mapping('log10lambda_a', lambda z,nonGR_alpha,wl,dist:np.log10(lambda_a(z, nonGR_alpha, 10**wl, dist)), ['redshift', 'nonGR_alpha', 'log10lambda_eff', 'dist'])
+        if ('log10lambda_eff' in pos.names) and ('redshift' in pos.names):
+            pos.append_mapping('log10livamp', lambda z,nonGR_alpha,wl,dist:np.log10(amplitudeMeasure(z, nonGR_alpha, 10**wl, dist)), ['redshift','nonGR_alpha','log10lambda_eff', 'dist'])
+        if ('lambda_eff' in pos.names) and ('redshift' in pos.names):
+            pos.append_mapping('lambda_a', lambda_a, ['redshift', 'nonGR_alpha', 'log10lambda_eff', 'dist'])
+        if ('lambda_eff' in pos.names) and ('redshift' in pos.names):
+            pos.append_mapping('liv_amp', amplitudeMeasure, ['redshift','nonGR_alpha','lambda_eff', 'dist'])
 
         #Calculate new tidal parameters
         new_tidal_params = ['lam_tilde','dlam_tilde']
@@ -3942,6 +3960,52 @@ def source_mass(mass, redshift):
     """
     return mass / (1.0 + redshift)
 
+## Following functions added for testing Lorentz violations
+def integrand_distance(redshift,nonGR_alpha):
+    """
+    Calculate D_alpha integral; multiplicative factor put later
+    D_alpha = integral{ ((1+z')^(alpha-2))/sqrt(Omega_m*(1+z')^3 +Omega_lambda) dz'} # eq.15 of arxiv 1110.2720
+    """
+    omega = lal.CreateCosmologicalParameters(0.6790,0.3065,0.6935,-1.0,0.0,0.0) ## Planck 2015 values
+    omega_m = omega.om # matter density
+    omega_l = omega.ol # dark energy density
+    #lal.DestroyCosmologicalParameters(omega)
+    return (1.0+redshift)**(nonGR_alpha-2.0)/(np.sqrt(omega_m*(1.0+redshift)**3.0 + omega_l))
+
+def DistanceMeasure(redshift,nonGR_alpha):
+    """
+    D_alpha = ((1+z)^(1-alpha))/H_0 * D_alpha # from eq.15 of arxiv 1110.2720
+    D_alpha calculated from integrand in above function
+    """
+    omega = lal.CreateCosmologicalParameters(0.6790,0.3065,0.6935,-1.0,0.0,0.0) ## Planck 2015 values
+    H0 = omega.h*lal.H0FAC_SI ## Hubble constant in SI units
+    dist = integrate.quad(integrand_distance, 0, redshift ,args=(nonGR_alpha))[0]
+    dist *= (1.0 + redshift)**(1.0 - nonGR_alpha)
+    dist /= H0
+    #lal.DestroyCosmologicalParameters(omega)
+    return dist*lal.C_SI ## returns D_alpha in metres
+
+def lambda_a(redshift, nonGR_alpha, lambda_eff, distance):
+    """
+    Converting from the effective wavelength-like parameter to lambda_A:
+    lambda_A = lambda_{eff}*(D_alpha/D_L)^(1/(2-alpha))*(1/(1+z)^((1-alpha)/(2-alpha)))
+    """
+    Dfunc = np.vectorize(DistanceMeasure)
+    D_alpha = Dfunc(redshift, nonGR_alpha)
+    dl = distance*lal.PC_SI*1e6  ## luminosity distane in metres
+    return lambda_eff*(D_alpha/(dl*(1.0+redshift)**(1.0-nonGR_alpha)))**(1./(2.0-nonGR_alpha))
+
+def amplitudeMeasure(redshift, nonGR_alpha, lambda_eff, distance):
+    """
+    Converting to Lorentz violating parameter "A" in dispersion  relation from lambda_A:
+    A = (lambda_A/h)^(alpha-2) # eqn. 13 of arxiv 1110.2720
+    """
+    hPlanck = 4.13567e-15 # Planck's constant in eV.s
+    ampFunc = np.vectorize(lambda_a)
+    lambdaA = ampFunc(redshift, nonGR_alpha, lambda_eff, distance)/lal.C_SI # convert to seconds
+    return (lambdaA/hPlanck)**(nonGR_alpha-2.0)
+############################ changes for testing Lorentz violations made till here
+
 def physical2radiationFrame(theta_jn, phi_jl, tilt1, tilt2, phi12, a1, a2, m1, m2, fref,phiref):
     """
     Wrapper function for SimInspiralTransformPrecessingNewInitialConditions().
@@ -6080,7 +6144,7 @@ class PEOutputParser(object):
             llines.append(np.array(list(map(lambda a:float(a.text),row))))
         flines=np.array(llines)
         for i in range(0,len(header)):
-            if header[i].lower().find('log')!=-1 and header[i].lower() not in logParams and re.sub('log', '', header[i].lower()) not in [h.lower() for h in header]:
+            if header[i].lower().find('log')!=-1 and header[i].lower() not in logParams and re.sub('log', '', header[i].lower()) not in [h.lower() for h in header] and header[i].lower() not in lorentzInvarianceViolationParams:
                 print('exponentiating %s'%(header[i]))
 
                 flines[:,i]=np.exp(flines[:,i])
@@ -6152,7 +6216,7 @@ class PEOutputParser(object):
 
         for param in params:
             param_low = param.lower()
-            if param_low.find('log') != -1 and param_low not in logParams and re.sub('log', '', param_low) not in [p.lower() for p in params]:
+            if param_low.find('log') != -1 and param_low not in logParams and re.sub('log', '', param_low) not in [p.lower() for p in params] and param_low not in lorentzInvarianceViolationParams:
                 print('exponentiating %s' % param)
                 new_param = re.sub('log', '', param, flags=re.IGNORECASE)
                 samples[new_param] = np.exp(samples[param])
@@ -6280,7 +6344,7 @@ class PEOutputParser(object):
 
 
         for i in range(0,len(header)):
-            if header[i].lower().find('log')!=-1 and header[i].lower() not in logParams and re.sub('log', '', header[i].lower()) not in [h.lower() for h in header]:
+            if header[i].lower().find('log')!=-1 and header[i].lower() not in logParams and re.sub('log', '', header[i].lower()) not in [h.lower() for h in header] and header[i].lower() not in lorentzInvarianceViolationParams:
                 print('exponentiating %s'%(header[i]))
 
                 flines[:,i]=np.exp(flines[:,i])
