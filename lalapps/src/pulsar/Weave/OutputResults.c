@@ -42,7 +42,7 @@ typedef struct {
   // Upper bin boundary
   REAL4 upper;
   // Bin count
-  UINT4 count;
+  UINT8 count;
 } WeaveMean2FHistogramBin;
 
 ///
@@ -66,11 +66,11 @@ struct tagWeaveOutputResults {
   /// Output result toplists
   WeaveResultsToplist *toplists[8];
   // Vector to store histogram of mean multi-F-statistics
-  UINT4Vector* mean2F_hgrm_bins;
+  UINT8Vector* mean2F_hgrm_bins;
   // Number of mean multi-F-statistics below range of histogram
-  UINT4 mean2F_hgrm_underflow;
+  UINT8 mean2F_hgrm_underflow;
   // Number of mean multi-F-statistics above range of histogram
-  UINT4 mean2F_hgrm_overflow;
+  UINT8 mean2F_hgrm_overflow;
   // Temporary REAL4 vector for generating histogram of mean multi-F-statistics
   REAL4Vector* mean2F_hgrm_tmp_REAL4;
   // Temporary INT4 vector for generating histogram of mean multi-F-statistics
@@ -257,7 +257,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create histogram of mean multi-F-statistic
   if ( mean2F_hgrm ) {
-    out->mean2F_hgrm_bins = XLALCreateUINT4Vector( 10000 );
+    out->mean2F_hgrm_bins = XLALCreateUINT8Vector( 10000 );
     XLAL_CHECK_NULL( out->mean2F_hgrm_bins != NULL, XLAL_EFUNC );
     memset( out->mean2F_hgrm_bins->data, 0, sizeof( out->mean2F_hgrm_bins->data[0] ) * out->mean2F_hgrm_bins->length );
   }
@@ -278,7 +278,7 @@ void XLALWeaveOutputResultsDestroy(
     for ( size_t i = 0; i < out->ntoplists; ++i ) {
       XLALWeaveResultsToplistDestroy( out->toplists[i] );
     }
-    XLALDestroyUINT4Vector( out->mean2F_hgrm_bins );
+    XLALDestroyUINT8Vector( out->mean2F_hgrm_bins );
     XLALDestroyREAL4Vector( out->mean2F_hgrm_tmp_REAL4 );
     XLALDestroyINT4Vector( out->mean2F_hgrm_tmp_INT4 );
     XLALFree( out );
@@ -434,7 +434,7 @@ int XLALWeaveOutputResultsWrite(
     XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveMean2FHistogramBin );
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, lower ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, upper ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, UINT4, count ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, UINT8, count ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write histogram bins
     WeaveMean2FHistogramBin bin;
@@ -627,7 +627,7 @@ int XLALWeaveOutputResultsReadAppend(
     XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveMean2FHistogramBin );
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, lower ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, upper ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, UINT4, count ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, UINT8, count ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Read histogram bins
     WeaveMean2FHistogramBin bin;
