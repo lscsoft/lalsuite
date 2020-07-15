@@ -259,7 +259,6 @@ typedef struct {
   CHAR *outputLogfile;		/**< write a log-file */
   CHAR *outputFstat;		/**< filename to output Fstatistic in */
   CHAR *outputLoudest;		/**< filename for loudest F-candidate plus parameter estimation */
-  CHAR *outputLogPrintf;        /**< send output from LogPrintf statements to this file */
 
   CHAR *outputFstatHist;        /**< output discrete histogram of all Fstatistic values */
   REAL8 FstatHistBin;           /**< width of an Fstatistic histogram bin */
@@ -323,10 +322,6 @@ typedef struct {
   LALStringVector *timestampsFiles;     /**< Names of numDet timestamps files */
   REAL8 Tsft;                           /**< length of one SFT in seconds, used in combination with timestamps files (otherwise taken from SFT files) */
   INT4 randSeed;		/**< allow user to specify random-number seed for reproducible noise-realizations */
-
-  // ----- deprecated and obsolete variables, kept around for backwards-compatibility -----
-  LIGOTimeGPS internalRefTime;   /**< [DEPRECATED] internal reference time. Has no effect, XLALComputeFstat() now always uses midtime anyway ... */
-  REAL8 dopplermax;              /**< [DEPRECATED] HAS NO EFFECT and should no longer be used: maximum Doppler shift is accounted for internally */
 
 } UserInput_t;
 
@@ -981,7 +976,6 @@ initUserVars ( UserInput_t *uvar )
   uvar->outputLogfile = NULL;
   uvar->outputFstat = NULL;
   uvar->outputLoudest = NULL;
-  uvar->outputLogPrintf = NULL;
 
   uvar->outputFstatHist = NULL;
   uvar->FstatHistBin = 0.1;
@@ -990,7 +984,6 @@ initUserVars ( UserInput_t *uvar )
 
   uvar->gridFile = NULL;
 
-  uvar->dopplermax =  0;        /* option is deprecated */
   uvar->RngMedWindow = FstatOptionalArgsDefaults.runningMedianWindow;
 
   uvar->SSBprecision = FstatOptionalArgsDefaults.SSBprec;
@@ -1172,11 +1165,6 @@ initUserVars ( UserInput_t *uvar )
   // ---------- deprecated but still-supported or tolerated options ----------
   XLALRegisterUvarMember ( RA,	STRING, 0, DEPRECATED, "Use --Alpha instead" );
   XLALRegisterUvarMember ( Dec, STRING, 0, DEPRECATED, "Use --Delta instead");
-
-  // ---------- obsolete and unsupported options ----------
-  XLALRegisterUvarMember ( outputLogPrintf, STRING,0, DEFUNCT, "DEFUNCT: Used to send all output from LogPrintf statements to this file");
-  XLALRegisterUvarMember ( internalRefTime, EPOCH, 0, DEFUNCT, "Should no longer be used: XLALComputeFstat() now always uses midtime internally ... ");
-  XLALRegisterUvarMember ( dopplermax,      REAL8, 0, DEFUNCT, "Should no longer be used: maximum Doppler shift is accounted for internally");
 
   return XLAL_SUCCESS;
 
