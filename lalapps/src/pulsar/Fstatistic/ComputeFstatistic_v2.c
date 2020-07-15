@@ -191,7 +191,6 @@ typedef struct {
 /* ----- User-variables: can be set from config-file or command-line */
 typedef struct {
   INT4 Dterms;			/**< number of terms in LALDemod Dirichlet kernel is Dterms+1 */
-  CHAR *IFO;			/**< DEPRECATED: IFO name: only required if using v1 SFTs */
 
   LALStringVector* assumeSqrtSX;/**< Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
   BOOLEAN SignalOnly;	        /**< DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
@@ -1072,7 +1071,6 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( 	dorbitEcc, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Spacing in Orbital eccentricity");
 
   XLALRegisterUvarMember(DataFiles, 	STRING, 'D', OPTIONAL, "File-pattern specifying (also multi-IFO) input SFT-files");
-  XLALRegisterUvarMember(IFO, 		STRING, 'I', DEPRECATED, "Detector: 'G1', 'L1', 'H1', 'H2' ... (useful for single-IFO v1-SFTs only, for modern v2-SFTs use an appropriate --DataFiles glob pattern instead!)");
 
   XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
   XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEPRECATED,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
@@ -1205,7 +1203,6 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->useResamp = ( uvar->FstatMethod >= FMETHOD_RESAMP_GENERIC ); // use resampling;
 
   /* if IFO string vector was passed by user, parse it for later use */
-
   if ( uvar->IFOs != NULL ) {
     XLAL_CHECK ( XLALParseMultiLALDetector ( &(cfg->multiIFO), uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
@@ -1220,22 +1217,10 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
       }
   }
 
-
-
-
-  /* use IFO-constraint if one given by the user */
-  if ( XLALUserVarWasSet ( &uvar->IFO ) ) {
-    XLAL_CHECK ( (constraints.detector = XLALGetChannelPrefix ( uvar->IFO )) != NULL, XLAL_EFUNC );
-  }
-
-
-
   LIGOTimeGPS minStartTime = uvar->minStartTime;
   LIGOTimeGPS maxStartTime = uvar->maxStartTime;
   constraints.minStartTime = &minStartTime;
   constraints.maxStartTime = &maxStartTime;
-
-
 
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
   /* DataFiles optional because of injectSqrtSX option, don't try to load if no files given **/
@@ -1250,11 +1235,6 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     /* the noise level is passed from the sqrtSX option */
 
     XLAL_CHECK ( (catalog = XLALMultiAddToFakeSFTCatalog ( NULL, uvar->IFOs,cfg-> multiTimestamps)) != NULL, XLAL_EFUNC );
-  }
-
-
-  if ( constraints.detector ) {
-    XLALFree ( constraints.detector );
   }
 
   XLAL_CHECK ( catalog->length > 0, XLAL_EINVAL, "\nSorry, didn't find any matching SFTs with pattern '%s'!\n\n", uvar->DataFiles );
