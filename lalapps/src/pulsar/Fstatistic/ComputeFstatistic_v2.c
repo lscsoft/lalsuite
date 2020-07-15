@@ -192,7 +192,6 @@ typedef struct {
   INT4 Dterms;			/**< number of terms in LALDemod Dirichlet kernel is Dterms+1 */
 
   LALStringVector* assumeSqrtSX;/**< Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
-  BOOLEAN SignalOnly;	        /**< DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
   BOOLEAN UseNoiseWeights;	/**< use SFT-specific noise-weights for each segment in Fstat-computation */
 
   REAL8 Freq;			/**< start-frequency of search */
@@ -508,11 +507,6 @@ int main(int argc,char *argv[])
       /* main function call: compute F-statistic for this template */
       XLAL_CHECK_MAIN ( XLALComputeFstat ( &Fstat_res, GV.Fstat_in, &dopplerpos, GV.numFreqBins_FBand, GV.Fstat_what) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      /* if single-only flag is given, add +4 to F-statistic */
-      if ( uvar.SignalOnly ) {
-        XLAL_CHECK_MAIN ( XLALAdd4ToFstatResults(Fstat_res) == XLAL_SUCCESS, XLAL_EFUNC );
-      }
-
       toc = GETTIME();
       timing.tauFstat += (toc - tic);   // pure Fstat-calculation time
 
@@ -738,10 +732,6 @@ int main(int argc,char *argv[])
           transientCand.doppler = dopplerpos;
           transientCand.windowRange = GV.transientWindowRange;
 
-          /* correct for missing bias in signal-only case */
-          if ( uvar.SignalOnly )
-            transientCand.FstatMap->maxF += 2;
-
           if ( fpTransientStats )
             {
               /* output everything into stats-file (one line per candidate) */
@@ -939,7 +929,6 @@ initUserVars ( UserInput_t *uvar )
   uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   uvar->assumeSqrtSX = NULL;
-  uvar->SignalOnly = 0;
   uvar->UseNoiseWeights = TRUE;
 
   /* default step-sizes for GRID_FLAT */
@@ -1056,8 +1045,7 @@ initUserVars ( UserInput_t *uvar )
 
   XLALRegisterUvarMember(DataFiles, 	STRING, 'D', OPTIONAL, "File-pattern specifying (also multi-IFO) input SFT-files");
 
-  XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
-  XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEPRECATED,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
+  XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs).\nNote that, unlike the historic --SignalOnly flag, this option will not lead to explicitly adding a +4 'correction' for noiseless SFTs to the output F-statistic.");
 
   XLALRegisterUvarMember( 	TwoFthreshold,	REAL8, 'F', OPTIONAL, "Set the threshold for selection of 2F");
   XLALRegisterUvarMember( 	gridType,	 INT4, 0 , OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 8=spin-square, 9=spin-age-brk");
@@ -1403,15 +1391,12 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   /* use fCoverMax here to work with loading grid from file (--gridType=6) */
   XLAL_CHECK ( XLALFstatCheckSFTLengthMismatch ( cfg->Tsft, fCoverMax, binaryMaxAsini, binaryMinPeriod, uvar->allowedMismatchFromSFTLength ) == XLAL_SUCCESS, XLAL_EFUNC, "Excessive mismatch would be incurred due to SFTs being too long for the current search setup. Please double-check your parameter ranges or provide shorter input SFTs. If you really know what you're doing, you could also consider using the --allowedMismatchFromSFTLength override." );
 
-  /* if single-only flag is given, assume a PSD with sqrt(S) = 1.0 */
+  /* If requested, assume a certain PSD instead of estimating it from data.
+   * NOTE that, unlike for the now removed --SignalOnly flag,
+   * no extra +4 is added to the F-statistic output in this case.
+   */
   MultiNoiseFloor s_assumeSqrtSX, *assumeSqrtSX;
-  if ( uvar->SignalOnly ) {
-    s_assumeSqrtSX.length = XLALCountIFOsInCatalog(catalog);
-    for (UINT4 X = 0; X < s_assumeSqrtSX.length; ++X) {
-      s_assumeSqrtSX.sqrtSn[X] = 1.0;
-    }
-    assumeSqrtSX = &s_assumeSqrtSX;
-  } else if ( uvar->assumeSqrtSX != NULL ) {
+  if ( uvar->assumeSqrtSX != NULL ) {
     XLAL_CHECK( XLALParseMultiNoiseFloor( &s_assumeSqrtSX, uvar->assumeSqrtSX, XLALCountIFOsInCatalog(catalog) ) == XLAL_SUCCESS, XLAL_EFUNC );
     assumeSqrtSX = &s_assumeSqrtSX;
   } else {
@@ -1917,24 +1902,16 @@ checkUserInputConsistency ( const UserInput_t *uvar )
     XLAL_ERROR ( XLAL_EINVAL );
   }
 
-  /* check SignalOnly and assumeSqrtSX */
-  XLAL_CHECK ( !uvar->SignalOnly || (uvar->assumeSqrtSX == NULL), XLAL_EINVAL, "Cannot pass --SignalOnly AND --assumeSqrtSX at the same time!\n");
-
-
-
-
+  /* check options for input data and injections */
   XLAL_CHECK ( (uvar->DataFiles ==NULL) ^ (uvar->injectSqrtSX == NULL), XLAL_EINVAL,  "Must pass exactly one out of --DataFiles or --injectSqrtSX \n");
   if(uvar->DataFiles !=NULL) {
-     
      XLAL_CHECK ( !XLALUserVarWasSet(&uvar->Tsft) , XLAL_EINVAL, UVAR_STR(Tsft) " can only be used for data generation with " UVAR_STR(injectSqrtSX)", not when loading existing "  UVAR_STR(DataFiles) "\n");
      XLAL_CHECK ( uvar->IFOs == NULL , XLAL_EINVAL, UVAR_STR(IFOs) " can only be used for data generation with " UVAR_STR(injectSqrtSX) ", not when loading existing "  UVAR_STR(DataFiles) "\n");
      XLAL_CHECK ( uvar->timestampsFiles == NULL , XLAL_EINVAL,UVAR_STR(timestampsFiles) " can only be used for data generation with " UVAR_STR(injectSqrtSX) ", not when loading existing "  UVAR_STR(DataFiles) "\n");
   }
-
   if(uvar->injectSqrtSX !=NULL) {
      XLAL_CHECK ( uvar->timestampsFiles != NULL &&  uvar->IFOs != NULL , XLAL_EINVAL,"--injectSqrtSX requires --IFOs, --timestampsFiles \n");
   }
-
 
   return XLAL_SUCCESS;
 
