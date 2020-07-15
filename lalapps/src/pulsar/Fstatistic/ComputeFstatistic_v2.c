@@ -201,12 +201,10 @@ typedef struct {
   REAL8 dFreq;			/**< user-specifyable Frequency stepsize */
 
   REAL8 Alpha;			/**< equatorial right-ascension in rad */
-  CHAR *RA;
   REAL8 dAlpha;
   REAL8 AlphaBand;
 
   REAL8 Delta;			/**< equatorial declination in rad */
-  CHAR *Dec;
   REAL8 dDelta;
   REAL8 DeltaBand;
 
@@ -937,8 +935,6 @@ initUserVars ( UserInput_t *uvar )
   uvar->FreqBand = 0.0;
   uvar->Alpha 	= 0.0;
   uvar->Delta 	= 0.0;
-  uvar->RA       = NULL;
-  uvar->Dec      = NULL;
   uvar->AlphaBand = 0;
   uvar->DeltaBand = 0;
   uvar->skyRegion = NULL;
@@ -1162,10 +1158,6 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember(Tsft,              REAL8, 0, DEVELOPER, "Generate SFTs with this timebase (in seconds) instead of loading from files. Requires --injectSqrtSX, --IFOs, --timestampsFiles");
   XLALRegisterUvarMember(randSeed,          INT4, 0, DEVELOPER, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
 
-  // ---------- deprecated but still-supported or tolerated options ----------
-  XLALRegisterUvarMember ( RA,	STRING, 0, DEPRECATED, "Use --Alpha instead" );
-  XLALRegisterUvarMember ( Dec, STRING, 0, DEPRECATED, "Use --Delta instead");
-
   return XLAL_SUCCESS;
 
 } /* initUserVars() */
@@ -1253,16 +1245,8 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     }
 
   /* define sky position variables from user input */
-  if (XLALUserVarWasSet(&uvar->RA))
-    {
-      XLALTranslateHMStoRAD ( &cfg->Alpha, uvar->RA );
-    }
-  else cfg->Alpha = uvar->Alpha;
-  if (XLALUserVarWasSet(&uvar->Dec))
-    {
-      XLALTranslateDMStoRAD( &cfg->Delta, uvar->Dec );
-    }
-  else cfg->Delta = uvar->Delta;
+  cfg->Alpha = uvar->Alpha;
+  cfg->Delta = uvar->Delta;
 
 
   REAL8 fMin, fMax, f1dotMin, f1dotMax, f2dotMin, f2dotMax, f3dotMin, f3dotMax;
@@ -1310,7 +1294,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
 
 
   { /* ----- set up Doppler region to scan ----- */
-    BOOLEAN haveAlphaDelta = (XLALUserVarWasSet(&uvar->Alpha) && XLALUserVarWasSet(&uvar->Delta)) || (XLALUserVarWasSet(&uvar->RA) && XLALUserVarWasSet(&uvar->Dec));
+    BOOLEAN haveAlphaDelta = (XLALUserVarWasSet(&uvar->Alpha) && XLALUserVarWasSet(&uvar->Delta));
 
     if (uvar->skyRegion)
       {
@@ -1818,19 +1802,6 @@ checkUserInputConsistency ( const UserInput_t *uvar )
 {
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
-  /* check that only alpha OR RA has been set */
-  if ( XLALUserVarWasSet(&uvar->Alpha) && (XLALUserVarWasSet(&uvar->RA)) )
-    {
-      XLALPrintError ("\nInput either Alpha OR RA, not both!\n\n");
-      XLAL_ERROR ( XLAL_EINVAL );
-    }
-  /* check that only delta OR Dec has been set */
-  if ( XLALUserVarWasSet(&uvar->Delta) && (XLALUserVarWasSet(&uvar->Dec)) )
-    {
-      XLALPrintError ("\nInput either Delta OR Dec, not both!\n\n");
-      XLAL_ERROR ( XLAL_EINVAL );
-    }
-
   /* check for negative stepsizes in Freq, Alpha, Delta */
   if ( XLALUserVarWasSet(&uvar->dAlpha) && (uvar->dAlpha < 0) )
     {
@@ -1878,7 +1849,7 @@ checkUserInputConsistency ( const UserInput_t *uvar )
     BOOLEAN useSkyGridFile, useFullGridFile, haveMetric, useMetric;
 
     haveSkyRegion  	= (uvar->skyRegion != NULL);
-    haveAlphaDelta 	= (XLALUserVarWasSet(&uvar->Alpha) && XLALUserVarWasSet(&uvar->Delta) ) || (XLALUserVarWasSet(&uvar->RA) && XLALUserVarWasSet(&uvar->Dec) );
+    haveAlphaDelta 	= (XLALUserVarWasSet(&uvar->Alpha) && XLALUserVarWasSet(&uvar->Delta));
     haveGridFile      	= (uvar->gridFile != NULL);
     useSkyGridFile   	= (uvar->gridType == GRID_FILE_SKYGRID);
     useFullGridFile	= (uvar->gridType == GRID_FILE_FULLGRID);
@@ -1914,9 +1885,8 @@ checkUserInputConsistency ( const UserInput_t *uvar )
       }
     if ( !haveSkyRegion && !haveAlphaDelta && !useSkyGridFile && !useFullGridFile )
       {
-        XLALPrintError ("\nUnderdetermined sky-region: use one of (Alpha,Delta), (RA,Dec), skyRegion or a gridFile!\n\n");
+        XLALPrintError ("\nUnderdetermined sky-region: use one of (Alpha,Delta), skyRegion or a gridFile!\n\n");
         XLAL_ERROR ( XLAL_EINVAL );
-
       }
 
     if ( !useMetric && haveMetric)
